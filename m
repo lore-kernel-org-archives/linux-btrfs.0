@@ -2,195 +2,125 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F3140C7EE29
-	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Jun 2023 22:20:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B101DC7EE25
+	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Jun 2023 23:45:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231940AbjFGWUA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 7 Jun 2023 18:20:00 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35888 "EHLO
+        id S233114AbjFGXpz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 7 Jun 2023 19:45:55 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50904 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231747AbjFGWTt (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Jun 2023 18:19:49 -0400
-Received: from mail-ua1-x935.google.com (mail-ua1-x935.google.com [IPv6:2607:f8b0:4864:20::935])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 36A1C2696
-        for <linux-btrfs@vger.kernel.org>; Wed,  7 Jun 2023 15:19:06 -0700 (PDT)
-Received: by mail-ua1-x935.google.com with SMTP id a1e0cc1a2514c-786f7e1ea2fso7001241.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 07 Jun 2023 15:19:06 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20221208; t=1686176313; x=1688768313;
-        h=mime-version:message-id:date:references:in-reply-to:subject:cc:to
-         :from:from:to:cc:subject:date:message-id:reply-to;
-        bh=tscqtiWNPRZB/rwsEFvY/JJuQDZQvgsE7LJ1A1TZhfY=;
-        b=QrhcUdZ/9Ff7luFFmncu8tNofZA0Zq/2MVdC3XQbjgHuicqd1uaeByj7LM6NgqkZhg
-         8uGTnA8LoUgoLqbIYuYxXa52ufSBlZIDwoAK7BR773Dnu520De2s+8XSBwXBRHSJf5wU
-         Dgh32BqW1OajgwgpSfri9rhl1RjVg85sCyKOWlrPtCgublls/wTu9V7cbYsVhW8oukuc
-         o10P/+L7JGUmSp0+QAoBH1bkubzQctpZ9tf+fWLR8rndwwKPC1D2Bt6klx1PueKA6Utv
-         8918zEdoOXDF37XCtksD0B5w3p/PsjdDmsSMEp33zeyvAAOxszrW6+bq7bh4ocxe6rgM
-         gMkA==
+        with ESMTP id S231550AbjFGXpy (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Jun 2023 19:45:54 -0400
+Received: from mail-io1-f78.google.com (mail-io1-f78.google.com [209.85.166.78])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C1D722115
+        for <linux-btrfs@vger.kernel.org>; Wed,  7 Jun 2023 16:45:52 -0700 (PDT)
+Received: by mail-io1-f78.google.com with SMTP id ca18e2360f4ac-770222340cfso643606139f.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 07 Jun 2023 16:45:52 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1686176313; x=1688768313;
-        h=mime-version:message-id:date:references:in-reply-to:subject:cc:to
-         :from:x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=tscqtiWNPRZB/rwsEFvY/JJuQDZQvgsE7LJ1A1TZhfY=;
-        b=c9Iq+4W6gatDFOtYaxVG/S1SLkHZNCgyletpOBC6APCqBmX5BGMDygHUdYVabaYS7g
-         DbGPGLB0xa3ocaiU8XPYvcHWDK5POm5ZMe/XOtFAjMwzaCln1uZcPNfMUr495a38jOK4
-         Hr6oHRjP67JEqF9mVRrr5OrqdNhI8noO8QoTnT6K9j69R2iCPg38qXjCqC4DDr7hhKFe
-         Z4IDhlGANgj/OiOZyFcWsvnFe2S4bzQ+KMcgeEVz9eLO+GORmcv7yCvLZXi619S640Jg
-         uOeVXv94JE1ry4505R+P/uvkwnC9kZRNzKAabHOH2KdLjnSa814faKi3sqZ+LIGOHqxF
-         7FGw==
-X-Gm-Message-State: AC+VfDynM4HpAqa0JwLWiPRc4EIQ9TXlSVsT1LvyI1d+/0MCRmk/QX7W
-        ZoK2VgbsZaKQ5DX8pRvLHEpcILi5k3g=
-X-Google-Smtp-Source: ACHHUZ6TlHqNvWaz2tpUGalOYlQ1Flx9Qn5Lb2fDF9Br2RnFW6JidB5JdEWWpti1i9PsP3rSR607eA==
-X-Received: by 2002:a67:d00f:0:b0:43b:159b:f2c5 with SMTP id r15-20020a67d00f000000b0043b159bf2c5mr1005279vsi.32.1686176313445;
-        Wed, 07 Jun 2023 15:18:33 -0700 (PDT)
-Received: from DigitalMercury.freeddns.org (bras-base-mtrlpq0313w-grc-04-65-94-64-248.dsl.bell.ca. [65.94.64.248])
-        by smtp.gmail.com with ESMTPSA id f1-20020a0ccc81000000b0061a68b5a8c4sm206168qvl.134.2023.06.07.15.18.32
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 07 Jun 2023 15:18:32 -0700 (PDT)
-Received: by DigitalMercury.freeddns.org (Postfix, from userid 1000)
-        id 94CC2D690C9; Wed,  7 Jun 2023 18:18:31 -0400 (EDT)
-From:   Nicholas D Steeves <nsteeves@gmail.com>
-To:     Bernd Lentes <bernd.lentes@helmholtz-muenchen.de>,
-        Phillip Susi <phill@thesusis.net>
-Cc:     Andrei Borzenkov <arvidjaar@gmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: RE: rollback to a snapshot
-In-Reply-To: <PR3PR04MB7340C8A490ED5E5B5446879FD653A@PR3PR04MB7340.eurprd04.prod.outlook.com>
-References: <PR3PR04MB73400D4878EB0F8328B5D50BD652A@PR3PR04MB7340.eurprd04.prod.outlook.com>
- <26251cfd-f138-a787-f0e8-528c1c5c6778@gmail.com>
- <PR3PR04MB7340EB60FBF52F117181580ED653A@PR3PR04MB7340.eurprd04.prod.outlook.com>
- <87zg5b821z.fsf@vps.thesusis.net>
- <PR3PR04MB7340C8A490ED5E5B5446879FD653A@PR3PR04MB7340.eurprd04.prod.outlook.com>
-Date:   Wed, 07 Jun 2023 18:18:23 -0400
-Message-ID: <87edmmvrv4.fsf@DigitalMercury.freeddns.org>
+        d=1e100.net; s=20221208; t=1686181552; x=1688773552;
+        h=to:from:subject:message-id:in-reply-to:date:mime-version
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=eWOJCBMKP6mSfYbctvklOmN3wcRqN+DKVS7GuRE6chI=;
+        b=bJ3aca9qRzyvs/nNMbyU8DC6Y70KArK2oby7QM6bON9bIRUR0eHKxXwmRbusVKVN0w
+         LzQQDtZiO+SyrOr7ngqaDRSmPlRZp1P0oRiim7F5e4MufiGTU2OKfTfT8ofzAFQzsbOb
+         fe3kQPrky3fLHca6Kp/yTRE0I6wLoa+Muxunbyt5OOvlDgzgWrjDyKD4Fgjdrkfij5g8
+         FBMSdhJ9N4uW4uCrGRB6NLI0MB+bASdi/2ZWTp+qlMQotZweCqALhVKvjct9RPnbYJXt
+         UZEKU7NwBz9WMbHFw5ZrGDY1S4TIi/JieS/Nr7jlSu3DFvKuqwKf0aRBF636DBf8eOtv
+         AXMQ==
+X-Gm-Message-State: AC+VfDz1oGIEU96CkFAmo6jjt6wSVfvvHQ9ykD2gEn4TPBm5IPZRSGKM
+        PaJ26YWMiNHQEa2fcE/SBKSQugJtq0RU5rDrdzsRSLqf/ivo
+X-Google-Smtp-Source: ACHHUZ55IA8Z0TgQ4yXZHNd1NXUzMwL9ikkAEETla75rjb06L4umBd1aPiWzck/1UePIu/KS0vMO0nXHoS4SsDf0wp3TbJyF/dOc
 MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="=-=-=";
-        micalg=pgp-sha512; protocol="application/pgp-signature"
+X-Received: by 2002:a6b:7507:0:b0:76c:7d5f:3690 with SMTP id
+ l7-20020a6b7507000000b0076c7d5f3690mr3378640ioh.1.1686181552159; Wed, 07 Jun
+ 2023 16:45:52 -0700 (PDT)
+Date:   Wed, 07 Jun 2023 16:45:52 -0700
+In-Reply-To: <00000000000009ee1005fc425b4b@google.com>
+X-Google-Appengine-App-Id: s~syzkaller
+X-Google-Appengine-App-Id-Alias: syzkaller
+Message-ID: <00000000000071812e05fd92bcef@google.com>
+Subject: Re: [syzbot] [btrfs?] WARNING in btrfs_split_ordered_extent
+From:   syzbot <syzbot+ee90502d5c8fd1d0dd93@syzkaller.appspotmail.com>
+To:     clm@fb.com, dsterba@suse.com, josef@toxicpanda.com,
+        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
---=-=-=
-Content-Type: text/plain
+syzbot has found a reproducer for the following issue on:
 
-Bernd Lentes <bernd.lentes@helmholtz-muenchen.de> writes:
+HEAD commit:    a27648c74210 afs: Fix setting of mtime when creating a fil..
+git tree:       upstream
+console+strace: https://syzkaller.appspot.com/x/log.txt?x=12b04695280000
+kernel config:  https://syzkaller.appspot.com/x/.config?x=7474de833c217bf4
+dashboard link: https://syzkaller.appspot.com/bug?extid=ee90502d5c8fd1d0dd93
+compiler:       Debian clang version 15.0.7, GNU ld (GNU Binutils for Debian) 2.35.2
+syz repro:      https://syzkaller.appspot.com/x/repro.syz?x=120b88fd280000
+C reproducer:   https://syzkaller.appspot.com/x/repro.c?x=17e6a23b280000
 
->>-----Original Message-----
->>From: Phillip Susi <phill@thesusis.net>
->>Sent: Wednesday, June 7, 2023 10:09 PM
->>To: Bernd Lentes <bernd.lentes@helmholtz-muenchen.de>
->>Cc: Andrei Borzenkov <arvidjaar@gmail.com>; linux-btrfs@vger.kernel.org
->>Subject: Re: rollback to a snapshot
->
->>The last time I installed Ubuntu on btrfs, the installer automatically created a
->>top level subvolume named @ and actually installed the system in that
->>subvolume, then configured grub to tell the kernel to mount the root btrfs
->>volume with the flag subvol="@" so that the system would boot normally.
->>Then you just mount the real root of the filesystem somewhere else and make
->>a snapshot of the @ subvolume.  When you want to roll back, you just rename
->>@ to something else, and either rename or create a new writable snapshot
->>from your previous snapshot and name it @, then reboot.
->
-> Do you remember which version it was ?
-> You say " top level subvolume named @". You mean subvolid 5 ?
-> " Then you just mount the real root of the filesystem". What do you mean by "real root" ?
-> Does the subvolume @ already contain files or is it just a container for another subvolume ?
-> "you just rename @ to something else". How can i rename a subvolume ? Just rename the corresponding directory ?
-> " Then you just mount the real root of the filesystem somewhere else" Why ? With a bind mount ?
->
-> Bernd
+Downloadable assets:
+disk image: https://storage.googleapis.com/syzbot-assets/33fadb6220e9/disk-a27648c7.raw.xz
+vmlinux: https://storage.googleapis.com/syzbot-assets/31a2f6248c1a/vmlinux-a27648c7.xz
+kernel image: https://storage.googleapis.com/syzbot-assets/c97df5fe3d0b/bzImage-a27648c7.xz
+mounted in repro: https://storage.googleapis.com/syzbot-assets/735d868a5353/mount_0.gz
 
-If I remember correctly, Ubuntu looks something like this
+IMPORTANT: if you fix the issue, please add the following tag to the commit:
+Reported-by: syzbot+ee90502d5c8fd1d0dd93@syzkaller.appspotmail.com
 
-sudo btrfs sub list / -t
-ID      gen     top level       path
---      ---     ---------       ----
-347     477642  5               @
-348     476215  5               @home
+------------[ cut here ]------------
+WARNING: CPU: 1 PID: 5017 at fs/btrfs/ordered-data.c:1138 btrfs_split_ordered_extent+0x628/0x840
+Modules linked in:
+CPU: 1 PID: 5017 Comm: syz-executor199 Not tainted 6.4.0-rc5-syzkaller-00017-ga27648c74210 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/25/2023
+RIP: 0010:btrfs_split_ordered_extent+0x628/0x840 fs/btrfs/ordered-data.c:1138
+Code: fe 48 c7 c7 a0 94 2a 8b 48 c7 c6 20 90 2a 8b ba 6c 04 00 00 e8 09 a9 1d 07 e8 f4 4a fb fd 0f 0b e9 21 fb ff ff e8 e8 4a fb fd <0f> 0b bb ea ff ff ff eb b0 e8 da 4a fb fd 0f 0b bb ea ff ff ff eb
+RSP: 0018:ffffc90003cbedd8 EFLAGS: 00010293
+RAX: ffffffff83903448 RBX: 0000000000010000 RCX: ffff88801929bb80
+RDX: 0000000000000000 RSI: 0000000000010000 RDI: 0000000000001000
+RBP: 1ffff1100fde111b R08: ffffffff83903012 R09: fffffbfff1cab9ae
+R10: 0000000000000000 R11: dffffc0000000001 R12: dffffc0000000000
+R13: ffff88807ef088d8 R14: 0000000000001000 R15: 0000000000000000
+FS:  00007f807fad4700(0000) GS:ffff8880b9900000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f9cf00c2723 CR3: 000000002b121000 CR4: 00000000003506e0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ btrfs_extract_ordered_extent+0x12c/0xb00 fs/btrfs/inode.c:2625
+ btrfs_dio_submit_io+0x239/0x340 fs/btrfs/inode.c:7737
+ iomap_dio_submit_bio fs/iomap/direct-io.c:75 [inline]
+ iomap_dio_bio_iter+0xe15/0x1430 fs/iomap/direct-io.c:355
+ __iomap_dio_rw+0x12c3/0x22e0 fs/iomap/direct-io.c:598
+ btrfs_dio_write+0xb6/0x100 fs/btrfs/inode.c:7770
+ btrfs_direct_write fs/btrfs/file.c:1529 [inline]
+ btrfs_do_write_iter+0x870/0x1270 fs/btrfs/file.c:1674
+ do_iter_write+0x7b1/0xcb0 fs/read_write.c:860
+ iter_file_splice_write+0x843/0xfe0 fs/splice.c:795
+ do_splice_from fs/splice.c:873 [inline]
+ direct_splice_actor+0xe7/0x1c0 fs/splice.c:1039
+ splice_direct_to_actor+0x4c4/0xbd0 fs/splice.c:994
+ do_splice_direct+0x283/0x3d0 fs/splice.c:1082
+ do_sendfile+0x620/0xff0 fs/read_write.c:1254
+ __do_sys_sendfile64 fs/read_write.c:1322 [inline]
+ __se_sys_sendfile64+0x17c/0x1e0 fs/read_write.c:1308
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x41/0xc0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+RIP: 0033:0x7f8086f49329
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 41 15 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007f807fad42f8 EFLAGS: 00000246 ORIG_RAX: 0000000000000028
+RAX: ffffffffffffffda RBX: 00007f8086fd27b0 RCX: 00007f8086f49329
+RDX: 0000000000000000 RSI: 0000000000000004 RDI: 0000000000000004
+RBP: 00007f8086f9f1f4 R08: 00007f807fad4700 R09: 0000000000000000
+R10: 0000000008800000 R11: 0000000000000246 R12: 6f63617461646f6e
+R13: 70735f6473736f6e R14: 0030656c69662f2e R15: 00007f8086fd27b8
+ </TASK>
 
-which is
 
-subvolid=5
-         |_ @
-         |_ @home
-
-and you shared this info in the initial thread:
-
-> root@Microknoppix:/home/knoppix# mount|grep btrfs
-> /dev/mapper/ubuntu--vg-ubuntu--lv on /mnt/btrfs type btrfs (rw,relatime,space_cache,subvolid=5,subvol=/)
-
-> root@Microknoppix:/home/knoppix# btrfs sub list /mnt/btrfs
-> ID 430 gen 1215864 top level 5 path .snapshots
-> ID 434 gen 1213568 top level 430 path .snapshots/06-06-2023--15:16_PRE_UPGRADE
-> ID 435 gen 1216086 top level 430 path .snapshots/06-06-2023
-> I want to go back to ID 434 or 435.
-
-So you have something like
-1. subvolid=5
-2.          |_ @
-3.          |_ @home
-4.          |_ snapshots
-5.                     |_ 06-06-2023--15:16_PRE_UPGRADE
-6.                     |_ 06-06-2023
-
-subvolid=5 is always the "real root" I think Andrei Borzenkov is calling
-it to mitigate the confusion resulting from potentially having used the
-default subvolume feature, which in my opinion should never be used,
-because it will confuse the bootloader.  A default Ubuntu installation
-will have "subvol=@" in the bootloader, which means all that you need to
-do is move your snapshot into place (position #2 in the above table)
-
-So I think you're going to do something like the following: Mount the
-true / (position #1) or subvolid=5 to /mnt/btrfs, then
-
-  cd /mnt/btrfs/snapshots
-  btrfs sub snap -r ../@ ./@_broken-upgrade  # note readonly "-r"
-  cd ..
-  # I still do a subvol sync and fi sync here
-  btrfs sub del -c ./@
-  # I still do a subvol sync and fi sync here
-  btrfs sub snap ./snapshots/06-06-2023--15:16_PRE_UPGRADE ./@
-  #             /\ note no readonly "-r"
-
-If you stuck with Ubuntu defaults and didn't use the default subvolume
-feature, then subvol=@ is still what grub will boot, and
-06-06-2023--15:16_PRE_UPGRADE is now the new writable @.
-
-I believe this is the safest method available.  The perfect snapshotting
-tool would make it easier to see the relationship between snapshoted
-copies of subvolumes.
-
-Note that rootfs rollbacks won't fix potentially incompatibly upgraded
-databases in @home (is that rare these days?).  There's not really any
-good fix for that, other than to restore them from backup.  Note that
-with this method you will lose a day's worth of everything in @ that
-didn't have its own subvolume (ie logs, any VMs not in @home, etc).
-
-For the record: If you consult the table above, the default subvolume
-feature makes any subvolume become the user-apparent / of the
-filesystem, and hides anything that's not beneath its tree.
-
-'hope this helps,
-Nicholas
-
---=-=-=
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQJHBAEBCgAxFiEE4qYmHjkArtfNxmcIWogwR199EGEFAmSBAjETHG5zdGVldmVz
-QGdtYWlsLmNvbQAKCRBaiDBHX30QYWl5D/0QfjlFNt00cos5YU61kfwyS/w4NBKH
-evtHlauStmtCcAEI8R7LSgskWYsGs15GlnILJWBWBmerFWNuLvr1L1SuoFr4sDZW
-/J4vBOfoMgv4OWJIkmhhugy5Wkf14YAagjs4kjHkzj5q5KMqjdEa2f3HXqYDWOGW
-vbdDMAPPTa9O/wUHG59NfAAMZ229XsjuuZk22wWnyuT0YWPooOLlvsEIK/UIV9w+
-Ph2Y3CBHIH+Ogoy1be9RfIyfFuennSGcBqPf9v7SUbINk9148+NGfhnQNLo5zOMN
-xKEHcYYOK8WKJ+mbDaV3ch+MV8rVGIVg7vm5uwbuNaUTiqEqCd3RwwH4JDUJSIlB
-Vu+kwhtAQs8GgRuZXDJQpiQ3gdH/RA6PQ5QnMTOVRh0SMQPVnIzUYQUrBTu/RtU/
-UeInUX4nQtptwVdRKNLqfFOYt44Gyl7C9kups7yIcXDKdCtTKURtxrci68PnOXSQ
-sNuCGWmjcBydiwRu4McuQcO5piSFhx/cdmMa2xEE1FJKifavi5Vzr97dZQqmycMp
-AyAl7MJ+xxHhO+6fyZgTI4WET5EMHZFQWPmqmcjh3V6Ce/RhnPwkLFIrwJH+E9CC
-OPncVXqaFtqOLfu2b5m3v2++60emm2gimRIA53LRg1CBWab1k3cFEPOYv8iD60fF
-vcSC1p83mALv1g==
-=b/H8
------END PGP SIGNATURE-----
---=-=-=--
+---
+If you want syzbot to run the reproducer, reply with:
+#syz test: git://repo/address.git branch-or-commit-hash
+If you attach or paste a git patch, syzbot will apply it before testing.

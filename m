@@ -2,40 +2,40 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 31B82C7EE23
-	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Jun 2023 19:25:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 03AE0C7EE43
+	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Jun 2023 19:25:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231408AbjFGTZD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S231420AbjFGTZD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Wed, 7 Jun 2023 15:25:03 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45558 "EHLO
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45578 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232723AbjFGTYu (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Jun 2023 15:24:50 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8EFC91FD5
-        for <linux-btrfs@vger.kernel.org>; Wed,  7 Jun 2023 12:24:49 -0700 (PDT)
+        with ESMTP id S233176AbjFGTYw (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Jun 2023 15:24:52 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7BEED1FD5
+        for <linux-btrfs@vger.kernel.org>; Wed,  7 Jun 2023 12:24:51 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 2C1B7639BC
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 10C59639BC
+        for <linux-btrfs@vger.kernel.org>; Wed,  7 Jun 2023 19:24:51 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id F392AC433EF
         for <linux-btrfs@vger.kernel.org>; Wed,  7 Jun 2023 19:24:49 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 159C9C433EF
-        for <linux-btrfs@vger.kernel.org>; Wed,  7 Jun 2023 19:24:47 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1686165888;
-        bh=gLvOi2Ppog4OeBikgV9x82wsSwVkvqPznbAcObJfA+M=;
+        s=k20201202; t=1686165890;
+        bh=Vgcvw+1J0gJ4ISmqjEBgkY4hK3nil+z9oZA3FU5CMFE=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=VbytxNccxxuqcaa2DTPnCoMaRunWOP2eAEu4MzTZMm3bpPbz2jTeyj6bYm54AjlxR
-         0SjE+BldGLSezVs+NC4RCkVVHIeh5T3A2xShfNkZV987kQ7VS/z1Uoo0WRRq8JaDMK
-         4DFhjZMVxDM1QvOhHicyN5QBbcLWA1Yk26zeqww6HBXs6WaPvvohDt6QguZ42xdg7+
-         N2WeF6JuyjgSU5GKx2peyaJgBN+PMI01NFoYID9XCwjLyayf3385WxnrnkX0GDz8bx
-         UPuAT8wD0YHX9ERD77uTzwiv/WwGD2WCq+jFzgVRDhXheyoz2M/ZSCtfCp+Yem/aFH
-         q5z/72wwWSWyg==
+        b=OaB58xWdFiEbc8yhkUuTlTHwhKTDDpJKPuxB6pXYhX3lbRB7LfOseRFCbAiqqgOg8
+         C/j1QFVpYzqtR7GdZsIUSa3jSOSTCrmOixFia1XIF8rQI/b/GlVCNoo/Gw5C/4nhoV
+         A34Oi7ct5R7+tgr/RWAr9GYiSU6rgsxhRimUP9kPXZYHra8WjvlzxWy7CBrjTxQDjc
+         VRTNXk14iXP1pWABxtqhyxD7p9fsPQWqIK40nBCecqFyeJCkTMinRc/m7MsFSFWDhP
+         D2LLhlhoBNydNNI3JkJP9DvW3V8WZE47N+ZrWRSitreNBDYVZlnIqUptmODal1a4W2
+         34TIW4ThDjSgA==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 08/13] btrfs: abort transaction at balance_level() when left child is missing
-Date:   Wed,  7 Jun 2023 20:24:32 +0100
-Message-Id: <91e588216500d2aaa7e119e5ac4be927c71bf066.1686164817.git.fdmanana@suse.com>
+Subject: [PATCH 10/13] btrfs: do not BUG_ON() on tree mod log failures at push_nodes_for_insert()
+Date:   Wed,  7 Jun 2023 20:24:34 +0100
+Message-Id: <3dfd1a4c01795433444b45268da1ae75563642c1.1686164820.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1686164789.git.fdmanana@suse.com>
 References: <cover.1686164789.git.fdmanana@suse.com>
@@ -47,39 +47,51 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-At balance_level() we are calling btrfs_handle_fs_error() when the middle
-child only has 1 item and the left child is missing, however we can simply
-use btrfs_abort_transaction(), which achieves the same purposes: to turn
-the fs to error state, abort the current transaction and turn the fs to
-RO mode. Besides that, btrfs_abort_transaction() also prints a stack trace
-which makes it more useful.
-
-Also, as this is an highly unexpected case and it's about a b+tree
-inconsistency, change the error code from -EROFS to -EUCLEAN and tag the
-if branch as 'unlikely'.
+At push_nodes_for_insert(), instead of doing a BUG_ON() in case we fail to
+record tree mod log operations, do a transaction abort and return the
+error to the caller. There's really no need for the BUG_ON() as we can
+release all resources in this context, and we have to abort because other
+future tree searches that use the tree mod log (btrfs_search_old_slot())
+may get inconsistent results if other operations modify the tree after
+that failure and before the tree mod log based search.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/ctree.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ fs/btrfs/ctree.c | 14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 4dcdcf25c3fe..e2943047b01d 100644
+index 2971e7d70d04..e3c949fa136f 100644
 --- a/fs/btrfs/ctree.c
 +++ b/fs/btrfs/ctree.c
-@@ -1164,9 +1164,9 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
- 		 * otherwise we would have pulled some pointers from the
- 		 * right
- 		 */
--		if (!left) {
--			ret = -EROFS;
--			btrfs_handle_fs_error(fs_info, ret, NULL);
-+		if (unlikely(!left)) {
-+			ret = -EUCLEAN;
-+			btrfs_abort_transaction(trans, ret);
- 			goto out;
- 		}
- 		wret = balance_node_right(trans, mid, left);
+@@ -1300,7 +1300,12 @@ static noinline int push_nodes_for_insert(struct btrfs_trans_handle *trans,
+ 			btrfs_node_key(mid, &disk_key, 0);
+ 			ret = btrfs_tree_mod_log_insert_key(parent, pslot,
+ 					BTRFS_MOD_LOG_KEY_REPLACE);
+-			BUG_ON(ret < 0);
++			if (ret < 0) {
++				btrfs_tree_unlock(left);
++				free_extent_buffer(left);
++				btrfs_abort_transaction(trans, ret);
++				return ret;
++			}
+ 			btrfs_set_node_key(parent, &disk_key, pslot);
+ 			btrfs_mark_buffer_dirty(parent);
+ 			if (btrfs_header_nritems(left) > orig_slot) {
+@@ -1355,7 +1360,12 @@ static noinline int push_nodes_for_insert(struct btrfs_trans_handle *trans,
+ 			btrfs_node_key(right, &disk_key, 0);
+ 			ret = btrfs_tree_mod_log_insert_key(parent, pslot + 1,
+ 					BTRFS_MOD_LOG_KEY_REPLACE);
+-			BUG_ON(ret < 0);
++			if (ret < 0) {
++				btrfs_tree_unlock(right);
++				free_extent_buffer(right);
++				btrfs_abort_transaction(trans, ret);
++				return ret;
++			}
+ 			btrfs_set_node_key(parent, &disk_key, pslot + 1);
+ 			btrfs_mark_buffer_dirty(parent);
+ 
 -- 
 2.34.1
 

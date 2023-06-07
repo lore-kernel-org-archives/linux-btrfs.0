@@ -2,57 +2,76 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 04BBEC83005
-	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Jun 2023 20:20:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 39B3EC7EE2E
+	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Jun 2023 20:31:49 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232417AbjFGUUG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 7 Jun 2023 16:20:06 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44550 "EHLO
+        id S232727AbjFGUbr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 7 Jun 2023 16:31:47 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57960 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233068AbjFGUT5 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Jun 2023 16:19:57 -0400
-X-Greylist: delayed 417 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Wed, 07 Jun 2023 13:19:36 PDT
-Received: from vps.thesusis.net (vps.thesusis.net [34.202.238.73])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 851B02710
-        for <linux-btrfs@vger.kernel.org>; Wed,  7 Jun 2023 13:19:36 -0700 (PDT)
-Received: by vps.thesusis.net (Postfix, from userid 1000)
-        id 9FFDE1239A0; Wed,  7 Jun 2023 16:12:08 -0400 (EDT)
-References: <PR3PR04MB73400D4878EB0F8328B5D50BD652A@PR3PR04MB7340.eurprd04.prod.outlook.com>
- <26251cfd-f138-a787-f0e8-528c1c5c6778@gmail.com>
- <PR3PR04MB7340EB60FBF52F117181580ED653A@PR3PR04MB7340.eurprd04.prod.outlook.com>
-User-agent: mu4e 1.7.12; emacs 27.1
-From:   Phillip Susi <phill@thesusis.net>
-To:     Bernd Lentes <bernd.lentes@helmholtz-muenchen.de>
-Cc:     Andrei Borzenkov <arvidjaar@gmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: rollback to a snapshot
-Date:   Wed, 07 Jun 2023 16:08:45 -0400
-In-reply-to: <PR3PR04MB7340EB60FBF52F117181580ED653A@PR3PR04MB7340.eurprd04.prod.outlook.com>
-Message-ID: <87zg5b821z.fsf@vps.thesusis.net>
+        with ESMTP id S233071AbjFGUbo (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Jun 2023 16:31:44 -0400
+Received: from syrinx.knorrie.org (syrinx.knorrie.org [IPv6:2001:888:2177::4d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7F523137
+        for <linux-btrfs@vger.kernel.org>; Wed,  7 Jun 2023 13:31:43 -0700 (PDT)
+Received: from [IPV6:4000:0:fb:a::15] (2a02-a213-2b81-f900-0000-0000-0000-0004.cable.dynamic.v6.ziggo.nl [IPv6:2a02:a213:2b81:f900::4])
+        (using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+         key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
+        (No client certificate requested)
+        by syrinx.knorrie.org (Postfix) with ESMTPSA id DF9CB6151B82E;
+        Wed,  7 Jun 2023 22:31:41 +0200 (CEST)
+Message-ID: <bdd74f6a-2f0a-6107-dd76-9e8e1c9e64fe@knorrie.org>
+Date:   Wed, 7 Jun 2023 22:31:41 +0200
 MIME-Version: 1.0
-Content-Type: text/plain
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.10.0
+Content-Language: en-US
+To:     Marc MERLIN <marc@merlins.org>
+Cc:     Qu Wenruo <quwenruo.btrfs@gmx.com>, Roman Mamedov <rm@romanrm.net>,
+        Andrei Borzenkov <arvidjaar@gmail.com>,
+        linux-btrfs@vger.kernel.org
+References: <20230605162636.GE105809@merlins.org>
+ <9bfa8bb6-b64e-d34f-f9c8-db5f9510fc29@gmail.com>
+ <20230606014636.GG105809@merlins.org>
+ <295ce1bb-bcd7-ebdf-96b2-230cfeff5871@gmail.com>
+ <20230606164139.GK105809@merlins.org> <20230606232558.00583826@nvm>
+ <543d7cf5-96c1-a947-6106-250527b4b830@gmx.com>
+ <20230607191719.GA12693@merlins.org>
+ <a2a492ee-baa5-6881-e9ec-85ca2e611879@knorrie.org>
+ <20230607200200.GA43020@merlins.org>
+From:   Hans van Kranenburg <hans@knorrie.org>
+Subject: Re: How to find/reclaim missing space in volume
+In-Reply-To: <20230607200200.GA43020@merlins.org>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On 6/7/23 22:02, Marc MERLIN wrote:
+> On Wed, Jun 07, 2023 at 09:32:13PM +0200, Hans van Kranenburg wrote:
+>>> On the plus side, this seems to have fixed the issue:
+>>
+>> Just a random hint... One possible situation in which a deleted
+>> subvolume can't be freed up for real yet, is when there is a process
+>> that still has an open file in it.
+> 
+> this is a fair guess.
+> Too late now, but is this something that would show up in 
+> lsof -n | grep volume ?
 
-Bernd Lentes <bernd.lentes@helmholtz-muenchen.de> writes:
+Yes, it should.
 
-> Could you propose a setup here which does not use top level subvolumes ?
-> I found it very frustrating that everyone says "BTRFS is great, you can do snapshots and easily rollback".
-> Because in reality rollback is not easy. How can i avoid to use top level subvolumes ?
-> I have some Suse boxes which seem to have a correct default setup. But when i install e.g. an Ubuntu box
-> i really don't know how to setup BTRFS manually.
-> There was a great Wiki (https://archive.kernel.org/oldwiki/btrfs.wiki.kernel.org/index.php/Main_Page.html),
-> but now it's outdated. Is there something new ?
+I just quickly tested this, by doing something like...
 
-The last time I installed Ubuntu on btrfs, the installer automatically
-created a top level subvolume named @ and actually installed the system
-in that subvolume, then configured grub to tell the kernel to mount the
-root btrfs volume with the flag subvol="@" so that the system would boot
-normally.  Then you just mount the real root of the filesystem somewhere
-else and make a snapshot of the @ subvolume.  When you want to roll
-back, you just rename @ to something else, and either rename or create a
-new writable snapshot from your previous snapshot and name it @, then
-reboot.
+btrfs sub create foo
+cat >> foo/bar
+.. and then while the file is still open ..
+btrfs sub del foo/
 
+-$ lsof -n |grep foo
+cat 577355 knorrie 1w REG 0,0 32 257 /home/knorrie/p/foo/bar
+
+So it doesn't show as DEL, but still as REG, even.
+
+Hans

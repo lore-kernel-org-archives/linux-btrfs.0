@@ -2,205 +2,141 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 741CDC7EE23
-	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Jun 2023 19:25:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C8733C7EE23
+	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Jun 2023 19:37:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231844AbjFGTZG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 7 Jun 2023 15:25:06 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45598 "EHLO
+        id S230057AbjFGThr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 7 Jun 2023 15:37:47 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51232 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233205AbjFGTYz (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Jun 2023 15:24:55 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 136671FD5
-        for <linux-btrfs@vger.kernel.org>; Wed,  7 Jun 2023 12:24:54 -0700 (PDT)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id E7B2D636CF
-        for <linux-btrfs@vger.kernel.org>; Wed,  7 Jun 2023 19:24:53 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id D18DEC4339B
-        for <linux-btrfs@vger.kernel.org>; Wed,  7 Jun 2023 19:24:52 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1686165893;
-        bh=rjUCCV1HaWN7sBC6U0UU4EZ6j/mOoXuFkg4EabJzqEs=;
-        h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=XmEG3QFS+w2W5hxZO8y0nLhrXqJwevJ54McR7GLq51hvphmuNTJWv5qkRWOsPvh8e
-         xA4ft9TniYE/ByM6hW5oZsEX6jnAwfUH9OysQQCKetM6F2JjiRLwPbpenUql7sHNOx
-         5gmfArdrOFRBhEdISAqPLvsIOA+ImrHS/Nn9wTWesCqIug0fw3OgBDz0wFkaPgw7L2
-         R4yxBfcdp/Pf9FM8/serh2d01yKrAIVnSAPs2DQWjFFXMp9TNdw1pUnwAT77Kc9EqI
-         Xll+TgUIN6Ti4HyqJfchtTh/p6XRceFPJ99G3X1/vgzL01GKOGUurAmo6nQo/1zjJZ
-         PeSHOBRMaNQjA==
-From:   fdmanana@kernel.org
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 13/13] btrfs: do not BUG_ON() on tree mod log failures at btrfs_del_ptr()
-Date:   Wed,  7 Jun 2023 20:24:37 +0100
-Message-Id: <7890b37a787a3dd59a6eadf0ae78092c46a7f9ca.1686164823.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.25.1
-In-Reply-To: <cover.1686164789.git.fdmanana@suse.com>
-References: <cover.1686164789.git.fdmanana@suse.com>
+        with ESMTP id S229792AbjFGTho (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Jun 2023 15:37:44 -0400
+Received: from EUR05-AM6-obe.outbound.protection.outlook.com (mail-am6eur05on2049.outbound.protection.outlook.com [40.107.22.49])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 034FB1FC3
+        for <linux-btrfs@vger.kernel.org>; Wed,  7 Jun 2023 12:37:42 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=Ps6ubzJuY6i85quZ9skwBdG7ltNbF/Yzd8VzTIgcrRu5Y2yxxhGvdnqeYhQKBCu1VwwhiErE3q0vLYYXK4xwawVuECm7EpNhX/3DfWmagwjXlyOvTpzllZd/UWFIrtqZoWnKUDHup6gpt8wx6a9zEzeb7DXb3JMSAlmkylgg0O9BSTqnkUg7Ftj7L8haG/bPP4RO5Xa2OPkLm6rzy8419Kitv5XwiMOdOjO/HoLzZBJA8Ey8ZEXwdHjhD35WkHE+uq/hObOH693UDcyRR0GF7W7J3VTv5msL1g5zRTtf5uuX2OD9R2TPVdUjGf2zfZFoWxWzarizN6cdlxWq9nEylA==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=NBr6Zt8S2RhkyeJlL2hEQvE4zZH0v22HEMIulCZj/ew=;
+ b=Bybcy/n/mALr5ZpWFFVkXf9lmtpMqfWwgZO6xfyr6NzN8QmlaHf/W7xxqbCo84NO9A5jf5xWKPbu45Se53NlJ679m+UnPl3sEerA4hqfuloOiHDYVMWeb4TgIkRU+sxFHxjIJR3rijUjXHBb7szMecZU1buJzKTth5ghFLas8XWkXUJW440NhNH6Lru2w9QZM9t7P048SETBm7FkF5oZo1AN1rwn3616hgBW1O+aFpJdxFUmrKDoYHtYv4GqGTLGddffB/bjjoDJp2hNE44uhh7Yfr2NnP2+awpFp2+0IBRQWDD/nDknFvdRdOqmSp+ePSDB0dPqo7YOCF7jejeibA==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=helmholtz-muenchen.de; dmarc=pass action=none
+ header.from=helmholtz-muenchen.de; dkim=pass header.d=helmholtz-muenchen.de;
+ arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=hmgu.onmicrosoft.com;
+ s=selector1-hmgu-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=NBr6Zt8S2RhkyeJlL2hEQvE4zZH0v22HEMIulCZj/ew=;
+ b=sjchaLfgxy4dsL0CQbnc22amVNi76tRxyGG3JM1416h4eZKi3jQulGfHJww7lkezhhFu39KB6C5MBSemydUDrn+XR0ukit5cjRUzKHdro3ea3jSRh3JMl05I1WQ1ZDegJqrHwiP5BckRnx247HrZ9fSUBtmpptrDR39fdXgn3R8=
+Received: from PR3PR04MB7340.eurprd04.prod.outlook.com (2603:10a6:102:93::18)
+ by DU2PR04MB8823.eurprd04.prod.outlook.com (2603:10a6:10:2e2::8) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.6455.36; Wed, 7 Jun
+ 2023 19:37:39 +0000
+Received: from PR3PR04MB7340.eurprd04.prod.outlook.com
+ ([fe80::710b:a8da:eec8:dddb]) by PR3PR04MB7340.eurprd04.prod.outlook.com
+ ([fe80::710b:a8da:eec8:dddb%3]) with mapi id 15.20.6455.030; Wed, 7 Jun 2023
+ 19:37:38 +0000
+From:   Bernd Lentes <bernd.lentes@helmholtz-muenchen.de>
+To:     Andrei Borzenkov <arvidjaar@gmail.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: RE: rollback to a snapshot
+Thread-Topic: rollback to a snapshot
+Thread-Index: AdmYsWN1zywqAwfcSAGb/x7tAPsy8AASEaCAAAzLYRAADFFIgAAGTo4A
+Date:   Wed, 7 Jun 2023 19:37:38 +0000
+Message-ID: <PR3PR04MB7340CB95E5AB4FC10706604DD653A@PR3PR04MB7340.eurprd04.prod.outlook.com>
+References: <PR3PR04MB73400D4878EB0F8328B5D50BD652A@PR3PR04MB7340.eurprd04.prod.outlook.com>
+ <26251cfd-f138-a787-f0e8-528c1c5c6778@gmail.com>
+ <PR3PR04MB734090961ACE766466980F04D653A@PR3PR04MB7340.eurprd04.prod.outlook.com>
+ <8c9b136c-c992-8c0e-a1e6-0e8aec1e89cd@gmail.com>
+In-Reply-To: <8c9b136c-c992-8c0e-a1e6-0e8aec1e89cd@gmail.com>
+Accept-Language: de-DE, en-US
+Content-Language: de-DE
+X-MS-Has-Attach: 
+X-MS-TNEF-Correlator: 
+authentication-results: dkim=none (message not signed)
+ header.d=none;dmarc=none action=none header.from=helmholtz-muenchen.de;
+x-ms-publictraffictype: Email
+x-ms-traffictypediagnostic: PR3PR04MB7340:EE_|DU2PR04MB8823:EE_
+x-ms-office365-filtering-correlation-id: 6e8e1768-4fc3-40c9-5572-08db678ea6e9
+x-ms-exchange-senderadcheck: 1
+x-ms-exchange-antispam-relay: 0
+x-microsoft-antispam: BCL:0;
+x-microsoft-antispam-message-info: I4rZlLHjHsXYcsDVLa4TKFAZxJKqQaM+P0Hl0iobdH54XzJ6xS9BvOpQiovoIm6+OeeeF37MBTcphlvgNoqcchxZ4kDaj4cPpPQprG4bW04nVnlCECacdFr5puB8yh1wKLBVwBOnt1ZNRalSGvkXWYDfI6tifC6sRQtG5nq37RTUjpFFiRQcOUGE5964qhm83VFs27MIzUEwjnyvkBjq6iXfuJoKJhHCm25mmkfMqbsxQd+/KUUKXnWBMzHISE5xExINAOQMmMHAiU7KGf5ZpxSU74E4peocsRQUAYcf2uDcRZAO5YO2wwd3ua2d2BbexQ/PpInfZ+tYfuualPsAEJ6+aF++FQ5cOGclVVfxe8X0RnwsqD3vPrhgBMJwXyBlBL+lBL2Y9mxWqj3f8ebkDfSVpMUSYAmVreHFACZjOCheKqoXwUg62qzHEu5LoYfLq4sxRxF3v/benKRKhF1VWwr2AH9CTvjVGmX5KcvZujDwyOWKZQeDLRNZpXrxW5lBAklKx+XrukBise5Hc7kr/yK9qqmvCMYewfhCbpqKBBBr1ugATl7AwkgeDLNAwHeg9BSKv/xR4j3pSzPLXdD5lwpuoJ0pSD27CZrijz1T8RZNkmFqUnTjBRhG4inYt1Db
+x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:PR3PR04MB7340.eurprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230028)(4636009)(136003)(346002)(366004)(396003)(39850400004)(376002)(451199021)(9686003)(6506007)(966005)(186003)(83380400001)(2906002)(4744005)(66446008)(64756008)(122000001)(66556008)(76116006)(66946007)(66476007)(3480700007)(7696005)(71200400001)(38100700002)(5660300002)(8936002)(86362001)(8676002)(44832011)(52536014)(38070700005)(110136005)(55016003)(478600001)(41300700001)(316002)(33656002);DIR:OUT;SFP:1101;
+x-ms-exchange-antispam-messagedata-chunkcount: 1
+x-ms-exchange-antispam-messagedata-0: =?utf-8?B?RW5oelY3bWtpOG5pRW04LzZ0N3JGRkhUWk1KNTZBd2tyVTRZS0MyOXRJVmx3?=
+ =?utf-8?B?VytUVkJ2SWxkNjIxVHVvblJSWlRYbmdOOUtEeGRGTzV2TWkxN3Bad2FnLzJk?=
+ =?utf-8?B?RGFrL0F4QXR1YnpSWDZ5endrN1B4Tk44eG1RczZRU1d1dHJnR1JDN0IybUh4?=
+ =?utf-8?B?SEJxRkJTRmlzbTZtNFlhRmZSNm0wY1E5aHZCQkFESjFxdXVPRmM1NWN0czBT?=
+ =?utf-8?B?cUlqcURYbE9xWVRqRTdVdFg4dXoxR01LN0k0dnp6MW80ejF1a3lqRjl6MHNY?=
+ =?utf-8?B?L2djOEhwYkZuMkdNMWxRSzFUVldPSU5uT2t3ZjY1OUlxL0JoenVkbVMweDRZ?=
+ =?utf-8?B?TDM2NlA0T1ZiUTFVWVdRYkJaMmJ6blhKN3VqYmRBZzJTWkxtMmgxV0c0OEEy?=
+ =?utf-8?B?UEZzMXZzMzF0NkNQRU0wa0pqbk5YTHU2N1E0cWtXN0pNMGxBYURDUEwwVC9G?=
+ =?utf-8?B?WXlrOXY1NnhzbzRLMzIyT0dUR2JVbUl6cDNlMkVydVBVY2R5aE5EM2U4azkv?=
+ =?utf-8?B?WGZ4TkVlOVk5QVc0RTJndi9vY3pOOFRUUFR3c2ptT1pVa1RKQ0R5Ly9YR01Y?=
+ =?utf-8?B?dkNaK28xMUhpcHdMbFhhRHJBY2NlWjZYZUpidDVBMHl3bEpnMFNkZmZZYzg4?=
+ =?utf-8?B?ZnhYVDg5dFkzK1hKZmF5YStZbS8rMWhBWVEvRWdNUmFhdjhyd09lWmRNL3VZ?=
+ =?utf-8?B?QUVISFVDKzRHQ3k3SjN6M1FqcjlsWnZVNURhRlVYMVQ2NlJKZjlabytHZWxW?=
+ =?utf-8?B?ZTlGTE9EZ1VzVzJ3SnVEenVRUGhBTWY4cytPc2JzcUE3cjk4Qml1ZjMxMks0?=
+ =?utf-8?B?clZiS2FWbElTRWRyZmpEQ0xFNFJtN2loRFdGOHM0ZXhDTDBGSnlIK2xjbVJ5?=
+ =?utf-8?B?QzhFc3JjVlViWDRFdXNNbUplRlB4blUwWG5Hc1lWdXg3TjV1MUs2RTc4c3JV?=
+ =?utf-8?B?K2prVmxMQlM3VzdEK0N6bEZzNmF0OW9lKy9YSEpiWjdrZllWU1p0NC84VHd4?=
+ =?utf-8?B?RXhPRm5Rd1BOeUtXeE1VYXNEQVZEa01FTVFTcHV2cm56WXNrMG9PQTE4N01M?=
+ =?utf-8?B?SVNUTjdwY1p2S1NzdW5EbUtHZG1IL3dBKzVBbVQ2dUtaMUNxRk43QlpYcXRH?=
+ =?utf-8?B?U29LVklEazBLbmJmOWlNM1Bhd3A2clVXMGZGNWQrVlhaT3JpTURjenF0cTM3?=
+ =?utf-8?B?cVM5ckR5bmYzdkxvbDU5blVKWDMwbXhIOUl1YmpPWEVXMEVTR2lNVUlkaU1q?=
+ =?utf-8?B?MDkwc3ZiNTQ1bi9IVUhRWktGeXpyaGc1VGtSOGhqaDAvemh0WjRLVGZGTGZv?=
+ =?utf-8?B?L245dUZxRS8wTGlyREFGY3Q5RUcxYys2cVU2aHIzQ2xnODNkNXV1dUl3cU5U?=
+ =?utf-8?B?UXUzU2NUU04vc2dPQkoydUNnZCtYelFzVTdWMW1XVzhOcFltb0JaeGJDUndx?=
+ =?utf-8?B?dkp1aHNrb2xJTmNPZWVqSkc2a2lHVnBMaVowdWVMQXBYeEV1aUpnaEs4QWQv?=
+ =?utf-8?B?WWVObCs4ZkNwaC81TXhtUU94WjRQd2lHd0hOTUU0ZTV5azJBd2dsdTRCdjVJ?=
+ =?utf-8?B?SG1oVEhyTnNjQisvS0lEbHdvL2h0eUxiQWNpTThVNk9ueWlhK2pocXozQm80?=
+ =?utf-8?B?Nkw0bGdFdlZMZEwrQythT2p5Tkh3bER4Q2lWK2RPWTZqcXMyVXFyK0VmRVN4?=
+ =?utf-8?B?ZWY0MmUvRFNpeWcwU1p3V0ttR1hjUUxTYU5TNEVmNVpieCtqbjBYVmJRU202?=
+ =?utf-8?B?T3pCMTE1WnJOZER2SlhIRFhWVDQ0aUluYk8rK1B4YUc4V0lLUzFiWFZxYncw?=
+ =?utf-8?B?aStWMENiczF2M2lxQWNmenltd24xeXV6MnN5dVliWFI3U2gxenVlV1A5bnNm?=
+ =?utf-8?B?Q2R4Qk5sVEJpdE82NFI0U0Nwei8yWllaVG1WWWY0VEptSnNHMlFrQ2c5enJj?=
+ =?utf-8?B?TmZkRk5jeXZuNFNiNjBVa3NZSEFCclNTeWtDU3l2Tzl5WDNxN09wVWIwS1ZO?=
+ =?utf-8?B?SXgvS3N4NTUxZXk0TUwvRFRScStxZlN2cWFvK245TWJWRTFPU3plWHJISmVm?=
+ =?utf-8?B?Y2dPcGFwZWVIVEhVdVF3MzdsTkFpOTJyRTRQOE9rV1VGZHBFNUF0SjRXMEln?=
+ =?utf-8?B?a0VsNExRQnpyWUVXZ3FTTXNtc1dPdEdadHRiQnRHY0Fja0ptYnhYWG9Rekg4?=
+ =?utf-8?B?Qnh2MDhVQkNmL21yYkxQdjVWVEU0bHF3Tk8reGRiM3hkNkhwZ0Z1bXpSckYx?=
+ =?utf-8?Q?t10HYgTujpFzwuIeA3zyGEpy5FfCF+whyuDFFJTW0M=3D?=
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+X-OriginatorOrg: helmholtz-muenchen.de
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-AuthSource: PR3PR04MB7340.eurprd04.prod.outlook.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 6e8e1768-4fc3-40c9-5572-08db678ea6e9
+X-MS-Exchange-CrossTenant-originalarrivaltime: 07 Jun 2023 19:37:38.6129
+ (UTC)
+X-MS-Exchange-CrossTenant-fromentityheader: Hosted
+X-MS-Exchange-CrossTenant-id: e229e493-1bf2-40a7-9b84-85f6c23aeed8
+X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
+X-MS-Exchange-CrossTenant-userprincipalname: Uu98B+HojpyhDbylA5WWhvfVdtHRvvTlFktIO8q/vkvfP9A56IVFlHlnScjAa0xf38hw3JIeAFd67UwNNA+yR6ZILrfkA1wbvQFDnPTNLoZzcKT0PM34k1XjfB6UZ27T
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: DU2PR04MB8823
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
-
-At btrfs_del_ptr(), instead of doing a BUG_ON() in case we fail to record
-tree mod log operations, do a transaction abort and return the error to
-the callers. There's really no need for the BUG_ON() as we can release all
-resources in the context of all callers, and we have to abort because other
-future tree searches that use the tree mod log (btrfs_search_old_slot())
-may get inconsistent results if other operations modify the tree after
-that failure and before the tree mod log based search.
-
-This implies btrfs_del_ptr() return an int instead of void, and making all
-callers check for returned errors.
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/ctree.c | 46 +++++++++++++++++++++++++++++++++-------------
- fs/btrfs/ctree.h |  4 ++--
- 2 files changed, 35 insertions(+), 15 deletions(-)
-
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index f1fa89ae1184..7220c8736218 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -1135,7 +1135,9 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
- 		if (btrfs_header_nritems(right) == 0) {
- 			btrfs_clear_buffer_dirty(trans, right);
- 			btrfs_tree_unlock(right);
--			btrfs_del_ptr(root, path, level + 1, pslot + 1);
-+			ret = btrfs_del_ptr(trans, root, path, level + 1, pslot + 1);
-+			if (ret < 0)
-+				goto out;
- 			root_sub_used(root, right->len);
- 			btrfs_free_tree_block(trans, btrfs_root_id(root), right,
- 					      0, 1);
-@@ -1184,7 +1186,9 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
- 	if (btrfs_header_nritems(mid) == 0) {
- 		btrfs_clear_buffer_dirty(trans, mid);
- 		btrfs_tree_unlock(mid);
--		btrfs_del_ptr(root, path, level + 1, pslot);
-+		ret = btrfs_del_ptr(trans, root, path, level + 1, pslot);
-+		if (ret < 0)
-+			goto out;
- 		root_sub_used(root, mid->len);
- 		btrfs_free_tree_block(trans, btrfs_root_id(root), mid, 0, 1);
- 		free_extent_buffer_stale(mid);
-@@ -4429,8 +4433,8 @@ int btrfs_duplicate_item(struct btrfs_trans_handle *trans,
-  *
-  * This is exported for use inside btrfs-progs, don't un-export it.
-  */
--void btrfs_del_ptr(struct btrfs_root *root, struct btrfs_path *path, int level,
--		   int slot)
-+int btrfs_del_ptr(struct btrfs_trans_handle *trans, struct btrfs_root *root,
-+		  struct btrfs_path *path, int level, int slot)
- {
- 	struct extent_buffer *parent = path->nodes[level];
- 	u32 nritems;
-@@ -4441,7 +4445,10 @@ void btrfs_del_ptr(struct btrfs_root *root, struct btrfs_path *path, int level,
- 		if (level) {
- 			ret = btrfs_tree_mod_log_insert_move(parent, slot,
- 					slot + 1, nritems - slot - 1);
--			BUG_ON(ret < 0);
-+			if (ret < 0) {
-+				btrfs_abort_transaction(trans, ret);
-+				return ret;
-+			}
- 		}
- 		memmove_extent_buffer(parent,
- 			      btrfs_node_key_ptr_offset(parent, slot),
-@@ -4451,7 +4458,10 @@ void btrfs_del_ptr(struct btrfs_root *root, struct btrfs_path *path, int level,
- 	} else if (level) {
- 		ret = btrfs_tree_mod_log_insert_key(parent, slot,
- 						    BTRFS_MOD_LOG_KEY_REMOVE);
--		BUG_ON(ret < 0);
-+		if (ret < 0) {
-+			btrfs_abort_transaction(trans, ret);
-+			return ret;
-+		}
- 	}
- 
- 	nritems--;
-@@ -4467,6 +4477,7 @@ void btrfs_del_ptr(struct btrfs_root *root, struct btrfs_path *path, int level,
- 		fixup_low_keys(path, &disk_key, level + 1);
- 	}
- 	btrfs_mark_buffer_dirty(parent);
-+	return 0;
- }
- 
- /*
-@@ -4479,13 +4490,17 @@ void btrfs_del_ptr(struct btrfs_root *root, struct btrfs_path *path, int level,
-  * The path must have already been setup for deleting the leaf, including
-  * all the proper balancing.  path->nodes[1] must be locked.
-  */
--static noinline void btrfs_del_leaf(struct btrfs_trans_handle *trans,
--				    struct btrfs_root *root,
--				    struct btrfs_path *path,
--				    struct extent_buffer *leaf)
-+static noinline int btrfs_del_leaf(struct btrfs_trans_handle *trans,
-+				   struct btrfs_root *root,
-+				   struct btrfs_path *path,
-+				   struct extent_buffer *leaf)
- {
-+	int ret;
-+
- 	WARN_ON(btrfs_header_generation(leaf) != trans->transid);
--	btrfs_del_ptr(root, path, 1, path->slots[1]);
-+	ret = btrfs_del_ptr(trans, root, path, 1, path->slots[1]);
-+	if (ret < 0)
-+		return ret;
- 
- 	/*
- 	 * btrfs_free_extent is expensive, we want to make sure we
-@@ -4498,6 +4513,7 @@ static noinline void btrfs_del_leaf(struct btrfs_trans_handle *trans,
- 	atomic_inc(&leaf->refs);
- 	btrfs_free_tree_block(trans, btrfs_root_id(root), leaf, 0, 1);
- 	free_extent_buffer_stale(leaf);
-+	return 0;
- }
- /*
-  * delete the item at the leaf level in path.  If that empties
-@@ -4547,7 +4563,9 @@ int btrfs_del_items(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 			btrfs_set_header_level(leaf, 0);
- 		} else {
- 			btrfs_clear_buffer_dirty(trans, leaf);
--			btrfs_del_leaf(trans, root, path, leaf);
-+			ret = btrfs_del_leaf(trans, root, path, leaf);
-+			if (ret < 0)
-+				return ret;
- 		}
- 	} else {
- 		int used = leaf_space_used(leaf, 0, nritems);
-@@ -4608,7 +4626,9 @@ int btrfs_del_items(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 
- 			if (btrfs_header_nritems(leaf) == 0) {
- 				path->slots[1] = slot;
--				btrfs_del_leaf(trans, root, path, leaf);
-+				ret = btrfs_del_leaf(trans, root, path, leaf);
-+				if (ret < 0)
-+					return ret;
- 				free_extent_buffer(leaf);
- 				ret = 0;
- 			} else {
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 5af61480dde6..f2d2b313bde5 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -541,8 +541,8 @@ int btrfs_copy_root(struct btrfs_trans_handle *trans,
- 		      struct extent_buffer **cow_ret, u64 new_root_objectid);
- int btrfs_block_can_be_shared(struct btrfs_root *root,
- 			      struct extent_buffer *buf);
--void btrfs_del_ptr(struct btrfs_root *root, struct btrfs_path *path, int level,
--		   int slot);
-+int btrfs_del_ptr(struct btrfs_trans_handle *trans, struct btrfs_root *root,
-+		  struct btrfs_path *path, int level, int slot);
- void btrfs_extend_item(struct btrfs_path *path, u32 data_size);
- void btrfs_truncate_item(struct btrfs_path *path, u32 new_size, int from_end);
- int btrfs_split_item(struct btrfs_trans_handle *trans,
--- 
-2.34.1
-
+DQo+LS0tLS1PcmlnaW5hbCBNZXNzYWdlLS0tLS0NCj5Gcm9tOiBBbmRyZWkgQm9yemVua292IDxh
+cnZpZGphYXJAZ21haWwuY29tPg0KPlNlbnQ6IFdlZG5lc2RheSwgSnVuZSA3LCAyMDIzIDY6MzYg
+UE0NCj5UbzogQmVybmQgTGVudGVzIDxiZXJuZC5sZW50ZXNAaGVsbWhvbHR6LW11ZW5jaGVuLmRl
+PjsgbGludXgtDQo+YnRyZnNAdmdlci5rZXJuZWwub3JnDQo+U3ViamVjdDogUmU6IHJvbGxiYWNr
+IHRvIGEgc25hcHNob3QNCg0KPkl0IGlzIHJhdGhlciB1bmNsZWFyIHdoYXQgeW91IG1lYW4uIFZN
+IGRpc2sgaW1hZ2VzIGFyZSBvbiBob3N0IGJ0cmZzIGFuZCB5b3UNCj5jcmVhdGUgc25hcHNob3Qg
+b24gaG9zdCB0aGF0IGNvbnRhaW5zIHRob3NlIGltYWdlcz8gT3IgeW91IGhhdmUgVk0gd2hpY2gN
+Cj51c2UgYnRyZnMgaW4gdGhlaXIgZ3Vlc3Qgc3lzdGVtPw0KDQpWTSBpbWFnZXMgYXJlIG9uIGhv
+c3QgQlRSRlMgYW5kIGkgY3JlYXRlIHRoZSBzbmFwc2hvdHMgZnJvbSB0aGVtIG9uIHRoZSBob3N0
+Lg0KDQpCZXJuZA0KDQoNCkhlbG1ob2x0eiBaZW50cnVtIE3DvG5jaGVuIOKAkyBEZXV0c2NoZXMg
+Rm9yc2NodW5nc3plbnRydW0gZsO8ciBHZXN1bmRoZWl0IHVuZCBVbXdlbHQgKEdtYkgpDQpJbmdv
+bHN0w6RkdGVyIExhbmRzdHJhw59lIDEsIEQtODU3NjQgTmV1aGVyYmVyZywgaHR0cHM6Ly93d3cu
+aGVsbWhvbHR6LW11bmljaC5kZQ0KR2VzY2jDpGZ0c2bDvGhydW5nOiBQcm9mLiBEci4gbWVkLiBE
+ci4gaC5jLiBNYXR0aGlhcyBUc2Now7ZwLCBEYW5pZWxhIFNvbW1lciAoa29tbS4pIHwgQXVmc2lj
+aHRzcmF0c3ZvcnNpdHplbmRlOiBNaW5EaXLigJlpbiBQcm9mLiBEci4gVmVyb25pa2Egdm9uIE1l
+c3NsaW5nDQpSZWdpc3RlcmdlcmljaHQ6IEFtdHNnZXJpY2h0IE3DvG5jaGVuIEhSQiA2NDY2IHwg
+VVN0LUlkTnIuIERFIDEyOTUyMTY3MQ0K

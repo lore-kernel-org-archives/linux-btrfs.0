@@ -2,99 +2,106 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 66AA4C77B7A
-	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Jun 2023 19:40:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 46210C7EE23
+	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Jun 2023 19:47:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230300AbjFGTku (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 7 Jun 2023 15:40:50 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52846 "EHLO
+        id S231611AbjFGTrM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 7 Jun 2023 15:47:12 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55602 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229925AbjFGTkt (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Jun 2023 15:40:49 -0400
-X-Greylist: delayed 510 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Wed, 07 Jun 2023 12:40:47 PDT
-Received: from syrinx.knorrie.org (syrinx.knorrie.org [IPv6:2001:888:2177::4d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D91A81FC3
-        for <linux-btrfs@vger.kernel.org>; Wed,  7 Jun 2023 12:40:47 -0700 (PDT)
-Received: from [IPV6:4000:0:fb:a::15] (2a02-a213-2b81-f900-0000-0000-0000-0004.cable.dynamic.v6.ziggo.nl [IPv6:2a02:a213:2b81:f900::4])
-        (using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
-         key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
-        (No client certificate requested)
-        by syrinx.knorrie.org (Postfix) with ESMTPSA id 3F0FC6151B6D5;
-        Wed,  7 Jun 2023 21:32:14 +0200 (CEST)
-Message-ID: <a2a492ee-baa5-6881-e9ec-85ca2e611879@knorrie.org>
-Date:   Wed, 7 Jun 2023 21:32:13 +0200
-MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.10.0
-Subject: Re: How to find/reclaim missing space in volume
-Content-Language: en-US
-To:     Marc MERLIN <marc@merlins.org>, Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     Roman Mamedov <rm@romanrm.net>,
-        Andrei Borzenkov <arvidjaar@gmail.com>,
-        linux-btrfs@vger.kernel.org
-References: <20230605162636.GE105809@merlins.org>
- <9bfa8bb6-b64e-d34f-f9c8-db5f9510fc29@gmail.com>
- <20230606014636.GG105809@merlins.org>
- <295ce1bb-bcd7-ebdf-96b2-230cfeff5871@gmail.com>
- <20230606164139.GK105809@merlins.org> <20230606232558.00583826@nvm>
- <543d7cf5-96c1-a947-6106-250527b4b830@gmx.com>
- <20230607191719.GA12693@merlins.org>
-From:   Hans van Kranenburg <hans@knorrie.org>
-In-Reply-To: <20230607191719.GA12693@merlins.org>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+        with ESMTP id S231839AbjFGTrF (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Jun 2023 15:47:05 -0400
+Received: from out3-smtp.messagingengine.com (out3-smtp.messagingengine.com [66.111.4.27])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AC147268C
+        for <linux-btrfs@vger.kernel.org>; Wed,  7 Jun 2023 12:46:41 -0700 (PDT)
+Received: from compute1.internal (compute1.nyi.internal [10.202.2.41])
+        by mailout.nyi.internal (Postfix) with ESMTP id 7D77F5C0116;
+        Wed,  7 Jun 2023 15:46:37 -0400 (EDT)
+Received: from imap45 ([10.202.2.95])
+  by compute1.internal (MEProxy); Wed, 07 Jun 2023 15:46:37 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=georgianit.com;
+         h=cc:content-type:content-type:date:date:from:from:in-reply-to
+        :in-reply-to:message-id:mime-version:references:reply-to:sender
+        :subject:subject:to:to; s=fm3; t=1686167197; x=1686253597; bh=kL
+        QjobKlNRUTF4Fcnwl4svY9ldXiIDlH2Cll8N0Q3jA=; b=PLGTkSV7nA388eAx5O
+        r5bkfpHS2OLgOKJzSN8+iECU5NOoevMpb3XgY/uahMjNKIxC8bl5aUHpYV6UCHaw
+        O8NKcWIuw6EzRHGzdYFe4150LfrOoLnmMmCpGlcSIka5aTt6gAHB4d+fmDPYZcQS
+        DuLyzBDkl2nD6TFFFxqZO4lZNf3+apBZp5upS2rV440F0RPL9cx9+wcnw2CSnMoG
+        BBPrUffamIJk/y7wqbxkiXyzFxAGdWGHb2ASrHLW4EaEUhhjtbFZJgI+gDLz2tKO
+        /Zl9eekR5WDN9qYzETgiM5EY9iONnC5DT+OLRU4ocYtU1OAqtY473sbpwZX3hYzL
+        wXUA==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+        messagingengine.com; h=cc:content-type:content-type:date:date
+        :feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
+        :message-id:mime-version:references:reply-to:sender:subject
+        :subject:to:to:x-me-proxy:x-me-proxy:x-me-sender:x-me-sender
+        :x-sasl-enc; s=fm1; t=1686167197; x=1686253597; bh=kLQjobKlNRUTF
+        4Fcnwl4svY9ldXiIDlH2Cll8N0Q3jA=; b=yIyWjG76LDxjKAsZm/ppM5KMHjsGN
+        vxiKvQkyuw6e0yte7OSb/C+busRinRJ8tLudZIaGQM9wu7MYWhS08T/+Rn5y53u1
+        5emw8Mj01NqiOJ4XXOviDGFODHfbp5tOW9PWAeFOLapX8YdmHKWJN1MYJlapyjyg
+        J8fPfzWyN7WIG1/4ceQear9x3Vj725hFJj658R+QMlpKPpKhWuIsCShgx1/iAUi3
+        NTHsB+mGXU/NLV+akemwagX6lODj39LL4gcRJVZ3TIXwADVPe416woNghHJO1/ZV
+        2pHfY0OyeMyAs4X8u6Hhnze8Y2L88YHN3I171p4QpXtkkjvlWBj4JDryg==
+X-ME-Sender: <xms:nd6AZBgHHtw8rLkJkKEh3chPod2slR0mWChXHCm7BEB3ewfmF9DbAA>
+    <xme:nd6AZGCxPlXr24MvXiVmEpeHlqK31CcNggha1kynaJigeHNED-qYmTf2g4Sp-p39P
+    RJTIuSzL_3DZbLGdw>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvhedrgedtgedgudegudcutefuodetggdotefrod
+    ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfgh
+    necuuegrihhlohhuthemuceftddtnecusecvtfgvtghiphhivghnthhsucdlqddutddtmd
+    enucfjughrpefofgggkfgjfhffhffvufgtsehttdertderredtnecuhfhrohhmpehrvghm
+    ihesghgvohhrghhirghnihhtrdgtohhmnecuggftrfgrthhtvghrnhepteejffeftdfghf
+    efudfffeekjeelkeehjeejjefgheehtdefueffhffhfeffudetnecuffhomhgrihhnpehs
+    uhgsvhholhhumhgvrdhmvhenucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmhepmh
+    grihhlfhhrohhmpehrvghmihesghgvohhrghhirghnihhtrdgtohhm
+X-ME-Proxy: <xmx:nd6AZBEe7lokqSDWLpebzgQxP0ENnEHT1mXSvKHHZEE8QJFcGdD50g>
+    <xmx:nd6AZGR_9WDTx0d0-9Yq0tb9LHTHjQ22v-saM16kUvaS6vPYj5DmyQ>
+    <xmx:nd6AZOzZbj3BMTCUarBY1AQ23-qjckyZb7Iyant-cwjrCjCk2TBaFA>
+    <xmx:nd6AZDuw45_g8zx9AIUFukWaHXRBvx6XXEXvzIYS3-eRdGcm26p1pg>
+Feedback-ID: i10c840cd:Fastmail
+Received: by mailuser.nyi.internal (Postfix, from userid 501)
+        id 3545E2720080; Wed,  7 Jun 2023 15:46:37 -0400 (EDT)
+X-Mailer: MessagingEngine.com Webmail Interface
+User-Agent: Cyrus-JMAP/3.9.0-alpha0-447-ge2460e13b3-fm-20230525.001-ge2460e13
+Mime-Version: 1.0
+Message-Id: <d708df28-a0fc-411b-97a0-7d2bea2f5f72@app.fastmail.com>
+In-Reply-To: <PR3PR04MB7340CB95E5AB4FC10706604DD653A@PR3PR04MB7340.eurprd04.prod.outlook.com>
+References: <PR3PR04MB73400D4878EB0F8328B5D50BD652A@PR3PR04MB7340.eurprd04.prod.outlook.com>
+ <26251cfd-f138-a787-f0e8-528c1c5c6778@gmail.com>
+ <PR3PR04MB734090961ACE766466980F04D653A@PR3PR04MB7340.eurprd04.prod.outlook.com>
+ <8c9b136c-c992-8c0e-a1e6-0e8aec1e89cd@gmail.com>
+ <PR3PR04MB7340CB95E5AB4FC10706604DD653A@PR3PR04MB7340.eurprd04.prod.outlook.com>
+Date:   Wed, 07 Jun 2023 15:46:16 -0400
+From:   remi@georgianit.com
+To:     "Bernd Lentes" <bernd.lentes@helmholtz-muenchen.de>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: rollback to a snapshot
+Content-Type: text/plain
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
 
-On 6/7/23 21:17, Marc MERLIN wrote:
-> On Wed, Jun 07, 2023 at 10:12:30AM +0800, Qu Wenruo wrote:
->> For the ghost subvolumes, it can be confirmed with "btrfs ins dump-tree
->> -t root", then looking for ROOT_ITEMs with "refs 0".
->>
->> I'm not sure if it is the case.
->>
->> Another possible cause is extent bookends, this needs something like
->> btrfs quota to confirm, and not much we can do if there are snapshots.
->> (If no snapshots, it's possible to defrag and free up such bookend extents).
-> 
-> unfortunately the system rebooted overnight, so I lost the state where
-> sync was hung.
-> On the plus side, this seems to have fixed the issue:
+On Wed, Jun 7, 2023, at 3:37 PM, Bernd Lentes wrote:
 
-Just a random hint... One possible situation in which a deleted
-subvolume can't be freed up for real yet, is when there is a process
-that still has an open file in it.
+> VM images are on host BTRFS and i create the snapshots from them on the host.
+>
 
-> sauron:/mnt/btrfs_pool2# btrfs fi usage -T .
-> Overall:
->     Device size:		   1.04TiB
->     Device allocated:		 857.02GiB
->     Device unallocated:		 210.73GiB
->     Device missing:		     0.00B
->     Used:			 589.30GiB
->     Free (estimated):		 470.78GiB	(min: 365.42GiB)
->     Data ratio:			      1.00
->     Metadata ratio:		      2.00
->     Global reserve:		 512.00MiB	(used: 0.00B)
-> 
->                      Data      Metadata System               
-> Id Path              single    DUP      DUP       Unallocated
-> -- ----------------- --------- -------- --------- -----------
->  1 /dev/mapper/pool2 845.00GiB 12.00GiB  16.00MiB   210.73GiB
-> -- ----------------- --------- -------- --------- -----------
->    Total             845.00GiB  6.00GiB   8.00MiB   210.73GiB
->    Used              584.95GiB  2.18GiB 112.00KiB            
-> sauron:/mnt/btrfs_pool2# df -h .
-> Filesystem         Size  Used Avail Use% Mounted on
-> /dev/mapper/pool2  1.1T  590G  471G  56% /mnt/btrfs_pool2
-> 
-> I know it's hard to say after the fact, but have you seen issues where snapshot delete
-> space cleanup would get stuck and 
-> btrfs subvolume sync `pwd`
-> would hang forever (until reboot) ?
+So there are a couple choices on how you want to restore.
 
-Hans
+You can make a new snapshot from your 'good' snapshot.  This will roll back the entire subvolume.
+
+mv /subvolume /subvolume-bad
+btrfs sub snap /path-to-snapshot /subvolume
+
+When you are confident that you want to delete the replaced subvolume
+
+btrfs sub del /subvolume-bad
+
+*Note*. you might want to first rename sobvolume-bad to something safe, like mv subvolume-bad deleteme; btrfs sub del deleteme
+That way, is not not possible to accidentally hit <Enter> when you have btrfs sub del /subvolume on the command line.
+
+
+Alternatively, you can just copy the disk image file from your snapshot into your active subvolume
+
+cp -a --reflink=always /path-to-snapshot/vm.img /subvolume/vm.img
 

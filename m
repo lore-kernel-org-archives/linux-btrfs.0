@@ -2,154 +2,195 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1609DC7EE43
-	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Jun 2023 21:01:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F3140C7EE29
+	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Jun 2023 22:20:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235973AbjFGVBD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 7 Jun 2023 17:01:03 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34052 "EHLO
+        id S231940AbjFGWUA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 7 Jun 2023 18:20:00 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35888 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235819AbjFGVAq (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Jun 2023 17:00:46 -0400
-Received: from EUR04-HE1-obe.outbound.protection.outlook.com (mail-he1eur04on2048.outbound.protection.outlook.com [40.107.7.48])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A4E922119
-        for <linux-btrfs@vger.kernel.org>; Wed,  7 Jun 2023 14:00:29 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
- b=jswx8TK0msvzh9gWSvOinRcd2qu+mA5yZlYKAL9DvM0ysYvy4ZzPiY4kyXezGEopoNzwa9oGsWMbKNOgIo59AojGYAOzciqB5rJrupV1w2RJ9IufCdWwg3YL/fMvRHu3ERIAS9LKvhiM0W0JzPkQbTfwDyK1ONPAR0y9c6cyFkqibRKhT03VPKpLePhB24q6eL8VBMjmSz/NjekbnJtO0Vo/9Lq+opHQiUFmuUGurcvUGoEnn2ll+1FyyTHbfGayUqnzgaVRdqW9RLjzHfri0UuISLU1v5el6ni/cuwNG40g6GeiTUI4PkMlISrkLf0EDERXm7eCvkUJbbCjxECcdA==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector9901;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
- bh=qc3no5eiXdFcd8801/3hoJ0i1AXVoMD/7WX/tfyJa6k=;
- b=czeDrlshY1yBYsRuG5BUhbV3fjCLi/YZVY8XfWPvpLrttB/gqsT4JWBLNDsE6Eorsl06fgszv2aJIVKiwVPdmzk5wgd/Jh3gTiEu3QQS7X4m8J118kyApNgOGXt/qc+BC+3YyNGjKVt/wxU2Jd28hDPbaRlIeojT/zUD4Vf9oFVTWybLlO9ZBKwRpHxcgagvZA/PgPacjpRKUgA86/5wKl9SjTeM750BYqeOII8B6TGq+ubp14+DQHuLyj8XAiot7865YchB2ujqs3QthBKI42NBlxT1lYCkpgPgqy9dAUfVERJpB+6JUObG1wB5SnnW7fT8+eCiFD/SDvnGBq3Y2w==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=helmholtz-muenchen.de; dmarc=pass action=none
- header.from=helmholtz-muenchen.de; dkim=pass header.d=helmholtz-muenchen.de;
- arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=hmgu.onmicrosoft.com;
- s=selector1-hmgu-onmicrosoft-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=qc3no5eiXdFcd8801/3hoJ0i1AXVoMD/7WX/tfyJa6k=;
- b=LMS+7AljmQJ8fttGCyj9YnO5WkstHDTtmbGaJyGbZZC89KSUyIcfeJ9RpH6D8FNFq9RK3F4KKZr6y+GoDfyEwVOeyWEaXoBIeZd/9X0tOpLMLn3T5LwOQaAWX1eu2pkPzuMeg6AmFr6fWY+hZaAQM2xCeAQ2W3OeRg9fZyERnG4=
-Received: from PR3PR04MB7340.eurprd04.prod.outlook.com (2603:10a6:102:93::18)
- by DU0PR04MB9586.eurprd04.prod.outlook.com (2603:10a6:10:31e::9) with
- Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.6477.19; Wed, 7 Jun
- 2023 21:00:14 +0000
-Received: from PR3PR04MB7340.eurprd04.prod.outlook.com
- ([fe80::710b:a8da:eec8:dddb]) by PR3PR04MB7340.eurprd04.prod.outlook.com
- ([fe80::710b:a8da:eec8:dddb%3]) with mapi id 15.20.6455.030; Wed, 7 Jun 2023
- 21:00:14 +0000
-From:   Bernd Lentes <bernd.lentes@helmholtz-muenchen.de>
-To:     Roman Mamedov <rm@romanrm.net>
-CC:     "remi@georgianit.com" <remi@georgianit.com>,
+        with ESMTP id S231747AbjFGWTt (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Jun 2023 18:19:49 -0400
+Received: from mail-ua1-x935.google.com (mail-ua1-x935.google.com [IPv6:2607:f8b0:4864:20::935])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 36A1C2696
+        for <linux-btrfs@vger.kernel.org>; Wed,  7 Jun 2023 15:19:06 -0700 (PDT)
+Received: by mail-ua1-x935.google.com with SMTP id a1e0cc1a2514c-786f7e1ea2fso7001241.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 07 Jun 2023 15:19:06 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20221208; t=1686176313; x=1688768313;
+        h=mime-version:message-id:date:references:in-reply-to:subject:cc:to
+         :from:from:to:cc:subject:date:message-id:reply-to;
+        bh=tscqtiWNPRZB/rwsEFvY/JJuQDZQvgsE7LJ1A1TZhfY=;
+        b=QrhcUdZ/9Ff7luFFmncu8tNofZA0Zq/2MVdC3XQbjgHuicqd1uaeByj7LM6NgqkZhg
+         8uGTnA8LoUgoLqbIYuYxXa52ufSBlZIDwoAK7BR773Dnu520De2s+8XSBwXBRHSJf5wU
+         Dgh32BqW1OajgwgpSfri9rhl1RjVg85sCyKOWlrPtCgublls/wTu9V7cbYsVhW8oukuc
+         o10P/+L7JGUmSp0+QAoBH1bkubzQctpZ9tf+fWLR8rndwwKPC1D2Bt6klx1PueKA6Utv
+         8918zEdoOXDF37XCtksD0B5w3p/PsjdDmsSMEp33zeyvAAOxszrW6+bq7bh4ocxe6rgM
+         gMkA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1686176313; x=1688768313;
+        h=mime-version:message-id:date:references:in-reply-to:subject:cc:to
+         :from:x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=tscqtiWNPRZB/rwsEFvY/JJuQDZQvgsE7LJ1A1TZhfY=;
+        b=c9Iq+4W6gatDFOtYaxVG/S1SLkHZNCgyletpOBC6APCqBmX5BGMDygHUdYVabaYS7g
+         DbGPGLB0xa3ocaiU8XPYvcHWDK5POm5ZMe/XOtFAjMwzaCln1uZcPNfMUr495a38jOK4
+         Hr6oHRjP67JEqF9mVRrr5OrqdNhI8noO8QoTnT6K9j69R2iCPg38qXjCqC4DDr7hhKFe
+         Z4IDhlGANgj/OiOZyFcWsvnFe2S4bzQ+KMcgeEVz9eLO+GORmcv7yCvLZXi619S640Jg
+         uOeVXv94JE1ry4505R+P/uvkwnC9kZRNzKAabHOH2KdLjnSa814faKi3sqZ+LIGOHqxF
+         7FGw==
+X-Gm-Message-State: AC+VfDynM4HpAqa0JwLWiPRc4EIQ9TXlSVsT1LvyI1d+/0MCRmk/QX7W
+        ZoK2VgbsZaKQ5DX8pRvLHEpcILi5k3g=
+X-Google-Smtp-Source: ACHHUZ6TlHqNvWaz2tpUGalOYlQ1Flx9Qn5Lb2fDF9Br2RnFW6JidB5JdEWWpti1i9PsP3rSR607eA==
+X-Received: by 2002:a67:d00f:0:b0:43b:159b:f2c5 with SMTP id r15-20020a67d00f000000b0043b159bf2c5mr1005279vsi.32.1686176313445;
+        Wed, 07 Jun 2023 15:18:33 -0700 (PDT)
+Received: from DigitalMercury.freeddns.org (bras-base-mtrlpq0313w-grc-04-65-94-64-248.dsl.bell.ca. [65.94.64.248])
+        by smtp.gmail.com with ESMTPSA id f1-20020a0ccc81000000b0061a68b5a8c4sm206168qvl.134.2023.06.07.15.18.32
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 07 Jun 2023 15:18:32 -0700 (PDT)
+Received: by DigitalMercury.freeddns.org (Postfix, from userid 1000)
+        id 94CC2D690C9; Wed,  7 Jun 2023 18:18:31 -0400 (EDT)
+From:   Nicholas D Steeves <nsteeves@gmail.com>
+To:     Bernd Lentes <bernd.lentes@helmholtz-muenchen.de>,
+        Phillip Susi <phill@thesusis.net>
+Cc:     Andrei Borzenkov <arvidjaar@gmail.com>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Subject: RE: rollback to a snapshot
-Thread-Topic: rollback to a snapshot
-Thread-Index: AdmYsWN1zywqAwfcSAGb/x7tAPsy8AASEaCAAAzLYRAADFFIgAAGTo4AAABYgAAAAMyhAAABW5sAAABgV3A=
-Date:   Wed, 7 Jun 2023 21:00:14 +0000
-Message-ID: <PR3PR04MB734074AD7CF8403E4F150385D653A@PR3PR04MB7340.eurprd04.prod.outlook.com>
+In-Reply-To: <PR3PR04MB7340C8A490ED5E5B5446879FD653A@PR3PR04MB7340.eurprd04.prod.outlook.com>
 References: <PR3PR04MB73400D4878EB0F8328B5D50BD652A@PR3PR04MB7340.eurprd04.prod.outlook.com>
-        <26251cfd-f138-a787-f0e8-528c1c5c6778@gmail.com>
-        <PR3PR04MB734090961ACE766466980F04D653A@PR3PR04MB7340.eurprd04.prod.outlook.com>
-        <8c9b136c-c992-8c0e-a1e6-0e8aec1e89cd@gmail.com>
-        <PR3PR04MB7340CB95E5AB4FC10706604DD653A@PR3PR04MB7340.eurprd04.prod.outlook.com>
-        <d708df28-a0fc-411b-97a0-7d2bea2f5f72@app.fastmail.com>
-        <PR3PR04MB7340C53376C738E6DDEA39B2D653A@PR3PR04MB7340.eurprd04.prod.outlook.com>
- <20230608014802.1dce81a0@nvm>
-In-Reply-To: <20230608014802.1dce81a0@nvm>
-Accept-Language: de-DE, en-US
-Content-Language: de-DE
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-authentication-results: dkim=none (message not signed)
- header.d=none;dmarc=none action=none header.from=helmholtz-muenchen.de;
-x-ms-publictraffictype: Email
-x-ms-traffictypediagnostic: PR3PR04MB7340:EE_|DU0PR04MB9586:EE_
-x-ms-office365-filtering-correlation-id: 2fcc74dc-e06b-414d-cee9-08db679a3093
-x-ms-exchange-senderadcheck: 1
-x-ms-exchange-antispam-relay: 0
-x-microsoft-antispam: BCL:0;
-x-microsoft-antispam-message-info: wk/7iL28BixzaqFPh9gbyyFAk+osrM30CLHAHVL6IhrmjhBXudVg/apkUsCbfiR4eQXcTEKGSL7ewahVqe+sfEpLLQgMHHfTJw0U+5UH9TvzswSNmiH9vPnFYky60vl4e0TPbUKg0SF68q33BC2Vk6o5CHEWoJxX98xLy3cQegtHTYwcBqpxH4Pv82qRlO8KWEfbD049eueTrTtSC/f27O+F5/FxcSY3kN2D/R352aTkRcNRZy7mZjvOpBs0qUQGnP8/Fv8LkyIJWDTZNDgRueq8aEEHbBAGMzGWJ9KSVsUOm1XFQnPM1H6oc3/XR6UWyo1OPrvbiYe/f0gaTmkEnJg9mFoaUQwZ2gtKJT8Iyhbp1vh97P3Rm6Pt6KDGuBUPgoOVj+PxSEkDJWxn7U4ZSfnjmg8nTwvPf9MbuT7wkndjA5dJudw82Xg2GsjhlhXn1It3DOYbbWrFZDWbUd8qVKTeYOeimlgxUuvxpVrYuC3o/n/XQ9uDOfGsSoTs1P8nGdNYTy+BX5EJ1XWvihySvsY6/+KEHB2x5oWrHesjmWkETj9eCIejXmCNAJJ1IGpVXejzF7VlEclCmZDo3njiTT+xncC+JErcFl/Jen4FjBUp+26bmPRrds5c9pyfTStN
-x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:PR3PR04MB7340.eurprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230028)(4636009)(39850400004)(396003)(136003)(376002)(366004)(346002)(451199021)(41300700001)(3480700007)(122000001)(4326008)(64756008)(66556008)(66476007)(66446008)(6916009)(76116006)(66946007)(5660300002)(8676002)(8936002)(52536014)(38070700005)(316002)(44832011)(9686003)(54906003)(86362001)(83380400001)(478600001)(38100700002)(2906002)(186003)(6506007)(55016003)(71200400001)(33656002)(7696005)(966005);DIR:OUT;SFP:1101;
-x-ms-exchange-antispam-messagedata-chunkcount: 1
-x-ms-exchange-antispam-messagedata-0: =?utf-8?B?bVh3UldOYVBIU3ZRZkRLU2JYcGFVbHY4ODVWdWxpOTgxUURoYUI2RlRmaXFk?=
- =?utf-8?B?Nzh5cUUxMGM3WUU0aWlrWmdJRnJIdkxaK3ZMQ2dVems0OVZEQ1p6QWpSZDVw?=
- =?utf-8?B?M2J6bUt1OU1FS2V0cERydUNlenR5YStNQUNubWVuRkZRaUFEUUYvOC8weGwv?=
- =?utf-8?B?VXZUUzQ1OFNXOHBkV2ZuSTM0d2dMMEtOY2pvbHNLcHFTQlBxR0ZKYURiOW5P?=
- =?utf-8?B?QWd1b25LWlNnQzZsTnVrb0ZvN0FnRUFYRGdQLzhIelB4eTY2STBJU2pMM0cy?=
- =?utf-8?B?VHp3VG1XV05JK3Z5dUN2VnB6bE9YUjVHZmZ6azR2TThFeXArdzYvNHpkWW1k?=
- =?utf-8?B?ei9tN1NRY3FuMHBiUUhLQitaUGZ6Vkx5dWZZbmorNDJ3SzE5SkZKYzVIR1lL?=
- =?utf-8?B?bmR5cVRLNzlSZXF3d0ZSOXhFVDZsanJ6Sk5iUGhOMk9pVWRNZVFtSWFIUDZ4?=
- =?utf-8?B?b0tDNHhqazBVMWp4MVozWTg3QWFjUGZiZ0Ezd2VwRENxY2hsazlBTFBlWFZY?=
- =?utf-8?B?c1poQzVZRnBNWjhTbEMwZGh5QzVuTTVDYWxsM29BL0M3dWRNSzFCSE5adkxr?=
- =?utf-8?B?UWFJcEN2ellEY0VuRm8wcE95RmJscGlDVXUxKyt1eGRHSGpxSisvRFpiR0Q1?=
- =?utf-8?B?YlJGYkRzRFNvQVIzaHNhOG9mcTRmMjZHVm02TkpXR3Bob1NET2lIMVIyYUN0?=
- =?utf-8?B?cy84eHU5OE1GUTVtTTJHMjgwWk1zenlranJGNTN0d0lZdTZscklrd2tQRUtp?=
- =?utf-8?B?QnpyUTRvSEFjRXltYThjSytvaHpIQjRBVWhUdW5uOGFPK05ER1dxenFMWTNr?=
- =?utf-8?B?MFY0c1NpQTRqM3MvUW5NaVZEZm9EbUZkOUorNUZHZHJqU3VuZzlnRG9UV1VW?=
- =?utf-8?B?d1pYNXBleFdVMUd4THFrNGNnaG80WjlFMWZiaGl6dVZIb1o2dElUaEtNcVR2?=
- =?utf-8?B?Y0dvczQyRERreklGdllpZkZ6SGk0QVkyeTFvTElSVkJmcitpa3dHUjdHYTMr?=
- =?utf-8?B?NWJGNnVlZ09vczdIR2g0Y2FuVTcvWWZhTjd2VTVHTEJzcWphWGttQXpTcHNU?=
- =?utf-8?B?SUpJNmMrSjRMVzhuYmdOSUF5WFlMU0FWSFl4SnZTOXFKWU9HVUlQUGtrb0Jj?=
- =?utf-8?B?V242a0hCaWdsUDdSei8wVDk5dkdHM2E3aGgyTGJodGxwY2h6ZGFmZXJ4ZkN4?=
- =?utf-8?B?SWhWYjU2MzZ4SFF6ejdneEIvVW5SSXk4UnJCVFdWc0dLazBWdExXSEVlMmFI?=
- =?utf-8?B?bXJ0a3B6ZEs5YU05M2M3SnlDUDVPODdEY3B5bjMvVXFSRFVyNDdpUjEvWjlP?=
- =?utf-8?B?d2tyYktpYnA2NW55RTlMTlJObjhtSWo5cmNVU1d3Y3I4V1BQNGF0d21KTGJF?=
- =?utf-8?B?R3E3Rm12WVFnWlgxWDNUWURmbkR6SHAzZ2d1TzJ5MWtOVmhaZTZmdTcrbE9V?=
- =?utf-8?B?bS9MaXFxb2FyUGtwSldRMEpuRnlTQkhHUm1yQzhDaVNvdjBSTGhXR2NMeXhj?=
- =?utf-8?B?N3RzWXFFWUlEWEZJaUdmdHFvU1U1b3BmN1FpSWF1S3hNVTEyQ0hRV0NvbnZG?=
- =?utf-8?B?Z25wVkhrdGFhV3hQTHRUNDJ3QmJLeUpvZ3N0a3FYL29FNUNNWXhjcEt2dzlz?=
- =?utf-8?B?RVVWYSs0SnNBZDNORTZLNFJacy9Na2NtN3BHNytndFZZT1hJOWlSamdrTVIx?=
- =?utf-8?B?bDVnUWcrUE5CRHBtN1F0ZEkxNk80OEpiMDNJNXBTN2FwNlpqWS9pYWE0b1RB?=
- =?utf-8?B?bGJwZTFuaGR5c1NHQmZCTWRPMUNpUkJuSjIxL1VTNXVMbWViVEQvMVVZVFZo?=
- =?utf-8?B?OVZMaVJXNXR3Qjhlazc4ZDd0WWJONFFOcGxNL3FpekpLK1ZyalNoZ0V4eWdH?=
- =?utf-8?B?eWxGQUJ0TDd1aWxhR2hmUEV0UHFPN0J6di9PNFE5bjdSUWxIQmpsN01GVDIv?=
- =?utf-8?B?dWJNV1krY2pwMDF6S1JJdkxZWE9ZZGVZYndUNlZIbjNvMVBkOEdhanNxZDcv?=
- =?utf-8?B?aVduRXRXRHZJUkNBTlZnRHJ3RkFybVpqVStUNzdQRytjUm13WFM5UUU1WTdq?=
- =?utf-8?B?MTlKeDFhNEVWODNoQTA2b1BIY0tydit5SnowM01oWHZaNGlvcExKQTRwNGZu?=
- =?utf-8?B?VWpmSStJWkV3Q3kyY0lFM3JEUDAzMUFoTm9pVkEyU0ZvR3lmQzVYL1c5OU1Z?=
- =?utf-8?B?aW9HRk0xbXJ2TDlzQnVZVUYyNlk5MXVsdk1xRmh6RWd3NVFtaW51ejgwUE15?=
- =?utf-8?Q?ZUJTw3AAOq5Xwse3QzapnrGO88AgmEOqgxX/F0xHBs=3D?=
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+ <26251cfd-f138-a787-f0e8-528c1c5c6778@gmail.com>
+ <PR3PR04MB7340EB60FBF52F117181580ED653A@PR3PR04MB7340.eurprd04.prod.outlook.com>
+ <87zg5b821z.fsf@vps.thesusis.net>
+ <PR3PR04MB7340C8A490ED5E5B5446879FD653A@PR3PR04MB7340.eurprd04.prod.outlook.com>
+Date:   Wed, 07 Jun 2023 18:18:23 -0400
+Message-ID: <87edmmvrv4.fsf@DigitalMercury.freeddns.org>
 MIME-Version: 1.0
-X-OriginatorOrg: helmholtz-muenchen.de
-X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-AuthSource: PR3PR04MB7340.eurprd04.prod.outlook.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: 2fcc74dc-e06b-414d-cee9-08db679a3093
-X-MS-Exchange-CrossTenant-originalarrivaltime: 07 Jun 2023 21:00:14.0240
- (UTC)
-X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: e229e493-1bf2-40a7-9b84-85f6c23aeed8
-X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
-X-MS-Exchange-CrossTenant-userprincipalname: 0XzN+3M0NS9l5+xEtKmDTbfneN/ACyUakKtDpe3oEeZpH0/udSuPbfRT3QHoqy/KMJWOjIhw/3QfihqgIS503U/3KQR/Kl4Ml5pCHgsw7h+NzTmytbKg01H6U+PLESdV
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: DU0PR04MB9586
+Content-Type: multipart/signed; boundary="=-=-=";
+        micalg=pgp-sha512; protocol="application/pgp-signature"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-DQo+LS0tLS1PcmlnaW5hbCBNZXNzYWdlLS0tLS0NCj5Gcm9tOiBSb21hbiBNYW1lZG92IDxybUBy
-b21hbnJtLm5ldD4NCj5TZW50OiBXZWRuZXNkYXksIEp1bmUgNywgMjAyMyAxMDo0OCBQTQ0KPlRv
-OiBCZXJuZCBMZW50ZXMgPGJlcm5kLmxlbnRlc0BoZWxtaG9sdHotbXVlbmNoZW4uZGU+DQo+Q2M6
-IHJlbWlAZ2VvcmdpYW5pdC5jb207IGxpbnV4LWJ0cmZzQHZnZXIua2VybmVsLm9yZw0KPlN1Ympl
-Y3Q6IFJlOiByb2xsYmFjayB0byBhIHNuYXBzaG90DQo+DQo+T24gV2VkLCA3IEp1biAyMDIzIDIw
-OjE0OjI3ICswMDAwDQo+QmVybmQgTGVudGVzIDxiZXJuZC5sZW50ZXNAaGVsbWhvbHR6LW11ZW5j
-aGVuLmRlPiB3cm90ZToNCj4NCj5Ob3QgYWxsIGZpbGVzeXN0ZW1zIHN1cHBvcnQgcmVmbGlua3Mu
-DQo+DQo+QnRyZnMgYW5kIFhGUyBzdXBwb3J0IGl0LCBidXQgZm9yIFhGUyB0aGlzIGhhcyB0byBi
-ZSBlbmFibGVkIGF0IEZTIGNyZWF0aW9uIHRpbWUNCj4oSUlSQyByZWNlbnQgbWtmcyBlbmFibGVz
-IGl0IGJ5IGRlZmF1bHQpLiBFeHQ0LCBSZWlzZXJGUyBhbmQgSkZTIGRvIG5vdC4NCg0KSXMgdGhl
-cmUgc29tZW9uZSB3aG8gdXNlcyBSZWlzZXJGUyBub3dhZGF5cyA/DQpPQ0ZTMiBhbHNvIGtub3dz
-IHJlZmxpbmtzLg0KDQo+Rm9yIFhGUyBpdCBpcyBhIHdheSB0byBoYXZlIHRoZSBiZXN0IG9mIHRo
-ZSBib3RoIHdvcmxkczogaGF2ZSBhIGZpbGVzeXN0ZW0gdGhhdCBpcw0KPndlbGwgcmVnYXJkZWQg
-Zm9yIHBlcmZvcm1hbmNlLCBidXQgYWxzbyBnYWluIGEgZGVncmVlIG9mIHRoZSBDb1cgYWJpbGl0
-eSB0aGF0DQo+QnRyZnMgaXMgbGlrZWQgZm9yLCBlLmcuIGFsbG93aW5nIGluc3RhbnQgc25hcHNo
-b3RzIG9mIFZNIGltYWdlcywgaW5jbHVkaW5nDQo+cnVubmluZyBvbmVzIHdpdGggYSBwb2ludC1p
-bi10aW1lIGZ1bGwgaW1hZ2UgY29uc2lzdGVuY3kgLS0gdW50aGlua2FibGUgd2l0aA0KPnRyYWRp
-dGlvbmFsIGNvcHlpbmcuDQoNCkJlcm5kDQoNCkhlbG1ob2x0eiBaZW50cnVtIE3DvG5jaGVuIOKA
-kyBEZXV0c2NoZXMgRm9yc2NodW5nc3plbnRydW0gZsO8ciBHZXN1bmRoZWl0IHVuZCBVbXdlbHQg
-KEdtYkgpDQpJbmdvbHN0w6RkdGVyIExhbmRzdHJhw59lIDEsIEQtODU3NjQgTmV1aGVyYmVyZywg
-aHR0cHM6Ly93d3cuaGVsbWhvbHR6LW11bmljaC5kZQ0KR2VzY2jDpGZ0c2bDvGhydW5nOiBQcm9m
-LiBEci4gbWVkLiBEci4gaC5jLiBNYXR0aGlhcyBUc2Now7ZwLCBEYW5pZWxhIFNvbW1lciAoa29t
-bS4pIHwgQXVmc2ljaHRzcmF0c3ZvcnNpdHplbmRlOiBNaW5EaXLigJlpbiBQcm9mLiBEci4gVmVy
-b25pa2Egdm9uIE1lc3NsaW5nDQpSZWdpc3RlcmdlcmljaHQ6IEFtdHNnZXJpY2h0IE3DvG5jaGVu
-IEhSQiA2NDY2IHwgVVN0LUlkTnIuIERFIDEyOTUyMTY3MQ0K
+--=-=-=
+Content-Type: text/plain
+
+Bernd Lentes <bernd.lentes@helmholtz-muenchen.de> writes:
+
+>>-----Original Message-----
+>>From: Phillip Susi <phill@thesusis.net>
+>>Sent: Wednesday, June 7, 2023 10:09 PM
+>>To: Bernd Lentes <bernd.lentes@helmholtz-muenchen.de>
+>>Cc: Andrei Borzenkov <arvidjaar@gmail.com>; linux-btrfs@vger.kernel.org
+>>Subject: Re: rollback to a snapshot
+>
+>>The last time I installed Ubuntu on btrfs, the installer automatically created a
+>>top level subvolume named @ and actually installed the system in that
+>>subvolume, then configured grub to tell the kernel to mount the root btrfs
+>>volume with the flag subvol="@" so that the system would boot normally.
+>>Then you just mount the real root of the filesystem somewhere else and make
+>>a snapshot of the @ subvolume.  When you want to roll back, you just rename
+>>@ to something else, and either rename or create a new writable snapshot
+>>from your previous snapshot and name it @, then reboot.
+>
+> Do you remember which version it was ?
+> You say " top level subvolume named @". You mean subvolid 5 ?
+> " Then you just mount the real root of the filesystem". What do you mean by "real root" ?
+> Does the subvolume @ already contain files or is it just a container for another subvolume ?
+> "you just rename @ to something else". How can i rename a subvolume ? Just rename the corresponding directory ?
+> " Then you just mount the real root of the filesystem somewhere else" Why ? With a bind mount ?
+>
+> Bernd
+
+If I remember correctly, Ubuntu looks something like this
+
+sudo btrfs sub list / -t
+ID      gen     top level       path
+--      ---     ---------       ----
+347     477642  5               @
+348     476215  5               @home
+
+which is
+
+subvolid=5
+         |_ @
+         |_ @home
+
+and you shared this info in the initial thread:
+
+> root@Microknoppix:/home/knoppix# mount|grep btrfs
+> /dev/mapper/ubuntu--vg-ubuntu--lv on /mnt/btrfs type btrfs (rw,relatime,space_cache,subvolid=5,subvol=/)
+
+> root@Microknoppix:/home/knoppix# btrfs sub list /mnt/btrfs
+> ID 430 gen 1215864 top level 5 path .snapshots
+> ID 434 gen 1213568 top level 430 path .snapshots/06-06-2023--15:16_PRE_UPGRADE
+> ID 435 gen 1216086 top level 430 path .snapshots/06-06-2023
+> I want to go back to ID 434 or 435.
+
+So you have something like
+1. subvolid=5
+2.          |_ @
+3.          |_ @home
+4.          |_ snapshots
+5.                     |_ 06-06-2023--15:16_PRE_UPGRADE
+6.                     |_ 06-06-2023
+
+subvolid=5 is always the "real root" I think Andrei Borzenkov is calling
+it to mitigate the confusion resulting from potentially having used the
+default subvolume feature, which in my opinion should never be used,
+because it will confuse the bootloader.  A default Ubuntu installation
+will have "subvol=@" in the bootloader, which means all that you need to
+do is move your snapshot into place (position #2 in the above table)
+
+So I think you're going to do something like the following: Mount the
+true / (position #1) or subvolid=5 to /mnt/btrfs, then
+
+  cd /mnt/btrfs/snapshots
+  btrfs sub snap -r ../@ ./@_broken-upgrade  # note readonly "-r"
+  cd ..
+  # I still do a subvol sync and fi sync here
+  btrfs sub del -c ./@
+  # I still do a subvol sync and fi sync here
+  btrfs sub snap ./snapshots/06-06-2023--15:16_PRE_UPGRADE ./@
+  #             /\ note no readonly "-r"
+
+If you stuck with Ubuntu defaults and didn't use the default subvolume
+feature, then subvol=@ is still what grub will boot, and
+06-06-2023--15:16_PRE_UPGRADE is now the new writable @.
+
+I believe this is the safest method available.  The perfect snapshotting
+tool would make it easier to see the relationship between snapshoted
+copies of subvolumes.
+
+Note that rootfs rollbacks won't fix potentially incompatibly upgraded
+databases in @home (is that rare these days?).  There's not really any
+good fix for that, other than to restore them from backup.  Note that
+with this method you will lose a day's worth of everything in @ that
+didn't have its own subvolume (ie logs, any VMs not in @home, etc).
+
+For the record: If you consult the table above, the default subvolume
+feature makes any subvolume become the user-apparent / of the
+filesystem, and hides anything that's not beneath its tree.
+
+'hope this helps,
+Nicholas
+
+--=-=-=
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQJHBAEBCgAxFiEE4qYmHjkArtfNxmcIWogwR199EGEFAmSBAjETHG5zdGVldmVz
+QGdtYWlsLmNvbQAKCRBaiDBHX30QYWl5D/0QfjlFNt00cos5YU61kfwyS/w4NBKH
+evtHlauStmtCcAEI8R7LSgskWYsGs15GlnILJWBWBmerFWNuLvr1L1SuoFr4sDZW
+/J4vBOfoMgv4OWJIkmhhugy5Wkf14YAagjs4kjHkzj5q5KMqjdEa2f3HXqYDWOGW
+vbdDMAPPTa9O/wUHG59NfAAMZ229XsjuuZk22wWnyuT0YWPooOLlvsEIK/UIV9w+
+Ph2Y3CBHIH+Ogoy1be9RfIyfFuennSGcBqPf9v7SUbINk9148+NGfhnQNLo5zOMN
+xKEHcYYOK8WKJ+mbDaV3ch+MV8rVGIVg7vm5uwbuNaUTiqEqCd3RwwH4JDUJSIlB
+Vu+kwhtAQs8GgRuZXDJQpiQ3gdH/RA6PQ5QnMTOVRh0SMQPVnIzUYQUrBTu/RtU/
+UeInUX4nQtptwVdRKNLqfFOYt44Gyl7C9kups7yIcXDKdCtTKURtxrci68PnOXSQ
+sNuCGWmjcBydiwRu4McuQcO5piSFhx/cdmMa2xEE1FJKifavi5Vzr97dZQqmycMp
+AyAl7MJ+xxHhO+6fyZgTI4WET5EMHZFQWPmqmcjh3V6Ce/RhnPwkLFIrwJH+E9CC
+OPncVXqaFtqOLfu2b5m3v2++60emm2gimRIA53LRg1CBWab1k3cFEPOYv8iD60fF
+vcSC1p83mALv1g==
+=b/H8
+-----END PGP SIGNATURE-----
+--=-=-=--

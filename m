@@ -2,40 +2,40 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9FE65C77B7A
-	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Jun 2023 19:25:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B5FA2C7EE25
+	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Jun 2023 19:25:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229498AbjFGTZA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 7 Jun 2023 15:25:00 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45552 "EHLO
+        id S229904AbjFGTZB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 7 Jun 2023 15:25:01 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45568 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232568AbjFGTYs (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Jun 2023 15:24:48 -0400
+        with ESMTP id S233048AbjFGTYv (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Jun 2023 15:24:51 -0400
 Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 560FE1FDA
-        for <linux-btrfs@vger.kernel.org>; Wed,  7 Jun 2023 12:24:48 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8E5871FDA
+        for <linux-btrfs@vger.kernel.org>; Wed,  7 Jun 2023 12:24:50 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 363C063C4E
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 200EE63C4E
+        for <linux-btrfs@vger.kernel.org>; Wed,  7 Jun 2023 19:24:50 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 0A4F1C4339B
         for <linux-btrfs@vger.kernel.org>; Wed,  7 Jun 2023 19:24:48 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 216B4C433D2
-        for <linux-btrfs@vger.kernel.org>; Wed,  7 Jun 2023 19:24:46 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1686165887;
-        bh=3DidI0i/RwWQuUG2o1GFYdZnklwi7zqjo1MjYCu98mA=;
+        s=k20201202; t=1686165889;
+        bh=SUX0xi3Bxb13WgJ2qds2/g7ZP3SOdwfnTyUQd2pJtyM=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=Yn7FP7+n2WVf/NxwyAu0JA9cpcnhj6DfkADKMw1BQi7zcKWImhYoLmEyOq878dYgN
-         cN7u+8hOEPFvEUCHnMQ9EV0VGqBWzM34oHUV3E6fQiI0DQSlacoADED5WvMO98ITJ6
-         Gg0EwED7Mhp/ijooXjMRFnCTc8cMlFia6TXGucPAV1DC9l/FllVcsekPc80haXpSzC
-         Lyk9CUHTCQmDNblu50D8hJRnwz393t3YG67CX3d+zP34RV2DxRw02+D/3Qk2Ox55QF
-         62waQPmjzSE1PVGmyWrKD0tfHL1d96m7SqVKfWul2/QMTO1JD+KVBNe9Ykk/uTLQxc
-         CctiB3J+zDiOw==
+        b=JzJXz+2nJfZo7bs9RcjPK2MpT1pYzEAEj5UIHKGqYTaKACi6XdItw6wHQIZsXs/n8
+         K+1+NqMr3xOuRMMx2oof7G4uI0Gsij9/TxJuVEn1/tFJD1Sxc5tKAC+f0G9GAL+wu8
+         V11w0KBraf1W+pu63dgh40V7bJJneLRwtcfrvcm8lPFTvAOMtNwyFLPlgF4keR21ah
+         vPpDlzcsV013MZ+ixIQTrz2oOxDnxKSJ3fqWRvNiaS8WPN3fc1XCFVQwgRpdYa/HP3
+         8lCAGJo6ljhqp60hVMig/UnWvTOe2z3oudB5eutJNKJHcsVLwhmGK3V+aOCoLhp3xa
+         H2lfo/WoFNjhw==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 07/13] btrfs: avoid unnecessarily setting the fs to RO and error state at balance_level()
-Date:   Wed,  7 Jun 2023 20:24:31 +0100
-Message-Id: <eed7a234bcbf584a4199b9b84d0e3e8927e2f077.1686164814.git.fdmanana@suse.com>
+Subject: [PATCH 09/13] btrfs: abort transaction at update_ref_for_cow() when ref count is zero
+Date:   Wed,  7 Jun 2023 20:24:33 +0100
+Message-Id: <a7914cc7ab662f8bf4e0ab5622e81622acbc186e.1686164819.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1686164789.git.fdmanana@suse.com>
 References: <cover.1686164789.git.fdmanana@suse.com>
@@ -47,31 +47,39 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-At balance_level(), when trying to promote a child node to a root node, if
-we fail to read the child we call btrfs_handle_fs_error(), which turns the
-fs to RO mode and sets it to error state as well, causing any ongoing
-transaction to abort. This however is not necessary because at that point
-we have not made any change yet at balance_level(), so any error reading
-the child node does not leaves us in any inconsistent state. Therefore we
-can just return the error to the caller.
+At update_ref_for_cow() we are calling btrfs_handle_fs_error() if we find
+that the extent buffer has an unexpected ref count of zero, however we can
+simply use btrfs_abort_transaction(), which achieves the same purposes: to
+turn the fs to error state, abort the current transaction and turn the fs
+to RO mode as well. Besides that, btrfs_abort_transaction() also prints a
+stack trace which makes it more useful.
+
+Also, as this is a very unexpected situation, indicating a serious
+corruption/inconsistency, tag the if branch as 'unlikely' and set the
+error code to -EUCLEAN instead of -EROFS.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/ctree.c | 1 -
- 1 file changed, 1 deletion(-)
+ fs/btrfs/ctree.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index e98f9e205e25..4dcdcf25c3fe 100644
+index e2943047b01d..2971e7d70d04 100644
 --- a/fs/btrfs/ctree.c
 +++ b/fs/btrfs/ctree.c
-@@ -1040,7 +1040,6 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
- 		child = btrfs_read_node_slot(mid, 0);
- 		if (IS_ERR(child)) {
- 			ret = PTR_ERR(child);
+@@ -421,9 +421,9 @@ static noinline int update_ref_for_cow(struct btrfs_trans_handle *trans,
+ 					       &refs, &flags);
+ 		if (ret)
+ 			return ret;
+-		if (refs == 0) {
+-			ret = -EROFS;
 -			btrfs_handle_fs_error(fs_info, ret, NULL);
- 			goto out;
++		if (unlikely(refs == 0)) {
++			ret = -EUCLEAN;
++			btrfs_abort_transaction(trans, ret);
+ 			return ret;
  		}
- 
+ 	} else {
 -- 
 2.34.1
 

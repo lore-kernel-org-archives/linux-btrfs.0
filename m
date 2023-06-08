@@ -2,32 +2,32 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A8644C7EE45
-	for <linux-btrfs@archiver.kernel.org>; Thu,  8 Jun 2023 11:06:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E517FC8300C
+	for <linux-btrfs@archiver.kernel.org>; Thu,  8 Jun 2023 11:06:29 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236344AbjFHLGF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 8 Jun 2023 07:06:05 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35730 "EHLO
+        id S236435AbjFHLG2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 8 Jun 2023 07:06:28 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36798 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236356AbjFHLFG (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Jun 2023 07:05:06 -0400
+        with ESMTP id S236280AbjFHLGC (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Jun 2023 07:06:02 -0400
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 05D04273E;
-        Thu,  8 Jun 2023 04:04:12 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 25F343A81;
+        Thu,  8 Jun 2023 04:04:34 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=zzKaJQa3JhGzap/6QNdzKP1Wkdkqpf0FeoakP4LHYJI=; b=IFokquyjT9HqPzGLqUwTr6ecRn
-        oGX/XXdsUirqOsUW6DttjK8Xx+L4Z4CmPRZESIbn2144Hb4wCpwmu+oG/xZIDwjhrEZijxIuniecN
-        xFKnTMQw4BKhssjuOdH77PUD4jFoDYzVT3audpsAukeeY8AYuknmSxnQVL/KTmlf53rM8W3HbKPmB
-        sSEcuqZO/g6gybfzLieIxrkUSqabKGOF6mP37wPvRVZ/80R86AOVFeLBZRNvTpKnmKYXCNQfBH8EH
-        Gj5McU8d9//mIV8ML3zdYjGKkoPoEqrsbpVHb3nqQkz6vDPO4aG0Rzy9hLO6r1zWlw/wxf84SzOow
-        x90jqCVQ==;
+        bh=dEmPe/bSHgwifwfXlA9VWAbszBT6B/IX1dmN5aeoTUI=; b=NX+i/BZ4ePCxmMMGp/hR5K6CcA
+        TPgtN6wf7MDHTBMHop0PsFxMQpnsbECsPFDJjw/4zVnSbJBF3q/wPJAXnymMfC5M6qn2IBKvbKyMi
+        G/rf3+POhoGtF1lr4x3ZQ5fcyBrOurP/CwYGkhDrrAZJ1T+cuJ/gwnUVyL5GgmUFG82MOCOnZLpIC
+        B1Spb85KQeuciZ6cbzhgJ8A6EprWorXBkGpaGF5rt/rKB9jEUn21HybusGIUR8t6LDgFd9pGgO+id
+        z2iw43GfIgmh7TQzgUixSGWtmiYfo6AyB+fQZ39N2+Akpbhns4c9w9ZlIH0ysgGvK34QlECJBwE/I
+        hEi3Ppgw==;
 Received: from 2a02-8389-2341-5b80-39d3-4735-9a3c-88d8.cable.dynamic.v6.surfer.at ([2a02:8389:2341:5b80:39d3:4735:9a3c:88d8] helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
-        id 1q7DQe-0092IK-25;
-        Thu, 08 Jun 2023 11:03:45 +0000
+        id 1q7DR2-0092i9-2D;
+        Thu, 08 Jun 2023 11:04:09 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Jens Axboe <axboe@kernel.dk>
 Cc:     Richard Weinberger <richard@nod.at>,
@@ -51,9 +51,9 @@ Cc:     Richard Weinberger <richard@nod.at>,
         linux-f2fs-devel@lists.sourceforge.net,
         linux-nilfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
         linux-pm@vger.kernel.org, Hannes Reinecke <hare@suse.de>
-Subject: [PATCH 16/30] block: add a sb_open_mode helper
-Date:   Thu,  8 Jun 2023 13:02:44 +0200
-Message-Id: <20230608110258.189493-17-hch@lst.de>
+Subject: [PATCH 23/30] rnbd-srv: replace sess->open_flags with a "bool readonly"
+Date:   Thu,  8 Jun 2023 13:02:51 +0200
+Message-Id: <20230608110258.189493-24-hch@lst.de>
 X-Mailer: git-send-email 2.39.2
 In-Reply-To: <20230608110258.189493-1-hch@lst.de>
 References: <20230608110258.189493-1-hch@lst.de>
@@ -64,116 +64,105 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Add a helper to return the open flags for blkdev_get_by* for passed in
-super block flags instead of open coding the logic in many places.
+Stop passing the fmode_t around and just use a simple bool to track if
+an export is read-only.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 Reviewed-by: Hannes Reinecke <hare@suse.de>
 Acked-by: Christian Brauner <brauner@kernel.org>
+Acked-by: Jack Wang <jinpu.wang@ionos.com>
 ---
- fs/btrfs/super.c       |  5 +----
- fs/nilfs2/super.c      |  7 ++-----
- fs/super.c             | 15 ++++-----------
- include/linux/blkdev.h |  7 +++++++
- 4 files changed, 14 insertions(+), 20 deletions(-)
+ drivers/block/rnbd/rnbd-srv-sysfs.c |  3 +--
+ drivers/block/rnbd/rnbd-srv.c       | 15 +++++++--------
+ drivers/block/rnbd/rnbd-srv.h       |  2 +-
+ 3 files changed, 9 insertions(+), 11 deletions(-)
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 1a2ee9407f5414..fd02b92e39106a 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1440,12 +1440,9 @@ static struct dentry *btrfs_mount_root(struct file_system_type *fs_type,
- 	struct btrfs_fs_devices *fs_devices = NULL;
- 	struct btrfs_fs_info *fs_info = NULL;
- 	void *new_sec_opts = NULL;
--	fmode_t mode = FMODE_READ;
-+	fmode_t mode = sb_open_mode(flags);
- 	int error = 0;
+diff --git a/drivers/block/rnbd/rnbd-srv-sysfs.c b/drivers/block/rnbd/rnbd-srv-sysfs.c
+index d5d9267e1fa5e4..ebd95771c85ec7 100644
+--- a/drivers/block/rnbd/rnbd-srv-sysfs.c
++++ b/drivers/block/rnbd/rnbd-srv-sysfs.c
+@@ -88,8 +88,7 @@ static ssize_t read_only_show(struct kobject *kobj, struct kobj_attribute *attr,
  
--	if (!(flags & SB_RDONLY))
--		mode |= FMODE_WRITE;
--
- 	if (data) {
- 		error = security_sb_eat_lsm_opts(data, &new_sec_opts);
- 		if (error)
-diff --git a/fs/nilfs2/super.c b/fs/nilfs2/super.c
-index 61d5e79a5e81df..a41fd84d4e28ab 100644
---- a/fs/nilfs2/super.c
-+++ b/fs/nilfs2/super.c
-@@ -1278,14 +1278,11 @@ nilfs_mount(struct file_system_type *fs_type, int flags,
+ 	sess_dev = container_of(kobj, struct rnbd_srv_sess_dev, kobj);
+ 
+-	return sysfs_emit(page, "%d\n",
+-			  !(sess_dev->open_flags & FMODE_WRITE));
++	return sysfs_emit(page, "%d\n", sess_dev->readonly);
+ }
+ 
+ static struct kobj_attribute rnbd_srv_dev_session_ro_attr =
+diff --git a/drivers/block/rnbd/rnbd-srv.c b/drivers/block/rnbd/rnbd-srv.c
+index 29d560472d05ba..b680071342b898 100644
+--- a/drivers/block/rnbd/rnbd-srv.c
++++ b/drivers/block/rnbd/rnbd-srv.c
+@@ -222,7 +222,7 @@ void rnbd_destroy_sess_dev(struct rnbd_srv_sess_dev *sess_dev, bool keep_id)
+ 	blkdev_put(sess_dev->bdev, NULL);
+ 	mutex_lock(&sess_dev->dev->lock);
+ 	list_del(&sess_dev->dev_list);
+-	if (sess_dev->open_flags & FMODE_WRITE)
++	if (!sess_dev->readonly)
+ 		sess_dev->dev->open_write_cnt--;
+ 	mutex_unlock(&sess_dev->dev->lock);
+ 
+@@ -561,7 +561,7 @@ static void rnbd_srv_fill_msg_open_rsp(struct rnbd_msg_open_rsp *rsp,
+ static struct rnbd_srv_sess_dev *
+ rnbd_srv_create_set_sess_dev(struct rnbd_srv_session *srv_sess,
+ 			      const struct rnbd_msg_open *open_msg,
+-			      struct block_device *bdev, fmode_t open_flags,
++			      struct block_device *bdev, bool readonly,
+ 			      struct rnbd_srv_dev *srv_dev)
  {
- 	struct nilfs_super_data sd;
- 	struct super_block *s;
--	fmode_t mode = FMODE_READ;
- 	struct dentry *root_dentry;
- 	int err, s_new = false;
+ 	struct rnbd_srv_sess_dev *sdev = rnbd_sess_dev_alloc(srv_sess);
+@@ -576,7 +576,7 @@ rnbd_srv_create_set_sess_dev(struct rnbd_srv_session *srv_sess,
+ 	sdev->bdev		= bdev;
+ 	sdev->sess		= srv_sess;
+ 	sdev->dev		= srv_dev;
+-	sdev->open_flags	= open_flags;
++	sdev->readonly		= readonly;
+ 	sdev->access_mode	= open_msg->access_mode;
  
--	if (!(flags & SB_RDONLY))
--		mode |= FMODE_WRITE;
--
--	sd.bdev = blkdev_get_by_path(dev_name, mode, fs_type, NULL);
-+	sd.bdev = blkdev_get_by_path(dev_name, sb_open_mode(flags), fs_type,
-+				     NULL);
- 	if (IS_ERR(sd.bdev))
- 		return ERR_CAST(sd.bdev);
- 
-diff --git a/fs/super.c b/fs/super.c
-index 8563794a8bc462..dc7f328398339d 100644
---- a/fs/super.c
-+++ b/fs/super.c
-@@ -1255,17 +1255,13 @@ int get_tree_bdev(struct fs_context *fc,
- {
+ 	return sdev;
+@@ -681,13 +681,12 @@ static int process_msg_open(struct rnbd_srv_session *srv_sess,
+ 	struct rnbd_srv_sess_dev *srv_sess_dev;
+ 	const struct rnbd_msg_open *open_msg = msg;
  	struct block_device *bdev;
- 	struct super_block *s;
--	fmode_t mode = FMODE_READ;
- 	int error = 0;
+-	fmode_t open_flags;
++	fmode_t open_flags = FMODE_READ;
+ 	char *full_path;
+ 	struct rnbd_msg_open_rsp *rsp = data;
  
--	if (!(fc->sb_flags & SB_RDONLY))
--		mode |= FMODE_WRITE;
--
- 	if (!fc->source)
- 		return invalf(fc, "No source specified");
+ 	trace_process_msg_open(srv_sess, open_msg);
  
--	bdev = blkdev_get_by_path(fc->source, mode, fc->fs_type,
--				  &fs_holder_ops);
-+	bdev = blkdev_get_by_path(fc->source, sb_open_mode(fc->sb_flags),
-+				  fc->fs_type, &fs_holder_ops);
- 	if (IS_ERR(bdev)) {
- 		errorf(fc, "%s: Can't open blockdev", fc->source);
- 		return PTR_ERR(bdev);
-@@ -1344,13 +1340,10 @@ struct dentry *mount_bdev(struct file_system_type *fs_type,
- {
- 	struct block_device *bdev;
- 	struct super_block *s;
--	fmode_t mode = FMODE_READ;
- 	int error = 0;
+-	open_flags = FMODE_READ;
+ 	if (open_msg->access_mode != RNBD_ACCESS_RO)
+ 		open_flags |= FMODE_WRITE;
  
--	if (!(flags & SB_RDONLY))
--		mode |= FMODE_WRITE;
--
--	bdev = blkdev_get_by_path(dev_name, mode, fs_type, &fs_holder_ops);
-+	bdev = blkdev_get_by_path(dev_name, sb_open_mode(flags), fs_type,
-+				  &fs_holder_ops);
- 	if (IS_ERR(bdev))
- 		return ERR_CAST(bdev);
+@@ -736,9 +735,9 @@ static int process_msg_open(struct rnbd_srv_session *srv_sess,
+ 		goto blkdev_put;
+ 	}
  
-diff --git a/include/linux/blkdev.h b/include/linux/blkdev.h
-index d5b99796f12c11..97803603902076 100644
---- a/include/linux/blkdev.h
-+++ b/include/linux/blkdev.h
-@@ -1473,6 +1473,13 @@ struct blk_holder_ops {
- 	void (*mark_dead)(struct block_device *bdev);
- };
- 
-+/*
-+ * Return the correct open flags for blkdev_get_by_* for super block flags
-+ * as stored in sb->s_flags.
-+ */
-+#define sb_open_mode(flags) \
-+	(FMODE_READ | (((flags) & SB_RDONLY) ? 0 : FMODE_WRITE))
-+
- struct block_device *blkdev_get_by_dev(dev_t dev, fmode_t mode, void *holder,
- 		const struct blk_holder_ops *hops);
- struct block_device *blkdev_get_by_path(const char *path, fmode_t mode,
+-	srv_sess_dev = rnbd_srv_create_set_sess_dev(srv_sess, open_msg,
+-						     bdev, open_flags,
+-						     srv_dev);
++	srv_sess_dev = rnbd_srv_create_set_sess_dev(srv_sess, open_msg, bdev,
++				open_msg->access_mode == RNBD_ACCESS_RO,
++				srv_dev);
+ 	if (IS_ERR(srv_sess_dev)) {
+ 		pr_err("Opening device '%s' on session %s failed, creating sess_dev failed, err: %ld\n",
+ 		       full_path, srv_sess->sessname, PTR_ERR(srv_sess_dev));
+diff --git a/drivers/block/rnbd/rnbd-srv.h b/drivers/block/rnbd/rnbd-srv.h
+index f5962fd31d62e4..76077a9db3dd55 100644
+--- a/drivers/block/rnbd/rnbd-srv.h
++++ b/drivers/block/rnbd/rnbd-srv.h
+@@ -52,7 +52,7 @@ struct rnbd_srv_sess_dev {
+ 	struct kobject                  kobj;
+ 	u32                             device_id;
+ 	bool				keep_id;
+-	fmode_t                         open_flags;
++	bool				readonly;
+ 	struct kref			kref;
+ 	struct completion               *destroy_comp;
+ 	char				pathname[NAME_MAX];
 -- 
 2.39.2
 

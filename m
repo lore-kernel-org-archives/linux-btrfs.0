@@ -2,132 +2,138 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B3854C7EE29
-	for <linux-btrfs@archiver.kernel.org>; Thu,  8 Jun 2023 11:02:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 14B8AC87FDC
+	for <linux-btrfs@archiver.kernel.org>; Thu,  8 Jun 2023 11:03:29 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234190AbjFHLCA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 8 Jun 2023 07:02:00 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34112 "EHLO
+        id S235118AbjFHLD1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 8 Jun 2023 07:03:27 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35458 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234703AbjFHLBx (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Jun 2023 07:01:53 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DF6902712
-        for <linux-btrfs@vger.kernel.org>; Thu,  8 Jun 2023 04:01:22 -0700 (PDT)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 05E436159F
-        for <linux-btrfs@vger.kernel.org>; Thu,  8 Jun 2023 11:01:14 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 63959C433EF
-        for <linux-btrfs@vger.kernel.org>; Thu,  8 Jun 2023 11:01:13 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1686222073;
-        bh=O28xAUfQwrfFC5JBiAKUCakol3VBKQlxri6HPpHnBbc=;
-        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-        b=R1D9UFROsyxdl/e3IYAvlY1KhJLy0hBjjkOudA2H6bF8IxA70iPPZFcrxP/jvatqW
-         GwQBAtNolzqLB7VISqOzSIT8cOBtMi5baTGoJvSTAVTIH2CdR+LFidm0EgJIL4/7Ya
-         Qri43yBwc8b/DvcoLLxMhnoDi18gPAqu1/H9rPPbC3iNJ1goKF2TcfZL5xcZqDxJCJ
-         nE04MydaN0SB+dsbmAXcVIwZzsQbyq4zvee7arSXDl39iN01ZD4EElyTYqx7vj0MpS
-         21kUFkFCtaUFKpoKQQo77SLXyD5H4xXeOshqeKRhRCmIpMsILaZqyECA9b1jre1zcB
-         i+aJxCLeYjPdw==
-Received: by mail-oa1-f44.google.com with SMTP id 586e51a60fabf-19f6211d4e1so373572fac.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 08 Jun 2023 04:01:13 -0700 (PDT)
-X-Gm-Message-State: AC+VfDw+7pFZl8Jg3kUPDqIrc5B68ogfg+kSztDlPmLbA3unlX5/HI01
-        MpcnwJSkli+RwvFWpQSrkGKpJgcuUItUmYHP7DY=
-X-Google-Smtp-Source: ACHHUZ7Hlbs/ldUJvNKNVSvhIZP3EA0MjAULclT8CTZB32evtZdxIMU9cb6p+ItBRv1K0t0R93OZ8a7stQW/yqrXxJc=
-X-Received: by 2002:a05:6870:a3d6:b0:1a2:7012:1ca7 with SMTP id
- h22-20020a056870a3d600b001a270121ca7mr4433870oak.19.1686222072500; Thu, 08
- Jun 2023 04:01:12 -0700 (PDT)
+        with ESMTP id S232139AbjFHLDZ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Jun 2023 07:03:25 -0400
+Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4527A2134;
+        Thu,  8 Jun 2023 04:03:24 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
+        MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
+        :Reply-To:Content-Type:Content-ID:Content-Description;
+        bh=FYQsICe+jkO2yrGbgRzbumctJVKnV4wWIZUy1tv1p54=; b=oucg3Pp/rKcskrh+Hb+2MAm4oh
+        CAxirj8/J8boUvG5KuKH4XNEziwGZWCBFdjLkSPuAUYn9sLXGhsGXcPg2M6lmVYYC1OxeFi4XX36Q
+        mX6ufS/9I1nDuIHYRLJpnpVCMycipoqj5pJDMjncVmj7ncRPeNeQdCfoC1C+XghtjX90w4hi7Cse9
+        WqJiXO1TpgvnDBjtOlTfsZXa+pPttbNa1Qk3YLwmNPxsJ0ApRlEg2FfQvwoShtptcHJJ/EHBK67bZ
+        riO/Gx/2T4VFi3othQU0kqoY1H9RFVaLIpHIcFoekDpe1RzqiRE6QCfLa+tpzrRlyc+jZL1+KdS5R
+        ywv3NawA==;
+Received: from 2a02-8389-2341-5b80-39d3-4735-9a3c-88d8.cable.dynamic.v6.surfer.at ([2a02:8389:2341:5b80:39d3:4735:9a3c:88d8] helo=localhost)
+        by bombadil.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
+        id 1q7DPz-0091cl-2t;
+        Thu, 08 Jun 2023 11:03:04 +0000
+From:   Christoph Hellwig <hch@lst.de>
+To:     Jens Axboe <axboe@kernel.dk>
+Cc:     Richard Weinberger <richard@nod.at>,
+        Josef Bacik <josef@toxicpanda.com>,
+        "Md. Haris Iqbal" <haris.iqbal@ionos.com>,
+        Jack Wang <jinpu.wang@ionos.com>,
+        Phillip Potter <phil@philpotter.co.uk>,
+        Coly Li <colyli@suse.de>,
+        Miquel Raynal <miquel.raynal@bootlin.com>,
+        Vignesh Raghavendra <vigneshr@ti.com>,
+        "Martin K. Petersen" <martin.petersen@oracle.com>,
+        Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
+        Alexander Viro <viro@zeniv.linux.org.uk>,
+        Christian Brauner <brauner@kernel.org>,
+        "Rafael J. Wysocki" <rafael@kernel.org>,
+        Pavel Machek <pavel@ucw.cz>, dm-devel@redhat.com,
+        linux-block@vger.kernel.org, linux-um@lists.infradead.org,
+        linux-scsi@vger.kernel.org, linux-bcache@vger.kernel.org,
+        linux-mtd@lists.infradead.org, linux-nvme@lists.infradead.org,
+        linux-btrfs@vger.kernel.org,
+        linux-f2fs-devel@lists.sourceforge.net,
+        linux-nilfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        linux-pm@vger.kernel.org, Hannes Reinecke <hare@suse.de>
+Subject: [PATCH 01/30] block: also call ->open for incremental partition opens
+Date:   Thu,  8 Jun 2023 13:02:29 +0200
+Message-Id: <20230608110258.189493-2-hch@lst.de>
+X-Mailer: git-send-email 2.39.2
+In-Reply-To: <20230608110258.189493-1-hch@lst.de>
+References: <20230608110258.189493-1-hch@lst.de>
 MIME-Version: 1.0
-References: <cover.1686219923.git.fdmanana@suse.com> <f566e1432b19f82d9c647b1c0e8e43743818bd7a.1686219923.git.fdmanana@suse.com>
- <dda1adff-2813-0ff8-1f88-fe14cc73c9eb@gmx.com>
-In-Reply-To: <dda1adff-2813-0ff8-1f88-fe14cc73c9eb@gmx.com>
-From:   Filipe Manana <fdmanana@kernel.org>
-Date:   Thu, 8 Jun 2023 12:00:36 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H7=T8HP+Q-OTqNxjtQDOZQS1KbRHEwX=kLv4UoZBd6MEQ@mail.gmail.com>
-Message-ID: <CAL3q7H7=T8HP+Q-OTqNxjtQDOZQS1KbRHEwX=kLv4UoZBd6MEQ@mail.gmail.com>
-Subject: Re: [PATCH v2 07/13] btrfs: avoid unnecessarily setting the fs to RO
- and error state at balance_level()
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
+X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Jun 8, 2023 at 11:51=E2=80=AFAM Qu Wenruo <quwenruo.btrfs@gmx.com> =
-wrote:
->
->
->
-> On 2023/6/8 18:27, fdmanana@kernel.org wrote:
-> > From: Filipe Manana <fdmanana@suse.com>
-> >
-> > At balance_level(), when trying to promote a child node to a root node,=
- if
-> > we fail to read the child we call btrfs_handle_fs_error(), which turns =
-the
-> > fs to RO mode and sets it to error state as well, causing any ongoing
-> > transaction to abort. This however is not necessary because at that poi=
-nt
-> > we have not made any change yet at balance_level(), so any error readin=
-g
-> > the child node does not leaves us in any inconsistent state. Therefore =
-we
-> > can just return the error to the caller.
-> >
-> > Signed-off-by: Filipe Manana <fdmanana@suse.com>
->
-> Reviewed-by: Qu Wenruo <wqu@suse.com>
->
-> Although I'd like to add some comments on the error handling.
->
-> The catch here is, we can only hit the branch because @mid is already
-> the highest tree block of the path.
-> Thus the path has no CoWed tree block in it at all.
+For whole devices ->open is called for each open, but for partitions it
+is only called on the first open of a partition, e.g.:
 
-Even if it's not the highest level, there's no problem at all.
-COWing blocks without doing anything else doesn't leave a tree in an
-inconsistent state,
-as long as each parent points to the new (COWed) child.
+  open("/dev/vdb", ...)
+  open("/dev/vdb", ...)
+    - 2 call to ->open
 
->
-> If the condition is not met, we will return an error while some CoWed
-> tree blocks are still in the path.
+  open("/dev/vdb1", ...)
+  open("/dev/vdb", ...)
+    - 2 call to ->open
 
-As said before, the COWed blocks are fine, the tree is consistent as
-long as each
-parent points to the new blocks.
+  open("/dev/vdb", ...)
+  open("/dev/vdb", ...)
+    - just open call to ->open
 
-> In that case, a simple btrfs_release_path() will only reduce the refs
-> and unlock, but not remove the delayed refs.
+This is problematic as various block drivers look at open flags and
+might not do all the required setup if the earlier open was with an
+odd flag like O_NDELAY or the magic 3 ioctl-only open mode.
 
-btrfs_release_path() is never responsible for adding delayed blocks.
-That happens during COW, when we call btrfs_free_tree_block().
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+Reviewed-by: Phillip Potter <phil@philpotter.co.uk>
+Reviewed-by: Hannes Reinecke <hare@suse.de>
+Acked-by: Christian Brauner <brauner@kernel.org>
+---
+ block/bdev.c | 18 ++++++++----------
+ 1 file changed, 8 insertions(+), 10 deletions(-)
 
->
-> Thus this is more like an exception, other locations can not follow the
-> practice here.
->
-> Thanks,
-> Qu
->
-> > ---
-> >   fs/btrfs/ctree.c | 1 -
-> >   1 file changed, 1 deletion(-)
-> >
-> > diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-> > index e98f9e205e25..4dcdcf25c3fe 100644
-> > --- a/fs/btrfs/ctree.c
-> > +++ b/fs/btrfs/ctree.c
-> > @@ -1040,7 +1040,6 @@ static noinline int balance_level(struct btrfs_tr=
-ans_handle *trans,
-> >               child =3D btrfs_read_node_slot(mid, 0);
-> >               if (IS_ERR(child)) {
-> >                       ret =3D PTR_ERR(child);
-> > -                     btrfs_handle_fs_error(fs_info, ret, NULL);
-> >                       goto out;
-> >               }
-> >
+diff --git a/block/bdev.c b/block/bdev.c
+index 5c46ff10770638..981f6135795138 100644
+--- a/block/bdev.c
++++ b/block/bdev.c
+@@ -683,9 +683,6 @@ static int blkdev_get_part(struct block_device *part, fmode_t mode)
+ 	struct gendisk *disk = part->bd_disk;
+ 	int ret;
+ 
+-	if (atomic_read(&part->bd_openers))
+-		goto done;
+-
+ 	ret = blkdev_get_whole(bdev_whole(part), mode);
+ 	if (ret)
+ 		return ret;
+@@ -694,9 +691,10 @@ static int blkdev_get_part(struct block_device *part, fmode_t mode)
+ 	if (!bdev_nr_sectors(part))
+ 		goto out_blkdev_put;
+ 
+-	disk->open_partitions++;
+-	set_init_blocksize(part);
+-done:
++	if (!atomic_read(&part->bd_openers)) {
++		disk->open_partitions++;
++		set_init_blocksize(part);
++	}
+ 	atomic_inc(&part->bd_openers);
+ 	return 0;
+ 
+@@ -709,10 +707,10 @@ static void blkdev_put_part(struct block_device *part, fmode_t mode)
+ {
+ 	struct block_device *whole = bdev_whole(part);
+ 
+-	if (!atomic_dec_and_test(&part->bd_openers))
+-		return;
+-	blkdev_flush_mapping(part);
+-	whole->bd_disk->open_partitions--;
++	if (atomic_dec_and_test(&part->bd_openers)) {
++		blkdev_flush_mapping(part);
++		whole->bd_disk->open_partitions--;
++	}
+ 	blkdev_put_whole(whole, mode);
+ }
+ 
+-- 
+2.39.2
+

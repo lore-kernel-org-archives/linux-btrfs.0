@@ -2,32 +2,32 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7424BC87FDE
-	for <linux-btrfs@archiver.kernel.org>; Thu,  8 Jun 2023 11:06:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 96214C87FE1
+	for <linux-btrfs@archiver.kernel.org>; Thu,  8 Jun 2023 11:06:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236475AbjFHLGh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 8 Jun 2023 07:06:37 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36144 "EHLO
+        id S236494AbjFHLGj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 8 Jun 2023 07:06:39 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36124 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236391AbjFHLFO (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Jun 2023 07:05:14 -0400
+        with ESMTP id S236232AbjFHLFJ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Jun 2023 07:05:09 -0400
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5304335A5;
-        Thu,  8 Jun 2023 04:04:23 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B58942D60;
+        Thu,  8 Jun 2023 04:04:18 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=OYUHh+4M0utRLFunGOJAUcyyaBU5s2THoZb+BQl7GUE=; b=XMxt1xBscJ0pI2z9wXwtBfhHoj
-        NaYMPR541sRAbKkNuq94A0tGaOdOL2ppU67LomkE8PHY1cLidjOlmD1ASO1pdXCpk0TwV2vD/WbBR
-        9kiggNU0hMlB7OKMpYl+7IiwsFYBd4AMo4RNXxOSqah0M1fTVzzNIxH4opHOEUD6ocDCS1QCOZDsR
-        ctTIHDJR3fDm3H3rHOfGswVKS8V8h7zZ3zaeE9z4hbqCdVvCfvfOA0KBL5SD8cN96eGG5AD6dpUnG
-        r3gJ4kX/hr+9Vw6Ni/HBW9azjuUusZbT0wswuRD8pEJpADntyxeC7hSr3xDQtNuv+v+3O4GfQn6ui
-        qiZvPnZg==;
+        bh=D+1s3WT+5DpsHw6D0N73ilbFCvVf0P+vhIMd+8ZE9LA=; b=40Te1n4Dyq79Fvl8DiG/4q/bRo
+        VTK3fXaSnaNNg1uOs526jLkNTpHwlbTJt5jmBxhgZxaikDudUl5mm+mGUQuUPzTI+l3GxVc9KxxXn
+        M0u9wkYFM1nlyleudq0pRlJRKmHm0M/ldAYGoysH/K2SaONPz05psQK0kO5bzoQgK4WqStI0m6KqL
+        7jJzBJE4GL4xkU2KnLRRgd3OeBmywzsBlmlcWFhtymotB+hEmhzNWDG6W9CXpPMrNHdrxWxBOjdWm
+        w7NtmU2XUqlRvQQJZZu/4nEZCVfDMTNSJR0uNM+71E6h4npceh/JitURnDS2n4/7TzJnLyOygUh2S
+        mv3c6bbg==;
 Received: from 2a02-8389-2341-5b80-39d3-4735-9a3c-88d8.cable.dynamic.v6.surfer.at ([2a02:8389:2341:5b80:39d3:4735:9a3c:88d8] helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
-        id 1q7DQq-0092W2-2a;
-        Thu, 08 Jun 2023 11:03:57 +0000
+        id 1q7DQj-0092O2-23;
+        Thu, 08 Jun 2023 11:03:49 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Jens Axboe <axboe@kernel.dk>
 Cc:     Richard Weinberger <richard@nod.at>,
@@ -51,9 +51,9 @@ Cc:     Richard Weinberger <richard@nod.at>,
         linux-f2fs-devel@lists.sourceforge.net,
         linux-nilfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
         linux-pm@vger.kernel.org, Hannes Reinecke <hare@suse.de>
-Subject: [PATCH 20/30] scsi: replace the fmode_t argument to ->sg_io_fn with a simple bool
-Date:   Thu,  8 Jun 2023 13:02:48 +0200
-Message-Id: <20230608110258.189493-21-hch@lst.de>
+Subject: [PATCH 18/30] scsi: replace the fmode_t argument to scsi_cmd_allowed with a simple bool
+Date:   Thu,  8 Jun 2023 13:02:46 +0200
+Message-Id: <20230608110258.189493-19-hch@lst.de>
 X-Mailer: git-send-email 2.39.2
 In-Reply-To: <20230608110258.189493-1-hch@lst.de>
 References: <20230608110258.189493-1-hch@lst.de>
@@ -72,93 +72,91 @@ Reviewed-by: Martin K. Petersen <martin.petersen@oracle.com>
 Reviewed-by: Hannes Reinecke <hare@suse.de>
 Acked-by: Christian Brauner <brauner@kernel.org>
 ---
- block/bsg-lib.c         | 2 +-
- block/bsg.c             | 8 +++++---
- drivers/scsi/scsi_bsg.c | 4 ++--
- include/linux/bsg.h     | 2 +-
- 4 files changed, 9 insertions(+), 7 deletions(-)
+ drivers/scsi/scsi_bsg.c   | 2 +-
+ drivers/scsi/scsi_ioctl.c | 8 ++++----
+ drivers/scsi/sg.c         | 2 +-
+ include/scsi/scsi_ioctl.h | 2 +-
+ 4 files changed, 7 insertions(+), 7 deletions(-)
 
-diff --git a/block/bsg-lib.c b/block/bsg-lib.c
-index 435c32373cd68f..b3acdbdb6e7ea8 100644
---- a/block/bsg-lib.c
-+++ b/block/bsg-lib.c
-@@ -26,7 +26,7 @@ struct bsg_set {
- };
- 
- static int bsg_transport_sg_io_fn(struct request_queue *q, struct sg_io_v4 *hdr,
--		fmode_t mode, unsigned int timeout)
-+		bool open_for_write, unsigned int timeout)
- {
- 	struct bsg_job *job;
- 	struct request *rq;
-diff --git a/block/bsg.c b/block/bsg.c
-index 7eca43f33d7ff8..bec4027842b31e 100644
---- a/block/bsg.c
-+++ b/block/bsg.c
-@@ -54,7 +54,8 @@ static unsigned int bsg_timeout(struct bsg_device *bd, struct sg_io_v4 *hdr)
- 	return max_t(unsigned int, timeout, BLK_MIN_SG_TIMEOUT);
- }
- 
--static int bsg_sg_io(struct bsg_device *bd, fmode_t mode, void __user *uarg)
-+static int bsg_sg_io(struct bsg_device *bd, bool open_for_write,
-+		     void __user *uarg)
- {
- 	struct sg_io_v4 hdr;
- 	int ret;
-@@ -63,7 +64,8 @@ static int bsg_sg_io(struct bsg_device *bd, fmode_t mode, void __user *uarg)
- 		return -EFAULT;
- 	if (hdr.guard != 'Q')
- 		return -EINVAL;
--	ret = bd->sg_io_fn(bd->queue, &hdr, mode, bsg_timeout(bd, &hdr));
-+	ret = bd->sg_io_fn(bd->queue, &hdr, open_for_write,
-+			   bsg_timeout(bd, &hdr));
- 	if (!ret && copy_to_user(uarg, &hdr, sizeof(hdr)))
- 		return -EFAULT;
- 	return ret;
-@@ -146,7 +148,7 @@ static long bsg_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
- 	case SG_EMULATED_HOST:
- 		return put_user(1, intp);
- 	case SG_IO:
--		return bsg_sg_io(bd, file->f_mode, uarg);
-+		return bsg_sg_io(bd, file->f_mode & FMODE_WRITE, uarg);
- 	case SCSI_IOCTL_SEND_COMMAND:
- 		pr_warn_ratelimited("%s: calling unsupported SCSI_IOCTL_SEND_COMMAND\n",
- 				current->comm);
 diff --git a/drivers/scsi/scsi_bsg.c b/drivers/scsi/scsi_bsg.c
-index 12431f35f861e1..a9a9ec086a7e3f 100644
+index 96ee35256a168f..12431f35f861e1 100644
 --- a/drivers/scsi/scsi_bsg.c
 +++ b/drivers/scsi/scsi_bsg.c
-@@ -10,7 +10,7 @@
- #define uptr64(val) ((void __user *)(uintptr_t)(val))
- 
- static int scsi_bsg_sg_io_fn(struct request_queue *q, struct sg_io_v4 *hdr,
--		fmode_t mode, unsigned int timeout)
-+		bool open_for_write, unsigned int timeout)
- {
- 	struct scsi_cmnd *scmd;
- 	struct request *rq;
 @@ -42,7 +42,7 @@ static int scsi_bsg_sg_io_fn(struct request_queue *q, struct sg_io_v4 *hdr,
  	if (copy_from_user(scmd->cmnd, uptr64(hdr->request), scmd->cmd_len))
  		goto out_put_request;
  	ret = -EPERM;
--	if (!scsi_cmd_allowed(scmd->cmnd, mode & FMODE_WRITE))
-+	if (!scsi_cmd_allowed(scmd->cmnd, open_for_write))
+-	if (!scsi_cmd_allowed(scmd->cmnd, mode))
++	if (!scsi_cmd_allowed(scmd->cmnd, mode & FMODE_WRITE))
  		goto out_put_request;
  
  	ret = 0;
-diff --git a/include/linux/bsg.h b/include/linux/bsg.h
-index 1ac81c809da9b3..ee2df73edf83f8 100644
---- a/include/linux/bsg.h
-+++ b/include/linux/bsg.h
-@@ -9,7 +9,7 @@ struct device;
- struct request_queue;
+diff --git a/drivers/scsi/scsi_ioctl.c b/drivers/scsi/scsi_ioctl.c
+index e3b31d32b6a92e..dda5468ca97f90 100644
+--- a/drivers/scsi/scsi_ioctl.c
++++ b/drivers/scsi/scsi_ioctl.c
+@@ -248,7 +248,7 @@ static int scsi_send_start_stop(struct scsi_device *sdev, int data)
+  * Only a subset of commands are allowed for unprivileged users. Commands used
+  * to format the media, update the firmware, etc. are not permitted.
+  */
+-bool scsi_cmd_allowed(unsigned char *cmd, fmode_t mode)
++bool scsi_cmd_allowed(unsigned char *cmd, bool open_for_write)
+ {
+ 	/* root can do any command. */
+ 	if (capable(CAP_SYS_RAWIO))
+@@ -338,7 +338,7 @@ bool scsi_cmd_allowed(unsigned char *cmd, fmode_t mode)
+ 	case GPCMD_SET_READ_AHEAD:
+ 	/* ZBC */
+ 	case ZBC_OUT:
+-		return (mode & FMODE_WRITE);
++		return open_for_write;
+ 	default:
+ 		return false;
+ 	}
+@@ -354,7 +354,7 @@ static int scsi_fill_sghdr_rq(struct scsi_device *sdev, struct request *rq,
+ 		return -EMSGSIZE;
+ 	if (copy_from_user(scmd->cmnd, hdr->cmdp, hdr->cmd_len))
+ 		return -EFAULT;
+-	if (!scsi_cmd_allowed(scmd->cmnd, mode))
++	if (!scsi_cmd_allowed(scmd->cmnd, mode & FMODE_WRITE))
+ 		return -EPERM;
+ 	scmd->cmd_len = hdr->cmd_len;
  
- typedef int (bsg_sg_io_fn)(struct request_queue *, struct sg_io_v4 *hdr,
--		fmode_t mode, unsigned int timeout);
-+		bool open_for_write, unsigned int timeout);
+@@ -554,7 +554,7 @@ static int sg_scsi_ioctl(struct request_queue *q, fmode_t mode,
+ 		goto error;
  
- struct bsg_device *bsg_register_queue(struct request_queue *q,
- 		struct device *parent, const char *name,
+ 	err = -EPERM;
+-	if (!scsi_cmd_allowed(scmd->cmnd, mode))
++	if (!scsi_cmd_allowed(scmd->cmnd, mode & FMODE_WRITE))
+ 		goto error;
+ 
+ 	/* default.  possible overridden later */
+diff --git a/drivers/scsi/sg.c b/drivers/scsi/sg.c
+index 037f8c98a6d364..e49ea693d0b656 100644
+--- a/drivers/scsi/sg.c
++++ b/drivers/scsi/sg.c
+@@ -237,7 +237,7 @@ static int sg_allow_access(struct file *filp, unsigned char *cmd)
+ 
+ 	if (sfp->parentdp->device->type == TYPE_SCANNER)
+ 		return 0;
+-	if (!scsi_cmd_allowed(cmd, filp->f_mode))
++	if (!scsi_cmd_allowed(cmd, filp->f_mode & FMODE_WRITE))
+ 		return -EPERM;
+ 	return 0;
+ }
+diff --git a/include/scsi/scsi_ioctl.h b/include/scsi/scsi_ioctl.h
+index beac64e38b8746..914201a8cb947c 100644
+--- a/include/scsi/scsi_ioctl.h
++++ b/include/scsi/scsi_ioctl.h
+@@ -49,7 +49,7 @@ int scsi_ioctl(struct scsi_device *sdev, fmode_t mode, int cmd,
+ 		void __user *arg);
+ int get_sg_io_hdr(struct sg_io_hdr *hdr, const void __user *argp);
+ int put_sg_io_hdr(const struct sg_io_hdr *hdr, void __user *argp);
+-bool scsi_cmd_allowed(unsigned char *cmd, fmode_t mode);
++bool scsi_cmd_allowed(unsigned char *cmd, bool open_for_write);
+ 
+ #endif /* __KERNEL__ */
+ #endif /* _SCSI_IOCTL_H */
 -- 
 2.39.2
 

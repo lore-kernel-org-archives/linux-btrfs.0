@@ -2,146 +2,55 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 94AABC7EE25
-	for <linux-btrfs@archiver.kernel.org>; Thu,  8 Jun 2023 12:13:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C33A6C7EE25
+	for <linux-btrfs@archiver.kernel.org>; Thu,  8 Jun 2023 12:14:21 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235870AbjFHMN3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 8 Jun 2023 08:13:29 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43738 "EHLO
+        id S235695AbjFHMOU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 8 Jun 2023 08:14:20 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43978 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234582AbjFHMN2 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Jun 2023 08:13:28 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0C1B3184
-        for <linux-btrfs@vger.kernel.org>; Thu,  8 Jun 2023 05:13:26 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id A7B4F1FDE6;
-        Thu,  8 Jun 2023 12:13:25 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1686226405;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=zqZTR005xzfonuwSZEodW0LXI5KYFuNXYua/Vpsbscc=;
-        b=tV53Tdc1370XDQV1A4gtHmOu6TQCbINEs67wOHzrqcNR6v3N1Nieax09+TNoYSfcRcjBDT
-        xBOyCDlLG+glfCOTsQjyJYlQ1uRRHcUB43QVivRTU9HclTvS29R/IgMyKtoYnwIUqs4InN
-        fw4KqtMxd7dyq7HSX/8XJ7DmJzCKVVk=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1686226405;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=zqZTR005xzfonuwSZEodW0LXI5KYFuNXYua/Vpsbscc=;
-        b=CXRjaoRx1WOy6cPxuyx8JvKYetr50ONjnvAwyhxtrMh44nGNDl8ifAMCyLL7QkbeIut16d
-        rzTU6zqufDd/piAw==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 77F83138E6;
-        Thu,  8 Jun 2023 12:13:25 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id an9/HOXFgWQ5OgAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Thu, 08 Jun 2023 12:13:25 +0000
-Date:   Thu, 8 Jun 2023 14:07:09 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: scrub: respect the read-only flag during repair
-Message-ID: <20230608120708.GD28933@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <85514d999fd01d20cbabed1b346f58f0fb6f7063.1686017100.git.wqu@suse.com>
- <20230608115617.GC28933@twin.jikos.cz>
- <762f030f-c8e5-9b94-b961-c9d55618380f@suse.com>
+        with ESMTP id S234352AbjFHMOT (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Jun 2023 08:14:19 -0400
+Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D76552136
+        for <linux-btrfs@vger.kernel.org>; Thu,  8 Jun 2023 05:14:16 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
+        MIME-Version:Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:Content-Type:
+        Content-ID:Content-Description:In-Reply-To:References;
+        bh=1l2z/jrGAvmbSgK62MSuZbAjdCeLxWzpvkonct7bDmo=; b=Ohp7s+YptyRBmkFZH246Nccnr/
+        E5cFr/Z3HF+8ATYr1cKzyZea7BxnvWODVu4bMO75Z6IJIrHxPW52C3ofmRTinPDP2NEzD1ZnTVTuP
+        7durTisjpxF7ZUCOc439f0IuQnT5i6A7zB8Iski7uIkVnq5fxJKd9eJil1CsENnNR/xgqGMMVeWqu
+        WKQiG0KoWXKqfNb757plZVZB5/w2eXCVHlLzhuL1z2W5o1tMzXPDzSiMWm+YDLc2I7ANqYVX6A21o
+        4sERHXNdJNPXE6IMcjdVuQYxCgOvmBSI1k6LjpEOErAt1hY2BdZcHhwBVit47mNyynHjQq9lU0QEW
+        hG0uBT/g==;
+Received: from 2a02-8389-2341-5b80-39d3-4735-9a3c-88d8.cable.dynamic.v6.surfer.at ([2a02:8389:2341:5b80:39d3:4735:9a3c:88d8] helo=localhost)
+        by bombadil.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
+        id 1q7EWs-009HB1-0f;
+        Thu, 08 Jun 2023 12:14:14 +0000
+From:   Christoph Hellwig <hch@lst.de>
+To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: fix nodatasum I/O for zone devices v2
+Date:   Thu,  8 Jun 2023 14:14:09 +0200
+Message-Id: <20230608121410.275766-1-hch@lst.de>
+X-Mailer: git-send-email 2.39.2
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <762f030f-c8e5-9b94-b961-c9d55618380f@suse.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+Content-Transfer-Encoding: 8bit
+X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Jun 08, 2023 at 08:08:25PM +0800, Qu Wenruo wrote:
-> 
-> 
-> On 2023/6/8 19:56, David Sterba wrote:
-> > On Tue, Jun 06, 2023 at 10:05:04AM +0800, Qu Wenruo wrote:
-> >> [BUG]
-> >> With recent scrub rework, the scrub operation no longer respects the
-> >> read-only flag passed by "-r" option of "btrfs scrub start" command.
-> >>
-> >>   # mkfs.btrfs -f -d raid1 $dev1 $dev2
-> >>   # mount $dev1 $mnt
-> >>   # xfs_io -f -d -c "pwrite -b 128K -S 0xaa 0 128k" $mnt/file
-> >>   # sync
-> >>   # xfs_io -c "pwrite -S 0xff $phy1 64k" $dev1
-> >>   # xfs_io -c "pwrite -S 0xff $((phy2 + 65536)) 64k" $dev2
-> >>   # mount $dev1 $mnt -o ro
-> >>   # btrfs scrub start -BrRd $mnt
-> >>   Scrub device $dev1 (id 1) done
-> >>   Scrub started:    Tue Jun  6 09:59:14 2023
-> >>   Status:           finished
-> >>   Duration:         0:00:00
-> >> 	[...]
-> >>   	corrected_errors: 16 <<< Still has corrupted sectors
-> >>   	last_physical: 1372585984
-> >>
-> >>   Scrub device $dev2 (id 2) done
-> >>   Scrub started:    Tue Jun  6 09:59:14 2023
-> >>   Status:           finished
-> >>   Duration:         0:00:00
-> >> 	[...]
-> >>   	corrected_errors: 16 <<< Still has corrupted sectors
-> >>   	last_physical: 1351614464
-> >>
-> >>   # btrfs scrub start -BrRd $mnt
-> >>   Scrub device $dev1 (id 1) done
-> >>   Scrub started:    Tue Jun  6 10:00:17 2023
-> >>   Status:           finished
-> >>   Duration:         0:00:00
-> >> 	[...]
-> >>   	corrected_errors: 0 <<< No more errors
-> >>   	last_physical: 1372585984
-> >>
-> >>   Scrub device $dev2 (id 2) done
-> >> 	[...]
-> >>   	corrected_errors: 0 <<< No more errors
-> >>   	last_physical: 1372585984
-> >>
-> >> [CAUSE]
-> >> In the newly reworked scrub code, repair is always submitted no matter
-> >> if we're doing a read-only scrub.
-> >>
-> >> [FIX]
-> >> Fix it by skipping the write submission if the scrub is a read-only one.
-> >>
-> >> Unfortunately for the report part, even for a read-only scrub we will
-> >> still report it as corrected errors, as we know it's repairable, even we
-> >> won't really submit the write.
-> > 
-> > We can maybe present the results in scrub status in an different way
-> > when it's started as read-only, e.g. not to say "repaired" but
-> > "repairable (read-only)".
-> 
-> Yes, this is much better for end users.
-> 
-> But unfortunately we're still introducing a behavior change, even it's 
-> just the report part.
-> 
-> Before the rework, read-only scrub would only report errors, no 
-> repairable/correctable checks, thus it would report csum_errors=32 and 
-> corrected_errors=0 for example.
-> 
-> Now we will report csum_errors=32 and corrected_errors=32.
-> 
-> With progs changes, it would be an improvement, but still a behavior change.
+Hi all,
 
-Sometimes we need to do such changes, I don't treat report as an ABI but
-at least the negative impact should be minimized. If the before/after
-can be recognized it's still better than printing the same information
-with a different meaning.
+my recent series to optimize the ordered_extent splitting for zoned
+devices broke nodatasum I/O - this was hidden by the fact that a normal
+xfstests run appears to only exercise nodatasum in combination with
+dev-replace, which was also broken..
+
+Changes since v1:
+ - drop the btrfs_inode_is_nodatasum helper
+ - add a new helper to just allocate a dummy ordered_sum structure
+ - more comments

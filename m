@@ -2,32 +2,32 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1089CC7EE45
-	for <linux-btrfs@archiver.kernel.org>; Thu,  8 Jun 2023 11:06:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EC939C87FE2
+	for <linux-btrfs@archiver.kernel.org>; Thu,  8 Jun 2023 11:06:35 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236440AbjFHLGc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 8 Jun 2023 07:06:32 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36088 "EHLO
+        id S236455AbjFHLGd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 8 Jun 2023 07:06:33 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35802 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236313AbjFHLGD (ORCPT
+        with ESMTP id S236304AbjFHLGD (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Jun 2023 07:06:03 -0400
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9D0FC2D7F;
-        Thu,  8 Jun 2023 04:04:36 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C8D6C3A82;
+        Thu,  8 Jun 2023 04:04:34 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=POouKGvveG/KhITgHpTZ7KYqo/RAGhaN1xR2Wciupo0=; b=EcIzCKB9dEH30RjdEI/DabgwV/
-        6ZE+m+wtvZk6OlgaAm4++oJn5FTLnCIoCYvUSixjcb5vsY48DtbyAF4PDNJ/rUJORL1vNC823Al4U
-        VogmIfb6HzJmAK7DP+LO5jRK6FEnbun1AtQpt1pPcF50L3s5FmpYxmyflfpxPuE7q7N0wzfVyrSB8
-        mNHn32tzxgxj01b+nT/bN6+F8F6UZG8I0kTELL4n7KxuHYSBQ/GlztYhMGyhnBDpN7FKP/M06AY4h
-        ARLvSfsMwWJCnbdIol8AZA7AQ8Dfm329oHy3IynpXfnam/tcuzu3MT53AqEu8DXAUCaDdLeh7/WED
-        B7h06UbQ==;
+        bh=vY4TzS76/rJ2xce2OD2MlrdJfdqE96jSdZdHV2ROwoI=; b=qtZc66QRnp6ItyMHZhuUGe4A72
+        oyK4P17k4i9Jb1HIO4XtasJgiPIm6p6crRVvWHHR0j0/9GEb6CBkbLV9MTbVP6DdY2Mfm98SLeTnT
+        9mLNMtLmQhKjNylaC1PAef4Q7FzQ0pBzRblaH4gZF769uixkLEtT9ztqGg04mcOqgLBwawZL50W7T
+        kHxO4V5h7JuAnuMXQ0G/NZW9PIiYBaQWnXrk81+Xg/nignplbrRscS+3zydxIt3mk4CjPW8jF4lFD
+        nbbYeIBITvF/v2l/ARUaUnGbAWR0CzX5NkYxlkYPZdMZ/gNvUDFfOcfgqIodGUOmv+5VAAilMRx5f
+        DB4z1kzA==;
 Received: from 2a02-8389-2341-5b80-39d3-4735-9a3c-88d8.cable.dynamic.v6.surfer.at ([2a02:8389:2341:5b80:39d3:4735:9a3c:88d8] helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
-        id 1q7DR5-0092kv-0m;
-        Thu, 08 Jun 2023 11:04:11 +0000
+        id 1q7DR0-0092dV-19;
+        Thu, 08 Jun 2023 11:04:06 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Jens Axboe <axboe@kernel.dk>
 Cc:     Richard Weinberger <richard@nod.at>,
@@ -51,9 +51,9 @@ Cc:     Richard Weinberger <richard@nod.at>,
         linux-f2fs-devel@lists.sourceforge.net,
         linux-nilfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
         linux-pm@vger.kernel.org, Hannes Reinecke <hare@suse.de>
-Subject: [PATCH 24/30] ubd: remove commented out code in ubd_open
-Date:   Thu,  8 Jun 2023 13:02:52 +0200
-Message-Id: <20230608110258.189493-25-hch@lst.de>
+Subject: [PATCH 22/30] mtd: block: use a simple bool to track open for write
+Date:   Thu,  8 Jun 2023 13:02:50 +0200
+Message-Id: <20230608110258.189493-23-hch@lst.de>
 X-Mailer: git-send-email 2.39.2
 In-Reply-To: <20230608110258.189493-1-hch@lst.de>
 References: <20230608110258.189493-1-hch@lst.de>
@@ -64,35 +64,58 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This code has been dead forever, make sure it doesn't show up in code
-searches.
+Instead of propagating the fmode_t, just use a bool to track if a mtd
+block device was opened for writing.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 Reviewed-by: Hannes Reinecke <hare@suse.de>
 Acked-by: Christian Brauner <brauner@kernel.org>
 Acked-by: Richard Weinberger <richard@nod.at>
 ---
- arch/um/drivers/ubd_kern.c | 7 -------
- 1 file changed, 7 deletions(-)
+ drivers/mtd/mtd_blkdevs.c    | 2 +-
+ drivers/mtd/mtdblock.c       | 2 +-
+ include/linux/mtd/blktrans.h | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/arch/um/drivers/ubd_kern.c b/arch/um/drivers/ubd_kern.c
-index 8b79554968addb..20c1a16199c503 100644
---- a/arch/um/drivers/ubd_kern.c
-+++ b/arch/um/drivers/ubd_kern.c
-@@ -1170,13 +1170,6 @@ static int ubd_open(struct gendisk *disk, fmode_t mode)
+diff --git a/drivers/mtd/mtd_blkdevs.c b/drivers/mtd/mtd_blkdevs.c
+index f0bb09fde95e3a..bd0b7545364349 100644
+--- a/drivers/mtd/mtd_blkdevs.c
++++ b/drivers/mtd/mtd_blkdevs.c
+@@ -208,7 +208,7 @@ static int blktrans_open(struct gendisk *disk, fmode_t mode)
+ 	ret = __get_mtd_device(dev->mtd);
+ 	if (ret)
+ 		goto error_release;
+-	dev->file_mode = mode;
++	dev->writable = mode & FMODE_WRITE;
+ 
+ unlock:
+ 	dev->open++;
+diff --git a/drivers/mtd/mtdblock.c b/drivers/mtd/mtdblock.c
+index a0a1194dc1d902..fa476fb4dffb6c 100644
+--- a/drivers/mtd/mtdblock.c
++++ b/drivers/mtd/mtdblock.c
+@@ -294,7 +294,7 @@ static void mtdblock_release(struct mtd_blktrans_dev *mbd)
+ 		 * It was the last usage. Free the cache, but only sync if
+ 		 * opened for writing.
+ 		 */
+-		if (mbd->file_mode & FMODE_WRITE)
++		if (mbd->writable)
+ 			mtd_sync(mbd->mtd);
+ 		vfree(mtdblk->cache_data);
  	}
- 	ubd_dev->count++;
- 	set_disk_ro(disk, !ubd_dev->openflags.w);
--
--	/* This should no more be needed. And it didn't work anyway to exclude
--	 * read-write remounting of filesystems.*/
--	/*if((mode & FMODE_WRITE) && !ubd_dev->openflags.w){
--	        if(--ubd_dev->count == 0) ubd_close_dev(ubd_dev);
--	        err = -EROFS;
--	}*/
- out:
- 	mutex_unlock(&ubd_mutex);
- 	return err;
+diff --git a/include/linux/mtd/blktrans.h b/include/linux/mtd/blktrans.h
+index 15cc9b95e32b52..6e471436bba556 100644
+--- a/include/linux/mtd/blktrans.h
++++ b/include/linux/mtd/blktrans.h
+@@ -34,7 +34,7 @@ struct mtd_blktrans_dev {
+ 	struct blk_mq_tag_set *tag_set;
+ 	spinlock_t queue_lock;
+ 	void *priv;
+-	fmode_t file_mode;
++	bool writable;
+ };
+ 
+ struct mtd_blktrans_ops {
 -- 
 2.39.2
 

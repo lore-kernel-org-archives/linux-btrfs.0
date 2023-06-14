@@ -2,89 +2,50 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C70DBEB64DA
-	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Jun 2023 06:59:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 104D8EB64D9
+	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Jun 2023 07:04:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S237178AbjFNG7S (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 14 Jun 2023 02:59:18 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55980 "EHLO
+        id S243175AbjFNHEP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 14 Jun 2023 03:04:15 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56932 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235013AbjFNG7R (ORCPT
+        with ESMTP id S243059AbjFNHEA (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Jun 2023 02:59:17 -0400
-Received: from mail.208.org (unknown [183.242.55.162])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7D99B1984
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Jun 2023 23:59:15 -0700 (PDT)
-Received: from mail.208.org (email.208.org [127.0.0.1])
-        by mail.208.org (Postfix) with ESMTP id 4Qgx9W3FFbzBQJYc
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Jun 2023 14:59:11 +0800 (CST)
-Authentication-Results: mail.208.org (amavisd-new); dkim=pass
-        reason="pass (just generated, assumed good)" header.d=208.org
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=208.org; h=
-        content-transfer-encoding:content-type:message-id:user-agent
-        :references:in-reply-to:subject:to:from:date:mime-version; s=
-        dkim; t=1686725951; x=1689317952; bh=kXBKIs8Nh33WqgV62LHlPZQl7XD
-        V7OtBPx3MI4EvG/Y=; b=x2fVcPwKbDjLkKswJG70cNh7HkleAINqMY3PIzH76j8
-        4foYPhc7j/9A7yVEx612j/V5oWg65n+aeTBKM6hGSZIr3/XaNeZc+79ww0FPTKP4
-        q/jLXd5+yT62/i/5Eqfp/7YehfWcaDvZYAZIXSYKFCT3dG3mFbwHJxVJacEnpnCT
-        SWLPABQhBVNHfjQVa50aUa+uia+w8jjlV5Gy3Pn/Kl95LfL21L1O6mgGeAo5EivD
-        1Xy+2LvbdkM0t0eS1Wn7c+LfqNTKvAYIEJMNy0qxlzgnPwGrWNA6OVEp++0zxOwX
-        N8n+KZxLRQ9usZsmMzXPxF8brVf4U/SMa8TsFGgNzQQ==
-X-Virus-Scanned: amavisd-new at mail.208.org
-Received: from mail.208.org ([127.0.0.1])
-        by mail.208.org (mail.208.org [127.0.0.1]) (amavisd-new, port 10026)
-        with ESMTP id cfgFVzL4oewq for <linux-btrfs@vger.kernel.org>;
-        Wed, 14 Jun 2023 14:59:11 +0800 (CST)
-Received: from localhost (email.208.org [127.0.0.1])
-        by mail.208.org (Postfix) with ESMTPSA id 4Qgx9W0mJ6zBJLB3;
-        Wed, 14 Jun 2023 14:59:11 +0800 (CST)
-MIME-Version: 1.0
-Date:   Wed, 14 Jun 2023 14:59:11 +0800
-From:   baomingtong001@208suo.com
-To:     clm@fb.com, josef@toxicpanda.com, dsterba@suse.com
-Cc:     linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: [PATCH] btrfs: remove unneeded variable from unpin_extent_cache()
-In-Reply-To: <20230614065736.22353-1-luojianhong@cdjrlc.com>
+        Wed, 14 Jun 2023 03:04:00 -0400
+Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 05EB92684;
+        Wed, 14 Jun 2023 00:03:07 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
+        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+        Content-Transfer-Encoding:Content-ID:Content-Description;
+        bh=M7NmYC/Iylm9myghHwqILim55SAUt9QrM+UZYk0eJlw=; b=yckbadJmiEAPUC27fCEyF+XdnQ
+        b1vZzxuMJahz3bckjmnEW3w0Lx6XjjBsi+j3Iebc+V+n2LVbIoMysl/e3iAW+/bKpUIfw0DVCFrp6
+        QaJBD5bk2AINEp6/aXZnt8mKdj8X87zMyvOQOa3OnBRLcYLI7pPzexYIsJ7rUMtKe0/x8IUhyGzkz
+        2KoMpHrnV+BOfrfly6xNT3TIv0UAJtysd682eAKTHPJNNTSahzLa5SjNvSv728+3C2aFXBzYI+0Xt
+        yDDYx3bVId9IR1FitbzHlGKBfnlt+yyCZt/Hh5ryFyoSFBYE34EkxQ4UtJpmUxEcO0t74mF3J0xer
+        mgFjI5JA==;
+Received: from hch by bombadil.infradead.org with local (Exim 4.96 #2 (Red Hat Linux))
+        id 1q9KWy-00AZm1-1E;
+        Wed, 14 Jun 2023 07:03:00 +0000
+Date:   Wed, 14 Jun 2023 00:03:00 -0700
+From:   Christoph Hellwig <hch@infradead.org>
+To:     baomingtong001@208suo.com
+Cc:     clm@fb.com, josef@toxicpanda.com, dsterba@suse.com,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH] btrfs: remove unneeded variable from unpin_extent_cache()
+Message-ID: <ZIlmJPgPwhvmDP+N@infradead.org>
 References: <20230614065736.22353-1-luojianhong@cdjrlc.com>
-User-Agent: Roundcube Webmail
-Message-ID: <a1c89487cc2839474f232ab140a96e3b@208suo.com>
-X-Sender: baomingtong001@208suo.com
-Content-Type: text/plain; charset=US-ASCII;
- format=flowed
-Content-Transfer-Encoding: 7bit
+ <a1c89487cc2839474f232ab140a96e3b@208suo.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <a1c89487cc2839474f232ab140a96e3b@208suo.com>
+X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-fix the following coccicheck warning:
+Looks good:
 
-fs/btrfs/extent_map.c:298:5-8: Unneeded variable: "ret". Return "0".
-
-Signed-off-by: Mingtong Bao <baomingtong001@208suo.com>
----
-  fs/btrfs/extent_map.c | 3 +--
-  1 file changed, 1 insertion(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-index 0cdb3e86f29b..f3e9aaeb9956 100644
---- a/fs/btrfs/extent_map.c
-+++ b/fs/btrfs/extent_map.c
-@@ -295,7 +295,6 @@ static void try_merge_map(struct extent_map_tree 
-*tree, struct extent_map *em)
-  int unpin_extent_cache(struct extent_map_tree *tree, u64 start, u64 
-len,
-                 u64 gen)
-  {
--    int ret = 0;
-      struct extent_map *em;
-      bool prealloc = false;
-
-@@ -327,7 +326,7 @@ int unpin_extent_cache(struct extent_map_tree *tree, 
-u64 start, u64 len,
-      free_extent_map(em);
-  out:
-      write_unlock(&tree->lock);
--    return ret;
-+    return 0;
-
-  }
+Reviewed-by: Christoph Hellwig <hch@lst.de>

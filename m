@@ -2,60 +2,75 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 20F02EB64D9
-	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Jun 2023 12:01:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4B31AEB64D9
+	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Jun 2023 12:50:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239665AbjFOMBd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 15 Jun 2023 08:01:33 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47622 "EHLO
+        id S243609AbjFOMuD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 15 Jun 2023 08:50:03 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47908 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S244403AbjFOMBJ (ORCPT
+        with ESMTP id S245355AbjFOMtt (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Jun 2023 08:01:09 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 11F227DA3
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Jun 2023 04:56:13 -0700 (PDT)
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out2.suse.de (Postfix) with ESMTP id 744D01FE0C
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Jun 2023 11:56:12 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1686830172; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=zVHx/np3JGWTujEibxc/YSiOJVv636y/9jPj8ZgQBJ8=;
-        b=G6IC8+bjNSkZxHjNSkmDpX08s4fXKzPBdh/yhOL4pfKRH62O0ZX9dKKFDJ1MtDwQCXsTSB
-        9jbyzMXrVYtBzST5fEqabkUUsKJQS9Qj3FwWkvfg7ZZfK3EWsnBuZEb4iMSHu9QTCuFj4R
-        shQZc3a3xERAfl9eDw+XnVNHfMZdwKc=
-Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 6438D2C141
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Jun 2023 11:56:12 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 4E896DA7D7; Thu, 15 Jun 2023 13:49:53 +0200 (CEST)
-From:   David Sterba <dsterba@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: Btrfs progs release 6.3.2
-Date:   Thu, 15 Jun 2023 13:49:53 +0200
-Message-Id: <20230615114953.14715-1-dsterba@suse.com>
-X-Mailer: git-send-email 2.40.0
+        Thu, 15 Jun 2023 08:49:49 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 25C262126;
+        Thu, 15 Jun 2023 05:49:49 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature RSA-PSS (2048 bits))
+        (No client certificate requested)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id AEF46625CE;
+        Thu, 15 Jun 2023 12:49:48 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 7DFCCC433C0;
+        Thu, 15 Jun 2023 12:49:47 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1686833388;
+        bh=HM9QW1ikx4EuJYt+6nVJniUFb4xtHPyQLNFeKRRhfHw=;
+        h=From:To:Cc:Subject:Date:From;
+        b=hvEow0ZHKEwQzuT8JwSEbRj3CWwl1VS3v2SVeSkGQYCjPlNwOm63B6ylLPT00IPOk
+         HgAJsVXawicgSu+UzO+s+j4/HMSIausAcbhBnDPqe4+8Mb8SZpDJT8+vLD2Hh0LN2V
+         t2Ru7eZ36grvORvPf0dAqhkf30vEY5ZdCM5oZoCSXSz8tkndU4Y/7vSr+k0FK6C0J0
+         O/J9FJQ8lOr3gYy68rL4Qq4dLJ4vnW3h6kQF7c+g9PaOIMDvukUdm/65BgF02YaTk6
+         eTJhw7uBFb0rV9LYKBXhgu87ynbcaI4KE6qWl2Qzm7mMw2b9M6jxUl5kcHDmaQysc8
+         VXa8bskFdtX2Q==
+From:   Jeff Layton <jlayton@kernel.org>
+To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>
+Cc:     linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: [PATCH] btrfs: update i_version in update_dev_time
+Date:   Thu, 15 Jun 2023 08:49:45 -0400
+Message-Id: <20230615124946.106957-1-jlayton@kernel.org>
+X-Mailer: git-send-email 2.40.1
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
+When updating the ctime, we also want to update i_version.
 
-btrfs-progs version 6.3.2 have been released. This is a bugfix release.
+Signed-off-by: Jeff Layton <jlayton@kernel.org>
+---
+ fs/btrfs/volumes.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Changelog:
+This is just something I noticed by inspection. There is probably no way
+to test this today unless you can somehow get to this inode via nfsd.
+Still, I think it's the right thing to do for consistency's sake.
 
-   * build: fix mkfs on big endian hosts
-   * mkfs: don't print changed defaults notice with --quiet
-   * scrub: fix wrong stats of processed bytes in background and foreground mode
-   * convert: actually create free-space-tree instead of v1 space cache
-   * print-tree: recognize and print CHANGING_FSID_V2 flag (for the
-     metadata_uuid change in progress)
-   * other:
-      * documentation updates
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 841e799dece5..c62570b6eb0f 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1918,7 +1918,7 @@ static void update_dev_time(const char *device_path)
+ 		return;
+ 
+ 	now = current_time(d_inode(path.dentry));
+-	inode_update_time(d_inode(path.dentry), &now, S_MTIME | S_CTIME);
++	inode_update_time(d_inode(path.dentry), &now, S_MTIME | S_CTIME | S_VERSION);
+ 	path_put(&path);
+ }
+ 
+-- 
+2.40.1
 
-Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
-Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git

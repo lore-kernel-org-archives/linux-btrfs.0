@@ -2,54 +2,54 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7634FEB64DA
-	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Jun 2023 08:56:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4520DC0015E
+	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Jun 2023 08:56:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231641AbjFVIzf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 22 Jun 2023 04:55:35 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38938 "EHLO
+        id S229870AbjFVIzi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 22 Jun 2023 04:55:38 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38360 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231559AbjFVIyx (ORCPT
+        with ESMTP id S231547AbjFVIyt (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Jun 2023 04:54:53 -0400
-Received: from mail-pl1-x62e.google.com (mail-pl1-x62e.google.com [IPv6:2607:f8b0:4864:20::62e])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8B2611735
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 Jun 2023 01:54:27 -0700 (PDT)
-Received: by mail-pl1-x62e.google.com with SMTP id d9443c01a7336-1b52418c25bso12030835ad.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 Jun 2023 01:54:27 -0700 (PDT)
+        Thu, 22 Jun 2023 04:54:49 -0400
+Received: from mail-pl1-x634.google.com (mail-pl1-x634.google.com [IPv6:2607:f8b0:4864:20::634])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BF14B210C
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 Jun 2023 01:54:43 -0700 (PDT)
+Received: by mail-pl1-x634.google.com with SMTP id d9443c01a7336-1b5079b8cb3so12587945ad.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 Jun 2023 01:54:43 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=bytedance.com; s=google; t=1687424067; x=1690016067;
+        d=bytedance.com; s=google; t=1687424083; x=1690016083;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=qIt8zXdDCaGLXCE6rKF2JMKvp8G2AK8nuTQphjV73ms=;
-        b=cC13yiK2b2HqEC2WYanx92tTHG9ibgrmYLbrgzYcUarLdydxeypI53cwuyYhjaQzJp
-         onJq4vBBmMajr1poWh86FQTLq2y1xSvoknQDzCFUhqc78tS5eFxPwQt8ueUiPUlQcGJ1
-         NoUMAyqrL7rvWv1XaJ4CPnN6K7xK1sRx+XiYPW8paVbE3vb5Wkc4IFamUXhI7GXmfwho
-         QPeLUm4YlUE0P3+vsMp1UZZv6g44Pla+Jp2DOFJOg6O2qS7xw748UZa1YIoXHuTtcdry
-         A4esVq8CH+pV+6r7bJr/mBJgAfFPjM5J1TM9ToGnDJSCePlm9yunBGrnuwbojkh7OG6q
-         rFSQ==
+        bh=TQaNNe8oXaUFeFpLguh+yca1iGAODo9pDL1sZw6pJSE=;
+        b=bLkRMM1jSdqXsEty9KLAFC9vFSq6Mb8s85EPujNxx1fG7cL+WhObUy7eJvjIIVVT27
+         Kiy5rsYxFdvQkjX/Hn7QfCF/H515sUldxTAV8THo6pKuerK5LdnjnrVU9ezaWAUUfrz8
+         rV0yX1ewF3SUu27Tytlc8UIGxdmoc2rf5KwQXmt4TN0xZENUrrBpDEpOBdYckFOGmW+/
+         CnWb/ghzLgegjrSPuJYmDsQVFRVYxO2XxU7X4C2jxwq5osf5N5i/+CYLyq1fNxhJsVCX
+         q//piIl1OJNIHjgKTj8Fx/a4slkfZ5A+zdUvxvyRJBR/16JSIqSsZUTa9z9xdPFzC7nq
+         BhVg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1687424067; x=1690016067;
+        d=1e100.net; s=20221208; t=1687424083; x=1690016083;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=qIt8zXdDCaGLXCE6rKF2JMKvp8G2AK8nuTQphjV73ms=;
-        b=dWxffXdEGINEO4XgMAGpzG/PbjIpuwih9ADYNr1B2MruW44gkMs5I9tJEIZqzQUVJU
-         F8zQDDRfk3EZ2P14xTICXfM+uOIrLf0EbdE/ep5+IcX2IrLwlwfcKtxoUFTD46gEHqKQ
-         M2drgq01FQaBwU28SiYj2poFK717gabTymYsTk1b6rubTaWcV2FzFmDmozsRVNlmvIEC
-         5EXxSjqxFsikXV3JNjRA6PgLePtvGZ/1tfFgV7O6frRJA7qJSzh8ywDytMkx6Hdu7HHu
-         kl80AdA7Te0D279GSOVcUF4O/5GEcln0oPFv64dAjqhi6KUm6b37tbPSg+5ZSkqzSRr+
-         2SCw==
-X-Gm-Message-State: AC+VfDzOXRzyB83ym6tbjvyrrnURqr/tPIablvy4OvgUqO1BoBUmreov
-        VCw6ovaeT2K1KnXTIjjJQomtwA==
-X-Google-Smtp-Source: ACHHUZ68xppE2OzenI0HziNaJw5pBbhsLnOSkDmr33RiuwGHaNU1efiGcJgTbt3uCyHHsLierWgKoQ==
-X-Received: by 2002:a17:902:d489:b0:1ae:4567:2737 with SMTP id c9-20020a170902d48900b001ae45672737mr21909019plg.2.1687424067136;
-        Thu, 22 Jun 2023 01:54:27 -0700 (PDT)
+        bh=TQaNNe8oXaUFeFpLguh+yca1iGAODo9pDL1sZw6pJSE=;
+        b=T3iyYxY25DdXFZbVA7xw+fsPwZXBFdsQUnpqUemgbLVq0XUkmM4e31HRQyizp95i/4
+         IzQ2rzSSzyWscCNSTi4bE8WDzeBD5a405+qzDMevQcNf2w8RGwW0rL8Ua/uiXvHNIxhe
+         FA4up3mK/Eo/UvMK4XMD/JFfGNpx+6YMoGWQcwIH9UcnKtqd0QQVSwFkPTeFerGgGZxJ
+         cKWJSth92RMHBeELQd9xLKktDglmOu5TyGSwe5as6OekvT888OzqzW3u4duCgMqVQKMF
+         L1s3ui6RCo7oim3NgO9MOtsv4gsFOM+yblJLcjITZ+gJvsAVZtLD38DhrA+u3+DlvYkL
+         pw+A==
+X-Gm-Message-State: AC+VfDwVtLUj/HTGlKrjuBQLprwOHWR7HalUro/mt7oihka4gbIvySLM
+        AuzZ4CWZAh/LaZ4OOlq8Jhs3GQ==
+X-Google-Smtp-Source: ACHHUZ6gH/Pv0NlMjwBsqv6k+8Uik3ghEf6lWW7kovYDQCKB++KLEA1PTcfQABA8HOR66RClg4yAXA==
+X-Received: by 2002:a17:903:32c4:b0:1b0:3cda:6351 with SMTP id i4-20020a17090332c400b001b03cda6351mr21555341plr.0.1687424083229;
+        Thu, 22 Jun 2023 01:54:43 -0700 (PDT)
 Received: from C02DW0BEMD6R.bytedance.net ([139.177.225.254])
-        by smtp.gmail.com with ESMTPSA id h2-20020a170902f7c200b001b549fce345sm4806971plw.230.2023.06.22.01.54.19
+        by smtp.gmail.com with ESMTPSA id h2-20020a170902f7c200b001b549fce345sm4806971plw.230.2023.06.22.01.54.35
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 22 Jun 2023 01:54:26 -0700 (PDT)
+        Thu, 22 Jun 2023 01:54:42 -0700 (PDT)
 From:   Qi Zheng <zhengqi.arch@bytedance.com>
 To:     akpm@linux-foundation.org, david@fromorbit.com, tkhai@ya.ru,
         vbabka@suse.cz, roman.gushchin@linux.dev, djwong@kernel.org,
@@ -62,9 +62,9 @@ Cc:     linux-kernel@vger.kernel.org, linux-mm@kvack.org,
         linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
         linux-nfs@vger.kernel.org, linux-xfs@vger.kernel.org,
         linux-btrfs@vger.kernel.org, Qi Zheng <zhengqi.arch@bytedance.com>
-Subject: [PATCH 03/29] drm/i915: dynamically allocate the i915_gem_mm shrinker
-Date:   Thu, 22 Jun 2023 16:53:09 +0800
-Message-Id: <20230622085335.77010-4-zhengqi.arch@bytedance.com>
+Subject: [PATCH 05/29] drm/panfrost: dynamically allocate the drm-panfrost shrinker
+Date:   Thu, 22 Jun 2023 16:53:11 +0800
+Message-Id: <20230622085335.77010-6-zhengqi.arch@bytedance.com>
 X-Mailer: git-send-email 2.24.3 (Apple Git-128)
 In-Reply-To: <20230622085335.77010-1-zhengqi.arch@bytedance.com>
 References: <20230622085335.77010-1-zhengqi.arch@bytedance.com>
@@ -75,97 +75,84 @@ List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 In preparation for implementing lockless slab shrink,
-we need to dynamically allocate the i915_gem_mm shrinker,
-so that it can be freed asynchronously by using kfree_rcu().
+we need to dynamically allocate the drm-panfrost shrinker,
+so that it can be freed asynchronously using kfree_rcu().
 Then it doesn't need to wait for RCU read-side critical
-section when releasing the struct drm_i915_private.
+section when releasing the struct panfrost_device.
 
 Signed-off-by: Qi Zheng <zhengqi.arch@bytedance.com>
 ---
- drivers/gpu/drm/i915/gem/i915_gem_shrinker.c | 27 ++++++++++----------
- drivers/gpu/drm/i915/i915_drv.h              |  3 ++-
- 2 files changed, 16 insertions(+), 14 deletions(-)
+ drivers/gpu/drm/panfrost/panfrost_device.h    |  2 +-
+ .../gpu/drm/panfrost/panfrost_gem_shrinker.c  | 24 ++++++++++---------
+ 2 files changed, 14 insertions(+), 12 deletions(-)
 
-diff --git a/drivers/gpu/drm/i915/gem/i915_gem_shrinker.c b/drivers/gpu/drm/i915/gem/i915_gem_shrinker.c
-index 214763942aa2..4dcdace26a08 100644
---- a/drivers/gpu/drm/i915/gem/i915_gem_shrinker.c
-+++ b/drivers/gpu/drm/i915/gem/i915_gem_shrinker.c
-@@ -284,8 +284,7 @@ unsigned long i915_gem_shrink_all(struct drm_i915_private *i915)
- static unsigned long
- i915_gem_shrinker_count(struct shrinker *shrinker, struct shrink_control *sc)
- {
--	struct drm_i915_private *i915 =
--		container_of(shrinker, struct drm_i915_private, mm.shrinker);
-+	struct drm_i915_private *i915 = shrinker->private_data;
- 	unsigned long num_objects;
- 	unsigned long count;
+diff --git a/drivers/gpu/drm/panfrost/panfrost_device.h b/drivers/gpu/drm/panfrost/panfrost_device.h
+index b0126b9fbadc..e667e5689353 100644
+--- a/drivers/gpu/drm/panfrost/panfrost_device.h
++++ b/drivers/gpu/drm/panfrost/panfrost_device.h
+@@ -118,7 +118,7 @@ struct panfrost_device {
  
-@@ -302,8 +301,8 @@ i915_gem_shrinker_count(struct shrinker *shrinker, struct shrink_control *sc)
- 	if (num_objects) {
- 		unsigned long avg = 2 * count / num_objects;
- 
--		i915->mm.shrinker.batch =
--			max((i915->mm.shrinker.batch + avg) >> 1,
-+		i915->mm.shrinker->batch =
-+			max((i915->mm.shrinker->batch + avg) >> 1,
- 			    128ul /* default SHRINK_BATCH */);
- 	}
- 
-@@ -313,8 +312,7 @@ i915_gem_shrinker_count(struct shrinker *shrinker, struct shrink_control *sc)
- static unsigned long
- i915_gem_shrinker_scan(struct shrinker *shrinker, struct shrink_control *sc)
- {
--	struct drm_i915_private *i915 =
--		container_of(shrinker, struct drm_i915_private, mm.shrinker);
-+	struct drm_i915_private *i915 = shrinker->private_data;
- 	unsigned long freed;
- 
- 	sc->nr_scanned = 0;
-@@ -422,12 +420,15 @@ i915_gem_shrinker_vmap(struct notifier_block *nb, unsigned long event, void *ptr
- 
- void i915_gem_driver_register__shrinker(struct drm_i915_private *i915)
- {
--	i915->mm.shrinker.scan_objects = i915_gem_shrinker_scan;
--	i915->mm.shrinker.count_objects = i915_gem_shrinker_count;
--	i915->mm.shrinker.seeks = DEFAULT_SEEKS;
--	i915->mm.shrinker.batch = 4096;
--	drm_WARN_ON(&i915->drm, register_shrinker(&i915->mm.shrinker,
--						  "drm-i915_gem"));
-+	i915->mm.shrinker = shrinker_alloc_and_init(i915_gem_shrinker_count,
-+						    i915_gem_shrinker_scan,
-+						    4096, DEFAULT_SEEKS, 0,
-+						    i915);
-+	if (i915->mm.shrinker &&
-+	    register_shrinker(i915->mm.shrinker, "drm-i915_gem")) {
-+		shrinker_free(i915->mm.shrinker);
-+		drm_WARN_ON(&i915->drm, 1);
-+	}
- 
- 	i915->mm.oom_notifier.notifier_call = i915_gem_shrinker_oom;
- 	drm_WARN_ON(&i915->drm, register_oom_notifier(&i915->mm.oom_notifier));
-@@ -443,7 +444,7 @@ void i915_gem_driver_unregister__shrinker(struct drm_i915_private *i915)
- 		    unregister_vmap_purge_notifier(&i915->mm.vmap_notifier));
- 	drm_WARN_ON(&i915->drm,
- 		    unregister_oom_notifier(&i915->mm.oom_notifier));
--	unregister_shrinker(&i915->mm.shrinker);
-+	unregister_and_free_shrinker(i915->mm.shrinker);
- }
- 
- void i915_gem_shrinker_taints_mutex(struct drm_i915_private *i915,
-diff --git a/drivers/gpu/drm/i915/i915_drv.h b/drivers/gpu/drm/i915/i915_drv.h
-index b4cf6f0f636d..06b04428596d 100644
---- a/drivers/gpu/drm/i915/i915_drv.h
-+++ b/drivers/gpu/drm/i915/i915_drv.h
-@@ -163,7 +163,8 @@ struct i915_gem_mm {
- 
- 	struct notifier_block oom_notifier;
- 	struct notifier_block vmap_notifier;
+ 	struct mutex shrinker_lock;
+ 	struct list_head shrinker_list;
 -	struct shrinker shrinker;
-+
 +	struct shrinker *shrinker;
  
- #ifdef CONFIG_MMU_NOTIFIER
- 	/**
+ 	struct panfrost_devfreq pfdevfreq;
+ };
+diff --git a/drivers/gpu/drm/panfrost/panfrost_gem_shrinker.c b/drivers/gpu/drm/panfrost/panfrost_gem_shrinker.c
+index bf0170782f25..2a5513eb9e1f 100644
+--- a/drivers/gpu/drm/panfrost/panfrost_gem_shrinker.c
++++ b/drivers/gpu/drm/panfrost/panfrost_gem_shrinker.c
+@@ -18,8 +18,7 @@
+ static unsigned long
+ panfrost_gem_shrinker_count(struct shrinker *shrinker, struct shrink_control *sc)
+ {
+-	struct panfrost_device *pfdev =
+-		container_of(shrinker, struct panfrost_device, shrinker);
++	struct panfrost_device *pfdev = shrinker->private_data;
+ 	struct drm_gem_shmem_object *shmem;
+ 	unsigned long count = 0;
+ 
+@@ -65,8 +64,7 @@ static bool panfrost_gem_purge(struct drm_gem_object *obj)
+ static unsigned long
+ panfrost_gem_shrinker_scan(struct shrinker *shrinker, struct shrink_control *sc)
+ {
+-	struct panfrost_device *pfdev =
+-		container_of(shrinker, struct panfrost_device, shrinker);
++	struct panfrost_device *pfdev = shrinker->private_data;
+ 	struct drm_gem_shmem_object *shmem, *tmp;
+ 	unsigned long freed = 0;
+ 
+@@ -100,10 +98,15 @@ panfrost_gem_shrinker_scan(struct shrinker *shrinker, struct shrink_control *sc)
+ void panfrost_gem_shrinker_init(struct drm_device *dev)
+ {
+ 	struct panfrost_device *pfdev = dev->dev_private;
+-	pfdev->shrinker.count_objects = panfrost_gem_shrinker_count;
+-	pfdev->shrinker.scan_objects = panfrost_gem_shrinker_scan;
+-	pfdev->shrinker.seeks = DEFAULT_SEEKS;
+-	WARN_ON(register_shrinker(&pfdev->shrinker, "drm-panfrost"));
++
++	pfdev->shrinker = shrinker_alloc_and_init(panfrost_gem_shrinker_count,
++						  panfrost_gem_shrinker_scan, 0,
++						  DEFAULT_SEEKS, 0, pfdev);
++	if (pfdev->shrinker &&
++	    register_shrinker(pfdev->shrinker, "drm-panfrost")) {
++		shrinker_free(pfdev->shrinker);
++		WARN_ON(1);
++	}
+ }
+ 
+ /**
+@@ -116,7 +119,6 @@ void panfrost_gem_shrinker_cleanup(struct drm_device *dev)
+ {
+ 	struct panfrost_device *pfdev = dev->dev_private;
+ 
+-	if (pfdev->shrinker.nr_deferred) {
+-		unregister_shrinker(&pfdev->shrinker);
+-	}
++	if (pfdev->shrinker->nr_deferred)
++		unregister_and_free_shrinker(pfdev->shrinker);
+ }
 -- 
 2.30.2
 

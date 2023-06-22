@@ -2,127 +2,150 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 11EE7EB64D8
-	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Jun 2023 02:23:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3F63DEB64D8
+	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Jun 2023 04:00:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229702AbjFVCXn convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 21 Jun 2023 22:23:43 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42106 "EHLO
+        id S229453AbjFVEAv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 22 Jun 2023 00:00:51 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33822 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229542AbjFVCXl (ORCPT
+        with ESMTP id S230478AbjFVEAW (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Jun 2023 22:23:41 -0400
-Received: from bird.elm.relay.mailchannels.net (bird.elm.relay.mailchannels.net [23.83.212.17])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3CB161A1
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Jun 2023 19:23:40 -0700 (PDT)
-X-Sender-Id: instrampxe0y3a|x-authuser|calestyo@scientia.org
-Received: from relay.mailchannels.net (localhost [127.0.0.1])
-        by relay.mailchannels.net (Postfix) with ESMTP id 5A95082087C
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 Jun 2023 02:14:03 +0000 (UTC)
-Received: from cpanel-007-fra.hostingww.com (unknown [127.0.0.6])
-        (Authenticated sender: instrampxe0y3a)
-        by relay.mailchannels.net (Postfix) with ESMTPA id 697F88212FF
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 Jun 2023 02:14:02 +0000 (UTC)
-ARC-Seal: i=1; s=arc-2022; d=mailchannels.net; t=1687400042; a=rsa-sha256;
-        cv=none;
-        b=Fhqw1QzjJFEe2NHevjlTtlTxQ+zQHYtKmSGqjJOSsuJh+RPdGtZGOfeILfB9nRfkTpzK9A
-        iXhb5TwTdSOl+n3rLo8BT+fdMRXHKTVqk6T5+Me7FfQbbeEdVSk+b0H2UGvElsrYUDM6gz
-        tP/vnlaRH/M7jLRDV99vnxnYDP2FxnDUDoM0p0dPspyhxU7WcJEiHbOzSHO6MKiDceDG2V
-        WtDIfsEnmbq4sEza5BeMcfBjMgjTgPkRX0JZUzBVK+R2lZ6iFCcuDox4kDZuc99NstVT+d
-        bG/cg7znyAZ9clINs5Dv/BNspMX1Q4clBvhM9Q6YEgxMrnFy74V5pE/e4Vjg6Q==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed;
- d=mailchannels.net;
-        s=arc-2022; t=1687400042;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding;
-        bh=lKQCvetYSZGHp9wgrW/KlmpqhYe1zSbmA061lxb5Ke4=;
-        b=X5FIpMJHEezFuMIvowFmp0EWnW1QQDnvmJjLPXG3CFI4Y4lW0CbmH6UHrfJqEZqQ/KdLcO
-        zEB5yUsFxf4Ej8wpx3tCVBmN4hl6K4SglSkmk9LBqnv3YVKeBJPSiWN8zC3t81gY+Kzjhk
-        lL+Kr1f5/zIyaQ4EvAJtAazK8Lxn/yeszovFj1emNZmzOaZ7XSMYrEmkRQeXu55tG/7LtH
-        UxVYmF5X/0F/yCs7p3AgAKchFVF5lYMFEVVWQKSVpAu5lRwGofLMO6u2knzc6cyT9rrtLH
-        00YP5kuMIuhq9yQH0w9wyJhDIfJvOrimQLSEfxnHFUgC0pcqeWoalfzm8jhW/Q==
-ARC-Authentication-Results: i=1;
-        rspamd-85899d6fcc-c749q;
-        auth=pass smtp.auth=instrampxe0y3a smtp.mailfrom=calestyo@scientia.org
-X-Sender-Id: instrampxe0y3a|x-authuser|calestyo@scientia.org
-X-MC-Relay: Neutral
-X-MailChannels-SenderId: instrampxe0y3a|x-authuser|calestyo@scientia.org
-X-MailChannels-Auth-Id: instrampxe0y3a
-X-Tangy-Language: 6175ddbc7c0c8e70_1687400042931_2030389506
-X-MC-Loop-Signature: 1687400042931:2298452461
-X-MC-Ingress-Time: 1687400042931
-Received: from cpanel-007-fra.hostingww.com (cpanel-007-fra.hostingww.com
- [3.69.87.180])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384)
-        by 100.125.42.143 (trex/6.9.1);
-        Thu, 22 Jun 2023 02:14:02 +0000
-Received: from p5090fc90.dip0.t-ipconnect.de ([80.144.252.144]:44400 helo=heisenberg.fritz.box)
-        by cpanel-007-fra.hostingww.com with esmtpsa  (TLS1.2) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-        (Exim 4.96)
-        (envelope-from <calestyo@scientia.org>)
-        id 1qC9pe-0077gz-0R
-        for linux-btrfs@vger.kernel.org;
-        Thu, 22 Jun 2023 02:14:00 +0000
-Message-ID: <3c63874fbadcfa13ca6a6178242328deb81b8cd0.camel@scientia.org>
-Subject: how to (space-)efficiently store XATTRs in btrfs?
-From:   Christoph Anton Mitterer <calestyo@scientia.org>
-To:     linux-btrfs@vger.kernel.org
-Date:   Thu, 22 Jun 2023 04:13:55 +0200
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
-User-Agent: Evolution 3.48.3-1 
+        Thu, 22 Jun 2023 00:00:22 -0400
+Received: from mail-io1-f77.google.com (mail-io1-f77.google.com [209.85.166.77])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D5EEE2101
+        for <linux-btrfs@vger.kernel.org>; Wed, 21 Jun 2023 20:58:29 -0700 (PDT)
+Received: by mail-io1-f77.google.com with SMTP id ca18e2360f4ac-77e3208a8cbso442250439f.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 21 Jun 2023 20:58:29 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1687406262; x=1689998262;
+        h=to:from:subject:message-id:date:mime-version:x-gm-message-state
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=lXPsR5iNV+ryJYqimaaO5q0mRVy7iYcqwvnGufr57vI=;
+        b=LYn6IwOKWGtIisVhk4xLvvZEPnvMhEOIF7PsIMe/1LcestTd4f58tL1usqZqIQYymS
+         krnvoiZYNYGDM7tFEbPVe1g6VZFfjNFVlbZ2/xt9UHBA4wOTTo6YBGLX6VNS3lnwiaBQ
+         nomjIa3quGtDuw8M8DjkneRQxQYNLgcrABprKCc63XLsw+qQKA8nWUmSSkYPfL1o8usO
+         qVyG42hHrfA6thHH6mYpFaCiM+dcmDuII+pAUXKHUoKKP3Al+rsw5tXkL1BgfAFfplrZ
+         WShiwMIQtBKmi+yrMmoeNLPetQ2AWkU3g26R9V56RzEolXHDC1XFipdV0/cQls3C8wXM
+         EZEQ==
+X-Gm-Message-State: AC+VfDwSEt6l5JuFcMQH+HgbFqdG1yDFe+uBTUh/CrDxT3Waxlt5alJI
+        ovk7GKUiim3bzdyZGyoSPGg5EblEDw6lAQaKU9k5gjiw3+1l
+X-Google-Smtp-Source: ACHHUZ6bwQ8anqnY/DFJMbRCWVI9OVQtPnttjSpix1pdVg8C9qZcrcQ+pOd81FeZIS15gBFYezhMOZlFi7KSB2OhYyq+KbbPZAdD
 MIME-Version: 1.0
-X-AuthUser: calestyo@scientia.org
+X-Received: by 2002:a5e:a908:0:b0:77e:4866:5c0c with SMTP id
+ c8-20020a5ea908000000b0077e48665c0cmr3656251iod.0.1687406262286; Wed, 21 Jun
+ 2023 20:57:42 -0700 (PDT)
+Date:   Wed, 21 Jun 2023 20:57:42 -0700
+X-Google-Appengine-App-Id: s~syzkaller
+X-Google-Appengine-App-Id-Alias: syzkaller
+Message-ID: <000000000000db02d205feafe2e1@google.com>
+Subject: [syzbot] [btrfs?] kernel BUG in btrfs_ioctl
+From:   syzbot <syzbot+c0f3acf145cb465426d5@syzkaller.appspotmail.com>
+To:     chris@chrisdown.name, clm@fb.com, dsterba@suse.com,
+        josef@toxicpanda.com, linux-btrfs@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
+        syzkaller-bugs@googlegroups.com
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hey.
+Hello,
+
+syzbot found the following issue on:
+
+HEAD commit:    1b29d271614a Merge tag 'staging-6.4-rc7' of git://git.kern..
+git tree:       upstream
+console output: https://syzkaller.appspot.com/x/log.txt?x=116de987280000
+kernel config:  https://syzkaller.appspot.com/x/.config?x=ac246111fb601aec
+dashboard link: https://syzkaller.appspot.com/bug?extid=c0f3acf145cb465426d5
+compiler:       gcc (Debian 10.2.1-6) 10.2.1 20210110, GNU ld (GNU Binutils for Debian) 2.35.2
+syz repro:      https://syzkaller.appspot.com/x/repro.syz?x=1061d897280000
+C reproducer:   https://syzkaller.appspot.com/x/repro.c?x=10109e6b280000
+
+Downloadable assets:
+disk image: https://storage.googleapis.com/syzbot-assets/16519d7a3fc8/disk-1b29d271.raw.xz
+vmlinux: https://storage.googleapis.com/syzbot-assets/d2cd6e97f1df/vmlinux-1b29d271.xz
+kernel image: https://storage.googleapis.com/syzbot-assets/a7781abe10c9/bzImage-1b29d271.xz
+mounted in repro: https://storage.googleapis.com/syzbot-assets/c7b9c660b7de/mount_0.gz
+
+IMPORTANT: if you fix the issue, please add the following tag to the commit:
+Reported-by: syzbot+c0f3acf145cb465426d5@syzkaller.appspotmail.com
+
+assertion failed: fs_info->exclusive_operation == BTRFS_EXCLOP_BALANCE_PAUSED, in fs/btrfs/ioctl.c:465
+------------[ cut here ]------------
+kernel BUG at fs/btrfs/messages.c:259!
+invalid opcode: 0000 [#1] PREEMPT SMP KASAN
+CPU: 1 PID: 6823 Comm: syz-executor250 Not tainted 6.4.0-rc6-syzkaller-00269-g1b29d271614a #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/27/2023
+RIP: 0010:btrfs_assertfail+0x2c/0x30 fs/btrfs/messages.c:259
+Code: 1f 00 41 55 41 89 d5 41 54 49 89 f4 55 48 89 fd e8 99 de f6 fd 44 89 e9 4c 89 e2 48 89 ee 48 c7 c7 c0 92 97 8a e8 b4 c2 da fd <0f> 0b 66 90 66 0f 1f 00 55 48 89 fd e8 73 de f6 fd 48 89 ef 5d 48
+RSP: 0018:ffffc9000ce67c10 EFLAGS: 00010286
+RAX: 0000000000000066 RBX: 0000000000000002 RCX: 0000000000000000
+RDX: 0000000000000000 RSI: ffffffff8168bd1c RDI: 0000000000000005
+RBP: ffffffff8a9626c0 R08: 0000000000000005 R09: 0000000000000000
+R10: 0000000000000001 R11: 0000000000000001 R12: ffffffff8a961a40
+R13: 00000000000001d1 R14: ffff888019fcbc00 R15: ffff888014ae0678
+FS:  00007fb611b0d700(0000) GS:ffff8880b9900000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007fb61190e000 CR3: 000000007aa80000 CR4: 0000000000350ee0
+Call Trace:
+ <TASK>
+ btrfs_exclop_balance fs/btrfs/ioctl.c:465 [inline]
+ btrfs_ioctl_balance fs/btrfs/ioctl.c:3564 [inline]
+ btrfs_ioctl+0x531e/0x5b30 fs/btrfs/ioctl.c:4632
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:870 [inline]
+ __se_sys_ioctl fs/ioctl.c:856 [inline]
+ __x64_sys_ioctl+0x197/0x210 fs/ioctl.c:856
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x39/0xb0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+RIP: 0033:0x7fb618fa5c59
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 a1 15 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007fb611b0d208 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
+RAX: ffffffffffffffda RBX: 00007fb61902f7c8 RCX: 00007fb618fa5c59
+RDX: 0000000020000540 RSI: 00000000c4009420 RDI: 0000000000000004
+RBP: 00007fb61902f7c0 R08: 00007fb611b0d700 R09: 0000000000000000
+R10: 00007fb611b0d700 R11: 0000000000000246 R12: 00007fb61902f7cc
+R13: 00007fff0865c5cf R14: 00007fb611b0d300 R15: 0000000000022000
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:btrfs_assertfail+0x2c/0x30 fs/btrfs/messages.c:259
+Code: 1f 00 41 55 41 89 d5 41 54 49 89 f4 55 48 89 fd e8 99 de f6 fd 44 89 e9 4c 89 e2 48 89 ee 48 c7 c7 c0 92 97 8a e8 b4 c2 da fd <0f> 0b 66 90 66 0f 1f 00 55 48 89 fd e8 73 de f6 fd 48 89 ef 5d 48
+RSP: 0018:ffffc9000ce67c10 EFLAGS: 00010286
+RAX: 0000000000000066 RBX: 0000000000000002 RCX: 0000000000000000
+RDX: 0000000000000000 RSI: ffffffff8168bd1c RDI: 0000000000000005
+RBP: ffffffff8a9626c0 R08: 0000000000000005 R09: 0000000000000000
+R10: 0000000000000001 R11: 0000000000000001 R12: ffffffff8a961a40
+R13: 00000000000001d1 R14: ffff888019fcbc00 R15: ffff888014ae0678
+FS:  00007fb611b0d700(0000) GS:ffff8880b9900000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007fb61190e000 CR3: 000000007aa80000 CR4: 0000000000350ee0
 
 
-I want to attach hashsums (of their data) to files as XATTRs, using
-possibly more than one hash algo.
+---
+This report is generated by a bot. It may contain errors.
+See https://goo.gl/tpsmEJ for more information about syzbot.
+syzbot engineers can be reached at syzkaller@googlegroups.com.
 
-So for a file whose content is "foo", I'd have something like:
-SHA2_512 = 0cf9180a764aba863a67b6d72f0918bc131c6772642cb2dce5a34f0a702f9470ddc2bf125c12198b1995c233c34b4afd346c54a2334c350a948a51b6e8b4e6b6
-SHA3_512 = 6f1b16155d5f87af947270b2202c9432b64ff07880e3bd104a50605bc0f949d4e4bf30cddbb257a7f3a54881429f45efdb43fbe14371f9f7f5cb16789db9175d
+syzbot will keep track of this issue. See:
+https://goo.gl/tpsmEJ#status for how to communicate with syzbot.
 
+If the bug is already fixed, let syzbot know by replying with:
+#syz fix: exact-commit-title
 
-Now I wondered which is the best way (from a btrfs PoV) to store that,
-primarily with respect to space usage, and only secondarily with
-respect to read/write speed.
+If you want syzbot to run the reproducer, reply with:
+#syz test: git://repo/address.git branch-or-commit-hash
+If you attach or paste a git patch, syzbot will apply it before testing.
 
+If you want to change bug's subsystems, reply with:
+#syz set subsystems: new-subsystem
+(See the list of subsystem names on the web dashboard)
 
-1) It seems the XATTR value can be binary, i.e. including 0x0, right?
+If the bug is a duplicate of another bug, reply with:
+#syz dup: exact-subject-of-another-report
 
-So does it make sense to convert the hash into its raw binary form, or
-is there anyway some minimum amount of storage that btrfs takes per
-XATTR, regardless of whether that's fully used or not?
-
-If so which is that? Or is that made in bunches?
-
-
-2) Similarly, is there an actual gain by using a shorter XATTR name or
-does btrfs anyway allocate larger amounts for that, regardless of how
-long the name actually is.
-
-E.g. is
-  user.SHA2_512
-actually more space efficient than e.g.
-  user.20b48846-10a2-11ee-88a2-7fd320700bfd.SHA2_512
-where I'd have prefixed a UUID to (hopefully) avoid naming collisions.
-
-
-3) Would I gain any advantage by placing multiple hashes in one XATTR,
-instead of one XATTR per algo?
-I mean I could do e.g.
-  user.SHA2_512 = "0cf91…"
-  user.SHA3_512 = "6f1b1…"
-or all in one:
-  user.hashes = "SHA2_512=0cf91…,SHA3_512=6f1b1…"
-
-
-Thanks,
-Chris.
+If you want to undo deduplication, reply with:
+#syz undup

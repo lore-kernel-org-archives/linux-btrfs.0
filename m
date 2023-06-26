@@ -2,104 +2,102 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id ADE1CEB64DC
-	for <linux-btrfs@archiver.kernel.org>; Sun, 25 Jun 2023 15:59:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4ED41EB64DD
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Jun 2023 01:54:21 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229785AbjFYP7w (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 25 Jun 2023 11:59:52 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46516 "EHLO
+        id S229906AbjFZByT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 25 Jun 2023 21:54:19 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58942 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229689AbjFYP7v (ORCPT
+        with ESMTP id S229452AbjFZByS (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 25 Jun 2023 11:59:51 -0400
-Received: from mail-wr1-x435.google.com (mail-wr1-x435.google.com [IPv6:2a00:1450:4864:20::435])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 562DBF3;
-        Sun, 25 Jun 2023 08:59:50 -0700 (PDT)
-Received: by mail-wr1-x435.google.com with SMTP id ffacd0b85a97d-31297125334so2022256f8f.0;
-        Sun, 25 Jun 2023 08:59:50 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20221208; t=1687708789; x=1690300789;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
-        bh=gHlFiZs5tFIFJlBDQPU4DvtUwczU5PH/nPUQB8u9ynA=;
-        b=NBsJvYr5y6vAfQybS4O4IodHezeegPVCM5raoQdCvB7dcrK1BQAcOQvwjyWUYBrZ17
-         AUiE9S01t2WeoDVZkaLSdZFzSJRjl+r0rBQ8USOw0/UQZkBZ8Q0v04F45iJ3vCodobEM
-         FrIwejpF5rzxJEUp5trugER+zOLjsQS/ZEDdrgFjPXpdtzcD89oUWXcUwLREyz6aW7hI
-         WzqReUcp4OKSVbYN3BDTiPO5lakVCGCq3fcpX/wMIB13tIuoI7q8msYTOc+kgTfAMD7K
-         VW68atjGBC2c3mv8ABYPFEnZwVRHkMfTxpINat8f+thxSuH4tv+akpSAfrHcpeEhf7tE
-         xAiQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1687708789; x=1690300789;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=gHlFiZs5tFIFJlBDQPU4DvtUwczU5PH/nPUQB8u9ynA=;
-        b=Gm4IARaQC5u51gQovaE2BedVShWNGh8P+eiE11Q0PiQzs8RcHjs+uUKRkj/t8dK1ST
-         m4ui5FC/icP6FRYYrEiEOBmSaFcMuyYldU4zRXQe7Z2+DcQ3s2Hj27HXXWGdyMSwkBYP
-         Y1nqrtR19d+kcdR7PhxCBtT9qkMCkukIWi0p0MaaCWXADQZVFQ18H0/m9/UHFimI6m7Y
-         aZ+uWO5sN6WwDC1tGbNCdTjhpd/LACtKyehkMBnmBoFJbmHxEUjUkTuWzzpvEmQ3XreH
-         BQBPGlRGHQg0qjmn9o6lyRZIfaBl6W4PrDLQbF8bA0L87T+UCfp3vrnWKGdNreITJ8z3
-         KvDw==
-X-Gm-Message-State: AC+VfDx9uz7Iqo4XuWVe5GyiXhUwdn5lCc5vb2NZgfiRG58hwrWymW5O
-        /rbHswfsCq33+qqYNLjPjXI=
-X-Google-Smtp-Source: ACHHUZ5ATvmUoOCSXJ8ImWBo56+GVeVF8ADqex2ejrdSs3fcxjADfw315UCi5HrmFvgrUkSMwjbVuw==
-X-Received: by 2002:a5d:6dce:0:b0:30a:e63b:950 with SMTP id d14-20020a5d6dce000000b0030ae63b0950mr29180323wrz.31.1687708788471;
-        Sun, 25 Jun 2023 08:59:48 -0700 (PDT)
-Received: from localhost ([2a00:23c5:dc8c:8701:1663:9a35:5a7b:1d76])
-        by smtp.gmail.com with ESMTPSA id i13-20020a5d522d000000b003119633ecb5sm4891836wra.88.2023.06.25.08.59.47
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sun, 25 Jun 2023 08:59:47 -0700 (PDT)
-Date:   Sun, 25 Jun 2023 16:59:46 +0100
-From:   Lorenzo Stoakes <lstoakes@gmail.com>
-To:     Forza <forza@tnonline.net>
-Cc:     Andrew Morton <akpm@linux-foundation.org>,
-        Vlastimil Babka <vbabka@suse.cz>, linux-mm@kvack.org,
-        linux-kernel@vger.kernel.org, Baoquan He <bhe@redhat.com>,
-        Uladzislau Rezki <urezki@gmail.com>,
-        Christoph Hellwig <hch@infradead.org>,
-        Bagas Sanjaya <bagasdotme@gmail.com>,
-        Linux btrfs <linux-btrfs@vger.kernel.org>,
-        Linux Regressions <regressions@lists.linux.dev>,
-        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>, a1bert@atlas.cz,
-        Linus Torvalds <torvalds@linux-foundation.org>,
-        Song Liu <song@kernel.org>,
-        Nicholas Piggin <npiggin@gmail.com>,
-        Matthew Wilcox <willy@infradead.org>
-Subject: Re: [PATCH] mm/vmalloc: do not output a spurious warning when huge
- vmalloc() fails
-Message-ID: <e3ce1745-0a3e-4c9d-955e-2a0ce20422cf@lucifer.local>
-References: <20230605201107.83298-1-lstoakes@gmail.com>
- <cd47d6ac-69ce-0315-dd45-2cb9dce57f36@suse.cz>
- <f6b42d95-09f1-48d6-8274-e6145febb31d@lucifer.local>
- <2a6fa9d6-53b8-93cd-16c8-309ce2b8e3ac@suse.cz>
- <20230607093316.cdf60df195915fa9d38067ea@linux-foundation.org>
- <11b893e.86425ef4.188f33688b8@tnonline.net>
+        Sun, 25 Jun 2023 21:54:18 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D4ED5196;
+        Sun, 25 Jun 2023 18:54:17 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature RSA-PSS (2048 bits))
+        (No client certificate requested)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 71D1A60C28;
+        Mon, 26 Jun 2023 01:54:17 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 93038C433C0;
+        Mon, 26 Jun 2023 01:54:16 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1687744456;
+        bh=5oeqP+MWXjh5TRebKQMUswKua+sGjBsaB33i76j0bxo=;
+        h=Date:From:To:Cc:Subject:From;
+        b=f6LGIex6z5K0RASvaouow8y8XMHsFXoUr7TZ2cVN0jTQhZ5CbZsJSJjkPCK82EaXb
+         WHfnKAp5TSnsepIqO1p3s1SAmJiku6aewaNrrd87VPbThmmT/S4Ga01IoS9OjHJE20
+         B09EP3Cz4HjqEmXElkhJYpdF4Jqe8u7PXQ1pMvxTa/05AdzLs4jvhT8Rb1yFzGsq2U
+         7mBc9xEZTHIDlv+nXA0qT+x/WEWAnFQiD+5AzmtJ9OX4B/+/eox2gxUj/O0jY3Ga6u
+         9g7sm5ShVE5ovqJDmng6IGODDnQIWY567sJ5ydCm5DMuhMP0bA131SUwh4MGJNFNTU
+         FuhaSQE4Vft2Q==
+Date:   Sun, 25 Jun 2023 18:54:15 -0700
+From:   Eric Biggers <ebiggers@kernel.org>
+To:     Linus Torvalds <torvalds@linux-foundation.org>
+Cc:     fsverity@lists.linux.dev, linux-fsdevel@vger.kernel.org,
+        linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        Theodore Ts'o <tytso@mit.edu>,
+        Alexander Larsson <alexl@redhat.com>
+Subject: [GIT PULL] fsverity updates for 6.5
+Message-ID: <20230626015415.GB1024@sol.localdomain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <11b893e.86425ef4.188f33688b8@tnonline.net>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sun, Jun 25, 2023 at 05:40:17PM +0200, Forza wrote:
->
->
-> ---- From: Andrew Morton <akpm@linux-foundation.org> -- Sent: 2023-06-07 - 18:33 ----
->
-> > On Wed, 7 Jun 2023 10:58:40 +0200 Vlastimil Babka <vbabka@suse.cz> wrote:
-> >
-> >> I would really suggest moving the fix to
-> >> mm-hotfixes instead of mm-unstable, and
-> >>
-> >> Fixes: 80b1d8fdfad1 ("mm: vmalloc: correct use of __GFP_NOWARN mask in __vmalloc_area_node()")
-> >> Cc: <stable@vger.kernel.org>
-> >
-> > I've made those changes.
->
-> Did the chabge go into 6.3 stable? I saw these issues with kernels 6.3.0-6 3.7. I now updated to 6.3.9 and have had no more warnings since.
+The following changes since commit f1fcbaa18b28dec10281551dfe6ed3a3ed80e3d6:
 
-Yeah, got the notification from Greg's script that it landed in 6.3 stable.
+  Linux 6.4-rc2 (2023-05-14 12:51:40 -0700)
 
->
+are available in the Git repository at:
+
+  https://git.kernel.org/pub/scm/fs/fsverity/linux.git tags/fsverity-for-linus
+
+for you to fetch changes up to 672d6ef4c775cfcd2e00172e23df34e77e495e85:
+
+  fsverity: improve documentation for builtin signature support (2023-06-20 22:47:55 -0700)
+
+----------------------------------------------------------------
+
+Several updates for fs/verity/:
+
+- Do all hashing with the shash API instead of with the ahash API.  This
+  simplifies the code and reduces API overhead.  It should also make
+  things slightly easier for XFS's upcoming support for fsverity.  It
+  does drop fsverity's support for off-CPU hash accelerators, but that
+  support was incomplete and not known to be used.
+
+- Update and export fsverity_get_digest() so that it's ready for
+  overlayfs's upcoming support for fsverity checking of lowerdata.
+
+- Improve the documentation for builtin signature support.
+
+- Fix a bug in the large folio support.
+
+----------------------------------------------------------------
+Eric Biggers (6):
+      fsverity: use shash API instead of ahash API
+      fsverity: constify fsverity_hash_alg
+      fsverity: don't use bio_first_page_all() in fsverity_verify_bio()
+      fsverity: simplify error handling in verify_data_block()
+      fsverity: rework fsverity_get_digest() again
+      fsverity: improve documentation for builtin signature support
+
+ Documentation/filesystems/fsverity.rst | 192 +++++++++++++++++++++------------
+ fs/verity/Kconfig                      |  16 +--
+ fs/verity/enable.c                     |  21 ++--
+ fs/verity/fsverity_private.h           |  23 ++--
+ fs/verity/hash_algs.c                  | 139 +++++-------------------
+ fs/verity/measure.c                    |  37 +++++--
+ fs/verity/open.c                       |  12 +--
+ fs/verity/read_metadata.c              |   4 +-
+ fs/verity/signature.c                  |   8 ++
+ fs/verity/verify.c                     | 164 +++++++++++-----------------
+ include/linux/fsverity.h               |  14 ++-
+ security/integrity/ima/ima_api.c       |  31 +++---
+ 12 files changed, 299 insertions(+), 362 deletions(-)

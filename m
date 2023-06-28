@@ -2,116 +2,181 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B8AEAEB64DA
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Jun 2023 08:32:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A2CA4EB64D7
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Jun 2023 08:33:00 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233467AbjF1Ic2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Jun 2023 04:32:28 -0400
-Received: from dfw.source.kernel.org ([139.178.84.217]:37906 "EHLO
-        dfw.source.kernel.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234811AbjF1I3t (ORCPT
+        id S234395AbjF1Ic4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Jun 2023 04:32:56 -0400
+Received: from smtp-out1.suse.de ([195.135.220.28]:36386 "EHLO
+        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S235256AbjF1Iaa (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Jun 2023 04:29:49 -0400
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        Wed, 28 Jun 2023 04:30:30 -0400
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature RSA-PSS (2048 bits))
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id E000161314
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Jun 2023 06:03:24 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id D7387C433C8;
-        Wed, 28 Jun 2023 06:03:23 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1687932204;
-        bh=lnvqXGzT2nTwK1jMxNamuzxXiolwH7ESU8C2/uhXFfo=;
-        h=Date:Subject:To:References:From:In-Reply-To:From;
-        b=qu1xW/P7zak5utQj0qaEYN64yxt07RgdhGYyn4kKnqSt0bEuKvs+VdBb3+VmkigU0
-         ki4AElY4Y+ZdEYgz49HgN0rsTSjdYnKZF1NZsiZKzQYKEZnpuN7ZwocPg6KvotaoI9
-         DJAuuWj4H6JwmtAlY7kWklaGLaDeeXByYwNrVOghqMXIWb61NirZwd3Am82cCG3cGf
-         8o90khTZ5enmHHxtb/CUBEbxRRhzsOHpQxKQefC9cTfN1z8P0u+Mcu/EWrqtzQknC+
-         GwDlcgkSqya+gVk96CJzh/LKJV+NPBoxcyMWvj1mFQzyQpxSdLD9MovUtuAoKMAoQz
-         LGV3G2YXKJPUQ==
-Message-ID: <203c7896-0e57-ce3a-5ff0-2bc3a7ab7bb3@kernel.org>
-Date:   Wed, 28 Jun 2023 15:03:22 +0900
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 895A32186F
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Jun 2023 04:53:08 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1687927988; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=1xYXot8ZqKa/aNr1CJf4hXNg6w4HIvcM7GvFm1PfaT8=;
+        b=J+LyNU1wcsd25InNWzwc6H3dJ0dD1qBzpfKJDYx7gN2GpW6yeLg7xEPO939KnS0VYMg+bb
+        ACLPoRlB7zaIuF2NgzwGt3IGwce8ydK2eBGNnA1vQsWsLaSWTZP5S896VsqZUJ7HevdsrG
+        Zqaiy3QDu+PJFDNOMYLMCyu2xOKTXtY=
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id DE0A513483
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Jun 2023 04:53:07 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id RK+WKbO8m2QecwAAMHmgww
+        (envelope-from <wqu@suse.com>)
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Jun 2023 04:53:07 +0000
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH v2] btrfs: avoid duplicated chunk lookup during btrfs_map_block()
+Date:   Wed, 28 Jun 2023 12:52:50 +0800
+Message-ID: <39b29e7b3b11bf19eb5ac4ce3276c6e218b59e21.1687927850.git.wqu@suse.com>
+X-Mailer: git-send-email 2.41.0
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.12.0
-Subject: Re: [PATCH] btrfs: zoned: do not enable async discard
-To:     Naohiro Aota <naohiro.aota@wdc.com>, linux-btrfs@vger.kernel.org
-References: <87c887259bfb49878be9990f4dd559ee90d273ec.1687913519.git.naohiro.aota@wdc.com>
-Content-Language: en-US
-From:   Damien Le Moal <dlemoal@kernel.org>
-Organization: Western Digital Research
-In-Reply-To: <87c887259bfb49878be9990f4dd559ee90d273ec.1687913519.git.naohiro.aota@wdc.com>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 6/28/23 09:53, Naohiro Aota wrote:
-> The zoned mode need to reset a zone before using it. We rely on btrfs's
-> original discard functionality (discarding unused block group range) to do
-> the resetting.
-> 
-> While the commit 63a7cb130718 ("btrfs: auto enable discard=async when
-> possible") made the discard done in an async manner, a zoned reset do not
-> need to be async, as it is fast enough.
-> 
-> Even worth, delaying zone rests prevents using those zones again. So, let's
-> disable async discard on the zoned mode.
-> 
-> Fixes: 63a7cb130718 ("btrfs: auto enable discard=async when possible")
-> CC: stable@vger.kernel.org # 6.3+
-> Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
-> ---
->  fs/btrfs/disk-io.c | 7 ++++++-
->  fs/btrfs/zoned.c   | 5 +++++
->  2 files changed, 11 insertions(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 7513388b0567..9b9914e5f03d 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -3438,11 +3438,16 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
->  	 * For devices supporting discard turn on discard=async automatically,
->  	 * unless it's already set or disabled. This could be turned off by
->  	 * nodiscard for the same mount.
-> +	 *
-> +	 * The zoned mode piggy backs on the discard functionality for
-> +	 * resetting a zone. There is no reason to delay the zone reset as it is
-> +	 * fast enough. So, do not enable async discard for zoned mode.
->  	 */
->  	if (!(btrfs_test_opt(fs_info, DISCARD_SYNC) ||
->  	      btrfs_test_opt(fs_info, DISCARD_ASYNC) ||
->  	      btrfs_test_opt(fs_info, NODISCARD)) &&
-> -	    fs_info->fs_devices->discardable) {
-> +	    fs_info->fs_devices->discardable &&
-> +	    !btrfs_is_zoned(fs_info)) {
->  		btrfs_set_and_info(fs_info, DISCARD_ASYNC,
->  				   "auto enabling async discard");
->  	}
-> diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-> index 85b8b332add9..56baac950f11 100644
-> --- a/fs/btrfs/zoned.c
-> +++ b/fs/btrfs/zoned.c
-> @@ -805,6 +805,11 @@ int btrfs_check_mountopts_zoned(struct btrfs_fs_info *info)
->  		return -EINVAL;
->  	}
->  
-> +	if (btrfs_test_opt(info, DISCARD_ASYNC)) {
-> +		btrfs_err(info, "zoned: async discard not supported");
-> +		return -EINVAL;
+[INEFFICIENCY]
+Inside btrfs_map_block() we will call btrfs_get_chunk_map() twice in a
+row:
 
-This is an option, so instead of returning an error, why not clearing it with a
-warning message only ?
+  btrfs_map_block()
+  |- btrfs_num_copies()
+  |  \- btrfs_get_chunk_map()
+  \- btrfs_get_chunk_map()
 
-> +	}
-> +
->  	return 0;
->  }
->  
+This is duplicated and has no special benefit.
 
+[ENHANCEMENT]
+Instead of the duplicated btrfs_get_chunk_map() calls, just calculate
+the number of copies using the same extent map.
+
+This would reduce one unnecessary rb tree lookup for the pretty hot
+btrfs_map_block().
+
+Also to reduce the duplicated code on calculating the number of mirrors
+on RAID56, extract a helper, map_num_copies(), to do the extra RAID56
+related checks.
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+Changelog:
+v2:
+- Remove @num_copies variables
+  Use map_num_copies() on @map directly.
+
+- Add a new @out_free_em label to error out
+---
+ fs/btrfs/volumes.c | 49 +++++++++++++++++++++++-----------------------
+ 1 file changed, 24 insertions(+), 25 deletions(-)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index a536d0e0e055..512afe691c30 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -5758,11 +5758,25 @@ void btrfs_mapping_tree_free(struct extent_map_tree *tree)
+ 	}
+ }
+ 
++static int map_num_copies(struct map_lookup *map)
++{
++	if (map->type & BTRFS_BLOCK_GROUP_RAID5)
++		return 2;
++	if (map->type & BTRFS_BLOCK_GROUP_RAID6)
++		/*
++		 * There could be two corrupted data stripes, we need
++		 * to loop retry in order to rebuild the correct data.
++		 *
++		 * Fail a stripe at a time on every retry except the
++		 * stripe under reconstruction.
++		 */
++		return map->num_stripes;
++	return btrfs_bg_type_to_factor(map->type);
++}
++
+ int btrfs_num_copies(struct btrfs_fs_info *fs_info, u64 logical, u64 len)
+ {
+ 	struct extent_map *em;
+-	struct map_lookup *map;
+-	enum btrfs_raid_types index;
+ 	int ret = 1;
+ 
+ 	em = btrfs_get_chunk_map(fs_info, logical, len);
+@@ -5775,23 +5789,7 @@ int btrfs_num_copies(struct btrfs_fs_info *fs_info, u64 logical, u64 len)
+ 		 */
+ 		return 1;
+ 
+-	map = em->map_lookup;
+-	index = btrfs_bg_flags_to_raid_index(map->type);
+-
+-	/* Non-RAID56, use their ncopies from btrfs_raid_array. */
+-	if (!(map->type & BTRFS_BLOCK_GROUP_RAID56_MASK))
+-		ret = btrfs_raid_array[index].ncopies;
+-	else if (map->type & BTRFS_BLOCK_GROUP_RAID5)
+-		ret = 2;
+-	else if (map->type & BTRFS_BLOCK_GROUP_RAID6)
+-		/*
+-		 * There could be two corrupted data stripes, we need
+-		 * to loop retry in order to rebuild the correct data.
+-		 *
+-		 * Fail a stripe at a time on every retry except the
+-		 * stripe under reconstruction.
+-		 */
+-		ret = map->num_stripes;
++	ret = map_num_copies(em->map_lookup);
+ 	free_extent_map(em);
+ 	return ret;
+ }
+@@ -6246,7 +6244,6 @@ int btrfs_map_block(struct btrfs_fs_info *fs_info, enum btrfs_map_op op,
+ 	int ret = 0;
+ 	int mirror_num = (mirror_num_ret ? *mirror_num_ret : 0);
+ 	int num_stripes;
+-	int num_copies;
+ 	int max_errors = 0;
+ 	struct btrfs_io_context *bioc = NULL;
+ 	struct btrfs_dev_replace *dev_replace = &fs_info->dev_replace;
+@@ -6257,15 +6254,16 @@ int btrfs_map_block(struct btrfs_fs_info *fs_info, enum btrfs_map_op op,
+ 
+ 	ASSERT(bioc_ret);
+ 
+-	num_copies = btrfs_num_copies(fs_info, logical, fs_info->sectorsize);
+-	if (mirror_num > num_copies)
+-		return -EINVAL;
+-
+ 	em = btrfs_get_chunk_map(fs_info, logical, *length);
+ 	if (IS_ERR(em))
+ 		return PTR_ERR(em);
+-
+ 	map = em->map_lookup;
++
++	if (mirror_num > map_num_copies(map)) {
++		ret = -EINVAL;
++		goto out_free_em;
++	}
++
+ 	data_stripes = nr_data_stripes(map);
+ 
+ 	map_offset = logical - em->start;
+@@ -6474,6 +6472,7 @@ int btrfs_map_block(struct btrfs_fs_info *fs_info, enum btrfs_map_op op,
+ 		/* Unlock and let waiting writers proceed */
+ 		up_read(&dev_replace->rwsem);
+ 	}
++out_free_em:
+ 	free_extent_map(em);
+ 	return ret;
+ }
 -- 
-Damien Le Moal
-Western Digital Research
+2.41.0
 

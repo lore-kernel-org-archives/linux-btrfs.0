@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B17AEC001DB
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Jun 2023 15:32:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3AFBBEB64DA
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Jun 2023 15:32:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232294AbjF1Pcc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Jun 2023 11:32:32 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60850 "EHLO
+        id S232305AbjF1Pcg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Jun 2023 11:32:36 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60884 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232218AbjF1PcR (ORCPT
+        with ESMTP id S231268AbjF1Pca (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Jun 2023 11:32:17 -0400
+        Wed, 28 Jun 2023 11:32:30 -0400
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5E8052979;
-        Wed, 28 Jun 2023 08:32:16 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 31BAC268F;
+        Wed, 28 Jun 2023 08:32:29 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=CRVWOZ/K4h6govUCQeEsnFecA9gGv9ULTyS6OF67+D0=; b=2vEsS1XMlo1E0JwCfcfvNaQR/8
-        58MQ97e/KdjXSK3sqPoG6CfyjNsyBvc67/ju4mSkVIT5dtvmv/eiyyF3AAx3Hcj3VoWQkknBS+xx8
-        Tcx1kjsHeBYL1FnXSqBCw1QmhEbecEbRk49dgKBO4goEQ+f0aU2oQM2sXjjoel9mvNJv44JxL9fTD
-        Fgf4ROcIivp51fC+y/kBmXH8MCtI8W+O1hDPio+srXngH7epQGxd8SUdfU4lVQwU2Z0P6gJvqLtBI
-        jPpbkvbrKYTbhE3v92bfsW1ldEd/qBWMo8JqUlLaRsfVfKaUUFmr5bPKvt5EyseyZisYpvZ7aT9AT
-        HfYMt0gg==;
+        bh=PJKul60FOrF0f6XpU9hW903HmzmLSrQrksohee9v4z0=; b=X6RDIoN45khiqil7iJ0SnHv1Aw
+        w5x9uGpEx6EWZTE2nfb5niCwAg0r4uy6bOfJLle0uEstoRP/zxZ5Rhqw8Rmsoktg4SlRuPlx7MKMF
+        hsbeQXS1Gr+9uZG5DNj8fmbNxNYd6Lraq4FarhpsubSB/FqJ28XedqTFP2tKG7LVOM1VtfU0AzkwZ
+        3j4l+fmvGibllJUFR/KOI0v760gzvfHfRXVPzmgIxlb7UKUexM2/SkE816KNWWzrVlGAUzzuoYVmh
+        QDRr4iIdlMcGgERqgeKe5Eaw2xkZrHdWhIsgQuOUL+JHj6dmd6D1M0NZQXktRxKedPQHv0KvEvImz
+        a7zruMoQ==;
 Received: from 2a02-8389-2341-5b80-39d3-4735-9a3c-88d8.cable.dynamic.v6.surfer.at ([2a02:8389:2341:5b80:39d3:4735:9a3c:88d8] helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
-        id 1qEX9R-00G06r-2b;
-        Wed, 28 Jun 2023 15:32:14 +0000
+        id 1qEX9e-00G08o-2p;
+        Wed, 28 Jun 2023 15:32:27 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>
 Cc:     Matthew Wilcox <willy@infradead.org>, linux-btrfs@vger.kernel.org,
         linux-fsdevel@vger.kernel.org
-Subject: [PATCH 08/23] btrfs: remove the return value from extent_write_locked_range
-Date:   Wed, 28 Jun 2023 17:31:29 +0200
-Message-Id: <20230628153144.22834-9-hch@lst.de>
+Subject: [PATCH 12/23] btrfs: don't clear async_chunk->inode in async_cow_start
+Date:   Wed, 28 Jun 2023 17:31:33 +0200
+Message-Id: <20230628153144.22834-13-hch@lst.de>
 X-Mailer: git-send-email 2.39.2
 In-Reply-To: <20230628153144.22834-1-hch@lst.de>
 References: <20230628153144.22834-1-hch@lst.de>
@@ -47,71 +47,101 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The return value from extent_write_locked_range is ignored, and that's
-fine because the error reporting happens through the mapping and
-ordered_extent.
+Now that the ->inode check isn't needed in submit_compressed_extents
+any more, there is no reason to clear the field early.  Always keep
+the inode around until the work item is finished and remove the special
+casing, and the counting of compressed extents in compress_file_range.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- fs/btrfs/extent_io.c | 13 +++----------
- fs/btrfs/extent_io.h |  4 ++--
- 2 files changed, 5 insertions(+), 12 deletions(-)
+ fs/btrfs/inode.c | 23 +++++------------------
+ 1 file changed, 5 insertions(+), 18 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 5a4f5fc09a2354..e32ec41bade681 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2152,11 +2152,10 @@ static int extent_write_cache_pages(struct address_space *mapping,
-  * already been ran (aka, ordered extent inserted) and all pages are still
-  * locked.
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 6197b33fb0b23b..f8fbcd359a304d 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -832,7 +832,7 @@ static inline void inode_should_defrag(struct btrfs_inode *inode,
+  * are written in the same order that the flusher thread sent them
+  * down.
   */
--int extent_write_locked_range(struct inode *inode, u64 start, u64 end,
--			      struct writeback_control *wbc)
-+void extent_write_locked_range(struct inode *inode, u64 start, u64 end,
-+			       struct writeback_control *wbc)
+-static noinline int compress_file_range(struct async_chunk *async_chunk)
++static noinline void compress_file_range(struct async_chunk *async_chunk)
  {
- 	bool found_error = false;
--	int first_error = 0;
- 	int ret = 0;
- 	struct address_space *mapping = inode->i_mapping;
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
-@@ -2206,20 +2205,14 @@ int extent_write_locked_range(struct inode *inode, u64 start, u64 end,
- 			mapping_set_error(page->mapping, ret);
+ 	struct btrfs_inode *inode = async_chunk->inode;
+ 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+@@ -850,7 +850,6 @@ static noinline int compress_file_range(struct async_chunk *async_chunk)
+ 	int i;
+ 	int will_compress;
+ 	int compress_type = fs_info->compress_type;
+-	int compressed_extents = 0;
+ 	int redirty = 0;
+ 
+ 	inode_should_defrag(inode, start, end, end - start + 1, SZ_16K);
+@@ -1027,7 +1026,7 @@ static noinline int compress_file_range(struct async_chunk *async_chunk)
+ 				}
+ 				kfree(pages);
+ 			}
+-			return 0;
++			return;
  		}
- 		btrfs_page_unlock_writer(fs_info, page, cur, cur_len);
--		if (ret < 0) {
-+		if (ret < 0)
- 			found_error = true;
--			first_error = ret;
--		}
- next_page:
- 		put_page(page);
- 		cur = cur_end + 1;
  	}
  
- 	submit_write_bio(&bio_ctrl, found_error ? ret : 0);
+@@ -1046,8 +1045,6 @@ static noinline int compress_file_range(struct async_chunk *async_chunk)
+ 		 */
+ 		total_in = round_up(total_in, fs_info->sectorsize);
+ 		if (total_compressed + blocksize <= total_in) {
+-			compressed_extents++;
 -
--	if (found_error)
--		return first_error;
--	return ret;
+ 			/*
+ 			 * The async work queues will take care of doing actual
+ 			 * allocation on disk for these compressed pages, and
+@@ -1063,7 +1060,7 @@ static noinline int compress_file_range(struct async_chunk *async_chunk)
+ 				cond_resched();
+ 				goto again;
+ 			}
+-			return compressed_extents;
++			return;
+ 		}
+ 	}
+ 	if (pages) {
+@@ -1104,9 +1101,6 @@ static noinline int compress_file_range(struct async_chunk *async_chunk)
+ 		extent_range_redirty_for_io(&inode->vfs_inode, start, end);
+ 	add_async_extent(async_chunk, start, end - start + 1, 0, NULL, 0,
+ 			 BTRFS_COMPRESS_NONE);
+-	compressed_extents++;
+-
+-	return compressed_extents;
  }
  
- int extent_writepages(struct address_space *mapping,
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 8d11e17c0be9fa..0312022bbf4b7a 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -177,8 +177,8 @@ int try_release_extent_mapping(struct page *page, gfp_t mask);
- int try_release_extent_buffer(struct page *page);
+ static void free_async_extent_pages(struct async_extent *async_extent)
+@@ -1659,15 +1653,9 @@ static noinline int cow_file_range(struct btrfs_inode *inode,
+ static noinline void async_cow_start(struct btrfs_work *work)
+ {
+ 	struct async_chunk *async_chunk;
+-	int compressed_extents;
  
- int btrfs_read_folio(struct file *file, struct folio *folio);
--int extent_write_locked_range(struct inode *inode, u64 start, u64 end,
--			      struct writeback_control *wbc);
-+void extent_write_locked_range(struct inode *inode, u64 start, u64 end,
-+			       struct writeback_control *wbc);
- int extent_writepages(struct address_space *mapping,
- 		      struct writeback_control *wbc);
- int btree_write_cache_pages(struct address_space *mapping,
+ 	async_chunk = container_of(work, struct async_chunk, work);
+-
+-	compressed_extents = compress_file_range(async_chunk);
+-	if (compressed_extents == 0) {
+-		btrfs_add_delayed_iput(async_chunk->inode);
+-		async_chunk->inode = NULL;
+-	}
++	compress_file_range(async_chunk);
+ }
+ 
+ /*
+@@ -1704,8 +1692,7 @@ static noinline void async_cow_free(struct btrfs_work *work)
+ 	struct async_cow *async_cow;
+ 
+ 	async_chunk = container_of(work, struct async_chunk, work);
+-	if (async_chunk->inode)
+-		btrfs_add_delayed_iput(async_chunk->inode);
++	btrfs_add_delayed_iput(async_chunk->inode);
+ 	if (async_chunk->blkcg_css)
+ 		css_put(async_chunk->blkcg_css);
+ 
 -- 
 2.39.2
 

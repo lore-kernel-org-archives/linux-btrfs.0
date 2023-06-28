@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 93FD9EB64DC
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Jun 2023 15:33:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D1B76EB64D7
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Jun 2023 15:33:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232419AbjF1Pdg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Jun 2023 11:33:36 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60958 "EHLO
+        id S232461AbjF1Pdi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Jun 2023 11:33:38 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:32790 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232421AbjF1PdA (ORCPT
+        with ESMTP id S232425AbjF1PdB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Jun 2023 11:33:00 -0400
+        Wed, 28 Jun 2023 11:33:01 -0400
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 69CD330C7;
-        Wed, 28 Jun 2023 08:32:49 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9BC0D26AB;
+        Wed, 28 Jun 2023 08:32:54 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=+7+4nsdFDbsRT1q2Uw8AAPCu0PUJ7daQq6Y87tECxWI=; b=2T/gp4mwuW67RaeBf5V/vXFlDv
-        Pvb90WeIH3YAGSimQS7fDf17hIp289HXwiI2t8AnAHn3bM0dZfFVlmxzsqd7BJTC4h17mTzIkxnrI
-        eeNsfr++uhQso3qBMDhRU0zl0bpXdGK5lgRvILAvH1EGzR7dbO3PoUi+siGkK4K2CPvV5+HMgl4XX
-        WsBmv396BHuJSuJAyeCOVXOJSY6JJPlBANBrTKje7n0B08N+Rxt3Z+S1B7qO7rdcXEYKNePwvqFmw
-        N4qUIpoasUFAdi4EwL8FEXXEu8rxOc+clH/9roN/caUzFRf8ClAPQxPRqyoCfBs++/HjLrkyryv/J
-        IcNK3z4A==;
+        bh=qx+gJ458aK+w8h5IAu2/xFThKmZn2rfF87JLskCyXl0=; b=39SuDBgZxbpLbHeTACnruu8DVF
+        tJFuJedPZV/h4Ihz7hI1C3gco2ksH3sU8ZVho3+zYJUSbBZsR8DPeRIRW9zA44iWqQ231csSe+069
+        OPCQUPtrmpCTuQN+vTP0+6WW2A/R8EwQFSl6UfAOfWAVMEH7C6BPc4Y6nBR0J6pcXMJwiwu9cVNAw
+        Gm7UWIdxso3rdXM6yqPqZya6iTHSJ/MWmtn6R+64q+f4Uy9Pihvp5qeUSG2b2oNtXg13gSriqDT7P
+        FZ0Ptofn4RPob5Z4AWKILypIb/xUBaf0Q8LVenz+HM6TXBmY8QjNT+1hqKAho7U7C1Di6wrGb9S3w
+        za3mrXDg==;
 Received: from 2a02-8389-2341-5b80-39d3-4735-9a3c-88d8.cable.dynamic.v6.surfer.at ([2a02:8389:2341:5b80:39d3:4735:9a3c:88d8] helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
-        id 1qEX9x-00G0Dg-1K;
-        Wed, 28 Jun 2023 15:32:45 +0000
+        id 1qEXA4-00G0F8-0r;
+        Wed, 28 Jun 2023 15:32:52 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>
 Cc:     Matthew Wilcox <willy@infradead.org>, linux-btrfs@vger.kernel.org,
         linux-fsdevel@vger.kernel.org
-Subject: [PATCH 18/23] btrfs: share the code to free the page array in compress_file_range
-Date:   Wed, 28 Jun 2023 17:31:39 +0200
-Message-Id: <20230628153144.22834-19-hch@lst.de>
+Subject: [PATCH 20/23] btrfs: refactor the zoned device handling in cow_file_range
+Date:   Wed, 28 Jun 2023 17:31:41 +0200
+Message-Id: <20230628153144.22834-21-hch@lst.de>
 X-Mailer: git-send-email 2.39.2
 In-Reply-To: <20230628153144.22834-1-hch@lst.de>
 References: <20230628153144.22834-1-hch@lst.de>
@@ -47,69 +47,122 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-compress_file_range has two code blocks to free the page array for the
-compressed data.  Share the code using a goto label.
+Handling of the done_offset to cow_file_range is a bit confusing, as
+it is not updated at all when the function succeeds, and the -EAGAIN
+status is used bother for the case where we need to wait for a zone
+finish and the one where the allocation was partially successful.
+
+Change the calling convention so that done_offset is always updated,
+and 0 is returned if some allocation was successful (partial allocation
+can still only happen for zoned devices), and waiting for a zone
+finish is done internally in cow_file_range instead of the caller.
+
+Also write a big fat comment explaining the logic.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- fs/btrfs/inode.c | 30 +++++++++---------------------
- 1 file changed, 9 insertions(+), 21 deletions(-)
+ fs/btrfs/inode.c | 58 ++++++++++++++++++++++++++----------------------
+ 1 file changed, 31 insertions(+), 27 deletions(-)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 00aabc088a9deb..8f3a72f3f897a1 100644
+index 556f63e8496ff8..2a4b62398ee7a3 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -1003,12 +1003,7 @@ static void compress_file_range(struct btrfs_work *work)
- 						     PAGE_UNLOCK |
- 						     PAGE_START_WRITEBACK |
- 						     PAGE_END_WRITEBACK);
--			for (i = 0; i < nr_pages; i++) {
--				WARN_ON(pages[i]->mapping);
--				put_page(pages[i]);
--			}
--			kfree(pages);
--			return;
-+			goto free_pages;
+@@ -1364,7 +1364,8 @@ static noinline int cow_file_range(struct btrfs_inode *inode,
+ 			 * compressed extent.
+ 			 */
+ 			unlock_page(locked_page);
+-			return 1;
++			ret = 1;
++			goto done;
+ 		} else if (ret < 0) {
+ 			goto out_unlock;
  		}
+@@ -1395,6 +1396,31 @@ static noinline int cow_file_range(struct btrfs_inode *inode,
+ 		ret = btrfs_reserve_extent(root, cur_alloc_size, cur_alloc_size,
+ 					   min_alloc_size, 0, alloc_hint,
+ 					   &ins, 1, 1);
++		if (ret == -EAGAIN) {
++			/*
++			 * btrfs_reserve_extent only returns -EAGAIN for zoned
++			 * file systems, which is an indication that there are
++			 * no active zones to allocate from at the moment.
++			 *
++			 * If this is the first loop iteration, wait for at
++			 * least one zone to finish before retrying the
++			 * allocation.  Otherwise ask the caller to write out
++			 * the already allocated blocks before coming back to
++			 * us, or return -ENOSPC if it can't handle retries.
++			 */
++			ASSERT(btrfs_is_zoned(fs_info));
++			if (start == orig_start) {
++				wait_on_bit_io(&inode->root->fs_info->flags,
++					       BTRFS_FS_NEED_ZONE_FINISH,
++					       TASK_UNINTERRUPTIBLE);
++				continue;
++			}
++			if (done_offset) {
++				*done_offset = start - 1;
++				return 0;
++			}
++			ret = -ENOSPC;
++		}
+ 		if (ret < 0)
+ 			goto out_unlock;
+ 		cur_alloc_size = ins.offset;
+@@ -1478,6 +1504,9 @@ static noinline int cow_file_range(struct btrfs_inode *inode,
+ 		if (ret)
+ 			goto out_unlock;
  	}
++done:
++	if (done_offset)
++		*done_offset = end;
+ 	return ret;
  
-@@ -1044,21 +1039,6 @@ static void compress_file_range(struct btrfs_work *work)
- 	if (!btrfs_test_opt(fs_info, FORCE_COMPRESS) && !inode->prop_compress)
- 		inode->flags |= BTRFS_INODE_NOCOMPRESS;
- cleanup_and_bail_uncompressed:
--	if (pages) {
--		/*
--		 * the compression code ran but failed to make things smaller,
--		 * free any pages it allocated and our page pointer array
--		 */
--		for (i = 0; i < nr_pages; i++) {
--			WARN_ON(pages[i]->mapping);
--			put_page(pages[i]);
--		}
--		kfree(pages);
--		pages = NULL;
--		total_compressed = 0;
--		nr_pages = 0;
+ out_drop_extent_cache:
+@@ -1486,21 +1515,6 @@ static noinline int cow_file_range(struct btrfs_inode *inode,
+ 	btrfs_dec_block_group_reservations(fs_info, ins.objectid);
+ 	btrfs_free_reserved_extent(fs_info, ins.objectid, ins.offset, 1);
+ out_unlock:
+-	/*
+-	 * If done_offset is non-NULL and ret == -EAGAIN, we expect the
+-	 * caller to write out the successfully allocated region and retry.
+-	 */
+-	if (done_offset && ret == -EAGAIN) {
+-		if (orig_start < start)
+-			*done_offset = start - 1;
+-		else
+-			*done_offset = start;
+-		return ret;
+-	} else if (ret == -EAGAIN) {
+-		/* Convert to -ENOSPC since the caller cannot retry. */
+-		ret = -ENOSPC;
 -	}
 -
  	/*
- 	 * No compression, but we still need to write the pages in the file
- 	 * we've been given so far.  redirty the locked page if it corresponds
-@@ -1076,6 +1056,14 @@ static void compress_file_range(struct btrfs_work *work)
- 		extent_range_redirty_for_io(&inode->vfs_inode, start, end);
- 	add_async_extent(async_chunk, start, end - start + 1, 0, NULL, 0,
- 			 BTRFS_COMPRESS_NONE);
-+free_pages:
-+	if (pages) {
-+		for (i = 0; i < nr_pages; i++) {
-+			WARN_ON(pages[i]->mapping);
-+			put_page(pages[i]);
-+		}
-+		kfree(pages);
-+	}
- }
+ 	 * Now, we have three regions to clean up:
+ 	 *
+@@ -1711,19 +1725,9 @@ static noinline int run_delalloc_zoned(struct btrfs_inode *inode,
+ 	while (start <= end) {
+ 		ret = cow_file_range(inode, locked_page, start, end,
+ 				     &done_offset, CFR_KEEP_LOCKED);
+-		if (ret && ret != -EAGAIN)
++		if (ret)
+ 			return ret;
  
- static void free_async_extent_pages(struct async_extent *async_extent)
+-		if (ret == 0)
+-			done_offset = end;
+-
+-		if (done_offset == start) {
+-			wait_on_bit_io(&inode->root->fs_info->flags,
+-				       BTRFS_FS_NEED_ZONE_FINISH,
+-				       TASK_UNINTERRUPTIBLE);
+-			continue;
+-		}
+-
+ 		if (!locked_page_done) {
+ 			__set_page_dirty_nobuffers(locked_page);
+ 			account_page_redirty(locked_page);
 -- 
 2.39.2
 

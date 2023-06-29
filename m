@@ -2,33 +2,33 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4238AEB64DA
-	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Jun 2023 00:35:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D7306EB64DD
+	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Jun 2023 00:35:49 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231424AbjF2Aff (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Jun 2023 20:35:35 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58566 "EHLO
+        id S231372AbjF2Afl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Jun 2023 20:35:41 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58568 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231249AbjF2AfT (ORCPT
+        with ESMTP id S231253AbjF2AfT (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 28 Jun 2023 20:35:19 -0400
-Received: from box.fidei.email (box.fidei.email [71.19.144.250])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 39596297B;
+Received: from box.fidei.email (box.fidei.email [IPv6:2605:2700:0:2:a800:ff:feba:dc44])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 49E63297C;
         Wed, 28 Jun 2023 17:35:16 -0700 (PDT)
 Received: from authenticated-user (box.fidei.email [71.19.144.250])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits))
         (No client certificate requested)
-        by box.fidei.email (Postfix) with ESMTPSA id BB4FC807D8;
-        Wed, 28 Jun 2023 20:29:18 -0400 (EDT)
+        by box.fidei.email (Postfix) with ESMTPSA id CB774807B7;
+        Wed, 28 Jun 2023 20:29:15 -0400 (EDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=dorminy.me; s=mail;
-        t=1687998559; bh=tKGg0Y0E/v95hp35rLNHlzWWV3bK2WTyoT2Z8orPn4k=;
+        t=1687998556; bh=YqRRDWI4Q3S+nsoV4rR7qxoo++Y30XsC6x8HLIhWvkQ=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=bt2sJhragF1CQrICtdpOW0F8IBGvSO3avOuQEbRWaLHgbNNGdjE99zdSyMyCZpTqg
-         B+9xnFCmzczIl3FRWvcEXoVgT6LHzsz+zC5kz5IiN+nzAPOAqFRJwFmm3zROtuC33v
-         zmARubiAwRBgxxmcf4aSRHh/PDeGrkjz7tXMxfiGf/if2X8vZRsf4tO2lGLNKXCrv6
-         CIR3EcEBCpqTL+Lf/LC41+rcRtHrZOFN/DsBoVSlbdYeAHEbtnqGf2f4FzWSR8dVZY
-         6S/coDTm8Qfhp7NLgnqXmiGOZKOlqcTgArscfxDUsbQbagx0CGNChcd8JEMhKQz3WU
-         ei35eRgYmzUrA==
+        b=SZ1Vd1SKJ1X2CtCTuhtuxgVbtLoLVJFmEa0f4scBw8OgUodlXjidgqX8IB50sYlSf
+         Km5VGglTbkOi71y0UJftEt2pWHbD24x55Yqt7Ac9l1XPshS5OE2VmzViAWpsic6OWe
+         XJyhmSUMtmmkFBKsP3rafPrDguFsMUOj+gppQH6FA3096VzHhdjhe93SCAQ8lU9pkm
+         kn3H6plI2bq8deaBSa+klDcq/T+Ir05NwDYt4h4AjjLbXjREsap7S2y4ZnJMXUmWKZ
+         blDa/5y8SJ34Pex3SyuCUMdKmDlbxzqlUJgwyZcNp9TuHMIEjnpDn/Xu8jaUN5M8vb
+         FJdTHp9XqBCcQ==
 From:   Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
 To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>,
@@ -37,9 +37,9 @@ To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         Jaegeuk Kim <jaegeuk@kernel.org>, kernel-team@meta.com,
         linux-btrfs@vger.kernel.org, linux-fscrypt@vger.kernel.org
 Cc:     Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-Subject: [PATCH v4 6/8] fscrypt: move all the shared mode key setup deeper
-Date:   Wed, 28 Jun 2023 20:28:56 -0400
-Message-Id: <60c9f5833997e942a7c5ebda7a54d0ee7d21f524.1687988119.git.sweettea-kernel@dorminy.me>
+Subject: [PATCH v4 4/8] fscrypt: move dirhash key setup away from IO key setup
+Date:   Wed, 28 Jun 2023 20:28:54 -0400
+Message-Id: <143406026caa2f73865dbc448533fb96735f896d.1687988119.git.sweettea-kernel@dorminy.me>
 In-Reply-To: <cover.1687988119.git.sweettea-kernel@dorminy.me>
 References: <cover.1687988119.git.sweettea-kernel@dorminy.me>
 MIME-Version: 1.0
@@ -48,221 +48,103 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Currently, fscrypt_setup_v2_file_key() has a set of ifs which encode
-various information about how to set up a new mode key if necessary for
-a shared-key policy (DIRECT or IV_INO_LBLK_*). This is somewhat awkward
--- this information is only needed at the point that we need to setup a
-new key, which is not the common case; the setup details are recorded as
-function parameters relatively far from where they're actually used; and
-at the point we use the parameters, we can derive the information
-equally well.
+The function named fscrypt_setup_v2_file_key() has as its main focus the
+setting up of the fscrypt_info's ci_enc_key member, the prepared key
+with which filenames or file contents are encrypted or decrypted.
+However, it currently also sets up the dirhash key, used by some
+directories, based on a parameter. There are no dependencies on
+setting up the dirhash key beyond having the master key locked, and it's
+clearer having fscrypt_setup_file_key() be only about setting up the
+prepared key for IO.
 
-So this moves mode and policy checking as deep into the callstack as
-possible. mk_prepared_key_for_mode_policy() deals with the array lookup
-within a master key. And fill_hkdf_info_for mode_key() deals with
-filling in the hkdf info as necessary for a particular policy. These
-seem a little clearer in broad strokes, emphasizing the similarities
-between the policies, but it does spread out the information on how the
-key is derived for a particular policy more.
+Thus, move dirhash key setup to fscrypt_setup_encryption_info(), which
+calls out to each function setting up parts of the fscrypt_info, and
+stop passing the need_dirhash_key parameter around.
 
 Signed-off-by: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
 ---
- fs/crypto/keysetup.c | 131 +++++++++++++++++++++++++++++--------------
- 1 file changed, 88 insertions(+), 43 deletions(-)
+ fs/crypto/keysetup.c | 37 +++++++++++++++++++++----------------
+ 1 file changed, 21 insertions(+), 16 deletions(-)
 
 diff --git a/fs/crypto/keysetup.c b/fs/crypto/keysetup.c
-index 0648ae22ecc4..111940b91456 100644
+index 69bd27b7e9d8..302a1ccde439 100644
 --- a/fs/crypto/keysetup.c
 +++ b/fs/crypto/keysetup.c
-@@ -13,6 +13,17 @@
- 
- #include "fscrypt_private.h"
- 
-+#define MAX_MODE_KEY_HKDF_INFO_SIZE 17
-+
-+/*
-+ * Constant defining the various policy flags which require a non-default key
-+ * policy.
-+ */
-+#define FSCRYPT_POLICY_FLAGS_KEY_MASK		\
-+	(FSCRYPT_POLICY_FLAG_DIRECT_KEY		\
-+	 | FSCRYPT_POLICY_FLAG_IV_INO_LBLK_64	\
-+	 | FSCRYPT_POLICY_FLAG_IV_INO_LBLK_32)
-+
- struct fscrypt_mode fscrypt_modes[] = {
- 	[FSCRYPT_MODE_AES_256_XTS] = {
- 		.friendly_name = "AES-256-XTS",
-@@ -184,20 +195,83 @@ int fscrypt_set_per_file_enc_key(struct fscrypt_info *ci, const u8 *raw_key)
- 	return fscrypt_prepare_key(&ci->ci_enc_key, raw_key, ci);
+@@ -343,8 +343,7 @@ static int fscrypt_setup_iv_ino_lblk_32_key(struct fscrypt_info *ci,
  }
  
-+static struct fscrypt_prepared_key *
-+mk_prepared_key_for_mode_policy(struct fscrypt_master_key *mk,
-+				union fscrypt_policy *policy,
-+				struct fscrypt_mode *mode)
-+{
-+	const u8 mode_num = mode - fscrypt_modes;
-+
-+	switch (policy->v2.flags & FSCRYPT_POLICY_FLAGS_KEY_MASK) {
-+	case FSCRYPT_POLICY_FLAG_DIRECT_KEY:
-+		return &mk->mk_direct_keys[mode_num];
-+	case FSCRYPT_POLICY_FLAG_IV_INO_LBLK_64:
-+		return &mk->mk_iv_ino_lblk_64_keys[mode_num];
-+	case FSCRYPT_POLICY_FLAG_IV_INO_LBLK_32:
-+		return &mk->mk_iv_ino_lblk_32_keys[mode_num];
-+	default:
-+		return ERR_PTR(-EINVAL);
-+	}
-+}
-+
-+static size_t
-+fill_hkdf_info_for_mode_key(const struct fscrypt_info *ci,
-+			    u8 hkdf_info[MAX_MODE_KEY_HKDF_INFO_SIZE])
-+{
-+	const u8 mode_num = ci->ci_mode - fscrypt_modes;
-+	const struct super_block *sb = ci->ci_inode->i_sb;
-+	u8 hkdf_infolen = 0;
-+
-+	hkdf_info[hkdf_infolen++] = mode_num;
-+	if (!(ci->ci_policy.v2.flags & FSCRYPT_POLICY_FLAG_DIRECT_KEY)) {
-+		memcpy(&hkdf_info[hkdf_infolen], &sb->s_uuid,
-+				sizeof(sb->s_uuid));
-+		hkdf_infolen += sizeof(sb->s_uuid);
-+	}
-+	return hkdf_infolen;
-+}
-+
- static int setup_new_mode_prepared_key(struct fscrypt_master_key *mk,
- 				       struct fscrypt_prepared_key *prep_key,
--				       const struct fscrypt_info *ci,
--				       u8 hkdf_context, bool include_fs_uuid)
-+				       const struct fscrypt_info *ci)
+ static int fscrypt_setup_v2_file_key(struct fscrypt_info *ci,
+-				     struct fscrypt_master_key *mk,
+-				     bool need_dirhash_key)
++				     struct fscrypt_master_key *mk)
  {
- 	const struct inode *inode = ci->ci_inode;
- 	const struct super_block *sb = inode->i_sb;
-+	unsigned int policy_flags = fscrypt_policy_flags(&ci->ci_policy);
- 	struct fscrypt_mode *mode = ci->ci_mode;
- 	const u8 mode_num = mode - fscrypt_modes;
- 	u8 mode_key[FSCRYPT_MAX_KEY_SIZE];
- 	u8 hkdf_info[sizeof(mode_num) + sizeof(sb->s_uuid)];
- 	unsigned int hkdf_infolen = 0;
-+	u8 hkdf_context = 0;
  	int err;
  
-+	switch (policy_flags & FSCRYPT_POLICY_FLAGS_KEY_MASK) {
-+	case FSCRYPT_POLICY_FLAG_DIRECT_KEY:
-+		hkdf_context = HKDF_CONTEXT_DIRECT_KEY;
-+		break;
-+	case FSCRYPT_POLICY_FLAG_IV_INO_LBLK_64:
-+		hkdf_context = HKDF_CONTEXT_IV_INO_LBLK_64_KEY;
-+		break;
-+	case FSCRYPT_POLICY_FLAG_IV_INO_LBLK_32:
-+		hkdf_context = HKDF_CONTEXT_IV_INO_LBLK_32_KEY;
-+		break;
-+	}
-+
-+	/*
-+	 * For DIRECT_KEY policies: instead of deriving per-file encryption
-+	 * keys, the per-file nonce will be included in all the IVs.  But
-+	 * unlike v1 policies, for v2 policies in this case we don't encrypt
-+	 * with the master key directly but rather derive a per-mode encryption
-+	 * key.  This ensures that the master key is consistently used only for
-+	 * HKDF, avoiding key reuse issues.
-+	 *
-+	 * For IV_INO_LBLK policies: encryption keys are derived from
-+	 * (master_key, mode_num, filesystem_uuid), and inode number is
-+	 * included in the IVs.  This format is optimized for use with inline
-+	 * encryption hardware compliant with the UFS standard.
-+	 */
-+
- 	mutex_lock(&fscrypt_mode_key_setup_mutex);
+@@ -386,25 +385,15 @@ static int fscrypt_setup_v2_file_key(struct fscrypt_info *ci,
+ 		err = fscrypt_set_per_file_enc_key(ci, derived_key);
+ 		memzero_explicit(derived_key, ci->ci_mode->keysize);
+ 	}
+-	if (err)
+-		return err;
  
- 	if (fscrypt_is_key_prepared(prep_key, ci))
-@@ -205,13 +279,9 @@ static int setup_new_mode_prepared_key(struct fscrypt_master_key *mk,
- 
- 	BUILD_BUG_ON(sizeof(mode_num) != 1);
- 	BUILD_BUG_ON(sizeof(sb->s_uuid) != 16);
--	BUILD_BUG_ON(sizeof(hkdf_info) != 17);
--	hkdf_info[hkdf_infolen++] = mode_num;
--	if (include_fs_uuid) {
--		memcpy(&hkdf_info[hkdf_infolen], &sb->s_uuid,
--		       sizeof(sb->s_uuid));
--		hkdf_infolen += sizeof(sb->s_uuid);
+-	/* Derive a secret dirhash key for directories that need it. */
+-	if (need_dirhash_key) {
+-		err = fscrypt_derive_dirhash_key(ci, mk);
+-		if (err)
+-			return err;
 -	}
-+	BUILD_BUG_ON(sizeof(hkdf_info) != MAX_MODE_KEY_HKDF_INFO_SIZE);
-+	hkdf_infolen = fill_hkdf_info_for_mode_key(ci, hkdf_info);
-+
- 	err = fscrypt_hkdf_expand(&mk->mk_secret.hkdf,
- 				  hkdf_context, hkdf_info, hkdf_infolen,
- 				  mode_key, mode->keysize);
-@@ -225,10 +295,8 @@ static int setup_new_mode_prepared_key(struct fscrypt_master_key *mk,
- 	return err;
+-
+-	return 0;
++	return err;
  }
  
--static int find_mode_prepared_key(struct fscrypt_info *ci,
+ /*
+  * Find or create the appropriate prepared key for an info.
+  */
+ static int fscrypt_setup_file_key(struct fscrypt_info *ci,
 -				  struct fscrypt_master_key *mk,
--				  struct fscrypt_prepared_key *keys,
--				  u8 hkdf_context, bool include_fs_uuid)
-+static int setup_mode_prepared_key(struct fscrypt_info *ci,
+-				  bool need_dirhash_key)
 +				  struct fscrypt_master_key *mk)
  {
- 	struct fscrypt_mode *mode = ci->ci_mode;
- 	const u8 mode_num = mode - fscrypt_modes;
-@@ -238,13 +306,15 @@ static int find_mode_prepared_key(struct fscrypt_info *ci,
- 	if (WARN_ON_ONCE(mode_num > FSCRYPT_MODE_MAX))
- 		return -EINVAL;
- 
--	prep_key = &keys[mode_num];
-+	prep_key = mk_prepared_key_for_mode_policy(mk, &ci->ci_policy, mode);
-+	if (IS_ERR(prep_key))
-+		return PTR_ERR(prep_key);
-+
- 	if (fscrypt_is_key_prepared(prep_key, ci)) {
- 		ci->ci_enc_key = *prep_key;
- 		return 0;
- 	}
--	err = setup_new_mode_prepared_key(mk, prep_key, ci, hkdf_context,
--					  include_fs_uuid);
-+	err = setup_new_mode_prepared_key(mk, prep_key, ci);
- 	if (err)
- 		return err;
- 
-@@ -333,33 +403,8 @@ static int fscrypt_setup_v2_file_key(struct fscrypt_info *ci,
- {
  	int err;
  
--	if (ci->ci_policy.v2.flags & FSCRYPT_POLICY_FLAG_DIRECT_KEY) {
--		/*
--		 * DIRECT_KEY: instead of deriving per-file encryption keys, the
--		 * per-file nonce will be included in all the IVs.  But unlike
--		 * v1 policies, for v2 policies in this case we don't encrypt
--		 * with the master key directly but rather derive a per-mode
--		 * encryption key.  This ensures that the master key is
--		 * consistently used only for HKDF, avoiding key reuse issues.
--		 */
--		err = find_mode_prepared_key(ci, mk, mk->mk_direct_keys,
--					     HKDF_CONTEXT_DIRECT_KEY, false);
--	} else if (ci->ci_policy.v2.flags &
--		   FSCRYPT_POLICY_FLAG_IV_INO_LBLK_64) {
--		/*
--		 * IV_INO_LBLK_64: encryption keys are derived from (master_key,
--		 * mode_num, filesystem_uuid), and inode number is included in
--		 * the IVs.  This format is optimized for use with inline
--		 * encryption hardware compliant with the UFS standard.
--		 */
--		err = find_mode_prepared_key(ci, mk, mk->mk_iv_ino_lblk_64_keys,
--					     HKDF_CONTEXT_IV_INO_LBLK_64_KEY,
--					     true);
--	} else if (ci->ci_policy.v2.flags &
--		   FSCRYPT_POLICY_FLAG_IV_INO_LBLK_32) {
--		err = find_mode_prepared_key(ci, mk, mk->mk_iv_ino_lblk_32_keys,
--					     HKDF_CONTEXT_IV_INO_LBLK_32_KEY,
--					     true);
-+	if (ci->ci_policy.v2.flags & FSCRYPT_POLICY_FLAGS_KEY_MASK) {
-+		err = setup_mode_prepared_key(ci, mk);
- 	} else {
- 		u8 derived_key[FSCRYPT_MAX_KEY_SIZE];
+@@ -426,7 +415,7 @@ static int fscrypt_setup_file_key(struct fscrypt_info *ci,
+ 		err = fscrypt_setup_v1_file_key(ci, mk->mk_secret.raw);
+ 		break;
+ 	case FSCRYPT_POLICY_V2:
+-		err = fscrypt_setup_v2_file_key(ci, mk, need_dirhash_key);
++		err = fscrypt_setup_v2_file_key(ci, mk);
+ 		break;
+ 	default:
+ 		WARN_ON_ONCE(1);
+@@ -620,10 +609,26 @@ fscrypt_setup_encryption_info(struct inode *inode,
+ 	if (res)
+ 		goto out;
  
+-	res = fscrypt_setup_file_key(crypt_info, mk, need_dirhash_key);
++	res = fscrypt_setup_file_key(crypt_info, mk);
+ 	if (res)
+ 		goto out;
+ 
++	/*
++	 * Derive a secret dirhash key for directories that need it. It
++	 * should be impossible to set flags such that a v1 policy sets
++	 * need_dirhash_key, but check it anyway.
++	 */
++	if (need_dirhash_key) {
++		if (WARN_ON_ONCE(policy->version == FSCRYPT_POLICY_V1)) {
++			res = -EINVAL;
++			goto out;
++		}
++
++		res = fscrypt_derive_dirhash_key(crypt_info, mk);
++		if (res)
++			goto out;
++	}
++
+ 	/*
+ 	 * For existing inodes, multiple tasks may race to set ->i_crypt_info.
+ 	 * So use cmpxchg_release().  This pairs with the smp_load_acquire() in
 -- 
 2.40.1
 

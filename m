@@ -2,33 +2,33 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5D5E4C001DB
-	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Jun 2023 00:35:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C557CEB64DA
+	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Jun 2023 00:36:00 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231547AbjF2Af5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Jun 2023 20:35:57 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58568 "EHLO
+        id S231439AbjF2Af6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Jun 2023 20:35:58 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58662 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231359AbjF2AfW (ORCPT
+        with ESMTP id S231416AbjF2Afq (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Jun 2023 20:35:22 -0400
+        Wed, 28 Jun 2023 20:35:46 -0400
 Received: from box.fidei.email (box.fidei.email [IPv6:2605:2700:0:2:a800:ff:feba:dc44])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1363F2961;
-        Wed, 28 Jun 2023 17:35:19 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0B3E91FC2;
+        Wed, 28 Jun 2023 17:35:45 -0700 (PDT)
 Received: from authenticated-user (box.fidei.email [71.19.144.250])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits))
         (No client certificate requested)
-        by box.fidei.email (Postfix) with ESMTPSA id D1509807A9;
-        Wed, 28 Jun 2023 20:29:12 -0400 (EDT)
+        by box.fidei.email (Postfix) with ESMTPSA id 483058079C;
+        Wed, 28 Jun 2023 20:35:45 -0400 (EDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=dorminy.me; s=mail;
-        t=1687998553; bh=zpbsNmNWpCCseiP3oLkRBDQESuU4ORz8TCsKQNmW/kg=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=dyPiF14BwnSAp66L4ZgdGkD47oR0m93nb5iJY4kzvD6G0Jvq0u4Uv2f0yuDbGM/B7
-         OkC5gGFdbgzo++rJDLTaJY/dXRWlYPhYW57A0Jy7E/YwJ/8Y5gbjNNo6MTBz+SyzNO
-         GpVJWOXwwzQc+87IpD2ZAJULoUEY+3Xtuhgc2wGcUISTLJ6bVy7iOW3Ul1pXx6TXXR
-         TNOH7KnE3YCetskxW36Jd1voiuMzj47LPHfBsh4KXgfH+cMWwbfct3ya0oNOZDfJfk
-         S0E9j5fBo3cnng9uHk+XY3ZKMmwl116Cv7vW7AN70sQwH2DqIe5O0tUSUzMaAsEq0/
-         olFQPsd3WORTA==
+        t=1687998945; bh=16K2VR1hogQ5kSXxv4RPsXnkIImMxPuMMjd09hGZsdc=;
+        h=From:To:Cc:Subject:Date:From;
+        b=UY4L0tpx9REOAIwVszM9thn1GVdbdZGzGTzz/h31MNt1FtUAdTHGUOofdoaOHNbzr
+         kWCe7RjJ0gVWBXQquY3YZS6p7Fcei45HYqt06jFJJTWW7/fm4cc1hibSVFE3eB4cur
+         TzCK9waiJPlxmE82YXZVU5w0U6ZTtXdxEZoYsV2oXVqJny5q6u+BDLtvsunonNZcvY
+         LHA7IE+owkj07Pou/YA798rkTPNniZy+IVpHoTxo4FhnZUtLbPmiG5VEQVLHE1v1DJ
+         7dVdPfZDkupswFQ7lbw+TLNLUwNLBSvBXBt9TWJzF0BSZoZB9RHOb1S+8CJ4oc9Jq9
+         MrtY76/cN/B/g==
 From:   Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
 To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>,
@@ -37,161 +37,108 @@ To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         Jaegeuk Kim <jaegeuk@kernel.org>, kernel-team@meta.com,
         linux-btrfs@vger.kernel.org, linux-fscrypt@vger.kernel.org
 Cc:     Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-Subject: [PATCH v4 2/8] fscrypt: split and rename setup_file_encryption_key()
-Date:   Wed, 28 Jun 2023 20:28:52 -0400
-Message-Id: <741d936ed04b00a6122f0043c00f261116bee8b3.1687988119.git.sweettea-kernel@dorminy.me>
-In-Reply-To: <cover.1687988119.git.sweettea-kernel@dorminy.me>
-References: <cover.1687988119.git.sweettea-kernel@dorminy.me>
+Subject: [PATCH v1 00/17] btrfs: add encryption feature
+Date:   Wed, 28 Jun 2023 20:35:23 -0400
+Message-Id: <cover.1687988380.git.sweettea-kernel@dorminy.me>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-At present, setup_file_encryption_key() does several things: it finds
-and locks the master key, and then calls into the appropriate functions
-to setup the prepared key for the fscrypt_info. The code is clearer to
-follow if these functions are divided.
+This is a changeset adding encryption to btrfs. It is not complete; it
+does not support inline data or verity or authenticated encryption. It
+is primarily intended as a proof that the fscrypt extent encryption
+changeset it builds on work. 
 
-Thus, move calling the appropriate file key setup function into a new
-fscrypt_setup_file_key() function. After the file key setup functions
-are moved, the remaining function can take a const fscrypt_info, and is
-renamed find_and_lock_master_key() to precisely describe its action.
+As per the design doc refined in the fall of last year [1], btrfs
+encryption has several steps: first, adding extent encryption to fscrypt
+and then btrfs; second, adding authenticated encryption support to the
+block layer, fscrypt, and then btrfs; and later adding potentially the
+ability to change the key used by a directory (either for all data or
+just newly written data) and/or allowing use of inline extents and
+verity items in combination with encryption and/or enabling send/receive
+of encrypted volumes. As such, this change is only the first step and is
+unsafe.
 
-Signed-off-by: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
----
- fs/crypto/keysetup.c | 77 ++++++++++++++++++++++++++++++--------------
- 1 file changed, 52 insertions(+), 25 deletions(-)
+This change does not pass a couple of encryption xfstests, because of
+different properties of extent encryption. It hasn't been tested with
+direct IO or RAID. Because currently extent encryption always uses inline
+encryption (i.e. IO-block-only) for data encryption, it does not support
+encryption of inline extents; similarly, since btrfs stores verity items
+in the tree instead of in inline encryptable blocks on disk as other
+filesystems do, btrfs cannot currently encrypt verity items. Finally,
+this is insecure; the checksums are calculated on the unencrypted data
+and stored unencrypted, which is a potential information leak. (This
+will be addressed by authenticated encryption).
 
-diff --git a/fs/crypto/keysetup.c b/fs/crypto/keysetup.c
-index b89c32ad19fb..727d473b6b03 100644
---- a/fs/crypto/keysetup.c
-+++ b/fs/crypto/keysetup.c
-@@ -386,6 +386,43 @@ static int fscrypt_setup_v2_file_key(struct fscrypt_info *ci,
- 	return 0;
- }
- 
-+/*
-+ * Find or create the appropriate prepared key for an info.
-+ */
-+static int fscrypt_setup_file_key(struct fscrypt_info *ci,
-+				  struct fscrypt_master_key *mk,
-+				  bool need_dirhash_key)
-+{
-+	int err;
-+
-+	if (!mk) {
-+		if (ci->ci_policy.version != FSCRYPT_POLICY_V1)
-+			return -ENOKEY;
-+
-+		/*
-+		 * As a legacy fallback for v1 policies, search for the key in
-+		 * the current task's subscribed keyrings too.  Don't move this
-+		 * to before the search of ->s_master_keys, since users
-+		 * shouldn't be able to override filesystem-level keys.
-+		 */
-+		return fscrypt_setup_v1_file_key_via_subscribed_keyrings(ci);
-+	}
-+
-+	switch (ci->ci_policy.version) {
-+	case FSCRYPT_POLICY_V1:
-+		err = fscrypt_setup_v1_file_key(ci, mk->mk_secret.raw);
-+		break;
-+	case FSCRYPT_POLICY_V2:
-+		err = fscrypt_setup_v2_file_key(ci, mk, need_dirhash_key);
-+		break;
-+	default:
-+		WARN_ON_ONCE(1);
-+		err = -EINVAL;
-+		break;
-+	}
-+	return err;
-+}
-+
- /*
-  * Check whether the size of the given master key (@mk) is appropriate for the
-  * encryption settings which a particular file will use (@ci).
-@@ -426,7 +463,7 @@ static bool fscrypt_valid_master_key_size(const struct fscrypt_master_key *mk,
- }
- 
- /*
-- * Find the master key, then set up the inode's actual encryption key.
-+ * Find and lock the master key.
-  *
-  * If the master key is found in the filesystem-level keyring, then it is
-  * returned in *mk_ret with its semaphore read-locked.  This is needed to ensure
-@@ -434,9 +471,8 @@ static bool fscrypt_valid_master_key_size(const struct fscrypt_master_key *mk,
-  * multiple tasks may race to create an fscrypt_info for the same inode), and to
-  * synchronize the master key being removed with a new inode starting to use it.
-  */
--static int setup_file_encryption_key(struct fscrypt_info *ci,
--				     bool need_dirhash_key,
--				     struct fscrypt_master_key **mk_ret)
-+static int find_and_lock_master_key(const struct fscrypt_info *ci,
-+				    struct fscrypt_master_key **mk_ret)
- {
- 	struct super_block *sb = ci->ci_inode->i_sb;
- 	struct fscrypt_key_specifier mk_spec;
-@@ -466,17 +502,19 @@ static int setup_file_encryption_key(struct fscrypt_info *ci,
- 			mk = fscrypt_find_master_key(sb, &mk_spec);
- 		}
- 	}
-+
- 	if (unlikely(!mk)) {
- 		if (ci->ci_policy.version != FSCRYPT_POLICY_V1)
- 			return -ENOKEY;
- 
- 		/*
--		 * As a legacy fallback for v1 policies, search for the key in
--		 * the current task's subscribed keyrings too.  Don't move this
--		 * to before the search of ->s_master_keys, since users
--		 * shouldn't be able to override filesystem-level keys.
-+		 * This might be the case of a v1 policy using a process
-+		 * subscribed keyring to get the key, so there may not be
-+		 * a relevant master key.
- 		 */
--		return fscrypt_setup_v1_file_key_via_subscribed_keyrings(ci);
-+
-+		*mk_ret = NULL;
-+		return 0;
- 	}
- 	down_read(&mk->mk_sem);
- 
-@@ -491,21 +529,6 @@ static int setup_file_encryption_key(struct fscrypt_info *ci,
- 		goto out_release_key;
- 	}
- 
--	switch (ci->ci_policy.version) {
--	case FSCRYPT_POLICY_V1:
--		err = fscrypt_setup_v1_file_key(ci, mk->mk_secret.raw);
--		break;
--	case FSCRYPT_POLICY_V2:
--		err = fscrypt_setup_v2_file_key(ci, mk, need_dirhash_key);
--		break;
--	default:
--		WARN_ON_ONCE(1);
--		err = -EINVAL;
--		break;
--	}
--	if (err)
--		goto out_release_key;
--
- 	*mk_ret = mk;
- 	return 0;
- 
-@@ -580,7 +603,11 @@ fscrypt_setup_encryption_info(struct inode *inode,
- 	if (res)
- 		goto out;
- 
--	res = setup_file_encryption_key(crypt_info, need_dirhash_key, &mk);
-+	res = find_and_lock_master_key(crypt_info, &mk);
-+	if (res)
-+		goto out;
-+
-+	res = fscrypt_setup_file_key(crypt_info, mk, need_dirhash_key);
- 	if (res)
- 		goto out;
- 
+This changeset is built on two prior changesets to fscrypt: [2] and [3]
+and should have no effect on unencrypted usage.
+
+[1] https://docs.google.com/document/d/1janjxewlewtVPqctkWOjSa7OhCgB8Gdx7iDaCDQQNZA/edit?usp=sharing
+[2]
+https://lore.kernel.org/linux-fscrypt/cover.1687988119.git.sweettea-kernel@dorminy.me/
+[3]
+https://lore.kernel.org/linux-fscrypt/cover.1687988246.git.sweettea-kernel@dorminy.me
+
+Omar Sandoval (7):
+  btrfs: disable various operations on encrypted inodes
+  fscrypt: expose fscrypt_nokey_name
+  btrfs: start using fscrypt hooks
+  btrfs: add inode encryption contexts
+  btrfs: add new FEATURE_INCOMPAT_ENCRYPT flag
+  btrfs: adapt readdir for encrypted and nokey names
+  btrfs: implement fscrypt ioctls
+
+Sweet Tea Dorminy (10):
+  btrfs: disable verity on encrypted inodes
+  btrfs: use correct name hash for nokey names
+  btrfs: add encryption to CONFIG_BTRFS_DEBUG
+  btrfs: add get_devices hook for fscrypt
+  btrfs: turn on inlinecrypt mount option for encrypt
+  btrfs: turn on the encryption ioctls
+  btrfs: create and free extent fscrypt_infos
+  btrfs: start tracking extent encryption context info
+  btrfs: explicitly track file extent length and encryption
+  btrfs: save and load fscrypt extent contexts
+
+ fs/btrfs/Kconfig                |   2 +-
+ fs/btrfs/Makefile               |   1 +
+ fs/btrfs/accessors.h            |  31 +++
+ fs/btrfs/btrfs_inode.h          |   3 +-
+ fs/btrfs/ctree.h                |   2 +
+ fs/btrfs/delayed-inode.c        |  30 ++-
+ fs/btrfs/delayed-inode.h        |   4 +-
+ fs/btrfs/dir-item.c             |  81 ++++++--
+ fs/btrfs/dir-item.h             |  13 +-
+ fs/btrfs/extent_io.c            |  49 +++++
+ fs/btrfs/extent_io.h            |   3 +
+ fs/btrfs/extent_map.c           |   9 +
+ fs/btrfs/extent_map.h           |   3 +
+ fs/btrfs/file-item.c            |  29 +++
+ fs/btrfs/file.c                 |  11 +-
+ fs/btrfs/fs.h                   |   7 +-
+ fs/btrfs/fscrypt.c              | 236 ++++++++++++++++++++++
+ fs/btrfs/fscrypt.h              |  61 ++++++
+ fs/btrfs/inode.c                | 333 +++++++++++++++++++++++++-------
+ fs/btrfs/ioctl.c                |  42 +++-
+ fs/btrfs/reflink.c              |   8 +
+ fs/btrfs/root-tree.c            |   8 +-
+ fs/btrfs/root-tree.h            |   2 +-
+ fs/btrfs/super.c                |  17 ++
+ fs/btrfs/tree-checker.c         |  37 +++-
+ fs/btrfs/tree-log.c             |  28 ++-
+ fs/btrfs/verity.c               |   3 +
+ fs/crypto/fname.c               |  39 +---
+ include/linux/fscrypt.h         |  37 ++++
+ include/uapi/linux/btrfs.h      |   1 +
+ include/uapi/linux/btrfs_tree.h |  20 ++
+ 31 files changed, 1004 insertions(+), 146 deletions(-)
+ create mode 100644 fs/btrfs/fscrypt.c
+ create mode 100644 fs/btrfs/fscrypt.h
+
+
+base-commit: 212cb3d0b8f4abf657671f05dbe0b3d9d858211d
 -- 
 2.40.1
 

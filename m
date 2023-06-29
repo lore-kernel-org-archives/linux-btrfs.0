@@ -2,39 +2,39 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B5609EB64D9
-	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Jun 2023 19:58:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2E087EB64DD
+	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Jun 2023 19:58:44 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231825AbjF2T6l (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 29 Jun 2023 15:58:41 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60708 "EHLO
+        id S232063AbjF2T6n (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 29 Jun 2023 15:58:43 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60662 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232063AbjF2T63 (ORCPT
+        with ESMTP id S232302AbjF2T6c (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 29 Jun 2023 15:58:29 -0400
-Received: from box.fidei.email (box.fidei.email [71.19.144.250])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6E9882D71
-        for <linux-btrfs@vger.kernel.org>; Thu, 29 Jun 2023 12:58:28 -0700 (PDT)
+        Thu, 29 Jun 2023 15:58:32 -0400
+Received: from box.fidei.email (box.fidei.email [IPv6:2605:2700:0:2:a800:ff:feba:dc44])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7C19930D1
+        for <linux-btrfs@vger.kernel.org>; Thu, 29 Jun 2023 12:58:30 -0700 (PDT)
 Received: from authenticated-user (box.fidei.email [71.19.144.250])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits))
         (No client certificate requested)
-        by box.fidei.email (Postfix) with ESMTPSA id F0D8980AEE;
-        Thu, 29 Jun 2023 15:58:27 -0400 (EDT)
+        by box.fidei.email (Postfix) with ESMTPSA id 8390980AE0;
+        Thu, 29 Jun 2023 15:58:30 -0400 (EDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=dorminy.me; s=mail;
-        t=1688068708; bh=kwpFfj+NnrvPQCaEv/DtQ9QsxS3IpDZzfXx1AMJqIiM=;
+        t=1688068710; bh=52Rr41aw2Qb6bdIRB7+n5MrXfQfrmDX6iS0fQCHf6sw=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=tK15WSs1vhvcSfWwVriyeLf0mhy8WsjT+Zrdh2T/Ioqnj/XgAM0RvlMbklOtOIs35
-         8A+QDbPqUaKMIeu/nHFTKuC2aTcFHc+vzcE/tiQcsW2kY06PL9eB9XXD0aNSkt9zXY
-         SEHonhpMc755a2J8OLjL6wLmw8mNoK8e+bxe2PJ+yil4E1maLGuum+f1YgCOp1ukbN
-         z/OOqR0cJsAxbuVZrrTFnTD25+Fua8ieb9yif9IZwOwRwrZuXKLqZ0MXU/c7duDejH
-         ozGGSe/8P4GTFm3Nla4nSKcpR688Ao+VyywRFpx8aBFWwlo1jYqyrYEb5zDnT2Ie4j
-         L1Ujc37VIklbw==
+        b=KEJufDkxcLCH0Fr0/lcpvQeQ1av9f+4qSPudeeKrnr03V1G8GiuD4o/6Gba5Ips2F
+         wvkQ76ytRkjJNQG8Jmof83n9/H0wCIadFYhbP7IOWLq5NCU77WbLHWPTAbbXPIHSJ5
+         KdgFbNU4TkDdU/81wssQW81ELZk48H8NB12qf//uAOicVfSRTmWZMr3l6e/S32/Dhc
+         0hg0+IBFCtpCMyXkZsPz3j5kEjkSf3ot6l0BFGBoAaEXfXlv3KNtIOPYDG+T28CjI3
+         dDumfR6lwiotzOoO7N5k1L4E5HYEtTOaK537EDrMEbOkAAt5ws80nEshim9HE1OLVr
+         i824hcHfWulsw==
 From:   Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
 To:     linux-btrfs@vger.kernel.org, kernel-team@meta.com
 Cc:     Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-Subject: [PATCH 3/8] btrfs-progs: add inode encryption contexts
-Date:   Thu, 29 Jun 2023 15:58:03 -0400
-Message-Id: <639b3158cef2fa35619d4b2b9871d56c88c5f81b.1688068420.git.sweettea-kernel@dorminy.me>
+Subject: [PATCH 4/8] btrfs-progs: save and load fscrypt extent contexts
+Date:   Thu, 29 Jun 2023 15:58:05 -0400
+Message-Id: <09d097a9b94ebf658f552537c5db66a4c87a4f4d.1688068420.git.sweettea-kernel@dorminy.me>
 In-Reply-To: <cover.1688068420.git.sweettea-kernel@dorminy.me>
 References: <cover.1688068420.git.sweettea-kernel@dorminy.me>
 MIME-Version: 1.0
@@ -43,56 +43,31 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Recapitulates relevant parts of kernel change 'btrfs: add inode
-encryption contexts'.
+Mirrors the relevant part of kernel change 'btrfs: save and load fscrypt
+extent contexts' to progs.
 
 Signed-off-by: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
 ---
- kernel-shared/uapi/btrfs_tree.h | 10 ++++++++++
- 1 file changed, 10 insertions(+)
+ kernel-shared/uapi/btrfs_tree.h | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
 
 diff --git a/kernel-shared/uapi/btrfs_tree.h b/kernel-shared/uapi/btrfs_tree.h
-index ad555e70..2df7cfec 100644
+index 2df7cfec..0e62f46b 100644
 --- a/kernel-shared/uapi/btrfs_tree.h
 +++ b/kernel-shared/uapi/btrfs_tree.h
-@@ -162,6 +162,8 @@
- #define BTRFS_VERITY_DESC_ITEM_KEY	36
- #define BTRFS_VERITY_MERKLE_ITEM_KEY	37
+@@ -1075,7 +1075,11 @@ struct btrfs_file_extent_item {
+ 	 * always reflects the size uncompressed and without encoding.
+ 	 */
+ 	__le64 num_bytes;
+-
++	/*
++	 * fscrypt extent encryption context. Only present if extent is
++	 * encrypted (stored in the encryption field).
++	 */
++	__u8 fscrypt_context[0];
+ } __attribute__ ((__packed__));
  
-+#define BTRFS_FSCRYPT_CTXT_ITEM_KEY	41
-+
- #define BTRFS_ORPHAN_ITEM_KEY		48
- /* reserve 2-15 close to the inode for later flexibility */
- 
-@@ -400,6 +402,7 @@ static inline __u8 btrfs_dir_flags_to_ftype(__u8 flags)
- #define BTRFS_INODE_NOATIME		(1U << 9)
- #define BTRFS_INODE_DIRSYNC		(1U << 10)
- #define BTRFS_INODE_COMPRESS		(1U << 11)
-+#define BTRFS_INODE_ENCRYPT	(1U << 12)
- 
- #define BTRFS_INODE_ROOT_ITEM_INIT	(1U << 31)
- 
-@@ -416,6 +419,7 @@ static inline __u8 btrfs_dir_flags_to_ftype(__u8 flags)
- 	 BTRFS_INODE_NOATIME |						\
- 	 BTRFS_INODE_DIRSYNC |						\
- 	 BTRFS_INODE_COMPRESS |						\
-+	 BTRFS_INODE_ENCRYPT |						\
- 	 BTRFS_INODE_ROOT_ITEM_INIT)
- 
- #define BTRFS_INODE_RO_VERITY		(1U << 0)
-@@ -1016,6 +1020,12 @@ enum {
- 	BTRFS_NR_FILE_EXTENT_TYPES = 3,
- };
- 
-+enum {
-+	BTRFS_ENCRYPTION_NONE,
-+	BTRFS_ENCRYPTION_FSCRYPT,
-+	BTRFS_NR_ENCRYPTION_TYPES,
-+};
-+
- struct btrfs_file_extent_item {
- 	/*
- 	 * transaction id that created this extent
+ struct btrfs_csum_item {
 -- 
 2.40.1
 

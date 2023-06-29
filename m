@@ -2,131 +2,111 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 10B3FEB64DD
-	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Jun 2023 00:10:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 427B0EB64DA
+	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Jun 2023 00:34:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232199AbjF2AKe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Jun 2023 20:10:34 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53024 "EHLO
+        id S229732AbjF2Ae3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Jun 2023 20:34:29 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58262 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232196AbjF2AKc (ORCPT
+        with ESMTP id S229501AbjF2Ae2 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Jun 2023 20:10:32 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 670E926B6;
-        Wed, 28 Jun 2023 17:10:30 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        Wed, 28 Jun 2023 20:34:28 -0400
+X-Greylist: delayed 319 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Wed, 28 Jun 2023 17:34:26 PDT
+Received: from box.fidei.email (box.fidei.email [71.19.144.250])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4040D1FC2;
+        Wed, 28 Jun 2023 17:34:26 -0700 (PDT)
+Received: from authenticated-user (box.fidei.email [71.19.144.250])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits))
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id A03122185C;
-        Thu, 29 Jun 2023 00:10:28 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1687997428; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=oWyWVgTSEV3MFabbeKzbDXd1Vdi5iQSxxpY/L5jsuOw=;
-        b=s8V4Sn1YTgDq+wvR65+wfyyCHeEq9f5ubYgjQqr3cb1NEuxpXKCCnIl7d0IJEC9oE9dlGS
-        3uONLBzGHXxtgYtMcMhejeBMyJf0Es6kOEwRbPuIimwBIprVW1rZXD5rLBHusSq58opF+p
-        gPExEqka2TN9dGEKMx2JNZiSCsLnw58=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 8E5181348C;
-        Thu, 29 Jun 2023 00:10:27 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id 5dYvFvPLnGRTFQAAMHmgww
-        (envelope-from <wqu@suse.com>); Thu, 29 Jun 2023 00:10:27 +0000
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org, fstests@vger.kernel.org
-Cc:     Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v2] common/btrfs: handle dmdust as mounted device in _btrfs_buffered_read_on_mirror()
-Date:   Thu, 29 Jun 2023 08:10:10 +0800
-Message-ID: <20230629001010.36235-1-wqu@suse.com>
-X-Mailer: git-send-email 2.41.0
+        by box.fidei.email (Postfix) with ESMTPSA id 09BAA80727;
+        Wed, 28 Jun 2023 20:34:24 -0400 (EDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=dorminy.me; s=mail;
+        t=1687998865; bh=YmTVWm+8w1XiK3osBNaPOn2YB+oMMXLIWj3hs2xcluA=;
+        h=From:To:Cc:Subject:Date:From;
+        b=LD6JDaIInhgJLRYBs4d+OA+f0La3cqoc7Jx4WOXUiIW/7+lAB2yfaYF17T4UEXUXp
+         QuFUx/UFxURjFx2wnDOqqW/lIlXo3QTqKXo+p6CGySMo1vmFlqfJy2dvhvG9DmiWCC
+         IExUQ75n+EuDPgIm2oGjeSb/Jb8ULkt/JePWIiVViCq2q60wIHDZhhwSMknzGU/iy4
+         O9BdUXndSPydOmCo07Jked/nEtVTJH3TjiyUMkRznyU6AyiEq0nn1zIyVf25sFlGhU
+         rTBoYoYbgNNYDLQ82hUIN+gQuvIllUpJCUVnjNbVbjUefwh2cMI34TOFJ/sSZM0hc8
+         4OMG8hnHUyleQ==
+From:   Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
+To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>,
+        Eric Biggers <ebiggers@kernel.org>,
+        "Theodore Y. Ts'o" <tytso@mit.edu>,
+        Jaegeuk Kim <jaegeuk@kernel.org>, kernel-team@meta.com,
+        linux-btrfs@vger.kernel.org, linux-fscrypt@vger.kernel.org
+Cc:     Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
+Subject: [PATCH v1 00/12] fscrypt: add extent encryption
+Date:   Wed, 28 Jun 2023 20:29:30 -0400
+Message-Id: <cover.1687988246.git.sweettea-kernel@dorminy.me>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-[BUG]
-After commit ab41f0bddb73 ("common/btrfs: use _scratch_cycle_mount to
-ensure all page caches are dropped"), the test case btrfs/143 can fail
-like below:
+This changeset adds extent-based data encryption to fscrypt.
+Some filesystems need to encrypt data based on extents, rather than on
+inodes, due to features incompatible with inode-based encryption. For
+instance, btrfs can have multiple inodes referencing a single block of
+data, and moves logical data blocks to different physical locations on
+disk in the background. 
 
- btrfs/143 6s ... [failed, exit status 1]- output mismatch (see ~/xfstests/results//btrfs/143.out.bad)
-    --- tests/btrfs/143.out 2020-06-10 19:29:03.818519162 +0100
-    +++ ~/xfstests/results//btrfs/143.out.bad 2023-06-19 17:04:00.575033899 +0100
-    @@ -1,37 +1,6 @@
-     QA output created by 143
-     wrote 131072/131072 bytes
-     XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-    -XXXXXXXX:  aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
-................
-    -XXXXXXXX:  aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
-................
-    -XXXXXXXX:  aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
-................
-    -XXXXXXXX:  aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
-................
+As per discussion last year in [1] and later in [2], we would like to
+allow the use of fscrypt with btrfs, with authenticated encryption. This
+is the first step of that work, adding extent-based encryption to
+fscrypt; authenticated encryption is the next step. Extent-based
+encryption should be usable by other filesystems which wish to support
+snapshotting or background data rearrangement also, but btrfs is the
+first user. 
 
-[CAUSE]
-Test case btrfs/143 uses dm-dust device to emulate read errors, this
-means we can not use _scratch_cycle_mount to cycle mount $SCRATCH_MNT.
+This changeset requires extent encryption to use inlinecrypt, as
+discussed previously. There are two questionable parts: the
+forget_extent_info hook is not yet in use by btrfs, as I haven't yet
+written a test exercising a race where it would be relevant; and saving
+the session key credentials just to enable v1 session-based policies is
+perhaps less good than 
 
-As it would go mount $SCRATCH_DEV, not the dm-dust device to
-$SCRATCH_MNT.
-This prevents us to trigger read-repair (since no error would be hit)
-thus fail the test.
+This applies atop [3], which itself is based on kdave/misc-next. It
+passes most encryption fstests with suitable changes to btrfs-progs, but
+not generic/580 or generic/595 due to different timing involved in
+extent encryption. Tests and btrfs progs updates to follow.
 
-[FIX]
-Since we can mount whatever device at $SCRATCH_MNT, we can not use
-_scratch_cycle_mount in this case.
 
-Instead implement a small helper to grab the mounted device and its
-mount options, and use the same device and mount options to cycle
-$SCRATCH_MNT mount.
+[1] https://docs.google.com/document/d/1janjxewlewtVPqctkWOjSa7OhCgB8Gdx7iDaCDQQNZA/edit?usp=sharing
+[2] https://lore.kernel.org/linux-fscrypt/80496cfe-161d-fb0d-8230-93818b966b1b@dorminy.me/T/#t
+[3]
+https://lore.kernel.org/linux-fscrypt/cover.1687988119.git.sweettea-kernel@dorminy.me/
 
-This would fix btrfs/143 and hopefully future test cases which use dm
-devices.
+Sweet Tea Dorminy (12):
+  fscrypt: factor helper for locking master key
+  fscrypt: factor getting info for a specific block
+  fscrypt: adjust effective lblks based on extents
+  fscrypt: add a super_block pointer to fscrypt_info
+  fscrypt: setup leaf inodes for extent encryption
+  fscrypt: allow infos to be owned by extents
+  fscrypt: notify per-extent infos if master key vanishes
+  fscrypt: use an optional ino equivalent for per-extent infos
+  fscrypt: add creation/usage/freeing of per-extent infos
+  fscrypt: allow load/save of extent contexts
+  fscrypt: save session key credentials for extent infos
+  fscrypt: update documentation for per-extent keys
 
-Reported-by: Filipe Manana <fdmanana@suse.com>
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
-Changelog:
-v2:
-- Use findmnt command to grab mount options and source device
----
- common/btrfs | 13 +++++++++++--
- 1 file changed, 11 insertions(+), 2 deletions(-)
+ Documentation/filesystems/fscrypt.rst |  38 +++-
+ fs/crypto/crypto.c                    |   6 +-
+ fs/crypto/fscrypt_private.h           |  91 ++++++++++
+ fs/crypto/inline_crypt.c              |  28 ++-
+ fs/crypto/keyring.c                   |  32 +++-
+ fs/crypto/keysetup.c                  | 244 ++++++++++++++++++++++----
+ fs/crypto/keysetup_v1.c               |   7 +-
+ fs/crypto/policy.c                    |  20 +++
+ include/linux/fscrypt.h               |  74 ++++++++
+ 9 files changed, 480 insertions(+), 60 deletions(-)
 
-diff --git a/common/btrfs b/common/btrfs
-index 175b33ae..0fec093d 100644
---- a/common/btrfs
-+++ b/common/btrfs
-@@ -601,8 +601,17 @@ _btrfs_buffered_read_on_mirror()
- 	# The drop_caches doesn't seem to drop every pages on aarch64 with
- 	# 64K page size.
- 	# So here as another workaround, cycle mount the SCRATCH_MNT to ensure
--	# the cache are dropped.
--	_scratch_cycle_mount
-+	# the cache are dropped, but we can not use _scratch_cycle_mount, as
-+	# we may mount whatever dm device at SCRATCH_MNT.
-+	# So here we grab the mounted block device and its mount options, then
-+	# unmount and re-mount with the same device and options.
-+	local dev=$(findmnt -n -T $SCRATCH_MNT -o SOURCE)
-+	local opts=$(findmnt -n -T $SCRATCH_MNT -o OPTIONS)
-+	if [ -z "$dev" -o -z "$opts" ]; then
-+		_fail "failed to grab mount info of $SCRATCH_MNT"
-+	fi
-+	_scratch_unmount
-+	_mount $dev -o $opts $SCRATCH_MNT
- 	while [[ -z $( (( BASHPID % nr_mirrors == mirror )) &&
- 		exec $XFS_IO_PROG \
- 			-c "pread -b $size $offset $size" $file) ]]; do
+
+base-commit: accadeb67609a5a5d088ebde8409c3f6db0b84b4
 -- 
-2.39.0
+2.40.1
 

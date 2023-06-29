@@ -2,39 +2,39 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4AA9BC001B0
-	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Jun 2023 19:58:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8C63AC001B3
+	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Jun 2023 19:58:47 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232082AbjF2T6p (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 29 Jun 2023 15:58:45 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60522 "EHLO
+        id S231407AbjF2T6q (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 29 Jun 2023 15:58:46 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60762 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232081AbjF2T6e (ORCPT
+        with ESMTP id S232178AbjF2T6h (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 29 Jun 2023 15:58:34 -0400
-Received: from box.fidei.email (box.fidei.email [IPv6:2605:2700:0:2:a800:ff:feba:dc44])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A52C62D5B
-        for <linux-btrfs@vger.kernel.org>; Thu, 29 Jun 2023 12:58:33 -0700 (PDT)
+        Thu, 29 Jun 2023 15:58:37 -0400
+Received: from box.fidei.email (box.fidei.email [71.19.144.250])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 802D42D60
+        for <linux-btrfs@vger.kernel.org>; Thu, 29 Jun 2023 12:58:36 -0700 (PDT)
 Received: from authenticated-user (box.fidei.email [71.19.144.250])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits))
         (No client certificate requested)
-        by box.fidei.email (Postfix) with ESMTPSA id 2DE8080AE0;
-        Thu, 29 Jun 2023 15:58:33 -0400 (EDT)
+        by box.fidei.email (Postfix) with ESMTPSA id E965080AE0;
+        Thu, 29 Jun 2023 15:58:35 -0400 (EDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=dorminy.me; s=mail;
-        t=1688068713; bh=NgXXFOl6a0/2PDL9/z/npYv+hjP2oswD7MP8NJsvONA=;
+        t=1688068716; bh=i64gJVxvY5Ht/txyZeejco2uaF2Z0SxWoUdP4xMQqzA=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=bj1BoHgSdQHAALTTevh7ZAjN1q5U4QRLhePp59YFyOwBtPDhUnznTNqGPVHvj3FLX
-         YCrFvcddOGGKj6tEwAYUn6oc95DHmk+svOfxwRIJ8F7XSPyTBhKceLaCIJ+pUncVQR
-         eM166Nm3XEIMgeMz6sNeDDgkZynfKYBqrkEQ1qQyi0qHiVF/4GvoDYLAFw47YUpKjk
-         7RdjshECPWMueO4lMvY/rC0PGzj5kY9k6Y8OIifEcWpT07H6V/kLB8aZW79V6GL3sD
-         v/spNL2DUu0fV7vo9MHyB49XTgoNMsmKSWsXvxherS2sHsi2UgALeQFHVJbWHAXC/n
-         PCpovk4Do8crA==
+        b=mZ6Pxav+rLQFB0UmDjvCzItJ38iH+p1/wM1H+RgSox8sCvOLFGSqXxBNk8RMj9Dm9
+         TFSPKhG0n4cqmd/4zpDKRHCiHzBhlJKYH1By2TWEaL7t88kqyswyU+7e0jGRL68bQX
+         cx2r86IDtGKbVs9Xu/G7B3qKyMcA4P6nQMcBNvlVQ3uqdJv5iTauwpUxcDfd+tlyMF
+         QBAm7YOxA5EY9J4JNNdi5XXLk5NGOeQmCaHei3AG7uAF6ZHIccvnFiokbke2CWTVqX
+         f2xBg8GsCtiFfH+++lbFJZyGCYJemB2MmpHS9uT90C4R8wTnAmBbPaHPhV5dCcsvOa
+         Q7KiTBPzPaUzg==
 From:   Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
 To:     linux-btrfs@vger.kernel.org, kernel-team@meta.com
 Cc:     Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-Subject: [PATCH 5/8] btrfs-progs: interpret encrypted file extents.
-Date:   Thu, 29 Jun 2023 15:58:07 -0400
-Message-Id: <adc97fa988761bb0b80038a71293c86f25401bdb.1688068420.git.sweettea-kernel@dorminy.me>
+Subject: [PATCH 7/8] btrfs-progs: escape unprintable characters in names
+Date:   Thu, 29 Jun 2023 15:58:09 -0400
+Message-Id: <57fd51e1bb53568633b6c92ac12f6dfbce7be404.1688068420.git.sweettea-kernel@dorminy.me>
 In-Reply-To: <cover.1688068420.git.sweettea-kernel@dorminy.me>
 References: <cover.1688068420.git.sweettea-kernel@dorminy.me>
 MIME-Version: 1.0
@@ -43,96 +43,68 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Encrypted file extents now have the 'encryption' field set to a
-encryption type plus a context length, and have an extent context
-appended to the item.  This necessitates adjusting the struct to have a
-variable-length fscrypt_context member at the end, and printing contexts
-if one is provided.
+There are several item types which have an associated name: inode refs
+and dir items. While they could always be unprintable, the advent of
+encryption makes it much more likely that the names contain characters
+outside the normal ASCII range. As such, it's useful to print the
+characters outside normal ASCII in hex format.
 
 Signed-off-by: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
 ---
- check/main.c               |  4 +++-
- kernel-shared/print-tree.c | 27 +++++++++++++++++++++++++++
- 2 files changed, 30 insertions(+), 1 deletion(-)
+ kernel-shared/print-tree.c | 19 ++++++++++++++++---
+ 1 file changed, 16 insertions(+), 3 deletions(-)
 
-diff --git a/check/main.c b/check/main.c
-index 77bb50a0..ce64f762 100644
---- a/check/main.c
-+++ b/check/main.c
-@@ -6345,6 +6345,7 @@ static int run_next_block(struct btrfs_root *root,
- 		for (i = 0; i < nritems; i++) {
- 			struct btrfs_file_extent_item *fi;
- 			unsigned long inline_offset;
-+			u8 ctxsize;
- 
- 			inline_offset = offsetof(struct btrfs_file_extent_item,
- 						 disk_bytenr);
-@@ -6480,8 +6481,9 @@ static int run_next_block(struct btrfs_root *root,
- 				continue;
- 
- 			/* Prealloc/regular extent must have fixed item size */
-+			ctxsize = btrfs_file_extent_encryption_ctxsize(buf, fi);
- 			if (btrfs_item_size(buf, i) !=
--			    sizeof(struct btrfs_file_extent_item)) {
-+			    sizeof(struct btrfs_file_extent_item) + ctxsize) {
- 				ret = -EUCLEAN;
- 				error(
- 			"invalid file extent item size, have %u expect %zu",
 diff --git a/kernel-shared/print-tree.c b/kernel-shared/print-tree.c
-index 0f7f7b72..688e4c1a 100644
+index fa32b586..c02c00d7 100644
 --- a/kernel-shared/print-tree.c
 +++ b/kernel-shared/print-tree.c
-@@ -356,6 +356,28 @@ static void compress_type_to_str(u8 compress_type, char *ret)
- 	}
- }
+@@ -30,6 +30,19 @@
+ #include "kernel-shared/file-item.h"
+ #include "common/utils.h"
  
-+static void generate_encryption_string(struct extent_buffer *leaf,
-+				       struct btrfs_file_extent_item *fi,
-+				       char *ret)
++static void print_name(const char *buf, size_t len)
 +{
-+	u8 encryption = btrfs_file_extent_encryption(leaf, fi);
-+	u8 policy, ctxsize;
-+	unsigned long offset = (unsigned long) fi;
-+	const struct btrfs_file_extent_item *fi2 = (struct btrfs_file_extent_item *)(leaf->data + offset);
-+	const __u8 *ctx = fi2->fscrypt_context;
-+
-+	btrfs_unpack_encryption(encryption, &policy, &ctxsize);
-+	ret += sprintf(ret, "(%hhu, %hhu", policy, ctxsize);
-+
-+	if (ctxsize) {
-+		int i;
-+		ret += sprintf(ret, ": context ");
-+		for (i = 0; i < ctxsize; i++)
-+			ret += sprintf(ret, "%02hhx", ctx[i]);
++	size_t i;
++	printf("name: ");
++	for(i = 0; i < len; i++) {
++		if (buf[i] >= ' ' && buf[i] <= '~')
++			printf("%c", buf[i]);
++		else
++			printf("\\x%02hhx", buf[i]);
 +	}
-+	sprintf(ret, ")");
++	printf("\n");
 +}
 +
- static const char* file_extent_type_to_str(u8 type)
+ static void print_dir_item_type(struct extent_buffer *eb,
+                                 struct btrfs_dir_item *di)
  {
- 	switch (type) {
-@@ -372,9 +394,11 @@ static void print_file_extent_item(struct extent_buffer *eb,
- {
- 	unsigned char extent_type = btrfs_file_extent_type(eb, fi);
- 	char compress_str[16];
-+	char encrypt_str[16];
+@@ -79,7 +92,7 @@ static void print_dir_item(struct extent_buffer *eb, u32 size,
+ 		} else {
+ 			read_extent_buffer(eb, namebuf,
+ 					(unsigned long)(di + 1), len);
+-			printf("\t\tname: %.*s\n", len, namebuf);
++			print_name(namebuf, len);
+ 		}
  
- 	compress_type_to_str(btrfs_file_extent_compression(eb, fi),
- 			     compress_str);
-+	generate_encryption_string(eb, fi, encrypt_str);
+ 		if (data_len) {
+@@ -137,7 +150,7 @@ static void print_inode_extref_item(struct extent_buffer *eb, u32 size,
+ 		} else {
+ 			read_extent_buffer(eb, namebuf,
+ 					(unsigned long)extref->name, len);
+-			printf("name: %.*s\n", len, namebuf);
++			print_name(namebuf, len);
+ 		}
  
- 	printf("\t\tgeneration %llu type %hhu (%s)\n",
- 			btrfs_file_extent_generation(eb, fi),
-@@ -407,6 +431,9 @@ static void print_file_extent_item(struct extent_buffer *eb,
- 	printf("\t\textent compression %hhu (%s)\n",
- 			btrfs_file_extent_compression(eb, fi),
- 			compress_str);
-+	printf("\t\textent encryption %hhu (%s)\n",
-+			btrfs_file_extent_encryption(eb, fi),
-+			encrypt_str);
- }
- 
- /* Caller should ensure sizeof(*ret) >= 16("DATA|TREE_BLOCK") */
+ 		len = sizeof(*extref) + name_len;
+@@ -167,7 +180,7 @@ static void print_inode_ref_item(struct extent_buffer *eb, u32 size,
+ 		} else {
+ 			read_extent_buffer(eb, namebuf,
+ 					(unsigned long)(ref + 1), len);
+-			printf("name: %.*s\n", len, namebuf);
++			print_name(namebuf, len);
+ 		}
+ 		len = sizeof(*ref) + name_len;
+ 		ref = (struct btrfs_inode_ref *)((char *)ref + len);
 -- 
 2.40.1
 

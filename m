@@ -2,121 +2,144 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 92EADEB64DC
-	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Jun 2023 08:42:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 41F1CEB64D9
+	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Jun 2023 09:08:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232540AbjF2ImR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 29 Jun 2023 04:42:17 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52194 "EHLO
+        id S230413AbjF2JIJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 29 Jun 2023 05:08:09 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33542 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230190AbjF2IlL (ORCPT
+        with ESMTP id S230055AbjF2JII (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 29 Jun 2023 04:41:11 -0400
-Received: from esa6.hgst.iphmx.com (esa6.hgst.iphmx.com [216.71.154.45])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 581903C35
-        for <linux-btrfs@vger.kernel.org>; Thu, 29 Jun 2023 01:37:36 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1688027856; x=1719563856;
-  h=from:to:cc:subject:date:message-id:mime-version:
-   content-transfer-encoding;
-  bh=ERheDmQIoQ5vF30e9LQtT+LH7vzvx+K4bcT+Gf7QptM=;
-  b=Pw82o7bSuW76KsPjzJQLo9bH5hYdUNmRZqA/5v5RS9wFKEd1mNw6aU2V
-   ewQCyLvjg5qVRr/e2eJtM+ZYQ+YVZWCjOM7X2EyEFnqs+NRtcMcUkdYaK
-   8Wf+wcqESf+m9sxze+gsd2INI6ALkwy6ilTGJ+efLhihgoLnTaxK4HZfG
-   7xCNMpS+a3LWDVJTu1Aeb9WZx8RIsUtAOh6vAtQ+j8T5PzCdYDBgDlFua
-   vpul7nrM914tbsk/y8rfMCzRP8VJ/1DTxUqcRxoSSGyuy7f58hxqn3Ptn
-   3CkZoq0rTV6i81scehn+XdeqqDWS/KflNQacfLAFOh8VLXk8WuuimS25V
-   Q==;
-X-IronPort-AV: E=Sophos;i="6.01,168,1684771200"; 
-   d="scan'208";a="237147808"
-Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 29 Jun 2023 16:37:35 +0800
-IronPort-SDR: xOHDqIrvlATEgWr3XUmzwSaq1LDuIT7LsluJSs2KAkqL1GinBxzsuqPxz+6pgmKY1qcEF0OHzK
- /dUXzGO9EVJ4GfJU8keVwXZChN6dx3HFxB81R33w/DtouuxQKfcmEEx7PhHaSoj5dqqKItBrXQ
- GhO42+zKWICs+Lt7RMfCRcr8U6aan6jXaDRkOCPGn+jfe1fXgqpHo3FdHpUQ9Q1uZyUelheGIY
- UIJF3s1+ApnMwG4NDanqSWFXIW8bKW3NM7CvnESE95Yqgp2egOMz55QJcTmoXyuwN3LoapmclG
- K6s=
-Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 29 Jun 2023 00:51:52 -0700
-IronPort-SDR: S87lsBbYsf+9Gt9CkcbcgZEWoEyapMhcq56p8kY519F1Dq9RoK+jLRPHmKXPHyj6sp+RKT+07u
- EQZuJiahyzASxJEnwD/I9loOTKntnQYp9JTswS8RRFF7kBnWIzkiSpvTZd9ybWd0nZdJsfcTEO
- 10/kRoeVgW/ilYs6B543D09zJwVgBDZ/rB+IIaFNjPpSgTHiW/tktdsEVYTOFItW3Ez/Oti5TF
- nFkBLtRT5ScMSFkjEuBeobVwacxCRbuKazZB+WWh8nRsCIcUEeh/xpzKyKCyM2n7OEOwUeBScN
- lAg=
-WDCIronportException: Internal
-Received: from unknown (HELO naota-xeon.wdc.com) ([10.225.163.52])
-  by uls-op-cesaip02.wdc.com with ESMTP; 29 Jun 2023 01:37:35 -0700
-From:   Naohiro Aota <naohiro.aota@wdc.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH v2] btrfs: zoned: do not enable async discard
-Date:   Thu, 29 Jun 2023 17:37:31 +0900
-Message-ID: <e22f5f69d881de1ec0e381f1be6bfe61b822c064.1688027756.git.naohiro.aota@wdc.com>
-X-Mailer: git-send-email 2.41.0
+        Thu, 29 Jun 2023 05:08:08 -0400
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.22])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2DC571BF4
+        for <linux-btrfs@vger.kernel.org>; Thu, 29 Jun 2023 02:08:07 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.com;
+ s=s31663417; t=1688029684; x=1688634484; i=quwenruo.btrfs@gmx.com;
+ bh=S/wdXoA3D/gg1kCejZzcrbKEhHUTYn7UAzuYjZKJfdU=;
+ h=X-UI-Sender-Class:Date:Subject:To:References:From:In-Reply-To;
+ b=ZCf19CC+Z/9teA+IBvW9dR+B5QzId6xK+v4SaDHwLQzTqdABx1yWHMRUr9E72eoofVtt5lG
+ Fgkbyj3MUbI5iPlW9tRc8KkJm414TU/Y976QT6++JUK6v7QSv92Ldv/jMpj88OXHoeiwpG1+8
+ TzVERakrRZTTo01/l3z/F1Q1njNkU6mvqZlo54C8GEvpvTSP49GokJmVUYbc0TGJiDalHnSLu
+ pRugggv6cK/WNBb4qACByQh5bSsCCcphXMv3qnD5jn54mJ3Y1hCzlHpYdRKPNP9bwMO0ZVJj4
+ 7jrabQr4nUkmXYNPv4+udZ4nsEWs+VypJQbHI6OjNwrLKhqkBF/A==
+X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx104
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1N8obG-1q1Ayz38rO-015oMf; Thu, 29
+ Jun 2023 11:08:04 +0200
+Message-ID: <8a3d7ad6-0ddb-3160-eece-8d6228b9c0a6@gmx.com>
+Date:   Thu, 29 Jun 2023 17:08:01 +0800
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.12.0
+Subject: Re: question to btrfs scrub
+To:     Bernd Lentes <bernd.lentes@helmholtz-muenchen.de>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <PR3PR04MB734055F52AB54D94193FA79CD625A@PR3PR04MB7340.eurprd04.prod.outlook.com>
+Content-Language: en-US
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+In-Reply-To: <PR3PR04MB734055F52AB54D94193FA79CD625A@PR3PR04MB7340.eurprd04.prod.outlook.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:GmElcomke7EFqcFYikB1YUw8x2cSyDrSXlJUvM/em4zSzEmacqu
+ 7NmzBd7bAGibmuk6rNlzfA3hHotEWLFBWXxBelaop0R/BiwUSHh418EUQ3YMp1Mn8kwy2mc
+ cnVsrNcxTtgnb4NxFfb5vPTOJpWh1d0aBlddQUh9/JOZL3PfR4x8WKTwT6CZVyGt+5THZqv
+ dLttOFsgCTF8ZxSijZ5LQ==
+UI-OutboundReport: notjunk:1;M01:P0:JHKRhW28VlI=;HKBz/7QYd1gGV+BHVzANTQ3v6UR
+ ejnTy3aKAi0c6TUGoAanzU/uJCmcT93RObFIF+d6iuhWt/9+CKyu13Sa2dyhwAgswqbQc7ts1
+ gwFmt2KYf0gE675C4VsEK90LsigYRwXuIcaFbuAWlANhvOzmbjJWlp8c39yb8q+6gx2OHAo6r
+ PctZe3hB2mTerQP03CQJaRbU1PlYH1cZuxhIW8XzEhnjCyti7r7Yic8dt6pSinISCXyLGYw28
+ 56Ich+s3ImxnV9FpXMnJE9QWc9u7kiW8GXI4igxCe6GseiKY9Pw/krYRhk9lUhKYWXLK8S0qF
+ C4LgahdzAiilwlKGxykFv+6ViWd3wJOnHQxGKrXy/aCUaCJCW3fDkw8NDKbVe2+uvMsP1TaJM
+ xXbIRF8jmuOsCzHY+BU4oPmEh062kBUbIKLarcDdPSRJ5AvO/bBws9xfkh7Zu2f35ZvdsZUX3
+ zeHQXgafYDT5crD4PohsGNY7F/9Yu0g8PAQSodobqhNRJgFtNyRsesgwumjMYargywdgNFlNq
+ hqHv8Nx/vqGDazZjHZ8jBCVjfsRl8CA6T9j41fGW5BIJFpAiT+nvQYaFxKSLSr6k2EUOBM1Xt
+ CZhR5Y1YUm1DZ+9JVhV+V+bfyUQjZrAhqBETfgMcMEnerxtX+H042WqTdYbRw6R2Ivy7lf+r8
+ b5miAIYv+5Xw0VdGas0irkFPDiMZliyZP/YW8nNlx8VPZae72K4UQN4ICB9LmZUWC7LH33NCi
+ TjFqZRCeoFLA8idTY+NEEyZZLyy869fhKkmEN0GV3dcet7W4R3mQ9EyIV4AX5nirb4D2PVRP/
+ TaMXY+Os/0QcTx90qt0Iig8NhHci0KDBJsYKBW2r6kvcP3P46IJYIF6Fai0a8fncYFWHiA3ax
+ MOsVIrcHvGGYBTzFePPTghcM05xoR6pRXq5pLsKiFfDyNQxS1JCz1yWFJplAA7q/DZuGMTHfr
+ XMLfmZ1r7HbTFadB5q9U9YBZKw4=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The zoned mode need to reset a zone before using it. We rely on btrfs's
-original discard functionality (discarding unused block group range) to do
-the resetting.
 
-While the commit 63a7cb130718 ("btrfs: auto enable discard=async when
-possible") made the discard done in an async manner, a zoned reset do not
-need to be async, as it is fast enough.
 
-Even worth, delaying zone rests prevents using those zones again. So, let's
-disable async discard on the zoned mode.
+On 2023/6/29 16:26, Bernd Lentes wrote:
+> Hi guys,
+>
+> i have a BTRFS volume which produces a lot of errors in the syslog.
+> Here I got the recommendation to start a =E2=80=9Cbtrfs scrub=E2=80=9D o=
+n that volume.
+> I made an image of that volume (with dd) and started the scrub on that.
+> That=E2=80=99s the result:
+>
+> ha-idg-1:/mnt/sdc1/ha-idg-1/image # btrfs scrub start -B /mnt/image/
+>
+> scrub done for bbcfa007-fb2b-432a-b513-207d5df35a2a
+> Scrub started:    Tue Jun 27 20:47:26 2023
+> Status:           finished
+> Duration:         35:39:48
+> Total to scrub:   5.07TiB
+> Rate:             40.16MiB/s
+> Error summary:    csum=3D1052
+>    Corrected:      0
+>    Uncorrectable:  1052
+>    Unverified:     0
+> ERROR: there are uncorrectable errors
+>
+> 1052 checksum errors on a 5TB volume. Is that much, or is that normal ?
 
-Fixes: 63a7cb130718 ("btrfs: auto enable discard=async when possible")
-CC: stable@vger.kernel.org # 6.3+
-Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
----
- fs/btrfs/disk-io.c | 7 ++++++-
- fs/btrfs/zoned.c   | 5 +++++
- 2 files changed, 11 insertions(+), 1 deletion(-)
+I believe it's not normal, but please also provide the following info:
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 7513388b0567..9b9914e5f03d 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3438,11 +3438,16 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
- 	 * For devices supporting discard turn on discard=async automatically,
- 	 * unless it's already set or disabled. This could be turned off by
- 	 * nodiscard for the same mount.
-+	 *
-+	 * The zoned mode piggy backs on the discard functionality for
-+	 * resetting a zone. There is no reason to delay the zone reset as it is
-+	 * fast enough. So, do not enable async discard for zoned mode.
- 	 */
- 	if (!(btrfs_test_opt(fs_info, DISCARD_SYNC) ||
- 	      btrfs_test_opt(fs_info, DISCARD_ASYNC) ||
- 	      btrfs_test_opt(fs_info, NODISCARD)) &&
--	    fs_info->fs_devices->discardable) {
-+	    fs_info->fs_devices->discardable &&
-+	    !btrfs_is_zoned(fs_info)) {
- 		btrfs_set_and_info(fs_info, DISCARD_ASYNC,
- 				   "auto enabling async discard");
- 	}
-diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-index 85b8b332add9..65d17306c2d4 100644
---- a/fs/btrfs/zoned.c
-+++ b/fs/btrfs/zoned.c
-@@ -805,6 +805,11 @@ int btrfs_check_mountopts_zoned(struct btrfs_fs_info *info)
- 		return -EINVAL;
- 	}
- 
-+	if (btrfs_test_opt(info, DISCARD_ASYNC)) {
-+		btrfs_warn(info, "zoned: disabling async discard as it is not supported");
-+		btrfs_clear_opt(info->mount_opt, DISCARD_ASYNC);
-+	}
-+
- 	return 0;
- }
- 
--- 
-2.41.0
+- Kernel version
+- SMART info
+- HDD model
 
+> What can I do ?
+
+You can check the dmesg, which should mention the file name of the
+offending inode.
+
+IIRC there used to be some bug causing csum mismatch, if it's all in one
+file, you can backup and remove the file, then set nodatacow for that file=
+.
+
+> Start a btrfs check ?
+
+It would never hurt, but if it's only csum errors, I believe btrfs check
+would not report any major problem.
+
+> First on the image before on the original ?
+
+Yeah, on the image first.
+
+Thanks,
+Qu
+>
+> Thanks.
+>
+>
+> Bernd Lentes
+>
+> --
+> Bernd Lentes
+> System Administrator
+> MCD
+> Helmholtzzentrum M=C3=BCnchen
+> +49 89 3187 1241
+> mailto:bernd.lentes@helmholtz-munich.de
+> https://www.helmholtz-munich.de/en/mcd
+>
+>
+> Helmholtz Zentrum M=C3=BCnchen =E2=80=93 Deutsches Forschungszentrum f=
+=C3=BCr Gesundheit und Umwelt (GmbH)
+> Ingolst=C3=A4dter Landstra=C3=9Fe 1, D-85764 Neuherberg, https://www.hel=
+mholtz-munich.de
+> Gesch=C3=A4ftsf=C3=BChrung: Prof. Dr. med. Dr. h.c. Matthias Tsch=C3=B6p=
+, Daniela Sommer (komm.) | Aufsichtsratsvorsitzende: MinDir=E2=80=99in Pro=
+f. Dr. Veronika von Messling
+> Registergericht: Amtsgericht M=C3=BCnchen HRB 6466 | USt-IdNr. DE 129521=
+671

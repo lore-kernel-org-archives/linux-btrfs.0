@@ -2,72 +2,98 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 585D8C001DF
-	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Jun 2023 19:58:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 93C7CEB64D9
+	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Jun 2023 19:58:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232039AbjF2T6m (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 29 Jun 2023 15:58:42 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60454 "EHLO
+        id S232194AbjF2T6o (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 29 Jun 2023 15:58:44 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60452 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232311AbjF2T6d (ORCPT
+        with ESMTP id S232316AbjF2T6f (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 29 Jun 2023 15:58:33 -0400
-Received: from box.fidei.email (box.fidei.email [71.19.144.250])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6504230DD
-        for <linux-btrfs@vger.kernel.org>; Thu, 29 Jun 2023 12:58:32 -0700 (PDT)
+        Thu, 29 Jun 2023 15:58:35 -0400
+Received: from box.fidei.email (box.fidei.email [IPv6:2605:2700:0:2:a800:ff:feba:dc44])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0C6382D52
+        for <linux-btrfs@vger.kernel.org>; Thu, 29 Jun 2023 12:58:35 -0700 (PDT)
 Received: from authenticated-user (box.fidei.email [71.19.144.250])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits))
         (No client certificate requested)
-        by box.fidei.email (Postfix) with ESMTPSA id D522880AEE;
-        Thu, 29 Jun 2023 15:58:31 -0400 (EDT)
+        by box.fidei.email (Postfix) with ESMTPSA id 8C99B80AEE;
+        Thu, 29 Jun 2023 15:58:34 -0400 (EDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=dorminy.me; s=mail;
-        t=1688068712; bh=52Rr41aw2Qb6bdIRB7+n5MrXfQfrmDX6iS0fQCHf6sw=;
+        t=1688068714; bh=hpN54LJR3hQl+NHy4p9FcgUzWadyhKColShXyQbVu7w=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=qtdf8SEZ9HKoGpWydd0TdNPJ49+0HEEkTwP/F1ZokrP/WREjhi+xkrnn8EMUDFsAe
-         sHcXKP7E95cnuakna/qiIXm0kZ8BUFJtAnibs+4yqbyVsx2exQaChdfNy870oLB7Sg
-         Nhhzi4R8qj7ORqU6acsADnoNMuCaQqxWce8w2svvqUTu6PDdX1JcX70DgB0tHLRWIR
-         1JIK8U0LgaY4MB9RV3kApHZiwFbCVfld6cb1f/vfgwRodfIBw5bpaOBY3qjMBEhcQ+
-         GLdIZfDYNyOXQDrLWAp2T/OfzkeeFBAmP06JYdarFr6IYEejwBfkHFXobuVOBIQL7b
-         VNJG1bAGVbHYg==
+        b=Z63vg20Z8PGh2yaw3F8sQ0OVB7m69l4BuqtX1KnQ9zQNE96jPxi/FNFDxiyYudEH3
+         K/csov2tc0iwMOgz+EaRa68rArSDtRVIiFk3lk+3KrPBRPPx1r3YjmTR23cYQCtHyb
+         OhNEAmjOY0HSf/egeKixW1TQz7csmTUthxqfM8hozWTmzv4ROYgKGr7WsRSgd5Q2yW
+         WZhUsgCfIKHMYJidzr6A8yZzigBstP0eBhK7QKwgbJez+Ab9UPZzViyLOZUmca0VQe
+         os1NaLUWVeEWZmcclwx4Ecy4Jq7i1Nsc6i3kO2v8Ee7no1iIVU/pihWDs6skQZ2jWz
+         doEHQsOil9omA==
 From:   Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
 To:     linux-btrfs@vger.kernel.org, kernel-team@meta.com
 Cc:     Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-Subject: [PATCH 4/8] progs: save and load fscrypt extent contexts
-Date:   Thu, 29 Jun 2023 15:58:06 -0400
-Message-Id: <e8638400ec466c01a7398b2c9215942960a94fe9.1688068150.git.sweettea-kernel@dorminy.me>
-In-Reply-To: <cover.1688068150.git.sweettea-kernel@dorminy.me>
-References: <cover.1688068150.git.sweettea-kernel@dorminy.me>
+Subject: [PATCH 6/8] btrfs-progs: handle fscrypt context items
+Date:   Thu, 29 Jun 2023 15:58:08 -0400
+Message-Id: <eef274ef0d95a408b83492cec8fc06f723bc2e59.1688068420.git.sweettea-kernel@dorminy.me>
+In-Reply-To: <cover.1688068420.git.sweettea-kernel@dorminy.me>
+References: <cover.1688068420.git.sweettea-kernel@dorminy.me>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Mirrors the relevant part of kernel change 'btrfs: save and load fscrypt
-extent contexts' to progs.
+Encrypted inodes have a new associated item, the fscrypt context, which
+can be printed as a pure hex string in dump-tree.
 
 Signed-off-by: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
 ---
- kernel-shared/uapi/btrfs_tree.h | 6 +++++-
- 1 file changed, 5 insertions(+), 1 deletion(-)
+ kernel-shared/print-tree.c | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
 
-diff --git a/kernel-shared/uapi/btrfs_tree.h b/kernel-shared/uapi/btrfs_tree.h
-index 2df7cfec..0e62f46b 100644
---- a/kernel-shared/uapi/btrfs_tree.h
-+++ b/kernel-shared/uapi/btrfs_tree.h
-@@ -1075,7 +1075,11 @@ struct btrfs_file_extent_item {
- 	 * always reflects the size uncompressed and without encoding.
- 	 */
- 	__le64 num_bytes;
--
-+	/*
-+	 * fscrypt extent encryption context. Only present if extent is
-+	 * encrypted (stored in the encryption field).
-+	 */
-+	__u8 fscrypt_context[0];
- } __attribute__ ((__packed__));
+diff --git a/kernel-shared/print-tree.c b/kernel-shared/print-tree.c
+index 688e4c1a..fa32b586 100644
+--- a/kernel-shared/print-tree.c
++++ b/kernel-shared/print-tree.c
+@@ -99,6 +99,20 @@ static void print_dir_item(struct extent_buffer *eb, u32 size,
+ 	}
+ }
  
- struct btrfs_csum_item {
++static void print_fscrypt_context(struct extent_buffer *eb, int slot)
++{
++	int i;
++	unsigned long ptr = btrfs_item_ptr_offset(eb, slot);
++	u32 item_size = btrfs_item_size(eb, slot);
++	u8 ctx_buf[item_size];
++
++	read_extent_buffer(eb, ctx_buf, ptr, item_size);
++	printf("\t\tvalue: ");
++	for(i = 0; i < item_size; i++)
++		printf("%02x", ctx_buf[i]);
++	printf("\n");
++}
++
+ static void print_inode_extref_item(struct extent_buffer *eb, u32 size,
+ 		struct btrfs_inode_extref *extref)
+ {
+@@ -675,6 +689,7 @@ void print_key_type(FILE *stream, u64 objectid, u8 type)
+ 		[BTRFS_DIR_LOG_ITEM_KEY]	= "DIR_LOG_ITEM",
+ 		[BTRFS_DIR_LOG_INDEX_KEY]	= "DIR_LOG_INDEX",
+ 		[BTRFS_XATTR_ITEM_KEY]		= "XATTR_ITEM",
++		[BTRFS_FSCRYPT_CTXT_ITEM_KEY]   = "FSCRYPT_CTXT_ITEM",
+ 		[BTRFS_VERITY_DESC_ITEM_KEY]	= "VERITY_DESC_ITEM",
+ 		[BTRFS_VERITY_MERKLE_ITEM_KEY]	= "VERITY_MERKLE_ITEM",
+ 		[BTRFS_ORPHAN_ITEM_KEY]		= "ORPHAN_ITEM",
+@@ -1395,6 +1410,9 @@ void btrfs_print_leaf(struct extent_buffer *eb, unsigned int mode)
+ 		case BTRFS_XATTR_ITEM_KEY:
+ 			print_dir_item(eb, item_size, ptr);
+ 			break;
++		case BTRFS_FSCRYPT_CTXT_ITEM_KEY:
++			print_fscrypt_context(eb, i);
++			break;
+ 		case BTRFS_DIR_LOG_INDEX_KEY:
+ 		case BTRFS_DIR_LOG_ITEM_KEY: {
+ 			struct btrfs_dir_log_item *dlog;
 -- 
 2.40.1
 

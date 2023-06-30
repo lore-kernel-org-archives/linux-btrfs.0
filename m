@@ -2,42 +2,42 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 14863EB64DC
-	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Jun 2023 15:04:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 09370EB64D7
+	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Jun 2023 15:04:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232903AbjF3PEE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 30 Jun 2023 11:04:04 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57982 "EHLO
+        id S232910AbjF3PEG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 30 Jun 2023 11:04:06 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57978 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232910AbjF3PEB (ORCPT
+        with ESMTP id S232907AbjF3PED (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 30 Jun 2023 11:04:01 -0400
+        Fri, 30 Jun 2023 11:04:03 -0400
 Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BDD1535AF
-        for <linux-btrfs@vger.kernel.org>; Fri, 30 Jun 2023 08:03:58 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A5F703583
+        for <linux-btrfs@vger.kernel.org>; Fri, 30 Jun 2023 08:04:01 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature RSA-PSS (2048 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 4A8E56176D
-        for <linux-btrfs@vger.kernel.org>; Fri, 30 Jun 2023 15:03:58 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 39786C433C9
-        for <linux-btrfs@vger.kernel.org>; Fri, 30 Jun 2023 15:03:57 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 2E89A6176F
+        for <linux-btrfs@vger.kernel.org>; Fri, 30 Jun 2023 15:04:01 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 19555C433C9
+        for <linux-btrfs@vger.kernel.org>; Fri, 30 Jun 2023 15:03:59 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1688137437;
-        bh=LnEJZ0hWqYV2gv4w5TYgjMImjZCfGv8+McVtM8mF+qc=;
+        s=k20201202; t=1688137440;
+        bh=3d/wJHSEWiE7WGrzCMwJqMT4xZVK+8Bb9S2y7VyJXaw=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=KtM5oLJNFB543ewCrWZ9lNT6XVnyf31MqAS+xxPDsoqi+vMB05UbqnbR5/pYMXTl4
-         CGs7c0cfcdZ8j8tARRSKuA2scxz36/hkkm6OFf4FNr3GWz9GAJOOaxVnn4pnQ5HGQQ
-         LH3dt2VL9beUAYM6GjOKxPFuujNne0lWee9cO76Y8+WPujXUhIpv8pOFW+hMI9qNej
-         frRWKuh0uDJZRN338pjezYsbKuYEWJSI9VorwMuEmajpTllOjfAQdJOEKpPhAc2V2n
-         qtHFD581lFLuh0yg5h0Zx2mu45I108zGpMwv8b7xNZptygO/9O2MFUmkuj/Yr19rKG
-         CGe7Lqkh/YRbA==
+        b=h43WsgmJZDSa5xoqTK928oSk6sl3m1P/deeOAbzd2oVIDC9/gy7aDka5w5QH7vrgu
+         B9ggq61kXVsEBE7wh/MMMA408LITBzNuDgRbDxlDGWQQS2H/e638nLFvTNyIv+B/7g
+         hfs8R4VKa6/Jur32K0PldgM59hmb5l6PIIRWZ4n3Y4ARXZJCGGffgA1Zbnnh+JYO7C
+         /IcKOYvfORIuCoWth5vRUyTP2/X1Ctvj70YHVPQK2OGG4gThyp8EZyS2j2ofMF6AqM
+         JxCr9wq5z39kgEz3xdNaRIf5nPr/1y7sHi8kQY6PpsZcO7QXDU1az1nzp6Sn/HY9BR
+         dhgDC/DF+Ojuw==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/8] btrfs: rename add_new_free_space() to btrfs_add_new_free_space()
-Date:   Fri, 30 Jun 2023 16:03:46 +0100
-Message-Id: <eb9ac6d0595238ce154af4e0143f2e0afe44d7d4.1688137156.git.fdmanana@suse.com>
+Subject: [PATCH 6/8] btrfs: make find_first_extent_bit() return a boolean
+Date:   Fri, 30 Jun 2023 16:03:49 +0100
+Message-Id: <61b7fb261a56bf95c0137c55b933754cf6608dc8.1688137156.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.34.1
 In-Reply-To: <cover.1688137155.git.fdmanana@suse.com>
 References: <cover.1688137155.git.fdmanana@suse.com>
@@ -49,131 +49,256 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-Since add_new_free_space() is exported, used outside block-group.c, rename
-it to include the 'btrfs_' prefix.
+Currently find_first_extent_bit() returns a 0 if it found a range in the
+given io tree and 1 if it didn't find any. There's no need to return any
+errors, so make the return value a boolean and invert the logic to make
+more sense: return true if it found a range and false if it didn't find
+any range.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/block-group.c     | 20 ++++++++++----------
- fs/btrfs/block-group.h     |  4 ++--
- fs/btrfs/free-space-tree.c | 16 ++++++++--------
- 3 files changed, 20 insertions(+), 20 deletions(-)
+ fs/btrfs/block-group.c      |  9 ++++-----
+ fs/btrfs/dev-replace.c      |  6 +++---
+ fs/btrfs/disk-io.c          | 10 +++++-----
+ fs/btrfs/extent-io-tree.c   | 14 +++++++-------
+ fs/btrfs/extent-io-tree.h   |  6 +++---
+ fs/btrfs/extent-tree.c      |  5 ++---
+ fs/btrfs/free-space-cache.c |  7 +++----
+ fs/btrfs/relocation.c       | 10 ++++++----
+ fs/btrfs/transaction.c      |  8 ++++----
+ fs/btrfs/volumes.c          |  6 +++---
+ 10 files changed, 40 insertions(+), 41 deletions(-)
 
 diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index ec4c6edb556b..ac098d62169d 100644
+index ac098d62169d..ba4e66de3372 100644
 --- a/fs/btrfs/block-group.c
 +++ b/fs/btrfs/block-group.c
-@@ -506,8 +506,8 @@ static void fragment_free_space(struct btrfs_block_group *block_group)
-  *
-  * Returns 0 on success or < 0 on error.
-  */
--int add_new_free_space(struct btrfs_block_group *block_group, u64 start, u64 end,
--		       u64 *total_added_ret)
-+int btrfs_add_new_free_space(struct btrfs_block_group *block_group, u64 start,
-+			     u64 end, u64 *total_added_ret)
- {
- 	struct btrfs_fs_info *info = block_group->fs_info;
- 	u64 extent_start, extent_end, size;
-@@ -796,8 +796,8 @@ static int load_extent_tree_free(struct btrfs_caching_control *caching_ctl)
- 		    key.type == BTRFS_METADATA_ITEM_KEY) {
- 			u64 space_added;
+@@ -517,11 +517,10 @@ int btrfs_add_new_free_space(struct btrfs_block_group *block_group, u64 start,
+ 		*total_added_ret = 0;
  
--			ret = add_new_free_space(block_group, last, key.objectid,
--						 &space_added);
-+			ret = btrfs_add_new_free_space(block_group, last,
-+						       key.objectid, &space_added);
- 			if (ret)
- 				goto out;
- 			total_found += space_added;
-@@ -816,9 +816,9 @@ static int load_extent_tree_free(struct btrfs_caching_control *caching_ctl)
- 		path->slots[0]++;
- 	}
+ 	while (start < end) {
+-		ret = find_first_extent_bit(&info->excluded_extents, start,
+-					    &extent_start, &extent_end,
+-					    EXTENT_DIRTY | EXTENT_UPTODATE,
+-					    NULL);
+-		if (ret)
++		if (!find_first_extent_bit(&info->excluded_extents, start,
++					   &extent_start, &extent_end,
++					   EXTENT_DIRTY | EXTENT_UPTODATE,
++					   NULL))
+ 			break;
  
--	ret = add_new_free_space(block_group, last,
--				 block_group->start + block_group->length,
--				 NULL);
-+	ret = btrfs_add_new_free_space(block_group, last,
-+				       block_group->start + block_group->length,
-+				       NULL);
- out:
- 	btrfs_free_path(path);
- 	return ret;
-@@ -2312,8 +2312,8 @@ static int read_one_block_group(struct btrfs_fs_info *info,
- 		btrfs_free_excluded_extents(cache);
- 	} else if (cache->used == 0) {
- 		cache->cached = BTRFS_CACHE_FINISHED;
--		ret = add_new_free_space(cache, cache->start,
--					 cache->start + cache->length, NULL);
-+		ret = btrfs_add_new_free_space(cache, cache->start,
-+					       cache->start + cache->length, NULL);
- 		btrfs_free_excluded_extents(cache);
+ 		if (extent_start <= start) {
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index 5e86bea0a950..661f02c8c038 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -792,9 +792,9 @@ static int btrfs_set_target_alloc_state(struct btrfs_device *srcdev,
+ 
+ 	lockdep_assert_held(&srcdev->fs_info->chunk_mutex);
+ 
+-	while (!find_first_extent_bit(&srcdev->alloc_state, start,
+-				      &found_start, &found_end,
+-				      CHUNK_ALLOCATED, &cached_state)) {
++	while (find_first_extent_bit(&srcdev->alloc_state, start,
++				     &found_start, &found_end,
++				     CHUNK_ALLOCATED, &cached_state)) {
+ 		ret = set_extent_bit(&tgtdev->alloc_state, found_start,
+ 				     found_end, CHUNK_ALLOCATED, NULL);
  		if (ret)
- 			goto error;
-@@ -2760,7 +2760,7 @@ struct btrfs_block_group *btrfs_make_block_group(struct btrfs_trans_handle *tran
- 		return ERR_PTR(ret);
- 	}
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 894096d42efc..fd84906a6ea4 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -4212,7 +4212,7 @@ static void warn_about_uncommitted_trans(struct btrfs_fs_info *fs_info)
+ 		u64 found_end;
  
--	ret = add_new_free_space(cache, chunk_offset, chunk_offset + size, NULL);
-+	ret = btrfs_add_new_free_space(cache, chunk_offset, chunk_offset + size, NULL);
- 	btrfs_free_excluded_extents(cache);
- 	if (ret) {
- 		btrfs_put_block_group(cache);
-diff --git a/fs/btrfs/block-group.h b/fs/btrfs/block-group.h
-index a6e7d66b9d80..2267be0aa66a 100644
---- a/fs/btrfs/block-group.h
-+++ b/fs/btrfs/block-group.h
-@@ -289,8 +289,8 @@ int btrfs_cache_block_group(struct btrfs_block_group *cache, bool wait);
- void btrfs_put_caching_control(struct btrfs_caching_control *ctl);
- struct btrfs_caching_control *btrfs_get_caching_control(
- 		struct btrfs_block_group *cache);
--int add_new_free_space(struct btrfs_block_group *block_group,
--		       u64 start, u64 end, u64 *total_added_ret);
-+int btrfs_add_new_free_space(struct btrfs_block_group *block_group,
-+			     u64 start, u64 end, u64 *total_added_ret);
- struct btrfs_trans_handle *btrfs_start_trans_remove_block_group(
- 				struct btrfs_fs_info *fs_info,
- 				const u64 chunk_offset);
-diff --git a/fs/btrfs/free-space-tree.c b/fs/btrfs/free-space-tree.c
-index 53b4ad1abdbc..c0e734082dcc 100644
---- a/fs/btrfs/free-space-tree.c
-+++ b/fs/btrfs/free-space-tree.c
-@@ -1517,10 +1517,10 @@ static int load_free_space_bitmaps(struct btrfs_caching_control *caching_ctl,
- 			} else if (prev_bit == 1 && bit == 0) {
- 				u64 space_added;
+ 		found = true;
+-		while (!find_first_extent_bit(&trans->dirty_pages, cur,
++		while (find_first_extent_bit(&trans->dirty_pages, cur,
+ 			&found_start, &found_end, EXTENT_DIRTY, &cached)) {
+ 			dirty_bytes += found_end + 1 - found_start;
+ 			cur = found_end + 1;
+@@ -4708,8 +4708,8 @@ static void btrfs_destroy_marked_extents(struct btrfs_fs_info *fs_info,
+ 	u64 start = 0;
+ 	u64 end;
  
--				ret = add_new_free_space(block_group,
--							 extent_start,
--							 offset,
--							 &space_added);
-+				ret = btrfs_add_new_free_space(block_group,
-+							       extent_start,
-+							       offset,
-+							       &space_added);
- 				if (ret)
- 					goto out;
- 				total_found += space_added;
-@@ -1535,7 +1535,7 @@ static int load_free_space_bitmaps(struct btrfs_caching_control *caching_ctl,
+-	while (!find_first_extent_bit(dirty_pages, start, &start, &end,
+-				      mark, NULL)) {
++	while (find_first_extent_bit(dirty_pages, start, &start, &end,
++				     mark, NULL)) {
+ 		clear_extent_bits(dirty_pages, start, end, mark);
+ 		while (start <= end) {
+ 			eb = find_extent_buffer(fs_info, start);
+@@ -4743,8 +4743,8 @@ static void btrfs_destroy_pinned_extent(struct btrfs_fs_info *fs_info,
+ 		 * the same extent range.
+ 		 */
+ 		mutex_lock(&fs_info->unused_bg_unpin_mutex);
+-		if (find_first_extent_bit(unpin, 0, &start, &end,
+-					  EXTENT_DIRTY, &cached_state)) {
++		if (!find_first_extent_bit(unpin, 0, &start, &end,
++					   EXTENT_DIRTY, &cached_state)) {
+ 			mutex_unlock(&fs_info->unused_bg_unpin_mutex);
+ 			break;
  		}
- 	}
- 	if (prev_bit == 1) {
--		ret = add_new_free_space(block_group, extent_start, end, NULL);
-+		ret = btrfs_add_new_free_space(block_group, extent_start, end, NULL);
- 		if (ret)
- 			goto out;
- 		extent_count++;
-@@ -1592,9 +1592,9 @@ static int load_free_space_extents(struct btrfs_caching_control *caching_ctl,
- 		ASSERT(key.type == BTRFS_FREE_SPACE_EXTENT_KEY);
- 		ASSERT(key.objectid < end && key.objectid + key.offset <= end);
+diff --git a/fs/btrfs/extent-io-tree.c b/fs/btrfs/extent-io-tree.c
+index a2315a4b8b75..ff8e117a1ace 100644
+--- a/fs/btrfs/extent-io-tree.c
++++ b/fs/btrfs/extent-io-tree.c
+@@ -831,15 +831,15 @@ static struct extent_state *find_first_extent_bit_state(struct extent_io_tree *t
+  *
+  * Note: If there are multiple bits set in @bits, any of them will match.
+  *
+- * Return 0 if we find something, and update @start_ret and @end_ret.
+- * Return 1 if we found nothing.
++ * Return true if we find something, and update @start_ret and @end_ret.
++ * Return false if we found nothing.
+  */
+-int find_first_extent_bit(struct extent_io_tree *tree, u64 start,
+-			  u64 *start_ret, u64 *end_ret, u32 bits,
+-			  struct extent_state **cached_state)
++bool find_first_extent_bit(struct extent_io_tree *tree, u64 start,
++			   u64 *start_ret, u64 *end_ret, u32 bits,
++			   struct extent_state **cached_state)
+ {
+ 	struct extent_state *state;
+-	int ret = 1;
++	bool ret = false;
  
--		ret = add_new_free_space(block_group, key.objectid,
--					 key.objectid + key.offset,
--					 &space_added);
-+		ret = btrfs_add_new_free_space(block_group, key.objectid,
-+					       key.objectid + key.offset,
-+					       &space_added);
- 		if (ret)
- 			goto out;
- 		total_found += space_added;
+ 	spin_lock(&tree->lock);
+ 	if (cached_state && *cached_state) {
+@@ -863,7 +863,7 @@ int find_first_extent_bit(struct extent_io_tree *tree, u64 start,
+ 		cache_state_if_flags(state, cached_state, 0);
+ 		*start_ret = state->start;
+ 		*end_ret = state->end;
+-		ret = 0;
++		ret = true;
+ 	}
+ out:
+ 	spin_unlock(&tree->lock);
+diff --git a/fs/btrfs/extent-io-tree.h b/fs/btrfs/extent-io-tree.h
+index fbd3b275ab1c..28c23a23d121 100644
+--- a/fs/btrfs/extent-io-tree.h
++++ b/fs/btrfs/extent-io-tree.h
+@@ -182,9 +182,9 @@ int convert_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+ 		       u32 bits, u32 clear_bits,
+ 		       struct extent_state **cached_state);
+ 
+-int find_first_extent_bit(struct extent_io_tree *tree, u64 start,
+-			  u64 *start_ret, u64 *end_ret, u32 bits,
+-			  struct extent_state **cached_state);
++bool find_first_extent_bit(struct extent_io_tree *tree, u64 start,
++			   u64 *start_ret, u64 *end_ret, u32 bits,
++			   struct extent_state **cached_state);
+ void find_first_clear_extent_bit(struct extent_io_tree *tree, u64 start,
+ 				 u64 *start_ret, u64 *end_ret, u32 bits);
+ int find_contiguous_extent_bit(struct extent_io_tree *tree, u64 start,
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index a6efbfd7b24c..4c140636b456 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2740,9 +2740,8 @@ int btrfs_finish_extent_commit(struct btrfs_trans_handle *trans)
+ 		struct extent_state *cached_state = NULL;
+ 
+ 		mutex_lock(&fs_info->unused_bg_unpin_mutex);
+-		ret = find_first_extent_bit(unpin, 0, &start, &end,
+-					    EXTENT_DIRTY, &cached_state);
+-		if (ret) {
++		if (!find_first_extent_bit(unpin, 0, &start, &end,
++					   EXTENT_DIRTY, &cached_state)) {
+ 			mutex_unlock(&fs_info->unused_bg_unpin_mutex);
+ 			break;
+ 		}
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 880800418075..bfc01352351c 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -1219,10 +1219,9 @@ static noinline_for_stack int write_pinned_extent_entries(
+ 	start = block_group->start;
+ 
+ 	while (start < block_group->start + block_group->length) {
+-		ret = find_first_extent_bit(unpin, start,
+-					    &extent_start, &extent_end,
+-					    EXTENT_DIRTY, NULL);
+-		if (ret)
++		if (!find_first_extent_bit(unpin, start,
++					   &extent_start, &extent_end,
++					   EXTENT_DIRTY, NULL))
+ 			return 0;
+ 
+ 		/* This pinned extent is out of our range */
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 25a3361caedc..9db2e6fa2cb2 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -3469,6 +3469,8 @@ int find_next_extent(struct reloc_control *rc, struct btrfs_path *path,
+ 
+ 	last = rc->block_group->start + rc->block_group->length;
+ 	while (1) {
++		bool block_found;
++
+ 		cond_resched();
+ 		if (rc->search_start >= last) {
+ 			ret = 1;
+@@ -3519,11 +3521,11 @@ int find_next_extent(struct reloc_control *rc, struct btrfs_path *path,
+ 			goto next;
+ 		}
+ 
+-		ret = find_first_extent_bit(&rc->processed_blocks,
+-					    key.objectid, &start, &end,
+-					    EXTENT_DIRTY, NULL);
++		block_found = find_first_extent_bit(&rc->processed_blocks,
++						    key.objectid, &start, &end,
++						    EXTENT_DIRTY, NULL);
+ 
+-		if (ret == 0 && start <= key.objectid) {
++		if (block_found && start <= key.objectid) {
+ 			btrfs_release_path(path);
+ 			rc->search_start = end + 1;
+ 		} else {
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index cf306351b148..4743882fa94b 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1054,8 +1054,8 @@ int btrfs_write_marked_extents(struct btrfs_fs_info *fs_info,
+ 	u64 start = 0;
+ 	u64 end;
+ 
+-	while (!find_first_extent_bit(dirty_pages, start, &start, &end,
+-				      mark, &cached_state)) {
++	while (find_first_extent_bit(dirty_pages, start, &start, &end,
++				     mark, &cached_state)) {
+ 		bool wait_writeback = false;
+ 
+ 		err = convert_extent_bit(dirty_pages, start, end,
+@@ -1108,8 +1108,8 @@ static int __btrfs_wait_marked_extents(struct btrfs_fs_info *fs_info,
+ 	u64 start = 0;
+ 	u64 end;
+ 
+-	while (!find_first_extent_bit(dirty_pages, start, &start, &end,
+-				      EXTENT_NEED_WAIT, &cached_state)) {
++	while (find_first_extent_bit(dirty_pages, start, &start, &end,
++				     EXTENT_NEED_WAIT, &cached_state)) {
+ 		/*
+ 		 * Ignore -ENOMEM errors returned by clear_extent_bit().
+ 		 * When committing the transaction, we'll remove any entries
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 8137c04f31c9..2e2c01de8188 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1427,9 +1427,9 @@ static bool contains_pending_extent(struct btrfs_device *device, u64 *start,
+ 
+ 	lockdep_assert_held(&device->fs_info->chunk_mutex);
+ 
+-	if (!find_first_extent_bit(&device->alloc_state, *start,
+-				   &physical_start, &physical_end,
+-				   CHUNK_ALLOCATED, NULL)) {
++	if (find_first_extent_bit(&device->alloc_state, *start,
++				  &physical_start, &physical_end,
++				  CHUNK_ALLOCATED, NULL)) {
+ 
+ 		if (in_range(physical_start, *start, len) ||
+ 		    in_range(*start, physical_start,
 -- 
 2.34.1
 

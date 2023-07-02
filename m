@@ -2,44 +2,45 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 30B0DEB64DA
-	for <linux-btrfs@archiver.kernel.org>; Sun,  2 Jul 2023 19:45:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3A08AC001B1
+	for <linux-btrfs@archiver.kernel.org>; Sun,  2 Jul 2023 19:45:19 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232628AbjGBTpI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 2 Jul 2023 15:45:08 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53220 "EHLO
+        id S232666AbjGBTpR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 2 Jul 2023 15:45:17 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52630 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232304AbjGBTnw (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 2 Jul 2023 15:43:52 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EC75230CA;
-        Sun,  2 Jul 2023 12:42:17 -0700 (PDT)
+        with ESMTP id S231842AbjGBToO (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 2 Jul 2023 15:44:14 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A0A4210C8;
+        Sun,  2 Jul 2023 12:42:18 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature RSA-PSS (2048 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id BDF5460DB4;
-        Sun,  2 Jul 2023 19:41:53 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 3775BC433CB;
-        Sun,  2 Jul 2023 19:41:52 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 526BD60C8D;
+        Sun,  2 Jul 2023 19:41:56 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id CE51FC433CA;
+        Sun,  2 Jul 2023 19:41:54 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1688326913;
-        bh=gJoEh10TgRM90BbbKHvH0kOlfRgG8CQczHgocj0/x9I=;
+        s=k20201202; t=1688326915;
+        bh=HuPXQr0v5KXu1FG8dgHpjBC/sC0xhbsLU1wrOl+bFvM=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=aqOzAQVUe0ZyByE4Q7a6sRRmN3/75jBiXBrmRj4g8otWo3jxzAbhdcQi9mFb9oPpt
-         xqjkGC01BDRhFyNG0KZipvhcSJQWvYjwc8gjr2hCkl0+eBqRAL7U4zg1YK82J4Qd5M
-         Amh+BmDk0aOOopm1AnBKsPvEfLec2hgxzJDiXaLTTQHg7y0xr5bX5QUdqnn2ekPAt0
-         SQ8GOvEepjvSVto/PAlcCYwWjDEcJbU1LVqih5XP8UyLj4B11Yn99clL6suKkefpw9
-         JSAt17ziW51LiCYlmTs1Rnsm9IJ7fCOrl08fsMcx5bZmhuS5BqmnXXP3JbmJvUEYZW
-         LOKByoEqShesg==
+        b=MbhcG00dXReapYHX3pcQ+duvxBpa0piBAs7Wo5GeUHmFYdBwrpITUDkMCdYdozQff
+         V0rbZ41f516MLl15s1h5nKNpmMZxKKojnpns/uXwuEDZ5c9xc2vGb1hCFDyC5UYeii
+         D0iO2ta6IhBISRPYTAOSmB2nI4M5LA3RXr6SDXGmsUiZOz6xkTKmpdlReAbKSYAOJD
+         kVF5fEKMLdjRLfIGAHXo4vGW3gv4o3cHiAczFJ3ZQTPNnBX/9YEIFeB9tZKnqrp2Lw
+         iVVsEk1VA4omE8GAiXrdkI3ptDMGCJD2XSYl7KrDuXVF1G/ZW804sVJt8Kv900imC0
+         SVvHUfFX8J2NA==
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     David Sterba <dsterba@suse.com>, Christoph Hellwig <hch@lst.de>,
+Cc:     Filipe Manana <fdmanana@suse.com>, Qu Wenruo <wqu@suse.com>,
+        David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, clm@fb.com,
         josef@toxicpanda.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.15 08/10] btrfs: add xxhash to fast checksum implementations
-Date:   Sun,  2 Jul 2023 15:41:37 -0400
-Message-Id: <20230702194139.1778398-8-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 5.15 10/10] btrfs: abort transaction at update_ref_for_cow() when ref count is zero
+Date:   Sun,  2 Jul 2023 15:41:39 -0400
+Message-Id: <20230702194139.1778398-10-sashal@kernel.org>
 X-Mailer: git-send-email 2.39.2
 In-Reply-To: <20230702194139.1778398-1-sashal@kernel.org>
 References: <20230702194139.1778398-1-sashal@kernel.org>
@@ -52,57 +53,51 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: David Sterba <dsterba@suse.com>
+From: Filipe Manana <fdmanana@suse.com>
 
-[ Upstream commit efcfcbc6a36195c42d98e0ee697baba36da94dc8 ]
+[ Upstream commit eced687e224eb3cc5a501cf53ad9291337c8dbc5 ]
 
-The implementation of XXHASH is now CPU only but still fast enough to be
-considered for the synchronous checksumming, like non-generic crc32c.
+At update_ref_for_cow() we are calling btrfs_handle_fs_error() if we find
+that the extent buffer has an unexpected ref count of zero, however we can
+simply use btrfs_abort_transaction(), which achieves the same purposes: to
+turn the fs to error state, abort the current transaction and turn the fs
+to RO mode as well. Besides that, btrfs_abort_transaction() also prints a
+stack trace which makes it more useful.
 
-A userspace benchmark comparing it to various implementations (patched
-hash-speedtest from btrfs-progs):
+Also, as this is a very unexpected situation, indicating a serious
+corruption/inconsistency, tag the if branch as 'unlikely', set the error
+code to -EUCLEAN instead of -EROFS, and log an explicit message.
 
-  Block size:     4096
-  Iterations:     1000000
-  Implementation: builtin
-  Units:          CPU cycles
-
-	NULL-NOP: cycles:     73384294, cycles/i       73
-     NULL-MEMCPY: cycles:    228033868, cycles/i      228,    61664.320 MiB/s
-      CRC32C-ref: cycles:  24758559416, cycles/i    24758,      567.950 MiB/s
-       CRC32C-NI: cycles:   1194350470, cycles/i     1194,    11773.433 MiB/s
-  CRC32C-ADLERSW: cycles:   6150186216, cycles/i     6150,     2286.372 MiB/s
-  CRC32C-ADLERHW: cycles:    626979180, cycles/i      626,    22427.453 MiB/s
-      CRC32C-PCL: cycles:    466746732, cycles/i      466,    30126.699 MiB/s
-	  XXHASH: cycles:    860656400, cycles/i      860,    16338.188 MiB/s
-
-Comparing purely software implementation (ref), current outdated
-accelerated using crc32q instruction (NI), optimized implementations by
-M. Adler (https://stackoverflow.com/questions/17645167/implementing-sse-4-2s-crc32c-in-software/17646775#17646775)
-and the best one that was taken from kernel using the PCLMULQDQ
-instruction (PCL).
-
-Reviewed-by: Christoph Hellwig <hch@lst.de>
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Reviewed-by: David Sterba <dsterba@suse.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/btrfs/disk-io.c | 3 +++
- 1 file changed, 3 insertions(+)
+ fs/btrfs/ctree.c | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 3c0b3b4ec5ad5..1fb7cb4492bdb 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2328,6 +2328,9 @@ static int btrfs_init_csum_hash(struct btrfs_fs_info *fs_info, u16 csum_type)
- 		if (!strstr(crypto_shash_driver_name(csum_shash), "generic"))
- 			set_bit(BTRFS_FS_CSUM_IMPL_FAST, &fs_info->flags);
- 		break;
-+	case BTRFS_CSUM_TYPE_XXHASH:
-+		set_bit(BTRFS_FS_CSUM_IMPL_FAST, &fs_info->flags);
-+		break;
- 	default:
- 		break;
- 	}
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 1a19354382b2b..df74db69cbbfc 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -291,9 +291,13 @@ static noinline int update_ref_for_cow(struct btrfs_trans_handle *trans,
+ 					       &refs, &flags);
+ 		if (ret)
+ 			return ret;
+-		if (refs == 0) {
+-			ret = -EROFS;
+-			btrfs_handle_fs_error(fs_info, ret, NULL);
++		if (unlikely(refs == 0)) {
++			btrfs_crit(fs_info,
++		"found 0 references for tree block at bytenr %llu level %d root %llu",
++				   buf->start, btrfs_header_level(buf),
++				   btrfs_root_id(root));
++			ret = -EUCLEAN;
++			btrfs_abort_transaction(trans, ret);
+ 			return ret;
+ 		}
+ 	} else {
 -- 
 2.39.2
 

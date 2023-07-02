@@ -2,51 +2,51 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2DF82C001DD
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3D10BC001DF
 	for <linux-btrfs@archiver.kernel.org>; Sun,  2 Jul 2023 19:43:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230199AbjGBTnE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 2 Jul 2023 15:43:04 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52450 "EHLO
+        id S231761AbjGBTnG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 2 Jul 2023 15:43:06 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53014 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231810AbjGBTm2 (ORCPT
+        with ESMTP id S231808AbjGBTm2 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Sun, 2 Jul 2023 15:42:28 -0400
 Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 59503273D;
-        Sun,  2 Jul 2023 12:41:44 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 64B2E2735;
+        Sun,  2 Jul 2023 12:41:43 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature RSA-PSS (2048 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id ED17160C82;
-        Sun,  2 Jul 2023 19:40:48 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9A1AAC433CB;
-        Sun,  2 Jul 2023 19:40:47 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 84C3D60C8F;
+        Sun,  2 Jul 2023 19:41:13 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2CE3DC433CA;
+        Sun,  2 Jul 2023 19:41:12 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1688326848;
-        bh=qHO6Iw7x9M0MnRv7KLgMk7jQSc7p1zh1FvSLKyElCbA=;
+        s=k20201202; t=1688326873;
+        bh=d0p/SlomyB6yip/oflxbVknw3XblWaCwwkxEO9Rvcjs=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=rpSjJq6CggftzJUNM/p9bTyiXwDKouzjxc72Rknc0eEFUrRG4Uhb8gSEBGnusw4hg
-         lw4h1kdTTiQ672ZBRz0w0F2BgnalVHH6dc+kh36TATpXsvWjMGEURq/vfGwJZrFSTU
-         sSoFmmg7pI/Fh0vPr+9KmN/Xq2XhF42lVZy5Ix5NMU64ROBuxcQydhkISMpC2Z7GCo
-         05bgPQuvklOPW3KRJeIng0QpYuwpBox0I2LEn1rAQE5SUwT8u+6A0dwFEEIZHjvIfW
-         Jj0ezxPJ4/8glTv3XLCPPWcdAi8gNFkJNJ9fAYgdMKrLdhdJkNzjzkGKfozrCdV9Us
-         nMajjskk1Fmtw==
+        b=XmehFi/X3QpilM3aF3rMuNo2dd/cyab5Q6WzRkEDAaawmNaZ7TMv/TPhIzyxUTAt6
+         mIBR2+iVxFtt1oEvvDvW7vPWh7ihNazWbHSKR423bcf0wcNmQp8th49+gG2QRWBRJR
+         9/EVblI2rVt2ubVYoJ32JC7Z7INSsURxfg6y8snxAx2VNZKF/23gBZH433KPR/vskf
+         4dZ6wzQ0d8bQaca4wljLRt8JCCIOD4AHe2ba5oM8VVJrc8uzNK00S6np7vAj0lGC4M
+         vmw/QIXZg7T9r4QLxDWKvnOxRtOX94GuzjXx44D6ulFtglcHhpa7F6DiuY9uWSZU9J
+         50QWgfjSw0fBw==
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
 Cc:     David Sterba <dsterba@suse.com>, Christoph Hellwig <hch@lst.de>,
         Sasha Levin <sashal@kernel.org>, clm@fb.com,
         josef@toxicpanda.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 6.4 12/15] btrfs: add xxhash to fast checksum implementations
-Date:   Sun,  2 Jul 2023 15:40:17 -0400
-Message-Id: <20230702194020.1776895-12-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 6.3 11/14] btrfs: add xxhash to fast checksum implementations
+Date:   Sun,  2 Jul 2023 15:40:50 -0400
+Message-Id: <20230702194053.1777356-11-sashal@kernel.org>
 X-Mailer: git-send-email 2.39.2
-In-Reply-To: <20230702194020.1776895-1-sashal@kernel.org>
-References: <20230702194020.1776895-1-sashal@kernel.org>
+In-Reply-To: <20230702194053.1777356-1-sashal@kernel.org>
+References: <20230702194053.1777356-1-sashal@kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
-X-stable-base: Linux 6.4.1
+X-stable-base: Linux 6.3.11
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -90,10 +90,10 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  1 file changed, 3 insertions(+)
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index dabc79c1af1bd..89ca1ed936a98 100644
+index a47d8ad6abcbe..6067396c0cafa 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -2265,6 +2265,9 @@ static int btrfs_init_csum_hash(struct btrfs_fs_info *fs_info, u16 csum_type)
+@@ -2266,6 +2266,9 @@ static int btrfs_init_csum_hash(struct btrfs_fs_info *fs_info, u16 csum_type)
  		if (!strstr(crypto_shash_driver_name(csum_shash), "generic"))
  			set_bit(BTRFS_FS_CSUM_IMPL_FAST, &fs_info->flags);
  		break;

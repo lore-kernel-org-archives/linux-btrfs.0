@@ -2,49 +2,49 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B0392EB64DC
-	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Jul 2023 07:33:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 52D78C001DE
+	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Jul 2023 07:33:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230510AbjGCHdY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 3 Jul 2023 03:33:24 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35540 "EHLO
+        id S230518AbjGCHdZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 3 Jul 2023 03:33:25 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35486 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230518AbjGCHdT (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Jul 2023 03:33:19 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 54517E56
-        for <linux-btrfs@vger.kernel.org>; Mon,  3 Jul 2023 00:33:15 -0700 (PDT)
+        with ESMTP id S230482AbjGCHdR (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Jul 2023 03:33:17 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4AC47E50
+        for <linux-btrfs@vger.kernel.org>; Mon,  3 Jul 2023 00:33:07 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 431C71FD70
-        for <linux-btrfs@vger.kernel.org>; Mon,  3 Jul 2023 07:33:09 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 0300E1FD6E;
+        Mon,  3 Jul 2023 07:33:06 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1688369589; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1688369586; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=HcfMNJ9wAUf7VMWNQAA6utV6c4KxEGpXKtlBN3PD6i0=;
-        b=uRsLA0MZCDh1qluOd8U44elvc7dWK17lrr+ubim+SUa8R2u7EcoVk5pLGhs/xWwLWKoo8/
-        JYpoMXRmVG6H4aRKenWQGe+xdFkgG4iD9LpfG4b6SXqazRgCIm+5JO9RpRcV+VCDLpTrB8
-        7q5XMqM0cZtZVXbU22X7h0dQT9zztiE=
+        bh=k0D/8EJwkLNZiJNZP+bXDDGhBtPoHSUffDal9aANvN8=;
+        b=h0lkuw835MzvIUXYllKrYdQ9Awtemkf2wVjOX0UYvPFrNtVgr/FT1yVxSW4wuORlbeBpiL
+        lYXeW3wpOLC7r6VVKynoVmC5ojAM6dtVZlgsh2RaBgRQ3k8bS9W0HvWvysdxan2OgU7Knk
+        WWf36+La9EKNoS6iLYe2/DF5mpt+UE4=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 982C113276
-        for <linux-btrfs@vger.kernel.org>; Mon,  3 Jul 2023 07:33:08 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 20A4613276;
+        Mon,  3 Jul 2023 07:33:04 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id EFx2GLR5omRoVQAAMHmgww
-        (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Mon, 03 Jul 2023 07:33:08 +0000
+        id sKEwN7B5omRoVQAAMHmgww
+        (envelope-from <wqu@suse.com>); Mon, 03 Jul 2023 07:33:04 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 10/14] btrfs: scrub: implement the basic extent iteration code
-Date:   Mon,  3 Jul 2023 15:32:34 +0800
-Message-ID: <6834a68474c0b42fde9ee100133f93eda12066b7.1688368617.git.wqu@suse.com>
+Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Subject: [PATCH 07/14] btrfs: scrub: introduce the skeleton for logical-scrub
+Date:   Mon,  3 Jul 2023 15:32:31 +0800
+Message-ID: <a95469cd1a413630e5ecd18027c53a4a46d3120b.1688368617.git.wqu@suse.com>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <cover.1688368617.git.wqu@suse.com>
 References: <cover.1688368617.git.wqu@suse.com>
@@ -54,211 +54,217 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Unlike the per-device scrub code, logical bytenr based scrub code is
-much easier iterating the extents.
+Currently btrfs scrub is a per-device operation, this is fine for most
+non-RAID56 profiles, but not a good thing for RAID56 profiles.
 
-The difference is mainly in the stripe queueing part, as we need to
-queue @nr_copies stripes at once.
+The main challenge for RAID56 is, we will read out data stripes more
+than one times (one for the data stripe scrub itself, more for
+parities).
 
-So here we introduce a helper, scrub_copy_stripe(), and fill the first
-stripe, then use that helper to fill the remaining copies.
+To address this, and maybe even improve the non-RAID56 scrub, here we
+introduce a new scrub flag, SCRUB_LOGICAL.
 
-For now, we still use the same flush_scrub_stripes(), but the repair
-part is less efficient.
+This would be a per-fs operation, and conflicts with any
+dev-scrub/dev-replace.
 
+This patch only implements the basic exclusion checks.
+
+Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/scrub.c | 163 ++++++++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 160 insertions(+), 3 deletions(-)
+ fs/btrfs/disk-io.c         |  1 +
+ fs/btrfs/fs.h              | 12 +++++++
+ fs/btrfs/ioctl.c           |  6 +++-
+ fs/btrfs/scrub.c           | 72 +++++++++++++++++++++++++++++++++++++-
+ fs/btrfs/scrub.h           |  2 ++
+ include/uapi/linux/btrfs.h | 11 ++++--
+ 6 files changed, 100 insertions(+), 4 deletions(-)
 
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 7513388b0567..c11f28becaf2 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1850,6 +1850,7 @@ static void btrfs_init_scrub(struct btrfs_fs_info *fs_info)
+ {
+ 	mutex_init(&fs_info->scrub_lock);
+ 	atomic_set(&fs_info->scrubs_running, 0);
++	atomic_set(&fs_info->scrubs_logical_running, 0);
+ 	atomic_set(&fs_info->scrub_pause_req, 0);
+ 	atomic_set(&fs_info->scrubs_paused, 0);
+ 	atomic_set(&fs_info->scrub_cancel_req, 0);
+diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
+index 203d2a267828..f3d50f97ab27 100644
+--- a/fs/btrfs/fs.h
++++ b/fs/btrfs/fs.h
+@@ -632,7 +632,19 @@ struct btrfs_fs_info {
+ 
+ 	/* Private scrub information */
+ 	struct mutex scrub_lock;
++
++	/*
++	 * Number of running scrubbing, including both dev-scrub (at most
++	 * one dev-scrub on each device) and logical-scrub (at most
++	 * one logical-scrub for each fs).
++	 */
+ 	atomic_t scrubs_running;
++
++	/*
++	 * Number of running logical scrubbing, there is at most one running
++	 * logical scrub for each fs.
++	 */
++	atomic_t scrubs_logical_running;
+ 	atomic_t scrub_pause_req;
+ 	atomic_t scrubs_paused;
+ 	atomic_t scrub_cancel_req;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index edbbd5cf23fc..1a1afcce73e0 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -3179,7 +3179,11 @@ static long btrfs_ioctl_scrub(struct file *file, void __user *arg)
+ 			goto out;
+ 	}
+ 
+-	ret = btrfs_scrub_dev(fs_info, sa->devid, sa->start, sa->end,
++	if (sa->flags & BTRFS_SCRUB_LOGICAL)
++		ret = btrfs_scrub_logical(fs_info, sa->start, sa->end,
++				&sa->progress, sa->flags & BTRFS_SCRUB_READONLY);
++	else
++		ret = btrfs_scrub_dev(fs_info, sa->devid, sa->start, sa->end,
+ 			      &sa->progress, sa->flags & BTRFS_SCRUB_READONLY,
+ 			      0);
+ 
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 79e47eee9d1b..02b212fe4712 100644
+index 1e49bb066619..ff637f83aa0e 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -1471,7 +1471,7 @@ static void scrub_stripe_reset_bitmaps(struct scrub_stripe *stripe)
- static int scrub_find_fill_first_stripe(struct btrfs_block_group *bg,
- 					struct btrfs_device *dev, u64 physical,
- 					int mirror_num, u64 logical_start,
--					u32 logical_len,
-+					u64 logical_len,
- 					struct scrub_stripe *stripe)
- {
- 	struct btrfs_fs_info *fs_info = bg->fs_info;
-@@ -2984,6 +2984,164 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
+@@ -178,7 +178,8 @@ struct scrub_ctx {
+ 	int			first_free;
+ 	int			cur_stripe;
+ 	atomic_t		cancel_req;
+-	int			readonly;
++	bool			readonly;
++	bool			scrub_logical;
+ 	int			sectors_per_bio;
+ 
+ 	/* Number of stripes we have in @stripes. */
+@@ -2835,6 +2836,14 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
+ 		goto out;
+ 	}
+ 
++	/* Dev-scrub conflicts with logical-scrub. */
++	if (atomic_read(&fs_info->scrubs_logical_running)) {
++		mutex_unlock(&fs_info->scrub_lock);
++		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
++		ret = -EINPROGRESS;
++		goto out;
++	}
++
+ 	down_read(&fs_info->dev_replace.rwsem);
+ 	if (dev->scrub_ctx ||
+ 	    (!is_dev_replace &&
+@@ -2945,6 +2954,67 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
  	return ret;
  }
  
-+static void scrub_copy_stripe(const struct scrub_stripe *src,
-+			      struct scrub_stripe *dst)
++int btrfs_scrub_logical(struct btrfs_fs_info *fs_info, u64 start, u64 end,
++			struct btrfs_scrub_progress *progress, bool readonly)
 +{
-+	struct scrub_ctx *sctx = src->sctx;
-+	struct btrfs_fs_info *fs_info = sctx->fs_info;
-+
-+	/* This function should only be called for logical scrub. */
-+	ASSERT(sctx->scrub_logical);
-+	scrub_reset_stripe(dst);
-+
-+	dst->bg = src->bg;
-+	dst->dev = NULL;
-+	dst->physical = 0;
-+	dst->logical = src->logical;
-+	dst->mirror_num = src->mirror_num;
-+
-+	bitmap_copy(&dst->extent_sector_bitmap, &src->extent_sector_bitmap,
-+		    src->nr_sectors);
-+	memcpy(dst->csums, src->csums,
-+	       (BTRFS_STRIPE_LEN >> fs_info->sectorsize_bits) *
-+		fs_info->csum_size);
-+
-+	for (int i = 0; i < src->nr_sectors; i++) {
-+		dst->sectors[i].is_metadata = src->sectors[i].is_metadata;
-+		if (src->sectors[i].is_metadata)
-+			dst->sectors[i].generation = src->sectors[i].generation;
-+		else if (src->sectors[i].csum)
-+			dst->sectors[i].csum = dst->csums + i * fs_info->csum_size;
-+	}
-+	dst->nr_data_extents = src->nr_data_extents;
-+	dst->nr_meta_extents = src->nr_meta_extents;
-+	set_bit(SCRUB_STRIPE_FLAG_INITIALIZED, &dst->state);
-+}
-+
-+/*
-+ * Unlike queue_scrub_stripe() which only queue one stripe, this queue all
-+ * mirrors for non-RAID56 profiles, or the full stripe for RAID56.
-+ */
-+static int queue_scrub_logical_stripes(struct scrub_ctx *sctx,
-+			struct btrfs_block_group *bg, u64 logical)
-+{
-+	const int raid_index = btrfs_bg_flags_to_raid_index(bg->flags);
-+	const int nr_copies = btrfs_raid_array[raid_index].ncopies;
-+	const int old_cur = sctx->cur_stripe;
-+	struct scrub_stripe *stripe;
++	struct scrub_ctx *sctx;
 +	int ret;
 +
-+	ASSERT(sctx->stripes);
-+	ASSERT(sctx->nr_stripes);
++	if (btrfs_fs_closing(fs_info))
++		return -EAGAIN;
 +
-+	if (sctx->cur_stripe + nr_copies > sctx->nr_stripes) {
-+		ret = flush_scrub_stripes(sctx);
-+		if (ret < 0)
-+			return ret;
-+	}
++	/* At mount time we have ensured nodesize is in the range of [4K, 64K]. */
++	ASSERT(fs_info->nodesize <= BTRFS_STRIPE_LEN);
 +
-+	stripe = &sctx->stripes[old_cur];
++	sctx = scrub_setup_ctx(fs_info, false);
++	if (IS_ERR(sctx))
++		return PTR_ERR(sctx);
++	sctx->scrub_logical = true;
++	sctx->readonly = readonly;
 +
-+	scrub_reset_stripe(stripe);
-+	ret = scrub_find_fill_first_stripe(bg, NULL, 0, 1,
-+			logical, bg->start + bg->length - logical, stripe);
-+	/* Either >0 as no more extents or <0 for error. */
++	ret = scrub_workers_get(fs_info, false);
 +	if (ret)
-+		return ret;
++		goto out_free_ctx;
 +
-+	/* For the remaining slots, just copy the above mirror. */
-+	for (int i = 1; i < nr_copies; i++) {
-+		struct scrub_stripe *dst = &sctx->stripes[old_cur + i];
-+
-+		scrub_copy_stripe(stripe, dst);
-+		dst->mirror_num = i + 1;
-+	}
-+	sctx->cur_stripe += nr_copies;
-+	return 0;
-+}
-+
-+static int scrub_logical_one_chunk(struct scrub_ctx *sctx,
-+				   struct btrfs_block_group *bg)
-+{
-+	struct btrfs_fs_info *fs_info = sctx->fs_info;
-+	struct extent_map_tree *map_tree = &fs_info->mapping_tree;
-+	struct extent_map *em;
-+	u64 cur = bg->start;
-+	const int raid_index = btrfs_bg_flags_to_raid_index(bg->flags);
-+	const int nr_copies = btrfs_raid_array[raid_index].ncopies;
-+	int nr_stripes;
-+	int ret = 0;
-+	int flush_ret;
-+
-+	read_lock(&map_tree->lock);
-+	em = lookup_extent_mapping(map_tree, bg->start, bg->length);
-+	read_unlock(&map_tree->lock);
-+	if (!em) {
-+		/*
-+		 * Might have been an unused block group deleted by the cleaner
-+		 * kthread or relocation.
-+		 */
-+		spin_lock(&bg->lock);
-+		if (!test_bit(BLOCK_GROUP_FLAG_REMOVED, &bg->runtime_flags))
-+			ret = -EINVAL;
-+		spin_unlock(&bg->lock);
-+		return ret;
-+	}
-+
-+	scrub_blocked_if_needed(fs_info);
-+
-+	/* RAID56 not yet supported. */
-+	if (bg->flags & BTRFS_BLOCK_GROUP_RAID56_MASK) {
-+		ret = -EOPNOTSUPP;
++	/* Make sure we're the only running scrub. */
++	mutex_lock(&fs_info->scrub_lock);
++	if (atomic_read(&fs_info->scrubs_running)) {
++		mutex_unlock(&fs_info->scrub_lock);
++		ret = -EINPROGRESS;
 +		goto out;
 +	}
-+
-+	nr_stripes = SCRUB_STRIPES_PER_SCTX * nr_copies;
-+	ret = alloc_scrub_stripes(sctx, nr_stripes);
-+	if (ret < 0)
++	down_read(&fs_info->dev_replace.rwsem);
++	if (btrfs_dev_replace_is_ongoing(&fs_info->dev_replace)) {
++		up_read(&fs_info->dev_replace.rwsem);
++		mutex_unlock(&fs_info->scrub_lock);
++		ret = -EINPROGRESS;
 +		goto out;
-+
-+	while (cur < bg->start + bg->length) {
-+		/* Canceled? */
-+		if (atomic_read(&fs_info->scrub_cancel_req) ||
-+		    atomic_read(&sctx->cancel_req)) {
-+			ret = -ECANCELED;
-+			break;
-+		}
-+		/* Paused? */
-+		if (atomic_read(&fs_info->scrub_pause_req)) {
-+			/* Push queued extents */
-+			scrub_blocked_if_needed(fs_info);
-+		}
-+		/* Block group removed? */
-+		spin_lock(&bg->lock);
-+		if (test_bit(BLOCK_GROUP_FLAG_REMOVED, &bg->runtime_flags)) {
-+			spin_unlock(&bg->lock);
-+			ret = 0;
-+			break;
-+		}
-+		spin_unlock(&bg->lock);
-+
-+		ret = queue_scrub_logical_stripes(sctx, bg, cur);
-+		if (ret > 0) {
-+			ret = 0;
-+			break;
-+		}
-+		if (ret < 0)
-+			break;
-+		ASSERT(sctx->cur_stripe >= 1);
-+		cur = sctx->stripes[sctx->cur_stripe - 1].logical + BTRFS_STRIPE_LEN;
 +	}
++	up_read(&fs_info->dev_replace.rwsem);
++	/*
++	 * Checking @scrub_pause_req here, we can avoid
++	 * race between committing transaction and scrubbing.
++	 */
++	__scrub_blocked_if_needed(fs_info);
++	atomic_inc(&fs_info->scrubs_running);
++	atomic_inc(&fs_info->scrubs_logical_running);
++	mutex_unlock(&fs_info->scrub_lock);
++
++	/* The main work would be implemented. */
++	ret = -EOPNOTSUPP;
++
++	atomic_dec(&fs_info->scrubs_running);
++	atomic_dec(&fs_info->scrubs_logical_running);
++	wake_up(&fs_info->scrub_pause_wait);
++	if (progress)
++		memcpy(progress, &sctx->stat, sizeof(*progress));
 +out:
-+	flush_ret = flush_scrub_stripes(sctx);
-+	if (!ret)
-+		ret = flush_ret;
-+	free_scrub_stripes(sctx);
-+	free_extent_map(em);
++	scrub_workers_put(fs_info);
++out_free_ctx:
++	scrub_free_ctx(sctx);
 +	return ret;
-+
 +}
 +
- static int scrub_logical_chunks(struct scrub_ctx *sctx, u64 start, u64 end)
+ void btrfs_scrub_pause(struct btrfs_fs_info *fs_info)
  {
- 	struct btrfs_fs_info *fs_info = sctx->fs_info;
-@@ -3014,8 +3172,7 @@ static int scrub_logical_chunks(struct scrub_ctx *sctx, u64 start, u64 end)
- 			break;
- 		}
+ 	mutex_lock(&fs_info->scrub_lock);
+diff --git a/fs/btrfs/scrub.h b/fs/btrfs/scrub.h
+index 7639103ebf9d..22db0f71083e 100644
+--- a/fs/btrfs/scrub.h
++++ b/fs/btrfs/scrub.h
+@@ -6,6 +6,8 @@
+ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
+ 		    u64 end, struct btrfs_scrub_progress *progress,
+ 		    int readonly, int is_dev_replace);
++int btrfs_scrub_logical(struct btrfs_fs_info *fs_info, u64 start, u64 end,
++			struct btrfs_scrub_progress *progress, bool readonly);
+ void btrfs_scrub_pause(struct btrfs_fs_info *fs_info);
+ void btrfs_scrub_continue(struct btrfs_fs_info *fs_info);
+ int btrfs_scrub_cancel(struct btrfs_fs_info *info);
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index dbb8b96da50d..fa5cb3b3611b 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -186,8 +186,15 @@ struct btrfs_scrub_progress {
+ 					 * Intermittent error. */
+ };
  
--		/* The real work starts here. */
--		ret = -EOPNOTSUPP;
-+		ret = scrub_logical_one_chunk(sctx, bg);
- 
- 		if (ro_set)
- 			btrfs_dec_block_group_ro(bg);
+-#define BTRFS_SCRUB_READONLY	1
+-#define BTRFS_SCRUB_SUPPORTED_FLAGS	(BTRFS_SCRUB_READONLY)
++#define BTRFS_SCRUB_READONLY	(1ULL << 0)
++
++/*
++ * Regular scrub is based on device, while with this flag, scrub is
++ * based on logical, and @devid would be ignored.
++ */
++#define BTRFS_SCRUB_LOGICAL	(1ULL << 1)
++#define BTRFS_SCRUB_SUPPORTED_FLAGS	(BTRFS_SCRUB_READONLY |\
++					 BTRFS_SCRUB_LOGICAL)
+ struct btrfs_ioctl_scrub_args {
+ 	__u64 devid;				/* in */
+ 	__u64 start;				/* in */
 -- 
 2.41.0
 

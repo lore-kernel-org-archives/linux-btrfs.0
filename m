@@ -2,49 +2,49 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E235BC0015E
-	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Jul 2023 07:33:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B0392EB64DC
+	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Jul 2023 07:33:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230499AbjGCHdX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 3 Jul 2023 03:33:23 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35462 "EHLO
+        id S230510AbjGCHdY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 3 Jul 2023 03:33:24 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35540 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230514AbjGCHdT (ORCPT
+        with ESMTP id S230518AbjGCHdT (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Jul 2023 03:33:19 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 523D1E54
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 54517E56
         for <linux-btrfs@vger.kernel.org>; Mon,  3 Jul 2023 00:33:15 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 5B1BC1FD72
-        for <linux-btrfs@vger.kernel.org>; Mon,  3 Jul 2023 07:33:11 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 431C71FD70
+        for <linux-btrfs@vger.kernel.org>; Mon,  3 Jul 2023 07:33:09 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1688369591; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1688369589; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=vTUdZAf5MDy7R5LMoW/1oGwvHe6e7H3aRxC+YL6Ytao=;
-        b=XR1tMtcmn5r556rsQEiAODWPXR3zPOYDFUfWwyGo6PnGGwV/nPEQMIGJdxuCXREe0cJC8k
-        yxvtL9d/qZ7Z+LegNR22op2uf4qg+AlUGzk9vqXcCguBikN2WwaFtevYVad7/IHEwh+IIo
-        urSmxyyYp5e2V22xAauER6F3vJJSg8U=
+        bh=HcfMNJ9wAUf7VMWNQAA6utV6c4KxEGpXKtlBN3PD6i0=;
+        b=uRsLA0MZCDh1qluOd8U44elvc7dWK17lrr+ubim+SUa8R2u7EcoVk5pLGhs/xWwLWKoo8/
+        JYpoMXRmVG6H4aRKenWQGe+xdFkgG4iD9LpfG4b6SXqazRgCIm+5JO9RpRcV+VCDLpTrB8
+        7q5XMqM0cZtZVXbU22X7h0dQT9zztiE=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id B0FCE13276
-        for <linux-btrfs@vger.kernel.org>; Mon,  3 Jul 2023 07:33:10 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 982C113276
+        for <linux-btrfs@vger.kernel.org>; Mon,  3 Jul 2023 07:33:08 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id ONlDHrZ5omRoVQAAMHmgww
+        id EFx2GLR5omRoVQAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Mon, 03 Jul 2023 07:33:10 +0000
+        for <linux-btrfs@vger.kernel.org>; Mon, 03 Jul 2023 07:33:08 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 12/14] btrfs: scrub: add RAID56 support for queue_scrub_logical_stripes()
-Date:   Mon,  3 Jul 2023 15:32:36 +0800
-Message-ID: <9e1666311b1e944fd666e97f77af59b198717676.1688368617.git.wqu@suse.com>
+Subject: [PATCH 10/14] btrfs: scrub: implement the basic extent iteration code
+Date:   Mon,  3 Jul 2023 15:32:34 +0800
+Message-ID: <6834a68474c0b42fde9ee100133f93eda12066b7.1688368617.git.wqu@suse.com>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <cover.1688368617.git.wqu@suse.com>
 References: <cover.1688368617.git.wqu@suse.com>
@@ -54,172 +54,211 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-There are several factors that needs to be considered for RAID56 full
-stripe:
+Unlike the per-device scrub code, logical bytenr based scrub code is
+much easier iterating the extents.
 
-- Empty data stripes
-  We still need those empty data stripes, as they may be involved in the
-  P/Q recovery.
+The difference is mainly in the stripe queueing part, as we need to
+queue @nr_copies stripes at once.
 
-- P/Q stripes
-  We need special handling for P/Q stripes.
+So here we introduce a helper, scrub_copy_stripe(), and fill the first
+stripe, then use that helper to fill the remaining copies.
 
-So this patch introduce a new helper, queue_raid56_full_stripes() to
-handle those special requirements.
+For now, we still use the same flush_scrub_stripes(), but the repair
+part is less efficient.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/scrub.c | 108 +++++++++++++++++++++++++++++++++++++++++++++--
- 1 file changed, 105 insertions(+), 3 deletions(-)
+ fs/btrfs/scrub.c | 163 ++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 160 insertions(+), 3 deletions(-)
 
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 21b3fa55d0f0..f37b9fd30595 100644
+index 79e47eee9d1b..02b212fe4712 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -105,7 +105,7 @@ struct scrub_stripe {
- 	u64 logical;
- 	u64 physical;
- 
--	u16 mirror_num;
-+	s16 mirror_num;
- 
- 	/* Should be BTRFS_STRIPE_LEN / sectorsize. */
- 	u16 nr_sectors;
-@@ -3147,15 +3147,109 @@ static void scrub_copy_stripe(const struct scrub_stripe *src,
- 	set_bit(SCRUB_STRIPE_FLAG_INITIALIZED, &dst->state);
+@@ -1471,7 +1471,7 @@ static void scrub_stripe_reset_bitmaps(struct scrub_stripe *stripe)
+ static int scrub_find_fill_first_stripe(struct btrfs_block_group *bg,
+ 					struct btrfs_device *dev, u64 physical,
+ 					int mirror_num, u64 logical_start,
+-					u32 logical_len,
++					u64 logical_len,
+ 					struct scrub_stripe *stripe)
+ {
+ 	struct btrfs_fs_info *fs_info = bg->fs_info;
+@@ -2984,6 +2984,164 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
+ 	return ret;
  }
  
-+static int queue_raid56_full_stripes(struct scrub_ctx *sctx,
-+			struct btrfs_block_group *bg, struct map_lookup *map,
-+			u64 logical)
++static void scrub_copy_stripe(const struct scrub_stripe *src,
++			      struct scrub_stripe *dst)
 +{
-+	const int num_stripes = map->num_stripes;
-+	const int old_cur = sctx->cur_stripe;
-+	const int data_stripes = nr_data_stripes(map);
++	struct scrub_ctx *sctx = src->sctx;
 +	struct btrfs_fs_info *fs_info = sctx->fs_info;
-+	struct btrfs_root *extent_root = btrfs_extent_root(fs_info, bg->start);
-+	struct btrfs_path path = { 0 };
-+	unsigned long extents_bitmap = 0;
-+	u64 extent_start;
-+	u64 extent_len;
-+	u64 extent_flags;
-+	u64 extent_gen;
-+	u64 full_stripe_start;
-+	u32 full_stripe_nr;
++
++	/* This function should only be called for logical scrub. */
++	ASSERT(sctx->scrub_logical);
++	scrub_reset_stripe(dst);
++
++	dst->bg = src->bg;
++	dst->dev = NULL;
++	dst->physical = 0;
++	dst->logical = src->logical;
++	dst->mirror_num = src->mirror_num;
++
++	bitmap_copy(&dst->extent_sector_bitmap, &src->extent_sector_bitmap,
++		    src->nr_sectors);
++	memcpy(dst->csums, src->csums,
++	       (BTRFS_STRIPE_LEN >> fs_info->sectorsize_bits) *
++		fs_info->csum_size);
++
++	for (int i = 0; i < src->nr_sectors; i++) {
++		dst->sectors[i].is_metadata = src->sectors[i].is_metadata;
++		if (src->sectors[i].is_metadata)
++			dst->sectors[i].generation = src->sectors[i].generation;
++		else if (src->sectors[i].csum)
++			dst->sectors[i].csum = dst->csums + i * fs_info->csum_size;
++	}
++	dst->nr_data_extents = src->nr_data_extents;
++	dst->nr_meta_extents = src->nr_meta_extents;
++	set_bit(SCRUB_STRIPE_FLAG_INITIALIZED, &dst->state);
++}
++
++/*
++ * Unlike queue_scrub_stripe() which only queue one stripe, this queue all
++ * mirrors for non-RAID56 profiles, or the full stripe for RAID56.
++ */
++static int queue_scrub_logical_stripes(struct scrub_ctx *sctx,
++			struct btrfs_block_group *bg, u64 logical)
++{
++	const int raid_index = btrfs_bg_flags_to_raid_index(bg->flags);
++	const int nr_copies = btrfs_raid_array[raid_index].ncopies;
++	const int old_cur = sctx->cur_stripe;
++	struct scrub_stripe *stripe;
 +	int ret;
 +
-+	path.search_commit_root = 1;
-+	path.skip_locking = 1;
++	ASSERT(sctx->stripes);
++	ASSERT(sctx->nr_stripes);
 +
-+	ret = find_first_extent_item(extent_root, &path, logical,
-+				     bg->start + bg->length - logical);
-+	/* Error or no more extent found. */
-+	if (ret)
-+		return ret;
-+	get_extent_info(&path, &extent_start, &extent_len, &extent_flags,
-+			&extent_gen);
-+	btrfs_release_path(&path);
-+
-+	full_stripe_nr = rounddown((extent_start - bg->start) >>
-+				   BTRFS_STRIPE_LEN_SHIFT, data_stripes);
-+	full_stripe_start = btrfs_stripe_nr_to_offset(full_stripe_nr) + bg->start;
-+
-+	for (int i = 0; i < data_stripes; i++) {
-+		struct scrub_stripe *stripe = &sctx->stripes[old_cur + i];
-+		u64 cur = full_stripe_start + btrfs_stripe_nr_to_offset(i);
-+
-+		scrub_reset_stripe(stripe);
-+		ret = scrub_find_fill_first_stripe(bg, NULL, 0, 1, cur,
-+						   BTRFS_STRIPE_LEN, stripe);
++	if (sctx->cur_stripe + nr_copies > sctx->nr_stripes) {
++		ret = flush_scrub_stripes(sctx);
 +		if (ret < 0)
 +			return ret;
-+		/*
-+		 * No extent in the data stripe, we need to fill the info
-+		 * manually.
-+		 */
-+		if (ret > 0) {
-+			stripe->logical = cur;
-+			stripe->physical = 0;
-+			stripe->dev = NULL;
-+			stripe->bg = bg;
-+			stripe->mirror_num = 1;
-+			set_bit(SCRUB_STRIPE_FLAG_INITIALIZED, &stripe->state);
-+			ret = 0;
-+		}
-+		bitmap_or(&extents_bitmap, &extents_bitmap,
-+			  &stripe->extent_sector_bitmap, stripe->nr_sectors);
 +	}
 +
-+	/* Manually fill the P/Q stripes */
-+	for (int i = 0; i < num_stripes - data_stripes; i++) {
-+		struct scrub_stripe *stripe =
-+			&sctx->stripes[old_cur + data_stripes + i];
-+		scrub_reset_stripe(stripe);
-+		/*
-+		 * Use the logical of the last data stripes, so the caller
-+		 * knows exactly where the next logical should start, no matter
-+		 * if it's RAID56 or not.
-+		 */
-+		stripe->logical = full_stripe_start +
-+				btrfs_stripe_nr_to_offset(data_stripes - 1);
-+		stripe->dev = NULL;
-+		stripe->bg = bg;
-+		stripe->mirror_num = -1 - i;
-+		bitmap_copy(&stripe->extent_sector_bitmap, &extents_bitmap,
-+			    stripe->nr_sectors);
-+		/*
-+		 * For parity stripes, they don't need any csum checks,
-+		 * so mark them as nocsum data.
-+		 */
-+		for (int sector = 0; sector < stripe->nr_sectors; sector++) {
-+			stripe->sectors[sector].is_metadata = false;
-+			stripe->sectors[sector].csum = NULL;
-+		}
-+		set_bit(SCRUB_STRIPE_FLAG_INITIALIZED, &stripe->state);
++	stripe = &sctx->stripes[old_cur];
++
++	scrub_reset_stripe(stripe);
++	ret = scrub_find_fill_first_stripe(bg, NULL, 0, 1,
++			logical, bg->start + bg->length - logical, stripe);
++	/* Either >0 as no more extents or <0 for error. */
++	if (ret)
++		return ret;
++
++	/* For the remaining slots, just copy the above mirror. */
++	for (int i = 1; i < nr_copies; i++) {
++		struct scrub_stripe *dst = &sctx->stripes[old_cur + i];
++
++		scrub_copy_stripe(stripe, dst);
++		dst->mirror_num = i + 1;
 +	}
-+	sctx->cur_stripe += num_stripes;
++	sctx->cur_stripe += nr_copies;
 +	return 0;
 +}
 +
- /*
-  * Unlike queue_scrub_stripe() which only queue one stripe, this queue all
-  * mirrors for non-RAID56 profiles, or the full stripe for RAID56.
-  */
- static int queue_scrub_logical_stripes(struct scrub_ctx *sctx,
--			struct btrfs_block_group *bg, u64 logical)
-+			struct btrfs_block_group *bg, struct map_lookup *map,
-+			u64 logical)
- {
- 	const int nr_copies = btrfs_bg_type_to_factor(bg->flags);
- 	const int old_cur = sctx->cur_stripe;
-+	bool is_raid56 = bg->flags & BTRFS_BLOCK_GROUP_RAID56_MASK;
- 	struct scrub_stripe *stripe;
- 	int ret;
- 
-@@ -3168,6 +3262,14 @@ static int queue_scrub_logical_stripes(struct scrub_ctx *sctx,
- 			return ret;
- 	}
- 
-+	/*
-+	 * For RAID56, we need to queue the full stripe. If there is some data
-+	 * stripes containing no sectors, we still need to queue those empty
-+	 * stripes for later recovery and P/Q verification.
-+	 */
-+	if (is_raid56)
-+		return queue_raid56_full_stripes(sctx, bg, map, logical);
++static int scrub_logical_one_chunk(struct scrub_ctx *sctx,
++				   struct btrfs_block_group *bg)
++{
++	struct btrfs_fs_info *fs_info = sctx->fs_info;
++	struct extent_map_tree *map_tree = &fs_info->mapping_tree;
++	struct extent_map *em;
++	u64 cur = bg->start;
++	const int raid_index = btrfs_bg_flags_to_raid_index(bg->flags);
++	const int nr_copies = btrfs_raid_array[raid_index].ncopies;
++	int nr_stripes;
++	int ret = 0;
++	int flush_ret;
 +
- 	stripe = &sctx->stripes[old_cur];
- 
- 	scrub_reset_stripe(stripe);
-@@ -3250,7 +3352,7 @@ static int scrub_logical_one_chunk(struct scrub_ctx *sctx,
- 		}
- 		spin_unlock(&bg->lock);
- 
--		ret = queue_scrub_logical_stripes(sctx, bg, cur);
-+		ret = queue_scrub_logical_stripes(sctx, bg, em->map_lookup, cur);
- 		if (ret > 0) {
- 			ret = 0;
++	read_lock(&map_tree->lock);
++	em = lookup_extent_mapping(map_tree, bg->start, bg->length);
++	read_unlock(&map_tree->lock);
++	if (!em) {
++		/*
++		 * Might have been an unused block group deleted by the cleaner
++		 * kthread or relocation.
++		 */
++		spin_lock(&bg->lock);
++		if (!test_bit(BLOCK_GROUP_FLAG_REMOVED, &bg->runtime_flags))
++			ret = -EINVAL;
++		spin_unlock(&bg->lock);
++		return ret;
++	}
++
++	scrub_blocked_if_needed(fs_info);
++
++	/* RAID56 not yet supported. */
++	if (bg->flags & BTRFS_BLOCK_GROUP_RAID56_MASK) {
++		ret = -EOPNOTSUPP;
++		goto out;
++	}
++
++	nr_stripes = SCRUB_STRIPES_PER_SCTX * nr_copies;
++	ret = alloc_scrub_stripes(sctx, nr_stripes);
++	if (ret < 0)
++		goto out;
++
++	while (cur < bg->start + bg->length) {
++		/* Canceled? */
++		if (atomic_read(&fs_info->scrub_cancel_req) ||
++		    atomic_read(&sctx->cancel_req)) {
++			ret = -ECANCELED;
++			break;
++		}
++		/* Paused? */
++		if (atomic_read(&fs_info->scrub_pause_req)) {
++			/* Push queued extents */
++			scrub_blocked_if_needed(fs_info);
++		}
++		/* Block group removed? */
++		spin_lock(&bg->lock);
++		if (test_bit(BLOCK_GROUP_FLAG_REMOVED, &bg->runtime_flags)) {
++			spin_unlock(&bg->lock);
++			ret = 0;
++			break;
++		}
++		spin_unlock(&bg->lock);
++
++		ret = queue_scrub_logical_stripes(sctx, bg, cur);
++		if (ret > 0) {
++			ret = 0;
++			break;
++		}
++		if (ret < 0)
++			break;
++		ASSERT(sctx->cur_stripe >= 1);
++		cur = sctx->stripes[sctx->cur_stripe - 1].logical + BTRFS_STRIPE_LEN;
++	}
++out:
++	flush_ret = flush_scrub_stripes(sctx);
++	if (!ret)
++		ret = flush_ret;
++	free_scrub_stripes(sctx);
++	free_extent_map(em);
++	return ret;
++
++}
++
+ static int scrub_logical_chunks(struct scrub_ctx *sctx, u64 start, u64 end)
+ {
+ 	struct btrfs_fs_info *fs_info = sctx->fs_info;
+@@ -3014,8 +3172,7 @@ static int scrub_logical_chunks(struct scrub_ctx *sctx, u64 start, u64 end)
  			break;
+ 		}
+ 
+-		/* The real work starts here. */
+-		ret = -EOPNOTSUPP;
++		ret = scrub_logical_one_chunk(sctx, bg);
+ 
+ 		if (ro_set)
+ 			btrfs_dec_block_group_ro(bg);
 -- 
 2.41.0
 

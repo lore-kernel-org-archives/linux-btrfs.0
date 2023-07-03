@@ -2,49 +2,49 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F3B25C0015E
-	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Jul 2023 07:33:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E2C61EB64DD
+	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Jul 2023 07:33:22 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230328AbjGCHdU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 3 Jul 2023 03:33:20 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35486 "EHLO
+        id S230454AbjGCHdV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 3 Jul 2023 03:33:21 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35484 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230454AbjGCHdP (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Jul 2023 03:33:15 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 190D1E64
-        for <linux-btrfs@vger.kernel.org>; Mon,  3 Jul 2023 00:33:02 -0700 (PDT)
+        with ESMTP id S229914AbjGCHdR (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Jul 2023 03:33:17 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0F787E43
+        for <linux-btrfs@vger.kernel.org>; Mon,  3 Jul 2023 00:33:06 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id B3E9A1F8AC
-        for <linux-btrfs@vger.kernel.org>; Mon,  3 Jul 2023 07:33:00 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id B2F3C218FE;
+        Mon,  3 Jul 2023 07:33:04 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1688369580; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1688369584; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=zRX1CFK6Lwh8rCfC0lbbKXIi/8mlmCJ2MZKyvM6jBxI=;
-        b=h0LcnMtQI5BPXr/82Vxsku4QDATeTrgQzuv7xWJsNE76Cm2I3PwOet3MIXTytHnJ5IdJ/a
-        4uo5bUuaaJciy0yTK5ilkfXl82DTvD5dU8f34HPdAS67FtxgOYBDrOAueUya9wZx/3RkF7
-        nRV81EVW/jg7QpFdId6BD7LJIrO151U=
+        bh=IfxRWjgTRSgQST7ocZIjQ+Q9TJbbAel8rOeIPy8Pa/Y=;
+        b=Kvuq0ZouLnwBSI/0onQpFZCoEDEDFr/yZlug7kdtViXd5BjRAmYiAqPtmqxyYTU3ery0cQ
+        DzTPnw8K2pMCh52bYj5LC6nk6+TlWPo5tNbkZbjMwCglkZNqgktkgSUsDxtPdiKbSKAxOZ
+        a4cwwVxPtsFt9/uPytupoYV/IevczZk=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 0A6AE13276
-        for <linux-btrfs@vger.kernel.org>; Mon,  3 Jul 2023 07:32:59 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id C7C7A13276;
+        Mon,  3 Jul 2023 07:33:03 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id sAXxMKt5omRoVQAAMHmgww
-        (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Mon, 03 Jul 2023 07:32:59 +0000
+        id CE58I695omRoVQAAMHmgww
+        (envelope-from <wqu@suse.com>); Mon, 03 Jul 2023 07:33:03 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 03/14] btrfs: raid56: allow caching P/Q stripes
-Date:   Mon,  3 Jul 2023 15:32:27 +0800
-Message-ID: <04691a8119ab8612a3f3bc4b003f44dcb189be86.1688368617.git.wqu@suse.com>
+Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Subject: [PATCH 06/14] btrfs: scrub: make scrub_ctx::stripes dynamically allocated
+Date:   Mon,  3 Jul 2023 15:32:30 +0800
+Message-ID: <e3636085c44cec6e167df77a000d3cd24c2fe678.1688368617.git.wqu@suse.com>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <cover.1688368617.git.wqu@suse.com>
 References: <cover.1688368617.git.wqu@suse.com>
@@ -54,173 +54,169 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Currently raid56_parity_cache_scrub_pages() only allows to cache data
-stripes, as the only scrub call site is only going to scrub P/Q stripes.
+Currently scrub_ctx::stripes are a fixed size array, this is fine for
+most use cases, but later we may want to allocate one larger sized array
+for logical bytenr based scrub.
 
-But later we want to use cached pages to do recovery, thus we need to
-cache P/Q stripes.
+So here we change the member to a dynamically allocated array.
 
-This patch would do the following changes to allow such new ability by:
+This also affects the lifespan of the member.
+Now it only needs to be allocated and initialized at the beginning of
+scrub_stripe() function.
 
-- Rename the function to raid56_parity_cache_pages()
-
-- Use @stripe_num to indicate where the cached stripe is
-
-- Change the ASSERT() to allow P/Q stripes to be cached
-
-- Introduce a new member, btrfs_raid_bio::cached, to allow recovery path
-  to use cached pages
-
+Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/raid56.c | 43 ++++++++++++++++++++++++++++++-------------
- fs/btrfs/raid56.h | 12 +++++++++---
- fs/btrfs/scrub.c  |  3 +--
- 3 files changed, 40 insertions(+), 18 deletions(-)
+ fs/btrfs/scrub.c | 67 ++++++++++++++++++++++++++++++++++++------------
+ 1 file changed, 51 insertions(+), 16 deletions(-)
 
-diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index d96bfc3a16fc..b2eb7e60a137 100644
---- a/fs/btrfs/raid56.c
-+++ b/fs/btrfs/raid56.c
-@@ -1932,11 +1932,10 @@ static void recover_rbio(struct btrfs_raid_bio *rbio)
- 
- 	/*
- 	 * Read everything that hasn't failed. However this time we will
--	 * not trust any cached sector.
-+	 * not trust any cached sector, unless it's explicitly required.
-+	 *
- 	 * As we may read out some stale data but higher layer is not reading
- 	 * that stale part.
--	 *
--	 * So here we always re-read everything in recovery path.
- 	 */
- 	for (total_sector_nr = 0; total_sector_nr < rbio->nr_sectors;
- 	     total_sector_nr++) {
-@@ -1960,6 +1959,14 @@ static void recover_rbio(struct btrfs_raid_bio *rbio)
- 		}
- 
- 		sector = rbio_stripe_sector(rbio, stripe, sectornr);
-+
-+		/*
-+		 * If we're forced to use cache and the sector is already cached,
-+		 * then we can skip this sector.
-+		 * Otherwise we should still read from disk.
-+		 */
-+		if (rbio->cached && sector->uptodate)
-+			continue;
- 		ret = rbio_add_io_sector(rbio, &bio_list, sector, stripe,
- 					 sectornr, REQ_OP_READ);
- 		if (ret < 0) {
-@@ -2765,22 +2772,32 @@ void raid56_parity_submit_scrub_rbio(struct btrfs_raid_bio *rbio)
- }
- 
- /*
-- * This is for scrub call sites where we already have correct data contents.
-- * This allows us to avoid reading data stripes again.
-+ * This is for scrub call sites where we already have correct stripe contents.
-+ * This allows us to avoid reading on-disk stripes again.
-  *
-  * Unfortunately here we have to do page copy, other than reusing the pages.
-  * This is due to the fact rbio has its own page management for its cache.
-+ * But this is also a good thing for recovery tries, this prevents the recovery
-+ * path to modify the stripes until we've verified the recovered data.
-+ *
-+ * @rbio:	The allocated rbio by raid56_parity_alloc_*_rbio()
-+ * @pages:	The pages which contains the stripe contents.
-+ * @stripe_num:	The stripe number, 0 means the first data stripe, and
-+ *		@rbio->nr_data means the P stripe.
-  */
--void raid56_parity_cache_data_pages(struct btrfs_raid_bio *rbio,
--				    struct page **data_pages, u64 data_logical)
-+void raid56_parity_cache_pages(struct btrfs_raid_bio *rbio, struct page **pages,
-+			       int stripe_num)
- {
--	const u64 offset_in_full_stripe = data_logical -
--					  rbio->bioc->full_stripe_logical;
-+	const u64 offset_in_full_stripe = btrfs_stripe_nr_to_offset(stripe_num);
- 	const int page_index = offset_in_full_stripe >> PAGE_SHIFT;
- 	const u32 sectorsize = rbio->bioc->fs_info->sectorsize;
- 	const u32 sectors_per_page = PAGE_SIZE / sectorsize;
- 	int ret;
- 
-+	if (stripe_num >= rbio->nr_data)
-+		ret = alloc_rbio_parity_pages(rbio);
-+	else
-+		ret = alloc_rbio_data_pages(rbio);
- 	/*
- 	 * If we hit ENOMEM temporarily, but later at
- 	 * raid56_parity_submit_scrub_rbio() time it succeeded, we just do
-@@ -2789,17 +2806,16 @@ void raid56_parity_cache_data_pages(struct btrfs_raid_bio *rbio,
- 	 * If we hit ENOMEM later at raid56_parity_submit_scrub_rbio() time,
- 	 * the bio would got proper error number set.
- 	 */
--	ret = alloc_rbio_data_pages(rbio);
- 	if (ret < 0)
- 		return;
- 
--	/* data_logical must be at stripe boundary and inside the full stripe. */
-+	/* The stripe must be at stripe boundary and inside the full stripe. */
- 	ASSERT(IS_ALIGNED(offset_in_full_stripe, BTRFS_STRIPE_LEN));
--	ASSERT(offset_in_full_stripe < btrfs_stripe_nr_to_offset(rbio->nr_data));
-+	ASSERT(offset_in_full_stripe < btrfs_stripe_nr_to_offset(rbio->real_stripes));
- 
- 	for (int page_nr = 0; page_nr < (BTRFS_STRIPE_LEN >> PAGE_SHIFT); page_nr++) {
- 		struct page *dst = rbio->stripe_pages[page_nr + page_index];
--		struct page *src = data_pages[page_nr];
-+		struct page *src = pages[page_nr];
- 
- 		memcpy_page(dst, 0, src, 0, PAGE_SIZE);
- 		for (int sector_nr = sectors_per_page * page_index;
-@@ -2807,4 +2823,5 @@ void raid56_parity_cache_data_pages(struct btrfs_raid_bio *rbio,
- 		     sector_nr++)
- 			rbio->stripe_sectors[sector_nr].uptodate = true;
- 	}
-+	rbio->cached = true;
- }
-diff --git a/fs/btrfs/raid56.h b/fs/btrfs/raid56.h
-index 1871a2a16a1c..41354a9f158a 100644
---- a/fs/btrfs/raid56.h
-+++ b/fs/btrfs/raid56.h
-@@ -82,6 +82,13 @@ struct btrfs_raid_bio {
- 	 */
- 	int bio_list_bytes;
- 
-+	/*
-+	 * If this rbio is forced to use cached stripes provided by the caller.
-+	 *
-+	 * Used by scrub path to reduce IO.
-+	 */
-+	bool cached;
-+
- 	refcount_t refs;
- 
- 	atomic_t stripes_pending;
-@@ -191,9 +198,8 @@ struct btrfs_raid_bio *raid56_parity_alloc_scrub_rbio(struct bio *bio,
- 				struct btrfs_device *scrub_dev,
- 				unsigned long *dbitmap);
- void raid56_parity_submit_scrub_rbio(struct btrfs_raid_bio *rbio);
--
--void raid56_parity_cache_data_pages(struct btrfs_raid_bio *rbio,
--				    struct page **data_pages, u64 data_logical);
-+void raid56_parity_cache_pages(struct btrfs_raid_bio *rbio, struct page **pages,
-+			       int stripe_num);
- 
- int btrfs_alloc_stripe_hash_table(struct btrfs_fs_info *info);
- void btrfs_free_stripe_hash_table(struct btrfs_fs_info *info);
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 5a0626a3c23c..1864856abb13 100644
+index 41c514db0793..1e49bb066619 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -1925,8 +1925,7 @@ static int scrub_raid56_parity_stripe(struct scrub_ctx *sctx,
- 	for (int i = 0; i < data_stripes; i++) {
- 		stripe = &sctx->raid56_data_stripes[i];
+@@ -172,7 +172,7 @@ struct scrub_stripe {
+ };
  
--		raid56_parity_cache_data_pages(rbio, stripe->pages,
--				full_stripe_start + btrfs_stripe_nr_to_offset(i));
-+		raid56_parity_cache_pages(rbio, stripe->pages, i);
+ struct scrub_ctx {
+-	struct scrub_stripe	stripes[SCRUB_STRIPES_PER_SCTX];
++	struct scrub_stripe	*stripes;
+ 	struct scrub_stripe	*raid56_data_stripes;
+ 	struct btrfs_fs_info	*fs_info;
+ 	int			first_free;
+@@ -181,6 +181,9 @@ struct scrub_ctx {
+ 	int			readonly;
+ 	int			sectors_per_bio;
+ 
++	/* Number of stripes we have in @stripes. */
++	unsigned int		nr_stripes;
++
+ 	/* State of IO submission throttling affecting the associated device */
+ 	ktime_t			throttle_deadline;
+ 	u64			throttle_sent;
+@@ -308,16 +311,24 @@ static void scrub_blocked_if_needed(struct btrfs_fs_info *fs_info)
+ 	scrub_pause_off(fs_info);
+ }
+ 
++static void free_scrub_stripes(struct scrub_ctx *sctx)
++{
++	if (!sctx->stripes)
++		return;
++
++	for (int i = 0; i < sctx->nr_stripes; i++)
++		release_scrub_stripe(&sctx->stripes[i]);
++	kfree(sctx->stripes);
++	sctx->nr_stripes = 0;
++	sctx->stripes = NULL;
++}
++
+ static noinline_for_stack void scrub_free_ctx(struct scrub_ctx *sctx)
+ {
+-	int i;
+-
+ 	if (!sctx)
+ 		return;
+ 
+-	for (i = 0; i < SCRUB_STRIPES_PER_SCTX; i++)
+-		release_scrub_stripe(&sctx->stripes[i]);
+-
++	free_scrub_stripes(sctx);
+ 	kfree(sctx);
+ }
+ 
+@@ -331,7 +342,6 @@ static noinline_for_stack struct scrub_ctx *scrub_setup_ctx(
+ 		struct btrfs_fs_info *fs_info, int is_dev_replace)
+ {
+ 	struct scrub_ctx *sctx;
+-	int		i;
+ 
+ 	sctx = kzalloc(sizeof(*sctx), GFP_KERNEL);
+ 	if (!sctx)
+@@ -339,14 +349,6 @@ static noinline_for_stack struct scrub_ctx *scrub_setup_ctx(
+ 	refcount_set(&sctx->refs, 1);
+ 	sctx->is_dev_replace = is_dev_replace;
+ 	sctx->fs_info = fs_info;
+-	for (i = 0; i < SCRUB_STRIPES_PER_SCTX; i++) {
+-		int ret;
+-
+-		ret = init_scrub_stripe(fs_info, &sctx->stripes[i]);
+-		if (ret < 0)
+-			goto nomem;
+-		sctx->stripes[i].sctx = sctx;
+-	}
+ 	sctx->first_free = 0;
+ 	atomic_set(&sctx->cancel_req, 0);
+ 
+@@ -1659,6 +1661,7 @@ static int flush_scrub_stripes(struct scrub_ctx *sctx)
+ 	const int nr_stripes = sctx->cur_stripe;
+ 	int ret = 0;
+ 
++	ASSERT(nr_stripes <= sctx->nr_stripes);
+ 	if (!nr_stripes)
+ 		return 0;
+ 
+@@ -1753,8 +1756,11 @@ static int queue_scrub_stripe(struct scrub_ctx *sctx, struct btrfs_block_group *
+ 	struct scrub_stripe *stripe;
+ 	int ret;
+ 
++	ASSERT(sctx->stripes);
++	ASSERT(sctx->nr_stripes);
++
+ 	/* No available slot, submit all stripes and wait for them. */
+-	if (sctx->cur_stripe >= SCRUB_STRIPES_PER_SCTX) {
++	if (sctx->cur_stripe >= sctx->nr_stripes) {
+ 		ret = flush_scrub_stripes(sctx);
+ 		if (ret < 0)
+ 			return ret;
+@@ -2076,6 +2082,30 @@ static int scrub_simple_stripe(struct scrub_ctx *sctx,
+ 	return ret;
+ }
+ 
++static int alloc_scrub_stripes(struct scrub_ctx *sctx, int nr_stripes)
++{
++	struct btrfs_fs_info *fs_info = sctx->fs_info;
++	int ret;
++
++	ASSERT(!sctx->stripes);
++	ASSERT(!sctx->nr_stripes);
++	sctx->stripes = kcalloc(nr_stripes, sizeof(struct scrub_stripe),
++				GFP_KERNEL);
++	if (!sctx->stripes)
++		return -ENOMEM;
++	sctx->nr_stripes = nr_stripes;
++	for (int i = 0; i < sctx->nr_stripes; i++) {
++		ret = init_scrub_stripe(fs_info, &sctx->stripes[i]);
++		if (ret < 0)
++			goto cleanup;
++		sctx->stripes[i].sctx = sctx;
++	}
++	return 0;
++cleanup:
++	free_scrub_stripes(sctx);
++	return -ENOMEM;
++}
++
+ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
+ 					   struct btrfs_block_group *bg,
+ 					   struct extent_map *em,
+@@ -2102,6 +2132,10 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
+ 
+ 	scrub_blocked_if_needed(fs_info);
+ 
++	ret = alloc_scrub_stripes(sctx, SCRUB_STRIPES_PER_SCTX);
++	if (ret < 0)
++		return ret;
++
+ 	if (sctx->is_dev_replace &&
+ 	    btrfs_dev_is_sequential(sctx->wr_tgtdev, physical)) {
+ 		mutex_lock(&sctx->wr_lock);
+@@ -2224,6 +2258,7 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
+ 		kfree(sctx->raid56_data_stripes);
+ 		sctx->raid56_data_stripes = NULL;
  	}
- 	raid56_parity_submit_scrub_rbio(rbio);
- 	wait_for_completion_io(&io_done);
++	free_scrub_stripes(sctx);
+ 
+ 	if (sctx->is_dev_replace && ret >= 0) {
+ 		int ret2;
 -- 
 2.41.0
 

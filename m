@@ -2,49 +2,49 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 42388C001DD
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E235BC0015E
 	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Jul 2023 07:33:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230476AbjGCHdX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S230499AbjGCHdX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Mon, 3 Jul 2023 03:33:23 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35484 "EHLO
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35462 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230506AbjGCHdT (ORCPT
+        with ESMTP id S230514AbjGCHdT (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Jul 2023 03:33:19 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AE292E52
-        for <linux-btrfs@vger.kernel.org>; Mon,  3 Jul 2023 00:33:14 -0700 (PDT)
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 523D1E54
+        for <linux-btrfs@vger.kernel.org>; Mon,  3 Jul 2023 00:33:15 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 70766218FC
-        for <linux-btrfs@vger.kernel.org>; Mon,  3 Jul 2023 07:33:13 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 5B1BC1FD72
+        for <linux-btrfs@vger.kernel.org>; Mon,  3 Jul 2023 07:33:11 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1688369593; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1688369591; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=eO1iej0py8goBFlIIh/KF0ANhgOXs2kxz+dDsLd/rEY=;
-        b=qUmAn28FaJuzGUb7XZ6ScSDBqvomgVVUYgNPM1q/8l3lfDnawzIcBtwLsvemjSUQxjPJg5
-        xpifD9mLwrkDg9md+c+th1A3Nf/qKU7A6Y+65YFxUUDKY19O9kc72hY+kl0UFbebp8z4uP
-        hHUMKNRhapIzcfdQm914yEIOgzQ/VJk=
+        bh=vTUdZAf5MDy7R5LMoW/1oGwvHe6e7H3aRxC+YL6Ytao=;
+        b=XR1tMtcmn5r556rsQEiAODWPXR3zPOYDFUfWwyGo6PnGGwV/nPEQMIGJdxuCXREe0cJC8k
+        yxvtL9d/qZ7Z+LegNR22op2uf4qg+AlUGzk9vqXcCguBikN2WwaFtevYVad7/IHEwh+IIo
+        urSmxyyYp5e2V22xAauER6F3vJJSg8U=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id C5A1613276
-        for <linux-btrfs@vger.kernel.org>; Mon,  3 Jul 2023 07:33:12 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id B0FCE13276
+        for <linux-btrfs@vger.kernel.org>; Mon,  3 Jul 2023 07:33:10 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id uDyII7h5omRoVQAAMHmgww
+        id ONlDHrZ5omRoVQAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Mon, 03 Jul 2023 07:33:12 +0000
+        for <linux-btrfs@vger.kernel.org>; Mon, 03 Jul 2023 07:33:10 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 14/14] btrfs: scrub: implement the RAID56 P/Q scrub code
-Date:   Mon,  3 Jul 2023 15:32:38 +0800
-Message-ID: <8538a4b8c0f2cfa762863ae735a774f903090acb.1688368617.git.wqu@suse.com>
+Subject: [PATCH 12/14] btrfs: scrub: add RAID56 support for queue_scrub_logical_stripes()
+Date:   Mon,  3 Jul 2023 15:32:36 +0800
+Message-ID: <9e1666311b1e944fd666e97f77af59b198717676.1688368617.git.wqu@suse.com>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <cover.1688368617.git.wqu@suse.com>
 References: <cover.1688368617.git.wqu@suse.com>
@@ -54,175 +54,172 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-For RAID56 P/Q stripe verification, we already have an existing path
-inside scrub_raid56_parity_stripe().
+There are several factors that needs to be considered for RAID56 full
+stripe:
 
-Although the existing path is only to verify one P/Q stripe, with recent
-changes to scrub_rbio(), we only need to pass a NULL @scrub_dev to
-raid56_parity_alloc_scrub_rbio(), then we can verify both P/Q stripes in
-one go.
+- Empty data stripes
+  We still need those empty data stripes, as they may be involved in the
+  P/Q recovery.
 
-So here we introduce a helper, submit_raid56_pq_scrub_bio(), to do the
-necessary work of P/Q stripes verification and repair.
+- P/Q stripes
+  We need special handling for P/Q stripes.
 
-The new helper would be utilized by both scrub_logical and the existing
-per-device scrub, and both would use the repaired data stripes to reduce
-IO for RAID56 scrub.
+So this patch introduce a new helper, queue_raid56_full_stripes() to
+handle those special requirements.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/scrub.c | 106 +++++++++++++++++++++++++++--------------------
- 1 file changed, 62 insertions(+), 44 deletions(-)
+ fs/btrfs/scrub.c | 108 +++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 105 insertions(+), 3 deletions(-)
 
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 4ca502fa0b40..2a882a07b388 100644
+index 21b3fa55d0f0..f37b9fd30595 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -1782,6 +1782,58 @@ static bool stripe_has_metadata_error(struct scrub_stripe *stripe)
- 	return false;
+@@ -105,7 +105,7 @@ struct scrub_stripe {
+ 	u64 logical;
+ 	u64 physical;
+ 
+-	u16 mirror_num;
++	s16 mirror_num;
+ 
+ 	/* Should be BTRFS_STRIPE_LEN / sectorsize. */
+ 	u16 nr_sectors;
+@@ -3147,15 +3147,109 @@ static void scrub_copy_stripe(const struct scrub_stripe *src,
+ 	set_bit(SCRUB_STRIPE_FLAG_INITIALIZED, &dst->state);
  }
  
-+static int submit_raid56_pq_scrub_bio(struct scrub_ctx *sctx,
-+				      struct map_lookup *map,
-+				      struct scrub_stripe *first_data_stripe,
-+				      int group_stripes,
-+				      struct btrfs_device *scrub_dev,
-+				      unsigned long extent_bitmap)
++static int queue_raid56_full_stripes(struct scrub_ctx *sctx,
++			struct btrfs_block_group *bg, struct map_lookup *map,
++			u64 logical)
 +{
-+	DECLARE_COMPLETION_ONSTACK(io_done);
-+	struct btrfs_fs_info *fs_info = sctx->fs_info;
-+	struct btrfs_io_context *bioc = NULL;
-+	struct btrfs_raid_bio *rbio;
-+	struct bio *bio;
++	const int num_stripes = map->num_stripes;
++	const int old_cur = sctx->cur_stripe;
 +	const int data_stripes = nr_data_stripes(map);
-+	u64 full_stripe_start = first_data_stripe->logical;
-+	u64 length = btrfs_stripe_nr_to_offset(data_stripes);
++	struct btrfs_fs_info *fs_info = sctx->fs_info;
++	struct btrfs_root *extent_root = btrfs_extent_root(fs_info, bg->start);
++	struct btrfs_path path = { 0 };
++	unsigned long extents_bitmap = 0;
++	u64 extent_start;
++	u64 extent_len;
++	u64 extent_flags;
++	u64 extent_gen;
++	u64 full_stripe_start;
++	u32 full_stripe_nr;
 +	int ret;
 +
-+	bio = bio_alloc(NULL, 1, REQ_OP_READ, GFP_NOFS);
-+	bio->bi_iter.bi_sector = full_stripe_start >> SECTOR_SHIFT;
-+	bio->bi_private = &io_done;
-+	bio->bi_end_io = raid56_scrub_wait_endio;
++	path.search_commit_root = 1;
++	path.skip_locking = 1;
 +
-+	btrfs_bio_counter_inc_blocked(fs_info);
-+	ret = btrfs_map_block(fs_info, BTRFS_MAP_WRITE, full_stripe_start,
-+			      &length, &bioc, NULL, NULL, 1);
-+	if (ret < 0) {
-+		btrfs_put_bioc(bioc);
-+		btrfs_bio_counter_dec(fs_info);
++	ret = find_first_extent_item(extent_root, &path, logical,
++				     bg->start + bg->length - logical);
++	/* Error or no more extent found. */
++	if (ret)
 +		return ret;
-+	}
-+	rbio = raid56_parity_alloc_scrub_rbio(bio, bioc, scrub_dev, &extent_bitmap);
-+	btrfs_put_bioc(bioc);
-+	if (!rbio) {
-+		ret = -ENOMEM;
-+		btrfs_bio_counter_dec(fs_info);
-+		return ret;
-+	}
-+	/* Use the recovered stripes as cache to avoid read them from disk again. */
-+	ASSERT(group_stripes <= map->num_stripes);
-+	for (int i = 0; i < group_stripes; i++) {
-+		struct scrub_stripe *stripe = first_data_stripe + i;
++	get_extent_info(&path, &extent_start, &extent_len, &extent_flags,
++			&extent_gen);
++	btrfs_release_path(&path);
 +
-+		raid56_parity_cache_pages(rbio, stripe->pages, i);
++	full_stripe_nr = rounddown((extent_start - bg->start) >>
++				   BTRFS_STRIPE_LEN_SHIFT, data_stripes);
++	full_stripe_start = btrfs_stripe_nr_to_offset(full_stripe_nr) + bg->start;
++
++	for (int i = 0; i < data_stripes; i++) {
++		struct scrub_stripe *stripe = &sctx->stripes[old_cur + i];
++		u64 cur = full_stripe_start + btrfs_stripe_nr_to_offset(i);
++
++		scrub_reset_stripe(stripe);
++		ret = scrub_find_fill_first_stripe(bg, NULL, 0, 1, cur,
++						   BTRFS_STRIPE_LEN, stripe);
++		if (ret < 0)
++			return ret;
++		/*
++		 * No extent in the data stripe, we need to fill the info
++		 * manually.
++		 */
++		if (ret > 0) {
++			stripe->logical = cur;
++			stripe->physical = 0;
++			stripe->dev = NULL;
++			stripe->bg = bg;
++			stripe->mirror_num = 1;
++			set_bit(SCRUB_STRIPE_FLAG_INITIALIZED, &stripe->state);
++			ret = 0;
++		}
++		bitmap_or(&extents_bitmap, &extents_bitmap,
++			  &stripe->extent_sector_bitmap, stripe->nr_sectors);
 +	}
-+	raid56_parity_submit_scrub_rbio(rbio);
-+	wait_for_completion_io(&io_done);
-+	ret = blk_status_to_errno(bio->bi_status);
-+	bio_put(bio);
-+	btrfs_bio_counter_dec(fs_info);
++
++	/* Manually fill the P/Q stripes */
++	for (int i = 0; i < num_stripes - data_stripes; i++) {
++		struct scrub_stripe *stripe =
++			&sctx->stripes[old_cur + data_stripes + i];
++		scrub_reset_stripe(stripe);
++		/*
++		 * Use the logical of the last data stripes, so the caller
++		 * knows exactly where the next logical should start, no matter
++		 * if it's RAID56 or not.
++		 */
++		stripe->logical = full_stripe_start +
++				btrfs_stripe_nr_to_offset(data_stripes - 1);
++		stripe->dev = NULL;
++		stripe->bg = bg;
++		stripe->mirror_num = -1 - i;
++		bitmap_copy(&stripe->extent_sector_bitmap, &extents_bitmap,
++			    stripe->nr_sectors);
++		/*
++		 * For parity stripes, they don't need any csum checks,
++		 * so mark them as nocsum data.
++		 */
++		for (int sector = 0; sector < stripe->nr_sectors; sector++) {
++			stripe->sectors[sector].is_metadata = false;
++			stripe->sectors[sector].csum = NULL;
++		}
++		set_bit(SCRUB_STRIPE_FLAG_INITIALIZED, &stripe->state);
++	}
++	sctx->cur_stripe += num_stripes;
 +	return 0;
 +}
 +
- static int repair_raid56_full_stripe(struct scrub_ctx *sctx, int start_stripe,
- 				     int group_stripes)
+ /*
+  * Unlike queue_scrub_stripe() which only queue one stripe, this queue all
+  * mirrors for non-RAID56 profiles, or the full stripe for RAID56.
+  */
+ static int queue_scrub_logical_stripes(struct scrub_ctx *sctx,
+-			struct btrfs_block_group *bg, u64 logical)
++			struct btrfs_block_group *bg, struct map_lookup *map,
++			u64 logical)
  {
-@@ -1853,8 +1905,14 @@ static int repair_raid56_full_stripe(struct scrub_ctx *sctx, int start_stripe,
- 		wait_scrub_stripe_io(stripe);
- 	}
- 
--	/* Still need to scrub P/Q stripes. */
--	ret = -EOPNOTSUPP;
-+	/*
-+	 * All data stripes repaired, now can generate and verify P/Q stripes.
-+	 *
-+	 * Pass NULL as @scrub_dev, so that both P/Q stripes would be verified.
-+	 */
-+	ret = submit_raid56_pq_scrub_bio(sctx, sctx->map, first_stripe,
-+					 sctx->map->num_stripes, NULL,
-+					 extents_bitmap);
- report:
- 	/*
- 	 * Update the accounting for data stripes.
-@@ -2141,14 +2199,10 @@ static int scrub_raid56_parity_stripe(struct scrub_ctx *sctx,
- {
- 	DECLARE_COMPLETION_ONSTACK(io_done);
- 	struct btrfs_fs_info *fs_info = sctx->fs_info;
--	struct btrfs_raid_bio *rbio;
--	struct btrfs_io_context *bioc = NULL;
--	struct bio *bio;
+ 	const int nr_copies = btrfs_bg_type_to_factor(bg->flags);
+ 	const int old_cur = sctx->cur_stripe;
++	bool is_raid56 = bg->flags & BTRFS_BLOCK_GROUP_RAID56_MASK;
  	struct scrub_stripe *stripe;
- 	bool all_empty = true;
- 	const int data_stripes = nr_data_stripes(map);
- 	unsigned long extent_bitmap = 0;
--	u64 length = btrfs_stripe_nr_to_offset(data_stripes);
  	int ret;
  
- 	ASSERT(sctx->raid56_data_stripes);
-@@ -2261,38 +2315,8 @@ static int scrub_raid56_parity_stripe(struct scrub_ctx *sctx,
+@@ -3168,6 +3262,14 @@ static int queue_scrub_logical_stripes(struct scrub_ctx *sctx,
+ 			return ret;
  	}
  
- 	/* Now we can check and regenerate the P/Q stripe. */
--	bio = bio_alloc(NULL, 1, REQ_OP_READ, GFP_NOFS);
--	bio->bi_iter.bi_sector = full_stripe_start >> SECTOR_SHIFT;
--	bio->bi_private = &io_done;
--	bio->bi_end_io = raid56_scrub_wait_endio;
--
--	btrfs_bio_counter_inc_blocked(fs_info);
--	ret = btrfs_map_block(fs_info, BTRFS_MAP_WRITE, full_stripe_start,
--			      &length, &bioc, NULL, NULL, 1);
--	if (ret < 0) {
--		btrfs_put_bioc(bioc);
--		btrfs_bio_counter_dec(fs_info);
--		goto out;
--	}
--	rbio = raid56_parity_alloc_scrub_rbio(bio, bioc, scrub_dev, &extent_bitmap);
--	btrfs_put_bioc(bioc);
--	if (!rbio) {
--		ret = -ENOMEM;
--		btrfs_bio_counter_dec(fs_info);
--		goto out;
--	}
--	/* Use the recovered stripes as cache to avoid read them from disk again. */
--	for (int i = 0; i < data_stripes; i++) {
--		stripe = &sctx->raid56_data_stripes[i];
--
--		raid56_parity_cache_pages(rbio, stripe->pages, i);
--	}
--	raid56_parity_submit_scrub_rbio(rbio);
--	wait_for_completion_io(&io_done);
--	ret = blk_status_to_errno(bio->bi_status);
--	bio_put(bio);
--	btrfs_bio_counter_dec(fs_info);
--
-+	ret = submit_raid56_pq_scrub_bio(sctx, map, sctx->raid56_data_stripes,
-+					 data_stripes, scrub_dev, extent_bitmap);
- out:
- 	return ret;
- }
-@@ -3545,12 +3569,6 @@ static int scrub_logical_one_chunk(struct scrub_ctx *sctx,
++	/*
++	 * For RAID56, we need to queue the full stripe. If there is some data
++	 * stripes containing no sectors, we still need to queue those empty
++	 * stripes for later recovery and P/Q verification.
++	 */
++	if (is_raid56)
++		return queue_raid56_full_stripes(sctx, bg, map, logical);
++
+ 	stripe = &sctx->stripes[old_cur];
  
- 	scrub_blocked_if_needed(fs_info);
+ 	scrub_reset_stripe(stripe);
+@@ -3250,7 +3352,7 @@ static int scrub_logical_one_chunk(struct scrub_ctx *sctx,
+ 		}
+ 		spin_unlock(&bg->lock);
  
--	/* RAID56 not yet supported. */
--	if (bg->flags & BTRFS_BLOCK_GROUP_RAID56_MASK) {
--		ret = -EOPNOTSUPP;
--		goto out;
--	}
--
- 	nr_stripes = SCRUB_STRIPES_PER_SCTX * nr_copies;
- 	ret = alloc_scrub_stripes(sctx, nr_stripes);
- 	if (ret < 0)
+-		ret = queue_scrub_logical_stripes(sctx, bg, cur);
++		ret = queue_scrub_logical_stripes(sctx, bg, em->map_lookup, cur);
+ 		if (ret > 0) {
+ 			ret = 0;
+ 			break;
 -- 
 2.41.0
 

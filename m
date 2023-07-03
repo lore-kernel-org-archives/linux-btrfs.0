@@ -2,49 +2,49 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AA420EB64DD
-	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Jul 2023 07:33:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 20E56EB64DC
+	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Jul 2023 07:33:21 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230468AbjGCHdP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 3 Jul 2023 03:33:15 -0400
+        id S229986AbjGCHdT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 3 Jul 2023 03:33:19 -0400
 Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35470 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229986AbjGCHdO (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Jul 2023 03:33:14 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E184FE5D
-        for <linux-btrfs@vger.kernel.org>; Mon,  3 Jul 2023 00:33:00 -0700 (PDT)
+        with ESMTP id S230464AbjGCHdP (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Jul 2023 03:33:15 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 82A2FE6A
+        for <linux-btrfs@vger.kernel.org>; Mon,  3 Jul 2023 00:33:03 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 982BB1F8B4
-        for <linux-btrfs@vger.kernel.org>; Mon,  3 Jul 2023 07:32:59 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 45590218F9
+        for <linux-btrfs@vger.kernel.org>; Mon,  3 Jul 2023 07:33:02 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1688369579; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1688369582; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=Y1GHaYZFWXJD/qRSi9l2fwrNwMSQrKAsf8uX196ZxxE=;
-        b=UdtKrJVubbv/vPGajNkx0shFpjRSGKo9PFc6/CljLgPTr4mhw3WPaXexeLEZaHJYSerQho
-        NPzNwAcCFGBbNyyTfC38iTjHDwe6HT2joG9LwPC+f05/l8zKuddqm/fsvIInBXjODmQO9j
-        EadroRrnDQMoUyVIOMBsTnuEla+vd7Y=
+        bh=x2Gn273D3eJJXiPy8q7PfiNedvrhXMd8qPQSyE8veiE=;
+        b=CRotMnnjoF6tILG0z7z016LMS+3xnBLj//B/ub7gzSisROZ8jrkB3TPTq6yX7Mdjzis2tl
+        ZI2T5aLxZEps0geGUCZWQl5ItWwq1maAbltrtFn+5wq/YqVpEFDNB2QbwHGuKvXYFWJ0Vk
+        PiozJ44KOCjyqnR24YE3jxvjq98/Zy0=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id E3D4713276
-        for <linux-btrfs@vger.kernel.org>; Mon,  3 Jul 2023 07:32:58 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 2A03113276
+        for <linux-btrfs@vger.kernel.org>; Mon,  3 Jul 2023 07:33:00 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id kJoEK6p5omRoVQAAMHmgww
+        id WL50OKx5omRoVQAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Mon, 03 Jul 2023 07:32:58 +0000
+        for <linux-btrfs@vger.kernel.org>; Mon, 03 Jul 2023 07:33:00 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 02/14] btrfs: raid56: allow scrub operation to update both P and Q stripes
-Date:   Mon,  3 Jul 2023 15:32:26 +0800
-Message-ID: <af2b86a9089423882813409531e3bcd1d8479b38.1688368617.git.wqu@suse.com>
+Subject: [PATCH 04/14] btrfs: raid56: add the interfaces to submit recovery rbio
+Date:   Mon,  3 Jul 2023 15:32:28 +0800
+Message-ID: <33215d978e2d8423aedde0c79d733204010c2adb.1688368617.git.wqu@suse.com>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <cover.1688368617.git.wqu@suse.com>
 References: <cover.1688368617.git.wqu@suse.com>
@@ -54,148 +54,91 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Current the scrub_rbio() workload (used by
-raid56_parity_alloc_scrub_rbio() then
-raid56_parity_submit_scrub_rbio()) can only handle one P/Q stripe
-workload.
+The incoming scrub_logical would need to recover raid56 data sectors
+with cached pages.
 
-But inside finish_parity_scrub() we always do the P/Q generation and
-verification for both P/Q stripes.
+This means we can not go regular btrfs_submit_bio() path, but go a
+similar path like raid56_parity_alloc_scrub_rbio().
 
-For the incoming scrub_logical feature, we want to verify P/Q stripes in
-one go, so here we introduce the ability to scrub both P/Q stripes.
+So this patch adds the following new functions to allow recover rbio to
+be allocated and submitted out of the btrfs_submit_bio() path:
 
-To do that the following things are modified:
+- raid56_parity_alloc_recover_rbio()
+- raid56_parity_submit_scrub_rbio()
 
-- raid56_parity_alloc_scrub_rbio() to allows empty @scrub_dev
-  Thankfully we don't have any extra sanity checks to reject such
-  empty parameter.
-
-- Verify both P and Q stripes if @rbio->scrubp is 0
-  Now we do the verification in a loop, and skip the stripe if
-  rbio->scrubp is not zero and does not match the stripe number.
-
-- Add bad sectors of both P/Q stripes to writeback
-  Unfortunately we're using the same dbitmap, this means if only one
-  of the P/Q stripes is corrupted, we would write both.
-  However we can accept the slightly extra cost for it.
+This means now we can go a full cached recover without reading any pages
+from disk.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/raid56.c | 56 +++++++++++++++++++++++++++++++++++------------
- 1 file changed, 42 insertions(+), 14 deletions(-)
+ fs/btrfs/raid56.c | 31 +++++++++++++++++++++++++++++++
+ fs/btrfs/raid56.h |  3 +++
+ 2 files changed, 34 insertions(+)
 
 diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index cc783da065b4..d96bfc3a16fc 100644
+index b2eb7e60a137..0340220463c6 100644
 --- a/fs/btrfs/raid56.c
 +++ b/fs/btrfs/raid56.c
-@@ -2363,7 +2363,14 @@ struct btrfs_raid_bio *raid56_parity_alloc_scrub_rbio(struct bio *bio,
- 			break;
- 		}
- 	}
--	ASSERT(i < rbio->real_stripes);
-+	/*
-+	 * If @scrub_dev is specified, @scrubp must be the stripe number of
-+	 * P or Q stripe.
-+	 */
-+	if (scrub_dev) {
-+		ASSERT(rbio->scrubp >= rbio->nr_data);
-+		ASSERT(rbio->scrubp < rbio->real_stripes);
-+	}
- 
- 	bitmap_copy(&rbio->dbitmap, dbitmap, rbio->stripe_nsectors);
+@@ -2383,6 +2383,31 @@ struct btrfs_raid_bio *raid56_parity_alloc_scrub_rbio(struct bio *bio,
  	return rbio;
-@@ -2426,7 +2433,8 @@ static int finish_parity_scrub(struct btrfs_raid_bio *rbio)
- 	 * Replace is running and our P/Q stripe is being replaced, then we
- 	 * need to duplicate the final write to replace target.
- 	 */
--	if (bioc->replace_nr_stripes && bioc->replace_stripe_src == rbio->scrubp) {
-+	if (rbio->scrubp && bioc->replace_nr_stripes &&
-+	    bioc->replace_stripe_src == rbio->scrubp) {
- 		is_replace = 1;
- 		bitmap_copy(pbitmap, &rbio->dbitmap, rbio->stripe_nsectors);
- 	}
-@@ -2464,6 +2472,7 @@ static int finish_parity_scrub(struct btrfs_raid_bio *rbio)
+ }
  
- 	for_each_set_bit(sectornr, &rbio->dbitmap, rbio->stripe_nsectors) {
- 		struct sector_ptr *sector;
-+		bool found_error = false;
- 		void *parity;
- 
- 		/* first collect one page from each data stripe */
-@@ -2484,14 +2493,22 @@ static int finish_parity_scrub(struct btrfs_raid_bio *rbio)
- 		}
- 
- 		/* Check scrubbing parity and repair it */
--		sector = rbio_stripe_sector(rbio, rbio->scrubp, sectornr);
--		parity = kmap_local_page(sector->page) + sector->pgoff;
--		if (memcmp(parity, pointers[rbio->scrubp], sectorsize) != 0)
--			memcpy(parity, pointers[rbio->scrubp], sectorsize);
--		else
-+		for (int i = rbio->nr_data; i < rbio->real_stripes; i++) {
-+			/* Skip this stripe if it's not our scrub target. */
-+			if (rbio->scrubp && i != rbio->scrubp)
-+				continue;
++/*
++ * Alloc a recovery rbio out of the regular btrfs_submit_bio() path.
++ *
++ * This allows scrub caller to use cached pages to reduce IO.
++ */
++struct btrfs_raid_bio *raid56_parity_alloc_recover_rbio(struct bio *bio,
++				struct btrfs_io_context *bioc, int mirror_num)
++{
++	struct btrfs_fs_info *fs_info = bioc->fs_info;
++	struct btrfs_raid_bio *rbio;
 +
-+			sector = rbio_stripe_sector(rbio, i, sectornr);
-+			parity = kmap_local_page(sector->page) + sector->pgoff;
-+			if (memcmp(parity, pointers[i], sectorsize) != 0) {
-+				memcpy(parity, pointers[i], sectorsize);
-+				found_error = true;
-+			}
-+			kunmap_local(parity);
-+		}
-+		if (!found_error)
- 			/* Parity is right, needn't writeback */
- 			bitmap_clear(&rbio->dbitmap, sectornr, 1);
--		kunmap_local(parity);
++	rbio = alloc_rbio(fs_info, bioc);
++	if (IS_ERR(rbio))
++		return NULL;
++	/* We should have some sectors that really need to be recovered. */
++	ASSERT(bio->bi_iter.bi_size);
++	bio_list_add(&rbio->bio_list, bio);
++	set_rbio_range_error(rbio, bio);
++	rbio->operation = BTRFS_RBIO_READ_REBUILD;
++	if (mirror_num > 2)
++		set_rbio_raid6_extra_error(rbio, mirror_num);
++
++	return rbio;
++}
++
+ /*
+  * We just scrub the parity that we have correct data on the same horizontal,
+  * so we needn't allocate all pages for all the stripes.
+@@ -2771,6 +2796,12 @@ void raid56_parity_submit_scrub_rbio(struct btrfs_raid_bio *rbio)
+ 		start_async_work(rbio, scrub_rbio_work_locked);
+ }
  
- 		for (stripe = nr_data - 1; stripe >= 0; stripe--)
- 			kunmap_local(pointers[stripe]);
-@@ -2514,11 +2531,16 @@ static int finish_parity_scrub(struct btrfs_raid_bio *rbio)
- 	for_each_set_bit(sectornr, &rbio->dbitmap, rbio->stripe_nsectors) {
- 		struct sector_ptr *sector;
++void raid56_parity_submit_recover_rbio(struct btrfs_raid_bio *rbio)
++{
++	if (!lock_stripe_add(rbio))
++		start_async_work(rbio, recover_rbio_work_locked);
++}
++
+ /*
+  * This is for scrub call sites where we already have correct stripe contents.
+  * This allows us to avoid reading on-disk stripes again.
+diff --git a/fs/btrfs/raid56.h b/fs/btrfs/raid56.h
+index 41354a9f158a..6f146eb86832 100644
+--- a/fs/btrfs/raid56.h
++++ b/fs/btrfs/raid56.h
+@@ -197,7 +197,10 @@ struct btrfs_raid_bio *raid56_parity_alloc_scrub_rbio(struct bio *bio,
+ 				struct btrfs_io_context *bioc,
+ 				struct btrfs_device *scrub_dev,
+ 				unsigned long *dbitmap);
++struct btrfs_raid_bio *raid56_parity_alloc_recover_rbio(struct bio *bio,
++				struct btrfs_io_context *bioc, int mirror_num);
+ void raid56_parity_submit_scrub_rbio(struct btrfs_raid_bio *rbio);
++void raid56_parity_submit_recover_rbio(struct btrfs_raid_bio *rbio);
+ void raid56_parity_cache_pages(struct btrfs_raid_bio *rbio, struct page **pages,
+ 			       int stripe_num);
  
--		sector = rbio_stripe_sector(rbio, rbio->scrubp, sectornr);
--		ret = rbio_add_io_sector(rbio, &bio_list, sector, rbio->scrubp,
--					 sectornr, REQ_OP_WRITE);
--		if (ret)
--			goto cleanup;
-+		for (int i = rbio->nr_data; i < rbio->real_stripes; i++) {
-+			/* Skip this stripe if it's not our scrub target. */
-+			if (rbio->scrubp && i != rbio->scrubp)
-+				continue;
-+			sector = rbio_stripe_sector(rbio, i, sectornr);
-+			ret = rbio_add_io_sector(rbio, &bio_list, sector, i,
-+						 sectornr, REQ_OP_WRITE);
-+			if (ret)
-+				goto cleanup;
-+		}
- 	}
- 
- 	if (!is_replace)
-@@ -2529,6 +2551,12 @@ static int finish_parity_scrub(struct btrfs_raid_bio *rbio)
- 	 * the target device.  Check we have a valid source stripe number.
- 	 */
- 	ASSERT(rbio->bioc->replace_stripe_src >= 0);
-+	/*
-+	 * For dev-replace case, scrubp must be provided by the caller at
-+	 * raid56_parity_alloc_scrub_rbio().
-+	 */
-+	ASSERT(rbio->scrubp >= rbio->nr_data);
-+	ASSERT(rbio->scrubp < rbio->real_stripes);
- 	for_each_set_bit(sectornr, pbitmap, rbio->stripe_nsectors) {
- 		struct sector_ptr *sector;
- 
-@@ -2625,7 +2653,7 @@ static int recover_scrub_rbio(struct btrfs_raid_bio *rbio)
- 		 * scrubbing parity, luckily, use the other one to repair the
- 		 * data, or we can not repair the data stripe.
- 		 */
--		if (failp != rbio->scrubp) {
-+		if (rbio->scrubp && failp != rbio->scrubp) {
- 			ret = -EIO;
- 			goto out;
- 		}
 -- 
 2.41.0
 

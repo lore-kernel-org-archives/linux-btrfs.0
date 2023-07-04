@@ -2,54 +2,54 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2974AC0015E
-	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Jul 2023 12:57:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 75A08C05052
+	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Jul 2023 12:57:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231527AbjGDM5L (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 4 Jul 2023 08:57:11 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56128 "EHLO
+        id S230216AbjGDM5M (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 4 Jul 2023 08:57:12 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56130 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231341AbjGDM5H (ORCPT
+        with ESMTP id S231485AbjGDM5H (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Jul 2023 08:57:07 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3F4BE10C8;
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8646D10CB;
         Tue,  4 Jul 2023 05:57:05 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 9D10D22876;
+        by smtp-out1.suse.de (Postfix) with ESMTPS id EB94D2289F;
         Tue,  4 Jul 2023 12:57:03 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
         t=1688475423; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=kbhFQ4y4JUc6VE27n1qMURiI+kwe8WF8aPKmnBcyUpk=;
-        b=rDKRnYDvYUUoNpEwCL+lKpDljazi+VVUzbNPMdqz8eYR1NJwS9f5nT25K3re1FCRawQsMy
-        zVnN6zr3Nt/SuEvgWQeZbovTpFGpu8ZFLTNoeek+H716uMOo0gQqVDDdq/RPoBxr2N7rsh
-        JWIM39cGBUxO3sNr2JDcaYnrESqoj/4=
+        bh=vrS3hC5VnXLyqrchQxaMGNTkNZQ8Lg/3MLwJBaPU+y0=;
+        b=gqbJbU/HZRYQFJ8o/6N8u6RkXXR+bUmZoH6xDwAdSxfgmrse26eKfWC+0Ly79w3FUvuiHp
+        GccK2LJCC8Rm2ZIJxK5FwTOtyDoteuK5htBpJBjGQ4N97lCY5bVgBr0ZpDPkl8qo+6l9kB
+        KwU5f61JYU+o/I7FKdOb5mTQ2hpWMew=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
         s=susede2_ed25519; t=1688475423;
         h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=kbhFQ4y4JUc6VE27n1qMURiI+kwe8WF8aPKmnBcyUpk=;
-        b=RK1OUnwmBQFtkwWltff/jkmiQkm12+RSxquqb+23d6BMaia9TG/+kkRrPEHNhoj4+3X9lt
-        I2Owvbte1Kfo1SCQ==
+        bh=vrS3hC5VnXLyqrchQxaMGNTkNZQ8Lg/3MLwJBaPU+y0=;
+        b=1T7gAAAwMTZutKfVyv5iJ26JkKeICzrERRt9KPowscGjBHJv9lI7YKTCImw3wi+/KRULux
+        CU8eg10/LEpe26CQ==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 8AF001346D;
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id DC8731346D;
         Tue,  4 Jul 2023 12:57:03 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id ZCN7IR8XpGRMQwAAMHmgww
+        id x+XUNR8XpGRWQwAAMHmgww
         (envelope-from <jack@suse.cz>); Tue, 04 Jul 2023 12:57:03 +0000
 Received: by quack3.suse.cz (Postfix, from userid 1000)
-        id E225FA06E5; Tue,  4 Jul 2023 14:57:02 +0200 (CEST)
+        id 0B7DAA0768; Tue,  4 Jul 2023 14:57:03 +0200 (CEST)
 From:   Jan Kara <jack@suse.cz>
 To:     <linux-fsdevel@vger.kernel.org>
 Cc:     <linux-block@vger.kernel.org>,
@@ -62,221 +62,315 @@ Cc:     <linux-block@vger.kernel.org>,
         Eric Biggers <ebiggers@google.com>,
         <linux-xfs@vger.kernel.org>, linux-btrfs@vger.kernel.org,
         Dmitry Vyukov <dvyukov@google.com>, Jan Kara <jack@suse.cz>
-Subject: [PATCH 1/6] block: Add config option to not allow writing to mounted devices
-Date:   Tue,  4 Jul 2023 14:56:49 +0200
-Message-Id: <20230704125702.23180-1-jack@suse.cz>
+Subject: [PATCH 6/6] fs: Make bind mounts work with bdev_allow_write_mounted=n
+Date:   Tue,  4 Jul 2023 14:56:54 +0200
+Message-Id: <20230704125702.23180-6-jack@suse.cz>
 X-Mailer: git-send-email 2.35.3
 In-Reply-To: <20230704122727.17096-1-jack@suse.cz>
 References: <20230704122727.17096-1-jack@suse.cz>
 MIME-Version: 1.0
-X-Developer-Signature: v=1; a=openpgp-sha256; l=6938; i=jack@suse.cz; h=from:subject; bh=DOox6anfnFC1Kv4xeCq03JYSu3CDt6VNymgWXcnDU4I=; b=owEBbQGS/pANAwAIAZydqgc/ZEDZAcsmYgBkpBcRpV+hI9I4lVXF8Xcz7GMQ+8kfA0ULNJC99Ewm 7orL2rqJATMEAAEIAB0WIQSrWdEr1p4yirVVKBycnaoHP2RA2QUCZKQXEQAKCRCcnaoHP2RA2RQdCA CoEAZOUV00hGij49VfxXVXEbBo/Q2ZOKvioIspbvrX69CLN6fvtsfuVCtnTVCesm4gAFc8qfLytwK+ QI0mFRj1odh85+n1OunBiUpmwlD6VnWz6RrxRtiBfli/gvya2Y7JmR8+XvipMQeb2J8RH9ZU8m8ZR5 8urXwJ+TaY07FGm64EGmxCC7J9y6ix2TESVM6+81GkrXSZ4PiB+STdI7ucX+XL9346mfgL4I+kMKeM /aFF1vn2XtqO2jg3Bk3SSmh9RWh3viGNlDwgiZQboVj7vFrQxjCr+DUX4eKTyuG+XlVpKvmZEKVrKR rB5mG8I7WBTd1ihEWiGC2ufaNMkw1A
+X-Developer-Signature: v=1; a=openpgp-sha256; l=9190; i=jack@suse.cz; h=from:subject; bh=6xoHWZ6rajVTnIYh7MZCs9+peehN7n1JkO674Qk1ieo=; b=owEBbQGS/pANAwAIAZydqgc/ZEDZAcsmYgBkpBcVmSO+tEKS17zqp34cfj75JL53r49CurVYu9in MRhxuVWJATMEAAEIAB0WIQSrWdEr1p4yirVVKBycnaoHP2RA2QUCZKQXFQAKCRCcnaoHP2RA2Q7eB/ 0agGBUG6EEeO59m597vlHZWaelx3Aponf6dGFQHiFafueKPmvIgeZun5nRto/vVdvolVYjTPHNZbwS cttlF3ZZ+a+LNAA5fBJ2edYIIQ+cU1KYpeqHzNeNceVTFHLK0W+9ylC8Iuv3jA6mzitNaw+rvPA9t9 /b403gMwfxfQ/I4COZuORzJC3h/sphHVNRhQyc0TMAMbuZG9eSUOe+Wid2T0n8zHr7F8sdDCwPLqW4 3ZJijWt1l3e8j80piHAf7HbudTAyGfVqrXsllE94dABcPkTTw79K0pYy69NA2hMLDrtKy34vYtrZLY 0uLCtpneXPWRbulqKVD2iM6N01A/4j
 X-Developer-Key: i=jack@suse.cz; a=openpgp; fpr=93C6099A142276A28BBE35D815BC833443038D8C
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Writing to mounted devices is dangerous and can lead to filesystem
-corruption as well as crashes. Furthermore syzbot comes with more and
-more involved examples how to corrupt block device under a mounted
-filesystem leading to kernel crashes and reports we can do nothing
-about. Add tracking of writers to each block device and a kernel cmdline
-argument which controls whether writes to block devices open with
-BLK_OPEN_BLOCK_WRITES flag are allowed. We will make filesystems use
-this flag for used devices.
+When we don't allow opening of mounted block devices for writing, bind
+mounting is broken because the bind mount tries to open the block device
+before finding the superblock for it already exists. Reorganize the
+mounting code to first look whether the superblock for a particular
+device is already mounted and open the block device only if it is not.
 
-Syzbot can use this cmdline argument option to avoid uninteresting
-crashes. Also users whose userspace setup does not need writing to
-mounted block devices can set this option for hardening.
-
-Link: https://lore.kernel.org/all/60788e5d-5c7c-1142-e554-c21d709acfd9@linaro.org
 Signed-off-by: Jan Kara <jack@suse.cz>
 ---
- block/Kconfig             | 16 ++++++++++
- block/bdev.c              | 63 ++++++++++++++++++++++++++++++++++++++-
- include/linux/blk_types.h |  1 +
- include/linux/blkdev.h    |  3 ++
- 4 files changed, 82 insertions(+), 1 deletion(-)
+ fs/super.c | 188 +++++++++++++++++++++++++----------------------------
+ 1 file changed, 89 insertions(+), 99 deletions(-)
 
-diff --git a/block/Kconfig b/block/Kconfig
-index 86122e459fe0..8b4fa105b854 100644
---- a/block/Kconfig
-+++ b/block/Kconfig
-@@ -77,6 +77,22 @@ config BLK_DEV_INTEGRITY_T10
- 	select CRC_T10DIF
- 	select CRC64_ROCKSOFT
+diff --git a/fs/super.c b/fs/super.c
+index ea135fece772..fdf1e286926e 100644
+--- a/fs/super.c
++++ b/fs/super.c
+@@ -1228,13 +1228,7 @@ static const struct blk_holder_ops fs_holder_ops = {
  
-+config BLK_DEV_WRITE_MOUNTED
-+	bool "Allow writing to mounted block devices"
-+	default y
-+	help
-+	When a block device is mounted, writing to its buffer cache very likely
-+	going to cause filesystem corruption. It is also rather easy to crash
-+	the kernel in this way since the filesystem has no practical way of
-+	detecting these writes to buffer cache and verifying its metadata
-+	integrity. However there are some setups that need this capability
-+	like running fsck on read-only mounted root device, modifying some
-+	features on mounted ext4 filesystem, and similar. If you say N, the
-+	kernel will prevent processes from writing to block devices that are
-+	mounted by filesystems which provides some more protection from runaway
-+	priviledged processes. If in doubt, say Y. The configuration can be
-+	overridden with bdev_allow_write_mounted boot option.
-+
- config BLK_DEV_ZONED
- 	bool "Zoned block device support"
- 	select MQ_IOSCHED_DEADLINE
-diff --git a/block/bdev.c b/block/bdev.c
-index 523ea7289834..346e68dbf0bf 100644
---- a/block/bdev.c
-+++ b/block/bdev.c
-@@ -30,6 +30,9 @@
- #include "../fs/internal.h"
- #include "blk.h"
- 
-+/* Should we allow writing to mounted block devices? */
-+static bool bdev_allow_write_mounted = IS_ENABLED(CONFIG_BLK_DEV_WRITE_MOUNTED);
-+
- struct bdev_inode {
- 	struct block_device bdev;
- 	struct inode vfs_inode;
-@@ -744,7 +747,34 @@ void blkdev_put_no_open(struct block_device *bdev)
+ static int set_bdev_super(struct super_block *s, void *data)
  {
- 	put_device(&bdev->bd_device);
+-	s->s_bdev_handle = data;
+-	s->s_bdev = s->s_bdev_handle->bdev;
+-	s->s_dev = s->s_bdev->bd_dev;
+-	s->s_bdi = bdi_get(s->s_bdev->bd_disk->bdi);
+-
+-	if (bdev_stable_writes(s->s_bdev))
+-		s->s_iflags |= SB_I_STABLE_WRITES;
++	s->s_dev = *(dev_t *)data;
+ 	return 0;
  }
--	
-+
-+static bool bdev_writes_blocked(struct block_device *bdev)
-+{
-+	return bdev->bd_writers == -1;
+ 
+@@ -1246,7 +1240,53 @@ static int set_bdev_super_fc(struct super_block *s, struct fs_context *fc)
+ static int test_bdev_super_fc(struct super_block *s, struct fs_context *fc)
+ {
+ 	return !(s->s_iflags & SB_I_RETIRED) &&
+-		s->s_bdev == ((struct bdev_handle *)fc->sget_key)->bdev;
++	       s->s_dev == *(dev_t *)fc->sget_key;
 +}
 +
-+static void bdev_block_writes(struct block_device *bdev)
++static int setup_bdev_super(struct super_block *s, int sb_flags,
++			    struct fs_context *fc)
 +{
-+	bdev->bd_writers = -1;
-+}
++	struct bdev_handle *bdev_handle;
 +
-+static void bdev_unblock_writes(struct block_device *bdev)
-+{
-+	bdev->bd_writers = 0;
-+}
-+
-+static bool blkdev_open_compatible(struct block_device *bdev, blk_mode_t mode)
-+{
-+	if (!bdev_allow_write_mounted) {
-+		/* Writes blocked? */
-+		if (mode & BLK_OPEN_WRITE && bdev_writes_blocked(bdev))
-+			return false;
-+		if (mode & BLK_OPEN_BLOCK_WRITES && bdev->bd_writers > 0)
-+			return false;
++	bdev_handle = blkdev_get_by_dev(s->s_dev, sb_open_mode(sb_flags),
++					s->s_type, &fs_holder_ops);
++	if (IS_ERR(bdev_handle)) {
++		if (fc)
++			errorf(fc, "%s: Can't open blockdev", fc->source);
++		return PTR_ERR(bdev_handle);
 +	}
-+	return true;
-+}
++	spin_lock(&sb_lock);
++	s->s_bdev_handle = bdev_handle;
++	s->s_bdev = bdev_handle->bdev;
++	s->s_bdi = bdi_get(s->s_bdev->bd_disk->bdi);
 +
++	if (bdev_stable_writes(s->s_bdev))
++		s->s_iflags |= SB_I_STABLE_WRITES;
++	spin_unlock(&sb_lock);
++
++	/*
++	 * Until SB_BORN flag is set, there can be no active superblock
++ 	 * references and thus no filesystem freezing. get_active_super()
++	 * will just loop waiting for SB_BORN so even freeze_bdev() cannot
++	 * proceed. It is enough to check bdev was not frozen before we set
++	 * s_bdev.
++	 */
++	mutex_lock(&s->s_bdev->bd_fsfreeze_mutex);
++	if (s->s_bdev->bd_fsfreeze_count > 0) {
++		mutex_unlock(&s->s_bdev->bd_fsfreeze_mutex);
++		if (fc)
++			warnf(fc, "%pg: Can't mount, blockdev is frozen",
++			      s->s_bdev);
++		return -EBUSY;
++	}
++	mutex_unlock(&s->s_bdev->bd_fsfreeze_mutex);
++
++	snprintf(s->s_id, sizeof(s->s_id), "%pg", s->s_bdev);
++	shrinker_debugfs_rename(&s->s_shrink, "sb-%s:%s",
++				fc->fs_type->name, s->s_id);
++	sb_set_blocksize(s, block_size(s->s_bdev));
++
++	return 0;
+ }
+ 
  /**
-  * blkdev_get_by_dev - open a block device by device number
-  * @dev: device number of block device to open
-@@ -787,6 +817,10 @@ struct bdev_handle *blkdev_get_by_dev(dev_t dev, blk_mode_t mode, void *holder,
- 	if (ret)
- 		goto free_handle;
+@@ -1258,75 +1298,51 @@ int get_tree_bdev(struct fs_context *fc,
+ 		int (*fill_super)(struct super_block *,
+ 				  struct fs_context *))
+ {
+-	struct bdev_handle *bdev_handle;
+-	struct block_device *bdev;
++	dev_t dev;
+ 	struct super_block *s;
+ 	int error = 0;
  
-+	/* Blocking writes requires exclusive opener */
-+	if (mode & BLK_OPEN_BLOCK_WRITES && !holder)
-+		return ERR_PTR(-EINVAL);
-+
- 	bdev = blkdev_get_no_open(dev);
- 	if (!bdev) {
- 		ret = -ENXIO;
-@@ -814,12 +848,21 @@ struct bdev_handle *blkdev_get_by_dev(dev_t dev, blk_mode_t mode, void *holder,
- 		goto abort_claiming;
- 	if (!try_module_get(disk->fops->owner))
- 		goto abort_claiming;
-+	ret = -EBUSY;
-+	if (!blkdev_open_compatible(bdev, mode))
-+		goto abort_claiming;
- 	if (bdev_is_partition(bdev))
- 		ret = blkdev_get_part(bdev, mode);
- 	else
- 		ret = blkdev_get_whole(bdev, mode);
- 	if (ret)
- 		goto put_module;
-+	if (!bdev_allow_write_mounted) {
-+		if (mode & BLK_OPEN_BLOCK_WRITES)
-+			bdev_block_writes(bdev);
-+		else if (mode & BLK_OPEN_WRITE)
-+			bdev->bd_writers++;
-+	}
- 	if (holder) {
- 		bd_finish_claiming(bdev, holder, hops);
+ 	if (!fc->source)
+ 		return invalf(fc, "No source specified");
  
-@@ -842,6 +885,7 @@ struct bdev_handle *blkdev_get_by_dev(dev_t dev, blk_mode_t mode, void *holder,
- 		disk_unblock_events(disk);
- 	handle->bdev = bdev;
- 	handle->holder = holder;
-+	handle->mode = mode;
- 	return handle;
- put_module:
- 	module_put(disk->fops->owner);
-@@ -914,6 +958,14 @@ void blkdev_put(struct bdev_handle *handle)
- 		sync_blockdev(bdev);
+-	bdev_handle = blkdev_get_by_path(fc->source,
+-					 sb_open_mode(fc->sb_flags),
+-					 fc->fs_type, &fs_holder_ops);
+-	if (IS_ERR(bdev_handle)) {
+-		errorf(fc, "%s: Can't open blockdev", fc->source);
+-		return PTR_ERR(bdev_handle);
+-	}
+-	bdev = bdev_handle->bdev;
+-
+-	/* Once the superblock is inserted into the list by sget_fc(), s_umount
+-	 * will protect the lockfs code from trying to start a snapshot while
+-	 * we are mounting
+-	 */
+-	mutex_lock(&bdev->bd_fsfreeze_mutex);
+-	if (bdev->bd_fsfreeze_count > 0) {
+-		mutex_unlock(&bdev->bd_fsfreeze_mutex);
+-		warnf(fc, "%pg: Can't mount, blockdev is frozen", bdev);
+-		blkdev_put(bdev_handle);
+-		return -EBUSY;
++	error = lookup_bdev(fc->source, &dev);
++	if (error) {
++		errorf(fc, "%s: Can't lookup blockdev", fc->source);
++		return error;
+ 	}
  
- 	mutex_lock(&disk->open_mutex);
-+	if (!bdev_allow_write_mounted) {
-+		/* The exclusive opener was blocking writes? Unblock them. */
-+		if (handle->mode & BLK_OPEN_BLOCK_WRITES)
-+			bdev_unblock_writes(bdev);
-+		else if (handle->mode & BLK_OPEN_WRITE)
-+			bdev->bd_writers--;
-+	}
-+
- 	if (handle->holder)
- 		bd_end_claim(bdev, handle->holder);
+ 	fc->sb_flags |= SB_NOSEC;
+-	fc->sget_key = bdev_handle;
++	fc->sget_key = &dev;
+ 	s = sget_fc(fc, test_bdev_super_fc, set_bdev_super_fc);
+-	mutex_unlock(&bdev->bd_fsfreeze_mutex);
+-	if (IS_ERR(s)) {
+-		blkdev_put(bdev_handle);
++	if (IS_ERR(s))
+ 		return PTR_ERR(s);
+-	}
  
-@@ -1070,3 +1122,12 @@ void bdev_statx_dioalign(struct inode *inode, struct kstat *stat)
+ 	if (s->s_root) {
+ 		/* Don't summarily change the RO/RW state. */
+ 		if ((fc->sb_flags ^ s->s_flags) & SB_RDONLY) {
+-			warnf(fc, "%pg: Can't mount, would change RO state", bdev);
++			warnf(fc, "%pg: Can't mount, would change RO state", s->s_bdev);
+ 			deactivate_locked_super(s);
+-			blkdev_put(bdev_handle);
+ 			return -EBUSY;
+ 		}
+-
++	} else {
+ 		/*
+-		 * s_umount nests inside open_mutex during
+-		 * __invalidate_device().  blkdev_put() acquires open_mutex and
+-		 * can't be called under s_umount.  Drop s_umount temporarily.
+-		 * This is safe as we're holding an active reference.
++		 * We drop s_umount here because we need to lookup bdev and
++		 * bdev->open_mutex ranks above s_umount (blkdev_put() ->
++		 * invalidate_bdev()). It is safe because we have active sb
++		 * reference and SB_BORN is not set yet.
+ 		 */
+ 		up_write(&s->s_umount);
+-		blkdev_put(bdev_handle);
++		error = setup_bdev_super(s, fc->sb_flags, fc);
+ 		down_write(&s->s_umount);
+-	} else {
+-		snprintf(s->s_id, sizeof(s->s_id), "%pg", bdev);
+-		shrinker_debugfs_rename(&s->s_shrink, "sb-%s:%s",
+-					fc->fs_type->name, s->s_id);
+-		sb_set_blocksize(s, block_size(bdev));
+-		error = fill_super(s, fc);
++		if (!error)
++			error = fill_super(s, fc);
+ 		if (error) {
+ 			deactivate_locked_super(s);
+ 			return error;
+ 		}
  
- 	blkdev_put_no_open(bdev);
+ 		s->s_flags |= SB_ACTIVE;
+-		bdev->bd_super = s;
++		s->s_bdev->bd_super = s;
+ 	}
+ 
+ 	BUG_ON(fc->root);
+@@ -1337,81 +1353,53 @@ EXPORT_SYMBOL(get_tree_bdev);
+ 
+ static int test_bdev_super(struct super_block *s, void *data)
+ {
+-	return !(s->s_iflags & SB_I_RETIRED) &&
+-		s->s_bdev == ((struct bdev_handle *)data)->bdev;
++	return !(s->s_iflags & SB_I_RETIRED) && s->s_dev == *(dev_t *)data;
  }
-+
-+static int __init setup_bdev_allow_write_mounted(char *str)
-+{
-+	if (kstrtobool(str, &bdev_allow_write_mounted))
-+		pr_warn("Invalid option string for bdev_allow_write_mounted:"
-+			" '%s'\n", str);
-+	return 1;
-+}
-+__setup("bdev_allow_write_mounted=", setup_bdev_allow_write_mounted);
-diff --git a/include/linux/blk_types.h b/include/linux/blk_types.h
-index 0bad62cca3d0..5bf0d2d458fd 100644
---- a/include/linux/blk_types.h
-+++ b/include/linux/blk_types.h
-@@ -70,6 +70,7 @@ struct block_device {
- #ifdef CONFIG_FAIL_MAKE_REQUEST
- 	bool			bd_make_it_fail;
- #endif
-+	int			bd_writers;
- 	/*
- 	 * keep this out-of-line as it's both big and not needed in the fast
- 	 * path
-diff --git a/include/linux/blkdev.h b/include/linux/blkdev.h
-index 4ae3647a0322..ca467525e6e4 100644
---- a/include/linux/blkdev.h
-+++ b/include/linux/blkdev.h
-@@ -124,6 +124,8 @@ typedef unsigned int __bitwise blk_mode_t;
- #define BLK_OPEN_NDELAY		((__force blk_mode_t)(1 << 3))
- /* open for "writes" only for ioctls (specialy hack for floppy.c) */
- #define BLK_OPEN_WRITE_IOCTL	((__force blk_mode_t)(1 << 4))
-+/* open is exclusive wrt all other BLK_OPEN_WRITE opens to the device */
-+#define BLK_OPEN_BLOCK_WRITES	((__force blk_mode_t)(1 << 5))
  
- struct gendisk {
- 	/*
-@@ -1474,6 +1476,7 @@ struct blk_holder_ops {
- struct bdev_handle {
- 	struct block_device *bdev;
- 	void *holder;
-+	blk_mode_t mode;
- };
+ struct dentry *mount_bdev(struct file_system_type *fs_type,
+ 	int flags, const char *dev_name, void *data,
+ 	int (*fill_super)(struct super_block *, void *, int))
+ {
+-	struct bdev_handle *bdev_handle;
+-	struct block_device *bdev;
+ 	struct super_block *s;
+ 	int error = 0;
++	dev_t dev;
  
- struct bdev_handle *blkdev_get_by_dev(dev_t dev, blk_mode_t mode, void *holder,
+-	bdev_handle = blkdev_get_by_path(dev_name, sb_open_mode(flags),
+-					 fs_type, &fs_holder_ops);
+-	if (IS_ERR(bdev_handle))
+-		return ERR_CAST(bdev_handle);
+-	bdev = bdev_handle->bdev;
++	error = lookup_bdev(dev_name, &dev);
++	if (error)
++		return ERR_PTR(error);
+ 
+-	/*
+-	 * once the super is inserted into the list by sget, s_umount
+-	 * will protect the lockfs code from trying to start a snapshot
+-	 * while we are mounting
+-	 */
+-	mutex_lock(&bdev->bd_fsfreeze_mutex);
+-	if (bdev->bd_fsfreeze_count > 0) {
+-		mutex_unlock(&bdev->bd_fsfreeze_mutex);
+-		error = -EBUSY;
+-		goto error_bdev;
+-	}
+-	s = sget(fs_type, test_bdev_super, set_bdev_super, flags | SB_NOSEC,
+-		 bdev_handle);
+-	mutex_unlock(&bdev->bd_fsfreeze_mutex);
++	flags |= SB_NOSEC;
++	s = sget(fs_type, test_bdev_super, set_bdev_super, flags, &dev);
+ 	if (IS_ERR(s))
+-		goto error_s;
++		return ERR_CAST(s);
+ 
+ 	if (s->s_root) {
+ 		if ((flags ^ s->s_flags) & SB_RDONLY) {
+ 			deactivate_locked_super(s);
+-			error = -EBUSY;
+-			goto error_bdev;
++			return ERR_PTR(-EBUSY);
+ 		}
+-
++	} else {
+ 		/*
+-		 * s_umount nests inside open_mutex during
+-		 * __invalidate_device().  blkdev_put() acquires open_mutex and
+-		 * can't be called under s_umount.  Drop s_umount temporarily.
+-		 * This is safe as we're holding an active reference.
++		 * We drop s_umount here because we need to lookup bdev and
++		 * bdev->open_mutex ranks above s_umount (blkdev_put() ->
++		 * invalidate_bdev()). It is safe because we have active sb
++		 * reference and SB_BORN is not set yet.
+ 		 */
+ 		up_write(&s->s_umount);
+-		blkdev_put(bdev_handle);
++		error = setup_bdev_super(s, flags, NULL);
+ 		down_write(&s->s_umount);
+-	} else {
+-		snprintf(s->s_id, sizeof(s->s_id), "%pg", bdev);
+-		shrinker_debugfs_rename(&s->s_shrink, "sb-%s:%s",
+-					fs_type->name, s->s_id);
+-		sb_set_blocksize(s, block_size(bdev));
+-		error = fill_super(s, data, flags & SB_SILENT ? 1 : 0);
++		if (!error)
++			error = fill_super(s, data, flags & SB_SILENT ? 1 : 0);
+ 		if (error) {
+ 			deactivate_locked_super(s);
+-			goto error;
++			return ERR_PTR(error);
+ 		}
+ 
+ 		s->s_flags |= SB_ACTIVE;
+-		bdev->bd_super = s;
++		s->s_bdev->bd_super = s;
+ 	}
+ 
+ 	return dget(s->s_root);
+-
+-error_s:
+-	error = PTR_ERR(s);
+-error_bdev:
+-	blkdev_put(bdev_handle);
+-error:
+-	return ERR_PTR(error);
+ }
+ EXPORT_SYMBOL(mount_bdev);
+ 
+@@ -1419,10 +1407,12 @@ void kill_block_super(struct super_block *sb)
+ {
+ 	struct block_device *bdev = sb->s_bdev;
+ 
+-	bdev->bd_super = NULL;
+ 	generic_shutdown_super(sb);
+-	sync_blockdev(bdev);
+-	blkdev_put(sb->s_bdev_handle);
++	if (bdev) {
++		bdev->bd_super = NULL;
++		sync_blockdev(bdev);
++		blkdev_put(sb->s_bdev_handle);
++	}
+ }
+ 
+ EXPORT_SYMBOL(kill_block_super);
 -- 
 2.35.3
 

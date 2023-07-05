@@ -2,70 +2,70 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 27E4BEB64DA
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4F54AC001DB
 	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Jul 2023 23:24:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232392AbjGEXXx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 5 Jul 2023 19:23:53 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42110 "EHLO
+        id S232403AbjGEXXz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 5 Jul 2023 19:23:55 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42134 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232426AbjGEXX0 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Jul 2023 19:23:26 -0400
+        with ESMTP id S232434AbjGEXX3 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Jul 2023 19:23:29 -0400
 Received: from out4-smtp.messagingengine.com (out4-smtp.messagingengine.com [66.111.4.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 698E0198E
-        for <linux-btrfs@vger.kernel.org>; Wed,  5 Jul 2023 16:23:24 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C9259E57
+        for <linux-btrfs@vger.kernel.org>; Wed,  5 Jul 2023 16:23:27 -0700 (PDT)
 Received: from compute4.internal (compute4.nyi.internal [10.202.2.44])
-        by mailout.nyi.internal (Postfix) with ESMTP id D63975C0281;
-        Wed,  5 Jul 2023 19:23:23 -0400 (EDT)
+        by mailout.nyi.internal (Postfix) with ESMTP id 45B405C02A1;
+        Wed,  5 Jul 2023 19:23:27 -0400 (EDT)
 Received: from mailfrontend2 ([10.202.2.163])
-  by compute4.internal (MEProxy); Wed, 05 Jul 2023 19:23:23 -0400
+  by compute4.internal (MEProxy); Wed, 05 Jul 2023 19:23:27 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc
         :content-transfer-encoding:content-type:date:date:from:from
         :in-reply-to:in-reply-to:message-id:mime-version:references
-        :reply-to:sender:subject:subject:to:to; s=fm3; t=1688599403; x=
-        1688685803; bh=QKh0tgqhtGxgsxuW9+z1Fvc2Qk9Qm3eBGgcUo8DHsi8=; b=D
-        wlAaI0o5XR7L/SvtoJjjStLKn8rhOFgiADvbG01fTq7griqxIFGuASzKD8j3TdB1
-        TF4vh3YAO/AnSn47gJeKP0AgAAnAAsfZb4g6TTj9D14UBwEebqXhTa/vaINw3XzK
-        oK2hDZ6GnI8qkfOW9BRL4EIzJNXx2UpmwgoYcaJ/R8N15nvkZEUHg60WhIHr3ySy
-        m0Y5GEmcRjnIismFHLSesiKzrcnLjVTOUUSZVEsDuBlw6+QQhJj/zovAHEKzo5Nb
-        Ooq9WtT+VZqpDog9v0LV83DdbeLY0pGlNNgdrCFZodcVhcveUi0uSiIBkbAGeuoJ
-        Fbsd3c+VxzObSFMNeiHUA==
+        :reply-to:sender:subject:subject:to:to; s=fm3; t=1688599407; x=
+        1688685807; bh=W80V2QyUb7WEXNyME8hnBHOtlpN/8S5iQHLAwGvSMXs=; b=F
+        bXu4k75XsbMaM2YVrTBS2aCmP/hm44v8jcPWwofOGuF/+jK2epN0/sETyfnnp1Ml
+        qiN1b/KYIMn/iPTezAOoR1YHrhWQjs/Xhs+xMsJZFA2sRqceLnIP0LhtKlvXVQba
+        8Eqbs4+VcArnU6o6S0br0+92jlsgHLKFWnueIaJwQmI9pCr9X0UZfp4IKInABhEH
+        caJLhm0fTBKSwPzEkS2qIGs9BBLQJPuumosZ2k4hnAtieY4uO5HKtOexdgauf5Gh
+        Lb1yZwO2MZeUrJ7VBnxQLys5V4KwpkG1z6ZRQ/3ItNLBgyLwmkBSbMAsp1y8GdIo
+        Uh6REG3E9v5kL4NNiQo2w==
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
         messagingengine.com; h=cc:content-transfer-encoding:content-type
         :date:date:feedback-id:feedback-id:from:from:in-reply-to
         :in-reply-to:message-id:mime-version:references:reply-to:sender
         :subject:subject:to:to:x-me-proxy:x-me-proxy:x-me-sender
-        :x-me-sender:x-sasl-enc; s=fm2; t=1688599403; x=1688685803; bh=Q
-        Kh0tgqhtGxgsxuW9+z1Fvc2Qk9Qm3eBGgcUo8DHsi8=; b=QgfH9Kz2HnZ1jJbQE
-        Rc963oKG6EHh3UavtTB6+fRVUKCPxBwFXPHOjI5ASO3npi9TNoTMU8vqMKM7iKcI
-        Cqhdyrks8bZPkDivcYADJJmGIwhi4YkRsPRCk+7hf3GmaFuNhorOwJOev/W0czzt
-        /M3YFeyVDBG2/bcVMpZFaoS4nlPujGVC239kOBUnXvBX19LsuJjKEb36L43/PhBK
-        5QiDEktoqJVvu4gt3hU/Z8HYssRcs2fu+EPcdpp920tHMtU2GJEeFKrhzs+hzNhA
-        Gqsic/2M2WwMc1gMTQR7dafGowTFwn10ldR35SWlJmZ8ARIU8LZ6phzZaLJU5qQj
-        UGlJg==
-X-ME-Sender: <xms:a_ulZP4pNKXK6kcdd9IF25jB72f5gngWLQrh5nKLk0vMWNCoWe0cgQ>
-    <xme:a_ulZE4xDnewQvr5X7JTJQr02k34T3MjT-kJdEH3lOLkgu-sIz6Xn_G4QT2Bx3Vzv
-    khCHSMxRXFS_7lKhN4>
-X-ME-Received: <xmr:a_ulZGdqn4C-ewoBJcH_muxMWf9GX6CaJKWYIG0yG5ulTmgpmFkSTT5C6F7Uyymg2Kqc_0qZz_du7RJ59CaAn8g16Xg>
+        :x-me-sender:x-sasl-enc; s=fm2; t=1688599407; x=1688685807; bh=W
+        80V2QyUb7WEXNyME8hnBHOtlpN/8S5iQHLAwGvSMXs=; b=d4RX6btU96cuAgooe
+        +URgIR4g6YnkDUxmwe5bAgRfjd7xAt7yIQ9zUFwA5OxXbXkPMHstOXXgL9RaRXG9
+        Z7AiKMLKV3ORF4Om1o/v7/Q98uz/4wZgaBXe1lm909p/5lc3E63lfkHy+YCZPsow
+        6ZNdAWQHTIO5w9+MzmuIa365/Li970wF6pLeyIKYrmmnqzvlC9k36uQar4Sof0nC
+        BLGa1dmVWWR4sVoXFZL9b3NW5aEeG361CF5Z4MR/neRfAi1Ahlf97FKXZLA2pKic
+        PVUcHpEYYG4IpblwFJ6Ofy/i0cbuQXxMmdQ62VlsUS9dvsudgfcpxKZRf12NTQm5
+        0/bVA==
+X-ME-Sender: <xms:b_ulZJxsjULrs7t4G0Jut7RQRRXaF7o0rNPxsyaJCMBP6f-eJ9aUOA>
+    <xme:b_ulZJSCkRVqw78ojxHRXzjSlwziS-8voIgjrcvkOZ9Nuoa4bkuqGLh586FPTn6Ik
+    dgQYQV-99k89W2R3Xk>
+X-ME-Received: <xmr:b_ulZDXpFZoIrK-JMV5kiOippBavFs7Uzlysg-ADaSlCRM3LXiDYEdcKcO_YWYC0vaQixYmHexa_fZ5FaaB_1uTq-KU>
 X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedviedrudekgddvudcutefuodetggdotefrodftvf
     curfhrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfghnecu
     uegrihhlohhuthemuceftddtnecunecujfgurhephffvufffkffojghfggfgsedtkeertd
     ertddtnecuhfhrohhmpeeuohhrihhsuceuuhhrkhhovhcuoegsohhrihhssegsuhhrrdhi
     oheqnecuggftrfgrthhtvghrnhepieeuffeuvdeiueejhfehiefgkeevudejjeejffevvd
-    ehtddufeeihfekgeeuheelnecuvehluhhsthgvrhfuihiivgepudenucfrrghrrghmpehm
+    ehtddufeeihfekgeeuheelnecuvehluhhsthgvrhfuihiivgepvdenucfrrghrrghmpehm
     rghilhhfrhhomhepsghorhhishessghurhdrihho
-X-ME-Proxy: <xmx:a_ulZAJEUKvVUkYJLZGA0Thhe0XWc3qZWnd4RsUs-ty5S8lOCEQaVA>
-    <xmx:a_ulZDKFYriP7tj8yobJZKO0OuXDAnYHLcvSPwjScfolGMyqG2XK5w>
-    <xmx:a_ulZJw-nKwRBVJhRGRunTEk8Dtydom4OXgt-5zxcO4exMa27RH7iQ>
-    <xmx:a_ulZFzN0hltMFR21j76ExwrEay3CCGZTSQ8Ywf3w7-xjRxQebZWCA>
+X-ME-Proxy: <xmx:b_ulZLhVmYKEUszQlaPSwEesbwfhwsOy_J7t_84Yld55Whn3KSb1Kw>
+    <xmx:b_ulZLCTMDAc_n5qcoot-LhIE-VRZ2Up-cq_rt9atdScT_1UZ_2n5A>
+    <xmx:b_ulZEKehXAMipxqUJb6bLY0aI6ZrROxoU_1qP_-ihyJ1lsEGAU7OQ>
+    <xmx:b_ulZOoXoUC0n_XyU6ul_xVyNBlIb7yz209W51hsG8Miwc7llRE4PQ>
 Feedback-ID: i083147f8:Fastmail
 Received: by mail.messagingengine.com (Postfix) with ESMTPA; Wed,
- 5 Jul 2023 19:23:23 -0400 (EDT)
+ 5 Jul 2023 19:23:26 -0400 (EDT)
 From:   Boris Burkov <boris@bur.io>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 12/18] btrfs: new inline ref storing owning subvol of data extents
-Date:   Wed,  5 Jul 2023 16:20:49 -0700
-Message-ID: <8d5a36641f7d79b66a1b306cee87f52bf1fb3b23.1688597211.git.boris@bur.io>
+Subject: [PATCH 14/18] btrfs: record simple quota deltas
+Date:   Wed,  5 Jul 2023 16:20:51 -0700
+Message-ID: <ebe324c9b3ab85f6ba4fca00a398e8e17ebe3c8c.1688597211.git.boris@bur.io>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <cover.1688597211.git.boris@bur.io>
 References: <cover.1688597211.git.boris@bur.io>
@@ -75,311 +75,277 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-In order to implement simple quota groups, we need to be able to
-associate a data extent with the subvolume that created it. Once you
-account for reflink, this information cannot be recovered without
-explicitly storing it. Options for storing it are:
-- a new key/item
-- a new extent inline ref item
+At the moment that we run delayed refs, we make the final ref-count
+based decision on creating/removing extent (and metadata) items.
+Therefore, it is exactly the spot to hook up simple quotas.
 
-The former is backwards compatible, but wastes space, the latter is
-incompat, but is efficient in space and reuses the existing inline ref
-machinery, while only abusing it a tiny amount -- specifically, the new
-item is not a ref, per-se.
+There are a few important subtleties to the fields we must collect to
+accurately track simple quotas, particularly when removing an extent.
+When removing a data extent, the ref could be in any tree (due to
+reflink, for example) and so we need to recover the owning root id from
+the owner ref item. When removing a metadata extent, we know the owning
+root from the owner field in the header when we create the delayed ref,
+so we can recover it from there.
+
+We must also be careful to handle reservations properly to not leaked
+reserved space. The happy path is freeing the reservation when the
+simple quota delta runs on a data extent. If that doesn't happen, due to
+refs canceling out or some error, the ref head already has the
+must_insert_reserved machinery to handle this, so we piggy back on that
+and use it to clean up the reserved data.
 
 Signed-off-by: Boris Burkov <boris@bur.io>
 ---
- fs/btrfs/accessors.h            |  4 +++
- fs/btrfs/backref.c              |  3 ++
- fs/btrfs/extent-tree.c          | 51 ++++++++++++++++++++++++++-------
- fs/btrfs/print-tree.c           | 12 ++++++++
- fs/btrfs/ref-verify.c           |  3 ++
- fs/btrfs/tree-checker.c         |  3 ++
- include/uapi/linux/btrfs_tree.h |  6 ++++
- 7 files changed, 71 insertions(+), 11 deletions(-)
+ fs/btrfs/delayed-ref.c |  3 ++
+ fs/btrfs/delayed-ref.h |  6 ++++
+ fs/btrfs/extent-tree.c | 79 +++++++++++++++++++++++++++++++++++++-----
+ 3 files changed, 80 insertions(+), 8 deletions(-)
 
-diff --git a/fs/btrfs/accessors.h b/fs/btrfs/accessors.h
-index ceadfc5d6c66..aab61312e4e8 100644
---- a/fs/btrfs/accessors.h
-+++ b/fs/btrfs/accessors.h
-@@ -350,6 +350,8 @@ BTRFS_SETGET_FUNCS(extent_data_ref_count, struct btrfs_extent_data_ref, count, 3
+diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+index 89641bcd6841..04e124a93049 100644
+--- a/fs/btrfs/delayed-ref.c
++++ b/fs/btrfs/delayed-ref.c
+@@ -735,6 +735,9 @@ static void init_delayed_ref_head(struct btrfs_delayed_ref_head *head_ref,
+ 	head_ref->bytenr = bytenr;
+ 	head_ref->num_bytes = num_bytes;
+ 	head_ref->ref_mod = count_mod;
++	head_ref->reserved_bytes = 0;
++	if (reserved)
++		head_ref->reserved_bytes = reserved;
+ 	head_ref->must_insert_reserved = must_insert_reserved;
+ 	head_ref->owning_root = owning_root;
+ 	head_ref->is_data = is_data;
+diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
+index 0af3b7395aba..aff05b3fb4ba 100644
+--- a/fs/btrfs/delayed-ref.h
++++ b/fs/btrfs/delayed-ref.h
+@@ -110,6 +110,12 @@ struct btrfs_delayed_ref_head {
+ 	 */
+ 	int ref_mod;
  
- BTRFS_SETGET_FUNCS(shared_data_ref_count, struct btrfs_shared_data_ref, count, 32);
- 
-+BTRFS_SETGET_FUNCS(extent_owner_ref_root_id, struct btrfs_extent_owner_ref, root_id, 64);
++	/*
++	 * Track reserved bytes when setting must_insert_reserved.
++	 * On success or cleanup, we will need to free the reservation.
++	 */
++	u64 reserved_bytes;
 +
- BTRFS_SETGET_FUNCS(extent_inline_ref_type, struct btrfs_extent_inline_ref,
- 		   type, 8);
- BTRFS_SETGET_FUNCS(extent_inline_ref_offset, struct btrfs_extent_inline_ref,
-@@ -366,6 +368,8 @@ static inline u32 btrfs_extent_inline_ref_size(int type)
- 	if (type == BTRFS_EXTENT_DATA_REF_KEY)
- 		return sizeof(struct btrfs_extent_data_ref) +
- 		       offsetof(struct btrfs_extent_inline_ref, offset);
-+	if (type == BTRFS_EXTENT_OWNER_REF_KEY)
-+		return sizeof(struct btrfs_extent_inline_ref);
- 	return 0;
- }
- 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index 79336fa853db..d5bb6a880713 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -1129,6 +1129,9 @@ static int add_inline_refs(struct btrfs_backref_walk_ctx *ctx,
- 						       count, sc, GFP_NOFS);
- 			break;
- 		}
-+		case BTRFS_EXTENT_OWNER_REF_KEY:
-+			WARN_ON(!btrfs_fs_incompat(ctx->fs_info, SIMPLE_QUOTA));
-+			break;
- 		default:
- 			WARN_ON(1);
- 		}
+ 	/*
+ 	 * when a new extent is allocated, it is just reserved in memory
+ 	 * The actual extent isn't inserted into the extent allocation tree
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index fa53f7cbd84a..3313f3d7d4ae 100644
+index c8f767d7e261..c8914c66dc83 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -363,9 +363,13 @@ int btrfs_get_extent_inline_ref_type(const struct extent_buffer *eb,
- 				     struct btrfs_extent_inline_ref *iref,
- 				     enum btrfs_inline_ref_type is_data)
- {
-+	struct btrfs_fs_info *fs_info = eb->fs_info;
- 	int type = btrfs_extent_inline_ref_type(eb, iref);
- 	u64 offset = btrfs_extent_inline_ref_offset(eb, iref);
- 
-+	if (type == BTRFS_EXTENT_OWNER_REF_KEY && btrfs_fs_incompat(fs_info, SIMPLE_QUOTA))
-+		return type;
-+
- 	if (type == BTRFS_TREE_BLOCK_REF_KEY ||
- 	    type == BTRFS_SHARED_BLOCK_REF_KEY ||
- 	    type == BTRFS_SHARED_DATA_REF_KEY ||
-@@ -374,26 +378,25 @@ int btrfs_get_extent_inline_ref_type(const struct extent_buffer *eb,
- 			if (type == BTRFS_TREE_BLOCK_REF_KEY)
- 				return type;
- 			if (type == BTRFS_SHARED_BLOCK_REF_KEY) {
--				ASSERT(eb->fs_info);
-+				ASSERT(fs_info);
- 				/*
- 				 * Every shared one has parent tree block,
- 				 * which must be aligned to sector size.
- 				 */
--				if (offset &&
--				    IS_ALIGNED(offset, eb->fs_info->sectorsize))
-+				if (offset && IS_ALIGNED(offset, fs_info->sectorsize))
- 					return type;
- 			}
- 		} else if (is_data == BTRFS_REF_TYPE_DATA) {
- 			if (type == BTRFS_EXTENT_DATA_REF_KEY)
- 				return type;
- 			if (type == BTRFS_SHARED_DATA_REF_KEY) {
--				ASSERT(eb->fs_info);
-+				ASSERT(fs_info);
- 				/*
- 				 * Every shared one has parent tree block,
- 				 * which must be aligned to sector size.
- 				 */
- 				if (offset &&
--				    IS_ALIGNED(offset, eb->fs_info->sectorsize))
-+				    IS_ALIGNED(offset, fs_info->sectorsize))
- 					return type;
- 			}
- 		} else {
-@@ -403,7 +406,7 @@ int btrfs_get_extent_inline_ref_type(const struct extent_buffer *eb,
- 	}
- 
- 	btrfs_print_leaf(eb);
--	btrfs_err(eb->fs_info,
-+	btrfs_err(fs_info,
- 		  "eb %llu iref 0x%lx invalid extent inline ref type %d",
- 		  eb->start, (unsigned long)iref, type);
- 	WARN_ON(1);
-@@ -912,6 +915,11 @@ int lookup_inline_extent_backref(struct btrfs_trans_handle *trans,
- 		}
- 		iref = (struct btrfs_extent_inline_ref *)ptr;
- 		type = btrfs_get_extent_inline_ref_type(leaf, iref, needed);
-+		if (type == BTRFS_EXTENT_OWNER_REF_KEY) {
-+			WARN_ON(!btrfs_fs_incompat(fs_info, SIMPLE_QUOTA));
-+			ptr += btrfs_extent_inline_ref_size(type);
-+			continue;
-+		}
- 		if (type == BTRFS_REF_TYPE_INVALID) {
- 			err = -EUCLEAN;
- 			goto out;
-@@ -1705,6 +1713,8 @@ static int run_one_delayed_ref(struct btrfs_trans_handle *trans,
- 		 node->type == BTRFS_SHARED_DATA_REF_KEY)
- 		ret = run_delayed_data_ref(trans, node, extent_op,
- 					   insert_reserved);
-+	else if (node->type == BTRFS_EXTENT_OWNER_REF_KEY)
-+		ret = 0;
- 	else
- 		BUG();
- 	if (ret && insert_reserved)
-@@ -2271,6 +2281,7 @@ static noinline int check_committed_ref(struct btrfs_root *root,
- 	struct btrfs_extent_item *ei;
- 	struct btrfs_key key;
- 	u32 item_size;
-+	u32 expected_size;
- 	int type;
- 	int ret;
- 
-@@ -2297,10 +2308,17 @@ static noinline int check_committed_ref(struct btrfs_root *root,
- 	ret = 1;
- 	item_size = btrfs_item_size(leaf, path->slots[0]);
- 	ei = btrfs_item_ptr(leaf, path->slots[0], struct btrfs_extent_item);
-+	expected_size = sizeof(*ei) + btrfs_extent_inline_ref_size(BTRFS_EXTENT_DATA_REF_KEY);
-+
-+	iref = (struct btrfs_extent_inline_ref *)(ei + 1);
-+	type = btrfs_get_extent_inline_ref_type(leaf, iref, BTRFS_REF_TYPE_DATA);
-+	if (btrfs_fs_incompat(fs_info, SIMPLE_QUOTA) && type == BTRFS_EXTENT_OWNER_REF_KEY) {
-+		expected_size += btrfs_extent_inline_ref_size(BTRFS_EXTENT_OWNER_REF_KEY);
-+		iref = (struct btrfs_extent_inline_ref *)(iref + 1);
-+	}
- 
- 	/* If extent item has more than 1 inline ref then it's shared */
--	if (item_size != sizeof(*ei) +
--	    btrfs_extent_inline_ref_size(BTRFS_EXTENT_DATA_REF_KEY))
-+	if (item_size != expected_size)
- 		goto out;
- 
- 	/*
-@@ -2312,8 +2330,6 @@ static noinline int check_committed_ref(struct btrfs_root *root,
- 	     btrfs_root_last_snapshot(&root->root_item)))
- 		goto out;
- 
--	iref = (struct btrfs_extent_inline_ref *)(ei + 1);
--
- 	/* If this extent has SHARED_DATA_REF then it's shared */
- 	type = btrfs_get_extent_inline_ref_type(leaf, iref, BTRFS_REF_TYPE_DATA);
- 	if (type != BTRFS_EXTENT_DATA_REF_KEY)
-@@ -4564,18 +4580,23 @@ static int alloc_reserved_file_extent(struct btrfs_trans_handle *trans,
- 	struct btrfs_root *extent_root;
- 	int ret;
- 	struct btrfs_extent_item *extent_item;
-+	struct btrfs_extent_owner_ref *oref;
- 	struct btrfs_extent_inline_ref *iref;
- 	struct btrfs_path *path;
- 	struct extent_buffer *leaf;
- 	int type;
- 	u32 size;
-+	bool simple_quota = btrfs_qgroup_mode(fs_info) == BTRFS_QGROUP_MODE_SIMPLE;
- 
- 	if (parent > 0)
- 		type = BTRFS_SHARED_DATA_REF_KEY;
- 	else
- 		type = BTRFS_EXTENT_DATA_REF_KEY;
- 
--	size = sizeof(*extent_item) + btrfs_extent_inline_ref_size(type);
-+	size = sizeof(*extent_item);
-+	if (simple_quota)
-+		size += btrfs_extent_inline_ref_size(BTRFS_EXTENT_OWNER_REF_KEY);
-+	size += btrfs_extent_inline_ref_size(type);
- 
- 	path = btrfs_alloc_path();
- 	if (!path)
-@@ -4596,8 +4617,16 @@ static int alloc_reserved_file_extent(struct btrfs_trans_handle *trans,
- 	btrfs_set_extent_flags(leaf, extent_item,
- 			       flags | BTRFS_EXTENT_FLAG_DATA);
- 
-+
- 	iref = (struct btrfs_extent_inline_ref *)(extent_item + 1);
-+	if (simple_quota) {
-+		btrfs_set_extent_inline_ref_type(leaf, iref, BTRFS_EXTENT_OWNER_REF_KEY);
-+		oref = (struct btrfs_extent_owner_ref *)(&iref->offset);
-+		btrfs_set_extent_owner_ref_root_id(leaf, oref, root_objectid);
-+		iref = (struct btrfs_extent_inline_ref *)(oref + 1);
-+	}
- 	btrfs_set_extent_inline_ref_type(leaf, iref, type);
-+
- 	if (parent > 0) {
- 		struct btrfs_shared_data_ref *ref;
- 		ref = (struct btrfs_shared_data_ref *)(iref + 1);
-diff --git a/fs/btrfs/print-tree.c b/fs/btrfs/print-tree.c
-index aa06d9ca911d..3fac15ce0db0 100644
---- a/fs/btrfs/print-tree.c
-+++ b/fs/btrfs/print-tree.c
-@@ -80,12 +80,20 @@ static void print_extent_data_ref(const struct extent_buffer *eb,
- 	       btrfs_extent_data_ref_count(eb, ref));
+@@ -1503,6 +1503,7 @@ static int __btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
  }
  
-+static void print_extent_owner_ref(const struct extent_buffer *eb,
-+				   struct btrfs_extent_owner_ref *ref)
-+{
-+	WARN_ON(!btrfs_fs_incompat(eb->fs_info, SIMPLE_QUOTA));
-+	pr_cont("extent data owner root %llu\n", btrfs_extent_owner_ref_root_id(eb, ref));
-+}
+ static int run_delayed_data_ref(struct btrfs_trans_handle *trans,
++				struct btrfs_delayed_ref_head *href,
+ 				struct btrfs_delayed_ref_node *node,
+ 				struct btrfs_delayed_extent_op *extent_op,
+ 				bool insert_reserved)
+@@ -1526,12 +1527,22 @@ static int run_delayed_data_ref(struct btrfs_trans_handle *trans,
+ 	ref_root = ref->root;
+ 
+ 	if (node->action == BTRFS_ADD_DELAYED_REF && insert_reserved) {
++		struct btrfs_simple_quota_delta delta = {
++			.root = href->owning_root,
++			.num_bytes = node->num_bytes,
++			.rsv_bytes = href->reserved_bytes,
++			.is_data = true,
++			.is_inc	= true,
++		};
 +
- static void print_extent_item(const struct extent_buffer *eb, int slot, int type)
+ 		if (extent_op)
+ 			flags |= extent_op->flags_to_set;
+ 		ret = alloc_reserved_file_extent(trans, parent, ref_root,
+ 						 flags, ref->objectid,
+ 						 ref->offset, &ins,
+ 						 node->ref_mod);
++		if (!ret)
++			ret = btrfs_record_simple_quota_delta(trans->fs_info, &delta);
+ 	} else if (node->action == BTRFS_ADD_DELAYED_REF) {
+ 		ret = __btrfs_inc_extent_ref(trans, node, parent, ref_root,
+ 					     ref->objectid, ref->offset,
+@@ -1653,11 +1664,13 @@ static int run_delayed_extent_op(struct btrfs_trans_handle *trans,
+ }
+ 
+ static int run_delayed_tree_ref(struct btrfs_trans_handle *trans,
++				struct btrfs_delayed_ref_head *href,
+ 				struct btrfs_delayed_ref_node *node,
+ 				struct btrfs_delayed_extent_op *extent_op,
+ 				bool insert_reserved)
  {
- 	struct btrfs_extent_item *ei;
- 	struct btrfs_extent_inline_ref *iref;
- 	struct btrfs_extent_data_ref *dref;
- 	struct btrfs_shared_data_ref *sref;
-+	struct btrfs_extent_owner_ref *oref;
- 	struct btrfs_disk_key key;
- 	unsigned long end;
- 	unsigned long ptr;
-@@ -159,6 +167,10 @@ static void print_extent_item(const struct extent_buffer *eb, int slot, int type
- 			"\t\t\t(parent %llu not aligned to sectorsize %u)\n",
- 				     offset, eb->fs_info->sectorsize);
- 			break;
-+		case BTRFS_EXTENT_OWNER_REF_KEY:
-+			oref = (struct btrfs_extent_owner_ref *)(&iref->offset);
-+			print_extent_owner_ref(eb, oref);
-+			break;
- 		default:
- 			pr_cont("(extent %llu has INVALID ref type %d)\n",
- 				  eb->start, type);
-diff --git a/fs/btrfs/ref-verify.c b/fs/btrfs/ref-verify.c
-index b7b3bd86f5e2..c0660233feb4 100644
---- a/fs/btrfs/ref-verify.c
-+++ b/fs/btrfs/ref-verify.c
-@@ -485,6 +485,9 @@ static int process_extent_item(struct btrfs_fs_info *fs_info,
- 			ret = add_shared_data_ref(fs_info, offset, count,
- 						  key->objectid, key->offset);
- 			break;
-+		case BTRFS_EXTENT_OWNER_REF_KEY:
-+			WARN_ON(!btrfs_fs_incompat(fs_info, SIMPLE_QUOTA));
-+			break;
- 		default:
- 			btrfs_err(fs_info, "invalid key type in iref");
- 			ret = -EINVAL;
-diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-index 038dfa8f1788..72d29ab74a01 100644
---- a/fs/btrfs/tree-checker.c
-+++ b/fs/btrfs/tree-checker.c
-@@ -1451,6 +1451,9 @@ static int check_extent_item(struct extent_buffer *leaf,
+ 	int ret = 0;
++	struct btrfs_fs_info *fs_info = trans->fs_info;
+ 	struct btrfs_delayed_tree_ref *ref;
+ 	u64 parent = 0;
+ 	u64 ref_root = 0;
+@@ -1677,8 +1690,18 @@ static int run_delayed_tree_ref(struct btrfs_trans_handle *trans,
+ 		return -EIO;
+ 	}
+ 	if (node->action == BTRFS_ADD_DELAYED_REF && insert_reserved) {
++		struct btrfs_simple_quota_delta delta = {
++			.root = href->owning_root,
++			.num_bytes = fs_info->nodesize,
++			.rsv_bytes = 0,
++			.is_data = false,
++			.is_inc = true,
++		};
++
+ 		BUG_ON(!extent_op || !extent_op->update_flags);
+ 		ret = alloc_reserved_tree_block(trans, node, extent_op);
++		if (!ret)
++			btrfs_record_simple_quota_delta(fs_info, &delta);
+ 	} else if (node->action == BTRFS_ADD_DELAYED_REF) {
+ 		ret = __btrfs_inc_extent_ref(trans, node, parent, ref_root,
+ 					     ref->level, 0, 1, extent_op);
+@@ -1693,6 +1716,7 @@ static int run_delayed_tree_ref(struct btrfs_trans_handle *trans,
+ 
+ /* helper function to actually process a single delayed ref entry */
+ static int run_one_delayed_ref(struct btrfs_trans_handle *trans,
++			       struct btrfs_delayed_ref_head *href,
+ 			       struct btrfs_delayed_ref_node *node,
+ 			       struct btrfs_delayed_extent_op *extent_op,
+ 			       bool insert_reserved)
+@@ -1707,12 +1731,12 @@ static int run_one_delayed_ref(struct btrfs_trans_handle *trans,
+ 
+ 	if (node->type == BTRFS_TREE_BLOCK_REF_KEY ||
+ 	    node->type == BTRFS_SHARED_BLOCK_REF_KEY)
+-		ret = run_delayed_tree_ref(trans, node, extent_op,
++		ret = run_delayed_tree_ref(trans, href, node, extent_op,
+ 					   insert_reserved);
+ 	else if (node->type == BTRFS_EXTENT_DATA_REF_KEY ||
+ 		 node->type == BTRFS_SHARED_DATA_REF_KEY)
+-		ret = run_delayed_data_ref(trans, node, extent_op,
+-					   insert_reserved);
++		ret = run_delayed_data_ref(trans, href, node,
++					   extent_op, insert_reserved);
+ 	else if (node->type == BTRFS_EXTENT_OWNER_REF_KEY)
+ 		ret = 0;
+ 	else
+@@ -1809,6 +1833,11 @@ void btrfs_cleanup_ref_head_accounting(struct btrfs_fs_info *fs_info,
+ 		spin_unlock(&delayed_refs->lock);
+ 		nr_items += btrfs_csum_bytes_to_leaves(fs_info, head->num_bytes);
+ 	}
++	if (head->must_insert_reserved && head->is_data &&
++	    btrfs_qgroup_mode(fs_info) == BTRFS_QGROUP_MODE_SIMPLE)
++		btrfs_qgroup_free_refroot(fs_info, head->owning_root,
++					  head->reserved_bytes,
++					  BTRFS_QGROUP_RSV_DATA);
+ 
+ 	btrfs_delayed_refs_rsv_release(fs_info, nr_items);
+ }
+@@ -1955,8 +1984,8 @@ static int btrfs_run_delayed_refs_for_head(struct btrfs_trans_handle *trans,
+ 		locked_ref->extent_op = NULL;
+ 		spin_unlock(&locked_ref->lock);
+ 
+-		ret = run_one_delayed_ref(trans, ref, extent_op,
+-					  must_insert_reserved);
++		ret = run_one_delayed_ref(trans, locked_ref, ref,
++					  extent_op, must_insert_reserved);
+ 
+ 		btrfs_free_delayed_extent_op(extent_op);
+ 		if (ret) {
+@@ -2873,11 +2902,12 @@ u64 btrfs_get_extent_owner_root(struct btrfs_fs_info *fs_info,
+ }
+ 
+ static int do_free_extent_accounting(struct btrfs_trans_handle *trans,
+-				     u64 bytenr, u64 num_bytes, bool is_data)
++				     u64 bytenr, struct btrfs_simple_quota_delta *delta)
+ {
+ 	int ret;
++	u64 num_bytes = delta->num_bytes;
+ 
+-	if (is_data) {
++	if (delta->is_data) {
+ 		struct btrfs_root *csum_root;
+ 
+ 		csum_root = btrfs_csum_root(trans->fs_info, bytenr);
+@@ -2888,6 +2918,12 @@ static int do_free_extent_accounting(struct btrfs_trans_handle *trans,
+ 		}
+ 	}
+ 
++	ret = btrfs_record_simple_quota_delta(trans->fs_info, delta);
++	if (ret) {
++		btrfs_abort_transaction(trans, ret);
++		return ret;
++	}
++
+ 	ret = add_to_free_space_tree(trans, bytenr, num_bytes);
+ 	if (ret) {
+ 		btrfs_abort_transaction(trans, ret);
+@@ -2990,6 +3026,7 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 	u64 bytenr = node->bytenr;
+ 	u64 num_bytes = node->num_bytes;
+ 	bool skinny_metadata = btrfs_fs_incompat(info, SKINNY_METADATA);
++	u64 delayed_ref_root = node->owning_root;
+ 
+ 	extent_root = btrfs_extent_root(info, bytenr);
+ 	ASSERT(extent_root);
+@@ -3188,6 +3225,14 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
  			}
- 			inline_refs += btrfs_shared_data_ref_count(leaf, sref);
- 			break;
-+		case BTRFS_EXTENT_OWNER_REF_KEY:
-+			WARN_ON(!btrfs_fs_incompat(fs_info, SIMPLE_QUOTA));
-+			break;
- 		default:
- 			extent_err(leaf, slot, "unknown inline ref type: %u",
- 				   inline_type);
-diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
-index ab38d0f411fa..424c7f342712 100644
---- a/include/uapi/linux/btrfs_tree.h
-+++ b/include/uapi/linux/btrfs_tree.h
-@@ -226,6 +226,8 @@
- 
- #define BTRFS_SHARED_DATA_REF_KEY	184
- 
-+#define BTRFS_EXTENT_OWNER_REF_KEY	190
+ 		}
+ 	} else {
++		struct btrfs_simple_quota_delta delta = {
++			.root = delayed_ref_root,
++			.num_bytes = num_bytes,
++			.rsv_bytes = 0,
++			.is_data = is_data,
++			.is_inc = false,
++		};
 +
- /*
-  * block groups give us hints into the extent allocation trees.  Which
-  * blocks are free etc etc
-@@ -783,6 +785,10 @@ struct btrfs_shared_data_ref {
- 	__le32 count;
- } __attribute__ ((__packed__));
+ 		/* In this branch refs == 1 */
+ 		if (found_extent) {
+ 			if (is_data && refs_to_drop !=
+@@ -3226,6 +3271,16 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 				num_to_del = 2;
+ 			}
+ 		}
++		/*
++		 * We can't infer the data owner from the delayed ref, so we
++		 * need to try to get it from the owning ref item.
++		 *
++		 * If it is not present, then that extent was not written under
++		 * simple quotas mode, so we don't need to account for its
++		 * deletion.
++		 */
++		if (is_data)
++			delta.root = btrfs_get_extent_owner_root(trans->fs_info, leaf, extent_slot);
  
-+struct btrfs_extent_owner_ref {
-+	u64 root_id;
-+} __attribute__ ((__packed__));
-+
- struct btrfs_extent_inline_ref {
- 	__u8 type;
- 	__le64 offset;
+ 		ret = btrfs_del_items(trans, extent_root, path, path->slots[0],
+ 				      num_to_del);
+@@ -3235,7 +3290,7 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 		}
+ 		btrfs_release_path(path);
+ 
+-		ret = do_free_extent_accounting(trans, bytenr, num_bytes, is_data);
++		ret = do_free_extent_accounting(trans, bytenr, &delta);
+ 	}
+ 	btrfs_release_path(path);
+ 
+@@ -4808,6 +4863,13 @@ int btrfs_alloc_logged_file_extent(struct btrfs_trans_handle *trans,
+ 	int ret;
+ 	struct btrfs_block_group *block_group;
+ 	struct btrfs_space_info *space_info;
++	struct btrfs_simple_quota_delta delta = {
++		.root = root_objectid,
++		.num_bytes = ins->offset,
++		.rsv_bytes = 0,
++		.is_data = true,
++		.is_inc = true,
++	};
+ 
+ 	/*
+ 	 * Mixed block groups will exclude before processing the log so we only
+@@ -4836,6 +4898,7 @@ int btrfs_alloc_logged_file_extent(struct btrfs_trans_handle *trans,
+ 					 offset, ins, 1);
+ 	if (ret)
+ 		btrfs_pin_extent(trans, ins->objectid, ins->offset, 1);
++	ret = btrfs_record_simple_quota_delta(fs_info, &delta);
+ 	btrfs_put_block_group(block_group);
+ 	return ret;
+ }
 -- 
 2.41.0
 

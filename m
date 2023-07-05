@@ -2,155 +2,165 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6EC0FEB64DA
-	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Jul 2023 23:21:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D8999EB64DA
+	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Jul 2023 23:23:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232120AbjGEXUg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 5 Jul 2023 19:20:36 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39968 "EHLO
+        id S231574AbjGEXXQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 5 Jul 2023 19:23:16 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41870 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232396AbjGEXUL (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Jul 2023 19:20:11 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DE0DE1997;
-        Wed,  5 Jul 2023 16:20:10 -0700 (PDT)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature RSA-PSS (2048 bits))
-        (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 72D1A6184D;
-        Wed,  5 Jul 2023 23:20:10 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 26476C433C8;
-        Wed,  5 Jul 2023 23:19:47 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1688599209;
-        bh=lKrue1sGsFTYklMQWRMbQ3My1e6nxD2ObDEGwR/VsF0=;
-        h=Date:Subject:To:References:From:In-Reply-To:From;
-        b=HLxmQwiZ1LmjUMMnuuRPPSyg4M265uTgwaRQNcugB9qBZelv5caqUlnlZ5FOkyCBO
-         LA9nfmoC3VcwDcNYXdLwyrAjpQ8qAvbq7SFByp4Q0d8VX6Iv9VyTpE94IU21bzQwq7
-         AXFUzX0mVEu7h6lf94UAW2WWe3aMpfRBaJ0VbFwIq54AZXBu03Eb370uSlX/QYxLnb
-         UXNpYhAvkUoamOq5NO810kR9phlIz2t2HqAG1QMsAKmqwo0IMtrDOTVHIlTnm36wsc
-         mJPYsNRjIZdhZzmDYmS/04VlnpppU6zobkiJuxMYBpvIxpIIrXPcePBFRLkFK603MQ
-         3zkknzFWV7lIQ==
-Message-ID: <a482ca9b-9621-7363-0233-1c0bec15aa6c@kernel.org>
-Date:   Thu, 6 Jul 2023 08:19:46 +0900
+        with ESMTP id S232085AbjGEXXJ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Jul 2023 19:23:09 -0400
+Received: from out4-smtp.messagingengine.com (out4-smtp.messagingengine.com [66.111.4.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4E160198E
+        for <linux-btrfs@vger.kernel.org>; Wed,  5 Jul 2023 16:23:07 -0700 (PDT)
+Received: from compute5.internal (compute5.nyi.internal [10.202.2.45])
+        by mailout.nyi.internal (Postfix) with ESMTP id 498FB5C028E;
+        Wed,  5 Jul 2023 19:23:06 -0400 (EDT)
+Received: from mailfrontend1 ([10.202.2.162])
+  by compute5.internal (MEProxy); Wed, 05 Jul 2023 19:23:06 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc
+        :content-transfer-encoding:content-type:date:date:from:from
+        :in-reply-to:in-reply-to:message-id:mime-version:references
+        :reply-to:sender:subject:subject:to:to; s=fm3; t=1688599386; x=
+        1688685786; bh=G512oza/F2C2P0WQmOip5mZlVluqNDhNAN1ErLQz+Vc=; b=P
+        gXnrSQqio6/CfDOLz2VikQGc7P0m2o+QizMN6ufVXR0WFxmCzMxuFUHI1VAKp/Ft
+        JrvBHFQla75mWJS7DWgPZAxdIZ9tp2KXGzF/cwqlPvcaUdQws0iBAncax0wI3kFx
+        vTCuy7gfb/Q80VFUVxc5j719St6+/SVmmyKSsPm8OWlRXXyaqFOcb4Kz78wvsHov
+        17Nmq8rBOBP6vFLnBvGZUko+cIdrUiRsPDHTCigpUd3Ynq4n5YW5re85C2nDyNmM
+        VfSHn7D90g0it7kxuGTp3XPCTYgKNtDobX+RTRZ3UShMj3iBVjpcLqA1CxBzgF4z
+        1sGy5l08sDtGrc6G2pcgg==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+        messagingengine.com; h=cc:content-transfer-encoding:content-type
+        :date:date:feedback-id:feedback-id:from:from:in-reply-to
+        :in-reply-to:message-id:mime-version:references:reply-to:sender
+        :subject:subject:to:to:x-me-proxy:x-me-proxy:x-me-sender
+        :x-me-sender:x-sasl-enc; s=fm2; t=1688599386; x=1688685786; bh=G
+        512oza/F2C2P0WQmOip5mZlVluqNDhNAN1ErLQz+Vc=; b=GIub0+KCNEMsx6MWy
+        rTr+cV+3k7bAD5nvUSCJ/rpavk6mC9+LqMwyg0NgRptj5uNdIs/zAYUoJDxf1ZtO
+        mVzQEkbagM72bzb6dPghc6m2KTf+L5cL7gx7mjdSNwBqW/KTMySt/4+C+lDP9GfK
+        joVxKLEkFnWutM3U4FRSuZnQzSVOgLGTaTxoVwkceuPONyPk+52KEF4qYdQN5XuH
+        lPdk2+Uc0lTYxCmgGXszoaCo3MZBKSQZ9kx7eS4vmF8JyA1OXzRwaZdtaWOrlU5a
+        5PB13G0I74Ywnc5y/qNDS38Qqd5naXqSuxyJM4JO6VvjYTI7rfsaCTDuH2Xa1iZY
+        FaY9w==
+X-ME-Sender: <xms:WvulZCWOS6-Zcp6XbEtZwJlh5TDVIEH-RubktxJ394DCctHg4R3uNQ>
+    <xme:WvulZOnf8uybVmRLAAwTElXMnYSyjZRBHwY4bZO4avZToyXYWt5O3VdZr1Eo-u6H_
+    TyhZZKdl4o7N9FmBlY>
+X-ME-Received: <xmr:WvulZGYEwYjJnjd2H1N8_pODTO7YE1gHYigqF7xieQvdpaMs0A5_K3fvSrInGfozcDhE6PmPVu0_Dz7Kb2aavAbHavw>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedviedrudekgddvtdcutefuodetggdotefrodftvf
+    curfhrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfghnecu
+    uegrihhlohhuthemuceftddtnecunecujfgurhephffvufffkffojghfggfgsedtkeertd
+    ertddtnecuhfhrohhmpeeuohhrihhsuceuuhhrkhhovhcuoegsohhrihhssegsuhhrrdhi
+    oheqnecuggftrfgrthhtvghrnhepieeuffeuvdeiueejhfehiefgkeevudejjeejffevvd
+    ehtddufeeihfekgeeuheelnecuvehluhhsthgvrhfuihiivgeptdenucfrrghrrghmpehm
+    rghilhhfrhhomhepsghorhhishessghurhdrihho
+X-ME-Proxy: <xmx:WvulZJXvDWvsnOw9BSkosSN4b0l853C24ZYajP_6qBN9VZQIa9f6sg>
+    <xmx:WvulZMmkzmnSjuTeA5JvezdseUPQIj6kDLtot1FbhyAqexImGDZvCQ>
+    <xmx:WvulZOdbO227SE_0ctDSytCf9r77MJzvRHk7WOCJwIGRDFGMVfmlOA>
+    <xmx:WvulZDsIqKeu5JBHjMSow2lOzyq77gNFu1CHnlIW8DaeBgy1N_c9Mw>
+Feedback-ID: i083147f8:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Wed,
+ 5 Jul 2023 19:23:05 -0400 (EDT)
+From:   Boris Burkov <boris@bur.io>
+To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: [PATCH 02/18] btrfs: fix start transaction qgroup rsv double free
+Date:   Wed,  5 Jul 2023 16:20:39 -0700
+Message-ID: <90d1a33e3722d5533a8bb595b658aae81d1e6c21.1688597211.git.boris@bur.io>
+X-Mailer: git-send-email 2.41.0
+In-Reply-To: <cover.1688597211.git.boris@bur.io>
+References: <cover.1688597211.git.boris@bur.io>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.12.0
-Subject: Re: [PATCH v2 92/92] fs: rename i_ctime field to __i_ctime
-Content-Language: en-US
-To:     Jeff Layton <jlayton@kernel.org>, jk@ozlabs.org, arnd@arndb.de,
-        mpe@ellerman.id.au, npiggin@gmail.com, christophe.leroy@csgroup.eu,
-        hca@linux.ibm.com, gor@linux.ibm.com, agordeev@linux.ibm.com,
-        borntraeger@linux.ibm.com, svens@linux.ibm.com,
-        gregkh@linuxfoundation.org, arve@android.com, tkjos@android.com,
-        maco@android.com, joel@joelfernandes.org, brauner@kernel.org,
-        cmllamas@google.com, surenb@google.com,
-        dennis.dalessandro@cornelisnetworks.com, jgg@ziepe.ca,
-        leon@kernel.org, bwarrum@linux.ibm.com, rituagar@linux.ibm.com,
-        ericvh@kernel.org, lucho@ionkov.net, asmadeus@codewreck.org,
-        linux_oss@crudebyte.com, dsterba@suse.com, dhowells@redhat.com,
-        marc.dionne@auristor.com, viro@zeniv.linux.org.uk,
-        raven@themaw.net, luisbg@kernel.org, salah.triki@gmail.com,
-        aivazian.tigran@gmail.com, ebiederm@xmission.com,
-        keescook@chromium.org, clm@fb.com, josef@toxicpanda.com,
-        xiubli@redhat.com, idryomov@gmail.com, jaharkes@cs.cmu.edu,
-        coda@cs.cmu.edu, jlbec@evilplan.org, hch@lst.de, nico@fluxnic.net,
-        rafael@kernel.org, code@tyhicks.com, ardb@kernel.org,
-        xiang@kernel.org, chao@kernel.org, huyue2@coolpad.com,
-        jefflexu@linux.alibaba.com, linkinjeon@kernel.org,
-        sj1557.seo@samsung.com, jack@suse.com, tytso@mit.edu,
-        adilger.kernel@dilger.ca, jaegeuk@kernel.org,
-        hirofumi@mail.parknet.co.jp, miklos@szeredi.hu,
-        rpeterso@redhat.com, agruenba@redhat.com, richard@nod.at,
-        anton.ivanov@cambridgegreys.com, johannes@sipsolutions.net,
-        mikulas@artax.karlin.mff.cuni.cz, mike.kravetz@oracle.com,
-        muchun.song@linux.dev, dwmw2@infradead.org, shaggy@kernel.org,
-        tj@kernel.org, trond.myklebust@hammerspace.com, anna@kernel.org,
-        chuck.lever@oracle.com, neilb@suse.de, kolga@netapp.com,
-        Dai.Ngo@oracle.com, tom@talpey.com, konishi.ryusuke@gmail.com,
-        anton@tuxera.com, almaz.alexandrovich@paragon-software.com,
-        mark@fasheh.com, joseph.qi@linux.alibaba.com, me@bobcopeland.com,
-        hubcap@omnibond.com, martin@omnibond.com, amir73il@gmail.com,
-        mcgrof@kernel.org, yzaikin@google.com, tony.luck@intel.com,
-        gpiccoli@igalia.com, al@alarsen.net, sfrench@samba.org,
-        pc@manguebit.com, lsahlber@redhat.com, sprasad@microsoft.com,
-        senozhatsky@chromium.org, phillip@squashfs.org.uk,
-        rostedt@goodmis.org, mhiramat@kernel.org, dushistov@mail.ru,
-        hdegoede@redhat.com, djwong@kernel.org, naohiro.aota@wdc.com,
-        jth@kernel.org, ast@kernel.org, daniel@iogearbox.net,
-        andrii@kernel.org, martin.lau@linux.dev, song@kernel.org,
-        yhs@fb.com, john.fastabend@gmail.com, kpsingh@kernel.org,
-        sdf@google.com, haoluo@google.com, jolsa@kernel.org,
-        hughd@google.com, akpm@linux-foundation.org, davem@davemloft.net,
-        edumazet@google.com, kuba@kernel.org, pabeni@redhat.com,
-        john.johansen@canonical.com, paul@paul-moore.com,
-        jmorris@namei.org, serge@hallyn.com,
-        stephen.smalley.work@gmail.com, eparis@parisplace.org,
-        jgross@suse.com, stern@rowland.harvard.edu, lrh2000@pku.edu.cn,
-        sebastian.reichel@collabora.com, wsa+renesas@sang-engineering.com,
-        quic_ugoswami@quicinc.com, quic_linyyuan@quicinc.com,
-        john@keeping.me.uk, error27@gmail.com, quic_uaggarwa@quicinc.com,
-        hayama@lineo.co.jp, jomajm@gmail.com, axboe@kernel.dk,
-        dhavale@google.com, dchinner@redhat.com, hannes@cmpxchg.org,
-        zhangpeng362@huawei.com, slava@dubeyko.com, gargaditya08@live.com,
-        penguin-kernel@I-love.SAKURA.ne.jp, yifeliu@cs.stonybrook.edu,
-        madkar@cs.stonybrook.edu, ezk@cs.stonybrook.edu,
-        yuzhe@nfschina.com, willy@infradead.org, okanatov@gmail.com,
-        jeffxu@chromium.org, linux@treblig.org, mirimmad17@gmail.com,
-        yijiangshan@kylinos.cn, yang.yang29@zte.com.cn,
-        xu.xin16@zte.com.cn, chengzhihao1@huawei.com, shr@devkernel.io,
-        Liam.Howlett@Oracle.com, adobriyan@gmail.com,
-        chi.minghao@zte.com.cn, roberto.sassu@huawei.com,
-        linuszeng@tencent.com, bvanassche@acm.org, zohar@linux.ibm.com,
-        yi.zhang@huawei.com, trix@redhat.com, fmdefrancesco@gmail.com,
-        ebiggers@google.com, princekumarmaurya06@gmail.com,
-        chenzhongjin@huawei.com, riel@surriel.com,
-        shaozhengchao@huawei.com, jingyuwang_vip@163.com,
-        linuxppc-dev@lists.ozlabs.org, linux-kernel@vger.kernel.org,
-        linux-s390@vger.kernel.org, linux-rdma@vger.kernel.org,
-        linux-usb@vger.kernel.org, v9fs@lists.linux.dev,
-        linux-fsdevel@vger.kernel.org, linux-afs@lists.infradead.org,
-        autofs@vger.kernel.org, linux-mm@kvack.org,
-        linux-btrfs@vger.kernel.org, ceph-devel@vger.kernel.org,
-        codalist@coda.cs.cmu.edu, ecryptfs@vger.kernel.org,
-        linux-efi@vger.kernel.org, linux-erofs@lists.ozlabs.org,
-        linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
-        cluster-devel@redhat.com, linux-um@lists.infradead.org,
-        linux-mtd@lists.infradead.org,
-        jfs-discussion@lists.sourceforge.net, linux-nfs@vger.kernel.org,
-        linux-nilfs@vger.kernel.org, linux-ntfs-dev@lists.sourceforge.net,
-        ntfs3@lists.linux.dev, ocfs2-devel@lists.linux.dev,
-        linux-karma-devel@lists.sourceforge.net, devel@lists.orangefs.org,
-        linux-unionfs@vger.kernel.org, linux-hardening@vger.kernel.org,
-        reiserfs-devel@vger.kernel.org, linux-cifs@vger.kernel.org,
-        samba-technical@lists.samba.org,
-        linux-trace-kernel@vger.kernel.org, linux-xfs@vger.kernel.org,
-        bpf@vger.kernel.org, netdev@vger.kernel.org,
-        apparmor@lists.ubuntu.com, linux-security-module@vger.kernel.org,
-        selinux@vger.kernel.org
-References: <20230705185812.579118-1-jlayton@kernel.org>
- <20230705185812.579118-4-jlayton@kernel.org>
-From:   Damien Le Moal <dlemoal@kernel.org>
-Organization: Western Digital Research
-In-Reply-To: <20230705185812.579118-4-jlayton@kernel.org>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 7/6/23 03:58, Jeff Layton wrote:
-> Now that everything in-tree is converted to use the accessor functions,
-> rename the i_ctime field in the inode to discourage direct access.
-> 
-> Signed-off-by: Jeff Layton <jlayton@kernel.org>
+btrfs_start_transaction reserves metadata space of the PERTRANS type
+before it identifies a transaction to start/join. This allows flushing
+when reserving that space without a deadlock. However, it results in a
+race which temporarily breaks qgroup rsv accounting.
 
-Looks OK to me.
+T1                                              T2
+start_transaction
+do_stuff
+                                            start_transaction
+                                                qgroup_reserve_meta_pertrans
+commit_transaction
+    qgroup_free_meta_all_pertrans
+                                            hit an error starting txn
+                                            goto reserve_fail
+                                            qgroup_free_meta_pertrans (already freed!)
 
-Reviewed-by: Damien Le Moal <dlemoal@kernel.org>
+The basic issue is that there is nothing preventing another commit from
+committing before start_transaction finishes (in fact sometimes we
+intentionally wait for it..) so any error path that frees the reserve is
+at risk of this race.
 
+While this exact space was getting freed anyway, and it's not a huge
+deal to double free it (just a warning, the free code catches this), it
+can result in incorrectly freeing some other pertrans reservation in
+this same reservation, which could then lead to spuriously granting
+reservations we might not have the space for. Therefore, I do believe it
+is worth fixing.
+
+To fix it, use the existing prealloc->pertrans conversion mechanism.
+When we first reserve the space, we reserve prealloc space and only when
+we are sure we have a transaction do we convert it to pertrans. This way
+any racing commits do not blow away our reservation, but we still get a
+pertrans reservation that is freed when _this_ transaction gets committed.
+
+This issue can be reproduced by running generic/269 with either qgroups
+or squotas enabled via mkfs on the scratch device.
+
+Signed-off-by: Boris Burkov <boris@bur.io>
+---
+ fs/btrfs/transaction.c | 19 ++++++++++++++++---
+ 1 file changed, 16 insertions(+), 3 deletions(-)
+
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index cf306351b148..d40b0a39a552 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -591,8 +591,13 @@ start_transaction(struct btrfs_root *root, unsigned int num_items,
+ 		u64 delayed_refs_bytes = 0;
+ 
+ 		qgroup_reserved = num_items * fs_info->nodesize;
+-		ret = btrfs_qgroup_reserve_meta_pertrans(root, qgroup_reserved,
+-				enforce_qgroups);
++		/*
++		 * Use prealloc for now, as there might be a currently running
++		 * transaction that could free this reserved space prematurely
++		 * by committing.
++		 */
++		ret = btrfs_qgroup_reserve_meta_prealloc(root, qgroup_reserved,
++							 enforce_qgroups, false);
+ 		if (ret)
+ 			return ERR_PTR(ret);
+ 
+@@ -705,6 +710,14 @@ start_transaction(struct btrfs_root *root, unsigned int num_items,
+ 		h->reloc_reserved = reloc_reserved;
+ 	}
+ 
++	/*
++	 * Now that we have found a transaction to be a part of, convert the
++	 * qgroup reservation from prealloc to pertrans. A different transaction
++	 * can't race in and free our pertrans out from under us.
++	 */
++	if (qgroup_reserved)
++		btrfs_qgroup_convert_reserved_meta(root, qgroup_reserved);
++
+ got_it:
+ 	if (!current->journal_info)
+ 		current->journal_info = h;
+@@ -752,7 +765,7 @@ start_transaction(struct btrfs_root *root, unsigned int num_items,
+ 		btrfs_block_rsv_release(fs_info, &fs_info->trans_block_rsv,
+ 					num_bytes, NULL);
+ reserve_fail:
+-	btrfs_qgroup_free_meta_pertrans(root, qgroup_reserved);
++	btrfs_qgroup_free_meta_prealloc(root, qgroup_reserved);
+ 	return ERR_PTR(ret);
+ }
+ 
 -- 
-Damien Le Moal
-Western Digital Research
+2.41.0
 

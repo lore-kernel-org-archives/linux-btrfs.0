@@ -2,70 +2,70 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0A42CC001DB
-	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Jul 2023 23:23:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9509CC001DF
+	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Jul 2023 23:23:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232338AbjGEXXv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 5 Jul 2023 19:23:51 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42066 "EHLO
+        id S232348AbjGEXXw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 5 Jul 2023 19:23:52 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42104 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232396AbjGEXXX (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Jul 2023 19:23:23 -0400
+        with ESMTP id S232420AbjGEXXZ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Jul 2023 19:23:25 -0400
 Received: from out4-smtp.messagingengine.com (out4-smtp.messagingengine.com [66.111.4.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4EA9C19A0
-        for <linux-btrfs@vger.kernel.org>; Wed,  5 Jul 2023 16:23:19 -0700 (PDT)
-Received: from compute5.internal (compute5.nyi.internal [10.202.2.45])
-        by mailout.nyi.internal (Postfix) with ESMTP id BC3DF5C028B;
-        Wed,  5 Jul 2023 19:23:18 -0400 (EDT)
-Received: from mailfrontend2 ([10.202.2.163])
-  by compute5.internal (MEProxy); Wed, 05 Jul 2023 19:23:18 -0400
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AE24A1995
+        for <linux-btrfs@vger.kernel.org>; Wed,  5 Jul 2023 16:23:22 -0700 (PDT)
+Received: from compute6.internal (compute6.nyi.internal [10.202.2.47])
+        by mailout.nyi.internal (Postfix) with ESMTP id 275D85C0283;
+        Wed,  5 Jul 2023 19:23:22 -0400 (EDT)
+Received: from mailfrontend1 ([10.202.2.162])
+  by compute6.internal (MEProxy); Wed, 05 Jul 2023 19:23:22 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc
         :content-transfer-encoding:content-type:date:date:from:from
         :in-reply-to:in-reply-to:message-id:mime-version:references
-        :reply-to:sender:subject:subject:to:to; s=fm3; t=1688599398; x=
-        1688685798; bh=ty+S1vJ3uKmEldN8gRCc0jhW6fjHpkOWf4xhg2xLMH0=; b=j
-        HhTyw+Oe3PJ+BARD1r6gWrvzwTEVLWTJ0P/wjylHsIEBI3XW89DBNsuFop/KGFSo
-        SGvTQ5suXidaE+Gm2qqODI60kVUeWAmtc6sN0BSM29BrSdD3FuBY7trx0By+2A2V
-        2gpFgaXarwgQC/wKS4dHIRRo6w6w2Nv5peSdwQuIKaIxPGudr4mcbLbwwMwPbzc2
-        bFPJLDjwHsxnlgfYQ9esJQU8Zos7OYR5q9V6VITs7riR+PA0IiNoGY89STdgyFEE
-        qOsQ3ijzs8zSgqCp2lk4s9wOqYQpZcvvKyfHmEF6Du54eiorZd4Uj/mHQ/7Bod90
-        feee8dES0Rf/4ibCXO8QQ==
+        :reply-to:sender:subject:subject:to:to; s=fm3; t=1688599402; x=
+        1688685802; bh=+4u02dRquDZRbDAXWJOGiTdYcK26uXD+Fleby38+UAo=; b=C
+        n3BdY/0bXsH1MGABYD2GVAie6N6wM0CHg20MKoEK7rQWk2uGSIhKZXe3YQhptScr
+        qbKIwaxUchVFF9UhJ9R80VCvrWM2USs2uXpkV23WXOfj7SfanYDXGLCNYe5zEyWx
+        CijSSH3iHWOrwpRK8sc+owL06QqVUq9zw0ohA1AIDl9U5lQWlzL0OQmLEq5+I5Et
+        ZWyqCL969PNFu5x3jO0qGMbwdcC4KXrol2+8PAz9ANZyw+e6SzLjan+U6VFzYWyt
+        wtrH1Mi1hgDQ1RXuZtNxcuj51pf+62j726ooLM8cYgjBVwFoE72yyBY2h9uRPYL5
+        JK7aZsgt2oizCvb6U745w==
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
         messagingengine.com; h=cc:content-transfer-encoding:content-type
         :date:date:feedback-id:feedback-id:from:from:in-reply-to
         :in-reply-to:message-id:mime-version:references:reply-to:sender
         :subject:subject:to:to:x-me-proxy:x-me-proxy:x-me-sender
-        :x-me-sender:x-sasl-enc; s=fm2; t=1688599398; x=1688685798; bh=t
-        y+S1vJ3uKmEldN8gRCc0jhW6fjHpkOWf4xhg2xLMH0=; b=N3ZNynQ0rRdD5fAe2
-        cGGpsoNJ7H283t47qZw7ugA9cRrgHV+qddz38PrmEiknzxmXJdcBdhE5d0Gd8SRW
-        KnpLRSbvDI4Qs4fdqLSW83eD7N2uUu8Aza/SHAYtosJK1QIUytdFWuWmGaHUDOiU
-        AV5Unqk34C6FNNWdGhG1JXseORvQgQJzwprrt0NSp8Ag+T0nnVPTuuYWC4ur/eZC
-        /vhLd53eEU4tuHvaqDWxfXjiUAqAP3EfMGhMbdo6XFhSRig85O2wt1hWejPLDU4o
-        xWRHHnpmdThPAdHG/Ecqvky55Yk5rb06MgCRVaG+lhnr5Yy6cwRvio3siFJabnUa
-        RPmww==
-X-ME-Sender: <xms:ZvulZIm2-T9ftUvdMT2rReJ9NHA3i3vtu-ubGrTsXdbupH-H-gv71g>
-    <xme:ZvulZH3qk_MVezXxQJx8H7pCkBUn6sVyLhmec8DEIe6e2kwWXbRXqcTmGMZK1-cg2
-    3T8G86-w7iMvY5lD8g>
-X-ME-Received: <xmr:ZvulZGp9QyPl8bIpdMdy1YEnZGWdY5YGlXRET809SjgMuzyCG8nqLtYWKOOeqMLKTHrbmedY3QgWkpoMZ7gygmRfars>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedviedrudekgddvtdcutefuodetggdotefrodftvf
+        :x-me-sender:x-sasl-enc; s=fm2; t=1688599402; x=1688685802; bh=+
+        4u02dRquDZRbDAXWJOGiTdYcK26uXD+Fleby38+UAo=; b=h3+GhIQkbilDrDf/w
+        8BVwy82Qo3nYWthiRJ/lyrUjtHQVm6+/EXhRD5qqh/n8xPrmiZwvRJaKXtd03+O3
+        NUa4N1eksQndmpVGZ6trX186vSJ3kJV9eVthzG/gPCeAOe0albd98bfguhgF0B9p
+        2uT8kMjVE2uV77W76IVCqhydp9hdajm5Ch1awUwf9GePv0Ag5o2lCsFThNlUHbh9
+        9G3GJZhKCjiLXNmjVW5RTRo457BOGyPO5PNJVHhIShRmQNL54bnCPT15rlOOD6Mh
+        ZTpcs9Lh4hlMtlJA3M7LOnISSiL0eWqC0KWEAZhsg3KMJ5SZifeIlhwgB/Aezcl7
+        XYCNA==
+X-ME-Sender: <xms:afulZG3Ho6849rMpmPjknPCWVem6CuGCLJU-RKraSoepD-51rrre8A>
+    <xme:afulZJHzWZSw4h7ZJwKiTH9MEBMJtDJzCCjkA70dteTPVUpFbm1oHkXDp5NBOQFz4
+    nwX-0nd8nmbMthLoq8>
+X-ME-Received: <xmr:afulZO5SLTqp7w9LKLU7IIFrSYp5F8HSlLYRgKgwysvApb5VBK4Xno2LmORbYD-LMqvEJsekwmBI08cujO2erysxERg>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedviedrudekgddvudcutefuodetggdotefrodftvf
     curfhrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfghnecu
     uegrihhlohhuthemuceftddtnecunecujfgurhephffvufffkffojghfggfgsedtkeertd
     ertddtnecuhfhrohhmpeeuohhrihhsuceuuhhrkhhovhcuoegsohhrihhssegsuhhrrdhi
     oheqnecuggftrfgrthhtvghrnhepieeuffeuvdeiueejhfehiefgkeevudejjeejffevvd
-    ehtddufeeihfekgeeuheelnecuvehluhhsthgvrhfuihiivgepvdenucfrrghrrghmpehm
+    ehtddufeeihfekgeeuheelnecuvehluhhsthgvrhfuihiivgepudenucfrrghrrghmpehm
     rghilhhfrhhomhepsghorhhishessghurhdrihho
-X-ME-Proxy: <xmx:ZvulZEkOBXU_bfmAU-WCC2iWq6nFFk1dANFlnMxpy0NQqN6Kr7SUQA>
-    <xmx:ZvulZG1vjBOKwAFOe77UQ7HvzoUZoqUfo3kYUjp6sevyBwSb3Mx4Ew>
-    <xmx:ZvulZLv7ST6jXmY1KgvUEFum0oPMQcgfreLOiIbjNUvmoH_r6S0lAw>
-    <xmx:ZvulZL8dN5U6TV9g0Kj7TahNJxS0oYhnzQt2Z26jTy5Qf0nBHJSPVw>
+X-ME-Proxy: <xmx:avulZH2PGZpOJcfBbEYQMY7G2kI66SQzENgRfzbkAyeDIHc1aGggkg>
+    <xmx:avulZJEqTH3x4Q-JHSfLC-gLpO39qtlBKs5xux3whQeBbsEW3VIRFA>
+    <xmx:avulZA8CP0RsJRYX1otj8L_2aD2sFBUEhAR_QAr4b0x7Qxr08m1UNQ>
+    <xmx:avulZMOfDJ0uNFKpHeAzVUsdhIO5siRQFrcRo8mXGTqW_pK0KmgfUQ>
 Feedback-ID: i083147f8:Fastmail
 Received: by mail.messagingengine.com (Postfix) with ESMTPA; Wed,
- 5 Jul 2023 19:23:18 -0400 (EDT)
+ 5 Jul 2023 19:23:21 -0400 (EDT)
 From:   Boris Burkov <boris@bur.io>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 09/18] btrfs: rename tree_ref and data_ref owning_root
-Date:   Wed,  5 Jul 2023 16:20:46 -0700
-Message-ID: <76805ec21163d519e27b073110f70f9eba214021.1688597211.git.boris@bur.io>
+Subject: [PATCH 11/18] btrfs: track original extent owner in head_ref
+Date:   Wed,  5 Jul 2023 16:20:48 -0700
+Message-ID: <3ab4ae0d6690a8d69cee48e107ee87102ce5f070.1688597211.git.boris@bur.io>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <cover.1688597211.git.boris@bur.io>
 References: <cover.1688597211.git.boris@bur.io>
@@ -75,167 +75,102 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-commit 113479d5b8eb ("btrfs: rename root fields in delayed refs structs")
-changed these from ref_root to owning_root. However, there are many
-circumstances where that name is not really accurate and the root on the
-ref struct _is_ the referring root. In general, these are not the owning
-root, though it does happen in some ref merging cases involving
-overwrites during snapshots and similar.
+Simple quotas requires tracking the original creating root of any given
+extent. This gets complicated when multiple subvolumes create
+overlapping/contradictory refs in the same transaction. For example,
+due to modifying or deleting an extent while also snapshotting it.
 
-Simple quotas cares quite a bit about tracking the original owner of an
-extent through delayed refs, so rename these back to free up the name
-for the real owning root (which will live on the generic btrfs_ref and
-the head ref)
+To resolve this in a general way, take advantage of the fact that we are
+essentially already tracking this for handling releasing reservations.
+The head ref coalesces the various refs and uses must_insert_reserved to
+check if it needs to create an extent/free reservation. Store the ref
+that set must_insert_reserved as the owning ref on the head ref.
+
+Note that this can result in writing an extent for the very first time
+with an owner different from its only ref, but it will look the same as
+if you first created it with the original owning ref, then added the
+other ref, then removed the owning ref.
 
 Signed-off-by: Boris Burkov <boris@bur.io>
 ---
- fs/btrfs/delayed-ref.c | 10 +++++-----
- fs/btrfs/delayed-ref.h | 12 ++++++------
- fs/btrfs/extent-tree.c | 10 +++++-----
- fs/btrfs/ref-verify.c  |  4 ++--
- 4 files changed, 18 insertions(+), 18 deletions(-)
+ fs/btrfs/delayed-ref.c | 10 ++++++----
+ fs/btrfs/delayed-ref.h |  7 +++++++
+ 2 files changed, 13 insertions(+), 4 deletions(-)
 
 diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index a9b938d3a531..f0bae1e1c455 100644
+index 49c320f2334b..89641bcd6841 100644
 --- a/fs/btrfs/delayed-ref.c
 +++ b/fs/btrfs/delayed-ref.c
-@@ -885,7 +885,7 @@ int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
- 	u64 parent = generic_ref->parent;
- 	u8 ref_type;
+@@ -632,6 +632,7 @@ static noinline void update_existing_head_ref(struct btrfs_trans_handle *trans,
+ 		 * Set it again here
+ 		 */
+ 		existing->must_insert_reserved = update->must_insert_reserved;
++		existing->owning_root = update->owning_root;
  
--	is_system = (generic_ref->tree_ref.owning_root == BTRFS_CHUNK_TREE_OBJECTID);
-+	is_system = (generic_ref->tree_ref.ref_root == BTRFS_CHUNK_TREE_OBJECTID);
- 
- 	ASSERT(generic_ref->type == BTRFS_REF_METADATA && generic_ref->action);
- 	ref = kmem_cache_alloc(btrfs_delayed_tree_ref_cachep, GFP_NOFS);
-@@ -914,14 +914,14 @@ int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
- 		ref_type = BTRFS_TREE_BLOCK_REF_KEY;
- 
- 	init_delayed_ref_common(fs_info, &ref->node, bytenr, num_bytes,
--				generic_ref->tree_ref.owning_root, action,
-+				generic_ref->tree_ref.ref_root, action,
- 				ref_type);
--	ref->root = generic_ref->tree_ref.owning_root;
-+	ref->root = generic_ref->tree_ref.ref_root;
- 	ref->parent = parent;
- 	ref->level = level;
+ 		/*
+ 		 * update the num_bytes so we make sure the accounting
+@@ -694,7 +695,7 @@ static void init_delayed_ref_head(struct btrfs_delayed_ref_head *head_ref,
+ 				  struct btrfs_qgroup_extent_record *qrecord,
+ 				  u64 bytenr, u64 num_bytes, u64 ref_root,
+ 				  u64 reserved, int action, bool is_data,
+-				  bool is_system)
++				  bool is_system, u64 owning_root)
+ {
+ 	int count_mod = 1;
+ 	bool must_insert_reserved = false;
+@@ -735,6 +736,7 @@ static void init_delayed_ref_head(struct btrfs_delayed_ref_head *head_ref,
+ 	head_ref->num_bytes = num_bytes;
+ 	head_ref->ref_mod = count_mod;
+ 	head_ref->must_insert_reserved = must_insert_reserved;
++	head_ref->owning_root = owning_root;
+ 	head_ref->is_data = is_data;
+ 	head_ref->is_system = is_system;
+ 	head_ref->ref_tree = RB_ROOT_CACHED;
+@@ -923,7 +925,7 @@ int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
  
  	init_delayed_ref_head(head_ref, record, bytenr, num_bytes,
--			      generic_ref->tree_ref.owning_root, 0, action,
-+			      generic_ref->tree_ref.ref_root, 0, action,
- 			      false, is_system);
+ 			      generic_ref->tree_ref.ref_root, 0, action,
+-			      false, is_system);
++			      false, is_system, generic_ref->owning_root);
  	head_ref->extent_op = extent_op;
  
-@@ -974,7 +974,7 @@ int btrfs_add_delayed_data_ref(struct btrfs_trans_handle *trans,
- 	u64 bytenr = generic_ref->bytenr;
- 	u64 num_bytes = generic_ref->len;
- 	u64 parent = generic_ref->parent;
--	u64 ref_root = generic_ref->data_ref.owning_root;
-+	u64 ref_root = generic_ref->data_ref.ref_root;
- 	u64 owner = generic_ref->data_ref.ino;
- 	u64 offset = generic_ref->data_ref.offset;
- 	u8 ref_type;
+ 	delayed_refs = &trans->transaction->delayed_refs;
+@@ -1015,7 +1017,7 @@ int btrfs_add_delayed_data_ref(struct btrfs_trans_handle *trans,
+ 	}
+ 
+ 	init_delayed_ref_head(head_ref, record, bytenr, num_bytes, ref_root,
+-			      reserved, action, true, false);
++			      reserved, action, true, false, generic_ref->owning_root);
+ 	head_ref->extent_op = NULL;
+ 
+ 	delayed_refs = &trans->transaction->delayed_refs;
+@@ -1061,7 +1063,7 @@ int btrfs_add_delayed_extent_op(struct btrfs_trans_handle *trans,
+ 		return -ENOMEM;
+ 
+ 	init_delayed_ref_head(head_ref, NULL, bytenr, num_bytes, 0, 0,
+-			      BTRFS_UPDATE_DELAYED_HEAD, false, false);
++			      BTRFS_UPDATE_DELAYED_HEAD, false, false, 0);
+ 	head_ref->extent_op = extent_op;
+ 
+ 	delayed_refs = &trans->transaction->delayed_refs;
 diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
-index b8e14b0ba5f1..a71eff78469c 100644
+index 336c33c28191..0af3b7395aba 100644
 --- a/fs/btrfs/delayed-ref.h
 +++ b/fs/btrfs/delayed-ref.h
-@@ -188,8 +188,8 @@ enum btrfs_ref_type {
- struct btrfs_data_ref {
- 	/* For EXTENT_DATA_REF */
- 
--	/* Original root this data extent belongs to */
--	u64 owning_root;
-+	/* Root which owns this data reference */
-+	u64 ref_root;
- 
- 	/* Inode which refers to this data extent */
- 	u64 ino;
-@@ -212,11 +212,11 @@ struct btrfs_tree_ref {
- 	int level;
- 
- 	/*
--	 * Root which owns this tree block.
-+	 * Root which owns this tree block reference.
- 	 *
- 	 * For TREE_BLOCK_REF (skinny metadata, either inline or keyed)
+@@ -123,6 +123,13 @@ struct btrfs_delayed_ref_head {
+ 	 * the free has happened.
  	 */
--	u64 owning_root;
-+	u64 ref_root;
- 
- 	/* For non-skinny metadata, no special member needed */
- };
-@@ -294,7 +294,7 @@ static inline void btrfs_init_tree_ref(struct btrfs_ref *generic_ref,
- 	generic_ref->real_root = mod_root ?: root;
- #endif
- 	generic_ref->tree_ref.level = level;
--	generic_ref->tree_ref.owning_root = root;
-+	generic_ref->tree_ref.ref_root = root;
- 	generic_ref->type = BTRFS_REF_METADATA;
- 	if (skip_qgroup || !(is_fstree(root) &&
- 			     (!mod_root || is_fstree(mod_root))))
-@@ -312,7 +312,7 @@ static inline void btrfs_init_data_ref(struct btrfs_ref *generic_ref,
- 	/* If @real_root not set, use @root as fallback */
- 	generic_ref->real_root = mod_root ?: ref_root;
- #endif
--	generic_ref->data_ref.owning_root = ref_root;
-+	generic_ref->data_ref.ref_root = ref_root;
- 	generic_ref->data_ref.ino = ino;
- 	generic_ref->data_ref.offset = offset;
- 	generic_ref->type = BTRFS_REF_DATA;
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 911908ea5f6f..041f2eb153d7 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -1386,7 +1386,7 @@ int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
- 	ASSERT(generic_ref->type != BTRFS_REF_NOT_SET &&
- 	       generic_ref->action);
- 	BUG_ON(generic_ref->type == BTRFS_REF_METADATA &&
--	       generic_ref->tree_ref.owning_root == BTRFS_TREE_LOG_OBJECTID);
-+	       generic_ref->tree_ref.ref_root == BTRFS_TREE_LOG_OBJECTID);
- 
- 	if (generic_ref->type == BTRFS_REF_METADATA)
- 		ret = btrfs_add_delayed_tree_ref(trans, generic_ref, NULL);
-@@ -3329,9 +3329,9 @@ int btrfs_free_extent(struct btrfs_trans_handle *trans, struct btrfs_ref *ref)
- 	 * tree, just update pinning info and exit early.
- 	 */
- 	if ((ref->type == BTRFS_REF_METADATA &&
--	     ref->tree_ref.owning_root == BTRFS_TREE_LOG_OBJECTID) ||
-+	     ref->tree_ref.ref_root == BTRFS_TREE_LOG_OBJECTID) ||
- 	    (ref->type == BTRFS_REF_DATA &&
--	     ref->data_ref.owning_root == BTRFS_TREE_LOG_OBJECTID)) {
-+	     ref->data_ref.ref_root == BTRFS_TREE_LOG_OBJECTID)) {
- 		/* unlocks the pinned mutex */
- 		btrfs_pin_extent(trans, ref->bytenr, ref->len, 1);
- 		ret = 0;
-@@ -3342,9 +3342,9 @@ int btrfs_free_extent(struct btrfs_trans_handle *trans, struct btrfs_ref *ref)
- 	}
- 
- 	if (!((ref->type == BTRFS_REF_METADATA &&
--	       ref->tree_ref.owning_root == BTRFS_TREE_LOG_OBJECTID) ||
-+	       ref->tree_ref.ref_root == BTRFS_TREE_LOG_OBJECTID) ||
- 	      (ref->type == BTRFS_REF_DATA &&
--	       ref->data_ref.owning_root == BTRFS_TREE_LOG_OBJECTID)))
-+	       ref->data_ref.ref_root == BTRFS_TREE_LOG_OBJECTID)))
- 		btrfs_ref_tree_mod(fs_info, ref);
- 
- 	return ret;
-diff --git a/fs/btrfs/ref-verify.c b/fs/btrfs/ref-verify.c
-index 95d28497de7c..b7b3bd86f5e2 100644
---- a/fs/btrfs/ref-verify.c
-+++ b/fs/btrfs/ref-verify.c
-@@ -681,10 +681,10 @@ int btrfs_ref_tree_mod(struct btrfs_fs_info *fs_info,
- 
- 	if (generic_ref->type == BTRFS_REF_METADATA) {
- 		if (!parent)
--			ref_root = generic_ref->tree_ref.owning_root;
-+			ref_root = generic_ref->tree_ref.ref_root;
- 		owner = generic_ref->tree_ref.level;
- 	} else if (!parent) {
--		ref_root = generic_ref->data_ref.owning_root;
-+		ref_root = generic_ref->data_ref.ref_root;
- 		owner = generic_ref->data_ref.ino;
- 		offset = generic_ref->data_ref.offset;
- 	}
+ 	bool must_insert_reserved;
++
++	/*
++	 * The root which triggered the allocation when
++	 * must_insert_reserved is true
++	 */
++	u64 owning_root;
++
+ 	bool is_data;
+ 	bool is_system;
+ 	bool processing;
 -- 
 2.41.0
 

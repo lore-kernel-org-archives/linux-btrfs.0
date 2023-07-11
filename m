@@ -2,83 +2,96 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 122BDC001B0
-	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Jul 2023 07:50:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 172D8EB64DC
+	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Jul 2023 09:00:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230360AbjGKHuL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 11 Jul 2023 03:50:11 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56892 "EHLO
+        id S231195AbjGKJAL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 11 Jul 2023 05:00:11 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35054 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230196AbjGKHuK (ORCPT
+        with ESMTP id S231258AbjGKJAJ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Jul 2023 03:50:10 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9D363DB
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Jul 2023 00:50:09 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id EEC662052F
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Jul 2023 07:50:07 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1689061807; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=QM2qn4Fv6hPMSWUyP0MIu83OLYXypFabSSYsQdaS0lI=;
-        b=amEcjR/DxCFUjTt17bGJAB8LZs2QmWsKS0Ltv2laSP/lJ7dt2sREQNCanmZ3+35HRKtU8r
-        dBVlduM7S0Yr44xtxrAUjchGQvAhtE33Q3X0pD+I7zqW1PTVH/bg7ytOhBC+rA036KzEWu
-        MGTPuBqFmgZ0S4CZ19zJe9RYYSnEktg=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 5481A1391C
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Jul 2023 07:50:07 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id eN2HCa8JrWS6LgAAMHmgww
-        (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Jul 2023 07:50:07 +0000
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 6/6] btrfs: call copy_extent_buffer_full() inside btrfs_clone_extent_buffer()
-Date:   Tue, 11 Jul 2023 15:49:44 +0800
-Message-ID: <50e8ebd3470bbd05f4987d37f661e0f3a570715c.1689061099.git.wqu@suse.com>
-X-Mailer: git-send-email 2.41.0
-In-Reply-To: <cover.1689061099.git.wqu@suse.com>
-References: <cover.1689061099.git.wqu@suse.com>
+        Tue, 11 Jul 2023 05:00:09 -0400
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.21])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 51D6610C3
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Jul 2023 02:00:04 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.com;
+ s=s31663417; t=1689065999; x=1689670799; i=quwenruo.btrfs@gmx.com;
+ bh=LYBQTaIw6ddA/iRUEb9lJqDubpyF9m5RmdhrMV94ItY=;
+ h=X-UI-Sender-Class:Date:Subject:To:References:From:In-Reply-To;
+ b=ZGZmYOG8mumlq6Sf+Itkk80if2S1GE5zcAdkYV90bZk8nkOBXdeKJB7Ufp1sk7lTqKgvSWK
+ /ydW3BSgvmljLpLA6BmAgZKbQLofj2GEqU61X49XZX95RxjQ2W9mWzCgHOvKHSjEciuQT/Np4
+ uXZEAMo46Ito9cSLiCxzcob6GWZYuv1BgIOc39iYT0kfzkVj8DEgPEBZeGwk01eGGfWbjOe9y
+ 6A5obF8n5IuzO6Yb0rVHxSF8O/KQaHlHEQ5/8T5wzkn1fd5+ClYMr2fRBAJvKmNEpTTcqrN/k
+ IfKCZjwXsX4M/yXCz89Ed6uBXOwRtegU7h2GI/cPsw1Bf5PHVdgg==
+X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx105
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1M1ps8-1qGwIY1CK8-002GLl; Tue, 11
+ Jul 2023 10:59:59 +0200
+Message-ID: <22b2a8da-5225-7703-e8c6-75c25baa986d@gmx.com>
+Date:   Tue, 11 Jul 2023 16:59:55 +0800
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.12.0
+Subject: Re: Scrub of my nvme SSD has slowed by about 2/3
+To:     Martin Steigerwald <martin@lichtvoll.de>,
+        linux-btrfs@vger.kernel.org, Tim Cuthbertson <ratcheer@gmail.com>
+References: <CAAKzf7=yS9vnf5zNid1CyvN19wyAgPz5o9sJP0vBqN6LReqXVg@mail.gmail.com>
+ <5690570.DvuYhMxLoT@lichtvoll.de> <2149714.irdbgypaU6@lichtvoll.de>
+ <2890794.e9J7NaK4W3@lichtvoll.de>
+Content-Language: en-US
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+In-Reply-To: <2890794.e9J7NaK4W3@lichtvoll.de>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:uCFZPwjYfVIp9an8tiy6r764JJix+QXKWApPZa+G8R3VGbrX/KS
+ o8IJqHx0Mlq4QnG3TmZX3yF+GnWfK8HQP4Dxi0J6QVDypAP1a5YaH8ELM+olew5ru76ky/M
+ tYQXFAT1wxKu6Du0M7ppjIWIlVrE9il21gw6EPcrPYnIPDGn9LN0CeMaAyN6pvrdkaoXWsF
+ YbsPoiT8Ih9r/H+ZRxPbg==
+UI-OutboundReport: notjunk:1;M01:P0:/UY7QK8Tzpo=;/QWdZz7lQMoKW/upHKGZ80eMwv2
+ KuxrjQpV2O6NqWyqpvXn/PIX3tcG/hJ6xAZBVTAvuOp5Cos6iiBKCjMnBjbpBAi2v7KoDPMDl
+ vdqaT5K9iIY68YhSktx7dO13QuQlKbcGvOgiFdAlyUMSWLlYsTBa9ve71zxE7TjNz5GqexkJC
+ zV1wf9X2TZoJzmM7skfT+VefIEzfTXi4csru/zNaeRXc1MV5WE1nC0keRkbYulLYKgdHWFoDC
+ Itn7WBB2QW4IzY9CxMGr/m2o7G9398yr0w4vkyuJvb+HqEQVRyo4rh6gF6a0X83oOaOcFOvjE
+ GeuAgqiemNcYblkeBWnimMqFocPmZi6fmfwK02DkHgtPJJdma4MV8EHU/31Ye0eySxU5V3Zor
+ TJE93SMOxyFokTXvGxl0fdXGO0lXXHYf1HaLlkJMSvwjTl3EftddzMzruvsVn+3nlEUDaABtJ
+ a8iysPMdsf1UMdU5rTEqe2JC0ghmgRbwelwboxMegjcvEWSkgreOemADl+tBVhj/82miE+tlr
+ zZLrpX/mQi55Us26vnn5mRtC+OJwESygPP4VtC0DqOl28d5oZAkAirx8yeZTbn4VArcoEPZ2b
+ F1YmAU2Ly5Lkul/weM1uZTHFWOZfCwluOFnne+qGNEGoXYa3fJVJLLzHxrXezt9KouWo43Hx3
+ SiQ6XEvEkQJSqf0Lx6uHJGAzmqD4i03G/nVlM2N51en7EA4vFO16iRbKBvxMWqwHjZEAHXZOs
+ EV4t+kfVJQGJRmqBHZE8zEGIRCalUwvK83CRkXSKwHI7Mm8NpyYIqy0alypk3Vvy7pvkq3C0n
+ bQl7zg4mzLOZE+pA5WmpzXkjGCAnAmPWIlFWBBjWbW1aWUhu63ghJhLYbwumyggmNS4hhzGhe
+ Gu/vV0mA65mjdlqx+58HvzcjKW/ELOLP+lNTQQ8YI7bB6vqltWmjWpxPtt/8ArIfEqPTUzh3l
+ N59I/WinFdDaLAhPHFD905lN7Uc=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Function btrfs_clone_extent_buffer() is calling of copy_page() directly.
 
-To make later migration for folio easier, just call
-copy_extent_buffer_full() instead.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/extent_io.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+On 2023/7/11 13:52, Martin Steigerwald wrote:
+> Martin Steigerwald - 11.07.23, 07:49:43 CEST:
+>> I see about 180000 reads in 10 seconds in atop. I have seen latency
+>> values from 55 to 85 =C2=B5s which is highly unusual for NVME SSD ("avi=
+o"
+>> in atop=C2=B9).
+>
+> Well I did not compare to a base line during scrub with 6.3. So not
+> actually sure about the unusual bit. But at least during daily activity
+> I do not see those values.
+>
+> Anyway, I am willing to test a patch.
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 9425380c110e..555cf17c13f9 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3285,8 +3285,8 @@ struct extent_buffer *btrfs_clone_extent_buffer(const struct extent_buffer *src)
- 			return NULL;
- 		}
- 		WARN_ON(PageDirty(p));
--		copy_page(page_address(p), page_address(src->pages[i]));
- 	}
-+	copy_extent_buffer_full(new, src);
- 	set_extent_buffer_uptodate(new);
- 
- 	return new;
--- 
-2.41.0
+Mind to try the following branch?
 
+https://github.com/adam900710/linux/tree/scrub_multi_thread
+
+Or you can grab the commit on top and backport to any kernel >=3D 6.4.
+
+Thanks,
+Qu
+>
+>> [1] according to man page atop(1) from atop 2.9:
+>>
+>> the average number of milliseconds needed by a request ('avio') for
+>> seek, latency and data transfer

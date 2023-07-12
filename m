@@ -2,96 +2,50 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8A378EB64DA
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Jul 2023 16:20:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 14C44EB64DD
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Jul 2023 16:24:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231555AbjGLQUY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 12 Jul 2023 12:20:24 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52406 "EHLO
+        id S233178AbjGLQYj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 12 Jul 2023 12:24:39 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57448 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232124AbjGLQUC (ORCPT
+        with ESMTP id S232541AbjGLQYG (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Jul 2023 12:20:02 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 091232D74
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Jul 2023 09:17:57 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 47E5E21D25;
-        Wed, 12 Jul 2023 16:17:30 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1689178650;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=0kiMISfx1ggOn1ocbNTI+YJzakczL5IDrJco9ltzjX8=;
-        b=ppLuEEbVNOJqpsxQfn2bgrHW3bMwderuJvUUgP4X/d7fPP3lZeQFu66n6v74Ys0GXtQhl0
-        I1Prz1+2eUqOYU1GoysPpeu2ZJSVtnPP8pg45s3dAEmHIjNRe6YWQo1ZLVkJcd6K2cOe16
-        TeEYAWCNk0XUKEDSAYUTIsfXc6v+OXk=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1689178650;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=0kiMISfx1ggOn1ocbNTI+YJzakczL5IDrJco9ltzjX8=;
-        b=TUuvXwDfmuxDWTrtlddR/Lf/4OaxxbxN18ByeemVV/aGoKWhHawizK8GP/QBLsFULnah2D
-        OfBMxNOyojL+aNAw==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 23B7713336;
-        Wed, 12 Jul 2023 16:17:30 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id tXJOBxrSrmSYaAAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Wed, 12 Jul 2023 16:17:30 +0000
-Date:   Wed, 12 Jul 2023 18:10:54 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Filipe Manana <fdmanana@suse.com>
-Cc:     Boris Burkov <boris@bur.io>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 8/8] btrfs: move btrfs_free_excluded_extents() into
- block-group.c
-Message-ID: <20230712161054.GL30916@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cb507b1dbff5ee7f776d98a9ea1da0d40ddeacfc.1688137156.git.fdmanana@suse.com>
- <20230707221740.GH2565448@zen>
- <365b60d2-32f2-9b60-a326-d3959592cb67@suse.com>
+        Wed, 12 Jul 2023 12:24:06 -0400
+Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 150E01FCA
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Jul 2023 09:23:40 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
+        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+        Content-Transfer-Encoding:Content-ID:Content-Description;
+        bh=M7NmYC/Iylm9myghHwqILim55SAUt9QrM+UZYk0eJlw=; b=giV1Wc0QrLW07o7I76cxxxIimm
+        T6dDmQGJp0X0K+Pb8XiiOtOoo6PiZL0nNO2Ix/nRP45hRZCd/p5W6J0WM42RCZGZusHWALHD9fdZc
+        sgtSSzbTie0MZPRJFHdshLgUypC3KyehSqVmkEGaBpFVS6JZIIVUuT8h2Hlex8qW1ho8lUQSLNL3Z
+        iPiBblCnstmFCLbQj8n3/+xNPmYpGPxKoiH6TX67paKeV/mrIM4SSchxQB3s/B239zQKH0e8aE4lv
+        6HMtqM4TPV7qh06SfIYbH1cTvXCvduJ3Sbg9w3Kb3Fgjiw1luTym8PjV0W2S5yAsXKacc2eFJ0tVw
+        G2di0GGw==;
+Received: from hch by bombadil.infradead.org with local (Exim 4.96 #2 (Red Hat Linux))
+        id 1qJccu-000ZTX-2Y;
+        Wed, 12 Jul 2023 16:23:40 +0000
+Date:   Wed, 12 Jul 2023 09:23:40 -0700
+From:   Christoph Hellwig <hch@infradead.org>
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 01/14] btrfs: raid56: remove unnecessary parameter for
+ raid56_parity_alloc_scrub_rbio()
+Message-ID: <ZK7TjGpSAH+Xruyi@infradead.org>
+References: <cover.1688368617.git.wqu@suse.com>
+ <1f848dbf2089ca42a3c17e2f361e7aabe3e91507.1688368617.git.wqu@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <365b60d2-32f2-9b60-a326-d3959592cb67@suse.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <1f848dbf2089ca42a3c17e2f361e7aabe3e91507.1688368617.git.wqu@suse.com>
+X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Jul 10, 2023 at 10:56:19AM +0100, Filipe Manana wrote:
-> On 07/07/23 23:17, Boris Burkov wrote:
-> > On Fri, Jun 30, 2023 at 04:03:51PM +0100, Filipe Manana wrote:
-> >> The function btrfs_free_excluded_extents() is only used by block-group.c,
-> >> so move it into block-group.c and make it static. Also removed unnecessary
-> >> variables that are used only once.
-> > 
-> > Since you added the btrfs_ for the function that's exported in the
-> > header earlier I think it would be nice to also drop it from this
-> > one as it goes static in block_group.c.
-> 
-> I don't think we have a policy to make static function without the 
-> "btrfs_" prefix mandatory. We have plenty of cases with and without the 
-> prefix.
-> 
-> Personally I prefer to have the prefix, because when reading a function 
-> call it makes it obvious that it's btrfs code and not generic code being 
-> called.
-> 
-> However I'm not against dropping the prefix, if that's what everyone 
-> prefers.
+Looks good:
 
-I think we don't have a strict policy here, exported functions should
-have the btrfs_ prefix unless there's some other common prefix or
-historical reasons. For static helper it's nice to have to make the
-functions obvious in stack traces but some simple helpers don't need it.
-More prefixes or naming unifications are probably better in the long run.
+Reviewed-by: Christoph Hellwig <hch@lst.de>

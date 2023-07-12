@@ -2,60 +2,101 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F3640EB64DA
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Jul 2023 16:28:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 17566EB64DA
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Jul 2023 16:30:32 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230474AbjGLQ2Z (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 12 Jul 2023 12:28:25 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33364 "EHLO
+        id S229632AbjGLQaa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 12 Jul 2023 12:30:30 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35622 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232605AbjGLQ16 (ORCPT
+        with ESMTP id S231608AbjGLQa2 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Jul 2023 12:27:58 -0400
-Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 324F0E8
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Jul 2023 09:27:57 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
-        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-        Content-Transfer-Encoding:Content-ID:Content-Description;
-        bh=Qz+Pr3DicCPGRIg6D9Ew+k8boFpiSp9dQTXZ91Hc2GE=; b=Lmm4ugDDc76wm9DcBioIsv+62O
-        3P7u4nzHJ30oBt3I53GawGj0EXLNlF2zSZ5I9g1msoCYf2RhYseb8l5ZprqDoALTJwbs2OcaX1ONN
-        2/R5B1hj93GBCdSFKowHs4jQbu84gjR9s94IOIGezUMyVW7HB0gubtVzzIA9vEIq6XjRq2HK3w3a0
-        /ymcJHfeL38/Beh6UR/WAdsZolsXd6dTl+p4apa1egU4HZ4lG/zDPAyR/d5Bf6Eop2WYGw6runQ0/
-        ZdUXhFw3vD21jQsRMvuhIujLJFeyEbLXyoTXcs0QKIL4RolA/wcT+Cm8RizVDIWC2fHcEEujMk/2o
-        eMtK6lww==;
-Received: from hch by bombadil.infradead.org with local (Exim 4.96 #2 (Red Hat Linux))
-        id 1qJch2-000aES-3C;
-        Wed, 12 Jul 2023 16:27:56 +0000
-Date:   Wed, 12 Jul 2023 09:27:56 -0700
-From:   Christoph Hellwig <hch@infradead.org>
-To:     Qu Wenruo <wqu@suse.com>
+        Wed, 12 Jul 2023 12:30:28 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AE2FF2696
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Jul 2023 09:29:59 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id CCB4521F94;
+        Wed, 12 Jul 2023 16:29:50 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1689179390;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=FchJxe9/GQIrRTOflCCkrruNeX656vguRZpDJSoe9IE=;
+        b=qPL35Nev8uOopDoZt1lWTkiCMOEvByZH+PfB9v13zspa1jXyFwYSkbk9KE8M5coJ8BFuUe
+        h5CS5LxgihtNTCcxTSIV1zT9vOCmuB//OHwYcF7Ya2PxNJm+3urpBwg1qHU4wsaZX2gak3
+        rJxEBZFW/DNTXKvwePFTZT7fijR/E1A=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1689179390;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=FchJxe9/GQIrRTOflCCkrruNeX656vguRZpDJSoe9IE=;
+        b=q6jvz00XiQ58u0XYiIY/LyDpTkc7SApku83qPb0zGXYRMOePRJMiSB7PVHEME0QpDWbSi4
+        b9/J+9E4DEtRP9Bw==
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id A7D1213336;
+        Wed, 12 Jul 2023 16:29:50 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id 2oZKKP7UrmQ0cQAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Wed, 12 Jul 2023 16:29:50 +0000
+Date:   Wed, 12 Jul 2023 18:23:14 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Naohiro Aota <naohiro.aota@wdc.com>
 Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 03/14] btrfs: raid56: allow caching P/Q stripes
-Message-ID: <ZK7UjPyQ+uQq+Yaj@infradead.org>
-References: <cover.1688368617.git.wqu@suse.com>
- <04691a8119ab8612a3f3bc4b003f44dcb189be86.1688368617.git.wqu@suse.com>
+Subject: Re: [PATCH v2] btrfs: zoned: do not enable async discard
+Message-ID: <20230712162314.GM30916@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <e22f5f69d881de1ec0e381f1be6bfe61b822c064.1688027756.git.naohiro.aota@wdc.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <04691a8119ab8612a3f3bc4b003f44dcb189be86.1688368617.git.wqu@suse.com>
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
+In-Reply-To: <e22f5f69d881de1ec0e381f1be6bfe61b822c064.1688027756.git.naohiro.aota@wdc.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Jul 03, 2023 at 03:32:27PM +0800, Qu Wenruo wrote:
-> @@ -82,6 +82,13 @@ struct btrfs_raid_bio {
->  	 */
->  	int bio_list_bytes;
->  
-> +	/*
-> +	 * If this rbio is forced to use cached stripes provided by the caller.
-> +	 *
-> +	 * Used by scrub path to reduce IO.
-> +	 */
-> +	bool cached;
+On Thu, Jun 29, 2023 at 05:37:31PM +0900, Naohiro Aota wrote:
+> The zoned mode need to reset a zone before using it. We rely on btrfs's
+> original discard functionality (discarding unused block group range) to do
+> the resetting.
+> 
+> While the commit 63a7cb130718 ("btrfs: auto enable discard=async when
+> possible") made the discard done in an async manner, a zoned reset do not
+> need to be async, as it is fast enough.
+> 
+> Even worth, delaying zone rests prevents using those zones again. So, let's
+> disable async discard on the zoned mode.
+> 
+> Fixes: 63a7cb130718 ("btrfs: auto enable discard=async when possible")
+> CC: stable@vger.kernel.org # 6.3+
+> Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 
-You probably want to move this next to the five u8 values for better
-packing.
+Added to misc-next, thanks.
+
+> --- a/fs/btrfs/zoned.c
+> +++ b/fs/btrfs/zoned.c
+> @@ -805,6 +805,11 @@ int btrfs_check_mountopts_zoned(struct btrfs_fs_info *info)
+>  		return -EINVAL;
+>  	}
+>  
+> +	if (btrfs_test_opt(info, DISCARD_ASYNC)) {
+> +		btrfs_warn(info, "zoned: disabling async discard as it is not supported");
+> +		btrfs_clear_opt(info->mount_opt, DISCARD_ASYNC);
+> +	}
+
+I agree with the comments that using 'ignored' is better here, if you
+look to the other checks in the function, NOCOW or SPACE_CACHE are not
+sukpported and also lead to an error. In case of async discard it's
+implemented in a sligly different way but it's not an error. I've also
+changed the error level to info, a warning needs attention, in this case
+it's not that serious IMHO.

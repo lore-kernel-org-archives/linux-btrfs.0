@@ -2,85 +2,96 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EAB07EB64DA
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Jul 2023 16:10:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8A378EB64DA
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Jul 2023 16:20:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229661AbjGLQKt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 12 Jul 2023 12:10:49 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44972 "EHLO
+        id S231555AbjGLQUY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 12 Jul 2023 12:20:24 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52406 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229551AbjGLQKs (ORCPT
+        with ESMTP id S232124AbjGLQUC (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Jul 2023 12:10:48 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 331F6134
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Jul 2023 09:10:47 -0700 (PDT)
+        Wed, 12 Jul 2023 12:20:02 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 091232D74
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Jul 2023 09:17:57 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id E880322074;
-        Wed, 12 Jul 2023 16:10:45 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 47E5E21D25;
+        Wed, 12 Jul 2023 16:17:30 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1689178245;
+        t=1689178650;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=Y1OUXA26EyObA+7TyNZLF02F0lBiP64/N8fxh+A1kVk=;
-        b=hi2/42LjRHM22Epf8DjkSM5asUmfrchQiCexXRCRyZ4VpjqQv5yBec/1WzZJqVJ54yGXP7
-        eO+SGfgzvXleRUq8jAzuaBtNsvDvc+q4MUr9h8FYYJTpqlc+BAH/pHxPfAEAVjA+rkAnHG
-        A0DvXx0AhtjQ+3yo7tp8Pp6c8oQ99ec=
+        bh=0kiMISfx1ggOn1ocbNTI+YJzakczL5IDrJco9ltzjX8=;
+        b=ppLuEEbVNOJqpsxQfn2bgrHW3bMwderuJvUUgP4X/d7fPP3lZeQFu66n6v74Ys0GXtQhl0
+        I1Prz1+2eUqOYU1GoysPpeu2ZJSVtnPP8pg45s3dAEmHIjNRe6YWQo1ZLVkJcd6K2cOe16
+        TeEYAWCNk0XUKEDSAYUTIsfXc6v+OXk=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1689178245;
+        s=susede2_ed25519; t=1689178650;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=Y1OUXA26EyObA+7TyNZLF02F0lBiP64/N8fxh+A1kVk=;
-        b=68VJ27mFm8svA3aANzaz4ea3N4fNWfkKMupaw8kylFReNi5VinsJPxa2V5hifZfE7EFkkw
-        sJPXjFjljXJ8q+Ag==
+        bh=0kiMISfx1ggOn1ocbNTI+YJzakczL5IDrJco9ltzjX8=;
+        b=TUuvXwDfmuxDWTrtlddR/Lf/4OaxxbxN18ByeemVV/aGoKWhHawizK8GP/QBLsFULnah2D
+        OfBMxNOyojL+aNAw==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id C82D5133DD;
-        Wed, 12 Jul 2023 16:10:45 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 23B7713336;
+        Wed, 12 Jul 2023 16:17:30 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id B8ydL4XQrmSBYwAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Wed, 12 Jul 2023 16:10:45 +0000
-Date:   Wed, 12 Jul 2023 18:04:10 +0200
+        id tXJOBxrSrmSYaAAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Wed, 12 Jul 2023 16:17:30 +0000
+Date:   Wed, 12 Jul 2023 18:10:54 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     fdmanana@kernel.org
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/8] btrfs: remove a couple BUG_ON()s and cleanups
-Message-ID: <20230712160409.GK30916@twin.jikos.cz>
+To:     Filipe Manana <fdmanana@suse.com>
+Cc:     Boris Burkov <boris@bur.io>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 8/8] btrfs: move btrfs_free_excluded_extents() into
+ block-group.c
+Message-ID: <20230712161054.GL30916@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <cover.1688137155.git.fdmanana@suse.com>
+References: <cb507b1dbff5ee7f776d98a9ea1da0d40ddeacfc.1688137156.git.fdmanana@suse.com>
+ <20230707221740.GH2565448@zen>
+ <365b60d2-32f2-9b60-a326-d3959592cb67@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <cover.1688137155.git.fdmanana@suse.com>
+In-Reply-To: <365b60d2-32f2-9b60-a326-d3959592cb67@suse.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Jun 30, 2023 at 04:03:43PM +0100, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
+On Mon, Jul 10, 2023 at 10:56:19AM +0100, Filipe Manana wrote:
+> On 07/07/23 23:17, Boris Burkov wrote:
+> > On Fri, Jun 30, 2023 at 04:03:51PM +0100, Filipe Manana wrote:
+> >> The function btrfs_free_excluded_extents() is only used by block-group.c,
+> >> so move it into block-group.c and make it static. Also removed unnecessary
+> >> variables that are used only once.
+> > 
+> > Since you added the btrfs_ for the function that's exported in the
+> > header earlier I think it would be nice to also drop it from this
+> > one as it goes static in block_group.c.
 > 
-> The first patch removes  a couple unnecessary BUG_ON()'s, since all
-> callers are able to properly deal with errors, which are triggered by
-> syzbot with error injection (-ENOMEM). The rest are just some followup
-> cleanups. More details in the changelogs.
+> I don't think we have a policy to make static function without the 
+> "btrfs_" prefix mandatory. We have plenty of cases with and without the 
+> prefix.
 > 
-> Filipe Manana (8):
->   btrfs: remove BUG_ON()'s in add_new_free_space()
->   btrfs: update documentation for add_new_free_space()
->   btrfs: rename add_new_free_space() to btrfs_add_new_free_space()
->   btrfs: make btrfs_destroy_marked_extents() return void
->   btrfs: make btrfs_destroy_pinned_extent() return void
->   btrfs: make find_first_extent_bit() return a boolean
->   btrfs: open code trivial btrfs_add_excluded_extent()
->   btrfs: move btrfs_free_excluded_extents() into block-group.c
+> Personally I prefer to have the prefix, because when reading a function 
+> call it makes it obvious that it's btrfs code and not generic code being 
+> called.
+> 
+> However I'm not against dropping the prefix, if that's what everyone 
+> prefers.
 
-Nice cleanups, added to misc-next, thanks.
+I think we don't have a strict policy here, exported functions should
+have the btrfs_ prefix unless there's some other common prefix or
+historical reasons. For static helper it's nice to have to make the
+functions obvious in stack traces but some simple helpers don't need it.
+More prefixes or naming unifications are probably better in the long run.

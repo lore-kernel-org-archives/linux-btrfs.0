@@ -2,50 +2,50 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 96925EB64D9
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Jul 2023 06:39:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4CB3FEB64DA
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Jul 2023 06:39:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230439AbjGLGjp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 12 Jul 2023 02:39:45 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35448 "EHLO
+        id S231304AbjGLGjr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 12 Jul 2023 02:39:47 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36384 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231454AbjGLGjU (ORCPT
+        with ESMTP id S231532AbjGLGjV (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Jul 2023 02:39:20 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9D79E19B9
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Jul 2023 23:38:07 -0700 (PDT)
+        Wed, 12 Jul 2023 02:39:21 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 93EF6199E
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Jul 2023 23:38:09 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 5DEAD2256E
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Jul 2023 06:38:06 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 5480B1FED2
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Jul 2023 06:38:08 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1689143886; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1689143888; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=6+2yxaHWyXCzcZAw4TbI7XdMj2GAY9cz4PdThVWe75E=;
-        b=tPtHpFG7Un/h9aITXT+6R+gDu30ymLbcgjSrR0kLRPLzFBnBlMY7JEeE4pw2/Hf+W6H6q2
-        FZ1AZy6dfctdMV0AqSm5RUWC2ridTVcBQLEzQDlajVvwz2GE0AIh6vv0xIMCd018CCgNOY
-        QaVn8O0FDxsYa9jSIdmQZrfynFM1QX4=
+        bh=oEvo/nPujCvbQSNXZJ0gGVWGN9fuFL9x9/9ShFLYjao=;
+        b=LpRe7p/WjVUCMPmf0vDTqMPqNDeqf6aIJBAnDNk//WINqoNQBT/4FpYnv1IHsgGvb4RSG3
+        35EpKc9CZNcEpgAFnOmg4+F68rrlnpLZLUKjHDIOpe+9F3Wn6Wx1pvAvV+dUBlXzhkqmDU
+        ZQvL/UN3npr3+36mzWJm6m+dcE+GOE0=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id BD7D5133DD
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Jul 2023 06:38:05 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id B51A4133DD
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Jul 2023 06:38:07 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id YBSlIk1KrmRhDwAAMHmgww
+        id GEyAIE9KrmRhDwAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Jul 2023 06:38:05 +0000
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Jul 2023 06:38:07 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 2/6] btrfs: refactor extent buffer bitmaps operations
-Date:   Wed, 12 Jul 2023 14:37:42 +0800
-Message-ID: <917b9206b5a56bd2bbdc328f8644fb72b888b8de.1689143654.git.wqu@suse.com>
+Subject: [PATCH v2 4/6] btrfs: refactor memcpy_extent_buffer()
+Date:   Wed, 12 Jul 2023 14:37:44 +0800
+Message-ID: <825deca8e1421418b18d74d43088c81974f9cf69.1689143655.git.wqu@suse.com>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <cover.1689143654.git.wqu@suse.com>
 References: <cover.1689143654.git.wqu@suse.com>
@@ -56,230 +56,95 @@ List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 [BACKGROUND]
-Currently we handle extent bitmaps manually in
-extent_buffer_bitmap_set() and extent_buffer_bitmap_clear().
+Currently memcpy_extent_buffer() goes a loop where it would stop at
+any page boundary inside [dst_offset, dst_offset + len) or [src_offset,
+src_offset + len).
 
-Although with various helper like eb_bitmap_offset() it's still a little
-messy to read.
-The code seems to be a copy of bitmap_set(), but with all the cross-page
-handling embedded into the code.
+This is mostly allowing us to go copy_pages(), but if we're going folio
+we will need to handle multi-page (the old behavior) or single folio
+(the new optimization).
+
+The current code would be a burden for future changes.
 
 [ENHANCEMENT]
-This patch would enhance the readability by introducing two helpers:
+Instead of sticking with copy_pages(), here we utilize
+write_extent_buffer() to handle writing into the dst range.
 
-- memset_extent_buffer()
-  To handle the byte aligned range, thus all the cross-page handling is
-  done there.
-
-- extent_buffer_get_byte()
-  This for the first and the last byte operation, which only needs to
-  grab one byte, thus no need for any cross-page handling.
-
-So we can split both extent_buffer_bitmap_set() and
-extent_buffer_bitmap_clear() into 3 parts:
-
-- Handle the first byte
-  If the range fits inside the first byte, we can exit early.
-
-- Handle the byte aligned part
-  This is the part which can have cross-page operations, and it would
-  be handled by memset_extent_buffer().
-
-- Handle the last byte
-
-This refactor does not only make the code a little easier to read, but
-also make later folio/page switch much easier, as the switch only needs
-to be done inside memset_extent_buffer() and extent_buffer_get_byte().
+Now we only need to handle the page boundaries inside the source range,
+making later switch to folio much easier.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/extent_io.c | 141 +++++++++++++++++++++----------------------
- 1 file changed, 68 insertions(+), 73 deletions(-)
+ fs/btrfs/extent_io.c | 36 +++++++++++++-----------------------
+ 1 file changed, 13 insertions(+), 23 deletions(-)
 
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index a845a90d46f7..6a7abcbe6bec 100644
+index 4e252fd7b78a..4db90ede8219 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -4229,32 +4229,30 @@ void write_extent_buffer(const struct extent_buffer *eb, const void *srcv,
+@@ -4183,6 +4183,8 @@ void write_extent_buffer(const struct extent_buffer *eb, const void *srcv,
+ 	struct page *page;
+ 	char *kaddr;
+ 	char *src = (char *)srcv;
++	/* For unmapped (dummy) ebs, no need to check their uptodate status. */
++	bool check_uptodate = !test_bit(EXTENT_BUFFER_UNMAPPED, &eb->bflags);
+ 	unsigned long i = get_eb_page_index(start);
+ 
+ 	WARN_ON(test_bit(EXTENT_BUFFER_NO_CHECK, &eb->bflags));
+@@ -4194,7 +4196,8 @@ void write_extent_buffer(const struct extent_buffer *eb, const void *srcv,
+ 
+ 	while (len > 0) {
+ 		page = eb->pages[i];
+-		assert_eb_page_uptodate(eb, page);
++		if (check_uptodate)
++			assert_eb_page_uptodate(eb, page);
+ 
+ 		cur = min(len, PAGE_SIZE - offset);
+ 		kaddr = page_address(page);
+@@ -4462,34 +4465,21 @@ void memcpy_extent_buffer(const struct extent_buffer *dst,
+ 			  unsigned long dst_offset, unsigned long src_offset,
+ 			  unsigned long len)
+ {
+-	size_t cur;
+-	size_t dst_off_in_page;
+-	size_t src_off_in_page;
+-	unsigned long dst_i;
+-	unsigned long src_i;
++	unsigned long cur = src_offset;
+ 
+ 	if (check_eb_range(dst, dst_offset, len) ||
+ 	    check_eb_range(dst, src_offset, len))
+ 		return;
+ 
+-	while (len > 0) {
+-		dst_off_in_page = get_eb_offset_in_page(dst, dst_offset);
+-		src_off_in_page = get_eb_offset_in_page(dst, src_offset);
++	while (cur < src_offset + len) {
++		int index = get_eb_page_index(cur);
++		unsigned long offset = get_eb_offset_in_page(dst, cur);
++		unsigned long cur_len = min(src_offset + len - cur, PAGE_SIZE - offset);
++		unsigned long offset_to_start = cur - src_offset;
++		void *src_addr = page_address(dst->pages[index]) + offset;
+ 
+-		dst_i = get_eb_page_index(dst_offset);
+-		src_i = get_eb_page_index(src_offset);
+-
+-		cur = min(len, (unsigned long)(PAGE_SIZE -
+-					       src_off_in_page));
+-		cur = min_t(unsigned long, cur,
+-			(unsigned long)(PAGE_SIZE - dst_off_in_page));
+-
+-		copy_pages(dst->pages[dst_i], dst->pages[src_i],
+-			   dst_off_in_page, src_off_in_page, cur);
+-
+-		src_offset += cur;
+-		dst_offset += cur;
+-		len -= cur;
++		write_extent_buffer(dst, src_addr, dst_offset + offset_to_start, cur_len);
++		cur += cur_len;
  	}
  }
  
-+static void memset_extent_buffer(const struct extent_buffer *eb, int c,
-+				 unsigned long start, unsigned long len)
-+{
-+	unsigned long cur = start;
-+
-+	while (cur < start + len) {
-+		int index = get_eb_page_index(cur);
-+		int offset = get_eb_offset_in_page(eb, cur);
-+		int cur_len = min(start + len - cur, PAGE_SIZE - offset);
-+		struct page *page = eb->pages[index];
-+
-+		assert_eb_page_uptodate(eb, page);
-+		memset(page_address(page) + offset, c, cur_len);
-+
-+		cur += cur_len;
-+	}
-+}
-+
- void memzero_extent_buffer(const struct extent_buffer *eb, unsigned long start,
- 		unsigned long len)
- {
--	size_t cur;
--	size_t offset;
--	struct page *page;
--	char *kaddr;
--	unsigned long i = get_eb_page_index(start);
--
- 	if (check_eb_range(eb, start, len))
- 		return;
--
--	offset = get_eb_offset_in_page(eb, start);
--
--	while (len > 0) {
--		page = eb->pages[i];
--		assert_eb_page_uptodate(eb, page);
--
--		cur = min(len, PAGE_SIZE - offset);
--		kaddr = page_address(page);
--		memset(kaddr + offset, 0, cur);
--
--		len -= cur;
--		offset = 0;
--		i++;
--	}
-+	return memset_extent_buffer(eb, 0, start, len);
- }
- 
- void copy_extent_buffer_full(const struct extent_buffer *dst,
-@@ -4371,6 +4369,15 @@ int extent_buffer_test_bit(const struct extent_buffer *eb, unsigned long start,
- 	return 1U & (kaddr[offset] >> (nr & (BITS_PER_BYTE - 1)));
- }
- 
-+static u8 *extent_buffer_get_byte(const struct extent_buffer *eb, unsigned long bytenr)
-+{
-+	unsigned long index = get_eb_page_index(bytenr);
-+
-+	if (check_eb_range(eb, bytenr, 1))
-+		return NULL;
-+	return page_address(eb->pages[index]) + get_eb_offset_in_page(eb, bytenr);
-+}
-+
- /*
-  * Set an area of a bitmap to 1.
-  *
-@@ -4382,35 +4389,29 @@ int extent_buffer_test_bit(const struct extent_buffer *eb, unsigned long start,
- void extent_buffer_bitmap_set(const struct extent_buffer *eb, unsigned long start,
- 			      unsigned long pos, unsigned long len)
- {
-+	unsigned int first_byte = start + BIT_BYTE(pos);
-+	unsigned int last_byte = start + BIT_BYTE(pos + len - 1);
-+	bool same_byte = (first_byte == last_byte);
-+	u8 mask = BITMAP_FIRST_BYTE_MASK(pos);
- 	u8 *kaddr;
--	struct page *page;
--	unsigned long i;
--	size_t offset;
--	const unsigned int size = pos + len;
--	int bits_to_set = BITS_PER_BYTE - (pos % BITS_PER_BYTE);
--	u8 mask_to_set = BITMAP_FIRST_BYTE_MASK(pos);
- 
--	eb_bitmap_offset(eb, start, pos, &i, &offset);
--	page = eb->pages[i];
--	assert_eb_page_uptodate(eb, page);
--	kaddr = page_address(page);
-+	if (same_byte)
-+		mask &= BITMAP_LAST_BYTE_MASK(pos + len);
- 
--	while (len >= bits_to_set) {
--		kaddr[offset] |= mask_to_set;
--		len -= bits_to_set;
--		bits_to_set = BITS_PER_BYTE;
--		mask_to_set = ~0;
--		if (++offset >= PAGE_SIZE && len > 0) {
--			offset = 0;
--			page = eb->pages[++i];
--			assert_eb_page_uptodate(eb, page);
--			kaddr = page_address(page);
--		}
--	}
--	if (len) {
--		mask_to_set &= BITMAP_LAST_BYTE_MASK(size);
--		kaddr[offset] |= mask_to_set;
--	}
-+	/* Handle the first byte. */
-+	kaddr = extent_buffer_get_byte(eb, first_byte);
-+	*kaddr |= mask;
-+	if (same_byte)
-+		return;
-+
-+	/* Handle the byte aligned part. */
-+	ASSERT(first_byte + 1 <= last_byte);
-+	memset_extent_buffer(eb, 0xff, first_byte + 1,
-+			     last_byte - first_byte - 1);
-+
-+	/* Handle the last byte. */
-+	kaddr = extent_buffer_get_byte(eb, last_byte);
-+	*kaddr |= BITMAP_LAST_BYTE_MASK(pos + len);
- }
- 
- 
-@@ -4426,35 +4427,29 @@ void extent_buffer_bitmap_clear(const struct extent_buffer *eb,
- 				unsigned long start, unsigned long pos,
- 				unsigned long len)
- {
-+	int first_byte = start + BIT_BYTE(pos);
-+	int last_byte = start + BIT_BYTE(pos + len - 1);
-+	bool same_byte = (first_byte == last_byte);
-+	u8 mask = BITMAP_FIRST_BYTE_MASK(pos);
- 	u8 *kaddr;
--	struct page *page;
--	unsigned long i;
--	size_t offset;
--	const unsigned int size = pos + len;
--	int bits_to_clear = BITS_PER_BYTE - (pos % BITS_PER_BYTE);
--	u8 mask_to_clear = BITMAP_FIRST_BYTE_MASK(pos);
- 
--	eb_bitmap_offset(eb, start, pos, &i, &offset);
--	page = eb->pages[i];
--	assert_eb_page_uptodate(eb, page);
--	kaddr = page_address(page);
-+	if (same_byte)
-+		mask &= BITMAP_LAST_BYTE_MASK(pos + len);
- 
--	while (len >= bits_to_clear) {
--		kaddr[offset] &= ~mask_to_clear;
--		len -= bits_to_clear;
--		bits_to_clear = BITS_PER_BYTE;
--		mask_to_clear = ~0;
--		if (++offset >= PAGE_SIZE && len > 0) {
--			offset = 0;
--			page = eb->pages[++i];
--			assert_eb_page_uptodate(eb, page);
--			kaddr = page_address(page);
--		}
--	}
--	if (len) {
--		mask_to_clear &= BITMAP_LAST_BYTE_MASK(size);
--		kaddr[offset] &= ~mask_to_clear;
--	}
-+	/* Handle the first byte. */
-+	kaddr = extent_buffer_get_byte(eb, first_byte);
-+	*kaddr &= ~mask;
-+	if (same_byte)
-+		return;
-+
-+	/* Handle the byte aligned part. */
-+	ASSERT(first_byte + 1 <= last_byte);
-+	memset_extent_buffer(eb, 0, first_byte + 1,
-+			     last_byte - first_byte - 1);
-+
-+	/* Handle the last byte. */
-+	kaddr = extent_buffer_get_byte(eb, last_byte);
-+	*kaddr &= ~BITMAP_LAST_BYTE_MASK(pos + len);
- }
- 
- static inline bool areas_overlap(unsigned long src, unsigned long dst, unsigned long len)
 -- 
 2.41.0
 

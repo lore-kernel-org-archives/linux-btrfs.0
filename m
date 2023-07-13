@@ -2,80 +2,59 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 478DCC001B0
-	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Jul 2023 14:11:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CCE1BC001B0
+	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Jul 2023 14:17:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232799AbjGMOLE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 13 Jul 2023 10:11:04 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58474 "EHLO
+        id S231530AbjGMORL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 13 Jul 2023 10:17:11 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34460 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230061AbjGMOLD (ORCPT
+        with ESMTP id S235047AbjGMORC (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 13 Jul 2023 10:11:03 -0400
-Received: from mail-yw1-x112a.google.com (mail-yw1-x112a.google.com [IPv6:2607:f8b0:4864:20::112a])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4D9CA2711
-        for <linux-btrfs@vger.kernel.org>; Thu, 13 Jul 2023 07:11:02 -0700 (PDT)
-Received: by mail-yw1-x112a.google.com with SMTP id 00721157ae682-570877f7838so6820247b3.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 13 Jul 2023 07:11:02 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20221208.gappssmtp.com; s=20221208; t=1689257461; x=1691849461;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
-        bh=RV2ohCtDzd3MzDNoRkqKbXeR0HHVKgopXssN7i0i0Y0=;
-        b=bXC6A9yAYNxeO8FPp/rVyiIJaey8g+Qcu/t2co12G75IQTJcQ+0xHDNzvaJa4J7wgf
-         SEQFCUpR4teQPEHNCWFQK03cORSOPPtRgtOkS+YX0t+DbyoYg0j/+hR75qvfTfB4lScp
-         fGhtmIKFoUG2Akku3e0SU9Zau6clM5+wbDzEhga7CxkZxe5mekmJRPRR+4c0k3U2TYTv
-         F8/baIMvf3lqjeW2WK+lxH70jXjSwQLXBHsj1Gtc7m/uin4T9SlK1OG/kxxMjhQrhGqN
-         1F3aur9ZbgKTK/jQ/Hq9hZYBMzU2J2hn899m8WUPcmmebv6wBGlterjNSOGPupYw9b5I
-         NcNA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1689257461; x=1691849461;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=RV2ohCtDzd3MzDNoRkqKbXeR0HHVKgopXssN7i0i0Y0=;
-        b=dOsthnyRHBAaLtQmnW/ZqyazpHE8Yy6mHDsjVLNXPRUaPXLrGbkR93DXBVCEQApQJq
-         lJxRLNTomGS21Wd6sVKnRARLLCMySCu2YlVgeNdBOa28tB48z4IcUgsPYRhEyY4amJ/Q
-         sIziYOUpMjKjbVMx1MNlbBuGogyOveGwKd/h/1oVC76oNFXgn1g1LVJMww6jLuWXP2Jq
-         bSVYUHPiuqTRLr73npSO4iWSv+bZcXfU7Yx5XolPx0KWif4dtdmkQpa7LTE/KHnBNMIl
-         Iqbaf779aDbwfKmHDDbNarsfr6vby8RKIsWuSwVsEb9T4RSRkK2Je4HLwHEnGCFckNE5
-         il3A==
-X-Gm-Message-State: ABy/qLYlnGTJdNQb/EsztsIF4tBfY5IvRPwtX3Ai4vS2xgD78TEuprH7
-        70jYmrlfZCTm42KR57B9g2Od5mPOWorcc2ncGbw2Qg==
-X-Google-Smtp-Source: APBJJlFZOsjD6Mj4/Ie1MM7RNC+aWjeU8bqQxdxSD6r3aipZBULHlxvHpIwSXYFQrvxGO4Wa2LQWYQ==
-X-Received: by 2002:a0d:e8d5:0:b0:576:b999:3d75 with SMTP id r204-20020a0de8d5000000b00576b9993d75mr2027625ywe.14.1689257461269;
-        Thu, 13 Jul 2023 07:11:01 -0700 (PDT)
-Received: from localhost (cpe-76-182-20-124.nc.res.rr.com. [76.182.20.124])
-        by smtp.gmail.com with ESMTPSA id z62-20020a816541000000b0055a931afe48sm1784204ywb.8.2023.07.13.07.11.00
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 13 Jul 2023 07:11:00 -0700 (PDT)
-Date:   Thu, 13 Jul 2023 10:11:00 -0400
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     Boris Burkov <boris@bur.io>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH 05/18] btrfs: expose quota mode via sysfs
-Message-ID: <20230713141100.GE207541@perftesting>
-References: <cover.1688597211.git.boris@bur.io>
- <0628cfee8bca3506127b46ac49ee4e2603f081f0.1688597211.git.boris@bur.io>
+        Thu, 13 Jul 2023 10:17:02 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6196B2733
+        for <linux-btrfs@vger.kernel.org>; Thu, 13 Jul 2023 07:16:59 -0700 (PDT)
+Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
+        by smtp-out1.suse.de (Postfix) with ESMTP id 045422215C;
+        Thu, 13 Jul 2023 14:16:58 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1689257818; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=T8s7J9XfXATwjILd5jYXvmwh2dNWEpNL61+Hxv5Ymmg=;
+        b=sNeZ8LlvhKEYonqMBveWUdh7yHVXGLc0KdDCEhViyMnRBJ3ZC7JM3v/zGpTX6fS51jcZkZ
+        puE+D0aQW2nqCpsimi1ASv0Adiqt/KeaRmN1F60v4MkdMN1Gy4MlJruVk3awuPAPFGXLaJ
+        LK25mlBDCeGOXOBN95gOKV81O9lDRIg=
+Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
+        by relay2.suse.de (Postfix) with ESMTP id EBAC92C142;
+        Thu, 13 Jul 2023 14:16:57 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id B92F9DA85A; Thu, 13 Jul 2023 16:10:22 +0200 (CEST)
+From:   David Sterba <dsterba@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     David Sterba <dsterba@suse.com>
+Subject: [PATCH 0/2] Minor macro and type cleanups
+Date:   Thu, 13 Jul 2023 16:10:22 +0200
+Message-Id: <cover.1689257327.git.dsterba@suse.com>
+X-Mailer: git-send-email 2.40.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <0628cfee8bca3506127b46ac49ee4e2603f081f0.1688597211.git.boris@bur.io>
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Jul 05, 2023 at 04:20:42PM -0700, Boris Burkov wrote:
-> Add a new sysfs file
-> /sys/fs/btrfs/<uuid>/qgroups/mode
-> which prints out the mode qgroups is running in. The possible modes are
-> disabled, qgroup, and squota
-> 
-> Signed-off-by: Boris Burkov <boris@bur.io>
+Get rid of unsigned char, and use sizeof_filed().
 
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+David Sterba (2):
+  btrfs: replace unsigned char with u8 for type casts
+  btrfs: use helper sizeof_field in struct accessors
 
-but you should also include another patch for BTRFS_FEAT_ATTR_INCOMPAT() so it
-shows up in /sys/fs/btrfs/features as well.  Thanks,
+ fs/btrfs/accessors.h     | 23 +++++++++++------------
+ fs/btrfs/delayed-inode.c |  2 +-
+ fs/btrfs/file-item.c     |  8 +++-----
+ fs/btrfs/send.c          |  2 +-
+ 4 files changed, 16 insertions(+), 19 deletions(-)
 
-Josef
+-- 
+2.40.0
+

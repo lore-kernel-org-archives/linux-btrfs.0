@@ -2,56 +2,54 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E7783EB64DD
-	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Jul 2023 11:21:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 920DDC001B0
+	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Jul 2023 11:27:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233580AbjGMLVq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 13 Jul 2023 07:21:46 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60306 "EHLO
+        id S232550AbjGML1G (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 13 Jul 2023 07:27:06 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35242 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232547AbjGMLVo (ORCPT
+        with ESMTP id S231693AbjGML1F (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 13 Jul 2023 07:21:44 -0400
+        Thu, 13 Jul 2023 07:27:05 -0400
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A9D412D61
-        for <linux-btrfs@vger.kernel.org>; Thu, 13 Jul 2023 04:21:13 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 186DB127
+        for <linux-btrfs@vger.kernel.org>; Thu, 13 Jul 2023 04:27:05 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
         :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
         Content-Transfer-Encoding:Content-ID:Content-Description;
-        bh=1k5wya+F3VE/UaYBscos0/fCU8kjsMbNGaqIgYHqpn0=; b=IZshu3u7E3y8MqJHiONX45TEYb
-        WqyczAblJjckA9Lq4NMEAfXxlEmsxaKmma0xBr545zD6xs3it4+KgKxXBVf9Ta9VRh0E/LNtkAumG
-        MHFeKjXwRvzUjN3X+SbAofP0pHrAnKzsBUCupjPO4rbp7sN2IJ2TGlZ2TItr7twDcwhfpK8HPUrR2
-        699HREcWVpd+0veDh3Cux1LF3i5LOYijRzKTMCUXpXX8V0VUHPk/89CuxLnXwZvwROar9vOwa3VK0
-        UKm2CuW0yIk9G4D5ABuAX3jtDOHSigK087D1WPPhVZUMQO02xELWHLjJP0V3YRMJfPLxh+qLPjotj
-        ks50/09w==;
+        bh=aaezeooconEYeLeR00mZF+dVxxFVo6GvvN2cSdK1oJA=; b=uOYNvwT4Nr9XwEQW4vux+w3pPz
+        Hv1Zsre149PTTPlGmA2+USLWAyOZ6KogLpO6L0GoE6EAkEB2fIhRHY/y0ifzT0DZDcSkrchJP6vPc
+        BMrJ7Dly4TSMvzVXX+jNP6HYtf4r2ggeKNtlQNxPtjJ36JK3oTi/WX7r/Gsj8i1dP50/JGBa49g/F
+        PDkGSVaiPNRFrN5OUdiOUfDQFwp7lgL/SCT4yo2ZzEkVFEvubC1JWH1Z4XNJEtGTys0emqlwm+ZCb
+        oUVOEC8URyMCYkVWP82bmvKQPcKew6hq07ZjHeKZG1wRqA1NaDHtqEqsBCWle8U9ZsyAAYNqMMVmq
+        NQ5Xn6Dw==;
 Received: from hch by bombadil.infradead.org with local (Exim 4.96 #2 (Red Hat Linux))
-        id 1qJuNi-0034GJ-34;
-        Thu, 13 Jul 2023 11:21:10 +0000
-Date:   Thu, 13 Jul 2023 04:21:10 -0700
+        id 1qJuTQ-0034xF-31;
+        Thu, 13 Jul 2023 11:27:04 +0000
+Date:   Thu, 13 Jul 2023 04:27:04 -0700
 From:   Christoph Hellwig <hch@infradead.org>
-To:     David Sterba <dsterba@suse.com>
-Cc:     linux-btrfs@vger.kernel.org, vbabka@suse.cz, linux-mm@kvack.org
-Subject: Re: [PATCH] btrfs: disable slab merging in debug build
-Message-ID: <ZK/eJlk0jb1F4E2V@infradead.org>
-References: <20230712191712.18860-1-dsterba@suse.com>
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: Re: [PATCH] btrfs: set_page_extent_mapped after read_folio in
+ btrfs_cont_expand
+Message-ID: <ZK/fiBCblahhm3l2@infradead.org>
+References: <f6704eb17e95f3f23a49ec7e4807f4fa45192965.1689180044.git.josef@toxicpanda.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20230712191712.18860-1-dsterba@suse.com>
+In-Reply-To: <f6704eb17e95f3f23a49ec7e4807f4fa45192965.1689180044.git.josef@toxicpanda.com>
 X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Jul 12, 2023 at 09:17:12PM +0200, David Sterba wrote:
-> The slab allocator newly allows to disable merging per-slab (since
-> commit d0bf7d5759c1 ("mm/slab: introduce kmem_cache flag
-> SLAB_NO_MERGE")). Set this for all caches in debug build so we can
-> verify there are no leaks when module gets reloaded.
+This feels a bit ugly, but I can't really think of a much better way
+to do this, so:
 
-So we're having a discussion on linux-mm wether to just disbale slab
-merging by default, because it really is a pain.  Maybe wait for that
-to settle before adding per-subsystem hacks for what really is a slab
-problem?
+Reviewed-by: Christoph Hellwig <hch@lst.de>
+
+Interestingly I've just started doing sub-page testing recently and
+have not hit it yet.
 

@@ -2,122 +2,120 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 572DBC001B0
-	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Jul 2023 18:03:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1A8CCC001B0
+	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Jul 2023 18:26:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230151AbjGMSDH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 13 Jul 2023 14:03:07 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36048 "EHLO
+        id S231866AbjGMS0E (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 13 Jul 2023 14:26:04 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40612 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229593AbjGMSDG (ORCPT
+        with ESMTP id S229611AbjGMS0C (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 13 Jul 2023 14:03:06 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C66B0271F
-        for <linux-btrfs@vger.kernel.org>; Thu, 13 Jul 2023 11:03:05 -0700 (PDT)
+        Thu, 13 Jul 2023 14:26:02 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 623A12D46
+        for <linux-btrfs@vger.kernel.org>; Thu, 13 Jul 2023 11:26:00 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 808AA1F383;
-        Thu, 13 Jul 2023 18:03:04 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id E1FE12215A;
+        Thu, 13 Jul 2023 18:25:58 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1689271384;
+        t=1689272758;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=tR6wJx3ORbQpWq6+h2EleWrqJvDTMH2xX275bek1TG8=;
-        b=jkPXQ8er3qqyrklO8w9CXVbZrRaVYB2Z/x6R6L0xvZTvSTz+xwH4JwB4wKDTIUONOtfjLv
-        FlX8Ai3nUZI34o9hCoZ2mkudHP37M3mBYetkxFtOkS4Z4GIGbUKioQ12K122BShrc54arp
-        w1r7G3PolUKcLR8eo0Qr3AvSS5SUQK8=
+        bh=FuOW23/MXlwb6S+xlq0XFLamlIBdIP+YAWSHgcwJpfA=;
+        b=fZ4TglQxQ281kI90mLu4viejSABDp3Sbt4vQjVmgFhUyJ3+TU9C6unez1hIY00PYosfG+5
+        wBOh0HNFOqtVVy/aFE8zYzSp3IQCboVR5dG6a/zLcEJ25toaJK09I+Gyslj9zthwyo6OMS
+        ZogooiqkEnPWHKFakOXyANgdSFv+cRQ=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1689271384;
+        s=susede2_ed25519; t=1689272758;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=tR6wJx3ORbQpWq6+h2EleWrqJvDTMH2xX275bek1TG8=;
-        b=ae2fJKU+zSxUcQIKKHu0Xk90FaHs4GFgf2dh5rVov6PP7bGv/K8VQaTgUWSkOkGnTrniyO
-        H4PX5kKl/v1dcsDw==
+        bh=FuOW23/MXlwb6S+xlq0XFLamlIBdIP+YAWSHgcwJpfA=;
+        b=UH8GhGUoWBymSydGQaRGTeEz9AvDDvhQd3PaGy/2PWIsJkqaAOFqaK9ymyE4dhIBBz6lhR
+        7ojL+mbxQYrDYiBg==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 51F6B13489;
-        Thu, 13 Jul 2023 18:03:04 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id B525A13489;
+        Thu, 13 Jul 2023 18:25:58 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id KIsvE1g8sGQlbgAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Thu, 13 Jul 2023 18:03:04 +0000
-Date:   Thu, 13 Jul 2023 19:56:27 +0200
+        id Jit1K7ZBsGSfeAAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Thu, 13 Jul 2023 18:25:58 +0000
+Date:   Thu, 13 Jul 2023 20:19:22 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH] btrfs: set_page_extent_mapped after read_folio in
- btrfs_cont_expand
-Message-ID: <20230713175627.GX30916@twin.jikos.cz>
+To:     "hch@infradead.org" <hch@infradead.org>
+Cc:     Naohiro Aota <Naohiro.Aota@wdc.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "kernel-team@fb.com" <kernel-team@fb.com>
+Subject: Re: [PATCH v2 2/2] btrfs-progs: set the proper minimum size for a
+ zoned file system
+Message-ID: <20230713181922.GY30916@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <f6704eb17e95f3f23a49ec7e4807f4fa45192965.1689180044.git.josef@toxicpanda.com>
+References: <cover.1688658745.git.josef@toxicpanda.com>
+ <c1cfe98ea6c2610373d11d4df7c8855e6e98d3dc.1688658745.git.josef@toxicpanda.com>
+ <ZKf5IjoGAAdkrz1I@infradead.org>
+ <wbsmajimcou2ow6s4rtzeopwvd5dhku7hcdvm2u3doy6lagvev@3kga7xlvxn5t>
+ <ZKuW7IkT9wtgJXQw@infradead.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <f6704eb17e95f3f23a49ec7e4807f4fa45192965.1689180044.git.josef@toxicpanda.com>
+In-Reply-To: <ZKuW7IkT9wtgJXQw@infradead.org>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Jul 12, 2023 at 12:44:12PM -0400, Josef Bacik wrote:
-> While trying to get the subpage blocksize tests running, I hit the
-> following panic on generic/476
+On Sun, Jul 09, 2023 at 10:28:12PM -0700, hch@infradead.org wrote:
+> On Mon, Jul 10, 2023 at 12:57:52AM +0000, Naohiro Aota wrote:
+> > It depends on what we consider the "minimal" is.
 > 
-> assertion failed: PagePrivate(page) && page->private, in fs/btrfs/subpage.c:229
-> ------------[ cut here ]------------
-> kernel BUG at fs/btrfs/subpage.c:229!
-> Internal error: Oops - BUG: 00000000f2000800 [#1] SMP
-> CPU: 1 PID: 1453 Comm: fsstress Not tainted 6.4.0-rc7+ #12
-> Hardware name: QEMU KVM Virtual Machine, BIOS edk2-20230301gitf80f052277c8-26.fc38 03/01/2023
-> pstate: 61400005 (nZCv daif +PAN -UAO -TCO +DIT -SSBS BTYPE=--)
-> pc : btrfs_subpage_assert+0xbc/0xf0
-> lr : btrfs_subpage_assert+0xbc/0xf0
-> Call trace:
->  btrfs_subpage_assert+0xbc/0xf0
->  btrfs_subpage_clear_checked+0x38/0xc0
->  btrfs_page_clear_checked+0x48/0x98
->  btrfs_truncate_block+0x5d0/0x6a8
->  btrfs_cont_expand+0x5c/0x528
->  btrfs_write_check.isra.0+0xf8/0x150
->  btrfs_buffered_write+0xb4/0x760
->  btrfs_do_write_iter+0x2f8/0x4b0
->  btrfs_file_write_iter+0x1c/0x30
->  do_iter_readv_writev+0xc8/0x158
->  do_iter_write+0x9c/0x210
->  vfs_iter_write+0x24/0x40
->  iter_file_splice_write+0x224/0x390
->  direct_splice_actor+0x38/0x68
->  splice_direct_to_actor+0x12c/0x260
->  do_splice_direct+0x90/0xe8
->  generic_copy_file_range+0x50/0x90
->  vfs_copy_file_range+0x29c/0x470
->  __arm64_sys_copy_file_range+0xcc/0x498
->  invoke_syscall.constprop.0+0x80/0xd8
->  do_el0_svc+0x6c/0x168
->  el0_svc+0x50/0x1b0
->  el0t_64_sync_handler+0x114/0x120
->  el0t_64_sync+0x194/0x198
-> ---[ end trace 0000000000000000 ]---
+> I think minimal means a file system that can actually be be continuously
+> used.
 > 
-> This happens because during btrfs_cont_expand we'll get a page, set it
-> as mapped, and if it's not Uptodate we'll read it.  However between the
-> read and re-locking the page we could have called release_folio() on the
-> page, but left the page in the file mapping.  release_folio() can clear
-> the page private, and thus further down we blow up when we go to modify
-> the subpage bits.  Fix this by putting the set_page_extent_mapped()
-> after the read.  This is safe because read_folio() will call
-> set_page_extent_mapped() before it does the read, and then if we clear
-> page private but leave it on the mapping we're completely safe
-> re-setting set_page_extent_mapped().  With this patch I can now run
-> generic/476 without panicing.
+> > Even with the 5 zones (2
+> > SBs + 1 per BG type), we can start writing to the file-system.
+> > 
+> > If you need to run a relocation, one more block group for it is needed.
+> > 
+> > The fsync block group might be optional because if the fsync node
+> > allocation failed, it should fall back to the full sync. It will kill the
+> > performance but still works...
+> > 
+> > If we say it is the "minimal" that we can infinitely write and delete a
+> > file without ENOSPC, we need one (or two, depending on the metadata
+> > profile) more BGs per META/SYSTEM.
 > 
-> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> Based on my above sentence we then need:
+> 
+>  2 zones for the primary superblock
+> 
+> metadata replication factor * (
+>   2 zones for the system block group
+>   2 zone for a metadata block group
+>   2 zone for the tree log)
+> 
+> 
+> data replication factor * (
+>  1 zone for a data block group
+>  1 zone for a relocation block group
+> )
 
-Added to misc-next, thanks.
+I think the relocation should be taken separately, there can be only one
+relocation process running per block group type, ie. data/metadata and
+the replication depends on the respective factor. Otherwise yeah the
+formula for minimal number of zones needs to take into account the
+replication and all the normal usage case. In total this is still a low
+number, say always below 20 with currently supported profiles. Devices
+typically have more and for emulated ones we should scale the size or
+zone size properly.
+
+Setting up devices with small number of spare zones is also interesting,
+or with small zones that will trigger the reclaim more often.

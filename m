@@ -2,101 +2,74 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 29493C0015E
-	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Jul 2023 00:32:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CA673C001DF
+	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Jul 2023 01:44:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234105AbjGNAcp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 13 Jul 2023 20:32:45 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45906 "EHLO
+        id S233916AbjGNBoE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 13 Jul 2023 21:44:04 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36982 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232438AbjGNAco (ORCPT
+        with ESMTP id S233488AbjGNBoD (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 13 Jul 2023 20:32:44 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 36EAF2D53
-        for <linux-btrfs@vger.kernel.org>; Thu, 13 Jul 2023 17:32:43 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id DC1FB220DE;
-        Fri, 14 Jul 2023 00:32:41 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1689294761;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=XZT/1TGnjfaErJjcs7cRuPKF0LJkStD9SKCPUqLOXEY=;
-        b=2NjD0u03V8+Si4IklzHpIhseviyMOaTtVUWo/1asdRiAB44DZsCEMgw0ABNQOTCeeyEuyZ
-        tUPLYhn6gUW27zsKrUpNEg6DF5oNB0lXZHE0wF0LXDcm3qhXtRD9w5Dv5xEyHfC09BkVrk
-        lMyDuUVtZCaP+KBObMWRCosC2DM/s5Q=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1689294761;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=XZT/1TGnjfaErJjcs7cRuPKF0LJkStD9SKCPUqLOXEY=;
-        b=/7XG5gb3CDKgFREYBgeANAKlnQPPmPMX2zyZOenh0Hc1eb3Yg+lfp0Twkmq2+IvNJMbh+i
-        epkWMJ4tqLV5kADg==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id AA2BF138F8;
-        Fri, 14 Jul 2023 00:32:41 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id H5hAKKmXsGRyDwAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Fri, 14 Jul 2023 00:32:41 +0000
-Date:   Fri, 14 Jul 2023 02:26:05 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 0/6] btrfs: preparation patches for the incoming
- metadata folio conversion
-Message-ID: <20230714002605.GD20457@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1689143654.git.wqu@suse.com>
- <20230713120935.GU30916@twin.jikos.cz>
- <20230713163908.GW30916@twin.jikos.cz>
- <9251d155-2e2e-a126-579e-2765e98a4a9d@gmx.com>
- <20230713220311.GC20457@suse.cz>
- <6c7b397a-8552-e150-a6fd-95ae73390509@gmx.com>
+        Thu, 13 Jul 2023 21:44:03 -0400
+Received: from mail-oo1-f69.google.com (mail-oo1-f69.google.com [209.85.161.69])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 84FCB35A6
+        for <linux-btrfs@vger.kernel.org>; Thu, 13 Jul 2023 18:43:36 -0700 (PDT)
+Received: by mail-oo1-f69.google.com with SMTP id 006d021491bc7-566ed1c021bso1752601eaf.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 13 Jul 2023 18:43:36 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1689299004; x=1691891004;
+        h=to:from:subject:message-id:in-reply-to:date:mime-version
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=vZnknvALMXVtBPX6Ukkpz2YO8donkHl1pxBhmFLF1B8=;
+        b=SU2dWR4voU2jnkZX+2TgByjXFKa1oTYAkHjuOnei1b34S7ndxB7lflYikg1i6smN0L
+         zqL0Q7zTI/hPKL6nLH0cPLSDneTSNA+rh6U2bT6uu31M+YjuAaPps55surjhpmxLX+oy
+         hdO2bj+a+84IA1pOOoOSsBA5ua9Wr5HY+OFd+JyHqfMOUmLq7y0YvtpELdpi9nJEft1f
+         kq/4N5BvuOzrtfr6GT1xSwpDpTRcQ0YsM5FGPiNi/wd5M0vRrkFnqK3WHZbrpnm7C5I8
+         gKzcOWRule2Hpn5Z4tTylO9Q3mYxCy3HtASLGlyAYG2wmv9IRACcxcMRymOwrXCZC67d
+         G6HA==
+X-Gm-Message-State: ABy/qLZv1/qML4KHqwpA/Hpxf2Fp48AybJhqcIQ4POz6n8eNZ6WuUv7r
+        E4F64Lj30f938zFyqin8dRXx09LuHJrFNoPkuysHGqAdmncH
+X-Google-Smtp-Source: APBJJlGd0eELYwyfN1ir0FVfQ1r8XO7T2Oqnv+pjSOFNSE8HMIz7hICE3gORb5V98Qrx8R+qp9PXum5hz1HF/XHIWmUmq950RZr6
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <6c7b397a-8552-e150-a6fd-95ae73390509@gmx.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-Received: by 2002:a05:6870:a881:b0:1b3:99b4:3e46 with SMTP id
+ eb1-20020a056870a88100b001b399b43e46mr3253987oab.8.1689299004333; Thu, 13 Jul
+ 2023 18:43:24 -0700 (PDT)
+Date:   Thu, 13 Jul 2023 18:43:24 -0700
+In-Reply-To: <0000000000003735c9060061384a@google.com>
+X-Google-Appengine-App-Id: s~syzkaller
+X-Google-Appengine-App-Id-Alias: syzkaller
+Message-ID: <00000000000012a70f0600689326@google.com>
+Subject: Re: [syzbot] [btrfs?] general protection fault in btrfs_finish_ordered_extent
+From:   syzbot <syzbot+5b82f0e951f8c2bcdb8f@syzkaller.appspotmail.com>
+To:     clm@fb.com, dsterba@suse.com, hch@lst.de,
+        johannes.thumshirn@wdc.com, josef@toxicpanda.com,
+        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Jul 14, 2023 at 08:09:16AM +0800, Qu Wenruo wrote:
-> 
-> 
-> On 2023/7/14 06:03, David Sterba wrote:
-> > On Fri, Jul 14, 2023 at 05:30:33AM +0800, Qu Wenruo wrote:
-> >> On 2023/7/14 00:39, David Sterba wrote:
-> >>> 		ref#0: tree block backref root 7
-> >>> 	item 14 key (30572544 169 0) itemoff 15815 itemsize 33
-> >>> 		extent refs 1 gen 5 flags 2
-> >>> 		ref#0: tree block backref root 7
-> >>> 	item 15 key (30588928 169 0) itemoff 15782 itemsize 33
-> >>> 		extent refs 1 gen 5 flags 2
-> >>> 		ref#0: tree block backref root 7
-> >>
-> >> This looks like an error in memmove_extent_buffer() which I
-> >> intentionally didn't touch.
-> >>
-> >> Anyway I'll try rebase and more tests.
-> >>
-> >> Can you put your modified commits in an external branch so I can inherit
-> >> all your modifications?
-> >
-> > First I saw the crashes with the modified patches but the report is from
-> > what you sent to the mailinglist so I can eliminate error on my side.
-> 
-> Still a branch would help a lot, as you won't want to re-do the usual
-> modification (like grammar, comments etc).
+syzbot has bisected this issue to:
 
-Branch ext/qu-eb-page-clanups-updated-broken at github.
+commit b41b6f6937dc89e072b334e8d814487cb4692770
+Author: Christoph Hellwig <hch@lst.de>
+Date:   Wed May 31 07:54:09 2023 +0000
+
+    btrfs: use btrfs_finish_ordered_extent to complete direct writes
+
+bisection log:  https://syzkaller.appspot.com/x/bisect.txt?x=14761374a80000
+start commit:   1c7873e33645 mm: lock newly mapped VMA with corrected orde..
+git tree:       upstream
+final oops:     https://syzkaller.appspot.com/x/report.txt?x=16761374a80000
+console output: https://syzkaller.appspot.com/x/log.txt?x=12761374a80000
+kernel config:  https://syzkaller.appspot.com/x/.config?x=9831e2c2660aae77
+dashboard link: https://syzkaller.appspot.com/bug?extid=5b82f0e951f8c2bcdb8f
+syz repro:      https://syzkaller.appspot.com/x/repro.syz?x=109dcf08a80000
+C reproducer:   https://syzkaller.appspot.com/x/repro.c?x=13dadfb4a80000
+
+Reported-by: syzbot+5b82f0e951f8c2bcdb8f@syzkaller.appspotmail.com
+Fixes: b41b6f6937dc ("btrfs: use btrfs_finish_ordered_extent to complete direct writes")
+
+For information about bisection process see: https://goo.gl/tpsmEJ#bisection

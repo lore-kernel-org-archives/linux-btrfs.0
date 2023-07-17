@@ -2,63 +2,100 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 92878C0015E
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Jul 2023 15:33:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9F2BDEB64DC
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Jul 2023 17:55:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233445AbjGLPc7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 12 Jul 2023 11:32:59 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48898 "EHLO
+        id S230057AbjGQRzG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 17 Jul 2023 13:55:06 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59512 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232884AbjGLPc6 (ORCPT
+        with ESMTP id S229872AbjGQRzF (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Jul 2023 11:32:58 -0400
-Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 70720C2;
-        Wed, 12 Jul 2023 08:32:56 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
-        Content-Type:In-Reply-To:From:References:To:Subject:MIME-Version:Date:
-        Message-ID:Sender:Reply-To:Cc:Content-ID:Content-Description;
-        bh=689SEK0ciFY8KgDlRHFBreHHAC2z+cvH0wQ011Q2aMI=; b=df/VKiT91ZqRa0x7ofoJaXGlph
-        PM7CRP4KkwoXZKNJlvYdkig+/LLrQ9LVGVf40H6Qaywx20JwTqHlizlUxF15FF/hdi7QMcfJ88rOM
-        Tk9o3z44pMTcermnTCrLWAF39fzqRsD0ms+1lMmZtzToJzTD0SUcPG6eXBFgIigvbDeEBrSIYXiW/
-        GnykGmmqxl8DWPpBQb6tfrtLGgdO7lnddHDuy7SXW0bC9E1PhpCLadB/V3QSWJPX+bNFvOifeRdsy
-        3Vg5gSGOgGr74Cyg+9z9dxsezgnvq5bViTggfgF6K6g7cj7jT1ssxpJXUEt4gBcr4IJbEN74vqTce
-        EZsIkLBg==;
-Received: from [2601:1c2:980:9ec0::2764]
-        by bombadil.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
-        id 1qJboy-000MRl-20;
-        Wed, 12 Jul 2023 15:32:04 +0000
-Message-ID: <03e153ce-328b-f279-2a40-4074bea2bc8f@infradead.org>
-Date:   Wed, 12 Jul 2023 08:31:55 -0700
+        Mon, 17 Jul 2023 13:55:05 -0400
+Received: from mail-qk1-x735.google.com (mail-qk1-x735.google.com [IPv6:2607:f8b0:4864:20::735])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D26771B6
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Jul 2023 10:55:04 -0700 (PDT)
+Received: by mail-qk1-x735.google.com with SMTP id af79cd13be357-765942d497fso449734685a.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Jul 2023 10:55:04 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20221208.gappssmtp.com; s=20221208; t=1689616504; x=1692208504;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
+        bh=9vOqeomKsAoqbWu4Lg1l0wQOQ6rbp2AkCLw+19AnRnY=;
+        b=oGUO2k0HdustWWFG4/5oBoO7XibwQW6vqWzRMFhTZXLpC4Mk3rtpN15YYAwwiqukx7
+         +bCOEk9uYeqxG0b/a0ZRpSRIqga8OW2dxGxRqbh/TP8WzWZCRRULZxj9Gg1DJDSpAWnc
+         X5S0s7F67rKEehM8bRsHLW5oI1zywsqSE1mX+KIMCiZJeDVopIzALp0ZYyRyCaKtQw/Q
+         LR20F2VUdy4KBn9HqJhTliiONXk7KNMQmsXZp0ePOBIzo5azsnQ6ZUYxL6rJceaz1VXw
+         QhdWarwAREl7ioqo56eFpVLPdwhFNdTNkqIvqGOCLj0mDF6VGF9E0eEcYr9+/Ck4JAPR
+         XnJw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1689616504; x=1692208504;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=9vOqeomKsAoqbWu4Lg1l0wQOQ6rbp2AkCLw+19AnRnY=;
+        b=TP2HATkKjgo/ZfwaDyOR1Iii8rNnbQb3Bnja5WESl1/k/DHXQF5cP0TagdkFHTRySN
+         0SyxaQMnzwdrZN7P1wa4Dl7TLq2R+9eQxf4G69aBAAFAnXEw1UVrtJUdhZitXjP0/Dah
+         OA467Lt/VhQJSoaCpMXMAiXc+/pxOr8yj5WrHZx1AtDV/77vSWbhy2JWVSFVRtoX/38W
+         eD3ucj3LcSlft4wu1SlWaGdwq772563rV54yj/A3wqhD4vuqi6EZXAZVoFaTHNDRrdiD
+         HYEGToSMixm43iZbq4XgsgrpT8nlwxb1kMI1qPRJz8BUjWjFTvtthg77hSgrnc0fjuSt
+         fQTQ==
+X-Gm-Message-State: ABy/qLZfyFm+DG7xRVQdKpDvIzeQqTBmiMk34CZ9D5njjK5vIgD0hbFK
+        p5pswAnM8NBev+4oO8+ruxC7Cw==
+X-Google-Smtp-Source: APBJJlFEMZrJu77OaOsHd+yjw0xsIC+NCqePa7t07IsbDvmVZ3erExTBNwo89dPJUnqj4tVaDT7Frw==
+X-Received: by 2002:a05:620a:44c9:b0:767:fe52:d13c with SMTP id y9-20020a05620a44c900b00767fe52d13cmr14977217qkp.22.1689616503786;
+        Mon, 17 Jul 2023 10:55:03 -0700 (PDT)
+Received: from localhost (cpe-76-182-20-124.nc.res.rr.com. [76.182.20.124])
+        by smtp.gmail.com with ESMTPSA id y5-20020a37e305000000b00766fce8f840sm6231752qki.120.2023.07.17.10.55.02
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 17 Jul 2023 10:55:02 -0700 (PDT)
+Date:   Mon, 17 Jul 2023 13:55:01 -0400
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
+Cc:     "Theodore Y. Ts'o" <tytso@mit.edu>,
+        Jaegeuk Kim <jaegeuk@kernel.org>,
+        Eric Biggers <ebiggers@kernel.org>, Chris Mason <clm@fb.com>,
+        David Sterba <dsterba@suse.com>, linux-fscrypt@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, kernel-team@meta.com
+Subject: Re: [PATCH v2 12/17] btrfs: turn on inlinecrypt mount option for
+ encrypt
+Message-ID: <20230717175501.GM691303@perftesting>
+References: <cover.1689564024.git.sweettea-kernel@dorminy.me>
+ <303b721e0c738ebb8ee3ada3d4b867a07d6d5bfb.1689564024.git.sweettea-kernel@dorminy.me>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.12.0
-Subject: Re: [PATCH 01/79] fs: add ctime accessors infrastructure
-Content-Language: en-US
-To:     Jeff Layton <jlayton@kernel.org>,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-        Linux FS-devel Mailing List <linux-fsdevel@vger.kernel.org>,
-        linux-um <linux-um@lists.infradead.org>
-References: <20230621144507.55591-1-jlayton@kernel.org>
- <20230621144507.55591-2-jlayton@kernel.org>
-From:   Randy Dunlap <rdunlap@infradead.org>
-In-Reply-To: <20230621144507.55591-2-jlayton@kernel.org>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <303b721e0c738ebb8ee3ada3d4b867a07d6d5bfb.1689564024.git.sweettea-kernel@dorminy.me>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi Jeff,
+On Sun, Jul 16, 2023 at 11:52:43PM -0400, Sweet Tea Dorminy wrote:
+> fscrypt's extent encryption requires the use of inline encryption or the
+> software fallback that the block layer provides; it is rather
+> complicated to allow software encryption with extent encryption due to
+> the timing of memory allocations. Thus, if btrfs has ever had a
+> encrypted file, or when encryption is enabled on a directory, update the
+> mount flags to include inlinecrypt.
+> 
+> Signed-off-by: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
+> ---
+>  fs/btrfs/ioctl.c |  4 ++++
+>  fs/btrfs/super.c | 10 ++++++++++
+>  2 files changed, 14 insertions(+)
+> 
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 91ad59519900..11866a88e33f 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -4574,6 +4574,10 @@ long btrfs_ioctl(struct file *file, unsigned int
+>  		 * state persists.
+>  		 */
+>  		btrfs_set_fs_incompat(fs_info, ENCRYPT);
+> +		if (!(inode->i_sb->s_flags & SB_INLINECRYPT)) {
+> +			inode->i_sb->s_flags |= SB_INLINECRYPT;
+> +			mb();
 
-On arch/um/, (subarch i386 or x86_64), hostfs build fails with:
+Extraneous mb().  Thanks,
 
-../fs/hostfs/hostfs_kern.c:520:36: error: incompatible type for arg
-ument 2 of 'inode_set_ctime_to_ts'
-../include/linux/fs.h:1499:73: note: expected 'struct timespec64' b
-ut argument is of type 'const struct hostfs_timespec *'
-
-
--- 
-~Randy
+Josef

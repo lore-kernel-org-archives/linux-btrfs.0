@@ -2,47 +2,86 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E884AEB64DA
-	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Jul 2023 15:25:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 68EACC001E0
+	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Jul 2023 17:11:32 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231714AbjGSPZx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 19 Jul 2023 11:25:53 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35306 "EHLO
+        id S231147AbjGSRLb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 19 Jul 2023 13:11:31 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47508 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231697AbjGSPZw (ORCPT
+        with ESMTP id S230405AbjGSRL3 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Jul 2023 11:25:52 -0400
-Received: from verein.lst.de (verein.lst.de [213.95.11.211])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 80F931FD3;
-        Wed, 19 Jul 2023 08:25:33 -0700 (PDT)
-Received: by verein.lst.de (Postfix, from userid 2407)
-        id 805CE67373; Wed, 19 Jul 2023 17:25:29 +0200 (CEST)
-Date:   Wed, 19 Jul 2023 17:25:29 +0200
-From:   Christoph Hellwig <hch@lst.de>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     Christoph Hellwig <hch@lst.de>, Chris Mason <clm@fb.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org
-Subject: Re: small writeback fixes
-Message-ID: <20230719152529.GA434@lst.de>
-References: <20230713130431.4798-1-hch@lst.de> <20230718171744.GA843162@perftesting> <20230719053901.GA3241@lst.de> <20230719115010.GA15617@lst.de> <20230719143032.GA856129@perftesting>
+        Wed, 19 Jul 2023 13:11:29 -0400
+Received: from mail-oi1-f207.google.com (mail-oi1-f207.google.com [209.85.167.207])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 32A861701
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Jul 2023 10:11:28 -0700 (PDT)
+Received: by mail-oi1-f207.google.com with SMTP id 5614622812f47-3a3df1e1f38so12056391b6e.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Jul 2023 10:11:28 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1689786687; x=1692378687;
+        h=cc:to:from:subject:message-id:in-reply-to:date:mime-version
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=LiK3UAz0+c77ryW/gb9cMTyS6vAEJ/XrFX6N9k9mOJQ=;
+        b=GI1Tlu82sVQqwTngKNxq945yVUyMXtaBWW3uoYGHq8dFfqmeL6C+ON/WyUskyNT24C
+         20T10l9bLqL4eRRu6IFtI7WJAFyXWrkvqanFbyr7d7uCA1N6wTn9pkHxIfP/rHOww4+M
+         AFexdC0C7xD/7U22ixa51boai/IU7DfOgrz/VZJ0BljJxnhfPDqZpwBaC2VuqLVk/YcJ
+         UNjif0PAUcLzyBpzAqoFrVz3poRVtBQRRruBoPyhj+J2OQzAXZSbNAg5yNxgT2mg36TK
+         +iJOsy6syIZsh03KiCtcmazNzL3kHwAoNkZQCKRZ9zX89Qw7iW8T1VgTWlwheRNLNp0a
+         /3lA==
+X-Gm-Message-State: ABy/qLZr7WzpdBJ7sVDW9nGUvJsjKDhffJ7MoHwQgBD1mxA1TE7Ev8s8
+        mf5ShoypHyfzjfbfgl1u+evgSDbVHq5FMDkP73ce8/dP4RSJ
+X-Google-Smtp-Source: APBJJlGqZ3iWxxXhT33LNAjfh+QREvkhQDEruriIX1JMirS2inBiRbWmSWpri4JcCeIQNkkHGF5KNA+oUFrsArjTbOfZC6ur6PVu
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20230719143032.GA856129@perftesting>
-User-Agent: Mutt/1.5.17 (2007-11-01)
+X-Received: by 2002:a05:6808:15aa:b0:3a4:48e1:3116 with SMTP id
+ t42-20020a05680815aa00b003a448e13116mr12661379oiw.0.1689786687593; Wed, 19
+ Jul 2023 10:11:27 -0700 (PDT)
+Date:   Wed, 19 Jul 2023 10:11:27 -0700
+In-Reply-To: <20230719170446.GR20457@twin.jikos.cz>
+X-Google-Appengine-App-Id: s~syzkaller
+X-Google-Appengine-App-Id-Alias: syzkaller
+Message-ID: <00000000000042a3ac0600da1f69@google.com>
+Subject: Re: [syzbot] [btrfs?] [netfilter?] BUG: MAX_LOCKDEP_CHAIN_HLOCKS too
+ low! (2)
+From:   syzbot <syzbot+9bbbacfbf1e04d5221f7@syzkaller.appspotmail.com>
+To:     dsterba@suse.cz
+Cc:     bakmitopiacibubur@boga.indosterling.com, clm@fb.com,
+        davem@davemloft.net, dsahern@kernel.org, dsterba@suse.com,
+        dsterba@suse.cz, fw@strlen.de, gregkh@linuxfoundation.org,
+        jirislaby@kernel.org, josef@toxicpanda.com, kadlec@netfilter.org,
+        kuba@kernel.org, linux-btrfs@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-serial@vger.kernel.org, linux@armlinux.org.uk,
+        netdev@vger.kernel.org, netfilter-devel@vger.kernel.org,
+        pablo@netfilter.org, syzkaller-bugs@googlegroups.com,
+        yoshfuji@linux-ipv6.org
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Jul 19, 2023 at 10:30:32AM -0400, Josef Bacik wrote:
-> I backed your patches out and re-ran and I hit hangs with generic/475 still, so
-> I think you're clear.  There's something awkward going on here, the below hang
-> just looks like we're waiting for IO.  The caching thread is blocking the
-> transaction commit because it's trying to read some old blocks, and it's been
-> waiting for them to come back for 2 minutes.  That's holding everybody else up.
-> I'll dig into all of this, misc-next is definitely fucked somehow, your stuff
-> may just be a victim.  Thanks,
+> On Wed, Jul 19, 2023 at 02:32:51AM -0700, syzbot wrote:
+>> syzbot has found a reproducer for the following issue on:
+>> 
+>> HEAD commit:    e40939bbfc68 Merge branch 'for-next/core' into for-kernelci
+>> git tree:       git://git.kernel.org/pub/scm/linux/kernel/git/arm64/linux.git for-kernelci
+>> console output: https://syzkaller.appspot.com/x/log.txt?x=15d92aaaa80000
+>> kernel config:  https://syzkaller.appspot.com/x/.config?x=c4a2640e4213bc2f
+>> dashboard link: https://syzkaller.appspot.com/bug?extid=9bbbacfbf1e04d5221f7
+>> compiler:       Debian clang version 15.0.6, GNU ld (GNU Binutils for Debian) 2.40
+>> userspace arch: arm64
+>> syz repro:      https://syzkaller.appspot.com/x/repro.syz?x=149b2d66a80000
+>> C reproducer:   https://syzkaller.appspot.com/x/repro.c?x=1214348aa80000
+>> 
+>> Downloadable assets:
+>> disk image: https://storage.googleapis.com/syzbot-assets/9d87aa312c0e/disk-e40939bb.raw.xz
+>> vmlinux: https://storage.googleapis.com/syzbot-assets/22a11d32a8b2/vmlinux-e40939bb.xz
+>> kernel image: https://storage.googleapis.com/syzbot-assets/0978b5788b52/Image-e40939bb.gz.xz
+>
+> #syz unset btrfs
 
-Yes.  I think this has shown up in misc-next as so far I've not
-been able to reproduce anything on 6.5-rc2.
+The following labels did not exist: btrfs
+
+>
+> The MAX_LOCKDEP_CHAIN_HLOCKS bugs/warnings can be worked around by
+> configuration, otherwise are considered invalid. This report has also
+> 'netfilter' label so I'm not closing it right away.

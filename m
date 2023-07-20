@@ -2,71 +2,71 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D56CFEB64DD
-	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Jul 2023 22:55:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A0AA3EB64DA
+	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Jul 2023 22:55:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229785AbjGTWzD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 20 Jul 2023 18:55:03 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60724 "EHLO
+        id S229864AbjGTWzF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 20 Jul 2023 18:55:05 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60756 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229618AbjGTWzB (ORCPT
+        with ESMTP id S229847AbjGTWzD (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 20 Jul 2023 18:55:01 -0400
+        Thu, 20 Jul 2023 18:55:03 -0400
 Received: from out2-smtp.messagingengine.com (out2-smtp.messagingengine.com [66.111.4.26])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C1EDA270B
-        for <linux-btrfs@vger.kernel.org>; Thu, 20 Jul 2023 15:54:49 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C5DA12D4B
+        for <linux-btrfs@vger.kernel.org>; Thu, 20 Jul 2023 15:54:51 -0700 (PDT)
 Received: from compute4.internal (compute4.nyi.internal [10.202.2.44])
-        by mailout.nyi.internal (Postfix) with ESMTP id BFEB25C00F0;
-        Thu, 20 Jul 2023 18:54:37 -0400 (EDT)
+        by mailout.nyi.internal (Postfix) with ESMTP id CBAD05C01BA;
+        Thu, 20 Jul 2023 18:54:42 -0400 (EDT)
 Received: from mailfrontend2 ([10.202.2.163])
-  by compute4.internal (MEProxy); Thu, 20 Jul 2023 18:54:37 -0400
+  by compute4.internal (MEProxy); Thu, 20 Jul 2023 18:54:42 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc
         :content-transfer-encoding:content-type:date:date:from:from
         :in-reply-to:in-reply-to:message-id:mime-version:references
-        :reply-to:sender:subject:subject:to:to; s=fm1; t=1689893677; x=
-        1689980077; bh=M10GRgW8Oo/CA1itNOSle6w3dntzCKyqXOPnbe/r0Ao=; b=A
-        pZ/EMcK3gSWX76x5iSFC3NY1AVv/5VClnW881gwAXCas71MreAZhhweAKXcv17NR
-        2YLgDYuUtc2QXhvEFWzNZ5kft0RdqywvAfkmqAjZ2FGIHbzh0YFbd0U+zFF/AwGz
-        9XcYXFLow8ed40tVVYoATZ2yO6DMkA1gPYoIUoUlV8WSiW5YHr5bwbdVEsAw9Aod
-        S2Z0CFiijpmfzJW52xNRlFwl5ipqVVa6fJ/SbqvBygj+HMqMYieqiQ1RCQh2V0Qh
-        a/QglJ+0loasgMndjgQFrEpqrzBy94Ym8I7Bg3VY5/vzmEq1la0YMaDyQsC7lHvM
-        gHkuk1G9Cyr172Z0Tdr3g==
+        :reply-to:sender:subject:subject:to:to; s=fm1; t=1689893682; x=
+        1689980082; bh=c/1h5x7nXgXAcZs5rb1gjOxbOML5UPVOtoHdeWbqhQg=; b=P
+        RG6wLednCqr59xU5TB0v6tPleR4W6C5lgsuofyl/U0sJNusr2NwoNbwkAhsqDiP4
+        jondaNMSxUV05VL/oOfnTiLTt9SaNAFQR2szsqfFHZAyBf6rRaLu0ZDHPzSQbpWQ
+        yrVAX6UhnVsW4vlAQC2KjeBh5KzijZ8NCYGU8JSpeTMxF4OopK2d7i1PuhFotzhc
+        a53Fk4f8C8t5pecVdLx5Z1cs3M20M9hb9DNnjUgdEykUc+5q7ZRZxtq4kRyjGrVY
+        LNlZiSUxBTfdMPkFudcRmMOzyvsbWS1NFV/zsVbZk49pqmmsAfXWe1SIZaU7aFpY
+        FAeTKIjKgA/K6F5i+38Og==
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
         messagingengine.com; h=cc:content-transfer-encoding:content-type
         :date:date:feedback-id:feedback-id:from:from:in-reply-to
         :in-reply-to:message-id:mime-version:references:reply-to:sender
         :subject:subject:to:to:x-me-proxy:x-me-proxy:x-me-sender
-        :x-me-sender:x-sasl-enc; s=fm3; t=1689893677; x=1689980077; bh=M
-        10GRgW8Oo/CA1itNOSle6w3dntzCKyqXOPnbe/r0Ao=; b=Xc6uY8nnbHXxBc0jw
-        fPdKHk9LEe7SATjyPZ/itx38CZKKCimG+m/jq1vcfGx+1YmIZc5b+XadH5PqUQOP
-        85trWD30xIpozawgSGBTGMahoDi/f0wJ8h0CS7hGKpnpvDBaBYybSWRthh7fA2cv
-        p1flkSqLM8CzAnb3UbAAhEgWUBQpZOB1XjVq2E0EREpAZGJxR9XOa29QmMqipViY
-        tg7CuV8FGWhi3MgCMW28mubG9PIpmldcaS0exCQD0a0AEvKV+OQW0u2lboF/NcLu
-        n1SXwwEdEoS+8lqMO8WyikZAJe04H44YhMxXcL5IZFxovIkkh5inmuATPNxJTqRg
-        W505w==
-X-ME-Sender: <xms:Lbu5ZKYklrObKwi3HWAF3P-MRSYF3lnHjAx8o0Us5bEtg2H0Kwjtog>
-    <xme:Lbu5ZNba2GCWRmEVViLdOy1XuTQGksggEv8V3ffdaqTX1AXFWqQNO41TgDNEMxa2U
-    bX44BUaAJk7LqvldGA>
-X-ME-Received: <xmr:Lbu5ZE_JmVn-32RNkQswXKS1390phBcN4Z5R59kzOHxasOb53r7KDzsT7UCU5Yuyj7ZtdxCeEmVp81Q8OxfCKuEyIa0>
+        :x-me-sender:x-sasl-enc; s=fm3; t=1689893682; x=1689980082; bh=c
+        /1h5x7nXgXAcZs5rb1gjOxbOML5UPVOtoHdeWbqhQg=; b=WhbS9mmSDZjyY7W8e
+        sT2qhIN3Sgc88Ue4BoTofUOhxhkhOT5o7TE0DfpZLEgT6dfmu51a9/uxIsfjGM4Z
+        61fcmoNCOdhcyg3Md2ZkTHg5iqeUMnbVH0w5z/oHpLdER5wAtlOdcdGKjmmBLzOf
+        U9Q7CqfZ5WG4UfD57K4sB08oShZO8XR/iFdDbZOgG2WDld3LYOdb2p9nGpUYmUCF
+        +0wxVE8O7672oi7h95/xBSOiyqDD9QbFu8ARb/h3cepDH6u7vWXbYjWzsjVlnH3p
+        qHjnamvsH6WVyKG0xSxqlGEGXNg8cfWI3uvDOnPXTqeS8mOfpfcLejPWz7/0/TFR
+        4SbmA==
+X-ME-Sender: <xms:Mru5ZCEk_eP6cuHosRrzPfFZE4jdyxnh70uSzQYG_Qm6dw0oPl0CiA>
+    <xme:Mru5ZDUkoLX00rudSDEf8C7-1QQBrQ59DvDRXw8TjQimh3NrXIgKpcgxN8SSXnVJx
+    bBv1EKbm4rYR5zgCbQ>
+X-ME-Received: <xmr:Mru5ZMJg84OCa8pHxFzRIfvoO63ek-jRLbn6pKSCM73-Z13G9Q2miZSgRtYK-Ybss5VSi-4ayza2qAzGY9ityEKl9O8>
 X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedviedrhedugdduhecutefuodetggdotefrodftvf
     curfhrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfghnecu
     uegrihhlohhuthemuceftddtnecunecujfgurhephffvufffkffojghfggfgsedtkeertd
     ertddtnecuhfhrohhmpeeuohhrihhsuceuuhhrkhhovhcuoegsohhrihhssegsuhhrrdhi
     oheqnecuggftrfgrthhtvghrnhepieeuffeuvdeiueejhfehiefgkeevudejjeejffevvd
-    ehtddufeeihfekgeeuheelnecuvehluhhsthgvrhfuihiivgepvdenucfrrghrrghmpehm
+    ehtddufeeihfekgeeuheelnecuvehluhhsthgvrhfuihiivgepgeenucfrrghrrghmpehm
     rghilhhfrhhomhepsghorhhishessghurhdrihho
-X-ME-Proxy: <xmx:Lbu5ZMocD600MVmSikZ9lMpkdgQzCsJXhSTOibTFE26bd_aXY1Ituw>
-    <xmx:Lbu5ZFqCyDXET0jCrsFfqeOCWhNWpT1rIB8LTBsSy7X1XZuvUWXB8g>
-    <xmx:Lbu5ZKT4WsPGKRkd0TTifemG4_V4cXl3GKrr928zUWbx7Xei5SEU1A>
-    <xmx:Lbu5ZEQhk2KRVPUWmK7i6VtaC-SK8CVGoBsT4xev8GktA4fXcAjVAg>
+X-ME-Proxy: <xmx:Mru5ZMHqSYtIuqNXdYctPZvcc9EkS15ah7ounQWnPo4Ko4qD6FtZNw>
+    <xmx:Mru5ZIUekrtOO5HMpVZGmmCgEhRT3ugvhTUbbJm8zDavfvbN-R14hA>
+    <xmx:Mru5ZPMYJR76LTmGAhK0ngYGNTU7shQABcrXThtdqwCKAcfKaugmLA>
+    <xmx:Mru5ZBcUz80dkB8FaIat8nik_zIvO058RMeLzmyS3uTBiRyZxd_MEw>
 Feedback-ID: i083147f8:Fastmail
 Received: by mail.messagingengine.com (Postfix) with ESMTPA; Thu,
- 20 Jul 2023 18:54:37 -0400 (EDT)
+ 20 Jul 2023 18:54:42 -0400 (EDT)
 From:   Boris Burkov <boris@bur.io>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v2 07/20] btrfs: flush reservations during quota disable
-Date:   Thu, 20 Jul 2023 15:52:35 -0700
-Message-ID: <dcd72a95aa5054adfa33643de70d05e49fdf5290.1689893021.git.boris@bur.io>
+Subject: [PATCH v2 10/20] btrfs: rename tree_ref and data_ref owning_root
+Date:   Thu, 20 Jul 2023 15:52:38 -0700
+Message-ID: <e9258cdb0b495710d7866e2e0d39b738802b5c41.1689893021.git.boris@bur.io>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <cover.1689893021.git.boris@bur.io>
 References: <cover.1689893021.git.boris@bur.io>
@@ -76,125 +76,168 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The following sequence:
-enable simple quotas
-do some writes
-    reserve space
-    create ordered_extent
-        release rsv (store rsv_bytes in OE, mark QGROUP_RESERVED bits)
-disable quotas
-enable simple quotas
-    set qgroup rsv to 0 on all subvols
-ordered_extent finishes
-    create delayed ref with rsv_bytes from before
-run delayed ref
-    record_simple_quota_delta
-        free rsv_bytes (0 -> -rsv_delta)
+commit 113479d5b8eb ("btrfs: rename root fields in delayed refs structs")
+changed these from ref_root to owning_root. However, there are many
+circumstances where that name is not really accurate and the root on the
+ref struct _is_ the referring root. In general, these are not the owning
+root, though it does happen in some ref merging cases involving
+overwrites during snapshots and similar.
 
-results in us reliably underflowing the subvolume's qgroup rsv counter,
-because disabling/re-enabling quotas toggles reservation counters down
-to 0, but does not remove other file system state which represents
-successful acquisition of qgroup rsv space. Specifically metadata rsv
-counters on the root object and rsv_bytes on ordered_extent objects that
-have released their reservation as well as the corresponding
-QGROUP_RESERVED extent bits.
-
-Normal qgroups gets away with this, I believe because it forces more
-work to happen on transaction commit, but I am not certain it is totally
-safe from the ordered_extent/leaked extent bit variant. Simple quotas
-hits this reliably.
-
-The intent of the fix is to make disable take the time to clear that
-external to qgroups state as well: after flipping off the quota bit on
-fs_info, flush delalloc and ordered extents, clearing the extent bits
-along the way. This makes it so there are no ordered extents or meta
-prealloc hanging around from the first enablement period during the second.
+Simple quotas cares quite a bit about tracking the original owner of an
+extent through delayed refs, so rename these back to free up the name
+for the real owning root (which will live on the generic btrfs_ref and
+the head ref)
 
 Signed-off-by: Boris Burkov <boris@bur.io>
 Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/qgroup.c | 47 ++++++++++++++++++++++++++++++++++++++++++++---
- 1 file changed, 44 insertions(+), 3 deletions(-)
+ fs/btrfs/delayed-ref.c | 10 +++++-----
+ fs/btrfs/delayed-ref.h | 12 ++++++------
+ fs/btrfs/extent-tree.c | 10 +++++-----
+ fs/btrfs/ref-verify.c  |  4 ++--
+ 4 files changed, 18 insertions(+), 18 deletions(-)
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 558f66994667..18f521716e8d 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -1248,6 +1248,40 @@ int btrfs_quota_enable(struct btrfs_fs_info *fs_info,
- 	return ret;
- }
+diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+index a9b938d3a531..f0bae1e1c455 100644
+--- a/fs/btrfs/delayed-ref.c
++++ b/fs/btrfs/delayed-ref.c
+@@ -885,7 +885,7 @@ int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
+ 	u64 parent = generic_ref->parent;
+ 	u8 ref_type;
  
-+/*
-+ * It is possible to have outstanding ordered extents
-+ * which reserved bytes before we disabled. We need to fully flush
-+ * delalloc, ordered extents, and a commit to ensure that
-+ * we don't leak such reservations, only to have them come back
-+ * if we re-enable.
-+ *
-+ * i.e.:
-+ * enable simple quotas
-+ * reserve space
-+ * release it, store rsv_bytes in OE
-+ * disable quotas
-+ * enable simple quotas (qgroup rsv are all 0)
-+ * OE finishes
-+ * run delayed refs
-+ * free rsv_bytes, resulting in miscounting or even underflow
-+ */
-+static int flush_reservations(struct btrfs_fs_info *fs_info)
-+{
-+	struct btrfs_trans_handle *trans;
-+	int ret;
-+
-+	ret = btrfs_start_delalloc_roots(fs_info, LONG_MAX, false);
-+	if (ret)
-+		return ret;
-+	btrfs_wait_ordered_roots(fs_info, U64_MAX, 0, (u64)-1);
-+	trans = btrfs_join_transaction(fs_info->tree_root);
-+	if (IS_ERR(trans))
-+		return PTR_ERR(trans);
-+	btrfs_commit_transaction(trans);
-+
-+	return ret;
-+}
-+
- int btrfs_quota_disable(struct btrfs_fs_info *fs_info)
- {
- 	struct btrfs_root *quota_root;
-@@ -1292,6 +1326,10 @@ int btrfs_quota_disable(struct btrfs_fs_info *fs_info)
- 	clear_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags);
- 	btrfs_qgroup_wait_for_completion(fs_info, false);
+-	is_system = (generic_ref->tree_ref.owning_root == BTRFS_CHUNK_TREE_OBJECTID);
++	is_system = (generic_ref->tree_ref.ref_root == BTRFS_CHUNK_TREE_OBJECTID);
  
-+	ret = flush_reservations(fs_info);
-+	if (ret)
-+		goto out;
-+
+ 	ASSERT(generic_ref->type == BTRFS_REF_METADATA && generic_ref->action);
+ 	ref = kmem_cache_alloc(btrfs_delayed_tree_ref_cachep, GFP_NOFS);
+@@ -914,14 +914,14 @@ int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
+ 		ref_type = BTRFS_TREE_BLOCK_REF_KEY;
+ 
+ 	init_delayed_ref_common(fs_info, &ref->node, bytenr, num_bytes,
+-				generic_ref->tree_ref.owning_root, action,
++				generic_ref->tree_ref.ref_root, action,
+ 				ref_type);
+-	ref->root = generic_ref->tree_ref.owning_root;
++	ref->root = generic_ref->tree_ref.ref_root;
+ 	ref->parent = parent;
+ 	ref->level = level;
+ 
+ 	init_delayed_ref_head(head_ref, record, bytenr, num_bytes,
+-			      generic_ref->tree_ref.owning_root, 0, action,
++			      generic_ref->tree_ref.ref_root, 0, action,
+ 			      false, is_system);
+ 	head_ref->extent_op = extent_op;
+ 
+@@ -974,7 +974,7 @@ int btrfs_add_delayed_data_ref(struct btrfs_trans_handle *trans,
+ 	u64 bytenr = generic_ref->bytenr;
+ 	u64 num_bytes = generic_ref->len;
+ 	u64 parent = generic_ref->parent;
+-	u64 ref_root = generic_ref->data_ref.owning_root;
++	u64 ref_root = generic_ref->data_ref.ref_root;
+ 	u64 owner = generic_ref->data_ref.ino;
+ 	u64 offset = generic_ref->data_ref.offset;
+ 	u8 ref_type;
+diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
+index b8e14b0ba5f1..a71eff78469c 100644
+--- a/fs/btrfs/delayed-ref.h
++++ b/fs/btrfs/delayed-ref.h
+@@ -188,8 +188,8 @@ enum btrfs_ref_type {
+ struct btrfs_data_ref {
+ 	/* For EXTENT_DATA_REF */
+ 
+-	/* Original root this data extent belongs to */
+-	u64 owning_root;
++	/* Root which owns this data reference */
++	u64 ref_root;
+ 
+ 	/* Inode which refers to this data extent */
+ 	u64 ino;
+@@ -212,11 +212,11 @@ struct btrfs_tree_ref {
+ 	int level;
+ 
  	/*
- 	 * 1 For the root item
+-	 * Root which owns this tree block.
++	 * Root which owns this tree block reference.
  	 *
-@@ -1353,7 +1391,7 @@ int btrfs_quota_disable(struct btrfs_fs_info *fs_info)
- 	if (ret && trans)
- 		btrfs_end_transaction(trans);
- 	else if (trans)
--		ret = btrfs_end_transaction(trans);
-+		ret = btrfs_commit_transaction(trans);
- 	mutex_unlock(&fs_info->cleaner_mutex);
+ 	 * For TREE_BLOCK_REF (skinny metadata, either inline or keyed)
+ 	 */
+-	u64 owning_root;
++	u64 ref_root;
+ 
+ 	/* For non-skinny metadata, no special member needed */
+ };
+@@ -294,7 +294,7 @@ static inline void btrfs_init_tree_ref(struct btrfs_ref *generic_ref,
+ 	generic_ref->real_root = mod_root ?: root;
+ #endif
+ 	generic_ref->tree_ref.level = level;
+-	generic_ref->tree_ref.owning_root = root;
++	generic_ref->tree_ref.ref_root = root;
+ 	generic_ref->type = BTRFS_REF_METADATA;
+ 	if (skip_qgroup || !(is_fstree(root) &&
+ 			     (!mod_root || is_fstree(mod_root))))
+@@ -312,7 +312,7 @@ static inline void btrfs_init_data_ref(struct btrfs_ref *generic_ref,
+ 	/* If @real_root not set, use @root as fallback */
+ 	generic_ref->real_root = mod_root ?: ref_root;
+ #endif
+-	generic_ref->data_ref.owning_root = ref_root;
++	generic_ref->data_ref.ref_root = ref_root;
+ 	generic_ref->data_ref.ino = ino;
+ 	generic_ref->data_ref.offset = offset;
+ 	generic_ref->type = BTRFS_REF_DATA;
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 04ceb9d25d3e..018e288ccf7d 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -1365,7 +1365,7 @@ int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
+ 	ASSERT(generic_ref->type != BTRFS_REF_NOT_SET &&
+ 	       generic_ref->action);
+ 	BUG_ON(generic_ref->type == BTRFS_REF_METADATA &&
+-	       generic_ref->tree_ref.owning_root == BTRFS_TREE_LOG_OBJECTID);
++	       generic_ref->tree_ref.ref_root == BTRFS_TREE_LOG_OBJECTID);
+ 
+ 	if (generic_ref->type == BTRFS_REF_METADATA)
+ 		ret = btrfs_add_delayed_tree_ref(trans, generic_ref, NULL);
+@@ -3307,9 +3307,9 @@ int btrfs_free_extent(struct btrfs_trans_handle *trans, struct btrfs_ref *ref)
+ 	 * tree, just update pinning info and exit early.
+ 	 */
+ 	if ((ref->type == BTRFS_REF_METADATA &&
+-	     ref->tree_ref.owning_root == BTRFS_TREE_LOG_OBJECTID) ||
++	     ref->tree_ref.ref_root == BTRFS_TREE_LOG_OBJECTID) ||
+ 	    (ref->type == BTRFS_REF_DATA &&
+-	     ref->data_ref.owning_root == BTRFS_TREE_LOG_OBJECTID)) {
++	     ref->data_ref.ref_root == BTRFS_TREE_LOG_OBJECTID)) {
+ 		/* unlocks the pinned mutex */
+ 		btrfs_pin_extent(trans, ref->bytenr, ref->len, 1);
+ 		ret = 0;
+@@ -3320,9 +3320,9 @@ int btrfs_free_extent(struct btrfs_trans_handle *trans, struct btrfs_ref *ref)
+ 	}
+ 
+ 	if (!((ref->type == BTRFS_REF_METADATA &&
+-	       ref->tree_ref.owning_root == BTRFS_TREE_LOG_OBJECTID) ||
++	       ref->tree_ref.ref_root == BTRFS_TREE_LOG_OBJECTID) ||
+ 	      (ref->type == BTRFS_REF_DATA &&
+-	       ref->data_ref.owning_root == BTRFS_TREE_LOG_OBJECTID)))
++	       ref->data_ref.ref_root == BTRFS_TREE_LOG_OBJECTID)))
+ 		btrfs_ref_tree_mod(fs_info, ref);
  
  	return ret;
-@@ -3957,8 +3995,11 @@ static int __btrfs_qgroup_release_data(struct btrfs_inode *inode,
- 	int trace_op = QGROUP_RELEASE;
- 	int ret;
+diff --git a/fs/btrfs/ref-verify.c b/fs/btrfs/ref-verify.c
+index 95d28497de7c..b7b3bd86f5e2 100644
+--- a/fs/btrfs/ref-verify.c
++++ b/fs/btrfs/ref-verify.c
+@@ -681,10 +681,10 @@ int btrfs_ref_tree_mod(struct btrfs_fs_info *fs_info,
  
--	if (btrfs_qgroup_mode(inode->root->fs_info) == BTRFS_QGROUP_MODE_DISABLED)
--		return 0;
-+	if (btrfs_qgroup_mode(inode->root->fs_info) == BTRFS_QGROUP_MODE_DISABLED) {
-+		extent_changeset_init(&changeset);
-+		return clear_record_extent_bits(&inode->io_tree, start, start + len - 1,
-+				       EXTENT_QGROUP_RESERVED, &changeset);
-+	}
- 
- 	/* In release case, we shouldn't have @reserved */
- 	WARN_ON(!free && reserved);
+ 	if (generic_ref->type == BTRFS_REF_METADATA) {
+ 		if (!parent)
+-			ref_root = generic_ref->tree_ref.owning_root;
++			ref_root = generic_ref->tree_ref.ref_root;
+ 		owner = generic_ref->tree_ref.level;
+ 	} else if (!parent) {
+-		ref_root = generic_ref->data_ref.owning_root;
++		ref_root = generic_ref->data_ref.ref_root;
+ 		owner = generic_ref->data_ref.ino;
+ 		offset = generic_ref->data_ref.offset;
+ 	}
 -- 
 2.41.0
 

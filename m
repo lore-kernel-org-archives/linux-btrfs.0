@@ -2,102 +2,94 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 32C84EB64DC
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Jul 2023 10:31:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B3594EB64DC
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Jul 2023 11:08:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229841AbjGUKbl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 21 Jul 2023 06:31:41 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35858 "EHLO
+        id S230509AbjGULIt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 21 Jul 2023 07:08:49 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53798 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229616AbjGUKbk (ORCPT
+        with ESMTP id S231464AbjGULHs (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 Jul 2023 06:31:40 -0400
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.21])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 64F4D1B6
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 Jul 2023 03:31:36 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.com;
- s=s31663417; t=1689935494; x=1690540294; i=quwenruo.btrfs@gmx.com;
- bh=1XNPQ3k7eWpP3PV6PyiNhCnw19dT1Q+V6QP6W9DVcuY=;
- h=X-UI-Sender-Class:Date:Subject:To:References:From:In-Reply-To;
- b=fkRXBCjxj765W6uqHbh1a48B5BmGjAmQlFPH7bsFEkU8XptmkmHI0AKLNV4+c/+HStHttCu
- SRXGkIu4uogT3ZSNNVrCfo6sGQC1yGWpPU/Atc/89XA+mZYMv/YVlC/xFrIuF4jbwhngTb1Uy
- T1DUBC9u6AG2WaBf2a/45tiELHxUuwd0IrSusX6mzGRuI0zIIMMMn/euMiHSi8KvL4eNl0Rjr
- 4Bq04eVWZnr7d/6oITUqZsdBCy5/eR8VIskmjldLLgf9eI+BmORvuAqJXiyM4wKkr4073edAz
- bLRoKCTJw8ilWQMOULBXTNXp+fxpN7NEubF2RKQRnKfjjwXjBn9w==
-X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx104
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1M6Udt-1qGRQn0xLN-006t5g; Fri, 21
- Jul 2023 12:18:57 +0200
-Message-ID: <daf9ae95-384d-0b58-ee98-f9698c08a038@gmx.com>
-Date:   Fri, 21 Jul 2023 18:18:53 +0800
+        Fri, 21 Jul 2023 07:07:48 -0400
+Received: from mga12.intel.com (mga12.intel.com [192.55.52.136])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8E85546BA
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 Jul 2023 04:04:13 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
+  t=1689937453; x=1721473453;
+  h=date:from:to:cc:subject:message-id:references:
+   mime-version:in-reply-to;
+  bh=+s+jHKhoqeCr4HOPis9ahrNrqhwyefbKhuoVLsPBADg=;
+  b=V6eQMRf4H7jOJ8yXAAsDg2/7fRXoq7Qy/otqPMahP5Ucep0IE7Y2IHdA
+   WmdNstyy81KiTo3LLpUi3/cV16B5SBFI//bBN+0rGFcmNlXIr9JKvHPdQ
+   JZYrnjfyeiMmnN0wYMMwEf1FZWMDSncSN5dUeBXjDJJwtxTjbA6tcq9Ru
+   Y7qH0btGASh4muQxe5/rYhIbC8QB2EfYAkbD2JvVCqSwBeBt/x6SJuLzN
+   Rt4dRGuQudrnrcr9pWPSpbtazvAmew9GJN8UV9jJNSbCW8Xo9wHQVfn1c
+   4IUON2c6C4NtCtHt5e9MTEITFVUme8fKOhI8fACa4967fMS8zEMjXRopq
+   A==;
+X-IronPort-AV: E=McAfee;i="6600,9927,10777"; a="346591163"
+X-IronPort-AV: E=Sophos;i="6.01,220,1684825200"; 
+   d="scan'208";a="346591163"
+Received: from fmsmga002.fm.intel.com ([10.253.24.26])
+  by fmsmga106.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 21 Jul 2023 04:03:56 -0700
+X-ExtLoop1: 1
+X-IronPort-AV: E=McAfee;i="6600,9927,10777"; a="838514931"
+X-IronPort-AV: E=Sophos;i="6.01,220,1684825200"; 
+   d="scan'208";a="838514931"
+Received: from lkp-server02.sh.intel.com (HELO 36946fcf73d7) ([10.239.97.151])
+  by fmsmga002.fm.intel.com with ESMTP; 21 Jul 2023 04:03:55 -0700
+Received: from kbuild by 36946fcf73d7 with local (Exim 4.96)
+        (envelope-from <lkp@intel.com>)
+        id 1qMnvF-0007CV-2f;
+        Fri, 21 Jul 2023 11:03:48 +0000
+Date:   Fri, 21 Jul 2023 19:03:02 +0800
+From:   kernel test robot <lkp@intel.com>
+To:     Boris Burkov <boris@bur.io>, linux-btrfs@vger.kernel.org,
+        kernel-team@fb.com
+Cc:     oe-kbuild-all@lists.linux.dev
+Subject: Re: [PATCH v2 13/20] btrfs: new inline ref storing owning subvol of
+ data extents
+Message-ID: <202307211814.Iule8nnz-lkp@intel.com>
+References: <cd13e27d24eb8c3d8162459e3f81c1ce772357a8.1689893021.git.boris@bur.io>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.12.0
-Subject: Re: [PATCH 1/2] btrfs: check if the transaction was aborted at
- btrfs_wait_for_commit()
-To:     fdmanana@kernel.org, linux-btrfs@vger.kernel.org
-References: <cover.1689932501.git.fdmanana@suse.com>
- <ef39d239a3d444a4a9788d5690c7f570ba6b8d52.1689932501.git.fdmanana@suse.com>
-Content-Language: en-US
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-In-Reply-To: <ef39d239a3d444a4a9788d5690c7f570ba6b8d52.1689932501.git.fdmanana@suse.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:H1oUP+UEpx3yIgrwgSqB9bG1c4dXAE2nNJcX8c1Zo4J9X38liEg
- xSwotePKPfPXlc1rDUcQB2oD7Qvc7ZOuIudW56MvrdkLNQfhOL0pxvBroxGP8Tlsdgram+S
- 85Hl3X9lMDc01/FmpMEMjuUF88GRW9gQp842og29gd7muGNZUFUExfDrnfghLj/bNI8oDb4
- CmtaAkSYDshb4T5wtoJ6w==
-UI-OutboundReport: notjunk:1;M01:P0:ieUSK+fOBNI=;0DHKM/nGQUFQobIDCDFsEOnJJvS
- 6IuCJP+iUH2MyWzbNVbmdwP3EBW8tWREw3EDDQ7v9EOldAnkZ54Vt03XCVeGFM22jz3y6+X4v
- i//JJ2EWewUKLj5lAj517z0fV1fYCEiCB8Sao5lIb4TEeslNrXkaT3N6BEUyM/vKm73bwPiDr
- py1F1S1PcHXNq9QFXz78Iq2DM88HkZJRvSQEZXXi/A8wjKHgHHehhLLBYxH6iTy55WDnlPt73
- b9UXPHfSRfPwoYbuUNZsDvDT3BWFMznGSRuajdNFJNArAJbdWc9BdR3rllt2UNO1etmRI1y9G
- k9Y43aXLhXBMNOm2fxqD93cBTPbuq84YwaXxTKzFTpkfMNNo2RZ8N/oJ0d4nYHGgT42Q1sMrb
- 3dlol5jZeju1o2mADRDY2NSEqwuijuK7kKNPZKK1rXPAXdp5ENp6htuKZsQnZyM83swdrYY5h
- dmEGIT15mcWB7S/krx0/Q1HLJIe5eC5ZIsGPoiMQDoXHFDNpBT6paiGX7kCPTPayq6ZBmnTw9
- FBgqNxM4DkRCkTgiBk7iFJDB40kkZFKd5PfCllPyaJxCJeO9SIQUdwH0Umpo2Bb/euDdQZIHt
- A9JRgo8qBZZUQGFjFd+zi4iyX0480HJ32TZod39COl1eb+bI3135AQ7f9Jc4nIBvGYOi2ionS
- OMEX/Bbzg/oTlXwa1EAUCj5bmHE/5lXI8ha7ViIP2yQkGHBfrEg0TkYFOfzQyh1bK90K0wpUJ
- NlLGxxW63OfVixVQgh44flZOmvVkI533wcPfnefbgvxcor9Mx7dVPGcEmCR/50HTvsbrEbKZz
- yyMCsDVxG3oPi4JUrOCZQ1b0JSBVGk5XonKAdWR94IvzwZ9jbB3F5FbDx5uVWPC/iiI7LpPYJ
- L/wCjzcY2Eh0M9WLp9Nmlo1moBcoMolYXAr4wCXPiOEInk/NzAvsAkfyK/rpVE1k9IVCq5OHn
- M2FhbgMP/wJYF0IzoZJy4fN6FzE=
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <cd13e27d24eb8c3d8162459e3f81c1ce772357a8.1689893021.git.boris@bur.io>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+Hi Boris,
 
+kernel test robot noticed the following build errors:
 
-On 2023/7/21 17:49, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
->
-> At btrfs_wait_for_commit() we wait for a transaction to finish and then
-> always return 0 (success) without checking if it was aborted, in which
-> case the transaction didn't happen due to some critical error. Fix this
-> by checking if the transaction was aborted.
->
-> Fixes: 462045928bda ("Btrfs: add START_SYNC, WAIT_SYNC ioctls")
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+[auto build test ERROR on kdave/for-next]
+[also build test ERROR on linus/master v6.5-rc2 next-20230721]
+[If your patch is applied to the wrong git tree, kindly drop us a note.
+And when submitting patch, we suggest to use '--base' as documented in
+https://git-scm.com/docs/git-format-patch#_base_tree_information]
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
+url:    https://github.com/intel-lab-lkp/linux/commits/Boris-Burkov/btrfs-free-qgroup-rsv-on-io-failure/20230721-065759
+base:   https://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-next
+patch link:    https://lore.kernel.org/r/cd13e27d24eb8c3d8162459e3f81c1ce772357a8.1689893021.git.boris%40bur.io
+patch subject: [PATCH v2 13/20] btrfs: new inline ref storing owning subvol of data extents
+config: x86_64-randconfig-r032-20230720 (https://download.01.org/0day-ci/archive/20230721/202307211814.Iule8nnz-lkp@intel.com/config)
+compiler: gcc-12 (Debian 12.2.0-14) 12.2.0
+reproduce: (https://download.01.org/0day-ci/archive/20230721/202307211814.Iule8nnz-lkp@intel.com/reproduce)
 
-Thanks,
-Qu
+If you fix the issue in a separate patch/commit (i.e. not just a new version of
+the same patch/commit), kindly add following tags
+| Reported-by: kernel test robot <lkp@intel.com>
+| Closes: https://lore.kernel.org/oe-kbuild-all/202307211814.Iule8nnz-lkp@intel.com/
 
-> ---
->   fs/btrfs/transaction.c | 1 +
->   1 file changed, 1 insertion(+)
->
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index 4743882fa94b..8ab85465cdaa 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -931,6 +931,7 @@ int btrfs_wait_for_commit(struct btrfs_fs_info *fs_i=
-nfo, u64 transid)
->   	}
->
->   	wait_for_commit(cur_trans, TRANS_STATE_COMPLETED);
-> +	ret =3D cur_trans->aborted;
->   	btrfs_put_transaction(cur_trans);
->   out:
->   	return ret;
+All errors (new ones prefixed by >>):
+
+   In file included from <command-line>:
+>> ./usr/include/linux/btrfs_tree.h:785:9: error: unknown type name 'u64'
+     785 |         u64 root_id;
+         |         ^~~
+
+-- 
+0-DAY CI Kernel Test Service
+https://github.com/intel/lkp-tests/wiki

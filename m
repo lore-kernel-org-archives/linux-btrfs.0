@@ -2,52 +2,52 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7F015EB64DD
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Jul 2023 16:04:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 79714EB64DC
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Jul 2023 16:04:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232338AbjGUQEO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 21 Jul 2023 12:04:14 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35226 "EHLO
+        id S232364AbjGUQET (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 21 Jul 2023 12:04:19 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35262 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231528AbjGUQEN (ORCPT
+        with ESMTP id S232343AbjGUQES (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 Jul 2023 12:04:13 -0400
+        Fri, 21 Jul 2023 12:04:18 -0400
 Received: from wout2-smtp.messagingengine.com (wout2-smtp.messagingengine.com [64.147.123.25])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 946E3E42
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 Jul 2023 09:04:11 -0700 (PDT)
-Received: from compute5.internal (compute5.nyi.internal [10.202.2.45])
-        by mailout.west.internal (Postfix) with ESMTP id DCB1A32000E5;
-        Fri, 21 Jul 2023 12:04:10 -0400 (EDT)
-Received: from mailfrontend2 ([10.202.2.163])
-  by compute5.internal (MEProxy); Fri, 21 Jul 2023 12:04:11 -0400
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 679BB2D47
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 Jul 2023 09:04:17 -0700 (PDT)
+Received: from compute4.internal (compute4.nyi.internal [10.202.2.44])
+        by mailout.west.internal (Postfix) with ESMTP id A946B32000E5;
+        Fri, 21 Jul 2023 12:04:16 -0400 (EDT)
+Received: from mailfrontend1 ([10.202.2.162])
+  by compute4.internal (MEProxy); Fri, 21 Jul 2023 12:04:16 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc
         :content-transfer-encoding:content-type:date:date:from:from
         :in-reply-to:in-reply-to:message-id:mime-version:references
-        :reply-to:sender:subject:subject:to:to; s=fm1; t=1689955450; x=
-        1690041850; bh=cdAF2g7upC4q8bhzChoEZzsUwDmUmT5k4kRthZMvmz4=; b=q
-        N1bCYNH54xLnvK33Fa18EA8rQAvirxlMUv5SEOx90uCqgJT8GC5ZuT+BQBA169Wq
-        ke0r6U7jwCX2wns1Mf82EJWn+QqdSgQYjAsL0+/E3Pi4fuJhinzWW4s2tTMEnAF/
-        En+CFrzD6TjZPisaBSBVO8p0TXIKepxYyQcejIkZwdpH9A6+EVZGOA8Ublo5hoaC
-        H7QVzrorSwjCZUx4cd5ZOQ1JIFRbhoq0OJHJpD7zLBT2guIa2Lzgi5ke/cJmt5KO
-        oXA38h8W2gqkmOFLvB4pY8/j2oyg1bncavqQpwKqZ9OPrdH+y5hypgj58DA6ekqR
-        BwmIvP0mQKPGfGNliKIBw==
+        :reply-to:sender:subject:subject:to:to; s=fm1; t=1689955456; x=
+        1690041856; bh=1jI89jJpbcX+QlAxKYbnErOrqzmmXD3xHc3JW0HJ1/E=; b=g
+        3YTqIf9gZGluVDqENIJEnesZayWy7L9o+dLOGAN8rH9FoRaui9jJteh2aGDDDZ2D
+        mHHCeYtyeOyWWPHSLhFeGUVxy5BCVVGs13XwKux2r4AKVF7pZQWH8JSCfP88lJX3
+        hOo8EPQAQWMOwQO3QnKQyDOtXDJh//7ggDp30iM7ZkNKyXF2o8JXBTAn0r8G16Up
+        G5sLBve1TILwPhZ6Fu48KlGGq//VvBhtHNCid7LQtE54FKn2UZedyAO/vaecwEOW
+        9BWKGM5/dYQhyuRC16XVLSeSCzhyO7kZutfmqviTNbergYF/j7iUUdasVfnQWsTd
+        MoSDKFIfAbAkABNvvVBUw==
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
         messagingengine.com; h=cc:content-transfer-encoding:content-type
         :date:date:feedback-id:feedback-id:from:from:in-reply-to
         :in-reply-to:message-id:mime-version:references:reply-to:sender
         :subject:subject:to:to:x-me-proxy:x-me-proxy:x-me-sender
-        :x-me-sender:x-sasl-enc; s=fm3; t=1689955450; x=1690041850; bh=c
-        dAF2g7upC4q8bhzChoEZzsUwDmUmT5k4kRthZMvmz4=; b=WpDSBFYP3aCWkDR4M
-        1Y9L6xuIoGj8hoDOVI7qqptmFIg34xv+exM+F7uIWnCzuJdm7xzofid2HQSleWyd
-        NO3l+k9ZWHd/UMQkptFt+DU95IyJfsYSWw+IHOHtRsHoz0k9XeUJJWIIsidOzS0G
-        JJvIJW4mmZMCfgsBNq+3hm/k73VcYeti6lCQka2zk4mvTI2kNvaVoQCoznrEcE6i
-        cUtqBzX0DaFrVakWflkxotuK2xqAMifV3keJXPveHyV4YZMfsJcq6ip0FFAxJgUX
-        vfeyBDVdSX6kZxn6GIEOuAofd2ohrtKQGQIiZ5LFyvvS1ZzJPILJVAnSZShTfAQG
-        zWCDw==
-X-ME-Sender: <xms:eqy6ZGQQ0-iecjioXKHGRJp9YDFoPY5THz7hZ6VHiJkknXG23yEyVQ>
-    <xme:eqy6ZLzuvd4zimIrva_rHChqT24k6N6ROO87Ri3S4g9mVTEKerHZNxEVnvGvMKvJP
-    FS0Pjn4vfEreLmPRh0>
-X-ME-Received: <xmr:eqy6ZD3mC5AUW54oltJIjhzTmUob04WaurTblkWts4F_lm8vqP3RwZJIRv50py-8hKGDIdhQpSW1fMl31xfRt9Sc3jE>
+        :x-me-sender:x-sasl-enc; s=fm3; t=1689955456; x=1690041856; bh=1
+        jI89jJpbcX+QlAxKYbnErOrqzmmXD3xHc3JW0HJ1/E=; b=e8bq3I2spcYlbGAIb
+        RGiseSyIZKQKpQ892GZP7pO1P/JcN1jLutw5F7qsQB1kJusZIHCYpLBm7ZE2mk1h
+        QWUHTjWz9Byz1aWvJ5E5Tvu8FaKx8vD0BVzPN3RJ8eMRdMhlC0/+q7VFj61C9pHz
+        IrwevRaw1AnkMDJ6irYeKXXb4RRE3Nf8TB6idd2nteK5VUHfC/c3XQcV3vR9YUld
+        z/B8G3TrS++kkovXk6G94f7Gjc52E6InZuC4VWQMsH1Djj363fB+etDRbbSRpJtx
+        BPGnzFDCFssJldfJsqM+aluTKeWPcZzTXordpeXC8/nfcQUU8i2m3+792dWQG39v
+        OrwCg==
+X-ME-Sender: <xms:gKy6ZDnjQpyBYTb8SqYW61mh2ZMvP3lGxZ-I6nwWFFU4lV6MZRKjSA>
+    <xme:gKy6ZG0RIs9lCj3CDYUsQtv5ycsNHVbg_fieMvim7bZzNSpLRnSy7sA3SG4bVbr4C
+    3PGwqVjB3qoWnqxalw>
+X-ME-Received: <xmr:gKy6ZJqxBVsNgETTetn-P6J5EuOdiNEY0IwdyUuLQxqvhxyrolu8i7ThNtRaAfBBo-bq7_3XyLmMRa3Oc_9QGaUc3W4>
 X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedviedrhedvgdelvdcutefuodetggdotefrodftvf
     curfhrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfghnecu
     uegrihhlohhuthemuceftddtnecunecujfgurhephffvufffkffojghfggfgsedtkeertd
@@ -55,18 +55,18 @@ X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedviedrhedvgdelvdcutefuodetggdote
     oheqnecuggftrfgrthhtvghrnhepieeuffeuvdeiueejhfehiefgkeevudejjeejffevvd
     ehtddufeeihfekgeeuheelnecuvehluhhsthgvrhfuihiivgeptdenucfrrghrrghmpehm
     rghilhhfrhhomhepsghorhhishessghurhdrihho
-X-ME-Proxy: <xmx:eqy6ZCBCC3E2Nb1chWjwDEs5AhFK8VwbPwKp6-qXyV5F26SJOD6Cmw>
-    <xmx:eqy6ZPir9zAqEcqMtwWITpzAXsI_srv-0RcJhQZis6ts683TR8RwtA>
-    <xmx:eqy6ZOqke3eY_Jq0wHYGb0RHMeR17LM4TBX0Q74888IsArLFZQFqMA>
-    <xmx:eqy6ZPKtpkcVlB7xzX2q_jC4nkedFHGYRh5FLGi_EmD7EgkzYwOLsg>
+X-ME-Proxy: <xmx:gKy6ZLlm2GkahYMqIVbIJsc3lJ4RYlSD1nZOvS6h06R7EUBn_ukc8w>
+    <xmx:gKy6ZB23Pdo0JB84aMLgVB51jBzHJKem43gEJ7RyDnBE7Rgj0gGnqA>
+    <xmx:gKy6ZKuhbdRsTVnmUbb8NPZP0bnIVhSTCMpD_uaJAzHgOEoWlnCEgw>
+    <xmx:gKy6ZO-nmb4phWaL_ORq3ccfzckLtwkhIIru5DYuTp0UMY8Dkz4AQg>
 Feedback-ID: i083147f8:Fastmail
 Received: by mail.messagingengine.com (Postfix) with ESMTPA; Fri,
- 21 Jul 2023 12:04:09 -0400 (EDT)
+ 21 Jul 2023 12:04:15 -0400 (EDT)
 From:   Boris Burkov <boris@bur.io>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v3 03/20] btrfs: introduce quota mode
-Date:   Fri, 21 Jul 2023 09:02:08 -0700
-Message-ID: <1f49b7f9cfa8480d54b0887f0d69f349b7f42e52.1689955162.git.boris@bur.io>
+Subject: [PATCH v3 05/20] btrfs: expose quota mode via sysfs
+Date:   Fri, 21 Jul 2023 09:02:10 -0700
+Message-ID: <1b615d9dcaf2f58f107cda91f767690a2da310e3.1689955162.git.boris@bur.io>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <cover.1689955162.git.boris@bur.io>
 References: <cover.1689955162.git.boris@bur.io>
@@ -76,52 +76,60 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-In preparation for introducing simple quotas, change from a binary
-setting for quotas to an enum based mode. Initially, the possible modes
-are disabled/full. Full quotas is normal btrfs qgroups.
+Add a new sysfs file
+/sys/fs/btrfs/<uuid>/qgroups/mode
+which prints out the mode qgroups is running in. The possible modes are
+disabled, qgroup, and squota
 
 Signed-off-by: Boris Burkov <boris@bur.io>
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/qgroup.c | 7 +++++++
- fs/btrfs/qgroup.h | 6 ++++++
- 2 files changed, 13 insertions(+)
+ fs/btrfs/sysfs.c | 26 ++++++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 2637d6b157ff..0a2085ae9bcd 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -30,6 +30,13 @@
- #include "root-tree.h"
- #include "tree-checker.h"
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index b1d1ac25237b..e53614753391 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -2086,6 +2086,31 @@ static ssize_t qgroup_enabled_show(struct kobject *qgroups_kobj,
+ }
+ BTRFS_ATTR(qgroups, enabled, qgroup_enabled_show);
  
-+enum btrfs_qgroup_mode btrfs_qgroup_mode(struct btrfs_fs_info *fs_info)
++static ssize_t qgroup_mode_show(struct kobject *qgroups_kobj,
++				struct kobj_attribute *a,
++				char *buf)
 +{
-+	if (!test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags))
-+		return BTRFS_QGROUP_MODE_DISABLED;
-+	return BTRFS_QGROUP_MODE_FULL;
++	struct btrfs_fs_info *fs_info = to_fs_info(qgroups_kobj->parent);
++	char *mode = "";
++
++	spin_lock(&fs_info->qgroup_lock);
++	switch (btrfs_qgroup_mode(fs_info)) {
++	case BTRFS_QGROUP_MODE_DISABLED:
++		mode = "disabled";
++		break;
++	case BTRFS_QGROUP_MODE_FULL:
++		mode = "qgroup";
++		break;
++	case BTRFS_QGROUP_MODE_SIMPLE:
++		mode = "squota";
++		break;
++	}
++	spin_unlock(&fs_info->qgroup_lock);
++
++	return sysfs_emit(buf, "%s\n", mode);
 +}
++BTRFS_ATTR(qgroups, mode, qgroup_mode_show);
 +
- /*
-  * Helpers to access qgroup reservation
-  *
-diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-index 7bffa10589d6..bb15e55f00b8 100644
---- a/fs/btrfs/qgroup.h
-+++ b/fs/btrfs/qgroup.h
-@@ -250,6 +250,12 @@ enum {
+ static ssize_t qgroup_inconsistent_show(struct kobject *qgroups_kobj,
+ 					struct kobj_attribute *a,
+ 					char *buf)
+@@ -2148,6 +2173,7 @@ static struct attribute *qgroups_attrs[] = {
+ 	BTRFS_ATTR_PTR(qgroups, enabled),
+ 	BTRFS_ATTR_PTR(qgroups, inconsistent),
+ 	BTRFS_ATTR_PTR(qgroups, drop_subtree_threshold),
++	BTRFS_ATTR_PTR(qgroups, mode),
+ 	NULL
  };
- 
- int btrfs_quota_enable(struct btrfs_fs_info *fs_info);
-+enum btrfs_qgroup_mode {
-+	BTRFS_QGROUP_MODE_DISABLED,
-+	BTRFS_QGROUP_MODE_FULL,
-+};
-+
-+enum btrfs_qgroup_mode btrfs_qgroup_mode(struct btrfs_fs_info *fs_info);
- int btrfs_quota_disable(struct btrfs_fs_info *fs_info);
- int btrfs_qgroup_rescan(struct btrfs_fs_info *fs_info);
- void btrfs_qgroup_rescan_resume(struct btrfs_fs_info *fs_info);
+ ATTRIBUTE_GROUPS(qgroups);
 -- 
 2.41.0
 

@@ -2,50 +2,83 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 73D8AC0015E
-	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Jul 2023 14:55:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8498DC001B0
+	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Jul 2023 15:00:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229597AbjGXOz3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 24 Jul 2023 10:55:29 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35832 "EHLO
+        id S229752AbjGXPAG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 24 Jul 2023 11:00:06 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37534 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229590AbjGXOz2 (ORCPT
+        with ESMTP id S229573AbjGXPAF (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 24 Jul 2023 10:55:28 -0400
+        Mon, 24 Jul 2023 11:00:05 -0400
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 376F910C1
-        for <linux-btrfs@vger.kernel.org>; Mon, 24 Jul 2023 07:55:25 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B7C40E56
+        for <linux-btrfs@vger.kernel.org>; Mon, 24 Jul 2023 08:00:04 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
         :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
         Content-Transfer-Encoding:Content-ID:Content-Description;
-        bh=RWboUVmSWmv9RVJc0Md/DeooAQPYZ3g0INW8wATErwE=; b=IduRIZxYPHF0ogcd5FQCptQqh0
-        Scww6QSel8TtnoTx6Gx1+ocWEVQfCDcPF0QBYnnH5wkAbjUVkoZGlTGb3DDy0dlzbmTT37sLxlw0q
-        GD8O3boulQdhssZ4tAqzgDmz/OcuRkoYr3NpqXdBtgyuTGuKO28mLsiDT4UClv7EpAl3QCYdlIG7t
-        pjKPpWASsHTcKpp/hXC9yHmr9hWvidHsRbzberw3FwH9j0HkY+BrBaX6wr7pRyXYtIbBbcSjeOhUp
-        nSE6w+MKdAWEVLraPeA9aYzbK5rjE1W32JQka/ycBqGrXuJ4XD8WYHZq0XwdFvJlTgNX96ZpWBkgo
-        B7NiU5Xg==;
+        bh=InB7KEyV9HSNKAo2YOsACoe1PSxsiZxh5JGtpzObSy4=; b=Q5ccNU1g6S2rZds+OOB325na2J
+        IDU275lnaHwIxmQqzBxI5kbgnmmAKuM3fcQBYbEBUV82jD3LATpkFcWsSwgiC/P6iNeRxW19XSayn
+        epY1AeeYeAe5AkVI4jtGVSvCVIRHWG//CaDlAUpg9Y5G61kIgMZltl781NxByEJMzFnNW7FExUpdI
+        MdEs/oJvO/ntxmWzAea46/NHu8P3fLUES7a5sURZc2qKmBdCZ8eZtzBJUA2d6S7KiBfyASo89T7Zk
+        6mi3nTCqGpqYETrQwh6EM+GQqbSXiNiGlMqrXe1qjunlaV3/FaqKaVPibllpbb20k40ifa66LjDrR
+        fu+xWkOA==;
 Received: from hch by bombadil.infradead.org with local (Exim 4.96 #2 (Red Hat Linux))
-        id 1qNwy5-004ec0-0H;
-        Mon, 24 Jul 2023 14:55:25 +0000
-Date:   Mon, 24 Jul 2023 07:55:25 -0700
+        id 1qNx2a-004fFD-1G;
+        Mon, 24 Jul 2023 15:00:04 +0000
+Date:   Mon, 24 Jul 2023 08:00:04 -0700
 From:   Christoph Hellwig <hch@infradead.org>
 To:     Naohiro Aota <naohiro.aota@wdc.com>
-Cc:     linux-btrfs@vger.kernel.org, hch@infradead.org
-Subject: Re: [PATCH v2] btrfs: zoned: do not zone finish data relocation
- block group
-Message-ID: <ZL6Q3Udz4vdbgEY+@infradead.org>
-References: <a57f943e28a5bd86cddcf9d0839b124880f2f6c7.1689924624.git.naohiro.aota@wdc.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/8] btrfs: zoned: introduce block_group context for
+ submit_eb_page()
+Message-ID: <ZL6R9OwFlwwmrcKo@infradead.org>
+References: <cover.1690171333.git.naohiro.aota@wdc.com>
+ <d20226362b9b193d85f63e81ee128ef3062e2203.1690171333.git.naohiro.aota@wdc.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <a57f943e28a5bd86cddcf9d0839b124880f2f6c7.1689924624.git.naohiro.aota@wdc.com>
+In-Reply-To: <d20226362b9b193d85f63e81ee128ef3062e2203.1690171333.git.naohiro.aota@wdc.com>
 X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Not an expert on the area, but with the new commit log I can at
-least understand and verify the logic.  So a very cautious:
+On Mon, Jul 24, 2023 at 01:18:30PM +0900, Naohiro Aota wrote:
+> For metadata write out on the zoned mode, we call
+> btrfs_check_meta_write_pointer() to check if an extent buffer to be written
+> is aligned to the write pointer.
+> 
+> We lookup for a block group containing the extent buffer for every extent
+> buffer, which take unnecessary effort as the writing extent buffers are
+> mostly contiguous.
+> 
+> Introduce "bg_context" to cache the block group working on.
 
-Reviewed-by: Christoph Hellwig <hch@lst.de>
+As someone who already found the eb_context naming and handling in the
+existing code highly confusing, I wonder if we should first add a new
+eb_write_context structure, which initially contains the wbc
+and eb_context pointers, and which also would grow the bg.  This
+should make argument passing a little simpler, but most importantly
+removes all the dealing with the double pointers that need a lot
+of checking and clearing.
+
+> diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
+> index 5e4285ae112c..58bd2de4026d 100644
+> --- a/fs/btrfs/zoned.c
+> +++ b/fs/btrfs/zoned.c
+> @@ -1751,27 +1751,33 @@ bool btrfs_check_meta_write_pointer(struct btrfs_fs_info *fs_info,
+>  				    struct extent_buffer *eb,
+>  				    struct btrfs_block_group **cache_ret)
+>  {
+>
+>
+> -	struct btrfs_block_group *cache;
+> -	bool ret = true;
+> +	struct btrfs_block_group *cache = NULL;
+
+.. and independent of the above comment, I also found the "cache" and
+"cache_ret" namings here very highly confusing.  What speaks again
+using a bg-based naming that makes it clear what we're dealing with?

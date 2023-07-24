@@ -2,41 +2,43 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A9B3AC41513
-	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Jul 2023 14:22:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 96500C001DF
+	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Jul 2023 14:22:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231761AbjGXOWs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 24 Jul 2023 10:22:48 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48988 "EHLO
+        id S231959AbjGXOWt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 24 Jul 2023 10:22:49 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48998 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231389AbjGXOWq (ORCPT
+        with ESMTP id S231532AbjGXOWr (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 24 Jul 2023 10:22:46 -0400
+        Mon, 24 Jul 2023 10:22:47 -0400
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 59FFFC6
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A36A3CF
         for <linux-btrfs@vger.kernel.org>; Mon, 24 Jul 2023 07:22:45 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
-        MIME-Version:Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:Content-Type:
-        Content-ID:Content-Description:In-Reply-To:References;
-        bh=QXlco0u5nq7+fEpX8GDO2I2YOd1D3wi1RZKUPJVnd38=; b=kv9Wh1kRAgdV5DqSy6DNjMKdUT
-        LTlgP8UC1MWTrWz0fomnYzk+DY5GnQ4sFiLhiDKOE4gF8msgQx9i6HQOAnOOEDuT+mLuU/GaQ1qn+
-        mfW3IWgcfU4+MGH2OxsZbxraZK5QcTKdJ1ttODhlfl9I4SlMVqd+YimGYrpkoKihGHgxJi+eybt1t
-        358BEWWy8EI3OUNErXaUtS8+UlSrWt5dEiSgh0aWe3WjVSfDBEajH90gNcqYKArv0uHHpCXnawOTh
-        IegCyACMMjxbeWp4H15EtRalYTUXp49j8s67sRc+Y42fn/QGyOhyE0jvNaX45amFisIRuqdBA0EGa
-        tDfT3pGA==;
+        MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
+        :Reply-To:Content-Type:Content-ID:Content-Description;
+        bh=jgeJ4CUi9vRUabJkqpzFSJAbNDBwazU6jwUOiaI5sFk=; b=oxbMsu4QpTPtN5sppEny45UCC5
+        Vqn0bO9QCA/G+MY+1R0uswRmVZCzt//0tSm3zXcOGIe/yuuumQ3M52jn6q2ergfiLSystHOKekRKd
+        7b2vOhvtebBM98ypLC0b5ShT8LxlcNHx9rYnKJbzuipoIe//TpPGcogJ7xadP3LtKz6fDBTS4Nt9y
+        CQ6itnjj9lxSD/9wK0QB4O4VcAKhynf/fcDqG14f0tByAecLfPTHbN2tnNE1QoScbLHrrP/fhtwZ4
+        DMoBtLpPutCkZxg9X+Om38exLlibVRNJO7ES5fxBkAwwIQWt4wngKyQ5UDQfUsVUCYNo03pmDtsHX
+        4xiDLGUQ==;
 Received: from 67-207-104-238.static.wiline.com ([67.207.104.238] helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
-        id 1qNwSR-004b9Q-1l;
-        Mon, 24 Jul 2023 14:22:43 +0000
+        id 1qNwSS-004b9l-0x;
+        Mon, 24 Jul 2023 14:22:44 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>
 Cc:     linux-btrfs@vger.kernel.org
-Subject: btrfs NOCOW fix and cleanups
-Date:   Mon, 24 Jul 2023 07:22:37 -0700
-Message-Id: <20230724142243.5742-1-hch@lst.de>
+Subject: [PATCH 4/6] btrfs: move the !zoned assert into run_delalloc_cow
+Date:   Mon, 24 Jul 2023 07:22:41 -0700
+Message-Id: <20230724142243.5742-5-hch@lst.de>
 X-Mailer: git-send-email 2.39.2
+In-Reply-To: <20230724142243.5742-1-hch@lst.de>
+References: <20230724142243.5742-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
@@ -44,25 +46,47 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi all,
+Having the assert in the actual helper documents the pre-conditions
+much better than having it in the caller, so move it.
 
-this series fixes a (found by code inspection) bug in the error handling
-in btrfs_run_delalloc_nocow, and then cleans up a bunch of things in
-btrfs_run_delalloc_nocow to allow me to actually undestand the logic
-there, and in case of the last patch signigicantly simplifies it.
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ fs/btrfs/inode.c | 15 +++++++--------
+ 1 file changed, 7 insertions(+), 8 deletions(-)
 
-The series is on top of the for-next branch as that includes previous
-work not in misc-next yet that the series relies on.
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 2d465b50c228ed..92182e0d27fdb5 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1978,6 +1978,13 @@ static noinline int run_delalloc_nocow(struct btrfs_inode *inode,
+ 	u64 ino = btrfs_ino(inode);
+ 	struct can_nocow_file_extent_args nocow_args = { 0 };
+ 
++	/*
++	 * Normally on a zoned device we're only doing COW writes, but in case
++	 * of relocation on a zoned filesystem serializes I/O so that we're only
++	 * writing sequentially and can end up here as well.
++	 */
++	ASSERT(!btrfs_is_zoned(fs_info) || btrfs_is_data_reloc_root(root));
++
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+ 		goto error;
+@@ -2257,14 +2264,6 @@ int btrfs_run_delalloc_range(struct btrfs_inode *inode, struct page *locked_page
+ 		 start >= page_offset(locked_page) + PAGE_SIZE));
+ 
+ 	if (should_nocow(inode, start, end)) {
+-		/*
+-		 * Normally on a zoned device we're only doing COW writes, but
+-		 * in case of relocation on a zoned filesystem we have taken
+-		 * precaution, that we're only writing sequentially. It's safe
+-		 * to use run_delalloc_nocow() here, like for  regular
+-		 * preallocated inodes.
+-		 */
+-		ASSERT(!zoned || btrfs_is_data_reloc_root(inode->root));
+ 		ret = run_delalloc_nocow(inode, locked_page, start, end);
+ 		goto out;
+ 	}
+-- 
+2.39.2
 
-A git tree is also available here:
-
-    git://git.infradead.org/users/hch/misc.git btrfs-nocow-cleanups
-
-Gitweb:
-
-    http://git.infradead.org/users/hch/misc.git/shortlog/refs/heads/btrfs-nocow-cleanups
-
-Diffstat:
- inode.c        |  143 +++++++++++++++++----------------------------------------
- ordered-data.c |   24 ++++++++-
- 2 files changed, 67 insertions(+), 100 deletions(-)

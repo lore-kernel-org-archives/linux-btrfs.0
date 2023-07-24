@@ -2,266 +2,205 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BCC10C001B0
-	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Jul 2023 10:21:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 49F39C41513
+	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Jul 2023 10:47:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229726AbjGXKVU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 24 Jul 2023 06:21:20 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50932 "EHLO
+        id S232391AbjGXKr0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 24 Jul 2023 06:47:26 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43742 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230191AbjGXKU1 (ORCPT
+        with ESMTP id S232314AbjGXKrZ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 24 Jul 2023 06:20:27 -0400
-Received: from mail-oa1-x29.google.com (mail-oa1-x29.google.com [IPv6:2001:4860:4864:20::29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C5CE310EB
-        for <linux-btrfs@vger.kernel.org>; Mon, 24 Jul 2023 03:12:27 -0700 (PDT)
-Received: by mail-oa1-x29.google.com with SMTP id 586e51a60fabf-1bb4277a715so164012fac.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 24 Jul 2023 03:12:27 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=bytedance.com; s=google; t=1690193547; x=1690798347;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=F/oK6bm2Afi7WKsfFLPLaSlUUie3UdhMRHX1z52bb4o=;
-        b=We3MuovW2qM0QPIb7Jlv1Umq5pilvubkHtQEKieLjna5mKcg2TlifjKJ3cGDJkB0XJ
-         2E7J4GC/J1PHeV+lmls2vGF9obRSKp+/TQgM0o8HDNNofmxtDijXCIF54/0ZOEfmktw8
-         /9PgshhzM69wB6yO1ryC3NCjyq3klccAmT8C1M7tmO7YQ2sPgw1KxHlz26xjWp5o98rV
-         TDMzb9LuU9f/SJLV6CczTf5v8IWcmBC0FMPs7LUUCqtoNXfRimz2TzMjhFU1wOgW6zqG
-         ZQxQfWzFsn8XHQTrFNG9aWwb0TeIoDGBpQ0oJDp4qWsajmwOaltjPbylvd24GImd72+O
-         6GJg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1690193547; x=1690798347;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=F/oK6bm2Afi7WKsfFLPLaSlUUie3UdhMRHX1z52bb4o=;
-        b=WoGe1/FGPH8OG2nVaSGc93jkdg/j6cGvujEZgPjaImEmUoydT8+Tb1z/glJKYRG27O
-         6UhR9Xj6U/7vX3459tsZ9uqBb1WyXstjgCQovCnZSMxzU5cF8xG/WEaEMD3KJg1QQOnM
-         qTaVZx1qKtYis8/NxKf+570xF5hoSAgs/Jo3EH9Tohd4FM4fi5/jtdgq7xdpkow+b7Ra
-         vAYXPawluLggGOtCKXL2D2yWm2huNgykhbGY2hatOWQw1NZZSXIMbO4AltsU8O2Tk9+0
-         4a8u7k8aWu24R1TKjeectETvlDbDOpkaQMBjp4llbhYv+9rkh8VmMdMWk3Xj25UUV698
-         PveQ==
-X-Gm-Message-State: ABy/qLbr2xlctmdSRt+uCrglhHQR9pkzD2PFYjd8WOtX9qRU3pRJmODV
-        Dcz7esNlV4MMTL6ajuz1PIq/Uj6OCUsYYcK4Ia4=
-X-Google-Smtp-Source: APBJJlFeSJXGwKM1/4Fx4M034iEieIqp39l7VwM/I3gIgSntmWk50xYbsW/3q3bB2XT8c22SamI2Bg==
-X-Received: by 2002:a17:902:dad2:b0:1b8:9fc4:2733 with SMTP id q18-20020a170902dad200b001b89fc42733mr12483608plx.3.1690192468770;
-        Mon, 24 Jul 2023 02:54:28 -0700 (PDT)
-Received: from C02DW0BEMD6R.bytedance.net ([203.208.167.147])
-        by smtp.gmail.com with ESMTPSA id d5-20020a170902c18500b001bb20380bf2sm8467233pld.13.2023.07.24.02.54.17
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 24 Jul 2023 02:54:28 -0700 (PDT)
-From:   Qi Zheng <zhengqi.arch@bytedance.com>
-To:     akpm@linux-foundation.org, david@fromorbit.com, tkhai@ya.ru,
-        vbabka@suse.cz, roman.gushchin@linux.dev, djwong@kernel.org,
-        brauner@kernel.org, paulmck@kernel.org, tytso@mit.edu,
-        steven.price@arm.com, cel@kernel.org, senozhatsky@chromium.org,
-        yujie.liu@intel.com, gregkh@linuxfoundation.org,
-        muchun.song@linux.dev
-Cc:     linux-kernel@vger.kernel.org, linux-mm@kvack.org, x86@kernel.org,
-        kvm@vger.kernel.org, xen-devel@lists.xenproject.org,
-        linux-erofs@lists.ozlabs.org,
-        linux-f2fs-devel@lists.sourceforge.net, cluster-devel@redhat.com,
-        linux-nfs@vger.kernel.org, linux-mtd@lists.infradead.org,
-        rcu@vger.kernel.org, netdev@vger.kernel.org,
-        dri-devel@lists.freedesktop.org, linux-arm-msm@vger.kernel.org,
-        dm-devel@redhat.com, linux-raid@vger.kernel.org,
-        linux-bcache@vger.kernel.org,
-        virtualization@lists.linux-foundation.org,
-        linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-xfs@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        Qi Zheng <zhengqi.arch@bytedance.com>
-Subject: [PATCH v2 47/47] mm: shrinker: convert shrinker_rwsem to mutex
-Date:   Mon, 24 Jul 2023 17:43:54 +0800
-Message-Id: <20230724094354.90817-48-zhengqi.arch@bytedance.com>
-X-Mailer: git-send-email 2.24.3 (Apple Git-128)
-In-Reply-To: <20230724094354.90817-1-zhengqi.arch@bytedance.com>
-References: <20230724094354.90817-1-zhengqi.arch@bytedance.com>
+        Mon, 24 Jul 2023 06:47:25 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EBD7F9C;
+        Mon, 24 Jul 2023 03:47:18 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id C616822963;
+        Mon, 24 Jul 2023 10:47:16 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1690195636; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=BS9XdjX+Qv1VH7ixVVXf7AVoupd/lRpWi54l4vCAjhU=;
+        b=t8/ZVOZ+oEczGitYPuZYA0mujjT/XWFVUXmE4U7eQ/0wVqFWRvFjKRkxOxqLRsoikgcxPG
+        0bKEQ8e1ISJHD9b6U9gfXfpsbVp1x92hUXnNpxDs/37uunk+3qVnRwEmIZjMW2p38iNiJe
+        ppW24Are363932a8p2mE+VA4LX7ogYA=
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id D6BB8138E8;
+        Mon, 24 Jul 2023 10:47:15 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id +um+J7NWvmReWAAAMHmgww
+        (envelope-from <wqu@suse.com>); Mon, 24 Jul 2023 10:47:15 +0000
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org, fstests@vger.kernel.org
+Subject: [PATCH v3] btrfs: add a test case to make sure scrub can repair parity corruption
+Date:   Mon, 24 Jul 2023 18:46:57 +0800
+Message-ID: <20230724104657.184761-1-wqu@suse.com>
+X-Mailer: git-send-email 2.41.0
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Now there are no readers of shrinker_rwsem, so we can simply replace it
-with mutex lock.
+There is a kernel regression caused by commit 75b470332965 ("btrfs:
+raid56: migrate recovery and scrub recovery path to use error_bitmap"),
+which leads to scrub not repairing corrupted parity stripes.
 
-Signed-off-by: Qi Zheng <zhengqi.arch@bytedance.com>
+So here we add a test case to verify the P/Q stripe scrub behavior by:
+
+- Create a RAID5 or RAID6 btrfs with minimal amount of devices
+  This means 2 devices for RAID5, and 3 devices for RAID6.
+  This would result the parity stripe to be a mirror of the only data
+  stripe.
+
+  And since we have control of the content of data stripes, the content
+  of the P stripe is also fixed.
+
+- Create an 64K file
+  The file would cover one data stripe.
+
+- Corrupt the P stripe
+
+- Scrub the fs
+  If scrub is working, the P stripe would be repaired.
+
+  Unfortunately scrub can not report any P/Q corruption, limited by its
+  reporting structure.
+  So we can not use the return value of scrub to determine if we
+  repaired anything.
+
+- Verify the content of the P stripe
+
+- Use "btrfs check --check-data-csum" to double check
+
+By above steps, we can verify if the P stripe is properly fixed.
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- drivers/md/dm-cache-metadata.c |  2 +-
- fs/super.c                     |  2 +-
- mm/shrinker.c                  | 16 ++++++++--------
- mm/shrinker_debug.c            | 14 +++++++-------
- 4 files changed, 17 insertions(+), 17 deletions(-)
+Changelog:
+v3:
+- Fix the "YOUR NAME HERE" boilerplate
 
-diff --git a/drivers/md/dm-cache-metadata.c b/drivers/md/dm-cache-metadata.c
-index acffed750e3e..9e0c69958587 100644
---- a/drivers/md/dm-cache-metadata.c
-+++ b/drivers/md/dm-cache-metadata.c
-@@ -1828,7 +1828,7 @@ int dm_cache_metadata_abort(struct dm_cache_metadata *cmd)
- 	 * Replacement block manager (new_bm) is created and old_bm destroyed outside of
- 	 * cmd root_lock to avoid ABBA deadlock that would result (due to life-cycle of
- 	 * shrinker associated with the block manager's bufio client vs cmd root_lock).
--	 * - must take shrinker_rwsem without holding cmd->root_lock
-+	 * - must take shrinker_mutex without holding cmd->root_lock
- 	 */
- 	new_bm = dm_block_manager_create(cmd->bdev, DM_CACHE_METADATA_BLOCK_SIZE << SECTOR_SHIFT,
- 					 CACHE_MAX_CONCURRENT_LOCKS);
-diff --git a/fs/super.c b/fs/super.c
-index 04643fd80886..602cf54eb7da 100644
---- a/fs/super.c
-+++ b/fs/super.c
-@@ -54,7 +54,7 @@ static char *sb_writers_name[SB_FREEZE_LEVELS] = {
-  * One thing we have to be careful of with a per-sb shrinker is that we don't
-  * drop the last active reference to the superblock from within the shrinker.
-  * If that happens we could trigger unregistering the shrinker from within the
-- * shrinker path and that leads to deadlock on the shrinker_rwsem. Hence we
-+ * shrinker path and that leads to deadlock on the shrinker_mutex. Hence we
-  * take a passive reference to the superblock to avoid this from occurring.
-  */
- static unsigned long super_cache_scan(struct shrinker *shrink,
-diff --git a/mm/shrinker.c b/mm/shrinker.c
-index 90c045620fe3..5c4546d2c234 100644
---- a/mm/shrinker.c
-+++ b/mm/shrinker.c
-@@ -7,7 +7,7 @@
- #include <trace/events/vmscan.h>
- 
- LIST_HEAD(shrinker_list);
--DECLARE_RWSEM(shrinker_rwsem);
-+DEFINE_MUTEX(shrinker_mutex);
- DEFINE_SPINLOCK(shrinker_lock);
- 
- #ifdef CONFIG_MEMCG
-@@ -80,7 +80,7 @@ int alloc_shrinker_info(struct mem_cgroup *memcg)
- 	int nid, ret = 0;
- 	int array_size = 0;
- 
--	down_write(&shrinker_rwsem);
-+	mutex_lock(&shrinker_mutex);
- 	array_size = shrinker_unit_size(shrinker_nr_max);
- 	for_each_node(nid) {
- 		info = kvzalloc_node(sizeof(*info) + array_size, GFP_KERNEL, nid);
-@@ -91,7 +91,7 @@ int alloc_shrinker_info(struct mem_cgroup *memcg)
- 			goto err;
- 		rcu_assign_pointer(memcg->nodeinfo[nid]->shrinker_info, info);
- 	}
--	up_write(&shrinker_rwsem);
-+	mutex_unlock(&shrinker_mutex);
- 
- 	return ret;
- 
-@@ -104,7 +104,7 @@ static struct shrinker_info *shrinker_info_protected(struct mem_cgroup *memcg,
- 						     int nid)
- {
- 	return rcu_dereference_protected(memcg->nodeinfo[nid]->shrinker_info,
--					 lockdep_is_held(&shrinker_rwsem));
-+					 lockdep_is_held(&shrinker_mutex));
- }
- 
- static struct shrinker_info *shrinker_info_rcu(struct mem_cgroup *memcg,
-@@ -158,7 +158,7 @@ static int expand_shrinker_info(int new_id)
- 	int new_size, old_size = 0;
- 	struct mem_cgroup *memcg;
- 
--	down_write(&shrinker_rwsem);
-+	mutex_lock(&shrinker_mutex);
- 
- 	if (!root_mem_cgroup)
- 		goto out;
-@@ -179,7 +179,7 @@ static int expand_shrinker_info(int new_id)
- 	if (!ret)
- 		shrinker_nr_max = new_nr_max;
- 
--	up_write(&shrinker_rwsem);
-+	mutex_unlock(&shrinker_mutex);
- 
- 	return ret;
- }
-@@ -303,7 +303,7 @@ void reparent_shrinker_deferred(struct mem_cgroup *memcg)
- 		parent = root_mem_cgroup;
- 
- 	/* Prevent from concurrent shrinker_info expand */
--	down_write(&shrinker_rwsem);
-+	mutex_lock(&shrinker_mutex);
- 	for_each_node(nid) {
- 		child_info = shrinker_info_protected(memcg, nid);
- 		parent_info = shrinker_info_protected(parent, nid);
-@@ -316,7 +316,7 @@ void reparent_shrinker_deferred(struct mem_cgroup *memcg)
- 			}
- 		}
- 	}
--	up_write(&shrinker_rwsem);
-+	mutex_unlock(&shrinker_mutex);
- }
- #else
- static int shrinker_memcg_alloc(struct shrinker *shrinker)
-diff --git a/mm/shrinker_debug.c b/mm/shrinker_debug.c
-index badda35464c3..44b620b1919d 100644
---- a/mm/shrinker_debug.c
-+++ b/mm/shrinker_debug.c
-@@ -8,7 +8,7 @@
- #include <linux/rculist.h>
- 
- /* defined in vmscan.c */
--extern struct rw_semaphore shrinker_rwsem;
-+extern struct mutex shrinker_mutex;
- extern struct list_head shrinker_list;
- 
- static DEFINE_IDA(shrinker_debugfs_ida);
-@@ -168,7 +168,7 @@ int shrinker_debugfs_add(struct shrinker *shrinker)
- 	if (!shrinker_debugfs_root)
- 		return 0;
- 
--	down_write(&shrinker_rwsem);
-+	mutex_lock(&shrinker_mutex);
- 	if (shrinker->debugfs_entry)
- 		goto fail;
- 
-@@ -196,7 +196,7 @@ int shrinker_debugfs_add(struct shrinker *shrinker)
- 			    &shrinker_debugfs_scan_fops);
- 
- fail:
--	up_write(&shrinker_rwsem);
-+	mutex_unlock(&shrinker_mutex);
- 	return ret;
- }
- 
-@@ -215,7 +215,7 @@ int shrinker_debugfs_rename(struct shrinker *shrinker, const char *fmt, ...)
- 	if (!new)
- 		return -ENOMEM;
- 
--	down_write(&shrinker_rwsem);
-+	mutex_lock(&shrinker_mutex);
- 
- 	old = shrinker->name;
- 	shrinker->name = new;
-@@ -233,7 +233,7 @@ int shrinker_debugfs_rename(struct shrinker *shrinker, const char *fmt, ...)
- 			shrinker->debugfs_entry = entry;
- 	}
- 
--	up_write(&shrinker_rwsem);
-+	mutex_unlock(&shrinker_mutex);
- 
- 	kfree_const(old);
- 
-@@ -246,7 +246,7 @@ struct dentry *shrinker_debugfs_detach(struct shrinker *shrinker,
- {
- 	struct dentry *entry = shrinker->debugfs_entry;
- 
--	down_write(&shrinker_rwsem);
-+	mutex_lock(&shrinker_mutex);
- 	kfree_const(shrinker->name);
- 	shrinker->name = NULL;
- 
-@@ -257,7 +257,7 @@ struct dentry *shrinker_debugfs_detach(struct shrinker *shrinker,
- 	 */
- 	smp_wmb();
- 	shrinker->debugfs_entry = NULL;
--	up_write(&shrinker_rwsem);
-+	mutex_unlock(&shrinker_mutex);
- 
- 	return entry;
- }
+v2:
+- Rebase to the latest misc-next
+- Use space_cache=v2 mount option instead of nospace_cache
+  New features like block group tree and extent tree v2 requires v2
+  cache
+- Fix a white space error
+---
+ tests/btrfs/297     | 85 +++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/297.out |  2 ++
+ 2 files changed, 87 insertions(+)
+ create mode 100755 tests/btrfs/297
+ create mode 100644 tests/btrfs/297.out
+
+diff --git a/tests/btrfs/297 b/tests/btrfs/297
+new file mode 100755
+index 00000000..a0023861
+--- /dev/null
++++ b/tests/btrfs/297
+@@ -0,0 +1,85 @@
++#! /bin/bash
++# SPDX-License-Identifier: GPL-2.0
++# Copyright (C) 2023 SUSE Linux Products GmbH. All Rights Reserved.
++#
++# FS QA Test 297
++#
++# Make sure btrfs scrub can fix parity stripe corruption
++#
++. ./common/preamble
++_begin_fstest auto quick raid scrub
++
++. ./common/filter
++
++_supported_fs btrfs
++_require_odirect
++_require_non_zoned_device "${SCRATCH_DEV}"
++_require_scratch_dev_pool 3
++_fixed_by_kernel_commit 486c737f7fdc \
++	"btrfs: raid56: always verify the P/Q contents for scrub"
++
++workload()
++{
++	local profile=$1
++	local nr_devs=$2
++
++	echo "=== Testing $nr_devs devices $profile ===" >> $seqres.full
++	_scratch_dev_pool_get $nr_devs
++
++	_scratch_pool_mkfs -d $profile -m single >> $seqres.full 2>&1
++	# Use v2 space cache to prevent v1 space cache affecting
++	# the result.
++	_scratch_mount -o space_cache=v2
++
++	# Create one 64K extent which would cover one data stripe.
++	$XFS_IO_PROG -f -d -c "pwrite -S 0xaa -b 64K 0 64K" \
++		"$SCRATCH_MNT/foobar" > /dev/null
++	sync
++
++	# Corrupt the P/Q stripe
++	local logical=$(_btrfs_get_first_logical $SCRATCH_MNT/foobar)
++
++	# The 2nd copy is pointed to P stripe directly.
++	physical_p=$(_btrfs_get_physical ${logical} 2)
++	devpath_p=$(_btrfs_get_device_path ${logical} 2)
++
++	_scratch_unmount
++
++	echo "Corrupt stripe P at devpath $devpath_p physical $physical_p" \
++		>> $seqres.full
++	$XFS_IO_PROG -d -c "pwrite -S 0xff -b 64K $physical_p 64K" $devpath_p \
++		> /dev/null
++
++	# Do a scrub to try repair the P stripe.
++	_scratch_mount -o space_cache=v2
++	$BTRFS_UTIL_PROG scrub start -BdR $SCRATCH_MNT >> $seqres.full 2>&1
++	_scratch_unmount
++
++	# Verify the repaired content directly
++	local output=$($XFS_IO_PROG -c "pread -qv $physical_p 16" $devpath_p | _filter_xfs_io_offset)
++	local expect="XXXXXXXX:  aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa  ................"
++
++	echo "The first 16 bytes of parity stripe after scrub:" >> $seqres.full
++	echo $output >> $seqres.full
++	if [ "$output" != "$expect" ]; then
++		echo "Unexpected parity content"
++		echo "has:"
++		echo "$output"
++		echo "expect"
++		echo "$expect"
++	fi
++
++	# Last safenet, let btrfs check --check-data-csum to do an offline scrub.
++	$BTRFS_UTIL_PROG check --check-data-csum $SCRATCH_DEV >> $seqres.full 2>&1
++	if [ $? -ne 0 ]; then
++		echo "Error detected after the scrub"
++	fi
++	_scratch_dev_pool_put
++}
++
++workload raid5 2
++workload raid6 3
++
++echo "Silence is golden"
++status=0
++exit
+diff --git a/tests/btrfs/297.out b/tests/btrfs/297.out
+new file mode 100644
+index 00000000..41c373c4
+--- /dev/null
++++ b/tests/btrfs/297.out
+@@ -0,0 +1,2 @@
++QA output created by 297
++Silence is golden
 -- 
-2.30.2
+2.41.0
 

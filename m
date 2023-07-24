@@ -2,54 +2,54 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2AA04C0015E
-	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Jul 2023 09:47:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 89152C05052
+	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Jul 2023 09:48:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232397AbjGXJra (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 24 Jul 2023 05:47:30 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45948 "EHLO
+        id S231403AbjGXJsK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 24 Jul 2023 05:48:10 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46188 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231483AbjGXJrE (ORCPT
+        with ESMTP id S230195AbjGXJrp (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 24 Jul 2023 05:47:04 -0400
-Received: from mail-pl1-x629.google.com (mail-pl1-x629.google.com [IPv6:2607:f8b0:4864:20::629])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 38E7BE5B
-        for <linux-btrfs@vger.kernel.org>; Mon, 24 Jul 2023 02:46:07 -0700 (PDT)
-Received: by mail-pl1-x629.google.com with SMTP id d9443c01a7336-1b867f9198dso8893945ad.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 24 Jul 2023 02:46:07 -0700 (PDT)
+        Mon, 24 Jul 2023 05:47:45 -0400
+Received: from mail-pl1-x636.google.com (mail-pl1-x636.google.com [IPv6:2607:f8b0:4864:20::636])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 19D2B1FE5
+        for <linux-btrfs@vger.kernel.org>; Mon, 24 Jul 2023 02:46:31 -0700 (PDT)
+Received: by mail-pl1-x636.google.com with SMTP id d9443c01a7336-1b867f9198dso8894675ad.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 24 Jul 2023 02:46:31 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=bytedance.com; s=google; t=1690191967; x=1690796767;
+        d=bytedance.com; s=google; t=1690191990; x=1690796790;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=vu9DfqGDIkVtY7CS+mn/8y6VlhAfp+/Q2ofuaCWar5Q=;
-        b=ZITiOrrWh+FheWM3chZFCAM8bc3YrsEgqzfm5Am/axy3dDhyTEHWaCIE6CxJlUheOx
-         RF45EA9aOXE5By7kx/OP7STghpSD/KEB/oF3GrXK+Myxe/+Fwg6k+PP3FURA3cxLYMYy
-         QPmEGcQxgz/g2uZ3I+YFETVsDVpSfeGJ/6AYCWm2OW7IkIAxCPa+wrGdNlr2psYdQiso
-         l4rMdXxvPMn1WtqWv/dfO7wx6DqTx5ztQcgxaNLtyw9DkIVWCy3gu8FnfH++DQ/RAVD5
-         IA2z6EzP9oeF3tWiBWkf5RokEJVb120E1SPLRv9Xx8rFVupecJKnGVj8I/3khxvVhjBZ
-         QV2A==
+        bh=TtWMuwNQICElQwN/uI+F3WL3CTikAs+Dtp5goHq/uX4=;
+        b=I+UdRoo7PtFa/HFb9ptM84BLJk51Oz8G0P2vA9d94Wc/XjfftjzLyxRBwA01anb/sX
+         9mresCrzzrrBEvcw02T2JRUzwmE2N5g0vsbRd5C+EoXN25pNGYeZ6g16/FMxa3H5VNDH
+         6ji0rzPXwUbXzJbwXvPiq1FHNNE8ocU8HPGADHiXDhNHZabYES9ASLXofIUnLzuIXCW+
+         kwLOx4qHBhz6RtbAZxDD88fTSzK7LENJJOn1r+bRhOQmNpcKYfm1Yk1Egb7OAZu9liNf
+         8Q2C/an05GdrxKmh9WrMTyMLOPzFeZw3WZtFR0oz9alHcEF4Djwn7mAV20C2gc5TCLWm
+         V2MQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1690191967; x=1690796767;
+        d=1e100.net; s=20221208; t=1690191990; x=1690796790;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=vu9DfqGDIkVtY7CS+mn/8y6VlhAfp+/Q2ofuaCWar5Q=;
-        b=KYeKLGAlkjR13bZSqV4wU5jw1k/Uv77PktWpmihwCpd3lEc1h+W1V5SA/WMSRFgGA7
-         FdU9t092uGA99xivxkiXVBTiI0sQsu/xVx1bIenwTd5LHjWMJrwwWAh+l3kalCJXd3qu
-         LZOPUBAIELpQCKqRNem4JI7WesOU8n9DlbaJpHpNV60KQgQEbVIIlG7EoKtCi75X3btF
-         QHsW8ISQLeZiJv3+jTKskwVeq8RtMCQ+u6ePsCdvS/cEe01/xikarvwGgPgZi+RXjxNV
-         4xyiwuMkg5nBJNGfwUkZawRD6mfP00QHom6C9gJ0ehe3wJWU1MykQQBKua/+f1H6/cFr
-         NE6g==
-X-Gm-Message-State: ABy/qLYBMTNIjbZs0WronqdCJTqRVF08rtUryMPwnSLw9r6/M9w3+18C
-        Ket8gA9LzAipwflkNlxaUwdPIg==
-X-Google-Smtp-Source: APBJJlGrsdFKJ71ukJT79kDa1W+M4ztJszdSUa3mf2ArYfnWEb5YwD/wtpSbLXe4wEi7ibAUftTBwg==
-X-Received: by 2002:a17:902:ecd2:b0:1b8:b4f6:1327 with SMTP id a18-20020a170902ecd200b001b8b4f61327mr12288935plh.6.1690191966684;
-        Mon, 24 Jul 2023 02:46:06 -0700 (PDT)
+        bh=TtWMuwNQICElQwN/uI+F3WL3CTikAs+Dtp5goHq/uX4=;
+        b=CVmp7+Pd4rYRKnP399o68bdpO50ToGDXLoZ6scuKOmSs6w6NkHUpoN961SydM6fpNr
+         GE9osRpub7rb+/0VqFlg46Z+jYbQFAtYjLdZYO/1WzQiaJ6pq8MVGYD6XVvyYMUtRNqB
+         0MWJ5EGQms0bg61PBHghXrf+K4ukK2832pLxxeiPoYo+x2A0GWxA11HcB7paSXbaqWLf
+         WsnCFSJXeYYFGMl2jKFLpvLNyM5fb4C5SJ7ziIP4Yut3zan34u21CIaYlYwlaSElv/J0
+         iYXOctq/Np6GZxuy7ZiltISzbZGerFBwyy1eCAD95/iT2GXzA4rK17aUe5bkGBVfYUUb
+         VWGg==
+X-Gm-Message-State: ABy/qLZJ2fXEEfvqQdkxNCLV8+MzJmCRBj4EThRRwoCZ7K2h6uAjfFrD
+        URgS9MWhddWA0ngOZF8iNLGoRw==
+X-Google-Smtp-Source: APBJJlE4z/oQr/nYJvsLLx4ZH1UH5CYL5idBHg9QqjGajgFE/t5dphI4tPFsRKn6N/RjSu5tdTiopA==
+X-Received: by 2002:a17:902:ecd2:b0:1b8:b4f6:1327 with SMTP id a18-20020a170902ecd200b001b8b4f61327mr12289687plh.6.1690191990533;
+        Mon, 24 Jul 2023 02:46:30 -0700 (PDT)
 Received: from C02DW0BEMD6R.bytedance.net ([203.208.167.147])
-        by smtp.gmail.com with ESMTPSA id d5-20020a170902c18500b001bb20380bf2sm8467233pld.13.2023.07.24.02.45.55
+        by smtp.gmail.com with ESMTPSA id d5-20020a170902c18500b001bb20380bf2sm8467233pld.13.2023.07.24.02.46.19
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 24 Jul 2023 02:46:06 -0700 (PDT)
+        Mon, 24 Jul 2023 02:46:30 -0700 (PDT)
 From:   Qi Zheng <zhengqi.arch@bytedance.com>
 To:     akpm@linux-foundation.org, david@fromorbit.com, tkhai@ya.ru,
         vbabka@suse.cz, roman.gushchin@linux.dev, djwong@kernel.org,
@@ -70,9 +70,9 @@ Cc:     linux-kernel@vger.kernel.org, linux-mm@kvack.org, x86@kernel.org,
         linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
         linux-xfs@vger.kernel.org, linux-btrfs@vger.kernel.org,
         Qi Zheng <zhengqi.arch@bytedance.com>
-Subject: [PATCH v2 05/47] binder: dynamically allocate the android-binder shrinker
-Date:   Mon, 24 Jul 2023 17:43:12 +0800
-Message-Id: <20230724094354.90817-6-zhengqi.arch@bytedance.com>
+Subject: [PATCH v2 07/47] xenbus/backend: dynamically allocate the xen-backend shrinker
+Date:   Mon, 24 Jul 2023 17:43:14 +0800
+Message-Id: <20230724094354.90817-8-zhengqi.arch@bytedance.com>
 X-Mailer: git-send-email 2.24.3 (Apple Git-128)
 In-Reply-To: <20230724094354.90817-1-zhengqi.arch@bytedance.com>
 References: <20230724094354.90817-1-zhengqi.arch@bytedance.com>
@@ -82,68 +82,48 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Use new APIs to dynamically allocate the android-binder shrinker.
+Use new APIs to dynamically allocate the xen-backend shrinker.
 
 Signed-off-by: Qi Zheng <zhengqi.arch@bytedance.com>
 ---
- drivers/android/binder_alloc.c | 31 +++++++++++++++++++------------
- 1 file changed, 19 insertions(+), 12 deletions(-)
+ drivers/xen/xenbus/xenbus_probe_backend.c | 17 +++++++++++------
+ 1 file changed, 11 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/android/binder_alloc.c b/drivers/android/binder_alloc.c
-index e3db8297095a..019981d65e1e 100644
---- a/drivers/android/binder_alloc.c
-+++ b/drivers/android/binder_alloc.c
-@@ -1053,11 +1053,7 @@ binder_shrink_scan(struct shrinker *shrink, struct shrink_control *sc)
- 			    NULL, sc->nr_to_scan);
+diff --git a/drivers/xen/xenbus/xenbus_probe_backend.c b/drivers/xen/xenbus/xenbus_probe_backend.c
+index da96c260e26b..b4c3cf27af30 100644
+--- a/drivers/xen/xenbus/xenbus_probe_backend.c
++++ b/drivers/xen/xenbus/xenbus_probe_backend.c
+@@ -284,10 +284,7 @@ static unsigned long backend_shrink_memory_count(struct shrinker *shrinker,
+ 	return 0;
  }
  
--static struct shrinker binder_shrinker = {
--	.count_objects = binder_shrink_count,
--	.scan_objects = binder_shrink_scan,
+-static struct shrinker backend_memory_shrinker = {
+-	.count_objects = backend_shrink_memory_count,
 -	.seeks = DEFAULT_SEEKS,
 -};
-+static struct shrinker *binder_shrinker;
++static struct shrinker *backend_memory_shrinker;
  
- /**
-  * binder_alloc_init() - called by binder_open() for per-proc initialization
-@@ -1077,19 +1073,30 @@ void binder_alloc_init(struct binder_alloc *alloc)
- 
- int binder_alloc_shrinker_init(void)
+ static int __init xenbus_probe_backend_init(void)
  {
--	int ret = list_lru_init(&binder_alloc_lru);
-+	int ret;
+@@ -305,8 +302,16 @@ static int __init xenbus_probe_backend_init(void)
  
--	if (ret == 0) {
--		ret = register_shrinker(&binder_shrinker, "android-binder");
--		if (ret)
--			list_lru_destroy(&binder_alloc_lru);
-+	ret = list_lru_init(&binder_alloc_lru);
-+	if (ret)
-+		return ret;
+ 	register_xenstore_notifier(&xenstore_notifier);
+ 
+-	if (register_shrinker(&backend_memory_shrinker, "xen-backend"))
+-		pr_warn("shrinker registration failed\n");
++	backend_memory_shrinker = shrinker_alloc(0, "xen-backend");
++	if (!backend_memory_shrinker) {
++		pr_warn("shrinker allocation failed\n");
++		return 0;
++	}
 +
-+	binder_shrinker = shrinker_alloc(0, "android-binder");
-+	if (!binder_shrinker) {
-+		list_lru_destroy(&binder_alloc_lru);
-+		return -ENOMEM;
- 	}
--	return ret;
++	backend_memory_shrinker->count_objects = backend_shrink_memory_count;
++	backend_memory_shrinker->seeks = DEFAULT_SEEKS;
 +
-+	binder_shrinker->count_objects = binder_shrink_count;
-+	binder_shrinker->scan_objects = binder_shrink_scan;
-+	binder_shrinker->seeks = DEFAULT_SEEKS;
-+
-+	shrinker_register(binder_shrinker);
-+
-+	return 0;
++	shrinker_register(backend_memory_shrinker);
+ 
+ 	return 0;
  }
- 
- void binder_alloc_shrinker_exit(void)
- {
--	unregister_shrinker(&binder_shrinker);
-+	shrinker_unregister(binder_shrinker);
- 	list_lru_destroy(&binder_alloc_lru);
- }
- 
 -- 
 2.30.2
 

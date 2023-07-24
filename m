@@ -2,40 +2,40 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9A68CC04A94
-	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Jul 2023 13:27:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8F2C3C0015E
+	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Jul 2023 13:27:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231392AbjGXN1X (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 24 Jul 2023 09:27:23 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35264 "EHLO
+        id S231426AbjGXN1Y (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 24 Jul 2023 09:27:24 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35270 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231179AbjGXN1S (ORCPT
+        with ESMTP id S231214AbjGXN1S (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Mon, 24 Jul 2023 09:27:18 -0400
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 03B36E76
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 01AFF106
         for <linux-btrfs@vger.kernel.org>; Mon, 24 Jul 2023 06:27:05 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=0mSf0Ipf+aqxpUxauetCwQTKn4svJk6yPriL/Z2IadY=; b=jAreCxouKNKveLD107eKSggOh1
-        b5Qr24+GxO0MyJPw38FAlG5diAywKj+A6moGNtxYNoN/1bth3LY4QV9M234war8AaDEqjxUxD4GQR
-        OCX17+guIZxfwFcv5CPpUl2HbELpRabY5qvmhvzCTVx1o4ifr7au7EVIqJZ7MCSKnZfm8kTvz1hSZ
-        406llFg1mu5RanReTKZM43aEn2hblfz6CFCj2lMc9WMeDNitKxW3hefGVfnfMgO8jIeMurhgrLAec
-        nYureFzmcGUh0fUr0NP1YJEi9ySYJhFcM5FP1pJYqnB39T92JBG+j4e+k0M/2PJMeXbYUJ6rTrK5E
-        LIk4WBHg==;
+        bh=3nNvfzNF93rFxsmZklRHmKc5CAnVSqAcDlcgaG/Rczo=; b=xpd0Fj5ogWsRLBCjiHSGZwzFMi
+        bw+CmyPVAtTeWdVOsPOLTaUNhQVVFIAmMiYMgs9HV00u2055lj0ujEkidsiF4Kq33sBhgP2igFens
+        8AvmRD2toTvB7YOc1D08trllV2OxLGU19l5IzgVkCgeI9wrvn3xJoO8hpDXW9zRAr7+O2imKsUoaE
+        HaZm4LkZCV/RF/TZZPItBdVdyMb7PNSOVRfn9ERfqFmWmkL2+ygNLz51cx1My4lFutFOlwMYv0ZeY
+        fZ1SgXJx5x8DC+dGjTRImdahAEPJEJUQZaMHP1+un9cdhhQC3e/6ElDrwtKambpLsIqKXye4AQWGc
+        zGk3Uc9w==;
 Received: from 67-207-104-238.static.wiline.com ([67.207.104.238] helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
-        id 1qNvaZ-004RLy-01;
+        id 1qNvaZ-004RMO-1r;
         Mon, 24 Jul 2023 13:27:03 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>
 Cc:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 6/9] btrfs: stop submitting I/O after an error in extent_write_locked_range
-Date:   Mon, 24 Jul 2023 06:26:58 -0700
-Message-Id: <20230724132701.816771-7-hch@lst.de>
+Subject: [PATCH 9/9] btrfs: lift the call to mapping_set_error out of cow_file_range
+Date:   Mon, 24 Jul 2023 06:27:01 -0700
+Message-Id: <20230724132701.816771-10-hch@lst.de>
 X-Mailer: git-send-email 2.39.2
 In-Reply-To: <20230724132701.816771-1-hch@lst.de>
 References: <20230724132701.816771-1-hch@lst.de>
@@ -46,64 +46,51 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-As soon a __extent_writepage_io returns an error we know that the
-extent_map is corrupted or we're out of memory, and there is no point
-in continuing to submit I/O.  Follow the behavior in extent_write_cache
-pages and stop submitting I/O, and instead just unlock all pages.
+Instead of calling mapping_set_error in cow_file_range for the
+!locked_page case, make the submit_uncompressed_range call
+mapping_set_error also for the !locked_page as that is the only caller
+that might pass a NULL locked_page.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/extent_io.c | 24 ++++++++++++++++++------
- 1 file changed, 18 insertions(+), 6 deletions(-)
+ fs/btrfs/inode.c | 7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 85d7a219040d07..fada7a1931b130 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2151,7 +2151,6 @@ void extent_write_locked_range(struct inode *inode, struct page *locked_page,
- 			       u64 start, u64 end, struct writeback_control *wbc,
- 			       bool pages_dirty)
- {
--	bool found_error = false;
- 	int ret = 0;
- 	struct address_space *mapping = inode->i_mapping;
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
-@@ -2180,16 +2179,29 @@ void extent_write_locked_range(struct inode *inode, struct page *locked_page,
- 			clear_page_dirty_for_io(page);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 0d33bff5ca176f..b04eacc0fed44e 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1077,6 +1077,7 @@ static void submit_uncompressed_range(struct btrfs_inode *inode,
+ 	wbc_detach_inode(&wbc);
+ 	if (ret < 0) {
+ 		btrfs_cleanup_ordered_extents(inode, locked_page, start, end - start + 1);
++		mapping_set_error(inode->vfs_inode.i_mapping, ret);
+ 		if (locked_page) {
+ 			const u64 page_start = page_offset(locked_page);
+ 
+@@ -1088,7 +1089,6 @@ static void submit_uncompressed_range(struct btrfs_inode *inode,
+ 			btrfs_page_clear_uptodate(inode->root->fs_info,
+ 						  locked_page, page_start,
+ 						  PAGE_SIZE);
+-			mapping_set_error(locked_page->mapping, ret);
+ 			unlock_page(locked_page);
  		}
- 
--		ret = __extent_writepage_io(BTRFS_I(inode), page, &bio_ctrl,
--					    i_size);
-+		/*
-+		 * The entire page range that we were called on is locked and
-+		 * covered by an ordered_extent.  Make sure we continue the
-+		 * loop after an initial writeback error to unwind these as well
-+		 * as clearing the dirty bit on the page by starting and ending
-+		 * writeback.
-+		 */
-+		if (ret) {
-+			btrfs_mark_ordered_io_finished(BTRFS_I(inode), page,
-+						       cur, cur_len, false);
-+			btrfs_page_clear_uptodate(fs_info, page, cur, cur_len);
-+			set_page_writeback(page);
-+			end_page_writeback(page);
-+		} else {
-+			ret = __extent_writepage_io(BTRFS_I(inode), page,
-+						    &bio_ctrl, i_size);
-+		}
- 		btrfs_page_unlock_writer(fs_info, page, cur, cur_len);
--		if (ret < 0)
--			found_error = true;
- 		put_page(page);
- 		cur = cur_end + 1;
  	}
+@@ -1526,12 +1526,9 @@ static noinline int cow_file_range(struct btrfs_inode *inode,
+ 	 * However, in case of @keep_locked, we still need to unlock the pages
+ 	 * (except @locked_page) to ensure all the pages are unlocked.
+ 	 */
+-	if (keep_locked && orig_start < start) {
+-		if (!locked_page)
+-			mapping_set_error(inode->vfs_inode.i_mapping, ret);
++	if (keep_locked && orig_start < start)
+ 		extent_clear_unlock_delalloc(inode, orig_start, start - 1,
+ 					     locked_page, 0, page_ops);
+-	}
  
--	submit_write_bio(&bio_ctrl, found_error ? ret : 0);
-+	submit_write_bio(&bio_ctrl, ret);
- }
- 
- int extent_writepages(struct address_space *mapping,
+ 	/*
+ 	 * For the range (2). If we reserved an extent for our delalloc range
 -- 
 2.39.2
 

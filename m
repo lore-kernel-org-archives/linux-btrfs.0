@@ -2,90 +2,50 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 99D58C04A6A
-	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Jul 2023 14:22:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 73D8AC0015E
+	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Jul 2023 14:55:30 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231695AbjGXOWv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 24 Jul 2023 10:22:51 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49004 "EHLO
+        id S229597AbjGXOz3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 24 Jul 2023 10:55:29 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35832 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231821AbjGXOWr (ORCPT
+        with ESMTP id S229590AbjGXOz2 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 24 Jul 2023 10:22:47 -0400
+        Mon, 24 Jul 2023 10:55:28 -0400
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6B856BC
-        for <linux-btrfs@vger.kernel.org>; Mon, 24 Jul 2023 07:22:46 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 376F910C1
+        for <linux-btrfs@vger.kernel.org>; Mon, 24 Jul 2023 07:55:25 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
-        MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
-        :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=NxrOayYA2ZaGKhdQ6VW3bI8ywI3ep4NRjpzmsZzHy4g=; b=K1SIkh2r0EKdtcBk0tomo8dU35
-        5WrUy7Eecky4nivGhr2knARE/yRj6VAz+IHboGKdy3Cbmak0X7RjampU6anFY0sT62FolGugv7gcf
-        5LSnMi86z8awRN0YY5brNYAoTeQlAI5/cUvPyVPo3Q65MuSbiQxhiaVKKvu95e6fhVi9xQm+yvDxm
-        tOdRclN2jKjwVV8naCO05BNZjc9+/5m2aNplsV3kvy/4faDrb6sHkYD6QhX57C1QYPaBR97Odr99y
-        dLHoji6Hd6PNbP80ZHiUBJRPTjPmTVuRqBXNzP8JQGnBwLl3DOd2CO0j4WshSXmUXbuyFpo2VAiXN
-        AVFohvNw==;
-Received: from 67-207-104-238.static.wiline.com ([67.207.104.238] helo=localhost)
-        by bombadil.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
-        id 1qNwSS-004b9h-0J;
-        Mon, 24 Jul 2023 14:22:44 +0000
-From:   Christoph Hellwig <hch@lst.de>
-To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/6] btrfs: consolidate the error handling in run_delalloc_nocow
-Date:   Mon, 24 Jul 2023 07:22:40 -0700
-Message-Id: <20230724142243.5742-4-hch@lst.de>
-X-Mailer: git-send-email 2.39.2
-In-Reply-To: <20230724142243.5742-1-hch@lst.de>
-References: <20230724142243.5742-1-hch@lst.de>
+        d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
+        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+        Content-Transfer-Encoding:Content-ID:Content-Description;
+        bh=RWboUVmSWmv9RVJc0Md/DeooAQPYZ3g0INW8wATErwE=; b=IduRIZxYPHF0ogcd5FQCptQqh0
+        Scww6QSel8TtnoTx6Gx1+ocWEVQfCDcPF0QBYnnH5wkAbjUVkoZGlTGb3DDy0dlzbmTT37sLxlw0q
+        GD8O3boulQdhssZ4tAqzgDmz/OcuRkoYr3NpqXdBtgyuTGuKO28mLsiDT4UClv7EpAl3QCYdlIG7t
+        pjKPpWASsHTcKpp/hXC9yHmr9hWvidHsRbzberw3FwH9j0HkY+BrBaX6wr7pRyXYtIbBbcSjeOhUp
+        nSE6w+MKdAWEVLraPeA9aYzbK5rjE1W32JQka/ycBqGrXuJ4XD8WYHZq0XwdFvJlTgNX96ZpWBkgo
+        B7NiU5Xg==;
+Received: from hch by bombadil.infradead.org with local (Exim 4.96 #2 (Red Hat Linux))
+        id 1qNwy5-004ec0-0H;
+        Mon, 24 Jul 2023 14:55:25 +0000
+Date:   Mon, 24 Jul 2023 07:55:25 -0700
+From:   Christoph Hellwig <hch@infradead.org>
+To:     Naohiro Aota <naohiro.aota@wdc.com>
+Cc:     linux-btrfs@vger.kernel.org, hch@infradead.org
+Subject: Re: [PATCH v2] btrfs: zoned: do not zone finish data relocation
+ block group
+Message-ID: <ZL6Q3Udz4vdbgEY+@infradead.org>
+References: <a57f943e28a5bd86cddcf9d0839b124880f2f6c7.1689924624.git.naohiro.aota@wdc.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <a57f943e28a5bd86cddcf9d0839b124880f2f6c7.1689924624.git.naohiro.aota@wdc.com>
 X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Share the calls to extent_clear_unlock_delalloc for btrfs_path allocation
-failure handling and the normal exit path.
+Not an expert on the area, but with the new commit log I can at
+least understand and verify the logic.  So a very cautious:
 
-This relies on btrfs_free_path ignoring a NULL pointer, and the
-initialization of cur_offset to start at the beginning of the function.
-
-Signed-off-by: Christoph Hellwig <hch@lst.de>
----
- fs/btrfs/inode.c | 13 +++----------
- 1 file changed, 3 insertions(+), 10 deletions(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 212aca4eea442b..2d465b50c228ed 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1973,21 +1973,14 @@ static noinline int run_delalloc_nocow(struct btrfs_inode *inode,
- 	struct btrfs_path *path;
- 	u64 cow_start = (u64)-1;
- 	u64 cur_offset = start;
--	int ret;
-+	int ret = -ENOMEM;
- 	bool check_prev = true;
- 	u64 ino = btrfs_ino(inode);
- 	struct can_nocow_file_extent_args nocow_args = { 0 };
- 
- 	path = btrfs_alloc_path();
--	if (!path) {
--		extent_clear_unlock_delalloc(inode, start, end, locked_page,
--					     EXTENT_LOCKED | EXTENT_DELALLOC |
--					     EXTENT_DO_ACCOUNTING |
--					     EXTENT_DEFRAG, PAGE_UNLOCK |
--					     PAGE_START_WRITEBACK |
--					     PAGE_END_WRITEBACK);
--		return -ENOMEM;
--	}
-+	if (!path)
-+		goto error;
- 
- 	nocow_args.end = end;
- 	nocow_args.writeback_path = true;
--- 
-2.39.2
-
+Reviewed-by: Christoph Hellwig <hch@lst.de>

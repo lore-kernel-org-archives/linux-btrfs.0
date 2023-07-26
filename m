@@ -2,42 +2,42 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 87E0EC04FE0
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A7180C05051
 	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Jul 2023 15:58:33 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234987AbjGZP6G (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 26 Jul 2023 11:58:06 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56388 "EHLO
+        id S234989AbjGZP6H (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 26 Jul 2023 11:58:07 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56432 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234954AbjGZP5b (ORCPT
+        with ESMTP id S234976AbjGZP5e (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 26 Jul 2023 11:57:31 -0400
+        Wed, 26 Jul 2023 11:57:34 -0400
 Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A11D2100
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Jul 2023 08:57:30 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 84FDF212B
+        for <linux-btrfs@vger.kernel.org>; Wed, 26 Jul 2023 08:57:32 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature RSA-PSS (2048 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 3F6BA61A21
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 2331D61A21
+        for <linux-btrfs@vger.kernel.org>; Wed, 26 Jul 2023 15:57:32 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 12D68C433C8
         for <linux-btrfs@vger.kernel.org>; Wed, 26 Jul 2023 15:57:30 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 29CA4C433CB
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Jul 2023 15:57:28 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1690387049;
-        bh=UqTyHnotFGChh78Tjzd0w6jJmADTq97xrTdADOACFkg=;
+        s=k20201202; t=1690387051;
+        bh=ci+v5pYze/SgbTOwXUWl2+aX/mtugpW70pThNVlwvEI=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=sbhfkdPBtKW/olzs7iefVlXU4cGOgPYExRUAx3RQpTzgF+ZYgmpBGl60hpGtYxFRN
-         2rP7pJdii6N+vZoAdjRltZYR8as0XDAvKsdUiUlljSN93xBBwLPK5c1gPhxqOrZkdR
-         3LskZUDOqh+2GaPUZk3nIDy9/6sOoaWqrF3SOHKF3J9i8u52g3llYPhn29l9k9zlA/
-         eHoBEs72QSjSQDELZlIOyUVdEDKAOkAmMn4OKKieo4Sy6zo0X7ralrip3mbPkBXOO/
-         H2gy8B/uYfXvEAl+5ysYwr18O677sg51pbJRrgZgXscxfZIWQd7mmyvwU51M7Ejjaw
-         k3yhCp5euVoCg==
+        b=bVw5mpUNvrTJYBRD9pql+Wo9Repn4hWCiJr2zjPwb22J8e0daK8SW8qnBL0xwBPeX
+         xkyQFUjSX231cVoaDqA44phqArlB4sgYdnc2AAHjA+fQuTAGV1nyw1jbAb5Uh7DW0W
+         aOKMfa5Ddy+wMecdkV+Ya1bI45drZlQtsYBd6QOX2gVHttWUHvdOBxH0eBo6HPNHRp
+         1YDLvq7pNLZNpNNQ53WLV4Gj4woG+NGWFBaQQIUqoeGSFII9f+IbbWFOd5UULZb4Vr
+         1HQMxjYU605PYnWcW8CoRlZyMsC+OWy2jKHH1jnYcCbrXfA6OGzIcVfz7L6ROH6O7u
+         AUULXU1YO2y5Q==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 13/17] btrfs: merge find_free_dev_extent() and find_free_dev_extent_start()
-Date:   Wed, 26 Jul 2023 16:57:09 +0100
-Message-Id: <b3bc936325b250e7f0960cc2f4344e1acf770025.1690383587.git.fdmanana@suse.com>
+Subject: [PATCH 15/17] btrfs: avoid starting and committing empty transaction when flushing space
+Date:   Wed, 26 Jul 2023 16:57:11 +0100
+Message-Id: <b7b65360d65db68392505b76a509ea79893a08cd.1690383587.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.34.1
 In-Reply-To: <cover.1690383587.git.fdmanana@suse.com>
 References: <cover.1690383587.git.fdmanana@suse.com>
@@ -49,86 +49,48 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-There is no point in having find_free_dev_extent() because it's just a
-simple wrapper around find_free_dev_extent_start() which always passes a
-value of 0 for the search_start argument. Since there are no other callers
-of find_free_dev_extent_start(), remove find_free_dev_extent() and rename
-find_free_dev_extent_start() to find_free_dev_extent(), removing its
-search_start argument because it's always 0.
+When flushing space and we are in the COMMIT_TRANS state, we join a
+transaction with btrfs_join_transaction() and then commit the returned
+transaction. However btrfs_join_transaction() starts a new transaction if
+there is none currently open, which is pointless since comitting a new,
+empty transaction, doesn't achieve anything, it only wastes time, IO and
+creates an unnecessary rotation of the backup roots.
+
+So use btrfs_attach_transaction_barrier() to avoid starting a new
+transaction. This also waits for any ongoing transaction that is
+committing (state >= TRANS_STATE_COMMIT_DOING) to fully complete, and
+therefore wait for all the extents that were pinned during the
+transaction's lifetime to be unpinned.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/volumes.c | 21 +++++++--------------
- 1 file changed, 7 insertions(+), 14 deletions(-)
+ fs/btrfs/space-info.c | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index e15d02f8520d..6b044d61ef13 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1438,18 +1438,18 @@ static bool contains_pending_extent(struct btrfs_device *device, u64 *start,
- 	return false;
- }
- 
--static u64 dev_extent_search_start(struct btrfs_device *device, u64 start)
-+static u64 dev_extent_search_start(struct btrfs_device *device)
- {
- 	switch (device->fs_devices->chunk_alloc_policy) {
- 	case BTRFS_CHUNK_ALLOC_REGULAR:
--		return max_t(u64, start, BTRFS_DEVICE_RANGE_RESERVED);
-+		return BTRFS_DEVICE_RANGE_RESERVED;
- 	case BTRFS_CHUNK_ALLOC_ZONED:
- 		/*
- 		 * We don't care about the starting region like regular
- 		 * allocator, because we anyway use/reserve the first two zones
- 		 * for superblock logging.
- 		 */
--		return ALIGN(start, device->zone_info->zone_size);
-+		return 0;
- 	default:
- 		BUG();
- 	}
-@@ -1581,15 +1581,15 @@ static bool dev_extent_hole_check(struct btrfs_device *device, u64 *hole_start,
-  * correct usable device space, as device extent freed in current transaction
-  * is not reported as available.
-  */
--static int find_free_dev_extent_start(struct btrfs_device *device,
--				u64 num_bytes, u64 search_start, u64 *start,
--				u64 *len)
-+static int find_free_dev_extent(struct btrfs_device *device, u64 num_bytes,
-+				u64 *start, u64 *len)
- {
- 	struct btrfs_fs_info *fs_info = device->fs_info;
- 	struct btrfs_root *root = fs_info->dev_root;
- 	struct btrfs_key key;
- 	struct btrfs_dev_extent *dev_extent;
- 	struct btrfs_path *path;
-+	u64 search_start;
- 	u64 hole_size;
- 	u64 max_hole_start;
- 	u64 max_hole_size;
-@@ -1599,7 +1599,7 @@ static int find_free_dev_extent_start(struct btrfs_device *device,
- 	int slot;
- 	struct extent_buffer *l;
- 
--	search_start = dev_extent_search_start(device, search_start);
-+	search_start = dev_extent_search_start(device);
- 
- 	WARN_ON(device->zone_info &&
- 		!IS_ALIGNED(num_bytes, device->zone_info->zone_size));
-@@ -1725,13 +1725,6 @@ static int find_free_dev_extent_start(struct btrfs_device *device,
- 	return ret;
- }
- 
--static int find_free_dev_extent(struct btrfs_device *device, u64 num_bytes,
--				u64 *start, u64 *len)
--{
--	/* FIXME use last free of some kind */
--	return find_free_dev_extent_start(device, num_bytes, 0, start, len);
--}
--
- static int btrfs_free_dev_extent(struct btrfs_trans_handle *trans,
- 			  struct btrfs_device *device,
- 			  u64 start, u64 *dev_extent_len)
+diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
+index 2db92a201697..17c86db7b1b1 100644
+--- a/fs/btrfs/space-info.c
++++ b/fs/btrfs/space-info.c
+@@ -814,9 +814,18 @@ static void flush_space(struct btrfs_fs_info *fs_info,
+ 		break;
+ 	case COMMIT_TRANS:
+ 		ASSERT(current->journal_info == NULL);
+-		trans = btrfs_join_transaction(root);
++		/*
++		 * We don't want to start a new transaction, just attach to the
++		 * current one or wait it fully commits in case its commit is
++		 * happening at the moment. Note: we don't use a nostart join
++		 * because that does not wait for a transaction to fully commit
++		 * (only for it to be unblocked, state TRANS_STATE_UNBLOCKED).
++		 */
++		trans = btrfs_attach_transaction_barrier(root);
+ 		if (IS_ERR(trans)) {
+ 			ret = PTR_ERR(trans);
++			if (ret == -ENOENT)
++				ret = 0;
+ 			break;
+ 		}
+ 		ret = btrfs_commit_transaction(trans);
 -- 
 2.34.1
 

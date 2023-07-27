@@ -2,209 +2,130 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A1E5CEB64DD
-	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Jul 2023 22:15:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 754F6C0015E
+	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Jul 2023 22:15:27 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232732AbjG0WPW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 27 Jul 2023 18:15:22 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41594 "EHLO
+        id S232757AbjG0WP0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 27 Jul 2023 18:15:26 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41640 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230254AbjG0WPV (ORCPT
+        with ESMTP id S232753AbjG0WPZ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 27 Jul 2023 18:15:21 -0400
-Received: from wout1-smtp.messagingengine.com (wout1-smtp.messagingengine.com [64.147.123.24])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A8C5913E
-        for <linux-btrfs@vger.kernel.org>; Thu, 27 Jul 2023 15:15:20 -0700 (PDT)
-Received: from compute6.internal (compute6.nyi.internal [10.202.2.47])
-        by mailout.west.internal (Postfix) with ESMTP id F0DFA3200319;
-        Thu, 27 Jul 2023 18:15:19 -0400 (EDT)
-Received: from mailfrontend2 ([10.202.2.163])
-  by compute6.internal (MEProxy); Thu, 27 Jul 2023 18:15:20 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc
-        :content-transfer-encoding:content-type:date:date:from:from
-        :in-reply-to:in-reply-to:message-id:mime-version:references
-        :reply-to:sender:subject:subject:to:to; s=fm1; t=1690496119; x=
-        1690582519; bh=JJ0H+v4Kmi+ad3UHW6tKa+EOnxzqUZcsFy+1TjVgi1k=; b=h
-        aPdgvw0gcLmbuxHoXGrIcBdAwCP/ibdOLnJ/umXL7PTS6GOg8wRNReqTtxvJSIGl
-        7jFIoU+KHP3AzXThAHkeCqk89GliqSvVbzWuamGAwJOxcclevWyX2Vx5UO951qO7
-        SAltGrRX31ehNBLlMrzJp/njZqZTJvMNB0b2q2rrCaVD8mfuiH5Wn7cMAfjb8rD6
-        45I83n6PXzxedewvJ4GS/cQXfzb+vrZXfN2jJNDeiTWdUyaCZ5zvsgVldetWUO9T
-        ax4XU5Sw0el8Vfa2cM/FI3NZ+pJS8UAM0XkNzjtO+J6zvBg60CG9nzYNbP78qza3
-        zin0XJl+Wasc7DpGuVsfQ==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-        messagingengine.com; h=cc:content-transfer-encoding:content-type
-        :date:date:feedback-id:feedback-id:from:from:in-reply-to
-        :in-reply-to:message-id:mime-version:references:reply-to:sender
-        :subject:subject:to:to:x-me-proxy:x-me-proxy:x-me-sender
-        :x-me-sender:x-sasl-enc; s=fm3; t=1690496119; x=1690582519; bh=J
-        J0H+v4Kmi+ad3UHW6tKa+EOnxzqUZcsFy+1TjVgi1k=; b=JZNF4dlIehYJFOaMf
-        /HOLUMqZ9nmmGXbpVersNvww0FlvxIJvovFThmswf8Z7B2HZMqE44owJMyDneoaY
-        jHDtn4IWb8cVZtz9KU6Agwo8OCdxgeoBaTy2Xma0Y0zUoSFH/fxPXQ4KhGQMvYcm
-        x+NcnKWwPMsLy9l60YY4fn3MbaThtfmMrULTfKvQQ4PkojlBuRLjNvjh2whxHPdW
-        t+Pg4XXG51/ivyKLOji9gAVblokfPH1kGhsiE3F65DkrCz943j5pA1AXYberL+Et
-        zGTnL64S3tfRP/JO9MFc9FGeESKS3GIH4cnXmlHAKNMLazVEyqIVT03NvIPDYOG+
-        MSBBQ==
-X-ME-Sender: <xms:d-zCZMc2p6G0jc8_-Wlf8x5tlVPdgLXyrxZ1VY3V0jeoxWLYm8X2Jg>
-    <xme:d-zCZOM402iCqkEgHyJWJAYHMVRUXDTbuF0nkRBiovMx-W9YVqYwn_yyOHCxOptlT
-    7Iy5DYI_0XB6UOhTmI>
-X-ME-Received: <xmr:d-zCZNiCr6mqaMejxsVoY4vj_nNkvcVNl5T0-rjrIR7pzIp_Rkg_xZlRHn_zbYxBwqjxrTPoiwHBVGxDaZM043656Mc>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedviedrieehgddtiecutefuodetggdotefrodftvf
-    curfhrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfghnecu
-    uegrihhlohhuthemuceftddtnecunecujfgurhephffvufffkffojghfggfgsedtkeertd
-    ertddtnecuhfhrohhmpeeuohhrihhsuceuuhhrkhhovhcuoegsohhrihhssegsuhhrrdhi
-    oheqnecuggftrfgrthhtvghrnhepieeuffeuvdeiueejhfehiefgkeevudejjeejffevvd
-    ehtddufeeihfekgeeuheelnecuvehluhhsthgvrhfuihiivgeptdenucfrrghrrghmpehm
-    rghilhhfrhhomhepsghorhhishessghurhdrihho
-X-ME-Proxy: <xmx:d-zCZB8yTCPHiHXN5UcVOoyK5YPNFb1AcdO8Hp3sDoiPtJFjCEIy6g>
-    <xmx:d-zCZIv1UM_tAXpBFnTJcPtEoTMnSab3liE7RxOctz9xk_NPC45liw>
-    <xmx:d-zCZIEKHmmAYLY_QfW5v50iVGFTwrJ1cXq-JnOxGjH_3Ex0ZmJNEQ>
-    <xmx:d-zCZO0iaRsyziKoJOYsCoptjwokFl73aAoacdDyEhMlAnJHTA0Ong>
-Feedback-ID: i083147f8:Fastmail
-Received: by mail.messagingengine.com (Postfix) with ESMTPA; Thu,
- 27 Jul 2023 18:15:18 -0400 (EDT)
-From:   Boris Burkov <boris@bur.io>
-To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v5 07/18] btrfs: function for recording simple quota deltas
-Date:   Thu, 27 Jul 2023 15:12:54 -0700
-Message-ID: <85ff3dcd358a340f89e93a09eafd02e051944bcd.1690495785.git.boris@bur.io>
-X-Mailer: git-send-email 2.41.0
-In-Reply-To: <cover.1690495785.git.boris@bur.io>
-References: <cover.1690495785.git.boris@bur.io>
+        Thu, 27 Jul 2023 18:15:25 -0400
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.20])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3C24EE78;
+        Thu, 27 Jul 2023 15:15:23 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.com;
+ s=s31663417; t=1690496118; x=1691100918; i=quwenruo.btrfs@gmx.com;
+ bh=tHBaZvQYsrn4NKoqjXmpgLdFlBY9dtppWa7RAlofW5U=;
+ h=X-UI-Sender-Class:Date:Subject:To:Cc:References:From:In-Reply-To;
+ b=V3UDKpGc7iU/DJ3ORpOk0bh70AUo7SJ2jpljncKJNCzDwpZvnMT8xj57tE/2BKjv5QmMLLb
+ bmRqbkx8Wd/l/6VbkwO5KZTfG8x/yf73mEClROl3KnfMpJHnCJfg1vfVft06jiuCNH4AlELBg
+ 8GeAADsL8879yFGnXjPYEHE5ZoxPTZ5CHZFnvsBrFuoyVYjrJinAvMW9kw/z8u54XywqtOIDn
+ fjDAJCnPiSMicQ/Qaz/4CYhCwlHx6BE2Ln1JENmdCjPL07IDgjHvcXoR7bAKFluz/ODAczj85
+ 7/6nVEdsGqvAp/y/x44Tb+EWhxxODG7bxox+Aeh2OahXrXAz4J8Q==
+X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx104
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MG9g4-1qfcK13LbA-00GV7L; Fri, 28
+ Jul 2023 00:15:18 +0200
+Message-ID: <1ff02767-621c-01ac-66fe-7ff3be3b71db@gmx.com>
+Date:   Fri, 28 Jul 2023 06:15:14 +0800
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.12.0
+Subject: Re: [PATCH] btrfs/294: reject zoned devices for now
+To:     Zorro Lang <zlang@redhat.com>, Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org, fstests@vger.kernel.org
+References: <20230724030423.92390-1-wqu@suse.com>
+ <20230727155041.u5yr3rtxneqhq2vl@zlang-mailbox>
+Content-Language: en-US
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+In-Reply-To: <20230727155041.u5yr3rtxneqhq2vl@zlang-mailbox>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:F031XwBHTjjwaK5gYDPutXSWrFtU7iS/4GUqPxTXGebE+3NJlK2
+ 3S0Y3leoouEp6yQXN79mr5rvKRyA5Ot3Ic9uCqRlAbcwiuv/WHti8i3GUioJ6mces4WzK9n
+ ZMXV6pwn05F+w+8WkvZHfcE3LpcNbNReNc/pDpYkY3zPiQ8+4PudCEUtKx9QCGKVWzJoKdG
+ lAqT1dGalc1tQRG2zSTcQ==
+UI-OutboundReport: notjunk:1;M01:P0:PcMaKy9+iEg=;ba5Og9wdxauxGWpOd8WVzJU52mn
+ wmXft8aVYjC50pWBDztwuhZoE0OB9oVVzlIo5upaYBRzBKBqNLwgxLQsP5eQMYfxZLAsvg7gG
+ Yqk0++3Utoa7YjbkZYZtuNEx6juF880P8RJnnzinb17h5BHpWFibUH2EsOD4TXS5JTLDAg+nZ
+ 7PKJ/MPOMJoEvO0uXazZUlsWRpkm7kkm1ctld3NwRpjo3uwG/jo1a+QD/kQdXpVzHaE9Fu6ZD
+ bnecwDOqHH2BTsOfVSK/z8EmMUkpA8DWyTsWIGxrUihovzNDnMRqWrVUc/oyNShGdLHkkxWrV
+ XCJNch64NVU1JPTACYMvBK/0K7TJu/O7xYZ1//roRtP0dD1sajiXXIRNGALLdUqOXckQShDom
+ AGGrGz4az91C5WiTVzvLcXm4gfVzs6R8Kf66+240et6xxFp5HinXxsXlj/ToD3S7cevkRjhUZ
+ JnISrmK18Znq2Ru34gxfBcRas1Y6EuImywH9rRCaFDMR1XE7xYSlzic2Eh9sJUdYrkDdo9Exf
+ dXV4HAWXOWpinRbcdaHFLIdKbBSrRHMz9sCFM9h0CGqoL7j52PPwdNRQkoeoI+SDWDVkHeL3Y
+ E8DSqrquXu5whAIxiFVz/Y7pFNB0j1ckGh6+a0SaN0/Bn+Aa5tqiCmDWWPH7J/kCAEd1SlXF2
+ PBbB9tnWVu/np6ODUPa9qF4sr+R/KALnfi/E4B5PfBHr756KCbzeJTVTfmMptlNHDlPR/1rRP
+ +nu9Z6Q+qW81fozyOrFrhwx8w2DHEt/DwJmf5+a4Bj0XvTF8dxUqotjbeSJf8GOVK+7nHjEVf
+ VK4f5m01NkfUisa6PS9dxxcnEpEaiHdQZac57fliNeig0hzN9HNIyjBTIAO7CjZnCA4o5ZR5M
+ 0I65UEk0M4oUXkRyUlKmCLpuyBDs5DZsJYhcBJUhSuCRSrB2OfdXqrDIp80I5d32FM+kupaCV
+ YEM2LGuezeJeoU+IxznYyB1Dg6Y=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Rather than re-computing shared/exclusive ownership based on backrefs
-and walking roots for implicit backrefs, simple quotas does an increment
-when creating an extent and a decrement when deleting it. Add the API
-for the extent item code to use to track those events.
 
-Also add a helper function to make collecting parent qgroups in a ulist
-easier for functions like this.
 
-Signed-off-by: Boris Burkov <boris@bur.io>
----
- fs/btrfs/qgroup.c | 73 +++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/qgroup.h | 11 ++++++-
- 2 files changed, 83 insertions(+), 1 deletion(-)
+On 2023/7/27 23:50, Zorro Lang wrote:
+> On Mon, Jul 24, 2023 at 11:04:23AM +0800, Qu Wenruo wrote:
+>> The test case itself is utilizing RAID5/6, which is not yet supported o=
+n
+>> zoned device.
+>>
+>> In the future we would use raid-stripe-tree (RST) feature, but for now
+>> just reject zoned devices completely.
+>>
+>> And since we're here, also update the _fixed_by_kernel_commit lines, as
+>> the proper fix is already merged upstream.
+>>
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>> ---
+>
+> Just check before next fstests release. This patch has been reviewed, bu=
+t looks
+> like there're still more review points from btrfs list. So will you send=
+ a new
+> version to replace this patch?
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 8e3a4ced3077..dedc532669f4 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -332,6 +332,35 @@ static int del_relation_rb(struct btrfs_fs_info *fs_info,
- 	return -ENOENT;
- }
- 
-+static int qgroup_collect_parents(struct btrfs_qgroup *qgroup,
-+				  struct ulist *ul)
-+{
-+	struct ulist_iterator uiter;
-+	struct ulist_node *unode;
-+	struct btrfs_qgroup_list *glist;
-+	struct btrfs_qgroup *qg;
-+	int ret = 0;
-+
-+	ulist_reinit(ul);
-+	ret = ulist_add(ul, qgroup->qgroupid,
-+			qgroup_to_aux(qgroup), GFP_ATOMIC);
-+	if (ret < 0)
-+		goto out;
-+	ULIST_ITER_INIT(&uiter);
-+	while ((unode = ulist_next(ul, &uiter))) {
-+		qg = unode_aux_to_qgroup(unode);
-+		list_for_each_entry(glist, &qg->groups, next_group) {
-+			ret = ulist_add(ul, glist->group->qgroupid,
-+					qgroup_to_aux(glist->group), GFP_ATOMIC);
-+			if (ret < 0)
-+				goto out;
-+		}
-+	}
-+	ret = 0;
-+out:
-+	return ret;
-+}
-+
- #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
- int btrfs_verify_qgroup_counts(struct btrfs_fs_info *fs_info, u64 qgroupid,
- 			       u64 rfer, u64 excl)
-@@ -4535,3 +4564,47 @@ void btrfs_qgroup_destroy_extent_records(struct btrfs_transaction *trans)
- 	}
- 	*root = RB_ROOT;
- }
-+
-+int btrfs_record_simple_quota_delta(struct btrfs_fs_info *fs_info,
-+				    struct btrfs_simple_quota_delta *delta)
-+{
-+	int ret;
-+	struct ulist *ul = fs_info->qgroup_ulist;
-+	struct btrfs_qgroup *qgroup;
-+	struct ulist_iterator uiter;
-+	struct ulist_node *unode;
-+	struct btrfs_qgroup *qg;
-+	u64 root = delta->root;
-+	u64 num_bytes = delta->num_bytes;
-+	int sign = delta->is_inc ? 1 : -1;
-+
-+	if (btrfs_qgroup_mode(fs_info) != BTRFS_QGROUP_MODE_SIMPLE)
-+		return 0;
-+
-+	if (!is_fstree(root))
-+		return 0;
-+
-+	spin_lock(&fs_info->qgroup_lock);
-+	qgroup = find_qgroup_rb(fs_info, root);
-+	if (!qgroup) {
-+		ret = -ENOENT;
-+		goto out;
-+	}
-+	ret = qgroup_collect_parents(qgroup, ul);
-+	if (ret)
-+		goto out;
-+
-+	ULIST_ITER_INIT(&uiter);
-+	while ((unode = ulist_next(ul, &uiter))) {
-+		qg = unode_aux_to_qgroup(unode);
-+		qg->excl += num_bytes * sign;
-+		qg->rfer += num_bytes * sign;
-+		qgroup_dirty(fs_info, qg);
-+	}
-+
-+out:
-+	spin_unlock(&fs_info->qgroup_lock);
-+	if (!ret && delta->rsv_bytes)
-+		btrfs_qgroup_free_refroot(fs_info, root, delta->rsv_bytes, BTRFS_QGROUP_RSV_DATA);
-+	return ret;
-+}
-diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-index d4c4d039585f..94d85b4fbebd 100644
---- a/fs/btrfs/qgroup.h
-+++ b/fs/btrfs/qgroup.h
-@@ -235,6 +235,14 @@ struct btrfs_qgroup {
- 	struct kobject kobj;
- };
- 
-+struct btrfs_simple_quota_delta {
-+	u64 root; /* The fstree root this delta counts against */
-+	u64 num_bytes; /* The number of bytes in the extent being counted */
-+	u64 rsv_bytes; /* The number of bytes reserved for this extent */
-+	bool is_inc; /* Whether we are using or freeing the extent */
-+	bool is_data; /* Whether the extent is data or metadata */
-+};
-+
- static inline u64 btrfs_qgroup_subvolid(u64 qgroupid)
- {
- 	return (qgroupid & ((1ULL << BTRFS_QGROUP_LEVEL_SHIFT) - 1));
-@@ -447,5 +455,6 @@ int btrfs_qgroup_trace_subtree_after_cow(struct btrfs_trans_handle *trans,
- 		struct btrfs_root *root, struct extent_buffer *eb);
- void btrfs_qgroup_destroy_extent_records(struct btrfs_transaction *trans);
- bool btrfs_check_quota_leak(struct btrfs_fs_info *fs_info);
--
-+int btrfs_record_simple_quota_delta(struct btrfs_fs_info *fs_info,
-+				    struct btrfs_simple_quota_delta *delta);
- #endif
--- 
-2.41.0
+IMHO the patch is fine to be merged for now.
 
+The new comments are mostly a future work idea, which needs some time to
+develop and extra kernel features.
+
+Thanks,
+Qu
+>
+> Thanks,
+> Zorro
+>
+>>   tests/btrfs/294 | 8 ++++++--
+>>   1 file changed, 6 insertions(+), 2 deletions(-)
+>>
+>> diff --git a/tests/btrfs/294 b/tests/btrfs/294
+>> index 61ce7d97..d7d13646 100755
+>> --- a/tests/btrfs/294
+>> +++ b/tests/btrfs/294
+>> @@ -16,11 +16,15 @@ _begin_fstest auto raid volume
+>>
+>>   # Modify as appropriate.
+>>   _supported_fs btrfs
+>> +
+>> +# No zoned support for RAID56 yet.
+>> +_require_non_zoned_device "${SCRATCH_DEV}"
+>> +
+>>   _require_scratch_dev_pool 8
+>>   _fixed_by_kernel_commit a7299a18a179 \
+>>   	"btrfs: fix u32 overflows when left shifting @stripe_nr"
+>> -_fixed_by_kernel_commit xxxxxxxxxxxx \
+>> -	"btrfs: use a dedicated helper to convert stripe_nr to offset"
+>> +_fixed_by_kernel_commit cb091225a538 \
+>> +	"btrfs: fix remaining u32 overflows when left shifting stripe_nr"
+>>
+>>   _scratch_dev_pool_get 8
+>>
+>> --
+>> 2.41.0
+>>
+>

@@ -2,69 +2,126 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E6565EB64DD
-	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Jul 2023 19:49:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0BF8BEB64DD
+	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Jul 2023 22:15:10 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232468AbjG0Tte (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 27 Jul 2023 15:49:34 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59838 "EHLO
+        id S232509AbjG0WPI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 27 Jul 2023 18:15:08 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41540 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232213AbjG0Tt3 (ORCPT
+        with ESMTP id S229866AbjG0WPH (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 27 Jul 2023 15:49:29 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 743D630CF;
-        Thu, 27 Jul 2023 12:49:22 -0700 (PDT)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature RSA-PSS (2048 bits))
-        (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 86CC161F31;
-        Thu, 27 Jul 2023 19:49:21 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPS id EE20BC433C9;
-        Thu, 27 Jul 2023 19:49:20 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1690487361;
-        bh=iAc1kJNObjDK53IYe81q+zX6mOvpFTZ1CnO4N11oKPw=;
-        h=Subject:From:In-Reply-To:References:Date:To:Cc:From;
-        b=NVyBdYTY89Pa2BteWItgI6CdbTR7vigMG5AcYK0U3fSfjIL6FsgnYJHtqv6BdOG1k
-         JwG0qnnF9KBgNwtvKUKG9vqK8nsQkheeHSgFW/fShXTOz8F3sjc3VIY3HhLEJPPEU6
-         Yc22s1XRAjnDn9gWOafTemhoqMUk/8jSG7Ojob4jmeJiK8cWuLtYFp8eQNyJXxOCWs
-         dWJfz4W+iiybQymgWmpgIcZOqpLxuRodESJRELXpHjUE1EMOEqUo9vU9y4nUyN0fnb
-         NdORvUHwIa9ADAmIJhA4CkesmPBlgnKRq9KJtqjhSqiR6KqWwuw4iuHVIbVy2MwffO
-         58S3AWOP8Vd0g==
-Received: from aws-us-west-2-korg-oddjob-1.ci.codeaurora.org (localhost.localdomain [127.0.0.1])
-        by aws-us-west-2-korg-oddjob-1.ci.codeaurora.org (Postfix) with ESMTP id DB98AC40C5E;
-        Thu, 27 Jul 2023 19:49:20 +0000 (UTC)
-Subject: Re: [GIT PULL] Btrfs fixes for 6.5-rc4
-From:   pr-tracker-bot@kernel.org
-In-Reply-To: <cover.1690455145.git.dsterba@suse.com>
-References: <cover.1690455145.git.dsterba@suse.com>
-X-PR-Tracked-List-Id: <linux-btrfs.vger.kernel.org>
-X-PR-Tracked-Message-Id: <cover.1690455145.git.dsterba@suse.com>
-X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git tags/for-6.5-rc3-tag
-X-PR-Tracked-Commit-Id: b28ff3a7d7e97456fd86b68d24caa32e1cfa7064
-X-PR-Merge-Tree: torvalds/linux.git
-X-PR-Merge-Refname: refs/heads/master
-X-PR-Merge-Commit-Id: 64de76ce8e26fb0a5ca32ac2210ef99238c28525
-Message-Id: <169048736089.11614.12085071304525055611.pr-tracker-bot@kernel.org>
-Date:   Thu, 27 Jul 2023 19:49:20 +0000
-To:     David Sterba <dsterba@suse.com>
-Cc:     torvalds@linux-foundation.org, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+        Thu, 27 Jul 2023 18:15:07 -0400
+Received: from wout1-smtp.messagingengine.com (wout1-smtp.messagingengine.com [64.147.123.24])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A6FAF19B
+        for <linux-btrfs@vger.kernel.org>; Thu, 27 Jul 2023 15:15:04 -0700 (PDT)
+Received: from compute5.internal (compute5.nyi.internal [10.202.2.45])
+        by mailout.west.internal (Postfix) with ESMTP id E9C73320090C;
+        Thu, 27 Jul 2023 18:15:03 -0400 (EDT)
+Received: from mailfrontend1 ([10.202.2.162])
+  by compute5.internal (MEProxy); Thu, 27 Jul 2023 18:15:04 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc
+        :content-transfer-encoding:content-type:date:date:from:from
+        :in-reply-to:in-reply-to:message-id:mime-version:references
+        :reply-to:sender:subject:subject:to:to; s=fm1; t=1690496103; x=
+        1690582503; bh=cdAF2g7upC4q8bhzChoEZzsUwDmUmT5k4kRthZMvmz4=; b=U
+        xpJL9LqWYZ4nhbAY5rPEvXmS7PE3JN5aR4j6O3GtYgnfBKIEvxZDNXOTeH7tTBQ6
+        n5gJwN5bl4dewbaynaMe3NsQnNSOwr+XGyfPlZyflr9mVMzaVA1prUzF8NINmoZB
+        uRTD4PUZVx9toLiZYlUM+VABAeshwJtuBQ+VynMSrW8YJYdj7laNyNXLwUGmu+p3
+        ghHGYhH8ClIBZWSdz/VlzVpLoIYZtg+MpwARq2oNaFbB2rZf3kUEmOA0n9c01yzm
+        RylQKC8sgGbTbS9WSphUOsqLA5rHjvFmoLs3GQEutFv4EWjpdBYAqJro/ZxnsdGl
+        +xN5621OaSP8bnLyzjE7Q==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+        messagingengine.com; h=cc:content-transfer-encoding:content-type
+        :date:date:feedback-id:feedback-id:from:from:in-reply-to
+        :in-reply-to:message-id:mime-version:references:reply-to:sender
+        :subject:subject:to:to:x-me-proxy:x-me-proxy:x-me-sender
+        :x-me-sender:x-sasl-enc; s=fm3; t=1690496103; x=1690582503; bh=c
+        dAF2g7upC4q8bhzChoEZzsUwDmUmT5k4kRthZMvmz4=; b=B9vDTWsC5vrwpp8Z6
+        cDz/brZBuk1QFBZleS2SmerHHptr8+lBsZzyyDXriyk5tSFE1da+3wEU3SKq7Lw1
+        DOLQQveTTpP2nejtt/A5cg+xtTN/lSU1hgkg2ewe0IQSqGDOZ3PVYDBze48HjRNt
+        1CPTva/6KPpoI98vlFzR6LVme11O5oceXGVIfc/zII04pzh2Or/Ai+d0WHUHB/Wl
+        lvLZj8whYBsimdTdFYKY53PaF8kkvF2IbeJgKGdJ2DDI004NVDGcc+xbs2906LJ1
+        ZralEd8B9/hG5Nb7RDoTZyjyt2t0Lo+SsMo4TJMeDZSsSwjDYQCxYBtOpA0kCW2A
+        Y2n4w==
+X-ME-Sender: <xms:Z-zCZAxPz8UMstqyjLjUsyeMgYwMJsIHKjB6D9LKhh_LnW_YKUHEmw>
+    <xme:Z-zCZESMTwn8gnyDJSkyGA9Wl_nqVMb0nwhO3TRlzKky_0O6Z-21ZIvFEwsnHU4qs
+    T0LqwhckwtYRYTxsug>
+X-ME-Received: <xmr:Z-zCZCUp9KxwNMZqsaNhuE9MPNCcqKqrS-PuDQylPQiG1WBiOf7kr8hIj0Qaw1O0SlfGjkiGmUPLMObelqscaoUNiQI>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedviedrieehgddtiecutefuodetggdotefrodftvf
+    curfhrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfghnecu
+    uegrihhlohhuthemuceftddtnecunecujfgurhephffvufffkffojghfggfgsedtkeertd
+    ertddtnecuhfhrohhmpeeuohhrihhsuceuuhhrkhhovhcuoegsohhrihhssegsuhhrrdhi
+    oheqnecuggftrfgrthhtvghrnhepieeuffeuvdeiueejhfehiefgkeevudejjeejffevvd
+    ehtddufeeihfekgeeuheelnecuvehluhhsthgvrhfuihiivgeptdenucfrrghrrghmpehm
+    rghilhhfrhhomhepsghorhhishessghurhdrihho
+X-ME-Proxy: <xmx:Z-zCZOgu7El928asllua9v9dH4SFwQyjSfWhAjZt4nO17OYvAoUibQ>
+    <xmx:Z-zCZCAt2FWoxXMtBPUj9ZS3aTBFIuQELfg95lRbSrw__myXP1ovtg>
+    <xmx:Z-zCZPKS_J8A591rkEi-09--Pa0VhLj9TRsyGvUp5qqfPL_hya_krQ>
+    <xmx:Z-zCZNplrQaS9eL6d95eoon3nC0N76JkxT9ia70iagXCHvv5IxqiFw>
+Feedback-ID: i083147f8:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Thu,
+ 27 Jul 2023 18:15:02 -0400 (EDT)
+From:   Boris Burkov <boris@bur.io>
+To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: [PATCH v5 01/18] btrfs: introduce quota mode
+Date:   Thu, 27 Jul 2023 15:12:48 -0700
+Message-ID: <0155748c3e1d0b92d942bb3026c0041c8ed933ae.1690495785.git.boris@bur.io>
+X-Mailer: git-send-email 2.41.0
+In-Reply-To: <cover.1690495785.git.boris@bur.io>
+References: <cover.1690495785.git.boris@bur.io>
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The pull request you sent on Thu, 27 Jul 2023 13:16:17 +0200:
+In preparation for introducing simple quotas, change from a binary
+setting for quotas to an enum based mode. Initially, the possible modes
+are disabled/full. Full quotas is normal btrfs qgroups.
 
-> git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git tags/for-6.5-rc3-tag
+Signed-off-by: Boris Burkov <boris@bur.io>
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+---
+ fs/btrfs/qgroup.c | 7 +++++++
+ fs/btrfs/qgroup.h | 6 ++++++
+ 2 files changed, 13 insertions(+)
 
-has been merged into torvalds/linux.git:
-https://git.kernel.org/torvalds/c/64de76ce8e26fb0a5ca32ac2210ef99238c28525
-
-Thank you!
-
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 2637d6b157ff..0a2085ae9bcd 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -30,6 +30,13 @@
+ #include "root-tree.h"
+ #include "tree-checker.h"
+ 
++enum btrfs_qgroup_mode btrfs_qgroup_mode(struct btrfs_fs_info *fs_info)
++{
++	if (!test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags))
++		return BTRFS_QGROUP_MODE_DISABLED;
++	return BTRFS_QGROUP_MODE_FULL;
++}
++
+ /*
+  * Helpers to access qgroup reservation
+  *
+diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
+index 7bffa10589d6..bb15e55f00b8 100644
+--- a/fs/btrfs/qgroup.h
++++ b/fs/btrfs/qgroup.h
+@@ -250,6 +250,12 @@ enum {
+ };
+ 
+ int btrfs_quota_enable(struct btrfs_fs_info *fs_info);
++enum btrfs_qgroup_mode {
++	BTRFS_QGROUP_MODE_DISABLED,
++	BTRFS_QGROUP_MODE_FULL,
++};
++
++enum btrfs_qgroup_mode btrfs_qgroup_mode(struct btrfs_fs_info *fs_info);
+ int btrfs_quota_disable(struct btrfs_fs_info *fs_info);
+ int btrfs_qgroup_rescan(struct btrfs_fs_info *fs_info);
+ void btrfs_qgroup_rescan_resume(struct btrfs_fs_info *fs_info);
 -- 
-Deet-doot-dot, I am a bot.
-https://korg.docs.kernel.org/prtracker.html
+2.41.0
+

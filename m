@@ -2,165 +2,142 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9FFAFC0015E
-	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Jul 2023 06:08:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 74435C04FE0
+	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Jul 2023 08:11:10 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232398AbjG0GIk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 27 Jul 2023 02:08:40 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50630 "EHLO
+        id S233019AbjG0ILH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 27 Jul 2023 04:11:07 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43076 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231911AbjG0GIj (ORCPT
+        with ESMTP id S233585AbjG0IK0 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 27 Jul 2023 02:08:39 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BB75C10F9
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Jul 2023 23:08:38 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 7CD2021B85
-        for <linux-btrfs@vger.kernel.org>; Thu, 27 Jul 2023 06:08:37 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1690438117; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=gM8XwYBCjyzoGlGGOmbfF2+i0P0vhoyS8DqrjiC9feY=;
-        b=kQQp/VJni1bO3Tq0o9K28LI4ea/pTXSiUymhzgH4HGsXhznRWWKt5eH4R/xwChnMJYgJzN
-        0OEJBMM292aKSufDUfSax0kf9965KD/RCK953xeJV4cvc1fPhMsv8iCOgxvO2KC02NL/3e
-        g4ouP+zmQv7/e16yu97+5RinVFj1Af4=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id B6FDE13902
-        for <linux-btrfs@vger.kernel.org>; Thu, 27 Jul 2023 06:08:36 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id x8zoHeQJwmRJDwAAMHmgww
-        (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Thu, 27 Jul 2023 06:08:36 +0000
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: cmd-device: add options to sync the fs after adding all devices
-Date:   Thu, 27 Jul 2023 14:08:18 +0800
-Message-ID: <a8c4c892258c28ddf763ba4386449665d2705c08.1690435989.git.wqu@suse.com>
-X-Mailer: git-send-email 2.41.0
+        Thu, 27 Jul 2023 04:10:26 -0400
+Received: from mail-pf1-x42d.google.com (mail-pf1-x42d.google.com [IPv6:2607:f8b0:4864:20::42d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DEC351BDA
+        for <linux-btrfs@vger.kernel.org>; Thu, 27 Jul 2023 01:07:02 -0700 (PDT)
+Received: by mail-pf1-x42d.google.com with SMTP id d2e1a72fcca58-682eef7d752so203234b3a.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 27 Jul 2023 01:07:02 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=bytedance.com; s=google; t=1690445160; x=1691049960;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=CmSKD1W4o1llBpukOwDAPdWOg+LYzWoL67ya0UPwqvg=;
+        b=bWsdCjXI/QTCbfrXnl1D1RHs1UzV532bO1xy0F2QKWdmxdeZNg1bc8fwYppoEa2Sii
+         fv3Dw05OLiEoJFGdDqA0cK2BR0yissZW0QGh0p8G2jYOCo1VM3qmhhRKOuDu3Ld44+HC
+         IlU/6E6PL7OGmulpkRgvQIFGvR7K7vSKmFATJlzNsM5VU0kfb+Q9ux9XLDln9HSGLjNa
+         erFo50JbYYva+gdlhuASAFmcGCxJk1UklUElA3OcQq/NsulVXFSALP8x8A3jEL8k5O2s
+         pAuqLDXkBW250K5e8xHlcez81V5k+DmAOms7sfdEUrryxL8JhS9LUOK5EJtF0pDaEYI9
+         8JWQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1690445160; x=1691049960;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=CmSKD1W4o1llBpukOwDAPdWOg+LYzWoL67ya0UPwqvg=;
+        b=ftQytigYEhbBn9+z+wWrfmHVoH6pB7mUonIvsgnPvKvQ0K21sIv6qx3+4EgYsLxmCD
+         WPJSwz5RE9LY5KeMmNtGmekgN1XB1vB6s3qz0OW2qE6/W1+hWdoJDRcphAQRdH1Ut+la
+         kkk/BwWbypFoZyZlNZpqKm0Xpni+wEDkwoPX3xUVp+vTUxHNGZhv8FQA4syMgXTZzD77
+         Gw2oAWLsZbYWHKDniMsucX+6QCs8wbqCnWblNsnk5e2yos9rGUUn9qnmGAHdOs2j5x8B
+         Xt6bwckw2fe+3i9SKHe8H2jUgDF7Y0uuu66zT+Gv+rbFrTuvlqBJ6FAZfeY/jca4Y2gO
+         +juw==
+X-Gm-Message-State: ABy/qLaYpRmAsyGR+0TT+cH5D9UrwrOYI7zVc9yl6o/MUZYV4Vz7LY/X
+        x1SzN/w0cgh3psmTtMcQPaMImA==
+X-Google-Smtp-Source: APBJJlGsBl3klUilUFzaktHEHOMbkNlcOB/1K8g6HjcIbYlgfdxi92AgDTolw1HjCRkDLU6/tzA6hQ==
+X-Received: by 2002:a05:6a21:78a8:b0:137:3eba:b81f with SMTP id bf40-20020a056a2178a800b001373ebab81fmr6002609pzc.3.1690445159927;
+        Thu, 27 Jul 2023 01:05:59 -0700 (PDT)
+Received: from C02DW0BEMD6R.bytedance.net ([203.208.167.147])
+        by smtp.gmail.com with ESMTPSA id j8-20020aa78d08000000b006828e49c04csm885872pfe.75.2023.07.27.01.05.48
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Thu, 27 Jul 2023 01:05:59 -0700 (PDT)
+From:   Qi Zheng <zhengqi.arch@bytedance.com>
+To:     akpm@linux-foundation.org, david@fromorbit.com, tkhai@ya.ru,
+        vbabka@suse.cz, roman.gushchin@linux.dev, djwong@kernel.org,
+        brauner@kernel.org, paulmck@kernel.org, tytso@mit.edu,
+        steven.price@arm.com, cel@kernel.org, senozhatsky@chromium.org,
+        yujie.liu@intel.com, gregkh@linuxfoundation.org,
+        muchun.song@linux.dev
+Cc:     linux-kernel@vger.kernel.org, linux-mm@kvack.org, x86@kernel.org,
+        kvm@vger.kernel.org, xen-devel@lists.xenproject.org,
+        linux-erofs@lists.ozlabs.org,
+        linux-f2fs-devel@lists.sourceforge.net, cluster-devel@redhat.com,
+        linux-nfs@vger.kernel.org, linux-mtd@lists.infradead.org,
+        rcu@vger.kernel.org, netdev@vger.kernel.org,
+        dri-devel@lists.freedesktop.org, linux-arm-msm@vger.kernel.org,
+        dm-devel@redhat.com, linux-raid@vger.kernel.org,
+        linux-bcache@vger.kernel.org,
+        virtualization@lists.linux-foundation.org,
+        linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-xfs@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        Qi Zheng <zhengqi.arch@bytedance.com>,
+        Carlos Llamas <cmllamas@google.com>
+Subject: [PATCH v3 01/49] binder: fix memory leak in binder_init()
+Date:   Thu, 27 Jul 2023 16:04:14 +0800
+Message-Id: <20230727080502.77895-2-zhengqi.arch@bytedance.com>
+X-Mailer: git-send-email 2.24.3 (Apple Git-128)
+In-Reply-To: <20230727080502.77895-1-zhengqi.arch@bytedance.com>
+References: <20230727080502.77895-1-zhengqi.arch@bytedance.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Although kernels would commit transaction after adding each device, the
-behavior itself would change to allow emergency device add (aka, without
-extra devices the fs can not commit a transaction).
+In binder_init(), the destruction of binder_alloc_shrinker_init() is not
+performed in the wrong path, which will cause memory leaks. So this commit
+introduces binder_alloc_shrinker_exit() and calls it in the wrong path to
+fix that.
 
-Unfortunately btrfs device add ioctl has no extra space for new flags,
-so here we add extra flags --sync and --nosync to "btrfs device add"
-subcommand.
-
-This would allowing users to choose if the target filesystem needs to be
-synced after all devices added.
-
-The default behavior is --sync, to keep the behavior the same no matter
-kernel versions.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Fixes: f2517eb76f1f ("android: binder: Add global lru shrinker to binder")
+Signed-off-by: Qi Zheng <zhengqi.arch@bytedance.com>
+Acked-by: Carlos Llamas <cmllamas@google.com>
 ---
- Documentation/btrfs-device.rst |  8 ++++++++
- cmds/device.c                  | 22 +++++++++++++++++++++-
- 2 files changed, 29 insertions(+), 1 deletion(-)
+ drivers/android/binder.c       | 1 +
+ drivers/android/binder_alloc.c | 6 ++++++
+ drivers/android/binder_alloc.h | 1 +
+ 3 files changed, 8 insertions(+)
 
-diff --git a/Documentation/btrfs-device.rst b/Documentation/btrfs-device.rst
-index 0459e93681e1..30c3afca8e3b 100644
---- a/Documentation/btrfs-device.rst
-+++ b/Documentation/btrfs-device.rst
-@@ -41,6 +41,14 @@ add [-Kf] <device> [<device>...] <path>
-         --enqueue
-                 wait if there's another exclusive operation running, otherwise continue
+diff --git a/drivers/android/binder.c b/drivers/android/binder.c
+index 486c8271cab7..d720f93d8b19 100644
+--- a/drivers/android/binder.c
++++ b/drivers/android/binder.c
+@@ -6617,6 +6617,7 @@ static int __init binder_init(void)
  
-+        --sync
-+                sync the filesystem after all devices added
+ err_alloc_device_names_failed:
+ 	debugfs_remove_recursive(binder_debugfs_dir_entry_root);
++	binder_alloc_shrinker_exit();
+ 
+ 	return ret;
+ }
+diff --git a/drivers/android/binder_alloc.c b/drivers/android/binder_alloc.c
+index 662a2a2e2e84..e3db8297095a 100644
+--- a/drivers/android/binder_alloc.c
++++ b/drivers/android/binder_alloc.c
+@@ -1087,6 +1087,12 @@ int binder_alloc_shrinker_init(void)
+ 	return ret;
+ }
+ 
++void binder_alloc_shrinker_exit(void)
++{
++	unregister_shrinker(&binder_shrinker);
++	list_lru_destroy(&binder_alloc_lru);
++}
 +
-+        --nosync
-+                do not sync the filesystem after all devices added.
-+                This may not work as older kernels would commit transaction after
-+                adding each device.
-+
- remove [options] <device>|<devid> [<device>|<devid>...] <path>
-         Remove device(s) from a filesystem identified by <path>
- 
-diff --git a/cmds/device.c b/cmds/device.c
-index 94418d43d6d4..e4458d668ebc 100644
---- a/cmds/device.c
-+++ b/cmds/device.c
-@@ -42,6 +42,7 @@
- #include "cmds/commands.h"
- #include "cmds/filesystem-usage.h"
- #include "mkfs/common.h"
-+#include "libbtrfsutil/btrfsutil.h"
- 
- static const char * const device_cmd_group_usage[] = {
- 	"btrfs device <command> [<args>]",
-@@ -55,6 +56,8 @@ static const char * const cmd_device_add_usage[] = {
- 	OPTLINE("-K|--nodiscard", "do not perform whole device TRIM on devices that report such capability"),
- 	OPTLINE("-f|--force", "force overwrite existing filesystem on the disk"),
- 	OPTLINE("--enqueue", "wait if there's another exclusive operation running, otherwise continue"),
-+	OPTLINE("--sync", "sync the fs after all devices added"),
-+	OPTLINE("--nosync", "do not sync the fs after all devices added"),
- 	NULL
- };
- 
-@@ -68,17 +71,21 @@ static int cmd_device_add(const struct cmd_struct *cmd,
- 	bool force = false;
- 	int last_dev;
- 	bool enqueue = false;
-+	bool do_sync = true;
- 	int zoned;
- 	struct btrfs_ioctl_feature_flags feature_flags;
- 
- 	optind = 0;
- 	while (1) {
- 		int c;
--		enum { GETOPT_VAL_ENQUEUE = GETOPT_VAL_FIRST };
-+		enum { GETOPT_VAL_ENQUEUE = GETOPT_VAL_FIRST,
-+		       GETOPT_VAL_SYNC, GETOPT_VAL_NOSYNC };
- 		static const struct option long_options[] = {
- 			{ "nodiscard", optional_argument, NULL, 'K'},
- 			{ "force", no_argument, NULL, 'f'},
- 			{ "enqueue", no_argument, NULL, GETOPT_VAL_ENQUEUE},
-+			{ "sync", no_argument, NULL, GETOPT_VAL_SYNC},
-+			{ "nosync", no_argument, NULL, GETOPT_VAL_NOSYNC},
- 			{ NULL, 0, NULL, 0}
- 		};
- 
-@@ -95,6 +102,12 @@ static int cmd_device_add(const struct cmd_struct *cmd,
- 		case GETOPT_VAL_ENQUEUE:
- 			enqueue = true;
- 			break;
-+		case GETOPT_VAL_SYNC:
-+			do_sync = true;
-+			break;
-+		case GETOPT_VAL_NOSYNC:
-+			do_sync = false;
-+			break;
- 		default:
- 			usage_unknown_option(cmd, argv);
- 		}
-@@ -181,6 +194,13 @@ static int cmd_device_add(const struct cmd_struct *cmd,
- 	}
- 
- error_out:
-+	if (!ret && do_sync) {
-+		ret = btrfs_util_sync_fd(fdmnt);
-+		if (ret < 0) {
-+			errno = -ret;
-+			error("error syncing the fs: %m");
-+		}
-+	}
- 	btrfs_warn_multiple_profiles(fdmnt);
- 	close_file_or_dir(fdmnt, dirstream);
- 	return !!ret;
+ /**
+  * check_buffer() - verify that buffer/offset is safe to access
+  * @alloc: binder_alloc for this proc
+diff --git a/drivers/android/binder_alloc.h b/drivers/android/binder_alloc.h
+index 138d1d5af9ce..dc1e2b01dd64 100644
+--- a/drivers/android/binder_alloc.h
++++ b/drivers/android/binder_alloc.h
+@@ -129,6 +129,7 @@ extern struct binder_buffer *binder_alloc_new_buf(struct binder_alloc *alloc,
+ 						  int pid);
+ extern void binder_alloc_init(struct binder_alloc *alloc);
+ extern int binder_alloc_shrinker_init(void);
++extern void binder_alloc_shrinker_exit(void);
+ extern void binder_alloc_vma_close(struct binder_alloc *alloc);
+ extern struct binder_buffer *
+ binder_alloc_prepare_to_free(struct binder_alloc *alloc,
 -- 
-2.41.0
+2.30.2
 

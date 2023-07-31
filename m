@@ -2,58 +2,58 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AEEFEC001DE
-	for <linux-btrfs@archiver.kernel.org>; Mon, 31 Jul 2023 17:20:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0D63BC001DC
+	for <linux-btrfs@archiver.kernel.org>; Mon, 31 Jul 2023 17:20:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232938AbjGaRUn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 31 Jul 2023 13:20:43 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44548 "EHLO
+        id S232198AbjGaRUq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 31 Jul 2023 13:20:46 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43892 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232690AbjGaRU2 (ORCPT
+        with ESMTP id S233020AbjGaRUa (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 31 Jul 2023 13:20:28 -0400
+        Mon, 31 Jul 2023 13:20:30 -0400
 Received: from esa3.hgst.iphmx.com (esa3.hgst.iphmx.com [216.71.153.141])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7B3F31BC6
-        for <linux-btrfs@vger.kernel.org>; Mon, 31 Jul 2023 10:19:21 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EA1EE18D
+        for <linux-btrfs@vger.kernel.org>; Mon, 31 Jul 2023 10:19:24 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1690823961; x=1722359961;
+  t=1690823964; x=1722359964;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=wn9cLpoQSaBP3G0whOQaePZu6El+QdodnQ6bl3Zy3t0=;
-  b=H4bq4MP+WyE2KCvHKg9nF3Bdd1Q7NX1j3jVTgVfAk/63FzYAUjq+zWq8
-   YDJlXeOA4ZZ+CBbAyW/+0S5beiZcIOUOue5UQkwChNhUurWuKEkT2MOLf
-   mQvs8lRjsVZ83MbRFw9ZAeqg9jjVHMGK53xtI5ZuuCvQ4euPr0bpwuuns
-   3Z7+12cUwtmd6oTIeru5RMj8I/AN76mlxbgZNeGuLOoVkgGDN9e30bLVi
-   NQ6ty/ew2KtxAIfpXHwOWHacnEuBx85UTwdjzz80v6URaYjxyhck/GqB4
-   9hjPwlqALHBW/EV6wxRgJX53tMHOWj82zxH8Sppbr9tOoSJE3gDvIXo2/
-   Q==;
+  bh=IhpujwgWrph6FHOVL04IiONRcxruk0whcIU1u0hndOM=;
+  b=O/f4JaL4aYDHpCjAjLjV7gkPxf9e8uWmf5da1Kx7RZ3pGGMJKCrA2BpM
+   Isx8PsYX2ccDiVNRQVaEwC7qBCaor36dQxCnqjz5W7OiUnenrJtq2jfnK
+   u1YL2VS+ZDzGKlqTOW+Hg5DZ7btNWI6kYRnl0xcuRWNC/U1DgI3P0z3CN
+   ae9Nj6shUZN5/2Tq+KsB3Ttwh21lmYNrXw45rQ/JMYtM3RTXZUItKNn05
+   O/sldzGTH1VASH+baYwzBZRfPMURdD3kvI+l+yUPHpjA3GjWPQkxZbM0/
+   Bm97C3O8U1H2SKjuDVeWcwo8l13ytrosjeQgLSu+KfAr7Y2XXx5Tib7C7
+   A==;
 X-IronPort-AV: E=Sophos;i="6.01,245,1684771200"; 
-   d="scan'208";a="244269566"
+   d="scan'208";a="244269572"
 Received: from h199-255-45-14.hgst.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 01 Aug 2023 01:17:38 +0800
-IronPort-SDR: X5OXbPFwE0ZAq/pb+9/UEUU9SHxpglasUUbKO+ijwvArEFo8hLSvNzXavx8gJ8lrH5Rbi/ygPu
- NAw2hRT1TnkFO8qKb7KZkY4Ohj5b9ZvIEX4Gd2XJ9aYwmJOccA1/SpiQq9zxf0evViAYYsrj2s
- 6sXlMn78gqnW1NgKJCF8sv++VwZxrN0+D7dHt+exZoDqnw3jotoES8vxcraIPmnxddc8o6Rcl5
- F09fLQ24ZRt/aKTvUJdP+tBbQMyVKD1/9KtpH4G6/u51KZ/dlvJ9GwQrGTMc/yvyoGLj0AT9FG
- pes=
+  by ob1.hgst.iphmx.com with ESMTP; 01 Aug 2023 01:17:40 +0800
+IronPort-SDR: QYFbAJWidgwAxXU74TO4wrX3stsycJ6hhW66lzhycoZSEBOUqTpPm44FXa2knALz62uw89mKU0
+ M5mDqk2ipmPjGzTYsTQYpmYqOu7HEAEiREaEmkH2iGHcrbIZF3u/7Z2kBg6x6lKh5Ei1D/2eeu
+ 1DN59Wc0lxxrgO8KFJqqUE0sFf+PNp1zhqNi0UBmB4fFyWMAE+h99+e6AeJ/zNv45XQUvQR+g9
+ jdRmpC5c4POnw+1pyxPlYn6DA4KPNz9W91AiddFK7+WJPDDQWByjqYb6WeW+PynI4FkIvzz3eD
+ uI4=
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 31 Jul 2023 09:31:15 -0700
-IronPort-SDR: 3nZ8ZRfO+HHxhJb4+P0P/E7c6tCWY59Y58cp43UQbc3CHFy1BFUAsrK+WXnLpNvs2mk/vYs9Qh
- aRfCfduGy5UgDPQymF10e0rtCog5tqJjOgStrIiFkyXVgqLOW3NxHKQF2RkXqyWSBHg5vr8jmo
- keQWWXr8u5mWyJKk2xTGYB0JnvIzgPx/xhtG3IjoKqRmDoTijoNwnqoHWSgs9oF7SWvAFKDpb9
- Ybicj8LDO0nU9oLPdeYwaHg43u0iaW5gED/HtzUNPs586mkKQfUTndDJylGb6KCI4/sFH2yAC1
- cUg=
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 31 Jul 2023 09:31:17 -0700
+IronPort-SDR: azzYYjOxJolbwEgXUu0CLFEgpgpE9BFRMB4TBUe5xLoaOi2bb+Th8aBmkVJ2JRaz8CsyqWpoI+
+ V2mZw3iFnOp3PLfbcV04EX9M9RJ3DlR00uVt0GwlXYKlXB0/oXHRU4oonek9cg3QxtGvL6Zvup
+ 37XTASQGVnYCHykCK4A6eUHFjkkFWydfFPMAsYoQfjOKJakcsrczOrzMmURT9C1k0K5GP8J+Uy
+ TIZZFhhUxTAHts8/zqp40aZ6A6oGxpts5TiUhs/L3wf9xEJBbsRE0enjGQCYuJJzJ8B8HweyuF
+ NnU=
 WDCIronportException: Internal
 Received: from unknown (HELO naota-xeon.wdc.com) ([10.225.163.18])
-  by uls-op-cesaip02.wdc.com with ESMTP; 31 Jul 2023 10:17:38 -0700
+  by uls-op-cesaip02.wdc.com with ESMTP; 31 Jul 2023 10:17:40 -0700
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     hch@infradead.org, josef@toxicpanda.com, dsterba@suse.cz,
         Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH v2 06/10] btrfs: zoned: reserve zones for an active metadata/system block group
-Date:   Tue,  1 Aug 2023 02:17:15 +0900
-Message-ID: <790055decdb2cfa7dfaa3a47dd43b0a1f9129814.1690823282.git.naohiro.aota@wdc.com>
+Subject: [PATCH v2 08/10] btrfs: zoned: no longer count fresh BG region as zone unusable
+Date:   Tue,  1 Aug 2023 02:17:17 +0900
+Message-ID: <5ae5510f8616620c037eff05e3a15df6f401c486.1690823282.git.naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <cover.1690823282.git.naohiro.aota@wdc.com>
 References: <cover.1690823282.git.naohiro.aota@wdc.com>
@@ -63,128 +63,111 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Ensure a metadata and system block group can be activated on write time, by
-leaving a certain number of active zones when trying to activate a data
-block group.
-
-When both metadata and system profiles are set to SINGLE, we need to
-reserve two zones. When both are DUP, we need to reserve four zones.
-
-In the case only one of them is DUP, we should reserve three zones.
-However, handling the case requires at least two bits to track if we have
-seen DUP profile for metadata and system, which is cumbersome. So, just
-reserve four zones in that case for now.
+Now that we switched to write time activation, we no longer need to (and
+must not) count the fresh region as zone unusable. This commit is similar
+to revert commit fc22cf8eba79 ("btrfs: zoned: count fresh BG region as zone
+unusable").
 
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
- fs/btrfs/fs.h    |  6 ++++++
- fs/btrfs/zoned.c | 39 +++++++++++++++++++++++++++++++++++++--
- 2 files changed, 43 insertions(+), 2 deletions(-)
+ fs/btrfs/free-space-cache.c |  8 +-------
+ fs/btrfs/zoned.c            | 26 +++-----------------------
+ 2 files changed, 4 insertions(+), 30 deletions(-)
 
-diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
-index ef07c6c252d8..2ce391959b6a 100644
---- a/fs/btrfs/fs.h
-+++ b/fs/btrfs/fs.h
-@@ -775,6 +775,12 @@ struct btrfs_fs_info {
- 	spinlock_t zone_active_bgs_lock;
- 	struct list_head zone_active_bgs;
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index cd5bfda2c259..27fad70451aa 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -2704,13 +2704,8 @@ static int __btrfs_add_free_space_zoned(struct btrfs_block_group *block_group,
+ 		bg_reclaim_threshold = READ_ONCE(sinfo->bg_reclaim_threshold);
  
-+	/*
-+	 * Reserved active zones per-device for one metadata and one system
-+	 * block group.
-+	 */
-+	unsigned int reserved_active_zones;
-+
- 	/* Updates are not protected by any lock */
- 	struct btrfs_commit_stats commit_stats;
- 
+ 	spin_lock(&ctl->tree_lock);
+-	/* Count initial region as zone_unusable until it gets activated. */
+ 	if (!used)
+ 		to_free = size;
+-	else if (initial &&
+-		 test_bit(BTRFS_FS_ACTIVE_ZONE_TRACKING, &block_group->fs_info->flags) &&
+-		 (block_group->flags & (BTRFS_BLOCK_GROUP_METADATA | BTRFS_BLOCK_GROUP_SYSTEM)))
+-		to_free = 0;
+ 	else if (initial)
+ 		to_free = block_group->zone_capacity;
+ 	else if (offset >= block_group->alloc_offset)
+@@ -2738,8 +2733,7 @@ static int __btrfs_add_free_space_zoned(struct btrfs_block_group *block_group,
+ 	reclaimable_unusable = block_group->zone_unusable -
+ 			       (block_group->length - block_group->zone_capacity);
+ 	/* All the region is now unusable. Mark it as unused and reclaim */
+-	if (block_group->zone_unusable == block_group->length &&
+-	    block_group->alloc_offset) {
++	if (block_group->zone_unusable == block_group->length) {
+ 		btrfs_mark_bg_unused(block_group);
+ 	} else if (bg_reclaim_threshold &&
+ 		   reclaimable_unusable >=
 diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-index 3902c16b9188..9dbcd747ee74 100644
+index 91eca8b48715..8c2b88be1480 100644
 --- a/fs/btrfs/zoned.c
 +++ b/fs/btrfs/zoned.c
-@@ -525,6 +525,12 @@ int btrfs_get_dev_zone_info(struct btrfs_device *device, bool populate_cache)
- 		atomic_set(&zone_info->active_zones_left,
- 			   max_active_zones - nactive);
- 		set_bit(BTRFS_FS_ACTIVE_ZONE_TRACKING, &fs_info->flags);
-+		/*
-+		 * First, reserve zones for SINGLE metadata and SINGLE system
-+		 * profile. The reservation will be increased when seeing DUP
-+		 * profile.
-+		 */
-+		fs_info->reserved_active_zones = 2;
- 	}
+@@ -1608,19 +1608,9 @@ void btrfs_calc_zone_unusable(struct btrfs_block_group *cache)
+ 		return;
  
- 	/* Validate superblock log */
-@@ -1515,6 +1521,22 @@ int btrfs_load_block_group_zone_info(struct btrfs_block_group *cache, bool new)
- 		}
- 		cache->alloc_offset = alloc_offsets[0];
- 		cache->zone_capacity = min(caps[0], caps[1]);
-+
-+		/*
-+		 * DUP profile needs two zones on the same device. Reserve 2
-+		 * zones * 2 types (metadata and system) = 4 zones.
-+		 *
-+		 * Technically, we can have SINGLE metadata and DUP system
-+		 * config. And, in that case, we only need 3 zones, wasting one
-+		 * active zone. But, to do the precise reservation, we need one
-+		 * more variable just to track we already seen a DUP block group
-+		 * or not, which is cumbersome.
-+		 *
-+		 * For now, let's be lazy and just reserve 4 zones.
-+		 */
-+		if (test_bit(BTRFS_FS_ACTIVE_ZONE_TRACKING, &fs_info->flags) &&
-+		    !(cache->flags & BTRFS_BLOCK_GROUP_DATA))
-+			fs_info->reserved_active_zones = 4;
- 		break;
- 	case BTRFS_BLOCK_GROUP_RAID1:
- 	case BTRFS_BLOCK_GROUP_RAID0:
-@@ -1888,6 +1910,8 @@ bool btrfs_zone_activate(struct btrfs_block_group *block_group)
- 	struct btrfs_space_info *space_info = block_group->space_info;
+ 	WARN_ON(cache->bytes_super != 0);
+-
+-	/* Check for block groups never get activated */
+-	if (test_bit(BTRFS_FS_ACTIVE_ZONE_TRACKING, &cache->fs_info->flags) &&
+-	    cache->flags & (BTRFS_BLOCK_GROUP_METADATA | BTRFS_BLOCK_GROUP_SYSTEM) &&
+-	    !test_bit(BLOCK_GROUP_FLAG_ZONE_IS_ACTIVE, &cache->runtime_flags) &&
+-	    cache->alloc_offset == 0) {
+-		unusable = cache->length;
+-		free = 0;
+-	} else {
+-		unusable = (cache->alloc_offset - cache->used) +
+-			   (cache->length - cache->zone_capacity);
+-		free = cache->zone_capacity - cache->alloc_offset;
+-	}
++	unusable = (cache->alloc_offset - cache->used) +
++		   (cache->length - cache->zone_capacity);
++	free = cache->zone_capacity - cache->alloc_offset;
+ 
+ 	/* We only need ->free_space in ALLOC_SEQ block groups */
+ 	cache->cached = BTRFS_CACHE_FINISHED;
+@@ -1986,7 +1976,6 @@ int btrfs_sync_zone_write_pointer(struct btrfs_device *tgt_dev, u64 logical,
+ bool btrfs_zone_activate(struct btrfs_block_group *block_group)
+ {
+ 	struct btrfs_fs_info *fs_info = block_group->fs_info;
+-	struct btrfs_space_info *space_info = block_group->space_info;
  	struct map_lookup *map;
  	struct btrfs_device *device;
-+	const unsigned int reserved = (block_group->flags & BTRFS_BLOCK_GROUP_DATA) ?
-+		fs_info->reserved_active_zones : 0;
- 	u64 physical;
- 	bool ret;
- 	int i;
-@@ -1917,6 +1941,15 @@ bool btrfs_zone_activate(struct btrfs_block_group *block_group)
- 		if (device->zone_info->max_active_zones == 0)
- 			continue;
+ 	const unsigned int reserved = (block_group->flags & BTRFS_BLOCK_GROUP_DATA) ?
+@@ -2000,7 +1989,6 @@ bool btrfs_zone_activate(struct btrfs_block_group *block_group)
  
-+		/*
-+		 * For the data block group, leave active zones for one
-+		 * metadata block group and one system block group.
-+		 */
-+		if (atomic_read(&device->zone_info->active_zones_left) <= reserved) {
-+			ret = false;
-+			goto out_unlock;
-+		}
-+
- 		if (!btrfs_dev_set_active_zone(device, physical)) {
- 			/* Cannot activate the zone */
- 			ret = false;
-@@ -2111,6 +2144,8 @@ bool btrfs_can_activate_zone(struct btrfs_fs_devices *fs_devices, u64 flags)
- {
- 	struct btrfs_fs_info *fs_info = fs_devices->fs_info;
- 	struct btrfs_device *device;
-+	const unsigned int reserved = (flags & BTRFS_BLOCK_GROUP_DATA) ?
-+		fs_info->reserved_active_zones : 0;
- 	bool ret = false;
+ 	map = block_group->physical_map;
  
- 	if (!btrfs_is_zoned(fs_info))
-@@ -2131,10 +2166,10 @@ bool btrfs_can_activate_zone(struct btrfs_fs_devices *fs_devices, u64 flags)
+-	spin_lock(&space_info->lock);
+ 	spin_lock(&block_group->lock);
+ 	if (test_bit(BLOCK_GROUP_FLAG_ZONE_IS_ACTIVE, &block_group->runtime_flags)) {
+ 		ret = true;
+@@ -2038,14 +2026,7 @@ bool btrfs_zone_activate(struct btrfs_block_group *block_group)
  
- 		switch (flags & BTRFS_BLOCK_GROUP_PROFILE_MASK) {
- 		case 0: /* single */
--			ret = (atomic_read(&zinfo->active_zones_left) >= 1);
-+			ret = (atomic_read(&zinfo->active_zones_left) >= (1 + reserved));
- 			break;
- 		case BTRFS_BLOCK_GROUP_DUP:
--			ret = (atomic_read(&zinfo->active_zones_left) >= 2);
-+			ret = (atomic_read(&zinfo->active_zones_left) >= (2 + reserved));
- 			break;
- 		}
- 		if (ret)
+ 	/* Successfully activated all the zones */
+ 	set_bit(BLOCK_GROUP_FLAG_ZONE_IS_ACTIVE, &block_group->runtime_flags);
+-	WARN_ON(block_group->alloc_offset != 0);
+-	if (block_group->zone_unusable == block_group->length) {
+-		block_group->zone_unusable = block_group->length - block_group->zone_capacity;
+-		space_info->bytes_zone_unusable -= block_group->zone_capacity;
+-	}
+ 	spin_unlock(&block_group->lock);
+-	btrfs_try_granting_tickets(fs_info, space_info);
+-	spin_unlock(&space_info->lock);
+ 
+ 	/* For the active block group list */
+ 	btrfs_get_block_group(block_group);
+@@ -2058,7 +2039,6 @@ bool btrfs_zone_activate(struct btrfs_block_group *block_group)
+ 
+ out_unlock:
+ 	spin_unlock(&block_group->lock);
+-	spin_unlock(&space_info->lock);
+ 	return ret;
+ }
+ 
 -- 
 2.41.0
 

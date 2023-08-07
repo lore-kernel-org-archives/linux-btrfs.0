@@ -2,53 +2,53 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 030ADC001B0
-	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Aug 2023 11:27:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8EB1DC41513
+	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Aug 2023 11:28:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232577AbjHGL1d (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 7 Aug 2023 07:27:33 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60766 "EHLO
+        id S232390AbjHGL2t (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 7 Aug 2023 07:28:49 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60280 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232644AbjHGL1E (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Aug 2023 07:27:04 -0400
-Received: from mail-oi1-x22c.google.com (mail-oi1-x22c.google.com [IPv6:2607:f8b0:4864:20::22c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1012B44A8
-        for <linux-btrfs@vger.kernel.org>; Mon,  7 Aug 2023 04:24:15 -0700 (PDT)
-Received: by mail-oi1-x22c.google.com with SMTP id 5614622812f47-3a3ee866e00so452667b6e.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 07 Aug 2023 04:24:15 -0700 (PDT)
+        with ESMTP id S232710AbjHGL1Z (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Aug 2023 07:27:25 -0400
+Received: from mail-oi1-x231.google.com (mail-oi1-x231.google.com [IPv6:2607:f8b0:4864:20::231])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CE9D64213
+        for <linux-btrfs@vger.kernel.org>; Mon,  7 Aug 2023 04:24:10 -0700 (PDT)
+Received: by mail-oi1-x231.google.com with SMTP id 5614622812f47-3a751bd3372so486914b6e.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 07 Aug 2023 04:24:10 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=bytedance.com; s=google; t=1691407409; x=1692012209;
+        d=bytedance.com; s=google; t=1691407398; x=1692012198;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=GSWsN00ewH1CUxuL2on0amogNZtYjpfZMPk3tXk1MLc=;
-        b=TTmeZvrfuAGU1iYkM0KoGL9MrIlrHNyZZaicFU2iy6/RE6HlW4IBcwufbBTWxj2KB2
-         vqBbGh26Sc9yA9RClZC0oUhRqt+z5aa6IWcf8kreI8XIxS8Qx9hVh6d6zFAcIfV93x8O
-         PiXsVAAeFmt2UDL/l1dVciAap+0ilMGH8d3yLFv81Ql9doJ6+7bRloBve13HLewedVYE
-         usJMIh2W0aY/bERUqVs+t2XE8DyCNf/+YJJ4cyTNkC/pMlaCmkDm7yv9ONAWrE9XbIUv
-         EmN2dP+N+cg39TEd/72Je4tqlBDR3bv5KsQvMGqQPklndrEzKJ6hSQTHZDI+4qlxZkRP
-         Ilvg==
+        bh=iXZOOFmuwv6/pQ9jzhgVENlSQpZ5agnqrhquB4Bsoao=;
+        b=hoDgW0Rmmtx4Zyg2/b4k6ftpUfrwbD5G7PiGJlYLrFl8MIoDDQBuVgnBz6dg8BVcV+
+         zMgTgwWY9Yj+wRyAzd7jyn1vPLufjaCXiE89uAo/e1e7BlPcjNP+7OcldiP+W4nDYhND
+         aIHRTOQc8Pg1PZifE942Ftiqrkyc5G22ular2BEXl+OE5ymaUGPm2FalXVABAHswELa9
+         9Zi6ylo48ouZ57Q6h3wy1bFOtTtQBJnqn+YTP6+97cT8h9RYmkWUIQ9KK9THbvdphVos
+         5Wunge9ioYG3OPaquDFGtZOeH+BlXBOJDnmH+4rOQwK4Yaopx+655UFQDxiWA5cnboKh
+         o98g==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1691407409; x=1692012209;
+        d=1e100.net; s=20221208; t=1691407398; x=1692012198;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=GSWsN00ewH1CUxuL2on0amogNZtYjpfZMPk3tXk1MLc=;
-        b=bMiGeaOH+27iqvcE6YgDpr6bhoO38m4BBcQHSN0YBduPcWbKwSdf19Nmopd2k9yFFI
-         d1wvEN8rhFttjSEOFTDRxupRb7IrZa6oAMU5Y8N6yXGTbGrvsuTcWCSfKQwkTVhr7n1r
-         jDortEiH7uE5u1rlYgeJRV1FcL5sX6D18zcgXFAqlnTpUuAo5jD4kq2KziTJlCgLvWL8
-         Os20xfZDc7MGmWgJPkPMSOucNMgC5eMBNWODRZP3rrSmLuR122dAqEjMGHRq9xHS6ZZ1
-         8ksLbLGYmfk0naKn2UT91WRjxjycoVsigQO+WyFPIl5tn5kaTd+hAxgKuZXfimutNDjy
-         sKOA==
-X-Gm-Message-State: ABy/qLakPSpV/s1H3k4oPoTxpWuOFqmmM3XkOwOMc0yi88x+qAkS1DqB
-        +f81mopRllJC9I6bcC7SKcALXtlMe22W5qSugTQ=
-X-Google-Smtp-Source: APBJJlEEwhe0wjgrc7nxC5j9G5K3ZI0sWgwDykpBRAx7nLtKV2LZNd6jgA89VvGSaryf9LAeIFxakg==
-X-Received: by 2002:a17:90a:901:b0:268:3a31:3e4d with SMTP id n1-20020a17090a090100b002683a313e4dmr23070871pjn.2.1691406828996;
-        Mon, 07 Aug 2023 04:13:48 -0700 (PDT)
+        bh=iXZOOFmuwv6/pQ9jzhgVENlSQpZ5agnqrhquB4Bsoao=;
+        b=erhSTXSf+VOlyNYHDcOnK+W5qaVcNUOUJQ2Wvr8UdKJfQTVgPilaSrZzYV0Mols2RS
+         VMAsOWpQOsza2IoGE866haiYvkDAcr/qH7lZ2AOrt6S9brWxdgxP5RYC8r6klRXmdwXi
+         RX0+AcPV+R7ayG5kXnZNek85OjMkQoxX+rknVaenE4YlEvgfMyqAUe3vO3q/cz7jqNVl
+         CvvhEe1ss1vSkZ1d8DXAgDgLfvRqSMMngXNsw8TwI9iy3+3QfQ29nixMC8tn8SxCFKMu
+         uNb8idjeniXUYYWUfKWVLHhOuTzdZFi2ft0srNaVyW4c1VqIjJUJMaD+EqWJKaF4XROa
+         qc8Q==
+X-Gm-Message-State: ABy/qLbt5CVr6G/nnpUQoVXn8VgMH2AbUQA8UXeGek4puJfyzluuOkJ+
+        9oSC40+ZnWiyQ3QDciYuOhI/Lbj7WHndSxHAXOg=
+X-Google-Smtp-Source: APBJJlFDSvCAq9gTdHkFF7Bzn2YL0W/qaEPzJ7AdGJ/zjCXgG1JFMDLiaFr2l43qqes0mOglkhZu9g==
+X-Received: by 2002:a17:902:f688:b0:1bb:d7d4:e2b with SMTP id l8-20020a170902f68800b001bbd7d40e2bmr33138766plg.0.1691406778592;
+        Mon, 07 Aug 2023 04:12:58 -0700 (PDT)
 Received: from C02DW0BEMD6R.bytedance.net ([203.208.167.146])
-        by smtp.gmail.com with ESMTPSA id y13-20020a17090aca8d00b0025be7b69d73sm5861191pjt.12.2023.08.07.04.13.37
+        by smtp.gmail.com with ESMTPSA id y13-20020a17090aca8d00b0025be7b69d73sm5861191pjt.12.2023.08.07.04.12.45
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 07 Aug 2023 04:13:48 -0700 (PDT)
+        Mon, 07 Aug 2023 04:12:58 -0700 (PDT)
 From:   Qi Zheng <zhengqi.arch@bytedance.com>
 To:     akpm@linux-foundation.org, david@fromorbit.com, tkhai@ya.ru,
         vbabka@suse.cz, roman.gushchin@linux.dev, djwong@kernel.org,
@@ -69,10 +69,11 @@ Cc:     linux-kernel@vger.kernel.org, linux-mm@kvack.org, x86@kernel.org,
         virtualization@lists.linux-foundation.org,
         linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
         linux-xfs@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        Qi Zheng <zhengqi.arch@bytedance.com>
-Subject: [PATCH v4 18/48] rcu: dynamically allocate the rcu-lazy shrinker
-Date:   Mon,  7 Aug 2023 19:09:06 +0800
-Message-Id: <20230807110936.21819-19-zhengqi.arch@bytedance.com>
+        Qi Zheng <zhengqi.arch@bytedance.com>,
+        Muchun Song <songmuchun@bytedance.com>
+Subject: [PATCH v4 14/48] nfs: dynamically allocate the nfs-acl shrinker
+Date:   Mon,  7 Aug 2023 19:09:02 +0800
+Message-Id: <20230807110936.21819-15-zhengqi.arch@bytedance.com>
 X-Mailer: git-send-email 2.24.3 (Apple Git-128)
 In-Reply-To: <20230807110936.21819-1-zhengqi.arch@bytedance.com>
 References: <20230807110936.21819-1-zhengqi.arch@bytedance.com>
@@ -82,58 +83,62 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Use new APIs to dynamically allocate the rcu-lazy shrinker.
+Use new APIs to dynamically allocate the nfs-acl shrinker.
 
 Signed-off-by: Qi Zheng <zhengqi.arch@bytedance.com>
+Reviewed-by: Muchun Song <songmuchun@bytedance.com>
 ---
- kernel/rcu/tree_nocb.h | 20 +++++++++++---------
- 1 file changed, 11 insertions(+), 9 deletions(-)
+ fs/nfs/super.c | 22 ++++++++++++++--------
+ 1 file changed, 14 insertions(+), 8 deletions(-)
 
-diff --git a/kernel/rcu/tree_nocb.h b/kernel/rcu/tree_nocb.h
-index 5598212d1f27..e1c59c33738a 100644
---- a/kernel/rcu/tree_nocb.h
-+++ b/kernel/rcu/tree_nocb.h
-@@ -1396,13 +1396,6 @@ lazy_rcu_shrink_scan(struct shrinker *shrink, struct shrink_control *sc)
- 
- 	return count ? count : SHRINK_STOP;
+diff --git a/fs/nfs/super.c b/fs/nfs/super.c
+index 2284f749d892..1b5cd0444dda 100644
+--- a/fs/nfs/super.c
++++ b/fs/nfs/super.c
+@@ -129,11 +129,7 @@ static void nfs_ssc_unregister_ops(void)
  }
--
--static struct shrinker lazy_rcu_shrinker = {
--	.count_objects = lazy_rcu_shrink_count,
--	.scan_objects = lazy_rcu_shrink_scan,
--	.batch = 0,
--	.seeks = DEFAULT_SEEKS,
+ #endif /* CONFIG_NFS_V4_2 */
+ 
+-static struct shrinker acl_shrinker = {
+-	.count_objects	= nfs_access_cache_count,
+-	.scan_objects	= nfs_access_cache_scan,
+-	.seeks		= DEFAULT_SEEKS,
 -};
- #endif // #ifdef CONFIG_RCU_LAZY
++static struct shrinker *acl_shrinker;
  
- void __init rcu_init_nohz(void)
-@@ -1410,6 +1403,7 @@ void __init rcu_init_nohz(void)
- 	int cpu;
- 	struct rcu_data *rdp;
- 	const struct cpumask *cpumask = NULL;
-+	struct shrinker * __maybe_unused lazy_rcu_shrinker;
- 
- #if defined(CONFIG_NO_HZ_FULL)
- 	if (tick_nohz_full_running && !cpumask_empty(tick_nohz_full_mask))
-@@ -1436,8 +1430,16 @@ void __init rcu_init_nohz(void)
- 		return;
- 
- #ifdef CONFIG_RCU_LAZY
--	if (register_shrinker(&lazy_rcu_shrinker, "rcu-lazy"))
--		pr_err("Failed to register lazy_rcu shrinker!\n");
-+	lazy_rcu_shrinker = shrinker_alloc(0, "rcu-lazy");
-+	if (!lazy_rcu_shrinker) {
-+		pr_err("Failed to allocate lazy_rcu shrinker!\n");
-+	} else {
-+		lazy_rcu_shrinker->count_objects = lazy_rcu_shrink_count;
-+		lazy_rcu_shrinker->scan_objects = lazy_rcu_shrink_scan;
-+		lazy_rcu_shrinker->seeks = DEFAULT_SEEKS;
+ /*
+  * Register the NFS filesystems
+@@ -153,9 +149,19 @@ int __init register_nfs_fs(void)
+ 	ret = nfs_register_sysctl();
+ 	if (ret < 0)
+ 		goto error_2;
+-	ret = register_shrinker(&acl_shrinker, "nfs-acl");
+-	if (ret < 0)
 +
-+		shrinker_register(lazy_rcu_shrinker);
++	acl_shrinker = shrinker_alloc(0, "nfs-acl");
++	if (!acl_shrinker) {
++		ret = -ENOMEM;
+ 		goto error_3;
 +	}
- #endif // #ifdef CONFIG_RCU_LAZY
- 
- 	if (!cpumask_subset(rcu_nocb_mask, cpu_possible_mask)) {
++
++	acl_shrinker->count_objects = nfs_access_cache_count;
++	acl_shrinker->scan_objects = nfs_access_cache_scan;
++	acl_shrinker->seeks = DEFAULT_SEEKS;
++
++	shrinker_register(acl_shrinker);
++
+ #ifdef CONFIG_NFS_V4_2
+ 	nfs_ssc_register_ops();
+ #endif
+@@ -175,7 +181,7 @@ int __init register_nfs_fs(void)
+  */
+ void __exit unregister_nfs_fs(void)
+ {
+-	unregister_shrinker(&acl_shrinker);
++	shrinker_free(acl_shrinker);
+ 	nfs_unregister_sysctl();
+ 	unregister_nfs4_fs();
+ #ifdef CONFIG_NFS_V4_2
 -- 
 2.30.2
 

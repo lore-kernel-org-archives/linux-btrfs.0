@@ -2,78 +2,49 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9A873C04A6A
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 34C0CC3DA41
 	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Aug 2023 18:16:16 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233311AbjHHSQP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Aug 2023 14:16:15 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38156 "EHLO
+        id S235554AbjHHSQO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Aug 2023 14:16:14 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58540 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233327AbjHHSPy (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Aug 2023 14:15:54 -0400
-Received: from box.fidei.email (box.fidei.email [71.19.144.250])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 208DF72B8;
-        Tue,  8 Aug 2023 10:22:14 -0700 (PDT)
-Received: from authenticated-user (box.fidei.email [71.19.144.250])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits))
-        (No client certificate requested)
-        by box.fidei.email (Postfix) with ESMTPSA id B1571809E9;
-        Tue,  8 Aug 2023 13:22:13 -0400 (EDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=dorminy.me; s=mail;
-        t=1691515333; bh=726Inc6P68BCi0kM+SUSni3m2wN66ATgsTZpdV1YXhA=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=w2iw0OWh+nUjaKDkhWMKMEaHCUJawApxUAUe/nrDey15oXBcy2yG3RjrFIwfIKt8F
-         pFSpf/AT+avhEWMfnWOmaYswBMTJDEJs18SbdCMKua579tjYZf2FrFFmYYMVHkWVnk
-         Bm1zBhLLx8XlN2lS/V76bO4jUujZTnjpbHYepR13pzH35WA2C/iY4EI0r68FJbV+I8
-         88/poEu/zzBw6nh7rV/UpCJslz70ATeq1Z++e3i3UUWlBZD9ykSXWoLyGoYOWAxlB9
-         gAfxCQHl0feLgtOS5vLV0DsvIzfjz6ICKtvVs87/Zqh04CHZ3CluUSMEKWn3hL4x9a
-         LGzme54L6kTsQ==
-From:   Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-To:     linux-btrfs@vger.kernel.org, fstests@vger.kernel.org,
-        kernel-team@meta.com, ebiggers@google.com, anand.jain@oracle.com,
-        fdmanana@suse.com, linux-fscrypt@vger.kernel.org,
-        fsverity@lists.linux.dev, zlang@kernel.org
-Cc:     Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-Subject: [RFC PATCH v3 4/9] common/encrypt: enable making a encrypted btrfs filesystem
-Date:   Tue,  8 Aug 2023 13:21:23 -0400
-Message-ID: <810d879650dd3bd8da1df2e4611d55adaf670ae4.1691530000.git.sweettea-kernel@dorminy.me>
-In-Reply-To: <cover.1691530000.git.sweettea-kernel@dorminy.me>
-References: <cover.1691530000.git.sweettea-kernel@dorminy.me>
+        with ESMTP id S235446AbjHHSPx (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Aug 2023 14:15:53 -0400
+Received: from verein.lst.de (verein.lst.de [213.95.11.211])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A6A851F41F;
+        Tue,  8 Aug 2023 10:22:25 -0700 (PDT)
+Received: by verein.lst.de (Postfix, from userid 2407)
+        id 25D9C68AA6; Tue,  8 Aug 2023 19:22:20 +0200 (CEST)
+Date:   Tue, 8 Aug 2023 19:22:19 +0200
+From:   Christoph Hellwig <hch@lst.de>
+To:     Christian Brauner <brauner@kernel.org>
+Cc:     Christoph Hellwig <hch@lst.de>, clm@fb.com, dsterba@suse.com,
+        josef@toxicpanda.com, linux-btrfs@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
+        syzkaller-bugs@googlegroups.com,
+        syzbot <syzbot+26860029a4d562566231@syzkaller.appspotmail.com>
+Subject: Re: [syzbot] [btrfs?] KASAN: slab-use-after-free Read in
+ btrfs_open_devices
+Message-ID: <20230808172219.GA17612@lst.de>
+References: <0000000000007921d606025b6ad6@google.com> <000000000000094846060260e710@google.com> <20230808-zentimeter-kappen-5da1e70c5535@brauner> <20230808160141.GA15875@lst.de> <20230808-wohnsiedlung-exerzierplatz-02b1257b97a2@brauner>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20230808-wohnsiedlung-exerzierplatz-02b1257b97a2@brauner>
+User-Agent: Mutt/1.5.17 (2007-11-01)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Signed-off-by: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
----
- common/encrypt | 6 ++++++
- 1 file changed, 6 insertions(+)
+On Tue, Aug 08, 2023 at 06:35:04PM +0200, Christian Brauner wrote:
+> On Tue, Aug 08, 2023 at 06:01:41PM +0200, Christoph Hellwig wrote:
+> > Yes, probably.  The lifetimes looked fishy to me to start with, but
+> > this might have made things worse.
+> 
+> It looks like we should be able to just drop that patch.
+> Ok, are you fixing this or should I drop this patch?
 
-diff --git a/common/encrypt b/common/encrypt
-index 2c1925da..1372af66 100644
---- a/common/encrypt
-+++ b/common/encrypt
-@@ -153,6 +153,9 @@ _scratch_mkfs_encrypted()
- 		# erase the UBI volume; reformated automatically on next mount
- 		$UBIUPDATEVOL_PROG ${SCRATCH_DEV} -t
- 		;;
-+	btrfs)
-+		_scratch_mkfs
-+		;;
- 	ceph)
- 		_scratch_cleanup_files
- 		;;
-@@ -168,6 +171,9 @@ _scratch_mkfs_sized_encrypted()
- 	ext4|f2fs)
- 		MKFS_OPTIONS="$MKFS_OPTIONS -O encrypt" _scratch_mkfs_sized $*
- 		;;
-+	btrfs)
-+		_scratch_mkfs_sized $*
-+		;;
- 	*)
- 		_notrun "Filesystem $FSTYP not supported in _scratch_mkfs_sized_encrypted"
- 		;;
--- 
-2.41.0
-
+I plan to fix it, but you can drop it for.  If we want to go on top
+drop get_super like the preview series I sent you we'll eventually need
+something like this patch back, though.

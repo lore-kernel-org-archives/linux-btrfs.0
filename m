@@ -2,39 +2,39 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 41BC7C04A6A
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Aug 2023 18:17:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D354BC04A94
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Aug 2023 18:17:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235587AbjHHSQ4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Aug 2023 14:16:56 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59768 "EHLO
+        id S231634AbjHHSRZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Aug 2023 14:17:25 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35320 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235497AbjHHSQV (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Aug 2023 14:16:21 -0400
+        with ESMTP id S235435AbjHHSQX (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Aug 2023 14:16:23 -0400
 Received: from box.fidei.email (box.fidei.email [IPv6:2605:2700:0:2:a800:ff:feba:dc44])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0AEBE7C701
-        for <linux-btrfs@vger.kernel.org>; Tue,  8 Aug 2023 10:23:00 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BB9507C71C
+        for <linux-btrfs@vger.kernel.org>; Tue,  8 Aug 2023 10:23:05 -0700 (PDT)
 Received: from authenticated-user (box.fidei.email [71.19.144.250])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits))
         (No client certificate requested)
-        by box.fidei.email (Postfix) with ESMTPSA id 889A98354E;
-        Tue,  8 Aug 2023 13:23:00 -0400 (EDT)
+        by box.fidei.email (Postfix) with ESMTPSA id E71EC8354E;
+        Tue,  8 Aug 2023 13:23:04 -0400 (EDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=dorminy.me; s=mail;
-        t=1691515380; bh=joEF3+va5Af010dXO69Cn6ETWbAgY5KWCyraZTJkzRY=;
+        t=1691515385; bh=gyOQqLkXJ8nN2qhN2fmMkaCWdsky5YkILPiT5605pPc=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=UbzusW0R+YQ0Z8VvGwkY42k43/DcTazrnoiGaa9PvjUbstybtU6TtLRbbf343HwcF
-         O08S7QhXOzoWiXQdJXvltuN+bAS2gqcmEoZy8Ic+z7+T/QH0LWhZS56lGPx6N9U5tJ
-         j8o3IDKZ8g1zICr/0KkFB/E12/1kFnn9/ZWhFQQ0pNCfbABXeynBzYH4RW0VIsl7Hp
-         AyjVZcet0hviZdWKQigYfeMEBqpyQgIqrMnyxwNRXEYWi3EtxaPaPjiufPzSwgIiII
-         25MQrkj1CZpFHCqdG3NBuJ9pJrt6GnS834kkKxwwK710XIx7x3wDnSLO+Ur1RLb2qy
-         MufpwIpILyJ9Q==
+        b=PXSbxk0Dg77xVOtqydoENsUm3LrFxvtLQteonAFBs8S9iCxvTB7faW/qeotBJFlmh
+         xW+bm5uJJSMwsW0NEV5Rr0BEZNntanqhQ9HhiUDazec6xKoqPPqqGB2GMNB72OPu/h
+         JQl27qDYdB7fCDzEhnTz2/2Qlf8DC65nTJcDPPTf4YQkvCIJksipXI0XhV517n0WAl
+         Yc98T7PDkAqHrZ53LsZfhFHaB+SuPaOYpDF9M1Wipj7CqrGCImNeyMA5wn1bO+Bp4Q
+         aCMagn98XvdxeV1fIYezVSW6CpxOEdppVEARUCYZvzqZzBZRBqrIUMpcahxvbYmj6R
+         vxMELSWphRFBQ==
 From:   Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
 To:     linux-btrfs@vger.kernel.org, ebiggers@google.com,
         kernel-team@meta.com
 Cc:     Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-Subject: [PATCH v2 1/8] btrfs-progs: add new FEATURE_INCOMPAT_ENCRYPT flag
-Date:   Tue,  8 Aug 2023 13:22:20 -0400
-Message-ID: <9e6e697ccd73915b237fe1caefc55afa0dc95de9.1691520000.git.sweettea-kernel@dorminy.me>
+Subject: [PATCH v2 4/8] btrfs-progs: save and load fscrypt extent contexts
+Date:   Tue,  8 Aug 2023 13:22:23 -0400
+Message-ID: <19d73f2d212981ce808d58a17eea5d7af62fed8b.1691520000.git.sweettea-kernel@dorminy.me>
 In-Reply-To: <cover.1691520000.git.sweettea-kernel@dorminy.me>
 References: <cover.1691520000.git.sweettea-kernel@dorminy.me>
 MIME-Version: 1.0
@@ -43,40 +43,31 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Matches kernel change by the same name.
+Mirrors the relevant part of kernel change 'btrfs: save and load fscrypt
+extent contexts' to progs.
 
 Signed-off-by: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
 ---
- kernel-shared/ctree.h      | 3 ++-
- kernel-shared/uapi/btrfs.h | 1 +
- 2 files changed, 3 insertions(+), 1 deletion(-)
+ kernel-shared/uapi/btrfs_tree.h | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
 
-diff --git a/kernel-shared/ctree.h b/kernel-shared/ctree.h
-index 59533879b..6c9ff866f 100644
---- a/kernel-shared/ctree.h
-+++ b/kernel-shared/ctree.h
-@@ -103,7 +103,8 @@ static inline u32 __BTRFS_LEAF_DATA_SIZE(u32 nodesize)
- 	 BTRFS_FEATURE_INCOMPAT_RAID1C34 |		\
- 	 BTRFS_FEATURE_INCOMPAT_METADATA_UUID |		\
- 	 BTRFS_FEATURE_INCOMPAT_ZONED |			\
--	 BTRFS_FEATURE_INCOMPAT_EXTENT_TREE_V2)
-+	 BTRFS_FEATURE_INCOMPAT_EXTENT_TREE_V2 |	\
-+	 BTRFS_FEATURE_INCOMPAT_ENCRYPT)
- #else
- #define BTRFS_FEATURE_INCOMPAT_SUPP			\
- 	(BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF |		\
-diff --git a/kernel-shared/uapi/btrfs.h b/kernel-shared/uapi/btrfs.h
-index 85b04f89a..e347cceb0 100644
---- a/kernel-shared/uapi/btrfs.h
-+++ b/kernel-shared/uapi/btrfs.h
-@@ -356,6 +356,7 @@ _static_assert(sizeof(struct btrfs_ioctl_fs_info_args) == 1024);
- #define BTRFS_FEATURE_INCOMPAT_RAID1C34		(1ULL << 11)
- #define BTRFS_FEATURE_INCOMPAT_ZONED		(1ULL << 12)
- #define BTRFS_FEATURE_INCOMPAT_EXTENT_TREE_V2	(1ULL << 13)
-+#define BTRFS_FEATURE_INCOMPAT_ENCRYPT		(1ULL << 14)
+diff --git a/kernel-shared/uapi/btrfs_tree.h b/kernel-shared/uapi/btrfs_tree.h
+index 2df7cfec4..c1c3a46e4 100644
+--- a/kernel-shared/uapi/btrfs_tree.h
++++ b/kernel-shared/uapi/btrfs_tree.h
+@@ -1075,7 +1075,11 @@ struct btrfs_file_extent_item {
+ 	 * always reflects the size uncompressed and without encoding.
+ 	 */
+ 	__le64 num_bytes;
+-
++	/*
++	 * fscrypt extent encryption context. Only present if extent is
++	 * encrypted (stored in the encryption field).
++	 */
++	__u8 encryption_context[0];
+ } __attribute__ ((__packed__));
  
- struct btrfs_ioctl_feature_flags {
- 	__u64 compat_flags;
+ struct btrfs_csum_item {
 -- 
 2.41.0
 

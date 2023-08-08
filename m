@@ -2,173 +2,122 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BCA8DC41513
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Aug 2023 19:48:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F353CC04A94
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Aug 2023 20:14:40 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230368AbjHHTsz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Aug 2023 15:48:55 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35200 "EHLO
+        id S232261AbjHHUOk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Aug 2023 16:14:40 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45562 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235329AbjHHSQW (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Aug 2023 14:16:22 -0400
-Received: from box.fidei.email (box.fidei.email [71.19.144.250])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 65669768A
-        for <linux-btrfs@vger.kernel.org>; Tue,  8 Aug 2023 10:23:02 -0700 (PDT)
+        with ESMTP id S231172AbjHHUO2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Aug 2023 16:14:28 -0400
+Received: from box.fidei.email (box.fidei.email [IPv6:2605:2700:0:2:a800:ff:feba:dc44])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4CB78BD7C4;
+        Tue,  8 Aug 2023 11:46:29 -0700 (PDT)
 Received: from authenticated-user (box.fidei.email [71.19.144.250])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits))
+        (using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits))
         (No client certificate requested)
-        by box.fidei.email (Postfix) with ESMTPSA id 04AFE8354F;
-        Tue,  8 Aug 2023 13:23:01 -0400 (EDT)
+        by box.fidei.email (Postfix) with ESMTPSA id 5BD3580C15;
+        Tue,  8 Aug 2023 14:46:28 -0400 (EDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=dorminy.me; s=mail;
-        t=1691515382; bh=hkyEGCML1GZoM8SkX38/nbSWGHcLrLq9/fryOwU2MeE=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=w+zsZ6TV6FM2xUBXRAFuAcF/M2EhFeQM7Ko9Tukl1K+bC9lTOJOdHjkC5vHUlHjVY
-         8MQlSv+XxCAZJIeTuAdeRkuXM7dhu6/YxiUzTcOXlIyzNNuLgGFVxHSbWu0pYUlM+y
-         AvzkISQky4e3vznBRbhE9uCV9+3H584FqdzbPxYzJaj41Ip1cpXeDxK2jt8eBgmJpU
-         rF4Y7o3AS3HwwOnu+Vj5Pw//DxI3n/PfCZGz/Arxvme9iyZ3Yw6+u1Xk1+g5XrrRXJ
-         i6lrFjW/EPzQZKmSWq2B4iKFSA8woAK6RURulbJFAYspCeSI9TL2M7HEY93QstYNES
-         +fueGHH5/MN4g==
-From:   Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-To:     linux-btrfs@vger.kernel.org, ebiggers@google.com,
-        kernel-team@meta.com
-Cc:     Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-Subject: [PATCH v2 2/8] btrfs-progs: start tracking extent encryption context info
-Date:   Tue,  8 Aug 2023 13:22:21 -0400
-Message-ID: <47f04d1db075b2dcc704a59353c64ab368cf9b69.1691520000.git.sweettea-kernel@dorminy.me>
-In-Reply-To: <cover.1691520000.git.sweettea-kernel@dorminy.me>
-References: <cover.1691520000.git.sweettea-kernel@dorminy.me>
+        t=1691520389; bh=zboWyX3LOqJT54iC6p239R9WSjBQ9u2mjNYR6izqaxw=;
+        h=Date:Subject:To:References:From:In-Reply-To:From;
+        b=YTboS0nEd5b0R7WsONge72lwyMWoG8E8DpBn0OTG5htDaLIGa5AAjcXkNKqmpGG3v
+         YPvTCUxG76My5eWBV1d703zsOBLQzsnoogNlDEquv8PieKLeVRafS5/BlSnAFe6aW6
+         RndnupZ2+KnMm1rMO+jVQBjA3y+4ILRv6bVAdJhO4E/++L5YH3pWMIM5375LveK+A4
+         QQOU2NvxIehNSDsQZ1Qm8QbHsZOJeOwd2K7qb8Xd0s122taP0HiC9e0hvyliVLag+l
+         V9xYRwmz9l34rKHfpOMcbnvNZTvKypUefmoMcqGUqmvAyPVdoXzncKskNmvouaeOG8
+         wI/RwM93PXvgQ==
+Message-ID: <1b838929-f349-559c-5f69-560c635c1d24@dorminy.me>
+Date:   Tue, 8 Aug 2023 14:46:27 -0400
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Subject: Re: [RFC PATCH v3 9/9] btrfs: test snapshotting encrypted subvol
+Content-Language: en-US
+To:     linux-btrfs@vger.kernel.org, fstests@vger.kernel.org,
+        kernel-team@meta.com, ebiggers@google.com, anand.jain@oracle.com,
+        fdmanana@suse.com, linux-fscrypt@vger.kernel.org,
+        fsverity@lists.linux.dev, zlang@kernel.org
+References: <cover.1691530000.git.sweettea-kernel@dorminy.me>
+ <400435f749f54e07a23e8e3c67bb717646747cc4.1691530000.git.sweettea-kernel@dorminy.me>
+From:   Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
+In-Reply-To: <400435f749f54e07a23e8e3c67bb717646747cc4.1691530000.git.sweettea-kernel@dorminy.me>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This recapitulates the kernel change named 'btrfs: start tracking extent
-encryption context info".
 
-Signed-off-by: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
----
- kernel-shared/accessors.h    |  2 ++
- kernel-shared/fscrypt.h      | 25 ++++++++++++++++++++++++
- kernel-shared/tree-checker.c | 37 ++++++++++++++++++++++++++++--------
- 3 files changed, 56 insertions(+), 8 deletions(-)
- create mode 100644 kernel-shared/fscrypt.h
 
-diff --git a/kernel-shared/accessors.h b/kernel-shared/accessors.h
-index 539c20d09..1302ce5e6 100644
---- a/kernel-shared/accessors.h
-+++ b/kernel-shared/accessors.h
-@@ -949,6 +949,8 @@ BTRFS_SETGET_STACK_FUNCS(stack_file_extent_disk_num_bytes,
- 			 struct btrfs_file_extent_item, disk_num_bytes, 64);
- BTRFS_SETGET_STACK_FUNCS(stack_file_extent_compression,
- 			 struct btrfs_file_extent_item, compression, 8);
-+BTRFS_SETGET_STACK_FUNCS(stack_file_extent_encryption,
-+			 struct btrfs_file_extent_item, encryption, 8);
- 
- BTRFS_SETGET_FUNCS(file_extent_type, struct btrfs_file_extent_item, type, 8);
- BTRFS_SETGET_FUNCS(file_extent_disk_bytenr, struct btrfs_file_extent_item,
-diff --git a/kernel-shared/fscrypt.h b/kernel-shared/fscrypt.h
-new file mode 100644
-index 000000000..32fda99ca
---- /dev/null
-+++ b/kernel-shared/fscrypt.h
-@@ -0,0 +1,25 @@
-+/* SPDX-License-Identifier: GPL-2.0 */
-+
-+#ifndef BTRFS_FSCRYPT_H
-+#define BTRFS_FSCRYPT_H
-+
-+static inline u32
-+btrfs_file_extent_encryption_ctxsize(const struct extent_buffer *eb,
-+                                     struct btrfs_file_extent_item *e)
-+{
-+        if (!btrfs_file_extent_encryption(eb, e))
-+                return 0;
-+
-+        return btrfs_get_32(eb, e, offsetof(struct btrfs_file_extent_item,
-+                                            encryption_context));
-+}
-+
-+static inline u8
-+btrfs_file_extent_ctxsize_from_item(const struct extent_buffer *leaf,
-+				    int nr)
-+{
-+	return (btrfs_item_size(leaf, nr) -
-+		sizeof(struct btrfs_file_extent_item));
-+}
-+
-+#endif
-diff --git a/kernel-shared/tree-checker.c b/kernel-shared/tree-checker.c
-index 107975891..2665b2038 100644
---- a/kernel-shared/tree-checker.c
-+++ b/kernel-shared/tree-checker.c
-@@ -25,6 +25,7 @@
- #include "kernel-shared/ctree.h"
- #include "kernel-shared/tree-checker.h"
- #include "kernel-shared/disk-io.h"
-+#include "kernel-shared/fscrypt.h"
- #include "kernel-shared/compression.h"
- #include "kernel-shared/volumes.h"
- #include "kernel-shared/misc.h"
-@@ -229,6 +230,7 @@ static int check_extent_data_item(struct extent_buffer *leaf,
- 	u32 sectorsize = fs_info->sectorsize;
- 	u32 item_size = btrfs_item_size(leaf, slot);
- 	u64 extent_end;
-+	u8 policy;
- 
- 	if (unlikely(!IS_ALIGNED(key->offset, sectorsize))) {
- 		file_extent_err(leaf, slot,
-@@ -280,10 +282,11 @@ static int check_extent_data_item(struct extent_buffer *leaf,
- 			BTRFS_NR_COMPRESS_TYPES - 1);
- 		return -EUCLEAN;
- 	}
--	if (unlikely(btrfs_file_extent_encryption(leaf, fi))) {
-+	policy = btrfs_file_extent_encryption(leaf, fi);
-+	if (unlikely(policy >= BTRFS_NR_ENCRYPTION_TYPES)) {
- 		file_extent_err(leaf, slot,
--			"invalid encryption for file extent, have %u expect 0",
--			btrfs_file_extent_encryption(leaf, fi));
-+			"invalid encryption for file extent, have %u expect range [0, %u]",
-+			policy, BTRFS_NR_ENCRYPTION_TYPES - 1);
- 		return -EUCLEAN;
- 	}
- 	if (btrfs_file_extent_type(leaf, fi) == BTRFS_FILE_EXTENT_INLINE) {
-@@ -312,12 +315,30 @@ static int check_extent_data_item(struct extent_buffer *leaf,
- 		return 0;
- 	}
- 
--	/* Regular or preallocated extent has fixed item size */
--	if (unlikely(item_size != sizeof(*fi))) {
--		file_extent_err(leaf, slot,
-+	if (policy == BTRFS_ENCRYPTION_FSCRYPT) {
-+		u8 ctxsize = btrfs_file_extent_encryption_ctxsize(leaf, fi);
-+
-+		if (unlikely(item_size != sizeof(*fi) + ctxsize)) {
-+			file_extent_err(leaf, slot,
-+	"invalid item size for encrypted file extent, have %u expect = %zu + context of size %u",
-+					item_size, sizeof(*fi), ctxsize);
-+			return -EUCLEAN;
-+		}
-+		/* Only regular extents should be encrypted. */
-+		if (btrfs_file_extent_type(leaf, fi) != BTRFS_FILE_EXTENT_REG) {
-+			file_extent_err(leaf, slot,
-+		"invalid type for encrypted file extent, have %u expect %u",
-+					btrfs_file_extent_type(leaf, fi),
-+					BTRFS_FILE_EXTENT_REG);
-+			return -EUCLEAN;
-+		}
-+	} else {
-+		if (unlikely(item_size != sizeof(*fi))) {
-+			file_extent_err(leaf, slot,
- 	"invalid item size for reg/prealloc file extent, have %u expect %zu",
--			item_size, sizeof(*fi));
--		return -EUCLEAN;
-+					item_size, sizeof(*fi));
-+			return -EUCLEAN;
-+		}
- 	}
- 	if (unlikely(CHECK_FE_ALIGNED(leaf, slot, fi, ram_bytes, sectorsize) ||
- 		     CHECK_FE_ALIGNED(leaf, slot, fi, disk_bytenr, sectorsize) ||
--- 
-2.41.0
-
+On 8/8/23 13:21, Sweet Tea Dorminy wrote:
+> Make sure that snapshots of encrypted data are readable and writeable.
+> 
+> Test deliberately high-numbered to not conflict.
+> 
+> Signed-off-by: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
+> ---
+>   tests/btrfs/614     |  76 ++++++++++++++++++++++++++++++
+>   tests/btrfs/614.out | 111 ++++++++++++++++++++++++++++++++++++++++++++
+>   2 files changed, 187 insertions(+)
+>   create mode 100755 tests/btrfs/614
+>   create mode 100644 tests/btrfs/614.out
+> 
+> diff --git a/tests/btrfs/614 b/tests/btrfs/614
+> new file mode 100755
+> index 00000000..87dd27f9
+> --- /dev/null
+> +++ b/tests/btrfs/614
+> @@ -0,0 +1,76 @@
+> +#! /bin/bash
+> +# SPDX-License-Identifier: GPL-2.0
+> +# Copyright (c) 2023 Meta Platforms, Inc.  All Rights Reserved.
+> +#
+> +# FS QA Test 614
+> +#
+> +# Try taking a snapshot of an encrypted subvolume. Make sure the snapshot is
+> +# still readable. Rewrite part of the subvol with the same data; make sure it's
+> +# still readable.
+> +#
+> +. ./common/preamble
+> +_begin_fstest auto encrypt
+> +
+> +# Import common functions.
+> +. ./common/encrypt
+> +. ./common/filter
+> +
+> +# real QA test starts here
+> +_supported_fs btrfs
+> +
+> +_require_test
+> +_require_scratch
+> +_require_scratch_encryption -v 2
+> +_require_command "$KEYCTL_PROG" keyctl
+> +
+> +_scratch_mkfs_encrypted &>> $seqres.full
+> +_scratch_mount
+> +
+> +udir=$SCRATCH_MNT/reference
+> +dir=$SCRATCH_MNT/subvol
+> +dir2=$SCRATCH_MNT/subvol2
+> +$BTRFS_UTIL_PROG subvolume create $dir >> $seqres.full
+> +mkdir $udir
+> +
+> +_set_encpolicy $dir $TEST_KEY_IDENTIFIER
+> +_add_enckey $SCRATCH_MNT "$TEST_RAW_KEY"
+> +
+> +# get files with lots of extents by using backwards writes.
+> +for j in `seq 0 50`; do
+> +	for i in `seq 20 -1 1`; do
+> +		$XFS_IO_PROG -f -d -c "pwrite $(($i * 4096)) 4096" \
+> +		$dir/foo-$j >> $seqres.full | _filter_xfs_io
+> +		$XFS_IO_PROG -f -d -c "pwrite $(($i * 4096)) 4096" \
+> +		$udir/foo-$j >> $seqres.full | _filter_xfs_io
+> +	done
+> +done
+> +
+> +$BTRFS_UTIL_PROG subvolume snapshot $dir $dir2 | _filter_scratch
+> +
+> +_scratch_remount
+> +_add_enckey $SCRATCH_MNT "$TEST_RAW_KEY"
+> +sleep 30
+Just noticed this sleep, will remove it in the next version.

@@ -2,74 +2,101 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A11C2C001B0
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Aug 2023 18:55:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7B938C001B0
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Aug 2023 19:07:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232213AbjHHSzR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Aug 2023 14:55:17 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55938 "EHLO
+        id S234387AbjHHTHt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Aug 2023 15:07:49 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39932 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234251AbjHHSyr (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Aug 2023 14:54:47 -0400
-Received: from box.fidei.email (box.fidei.email [IPv6:2605:2700:0:2:a800:ff:feba:dc44])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8CCF0696B0;
-        Tue,  8 Aug 2023 10:12:29 -0700 (PDT)
-Received: from authenticated-user (box.fidei.email [71.19.144.250])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits))
+        with ESMTP id S231200AbjHHTHb (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Aug 2023 15:07:31 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1116E2D1D6
+        for <linux-btrfs@vger.kernel.org>; Tue,  8 Aug 2023 09:29:22 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by box.fidei.email (Postfix) with ESMTPSA id EE1498343E;
-        Tue,  8 Aug 2023 13:12:28 -0400 (EDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=dorminy.me; s=mail;
-        t=1691514749; bh=qYTOnD2X09d8CWs7gVr1n+nGjMJSg4tguTG1TOz83fw=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=a+zN3vdUUOgJKeKRIKi+vFBuveCBaoB+1QKyQXQP3+gzKKPLoLRlLk5zUqtMnT4nw
-         wK/OeYLZXRBPaliFAdsEp6K7/BblQNWTvRGl4HCM998THLchYX39apNynej4bRYciB
-         PbC3/RrmLPLkfNQaWpS+H8PC9s1QXB72bGVAOZWphgZK08hNgM2E3S8VeoB4ieMwm9
-         q06rYDKDuezeIQDFH2BXg0x+huYxiazCxK40Vb9WoRsCJp/5qzzVps8M5W4dusfKO4
-         QuPTki9X2GZk2OlHdP+Z/SMmrbyXc2NFojwa3ovmRJcqtxQdZeCxNjb3w2lG9jxbt6
-         7khnJjgXD4jKA==
-From:   Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>,
-        "Theodore Y . Ts'o" <tytso@mit.edu>,
-        Jaegeuk Kim <jaegeuk@kernel.org>, kernel-team@meta.com,
-        linux-btrfs@vger.kernel.org, linux-fscrypt@vger.kernel.org,
-        Eric Biggers <ebiggers@kernel.org>
-Cc:     Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-Subject: [PATCH v3 02/17] btrfs: disable verity on encrypted inodes
-Date:   Tue,  8 Aug 2023 13:12:04 -0400
-Message-ID: <7f5444829adca5f4bd647749382bd0771258c846.1691510179.git.sweettea-kernel@dorminy.me>
-In-Reply-To: <cover.1691510179.git.sweettea-kernel@dorminy.me>
-References: <cover.1691510179.git.sweettea-kernel@dorminy.me>
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 2ADEE2030C
+        for <linux-btrfs@vger.kernel.org>; Tue,  8 Aug 2023 05:52:24 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1691473944; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=TN1iAzD1c46swHcK3wbG5q+6/0YrH8TH9/ePZT6UiMo=;
+        b=I5ofDbow/vfUWENnESJYIb7FlxwsJyavQ7asz4gIp+vBF0mmsQxhDyv251baBl5NiNIYwI
+        vJssTFhFVREtZ59bPzMKTbVif2BYe3j1LneveMs4DCcfZ7RIjjv7HZujE7SdVuUjFnlM6J
+        xno+TEJU1tvidVGfsH0veaB5ugQVIyU=
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 8C46C13910
+        for <linux-btrfs@vger.kernel.org>; Tue,  8 Aug 2023 05:52:23 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id 8gCuFhfY0WS4NQAAMHmgww
+        (envelope-from <wqu@suse.com>)
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 Aug 2023 05:52:23 +0000
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs-progs: tests/mkfs/005: use udevadm settle to avoid false alerts
+Date:   Tue,  8 Aug 2023 13:52:06 +0800
+Message-ID: <688da51813559124605fca0f67c178095baca8d2.1691473890.git.wqu@suse.com>
+X-Mailer: git-send-email 2.41.0
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Right now there isn't a way to encrypt things that aren't either
-filenames in directories or data on blocks on disk with extent
-encryption, so for now, disable verity usage with encryption on btrfs.
+[BUG]
+During my test runs of mkfs-tests, 005-long-device-name-for-ssd failed
+with the following error messages:
 
-Signed-off-by: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
+  ====== RUN CHECK dmsetup remove btrfs-test-with-very-long-name-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQPGc
+  device-mapper: remove ioctl on btrfs-test-with-very-long-name-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQPGc  failed: Device or resource busy
+  Command failed.
+  failed: dmsetup remove btrfs-test-with-very-long-name-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQPGc
+  test failed for case 005-long-device-name-for-ssd
+
+[CAUSE]
+There seems to be a race between "btrfs inspect dump-super" and the
+dmsetup removal.
+
+[FIX]
+Add a "udevadm settle" before removing the dm devices.
+
+Also since we're here, use the same "udevadm settle" instead of the
+manual sleep to wait for the new dm device to showup.
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/verity.c | 3 +++
- 1 file changed, 3 insertions(+)
+ tests/mkfs-tests/005-long-device-name-for-ssd/test.sh | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/verity.c b/fs/btrfs/verity.c
-index c5ff16f9e9fa..cda969c6cb0c 100644
---- a/fs/btrfs/verity.c
-+++ b/fs/btrfs/verity.c
-@@ -588,6 +588,9 @@ static int btrfs_begin_enable_verity(struct file *filp)
+diff --git a/tests/mkfs-tests/005-long-device-name-for-ssd/test.sh b/tests/mkfs-tests/005-long-device-name-for-ssd/test.sh
+index 208698dce243..c32eb3a42def 100755
+--- a/tests/mkfs-tests/005-long-device-name-for-ssd/test.sh
++++ b/tests/mkfs-tests/005-long-device-name-for-ssd/test.sh
+@@ -24,7 +24,7 @@ loopdev=`run_check_stdout $SUDO_HELPER losetup --find --show img`
+ run_check $SUDO_HELPER dmsetup create "$dmname" --table "0 1048576 linear $loopdev 0"
  
- 	ASSERT(inode_is_locked(file_inode(filp)));
+ # Setting up the device may need some time to appear
+-sleep 5
++run_check $SUDO_HELPER udevadm settle
+ if ! [ -b "$dmdev" ]; then
+ 	_not_run "dm device created but not visible in /dev/mapper"
+ fi
+@@ -43,6 +43,8 @@ run_check_stdout $SUDO_HELPER "$TOP/mkfs.btrfs" -f "$@" "$dmdev" |
+ 	grep -q 'SSD detected:.*yes' || _fail 'SSD not detected'
+ run_check $SUDO_HELPER "$TOP/btrfs" inspect-internal dump-super "$dmdev"
  
-+	if (IS_ENCRYPTED(&inode->vfs_inode))
-+		return -EINVAL;
++run_check $SUDO_HELPER udevadm settle
 +
- 	if (test_bit(BTRFS_INODE_VERITY_IN_PROGRESS, &inode->runtime_flags))
- 		return -EBUSY;
- 
+ # cleanup
+ run_check $SUDO_HELPER dmsetup remove "$dmname"
+ run_mayfail $SUDO_HELPER losetup -d "$loopdev"
 -- 
 2.41.0
 

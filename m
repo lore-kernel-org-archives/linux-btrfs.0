@@ -2,106 +2,84 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 90FCBC04FDF
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Aug 2023 17:51:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AD329C04A94
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Aug 2023 18:08:01 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235095AbjHHRv3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Aug 2023 13:51:29 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34670 "EHLO
+        id S232113AbjHHSIA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Aug 2023 14:08:00 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41346 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231765AbjHHRvG (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Aug 2023 13:51:06 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DBD9B9ECD
-        for <linux-btrfs@vger.kernel.org>; Tue,  8 Aug 2023 09:22:51 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        with ESMTP id S231835AbjHHSHY (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Aug 2023 14:07:24 -0400
+Received: from box.fidei.email (box.fidei.email [IPv6:2605:2700:0:2:a800:ff:feba:dc44])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7A2A315A8D1;
+        Tue,  8 Aug 2023 10:08:16 -0700 (PDT)
+Received: from authenticated-user (box.fidei.email [71.19.144.250])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits))
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 642A421B5C
-        for <linux-btrfs@vger.kernel.org>; Tue,  8 Aug 2023 06:55:40 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1691477740; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=ff7alGF9fATTFj75SKCxHOxDxpbQoDt65+5iOilJ3pQ=;
-        b=SYVC58AIuTOBb17ruU+lanNFXVsckWyoH2rO7DQgHSBgOl87RboyPla94eQz4QViuyRCQt
-        mFiiUtamoaFPDN3IAdEYysb3l0vtcRLawVCVc4GCpWcMyzUf4qjmUivO4ITNC5LLt7ml5w
-        kJIf5VPrEf5Ye7J8Yt33MxxU8mVQ8QQ=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id AB91013451
-        for <linux-btrfs@vger.kernel.org>; Tue,  8 Aug 2023 06:55:39 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id YyX9G+vm0WSkUAAAMHmgww
-        (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Tue, 08 Aug 2023 06:55:39 +0000
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: tests/misc/058: reduce the space requirement and speed up the test
-Date:   Tue,  8 Aug 2023 14:55:21 +0800
-Message-ID: <173e7faa9202a5d3438cd5bbdca765708f3bc729.1691477705.git.wqu@suse.com>
-X-Mailer: git-send-email 2.41.0
+        by box.fidei.email (Postfix) with ESMTPSA id 1A13D83533;
+        Tue,  8 Aug 2023 13:08:16 -0400 (EDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=dorminy.me; s=mail;
+        t=1691514496; bh=jeYQA7/njT8jvaAwldD3M+z3nL1zGvL3hNq+18LLvR8=;
+        h=From:To:Cc:Subject:Date:From;
+        b=cK0AzV3wosKqI/BauERrxjRIRR4wAD6Lbxxpd8kZ68Bwanybfl+LMQW7zqftPu3A+
+         HsJuTAgmAkxchPdymkPJIiSyVztKqTG99x9qa0qJOgfqFz2lt5xej6S8wz6a+DZTqc
+         vIvZXSjf29pfq+3CmZdWxf/i7tvMn5g/BTzey3sYm+as1aA/cp4qgbS8E9MM26CbRv
+         0urPnjSb7hudr+5bW3S0JHnxe4foRpF+KfvNLOXGF1mdo0qCbHYxffnrvxBPjslHix
+         wvskOZYTYJV/DdvX8oBUMd8sePZpG+XDHf8qSt6z5fUlhYH05KDRgxQ8HG4g5C2iTv
+         qMz+gqq/aQxJA==
+From:   Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
+To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>,
+        "Theodore Y . Ts'o" <tytso@mit.edu>,
+        Jaegeuk Kim <jaegeuk@kernel.org>, kernel-team@meta.com,
+        linux-btrfs@vger.kernel.org, linux-fscrypt@vger.kernel.org,
+        Eric Biggers <ebiggers@kernel.org>
+Cc:     Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
+Subject: [PATCH v6 0/8] fscrypt: preliminary rearrangmeents of key setup
+Date:   Tue,  8 Aug 2023 13:08:00 -0400
+Message-ID: <cover.1691505830.git.sweettea-kernel@dorminy.me>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-[BUG]
-When I was testing misc/058, the fs still has around 7GiB free space,
-but during that test case, btrfs kernel module reports write failures
-and even git commands failed inside that fs.
+For btrfs extent encryption, prepared keys need to be asynchronously
+freed after the fscrypt_info is freed. This set of various
+rearrangements of key setup turns the prepared key member of the info
+into a pointer so this is possible.
 
-And obviously the test case failed.
+Patchset is built on kdave/misc-next as per base commit and needs a tiny
+fixup to apply to fscrypt/for-next. It passes ext4/f2fs tests for me.
 
-[CAUSE]
-It turns out that, the test case itself would require 6GiB (4 data
-disks) + 1.5GiB x 2 (the two replace target), thus it requires 9 GiB
-free space.
+[1] https://lore.kernel.org/linux-fscrypt/cover.1681837335.git.sweettea-kernel@dorminy.me/
 
-And obviously my partition is not that large and failed.
+Changelog:
+v6:
+ - Reword 'make infos have a pointer to prepared keys' to elaborate
+   on why it is a useful change.
 
-[FIX]
-In fact, we really don't need that much space at all.
+Sweet Tea Dorminy (8):
+  fscrypt: move inline crypt decision to info setup
+  fscrypt: split and rename setup_file_encryption_key()
+  fscrypt: split setup_per_mode_enc_key()
+  fscrypt: move dirhash key setup away from IO key setup
+  fscrypt: reduce special-casing of IV_INO_LBLK_32
+  fscrypt: move all the shared mode key setup deeper
+  fscrypt: make infos have a pointer to prepared keys
+  fscrypt: make prepared keys record their type
 
-Our objective is to test "btrfs device replace --enqueue" functionality,
-there is not much need to wait for 1 second, we can just do the enqueue
-immediately.
+ fs/crypto/crypto.c          |   2 +-
+ fs/crypto/fname.c           |   4 +-
+ fs/crypto/fscrypt_private.h |  33 +++-
+ fs/crypto/inline_crypt.c    |   4 +-
+ fs/crypto/keysetup.c        | 357 +++++++++++++++++++++++-------------
+ fs/crypto/keysetup_v1.c     |   9 +-
+ 6 files changed, 265 insertions(+), 144 deletions(-)
 
-So this patch would reduce the file size to a more sane (and rounded)
-2GiB, and do the enqueue immediately.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- tests/misc-tests/058-replace-start-enqueue/test.sh | 5 ++---
- 1 file changed, 2 insertions(+), 3 deletions(-)
-
-diff --git a/tests/misc-tests/058-replace-start-enqueue/test.sh b/tests/misc-tests/058-replace-start-enqueue/test.sh
-index 1a24d5ec7ecb..bdbc87b4090d 100755
---- a/tests/misc-tests/058-replace-start-enqueue/test.sh
-+++ b/tests/misc-tests/058-replace-start-enqueue/test.sh
-@@ -21,16 +21,15 @@ run_check_mount_test_dev
- run_check $SUDO_HELPER "$TOP/btrfs" device remove "$REPLACE1" "$TEST_MNT"
- run_check $SUDO_HELPER "$TOP/btrfs" device remove "$REPLACE2" "$TEST_MNT"
- 
--for i in `seq 48`; do
-+for i in `seq 16`; do
- 	run_check $SUDO_HELPER dd if=/dev/zero of="$TEST_MNT/file$i" bs=1M count=128 status=noxfer
- done
- # Sync so replace start does not block in unwritten IO
- run_check "$TOP/btrfs" filesystem sync "$TEST_MNT"
- run_check "$TOP/btrfs" filesystem usage -T "$TEST_MNT"
- 
--# Go background, should not be that fast, estimated 10 seconds
-+# Go background, should not be that fast.
- run_check $SUDO_HELPER "$TOP/btrfs" replace start 2 "$REPLACE1" "$TEST_MNT"
--run_check sleep 1
- # No background, should wait
- run_check $SUDO_HELPER "$TOP/btrfs" replace start --enqueue 3 "$REPLACE2" "$TEST_MNT"
- run_check $SUDO_HELPER "$TOP/btrfs" replace status "$TEST_MNT"
+base-commit: 54d2161835d828a9663f548f61d1d9c3d3482122
 -- 
 2.41.0
 

@@ -2,177 +2,75 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 869C7C04FDF
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Aug 2023 21:58:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E926DC001B0
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Aug 2023 22:41:00 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231440AbjHHV6Q (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Aug 2023 17:58:16 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:32934 "EHLO
+        id S230146AbjHHWlA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Aug 2023 18:41:00 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57728 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231126AbjHHV6G (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Aug 2023 17:58:06 -0400
+        with ESMTP id S229664AbjHHWk7 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Aug 2023 18:40:59 -0400
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B4E593A68F;
-        Tue,  8 Aug 2023 09:39:25 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6E0B5FD
+        for <linux-btrfs@vger.kernel.org>; Tue,  8 Aug 2023 15:40:58 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 313B020317;
-        Tue,  8 Aug 2023 09:32:27 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1691487147; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=URemeKpdb8J18iMONbqIB4P02haKyRX6mS8Xu4Mgmc8=;
-        b=kAP4/qU3eebbLi9EbGgoNiblqEAMz2n9d8dDZjEU/zYHxmh4xQUAW4aRmDsDFAo1LDW4XS
-        Jz3jziQyqFQJ2OS6XJQCmcd5h9qdcD3Byn8qpddgol9CAV8ew1WhVYDKOVKgTmZrEM14u3
-        +VucJ+n1ddguqczAaW5Ki56KFXcMMvI=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1691487147;
-        h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=URemeKpdb8J18iMONbqIB4P02haKyRX6mS8Xu4Mgmc8=;
-        b=zakAo2cWrWyYBcipF4rIUwLGrOqm5ZeFyaCmUH+fTkQWLNKyEQyre7V0L+jFNWPtWdDjYF
-        EO0z/Yllpo+E3ODA==
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 308CE1F45E
+        for <linux-btrfs@vger.kernel.org>; Tue,  8 Aug 2023 22:40:57 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1691534457; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=s+v9Qs9rnLOD1rhG+TpFEKEA6oqDGuSdWgMrfi3ZcsA=;
+        b=gPF9wFVZoSpFS/E5STcmkze9/NOmIp5n5LIxtyR40GNbzenTmWTW0afO6/2mIqXGa0Idbi
+        s7XCgjoWkimlc1C1kHQy2PNUAKwcFDBPBwvkOcOh6DiS1XA/aMoN9NCNGdB+mX1C0lBaPp
+        FIL74N0OOhV2gI1pxKSnxQPFZ6Yix+0=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 1EA0313451;
-        Tue,  8 Aug 2023 09:32:27 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 857CC139D1
+        for <linux-btrfs@vger.kernel.org>; Tue,  8 Aug 2023 22:40:56 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id uyF3B6sL0mR7GwAAMHmgww
-        (envelope-from <jack@suse.cz>); Tue, 08 Aug 2023 09:32:27 +0000
-Received: by quack3.suse.cz (Postfix, from userid 1000)
-        id 82443A0769; Tue,  8 Aug 2023 11:32:26 +0200 (CEST)
-Date:   Tue, 8 Aug 2023 11:32:26 +0200
-From:   Jan Kara <jack@suse.cz>
-To:     Jeff Layton <jlayton@kernel.org>
-Cc:     Alexander Viro <viro@zeniv.linux.org.uk>,
-        Christian Brauner <brauner@kernel.org>,
-        Eric Van Hensbergen <ericvh@kernel.org>,
-        Latchesar Ionkov <lucho@ionkov.net>,
-        Dominique Martinet <asmadeus@codewreck.org>,
-        Christian Schoenebeck <linux_oss@crudebyte.com>,
-        David Howells <dhowells@redhat.com>,
-        Marc Dionne <marc.dionne@auristor.com>,
-        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>, Xiubo Li <xiubli@redhat.com>,
-        Ilya Dryomov <idryomov@gmail.com>,
-        Jan Harkes <jaharkes@cs.cmu.edu>, coda@cs.cmu.edu,
-        Tyler Hicks <code@tyhicks.com>, Gao Xiang <xiang@kernel.org>,
-        Chao Yu <chao@kernel.org>, Yue Hu <huyue2@coolpad.com>,
-        Jeffle Xu <jefflexu@linux.alibaba.com>,
-        Namjae Jeon <linkinjeon@kernel.org>,
-        Sungjong Seo <sj1557.seo@samsung.com>,
-        Jan Kara <jack@suse.com>, Theodore Ts'o <tytso@mit.edu>,
-        Andreas Dilger <adilger.kernel@dilger.ca>,
-        Jaegeuk Kim <jaegeuk@kernel.org>,
-        OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>,
-        Miklos Szeredi <miklos@szeredi.hu>,
-        Bob Peterson <rpeterso@redhat.com>,
-        Andreas Gruenbacher <agruenba@redhat.com>,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        Tejun Heo <tj@kernel.org>,
-        Trond Myklebust <trond.myklebust@hammerspace.com>,
-        Anna Schumaker <anna@kernel.org>,
-        Konstantin Komarov <almaz.alexandrovich@paragon-software.com>,
-        Mark Fasheh <mark@fasheh.com>,
-        Joel Becker <jlbec@evilplan.org>,
-        Joseph Qi <joseph.qi@linux.alibaba.com>,
-        Mike Marshall <hubcap@omnibond.com>,
-        Martin Brandenburg <martin@omnibond.com>,
-        Luis Chamberlain <mcgrof@kernel.org>,
-        Kees Cook <keescook@chromium.org>,
-        Iurii Zaikin <yzaikin@google.com>,
-        Steve French <sfrench@samba.org>,
-        Paulo Alcantara <pc@manguebit.com>,
-        Ronnie Sahlberg <ronniesahlberg@gmail.com>,
-        Shyam Prasad N <sprasad@microsoft.com>,
-        Tom Talpey <tom@talpey.com>,
-        Sergey Senozhatsky <senozhatsky@chromium.org>,
-        Richard Weinberger <richard@nod.at>,
-        Hans de Goede <hdegoede@redhat.com>,
-        Hugh Dickins <hughd@google.com>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Amir Goldstein <amir73il@gmail.com>,
-        "Darrick J. Wong" <djwong@kernel.org>,
-        Benjamin Coddington <bcodding@redhat.com>,
-        linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
-        v9fs@lists.linux.dev, linux-afs@lists.infradead.org,
-        linux-btrfs@vger.kernel.org, ceph-devel@vger.kernel.org,
-        codalist@coda.cs.cmu.edu, ecryptfs@vger.kernel.org,
-        linux-erofs@lists.ozlabs.org, linux-ext4@vger.kernel.org,
-        linux-f2fs-devel@lists.sourceforge.net, cluster-devel@redhat.com,
-        linux-nfs@vger.kernel.org, ntfs3@lists.linux.dev,
-        ocfs2-devel@lists.linux.dev, devel@lists.orangefs.org,
-        linux-cifs@vger.kernel.org, samba-technical@lists.samba.org,
-        linux-mtd@lists.infradead.org, linux-mm@kvack.org,
-        linux-unionfs@vger.kernel.org, linux-xfs@vger.kernel.org
-Subject: Re: [PATCH v7 05/13] fat: make fat_update_time get its own timestamp
-Message-ID: <20230808093226.bq2qfxv5npckk643@quack3>
-References: <20230807-mgctime-v7-0-d1dec143a704@kernel.org>
- <20230807-mgctime-v7-5-d1dec143a704@kernel.org>
+        id Ff0ZFHjE0mQICgAAMHmgww
+        (envelope-from <wqu@suse.com>)
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 Aug 2023 22:40:56 +0000
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/4] btrfs-progs: tests false alerts fixes
+Date:   Wed,  9 Aug 2023 06:40:40 +0800
+Message-ID: <cover.1691533896.git.wqu@suse.com>
+X-Mailer: git-send-email 2.41.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20230807-mgctime-v7-5-d1dec143a704@kernel.org>
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon 07-08-23 15:38:36, Jeff Layton wrote:
-> In later patches, we're going to drop the "now" parameter from the
-> update_time operation. Fix fat_update_time to fetch its own timestamp.
-> It turns out that this is easily done by just passing a NULL timestamp
-> pointer to fat_update_time.
-             ^^^ fat_truncate_time()
+This is the resent and aggregate version of the fixes I sent but mostly
+eaten by the recent vger down time.
 
-> Also, it may be that things have changed by the time we get to calling
-> fat_update_time after checking inode_needs_update_time. Ensure that we
-> attempt the i_version bump if any of the S_* flags besides S_ATIME are
-> set.
-> 
-> Signed-off-by: Jeff Layton <jlayton@kernel.org>
+Those are small fixes for the false alerts I hit during my local runs.
 
-Looks good. Feel free to add:
+Most of them are subtle fixes, only the last one is more like an
+optimization.
 
-Reviewed-by: Jan Kara <jack@suse.cz>
+Qu Wenruo (4):
+  btrfs-progs: tests/mkfs/005: use udevadm settle to avoid false alerts
+  btrfs-progs: tests/misc/030: do not require v1 cache for the test case
+  btrfs-progs: tests/misc/046: fix false alerts on write detection
+  btrfs-progs: tests/misc/058: reduce the space requirement and speed up
+    the test
 
-								Honza
+ tests/misc-tests/030-missing-device-image/test.sh     | 8 --------
+ tests/misc-tests/046-seed-multi-mount/test.sh         | 4 +++-
+ tests/misc-tests/058-replace-start-enqueue/test.sh    | 5 ++---
+ tests/mkfs-tests/005-long-device-name-for-ssd/test.sh | 4 +++-
+ 4 files changed, 8 insertions(+), 13 deletions(-)
 
-> ---
->  fs/fat/misc.c | 4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
-> 
-> diff --git a/fs/fat/misc.c b/fs/fat/misc.c
-> index 67006ea08db6..8cab87145d63 100644
-> --- a/fs/fat/misc.c
-> +++ b/fs/fat/misc.c
-> @@ -347,14 +347,14 @@ int fat_update_time(struct inode *inode, struct timespec64 *now, int flags)
->  		return 0;
->  
->  	if (flags & (S_ATIME | S_CTIME | S_MTIME)) {
-> -		fat_truncate_time(inode, now, flags);
-> +		fat_truncate_time(inode, NULL, flags);
->  		if (inode->i_sb->s_flags & SB_LAZYTIME)
->  			dirty_flags |= I_DIRTY_TIME;
->  		else
->  			dirty_flags |= I_DIRTY_SYNC;
->  	}
->  
-> -	if ((flags & S_VERSION) && inode_maybe_inc_iversion(inode, false))
-> +	if ((flags & (S_VERSION|S_CTIME|S_MTIME)) && inode_maybe_inc_iversion(inode, false))
->  		dirty_flags |= I_DIRTY_SYNC;
->  
->  	__mark_inode_dirty(inode, dirty_flags);
-> 
-> -- 
-> 2.41.0
-> 
--- 
-Jan Kara <jack@suse.com>
-SUSE Labs, CR
+--
+2.41.0
+

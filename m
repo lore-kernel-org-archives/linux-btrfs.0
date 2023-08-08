@@ -2,164 +2,104 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E26FBC04A6A
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Aug 2023 17:31:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D7B9CC04FDF
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Aug 2023 17:33:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234636AbjHHRbD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Aug 2023 13:31:03 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58658 "EHLO
+        id S234700AbjHHRdQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Aug 2023 13:33:16 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34642 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234574AbjHHRaX (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Aug 2023 13:30:23 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 44D95217B9;
-        Tue,  8 Aug 2023 09:13:11 -0700 (PDT)
+        with ESMTP id S234747AbjHHRci (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Aug 2023 13:32:38 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0224B91B39
+        for <linux-btrfs@vger.kernel.org>; Tue,  8 Aug 2023 09:14:08 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id A7B1922468;
-        Tue,  8 Aug 2023 09:05:27 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1691485527; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=wcZ0MvDWAvHGz+Tvz5BQspV1+Y90atrQ/21gTPDSJ5A=;
-        b=ltvgN98jUPLfVGzwkX2IMCxL1+gt7mU2eMGWerKExKXl9rFxELcQOOu6LDPvkVgELBTWMM
-        RPR+CvNDbp+v8nhbcYMs5NsoZ+s9OQ/UvQVEgQ88doFw/btLczZrQg2i1eZV1+ZBjvbv6d
-        v//UiKTWiNGL8LuYIfEW5snVicPsNCw=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1691485527;
-        h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=wcZ0MvDWAvHGz+Tvz5BQspV1+Y90atrQ/21gTPDSJ5A=;
-        b=NtHl8v8fs0QRleiCInWaMqHlp3B+YiNNeUD28RUprosc+RMkGA1oFQ5OJqyi3S1c2mho42
-        UGYfjYfTqGY9zJAQ==
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 1713720311
+        for <linux-btrfs@vger.kernel.org>; Tue,  8 Aug 2023 06:09:01 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1691474941; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=VpcJUfyx823L0mpm43zyNXi7pxT46u0NGb5HMam35y0=;
+        b=jdvmdOHjBxqh7U5esiAEQhn1PDwjvAmQQNOGcTA5MwzeKqNmkXXsBp0OvTSlzOsOqmEzkA
+        uXCRT/cXqP+ijv/Z3EuMC0qZ5McXEQa+142JBmUJEJejOOReU4A1r3slFIt34zks4VqZ43
+        pj95iDTRXb/S88+7iLbeh5N5qaWRxaY=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 903E5139E9;
-        Tue,  8 Aug 2023 09:05:27 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 73CEE139D1
+        for <linux-btrfs@vger.kernel.org>; Tue,  8 Aug 2023 06:09:00 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id RgEgI1cF0mRWDgAAMHmgww
-        (envelope-from <jack@suse.cz>); Tue, 08 Aug 2023 09:05:27 +0000
-Received: by quack3.suse.cz (Postfix, from userid 1000)
-        id 215FCA0769; Tue,  8 Aug 2023 11:05:27 +0200 (CEST)
-Date:   Tue, 8 Aug 2023 11:05:27 +0200
-From:   Jan Kara <jack@suse.cz>
-To:     Jeff Layton <jlayton@kernel.org>
-Cc:     Alexander Viro <viro@zeniv.linux.org.uk>,
-        Christian Brauner <brauner@kernel.org>,
-        Eric Van Hensbergen <ericvh@kernel.org>,
-        Latchesar Ionkov <lucho@ionkov.net>,
-        Dominique Martinet <asmadeus@codewreck.org>,
-        Christian Schoenebeck <linux_oss@crudebyte.com>,
-        David Howells <dhowells@redhat.com>,
-        Marc Dionne <marc.dionne@auristor.com>,
-        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>, Xiubo Li <xiubli@redhat.com>,
-        Ilya Dryomov <idryomov@gmail.com>,
-        Jan Harkes <jaharkes@cs.cmu.edu>, coda@cs.cmu.edu,
-        Tyler Hicks <code@tyhicks.com>, Gao Xiang <xiang@kernel.org>,
-        Chao Yu <chao@kernel.org>, Yue Hu <huyue2@coolpad.com>,
-        Jeffle Xu <jefflexu@linux.alibaba.com>,
-        Namjae Jeon <linkinjeon@kernel.org>,
-        Sungjong Seo <sj1557.seo@samsung.com>,
-        Jan Kara <jack@suse.com>, Theodore Ts'o <tytso@mit.edu>,
-        Andreas Dilger <adilger.kernel@dilger.ca>,
-        Jaegeuk Kim <jaegeuk@kernel.org>,
-        OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>,
-        Miklos Szeredi <miklos@szeredi.hu>,
-        Bob Peterson <rpeterso@redhat.com>,
-        Andreas Gruenbacher <agruenba@redhat.com>,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        Tejun Heo <tj@kernel.org>,
-        Trond Myklebust <trond.myklebust@hammerspace.com>,
-        Anna Schumaker <anna@kernel.org>,
-        Konstantin Komarov <almaz.alexandrovich@paragon-software.com>,
-        Mark Fasheh <mark@fasheh.com>,
-        Joel Becker <jlbec@evilplan.org>,
-        Joseph Qi <joseph.qi@linux.alibaba.com>,
-        Mike Marshall <hubcap@omnibond.com>,
-        Martin Brandenburg <martin@omnibond.com>,
-        Luis Chamberlain <mcgrof@kernel.org>,
-        Kees Cook <keescook@chromium.org>,
-        Iurii Zaikin <yzaikin@google.com>,
-        Steve French <sfrench@samba.org>,
-        Paulo Alcantara <pc@manguebit.com>,
-        Ronnie Sahlberg <ronniesahlberg@gmail.com>,
-        Shyam Prasad N <sprasad@microsoft.com>,
-        Tom Talpey <tom@talpey.com>,
-        Sergey Senozhatsky <senozhatsky@chromium.org>,
-        Richard Weinberger <richard@nod.at>,
-        Hans de Goede <hdegoede@redhat.com>,
-        Hugh Dickins <hughd@google.com>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Amir Goldstein <amir73il@gmail.com>,
-        "Darrick J. Wong" <djwong@kernel.org>,
-        Benjamin Coddington <bcodding@redhat.com>,
-        linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
-        v9fs@lists.linux.dev, linux-afs@lists.infradead.org,
-        linux-btrfs@vger.kernel.org, ceph-devel@vger.kernel.org,
-        codalist@coda.cs.cmu.edu, ecryptfs@vger.kernel.org,
-        linux-erofs@lists.ozlabs.org, linux-ext4@vger.kernel.org,
-        linux-f2fs-devel@lists.sourceforge.net, cluster-devel@redhat.com,
-        linux-nfs@vger.kernel.org, ntfs3@lists.linux.dev,
-        ocfs2-devel@lists.linux.dev, devel@lists.orangefs.org,
-        linux-cifs@vger.kernel.org, samba-technical@lists.samba.org,
-        linux-mtd@lists.infradead.org, linux-mm@kvack.org,
-        linux-unionfs@vger.kernel.org, linux-xfs@vger.kernel.org
-Subject: Re: [PATCH v7 01/13] fs: remove silly warning from current_time
-Message-ID: <20230808090527.nvn6vd5wdw4o5b2m@quack3>
-References: <20230807-mgctime-v7-0-d1dec143a704@kernel.org>
- <20230807-mgctime-v7-1-d1dec143a704@kernel.org>
+        id S4oSEPzb0WTCPAAAMHmgww
+        (envelope-from <wqu@suse.com>)
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 Aug 2023 06:09:00 +0000
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs-progs: tests/misc/030: do not require v1 cache for the test case
+Date:   Tue,  8 Aug 2023 14:08:42 +0800
+Message-ID: <c56a81542acc3319265ed1041640253d2b4b8276.1691474892.git.wqu@suse.com>
+X-Mailer: git-send-email 2.41.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20230807-mgctime-v7-1-d1dec143a704@kernel.org>
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon 07-08-23 15:38:32, Jeff Layton wrote:
-> An inode with no superblock? Unpossible!
-> 
-> Signed-off-by: Jeff Layton <jlayton@kernel.org>
+[PROBLEM]
+Since we have migrated to default v2 cache, the test case
+misc/030-missing-device-image is no longer executed:
 
-Looks good. Feel free to add:
+    [TEST/misc]   030-missing-device-image
+    [NOTRUN] unable to create v1 space cache
 
-Reviewed-by: Jan Kara <jack@suse.cz>
+[CAUSE]
+The test case itself is trying its best to cover all paths, including
+the data extent read path.
 
-								Honza
+Thus the test case is requiring v1 cache, as that's the only way to
+cover the data read path.
 
-> ---
->  fs/inode.c | 6 ------
->  1 file changed, 6 deletions(-)
-> 
-> diff --git a/fs/inode.c b/fs/inode.c
-> index d4ab92233062..3fc251bfaf73 100644
-> --- a/fs/inode.c
-> +++ b/fs/inode.c
-> @@ -2495,12 +2495,6 @@ struct timespec64 current_time(struct inode *inode)
->  	struct timespec64 now;
->  
->  	ktime_get_coarse_real_ts64(&now);
-> -
-> -	if (unlikely(!inode->i_sb)) {
-> -		WARN(1, "current_time() called with uninitialized super_block in the inode");
-> -		return now;
-> -	}
-> -
->  	return timestamp_truncate(now, inode);
->  }
->  EXPORT_SYMBOL(current_time);
-> 
-> -- 
-> 2.41.0
-> 
+[FIX]
+Just remove the v1 space cache requirement, it's still better to run the
+test even it only exercises the metadata read path.
+
+The good news is, after commit 3ff9d352576b ("btrfs-progs: use
+read_data_from_disk() to replace read_extent_from_disk() and replace
+read_extent_data()"), all data/metadata read paths are unified.
+They only differ in the verification part.
+
+Thus even if we didn't fully exercise the data read path, we didn't lose
+much coverage anyway.
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ tests/misc-tests/030-missing-device-image/test.sh | 8 --------
+ 1 file changed, 8 deletions(-)
+
+diff --git a/tests/misc-tests/030-missing-device-image/test.sh b/tests/misc-tests/030-missing-device-image/test.sh
+index be022c4bb9eb..1438f8a45229 100755
+--- a/tests/misc-tests/030-missing-device-image/test.sh
++++ b/tests/misc-tests/030-missing-device-image/test.sh
+@@ -37,14 +37,6 @@ test_missing()
+ 	run_check $SUDO_HELPER dd if=/dev/zero of="$TEST_MNT/b" bs=4k count=1000 conv=sync
+ 	run_check $SUDO_HELPER umount "$TEST_MNT"
+ 
+-	# make sure we have space cache
+-	if ! run_check_stdout "$TOP/btrfs" inspect dump-tree -t root "$dev1" |
+-		grep -q "EXTENT_DATA"; then
+-		# Normally the above operation should create the space cache.
+-		# If not, it may mean we have migrated to v2 cache by default
+-		_not_run "unable to create v1 space cache"
+-	fi
+-
+ 	# now wipe the device
+ 	run_check wipefs -fa "$bad_dev"
+ 
 -- 
-Jan Kara <jack@suse.com>
-SUSE Labs, CR
+2.41.0
+

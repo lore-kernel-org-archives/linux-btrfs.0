@@ -2,435 +2,417 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 15EA9C04A6A
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Aug 2023 17:18:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A7986C001B0
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Aug 2023 17:26:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234394AbjHHRS5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Aug 2023 13:18:57 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49736 "EHLO
+        id S234623AbjHHR0f (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Aug 2023 13:26:35 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40096 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229885AbjHHRS3 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Aug 2023 13:18:29 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8E9BF1E320;
-        Tue,  8 Aug 2023 09:07:33 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 948FE21E30;
-        Tue,  8 Aug 2023 10:02:40 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1691488960; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=0HEDf4nPJ+iNrPUKPUVl/LvlxLOjZZAZpje52YEl2Wk=;
-        b=zp34KHdnygGkkUw1WrZLx6L90aMGe3p6SyU1Z4XKZwbj71OiVbCKm8NqgCli3bghyh6WfA
-        kiTTAKf9pEw3smNkjBO7G3rlfxkekHA4d98sI0t2U27Anh0bF0iD+NHAfSoh7Y37qh6dQg
-        RCS5eKpej8PWZuiN3BYxnBeRoQu71m4=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1691488960;
-        h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=0HEDf4nPJ+iNrPUKPUVl/LvlxLOjZZAZpje52YEl2Wk=;
-        b=xIFFbdmF7c2Azz53cFDw3fHZsQRn1OIeCwdCvV5z4TTksaSLfy8IXpgapBsxV1A+7h/AWc
-        9+CTFjcCsgbFFuCw==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 7A0F613451;
-        Tue,  8 Aug 2023 10:02:40 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id 9CbJHcAS0mQYKgAAMHmgww
-        (envelope-from <jack@suse.cz>); Tue, 08 Aug 2023 10:02:40 +0000
-Received: by quack3.suse.cz (Postfix, from userid 1000)
-        id 055A7A0769; Tue,  8 Aug 2023 12:02:40 +0200 (CEST)
-Date:   Tue, 8 Aug 2023 12:02:39 +0200
-From:   Jan Kara <jack@suse.cz>
-To:     Jeff Layton <jlayton@kernel.org>
-Cc:     Alexander Viro <viro@zeniv.linux.org.uk>,
-        Christian Brauner <brauner@kernel.org>,
-        Eric Van Hensbergen <ericvh@kernel.org>,
-        Latchesar Ionkov <lucho@ionkov.net>,
-        Dominique Martinet <asmadeus@codewreck.org>,
-        Christian Schoenebeck <linux_oss@crudebyte.com>,
-        David Howells <dhowells@redhat.com>,
-        Marc Dionne <marc.dionne@auristor.com>,
-        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>, Xiubo Li <xiubli@redhat.com>,
-        Ilya Dryomov <idryomov@gmail.com>,
-        Jan Harkes <jaharkes@cs.cmu.edu>, coda@cs.cmu.edu,
-        Tyler Hicks <code@tyhicks.com>, Gao Xiang <xiang@kernel.org>,
-        Chao Yu <chao@kernel.org>, Yue Hu <huyue2@coolpad.com>,
-        Jeffle Xu <jefflexu@linux.alibaba.com>,
-        Namjae Jeon <linkinjeon@kernel.org>,
-        Sungjong Seo <sj1557.seo@samsung.com>,
-        Jan Kara <jack@suse.com>, Theodore Ts'o <tytso@mit.edu>,
-        Andreas Dilger <adilger.kernel@dilger.ca>,
-        Jaegeuk Kim <jaegeuk@kernel.org>,
-        OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>,
-        Miklos Szeredi <miklos@szeredi.hu>,
-        Bob Peterson <rpeterso@redhat.com>,
-        Andreas Gruenbacher <agruenba@redhat.com>,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        Tejun Heo <tj@kernel.org>,
-        Trond Myklebust <trond.myklebust@hammerspace.com>,
-        Anna Schumaker <anna@kernel.org>,
-        Konstantin Komarov <almaz.alexandrovich@paragon-software.com>,
-        Mark Fasheh <mark@fasheh.com>,
-        Joel Becker <jlbec@evilplan.org>,
-        Joseph Qi <joseph.qi@linux.alibaba.com>,
-        Mike Marshall <hubcap@omnibond.com>,
-        Martin Brandenburg <martin@omnibond.com>,
-        Luis Chamberlain <mcgrof@kernel.org>,
-        Kees Cook <keescook@chromium.org>,
-        Iurii Zaikin <yzaikin@google.com>,
-        Steve French <sfrench@samba.org>,
-        Paulo Alcantara <pc@manguebit.com>,
-        Ronnie Sahlberg <ronniesahlberg@gmail.com>,
-        Shyam Prasad N <sprasad@microsoft.com>,
-        Tom Talpey <tom@talpey.com>,
-        Sergey Senozhatsky <senozhatsky@chromium.org>,
-        Richard Weinberger <richard@nod.at>,
-        Hans de Goede <hdegoede@redhat.com>,
-        Hugh Dickins <hughd@google.com>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Amir Goldstein <amir73il@gmail.com>,
-        "Darrick J. Wong" <djwong@kernel.org>,
-        Benjamin Coddington <bcodding@redhat.com>,
-        linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
-        v9fs@lists.linux.dev, linux-afs@lists.infradead.org,
-        linux-btrfs@vger.kernel.org, ceph-devel@vger.kernel.org,
-        codalist@coda.cs.cmu.edu, ecryptfs@vger.kernel.org,
-        linux-erofs@lists.ozlabs.org, linux-ext4@vger.kernel.org,
-        linux-f2fs-devel@lists.sourceforge.net, cluster-devel@redhat.com,
-        linux-nfs@vger.kernel.org, ntfs3@lists.linux.dev,
-        ocfs2-devel@lists.linux.dev, devel@lists.orangefs.org,
-        linux-cifs@vger.kernel.org, samba-technical@lists.samba.org,
-        linux-mtd@lists.infradead.org, linux-mm@kvack.org,
-        linux-unionfs@vger.kernel.org, linux-xfs@vger.kernel.org
-Subject: Re: [PATCH v7 09/13] fs: add infrastructure for multigrain timestamps
-Message-ID: <20230808100239.v7c6lh5yqszercvv@quack3>
-References: <20230807-mgctime-v7-0-d1dec143a704@kernel.org>
- <20230807-mgctime-v7-9-d1dec143a704@kernel.org>
+        with ESMTP id S234389AbjHHRZr (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Aug 2023 13:25:47 -0400
+Received: from mail-qv1-xf2b.google.com (mail-qv1-xf2b.google.com [IPv6:2607:f8b0:4864:20::f2b])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 98AE920261
+        for <linux-btrfs@vger.kernel.org>; Tue,  8 Aug 2023 09:10:55 -0700 (PDT)
+Received: by mail-qv1-xf2b.google.com with SMTP id 6a1803df08f44-63cfb876981so12357396d6.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 Aug 2023 09:10:55 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=bytedance.com; s=google; t=1691511010; x=1692115810;
+        h=content-transfer-encoding:in-reply-to:from:content-language
+         :references:cc:to:subject:user-agent:mime-version:date:message-id
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=m1STCrinczuq8FuoUgLs8N4vldOealvmees85dm6MPY=;
+        b=U73VjEgLrDi5BYPc5rXP+89JxpQjJ96lXb5+nBnFRn/9UJife1fcOuxEx5/OgNtVsi
+         R7AnNVSRyIxN9tY/XYZoJuB/E8FSFILV0EGFEOrn5Z7u3QaGmKlmI6bVK3FT8UJ5egnf
+         QtsUtqaKwq8MWhJ+uYZYetmy1+DoD5GtOkV1wLCe7giL/dKixtH8GraqREt+OsIcnvx4
+         2Q/Keyvf824OAlMRQoON9d09mHxwv2LdwFRIYH3P9kYZhOJ141JXGwe2anhWVKJW0zLB
+         JFgoNhrGmg3bvJCcCHEp3iiqgWHTtLf6B9tKP+ayYw004a7DQxagR1CxNYWAOoehm/8M
+         N/aQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1691511010; x=1692115810;
+        h=content-transfer-encoding:in-reply-to:from:content-language
+         :references:cc:to:subject:user-agent:mime-version:date:message-id
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=m1STCrinczuq8FuoUgLs8N4vldOealvmees85dm6MPY=;
+        b=QrF2XV7T7w5ynaQDsro7IT/a/Y6MOOyDuW7Q8lR71esrQwfQS7D9VrwOnwnOe0uH65
+         CG2j+OHYp1XjVQD1gPm6h0ciKfFTIwWEZiTnPVNfbDLRmJXbMJwHg4v5es2sTDKiTLUR
+         tB9Xu4lDUgVHkAFUs8eW6qKMNbbAnX8XcAHYSRSFLnncwXv7+LsrGqbzxQGRJ30fF4FT
+         VX6HS/iZmwT5g1eUOxxCT0Hq2l+/mGYQwAWxCiE25sS/NAYOBlApDZqrfj1eLzKTuAD+
+         tDYUmK5t2Y6YvcQeabrYcTlFqQyvKHe0nJIJoRTd0IPKorRKLePoTP3PmlbUf4nmD9Fi
+         CNiQ==
+X-Gm-Message-State: AOJu0Ywych7ebRW8MnxauWSxHOUZ0jGicObejbYIq8oPCpUk3cCneKNw
+        DojTqTxIZ+F7HcLl3j4Jrt/XkqS0OpToFw0Naxc=
+X-Google-Smtp-Source: APBJJlEAHd7r+M3vyCUQDMAxEjMveuzSqb/Q6wUuSUNAB0Ns9zs1qKL/YECIY4J9DtcJjA3HpA/s7A==
+X-Received: by 2002:a05:6a21:998c:b0:13d:1ebf:5dfc with SMTP id ve12-20020a056a21998c00b0013d1ebf5dfcmr38062815pzb.5.1691476391828;
+        Mon, 07 Aug 2023 23:33:11 -0700 (PDT)
+Received: from [10.70.252.135] ([203.208.167.146])
+        by smtp.gmail.com with ESMTPSA id ff12-20020a056a002f4c00b0067f2f7eccdcsm7204570pfb.193.2023.08.07.23.32.59
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 07 Aug 2023 23:33:11 -0700 (PDT)
+Message-ID: <0e7b16ce-19f9-0c70-4a94-f05cbfee613a@bytedance.com>
+Date:   Tue, 8 Aug 2023 14:32:55 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20230807-mgctime-v7-9-d1dec143a704@kernel.org>
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:102.0)
+ Gecko/20100101 Thunderbird/102.14.0
+Subject: Re: [PATCH v4 44/48] mm: shrinker: add a secondary array for
+ shrinker_info::{map, nr_deferred}
+To:     Dave Chinner <david@fromorbit.com>
+Cc:     akpm@linux-foundation.org, tkhai@ya.ru, vbabka@suse.cz,
+        roman.gushchin@linux.dev, djwong@kernel.org, brauner@kernel.org,
+        paulmck@kernel.org, tytso@mit.edu, steven.price@arm.com,
+        cel@kernel.org, senozhatsky@chromium.org, yujie.liu@intel.com,
+        gregkh@linuxfoundation.org, muchun.song@linux.dev,
+        simon.horman@corigine.com, dlemoal@kernel.org,
+        linux-kernel@vger.kernel.org, linux-mm@kvack.org, x86@kernel.org,
+        kvm@vger.kernel.org, xen-devel@lists.xenproject.org,
+        linux-erofs@lists.ozlabs.org,
+        linux-f2fs-devel@lists.sourceforge.net, cluster-devel@redhat.com,
+        linux-nfs@vger.kernel.org, linux-mtd@lists.infradead.org,
+        rcu@vger.kernel.org, netdev@vger.kernel.org,
+        dri-devel@lists.freedesktop.org, linux-arm-msm@vger.kernel.org,
+        dm-devel@redhat.com, linux-raid@vger.kernel.org,
+        linux-bcache@vger.kernel.org,
+        virtualization@lists.linux-foundation.org,
+        linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-xfs@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        Muchun Song <songmuchun@bytedance.com>
+References: <20230807110936.21819-1-zhengqi.arch@bytedance.com>
+ <20230807110936.21819-45-zhengqi.arch@bytedance.com>
+ <ZNGkcp3Dh8hOiFpk@dread.disaster.area>
+Content-Language: en-US
+From:   Qi Zheng <zhengqi.arch@bytedance.com>
+In-Reply-To: <ZNGkcp3Dh8hOiFpk@dread.disaster.area>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon 07-08-23 15:38:40, Jeff Layton wrote:
-> The VFS always uses coarse-grained timestamps when updating the ctime
-> and mtime after a change. This has the benefit of allowing filesystems
-> to optimize away a lot metadata updates, down to around 1 per jiffy,
-> even when a file is under heavy writes.
-> 
-> Unfortunately, this has always been an issue when we're exporting via
-> NFSv3, which relies on timestamps to validate caches. A lot of changes
-> can happen in a jiffy, so timestamps aren't sufficient to help the
-> client decide to invalidate the cache. Even with NFSv4, a lot of
-> exported filesystems don't properly support a change attribute and are
-> subject to the same problems with timestamp granularity. Other
-> applications have similar issues with timestamps (e.g backup
-> applications).
-> 
-> If we were to always use fine-grained timestamps, that would improve the
-> situation, but that becomes rather expensive, as the underlying
-> filesystem would have to log a lot more metadata updates.
-> 
-> What we need is a way to only use fine-grained timestamps when they are
-> being actively queried.
-> 
-> POSIX generally mandates that when the the mtime changes, the ctime must
-> also change. The kernel always stores normalized ctime values, so only
-> the first 30 bits of the tv_nsec field are ever used.
-> 
-> Use the 31st bit of the ctime tv_nsec field to indicate that something
-> has queried the inode for the mtime or ctime. When this flag is set,
-> on the next mtime or ctime update, the kernel will fetch a fine-grained
-> timestamp instead of the usual coarse-grained one.
-> 
-> Filesytems can opt into this behavior by setting the FS_MGTIME flag in
-> the fstype. Filesystems that don't set this flag will continue to use
-> coarse-grained timestamps.
-> 
-> Later patches will convert individual filesystems to use the new
-> infrastructure.
-> 
-> Signed-off-by: Jeff Layton <jlayton@kernel.org>
+Hi Dave,
 
-Looks good to me. Feel free to add:
-
-Reviewed-by: Jan Kara <jack@suse.cz>
-
-								Honza
-
-> ---
->  fs/inode.c         | 82 ++++++++++++++++++++++++++++++++++++++++++++++++++++--
->  fs/stat.c          | 41 +++++++++++++++++++++++++--
->  include/linux/fs.h | 46 ++++++++++++++++++++++++++++--
->  3 files changed, 162 insertions(+), 7 deletions(-)
+On 2023/8/8 10:12, Dave Chinner wrote:
+> On Mon, Aug 07, 2023 at 07:09:32PM +0800, Qi Zheng wrote:
+>> Currently, we maintain two linear arrays per node per memcg, which are
+>> shrinker_info::map and shrinker_info::nr_deferred. And we need to resize
+>> them when the shrinker_nr_max is exceeded, that is, allocate a new array,
+>> and then copy the old array to the new array, and finally free the old
+>> array by RCU.
+>>
+>> For shrinker_info::map, we do set_bit() under the RCU lock, so we may set
+>> the value into the old map which is about to be freed. This may cause the
+>> value set to be lost. The current solution is not to copy the old map when
+>> resizing, but to set all the corresponding bits in the new map to 1. This
+>> solves the data loss problem, but bring the overhead of more pointless
+>> loops while doing memcg slab shrink.
+>>
+>> For shrinker_info::nr_deferred, we will only modify it under the read lock
+>> of shrinker_rwsem, so it will not run concurrently with the resizing. But
+>> after we make memcg slab shrink lockless, there will be the same data loss
+>> problem as shrinker_info::map, and we can't work around it like the map.
+>>
+>> For such resizable arrays, the most straightforward idea is to change it
+>> to xarray, like we did for list_lru [1]. We need to do xa_store() in the
+>> list_lru_add()-->set_shrinker_bit(), but this will cause memory
+>> allocation, and the list_lru_add() doesn't accept failure. A possible
+>> solution is to pre-allocate, but the location of pre-allocation is not
+>> well determined.
 > 
-> diff --git a/fs/inode.c b/fs/inode.c
-> index e50d94a136fe..f55957ac80e6 100644
-> --- a/fs/inode.c
-> +++ b/fs/inode.c
-> @@ -2118,10 +2118,52 @@ int file_remove_privs(struct file *file)
->  }
->  EXPORT_SYMBOL(file_remove_privs);
->  
-> +/**
-> + * current_mgtime - Return FS time (possibly fine-grained)
-> + * @inode: inode.
-> + *
-> + * Return the current time truncated to the time granularity supported by
-> + * the fs, as suitable for a ctime/mtime change. If the ctime is flagged
-> + * as having been QUERIED, get a fine-grained timestamp.
-> + */
-> +struct timespec64 current_mgtime(struct inode *inode)
-> +{
-> +	struct timespec64 now, ctime;
-> +	atomic_long_t *pnsec = (atomic_long_t *)&inode->__i_ctime.tv_nsec;
-> +	long nsec = atomic_long_read(pnsec);
-> +
-> +	if (nsec & I_CTIME_QUERIED) {
-> +		ktime_get_real_ts64(&now);
-> +		return timestamp_truncate(now, inode);
-> +	}
-> +
-> +	ktime_get_coarse_real_ts64(&now);
-> +	now = timestamp_truncate(now, inode);
-> +
-> +	/*
-> +	 * If we've recently fetched a fine-grained timestamp
-> +	 * then the coarse-grained one may still be earlier than the
-> +	 * existing ctime. Just keep the existing value if so.
-> +	 */
-> +	ctime = inode_get_ctime(inode);
-> +	if (timespec64_compare(&ctime, &now) > 0)
-> +		now = ctime;
-> +
-> +	return now;
-> +}
-> +EXPORT_SYMBOL(current_mgtime);
-> +
-> +static struct timespec64 current_ctime(struct inode *inode)
-> +{
-> +	if (is_mgtime(inode))
-> +		return current_mgtime(inode);
-> +	return current_time(inode);
-> +}
-> +
->  static int inode_needs_update_time(struct inode *inode)
->  {
->  	int sync_it = 0;
-> -	struct timespec64 now = current_time(inode);
-> +	struct timespec64 now = current_ctime(inode);
->  	struct timespec64 ctime;
->  
->  	/* First try to exhaust all avenues to not sync */
-> @@ -2552,9 +2594,43 @@ EXPORT_SYMBOL(current_time);
->   */
->  struct timespec64 inode_set_ctime_current(struct inode *inode)
->  {
-> -	struct timespec64 now = current_time(inode);
-> +	struct timespec64 now;
-> +	struct timespec64 ctime;
-> +
-> +	ctime.tv_nsec = READ_ONCE(inode->__i_ctime.tv_nsec);
-> +	if (!(ctime.tv_nsec & I_CTIME_QUERIED)) {
-> +		now = current_time(inode);
->  
-> -	inode_set_ctime(inode, now.tv_sec, now.tv_nsec);
-> +		/* Just copy it into place if it's not multigrain */
-> +		if (!is_mgtime(inode)) {
-> +			inode_set_ctime_to_ts(inode, now);
-> +			return now;
-> +		}
-> +
-> +		/*
-> +		 * If we've recently updated with a fine-grained timestamp,
-> +		 * then the coarse-grained one may still be earlier than the
-> +		 * existing ctime. Just keep the existing value if so.
-> +		 */
-> +		ctime.tv_sec = inode->__i_ctime.tv_sec;
-> +		if (timespec64_compare(&ctime, &now) > 0)
-> +			return ctime;
-> +
-> +		/*
-> +		 * Ctime updates are usually protected by the inode_lock, but
-> +		 * we can still race with someone setting the QUERIED flag.
-> +		 * Try to swap the new nsec value into place. If it's changed
-> +		 * in the interim, then just go with a fine-grained timestamp.
-> +		 */
-> +		if (cmpxchg(&inode->__i_ctime.tv_nsec, ctime.tv_nsec,
-> +			    now.tv_nsec) != ctime.tv_nsec)
-> +			goto fine_grained;
-> +		inode->__i_ctime.tv_sec = now.tv_sec;
-> +		return now;
-> +	}
-> +fine_grained:
-> +	ktime_get_real_ts64(&now);
-> +	inode_set_ctime_to_ts(inode, timestamp_truncate(now, inode));
->  	return now;
->  }
->  EXPORT_SYMBOL(inode_set_ctime_current);
-> diff --git a/fs/stat.c b/fs/stat.c
-> index 7644e5997035..136711ae72fb 100644
-> --- a/fs/stat.c
-> +++ b/fs/stat.c
-> @@ -26,6 +26,37 @@
->  #include "internal.h"
->  #include "mount.h"
->  
-> +/**
-> + * fill_mg_cmtime - Fill in the mtime and ctime and flag ctime as QUERIED
-> + * @stat: where to store the resulting values
-> + * @request_mask: STATX_* values requested
-> + * @inode: inode from which to grab the c/mtime
-> + *
-> + * Given @inode, grab the ctime and mtime out if it and store the result
-> + * in @stat. When fetching the value, flag it as queried so the next write
-> + * will use a fine-grained timestamp.
-> + */
-> +void fill_mg_cmtime(struct kstat *stat, u32 request_mask, struct inode *inode)
-> +{
-> +	atomic_long_t *pnsec = (atomic_long_t *)&inode->__i_ctime.tv_nsec;
-> +
-> +	/* If neither time was requested, then don't report them */
-> +	if (!(request_mask & (STATX_CTIME|STATX_MTIME))) {
-> +		stat->result_mask &= ~(STATX_CTIME|STATX_MTIME);
-> +		return;
-> +	}
-> +
-> +	stat->mtime = inode->i_mtime;
-> +	stat->ctime.tv_sec = inode->__i_ctime.tv_sec;
-> +	/*
-> +	 * Atomically set the QUERIED flag and fetch the new value with
-> +	 * the flag masked off.
-> +	 */
-> +	stat->ctime.tv_nsec = atomic_long_fetch_or(I_CTIME_QUERIED, pnsec) &
-> +					~I_CTIME_QUERIED;
-> +}
-> +EXPORT_SYMBOL(fill_mg_cmtime);
-> +
->  /**
->   * generic_fillattr - Fill in the basic attributes from the inode struct
->   * @idmap:		idmap of the mount the inode was found from
-> @@ -58,8 +89,14 @@ void generic_fillattr(struct mnt_idmap *idmap, u32 request_mask,
->  	stat->rdev = inode->i_rdev;
->  	stat->size = i_size_read(inode);
->  	stat->atime = inode->i_atime;
-> -	stat->mtime = inode->i_mtime;
-> -	stat->ctime = inode_get_ctime(inode);
-> +
-> +	if (is_mgtime(inode)) {
-> +		fill_mg_cmtime(stat, request_mask, inode);
-> +	} else {
-> +		stat->mtime = inode->i_mtime;
-> +		stat->ctime = inode_get_ctime(inode);
-> +	}
-> +
->  	stat->blksize = i_blocksize(inode);
->  	stat->blocks = inode->i_blocks;
->  
-> diff --git a/include/linux/fs.h b/include/linux/fs.h
-> index a83313f90fe3..455835d0e963 100644
-> --- a/include/linux/fs.h
-> +++ b/include/linux/fs.h
-> @@ -1474,18 +1474,47 @@ static inline bool fsuidgid_has_mapping(struct super_block *sb,
->  	       kgid_has_mapping(fs_userns, kgid);
->  }
->  
-> +struct timespec64 current_mgtime(struct inode *inode);
->  struct timespec64 current_time(struct inode *inode);
->  struct timespec64 inode_set_ctime_current(struct inode *inode);
->  
-> +/*
-> + * Multigrain timestamps
-> + *
-> + * Conditionally use fine-grained ctime and mtime timestamps when there
-> + * are users actively observing them via getattr. The primary use-case
-> + * for this is NFS clients that use the ctime to distinguish between
-> + * different states of the file, and that are often fooled by multiple
-> + * operations that occur in the same coarse-grained timer tick.
-> + *
-> + * The kernel always keeps normalized struct timespec64 values in the ctime,
-> + * which means that only the first 30 bits of the value are used. Use the
-> + * 31st bit of the ctime's tv_nsec field as a flag to indicate that the value
-> + * has been queried since it was last updated.
-> + */
-> +#define I_CTIME_QUERIED		(1L<<30)
-> +
->  /**
->   * inode_get_ctime - fetch the current ctime from the inode
->   * @inode: inode from which to fetch ctime
->   *
-> - * Grab the current ctime from the inode and return it.
-> + * Grab the current ctime tv_nsec field from the inode, mask off the
-> + * I_CTIME_QUERIED flag and return it. This is mostly intended for use by
-> + * internal consumers of the ctime that aren't concerned with ensuring a
-> + * fine-grained update on the next change (e.g. when preparing to store
-> + * the value in the backing store for later retrieval).
-> + *
-> + * This is safe to call regardless of whether the underlying filesystem
-> + * is using multigrain timestamps.
->   */
->  static inline struct timespec64 inode_get_ctime(const struct inode *inode)
->  {
-> -	return inode->__i_ctime;
-> +	struct timespec64 ctime;
-> +
-> +	ctime.tv_sec = inode->__i_ctime.tv_sec;
-> +	ctime.tv_nsec = inode->__i_ctime.tv_nsec & ~I_CTIME_QUERIED;
-> +
-> +	return ctime;
->  }
->  
->  /**
-> @@ -2259,6 +2288,7 @@ struct file_system_type {
->  #define FS_USERNS_MOUNT		8	/* Can be mounted by userns root */
->  #define FS_DISALLOW_NOTIFY_PERM	16	/* Disable fanotify permission events */
->  #define FS_ALLOW_IDMAP         32      /* FS has been updated to handle vfs idmappings. */
-> +#define FS_MGTIME		64	/* FS uses multigrain timestamps */
->  #define FS_RENAME_DOES_D_MOVE	32768	/* FS will handle d_move() during rename() internally. */
->  	int (*init_fs_context)(struct fs_context *);
->  	const struct fs_parameter_spec *parameters;
-> @@ -2282,6 +2312,17 @@ struct file_system_type {
->  
->  #define MODULE_ALIAS_FS(NAME) MODULE_ALIAS("fs-" NAME)
->  
-> +/**
-> + * is_mgtime: is this inode using multigrain timestamps
-> + * @inode: inode to test for multigrain timestamps
-> + *
-> + * Return true if the inode uses multigrain timestamps, false otherwise.
-> + */
-> +static inline bool is_mgtime(const struct inode *inode)
-> +{
-> +	return inode->i_sb->s_type->fs_flags & FS_MGTIME;
-> +}
-> +
->  extern struct dentry *mount_bdev(struct file_system_type *fs_type,
->  	int flags, const char *dev_name, void *data,
->  	int (*fill_super)(struct super_block *, void *, int));
-> @@ -2918,6 +2959,7 @@ extern void page_put_link(void *);
->  extern int page_symlink(struct inode *inode, const char *symname, int len);
->  extern const struct inode_operations page_symlink_inode_operations;
->  extern void kfree_link(void *);
-> +void fill_mg_cmtime(struct kstat *stat, u32 request_mask, struct inode *inode);
->  void generic_fillattr(struct mnt_idmap *, u32, struct inode *, struct kstat *);
->  void generic_fill_statx_attr(struct inode *inode, struct kstat *stat);
->  extern int vfs_getattr_nosec(const struct path *, struct kstat *, u32, unsigned int);
+> So you implemented a two level array that preallocates leaf
+> nodes to work around it? It's remarkable complex for what it does,
+
+Yes, here I have implemented a two level array like the following:
+
++---------------+--------+--------+-----+
+| shrinker_info | unit 0 | unit 1 | ... | (secondary array)
++---------------+--------+--------+-----+
+                      ^
+                      |
+                 +---------------+-----+
+                 | nr_deferred[] | map | (leaf array)
+                 +---------------+-----+
+                 (shrinker_info_unit)
+
+The leaf array is never freed unless the memcg is destroyed. The
+secondary array will be resized every time the shrinker id exceeds
+shrinker_nr_max.
+
+> I can't help but think a radix tree using a special holder for
+> nr_deferred values of zero would end up being simpler...
+
+I tried. If the shrinker uses list_lru, then we can preallocate
+xa node where list_lru_one is pre-allocated. But for other types of
+shrinkers, the location of pre-allocation is not easy to determine
+(Such as deferred_split_shrinker). And we can't force all memcg aware
+shrinkers to use list_lru, so I gave up using xarray and implemented the 
+above two-level array.
+
 > 
-> -- 
-> 2.41.0
+>> Therefore, this commit chooses to introduce a secondary array for
+>> shrinker_info::{map, nr_deferred}, so that we only need to copy this
+>> secondary array every time the size is resized. Then even if we get the
+>> old secondary array under the RCU lock, the found map and nr_deferred are
+>> also true, so no data is lost.
 > 
--- 
-Jan Kara <jack@suse.com>
-SUSE Labs, CR
+> I don't understand what you are trying to describe here. If we get
+> the old array, then don't we get either a stale nr_deferred value,
+> or the update we do gets lost because the next shrinker lookup will
+> find the new array and os the deferred value stored to the old one
+> is never seen again?
+
+As shown above, the leaf array will not be freed when shrinker_info is
+expanded, so the shrinker_info_unit can be indexed from both the old
+and the new shrinker_info->unit[x]. So the updated nr_deferred and map
+will not be lost.
+
+> 
+>>
+>> [1]. https://lore.kernel.org/all/20220228122126.37293-13-songmuchun@bytedance.com/
+>>
+>> Signed-off-by: Qi Zheng <zhengqi.arch@bytedance.com>
+>> Reviewed-by: Muchun Song <songmuchun@bytedance.com>
+>> ---
+> .....
+>> diff --git a/mm/shrinker.c b/mm/shrinker.c
+>> index a27779ed3798..1911c06b8af5 100644
+>> --- a/mm/shrinker.c
+>> +++ b/mm/shrinker.c
+>> @@ -12,15 +12,50 @@ DECLARE_RWSEM(shrinker_rwsem);
+>>   #ifdef CONFIG_MEMCG
+>>   static int shrinker_nr_max;
+>>   
+>> -/* The shrinker_info is expanded in a batch of BITS_PER_LONG */
+>> -static inline int shrinker_map_size(int nr_items)
+>> +static inline int shrinker_unit_size(int nr_items)
+>>   {
+>> -	return (DIV_ROUND_UP(nr_items, BITS_PER_LONG) * sizeof(unsigned long));
+>> +	return (DIV_ROUND_UP(nr_items, SHRINKER_UNIT_BITS) * sizeof(struct shrinker_info_unit *));
+>>   }
+>>   
+>> -static inline int shrinker_defer_size(int nr_items)
+>> +static inline void shrinker_unit_free(struct shrinker_info *info, int start)
+>>   {
+>> -	return (round_up(nr_items, BITS_PER_LONG) * sizeof(atomic_long_t));
+>> +	struct shrinker_info_unit **unit;
+>> +	int nr, i;
+>> +
+>> +	if (!info)
+>> +		return;
+>> +
+>> +	unit = info->unit;
+>> +	nr = DIV_ROUND_UP(info->map_nr_max, SHRINKER_UNIT_BITS);
+>> +
+>> +	for (i = start; i < nr; i++) {
+>> +		if (!unit[i])
+>> +			break;
+>> +
+>> +		kvfree(unit[i]);
+>> +		unit[i] = NULL;
+>> +	}
+>> +}
+>> +
+>> +static inline int shrinker_unit_alloc(struct shrinker_info *new,
+>> +				       struct shrinker_info *old, int nid)
+>> +{
+>> +	struct shrinker_info_unit *unit;
+>> +	int nr = DIV_ROUND_UP(new->map_nr_max, SHRINKER_UNIT_BITS);
+>> +	int start = old ? DIV_ROUND_UP(old->map_nr_max, SHRINKER_UNIT_BITS) : 0;
+>> +	int i;
+>> +
+>> +	for (i = start; i < nr; i++) {
+>> +		unit = kvzalloc_node(sizeof(*unit), GFP_KERNEL, nid);
+> 
+> A unit is 576 bytes. Why is this using kvzalloc_node()?
+
+Ah, will use kzalloc_node() in the next version.
+
+> 
+>> +		if (!unit) {
+>> +			shrinker_unit_free(new, start);
+>> +			return -ENOMEM;
+>> +		}
+>> +
+>> +		new->unit[i] = unit;
+>> +	}
+>> +
+>> +	return 0;
+>>   }
+>>   
+>>   void free_shrinker_info(struct mem_cgroup *memcg)
+>> @@ -32,6 +67,7 @@ void free_shrinker_info(struct mem_cgroup *memcg)
+>>   	for_each_node(nid) {
+>>   		pn = memcg->nodeinfo[nid];
+>>   		info = rcu_dereference_protected(pn->shrinker_info, true);
+>> +		shrinker_unit_free(info, 0);
+>>   		kvfree(info);
+>>   		rcu_assign_pointer(pn->shrinker_info, NULL);
+>>   	}
+> 
+> Why is this safe? The info and maps are looked up by RCU, so why is
+> freeing them without a RCU grace period expiring safe?
+
+The free_shrinker_info() will be called in alloc_shrinker_info() and
+mem_cgroup_css_free().
+
+In alloc_shrinker_info(), it will only be called in the error path, so
+shrinker_info_unit and shrinker_info can be safely freed.
+
+In mem_cgroup_css_free(), when we get here, the traversal of this memcg
+has ended and will not be found again. That is to say, the corresponding
+shrink_slab() is also over, so shrinker_info_unit and shrinker_info can
+also be safely freed here.
+
+> 
+> Yes, it was safe to do this when it was all under a semaphore, but
+> now the lookup and use is under RCU, so this freeing isn't
+> serialised against lookups anymore...
+> 
+> 
+>> @@ -40,28 +76,27 @@ void free_shrinker_info(struct mem_cgroup *memcg)
+>>   int alloc_shrinker_info(struct mem_cgroup *memcg)
+>>   {
+>>   	struct shrinker_info *info;
+>> -	int nid, size, ret = 0;
+>> -	int map_size, defer_size = 0;
+>> +	int nid, ret = 0;
+>> +	int array_size = 0;
+>>   
+>>   	down_write(&shrinker_rwsem);
+>> -	map_size = shrinker_map_size(shrinker_nr_max);
+>> -	defer_size = shrinker_defer_size(shrinker_nr_max);
+>> -	size = map_size + defer_size;
+>> +	array_size = shrinker_unit_size(shrinker_nr_max);
+>>   	for_each_node(nid) {
+>> -		info = kvzalloc_node(sizeof(*info) + size, GFP_KERNEL, nid);
+>> -		if (!info) {
+>> -			free_shrinker_info(memcg);
+>> -			ret = -ENOMEM;
+>> -			break;
+>> -		}
+>> -		info->nr_deferred = (atomic_long_t *)(info + 1);
+>> -		info->map = (void *)info->nr_deferred + defer_size;
+>> +		info = kvzalloc_node(sizeof(*info) + array_size, GFP_KERNEL, nid);
+>> +		if (!info)
+>> +			goto err;
+>>   		info->map_nr_max = shrinker_nr_max;
+>> +		if (shrinker_unit_alloc(info, NULL, nid))
+>> +			goto err;
+> 
+> That's going to now do a lot of small memory allocation when we have
+> lots of shrinkers active....
+> 
+>> @@ -150,17 +175,34 @@ static int expand_shrinker_info(int new_id)
+>>   	return ret;
+>>   }
+>>   
+>> +static inline int shriner_id_to_index(int shrinker_id)
+> 
+> shrinker_id_to_index
+
+Will fix.
+
+> 
+>> +{
+>> +	return shrinker_id / SHRINKER_UNIT_BITS;
+>> +}
+>> +
+>> +static inline int shriner_id_to_offset(int shrinker_id)
+> 
+> shrinker_id_to_offset
+
+Will fix.
+
+> 
+>> +{
+>> +	return shrinker_id % SHRINKER_UNIT_BITS;
+>> +}
+> 
+> ....
+>> @@ -209,26 +251,31 @@ static long xchg_nr_deferred_memcg(int nid, struct shrinker *shrinker,
+>>   				   struct mem_cgroup *memcg)
+>>   {
+>>   	struct shrinker_info *info;
+>> +	struct shrinker_info_unit *unit;
+>>   
+>>   	info = shrinker_info_protected(memcg, nid);
+>> -	return atomic_long_xchg(&info->nr_deferred[shrinker->id], 0);
+>> +	unit = info->unit[shriner_id_to_index(shrinker->id)];
+>> +	return atomic_long_xchg(&unit->nr_deferred[shriner_id_to_offset(shrinker->id)], 0);
+>>   }
+>>   
+>>   static long add_nr_deferred_memcg(long nr, int nid, struct shrinker *shrinker,
+>>   				  struct mem_cgroup *memcg)
+>>   {
+>>   	struct shrinker_info *info;
+>> +	struct shrinker_info_unit *unit;
+>>   
+>>   	info = shrinker_info_protected(memcg, nid);
+>> -	return atomic_long_add_return(nr, &info->nr_deferred[shrinker->id]);
+>> +	unit = info->unit[shriner_id_to_index(shrinker->id)];
+>> +	return atomic_long_add_return(nr, &unit->nr_deferred[shriner_id_to_offset(shrinker->id)]);
+>>   }
+>>   
+>>   void reparent_shrinker_deferred(struct mem_cgroup *memcg)
+>>   {
+>> -	int i, nid;
+>> +	int nid, index, offset;
+>>   	long nr;
+>>   	struct mem_cgroup *parent;
+>>   	struct shrinker_info *child_info, *parent_info;
+>> +	struct shrinker_info_unit *child_unit, *parent_unit;
+>>   
+>>   	parent = parent_mem_cgroup(memcg);
+>>   	if (!parent)
+>> @@ -239,9 +286,13 @@ void reparent_shrinker_deferred(struct mem_cgroup *memcg)
+>>   	for_each_node(nid) {
+>>   		child_info = shrinker_info_protected(memcg, nid);
+>>   		parent_info = shrinker_info_protected(parent, nid);
+>> -		for (i = 0; i < child_info->map_nr_max; i++) {
+>> -			nr = atomic_long_read(&child_info->nr_deferred[i]);
+>> -			atomic_long_add(nr, &parent_info->nr_deferred[i]);
+>> +		for (index = 0; index < shriner_id_to_index(child_info->map_nr_max); index++) {
+>> +			child_unit = child_info->unit[index];
+>> +			parent_unit = parent_info->unit[index];
+>> +			for (offset = 0; offset < SHRINKER_UNIT_BITS; offset++) {
+>> +				nr = atomic_long_read(&child_unit->nr_deferred[offset]);
+>> +				atomic_long_add(nr, &parent_unit->nr_deferred[offset]);
+>> +			}
+>>   		}
+>>   	}
+>>   	up_read(&shrinker_rwsem);
+>> @@ -407,7 +458,7 @@ static unsigned long shrink_slab_memcg(gfp_t gfp_mask, int nid,
+>>   {
+>>   	struct shrinker_info *info;
+>>   	unsigned long ret, freed = 0;
+>> -	int i;
+>> +	int offset, index = 0;
+>>   
+>>   	if (!mem_cgroup_online(memcg))
+>>   		return 0;
+>> @@ -419,56 +470,63 @@ static unsigned long shrink_slab_memcg(gfp_t gfp_mask, int nid,
+>>   	if (unlikely(!info))
+>>   		goto unlock;
+>>   
+>> -	for_each_set_bit(i, info->map, info->map_nr_max) {
+>> -		struct shrink_control sc = {
+>> -			.gfp_mask = gfp_mask,
+>> -			.nid = nid,
+>> -			.memcg = memcg,
+>> -		};
+>> -		struct shrinker *shrinker;
+>> +	for (; index < shriner_id_to_index(info->map_nr_max); index++) {
+>> +		struct shrinker_info_unit *unit;
+> 
+> This adds another layer of indent to shrink_slab_memcg(). Please
+> factor it first so that the code ends up being readable. Doing that
+> first as a separate patch will also make the actual algorithm
+> changes in this patch be much more obvious - this huge hunk of
+> diff is pretty much impossible to review...
+
+OK, I will send this patch together with PATCH v4 01/02/03/43 as
+a single cleanup patchset.
+
+Thanks,
+Qi
+
+> 
+> -Dave.

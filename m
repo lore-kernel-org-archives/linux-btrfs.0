@@ -2,92 +2,90 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6E460C0015E
-	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Aug 2023 08:58:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D7715C07E8F
+	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Aug 2023 10:08:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234120AbjHKI6g (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 11 Aug 2023 04:58:36 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51230 "EHLO
+        id S235516AbjHKKIs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 11 Aug 2023 06:08:48 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49764 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229835AbjHKI6f (ORCPT
+        with ESMTP id S235435AbjHKKIk (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 11 Aug 2023 04:58:35 -0400
-Received: from wp530.webpack.hosteurope.de (wp530.webpack.hosteurope.de [80.237.130.52])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A85B0E76
-        for <linux-btrfs@vger.kernel.org>; Fri, 11 Aug 2023 01:58:31 -0700 (PDT)
-Received: from 46.183.103.8.relaix.net ([46.183.103.8] helo=[172.18.99.178]); authenticated
-        by wp530.webpack.hosteurope.de running ExIM with esmtpsa (TLS1.3:ECDHE_RSA_AES_128_GCM_SHA256:128)
-        id 1qUNyX-0002YE-1r; Fri, 11 Aug 2023 10:58:29 +0200
-Message-ID: <adfdb843-2220-5969-e647-d31ba8684d42@leemhuis.info>
-Date:   Fri, 11 Aug 2023 10:58:27 +0200
-MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Reply-To: Linux regressions mailing list <regressions@lists.linux.dev>
-Subject: Re: btrfs write-bandwidth performance regression of 6.5-rc4/rc3
-Content-Language: en-US, de-DE
-To:     Christoph Hellwig <hch@lst.de>, Wang Yugui <wangyugui@e16-tech.com>
-Cc:     linux-btrfs@vger.kernel.org, Chris Mason <clm@fb.com>,
-        David Sterba <dsterba@suse.com>,
+        Fri, 11 Aug 2023 06:08:40 -0400
+Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 742B7E3;
+        Fri, 11 Aug 2023 03:08:40 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
+        MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
+        :Reply-To:Content-Type:Content-ID:Content-Description;
+        bh=zjW5l1wDCFCu1pt1F8sv0aM8FWD26mmo/JL5KKCdSVc=; b=FLY/bEYIE/O6+NT+S/Mq95/r4q
+        KbdDpVEX1AzOR9mg158RJ8u4nVDaKwzZDPKqlYXpv1hJVBbp+ooEeVpKTD3W8Ptb9V1swX1/QmLQL
+        mxQ0J3YSDFdQaVriWRdeIezdUaanTl1C7etOiswe+fwADJXvujqc1cuQXNKNQJvm9qPjEhKrQwFuP
+        dz906g0PSLyFYc8WzsAsuEQlwYNzsGRv5pEdx5YMF8412opsklTpUEDBglBQqKh5lYahvgmrDjBf5
+        F3dqgOGPFWbTjsVb8VNlt+o5xySVp3R9xnW/b8uWriDFl38D/MBVtQRXF5d9Rp4cpDl1aHzue8e2o
+        M+saUX9A==;
+Received: from [88.128.92.63] (helo=localhost)
+        by bombadil.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
+        id 1qUP4L-00A5Yk-2W;
+        Fri, 11 Aug 2023 10:08:34 +0000
+From:   Christoph Hellwig <hch@lst.de>
+To:     Al Viro <viro@zeniv.linux.org.uk>,
+        Christian Brauner <brauner@kernel.org>
+Cc:     Jens Axboe <axboe@kernel.dk>, Denis Efremov <efremov@linux.com>,
         Josef Bacik <josef@toxicpanda.com>,
-        Linux kernel regressions list <regressions@lists.linux.dev>
-References: <20230801235123.B665.409509F4@e16-tech.com>
- <20230801155649.GA13009@lst.de> <20230802080451.F0C2.409509F4@e16-tech.com>
- <20230802092631.GA27963@lst.de>
-From:   "Linux regression tracking (Thorsten Leemhuis)" 
-        <regressions@leemhuis.info>
-In-Reply-To: <20230802092631.GA27963@lst.de>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
-X-bounce-key: webpack.hosteurope.de;regressions@leemhuis.info;1691744311;e1da6cc4;
-X-HE-SMSGID: 1qUNyX-0002YE-1r
+        Stefan Haberland <sth@linux.ibm.com>,
+        Jan Hoeppner <hoeppner@linux.ibm.com>,
+        Heiko Carstens <hca@linux.ibm.com>,
+        Vasily Gorbik <gor@linux.ibm.com>,
+        Alexander Gordeev <agordeev@linux.ibm.com>,
+        "Darrick J . Wong" <djwong@kernel.org>, Chris Mason <clm@fb.com>,
+        David Sterba <dsterba@suse.com>, linux-block@vger.kernel.org,
+        nbd@other.debian.org, linux-s390@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org
+Subject: [PATCH 01/17] FOLD: reverts part of "fs: use the super_block as holder when mounting file systems"
+Date:   Fri, 11 Aug 2023 12:08:12 +0200
+Message-Id: <20230811100828.1897174-2-hch@lst.de>
+X-Mailer: git-send-email 2.39.2
+In-Reply-To: <20230811100828.1897174-1-hch@lst.de>
+References: <20230811100828.1897174-1-hch@lst.de>
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
+X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 02.08.23 11:26, Christoph Hellwig wrote:
-> On Wed, Aug 02, 2023 at 08:04:57AM +0800, Wang Yugui wrote:
->>> And with only a revert of
->>>
->>> "btrfs: submit IO synchronously for fast checksum implementations"?
->>
->> GOOD performance when only (Revert "btrfs: submit IO synchronously for fast
->> checksum implementations") 
-> 
-> Ok, so you have a case where the offload for the checksumming generation
-> actually helps (by a lot).  Adding Chris to the Cc list as he was
-> involved with this.
+The btrfs hunk should be dropped because the prerequisite btrfs changes were
+dropped from the branch.
 
-Radio silence from Chris here and on lore in general afaics. Also
-nothing new in this thread for more than a week now.
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ fs/btrfs/super.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-CCing David and Josef, maybe they have an idea what's up here and if
-Chris might be afk for longer -- and maybe this can still be fixed
-before the 6.5 release.
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index d58ace4c1d2962..f1dd172d8d5bd7 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -69,6 +69,8 @@ static const struct super_operations btrfs_super_ops;
+  * requested by subvol=/path. That way the callchain is straightforward and we
+  * don't have to play tricks with the mount options and recursive calls to
+  * btrfs_mount.
++ *
++ * The new btrfs_root_fs_type also servers as a tag for the bdev_holder.
+  */
+ static struct file_system_type btrfs_fs_type;
+ static struct file_system_type btrfs_root_fs_type;
+@@ -1513,7 +1515,7 @@ static struct dentry *btrfs_mount_root(struct file_system_type *fs_type,
+ 		snprintf(s->s_id, sizeof(s->s_id), "%pg", bdev);
+ 		shrinker_debugfs_rename(&s->s_shrink, "sb-%s:%s", fs_type->name,
+ 					s->s_id);
+-		fs_info->bdev_holder = s;
++		btrfs_sb(s)->bdev_holder = fs_type;
+ 		error = btrfs_fill_super(s, fs_devices, data);
+ 	}
+ 	if (!error)
+-- 
+2.39.2
 
-Ciao, Thorsten (wearing his 'the Linux kernel's regression tracker' hat)
---
-Everything you wanna know about Linux kernel regression tracking:
-https://linux-regtracking.leemhuis.info/about/#tldr
-If I did something stupid, please tell me, as explained on that page.
-
-#regzbot poke
-
->>>> -       if (test_bit(BTRFS_FS_CSUM_IMPL_FAST, &bbio->fs_info->flags))
->>>> +       if ((bbio->bio.bi_opf & REQ_META) && test_bit(BTRFS_FS_CSUM_IMPL_FAST, &bbio->fs_info->flags))
->>>>                 return false;
->>>
->>> This disables synchronous checksum calculation entirely for data I/O.
->>
->> without this fix, data I/O checksum is always synchronous?
->> this is a feature change of "btrfs: submit IO synchronously for fast checksum implementations"?
-> 
-> It is never with the above patch.
-> 
->>
->>> Also I'm curious if you see any differents for a non-RAID0 (i.e.
->>> single profile) workload.
->>
->> '-m single -d single' is about 10% slow that '-m raid1 -d raid0' in this test
->> case.
-> 
-> How does it compare with and without the revert?  Can you add the numbers?

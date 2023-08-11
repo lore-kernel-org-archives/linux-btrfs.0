@@ -2,31 +2,30 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 56756C001DE
-	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Aug 2023 01:38:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 195C8C001DE
+	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Aug 2023 01:44:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232207AbjHKBiI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 10 Aug 2023 21:38:08 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51548 "EHLO
+        id S230372AbjHKBo5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 10 Aug 2023 21:44:57 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42668 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231285AbjHKBiH (ORCPT
+        with ESMTP id S229685AbjHKBo4 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 10 Aug 2023 21:38:07 -0400
-X-Greylist: delayed 3056 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Thu, 10 Aug 2023 18:38:07 PDT
+        Thu, 10 Aug 2023 21:44:56 -0400
 Received: from trager.us (trager.us [52.5.81.116])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2E434196
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Aug 2023 18:38:07 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 019AC10D
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Aug 2023 18:44:55 -0700 (PDT)
 Received: from [163.114.132.6] (helo=localhost)
         by trager.us with esmtpsa (TLSv1.3:TLS_AES_256_GCM_SHA384:256)
         (Exim 4.92.3)
         (envelope-from <lee@trager.us>)
-        id 1qUGJ3-0006Ox-QD; Fri, 11 Aug 2023 00:47:09 +0000
+        id 1qUHCx-0006Tx-42; Fri, 11 Aug 2023 01:44:55 +0000
 From:   Lee Trager <lee@trager.us>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Lee Trager <lee@trager.us>
 Subject: [PATCH] btrfs: Copy dir permission and time when creating a stub subvolume
-Date:   Thu, 10 Aug 2023 17:46:57 -0700
-Message-Id: <20230811004657.1661696-1-lee@trager.us>
+Date:   Thu, 10 Aug 2023 18:44:35 -0700
+Message-Id: <20230811014435.1963948-1-lee@trager.us>
 X-Mailer: git-send-email 2.34.1
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -76,7 +75,7 @@ Signed-off-by: Lee Trager <lee@trager.us>
  1 file changed, 7 insertions(+), 5 deletions(-)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 6a68d5a3ed20..37a9b5822808 100644
+index 6a68d5a3ed20..7a288cd6f815 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
 @@ -5592,11 +5592,11 @@ struct inode *btrfs_iget(struct super_block *s, u64 ino, struct btrfs_root *root
@@ -102,8 +101,8 @@ index 6a68d5a3ed20..37a9b5822808 100644
 +	inode->i_atime = dir->i_atime;
 +	inode->i_ctime = dir->i_ctime;
  	BTRFS_I(inode)->i_otime = inode->i_mtime;
-+        inode->i_uid = dir->i_uid;
-+        inode->i_gid = dir->i_gid;
++	inode->i_uid = dir->i_uid;
++	inode->i_gid = dir->i_gid;
  
  	return inode;
  }

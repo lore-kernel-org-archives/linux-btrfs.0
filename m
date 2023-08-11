@@ -2,33 +2,33 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DB461C41513
-	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Aug 2023 10:10:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D1419C04FE1
+	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Aug 2023 10:10:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234980AbjHKKKg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 11 Aug 2023 06:10:36 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35150 "EHLO
+        id S235768AbjHKKKh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 11 Aug 2023 06:10:37 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33150 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233965AbjHKKKO (ORCPT
+        with ESMTP id S229709AbjHKKKX (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 11 Aug 2023 06:10:14 -0400
+        Fri, 11 Aug 2023 06:10:23 -0400
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D0E2330EC;
-        Fri, 11 Aug 2023 03:09:20 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 36554448B;
+        Fri, 11 Aug 2023 03:09:33 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=sF7/TLAdvGX6cavT8VuEoUUpVOqcLET0XfQb1xeL0Nw=; b=UCL+x9QG32FS+rhJbyMhi+/7BI
-        pwDlHyybaxOCwwWqEiFMPVBNHFZeJBqaAwqNejCegVzyecx6tc9ySNjKWcO4z9faDK62iUZdEAG92
-        O0byl8R9U9DO/sDMANpqYnIOjofkj88tIwTlBiw5GOiz58QuvPsWSQaw4+K4EEER553egvEWGz6yj
-        C5tYAvvdB/qekhXR9UmRdfHPWIZUTA/Y6zwP1PKTJ3GVc6U/3wIdpUMiUKzBK001ICAg5yJnDlp8v
-        dS7G9KViqIPcJSoosia71E04M94EtuD+UgLsefFdXt07ze6NRePr4uaLkbHud4BpYeZGm6OT48+gn
-        oYBYUFPw==;
+        bh=Y0aq5oBkHJsvXg0ECqI6wIhwCUIqs6QSxIJwZB5Tg0o=; b=FjkKB5xIPgNLh//E/xqOQFA45R
+        VSP+UeoBUaF9btYuhIjqqy0u83JMqFCgg2weFALy38TtLThLceZzvbP2t1wBtMyf+55MYxNQ8Eveb
+        AwIwn3qFWLzfz1VCe4o3ExmAAqa/gCJXcK2iawdvzkOzL6+sj9fCAgBnQD2KMMOakDHVl8WlKE5n4
+        KhykANnyuCdYsCm/vVwFGpBxVvS0hBxd6gSfLKBj2S7UCxjoiJoJHJDO3t7lYe7SEhgS8mpQ/HW2k
+        UUQ7EeGntgFYboYtc1SGDh4rcpg9343vfuLbK4jJQtSTD0mWNyfKSD59b14AYGOcMBMmiV5pe6Ps/
+        34ePRnBw==;
 Received: from [88.128.92.63] (helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
-        id 1qUP4n-00A5mu-2B;
-        Fri, 11 Aug 2023 10:09:02 +0000
+        id 1qUP4t-00A5p2-20;
+        Fri, 11 Aug 2023 10:09:08 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Al Viro <viro@zeniv.linux.org.uk>,
         Christian Brauner <brauner@kernel.org>
@@ -43,9 +43,9 @@ Cc:     Jens Axboe <axboe@kernel.dk>, Denis Efremov <efremov@linux.com>,
         David Sterba <dsterba@suse.com>, linux-block@vger.kernel.org,
         nbd@other.debian.org, linux-s390@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org
-Subject: [PATCH 10/17] amiflop: don't call fsync_bdev in FDFMTBEG
-Date:   Fri, 11 Aug 2023 12:08:21 +0200
-Message-Id: <20230811100828.1897174-11-hch@lst.de>
+Subject: [PATCH 12/17] block: drop the "busy inodes on changed media" log message
+Date:   Fri, 11 Aug 2023 12:08:23 +0200
+Message-Id: <20230811100828.1897174-13-hch@lst.de>
 X-Mailer: git-send-email 2.39.2
 In-Reply-To: <20230811100828.1897174-1-hch@lst.de>
 References: <20230811100828.1897174-1-hch@lst.de>
@@ -56,27 +56,40 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-FDFMTBEG is used by fdformat to calibrate before formatting a disk.
-Neither the atari nor PC floppy driver sync data, which also seems
-a bit pointless for a disk hat is about to get formatted.
+This message isn't exactly helpful, and file systems already print way more
+useful messages when shut down while active.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- drivers/block/amiflop.c | 1 -
- 1 file changed, 1 deletion(-)
+ block/disk-events.c | 8 ++------
+ 1 file changed, 2 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/block/amiflop.c b/drivers/block/amiflop.c
-index e460c9799d9f35..2b98114a9fe092 100644
---- a/drivers/block/amiflop.c
-+++ b/drivers/block/amiflop.c
-@@ -1547,7 +1547,6 @@ static int fd_locked_ioctl(struct block_device *bdev, blk_mode_t mode,
- 			rel_fdc();
- 			return -EBUSY;
- 		}
--		fsync_bdev(bdev);
- 		if (fd_motor_on(drive) == 0) {
- 			rel_fdc();
- 			return -ENODEV;
+diff --git a/block/disk-events.c b/block/disk-events.c
+index 6189b819b2352e..6b858d3504772c 100644
+--- a/block/disk-events.c
++++ b/block/disk-events.c
+@@ -281,9 +281,7 @@ bool disk_check_media_change(struct gendisk *disk)
+ 	if (!(events & DISK_EVENT_MEDIA_CHANGE))
+ 		return false;
+ 
+-	if (__invalidate_device(disk->part0, true))
+-		pr_warn("VFS: busy inodes on changed media %s\n",
+-			disk->disk_name);
++	__invalidate_device(disk->part0, true);
+ 	set_bit(GD_NEED_PART_SCAN, &disk->state);
+ 	return true;
+ }
+@@ -302,9 +300,7 @@ void disk_force_media_change(struct gendisk *disk)
+ {
+ 	disk_event_uevent(disk, DISK_EVENT_MEDIA_CHANGE);
+ 	inc_diskseq(disk);
+-	if (__invalidate_device(disk->part0, true))
+-		pr_warn("VFS: busy inodes on changed media %s\n",
+-			disk->disk_name);
++	__invalidate_device(disk->part0, true);
+ 	set_bit(GD_NEED_PART_SCAN, &disk->state);
+ }
+ EXPORT_SYMBOL_GPL(disk_force_media_change);
 -- 
 2.39.2
 

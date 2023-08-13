@@ -2,26 +2,26 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B55A8C41513
-	for <linux-btrfs@archiver.kernel.org>; Sun, 13 Aug 2023 09:51:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 763DFC001B0
+	for <linux-btrfs@archiver.kernel.org>; Sun, 13 Aug 2023 09:51:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230271AbjHMJvT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 13 Aug 2023 05:51:19 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57404 "EHLO
+        id S231161AbjHMJvU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 13 Aug 2023 05:51:20 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57446 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231163AbjHMJvQ (ORCPT
+        with ESMTP id S231167AbjHMJvQ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Sun, 13 Aug 2023 05:51:16 -0400
-Received: from mail-108-mta227.mxroute.com (mail-108-mta227.mxroute.com [136.175.108.227])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E1DD8170E
+Received: from mail-108-mta39.mxroute.com (mail-108-mta39.mxroute.com [136.175.108.39])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E1BF71700
         for <linux-btrfs@vger.kernel.org>; Sun, 13 Aug 2023 02:51:16 -0700 (PDT)
 Received: from mail-111-mta2.mxroute.com ([136.175.111.2] filter006.mxroute.com)
  (Authenticated sender: mN4UYu2MZsgR)
- by mail-108-mta227.mxroute.com (ZoneMTA) with ESMTPSA id 189ee49e1a900023b6.001
+ by mail-108-mta39.mxroute.com (ZoneMTA) with ESMTPSA id 189ee49e5fa00023b6.001
  for <linux-btrfs@vger.kernel.org>
  (version=TLSv1.3 cipher=TLS_AES_256_GCM_SHA384);
- Sun, 13 Aug 2023 09:46:06 +0000
-X-Zone-Loop: 18079c2d65d26ccf92cb301a1afdfb99e4203a8ec740
+ Sun, 13 Aug 2023 09:46:07 +0000
+X-Zone-Loop: aa6b3f83f03e9767c3ae162c5cfac81d8d3a2f952aa7
 X-Originating-IP: [136.175.111.2]
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=c8h4.io;
         s=x; h=Content-Transfer-Encoding:MIME-Version:References:In-Reply-To:
@@ -29,17 +29,17 @@ DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=c8h4.io;
         Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
         :Resent-Message-ID:List-Id:List-Help:List-Unsubscribe:List-Subscribe:
         List-Post:List-Owner:List-Archive;
-        bh=cgrdauJJLi+22I4oU0p+myNIz0Q5ENrDAebkct7NuFs=; b=dqK/2Cs4UgorCHa+LEyh6+wHZe
-        dGI9b5xkYC3iMz6g8iBuoBA6g/3nbVlLbxQWBsnudWfvgRO3sRByvPns8ueL0QdzGcfqHD5o2NlVX
-        CHdYz01pnlAsMpxIBPmDHR60Kqpl9+Q9J4UzIyLxUB06VFt68AFIAl461h+i/L7RKoQb3EBPe/k/0
-        i+98bNAwnz4FfuW7cPZm7r2GveaxWFeO71Z42ifCDrBf+exnGKngdQdABZyWJx17O8g57eLEuD4CG
-        KUgR2+V3a59YbzX6e+9/R5pM/tPdUMEp//13+YtMA/YIvs0ovvlaUKBKJPVHXWoV5xOrFlBA7+JeL
-        ZYX8IJXg==;
+        bh=NDLLnyGyq/UIsbHA2VT4Kr9AGL//iNQbw4+KF4VcVuc=; b=OgCGXfPNe8l/cKB49yjfsgppWE
+        SMBVQLsStOxmu3DKbe06EIBvgvRxpKpGhCAhd0rdLeh4hOgbvuaH0Py/aOPjSOaqx6pl99b89ke3A
+        FBPQ370pdPnPBqEQ0Ng0ReELpF/TzP1hehtsq34rf/RK6UGh8EHAs10Mjd7yLf7vd/9QY2ockHf4Q
+        jHKgsEoKoKybbvqIFrhXjx0q0e6VwGX8aC6z3oXgUb8Gl3wYzXsHGGtMkkEQB5OMtUzfrjTmlW2uM
+        kSbEtF2d7tCocA7xJa7xdUPHG5yilGXzEjAMriEFU9zAU1i4mlb+yHqsZM7FDjSA4nDzQPUtH6qmO
+        NZ8yB56A==;
 From:   Christoph Heiss <christoph@c8h4.io>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/7] btrfs-progs: subvol show: remove duplicated quotas error check
-Date:   Sun, 13 Aug 2023 11:44:57 +0200
-Message-ID: <20230813094555.106052-3-christoph@c8h4.io>
+Subject: [PATCH 4/7] btrfs-progs: subvol: introduce rowspec definition for json output
+Date:   Sun, 13 Aug 2023 11:44:59 +0200
+Message-ID: <20230813094555.106052-5-christoph@c8h4.io>
 In-Reply-To: <20230813094555.106052-1-christoph@c8h4.io>
 References: <20230813094555.106052-1-christoph@c8h4.io>
 MIME-Version: 1.0
@@ -49,30 +49,80 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The exact same check is repeated here, with the second being dead code.
-Keep the second instance, as that informs the user what is happening.
+Includes all fields that are needed by the various `btrfs subvolume`
+subcommands.
 
 Signed-off-by: Christoph Heiss <christoph@c8h4.io>
 ---
- cmds/subvolume.c | 5 -----
- 1 file changed, 5 deletions(-)
+ cmds/subvolume.c | 25 +++++++++++++++++++++++++
+ cmds/subvolume.h | 19 +++++++++++++++++++
+ 2 files changed, 44 insertions(+)
+ create mode 100644 cmds/subvolume.h
 
 diff --git a/cmds/subvolume.c b/cmds/subvolume.c
-index 0691157c..a5423759 100644
+index 65cff24b..cb863ac7 100644
 --- a/cmds/subvolume.c
 +++ b/cmds/subvolume.c
-@@ -1466,11 +1466,6 @@ static int cmd_subvolume_show(const struct cmd_struct *cmd, int argc, char **arg
- 	btrfs_util_destroy_subvolume_iterator(iter);
+@@ -41,9 +41,34 @@
+ #include "common/open-utils.h"
+ #include "common/string-utils.h"
+ #include "common/units.h"
++#include "common/format-output.h"
+ #include "cmds/commands.h"
+ #include "cmds/qgroup.h"
  
- 	ret = btrfs_qgroup_query(fd, subvol.id, &stats);
--	if (ret == -ENOTTY) {
--		/* Quotas not enabled */
--		ret = 0;
--		goto out;
--	}
- 	if (ret == -ENOTTY) {
- 		/* Quota information not available, not fatal */
- 		pr_verbose(LOG_DEFAULT, "\tQuota group:\t\tn/a\n");
++const struct rowspec btrfs_subvolume_rowspec[] = {
++	{ .key = "ID", .fmt = "%llu", .out_json = "id" },
++	{ .key = "name", .fmt = "%s", .out_json = "name" },
++	{ .key = "gen", .fmt = "%llu", .out_json = "gen" },
++	{ .key = "cgen", .fmt = "%llu", .out_json = "cgen" },
++	{ .key = "parent", .fmt = "%llu", .out_json = "parent" },
++	{ .key = "top level", .fmt = "%llu", .out_json = "top_level" },
++	{ .key = "otime", .fmt = "time-long", .out_json = "otime" },
++	{ .key = "parent_uuid", .fmt = "uuid", .out_json = "parent_uuid" },
++	{ .key = "received_uuid", .fmt = "uuid", .out_json = "received_uuid" },
++	{ .key = "uuid", .fmt = "uuid", .out_json = "uuid" },
++	{ .key = "path", .fmt = "%s", .out_json = "path" },
++	{ .key = "flag-list-item", .fmt = "%s" },
++	{ .key = "stransid", .fmt = "%llu", .out_json = "stransid" },
++	{ .key = "stime", .fmt = "time-long", .out_json = "stime" },
++	{ .key = "rtransid", .fmt = "%llu", .out_json = "rtransid" },
++	{ .key = "rtime", .fmt = "time-long", .out_json = "rtime" },
++	{ .key = "snapshot-list-item", .fmt = "%s" },
++	{ .key = "quota-group", .fmt = "qgroupid", .out_json = "group" },
++	{ .key = "quota-ref", .fmt = "%llu", .out_json = "referenced" },
++	{ .key = "quota-excl", .fmt = "%llu", .out_json = "exclusive" },
++	ROWSPEC_END
++};
++
+ static int wait_for_subvolume_cleaning(int fd, size_t count, uint64_t *ids,
+ 				       int sleep_interval)
+ {
+diff --git a/cmds/subvolume.h b/cmds/subvolume.h
+new file mode 100644
+index 00000000..041ea865
+--- /dev/null
++++ b/cmds/subvolume.h
+@@ -0,0 +1,19 @@
++/*
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ */
++
++struct rowspec;
++
++extern const struct rowspec btrfs_subvolume_rowspec[];
 -- 
 2.41.0
 

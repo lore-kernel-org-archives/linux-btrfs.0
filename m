@@ -2,44 +2,46 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 058BFC04A6A
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B55A8C41513
 	for <linux-btrfs@archiver.kernel.org>; Sun, 13 Aug 2023 09:51:23 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231185AbjHMJvS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 13 Aug 2023 05:51:18 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33368 "EHLO
+        id S230271AbjHMJvT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 13 Aug 2023 05:51:19 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57404 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231152AbjHMJvQ (ORCPT
+        with ESMTP id S231163AbjHMJvQ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Sun, 13 Aug 2023 05:51:16 -0400
-X-Greylist: delayed 306 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Sun, 13 Aug 2023 02:51:16 PDT
-Received: from mail-108-mta247.mxroute.com (mail-108-mta247.mxroute.com [136.175.108.247])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A48E710CE
+Received: from mail-108-mta227.mxroute.com (mail-108-mta227.mxroute.com [136.175.108.227])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E1DD8170E
         for <linux-btrfs@vger.kernel.org>; Sun, 13 Aug 2023 02:51:16 -0700 (PDT)
 Received: from mail-111-mta2.mxroute.com ([136.175.111.2] filter006.mxroute.com)
  (Authenticated sender: mN4UYu2MZsgR)
- by mail-108-mta247.mxroute.com (ZoneMTA) with ESMTPSA id 189ee49dde700023b6.001
+ by mail-108-mta227.mxroute.com (ZoneMTA) with ESMTPSA id 189ee49e1a900023b6.001
  for <linux-btrfs@vger.kernel.org>
  (version=TLSv1.3 cipher=TLS_AES_256_GCM_SHA384);
- Sun, 13 Aug 2023 09:46:05 +0000
-X-Zone-Loop: 8a6ed084fbe461891bb4d07b5da51cdac34ed64662b6
+ Sun, 13 Aug 2023 09:46:06 +0000
+X-Zone-Loop: 18079c2d65d26ccf92cb301a1afdfb99e4203a8ec740
 X-Originating-IP: [136.175.111.2]
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=c8h4.io;
-        s=x; h=Content-Transfer-Encoding:MIME-Version:Message-ID:Date:Subject:To:From
-        :Sender:Reply-To:Cc:Content-Type:Content-ID:Content-Description:Resent-Date:
-        Resent-From:Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:In-Reply-To:
-        References:List-Id:List-Help:List-Unsubscribe:List-Subscribe:List-Post:
-        List-Owner:List-Archive; bh=xEsQqoz89NK6qa15YW7tsYd40jto9WY8e2oyvUUOnOk=; b=Z
-        0KyEvhYpBTARwkRQ0rl7QQ2WjrvqfNNBn0Vdh4zxur+uVfdMgFwkCsy5+axjJpXg368cTAO2X6hPD
-        8khMiyLjrcIGPDiR4mI9tU+aogyL2EFZuwPu9Z7lf4JMvpSVIqDmZUxzr4v7ol2EBVZxtNJIgFhTG
-        DwTJA23LKTYc8yDAuX+uMKFft2wlX3fpBR7BCXQ9J81117VtF+WkFjvspNkkJBmSk+IGYb1snpE3z
-        emL7npa73XcSGXwwX7h67H3PiIUhjH7hpFrqYnYGzwx0PNFvKpNtJlQBh165tmU7F3AnvigByqm9T
-        /HehFewveW9NBYe1aHgw6tYDjEUU4ouYw==;
+        s=x; h=Content-Transfer-Encoding:MIME-Version:References:In-Reply-To:
+        Message-ID:Date:Subject:To:From:Sender:Reply-To:Cc:Content-Type:Content-ID:
+        Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
+        :Resent-Message-ID:List-Id:List-Help:List-Unsubscribe:List-Subscribe:
+        List-Post:List-Owner:List-Archive;
+        bh=cgrdauJJLi+22I4oU0p+myNIz0Q5ENrDAebkct7NuFs=; b=dqK/2Cs4UgorCHa+LEyh6+wHZe
+        dGI9b5xkYC3iMz6g8iBuoBA6g/3nbVlLbxQWBsnudWfvgRO3sRByvPns8ueL0QdzGcfqHD5o2NlVX
+        CHdYz01pnlAsMpxIBPmDHR60Kqpl9+Q9J4UzIyLxUB06VFt68AFIAl461h+i/L7RKoQb3EBPe/k/0
+        i+98bNAwnz4FfuW7cPZm7r2GveaxWFeO71Z42ifCDrBf+exnGKngdQdABZyWJx17O8g57eLEuD4CG
+        KUgR2+V3a59YbzX6e+9/R5pM/tPdUMEp//13+YtMA/YIvs0ovvlaUKBKJPVHXWoV5xOrFlBA7+JeL
+        ZYX8IJXg==;
 From:   Christoph Heiss <christoph@c8h4.io>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/7] btrfs-progs: implement json output for subvolume subcommands
-Date:   Sun, 13 Aug 2023 11:44:55 +0200
-Message-ID: <20230813094555.106052-1-christoph@c8h4.io>
+Subject: [PATCH 2/7] btrfs-progs: subvol show: remove duplicated quotas error check
+Date:   Sun, 13 Aug 2023 11:44:57 +0200
+Message-ID: <20230813094555.106052-3-christoph@c8h4.io>
+In-Reply-To: <20230813094555.106052-1-christoph@c8h4.io>
+References: <20230813094555.106052-1-christoph@c8h4.io>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-Authenticated-Id: christoph@c8h4.io
@@ -47,38 +49,30 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-JSON as output format is already implement for some of the commands in
-btrfs-progs, which is a very useful feature to have for e.g. scripting.
+The exact same check is repeated here, with the second being dead code.
+Keep the second instance, as that informs the user what is happening.
 
-This series adds the same for `btrfs subvolume list`, `btrfs subvolume
-get-default` and `btrfs subvolume show`.
+Signed-off-by: Christoph Heiss <christoph@c8h4.io>
+---
+ cmds/subvolume.c | 5 -----
+ 1 file changed, 5 deletions(-)
 
-#1-#3 are some small preparatory fixes & refactors, #4 introduces the
-`struct rowspec` containing all fields needed by the series.
-
-The actual implementation of the JSON output is mostly pretty
-straight-forward, only cmd_subvolume_show() needed some refactoring
-first.
-
-I probably will go about implementing the same for more commands, but
-wanted to get this out now to get some feedback.
-
-Christoph Heiss (7):
-  btrfs-progs: common: document `time-long` output format
-  btrfs-progs: subvol show: remove duplicated quotas error check
-  btrfs-progs: subvol show: factor out text printing to own function
-  btrfs-progs: subvol: introduce rowspec definition for json output
-  btrfs-progs: subvol list: implement json format output
-  btrfs-progs: subvol get-default: implement json format output
-  btrfs-progs: subvol show: implement json format output
-
- cmds/subvolume-list.c  |  91 ++++++++++-
- cmds/subvolume.c       | 345 +++++++++++++++++++++++++++++------------
- cmds/subvolume.h       |  19 +++
- common/format-output.h |   2 +
- 4 files changed, 357 insertions(+), 100 deletions(-)
- create mode 100644 cmds/subvolume.h
-
---
+diff --git a/cmds/subvolume.c b/cmds/subvolume.c
+index 0691157c..a5423759 100644
+--- a/cmds/subvolume.c
++++ b/cmds/subvolume.c
+@@ -1466,11 +1466,6 @@ static int cmd_subvolume_show(const struct cmd_struct *cmd, int argc, char **arg
+ 	btrfs_util_destroy_subvolume_iterator(iter);
+ 
+ 	ret = btrfs_qgroup_query(fd, subvol.id, &stats);
+-	if (ret == -ENOTTY) {
+-		/* Quotas not enabled */
+-		ret = 0;
+-		goto out;
+-	}
+ 	if (ret == -ENOTTY) {
+ 		/* Quota information not available, not fatal */
+ 		pr_verbose(LOG_DEFAULT, "\tQuota group:\t\tn/a\n");
+-- 
 2.41.0
 

@@ -2,150 +2,184 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7459EC04A94
-	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Aug 2023 16:44:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C1546C001B0
+	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Aug 2023 17:04:42 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230301AbjHNQni (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 14 Aug 2023 12:43:38 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53830 "EHLO
+        id S230189AbjHNREL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 14 Aug 2023 13:04:11 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55534 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232499AbjHNQn3 (ORCPT
+        with ESMTP id S230500AbjHNREE (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 Aug 2023 12:43:29 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AC83610C0;
-        Mon, 14 Aug 2023 09:43:24 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 3B23D21906;
-        Mon, 14 Aug 2023 16:43:23 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1692031403; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=oUvv9I+YRijxn7USCgt6yOIKbwQjotN/UplplcOhebw=;
-        b=zGZSRXl74qCuVw7E/cAaeiE2/vQA42KysW+S4tIkXmxqXJXhJQkiPVScxshWrxycoj40yN
-        b4iHrkX+qQ02XiqOHXy7XbPU88X5fSiKnmIDtx/ZgO5ZBxsfjC9cMsI/EWLqF0e1tbsHHM
-        s8u6+5gmXun9sz1wG+O93/QmW2Q+0Ns=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1692031403;
-        h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=oUvv9I+YRijxn7USCgt6yOIKbwQjotN/UplplcOhebw=;
-        b=0Sl/zKo/iWi48k0GHMTje0r8oHiqbSbZJINg6D90/3Ki5JyINjXiXRJOYRU9TU3i57jvrv
-        tQgYE3dVl/VrEsBg==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 2BEBC138EE;
-        Mon, 14 Aug 2023 16:43:23 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id Td+3CqtZ2mQnOwAAMHmgww
-        (envelope-from <jack@suse.cz>); Mon, 14 Aug 2023 16:43:23 +0000
-Received: by quack3.suse.cz (Postfix, from userid 1000)
-        id B03AFA0769; Mon, 14 Aug 2023 18:43:22 +0200 (CEST)
-Date:   Mon, 14 Aug 2023 18:43:22 +0200
-From:   Jan Kara <jack@suse.cz>
-To:     Colin Walters <walters@verbum.org>
-Cc:     Jan Kara <jack@suse.cz>, linux-fsdevel@vger.kernel.org,
-        linux-block@vger.kernel.org, Christoph Hellwig <hch@infradead.org>,
-        Christian Brauner <brauner@kernel.org>,
-        Jens Axboe <axboe@kernel.dk>, Kees Cook <keescook@google.com>,
-        Theodore Ts'o <tytso@mit.edu>,
-        syzkaller <syzkaller@googlegroups.com>,
-        Alexander Popov <alex.popov@linux.com>,
-        Eric Biggers <ebiggers@google.com>,
-        xfs <linux-xfs@vger.kernel.org>, linux-btrfs@vger.kernel.org,
-        Dmitry Vyukov <dvyukov@google.com>
-Subject: Re: [PATCH 1/6] block: Add config option to not allow writing to
- mounted devices
-Message-ID: <20230814164322.ipqfug6466jmk6ca@quack3>
-References: <20230704122727.17096-1-jack@suse.cz>
- <20230704125702.23180-1-jack@suse.cz>
- <0c5384c2-307b-43fc-9ea6-2a194f859e9b@app.fastmail.com>
+        Mon, 14 Aug 2023 13:04:04 -0400
+Received: from casper.infradead.org (casper.infradead.org [IPv6:2001:8b0:10b:1236::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 75F12E63
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 Aug 2023 10:04:03 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=casper.20170209; h=Content-Transfer-Encoding:MIME-Version:
+        References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:
+        Content-Type:Content-ID:Content-Description;
+        bh=s8Ul2pgTccMSwgmrWj2LilWQJcUnoQaVE+z6Uh2aRJc=; b=suuJrG8RF9DoJ6sFBAcXJGuiHo
+        0drJgdUgfa60I+nex0i8RaVtRGD46O+t+SsYX3QDacafhkz1uIwCoaxzi0bECcSdmY14lEzOmZzGh
+        uhQ4t9p5sC3ouD63mVuNXqSAi+GGajuV4KHHqtobopcYfOMtXDSMzfrv+TnYugSRM1jZVd67qhz8t
+        AOC4a49K7AXr+LHSMMcK6un6tTLxe3T7zCL5umJj0oMRyivekFcoHemUa0lImV1JnCg98sIVwykMr
+        kSl0CTV/fgXbM457Jp16kXGrB7TutpCX7PskPNMtuOmRiT1KA1s5qNoehgjGfTX3mVy+rRm9kGyIk
+        x22K4fMA==;
+Received: from willy by casper.infradead.org with local (Exim 4.94.2 #2 (Red Hat Linux))
+        id 1qVayx-003Anl-6n; Mon, 14 Aug 2023 17:03:55 +0000
+From:   "Matthew Wilcox (Oracle)" <willy@infradead.org>
+To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>
+Cc:     "Matthew Wilcox (Oracle)" <willy@infradead.org>,
+        linux-btrfs@vger.kernel.org
+Subject: [PATCH 2/2] btrfs: Use a folio array throughout the defrag process
+Date:   Mon, 14 Aug 2023 18:03:50 +0100
+Message-Id: <20230814170350.756488-2-willy@infradead.org>
+X-Mailer: git-send-email 2.37.1
+In-Reply-To: <20230814170350.756488-1-willy@infradead.org>
+References: <20230814170350.756488-1-willy@infradead.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <0c5384c2-307b-43fc-9ea6-2a194f859e9b@app.fastmail.com>
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue 04-07-23 11:56:44, Colin Walters wrote:
-> On Tue, Jul 4, 2023, at 8:56 AM, Jan Kara wrote:
-> > Writing to mounted devices is dangerous and can lead to filesystem
-> > corruption as well as crashes. Furthermore syzbot comes with more and
-> > more involved examples how to corrupt block device under a mounted
-> > filesystem leading to kernel crashes and reports we can do nothing
-> > about. Add tracking of writers to each block device and a kernel cmdline
-> > argument which controls whether writes to block devices open with
-> > BLK_OPEN_BLOCK_WRITES flag are allowed. We will make filesystems use
-> > this flag for used devices.
-> >
-> > Syzbot can use this cmdline argument option to avoid uninteresting
-> > crashes. Also users whose userspace setup does not need writing to
-> > mounted block devices can set this option for hardening.
-> >
-> > Link: 
-> > https://lore.kernel.org/all/60788e5d-5c7c-1142-e554-c21d709acfd9@linaro.org
-> > Signed-off-by: Jan Kara <jack@suse.cz>
-> > ---
-> >  block/Kconfig             | 16 ++++++++++
-> >  block/bdev.c              | 63 ++++++++++++++++++++++++++++++++++++++-
-> >  include/linux/blk_types.h |  1 +
-> >  include/linux/blkdev.h    |  3 ++
-> >  4 files changed, 82 insertions(+), 1 deletion(-)
-> >
-> > diff --git a/block/Kconfig b/block/Kconfig
-> > index 86122e459fe0..8b4fa105b854 100644
-> > --- a/block/Kconfig
-> > +++ b/block/Kconfig
-> > @@ -77,6 +77,22 @@ config BLK_DEV_INTEGRITY_T10
-> >  	select CRC_T10DIF
-> >  	select CRC64_ROCKSOFT
-> > 
-> > +config BLK_DEV_WRITE_MOUNTED
-> > +	bool "Allow writing to mounted block devices"
-> > +	default y
-> > +	help
-> > +	When a block device is mounted, writing to its buffer cache very likely
-> 
-> s/very/is very/
-> 
-> > +	going to cause filesystem corruption. It is also rather easy to crash
-> > +	the kernel in this way since the filesystem has no practical way of
-> > +	detecting these writes to buffer cache and verifying its metadata
-> > +	integrity. However there are some setups that need this capability
-> > +	like running fsck on read-only mounted root device, modifying some
-> > +	features on mounted ext4 filesystem, and similar. If you say N, the
-> > +	kernel will prevent processes from writing to block devices that are
-> > +	mounted by filesystems which provides some more protection from runaway
-> > +	priviledged processes. If in doubt, say Y. The configuration can be
-> 
-> s/priviledged/privileged/
-> 
-> > +	overridden with bdev_allow_write_mounted boot option.
-> 
-> s/with/with the/
+Remove more hidden calls to compound_head() by using an array of folios
+instead of pages.  Also neaten the error path in defrag_one_range() by
+adjusting the length of the array instead of checking for NULL.
 
-Thanks for the language fixes!
+Signed-off-by: Matthew Wilcox (Oracle) <willy@infradead.org>
+---
+ fs/btrfs/defrag.c | 44 +++++++++++++++++++++-----------------------
+ 1 file changed, 21 insertions(+), 23 deletions(-)
 
-> > +/* open is exclusive wrt all other BLK_OPEN_WRITE opens to the device */
-> > +#define BLK_OPEN_BLOCK_WRITES	((__force blk_mode_t)(1 << 5))
-> 
-> Bikeshed but: I think BLK and BLOCK "stutter" here.  The doc comment
-> already uses the term "exclusive" so how about BLK_OPEN_EXCLUSIVE ?  
-
-Well, we already have exclusive opens of block devices which are different
-(they are exclusive only wrt other exclusive opens) so BLK_OPEN_EXCLUSIVE
-will be really confusing. But BLK_OPEN_RESTRICT_WRITES sounds good to me.
-
-								Honza
+diff --git a/fs/btrfs/defrag.c b/fs/btrfs/defrag.c
+index 4392a09d2bb1..065cb613e3b7 100644
+--- a/fs/btrfs/defrag.c
++++ b/fs/btrfs/defrag.c
+@@ -717,7 +717,7 @@ static bool defrag_check_next_extent(struct inode *inode, struct extent_map *em,
+  * NOTE: Caller should also wait for page writeback after the cluster is
+  * prepared, here we don't do writeback wait for each page.
+  */
+-static struct page *defrag_prepare_one_page(struct btrfs_inode *inode, pgoff_t index)
++static struct folio *defrag_prepare_one_folio(struct btrfs_inode *inode, pgoff_t index)
+ {
+ 	struct address_space *mapping = inode->vfs_inode.i_mapping;
+ 	gfp_t mask = btrfs_alloc_write_mask(mapping);
+@@ -731,7 +731,7 @@ static struct page *defrag_prepare_one_page(struct btrfs_inode *inode, pgoff_t i
+ 	folio = __filemap_get_folio(mapping, index,
+ 			FGP_LOCK | FGP_ACCESSED | FGP_CREAT, mask);
+ 	if (IS_ERR(folio))
+-		return &folio->page;
++		return folio;
+ 
+ 	/*
+ 	 * Since we can defragment files opened read-only, we can encounter
+@@ -798,7 +798,7 @@ static struct page *defrag_prepare_one_page(struct btrfs_inode *inode, pgoff_t i
+ 			return ERR_PTR(-EIO);
+ 		}
+ 	}
+-	return &folio->page;
++	return folio;
+ }
+ 
+ struct defrag_target_range {
+@@ -1020,7 +1020,7 @@ static_assert(PAGE_ALIGNED(CLUSTER_SIZE));
+  */
+ static int defrag_one_locked_target(struct btrfs_inode *inode,
+ 				    struct defrag_target_range *target,
+-				    struct page **pages, int nr_pages,
++				    struct folio **folios, int nr_pages,
+ 				    struct extent_state **cached_state)
+ {
+ 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+@@ -1029,7 +1029,7 @@ static int defrag_one_locked_target(struct btrfs_inode *inode,
+ 	const u64 len = target->len;
+ 	unsigned long last_index = (start + len - 1) >> PAGE_SHIFT;
+ 	unsigned long start_index = start >> PAGE_SHIFT;
+-	unsigned long first_index = page_index(pages[0]);
++	unsigned long first_index = folios[0]->index;
+ 	int ret = 0;
+ 	int i;
+ 
+@@ -1046,8 +1046,8 @@ static int defrag_one_locked_target(struct btrfs_inode *inode,
+ 
+ 	/* Update the page status */
+ 	for (i = start_index - first_index; i <= last_index - first_index; i++) {
+-		ClearPageChecked(pages[i]);
+-		btrfs_page_clamp_set_dirty(fs_info, pages[i], start, len);
++		folio_clear_checked(folios[i]);
++		btrfs_page_clamp_set_dirty(fs_info, &folios[i]->page, start, len);
+ 	}
+ 	btrfs_delalloc_release_extents(inode, len);
+ 	extent_changeset_free(data_reserved);
+@@ -1063,7 +1063,7 @@ static int defrag_one_range(struct btrfs_inode *inode, u64 start, u32 len,
+ 	struct defrag_target_range *entry;
+ 	struct defrag_target_range *tmp;
+ 	LIST_HEAD(target_list);
+-	struct page **pages;
++	struct folio **folios;
+ 	const u32 sectorsize = inode->root->fs_info->sectorsize;
+ 	u64 last_index = (start + len - 1) >> PAGE_SHIFT;
+ 	u64 start_index = start >> PAGE_SHIFT;
+@@ -1074,21 +1074,21 @@ static int defrag_one_range(struct btrfs_inode *inode, u64 start, u32 len,
+ 	ASSERT(nr_pages <= CLUSTER_SIZE / PAGE_SIZE);
+ 	ASSERT(IS_ALIGNED(start, sectorsize) && IS_ALIGNED(len, sectorsize));
+ 
+-	pages = kcalloc(nr_pages, sizeof(struct page *), GFP_NOFS);
+-	if (!pages)
++	folios = kcalloc(nr_pages, sizeof(struct folio *), GFP_NOFS);
++	if (!folios)
+ 		return -ENOMEM;
+ 
+ 	/* Prepare all pages */
+ 	for (i = 0; i < nr_pages; i++) {
+-		pages[i] = defrag_prepare_one_page(inode, start_index + i);
+-		if (IS_ERR(pages[i])) {
+-			ret = PTR_ERR(pages[i]);
+-			pages[i] = NULL;
+-			goto free_pages;
++		folios[i] = defrag_prepare_one_folio(inode, start_index + i);
++		if (IS_ERR(folios[i])) {
++			ret = PTR_ERR(folios[i]);
++			nr_pages = i;
++			goto free_folios;
+ 		}
+ 	}
+ 	for (i = 0; i < nr_pages; i++)
+-		wait_on_page_writeback(pages[i]);
++		folio_wait_writeback(folios[i]);
+ 
+ 	/* Lock the pages range */
+ 	lock_extent(&inode->io_tree, start_index << PAGE_SHIFT,
+@@ -1108,7 +1108,7 @@ static int defrag_one_range(struct btrfs_inode *inode, u64 start, u32 len,
+ 		goto unlock_extent;
+ 
+ 	list_for_each_entry(entry, &target_list, list) {
+-		ret = defrag_one_locked_target(inode, entry, pages, nr_pages,
++		ret = defrag_one_locked_target(inode, entry, folios, nr_pages,
+ 					       &cached_state);
+ 		if (ret < 0)
+ 			break;
+@@ -1122,14 +1122,12 @@ static int defrag_one_range(struct btrfs_inode *inode, u64 start, u32 len,
+ 	unlock_extent(&inode->io_tree, start_index << PAGE_SHIFT,
+ 		      (last_index << PAGE_SHIFT) + PAGE_SIZE - 1,
+ 		      &cached_state);
+-free_pages:
++free_folios:
+ 	for (i = 0; i < nr_pages; i++) {
+-		if (pages[i]) {
+-			unlock_page(pages[i]);
+-			put_page(pages[i]);
+-		}
++		folio_unlock(folios[i]);
++		folio_put(folios[i]);
+ 	}
+-	kfree(pages);
++	kfree(folios);
+ 	return ret;
+ }
+ 
 -- 
-Jan Kara <jack@suse.com>
-SUSE Labs, CR
+2.40.1
+

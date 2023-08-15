@@ -2,75 +2,123 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AE9FBC07E8B
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Aug 2023 08:59:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C5FF8C0015E
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Aug 2023 09:16:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235922AbjHOI7Z (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 15 Aug 2023 04:59:25 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59352 "EHLO
+        id S235893AbjHOJPn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 15 Aug 2023 05:15:43 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43420 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235950AbjHOI6V (ORCPT
+        with ESMTP id S235991AbjHOJPT (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 Aug 2023 04:58:21 -0400
-Received: from out-27.mta1.migadu.com (out-27.mta1.migadu.com [IPv6:2001:41d0:203:375::1b])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E05F22106
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Aug 2023 01:56:55 -0700 (PDT)
-Content-Type: text/plain;
-        charset=us-ascii
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linux.dev; s=key1;
-        t=1692089813;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=P6bHve1nYg/bJoXU/AFGmk5Zl6IycrFBw1mdd3eghAw=;
-        b=ZboKTnDNrg6vIJPIGhqfQcqeDe/jt4ERjlf13Tk6VPjXBVQvvsAtANiKpbjOjVSgRfY40A
-        qV1OgTNlJhRtArT95ncotHyqj7m2j8VDwj2zwa0fIqDGhtCIIoQOUE7bkXfa+YKA3QuuoE
-        8EIeURUh5iYzv41wHSUftY3Kgi5uKPM=
+        Tue, 15 Aug 2023 05:15:19 -0400
+Received: from mail-pj1-f78.google.com (mail-pj1-f78.google.com [209.85.216.78])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3113B1BC3
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 Aug 2023 02:15:16 -0700 (PDT)
+Received: by mail-pj1-f78.google.com with SMTP id 98e67ed59e1d1-2680f0cc480so5403509a91.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 Aug 2023 02:15:16 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1692090916; x=1692695716;
+        h=to:from:subject:message-id:date:mime-version:x-gm-message-state
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=D+iGRWuefmU2hiUid4QGdYR0UnLqwkGiIEu1C3f/EfQ=;
+        b=eAY1vNUtOmbhm5hDluZ8rmoKOiSIFFujHObJwBNY1Hz4gVJuXUSOs+0D9zeMrfc17O
+         qjI1uddv+9OWfibVmdCcyOIldS74tjKIaftJKUCpnlV9ZQ+t5f62jauqEGZBRI/eoyN/
+         /GlvVQw1vHsSthhFgFB5VKvXVJACfXaCzZlsgWOqUsTqQDbmPmH558sbWFQ7nZqBZUpb
+         e7t7ZsI19nwFuZhTyohgJKPZJKPEOY0eb4T7MC2dGMSOoWj3m4N+gCLaCkx/u5t5hc3j
+         D2++F1PmJsuZOjUVkLzI8EhGB3AnZe0KjoPjAtv+chGSP3zq9ouTkHwOhgXAd4dOVG2s
+         TqbA==
+X-Gm-Message-State: AOJu0YzVGM3bzvpLS8j1zBV1b16SVU/XS54/v80nS3TU0msT4zekSXyc
+        Y5CnfvvE3u3vipo7llsCxLLXniyfO1k/ry09vawwTragRXrS
+X-Google-Smtp-Source: AGHT+IH9Pz6z43oMnXdI0xY8eQPyvoGkbhYumOmSRX9gEC4UXvhJLnTswhlaJzcU5cCPpBg9a5uPT9cIokiDiBeB3fRQBdS/jRWl
 MIME-Version: 1.0
-Subject: Re: [PATCH v4 12/48] gfs2: dynamically allocate the gfs2-qd shrinker
-X-Report-Abuse: Please report any abuse attempt to abuse@migadu.com and include these headers.
-From:   Muchun Song <muchun.song@linux.dev>
-In-Reply-To: <20230807110936.21819-13-zhengqi.arch@bytedance.com>
-Date:   Tue, 15 Aug 2023 16:56:06 +0800
-Cc:     Andrew Morton <akpm@linux-foundation.org>, david@fromorbit.com,
-        tkhai@ya.ru, Vlastimil Babka <vbabka@suse.cz>,
-        Roman Gushchin <roman.gushchin@linux.dev>, djwong@kernel.org,
-        Christian Brauner <brauner@kernel.org>,
-        "Paul E. McKenney" <paulmck@kernel.org>, tytso@mit.edu,
-        steven.price@arm.com, cel@kernel.org, senozhatsky@chromium.org,
-        yujie.liu@intel.com, gregkh@linuxfoundation.org,
-        simon.horman@corigine.com, dlemoal@kernel.org,
-        linux-kernel@vger.kernel.org, linux-mm@kvack.org, x86@kernel.org,
-        kvm@vger.kernel.org, xen-devel@lists.xenproject.org,
-        linux-erofs@lists.ozlabs.org,
-        linux-f2fs-devel@lists.sourceforge.net, cluster-devel@redhat.com,
-        linux-nfs@vger.kernel.org, linux-mtd@lists.infradead.org,
-        rcu@vger.kernel.org, netdev@vger.kernel.org,
-        dri-devel@lists.freedesktop.org, linux-arm-msm@vger.kernel.org,
-        dm-devel@redhat.com, linux-raid@vger.kernel.org,
-        linux-bcache@vger.kernel.org,
-        virtualization@lists.linux-foundation.org,
-        linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-xfs@vger.kernel.org, linux-btrfs@vger.kernel.org
-Content-Transfer-Encoding: 7bit
-Message-Id: <D38951C4-3BC6-409C-90C4-C72E772ECFF0@linux.dev>
-References: <20230807110936.21819-1-zhengqi.arch@bytedance.com>
- <20230807110936.21819-13-zhengqi.arch@bytedance.com>
-To:     Qi Zheng <zhengqi.arch@bytedance.com>
-X-Migadu-Flow: FLOW_OUT
+X-Received: by 2002:a17:90a:f306:b0:268:2de3:e6b2 with SMTP id
+ ca6-20020a17090af30600b002682de3e6b2mr2876129pjb.5.1692090915735; Tue, 15 Aug
+ 2023 02:15:15 -0700 (PDT)
+Date:   Tue, 15 Aug 2023 02:15:15 -0700
+X-Google-Appengine-App-Id: s~syzkaller
+X-Google-Appengine-App-Id-Alias: syzkaller
+Message-ID: <000000000000f5ce160602f29dd6@google.com>
+Subject: [syzbot] [btrfs?] memory leak in btrfs_ref_tree_mod
+From:   syzbot <syzbot+d66de4cbf532749df35f@syzkaller.appspotmail.com>
+To:     clm@fb.com, dsterba@suse.com, josef@toxicpanda.com,
+        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+Hello,
+
+syzbot found the following issue on:
+
+HEAD commit:    25aa0bebba72 Merge tag 'net-6.5-rc6' of git://git.kernel.o..
+git tree:       upstream
+console output: https://syzkaller.appspot.com/x/log.txt?x=169577fda80000
+kernel config:  https://syzkaller.appspot.com/x/.config?x=2bf8962e4f7984f4
+dashboard link: https://syzkaller.appspot.com/bug?extid=d66de4cbf532749df35f
+compiler:       gcc (Debian 12.2.0-14) 12.2.0, GNU ld (GNU Binutils for Debian) 2.40
+syz repro:      https://syzkaller.appspot.com/x/repro.syz?x=148191c3a80000
+
+Downloadable assets:
+disk image: https://storage.googleapis.com/syzbot-assets/76b0857d2814/disk-25aa0beb.raw.xz
+vmlinux: https://storage.googleapis.com/syzbot-assets/a01574755257/vmlinux-25aa0beb.xz
+kernel image: https://storage.googleapis.com/syzbot-assets/262002db770e/bzImage-25aa0beb.xz
+mounted in repro: https://storage.googleapis.com/syzbot-assets/b93cffaa6717/mount_0.gz
+
+IMPORTANT: if you fix the issue, please add the following tag to the commit:
+Reported-by: syzbot+d66de4cbf532749df35f@syzkaller.appspotmail.com
+
+BUG: memory leak
+unreferenced object 0xffff888129851240 (size 64):
+  comm "syz-executor.0", pid 5069, jiffies 4294977377 (age 16.480s)
+  hex dump (first 32 bytes):
+    01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+  backtrace:
+    [<ffffffff815545e5>] kmalloc_trace+0x25/0x90 mm/slab_common.c:1076
+    [<ffffffff821731b1>] kmalloc include/linux/slab.h:582 [inline]
+    [<ffffffff821731b1>] btrfs_ref_tree_mod+0x211/0xb80 fs/btrfs/ref-verify.c:768
+    [<ffffffff820444f6>] btrfs_free_tree_block+0x116/0x450 fs/btrfs/extent-tree.c:3250
+    [<ffffffff8202d775>] __btrfs_cow_block+0x6a5/0xa30 fs/btrfs/ctree.c:601
+    [<ffffffff8202dc54>] btrfs_cow_block+0x154/0x2b0 fs/btrfs/ctree.c:712
+    [<ffffffff8206013c>] commit_cowonly_roots+0x8c/0x3f0 fs/btrfs/transaction.c:1276
+    [<ffffffff820647c9>] btrfs_commit_transaction+0x999/0x15c0 fs/btrfs/transaction.c:2410
+    [<ffffffff8205a516>] btrfs_commit_super+0x86/0xb0 fs/btrfs/disk-io.c:4195
+    [<ffffffff8205c743>] close_ctree+0x543/0x730 fs/btrfs/disk-io.c:4349
+    [<ffffffff8166b44e>] generic_shutdown_super+0x9e/0x1c0 fs/super.c:499
+    [<ffffffff8166b769>] kill_anon_super+0x19/0x30 fs/super.c:1110
+    [<ffffffff8202357d>] btrfs_kill_super+0x1d/0x30 fs/btrfs/super.c:2138
+    [<ffffffff8166ca46>] deactivate_locked_super+0x46/0xd0 fs/super.c:330
+    [<ffffffff8166cb6c>] deactivate_super fs/super.c:361 [inline]
+    [<ffffffff8166cb6c>] deactivate_super+0x9c/0xb0 fs/super.c:357
+    [<ffffffff816a8931>] cleanup_mnt+0x121/0x210 fs/namespace.c:1254
+    [<ffffffff812becaf>] task_work_run+0x8f/0xe0 kernel/task_work.c:179
 
 
-> On Aug 7, 2023, at 19:09, Qi Zheng <zhengqi.arch@bytedance.com> wrote:
-> 
-> Use new APIs to dynamically allocate the gfs2-qd shrinker.
-> 
-> Signed-off-by: Qi Zheng <zhengqi.arch@bytedance.com>
 
-Reviewed-by: Muchun Song <songmuchun@bytedance.com>
+---
+This report is generated by a bot. It may contain errors.
+See https://goo.gl/tpsmEJ for more information about syzbot.
+syzbot engineers can be reached at syzkaller@googlegroups.com.
 
+syzbot will keep track of this issue. See:
+https://goo.gl/tpsmEJ#status for how to communicate with syzbot.
 
+If the bug is already fixed, let syzbot know by replying with:
+#syz fix: exact-commit-title
+
+If you want syzbot to run the reproducer, reply with:
+#syz test: git://repo/address.git branch-or-commit-hash
+If you attach or paste a git patch, syzbot will apply it before testing.
+
+If you want to change bug's subsystems, reply with:
+#syz set subsystems: new-subsystem
+(See the list of subsystem names on the web dashboard)
+
+If the bug is a duplicate of another bug, reply with:
+#syz dup: exact-subject-of-another-report
+
+If you want to undo deduplication, reply with:
+#syz undup

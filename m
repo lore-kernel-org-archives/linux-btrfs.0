@@ -2,202 +2,88 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8A6ADC2FC20
-	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Aug 2023 12:51:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1C0B4C27C7A
+	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Aug 2023 12:59:10 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1350978AbjHQMvE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 17 Aug 2023 08:51:04 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47472 "EHLO
+        id S1351010AbjHQM6j (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 17 Aug 2023 08:58:39 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39210 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1350994AbjHQMut (ORCPT
+        with ESMTP id S1351048AbjHQM6f (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 17 Aug 2023 08:50:49 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B5E0B2D78
-        for <linux-btrfs@vger.kernel.org>; Thu, 17 Aug 2023 05:50:47 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 750411F37E;
-        Thu, 17 Aug 2023 12:50:46 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1692276646;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=myYUGxJEy//L0X8mScQFrpkrUMekJEZihM90TXz1MHg=;
-        b=2XJ9/EuL4gcNnfYWFFQ/CRFkGTMKMhS9x4fwgbkgzik+kq9YB2sxfc80es/BeRReBK0bbr
-        EVAHrrz22C5wlpPR9nOgDxrEhOII5a90DFOTTzyR4QlAlSBTJhyrLZvyfnILDNTpY0Bl1h
-        xHUlgDaFfiHzYKSV0BeOLHhpT2dxMlw=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1692276646;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=myYUGxJEy//L0X8mScQFrpkrUMekJEZihM90TXz1MHg=;
-        b=TA3unoS42gXS6fmBB2s+X94Kb/+eiR1yZflrRXGQcWIhZ9mQlPSwguOKeszb/Pznn8T1FB
-        Yo99b4VidFKbbZAw==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 427801392B;
-        Thu, 17 Aug 2023 12:50:46 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id T/h/D6YX3mTCagAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Thu, 17 Aug 2023 12:50:46 +0000
-Date:   Thu, 17 Aug 2023 14:44:17 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org,
-        syzbot+ae97a827ae1c3336bbb4@syzkaller.appspotmail.com
-Subject: Re: [PATCH v4 2/3] btrfs: exit gracefully if reloc roots don't match
-Message-ID: <20230817124417.GQ2420@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1691054362.git.wqu@suse.com>
- <30acf23be32724aa2cae7e85a6b88e039f290773.1691054362.git.wqu@suse.com>
- <ZNPoAZ6nNYdm8OOK@twin.jikos.cz>
- <ed1f5dfa-76ca-4e4b-8e5a-cfa09cef38d7@gmx.com>
+        Thu, 17 Aug 2023 08:58:35 -0400
+Received: from mail-yb1-xb33.google.com (mail-yb1-xb33.google.com [IPv6:2607:f8b0:4864:20::b33])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 379AA2D7D
+        for <linux-btrfs@vger.kernel.org>; Thu, 17 Aug 2023 05:58:34 -0700 (PDT)
+Received: by mail-yb1-xb33.google.com with SMTP id 3f1490d57ef6-d62ae3fc7f1so6026633276.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 17 Aug 2023 05:58:34 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20221208.gappssmtp.com; s=20221208; t=1692277113; x=1692881913;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
+        bh=GZWanNNyl1e4a9HFsYZnsiD4qo/hfmyUMdIQ/f5SCeE=;
+        b=ymNu3ZNR7DLLTifK++n+6+TWYgjhAFjOdwvlpKEvS46VCrH1Gp/z2gvvssOg7XjaCu
+         SQgP7e7+raH1pPlEKLIWmQ3yxaq9PnzaezYJ9fk4QyeIQcowpQ5QwTjD5tDFE6lFxexx
+         vxxLvV6JZcERm6CqEksv+wTo4PAGvGtelnLjfjvXZiZpQjvEebGZeVx6WV8KQsVN5sDd
+         /1MQqoPTlh50knkCFYOQIcIvTDerelXSj8NTrI1ye7ROUgwpZH+i/mh9DGmVsWjR7vvT
+         dESqXyX4C9az3USSxjfUsUxbOSCiosgqwrLGVrmBF9uHNK3/xT72oK4xBy61DrlcslYV
+         +WRQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1692277113; x=1692881913;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=GZWanNNyl1e4a9HFsYZnsiD4qo/hfmyUMdIQ/f5SCeE=;
+        b=CeYcwj5ECn+iB+G5EQMyFXDxAdN0857jIgkG/otjQt5lLyUcRzEaomI069wGfO1/AD
+         TRZxShD9NAO6TUe1hwaUbKj8K0zcwcL/kOt/Kfr5i2KGLTNEdvuQ7BCegoBAIngWM4Vv
+         ixL8Mff6NmFBCM8tvaaqWqkyZ24hlf3icxHt1yS4FgzsFdCCb+krodxjcXOL7iJ4xmM/
+         CtIcTdOv83x5I1R95abm3gLWrFun///LJzqGJ8+cE1QiG+cuqNaM5ytuDapshOuU8F4/
+         tnR088bnbKNgN8xr+EI1CL/eaEW5txtU8sYzJEFiohD3zq3pYvmQy0n66O8xeOe2PCBM
+         T7Dw==
+X-Gm-Message-State: AOJu0YzqEdEhvwhN/B0g127heunFsCERH6+qHmrMVAsAzFzqCn5MoPcz
+        25Pucx8M6fhpiNGRwP4Lwl/KfQ==
+X-Google-Smtp-Source: AGHT+IE8KQ70rQLWfnLEZf3ks2BrtS9eEh50LlFmA8NA7ZVUS1DJy9NQkE8oq2Hj10e/paQ22pIMWQ==
+X-Received: by 2002:a25:db03:0:b0:d08:f00d:ccfe with SMTP id g3-20020a25db03000000b00d08f00dccfemr4653298ybf.15.1692277113367;
+        Thu, 17 Aug 2023 05:58:33 -0700 (PDT)
+Received: from localhost (cpe-76-182-20-124.nc.res.rr.com. [76.182.20.124])
+        by smtp.gmail.com with ESMTPSA id p206-20020a25d8d7000000b00d677aec54ffsm3223107ybg.60.2023.08.17.05.58.32
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Thu, 17 Aug 2023 05:58:32 -0700 (PDT)
+Date:   Thu, 17 Aug 2023 08:58:32 -0400
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     Naohiro Aota <naohiro.aota@wdc.com>
+Cc:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs/179: optimize remove file selection
+Message-ID: <20230817125832.GA2932674@perftesting>
+References: <20230817051317.3825299-1-naohiro.aota@wdc.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <ed1f5dfa-76ca-4e4b-8e5a-cfa09cef38d7@gmx.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <20230817051317.3825299-1-naohiro.aota@wdc.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Aug 10, 2023 at 08:57:24AM +0800, Qu Wenruo wrote:
-> On 2023/8/10 03:24, David Sterba wrote:
-> > On Thu, Aug 03, 2023 at 05:20:42PM +0800, Qu Wenruo wrote:
-> >> [BUG]
-> >> Syzbot reported a crash that an ASSERT() got triggered inside
-> >> prepare_to_merge().
-> >>
-> >> [CAUSE]
-> >> The root cause of the triggered ASSERT() is we can have a race between
-> >> quota tree creation and relocation.
-> >>
-> >> This leads us to create a duplicated quota tree in the
-> >> btrfs_read_fs_root() path, and since it's treated as fs tree, it would
-> >> have ROOT_SHAREABLE flag, causing us to create a reloc tree for it.
-> >>
-> >> The bug itself is fixed by a dedicated patch for it, but this already
-> >> taught us the ASSERT() is not something straightforward for
-> >> developers.
-> >>
-> >> [ENHANCEMENT]
-> >> Instead of using an ASSERT(), let's handle it gracefully and output
-> >> extra info about the mismatch reloc roots to help debug.
-> >>
-> >> Also with the above ASSERT() removed, we can trigger ASSERT(0)s inside
-> >> merge_reloc_roots() later.
-> >> Also replace those ASSERT(0)s with WARN_ON()s.
-> >>
-> >> Reported-by: syzbot+ae97a827ae1c3336bbb4@syzkaller.appspotmail.com
-> >> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> >> ---
-> >>   fs/btrfs/relocation.c | 44 +++++++++++++++++++++++++++++++++++--------
-> >>   1 file changed, 36 insertions(+), 8 deletions(-)
-> >>
-> >> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-> >> index 9db2e6fa2cb2..2bd97d2cb52e 100644
-> >> --- a/fs/btrfs/relocation.c
-> >> +++ b/fs/btrfs/relocation.c
-> >> @@ -1916,7 +1916,38 @@ int prepare_to_merge(struct reloc_control *rc, int err)
-> >>   				err = PTR_ERR(root);
-> >>   			break;
-> >>   		}
-> >> -		ASSERT(root->reloc_root == reloc_root);
-> >> +
-> >> +		if (unlikely(root->reloc_root != reloc_root)) {
-> >> +			if (root->reloc_root)
-> >> +				btrfs_err(fs_info,
-> >> +"reloc tree mismatch, root %lld has reloc root key (%lld %u %llu) gen %llu, expect reloc root key (%lld %u %llu) gen %llu",
-> >> +					  root->root_key.objectid,
-> >> +					  root->reloc_root->root_key.objectid,
-> >> +					  root->reloc_root->root_key.type,
-> >> +					  root->reloc_root->root_key.offset,
-> >> +					  btrfs_root_generation(
-> >> +						  &root->reloc_root->root_item),
-> >> +					  reloc_root->root_key.objectid,
-> >> +					  reloc_root->root_key.type,
-> >> +					  reloc_root->root_key.offset,
-> >> +					  btrfs_root_generation(
-> >> +						  &reloc_root->root_item));
-> >> +			else
-> >> +				btrfs_err(fs_info,
-> >> +"reloc tree mismatch, root %lld has no reloc root, expect reloc root key (%lld %u %llu) gen %llu",
-> >> +					  root->root_key.objectid,
-> >> +					  reloc_root->root_key.objectid,
-> >> +					  reloc_root->root_key.type,
-> >> +					  reloc_root->root_key.offset,
-> >> +					  btrfs_root_generation(
-> >> +						  &reloc_root->root_item));
-> >> +			list_add(&reloc_root->root_list, &reloc_roots);
-> >> +			btrfs_put_root(root);
-> >> +			btrfs_abort_transaction(trans, -EUCLEAN);
-> >> +			if (!err)
-> >> +				err = -EUCLEAN;
-> >> +			break;
-> >> +		}
-> >>
-> >>   		/*
-> >>   		 * set reference count to 1, so btrfs_recover_relocation
-> >> @@ -1989,7 +2020,7 @@ void merge_reloc_roots(struct reloc_control *rc)
-> >>   		root = btrfs_get_fs_root(fs_info, reloc_root->root_key.offset,
-> >>   					 false);
-> >>   		if (btrfs_root_refs(&reloc_root->root_item) > 0) {
-> >> -			if (IS_ERR(root)) {
-> >> +			if (WARN_ON(IS_ERR(root))) {
-> >>   				/*
-> >>   				 * For recovery we read the fs roots on mount,
-> >>   				 * and if we didn't find the root then we marked
-> >> @@ -1998,17 +2029,14 @@ void merge_reloc_roots(struct reloc_control *rc)
-> >>   				 * memory.  However there's no reason we can't
-> >>   				 * handle the error properly here just in case.
-> >>   				 */
-> >> -				ASSERT(0);
-> >>   				ret = PTR_ERR(root);
-> >>   				goto out;
-> >>   			}
-> >> -			if (root->reloc_root != reloc_root) {
-> >> +			if (WARN_ON(root->reloc_root != reloc_root)) {
-> >>   				/*
-> >> -				 * This is actually impossible without something
-> >> -				 * going really wrong (like weird race condition
-> >> -				 * or cosmic rays).
-> >> +				 * This can happen if on-disk metadata has some
-> >> +				 * corruption, e.g. bad reloc tree key offset.
-> >
-> > Based on the comments, hitting that conditition is possible by corrupted
-> > on-disk, so the WARN_ON should not be here. I did not like the ASSERT(0)
-> > and I don't like the WARN_ON either. It's an anti-pattern and we should
-> > not spread it.
-> >
-> > Some hints and suggestions are documented here
-> > https://btrfs.readthedocs.io/en/latest/dev/Development-notes.html#handling-unexpected-conditions
-> > but we can make it more explicit how to them.
+On Thu, Aug 17, 2023 at 02:13:17PM +0900, Naohiro Aota wrote:
+> Currently, we use "ls ... | sort -R | head -n1" to choose a removing
+> victim. It sorts the files with "ls", sort it randomly and pick the first
+> line, which wastes the "ls" sort.
 > 
-> I don't like the WARN_ON() either, however I didn't have any better
-> idea/practice at that time.
+> Also, using "sort -R | head -n1" is inefficient. For example, in a
+> directory with 1000000 files, it takes more than 15 seconds to pick a file.
 > 
-> For now, I believe WARN_ON() should only be utilized when there is a
-> strong need for a backtrace, and it's not covered by any existing
-> facility like btrfs_abort_transaction().
+>   $ time bash -c "ls -U | sort -R | head -n 1 >/dev/null"
+>   bash -c "ls -U | sort -R | head -n 1 >/dev/null"  15.38s user 0.14s system 99% cpu 15.536 total
 > 
-> If we go that idea, the WARN_ON() is not needed at all, since the there
-> is only one call chain leading to the error, and the error message alone
-> is enough to locate the call chain.
+>   $ time bash -c "ls -U | shuf -n 1 >/dev/null"
+>   bash -c "ls -U | shuf -n 1 >/dev/null"  0.30s user 0.12s system 138% cpu 0.306 total
 > 
-> For other situations where there are multiple call chains involved, we
-> may want to remove unnecessary WARN_ON(), with btrfs_abort_transaction()
-> closer to the error.
+> So, just use "ls -U" and "shuf -n 1" to choose a victim.
 > 
-> Would this idea be more practical?
+> Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 
-As a general idea yes. Not in all cases where the call chain is
-different we need to know it but we'll deal with that case by case.
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+
+Thanks,
+
+Josef

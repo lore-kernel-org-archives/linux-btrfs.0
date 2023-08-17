@@ -2,100 +2,113 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C54D3C27C7A
-	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Aug 2023 13:07:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1ABF5C2FC29
+	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Aug 2023 13:32:10 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1346960AbjHQNGj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 17 Aug 2023 09:06:39 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54534 "EHLO
+        id S1351518AbjHQNbk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 17 Aug 2023 09:31:40 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42930 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1351398AbjHQNG0 (ORCPT
+        with ESMTP id S1351492AbjHQNbM (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 17 Aug 2023 09:06:26 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CC56835AD
-        for <linux-btrfs@vger.kernel.org>; Thu, 17 Aug 2023 06:06:04 -0700 (PDT)
+        Thu, 17 Aug 2023 09:31:12 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3F225211E;
+        Thu, 17 Aug 2023 06:31:10 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id DFBD21F37F;
-        Thu, 17 Aug 2023 13:04:50 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id EA45921838;
+        Thu, 17 Aug 2023 13:31:08 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1692277490;
+        t=1692279068;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=rwXsIqenf9XGMRSYvbrzux5xj71G55coXZCD8QvMWRE=;
-        b=cEQriW2ALYVijVk6QCrYmMbFwSaYbv73CaP37eUSHLHzhTB8zFffOXpjY/uygie5ynnhN5
-        vXKSqF+k7QCgxOqYCycp22d/aU0SXX8PIyasDtMPYEoXpES88ihYy/rZ3xQDOIOJA3Qt6n
-        Iv/ZAd1h3/RM91Ji9/4k1lazTZXWsQA=
+        bh=rxHsVahN+II7L6QdwHgwa3dykGnq3oewSCrsfH/KRNs=;
+        b=pHNe7my7estC1s/b6vNW11izgXmUg8eLSmwUlnvrKjW45L2s+O3jB8frT5bERp44nW9BFf
+        oxFCapVFDSxEzySP1Lq1l6jfELzBVUh15T6d3FJa1ZFtKyzP5PsN2w5msAKzUcn2aM1xMG
+        iUzTD5mH+tGbv6b5/MH0uDUtd61l+QY=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1692277490;
+        s=susede2_ed25519; t=1692279068;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=rwXsIqenf9XGMRSYvbrzux5xj71G55coXZCD8QvMWRE=;
-        b=ATp4saVzhdnIBRYwoUvDaDCVqVbidCr5jJS2cHfSeQxTRQlDtmUw9FLr4QvFs2XY0gnXyk
-        h7Z7ysi/1rFBuLAQ==
+        bh=rxHsVahN+II7L6QdwHgwa3dykGnq3oewSCrsfH/KRNs=;
+        b=ZrIkejyby1h+sgyUZ9stf6CAWIOutsF7wcK+5OakVnNnUR9eSPlgD0dCnK7CEY4g4rPXpz
+        YA5vuiECt2DwOpCQ==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id CA2681392B;
-        Thu, 17 Aug 2023 13:04:50 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 8AEBC1392B;
+        Thu, 17 Aug 2023 13:31:08 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id W9+OMPIa3mTzcgAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Thu, 17 Aug 2023 13:04:50 +0000
-Date:   Thu, 17 Aug 2023 14:58:22 +0200
+        id ycUOIRwh3mR0AwAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Thu, 17 Aug 2023 13:31:08 +0000
+Date:   Thu, 17 Aug 2023 15:24:39 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     fdmanana@kernel.org
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 00/17] btrfs: some misc stuff around space flushing and
- enospc handling
-Message-ID: <20230817125822.GR2420@twin.jikos.cz>
+To:     David Sterba <dsterba@suse.cz>
+Cc:     Christian Brauner <brauner@kernel.org>,
+        Christoph Hellwig <hch@lst.de>,
+        Al Viro <viro@zeniv.linux.org.uk>,
+        Jens Axboe <axboe@kernel.dk>,
+        Denis Efremov <efremov@linux.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        Stefan Haberland <sth@linux.ibm.com>,
+        Jan Hoeppner <hoeppner@linux.ibm.com>,
+        Heiko Carstens <hca@linux.ibm.com>,
+        Vasily Gorbik <gor@linux.ibm.com>,
+        Alexander Gordeev <agordeev@linux.ibm.com>,
+        "Darrick J . Wong" <djwong@kernel.org>, Chris Mason <clm@fb.com>,
+        David Sterba <dsterba@suse.com>, linux-block@vger.kernel.org,
+        nbd@other.debian.org, linux-s390@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org
+Subject: Re: [PATCH 05/17] btrfs: open block devices after superblock creation
+Message-ID: <20230817132439.GS2420@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <cover.1690383587.git.fdmanana@suse.com>
+References: <20230811100828.1897174-1-hch@lst.de>
+ <20230811100828.1897174-6-hch@lst.de>
+ <20230811-wildpark-bronzen-5e30a56de1a1@brauner>
+ <20230811131131.GN2420@suse.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <cover.1690383587.git.fdmanana@suse.com>
+In-Reply-To: <20230811131131.GN2420@suse.cz>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Jul 26, 2023 at 04:56:56PM +0100, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
+On Fri, Aug 11, 2023 at 03:11:31PM +0200, David Sterba wrote:
+> On Fri, Aug 11, 2023 at 02:44:50PM +0200, Christian Brauner wrote:
+> > On Fri, Aug 11, 2023 at 12:08:16PM +0200, Christoph Hellwig wrote:
+> > > Currently btrfs_mount_root opens the block devices before committing to
+> > > allocating a super block. That creates problems for restricting the
+> > > number of writers to a device, and also leads to a unusual and not very
+> > > helpful holder (the fs_type).
+> > > 
+> > > Reorganize the code to first check whether the superblock for a
+> > > particular fsid does already exist and open the block devices only if it
+> > > doesn't, mirroring the recent changes to the VFS mount helpers.  To do
+> > > this the increment of the in_use counter moves out of btrfs_open_devices
+> > > and into the only caller in btrfs_mount_root so that it happens before
+> > > dropping uuid_mutex around the call to sget.
+> > > 
+> > > Signed-off-by: Christoph Hellwig <hch@lst.de>
+> > > ---
+> > 
+> > Looks good to me,
+> > Acked-by: Christian Brauner <brauner@kernel.org>
+> > 
+> > And ofc, would be great to get btrfs reviews.
 > 
-> A few fixes, improvements, cleanups around space flushing, enospc handling,
-> debugging. These came out while debugging an image of a fs that fails to
-> mount due to being out of unallocated space and having only about 1.6M of
-> free metadata space, which is not enough to commit any transaction triggered
-> during mount while doing orphan cleanup, resulting in transactions aborts
-> either when running delayed refs or somewhere in the critical section of a
-> transaction commit. These patches do not prevent getting into that situation,
-> but that will be attempted by other patches in a separate patchset.
-> 
-> Filipe Manana (17):
->   btrfs: don't start transaction when joining with TRANS_JOIN_NOSTART
->   btrfs: update comment for btrfs_join_transaction_nostart()
->   btrfs: print target number of bytes when dumping free space
->   btrfs: print block group super and delalloc bytes when dumping space info
->   btrfs: print available space for a block group when dumping a space info
->   btrfs: print available space across all block groups when dumping space info
->   btrfs: don't steal space from global rsv after a transaction abort
->   btrfs: store the error that turned the fs into error state
->   btrfs: return real error when orphan cleanup fails due to a transaction abort
->   btrfs: fail priority metadata ticket with real fs error
->   btrfs: make btrfs_cleanup_fs_roots() static
->   btrfs: make find_free_dev_extent() static
->   btrfs: merge find_free_dev_extent() and find_free_dev_extent_start()
->   btrfs: avoid starting new transaction when flushing delayed items and refs
->   btrfs: avoid starting and committing empty transaction when flushing space
->   btrfs: avoid start and commit empty transaction when starting qgroup rescan
->   btrfs: avoid start and commit empty transaction when flushing qgroups
+> I'll take a look but there are some performance regressions to deal with
+> and pre-merge window freeze so it won't be soon.
 
-Looks like I forgot to reply, the patchset has been in misc-next for
-some time. Thanks.
+I'd rather take the btrfs patches via my tree and get them tested for a
+longer time.  This patch in particular changes locking, mount, device
+management, that's beyond what I'd consider safe to get merged outside
+of btrfs.

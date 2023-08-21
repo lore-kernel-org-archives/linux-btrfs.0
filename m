@@ -2,85 +2,96 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 41ED2EE49A5
-	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Aug 2023 06:37:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 393F3EE49AE
+	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Aug 2023 06:37:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233453AbjHUGhN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 21 Aug 2023 02:37:13 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33020 "EHLO
+        id S233466AbjHUGhO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 21 Aug 2023 02:37:14 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33046 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229734AbjHUGhM (ORCPT
+        with ESMTP id S229929AbjHUGhN (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 21 Aug 2023 02:37:12 -0400
+        Mon, 21 Aug 2023 02:37:13 -0400
 Received: from esa6.hgst.iphmx.com (esa6.hgst.iphmx.com [216.71.154.45])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 27674A9;
-        Sun, 20 Aug 2023 23:37:10 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8B4A4A9;
+        Sun, 20 Aug 2023 23:37:12 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1692599829; x=1724135829;
-  h=from:to:cc:subject:date:message-id:mime-version:
-   content-transfer-encoding;
-  bh=GYzwbOjfiF39TZRz9eZIrZNRhFVh+tsx/joWx5dA5oY=;
-  b=Jl5bb4nga9D8NNEPFJ3KrPiQ7g8Doizw9a9IQ9rqtgirFv46Si/c3wv1
-   bxLjAKbvMatB/Xg8Vjz/xrxNDFdGEM1+c6TcSj9Eh3U/L5vKOgWFehdQa
-   5tOUPxa0nX6MUnPyoChVDElBIICkQfPyIa7B4Bd75l3YMOkCZC7KhFVV3
-   cj+FZ6Vaje0lC2OketO6YwFsVVxP06jsFmFx/gE19LHWFo0uja+5nnqrv
-   TVT0miLHhezkDD2PBPk1SBN3oqyR6AJg8n/W0HCWCbtVSkhszw+fTW04Q
-   6+isnsd5XGi6hk3UH4S+Tz/BVMCn2oILpO2vqHDTHupoMcCAiTQpiY2HI
-   A==;
+  t=1692599832; x=1724135832;
+  h=from:to:cc:subject:date:message-id:in-reply-to:
+   references:mime-version:content-transfer-encoding;
+  bh=G9ZyhRGZh2z81PLUydMfxH4iIes0hBOJauITXx85a2s=;
+  b=XQ6wl/MGQYIKCXuWyZCwgHf7eEHvj0+mc+tfD58PY/jKrh4vBoMcfPeG
+   xw/O7tMv10dCPC0UHK/mt3VIeRtaHe6zOIvdVVfZyFV5mZj0S4v1xaYfJ
+   41+rXFln2Md86YloWK2T1mlotFasz++7SSjigxE516FPc1A+N6OVWnkjE
+   OC10twT4xNHfpOtQUYFljIUrbkZLrMZqocKf6TOY0zINbRHw+toWzRA14
+   XH87ymLBd5RHWOnk3x1Uu4ObLFtzqoJ/uP8td0GAGqLTbOl0Qu+crlBsU
+   pvoi8AxKYHYAPjddtS+7ZjhQT04RH5e0IxNyLloGu705ibGK8NvYrCMdL
+   g==;
 X-IronPort-AV: E=Sophos;i="6.01,189,1684771200"; 
-   d="scan'208";a="241991949"
+   d="scan'208";a="241991953"
 Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 21 Aug 2023 14:37:09 +0800
-IronPort-SDR: jK5Ob05L1l73OZgucDvviFVLi4tQ2PaNj0fUr7PJV1ddNnYe/8xWCU8fTzfiCuoV1XZBoLyU++
- sCtmg/+Z5QVOigmPHsUi2H1R5NJLXo8LRqzXo47uhd2lflaMPZv8Ec0MTRjnsxvPoZuu4A+p6B
- 2vCGRLOeFvYh75F4bgX/0ccJ9u3EqQwro54b5+4r9tlXOSL99PvGIEZcqp211V5DDBXvHAK71o
- d9b49iksQnQwDzakfvu49D69CIFQcYhQrNKKhffGr2Hdhidde2e2EOB8G0w2JhF0daBN5q2iZK
- dWs=
+  by ob1.hgst.iphmx.com with ESMTP; 21 Aug 2023 14:37:11 +0800
+IronPort-SDR: 2APoeC2xbV7fi38+cOZ9HohAWFqPmRaI2nKNHtX09/QidExbpbVpO1q2tjbr+67phs8bnsSD7v
+ v808R33Jv64oyhWeFfIh0e2IXSdxP4vuFKC3soUyNvCsOR93h0FaiEIcGuTT5xJE0W+r6HRTvf
+ kEAWyGRotIbqimLwP8j/C0GVHE0zLCXad8e+Dyi3c925IlaHJTFNAltzoUq3QmcGQLjzl+MXGX
+ Fjtt4Ndclxtb7NCbKe3Y7e3/YU82ic+94b6rypp2LiM58Oj7I3IjJZApocIrDSCdCdlGv4GqbJ
+ 8ek=
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 20 Aug 2023 22:44:41 -0700
-IronPort-SDR: 3I8MO5SdFljMYY1HPFbC3YHfZhN9TG1TE3VdbU14Igzs/yk5L2tsqi1fhXJK5RcTIm2YyjaVKF
- 1wF3/XiUZVh28Zerc01/OeW4I8LSyIYTTxM6vsyxhtYyJVlMvvyjIiMixW02aPJ+EDkXoGntMp
- 6WBVhI5L/6cSOl1V+ynsc/gruuS7JghbJ/z2HWVpd9BVIvABYurMHUCn/JddEvuahiQzDBeZkP
- y9RUON6tHvU2gAALTFMch8nHbx4/nZFIz1uUR4eXtTNCI4CAB2SQKTxfdUVn/z6xEFI4RUV0XB
- jts=
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 20 Aug 2023 22:44:43 -0700
+IronPort-SDR: 8B9YpI4ticd2Yi8e1aIL8ZXiwuwLSk5nm46pmREJIkZCc4QzasQGAG8jAbw0eY311qMysLo3Hf
+ ihZjKp5sjZmZ+hr6WcbmlDjeI/xHFXVDbA3zlFFKccWHuXZOOEu2Glmpfe3U4cDA0iYgTGHwdC
+ IZ14Bk7z3PSHJTVpHsXKJi4AAPF8QQeRlbsQl63IU6+XPrs2muRlGfMWB4YvbS1p9gMtWzsIr8
+ 3Q4tW3OmFgjKZEpwFfQ5LrNoj3LU1X5TPMMBXKcLX39h8gLsJT65MiBhCCTvBYJf9jvLqEimBb
+ okw=
 WDCIronportException: Internal
 Received: from unknown (HELO naota-xeon.wdc.com) ([10.225.163.96])
-  by uls-op-cesaip02.wdc.com with ESMTP; 20 Aug 2023 23:37:10 -0700
+  by uls-op-cesaip02.wdc.com with ESMTP; 20 Aug 2023 23:37:12 -0700
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     fstests@vger.kernel.org
 Cc:     linux-btrfs@vger.kernel.org, Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH v2 0/3] use shuf to choose a random file
-Date:   Mon, 21 Aug 2023 15:37:01 +0900
-Message-ID: <cover.1692599767.git.naohiro.aota@wdc.com>
+Subject: [PATCH v2 3/3] btrfs/004: use shuf to shuffle the file lines
+Date:   Mon, 21 Aug 2023 15:37:04 +0900
+Message-ID: <ec5d63686914faace908a3b4a3152d639b754f4a.1692599767.git.naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.41.0
+In-Reply-To: <cover.1692599767.git.naohiro.aota@wdc.com>
+References: <cover.1692599767.git.naohiro.aota@wdc.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Currently, we use "ls ... | sort -R | head -n1" (or tail) to choose a
-random file in a directory.It sorts the files with "ls", sort it randomly
-and pick the first line, which wastes the "ls" sort.
+The "sort -R" is slower than "shuf" even with the full output because
+"sort -R" actually sort them to group the identical keys.
 
-Also, using "sort -R | head -n1" is inefficient. Furthermore, even without
-"head" or "tail", "shuf" is faster than "sort -R".
+  $ time bash -c "seq 1000000 | shuf >/dev/null"
+  bash -c "seq 1000000 | shuf >/dev/null"  0.18s user 0.03s system 104% cpu 0.196 total
 
-This series introduces a new helper _random_file() to choose a file in a
-directory randomly. Also, replace "sort -R" with _random_file() or "shuf".
+  $ time bash -c "seq 1000000 | sort -R >/dev/null"
+  bash -c "seq 1000000 | sort -R >/dev/null"  19.61s user 0.03s system 99% cpu 19.739 total
 
-Naohiro Aota (3):
-  common/rc: introduce _random_file() helper
-  fstests/btrfs: use _random_file() helper
-  btrfs/004: use shuf to shuffle the file lines
+Since the "find"'s outputs never be identical, we can just use "shuf" to
+optimize the selection.
 
- common/rc       |  7 +++++++
- tests/btrfs/004 |  2 +-
- tests/btrfs/179 |  4 ++--
- tests/btrfs/192 | 14 ++++----------
- 4 files changed, 14 insertions(+), 13 deletions(-)
+Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+---
+ tests/btrfs/004 | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
+diff --git a/tests/btrfs/004 b/tests/btrfs/004
+index ea40dbf62880..78df6a3af6b1 100755
+--- a/tests/btrfs/004
++++ b/tests/btrfs/004
+@@ -201,7 +201,7 @@ workout()
+ 	cnt=0
+ 	errcnt=0
+ 	dir="$SCRATCH_MNT/$snap_name/"
+-	for file in `find $dir -name f\* -size +0 | sort -R`; do
++	for file in `find $dir -name f\* -size +0 | shuf`; do
+ 		extents=`_check_file_extents $file`
+ 		ret=$?
+ 		if [ $ret -ne 0 ]; then
 -- 
 2.41.0
 

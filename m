@@ -2,59 +2,59 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BAE22EE49BA
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 42A16EE49B9
 	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Aug 2023 14:33:33 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236497AbjHWOde (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 23 Aug 2023 10:33:34 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34300 "EHLO
+        id S236486AbjHWOdd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 23 Aug 2023 10:33:33 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34292 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236470AbjHWOdc (ORCPT
+        with ESMTP id S236471AbjHWOdb (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 23 Aug 2023 10:33:32 -0400
-Received: from mail-yw1-x1132.google.com (mail-yw1-x1132.google.com [IPv6:2607:f8b0:4864:20::1132])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0BCB7E68
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 Aug 2023 07:33:30 -0700 (PDT)
-Received: by mail-yw1-x1132.google.com with SMTP id 00721157ae682-58cf42a32b9so63487817b3.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 Aug 2023 07:33:30 -0700 (PDT)
+        Wed, 23 Aug 2023 10:33:31 -0400
+Received: from mail-yw1-x1131.google.com (mail-yw1-x1131.google.com [IPv6:2607:f8b0:4864:20::1131])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 509AEE5F
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Aug 2023 07:33:26 -0700 (PDT)
+Received: by mail-yw1-x1131.google.com with SMTP id 00721157ae682-5925e580e87so8150247b3.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Aug 2023 07:33:26 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20221208.gappssmtp.com; s=20221208; t=1692801209; x=1693406009;
+        d=toxicpanda-com.20221208.gappssmtp.com; s=20221208; t=1692801205; x=1693406005;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=LWYVPdrAqaymGLj3vcZR+O2TJhyfMPKOtfcj/j8VF8Y=;
-        b=kwjJ8FOfrG+qoYtTk9GQxzJpfUEa5CN7suIJhbeHlvQTQxuJW6Uk2T4bszTxRaPHn3
-         njWvStD36+0bkn2bMmv+iHqddemgwGUyzTwXYAaupxshnHInZw6tL+b8g2cOPeFIs1wD
-         uxbVUaSe+qz1gB3YV+CB+MVY6OO0CcLuIRdJNUseFHL0n2BcytDRfw5hvSPRC/H6bdUJ
-         ztsAESviLYQAxWVT0iXWPZF8jpL7lZw7YqUKM3g0ln5BvBb1h0lSSieAzOtD+uoTFssg
-         h7nVbG3y+NtUjOxm3akyVxYlA+2zGERzDpQOm+FrnCQNvP3CRuUY+ZNGjWu1b3IZi+mT
-         OyVw==
+        bh=pdjZjPhS25CFNhSP07KJQZLiGxYjA/BPasxjgyWmPcQ=;
+        b=mddn1k8uEMnJfTTJ8N9gAaBKur8qIf9OjtwK5T9ie5OJFZIcI3N+Otq36vtbkql1T1
+         4Q28/EjK4F0O++6G4eZPqmEVOFRM4LFfYm9dbh+UYujtXgmzY0xdBpZaMWXI22bHAcvp
+         9gKbeDhpNCyzSYRuNZSy5wpj43zcAm+Z+w62YwgeCv0pPISkIvLKOCOL5Ao4uSVlbN6G
+         wXJw8giha0AHfe8Vz3cRVrh66cp5YuMYirsbJaqx4Gz/ZVrPwND2p6PVVLAAyCAInX69
+         wlaCFo8mYY/lIwjq3cWXIX+qBbFva2ifUFaujWqI+kujpe8szNgwSuQTcL8zytSSy9h6
+         vVpw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1692801209; x=1693406009;
+        d=1e100.net; s=20221208; t=1692801205; x=1693406005;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=LWYVPdrAqaymGLj3vcZR+O2TJhyfMPKOtfcj/j8VF8Y=;
-        b=gt2pmP0LtpIFw3r58AqXnxP8TADsZCJQq4xiZxY0ZHlw53CkFPf3qNOs0iQziZdmnk
-         1UdKRrqIeg6zLuRLrLWvmsd4reQ04lLQdmNnOHbzQgynvxFqkUsztweTuRFzVnHUc0pU
-         Eh6qXMg27THANN5cvW+owt8FmF+srNxN+Jy7X+gS44H75XrrNTSHislykhDC0w+mAieN
-         apH9ZhmpO8ICkj2PAUlJwq8oNrSOSY63lEP+qMwBdYcSi469252AEZ6Q26sKxdN116A3
-         NSwKmmP4SKvmskx7EasiU1xC4Gy2M0K12MXXWiLyHpRCHko1O1tM+oVgOc2wUoqUdCF8
-         Fzkw==
-X-Gm-Message-State: AOJu0Yy0qw1Nr4VVNqVF4oRxxzBCl8t8DODnfvs2nKOBtRxN6BnkbI+C
-        GRBxn3Hvy6nO/sdach8asjE+ZqaZwwS6KBpWt0c=
-X-Google-Smtp-Source: AGHT+IHSZ7yKLNX420/FyKi3C7j0voijBP7xl05u3o+KYch4j3PqEYFQR0+1JMW81tZHf21+0cbcjg==
-X-Received: by 2002:a05:690c:e0d:b0:586:a249:d396 with SMTP id cp13-20020a05690c0e0d00b00586a249d396mr14119160ywb.12.1692801209137;
-        Wed, 23 Aug 2023 07:33:29 -0700 (PDT)
+        bh=pdjZjPhS25CFNhSP07KJQZLiGxYjA/BPasxjgyWmPcQ=;
+        b=FBmpczv27P3dNeYcR4gBY2uxNjgmoKpXKvQTCOCQpdMm1qHlukUTFsXAiNsb2WvNn7
+         WVTJoful7tq7djUPTPKp3tCPEKryNaW3EMVlfOBySDCXtq8AmlwROAuGf8ztU0b9TI54
+         lZutjmBJg514bZ7Hper0MdI3kcRhYi3DUcnfCib0I3uuGSrmj8ZZULq9szsIvOmEOSzF
+         MSqc8GVdCsTZY5AIXYndOWSBlo4H3XWGBTjsBLrPRPUYhOnXNNRcrM3sYbnMHpRooJ6t
+         ilbDlWI3gihrt6eU3TzzudSNuzzzE16LCUxrYDI6tlsSEpkxabl/hzPepaDuLL1+Mt0c
+         a5Hw==
+X-Gm-Message-State: AOJu0YyQW9WdJ6WGwauXIeCq1EqMQe7QHm5by2EhwL1KQr1MsCuYoi2E
+        RaDft4Q+mAaxMWkVb46n4+xEr2VmSUxIUMWRmNU=
+X-Google-Smtp-Source: AGHT+IHHwJAFNYW2KwG584vhMcg1dlXoEJPd5nWHQK0bT2oVo3krwNNsNOhgX8kVnygxrIXjNALswA==
+X-Received: by 2002:a0d:cc4f:0:b0:589:9717:22c7 with SMTP id o76-20020a0dcc4f000000b00589971722c7mr13637616ywd.22.1692801205372;
+        Wed, 23 Aug 2023 07:33:25 -0700 (PDT)
 Received: from localhost (cpe-76-182-20-124.nc.res.rr.com. [76.182.20.124])
-        by smtp.gmail.com with ESMTPSA id p188-20020a815bc5000000b0057a6e41aad1sm3332907ywb.67.2023.08.23.07.33.28
+        by smtp.gmail.com with ESMTPSA id r67-20020a0de846000000b00589e84acafasm3379307ywe.48.2023.08.23.07.33.24
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 23 Aug 2023 07:33:28 -0700 (PDT)
+        Wed, 23 Aug 2023 07:33:25 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 17/38] btrfs-progs: don't set the ->commit_root in btrfs_create_tree
-Date:   Wed, 23 Aug 2023 10:32:43 -0400
-Message-ID: <b97af2da00b090c30932e9062ef7b73ebbdbb6b7.1692800904.git.josef@toxicpanda.com>
+Subject: [PATCH 14/38] btrfs-progs: move btrfs_set_item_key_unsafe to check/
+Date:   Wed, 23 Aug 2023 10:32:40 -0400
+Message-ID: <3c55d9a5d40e799d82bea269de589a41e44a6b56.1692800904.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <cover.1692800904.git.josef@toxicpanda.com>
 References: <cover.1692800904.git.josef@toxicpanda.com>
@@ -64,41 +64,223 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-In btrfs_create_tree we set ->commit_root to the current node, however
-we don't add the root to the dirty list, so this is never cleaned up.
-This is a problem in btrfs-progs because the transaction commit stuff
-clears the commit_root when we write the dirty root out, so if we try to
-re-modify this root later we'll fail to start the transaction.  Fix this
-by noting that we do this differently in the kernel, and drop the
-assignment as we're inserting the root into the tree_root in this
-function and thus don't need to update it again at transaction commit
-time.
+This helper exists for check and for btrfs-corrupt-block.  Move the
+helper and the btrfs_fixup_low_keys helper into check/repair.[ch] so we
+can keep the kernel-shared sources close to the upstream kernel.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- kernel-shared/disk-io.c | 9 ++++++++-
- 1 file changed, 8 insertions(+), 1 deletion(-)
+ btrfs-corrupt-block.c |  1 +
+ check/repair.c        | 47 +++++++++++++++++++++++++++++++++++++++++++
+ check/repair.h        |  5 +++++
+ kernel-shared/ctree.c | 40 +++++++++---------------------------
+ kernel-shared/ctree.h |  5 -----
+ 5 files changed, 62 insertions(+), 36 deletions(-)
 
-diff --git a/kernel-shared/disk-io.c b/kernel-shared/disk-io.c
-index 35b6cde9..c98addd2 100644
---- a/kernel-shared/disk-io.c
-+++ b/kernel-shared/disk-io.c
-@@ -2340,7 +2340,14 @@ struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
- 	btrfs_mark_buffer_dirty(leaf);
+diff --git a/btrfs-corrupt-block.c b/btrfs-corrupt-block.c
+index 3c742cc8..3e741c08 100644
+--- a/btrfs-corrupt-block.c
++++ b/btrfs-corrupt-block.c
+@@ -35,6 +35,7 @@
+ #include "common/messages.h"
+ #include "common/string-utils.h"
+ #include "cmds/commands.h"
++#include "check/repair.h"
  
- 	extent_buffer_get(root->node);
--	root->commit_root = root->node;
+ #define FIELD_BUF_LEN 80
+ 
+diff --git a/check/repair.c b/check/repair.c
+index eacf4506..d8900c41 100644
+--- a/check/repair.c
++++ b/check/repair.c
+@@ -33,6 +33,53 @@
+ 
+ int opt_check_repair = 0;
+ 
++/*
++ * adjust the pointers going up the tree, starting at level
++ * making sure the right key of each node is points to 'key'.
++ * This is used after shifting pointers to the left, so it stops
++ * fixing up pointers when a given leaf/node is not in slot 0 of the
++ * higher levels
++ */
++void btrfs_fixup_low_keys(struct btrfs_path *path, struct btrfs_disk_key *key,
++			  int level)
++{
++	int i;
++	struct extent_buffer *t;
 +
-+	/*
-+	 * MODIFIED:
-+	 *  - In the kernel we set ->commit_root here, however in btrfs-progs
-+	 *    confuses the transaction code.  For now don't set the commit_root
-+	 *    here, if we update transaction.c to match the kernel version we
-+	 *    need to revisit this.
-+	 */
- 	set_bit(BTRFS_ROOT_TRACK_DIRTY, &root->state);
++	for (i = level; i < BTRFS_MAX_LEVEL; i++) {
++		int tslot = path->slots[i];
++		if (!path->nodes[i])
++			break;
++		t = path->nodes[i];
++		btrfs_set_node_key(t, key, tslot);
++		btrfs_mark_buffer_dirty(path->nodes[i]);
++		if (tslot != 0)
++			break;
++	}
++}
++
++/*
++ * update an item key without the safety checks.  This is meant to be called by
++ * fsck only.
++ */
++void btrfs_set_item_key_unsafe(struct btrfs_root *root,
++			       struct btrfs_path *path,
++			       struct btrfs_key *new_key)
++{
++	struct btrfs_disk_key disk_key;
++	struct extent_buffer *eb;
++	int slot;
++
++	eb = path->nodes[0];
++	slot = path->slots[0];
++
++	btrfs_cpu_key_to_disk(&disk_key, new_key);
++	btrfs_set_item_key(eb, &disk_key, slot);
++	btrfs_mark_buffer_dirty(eb);
++	if (slot == 0)
++		btrfs_fixup_low_keys(path, &disk_key, 1);
++}
++
+ int btrfs_add_corrupt_extent_record(struct btrfs_fs_info *info,
+ 				    struct btrfs_key *first_key,
+ 				    u64 start, u64 len, int level)
+diff --git a/check/repair.h b/check/repair.h
+index 3c44a498..81440a87 100644
+--- a/check/repair.h
++++ b/check/repair.h
+@@ -45,5 +45,10 @@ int btrfs_mark_used_blocks(struct btrfs_fs_info *fs_info,
+ 			   struct extent_io_tree *tree);
+ enum btrfs_tree_block_status btrfs_check_block_for_repair(struct extent_buffer *eb,
+ 							  struct btrfs_key *first_key);
++void btrfs_set_item_key_unsafe(struct btrfs_root *root,
++			       struct btrfs_path *path,
++			       struct btrfs_key *new_key);
++void btrfs_fixup_low_keys(struct btrfs_path *path, struct btrfs_disk_key *key,
++			  int level);
  
- 	root->root_item.flags = 0;
+ #endif
+diff --git a/kernel-shared/ctree.c b/kernel-shared/ctree.c
+index bbbb2cc3..8eba7812 100644
+--- a/kernel-shared/ctree.c
++++ b/kernel-shared/ctree.c
+@@ -1485,8 +1485,8 @@ again:
+  * fixing up pointers when a given leaf/node is not in slot 0 of the
+  * higher levels
+  */
+-void btrfs_fixup_low_keys( struct btrfs_path *path, struct btrfs_disk_key *key,
+-		int level)
++static void fixup_low_keys(struct btrfs_path *path, struct btrfs_disk_key *key,
++			   int level)
+ {
+ 	int i;
+ 	struct extent_buffer *t;
+@@ -1532,29 +1532,7 @@ void btrfs_set_item_key_safe(struct btrfs_fs_info *fs_info,
+ 	btrfs_set_item_key(eb, &disk_key, slot);
+ 	btrfs_mark_buffer_dirty(eb);
+ 	if (slot == 0)
+-		btrfs_fixup_low_keys(path, &disk_key, 1);
+-}
+-
+-/*
+- * update an item key without the safety checks.  This is meant to be called by
+- * fsck only.
+- */
+-void btrfs_set_item_key_unsafe(struct btrfs_root *root,
+-			       struct btrfs_path *path,
+-			       struct btrfs_key *new_key)
+-{
+-	struct btrfs_disk_key disk_key;
+-	struct extent_buffer *eb;
+-	int slot;
+-
+-	eb = path->nodes[0];
+-	slot = path->slots[0];
+-
+-	btrfs_cpu_key_to_disk(&disk_key, new_key);
+-	btrfs_set_item_key(eb, &disk_key, slot);
+-	btrfs_mark_buffer_dirty(eb);
+-	if (slot == 0)
+-		btrfs_fixup_low_keys(path, &disk_key, 1);
++		fixup_low_keys(path, &disk_key, 1);
+ }
+ 
+ /*
+@@ -2213,7 +2191,7 @@ static int push_leaf_left(struct btrfs_trans_handle *trans, struct btrfs_root
+ 		btrfs_mark_buffer_dirty(right);
+ 
+ 	btrfs_item_key(right, &disk_key, 0);
+-	btrfs_fixup_low_keys(path, &disk_key, 1);
++	fixup_low_keys(path, &disk_key, 1);
+ 
+ 	/* then fixup the leaf pointer in the path */
+ 	if (path->slots[0] < push_items) {
+@@ -2439,7 +2417,7 @@ again:
+ 			path->nodes[0] = right;
+ 			path->slots[0] = 0;
+ 			if (path->slots[1] == 0)
+-				btrfs_fixup_low_keys(path, &disk_key, 1);
++				fixup_low_keys(path, &disk_key, 1);
+ 		}
+ 		btrfs_mark_buffer_dirty(right);
+ 		return ret;
+@@ -2644,7 +2622,7 @@ void btrfs_truncate_item(struct btrfs_path *path, u32 new_size, int from_end)
+ 		btrfs_set_disk_key_offset(&disk_key, offset + size_diff);
+ 		btrfs_set_item_key(leaf, &disk_key, slot);
+ 		if (slot == 0)
+-			btrfs_fixup_low_keys(path, &disk_key, 1);
++			fixup_low_keys(path, &disk_key, 1);
+ 	}
+ 
+ 	btrfs_set_item_size(leaf, slot, new_size);
+@@ -2808,7 +2786,7 @@ int btrfs_insert_empty_items(struct btrfs_trans_handle *trans,
+ 	ret = 0;
+ 	if (slot == 0) {
+ 		btrfs_cpu_key_to_disk(&disk_key, cpu_key);
+-		btrfs_fixup_low_keys(path, &disk_key, 1);
++		fixup_low_keys(path, &disk_key, 1);
+ 	}
+ 
+ 	if (btrfs_leaf_free_space(leaf) < 0) {
+@@ -2881,7 +2859,7 @@ int btrfs_del_ptr(struct btrfs_root *root, struct btrfs_path *path,
+ 		struct btrfs_disk_key disk_key;
+ 
+ 		btrfs_node_key(parent, &disk_key, 0);
+-		btrfs_fixup_low_keys(path, &disk_key, level + 1);
++		fixup_low_keys(path, &disk_key, level + 1);
+ 	}
+ 	btrfs_mark_buffer_dirty(parent);
+ 	return ret;
+@@ -2979,7 +2957,7 @@ int btrfs_del_items(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 			struct btrfs_disk_key disk_key;
+ 
+ 			btrfs_item_key(leaf, &disk_key, 0);
+-			btrfs_fixup_low_keys(path, &disk_key, 1);
++			fixup_low_keys(path, &disk_key, 1);
+ 		}
+ 
+ 		/* delete the leaf if it is mostly empty */
+diff --git a/kernel-shared/ctree.h b/kernel-shared/ctree.h
+index 0d9b75bf..3e00d69b 100644
+--- a/kernel-shared/ctree.h
++++ b/kernel-shared/ctree.h
+@@ -1052,14 +1052,9 @@ static inline int btrfs_next_item(struct btrfs_root *root,
+ 
+ int btrfs_prev_leaf(struct btrfs_root *root, struct btrfs_path *path);
+ int btrfs_leaf_free_space(struct extent_buffer *leaf);
+-void btrfs_fixup_low_keys(struct btrfs_path *path, struct btrfs_disk_key *key,
+-		int level);
+ void btrfs_set_item_key_safe(struct btrfs_fs_info *fs_info,
+ 			     struct btrfs_path *path,
+ 			     const struct btrfs_key *new_key);
+-void btrfs_set_item_key_unsafe(struct btrfs_root *root,
+-			       struct btrfs_path *path,
+-			       struct btrfs_key *new_key);
+ 
+ int btrfs_super_csum_size(const struct btrfs_super_block *sb);
+ const char *btrfs_super_csum_name(u16 csum_type);
 -- 
 2.41.0
 

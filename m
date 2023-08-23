@@ -2,59 +2,59 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4E962EE49A3
-	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Aug 2023 14:27:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B0BFDEE49A0
+	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Aug 2023 14:28:00 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236396AbjHWO16 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 23 Aug 2023 10:27:58 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45348 "EHLO
+        id S236398AbjHWO2B (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 23 Aug 2023 10:28:01 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45378 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233339AbjHWO15 (ORCPT
+        with ESMTP id S233339AbjHWO2A (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 23 Aug 2023 10:27:57 -0400
-Received: from mail-yw1-x112e.google.com (mail-yw1-x112e.google.com [IPv6:2607:f8b0:4864:20::112e])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 33D2AE57
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 Aug 2023 07:27:56 -0700 (PDT)
-Received: by mail-yw1-x112e.google.com with SMTP id 00721157ae682-58df8cab1f2so60397117b3.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 Aug 2023 07:27:56 -0700 (PDT)
+        Wed, 23 Aug 2023 10:28:00 -0400
+Received: from mail-yw1-x112b.google.com (mail-yw1-x112b.google.com [IPv6:2607:f8b0:4864:20::112b])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BECB2E54
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Aug 2023 07:27:58 -0700 (PDT)
+Received: by mail-yw1-x112b.google.com with SMTP id 00721157ae682-58e6c05f529so61765277b3.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Aug 2023 07:27:58 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20221208.gappssmtp.com; s=20221208; t=1692800875; x=1693405675;
+        d=toxicpanda-com.20221208.gappssmtp.com; s=20221208; t=1692800878; x=1693405678;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=IoFN3W7lDqZnofeAylvKtCc5G5mnsjUfSVACRAr/Fk0=;
-        b=lLgLooNRTHGAieDccBfjJnv3s+OAlRIC3bTxHU7r3uV7br+ozN7g9A+iHDTBL/8wAQ
-         hSViKEuy0yAIcRolakXJdOVjTvDl5U6pn7SKiMxOWmBXbPRxyQXjlTRK4tTov5mkZnJE
-         R+nxssKZm9rzhpb6kFaLAHJ9751FWUhETugYe8yTUlN2jSnaulBkMp1Jea7kzQmpURB/
-         V1K5v4ItamwtGNJjOzu43hQOh22V48xUjToOQYXNLzPNhNUQHfF/TWUbWZQZ66J9IcZ5
-         I8gaXjlJwUn/WneXD3XjrCaDgKKeVZLTRZNluMbdJqR/dmXZJvLlCrubXfz+5rLVXM1n
-         gDtg==
+        bh=9F083effnyrHv6DM5fa5wc8MYG4nWEGrJ2ZWF7jd1hE=;
+        b=2ddBzWobwOupvwGCpSgVA/AI5y+iGjK1z+sNq31EoUyIxE8Jd8VfvKX2N8+o9v/3H3
+         BvCKBY18USPTu074ikqVKLfEOVLmo/Skh77R6RyK9xk2/1iXmfpujUf9thidqycfFRhl
+         iqpR6P72vN/AJi5tiAnVVn5U7csUSG35pkesIoPxHObeS9qQSgXCQ9ROxAsFACS8x5Jc
+         CVtPzd6G+VPuaQH1kLpLDdR1V8k5nOiGcjOKsRiFup3LMWje7Dl6EQeFmm4OHcQY6CVT
+         iGL90/Io6d51OtH9G8uFBDR/Sknn7NB8nKFd5NolpCeF/UYaJfWmKVAIZeTxhvM+gOcF
+         KGbA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1692800875; x=1693405675;
+        d=1e100.net; s=20221208; t=1692800878; x=1693405678;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=IoFN3W7lDqZnofeAylvKtCc5G5mnsjUfSVACRAr/Fk0=;
-        b=MX8qXi08rIy8ZC+hC8ZkcV3DLEpciAlIDocab960Bg45WCCSwSPDp5VXhabfdvyOeN
-         JMe0Pf35UhGMnoJyIZYoA+X+a69kmO/m9UeaWWvMcOHfVesduvXCntMVeByCdtixGstq
-         bTJ/7bAZbhY5C8J9ohxz9QWN22WvvZQPhLuhLIb/m/+q0+sbb1xAkfojM0AmGzj8Siti
-         J3WWguGswDJg+Rnr/53nWSW/jgGSfA36o4Mrg6rlthLTMpvGX3NBljf4cTzdVxx607O/
-         RSF0wjL5PHlUIUoaT7ji8D1bWF8t4f+xr7aSlofhV7w+uEY6SLBDcNodpyLZP5s03h3Z
-         JQuw==
-X-Gm-Message-State: AOJu0Yzt5grmrEJm6sEONXJETsAfHq4AMB4hl1+fOcKfhYQOdkYNk2WE
-        dij5iq10TM/Vtk8tNqVRlqCDbyDyaTgSBkxaiNQ=
-X-Google-Smtp-Source: AGHT+IGKuqRiFGHZ44qt9Quzjmhi2jmHwifQNbJNRzx/ZaGb8DLXxSECiFRqq3dfRwIRFjoRUXNeCA==
-X-Received: by 2002:a0d:c045:0:b0:589:8b55:fe09 with SMTP id b66-20020a0dc045000000b005898b55fe09mr12234345ywd.50.1692800875367;
-        Wed, 23 Aug 2023 07:27:55 -0700 (PDT)
+        bh=9F083effnyrHv6DM5fa5wc8MYG4nWEGrJ2ZWF7jd1hE=;
+        b=A7h4aOHsGprZkon47/8K9Gv7qQnu+QO5z1ieuObt6ob3dS3162FXixaPtR26yHtVrL
+         /9+GSuSkbRJMOrwNIot7ex52DpgbTOHhQGSRRJ7/yT2eCxqDQVbGNYxCdYMriVshcV3P
+         zePy0ZQxbVXQNkaa0KlgNrurMKcX8p+VTNmyp0ZB+E0ZIpn0AO4jXnHcW00qhFtOM4TG
+         2RC+le9sSIzT9OuJIImlvXPnNulIt3aVtyfxfdoTPTp4NYCC8UMABZcfKrdYaWXZqDex
+         RYq+l7RTj7TTD9AW0d6jbjbrgfIN/9FwWmlcLjgSSswQbN/Hm3QF/MgtVlw17MACdFtO
+         3t9w==
+X-Gm-Message-State: AOJu0YyKCaQ9xPC4ejDiruscapsviKswkrkyU7/I/5AgLbDWKI+5phBl
+        JQ1SDM2y6XbRm0v+v/jYuVe50NRoIxAc7k70b7U=
+X-Google-Smtp-Source: AGHT+IHN5roVoPpG6rEcwqfh5sDFZ1z+tbu/zgXvYz/KaK/+USZ7L1kMPbLH+/1sE7EbTKokUAb31Q==
+X-Received: by 2002:a81:9e4d:0:b0:57a:250:27ec with SMTP id n13-20020a819e4d000000b0057a025027ecmr13438313ywj.32.1692800877878;
+        Wed, 23 Aug 2023 07:27:57 -0700 (PDT)
 Received: from localhost (cpe-76-182-20-124.nc.res.rr.com. [76.182.20.124])
-        by smtp.gmail.com with ESMTPSA id v17-20020a814811000000b00583b40d907esm3374908ywa.16.2023.08.23.07.27.55
+        by smtp.gmail.com with ESMTPSA id j195-20020a8192cc000000b00576c727498dsm3349119ywg.92.2023.08.23.07.27.57
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 23 Aug 2023 07:27:55 -0700 (PDT)
+        Wed, 23 Aug 2023 07:27:57 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 1/3] btrfs-progs: take a ref in the root locking code
-Date:   Wed, 23 Aug 2023 10:27:48 -0400
-Message-ID: <d5f7aa7b21a238ddbbe4196d9c5707846550728f.1692800798.git.josef@toxicpanda.com>
+Subject: [PATCH 3/3] btrfs-progs: fix improper error handling in btrfs filesystem usage
+Date:   Wed, 23 Aug 2023 10:27:50 -0400
+Message-ID: <6c916b6ad8042d676c17be3b3a3f78c7b5cb62cf.1692800798.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <cover.1692800798.git.josef@toxicpanda.com>
 References: <cover.1692800798.git.josef@toxicpanda.com>
@@ -64,39 +64,45 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This code in the kernel not only returns the locked root, but also takes
-a reference on the node.  This is important for when we sync ctree.c
-into btrfs-progs, it expects that references are held on the root node
-after calling these helpers.
+I was seeing test-cli/016 failures because it claimed we were getting
+EPERM from the TREE_SEARCH ioctl to get the chunk info out of the file
+system.  This turned out to be because errno was already set going into
+this function, the ioctl itself wasn't actually failing.  Fix this by
+checking for a return value from the ioctl first, and then returning
+-EPERM if appropriate.  This fixed the failures in my setup.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- kernel-shared/locking.c | 3 +++
- 1 file changed, 3 insertions(+)
+ cmds/filesystem-usage.c | 8 +++-----
+ 1 file changed, 3 insertions(+), 5 deletions(-)
 
-diff --git a/kernel-shared/locking.c b/kernel-shared/locking.c
-index a41ce06b..bd24571e 100644
---- a/kernel-shared/locking.c
-+++ b/kernel-shared/locking.c
-@@ -5,15 +5,18 @@
+diff --git a/cmds/filesystem-usage.c b/cmds/filesystem-usage.c
+index 73b0ca35..f38051a2 100644
+--- a/cmds/filesystem-usage.c
++++ b/cmds/filesystem-usage.c
+@@ -145,7 +145,7 @@ static int load_chunk_info(int fd, struct chunk_info **chunkinfo_ret,
+ 	struct btrfs_ioctl_search_key *sk = &args.key;
+ 	struct btrfs_ioctl_search_header *sh;
+ 	unsigned long off = 0;
+-	int i, e;
++	int i;
  
- struct extent_buffer *btrfs_read_lock_root_node(struct btrfs_root *root)
- {
-+	root->node->refs++;
- 	return root->node;
- }
+ 	memset(&args, 0, sizeof(args));
  
- struct extent_buffer *btrfs_try_read_lock_root_node(struct btrfs_root *root)
- {
-+	root->node->refs++;
- 	return root->node;
- }
+@@ -168,11 +168,9 @@ static int load_chunk_info(int fd, struct chunk_info **chunkinfo_ret,
  
- struct extent_buffer *btrfs_lock_root_node(struct btrfs_root *root)
- {
-+	root->node->refs++;
- 	return root->node;
- }
+ 	while (1) {
+ 		ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args);
+-		e = errno;
+-		if (e == EPERM)
+-			return -e;
+-
+ 		if (ret < 0) {
++			if (errno == EPERM)
++				return -errno;
+ 			error("cannot look up chunk tree info: %m");
+ 			return 1;
+ 		}
 -- 
 2.41.0
 

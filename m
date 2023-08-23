@@ -2,59 +2,59 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5F308EE49A0
-	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Aug 2023 14:33:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 152CBEE49B7
+	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Aug 2023 14:33:33 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236491AbjHWOdc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 23 Aug 2023 10:33:32 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33506 "EHLO
+        id S236490AbjHWOdd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 23 Aug 2023 10:33:33 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34280 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236484AbjHWOda (ORCPT
+        with ESMTP id S236486AbjHWOdb (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 23 Aug 2023 10:33:30 -0400
-Received: from mail-yw1-x112a.google.com (mail-yw1-x112a.google.com [IPv6:2607:f8b0:4864:20::112a])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 87781E57
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 Aug 2023 07:33:23 -0700 (PDT)
-Received: by mail-yw1-x112a.google.com with SMTP id 00721157ae682-5924093a9b2so23677667b3.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 Aug 2023 07:33:23 -0700 (PDT)
+        Wed, 23 Aug 2023 10:33:31 -0400
+Received: from mail-yw1-x1135.google.com (mail-yw1-x1135.google.com [IPv6:2607:f8b0:4864:20::1135])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B1A6CE71
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Aug 2023 07:33:28 -0700 (PDT)
+Received: by mail-yw1-x1135.google.com with SMTP id 00721157ae682-5925e580e87so8150717b3.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Aug 2023 07:33:28 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20221208.gappssmtp.com; s=20221208; t=1692801202; x=1693406002;
+        d=toxicpanda-com.20221208.gappssmtp.com; s=20221208; t=1692801208; x=1693406008;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=T0ZQF567ER/Ck2OhzmAVs5dslXtY3Ed+YTVW2Y/9WFY=;
-        b=Dzj9a09CHJAmdBIjo8sF2NoO1frqEMzSEzMnOaz3NCH/P7IpJxVD6uF9+l4Q9YxhiO
-         9PISsrXv2txQZAD33mNNih6jbVKVbKW1AarDz/hHhXSHUOMYWUxX/F16iZvAm3hjZDmD
-         nwi6Ho0NSRfkgz3vggi5mF333NVsOKutE/IxuGTvLWVCDeZJywbR2O3CR2vsgaSAz8Ze
-         zTqR+CJrrvz+Ot9E1upVCZGZTvdCyBPEqQ6KRYMQgBLeeIjJyoy0uCnqFU6kGjLtRT5c
-         c6ol+WPdisFmLIzOASyLNbHsrLHBPYiCWSEk7pEnq5pbU7/7Zfm7/d03OgYWuU6w6Mn4
-         jT4w==
+        bh=haLw09pFHAY4XRAffxLzVGIkco3b9tDOk8bK//gatW0=;
+        b=D/qLY+lH9hDFLZAIu/2K8MOpb9moerZiQQbC/VRg8UWXMXX2GHqRYnX4ODVQx/QCZ6
+         1V+uhNtqr6vgdIUhThHJCLr13FisRxD1IJP01Hcpi1WAVQcSuG899Ndt8SD9orkccSed
+         +PubCZXXN8FN8XcuOhQ3XRGvSlmgQ5QEGdqAiUZC+1YORCdaN352b6aHwZyYplLgI741
+         3YajgV4B6iX4z5UvQ17NFK6tqm1QjEuKaxZJs0PozAZ1q0xp3TqudWuKOA0dPcQUClTe
+         HzUs08rhy0s0fLPS39KUgriexpdQzVqahj4Mdh5ycCFltPEqIH+Y+u5ro+YrtkdTf5SH
+         l5uw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1692801202; x=1693406002;
+        d=1e100.net; s=20221208; t=1692801208; x=1693406008;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=T0ZQF567ER/Ck2OhzmAVs5dslXtY3Ed+YTVW2Y/9WFY=;
-        b=h95pR7fW6WR3wjhWMIW+DzjlE2/g70JLssGs86KgCkoonG+IdweE09Lu0ZtMF0ilqe
-         +ETNutAfp6a5r8KxLY6nw80Ke9ycaUhxsPAB8l5Y3oYIuxIJoLyhzpJ8TCnCyDBZEt+E
-         FaB9ReYOaC4Izz7fHZE8on+KQQwUS8L0GvdK3YkOy8BBeTqhA8I/gqq6eiz3Phsd3C7T
-         1MeUfPo9X/+LYPR5b510AWkJIyxVCX/HNkGJRanRnC37/UKT8+X+d9T2PDxet9PniXI9
-         BoUcTp2VXuHseGv5xqas2nMOCa9LAlrN30XT4RBuIIouOMCkmWjyonCglKt2qhtguxYV
-         uViA==
-X-Gm-Message-State: AOJu0YyzF2ooS4+2q38nBWpYF4M5xckpbgmRjpJ+LuSZNMEw2iamNvks
-        oKEF4JcWcJoaOeUnFiG/0StMBfPXjs8ahlCcdvY=
-X-Google-Smtp-Source: AGHT+IG/zs5DjWa9BGMAWs9Qp+dCrvawDSGl0I612pXWxv96HThEcPyzlcH3ub8jPW+ZcuFDJUYQcg==
-X-Received: by 2002:a81:920a:0:b0:58c:a87b:6e65 with SMTP id j10-20020a81920a000000b0058ca87b6e65mr15220207ywg.26.1692801201795;
-        Wed, 23 Aug 2023 07:33:21 -0700 (PDT)
+        bh=haLw09pFHAY4XRAffxLzVGIkco3b9tDOk8bK//gatW0=;
+        b=QB6Th1W3UbDJVV9/0yZUxu9+XSSVGLwnQFKgYZ9Gxw3tyzwZkvglEP/92PCLPdFkDG
+         OWLYwvGprom8nOrHy55C0U4/mjOQLwnMT1z0cegGqfWXSkZmDvX260bzEJS196uy6PLO
+         Ef7E3jvcp1kiBnj/gcf4mqKL6ASMI4Q2lVddOPS6yoWwpuirq62KgbjikFfvKo/SxJfP
+         Bz+w7QkQBBAGCZWeVfBUwhT6dPQ7T/yJOm2c0smfdY8i2BrjyASQ3n6JuroXb60vOx7x
+         3xMbkVb5fhRTMnQoFgah6C+v6nyYEr9zQXEBoCnpgjRC9ffByDqxsHQLwp330kp/i8oV
+         fjCA==
+X-Gm-Message-State: AOJu0YxOM7a1AuymkdFhtunQg57x4Tv8sQ0sE319kR5L1HE378H6EGij
+        xETzBa9QSBN0VRCADeLe8URRmQZZrAfZlKLc0Tk=
+X-Google-Smtp-Source: AGHT+IFhaRbcWXMWKeOHlEIpQaZEwzorZ8NEuehYLRKiXZdc7FaL5CPviohvosxyE4khv715mA3GKg==
+X-Received: by 2002:a81:5388:0:b0:577:1560:9e17 with SMTP id h130-20020a815388000000b0057715609e17mr11444370ywb.35.1692801207809;
+        Wed, 23 Aug 2023 07:33:27 -0700 (PDT)
 Received: from localhost (cpe-76-182-20-124.nc.res.rr.com. [76.182.20.124])
-        by smtp.gmail.com with ESMTPSA id m124-20020a0dca82000000b005897fd75c80sm3361612ywd.78.2023.08.23.07.33.21
+        by smtp.gmail.com with ESMTPSA id m185-20020a0dfcc2000000b00589b653b7adsm3379463ywf.136.2023.08.23.07.33.27
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 23 Aug 2023 07:33:21 -0700 (PDT)
+        Wed, 23 Aug 2023 07:33:27 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 11/38] btrfs-progs: update btrfs_extend_item to match the kernel definition
-Date:   Wed, 23 Aug 2023 10:32:37 -0400
-Message-ID: <0d67f505513af33ba9d49bb3242cc0884b89a370.1692800904.git.josef@toxicpanda.com>
+Subject: [PATCH 16/38] btrfs-progs: make a local copy of btrfs_next_sibling_block in print-tree.c
+Date:   Wed, 23 Aug 2023 10:32:42 -0400
+Message-ID: <f40179778e3d772f3c3ef1b33f59f86284e9d34a.1692800904.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <cover.1692800904.git.josef@toxicpanda.com>
 References: <cover.1692800904.git.josef@toxicpanda.com>
@@ -64,147 +64,88 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Similar to btrfs_truncate_item(), this is void in the kernel as the
-failure case is simply BUG_ON().  Additionally there is no root
-parameter as it's not used in the function at all.  Make these changes
-and update the callers.
+We use this in print-tree to do BFS tree printing, but there are no
+other users and it doesn't exist upstream.  Copy the current code and
+clean it up so it can exist in print-tree.c and use the local copy
+there.  This will allow us to remove the function call when ctree.c is
+synced.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- kernel-shared/ctree.c       | 8 ++------
- kernel-shared/ctree.h       | 3 +--
- kernel-shared/dir-item.c    | 4 ++--
- kernel-shared/extent-tree.c | 4 +---
- kernel-shared/file-item.c   | 3 +--
- kernel-shared/inode-item.c  | 5 ++---
- 6 files changed, 9 insertions(+), 18 deletions(-)
+ kernel-shared/print-tree.c | 53 +++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 52 insertions(+), 1 deletion(-)
 
-diff --git a/kernel-shared/ctree.c b/kernel-shared/ctree.c
-index b5d3d12e..ed8a7002 100644
---- a/kernel-shared/ctree.c
-+++ b/kernel-shared/ctree.c
-@@ -2661,10 +2661,8 @@ void btrfs_truncate_item(struct btrfs_path *path, u32 new_size, int from_end)
- 	}
+diff --git a/kernel-shared/print-tree.c b/kernel-shared/print-tree.c
+index a32c9a2a..9796085d 100644
+--- a/kernel-shared/print-tree.c
++++ b/kernel-shared/print-tree.c
+@@ -1505,6 +1505,57 @@ out:
+ 	return ret;
  }
  
--int btrfs_extend_item(struct btrfs_root *root, struct btrfs_path *path,
--		      u32 data_size)
-+void btrfs_extend_item(struct btrfs_path *path, u32 data_size)
++/*
++ * Walk up the tree as far as necessary to find the next sibling tree block.
++ * More generic version of btrfs_next_leaf(), as it could find sibling nodes
++ * if @path->lowest_level is not 0.
++ *
++ * returns 0 if it found something or 1 if there are no greater leaves.
++ * returns < 0 on io errors.
++ */
++static int next_sibling_tree_block(struct btrfs_fs_info *fs_info,
++				   struct btrfs_path *path)
++{
++	int slot;
++	int level = path->lowest_level + 1;
++	struct extent_buffer *c;
++	struct extent_buffer *next = NULL;
++
++	BUG_ON(path->lowest_level + 1 >= BTRFS_MAX_LEVEL);
++	do {
++		if (!path->nodes[level])
++			return 1;
++
++		slot = path->slots[level] + 1;
++		c = path->nodes[level];
++		if (slot >= btrfs_header_nritems(c)) {
++			level++;
++			if (level == BTRFS_MAX_LEVEL)
++				return 1;
++			continue;
++		}
++
++		next = btrfs_read_node_slot(c, slot);
++		if (!extent_buffer_uptodate(next))
++			return -EIO;
++		break;
++	} while (level < BTRFS_MAX_LEVEL);
++	path->slots[level] = slot;
++	while(1) {
++		level--;
++		c = path->nodes[level];
++		free_extent_buffer(c);
++		path->nodes[level] = next;
++		path->slots[level] = 0;
++		if (level == path->lowest_level)
++			break;
++		next = btrfs_read_node_slot(next, 0);
++		if (!extent_buffer_uptodate(next))
++			return -EIO;
++	}
++	return 0;
++}
++
+ static void bfs_print_children(struct extent_buffer *root_eb, unsigned int mode)
  {
--	int ret = 0;
- 	int slot;
- 	struct extent_buffer *leaf;
- 	u32 nritems;
-@@ -2712,12 +2710,10 @@ int btrfs_extend_item(struct btrfs_root *root, struct btrfs_path *path,
- 	btrfs_set_item_size(leaf, slot, old_size + data_size);
- 	btrfs_mark_buffer_dirty(leaf);
- 
--	ret = 0;
- 	if (btrfs_leaf_free_space(leaf) < 0) {
- 		btrfs_print_leaf(leaf);
- 		BUG();
- 	}
--	return ret;
- }
- 
- /*
-@@ -3366,7 +3362,7 @@ int btrfs_uuid_tree_add(struct btrfs_trans_handle *trans, u8 *uuid, u8 type,
- 		 * ret == -EEXIST case, An item with that type already exists.
- 		 * Extend the item and store the new subvol_id at the end.
- 		 */
--		btrfs_extend_item(uuid_root, path, sizeof(subvol_id_le));
-+		btrfs_extend_item(path, sizeof(subvol_id_le));
- 		eb = path->nodes[0];
- 		slot = path->slots[0];
- 		offset = btrfs_item_ptr_offset(eb, slot);
-diff --git a/kernel-shared/ctree.h b/kernel-shared/ctree.h
-index 81d71d36..c7321a40 100644
---- a/kernel-shared/ctree.h
-+++ b/kernel-shared/ctree.h
-@@ -968,8 +968,7 @@ int btrfs_copy_root(struct btrfs_trans_handle *trans,
- 		      struct extent_buffer **cow_ret, u64 new_root_objectid);
- int btrfs_create_root(struct btrfs_trans_handle *trans,
- 		      struct btrfs_fs_info *fs_info, u64 objectid);
--int btrfs_extend_item(struct btrfs_root *root, struct btrfs_path *path,
--		u32 data_size);
-+void btrfs_extend_item(struct btrfs_path *path, u32 data_size);
- void btrfs_truncate_item(struct btrfs_path *path, u32 new_size, int from_end);
- int btrfs_split_item(struct btrfs_trans_handle *trans,
- 		     struct btrfs_root *root,
-diff --git a/kernel-shared/dir-item.c b/kernel-shared/dir-item.c
-index abf7d047..cb70d7c8 100644
---- a/kernel-shared/dir-item.c
-+++ b/kernel-shared/dir-item.c
-@@ -48,8 +48,8 @@ static struct btrfs_dir_item *insert_with_overflow(struct btrfs_trans_handle
- 		di = btrfs_match_dir_item_name(root, path, name, name_len);
- 		if (di)
- 			return ERR_PTR(-EEXIST);
--		ret = btrfs_extend_item(root, path, data_size);
--		WARN_ON(ret > 0);
-+		btrfs_extend_item(path, data_size);
-+		ret = 0;
- 	}
- 	if (ret < 0)
- 		return ERR_PTR(ret);
-diff --git a/kernel-shared/extent-tree.c b/kernel-shared/extent-tree.c
-index 001cffd1..543a9952 100644
---- a/kernel-shared/extent-tree.c
-+++ b/kernel-shared/extent-tree.c
-@@ -1039,7 +1039,6 @@ static int setup_inline_extent_backref(struct btrfs_root *root,
- 	u64 refs;
- 	int size;
- 	int type;
--	int ret;
- 
- 	leaf = path->nodes[0];
- 	ei = btrfs_item_ptr(leaf, path->slots[0], struct btrfs_extent_item);
-@@ -1048,8 +1047,7 @@ static int setup_inline_extent_backref(struct btrfs_root *root,
- 	type = extent_ref_type(parent, owner);
- 	size = btrfs_extent_inline_ref_size(type);
- 
--	ret = btrfs_extend_item(root, path, size);
--	BUG_ON(ret);
-+	btrfs_extend_item(path, size);
- 
- 	ei = btrfs_item_ptr(leaf, path->slots[0], struct btrfs_extent_item);
- 	refs = btrfs_extent_refs(leaf, ei);
-diff --git a/kernel-shared/file-item.c b/kernel-shared/file-item.c
-index e23e679e..7baa5614 100644
---- a/kernel-shared/file-item.c
-+++ b/kernel-shared/file-item.c
-@@ -282,8 +282,7 @@ int btrfs_csum_file_block(struct btrfs_trans_handle *trans, u64 logical,
- 		diff = diff - btrfs_item_size(leaf, path->slots[0]);
- 		if (diff != csum_size)
- 			goto insert;
--		ret = btrfs_extend_item(root, path, diff);
--		BUG_ON(ret);
-+		btrfs_extend_item(path, diff);
- 		goto csum;
- 	}
- 
-diff --git a/kernel-shared/inode-item.c b/kernel-shared/inode-item.c
-index 891ae40a..d0705267 100644
---- a/kernel-shared/inode-item.c
-+++ b/kernel-shared/inode-item.c
-@@ -78,8 +78,7 @@ int btrfs_insert_inode_ref(struct btrfs_trans_handle *trans,
- 			goto out;
- 
- 		old_size = btrfs_item_size(path->nodes[0], path->slots[0]);
--		ret = btrfs_extend_item(root, path, ins_len);
--		BUG_ON(ret);
-+		btrfs_extend_item(path, ins_len);
- 		ref = btrfs_item_ptr(path->nodes[0], path->slots[0],
- 				     struct btrfs_inode_ref);
- 		ref = (struct btrfs_inode_ref *)((unsigned long)ref + old_size);
-@@ -352,7 +351,7 @@ int btrfs_insert_inode_extref(struct btrfs_trans_handle *trans,
- 						   name, name_len, NULL))
- 			goto out;
- 
--		btrfs_extend_item(root, path, ins_len);
-+		btrfs_extend_item(path, ins_len);
- 		ret = 0;
- 	}
- 
+ 	struct btrfs_fs_info *fs_info = root_eb->fs_info;
+@@ -1535,7 +1586,7 @@ static void bfs_print_children(struct extent_buffer *root_eb, unsigned int mode)
+ 		/* Print all sibling tree blocks */
+ 		while (1) {
+ 			btrfs_print_tree(path.nodes[cur_level], mode);
+-			ret = btrfs_next_sibling_tree_block(fs_info, &path);
++			ret = next_sibling_tree_block(fs_info, &path);
+ 			if (ret < 0)
+ 				goto out;
+ 			if (ret > 0) {
 -- 
 2.41.0
 

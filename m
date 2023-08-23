@@ -2,82 +2,98 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 62838EE49A0
-	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Aug 2023 14:27:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9143DEE49B2
+	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Aug 2023 14:27:59 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236385AbjHWO15 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 23 Aug 2023 10:27:57 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45322 "EHLO
+        id S236395AbjHWO17 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 23 Aug 2023 10:27:59 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45376 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233339AbjHWO14 (ORCPT
+        with ESMTP id S233339AbjHWO17 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 23 Aug 2023 10:27:56 -0400
-Received: from mail-yw1-x112b.google.com (mail-yw1-x112b.google.com [IPv6:2607:f8b0:4864:20::112b])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 36F81E54
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 Aug 2023 07:27:55 -0700 (PDT)
-Received: by mail-yw1-x112b.google.com with SMTP id 00721157ae682-58d70c441d5so61774737b3.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 Aug 2023 07:27:55 -0700 (PDT)
+        Wed, 23 Aug 2023 10:27:59 -0400
+Received: from mail-yw1-x1131.google.com (mail-yw1-x1131.google.com [IPv6:2607:f8b0:4864:20::1131])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C09DFE54
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Aug 2023 07:27:57 -0700 (PDT)
+Received: by mail-yw1-x1131.google.com with SMTP id 00721157ae682-58dfe2d5b9aso76920977b3.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Aug 2023 07:27:57 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20221208.gappssmtp.com; s=20221208; t=1692800874; x=1693405674;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:to
-         :from:from:to:cc:subject:date:message-id:reply-to;
-        bh=ldOkbB5s+l6X6VhlK4oL1is7O0L0mYdBZ5mFS+ALnQA=;
-        b=XZuym4UcnpHecsTWEsdzHUlr3XFJChs6s4fcX7V5sElLqpnKElWGxLyTo3ZxIZgqEq
-         U24CNGj9ZjhW2wSa6T92JRG9kRRobxQRw+7c6dv8jlJTA/Plfas9884cKk8WUt7oi1yg
-         ICeKxzEznTKpqpCui0VLSEt7fWNAFefNaPgee9tBTdfBJASB9ragKaQISxi2uJso8UrR
-         sR1+KBH4ABVPcfpBQBmLUAmmX9UsmBim3ABBGbOXG0pfndb5UheKSVZ2T9yAZ6H6w0kD
-         VcEHBqQclpwe0RfYCreOUO739zzYZIuLcDBecIa5ADCzxxHIu6grY15dgAQ/V0nzXjmi
-         Qcsg==
+        d=toxicpanda-com.20221208.gappssmtp.com; s=20221208; t=1692800876; x=1693405676;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=+Nn75m+fh1uPSGEiOj/Qn99LtEXbrG94dEXOTxOP+tg=;
+        b=nLFTI31zRqWxkcXTmuaSyeun7cjDw87zuXaZc63HCkDbEh8IrgVYoOvh7wce4AINY/
+         VN+x8XxHNCdcdVPUemb59ewkcU8e9ckULXL4kTaRbpPTww36JERiEs3wXKJbOOGmwp/0
+         dSWrHklH1L5UmjGRF/1JJoqFIuhZJ79a1eDf9ERdDnVPdo1cP3dRIngPrSBlVTXzssWQ
+         TYr2QZAcRj2qP8Jye97JEPu1a3qJXxR0kwe+uPz/8sV0/rDQqhg9YY5L122BPH2vo35q
+         NM/Slmzy5GQvoqXFI+nd0JCgvHbLJH8qV7CffbigKTU7q+ce96SzUpVimQroXK9VoASA
+         rPBw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1692800874; x=1693405674;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:to
-         :from:x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=ldOkbB5s+l6X6VhlK4oL1is7O0L0mYdBZ5mFS+ALnQA=;
-        b=LcbDNfKrv4Z5lFjOI3NfL1//C8NbmGS3o0hkPXkaBN0VwMh1BYT/Ide/IxL1d088s9
-         aJIe7/FJIjxyPdkyY9Y7A1+RB6jfSEKlS6ZbSFMd337rflGGBmhGEpNHOUale7NIcZxv
-         cea4mMkoeh13VZTJ3DbkiBLwGmBecJKGrvTr7GHOdiTdv2fKGj+ijwvrraotJ/LbnOo7
-         7+UtNnQRENPpChP4Nos9+PqhbqSJT1DH8rbLWsn6fA4lC3kXoD3arrt/Gwdst/+9csNm
-         kKnfTXimNJe2USNz4xWjsWcw0AaZKMYSfDdYjm+2rOdLndiaGQbMojHY7C+ZIe8xWmTf
-         xoXg==
-X-Gm-Message-State: AOJu0Yx2RyvPACkT3I+Fo7SDMbajaUTCUQ+tjuZFjcQ7ZwPE/N8va8cR
-        Awb4QMLZpvp7U+094UEl4EYmobu15NqO4kCWLa0=
-X-Google-Smtp-Source: AGHT+IG5UoQhYAP7KfwsF6KMd0TJdMloxcizjrDOHGxHbD/Hb9xK0tZZETzYL924NEVMFKzQrnQAww==
-X-Received: by 2002:a81:6d53:0:b0:583:9018:6fbb with SMTP id i80-20020a816d53000000b0058390186fbbmr14818893ywc.37.1692800874308;
-        Wed, 23 Aug 2023 07:27:54 -0700 (PDT)
+        d=1e100.net; s=20221208; t=1692800876; x=1693405676;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=+Nn75m+fh1uPSGEiOj/Qn99LtEXbrG94dEXOTxOP+tg=;
+        b=WJsDoVaPF5aNlCDAWslTw4RCSauNFljREy796dqT5UHqNfx86F/mnwwyHXlumwCMnu
+         MI2yEUFsQFgeSFBcP8EMnd1etvAbRlRsAnLTRMjrS5wicg1XwikFqNH2AhekAYjo7tPO
+         hYw9GkUe/gho+8mg7ST1jpIoknQix7HrRctiE1Qcfez2yInEa6J6GEXLPKK7PoVugKAz
+         C+o4YkBKwkc0fBMePnfWCGPKlXSFvIZm0byg6ffJ938OddHMTI3DDhWlbFNJ/o36EUZ4
+         3pkwYYV1fb05ki151uBWjph44bvfUtDzu2FDKWH5GRT6GZ+KqizTmH1aZA5y1K+h4qO1
+         9MYg==
+X-Gm-Message-State: AOJu0YzYfOhN1+8I3qvtX8aLeM3wYq/QP0PcnGoJ91IUvjeWTQZBgpgN
+        js301IZFDB/vQfy+y/6mcA1Qf8jg/pM2uP0Z9yQ=
+X-Google-Smtp-Source: AGHT+IF9UxbpHOiMlyLqJZhTKzyVtBJkGbwYSqJvpF+sTvkSV3Hf+iI9ms5hHKNccwAOWvVpN+bMpg==
+X-Received: by 2002:a81:9154:0:b0:586:9384:ffd7 with SMTP id i81-20020a819154000000b005869384ffd7mr11914445ywg.9.1692800876604;
+        Wed, 23 Aug 2023 07:27:56 -0700 (PDT)
 Received: from localhost (cpe-76-182-20-124.nc.res.rr.com. [76.182.20.124])
-        by smtp.gmail.com with ESMTPSA id i128-20020a0ddf86000000b0056974f4019esm3353464ywe.6.2023.08.23.07.27.53
+        by smtp.gmail.com with ESMTPSA id z3-20020a81c203000000b005899c8e8242sm3336182ywc.138.2023.08.23.07.27.56
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 23 Aug 2023 07:27:53 -0700 (PDT)
+        Wed, 23 Aug 2023 07:27:56 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 0/3] btrfs-progs: a couple fixes
-Date:   Wed, 23 Aug 2023 10:27:47 -0400
-Message-ID: <cover.1692800798.git.josef@toxicpanda.com>
+Subject: [PATCH 2/3] btrfs-progs: clear root dirty when we update the root
+Date:   Wed, 23 Aug 2023 10:27:49 -0400
+Message-ID: <5867c49c060d81c16fff55e20f62c0702ceae91f.1692800798.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.41.0
+In-Reply-To: <cover.1692800798.git.josef@toxicpanda.com>
+References: <cover.1692800798.git.josef@toxicpanda.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hello,
+We don't currently use the bit to track whether or not the root is
+dirty, but when we sync ctree.c it uses this bit to determine if we
+should add the root to the dirty list.  Clear this bit when we update
+the root so that the dirty tracking works properly when we sync ctree.c.
 
-These are a set of fixes that I needed for the ctree sync to work properly, and
-one fix that was just broken in general.  They apply cleanly to devel and should
-be straightforward enough.  Thanks,
-
-Josef
-
-Josef Bacik (3):
-  btrfs-progs: take a ref in the root locking code
-  btrfs-progs: clear root dirty when we update the root
-  btrfs-progs: fix improper error handling in btrfs filesystem usage
-
- cmds/filesystem-usage.c     | 8 +++-----
- kernel-shared/locking.c     | 3 +++
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+---
  kernel-shared/transaction.c | 2 ++
- 3 files changed, 8 insertions(+), 5 deletions(-)
+ 1 file changed, 2 insertions(+)
 
+diff --git a/kernel-shared/transaction.c b/kernel-shared/transaction.c
+index d30be5b5..49b435f6 100644
+--- a/kernel-shared/transaction.c
++++ b/kernel-shared/transaction.c
+@@ -14,6 +14,7 @@
+  * Boston, MA 021110-1307, USA.
+  */
+ 
++#include "kernel-lib/bitops.h"
+ #include "kerncompat.h"
+ #include "kernel-shared/disk-io.h"
+ #include "kernel-shared/transaction.h"
+@@ -119,6 +120,7 @@ int commit_tree_roots(struct btrfs_trans_handle *trans,
+ 		next = fs_info->dirty_cowonly_roots.next;
+ 		list_del_init(next);
+ 		root = list_entry(next, struct btrfs_root, dirty_list);
++		clear_bit(BTRFS_ROOT_DIRTY, &root->state);
+ 		ret = update_cowonly_root(trans, root);
+ 		free_extent_buffer(root->commit_root);
+ 		root->commit_root = NULL;
 -- 
 2.41.0
 

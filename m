@@ -2,59 +2,59 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4312EEE49B7
-	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Aug 2023 14:33:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 065C4EE49A0
+	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Aug 2023 14:33:29 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236476AbjHWOd2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 23 Aug 2023 10:33:28 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33298 "EHLO
+        id S236477AbjHWOd3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 23 Aug 2023 10:33:29 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33316 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236466AbjHWOd0 (ORCPT
+        with ESMTP id S236467AbjHWOd0 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 23 Aug 2023 10:33:26 -0400
-Received: from mail-yw1-x1132.google.com (mail-yw1-x1132.google.com [IPv6:2607:f8b0:4864:20::1132])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C5940E6E
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 Aug 2023 07:33:17 -0700 (PDT)
-Received: by mail-yw1-x1132.google.com with SMTP id 00721157ae682-59254e181a2so14303577b3.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 Aug 2023 07:33:17 -0700 (PDT)
+Received: from mail-yb1-xb32.google.com (mail-yb1-xb32.google.com [IPv6:2607:f8b0:4864:20::b32])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4ECFFE79
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Aug 2023 07:33:15 -0700 (PDT)
+Received: by mail-yb1-xb32.google.com with SMTP id 3f1490d57ef6-d71c3a32e1aso5300350276.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Aug 2023 07:33:15 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20221208.gappssmtp.com; s=20221208; t=1692801197; x=1693405997;
+        d=toxicpanda-com.20221208.gappssmtp.com; s=20221208; t=1692801194; x=1693405994;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=1H2Zlv1o3VIX483lfJm/ywo5TfIg7XeI5NRHVO7sb9I=;
-        b=PSLntg7rHqGsCpZaqg7VVUX2lMVBoomel0a12L3x1EToo310tBaYa6Afe532BXdcL9
-         i99lpqD+D0qwk/hYr2n051+OosQXANjoDEA6XVd06U9lKlbJmyjNhXenAxc8vPsyVGFI
-         OxSHJWKQexurWoOGfh3dIbYQ3T6dHS9GuIH3mt4sBgZJT3Xwv+/AkAOEhf1Z/MB6d10T
-         N+tuATX+4wwzj1PQW9CVEyCeK/wd5WVdKf9m3pzib0A61TPe6ygs65AxaLBUC/CBDaqS
-         7CQQGmc23Sm/PFCMrNT3l2sZLv7yP3I7QCJzsrAGy7r04oMqXLaLNKDvAHyjYHbi/Q9p
-         quVQ==
+        bh=e1wMhu87fj8yCR2Ff3q/jizxT4irK1HD29PxYua+r/A=;
+        b=PzywyVbCvrOtHsdVb6mi6Br7IIa8Wg59OxEKlZaoPU1v77ENAeL8ToEnV/Ar3im0Kj
+         2KB9NnVcLLw2ZGC/QG1seGzb0Ry1eWAo//2RUm5gXLx4gL0Hyr5zLik7ECEUJLdqvpa7
+         h2eeOhLejdvs11Oc9V596V0JZhesMHhGQYejWBtRgyBLpFcF8HYljehM+uN3RvH5x5ZE
+         nm9SLlyUiWXJZtuyqhKLiRG5eqfkPaGigsFHnauI7/rGc8QFB9RAjMzh6cFMUPlfZh5C
+         Ok8aYELlAAaz1rKqpqrtM64K+/oLqE0lZOF4sY7icf6PX7VQ6aHKy35T6rsOLUpB4hgL
+         qHrQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1692801197; x=1693405997;
+        d=1e100.net; s=20221208; t=1692801194; x=1693405994;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=1H2Zlv1o3VIX483lfJm/ywo5TfIg7XeI5NRHVO7sb9I=;
-        b=Ez7TyzPWOSVeHk4U87dfFh/PWDs7jBkdZaIJgVqwg3bhhbHQkbDLnx7aAQfvmBeW3u
-         M57aj9UnvvPh9SlPCtHj6ROLRHSclJYgS6kN4mtnNIau9GcdeFiCSNDmDx7ZYx9J8cIz
-         FlXEvusBQX/NDORf22fuYwsSETFEVzQ7nvCuYZJBFtcvAWyvg4zU3Gp/rogsBvqoW8Lv
-         dje/5h+jJh3W0xRoCNdlNLQsCHOedVxy6GH/igOm/KD8ZIY/9uJCn7scISUU7kB/h0qA
-         UJPoGbV74xfUrG8XgdXvxqukrgvPVYleZCOEtlumeW/tclDUI6eEemGJL1iSbZKkcgTV
-         tGjw==
-X-Gm-Message-State: AOJu0YxKVxVKGBgiUyTUxJIlqYZswhB0DM6AlssSsgJ9mBDcRjLrQq3m
-        TYzfo7dTID8Tjt6sdxaXnuo3GwTNcrTC+VpYnjQ=
-X-Google-Smtp-Source: AGHT+IEWoSb+aNjZMdqP+gHzhIAzKxqdoF1utlj1uBiPTVUOB10woLhpSB1o1YMUMu1Myz19rAJBJQ==
-X-Received: by 2002:a0d:ca8e:0:b0:576:8d7f:d163 with SMTP id m136-20020a0dca8e000000b005768d7fd163mr12566264ywd.8.1692801196892;
-        Wed, 23 Aug 2023 07:33:16 -0700 (PDT)
+        bh=e1wMhu87fj8yCR2Ff3q/jizxT4irK1HD29PxYua+r/A=;
+        b=QMASbMidVOzM+NVVxLaZrGofzEgEXHfBAwCjoZpZTnqrooYl4me4kQv73Cl9vL4PQP
+         mOIMRTxcrcSvb9TvvTKHtR1OJcrR/EuMgpHe0XAsfrnOjoZDYpctK2gRwOAlOXvT0yWX
+         g5If7sVCHhQSW9Q+JogYphS8AHhqgb67MASAr6pfv09/6qwXPiK560cKXFe44ADYnhpm
+         OkHl4HU6+Ig0JYUuQ1W6zEnVRBfgeTzaMqUqkzuwh3Y5FmlLX3bMSRjI/voKOyYGF0NZ
+         4Ho89nkxwAhlEccNc+tdGscoY9Ez0XCsAmH7x7o7VjcUhskEb8AX/g4qqERt7iNLmHte
+         ybFw==
+X-Gm-Message-State: AOJu0YzP5ylHivG3OoMp0+SL7F+2MYdNBihwfaC/hO2ogjO9lBp3vqgE
+        acO5mAc7oxZQdG5kcAg8xCCD8DYdLXRJu0Ndi9Q=
+X-Google-Smtp-Source: AGHT+IF+ifNJdwDotM5yA4ylXn5hm22d+PyFAAev3G2L63ImiP83hqkcV6q1c55/2t1qaiaN656zJw==
+X-Received: by 2002:a25:bccb:0:b0:d50:60a4:a1b6 with SMTP id l11-20020a25bccb000000b00d5060a4a1b6mr11218388ybm.63.1692801194331;
+        Wed, 23 Aug 2023 07:33:14 -0700 (PDT)
 Received: from localhost (cpe-76-182-20-124.nc.res.rr.com. [76.182.20.124])
-        by smtp.gmail.com with ESMTPSA id i126-20020a0df884000000b0057085b18cddsm3364247ywf.54.2023.08.23.07.33.16
+        by smtp.gmail.com with ESMTPSA id y127-20020a253285000000b00d74c43dad49sm1495108yby.48.2023.08.23.07.33.13
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 23 Aug 2023 07:33:16 -0700 (PDT)
+        Wed, 23 Aug 2023 07:33:14 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 07/38] btrfs-progs: update btrfs_bin_search to match the kernel definition
-Date:   Wed, 23 Aug 2023 10:32:33 -0400
-Message-ID: <035b46cd8be1339b6576f08f0dd685423f37da9b.1692800904.git.josef@toxicpanda.com>
+Subject: [PATCH 05/38] btrfs-progs: pass btrfs_trans_handle through btrfs_clear_buffer_dirty
+Date:   Wed, 23 Aug 2023 10:32:31 -0400
+Message-ID: <7bb1e13416572388567f149591690ab8b80b6d1d.1692800904.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <cover.1692800904.git.josef@toxicpanda.com>
 References: <cover.1692800904.git.josef@toxicpanda.com>
@@ -64,68 +64,177 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This was updated to include a first_slot argument, update it to match
-the kernel definition to make it easier to sync ctree.c.
+This is the calling convention in the kernel because we track dirty
+blocks per transaction instead of globally in the fs_info.  Simply
+mirror what we do in the kernel to make it easier to sync ctree.c
+locally.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- check/main.c          | 2 +-
- kernel-shared/ctree.c | 6 +++---
- kernel-shared/ctree.h | 4 ++--
- 3 files changed, 6 insertions(+), 6 deletions(-)
+ cmds/rescue.c               |  2 +-
+ kernel-shared/ctree.c       | 12 ++++++------
+ kernel-shared/disk-io.c     |  2 +-
+ kernel-shared/extent-tree.c |  2 +-
+ kernel-shared/extent_io.c   |  3 ++-
+ kernel-shared/extent_io.h   |  4 +++-
+ kernel-shared/transaction.c |  4 ++--
+ 7 files changed, 16 insertions(+), 13 deletions(-)
 
-diff --git a/check/main.c b/check/main.c
-index d992b9f8..481fe11e 100644
---- a/check/main.c
-+++ b/check/main.c
-@@ -6524,7 +6524,7 @@ static int run_next_block(struct btrfs_root *root,
- 		 * technically unreferenced and don't need to be worried about.
- 		 */
- 		if (ri != NULL && ri->drop_level && level > ri->drop_level) {
--			ret = btrfs_bin_search(buf, &ri->drop_key, &i);
-+			ret = btrfs_bin_search(buf, 0, &ri->drop_key, &i);
- 			if (ret && i > 0)
- 				i--;
- 		}
+diff --git a/cmds/rescue.c b/cmds/rescue.c
+index e244d1af..cf39edd3 100644
+--- a/cmds/rescue.c
++++ b/cmds/rescue.c
+@@ -340,7 +340,7 @@ static int clear_uuid_tree(struct btrfs_fs_info *fs_info)
+ 	if (ret < 0)
+ 		goto out;
+ 	list_del(&uuid_root->dirty_list);
+-	ret = btrfs_clear_buffer_dirty(uuid_root->node);
++	ret = btrfs_clear_buffer_dirty(trans, uuid_root->node);
+ 	if (ret < 0)
+ 		goto out;
+ 	ret = btrfs_free_tree_block(trans, btrfs_root_id(uuid_root),
 diff --git a/kernel-shared/ctree.c b/kernel-shared/ctree.c
-index 3b703f7c..4d269e45 100644
+index 6e88b4a9..a87a79b2 100644
 --- a/kernel-shared/ctree.c
 +++ b/kernel-shared/ctree.c
-@@ -816,8 +816,8 @@ static int generic_bin_search(struct extent_buffer *eb, unsigned long p,
-  * simple bin_search frontend that does the right thing for
-  * leaves vs nodes
-  */
--int btrfs_bin_search(struct extent_buffer *eb, const struct btrfs_key *key,
--		     int *slot)
-+int btrfs_bin_search(struct extent_buffer *eb, int first_slot,
-+		     const struct btrfs_key *key, int *slot)
+@@ -571,7 +571,7 @@ static noinline int update_ref_for_cow(struct btrfs_trans_handle *trans,
+ 			ret = btrfs_dec_ref(trans, root, buf, 1);
+ 			BUG_ON(ret);
+ 		}
+-		btrfs_clear_buffer_dirty(buf);
++		btrfs_clear_buffer_dirty(trans, buf);
+ 	}
+ 	return 0;
+ }
+@@ -917,7 +917,7 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
+ 		root->node = child;
+ 		add_root_to_dirty_list(root);
+ 		path->nodes[level] = NULL;
+-		btrfs_clear_buffer_dirty(mid);
++		btrfs_clear_buffer_dirty(trans, mid);
+ 		/* once for the path */
+ 		free_extent_buffer(mid);
+ 
+@@ -971,7 +971,7 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
+ 			u64 bytenr = right->start;
+ 			u32 blocksize = right->len;
+ 
+-			btrfs_clear_buffer_dirty(right);
++			btrfs_clear_buffer_dirty(trans, right);
+ 			free_extent_buffer(right);
+ 			right = NULL;
+ 			wret = btrfs_del_ptr(root, path, level + 1, pslot + 1);
+@@ -1018,7 +1018,7 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
+ 		/* we've managed to empty the middle node, drop it */
+ 		u64 bytenr = mid->start;
+ 		u32 blocksize = mid->len;
+-		btrfs_clear_buffer_dirty(mid);
++		btrfs_clear_buffer_dirty(trans, mid);
+ 		free_extent_buffer(mid);
+ 		mid = NULL;
+ 		wret = btrfs_del_ptr(root, path, level + 1, pslot);
+@@ -2982,7 +2982,7 @@ int btrfs_del_items(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 		if (leaf == root->node) {
+ 			btrfs_set_header_level(leaf, 0);
+ 		} else {
+-			btrfs_clear_buffer_dirty(leaf);
++			btrfs_clear_buffer_dirty(trans, leaf);
+ 			wret = btrfs_del_leaf(trans, root, path, leaf);
+ 			BUG_ON(ret);
+ 			if (wret)
+@@ -3018,7 +3018,7 @@ int btrfs_del_items(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 			}
+ 
+ 			if (btrfs_header_nritems(leaf) == 0) {
+-				btrfs_clear_buffer_dirty(leaf);
++				btrfs_clear_buffer_dirty(trans, leaf);
+ 				path->slots[1] = slot;
+ 				ret = btrfs_del_leaf(trans, root, path, leaf);
+ 				BUG_ON(ret);
+diff --git a/kernel-shared/disk-io.c b/kernel-shared/disk-io.c
+index 6a3178a8..35b6cde9 100644
+--- a/kernel-shared/disk-io.c
++++ b/kernel-shared/disk-io.c
+@@ -2289,7 +2289,7 @@ int btrfs_delete_and_free_root(struct btrfs_trans_handle *trans,
+ 		return ret;
+ 
+ 	list_del(&root->dirty_list);
+-	ret = btrfs_clear_buffer_dirty(root->node);
++	ret = btrfs_clear_buffer_dirty(trans, root->node);
+ 	if (ret)
+ 		return ret;
+ 	ret = btrfs_free_tree_block(trans, btrfs_root_id(root), root->node, 0, 1);
+diff --git a/kernel-shared/extent-tree.c b/kernel-shared/extent-tree.c
+index 91dd7ca1..8c7dab3f 100644
+--- a/kernel-shared/extent-tree.c
++++ b/kernel-shared/extent-tree.c
+@@ -1898,7 +1898,7 @@ static int pin_down_bytes(struct btrfs_trans_handle *trans, u64 bytenr,
+ 		if (header_owner != BTRFS_TREE_LOG_OBJECTID &&
+ 		    header_transid == trans->transid &&
+ 		    !btrfs_header_flag(buf, BTRFS_HEADER_FLAG_WRITTEN)) {
+-			btrfs_clear_buffer_dirty(buf);
++			btrfs_clear_buffer_dirty(trans, buf);
+ 			free_extent_buffer(buf);
+ 			return 1;
+ 		}
+diff --git a/kernel-shared/extent_io.c b/kernel-shared/extent_io.c
+index c653d7c3..503b63e2 100644
+--- a/kernel-shared/extent_io.c
++++ b/kernel-shared/extent_io.c
+@@ -585,7 +585,8 @@ int set_extent_buffer_dirty(struct extent_buffer *eb)
+ 	return 0;
+ }
+ 
+-int btrfs_clear_buffer_dirty(struct extent_buffer *eb)
++int btrfs_clear_buffer_dirty(struct btrfs_trans_handle *trans,
++			     struct extent_buffer *eb)
  {
- 	if (btrfs_header_level(eb) == 0)
- 		return generic_bin_search(eb,
-@@ -1355,7 +1355,7 @@ again:
- 		ret = check_block(fs_info, p, level);
- 		if (ret)
- 			return -1;
--		ret = btrfs_bin_search(b, key, &slot);
-+		ret = btrfs_bin_search(b, 0, key, &slot);
- 		if (level != 0) {
- 			if (ret && slot > 0)
- 				slot -= 1;
-diff --git a/kernel-shared/ctree.h b/kernel-shared/ctree.h
-index dc11b246..66c05a69 100644
---- a/kernel-shared/ctree.h
-+++ b/kernel-shared/ctree.h
-@@ -983,8 +983,8 @@ int btrfs_search_slot_for_read(struct btrfs_root *root,
-                                const struct btrfs_key *key,
-                                struct btrfs_path *p, int find_higher,
-                                int return_any);
--int btrfs_bin_search(struct extent_buffer *eb, const struct btrfs_key *key,
--		     int *slot);
-+int btrfs_bin_search(struct extent_buffer *eb, int first_slot,
-+		     const struct btrfs_key *key, int *slot);
- int btrfs_find_item(struct btrfs_root *fs_root, struct btrfs_path *found_path,
- 		u64 iobjectid, u64 ioff, u8 key_type,
- 		struct btrfs_key *found_key);
+ 	struct extent_io_tree *tree = &eb->fs_info->dirty_buffers;
+ 	if (eb->flags & EXTENT_BUFFER_DIRTY) {
+diff --git a/kernel-shared/extent_io.h b/kernel-shared/extent_io.h
+index 520ccd78..243ffe74 100644
+--- a/kernel-shared/extent_io.h
++++ b/kernel-shared/extent_io.h
+@@ -54,6 +54,7 @@ static inline int le_test_bit(int nr, const u8 *addr)
+ }
+ 
+ struct btrfs_fs_info;
++struct btrfs_trans_handle;
+ 
+ struct extent_buffer {
+ 	struct cache_extent cache_node;
+@@ -128,7 +129,8 @@ void memset_extent_buffer(const struct extent_buffer *eb, char c,
+ int extent_buffer_test_bit(const struct extent_buffer *eb, unsigned long start,
+ 			   unsigned long nr);
+ int set_extent_buffer_dirty(struct extent_buffer *eb);
+-int btrfs_clear_buffer_dirty(struct extent_buffer *eb);
++int btrfs_clear_buffer_dirty(struct btrfs_trans_handle *trans,
++			     struct extent_buffer *eb);
+ int read_data_from_disk(struct btrfs_fs_info *info, void *buf, u64 logical,
+ 			u64 *len, int mirror);
+ int write_data_to_disk(struct btrfs_fs_info *info, const void *buf, u64 offset,
+diff --git a/kernel-shared/transaction.c b/kernel-shared/transaction.c
+index 49b435f6..87d86fcd 100644
+--- a/kernel-shared/transaction.c
++++ b/kernel-shared/transaction.c
+@@ -163,7 +163,7 @@ again:
+ 				goto cleanup;
+ 			}
+ 			start += eb->len;
+-			btrfs_clear_buffer_dirty(eb);
++			btrfs_clear_buffer_dirty(trans, eb);
+ 			free_extent_buffer(eb);
+ 		}
+ 	}
+@@ -186,7 +186,7 @@ cleanup:
+ 			eb = find_first_extent_buffer(fs_info, start);
+ 			BUG_ON(!eb || eb->start != start);
+ 			start += eb->len;
+-			btrfs_clear_buffer_dirty(eb);
++			btrfs_clear_buffer_dirty(trans, eb);
+ 			free_extent_buffer(eb);
+ 		}
+ 	}
 -- 
 2.41.0
 

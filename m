@@ -2,59 +2,59 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 68005EE49B4
-	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Aug 2023 20:20:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A57BBEE49B5
+	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Aug 2023 20:20:44 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231151AbjHYUUP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 25 Aug 2023 16:20:15 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54214 "EHLO
+        id S231148AbjHYUUO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 25 Aug 2023 16:20:14 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54186 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230508AbjHYUTu (ORCPT
+        with ESMTP id S230496AbjHYUTs (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 25 Aug 2023 16:19:50 -0400
-Received: from mail-ot1-x335.google.com (mail-ot1-x335.google.com [IPv6:2607:f8b0:4864:20::335])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8822F171A
-        for <linux-btrfs@vger.kernel.org>; Fri, 25 Aug 2023 13:19:48 -0700 (PDT)
-Received: by mail-ot1-x335.google.com with SMTP id 46e09a7af769-6bda8559fddso963401a34.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 25 Aug 2023 13:19:48 -0700 (PDT)
+        Fri, 25 Aug 2023 16:19:48 -0400
+Received: from mail-ua1-x929.google.com (mail-ua1-x929.google.com [IPv6:2607:f8b0:4864:20::929])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4E6A7171A
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 Aug 2023 13:19:46 -0700 (PDT)
+Received: by mail-ua1-x929.google.com with SMTP id a1e0cc1a2514c-7a25071d633so508833241.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 Aug 2023 13:19:46 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20221208.gappssmtp.com; s=20221208; t=1692994788; x=1693599588;
+        d=toxicpanda-com.20221208.gappssmtp.com; s=20221208; t=1692994785; x=1693599585;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=t6AEW6ge5cEyzzzVA9dkAUL4qwB1kcQfIvwbaN5wWw4=;
-        b=UosHxHtJJhlVjt/4z/ToE3gGz0pvhEQcXcY27kYDqxn/54RvRnQModTKWQaP+ERGH6
-         ptAUUZulOM48B1lVjk4akmEiFPCNEKp7sVDWz5xiCC/1ybWFZ2lNKp5wslCakGz2qMx1
-         PedcDY9p1jvRnAJHrNTBixWURR1ODru8YbdfqT9l1gRKlLnK8/ux42WsT3qLTBZ4R5lU
-         Mvfk252N+TiYP8k+/YjaYRRqd0L73FPniUG7xgQsgUr5GfCuMyaa8zQNOIv/OQBj8UNE
-         S0puJOwLrO/Arzz43xhZJXMgN9eODwJQiuoW+dem3HudhCnJG1wVz4TqR83C9nAjj6t5
-         b1LA==
+        bh=KXhfugQ15ZQIBw/K62Nj9pa/gM6xIJGR9HpfEvZp4TU=;
+        b=1BgUiMAJOBgZSiR+g2Sxu2xNO/jpoa4OatL8wb2pZcb5mzdIiKJidSIoQKe5TjMuOi
+         TvdxQorJnhSke6vlqlDQIEFIvwPW1HJviJwQMy2arMc5YeRFrbBeAz0yV1EZSh1fVioG
+         PuzJYrpvgV21sq3kYJfwMok3qx6mdkESvg1ci+mzBXd+QeCcIQ5o2AoVFgPDP1YlSCX2
+         mJgxgpPTwOVzIYUUxHM0kyYqv0WE9yS1j9y40sXCX91lFd4TmeotzLReRvGEfaXR7EOz
+         GAMf032W2/59t65sQWwmeBBZCBe+W0FhKc+/Wb294QDLDJghNNohWKjgzaRaU6R8zgS1
+         tp0Q==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1692994788; x=1693599588;
+        d=1e100.net; s=20221208; t=1692994785; x=1693599585;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=t6AEW6ge5cEyzzzVA9dkAUL4qwB1kcQfIvwbaN5wWw4=;
-        b=BP8BXC545Qfv2ZMlHuWZkjPUewPDzfueH+OVer32b5CXpXn24vYaep98ijaKeLnL4g
-         sTLa3+bN3+DTLYkZUqrROrHnIADLUFyQgzqnIlSqm0QW2SxKnccecRxleVThVakiPA0V
-         Z1YNf8+oSYtW5UtfYoIuSHa2lLvO2sSsFkRJkaVYaS1Eo7u2MmY2+AfySKQzcsHpbsoG
-         /nNRHAZ8MJKZIT2bVETyvkAM7hlzBUmlTg/RY49n90YtMc3S5HUC30TRRTB6QU7zbnpx
-         BdZZ4Mjk3s9gpnX8yvSenpZzupb6zl6Vwr4/hvkqfC3FPv1I9vssvS272ZMXID23tiwl
-         7KcA==
-X-Gm-Message-State: AOJu0Yxdn5saVqriFY2FFnYWlv6tZYS4+xtans3v19cW2uwbTzMJwI29
-        kBOdWDmlx+4G6z0PiHggJpxE84rG5Hlk674rwk8=
-X-Google-Smtp-Source: AGHT+IGs2DXZOins3JQtj5WFhqhuK3oMbr74WFEsFKwcWysDkfYBu/+q4uXqk/Wpb1ram+BlwgCL7Q==
-X-Received: by 2002:a05:6870:219e:b0:1bf:b00:acc5 with SMTP id l30-20020a056870219e00b001bf0b00acc5mr4084214oae.28.1692994787740;
-        Fri, 25 Aug 2023 13:19:47 -0700 (PDT)
+        bh=KXhfugQ15ZQIBw/K62Nj9pa/gM6xIJGR9HpfEvZp4TU=;
+        b=LVLzYLvFiEAOzCQONyp9iTJOLoyqHZ6ixPtUHcFO7tfgbTB9q9ijDam0DO1Y/GxrvR
+         u6usRnDuY7TVYq6iID1yuHsYxpfHR4onsrLXDga0YT5reZpMaDFmG0osvhAjzVBgkdaw
+         TvW7LZeXes1cVkzbGczT6meygVOHjvVRRobxVE2HrX6Mq2+ZiZielcS/FU6nvTvQuMXY
+         ZgeEM9LE7FqffRA9TeHgSoBo72Jq7WOeK1QUTcLd2e1CJOg8Fyal1UE7x6+/m0BYDglE
+         w3AF6uMnlpNqPtTAsdRjC2srXySkIqqiHIaXrDBcoQWHIVg8b+JatMXfalNOf6YhMNQo
+         +CkQ==
+X-Gm-Message-State: AOJu0Yz7tRYyY16KOW+TDJkPL7eTSTKOxZ36SDfoLxyZGrunKWvrx5rg
+        8w7jrED/uC+PN65LZem0H2zewnao4vlauHM8v/c=
+X-Google-Smtp-Source: AGHT+IEOZeDnoINDN9+QU7XbKWE+CRvPTLQQ+PRvejOXP1GOsRYt+UqIYSYlaW1eWCevYGkf45YHnQ==
+X-Received: by 2002:a05:6102:2c9:b0:44d:3d41:2a03 with SMTP id h9-20020a05610202c900b0044d3d412a03mr17198975vsh.16.1692994785303;
+        Fri, 25 Aug 2023 13:19:45 -0700 (PDT)
 Received: from localhost (cpe-76-182-20-124.nc.res.rr.com. [76.182.20.124])
-        by smtp.gmail.com with ESMTPSA id i20-20020a0cf394000000b005dd8b9345b4sm764333qvk.76.2023.08.25.13.19.47
+        by smtp.gmail.com with ESMTPSA id b10-20020a0ccd0a000000b0064f46c719fasm770330qvm.31.2023.08.25.13.19.44
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 25 Aug 2023 13:19:47 -0700 (PDT)
+        Fri, 25 Aug 2023 13:19:45 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v2 09/12] btrfs: add btrfs_delayed_ref_head declaration to extent-tree.h
-Date:   Fri, 25 Aug 2023 16:19:27 -0400
-Message-ID: <a1a8c85cf3ee5c7664bff1922fec323e37850607.1692994620.git.josef@toxicpanda.com>
+Subject: [PATCH v2 07/12] btrfs: include linux/iomap.h in file.c
+Date:   Fri, 25 Aug 2023 16:19:25 -0400
+Message-ID: <1dc135f94f5432b2c2264eda691787a3300ebea6.1692994620.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <cover.1692994620.git.josef@toxicpanda.com>
 References: <cover.1692994620.git.josef@toxicpanda.com>
@@ -64,27 +64,25 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-extent-tree.h uses btrfs_delayed_ref_head in a function argument but
-doesn't pull it's declaration from anywhere, add it to the top of the
-header.
+We use the iomap code in file.c, include it so we have our dependencies.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/extent-tree.h | 1 +
+ fs/btrfs/file.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/fs/btrfs/extent-tree.h b/fs/btrfs/extent-tree.h
-index 88c249c37516..ab2016db17e8 100644
---- a/fs/btrfs/extent-tree.h
-+++ b/fs/btrfs/extent-tree.h
-@@ -7,6 +7,7 @@
- #include "block-group.h"
- 
- struct btrfs_free_cluster;
-+struct btrfs_delayed_ref_head;
- 
- enum btrfs_extent_allocation_policy {
- 	BTRFS_EXTENT_ALLOC_CLUSTERED,
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 6edad7b9a5d3..ee9621e622d0 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -17,6 +17,7 @@
+ #include <linux/uio.h>
+ #include <linux/iversion.h>
+ #include <linux/fsverity.h>
++#include <linux/iomap.h>
+ #include "ctree.h"
+ #include "disk-io.h"
+ #include "transaction.h"
 -- 
 2.41.0
 

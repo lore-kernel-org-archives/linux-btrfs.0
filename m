@@ -2,119 +2,102 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E1739EE49A3
-	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Aug 2023 20:20:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1ED77EE49A6
+	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Aug 2023 20:20:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230503AbjHYUUJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 25 Aug 2023 16:20:09 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34008 "EHLO
+        id S231140AbjHYUUM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 25 Aug 2023 16:20:12 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54170 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229500AbjHYUTk (ORCPT
+        with ESMTP id S230487AbjHYUTr (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 25 Aug 2023 16:19:40 -0400
-Received: from mail-qt1-x82f.google.com (mail-qt1-x82f.google.com [IPv6:2607:f8b0:4864:20::82f])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0D195171A
-        for <linux-btrfs@vger.kernel.org>; Fri, 25 Aug 2023 13:19:38 -0700 (PDT)
-Received: by mail-qt1-x82f.google.com with SMTP id d75a77b69052e-410a2925972so7209311cf.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 25 Aug 2023 13:19:38 -0700 (PDT)
+        Fri, 25 Aug 2023 16:19:47 -0400
+Received: from mail-vk1-xa2b.google.com (mail-vk1-xa2b.google.com [IPv6:2607:f8b0:4864:20::a2b])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1ECDF19AC
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 Aug 2023 13:19:45 -0700 (PDT)
+Received: by mail-vk1-xa2b.google.com with SMTP id 71dfb90a1353d-48d0bfd352eso618720e0c.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 Aug 2023 13:19:45 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20221208.gappssmtp.com; s=20221208; t=1692994777; x=1693599577;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:to
-         :from:from:to:cc:subject:date:message-id:reply-to;
-        bh=htraD9ANz+C0wh7ZMyaX+vtTHBgZrivxk7LG4P1ZeNU=;
-        b=WxdSQbkLSACBMlXd6LnbhgUbFG/kV7OeTA8BZHfBKQ/UCyHGBjGtAlDF1b4y5vKs2B
-         VuXga/hdfJptaquI2RshljkYCjP4r3HlYopohB2361jcyXeHXlgIDa533LO8Qn7lCDKL
-         nWIHcehh5YqQq5tucBGDil+CGpVfhvI1E7lMnEdIyXE49dtDvbD3e0dR/j7FO8NsMCNS
-         +QI9BQKiqPZA/YMYX+IiZwDUEjnVdJriwDnLMcaa4Hyxwc63xsLWWl+5b57WK9h1W1gX
-         g1CDSMApkn97pqj1V/pwTGv+5K395vXyMnAZcF9Jo+vZf1oXtxAx8e6t9hoWBn7mgfpt
-         GWMw==
+        d=toxicpanda-com.20221208.gappssmtp.com; s=20221208; t=1692994784; x=1693599584;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=sC8vKC1MdrtQTH/KdS7qPHtYBd4gWs5JdzeemEzBpyc=;
+        b=O1kw8SZ5trQNFLJ0jGTv1bHlnvwh3t7vEBO/o1WIMY6O/wOjubjZXVqV/offxDgPQj
+         +stQsaYf5thuxy/mx8wMnco2zZo62qe1q7jH4claanqMLeem3Wyk8jl6vcVcgHrFV1h/
+         f+RqEvwNEpyJMnQqzbOZ/GQqrfS3fhSKFXTqSwOV3Z1KxYOw9yi3Bs4K5U0NlBFSYq6f
+         cd9ZsfBQ4QCzP7g3n80EwYE1ErYzshkNDhCQbHOsWFXk7BPTWL2FS+gAic2bfMwTr8jq
+         pzzgO3b3Vy2Yfqs71CJVFaoQu4XSAS6EHOEHxhr2PjnDOF3eXsK5+DWuZKmvrJLWisRn
+         dWJg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1692994777; x=1693599577;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:to
-         :from:x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=htraD9ANz+C0wh7ZMyaX+vtTHBgZrivxk7LG4P1ZeNU=;
-        b=Gf3PjRqdwK1H5fL8hGdOXyixlPHuP/wxiQb42Qlsb67jt7auaP7oCQkwJWgoAilcpB
-         r2wvtLKjoTu0uqHF0GDI4Q2mY7aSQMiuca1ONFB1Ilb4mlqjRkVvsM1Vza99MkPzVSoM
-         RFnLpdhqVIDuKwKn1TyxwOszieK/Ltwclt0+avmZzm1wecgiPOPOPrCVDCrin21Qud6o
-         qUVwwI7z0AH4YMpx7DAa2uQCAbv5fZNgDBmttps2ba+SseM03uzqIYs7S3lNmBkwgVOV
-         vPRi0lkbU6ZZFNisulZZaJqxWoIqN87HxceVvErAwqx/AXZmq7lT6QF/m/VPODqWQ62A
-         zZIg==
-X-Gm-Message-State: AOJu0Ywn7mfVek88vewZuBvJ4nqIwyj+EZjN165wkKIO6DKK06bdQx0M
-        FK0UgjbN/i7a3wcy5PSTxiDPfbUBCuN3UcWv3Zk=
-X-Google-Smtp-Source: AGHT+IH1eem7FDjVjpd4l3lgbt65bYUk7iyuiNjEJARwSMQM55INKenS3SVoBlnFzMNCJAdD5YmANw==
-X-Received: by 2002:a05:622a:1993:b0:40f:c5ac:8e1d with SMTP id u19-20020a05622a199300b0040fc5ac8e1dmr21585358qtc.55.1692994776915;
-        Fri, 25 Aug 2023 13:19:36 -0700 (PDT)
+        d=1e100.net; s=20221208; t=1692994784; x=1693599584;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=sC8vKC1MdrtQTH/KdS7qPHtYBd4gWs5JdzeemEzBpyc=;
+        b=IrFyg5kVJxApPJoX2FOD2ccO+wrqNkhrVSawIVe5QsqgBfGQA60Jc+j5a9C8gNEgAD
+         4QyS0LH2GN049J4ABdYnLCOU+jjkM/PgQkjI7pF/mokL2REkyVZoGuXEGBDoNX1GH03K
+         ib8BAFCYFNZaXlGCKneVEmQyW5Vn1FuToX0CbX5egAFC8PYIVz5M4KiH3WKdKeiAuCts
+         wkWgpcXU0hnv2v2Q/kRFDsttb40sf3R4X7l0jw3Hk3aa/yn/EYp9ge4WDIv1KQeujl54
+         u87KxYkf8b5a47/UrFO/JPDlwIEAC3f+jFlaFnK8O/TJ34szaEvxYlXGDEIoFffwgCKk
+         wDNA==
+X-Gm-Message-State: AOJu0YxtWNLwwpvCSbOC9FA+rSBlzjb/OP2AMYAt/HZLwFPBAs3gKU+3
+        zAj0xxEpC5p82hT/lrHjrh6KuNlFJD9NpbDN4hY=
+X-Google-Smtp-Source: AGHT+IGMu8Id2/HFzNXPVXbQaupB9Adp+W1SL+F+56f9wcxFuVzUyZoFGScVZh3DQQK4NMCSvlBKow==
+X-Received: by 2002:a1f:4c85:0:b0:48c:fb34:cf92 with SMTP id z127-20020a1f4c85000000b0048cfb34cf92mr17857220vka.5.1692994784098;
+        Fri, 25 Aug 2023 13:19:44 -0700 (PDT)
 Received: from localhost (cpe-76-182-20-124.nc.res.rr.com. [76.182.20.124])
-        by smtp.gmail.com with ESMTPSA id kf6-20020a05622a2a8600b0040ff234b9c4sm732553qtb.25.2023.08.25.13.19.36
+        by smtp.gmail.com with ESMTPSA id n5-20020ae9c305000000b0076ceb5eb309sm733583qkg.74.2023.08.25.13.19.43
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 25 Aug 2023 13:19:36 -0700 (PDT)
+        Fri, 25 Aug 2023 13:19:43 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v2 00/12] btrfs: ctree.[ch] cleanups
-Date:   Fri, 25 Aug 2023 16:19:18 -0400
-Message-ID: <cover.1692994620.git.josef@toxicpanda.com>
+Subject: [PATCH v2 06/12] btrfs: include linux/crc32c in dir-item and inode-item
+Date:   Fri, 25 Aug 2023 16:19:24 -0400
+Message-ID: <6dbf325458ee1c2fc45a66779fd5a277d4f39810.1692994620.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.41.0
+In-Reply-To: <cover.1692994620.git.josef@toxicpanda.com>
+References: <cover.1692994620.git.josef@toxicpanda.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-v1->v2:
-- added "btrfs: include linux/security.h in super.c" to deal with a compile
-  error after removing it from ctree.h in certain configs.
+Now these are holding the crc32c wrappers, add the required include so
+that we have our necessary dependencies.
 
---- Original email ---
-Hello,
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+---
+ fs/btrfs/dir-item.h   | 2 ++
+ fs/btrfs/inode-item.h | 1 +
+ 2 files changed, 3 insertions(+)
 
-While refreshing my ctree sync patches for btrfs-progs I ran into some oddness
-around our crc32c related helpers that made the sync awkward.  This moves those
-helpers around to other locations to make it easier to sync ctree.c into
-btrfs-progs.
-
-I also got a little distracted by the massive amount of includes we have in
-ctree.h, so I moved code around to trim this down to the bare minimum we need
-currently.
-
-There's no functional change here, just moving things about and renaming things.
-Thanks,
-
-Josef
-
-
-Josef Bacik (12):
-  btrfs: move btrfs_crc32c_final into free-space-cache.c
-  btrfs: remove btrfs_crc32c wrapper
-  btrfs: move btrfs_extref_hash into inode-item.h
-  btrfs: move btrfs_name_hash to dir-item.h
-  btrfs: include asm/unaligned.h in accessors.h
-  btrfs: include linux/crc32c in dir-item and inode-item
-  btrfs: include linux/iomap.h in file.c
-  btrfs: add fscrypt related dependencies to respective headers
-  btrfs: add btrfs_delayed_ref_head declaration to extent-tree.h
-  btrfs: include trace header in where necessary
-  btrfs: include linux/security.h in super.c
-  btrfs: remove extraneous includes from ctree.h
-
- fs/btrfs/accessors.h        |  1 +
- fs/btrfs/async-thread.c     |  1 +
- fs/btrfs/btrfs_inode.h      |  2 ++
- fs/btrfs/ctree.h            | 52 -------------------------------------
- fs/btrfs/dir-item.h         |  9 +++++++
- fs/btrfs/extent-tree.c      |  6 ++---
- fs/btrfs/extent-tree.h      |  1 +
- fs/btrfs/file.c             |  1 +
- fs/btrfs/free-space-cache.c |  9 +++++--
- fs/btrfs/inode-item.h       | 11 ++++++++
- fs/btrfs/locking.c          |  1 +
- fs/btrfs/props.c            |  1 +
- fs/btrfs/root-tree.h        |  2 ++
- fs/btrfs/send.c             |  6 ++---
- fs/btrfs/space-info.h       |  1 +
- fs/btrfs/super.c            |  1 +
- fs/btrfs/tree-checker.c     |  1 +
- 17 files changed, 46 insertions(+), 60 deletions(-)
-
+diff --git a/fs/btrfs/dir-item.h b/fs/btrfs/dir-item.h
+index 951b4dda46fe..5db2ea0dfd76 100644
+--- a/fs/btrfs/dir-item.h
++++ b/fs/btrfs/dir-item.h
+@@ -3,6 +3,8 @@
+ #ifndef BTRFS_DIR_ITEM_H
+ #define BTRFS_DIR_ITEM_H
+ 
++#include <linux/crc32c.h>
++
+ int btrfs_check_dir_item_collision(struct btrfs_root *root, u64 dir,
+ 			  const struct fscrypt_str *name);
+ int btrfs_insert_dir_item(struct btrfs_trans_handle *trans,
+diff --git a/fs/btrfs/inode-item.h b/fs/btrfs/inode-item.h
+index 2ee425a08e63..63dfd227e7ce 100644
+--- a/fs/btrfs/inode-item.h
++++ b/fs/btrfs/inode-item.h
+@@ -4,6 +4,7 @@
+ #define BTRFS_INODE_ITEM_H
+ 
+ #include <linux/types.h>
++#include <linux/crc32c.h>
+ 
+ struct btrfs_trans_handle;
+ struct btrfs_root;
 -- 
 2.41.0
 

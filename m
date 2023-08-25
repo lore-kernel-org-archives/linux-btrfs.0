@@ -2,84 +2,77 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E1BDCC3DA6F
-	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Aug 2023 12:00:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 946BDC7EE2C
+	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Aug 2023 12:29:19 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238114AbjHYMAJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 25 Aug 2023 08:00:09 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35060 "EHLO
+        id S244676AbjHYM2t (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 25 Aug 2023 08:28:49 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36422 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S237180AbjHYL7h (ORCPT
+        with ESMTP id S244847AbjHYM23 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 25 Aug 2023 07:59:37 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 09B42198E
-        for <linux-btrfs@vger.kernel.org>; Fri, 25 Aug 2023 04:59:36 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        Fri, 25 Aug 2023 08:28:29 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 500F226B2;
+        Fri, 25 Aug 2023 05:27:58 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+         key-exchange X25519 server-signature RSA-PSS (2048 bits))
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id B8CF62247C;
-        Fri, 25 Aug 2023 11:59:34 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1692964774;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=pT2JXp601qvLA2vP6ZpYSQAeWNupkXvIqxQ+BH7IzFg=;
-        b=RYi7Yb1uq5KBR9/4DhNUitRnvf13sTQh2xiEN77cDjQcH6CMfT3CjPKtQb1uBueaWXTPT2
-        0ZY/gMEZ7LStwZdR8J723mdFUuXJ+W/NAVJyIs5GBfdcBv5/RV3En7l2HoyTZJi1XHkM9v
-        7j2kEvrS026EQZYkFYzo1wTMTUcidK0=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1692964774;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=pT2JXp601qvLA2vP6ZpYSQAeWNupkXvIqxQ+BH7IzFg=;
-        b=jUr0lFH6S5B4WR0zNibi58ugLlOMnrBg9L9MX7CkZ/f3453FNQw3lXw3DA8If/0GoTGLp8
-        95dvRVsAYeXmB2CA==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 9F06B138F9;
-        Fri, 25 Aug 2023 11:59:34 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id UVQLJqaX6GSiSwAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Fri, 25 Aug 2023 11:59:34 +0000
-Date:   Fri, 25 Aug 2023 13:53:01 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 00/16] btrfs-progs: recover from failed metadata_uuid
-Message-ID: <20230825115301.GP2420@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1692018849.git.anand.jain@oracle.com>
- <20230823221315.GL2420@twin.jikos.cz>
- <20230823222434.GM2420@twin.jikos.cz>
- <ee88691e-f484-58cd-4e48-50d2671e7e71@oracle.com>
+        by dfw.source.kernel.org (Postfix) with ESMTPS id A566E619C2;
+        Fri, 25 Aug 2023 12:27:02 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 3C546C433C8;
+        Fri, 25 Aug 2023 12:27:00 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1692966422;
+        bh=IuS22xMDOXhLWj5dSRNrTGi8iu/lZ+v8ul0iyCnqnRM=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=pGrJ1H9qLPII+BFyolV4e8E2pcSsMM+Mzt9yz/yMufFFK/PZsoYtzjKPI4tYTkHpr
+         3+OkQHTnkmSWzdj3jyJfA5y59eIjumohbQgCW8lmysGu7nwKYsMMWjzfaz55Q4UBoP
+         FxdNrzCIKaELdIzOO9SBEff/HfnsN0HZBDPUjFC7FZe/wRKSHcG/b542L/ediEc++D
+         tyukPN53f1iHl9gLlO9JfDwSg2C3apPbe0hiExSzJa7sP8goS968Zz73M+3DjHSVUZ
+         XYhP0LdajzKYRQVQoPLgjX5FL9WrnRxsolqfkL8S4APyK2kaKLpxQZKFLxBV+hIiqt
+         5aZivMOvSfjAA==
+Date:   Fri, 25 Aug 2023 14:26:57 +0200
+From:   Christian Brauner <brauner@kernel.org>
+To:     Jan Kara <jack@suse.cz>
+Cc:     Jens Axboe <axboe@kernel.dk>, linux-fsdevel@vger.kernel.org,
+        linux-block@vger.kernel.org, Christoph Hellwig <hch@infradead.org>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        Christoph Hellwig <hch@lst.de>
+Subject: Re: [PATCH 20/29] btrfs: Convert to bdev_open_by_path()
+Message-ID: <20230825-inhaber-zwirn-1575ae24f4c3@brauner>
+References: <20230818123232.2269-1-jack@suse.cz>
+ <20230823104857.11437-20-jack@suse.cz>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <ee88691e-f484-58cd-4e48-50d2671e7e71@oracle.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <20230823104857.11437-20-jack@suse.cz>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Aug 24, 2023 at 09:54:30PM +0800, Anand Jain wrote:
-> >> Patches added to devel, thanks.
-> > 
-> > On my machine the metadata uuid test does not run because the module is
-> > not loadable, but the GH actions report a failure:
-> > https://github.com/kdave/btrfs-progs/actions/runs/5956097489/job/1615613826
+On Wed, Aug 23, 2023 at 12:48:31PM +0200, Jan Kara wrote:
+> Convert btrfs to use bdev_open_by_path() and pass the handle around.  We
+> also drop the holder from struct btrfs_device as it is now not needed
+> anymore.
 > 
-> Local VM successfully runs misc-tests/034*. However, on OCI, the same
-> error as GH. Error reports missing device. It appears, inconsistent
-> results due to the varying device scan order from system to system.
-> I am looking more.
+> CC: David Sterba <dsterba@suse.com>
+> CC: linux-btrfs@vger.kernel.org
+> Acked-by: Christoph Hellwig <hch@lst.de>
+> Signed-off-by: Jan Kara <jack@suse.cz>
+> ---
 
-Patches 13-16 have been removed from devel until the issue is resolved.
-I've enabled build tests for pull requests you can use the github CI for
-testing too (open a PR against devel or master branch).
+Looks good to me,
+Reviewed-by: Christian Brauner <brauner@kernel.org>
+
+> -	bdev = blkdev_get_by_path(path, BLK_OPEN_READ, NULL, NULL);
+> -	if (IS_ERR(bdev))
+> -		return ERR_CAST(bdev);
+> +	bdev_handle = bdev_open_by_path(path, BLK_OPEN_READ, NULL, NULL);
+> +	if (IS_ERR(bdev_handle))
+> +		return ERR_CAST(bdev_handle);
+
+Minor merge conflict with what's in vfs.super because we dropped
+unrelated btrfs patches like David asked us to. Very easy to fix for me.
+Just an fyi.

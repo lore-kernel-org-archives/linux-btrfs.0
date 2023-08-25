@@ -2,139 +2,136 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2376BEE49AB
-	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Aug 2023 21:43:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5079CEE49B7
+	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Aug 2023 21:54:59 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231519AbjHYVmf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 25 Aug 2023 17:42:35 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45376 "EHLO
+        id S229778AbjHYVyZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 25 Aug 2023 17:54:25 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57802 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231425AbjHYVmI (ORCPT
+        with ESMTP id S229706AbjHYVx5 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 25 Aug 2023 17:42:08 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5AEB426AF
-        for <linux-btrfs@vger.kernel.org>; Fri, 25 Aug 2023 14:42:03 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 14E722212A;
-        Fri, 25 Aug 2023 21:42:02 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1692999722;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=RP6DG9XHkiu3A5bMNzgvKKm7HF4aFTgmdIuO0VvGGEc=;
-        b=LKbs5Ysd6GJngBS/cN+8+r0tr1CPXmWHzURpXnbGR9PVctsxANiUe+6T+9qGKmnyqPnktC
-        Vq+eJ2Hl1CME8cLQhuqMqIIEWvRd6XzzLoggL+ROWFCbHO8J/0byJAE9+nGt1MSLJDk25U
-        2FTRW8NN9vg0rJ+oEuT4JoXLSs48BNk=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1692999722;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=RP6DG9XHkiu3A5bMNzgvKKm7HF4aFTgmdIuO0VvGGEc=;
-        b=R2oflmSS3Rksc9Irrw/D7np6/4Qa84rQPpe6DoqJNDwx+uqacEBvtTcGu8qVDEZIbB1bCh
-        0dPLqxCvksvnHwCQ==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id D5C711340A;
-        Fri, 25 Aug 2023 21:42:01 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id Q7PUMikg6WR+SQAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Fri, 25 Aug 2023 21:42:01 +0000
-Date:   Fri, 25 Aug 2023 23:35:27 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH 00/38] btrfs-progs: sync ctree.c into btrfs-progs
-Message-ID: <20230825213527.GA14420@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1692800904.git.josef@toxicpanda.com>
+        Fri, 25 Aug 2023 17:53:57 -0400
+Received: from mail-pg1-x536.google.com (mail-pg1-x536.google.com [IPv6:2607:f8b0:4864:20::536])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B4C2026B0
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 Aug 2023 14:53:54 -0700 (PDT)
+Received: by mail-pg1-x536.google.com with SMTP id 41be03b00d2f7-5650ef42f6dso791933a12.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 Aug 2023 14:53:54 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=fromorbit-com.20221208.gappssmtp.com; s=20221208; t=1693000434; x=1693605234;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
+        bh=EA93GbJhFaX1RD1S1v1NWvgWKkuCopUaLEmO6z67OS0=;
+        b=cH08dFt6/4c3wH/stFXC+uGu5D8z0Csp+c9btLL74n40FUQC+soJCMHngcXZEBLgzm
+         qybrDAhkHNIQidm6McS9k7OAisvjKsYcisQszCCpar5CuSiRIpSFGB178B7PZGJmjIVI
+         4C//pqzQHhkBzMUsweM/Ox4iwIPKOu4SLlyG1BwihVAd4isMoJvmKve8ppg0AFR80Lm5
+         +9HwDLBwFdO48zPf3pAy2OfApTkcKybUvjmHUA0hm0UnLP/VyyPd03hkf4rprWixbIcJ
+         VF2B37IJ0D+t2NzeGs35vYm6/AeFMMVd3Duqbo/sN/EdZ49iAcVRSUTD7gvcubzYge+h
+         CorA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1693000434; x=1693605234;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=EA93GbJhFaX1RD1S1v1NWvgWKkuCopUaLEmO6z67OS0=;
+        b=IN00pwJxE5NySce5AnzTyqyIzgnfDiJtoyfA2+u09mQJCae8gZXqKB0R+Jhipm9JCD
+         gJUNAIhyF1yuFcCUkEAJEzE2wk5d+sFpBf2j+21Jm0VL3ItHyw2rCUkJ6QNH8hmS1uUN
+         OnoJvhZC+0sLP57uOAZccydi8hfjhTviTLK4H8xh7dHI9IVnv3p42Jw0kx1SoxIhPTyp
+         n7cYnRGJUcwu0aiLEYCmFzF4CsoL6aO719syC0xjmV/A5znddHqwDQBNmIyl7AErHA39
+         CVDWmynvFmuLzAD+q2zE9uW5BnYYb/6yA9Ak04cZtCiHOrYbx/MvH5OMZTRdUd3v0oZs
+         zR1Q==
+X-Gm-Message-State: AOJu0YxxA6ubMMFpc8PIgKyZCLjDjMB6Bhvq6BgwZRpsL7Jt+BO0M/2h
+        +OrL3ha50I3cRuCk2PsyJKV9Mw==
+X-Google-Smtp-Source: AGHT+IGuXiZpaiaSoWbg0vAVB9MheRguVETxlh6z74Aponrqbg78kQHVeidygYbMeETEncHmOPB93Q==
+X-Received: by 2002:a17:90a:bf88:b0:263:5d25:150c with SMTP id d8-20020a17090abf8800b002635d25150cmr15563047pjs.29.1693000434105;
+        Fri, 25 Aug 2023 14:53:54 -0700 (PDT)
+Received: from dread.disaster.area (pa49-195-66-88.pa.nsw.optusnet.com.au. [49.195.66.88])
+        by smtp.gmail.com with ESMTPSA id fz23-20020a17090b025700b0026b4decfe59sm2177778pjb.31.2023.08.25.14.53.53
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Fri, 25 Aug 2023 14:53:53 -0700 (PDT)
+Received: from dave by dread.disaster.area with local (Exim 4.96)
+        (envelope-from <david@fromorbit.com>)
+        id 1qZekY-006V5n-1X;
+        Sat, 26 Aug 2023 07:53:50 +1000
+Date:   Sat, 26 Aug 2023 07:53:50 +1000
+From:   Dave Chinner <david@fromorbit.com>
+To:     Hao Xu <hao.xu@linux.dev>
+Cc:     io-uring@vger.kernel.org, Jens Axboe <axboe@kernel.dk>,
+        Dominique Martinet <asmadeus@codewreck.org>,
+        Pavel Begunkov <asml.silence@gmail.com>,
+        Christian Brauner <brauner@kernel.org>,
+        Alexander Viro <viro@zeniv.linux.org.uk>,
+        Stefan Roesch <shr@fb.com>, Clay Harris <bugs@claycon.org>,
+        "Darrick J . Wong" <djwong@kernel.org>,
+        linux-fsdevel@vger.kernel.org, linux-xfs@vger.kernel.org,
+        linux-ext4@vger.kernel.org, linux-cachefs@redhat.com,
+        ecryptfs@vger.kernel.org, linux-nfs@vger.kernel.org,
+        linux-unionfs@vger.kernel.org, bpf@vger.kernel.org,
+        netdev@vger.kernel.org, linux-s390@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-block@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, codalist@coda.cs.cmu.edu,
+        linux-f2fs-devel@lists.sourceforge.net, cluster-devel@redhat.com,
+        linux-mm@kvack.org, linux-nilfs@vger.kernel.org,
+        devel@lists.orangefs.org, linux-cifs@vger.kernel.org,
+        samba-technical@lists.samba.org, linux-mtd@lists.infradead.org,
+        Wanpeng Li <wanpengli@tencent.com>
+Subject: Re: [PATCH 24/29] xfs: support nowait for xfs_buf_read_map()
+Message-ID: <ZOki7u/zJGmZtL6g@dread.disaster.area>
+References: <20230825135431.1317785-1-hao.xu@linux.dev>
+ <20230825135431.1317785-25-hao.xu@linux.dev>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <cover.1692800904.git.josef@toxicpanda.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <20230825135431.1317785-25-hao.xu@linux.dev>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Aug 23, 2023 at 10:32:26AM -0400, Josef Bacik wrote:
-> Hello,
+On Fri, Aug 25, 2023 at 09:54:26PM +0800, Hao Xu wrote:
+> From: Hao Xu <howeyxu@tencent.com>
 > 
-> I started back up my extent tree v2 work and noticed not all my ctree.c sync
-> patches made it in the last submission as I missed some comments.
+> This causes xfstests generic/232 hung in umount process, waiting for ail
+> push, so I comment it for now, need some hints from xfs folks.
+> Not a real patch.
 > 
-> This patchset is much larger than what was left, as I broke up the changes more
-> discreetly.  In my original submission I had ignored some of the tree wide
-> changes in favor of expediency, and had modified ctree.c more to match what we
-> had in btrfs-progs.
+> Signed-off-by: Hao Xu <howeyxu@tencent.com>
+> ---
+>  fs/xfs/xfs_buf.c | 7 +++++++
+>  1 file changed, 7 insertions(+)
 > 
-> This time I've updated everything that was different in ctree.c in the rest of
-> btrfs-progs to make the actual sync'ing of ctree.c more straightforward.  I had
-> to modify a few things in ctree.c, but they are very small and specific, no more
-> updates of any of the global functions we depend on.
-> 
-> The downside is this patchset is massive.  The upside is the patches are small
-> and self contained, with the obvious exception of the actual ctree.c sync.
-> 
-> This also will make subsequent sync'ing of other source files much easier, as
-> I've changed a good deal of the very common helpers to match what exists in the
-> kernel.
-> 
-> This passes all the tests.  There are a few behavior changes, but for the most
-> part it's just updating helpers to match kernel definitions and moving code
-> around.  Thanks,
-> 
-> Josef
-> 
-> Josef Bacik (38):
->   btrfs-progs: stop using add_root_to_dirty_list in check
->   btrfs-progs: remove useless add_root_to_dirty_list call in mkfs
->   btrfs-progs: remove add_root_to_dirty_list call when creating free
->     space tree
->   btrfs-progs: make add_root_to_dirty_list static and unexport it
->   btrfs-progs: pass btrfs_trans_handle through btrfs_clear_buffer_dirty
->   btrfs-progs: update read_node_slot to match the kernel definition
->   btrfs-progs: update btrfs_bin_search to match the kernel definition
->   btrfs-progs: update btrfs_set_item_key_safe to match kernel definition
->   btrfs-progs: update btrfs_print_leaf to match the kernel definition
->   btrfs-progs: update btrfs_truncate_item to match the kernel definition
->   btrfs-progs: update btrfs_extend_item to match the kernel definition
->   btrfs-progs: sync memcpy_extent_buffer from the kernel
->   btrfs-progs: drop btrfs_init_path
->   btrfs-progs: move btrfs_set_item_key_unsafe to check/
->   btrfs-progs: move btrfs_record_file_extent and code into a new file
->   btrfs-progs: make a local copy of btrfs_next_sibling_block in
->     print-tree.c
->   btrfs-progs: don't set the ->commit_root in btrfs_create_tree
->   btrfs-progs: remove btrfs_create_root
->   btrfs-progs: move btrfs_uuid_tree_add into mkfs/main.c
->   btrfs-progs: make btrfs_del_ptr a void
->   btrfs-progs: replace blocksize with parent argument for
->     btrfs_alloc_tree_block
->   btrfs-progs: use path->search_for_extension
->   btrfs-progs: init new tree blocks in btrfs_alloc_tree_block
->   btrfs-progs: add dwarves to the package list for ci
->   btrfs-progs: add kerncompat helpers for ctree.c sync
->   btrfs-progs: add trans_lock to fs_info
->   btrfs-progs: add commit_root_sem to btrfs_fs_info
->   btrfs-progs: update btrfs_cow_block to match the in-kernel definition
->   btrfs-progs: update btrfs_insert_empty_items to match the kernel
->   btrfs-progs: update btrfs_insert_empty_item to match the kernel
->   btrfs-progs: update btrfs_del_ptr to match the kernel
->   btrfs-progs: update btrfs_insert_item to match the kernel
->   btrfs-progs: update btrfs_leaf_free_space to match the kernel
->   btrfs-progs: use btrfs_tree_parent_check for btrfs_read_extent_buffer
->   btrfs-progs: update read_tree_block to take a btrfs_parent_tree_check
->   btrfs-progs: inline btrfs_name_hash and btrfs_extref_hash
->   btrfs-progs: update btrfs_split_item to match the in-kernel definition
+> diff --git a/fs/xfs/xfs_buf.c b/fs/xfs/xfs_buf.c
+> index cdad80e1ae25..284962a9f31a 100644
+> --- a/fs/xfs/xfs_buf.c
+> +++ b/fs/xfs/xfs_buf.c
+> @@ -828,6 +828,13 @@ xfs_buf_read_map(
+>  	trace_xfs_buf_read(bp, flags, _RET_IP_);
+>  
+>  	if (!(bp->b_flags & XBF_DONE)) {
+> +//		/*
+> +//		 * Let's bypass the _xfs_buf_read() for now
+> +//		 */
+> +//		if (flags & XBF_NOWAIT) {
+> +//			xfs_buf_relse(bp);
+> +//			return -EAGAIN;
+> +//		}
 
-1-37 applied, with some minor fixups, thanks. This change granularity is
-good.
+This is *fundamentally broken*, and apart from anything else breaks
+readahead.
+
+IF we asked for a read, we cannot instantiate the buffer and then
+*not issue any IO on it* and release it. That leaves an
+uninitialised buffer in memory, and there's every chance that
+something then trips over it and bad things happen.
+
+A buffer like this *must* be errored out and marked stale so that
+the next access to it will then re-initialise the buffer state and
+trigger any preparatory work that needs to be done for the new
+operation.
+
+This comes back to my first comments that XBF_TRYLOCK cannot simpy
+be replaced with XBF_NOWAIT semantics...
+
+-Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

@@ -2,124 +2,145 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2CBA1C3DA6F
-	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Aug 2023 14:02:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 100DBEE49B2
+	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Aug 2023 14:02:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S244023AbjHYOBw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 25 Aug 2023 10:01:52 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42310 "EHLO
+        id S245515AbjHYOBz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 25 Aug 2023 10:01:55 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35452 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S245575AbjHYOBV (ORCPT
+        with ESMTP id S245555AbjHYOBl (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 25 Aug 2023 10:01:21 -0400
-Received: from out-249.mta1.migadu.com (out-249.mta1.migadu.com [95.215.58.249])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 86B422D4A;
-        Fri, 25 Aug 2023 07:00:48 -0700 (PDT)
-X-Report-Abuse: Please report any abuse attempt to abuse@migadu.com and include these headers.
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linux.dev; s=key1;
-        t=1692972039;
+        Fri, 25 Aug 2023 10:01:41 -0400
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 541F026B6
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 Aug 2023 07:00:33 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+        s=mimecast20190719; t=1692972019;
         h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
+         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=A8n142m+ckTq2ok9t7Tm2FnSZDGwRTGaDgQRQd0QVrs=;
-        b=pz2+RJXny/FRc9X5ZHvo0v2sP0AhNIbG6GqEDC3f4IgSNhM3HBNVDwOESMUSOR4IEMUxcQ
-        QeB+zNMG6saCP+3Ee3iNvTaLm94PmwVrh29h0zPxcQxdxo6uNrunXvw2MGBXff+gKAxGGD
-        nCmOsY1G1aaOlGneScmRPtSGG9/rCYg=
-From:   Hao Xu <hao.xu@linux.dev>
-To:     io-uring@vger.kernel.org, Jens Axboe <axboe@kernel.dk>
-Cc:     Dominique Martinet <asmadeus@codewreck.org>,
-        Pavel Begunkov <asml.silence@gmail.com>,
-        Christian Brauner <brauner@kernel.org>,
-        Alexander Viro <viro@zeniv.linux.org.uk>,
-        Stefan Roesch <shr@fb.com>, Clay Harris <bugs@claycon.org>,
-        Dave Chinner <david@fromorbit.com>,
-        "Darrick J . Wong" <djwong@kernel.org>,
-        linux-fsdevel@vger.kernel.org, linux-xfs@vger.kernel.org,
-        linux-ext4@vger.kernel.org, linux-cachefs@redhat.com,
-        ecryptfs@vger.kernel.org, linux-nfs@vger.kernel.org,
-        linux-unionfs@vger.kernel.org, bpf@vger.kernel.org,
-        netdev@vger.kernel.org, linux-s390@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-block@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, codalist@coda.cs.cmu.edu,
-        linux-f2fs-devel@lists.sourceforge.net, cluster-devel@redhat.com,
-        linux-mm@kvack.org, linux-nilfs@vger.kernel.org,
-        devel@lists.orangefs.org, linux-cifs@vger.kernel.org,
-        samba-technical@lists.samba.org, linux-mtd@lists.infradead.org,
-        Wanpeng Li <wanpengli@tencent.com>
-Subject: [PATCH 12/29] xfs: enforce GFP_NOIO implicitly during nowait time update
-Date:   Fri, 25 Aug 2023 21:54:14 +0800
-Message-Id: <20230825135431.1317785-13-hao.xu@linux.dev>
-In-Reply-To: <20230825135431.1317785-1-hao.xu@linux.dev>
-References: <20230825135431.1317785-1-hao.xu@linux.dev>
+        bh=vjxak9bo89OebQVshAcR8xV4lyZfu4tcklNih1ULQqY=;
+        b=a/T2rsqLEqfP9R5oAjR5tj/MrQwptGyftVxYlN2K6zDeee+KR/KGSRnTH0jaCINcsQ2UqF
+        fKYCYB7TErfVkJiW8ffNGNKYQ6pKm/2grUtQDnhdzf/0KxRCyxvOgLKWvHs/fXlQf1dpx0
+        fFvEUfzNQ6tYhcdypOH08DwIXVjR8FY=
+Received: from mail-pf1-f198.google.com (mail-pf1-f198.google.com
+ [209.85.210.198]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
+ us-mta-571-rrQddHiJPqSRwo73JJ3TpA-1; Fri, 25 Aug 2023 10:00:16 -0400
+X-MC-Unique: rrQddHiJPqSRwo73JJ3TpA-1
+Received: by mail-pf1-f198.google.com with SMTP id d2e1a72fcca58-68bf123af64so1099738b3a.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 Aug 2023 07:00:16 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1692972016; x=1693576816;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=vjxak9bo89OebQVshAcR8xV4lyZfu4tcklNih1ULQqY=;
+        b=It/GPeE7LEA0nxgQe0thRyaBCK+N367DC8bFknnR3lvAYQrV4AqlwnBK7IuHbN7eqq
+         aqLuJbUh7VB6SlufLoIh9t64oJWa9xr+OsT4ee18gWR4xY5120Q1/jYTbUC2GaaRb9hv
+         FCkmlp5mUjiXqe6Ay+yxP+G7m2ZDuXcoaGeDBxmNZaY34B/jXtgBkOl0dvnVAfXHSPcV
+         qI9KlUsV/dL1ujvqBw+DigLz2Iq150DdR8cWn3K9cA4cCKfN9qWq5bywD/8JJM+S9tmd
+         0mh4ONkGw+RZFQd2nT0yfxKJDDlVfD8S1Xy5x8znwcg7iJGBly2rjJmnvOXM0maADjBp
+         1I3Q==
+X-Gm-Message-State: AOJu0Ywi6eHqMWafmk8FPNAz6welxsWJoB1TitYwOg7/+wu1wMsD91Va
+        TksTjToLO9yrOJqBbwHoplZUpd076c0E7IbiCKWV2+YU1Zg9WCvUwcD9i8Sis4WLyLQ2YZpxjdx
+        mncGfNvOgwMZZMLehXN69rrE=
+X-Received: by 2002:a05:6a00:2354:b0:68a:6e79:d23b with SMTP id j20-20020a056a00235400b0068a6e79d23bmr11702248pfj.23.1692972015386;
+        Fri, 25 Aug 2023 07:00:15 -0700 (PDT)
+X-Google-Smtp-Source: AGHT+IHeLebA4sWSvMf5za4+Qucu3UOW/hpn/TicURPd7Beo5zSzX+vfX2PvKu1KYi02yGz+VTymeA==
+X-Received: by 2002:a05:6a00:2354:b0:68a:6e79:d23b with SMTP id j20-20020a056a00235400b0068a6e79d23bmr11702035pfj.23.1692972013250;
+        Fri, 25 Aug 2023 07:00:13 -0700 (PDT)
+Received: from zlang-mailbox ([43.228.180.230])
+        by smtp.gmail.com with ESMTPSA id z22-20020aa791d6000000b00686a80f431dsm1561864pfa.126.2023.08.25.07.00.11
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Fri, 25 Aug 2023 07:00:12 -0700 (PDT)
+Date:   Fri, 25 Aug 2023 22:00:09 +0800
+From:   Zorro Lang <zlang@redhat.com>
+To:     Naohiro Aota <naohiro.aota@wdc.com>
+Cc:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v3 1/3] common/rc: introduce _random_file() helper
+Message-ID: <20230825140009.4pg43yyprmunrxkn@zlang-mailbox>
+References: <cover.1692600259.git.naohiro.aota@wdc.com>
+ <63147107b1aee89c21ef848857e0dc3964134392.1692600259.git.naohiro.aota@wdc.com>
+ <20230825133948.oubggt74y7cmci2j@zlang-mailbox>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Migadu-Flow: FLOW_OUT
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20230825133948.oubggt74y7cmci2j@zlang-mailbox>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Hao Xu <howeyxu@tencent.com>
+On Fri, Aug 25, 2023 at 09:39:48PM +0800, Zorro Lang wrote:
+> On Mon, Aug 21, 2023 at 04:12:11PM +0900, Naohiro Aota wrote:
+> > Currently, we use "ls ... | sort -R | head -n1" (or tail) to choose a
+> > random file in a directory.It sorts the files with "ls", sort it randomly
+> > and pick the first line, which wastes the "ls" sort.
+> > 
+> > Also, using "sort -R | head -n1" is inefficient. For example, in a
+> > directory with 1000000 files, it takes more than 15 seconds to pick a file.
+> > 
+> >   $ time bash -c "ls -U | sort -R | head -n 1 >/dev/null"
+> >   bash -c "ls -U | sort -R | head -n 1 >/dev/null"  15.38s user 0.14s system 99% cpu 15.536 total
+> > 
+> >   $ time bash -c "ls -U | shuf -n 1 >/dev/null"
+> >   bash -c "ls -U | shuf -n 1 >/dev/null"  0.30s user 0.12s system 138% cpu 0.306 total
+> > 
+> > So, we should just use "ls -U" and "shuf -n 1" to choose a random file.
+> > Introduce _random_file() helper to do it properly.
+> > 
+> > Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+> > ---
+> >  common/rc | 7 +++++++
+> >  1 file changed, 7 insertions(+)
+> > 
+> > diff --git a/common/rc b/common/rc
+> > index 5c4429ed0425..4d414955f6d9 100644
+> > --- a/common/rc
+> > +++ b/common/rc
+> > @@ -5224,6 +5224,13 @@ _soak_loop_running() {
+> >  	return 0
+> >  }
+> >  
+> > +# Return a random file in a directory. A directory is *not* followed
+> > +# recursively.
+> > +_random_file() {
+> > +	local basedir=$1
+> > +	echo "$basedir/$(ls -U $basedir | shuf -n 1)"
+> 
+> I think the "1" can be the second argument, for we might want to get a random
+> file list sometimes. For example:
+> 
+>   local basedir=$1
+>   local num=$2
+>   local opt
+> 
+>   if [ -n "$num" ];then
+> 	  opt="-n $num"
+>   fi
+>   echo "$basedir/$(ls -U $basedir | shuf $opt)"
+> 
+> What do you think?
 
-Enforce GFP_NOIO logic implicitly by set pflags if we are in nowait
-time update process. Nowait semantics means no waiting for IO,
-therefore GFP_NOIO is needed.
+Hmm... nack my review point. Looks like this makes a simple change to be
+complicated, especially multiple output lines. I'll merge this patchset
+at first, then we can support that second argument If we need that
+feature in one day. Or if you're interested in it.
 
-Signed-off-by: Hao Xu <howeyxu@tencent.com>
----
- fs/xfs/xfs_iops.c | 22 +++++++++++++++++-----
- 1 file changed, 17 insertions(+), 5 deletions(-)
+Thanks,
+Zorro
 
-diff --git a/fs/xfs/xfs_iops.c b/fs/xfs/xfs_iops.c
-index bf1d4c31f009..5fa391083de9 100644
---- a/fs/xfs/xfs_iops.c
-+++ b/fs/xfs/xfs_iops.c
-@@ -1037,6 +1037,8 @@ xfs_vn_update_time(
- 	int			log_flags = XFS_ILOG_TIMESTAMP;
- 	struct xfs_trans	*tp;
- 	int			error;
-+	int			old_pflags;
-+	bool			nowait = flags & S_NOWAIT;
- 
- 	trace_xfs_update_time(ip);
- 
-@@ -1049,13 +1051,18 @@ xfs_vn_update_time(
- 		log_flags |= XFS_ILOG_CORE;
- 	}
- 
-+	if (nowait)
-+		old_pflags = memalloc_noio_save();
-+
- 	error = xfs_trans_alloc(mp, &M_RES(mp)->tr_fsyncts, 0, 0, 0, &tp);
- 	if (error)
--		return error;
-+		goto out;
- 
--	if (flags & S_NOWAIT) {
--		if (!xfs_ilock_nowait(ip, XFS_ILOCK_EXCL))
--			return -EAGAIN;
-+	if (nowait) {
-+		if (!xfs_ilock_nowait(ip, XFS_ILOCK_EXCL)) {
-+			error = -EAGAIN;
-+			goto out;
-+		}
- 	} else {
- 		xfs_ilock(ip, XFS_ILOCK_EXCL);
- 	}
-@@ -1069,7 +1076,12 @@ xfs_vn_update_time(
- 
- 	xfs_trans_ijoin(tp, ip, XFS_ILOCK_EXCL);
- 	xfs_trans_log_inode(tp, ip, log_flags);
--	return xfs_trans_commit(tp);
-+	error = xfs_trans_commit(tp);
-+
-+out:
-+	if (nowait)
-+		memalloc_noio_restore(old_pflags);
-+	return error;
- }
- 
- STATIC int
--- 
-2.25.1
+> 
+> Thanks,
+> Zorro
+> 
+> > +}
+> > +
+> >  init_rc
+> >  
+> >  ################################################################################
+> > -- 
+> > 2.41.0
+> > 
 

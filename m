@@ -2,83 +2,227 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 15795EE49A0
-	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Aug 2023 20:28:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 68A38EE49B8
+	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Aug 2023 21:40:27 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230042AbjHYU2S (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 25 Aug 2023 16:28:18 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45594 "EHLO
+        id S231491AbjHYVj4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 25 Aug 2023 17:39:56 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43200 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230177AbjHYU1x (ORCPT
+        with ESMTP id S231499AbjHYVjY (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 25 Aug 2023 16:27:53 -0400
-Received: from trager.us (trager.us [52.5.81.116])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 96FDC1BEB
-        for <linux-btrfs@vger.kernel.org>; Fri, 25 Aug 2023 13:27:50 -0700 (PDT)
-Received: from c-73-11-250-112.hsd1.wa.comcast.net ([73.11.250.112] helo=[192.168.1.226])
-        by trager.us with esmtpsa (TLSv1.3:TLS_AES_128_GCM_SHA256:128)
-        (Exim 4.92.3)
-        (envelope-from <lee@trager.us>)
-        id 1qZdPJ-0007CJ-6Y; Fri, 25 Aug 2023 20:27:49 +0000
-Message-ID: <0f1c3625-8ab8-d455-46ed-04b6a17b5f28@trager.us>
-Date:   Fri, 25 Aug 2023 13:27:42 -0700
+        Fri, 25 Aug 2023 17:39:24 -0400
+Received: from mail-pf1-x434.google.com (mail-pf1-x434.google.com [IPv6:2607:f8b0:4864:20::434])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C8DE7199F
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 Aug 2023 14:39:21 -0700 (PDT)
+Received: by mail-pf1-x434.google.com with SMTP id d2e1a72fcca58-68bec3a9bdbso1060362b3a.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 Aug 2023 14:39:21 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=fromorbit-com.20221208.gappssmtp.com; s=20221208; t=1692999561; x=1693604361;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
+        bh=o7dRQ9By/T99QWDW5xev9b8rVkM9NZXXwZrmSduoTKY=;
+        b=TZVHksaQT5yCsIen/c2upIT1FV0UF6+iYRjZnJ0cteKZDwE34A1WOLCekowerwYt2D
+         28KLfuHOkrH+S7NXgfzrxv2wEPzVXNOx12BPZqI35ZFuqsHlPQT0hdOxe7PBQ/R8Z8I7
+         Cycu+HuPFm+mUEFOO5dkC4vMTGg4aTatYUmw68Y3LHfPOr8hVhEM365l3OrWTkvJGBZb
+         5D1QCHz94l8BO5g39/3dKaMICzlN3vzJKDu/jlyvNCJoapKfzcDa2usPFsy0xLkVtWp9
+         C/WP+vk1TDlUAeKjfLXf8xrX2y5IOGi5s/EUDBiS2oILvLXGaeUaWmrkMN+ppW3C8aB5
+         mqKA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1692999561; x=1693604361;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=o7dRQ9By/T99QWDW5xev9b8rVkM9NZXXwZrmSduoTKY=;
+        b=bvQQVhFzDactkfPIamExnYHrD8wHO2m9rXkMz91mj4MhCFAJaLGbVmDkTyEDbQVgbG
+         DIL+/zG949slpBIjIc0ixsgq/V6RBhhWo3oMoyUAJCdlUS4Zm6xwYCLFbaAesoBYX4Wx
+         wGxK6Ikfuqk7q5JyVd0KC2bR2OMNiIUpzFCRn0tdPJV9N/vKjI3OON4cNnW1E+s4RxqT
+         qZC7N8qIY2bGX5GIHY8HW5Qxoe1455TbgvEXvS25nuj/2Wi+2O5yMkMJNtYPd+1l2l5K
+         ZP0c90mHhoRmwAk0HtJmrpxBldymsnikbsytaaIPDUf2Cni7BumYrE068EYS6lzC1XK2
+         skaw==
+X-Gm-Message-State: AOJu0YxjIq2DOjijJDcVqkSXy+o7YTp5zwptCe462L3TKAK78Rz4Z8t0
+        EXMcBovjJ0zl6SLrDpMxRuuV0Q==
+X-Google-Smtp-Source: AGHT+IFGwDu4J6IE5hfbjc7KSF4OfJEndquVBvBoV5vhWuIhyGy4zoBWcpcC8Lokr19GaOsT0RulfQ==
+X-Received: by 2002:a05:6a20:7fa0:b0:140:324c:124c with SMTP id d32-20020a056a207fa000b00140324c124cmr22387249pzj.62.1692999556447;
+        Fri, 25 Aug 2023 14:39:16 -0700 (PDT)
+Received: from dread.disaster.area (pa49-195-66-88.pa.nsw.optusnet.com.au. [49.195.66.88])
+        by smtp.gmail.com with ESMTPSA id a14-20020a62bd0e000000b006875df4773fsm1997221pff.163.2023.08.25.14.39.15
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Fri, 25 Aug 2023 14:39:15 -0700 (PDT)
+Received: from dave by dread.disaster.area with local (Exim 4.96)
+        (envelope-from <david@fromorbit.com>)
+        id 1qZeWO-006Uvd-0J;
+        Sat, 26 Aug 2023 07:39:12 +1000
+Date:   Sat, 26 Aug 2023 07:39:12 +1000
+From:   Dave Chinner <david@fromorbit.com>
+To:     Hao Xu <hao.xu@linux.dev>
+Cc:     io-uring@vger.kernel.org, Jens Axboe <axboe@kernel.dk>,
+        Dominique Martinet <asmadeus@codewreck.org>,
+        Pavel Begunkov <asml.silence@gmail.com>,
+        Christian Brauner <brauner@kernel.org>,
+        Alexander Viro <viro@zeniv.linux.org.uk>,
+        Stefan Roesch <shr@fb.com>, Clay Harris <bugs@claycon.org>,
+        "Darrick J . Wong" <djwong@kernel.org>,
+        linux-fsdevel@vger.kernel.org, linux-xfs@vger.kernel.org,
+        linux-ext4@vger.kernel.org, linux-cachefs@redhat.com,
+        ecryptfs@vger.kernel.org, linux-nfs@vger.kernel.org,
+        linux-unionfs@vger.kernel.org, bpf@vger.kernel.org,
+        netdev@vger.kernel.org, linux-s390@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-block@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, codalist@coda.cs.cmu.edu,
+        linux-f2fs-devel@lists.sourceforge.net, cluster-devel@redhat.com,
+        linux-mm@kvack.org, linux-nilfs@vger.kernel.org,
+        devel@lists.orangefs.org, linux-cifs@vger.kernel.org,
+        samba-technical@lists.samba.org, linux-mtd@lists.infradead.org,
+        Wanpeng Li <wanpengli@tencent.com>
+Subject: Re: [PATCH 02/29] xfs: rename XBF_TRYLOCK to XBF_NOWAIT
+Message-ID: <ZOkfgBlWKVmGN84i@dread.disaster.area>
+References: <20230825135431.1317785-1-hao.xu@linux.dev>
+ <20230825135431.1317785-3-hao.xu@linux.dev>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.13.0
-Subject: Re: [PATCH] btrfs: Allow online resize to use "min" shortcut
-To:     dsterba@suse.cz
-Cc:     linux-btrfs@vger.kernel.org, lennart@poettering.net,
-        daan.j.demeyer@gmail.com
-References: <20230825010542.4158944-1-lee@trager.us>
- <3127979c-8324-feda-4250-13c61117d0bf@trager.us>
- <20230825114718.GN2420@twin.jikos.cz> <20230825115040.GO2420@twin.jikos.cz>
-Content-Language: en-US
-From:   Lee Trager <lee@trager.us>
-In-Reply-To: <20230825115040.GO2420@twin.jikos.cz>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20230825135431.1317785-3-hao.xu@linux.dev>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On Fri, Aug 25, 2023 at 09:54:04PM +0800, Hao Xu wrote:
+> From: Hao Xu <howeyxu@tencent.com>
+> 
+> XBF_TRYLOCK means we need lock but don't block on it,
 
-On 8/25/23 4:50 AM, David Sterba wrote:
-> On Fri, Aug 25, 2023 at 01:47:18PM +0200, David Sterba wrote:
->> On Thu, Aug 24, 2023 at 06:23:50PM -0700, Lee Trager wrote:
->>>> --- a/fs/btrfs/volumes.h
->>>> +++ b/fs/btrfs/volumes.h
->>>> @@ -636,7 +636,7 @@ int btrfs_grow_device(struct btrfs_trans_handle *trans,
->>>>    		      struct btrfs_device *device, u64 new_size);
->>>>    struct btrfs_device *btrfs_find_device(const struct btrfs_fs_devices *fs_devices,
->>>>    				       const struct btrfs_dev_lookup_args *args);
->>>> -int btrfs_shrink_device(struct btrfs_device *device, u64 new_size);
->>>> +int btrfs_shrink_device(struct btrfs_device *device, u64 *new_size, bool to_min);
->>>>    int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *path);
->>>>    int btrfs_balance(struct btrfs_fs_info *fs_info,
->>>>    		  struct btrfs_balance_control *bctl,
->>>> @@ -648,6 +648,7 @@ int btrfs_pause_balance(struct btrfs_fs_info *fs_info);
->>>>    int btrfs_relocate_chunk(struct btrfs_fs_info *fs_info, u64 chunk_offset);
->>>>    int btrfs_cancel_balance(struct btrfs_fs_info *fs_info);
->>>>    int btrfs_create_uuid_tree(struct btrfs_fs_info *fs_info);
->>>> +u64 btrfs_get_allocated_space(struct btrfs_fs_info *fs_info);
->>>>    int btrfs_uuid_scan_kthread(void *data);
->>>>    bool btrfs_chunk_writeable(struct btrfs_fs_info *fs_info, u64 chunk_offset);
->>>>    void btrfs_dev_stat_inc_and_print(struct btrfs_device *dev, int index);
->>> I plan on sending a follow up patch to optionally resize block groups to
->>> the amount of space used by data and metadata. This will allow the
->>> creation of small distributed btrfs OS images.
->> Can you create the images in userspace with such properties?
-> Also we have that already as "mkfs.btrfs --shrink".
+Yes.
 
-mkfs.btrfs --rootdir foo --shrink doesn't support many btrfs features 
-such as subvolumes and compression. To use those features you must mount 
-the filesystem and make those modifications. Once those modifications 
-are made the filesystem must be shrunk. systemd has its own logic to 
-figure out how to shrink the filesystem after these operations are 
-complete using a bisect algorithm[1]. This patch allows users such as 
-systemd to minimize the filesystem with one command which uses internal 
-data to quickly get the right size.
 
-[1] 
-https://github.com/systemd/systemd/blob/main/src/home/homework-luks.c#L2957
+> we can use it to
+> stand for not waiting for memory allcation. Rename XBF_TRYLOCK to
+> XBF_NOWAIT, which is more generic.
 
+No.
+
+Not only can XBF_TRYLOCK require memory allocation, it can require
+IO to be issued. We use TRYLOCK for -readahead- and so we *must* be
+able to allocate memory and issue IO under TRYLOCK caller
+conditions.
+
+[...]
+
+> diff --git a/fs/xfs/libxfs/xfs_attr_remote.c b/fs/xfs/libxfs/xfs_attr_remote.c
+> index d440393b40eb..2ccb0867824c 100644
+> --- a/fs/xfs/libxfs/xfs_attr_remote.c
+> +++ b/fs/xfs/libxfs/xfs_attr_remote.c
+> @@ -661,7 +661,7 @@ xfs_attr_rmtval_invalidate(
+>  			return error;
+>  		if (XFS_IS_CORRUPT(args->dp->i_mount, nmap != 1))
+>  			return -EFSCORRUPTED;
+> -		error = xfs_attr_rmtval_stale(args->dp, &map, XBF_TRYLOCK);
+> +		error = xfs_attr_rmtval_stale(args->dp, &map, XBF_NOWAIT);
+>  		if (error)
+>  			return error;
+
+XBF_INCORE | XBF_NOWAIT makes no real sense. I mean, XBF_INCORE is
+exactly "find a cached buffer or fail" - it's not going to do any
+memory allocation or IO so NOWAIT smeantics don't make any sense
+here. It's the buffer lock that this lookup is explicitly
+avoiding, and so TRYLOCK describes exactly the semantics we want
+from this incore lookup.
+
+Indeed, this is a deadlock avoidance mechanism as the transaction
+may already have the buffer locked and so we don't want the
+xfs_buf_incore() lookup to try to lock the buffer again. TRYLOCK
+documents this pretty clearly - NOWAIT loses that context....
+
+> diff --git a/fs/xfs/libxfs/xfs_btree.c b/fs/xfs/libxfs/xfs_btree.c
+> index 6a6503ab0cd7..77c4f1d83475 100644
+> --- a/fs/xfs/libxfs/xfs_btree.c
+> +++ b/fs/xfs/libxfs/xfs_btree.c
+> @@ -1343,7 +1343,7 @@ xfs_btree_read_buf_block(
+>  	int			error;
+>  
+>  	/* need to sort out how callers deal with failures first */
+> -	ASSERT(!(flags & XBF_TRYLOCK));
+> +	ASSERT(!(flags & XBF_NOWAIT));
+>  
+>  	error = xfs_btree_ptr_to_daddr(cur, ptr, &d);
+>  	if (error)
+> diff --git a/fs/xfs/scrub/repair.c b/fs/xfs/scrub/repair.c
+> index ac6d8803e660..9312cf3b20e2 100644
+> --- a/fs/xfs/scrub/repair.c
+> +++ b/fs/xfs/scrub/repair.c
+> @@ -460,7 +460,7 @@ xrep_invalidate_block(
+>  
+>  	error = xfs_buf_incore(sc->mp->m_ddev_targp,
+>  			XFS_FSB_TO_DADDR(sc->mp, fsbno),
+> -			XFS_FSB_TO_BB(sc->mp, 1), XBF_TRYLOCK, &bp);
+> +			XFS_FSB_TO_BB(sc->mp, 1), XBF_NOWAIT, &bp);
+
+My point exactly.
+
+xfs_buf_incore() is simply a lookup with XBF_INCORE set. (XBF_INCORE
+| XBF_TRYLOCK) has the exactly semantics of "return the buffer only
+if it is cached and we can lock it without blocking.
+
+It will not instantiate a new buffer (i.e. do memory allocation) or
+do IO because the if it is under IO the buffer lock will be held.
+
+So, essentially, this "NOWAIT" semantic you want is already supplied
+by (XBF_INCORE | XBF_TRYLOCK) buffer lookups.
+
+>  	if (error)
+>  		return 0;
+>  
+> diff --git a/fs/xfs/xfs_buf.c b/fs/xfs/xfs_buf.c
+> index 15d1e5a7c2d3..9f84bc3b802c 100644
+> --- a/fs/xfs/xfs_buf.c
+> +++ b/fs/xfs/xfs_buf.c
+> @@ -228,7 +228,7 @@ _xfs_buf_alloc(
+>  	 * We don't want certain flags to appear in b_flags unless they are
+>  	 * specifically set by later operations on the buffer.
+>  	 */
+> -	flags &= ~(XBF_UNMAPPED | XBF_TRYLOCK | XBF_ASYNC | XBF_READ_AHEAD);
+> +	flags &= ~(XBF_UNMAPPED | XBF_NOWAIT | XBF_ASYNC | XBF_READ_AHEAD);
+>  
+>  	atomic_set(&bp->b_hold, 1);
+>  	atomic_set(&bp->b_lru_ref, 1);
+> @@ -543,7 +543,7 @@ xfs_buf_find_lock(
+>  	struct xfs_buf          *bp,
+>  	xfs_buf_flags_t		flags)
+>  {
+> -	if (flags & XBF_TRYLOCK) {
+> +	if (flags & XBF_NOWAIT) {
+>  		if (!xfs_buf_trylock(bp)) {
+>  			XFS_STATS_INC(bp->b_mount, xb_busy_locked);
+>  			return -EAGAIN;
+> @@ -886,7 +886,7 @@ xfs_buf_readahead_map(
+>  	struct xfs_buf		*bp;
+>  
+>  	xfs_buf_read_map(target, map, nmaps,
+> -		     XBF_TRYLOCK | XBF_ASYNC | XBF_READ_AHEAD, &bp, ops,
+> +		     XBF_NOWAIT | XBF_ASYNC | XBF_READ_AHEAD, &bp, ops,
+>  		     __this_address);
+
+That will break readahead (which we use extensively in getdents
+operations) if we can't allocate buffers and issue IO under NOWAIT
+conditions.
+
+>  }
+>  
+> diff --git a/fs/xfs/xfs_buf.h b/fs/xfs/xfs_buf.h
+> index 549c60942208..8cd307626939 100644
+> --- a/fs/xfs/xfs_buf.h
+> +++ b/fs/xfs/xfs_buf.h
+> @@ -45,7 +45,7 @@ struct xfs_buf;
+>  
+>  /* flags used only as arguments to access routines */
+>  #define XBF_INCORE	 (1u << 29)/* lookup only, return if found in cache */
+> -#define XBF_TRYLOCK	 (1u << 30)/* lock requested, but do not wait */
+> +#define XBF_NOWAIT	 (1u << 30)/* mem/lock requested, but do not wait */
+
+That's now a really poor comment. It doesn't describe the semantics
+or constraints that NOWAIT might imply.
+
+-Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

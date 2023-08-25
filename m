@@ -2,141 +2,89 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 992B6C3DA66
-	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Aug 2023 10:07:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 35A10C7EE2C
+	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Aug 2023 11:53:10 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235015AbjHYKHF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 25 Aug 2023 06:07:05 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42966 "EHLO
+        id S242211AbjHYLwi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 25 Aug 2023 07:52:38 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37094 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233119AbjHYKGe (ORCPT
+        with ESMTP id S244232AbjHYLw0 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 25 Aug 2023 06:06:34 -0400
+        Fri, 25 Aug 2023 07:52:26 -0400
 Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A80A32106
-        for <linux-btrfs@vger.kernel.org>; Fri, 25 Aug 2023 03:06:32 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C40EF10FF
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 Aug 2023 04:52:24 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature RSA-PSS (2048 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 4525762FB9
-        for <linux-btrfs@vger.kernel.org>; Fri, 25 Aug 2023 10:06:32 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 61590C433C7;
-        Fri, 25 Aug 2023 10:06:31 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 624D9653FF
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 Aug 2023 11:52:24 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 746C2C433C8;
+        Fri, 25 Aug 2023 11:52:23 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1692957991;
-        bh=spjNavDxVkOgczkMOddSkUptD98eGtpSnNMxTKv6hpM=;
-        h=Subject:From:To:Date:In-Reply-To:References:From;
-        b=Ln5m0U/w+x+s2RBXkxrIE1amOZpHW4EBlsbk11kCtETkBywZAKc8CbS+qbHhgtWJ6
-         BZj91PElCGcjqZ10T2btFQWQkju7SX3J1rvCGUXiFZ9Jhtu5Hj/uf6xHeAzWyL4TX7
-         x8RsYQrlMpQyd3QTHu9Stq5TLOd/m+drOn7RVyIJZYKcmts5Znbg11sihtVkXNVDlz
-         Y4fDwPpSAee4EL/cb7hg75KkZjYYh7FMvHi0AtmNJgliDuK/CgwSjDddYLegHjDjfE
-         ffuy5fGC/3wx4d7ReLfUa+NmuL0bm1lKG/eoPycqJXpm4h7qsOG03FcmRmVfIdJB6z
-         PCkGEve4NMNJA==
-Message-ID: <2c789ca858b0c2c52a5e90aba403144fbff3f941.camel@kernel.org>
-Subject: Re: btrfs blocks root from writing even when there is plenty of
- statfs->f_bfree
-From:   Jeff Layton <jlayton@kernel.org>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Date:   Fri, 25 Aug 2023 06:06:30 -0400
-In-Reply-To: <32999248-c1e9-4601-9a1e-b236a7fa8638@gmx.com>
-References: <dca245d8861cfa6ba65a4ca4b74ff8adaba9bfc0.camel@kernel.org>
-         <c3792425-efcf-40d4-a3fb-e7f8b38dc666@gmx.com>
-         <32999248-c1e9-4601-9a1e-b236a7fa8638@gmx.com>
-Content-Type: text/plain; charset="ISO-8859-15"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.48.4 (3.48.4-1.fc38) 
+        s=k20201202; t=1692964343;
+        bh=Cw+RgJBIbI14PDReeLRlheEacvr6y7G9HRsspEtFwrc=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=QcsQWvEpIJV8gu97n62hVAqk6Cy442zivQWqcAJEN6Cnh9I22bfRarp9SK593JLs0
+         apcXJ6tUyD+ggnpBpBC/Gl31Z8IeVw1x2kO4g7WSckw4lKagf7ZCN8y+5kK/oObl0y
+         fKX8/Ti3jUrUQ6oAxXoJTwqqbUmqQw7hHSfdhvka/Rc/jBl8JtUxPaEWa7YyVPzefA
+         dnkrghAV5RDgM1HzMtciYxpnWJjis6qwnOHbwfuNSXSdnGt+x76QZlMf8rPUEKemCj
+         hRTMm3e0PwzTvi+juL1Z933Ndl/eo/Ai7j1tT/zuC75LM3c1vzhNK7iDu/5vnB0gSL
+         aV/9ZV2IbDDHw==
+Date:   Fri, 25 Aug 2023 12:52:20 +0100
+From:   Filipe Manana <fdmanana@kernel.org>
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: Re: [PATCH] btrfs: check for BTRFS_FS_ERROR in pending ordered assert
+Message-ID: <ZOiV9NakKKVGssWk@debian0.Home>
+References: <c640ee0669c4454488d2ddacbc3a93884c905b38.1692910732.git.josef@toxicpanda.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <c640ee0669c4454488d2ddacbc3a93884c905b38.1692910732.git.josef@toxicpanda.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, 2023-08-25 at 10:12 +0800, Qu Wenruo wrote:
->=20
-> On 2023/8/25 09:23, Qu Wenruo wrote:
-> >=20
-> >=20
-> > On 2023/8/25 04:33, Jeff Layton wrote:
-> > > I've been doing some testing with btrfs exported via nfsd and hit thi=
-s
-> > > bug. root is unable to write to the filesystem, even though statfs
-> > > reports that there should be 400k+ blocks available.
-> > >=20
-> > > The reproducer is pretty simple. First I fill up the filesystem as an
-> > > unprivileged user (let this run until I hit ENOSPC):
-> > >=20
-> > > [vagrant@kdevops-nfs-default btrfs]$ dd if=3D/dev/urandom
-> > > of=3D/media/btrfs/bigfile bs=3D1M
-> > >=20
-> > > ...and then try to write to a file on the fs as root:
-> > >=20
-> > > [root@kdevops-nfs-default btrfs]# strace -f -e statfs df .
-> > > statfs(".", {f_type=3DBTRFS_SUPER_MAGIC, f_bsize=3D4096,
-> > > f_blocks=3D26214400, f_bfree=3D452204, f_bavail=3D0, f_files=3D0, f_f=
-free=3D0,
-> > > f_fsid=3D{val=3D[0xa9d43863, 0xb08b34cc]}, f_namelen=3D255, f_frsize=
-=3D4096,
-> > > f_flags=3DST_VALID|ST_RELATIME}) =3D 0
-> >=20
-> > Note that, unlike XFS/EXT4, btrfs goes strict limits between data and
-> > metadata.
-> >=20
-> > Metadata space can only be used to store tree blocks, never data.
-> > And both metadata and data space are allocated dynamically, thus we hav=
-e
-> > have problems when the workload is unbalanced.
-> > (This is a little like the inodes limits on XFS/EXT4, but more dynamic)
-> >=20
-> > In your particular case, the data space is all used up, but metadata
-> > space still has some free space.
-> >=20
-> > And f_btree returned by btrfs is including the metadata space, as
-> > although that's inaccurate, it's the best what we can do to report.
-> >=20
-> >=20
-> > > Filesystem=A0=A0=A0=A0 1K-blocks=A0=A0=A0=A0=A0 Used Available Use% M=
-ounted on
-> > > /dev/nvme2n1=A0=A0 104857600 103048784=A0=A0=A0=A0=A0=A0=A0=A0 0 100%=
- /media/btrfs
-> > > +++ exited with 0 +++
-> > > [root@kdevops-nfs-default btrfs]# xfs_io -f -c "pwrite -b 4096 4096
-> > > 4096" ./file1
-> > > pwrite: No space left on device
-> > >=20
-> > > This works on ext4 and xfs. The kernel is Linus' master branch as of =
-a
-> > > couple of days ago:
-> > >=20
-> > > =A0=A0=A0=A0 6.5.0-rc7-g081b0d4bef5d
-> > >=20
-> > > Let me know if you need more info.
-> >=20
-> > That's why for btrfs we recommend to go "btrfs fi usage" to get a more
-> > comprehensive understand on the space usage.
-> >=20
-> > In your case, Data usage should be 100%, without any spare ones.
->=20
-> Another thing is, btrfs doesn't have any extra data space reserved for
-> root user, instead btrfs has extra space reserved for metadata, as
-> metadata COW will cost extra space, even doing things like unlinking a fi=
-le.
->=20
-> Thus this would be a behavior difference here.
->=20
+On Thu, Aug 24, 2023 at 04:59:04PM -0400, Josef Bacik wrote:
+> If we do fast tree logging we increment a counter on the current
+> transaction for every ordered extent we need to wait for.  This means we
+> expect the transaction to still be there when we clear pending on the
+> ordered extent.  However if we happen to abort the transaction and clean
+> it up, there could be no running transaction, and thus we'll trip the
+> 
+> ASSERT(trans)
+> 
+> check.  This is obviously incorrect, and the code properly deals with
+> the case that the trans doesn't exist.  Fix this ASSERT() to only fire
+> if there's no trans and we don't have BTRFS_FS_ERROR() set on the file
+> system.
+> 
+> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
 
-Got it, thanks for the explanation.
+Looks good, thanks.
 
-FWIW, I noticed this because generic/186 and generic/187 were failing on
-NFS exported btrfs, but was passing with XFS, they get _notrun:
-
-    generic/186       [not run] Can't fragment free space on btrfs.
-    generic/187       [not run] Can't fragment free space on btrfs.
-
-I'll probably just skip this test on NFS since it only reliably passes
-on certain exported filesystems.
-
-Thanks again!
---=20
-Jeff Layton <jlayton@kernel.org>
+> ---
+>  fs/btrfs/ordered-data.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+> index 09b274d9ba18..69a2cb50c197 100644
+> --- a/fs/btrfs/ordered-data.c
+> +++ b/fs/btrfs/ordered-data.c
+> @@ -659,7 +659,7 @@ void btrfs_remove_ordered_extent(struct btrfs_inode *btrfs_inode,
+>  			refcount_inc(&trans->use_count);
+>  		spin_unlock(&fs_info->trans_lock);
+>  
+> -		ASSERT(trans);
+> +		ASSERT(trans || BTRFS_FS_ERROR(fs_info));
+>  		if (trans) {
+>  			if (atomic_dec_and_test(&trans->pending_ordered))
+>  				wake_up(&trans->pending_wait);
+> -- 
+> 2.26.3
+> 

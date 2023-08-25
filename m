@@ -2,221 +2,109 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CD198C71134
-	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Aug 2023 19:51:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 88714C3DA66
+	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Aug 2023 20:20:42 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229993AbjHYTvK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 25 Aug 2023 15:51:10 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50614 "EHLO
+        id S231130AbjHYUUK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 25 Aug 2023 16:20:10 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34010 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229748AbjHYTuz (ORCPT
+        with ESMTP id S230382AbjHYUTk (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 25 Aug 2023 15:50:55 -0400
-Received: from mail-pl1-f206.google.com (mail-pl1-f206.google.com [209.85.214.206])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4ECF72686
-        for <linux-btrfs@vger.kernel.org>; Fri, 25 Aug 2023 12:50:49 -0700 (PDT)
-Received: by mail-pl1-f206.google.com with SMTP id d9443c01a7336-1c08a6763b3so14918155ad.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 25 Aug 2023 12:50:49 -0700 (PDT)
+        Fri, 25 Aug 2023 16:19:40 -0400
+Received: from mail-qt1-x82a.google.com (mail-qt1-x82a.google.com [IPv6:2607:f8b0:4864:20::82a])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 20BDB1736
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 Aug 2023 13:19:39 -0700 (PDT)
+Received: by mail-qt1-x82a.google.com with SMTP id d75a77b69052e-4109c8ece5aso7899041cf.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 Aug 2023 13:19:39 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20221208.gappssmtp.com; s=20221208; t=1692994778; x=1693599578;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=xEXFUFmf3inW/LN0OTx/vLWSMp4bAzU+io4MxvgVyuE=;
+        b=ZY6AYuDpmtd1RXXfKTk7foBgKGaRyQrXGf3h/WA8S1BPL23UYscX7WKfcQchgLQ7ST
+         tifgKHOWX5rhOs3NX3ysnEvJzaNwo5F4QgkXlLAt5JCWGCHSM8uek67l2hiQ7VGmpLTK
+         8ehoDuzqTHSo48BCEQgA/RJSCp9VCsxHo93bz8RJOiyt2PP1hTQ3b72HdVaEZ+NVzvzs
+         JDb2SBFka7Cta15NGGXJOLGxf7PZC5CHK3DcoLVUflTe+ZAGEQkgmtFpqdGSD/3Mqmig
+         J3DPyjlCCPBLdAOL2BerSzV9dEu6nOWL1eWV1ouOn7GUAnu/8RZbx2tHrIpUq2MMek1Q
+         gyeQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1692993048; x=1693597848;
-        h=to:from:subject:message-id:date:mime-version:x-gm-message-state
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=o7e1vWies/DOaZ3ASWipIdAkVy48iy3yEqiHzcJn1bQ=;
-        b=VG03UlERM07pBWB0L/JVxo7q/2bJ1O3Wb9R7RRxZZefGqaCOm9jDL3EXYg3yJcY0WX
-         jTwvMnHpY7T0FwwQs6ILk5AGqw3JtWXUSyJcIWCHPK3Xwv9fK4DDvSKJyTx97pTesEev
-         iWnj1U9170FPsmjHvS545uAG1MO9u/YdqWBd1/chBJ1Qpy9as0eD/u4IViBOjCDld0Bw
-         XOypi9vKw++AnY4WD9By1PUdnDwD93lxK/3myDgFVEg/e2B852j0lz+gu5ZY0mgyxRMI
-         SSW51hNJ+cjRRltwoOcfP5ZfaeSG2YWmugMGW1FGG8CzCzLkBff+8lKgEnB1OaYQPeyu
-         5QiA==
-X-Gm-Message-State: AOJu0Yy2QXVmmJI+VB2KuSmFBCo3wpMw7VyeyRK3ycrfD8/qPFtsH6Pg
-        Ay87OtNj5FYFU2LtPDZw47n5z4+onmns3kRtVUZiqhLn+yHN
-X-Google-Smtp-Source: AGHT+IFLqTA9q5/x/vpyoJaI5CoNdPUW0LdQYmCBBE4S12+neVrz/DqAKvnxXY+7ui7xqh/hGZJytBeMRYEKxcWgFvnbM762rp4r
+        d=1e100.net; s=20221208; t=1692994778; x=1693599578;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=xEXFUFmf3inW/LN0OTx/vLWSMp4bAzU+io4MxvgVyuE=;
+        b=Z3+P2zd6Ljh5ZXXQ+mNifsTKVvw/GKYF9uncmcRTih10es+6A9ooOEfxuQn0qUbOKQ
+         b2iXZntque5J6/5hmB2mNFw4X+DQ8hF93Ij7fvyXzUbETqapxeq2yRTiqAX4jP/sV1vq
+         g7CiW1PnLkLK30pV/jrgCeMY0YwQyhnEYWRyrgRHmTEAQP7n1xL814yrtDvedQaXw3ue
+         2piPDLxYItsIAngT6YbeND8+zsHNoKU9R569My+PQp+xAitfgE7Frbe3oqpZ54W1waGK
+         VJ+9yHLhjYIEvIYcufb30jYLZfz3zwugjecY7kUuVz7mjmz3IIR1e8ZkFACBUhq9h5dN
+         mecw==
+X-Gm-Message-State: AOJu0YxVSOjzSWXnV4FdwPITPKaBMY53ikpAvMPq4edU/7eHI5actEyV
+        dROxgQIFvXkfocqQsJn5gD9UIiQ7E5mOsjk/MVw=
+X-Google-Smtp-Source: AGHT+IF8gSFrDa7vl2J5bMd1kMJ15NwfSjy4U+3Dq1di8uR/VhBvF7aUogosHoPqgFSmvt/qzXj8JA==
+X-Received: by 2002:a05:622a:1046:b0:410:8fcb:e966 with SMTP id f6-20020a05622a104600b004108fcbe966mr21579736qte.32.1692994778148;
+        Fri, 25 Aug 2023 13:19:38 -0700 (PDT)
+Received: from localhost (cpe-76-182-20-124.nc.res.rr.com. [76.182.20.124])
+        by smtp.gmail.com with ESMTPSA id bp37-20020a05622a1ba500b004100c132990sm738694qtb.44.2023.08.25.13.19.37
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Fri, 25 Aug 2023 13:19:37 -0700 (PDT)
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: [PATCH v2 01/12] btrfs: move btrfs_crc32c_final into free-space-cache.c
+Date:   Fri, 25 Aug 2023 16:19:19 -0400
+Message-ID: <c86c72428b7356d2a983d6943818bd9c1c40e1fb.1692994620.git.josef@toxicpanda.com>
+X-Mailer: git-send-email 2.41.0
+In-Reply-To: <cover.1692994620.git.josef@toxicpanda.com>
+References: <cover.1692994620.git.josef@toxicpanda.com>
 MIME-Version: 1.0
-X-Received: by 2002:a17:903:1248:b0:1b8:a552:c8c9 with SMTP id
- u8-20020a170903124800b001b8a552c8c9mr7390745plh.13.1692993048670; Fri, 25 Aug
- 2023 12:50:48 -0700 (PDT)
-Date:   Fri, 25 Aug 2023 12:50:48 -0700
-X-Google-Appengine-App-Id: s~syzkaller
-X-Google-Appengine-App-Id-Alias: syzkaller
-Message-ID: <00000000000045fa140603c4a969@google.com>
-Subject: [syzbot] [btrfs?] possible deadlock in btrfs_search_slot (2)
-From:   syzbot <syzbot+bf66ad948981797d2f1d@syzkaller.appspotmail.com>
-To:     clm@fb.com, dsterba@suse.com, josef@toxicpanda.com,
-        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hello,
+This is the only place this helper is used, take it out of ctree.h and
+move it into free-space-cache.c.
 
-syzbot found the following issue on:
-
-HEAD commit:    f7757129e3de Merge tag 'v6.5-p3' of git://git.kernel.org/p..
-git tree:       upstream
-console+strace: https://syzkaller.appspot.com/x/log.txt?x=16f597efa80000
-kernel config:  https://syzkaller.appspot.com/x/.config?x=1b32f62c755c3a9c
-dashboard link: https://syzkaller.appspot.com/bug?extid=bf66ad948981797d2f1d
-compiler:       Debian clang version 15.0.6, GNU ld (GNU Binutils for Debian) 2.40
-syz repro:      https://syzkaller.appspot.com/x/repro.syz?x=17f91660680000
-C reproducer:   https://syzkaller.appspot.com/x/repro.c?x=17b3a25ba80000
-
-Downloadable assets:
-disk image: https://storage.googleapis.com/syzbot-assets/e974b38a90bd/disk-f7757129.raw.xz
-vmlinux: https://storage.googleapis.com/syzbot-assets/fdc5c90820c9/vmlinux-f7757129.xz
-kernel image: https://storage.googleapis.com/syzbot-assets/b21384bf7402/bzImage-f7757129.xz
-mounted in repro: https://storage.googleapis.com/syzbot-assets/404dc73f5fcc/mount_0.gz
-
-IMPORTANT: if you fix the issue, please add the following tag to the commit:
-Reported-by: syzbot+bf66ad948981797d2f1d@syzkaller.appspotmail.com
-
-BTRFS info (device loop0): enabling ssd optimizations
-BTRFS info (device loop0): using spread ssd allocation scheme
-BTRFS info (device loop0): turning on sync discard
-BTRFS info (device loop0): using free space tree
-======================================================
-WARNING: possible circular locking dependency detected
-6.5.0-rc7-syzkaller-00004-gf7757129e3de #0 Not tainted
-------------------------------------------------------
-syz-executor277/5012 is trying to acquire lock:
-ffff88802df41710 (btrfs-tree-01){++++}-{3:3}, at: __btrfs_tree_read_lock+0x2f/0x220 fs/btrfs/locking.c:136
-
-but task is already holding lock:
-ffff88802df418e8 (btrfs-tree-00){++++}-{3:3}, at: __btrfs_tree_read_lock+0x2f/0x220 fs/btrfs/locking.c:136
-
-which lock already depends on the new lock.
-
-
-the existing dependency chain (in reverse order) is:
-
--> #1 (btrfs-tree-00){++++}-{3:3}:
-       down_read_nested+0x49/0x2f0 kernel/locking/rwsem.c:1645
-       __btrfs_tree_read_lock+0x2f/0x220 fs/btrfs/locking.c:136
-       btrfs_search_slot+0x13a4/0x2f80 fs/btrfs/ctree.c:2302
-       btrfs_init_root_free_objectid+0x148/0x320 fs/btrfs/disk-io.c:4955
-       btrfs_init_fs_root fs/btrfs/disk-io.c:1128 [inline]
-       btrfs_get_root_ref+0x5ae/0xae0 fs/btrfs/disk-io.c:1338
-       btrfs_get_fs_root fs/btrfs/disk-io.c:1390 [inline]
-       open_ctree+0x29c8/0x3030 fs/btrfs/disk-io.c:3494
-       btrfs_fill_super+0x1c7/0x2f0 fs/btrfs/super.c:1154
-       btrfs_mount_root+0x7e0/0x910 fs/btrfs/super.c:1519
-       legacy_get_tree+0xef/0x190 fs/fs_context.c:611
-       vfs_get_tree+0x8c/0x270 fs/super.c:1519
-       fc_mount fs/namespace.c:1112 [inline]
-       vfs_kern_mount+0xbc/0x150 fs/namespace.c:1142
-       btrfs_mount+0x39f/0xb50 fs/btrfs/super.c:1579
-       legacy_get_tree+0xef/0x190 fs/fs_context.c:611
-       vfs_get_tree+0x8c/0x270 fs/super.c:1519
-       do_new_mount+0x28f/0xae0 fs/namespace.c:3335
-       do_mount fs/namespace.c:3675 [inline]
-       __do_sys_mount fs/namespace.c:3884 [inline]
-       __se_sys_mount+0x2d9/0x3c0 fs/namespace.c:3861
-       do_syscall_x64 arch/x86/entry/common.c:50 [inline]
-       do_syscall_64+0x41/0xc0 arch/x86/entry/common.c:80
-       entry_SYSCALL_64_after_hwframe+0x63/0xcd
-
--> #0 (btrfs-tree-01){++++}-{3:3}:
-       check_prev_add kernel/locking/lockdep.c:3142 [inline]
-       check_prevs_add kernel/locking/lockdep.c:3261 [inline]
-       validate_chain kernel/locking/lockdep.c:3876 [inline]
-       __lock_acquire+0x39ff/0x7f70 kernel/locking/lockdep.c:5144
-       lock_acquire+0x1e3/0x520 kernel/locking/lockdep.c:5761
-       down_read_nested+0x49/0x2f0 kernel/locking/rwsem.c:1645
-       __btrfs_tree_read_lock+0x2f/0x220 fs/btrfs/locking.c:136
-       btrfs_tree_read_lock fs/btrfs/locking.c:142 [inline]
-       btrfs_read_lock_root_node+0x292/0x3c0 fs/btrfs/locking.c:281
-       btrfs_search_slot_get_root fs/btrfs/ctree.c:1832 [inline]
-       btrfs_search_slot+0x4ff/0x2f80 fs/btrfs/ctree.c:2154
-       btrfs_lookup_inode+0xdc/0x480 fs/btrfs/inode-item.c:412
-       btrfs_read_locked_inode fs/btrfs/inode.c:3892 [inline]
-       btrfs_iget_path+0x2d9/0x1520 fs/btrfs/inode.c:5716
-       btrfs_search_path_in_tree_user fs/btrfs/ioctl.c:1961 [inline]
-       btrfs_ioctl_ino_lookup_user+0x77a/0xf50 fs/btrfs/ioctl.c:2105
-       btrfs_ioctl+0xb0b/0xd40 fs/btrfs/ioctl.c:4683
-       vfs_ioctl fs/ioctl.c:51 [inline]
-       __do_sys_ioctl fs/ioctl.c:870 [inline]
-       __se_sys_ioctl+0xf8/0x170 fs/ioctl.c:856
-       do_syscall_x64 arch/x86/entry/common.c:50 [inline]
-       do_syscall_64+0x41/0xc0 arch/x86/entry/common.c:80
-       entry_SYSCALL_64_after_hwframe+0x63/0xcd
-
-other info that might help us debug this:
-
- Possible unsafe locking scenario:
-
-       CPU0                    CPU1
-       ----                    ----
-  rlock(btrfs-tree-00);
-                               lock(btrfs-tree-01);
-                               lock(btrfs-tree-00);
-  rlock(btrfs-tree-01);
-
- *** DEADLOCK ***
-
-1 lock held by syz-executor277/5012:
- #0: ffff88802df418e8 (btrfs-tree-00){++++}-{3:3}, at: __btrfs_tree_read_lock+0x2f/0x220 fs/btrfs/locking.c:136
-
-stack backtrace:
-CPU: 1 PID: 5012 Comm: syz-executor277 Not tainted 6.5.0-rc7-syzkaller-00004-gf7757129e3de #0
-Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 07/26/2023
-Call Trace:
- <TASK>
- __dump_stack lib/dump_stack.c:88 [inline]
- dump_stack_lvl+0x1e7/0x2d0 lib/dump_stack.c:106
- check_noncircular+0x375/0x4a0 kernel/locking/lockdep.c:2195
- check_prev_add kernel/locking/lockdep.c:3142 [inline]
- check_prevs_add kernel/locking/lockdep.c:3261 [inline]
- validate_chain kernel/locking/lockdep.c:3876 [inline]
- __lock_acquire+0x39ff/0x7f70 kernel/locking/lockdep.c:5144
- lock_acquire+0x1e3/0x520 kernel/locking/lockdep.c:5761
- down_read_nested+0x49/0x2f0 kernel/locking/rwsem.c:1645
- __btrfs_tree_read_lock+0x2f/0x220 fs/btrfs/locking.c:136
- btrfs_tree_read_lock fs/btrfs/locking.c:142 [inline]
- btrfs_read_lock_root_node+0x292/0x3c0 fs/btrfs/locking.c:281
- btrfs_search_slot_get_root fs/btrfs/ctree.c:1832 [inline]
- btrfs_search_slot+0x4ff/0x2f80 fs/btrfs/ctree.c:2154
- btrfs_lookup_inode+0xdc/0x480 fs/btrfs/inode-item.c:412
- btrfs_read_locked_inode fs/btrfs/inode.c:3892 [inline]
- btrfs_iget_path+0x2d9/0x1520 fs/btrfs/inode.c:5716
- btrfs_search_path_in_tree_user fs/btrfs/ioctl.c:1961 [inline]
- btrfs_ioctl_ino_lookup_user+0x77a/0xf50 fs/btrfs/ioctl.c:2105
- btrfs_ioctl+0xb0b/0xd40 fs/btrfs/ioctl.c:4683
- vfs_ioctl fs/ioctl.c:51 [inline]
- __do_sys_ioctl fs/ioctl.c:870 [inline]
- __se_sys_ioctl+0xf8/0x170 fs/ioctl.c:856
- do_syscall_x64 arch/x86/entry/common.c:50 [inline]
- do_syscall_64+0x41/0xc0 arch/x86/entry/common.c:80
- entry_SYSCALL_64_after_hwframe+0x63/0xcd
-RIP: 0033:0x7f0bec94ea39
-Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 61 17 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
-RSP: 002b:00007ffcde5751e8 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
-RAX: ffffffffffffffda RBX: 00007ffcde5753b8 RCX: 00007f0bec94ea39
-RDX: 0000000020000040 RSI: 00000000d000943e RDI: 0000000000000004
-RBP: 00007f0bec9c6610 R08:
-
-
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
-This report is generated by a bot. It may contain errors.
-See https://goo.gl/tpsmEJ for more information about syzbot.
-syzbot engineers can be reached at syzkaller@googlegroups.com.
+ fs/btrfs/ctree.h            | 5 -----
+ fs/btrfs/free-space-cache.c | 5 +++++
+ 2 files changed, 5 insertions(+), 5 deletions(-)
 
-syzbot will keep track of this issue. See:
-https://goo.gl/tpsmEJ#status for how to communicate with syzbot.
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 9419f4e37a58..c80d9879d931 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -475,11 +475,6 @@ static inline u32 btrfs_crc32c(u32 crc, const void *address, unsigned length)
+ 	return crc32c(crc, address, length);
+ }
+ 
+-static inline void btrfs_crc32c_final(u32 crc, u8 *result)
+-{
+-	put_unaligned_le32(~crc, result);
+-}
+-
+ static inline u64 btrfs_name_hash(const char *name, int len)
+ {
+        return crc32c((u32)~1, name, len);
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 27fad70451aa..759b92db35d7 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -57,6 +57,11 @@ static void bitmap_clear_bits(struct btrfs_free_space_ctl *ctl,
+ 			      struct btrfs_free_space *info, u64 offset,
+ 			      u64 bytes, bool update_stats);
+ 
++static inline void btrfs_crc32c_final(u32 crc, u8 *result)
++{
++	put_unaligned_le32(~crc, result);
++}
++
+ static void __btrfs_remove_free_space_cache(struct btrfs_free_space_ctl *ctl)
+ {
+ 	struct btrfs_free_space *info;
+-- 
+2.41.0
 
-If the bug is already fixed, let syzbot know by replying with:
-#syz fix: exact-commit-title
-
-If you want syzbot to run the reproducer, reply with:
-#syz test: git://repo/address.git branch-or-commit-hash
-If you attach or paste a git patch, syzbot will apply it before testing.
-
-If you want to overwrite bug's subsystems, reply with:
-#syz set subsystems: new-subsystem
-(See the list of subsystem names on the web dashboard)
-
-If the bug is a duplicate of another bug, reply with:
-#syz dup: exact-subject-of-another-report
-
-If you want to undo deduplication, reply with:
-#syz undup

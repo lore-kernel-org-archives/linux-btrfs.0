@@ -2,186 +2,104 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 44BEAC83F1F
-	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Aug 2023 18:36:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 429C0C83F19
+	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Aug 2023 18:36:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232012AbjH3Sf7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 30 Aug 2023 14:35:59 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38874 "EHLO
+        id S231796AbjH3SgB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 30 Aug 2023 14:36:01 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50402 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S243295AbjH3Khz (ORCPT
+        with ESMTP id S243289AbjH3Kht (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 30 Aug 2023 06:37:55 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E7177B9
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 Aug 2023 03:37:52 -0700 (PDT)
+        Wed, 30 Aug 2023 06:37:49 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9E743B9
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 Aug 2023 03:37:46 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id A97932186F
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 Aug 2023 10:37:51 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 62F941F45F
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 Aug 2023 10:37:45 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1693391871; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=myP+DltJIQ4KaAdmFdh+QtBGWlh+e4tl72mNfSEIyCs=;
-        b=a7yg8/wpizpx5IEwlAsUUlxtQFahHYAPAkXDfX5AS+HkOBWxBvoyeq5WcyiQvDNkCFNo4r
-        0hSlR/7YUP2QZyWmwpF3mUVh/7xsvIpiL1bVm0INXRU+dDrxUMQFrSr5H7Bz+qD8Qlbxv1
-        X9suMAsI4AkRAjSK+v9oHPkeYHiPFZ8=
+        t=1693391865; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=qohgiNSWQBKmuIXc/y5LLmz5xDPs8vxMN3Z2dTKowuQ=;
+        b=a2dsuLNw8MqnADletzNRLz3kIFeQ/gIw0ybC293vc0vXcW67TLwTi977v4hmhe7Eo852RE
+        XQTrcV+4isL23plA4K/4KLacpy0MkuoCxnEPlMJ6Lu2V2QGDN1coA5mIeSJvzRB9eaalv2
+        0d2Oey7AxJwm8p4rNToMLSNjYpSy++g=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 93CFB1353E
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 Aug 2023 10:37:50 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id B46721353E
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 Aug 2023 10:37:44 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id 2B16F/4b72SKcAAAMHmgww
+        id fYrmHvgb72SKcAAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 Aug 2023 10:37:50 +0000
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 Aug 2023 10:37:44 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 5/5] btrfs: qgroup: use qgroup_iterator facility to replace @tmp ulist of qgroup_update_refcnt()
-Date:   Wed, 30 Aug 2023 18:37:27 +0800
-Message-ID: <e6d30c5f77867f20ca19244e5c37881188855d6e.1693391268.git.wqu@suse.com>
+Subject: [PATCH 0/5] btrfs: qgroup: reduce GFP_ATOMIC usage for ulist
+Date:   Wed, 30 Aug 2023 18:37:22 +0800
+Message-ID: <cover.1693391268.git.wqu@suse.com>
 X-Mailer: git-send-email 2.41.0
-In-Reply-To: <cover.1693391268.git.wqu@suse.com>
-References: <cover.1693391268.git.wqu@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-For function qgroup_update_refcnt(), we use @tmp list to iterate all the
-involved qgroups of a subvolume.
+[REPO]
+https://github.com/adam900710/linux/tree/qgroup_mutex
 
-It's a perfect match for qgroup_iterator facility, as that @tmp ulist
-has a very limited lifespan (just inside the while() loop).
+Yep, the branch name shows my previous failed attempt to solve the
+problem.
 
-By migrating to qgroup_iterator, we can get rid of the GFP_ATOMIC memory
-allocation and no more error handling needed.
+[PROBLEM]
+There are quite some GFP_ATOMIC usage for btrfs qgroups, most of them
+are for ulists.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/qgroup.c | 37 +++++++++++--------------------------
- 1 file changed, 11 insertions(+), 26 deletions(-)
+Those ulists are just used as a temporary memory to trace the involved
+qgroups.
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 08f4fc622180..6fcf302744e2 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -2463,13 +2463,11 @@ int btrfs_qgroup_trace_subtree(struct btrfs_trans_handle *trans,
-  * Walk all of the roots that points to the bytenr and adjust their refcnts.
-  */
- static int qgroup_update_refcnt(struct btrfs_fs_info *fs_info,
--				struct ulist *roots, struct ulist *tmp,
--				struct ulist *qgroups, u64 seq, int update_old)
-+				struct ulist *roots, struct ulist *qgroups,
-+				u64 seq, int update_old)
- {
- 	struct ulist_node *unode;
- 	struct ulist_iterator uiter;
--	struct ulist_node *tmp_unode;
--	struct ulist_iterator tmp_uiter;
- 	struct btrfs_qgroup *qg;
- 	int ret = 0;
- 
-@@ -2477,40 +2475,35 @@ static int qgroup_update_refcnt(struct btrfs_fs_info *fs_info,
- 		return 0;
- 	ULIST_ITER_INIT(&uiter);
- 	while ((unode = ulist_next(roots, &uiter))) {
-+		LIST_HEAD(tmp);
-+
- 		qg = find_qgroup_rb(fs_info, unode->val);
- 		if (!qg)
- 			continue;
- 
--		ulist_reinit(tmp);
- 		ret = ulist_add(qgroups, qg->qgroupid, qgroup_to_aux(qg),
- 				GFP_ATOMIC);
- 		if (ret < 0)
- 			return ret;
--		ret = ulist_add(tmp, qg->qgroupid, qgroup_to_aux(qg), GFP_ATOMIC);
--		if (ret < 0)
--			return ret;
--		ULIST_ITER_INIT(&tmp_uiter);
--		while ((tmp_unode = ulist_next(tmp, &tmp_uiter))) {
-+		qgroup_iterator_add(&tmp, qg);
-+		list_for_each_entry(qg, &tmp, iterator) {
- 			struct btrfs_qgroup_list *glist;
- 
--			qg = unode_aux_to_qgroup(tmp_unode);
- 			if (update_old)
- 				btrfs_qgroup_update_old_refcnt(qg, seq, 1);
- 			else
- 				btrfs_qgroup_update_new_refcnt(qg, seq, 1);
-+
- 			list_for_each_entry(glist, &qg->groups, next_group) {
- 				ret = ulist_add(qgroups, glist->group->qgroupid,
- 						qgroup_to_aux(glist->group),
- 						GFP_ATOMIC);
- 				if (ret < 0)
- 					return ret;
--				ret = ulist_add(tmp, glist->group->qgroupid,
--						qgroup_to_aux(glist->group),
--						GFP_ATOMIC);
--				if (ret < 0)
--					return ret;
-+				qgroup_iterator_add(&tmp, glist->group);
- 			}
- 		}
-+		qgroup_iterator_clean(&tmp);
- 	}
- 	return 0;
- }
-@@ -2675,7 +2668,6 @@ int btrfs_qgroup_account_extent(struct btrfs_trans_handle *trans, u64 bytenr,
- {
- 	struct btrfs_fs_info *fs_info = trans->fs_info;
- 	struct ulist *qgroups = NULL;
--	struct ulist *tmp = NULL;
- 	u64 seq;
- 	u64 nr_new_roots = 0;
- 	u64 nr_old_roots = 0;
-@@ -2714,12 +2706,6 @@ int btrfs_qgroup_account_extent(struct btrfs_trans_handle *trans, u64 bytenr,
- 		ret = -ENOMEM;
- 		goto out_free;
- 	}
--	tmp = ulist_alloc(GFP_NOFS);
--	if (!tmp) {
--		ret = -ENOMEM;
--		goto out_free;
--	}
--
- 	mutex_lock(&fs_info->qgroup_rescan_lock);
- 	if (fs_info->qgroup_flags & BTRFS_QGROUP_STATUS_FLAG_RESCAN) {
- 		if (fs_info->qgroup_rescan_progress.objectid <= bytenr) {
-@@ -2734,13 +2720,13 @@ int btrfs_qgroup_account_extent(struct btrfs_trans_handle *trans, u64 bytenr,
- 	seq = fs_info->qgroup_seq;
- 
- 	/* Update old refcnts using old_roots */
--	ret = qgroup_update_refcnt(fs_info, old_roots, tmp, qgroups, seq,
-+	ret = qgroup_update_refcnt(fs_info, old_roots, qgroups, seq,
- 				   UPDATE_OLD);
- 	if (ret < 0)
- 		goto out;
- 
- 	/* Update new refcnts using new_roots */
--	ret = qgroup_update_refcnt(fs_info, new_roots, tmp, qgroups, seq,
-+	ret = qgroup_update_refcnt(fs_info, new_roots, qgroups, seq,
- 				   UPDATE_NEW);
- 	if (ret < 0)
- 		goto out;
-@@ -2755,7 +2741,6 @@ int btrfs_qgroup_account_extent(struct btrfs_trans_handle *trans, u64 bytenr,
- out:
- 	spin_unlock(&fs_info->qgroup_lock);
- out_free:
--	ulist_free(tmp);
- 	ulist_free(qgroups);
- 	ulist_free(old_roots);
- 	ulist_free(new_roots);
+[ENHANCEMENT]
+This patchset would address the problem by adding a new list_head called
+iterator for btrfs_qgroup.
+
+And all call sites but one of ulist allocation can be migrated to use
+the new qgroup_iterator facility to iterate qgroups without any memory
+allocation.
+
+The only remaining ulist call site is @qgroups ulist utilized inside
+btrfs_qgroup_account_extent(), which is utilized to get all involved
+qgroups for both old and new roots.
+
+I tried to extract the qgroups collection code into a dedicate loop
+out of qgroup_update_refcnt(), but it would lead to test case failure of
+btrfs/028 (accounts underflow).
+
+Thus for now only the safe part is sent to the list.
+
+And BTW since we can skip quite some memory allocation failure handling
+(since there is no memory allocation), we also save some lines of code.
+
+Qu Wenruo (5):
+  btrfs: qgroup: iterate qgroups without memory allocation for
+    qgroup_reserve()
+  btrfs: qgroup: use qgroup_iterator facility for
+    btrfs_qgroup_free_refroot()
+  btrfs: qgroup: use qgroup_iterator facility for qgroup_convert_meta()
+  btrfs: qgroup: use qgroup_iterator facility for
+    __qgroup_excl_accounting()
+  btrfs: qgroup: use qgroup_iterator facility to replace @tmp ulist of
+    qgroup_update_refcnt()
+
+ fs/btrfs/qgroup.c | 252 ++++++++++++++++------------------------------
+ fs/btrfs/qgroup.h |   9 ++
+ 2 files changed, 94 insertions(+), 167 deletions(-)
+
 -- 
 2.41.0
 

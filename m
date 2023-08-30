@@ -2,95 +2,75 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3F10AC6FA8F
-	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Aug 2023 18:36:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5703DC83F29
+	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Aug 2023 18:36:19 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233182AbjH3SgP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 30 Aug 2023 14:36:15 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48752 "EHLO
+        id S236749AbjH3SgQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 30 Aug 2023 14:36:16 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41100 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S242857AbjH3JxM (ORCPT
+        with ESMTP id S243870AbjH3MAv (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 30 Aug 2023 05:53:12 -0400
-Received: from mail-pf1-f199.google.com (mail-pf1-f199.google.com [209.85.210.199])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9FE05CCB
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 Aug 2023 02:53:09 -0700 (PDT)
-Received: by mail-pf1-f199.google.com with SMTP id d2e1a72fcca58-68bec43ec0cso6708836b3a.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 Aug 2023 02:53:09 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1693389189; x=1693993989;
-        h=to:from:subject:message-id:date:mime-version:x-gm-message-state
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=bzHfCFTnMqiRc3QC+Ez91qszxdCPJ8z3TEmrMibThBo=;
-        b=WcQJKrUS1FiLJCVuZ4jUBmYc7hQ5neeKNA8PvQt3dYG5Qkvzj8PONpeyQfgb/BT8Mh
-         wYtvNZaBEPaszBT6lEkD2N2GiHZIwARjSX4w1zWucqN1UBdT/HVq0ShJIKX//YBri2Lc
-         pRUtIS8IpeD09ywOfEXGC6W0otxPRrJCo1zqoUv78M7KYyz6co5lvHHvFj6k/pr1LWru
-         Y5LCCm+scztnTned1ui+O52OYQ72XV63SVG9h4dcbKfV7ne1qPpQTDpZE/PqLUKxp/zJ
-         X0L3/vrNcLYesYi48VgBbgFcQr07J5NTd71uoOQLpQV+c4eHgZ6soXt32Hi+Suqn72Ws
-         lpFg==
-X-Gm-Message-State: AOJu0YwDfbnA9mMAdhC/G6B+fthibAUCkVHKQ0H0kLcLaluF4jc18Yw9
-        jc5WRv2WJ4VZAzAeB3IbLXaoEGjIv3PsK2woezoUIia4C+Ef
-X-Google-Smtp-Source: AGHT+IEFbtW9dUlVtXjbvzQEeZ3dBkPMebb+v/x8PTR70mT5YNAC4VJuW4mF4Sl+HGZj2RTmt4R+j6UhLQLFI1PLR7U4bup+E6wz
+        Wed, 30 Aug 2023 08:00:51 -0400
+Received: from fanzine2.igalia.com (fanzine2.igalia.com [213.97.179.56])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 13B631B0;
+        Wed, 30 Aug 2023 05:00:43 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=igalia.com;
+        s=20170329; h=Content-Transfer-Encoding:Content-Type:In-Reply-To:From:
+        References:Cc:To:Subject:MIME-Version:Date:Message-ID:Sender:Reply-To:
+        Content-ID:Content-Description:Resent-Date:Resent-From:Resent-Sender:
+        Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:List-Unsubscribe:
+        List-Subscribe:List-Post:List-Owner:List-Archive;
+        bh=kjFpwM2xu0IM8xc9RfcUZFYWV0WkUr533BDclRZkPy4=; b=Ul8k2Rbr88lhf3y32rAu+afX6A
+        hYy7xUu6c2zOWKkuCNM0tZHS6wvYbpOHlobypCFANdqfMMxf9xLoi0z+51D/ZumEcFo8rYrKbKScY
+        PvtBDLcHzbjz2xjiebK1MkLchJC+qW/D76CqsrDh6I7VI1G1ci7os4GoBRzmxuseYFx3Av6hRpzO8
+        OI49wGvwfwETqdDC7LQn/IEfIxRg+lueOnfvDBH4HUciEn+nUt8Ar6w2Fx2JIZlG6nXbXYAc4Cw1+
+        AzPC503Dxvq0eBr0cKk5e1+0XnB91db5gtWcHKp6P1DjvDPz5gRu7FTB9GJsaKnJIiHKMCQ2yHKGS
+        3rZV8VDQ==;
+Received: from [187.116.122.196] (helo=[192.168.1.60])
+        by fanzine2.igalia.com with esmtpsa 
+        (Cipher TLS1.3:ECDHE_X25519__RSA_PSS_RSAE_SHA256__AES_128_GCM:128) (Exim)
+        id 1qbJs8-00HMh1-EI; Wed, 30 Aug 2023 14:00:32 +0200
+Message-ID: <748fbfb3-5467-afeb-f93a-e072fabf985f@igalia.com>
+Date:   Wed, 30 Aug 2023 09:00:24 -0300
 MIME-Version: 1.0
-X-Received: by 2002:a05:6a00:21cf:b0:68a:5cf8:dadd with SMTP id
- t15-20020a056a0021cf00b0068a5cf8daddmr631221pfj.4.1693389189024; Wed, 30 Aug
- 2023 02:53:09 -0700 (PDT)
-Date:   Wed, 30 Aug 2023 02:53:08 -0700
-X-Google-Appengine-App-Id: s~syzkaller
-X-Google-Appengine-App-Id-Alias: syzkaller
-Message-ID: <0000000000001411fa060420e5f4@google.com>
-Subject: [syzbot] Monthly btrfs report (Aug 2023)
-From:   syzbot <syzbot+list902b4a7ca2aca212df12@syzkaller.appspotmail.com>
-To:     clm@fb.com, dsterba@suse.com, josef@toxicpanda.com,
-        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
-Content-Type: text/plain; charset="UTF-8"
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.11.0
+Subject: Re: [PATCH 2/3] btrfs: Introduce the single-dev feature
+Content-Language: en-US
+To:     Anand Jain <anand.jain@oracle.com>
+Cc:     clm@fb.com, linux-btrfs@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, kernel@gpiccoli.net,
+        kernel-dev@igalia.com, david@fromorbit.com, kreijack@libero.it,
+        johns@valvesoftware.com, ludovico.denittis@collabora.com,
+        quwenruo.btrfs@gmx.com, wqu@suse.com, vivek@collabora.com,
+        dsterba@suse.com, josef@toxicpanda.com
+References: <20230803154453.1488248-1-gpiccoli@igalia.com>
+ <20230803154453.1488248-3-gpiccoli@igalia.com>
+ <9bd1260f-fe69-45ba-1a37-f9e422809bff@igalia.com>
+ <ff5c53fa-e808-0dbe-6f08-bfaa945ced4c@oracle.com>
+From:   "Guilherme G. Piccoli" <gpiccoli@igalia.com>
+In-Reply-To: <ff5c53fa-e808-0dbe-6f08-bfaa945ced4c@oracle.com>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hello btrfs maintainers/developers,
+On 30/08/2023 04:11, Anand Jain wrote:
+> [...]
+> Yeah, we need sysfs entries for the new feature and test cases that 
+> generally rely on it to determine whether to skip or run the test case.
+> 
+> The paths would be:
+> - /sys/fs/btrfs/features/..
+> - /sys/fs/btrfs/<uuid>/features/..
+> 
+> These paths emit only output 0. The presence of the sysfs file indicates 
+> that the feature is supported.
+> 
+> Thanks,
+> Anand
+> 
 
-This is a 31-day syzbot report for the btrfs subsystem.
-All related reports/information can be found at:
-https://syzkaller.appspot.com/upstream/s/btrfs
-
-During the period, 8 new issues were detected and 1 were fixed.
-In total, 55 issues are still open and 37 have been fixed so far.
-
-Some of the still happening issues:
-
-Ref  Crashes Repro Title
-<1>  8234    Yes   VFS: Busy inodes after unmount (use-after-free)
-                   https://syzkaller.appspot.com/bug?extid=0af00f6a2cba2058b5db
-<2>  5325    Yes   kernel BUG in close_ctree
-                   https://syzkaller.appspot.com/bug?extid=2665d678fffcc4608e18
-<3>  1042    Yes   WARNING in btrfs_space_info_update_bytes_may_use
-                   https://syzkaller.appspot.com/bug?extid=8edfa01e46fd9fe3fbfb
-<4>  809     Yes   WARNING in __kernel_write_iter
-                   https://syzkaller.appspot.com/bug?extid=12e098239d20385264d3
-<5>  310     Yes   kernel BUG at fs/inode.c:LINE! (2)
-                   https://syzkaller.appspot.com/bug?extid=c92c93d1f1aaaacdb9db
-<6>  273     Yes   WARNING in lookup_inline_extent_backref
-                   https://syzkaller.appspot.com/bug?extid=d6f9ff86c1d804ba2bc6
-<7>  211     Yes   WARNING in btrfs_remove_chunk
-                   https://syzkaller.appspot.com/bug?extid=e8582cc16881ec70a430
-<8>  202     Yes   WARNING in btrfs_chunk_alloc
-                   https://syzkaller.appspot.com/bug?extid=e8e56d5d31d38b5b47e7
-<9>  147     Yes   INFO: task hung in lock_extent
-                   https://syzkaller.appspot.com/bug?extid=eaa05fbc7563874b7ad2
-<10> 89      Yes   WARNING in cleanup_transaction
-                   https://syzkaller.appspot.com/bug?extid=021d10c4d4edc87daa03
-
----
-This report is generated by a bot. It may contain errors.
-See https://goo.gl/tpsmEJ for more information about syzbot.
-syzbot engineers can be reached at syzkaller@googlegroups.com.
-
-To disable reminders for individual bugs, reply with the following command:
-#syz set <Ref> no-reminders
-
-To change bug's subsystems, reply with:
-#syz set <Ref> subsystems: new-subsystem
-
-You may send multiple commands in a single email message.
+Thanks a lot Anand!

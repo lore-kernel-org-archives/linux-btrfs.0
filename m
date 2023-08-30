@@ -2,109 +2,180 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3C3FBC83F18
-	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Aug 2023 06:18:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 383A4C83F01
+	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Aug 2023 18:35:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233624AbjH3GSB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 30 Aug 2023 02:18:01 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42690 "EHLO
+        id S236758AbjH3Sfx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 30 Aug 2023 14:35:53 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58368 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S240331AbjH3GRi (ORCPT
+        with ESMTP id S243847AbjH3Lya (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 30 Aug 2023 02:17:38 -0400
-X-Greylist: delayed 331 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Tue, 29 Aug 2023 23:17:32 PDT
-Received: from out-251.mta0.migadu.com (out-251.mta0.migadu.com [91.218.175.251])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AA2D9CEC;
-        Tue, 29 Aug 2023 23:17:32 -0700 (PDT)
-Message-ID: <642de4e6-801d-fcad-a7ce-bfc6dec3b6e5@linux.dev>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linux.dev; s=key1;
-        t=1693375918;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=JMzOvVHk770qYz+7D4bRM3eiaC0WBb12Z/fuZleaQ2g=;
-        b=n8qZNKHDJ8ZkQN8s6YCFhUc5vlrIehXvAzssrfT4lOFAEgM70y7j9ccF+kTN544/il9mhv
-        /Qwyv0zoAHdwAPeCdmanHqcxV7A/7XcL4G5u9c/o5+tWUqR2xZIKUSlHotdEAwwwHhjWvg
-        KLK2CGyPGmGk32bcLUct3rbhOUMJhk8=
-Date:   Wed, 30 Aug 2023 14:11:31 +0800
+        Wed, 30 Aug 2023 07:54:30 -0400
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.21])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 89BE41B0
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 Aug 2023 04:54:26 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.com;
+ s=s31663417; t=1693396456; x=1694001256; i=quwenruo.btrfs@gmx.com;
+ bh=lzjNV5Jzf/xj6UtZ8T1zBxM0cSqdrYTJE+F9WL4iTng=;
+ h=X-UI-Sender-Class:Date:Subject:To:Cc:References:From:In-Reply-To;
+ b=s6QOIMLZTDZAh1Eb6JRTvR585iWqbBcEgvA1QgJtg9m66fTlWDl/6PsOFtSRZU+moefzN0z
+ pO2jZW9eWFIzuXYxfY3dVKFU/i4iMZAhSCUB4GShtTOHHork2NQuCgboqXe6NSc8Lwzy8qIPr
+ g4Rt8NOe53HZc6aE92d49SU2Aw0NPcybL/dmjC2p/LWERYIoVyCk3chWyCJz0b55qW107ju3k
+ XvfqZO+jPx7zJhWPOeCGttQet22/Fv8DICP9twbwvYv5zsVHw8M1T/mXVjWSu2i2UeSTlQHKs
+ 2Vf9b5PEHvd5Mq22PLa6myKrc0XiT/6otY8GOndo69ez1wH7puGQ==
+X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx104
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1Mz9Z5-1poJtT06BH-00wGMG; Wed, 30
+ Aug 2023 13:54:16 +0200
+Message-ID: <da72818c-6327-44d3-aee8-a73e7ee42b65@gmx.com>
+Date:   Wed, 30 Aug 2023 19:54:12 +0800
 MIME-Version: 1.0
-Subject: Re: [PATCH 07/11] vfs: add nowait parameter for file_accessed()
+User-Agent: Mozilla Thunderbird
+Subject: Re: (PING) btrfs sequential 8K read()s from compressed files are not
+ merging
+To:     Dimitrios Apostolou <jimis@gmx.net>,
+        Christoph Hellwig <hch@infradead.org>
+Cc:     linux-btrfs@vger.kernel.org
+References: <0db91235-810e-1c6e-7192-48f698c55c59@gmx.net>
+ <4b16bd02-a446-8000-b10e-4b24aaede854@gmx.net>
+ <fd0bbbc3-4a42-3472-dc6e-5a1cb51df10e@gmx.net>
+ <ZMEXhfDG2BinQEOy@infradead.org>
+ <62b24a0c-08e9-5dfd-33a6-a34dd93b1727@gmx.net>
 Content-Language: en-US
-To:     Matthew Wilcox <willy@infradead.org>
-Cc:     io-uring@vger.kernel.org, Jens Axboe <axboe@kernel.dk>,
-        Dominique Martinet <asmadeus@codewreck.org>,
-        Pavel Begunkov <asml.silence@gmail.com>,
-        Christian Brauner <brauner@kernel.org>,
-        Alexander Viro <viro@zeniv.linux.org.uk>,
-        Stefan Roesch <shr@fb.com>, Clay Harris <bugs@claycon.org>,
-        Dave Chinner <david@fromorbit.com>,
-        "Darrick J . Wong" <djwong@kernel.org>,
-        linux-fsdevel@vger.kernel.org, linux-xfs@vger.kernel.org,
-        linux-ext4@vger.kernel.org, linux-cachefs@redhat.com,
-        ecryptfs@vger.kernel.org, linux-nfs@vger.kernel.org,
-        linux-unionfs@vger.kernel.org, bpf@vger.kernel.org,
-        netdev@vger.kernel.org, linux-s390@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-block@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, codalist@coda.cs.cmu.edu,
-        linux-f2fs-devel@lists.sourceforge.net, cluster-devel@redhat.com,
-        linux-mm@kvack.org, linux-nilfs@vger.kernel.org,
-        devel@lists.orangefs.org, linux-cifs@vger.kernel.org,
-        samba-technical@lists.samba.org, linux-mtd@lists.infradead.org,
-        Wanpeng Li <wanpengli@tencent.com>
-References: <20230827132835.1373581-1-hao.xu@linux.dev>
- <20230827132835.1373581-8-hao.xu@linux.dev>
- <ZOvA5DJDZN0FRymp@casper.infradead.org>
- <c728bf3f-d9db-4865-8473-058b26c11c06@linux.dev>
- <ZO3cI+DkotHQo3md@casper.infradead.org>
-X-Report-Abuse: Please report any abuse attempt to abuse@migadu.com and include these headers.
-From:   Hao Xu <hao.xu@linux.dev>
-In-Reply-To: <ZO3cI+DkotHQo3md@casper.infradead.org>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCY00iVQUJDToH
+ pgAKCRDCPZHzoSX+qNKACACkjDLzCvcFuDlgqCiS4ajHAo6twGra3uGgY2klo3S4JespWifr
+ BLPPak74oOShqNZ8yWzB1Bkz1u93Ifx3c3H0r2vLWrImoP5eQdymVqMWmDAq+sV1Koyt8gXQ
+ XPD2jQCrfR9nUuV1F3Z4Lgo+6I5LjuXBVEayFdz/VYK63+YLEAlSowCF72Lkz06TmaI0XMyj
+ jgRNGM2MRgfxbprCcsgUypaDfmhY2nrhIzPUICURfp9t/65+/PLlV4nYs+DtSwPyNjkPX72+
+ LdyIdY+BqS8cZbPG5spCyJIlZonADojLDYQq4QnufARU51zyVjzTXMg5gAttDZwTH+8LbNI4
+ mm2YzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCY00ibgUJDToHvwAK
+ CRDCPZHzoSX+qK6vB/9yyZlsS+ijtsvwYDjGA2WhVhN07Xa5SBBvGCAycyGGzSMkOJcOtUUf
+ tD+ADyrLbLuVSfRN1ke738UojphwkSFj4t9scG5A+U8GgOZtrlYOsY2+cG3R5vjoXUgXMP37
+ INfWh0KbJodf0G48xouesn08cbfUdlphSMXujCA8y5TcNyRuNv2q5Nizl8sKhUZzh4BascoK
+ DChBuznBsucCTAGrwPgG4/ul6HnWE8DipMKvkV9ob1xJS2W4WJRPp6QdVrBWJ9cCdtpR6GbL
+ iQi22uZXoSPv/0oUrGU+U5X4IvdnvT+8viPzszL5wXswJZfqfy8tmHM85yjObVdIG6AlnrrD
+In-Reply-To: <62b24a0c-08e9-5dfd-33a6-a34dd93b1727@gmx.net>
 Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
-X-Migadu-Flow: FLOW_OUT
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:IuMUwdvQcVoo/v+nGRs1Y4ol0/pAvSC3+5igIXlQ4o1GyH1IUZv
+ 0rHK0vL6nq/e+xT/YxqrlfI4sYRZt/eZwwa2C+BJbZqhSVsB3SvkTtGuDOzyP7qagyM4+ZE
+ dD9YHRYLom4SFSlUVgSTtg1+34HoT8SVNToFdn5Nrsg8Ye0VPb1nJwDyyzqwTpbqLGf49nY
+ +aNiQ20XyVL8VaiHsNpRA==
+UI-OutboundReport: notjunk:1;M01:P0:09MJbUd1vWE=;0EZRXbTRYYe04GJ3sRU1K0cRL9M
+ isz9kdr+4yE2dwqFHmcSfeYFw9lHZZu/QtC5BDA241YUdPwanrFNxFKIV07/G8jd6HtOPKzWG
+ ZHSEw5+qxoHpMypBuQbZnMyqu6V2nOdT+SD8hUJTm72W3QY/UNrxjc0zL/CEUPETLrhvS3A/U
+ zNtCru2/upc3l8leuAnzp2oDmXR9rqvYAAa6Qhj1iaEP9RgU1fxQBqOSgedT46SHWhW1xGXVc
+ 1+gZe4QiMX0j03QsBVGw1EBPpDMPwdvaQ001Z6tAuxav7a/BSLZ6J+UQZhDpCOGI/EMCfEpTK
+ zyjHjzq8qea5gFZt9YcsmGDNn1yk9E6AO5hur/YTkKDxs3aFLYm/o0HjQsj0pfcE/DtYO99do
+ UYjJMi9zurkAjTaFVaFBSTqgFjj4udypQKOb8DC2G6DlgHoBwFigQvw5rll2JqqEtLFnjOcW0
+ 3pP0KTu63Kg5D59Ecb02CG40WOHKTfbDrGB2xyX0dQXRStfdsvOAJLQ6c5hM70POpcAu75pJU
+ wwPBKb78aceajp7lJXm+Qr+58DdbaW27cx5EJ5PvFL/sr35bP1IJ5KoJw1zASFPlPpqUbWZIv
+ jNfEGI/s/84TGK7QNEkb7OOTHUgPDb0LY5YC5m3iaOiNrVAIzFpK28GlUFrf2nvlG2CtrKKJm
+ H99wxC9J6ZbBM60P0E4XWOwzqXixkBbNczeVaut0aho0bg/SJMyBdOxkk9/npVREZu41KCbOu
+ 1ZR7uz/sA5oKL+64M888kC7b+Jx3LVXqF/cZT9escdMOATvMY3/IwqCo/MReVpt6qODH3Vq9O
+ NkgZJDG6wRqtvYCPiays4AZFWm+r4GmsmMtZfxLdfu8asxHtwufcD06lbzxVEZ54wr7qJASWd
+ VIpUPzYMVqQ7iHttsJ6M2fwO17eFbTHGe8MetuSQAHbRz2zdRz5OpKoD+lQYNd10BJK0q1Egm
+ LWjZMWGhmtZDJGE5ZHIku8FZ2A4=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 8/29/23 19:53, Matthew Wilcox wrote:
-> On Tue, Aug 29, 2023 at 03:46:13PM +0800, Hao Xu wrote:
->> On 8/28/23 05:32, Matthew Wilcox wrote:
->>> On Sun, Aug 27, 2023 at 09:28:31PM +0800, Hao Xu wrote:
->>>> From: Hao Xu <howeyxu@tencent.com>
->>>>
->>>> Add a boolean parameter for file_accessed() to support nowait semantics.
->>>> Currently it is true only with io_uring as its initial caller.
->>>
->>> So why do we need to do this as part of this series?  Apparently it
->>> hasn't caused any problems for filemap_read().
->>>
+
+
+On 2023/8/29 21:02, Dimitrios Apostolou wrote:
+> On Wed, 26 Jul 2023, Christoph Hellwig wrote:
+>
+>> FYI, I can reproduce similar findings to yours.=C2=A0 I'm somewhere bet=
+ween
+>> dealing with regressions and travel and don't actually have time to
+>> fully root cause it.
 >>
->> We need this parameter to indicate if nowait semantics should be enforced in
->> touch_atime(), There are locks and maybe IOs in it.
-> 
-> That's not my point.  We currently call file_accessed() and
-> touch_atime() for nowait reads and nowait writes.  You haven't done
-> anything to fix those.
-> 
-> I suspect you can trim this patchset down significantly by avoiding
-> fixing the file_accessed() problem.  And then come back with a later
-> patchset that fixes it for all nowait i/o.  Or do a separate prep series
+>> The most likely scenario is probably some interaction between the read
+>> ahead window that is based around the actual I/O size, and the btrfs
+>> compressed extent design that always compressed a fixed sized chunk
+>> of data.
+>
+> So the issue is still an issue (btrfs being unreasonably slow when readi=
+ng
+> sequentially 8K blocks from a compressed file) and I'm trying to figure
+> out the reasons.
+>
+> I'm wondering, when an application read()s an 8K block from a big
+> btrfs-compressed file, apparently the full 128KB compressed chunk has to
+> be decompressed. But what does btrfs store in the kernel buffercache?
 
-I'm ok to do that.
+The kernel page cache is mostly for inode, aka the decompressed data.
 
-> first that fixes it for the existing nowait users, and then a second
-> series to do all the directory stuff.
-> 
-> I'd do the first thing.  Just ignore the problem.  Directory atime
-> updates cause I/O so rarely that you can afford to ignore it.  Almost
-> everyone uses relatime or nodiratime.
+As long as you're doing cached read, the decompressed data would be cached=
+.
 
-Hi Matthew,
-The previous discussion shows this does cause issues in real
-producations: 
-https://lore.kernel.org/io-uring/2785f009-2ebb-028d-8250-d5f3a30510f0@gmail.com/#:~:text=fwiw%2C%20we%27ve%20just%20recently%20had%20similar%20problems%20with%20io_uring%20read/write
+But there is another catch, if the file extent only points to a very
+small part of the decompressed range, we still need to read the full
+compressed extent, do the decompression, and only copy the small range
+into the page cache.
 
+>
+> a. Does it store only the specific 8K block of decompressed data that wa=
+s
+>  =C2=A0=C2=A0 requested?
 
+If it's buffered read, the read can be merged with other blocks, and we
+also have readahead, in that case we can still submit a much larger read.
 
+But mostly it's case a), as for dd, it would wait for the read to finish.
 
+Meanwhile if it's direct IO, there would be no merge, nor any cache.
+(That's expected though)
+
+>
+> b. Does it store the full compressed block (128KB AFAIK) and will be
+>  =C2=A0=C2=A0 re-decompressed upon read() from any application?
+>
+> c. Or does it store the full de-compressed block, which might even be 1M=
+B
+>  =C2=A0=C2=A0 in size?
+>
+> I guess it's doing [a], because of the performance issue I'm facing. Bot=
+h
+> [b] and [c] would work as some kind of automatic read-ahead. But any kin=
+d
+> of verification would be helpful to nail the problem, as I can't see thi=
+s
+> level of detail exposed in any way, from a userspace point of view.
+
+Although there are other factors which can be involved, like fragments
+(especially damaging performance for compressed extents).
+
+One thing I want to verify is, could you create a big file with all
+compressed extents (dd writes, blocksize doesn't matter that much as by
+default it's buffered write), other than postgres data bases?
+
+Then do the same read with 32K and 512K and see if there is still the
+same slow performance.
+(The compressed extent size limit is 128K, thus 512K would cover 4 file
+extents, and hopefully to increase the performance.)
+
+I'm afraid the postgres data may be fragmented due to the database
+workload, and contributes to the slow down.
+
+Thanks,
+Qu
+>
+>
+> Thanks,
+> Dimitris
+>

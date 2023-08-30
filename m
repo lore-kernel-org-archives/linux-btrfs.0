@@ -2,135 +2,253 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 20E32C83F14
-	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Aug 2023 22:30:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5F4A8C83F01
+	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Aug 2023 22:46:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S245651AbjH3WaH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 30 Aug 2023 18:30:07 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40070 "EHLO
+        id S1344177AbjH3Wqr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 30 Aug 2023 18:46:47 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56510 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S242076AbjH3WaH (ORCPT
+        with ESMTP id S1344110AbjH3Wqq (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 30 Aug 2023 18:30:07 -0400
-Received: from mail-ot1-f77.google.com (mail-ot1-f77.google.com [209.85.210.77])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 23BE2185
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 Aug 2023 15:29:57 -0700 (PDT)
-Received: by mail-ot1-f77.google.com with SMTP id 46e09a7af769-6bc7afd0498so378375a34.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 Aug 2023 15:29:57 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1693434596; x=1694039396;
-        h=to:from:subject:message-id:date:mime-version:x-gm-message-state
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=9NmXwYpj44o4xkzQIM7RGKV1c90eyLE1sEyqDfJKB/Y=;
-        b=W650uYk8R/8QcUbWzsTpZXnJh3gNbAk/B2d2XDfgC2k7rJxIL8hMw/MacxuAPqbl6p
-         JhfIO83+kv5tr5Yap/3Vf6/HaMj0VOsv2fnhRPDt8Mc8oSDCNeSrd77dCN6PKj9ZBla+
-         t2hsY17CEQij2MnEoQc29jOXhpnKGfdZWNaAs4oF8HwkJ7nxXv3Zjd0+r+RYxYj9Gdjx
-         u0rS6Mr3njKJzjA2j/9ALkapjiI+w94c6EXh3htPstXkiezQeI36gG0pPC1R6w9S65zr
-         ppFWtBdJEM2/au1gO/ETUbuNQsuoV3CxoqU2tKWg4gzutSTeSk3ooRwjXmSZG7L/ioq4
-         /qjA==
-X-Gm-Message-State: AOJu0Yx5K9+1q83rA4vp2W/H2xyuAwqAH0k/fft0nzekXRhmvN9lYxC8
-        BbJsziyr+3xLTlFwiTmTKXLiv+gJ4+C0ZK7xMKhGB6VZNaXW
-X-Google-Smtp-Source: AGHT+IHOhbEGYJ0Z2pCOv9JKJIqhnnyG451vqt7GOKovTB01jPY3MBaRzmr7TxVLh+jrRq2inBS7ic3VbfyVFAAQi1dCnj4wJGGm
+        Wed, 30 Aug 2023 18:46:46 -0400
+X-Greylist: delayed 16254 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Wed, 30 Aug 2023 15:46:30 PDT
+Received: from outbound-ip7a.ess.barracuda.com (outbound-ip7a.ess.barracuda.com [209.222.82.174])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 262B0C5
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 Aug 2023 15:46:29 -0700 (PDT)
+Received: from NAM04-DM6-obe.outbound.protection.outlook.com (mail-dm6nam04lp2043.outbound.protection.outlook.com [104.47.73.43]) by mx-outbound45-208.us-east-2c.ess.aws.cudaops.com (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NO); Wed, 30 Aug 2023 22:46:28 +0000
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=AkaXen7/n8vAWbOMDuhtCSxXfhPRChUSC2vMgapd8d4o5QXQB4GRyEVbCzLCGg2uwfN2iKu2vkiPdqsuO98VcI2KJfgs/CcIADWDVGsO7/beTs/NbfpskH3CFTOWk1LeNTpHNtHc6fuwmJDeye0cArMti8vBoiOoOor3naLAYTG+//jSrGq1NGx+wedAUlqS5qHoKVvxYStwZPzqnB4tErT5pyi6/gpm803vihT8IplEZNNYEa0QcGxB+Exhy94i5mzE2PeftZOXte7BaoT78EklirwRh8pkw/aZJMTF0jRWf4ta2C8wXFz5BAzXcMiPnquCVhkCyYDd0zH9bX8oDg==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=JH1IRVqwi5yaAlGJWt4Jx4JOmTtWYWQE7IEL5yxEOSw=;
+ b=jxf2OlfMKQiXhiNKalq9Qc0292G1h1OLpCRTdPwjjGWS4L6yV2gJ4ExcOBt25q7qQoqaXuI1UZI3/wgkeo1tdHnzxke/ELc5gbqjemxxYQ3rROp6C93JcQLVvuRVnR55USJnvZLhI58e6fB7jbO0f8PRyIft6FwAP0xyfZ6FcASaFVeTF/pZqeKmj4u5IHvQCYhRqhGkdCoL9LpGh+OZ5QrO+wLwf0WLOevIHBg5uIeBgi0lrrAVeqsDnRwFkq7+P25rVjnVnL2mXap9CKfljUgwZouGIZdyZ0Z+pwd2JX9wBIPBKgS4uplh5R9kygOD75mscGqMlyBAyLSjTtq7Hw==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass (sender ip is
+ 50.222.100.11) smtp.rcpttodomain=ddn.com smtp.mailfrom=ddn.com; dmarc=pass
+ (p=reject sp=reject pct=100) action=none header.from=ddn.com; dkim=none
+ (message not signed); arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ddn.com; s=selector2;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=JH1IRVqwi5yaAlGJWt4Jx4JOmTtWYWQE7IEL5yxEOSw=;
+ b=VMvvXNbrPlP1xgZPeznqXxF2z58MT6sqaLqOLmaH11mO9RLC3qs4ttWcFFRb++LsZNambfeR8XYTBsbNgHI7IPGYScvrarKvP8mhZrawe5KRTqjI/nhsxlBvaS6oP2MG81ClnQ7ciJs6o2PdrDeUciYdau5ODui4VJJJCTx8gVs=
+Received: from SJ0PR05CA0017.namprd05.prod.outlook.com (2603:10b6:a03:33b::22)
+ by SN7PR19MB7733.namprd19.prod.outlook.com (2603:10b6:806:2eb::18) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.6699.34; Wed, 30 Aug
+ 2023 18:15:26 +0000
+Received: from MW2NAM04FT067.eop-NAM04.prod.protection.outlook.com
+ (2603:10b6:a03:33b:cafe::9c) by SJ0PR05CA0017.outlook.office365.com
+ (2603:10b6:a03:33b::22) with Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.6745.18 via Frontend
+ Transport; Wed, 30 Aug 2023 18:15:26 +0000
+X-MS-Exchange-Authentication-Results: spf=pass (sender IP is 50.222.100.11)
+ smtp.mailfrom=ddn.com; dkim=none (message not signed)
+ header.d=none;dmarc=pass action=none header.from=ddn.com;
+Received-SPF: Pass (protection.outlook.com: domain of ddn.com designates
+ 50.222.100.11 as permitted sender) receiver=protection.outlook.com;
+ client-ip=50.222.100.11; helo=uww-mx01.datadirectnet.com; pr=C
+Received: from uww-mx01.datadirectnet.com (50.222.100.11) by
+ MW2NAM04FT067.mail.protection.outlook.com (10.13.31.174) with Microsoft SMTP
+ Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.20.6745.21 via Frontend Transport; Wed, 30 Aug 2023 18:15:25 +0000
+Received: from localhost (unknown [10.68.0.8])
+        by uww-mx01.datadirectnet.com (Postfix) with ESMTP id 691F020C684D;
+        Wed, 30 Aug 2023 12:16:31 -0600 (MDT)
+From:   Bernd Schubert <bschubert@ddn.com>
+To:     linux-fsdevel@vger.kernel.org
+Cc:     bernd.schubert@fastmail.fm, miklos@szeredi.hu, dsingh@ddn.com,
+        Bernd Schubert <bschubert@ddn.com>,
+        Goldwyn Rodrigues <rgoldwyn@suse.com>,
+        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+Subject: [PATCH 2/2] btrfs: file_remove_privs needs an exclusive lock
+Date:   Wed, 30 Aug 2023 20:15:19 +0200
+Message-Id: <20230830181519.2964941-3-bschubert@ddn.com>
+X-Mailer: git-send-email 2.34.1
+In-Reply-To: <20230830181519.2964941-1-bschubert@ddn.com>
+References: <20230830181519.2964941-1-bschubert@ddn.com>
 MIME-Version: 1.0
-X-Received: by 2002:a05:6870:c797:b0:1bb:4593:ede7 with SMTP id
- dy23-20020a056870c79700b001bb4593ede7mr323807oab.11.1693434596449; Wed, 30
- Aug 2023 15:29:56 -0700 (PDT)
-Date:   Wed, 30 Aug 2023 15:29:56 -0700
-X-Google-Appengine-App-Id: s~syzkaller
-X-Google-Appengine-App-Id-Alias: syzkaller
-Message-ID: <00000000000092672f06042b7711@google.com>
-Subject: [syzbot] [btrfs?] WARNING in btrfs_use_block_rsv
-From:   syzbot <syzbot+10d5b62a8d7046b86d22@syzkaller.appspotmail.com>
-To:     clm@fb.com, dsterba@suse.com, josef@toxicpanda.com,
-        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
+X-EOPAttributedMessage: 0
+X-MS-PublicTrafficType: Email
+X-MS-TrafficTypeDiagnostic: MW2NAM04FT067:EE_|SN7PR19MB7733:EE_
+Content-Type: text/plain
+X-MS-Office365-Filtering-Correlation-Id: c490965c-38c2-402d-9eb4-08dba9851571
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam: BCL:0;
+X-Microsoft-Antispam-Message-Info: 9XojB2xQSsmwN2dWbmsdfCwcp7f3IRFK5dTrcUIeZyh6Z7rAN8K5Re3kmKOk2Sf6q2Ht3YEiCYvLIXReaAvAv6rkMfJr2qNwsSh20Z6k0VU3QNFMeEi4QFsJik4oV7Rzwf29yC5n3IFE11O0wZJE+d6FbalhLjacMn5uFv+ni2E/rtQTy+g1Up8LSkoXkI2Q+JpLAclbgw6VDSa56CSQjHkVkL/7V6zR8FvP2NM5DckSFU8omOcsEgayaLq+aBeJ8ZJJU9alM7yJFoSktPkpsm0kRWNHjYxV2Yy9P82WFDsnWqkKpGRgTstHrobMdL0TdAz25jzPHg0RJfZySJmOCf+8Tz7/yNi1STzMgWGF/s7+nHsXQITZeNSh7M2LXMZXAMiQEynhVOhxtfrNAz7GQjSUZHwcm7PHMYxUqQUGXaWmNNxOMyxOENgX33jElRwJzA945ZFN92aFNTmk3sJ6k2I7rnJuuTpssWgvZHMI36aHTQKzCWbtPXImgwiYMOet++QJS1wTxpCnx86uVipmGqAbCXsuPQKUjxv623RzyCS4gwVWqI4bER4kjVlTLb05alNt4dD8P+IzeiFD9Eyo+SitbYIhNNmWsab2jWKuhX/fXDdRVZGzDXHFobkgB3WmgxX7fmSwtVmVjPrmTomprDE8VcFbX7T/cMT1uEPIDd3WFe5E6+rUR8eSm7mWJQ8MyuKEM0lqiS/yKelgiXkEUrIrZ83k8mwi9r86fZlOFmNd90ig5B4u3GIrachRSi+e
+X-Forefront-Antispam-Report: CIP:50.222.100.11;CTRY:US;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:uww-mx01.datadirectnet.com;PTR:InfoDomainNonexistent;CAT:NONE;SFS:(13230031)(4636009)(376002)(136003)(346002)(396003)(39850400004)(186009)(1800799009)(451199024)(82310400011)(46966006)(36840700001)(36860700001)(41300700001)(26005)(356005)(81166007)(82740400003)(6666004)(86362001)(83380400001)(478600001)(47076005)(336012)(1076003)(6266002)(2616005)(40480700001)(70206006)(70586007)(6916009)(2906002)(54906003)(36756003)(316002)(5660300002)(4326008)(8936002)(8676002)(36900700001);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0: =?us-ascii?Q?4eKDDvpAC7dG0DgGBo6jE5/RluR9IXqniC9Fr96kJQj1sAtugIlhOuaR8V7e?=
+ =?us-ascii?Q?KCJb1GGnDVGmgTz/noPkQdYleh76GkB93YaNvZkLoJ3yF4j5Yi11Nr/ElOU5?=
+ =?us-ascii?Q?Tz3r+Xcdh/4mPndF8OhFDplBoADf+XK5Xxt+gMUP6duRz++kIu5scajZxKGK?=
+ =?us-ascii?Q?i7y3EnjiAocEFOn0JNZWNP0B83oAc9U4brdscin/Yyy3AmfQpZK59NxzcB1H?=
+ =?us-ascii?Q?6IYaqp0jvyKTrYa+nCwRMRru5kTyQ/F8k8MbTbS0XbWJrcXLv6TPsxlARTig?=
+ =?us-ascii?Q?fcGWzWvWWkgGHxFEH7jgLYoxybEnm6m14tVJjIrhdNLHffN4GI4htjIWg6e8?=
+ =?us-ascii?Q?IGgqTlAEX8mLj1RfQ5PT31v9wEKSi5mT7JeaWoFt0zRY8J9OlQ8UT/EXZ4GO?=
+ =?us-ascii?Q?opAAthk0E5kCzfXqW18csKMbLIP6o98sAbVAfeb0wckisNyy9RLLX8k0A6e9?=
+ =?us-ascii?Q?k4lfiRrrXrhK+QiC4QCst0e4HPwUJndCRGnfUYdCurgRskUvISey36KOpB9n?=
+ =?us-ascii?Q?tUzg17d/EaRUKL2zChoKS/QddOR2wTejPxr1Vr+uO2cLkdSZVylaZueK0DCh?=
+ =?us-ascii?Q?l4rNN+B8Y6FJAR0anYbfUD+yfeDpSj4cSW0of+5heW37sLuODLpVkv4NdDAc?=
+ =?us-ascii?Q?QV0iZLJi4mzadj4uWCavsKokfGnJkWYiSqitttO41LWBrkNB2RzPS8N5ub2Q?=
+ =?us-ascii?Q?9BJ54fL27Ju9CPfB2CP3Kil3Se2WSA4JcE+Y4TYyG+738+jObX1LSbd+8/Pt?=
+ =?us-ascii?Q?KrZ1rdb8FFRlt7rTMbe3Oe55kZPghPF9Ancd1jP72zjULeZLYtzdOfLJwbnF?=
+ =?us-ascii?Q?Cs+ARS19UB9ZwYiDzZeznwZhvERztRE+jCcCL6/+tHVT5QGzqBpoJOiHfYaN?=
+ =?us-ascii?Q?aka1AoA0muZQ+KZyAn4HSdqURcOyYXP7MfsxdskdEiEYRO/mrrvMmv5yi9cB?=
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 30 Aug 2023 18:15:25.7631
+ (UTC)
+X-MS-Exchange-CrossTenant-Network-Message-Id: c490965c-38c2-402d-9eb4-08dba9851571
+X-MS-Exchange-CrossTenant-Id: 753b6e26-6fd3-43e6-8248-3f1735d59bb4
+X-MS-Exchange-CrossTenant-OriginalAttributedTenantConnectingIp: TenantId=753b6e26-6fd3-43e6-8248-3f1735d59bb4;Ip=[50.222.100.11];Helo=[uww-mx01.datadirectnet.com]
+X-MS-Exchange-CrossTenant-AuthSource: MW2NAM04FT067.eop-NAM04.prod.protection.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Anonymous
+X-MS-Exchange-CrossTenant-FromEntityHeader: HybridOnPrem
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: SN7PR19MB7733
+X-OriginatorOrg: ddn.com
+X-BESS-ID: 1693435588-111728-27806-5975-1
+X-BESS-VER: 2019.1_20230830.2058
+X-BESS-Apparent-Source-IP: 104.47.73.43
+X-BESS-Parts: H4sIAAAAAAACA4uuVkqtKFGyUioBkjpK+cVKViYG5kZAVgZQ0DIt2TLNzMgo2T
+        A5KS3NIC3RzDTVwsQwLTU5NdHMOM1AqTYWAOYOC11BAAAA
+X-BESS-Outbound-Spam-Score: 0.00
+X-BESS-Outbound-Spam-Report: Code version 3.2, rules version 3.2.2.250500 [from 
+        cloudscan11-241.us-east-2a.ess.aws.cudaops.com]
+        Rule breakdown below
+         pts rule name              description
+        ---- ---------------------- --------------------------------
+        0.00 BSF_BESS_OUTBOUND      META: BESS Outbound 
+        0.00 BSF_SC0_MISMATCH_TO    META: Envelope rcpt doesn't match header 
+X-BESS-Outbound-Spam-Status: SCORE=0.00 using account:ESS124931 scores of KILL_LEVEL=7.0 tests=BSF_BESS_OUTBOUND, BSF_SC0_MISMATCH_TO
+X-BESS-BRTS-Status: 1
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hello,
+file_remove_privs might call into notify_change(), which
+requires to hold an exclusive lock.
+In order to keep the shared lock for most IOs it now first
+checks if privilege changes are needed, then switches to
+the exclusive lock, rechecks and only then calls file_remove_privs.
+This makes usage of the new exported function
+file_needs_remove_privs().
 
-syzbot found the following issue on:
+The file_remove_privs code path is not optimized, under the
+assumption that it would be a rare call (file_remove_privs
+calls file_needs_remove_privs a 2nd time).
 
-HEAD commit:    3b35375f19fe Merge tag 'irq-urgent-2023-08-26' of git://gi..
-git tree:       upstream
-console output: https://syzkaller.appspot.com/x/log.txt?x=1156791fa80000
-kernel config:  https://syzkaller.appspot.com/x/.config?x=67db137b0441ab96
-dashboard link: https://syzkaller.appspot.com/bug?extid=10d5b62a8d7046b86d22
-compiler:       gcc (Debian 12.2.0-14) 12.2.0, GNU ld (GNU Binutils for Debian) 2.40
-syz repro:      https://syzkaller.appspot.com/x/repro.syz?x=1767c1e0680000
-C reproducer:   https://syzkaller.appspot.com/x/repro.c?x=146903b0680000
-
-Downloadable assets:
-disk image (non-bootable): https://storage.googleapis.com/syzbot-assets/7bc7510fe41f/non_bootable_disk-3b35375f.raw.xz
-vmlinux: https://storage.googleapis.com/syzbot-assets/34c4f640b690/vmlinux-3b35375f.xz
-kernel image: https://storage.googleapis.com/syzbot-assets/58c9c2459f41/bzImage-3b35375f.xz
-mounted in repro: https://storage.googleapis.com/syzbot-assets/501d7ead33fe/mount_0.gz
-
-IMPORTANT: if you fix the issue, please add the following tag to the commit:
-Reported-by: syzbot+10d5b62a8d7046b86d22@syzkaller.appspotmail.com
-
-------------[ cut here ]------------
-WARNING: CPU: 1 PID: 5212 at fs/btrfs/block-rsv.c:515 btrfs_use_block_rsv+0x688/0x7f0 fs/btrfs/block-rsv.c:515
-Modules linked in:
-CPU: 1 PID: 5212 Comm: kworker/u17:1 Not tainted 6.5.0-rc7-syzkaller-00182-g3b35375f19fe #0
-Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.2-debian-1.16.2-1 04/01/2014
-Workqueue: btrfs-endio-write btrfs_work_helper
-RIP: 0010:btrfs_use_block_rsv+0x688/0x7f0 fs/btrfs/block-rsv.c:515
-Code: 89 ea 83 e2 07 38 d0 7f 0c 84 c0 74 08 48 89 ef e8 ed 42 47 fe 0f b6 73 5a ba e4 ff ff ff 48 c7 c7 00 e4 b7 8a e8 b8 b8 ba fd <0f> 0b e9 a3 fd ff ff e8 8c f7 f3 fd 49 8d 9d 80 04 00 00 e9 1c fb
-RSP: 0018:ffffc90003737030 EFLAGS: 00010282
-RAX: 0000000000000000 RBX: ffff8880323ba608 RCX: 0000000000000000
-RDX: ffff888029a1c4c0 RSI: ffffffff814be3c6 RDI: 0000000000000001
-RBP: ffff8880323ba662 R08: 0000000000000001 R09: 0000000000000000
-R10: 0000000000000000 R11: 000000002d2d2d2d R12: 0000000000001000
-R13: ffff88801fb84000 R14: 0000000000000001 R15: 0000000000000001
-FS:  0000000000000000(0000) GS:ffff88806b700000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 0000000020d41000 CR3: 00000000219e2000 CR4: 0000000000350ee0
-DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
-Call Trace:
- <TASK>
- btrfs_alloc_tree_block+0x1dd/0x1420 fs/btrfs/extent-tree.c:4883
- __btrfs_cow_block+0x3ce/0x18e0 fs/btrfs/ctree.c:546
- btrfs_cow_block+0x2f1/0x820 fs/btrfs/ctree.c:712
- btrfs_search_slot+0x12a0/0x30e0 fs/btrfs/ctree.c:2194
- btrfs_lookup_file_extent+0xcb/0x110 fs/btrfs/file-item.c:270
- btrfs_drop_extents+0x433/0x2bd0 fs/btrfs/file.c:250
- insert_reserved_file_extent+0x3a8/0x940 fs/btrfs/inode.c:3057
- insert_ordered_extent_file_extent fs/btrfs/inode.c:3164 [inline]
- btrfs_finish_one_ordered+0x1443/0x2240 fs/btrfs/inode.c:3268
- btrfs_work_helper+0x20b/0xba0 fs/btrfs/async-thread.c:314
- process_one_work+0xaa2/0x16f0 kernel/workqueue.c:2600
- worker_thread+0x687/0x1110 kernel/workqueue.c:2751
- kthread+0x33a/0x430 kernel/kthread.c:389
- ret_from_fork+0x2c/0x70 arch/x86/kernel/process.c:145
- ret_from_fork_asm+0x11/0x20 arch/x86/entry/entry_64.S:304
- </TASK>
-
-
+Fixes: e9adabb9712e ("btrfs: use shared lock for direct writes within EOF")
+Cc: Goldwyn Rodrigues <rgoldwyn@suse.com>
+Cc: Miklos Szeredi <miklos@szeredi.hu>
+Cc: Dharmendra Singh <dsingh@ddn.com>
+Cc: Chris Mason <clm@fb.com>
+Cc: Josef Bacik <josef@toxicpanda.com>
+Cc: David Sterba <dsterba@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Cc: linux-fsdevel@vger.kernel.org
+Signed-off-by: Bernd Schubert <bschubert@ddn.com>
 ---
-This report is generated by a bot. It may contain errors.
-See https://goo.gl/tpsmEJ for more information about syzbot.
-syzbot engineers can be reached at syzkaller@googlegroups.com.
+ fs/btrfs/file.c | 37 +++++++++++++++++++++++++++++--------
+ 1 file changed, 29 insertions(+), 8 deletions(-)
 
-syzbot will keep track of this issue. See:
-https://goo.gl/tpsmEJ#status for how to communicate with syzbot.
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index fd03e689a6be..89c869ab131d 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1125,7 +1125,7 @@ static void update_time_for_write(struct inode *inode)
+ }
+ 
+ static int btrfs_write_check(struct kiocb *iocb, struct iov_iter *from,
+-			     size_t count)
++			     size_t count, unsigned int *ilock_flags)
+ {
+ 	struct file *file = iocb->ki_filp;
+ 	struct inode *inode = file_inode(file);
+@@ -1145,9 +1145,17 @@ static int btrfs_write_check(struct kiocb *iocb, struct iov_iter *from,
+ 	    !(BTRFS_I(inode)->flags & (BTRFS_INODE_NODATACOW | BTRFS_INODE_PREALLOC)))
+ 		return -EAGAIN;
+ 
+-	ret = file_remove_privs(file);
+-	if (ret)
+-		return ret;
++	ret = file_needs_remove_privs(file);
++	if (ret) {
++		if (ilock_flags && *ilock_flags & BTRFS_ILOCK_SHARED) {
++			*ilock_flags &= ~BTRFS_ILOCK_SHARED;
++			return -EAGAIN;
++		}
++
++		ret = file_remove_privs(file);
++		if (ret)
++			return ret;
++	}
+ 
+ 	/*
+ 	 * We reserve space for updating the inode when we reserve space for the
+@@ -1204,7 +1212,7 @@ static noinline ssize_t btrfs_buffered_write(struct kiocb *iocb,
+ 	if (ret <= 0)
+ 		goto out;
+ 
+-	ret = btrfs_write_check(iocb, i, ret);
++	ret = btrfs_write_check(iocb, i, ret, NULL);
+ 	if (ret < 0)
+ 		goto out;
+ 
+@@ -1462,13 +1470,16 @@ static ssize_t btrfs_direct_write(struct kiocb *iocb, struct iov_iter *from)
+ 	ssize_t err;
+ 	unsigned int ilock_flags = 0;
+ 	struct iomap_dio *dio;
++	bool has_shared_lock;
+ 
+ 	if (iocb->ki_flags & IOCB_NOWAIT)
+ 		ilock_flags |= BTRFS_ILOCK_TRY;
+ 
+ 	/* If the write DIO is within EOF, use a shared lock */
+-	if (iocb->ki_pos + iov_iter_count(from) <= i_size_read(inode))
++	if (iocb->ki_pos + iov_iter_count(from) <= i_size_read(inode)) {
+ 		ilock_flags |= BTRFS_ILOCK_SHARED;
++		has_shared_lock = true;
++	}
+ 
+ relock:
+ 	err = btrfs_inode_lock(BTRFS_I(inode), ilock_flags);
+@@ -1481,8 +1492,17 @@ static ssize_t btrfs_direct_write(struct kiocb *iocb, struct iov_iter *from)
+ 		return err;
+ 	}
+ 
+-	err = btrfs_write_check(iocb, from, err);
++	/* might uset BTRFS_ILOCK_SHARED */
++	err = btrfs_write_check(iocb, from, err, &ilock_flags);
+ 	if (err < 0) {
++		if (err == -EAGAIN && has_shared_lock &&
++		    !(ilock_flags & BTRFS_ILOCK_SHARED)) {
++			btrfs_inode_unlock(BTRFS_I(inode),
++					   ilock_flags | BTRFS_ILOCK_SHARED);
++			has_shared_lock = false;
++			goto relock;
++		}
++
+ 		btrfs_inode_unlock(BTRFS_I(inode), ilock_flags);
+ 		goto out;
+ 	}
+@@ -1496,6 +1516,7 @@ static ssize_t btrfs_direct_write(struct kiocb *iocb, struct iov_iter *from)
+ 	    pos + iov_iter_count(from) > i_size_read(inode)) {
+ 		btrfs_inode_unlock(BTRFS_I(inode), ilock_flags);
+ 		ilock_flags &= ~BTRFS_ILOCK_SHARED;
++		has_shared_lock = false;
+ 		goto relock;
+ 	}
+ 
+@@ -1632,7 +1653,7 @@ static ssize_t btrfs_encoded_write(struct kiocb *iocb, struct iov_iter *from,
+ 	if (ret || encoded->len == 0)
+ 		goto out;
+ 
+-	ret = btrfs_write_check(iocb, from, encoded->len);
++	ret = btrfs_write_check(iocb, from, encoded->len, NULL);
+ 	if (ret < 0)
+ 		goto out;
+ 
+-- 
+2.39.2
 
-If the bug is already fixed, let syzbot know by replying with:
-#syz fix: exact-commit-title
-
-If you want syzbot to run the reproducer, reply with:
-#syz test: git://repo/address.git branch-or-commit-hash
-If you attach or paste a git patch, syzbot will apply it before testing.
-
-If you want to overwrite bug's subsystems, reply with:
-#syz set subsystems: new-subsystem
-(See the list of subsystem names on the web dashboard)
-
-If the bug is a duplicate of another bug, reply with:
-#syz dup: exact-subject-of-another-report
-
-If you want to undo deduplication, reply with:
-#syz undup

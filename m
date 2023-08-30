@@ -2,217 +2,130 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9C365C83F1E
-	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Aug 2023 18:36:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C5303C83F24
+	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Aug 2023 18:36:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235823AbjH3SgK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 30 Aug 2023 14:36:10 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50018 "EHLO
+        id S236954AbjH3SgN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 30 Aug 2023 14:36:13 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42080 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1344185AbjH3STJ (ORCPT
+        with ESMTP id S242283AbjH3Ht5 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 30 Aug 2023 14:19:09 -0400
-Received: from mout.gmx.net (mout.gmx.net [212.227.15.19])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 33CD5198
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 Aug 2023 11:19:05 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
- s=s31663417; t=1693419537; x=1694024337; i=jimis@gmx.net;
- bh=u3qLto2RhCCQHa4DegebNACGbUXrBMHlBylOLqeybJA=;
- h=X-UI-Sender-Class:Date:From:To:cc:Subject:In-Reply-To:References;
- b=toHkWxbrRJ2nuo32fpe9hBrgZJ2/Q0B1J7kxuguFuoHUadzHQqeDlD1UMZSKKmYsMvhjnZd
- 9JsRUozBNq7h+4S2Q9Qxk74fSKQyPwPNc2fdSUwb2f9Q4PQ3f/koHoIdlh18NKndH3tmXUuAR
- hlWtwtuvhK/5cecZKKkzwHrGAIOZah3k7XhieWIkmLPDaWIw9UlzZ9LB6wIOex9qvT4AOQVqs
- TDT9TkSFpUMTMcjSMYiN/+83Rrxw2K3SmPWzgA/w3dkQTHmnjrmKShEPqBr5I88IeOkO08TJ6
- pAQyVW0nVG9gbZBb+be7l22xjJ6xmIb9D3L7mSp8xcSbnZPj/CAw==
-X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from [10.9.70.65] ([185.55.107.82]) by mail.gmx.net (mrgmx005
- [212.227.17.190]) with ESMTPSA (Nemesis) id 1ML9yS-1qJKxn0KCA-00IHgU; Wed, 30
- Aug 2023 20:18:57 +0200
-Date:   Wed, 30 Aug 2023 20:18:56 +0200 (CEST)
-From:   Dimitrios Apostolou <jimis@gmx.net>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-cc:     Christoph Hellwig <hch@infradead.org>, linux-btrfs@vger.kernel.org
-Subject: Re: (PING) btrfs sequential 8K read()s from compressed files are
- not merging
-In-Reply-To: <da72818c-6327-44d3-aee8-a73e7ee42b65@gmx.com>
-Message-ID: <ea6bde1e-1181-6bea-bc82-12d8225952ef@gmx.net>
-References: <0db91235-810e-1c6e-7192-48f698c55c59@gmx.net> <4b16bd02-a446-8000-b10e-4b24aaede854@gmx.net> <fd0bbbc3-4a42-3472-dc6e-5a1cb51df10e@gmx.net> <ZMEXhfDG2BinQEOy@infradead.org> <62b24a0c-08e9-5dfd-33a6-a34dd93b1727@gmx.net>
- <da72818c-6327-44d3-aee8-a73e7ee42b65@gmx.com>
+        Wed, 30 Aug 2023 03:49:57 -0400
+Received: from mail-pl1-f207.google.com (mail-pl1-f207.google.com [209.85.214.207])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7A7FECDA
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 Aug 2023 00:49:54 -0700 (PDT)
+Received: by mail-pl1-f207.google.com with SMTP id d9443c01a7336-1bf525c269cso52722795ad.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 Aug 2023 00:49:54 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1693381794; x=1693986594;
+        h=to:from:subject:message-id:date:mime-version:x-gm-message-state
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=cTDt+bYQ6/mSJ4jCUdcdtOg7X5im5pInz2MbzpCzUzU=;
+        b=bvT3j66mGL2euj+nOV0TJ10FhuOvLco6gjCyQY73TRIPjRE5CpMOYrTISO05AKhRmR
+         8tHsk5FsK7RC8LUfVwpjye/W/NnKkOBYlH46AujYZCePKSyFl83yatYS0bOqaehAkDRi
+         +kwhmrf010GXCW/YGW5Ad6DBCVVWB6hHtNcK2BuiW+MQz89J8u4ttBImsKo0FwLqY9XR
+         CfOc2XNGttiANkryQr9cRkLN1ZFwANbIU4ETIHdLIV/WZdq1YmS9ujXSEZdtaYs1Xqhr
+         ynTmsDuJ/3OhsPJLIk+sLNCzKGZX4ebpXBqaj2j97//GGY2Y+O7hzPltyE4uQyKUtwCj
+         lnXA==
+X-Gm-Message-State: AOJu0YyNFHLs1gaaAyctad0Ehu3a6Gh31wYejC0rviZR9eLuGO7WGL27
+        10O0eDlM6oxE78CNMO58f4GRqSiZalCkVQJEbNzD6ul4WZY6
+X-Google-Smtp-Source: AGHT+IGLGLtOU++31iOl3HsQ4ALkIEcFZFjlI33fIt3VEG5cMRJjGYewpLyhKZy4cEg5de/RAU2H2G6WzOKOsgBsZyCgQBXu++q2
 MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary="0-873968584-1693419537=:12568"
-X-Provags-ID: V03:K1:TH/wGteEAMEr5bfi9rw7z1Rq1jigVHDE7DuUOxl2KwpKfi1ApkC
- LJqidgoWqYj0V5lBMsNANDkjXSyAoKJRKi4JI+gXv0VGaKvXvg01MQbRCci2ibSFC4cxo9v
- q3OcJjYywuspJPq5zwQLgsHArED+7YuoLHoyhoFFRv3wgCUWsiH23prNyFAsG+4TLt/z5RZ
- 89CocdWqbgvqzJ7XH9oKA==
-UI-OutboundReport: notjunk:1;M01:P0:EVFShTwR0mc=;507GOkkaGx3nm1v9eqOQ8x0DiAb
- BkEAqmORx+A+FE+NczDFMPSAwzGKRBQRvrRGkvPtd1NqbVTzJDME/9Dn7jISZ5VBjIcgxC2c2
- HKpzJ645eIO8IBC4hYgXmL+IVKio/BDYdUAVrQXsMxBuVSSw7t58AekAbqqH1YrLWhfgiLy6E
- C4GQq0Z2BGEKuBNHMV0Gm8hIHgce5j8wd0nZ/oSBFFMynzz4mscLuMTz8O6w5MfKbsJXvQ7hb
- eUkNK2D4Po9S59+ISuxJznAi5pjqUPDfSEw6/CTupL7R8RcLoNqGoBW3iKAuYT3BCIFXYFiKH
- BCDfVow1+ctIl9zZCu4l0o0X+QEYhipCEnjDyY2Fx57fpUpyvGYs9OWhgxOXfQ+ir94Ksfh4y
- XRW7pyXflXSRRoN9/MtU8rPCbsVBwqjHEDE9rAZ2h4ZdEYrshQPaFxrL2GD9RgW4lKW+4XOtj
- lU2bi5MTeFE5VmSor/T4f96CG7eMHk9Zy4LuU4l1QiBZi9NBCT+8R38Oe6QZF+/wiWJ+rBooL
- HHA0NeKgKekwXUAoQp5TSyf6BdlpNK2SjRBsJlSRN1RysdQYDzhp+EQJCUW3Yd1j4jC4FuQfD
- 47st+d2pwzKJgEqZgGd89QgeF7kpmJgVV55gpX4Dl98K7LgfmiwLRUFpbxjpo2DSV5KiIVeJO
- eYHIL9Z8tl+qGYdRcEfq1FqrvyPVCpTgq6LxZloLJA0uSFg669sa7CFN6wivKSBe91wnq+uNa
- DUpuUNkHdORhQtZh1VouG79kyUc13nChWBJC7qnZME6ITkMHLZQ/D1MzcGF5WoD6Rh0PjhM1/
- BFiw8jVbdNRqOfmW1OfCPGmjg9KqV9tN+J994D6NHtEipHULe+yoAfAy6ckKncy2IoSr0hONo
- wzF7BuAuJQ929yhW6zfsqMNNFuEqNg16Qr7ZCW5BWQGSmDtdl3V68nNz9WbtSYqmAhFWRh9ck
- Puyabw==
+X-Received: by 2002:a17:902:f68f:b0:1b8:a8f5:a97b with SMTP id
+ l15-20020a170902f68f00b001b8a8f5a97bmr448638plg.7.1693381793779; Wed, 30 Aug
+ 2023 00:49:53 -0700 (PDT)
+Date:   Wed, 30 Aug 2023 00:49:53 -0700
+X-Google-Appengine-App-Id: s~syzkaller
+X-Google-Appengine-App-Id-Alias: syzkaller
+Message-ID: <00000000000049964e06041f2cbf@google.com>
+Subject: [syzbot] [btrfs?] UBSAN: array-index-out-of-bounds in FSE_decompress_wksp_body_bmi2
+From:   syzbot <syzbot+1f2eb3e8cd123ffce499@syzkaller.appspotmail.com>
+To:     clm@fb.com, dsterba@suse.com, josef@toxicpanda.com,
+        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com,
+        terrelln@fb.com
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-  This message is in MIME format.  The first part should be readable text,
-  while the remaining parts are likely unreadable without MIME-aware tools.
+Hello,
 
---0-873968584-1693419537=:12568
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
+syzbot found the following issue on:
 
-Thanks for the feedback!
+HEAD commit:    382d4cd18475 lib/clz_ctz.c: Fix __clzdi2() and __ctzdi2() ..
+git tree:       upstream
+console output: https://syzkaller.appspot.com/x/log.txt?x=15979833a80000
+kernel config:  https://syzkaller.appspot.com/x/.config?x=1b32f62c755c3a9c
+dashboard link: https://syzkaller.appspot.com/bug?extid=1f2eb3e8cd123ffce499
+compiler:       Debian clang version 15.0.6, GNU ld (GNU Binutils for Debian) 2.40
 
-On Wed, 30 Aug 2023, Qu Wenruo wrote:
->
-> On 2023/8/29 21:02, Dimitrios Apostolou wrote:
->
->>  a. Does it store only the specific 8K block of decompressed data that =
-was
->>   =C2=A0=C2=A0 requested?
->
-> If it's buffered read, the read can be merged with other blocks, and we
-> also have readahead, in that case we can still submit a much larger read=
-.
->
-> But mostly it's case a), as for dd, it would wait for the read to finish=
-.
+Unfortunately, I don't have any reproducer for this issue yet.
 
-This is definitely not the case in other filesystems, where I see blocking
-8K buffered reads going much faster. But I understand better now, and I
-think I have expressed the problem wrong in the subject. The problem is
-not that IOs are not *merging*, but that there is no read-ahead/pre-fetch
-happening. This sounds more accurate to me.
+Downloadable assets:
+disk image: https://storage.googleapis.com/syzbot-assets/57260ac283ce/disk-382d4cd1.raw.xz
+vmlinux: https://storage.googleapis.com/syzbot-assets/8be20b71d903/vmlinux-382d4cd1.xz
+kernel image: https://storage.googleapis.com/syzbot-assets/518fe2320c33/bzImage-382d4cd1.xz
 
-But this brings the question: shouldn't read-ahead/pre-fetch happen on the
-block layer? I remember I have seen some configurable knobs on the
-elevator level, or even on the device driver level. Is btrfs circumventing
-those?
+IMPORTANT: if you fix the issue, please add the following tag to the commit:
+Reported-by: syzbot+1f2eb3e8cd123ffce499@syzkaller.appspotmail.com
 
-
-For the sake of completeness all of the read()s in my (previous and
-current) measurements are buffered and blocking, and same are the ones
-from postgres.
-
-
-> One thing I want to verify is, could you create a big file with all
-> compressed extents (dd writes, blocksize doesn't matter that much as by
-> default it's buffered write), other than postgres data bases?
->
-> Then do the same read with 32K and 512K and see if there is still the
-> same slow performance.
-
-I assume you also want to see 8KB reads here, which is the main problem I
-reported.
-
-> (The compressed extent size limit is 128K, thus 512K would cover 4 file
-> extents, and hopefully to increase the performance.)
->
-> I'm afraid the postgres data may be fragmented due to the database
-> workload, and contributes to the slow down.
-
-
-=3D=3D=3D=3D Measurements
-
-I created a zero-filled file with the size of the host's RAM to avoid
-caching issues. I did many re-runs of every dd command and verified there
-is no variation. I should also mention that the filesystem is 85% free, so
-there shouldn't be any fragmentation issues.
-
-# dd if=3D/dev/zero of=3Dblah bs=3D1G count=3D16
-16+0 records in
-16+0 records out
-17179869184 bytes (17 GB, 16 GiB) copied, 14.2627 s, 1.2 GB/s
-
-I verified the file is well compressed:
-
-# compsize blah
-Processed 1 file, 131073 regular extents (131073 refs), 0 inline.
-Type       Perc     Disk Usage   Uncompressed Referenced
-TOTAL        3%      512M          16G          16G
-zstd         3%      512M          16G          16G
-
-I'm surprised that such a file needed 128Kextents and required 512MB of
-disk space (the filesystem is mounted with compress=3Dzstd:3) but it is wh=
-at
-it is. On to reading the file:
-
-# dd if=3Dblah of=3D/dev/null bs=3D512k
-32768+0 records in
-32768+0 records out
-17179869184 bytes (17 GB, 16 GiB) copied, 7.40493 s, 2.3 GB/s
-### iostat showed 30MB/s to 100MB/s device read speed
-
-# dd if=3Dblah of=3D/dev/null bs=3D32k
-524288+0 records in
-524288+0 records out
-17179869184 bytes (17 GB, 16 GiB) copied, 8.34762 s, 2.1 GB/s
-### iostat showed 30MB/s to 90MB/s device read speed
-
-# dd if=3Dblah of=3D/dev/null bs=3D8k
-2097152+0 records in
-2097152+0 records out
-17179869184 bytes (17 GB, 16 GiB) copied, 18.7143 s, 918 MB/s
-### iostat showed very variable 8MB/s to 60MB/s device read speed
-### average maybe around 40MB/s
+================================================================================
+UBSAN: array-index-out-of-bounds in lib/zstd/common/fse_decompress.c:345:30
+index 33 is out of range for type 'FSE_DTable[1]' (aka 'unsigned int[1]')
+CPU: 0 PID: 2895 Comm: kworker/u4:7 Not tainted 6.5.0-rc7-syzkaller-00164-g382d4cd18475 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 07/26/2023
+Workqueue: btrfs-endio btrfs_end_bio_work
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x1e7/0x2d0 lib/dump_stack.c:106
+ ubsan_epilogue lib/ubsan.c:217 [inline]
+ __ubsan_handle_out_of_bounds+0x11c/0x150 lib/ubsan.c:348
+ FSE_decompress_wksp_body lib/zstd/common/fse_decompress.c:345 [inline]
+ FSE_decompress_wksp_body_bmi2+0x2e8/0x3790 lib/zstd/common/fse_decompress.c:370
+ FSE_decompress_wksp_bmi2+0xc7/0x3670 lib/zstd/common/fse_decompress.c:378
+ HUF_readStats_body lib/zstd/common/entropy_common.c:289 [inline]
+ HUF_readStats_body_bmi2+0xba/0x620 lib/zstd/common/entropy_common.c:340
+ HUF_readDTableX1_wksp_bmi2+0x161/0x2740 lib/zstd/decompress/huf_decompress.c:353
+ HUF_decompress1X1_DCtx_wksp_bmi2+0x4e/0xe0 lib/zstd/decompress/huf_decompress.c:1693
+ ZSTD_decodeLiteralsBlock+0x1009/0x1560 lib/zstd/decompress/zstd_decompress_block.c:195
+ ZSTD_decompressBlock_internal+0x106/0xacc0 lib/zstd/decompress/zstd_decompress_block.c:1995
+ ZSTD_decompressContinue+0x571/0x1690 lib/zstd/decompress/zstd_decompress.c:1184
+ ZSTD_decompressContinueStream lib/zstd/decompress/zstd_decompress.c:1855 [inline]
+ ZSTD_decompressStream+0x208f/0x3080 lib/zstd/decompress/zstd_decompress.c:2036
+ zstd_decompress_bio+0x22b/0x570 fs/btrfs/zstd.c:573
+ compression_decompress_bio fs/btrfs/compression.c:131 [inline]
+ btrfs_decompress_bio fs/btrfs/compression.c:930 [inline]
+ end_compressed_bio_read+0x145/0x400 fs/btrfs/compression.c:178
+ btrfs_check_read_bio+0x138f/0x19b0 fs/btrfs/bio.c:324
+ process_one_work+0x92c/0x12c0 kernel/workqueue.c:2600
+ worker_thread+0xa63/0x1210 kernel/workqueue.c:2751
+ kthread+0x2b8/0x350 kernel/kthread.c:389
+ ret_from_fork+0x2e/0x60 arch/x86/kernel/process.c:145
+ ret_from_fork_asm+0x11/0x20 arch/x86/entry/entry_64.S:304
+ </TASK>
+================================================================================
 
 
-Also worth noting is the IO request size that iostat is reporting. For
-bs=3D8k it reports a request size of about 4 (KB?), while it's order of
-magnitudes higher for all the other measurements in this email.
+---
+This report is generated by a bot. It may contain errors.
+See https://goo.gl/tpsmEJ for more information about syzbot.
+syzbot engineers can be reached at syzkaller@googlegroups.com.
 
+syzbot will keep track of this issue. See:
+https://goo.gl/tpsmEJ#status for how to communicate with syzbot.
 
-=3D=3D=3D=3D Same test with uncompressable file
+If the bug is already fixed, let syzbot know by replying with:
+#syz fix: exact-commit-title
 
-I performed the same experiments with a urandom-filled file. I assume here
-that btrfs is detecting the file can't be compressed, so it's treating it
-differently. This is what the measurements are showing here, that the
-device speed limits are reached in all cases
-(this host has an HDD with limit 200MB/s).
+If you want to overwrite bug's subsystems, reply with:
+#syz set subsystems: new-subsystem
+(See the list of subsystem names on the web dashboard)
 
-# dd if=3D/dev/urandom of=3Dblah-random bs=3D1G count=3D16
-16+0 records in
-16+0 records out
-17179869184 bytes (17 GB, 16 GiB) copied, 84.0045 s, 205 MB/s
+If the bug is a duplicate of another bug, reply with:
+#syz dup: exact-subject-of-another-report
 
-# compsize blah-random
-Processed 1 file, 133 regular extents (133 refs), 0 inline.
-Type       Perc     Disk Usage   Uncompressed Referenced
-TOTAL      100%       15G          15G          15G
-none       100%       15G          15G          15G
-
-# dd if=3Dblah-random of=3D/dev/null bs=3D512k
-32768+0 records in
-32768+0 records out
-17179869184 bytes (17 GB, 16 GiB) copied, 87.82 s, 196 MB/s
-### iostat showed 180-205MB/s device read speed
-
-# dd if=3Dblah-random of=3D/dev/null bs=3D32k
-524288+0 records in
-524288+0 records out
-17179869184 bytes (17 GB, 16 GiB) copied, 88.3785 s, 194 MB/s
-### iostat showed 180-205MB/s device read speed
-
-# dd if=3Dblah-random of=3D/dev/null bs=3D8k
-2097152+0 records in
-2097152+0 records out
-17179869184 bytes (17 GB, 16 GiB) copied, 88.7887 s, 193 MB/s
-### iostat showed 180-205MB/s device read speed
-
-
-
-
-
-Thanks,
-Dimitris
-
---0-873968584-1693419537=:12568--
+If you want to undo deduplication, reply with:
+#syz undup

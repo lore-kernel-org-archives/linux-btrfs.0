@@ -2,129 +2,113 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7C4B3CA0FE1
-	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Sep 2023 11:47:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 90EADCA0FE8
+	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Sep 2023 12:51:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234023AbjIALrd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 1 Sep 2023 07:47:33 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51534 "EHLO
+        id S244190AbjIAMvP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 1 Sep 2023 08:51:15 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50052 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S244791AbjIALrc (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Sep 2023 07:47:32 -0400
-Received: from mail-oo1-xc29.google.com (mail-oo1-xc29.google.com [IPv6:2607:f8b0:4864:20::c29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 71ED0E7F;
-        Fri,  1 Sep 2023 04:47:12 -0700 (PDT)
-Received: by mail-oo1-xc29.google.com with SMTP id 006d021491bc7-5733789a44cso1129587eaf.2;
-        Fri, 01 Sep 2023 04:47:12 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20221208; t=1693568831; x=1694173631; darn=vger.kernel.org;
-        h=cc:to:subject:message-id:date:from:references:in-reply-to
-         :mime-version:from:to:cc:subject:date:message-id:reply-to;
-        bh=X7rwU6W8HFnjKISyGj3B7ytmQWd+an0LBOawg8tqKhY=;
-        b=M8IF/FoB7q/jVP2hF5xNppqUARJ5kqqvLeXl6CxWPROfjx1p+XQ8KPg4yT4kzU+i3z
-         hzJGhdz0dKYf3Y2zEhWXFnf4JlwpbXhIzr4Ag3kbQOHAUHMDnt2K3AoFZoPHjwJB3yzk
-         ByQApXMQoQKORI6B7EgS94RdPomZezj0QLtqelWNv4eJtxX9fim7fdlmRFNstMFHV47P
-         9G/zCdOwSBYcnYR6JfBHmoRjd3j/TeRrqKYNp2f80pN+oXbNGLl/0vMTA5wETZSUwhdX
-         ftFn9KtuS5nMUba0I9U5hU/XYn2QDO6DtoMa9iRn2YDG2DQE0CTdyNvQasa1/Buev2E5
-         LYAA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1693568831; x=1694173631;
-        h=cc:to:subject:message-id:date:from:references:in-reply-to
-         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=X7rwU6W8HFnjKISyGj3B7ytmQWd+an0LBOawg8tqKhY=;
-        b=UQnj7EluB/+VmjOStJlipAUI48DweqcS7hKFiCahW3z5G2PTzGenR1QCRJRRuuF3dt
-         HH0SaQ5TJnzysdT5QSlzIYuSHoxEPwlzyzSp/jFzAaRTBvo1iZOkNDdJ4IhxuU2y6yl7
-         /gNJoD5a4Y9yqgdY1gVLzhrXFyvWjdm5srcxTYak4IVTt7YJKbLi3yEZEa/KVZKqFMpG
-         3+qL20S0fIZGuYSK0mIv2uXYdH4i3iGltk7zC34Yt9MdiufU9ZZkN3ar8xvXHOzuzJlJ
-         6bnPycFFz2o+jasmvcrplx0mFUIUJRmvXYzwC3vFnvr+R3bYMT4QEfcHdAoVjl1evYmO
-         vBTA==
-X-Gm-Message-State: AOJu0Yz7UYcvPDaZR65XoaUuAZR9ay7F6OjhRsG9jjGhv/Ertu6qs6PN
-        h6ZSEuJb98t2AALsd+8Oo+Qv+o5m7dSbc5GN+WutmsqJAI0=
-X-Google-Smtp-Source: AGHT+IELXRtKYBQn4J8XqDeAm93P0ZsCOh1TRy/ACXXKqbQNn1kjYnPBgYC25bPJUMPU/j8iRlLVF7q0KdDYV4iAk4M=
-X-Received: by 2002:a4a:2b42:0:b0:571:2b86:2050 with SMTP id
- y2-20020a4a2b42000000b005712b862050mr2074351ooe.7.1693568831213; Fri, 01 Sep
- 2023 04:47:11 -0700 (PDT)
-MIME-Version: 1.0
-Received: by 2002:a8a:1141:0:b0:4f0:1250:dd51 with HTTP; Fri, 1 Sep 2023
- 04:47:10 -0700 (PDT)
-In-Reply-To: <ZPHNJVU+T79oVGY9@casper.infradead.org>
-References: <20230830181519.2964941-1-bschubert@ddn.com> <20230831101824.qdko4daizgh7phav@f>
- <ZPHNJVU+T79oVGY9@casper.infradead.org>
-From:   Mateusz Guzik <mjguzik@gmail.com>
-Date:   Fri, 1 Sep 2023 13:47:10 +0200
-Message-ID: <CAGudoHE6LVCFU6w6+4WHY=Bx7SSTCggzO+CihWeaRgWRy+EXtg@mail.gmail.com>
-Subject: Re: [PATCH 0/2] Use exclusive lock for file_remove_privs
-To:     Matthew Wilcox <willy@infradead.org>
+        with ESMTP id S244118AbjIAMvP (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Sep 2023 08:51:15 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 479BE1726;
+        Fri,  1 Sep 2023 05:50:51 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature RSA-PSS (2048 bits))
+        (No client certificate requested)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id EE22260DFF;
+        Fri,  1 Sep 2023 12:50:38 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 92AD8C433C8;
+        Fri,  1 Sep 2023 12:50:36 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1693572638;
+        bh=nMZ96azLHYWOYXamjxieuqFfT91YKa/NfwWGHknuPOA=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=Z8wsQTwLmYV87LF3PK4H2AQ7G1wx/tK9CDEsJ/DyuLkl21MZG6X5XYFgyIrPrP7Vq
+         a7NP/uk99iNgEq6sSEUfRzicNdhdarQM0aI0Je56+u4rmDeO9xkiCzV561wHIXOM4q
+         x8MaI0RWxXkHXLJCLZsaKRBOtiYGRUcJaODa6gPqTOAiAzJ26qL6DBEVsF6Ace5KjC
+         +G4rdN1g1utaP9bkhWy6SoNufaCKGaR50a9tkSHr2HgB/HIfQg1VRU49174lyRcTe4
+         /0QR7t888E4uYAZFkq5a8rMhFbPbAO5ZncJbbWxn3n03+EQyOzYlm9b9CO5+jupH1L
+         qaoteLrPPTfbw==
+Date:   Fri, 1 Sep 2023 14:50:33 +0200
+From:   Christian Brauner <brauner@kernel.org>
+To:     Bernd Schubert <bernd.schubert@fastmail.fm>
 Cc:     Bernd Schubert <bschubert@ddn.com>, linux-fsdevel@vger.kernel.org,
-        bernd.schubert@fastmail.fm, miklos@szeredi.hu, dsingh@ddn.com,
+        miklos@szeredi.hu, dsingh@ddn.com,
         Josef Bacik <josef@toxicpanda.com>,
         linux-btrfs@vger.kernel.org,
-        Alexander Viro <viro@zeniv.linux.org.uk>,
-        Christian Brauner <brauner@kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+        Alexander Viro <viro@zeniv.linux.org.uk>
+Subject: Re: [PATCH 1/2] fs: Add and export file_needs_remove_privs
+Message-ID: <20230901-briefe-amtieren-0c8b555219cb@brauner>
+References: <20230831112431.2998368-1-bschubert@ddn.com>
+ <20230831112431.2998368-2-bschubert@ddn.com>
+ <20230831-letzlich-eruption-9187c3adaca6@brauner>
+ <99bc64c2-44e2-5000-45b7-d9343bcc8fb8@fastmail.fm>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+In-Reply-To: <99bc64c2-44e2-5000-45b7-d9343bcc8fb8@fastmail.fm>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 9/1/23, Matthew Wilcox <willy@infradead.org> wrote:
-> On Thu, Aug 31, 2023 at 12:18:24PM +0200, Mateusz Guzik wrote:
->> So I figured an assert should be there on the write lock held, then the
->> issue would have been automagically reported.
->>
->> Turns out notify_change has the following:
->>         WARN_ON_ONCE(!inode_is_locked(inode));
->>
->> Which expands to:
->> static inline int rwsem_is_locked(struct rw_semaphore *sem)
->> {
->>         return atomic_long_read(&sem->count) != 0;
->> }
->>
->> So it does check the lock, except it passes *any* locked state,
->> including just readers.
->>
->> According to git blame this regressed from commit 5955102c9984
->> ("wrappers for ->i_mutex access") by Al -- a bunch of mutex_is_locked
->> were replaced with inode_is_locked, which unintentionally provides
->> weaker guarantees.
->>
->> I don't see a rwsem helper for wlock check and I don't think it is all
->> that beneficial to add. Instead, how about a bunch of lockdep, like so:
->> diff --git a/fs/attr.c b/fs/attr.c
->> index a8ae5f6d9b16..f47e718766d1 100644
->> --- a/fs/attr.c
->> +++ b/fs/attr.c
->> @@ -387,7 +387,7 @@ int notify_change(struct mnt_idmap *idmap, struct
->> dentry *dentry,
->>         struct timespec64 now;
->>         unsigned int ia_valid = attr->ia_valid;
->>
->> -       WARN_ON_ONCE(!inode_is_locked(inode));
->> +       lockdep_assert_held_write(&inode->i_rwsem);
->>
->>         error = may_setattr(idmap, inode, ia_valid);
->>         if (error)
->>
->> Alternatively hide it behind inode_assert_is_wlocked() or whatever other
->> name.
->
-> Better to do it like mmap_lock:
->
-> static inline void mmap_assert_write_locked(struct mm_struct *mm)
-> {
->         lockdep_assert_held_write(&mm->mmap_lock);
->         VM_BUG_ON_MM(!rwsem_is_locked(&mm->mmap_lock), mm);
-> }
->
+On Thu, Aug 31, 2023 at 04:17:01PM +0200, Bernd Schubert wrote:
+> 
+> 
+> On 8/31/23 15:40, Christian Brauner wrote:
+> > On Thu, Aug 31, 2023 at 01:24:30PM +0200, Bernd Schubert wrote:
+> > > File systems want to hold a shared lock for DIO writes,
+> > > but may need to drop file priveliges - that a requires an
+> > > exclusive lock. The new export function file_needs_remove_privs()
+> > > is added in order to first check if that is needed.
+> > > 
+> > > Cc: Miklos Szeredi <miklos@szeredi.hu>
+> > > Cc: Dharmendra Singh <dsingh@ddn.com>
+> > > Cc: Josef Bacik <josef@toxicpanda.com>
+> > > Cc: linux-btrfs@vger.kernel.org
+> > > Cc: Alexander Viro <viro@zeniv.linux.org.uk>
+> > > Cc: Christian Brauner <brauner@kernel.org>
+> > > Cc: linux-fsdevel@vger.kernel.org
+> > > Signed-off-by: Bernd Schubert <bschubert@ddn.com>
+> > > ---
+> > >   fs/inode.c         | 8 ++++++++
+> > >   include/linux/fs.h | 1 +
+> > >   2 files changed, 9 insertions(+)
+> > > 
+> > > diff --git a/fs/inode.c b/fs/inode.c
+> > > index 67611a360031..9b05db602e41 100644
+> > > --- a/fs/inode.c
+> > > +++ b/fs/inode.c
+> > > @@ -2013,6 +2013,14 @@ int dentry_needs_remove_privs(struct mnt_idmap *idmap,
+> > >   	return mask;
+> > >   }
+> > > +int file_needs_remove_privs(struct file *file)
+> > > +{
+> > > +	struct dentry *dentry = file_dentry(file);
+> > > +
+> > > +	return dentry_needs_remove_privs(file_mnt_idmap(file), dentry);
+> > 
+> > Ugh, I wanted to propose to get rid of this dentry dance but I propsed
+> > that before and remembered it's because of __vfs_getxattr() which is
+> > called from the capability security hook that we need it...
+> 
+> Is there anything specific you are suggesting?
 
-May I suggest continuing this with responses to the patch I sent? ;)
-[RFC PATCH] vfs: add inode lockdep assertions on -fsdevel
+No, it's not actionable for you here. It would require adding inode
+methods to set and get filesystem capabilities and then converting it in
+such a way that we don't need to rely on passing dentries around. That's
+a separate larger patchset that we would need with surgery across a
+bunch of filesystems and the vfs - Seth (Forshee) has been working on this.
 
-I made it line up with asserts for i_mmap_rwsem.
+The callchains are just pointless which I remembered when I saw the
+patchset:
 
-btw your non-lockdep check suffers the very problem I'm trying to fix
-here -- checking for *any* locked state.
+file_needs_remove_privs(file)
+-> dentry_needs_remove_privs(dentry)
+   -> inode = d_inode(dentry)
+      // do inode stuff
+      // security_needs_*(dentry)
 
--- 
-Mateusz Guzik <mjguzik gmail.com>
+point is ideally we shouldn't need the dentry in *remove_privs() at all.

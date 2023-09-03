@@ -2,51 +2,140 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2B66EC83F2C
-	for <linux-btrfs@archiver.kernel.org>; Sat,  2 Sep 2023 18:51:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C4A12CA0FF6
+	for <linux-btrfs@archiver.kernel.org>; Sun,  3 Sep 2023 22:31:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231861AbjIBSvL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 2 Sep 2023 14:51:11 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51888 "EHLO
+        id S1349046AbjICWbG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 3 Sep 2023 18:31:06 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35174 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231451AbjIBSvK (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Sep 2023 14:51:10 -0400
-X-Greylist: delayed 313 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Sat, 02 Sep 2023 11:51:04 PDT
-Received: from len.romanrm.net (len.romanrm.net [91.121.86.59])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 71717DD
-        for <linux-btrfs@vger.kernel.org>; Sat,  2 Sep 2023 11:51:04 -0700 (PDT)
-Received: from nvm (nvm2.home.romanrm.net [IPv6:fd39::4a:3cff:fe57:d6b5])
-        by len.romanrm.net (Postfix) with SMTP id 9EF7C4013F;
-        Sat,  2 Sep 2023 18:45:49 +0000 (UTC)
-Date:   Sat, 2 Sep 2023 23:45:40 +0500
-From:   Roman Mamedov <rm@romanrm.net>
-To:     notrandom98234 <notrandom98234@protonmail.com>
-Cc:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Corrupted after multiple forceful shutdowns
-Message-ID: <20230902234540.48021d91@nvm>
-In-Reply-To: <eLb7l_dsyZ22sxuyFDBSxKtxRrxVjT-OubDEVRqQwFHPNiNGbQF5WcoFVbn27A03PzyYZFQ3BbvT8WcpaKIJ9-tRBZd9jzj1JVz0KPlrK7A=@protonmail.com>
-References: <UwXYhs4amR33Eh6Hct6Rq0cpIRr0-Tjg4HvlpD1V9Q_6e9IhXcxxhbz6BUIrabFawS6wduY0Z6HgJSo9CEj1Vy1sIRugFRvLCDA43OUao3s=@protonmail.com>
-        <LuEE1I-3MHi2t3VMlpKKPCBNlfkqenbbFfZLhEum4QTP0J9pQBKVuYJQP9zJPnOnaKANpJ197S4NygsMibFoaA9X--4JESqunpQW8ZR7Q34=@protonmail.com>
-        <eLb7l_dsyZ22sxuyFDBSxKtxRrxVjT-OubDEVRqQwFHPNiNGbQF5WcoFVbn27A03PzyYZFQ3BbvT8WcpaKIJ9-tRBZd9jzj1JVz0KPlrK7A=@protonmail.com>
-X-Mailer: Claws Mail 3.11.1 (GTK+ 2.24.31; x86_64-pc-linux-gnu)
+        with ESMTP id S1348165AbjICWbF (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Sep 2023 18:31:05 -0400
+Received: from mail-oa1-x33.google.com (mail-oa1-x33.google.com [IPv6:2001:4860:4864:20::33])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0B68E106
+        for <linux-btrfs@vger.kernel.org>; Sun,  3 Sep 2023 15:30:55 -0700 (PDT)
+Received: by mail-oa1-x33.google.com with SMTP id 586e51a60fabf-1d4e0c2901bso213921fac.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 03 Sep 2023 15:30:55 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=fromorbit-com.20230601.gappssmtp.com; s=20230601; t=1693780255; x=1694385055; darn=vger.kernel.org;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
+        bh=Nv6YpToDNZJcA/Ccz8YHJKQ8zE37n7OYKvDh05ivZ8M=;
+        b=eLvFMZ6HweV3i75Mje3KyiQMHp72f3fVYJp4X8QBR1sUoWt5LbUe2oYe6gz7J03xSV
+         aHsv7iDil4KTnD32vRddboJhyW5dIQThpWZBfmdQlNdU/+SQKnZqTkI+8YNmhDFqSNM4
+         M/5uOEBZigGEpPC3vmfjiwnDFOd47IixsMl044OpUX7QG234XdFYwtba/jPyi6PCo/kZ
+         okP+nX6zzbLjyilv/Ocy1qCe5aC4gkdgDOfyh92JWGe8bVg+DmwjlPuuV3kM/V8mAkRG
+         YMrGVWwsvVs5uRT8A9BN8JD3DAOcyXyqtn49LxBGuGru+09OFjvSzk6tINPlQnplnbJD
+         r/Aw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1693780255; x=1694385055;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=Nv6YpToDNZJcA/Ccz8YHJKQ8zE37n7OYKvDh05ivZ8M=;
+        b=T4I3mbYDoO01Dsn5dV7bNWoqiiBAunwnjeit6MgFjYXXd7DgQUcNk/qPKrbiKyeCLl
+         8SJeRb3C8li0LLAh9/y4u3u1i5Zv5xBx9lKSTzG6ClhtH7xbPpeIqYJac+RQdPd+H6eI
+         G6uysPWx17Kq87UY0t7sh3P7qUtp4jBHbb4KDNpEgpbNrNvvM/kTwedCKwechHXFow07
+         8qHbaEeYhs05HaDDU3ITE6kbkVP3a6pbURAr3TPcZ6qV4WJbMVdcOCahfzGCvPL3I+qS
+         QMcXmCglJeWJ8B5h3oBof/PbagWjZ6ZhSHIxrZUtJyMamPznYUfni1p7+q4EIyVYhAdD
+         IjWA==
+X-Gm-Message-State: AOJu0YyLE3DjxDKf/6c/2MeLGalNFdBH40SIbJkuyDjwDLfQwOTJ9mZ9
+        V9BIrYFhVXFVygm6I9CA6WolcQ==
+X-Google-Smtp-Source: AGHT+IGLu9Ypqvz2HQH6Ke2apJHDtGTD5ZHmV6+9u1MT+8XuCmbNG2jkA6AQg79Zc5mY+kWQOWShIA==
+X-Received: by 2002:a05:6870:568d:b0:1be:c8e2:3ec3 with SMTP id p13-20020a056870568d00b001bec8e23ec3mr11536784oao.14.1693780255066;
+        Sun, 03 Sep 2023 15:30:55 -0700 (PDT)
+Received: from dread.disaster.area (pa49-195-66-88.pa.nsw.optusnet.com.au. [49.195.66.88])
+        by smtp.gmail.com with ESMTPSA id i15-20020a63bf4f000000b00565e96d9874sm5648132pgo.89.2023.09.03.15.30.54
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sun, 03 Sep 2023 15:30:54 -0700 (PDT)
+Received: from dave by dread.disaster.area with local (Exim 4.96)
+        (envelope-from <david@fromorbit.com>)
+        id 1qcvcK-00ASFy-0F;
+        Mon, 04 Sep 2023 08:30:52 +1000
+Date:   Mon, 4 Sep 2023 08:30:52 +1000
+From:   Dave Chinner <david@fromorbit.com>
+To:     Hao Xu <hao.xu@linux.dev>
+Cc:     Matthew Wilcox <willy@infradead.org>, io-uring@vger.kernel.org,
+        Jens Axboe <axboe@kernel.dk>,
+        Dominique Martinet <asmadeus@codewreck.org>,
+        Pavel Begunkov <asml.silence@gmail.com>,
+        Christian Brauner <brauner@kernel.org>,
+        Alexander Viro <viro@zeniv.linux.org.uk>,
+        Stefan Roesch <shr@fb.com>, Clay Harris <bugs@claycon.org>,
+        "Darrick J . Wong" <djwong@kernel.org>,
+        linux-fsdevel@vger.kernel.org, linux-xfs@vger.kernel.org,
+        linux-ext4@vger.kernel.org, linux-cachefs@redhat.com,
+        ecryptfs@vger.kernel.org, linux-nfs@vger.kernel.org,
+        linux-unionfs@vger.kernel.org, bpf@vger.kernel.org,
+        netdev@vger.kernel.org, linux-s390@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-block@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, codalist@coda.cs.cmu.edu,
+        linux-f2fs-devel@lists.sourceforge.net, cluster-devel@redhat.com,
+        linux-mm@kvack.org, linux-nilfs@vger.kernel.org,
+        devel@lists.orangefs.org, linux-cifs@vger.kernel.org,
+        samba-technical@lists.samba.org, linux-mtd@lists.infradead.org,
+        Wanpeng Li <wanpengli@tencent.com>
+Subject: Re: [PATCH 07/11] vfs: add nowait parameter for file_accessed()
+Message-ID: <ZPUJHAKzxvXiEDYA@dread.disaster.area>
+References: <20230827132835.1373581-1-hao.xu@linux.dev>
+ <20230827132835.1373581-8-hao.xu@linux.dev>
+ <ZOvA5DJDZN0FRymp@casper.infradead.org>
+ <c728bf3f-d9db-4865-8473-058b26c11c06@linux.dev>
+ <ZO3cI+DkotHQo3md@casper.infradead.org>
+ <642de4e6-801d-fcad-a7ce-bfc6dec3b6e5@linux.dev>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <642de4e6-801d-fcad-a7ce-bfc6dec3b6e5@linux.dev>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sat, 02 Sep 2023 18:29:23 +0000
-notrandom98234 <notrandom98234@protonmail.com> wrote:
+On Wed, Aug 30, 2023 at 02:11:31PM +0800, Hao Xu wrote:
+> On 8/29/23 19:53, Matthew Wilcox wrote:
+> > On Tue, Aug 29, 2023 at 03:46:13PM +0800, Hao Xu wrote:
+> > > On 8/28/23 05:32, Matthew Wilcox wrote:
+> > > > On Sun, Aug 27, 2023 at 09:28:31PM +0800, Hao Xu wrote:
+> > > > > From: Hao Xu <howeyxu@tencent.com>
+> > > > > 
+> > > > > Add a boolean parameter for file_accessed() to support nowait semantics.
+> > > > > Currently it is true only with io_uring as its initial caller.
+> > > > 
+> > > > So why do we need to do this as part of this series?  Apparently it
+> > > > hasn't caused any problems for filemap_read().
+> > > > 
+> > > 
+> > > We need this parameter to indicate if nowait semantics should be enforced in
+> > > touch_atime(), There are locks and maybe IOs in it.
+> > 
+> > That's not my point.  We currently call file_accessed() and
+> > touch_atime() for nowait reads and nowait writes.  You haven't done
+> > anything to fix those.
+> > 
+> > I suspect you can trim this patchset down significantly by avoiding
+> > fixing the file_accessed() problem.  And then come back with a later
+> > patchset that fixes it for all nowait i/o.  Or do a separate prep series
+> 
+> I'm ok to do that.
+> 
+> > first that fixes it for the existing nowait users, and then a second
+> > series to do all the directory stuff.
+> > 
+> > I'd do the first thing.  Just ignore the problem.  Directory atime
+> > updates cause I/O so rarely that you can afford to ignore it.  Almost
+> > everyone uses relatime or nodiratime.
+> 
+> Hi Matthew,
+> The previous discussion shows this does cause issues in real
+> producations: https://lore.kernel.org/io-uring/2785f009-2ebb-028d-8250-d5f3a30510f0@gmail.com/#:~:text=fwiw%2C%20we%27ve%20just%20recently%20had%20similar%20problems%20with%20io_uring%20read/write
+> 
 
-> Is it possible to recover the files even if it's without the directory
-> structure? My data is most probably intact and I only have to recover some
-> files..
+Then separate it out into it's own patch set so we can have a
+discussion on the merits of requiring using noatime, relatime or
+lazytime for really latency sensitive IO applications. Changing code
+is not always the right solution...
 
-Check out "btrfs restore"
-
-https://man7.org/linux/man-pages/man8/btrfs-restore.8.html
-
+-Dave.
 -- 
-With respect,
-Roman
+Dave Chinner
+david@fromorbit.com

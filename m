@@ -2,130 +2,90 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CF012CA0FFB
-	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Sep 2023 16:03:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E9730CA0FF3
+	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Sep 2023 16:03:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236169AbjIEQCs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 5 Sep 2023 12:02:48 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57322 "EHLO
+        id S236255AbjIEQCu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 5 Sep 2023 12:02:50 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34350 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1353749AbjIEHwS (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Sep 2023 03:52:18 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4BE3ACCF
-        for <linux-btrfs@vger.kernel.org>; Tue,  5 Sep 2023 00:52:15 -0700 (PDT)
+        with ESMTP id S1354635AbjIENJU (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Sep 2023 09:09:20 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E287912E
+        for <linux-btrfs@vger.kernel.org>; Tue,  5 Sep 2023 06:09:16 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 10E7321832
-        for <linux-btrfs@vger.kernel.org>; Tue,  5 Sep 2023 07:52:14 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1693900334; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
+        by smtp-out1.suse.de (Postfix) with ESMTPS id A66CA21A41;
+        Tue,  5 Sep 2023 13:09:15 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1693919355;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=0fDVBTEsm7FR57aEl2RYMUzC1tNIzw0LejU5BQx6NGY=;
-        b=tGiUif+/Ofv7G7aTuxhuKC/oVvLvOUhg6eourtzXahXPNRpKoGmj8SRdZdAS0hyJhF03BD
-        4bw2eO2kVMa1WQTruzWMuX/eOTIGLDvXE4UIpwaIL/eNrrLLKZvMK/Ai+e41am8igwgqjh
-        usr68LfPF6cgFVyh8giUrWkL/1p/Xhc=
+        bh=8etBUPQetD60UC6hSCH3CHQZnjFjyoOaVvTagMXOXdw=;
+        b=c6BwPFY5anSO7xHqWCidvANWEPPa8lSpomDXdCSvkZSydrlu83hlHp26zX/5siTPr1fU3h
+        2MntQCxcmw48c9R2iDHdfS8j6vrHC10yXyuAuQkVsDOtszoH+n5ezhe91HIWZMQjE/mkTs
+        cy5ubAw9l1zO47BZyoExHKnB1oCztFw=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1693919355;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=8etBUPQetD60UC6hSCH3CHQZnjFjyoOaVvTagMXOXdw=;
+        b=vKaZ/x0an5C54EMtPd2Y2Etc8cacX8Zgsd4+aWLChOsuU7O9ldaRwcc+eN0mHev0Kl+kjS
+        hzt3zbyU6/CDzDCg==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 5C45113911
-        for <linux-btrfs@vger.kernel.org>; Tue,  5 Sep 2023 07:52:13 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 763E813499;
+        Tue,  5 Sep 2023 13:09:15 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id GCIXCS3e9mTFeQAAMHmgww
-        (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Tue, 05 Sep 2023 07:52:13 +0000
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 4/7] btrfs-progs: cmds/tune: add set support for block-group-tree feature
-Date:   Tue,  5 Sep 2023 15:51:46 +0800
-Message-ID: <663028b35ff393f8aa88126edba8aa2763a11a22.1693900169.git.wqu@suse.com>
-X-Mailer: git-send-email 2.42.0
-In-Reply-To: <cover.1693900169.git.wqu@suse.com>
-References: <cover.1693900169.git.wqu@suse.com>
+        id NEcvHHso92QALAAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Tue, 05 Sep 2023 13:09:15 +0000
+Date:   Tue, 5 Sep 2023 15:02:35 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org, Boris Burkov <boris@bur.io>
+Subject: Re: [PATCH v2 5/6] btrfs: qgroup: use qgroup_iterator facility to
+ replace @tmp ulist of qgroup_update_refcnt()
+Message-ID: <20230905130235.GX14420@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <cover.1693441298.git.wqu@suse.com>
+ <ce02f493bf56e540679db37393a9ca243b20c012.1693441298.git.wqu@suse.com>
+ <20230901131650.GL14420@twin.jikos.cz>
+ <384937d2-78ce-48d0-a6d1-751fee0d953b@gmx.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <384937d2-78ce-48d0-a6d1-751fee0d953b@gmx.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Most of the code is reusing the existing code from btrfs-tune, only
-needs to add extra linkage dependency on tune/convert-bgt.o.
+On Sat, Sep 02, 2023 at 08:16:52AM +0800, Qu Wenruo wrote:
+> 
+> 
+> On 2023/9/1 21:16, David Sterba wrote:
+> > Please don't put the @ in the variable references in the subjects.
+> 
+> Now removed, but I'm wondering what's the guideline for referring the
+> variable names in the commit message/subject line?
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- Makefile    |  2 +-
- cmds/tune.c | 25 +++++++++++++++++++++++++
- 2 files changed, 26 insertions(+), 1 deletion(-)
+In subject it should be plain reference, unquoted and untagged.
 
-diff --git a/Makefile b/Makefile
-index 9857daaa42ac..45d64129352c 100644
---- a/Makefile
-+++ b/Makefile
-@@ -241,7 +241,7 @@ cmds_objects = cmds/subvolume.o cmds/subvolume-list.o \
- 	       cmds/inspect-dump-super.o cmds/inspect-tree-stats.o cmds/filesystem-du.o \
- 	       cmds/reflink.o cmds/tune.o \
- 	       mkfs/common.o check/mode-common.o check/mode-lowmem.o \
--	       check/clear-cache.o
-+	       check/clear-cache.o tune/convert-bgt.o
- 
- libbtrfs_objects = \
- 		kernel-lib/rbtree.o	\
-diff --git a/cmds/tune.c b/cmds/tune.c
-index 9906cde393f4..76ad9ebfc39e 100644
---- a/cmds/tune.c
-+++ b/cmds/tune.c
-@@ -24,6 +24,7 @@
- #include "kernel-shared/disk-io.h"
- #include "kernel-shared/transaction.h"
- #include "kernel-shared/free-space-tree.h"
-+#include "tune/tune.h"
- 
- static const char * const cmd_tune_set_usage[] = {
- 	"btrfs tune set <feature> [<device>]",
-@@ -68,6 +69,14 @@ static const struct btrfs_feature set_features[] = {
- 		VERSION_TO_STRING2(safe, 4,9),
- 		VERSION_TO_STRING2(default, 5,15),
- 		.desc		= "free space tree (space_cache=v2)"
-+	}, {
-+		.name		= "block-group-tree",
-+		.compat_ro_flag	= BTRFS_FEATURE_COMPAT_RO_BLOCK_GROUP_TREE,
-+		.sysfs_name	= "block_group_tree",
-+		VERSION_TO_STRING2(compat, 6,1),
-+		VERSION_NULL(safe),
-+		VERSION_NULL(default),
-+		.desc		= "block group tree to reduce mount time"
- 	},
- 	/* Keep this one last */
- 	{
-@@ -254,6 +263,22 @@ static int cmd_tune_set(const struct cmd_struct *cmd, int argc, char **argv)
- 			error("failed to convert the filesystem to free-space-tree feature");
- 		goto out;
- 	}
-+	if (!strcmp(feature, "block-group-tree")) {
-+		if (btrfs_fs_compat_ro(fs_info, BLOCK_GROUP_TREE)) {
-+			error("filesystem already has block-group-tree feature");
-+			ret = -EINVAL;
-+			goto out;
-+		}
-+		if (!btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE_VALID)) {
-+			error("the filesystem doesn't have free-space-tree feature, please enable it first");
-+			ret = -EINVAL;
-+			goto out;
-+		}
-+		ret = convert_to_bg_tree(fs_info);
-+		if (ret < 0)
-+			error("failed to convert the filesystem to free-space-tree feature");
-+		goto out;
-+	}
- 
- out:
- 	if (fs_info)
--- 
-2.42.0
+> I didn't remember when but I have seen such "@" prefix for variable
+> names in the mailing list, thus I followed the scheme.
+>
+> If there is a guideline it can help me from causing more damage in the
+> future.
 
+The guideline has been there for a few years at
+https://archive.kernel.org/oldwiki/btrfs.wiki.kernel.org/index.php/Development_notes.html#Patches
+after I reminded people to not do it, but this never sticks for long.

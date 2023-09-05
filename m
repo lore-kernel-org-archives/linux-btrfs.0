@@ -2,103 +2,102 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1EB9CCA0FFA
-	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Sep 2023 16:03:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 68D17CA0FF8
+	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Sep 2023 16:03:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236417AbjIEQC4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 5 Sep 2023 12:02:56 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54982 "EHLO
+        id S232591AbjIEQC7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 5 Sep 2023 12:02:59 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44446 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1354826AbjIEOp3 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Sep 2023 10:45:29 -0400
+        with ESMTP id S1354420AbjIEL2x (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Sep 2023 07:28:53 -0400
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 56711197
-        for <linux-btrfs@vger.kernel.org>; Tue,  5 Sep 2023 07:45:26 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4D7621AD
+        for <linux-btrfs@vger.kernel.org>; Tue,  5 Sep 2023 04:28:50 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 176A71FE6C;
-        Tue,  5 Sep 2023 14:45:25 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 107201F8B0;
+        Tue,  5 Sep 2023 11:28:49 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1693925125;
+        t=1693913329;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=pRmFRBBjiymADHuC158loV+BM7nlgrm8e2wfNXA74Lk=;
-        b=n19MV11jxDbg72js+uGhkeNYpDWDU6NgTIjnhKOuGuhJUSGs+ovlOqfizZSJ7Jz7Gd/Z6g
-        xesqAwq+xwvYYGFYjH1bYs6V5UR1pEEkFzbQKHTwrOGXr9AFxk3zHFhkshWElI+w5pfY+/
-        tNt6+bqTZZo2k7nKj8Yoiv8qvrroGS0=
+        bh=v8WUlaQOAhPmaU5wnKu5apjJVuO5EGGmnq/FtrE8DMk=;
+        b=HaBjmRoKQ1QBmh19HYnsJAu7bDaqV1PZrketEDcGR0/oXPfcKFgGfIUuvPVVgYdZtfDysS
+        vvRkuE7dPawTe9TWyNoesPIXUmxFZQ4FXNK0Tnk0iTkQpGxaZOhr6/ze7D7b4WY+eBS0y1
+        xn686jJG1MCXE21YTyns8rXZL5yMoQY=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1693925125;
+        s=susede2_ed25519; t=1693913329;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=pRmFRBBjiymADHuC158loV+BM7nlgrm8e2wfNXA74Lk=;
-        b=wlPszRjrMLgiRpBlbI4Tkb1fFtYrr62MXK+c0qFqOpw2HUgHdPUPZnRsj3kURx4nVNaxTF
-        chIMQ6sRd51SuXDw==
+        bh=v8WUlaQOAhPmaU5wnKu5apjJVuO5EGGmnq/FtrE8DMk=;
+        b=veTGNnptJGj9T9RQHhecQAXBa82meLWmZvZ8BMiJCOxRQQWEi8b50VapJ+T9tbh6ETwXih
+        QmGV7VzA9982LuDg==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id DF39013911;
-        Tue,  5 Sep 2023 14:45:24 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id DED9E13499;
+        Tue,  5 Sep 2023 11:28:48 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id TbStNQQ/92RyYgAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Tue, 05 Sep 2023 14:45:24 +0000
-Date:   Tue, 5 Sep 2023 16:38:45 +0200
+        id dfKgNfAQ92SwcQAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Tue, 05 Sep 2023 11:28:48 +0000
+Date:   Tue, 5 Sep 2023 13:22:09 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH v2 00/12] btrfs: ctree.[ch] cleanups
-Message-ID: <20230905143845.GC14420@twin.jikos.cz>
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: fix a compiling error if DEBUG is defined
+Message-ID: <20230905112209.GT14420@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <cover.1692994620.git.josef@toxicpanda.com>
+References: <14ea9aa0a4d5ac8f2c817978e9fff6ded8777ef9.1692683147.git.wqu@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <cover.1692994620.git.josef@toxicpanda.com>
+In-Reply-To: <14ea9aa0a4d5ac8f2c817978e9fff6ded8777ef9.1692683147.git.wqu@suse.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Aug 25, 2023 at 04:19:18PM -0400, Josef Bacik wrote:
-> v1->v2:
-> - added "btrfs: include linux/security.h in super.c" to deal with a compile
->   error after removing it from ctree.h in certain configs.
+On Tue, Aug 22, 2023 at 01:50:51PM +0800, Qu Wenruo wrote:
+> [BUG]
+> After commit 72a69cd03082 ("btrfs: subpage: pack all subpage bitmaps
+> into a larger bitmap"), the DEBUG section of btree_dirty_folio() would
+> no longer compile.
 > 
-> --- Original email ---
-> Hello,
+> [CAUSE]
+> If DEBUG is defined, we would do extra checks for btree_dirty_folio(),
+> mostly to make sure the range we marked dirty has an extent buffer and
+> that extent buffer is dirty.
 > 
-> While refreshing my ctree sync patches for btrfs-progs I ran into some oddness
-> around our crc32c related helpers that made the sync awkward.  This moves those
-> helpers around to other locations to make it easier to sync ctree.c into
-> btrfs-progs.
+> For subpage, we need to iterate through all the extent buffers covered
+> by that page range, and make sure they all matches the criteria.
 > 
-> I also got a little distracted by the massive amount of includes we have in
-> ctree.h, so I moved code around to trim this down to the bare minimum we need
-> currently.
+> However commit 72a69cd03082 ("btrfs: subpage: pack all subpage bitmaps
+> into a larger bitmap") changes how we store the bitmap, we pack all the
+> 16 bits bitmaps into a larger bitmap, which would save some space.
 > 
-> There's no functional change here, just moving things about and renaming things.
-> Thanks,
+> This means we no longer have btrfs_subpage::dirty_bitmap, instead the
+> dirty bitmap is starting at btrfs_subpage_info::dirty_offset, and has a
+> length of btrfs_subpage_info::bitmap_nr_bits.
 > 
-> Josef
-> 
-> 
-> Josef Bacik (12):
->   btrfs: move btrfs_crc32c_final into free-space-cache.c
->   btrfs: remove btrfs_crc32c wrapper
->   btrfs: move btrfs_extref_hash into inode-item.h
->   btrfs: move btrfs_name_hash to dir-item.h
->   btrfs: include asm/unaligned.h in accessors.h
->   btrfs: include linux/crc32c in dir-item and inode-item
->   btrfs: include linux/iomap.h in file.c
->   btrfs: add fscrypt related dependencies to respective headers
->   btrfs: add btrfs_delayed_ref_head declaration to extent-tree.h
->   btrfs: include trace header in where necessary
->   btrfs: include linux/security.h in super.c
->   btrfs: remove extraneous includes from ctree.h
+> [FIX]
+> Although I'm not sure if it still makes sense to maintain such code, at
+> least let it compile.
 
-With patch 6 folded to 3 and 4 added to misc-next, thanks.
+I'm not sure either, making it compile again makes sense. I vaguely
+remember that the DEBUG macro is set by some option externally and there
+are many ifdefs in other code so I assume it's still a valid feature.
+There's a reference to -DDEBUG in
+Documentation/admin-guide/dynamic-debug-howto.rst .
+
+> This patch would let us test the bits one by one through the bitmaps.
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+
+Added to misc-next, thanks.

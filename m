@@ -2,102 +2,135 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 68D17CA0FF8
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8EF1BCA0FE2
 	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Sep 2023 16:03:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232591AbjIEQC7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 5 Sep 2023 12:02:59 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44446 "EHLO
+        id S236300AbjIEQCy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 5 Sep 2023 12:02:54 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47020 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1354420AbjIEL2x (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Sep 2023 07:28:53 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4D7621AD
-        for <linux-btrfs@vger.kernel.org>; Tue,  5 Sep 2023 04:28:50 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 107201F8B0;
-        Tue,  5 Sep 2023 11:28:49 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1693913329;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=v8WUlaQOAhPmaU5wnKu5apjJVuO5EGGmnq/FtrE8DMk=;
-        b=HaBjmRoKQ1QBmh19HYnsJAu7bDaqV1PZrketEDcGR0/oXPfcKFgGfIUuvPVVgYdZtfDysS
-        vvRkuE7dPawTe9TWyNoesPIXUmxFZQ4FXNK0Tnk0iTkQpGxaZOhr6/ze7D7b4WY+eBS0y1
-        xn686jJG1MCXE21YTyns8rXZL5yMoQY=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1693913329;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=v8WUlaQOAhPmaU5wnKu5apjJVuO5EGGmnq/FtrE8DMk=;
-        b=veTGNnptJGj9T9RQHhecQAXBa82meLWmZvZ8BMiJCOxRQQWEi8b50VapJ+T9tbh6ETwXih
-        QmGV7VzA9982LuDg==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id DED9E13499;
-        Tue,  5 Sep 2023 11:28:48 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id dfKgNfAQ92SwcQAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Tue, 05 Sep 2023 11:28:48 +0000
-Date:   Tue, 5 Sep 2023 13:22:09 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: fix a compiling error if DEBUG is defined
-Message-ID: <20230905112209.GT14420@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <14ea9aa0a4d5ac8f2c817978e9fff6ded8777ef9.1692683147.git.wqu@suse.com>
+        with ESMTP id S1343634AbjIECly (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Sep 2023 22:41:54 -0400
+Received: from mail-pg1-f208.google.com (mail-pg1-f208.google.com [209.85.215.208])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 976ACCC6
+        for <linux-btrfs@vger.kernel.org>; Mon,  4 Sep 2023 19:41:50 -0700 (PDT)
+Received: by mail-pg1-f208.google.com with SMTP id 41be03b00d2f7-563ab574cb5so1558071a12.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 Sep 2023 19:41:50 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1693881710; x=1694486510;
+        h=to:from:subject:message-id:date:mime-version:x-gm-message-state
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=4rel8C/D7Odl/6HR0dA8yx8orsYr6F/O5Rkd47PoIZI=;
+        b=XNrsUb+gdmZQCo7gjKScMiGL9NPeBXjWQ1B7UYxRWJFAg5EsfJXiKLKKvF+Nd3ef7O
+         GQLD/p2KOCHdtHwYk32Sua/y6Hg5YvnyDRAWx8roy5lrGBESCitE+rfJdJsn9imXJ5pH
+         FVV+FkeHhJzHMjVmyeSNY23F/XTeKiImcxItzJTlyDR6AL3J3Ksvh10OD9wuvSIL8Ymi
+         cm5pY6OMMiIAOeuL3hV+UxMkw71s+oSVz5L0U2FVJfKrgSG/JZuu0Ebwaf8zfKZjsr0B
+         9UjZn0KbkeYB3J6k0+RgpLvyjqBXR4pVMhOJTIA2IbD4Zol1Lv13axBYuJefacYUBQMg
+         87xQ==
+X-Gm-Message-State: AOJu0YzKNpSjRrRjol8UKRYDPxly/N+C2Lo329uXUUFxe2crNxcqA6mR
+        Qys1ETFh/gvRp7zy3cpJM8AHj2Sqr9w80ppHVZVNDP6K0YdH
+X-Google-Smtp-Source: AGHT+IGW0pF60lKuZHOAJcmKE6HN4PYUeBmo0mzrxsM76DNHFjwYTiAIjApYnrJ1yttLxPBKU5Z3Gjv+vCKsyccE4kcwow3QL93C
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <14ea9aa0a4d5ac8f2c817978e9fff6ded8777ef9.1692683147.git.wqu@suse.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-Received: by 2002:a63:2903:0:b0:564:aeb6:c383 with SMTP id
+ bt3-20020a632903000000b00564aeb6c383mr2470013pgb.1.1693881710227; Mon, 04 Sep
+ 2023 19:41:50 -0700 (PDT)
+Date:   Mon, 04 Sep 2023 19:41:50 -0700
+X-Google-Appengine-App-Id: s~syzkaller
+X-Google-Appengine-App-Id-Alias: syzkaller
+Message-ID: <000000000000a13b2c06049391bf@google.com>
+Subject: [syzbot] [btrfs?] WARNING in __btrfs_run_delayed_items
+From:   syzbot <syzbot+90ad99829e4f013084b7@syzkaller.appspotmail.com>
+To:     clm@fb.com, dsterba@suse.com, josef@toxicpanda.com,
+        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Aug 22, 2023 at 01:50:51PM +0800, Qu Wenruo wrote:
-> [BUG]
-> After commit 72a69cd03082 ("btrfs: subpage: pack all subpage bitmaps
-> into a larger bitmap"), the DEBUG section of btree_dirty_folio() would
-> no longer compile.
-> 
-> [CAUSE]
-> If DEBUG is defined, we would do extra checks for btree_dirty_folio(),
-> mostly to make sure the range we marked dirty has an extent buffer and
-> that extent buffer is dirty.
-> 
-> For subpage, we need to iterate through all the extent buffers covered
-> by that page range, and make sure they all matches the criteria.
-> 
-> However commit 72a69cd03082 ("btrfs: subpage: pack all subpage bitmaps
-> into a larger bitmap") changes how we store the bitmap, we pack all the
-> 16 bits bitmaps into a larger bitmap, which would save some space.
-> 
-> This means we no longer have btrfs_subpage::dirty_bitmap, instead the
-> dirty bitmap is starting at btrfs_subpage_info::dirty_offset, and has a
-> length of btrfs_subpage_info::bitmap_nr_bits.
-> 
-> [FIX]
-> Although I'm not sure if it still makes sense to maintain such code, at
-> least let it compile.
+Hello,
 
-I'm not sure either, making it compile again makes sense. I vaguely
-remember that the DEBUG macro is set by some option externally and there
-are many ifdefs in other code so I assume it's still a valid feature.
-There's a reference to -DDEBUG in
-Documentation/admin-guide/dynamic-debug-howto.rst .
+syzbot found the following issue on:
 
-> This patch would let us test the bits one by one through the bitmaps.
-> 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+HEAD commit:    b97d64c72259 Merge tag '6.6-rc-smb3-client-fixes-part1' of..
+git tree:       upstream
+console output: https://syzkaller.appspot.com/x/log.txt?x=11e8d7dfa80000
+kernel config:  https://syzkaller.appspot.com/x/.config?x=958c1fdc38118172
+dashboard link: https://syzkaller.appspot.com/bug?extid=90ad99829e4f013084b7
+compiler:       Debian clang version 15.0.6, GNU ld (GNU Binutils for Debian) 2.40
 
-Added to misc-next, thanks.
+Unfortunately, I don't have any reproducer for this issue yet.
+
+Downloadable assets:
+disk image: https://storage.googleapis.com/syzbot-assets/99875b49c50b/disk-b97d64c7.raw.xz
+vmlinux: https://storage.googleapis.com/syzbot-assets/5bcacc1a3f5b/vmlinux-b97d64c7.xz
+kernel image: https://storage.googleapis.com/syzbot-assets/e2fe9c8de38a/bzImage-b97d64c7.xz
+
+IMPORTANT: if you fix the issue, please add the following tag to the commit:
+Reported-by: syzbot+90ad99829e4f013084b7@syzkaller.appspotmail.com
+
+------------[ cut here ]------------
+BTRFS: Transaction aborted (error -17)
+WARNING: CPU: 0 PID: 3647 at fs/btrfs/delayed-inode.c:1158 __btrfs_run_delayed_items+0x3d3/0x430 fs/btrfs/delayed-inode.c:1158
+Modules linked in:
+CPU: 0 PID: 3647 Comm: syz-executor.2 Not tainted 6.5.0-syzkaller-08894-gb97d64c72259 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 07/26/2023
+RIP: 0010:__btrfs_run_delayed_items+0x3d3/0x430 fs/btrfs/delayed-inode.c:1158
+Code: fe c1 38 c1 0f 8c b5 fc ff ff 48 89 ef e8 f5 e3 42 fe e9 a8 fc ff ff e8 7b 2a e9 fd 48 c7 c7 e0 2a 4c 8b 89 de e8 5d dd af fd <0f> 0b e9 69 ff ff ff f3 0f 1e fa e8 5d 2a e9 fd 48 8b 44 24 10 42
+RSP: 0018:ffffc9001403f8f0 EFLAGS: 00010246
+RAX: 005f0d5eac152800 RBX: 00000000ffffffef RCX: ffff888026da1dc0
+RDX: 0000000000000000 RSI: 0000000000000001 RDI: 0000000000000000
+RBP: ffff888031242a00 R08: ffffffff8153f992 R09: 1ffff92002807e94
+R10: dffffc0000000000 R11: fffff52002807e95 R12: dffffc0000000000
+R13: ffff8880312429d8 R14: 0000000000000000 R15: ffff888031242a00
+FS:  00007f5361bdd6c0(0000) GS:ffff8880b9800000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007ffdbc30a6b8 CR3: 000000007bf09000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ btrfs_commit_transaction+0xf44/0x2ff0 fs/btrfs/transaction.c:2393
+ create_snapshot+0x4a5/0x7e0 fs/btrfs/ioctl.c:845
+ btrfs_mksubvol+0x5d0/0x750 fs/btrfs/ioctl.c:995
+ btrfs_mksnapshot+0xb5/0xf0 fs/btrfs/ioctl.c:1041
+ __btrfs_ioctl_snap_create+0x344/0x460 fs/btrfs/ioctl.c:1294
+ btrfs_ioctl_snap_create+0x13c/0x190 fs/btrfs/ioctl.c:1321
+ btrfs_ioctl+0xbbf/0xd40
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:871 [inline]
+ __se_sys_ioctl+0xf8/0x170 fs/ioctl.c:857
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x41/0xc0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+RIP: 0033:0x7f536a47cae9
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 e1 20 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b0 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007f5361bdd0c8 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
+RAX: ffffffffffffffda RBX: 00007f536a59c050 RCX: 00007f536a47cae9
+RDX: 0000000020001200 RSI: 0000000050009401 RDI: 0000000000000007
+RBP: 00007f536a4c847a R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
+R13: 000000000000000b R14: 00007f536a59c050 R15: 00007fffdca166a8
+ </TASK>
+
+
+---
+This report is generated by a bot. It may contain errors.
+See https://goo.gl/tpsmEJ for more information about syzbot.
+syzbot engineers can be reached at syzkaller@googlegroups.com.
+
+syzbot will keep track of this issue. See:
+https://goo.gl/tpsmEJ#status for how to communicate with syzbot.
+
+If the bug is already fixed, let syzbot know by replying with:
+#syz fix: exact-commit-title
+
+If you want to overwrite bug's subsystems, reply with:
+#syz set subsystems: new-subsystem
+(See the list of subsystem names on the web dashboard)
+
+If the bug is a duplicate of another bug, reply with:
+#syz dup: exact-subject-of-another-report
+
+If you want to undo deduplication, reply with:
+#syz undup

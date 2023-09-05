@@ -2,94 +2,221 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CDCE7CA1000
-	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Sep 2023 16:03:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1984FCA1001
+	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Sep 2023 16:03:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236810AbjIEQDa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 5 Sep 2023 12:03:30 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34182 "EHLO
+        id S236930AbjIEQDi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 5 Sep 2023 12:03:38 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57346 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1354701AbjIENgl (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Sep 2023 09:36:41 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4A9C4191
-        for <linux-btrfs@vger.kernel.org>; Tue,  5 Sep 2023 06:36:35 -0700 (PDT)
+        with ESMTP id S1353751AbjIEHwV (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Sep 2023 03:52:21 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3D033CCB
+        for <linux-btrfs@vger.kernel.org>; Tue,  5 Sep 2023 00:52:18 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 0D67D21ACF;
-        Tue,  5 Sep 2023 13:36:34 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1693920994;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 5206C1F750
+        for <linux-btrfs@vger.kernel.org>; Tue,  5 Sep 2023 07:52:16 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1693900336; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=szXHBbUaVaJPcZnxAb1iLDUGnWAhBDvZ6R/GfcCuWFE=;
-        b=k07I9x8r9/B5nGsGUBQ/Q6ApU80imCpY4o2UnvbJJvbcASXHkzcmMMsoVDfwAhxNt56CAT
-        7q7pTlCdzuIZaaprLaGv/7w1/8vwGLKgm7ak6X9HHDjOofKXAm3K0Gx7uSy7uuu4qU4CBV
-        GUGCjIkIHIGHiNIfltdFCbmM5Bn0Smg=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1693920994;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=szXHBbUaVaJPcZnxAb1iLDUGnWAhBDvZ6R/GfcCuWFE=;
-        b=oMIw1Ej8eUU+K0UYxnE7XhofhNtRmw9nSlL6ocX+qxIsNcDQlMqSjbC7uxH332peDFS0ih
-        MaHs4I2S5iqtAjAg==
+        bh=VcgjDA8p9OrjoteXCujfMYZVyk8q/PBXrDbhLk7dj1c=;
+        b=SbCbSXH8ynU8xqZhy3krVMmdcahM+DDbd3HA1yE6urkg/5FXT7G+q/2eXpM3fe/Optet3A
+        jxYseCDmmf4ZrDC8D4nrWTgIc9I8+D5RlTxSre3bu4I0MGNszp7tmamDZ/jqSoHRJtNwGi
+        fmZwkN/o/oPHjO0OQDoba14wBQv02lQ=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id DC8AB13499;
-        Tue,  5 Sep 2023 13:36:33 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 9ADE313911
+        for <linux-btrfs@vger.kernel.org>; Tue,  5 Sep 2023 07:52:15 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id FIvYNOEu92S3OgAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Tue, 05 Sep 2023 13:36:33 +0000
-Date:   Tue, 5 Sep 2023 15:29:54 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: do not require EXTENT_NOWAIT for
- btrfs_redirty_list_add()
-Message-ID: <20230905132954.GZ14420@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <bd9358f329b4574724250f1c0ba1ef2939f1feaa.1693293259.git.wqu@suse.com>
+        id uEdgGC/e9mTFeQAAMHmgww
+        (envelope-from <wqu@suse.com>)
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 Sep 2023 07:52:15 +0000
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH 6/7] btrfs-progs: cmds/tune: add "btrfs tune clear" subcommand
+Date:   Tue,  5 Sep 2023 15:51:48 +0800
+Message-ID: <d881bafa9ff5e902275e3188af52e73d2f5c0854.1693900169.git.wqu@suse.com>
+X-Mailer: git-send-email 2.42.0
+In-Reply-To: <cover.1693900169.git.wqu@suse.com>
+References: <cover.1693900169.git.wqu@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <bd9358f329b4574724250f1c0ba1ef2939f1feaa.1693293259.git.wqu@suse.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Aug 29, 2023 at 03:14:25PM +0800, Qu Wenruo wrote:
-> The flag EXTENT_NOWAIT is a special flag to notify extent-io-tree code
-> that this operation should not sleep for the extent state preallocation.
-> 
-> However for btrfs_redirty_list_add(), all callers are able to sleep:
-> 
-> - clean_log_buffer()
->   Just 2 lines before, we call btrfs_pin_reserved_extent(), which calls
->   pin_down_extent(), and that function does not require EXTENT_NOWAIT.
->   Thus we're safe to call it without EXTENT_NOWAIT.
-> 
-> - btrfs_free_tree_block()
->   This function have several call sites which trigger tree read, e.g.
->   walk_up_proc(), thus we're safe to call it without EXTENT_NOWAIT.
-> 
-> Thus there is no need to require EXTENT_NOWAIT flag.
-> 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+This new "btrfs tune clear" subcommand is mostly the same as "btrfs tune
+set", but with much less features supported:
 
-Added to misc-next, thanks. I did some research if we need the
-EXTENT_NOWAIT at all, it's obscured by a lot of code refactoring but
-it's still needed due to
+- seed
+- block-group-tree
 
-add_extent_mapping
-  extent_map_device_set_bits
+For the features in "btrfs tune set" but not in "btrfs tune clear", they
+are mostly default features now, and we won't support disabling those
+features anymore.
 
-done under extent_map_tree::lock (rwlock_t), added in 1c11b63eff2a
-("btrfs: replace pending/pinned chunks lists with io tree").
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ Documentation/btrfs-tune.rst |   7 +++
+ cmds/tune.c                  | 111 +++++++++++++++++++++++++++++++++++
+ 2 files changed, 118 insertions(+)
+
+diff --git a/Documentation/btrfs-tune.rst b/Documentation/btrfs-tune.rst
+index 827c92eadb72..4a556a197540 100644
+--- a/Documentation/btrfs-tune.rst
++++ b/Documentation/btrfs-tune.rst
+@@ -21,6 +21,13 @@ set <feature> [<device>]
+         If *feature* is `list-all`, all supported features would be listed, and
+ 	no *device* parameter is needed.
+ 
++clear <feature> [<device>]
++        Set/enable a feature.
++
++        If *feature* is `list-all`, all supported features would be listed, and
++	no *device* parameter is needed. And the listed features may be different
++	compared to the ones from `btrfs tune set list-all`.
++
+ EXIT STATUS
+ -----------
+ 
+diff --git a/cmds/tune.c b/cmds/tune.c
+index 195d0a235fc8..a85d017ba2e1 100644
+--- a/cmds/tune.c
++++ b/cmds/tune.c
+@@ -321,6 +321,116 @@ out:
+ 
+ static DEFINE_SIMPLE_COMMAND(tune_set, "set");
+ 
++static const struct btrfs_feature clear_features[] = {
++	{
++		.name		= "block-group-tree",
++		.compat_ro_flag	= BTRFS_FEATURE_COMPAT_RO_BLOCK_GROUP_TREE,
++		.sysfs_name	= "block_group_tree",
++		VERSION_TO_STRING2(compat, 6,1),
++		VERSION_NULL(safe),
++		VERSION_NULL(default),
++		.desc		= "block group tree to reduce mount time"
++	}, {
++		.name		= "seed",
++		.sysfs_name	= NULL,
++		VERSION_TO_STRING3(compat, 2,6,29),
++		VERSION_NULL(safe),
++		VERSION_NULL(default),
++		.desc		= "seeding device support"
++	},
++	/* Keep this one last */
++	{
++		.name		= "list-all",
++		.runtime_flag	= BTRFS_FEATURE_RUNTIME_LIST_ALL,
++		.sysfs_name	= NULL,
++		VERSION_NULL(compat),
++		VERSION_NULL(safe),
++		VERSION_NULL(default),
++		.desc		= NULL
++	}
++};
++
++static int cmd_tune_clear(const struct cmd_struct *cmd, int argc, char **argv)
++{
++	struct btrfs_fs_info *fs_info;
++	struct open_ctree_args oca = { 0 };
++	char *feature;
++	char *path;
++	int ret = 0;
++
++	optind = 0;
++	while (1) {
++		int c = getopt(argc, argv, "f");
++		if (c < 0)
++			break;
++
++		switch (c) {
++		default:
++			usage_unknown_option(cmd, argv);
++		}
++	}
++
++	if (check_argc_min(argc - optind, 1))
++		return 1;
++
++	feature = argv[optind];
++
++	if (check_features(feature, clear_features, ARRAY_SIZE(clear_features))) {
++		error("Unknown feature to clear: %s", feature);
++		return 1;
++	}
++
++	if (!strcmp(feature, "list-all")) {
++		list_all_features("set", set_features, ARRAY_SIZE(set_features));
++		return 0;
++	}
++
++	if (check_argc_exact(argc - optind, 2))
++		return 1;
++
++	path = argv[optind + 1];
++	oca.flags = OPEN_CTREE_WRITES;
++	oca.filename = path;
++	fs_info = open_ctree_fs_info(&oca);
++	if (!fs_info) {
++		error("failed to open btrfs");
++		ret = -EIO;
++		goto out;
++	}
++	if (!strcmp(feature, "seed")) {
++		ret = update_seeding_flag(fs_info->tree_root, path, 0, 0);
++		goto out;
++	}
++	if (!strcmp(feature, "block-group-tree")) {
++		if (!btrfs_fs_compat_ro(fs_info, BLOCK_GROUP_TREE)) {
++			error("filesystem doesn't have block-group-tree feature");
++			ret = -EINVAL;
++			goto out;
++		}
++		ret = convert_to_extent_tree(fs_info);
++		if (ret < 0) {
++			error("failed to convert the filesystem from block group tree feature");
++			goto out;
++		}
++		goto out;
++	}
++out:
++	if (fs_info)
++		close_ctree_fs_info(fs_info);
++	return !!ret;
++}
++
++static const char * const cmd_tune_clear_usage[] = {
++	"btrfs tune clear <feature> [<device>]",
++	"Clear/disable specified feature for the unmounted filesystem",
++	"",
++	HELPINFO_INSERT_GLOBALS,
++	HELPINFO_INSERT_VERBOSE,
++	NULL,
++};
++
++static DEFINE_SIMPLE_COMMAND(tune_clear, "clear");
++
+ static const char * const tune_cmd_group_usage[] = {
+ 	"btrfs tune <command> <args>",
+ 	NULL,
+@@ -331,6 +441,7 @@ static const char tune_cmd_group_info[] = "change various btrfs features";
+ static const struct cmd_group tune_cmd_group = {
+ 	tune_cmd_group_usage, tune_cmd_group_info, {
+ 		&cmd_struct_tune_set,
++		&cmd_struct_tune_clear,
+ 		NULL
+ 	}
+ };
+-- 
+2.42.0
+

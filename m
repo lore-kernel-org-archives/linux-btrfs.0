@@ -2,452 +2,82 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CA808CA0FFB
-	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Sep 2023 16:03:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E1A06C83F2C
+	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Sep 2023 16:42:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236954AbjIEQDk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 5 Sep 2023 12:03:40 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57294 "EHLO
+        id S240247AbjIEQmL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 5 Sep 2023 12:42:11 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57134 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1353747AbjIEHwQ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Sep 2023 03:52:16 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 274CACD2
-        for <linux-btrfs@vger.kernel.org>; Tue,  5 Sep 2023 00:52:12 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id E084121832
-        for <linux-btrfs@vger.kernel.org>; Tue,  5 Sep 2023 07:52:10 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1693900330; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=sGb+raeZtxI4N5w3xxi6a4RHWlxDqp69uNMLWcchL30=;
-        b=HMrPxud65983PtzLJ2uDOXiqZySi7e+8g4oHFRcqJ8V+wISy+DDBiCgloxvtLkB4stBkR1
-        ey6btCZNZrhhn9+YtD5pIbsVFBr8eLdf0jnex1spGjhu65Tr8Uew8hm2Sr6xPVxi0Jr2wp
-        sJst3AuI/hr8KT5u5+T2TJ4G1lOOR+4=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 3681D13911
-        for <linux-btrfs@vger.kernel.org>; Tue,  5 Sep 2023 07:52:09 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id 0D9fOyne9mTFeQAAMHmgww
-        (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Tue, 05 Sep 2023 07:52:09 +0000
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/7] btrfs-progs: cmds: add "btrfs tune set" subcommand group
-Date:   Tue,  5 Sep 2023 15:51:44 +0800
-Message-ID: <1c294f739f028da499cf7f57deb334f419979097.1693900169.git.wqu@suse.com>
-X-Mailer: git-send-email 2.42.0
-In-Reply-To: <cover.1693900169.git.wqu@suse.com>
-References: <cover.1693900169.git.wqu@suse.com>
+        with ESMTP id S244287AbjIEQUW (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Sep 2023 12:20:22 -0400
+Received: from mail-ot1-f48.google.com (mail-ot1-f48.google.com [209.85.210.48])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C1F5F2137
+        for <linux-btrfs@vger.kernel.org>; Tue,  5 Sep 2023 09:18:01 -0700 (PDT)
+Received: by mail-ot1-f48.google.com with SMTP id 46e09a7af769-6bf04263dc8so1994978a34.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 Sep 2023 09:18:01 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1693930529; x=1694535329; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:to
+         :from:from:to:cc:subject:date:message-id:reply-to;
+        bh=aaCA1ihvEgFRcb9HYg/XkMOmb87JV8NO5h7i4qiuGsA=;
+        b=rtHMITkikILsKrA7n6JLYhTaQdmTi26khzDL+w2wzHnlsKIJxmVHiJk9rwfc3/Fufz
+         V0SjOXaO/18kLWenEqGEoo96XrY1N2R1+zy4t9BVKl2fdUPsKZ5qSIoa/VQ93rRNAsHJ
+         5mYtD17y81wdYRl7vI/eDsVfdmb4jQO9iB+S53SkkdlBOMkHXrAN3HkKLftgTeeD/Utd
+         IGBu6E8GBbV5SIbpHyAMBpZU7lPcqRowhw9SNU9Wrq3XnqmBroaDgnxQp9JTL5pLiVbf
+         Yxq+PXO681u6HI49ab2WvCwhkrMn3jKVIt7tkVf4voVTYbdgvSSAJwKIFar96t/+4dho
+         Wjpg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1693930529; x=1694535329;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:to
+         :from:x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=aaCA1ihvEgFRcb9HYg/XkMOmb87JV8NO5h7i4qiuGsA=;
+        b=SQeWUHPpqFC5lJ785zvE7Bcnj7q1Ka/xN9EkfRlByBxW++iRm7Q2+3DWs3YR9jBxCU
+         iptzlDfSeANetXFXWbqQlDeM2bb5WHYVnHu7FH+/UclxeKy4t+orv1GLuZQBPvACiCwB
+         4ehEmOTiah13XEF1nS4nXgIbo3Tz1+4MBhuQyUuiRb50moucfxzj+7U4mhHlDpN8Ep3e
+         Qk3XKa5ITnh+gPQkvbMyy9DpbMVeBNmPAS0HtN/Gl2RBWDct63KPaoCSWexZbQ3Bqh2a
+         RA+d/8D6V9u2qKwRs3/gRQuGVv03YP+75ZwkgdyC3TZaFOtpYqCkQYjX22JFPAiULZdp
+         J3eA==
+X-Gm-Message-State: AOJu0YxGTfwvnmxOZad1y+SjOJFScvxP8vgQOMOeue+54E6Ht+GcG7+X
+        Nti/DlOyMd+kXNK58KnXpqS9UCMdaD0xJL/Aefg=
+X-Google-Smtp-Source: AGHT+IHdgeZLQShbZYW7SD6BymVzuR7ZXefjhR33/rDfOxDOxdZLhjZeRrnp/odegdA8F+lKpfl9Kg==
+X-Received: by 2002:a9d:641a:0:b0:6bc:fb5f:7b06 with SMTP id h26-20020a9d641a000000b006bcfb5f7b06mr12666730otl.17.1693930528866;
+        Tue, 05 Sep 2023 09:15:28 -0700 (PDT)
+Received: from localhost (cpe-76-182-20-124.nc.res.rr.com. [76.182.20.124])
+        by smtp.gmail.com with ESMTPSA id w10-20020a0c8e4a000000b006505119ca66sm4587659qvb.22.2023.09.05.09.15.28
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 05 Sep 2023 09:15:28 -0700 (PDT)
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: [PATCH 0/2] Fix some -Wmaybe-uninitialized errors
+Date:   Tue,  5 Sep 2023 12:15:22 -0400
+Message-ID: <cover.1693930391.git.josef@toxicpanda.com>
+X-Mailer: git-send-email 2.41.0
 MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-As the first step to convert btrfstune into "btrfs tune" subcommand
-group, this patch would add the following subcommand group:
+Hello,
 
- btrfs tune set <feature> [<device>]
+Jens reported to me two warnings he was seeing with
+CONFIG_CC_OPTIMIZE_FOR_SIZE=y set in his .config.  We don't see these errors
+without this option, and they're not correct warnings.  However we've had issues
+where -Wmaybe-uninitialized would have caught a real bug, so this warning is
+generally valuable.  Fix these warnings so we have a clean build.  Thanks,
 
-For now the following features are supported:
+Josef
 
-- extref
-- skinny-metadata
-- no-holes
-  All those are simple super block flags toggle.
+Josef Bacik (2):
+  btrfs: make sure to initialize start and len in find_free_dev_extent
+  btrfs: initialize start_slot in btrfs_log_prealloc_extents
 
-- list-all
-  This acts the same way as "mkfs.btrfs -O list-all", the difference is
-  it would only list the supported features.
-  (In the future, there will be "btrfs tune clear" subcommand, which
-   would support a different set of features).
+ fs/btrfs/tree-log.c |  2 +-
+ fs/btrfs/volumes.c  | 14 ++++++--------
+ 2 files changed, 7 insertions(+), 9 deletions(-)
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- Documentation/btrfs-tune.rst |  40 ++++++
- Documentation/btrfs.rst      |   5 +
- Documentation/conf.py        |   1 +
- Documentation/man-index.rst  |   1 +
- Makefile                     |   2 +-
- btrfs.c                      |   1 +
- cmds/commands.h              |   1 +
- cmds/tune.c                  | 227 +++++++++++++++++++++++++++++++++++
- 8 files changed, 277 insertions(+), 1 deletion(-)
- create mode 100644 Documentation/btrfs-tune.rst
- create mode 100644 cmds/tune.c
-
-diff --git a/Documentation/btrfs-tune.rst b/Documentation/btrfs-tune.rst
-new file mode 100644
-index 000000000000..827c92eadb72
---- /dev/null
-+++ b/Documentation/btrfs-tune.rst
-@@ -0,0 +1,40 @@
-+btrfs-tune(8)
-+==================
-+
-+SYNOPSIS
-+--------
-+
-+**btrfs tune** <subcommand> [<args>]
-+
-+DESCRIPTION
-+-----------
-+
-+:command:`btrfs tune` is used to tweak various btrfs features on a
-+unmounted filesystem.
-+
-+SUBCOMMAND
-+-----------
-+
-+set <feature> [<device>]
-+        Set/enable a feature.
-+
-+        If *feature* is `list-all`, all supported features would be listed, and
-+	no *device* parameter is needed.
-+
-+EXIT STATUS
-+-----------
-+
-+**btrfs tune** returns a zero exit status if it succeeds. A non-zero value is
-+returned in case of failure.
-+
-+AVAILABILITY
-+------------
-+
-+**btrfs** is part of btrfs-progs.  Please refer to the documentation at
-+`https://btrfs.readthedocs.io <https://btrfs.readthedocs.io>`_.
-+
-+SEE ALSO
-+--------
-+
-+:doc:`mkfs.btrfs`,
-+``mount(8)``
-diff --git a/Documentation/btrfs.rst b/Documentation/btrfs.rst
-index e878f158aaa1..5aea0d1a208c 100644
---- a/Documentation/btrfs.rst
-+++ b/Documentation/btrfs.rst
-@@ -134,6 +134,10 @@ subvolume
- 	Create/delete/list/manage btrfs subvolume.
- 	See :doc:`btrfs-subvolume` for details.
- 
-+tune
-+	Change various btrfs features.
-+	See :doc:`btrfs-tune` for details.
-+
- .. _man-btrfs8-standalone-tools:
- 
- STANDALONE TOOLS
-@@ -150,6 +154,7 @@ btrfs-convert
-         in-place conversion from ext2/3/4 filesystems to btrfs
- btrfstune
-         tweak some filesystem properties on a unmounted filesystem
-+	(will be replaced by `btrfs-tune`)
- btrfs-select-super
-         rescue tool to overwrite primary superblock from a spare copy
- btrfs-find-root
-diff --git a/Documentation/conf.py b/Documentation/conf.py
-index 1025e10d7206..e0801bca4686 100644
---- a/Documentation/conf.py
-+++ b/Documentation/conf.py
-@@ -66,6 +66,7 @@ man_pages = [
-     ('btrfs-check', 'btrfs-check', 'check or repair a btrfs filesystem', '', 8),
-     ('btrfs-balance', 'btrfs-balance', 'balance block groups on a btrfs filesystem', '', 8),
-     ('btrfs-subvolume', 'btrfs-subvolume', 'manage btrfs subvolumes', '', 8),
-+    ('btrfs-tune', 'btrfs-tune', 'tweak btrfs features', '', 8),
-     ('btrfs-map-logical', 'btrfs-map-logical', 'map btrfs logical extent to physical extent', '', 8),
-     ('btrfs', 'btrfs', 'a toolbox to manage btrfs filesystems', '', 8),
-     ('mkfs.btrfs', 'mkfs.btrfs', 'create a btrfs filesystem', '', 8),
-diff --git a/Documentation/man-index.rst b/Documentation/man-index.rst
-index 36d45d2903ea..5fcd4cbc4bee 100644
---- a/Documentation/man-index.rst
-+++ b/Documentation/man-index.rst
-@@ -28,6 +28,7 @@ Manual pages
-    btrfs-select-super
-    btrfs-send
-    btrfs-subvolume
-+   btrfs-tune
-    btrfstune
-    fsck.btrfs
-    mkfs.btrfs
-diff --git a/Makefile b/Makefile
-index f4feb1fff8e1..9857daaa42ac 100644
---- a/Makefile
-+++ b/Makefile
-@@ -239,7 +239,7 @@ cmds_objects = cmds/subvolume.o cmds/subvolume-list.o \
- 	       cmds/rescue-super-recover.o \
- 	       cmds/property.o cmds/filesystem-usage.o cmds/inspect-dump-tree.o \
- 	       cmds/inspect-dump-super.o cmds/inspect-tree-stats.o cmds/filesystem-du.o \
--	       cmds/reflink.o \
-+	       cmds/reflink.o cmds/tune.o \
- 	       mkfs/common.o check/mode-common.o check/mode-lowmem.o \
- 	       check/clear-cache.o
- 
-diff --git a/btrfs.c b/btrfs.c
-index 751f193ee2e0..c2dae0303ffe 100644
---- a/btrfs.c
-+++ b/btrfs.c
-@@ -389,6 +389,7 @@ static const struct cmd_group btrfs_cmd_group = {
- 		&cmd_struct_scrub,
- 		&cmd_struct_send,
- 		&cmd_struct_subvolume,
-+		&cmd_struct_tune,
- 
- 		/* Help and version stay last */
- 		&cmd_struct_help,
-diff --git a/cmds/commands.h b/cmds/commands.h
-index 5ab7c881f634..aebacd718a7b 100644
---- a/cmds/commands.h
-+++ b/cmds/commands.h
-@@ -151,5 +151,6 @@ DECLARE_COMMAND(qgroup);
- DECLARE_COMMAND(replace);
- DECLARE_COMMAND(restore);
- DECLARE_COMMAND(rescue);
-+DECLARE_COMMAND(tune);
- 
- #endif
-diff --git a/cmds/tune.c b/cmds/tune.c
-new file mode 100644
-index 000000000000..92c7b9f1502c
---- /dev/null
-+++ b/cmds/tune.c
-@@ -0,0 +1,227 @@
-+/*
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public
-+ * License v2 as published by the Free Software Foundation.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-+ * General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public
-+ * License along with this program; if not, write to the
-+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-+ * Boston, MA 021110-1307, USA.
-+ */
-+
-+#include <unistd.h>
-+#include "kerncompat.h"
-+#include "cmds/commands.h"
-+#include "common/help.h"
-+#include "common/fsfeatures.h"
-+#include "kernel-shared/messages.h"
-+#include "kernel-shared/disk-io.h"
-+#include "kernel-shared/transaction.h"
-+
-+static const char * const cmd_tune_set_usage[] = {
-+	"btrfs tune set <feature> [<device>]",
-+	"Set/enable specified feature for the unmounted filesystem",
-+	"",
-+	HELPINFO_INSERT_GLOBALS,
-+	HELPINFO_INSERT_VERBOSE,
-+	NULL,
-+};
-+
-+static const struct btrfs_feature set_features[] = {
-+	{
-+		.name		= "extref",
-+		.incompat_flag	= BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF,
-+		.sysfs_name	= "extended_iref",
-+		VERSION_TO_STRING2(compat, 3,7),
-+		VERSION_TO_STRING2(safe, 3,12),
-+		VERSION_TO_STRING2(default, 3,12),
-+		.desc		= "increased hardlink limit per file to 65536"
-+	}, {
-+		.name		= "skinny-metadata",
-+		.incompat_flag	= BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA,
-+		.sysfs_name	= "skinny_metadata",
-+		VERSION_TO_STRING2(compat, 3,10),
-+		VERSION_TO_STRING2(safe, 3,18),
-+		VERSION_TO_STRING2(default, 3,18),
-+		.desc		= "reduced-size metadata extent refs"
-+	}, {
-+		.name		= "no-holes",
-+		.incompat_flag	= BTRFS_FEATURE_INCOMPAT_NO_HOLES,
-+		.sysfs_name	= "no_holes",
-+		VERSION_TO_STRING2(compat, 3,14),
-+		VERSION_TO_STRING2(safe, 4,0),
-+		VERSION_TO_STRING2(default, 5,15),
-+		.desc		= "no explicit hole extents for files"
-+	},
-+	/* Keep this one last */
-+	{
-+		.name		= "list-all",
-+		.runtime_flag	= BTRFS_FEATURE_RUNTIME_LIST_ALL,
-+		.sysfs_name	= NULL,
-+		VERSION_NULL(compat),
-+		VERSION_NULL(safe),
-+		VERSION_NULL(default),
-+		.desc		= NULL
-+	}
-+};
-+
-+static void list_all_features(const char *prefix,
-+			      const struct btrfs_feature *features,
-+			      int nr_features)
-+{
-+	/* We should have at least one empty feature. */
-+	ASSERT(nr_features > 1);
-+
-+	printf("features available to %s:\n", prefix);
-+	for (int i = 0; i < nr_features - 1; i++) {
-+		const struct btrfs_feature *feat = features + i;
-+		const char *sep = "";
-+
-+		fprintf(stderr, "%-20s- %s (", feat->name, feat->desc);
-+		if (feat->compat_ver) {
-+			fprintf(stderr, "compat=%s", feat->compat_str);
-+			sep = ", ";
-+		}
-+		if (feat->safe_ver) {
-+			fprintf(stderr, "%ssafe=%s", sep, feat->safe_str);
-+			sep = ", ";
-+		}
-+		if (feat->default_ver)
-+			fprintf(stderr, "%sdefault=%s", sep, feat->default_str);
-+		fprintf(stderr, ")\n");
-+	}
-+}
-+
-+static int check_features(const char *name, const struct btrfs_feature *features,
-+			  int nr_features)
-+{
-+	bool found = false;
-+
-+	for (int i = 0; i < nr_features; i++) {
-+		const struct btrfs_feature *feat = features + i;
-+
-+		if (!strcmp(feat->name, name)) {
-+			found = true;
-+			break;
-+		}
-+	}
-+	if (found)
-+		return 0;
-+	return -EINVAL;
-+}
-+
-+static int set_super_incompat_flags(struct btrfs_fs_info *fs_info, u64 flags)
-+{
-+	struct btrfs_root *root = fs_info->tree_root;
-+	struct btrfs_trans_handle *trans;
-+	struct btrfs_super_block *disk_super;
-+	u64 super_flags;
-+	int ret;
-+
-+	disk_super = fs_info->super_copy;
-+	super_flags = btrfs_super_incompat_flags(disk_super);
-+	super_flags |= flags;
-+	trans = btrfs_start_transaction(root, 1);
-+	BUG_ON(IS_ERR(trans));
-+	btrfs_set_super_incompat_flags(disk_super, super_flags);
-+	ret = btrfs_commit_transaction(trans, root);
-+
-+	return ret;
-+}
-+
-+static int cmd_tune_set(const struct cmd_struct *cmd, int argc, char **argv)
-+{
-+	struct btrfs_fs_info *fs_info;
-+	struct open_ctree_args oca = { 0 };
-+	char *feature;
-+	char *path;
-+	int ret = 0;
-+
-+	optind = 0;
-+	while (1) {
-+		int c = getopt(argc, argv, "");
-+		if (c < 0)
-+			break;
-+
-+		switch (c) {
-+		default:
-+			usage_unknown_option(cmd, argv);
-+		}
-+	}
-+
-+	if (check_argc_min(argc - optind, 1))
-+		return 1;
-+
-+	feature = argv[optind];
-+
-+	if (check_features(feature, set_features, ARRAY_SIZE(set_features))) {
-+		error("Unknown feature to set: %s", feature);
-+		return 1;
-+	}
-+	if (!strcmp(feature, "list-all")) {
-+		list_all_features("set", set_features, ARRAY_SIZE(set_features));
-+		return 0;
-+	}
-+
-+	if (check_argc_exact(argc - optind, 2))
-+		return 1;
-+
-+	path = argv[optind + 1];
-+	oca.flags = OPEN_CTREE_WRITES;
-+	oca.filename = path;
-+	fs_info = open_ctree_fs_info(&oca);
-+	if (!fs_info) {
-+		error("failed to open btrfs");
-+		ret = -EIO;
-+		goto out;
-+	}
-+	/*
-+	 * For those 3 features, we only need to update the superblock to add
-+	 * the new feature flags.
-+	 */
-+	if (!strcmp(feature, "extref") ||
-+	    !strcmp(feature, "skinny-metadata") ||
-+	    !strcmp(feature, "no-holes")) {
-+		u64 incompat_flags = 0;
-+
-+		if (!strcmp(feature, "extref"))
-+			incompat_flags |= BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF;
-+		if (!strcmp(feature, "skinny-metadata"))
-+			incompat_flags |= BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA;
-+		if (!strcmp(feature, "no-holes"))
-+			incompat_flags |= BTRFS_FEATURE_INCOMPAT_NO_HOLES;
-+		ret = set_super_incompat_flags(fs_info, incompat_flags);
-+		if (ret < 0) {
-+			errno = -ret;
-+			error("failed to set feature '%s': %m", feature);
-+		}
-+		goto out;
-+	}
-+
-+out:
-+	if (fs_info)
-+		close_ctree_fs_info(fs_info);
-+	return !!ret;
-+}
-+
-+static DEFINE_SIMPLE_COMMAND(tune_set, "set");
-+
-+static const char * const tune_cmd_group_usage[] = {
-+	"btrfs tune <command> <args>",
-+	NULL,
-+};
-+
-+static const char tune_cmd_group_info[] = "change various btrfs features";
-+
-+static const struct cmd_group tune_cmd_group = {
-+	tune_cmd_group_usage, tune_cmd_group_info, {
-+		&cmd_struct_tune_set,
-+		NULL
-+	}
-+};
-+DEFINE_GROUP_COMMAND_TOKEN(tune);
 -- 
-2.42.0
+2.41.0
 

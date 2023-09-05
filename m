@@ -2,82 +2,118 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 33E7BCA0FFF
-	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Sep 2023 19:16:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 791DDCA0FFF
+	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Sep 2023 19:19:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S242083AbjIETQa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 5 Sep 2023 15:16:30 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47608 "EHLO
+        id S236066AbjIETT7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 5 Sep 2023 15:19:59 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57474 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S237068AbjIETQ3 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Sep 2023 15:16:29 -0400
+        with ESMTP id S232837AbjIETTx (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Sep 2023 15:19:53 -0400
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5EE7F10DE
-        for <linux-btrfs@vger.kernel.org>; Tue,  5 Sep 2023 12:16:03 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 36EB41BE;
+        Tue,  5 Sep 2023 12:19:30 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 823131FFE2;
-        Tue,  5 Sep 2023 19:09:44 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id B6EA51FF11;
+        Tue,  5 Sep 2023 16:50:39 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1693940984;
+        t=1693932639;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=JlaurX9qjfmboJ+Ht6H2xbwD9IqE9gAVsbeTmxeGf4k=;
-        b=E1xaMgDP5sZe7brpjiTA3sBzemvI0oBLmSh5dk83sH4cx/Usu8W/Xi9GD87++tgwmPzVlS
-        vWISmw4PZ5NLPzK3NHj64F6RwqoeAh5XGvoZzn/MZZIYDI1f7SbhtLidQ0sagy/yvUFbd2
-        A4GXcQdevfWtL4ozmwwWNygYlIlXbQ8=
+        bh=mV5q3bCfqIU2bieJ+aC5Rbi5OO82o6cF5zowkscv/5w=;
+        b=KOZMtlKv/UXIf9swCGne/UIkYncl66ozaD98HhO2kaslzj5qvIlH6hJoU4FlUV7AhLfAPI
+        fheX0u44nrdki+PfK1Nc9eekR41Z2ADABIQaWC3RcjIYoRYNkdaaG2vS17kLJJ7xOQ4ScZ
+        RmuwG9G4XoicJtvmdgfwRDyyeToggGc=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1693940984;
+        s=susede2_ed25519; t=1693932639;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=JlaurX9qjfmboJ+Ht6H2xbwD9IqE9gAVsbeTmxeGf4k=;
-        b=ReEKbFC0syT9eG1HIjCmriGRcTuQJ47pdbv18IV0hchQRe1Qx6yyxYwluv2UXLrKeArvIV
-        dkFpQMyckouSWDBw==
+        bh=mV5q3bCfqIU2bieJ+aC5Rbi5OO82o6cF5zowkscv/5w=;
+        b=Dl1ITXZHlebT1nYY9VOGAKQB6ogReSrEMEMNQXt8DU6NrPUNUCI6Q6h7fqx6Yvdn0wyM0z
+        qVsi9NONZq7Hw9DQ==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 6933813911;
-        Tue,  5 Sep 2023 19:09:44 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 5E70413911;
+        Tue,  5 Sep 2023 16:50:39 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id C37uGPh892SsaAAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Tue, 05 Sep 2023 19:09:44 +0000
-Date:   Tue, 5 Sep 2023 21:03:04 +0200
+        id Yx4mFl9c92TNJgAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Tue, 05 Sep 2023 16:50:39 +0000
+Date:   Tue, 5 Sep 2023 18:43:59 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     David Sterba <dsterba@suse.cz>
-Cc:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
-        kernel-team@fb.com
-Subject: Re: [PATCH] btrfs-progs: add a free_root_extent_buffers helper
-Message-ID: <20230905190304.GH14420@twin.jikos.cz>
+To:     "Guilherme G. Piccoli" <gpiccoli@igalia.com>
+Cc:     Anand Jain <anand.jain@oracle.com>, clm@fb.com,
+        josef@toxicpanda.com, dsterba@suse.com,
+        linux-fsdevel@vger.kernel.org, kernel@gpiccoli.net,
+        kernel-dev@igalia.com, david@fromorbit.com, kreijack@libero.it,
+        johns@valvesoftware.com, ludovico.denittis@collabora.com,
+        quwenruo.btrfs@gmx.com, wqu@suse.com, vivek@collabora.com,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH V3 0/2] Supporting same fsid mounting through the
+ single-dev compat_ro feature
+Message-ID: <20230905164359.GE14420@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <9dde35bf7b2817ae22d60510ec8f4fc6e0614221.1692969459.git.josef@toxicpanda.com>
- <20230829174533.GI14420@twin.jikos.cz>
+References: <20230831001544.3379273-1-gpiccoli@igalia.com>
+ <fee2dcd5-065d-1e60-5871-4a606405a683@oracle.com>
+ <80140c50-1fbe-1631-1473-087a13fd034f@igalia.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20230829174533.GI14420@twin.jikos.cz>
+In-Reply-To: <80140c50-1fbe-1631-1473-087a13fd034f@igalia.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Aug 29, 2023 at 07:45:34PM +0200, David Sterba wrote:
-> On Fri, Aug 25, 2023 at 09:17:45AM -0400, Josef Bacik wrote:
-> > Our CI started failing a bunch because I accidentally introduced an
-> > extent buffer leak.  This is because we haphazardly have ->commit_roots
-> > used in btrfs-progs, and they get freed when the transaction commits and
-> > then they're cleared out.  In the kernel we make sure to free all this
-> > when we free the root, but we don't have the same thing in btrfs-progs.
-> > Fix this by bringing over the free_root_extent_buffers helper and use
-> > this for free'ing up all the roots.  This brings us inline with the
-> > kernel more and eliminates the extent buffer leak.
-> 
-> With this patch applied in devel I still see the leaks after mkfs.
+On Mon, Sep 04, 2023 at 10:29:52PM -0300, Guilherme G. Piccoli wrote:
+> On 04/09/2023 03:36, Anand Jain wrote:
+> > [...]
+> > We need some manual tests as well to understand how this feature
+> > will behave in a multi-pathed device, especially in SAN and iSCSI
+> > environments.
 
-I've removed this patch, there are more patches introducing the leaks so
-I'd like to get a clean series without the fixups.
+I don't know how good the multipath support is on btrfs, it's kind of a
+specific use case, requires a specialized hardware and emulation in VM
+requires iSCSI hacks which is tedious to setup on itself. So I do not
+insist on supporting the single-dev from the beginning, we usually
+start with a more restricted version and then extend the support
+eventually.
+
+> > I have noticed that Ubuntu has two different device
+> > paths for the root device during boot. It should be validated
+> > as the root file system using some popular OS distributions.
+> 
+> Hi Anand, thanks for you suggestions! I just tried on Ubuntu 22.04.3 and
+> it worked flawlessly. After manually enabling the single-dev feature
+> through btrfstune, when booted into the distro kernel (6.2.x) it mounts
+> as RO (as expected, since this is a compat_ro feature). When switched to
+> a supporting kernel (6.5 + this patch), it mounts normally -
+> udev/systemd are capable of identifying the underlying device based on
+> UUID, and it mounts as SINGLE_DEV.
+> 
+> About the iSCSI / multipath cases, they are/should be unsupported. Is
+> multi-path a feature of btrfs? I think we should prevent users from
+> using single-dev along with other features of btrfs that doesn't make
+> sense, like we're doing here with devices removal/replace and of course,
+> with the metadata_uuid feature.
+> 
+> Now if multipath is not supported from btrfs, my understanding is that
+> users should not tune single-dev, as it doesn't make sense, but at the
+> same time it's not on scope here to test such scenario. In other words,
+> I'm happy to test a case that you suggest, but no matter how many
+> non-btrfs features/cases we test, we're not in control of what users can
+> do in the wild.
+
+We at least should know how some feature/hardware combinations behave
+and add protections against using them together if there are known
+problems. In the case of multipath I'd like to see somebody tests it but
+as said above for the initial implementation it does not need to support
+it.

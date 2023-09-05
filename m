@@ -2,279 +2,239 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6491FC71153
-	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Sep 2023 00:21:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C63B4CA0FFA
+	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Sep 2023 16:02:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S237910AbjIEAVi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 4 Sep 2023 20:21:38 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43694 "EHLO
+        id S235846AbjIEQCf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 5 Sep 2023 12:02:35 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45898 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233130AbjIEAVh (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Sep 2023 20:21:37 -0400
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.21])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5AF4F18C
-        for <linux-btrfs@vger.kernel.org>; Mon,  4 Sep 2023 17:21:33 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.com;
- s=s31663417; t=1693873287; x=1694478087; i=quwenruo.btrfs@gmx.com;
- bh=iUTp3g1DkUm2gAPWL8eIA+FQYF4tDIgvlqxsLfe8vSs=;
- h=X-UI-Sender-Class:Date:Subject:To:Cc:References:From:In-Reply-To;
- b=iK48XisRkiGA3y9f4/tfFCfXNrCF3AazH6G1FA4e7fwf1MBpDAuR68ZGgmcIh5wBJKstrRr
- +6zxjhWgya3sTLwxn4Y/MlfYmvVCN+GdtH6TOOcr306GU7GNPimc6h8k3KnamRcAj2TRVUVQ3
- dDFu9mz83mfQchSbTLmTd9ueesNKwJLAlEmmW/a96+lsNMEMccFn102C/cz1fJ66s5UMBP3Z1
- 8ny/nbItFlC/6DEK+pn/qYAP+W/NZvoH2bJ+o8DeEa57WqB4WtvdMknbPwCjY/+eS25vLYWxm
- wwyITJMA3nIrlsJjw4OJ5u/qKtH9A+9sQ47275n0n9LcvPqTFBUw==
-X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx105
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1MEFvp-1qTemh128r-00AH9p; Tue, 05
- Sep 2023 02:21:26 +0200
-Message-ID: <993ff43e-744d-4807-8f29-1e70418a8cd4@gmx.com>
-Date:   Tue, 5 Sep 2023 08:21:23 +0800
+        with ESMTP id S243925AbjIEBEe (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Sep 2023 21:04:34 -0400
+Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5E278CC3;
+        Mon,  4 Sep 2023 18:04:30 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature RSA-PSS (2048 bits))
+        (No client certificate requested)
+        by ams.source.kernel.org (Postfix) with ESMTPS id B3E65B80EF6;
+        Tue,  5 Sep 2023 01:04:28 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 53823C433CC;
+        Tue,  5 Sep 2023 01:04:27 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1693875867;
+        bh=ZD+Z0ymC6v+NTgD8Io2pUOkKRPb7xF1w6LxtCKdRREU=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+        b=k5Ywg0BWZ9QNcRcFSQLFqhYxn6yBSHXSk/gg6rAoBOoiF9PYiOSNYl6NPK0GJFPTh
+         cvv6WlnIsA8NJ4Au0a19Ya4r/lzv64+t9HxEr/59HiggwZNKodlpiblrPqFstn+kxm
+         eYyUDqdfvmfqMcg4udD+EfYRwEhHuZ+tqE3fH15R352YL78Nr59OaA2m0JwcVFJyZK
+         8xTUQrCj6mEY3yjt9OVUsbbPPLzuY9vo+ATi40uLljMAW/nvicYPMi+RdJYBRK5e6s
+         j1LaPmAljyIHEVI0N63gDH9AQlt37u+ZIh+TH2HHYg7P7I8q1Qdmrrd6PE7uPmUFhD
+         Uk1NTiFUTF+/Q==
+From:   Eric Biggers <ebiggers@kernel.org>
+To:     linux-fscrypt@vger.kernel.org
+Cc:     linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-f2fs-devel@lists.sourceforge.net, linux-btrfs@vger.kernel.org
+Subject: [PATCH 4/5] fscrypt: replace get_ino_and_lblk_bits with just has_32bit_inodes
+Date:   Mon,  4 Sep 2023 17:58:29 -0700
+Message-ID: <20230905005830.365985-5-ebiggers@kernel.org>
+X-Mailer: git-send-email 2.42.0
+In-Reply-To: <20230905005830.365985-1-ebiggers@kernel.org>
+References: <20230905005830.365985-1-ebiggers@kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: fix race between finishing block group creation
- and its item update
-Content-Language: en-US
-To:     Filipe Manana <fdmanana@kernel.org>
-Cc:     linux-btrfs@vger.kernel.org
-References: <f5eda1ba8b7a776d3407d30939078b63d02aaff4.1693825574.git.fdmanana@suse.com>
- <2141e167-99ba-4a12-b053-af2cd7124a7a@gmx.com>
- <CAL3q7H4QR8aLRFtVOuhXoxSyFAdRJqCgvD7v9W=pNaUnLyKmhg@mail.gmail.com>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCY00iVQUJDToH
- pgAKCRDCPZHzoSX+qNKACACkjDLzCvcFuDlgqCiS4ajHAo6twGra3uGgY2klo3S4JespWifr
- BLPPak74oOShqNZ8yWzB1Bkz1u93Ifx3c3H0r2vLWrImoP5eQdymVqMWmDAq+sV1Koyt8gXQ
- XPD2jQCrfR9nUuV1F3Z4Lgo+6I5LjuXBVEayFdz/VYK63+YLEAlSowCF72Lkz06TmaI0XMyj
- jgRNGM2MRgfxbprCcsgUypaDfmhY2nrhIzPUICURfp9t/65+/PLlV4nYs+DtSwPyNjkPX72+
- LdyIdY+BqS8cZbPG5spCyJIlZonADojLDYQq4QnufARU51zyVjzTXMg5gAttDZwTH+8LbNI4
- mm2YzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCY00ibgUJDToHvwAK
- CRDCPZHzoSX+qK6vB/9yyZlsS+ijtsvwYDjGA2WhVhN07Xa5SBBvGCAycyGGzSMkOJcOtUUf
- tD+ADyrLbLuVSfRN1ke738UojphwkSFj4t9scG5A+U8GgOZtrlYOsY2+cG3R5vjoXUgXMP37
- INfWh0KbJodf0G48xouesn08cbfUdlphSMXujCA8y5TcNyRuNv2q5Nizl8sKhUZzh4BascoK
- DChBuznBsucCTAGrwPgG4/ul6HnWE8DipMKvkV9ob1xJS2W4WJRPp6QdVrBWJ9cCdtpR6GbL
- iQi22uZXoSPv/0oUrGU+U5X4IvdnvT+8viPzszL5wXswJZfqfy8tmHM85yjObVdIG6AlnrrD
-In-Reply-To: <CAL3q7H4QR8aLRFtVOuhXoxSyFAdRJqCgvD7v9W=pNaUnLyKmhg@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:4DRiM+shrXJ2G+IFkIsbem0u0eVA45jfWoqUddA36C4cNHyUvUa
- f5nSxvxo3Sj6qz4FUDA7TbZGUKe09Ow9s8v7L5KEUjngBRmAGuNUMUiaad45QdTHOp/imgl
- RDpMjmxJPhNjlLfCOgji+usOGs2DnW1UTqsuoFNstWkJV10g6u+Ndryc4qsk69OU250fpuF
- HWtC0C+IOGR6sPwJjcfYg==
-UI-OutboundReport: notjunk:1;M01:P0:AQkT9cN3ejk=;sAvFJBb7IfvClW5z1+xCuUHgxVa
- ow4NMEHo72k5YadgAr6LBiqJGuvWJ7JgcOQE+9Cqby6qCuvB12kIItMmqj3VSQza3CrooY6/3
- qXvsgQo/xaQCazx3gA1KYixpMpSkZ0NFZnxDeZnGF2E4s1J6O2QYbkto8998/OW0FwZQDjxWv
- m/mm7GkE31zkMWwWqpV35unR92K0nWbEAMIi2wJB/u3w7uMLi9LyvODB46KzSbNlLiwPN9qTW
- maaSlMsHo78KGXVdt+ZYDhT6twRp6BSSvHUzxW5yJcHeiP7B0l1C8SAC2rlM8EOp6lNBv/6MT
- B5Rp8qoctPznwqmu2qwgEYbM+Zmrf5aYHKmtnqTjmSgwVCKsyRdA4nZE/6m/fIm4GG+nSzbHO
- 7Y9esnwFzSGY962A9bJOyL1Yt7W0axdDRWqqppXLJZj1CixEw6QJL2+pBitmDbfeR61vtlzMw
- UYllU524CH/3V7OA2B6zZb5cvpqUS+sWCGHmWngchTtKdXyQHLfEcNzubUJKRD80HT4pjp06f
- NXJEb02qfYVjrn5J+7bBeurMGzfHleFH0RJmqIPu8MRzZu/Q3qJQuZfx3IWh/Uj4ShUJLl4wM
- aWGYrjXXFKccYmLMrrI2bAQ14CMhExcLu3nptekZoWelS/zTREmFEQ/Ty7XJGx+ihehpp7kJY
- jTMfByu7OkzKNLfz+z6Qxl/8H+oPTuqwcgjkc7PIxnsS38jil4Q9kuoqDOEWTjzcCgEkc/bfB
- 7tlKU2U4ZmCsWLauJKOl4UuvwecwP1sh+gbZLdv9lJdps58Tw2qXR+TnJQ5XRGO/voS/XDiSJ
- f3aIC9T1JdjX/YD7o553XiWc/OLF/WYMMYZP5bvfs4zSN1o7+IW16ax1QBpJaI+qnthKhQJ3y
- p/xgJ3R0H5hiM5OyyHrWSfq26rIlfRDBMEWIraBo4Hgu0uIX1cj69DVUU2PhQbeU0ZSLut6qD
- Qo8vz+6yV8Z6BUWJevLE6Rk80s8=
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+From: Eric Biggers <ebiggers@google.com>
 
+Now that fs/crypto/ computes the filesystem's lblk_bits from its maximum
+file size, it is no longer necessary for filesystems to provide
+lblk_bits via fscrypt_operations::get_ino_and_lblk_bits.
 
-On 2023/9/4 21:26, Filipe Manana wrote:
-> On Mon, Sep 4, 2023 at 1:22=E2=80=AFPM Qu Wenruo <quwenruo.btrfs@gmx.com=
-> wrote:
->>
->>
->>
->> On 2023/9/4 19:10, fdmanana@kernel.org wrote:
->>> From: Filipe Manana <fdmanana@suse.com>
->>>
->>> Commit 675dfe1223a6 ("btrfs: fix block group item corruption after
->>> inserting new block group") fixed one race that resulted in not persis=
-ting
->>> a block group's item when its "used" bytes field decreases to zero.
->>> However there's another race that can happen in a much shorter time wi=
-ndow
->>> that results in the same problem. The following sequence of steps expl=
-ains
->>> how it can happen:
->>>
->>> 1) Task A creates a metadata block group X, its "used" and "commit_use=
-d"
->>>      fields are initialized to 0;
->>>
->>> 2) Two extents are allocated from block group X, so its "used" field i=
-s
->>>      updated to 32K, and its "commit_used" field remains as 0;
->>>
->>> 3) Transaction commit starts, by some task B, and it enters
->>>      btrfs_start_dirty_block_groups(). There it tries to update the bl=
-ock
->>>      group item for block group X, which currently has its "used" fiel=
-d with
->>>      a value of 32K and its "commited_used" field with a value of 0. H=
-owever
->>>      that fails since the block group item was not yet inserted, so at
->>>      update_block_group_item(), the btrfs_search_slot() call returns 1=
-, and
->>>      then we set 'ret' to -ENOENT. Before jumping to the label 'fail'.=
-..
->>>
->>> 4) The block group item is inserted by task A, when for example
->>>      btrfs_create_pending_block_groups() is called when releasing its
->>>      transaction handle. This results in insert_block_group_item() ins=
-erting
->>>      the block group item in the extent tree (or block group tree), wi=
-th a
->>>      "used" field having a value of 32K and setting "commit_used", in =
-struct
->>>      btrfs_block_group, to the same value (32K);
->>>
->>> 5) Task B jumps to the 'fail' label and then resets the "commit_used"
->>>      field to 0. At btrfs_start_dirty_block_groups(), because -ENOENT =
-was
->>>      returned from update_block_group_item(), we add the block group a=
-gain
->>>      to the list of dirty block groups, so that we will try again in t=
-he
->>>      critical section of the transaction commit when calling
->>>      btrfs_write_dirty_block_groups();
->>>
->>> 6) Later the two extents from block group X are freed, so its "used" f=
-ield
->>>      becomes 0;
->>>
->>> 7) If no more extents are allocated from block group X before we get i=
-nto
->>>      btrfs_write_dirty_block_groups(), then when we call
->>>      update_block_group_item() again for block group X, we will not up=
-date
->>>      the block group item to reflect that it has 0 bytes used, because=
- the
->>>      "used" and "commit_used" fields in struct btrfs_block_group have =
-the
->>>      same value, a value of 0.
->>>
->>>      As a result after committing the transaction we have an empty blo=
-ck
->>>      group with its block group item having a 32K value for its "used"=
- field.
->>>      This will trigger errors from fsck ("btrfs check" command) and af=
-ter
->>>      mounting again the fs, the cleaner kthread will not automatically=
- delete
->>>      the empty block group, since its "used" field is not 0. Possibly =
-there
->>>      are other issues due to this incosistency.
->>>
->>>      When this issue happens, the error reported by fsck is like this:
->>>
->>>        [1/7] checking root items
->>>        [2/7] checking extents
->>>        block group [1104150528 1073741824] used 39796736 but extent it=
-ems used 0
->>>        ERROR: errors found in extent allocation tree or chunk allocati=
-on
->>>        (...)
->>>
->>> So fix this by not resetting the "commit_used" field of a block group =
-when
->>> we don't find the block group item at update_block_group_item().
->>>
->>> Fixes: 7248e0cebbef ("btrfs: skip update of block group item if used b=
-ytes are the same")
->>> Signed-off-by: Filipe Manana <fdmanana@suse.com>
->>
->> Reviewed-by: Qu Wenruo <wqu@suse.com>
->>
->> Although considering we have hit at least two bugs around "commit_used"=
-,
->> can we have a more generic way like setting "commit_used" to some
->> impossible values (e.g, U64_MAX) so that the bg is ensured to be update=
-d?
->
-> I don't see how initializing commit_used to U64_MAX, or anything else,
-> would have prevented any of these two bugs...
+It is still necessary for fs/crypto/ to retrieve ino_bits from the
+filesystem.  However, this is used only to decide whether inode numbers
+fit in 32 bits.  Also, ino_bits is static for all relevant filesystems,
+i.e. it doesn't depend on the filesystem instance.
 
-I'm talking about something like this diff:
+Therefore, in the interest of keeping things as simple as possible,
+replace 'get_ino_and_lblk_bits' with a flag 'has_32bit_inodes'.  This
+can always be changed back to a function if a filesystem needs it to be
+dynamic, but for now a static flag is all that's needed.
 
-diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index 0cb1dee965a0..c9b582bb7112 100644
-=2D-- a/fs/btrfs/block-group.c
-+++ b/fs/btrfs/block-group.c
-@@ -3031,7 +3031,7 @@ static int update_block_group_item(struct
-btrfs_trans_handle *trans,
-         /* We didn't update the block group item, need to revert
-@commit_used. */
-         if (ret < 0) {
-                 spin_lock(&cache->lock);
--               cache->commit_used =3D old_commit_used;
-+               cache->commit_used =3D U64_MAX;
-                 spin_unlock(&cache->lock);
-         }
-         return ret;
+Signed-off-by: Eric Biggers <ebiggers@google.com>
+---
+ fs/crypto/policy.c      | 33 +++++++++++++++------------------
+ fs/ext4/crypto.c        |  9 +--------
+ fs/f2fs/super.c         |  9 +--------
+ include/linux/fscrypt.h | 26 +++++++++++---------------
+ 4 files changed, 28 insertions(+), 49 deletions(-)
 
-The analyze shows that at step 7), the original code would skip the
-update as @commit_used is the same as @used, all 0.
+diff --git a/fs/crypto/policy.c b/fs/crypto/policy.c
+index 36bffc4d6228d..c8072a634af8f 100644
+--- a/fs/crypto/policy.c
++++ b/fs/crypto/policy.c
+@@ -118,11 +118,11 @@ static bool supported_direct_key_modes(const struct inode *inode,
+ }
+ 
+ static bool supported_iv_ino_lblk_policy(const struct fscrypt_policy_v2 *policy,
+-					 const struct inode *inode,
+-					 const char *type, int max_ino_bits)
++					 const struct inode *inode)
+ {
++	const char *type = (policy->flags & FSCRYPT_POLICY_FLAG_IV_INO_LBLK_64)
++				? "IV_INO_LBLK_64" : "IV_INO_LBLK_32";
+ 	struct super_block *sb = inode->i_sb;
+-	int ino_bits = 64, lblk_bits = 64;
+ 
+ 	/*
+ 	 * IV_INO_LBLK_* exist only because of hardware limitations, and
+@@ -149,9 +149,15 @@ static bool supported_iv_ino_lblk_policy(const struct fscrypt_policy_v2 *policy,
+ 			     type, sb->s_id);
+ 		return false;
+ 	}
+-	if (sb->s_cop->get_ino_and_lblk_bits)
+-		sb->s_cop->get_ino_and_lblk_bits(sb, &ino_bits, &lblk_bits);
+-	if (ino_bits > max_ino_bits) {
++
++	/*
++	 * IV_INO_LBLK_64 requires that inode numbers fit in 32 bits.
++	 * IV_INO_LBLK_32 hashes the inode number, so in principle it can
++	 * support any length; however, currently the inode number is gotten
++	 * from inode::i_ino which is 'unsigned long'.  So for now the
++	 * implementation limit is 32 bits, the same as IV_INO_LBLK_64.
++	 */
++	if (!sb->s_cop->has_32bit_inodes) {
+ 		fscrypt_warn(inode,
+ 			     "Can't use %s policy on filesystem '%s' because its maximum inode number is too large",
+ 			     type, sb->s_id);
+@@ -242,18 +248,9 @@ static bool fscrypt_supported_v2_policy(const struct fscrypt_policy_v2 *policy,
+ 					policy->filenames_encryption_mode))
+ 		return false;
+ 
+-	if ((policy->flags & FSCRYPT_POLICY_FLAG_IV_INO_LBLK_64) &&
+-	    !supported_iv_ino_lblk_policy(policy, inode, "IV_INO_LBLK_64", 32))
+-		return false;
+-
+-	/*
+-	 * IV_INO_LBLK_32 hashes the inode number, so in principle it can
+-	 * support any ino_bits.  However, currently the inode number is gotten
+-	 * from inode::i_ino which is 'unsigned long'.  So for now the
+-	 * implementation limit is 32 bits.
+-	 */
+-	if ((policy->flags & FSCRYPT_POLICY_FLAG_IV_INO_LBLK_32) &&
+-	    !supported_iv_ino_lblk_policy(policy, inode, "IV_INO_LBLK_32", 32))
++	if ((policy->flags & (FSCRYPT_POLICY_FLAG_IV_INO_LBLK_64 |
++			      FSCRYPT_POLICY_FLAG_IV_INO_LBLK_32)) &&
++	    !supported_iv_ino_lblk_policy(policy, inode))
+ 		return false;
+ 
+ 	if (memchr_inv(policy->__reserved, 0, sizeof(policy->__reserved))) {
+diff --git a/fs/ext4/crypto.c b/fs/ext4/crypto.c
+index a9221be67f2a7..2859d9569aa74 100644
+--- a/fs/ext4/crypto.c
++++ b/fs/ext4/crypto.c
+@@ -232,20 +232,13 @@ static bool ext4_has_stable_inodes(struct super_block *sb)
+ 	return ext4_has_feature_stable_inodes(sb);
+ }
+ 
+-static void ext4_get_ino_and_lblk_bits(struct super_block *sb,
+-				       int *ino_bits_ret, int *lblk_bits_ret)
+-{
+-	*ino_bits_ret = 8 * sizeof(EXT4_SB(sb)->s_es->s_inodes_count);
+-	*lblk_bits_ret = 8 * sizeof(ext4_lblk_t);
+-}
+-
+ const struct fscrypt_operations ext4_cryptops = {
+ 	.needs_bounce_pages	= 1,
++	.has_32bit_inodes	= 1,
+ 	.legacy_key_prefix_for_backcompat = "ext4:",
+ 	.get_context		= ext4_get_context,
+ 	.set_context		= ext4_set_context,
+ 	.get_dummy_policy	= ext4_get_dummy_policy,
+ 	.empty_dir		= ext4_empty_dir,
+ 	.has_stable_inodes	= ext4_has_stable_inodes,
+-	.get_ino_and_lblk_bits	= ext4_get_ino_and_lblk_bits,
+ };
+diff --git a/fs/f2fs/super.c b/fs/f2fs/super.c
+index 276535af5bf3c..7e8e510ef77af 100644
+--- a/fs/f2fs/super.c
++++ b/fs/f2fs/super.c
+@@ -3203,13 +3203,6 @@ static bool f2fs_has_stable_inodes(struct super_block *sb)
+ 	return true;
+ }
+ 
+-static void f2fs_get_ino_and_lblk_bits(struct super_block *sb,
+-				       int *ino_bits_ret, int *lblk_bits_ret)
+-{
+-	*ino_bits_ret = 8 * sizeof(nid_t);
+-	*lblk_bits_ret = 8 * sizeof(block_t);
+-}
+-
+ static struct block_device **f2fs_get_devices(struct super_block *sb,
+ 					      unsigned int *num_devs)
+ {
+@@ -3232,13 +3225,13 @@ static struct block_device **f2fs_get_devices(struct super_block *sb,
+ 
+ static const struct fscrypt_operations f2fs_cryptops = {
+ 	.needs_bounce_pages	= 1,
++	.has_32bit_inodes	= 1,
+ 	.legacy_key_prefix_for_backcompat = "f2fs:",
+ 	.get_context		= f2fs_get_context,
+ 	.set_context		= f2fs_set_context,
+ 	.get_dummy_policy	= f2fs_get_dummy_policy,
+ 	.empty_dir		= f2fs_empty_dir,
+ 	.has_stable_inodes	= f2fs_has_stable_inodes,
+-	.get_ino_and_lblk_bits	= f2fs_get_ino_and_lblk_bits,
+ 	.get_devices		= f2fs_get_devices,
+ };
+ #endif
+diff --git a/include/linux/fscrypt.h b/include/linux/fscrypt.h
+index ac684f688d488..fb2a74e618a11 100644
+--- a/include/linux/fscrypt.h
++++ b/include/linux/fscrypt.h
+@@ -73,6 +73,17 @@ struct fscrypt_operations {
+ 	 */
+ 	unsigned int needs_bounce_pages : 1;
+ 
++	/*
++	 * If set, then fs/crypto/ will allow the use of encryption settings
++	 * that assume inode numbers fit in 32 bits (i.e.
++	 * FSCRYPT_POLICY_FLAG_IV_INO_LBLK_{32,64}), provided that the other
++	 * prerequisites for these settings are also met.  This is only useful
++	 * if the filesystem wants to support inline encryption hardware that is
++	 * limited to 32-bit or 64-bit data unit numbers and where programming
++	 * keyslots is very slow.
++	 */
++	unsigned int has_32bit_inodes : 1;
++
+ 	/*
+ 	 * This field exists only for backwards compatibility reasons and should
+ 	 * only be set by the filesystems that are setting it already.  It
+@@ -150,21 +161,6 @@ struct fscrypt_operations {
+ 	 */
+ 	bool (*has_stable_inodes)(struct super_block *sb);
+ 
+-	/*
+-	 * Get the number of bits that the filesystem uses to represent inode
+-	 * numbers and file logical block numbers.
+-	 *
+-	 * By default, both of these are assumed to be 64-bit.  This function
+-	 * can be implemented to declare that either or both of these numbers is
+-	 * shorter, which may allow the use of the
+-	 * FSCRYPT_POLICY_FLAG_IV_INO_LBLK_{32,64} flags and/or the use of
+-	 * inline crypto hardware whose maximum DUN length is less than 64 bits
+-	 * (e.g., eMMC v5.2 spec compliant hardware).  This function only needs
+-	 * to be implemented if support for one of these features is needed.
+-	 */
+-	void (*get_ino_and_lblk_bits)(struct super_block *sb,
+-				      int *ino_bits_ret, int *lblk_bits_ret);
+-
+ 	/*
+ 	 * Return an array of pointers to the block devices to which the
+ 	 * filesystem may write encrypted file contents, NULL if the filesystem
+-- 
+2.42.0
 
-But with above diff, we would be forced to update the block group item
-no matter what.
-
-And with this change, if there is some unexpected return value we didn't
-take into consideration, it would still act as a safenet, as the next
-time the block group would still be updated.
-
-Thanks,
-Qu
->
->>
->> Thanks,
->> Qu
->>> ---
->>>    fs/btrfs/block-group.c | 12 ++++++++++--
->>>    1 file changed, 10 insertions(+), 2 deletions(-)
->>>
->>> diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
->>> index 0cb1dee965a0..b2e5107b7cec 100644
->>> --- a/fs/btrfs/block-group.c
->>> +++ b/fs/btrfs/block-group.c
->>> @@ -3028,8 +3028,16 @@ static int update_block_group_item(struct btrfs=
-_trans_handle *trans,
->>>        btrfs_mark_buffer_dirty(leaf);
->>>    fail:
->>>        btrfs_release_path(path);
->>> -     /* We didn't update the block group item, need to revert @commit=
-_used. */
->>> -     if (ret < 0) {
->>> +     /*
->>> +      * We didn't update the block group item, need to revert commit_=
-used
->>> +      * unless the block group item didn't exist yet - this is to pre=
-vent a
->>> +      * race with a concurrent insertion of the block group item, wit=
-h
->>> +      * insert_block_group_item(), that happened just after we attemp=
-ted to
->>> +      * update. In that case we would reset commit_used to 0 just aft=
-er the
->>> +      * insertion set it to a value greater than 0 - if the block gro=
-up later
->>> +      * becomes with 0 used bytes, we would incorrectly skip its upda=
-te.
->>> +      */
->>> +     if (ret < 0 && ret !=3D -ENOENT) {
->>>                spin_lock(&cache->lock);
->>>                cache->commit_used =3D old_commit_used;
->>>                spin_unlock(&cache->lock);

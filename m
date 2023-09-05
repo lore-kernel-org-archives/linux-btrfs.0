@@ -2,82 +2,85 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 334F2CA0FF3
-	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Sep 2023 16:03:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3F555CA0FFC
+	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Sep 2023 16:03:01 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236100AbjIEQCq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 5 Sep 2023 12:02:46 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58046 "EHLO
+        id S236184AbjIEQCs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 5 Sep 2023 12:02:48 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46030 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1354389AbjIELQN (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Sep 2023 07:16:13 -0400
+        with ESMTP id S1354577AbjIEMow (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Sep 2023 08:44:52 -0400
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 85D3F1AD
-        for <linux-btrfs@vger.kernel.org>; Tue,  5 Sep 2023 04:16:10 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 810A91A8
+        for <linux-btrfs@vger.kernel.org>; Tue,  5 Sep 2023 05:44:48 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 424722188A;
-        Tue,  5 Sep 2023 11:16:09 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 45AC521A2B;
+        Tue,  5 Sep 2023 12:44:47 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1693912569;
+        t=1693917887;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=VZIu5O5g/jix96/v9zTaTElP/+yg0ftOZ3tkBR4rvNI=;
-        b=x7zBT8RlKtXRFBnpHQQrsgO2AyiR0UH+s0glgP/8qw/4TcnEcZ6L+6SoY9KL/+fVfPIJjH
-        ndTE7tldHzNbIN11ZsGnXWUuZURcGUmRzQw0wzVpezn2NqhF+49xr2Q82+pa8GlWB09zOQ
-        D1kT4rBm759D7kyeSBo7iNLHlP/jSwk=
+        bh=Pclcf5YMxqGqWtC+ZtOaxI8viwqNG/pCVU/u0+6GjkU=;
+        b=oSN7j5Pu+wPPcCoWcTjG9/8yfHHDtP0g3Rnq7EON1As8Pj0IQjZVC30eaNJSM1KfT1b8EX
+        ap4U7TJqD06Y74VMHQ8XhYrbkuU24mXT6LCn2H1S1nRLK4u5kNm384/Zss6a8157iVhKoZ
+        UlIGxRQ6kBXYJGI3bNLylHTW4EfpNAo=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1693912569;
+        s=susede2_ed25519; t=1693917887;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=VZIu5O5g/jix96/v9zTaTElP/+yg0ftOZ3tkBR4rvNI=;
-        b=uKmPM6pJTK9zkhE4xmhlvPyEVpKDojCxrYZIhvtRuqyMtdk23YMmKPF7EhSOkTIrsEZRDP
-        yFAnkBUXYA3m0NDw==
+        bh=Pclcf5YMxqGqWtC+ZtOaxI8viwqNG/pCVU/u0+6GjkU=;
+        b=2R9PIVKqu9w7W+tvBIh3jhmJPhCGdnLVZkc0JNNJUsQTp0OL9nUvp2+nKcfDmzNjgu4LkD
+        xhuetI3tzTEvpAAw==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 200DD13499;
-        Tue,  5 Sep 2023 11:16:09 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 2C03A13911;
+        Tue,  5 Sep 2023 12:44:47 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id iNfOBvkN92QRawAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Tue, 05 Sep 2023 11:16:09 +0000
-Date:   Tue, 5 Sep 2023 13:09:29 +0200
+        id yOSlCb8i92QCHgAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Tue, 05 Sep 2023 12:44:47 +0000
+Date:   Tue, 5 Sep 2023 14:38:07 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH] btrfs: check for BTRFS_FS_ERROR in pending ordered assert
-Message-ID: <20230905110929.GS14420@twin.jikos.cz>
+To:     fdmanana@kernel.org
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 0/3] btrfs: updates to error path for delayed dir
+ index insertion failure
+Message-ID: <20230905123807.GV14420@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <c640ee0669c4454488d2ddacbc3a93884c905b38.1692910732.git.josef@toxicpanda.com>
+References: <cover.1693209858.git.fdmanana@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <c640ee0669c4454488d2ddacbc3a93884c905b38.1692910732.git.josef@toxicpanda.com>
+In-Reply-To: <cover.1693209858.git.fdmanana@suse.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Aug 24, 2023 at 04:59:04PM -0400, Josef Bacik wrote:
-> If we do fast tree logging we increment a counter on the current
-> transaction for every ordered extent we need to wait for.  This means we
-> expect the transaction to still be there when we clear pending on the
-> ordered extent.  However if we happen to abort the transaction and clean
-> it up, there could be no running transaction, and thus we'll trip the
+On Mon, Aug 28, 2023 at 09:06:41AM +0100, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
 > 
-> ASSERT(trans)
+> Some updates to the error path for delayed dir index insertion failure,
+> motivated by a recent syzbot report:
 > 
-> check.  This is obviously incorrect, and the code properly deals with
-> the case that the trans doesn't exist.  Fix this ASSERT() to only fire
-> if there's no trans and we don't have BTRFS_FS_ERROR() set on the file
-> system.
+>   https://lore.kernel.org/linux-btrfs/00000000000036e1290603e097e0@google.com/
 > 
-> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> Details in the changelogs.
+> 
+> v2: Fixed error path in patch 2 to release delayed item before unlocking
+>     the delayed node. Added patch 3 to prevent such mistakes in the future.
+> 
+> Filipe Manana (3):
+>   btrfs: improve error message after failure to add delayed dir index item
+>   btrfs: remove BUG() after failure to insert delayed dir index item
+>   btrfs: assert delayed node locked when removing delayed item
 
 Added to misc-next, thanks.

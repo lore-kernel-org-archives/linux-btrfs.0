@@ -2,170 +2,77 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7185ACA0FFB
-	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Sep 2023 16:03:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 023B8CA0FF3
+	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Sep 2023 16:03:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236526AbjIEQDG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 5 Sep 2023 12:03:06 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48362 "EHLO
+        id S236555AbjIEQDL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 5 Sep 2023 12:03:11 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36720 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S243917AbjIEBEb (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Sep 2023 21:04:31 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EFDDB1BE;
-        Mon,  4 Sep 2023 18:04:27 -0700 (PDT)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        with ESMTP id S1354722AbjIENuw (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Sep 2023 09:50:52 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3C0A31A7
+        for <linux-btrfs@vger.kernel.org>; Tue,  5 Sep 2023 06:50:47 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature RSA-PSS (2048 bits))
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 7C48461197;
-        Tue,  5 Sep 2023 01:04:27 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id B00CCC433C8;
-        Tue,  5 Sep 2023 01:04:26 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1693875866;
-        bh=mA/Dvgn43PcLulCBha8yDFRXAbYYmz0W5UhWW5k2V0U=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=DqsUKpp+DESWe4xI4x4m+43TguAisfpiOWMlga8z5er8oM3F0oHOQNRAnTX5TBQg3
-         UuV8aCgTuSbhnsofkbhOgSDf0l/QqCr45WJpwvrizqcDgOfltg8/pUM3ncdj3vm8yl
-         9kS3Y1jc06DxH/qbMp2iyLyZXHd97llvlE6NM+FbNiX7cvB/vbctzzz926HgBKzJZS
-         bbuT3LIkc6AyHdfhm2duWA3lHHBnTSQ9bwVfrbP7nFRm02mVBn4Lx+mnJmAa9O7y1w
-         I2/0k/V5UIEUTO22Al89dZxI+miSnWEaIEPvzMHck9D8TGtuveZqlitVPKFBjyGXDX
-         8T56f8ALmUVgQ==
-From:   Eric Biggers <ebiggers@kernel.org>
-To:     linux-fscrypt@vger.kernel.org
-Cc:     linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-f2fs-devel@lists.sourceforge.net, linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/5] fscrypt: make the bounce page pool opt-in instead of opt-out
-Date:   Mon,  4 Sep 2023 17:58:27 -0700
-Message-ID: <20230905005830.365985-3-ebiggers@kernel.org>
-X-Mailer: git-send-email 2.42.0
-In-Reply-To: <20230905005830.365985-1-ebiggers@kernel.org>
-References: <20230905005830.365985-1-ebiggers@kernel.org>
+        by smtp-out2.suse.de (Postfix) with ESMTPS id F0FF01FE06;
+        Tue,  5 Sep 2023 13:50:45 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1693921845;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=le7+7klQLwaz+uVKcVRhD0jfka86v28w5zO3LxpMa+8=;
+        b=u4geV6DEtyd60ZPGmD21Z9C2N4+jO73FdCWMWl4nLXzY36ahe40bVayUtH9kncJ69Sj/YG
+        46RFQDhw25SM+eUUV+KYOBh14d9gt0zvNXMljs+J8q/Zj76vX1NSOauddqZuG1oI9a/y6d
+        KzB89iktV/BQ7TPyFTyEZDRDgFszbYk=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1693921845;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=le7+7klQLwaz+uVKcVRhD0jfka86v28w5zO3LxpMa+8=;
+        b=A/gr2aPeFP/b/5Jyi4a49VbTEHSJcbWSWD3NiI6g6rcGLB7o7E7Z7UodJMjybgEfhPEKW9
+        rGW5FDK4LmKH/oDg==
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id D3F0A13499;
+        Tue,  5 Sep 2023 13:50:45 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id 3XsBMzUy92SoQgAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Tue, 05 Sep 2023 13:50:45 +0000
+Date:   Tue, 5 Sep 2023 15:44:06 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: Re: [PATCH v2 12/12] btrfs: remove extraneous includes from ctree.h
+Message-ID: <20230905134406.GA14420@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <cover.1692994620.git.josef@toxicpanda.com>
+ <15d63abd06cb64b7edc83d033e65ca00a2bae3ba.1692994620.git.josef@toxicpanda.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <15d63abd06cb64b7edc83d033e65ca00a2bae3ba.1692994620.git.josef@toxicpanda.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Eric Biggers <ebiggers@google.com>
+On Fri, Aug 25, 2023 at 04:19:30PM -0400, Josef Bacik wrote:
+> We don't need any of these includes in the ctree.h header file for the
+> header file itself, remove them to clean up ctree.h a little bit.
 
-Replace FS_CFLG_OWN_PAGES with a bit flag 'needs_bounce_pages' which has
-the opposite meaning.  I.e., filesystems now opt into the bounce page
-pool instead of opt out.  Make fscrypt_alloc_bounce_page() check that
-the bounce page pool has been initialized.
-
-I believe the opt in makes more sense, since nothing else in
-fscrypt_operations is opt out, and these days filesystems can choose to
-use blk-crypto which doesn't need the fscrypt bounce page pool.  Also, I
-happen to be planning to add two more flags, and I wanted to fix the
-"FS_CFLG_" name anyway as it wasn't prefixed with "FSCRYPT_".
-
-Signed-off-by: Eric Biggers <ebiggers@google.com>
----
- fs/crypto/crypto.c      |  9 ++++++++-
- fs/ext4/crypto.c        |  1 +
- fs/f2fs/super.c         |  1 +
- fs/ubifs/crypto.c       |  1 -
- include/linux/fscrypt.h | 19 ++++++++++---------
- 5 files changed, 20 insertions(+), 11 deletions(-)
-
-diff --git a/fs/crypto/crypto.c b/fs/crypto/crypto.c
-index 6a837e4b80dcb..803347a5d0a6d 100644
---- a/fs/crypto/crypto.c
-+++ b/fs/crypto/crypto.c
-@@ -49,6 +49,13 @@ EXPORT_SYMBOL(fscrypt_enqueue_decrypt_work);
- 
- struct page *fscrypt_alloc_bounce_page(gfp_t gfp_flags)
- {
-+	if (WARN_ON_ONCE(!fscrypt_bounce_page_pool)) {
-+		/*
-+		 * Oops, the filesystem called a function that uses the bounce
-+		 * page pool, but it forgot to set needs_bounce_pages.
-+		 */
-+		return NULL;
-+	}
- 	return mempool_alloc(fscrypt_bounce_page_pool, gfp_flags);
- }
- 
-@@ -325,7 +332,7 @@ int fscrypt_initialize(struct super_block *sb)
- 		return 0;
- 
- 	/* No need to allocate a bounce page pool if this FS won't use it. */
--	if (sb->s_cop->flags & FS_CFLG_OWN_PAGES)
-+	if (!sb->s_cop->needs_bounce_pages)
- 		return 0;
- 
- 	mutex_lock(&fscrypt_init_mutex);
-diff --git a/fs/ext4/crypto.c b/fs/ext4/crypto.c
-index 8cdb7bbc655b0..a9221be67f2a7 100644
---- a/fs/ext4/crypto.c
-+++ b/fs/ext4/crypto.c
-@@ -240,6 +240,7 @@ static void ext4_get_ino_and_lblk_bits(struct super_block *sb,
- }
- 
- const struct fscrypt_operations ext4_cryptops = {
-+	.needs_bounce_pages	= 1,
- 	.legacy_key_prefix_for_backcompat = "ext4:",
- 	.get_context		= ext4_get_context,
- 	.set_context		= ext4_set_context,
-diff --git a/fs/f2fs/super.c b/fs/f2fs/super.c
-index 8de799a8bad04..276535af5bf3c 100644
---- a/fs/f2fs/super.c
-+++ b/fs/f2fs/super.c
-@@ -3231,6 +3231,7 @@ static struct block_device **f2fs_get_devices(struct super_block *sb,
- }
- 
- static const struct fscrypt_operations f2fs_cryptops = {
-+	.needs_bounce_pages	= 1,
- 	.legacy_key_prefix_for_backcompat = "f2fs:",
- 	.get_context		= f2fs_get_context,
- 	.set_context		= f2fs_set_context,
-diff --git a/fs/ubifs/crypto.c b/fs/ubifs/crypto.c
-index fab90f9a8eaff..f0ca403777d9a 100644
---- a/fs/ubifs/crypto.c
-+++ b/fs/ubifs/crypto.c
-@@ -88,7 +88,6 @@ int ubifs_decrypt(const struct inode *inode, struct ubifs_data_node *dn,
- }
- 
- const struct fscrypt_operations ubifs_crypt_operations = {
--	.flags			= FS_CFLG_OWN_PAGES,
- 	.legacy_key_prefix_for_backcompat = "ubifs:",
- 	.get_context		= ubifs_crypt_get_context,
- 	.set_context		= ubifs_crypt_set_context,
-diff --git a/include/linux/fscrypt.h b/include/linux/fscrypt.h
-index 85574282c7e52..ac684f688d488 100644
---- a/include/linux/fscrypt.h
-+++ b/include/linux/fscrypt.h
-@@ -59,18 +59,19 @@ struct fscrypt_name {
- 
- #ifdef CONFIG_FS_ENCRYPTION
- 
--/*
-- * If set, the fscrypt bounce page pool won't be allocated (unless another
-- * filesystem needs it).  Set this if the filesystem always uses its own bounce
-- * pages for writes and therefore won't need the fscrypt bounce page pool.
-- */
--#define FS_CFLG_OWN_PAGES (1U << 1)
--
- /* Crypto operations for filesystems */
- struct fscrypt_operations {
- 
--	/* Set of optional flags; see above for allowed flags */
--	unsigned int flags;
-+	/*
-+	 * If set, then fs/crypto/ will allocate a global bounce page pool.  The
-+	 * bounce page pool is required by the following functions:
-+	 *
-+	 * - fscrypt_encrypt_pagecache_blocks()
-+	 * - fscrypt_zeroout_range() for files not using inline crypto
-+	 *
-+	 * If the filesystem doesn't use those, it doesn't need to set this.
-+	 */
-+	unsigned int needs_bounce_pages : 1;
- 
- 	/*
- 	 * This field exists only for backwards compatibility reasons and should
--- 
-2.42.0
-
+While the include reduction is nice, we still don't have the includes
+for everything ctree.h uses, e.g. spinlock_t, mutex, pid_t, rb_tree and
+maybe more. It's not critical as long as it compiles and we have the
+includes entangled too much so incremental updates work better. The tool
+include-what-you-use can print the recommendeations for adding and
+removing includes but it can get confused by direct includes by command
+line -include. I did a pass for btrfs-progs, desiable for kernel too.

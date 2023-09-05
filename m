@@ -2,90 +2,113 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E9730CA0FF3
-	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Sep 2023 16:03:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D28E5C83F2C
+	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Sep 2023 16:03:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236255AbjIEQCu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 5 Sep 2023 12:02:50 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34350 "EHLO
+        id S236396AbjIEQCz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 5 Sep 2023 12:02:55 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45878 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1354635AbjIENJU (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Sep 2023 09:09:20 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E287912E
-        for <linux-btrfs@vger.kernel.org>; Tue,  5 Sep 2023 06:09:16 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        with ESMTP id S243921AbjIEBEd (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Sep 2023 21:04:33 -0400
+Received: from sin.source.kernel.org (sin.source.kernel.org [IPv6:2604:1380:40e1:4800::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 078E81B8;
+        Mon,  4 Sep 2023 18:04:30 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+         key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id A66CA21A41;
-        Tue,  5 Sep 2023 13:09:15 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1693919355;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=8etBUPQetD60UC6hSCH3CHQZnjFjyoOaVvTagMXOXdw=;
-        b=c6BwPFY5anSO7xHqWCidvANWEPPa8lSpomDXdCSvkZSydrlu83hlHp26zX/5siTPr1fU3h
-        2MntQCxcmw48c9R2iDHdfS8j6vrHC10yXyuAuQkVsDOtszoH+n5ezhe91HIWZMQjE/mkTs
-        cy5ubAw9l1zO47BZyoExHKnB1oCztFw=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1693919355;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=8etBUPQetD60UC6hSCH3CHQZnjFjyoOaVvTagMXOXdw=;
-        b=vKaZ/x0an5C54EMtPd2Y2Etc8cacX8Zgsd4+aWLChOsuU7O9ldaRwcc+eN0mHev0Kl+kjS
-        hzt3zbyU6/CDzDCg==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 763E813499;
-        Tue,  5 Sep 2023 13:09:15 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id NEcvHHso92QALAAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Tue, 05 Sep 2023 13:09:15 +0000
-Date:   Tue, 5 Sep 2023 15:02:35 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org, Boris Burkov <boris@bur.io>
-Subject: Re: [PATCH v2 5/6] btrfs: qgroup: use qgroup_iterator facility to
- replace @tmp ulist of qgroup_update_refcnt()
-Message-ID: <20230905130235.GX14420@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1693441298.git.wqu@suse.com>
- <ce02f493bf56e540679db37393a9ca243b20c012.1693441298.git.wqu@suse.com>
- <20230901131650.GL14420@twin.jikos.cz>
- <384937d2-78ce-48d0-a6d1-751fee0d953b@gmx.com>
+        by sin.source.kernel.org (Postfix) with ESMTPS id 335DFCE0220;
+        Tue,  5 Sep 2023 01:04:28 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 17F2EC433C7;
+        Tue,  5 Sep 2023 01:04:26 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1693875866;
+        bh=22KQJh++JdcILQbZl12E7tGyAtMvtw7vw8AFr0hHnnY=;
+        h=From:To:Cc:Subject:Date:From;
+        b=GWIzNOUiEAtOu+wFjqcn0IqP8smNxOh6FpGxSPeJe5GJp1EIm92geCeXV2OOQRX2v
+         A6kONLiIwSrZw8ibpttCuP1p4WFIi0xzdub0XztvVwrJOzY2HQyNgG84DwrO+Claz7
+         IbUtrTrxONyYe41ZtvEHQxjeQQcCD52pinHNEQ+dAdOfw3sMr+NIVq3aOWhMZKdg1u
+         2AAvveu7BS8kwkSUCuqu2yDwZB+rzjalOPGndECxnL5WMkBnJ/G8PntUy5WzJ5kqKh
+         Otioqez2Flk0Q+vcdBfnskrC3jk4hnkfg0+tI8ahglB5vusDwMew5/svqxY0Zz36rt
+         ROYuuoWDyg01w==
+From:   Eric Biggers <ebiggers@kernel.org>
+To:     linux-fscrypt@vger.kernel.org
+Cc:     linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-f2fs-devel@lists.sourceforge.net, linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/5] fscrypt: add support for data_unit_size < fs_block_size
+Date:   Mon,  4 Sep 2023 17:58:25 -0700
+Message-ID: <20230905005830.365985-1-ebiggers@kernel.org>
+X-Mailer: git-send-email 2.42.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <384937d2-78ce-48d0-a6d1-751fee0d953b@gmx.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sat, Sep 02, 2023 at 08:16:52AM +0800, Qu Wenruo wrote:
-> 
-> 
-> On 2023/9/1 21:16, David Sterba wrote:
-> > Please don't put the @ in the variable references in the subjects.
-> 
-> Now removed, but I'm wondering what's the guideline for referring the
-> variable names in the commit message/subject line?
+Until now, fscrypt has always used the filesystem block size as the
+granularity of file contents encryption.  Two scenarios have come up
+where a sub-block granularity of contents encryption would be useful:
 
-In subject it should be plain reference, unquoted and untagged.
+1. Inline encryption hardware that only supports a crypto data unit size
+   that is less than the filesystem block size.
 
-> I didn't remember when but I have seen such "@" prefix for variable
-> names in the mailing list, thus I followed the scheme.
->
-> If there is a guideline it can help me from causing more damage in the
-> future.
+2. Support for direct I/O at a granularity less than the filesystem
+   block size, for example at the block device's logical block size in
+   order to match the traditional direct I/O alignment requirement.
 
-The guideline has been there for a few years at
-https://archive.kernel.org/oldwiki/btrfs.wiki.kernel.org/index.php/Development_notes.html#Patches
-after I reminded people to not do it, but this never sticks for long.
+(1) first came up with older eMMC inline crypto hardware that only
+supports a crypto data unit size of 512 bytes.  That specific case
+ultimately went away because all systems with that hardware continued
+using out of tree code and never actually upgraded to the upstream
+inline crypto framework.  But, now it's coming back in a new way: some
+current UFS controllers only support a data unit size of 4096 bytes, and
+there is a proposal to increase the filesystem block size to 16K.
+
+(2) was discussed as a "nice to have" feature, though not essential,
+when support for direct I/O on encrypted files was being upstreamed.
+
+Still, the fact that this feature has come up several times does suggest
+it would be wise to have available.  Therefore, this patchset implements
+it by using one of the reserved bytes in fscrypt_policy_v2 to allow
+users to select a sub-block data unit size.  Supported values are powers
+of 2 between 512 bytes and the filesystem block size, inclusively.
+
+Patch 1-4 are preparatory patches.  Patch 5 is the actual feature.
+
+Testing and userspace support are still in progress; there may be bugs
+in this patchset.  I just wanted to get this out early in case anyone
+has feedback on the feature itself and its likely implementation.
+
+Note: this is unrelated to the work on extent based encryption that is
+ongoing by the btrfs folks.  This is basically an orthogonal feature.
+
+This patchset is based on mainline commit 708283abf896dd48
+
+Eric Biggers (5):
+  fscrypt: make it extra clear that key_prefix is deprecated
+  fscrypt: make the bounce page pool opt-in instead of opt-out
+  fscrypt: use s_maxbytes instead of filesystem lblk_bits
+  fscrypt: replace get_ino_and_lblk_bits with just has_32bit_inodes
+  fscrypt: support crypto data unit size less than filesystem block size
+
+ Documentation/filesystems/fscrypt.rst | 115 ++++++++++++++------
+ fs/crypto/bio.c                       |  39 ++++---
+ fs/crypto/crypto.c                    | 148 +++++++++++++++-----------
+ fs/crypto/fscrypt_private.h           |  51 +++++++--
+ fs/crypto/inline_crypt.c              |  46 ++++++--
+ fs/crypto/keysetup.c                  |  21 +++-
+ fs/crypto/keysetup_v1.c               |   5 +-
+ fs/crypto/policy.c                    |  69 +++++++-----
+ fs/ext4/crypto.c                      |  13 +--
+ fs/f2fs/super.c                       |  13 +--
+ fs/ubifs/crypto.c                     |   3 +-
+ include/linux/fscrypt.h               |  71 +++++++-----
+ include/uapi/linux/fscrypt.h          |   3 +-
+ 13 files changed, 385 insertions(+), 212 deletions(-)
+
+
+base-commit: 708283abf896dd4853e673cc8cba70acaf9bf4ea
+-- 
+2.42.0
+

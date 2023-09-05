@@ -2,112 +2,74 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 03618CA0FFA
-	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Sep 2023 17:51:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 026FECA0FFA
+	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Sep 2023 17:52:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239437AbjIERvR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 5 Sep 2023 13:51:17 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34666 "EHLO
+        id S229656AbjIERwL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 5 Sep 2023 13:52:11 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42404 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S239556AbjIERuf (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Sep 2023 13:50:35 -0400
-Received: from mail-qt1-x82c.google.com (mail-qt1-x82c.google.com [IPv6:2607:f8b0:4864:20::82c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 11B8E1080D
-        for <linux-btrfs@vger.kernel.org>; Tue,  5 Sep 2023 10:34:41 -0700 (PDT)
-Received: by mail-qt1-x82c.google.com with SMTP id d75a77b69052e-412989e3b7bso18613961cf.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 05 Sep 2023 10:34:41 -0700 (PDT)
+        with ESMTP id S233516AbjIERv5 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Sep 2023 13:51:57 -0400
+Received: from mail-io1-f52.google.com (mail-io1-f52.google.com [209.85.166.52])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A305A76C15
+        for <linux-btrfs@vger.kernel.org>; Tue,  5 Sep 2023 10:37:15 -0700 (PDT)
+Received: by mail-io1-f52.google.com with SMTP id ca18e2360f4ac-760dff4b701so38829539f.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 Sep 2023 10:37:15 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1693935200; x=1694540000; darn=vger.kernel.org;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
-        bh=xhVyYyhnkV6xf8sOqK4YgIYEfgThVB5ep8tTtgcxT/o=;
-        b=LywcW6+WJDqF+68BOhCqz3BTQg/0UowdNob97RYRbIsraplpVitsZeDR6H4EJanG3e
-         Y81daQLLn32r3+gYfjOgsSslxYaU6nFHa2y1vN2qWoxwwY5LHwXlH6Gz9O7SVi9KMOZ/
-         3COO7ilPUNuPkB4TOELuiNgcYt9nYOLwO3On+Leljb5wo5qjXNU0HyM7lI8BAxBQj5tz
-         R3OPqch2iao/WwxqZD5e36pvjVPzptQGxdIv3HZMBmhQsIaROyKYe2h7VwODh06UurnC
-         NoPnuUgxy1/duFslRDgsVuLQP+N8Sfk9w7rii+96Xn+KngVucjbeS9BRnbeB4kRYDLnR
-         OzOg==
+        d=kernel-dk.20230601.gappssmtp.com; s=20230601; t=1693935055; x=1694539855; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:from:references:to
+         :content-language:subject:user-agent:mime-version:date:message-id
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=lhgUyOYlzs50wPwnVa1NJV5fMVV2WbYk1NVnh8F+sSY=;
+        b=W39ADkLeoDAGskfKqsq+erOALjjpFivZZ1Iy28vIEhJ/KOId5Sa8qKq0bLofGAEYr8
+         mrucB/tKNUzIy02AbE5XSAuF20X6lGutMQkx0xZgr82POJ2j84CblX+DRw8SMR7VZ/r8
+         ErltWwkNexjh2HygDGxd9g7M+mk5ubpb3tW/57ObzlftxfDDFGYGnpI9PtWxPsiaOrC9
+         Vo1b9F2mnoXjSmVav7x4KxuUQswlmKpW+XhvPgNmB6TqjWAOoV4C+zDG7Gfvlt5B7utK
+         EYgYPpOzx+70DPwigiEZ6JNHAnENy6dj49DtcruulKIy8vhKID0wvepj7b4ZaR1kQBte
+         KwrA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1693935200; x=1694540000;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=xhVyYyhnkV6xf8sOqK4YgIYEfgThVB5ep8tTtgcxT/o=;
-        b=T8KQHR3Fe5S4XPpJAqDKCaS18FZ9tRsq02WNX8zdclOwSQA3OSamnPf39HIuS8j/Xy
-         xIihljwZl8L6sShYOVyUR4pKIIcIZnfGef+Ln5GD38XzKJbubIir5Yki1KomEOe0Udwv
-         0YZb11m7ctutaALBi3JYUymfiZrCDdUaASVn3l9KktNq1wVNFdpO83fQuFcZcvGgU2uo
-         Ui0TexAE1p7ht6qyFFsHwBGNCf0V15HP4fxxgC4njKyJVA4pr3NsVtemicaevW+q5Xfd
-         jYn1AKfPSdGo0bknqzk0fzjrPNH4rZ3BcUAqCHq3vpEFRXyxzfsOihFra4bsqPBtkUOu
-         IgoA==
-X-Gm-Message-State: AOJu0YzhRy57QDOFw1weynY6yGluwGUqeQLFgLw019Sd5OjrpHQASQ5d
-        iRtc3qZnWiJKHVRVR2NiFrNfED1+V+duEAmIED4=
-X-Google-Smtp-Source: AGHT+IHoC+f41O5N5PptqoeyvPhwdxGzWHM/2723fFAW8BRKe0D9fUW6UrRfh2NpNAWsqupuLcJzEg==
-X-Received: by 2002:ac8:5c04:0:b0:410:a39d:767e with SMTP id i4-20020ac85c04000000b00410a39d767emr17819928qti.25.1693935200372;
-        Tue, 05 Sep 2023 10:33:20 -0700 (PDT)
-Received: from localhost (cpe-76-182-20-124.nc.res.rr.com. [76.182.20.124])
-        by smtp.gmail.com with ESMTPSA id f2-20020a05620a12e200b0076ef7810f27sm4202383qkl.58.2023.09.05.10.33.19
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 05 Sep 2023 10:33:20 -0700 (PDT)
-Date:   Tue, 5 Sep 2023 13:33:19 -0400
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-Cc:     Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
-        "Theodore Y . Ts'o" <tytso@mit.edu>,
-        Jaegeuk Kim <jaegeuk@kernel.org>, kernel-team@meta.com,
-        linux-btrfs@vger.kernel.org, linux-fscrypt@vger.kernel.org,
-        ebiggers@kernel.org, ngompa13@gmail.com
-Subject: Re: [RFC PATCH 00/13] fscrypt: add extent encryption
-Message-ID: <20230905173319.GA1222577@perftesting>
-References: <cover.1693630890.git.sweettea-kernel@dorminy.me>
+        d=1e100.net; s=20221208; t=1693935055; x=1694539855;
+        h=content-transfer-encoding:in-reply-to:from:references:to
+         :content-language:subject:user-agent:mime-version:date:message-id
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=lhgUyOYlzs50wPwnVa1NJV5fMVV2WbYk1NVnh8F+sSY=;
+        b=feKs8oURF/oZT/Hnxo+dBweMOB/agEw9DTwVkrJFyiGOO08mwgx+q7TlJLA4h8AXuU
+         /+AoKbkPEhDqqisgCOiWCMXE5jSndFmfgleL4lf/NY7CUdPBz4K+8AKSLyGoAYHrU1Zn
+         esW5/f5G+DHNPqLfmiTomcxwbcOy8UqVnolSDMbUbdCB8L2kF2nmmNcVZpsu7An8M8xE
+         VMYzbz26pmVeTSrEs4kKlSJXVRJihVPMBhKC7nefusMJXGjnQQq//a0M2xKrBnrqgX8Y
+         h/c1fxbb07Wk+65EDmXn1wWsRXaipoYvajR3D73k7APz4bzYYnVQyDhg909IWPKltXW0
+         mUfg==
+X-Gm-Message-State: AOJu0YxQNAZyALKtv4OH9EjG08qPvYbOUedkhWWPc8y0ThWvF0YG3kLM
+        lWwhsbuou/HQdYWvL1g59NAoeA==
+X-Google-Smtp-Source: AGHT+IFxNBeDMIO3ay5dJIruveOgIGCbwp+khAehFYmNxYPYoLOzPNLhXp4Oanjz4dj9j4D6ep0jlQ==
+X-Received: by 2002:a05:6602:14d2:b0:792:6dd8:a65f with SMTP id b18-20020a05660214d200b007926dd8a65fmr16334329iow.0.1693935055659;
+        Tue, 05 Sep 2023 10:30:55 -0700 (PDT)
+Received: from [192.168.1.94] ([96.43.243.2])
+        by smtp.gmail.com with ESMTPSA id br19-20020a05663846d300b0042b61a5087csm4056486jab.132.2023.09.05.10.30.54
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 05 Sep 2023 10:30:54 -0700 (PDT)
+Message-ID: <5e387913-aba3-4445-8eb3-50b1b94fba30@kernel.dk>
+Date:   Tue, 5 Sep 2023 11:30:54 -0600
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <cover.1693630890.git.sweettea-kernel@dorminy.me>
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH 1/2] btrfs: make sure to initialize start and len in
+ find_free_dev_extent
+Content-Language: en-US
+To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
+        kernel-team@fb.com
+References: <cover.1693930391.git.josef@toxicpanda.com>
+ <3223c8646dd74cc0252e3b619a7a2cd6b078d85a.1693930391.git.josef@toxicpanda.com>
+From:   Jens Axboe <axboe@kernel.dk>
+In-Reply-To: <3223c8646dd74cc0252e3b619a7a2cd6b078d85a.1693930391.git.josef@toxicpanda.com>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sat, Sep 02, 2023 at 01:54:18AM -0400, Sweet Tea Dorminy wrote:
-> This is a replacement for the former changeset (previously v3). This
-> doesn't reflect all the smaller feedback on v3: it's an attempt to address
-> the major points of giving extents and inodes different objects, and to
-> clearly define lightweight and heavyweight extent contexts. Currently,
-> with minor changes to the btrfs patchset building on it, it passes
-> tests.
-> 
-> Hopefully I understood the proposed alternate design and this is indeed
-> more elegant, reviewable, and maintainable. 
-> 
-> This applies atop [3], which itself is based on kdave/misc-next.
-> 
-> Changelog:
-> RFC:
->  - Split fscrypt_info into a general fscrypt_common_info, an
->    inode-specific fscrypt_info, and an extent-specific
->    fscrypt_extent_info. All external interfaces use either an inode or
->    extent specific structure; most internal functions handle the common
->    structure.
->  - Tried to fix up more places to refer to infos instead of inodes and
->    files.
->  - Changed to use lightweight extent contexts containing just a nonce,
->    and then a following change to do heavyweight extent contexts
->    identical to inode contexts, so they're easily comparable.
->  - Dropped factoring lock_master_key() and adding super block pointer to
->    fscrypt_info changes, as they didn't seem necessary.
->  - Temporarily dropped optimization where leaf inodes with extents don't
->    have on-disk fscrypt_contexts. It's a convenient optimization and
->    affects btrfs disk format, but it's not very big and not strictly
->    needed to check whether the new structural arrangement is better.
+Tested-by: Jens Axboe <axboe@kernel.dk>
 
-I've gone through this, does seem a bit cleaner, and the uses of ->ci_type are
-limited to the soft deletion part, so the overlapping thing that Eric was
-worried about seems to be very contained.
+-- 
+Jens Axboe
 
-Eric, I asked Sweet Tea to do a rough run at this to see if this was more in
-your liking, I specifically told him to get it down and get it out so apologies
-for the rough edges.  What I'm looking for is wether or not this is an
-acceptable approach, and if there's any other big changes you want to see.  If
-this looks good then Sweet Tea can clean it up and we can hopefully start making
-progress on the other things.  Thanks,
-
-Josef

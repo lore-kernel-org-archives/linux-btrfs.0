@@ -2,115 +2,100 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9B653EC873A
-	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Sep 2023 15:36:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 86F7CEC8742
+	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Sep 2023 15:36:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236452AbjIGPfd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 7 Sep 2023 11:35:33 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53162 "EHLO
+        id S240385AbjIGPfe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 7 Sep 2023 11:35:34 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51810 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S245069AbjIGP1z (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Sep 2023 11:27:55 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5B600CE7
-        for <linux-btrfs@vger.kernel.org>; Thu,  7 Sep 2023 08:27:32 -0700 (PDT)
+        with ESMTP id S233593AbjIGPYr (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Sep 2023 11:24:47 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 339B410E9;
+        Thu,  7 Sep 2023 08:24:30 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id D22E621872;
-        Thu,  7 Sep 2023 11:48:06 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 2117F1F74D;
+        Thu,  7 Sep 2023 14:06:46 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1694087286;
+        t=1694095606;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=WR+n4/4VD6Juf6BPsfTkyKYsr9rWGg3rDle7QwAq+qk=;
-        b=y85pWPV0op/zSwuis8JzfudooSrQzKdGWHksaYZSerDdYKGin+KZUPQdAUvgE7ZnojWkCU
-        RG/o8DslIYjaM46yaZkpHHenIO4yg7FaP/C4f143eMLGsRIqn73UjU/UVeimw8IiJHpDf0
-        xV+3NrKdvfXOXV8mW5glmBmGu2SVfcA=
+        bh=VqPjYifbkeF3+t2RA3edn8iMNGo18hRP1/ESstRei+0=;
+        b=f/pXO21mPTw67GwDjXvy+q5McylSHYIUb3fcUpGA4pG+ceHWzmPBKAo5pSNzh5/CCiw4sg
+        TH67sJMgNeNhMAs1nFKxAcREyt/78FbXiWOWFLm6AmMaKu7cCR4QCZca4Lw9m9bzabzlHr
+        c6cUeXRttcjsukRAupITjPVEeBhC5Tw=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1694087286;
+        s=susede2_ed25519; t=1694095606;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=WR+n4/4VD6Juf6BPsfTkyKYsr9rWGg3rDle7QwAq+qk=;
-        b=MaOv/mCVOe/knmbDaCGeyVEIfxGndtqU8rqm/spFVrbra9Cj/QMfuC+sgloWTT8wyO6bQF
-        Pwha+JFOjA6aOVCg==
+        bh=VqPjYifbkeF3+t2RA3edn8iMNGo18hRP1/ESstRei+0=;
+        b=B3xC5wfx3s4slGZ50gWxMjK3CsJcwVa3aUgqEDbMbCF/7wKtzyIi3fCTC4eFlLWPjVFcaJ
+        9CH5g/I9ZHZSukDQ==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id B6C93138F9;
-        Thu,  7 Sep 2023 11:48:06 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id D250F138F9;
+        Thu,  7 Sep 2023 14:06:45 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id IlipK3a4+WQTBQAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Thu, 07 Sep 2023 11:48:06 +0000
-Date:   Thu, 7 Sep 2023 13:41:35 +0200
+        id HkyJMvXY+WR2UQAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Thu, 07 Sep 2023 14:06:45 +0000
+Date:   Thu, 7 Sep 2023 16:00:14 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     Boris Burkov <boris@bur.io>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH v5 06/18] btrfs: create qgroup earlier in snapshot
- creation
-Message-ID: <20230907114135.GE3159@twin.jikos.cz>
+To:     Christian Brauner <brauner@kernel.org>
+Cc:     David Sterba <dsterba@suse.cz>, Bernd Schubert <bschubert@ddn.com>,
+        linux-fsdevel@vger.kernel.org, bernd.schubert@fastmail.fm,
+        miklos@szeredi.hu, dsingh@ddn.com,
+        Josef Bacik <josef@toxicpanda.com>,
+        linux-btrfs@vger.kernel.org,
+        Alexander Viro <viro@zeniv.linux.org.uk>
+Subject: Re: [PATCH v2 0/2] Use exclusive lock for file_remove_privs
+Message-ID: <20230907140014.GP3159@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <cover.1690495785.git.boris@bur.io>
- <4418d4544e16023fb0b7db6969b657b32cd25f93.1690495785.git.boris@bur.io>
+References: <20230831112431.2998368-1-bschubert@ddn.com>
+ <20230905180259.GG14420@twin.jikos.cz>
+ <20230906-teeservice-erbfolge-a23bfa3180eb@brauner>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <4418d4544e16023fb0b7db6969b657b32cd25f93.1690495785.git.boris@bur.io>
+In-Reply-To: <20230906-teeservice-erbfolge-a23bfa3180eb@brauner>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Jul 27, 2023 at 03:12:53PM -0700, Boris Burkov wrote:
-> Pull creating the qgroup earlier in the snapshot. This allows simple
-> quotas qgroups to see all the metadata writes related to the snapshot
-> being created and to be born with the root node accounted.
+On Wed, Sep 06, 2023 at 04:43:22PM +0200, Christian Brauner wrote:
+> On Tue, Sep 05, 2023 at 08:02:59PM +0200, David Sterba wrote:
+> > On Thu, Aug 31, 2023 at 01:24:29PM +0200, Bernd Schubert wrote:
+> > > While adding shared direct IO write locks to fuse Miklos noticed
+> > > that file_remove_privs() needs an exclusive lock. I then
+> > > noticed that btrfs actually has the same issue as I had in my patch,
+> > > it was calling into that function with a shared lock.
+> > > This series adds a new exported function file_needs_remove_privs(),
+> > > which used by the follow up btrfs patch and will be used by the
+> > > DIO code path in fuse as well. If that function returns any mask
+> > > the shared lock needs to be dropped and replaced by the exclusive
+> > > variant.
+> > > 
+> > > Note: Compilation tested only.
+> > 
+> > The fix makes sense, there should be no noticeable performance impact,
+> > basically the same check is done in the newly exported helper for the
+> > IS_NOSEC bit.  I can give it a test locally for the default case, I'm
+> > not sure if we have specific tests for the security layers in fstests.
+> > 
+> > Regarding merge, I can take the two patches via btrfs tree or can wait
+> > until the export is present in Linus' tree in case FUSE needs it
+> > independently.
 > 
-> Signed-off-by: Boris Burkov <boris@bur.io>
-> ---
->  fs/btrfs/qgroup.c      | 3 +++
->  fs/btrfs/transaction.c | 6 ++++++
->  2 files changed, 9 insertions(+)
-> 
-> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-> index 18f521716e8d..8e3a4ced3077 100644
-> --- a/fs/btrfs/qgroup.c
-> +++ b/fs/btrfs/qgroup.c
-> @@ -1672,6 +1672,9 @@ int btrfs_create_qgroup(struct btrfs_trans_handle *trans, u64 qgroupid)
->  	struct btrfs_qgroup *qgroup;
->  	int ret = 0;
->  
-> +	if (btrfs_qgroup_mode(fs_info) == BTRFS_QGROUP_MODE_DISABLED)
-> +		return 0;
-> +
->  	mutex_lock(&fs_info->qgroup_ioctl_lock);
->  	if (!fs_info->quota_root) {
->  		ret = -ENOTCONN;
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index 89ff15aa085f..25217888e897 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -1722,6 +1722,12 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
->  	}
->  	btrfs_release_path(path);
->  
-> +	ret = btrfs_create_qgroup(trans, objectid);
-> +	if (ret) {
-> +		btrfs_abort_transaction(trans, ret);
+> Both fuse and btrfs need it afaict. We can grab it and provide a tag
+> post -rc1? Whatever works best.
 
-This adds and error case to the middle of a transaction commit.
-Snapshots are created in two parts, first is the ioctl adding the
-structure and then commit actually creates that. So the first phase
-preallocates what's needed (the root_item and path) and should do the
-same with the qgroups as much as possible.
-
-Also check all the things that btrfs_create_qgroup() does, searches the
-qgroup tree, adds the new item, takes the qgroup_ioctl_lock mutex, and
-adds the sysfs entry (that does allocations under GFP_KERNEL).
-If you really need to create the qgroup like that then it needs much
-more care.
+Git tree sync won't be needed, Bernd sent the fix within btrfs code.

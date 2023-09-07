@@ -2,284 +2,157 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6994EEC874E
-	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Sep 2023 18:36:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 06C57EC8758
+	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Sep 2023 20:50:32 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1344208AbjIGSgz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 7 Sep 2023 14:36:55 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37098 "EHLO
+        id S237013AbjIGUud (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 7 Sep 2023 16:50:33 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55364 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1344194AbjIGSgy (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Sep 2023 14:36:54 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 40EF29D
-        for <linux-btrfs@vger.kernel.org>; Thu,  7 Sep 2023 11:36:46 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id B69B32187E;
-        Thu,  7 Sep 2023 12:34:28 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1694090068;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=JeThfLjvaCACKQrFTaFqaIX4x3+TM9U+WjXWZ7/4haQ=;
-        b=IrralYgdcL/WI+S5sJ5nkHig2DAcD5swOLo2zYoiTaTGOy0B2LAhJ2ZPNlRlLr7hEEnutX
-        6BZN6AztBeCZXGleIKrXA7h6kxOHk8SNODrSy9St8MX/DebKytZ8Ws2HXcWYERZE1m3tQK
-        ux9lCo5vF82deKpXtpP/raLL1Mm9SFU=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1694090068;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=JeThfLjvaCACKQrFTaFqaIX4x3+TM9U+WjXWZ7/4haQ=;
-        b=hFvHLFSUJT1S9RFOjwFiJBJ1k6G8cX8Hzmm/IkL6B2XX0/r0+24nu5MHnxrBaU3IGjtj00
-        oS9wloHjhib4WVDg==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 7C93C138FA;
-        Thu,  7 Sep 2023 12:34:28 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id 2yuYHVTD+WRrIAAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Thu, 07 Sep 2023 12:34:28 +0000
-Date:   Thu, 7 Sep 2023 14:27:56 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Boris Burkov <boris@bur.io>
+        with ESMTP id S229534AbjIGUud (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Sep 2023 16:50:33 -0400
+Received: from out1-smtp.messagingengine.com (out1-smtp.messagingengine.com [66.111.4.25])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 55BFD1BCB
+        for <linux-btrfs@vger.kernel.org>; Thu,  7 Sep 2023 13:50:29 -0700 (PDT)
+Received: from compute3.internal (compute3.nyi.internal [10.202.2.43])
+        by mailout.nyi.internal (Postfix) with ESMTP id C0DEF5C01CC;
+        Thu,  7 Sep 2023 16:50:28 -0400 (EDT)
+Received: from mailfrontend2 ([10.202.2.163])
+  by compute3.internal (MEProxy); Thu, 07 Sep 2023 16:50:28 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
+        :content-type:content-type:date:date:from:from:in-reply-to
+        :in-reply-to:message-id:mime-version:references:reply-to:sender
+        :subject:subject:to:to; s=fm2; t=1694119828; x=1694206228; bh=hw
+        zqJPRJza20zli6G+HAIDt2DWfMXFEP6lvX1HBf44I=; b=FlKsDGQjD/8HRE3097
+        dv493hHo4r0N/HidPhkK46mENsJD/+91hlDWVPhuECYVXnkGj6iulUHcX1VY3CI4
+        sKmmNpszWbs0mrugo+EN8FWbORTgg3SQVfFfeViTIolpchs4aGczBZpiPSIhHoIk
+        dt04FzaeTAadAo96MthS6NAeks8Vb3reOD0CN6l4YYwSEOKmrJfmhjpOinz6vU55
+        iyAjy5yxJg77zkAPp+612xqeVVlAO5nark2s3tNr7tnRGRSDa/b3e7vy1mwWL3Gq
+        sPwGx5WDV2VBBwTYxQ0ccjfrE6KGdZLGXkGUhevxXBf5ia1BA/YLDh6T9iPw35k2
+        GwRw==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+        messagingengine.com; h=cc:cc:content-type:content-type:date:date
+        :feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
+        :message-id:mime-version:references:reply-to:sender:subject
+        :subject:to:to:x-me-proxy:x-me-proxy:x-me-sender:x-me-sender
+        :x-sasl-enc; s=fm1; t=1694119828; x=1694206228; bh=hwzqJPRJza20z
+        li6G+HAIDt2DWfMXFEP6lvX1HBf44I=; b=BjeONcTZ4NVGyZCR6iqzzjtOTFXXX
+        n242T5uw7I1/6epbvPuFRWv2/v7dGGD8HfqvjnJqc33LyJJQjgBehUPnxySd12yy
+        MVzbTLQGKD7rkpaFxty41C5nqS9wi/I9nU8lq3uFlfUyBjYJ479AeQneq2qGK+iH
+        QGyELexyvblhyMiGOtroPC5heRL/y9maWQJTNUdpuxpIjlJyiZD6ye9i9i89gbF1
+        0z8H2jyUZDKef6tkb2z1oB/eKBXWmoXfMHoLcG5VtvwrfqOyGp5dLv0Rup64FOy8
+        oTVfS+Uke9fXBvKKGgeS1xtwCUPOR4Yh5dlrghZ0Db1m2pwwtBcGyk7jw==
+X-ME-Sender: <xms:lDf6ZDr_L3caWb63EAPHsXMhjkQTo_JfZc6FAPjBgAg3dyNO-MV1sw>
+    <xme:lDf6ZNrjK7x-BqddlEMM8MTUOm5ZW_FCwmOqBD42lgRsMXIq54c_trbvDf3em2Ccl
+    z0FAkwS9oPmLXb9Wkc>
+X-ME-Received: <xmr:lDf6ZAM4vp3P434psOKh0v1fjkI8iNLiI6wSCIVN7tBwEhIbyTeDdHDhoVHKeCXqG5PwJIJIAQtc3G9oPI-Fiiv_dUo>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedviedrudehhedgudehgecutefuodetggdotefrod
+    ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfgh
+    necuuegrihhlohhuthemuceftddtnecusecvtfgvtghiphhivghnthhsucdlqddutddtmd
+    enucfjughrpeffhffvvefukfhfgggtuggjsehttdertddttddvnecuhfhrohhmpeeuohhr
+    ihhsuceuuhhrkhhovhcuoegsohhrihhssegsuhhrrdhioheqnecuggftrfgrthhtvghrnh
+    epkedvkeffjeellefhveehvdejudfhjedthfdvveeiieeiudfguefgtdejgfefleejnecu
+    vehluhhsthgvrhfuihiivgeptdenucfrrghrrghmpehmrghilhhfrhhomhepsghorhhish
+    essghurhdrihho
+X-ME-Proxy: <xmx:lDf6ZG7395FenwVjqLuiUWHuoJpYRff-E02ZziLwdENXiqvU9ecHNA>
+    <xmx:lDf6ZC7yjKg74KESETfnqa9yCRgs08Amgqimj4PPDZpmdCB5LCenaA>
+    <xmx:lDf6ZOgN5ww074R_B6oEDERkJz4vU-ibWnwLeLYiybgy9DUHTL6H5w>
+    <xmx:lDf6ZIRC4QOaPxQ0YPP1uN2N_Em3-yKTsrBh7HEUdWQSQxaRayEmhg>
+Feedback-ID: i083147f8:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Thu,
+ 7 Sep 2023 16:50:27 -0400 (EDT)
+Date:   Thu, 7 Sep 2023 13:51:31 -0700
+From:   Boris Burkov <boris@bur.io>
+To:     David Sterba <dsterba@suse.cz>
 Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH v5 16/18] btrfs: track metadata relocation cow with
- simple quota
-Message-ID: <20230907122756.GM3159@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Subject: Re: [PATCH v5 00/18] btrfs: simple quotas
+Message-ID: <20230907205131.GA5581@zen>
 References: <cover.1690495785.git.boris@bur.io>
- <88d41836e1f44a21ab284db9eba5aa01365e9458.1690495785.git.boris@bur.io>
+ <20230907105115.GA3159@twin.jikos.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <88d41836e1f44a21ab284db9eba5aa01365e9458.1690495785.git.boris@bur.io>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <20230907105115.GA3159@twin.jikos.cz>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Jul 27, 2023 at 03:13:03PM -0700, Boris Burkov wrote:
-> Relocation cows metadata blocks in two cases for the reloc root:
-> - copying the subvol root item when creating the reloc root
-> - copying a btree node when there is a cow during relocation
+On Thu, Sep 07, 2023 at 12:51:15PM +0200, David Sterba wrote:
+> On Thu, Jul 27, 2023 at 03:12:47PM -0700, Boris Burkov wrote:
+> > btrfs quota groups (qgroups) are a compelling feature of btrfs that
+> > allow flexible control for limiting subvolume data and metadata usage.
+> > However, due to btrfs's high level decision to tradeoff snapshot
+> > performance against ref-counting performance, qgroups suffer from
+> > non-trivial performance issues that make them unattractive in certain
+> > workloads. Particularly, frequent backref walking during writes and
+> > during commits can make operations increasingly expensive as the number
+> > of snapshots scales up. For that reason, we have never been able to
+> > commit to using qgroups in production at Meta, despite significant
+> > interest from people running container workloads, where we would benefit
+> > from protecting the rest of the host from a buggy application in a
+> > container running away with disk usage. This patch series introduces a
+> > simplified version of qgroups called
+> > simple quotas (squotas) which never computes global reference counts
+> > for extents, and thus has similar performance characteristics to normal,
+> > quotas disabled, btrfs. The "trick" is that in simple quotas mode, we
+> > account all extents permanently to the subvolume in which they were
+> > originally created. That allows us to make all accounting 1:1 with
+> > extent item lifetime, removing the need to walk backrefs. However,
+> > this sacrifices the ability to compute shared vs. exclusive usage. It
+> > also results in counter-intuitive, though still predictable and simple
+> > accounting in the cases where an original extent is removed while a
+> > shared copy still exists. Qgroups is able to detect that case and count
+> > the remaining copy as an exclusive owner, while squotas is not. As a
+> > result, squotas works best when the original extent is immutable and
+> > outlives any clones.
+> > 
+> > ==Format Change==
+> > In order to track the original creating subvolume of a data extent in
+> > the face of reflinks, it is necessary to add additional accounting to
+> > the extent item. To save space, this is done with a new inline ref item.
+> > However, the downside of this approach is that it makes enabling squota
+> > an incompat change, denoted by the new incompat bit SIMPLE_QUOTA. When
+> > this bit is set and quotas are enabled, new extent items get the extra
+> > accounting, and freed extent items check for the accounting to find
+> > their creating subvolume. In addition, 1:1 with this incompat bit,
+> > the quota status item now tracks a "quota enablement generation" needed
+> > for properly handling deleting extents with predate enablement.
+> > 
+> > ==API==
+> > Squotas reuses the api of qgroups.
 > 
-> In both cases, the resulting btree node hits an abnormal code path with
-> respect to the owner field in its btrfs_header. It first creates the
-> root item for the new objectid, which populates the reloc root id, and
-> it at this point that delayed refs are created.
-> 
-> Later, it fully copies the old node into the new node (including the
-> original owner field) which overwrites it. This results in a simple
-> quotas mismatch where we run the delayed ref for the reloc root which
-> has no simple quota effect (reloc root is not an fstree) but when we
-> ultimately delete the node, the owner is the real original fstree and we
-> do free the space.
-> 
-> To work around this without tampering with the behavior of relocation,
-> add a parameter to btrfs_add_tree_block that lets the relocation code
-> path specify a different owning root than the "operating" root (in this
-> case, owning root is the real root and the operating root is the reloc
-> root). These can naturally be plumbed into delayed refs that have the
-> same concept.
-> 
-> Note that this is a double count in some sense, but a relatively natural
-> one, as there are really two extents, and the old one will be deleted
-> soon. This is consistent with how data relocation extents are accounted
-> by simple quotas.
-> 
-> Signed-off-by: Boris Burkov <boris@bur.io>
-> Reviewed-by: Josef Bacik <josef@toxicpanda.com>
-> ---
->  fs/btrfs/ctree.c       | 22 ++++++++++++++--------
->  fs/btrfs/disk-io.c     |  4 ++--
->  fs/btrfs/extent-tree.c |  8 ++++++--
->  fs/btrfs/extent-tree.h |  3 ++-
->  fs/btrfs/ioctl.c       |  2 +-
->  5 files changed, 25 insertions(+), 14 deletions(-)
-> 
-> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-> index a4cb4b642987..cb0d4535de37 100644
-> --- a/fs/btrfs/ctree.c
-> +++ b/fs/btrfs/ctree.c
-> @@ -316,6 +316,7 @@ int btrfs_copy_root(struct btrfs_trans_handle *trans,
->  	int ret = 0;
->  	int level;
->  	struct btrfs_disk_key disk_key;
-> +	u64 reloc_src_root = 0;
->  
->  	WARN_ON(test_bit(BTRFS_ROOT_SHAREABLE, &root->state) &&
->  		trans->transid != fs_info->running_transaction->transid);
-> @@ -328,9 +329,11 @@ int btrfs_copy_root(struct btrfs_trans_handle *trans,
->  	else
->  		btrfs_node_key(buf, &disk_key, 0);
->  
-> +	if (new_root_objectid == BTRFS_TREE_RELOC_OBJECTID)
-> +		reloc_src_root = btrfs_header_owner(buf);
->  	cow = btrfs_alloc_tree_block(trans, root, 0, new_root_objectid,
->  				     &disk_key, level, buf->start, 0,
-> -				     BTRFS_NESTING_NEW_ROOT);
-> +				     BTRFS_NESTING_NEW_ROOT, reloc_src_root);
->  	if (IS_ERR(cow))
->  		return PTR_ERR(cow);
->  
-> @@ -522,6 +525,7 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
->  	int last_ref = 0;
->  	int unlock_orig = 0;
->  	u64 parent_start = 0;
-> +	u64 reloc_src_root = 0;
->  
->  	if (*cow_ret == buf)
->  		unlock_orig = 1;
-> @@ -540,12 +544,14 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
->  	else
->  		btrfs_node_key(buf, &disk_key, 0);
->  
-> -	if ((root->root_key.objectid == BTRFS_TREE_RELOC_OBJECTID) && parent)
-> -		parent_start = parent->start;
-> -
-> +	if (root->root_key.objectid == BTRFS_TREE_RELOC_OBJECTID) {
-> +		if (parent)
-> +			parent_start = parent->start;
-> +		reloc_src_root = btrfs_header_owner(buf);
-> +	}
->  	cow = btrfs_alloc_tree_block(trans, root, parent_start,
->  				     root->root_key.objectid, &disk_key, level,
-> -				     search_start, empty_size, nest);
-> +				     search_start, empty_size, nest, reloc_src_root);
->  	if (IS_ERR(cow))
->  		return PTR_ERR(cow);
->  
-> @@ -2956,7 +2962,7 @@ static noinline int insert_new_root(struct btrfs_trans_handle *trans,
->  
->  	c = btrfs_alloc_tree_block(trans, root, 0, root->root_key.objectid,
->  				   &lower_key, level, root->node->start, 0,
-> -				   BTRFS_NESTING_NEW_ROOT);
-> +				   BTRFS_NESTING_NEW_ROOT, 0);
->  	if (IS_ERR(c))
->  		return PTR_ERR(c);
->  
-> @@ -3100,7 +3106,7 @@ static noinline int split_node(struct btrfs_trans_handle *trans,
->  
->  	split = btrfs_alloc_tree_block(trans, root, 0, root->root_key.objectid,
->  				       &disk_key, level, c->start, 0,
-> -				       BTRFS_NESTING_SPLIT);
-> +				       BTRFS_NESTING_SPLIT, 0);
->  	if (IS_ERR(split))
->  		return PTR_ERR(split);
->  
-> @@ -3853,7 +3859,7 @@ static noinline int split_leaf(struct btrfs_trans_handle *trans,
->  	right = btrfs_alloc_tree_block(trans, root, 0, root->root_key.objectid,
->  				       &disk_key, 0, l->start, 0,
->  				       num_doubles ? BTRFS_NESTING_NEW_ROOT :
-> -				       BTRFS_NESTING_SPLIT);
-> +				       BTRFS_NESTING_SPLIT, 0);
->  	if (IS_ERR(right))
->  		return PTR_ERR(right);
->  
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index b4495d4c1533..e2b0e11800fc 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -862,7 +862,7 @@ struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
->  	root->root_key.offset = 0;
->  
->  	leaf = btrfs_alloc_tree_block(trans, root, 0, objectid, NULL, 0, 0, 0,
-> -				      BTRFS_NESTING_NORMAL);
-> +				      BTRFS_NESTING_NORMAL, 0);
->  	if (IS_ERR(leaf)) {
->  		ret = PTR_ERR(leaf);
->  		leaf = NULL;
-> @@ -939,7 +939,7 @@ int btrfs_alloc_log_tree_node(struct btrfs_trans_handle *trans,
->  	 */
->  
->  	leaf = btrfs_alloc_tree_block(trans, root, 0, BTRFS_TREE_LOG_OBJECTID,
-> -			NULL, 0, 0, 0, BTRFS_NESTING_NORMAL);
-> +			NULL, 0, 0, 0, BTRFS_NESTING_NORMAL, 0);
->  	if (IS_ERR(leaf))
->  		return PTR_ERR(leaf);
->  
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 395ab46e520b..50db75529a83 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -4989,7 +4989,8 @@ struct extent_buffer *btrfs_alloc_tree_block(struct btrfs_trans_handle *trans,
->  					     const struct btrfs_disk_key *key,
->  					     int level, u64 hint,
->  					     u64 empty_size,
-> -					     enum btrfs_lock_nesting nest)
-> +					     enum btrfs_lock_nesting nest,
-> +					     u64 reloc_src_root)
+> So apart from the accounting, the hierarchy of qgroups can be still
+> built as before, right? In the example you create a group 1/100 so I
+> assume that it's still qgroups from the outside, and that the limits can
+> be set.
 
-Please move the new parameter before 'nest'.
+Yes, you can create quota group hierarchies with the same nesting
+behavior. I am only changing the accounting methodology (and added auto
+hierarchy)
 
->  {
->  	struct btrfs_fs_info *fs_info = root->fs_info;
->  	struct btrfs_key ins;
-> @@ -5001,6 +5002,7 @@ struct extent_buffer *btrfs_alloc_tree_block(struct btrfs_trans_handle *trans,
->  	int ret;
->  	u32 blocksize = fs_info->nodesize;
->  	bool skinny_metadata = btrfs_fs_incompat(fs_info, SKINNY_METADATA);
-> +	u64 owning_root;
->  
->  #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
->  	if (btrfs_is_testing(fs_info)) {
-> @@ -5027,11 +5029,13 @@ struct extent_buffer *btrfs_alloc_tree_block(struct btrfs_trans_handle *trans,
->  		ret = PTR_ERR(buf);
->  		goto out_free_reserved;
->  	}
-> +	owning_root = btrfs_header_owner(buf);
->  
->  	if (root_objectid == BTRFS_TREE_RELOC_OBJECTID) {
->  		if (parent == 0)
->  			parent = ins.objectid;
->  		flags |= BTRFS_BLOCK_FLAG_FULL_BACKREF;
-> +		owning_root = reloc_src_root;
->  	} else
->  		BUG_ON(parent > 0);
->  
-> @@ -5051,7 +5055,7 @@ struct extent_buffer *btrfs_alloc_tree_block(struct btrfs_trans_handle *trans,
->  		extent_op->level = level;
->  
->  		btrfs_init_generic_ref(&generic_ref, BTRFS_ADD_DELAYED_EXTENT,
-> -				       ins.objectid, ins.offset, parent, btrfs_header_owner(buf));
-> +				       ins.objectid, ins.offset, parent, owning_root);
->  		btrfs_init_tree_ref(&generic_ref, level, root_objectid,
->  				    root->root_key.objectid, false);
->  		btrfs_ref_tree_mod(fs_info, &generic_ref);
-> diff --git a/fs/btrfs/extent-tree.h b/fs/btrfs/extent-tree.h
-> index 7c27652880a2..99b11e278ae4 100644
-> --- a/fs/btrfs/extent-tree.h
-> +++ b/fs/btrfs/extent-tree.h
-> @@ -118,7 +118,8 @@ struct extent_buffer *btrfs_alloc_tree_block(struct btrfs_trans_handle *trans,
->  					     const struct btrfs_disk_key *key,
->  					     int level, u64 hint,
->  					     u64 empty_size,
-> -					     enum btrfs_lock_nesting nest);
-> +					     enum btrfs_lock_nesting nest,
-> +					     u64 reloc_src_root);
->  void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
->  			   u64 root_id,
->  			   struct extent_buffer *buf,
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index c9b069077fd0..f3807def6596 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -657,7 +657,7 @@ static noinline int create_subvol(struct mnt_idmap *idmap,
->  		goto out;
->  
->  	leaf = btrfs_alloc_tree_block(trans, root, 0, objectid, NULL, 0, 0, 0,
-> -				      BTRFS_NESTING_NORMAL);
-> +				      BTRFS_NESTING_NORMAL, 0);
->  	if (IS_ERR(leaf)) {
->  		ret = PTR_ERR(leaf);
->  		goto out;
-> -- 
-> 2.41.0
+> 
+> Because if not, then squotas would make more sense as a separate
+> infrastructure, under quotas. Like that quotas are the abstraction while
+> qgroups or squota would be the implementation.
+> 
+> > The only difference is that when you
+> > enable quotas via `btrfs quota enable`, you pass the `--simple` flag.
+> > Squotas will always report exclusive == shared for each qgroup. Squotas
+> > deal with extent_item/metadata_item sizes and thus do not do anything
+> > special with compression. Squotas also introduce auto inheritance for
+> > nested subvols. The API is documented more fully in the documentation
+> > patches in btrfs-progs.
+> 
+> The lack of exclusive size sharing will be confusing I guess, so we need
+> to make it clear in the documentation and in the UI that it's either
+> full or simple mode.
+
+I am happy to iterate on that. I think always reporting as shared=0,
+since the *ownership* is exclusive. I opted for making them equal since
+it sort of both shared usage (we don't know if it's shared nor when it
+will be freed) and exclusive usage (belongs to this subvol by owner ref)
+
+> 
+> I've added the patchset to for-next, we may need an iteration or two to
+> fix some issues I've seen so far but on the fundamental level I think
+> it's ok.

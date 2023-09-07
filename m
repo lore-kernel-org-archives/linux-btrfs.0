@@ -2,45 +2,45 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4FDA1EC8738
-	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Sep 2023 16:21:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A14E0EC873E
+	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Sep 2023 16:22:10 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S241952AbjIGQVz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 7 Sep 2023 12:21:55 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33278 "EHLO
+        id S236665AbjIGQWL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 7 Sep 2023 12:22:11 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57214 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S240996AbjIGQVc (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Sep 2023 12:21:32 -0400
+        with ESMTP id S236924AbjIGQVl (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Sep 2023 12:21:41 -0400
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 91CE876B8;
-        Thu,  7 Sep 2023 09:18:47 -0700 (PDT)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8CEF6C4AF7C;
-        Thu,  7 Sep 2023 15:43:56 +0000 (UTC)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 57F777D97;
+        Thu,  7 Sep 2023 09:19:00 -0700 (PDT)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8BACAC4E67F;
+        Thu,  7 Sep 2023 15:44:34 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1694101437;
-        bh=w9ciwqXcEgv02AfI3nMnFAPNY2eIwhecY1uvdb8YIcI=;
+        s=k20201202; t=1694101475;
+        bh=2KB4DiRhtC5YYJ+iMet55uvnQgaAEVc3WCBimbVYb9I=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=WA1tnHLZTEvMRYVkyOEUpW2l27n2Zc+AX5RXiqw/i6apQIHAnAqPzRrI1XMUkJdfU
-         VKornElj12FMqVq0kRZjSNx49wjltNVSkXIl2SH9xC/lA7kljRUdxSExRiNpQhyQgy
-         7mPYKQXSfSyBRw2Z606vWtaegP1Ts2vOrNMYzholui9LZX7C8l/Wtj5PEhuiBBlaYH
-         xip0brpBm1Y1EtxzoeIWZFSdUmBIQ/7eA4/HVwImTrsXX2SCCmcIxvUAl056EoMdVs
-         FkjaqCPfzNcy1aiga+LHFN9zHzcnIq3enhaN9/9qFU5RaPmYfBfB/NqpqXCYJJ9GsC
-         2+DOkqL73TpBg==
+        b=Jul0z8elI4G1CXMdfZKQ3w5qX4YLAHChX6a4d/kD34qD304H6NsfphlYCuGNIBMZ1
+         SyPyfzheaa3pKIblXg4e+Jp+rbvua1RKKTAogTqlP1gScmuImyePeRZPGqyxUlQLfF
+         ptG2V0ItfQdbK1a68ec9E0AXhf4Ce+moUC0Z429ttd7du1GqpZQgwEQJ8+8+IquQj6
+         8WkXuiXjSoFNQ8fcyQt1zxJWv2ws47OLc8RYWa6uKI2KgubF7t7RaPfoeIMIJqdCsH
+         fWm3TOS4gDdMdUnBdBUeuU/4KpTneXTQ/HDuKLqnRqSiWoMYFz0zouTOLGCoTw4eii
+         9ytmsIlNFWa5g==
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
 Cc:     Qu Wenruo <wqu@suse.com>, David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, clm@fb.com,
         josef@toxicpanda.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 6.4 4/5] btrfs: output extra debug info if we failed to find an inline backref
-Date:   Thu,  7 Sep 2023 11:43:48 -0400
-Message-Id: <20230907154349.3421707-4-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 4.19 2/2] btrfs: output extra debug info if we failed to find an inline backref
+Date:   Thu,  7 Sep 2023 11:44:30 -0400
+Message-Id: <20230907154430.3422062-2-sashal@kernel.org>
 X-Mailer: git-send-email 2.40.1
-In-Reply-To: <20230907154349.3421707-1-sashal@kernel.org>
-References: <20230907154349.3421707-1-sashal@kernel.org>
+In-Reply-To: <20230907154430.3422062-1-sashal@kernel.org>
+References: <20230907154430.3422062-1-sashal@kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
-X-stable-base: Linux 6.4.15
+X-stable-base: Linux 4.19.294
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -75,10 +75,10 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  1 file changed, 5 insertions(+)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 10bffcb379148..55d5f67881dcf 100644
+index d71f800e8bf60..bb05b0a82c8ba 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -869,6 +869,11 @@ int lookup_inline_extent_backref(struct btrfs_trans_handle *trans,
+@@ -1549,6 +1549,11 @@ int lookup_inline_extent_backref(struct btrfs_trans_handle *trans,
  		err = -ENOENT;
  		goto out;
  	} else if (WARN_ON(ret)) {

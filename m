@@ -2,139 +2,209 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6587DEC8726
-	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Sep 2023 17:30:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 22F81EC8742
+	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Sep 2023 17:48:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S237500AbjIGRaw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 7 Sep 2023 13:30:52 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56684 "EHLO
+        id S245356AbjIGRsH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 7 Sep 2023 13:48:07 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49196 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231754AbjIGRav (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Sep 2023 13:30:51 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4624F91
-        for <linux-btrfs@vger.kernel.org>; Thu,  7 Sep 2023 10:30:23 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 18B7F1F461;
-        Thu,  7 Sep 2023 11:32:31 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1694086351;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=jaAzWCd64GLKcAI7yBVVfVbGBhHSDWpNzSQiVOQzW50=;
-        b=nWVPogd2p0m3jHhOJIZKn/qBgcN9AjQcAy2kl6A0bkGnIDZfULGWgzVfOtcGopcXUB+gBN
-        iJsFE00aJfk12oKWzSA6V0pLzM0k74pw0bCitO+xOktlkh/do96bzZy8NmVxb2RySTt2Vx
-        y3MavY3Qre51D1Ji0XyxAfd2gq+6S3c=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1694086351;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=jaAzWCd64GLKcAI7yBVVfVbGBhHSDWpNzSQiVOQzW50=;
-        b=aUeGhr3CMcWhi65VcodpHXpr/LtLmMSZWtVfFwTxDe9mOUkSlw4zq1tmEUOAWHzRAmOCRO
-        EOhZzEA4uT6/SiDg==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id D4C90138F9;
-        Thu,  7 Sep 2023 11:32:30 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id mcJLM860+WQ8ewAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Thu, 07 Sep 2023 11:32:30 +0000
-Date:   Thu, 7 Sep 2023 13:25:59 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Boris Burkov <boris@bur.io>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH v5 03/18] btrfs: expose quota mode via sysfs
-Message-ID: <20230907112559.GC3159@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1690495785.git.boris@bur.io>
- <9c9d150a93e91a5a648840ef77240e81b70ff769.1690495785.git.boris@bur.io>
+        with ESMTP id S245504AbjIGRrs (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Sep 2023 13:47:48 -0400
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 540001FD0;
+        Thu,  7 Sep 2023 10:47:31 -0700 (PDT)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 88F30C433CC;
+        Thu,  7 Sep 2023 16:29:05 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1694104146;
+        bh=qQJJueJsk1aXmtevEtR8SOUehv4iQar07ccm+C/K/nE=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=HnHxu1esIO5eQrZo0gwp4TDc+F4b3TsS9lTmQCx7KKhQabfaZVQEm8sYdCE2r35w2
+         xC5XBZ5R/de1UhicCk9OG7om5QzxUZjbGO5js+xK0zlNpn1AQbS4uK9dcGQeISc4RD
+         0uJAZEbXqL4IPPKcihWQocAyY2CVoslZvK2OCV2TvvzhaRXqaedcbodxf9kbW/04HW
+         NviLWMocw9d2PNmWtKBgxvLS8KTLP/uRhXUmVXRGtmJzuzGAPEqgxAf/k0sEI5cMqI
+         omzH56Ec2fXLtmv5zGlrB1dJm8VWY3dGh7nafSM1lIzTR0gxi4vSOSBe07lXz/xv+b
+         FwvHJ0WUaqrqw==
+Date:   Thu, 7 Sep 2023 17:29:02 +0100
+From:   Filipe Manana <fdmanana@kernel.org>
+To:     Sasha Levin <sashal@kernel.org>
+Cc:     linux-kernel@vger.kernel.org, stable@vger.kernel.org,
+        Filipe Manana <fdmanana@suse.com>,
+        David Sterba <dsterba@suse.com>, clm@fb.com,
+        josef@toxicpanda.com, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH AUTOSEL 6.4 3/5] btrfs: return real error when orphan
+ cleanup fails due to a transaction abort
+Message-ID: <ZPn6TsBDUIcnkcHW@debian0.Home>
+References: <20230907154349.3421707-1-sashal@kernel.org>
+ <20230907154349.3421707-3-sashal@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <9c9d150a93e91a5a648840ef77240e81b70ff769.1690495785.git.boris@bur.io>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <20230907154349.3421707-3-sashal@kernel.org>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Jul 27, 2023 at 03:12:50PM -0700, Boris Burkov wrote:
-> Add a new sysfs file
-> /sys/fs/btrfs/<uuid>/qgroups/mode
-> which prints out the mode qgroups is running in. The possible modes are
-> disabled, qgroup, and squota
-
-Can you get the 'disabled' at all? Because when the quotas are disabled
-by ioctl the whole sysfs directory is gone, see btrfs_free_qgroup_config().
-
-> Signed-off-by: Boris Burkov <boris@bur.io>
-> ---
->  fs/btrfs/sysfs.c | 26 ++++++++++++++++++++++++++
->  1 file changed, 26 insertions(+)
+On Thu, Sep 07, 2023 at 11:43:47AM -0400, Sasha Levin wrote:
+> From: Filipe Manana <fdmanana@suse.com>
 > 
-> diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-> index b1d1ac25237b..e53614753391 100644
-> --- a/fs/btrfs/sysfs.c
-> +++ b/fs/btrfs/sysfs.c
-> @@ -2086,6 +2086,31 @@ static ssize_t qgroup_enabled_show(struct kobject *qgroups_kobj,
->  }
->  BTRFS_ATTR(qgroups, enabled, qgroup_enabled_show);
+> [ Upstream commit a7f8de500e28bb227e02a7bd35988cf37b816c86 ]
+
+Please don't add this patch to any stable release.
+Besides not being that important for stable, backporting it alone would not
+be correct as it depends on:
+
+   commit ae3364e5215bed9ce89db6b0c2d21eae4b66f4ae
+   Author: Filipe Manana <fdmanana@suse.com>
+   Date:   Wed Jul 26 16:57:04 2023 +0100
+
+        btrfs: store the error that turned the fs into error state
+    
+Thanks.
+
+> 
+> During mount we will call btrfs_orphan_cleanup() to remove any inodes that
+> were previously deleted (have a link count of 0) but for which we were not
+> able before to remove their items from the subvolume tree. The removal of
+> the items will happen by triggering eviction, when we do the final iput()
+> on them at btrfs_orphan_cleanup(), which will end in the loop at
+> btrfs_evict_inode() that truncates inode items.
+> 
+> In a dire situation we may have a transaction abort due to -ENOSPC when
+> attempting to truncate the inode items, and in that case the orphan item
+> (key type BTRFS_ORPHAN_ITEM_KEY) will remain in the subvolume tree and
+> when we hit the next iteration of the while loop at btrfs_orphan_cleanup()
+> we will find the same orphan item as before, and then we will return
+> -EINVAL from btrfs_orphan_cleanup() through the following if statement:
+> 
+>     if (found_key.offset == last_objectid) {
+>        btrfs_err(fs_info,
+>                  "Error removing orphan entry, stopping orphan cleanup");
+>        ret = -EINVAL;
+>        goto out;
+>     }
+> 
+> This makes the mount operation fail with -EINVAL, when it should have been
+> -ENOSPC. This is confusing because -EINVAL might lead a user into thinking
+> it provided invalid mount options for example.
+> 
+> An example where this happens:
+> 
+>    $ mount test.img /mnt
+>    mount: /mnt: wrong fs type, bad option, bad superblock on /dev/loop0, missing codepage or helper program, or other error.
+> 
+>    $ dmesg
+>    [ 2542.356934] BTRFS: device fsid 977fff75-1181-4d2b-a739-384fa710d16e devid 1 transid 47409973 /dev/loop0 scanned by mount (4459)
+>    [ 2542.357451] BTRFS info (device loop0): using crc32c (crc32c-intel) checksum algorithm
+>    [ 2542.357461] BTRFS info (device loop0): disk space caching is enabled
+>    [ 2542.742287] BTRFS info (device loop0): auto enabling async discard
+>    [ 2542.764554] BTRFS info (device loop0): checking UUID tree
+>    [ 2551.743065] ------------[ cut here ]------------
+>    [ 2551.743068] BTRFS: Transaction aborted (error -28)
+>    [ 2551.743149] WARNING: CPU: 7 PID: 215 at fs/btrfs/block-group.c:3494 btrfs_write_dirty_block_groups+0x397/0x3d0 [btrfs]
+>    [ 2551.743311] Modules linked in: btrfs blake2b_generic (...)
+>    [ 2551.743353] CPU: 7 PID: 215 Comm: kworker/u24:5 Not tainted 6.4.0-rc6-btrfs-next-134+ #1
+>    [ 2551.743356] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.16.2-0-gea1b7a073390-prebuilt.qemu.org 04/01/2014
+>    [ 2551.743357] Workqueue: events_unbound btrfs_async_reclaim_metadata_space [btrfs]
+>    [ 2551.743405] RIP: 0010:btrfs_write_dirty_block_groups+0x397/0x3d0 [btrfs]
+>    [ 2551.743449] Code: 8b 43 0c (...)
+>    [ 2551.743451] RSP: 0018:ffff982c005a7c40 EFLAGS: 00010286
+>    [ 2551.743452] RAX: 0000000000000000 RBX: ffff88fc6e44b400 RCX: 0000000000000000
+>    [ 2551.743453] RDX: 0000000000000002 RSI: ffffffff8dff0878 RDI: 00000000ffffffff
+>    [ 2551.743454] RBP: ffff88fc51817208 R08: 0000000000000000 R09: ffff982c005a7ae0
+>    [ 2551.743455] R10: 0000000000000001 R11: 0000000000000001 R12: ffff88fc43d2e570
+>    [ 2551.743456] R13: ffff88fc43d2e400 R14: ffff88fc8fb08ee0 R15: ffff88fc6e44b530
+>    [ 2551.743457] FS:  0000000000000000(0000) GS:ffff89035fbc0000(0000) knlGS:0000000000000000
+>    [ 2551.743458] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+>    [ 2551.743459] CR2: 00007fa8cdf2f6f4 CR3: 0000000124850003 CR4: 0000000000370ee0
+>    [ 2551.743462] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+>    [ 2551.743463] DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+>    [ 2551.743464] Call Trace:
+>    [ 2551.743472]  <TASK>
+>    [ 2551.743474]  ? __warn+0x80/0x130
+>    [ 2551.743478]  ? btrfs_write_dirty_block_groups+0x397/0x3d0 [btrfs]
+>    [ 2551.743520]  ? report_bug+0x1f4/0x200
+>    [ 2551.743523]  ? handle_bug+0x42/0x70
+>    [ 2551.743526]  ? exc_invalid_op+0x14/0x70
+>    [ 2551.743528]  ? asm_exc_invalid_op+0x16/0x20
+>    [ 2551.743532]  ? btrfs_write_dirty_block_groups+0x397/0x3d0 [btrfs]
+>    [ 2551.743574]  ? _raw_spin_unlock+0x15/0x30
+>    [ 2551.743576]  ? btrfs_run_delayed_refs+0x1bd/0x200 [btrfs]
+>    [ 2551.743609]  commit_cowonly_roots+0x1e9/0x260 [btrfs]
+>    [ 2551.743652]  btrfs_commit_transaction+0x42e/0xfa0 [btrfs]
+>    [ 2551.743693]  ? __pfx_autoremove_wake_function+0x10/0x10
+>    [ 2551.743697]  flush_space+0xf1/0x5d0 [btrfs]
+>    [ 2551.743743]  ? _raw_spin_unlock+0x15/0x30
+>    [ 2551.743745]  ? finish_task_switch+0x91/0x2a0
+>    [ 2551.743748]  ? _raw_spin_unlock+0x15/0x30
+>    [ 2551.743750]  ? btrfs_get_alloc_profile+0xc9/0x1f0 [btrfs]
+>    [ 2551.743793]  btrfs_async_reclaim_metadata_space+0xe1/0x230 [btrfs]
+>    [ 2551.743837]  process_one_work+0x1d9/0x3e0
+>    [ 2551.743844]  worker_thread+0x4a/0x3b0
+>    [ 2551.743847]  ? __pfx_worker_thread+0x10/0x10
+>    [ 2551.743849]  kthread+0xee/0x120
+>    [ 2551.743852]  ? __pfx_kthread+0x10/0x10
+>    [ 2551.743854]  ret_from_fork+0x29/0x50
+>    [ 2551.743860]  </TASK>
+>    [ 2551.743861] ---[ end trace 0000000000000000 ]---
+>    [ 2551.743863] BTRFS info (device loop0: state A): dumping space info:
+>    [ 2551.743866] BTRFS info (device loop0: state A): space_info DATA has 126976 free, is full
+>    [ 2551.743868] BTRFS info (device loop0: state A): space_info total=13458472960, used=13458137088, pinned=143360, reserved=0, may_use=0, readonly=65536 zone_unusable=0
+>    [ 2551.743870] BTRFS info (device loop0: state A): space_info METADATA has -51625984 free, is full
+>    [ 2551.743872] BTRFS info (device loop0: state A): space_info total=771751936, used=770146304, pinned=1605632, reserved=0, may_use=51625984, readonly=0 zone_unusable=0
+>    [ 2551.743874] BTRFS info (device loop0: state A): space_info SYSTEM has 14663680 free, is not full
+>    [ 2551.743875] BTRFS info (device loop0: state A): space_info total=14680064, used=16384, pinned=0, reserved=0, may_use=0, readonly=0 zone_unusable=0
+>    [ 2551.743877] BTRFS info (device loop0: state A): global_block_rsv: size 53231616 reserved 51544064
+>    [ 2551.743878] BTRFS info (device loop0: state A): trans_block_rsv: size 0 reserved 0
+>    [ 2551.743879] BTRFS info (device loop0: state A): chunk_block_rsv: size 0 reserved 0
+>    [ 2551.743880] BTRFS info (device loop0: state A): delayed_block_rsv: size 0 reserved 0
+>    [ 2551.743881] BTRFS info (device loop0: state A): delayed_refs_rsv: size 786432 reserved 0
+>    [ 2551.743886] BTRFS: error (device loop0: state A) in btrfs_write_dirty_block_groups:3494: errno=-28 No space left
+>    [ 2551.743911] BTRFS info (device loop0: state EA): forced readonly
+>    [ 2551.743951] BTRFS warning (device loop0: state EA): could not allocate space for delete; will truncate on mount
+>    [ 2551.743962] BTRFS error (device loop0: state EA): Error removing orphan entry, stopping orphan cleanup
+>    [ 2551.743973] BTRFS warning (device loop0: state EA): Skipping commit of aborted transaction.
+>    [ 2551.743989] BTRFS error (device loop0: state EA): could not do orphan cleanup -22
+> 
+> So make the btrfs_orphan_cleanup() return the value of BTRFS_FS_ERROR(),
+> if it's set, and -EINVAL otherwise.
+> 
+> For that same example, after this change, the mount operation fails with
+> -ENOSPC:
+> 
+>    $ mount test.img /mnt
+>    mount: /mnt: mount(2) system call failed: No space left on device.
+> 
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> Signed-off-by: David Sterba <dsterba@suse.com>
+> Signed-off-by: Sasha Levin <sashal@kernel.org>
+> ---
+>  fs/btrfs/inode.c | 9 ++++++++-
+>  1 file changed, 8 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index a446965d701db..f22449aea5b7f 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -3534,9 +3534,16 @@ int btrfs_orphan_cleanup(struct btrfs_root *root)
+>  		 */
 >  
-> +static ssize_t qgroup_mode_show(struct kobject *qgroups_kobj,
-> +				struct kobj_attribute *a,
-> +				char *buf)
-> +{
-> +	struct btrfs_fs_info *fs_info = to_fs_info(qgroups_kobj->parent);
-> +	char *mode = "";
-> +
-> +	spin_lock(&fs_info->qgroup_lock);
-> +	switch (btrfs_qgroup_mode(fs_info)) {
-> +	case BTRFS_QGROUP_MODE_DISABLED:
-> +		mode = "disabled";
-> +		break;
-> +	case BTRFS_QGROUP_MODE_FULL:
-> +		mode = "qgroup";
-> +		break;
-> +	case BTRFS_QGROUP_MODE_SIMPLE:
-> +		mode = "squota";
-
-You can do
-
-	lock;
-	switch (mode) {
-	case FULL:   sysfs_emit(buf, "qgroup\n"); break;
-	case SIMPLE: sysfs_emit(buf, "simple\n"); break;
-	}
-	unlock;
-	return 7;
-
-or track the return value from sysfs_emit so it's not so hacky.
-
-> +		break;
-> +	}
-> +	spin_unlock(&fs_info->qgroup_lock);
-> +
-> +	return sysfs_emit(buf, "%s\n", mode);
-> +}
-> +BTRFS_ATTR(qgroups, mode, qgroup_mode_show);
-> +
->  static ssize_t qgroup_inconsistent_show(struct kobject *qgroups_kobj,
->  					struct kobj_attribute *a,
->  					char *buf)
-> @@ -2148,6 +2173,7 @@ static struct attribute *qgroups_attrs[] = {
->  	BTRFS_ATTR_PTR(qgroups, enabled),
->  	BTRFS_ATTR_PTR(qgroups, inconsistent),
->  	BTRFS_ATTR_PTR(qgroups, drop_subtree_threshold),
-> +	BTRFS_ATTR_PTR(qgroups, mode),
->  	NULL
->  };
->  ATTRIBUTE_GROUPS(qgroups);
+>  		if (found_key.offset == last_objectid) {
+> +			/*
+> +			 * We found the same inode as before. This means we were
+> +			 * not able to remove its items via eviction triggered
+> +			 * by an iput(). A transaction abort may have happened,
+> +			 * due to -ENOSPC for example, so try to grab the error
+> +			 * that lead to a transaction abort, if any.
+> +			 */
+>  			btrfs_err(fs_info,
+>  				  "Error removing orphan entry, stopping orphan cleanup");
+> -			ret = -EINVAL;
+> +			ret = BTRFS_FS_ERROR(fs_info) ?: -EINVAL;
+>  			goto out;
+>  		}
+>  
 > -- 
-> 2.41.0
+> 2.40.1
+> 

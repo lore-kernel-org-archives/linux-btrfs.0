@@ -2,132 +2,139 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 686F6EC8743
-	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Sep 2023 17:28:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6587DEC8726
+	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Sep 2023 17:30:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S243657AbjIGR2Y (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 7 Sep 2023 13:28:24 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41754 "EHLO
+        id S237500AbjIGRaw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 7 Sep 2023 13:30:52 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56684 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S243681AbjIGR2W (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Sep 2023 13:28:22 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 044A91710
-        for <linux-btrfs@vger.kernel.org>; Thu,  7 Sep 2023 10:27:57 -0700 (PDT)
+        with ESMTP id S231754AbjIGRav (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Sep 2023 13:30:51 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4624F91
+        for <linux-btrfs@vger.kernel.org>; Thu,  7 Sep 2023 10:30:23 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 7E8B821863;
-        Thu,  7 Sep 2023 10:57:47 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 18B7F1F461;
+        Thu,  7 Sep 2023 11:32:31 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1694084267;
+        t=1694086351;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=15n2HHj9ksSziQUuzfVuU96jihfZLsF3NTqnIb9LChI=;
-        b=aupQ04QX4ExK8luGHGiO/IxMEp3u/MkSyZt2XGi1JA9trmLbRBoGsgHQUuWtgTIgYLMXZJ
-        grE6pDCPyDhgqhVQfAoT06XkE9gDGyb6PQtKJKxksyTXezoVuvcJJfKHf/x7kvEEhvRzxk
-        K9MqhgZCmLlhet5bl4xhNsDaUSXASIM=
+        bh=jaAzWCd64GLKcAI7yBVVfVbGBhHSDWpNzSQiVOQzW50=;
+        b=nWVPogd2p0m3jHhOJIZKn/qBgcN9AjQcAy2kl6A0bkGnIDZfULGWgzVfOtcGopcXUB+gBN
+        iJsFE00aJfk12oKWzSA6V0pLzM0k74pw0bCitO+xOktlkh/do96bzZy8NmVxb2RySTt2Vx
+        y3MavY3Qre51D1Ji0XyxAfd2gq+6S3c=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1694084267;
+        s=susede2_ed25519; t=1694086351;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=15n2HHj9ksSziQUuzfVuU96jihfZLsF3NTqnIb9LChI=;
-        b=F/4Y5i6f7bq33w09h4REbXxhhboWuzY6mly8A07BWfK90prVA2OR9adAfUbqLA3ELWpPAB
-        QVYPIkxcA54FquDg==
+        bh=jaAzWCd64GLKcAI7yBVVfVbGBhHSDWpNzSQiVOQzW50=;
+        b=aUeGhr3CMcWhi65VcodpHXpr/LtLmMSZWtVfFwTxDe9mOUkSlw4zq1tmEUOAWHzRAmOCRO
+        EOhZzEA4uT6/SiDg==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 5AD4B138FA;
-        Thu,  7 Sep 2023 10:57:47 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id D4C90138F9;
+        Thu,  7 Sep 2023 11:32:30 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id 1E9zFaus+WS7aAAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Thu, 07 Sep 2023 10:57:47 +0000
-Date:   Thu, 7 Sep 2023 12:51:15 +0200
+        id mcJLM860+WQ8ewAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Thu, 07 Sep 2023 11:32:30 +0000
+Date:   Thu, 7 Sep 2023 13:25:59 +0200
 From:   David Sterba <dsterba@suse.cz>
 To:     Boris Burkov <boris@bur.io>
 Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH v5 00/18] btrfs: simple quotas
-Message-ID: <20230907105115.GA3159@twin.jikos.cz>
+Subject: Re: [PATCH v5 03/18] btrfs: expose quota mode via sysfs
+Message-ID: <20230907112559.GC3159@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <cover.1690495785.git.boris@bur.io>
+ <9c9d150a93e91a5a648840ef77240e81b70ff769.1690495785.git.boris@bur.io>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <cover.1690495785.git.boris@bur.io>
+In-Reply-To: <9c9d150a93e91a5a648840ef77240e81b70ff769.1690495785.git.boris@bur.io>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Jul 27, 2023 at 03:12:47PM -0700, Boris Burkov wrote:
-> btrfs quota groups (qgroups) are a compelling feature of btrfs that
-> allow flexible control for limiting subvolume data and metadata usage.
-> However, due to btrfs's high level decision to tradeoff snapshot
-> performance against ref-counting performance, qgroups suffer from
-> non-trivial performance issues that make them unattractive in certain
-> workloads. Particularly, frequent backref walking during writes and
-> during commits can make operations increasingly expensive as the number
-> of snapshots scales up. For that reason, we have never been able to
-> commit to using qgroups in production at Meta, despite significant
-> interest from people running container workloads, where we would benefit
-> from protecting the rest of the host from a buggy application in a
-> container running away with disk usage. This patch series introduces a
-> simplified version of qgroups called
-> simple quotas (squotas) which never computes global reference counts
-> for extents, and thus has similar performance characteristics to normal,
-> quotas disabled, btrfs. The "trick" is that in simple quotas mode, we
-> account all extents permanently to the subvolume in which they were
-> originally created. That allows us to make all accounting 1:1 with
-> extent item lifetime, removing the need to walk backrefs. However,
-> this sacrifices the ability to compute shared vs. exclusive usage. It
-> also results in counter-intuitive, though still predictable and simple
-> accounting in the cases where an original extent is removed while a
-> shared copy still exists. Qgroups is able to detect that case and count
-> the remaining copy as an exclusive owner, while squotas is not. As a
-> result, squotas works best when the original extent is immutable and
-> outlives any clones.
+On Thu, Jul 27, 2023 at 03:12:50PM -0700, Boris Burkov wrote:
+> Add a new sysfs file
+> /sys/fs/btrfs/<uuid>/qgroups/mode
+> which prints out the mode qgroups is running in. The possible modes are
+> disabled, qgroup, and squota
+
+Can you get the 'disabled' at all? Because when the quotas are disabled
+by ioctl the whole sysfs directory is gone, see btrfs_free_qgroup_config().
+
+> Signed-off-by: Boris Burkov <boris@bur.io>
+> ---
+>  fs/btrfs/sysfs.c | 26 ++++++++++++++++++++++++++
+>  1 file changed, 26 insertions(+)
 > 
-> ==Format Change==
-> In order to track the original creating subvolume of a data extent in
-> the face of reflinks, it is necessary to add additional accounting to
-> the extent item. To save space, this is done with a new inline ref item.
-> However, the downside of this approach is that it makes enabling squota
-> an incompat change, denoted by the new incompat bit SIMPLE_QUOTA. When
-> this bit is set and quotas are enabled, new extent items get the extra
-> accounting, and freed extent items check for the accounting to find
-> their creating subvolume. In addition, 1:1 with this incompat bit,
-> the quota status item now tracks a "quota enablement generation" needed
-> for properly handling deleting extents with predate enablement.
-> 
-> ==API==
-> Squotas reuses the api of qgroups.
+> diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+> index b1d1ac25237b..e53614753391 100644
+> --- a/fs/btrfs/sysfs.c
+> +++ b/fs/btrfs/sysfs.c
+> @@ -2086,6 +2086,31 @@ static ssize_t qgroup_enabled_show(struct kobject *qgroups_kobj,
+>  }
+>  BTRFS_ATTR(qgroups, enabled, qgroup_enabled_show);
+>  
+> +static ssize_t qgroup_mode_show(struct kobject *qgroups_kobj,
+> +				struct kobj_attribute *a,
+> +				char *buf)
+> +{
+> +	struct btrfs_fs_info *fs_info = to_fs_info(qgroups_kobj->parent);
+> +	char *mode = "";
+> +
+> +	spin_lock(&fs_info->qgroup_lock);
+> +	switch (btrfs_qgroup_mode(fs_info)) {
+> +	case BTRFS_QGROUP_MODE_DISABLED:
+> +		mode = "disabled";
+> +		break;
+> +	case BTRFS_QGROUP_MODE_FULL:
+> +		mode = "qgroup";
+> +		break;
+> +	case BTRFS_QGROUP_MODE_SIMPLE:
+> +		mode = "squota";
 
-So apart from the accounting, the hierarchy of qgroups can be still
-built as before, right? In the example you create a group 1/100 so I
-assume that it's still qgroups from the outside, and that the limits can
-be set.
+You can do
 
-Because if not, then squotas would make more sense as a separate
-infrastructure, under quotas. Like that quotas are the abstraction while
-qgroups or squota would be the implementation.
+	lock;
+	switch (mode) {
+	case FULL:   sysfs_emit(buf, "qgroup\n"); break;
+	case SIMPLE: sysfs_emit(buf, "simple\n"); break;
+	}
+	unlock;
+	return 7;
 
-> The only difference is that when you
-> enable quotas via `btrfs quota enable`, you pass the `--simple` flag.
-> Squotas will always report exclusive == shared for each qgroup. Squotas
-> deal with extent_item/metadata_item sizes and thus do not do anything
-> special with compression. Squotas also introduce auto inheritance for
-> nested subvols. The API is documented more fully in the documentation
-> patches in btrfs-progs.
+or track the return value from sysfs_emit so it's not so hacky.
 
-The lack of exclusive size sharing will be confusing I guess, so we need
-to make it clear in the documentation and in the UI that it's either
-full or simple mode.
-
-I've added the patchset to for-next, we may need an iteration or two to
-fix some issues I've seen so far but on the fundamental level I think
-it's ok.
+> +		break;
+> +	}
+> +	spin_unlock(&fs_info->qgroup_lock);
+> +
+> +	return sysfs_emit(buf, "%s\n", mode);
+> +}
+> +BTRFS_ATTR(qgroups, mode, qgroup_mode_show);
+> +
+>  static ssize_t qgroup_inconsistent_show(struct kobject *qgroups_kobj,
+>  					struct kobj_attribute *a,
+>  					char *buf)
+> @@ -2148,6 +2173,7 @@ static struct attribute *qgroups_attrs[] = {
+>  	BTRFS_ATTR_PTR(qgroups, enabled),
+>  	BTRFS_ATTR_PTR(qgroups, inconsistent),
+>  	BTRFS_ATTR_PTR(qgroups, drop_subtree_threshold),
+> +	BTRFS_ATTR_PTR(qgroups, mode),
+>  	NULL
+>  };
+>  ATTRIBUTE_GROUPS(qgroups);
+> -- 
+> 2.41.0

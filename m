@@ -2,100 +2,66 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 86F7CEC8742
-	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Sep 2023 15:36:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 45163EC873E
+	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Sep 2023 15:36:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S240385AbjIGPfe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 7 Sep 2023 11:35:34 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51810 "EHLO
+        id S241783AbjIGPff (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 7 Sep 2023 11:35:35 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39554 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233593AbjIGPYr (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Sep 2023 11:24:47 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 339B410E9;
-        Thu,  7 Sep 2023 08:24:30 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 2117F1F74D;
-        Thu,  7 Sep 2023 14:06:46 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1694095606;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=VqPjYifbkeF3+t2RA3edn8iMNGo18hRP1/ESstRei+0=;
-        b=f/pXO21mPTw67GwDjXvy+q5McylSHYIUb3fcUpGA4pG+ceHWzmPBKAo5pSNzh5/CCiw4sg
-        TH67sJMgNeNhMAs1nFKxAcREyt/78FbXiWOWFLm6AmMaKu7cCR4QCZca4Lw9m9bzabzlHr
-        c6cUeXRttcjsukRAupITjPVEeBhC5Tw=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1694095606;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=VqPjYifbkeF3+t2RA3edn8iMNGo18hRP1/ESstRei+0=;
-        b=B3xC5wfx3s4slGZ50gWxMjK3CsJcwVa3aUgqEDbMbCF/7wKtzyIi3fCTC4eFlLWPjVFcaJ
-        9CH5g/I9ZHZSukDQ==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id D250F138F9;
-        Thu,  7 Sep 2023 14:06:45 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id HkyJMvXY+WR2UQAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Thu, 07 Sep 2023 14:06:45 +0000
-Date:   Thu, 7 Sep 2023 16:00:14 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Christian Brauner <brauner@kernel.org>
-Cc:     David Sterba <dsterba@suse.cz>, Bernd Schubert <bschubert@ddn.com>,
-        linux-fsdevel@vger.kernel.org, bernd.schubert@fastmail.fm,
-        miklos@szeredi.hu, dsingh@ddn.com,
-        Josef Bacik <josef@toxicpanda.com>,
-        linux-btrfs@vger.kernel.org,
-        Alexander Viro <viro@zeniv.linux.org.uk>
-Subject: Re: [PATCH v2 0/2] Use exclusive lock for file_remove_privs
-Message-ID: <20230907140014.GP3159@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20230831112431.2998368-1-bschubert@ddn.com>
- <20230905180259.GG14420@twin.jikos.cz>
- <20230906-teeservice-erbfolge-a23bfa3180eb@brauner>
+        with ESMTP id S1344222AbjIGPcm (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Sep 2023 11:32:42 -0400
+Received: from fanzine2.igalia.com (fanzine2.igalia.com [213.97.179.56])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 32BDC1BF;
+        Thu,  7 Sep 2023 08:32:11 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=igalia.com;
+        s=20170329; h=Content-Transfer-Encoding:Content-Type:In-Reply-To:From:
+        References:Cc:To:Subject:MIME-Version:Date:Message-ID:Sender:Reply-To:
+        Content-ID:Content-Description:Resent-Date:Resent-From:Resent-Sender:
+        Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:List-Unsubscribe:
+        List-Subscribe:List-Post:List-Owner:List-Archive;
+        bh=Moo8y+fyZCd1KYkspxGFRU4h9hAwFKFLft1tLgBc2oI=; b=Hr5j8Diq5/wQ/xxCbcaS/B826T
+        ruZBnOLpP500r97p0SzeUmKwxSegPPdm+YJcuTDlqsi5riDMaxkmy0sZZpxn9O3edVRaTN8OTmWLF
+        aQKia4ElA2U9IsC6BQGzXtPtbSb7vByI9KKkfiiTPm/3+Up5id2Rx6FeqOZhUEu+inFCO8StkLbOJ
+        DACUulJW8BzbSUVzdG4tws9iuFDnOUv9UzuCxl20z8HExSw+I13KPeHI70zzPjM7ysmxuhNFkSKpD
+        +JkrqOY3BPEVbj9eKbTbMmJHu5hgsKGJctW1wf9a4xDc0QfYvgVUSDAYPfc9DxbTFbbg8yipZjYgg
+        aYxaWCbg==;
+Received: from [179.232.147.2] (helo=[192.168.0.5])
+        by fanzine2.igalia.com with esmtpsa 
+        (Cipher TLS1.3:ECDHE_X25519__RSA_PSS_RSAE_SHA256__AES_128_GCM:128) (Exim)
+        id 1qeGxr-000ZsH-4X; Thu, 07 Sep 2023 17:30:38 +0200
+Message-ID: <e2c88e77-5f44-5dbc-da1a-41283216c0e8@igalia.com>
+Date:   Thu, 7 Sep 2023 12:30:33 -0300
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20230906-teeservice-erbfolge-a23bfa3180eb@brauner>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.15.0
+Subject: Re: [PATCH v2] btrfs: Add test for the single-dev feature
+Content-Language: en-US
+To:     Anand Jain <anand.jain@oracle.com>,
+        Josef Bacik <josef@toxicpanda.com>
+Cc:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        dsterba@suse.com, kernel@gpiccoli.net, kernel-dev@igalia.com
+References: <20230905200826.3605083-1-gpiccoli@igalia.com>
+ <20230906141733.GC1877831@perftesting>
+ <e63f7f76-c039-1bfd-84ea-b8e76be39a86@oracle.com>
+From:   "Guilherme G. Piccoli" <gpiccoli@igalia.com>
+In-Reply-To: <e63f7f76-c039-1bfd-84ea-b8e76be39a86@oracle.com>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Sep 06, 2023 at 04:43:22PM +0200, Christian Brauner wrote:
-> On Tue, Sep 05, 2023 at 08:02:59PM +0200, David Sterba wrote:
-> > On Thu, Aug 31, 2023 at 01:24:29PM +0200, Bernd Schubert wrote:
-> > > While adding shared direct IO write locks to fuse Miklos noticed
-> > > that file_remove_privs() needs an exclusive lock. I then
-> > > noticed that btrfs actually has the same issue as I had in my patch,
-> > > it was calling into that function with a shared lock.
-> > > This series adds a new exported function file_needs_remove_privs(),
-> > > which used by the follow up btrfs patch and will be used by the
-> > > DIO code path in fuse as well. If that function returns any mask
-> > > the shared lock needs to be dropped and replaced by the exclusive
-> > > variant.
-> > > 
-> > > Note: Compilation tested only.
-> > 
-> > The fix makes sense, there should be no noticeable performance impact,
-> > basically the same check is done in the newly exported helper for the
-> > IS_NOSEC bit.  I can give it a test locally for the default case, I'm
-> > not sure if we have specific tests for the security layers in fstests.
-> > 
-> > Regarding merge, I can take the two patches via btrfs tree or can wait
-> > until the export is present in Linus' tree in case FUSE needs it
-> > independently.
+On 06/09/2023 11:45, Anand Jain wrote:
 > 
-> Both fuse and btrfs need it afaict. We can grab it and provide a tag
-> post -rc1? Whatever works best.
+> Further to Josef's review.
+> 
 
-Git tree sync won't be needed, Bernd sent the fix within btrfs code.
+Thanks both Anand and Josef, I'll implement all the changes in the next
+iteration, hopefully having then the proper name for the feature
+(instead of single-dev heh).
+
+Cheers,
+
+
+Guilherme

@@ -2,209 +2,94 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 86439EC873A
-	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Sep 2023 16:08:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 87078EC873E
+	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Sep 2023 16:17:32 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233656AbjIGQIk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 7 Sep 2023 12:08:40 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54736 "EHLO
+        id S240130AbjIGQRe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 7 Sep 2023 12:17:34 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40008 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238407AbjIGQHv (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Sep 2023 12:07:51 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AFF1230E5
-        for <linux-btrfs@vger.kernel.org>; Thu,  7 Sep 2023 09:00:43 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 3960D1F8AE;
-        Thu,  7 Sep 2023 14:43:31 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1694097811;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=alY2gmxa1BhT3V1dMJNaXoi//BPyI2ysm0J8kiIEpE0=;
-        b=dTHlN32xB4r5d7a3icP3Dgz95MxJXykVTWy4iqO91uPYRUtN4yslkCi0iP/i7pK00rLpv5
-        vvjL5q4jhwrffVxv0QPNZSUwdaWrhSRGroJKDC250JaIZqnBC9ijyq8qCmLi6IOHBfjFat
-        ZeXNbsOhv1F+msglcZSbRaIwCjHu3rg=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1694097811;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=alY2gmxa1BhT3V1dMJNaXoi//BPyI2ysm0J8kiIEpE0=;
-        b=i0hWm1n4JzDzfTYYWPDeC+a9g/KKsjT8yoLGCAXBjM9Hv21VOt38YSp9jrRcNCdw25yAgr
-        tQJKOTTxtYGzojAw==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id EEE94138F9;
-        Thu,  7 Sep 2023 14:43:30 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id Dy/eOJLh+WQBZQAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Thu, 07 Sep 2023 14:43:30 +0000
-Date:   Thu, 7 Sep 2023 16:36:58 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: pseudo device-scan for single-device filesystems
-Message-ID: <20230907143658.GQ3159@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <b0e0240254557461c137cd9b943f00b0d5048083.1693959204.git.anand.jain@oracle.com>
+        with ESMTP id S240805AbjIGQRF (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Sep 2023 12:17:05 -0400
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3BE09678AB;
+        Thu,  7 Sep 2023 08:46:22 -0700 (PDT)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 31DBBC32798;
+        Thu,  7 Sep 2023 15:43:46 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1694101427;
+        bh=Bvcu73pIxp2qFPTD0gge5LZ4cNXLO+7TlPXeCdfmmWI=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+        b=D4Lcwl9cSexsDYdI3+hzKxn7XmjbajUAGqL22M3OB7/TaprjbMfGsDte2JHp6fqY8
+         r1V/h911XY7DKEXIQ1bClAJKfvsg2bOvRsftWWmzKwiTry3kgF9HkzNzI1Bm/9KXnO
+         y/TYU/Zjrvp4D34GsnaE48vpUsogtepSLRDSJLgoINyPngULF84Epr/GzWHCghhIA3
+         laCyArlcuaFecupJJQJdOQJ/RZJpqQcFiMLWp6Ww8SUaalltw1tbd52IdA07rloUp1
+         Z/P/xnvBw84dXS6bZMZKC8rV9wrZPQLWUNJTJXU1HE90lvzDEIRyt5wLCH551mgona
+         HXk5mqkRPW8zw==
+From:   Sasha Levin <sashal@kernel.org>
+To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
+Cc:     Qu Wenruo <wqu@suse.com>, David Sterba <dsterba@suse.com>,
+        Sasha Levin <sashal@kernel.org>, clm@fb.com,
+        josef@toxicpanda.com, linux-btrfs@vger.kernel.org
+Subject: [PATCH AUTOSEL 6.5 5/6] btrfs: output extra debug info if we failed to find an inline backref
+Date:   Thu,  7 Sep 2023 11:43:36 -0400
+Message-Id: <20230907154338.3421582-5-sashal@kernel.org>
+X-Mailer: git-send-email 2.40.1
+In-Reply-To: <20230907154338.3421582-1-sashal@kernel.org>
+References: <20230907154338.3421582-1-sashal@kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <b0e0240254557461c137cd9b943f00b0d5048083.1693959204.git.anand.jain@oracle.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-stable: review
+X-Patchwork-Hint: Ignore
+X-stable-base: Linux 6.5.2
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Sep 07, 2023 at 12:27:41AM +0800, Anand Jain wrote:
-> After the commit [1], we unregister the device from the kernel memory upon
-> unmounting for a single device.
-> 
->   [1] 5f58d783fd78 ("btrfs: free device in btrfs_close_devices for a single device filesystem")
+From: Qu Wenruo <wqu@suse.com>
 
-You can write patch references into the text, the [1] references are
-more suitable for links.
+[ Upstream commit 7f72f50547b7af4ddf985b07fc56600a4deba281 ]
 
-> So, device registration that was performed before mounting if any is no
-> longer in the kernel memory.
-> 
-> However, in fact, note that device registration is unnecessary for a
-> single-device Btrfs filesystem unless it's a seed device.
-> 
-> So for commands like 'btrfs device scan' or 'btrfs device ready' with a
-> non-seed single-device Btrfs filesystem, they can return success without
-> the actual device scan.
+[BUG]
+Syzbot reported several warning triggered inside
+lookup_inline_extent_backref().
 
-Just to clarify, the device will be scanned as read by kernel, signature
-verified but not added to the fs_devices lists, right?
+[CAUSE]
+As usual, the reproducer doesn't reliably trigger locally here, but at
+least we know the WARN_ON() is triggered when an inline backref can not
+be found, and it can only be triggered when @insert is true. (I.e.
+inserting a new inline backref, which means the backref should already
+exist)
 
-> The seed device must remain in the kernel memory to allow the sprout
-> device to mount without the need to specify the seed device explicitly.
+[ENHANCEMENT]
+After the WARN_ON(), dump all the parameters and the extent tree
+leaf to help debug.
 
-And in case the seeding status of the already scanned and registered
-device is changed another scan will happen by udev due to openning for
-write. So I guess it's safe.
+Link: https://syzkaller.appspot.com/bug?extid=d6f9ff86c1d804ba2bc6
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+Reviewed-by: David Sterba <dsterba@suse.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ fs/btrfs/extent-tree.c | 5 +++++
+ 1 file changed, 5 insertions(+)
 
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
-> 
-> Passes fstests with a fstests fix as below.
-> 
->   [PATCH] fstests: btrfs/185 update for single device pseudo device-scan
-> 
-> Testing as a boot device is going on.
-> 
->  fs/btrfs/super.c   | 21 +++++++++++++++------
->  fs/btrfs/volumes.c | 12 +++++++++++-
->  fs/btrfs/volumes.h |  3 ++-
->  3 files changed, 28 insertions(+), 8 deletions(-)
-> 
-> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-> index 32ff441d2c13..22910e0d39a2 100644
-> --- a/fs/btrfs/super.c
-> +++ b/fs/btrfs/super.c
-> @@ -891,7 +891,7 @@ static int btrfs_parse_device_options(const char *options, blk_mode_t flags)
->  				error = -ENOMEM;
->  				goto out;
->  			}
-> -			device = btrfs_scan_one_device(device_name, flags);
-> +			device = btrfs_scan_one_device(device_name, flags, false);
->  			kfree(device_name);
->  			if (IS_ERR(device)) {
->  				error = PTR_ERR(device);
-> @@ -1486,10 +1486,17 @@ static struct dentry *btrfs_mount_root(struct file_system_type *fs_type,
->  		goto error_fs_info;
->  	}
->  
-> -	device = btrfs_scan_one_device(device_name, mode);
-> -	if (IS_ERR(device)) {
-> +	device = btrfs_scan_one_device(device_name, mode, true);
-> +	if (IS_ERR_OR_NULL(device)) {
->  		mutex_unlock(&uuid_mutex);
->  		error = PTR_ERR(device);
-> +		/*
-> +		 * As 3rd argument in the funtion
-> +		 * btrfs_scan_one_device( , ,mount_arg_dev) above is true, the
-> +		 * 'device' or the 'error' won't be NULL or 0 respectively
-> +		 * unless for a bug.
-> +		 */
-> +		ASSERT(error);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 21e48c422bc50..79a53676a3881 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -869,6 +869,11 @@ int lookup_inline_extent_backref(struct btrfs_trans_handle *trans,
+ 		err = -ENOENT;
+ 		goto out;
+ 	} else if (WARN_ON(ret)) {
++		btrfs_print_leaf(path->nodes[0]);
++		btrfs_err(fs_info,
++"extent item not found for insert, bytenr %llu num_bytes %llu parent %llu root_objectid %llu owner %llu offset %llu",
++			  bytenr, num_bytes, parent, root_objectid, owner,
++			  offset);
+ 		err = -EIO;
+ 		goto out;
+ 	}
+-- 
+2.40.1
 
-Could the case when device is NULL be handled separately? That way it's
-not so obvious that we expect an error and also a NULL pointer.
-
->  		goto error_fs_info;
->  	}
->  
-> @@ -2199,7 +2206,8 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
->  	switch (cmd) {
->  	case BTRFS_IOC_SCAN_DEV:
->  		mutex_lock(&uuid_mutex);
-> -		device = btrfs_scan_one_device(vol->name, BLK_OPEN_READ);
-> +		device = btrfs_scan_one_device(vol->name, BLK_OPEN_READ, false);
-> +		/* Return success i.e. 0 for device == NULL */
->  		ret = PTR_ERR_OR_ZERO(device);
->  		mutex_unlock(&uuid_mutex);
->  		break;
-> @@ -2213,9 +2221,10 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
->  		break;
->  	case BTRFS_IOC_DEVICES_READY:
->  		mutex_lock(&uuid_mutex);
-> -		device = btrfs_scan_one_device(vol->name, BLK_OPEN_READ);
-> -		if (IS_ERR(device)) {
-> +		device = btrfs_scan_one_device(vol->name, BLK_OPEN_READ, false);
-> +		if (IS_ERR_OR_NULL(device)) {
->  			mutex_unlock(&uuid_mutex);
-> +			/* Return success i.e. 0 for device == NULL */
->  			ret = PTR_ERR(device);
->  			break;
->  		}
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index fa18ea7ef8e3..38e714661286 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -1218,7 +1218,8 @@ int btrfs_forget_devices(dev_t devt)
->   * and we are not allowed to call set_blocksize during the scan. The superblock
->   * is read via pagecache
->   */
-> -struct btrfs_device *btrfs_scan_one_device(const char *path, blk_mode_t flags)
-> +struct btrfs_device *btrfs_scan_one_device(const char *path, blk_mode_t flags,
-> +					   bool mount_arg_dev)
->  {
->  	struct btrfs_super_block *disk_super;
->  	bool new_device_added = false;
-> @@ -1263,10 +1264,19 @@ struct btrfs_device *btrfs_scan_one_device(const char *path, blk_mode_t flags)
->  		goto error_bdev_put;
->  	}
->  
-> +	if (!mount_arg_dev && btrfs_super_num_devices(disk_super) == 1 &&
-> +	    !(btrfs_super_flags(disk_super) & BTRFS_SUPER_FLAG_SEEDING)) {
-> +		pr_info("skip registering single non seed device path %s\n",
-> +			path);
-
-Wouldn't this be too noisy in the logs? With the scanning and
-registration repeated scans of a device there will be only the first
-message, but on a system with potentially many single-dev devices each
-time udev would want to scan it and it'd get logged.
-
-> +		device = NULL;
-> +		goto free_disk_super;
-> +	}
-> +
->  	device = device_list_add(path, disk_super, &new_device_added);
->  	if (!IS_ERR(device) && new_device_added)
->  		btrfs_free_stale_devices(device->devt, device);
->  
-> +free_disk_super:
->  	btrfs_release_disk_super(disk_super);
->  
->  error_bdev_put:

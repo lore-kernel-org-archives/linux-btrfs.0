@@ -2,195 +2,124 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9294FEC8741
-	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Sep 2023 16:24:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 51353EC8743
+	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Sep 2023 16:36:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236325AbjIGQYm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 7 Sep 2023 12:24:42 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57266 "EHLO
+        id S234401AbjIGQgi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 7 Sep 2023 12:36:38 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60018 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S245118AbjIGQXr (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Sep 2023 12:23:47 -0400
+        with ESMTP id S241628AbjIGQgP (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Sep 2023 12:36:15 -0400
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3DB252D6B;
-        Thu,  7 Sep 2023 09:20:48 -0700 (PDT)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 6098EC32782;
-        Thu,  7 Sep 2023 15:43:43 +0000 (UTC)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2D1BC7ABB;
+        Thu,  7 Sep 2023 09:22:57 -0700 (PDT)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id B226EC433C8;
+        Thu,  7 Sep 2023 05:52:34 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1694101424;
-        bh=CdNXrQkjV8yfQiYloqa705MoG8dKwkb5g3EPrfzoeiU=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=UaqcmBrZQjmYp+ks2PFBb+58aouQUjRBSi21L4W/0Z7PWOW/nz810WI+WWu0eKqtR
-         q7BIwW+2g4BpDpGzR6+sHAegHQct3cJRqoEshCmOIJh1EiE+gOzhqx+Dim0aSZX/Aw
-         PO9Hnw/+ND96clB3087yFVV+x3YZXP6qZWIilribB1gj5C20kftBApnsPMtxBjDlsa
-         WsSBO77m0IUCEFt79fo9lak2eY0CtXKbt6ieZM1u+xcSEqkcNjhxo32eoHklFxZ4nl
-         36ukjW4NG6sKMSFm6NzgN0SkH3nH+KoDFmjGpLLVpRy0btsP5HQhEPqI9W31AtORnJ
-         y2ZAf5Sb8Mhng==
-From:   Sasha Levin <sashal@kernel.org>
-To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Filipe Manana <fdmanana@suse.com>, David Sterba <dsterba@suse.com>,
-        Sasha Levin <sashal@kernel.org>, clm@fb.com,
-        josef@toxicpanda.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 6.5 3/6] btrfs: return real error when orphan cleanup fails due to a transaction abort
-Date:   Thu,  7 Sep 2023 11:43:34 -0400
-Message-Id: <20230907154338.3421582-3-sashal@kernel.org>
-X-Mailer: git-send-email 2.40.1
-In-Reply-To: <20230907154338.3421582-1-sashal@kernel.org>
-References: <20230907154338.3421582-1-sashal@kernel.org>
+        s=k20201202; t=1694065955;
+        bh=UbB/H1o92oUgiYA1+Db8O40zgKvPxC38MTY+KZQFJTY=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=sbBz3uPm6SK37neGXax7l5JK/fYT55jKW17SnuBRXNqcTNg3OATCkjhQ3PvAK7ovS
+         IifQqEWcW00J+Xr11GRNO/D53kvftlckIjOQBAh0cGCREuxTSVa6uSW1lAVKz2/uQn
+         Qr52gBtyIY/g5MhIJQGUu1xdQfdOdAfcFuUq/G9pKsN5MqngVQU9003dmKAU9J5GA/
+         8zFF2M3+FjSAQboJVCVWEOFKc8AFlrsQpE9W8eCAjJ2kteieReX9ulUDmgtu8Eo/W2
+         2u0e5oaFkEN4uOEKyUBWkv6OKNKoqHY5rVqHag/iUQ3+K50Zn5chjIPlPBxPWVkWGH
+         sva0gC/MNtw5w==
+Date:   Wed, 6 Sep 2023 22:52:33 -0700
+From:   Eric Biggers <ebiggers@kernel.org>
+To:     Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
+Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>,
+        "Theodore Y . Ts'o" <tytso@mit.edu>,
+        Jaegeuk Kim <jaegeuk@kernel.org>, kernel-team@meta.com,
+        linux-btrfs@vger.kernel.org, linux-fscrypt@vger.kernel.org,
+        ngompa13@gmail.com
+Subject: Re: [RFC PATCH 00/13] fscrypt: add extent encryption
+Message-ID: <20230907055233.GB37146@sol.localdomain>
+References: <cover.1693630890.git.sweettea-kernel@dorminy.me>
 MIME-Version: 1.0
-X-stable: review
-X-Patchwork-Hint: Ignore
-X-stable-base: Linux 6.5.2
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <cover.1693630890.git.sweettea-kernel@dorminy.me>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+On Sat, Sep 02, 2023 at 01:54:18AM -0400, Sweet Tea Dorminy wrote:
+> This is a replacement for the former changeset (previously v3). This
+> doesn't reflect all the smaller feedback on v3: it's an attempt to address
+> the major points of giving extents and inodes different objects, and to
+> clearly define lightweight and heavyweight extent contexts.
 
-[ Upstream commit a7f8de500e28bb227e02a7bd35988cf37b816c86 ]
+In general it would be helpful if more of the feedback I've already given was
+addressed, e.g.
+https://lore.kernel.org/r/20230812223408.GA41642@sol.localdomain
+https://lore.kernel.org/r/20230812224144.GB41642@sol.localdomain
+https://lore.kernel.org/r/20230812224301.GC41642@sol.localdomain.
+It's hard to review this when things that are being proposed "for real" are
+mixed in with things that just haven't had time to be fixed yet, and it's
+not obvious which are which.
+https://lore.kernel.org/r/20230812223408.GA41642@sol.localdomain in particular
+is important and would affect the parts which it seems I'm being asked to
+review.
 
-During mount we will call btrfs_orphan_cleanup() to remove any inodes that
-were previously deleted (have a link count of 0) but for which we were not
-able before to remove their items from the subvolume tree. The removal of
-the items will happen by triggering eviction, when we do the final iput()
-on them at btrfs_orphan_cleanup(), which will end in the loop at
-btrfs_evict_inode() that truncates inode items.
+> Changelog:
+> RFC:
+>  - Split fscrypt_info into a general fscrypt_common_info, an
+>    inode-specific fscrypt_info, and an extent-specific
+>    fscrypt_extent_info. All external interfaces use either an inode or
+>    extent specific structure; most internal functions handle the common
+>    structure.
 
-In a dire situation we may have a transaction abort due to -ENOSPC when
-attempting to truncate the inode items, and in that case the orphan item
-(key type BTRFS_ORPHAN_ITEM_KEY) will remain in the subvolume tree and
-when we hit the next iteration of the while loop at btrfs_orphan_cleanup()
-we will find the same orphan item as before, and then we will return
--EINVAL from btrfs_orphan_cleanup() through the following if statement:
+If we indeed go this route, the inode one should be called fscrypt_inode_info,
+right?  Also, this could be done in 3 patches to make it easier to review: (1)
+rename fscrypt_info => fscrypt_inode_info, (2) add fscrypt_common_info and put
+it in fscrypt_inode_info, and (3) add fscrypt_extent_info.
 
-    if (found_key.offset == last_objectid) {
-       btrfs_err(fs_info,
-                 "Error removing orphan entry, stopping orphan cleanup");
-       ret = -EINVAL;
-       goto out;
-    }
+>  - Tried to fix up more places to refer to infos instead of inodes and
+>    files.
 
-This makes the mount operation fail with -EINVAL, when it should have been
--ENOSPC. This is confusing because -EINVAL might lead a user into thinking
-it provided invalid mount options for example.
+I don't think the things that are being encrypted should be called "infos".
+"Info" is just what fs/crypto/ happens to the call the data structure that holds
+the key, encryption settings, etc. for an object (inode or extent) subject to FS
+encryption.  It's not a great name, and in any case it's not the same as the
+object itself.  When we're not literally talking about the data structure
+itself, code comments should say something like "object represented by the info
+@ci" or "file or extent for the info @ci".  Other suggestions appreciated, of
+course.  But we should not refer to the things being encrypted as "infos".
+"Info" is the C struct that the code happens to use, nothing more.
 
-An example where this happens:
+>  - Changed to use lightweight extent contexts containing just a nonce,
+>    and then a following change to do heavyweight extent contexts
+>    identical to inode contexts, so they're easily comparable.
 
-   $ mount test.img /mnt
-   mount: /mnt: wrong fs type, bad option, bad superblock on /dev/loop0, missing codepage or helper program, or other error.
+This seems to be referring to "fscrypt: store full fscrypt_contexts for each
+extent".  But, that just changes what is stored for each extent.  The rest of
+this patchset still very much assumes the heavyweight design, and it brings in
+the complexity from that.  E.g., the proposed fscrypt_extent_info has a lot of
+fields which are not necessary if there was an associated per-inode struct that
+the policy, mode, master key, etc. could be pulled from.  Also the master key
+link, since only inodes really need to be in the master key's list, right?
 
-   $ dmesg
-   [ 2542.356934] BTRFS: device fsid 977fff75-1181-4d2b-a739-384fa710d16e devid 1 transid 47409973 /dev/loop0 scanned by mount (4459)
-   [ 2542.357451] BTRFS info (device loop0): using crc32c (crc32c-intel) checksum algorithm
-   [ 2542.357461] BTRFS info (device loop0): disk space caching is enabled
-   [ 2542.742287] BTRFS info (device loop0): auto enabling async discard
-   [ 2542.764554] BTRFS info (device loop0): checking UUID tree
-   [ 2551.743065] ------------[ cut here ]------------
-   [ 2551.743068] BTRFS: Transaction aborted (error -28)
-   [ 2551.743149] WARNING: CPU: 7 PID: 215 at fs/btrfs/block-group.c:3494 btrfs_write_dirty_block_groups+0x397/0x3d0 [btrfs]
-   [ 2551.743311] Modules linked in: btrfs blake2b_generic (...)
-   [ 2551.743353] CPU: 7 PID: 215 Comm: kworker/u24:5 Not tainted 6.4.0-rc6-btrfs-next-134+ #1
-   [ 2551.743356] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.16.2-0-gea1b7a073390-prebuilt.qemu.org 04/01/2014
-   [ 2551.743357] Workqueue: events_unbound btrfs_async_reclaim_metadata_space [btrfs]
-   [ 2551.743405] RIP: 0010:btrfs_write_dirty_block_groups+0x397/0x3d0 [btrfs]
-   [ 2551.743449] Code: 8b 43 0c (...)
-   [ 2551.743451] RSP: 0018:ffff982c005a7c40 EFLAGS: 00010286
-   [ 2551.743452] RAX: 0000000000000000 RBX: ffff88fc6e44b400 RCX: 0000000000000000
-   [ 2551.743453] RDX: 0000000000000002 RSI: ffffffff8dff0878 RDI: 00000000ffffffff
-   [ 2551.743454] RBP: ffff88fc51817208 R08: 0000000000000000 R09: ffff982c005a7ae0
-   [ 2551.743455] R10: 0000000000000001 R11: 0000000000000001 R12: ffff88fc43d2e570
-   [ 2551.743456] R13: ffff88fc43d2e400 R14: ffff88fc8fb08ee0 R15: ffff88fc6e44b530
-   [ 2551.743457] FS:  0000000000000000(0000) GS:ffff89035fbc0000(0000) knlGS:0000000000000000
-   [ 2551.743458] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-   [ 2551.743459] CR2: 00007fa8cdf2f6f4 CR3: 0000000124850003 CR4: 0000000000370ee0
-   [ 2551.743462] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-   [ 2551.743463] DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
-   [ 2551.743464] Call Trace:
-   [ 2551.743472]  <TASK>
-   [ 2551.743474]  ? __warn+0x80/0x130
-   [ 2551.743478]  ? btrfs_write_dirty_block_groups+0x397/0x3d0 [btrfs]
-   [ 2551.743520]  ? report_bug+0x1f4/0x200
-   [ 2551.743523]  ? handle_bug+0x42/0x70
-   [ 2551.743526]  ? exc_invalid_op+0x14/0x70
-   [ 2551.743528]  ? asm_exc_invalid_op+0x16/0x20
-   [ 2551.743532]  ? btrfs_write_dirty_block_groups+0x397/0x3d0 [btrfs]
-   [ 2551.743574]  ? _raw_spin_unlock+0x15/0x30
-   [ 2551.743576]  ? btrfs_run_delayed_refs+0x1bd/0x200 [btrfs]
-   [ 2551.743609]  commit_cowonly_roots+0x1e9/0x260 [btrfs]
-   [ 2551.743652]  btrfs_commit_transaction+0x42e/0xfa0 [btrfs]
-   [ 2551.743693]  ? __pfx_autoremove_wake_function+0x10/0x10
-   [ 2551.743697]  flush_space+0xf1/0x5d0 [btrfs]
-   [ 2551.743743]  ? _raw_spin_unlock+0x15/0x30
-   [ 2551.743745]  ? finish_task_switch+0x91/0x2a0
-   [ 2551.743748]  ? _raw_spin_unlock+0x15/0x30
-   [ 2551.743750]  ? btrfs_get_alloc_profile+0xc9/0x1f0 [btrfs]
-   [ 2551.743793]  btrfs_async_reclaim_metadata_space+0xe1/0x230 [btrfs]
-   [ 2551.743837]  process_one_work+0x1d9/0x3e0
-   [ 2551.743844]  worker_thread+0x4a/0x3b0
-   [ 2551.743847]  ? __pfx_worker_thread+0x10/0x10
-   [ 2551.743849]  kthread+0xee/0x120
-   [ 2551.743852]  ? __pfx_kthread+0x10/0x10
-   [ 2551.743854]  ret_from_fork+0x29/0x50
-   [ 2551.743860]  </TASK>
-   [ 2551.743861] ---[ end trace 0000000000000000 ]---
-   [ 2551.743863] BTRFS info (device loop0: state A): dumping space info:
-   [ 2551.743866] BTRFS info (device loop0: state A): space_info DATA has 126976 free, is full
-   [ 2551.743868] BTRFS info (device loop0: state A): space_info total=13458472960, used=13458137088, pinned=143360, reserved=0, may_use=0, readonly=65536 zone_unusable=0
-   [ 2551.743870] BTRFS info (device loop0: state A): space_info METADATA has -51625984 free, is full
-   [ 2551.743872] BTRFS info (device loop0: state A): space_info total=771751936, used=770146304, pinned=1605632, reserved=0, may_use=51625984, readonly=0 zone_unusable=0
-   [ 2551.743874] BTRFS info (device loop0: state A): space_info SYSTEM has 14663680 free, is not full
-   [ 2551.743875] BTRFS info (device loop0: state A): space_info total=14680064, used=16384, pinned=0, reserved=0, may_use=0, readonly=0 zone_unusable=0
-   [ 2551.743877] BTRFS info (device loop0: state A): global_block_rsv: size 53231616 reserved 51544064
-   [ 2551.743878] BTRFS info (device loop0: state A): trans_block_rsv: size 0 reserved 0
-   [ 2551.743879] BTRFS info (device loop0: state A): chunk_block_rsv: size 0 reserved 0
-   [ 2551.743880] BTRFS info (device loop0: state A): delayed_block_rsv: size 0 reserved 0
-   [ 2551.743881] BTRFS info (device loop0: state A): delayed_refs_rsv: size 786432 reserved 0
-   [ 2551.743886] BTRFS: error (device loop0: state A) in btrfs_write_dirty_block_groups:3494: errno=-28 No space left
-   [ 2551.743911] BTRFS info (device loop0: state EA): forced readonly
-   [ 2551.743951] BTRFS warning (device loop0: state EA): could not allocate space for delete; will truncate on mount
-   [ 2551.743962] BTRFS error (device loop0: state EA): Error removing orphan entry, stopping orphan cleanup
-   [ 2551.743973] BTRFS warning (device loop0: state EA): Skipping commit of aborted transaction.
-   [ 2551.743989] BTRFS error (device loop0: state EA): could not do orphan cleanup -22
+I understand that you want to be able to assign an encryption policy to an
+unencrypted file and have new extents be encrypted using that policy.  I never
+received a real answer to my question about what the plan is to recursively
+change a whole directory tree, but sure, let's assume this will be supported by
+iterating through every file and directory and setting something on them (for
+directories it would have to be a new kind of inherit-only policy; also for this
+to work at all you'd have to relax the current fscrypt semantics described in
+https://www.kernel.org/doc/html/next/filesystems/fscrypt.html#encryption-policy-enforcement).
+This still means that the encryption policy for each extent, if it has one, will
+match the file that contains it.  So I don't see why it's necessary to have all
+complexity of setting up everything completely independently for each extent.
 
-So make the btrfs_orphan_cleanup() return the value of BTRFS_FS_ERROR(),
-if it's set, and -EINVAL otherwise.
+It does sound like you still want to store the full information for each extent
+anyway.  In that case, how about doing that but just making the kernel validate
+at runtime that it matches the corresponding inode's?  (Yes, extent => inode is
+a one-to-many relationship on-disk, but in the cache it's one-to-one I think.)
+I think that would be a good middle ground.  It would allow the implementation
+to be simple for now, with lightweight "struct fscrypt_extent_info", but all the
+information for each extent would be stored on-disk for futureproofing.
 
-For that same example, after this change, the mount operation fails with
--ENOSPC:
-
-   $ mount test.img /mnt
-   mount: /mnt: mount(2) system call failed: No space left on device.
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
-Signed-off-by: Sasha Levin <sashal@kernel.org>
----
- fs/btrfs/inode.c | 9 ++++++++-
- 1 file changed, 8 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index aa090b0b5d298..02d9640699b80 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3662,9 +3662,16 @@ int btrfs_orphan_cleanup(struct btrfs_root *root)
- 		 */
- 
- 		if (found_key.offset == last_objectid) {
-+			/*
-+			 * We found the same inode as before. This means we were
-+			 * not able to remove its items via eviction triggered
-+			 * by an iput(). A transaction abort may have happened,
-+			 * due to -ENOSPC for example, so try to grab the error
-+			 * that lead to a transaction abort, if any.
-+			 */
- 			btrfs_err(fs_info,
- 				  "Error removing orphan entry, stopping orphan cleanup");
--			ret = -EINVAL;
-+			ret = BTRFS_FS_ERROR(fs_info) ?: -EINVAL;
- 			goto out;
- 		}
- 
--- 
-2.40.1
-
+- Eric

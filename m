@@ -2,415 +2,209 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B8DF9EC8738
-	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Sep 2023 16:06:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 86439EC873A
+	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Sep 2023 16:08:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236610AbjIGQG5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 7 Sep 2023 12:06:57 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44868 "EHLO
+        id S233656AbjIGQIk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 7 Sep 2023 12:08:40 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54736 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236837AbjIGQGr (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Sep 2023 12:06:47 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 608713A963
-        for <linux-btrfs@vger.kernel.org>; Thu,  7 Sep 2023 08:58:31 -0700 (PDT)
+        with ESMTP id S238407AbjIGQHv (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Sep 2023 12:07:51 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AFF1230E5
+        for <linux-btrfs@vger.kernel.org>; Thu,  7 Sep 2023 09:00:43 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 8DBF021877;
-        Thu,  7 Sep 2023 12:12:38 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 3960D1F8AE;
+        Thu,  7 Sep 2023 14:43:31 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1694088758;
+        t=1694097811;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=A8Z/HrYydCfCEHCLG29l/CwjC83zvsCaBUreOtZbI+U=;
-        b=o5NKctV6tSB+GT/f686MD8S8ejpEnLT6sqkeGYYvvVmKZt0JO1pLhCHMwNf6CkPGlnQ0tc
-        J10CtrRoYqSj9U0zmKZxmrFLWOePACgE4Ms/2h5QozR4sxePXGidgDiLoz3FZY7DpVEC/4
-        UXdYxZTCXhmrMBsPU1obIoB7/TB9CIE=
+        bh=alY2gmxa1BhT3V1dMJNaXoi//BPyI2ysm0J8kiIEpE0=;
+        b=dTHlN32xB4r5d7a3icP3Dgz95MxJXykVTWy4iqO91uPYRUtN4yslkCi0iP/i7pK00rLpv5
+        vvjL5q4jhwrffVxv0QPNZSUwdaWrhSRGroJKDC250JaIZqnBC9ijyq8qCmLi6IOHBfjFat
+        ZeXNbsOhv1F+msglcZSbRaIwCjHu3rg=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1694088758;
+        s=susede2_ed25519; t=1694097811;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=A8Z/HrYydCfCEHCLG29l/CwjC83zvsCaBUreOtZbI+U=;
-        b=+32u2zvz+ENb2Up54k+DWkOUSdFaGd2p3p4FrDSdTFRGO0oL42GXqtJVyf64IXBkmcT1wM
-        KEzCCYGHkfiOtZDQ==
+        bh=alY2gmxa1BhT3V1dMJNaXoi//BPyI2ysm0J8kiIEpE0=;
+        b=i0hWm1n4JzDzfTYYWPDeC+a9g/KKsjT8yoLGCAXBjM9Hv21VOt38YSp9jrRcNCdw25yAgr
+        tQJKOTTxtYGzojAw==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 4C348138F9;
-        Thu,  7 Sep 2023 12:12:38 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id EEE94138F9;
+        Thu,  7 Sep 2023 14:43:30 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id qxHvETa++WSYFAAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Thu, 07 Sep 2023 12:12:38 +0000
-Date:   Thu, 7 Sep 2023 14:06:06 +0200
+        id Dy/eOJLh+WQBZQAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Thu, 07 Sep 2023 14:43:30 +0000
+Date:   Thu, 7 Sep 2023 16:36:58 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     Boris Burkov <boris@bur.io>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH v5 11/18] btrfs: new inline ref storing owning subvol of
- data extents
-Message-ID: <20230907120606.GH3159@twin.jikos.cz>
+To:     Anand Jain <anand.jain@oracle.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: pseudo device-scan for single-device filesystems
+Message-ID: <20230907143658.GQ3159@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <cover.1690495785.git.boris@bur.io>
- <deb2d2bcfb7d6a9dbe9657b1a39659efc0e9f258.1690495785.git.boris@bur.io>
+References: <b0e0240254557461c137cd9b943f00b0d5048083.1693959204.git.anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <deb2d2bcfb7d6a9dbe9657b1a39659efc0e9f258.1690495785.git.boris@bur.io>
+In-Reply-To: <b0e0240254557461c137cd9b943f00b0d5048083.1693959204.git.anand.jain@oracle.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Jul 27, 2023 at 03:12:58PM -0700, Boris Burkov wrote:
-> In order to implement simple quota groups, we need to be able to
-> associate a data extent with the subvolume that created it. Once you
-> account for reflink, this information cannot be recovered without
-> explicitly storing it. Options for storing it are:
-> - a new key/item
-> - a new extent inline ref item
+On Thu, Sep 07, 2023 at 12:27:41AM +0800, Anand Jain wrote:
+> After the commit [1], we unregister the device from the kernel memory upon
+> unmounting for a single device.
 > 
-> The former is backwards compatible, but wastes space, the latter is
-> incompat, but is efficient in space and reuses the existing inline ref
-> machinery, while only abusing it a tiny amount -- specifically, the new
-> item is not a ref, per-se.
+>   [1] 5f58d783fd78 ("btrfs: free device in btrfs_close_devices for a single device filesystem")
+
+You can write patch references into the text, the [1] references are
+more suitable for links.
+
+> So, device registration that was performed before mounting if any is no
+> longer in the kernel memory.
 > 
-> Signed-off-by: Boris Burkov <boris@bur.io>
+> However, in fact, note that device registration is unnecessary for a
+> single-device Btrfs filesystem unless it's a seed device.
+> 
+> So for commands like 'btrfs device scan' or 'btrfs device ready' with a
+> non-seed single-device Btrfs filesystem, they can return success without
+> the actual device scan.
+
+Just to clarify, the device will be scanned as read by kernel, signature
+verified but not added to the fs_devices lists, right?
+
+> The seed device must remain in the kernel memory to allow the sprout
+> device to mount without the need to specify the seed device explicitly.
+
+And in case the seeding status of the already scanned and registered
+device is changed another scan will happen by udev due to openning for
+write. So I guess it's safe.
+
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 > ---
->  fs/btrfs/accessors.h            |  4 +++
->  fs/btrfs/backref.c              |  3 ++
->  fs/btrfs/extent-tree.c          | 56 ++++++++++++++++++++++++++-------
->  fs/btrfs/print-tree.c           | 12 +++++++
->  fs/btrfs/ref-verify.c           |  3 ++
->  fs/btrfs/tree-checker.c         |  3 ++
->  include/uapi/linux/btrfs_tree.h |  6 ++++
->  7 files changed, 76 insertions(+), 11 deletions(-)
 > 
-> diff --git a/fs/btrfs/accessors.h b/fs/btrfs/accessors.h
-> index 8cfc8214109c..a23045c05937 100644
-> --- a/fs/btrfs/accessors.h
-> +++ b/fs/btrfs/accessors.h
-> @@ -349,6 +349,8 @@ BTRFS_SETGET_FUNCS(extent_data_ref_count, struct btrfs_extent_data_ref, count, 3
->  
->  BTRFS_SETGET_FUNCS(shared_data_ref_count, struct btrfs_shared_data_ref, count, 32);
->  
-> +BTRFS_SETGET_FUNCS(extent_owner_ref_root_id, struct btrfs_extent_owner_ref, root_id, 64);
-> +
->  BTRFS_SETGET_FUNCS(extent_inline_ref_type, struct btrfs_extent_inline_ref,
->  		   type, 8);
->  BTRFS_SETGET_FUNCS(extent_inline_ref_offset, struct btrfs_extent_inline_ref,
-> @@ -365,6 +367,8 @@ static inline u32 btrfs_extent_inline_ref_size(int type)
->  	if (type == BTRFS_EXTENT_DATA_REF_KEY)
->  		return sizeof(struct btrfs_extent_data_ref) +
->  		       offsetof(struct btrfs_extent_inline_ref, offset);
-> +	if (type == BTRFS_EXTENT_OWNER_REF_KEY)
-> +		return sizeof(struct btrfs_extent_inline_ref);
->  	return 0;
->  }
->  
-> diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-> index 79336fa853db..d5bb6a880713 100644
-> --- a/fs/btrfs/backref.c
-> +++ b/fs/btrfs/backref.c
-> @@ -1129,6 +1129,9 @@ static int add_inline_refs(struct btrfs_backref_walk_ctx *ctx,
->  						       count, sc, GFP_NOFS);
->  			break;
->  		}
-> +		case BTRFS_EXTENT_OWNER_REF_KEY:
-> +			WARN_ON(!btrfs_fs_incompat(ctx->fs_info, SIMPLE_QUOTA));
-
-Please turn this to an ASSERT, we must catch this during development but
-hte warning makes no sense for end users.
-
-> +			break;
->  		default:
->  			WARN_ON(1);
->  		}
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 4f0115553cd3..c6d537bf5ad4 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -342,9 +342,13 @@ int btrfs_get_extent_inline_ref_type(const struct extent_buffer *eb,
->  				     struct btrfs_extent_inline_ref *iref,
->  				     enum btrfs_inline_ref_type is_data)
->  {
-> +	struct btrfs_fs_info *fs_info = eb->fs_info;
->  	int type = btrfs_extent_inline_ref_type(eb, iref);
->  	u64 offset = btrfs_extent_inline_ref_offset(eb, iref);
->  
-> +	if (type == BTRFS_EXTENT_OWNER_REF_KEY && btrfs_fs_incompat(fs_info, SIMPLE_QUOTA))
-
-I think the conditions should be swapped, first you check that squotas
-are enabled then that the type is the one you look for.
-
-> +		return type;
-> +
->  	if (type == BTRFS_TREE_BLOCK_REF_KEY ||
->  	    type == BTRFS_SHARED_BLOCK_REF_KEY ||
->  	    type == BTRFS_SHARED_DATA_REF_KEY ||
-> @@ -353,26 +357,25 @@ int btrfs_get_extent_inline_ref_type(const struct extent_buffer *eb,
->  			if (type == BTRFS_TREE_BLOCK_REF_KEY)
->  				return type;
->  			if (type == BTRFS_SHARED_BLOCK_REF_KEY) {
-> -				ASSERT(eb->fs_info);
-> +				ASSERT(fs_info);
-
-I'm not sure what's the point of this assertion, each eb is created with
-a valid fs_info. It's not in your new code so you can keep it but would
-be good to remove it evenntually.
-
->  				/*
->  				 * Every shared one has parent tree block,
->  				 * which must be aligned to sector size.
->  				 */
-> -				if (offset &&
-> -				    IS_ALIGNED(offset, eb->fs_info->sectorsize))
-> +				if (offset && IS_ALIGNED(offset, fs_info->sectorsize))
->  					return type;
+> Passes fstests with a fstests fix as below.
+> 
+>   [PATCH] fstests: btrfs/185 update for single device pseudo device-scan
+> 
+> Testing as a boot device is going on.
+> 
+>  fs/btrfs/super.c   | 21 +++++++++++++++------
+>  fs/btrfs/volumes.c | 12 +++++++++++-
+>  fs/btrfs/volumes.h |  3 ++-
+>  3 files changed, 28 insertions(+), 8 deletions(-)
+> 
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index 32ff441d2c13..22910e0d39a2 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -891,7 +891,7 @@ static int btrfs_parse_device_options(const char *options, blk_mode_t flags)
+>  				error = -ENOMEM;
+>  				goto out;
 >  			}
->  		} else if (is_data == BTRFS_REF_TYPE_DATA) {
->  			if (type == BTRFS_EXTENT_DATA_REF_KEY)
->  				return type;
->  			if (type == BTRFS_SHARED_DATA_REF_KEY) {
-> -				ASSERT(eb->fs_info);
-> +				ASSERT(fs_info);
-
-Same.
-
->  				/*
->  				 * Every shared one has parent tree block,
->  				 * which must be aligned to sector size.
->  				 */
->  				if (offset &&
-> -				    IS_ALIGNED(offset, eb->fs_info->sectorsize))
-> +				    IS_ALIGNED(offset, fs_info->sectorsize))
->  					return type;
->  			}
->  		} else {
-> @@ -382,7 +385,7 @@ int btrfs_get_extent_inline_ref_type(const struct extent_buffer *eb,
+> -			device = btrfs_scan_one_device(device_name, flags);
+> +			device = btrfs_scan_one_device(device_name, flags, false);
+>  			kfree(device_name);
+>  			if (IS_ERR(device)) {
+>  				error = PTR_ERR(device);
+> @@ -1486,10 +1486,17 @@ static struct dentry *btrfs_mount_root(struct file_system_type *fs_type,
+>  		goto error_fs_info;
 >  	}
 >  
->  	btrfs_print_leaf(eb);
-> -	btrfs_err(eb->fs_info,
-> +	btrfs_err(fs_info,
->  		  "eb %llu iref 0x%lx invalid extent inline ref type %d",
->  		  eb->start, (unsigned long)iref, type);
->  	WARN_ON(1);
-> @@ -891,6 +894,11 @@ int lookup_inline_extent_backref(struct btrfs_trans_handle *trans,
+> -	device = btrfs_scan_one_device(device_name, mode);
+> -	if (IS_ERR(device)) {
+> +	device = btrfs_scan_one_device(device_name, mode, true);
+> +	if (IS_ERR_OR_NULL(device)) {
+>  		mutex_unlock(&uuid_mutex);
+>  		error = PTR_ERR(device);
+> +		/*
+> +		 * As 3rd argument in the funtion
+> +		 * btrfs_scan_one_device( , ,mount_arg_dev) above is true, the
+> +		 * 'device' or the 'error' won't be NULL or 0 respectively
+> +		 * unless for a bug.
+> +		 */
+> +		ASSERT(error);
+
+Could the case when device is NULL be handled separately? That way it's
+not so obvious that we expect an error and also a NULL pointer.
+
+>  		goto error_fs_info;
+>  	}
+>  
+> @@ -2199,7 +2206,8 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
+>  	switch (cmd) {
+>  	case BTRFS_IOC_SCAN_DEV:
+>  		mutex_lock(&uuid_mutex);
+> -		device = btrfs_scan_one_device(vol->name, BLK_OPEN_READ);
+> +		device = btrfs_scan_one_device(vol->name, BLK_OPEN_READ, false);
+> +		/* Return success i.e. 0 for device == NULL */
+>  		ret = PTR_ERR_OR_ZERO(device);
+>  		mutex_unlock(&uuid_mutex);
+>  		break;
+> @@ -2213,9 +2221,10 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
+>  		break;
+>  	case BTRFS_IOC_DEVICES_READY:
+>  		mutex_lock(&uuid_mutex);
+> -		device = btrfs_scan_one_device(vol->name, BLK_OPEN_READ);
+> -		if (IS_ERR(device)) {
+> +		device = btrfs_scan_one_device(vol->name, BLK_OPEN_READ, false);
+> +		if (IS_ERR_OR_NULL(device)) {
+>  			mutex_unlock(&uuid_mutex);
+> +			/* Return success i.e. 0 for device == NULL */
+>  			ret = PTR_ERR(device);
+>  			break;
 >  		}
->  		iref = (struct btrfs_extent_inline_ref *)ptr;
->  		type = btrfs_get_extent_inline_ref_type(leaf, iref, needed);
-> +		if (type == BTRFS_EXTENT_OWNER_REF_KEY) {
-> +			WARN_ON(!btrfs_fs_incompat(fs_info, SIMPLE_QUOTA));
-
-ASSERT()
-
-> +			ptr += btrfs_extent_inline_ref_size(type);
-> +			continue;
-> +		}
->  		if (type == BTRFS_REF_TYPE_INVALID) {
->  			err = -EUCLEAN;
->  			goto out;
-> @@ -1684,6 +1692,8 @@ static int run_one_delayed_ref(struct btrfs_trans_handle *trans,
->  		 node->type == BTRFS_SHARED_DATA_REF_KEY)
->  		ret = run_delayed_data_ref(trans, node, extent_op,
->  					   insert_reserved);
-> +	else if (node->type == BTRFS_EXTENT_OWNER_REF_KEY)
-> +		ret = 0;
->  	else
->  		BUG();
->  	if (ret && insert_reserved)
-> @@ -2250,6 +2260,7 @@ static noinline int check_committed_ref(struct btrfs_root *root,
->  	struct btrfs_extent_item *ei;
->  	struct btrfs_key key;
->  	u32 item_size;
-> +	u32 expected_size;
->  	int type;
->  	int ret;
->  
-> @@ -2276,10 +2287,22 @@ static noinline int check_committed_ref(struct btrfs_root *root,
->  	ret = 1;
->  	item_size = btrfs_item_size(leaf, path->slots[0]);
->  	ei = btrfs_item_ptr(leaf, path->slots[0], struct btrfs_extent_item);
-> +	expected_size = sizeof(*ei) + btrfs_extent_inline_ref_size(BTRFS_EXTENT_DATA_REF_KEY);
-> +
-> +	/* No inline refs; we need to bail before checking for owner ref */
-> +	if (item_size == sizeof(*ei))
-> +		goto out;
-> +
-> +	/* Check for an owner ref; skip over it to the real inline refs */
-> +	iref = (struct btrfs_extent_inline_ref *)(ei + 1);
-> +	type = btrfs_get_extent_inline_ref_type(leaf, iref, BTRFS_REF_TYPE_DATA);
-> +	if (btrfs_fs_incompat(fs_info, SIMPLE_QUOTA) && type == BTRFS_EXTENT_OWNER_REF_KEY) {
-> +		expected_size += btrfs_extent_inline_ref_size(BTRFS_EXTENT_OWNER_REF_KEY);
-> +		iref = (struct btrfs_extent_inline_ref *)(iref + 1);
-> +	}
->  
->  	/* If extent item has more than 1 inline ref then it's shared */
-> -	if (item_size != sizeof(*ei) +
-> -	    btrfs_extent_inline_ref_size(BTRFS_EXTENT_DATA_REF_KEY))
-> +	if (item_size != expected_size)
->  		goto out;
->  
->  	/*
-> @@ -2291,8 +2314,6 @@ static noinline int check_committed_ref(struct btrfs_root *root,
->  	     btrfs_root_last_snapshot(&root->root_item)))
->  		goto out;
->  
-> -	iref = (struct btrfs_extent_inline_ref *)(ei + 1);
-> -
->  	/* If this extent has SHARED_DATA_REF then it's shared */
->  	type = btrfs_get_extent_inline_ref_type(leaf, iref, BTRFS_REF_TYPE_DATA);
->  	if (type != BTRFS_EXTENT_DATA_REF_KEY)
-> @@ -4543,18 +4564,23 @@ static int alloc_reserved_file_extent(struct btrfs_trans_handle *trans,
->  	struct btrfs_root *extent_root;
->  	int ret;
->  	struct btrfs_extent_item *extent_item;
-> +	struct btrfs_extent_owner_ref *oref;
->  	struct btrfs_extent_inline_ref *iref;
->  	struct btrfs_path *path;
->  	struct extent_buffer *leaf;
->  	int type;
->  	u32 size;
-> +	bool simple_quota = btrfs_qgroup_mode(fs_info) == BTRFS_QGROUP_MODE_SIMPLE;
-
-	const bool simple_quota = (btrfs_qgroup_mode(fs_info) == BTRFS_QGROUP_MODE_SIMPLE);
-
->  
->  	if (parent > 0)
->  		type = BTRFS_SHARED_DATA_REF_KEY;
->  	else
->  		type = BTRFS_EXTENT_DATA_REF_KEY;
->  
-> -	size = sizeof(*extent_item) + btrfs_extent_inline_ref_size(type);
-> +	size = sizeof(*extent_item);
-> +	if (simple_quota)
-> +		size += btrfs_extent_inline_ref_size(BTRFS_EXTENT_OWNER_REF_KEY);
-> +	size += btrfs_extent_inline_ref_size(type);
->  
->  	path = btrfs_alloc_path();
->  	if (!path)
-> @@ -4575,8 +4601,16 @@ static int alloc_reserved_file_extent(struct btrfs_trans_handle *trans,
->  	btrfs_set_extent_flags(leaf, extent_item,
->  			       flags | BTRFS_EXTENT_FLAG_DATA);
->  
-> +
-
-Stray newline
-
->  	iref = (struct btrfs_extent_inline_ref *)(extent_item + 1);
-> +	if (simple_quota) {
-> +		btrfs_set_extent_inline_ref_type(leaf, iref, BTRFS_EXTENT_OWNER_REF_KEY);
-> +		oref = (struct btrfs_extent_owner_ref *)(&iref->offset);
-> +		btrfs_set_extent_owner_ref_root_id(leaf, oref, root_objectid);
-> +		iref = (struct btrfs_extent_inline_ref *)(oref + 1);
-> +	}
->  	btrfs_set_extent_inline_ref_type(leaf, iref, type);
-> +
->  	if (parent > 0) {
->  		struct btrfs_shared_data_ref *ref;
->  		ref = (struct btrfs_shared_data_ref *)(iref + 1);
-> diff --git a/fs/btrfs/print-tree.c b/fs/btrfs/print-tree.c
-> index aa06d9ca911d..3fac15ce0db0 100644
-> --- a/fs/btrfs/print-tree.c
-> +++ b/fs/btrfs/print-tree.c
-> @@ -80,12 +80,20 @@ static void print_extent_data_ref(const struct extent_buffer *eb,
->  	       btrfs_extent_data_ref_count(eb, ref));
->  }
->  
-> +static void print_extent_owner_ref(const struct extent_buffer *eb,
-> +				   struct btrfs_extent_owner_ref *ref)
-
-ref type can be also made const
-
-> +{
-> +	WARN_ON(!btrfs_fs_incompat(eb->fs_info, SIMPLE_QUOTA));
-
-ASSERT()
-
-> +	pr_cont("extent data owner root %llu\n", btrfs_extent_owner_ref_root_id(eb, ref));
-> +}
-> +
->  static void print_extent_item(const struct extent_buffer *eb, int slot, int type)
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index fa18ea7ef8e3..38e714661286 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -1218,7 +1218,8 @@ int btrfs_forget_devices(dev_t devt)
+>   * and we are not allowed to call set_blocksize during the scan. The superblock
+>   * is read via pagecache
+>   */
+> -struct btrfs_device *btrfs_scan_one_device(const char *path, blk_mode_t flags)
+> +struct btrfs_device *btrfs_scan_one_device(const char *path, blk_mode_t flags,
+> +					   bool mount_arg_dev)
 >  {
->  	struct btrfs_extent_item *ei;
->  	struct btrfs_extent_inline_ref *iref;
->  	struct btrfs_extent_data_ref *dref;
->  	struct btrfs_shared_data_ref *sref;
-> +	struct btrfs_extent_owner_ref *oref;
->  	struct btrfs_disk_key key;
->  	unsigned long end;
->  	unsigned long ptr;
-> @@ -159,6 +167,10 @@ static void print_extent_item(const struct extent_buffer *eb, int slot, int type
->  			"\t\t\t(parent %llu not aligned to sectorsize %u)\n",
->  				     offset, eb->fs_info->sectorsize);
->  			break;
-> +		case BTRFS_EXTENT_OWNER_REF_KEY:
-> +			oref = (struct btrfs_extent_owner_ref *)(&iref->offset);
-> +			print_extent_owner_ref(eb, oref);
-> +			break;
->  		default:
->  			pr_cont("(extent %llu has INVALID ref type %d)\n",
->  				  eb->start, type);
-> diff --git a/fs/btrfs/ref-verify.c b/fs/btrfs/ref-verify.c
-> index b7b3bd86f5e2..c0660233feb4 100644
-> --- a/fs/btrfs/ref-verify.c
-> +++ b/fs/btrfs/ref-verify.c
-> @@ -485,6 +485,9 @@ static int process_extent_item(struct btrfs_fs_info *fs_info,
->  			ret = add_shared_data_ref(fs_info, offset, count,
->  						  key->objectid, key->offset);
->  			break;
-> +		case BTRFS_EXTENT_OWNER_REF_KEY:
-> +			WARN_ON(!btrfs_fs_incompat(fs_info, SIMPLE_QUOTA));
-> +			break;
->  		default:
->  			btrfs_err(fs_info, "invalid key type in iref");
->  			ret = -EINVAL;
-> diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-> index 038dfa8f1788..72d29ab74a01 100644
-> --- a/fs/btrfs/tree-checker.c
-> +++ b/fs/btrfs/tree-checker.c
-> @@ -1451,6 +1451,9 @@ static int check_extent_item(struct extent_buffer *leaf,
->  			}
->  			inline_refs += btrfs_shared_data_ref_count(leaf, sref);
->  			break;
-> +		case BTRFS_EXTENT_OWNER_REF_KEY:
-> +			WARN_ON(!btrfs_fs_incompat(fs_info, SIMPLE_QUOTA));
-> +			break;
->  		default:
->  			extent_err(leaf, slot, "unknown inline ref type: %u",
->  				   inline_type);
-> diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
-> index 47aca414a41b..eacb26caf3c6 100644
-> --- a/include/uapi/linux/btrfs_tree.h
-> +++ b/include/uapi/linux/btrfs_tree.h
-> @@ -226,6 +226,8 @@
+>  	struct btrfs_super_block *disk_super;
+>  	bool new_device_added = false;
+> @@ -1263,10 +1264,19 @@ struct btrfs_device *btrfs_scan_one_device(const char *path, blk_mode_t flags)
+>  		goto error_bdev_put;
+>  	}
 >  
->  #define BTRFS_SHARED_DATA_REF_KEY	184
->  
-> +#define BTRFS_EXTENT_OWNER_REF_KEY	190
+> +	if (!mount_arg_dev && btrfs_super_num_devices(disk_super) == 1 &&
+> +	    !(btrfs_super_flags(disk_super) & BTRFS_SUPER_FLAG_SEEDING)) {
+> +		pr_info("skip registering single non seed device path %s\n",
+> +			path);
 
-Please add some description of the new key and use number 188 so it
-leaves roughly equal space around it.
+Wouldn't this be too noisy in the logs? With the scanning and
+registration repeated scans of a device there will be only the first
+message, but on a system with potentially many single-dev devices each
+time udev would want to scan it and it'd get logged.
 
+> +		device = NULL;
+> +		goto free_disk_super;
+> +	}
 > +
->  /*
->   * block groups give us hints into the extent allocation trees.  Which
->   * blocks are free etc etc
-> @@ -783,6 +785,10 @@ struct btrfs_shared_data_ref {
->  	__le32 count;
->  } __attribute__ ((__packed__));
+>  	device = device_list_add(path, disk_super, &new_device_added);
+>  	if (!IS_ERR(device) && new_device_added)
+>  		btrfs_free_stale_devices(device->devt, device);
 >  
-> +struct btrfs_extent_owner_ref {
-> +	__le64 root_id;
-> +} __attribute__ ((__packed__));
-> +
->  struct btrfs_extent_inline_ref {
->  	__u8 type;
->  	__le64 offset;
-> -- 
-> 2.41.0
+> +free_disk_super:
+>  	btrfs_release_disk_super(disk_super);
+>  
+>  error_bdev_put:

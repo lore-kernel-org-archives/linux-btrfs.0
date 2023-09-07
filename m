@@ -2,220 +2,251 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 77AF1EC8743
-	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Sep 2023 15:36:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8EF09EC873D
+	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Sep 2023 15:51:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S243136AbjIGPfg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 7 Sep 2023 11:35:36 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35380 "EHLO
+        id S243229AbjIGPvz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 7 Sep 2023 11:51:55 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49076 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1344285AbjIGPcv (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Sep 2023 11:32:51 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 815471FE5
-        for <linux-btrfs@vger.kernel.org>; Thu,  7 Sep 2023 08:32:30 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id DEB9A21870;
-        Thu,  7 Sep 2023 11:53:11 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1694087591;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=0mSWy/o6gcv6wq+9Jgr/Mcb0vkzeQsZDog6MWuL/Asw=;
-        b=hLx133LrLqTbt8hrOMzNnaZqSpNd+YsaPLRwP+3hRIL0eX7m1OLeJYJI65BrgXJfp7Co8/
-        R97x4uP3BWQGP66M0e6QxTyuhPRIYd2oMt+tsPfdXERKjVQIknXBVti4hzh88HdEXvpOEM
-        YER3YnxLTu6dxv1VFM0tHTb6LpzM4Vs=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1694087591;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=0mSWy/o6gcv6wq+9Jgr/Mcb0vkzeQsZDog6MWuL/Asw=;
-        b=+EAg8wMVHh7aZ6Sc0Q5lptVTzaeKbpX/Q+nu+WHmUf9WQUDNzIo+qHgs8dDJ9Quh/vhWZt
-        aKJqCngqxbDZPjAQ==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id B4774138F9;
-        Thu,  7 Sep 2023 11:53:11 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id XCU5K6e5+WRSCAAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Thu, 07 Sep 2023 11:53:11 +0000
-Date:   Thu, 7 Sep 2023 13:46:39 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Boris Burkov <boris@bur.io>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH v5 07/18] btrfs: function for recording simple quota
- deltas
-Message-ID: <20230907114639.GF3159@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1690495785.git.boris@bur.io>
- <85ff3dcd358a340f89e93a09eafd02e051944bcd.1690495785.git.boris@bur.io>
+        with ESMTP id S245473AbjIGPgj (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Sep 2023 11:36:39 -0400
+Received: from fanzine2.igalia.com (fanzine2.igalia.com [213.97.179.56])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9DFCE1FEF;
+        Thu,  7 Sep 2023 08:36:13 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=igalia.com;
+        s=20170329; h=Content-Transfer-Encoding:Content-Type:In-Reply-To:From:
+        References:Cc:To:Subject:MIME-Version:Date:Message-ID:Sender:Reply-To:
+        Content-ID:Content-Description:Resent-Date:Resent-From:Resent-Sender:
+        Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:List-Unsubscribe:
+        List-Subscribe:List-Post:List-Owner:List-Archive;
+        bh=15P0rxQmct0H/vxkeXgXMbJboUm3Wf8cAnjBEyPzXk8=; b=mQjaRNaqtU6hXc+r/oaKH0ipIj
+        yK9pXs0w+8uqMI5SYGjLaaglGoQoAemOFBz/kqBuRjnvw4wxrFrWAJ4Nlt+q3TNlW97LxTGYcL0zw
+        f09VYyFofiiipJYvVQjyD6vPrboCxydNB+yLRApcltA4paVzAaMWbCP2pIv5tIBSKafCppXeP6+WQ
+        tZdPgl32xnBVtPJhLXKo5pYKp9zZmsUDdyeU10K9W8jvykreVx7wcakPoKD3db7IRf96UdAQJhATH
+        fvi79wYjyuOOGG0fiWS3tR+/jcVGiGOspg8g3X/9NJqA7IJRdWfjNcLHFsNbN0y8ERoZdT3iIU45D
+        PF1D33Rw==;
+Received: from [179.232.147.2] (helo=[192.168.0.5])
+        by fanzine2.igalia.com with esmtpsa 
+        (Cipher TLS1.3:ECDHE_X25519__RSA_PSS_RSAE_SHA256__AES_128_GCM:128) (Exim)
+        id 1qeGaa-000YCI-PE; Thu, 07 Sep 2023 17:06:36 +0200
+Message-ID: <e73ba527-52e8-4795-a2e6-33a9298a58a1@igalia.com>
+Date:   Thu, 7 Sep 2023 12:06:27 -0300
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <85ff3dcd358a340f89e93a09eafd02e051944bcd.1690495785.git.boris@bur.io>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.15.0
+Subject: Re: [PATCH V3 2/2] btrfs: Introduce the single-dev feature
+Content-Language: en-US
+To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+Cc:     clm@fb.com, josef@toxicpanda.com, dsterba@suse.com,
+        linux-fsdevel@vger.kernel.org, kernel@gpiccoli.net,
+        kernel-dev@igalia.com, david@fromorbit.com, kreijack@libero.it,
+        johns@valvesoftware.com, ludovico.denittis@collabora.com,
+        quwenruo.btrfs@gmx.com, wqu@suse.com, vivek@collabora.com
+References: <20230831001544.3379273-1-gpiccoli@igalia.com>
+ <20230831001544.3379273-3-gpiccoli@igalia.com>
+ <f700b53e-328d-cc69-937f-e4b8bfd8c37d@oracle.com>
+From:   "Guilherme G. Piccoli" <gpiccoli@igalia.com>
+In-Reply-To: <f700b53e-328d-cc69-937f-e4b8bfd8c37d@oracle.com>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Jul 27, 2023 at 03:12:54PM -0700, Boris Burkov wrote:
-> Rather than re-computing shared/exclusive ownership based on backrefs
-> and walking roots for implicit backrefs, simple quotas does an increment
-> when creating an extent and a decrement when deleting it. Add the API
-> for the extent item code to use to track those events.
+Hi Anand, thanks for the feedback / review, much appreciated!
+You're definitely helping a lot with this patch =)
+
+
+On 06/09/2023 13:14, Anand Jain wrote:
+> [...]
+>> Anand: the distinction of fsid/metadata_uuid is indeed required on
+>> btrfs_validate_super() - since we don't write the virtual/rand fsid to
+>> the disk, and such function operates on the superblock that is read
+>> from the disk, it fails for the single_dev case unless we condition check
+>> there - thanks for noticing that though, was interesting to experiment
+>> and validate =)
 > 
-> Also add a helper function to make collecting parent qgroups in a ulist
-> easier for functions like this.
+> Yep, that makes sense. Thanks. I have added cases 1 and 2 in an upcoming
+> patch, and as part of this patch, you could add case 3 as below. Case 4
+> is just for discussion.
 > 
-> Signed-off-by: Boris Burkov <boris@bur.io>
-> ---
->  fs/btrfs/qgroup.c | 73 +++++++++++++++++++++++++++++++++++++++++++++++
->  fs/btrfs/qgroup.h | 11 ++++++-
->  2 files changed, 83 insertions(+), 1 deletion(-)
 > 
-> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-> index 8e3a4ced3077..dedc532669f4 100644
-> --- a/fs/btrfs/qgroup.c
-> +++ b/fs/btrfs/qgroup.c
-> @@ -332,6 +332,35 @@ static int del_relation_rb(struct btrfs_fs_info *fs_info,
->  	return -ENOENT;
->  }
->  
-> +static int qgroup_collect_parents(struct btrfs_qgroup *qgroup,
-> +				  struct ulist *ul)
-> +{
-> +	struct ulist_iterator uiter;
-> +	struct ulist_node *unode;
-> +	struct btrfs_qgroup_list *glist;
-> +	struct btrfs_qgroup *qg;
-> +	int ret = 0;
-> +
-> +	ulist_reinit(ul);
-> +	ret = ulist_add(ul, qgroup->qgroupid,
-> +			qgroup_to_aux(qgroup), GFP_ATOMIC);
+> 1. Normally
+> 
+>      fs_devices->fsid == fs_devices->metadata_uuid == sb->fsid;
+>      sb->metadata_uuid == 0;
+> 
+> 2. BTRFS_FEATURE_INCOMPAT_METADATA_UUID
+> 
+>      fs_devices->fsid == sb->fsid;
+>      fs_devices->metadata_uuid == sb->metadata_uuid;
+> 
+> 
+> 3. BTRFS_FEATURE_COMPAT_RO_SINGLE_DEV
+> 
+>      fs_devices->fsid == random();
+>      fs_devices->metadata_uuid = sb->fsid;
+>      sb->metadata_uuid == 0;
+> 
+> 
+> 
+> For future development: (ignore for now)
+> 
+> 4. BTRFS_FEATURE_INCOMPAT_METADATA_UUID |\
+>      BTRFS_FEATURE_COMPAT_RO_SINGLE_DEV
+> 
+>      fs_devices->fsid == random();
+>      sb->fsid == actual_fsid (unused);
+>      fs_devices->metadata_uuid == sb->metadata_uuid;
+> 
+This is a very good way of expressing the differences, quite good as
+documentation! Thanks for that, it makes sense for me.
 
-Qu has sent a series to get rid of the GFP_ATOMIC allocations when
-processing qgruops, so this would be good to port to the qgroup
-iterators as well but it's a recent change and can be done later as an
-optimization.
+What do you mean by "you could add case 3 as below"? I'm already doing
+that in the code, correct? Or do you mean somehow document that? I guess
+this could be kinda copy/paste as a comment or in the wiki, for example.
 
-> +	if (ret < 0)
-> +		goto out;
-> +	ULIST_ITER_INIT(&uiter);
-> +	while ((unode = ulist_next(ul, &uiter))) {
-> +		qg = unode_aux_to_qgroup(unode);
-> +		list_for_each_entry(glist, &qg->groups, next_group) {
-> +			ret = ulist_add(ul, glist->group->qgroupid,
-> +					qgroup_to_aux(glist->group), GFP_ATOMIC);
-> +			if (ret < 0)
-> +				goto out;
-> +		}
-> +	}
-> +	ret = 0;
-> +out:
-> +	return ret;
-> +}
-> +
->  #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
->  int btrfs_verify_qgroup_counts(struct btrfs_fs_info *fs_info, u64 qgroupid,
->  			       u64 rfer, u64 excl)
-> @@ -4535,3 +4564,47 @@ void btrfs_qgroup_destroy_extent_records(struct btrfs_transaction *trans)
->  	}
->  	*root = RB_ROOT;
->  }
-> +
-> +int btrfs_record_simple_quota_delta(struct btrfs_fs_info *fs_info,
+[Looking in the list I think I found a patch from you adding these
+comments to volumes.h =) ]
 
-You can abbreviate all the 'simple_quota' in identifiers as 'squota'.
+> [...]
+>> +		btrfs_err(fs_info,
+>> +			  "device removal is unsupported on SINGLE_DEV devices\n");
+> 
+> No \n at the end. btrfs_err() already adds one.
+> 
+>> +		btrfs_err(fs_info,
+>> +			  "device removal is unsupported on SINGLE_DEV devices\n");
+> 
+> here too.
+>> +		btrfs_err(fs_info,
+>> +			  "device replace is unsupported on SINGLE_DEV devices\n");
+> 
+> and here.
+> 
 
-> +				    struct btrfs_simple_quota_delta *delta)
-> +{
-> +	int ret;
-> +	struct ulist *ul = fs_info->qgroup_ulist;
-> +	struct btrfs_qgroup *qgroup;
-> +	struct ulist_iterator uiter;
-> +	struct ulist_node *unode;
-> +	struct btrfs_qgroup *qg;
-> +	u64 root = delta->root;
-> +	u64 num_bytes = delta->num_bytes;
-> +	int sign = delta->is_inc ? 1 : -1;
+Good catch, will fix that!
 
-	const int sign = (delta->is_inc ? 1 : -1);
 
-> +
-> +	if (btrfs_qgroup_mode(fs_info) != BTRFS_QGROUP_MODE_SIMPLE)
-> +		return 0;
-> +
-> +	if (!is_fstree(root))
-> +		return 0;
-> +
-> +	spin_lock(&fs_info->qgroup_lock);
-> +	qgroup = find_qgroup_rb(fs_info, root);
-> +	if (!qgroup) {
-> +		ret = -ENOENT;
-> +		goto out;
-> +	}
-> +	ret = qgroup_collect_parents(qgroup, ul);
-> +	if (ret)
-> +		goto out;
-> +
-> +	ULIST_ITER_INIT(&uiter);
-> +	while ((unode = ulist_next(ul, &uiter))) {
-> +		qg = unode_aux_to_qgroup(unode);
-> +		qg->excl += num_bytes * sign;
-> +		qg->rfer += num_bytes * sign;
-> +		qgroup_dirty(fs_info, qg);
-> +	}
-> +
-> +out:
-> +	spin_unlock(&fs_info->qgroup_lock);
-> +	if (!ret && delta->rsv_bytes)
-> +		btrfs_qgroup_free_refroot(fs_info, root, delta->rsv_bytes, BTRFS_QGROUP_RSV_DATA);
-> +	return ret;
-> +}
-> diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-> index d4c4d039585f..94d85b4fbebd 100644
-> --- a/fs/btrfs/qgroup.h
-> +++ b/fs/btrfs/qgroup.h
-> @@ -235,6 +235,14 @@ struct btrfs_qgroup {
->  	struct kobject kobj;
->  };
->  
-> +struct btrfs_simple_quota_delta {
+> [...]
+>> @@ -889,7 +889,7 @@ static int btrfs_parse_device_options(const char *options, blk_mode_t flags)
+>>   				error = -ENOMEM;
+>>   				goto out;
+>>   			}
+>> -			device = btrfs_scan_one_device(device_name, flags);
+> 
+>> +			device = btrfs_scan_one_device(device_name, flags, true);
+> 
+> Why do we have to pass 'true' in btrfs_scan_one_device() here? It is
+> single device and I don't see any special handle for the seed device.
+>>   	case BTRFS_IOC_SCAN_DEV:
+>>   		mutex_lock(&uuid_mutex);
+>> -		device = btrfs_scan_one_device(vol->name, BLK_OPEN_READ);
+>> +		device = btrfs_scan_one_device(vol->name, BLK_OPEN_READ, false);
+>>   		ret = PTR_ERR_OR_ZERO(device);
+>>   		mutex_unlock(&uuid_mutex);
+>>   		break;
+>> @@ -2210,7 +2210,7 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
+>>   		break;
+>>   	case BTRFS_IOC_DEVICES_READY:
+>>   		mutex_lock(&uuid_mutex);
+>> -		device = btrfs_scan_one_device(vol->name, BLK_OPEN_READ);
+>> +		device = btrfs_scan_one_device(vol->name, BLK_OPEN_READ, false);
+>>   		if (IS_ERR(device)) {
+>>   			mutex_unlock(&uuid_mutex);
+>>   			ret = PTR_ERR(device);
+> 
+> With this patch, command 'btrfs device scan' and 'btrfs device ready'
+> returns -EINVAL for the single-device?  Some os distributions checks
+> the status using these commands during boot. Instead, it is ok to
+> just return success here.
 
-struct btrfs_squota_delta
+These are related things. So, regarding the
+btrfs_parse_device_options(), as per my understanding this a mount
+option that causes a device scan - so, it is a mount-time operation
+somehow, correct? But I'm glad to s/true/false and prevent such
+scanning, if you think it's more appropriate.
 
-> +	u64 root; /* The fstree root this delta counts against */
-> +	u64 num_bytes; /* The number of bytes in the extent being counted */
-> +	u64 rsv_bytes; /* The number of bytes reserved for this extent */
-> +	bool is_inc; /* Whether we are using or freeing the extent */
-> +	bool is_data; /* Whether the extent is data or metadata */
+Now, about "just return success" on device scans, just return 0 then? OK
+for me...
 
-Please put the comments on separate lines before the struct member definitions.
 
-> +};
-> +
->  static inline u64 btrfs_qgroup_subvolid(u64 qgroupid)
->  {
->  	return (qgroupid & ((1ULL << BTRFS_QGROUP_LEVEL_SHIFT) - 1));
-> @@ -447,5 +455,6 @@ int btrfs_qgroup_trace_subtree_after_cow(struct btrfs_trans_handle *trans,
->  		struct btrfs_root *root, struct extent_buffer *eb);
->  void btrfs_qgroup_destroy_extent_records(struct btrfs_transaction *trans);
->  bool btrfs_check_quota_leak(struct btrfs_fs_info *fs_info);
-> -
-> +int btrfs_record_simple_quota_delta(struct btrfs_fs_info *fs_info,
-> +				    struct btrfs_simple_quota_delta *delta);
+> [...] 
+>> +	if (single_dev) {
+>> +		if (has_metadata_uuid || fsid_change_in_progress) {
+>> +			btrfs_err(NULL,
+>> +		"SINGLE_DEV devices don't support the metadata_uuid feature\n");
+>> +			return ERR_PTR(-EINVAL);
+> 
+> It could right?
 
-Please keep the newline before the last #endif
+In theory, yes. But notice that we have a special situation with
+SINGLE_DEV - we make use of the metadata_uuid infrastructure
+*partially*; the in-memory structures are affected, but the superblock
+is not touched. Now, to support both metadata_uuid and SINGLE_DEV, it
+means for example that the user wants to mount two identical devices
+(with metadata_uuid enabled) at same time, which is not currently
+supported. But then SINGLE_DEV can't use metadata_uuid for that, since
+this infrastructure is in use already, we'd need to have like a third
+fsid entity, IIUC.
 
->  #endif
-> -- 
-> 2.41.0
+I think this could be achieved but I'm not sure the value for that, and
+specially in the first iteration of the patch. I'd vote to merge this as
+simple as possible and maybe extend that in the future to support
+co-existing metadata_uuid, if that makes sense for some users. OK for you?
+
+
+> [...]
+>> @@ -1402,6 +1444,16 @@ struct btrfs_device *btrfs_scan_one_device(const char *path, blk_mode_t flags)
+>>   		goto error_bdev_put;
+>>   	}
+>>   
+>> +	single_dev = btrfs_super_compat_ro_flags(disk_super) &
+>> +			BTRFS_FEATURE_COMPAT_RO_SINGLE_DEV;
+>> +
+>> +	if (!mounting && single_dev) {
+>> +		pr_info("BTRFS: skipped non-mount scan on SINGLE_DEV device %s\n",
+>> +			path);
+>> +		btrfs_release_disk_super(disk_super);
+> 
+> leaks bdev?
+> 
+
+Ugh, apparently yes, thanks for noticing this!
+
+
+>> +		return ERR_PTR(-EINVAL);
+> 
+> We need to let seed device scan even for the single device.
+> 
+> In fact we can make no-scan required for the any fs with the total_devs 
+> == 1.
+> 
+> I wrote a patch send it out for the review. So no special handling for
+> single-device will be required.
+
+This one?
+https://lore.kernel.org/linux-btrfs/b0e0240254557461c137cd9b943f00b0d5048083.1693959204.git.anand.jain@oracle.com/
+
+OK, seems it does directly affect my patch, if yours is merged I can
+remove part of the code I'm proposing, which is nice. I'll wait David /
+Josef feedback on your patch to move on from here, if that's accepted,
+I'll incorporate yours in my next iteration.
+--
+
+If possible, could you CC me in your patches related to metadata_uuid
+and fsid for now, since I'm also working on that? This helps me to be
+aware of the stuff.
+
+For example, looking in the list, I just found:
+https://lore.kernel.org/linux-btrfs/0b71460e3a52cf77cd0f7d533e28d2502e285c11.1693820430.git.anand.jain@oracle.com/
+
+This is the perfect place to add the comment above, related to fsid's
+right? I'll do that in my next version.
+
+Thanks,
+
+
+Guilherme
+

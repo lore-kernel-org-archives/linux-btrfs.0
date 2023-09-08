@@ -2,89 +2,187 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 88CD8EE7FE3
-	for <linux-btrfs@archiver.kernel.org>; Fri,  8 Sep 2023 12:15:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 70E1EEE7FE8
+	for <linux-btrfs@archiver.kernel.org>; Fri,  8 Sep 2023 12:40:27 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S243228AbjIHMPL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 8 Sep 2023 08:15:11 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50882 "EHLO
+        id S243264AbjIHMk3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 8 Sep 2023 08:40:29 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48002 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229713AbjIHMPK (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Sep 2023 08:15:10 -0400
+        with ESMTP id S237726AbjIHMk3 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Sep 2023 08:40:29 -0400
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7ADE01BFB
-        for <linux-btrfs@vger.kernel.org>; Fri,  8 Sep 2023 05:15:06 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A6B5A1FC6
+        for <linux-btrfs@vger.kernel.org>; Fri,  8 Sep 2023 05:40:23 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 1DBE621B7B;
-        Fri,  8 Sep 2023 12:15:05 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 6466221BAA;
+        Fri,  8 Sep 2023 12:40:22 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1694175305;
+        t=1694176822;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=JSUDeN7EBtQqY6qVI3X8EK72wu0xe0JRGbO+ae5eeSY=;
-        b=jqkXF7GxUO1cCrEdB56rwvJzk6CeavXR+kZaKtPSM3mCNBMZ13asmTlDciD6dMeFuYszP1
-        P18E52LDhcCeoMnBrdOBl4xMPEUJWhno/MSqWQ8zMq7R/yhN8EQIkj9QVGqAA8hUl/3CfC
-        m5ho9PaDFkmbr7BhYkM/GkUQugGMf7k=
+        bh=DS15BjzWidChula0by5R534iDjPEyTmog9P8hxKEBFI=;
+        b=wjWOXwuq+DhmZ5tCGjAYb+yGTYUijP+wALI9Y9ZCNHqZ0lAn5jfZscJM33MYCYDKMosA4G
+        2YAfS4CUFS1BdspUavOvuIJypCe767jGDdPxeI+UXujI5MOQZ5zC78ECKWbqOVkIxqoi+t
+        M40r2FdARtmwi+k489ELswfdjwQAVd0=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1694175305;
+        s=susede2_ed25519; t=1694176822;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=JSUDeN7EBtQqY6qVI3X8EK72wu0xe0JRGbO+ae5eeSY=;
-        b=s2txbfJNl8ZWYbxUk24/Q3nPO8mpciJd39ZFyad04n4ntCey8EAIOff/bhgxIyDgDM/Ole
-        mmCHhC3ZxQLvsaCA==
+        bh=DS15BjzWidChula0by5R534iDjPEyTmog9P8hxKEBFI=;
+        b=l4WCn6CiJXkoqkLQYF6Rp3ifDsjsi8BwvYPYb2TmKuH90EK92SnvCJQoWlNNBs+OEDO8/P
+        pIdVPmoqHBEK3yCw==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id E9982132F2;
-        Fri,  8 Sep 2023 12:15:04 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 2456F131FD;
+        Fri,  8 Sep 2023 12:40:22 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id l4xdOEgQ+2QsMwAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Fri, 08 Sep 2023 12:15:04 +0000
-Date:   Fri, 8 Sep 2023 14:08:32 +0200
+        id bU3qBzYW+2TdQAAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Fri, 08 Sep 2023 12:40:22 +0000
+Date:   Fri, 8 Sep 2023 14:33:49 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH 0/3] btrfs-progs: add eb leak detection and fixes
-Message-ID: <20230908120832.GW3159@twin.jikos.cz>
+To:     David Sterba <dsterba@suse.cz>
+Cc:     Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 03/10] btrfs: drop __must_check annotations
+Message-ID: <20230908123349.GX3159@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <cover.1693945163.git.josef@toxicpanda.com>
+References: <cover.1694126893.git.dsterba@suse.com>
+ <565b63e6e34c122ca9bbe1e0272f43d6327a6316.1694126893.git.dsterba@suse.com>
+ <ef9b407d-b9ac-487d-8194-6a26e4cafb21@gmx.com>
+ <20230908003415.GT3159@twin.jikos.cz>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <cover.1693945163.git.josef@toxicpanda.com>
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <20230908003415.GT3159@twin.jikos.cz>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Sep 05, 2023 at 04:21:50PM -0400, Josef Bacik wrote:
-> Hello,
+On Fri, Sep 08, 2023 at 02:34:15AM +0200, David Sterba wrote:
+> On Fri, Sep 08, 2023 at 07:56:24AM +0800, Qu Wenruo wrote:
+> > 
+> > 
+> > On 2023/9/8 07:09, David Sterba wrote:
+> > > Drop all __must_check annotations because they're used in random
+> > > functions and not consistently. All errors should be handled.
+> > 
+> > Is there any compiler warning option to warn about unchecked return value?
 > 
-> I introduced an EB leak that we only discovered when we started running fstests
-> with my code applied to the btrfs-progs devel branch.  We really want to detect
-> this before we start using this code for fstests, so update all the run_check
-> related helpers to use a helper that will check for extent buffer leaks and fail
-> accordingly.  This will allow developers to discover they've introduced a
-> problem when they run make test after their changes.
+> By default this is checked for functions annotated by warn_unused_result
+> attribute, which is exactly what __must_check does. The check can be
+> disabled but that's not what we want.
 > 
-> This functionality of course uncovered a few leaks that currently exist in
-> btrfs-progs, so there are two fixes that precede the leak detection work in
-> order to make sure we are clean from the leak detection commit ondwards.
-> Thanks,
+> > In fact recently when working on qgroup GFP_ATOMIC, I found a call site
+> > that we didn't handle error at all (qgroup_update_counters()).
 > 
-> Josef
+> A quick way how to check if a given function is properly handled is to
+> add the __must_check attribute and run build. For qgroup_update_counters
+> this is found right away:
 > 
-> Josef Bacik (3):
->   btrfs-progs: cleanup dirty buffers on transaction abort
->   btrfs-progs: properly cleanup aborted transactions in check
->   btrfs-progs: add extent buffer leak detection to make test
+>   CC [M]  fs/btrfs/qgroup.o
+> fs/btrfs/qgroup.c: In function ‘btrfs_qgroup_account_extent’:
+> fs/btrfs/qgroup.c:2736:9: warning: ignoring return value of ‘qgroup_update_counters’ declared with attribute ‘warn_unused_result’ [-Wunused-result]
+>  2736 |         qgroup_update_counters(fs_info, qgroups, nr_old_roots, nr_new_roots,
+>       |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+>  2737 |                                num_bytes, seq);
+>       |                                ~~~~~~~~~~~~~~~
+> 
+> > I'm pretty sure that is not the last one.
+> 
+> Yeah but we'd have to add the attribute to most if not all functions. It
+> could be possibly automated using coccinnelle scripts, list functions,
+> apply a semantic patch to add the attribute, compile it and get the
+> results. A quick test shows it's doable.
 
-1 and 2 added to devel, the leak detection is done in a different way,
-thanks.
+We have 3179 functions, lots of them return void (but they might ignore
+return values from called functions so it does not mean they're safe).
+There are 65 Functions that don't have all their return values checked,
+which 2%.
+
+There are several that do the extent bit handling and we knowingly don't
+handle the errors because all fatal erros lead to panic. The remaining
+are a mixed bag, I tried to check a few randomly and it seems that the
+error handling could lead to bad situations.
+
+Ideally we should audit the whole list, and also maybe identify some key
+functions that should have the __must_check attribute, e.g.
+btrfs_commit_transaction (which is not in the list).
+
+add_async_extent
+add_delayed_ref_head
+add_extent_mapping
+add_ra_bio_pages
+addrm_unknown_feature_attrs
+btree_release_folio
+__btrfs_add_free_space
+btrfs_block_rsv_release
+btrfs_cache_block_group
+btrfs_cleanup_transaction
+__btrfs_commit_inode_delayed_items
+btrfs_del_item
+btrfs_do_readpage
+btrfs_end_transaction
+btrfs_finish_ordered_io
+btrfs_forget_devices
+btrfs_free_reserved_extent
+btrfs_free_stale_devices
+btrfs_grab_root
+btrfs_inode_lock
+btrfs_log_inode_parent
+btrfs_orphan_del
+btrfs_pin_extent
+btrfs_ref_tree_mod
+__btrfs_release_folio
+btrfs_release_folio
+btrfs_repair_eb_io_failure
+btrfs_reset_sb_log_zones
+__btrfs_run_defrag_inode
+btrfs_wait_block_group_cache_done
+btrfs_wq_run_delayed_node
+btrfs_zone_activate
+cache_save_setup
+clear_extent_bit
+clear_extent_bits
+clear_extent_dirty
+clear_extent_uptodate
+clear_state_bit
+del_qgroup_rb
+del_qgroup_relation_item
+del_relation_rb
+dev_extent_hole_check
+do_zone_finish
+fill_writer_pointer_gap
+find_next_key
+get_raid56_logic_offset
+inc_block_group_ro
+insert_root_entry
+invalidate_extent_cache
+link_free_space
+load_block_group_size_class
+maybe_fail_all_tickets
+pin_down_extent
+process_page_range
+push_for_double_split
+qgroup_unreserve_range
+qgroup_update_counters
+release_extent_buffer
+remove_from_discard_list
+tree_insert_offset
+try_merge_free_space
+unlock_extent
+unpin_extent_range
+update_backref_cache
+__update_reloc_root

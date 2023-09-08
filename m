@@ -2,35 +2,35 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A753CEE57CD
-	for <linux-btrfs@archiver.kernel.org>; Fri,  8 Sep 2023 17:20:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 697DEEEB563
+	for <linux-btrfs@archiver.kernel.org>; Fri,  8 Sep 2023 17:20:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S245219AbjIHRUx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 8 Sep 2023 13:20:53 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51464 "EHLO
+        id S245396AbjIHRUz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 8 Sep 2023 13:20:55 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57012 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S244687AbjIHRUu (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Sep 2023 13:20:50 -0400
+        with ESMTP id S244687AbjIHRUy (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Sep 2023 13:20:54 -0400
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 482881FCD
-        for <linux-btrfs@vger.kernel.org>; Fri,  8 Sep 2023 10:20:45 -0700 (PDT)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 5FBD0C433CA
-        for <linux-btrfs@vger.kernel.org>; Fri,  8 Sep 2023 17:20:44 +0000 (UTC)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 522EBCE6
+        for <linux-btrfs@vger.kernel.org>; Fri,  8 Sep 2023 10:20:50 -0700 (PDT)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 6CE84C433CB
+        for <linux-btrfs@vger.kernel.org>; Fri,  8 Sep 2023 17:20:49 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1694193644;
-        bh=QhsAYN1/B4SuD/xagbZC1aqcx7Yf80RfluZulI3MC/4=;
+        s=k20201202; t=1694193650;
+        bh=TxZmlvyZ6C3+PQhT/HuAYK6BHwt4zLCulzjUm+W5JL4=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=jlK2pjR91+HtXUVWqOJSQaCxdzD8qn8cAjo9YUHuKROpDxWvAxa0vQ7Ztb4mRG4RE
-         vbcjvpcqN0Qrly9V4/AtNneY1NR/XqcjOxsv1H9fvIfMdjh3g1dM8U0NDfBth/eq7h
-         3gJMjFPWqfbelPoJyzRArx7iuLmxG78UbCu7GCQ11SdPdJ1CKkWtAp1+f8qQG9vSz+
-         Rrrd8EPv4Gs1125zCXumzbqyNZTkYKXia/OFrvfKfHTQT314FHJfKtE6xZAjS0vYLf
-         c3pPZJ+7UzNs1NjJ9XxwzrnNo7gTTe8raegjXUYT/hxF1AAUXfWfbVnGSUidHFx59j
-         H2TSaRL5o6XrQ==
+        b=D32ko8QhbcGlJr4hwrcmX2aZhw2BzHWCtM0LNy8Sz3vilSW1CaGb/ag1IMe5EHD3d
+         /Kk+Cj2ZFEOm5SSpDn9kwDeeLQ0gJakNSFDsl+HMq2Z4G+LD9r/VfMgrNuiMJAGITP
+         B45UK/8tu5CVCwjYI+9rbaxgi+R98Ly94f3ecR7PUJqvxwbBwPpXXNZtASUOnPDQ24
+         TpQAL2Lz0e3Lu1MeCg7t7ABCjM+1S0J3jWz9kIaf9NkXjUMr7Xpte/ATdru+9R3WSf
+         zsei+gKo+LH+NNW7Hya0uqQ+uGdYox6S/v9xbuG+GcWcnAEmc/dPjdFanlw9LGtvEP
+         BAvoTrepwJWtA==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 03/21] btrfs: pass a space_info argument to btrfs_reserve_metadata_bytes()
-Date:   Fri,  8 Sep 2023 18:20:20 +0100
-Message-Id: <9c419540b416841b3661e837f310299cf64a6ba9.1694192469.git.fdmanana@suse.com>
+Subject: [PATCH v2 08/21] btrfs: remove refs_to_add argument from __btrfs_inc_extent_ref()
+Date:   Fri,  8 Sep 2023 18:20:25 +0100
+Message-Id: <ca230c04666d478f5601636705c12aa231095d7f.1694192469.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.34.1
 In-Reply-To: <cover.1694192469.git.fdmanana@suse.com>
 References: <cover.1694192469.git.fdmanana@suse.com>
@@ -42,191 +42,64 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-We are passing a block reserve argument to btrfs_reserve_metadata_bytes()
-which is not really used, all we need is to pass the space_info associated
-to the block reserve, we don't change the block reserve at all.
-
-Not only it's pointless to pass the block reserve, it's also confusing as
-one might think that the reserved bytes will end up being added to the
-passed block reserve, when that's not the case. The pattern for reserving
-space and adding it to a block reserve is to first reserve space with
-btrfs_reserve_metadata_bytes() and if that succeeds, then add the space to
-a block reserve by calling btrfs_block_rsv_add_bytes().
-
-Also the reverse of btrfs_reserve_metadata_bytes(), which is
-btrfs_space_info_free_bytes_may_use(), takes a space_info argument and
-not a block reserve, so one more reason to pass a space_info and not a
-block reserve to btrfs_reserve_metadata_bytes().
-
-So change btrfs_reserve_metadata_bytes() and its callers to pass a
-space_info argument instead of a block reserve argument.
+Currently the 'refs_to_add' argument of __btrfs_inc_extent_ref() always
+matches the value of node->ref_mod, so remove the argument and use
+node->ref_mod at __btrfs_inc_extent_ref().
 
 Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/block-rsv.c      | 12 +++++++-----
- fs/btrfs/delalloc-space.c |  3 ++-
- fs/btrfs/delayed-ref.c    |  6 +++---
- fs/btrfs/space-info.c     | 12 +++++-------
- fs/btrfs/space-info.h     |  2 +-
- fs/btrfs/transaction.c    |  3 ++-
- 6 files changed, 20 insertions(+), 18 deletions(-)
+ fs/btrfs/extent-tree.c | 9 ++++-----
+ 1 file changed, 4 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/block-rsv.c b/fs/btrfs/block-rsv.c
-index 77684c5e0c8b..6ccd91bbff3e 100644
---- a/fs/btrfs/block-rsv.c
-+++ b/fs/btrfs/block-rsv.c
-@@ -221,7 +221,8 @@ int btrfs_block_rsv_add(struct btrfs_fs_info *fs_info,
- 	if (num_bytes == 0)
- 		return 0;
- 
--	ret = btrfs_reserve_metadata_bytes(fs_info, block_rsv, num_bytes, flush);
-+	ret = btrfs_reserve_metadata_bytes(fs_info, block_rsv->space_info,
-+					   num_bytes, flush);
- 	if (!ret)
- 		btrfs_block_rsv_add_bytes(block_rsv, num_bytes, true);
- 
-@@ -261,7 +262,8 @@ int btrfs_block_rsv_refill(struct btrfs_fs_info *fs_info,
- 	if (!ret)
- 		return 0;
- 
--	ret = btrfs_reserve_metadata_bytes(fs_info, block_rsv, num_bytes, flush);
-+	ret = btrfs_reserve_metadata_bytes(fs_info, block_rsv->space_info,
-+					   num_bytes, flush);
- 	if (!ret) {
- 		btrfs_block_rsv_add_bytes(block_rsv, num_bytes, false);
- 		return 0;
-@@ -517,8 +519,8 @@ struct btrfs_block_rsv *btrfs_use_block_rsv(struct btrfs_trans_handle *trans,
- 				block_rsv->type, ret);
- 	}
- try_reserve:
--	ret = btrfs_reserve_metadata_bytes(fs_info, block_rsv, blocksize,
--					   BTRFS_RESERVE_NO_FLUSH);
-+	ret = btrfs_reserve_metadata_bytes(fs_info, block_rsv->space_info,
-+					   blocksize, BTRFS_RESERVE_NO_FLUSH);
- 	if (!ret)
- 		return block_rsv;
- 	/*
-@@ -539,7 +541,7 @@ struct btrfs_block_rsv *btrfs_use_block_rsv(struct btrfs_trans_handle *trans,
- 	 * one last time to force a reservation if there's enough actual space
- 	 * on disk to make the reservation.
- 	 */
--	ret = btrfs_reserve_metadata_bytes(fs_info, block_rsv, blocksize,
-+	ret = btrfs_reserve_metadata_bytes(fs_info, block_rsv->space_info, blocksize,
- 					   BTRFS_RESERVE_FLUSH_EMERGENCY);
- 	if (!ret)
- 		return block_rsv;
-diff --git a/fs/btrfs/delalloc-space.c b/fs/btrfs/delalloc-space.c
-index 427abaf608b8..a764db67c033 100644
---- a/fs/btrfs/delalloc-space.c
-+++ b/fs/btrfs/delalloc-space.c
-@@ -346,7 +346,8 @@ int btrfs_delalloc_reserve_metadata(struct btrfs_inode *inode, u64 num_bytes,
- 						 noflush);
- 	if (ret)
- 		return ret;
--	ret = btrfs_reserve_metadata_bytes(fs_info, block_rsv, meta_reserve, flush);
-+	ret = btrfs_reserve_metadata_bytes(fs_info, block_rsv->space_info,
-+					   meta_reserve, flush);
- 	if (ret) {
- 		btrfs_qgroup_free_meta_prealloc(root, qgroup_reserve);
- 		return ret;
-diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index 9fe4ccca50a0..0991f66471ff 100644
---- a/fs/btrfs/delayed-ref.c
-+++ b/fs/btrfs/delayed-ref.c
-@@ -154,6 +154,7 @@ int btrfs_delayed_refs_rsv_refill(struct btrfs_fs_info *fs_info,
- 				  enum btrfs_reserve_flush_enum flush)
- {
- 	struct btrfs_block_rsv *block_rsv = &fs_info->delayed_refs_rsv;
-+	struct btrfs_space_info *space_info = block_rsv->space_info;
- 	u64 limit = btrfs_calc_delayed_ref_bytes(fs_info, 1);
- 	u64 num_bytes = 0;
- 	u64 refilled_bytes;
-@@ -170,7 +171,7 @@ int btrfs_delayed_refs_rsv_refill(struct btrfs_fs_info *fs_info,
- 	if (!num_bytes)
- 		return 0;
- 
--	ret = btrfs_reserve_metadata_bytes(fs_info, block_rsv, num_bytes, flush);
-+	ret = btrfs_reserve_metadata_bytes(fs_info, space_info, num_bytes, flush);
- 	if (ret)
- 		return ret;
- 
-@@ -199,8 +200,7 @@ int btrfs_delayed_refs_rsv_refill(struct btrfs_fs_info *fs_info,
- 	spin_unlock(&block_rsv->lock);
- 
- 	if (to_free > 0)
--		btrfs_space_info_free_bytes_may_use(fs_info, block_rsv->space_info,
--						    to_free);
-+		btrfs_space_info_free_bytes_may_use(fs_info, space_info, to_free);
- 
- 	if (refilled_bytes > 0)
- 		trace_btrfs_space_reservation(fs_info, "delayed_refs_rsv", 0,
-diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index d7e8cd4f140c..ca7c702172fd 100644
---- a/fs/btrfs/space-info.c
-+++ b/fs/btrfs/space-info.c
-@@ -1742,7 +1742,7 @@ static int __reserve_bytes(struct btrfs_fs_info *fs_info,
-  * Try to reserve metadata bytes from the block_rsv's space.
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index cf503f2972a1..16e511f3d24b 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -1465,8 +1465,6 @@ int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
+  *		    always passed as 0. For data extents it is the fileoffset
+  *		    this extent belongs to.
   *
-  * @fs_info:    the filesystem
-- * @block_rsv:  block_rsv we're allocating for
-+ * @space_info: the space_info we're allocating for
-  * @orig_bytes: number of bytes we want
-  * @flush:      whether or not we can flush to make our reservation
+- * @refs_to_add     Number of references to add
+- *
+  * @extent_op       Pointer to a structure, holding information necessary when
+  *                  updating a tree block's flags
   *
-@@ -1754,21 +1754,19 @@ static int __reserve_bytes(struct btrfs_fs_info *fs_info,
-  * space already.
-  */
- int btrfs_reserve_metadata_bytes(struct btrfs_fs_info *fs_info,
--				 struct btrfs_block_rsv *block_rsv,
-+				 struct btrfs_space_info *space_info,
- 				 u64 orig_bytes,
- 				 enum btrfs_reserve_flush_enum flush)
+@@ -1474,7 +1472,7 @@ int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
+ static int __btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
+ 				  struct btrfs_delayed_ref_node *node,
+ 				  u64 parent, u64 root_objectid,
+-				  u64 owner, u64 offset, int refs_to_add,
++				  u64 owner, u64 offset,
+ 				  struct btrfs_delayed_extent_op *extent_op)
  {
+ 	struct btrfs_path *path;
+@@ -1484,6 +1482,7 @@ static int __btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
+ 	u64 bytenr = node->bytenr;
+ 	u64 num_bytes = node->num_bytes;
+ 	u64 refs;
++	int refs_to_add = node->ref_mod;
  	int ret;
  
--	ret = __reserve_bytes(fs_info, block_rsv->space_info, orig_bytes, flush);
-+	ret = __reserve_bytes(fs_info, space_info, orig_bytes, flush);
- 	if (ret == -ENOSPC) {
- 		trace_btrfs_space_reservation(fs_info, "space_info:enospc",
--					      block_rsv->space_info->flags,
--					      orig_bytes, 1);
-+					      space_info->flags, orig_bytes, 1);
- 
- 		if (btrfs_test_opt(fs_info, ENOSPC_DEBUG))
--			btrfs_dump_space_info(fs_info, block_rsv->space_info,
--					      orig_bytes, 0);
-+			btrfs_dump_space_info(fs_info, space_info, orig_bytes, 0);
- 	}
- 	return ret;
- }
-diff --git a/fs/btrfs/space-info.h b/fs/btrfs/space-info.h
-index 0bb9d14e60a8..ef0fac9c70ae 100644
---- a/fs/btrfs/space-info.h
-+++ b/fs/btrfs/space-info.h
-@@ -212,7 +212,7 @@ void btrfs_dump_space_info(struct btrfs_fs_info *fs_info,
- 			   struct btrfs_space_info *info, u64 bytes,
- 			   int dump_block_groups);
- int btrfs_reserve_metadata_bytes(struct btrfs_fs_info *fs_info,
--				 struct btrfs_block_rsv *block_rsv,
-+				 struct btrfs_space_info *space_info,
- 				 u64 orig_bytes,
- 				 enum btrfs_reserve_flush_enum flush);
- void btrfs_try_granting_tickets(struct btrfs_fs_info *fs_info,
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 1985ab543ad2..ee63d92d66b4 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -625,7 +625,8 @@ start_transaction(struct btrfs_root *root, unsigned int num_items,
- 			reloc_reserved = true;
- 		}
- 
--		ret = btrfs_reserve_metadata_bytes(fs_info, rsv, num_bytes, flush);
-+		ret = btrfs_reserve_metadata_bytes(fs_info, rsv->space_info,
-+						   num_bytes, flush);
- 		if (ret)
- 			goto reserve_fail;
- 		if (delayed_refs_bytes) {
+ 	path = btrfs_alloc_path();
+@@ -1562,7 +1561,7 @@ static int run_delayed_data_ref(struct btrfs_trans_handle *trans,
+ 	} else if (node->action == BTRFS_ADD_DELAYED_REF) {
+ 		ret = __btrfs_inc_extent_ref(trans, node, parent, ref_root,
+ 					     ref->objectid, ref->offset,
+-					     node->ref_mod, extent_op);
++					     extent_op);
+ 	} else if (node->action == BTRFS_DROP_DELAYED_REF) {
+ 		ret = __btrfs_free_extent(trans, node, parent,
+ 					  ref_root, ref->objectid,
+@@ -1710,7 +1709,7 @@ static int run_delayed_tree_ref(struct btrfs_trans_handle *trans,
+ 		ret = alloc_reserved_tree_block(trans, node, extent_op);
+ 	} else if (node->action == BTRFS_ADD_DELAYED_REF) {
+ 		ret = __btrfs_inc_extent_ref(trans, node, parent, ref_root,
+-					     ref->level, 0, 1, extent_op);
++					     ref->level, 0, extent_op);
+ 	} else if (node->action == BTRFS_DROP_DELAYED_REF) {
+ 		ret = __btrfs_free_extent(trans, node, parent, ref_root,
+ 					  ref->level, 0, 1, extent_op);
 -- 
 2.40.1
 

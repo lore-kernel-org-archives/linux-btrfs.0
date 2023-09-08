@@ -2,35 +2,35 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 697DEEEB563
-	for <linux-btrfs@archiver.kernel.org>; Fri,  8 Sep 2023 17:20:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2F28EEEB565
+	for <linux-btrfs@archiver.kernel.org>; Fri,  8 Sep 2023 17:20:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S245396AbjIHRUz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 8 Sep 2023 13:20:55 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57012 "EHLO
+        id S245406AbjIHRU4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 8 Sep 2023 13:20:56 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57042 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S244687AbjIHRUy (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Sep 2023 13:20:54 -0400
+        with ESMTP id S245399AbjIHRUz (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Sep 2023 13:20:55 -0400
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 522EBCE6
-        for <linux-btrfs@vger.kernel.org>; Fri,  8 Sep 2023 10:20:50 -0700 (PDT)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 6CE84C433CB
-        for <linux-btrfs@vger.kernel.org>; Fri,  8 Sep 2023 17:20:49 +0000 (UTC)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 59550199F
+        for <linux-btrfs@vger.kernel.org>; Fri,  8 Sep 2023 10:20:52 -0700 (PDT)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 7349AC433CD
+        for <linux-btrfs@vger.kernel.org>; Fri,  8 Sep 2023 17:20:51 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1694193650;
-        bh=TxZmlvyZ6C3+PQhT/HuAYK6BHwt4zLCulzjUm+W5JL4=;
+        s=k20201202; t=1694193652;
+        bh=LdoCaAHdILvGMagXDNJCdW6byGwG+gSiARwnBDld4c0=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=D32ko8QhbcGlJr4hwrcmX2aZhw2BzHWCtM0LNy8Sz3vilSW1CaGb/ag1IMe5EHD3d
-         /Kk+Cj2ZFEOm5SSpDn9kwDeeLQ0gJakNSFDsl+HMq2Z4G+LD9r/VfMgrNuiMJAGITP
-         B45UK/8tu5CVCwjYI+9rbaxgi+R98Ly94f3ecR7PUJqvxwbBwPpXXNZtASUOnPDQ24
-         TpQAL2Lz0e3Lu1MeCg7t7ABCjM+1S0J3jWz9kIaf9NkXjUMr7Xpte/ATdru+9R3WSf
-         zsei+gKo+LH+NNW7Hya0uqQ+uGdYox6S/v9xbuG+GcWcnAEmc/dPjdFanlw9LGtvEP
-         BAvoTrepwJWtA==
+        b=UfpHZWzr1ewttu8V1cs0fv+J05UdcORFaDMWxAOJdv06Eo0/xR3KiY5oJeXN8heMh
+         DcA+8LJTDTxae3BfS/X8Jvqkwhd9L3NsZjDxw51vBDGhJTwwdxoK0qtpRNCesRSWaN
+         MaUCO5vn9J/YY2hdNsTm7f4vIBFELo0ceJe1RIveqTqd7uB3KFG/zYgxLwqPbwDiV4
+         /qrtiEjO+0BV3GfJWE4WN7VupQKQi+jslA7SAf4RDs9ItIOtb9VbOwbjo3WiDt0QHs
+         UGu3W3kMc2IPs8MI+9/KgwPEcli1cTahrC1DgiHoTHSqk18f5lJFP4tYAZUaKPQyfp
+         fik9MnmkmwUkw==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 08/21] btrfs: remove refs_to_add argument from __btrfs_inc_extent_ref()
-Date:   Fri,  8 Sep 2023 18:20:25 +0100
-Message-Id: <ca230c04666d478f5601636705c12aa231095d7f.1694192469.git.fdmanana@suse.com>
+Subject: [PATCH v2 10/21] btrfs: initialize key where it's used when running delayed data ref
+Date:   Fri,  8 Sep 2023 18:20:27 +0100
+Message-Id: <5b936afa138b6e190a322987e7d6c9b2ad7230f1.1694192469.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.34.1
 In-Reply-To: <cover.1694192469.git.fdmanana@suse.com>
 References: <cover.1694192469.git.fdmanana@suse.com>
@@ -42,64 +42,57 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-Currently the 'refs_to_add' argument of __btrfs_inc_extent_ref() always
-matches the value of node->ref_mod, so remove the argument and use
-node->ref_mod at __btrfs_inc_extent_ref().
+At run_delayed_data_ref() we are always initializing a key but the key
+is only needed and used if we are inserting a new extent. So move the
+declaration and initialization of the key to 'if' branch where it's used.
+Also rename the key from 'ins' to 'key', as it's a more clear name.
 
 Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/extent-tree.c | 9 ++++-----
- 1 file changed, 4 insertions(+), 5 deletions(-)
+ fs/btrfs/extent-tree.c | 14 ++++++++------
+ 1 file changed, 8 insertions(+), 6 deletions(-)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index cf503f2972a1..16e511f3d24b 100644
+index de63e873be3a..16c7122bdfb5 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -1465,8 +1465,6 @@ int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
-  *		    always passed as 0. For data extents it is the fileoffset
-  *		    this extent belongs to.
-  *
-- * @refs_to_add     Number of references to add
-- *
-  * @extent_op       Pointer to a structure, holding information necessary when
-  *                  updating a tree block's flags
-  *
-@@ -1474,7 +1472,7 @@ int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
- static int __btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
- 				  struct btrfs_delayed_ref_node *node,
- 				  u64 parent, u64 root_objectid,
--				  u64 owner, u64 offset, int refs_to_add,
-+				  u64 owner, u64 offset,
- 				  struct btrfs_delayed_extent_op *extent_op)
+@@ -1535,15 +1535,10 @@ static int run_delayed_data_ref(struct btrfs_trans_handle *trans,
  {
- 	struct btrfs_path *path;
-@@ -1484,6 +1482,7 @@ static int __btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
- 	u64 bytenr = node->bytenr;
- 	u64 num_bytes = node->num_bytes;
- 	u64 refs;
-+	int refs_to_add = node->ref_mod;
- 	int ret;
+ 	int ret = 0;
+ 	struct btrfs_delayed_data_ref *ref;
+-	struct btrfs_key ins;
+ 	u64 parent = 0;
+ 	u64 ref_root = 0;
+ 	u64 flags = 0;
  
- 	path = btrfs_alloc_path();
-@@ -1562,7 +1561,7 @@ static int run_delayed_data_ref(struct btrfs_trans_handle *trans,
+-	ins.objectid = node->bytenr;
+-	ins.offset = node->num_bytes;
+-	ins.type = BTRFS_EXTENT_ITEM_KEY;
+-
+ 	ref = btrfs_delayed_node_to_data_ref(node);
+ 	trace_run_delayed_data_ref(trans->fs_info, node, ref, node->action);
+ 
+@@ -1552,11 +1547,18 @@ static int run_delayed_data_ref(struct btrfs_trans_handle *trans,
+ 	ref_root = ref->root;
+ 
+ 	if (node->action == BTRFS_ADD_DELAYED_REF && insert_reserved) {
++		struct btrfs_key key;
++
+ 		if (extent_op)
+ 			flags |= extent_op->flags_to_set;
++
++		key.objectid = node->bytenr;
++		key.type = BTRFS_EXTENT_ITEM_KEY;
++		key.offset = node->num_bytes;
++
+ 		ret = alloc_reserved_file_extent(trans, parent, ref_root,
+ 						 flags, ref->objectid,
+-						 ref->offset, &ins,
++						 ref->offset, &key,
+ 						 node->ref_mod);
  	} else if (node->action == BTRFS_ADD_DELAYED_REF) {
  		ret = __btrfs_inc_extent_ref(trans, node, parent, ref_root,
- 					     ref->objectid, ref->offset,
--					     node->ref_mod, extent_op);
-+					     extent_op);
- 	} else if (node->action == BTRFS_DROP_DELAYED_REF) {
- 		ret = __btrfs_free_extent(trans, node, parent,
- 					  ref_root, ref->objectid,
-@@ -1710,7 +1709,7 @@ static int run_delayed_tree_ref(struct btrfs_trans_handle *trans,
- 		ret = alloc_reserved_tree_block(trans, node, extent_op);
- 	} else if (node->action == BTRFS_ADD_DELAYED_REF) {
- 		ret = __btrfs_inc_extent_ref(trans, node, parent, ref_root,
--					     ref->level, 0, 1, extent_op);
-+					     ref->level, 0, extent_op);
- 	} else if (node->action == BTRFS_DROP_DELAYED_REF) {
- 		ret = __btrfs_free_extent(trans, node, parent, ref_root,
- 					  ref->level, 0, 1, extent_op);
 -- 
 2.40.1
 

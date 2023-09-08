@@ -2,90 +2,106 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6F0E8EC8748
-	for <linux-btrfs@archiver.kernel.org>; Fri,  8 Sep 2023 12:02:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CB17ECCFA0A
+	for <linux-btrfs@archiver.kernel.org>; Fri,  8 Sep 2023 12:09:30 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S241645AbjIHMCp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 8 Sep 2023 08:02:45 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54520 "EHLO
+        id S242815AbjIHMJc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 8 Sep 2023 08:09:32 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35674 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232403AbjIHMCo (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Sep 2023 08:02:44 -0400
-X-Greylist: delayed 470 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Fri, 08 Sep 2023 05:02:40 PDT
-Received: from mail.lichtvoll.de (luna.lichtvoll.de [194.150.191.11])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A587C1BE7
-        for <linux-btrfs@vger.kernel.org>; Fri,  8 Sep 2023 05:02:40 -0700 (PDT)
-Received: from 127.0.0.1 (localhost [127.0.0.1])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (secp384r1) server-digest SHA384)
-        (No client certificate requested)
-        by mail.lichtvoll.de (Postfix) with ESMTPSA id 510DA7A0B17;
-        Fri,  8 Sep 2023 13:54:48 +0200 (CEST)
-Authentication-Results: mail.lichtvoll.de;
-        auth=pass smtp.auth=martin smtp.mailfrom=martin@lichtvoll.de
-From:   Martin Steigerwald <martin@lichtvoll.de>
-To:     linux-btrfs@vger.kernel.org,
-        Linux regressions mailing list <regressions@lists.linux.dev>,
-        Linux kernel regressions list <regressions@lists.linux.dev>
-Cc:     Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Tim Cuthbertson <ratcheer@gmail.com>
-Subject: Re: Scrub of my nvme SSD has slowed by about 2/3
-Date:   Fri, 08 Sep 2023 13:54:47 +0200
-Message-ID: <2169630.irdbgypaU6@lichtvoll.de>
-In-Reply-To: <efbe13a5-1c6d-e6fe-25be-bd942823432c@leemhuis.info>
-References: <CAAKzf7=yS9vnf5zNid1CyvN19wyAgPz5o9sJP0vBqN6LReqXVg@mail.gmail.com>
- <1d611dbb-8aee-9a6e-701c-6498f1b51c34@leemhuis.info>
- <efbe13a5-1c6d-e6fe-25be-bd942823432c@leemhuis.info>
+        with ESMTP id S231841AbjIHMJb (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Sep 2023 08:09:31 -0400
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B355B1BC5
+        for <linux-btrfs@vger.kernel.org>; Fri,  8 Sep 2023 05:09:27 -0700 (PDT)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id D6BC1C433C8
+        for <linux-btrfs@vger.kernel.org>; Fri,  8 Sep 2023 12:09:26 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1694174967;
+        bh=TJQ3Oc/hJWt2rMA+QEvUNfR2P8cyZRjOqDdK1bvY2Ak=;
+        h=From:To:Subject:Date:From;
+        b=iekNL4OjHQoYETETg8DPDmppd6q4j3wv+0vMXnqoo1+4P97/B+MqUTHwIemnzF/tO
+         9YpX4CuTCIwQWVXbipqGcSznQ7WdCP7bsI9qff6PX0SfwzTJyY0o4noL9wwvO8RrrS
+         bQ1Tif83Cn09/WJ0DtMYLQIyb56Kvsbus2iQ7av69rysUICFhs4UNZjwBinXgQOtPy
+         uRPtUc3EPO3WHX4g5uhaiB8w732q8XHCG5ZlsFdwQefrc5whja6ujJOGV2DDsjsZ8N
+         XK54BfxKWVuW05KeHIO2/FJGcOn90+Rd2mu+03FmRQFhJkYpyynCzMxJ3Ewim6ZQaU
+         nG78eVjXQ1W0g==
+From:   fdmanana@kernel.org
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH 00/21] btrfs: updates to delayed refs accounting and space reservation
+Date:   Fri,  8 Sep 2023 13:09:02 +0100
+Message-Id: <cover.1694174371.git.fdmanana@suse.com>
+X-Mailer: git-send-email 2.34.1
 MIME-Version: 1.0
-Content-Transfer-Encoding: 7Bit
-Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi Thorsten, Qu, Tim, everyone,
+From: Filipe Manana <fdmanana@suse.com>
 
-Linux regression tracking #update (Thorsten Leemhuis) - 29.08.23, 14:17:33 
-CEST:
-> On 12.07.23 13:02, Linux regression tracking #adding (Thorsten Leemhuis)
-> wrote:
-> > On 03.07.23 22:19, Tim Cuthbertson wrote:
-> >> Yesterday, I noticed that a scrub of my main system filesystem has
-> >> slowed from about 2.9 gb/sec to about 949 mb/sec. My scrub used to
-> >> run
-> >> in about 12 seconds, now it is taking 51 seconds. I had just
-> >> installed
-> >> Linux kernel 6.4.1 on Arch Linux, upgrading from 6.3.9. At first I
-> >> suspected the new kernel, but now I am not so sure.
-> > 
-> > Thanks for the report. It seems it will take some work to address
-> > this,
-> > so to be sure the issue doesn't fall through the cracks unnoticed, I'm
-> > adding it to regzbot, the Linux kernel regression tracking bot:
-> > 
-> > #regzbot ^introduced e02ee89baa66
-> 
-> #regzbot resolve: various changes merged for 6.6 improve things again;
-> more planned; backporting is planned, too;
-> #regzbot ignore-activity
-> 
-> (yes, that is not idea, but that's how it is sometimes)
+The following are some fixes, improvements and cleanups around delayed refs.
+Mostly about space accouting and reservation and were motivated by a case
+hit by a SLE (SUSE Linux Enterprise) user where a filesystem became unmountable
+and unusable because it fails a RW mount with -ENOSPC when attempting to do
+any orphan cleanup. The problem was that the device had no available space
+for allocating new block groups and the available metadata space was about
+1.5M, too little to commit any transaction, but enough to start a transaction,
+as during the transaction commit we need to COW more than we accounted for
+when starting the transaction (running delayed refs generates more delayed
+refs to update the extent tree for example). Starting any transaction there,
+either to do orphan cleanup, attempt to reclaim data block groups, unlink,
+etc, always failed during the transaction commit and result in transaction
+aborts.
 
-ideal?
+We have some cases where we use and abuse of the global block reserve
+because we don't reserve enough space when starting a transaction or account
+delayed refs properly, and can therefore lead to exhaustion of metadata space
+in case we don't have more unallocated space to allocate a new metadata block
+group.
 
-Scrubbing "/home" with 304.61GiB (interestingly both back then with 6.4 
-and now with 6.5.2):
+More details on the individual changelogs.
 
-- 6.4: 966.84MiB/s
-- 6.5.2:  748.02MiB/s
+There are more cases that will be addressed later and depend on this patchset,
+but they'll be sent later and separately.
 
-I expected an improvement.
+Filipe Manana (21):
+  btrfs: fix race when refilling delayed refs block reserve
+  btrfs: prevent transaction block reserve underflow when starting transaction
+  btrfs: pass a space_info argument to btrfs_reserve_metadata_bytes()
+  btrfs: remove unnecessary logic when running new delayed references
+  btrfs: remove the refcount warning/check at btrfs_put_delayed_ref()
+  btrfs: return -EUCLEAN for delayed tree ref with a ref count not equals to 1
+  btrfs: remove redundant BUG_ON() from __btrfs_inc_extent_ref()
+  btrfs: remove refs_to_add argument from __btrfs_inc_extent_ref()
+  btrfs: remove refs_to_drop argument from __btrfs_free_extent()
+  btrfs: initialize key where it's used when running delayed data ref
+  btrfs: remove pointless 'ref_root' variable from run_delayed_data_ref()
+  btrfs: log message if extent item not found when running delayed extent op
+  btrfs: use a single variable for return value at run_delayed_extent_op()
+  btrfs: use a single variable for return value at lookup_inline_extent_backref()
+  btrfs: return -EUCLEAN if extent item is missing when searching inline backref
+  btrfs: simplify check for extent item overrun at lookup_inline_extent_backref()
+  btrfs: allow to run delayed refs by bytes to be released instead of count
+  btrfs: reserve space for delayed refs on a per ref basis
+  btrfs: remove pointless initialization at btrfs_delayed_refs_rsv_release()
+  btrfs: stop doing excessive space reservation for csum deletion
+  btrfs: always reserve space for delayed refs when starting transaction
 
-Same Lenovo ThinkPad T14 AMD Gen 1 with AMD Ryzen 7 PRO 4750U, 32 GiB RAM 
-and 2TB Samsung 980 Pro NVME SSD as before.
+ fs/btrfs/block-group.c    |  11 +-
+ fs/btrfs/block-rsv.c      |  18 ++--
+ fs/btrfs/delalloc-space.c |   3 +-
+ fs/btrfs/delayed-ref.c    | 132 +++++++++++++++++-------
+ fs/btrfs/delayed-ref.h    |  15 ++-
+ fs/btrfs/disk-io.c        |   3 +-
+ fs/btrfs/extent-tree.c    | 208 +++++++++++++++++++-------------------
+ fs/btrfs/extent-tree.h    |   4 +-
+ fs/btrfs/space-info.c     |  29 ++----
+ fs/btrfs/space-info.h     |   2 +-
+ fs/btrfs/transaction.c    | 143 ++++++++++++++++++++------
+ fs/btrfs/transaction.h    |   3 +
+ 12 files changed, 357 insertions(+), 214 deletions(-)
 
-Ciao,
 -- 
-Martin
-
+2.40.1
 

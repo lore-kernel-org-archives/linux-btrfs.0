@@ -2,286 +2,172 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 39E88CA0ECF
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A2419CA0ECD
 	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Sep 2023 22:07:22 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1356085AbjIKWCv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 11 Sep 2023 18:02:51 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42500 "EHLO
+        id S1356095AbjIKWCw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 11 Sep 2023 18:02:52 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56310 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S243874AbjIKSHC (ORCPT
+        with ESMTP id S237056AbjIKL4T (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Sep 2023 14:07:02 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5CA18103
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 11:06:56 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 11D6921847;
-        Mon, 11 Sep 2023 18:06:55 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1694455615;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=MZtTXSD3mRFMRd6KrsQ8XRgzQQFc4DLlnk0VeYAyZ94=;
-        b=FiP5m6I9m3mxT6dGWeRjv00C2g7GC7sMjW34J7E7bj83ID5yCClZK/GHfce0tb0Hu/BSn/
-        s6I6etReW8WZEqZr8PaUi79Ekt9D6Fypa7cmhLEIvjazx9GntBXSDbZdH3i77Y0GbU7A4d
-        R3vE2Dj/1zUnBIC2foQ10j0sf0gV1Us=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1694455615;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=MZtTXSD3mRFMRd6KrsQ8XRgzQQFc4DLlnk0VeYAyZ94=;
-        b=RMQrIY+ERIvdrq0H/dEoS+8YAa+OGDnX18hbq4mBuHxAByNPvJYpJnkX9hphPthBt0hk3T
-        Bw8BXcvO+EXmJ7Dw==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id D56E413780;
-        Mon, 11 Sep 2023 18:06:54 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id bKJsMz5X/2S/NwAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Mon, 11 Sep 2023 18:06:54 +0000
-Date:   Mon, 11 Sep 2023 20:00:20 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Boris Burkov <boris@bur.io>
-Cc:     David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org,
-        kernel-team@fb.com
-Subject: Re: [PATCH v5 15/18] btrfs: check generation when recording simple
- quota delta
-Message-ID: <20230911180020.GF3159@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1690495785.git.boris@bur.io>
- <04ffbfcc145951c2f570312901b2c03c3c74e48e.1690495785.git.boris@bur.io>
- <20230907122449.GL3159@twin.jikos.cz>
- <20230908214146.GA172348@zen>
+        Mon, 11 Sep 2023 07:56:19 -0400
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 228A3E3
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 04:56:14 -0700 (PDT)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 386ADC433C8;
+        Mon, 11 Sep 2023 11:56:12 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1694433372;
+        bh=izqMVeJP9+1E8Bddkk1KXhK8gNxA0s4Kf8noD68IwNg=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=eztXblBjewp1z4woLNQO1wNdGHoA9BTSYV6Yyt7WprRhQDJzkMjWZJIgqWWfe9/s+
+         QBqf6Aer11z6LF2MKdtUGrAynWK9DDGbskNrXPvlWZFfejCXBceqTLLmg4VTwbHUuO
+         BiVSvoWv7P9ODGSiY9DkkMy9v6l7DAfIurHRx5bKXLjGQt8tfJjT6FdgNMPGv4FeXk
+         FE2RQxzFRE8W4D4VakGVVULkSK85w6gbsbPFhIKrP1IlbrZTZMDlfe9b5Ny7sTfBQX
+         74xfbUGMrJIKJRai0tQG7Kmy435pMGH/LJ6mP+BUYvPUsY6vMCZMVWQakJQziq40zG
+         M4gVFJLijFVIg==
+Date:   Mon, 11 Sep 2023 12:56:08 +0100
+From:   Filipe Manana <fdmanana@kernel.org>
+To:     Evangelos Foutras <evangelos@foutras.com>
+Cc:     Ian Johnson <ian@ianjohnson.dev>, linux-btrfs@vger.kernel.org
+Subject: Re: Possible readdir regression with BTRFS
+Message-ID: <ZP8AWKMVYOY0mAwq@debian0.Home>
+References: <YR1P0S.NGASEG570GJ8@ianjohnson.dev>
+ <ZPweR/773V2lmf0I@debian0.Home>
+ <00ed09b9-d60c-4605-b3b6-f4e79bf92fca@foutras.com>
+ <ZPxiqYCeMb6vOjw9@debian0.Home>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20230908214146.GA172348@zen>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <ZPxiqYCeMb6vOjw9@debian0.Home>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Sep 08, 2023 at 02:41:46PM -0700, Boris Burkov wrote:
-> On Thu, Sep 07, 2023 at 02:24:49PM +0200, David Sterba wrote:
-> > On Thu, Jul 27, 2023 at 03:13:02PM -0700, Boris Burkov wrote:
-> > > Simple quotas count extents only from the moment the feature is enabled.
-> > > Therefore, if we do something like:
-> > > 1. create subvol S
-> > > 2. write F in S
-> > > 3. enable quotas
-> > > 4. remove F
-> > > 5. write G in S
-> > > 
-> > > then after 3. and 4. we would expect the simple quota usage of S to be 0
-> > > (putting aside some metadata extents that might be written) and after
-> > > 5., it should be the size of G plus metadata. Therefore, we need to be
-> > > able to determine whether a particular quota delta we are processing
-> > > predates simple quota enablement.
-> > > 
-> > > To do this, store the transaction id when quotas were enabled. In
-> > > fs_info for immediate use and in the quota status item to make it
-> > > recoverable on mount. When we see a delta, check if the generation of
-> > > the extent item is less than that of quota enablement. If so, we should
-> > > ignore the delta from this extent.
-> > > 
-> > > Signed-off-by: Boris Burkov <boris@bur.io>
-> > > ---
-> > >  fs/btrfs/accessors.h            |  2 ++
-> > >  fs/btrfs/extent-tree.c          |  4 ++++
-> > >  fs/btrfs/fs.h                   |  2 ++
-> > >  fs/btrfs/qgroup.c               | 14 ++++++++++++--
-> > >  fs/btrfs/qgroup.h               |  1 +
-> > >  include/uapi/linux/btrfs_tree.h |  7 +++++++
-> > >  6 files changed, 28 insertions(+), 2 deletions(-)
-> > > 
-> > > diff --git a/fs/btrfs/accessors.h b/fs/btrfs/accessors.h
-> > > index a23045c05937..513f8edbd98e 100644
-> > > --- a/fs/btrfs/accessors.h
-> > > +++ b/fs/btrfs/accessors.h
-> > > @@ -970,6 +970,8 @@ BTRFS_SETGET_FUNCS(qgroup_status_flags, struct btrfs_qgroup_status_item,
-> > >  		   flags, 64);
-> > >  BTRFS_SETGET_FUNCS(qgroup_status_rescan, struct btrfs_qgroup_status_item,
-> > >  		   rescan, 64);
-> > > +BTRFS_SETGET_FUNCS(qgroup_status_enable_gen, struct btrfs_qgroup_status_item,
-> > > +		   enable_gen, 64);
-> > >  
-> > >  /* btrfs_qgroup_info_item */
-> > >  BTRFS_SETGET_FUNCS(qgroup_info_generation, struct btrfs_qgroup_info_item,
-> > > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> > > index 1b5efd03ef83..395ab46e520b 100644
-> > > --- a/fs/btrfs/extent-tree.c
-> > > +++ b/fs/btrfs/extent-tree.c
-> > > @@ -1513,6 +1513,7 @@ static int run_delayed_data_ref(struct btrfs_trans_handle *trans,
-> > >  			.rsv_bytes = href->reserved_bytes,
-> > >  			.is_data = true,
-> > >  			.is_inc	= true,
-> > > +			.generation = trans->transid,
-> > >  		};
-> > >  
-> > >  		if (extent_op)
-> > > @@ -1676,6 +1677,7 @@ static int run_delayed_tree_ref(struct btrfs_trans_handle *trans,
-> > >  			.rsv_bytes = 0,
-> > >  			.is_data = false,
-> > >  			.is_inc = true,
-> > > +			.generation = trans->transid,
-> > >  		};
-> > >  
-> > >  		BUG_ON(!extent_op || !extent_op->update_flags);
-> > > @@ -3217,6 +3219,7 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
-> > >  			.rsv_bytes = 0,
-> > >  			.is_data = is_data,
-> > >  			.is_inc = false,
-> > > +			.generation = btrfs_extent_generation(leaf, ei),
-> > >  		};
-> > >  
-> > >  		/* In this branch refs == 1 */
-> > > @@ -4850,6 +4853,7 @@ int btrfs_alloc_logged_file_extent(struct btrfs_trans_handle *trans,
-> > >  	struct btrfs_simple_quota_delta delta = {
-> > >  		.root = root_objectid,
-> > >  		.num_bytes = ins->offset,
-> > > +		.generation = trans->transid,
-> > >  		.rsv_bytes = 0,
-> > >  		.is_data = true,
-> > >  		.is_inc = true,
-> > > diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
-> > > index f76f450c2abf..da7b623ff15f 100644
-> > > --- a/fs/btrfs/fs.h
-> > > +++ b/fs/btrfs/fs.h
-> > > @@ -802,6 +802,8 @@ struct btrfs_fs_info {
-> > >  	spinlock_t eb_leak_lock;
-> > >  	struct list_head allocated_ebs;
-> > >  #endif
-> > > +
-> > > +	u64 quota_enable_gen;
+On Sat, Sep 09, 2023 at 01:18:49PM +0100, Filipe Manana wrote:
+> On Sat, Sep 09, 2023 at 02:52:19PM +0300, Evangelos Foutras wrote:
+> > Hi Filipe,
 > > 
-> > Please move it to the other quota/qgroup related members, at the end of
-> > fs_info there's only debugging stuff.
+> > Please be aware that this bug might not be as harmless as it seems. I'm not
+> > sure if the fix you're preparing would also fix an issue we saw at Arch
+> > Linux but I thought I'd mention it here.
 > > 
-> > >  };
-> > >  
-> > >  static inline void btrfs_set_last_root_drop_gen(struct btrfs_fs_info *fs_info,
-> > > diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-> > > index 58e9ed0deedd..a8a603242431 100644
-> > > --- a/fs/btrfs/qgroup.c
-> > > +++ b/fs/btrfs/qgroup.c
-> > > @@ -454,6 +454,8 @@ int btrfs_read_qgroup_config(struct btrfs_fs_info *fs_info)
-> > >  			}
-> > >  			fs_info->qgroup_flags = btrfs_qgroup_status_flags(l, ptr);
-> > >  			simple = fs_info->qgroup_flags & BTRFS_QGROUP_STATUS_FLAG_SIMPLE;
-> > > +			if (simple)
-> > > +				fs_info->quota_enable_gen = btrfs_qgroup_status_enable_gen(l, ptr);
-> > >  			if (btrfs_qgroup_status_generation(l, ptr) !=
-> > >  			    fs_info->generation && !simple) {
-> > >  				qgroup_mark_inconsistent(fs_info);
-> > > @@ -1107,10 +1109,12 @@ int btrfs_quota_enable(struct btrfs_fs_info *fs_info,
-> > >  	btrfs_set_qgroup_status_generation(leaf, ptr, trans->transid);
-> > >  	btrfs_set_qgroup_status_version(leaf, ptr, BTRFS_QGROUP_STATUS_VERSION);
-> > >  	fs_info->qgroup_flags = BTRFS_QGROUP_STATUS_FLAG_ON;
-> > > -	if (simple)
-> > > +	if (simple) {
-> > >  		fs_info->qgroup_flags |= BTRFS_QGROUP_STATUS_FLAG_SIMPLE;
-> > > -	else
-> > > +		btrfs_set_qgroup_status_enable_gen(leaf, ptr, trans->transid);
-> > > +	} else {
-> > >  		fs_info->qgroup_flags |= BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT;
-> > > +	}
-> > >  	btrfs_set_qgroup_status_flags(leaf, ptr, fs_info->qgroup_flags &
-> > >  				      BTRFS_QGROUP_STATUS_FLAGS_MASK);
-> > >  	btrfs_set_qgroup_status_rescan(leaf, ptr, 0);
-> > > @@ -1202,6 +1206,8 @@ int btrfs_quota_enable(struct btrfs_fs_info *fs_info,
-> > >  		goto out_free_path;
-> > >  	}
-> > >  
-> > > +	fs_info->quota_enable_gen = trans->transid;
-> > > +
-> > >  	mutex_unlock(&fs_info->qgroup_ioctl_lock);
-> > >  	/*
-> > >  	 * Commit the transaction while not holding qgroup_ioctl_lock, to avoid
-> > > @@ -4622,6 +4628,10 @@ int btrfs_record_simple_quota_delta(struct btrfs_fs_info *fs_info,
-> > >  	if (!is_fstree(root))
-> > >  		return 0;
-> > >  
-> > > +	/* If the extent predates enabling quotas, don't count it. */
-> > > +	if (delta->generation < fs_info->quota_enable_gen)
-> > > +		return 0;
-> > > +
-> > >  	spin_lock(&fs_info->qgroup_lock);
-> > >  	qgroup = find_qgroup_rb(fs_info, root);
-> > >  	if (!qgroup) {
-> > > diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-> > > index ce6fa8694ca7..ae1ce14b365c 100644
-> > > --- a/fs/btrfs/qgroup.h
-> > > +++ b/fs/btrfs/qgroup.h
-> > > @@ -241,6 +241,7 @@ struct btrfs_simple_quota_delta {
-> > >  	u64 rsv_bytes; /* The number of bytes reserved for this extent */
-> > >  	bool is_inc; /* Whether we are using or freeing the extent */
-> > >  	bool is_data; /* Whether the extent is data or metadata */
-> > > +	u64 generation; /* The generation the extent was created in */
+> > We have a package repository server with 4x10 TB drives in RAID10 (btrfs
+> > only, no mdadm). On multiple mirrors syncing from it we have seen rsync
+> > occasionally delete ~4 small (<10 MB) files that get frequently updated by
+> > renaming temporary files into them. This only happened with 6.4.12 and went
+> > away after going back to 6.4.10 (the former had the commit Ian mentioned).
 > > 
-> > Please reorder it so it does not leave gaps between struct members.
+> > Unfortunately I don't have a reproducer for this. I can only describe what
+> > our repo-add script does and how rsync behaves during problematic syncs.
 > > 
-> > >  };
-> > >  
-> > >  static inline u64 btrfs_qgroup_subvolid(u64 qgroupid)
-> > > diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
-> > > index eacb26caf3c6..1120ce3dae42 100644
-> > > --- a/include/uapi/linux/btrfs_tree.h
-> > > +++ b/include/uapi/linux/btrfs_tree.h
-> > > @@ -1242,6 +1242,13 @@ struct btrfs_qgroup_status_item {
-> > >  	 * of the scan. It contains a logical address
-> > >  	 */
-> > >  	__le64 rescan;
-> > > +
-> > > +	/*
-> > > +	 * the generation when quotas are enabled. Used by simple quotas to
-> > > +	 * avoid decrementing when freeing an extent that was written before
-> > > +	 * enable.
-> > > +	 */
-> > > +	__le64 enable_gen;
+> > Our repo-add script frequently adds packages to the extra repo by doing:
 > > 
-> > This is public interface and btrfs_qgroup_status_item is used in many
-> > places in user space at least in btrfs-progs. This needs a lot of
-> > sanity checks.
+> >   ln -f extra.db.tar.gz extra.db.tar.gz.old
+> >   mv .tmp.extra.db.tar.gz extra.db.tar.gz
+> > 
+> > And the same for extra.files.tar.gz:
+> > 
+> >   ln -f extra.files.tar.gz extra.files.tar.gz.old
+> >   mv .tmp.extra.files.tar.gz extra.files.tar.gz
+> > 
+> > While the server was running Linux 6.4.12, rsync on some mirrors would
+> > occasionally (3-4 times in the day) delete these files:
+> > 
+> >   deleting extra/os/x86_64/extra.files.tar.gz.old
+> >   deleting extra/os/x86_64/extra.files.tar.gz
+> >   deleting extra/os/x86_64/extra.db.tar.gz.old
+> >   deleting extra/os/x86_64/extra.db.tar.gz
+> > 
+> > Since renames are atomic, I would expect this scenario to never happen.
+> > 
+> > Again, sorry for not being able to provide a proper reproducer like Ian;
+> > there is probably some timing interaction with how rsync does directory
+> > scanning and repo-add updating the directory entry during this time.
 > 
-> Totally agreed in principle, but not exactly sure how to proceed in
-> practice. I would definitely appreciate some tips/help!
+> No worries, I've just sent a patchset with 2 patches:
 > 
-> How we interact with the new field:
-> - When enabling squota, set it, the incompat bit, and the status flag
-> - When reading in the qgroup status_item, if the status flag is set,
->   then read the enable_gen.
+> https://lore.kernel.org/linux-btrfs/cover.1694260751.git.fdmanana@suse.com/
 > 
-> I believe this prevents us from ever reading garbage while trying to
-> read an old fs (status flag won't be set) and it prevents any
-> btrfs-progs from getting confused by a wrong-sized status item, since
-> it would choke on the incompat bit first.
-> 
-> Am I missing some other case? I can try to make it more explicitly
-> zeroed when we enable qgroups but not squotas? I can add an ASSERT that
-> the incompat bit is set as expected when we read the status item with
-> the flag on (that seems good no matter what)?
-> 
-> I can also write a wrapper for getting it which does the incompat/status
-> flag checking to make it more clear that it isn't safe to read in
-> general. Or a comment on the struct saying it depends on the incompat
-> bit?
+> I've only seen your message after sending it, but I think the first patch
+> should fix what you are seeing.
 
-All of the above makes sense and I had something like that in mind when
-writing the comment. The wrappers can make sure the bit is set when
-reading the item. I think there's an example in existing code that
-versions an item based on size, I can't find it now (probably something
-from the send/receive time where several new struct members were added).
+Ok, so I took a more detailed look at your issue this morning.
+It's unrelated to what Ian reported, as rsync doesn't even use rewinddir(3).
 
-I just noticed we have versioning for the qgoup status item,
-BTRFS_QGROUP_STATUS_VERSION is now 1 and has backward compatibility
-handling. We can probably use version 2 for squotas, in addition to the
-helpers with sanity checks.
+Here's what I think it's happening (speculating a bit about how rsync
+works):
+
+1) rsync uses opendir() and readdir() to iterate over the source and
+   destination (backup) directories, to obtain a list of files in each;
+
+2) While it's iterating the source directory, the renames and "ln -f"
+   happen. Because of this the readdir() calls don't return neither the
+   old file names neither the new ones.
+
+   This is because when opendir() is called, btrfs gets the index of the
+   last (most recently added) directory entry, and then never iterates
+   beyond that index in readdir() calls - this behaviour was introduced
+   in commit 9b378f6ad48c ("btrfs: fix infinite directory reads"), and it's
+   intentional to prevent readdir() never finishing while renames (or new
+   files added) inside the directory are happening.
+
+   On a rename, the new file name is assigned a new index number, larger
+   then the last one we had when openddir() was called. It's effectively
+   like removing an entry from the directory and adding a new one.
+   The same goes for a 'ln -f' - if the destination name exists, it is
+   removed and then the name is added again but pointing to a different
+   inode (and with a higher index number);
+
+3) As rsync sees that one of those renamed files is in the destination
+   directory but not on the source directory, it deletes those files from
+   the destination.
+
+Looking at readdir() requirements from POSIX we have:
+
+  "If a file is removed from or added to the directory after the most recent call
+   to opendir() or rewinddir(), whether a subsequent call to readdir() returns an
+   entry for that file is unspecified."
+
+  (from https://pubs.opengroup.org/onlinepubs/007904875/functions/readdir_r.html)
+
+Yes, renames are not explicit there, even though they are like adding a new name
+and removing another one. So googling around, to be extra sure, I found this old
+thread from Ted (ext4 maintainer):
+
+   https://yarchive.net/comp/linux/readdir_nonatomicity.html
+
+Where the most important part is this:
+
+   "This is not a bug; the POSIX specification explicitly allows this
+    behavior.  If a filename is renamed during a readdir() session of a
+    directory, it is undefined where that neither, either, or both of the
+    new and old filenames will be returned."
+
+So from a POSIX point of view, we are not doing anything wrong after that commit
+in btrfs. So my advise is to not have rsync running while the renames and "ln -f"
+are happening.
+
+I understand this may be a bummer as some applications may be relying on the old
+behaviour that happened to guarantee that at least the new file names would always
+be visible in readdir() calls, but that effectively was due to a bug in btrfs that
+caused infinite directory reads as mentioned in that commit and the linked thread.
+As if new indexes were added after opendir(), we would always read and return them.
+
+We could change opendir() to allow reading up to the current last index plus N,
+where N may be 10 or 100 for example, so that in the case of concurrent renames we
+would still (very likely but no guaranteed) at least return the new names - but
+not only that is not required by POSIX it would also not be always reliable - what
+if we have N + 1 renames? Then file name N + 1 would still be not returned, or
+if N new files are added and then rename happens at N + 1, we would also not return
+it - i.e., it would never be reliable and it would be a hack - it would encourage
+applications to rely on a behaviour that can not always be guaranteed.
+
+Thanks.
+
+> 
+> Thanks.
+> 
+> > 
+> > [1] https://gitlab.archlinux.org/pacman/pacman/-/blob/v6.0.2/scripts/repo-add.sh.in#L473

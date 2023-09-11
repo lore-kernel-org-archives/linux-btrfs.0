@@ -2,128 +2,229 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 88AEDCA0EC6
-	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Sep 2023 22:07:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 53344CA0EC3
+	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Sep 2023 22:07:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1355873AbjIKWCP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 11 Sep 2023 18:02:15 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52112 "EHLO
+        id S1355885AbjIKWCQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 11 Sep 2023 18:02:16 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56862 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S243953AbjIKSbc (ORCPT
+        with ESMTP id S237460AbjIKMw3 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Sep 2023 14:31:32 -0400
-Received: from wout4-smtp.messagingengine.com (wout4-smtp.messagingengine.com [64.147.123.20])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 49C61198;
-        Mon, 11 Sep 2023 11:31:27 -0700 (PDT)
-Received: from compute3.internal (compute3.nyi.internal [10.202.2.43])
-        by mailout.west.internal (Postfix) with ESMTP id E2EA83200912;
-        Mon, 11 Sep 2023 14:31:23 -0400 (EDT)
-Received: from mailfrontend2 ([10.202.2.163])
-  by compute3.internal (MEProxy); Mon, 11 Sep 2023 14:31:24 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
-        :content-type:content-type:date:date:from:from:in-reply-to
-        :in-reply-to:message-id:mime-version:references:reply-to:sender
-        :subject:subject:to:to; s=fm2; t=1694457083; x=1694543483; bh=Ec
-        MFYvhUrMnasEqJwEyJPej38pS4lZZ3N7GELDh7r38=; b=nMcci+o/59MCemrXW5
-        8dcZVnfHs5GPM/Dq4tcYijrGi7fvsxjxnWFulAC+EaeWcnl3ZwVgO7HOZ8kx268J
-        v3J5+OGvDxhy13nngEYTNboVIzpeafHZ+HFPftahw0sACD266c3kbfX4Vc2cXwtR
-        guQMSJV37NO13UnGXSzRuLPMURW4gK49vti+MfkO9Rw2Fm5cp2ev8btsP22PKoGw
-        43U7F1WShYKCs4fNKvClrt+NYXWBRiBLZKbbwVGTTUdr1tLhbPHnP+KJTDd0PJA0
-        h/WrFRkJQTs+2bIqEzNrp7S+Ph8Vx7MPWYS9p5+mBn6ZbIkzKk7Ln8wbEQMEXsxF
-        jjtA==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-        messagingengine.com; h=cc:cc:content-type:content-type:date:date
-        :feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
-        :message-id:mime-version:references:reply-to:sender:subject
-        :subject:to:to:x-me-proxy:x-me-proxy:x-me-sender:x-me-sender
-        :x-sasl-enc; s=fm1; t=1694457083; x=1694543483; bh=EcMFYvhUrMnas
-        EqJwEyJPej38pS4lZZ3N7GELDh7r38=; b=vsmmCu4Nv39Ay3NHLb3N2iQhwjdzZ
-        BHtUv5ei4e6U18ndUC855+9I8tupLZfAvGOrKojYzPcKvyGm9rbUYicMFehpzWi6
-        VTWygoxtHLzqZFVbBngs5RmEKrdpeqAD/4wJn9t52HZk9DZFotfluoEsFGiBsQMF
-        7Vi7rZS4i2Ot48+hvYOwK6fBAUSsAr/KsMzwvwYKzJATlEcKEyx8fWZODYQX7pDW
-        WV0hMtqoZKrnPzL6zpxcYHvN7NbX97pcPiDQdqSBq50iF+L/VAP3MV/UnDl4PlhH
-        X1dQF2fxUGBkGuLXAOee0jgFpplCm4rWaxLFo1pnmic4vsJjTGgm+yXmA==
-X-ME-Sender: <xms:-lz_ZJV4NRGW4-f1uSPJpD7Oxc8MxeJspcisSUu-1QcSt5YLYqca2g>
-    <xme:-lz_ZJlRbAVOz4Ei9KNaGwr7vZRP4h9Ldi-Eng8xmjdYceIDn1ZieZuJTuJ9p2pjW
-    yOEquAQ-P6-djvLve4>
-X-ME-Received: <xmr:-lz_ZFaM2n4rds7OPzAmWpOwf_9VWzGQKFXX2HcHmvutSQGy0kgkXcOWwATYCY-NqEvExsAQTZFn-69Pp1EojYdvgo0>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedviedrudeigedguddvfecutefuodetggdotefrod
-    ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfgh
-    necuuegrihhlohhuthemuceftddtnecusecvtfgvtghiphhivghnthhsucdlqddutddtmd
-    enucfjughrpeffhffvvefukfhfgggtuggjsehttdertddttddvnecuhfhrohhmpeeuohhr
-    ihhsuceuuhhrkhhovhcuoegsohhrihhssegsuhhrrdhioheqnecuggftrfgrthhtvghrnh
-    epkedvkeffjeellefhveehvdejudfhjedthfdvveeiieeiudfguefgtdejgfefleejnecu
-    vehluhhsthgvrhfuihiivgeptdenucfrrghrrghmpehmrghilhhfrhhomhepsghorhhish
-    essghurhdrihho
-X-ME-Proxy: <xmx:-lz_ZMVwTpWjiCQ1Vxt_CmqHxv309uYBiPfgXqCLX1PsG4iWeuhLmA>
-    <xmx:-lz_ZDnGlhPaDrEhBiaWcUznyk3y9N6iqr2sFtOmoS_5TqXw4OvaPw>
-    <xmx:-lz_ZJc4vHhoT5JBEyY8ouXTZBxcHtl7K5IPajJLiXIe2e0sL2ifww>
-    <xmx:-1z_ZLvv9rmbrXM3dNZ0bG1VPErrBmXwyt3b8OS0BjizFISdtHhyzA>
-Feedback-ID: i083147f8:Fastmail
-Received: by mail.messagingengine.com (Postfix) with ESMTPA; Mon,
- 11 Sep 2023 14:31:22 -0400 (EDT)
-Date:   Mon, 11 Sep 2023 11:32:19 -0700
-From:   Boris Burkov <boris@bur.io>
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] fstests: btrfs/185 update for single device pseudo
- device-scan
-Message-ID: <20230911183219.GA1770132@zen>
-References: <7558eed09a89d25fbd8083d45078cfe2e9601f45.1694017375.git.anand.jain@oracle.com>
+        Mon, 11 Sep 2023 08:52:29 -0400
+Received: from esa5.hgst.iphmx.com (esa5.hgst.iphmx.com [216.71.153.144])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C7213CEB;
+        Mon, 11 Sep 2023 05:52:24 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1694436745; x=1725972745;
+  h=from:to:cc:subject:date:message-id:mime-version:
+   content-transfer-encoding;
+  bh=/GWruwMj73XrJmk+0WNQIqaqY58Qcl6UowfZNG3AlVk=;
+  b=cNfwXJi7omRs7uUIlB6YcPoUnYXiXOf2wGzYFovoz6bf4daAvBxSPJv4
+   EBF/AJ2cWQZwfFVG1U0WkVdUQ1Yupz+0ErTuXvRhPeZJTEyNlbWjbvI5M
+   HiiNVsSYJKB7YNa+cwVsBI/Bi7/xGn1DSkjHYW6vN6CqpoKrAC95Nw2Vg
+   DLs2VhQo6zPSqVY4UVvyyYkzEsGuzQGfQXLZ/auXu836MYQxsbMXE7fFk
+   0Qks0D7wdIwxLsLIEgJ+xCyR21fW9EogxRUc4hrGw19/VjVBLNXuucXje
+   sLxvv6LKOjC1HFu1hN8xbH0SSdBJ3drZBeZruEIhzSiYTuyo6wu8nrdGs
+   g==;
+X-CSE-ConnectionGUID: ojPVaRudQ3avWpHJkgnG+A==
+X-CSE-MsgGUID: JEBuHoT6QzemH19c36MuHA==
+X-IronPort-AV: E=Sophos;i="6.02,244,1688400000"; 
+   d="scan'208";a="243594375"
+Received: from h199-255-45-15.hgst.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
+  by ob1.hgst.iphmx.com with ESMTP; 11 Sep 2023 20:52:24 +0800
+IronPort-SDR: hYA10h37euADM+ETY8OtkOMabkyDKCfyP4TjVLzowV49sx5s2cHlz26+Chv5QYbzC61PXeV7tZ
+ CKG7fL9twmu4r5yq6DDyyqkentfXLI7bMuI27D5TjmxEJLThsoVCgGCNSFchc67L0D1JsFcrMO
+ cxTOi0+yL2IQDjXGIZUtre7rEtiZBesu7FZ2EUzpJRFZlaCCoZeaEkkO/Kysyuq3coTb9vAwox
+ iKy5+/LfEFq1WTh2jlAX0nBbXyUmYw6m+GxXZ/VoHgS2HouAnvZ59H+1WKNCk43RfimFwl3yUk
+ 1Ms=
+Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 11 Sep 2023 04:59:29 -0700
+IronPort-SDR: xbQpaGrf4GErrvRFnpsK4EFMtmV3NmvhPqKqq0eqHeyKDzX3K5xLrM8VpRbU/vdwCddIG0f4VX
+ tA2t8I1SqQo1PUcqcKoIq38But9m7Y084ow1rZY7/WWXS+FW6aNDN9f9ruIKqZJP4EnNp6JYrx
+ mA9efDL6Hw1Ycam6HQ8rj86gv0/CKXgMBTEUf/Kqhp6Xz8zWRItaj1UzoVwx/vIAD/EtVT534S
+ WrGxRVkzzzD+B7JR/OrM6Y6hmUgVZYf4O0LTOxqkyMphsdolxfyBOc84P7ElKYWtXsFV7aYdPN
+ Ws8=
+WDCIronportException: Internal
+Received: from unknown (HELO redsun91.ssa.fujisawa.hgst.com) ([10.149.66.6])
+  by uls-op-cesaip02.wdc.com with ESMTP; 11 Sep 2023 05:52:22 -0700
+From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
+To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>
+Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+        Christoph Hellwig <hch@lst.de>,
+        Naohiro Aota <naohiro.aota@wdc.com>, Qu Wenruo <wqu@suse.com>,
+        Damien Le Moal <dlemoal@kernel.org>,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        Anand Jain <anand.jain@oracle.com>
+Subject: [PATCH v8 00/11] btrfs: introduce RAID stripe tree
+Date:   Mon, 11 Sep 2023 05:52:01 -0700
+Message-ID: <20230911-raid-stripe-tree-v8-0-647676fa852c@wdc.com>
+X-Mailer: git-send-email 2.41.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <7558eed09a89d25fbd8083d45078cfe2e9601f45.1694017375.git.anand.jain@oracle.com>
+Content-Type: text/plain; charset="utf-8"
+X-Mailer: b4 0.12.3
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1694436627; l=6155; i=johannes.thumshirn@wdc.com; s=20230613; h=from:subject:message-id; bh=/GWruwMj73XrJmk+0WNQIqaqY58Qcl6UowfZNG3AlVk=; b=Bj/hqP8Mk+eRtZYYKYKNEk0DMizMpZkr+94No3mkh1qvdY3oZIsE+pX12WXVT0VbmYJ01W80M UeQgqWKECMmDNlFLs6uYX6gThfzVwyp0ulIc85wFNV8r3BbnOJ4Bab4
+X-Developer-Key: i=johannes.thumshirn@wdc.com; a=ed25519; pk=TGmHKs78FdPi+QhrViEvjKIGwReUGCfa+3LEnGoR2KM=
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Sep 07, 2023 at 12:24:43AM +0800, Anand Jain wrote:
-> As we are obliterating the need for the device scan for the single device,
-> which will return success if the basic superblock verification passes,
-> even for the duplicate device of the mounted filesystem, drop the check
-> for the return code in this testcase and continue to verify if the device
-> path of the mounted filesystem remains unaltered after the scan.
-> 
-> Also, if the test fails, it leaves the local non-standard mount point
-> remained mounted, leading to further test cases failing. Call unmount
-> in _cleanup().
+Updates of the raid-stripe-tree are done at ordered extent write time to safe
+on bandwidth while for reading we do the stripe-tree lookup on bio mapping
+time, i.e. when the logical to physical translation happens for regular btrfs
+RAID as well.
 
-This was also affecting my setup, thanks for the fix!
+The stripe tree is keyed by an extent's disk_bytenr and disk_num_bytes and
+it's contents are the respective physical device id and position.
 
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
->  tests/btrfs/185 | 5 +++--
->  1 file changed, 3 insertions(+), 2 deletions(-)
-> 
-> diff --git a/tests/btrfs/185 b/tests/btrfs/185
-> index ba0200617e69..c7b8d2d46951 100755
-> --- a/tests/btrfs/185
-> +++ b/tests/btrfs/185
-> @@ -15,6 +15,7 @@ mnt=$TEST_DIR/$seq.mnt
->  # Override the default cleanup function.
->  _cleanup()
->  {
-> +	$UMOUNT_PROG $mnt > /dev/null 2>&1
+For an example 1M write (split into 126K segments due to zone-append)
+rapido2:/home/johannes/src/fstests# xfs_io -fdc "pwrite -b 1M 0 1M" -c fsync /mnt/test/test
+wrote 1048576/1048576 bytes at offset 0
+1 MiB, 1 ops; 0.0065 sec (151.538 MiB/sec and 151.5381 ops/sec)
 
-Do you mean to umount before calling rm -rf on it? That seems.. risky.
+The tree will look as follows (both 128k buffered writes to a ZNS drive):
 
->  	rm -rf $mnt > /dev/null 2>&1
->  	cd /
->  	rm -f $tmp.*
-> @@ -51,9 +52,9 @@ for sb_bytenr in 65536 67108864; do
->  	echo ..:$? >> $seqres.full
->  done
->  
-> -# Original device is mounted, scan of its clone should fail
-> +# Original device is mounted, scan of its clone must not alter the
-> +# filesystem device path
->  $BTRFS_UTIL_PROG device scan $device_2 >> $seqres.full 2>&1
-> -[[ $? != 1 ]] && _fail "cloned device scan should fail"
->  
->  [[ $(findmnt $mnt | grep -v TARGET | $AWK_PROG '{print $2}') != $device_1 ]] && \
->  						_fail "mounted device changed"
-> -- 
-> 2.39.3
-> 
+RAID0 case:
+bash-5.2# btrfs inspect-internal dump-tree -t raid_stripe /dev/nvme0n1
+btrfs-progs v6.3
+raid stripe tree key (RAID_STRIPE_TREE ROOT_ITEM 0) 
+leaf 805535744 items 1 free space 16218 generation 8 owner RAID_STRIPE_TREE
+leaf 805535744 flags 0x1(WRITTEN) backref revision 1
+checksum stored 2d2d2262
+checksum calced 2d2d2262
+fs uuid ab05cfc6-9859-404e-970d-3999b1cb5438
+chunk uuid c9470ba2-49ac-4d46-8856-438a18e6bd23
+        item 0 key (1073741824 RAID_STRIPE_KEY 131072) itemoff 16243 itemsize 40
+                        encoding: RAID0
+                        stripe 0 devid 1 offset 805306368
+                        stripe 1 devid 2 offset 536870912
+total bytes 42949672960
+bytes used 294912
+uuid ab05cfc6-9859-404e-970d-3999b1cb5438
+
+RAID1 case:
+bash-5.2# btrfs inspect-internal dump-tree -t raid_stripe /dev/nvme0n1
+btrfs-progs v6.3
+raid stripe tree key (RAID_STRIPE_TREE ROOT_ITEM 0) 
+leaf 805535744 items 1 free space 16218 generation 8 owner RAID_STRIPE_TREE
+leaf 805535744 flags 0x1(WRITTEN) backref revision 1
+checksum stored 56199539
+checksum calced 56199539
+fs uuid 9e693a37-fbd1-4891-aed2-e7fe64605045
+chunk uuid 691874fc-1b9c-469b-bd7f-05e0e6ba88c4
+        item 0 key (939524096 RAID_STRIPE_KEY 131072) itemoff 16243 itemsize 40
+                        encoding: RAID1
+                        stripe 0 devid 1 offset 939524096
+                        stripe 1 devid 2 offset 536870912
+total bytes 42949672960
+bytes used 294912
+uuid 9e693a37-fbd1-4891-aed2-e7fe64605045
+
+A design document can be found here:
+https://docs.google.com/document/d/1Iui_jMidCd4MVBNSSLXRfO7p5KmvnoQL/edit?usp=sharing&ouid=103609947580185458266&rtpof=true&sd=true
+
+The user-space part of this series can be found here:
+https://lore.kernel.org/linux-btrfs/20230215143109.2721722-1-johannes.thumshirn@wdc.com
+
+Changes to v7:
+- Huge rewrite
+
+v7 of the patchset can be found here:
+https://lore.kernel.org/linux-btrfs/cover.1677750131.git.johannes.thumshirn@wdc.com/
+
+Changes to v6:
+- Fix degraded RAID1 mounts
+- Fix RAID0/10 mounts
+
+v6 of the patchset can be found here:
+https://lore/kernel.org/linux-btrfs/cover.1676470614.git.johannes.thumshirn@wdc.com
+
+Changes to v5:
+- Incroporated review comments from Josef and Christoph
+- Rebased onto misc-next
+
+v5 of the patchset can be found here:
+https://lore/kernel.org/linux-btrfs/cover.1675853489.git.johannes.thumshirn@wdc.com
+
+Changes to v4:
+- Added patch to check for RST feature in sysfs
+- Added RST lookups for scrubbing 
+- Fixed the error handling bug Josef pointed out
+- Only check if we need to write out a RST once per delayed_ref head
+- Added support for zoned data DUP with RST
+
+Changes to v3:
+- Rebased onto 20221120124734.18634-1-hch@lst.de
+- Incorporated Josef's review
+- Merged related patches
+
+v3 of the patchset can be found here:
+https://lore/kernel.org/linux-btrfs/cover.1666007330.git.johannes.thumshirn@wdc.com
+
+Changes to v2:
+- Bug fixes
+- Rebased onto 20220901074216.1849941-1-hch@lst.de
+- Added tracepoints
+- Added leak checker
+- Added RAID0 and RAID10
+
+v2 of the patchset can be found here:
+https://lore.kernel.org/linux-btrfs/cover.1656513330.git.johannes.thumshirn@wdc.com
+
+Changes to v1:
+- Write the stripe-tree at delayed-ref time (Qu)
+- Add a different write path for preallocation
+
+v1 of the patchset can be found here:
+https://lore.kernel.org/linux-btrfs/cover.1652711187.git.johannes.thumshirn@wdc.com/
+
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+---
+Johannes Thumshirn (11):
+      btrfs: add raid stripe tree definitions
+      btrfs: read raid-stripe-tree from disk
+      btrfs: add support for inserting raid stripe extents
+      btrfs: delete stripe extent on extent deletion
+      btrfs: lookup physical address from stripe extent
+      btrfs: implement RST version of scrub
+      btrfs: zoned: allow zoned RAID
+      btrfs: add raid stripe tree pretty printer
+      btrfs: announce presence of raid-stripe-tree in sysfs
+      btrfs: add trace events for RST
+      btrfs: add raid-stripe-tree to features enabled with debug
+
+ fs/btrfs/Makefile               |   2 +-
+ fs/btrfs/accessors.h            |  10 +
+ fs/btrfs/bio.c                  |  23 ++
+ fs/btrfs/block-rsv.c            |   6 +
+ fs/btrfs/disk-io.c              |  18 ++
+ fs/btrfs/disk-io.h              |   5 +
+ fs/btrfs/extent-tree.c          |   7 +
+ fs/btrfs/fs.h                   |   4 +-
+ fs/btrfs/inode.c                |   8 +-
+ fs/btrfs/locking.c              |   5 +-
+ fs/btrfs/ordered-data.c         |   1 +
+ fs/btrfs/ordered-data.h         |   2 +
+ fs/btrfs/print-tree.c           |  49 ++++
+ fs/btrfs/raid-stripe-tree.c     | 493 ++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/raid-stripe-tree.h     |  52 +++++
+ fs/btrfs/scrub.c                |  56 +++++
+ fs/btrfs/sysfs.c                |   3 +
+ fs/btrfs/volumes.c              |  43 +++-
+ fs/btrfs/volumes.h              |  15 +-
+ fs/btrfs/zoned.c                | 113 ++++++++-
+ include/trace/events/btrfs.h    |  75 ++++++
+ include/uapi/linux/btrfs.h      |   1 +
+ include/uapi/linux/btrfs_tree.h |  33 ++-
+ 23 files changed, 999 insertions(+), 25 deletions(-)
+---
+base-commit: 133da717263112d81bb95b5535ceb2c1eeddd4e7
+change-id: 20230613-raid-stripe-tree-e330c9a45cc3
+
+Best regards,
+-- 
+Johannes Thumshirn <johannes.thumshirn@wdc.com>
+

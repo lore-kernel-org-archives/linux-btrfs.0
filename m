@@ -2,249 +2,313 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 64F80CA0EC9
-	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Sep 2023 22:06:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2A6A3CA0ECE
+	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Sep 2023 22:06:35 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1355564AbjIKWA4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 11 Sep 2023 18:00:56 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34876 "EHLO
+        id S1355573AbjIKWBG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 11 Sep 2023 18:01:06 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54518 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236129AbjIKJv0 (ORCPT
+        with ESMTP id S237941AbjIKNXT (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Sep 2023 05:51:26 -0400
-Received: from mail-pg1-x52f.google.com (mail-pg1-x52f.google.com [IPv6:2607:f8b0:4864:20::52f])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8909DE53
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 02:50:59 -0700 (PDT)
-Received: by mail-pg1-x52f.google.com with SMTP id 41be03b00d2f7-573e931433aso439483a12.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 02:50:59 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=bytedance.com; s=google; t=1694425859; x=1695030659; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=UwQSoSJR+jSGtu7F9A/uGElinPV2h0dmFylLKakGH3E=;
-        b=IA+xNJX9lpoZOvs70Szvr9jKE8+886p1h7TFx5fxt4u29LBTQ2nXb0/azdBeI05PIb
-         sFudKsQ2IOM6VFAyL/QimZeubcMBNmk8fpH6+QuM90rZ5S9eGxOQpd+tGTHGuzCt/IzP
-         e1beu0ffbKrkWa/Gi+8tjlnezoYcQ/4l6/mCZG/Ns/zS6i2rfhuQCcqjUT2RlAErK3Ez
-         iGLCvdipvnx4txhKvlkfLzZTp/E/12Z0HpsQzvni6UhPUHXkyyDNOuYE3sgWBwRQZnzg
-         8PISQ56FAZBJMqXNoaFsY+e4MndQdgLIH9b44YDrLaghg0AEvXtnj4/Cp+ou4Ly8ImCD
-         1TDA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1694425859; x=1695030659;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=UwQSoSJR+jSGtu7F9A/uGElinPV2h0dmFylLKakGH3E=;
-        b=t+/k4jk4whqXAL8b9VoD+AAaGZ11TtIxg94rPZe/qwMcC1gjGQxnfIAmD4abLlCOob
-         j+TKGpYavFAlLrVK0lQCVfcLZTIodeEvq2o2/zJu8K5DowwVEdqLo3CS+lKgA8r9Yjku
-         DuSBIz5Fnq5c/8xD2DjtbKh1Bfx8w+ePClH1oOyRBjpLqzX7amVHFZOdBvsxhH47nwBM
-         pCkUPZdbFS/+Q1OKTkEwmBkvFuURJam47LkQaUNpB7lB0eVMxqc+656qyZqH1ccPLnkC
-         yQuBmW2QOgcyVamsXGEoQvZuXbDWn+WJb8nGm19hik5Il+RjAh/4wACse0AV80lCVWEQ
-         h9vQ==
-X-Gm-Message-State: AOJu0YxeupFxm4MoVBL7RZqKZiCZmbolS2zi3RXtOaCnLLcRr7epTuLo
-        eGj4p7198pbjK1E3wHmH0nxMgw==
-X-Google-Smtp-Source: AGHT+IFK0C5cGs7QePEp9uLcPywDnGod8IFfwet3Jfbl6uzPvoZmscAh5Bx6Hmh6im2BgxS0qDp7eg==
-X-Received: by 2002:a05:6a20:4425:b0:14d:4ab5:5e3c with SMTP id ce37-20020a056a20442500b0014d4ab55e3cmr13477043pzb.1.1694425858977;
-        Mon, 11 Sep 2023 02:50:58 -0700 (PDT)
-Received: from C02DW0BEMD6R.bytedance.net ([203.208.167.146])
-        by smtp.gmail.com with ESMTPSA id az7-20020a170902a58700b001bdc2fdcf7esm5988188plb.129.2023.09.11.02.50.48
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 11 Sep 2023 02:50:58 -0700 (PDT)
-From:   Qi Zheng <zhengqi.arch@bytedance.com>
-To:     akpm@linux-foundation.org, david@fromorbit.com, tkhai@ya.ru,
-        vbabka@suse.cz, roman.gushchin@linux.dev, djwong@kernel.org,
-        brauner@kernel.org, paulmck@kernel.org, tytso@mit.edu,
-        steven.price@arm.com, cel@kernel.org, senozhatsky@chromium.org,
-        yujie.liu@intel.com, gregkh@linuxfoundation.org,
-        muchun.song@linux.dev
-Cc:     linux-kernel@vger.kernel.org, linux-mm@kvack.org,
-        linux-fsdevel@vger.kernel.org,
-        Qi Zheng <zhengqi.arch@bytedance.com>,
-        Muchun Song <songmuchun@bytedance.com>,
-        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>,
-        Alexander Viro <viro@zeniv.linux.org.uk>,
+        Mon, 11 Sep 2023 09:23:19 -0400
+Received: from esa3.hgst.iphmx.com (esa3.hgst.iphmx.com [216.71.153.141])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2155612A
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 06:23:15 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1694438595; x=1725974595;
+  h=from:to:cc:subject:date:message-id:in-reply-to:
+   references:mime-version:content-transfer-encoding;
+  bh=H022AhqxQLH8oJ/IhL9gK9CUAeyKynw0SLTJOhcuOHQ=;
+  b=YilrwGy5AlUpmOxGxVMDPCg5FoylLJqk2YoNFnTAqfzcNgoNFC4orejf
+   HiXZM37sQgQj6n4dy7YGQFJ3ehXxEznl2KXzwxtF0UlZSRqGQnCT78VW+
+   NvNOoSoYQVdeOEIApTj6YPMHaeLmKUdyw2WJYVd9TMGf/NlAfJ9CA6lZx
+   vJo+W9TNDUOD19j3A2E7Tq8UkWr7z1sCFDY8uguyhfgsOE9zeXKBZ1KSt
+   SHOEDFfqOohFFmKYcrpxoYnFq2UfhNgV50a7YdCpl69rgrNqIIEYulEM4
+   WloKy2f38sEi2ZuhPdJHxzBJqhdI8QgekUxDebYQn01y4CXBkM56rLOc7
+   A==;
+X-CSE-ConnectionGUID: 8ES1wyiBRRGwLWNFUoUwww==
+X-CSE-MsgGUID: OHUcN68/TdyRNJePVtl7FQ==
+X-IronPort-AV: E=Sophos;i="6.02,244,1688400000"; 
+   d="scan'208";a="248143283"
+Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
+  by ob1.hgst.iphmx.com with ESMTP; 11 Sep 2023 21:23:14 +0800
+IronPort-SDR: 6DD1LbTZDt0YQB/csjrBy5moV0FrM5Ce5Ab1rVbuMlM+WjrhvVKXZpdvTZlS/TDmU1uf7rbuwg
+ B9TSuEa4//11sDNO6axZ7hYtAIrGCT+fWasseomEWjtiCavUUXaN/j9VWsN7taj5XBd5rXg6v9
+ MUFgfTgxJuaz1+SyarY7D8p6E4Z2Hd8npHMZrPI/R343zY1AHGlOdoF/dltxASWzCO0UbkfX/1
+ Rgw5ZLImApekPdoKjsNCvgBRCENJIc37XDZ03oY2KrKitg3m7RbwD3d1bzYDUkogBhGHGfg7/p
+ Ebs=
+Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 11 Sep 2023 05:30:19 -0700
+IronPort-SDR: My0ZbToCJmvcAZDxNYlrQPbivIoV+mITsZaki3rPiNzcYIRXItz1xdhbguw/nFPdPojhxz7P4f
+ f2TERQyq8ZWoJiALKCy41yjh938GK+0lAb8NfEqPRLMaxKHDiH+6/MQli9Mcogf3sQBTcYmArI
+ cvpjlVzhpokCWcaaK4JmWIfRvkEQiwPc3dvlnzCcunjx+cGIJPWtG0C4mZDqZc2w3WgMTOWNfy
+ KPYI3WwSBFBec0fKiw4kmfrh3EiaC8HpS+wSnjpmXxZfAUOFXpYBaCZD598PkJYgDZjeN62zcY
+ +K0=
+WDCIronportException: Internal
+Received: from unknown (HELO redsun91.ssa.fujisawa.hgst.com) ([10.149.66.6])
+  by uls-op-cesaip01.wdc.com with ESMTP; 11 Sep 2023 06:23:13 -0700
+From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
+To:     David Sterba <dsterba@suse.com>
+Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
         linux-btrfs@vger.kernel.org
-Subject: [PATCH v6 38/45] fs: super: dynamically allocate the s_shrink
-Date:   Mon, 11 Sep 2023 17:44:37 +0800
-Message-Id: <20230911094444.68966-39-zhengqi.arch@bytedance.com>
-X-Mailer: git-send-email 2.24.3 (Apple Git-128)
-In-Reply-To: <20230911094444.68966-1-zhengqi.arch@bytedance.com>
-References: <20230911094444.68966-1-zhengqi.arch@bytedance.com>
+Subject: [PATCH 4/6] btrfs-progs: allow zoned RAID
+Date:   Mon, 11 Sep 2023 06:23:00 -0700
+Message-ID: <20230911-raid-stripe-tree-v1-4-c8337f7444b5@wdc.com>
+X-Mailer: git-send-email 2.41.0
+In-Reply-To: <20230911-raid-stripe-tree-v1-0-c8337f7444b5@wdc.com>
+References: <20230911-raid-stripe-tree-v1-0-c8337f7444b5@wdc.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+X-Mailer: b4 0.12.3
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1694438542; l=7572; i=johannes.thumshirn@wdc.com; s=20230613; h=from:subject:message-id; bh=H022AhqxQLH8oJ/IhL9gK9CUAeyKynw0SLTJOhcuOHQ=; b=Ye/UjLLY5aX1r6TuR1tcvcESvHzT9JgMZvwugj85EGD/X3aXSpKD3RcuNbZ42G6p/Qqe1GerI KLgMRiBO8/KA2ubdAesgYJ4LHXW4mujAcOzW5lfCIpObnHElXTBrMZ2
+X-Developer-Key: i=johannes.thumshirn@wdc.com; a=ed25519; pk=TGmHKs78FdPi+QhrViEvjKIGwReUGCfa+3LEnGoR2KM=
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-In preparation for implementing lockless slab shrink, use new APIs to
-dynamically allocate the s_shrink, so that it can be freed asynchronously
-via RCU. Then it doesn't need to wait for RCU read-side critical section
-when releasing the struct super_block.
+Allow for RAID levels 0, 1 and 10 on zoned devices if the RAID stripe tree
+is used.
 
-Signed-off-by: Qi Zheng <zhengqi.arch@bytedance.com>
-Reviewed-by: Muchun Song <songmuchun@bytedance.com>
-CC: Chris Mason <clm@fb.com>
-CC: Josef Bacik <josef@toxicpanda.com>
-CC: David Sterba <dsterba@suse.com>
-CC: Alexander Viro <viro@zeniv.linux.org.uk>
-CC: Christian Brauner <brauner@kernel.org>
-CC: linux-btrfs@vger.kernel.org
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- fs/btrfs/super.c   |  2 +-
- fs/kernfs/mount.c  |  2 +-
- fs/proc/root.c     |  2 +-
- fs/super.c         | 33 ++++++++++++++++++---------------
- include/linux/fs.h |  2 +-
- 5 files changed, 22 insertions(+), 19 deletions(-)
+ common/fsfeatures.c   |  8 ++++++
+ kernel-shared/ctree.h |  3 +-
+ kernel-shared/zoned.c | 34 ++++++++++++++++++++--
+ kernel-shared/zoned.h |  4 +--
+ mkfs/main.c           | 79 ++++++++++++++++++++++++++++++++++++++++++++++++---
+ 5 files changed, 118 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 09bfe68d2ea3..3b165d9967bb 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1519,7 +1519,7 @@ static struct dentry *btrfs_mount_root(struct file_system_type *fs_type,
- 			error = -EBUSY;
- 	} else {
- 		snprintf(s->s_id, sizeof(s->s_id), "%pg", bdev);
--		shrinker_debugfs_rename(&s->s_shrink, "sb-%s:%s", fs_type->name,
-+		shrinker_debugfs_rename(s->s_shrink, "sb-%s:%s", fs_type->name,
- 					s->s_id);
- 		btrfs_sb(s)->bdev_holder = fs_type;
- 		error = btrfs_fill_super(s, fs_devices, data);
-diff --git a/fs/kernfs/mount.c b/fs/kernfs/mount.c
-index c4bf26142eec..79b96e74a8a0 100644
---- a/fs/kernfs/mount.c
-+++ b/fs/kernfs/mount.c
-@@ -265,7 +265,7 @@ static int kernfs_fill_super(struct super_block *sb, struct kernfs_fs_context *k
- 	sb->s_time_gran = 1;
- 
- 	/* sysfs dentries and inodes don't require IO to create */
--	sb->s_shrink.seeks = 0;
-+	sb->s_shrink->seeks = 0;
- 
- 	/* get root inode, initialize and unlock it */
- 	down_read(&kf_root->kernfs_rwsem);
-diff --git a/fs/proc/root.c b/fs/proc/root.c
-index 9191248f2dac..b55dbc70287b 100644
---- a/fs/proc/root.c
-+++ b/fs/proc/root.c
-@@ -188,7 +188,7 @@ static int proc_fill_super(struct super_block *s, struct fs_context *fc)
- 	s->s_stack_depth = FILESYSTEM_MAX_STACK_DEPTH;
- 
- 	/* procfs dentries and inodes don't require IO to create */
--	s->s_shrink.seeks = 0;
-+	s->s_shrink->seeks = 0;
- 
- 	pde_get(&proc_root);
- 	root_inode = proc_get_inode(s, &proc_root);
-diff --git a/fs/super.c b/fs/super.c
-index 2d762ce67f6e..adadf6689611 100644
---- a/fs/super.c
-+++ b/fs/super.c
-@@ -191,7 +191,7 @@ static unsigned long super_cache_scan(struct shrinker *shrink,
- 	long	dentries;
- 	long	inodes;
- 
--	sb = container_of(shrink, struct super_block, s_shrink);
-+	sb = shrink->private_data;
- 
- 	/*
- 	 * Deadlock avoidance.  We may hold various FS locks, and we don't want
-@@ -244,7 +244,7 @@ static unsigned long super_cache_count(struct shrinker *shrink,
- 	struct super_block *sb;
- 	long	total_objects = 0;
- 
--	sb = container_of(shrink, struct super_block, s_shrink);
-+	sb = shrink->private_data;
- 
- 	/*
- 	 * We don't call super_trylock_shared() here as it is a scalability
-@@ -306,7 +306,7 @@ static void destroy_unused_super(struct super_block *s)
- 	security_sb_free(s);
- 	put_user_ns(s->s_user_ns);
- 	kfree(s->s_subtype);
--	free_prealloced_shrinker(&s->s_shrink);
-+	shrinker_free(s->s_shrink);
- 	/* no delays needed */
- 	destroy_super_work(&s->destroy_work);
+diff --git a/common/fsfeatures.c b/common/fsfeatures.c
+index 00658fa5159f..2658f5072af4 100644
+--- a/common/fsfeatures.c
++++ b/common/fsfeatures.c
+@@ -189,6 +189,14 @@ static const struct btrfs_feature mkfs_features[] = {
+ 		VERSION_NULL(safe),
+ 		VERSION_NULL(default),
+ 		.desc		= "new extent tree format"
++	} , {
++		.name		= "raid-stripe-tree",
++		.incompat_flag	= BTRFS_FEATURE_INCOMPAT_RAID_STRIPE_TREE,
++		.sysfs_name	= NULL,
++		VERSION_NULL(compat),
++		VERSION_NULL(safe),
++		VERSION_NULL(default),
++		.desc		= "raid stripe tree"
+ 	},
+ #endif
+ 	/* Keep this one last */
+diff --git a/kernel-shared/ctree.h b/kernel-shared/ctree.h
+index 26ab0b6aea17..e6322a77d3c8 100644
+--- a/kernel-shared/ctree.h
++++ b/kernel-shared/ctree.h
+@@ -102,7 +102,8 @@ static inline u32 __BTRFS_LEAF_DATA_SIZE(u32 nodesize)
+ 	 BTRFS_FEATURE_INCOMPAT_RAID1C34 |		\
+ 	 BTRFS_FEATURE_INCOMPAT_METADATA_UUID |		\
+ 	 BTRFS_FEATURE_INCOMPAT_ZONED |			\
+-	 BTRFS_FEATURE_INCOMPAT_EXTENT_TREE_V2)
++	 BTRFS_FEATURE_INCOMPAT_EXTENT_TREE_V2 |	\
++	 BTRFS_FEATURE_INCOMPAT_RAID_STRIPE_TREE)
+ #else
+ #define BTRFS_FEATURE_INCOMPAT_SUPP			\
+ 	(BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF |		\
+diff --git a/kernel-shared/zoned.c b/kernel-shared/zoned.c
+index d187c5763406..d8fad4319e44 100644
+--- a/kernel-shared/zoned.c
++++ b/kernel-shared/zoned.c
+@@ -737,7 +737,7 @@ out:
+ 	return ret;
  }
-@@ -383,16 +383,19 @@ static struct super_block *alloc_super(struct file_system_type *type, int flags,
- 	s->s_time_min = TIME64_MIN;
- 	s->s_time_max = TIME64_MAX;
  
--	s->s_shrink.seeks = DEFAULT_SEEKS;
--	s->s_shrink.scan_objects = super_cache_scan;
--	s->s_shrink.count_objects = super_cache_count;
--	s->s_shrink.batch = 1024;
--	s->s_shrink.flags = SHRINKER_NUMA_AWARE | SHRINKER_MEMCG_AWARE;
--	if (prealloc_shrinker(&s->s_shrink, "sb-%s", type->name))
-+	s->s_shrink = shrinker_alloc(SHRINKER_NUMA_AWARE | SHRINKER_MEMCG_AWARE,
-+				     "sb-%s", type->name);
-+	if (!s->s_shrink)
- 		goto fail;
--	if (list_lru_init_memcg(&s->s_dentry_lru, &s->s_shrink))
-+
-+	s->s_shrink->scan_objects = super_cache_scan;
-+	s->s_shrink->count_objects = super_cache_count;
-+	s->s_shrink->batch = 1024;
-+	s->s_shrink->private_data = s;
-+
-+	if (list_lru_init_memcg(&s->s_dentry_lru, s->s_shrink))
- 		goto fail;
--	if (list_lru_init_memcg(&s->s_inode_lru, &s->s_shrink))
-+	if (list_lru_init_memcg(&s->s_inode_lru, s->s_shrink))
- 		goto fail;
- 	return s;
- 
-@@ -477,7 +480,7 @@ void deactivate_locked_super(struct super_block *s)
+-bool zoned_profile_supported(u64 map_type)
++bool zoned_profile_supported(u64 map_type, bool rst)
  {
- 	struct file_system_type *fs = s->s_type;
- 	if (atomic_dec_and_test(&s->s_active)) {
--		unregister_shrinker(&s->s_shrink);
-+		shrinker_free(s->s_shrink);
- 		fs->kill_sb(s);
+ 	bool data = (map_type & BTRFS_BLOCK_GROUP_DATA);
+ 	u64 flags = (map_type & BTRFS_BLOCK_GROUP_PROFILE_MASK);
+@@ -746,9 +746,37 @@ bool zoned_profile_supported(u64 map_type)
+ 	if (flags == 0)
+ 		return true;
  
- 		kill_super_notify(s);
-@@ -818,7 +821,7 @@ struct super_block *sget_fc(struct fs_context *fc,
- 	hlist_add_head(&s->s_instances, &s->s_type->fs_supers);
- 	spin_unlock(&sb_lock);
- 	get_filesystem(s->s_type);
--	register_shrinker_prepared(&s->s_shrink);
-+	shrinker_register(s->s_shrink);
- 	return s;
+-	/* We can support DUP on metadata */
++#if EXPERIMENTAL
++	if (data) {
++		if ((flags & BTRFS_BLOCK_GROUP_DUP) && rst)
++			return true;
++		/* Data RAID1 needs a raid-stripe-tree */
++		if ((flags & BTRFS_BLOCK_GROUP_RAID1_MASK) && rst)
++			return true;
++		/* Data RAID0 needs a raid-stripe-tree */
++		if ((flags & BTRFS_BLOCK_GROUP_RAID0) && rst)
++			return true;
++		/* Data RAID10 needs a raid-stripe-tree */
++		if ((flags & BTRFS_BLOCK_GROUP_RAID10) && rst)
++			return true;
++	} else {
++		/* We can support DUP on metadata/system */
++		if (flags & BTRFS_BLOCK_GROUP_DUP)
++			return true;
++		/* We can support RAID1 on metadata/system */
++		if (flags & BTRFS_BLOCK_GROUP_RAID1_MASK)
++			return true;
++		/* We can support RAID0 on metadata/system */
++		if (flags & BTRFS_BLOCK_GROUP_RAID0)
++			return true;
++		/* We can support RAID10 on metadata/system */
++		if (flags & BTRFS_BLOCK_GROUP_RAID10)
++			return true;
++	}
++#else
+ 	if (!data && (flags & BTRFS_BLOCK_GROUP_DUP))
+ 		return true;
++#endif
  
- share_extant_sb:
-@@ -901,7 +904,7 @@ struct super_block *sget(struct file_system_type *type,
- 	hlist_add_head(&s->s_instances, &type->fs_supers);
- 	spin_unlock(&sb_lock);
- 	get_filesystem(type);
--	register_shrinker_prepared(&s->s_shrink);
-+	shrinker_register(s->s_shrink);
- 	return s;
+ 	/* All other profiles are not supported yet */
+ 	return false;
+@@ -863,7 +891,7 @@ int btrfs_load_block_group_zone_info(struct btrfs_fs_info *fs_info,
+ 		}
+ 	}
+ 
+-	if (!zoned_profile_supported(map->type)) {
++	if (!zoned_profile_supported(map->type, !!fs_info->stripe_root)) {
+ 		error("zoned: profile %s not yet supported",
+ 		      btrfs_group_profile_str(map->type));
+ 		ret = -EINVAL;
+diff --git a/kernel-shared/zoned.h b/kernel-shared/zoned.h
+index 9e4162cf25c5..6efc60281bc9 100644
+--- a/kernel-shared/zoned.h
++++ b/kernel-shared/zoned.h
+@@ -133,7 +133,7 @@ static inline bool btrfs_dev_is_empty_zone(struct btrfs_device *device, u64 pos)
+ 	return zinfo->zones[zno].cond == BLK_ZONE_COND_EMPTY;
  }
- EXPORT_SYMBOL(sget);
-@@ -1522,7 +1525,7 @@ int setup_bdev_super(struct super_block *sb, int sb_flags,
- 	mutex_unlock(&bdev->bd_fsfreeze_mutex);
  
- 	snprintf(sb->s_id, sizeof(sb->s_id), "%pg", bdev);
--	shrinker_debugfs_rename(&sb->s_shrink, "sb-%s:%s", sb->s_type->name,
-+	shrinker_debugfs_rename(sb->s_shrink, "sb-%s:%s", sb->s_type->name,
- 				sb->s_id);
- 	sb_set_blocksize(sb, block_size(bdev));
+-bool zoned_profile_supported(u64 map_type);
++bool zoned_profile_supported(u64 map_type, bool rst);
+ int btrfs_reset_dev_zone(int fd, struct blk_zone *zone);
+ u64 btrfs_find_allocatable_zones(struct btrfs_device *device, u64 hole_start,
+ 				 u64 hole_end, u64 num_bytes);
+@@ -214,7 +214,7 @@ static inline int btrfs_wipe_temporary_sb(struct btrfs_fs_devices *fs_devices)
  	return 0;
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 4aeb3fa11927..801ff3d66caa 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -1265,7 +1265,7 @@ struct super_block {
+ }
  
- 	const struct dentry_operations *s_d_op; /* default d_op for dentries */
+-static inline bool zoned_profile_supported(u64 map_type)
++static inline bool zoned_profile_supported(u64 map_type, bool rst)
+ {
+ 	return false;
+ }
+diff --git a/mkfs/main.c b/mkfs/main.c
+index 7acd39ec6531..7d07ba1e7001 100644
+--- a/mkfs/main.c
++++ b/mkfs/main.c
+@@ -962,6 +962,38 @@ fail:
+ 	return ret;
+ }
  
--	struct shrinker s_shrink;	/* per-sb shrinker handle */
-+	struct shrinker *s_shrink;	/* per-sb shrinker handle */
++static int setup_raid_stripe_tree_root(struct btrfs_fs_info *fs_info)
++{
++	struct btrfs_trans_handle *trans;
++	struct btrfs_root *stripe_root;
++	struct btrfs_key key = {
++		.objectid = BTRFS_RAID_STRIPE_TREE_OBJECTID,
++		.type = BTRFS_ROOT_ITEM_KEY,
++	};
++	int ret;
++
++	trans = btrfs_start_transaction(fs_info->tree_root, 0);
++	if (IS_ERR(trans))
++		return PTR_ERR(trans);
++
++	stripe_root = btrfs_create_tree(trans, fs_info, &key);
++	if (IS_ERR(stripe_root))  {
++		ret =  PTR_ERR(stripe_root);
++		goto abort;
++	}
++	fs_info->stripe_root = stripe_root;
++	add_root_to_dirty_list(stripe_root);
++
++	ret = btrfs_commit_transaction(trans, fs_info->tree_root);
++	if (ret)
++		return ret;
++
++	return 0;
++abort:
++	btrfs_abort_transaction(trans, ret);
++	return ret;
++}
++
+ /* Thread callback for device preparation */
+ static void *prepare_one_device(void *ctx)
+ {
+@@ -1472,10 +1504,39 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
+ 	if (ret)
+ 		goto error;
  
- 	/* Number of inodes with nlink == 0 but still referenced */
- 	atomic_long_t s_remove_count;
+-	if (opt_zoned && (!zoned_profile_supported(BTRFS_BLOCK_GROUP_METADATA | metadata_profile) ||
+-		      !zoned_profile_supported(BTRFS_BLOCK_GROUP_DATA | data_profile))) {
+-		error("zoned mode does not yet support RAID/DUP profiles, please specify '-d single -m single' manually");
+-		goto error;
++#if EXPERIMENTAL
++	if (opt_zoned && device_count) {
++		switch (data_profile & BTRFS_BLOCK_GROUP_PROFILE_MASK) {
++		case BTRFS_BLOCK_GROUP_DUP:
++		case BTRFS_BLOCK_GROUP_RAID1:
++		case BTRFS_BLOCK_GROUP_RAID1C3:
++		case BTRFS_BLOCK_GROUP_RAID1C4:
++		case BTRFS_BLOCK_GROUP_RAID0:
++		case BTRFS_BLOCK_GROUP_RAID10:
++			features.incompat_flags |=
++				BTRFS_FEATURE_INCOMPAT_RAID_STRIPE_TREE;
++			break;
++		default:
++			break;
++		}
++	}
++#endif
++
++	if (opt_zoned) {
++		u64 metadata = BTRFS_BLOCK_GROUP_METADATA | metadata_profile;
++		u64 data = BTRFS_BLOCK_GROUP_DATA | data_profile;
++#if EXPERIMENTAL
++		bool rst = features.incompat_flags &
++			BTRFS_FEATURE_INCOMPAT_RAID_STRIPE_TREE;
++#else
++		bool rst = false;
++#endif
++
++		if (!zoned_profile_supported(metadata, rst) ||
++		    !zoned_profile_supported(data, rst)) {
++			error("zoned mode does not yet support RAID/DUP profiles, please specify '-d single -m single' manually");
++			goto error;
++		}
+ 	}
+ 
+ 	t_prepare = calloc(device_count, sizeof(*t_prepare));
+@@ -1585,6 +1646,15 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
+ 		goto error;
+ 	}
+ 
++	if (features.incompat_flags & BTRFS_FEATURE_INCOMPAT_RAID_STRIPE_TREE) {
++		ret = setup_raid_stripe_tree_root(fs_info);
++		if (ret < 0) {
++			error("failed to initialize raid-stripe-tree: %d (%m)",
++			      ret);
++			goto out;
++		}
++	}
++
+ 	trans = btrfs_start_transaction(root, 1);
+ 	if (IS_ERR(trans)) {
+ 		errno = -PTR_ERR(trans);
+@@ -1750,6 +1820,7 @@ raid_groups:
+ 			goto out;
+ 		}
+ 	}
++
+ 	if (bconf.verbose) {
+ 		char features_buf[BTRFS_FEATURE_STRING_BUF_SIZE];
+ 
+
 -- 
-2.30.2
+2.41.0
 

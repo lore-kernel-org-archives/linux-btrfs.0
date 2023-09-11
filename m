@@ -2,187 +2,260 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A4354CA0ECD
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Sep 2023 02:42:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B163DCA0EC8
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Sep 2023 02:44:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S240135AbjILCmM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 11 Sep 2023 22:42:12 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42048 "EHLO
+        id S240053AbjILCoV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 11 Sep 2023 22:44:21 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44388 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S237764AbjILCmA (ORCPT
+        with ESMTP id S235868AbjILCoL (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Sep 2023 22:42:00 -0400
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 48914107C4B;
-        Mon, 11 Sep 2023 19:07:26 -0700 (PDT)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 75967C433CA;
-        Mon, 11 Sep 2023 21:00:06 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1694466007;
-        bh=1Mtvtm9h8TdWnm2D+iqG/IpaTwZ8nD6u53SoLdurI14=;
-        h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
-        b=fuwGvohpcmfKGO2RWlGciogfllrT4g6bvxsOEkzncwoCYESfxu+p/K54lOrttG+Uz
-         Lbd3aJYJZpIPbYwhQAehM6Gcr6KwCM+3tyPtTm0hyQN5j/yWkyUzAincgHBnwO/zpY
-         pjXnphPXJc1bAkNZKsCAH/3A9PCby/n/MzYiyVO83lUlsnq17ky39/585vP0brzZ1r
-         PxD3tWMaSrH5bqscYUxsP3a4Gtxzz3ZEpJEX0IouQpdRnPF38YH46SWKSKDF/i7Gtc
-         CvguMJQzhPokaUhGzmLsWF7s9PVRrHDxRCHs5Pzyiuyf7klnI2t1uzusdnlH8hs3cv
-         +4ffX5dswg1Bw==
-Message-ID: <9cae9239-2a07-6477-da53-275944e8ce25@kernel.org>
-Date:   Tue, 12 Sep 2023 06:00:05 +0900
+        Mon, 11 Sep 2023 22:44:11 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BBF69EED5C
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 16:37:19 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 2B7451F88C
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 23:35:45 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1694475345; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=hhAqB477ZX34d2b5Zk99+GOdX/Svz9FDHJqV4Godxro=;
+        b=plKkY4XpN1ydgXZFwT/MxmqIEZ1El2oTgtbRFfCSSjuiadhI5WpAdDF5VA6i0lP2HJIWWU
+        q6elUQfIkuXcHaMgjH+HWcgZQouHRoWkwVsbhRZnzSpkYMBREJ9d7koZ4eDrgsZ8O5Lt18
+        mc5DspEdKnTMaZQmsTq9FszzJtHLKAI=
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 61D8F139CC
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 23:35:44 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id eHvHCFCk/2SgPwAAMHmgww
+        (envelope-from <wqu@suse.com>)
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 23:35:44 +0000
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/3] btrfs-progs: pull in the full max/min/clamp implementation from kernel
+Date:   Tue, 12 Sep 2023 09:05:23 +0930
+Message-ID: <6492b29d21c7ac12eb52255ff577e4e6d7e10c0d.1694428549.git.wqu@suse.com>
+X-Mailer: git-send-email 2.42.0
+In-Reply-To: <cover.1694428549.git.wqu@suse.com>
+References: <cover.1694428549.git.wqu@suse.com>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.13.0
-Subject: Re: [PATCH v8 01/11] btrfs: add raid stripe tree definitions
-To:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>
-Cc:     Christoph Hellwig <hch@lst.de>,
-        Naohiro Aota <naohiro.aota@wdc.com>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-References: <20230911-raid-stripe-tree-v8-0-647676fa852c@wdc.com>
- <20230911-raid-stripe-tree-v8-1-647676fa852c@wdc.com>
-Content-Language: en-US
-From:   Damien Le Moal <dlemoal@kernel.org>
-Organization: Western Digital Research
-In-Reply-To: <20230911-raid-stripe-tree-v8-1-647676fa852c@wdc.com>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
+Message-ID: <20230911233523.Ja6zkUBVPzM1SdwzSn8QhQuxWssIA6lslf_X9guPJTg@z>
 
-On 9/11/23 21:52, Johannes Thumshirn wrote:
-> Add definitions for the raid stripe tree. This tree will hold information
-> about the on-disk layout of the stripes in a RAID set.
-> 
-> Each stripe extent has a 1:1 relationship with an on-disk extent item and
-> is doing the logical to per-drive physical address translation for the
-> extent item in question.
-> 
-> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-> ---
->  fs/btrfs/accessors.h            | 10 ++++++++++
->  fs/btrfs/locking.c              |  5 +++--
->  include/uapi/linux/btrfs_tree.h | 33 +++++++++++++++++++++++++++++++--
->  3 files changed, 44 insertions(+), 4 deletions(-)
-> 
-> diff --git a/fs/btrfs/accessors.h b/fs/btrfs/accessors.h
-> index f958eccff477..977ff160a024 100644
-> --- a/fs/btrfs/accessors.h
-> +++ b/fs/btrfs/accessors.h
-> @@ -306,6 +306,16 @@ BTRFS_SETGET_FUNCS(timespec_nsec, struct btrfs_timespec, nsec, 32);
->  BTRFS_SETGET_STACK_FUNCS(stack_timespec_sec, struct btrfs_timespec, sec, 64);
->  BTRFS_SETGET_STACK_FUNCS(stack_timespec_nsec, struct btrfs_timespec, nsec, 32);
->  
-> +BTRFS_SETGET_FUNCS(stripe_extent_encoding, struct btrfs_stripe_extent, encoding, 8);
-> +BTRFS_SETGET_FUNCS(raid_stride_devid, struct btrfs_raid_stride, devid, 64);
-> +BTRFS_SETGET_FUNCS(raid_stride_physical, struct btrfs_raid_stride, physical, 64);
-> +BTRFS_SETGET_FUNCS(raid_stride_length, struct btrfs_raid_stride, length, 64);
-> +BTRFS_SETGET_STACK_FUNCS(stack_stripe_extent_encoding,
-> +			 struct btrfs_stripe_extent, encoding, 8);
-> +BTRFS_SETGET_STACK_FUNCS(stack_raid_stride_devid, struct btrfs_raid_stride, devid, 64);
-> +BTRFS_SETGET_STACK_FUNCS(stack_raid_stride_physical, struct btrfs_raid_stride, physical, 64);
-> +BTRFS_SETGET_STACK_FUNCS(stack_raid_stride_length, struct btrfs_raid_stride, length, 64);
-> +
->  /* struct btrfs_dev_extent */
->  BTRFS_SETGET_FUNCS(dev_extent_chunk_tree, struct btrfs_dev_extent, chunk_tree, 64);
->  BTRFS_SETGET_FUNCS(dev_extent_chunk_objectid, struct btrfs_dev_extent,
-> diff --git a/fs/btrfs/locking.c b/fs/btrfs/locking.c
-> index 6ac4fd8cc8dc..e7760d40feab 100644
-> --- a/fs/btrfs/locking.c
-> +++ b/fs/btrfs/locking.c
-> @@ -58,8 +58,8 @@
->  
->  static struct btrfs_lockdep_keyset {
->  	u64			id;		/* root objectid */
-> -	/* Longest entry: btrfs-block-group-00 */
-> -	char			names[BTRFS_MAX_LEVEL][24];
-> +	/* Longest entry: btrfs-raid-stripe-tree-00 */
-> +	char			names[BTRFS_MAX_LEVEL][25];
->  	struct lock_class_key	keys[BTRFS_MAX_LEVEL];
->  } btrfs_lockdep_keysets[] = {
->  	{ .id = BTRFS_ROOT_TREE_OBJECTID,	DEFINE_NAME("root")	},
-> @@ -74,6 +74,7 @@ static struct btrfs_lockdep_keyset {
->  	{ .id = BTRFS_UUID_TREE_OBJECTID,	DEFINE_NAME("uuid")	},
->  	{ .id = BTRFS_FREE_SPACE_TREE_OBJECTID,	DEFINE_NAME("free-space") },
->  	{ .id = BTRFS_BLOCK_GROUP_TREE_OBJECTID, DEFINE_NAME("block-group") },
-> +	{ .id = BTRFS_RAID_STRIPE_TREE_OBJECTID,DEFINE_NAME("raid-stripe-tree") },
->  	{ .id = 0,				DEFINE_NAME("tree")	},
->  };
->  
-> diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
-> index fc3c32186d7e..3fb758ce3ac0 100644
-> --- a/include/uapi/linux/btrfs_tree.h
-> +++ b/include/uapi/linux/btrfs_tree.h
-> @@ -4,9 +4,8 @@
->  
->  #include <linux/btrfs.h>
->  #include <linux/types.h>
-> -#ifdef __KERNEL__
->  #include <linux/stddef.h>
-> -#else
-> +#ifndef __KERNEL__
->  #include <stddef.h>
->  #endif
+The current implementation would introduce variable shadowing due to
+both max() and min() are using the same __x and __y.
 
-This change seems unrelated to the RAID stripe tree. Should this be a patch on
-its own ?
+This may not be a big deal, but since kernel is already handling it
+properly using __UNIQUE_ID() macro, and has more checks, we can
+cross-port the kernel version to btrfs-progs.
 
->  
-> @@ -73,6 +72,9 @@
->  /* Holds the block group items for extent tree v2. */
->  #define BTRFS_BLOCK_GROUP_TREE_OBJECTID 11ULL
->  
-> +/* tracks RAID stripes in block groups. */
-> +#define BTRFS_RAID_STRIPE_TREE_OBJECTID 12ULL
-> +
->  /* device stats in the device tree */
->  #define BTRFS_DEV_STATS_OBJECTID 0ULL
->  
-> @@ -285,6 +287,8 @@
->   */
->  #define BTRFS_QGROUP_RELATION_KEY       246
->  
-> +#define BTRFS_RAID_STRIPE_KEY		247
-> +
->  /*
->   * Obsolete name, see BTRFS_TEMPORARY_ITEM_KEY.
->   */
-> @@ -719,6 +723,31 @@ struct btrfs_free_space_header {
->  	__le64 num_bitmaps;
->  } __attribute__ ((__packed__));
->  
-> +struct btrfs_raid_stride {
-> +	/* btrfs device-id this raid extent lives on */
-> +	__le64 devid;
-> +	/* physical location on disk */
-> +	__le64 physical;
-> +	/* length of stride on this disk */
-> +	__le64 length;
-> +};
-> +
-> +#define BTRFS_STRIPE_DUP	0
-> +#define BTRFS_STRIPE_RAID0	1
-> +#define BTRFS_STRIPE_RAID1	2
-> +#define BTRFS_STRIPE_RAID1C3	3
-> +#define BTRFS_STRIPE_RAID1C4	4
-> +#define BTRFS_STRIPE_RAID5	5
-> +#define BTRFS_STRIPE_RAID6	6
-> +#define BTRFS_STRIPE_RAID10	7
-> +
-> +struct btrfs_stripe_extent {
-> +	__u8 encoding;
-> +	__u8 reserved[7];
-> +	/* array of raid strides this stripe is composed of */
-> +	__DECLARE_FLEX_ARRAY(struct btrfs_raid_stride, strides);
-> +};
-> +
->  #define BTRFS_HEADER_FLAG_WRITTEN	(1ULL << 0)
->  #define BTRFS_HEADER_FLAG_RELOC		(1ULL << 1)
->  
-> 
+There are some dependency needed, they are all small enough thus can be
+put into the helper.
 
+- __PASTE()
+- __UNIQUE_ID()
+- BUILD_BUG_ON_ZERO()
+- __is_constexpr()
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ common/internal.h            | 147 +++++++++++++++++++++++++++++++----
+ kernel-shared/async-thread.c |   2 +-
+ 2 files changed, 131 insertions(+), 18 deletions(-)
+
+diff --git a/common/internal.h b/common/internal.h
+index 81729964d3c7..33295a194dad 100644
+--- a/common/internal.h
++++ b/common/internal.h
+@@ -16,31 +16,144 @@
+  * Boston, MA 021110-1307, USA.
+  */
+ 
++/*
++ * All those macros are cross-ported from kernel's include/linux/minmax.h, with needed
++ * dependency put here directly.
++ */
++
+ #ifndef __INTERNAL_H__
+ #define __INTERNAL_H__
+ 
++/* Indirect macros required for expanded argument pasting, eg. __LINE__. */
++#define ___PASTE(a,b) a##b
++#define __PASTE(a,b) ___PASTE(a,b)
++
++/* Not-quite-unique ID. */
++#ifndef __UNIQUE_ID
++# define __UNIQUE_ID(prefix) __PASTE(__PASTE(__UNIQUE_ID_, prefix), __LINE__)
++#endif
++
++#ifdef __CHECKER__
++#define BUILD_BUG_ON_ZERO(e) (0)
++#else /* __CHECKER__ */
+ /*
+- * max/min macro
++ * Force a compilation error if condition is true, but also produce a
++ * result (of value 0 and type int), so the expression can be used
++ * e.g. in a structure initializer (or where-ever else comma expressions
++ * aren't permitted).
+  */
+-#define min(x,y) ({ \
+-	typeof(x) _x = (x);	\
+-	typeof(y) _y = (y);	\
+-	(void) (&_x == &_y);		\
+-	_x < _y ? _x : _y; })
++#define BUILD_BUG_ON_ZERO(e) ((int)(sizeof(struct { int:(-!!(e)); })))
++#endif /* __CHECKER__ */
+ 
+-#define max(x,y) ({ \
+-	typeof(x) _x = (x);	\
+-	typeof(y) _y = (y);	\
+-	(void) (&_x == &_y);		\
+-	_x > _y ? _x : _y; })
++/*
++ * This returns a constant expression while determining if an argument is
++ * a constant expression, most importantly without evaluating the argument.
++ * Glory to Martin Uecker <Martin.Uecker@med.uni-goettingen.de>
++ */
++#define __is_constexpr(x) \
++	(sizeof(int) == sizeof(*(8 ? ((void *)((long)(x) * 0l)) : (int *)8)))
+ 
+-#define min_t(type,x,y) \
+-	({ type __x = (x); type __y = (y); __x < __y ? __x: __y; })
+-#define max_t(type,x,y) \
+-	({ type __x = (x); type __y = (y); __x > __y ? __x: __y; })
++/*
++ * min()/max()/clamp() macros must accomplish three things:
++ *
++ * - avoid multiple evaluations of the arguments (so side-effects like
++ *   "x++" happen only once) when non-constant.
++ * - perform strict type-checking (to generate warnings instead of
++ *   nasty runtime surprises). See the "unnecessary" pointer comparison
++ *   in __typecheck().
++ * - retain result as a constant expressions when called with only
++ *   constant expressions (to avoid tripping VLA warnings in stack
++ *   allocation usage).
++ */
++#define __typecheck(x, y) \
++	(!!(sizeof((typeof(x) *)1 == (typeof(y) *)1)))
+ 
+-#define clamp_t(type, val, lo, hi) min_t(type, max_t(type, val, lo), hi)
++#define __no_side_effects(x, y) \
++		(__is_constexpr(x) && __is_constexpr(y))
+ 
+-#define clamp_val(val, lo, hi) clamp_t(typeof(val), val, lo, hi)
++#define __safe_cmp(x, y) \
++		(__typecheck(x, y) && __no_side_effects(x, y))
++
++#define __cmp(x, y, op)	((x) op (y) ? (x) : (y))
++
++#define __cmp_once(x, y, unique_x, unique_y, op) ({	\
++		typeof(x) unique_x = (x);		\
++		typeof(y) unique_y = (y);		\
++		__cmp(unique_x, unique_y, op); })
++
++#define __careful_cmp(x, y, op) \
++	__builtin_choose_expr(__safe_cmp(x, y), \
++		__cmp(x, y, op), \
++		__cmp_once(x, y, __UNIQUE_ID(__x), __UNIQUE_ID(__y), op))
++
++#define __clamp(val, lo, hi)	\
++	((val) >= (hi) ? (hi) : ((val) <= (lo) ? (lo) : (val)))
++
++#define __clamp_once(val, lo, hi, unique_val, unique_lo, unique_hi) ({	\
++		typeof(val) unique_val = (val);				\
++		typeof(lo) unique_lo = (lo);				\
++		typeof(hi) unique_hi = (hi);				\
++		__clamp(unique_val, unique_lo, unique_hi); })
++
++#define __clamp_input_check(lo, hi)					\
++        (BUILD_BUG_ON_ZERO(__builtin_choose_expr(			\
++                __is_constexpr((lo) > (hi)), (lo) > (hi), false)))
++
++#define __careful_clamp(val, lo, hi) ({					\
++	__clamp_input_check(lo, hi) +					\
++	__builtin_choose_expr(__typecheck(val, lo) && __typecheck(val, hi) && \
++			      __typecheck(hi, lo) && __is_constexpr(val) && \
++			      __is_constexpr(lo) && __is_constexpr(hi),	\
++		__clamp(val, lo, hi),					\
++		__clamp_once(val, lo, hi, __UNIQUE_ID(__val),		\
++			     __UNIQUE_ID(__lo), __UNIQUE_ID(__hi))); })
++
++/**
++ * min - return minimum of two values of the same or compatible types
++ * @x: first value
++ * @y: second value
++ */
++#define min(x, y)	__careful_cmp(x, y, <)
++
++/**
++ * max - return maximum of two values of the same or compatible types
++ * @x: first value
++ * @y: second value
++ */
++#define max(x, y)	__careful_cmp(x, y, >)
++
++/**
++ * clamp - return a value clamped to a given range with strict typechecking
++ * @val: current value
++ * @lo: lowest allowable value
++ * @hi: highest allowable value
++ *
++ * This macro does strict typechecking of @lo/@hi to make sure they are of the
++ * same type as @val.  See the unnecessary pointer comparisons.
++ */
++#define clamp(val, lo, hi) __careful_clamp(val, lo, hi)
++
++/*
++ * ..and if you can't take the strict
++ * types, you can specify one yourself.
++ *
++ * Or not use min/max/clamp at all, of course.
++ */
++
++/**
++ * min_t - return minimum of two values, using the specified type
++ * @type: data type to use
++ * @x: first value
++ * @y: second value
++ */
++#define min_t(type, x, y)	__careful_cmp((type)(x), (type)(y), <)
++
++/**
++ * max_t - return maximum of two values, using the specified type
++ * @type: data type to use
++ * @x: first value
++ * @y: second value
++ */
++#define max_t(type, x, y)	__careful_cmp((type)(x), (type)(y), >)
+ 
+ #endif
+diff --git a/kernel-shared/async-thread.c b/kernel-shared/async-thread.c
+index ed235afdf215..db8870f9ae11 100644
+--- a/kernel-shared/async-thread.c
++++ b/kernel-shared/async-thread.c
+@@ -159,7 +159,7 @@ static inline void thresh_exec_hook(struct btrfs_workqueue *wq)
+ 		new_current_active++;
+ 	if (pending < wq->thresh / 2)
+ 		new_current_active--;
+-	new_current_active = clamp_val(new_current_active, 1, wq->limit_active);
++	new_current_active = clamp(new_current_active, 1, wq->limit_active);
+ 	if (new_current_active != wq->current_active)  {
+ 		need_change = 1;
+ 		wq->current_active = new_current_active;
 -- 
-Damien Le Moal
-Western Digital Research
+2.42.0
 

@@ -2,390 +2,128 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AA4F4CA0EC9
-	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Sep 2023 22:08:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6CE3BCA0EC7
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Sep 2023 01:43:49 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1356226AbjIKWDO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 11 Sep 2023 18:03:14 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58922 "EHLO
+        id S231891AbjILBnw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 11 Sep 2023 21:43:52 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50242 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236456AbjIKKlE (ORCPT
+        with ESMTP id S232638AbjILBTC (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Sep 2023 06:41:04 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AD937CDC
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 03:40:59 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 5F8291F893
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 10:40:58 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1694428858; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=qSam5cRKu3/msUdYKqLYYij4RmQ84ITCmv1EnJUGr+8=;
-        b=OStCowUjA80fLx1VmoPBwPOxYqLllVQTJX6cBJvBRflDTKNQjN8+e1XbsmCHYXFAZVvAwt
-        /oER21YwRdTf3LYMWtml+tQHfyQe2EcrARPFeEGd1KypJ5KA2rRgqlxr6puhqntpSp6ygq
-        0o/6ozlo79WyY8uv0N+cv5PIW4Z77tA=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 0BE3613780
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 10:40:56 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id 6OSUKrju/mQPTwAAMHmgww
-        (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 10:40:56 +0000
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/3] btrfs-progs: fix all variable shadowing
-Date:   Mon, 11 Sep 2023 20:10:33 +0930
-Message-ID: <36726710fcb190d52deca81b2735b5b1613304b2.1694428549.git.wqu@suse.com>
-X-Mailer: git-send-email 2.42.0
-In-Reply-To: <cover.1694428549.git.wqu@suse.com>
-References: <cover.1694428549.git.wqu@suse.com>
+        Mon, 11 Sep 2023 21:19:02 -0400
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.22])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6D98511C8C7
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 16:35:21 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.com;
+ s=s31663417; t=1694475264; x=1695080064; i=quwenruo.btrfs@gmx.com;
+ bh=k646O4fRYMxnP8IP0z27J3oDN+NPbYiQY++iJR5GF04=;
+ h=X-UI-Sender-Class:Date:Subject:To:Cc:References:From:In-Reply-To;
+ b=nQB5IJTMzdN1RBtSgX3A8ogh4hPU+KXoaJmvLM2YjtI01lS6HgxDUUMDbWQwuJnba/jhHv3
+ ixLWMf0CQZjURkQzPmikgRNySc+MLDgFvo1GxFxuRxmbHEp5ee890XyA4sjn1ThSFu9TLQF1k
+ sa8C0IXMHytsarzh9avqd/BEvcc2hrfuXHpGAKXptYkz5WwbbSyKcCnrMFZqYiDz3hEdekb7c
+ L+nPqN8jR/ZuicPuir9FVI3Z5NKcmERLMkoa1EDttFqO9NMP1TK96WXl4ePemFU4ht89SdhsC
+ re6yRrsllo7l39Dwy3GliWREs65sof++q/kFcUKqMrO1f8QVu1kw==
+X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
+Received: from [10.23.112.148] ([154.6.147.212]) by mail.gmx.net (mrgmx105
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MybGX-1pgzqJ49vB-00ywX7; Mon, 11
+ Sep 2023 23:07:15 +0200
+Message-ID: <2f663b7e-76f4-4e3f-a8aa-af79007f6683@gmx.com>
+Date:   Tue, 12 Sep 2023 06:37:11 +0930
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH] btrfs: rename errno identifiers to error
+To:     dsterba@suse.cz
+Cc:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+References: <20230908191006.31940-1-dsterba@suse.com>
+ <43024b78-debe-4764-8dc2-098e398df719@gmx.com>
+ <8dbd9c7b-0f51-4edd-a6e5-0ad6c30e2dd2@gmx.com>
+ <20230911143529.GB3159@twin.jikos.cz>
+Content-Language: en-US
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCY00iVQUJDToH
+ pgAKCRDCPZHzoSX+qNKACACkjDLzCvcFuDlgqCiS4ajHAo6twGra3uGgY2klo3S4JespWifr
+ BLPPak74oOShqNZ8yWzB1Bkz1u93Ifx3c3H0r2vLWrImoP5eQdymVqMWmDAq+sV1Koyt8gXQ
+ XPD2jQCrfR9nUuV1F3Z4Lgo+6I5LjuXBVEayFdz/VYK63+YLEAlSowCF72Lkz06TmaI0XMyj
+ jgRNGM2MRgfxbprCcsgUypaDfmhY2nrhIzPUICURfp9t/65+/PLlV4nYs+DtSwPyNjkPX72+
+ LdyIdY+BqS8cZbPG5spCyJIlZonADojLDYQq4QnufARU51zyVjzTXMg5gAttDZwTH+8LbNI4
+ mm2YzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCY00ibgUJDToHvwAK
+ CRDCPZHzoSX+qK6vB/9yyZlsS+ijtsvwYDjGA2WhVhN07Xa5SBBvGCAycyGGzSMkOJcOtUUf
+ tD+ADyrLbLuVSfRN1ke738UojphwkSFj4t9scG5A+U8GgOZtrlYOsY2+cG3R5vjoXUgXMP37
+ INfWh0KbJodf0G48xouesn08cbfUdlphSMXujCA8y5TcNyRuNv2q5Nizl8sKhUZzh4BascoK
+ DChBuznBsucCTAGrwPgG4/ul6HnWE8DipMKvkV9ob1xJS2W4WJRPp6QdVrBWJ9cCdtpR6GbL
+ iQi22uZXoSPv/0oUrGU+U5X4IvdnvT+8viPzszL5wXswJZfqfy8tmHM85yjObVdIG6AlnrrD
+In-Reply-To: <20230911143529.GB3159@twin.jikos.cz>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:yrY/YxrL78iTCz4TVaGdczuRPkxnrgaRlsWcDHyq2LcFPXen/ow
+ BWtS8xvQbQi1mUlzjfVuhCdHsDrqawq5UMr3ACrEQReF2jW1+T7nPId8k2pXVUC3u1X/dEH
+ h5vLNmL2xm//pyLJzYNXEIGxIhdX4sCRSlPvbf+NZdjEUAgHqU/Xv8wEDV36VOtMsRf9/VE
+ 6RLSzYh+fTrHJvC6Fwk6w==
+UI-OutboundReport: notjunk:1;M01:P0:LfBLGCV+WxI=;bDISLq3JmLQO0PwqZ9scKPzMXyq
+ rtOGFZmWifezbXHpkyoBsh1yAli66K5Psu+EwAZyNl5vxav/b6GvjoDf/LN9nQKuzSPwG3mls
+ HEoPWlh/VNh9qT8SxjbD4Qvz7/IpgQzfVXy+aV12D9oHtPEX4ZzsuofVsRyh2Q9h6R8FZvEuT
+ hIb40LlRAorbPaBj3QzDlJREOgMdTEw6O6qpntk59qalfpFSJX3/oSUJThKeJxaQXCbn5MfXA
+ 71uoYH0u258Xsv4cm5hehoUphNnyR2fGl5+F9LVuGkiojWiSUq42yqx5sJ5l1bE/K3vgrHI25
+ NnZfOwrKXbDlaIJbJfxq/7XP+vKzeXsNoHvoLrwkacG+KgpsfN4wPBmRSq5CCumbIxp0nRfSK
+ Es8D4svRrMCmdWMMPSmscwAiSwuLSfK4tZFZqmya/uW/fKkxKMsEx78jG0G8B/vZ8sEMxExaC
+ ujUrx+Kra1xiA0jplE505bVj9zZy+BvV1tkkSWSSkZu6NyGesFO0fa7j+LWMKXzupvhVYvL1i
+ 0cZlvii6AVGcNvgzy9cL0ruw2Z+FhtAErxTQjYfqNuVb7PM3Ds9dFau8uqQ96cuBhO7mvwhxV
+ x2o85t5oQy8mC/LTUM/v/AZMPKcub5eNCOUFJMjZoYS/sqFgIA4UBjnKrrJ9bypFjFf8aiqjI
+ nxQ2qndCl5YnpXInXvv/ueZc+v+13/BTJ5mVBJIkHqC5IWVB0gwlxIMh+z1UhjY+UL4WMNjHd
+ OUkL90Q6uN/FlcZ6g11dp4JoTmOPF+Fqx4pwmyr2DuGsol9MfzwqSPyCecM7oGSShg0Zd0myF
+ +OhNFk0gEicbe/3y5yo9y+Rj4sBmlwLXo1QKrYOw4x6RibSvWJsSzTSMK32q4/fdW6Gyl27Yd
+ qcuOoIXrkRgvKSJl2/Si4GPHnT/Cgk5DSmtvQDHHHKMyhwzvyuZMP+fL3/R0WMna4DxNbwwM1
+ omwG+lNIPKHl1M0x5IbrPuTOSrA=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-There are quite some variable shadowing in btrfs-progs, most of them are
-just reusing some common names like tmp.
-And those are quite safe and the shadowed one are even different type.
 
-But there are some exceptions:
 
-- @end in traverse_tree_blocks()
-  There is already an @end with the same type, but a different meaning
-  (the end of the current extent buffer passed in).
-  Just rename it to @child_end.
+On 2023/9/12 00:05, David Sterba wrote:
+> On Sun, Sep 10, 2023 at 02:35:30PM +0930, Qu Wenruo wrote:
+>> On 2023/9/10 14:28, Qu Wenruo wrote:
+>>> On 2023/9/9 04:40, David Sterba wrote:
+>>>> We sync the kernel files to userspace and the 'errno' symbol is defin=
+ed
+>>>> by standard library, which does not matter in kernel but the paramete=
+rs
+>>>> or local variables could clash. Rename them all.
+>>>
+>>> Well, initially I thought this problem should be exposed by -Wshadow i=
+n
+>>> btrfs-progs, but I'm wrong.
+>>>
+>>> When going W=3D2 for btrfs-progs, we indeed got some error on some sha=
+dows
+>>> but not any @errno one in the current devel.
+>>>
+>>> Is there some warning option we can use in progs to expose such warnin=
+gs?
+>>
+>> Never mind, those files are not yet synced to btrfs-progs, thus no such
+>> variable shadowing problem.
+>>
+>> For this -Wshadow, I think after cleaning up all those existing warning
+>> we may consider put it into the default warning options.
+>
+> Agreed.
 
-- @start in generate_new_data_csums_range()
-  Just rename it to @csum_start.
+Sent but not really arriving the mailing list due to regular vger
+downtime...
 
-- @size of fixup_chunk_tree_block()
-  This one is particularly bad, we declare a local @size and initialize
-  it to -1, then before we really utilize the variable @size, we
-  immediately reset it to 0, then pass it to logical_to_physical().
-  Then there is a location to check if @size is -1, which will always be
-  true.
-
-  According to the code in logical_to_physical(), @size would be clamped
-  down by its original value, thus our local @size will always be 0.
-
-  This patch would rename the local @size to @found_size, and only set
-  it to -1.
-  The call site is only to pass something as logical_to_physical()
-  requires a non-NULL pointer.
-  We don't really need to bother the returned value.
-
-- duplicated @ref declaration in run_delayed_tree_ref()
-- duplicated @super_flags in change_meta_csums()
-  Just delete the duplicated one.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- check/main.c                |  6 +++---
- check/mode-lowmem.c         |  4 ++--
- check/qgroup-verify.c       | 23 +++++++++++------------
- check/repair.c              |  7 ++++---
- cmds/filesystem-usage.c     |  8 ++++----
- cmds/subvolume-list.c       |  2 +-
- image/image-restore.c       | 10 ++++------
- kernel-shared/extent-tree.c |  1 -
- tune/change-csum.c          | 10 +++++-----
- 9 files changed, 34 insertions(+), 37 deletions(-)
-
-diff --git a/check/main.c b/check/main.c
-index 01c677dc17d2..70001821ef72 100644
---- a/check/main.c
-+++ b/check/main.c
-@@ -7595,9 +7595,9 @@ static int find_possible_backrefs(struct btrfs_path *path,
- 
- 		cache = lookup_cache_extent(extent_cache, bytenr, 1);
- 		if (cache) {
--			struct extent_record *tmp;
-+			struct extent_record *extent;
- 
--			tmp = container_of(cache, struct extent_record, cache);
-+			extent = container_of(cache, struct extent_record, cache);
- 
- 			/*
- 			 * If we found an extent record for the bytenr for this
-@@ -7607,7 +7607,7 @@ static int find_possible_backrefs(struct btrfs_path *path,
- 			 * extent tree since they likely belong to this record
- 			 * and we need to fix it if it doesn't match bytenrs.
- 			 */
--			if  (tmp->found_rec)
-+			if  (extent->found_rec)
- 				continue;
- 		}
- 
-diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
-index c3d2fec18294..3b2807cc5de9 100644
---- a/check/mode-lowmem.c
-+++ b/check/mode-lowmem.c
-@@ -5027,7 +5027,7 @@ static int walk_down_tree(struct btrfs_root *root, struct btrfs_path *path,
- 
- 		next = btrfs_find_tree_block(gfs_info, bytenr, gfs_info->nodesize);
- 		if (!next || !btrfs_buffer_uptodate(next, ptr_gen, 0)) {
--			struct btrfs_tree_parent_check check = {
-+			struct btrfs_tree_parent_check tree_check = {
- 				.owner_root = btrfs_header_owner(cur),
- 				.transid = ptr_gen,
- 				.level = *level - 1,
-@@ -5035,7 +5035,7 @@ static int walk_down_tree(struct btrfs_root *root, struct btrfs_path *path,
- 
- 			free_extent_buffer(next);
- 			reada_walk_down(root, cur, path->slots[*level]);
--			next = read_tree_block(gfs_info, bytenr, &check);
-+			next = read_tree_block(gfs_info, bytenr, &tree_check);
- 			if (!extent_buffer_uptodate(next)) {
- 				struct btrfs_key node_key;
- 
-diff --git a/check/qgroup-verify.c b/check/qgroup-verify.c
-index 348b2cfa7384..c9753c0c7028 100644
---- a/check/qgroup-verify.c
-+++ b/check/qgroup-verify.c
-@@ -406,7 +406,7 @@ static int account_one_extent(struct ulist *roots, u64 bytenr, u64 num_bytes)
- 	int ret;
- 	u64 id, nr_roots, nr_refs;
- 	struct qgroup_count *count;
--	struct ulist *counts = ulist_alloc(0);
-+	struct ulist *local_counts = ulist_alloc(0);
- 	struct ulist *tmp = ulist_alloc(0);
- 	struct ulist_iterator uiter;
- 	struct ulist_iterator tmp_uiter;
-@@ -414,8 +414,8 @@ static int account_one_extent(struct ulist *roots, u64 bytenr, u64 num_bytes)
- 	struct ulist_node *tmp_unode;
- 	struct btrfs_qgroup_list *glist;
- 
--	if (!counts || !tmp) {
--		ulist_free(counts);
-+	if (!local_counts || !tmp) {
-+		ulist_free(local_counts);
- 		ulist_free(tmp);
- 		return ENOMEM;
- 	}
-@@ -433,7 +433,7 @@ static int account_one_extent(struct ulist *roots, u64 bytenr, u64 num_bytes)
- 			continue;
- 
- 		BUG_ON(!is_fstree(unode->val));
--		ret = ulist_add(counts, count->qgroupid, ptr_to_u64(count), 0);
-+		ret = ulist_add(local_counts, count->qgroupid, ptr_to_u64(count), 0);
- 		if (ret < 0)
- 			goto out;
- 
-@@ -460,7 +460,7 @@ static int account_one_extent(struct ulist *roots, u64 bytenr, u64 num_bytes)
- 
- 				BUG_ON(!count);
- 
--				ret = ulist_add(counts, id, ptr_to_u64(parent),
-+				ret = ulist_add(local_counts, id, ptr_to_u64(parent),
- 						0);
- 				if (ret < 0)
- 					goto out;
-@@ -478,7 +478,7 @@ static int account_one_extent(struct ulist *roots, u64 bytenr, u64 num_bytes)
- 	 */
- 	nr_roots = roots->nnodes;
- 	ULIST_ITER_INIT(&uiter);
--	while ((unode = ulist_next(counts, &uiter))) {
-+	while ((unode = ulist_next(local_counts, &uiter))) {
- 		count = u64_to_ptr(unode->aux);
- 
- 		nr_refs = group_get_cur_refcnt(count);
-@@ -504,7 +504,7 @@ static int account_one_extent(struct ulist *roots, u64 bytenr, u64 num_bytes)
- 	inc_qgroup_seq(roots->nnodes);
- 	ret = 0;
- out:
--	ulist_free(counts);
-+	ulist_free(local_counts);
- 	ulist_free(tmp);
- 	return ret;
- }
-@@ -920,7 +920,7 @@ static int add_qgroup_relation(u64 memberid, u64 parentid)
- }
- 
- static void read_qgroup_status(struct extent_buffer *eb, int slot,
--			      struct counts_tree *counts)
-+			      struct counts_tree *ct)
- {
- 	struct btrfs_qgroup_status_item *status_item;
- 	u64 flags;
-@@ -931,10 +931,9 @@ static void read_qgroup_status(struct extent_buffer *eb, int slot,
- 	 * Since qgroup_inconsist/rescan_running is just one bit,
- 	 * assign value directly won't work.
- 	 */
--	counts->qgroup_inconsist = !!(flags &
--			BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT);
--	counts->rescan_running = !!(flags & BTRFS_QGROUP_STATUS_FLAG_RESCAN);
--	counts->scan_progress = btrfs_qgroup_status_rescan(eb, status_item);
-+	ct->qgroup_inconsist = !!(flags & BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT);
-+	ct->rescan_running = !!(flags & BTRFS_QGROUP_STATUS_FLAG_RESCAN);
-+	ct->scan_progress = btrfs_qgroup_status_rescan(eb, status_item);
- }
- 
- static int load_quota_info(struct btrfs_fs_info *info)
-diff --git a/check/repair.c b/check/repair.c
-index 9656241f6799..c81f19bad21f 100644
---- a/check/repair.c
-+++ b/check/repair.c
-@@ -169,10 +169,10 @@ static int traverse_tree_blocks(struct extent_io_tree *tree,
- 			if (ret)
- 				return ret;
- 		} else {
--			u64 end;
-+			u64 child_end;
- 
- 			bytenr = btrfs_node_blockptr(eb, i);
--			end = bytenr + fs_info->nodesize - 1;
-+			child_end = bytenr + fs_info->nodesize - 1;
- 
- 			/* If we aren't the tree root don't read the block */
- 			if (level == 1 && !tree_root) {
-@@ -180,7 +180,8 @@ static int traverse_tree_blocks(struct extent_io_tree *tree,
- 					btrfs_pin_extent(fs_info, bytenr,
- 							 fs_info->nodesize);
- 				else
--					set_extent_dirty(tree, bytenr, end, GFP_NOFS);
-+					set_extent_dirty(tree, bytenr,
-+							 child_end, GFP_NOFS);
- 				continue;
- 			}
- 
-diff --git a/cmds/filesystem-usage.c b/cmds/filesystem-usage.c
-index 8b97f8ae36d2..403ab78ae004 100644
---- a/cmds/filesystem-usage.c
-+++ b/cmds/filesystem-usage.c
-@@ -537,11 +537,11 @@ static int print_filesystem_usage_overall(int fd, struct chunk_info *chunkinfo,
- 			 * As mixed mode is not supported in zoned mode, this
- 			 * will account for all profile types
- 			 */
--			u64 tmp;
-+			u64 unusable;
- 
--			tmp = device_get_zone_unusable(fd, flags);
--			if (tmp != DEVICE_ZONE_UNUSABLE_UNKNOWN)
--				zone_unusable += tmp;
-+			unusable = device_get_zone_unusable(fd, flags);
-+			if (unusable != DEVICE_ZONE_UNUSABLE_UNKNOWN)
-+				zone_unusable += unusable;
- 		}
- 		if (flags & BTRFS_BLOCK_GROUP_DATA) {
- 			r_data_used += sargs->spaces[i].used_bytes * ratio;
-diff --git a/cmds/subvolume-list.c b/cmds/subvolume-list.c
-index a583c8b63f3d..5a91f41da998 100644
---- a/cmds/subvolume-list.c
-+++ b/cmds/subvolume-list.c
-@@ -1411,7 +1411,7 @@ static int btrfs_list_subvols(int fd, struct rb_root *root_lookup)
- 	n = rb_first(root_lookup);
- 	while (n) {
- 		struct root_info *entry;
--		int ret;
-+
- 		entry = to_root_info(n);
- 		ret = lookup_ino_path(fd, entry);
- 		if (ret && ret != -ENOENT)
-diff --git a/image/image-restore.c b/image/image-restore.c
-index edd81870adfb..2c3b276e39df 100644
---- a/image/image-restore.c
-+++ b/image/image-restore.c
-@@ -227,15 +227,15 @@ static int fixup_chunk_tree_block(struct mdrestore_struct *mdres,
- 		for (i = 0; i < btrfs_header_nritems(eb); i++) {
- 			struct btrfs_chunk *chunk;
- 			struct btrfs_key key;
--			u64 type, physical, physical_dup, size = (u64)-1;
-+			u64 type, physical, physical_dup;
-+			u64 found_size = (u64)-1;
- 
- 			btrfs_item_key_to_cpu(eb, &key, i);
- 			if (key.type != BTRFS_CHUNK_ITEM_KEY)
- 				continue;
- 
--			size = 0;
- 			physical = logical_to_physical(mdres, key.offset,
--						       &size, &physical_dup);
-+						       &found_size, &physical_dup);
- 
- 			if (!physical_dup)
- 				truncate_item(eb, i, sizeof(*chunk));
-@@ -254,9 +254,7 @@ static int fixup_chunk_tree_block(struct mdrestore_struct *mdres,
- 				btrfs_set_chunk_num_stripes(eb, chunk, 1);
- 			btrfs_set_chunk_sub_stripes(eb, chunk, 0);
- 			btrfs_set_stripe_devid_nr(eb, chunk, 0, mdres->devid);
--			if (size != (u64)-1)
--				btrfs_set_stripe_offset_nr(eb, chunk, 0,
--							   physical);
-+			btrfs_set_stripe_offset_nr(eb, chunk, 0, physical);
- 			/* update stripe 2 offset */
- 			if (physical_dup)
- 				btrfs_set_stripe_offset_nr(eb, chunk, 1,
-diff --git a/kernel-shared/extent-tree.c b/kernel-shared/extent-tree.c
-index 5f83ff5548e5..7022643a9843 100644
---- a/kernel-shared/extent-tree.c
-+++ b/kernel-shared/extent-tree.c
-@@ -3768,7 +3768,6 @@ static int run_delayed_tree_ref(struct btrfs_trans_handle *trans,
- 		BUG_ON(!extent_op || !extent_op->update_flags);
- 		ret = alloc_reserved_tree_block(trans, node, extent_op);
- 	} else if (node->action == BTRFS_DROP_DELAYED_REF) {
--		struct btrfs_delayed_tree_ref *ref = btrfs_delayed_node_to_tree_ref(node);
- 		ret =  __free_extent(trans, node->bytenr, node->num_bytes,
- 			     ref->parent, ref->root, ref->level, 0, 1);
- 	} else {
-diff --git a/tune/change-csum.c b/tune/change-csum.c
-index ae8670f98a3f..0780a18b090b 100644
---- a/tune/change-csum.c
-+++ b/tune/change-csum.c
-@@ -248,7 +248,7 @@ static int generate_new_data_csums_range(struct btrfs_fs_info *fs_info, u64 star
- 	}
- 
- 	while (cur < last_csum) {
--		u64 start;
-+		u64 csum_start;
- 		u64 len;
- 		u32 item_size;
- 
-@@ -276,14 +276,14 @@ static int generate_new_data_csums_range(struct btrfs_fs_info *fs_info, u64 star
- 		assert(key.offset >= cur);
- 		item_size = btrfs_item_size(path.nodes[0], path.slots[0]);
- 
--		start = key.offset;
-+		csum_start = key.offset;
- 		len = item_size / fs_info->csum_size * fs_info->sectorsize;
- 		read_extent_buffer(path.nodes[0], csum_buffer,
- 				btrfs_item_ptr_offset(path.nodes[0], path.slots[0]),
- 				item_size);
- 		btrfs_release_path(&path);
- 
--		ret = generate_new_csum_range(trans, start, len, new_csum_type,
-+		ret = generate_new_csum_range(trans, csum_start, len, new_csum_type,
- 					      csum_buffer);
- 		if (ret < 0)
- 			goto out;
-@@ -303,7 +303,7 @@ static int generate_new_data_csums_range(struct btrfs_fs_info *fs_info, u64 star
- 				goto out;
- 			}
- 		}
--		cur = start + len;
-+		cur = csum_start + len;
- 	}
- 	ret = btrfs_commit_transaction(trans, csum_root);
- 	if (inject_error(0x4de02239))
-@@ -628,7 +628,7 @@ out:
- 		struct btrfs_root *tree_root = fs_info->tree_root;
- 		struct btrfs_trans_handle *trans;
- 
--		u64 super_flags = btrfs_super_flags(fs_info->super_copy);
-+		super_flags = btrfs_super_flags(fs_info->super_copy);
- 
- 		btrfs_set_super_csum_type(fs_info->super_copy, new_csum_type);
- 		super_flags &= ~(BTRFS_SUPER_FLAG_CHANGING_DATA_CSUM |
--- 
-2.42.0
-
+Thanks,
+Qu

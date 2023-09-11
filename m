@@ -2,138 +2,71 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4601FCA0EC8
-	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Sep 2023 22:07:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D7002CA0ECD
+	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Sep 2023 22:07:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1355951AbjIKWC3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 11 Sep 2023 18:02:29 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51692 "EHLO
+        id S1355982AbjIKWCg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 11 Sep 2023 18:02:36 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49452 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238233AbjIKNvz (ORCPT
+        with ESMTP id S244157AbjIKTT7 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Sep 2023 09:51:55 -0400
-Received: from mail-yb1-xb29.google.com (mail-yb1-xb29.google.com [IPv6:2607:f8b0:4864:20::b29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0BF07FA
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 06:51:51 -0700 (PDT)
-Received: by mail-yb1-xb29.google.com with SMTP id 3f1490d57ef6-d7b9c04591fso3734434276.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 06:51:51 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1694440310; x=1695045110; darn=vger.kernel.org;
-        h=content-disposition:mime-version:message-id:subject:cc:to:from:date
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=Vi3jzxur3SdMTDLceOQ6ZmBnaFyzcufuj8RUdb/3Gx4=;
-        b=BxddP5169o4MQCqd7LBj/EYYo/xDVTRfiFXZeaY8ahckFTVQ2B0416rh8p47xl+B16
-         3F2ktv/RaTXezC2jLpkkW6A2afxBhX2gvbi+ZfbalIplmcbiqkn3FUBsfaIiNQrifxem
-         qpqSQ8kMORK0LA9UYpIeQC/nJRP0H8fseDzeGO0en5cCahgCxS8T9Fs2Lw9Gl0UjkAnc
-         dp7VzJedi9cc5IEahMuKf6Q/Xvw3IVLhTdVxJBx9XCBG9fRivmWX+3AsCM9xyHOYzuYX
-         INkiQDUJqmc/CyodehjPMEB34hU7tycLX+MFSBC757xr/7G4k+GmmjIe7Ig1fsgn7Uis
-         W6sA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1694440310; x=1695045110;
-        h=content-disposition:mime-version:message-id:subject:cc:to:from:date
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=Vi3jzxur3SdMTDLceOQ6ZmBnaFyzcufuj8RUdb/3Gx4=;
-        b=KeT6UG7AVpATEPQZNpn1iBYx4Hf8BqoVzFRQQ+yLYypxoCtSATTEM6Xzl7Y1DqKuyE
-         j4wyZkguq0TB5n/4p+B6A5ro41kotXB0Y8aOZ3DM/8xkMYI6DF4iBRhz/I/QYVkr3ohG
-         mOgGZOnY6FZvgKBdbeM0UJPPsBj1L4UpkSfYlqWt40tdu+36aiqwVgXLxwD6MWdmb3W8
-         p3zVuKFtyM8YYc+1Drm61ZoM7prCXjMGV4T/PcN9dqDHGXXwKJ6Uyf9E5aYfzeIlvtZY
-         Fyej5CXdug0B+BBmRXYWA8gTejFZ/oY/aHAHZ8VKAPf3Jyxrhc6Ygg6wGlOUC64XFIYJ
-         CLMQ==
-X-Gm-Message-State: AOJu0YyKSJiUjlE7/lIBqErDXV8mGR3WcjeFZUpMXK1pIfRqdsMwJulc
-        ZQQXxo+PEGRs4dZ6rKaSNA1PCf5GI6e8H0qII2RRWw==
-X-Google-Smtp-Source: AGHT+IEAufkYUPNXSYTQwYR4PAvaQ7Ox9VSbKYEu++jxJAmkFgk5na89NrGwFh0749U79NaFa7jUmQ==
-X-Received: by 2002:a25:b16:0:b0:d7f:cdc8:e17c with SMTP id 22-20020a250b16000000b00d7fcdc8e17cmr8202730ybl.51.1694440310085;
-        Mon, 11 Sep 2023 06:51:50 -0700 (PDT)
-Received: from localhost (cpe-76-182-20-124.nc.res.rr.com. [76.182.20.124])
-        by smtp.gmail.com with ESMTPSA id n62-20020a25d641000000b00d7f06aa25c5sm1705813ybg.58.2023.09.11.06.51.49
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 11 Sep 2023 06:51:49 -0700 (PDT)
-Date:   Mon, 11 Sep 2023 09:51:46 -0400
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     johannes.thumshirn@wdc.com, naohiro.aota@wdc.com
-Subject: Zoned panic WRT btrfs_redirty_list_add
-Message-ID: <20230911135146.GA2352074@perftesting>
+        Mon, 11 Sep 2023 15:19:59 -0400
+X-Greylist: delayed 1537 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Mon, 11 Sep 2023 12:19:54 PDT
+Received: from fanzine2.igalia.com (fanzine.igalia.com [178.60.130.6])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A23BFF9;
+        Mon, 11 Sep 2023 12:19:54 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=igalia.com;
+        s=20170329; h=Content-Transfer-Encoding:Content-Type:In-Reply-To:From:
+        References:Cc:To:Subject:MIME-Version:Date:Message-ID:Sender:Reply-To:
+        Content-ID:Content-Description:Resent-Date:Resent-From:Resent-Sender:
+        Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:List-Unsubscribe:
+        List-Subscribe:List-Post:List-Owner:List-Archive;
+        bh=hvtgfazEDfD/ESc/aDVpO+amH0zNM0AgcdVremR6roI=; b=cdnTajZlOlBLZ/FHvontAz4Gwc
+        9l80zvpR+3R/TQbYWYLVlT/3TQFoCCxLNOUgmH3CImeJt8QdYsFU0Yp1wQvVN5MMb0j0xzT5Ba0Bh
+        j5LX46+Ep9n9J0YHdn91ZQ9ad4q1dqRH0hTdrWjUrtokiqGla//UVB/SP5TX+SA6JZAw/qtGHLDDa
+        2tk+n59UQ7qfoqyjAsx81tVTJqs/37wb8UMArGgXYq284MFPMI/0W1ssOfClP27YzDJGaRR7gdsen
+        Pg46m47jDyzDyb2Av733cjeiNYVEYQmHD+8UCvtCxm51q+GCasH0Xoo5xKfPbvsxS52qKLGRX0gwT
+        dcrZUfyw==;
+Received: from [187.116.122.196] (helo=[192.168.1.60])
+        by fanzine2.igalia.com with esmtpsa 
+        (Cipher TLS1.3:ECDHE_X25519__RSA_PSS_RSAE_SHA256__AES_128_GCM:128) (Exim)
+        id 1qfm30-002QWn-6v; Mon, 11 Sep 2023 20:54:10 +0200
+Message-ID: <daea5aef-e5f9-09af-cdf3-13faa204497b@igalia.com>
+Date:   Mon, 11 Sep 2023 15:53:54 -0300
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.15.0
+Subject: Re: [PATCH V3 2/2] btrfs: Introduce the single-dev feature
+Content-Language: en-US
+To:     dsterba@suse.cz, josef@toxicpanda.com
+Cc:     linux-btrfs@vger.kernel.org, clm@fb.com, dsterba@suse.com,
+        linux-fsdevel@vger.kernel.org, kernel@gpiccoli.net,
+        kernel-dev@igalia.com, anand.jain@oracle.com, david@fromorbit.com,
+        kreijack@libero.it, johns@valvesoftware.com,
+        ludovico.denittis@collabora.com, quwenruo.btrfs@gmx.com,
+        wqu@suse.com, vivek@collabora.com
+References: <20230831001544.3379273-1-gpiccoli@igalia.com>
+ <20230831001544.3379273-3-gpiccoli@igalia.com>
+ <20230911182804.GA20408@twin.jikos.cz>
+From:   "Guilherme G. Piccoli" <gpiccoli@igalia.com>
+In-Reply-To: <20230911182804.GA20408@twin.jikos.cz>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hello,
+On 11/09/2023 15:28, David Sterba wrote:
+> On Wed, Aug 30, 2023 at 09:12:34PM -0300, Guilherme G. Piccoli wrote:
+> I've added Anand's patch
+> https://lore.kernel.org/linux-btrfs/de8d71b1b08f2c6ce75e3c45ee801659ecd4dc43.1694164368.git.anand.jain@oracle.com/
+> to misc-next that implements subset of your patch, namely extending
+> btrfs_scan_one_device() with the 'mounting' parameter. I haven't looked
+> if the semantics is the same so I let you take a look.
+> 
+> As there were more comments to V3, please fix that and resend. Thanks.
+> 
 
-I hit the following panic on our CI this last week
-
-assertion failed: PageDirty(eb->pages[i]), in fs/btrfs/extent_io.c:3809
-------------[ cut here ]------------
-kernel BUG at fs/btrfs/extent_io.c:3809!
-invalid opcode: 0000 [#1] PREEMPT SMP NOPTI
-CPU: 1 PID: 858183 Comm: fsstress Not tainted 6.5.0+ #1
-RIP: 0010:set_extent_buffer_dirty+0x11a/0x210
-RSP: 0018:ffffc9000631fa28 EFLAGS: 00010246
-RAX: 0000000000000047 RBX: ffff888116642848 RCX: 0000000000000000
-RDX: 0000000000000000 RSI: ffff88817bd21880 RDI: ffff88817bd21880
-RBP: 0000000000000004 R08: 0000000000000000 R09: ffffc9000631f8c8
-R10: 0000000000000003 R11: ffffffff8c534318 R12: 0000000000000004
-R13: 0000000000004000 R14: 0000000000000004 R15: ffff888116642848
-FS:  00007f6608d72740(0000) GS:ffff88817bd00000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 0000000000c98568 CR3: 000000011f3b8000 CR4: 0000000000350ee0
-Call Trace:
- <TASK>
- ? die+0x36/0x90
- ? do_trap+0xda/0x100
- ? set_extent_buffer_dirty+0x11a/0x210
- ? set_extent_buffer_dirty+0x11a/0x210
- ? do_error_trap+0x81/0x110
- ? set_extent_buffer_dirty+0x11a/0x210
- ? exc_invalid_op+0x50/0x70
- ? set_extent_buffer_dirty+0x11a/0x210
- ? asm_exc_invalid_op+0x1a/0x20
- ? set_extent_buffer_dirty+0x11a/0x210
- ? set_extent_buffer_dirty+0x11a/0x210
- btrfs_redirty_list_add+0x75/0xd0
- btrfs_free_tree_block+0x243/0x2f0
- btrfs_del_leaf+0xba/0xe0
- btrfs_del_items+0x49c/0x520
- __btrfs_free_extent+0x615/0x1260
- __btrfs_run_delayed_refs+0x2d9/0x1310
- ? lock_is_held_type+0x9b/0x110
- ? find_held_lock+0x2b/0x80
- ? btrfs_start_dirty_block_groups+0x50/0x5b0
- btrfs_run_delayed_refs+0x59/0x220
- btrfs_start_dirty_block_groups+0x3bc/0x5b0
- ? btrfs_commit_transaction+0x41/0x1420
- ? btrfs_commit_transaction+0x41/0x1420
- btrfs_commit_transaction+0x106/0x1420
- ? btrfs_attach_transaction_barrier+0x22/0x60
- ? __pfx_sync_fs_one_sb+0x10/0x10
- iterate_supers+0x7e/0xf0
-
-We have a check to make sure the pages we just dirtied are actually set to
-dirty, and this is what's failing.
-
-In btrfs_redirty_list_add() we have an ASSERT(!EXTENT_BUFFER_DIRTY), so we know
-we're going through the path where we weren't dirty and now we are and thus
-setting the pages dirty.
-
-However we're doing the btrfs_redirty_list_add() outside of the
-btrfs_tree_lock().  We always set the EXTENT_DIRTY for ->dirty_pages on the
-transaction, however we never clear it, we rely on the EXTENT_BUFFER_DIRTY flag
-to be the ultimate arbiter of whether or not to write the extent buffer.
-
-Which means there's a race where we could be currently writing this extent
-buffer out and calling btrfs_redirty_list_add() on the extent buffer.
-
-I attempted to naively fix this by adjusting the btrfs_clear_buffer_dirty()
-helper to simply not clear dirty for extent buffers if we were zoned, but that
-keeps blowing up in my face and I'm not awake enough to figure out why.
-
-I had also tried just wrapping this in btrfs_tree_lock() but there was an
-immediate deadlock that I didn't look at because I tried the
-btrfs_clear_buffer_dirty() thing next.
-
-In any case this needs to be reworked with this race in mind.  Thanks,
-
-Josef
+Thanks David, will do.
+Did we agree about the name of the feature? temp_fsid maybe?

@@ -2,300 +2,372 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7565DCA0EC3
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 98095CA0EC6
 	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Sep 2023 22:06:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1355589AbjIKWBS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 11 Sep 2023 18:01:18 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43662 "EHLO
+        id S1355596AbjIKWBV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 11 Sep 2023 18:01:21 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59640 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S239169AbjIKONe (ORCPT
+        with ESMTP id S237470AbjIKMwj (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Sep 2023 10:13:34 -0400
-Received: from mail-wr1-x431.google.com (mail-wr1-x431.google.com [IPv6:2a00:1450:4864:20::431])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 51C15DE
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 07:13:30 -0700 (PDT)
-Received: by mail-wr1-x431.google.com with SMTP id ffacd0b85a97d-31fa666000dso1073224f8f.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 07:13:30 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20221208; t=1694441608; x=1695046408; darn=vger.kernel.org;
-        h=autocrypt:subject:from:cc:to:content-language:user-agent
-         :mime-version:date:message-id:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=42UurXTwIJ/pQjUAgTZIUhis4l0hJ6+7W0sQuoz9wwA=;
-        b=d9WWUkke6R1VRcd+s5vmR5OW2fq85yIjgXmMSIDIH9XW+DZplVbA/SdxbV9YKQTrP2
-         te4XuGIK75RtlUegykPdH7KdUNTA8RJQcT/aQMrE0V74HVRMND9uzi7Zw0O2QG02Zjnq
-         dVl+BVEn5OTy2aHYFCbx8HDvya4bPIOOOxS2uKV85Yn0QQpwBfBnmOBVIlx7lV/juYX9
-         OGSiEXxwUmPLULtxltegi3/7GW2N1B4XSseAloJWN1+M86kGqELW46dKyf+qvCnKcN9M
-         uisxRkxFNwUEC5gBq/gCtUMJ6R5npLuVMrwnkrM8oVPlokkND0xbS3U+lfiZ1ApK0Iam
-         gIgQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1694441608; x=1695046408;
-        h=autocrypt:subject:from:cc:to:content-language:user-agent
-         :mime-version:date:message-id:x-gm-message-state:from:to:cc:subject
-         :date:message-id:reply-to;
-        bh=42UurXTwIJ/pQjUAgTZIUhis4l0hJ6+7W0sQuoz9wwA=;
-        b=rYi6Ob9WsWvobOGottPRwlVskD9EQMFGdypl9o46eURzo4mTwkdL3c+T8MhDa33xDw
-         WMlrMqY6S6BwAYf3+NRE4jWNiCCDayKy+OphbiGVeZdciBuQg1OFUATXSB4+pb5e5GIw
-         WvXaPL9ERMPJv/J70fJWGzQe2ZNRUVDZYpes/gp7mBFihGijTgkfB1/rDdpXk7EmKfG8
-         x3Me1gyithbyTFwukLg5a+3qmW/FqINKdevKOJsRE9e5KnVIGhbqfYVKuEtIXt/2ZbAr
-         PsDTIJOhBSiZSMKEljBRs5eEPt0sQVO/dUj8qRNQ+P40VGmJbV7EuF7n25fsKug/Yx4A
-         XS2w==
-X-Gm-Message-State: AOJu0YyMZ+plfKGlLY12SANfIq3UHFwG7Ch17WUOpzKEj6m9ZJ1VSDwG
-        QyWnpchwmd/mnVrLLBUxn+qvUHonTmUJbYUQ
-X-Google-Smtp-Source: AGHT+IEX3k//erxY4zoZnVD+A7wNLLFwQPNKp0ZKgxirjAuHWlco4Eg3BajQIGiii38HVmbJXeBK9w==
-X-Received: by 2002:a5d:444f:0:b0:318:70:a4ac with SMTP id x15-20020a5d444f000000b003180070a4acmr8829029wrr.17.1694441608032;
-        Mon, 11 Sep 2023 07:13:28 -0700 (PDT)
-Received: from [192.168.20.10] ([141.0.156.136])
-        by smtp.gmail.com with ESMTPSA id r15-20020a056000014f00b0031c6dc684f8sm10115142wrx.20.2023.09.11.07.13.25
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 11 Sep 2023 07:13:27 -0700 (PDT)
-Message-ID: <cb777ab6-f1c5-4b8b-b3a9-2304e2ea9aec@gmail.com>
-Date:   Mon, 11 Sep 2023 17:13:24 +0300
+        Mon, 11 Sep 2023 08:52:39 -0400
+Received: from esa5.hgst.iphmx.com (esa5.hgst.iphmx.com [216.71.153.144])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3BDE1E40;
+        Mon, 11 Sep 2023 05:52:35 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1694436755; x=1725972755;
+  h=from:to:cc:subject:date:message-id:in-reply-to:
+   references:mime-version:content-transfer-encoding;
+  bh=aRvvWdjtbEYuAkkq1cMd1cz7TCumuqP5svgnqRV+38s=;
+  b=Sh0DWtz5l23SfbrsD6HhkR9TBe7w5scn1fQgDg8TtW1PtqGhBvjRk8sc
+   0Z/h05SSUwFqCwWNipDmARXFgbxA9kC/yA43L6rOkdHAxDrEz+tl3djoS
+   dWOg0Z/MMHVH18ih/ILxSG9SMz7kLRDqLYYhqCPUDhE7CQctRYs85Am9V
+   HuF/cNh6yUjslUGs0KKGw+xXA4GDKOQmokoEUVLjbSec8vjiSCP0BIalT
+   SYpANv8PsovTWtukNAIiyLFGsI6fqOEOH80IPn7pRXecKNOLbwxwRgPaz
+   hq51YcJD+ghMNN2DMOhEx8OzAFNP5P6D1tcyTTzqGzq+OfbLifS1qYcLV
+   A==;
+X-CSE-ConnectionGUID: Z3Qz3oS6Q9OdOqaKk+MeMA==
+X-CSE-MsgGUID: XgUAcItHSIqEe7z66pEuaQ==
+X-IronPort-AV: E=Sophos;i="6.02,244,1688400000"; 
+   d="scan'208";a="243594396"
+Received: from h199-255-45-14.hgst.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
+  by ob1.hgst.iphmx.com with ESMTP; 11 Sep 2023 20:52:35 +0800
+IronPort-SDR: GrBQCx/Jp6BJOeyol65iZ+lhJuyECy1PkNptiuTv5yBk5wAtOdfv6sREDl9nmIMrlXzV4zJOmm
+ Y0al2fUdko7T96lgMOKAT50Fabc+AUW5GnsZ0lgh9Ge3oWCsQJLPHTtmHMRkchl9vSRlGmgBCY
+ xr+cWeWvw97xHczElWuawtJKOt5hfRRydj3SkRuTtwVX/npckgjfa1k2rXsjnvWXifJe0Hq2kR
+ KpU9biygObfp+WNJPNY+ZvSP1pKQK8STnS1GX+NAPA/N8W27hcGl5BID0FHPmafSLU8rwZhHyx
+ Jv8=
+Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 11 Sep 2023 05:05:19 -0700
+IronPort-SDR: NiTBUCr4z4SFaBV5dhYJ7XEQXGJyI+GoN2Z9Dxs+OLwGxNu6mA1H3OulWg3/0Dlpti20JpKLYM
+ VhUpS7NIvTy8yI3hbaZWVnoAn6p5iPIcBcrFXdiTDZ6dceZRMBX9cEQ9/G0Fh93III9Ooqe1oX
+ vbFI4I4tUr+PB72Scn22H5Hcs2iQtzysNyNjCk9/9YfHGhc7JuGptiGVBjFuyOACjotGf3LK3N
+ ubnH0man6OyPH5F+8f/0KY+I4Dv8tZVQz6953vG/88CtK9Y1qDkRzRCV6Mf54zjiV4vl7JrkFV
+ oR8=
+WDCIronportException: Internal
+Received: from unknown (HELO redsun91.ssa.fujisawa.hgst.com) ([10.149.66.6])
+  by uls-op-cesaip02.wdc.com with ESMTP; 11 Sep 2023 05:52:31 -0700
+From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
+To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>
+Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+        Christoph Hellwig <hch@lst.de>,
+        Naohiro Aota <naohiro.aota@wdc.com>, Qu Wenruo <wqu@suse.com>,
+        Damien Le Moal <dlemoal@kernel.org>,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: [PATCH v8 05/11] btrfs: lookup physical address from stripe extent
+Date:   Mon, 11 Sep 2023 05:52:06 -0700
+Message-ID: <20230911-raid-stripe-tree-v8-5-647676fa852c@wdc.com>
+X-Mailer: git-send-email 2.41.0
+In-Reply-To: <20230911-raid-stripe-tree-v8-0-647676fa852c@wdc.com>
+References: <20230911-raid-stripe-tree-v8-0-647676fa852c@wdc.com>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Content-Language: en-GB
-To:     linux-btrfs@vger.kernel.org
-Cc:     Leonidas Spyropoulos <artafinde@gmail.com>
-From:   Leonidas Spyropoulos <artafinde@gmail.com>
-Subject: Mailing List missing messages
-Autocrypt: addr=artafinde@gmail.com; keydata=
- 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
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="------------JR3UOEMyDwHHRh0c2hgXw4a3"
+Content-Type: text/plain; charset="utf-8"
+X-Mailer: b4 0.12.3
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1694436627; l=8982; i=johannes.thumshirn@wdc.com; s=20230613; h=from:subject:message-id; bh=aRvvWdjtbEYuAkkq1cMd1cz7TCumuqP5svgnqRV+38s=; b=OmZOx7p6p8oaDM6P9eM436W7XiJ8t7EFfYjke1U2ftBx4v/hl9xBnN/d0Iu4MuZSiJwoAfR3V rhrgeadB5dyDT35rUEj7AN8UchEhngIaXrIbRzdHPYa+F3UL1GFQI6T
+X-Developer-Key: i=johannes.thumshirn@wdc.com; a=ed25519; pk=TGmHKs78FdPi+QhrViEvjKIGwReUGCfa+3LEnGoR2KM=
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---------------JR3UOEMyDwHHRh0c2hgXw4a3
-Content-Type: multipart/mixed; boundary="------------MRaJbEXkiBYBNL8aJHJV8eFk";
- protected-headers="v1"
-From: Leonidas Spyropoulos <artafinde@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Leonidas Spyropoulos <artafinde@gmail.com>
-Message-ID: <cb777ab6-f1c5-4b8b-b3a9-2304e2ea9aec@gmail.com>
-Subject: Mailing List missing messages
+Lookup the physical address from the raid stripe tree when a read on an
+RAID volume formatted with the raid stripe tree was attempted.
 
---------------MRaJbEXkiBYBNL8aJHJV8eFk
-Content-Type: multipart/mixed; boundary="------------NkBUpyFZ0M4Bfqzg4CvnXj6W"
+If the requested logical address was not found in the stripe tree, it may
+still be in the in-memory ordered stripe tree, so fallback to searching
+the ordered stripe tree in this case.
 
---------------NkBUpyFZ0M4Bfqzg4CvnXj6W
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+---
+ fs/btrfs/raid-stripe-tree.c | 159 ++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/raid-stripe-tree.h |  11 +++
+ fs/btrfs/volumes.c          |  37 ++++++++---
+ 3 files changed, 198 insertions(+), 9 deletions(-)
 
+diff --git a/fs/btrfs/raid-stripe-tree.c b/fs/btrfs/raid-stripe-tree.c
+index 5b12f40877b5..7ed02e4b79ec 100644
+--- a/fs/btrfs/raid-stripe-tree.c
++++ b/fs/btrfs/raid-stripe-tree.c
+@@ -324,3 +324,162 @@ int btrfs_insert_raid_extent(struct btrfs_trans_handle *trans,
+ 
+ 	return ret;
+ }
++
++static bool btrfs_check_for_extent(struct btrfs_fs_info *fs_info, u64 logical,
++				   u64 length, struct btrfs_path *path)
++{
++	struct btrfs_root *extent_root = btrfs_extent_root(fs_info, logical);
++	struct btrfs_key key;
++	int ret;
++
++	btrfs_release_path(path);
++
++	key.objectid = logical;
++	key.type = BTRFS_EXTENT_ITEM_KEY;
++	key.offset = length;
++
++	ret = btrfs_search_slot(NULL, extent_root, &key, path, 0, 0);
++
++	return ret;
++}
++
++int btrfs_get_raid_extent_offset(struct btrfs_fs_info *fs_info,
++				 u64 logical, u64 *length, u64 map_type,
++				 u32 stripe_index,
++				 struct btrfs_io_stripe *stripe)
++{
++	struct btrfs_root *stripe_root = btrfs_stripe_tree_root(fs_info);
++	struct btrfs_stripe_extent *stripe_extent;
++	struct btrfs_key stripe_key;
++	struct btrfs_key found_key;
++	struct btrfs_path *path;
++	struct extent_buffer *leaf;
++	int num_stripes;
++	u8 encoding;
++	u64 offset;
++	u64 found_logical;
++	u64 found_length;
++	u64 end;
++	u64 found_end;
++	int slot;
++	int ret;
++	int i;
++
++	stripe_key.objectid = logical;
++	stripe_key.type = BTRFS_RAID_STRIPE_KEY;
++	stripe_key.offset = 0;
++
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
++
++	ret = btrfs_search_slot(NULL, stripe_root, &stripe_key, path, 0, 0);
++	if (ret < 0)
++		goto free_path;
++	if (ret) {
++		if (path->slots[0] != 0)
++			path->slots[0]--;
++	}
++
++	end = logical + *length;
++
++	while (1) {
++		leaf = path->nodes[0];
++		slot = path->slots[0];
++
++		btrfs_item_key_to_cpu(leaf, &found_key, slot);
++		found_logical = found_key.objectid;
++		found_length = found_key.offset;
++		found_end = found_logical + found_length;
++
++		if (found_logical > end) {
++			ret = -ENOENT;
++			goto out;
++		}
++
++		if (in_range(logical, found_logical, found_length))
++			break;
++
++		ret = btrfs_next_item(stripe_root, path);
++		if (ret)
++			goto out;
++	}
++
++	offset = logical - found_logical;
++
++	/*
++	 * If we have a logically contiguous, but physically noncontinuous
++	 * range, we need to split the bio. Record the length after which we
++	 * must split the bio.
++	 */
++	if (end > found_end)
++		*length -= end - found_end;
++
++	num_stripes = btrfs_num_raid_stripes(btrfs_item_size(leaf, slot));
++	stripe_extent = btrfs_item_ptr(leaf, slot, struct btrfs_stripe_extent);
++	encoding = btrfs_stripe_extent_encoding(leaf, stripe_extent);
++
++	if (encoding != btrfs_bg_type_to_raid_encoding(map_type)) {
++		ret = -ENOENT;
++		goto out;
++	}
++
++	for (i = 0; i < num_stripes; i++) {
++		struct btrfs_raid_stride *stride = &stripe_extent->strides[i];
++		u64 devid = btrfs_raid_stride_devid(leaf, stride);
++		u64 len = btrfs_raid_stride_length(leaf, stride);
++		u64 physical = btrfs_raid_stride_physical(leaf, stride);
++
++		if (offset >= len) {
++			offset -= len;
++
++			if (offset >= BTRFS_STRIPE_LEN)
++				continue;
++		}
++
++		if (devid != stripe->dev->devid)
++			continue;
++
++		if ((map_type & BTRFS_BLOCK_GROUP_DUP) && stripe_index != i)
++			continue;
++
++		stripe->physical = physical + offset;
++
++		ret = 0;
++		goto free_path;
++	}
++
++	/*
++	 * If we're here, we haven't found the requested devid in the stripe.
++	 */
++	ret = -ENOENT;
++out:
++	if (ret > 0)
++		ret = -ENOENT;
++	if (ret && ret != -EIO) {
++		/*
++		 * Check if the range we're looking for is actually backed by
++		 * an extent. This can happen, e.g. when scrub is running on a
++		 * block-group and the extent it is trying to scrub get's
++		 * deleted in the meantime. Although scrub is setting the
++		 * block-group to read-only, deletion of extents are still
++		 * allowed. If the extent is gone, simply return ENOENT and be
++		 * good.
++		 */
++		if (btrfs_check_for_extent(fs_info, logical, *length, path)) {
++			ret = -ENOENT;
++			goto free_path;
++		}
++
++		if (IS_ENABLED(CONFIG_BTRFS_DEBUG))
++			btrfs_print_tree(leaf, 1);
++		btrfs_err(fs_info,
++			  "cannot find raid-stripe for logical [%llu, %llu] devid %llu, profile %s",
++			  logical, logical + *length, stripe->dev->devid,
++			  btrfs_bg_type_to_raid_name(map_type));
++	}
++free_path:
++	btrfs_free_path(path);
++
++	return ret;
++}
+diff --git a/fs/btrfs/raid-stripe-tree.h b/fs/btrfs/raid-stripe-tree.h
+index 7560dc501a65..40aa553ae8aa 100644
+--- a/fs/btrfs/raid-stripe-tree.h
++++ b/fs/btrfs/raid-stripe-tree.h
+@@ -13,6 +13,10 @@ struct btrfs_io_stripe;
+ 
+ int btrfs_delete_raid_extent(struct btrfs_trans_handle *trans, u64 start,
+ 			     u64 length);
++int btrfs_get_raid_extent_offset(struct btrfs_fs_info *fs_info,
++				 u64 logical, u64 *length, u64 map_type,
++				 u32 stripe_index,
++				 struct btrfs_io_stripe *stripe);
+ int btrfs_insert_raid_extent(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_ordered_extent *ordered_extent);
+ 
+@@ -33,4 +37,11 @@ static inline bool btrfs_need_stripe_tree_update(struct btrfs_fs_info *fs_info,
+ 
+ 	return false;
+ }
++
++static inline int btrfs_num_raid_stripes(u32 item_size)
++{
++	return (item_size - offsetof(struct btrfs_stripe_extent, strides)) /
++		sizeof(struct btrfs_raid_stride);
++}
++
+ #endif
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 0c0fd4eb4848..7c25f5c77788 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -35,6 +35,7 @@
+ #include "relocation.h"
+ #include "scrub.h"
+ #include "super.h"
++#include "raid-stripe-tree.h"
+ 
+ #define BTRFS_BLOCK_GROUP_STRIPE_MASK	(BTRFS_BLOCK_GROUP_RAID0 | \
+ 					 BTRFS_BLOCK_GROUP_RAID10 | \
+@@ -6206,12 +6207,22 @@ static u64 btrfs_max_io_len(struct map_lookup *map, enum btrfs_map_op op,
+ 	return U64_MAX;
+ }
+ 
+-static void set_io_stripe(struct btrfs_io_stripe *dst, const struct map_lookup *map,
+-			  u32 stripe_index, u64 stripe_offset, u32 stripe_nr)
++static int set_io_stripe(struct btrfs_fs_info *fs_info, enum btrfs_map_op op,
++		      u64 logical, u64 *length, struct btrfs_io_stripe *dst,
++		      struct map_lookup *map, u32 stripe_index,
++		      u64 stripe_offset, u64 stripe_nr)
+ {
+ 	dst->dev = map->stripes[stripe_index].dev;
++
++	if (op == BTRFS_MAP_READ &&
++	    btrfs_need_stripe_tree_update(fs_info, map->type))
++		return btrfs_get_raid_extent_offset(fs_info, logical, length,
++						    map->type, stripe_index,
++						    dst);
++
+ 	dst->physical = map->stripes[stripe_index].physical +
+ 			stripe_offset + btrfs_stripe_nr_to_offset(stripe_nr);
++	return 0;
+ }
+ 
+ /*
+@@ -6428,11 +6439,11 @@ int btrfs_map_block(struct btrfs_fs_info *fs_info, enum btrfs_map_op op,
+ 	 */
+ 	if (smap && num_alloc_stripes == 1 &&
+ 	    !((map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) && mirror_num > 1)) {
+-		set_io_stripe(smap, map, stripe_index, stripe_offset, stripe_nr);
++		ret = set_io_stripe(fs_info, op, logical, length, smap, map,
++				    stripe_index, stripe_offset, stripe_nr);
+ 		if (mirror_num_ret)
+ 			*mirror_num_ret = mirror_num;
+ 		*bioc_ret = NULL;
+-		ret = 0;
+ 		goto out;
+ 	}
+ 
+@@ -6463,21 +6474,29 @@ int btrfs_map_block(struct btrfs_fs_info *fs_info, enum btrfs_map_op op,
+ 		bioc->full_stripe_logical = em->start +
+ 			btrfs_stripe_nr_to_offset(stripe_nr * data_stripes);
+ 		for (i = 0; i < num_stripes; i++)
+-			set_io_stripe(&bioc->stripes[i], map,
+-				      (i + stripe_nr) % num_stripes,
+-				      stripe_offset, stripe_nr);
++			ret = set_io_stripe(fs_info, op, logical, length,
++					    &bioc->stripes[i], map,
++					    (i + stripe_nr) % num_stripes,
++					    stripe_offset, stripe_nr);
+ 	} else {
+ 		/*
+ 		 * For all other non-RAID56 profiles, just copy the target
+ 		 * stripe into the bioc.
+ 		 */
+ 		for (i = 0; i < num_stripes; i++) {
+-			set_io_stripe(&bioc->stripes[i], map, stripe_index,
+-				      stripe_offset, stripe_nr);
++			ret = set_io_stripe(fs_info, op, logical, length,
++					    &bioc->stripes[i], map, stripe_index,
++					    stripe_offset, stripe_nr);
+ 			stripe_index++;
+ 		}
+ 	}
+ 
++	if (ret) {
++		*bioc_ret = NULL;
++		btrfs_put_bioc(bioc);
++		goto out;
++	}
++
+ 	if (op != BTRFS_MAP_READ)
+ 		max_errors = btrfs_chunk_max_errors(map);
+ 
 
-Hi,
+-- 
+2.41.0
 
-I've noticed the Mailing List archives contain messages I never received
-in my email. Anyone else experienced this issue?
-
-I'm comparing my inbox with: https://lore.kernel.org/linux-btrfs/
-
-Example message I never received:
-https://lore.kernel.org/linux-btrfs/f6ad7269b879d0ac24f3b051c3ff6530dc095=
-3b4.1694260751.git.fdmanana@suse.com/T/#u
-
-
-Regards,
-Leonidas
---------------NkBUpyFZ0M4Bfqzg4CvnXj6W
-Content-Type: application/pgp-keys; name="OpenPGP_0x59E43E106B247368.asc"
-Content-Disposition: attachment; filename="OpenPGP_0x59E43E106B247368.asc"
-Content-Description: OpenPGP public key
-Content-Transfer-Encoding: quoted-printable
-
------BEGIN PGP PUBLIC KEY BLOCK-----
-
-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3D=3D
-=3DMX9q
------END PGP PUBLIC KEY BLOCK-----
-
---------------NkBUpyFZ0M4Bfqzg4CvnXj6W--
-
---------------MRaJbEXkiBYBNL8aJHJV8eFk--
-
---------------JR3UOEMyDwHHRh0c2hgXw4a3
-Content-Type: application/pgp-signature; name="OpenPGP_signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="OpenPGP_signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-wsF5BAABCAAjFiEEtLdZYl1GM0MLdIdwWeQ+EGskc2gFAmT/IIQFAwAAAAAACgkQWeQ+EGskc2jj
-/RAAkPJhW1+320q2XyWyuGlGFuZOCk+4X1byYyrGfN909gBFJI3Nu31Jp3WMM2bjvM4x3h5NxdEa
-esWbExp0jYm9xzW9TBULwedsyLegEkkejRq4sIhy/e5YxwuMhyP6HLavt863vgcyEOtZ+uEpHgsh
-rknzsPRXoUosEx0plP59yLiS8P3tJb3iHCY9/OgRpov3/8bLg9gxO9TSApVN7esgUYKdiFTSf1LC
-iiJPauG6TxV79NCeQRBXa4f1PebvreIGCNp678yQie5d/S6aHyEcyGkqhUhO9I2SibIi4TQi34ql
-dVTfgQq3loKq/7zRWsYFRpU6lW7ZwJdtJ0qERSeyiI+yI1U1TnLmMZQ7+ISusWB7UZsCfHgZxTYW
-93gPQxSO5lWg6t5cO0sDI2hPmi1muIbSgqIYkQZ6dkJvTY0BwG4uvOP8+snNlTUZSID+YpBv+Nfr
-E+mnoclhkPmf3fB+/mp9m2uHpd4qTx6TBOPsxgrMZg/GwcUfccwNN9lAcZPbIw3eYgO9GmY5y4aj
-a9zWIPZQFGLEiw3p/FPawuV4Jzo73oOjJ24Klpu3RHbGBsKleD0jXdGlKEm8R33KadyP2xv59b2D
-ZsK+VDf8/hiCACDBexWXJ/FSlhvZv4NwsytKmVpf3K8nrV33sgeL/aWPug4TH7MciD2wGEbH3kWm
-IB8=
-=5SWm
------END PGP SIGNATURE-----
-
---------------JR3UOEMyDwHHRh0c2hgXw4a3--

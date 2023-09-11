@@ -2,189 +2,153 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A69B5CA0EC3
-	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Sep 2023 22:07:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 66CC2CA0ECB
+	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Sep 2023 22:07:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1356165AbjIKWDE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 11 Sep 2023 18:03:04 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59626 "EHLO
+        id S1356175AbjIKWDG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 11 Sep 2023 18:03:06 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55342 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S237466AbjIKMwh (ORCPT
+        with ESMTP id S243895AbjIKSNj (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Sep 2023 08:52:37 -0400
-Received: from esa5.hgst.iphmx.com (esa5.hgst.iphmx.com [216.71.153.144])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 43B7ECEB;
-        Mon, 11 Sep 2023 05:52:33 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1694436753; x=1725972753;
-  h=from:to:cc:subject:date:message-id:in-reply-to:
-   references:mime-version:content-transfer-encoding;
-  bh=cE+UPzVtXzF+bHxJkcZdCTF60ml4yxdyGi02OCjQOuI=;
-  b=FE6YfLi5wayFhQzNpoYeNXT+qNi34BY6BgHJHEHbEGcW+nXkX+dArov5
-   B1rQ7jVbcgPjUmOD0vpwXNQOHK8BiMpi00L6yAMRixtfEziuCih7R9ULb
-   aCw00osomak4AW9zhpHGhgmNWzueYAhxD1bWqCdSGRBAnnD1FPf+Eh4NQ
-   AcafDxiYEHjDTdn8TWyDDZAXDxv7iXxTq8zMmC1XIY+FgibbSvyFeXavQ
-   o9eehrr/RKyK+R82iS5C5zi+8c1BzM1g/3Rn+zdDviUexmsTEYQj20ivE
-   iM2tK+ObJMZeoqvgY7Tl9kAPNIS1QQoXovykoA1Ojn3/hk/3m8zRVmNml
-   Q==;
-X-CSE-ConnectionGUID: QE+c5Mf9S7Ot5r94N5aiGA==
-X-CSE-MsgGUID: SC5pS0z4Qd+dU5/hOKvhHg==
-X-IronPort-AV: E=Sophos;i="6.02,244,1688400000"; 
-   d="scan'208";a="243594391"
-Received: from h199-255-45-15.hgst.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 11 Sep 2023 20:52:33 +0800
-IronPort-SDR: V27pBxFFsKDgNgl0RZOKJXHd6hZvW2wTf5KnjPrEuxJaHWKDncyy7V7r6iTUrPZCuDPHIh6gkS
- AtHw+MtAxQaQfEobLnGu+CoEb8x/p3ncBhGaAvavDqiq0dvf4PxTZlntsoGVghtwBDHBLrUAOW
- t/VXqRQ+43HsB1Ye4TsiXt+2dcCWalS0f/bTADSEy9BEhL6BrJtqXjQffe8l7onRSf3xNItiGK
- h9l+gEvwPMlC7W2GdMcu3sJhMZrENzVgbubG/FZGgzsKbdgPO7P0veMKIfy0yI3QMo6MG+ITf5
- lXg=
-Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 11 Sep 2023 04:59:38 -0700
-IronPort-SDR: b0sxTakIdX+U2kkYMpn6AA3uc/Dl4KC/NlPw48XyyKrSKPXXVE7ibDuQ+n6ABs2mNuR3TS5k+B
- zVFb5PYiyvZm0IZhrx2sQJKWj/BfUAjhziHBPm/+ud0gBjMHQfQ4BQs4yQj0uVkioHI8TQ/KxU
- vEgEtI70v9/n8NX5oTZ45SxDRYlIoiblZjfH42WyLjdcsBnaP4b32YBd62vTAUCWTEedasEUqL
- QWj+fy5wNPv8OppHe3n6bOEHQZi71mte+NdRdyIdDeVqDS5XmBx6Ys/UVQ8FuA/R8SLMFv4die
- Y3w=
-WDCIronportException: Internal
-Received: from unknown (HELO redsun91.ssa.fujisawa.hgst.com) ([10.149.66.6])
-  by uls-op-cesaip02.wdc.com with ESMTP; 11 Sep 2023 05:52:29 -0700
-From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
-To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>
-Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-        Christoph Hellwig <hch@lst.de>,
-        Naohiro Aota <naohiro.aota@wdc.com>, Qu Wenruo <wqu@suse.com>,
-        Damien Le Moal <dlemoal@kernel.org>,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: [PATCH v8 04/11] btrfs: delete stripe extent on extent deletion
-Date:   Mon, 11 Sep 2023 05:52:05 -0700
-Message-ID: <20230911-raid-stripe-tree-v8-4-647676fa852c@wdc.com>
-X-Mailer: git-send-email 2.41.0
-In-Reply-To: <20230911-raid-stripe-tree-v8-0-647676fa852c@wdc.com>
-References: <20230911-raid-stripe-tree-v8-0-647676fa852c@wdc.com>
+        Mon, 11 Sep 2023 14:13:39 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8B420110
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 11:13:34 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 4E7201F38D;
+        Mon, 11 Sep 2023 18:13:33 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1694456013;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=3at3BnDSC9T9FhP6/SVAArWcPwIkxfA2v4bak7bjtFo=;
+        b=pHTG5Yvx1i+mqOrFR0EsKuIpwOxBicWZtw/mTdnuQZUsoTxdl+fgmr5kpL0AlA2GEGN+aP
+        tECab56d1fzkxRHxkv6qAwl2+qYM1TZXqr0hcf4C30x4sAD6kp+8evUCQmZnELhyjbrRsZ
+        x1ketjd1FUw86DobR0HTJ3H7hz2SMV8=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1694456013;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=3at3BnDSC9T9FhP6/SVAArWcPwIkxfA2v4bak7bjtFo=;
+        b=DjJfkpj2BW81K7/nK6L2pghWt1cWTskKJZ7PlhRfiWSSxjYlaUd583EI284UUJhiMfR1JW
+        q5ijo3XnWOM3FtBg==
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 2835513780;
+        Mon, 11 Sep 2023 18:13:33 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id YnwWCc1Y/2R8OgAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Mon, 11 Sep 2023 18:13:33 +0000
+Date:   Mon, 11 Sep 2023 20:06:59 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Boris Burkov <boris@bur.io>
+Cc:     David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org,
+        kernel-team@fb.com
+Subject: Re: [PATCH v5 00/18] btrfs: simple quotas
+Message-ID: <20230911180658.GG3159@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <cover.1690495785.git.boris@bur.io>
+ <20230907105115.GA3159@twin.jikos.cz>
+ <20230907205131.GA5581@zen>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-X-Mailer: b4 0.12.3
-X-Developer-Signature: v=1; a=ed25519-sha256; t=1694436627; l=3110; i=johannes.thumshirn@wdc.com; s=20230613; h=from:subject:message-id; bh=cE+UPzVtXzF+bHxJkcZdCTF60ml4yxdyGi02OCjQOuI=; b=NvUPztervxuijkZ/xcqpNHmK/91BLMtrbrcV2Mx/zouu8TkB1jznaW3mX5GOfGkGkixB4rF8f 35LIibF5YohBRtd5ZOFKWtpxbtD+4/YIGUHymPSpcklN3yuYLz8MIZ0
-X-Developer-Key: i=johannes.thumshirn@wdc.com; a=ed25519; pk=TGmHKs78FdPi+QhrViEvjKIGwReUGCfa+3LEnGoR2KM=
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20230907205131.GA5581@zen>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-As each stripe extent is tied to an extent item, delete the stripe extent
-once the corresponding extent item is deleted.
+On Thu, Sep 07, 2023 at 01:51:31PM -0700, Boris Burkov wrote:
+> On Thu, Sep 07, 2023 at 12:51:15PM +0200, David Sterba wrote:
+> > On Thu, Jul 27, 2023 at 03:12:47PM -0700, Boris Burkov wrote:
+> > > btrfs quota groups (qgroups) are a compelling feature of btrfs that
+> > > allow flexible control for limiting subvolume data and metadata usage.
+> > > However, due to btrfs's high level decision to tradeoff snapshot
+> > > performance against ref-counting performance, qgroups suffer from
+> > > non-trivial performance issues that make them unattractive in certain
+> > > workloads. Particularly, frequent backref walking during writes and
+> > > during commits can make operations increasingly expensive as the number
+> > > of snapshots scales up. For that reason, we have never been able to
+> > > commit to using qgroups in production at Meta, despite significant
+> > > interest from people running container workloads, where we would benefit
+> > > from protecting the rest of the host from a buggy application in a
+> > > container running away with disk usage. This patch series introduces a
+> > > simplified version of qgroups called
+> > > simple quotas (squotas) which never computes global reference counts
+> > > for extents, and thus has similar performance characteristics to normal,
+> > > quotas disabled, btrfs. The "trick" is that in simple quotas mode, we
+> > > account all extents permanently to the subvolume in which they were
+> > > originally created. That allows us to make all accounting 1:1 with
+> > > extent item lifetime, removing the need to walk backrefs. However,
+> > > this sacrifices the ability to compute shared vs. exclusive usage. It
+> > > also results in counter-intuitive, though still predictable and simple
+> > > accounting in the cases where an original extent is removed while a
+> > > shared copy still exists. Qgroups is able to detect that case and count
+> > > the remaining copy as an exclusive owner, while squotas is not. As a
+> > > result, squotas works best when the original extent is immutable and
+> > > outlives any clones.
+> > > 
+> > > ==Format Change==
+> > > In order to track the original creating subvolume of a data extent in
+> > > the face of reflinks, it is necessary to add additional accounting to
+> > > the extent item. To save space, this is done with a new inline ref item.
+> > > However, the downside of this approach is that it makes enabling squota
+> > > an incompat change, denoted by the new incompat bit SIMPLE_QUOTA. When
+> > > this bit is set and quotas are enabled, new extent items get the extra
+> > > accounting, and freed extent items check for the accounting to find
+> > > their creating subvolume. In addition, 1:1 with this incompat bit,
+> > > the quota status item now tracks a "quota enablement generation" needed
+> > > for properly handling deleting extents with predate enablement.
+> > > 
+> > > ==API==
+> > > Squotas reuses the api of qgroups.
+> > 
+> > So apart from the accounting, the hierarchy of qgroups can be still
+> > built as before, right? In the example you create a group 1/100 so I
+> > assume that it's still qgroups from the outside, and that the limits can
+> > be set.
+> 
+> Yes, you can create quota group hierarchies with the same nesting
+> behavior. I am only changing the accounting methodology (and added auto
+> hierarchy)
 
-Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
----
- fs/btrfs/extent-tree.c      |  6 +++++
- fs/btrfs/raid-stripe-tree.c | 60 +++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/raid-stripe-tree.h |  2 ++
- 3 files changed, 68 insertions(+)
+OK, makes sense. The hierarchy does not need to be used and is probably
+less practical for the simple accounting. What I had in mind was some
+kind of flat hierarchy, now that the simple accounting is there. People
+were asking about that in the past, wit the drawback of lack of
+shared/exclusive accounting. Adding a separate subcommands and tooling
+around flat quotas could be done but with squotas as well, just "don't
+use the hierarchy".
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 2e11a699ab77..c64dd3fd4463 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2857,6 +2857,12 @@ static int do_free_extent_accounting(struct btrfs_trans_handle *trans,
- 			btrfs_abort_transaction(trans, ret);
- 			return ret;
- 		}
-+
-+		ret = btrfs_delete_raid_extent(trans, bytenr, num_bytes);
-+		if (ret) {
-+			btrfs_abort_transaction(trans, ret);
-+			return ret;
-+		}
- 	}
- 
- 	ret = add_to_free_space_tree(trans, bytenr, num_bytes);
-diff --git a/fs/btrfs/raid-stripe-tree.c b/fs/btrfs/raid-stripe-tree.c
-index 2415698a8fef..5b12f40877b5 100644
---- a/fs/btrfs/raid-stripe-tree.c
-+++ b/fs/btrfs/raid-stripe-tree.c
-@@ -15,6 +15,66 @@
- #include "misc.h"
- #include "print-tree.h"
- 
-+int btrfs_delete_raid_extent(struct btrfs_trans_handle *trans, u64 start,
-+			     u64 length)
-+{
-+	struct btrfs_fs_info *fs_info = trans->fs_info;
-+	struct btrfs_root *stripe_root = btrfs_stripe_tree_root(fs_info);
-+	struct btrfs_path *path;
-+	struct btrfs_key key;
-+	struct extent_buffer *leaf;
-+	u64 found_start;
-+	u64 found_end;
-+	u64 end = start + length;
-+	int slot;
-+	int ret;
-+
-+	if (!stripe_root)
-+		return 0;
-+
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
-+
-+	while (1) {
-+
-+		key.objectid = start;
-+		key.type = BTRFS_RAID_STRIPE_KEY;
-+		key.offset = length;
-+
-+		ret = btrfs_search_slot(trans, stripe_root, &key, path, -1, 1);
-+		if (ret < 0)
-+			break;
-+		if (ret > 0) {
-+			ret = 0;
-+			if (path->slots[0] == 0)
-+				break;
-+			path->slots[0]--;
-+		}
-+
-+		leaf = path->nodes[0];
-+		slot = path->slots[0];
-+		btrfs_item_key_to_cpu(leaf, &key, slot);
-+		found_start = key.objectid;
-+		found_end = found_start + key.offset;
-+
-+		/* That stripe ends before we start, we're done */
-+		if (found_end <= start)
-+			break;
-+
-+		ASSERT(found_start >= start && found_end <= end);
-+		ret = btrfs_del_item(trans, stripe_root, path);
-+		if (ret)
-+			break;
-+
-+		btrfs_release_path(path);
-+	}
-+
-+	btrfs_free_path(path);
-+	return ret;
-+
-+}
-+
- static u8 btrfs_bg_type_to_raid_encoding(u64 map_type)
- {
- 	switch (map_type & BTRFS_BLOCK_GROUP_PROFILE_MASK) {
-diff --git a/fs/btrfs/raid-stripe-tree.h b/fs/btrfs/raid-stripe-tree.h
-index f36e4c2d46b0..7560dc501a65 100644
---- a/fs/btrfs/raid-stripe-tree.h
-+++ b/fs/btrfs/raid-stripe-tree.h
-@@ -11,6 +11,8 @@
- struct btrfs_io_context;
- struct btrfs_io_stripe;
- 
-+int btrfs_delete_raid_extent(struct btrfs_trans_handle *trans, u64 start,
-+			     u64 length);
- int btrfs_insert_raid_extent(struct btrfs_trans_handle *trans,
- 			     struct btrfs_ordered_extent *ordered_extent);
- 
+> > Because if not, then squotas would make more sense as a separate
+> > infrastructure, under quotas. Like that quotas are the abstraction while
+> > qgroups or squota would be the implementation.
+> > 
+> > > The only difference is that when you
+> > > enable quotas via `btrfs quota enable`, you pass the `--simple` flag.
+> > > Squotas will always report exclusive == shared for each qgroup. Squotas
+> > > deal with extent_item/metadata_item sizes and thus do not do anything
+> > > special with compression. Squotas also introduce auto inheritance for
+> > > nested subvols. The API is documented more fully in the documentation
+> > > patches in btrfs-progs.
+> > 
+> > The lack of exclusive size sharing will be confusing I guess, so we need
+> > to make it clear in the documentation and in the UI that it's either
+> > full or simple mode.
+> 
+> I am happy to iterate on that. I think always reporting as shared=0,
+> since the *ownership* is exclusive. I opted for making them equal since
+> it sort of both shared usage (we don't know if it's shared nor when it
+> will be freed) and exclusive usage (belongs to this subvol by owner ref)
 
--- 
-2.41.0
-
+I agree with that reasoning.

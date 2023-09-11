@@ -2,93 +2,87 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 01E5DCA0ECD
-	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Sep 2023 22:06:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0A606CA0EC3
+	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Sep 2023 22:06:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1355661AbjIKWBo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 11 Sep 2023 18:01:44 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58928 "EHLO
+        id S1355699AbjIKWBr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 11 Sep 2023 18:01:47 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54826 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236458AbjIKKlF (ORCPT
+        with ESMTP id S243728AbjIKRfg (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Sep 2023 06:41:05 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 57F60E5F
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 03:41:01 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 11C301F891
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 10:41:00 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1694428860; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=/u0O6wJRRN0Lir/nQV5QzKGbQ+scNzscwAUT0zubgfU=;
-        b=nSAf2DIznjmiPCIJwEb4SMa3V1INSn50zzagLUT8W32eyY04XXYR5T+KGPgPer4IpXJVof
-        GfWRC6KLVikIq5SgXHEdo47DtJllgjFDnnOtXntnDPnFwssoeNdJt75viZhFR0jCz4a9rV
-        M7POLva3dbi57qBZPaQVMkDFTnABBT4=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 0C3DA13780
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 10:40:58 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id qIxfKrru/mQPTwAAMHmgww
-        (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 10:40:58 +0000
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/3] btrfs-progs: enable -Wshadow for default build
-Date:   Mon, 11 Sep 2023 20:10:34 +0930
-Message-ID: <5a97e0bcbf28f018ce9cf30106b4c5142d2c5299.1694428549.git.wqu@suse.com>
-X-Mailer: git-send-email 2.42.0
-In-Reply-To: <cover.1694428549.git.wqu@suse.com>
-References: <cover.1694428549.git.wqu@suse.com>
+        Mon, 11 Sep 2023 13:35:36 -0400
+Received: from mail-oo1-xc35.google.com (mail-oo1-xc35.google.com [IPv6:2607:f8b0:4864:20::c35])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 046DC125
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 10:35:32 -0700 (PDT)
+Received: by mail-oo1-xc35.google.com with SMTP id 006d021491bc7-5717f7b932aso3086283eaf.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 10:35:31 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1694453731; x=1695058531; darn=vger.kernel.org;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
+        bh=pJztqqjJZ91Rwj8nF59E+xMwCK2VrN5odsIoKXltNF8=;
+        b=jCc81UCdhFX6ezLGpjocris64ffjmNa+b4M7VDtgl7BDxeuQ9coCts6R+4CtX+I1py
+         8niYkI+jVgS/IbCqMrZ6XAVz7E6fHJL9iTVM/vKHdSxrKZGoC4lG0pM00attV6BevB0K
+         LFmy5bfuyNa8vVA8b1kKNBauyJLtIKekGf48xutKGCQIG/850Df2Nj/7FJxO9thUfM5j
+         rYOhCUcqGJzr+cp550XwX1QNTTSzAd8hXHSgCP5dpDmO6nrOKPsl7rgFNwhsp0g8O1FK
+         vdZ5DscmRcFnj3YSnaJU4Qg8e2/ZQMxMEYGUaANTq267gQ/h259ddFvyw7uOzTsoAqhz
+         FVYg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1694453731; x=1695058531;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=pJztqqjJZ91Rwj8nF59E+xMwCK2VrN5odsIoKXltNF8=;
+        b=CzZdP+DaD2YVnEimq7qvEvt4djvS7MRutiKWbyKqMjAzNTjyUSvuokKlDGZY9fzB3/
+         t/7oQyTST5dJexCcStsB45+/YiE2StJcqFY/8pQHwWrh4A61jcVLVK393FZnoW3WEsCd
+         amdJuH9CjUX1erYO20AT29cRNW2mF+VDCu2yCS5SNfOtQPcQ78Omq55crSEf6csVsXFY
+         RDfcmAA6yQeerHJWfRAe2D61JU2asKpgNDAEr/DqzHAjhVmCgLikZnvtnAcLlFzhnQP+
+         c7ziEQRwCNbrt41nssgREpUa9YG7vJGTAkrrFFciF/dkLuli/6rs0eNXzIqs1SjDdJY7
+         AAPg==
+X-Gm-Message-State: AOJu0YxPqBM8pI1xnuKibNCA4lkzFzEhHKrnarvMW343PVJYUj5CXHw+
+        oiD45qDiFRCvrE5gzDRWJvGCGJSJnsLORgFJk5yyZQ==
+X-Google-Smtp-Source: AGHT+IGpIkUPKNOZp7Ptavm4ZlrP/2TXtpbu9Y3nGePIYbjKnYG0J7HEQBAJdJzPtXu2bFWqCNl3Iw==
+X-Received: by 2002:a05:6358:5924:b0:137:8922:7ebf with SMTP id g36-20020a056358592400b0013789227ebfmr13211216rwf.2.1694453731249;
+        Mon, 11 Sep 2023 10:35:31 -0700 (PDT)
+Received: from localhost (cpe-76-182-20-124.nc.res.rr.com. [76.182.20.124])
+        by smtp.gmail.com with ESMTPSA id s25-20020a0cb319000000b00653559e065asm3095194qve.99.2023.09.11.10.35.30
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 11 Sep 2023 10:35:30 -0700 (PDT)
+Date:   Mon, 11 Sep 2023 13:35:30 -0400
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     fdmanana@kernel.org
+Cc:     linux-btrfs@vger.kernel.org, ian@ianjohnson.dev,
+        Filipe Manana <fdmanana@suse.com>
+Subject: Re: [PATCH 0/2] btrfs: updates for directory reading
+Message-ID: <20230911173530.GB2352074@perftesting>
+References: <cover.1694260751.git.fdmanana@suse.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <cover.1694260751.git.fdmanana@suse.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-With all the known one fixed, we can enable -Wshadow now.
+On Sat, Sep 09, 2023 at 01:08:30PM +0100, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> Tweak and fix a bug when reading directory entries after a rewinddir(3)
+> call. Reported by Ian Johnson.
+> 
+> Link: https://lore.kernel.org/linux-btrfs/YR1P0S.NGASEG570GJ8@ianjohnson.dev/T/#u
+> 
+> Filipe Manana (2):
+>   btrfs: set last dir index to the current last index when opening dir
+>   btrfs: refresh dir last index during a rewinddir(3) call
+> 
+>  fs/btrfs/inode.c | 18 ++++++++++++++++--
+>  1 file changed, 16 insertions(+), 2 deletions(-)
+> 
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- Makefile           | 3 ++-
- Makefile.extrawarn | 1 -
- 2 files changed, 2 insertions(+), 2 deletions(-)
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 
-diff --git a/Makefile b/Makefile
-index 8cd5674616be..e178b7e13777 100644
---- a/Makefile
-+++ b/Makefile
-@@ -86,7 +86,8 @@ DISABLE_WARNING_FLAGS := $(call cc-disable-warning, format-truncation) \
- 
- # Warnings that we want by default
- ENABLE_WARNING_FLAGS := $(call cc-option, -Wimplicit-fallthrough) \
--			$(call cc-option, -Wmissing-prototypes)
-+			$(call cc-option, -Wmissing-prototypes) \
-+			-Wshadow
- 
- ASFLAGS =
- 
-diff --git a/Makefile.extrawarn b/Makefile.extrawarn
-index 9cd279171e57..44bc8cff188f 100644
---- a/Makefile.extrawarn
-+++ b/Makefile.extrawarn
-@@ -60,7 +60,6 @@ warning-2 := -Waggregate-return
- warning-2 += -Wcast-align
- warning-2 += -Wdisabled-optimization
- warning-2 += -Wnested-externs
--warning-2 += -Wshadow
- warning-2 += $(call cc-option, -Wlogical-op)
- warning-2 += $(call cc-option, -Wmissing-field-initializers)
- warning-2 += $(call cc-option, -Wformat-truncation)
--- 
-2.42.0
+I didn't see an fstest for this, is it forthcoming?  Thanks,
 
+Josef

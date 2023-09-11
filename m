@@ -2,172 +2,261 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A2419CA0ECD
-	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Sep 2023 22:07:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5EB89CA0ED0
+	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Sep 2023 22:07:23 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1356095AbjIKWCw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 11 Sep 2023 18:02:52 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56310 "EHLO
+        id S1356108AbjIKWCy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 11 Sep 2023 18:02:54 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59644 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S237056AbjIKL4T (ORCPT
+        with ESMTP id S237471AbjIKMwk (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Sep 2023 07:56:19 -0400
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 228A3E3
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 04:56:14 -0700 (PDT)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 386ADC433C8;
-        Mon, 11 Sep 2023 11:56:12 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1694433372;
-        bh=izqMVeJP9+1E8Bddkk1KXhK8gNxA0s4Kf8noD68IwNg=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=eztXblBjewp1z4woLNQO1wNdGHoA9BTSYV6Yyt7WprRhQDJzkMjWZJIgqWWfe9/s+
-         QBqf6Aer11z6LF2MKdtUGrAynWK9DDGbskNrXPvlWZFfejCXBceqTLLmg4VTwbHUuO
-         BiVSvoWv7P9ODGSiY9DkkMy9v6l7DAfIurHRx5bKXLjGQt8tfJjT6FdgNMPGv4FeXk
-         FE2RQxzFRE8W4D4VakGVVULkSK85w6gbsbPFhIKrP1IlbrZTZMDlfe9b5Ny7sTfBQX
-         74xfbUGMrJIKJRai0tQG7Kmy435pMGH/LJ6mP+BUYvPUsY6vMCZMVWQakJQziq40zG
-         M4gVFJLijFVIg==
-Date:   Mon, 11 Sep 2023 12:56:08 +0100
-From:   Filipe Manana <fdmanana@kernel.org>
-To:     Evangelos Foutras <evangelos@foutras.com>
-Cc:     Ian Johnson <ian@ianjohnson.dev>, linux-btrfs@vger.kernel.org
-Subject: Re: Possible readdir regression with BTRFS
-Message-ID: <ZP8AWKMVYOY0mAwq@debian0.Home>
-References: <YR1P0S.NGASEG570GJ8@ianjohnson.dev>
- <ZPweR/773V2lmf0I@debian0.Home>
- <00ed09b9-d60c-4605-b3b6-f4e79bf92fca@foutras.com>
- <ZPxiqYCeMb6vOjw9@debian0.Home>
+        Mon, 11 Sep 2023 08:52:40 -0400
+Received: from esa5.hgst.iphmx.com (esa5.hgst.iphmx.com [216.71.153.144])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 36ED4CEB;
+        Mon, 11 Sep 2023 05:52:36 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1694436756; x=1725972756;
+  h=from:to:cc:subject:date:message-id:in-reply-to:
+   references:mime-version:content-transfer-encoding;
+  bh=oNfuLA8tG2aivaq6yjp4JQ9c65/XbLN/yRBDi9R2XTE=;
+  b=G71DJe5mBJCJcF5WDGKl0PGnjnF294kTQ9oh7ugeoNY65oPmSOOThOpG
+   WMl0TXb2w+H0hgeGk+IyRJFIVsvOSbD+R+bsRZb478ZvP4l2bTNIJF3LM
+   2aCYhCO7QIMsrMx68fD/ZEc/3MS4GsBi4DZ9G5i9HPioJKXcMLgKzhs8Z
+   2+B+VxiNwG9JO1sVsM2llDz1mledc7LUrLDxcVL0HQTcXdp6IZdCCHoyn
+   WjvP/Wq4AuqpZjabRhzu4BVUlpuyaexODs8rv+P4VA8sEg/O2NyZEre1O
+   JhY9mLaX8a0tz8bi2BAxMStIbhIlFrzCbxOHE8GYR8KhqQKoEMz6vN9fC
+   w==;
+X-CSE-ConnectionGUID: Htx3DRGgTkSfk/QSz6i4wQ==
+X-CSE-MsgGUID: hD9kqg/eTb6Q+5QwIbBYHg==
+X-IronPort-AV: E=Sophos;i="6.02,244,1688400000"; 
+   d="scan'208";a="243594399"
+Received: from h199-255-45-14.hgst.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
+  by ob1.hgst.iphmx.com with ESMTP; 11 Sep 2023 20:52:36 +0800
+IronPort-SDR: NPIuTsyUGUwDs10k5kFNYmPz1bMKnbTPipyvZjhEFvdPlbT2WcZOhNAH6YXg8SVXveqpTBvylQ
+ 6S2lyd1vF14lOgyRmxBQv5RmVWGmhic6c4OId0Z3RHBCzBCvdJs9PpYAyBdzAatJ699MYn4x2f
+ CuW8jOdOZIOFpb1xhAzTxEc+llwsvNOUS9FloUzVnwbRvkQrWwET6VXHS9Tfi2m52C+T+MfxmV
+ BTXj4/1XqxcWU65JggdlEvyE63xQZEKqWjHzXDW1s7lc2t+1V9UDVhuxAFIzEnTHkNWEMN8Wb7
+ OKU=
+Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 11 Sep 2023 05:05:22 -0700
+IronPort-SDR: 3b4LOtVH9XTHOOqFKz2/ds6Q2VOATKJRKWadc42bzCwW8mWkh3KmLjVTaKTEc3ufCKQ5ffMKuV
+ bytkYrjU18p/SXFJlrqRgzydE5pURVrAnGdqlmiNu6/sYoF6Mp73cxJwxyavSDeew3r2KoXAYG
+ v/faX2KROTKmkTJVQK91QVdn1HNkUEOeCh1Ayq0j8+ohBxCIxoBpSUii70HeGxpLq/BzQj3Z9C
+ 5ILh29aNxzi43M/Z/SduN1+86beIcxs8IHyOtu5cr8I2RFUIF/wdD/KzOlPiFIzp6UNC246qAC
+ W4w=
+WDCIronportException: Internal
+Received: from unknown (HELO redsun91.ssa.fujisawa.hgst.com) ([10.149.66.6])
+  by uls-op-cesaip02.wdc.com with ESMTP; 11 Sep 2023 05:52:34 -0700
+From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
+To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>
+Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+        Christoph Hellwig <hch@lst.de>,
+        Naohiro Aota <naohiro.aota@wdc.com>, Qu Wenruo <wqu@suse.com>,
+        Damien Le Moal <dlemoal@kernel.org>,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: [PATCH v8 07/11] btrfs: zoned: allow zoned RAID
+Date:   Mon, 11 Sep 2023 05:52:08 -0700
+Message-ID: <20230911-raid-stripe-tree-v8-7-647676fa852c@wdc.com>
+X-Mailer: git-send-email 2.41.0
+In-Reply-To: <20230911-raid-stripe-tree-v8-0-647676fa852c@wdc.com>
+References: <20230911-raid-stripe-tree-v8-0-647676fa852c@wdc.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <ZPxiqYCeMb6vOjw9@debian0.Home>
+Content-Type: text/plain; charset="utf-8"
+X-Mailer: b4 0.12.3
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1694436627; l=5991; i=johannes.thumshirn@wdc.com; s=20230613; h=from:subject:message-id; bh=oNfuLA8tG2aivaq6yjp4JQ9c65/XbLN/yRBDi9R2XTE=; b=vw/lnwXT5Qma1bXsUIEGpCkgShSXIJEsBfWlzjWUPPC9HI2KqCTQtiVdkjCd0lxZR6f1SxK24 uVFJ52XWAKlAkCECmstLS0V1KdUhCeIlE9lZ9nBwAF6Y3Jpau+LnfDK
+X-Developer-Key: i=johannes.thumshirn@wdc.com; a=ed25519; pk=TGmHKs78FdPi+QhrViEvjKIGwReUGCfa+3LEnGoR2KM=
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sat, Sep 09, 2023 at 01:18:49PM +0100, Filipe Manana wrote:
-> On Sat, Sep 09, 2023 at 02:52:19PM +0300, Evangelos Foutras wrote:
-> > Hi Filipe,
-> > 
-> > Please be aware that this bug might not be as harmless as it seems. I'm not
-> > sure if the fix you're preparing would also fix an issue we saw at Arch
-> > Linux but I thought I'd mention it here.
-> > 
-> > We have a package repository server with 4x10 TB drives in RAID10 (btrfs
-> > only, no mdadm). On multiple mirrors syncing from it we have seen rsync
-> > occasionally delete ~4 small (<10 MB) files that get frequently updated by
-> > renaming temporary files into them. This only happened with 6.4.12 and went
-> > away after going back to 6.4.10 (the former had the commit Ian mentioned).
-> > 
-> > Unfortunately I don't have a reproducer for this. I can only describe what
-> > our repo-add script does and how rsync behaves during problematic syncs.
-> > 
-> > Our repo-add script frequently adds packages to the extra repo by doing:
-> > 
-> >   ln -f extra.db.tar.gz extra.db.tar.gz.old
-> >   mv .tmp.extra.db.tar.gz extra.db.tar.gz
-> > 
-> > And the same for extra.files.tar.gz:
-> > 
-> >   ln -f extra.files.tar.gz extra.files.tar.gz.old
-> >   mv .tmp.extra.files.tar.gz extra.files.tar.gz
-> > 
-> > While the server was running Linux 6.4.12, rsync on some mirrors would
-> > occasionally (3-4 times in the day) delete these files:
-> > 
-> >   deleting extra/os/x86_64/extra.files.tar.gz.old
-> >   deleting extra/os/x86_64/extra.files.tar.gz
-> >   deleting extra/os/x86_64/extra.db.tar.gz.old
-> >   deleting extra/os/x86_64/extra.db.tar.gz
-> > 
-> > Since renames are atomic, I would expect this scenario to never happen.
-> > 
-> > Again, sorry for not being able to provide a proper reproducer like Ian;
-> > there is probably some timing interaction with how rsync does directory
-> > scanning and repo-add updating the directory entry during this time.
-> 
-> No worries, I've just sent a patchset with 2 patches:
-> 
-> https://lore.kernel.org/linux-btrfs/cover.1694260751.git.fdmanana@suse.com/
-> 
-> I've only seen your message after sending it, but I think the first patch
-> should fix what you are seeing.
+When we have a raid-stripe-tree, we can do RAID0/1/10 on zoned devices for
+data block-groups. For meta-data block-groups, we don't actually need
+anything special, as all meta-data I/O is protected by the
+btrfs_zoned_meta_io_lock() already.
 
-Ok, so I took a more detailed look at your issue this morning.
-It's unrelated to what Ian reported, as rsync doesn't even use rewinddir(3).
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+---
+ fs/btrfs/raid-stripe-tree.h |   7 ++-
+ fs/btrfs/volumes.c          |   2 +
+ fs/btrfs/zoned.c            | 113 +++++++++++++++++++++++++++++++++++++++++++-
+ 3 files changed, 119 insertions(+), 3 deletions(-)
 
-Here's what I think it's happening (speculating a bit about how rsync
-works):
+diff --git a/fs/btrfs/raid-stripe-tree.h b/fs/btrfs/raid-stripe-tree.h
+index 40aa553ae8aa..30c7d5981890 100644
+--- a/fs/btrfs/raid-stripe-tree.h
++++ b/fs/btrfs/raid-stripe-tree.h
+@@ -8,6 +8,11 @@
+ 
+ #include "disk-io.h"
+ 
++#define BTRFS_RST_SUPP_BLOCK_GROUP_MASK		(BTRFS_BLOCK_GROUP_DUP |\
++						 BTRFS_BLOCK_GROUP_RAID1_MASK |\
++						 BTRFS_BLOCK_GROUP_RAID0 |\
++						 BTRFS_BLOCK_GROUP_RAID10)
++
+ struct btrfs_io_context;
+ struct btrfs_io_stripe;
+ 
+@@ -32,7 +37,7 @@ static inline bool btrfs_need_stripe_tree_update(struct btrfs_fs_info *fs_info,
+ 	if (type != BTRFS_BLOCK_GROUP_DATA)
+ 		return false;
+ 
+-	if (profile & BTRFS_BLOCK_GROUP_RAID1_MASK)
++	if (profile & BTRFS_RST_SUPP_BLOCK_GROUP_MASK)
+ 		return true;
+ 
+ 	return false;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 7c25f5c77788..9f17e5f290f4 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -6438,6 +6438,8 @@ int btrfs_map_block(struct btrfs_fs_info *fs_info, enum btrfs_map_op op,
+ 	 * I/O context structure.
+ 	 */
+ 	if (smap && num_alloc_stripes == 1 &&
++	    !(btrfs_need_stripe_tree_update(fs_info, map->type) &&
++	      op != BTRFS_MAP_READ) &&
+ 	    !((map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) && mirror_num > 1)) {
+ 		ret = set_io_stripe(fs_info, op, logical, length, smap, map,
+ 				    stripe_index, stripe_offset, stripe_nr);
+diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
+index c6eedf4bfba9..4ca36875058c 100644
+--- a/fs/btrfs/zoned.c
++++ b/fs/btrfs/zoned.c
+@@ -1481,8 +1481,9 @@ int btrfs_load_block_group_zone_info(struct btrfs_block_group *cache, bool new)
+ 			set_bit(BLOCK_GROUP_FLAG_ZONE_IS_ACTIVE, &cache->runtime_flags);
+ 		break;
+ 	case BTRFS_BLOCK_GROUP_DUP:
+-		if (map->type & BTRFS_BLOCK_GROUP_DATA) {
+-			btrfs_err(fs_info, "zoned: profile DUP not yet supported on data bg");
++		if (map->type & BTRFS_BLOCK_GROUP_DATA &&
++		    !btrfs_stripe_tree_root(fs_info)) {
++			btrfs_err(fs_info, "zoned: data DUP profile needs stripe_root");
+ 			ret = -EINVAL;
+ 			goto out;
+ 		}
+@@ -1520,8 +1521,116 @@ int btrfs_load_block_group_zone_info(struct btrfs_block_group *cache, bool new)
+ 		cache->zone_capacity = min(caps[0], caps[1]);
+ 		break;
+ 	case BTRFS_BLOCK_GROUP_RAID1:
++	case BTRFS_BLOCK_GROUP_RAID1C3:
++	case BTRFS_BLOCK_GROUP_RAID1C4:
++		if (map->type & BTRFS_BLOCK_GROUP_DATA &&
++		    !btrfs_stripe_tree_root(fs_info)) {
++			btrfs_err(fs_info,
++				  "zoned: data %s needs stripe_root",
++				  btrfs_bg_type_to_raid_name(map->type));
++			ret = -EIO;
++			goto out;
++
++		}
++
++		for (i = 0; i < map->num_stripes; i++) {
++			if (alloc_offsets[i] == WP_MISSING_DEV ||
++			    alloc_offsets[i] == WP_CONVENTIONAL)
++				continue;
++
++			if ((alloc_offsets[0] != alloc_offsets[i]) &&
++			    !btrfs_test_opt(fs_info, DEGRADED)) {
++				btrfs_err(fs_info,
++					  "zoned: write pointer offset mismatch of zones in %s profile",
++					  btrfs_bg_type_to_raid_name(map->type));
++				ret = -EIO;
++				goto out;
++			}
++			if (test_bit(0, active) != test_bit(i, active)) {
++				if (!btrfs_test_opt(fs_info, DEGRADED) &&
++				    !btrfs_zone_activate(cache)) {
++					ret = -EIO;
++					goto out;
++				}
++			} else {
++				if (test_bit(0, active))
++					set_bit(BLOCK_GROUP_FLAG_ZONE_IS_ACTIVE,
++						&cache->runtime_flags);
++			}
++			/*
++			 * In case a device is missing we have a cap of 0, so don't
++			 * use it.
++			 */
++			cache->zone_capacity = min_not_zero(caps[0], caps[i]);
++		}
++
++		if (alloc_offsets[0] != WP_MISSING_DEV)
++			cache->alloc_offset = alloc_offsets[0];
++		else
++			cache->alloc_offset = alloc_offsets[i - 1];
++		break;
+ 	case BTRFS_BLOCK_GROUP_RAID0:
++		if (map->type & BTRFS_BLOCK_GROUP_DATA &&
++		    !btrfs_stripe_tree_root(fs_info)) {
++			btrfs_err(fs_info,
++				  "zoned: data %s needs stripe_root",
++				  btrfs_bg_type_to_raid_name(map->type));
++			ret = -EIO;
++			goto out;
++
++		}
++		for (i = 0; i < map->num_stripes; i++) {
++			if (alloc_offsets[i] == WP_MISSING_DEV ||
++			    alloc_offsets[i] == WP_CONVENTIONAL)
++				continue;
++
++			if (test_bit(0, active) != test_bit(i, active)) {
++				if (!btrfs_zone_activate(cache)) {
++					ret = -EIO;
++					goto out;
++				}
++			} else {
++				if (test_bit(0, active))
++					set_bit(BLOCK_GROUP_FLAG_ZONE_IS_ACTIVE,
++						&cache->runtime_flags);
++			}
++			cache->zone_capacity += caps[i];
++			cache->alloc_offset += alloc_offsets[i];
++
++		}
++		break;
+ 	case BTRFS_BLOCK_GROUP_RAID10:
++		if (map->type & BTRFS_BLOCK_GROUP_DATA &&
++		    !btrfs_stripe_tree_root(fs_info)) {
++			btrfs_err(fs_info,
++				  "zoned: data %s needs stripe_root",
++				  btrfs_bg_type_to_raid_name(map->type));
++			ret = -EIO;
++			goto out;
++
++		}
++		for (i = 0; i < map->num_stripes; i++) {
++			if (alloc_offsets[i] == WP_MISSING_DEV ||
++			    alloc_offsets[i] == WP_CONVENTIONAL)
++				continue;
++
++			if (test_bit(0, active) != test_bit(i, active)) {
++				if (!btrfs_zone_activate(cache)) {
++					ret = -EIO;
++					goto out;
++				}
++			} else {
++				if (test_bit(0, active))
++					set_bit(BLOCK_GROUP_FLAG_ZONE_IS_ACTIVE,
++						&cache->runtime_flags);
++			}
++			if ((i % map->sub_stripes) == 0) {
++				cache->zone_capacity += caps[i];
++				cache->alloc_offset += alloc_offsets[i];
++			}
++
++		}
++		break;
+ 	case BTRFS_BLOCK_GROUP_RAID5:
+ 	case BTRFS_BLOCK_GROUP_RAID6:
+ 		/* non-single profiles are not supported yet */
 
-1) rsync uses opendir() and readdir() to iterate over the source and
-   destination (backup) directories, to obtain a list of files in each;
+-- 
+2.41.0
 
-2) While it's iterating the source directory, the renames and "ln -f"
-   happen. Because of this the readdir() calls don't return neither the
-   old file names neither the new ones.
-
-   This is because when opendir() is called, btrfs gets the index of the
-   last (most recently added) directory entry, and then never iterates
-   beyond that index in readdir() calls - this behaviour was introduced
-   in commit 9b378f6ad48c ("btrfs: fix infinite directory reads"), and it's
-   intentional to prevent readdir() never finishing while renames (or new
-   files added) inside the directory are happening.
-
-   On a rename, the new file name is assigned a new index number, larger
-   then the last one we had when openddir() was called. It's effectively
-   like removing an entry from the directory and adding a new one.
-   The same goes for a 'ln -f' - if the destination name exists, it is
-   removed and then the name is added again but pointing to a different
-   inode (and with a higher index number);
-
-3) As rsync sees that one of those renamed files is in the destination
-   directory but not on the source directory, it deletes those files from
-   the destination.
-
-Looking at readdir() requirements from POSIX we have:
-
-  "If a file is removed from or added to the directory after the most recent call
-   to opendir() or rewinddir(), whether a subsequent call to readdir() returns an
-   entry for that file is unspecified."
-
-  (from https://pubs.opengroup.org/onlinepubs/007904875/functions/readdir_r.html)
-
-Yes, renames are not explicit there, even though they are like adding a new name
-and removing another one. So googling around, to be extra sure, I found this old
-thread from Ted (ext4 maintainer):
-
-   https://yarchive.net/comp/linux/readdir_nonatomicity.html
-
-Where the most important part is this:
-
-   "This is not a bug; the POSIX specification explicitly allows this
-    behavior.  If a filename is renamed during a readdir() session of a
-    directory, it is undefined where that neither, either, or both of the
-    new and old filenames will be returned."
-
-So from a POSIX point of view, we are not doing anything wrong after that commit
-in btrfs. So my advise is to not have rsync running while the renames and "ln -f"
-are happening.
-
-I understand this may be a bummer as some applications may be relying on the old
-behaviour that happened to guarantee that at least the new file names would always
-be visible in readdir() calls, but that effectively was due to a bug in btrfs that
-caused infinite directory reads as mentioned in that commit and the linked thread.
-As if new indexes were added after opendir(), we would always read and return them.
-
-We could change opendir() to allow reading up to the current last index plus N,
-where N may be 10 or 100 for example, so that in the case of concurrent renames we
-would still (very likely but no guaranteed) at least return the new names - but
-not only that is not required by POSIX it would also not be always reliable - what
-if we have N + 1 renames? Then file name N + 1 would still be not returned, or
-if N new files are added and then rename happens at N + 1, we would also not return
-it - i.e., it would never be reliable and it would be a hack - it would encourage
-applications to rely on a behaviour that can not always be guaranteed.
-
-Thanks.
-
-> 
-> Thanks.
-> 
-> > 
-> > [1] https://gitlab.archlinux.org/pacman/pacman/-/blob/v6.0.2/scripts/repo-add.sh.in#L473

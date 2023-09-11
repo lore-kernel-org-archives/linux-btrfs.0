@@ -2,134 +2,91 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8EBE8CA0EC9
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9D730CA0ECF
 	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Sep 2023 22:06:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1355829AbjIKWCI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 11 Sep 2023 18:02:08 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42126 "EHLO
+        id S1355805AbjIKWCF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 11 Sep 2023 18:02:05 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57444 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236448AbjIKKkf (ORCPT
+        with ESMTP id S237612AbjIKNAj (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Sep 2023 06:40:35 -0400
+        Mon, 11 Sep 2023 09:00:39 -0400
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C11B3CDC
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 03:40:30 -0700 (PDT)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 0BCCFC433C8;
-        Mon, 11 Sep 2023 10:40:29 +0000 (UTC)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 775A0CD7;
+        Mon, 11 Sep 2023 06:00:34 -0700 (PDT)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 0D58AC433CA;
+        Mon, 11 Sep 2023 13:00:31 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1694428830;
-        bh=v6J9w8t4I00gjDRlGBnG8klrchAwwNzQYRkn6s0VJ4g=;
+        s=k20201202; t=1694437234;
+        bh=gTtArNuZ0vo/RYfzma1n4Nj7HrwLli9DtJUfB6Thws4=;
         h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=uJSdnOsBhpsbluwKATLF54elY6oQjNbMVFEYMVnuJR0ZzzOYoQDgLK24kj1Bhu+X/
-         E7WdKz9CE8sGbsmZ/D3FYUQq57ZWdQKqjr9ssQmLVEFPMUu501kSiqI7XWxRROcYPj
-         PJyRouIUgfaBA2UhBSrKaZ1tr7J3zuHh5FZ7qYUxNujVDtkBTqSWxohNEr7mM1HK9+
-         DbJV0bhnzDDYI54JJn2rRtKcUL90k5mAh9Dfs+I/D44d4Z0L3MD+Zgm5AV6uM5vRrz
-         uQSQQ1TFuvjvOezx6/zbHcfJarqOtQt7zyhvPNQiz1MIW5SgcYtL1lKBby2CcYCVjq
-         frdN+g3lpUvbg==
-Date:   Mon, 11 Sep 2023 11:40:27 +0100
-From:   Filipe Manana <fdmanana@kernel.org>
-To:     linux-btrfs@vger.kernel.org
-Cc:     ian@ianjohnson.dev, Filipe Manana <fdmanana@suse.com>
-Subject: Re: [PATCH 1/2] btrfs: set last dir index to the current last index
- when opening dir
-Message-ID: <ZP7um+C2VEK3DPrf@debian0.Home>
-References: <cover.1694260751.git.fdmanana@suse.com>
- <f6ad7269b879d0ac24f3b051c3ff6530dc0953b4.1694260751.git.fdmanana@suse.com>
+        b=dDFDXJKS6/Y2QkjEBjP2l9kxDeFHwcUhOkRE5Hd4b2kqfzjlNiT9ZDfOkcczPTNC+
+         TCuE8jW4hntfldk3SqtzM4OYoxztc/Vq7ypUBq8AMkO3wTqyyV8abd2yC/969cSAuq
+         Y7T3+FqQpNK1ZYKottqqDrOucAbSlXEWGVU/As/EmxxwLl5dxN16SGcxdp4YmB1ovG
+         Dgk2zNtzOfDbdenCJansYRsOeDE2ryvCvu56Iz+tS0d9s44v7wwu4TjULA4tDVPj6J
+         ALqktbowU323PXO3ZQISMbPVFolDyaYWk9Y0S1MxPPbvW3aL4otvrxVYOciSgjodxe
+         0GjTS/5X5+ADw==
+Date:   Mon, 11 Sep 2023 15:00:28 +0200
+From:   Christian Brauner <brauner@kernel.org>
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     David Sterba <dsterba@suse.com>, Jan Kara <jack@suse.cz>,
+        Christoph Hellwig <hch@lst.de>, linux-fsdevel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org
+Subject: Re: btrfs freezing question
+Message-ID: <20230911-spotten-tadel-4a4cf4e17729@brauner>
+References: <20230908-merklich-bebauen-11914a630db4@brauner>
+ <20230908143221.GA1977092@perftesting>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <f6ad7269b879d0ac24f3b051c3ff6530dc0953b4.1694260751.git.fdmanana@suse.com>
+In-Reply-To: <20230908143221.GA1977092@perftesting>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sat, Sep 09, 2023 at 01:08:31PM +0100, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> When opening a directory for reading it, we set the last index where we
-> stop iteration to the value in struct btrfs_inode::index_cnt. That value
-> does not match the index of the most recently added directory entry but
-> it's instead the index number that will be assigned the next directory
-> entry.
-> 
-> This means that if after the call to opendir(3) new directory entries are
-> added, a readdir(3) call will return the first new directory entry. This
-> is fine because POSIX says the following [1]:
-> 
->   "If a file is removed from or added to the directory after the most
->    recent call to opendir() or rewinddir(), whether a subsequent call to
->    readdir() returns an entry for that file is unspecified."
-> 
-> For example for the test script from commit 9b378f6ad48c ("btrfs: fix
-> infinite directory reads"), where we have 2000 files in a directory, ext4
-> doesn't return any new directory entry after opendir(3), while xfs returns
-> the first 13 new directory entries added after the opendir(3) call.
-> 
-> If we move to a shorter example with an empty directory when opendir(3) is
-> called, and 2 files added to the directory after the opendir(3) call, then
-> readdir(3) on btrfs will return the first file, ext4 and xfs return the 2
-> files (but in a different order). A test program for this, reported by
-> Ian Johnson, is the following:
-> 
->    #include <dirent.h>
->    #include <stdio.h>
-> 
->    int main(void) {
->      DIR *dir = opendir("test");
-> 
->      FILE *file;
->      file = fopen("test/1", "w");
->      fwrite("1", 1, 1, file);
->      fclose(file);
-> 
->      file = fopen("test/2", "w");
->      fwrite("2", 1, 1, file);
->      fclose(file);
-> 
->      struct dirent *entry;
->      while ((entry = readdir(dir))) {
->         printf("%s\n", entry->d_name);
->      }
->      closedir(dir);
->      return 0;
->    }
-> 
-> To make this less odd, change the behaviour to never return new entries
-> that were added after the opendir(3) call. This is done by setting the
-> last_index field of the struct btrfs_file_private attached to the
-> directory's file handle with a value matching btrfs_inode::index_cnt
-> minus 1, since that value always matches the index of the next new
-> directory entry and not the index of the most recently added entry.
-> 
-> [1] https://pubs.opengroup.org/onlinepubs/007904875/functions/readdir_r.html
-> 
+> Eesh, no you're right, seems like we only set this when we're moving devices
+> around, so it must have gotten removed at some point.
 
-Also (see the linked thread):
+Thanks for taking a look, Josef!
 
-Reported-by: Ian Johnson <ian@ianjohnson.dev>
-Tested-by: Ian Johnson <ian@ianjohnson.dev>
+> > My series can proceed independent of fixing btrfs but I'm just trying to
+> > make people aware in case that somehow wasn't known.
+> 
+> Thanks for that, we definitely need to get this fixed.  Is the bdev->bd_holder
+> part of the new mount api, or is it some other thing that we can do right now
+> and then be in a good spot when your new patchset lands?  Let me know and we can
+> prioritize that work.  Thanks,
 
-> Link: https://lore.kernel.org/linux-btrfs/YR1P0S.NGASEG570GJ8@ianjohnson.dev/
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> ---
->  fs/btrfs/inode.c | 3 ++-
->  1 file changed, 2 insertions(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index ca0f4781b0e5..df035211bdf0 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -5782,7 +5782,8 @@ static int btrfs_get_dir_last_index(struct btrfs_inode *dir, u64 *index)
->  		}
->  	}
->  
-> -	*index = dir->index_cnt;
-> +	/* index_cnt is the index number of next new entry, so decrement it. */
-> +	*index = dir->index_cnt - 1;
->  
->  	return 0;
->  }
-> -- 
-> 2.40.1
-> 
+This is independent of converting btrfs to the new mount api.
+
+Christoph has landed a patch series this cycle that sets bdev->bd_holder
+to the superblock owning the block device. Before his work
+bdev->bd_holder was set to the filesystem type. Roughly, this has
+enabled us to go from a block device straight to the owning superblock.
+
+Associated with changing bdev->bd_holder is using a set of holder
+operations: fs_holder_ops (see fs/super.c). These can be used to perform
+various operations on the holder: in this case on the superblock.
+
+IOW, we don't need to find the owning superblock anymore we just need to
+go straight from block device to owning superblock. You can see this
+e.g., in block/bdev.c:bdev_mark_dead() = fs/super.c:fs_bdev_mark_dead().
+
+What we need is to switch btrfs to bdev->bd_holder = sb and the usage of
+fs/super.c:fs_holder_ops if possible. We did this anyway to avoid
+deadlocks, allow dropping of s_umount when opening block devices and
+ultimately we can find matching superblocks before opening block devices
+which will allow us to restrict writers to block devices in v6.7 (Jan's
+work).
+
+We converted all block-based filesystems to use this new mechanism but
+David insisted on taking the btrfs portion through btrfs itself. So none
+of the btrfs patches in the series linked below have made it upstream
+for v6.6 and so you're unfortunately the only fs which still uses the
+old mechanism:
+
+Subject: [PATCH 05/17] btrfs: open block devices after superblock
+https://lore.kernel.org/linux-block/20230811100828.1897174-6-hch@lst.de
+
+What would help is if you would start to take these patches.

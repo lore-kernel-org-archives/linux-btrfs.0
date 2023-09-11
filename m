@@ -2,87 +2,126 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0A606CA0EC3
-	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Sep 2023 22:06:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 15124CA0ECB
+	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Sep 2023 22:06:51 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1355699AbjIKWBr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 11 Sep 2023 18:01:47 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54826 "EHLO
+        id S1355750AbjIKWBw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 11 Sep 2023 18:01:52 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46230 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S243728AbjIKRfg (ORCPT
+        with ESMTP id S243980AbjIKSeu (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Sep 2023 13:35:36 -0400
-Received: from mail-oo1-xc35.google.com (mail-oo1-xc35.google.com [IPv6:2607:f8b0:4864:20::c35])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 046DC125
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 10:35:32 -0700 (PDT)
-Received: by mail-oo1-xc35.google.com with SMTP id 006d021491bc7-5717f7b932aso3086283eaf.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 10:35:31 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1694453731; x=1695058531; darn=vger.kernel.org;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
-        bh=pJztqqjJZ91Rwj8nF59E+xMwCK2VrN5odsIoKXltNF8=;
-        b=jCc81UCdhFX6ezLGpjocris64ffjmNa+b4M7VDtgl7BDxeuQ9coCts6R+4CtX+I1py
-         8niYkI+jVgS/IbCqMrZ6XAVz7E6fHJL9iTVM/vKHdSxrKZGoC4lG0pM00attV6BevB0K
-         LFmy5bfuyNa8vVA8b1kKNBauyJLtIKekGf48xutKGCQIG/850Df2Nj/7FJxO9thUfM5j
-         rYOhCUcqGJzr+cp550XwX1QNTTSzAd8hXHSgCP5dpDmO6nrOKPsl7rgFNwhsp0g8O1FK
-         vdZ5DscmRcFnj3YSnaJU4Qg8e2/ZQMxMEYGUaANTq267gQ/h259ddFvyw7uOzTsoAqhz
-         FVYg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1694453731; x=1695058531;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=pJztqqjJZ91Rwj8nF59E+xMwCK2VrN5odsIoKXltNF8=;
-        b=CzZdP+DaD2YVnEimq7qvEvt4djvS7MRutiKWbyKqMjAzNTjyUSvuokKlDGZY9fzB3/
-         t/7oQyTST5dJexCcStsB45+/YiE2StJcqFY/8pQHwWrh4A61jcVLVK393FZnoW3WEsCd
-         amdJuH9CjUX1erYO20AT29cRNW2mF+VDCu2yCS5SNfOtQPcQ78Omq55crSEf6csVsXFY
-         RDfcmAA6yQeerHJWfRAe2D61JU2asKpgNDAEr/DqzHAjhVmCgLikZnvtnAcLlFzhnQP+
-         c7ziEQRwCNbrt41nssgREpUa9YG7vJGTAkrrFFciF/dkLuli/6rs0eNXzIqs1SjDdJY7
-         AAPg==
-X-Gm-Message-State: AOJu0YxPqBM8pI1xnuKibNCA4lkzFzEhHKrnarvMW343PVJYUj5CXHw+
-        oiD45qDiFRCvrE5gzDRWJvGCGJSJnsLORgFJk5yyZQ==
-X-Google-Smtp-Source: AGHT+IGpIkUPKNOZp7Ptavm4ZlrP/2TXtpbu9Y3nGePIYbjKnYG0J7HEQBAJdJzPtXu2bFWqCNl3Iw==
-X-Received: by 2002:a05:6358:5924:b0:137:8922:7ebf with SMTP id g36-20020a056358592400b0013789227ebfmr13211216rwf.2.1694453731249;
-        Mon, 11 Sep 2023 10:35:31 -0700 (PDT)
-Received: from localhost (cpe-76-182-20-124.nc.res.rr.com. [76.182.20.124])
-        by smtp.gmail.com with ESMTPSA id s25-20020a0cb319000000b00653559e065asm3095194qve.99.2023.09.11.10.35.30
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 11 Sep 2023 10:35:30 -0700 (PDT)
-Date:   Mon, 11 Sep 2023 13:35:30 -0400
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     fdmanana@kernel.org
-Cc:     linux-btrfs@vger.kernel.org, ian@ianjohnson.dev,
-        Filipe Manana <fdmanana@suse.com>
-Subject: Re: [PATCH 0/2] btrfs: updates for directory reading
-Message-ID: <20230911173530.GB2352074@perftesting>
-References: <cover.1694260751.git.fdmanana@suse.com>
+        Mon, 11 Sep 2023 14:34:50 -0400
+Received: from wout4-smtp.messagingengine.com (wout4-smtp.messagingengine.com [64.147.123.20])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C839F198;
+        Mon, 11 Sep 2023 11:34:45 -0700 (PDT)
+Received: from compute5.internal (compute5.nyi.internal [10.202.2.45])
+        by mailout.west.internal (Postfix) with ESMTP id 06AB63200912;
+        Mon, 11 Sep 2023 14:34:44 -0400 (EDT)
+Received: from mailfrontend2 ([10.202.2.163])
+  by compute5.internal (MEProxy); Mon, 11 Sep 2023 14:34:45 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
+        :content-type:content-type:date:date:from:from:in-reply-to
+        :in-reply-to:message-id:mime-version:references:reply-to:sender
+        :subject:subject:to:to; s=fm2; t=1694457284; x=1694543684; bh=IF
+        8gqeL+ErQjBAaEgRAFAOPP4+xIGg4ZWf75F8j7o+g=; b=oHm4ccriNXJZT9A27C
+        3Wweh49Kbg+jYoKq2xGKakkYJ1TMYsrKQ5UR7PvC57UvxWoX9k/e0TKV0UnCju1o
+        PY89loZRHsBLZFqQc0d0xOo1woPXKLo+dveCeQGcEFsYswn/1dBU50w24GSeqzco
+        ylfOiQQnSTm74GMRjD6jcADFF/zjGxcy7GeDCoA8D1ddwHAf7+OK/pmA0YzCNfhp
+        vEfPqsSpqmQ3bxzSZkvT+WSJvAMRmwfUoPn+pz9u4Vl51yVsUJUfN+QHiTeNTnmi
+        hWyHJT8JPNJ2EC6vyPK6lgDYB2wEjd5Xm/j2/kDNKmbVc9/8fxIIKP5Qn18i6reL
+        90cg==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+        messagingengine.com; h=cc:cc:content-type:content-type:date:date
+        :feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
+        :message-id:mime-version:references:reply-to:sender:subject
+        :subject:to:to:x-me-proxy:x-me-proxy:x-me-sender:x-me-sender
+        :x-sasl-enc; s=fm1; t=1694457284; x=1694543684; bh=IF8gqeL+ErQjB
+        AaEgRAFAOPP4+xIGg4ZWf75F8j7o+g=; b=KV8aWZg051d1x+uq2UsuoNYBRtS64
+        8VwFst1phf2UjiDulhhOMzWR8h9azeTA2Zk2HKdMRKZ7Bq9dET3ezRbINI2v4zSh
+        ZUh5GT4yHUXgxuPlkIV75rZ1NURzMlH7nsyNu7sqX6yAzpbZabz2ep0RzX5CvY3+
+        9c92UPOVbng2yWYIYWtsIkky7C7P9yjhhC03YtmJt9INmaeFZ9P7fID2XcXrA4nW
+        WBhCInNd3vor00ONr7LmWFEIJJSqez2Zhz6xjfaEN8VpRHwUZyitKaJU5Qvbgo0z
+        lNT6vr0IBS7B8AB3V9YdFes48gfeBzqPErQVLE6cPO4KYLBDFyg8cyZqg==
+X-ME-Sender: <xms:xF3_ZAb7UjMrFrUXcy-qkvOHEYNKg-WSkGCSbrbiKTV2RAZHxK02IA>
+    <xme:xF3_ZLZhWk3p4YepkMqHT1JP9yiRs6TplPYAgd0yFBmUM6lmjGqqBv4OT6jyYg3Ks
+    VoqFN8_9_tWuB3-6mM>
+X-ME-Received: <xmr:xF3_ZK92bQLl2lQm3z4KxZN-fJv8kUDqNF7HMEiSjNsLTXbUjNrDgSsq-edziitQW8xqkJlAbuScXLfhZwA_HQM3tRY>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedviedrudeigedguddvgecutefuodetggdotefrod
+    ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfgh
+    necuuegrihhlohhuthemuceftddtnecusecvtfgvtghiphhivghnthhsucdlqddutddtmd
+    enucfjughrpeffhffvvefukfhfgggtuggjsehttdertddttddvnecuhfhrohhmpeeuohhr
+    ihhsuceuuhhrkhhovhcuoegsohhrihhssegsuhhrrdhioheqnecuggftrfgrthhtvghrnh
+    epkedvkeffjeellefhveehvdejudfhjedthfdvveeiieeiudfguefgtdejgfefleejnecu
+    vehluhhsthgvrhfuihiivgeptdenucfrrghrrghmpehmrghilhhfrhhomhepsghorhhish
+    essghurhdrihho
+X-ME-Proxy: <xmx:xF3_ZKoudNGIAERE4twxkzdFvtFMdenTVi0EJFCP0N3E-simWMYaSw>
+    <xmx:xF3_ZLpeYD2jCvWSqeSyVKP1EnDPx2rtjA8mxeTMEEL1E5CoPy-aRQ>
+    <xmx:xF3_ZIQNgtdJxGe6VUnwV5mXcEBnk7lxy8hSimUkUiVyxnschwJU7g>
+    <xmx:xF3_ZECl3pggyMA44U-NbJPsyKEGcxEwcpsokfwEsYyVSmilsFAa0Q>
+Feedback-ID: i083147f8:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Mon,
+ 11 Sep 2023 14:34:43 -0400 (EDT)
+Date:   Mon, 11 Sep 2023 11:35:42 -0700
+From:   Boris Burkov <boris@bur.io>
+To:     Anand Jain <anand.jain@oracle.com>
+Cc:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] fstests: btrfs/185 update for single device pseudo
+ device-scan
+Message-ID: <20230911183542.GA1770246@zen>
+References: <7558eed09a89d25fbd8083d45078cfe2e9601f45.1694017375.git.anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <cover.1694260751.git.fdmanana@suse.com>
+In-Reply-To: <7558eed09a89d25fbd8083d45078cfe2e9601f45.1694017375.git.anand.jain@oracle.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sat, Sep 09, 2023 at 01:08:30PM +0100, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
+On Thu, Sep 07, 2023 at 12:24:43AM +0800, Anand Jain wrote:
+> As we are obliterating the need for the device scan for the single device,
+> which will return success if the basic superblock verification passes,
+> even for the duplicate device of the mounted filesystem, drop the check
+> for the return code in this testcase and continue to verify if the device
+> path of the mounted filesystem remains unaltered after the scan.
 > 
-> Tweak and fix a bug when reading directory entries after a rewinddir(3)
-> call. Reported by Ian Johnson.
+> Also, if the test fails, it leaves the local non-standard mount point
+> remained mounted, leading to further test cases failing. Call unmount
+> in _cleanup().
 > 
-> Link: https://lore.kernel.org/linux-btrfs/YR1P0S.NGASEG570GJ8@ianjohnson.dev/T/#u
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> ---
+>  tests/btrfs/185 | 5 +++--
+>  1 file changed, 3 insertions(+), 2 deletions(-)
 > 
-> Filipe Manana (2):
->   btrfs: set last dir index to the current last index when opening dir
->   btrfs: refresh dir last index during a rewinddir(3) call
-> 
->  fs/btrfs/inode.c | 18 ++++++++++++++++--
->  1 file changed, 16 insertions(+), 2 deletions(-)
-> 
+> diff --git a/tests/btrfs/185 b/tests/btrfs/185
+> index ba0200617e69..c7b8d2d46951 100755
+> --- a/tests/btrfs/185
+> +++ b/tests/btrfs/185
+> @@ -15,6 +15,7 @@ mnt=$TEST_DIR/$seq.mnt
+>  # Override the default cleanup function.
+>  _cleanup()
+>  {
+> +	$UMOUNT_PROG $mnt > /dev/null 2>&1
+>  	rm -rf $mnt > /dev/null 2>&1
+>  	cd /
+>  	rm -f $tmp.*
 
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+Also, do we need to do the scratch_dev_pool_put on cleanup? Do we have
+to worry about having not actually called scratch_dev_pool_get?
 
-I didn't see an fstest for this, is it forthcoming?  Thanks,
-
-Josef
+> @@ -51,9 +52,9 @@ for sb_bytenr in 65536 67108864; do
+>  	echo ..:$? >> $seqres.full
+>  done
+>  
+> -# Original device is mounted, scan of its clone should fail
+> +# Original device is mounted, scan of its clone must not alter the
+> +# filesystem device path
+>  $BTRFS_UTIL_PROG device scan $device_2 >> $seqres.full 2>&1
+> -[[ $? != 1 ]] && _fail "cloned device scan should fail"
+>  
+>  [[ $(findmnt $mnt | grep -v TARGET | $AWK_PROG '{print $2}') != $device_1 ]] && \
+>  						_fail "mounted device changed"
+> -- 
+> 2.39.3
+> 

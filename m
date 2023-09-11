@@ -2,126 +2,173 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 15124CA0ECB
-	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Sep 2023 22:06:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0B563CA0EC3
+	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Sep 2023 22:06:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1355750AbjIKWBw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 11 Sep 2023 18:01:52 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46230 "EHLO
+        id S1355772AbjIKWB7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 11 Sep 2023 18:01:59 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59630 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S243980AbjIKSeu (ORCPT
+        with ESMTP id S237469AbjIKMwi (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Sep 2023 14:34:50 -0400
-Received: from wout4-smtp.messagingengine.com (wout4-smtp.messagingengine.com [64.147.123.20])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C839F198;
-        Mon, 11 Sep 2023 11:34:45 -0700 (PDT)
-Received: from compute5.internal (compute5.nyi.internal [10.202.2.45])
-        by mailout.west.internal (Postfix) with ESMTP id 06AB63200912;
-        Mon, 11 Sep 2023 14:34:44 -0400 (EDT)
-Received: from mailfrontend2 ([10.202.2.163])
-  by compute5.internal (MEProxy); Mon, 11 Sep 2023 14:34:45 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
-        :content-type:content-type:date:date:from:from:in-reply-to
-        :in-reply-to:message-id:mime-version:references:reply-to:sender
-        :subject:subject:to:to; s=fm2; t=1694457284; x=1694543684; bh=IF
-        8gqeL+ErQjBAaEgRAFAOPP4+xIGg4ZWf75F8j7o+g=; b=oHm4ccriNXJZT9A27C
-        3Wweh49Kbg+jYoKq2xGKakkYJ1TMYsrKQ5UR7PvC57UvxWoX9k/e0TKV0UnCju1o
-        PY89loZRHsBLZFqQc0d0xOo1woPXKLo+dveCeQGcEFsYswn/1dBU50w24GSeqzco
-        ylfOiQQnSTm74GMRjD6jcADFF/zjGxcy7GeDCoA8D1ddwHAf7+OK/pmA0YzCNfhp
-        vEfPqsSpqmQ3bxzSZkvT+WSJvAMRmwfUoPn+pz9u4Vl51yVsUJUfN+QHiTeNTnmi
-        hWyHJT8JPNJ2EC6vyPK6lgDYB2wEjd5Xm/j2/kDNKmbVc9/8fxIIKP5Qn18i6reL
-        90cg==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-        messagingengine.com; h=cc:cc:content-type:content-type:date:date
-        :feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
-        :message-id:mime-version:references:reply-to:sender:subject
-        :subject:to:to:x-me-proxy:x-me-proxy:x-me-sender:x-me-sender
-        :x-sasl-enc; s=fm1; t=1694457284; x=1694543684; bh=IF8gqeL+ErQjB
-        AaEgRAFAOPP4+xIGg4ZWf75F8j7o+g=; b=KV8aWZg051d1x+uq2UsuoNYBRtS64
-        8VwFst1phf2UjiDulhhOMzWR8h9azeTA2Zk2HKdMRKZ7Bq9dET3ezRbINI2v4zSh
-        ZUh5GT4yHUXgxuPlkIV75rZ1NURzMlH7nsyNu7sqX6yAzpbZabz2ep0RzX5CvY3+
-        9c92UPOVbng2yWYIYWtsIkky7C7P9yjhhC03YtmJt9INmaeFZ9P7fID2XcXrA4nW
-        WBhCInNd3vor00ONr7LmWFEIJJSqez2Zhz6xjfaEN8VpRHwUZyitKaJU5Qvbgo0z
-        lNT6vr0IBS7B8AB3V9YdFes48gfeBzqPErQVLE6cPO4KYLBDFyg8cyZqg==
-X-ME-Sender: <xms:xF3_ZAb7UjMrFrUXcy-qkvOHEYNKg-WSkGCSbrbiKTV2RAZHxK02IA>
-    <xme:xF3_ZLZhWk3p4YepkMqHT1JP9yiRs6TplPYAgd0yFBmUM6lmjGqqBv4OT6jyYg3Ks
-    VoqFN8_9_tWuB3-6mM>
-X-ME-Received: <xmr:xF3_ZK92bQLl2lQm3z4KxZN-fJv8kUDqNF7HMEiSjNsLTXbUjNrDgSsq-edziitQW8xqkJlAbuScXLfhZwA_HQM3tRY>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedviedrudeigedguddvgecutefuodetggdotefrod
-    ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfgh
-    necuuegrihhlohhuthemuceftddtnecusecvtfgvtghiphhivghnthhsucdlqddutddtmd
-    enucfjughrpeffhffvvefukfhfgggtuggjsehttdertddttddvnecuhfhrohhmpeeuohhr
-    ihhsuceuuhhrkhhovhcuoegsohhrihhssegsuhhrrdhioheqnecuggftrfgrthhtvghrnh
-    epkedvkeffjeellefhveehvdejudfhjedthfdvveeiieeiudfguefgtdejgfefleejnecu
-    vehluhhsthgvrhfuihiivgeptdenucfrrghrrghmpehmrghilhhfrhhomhepsghorhhish
-    essghurhdrihho
-X-ME-Proxy: <xmx:xF3_ZKoudNGIAERE4twxkzdFvtFMdenTVi0EJFCP0N3E-simWMYaSw>
-    <xmx:xF3_ZLpeYD2jCvWSqeSyVKP1EnDPx2rtjA8mxeTMEEL1E5CoPy-aRQ>
-    <xmx:xF3_ZIQNgtdJxGe6VUnwV5mXcEBnk7lxy8hSimUkUiVyxnschwJU7g>
-    <xmx:xF3_ZECl3pggyMA44U-NbJPsyKEGcxEwcpsokfwEsYyVSmilsFAa0Q>
-Feedback-ID: i083147f8:Fastmail
-Received: by mail.messagingengine.com (Postfix) with ESMTPA; Mon,
- 11 Sep 2023 14:34:43 -0400 (EDT)
-Date:   Mon, 11 Sep 2023 11:35:42 -0700
-From:   Boris Burkov <boris@bur.io>
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] fstests: btrfs/185 update for single device pseudo
- device-scan
-Message-ID: <20230911183542.GA1770246@zen>
-References: <7558eed09a89d25fbd8083d45078cfe2e9601f45.1694017375.git.anand.jain@oracle.com>
+        Mon, 11 Sep 2023 08:52:38 -0400
+Received: from esa5.hgst.iphmx.com (esa5.hgst.iphmx.com [216.71.153.144])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 89229CEB;
+        Mon, 11 Sep 2023 05:52:34 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1694436755; x=1725972755;
+  h=from:to:cc:subject:date:message-id:in-reply-to:
+   references:mime-version:content-transfer-encoding;
+  bh=SgfsEwHqQ+ql6isG68bwoNb5Engbd+pFiR0bLi/DpuM=;
+  b=a34uboaSmQ34Jz4FyPTUH/HExCoTnow7o/tTdbOvcnyuoTCRtiv4wDgR
+   BiqkaGpkRiTYp+ERkMUH9aRGrWhzRA2DQLV3zm1L+6sBOShE+z0EQirta
+   fJHFmenyDxTckFpmkZ+Ry8sqi1KSkHnMEYrKg9gkiJ9MLP/uiGh33I+4C
+   hsRlwVocG66cQ5hEw7VGKejqdMhVXv3R969nFaS7D0OJU4E0YqdUlVVA3
+   4NBb6wVl+NbsGutd5IkfqhR+vx4tQ2FAw0J2U4Bx5MT7dC2+fkmLztial
+   uyemMoJsOgNE1KobNBQLh/BCNDK3WceBnekl3EwfIYS5wp9Cwx2giOoWS
+   A==;
+X-CSE-ConnectionGUID: PBcZDTIOSVChKFl5tPSYEQ==
+X-CSE-MsgGUID: Mvsx96uiQE6WXe74ZhrXLA==
+X-IronPort-AV: E=Sophos;i="6.02,244,1688400000"; 
+   d="scan'208";a="243594394"
+Received: from h199-255-45-15.hgst.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
+  by ob1.hgst.iphmx.com with ESMTP; 11 Sep 2023 20:52:34 +0800
+IronPort-SDR: eSWnZUnb2K0nMsHhNpM/M4iUVV3O1x4EQWt4g+HEZ0lN0BJGlF5B3dYLcp+NjUhXigbPREFJUH
+ eLXbqRMEW7fp8DBiYxLeChM+LMdjoms2ey4EIGGzCUeTKazIdjrNMucM66MobAEscxvSbwSbfL
+ qfuk/cNXJYrGdaAmS4/vyrwC8ec9VH6ujE6oIGzIzSbxqt70gJGq0Wd686ofaZO6NceLJZJxZd
+ i1+G73NSd+E/VgrTeQrTolyPZyNaUa2yKNIPb8XBYH2R4MUTZUfiug2TQ1PiSiky2hSiX21XfM
+ yjU=
+Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 11 Sep 2023 04:59:40 -0700
+IronPort-SDR: xPqOOXg2YEhy3QmJe+LzSdhGE/g+wr0Jd/5ZoG5qm/eiqKY78YGZCJmFchqNMwH4GWaim3/IGt
+ x/va9oC5kV9XpewqriTTav2HLtM9N7EQCznHrf1WegrtoSTPjXEq0/PhNSySHsFFvXJExDQ99h
+ Z2lqNnJc8Y3t5N/UyEB710E9NwKEU5M0gxgLM7mtXGrf4AHBYHB5AMBhTOMo3k/hyPSbOeZebN
+ /uWHZUAnNq5G7MeyUXAjlBlT8fgzGuXiR1Ryp4zlM4HFEQNB3STK4KoabaI7jcCS+/ripSvQeA
+ KTg=
+WDCIronportException: Internal
+Received: from unknown (HELO redsun91.ssa.fujisawa.hgst.com) ([10.149.66.6])
+  by uls-op-cesaip02.wdc.com with ESMTP; 11 Sep 2023 05:52:33 -0700
+From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
+To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>
+Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+        Christoph Hellwig <hch@lst.de>,
+        Naohiro Aota <naohiro.aota@wdc.com>, Qu Wenruo <wqu@suse.com>,
+        Damien Le Moal <dlemoal@kernel.org>,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: [PATCH v8 06/11] btrfs: implement RST version of scrub
+Date:   Mon, 11 Sep 2023 05:52:07 -0700
+Message-ID: <20230911-raid-stripe-tree-v8-6-647676fa852c@wdc.com>
+X-Mailer: git-send-email 2.41.0
+In-Reply-To: <20230911-raid-stripe-tree-v8-0-647676fa852c@wdc.com>
+References: <20230911-raid-stripe-tree-v8-0-647676fa852c@wdc.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <7558eed09a89d25fbd8083d45078cfe2e9601f45.1694017375.git.anand.jain@oracle.com>
+Content-Type: text/plain; charset="utf-8"
+X-Mailer: b4 0.12.3
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1694436627; l=3130; i=johannes.thumshirn@wdc.com; s=20230613; h=from:subject:message-id; bh=SgfsEwHqQ+ql6isG68bwoNb5Engbd+pFiR0bLi/DpuM=; b=EKY4ohiJyLZgwMkU/s0o/u+g9U+um3lGuU1U+aGuCCalzHbC/jCRCD+wNk8fNEmhL/gq7E+sX ASfFlegZa0lAKAGShGU1GdP2965g87ksYgNPqakDUoRmm94YyXRm61o
+X-Developer-Key: i=johannes.thumshirn@wdc.com; a=ed25519; pk=TGmHKs78FdPi+QhrViEvjKIGwReUGCfa+3LEnGoR2KM=
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Sep 07, 2023 at 12:24:43AM +0800, Anand Jain wrote:
-> As we are obliterating the need for the device scan for the single device,
-> which will return success if the basic superblock verification passes,
-> even for the duplicate device of the mounted filesystem, drop the check
-> for the return code in this testcase and continue to verify if the device
-> path of the mounted filesystem remains unaltered after the scan.
-> 
-> Also, if the test fails, it leaves the local non-standard mount point
-> remained mounted, leading to further test cases failing. Call unmount
-> in _cleanup().
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
->  tests/btrfs/185 | 5 +++--
->  1 file changed, 3 insertions(+), 2 deletions(-)
-> 
-> diff --git a/tests/btrfs/185 b/tests/btrfs/185
-> index ba0200617e69..c7b8d2d46951 100755
-> --- a/tests/btrfs/185
-> +++ b/tests/btrfs/185
-> @@ -15,6 +15,7 @@ mnt=$TEST_DIR/$seq.mnt
->  # Override the default cleanup function.
->  _cleanup()
->  {
-> +	$UMOUNT_PROG $mnt > /dev/null 2>&1
->  	rm -rf $mnt > /dev/null 2>&1
->  	cd /
->  	rm -f $tmp.*
+A filesystem that uses the RAID stripe tree for logical to physical
+address translation can't use the regular scrub path, that reads all
+stripes and then checks if a sector is unused afterwards.
 
-Also, do we need to do the scratch_dev_pool_put on cleanup? Do we have
-to worry about having not actually called scratch_dev_pool_get?
+When using the RAID stripe tree, this will result in lookup errors, as the
+stripe tree doesn't know the requested logical addresses.
 
-> @@ -51,9 +52,9 @@ for sb_bytenr in 65536 67108864; do
->  	echo ..:$? >> $seqres.full
->  done
->  
-> -# Original device is mounted, scan of its clone should fail
-> +# Original device is mounted, scan of its clone must not alter the
-> +# filesystem device path
->  $BTRFS_UTIL_PROG device scan $device_2 >> $seqres.full 2>&1
-> -[[ $? != 1 ]] && _fail "cloned device scan should fail"
->  
->  [[ $(findmnt $mnt | grep -v TARGET | $AWK_PROG '{print $2}') != $device_1 ]] && \
->  						_fail "mounted device changed"
-> -- 
-> 2.39.3
-> 
+Instead, look up stripes that are backed by the extent bitmap.
+
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+---
+ fs/btrfs/scrub.c | 56 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 56 insertions(+)
+
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index f16220ce5fba..5101e0a3f83e 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -23,6 +23,7 @@
+ #include "accessors.h"
+ #include "file-item.h"
+ #include "scrub.h"
++#include "raid-stripe-tree.h"
+ 
+ /*
+  * This is only the first step towards a full-features scrub. It reads all
+@@ -1634,6 +1635,56 @@ static void scrub_reset_stripe(struct scrub_stripe *stripe)
+ 	}
+ }
+ 
++static void scrub_submit_extent_sector_read(struct scrub_ctx *sctx,
++					    struct scrub_stripe *stripe)
++{
++	struct btrfs_fs_info *fs_info = stripe->bg->fs_info;
++	struct btrfs_bio *bbio = NULL;
++	int mirror = stripe->mirror_num;
++	int i;
++
++	atomic_inc(&stripe->pending_io);
++
++	for_each_set_bit(i, &stripe->extent_sector_bitmap, stripe->nr_sectors) {
++		struct page *page;
++		int pgoff;
++
++		page = scrub_stripe_get_page(stripe, i);
++		pgoff = scrub_stripe_get_page_offset(stripe, i);
++
++		/* The current sector cannot be merged, submit the bio. */
++		if (bbio &&
++		    ((i > 0 && !test_bit(i - 1, &stripe->extent_sector_bitmap)) ||
++		     bbio->bio.bi_iter.bi_size >= BTRFS_STRIPE_LEN)) {
++			ASSERT(bbio->bio.bi_iter.bi_size);
++			atomic_inc(&stripe->pending_io);
++			btrfs_submit_bio(bbio, mirror);
++			bbio = NULL;
++		}
++
++		if (!bbio) {
++			bbio = btrfs_bio_alloc(stripe->nr_sectors, REQ_OP_READ,
++				fs_info, scrub_read_endio, stripe);
++			bbio->bio.bi_iter.bi_sector = (stripe->logical +
++				(i << fs_info->sectorsize_bits)) >> SECTOR_SHIFT;
++		}
++
++		__bio_add_page(&bbio->bio, page, fs_info->sectorsize, pgoff);
++	}
++
++	if (bbio) {
++		ASSERT(bbio->bio.bi_iter.bi_size);
++		atomic_inc(&stripe->pending_io);
++		btrfs_submit_bio(bbio, mirror);
++	}
++
++	if (atomic_dec_and_test(&stripe->pending_io)) {
++		wake_up(&stripe->io_wait);
++		INIT_WORK(&stripe->work, scrub_stripe_read_repair_worker);
++		queue_work(stripe->bg->fs_info->scrub_workers, &stripe->work);
++	}
++}
++
+ static void scrub_submit_initial_read(struct scrub_ctx *sctx,
+ 				      struct scrub_stripe *stripe)
+ {
+@@ -1645,6 +1696,11 @@ static void scrub_submit_initial_read(struct scrub_ctx *sctx,
+ 	ASSERT(stripe->mirror_num > 0);
+ 	ASSERT(test_bit(SCRUB_STRIPE_FLAG_INITIALIZED, &stripe->state));
+ 
++	if (btrfs_need_stripe_tree_update(fs_info, stripe->bg->flags)) {
++		scrub_submit_extent_sector_read(sctx, stripe);
++		return;
++	}
++
+ 	bbio = btrfs_bio_alloc(SCRUB_STRIPE_PAGES, REQ_OP_READ, fs_info,
+ 			       scrub_read_endio, stripe);
+ 
+
+-- 
+2.41.0
+

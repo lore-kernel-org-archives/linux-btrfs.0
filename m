@@ -2,153 +2,189 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7B3DCCA0EC6
-	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Sep 2023 22:07:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A69B5CA0EC3
+	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Sep 2023 22:07:27 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1356152AbjIKWDE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S1356165AbjIKWDE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Mon, 11 Sep 2023 18:03:04 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56062 "EHLO
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59626 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236426AbjIKKhB (ORCPT
+        with ESMTP id S237466AbjIKMwh (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Sep 2023 06:37:01 -0400
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6AC66CDC
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 03:36:57 -0700 (PDT)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id AEE1EC433C8;
-        Mon, 11 Sep 2023 10:36:56 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1694428617;
-        bh=aNhUZcMgfm6U83IFSp76Zf8PliQDFB2ZRFSUlCFn23Y=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=IEmVJ/w6PHqx1NSCahxq+fXuEqYiyziQgOwuTrkl9Y0F1PQaCVPzbwH1Jo+lQj0xG
-         Gu9VZnTPFCYm7rsxH23p47AifRU0qSyP/dzRuC0MEZ3S0Ddah78P8X/QzcTtmqW1LV
-         Z4X+8rrZFJKvZ9xTkFI0G7G/2hFd4xo9Ld5EFoEzbZIKKtdnZtdqgdXDgQiMdeqg9x
-         WYJzXJMeB932mjX++09lmfiXaNvsxMpoz1LudAGE71lig+I6gXfeeXyMYG2ubposp2
-         nw5eukwr87z/MOiQmLCy5BEebpJE62DlLNBqbcGlg5zaVzem1nP1Kiv2HeZL5pNDEv
-         +qw9n3teSxcVg==
-Date:   Mon, 11 Sep 2023 11:36:47 +0100
-From:   Filipe Manana <fdmanana@kernel.org>
-To:     linux-btrfs@vger.kernel.org
-Cc:     ian@ianjohnson.dev, Filipe Manana <fdmanana@suse.com>
-Subject: Re: [PATCH 2/2] btrfs: refresh dir last index during a rewinddir(3)
- call
-Message-ID: <ZP7tv0KyZGKildBq@debian0.Home>
-References: <cover.1694260751.git.fdmanana@suse.com>
- <f2ce20268ec99d4d4e1392a200d75309a0b41acc.1694260751.git.fdmanana@suse.com>
+        Mon, 11 Sep 2023 08:52:37 -0400
+Received: from esa5.hgst.iphmx.com (esa5.hgst.iphmx.com [216.71.153.144])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 43B7ECEB;
+        Mon, 11 Sep 2023 05:52:33 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1694436753; x=1725972753;
+  h=from:to:cc:subject:date:message-id:in-reply-to:
+   references:mime-version:content-transfer-encoding;
+  bh=cE+UPzVtXzF+bHxJkcZdCTF60ml4yxdyGi02OCjQOuI=;
+  b=FE6YfLi5wayFhQzNpoYeNXT+qNi34BY6BgHJHEHbEGcW+nXkX+dArov5
+   B1rQ7jVbcgPjUmOD0vpwXNQOHK8BiMpi00L6yAMRixtfEziuCih7R9ULb
+   aCw00osomak4AW9zhpHGhgmNWzueYAhxD1bWqCdSGRBAnnD1FPf+Eh4NQ
+   AcafDxiYEHjDTdn8TWyDDZAXDxv7iXxTq8zMmC1XIY+FgibbSvyFeXavQ
+   o9eehrr/RKyK+R82iS5C5zi+8c1BzM1g/3Rn+zdDviUexmsTEYQj20ivE
+   iM2tK+ObJMZeoqvgY7Tl9kAPNIS1QQoXovykoA1Ojn3/hk/3m8zRVmNml
+   Q==;
+X-CSE-ConnectionGUID: QE+c5Mf9S7Ot5r94N5aiGA==
+X-CSE-MsgGUID: SC5pS0z4Qd+dU5/hOKvhHg==
+X-IronPort-AV: E=Sophos;i="6.02,244,1688400000"; 
+   d="scan'208";a="243594391"
+Received: from h199-255-45-15.hgst.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
+  by ob1.hgst.iphmx.com with ESMTP; 11 Sep 2023 20:52:33 +0800
+IronPort-SDR: V27pBxFFsKDgNgl0RZOKJXHd6hZvW2wTf5KnjPrEuxJaHWKDncyy7V7r6iTUrPZCuDPHIh6gkS
+ AtHw+MtAxQaQfEobLnGu+CoEb8x/p3ncBhGaAvavDqiq0dvf4PxTZlntsoGVghtwBDHBLrUAOW
+ t/VXqRQ+43HsB1Ye4TsiXt+2dcCWalS0f/bTADSEy9BEhL6BrJtqXjQffe8l7onRSf3xNItiGK
+ h9l+gEvwPMlC7W2GdMcu3sJhMZrENzVgbubG/FZGgzsKbdgPO7P0veMKIfy0yI3QMo6MG+ITf5
+ lXg=
+Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 11 Sep 2023 04:59:38 -0700
+IronPort-SDR: b0sxTakIdX+U2kkYMpn6AA3uc/Dl4KC/NlPw48XyyKrSKPXXVE7ibDuQ+n6ABs2mNuR3TS5k+B
+ zVFb5PYiyvZm0IZhrx2sQJKWj/BfUAjhziHBPm/+ud0gBjMHQfQ4BQs4yQj0uVkioHI8TQ/KxU
+ vEgEtI70v9/n8NX5oTZ45SxDRYlIoiblZjfH42WyLjdcsBnaP4b32YBd62vTAUCWTEedasEUqL
+ QWj+fy5wNPv8OppHe3n6bOEHQZi71mte+NdRdyIdDeVqDS5XmBx6Ys/UVQ8FuA/R8SLMFv4die
+ Y3w=
+WDCIronportException: Internal
+Received: from unknown (HELO redsun91.ssa.fujisawa.hgst.com) ([10.149.66.6])
+  by uls-op-cesaip02.wdc.com with ESMTP; 11 Sep 2023 05:52:29 -0700
+From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
+To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>
+Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+        Christoph Hellwig <hch@lst.de>,
+        Naohiro Aota <naohiro.aota@wdc.com>, Qu Wenruo <wqu@suse.com>,
+        Damien Le Moal <dlemoal@kernel.org>,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: [PATCH v8 04/11] btrfs: delete stripe extent on extent deletion
+Date:   Mon, 11 Sep 2023 05:52:05 -0700
+Message-ID: <20230911-raid-stripe-tree-v8-4-647676fa852c@wdc.com>
+X-Mailer: git-send-email 2.41.0
+In-Reply-To: <20230911-raid-stripe-tree-v8-0-647676fa852c@wdc.com>
+References: <20230911-raid-stripe-tree-v8-0-647676fa852c@wdc.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <f2ce20268ec99d4d4e1392a200d75309a0b41acc.1694260751.git.fdmanana@suse.com>
+Content-Type: text/plain; charset="utf-8"
+X-Mailer: b4 0.12.3
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1694436627; l=3110; i=johannes.thumshirn@wdc.com; s=20230613; h=from:subject:message-id; bh=cE+UPzVtXzF+bHxJkcZdCTF60ml4yxdyGi02OCjQOuI=; b=NvUPztervxuijkZ/xcqpNHmK/91BLMtrbrcV2Mx/zouu8TkB1jznaW3mX5GOfGkGkixB4rF8f 35LIibF5YohBRtd5ZOFKWtpxbtD+4/YIGUHymPSpcklN3yuYLz8MIZ0
+X-Developer-Key: i=johannes.thumshirn@wdc.com; a=ed25519; pk=TGmHKs78FdPi+QhrViEvjKIGwReUGCfa+3LEnGoR2KM=
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sat, Sep 09, 2023 at 01:08:32PM +0100, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> When opening a directory we find what's the index of its last entry and
-> then store it in the directory's file handle private data (struct
-> btrfs_file_private::last_index), so that in the case new directory entries
-> are added to a directory after an opendir(3) call we don't end up in an
-> infinite loop (see commit 9b378f6ad48c ("btrfs: fix infinite directory
-> reads")) when calling readdir(3).
-> 
-> However once rewinddir(3) is called, POSIX states [1] that any new
-> directory entries added after the previous opendir(3) call, must be
-> returned by subsequent calls to readdir(3):
-> 
->   "The rewinddir() function shall reset the position of the directory
->    stream to which dirp refers to the beginning of the directory.
->    It shall also cause the directory stream to refer to the current
->    state of the corresponding directory, as a call to opendir() would
->    have done."
-> 
-> We currently don't refresh the last_index field of the struct
-> btrfs_file_private associated to the directory, so after a rewinddir(3)
-> we are not returning any new entries added after the opendir(3) call.
-> 
-> Fix this by finding the current last index of the directory when llseek
-> is called agains the directory.
-> 
-> This can be reproduced by the following C program provided by Ian Johnson:
-> 
->    #include <dirent.h>
->    #include <stdio.h>
-> 
->    int main(void) {
->      DIR *dir = opendir("test");
-> 
->      FILE *file;
->      file = fopen("test/1", "w");
->      fwrite("1", 1, 1, file);
->      fclose(file);
-> 
->      file = fopen("test/2", "w");
->      fwrite("2", 1, 1, file);
->      fclose(file);
-> 
->      rewinddir(dir);
-> 
->      struct dirent *entry;
->      while ((entry = readdir(dir))) {
->         printf("%s\n", entry->d_name);
->      }
->      closedir(dir);
->      return 0;
->    }
+As each stripe extent is tied to an extent item, delete the stripe extent
+once the corresponding extent item is deleted.
 
-Missing the reference [1] here:
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+---
+ fs/btrfs/extent-tree.c      |  6 +++++
+ fs/btrfs/raid-stripe-tree.c | 60 +++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/raid-stripe-tree.h |  2 ++
+ 3 files changed, 68 insertions(+)
 
-[1] https://pubs.opengroup.org/onlinepubs/9699919799/functions/rewinddir.html
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 2e11a699ab77..c64dd3fd4463 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2857,6 +2857,12 @@ static int do_free_extent_accounting(struct btrfs_trans_handle *trans,
+ 			btrfs_abort_transaction(trans, ret);
+ 			return ret;
+ 		}
++
++		ret = btrfs_delete_raid_extent(trans, bytenr, num_bytes);
++		if (ret) {
++			btrfs_abort_transaction(trans, ret);
++			return ret;
++		}
+ 	}
+ 
+ 	ret = add_to_free_space_tree(trans, bytenr, num_bytes);
+diff --git a/fs/btrfs/raid-stripe-tree.c b/fs/btrfs/raid-stripe-tree.c
+index 2415698a8fef..5b12f40877b5 100644
+--- a/fs/btrfs/raid-stripe-tree.c
++++ b/fs/btrfs/raid-stripe-tree.c
+@@ -15,6 +15,66 @@
+ #include "misc.h"
+ #include "print-tree.h"
+ 
++int btrfs_delete_raid_extent(struct btrfs_trans_handle *trans, u64 start,
++			     u64 length)
++{
++	struct btrfs_fs_info *fs_info = trans->fs_info;
++	struct btrfs_root *stripe_root = btrfs_stripe_tree_root(fs_info);
++	struct btrfs_path *path;
++	struct btrfs_key key;
++	struct extent_buffer *leaf;
++	u64 found_start;
++	u64 found_end;
++	u64 end = start + length;
++	int slot;
++	int ret;
++
++	if (!stripe_root)
++		return 0;
++
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
++
++	while (1) {
++
++		key.objectid = start;
++		key.type = BTRFS_RAID_STRIPE_KEY;
++		key.offset = length;
++
++		ret = btrfs_search_slot(trans, stripe_root, &key, path, -1, 1);
++		if (ret < 0)
++			break;
++		if (ret > 0) {
++			ret = 0;
++			if (path->slots[0] == 0)
++				break;
++			path->slots[0]--;
++		}
++
++		leaf = path->nodes[0];
++		slot = path->slots[0];
++		btrfs_item_key_to_cpu(leaf, &key, slot);
++		found_start = key.objectid;
++		found_end = found_start + key.offset;
++
++		/* That stripe ends before we start, we're done */
++		if (found_end <= start)
++			break;
++
++		ASSERT(found_start >= start && found_end <= end);
++		ret = btrfs_del_item(trans, stripe_root, path);
++		if (ret)
++			break;
++
++		btrfs_release_path(path);
++	}
++
++	btrfs_free_path(path);
++	return ret;
++
++}
++
+ static u8 btrfs_bg_type_to_raid_encoding(u64 map_type)
+ {
+ 	switch (map_type & BTRFS_BLOCK_GROUP_PROFILE_MASK) {
+diff --git a/fs/btrfs/raid-stripe-tree.h b/fs/btrfs/raid-stripe-tree.h
+index f36e4c2d46b0..7560dc501a65 100644
+--- a/fs/btrfs/raid-stripe-tree.h
++++ b/fs/btrfs/raid-stripe-tree.h
+@@ -11,6 +11,8 @@
+ struct btrfs_io_context;
+ struct btrfs_io_stripe;
+ 
++int btrfs_delete_raid_extent(struct btrfs_trans_handle *trans, u64 start,
++			     u64 length);
+ int btrfs_insert_raid_extent(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_ordered_extent *ordered_extent);
+ 
 
-> 
-> Reported-by: Ian Johnson <ian@ianjohnson.dev>
+-- 
+2.41.0
 
-Now also (as per the reply in the linked thread):
-
-Tested-by: Ian Johnson <ian@ianjohnson.dev>
-
-> Link: https://lore.kernel.org/linux-btrfs/YR1P0S.NGASEG570GJ8@ianjohnson.dev/
-> Fixes: 9b378f6ad48c ("btrfs: fix infinite directory reads")
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> ---
->  fs/btrfs/inode.c | 15 ++++++++++++++-
->  1 file changed, 14 insertions(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index df035211bdf0..006ca4cb4788 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -5820,6 +5820,19 @@ static int btrfs_opendir(struct inode *inode, struct file *file)
->  	return 0;
->  }
->  
-> +static loff_t btrfs_dir_llseek(struct file *file, loff_t offset, int whence)
-> +{
-> +	struct btrfs_file_private *private = file->private_data;
-> +	int ret;
-> +
-> +	ret = btrfs_get_dir_last_index(BTRFS_I(file_inode(file)),
-> +				       &private->last_index);
-> +	if (ret)
-> +		return ret;
-> +
-> +	return generic_file_llseek(file, offset, whence);
-> +}
-> +
->  struct dir_entry {
->  	u64 ino;
->  	u64 offset;
-> @@ -10893,7 +10906,7 @@ static const struct inode_operations btrfs_dir_inode_operations = {
->  };
->  
->  static const struct file_operations btrfs_dir_file_operations = {
-> -	.llseek		= generic_file_llseek,
-> +	.llseek		= btrfs_dir_llseek,
->  	.read		= generic_read_dir,
->  	.iterate_shared	= btrfs_real_readdir,
->  	.open		= btrfs_opendir,
-> -- 
-> 2.40.1
-> 

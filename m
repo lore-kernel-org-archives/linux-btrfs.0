@@ -2,119 +2,80 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3A7E3CA0EC6
-	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Sep 2023 22:06:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D644BCA0EC3
+	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Sep 2023 22:06:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238820AbjIKWAs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 11 Sep 2023 18:00:48 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43084 "EHLO
+        id S236728AbjIKWAy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 11 Sep 2023 18:00:54 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52522 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S243640AbjIKR06 (ORCPT
+        with ESMTP id S243725AbjIKRfJ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Sep 2023 13:26:58 -0400
+        Mon, 11 Sep 2023 13:35:09 -0400
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7689A125
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 10:26:52 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A19631B8
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 10:35:01 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 2CD5A2185A;
-        Mon, 11 Sep 2023 17:26:51 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 6482121842;
+        Mon, 11 Sep 2023 17:35:00 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1694453211;
+        t=1694453700;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=Yj5x+95/bkjl9FEphu/zyzgq9rgQ33XBrAJiJ3VXrao=;
-        b=h0s8dFPQtGn0OFQLjnct4YJhx4K+WxHAI+dTt7cbDTkJ78DeEAQugTMO+/8PqMYrgg3w9w
-        TD5B7L2uIhzfvDhkKvBtPd/yLUA85M9yNF5+Ar1A84A9Nfxa/fTEZ5y211NkYBK5+eGH7D
-        CQ90kiADyaAzqPYNL38zZPc2vsXJj8o=
+        bh=IYRYgjntgu6b6mEWldKuccG3gcBVqn6OG8aZTDbKTLk=;
+        b=XkZeSMgQOHsmLpNZAPzyar7JdKkVkzywcuWT64/rkjCnlSvriwgmoEXjNhl+VrxziYcaPq
+        +O1A82Sfkimm18oXrowbrWMj8chAZkRK2bsAcPEQO2axeW00nnl/ttXImh8tPvtjI9pthV
+        yJyBBDx3tpgYr/3HVXo3M2I4YnOrJz4=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1694453211;
+        s=susede2_ed25519; t=1694453700;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=Yj5x+95/bkjl9FEphu/zyzgq9rgQ33XBrAJiJ3VXrao=;
-        b=kAS6CbqNyqRksGc6AO5lEQSBkr6UwK7JKZgxLz58ratGvL8XqWon+/CIybPqp3ACpuzobn
-        a5a6IQ3273q/WeAw==
+        bh=IYRYgjntgu6b6mEWldKuccG3gcBVqn6OG8aZTDbKTLk=;
+        b=enYs8R50BKyyN1+J6Uj0v61oS5zuIaFxXhcjYjVH1/EKry0JyCInrGWdJ5clWRsxmo9dqZ
+        AEKw79XLdUcVLvBw==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 08AFF139CC;
-        Mon, 11 Sep 2023 17:26:51 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 49E3513780;
+        Mon, 11 Sep 2023 17:35:00 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id qOoyAdtN/2QnJgAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Mon, 11 Sep 2023 17:26:51 +0000
-Date:   Mon, 11 Sep 2023 19:20:16 +0200
+        id 5ZpYEcRP/2SiKQAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Mon, 11 Sep 2023 17:35:00 +0000
+Date:   Mon, 11 Sep 2023 19:28:26 +0200
 From:   David Sterba <dsterba@suse.cz>
 To:     fdmanana@kernel.org
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 00/21] btrfs: updates to delayed refs accounting and
- space reservation
-Message-ID: <20230911172016.GC3159@twin.jikos.cz>
+Cc:     linux-btrfs@vger.kernel.org, ian@ianjohnson.dev,
+        Filipe Manana <fdmanana@suse.com>
+Subject: Re: [PATCH 0/2] btrfs: updates for directory reading
+Message-ID: <20230911172825.GD3159@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <cover.1694192469.git.fdmanana@suse.com>
+References: <cover.1694260751.git.fdmanana@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <cover.1694192469.git.fdmanana@suse.com>
+In-Reply-To: <cover.1694260751.git.fdmanana@suse.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Sep 08, 2023 at 06:20:17PM +0100, fdmanana@kernel.org wrote:
+On Sat, Sep 09, 2023 at 01:08:30PM +0100, fdmanana@kernel.org wrote:
 > From: Filipe Manana <fdmanana@suse.com>
 > 
-> The following are some fixes, improvements and cleanups around delayed refs.
-> Mostly about space accouting and reservation and were motivated by a case
-> hit by a SLE (SUSE Linux Enterprise) user where a filesystem became unmountable
-> and unusable because it fails a RW mount with -ENOSPC when attempting to do
-> any orphan cleanup. The problem was that the device had no available space
-> for allocating new block groups and the available metadata space was about
-> 1.5M, too little to commit any transaction, but enough to start a transaction,
-> as during the transaction commit we need to COW more than we accounted for
-> when starting the transaction (running delayed refs generates more delayed
-> refs to update the extent tree for example). Starting any transaction there,
-> either to do orphan cleanup, attempt to reclaim data block groups, unlink,
-> etc, always failed during the transaction commit and result in transaction
-> aborts.
+> Tweak and fix a bug when reading directory entries after a rewinddir(3)
+> call. Reported by Ian Johnson.
 > 
-> We have some cases where we use and abuse of the global block reserve
-> because we don't reserve enough space when starting a transaction or account
-> delayed refs properly, and can therefore lead to exhaustion of metadata space
-> in case we don't have more unallocated space to allocate a new metadata block
-> group.
+> Link: https://lore.kernel.org/linux-btrfs/YR1P0S.NGASEG570GJ8@ianjohnson.dev/T/#u
 > 
-> More details on the individual changelogs.
-> 
-> There are more cases that will be addressed later and depend on this patchset,
-> but they'll be sent later and separately.
-> 
-> Filipe Manana (21):
->   btrfs: fix race when refilling delayed refs block reserve
->   btrfs: prevent transaction block reserve underflow when starting transaction
->   btrfs: pass a space_info argument to btrfs_reserve_metadata_bytes()
->   btrfs: remove unnecessary logic when running new delayed references
->   btrfs: remove the refcount warning/check at btrfs_put_delayed_ref()
->   btrfs: return -EUCLEAN for delayed tree ref with a ref count not equals to 1
->   btrfs: remove redundant BUG_ON() from __btrfs_inc_extent_ref()
->   btrfs: remove refs_to_add argument from __btrfs_inc_extent_ref()
->   btrfs: remove refs_to_drop argument from __btrfs_free_extent()
->   btrfs: initialize key where it's used when running delayed data ref
->   btrfs: remove pointless 'ref_root' variable from run_delayed_data_ref()
->   btrfs: log message if extent item not found when running delayed extent op
->   btrfs: use a single variable for return value at run_delayed_extent_op()
->   btrfs: use a single variable for return value at lookup_inline_extent_backref()
->   btrfs: return -EUCLEAN if extent item is missing when searching inline backref
->   btrfs: simplify check for extent item overrun at lookup_inline_extent_backref()
->   btrfs: allow to run delayed refs by bytes to be released instead of count
->   btrfs: reserve space for delayed refs on a per ref basis
->   btrfs: remove pointless initialization at btrfs_delayed_refs_rsv_release()
->   btrfs: stop doing excessive space reservation for csum deletion
->   btrfs: always reserve space for delayed refs when starting transaction
+> Filipe Manana (2):
+>   btrfs: set last dir index to the current last index when opening dir
+>   btrfs: refresh dir last index during a rewinddir(3) call
 
-Added to misc-next, thanks.
+Thanks for the quick fixes, added to misc-next.

@@ -2,133 +2,119 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 17966EE57DF
-	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Sep 2023 07:02:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3A7E3CA0EC6
+	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Sep 2023 22:06:19 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234625AbjIKHCs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 11 Sep 2023 03:02:48 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37512 "EHLO
+        id S238820AbjIKWAs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 11 Sep 2023 18:00:48 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43084 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234628AbjIKHCr (ORCPT
+        with ESMTP id S243640AbjIKR06 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Sep 2023 03:02:47 -0400
-Received: from wp530.webpack.hosteurope.de (wp530.webpack.hosteurope.de [80.237.130.52])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4E9479C
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 00:02:41 -0700 (PDT)
-Received: from [2a02:8108:8980:2478:8cde:aa2c:f324:937e]; authenticated
-        by wp530.webpack.hosteurope.de running ExIM with esmtpsa (TLS1.3:ECDHE_RSA_AES_128_GCM_SHA256:128)
-        id 1qfawP-0001t6-Qo; Mon, 11 Sep 2023 09:02:37 +0200
-Message-ID: <706df63f-ec5b-457a-b0ab-2d18816e3911@leemhuis.info>
-Date:   Mon, 11 Sep 2023 09:02:37 +0200
+        Mon, 11 Sep 2023 13:26:58 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7689A125
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 10:26:52 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 2CD5A2185A;
+        Mon, 11 Sep 2023 17:26:51 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1694453211;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=Yj5x+95/bkjl9FEphu/zyzgq9rgQ33XBrAJiJ3VXrao=;
+        b=h0s8dFPQtGn0OFQLjnct4YJhx4K+WxHAI+dTt7cbDTkJ78DeEAQugTMO+/8PqMYrgg3w9w
+        TD5B7L2uIhzfvDhkKvBtPd/yLUA85M9yNF5+Ar1A84A9Nfxa/fTEZ5y211NkYBK5+eGH7D
+        CQ90kiADyaAzqPYNL38zZPc2vsXJj8o=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1694453211;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=Yj5x+95/bkjl9FEphu/zyzgq9rgQ33XBrAJiJ3VXrao=;
+        b=kAS6CbqNyqRksGc6AO5lEQSBkr6UwK7JKZgxLz58ratGvL8XqWon+/CIybPqp3ACpuzobn
+        a5a6IQ3273q/WeAw==
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 08AFF139CC;
+        Mon, 11 Sep 2023 17:26:51 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id qOoyAdtN/2QnJgAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Mon, 11 Sep 2023 17:26:51 +0000
+Date:   Mon, 11 Sep 2023 19:20:16 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     fdmanana@kernel.org
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 00/21] btrfs: updates to delayed refs accounting and
+ space reservation
+Message-ID: <20230911172016.GC3159@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <cover.1694192469.git.fdmanana@suse.com>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: btrfs write-bandwidth performance regression of 6.5-rc4/rc3
-Content-Language: en-US, de-DE
-From:   Thorsten Leemhuis <regressions@leemhuis.info>
-To:     Wang Yugui <wangyugui@e16-tech.com>, Chris Mason <clm@meta.com>
-Cc:     Christoph Hellwig <hch@lst.de>, linux-btrfs@vger.kernel.org,
-        Chris Mason <clm@fb.com>,
-        Linux kernel regressions list <regressions@lists.linux.dev>
-Reply-To: Linux regressions mailing list <regressions@lists.linux.dev>
-References: <20230811222321.2AD2.409509F4@e16-tech.com>
- <20ab0be0-e7d0-632b-b94c-89d76911f1ed@meta.com>
- <20230813175032.AA17.409509F4@e16-tech.com>
- <4108c514-77ff-a247-d6e1-2c12a5dea295@leemhuis.info>
-In-Reply-To: <4108c514-77ff-a247-d6e1-2c12a5dea295@leemhuis.info>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
-X-bounce-key: webpack.hosteurope.de;regressions@leemhuis.info;1694415761;89756994;
-X-HE-SMSGID: 1qfawP-0001t6-Qo
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <cover.1694192469.git.fdmanana@suse.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi, Thorsten here, the Linux kernel's regression tracker. Top-posting
-for once, to make this easily accessible to everyone.
-
-Hmmm, nothing happened wrt to this regression during the past two weeks
-afaics. Wonder if it fell through the cracks due to the merge window or
-if there is a good reason. Was there progress and I just missed it? To
-rule out the latter:
-
-Wang Yugui, does the problem still happen with 6.6-rc1?
-
-Ciao, Thorsten (wearing his 'the Linux kernel's regression tracker' hat)
---
-Everything you wanna know about Linux kernel regression tracking:
-https://linux-regtracking.leemhuis.info/about/#tldr
-If I did something stupid, please tell me, as explained on that page.
-
-#regzbot poke
-
-On 29.08.23 11:45, Linux regression tracking (Thorsten Leemhuis) wrote:
-> On 13.08.23 11:50, Wang Yugui wrote:
->>> On 8/11/23 10:23 AM, Wang Yugui wrote:
->>>>> On Wed, Aug 02, 2023 at 08:04:57AM +0800, Wang Yugui wrote:
->>>>>>> And with only a revert of
->>>>>>>
->>>>>>> "btrfs: submit IO synchronously for fast checksum implementations"?
->>>>>> GOOD performance when only (Revert "btrfs: submit IO synchronously for fast
->>>>>> checksum implementations") 
->>>>> Ok, so you have a case where the offload for the checksumming generation
->>>>> actually helps (by a lot).  Adding Chris to the Cc list as he was
->>>>> involved with this.
->>>>>
->>>>>>>> -       if (test_bit(BTRFS_FS_CSUM_IMPL_FAST, &bbio->fs_info->flags))
->>>>>>>> +       if ((bbio->bio.bi_opf & REQ_META) && test_bit(BTRFS_FS_CSUM_IMPL_FAST, &bbio->fs_info->flags))
->>>>>>>>                 return false;
->>>>>>> This disables synchronous checksum calculation entirely for data I/O.
->>>>>> without this fix, data I/O checksum is always synchronous?
->>>>>> this is a feature change of "btrfs: submit IO synchronously for fast checksum implementations"?
->>>>> It is never with the above patch.
->>>>>
->>>>>>> Also I'm curious if you see any differents for a non-RAID0 (i.e.
->>>>>>> single profile) workload.
->>>>>> '-m single -d single' is about 10% slow that '-m raid1 -d raid0' in this test
->>>>>> case.
->>>>> How does it compare with and without the revert?  Can you add the numbers?
->>>
->>> Looking through the thread, you're comparing -m single -d single, but
->>> btrfs is still doing the raid.
->>>
->>> Sorry to keep asking for more runs, but these numbers are a surprise,
->>> and I probably won't have time today to reproduce before vacation next
->>> week (sadly, Christoph and I aren't going together).
+On Fri, Sep 08, 2023 at 06:20:17PM +0100, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
 > 
-> Sadly I also did not run into either you or Christoph during my own
-> vacation during the last two weeks. But I'm back from it how, which got
-> me wondering:
+> The following are some fixes, improvements and cleanups around delayed refs.
+> Mostly about space accouting and reservation and were motivated by a case
+> hit by a SLE (SUSE Linux Enterprise) user where a filesystem became unmountable
+> and unusable because it fails a RW mount with -ENOSPC when attempting to do
+> any orphan cleanup. The problem was that the device had no available space
+> for allocating new block groups and the available metadata space was about
+> 1.5M, too little to commit any transaction, but enough to start a transaction,
+> as during the transaction commit we need to COW more than we accounted for
+> when starting the transaction (running delayed refs generates more delayed
+> refs to update the extent tree for example). Starting any transaction there,
+> either to do orphan cleanup, attempt to reclaim data block groups, unlink,
+> etc, always failed during the transaction commit and result in transaction
+> aborts.
 > 
-> What happened to this regression? Was any progress made to resolve this
-> in one way or another?
+> We have some cases where we use and abuse of the global block reserve
+> because we don't reserve enough space when starting a transaction or account
+> delayed refs properly, and can therefore lead to exhaustion of metadata space
+> in case we don't have more unallocated space to allocate a new metadata block
+> group.
 > 
-> Ciao, Thorsten (wearing his 'the Linux kernel's regression tracker' hat)
-> --
-> Everything you wanna know about Linux kernel regression tracking:
-> https://linux-regtracking.leemhuis.info/about/#tldr
-> If I did something stupid, please tell me, as explained on that page.
+> More details on the individual changelogs.
 > 
-> #regzbot poke
+> There are more cases that will be addressed later and depend on this patchset,
+> but they'll be sent later and separately.
 > 
->>> Can you please do a run where lvm or MD raid are providing the raid0?
->> no LVM/MD used here.
->>
->>> It doesn't look like you're using compression, but I wanted to double check.
->>
->> Yes. '-m xx -d yy' with other default mkfs.btrfs option, so no compression.
->>
->>> How much ram do you have?
->>
->> 192G ECC memory.
->>
->> two CPU numa nodes, but all PCIe3 NVMe SSD are connected to one NVMe HBA/
->> one numa node.
->>
->>> Your fio run has 4 jobs going, can I please see the full fio output for
->>> a fast run and a slow run?
->>
->> fio results are saved into attachment files (fast.text & slow.txt)
->>
->> Best Regards
->> Wang Yugui (wangyugui@e16-tech.com)
->> 2023/08/13
+> Filipe Manana (21):
+>   btrfs: fix race when refilling delayed refs block reserve
+>   btrfs: prevent transaction block reserve underflow when starting transaction
+>   btrfs: pass a space_info argument to btrfs_reserve_metadata_bytes()
+>   btrfs: remove unnecessary logic when running new delayed references
+>   btrfs: remove the refcount warning/check at btrfs_put_delayed_ref()
+>   btrfs: return -EUCLEAN for delayed tree ref with a ref count not equals to 1
+>   btrfs: remove redundant BUG_ON() from __btrfs_inc_extent_ref()
+>   btrfs: remove refs_to_add argument from __btrfs_inc_extent_ref()
+>   btrfs: remove refs_to_drop argument from __btrfs_free_extent()
+>   btrfs: initialize key where it's used when running delayed data ref
+>   btrfs: remove pointless 'ref_root' variable from run_delayed_data_ref()
+>   btrfs: log message if extent item not found when running delayed extent op
+>   btrfs: use a single variable for return value at run_delayed_extent_op()
+>   btrfs: use a single variable for return value at lookup_inline_extent_backref()
+>   btrfs: return -EUCLEAN if extent item is missing when searching inline backref
+>   btrfs: simplify check for extent item overrun at lookup_inline_extent_backref()
+>   btrfs: allow to run delayed refs by bytes to be released instead of count
+>   btrfs: reserve space for delayed refs on a per ref basis
+>   btrfs: remove pointless initialization at btrfs_delayed_refs_rsv_release()
+>   btrfs: stop doing excessive space reservation for csum deletion
+>   btrfs: always reserve space for delayed refs when starting transaction
+
+Added to misc-next, thanks.

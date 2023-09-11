@@ -2,91 +2,93 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9D730CA0ECF
-	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Sep 2023 22:06:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F0BDCCA0EC9
+	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Sep 2023 22:07:00 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1355805AbjIKWCF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 11 Sep 2023 18:02:05 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57444 "EHLO
+        id S1355859AbjIKWCO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 11 Sep 2023 18:02:14 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42726 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S237612AbjIKNAj (ORCPT
+        with ESMTP id S236452AbjIKKlB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Sep 2023 09:00:39 -0400
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 775A0CD7;
-        Mon, 11 Sep 2023 06:00:34 -0700 (PDT)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 0D58AC433CA;
-        Mon, 11 Sep 2023 13:00:31 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1694437234;
-        bh=gTtArNuZ0vo/RYfzma1n4Nj7HrwLli9DtJUfB6Thws4=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=dDFDXJKS6/Y2QkjEBjP2l9kxDeFHwcUhOkRE5Hd4b2kqfzjlNiT9ZDfOkcczPTNC+
-         TCuE8jW4hntfldk3SqtzM4OYoxztc/Vq7ypUBq8AMkO3wTqyyV8abd2yC/969cSAuq
-         Y7T3+FqQpNK1ZYKottqqDrOucAbSlXEWGVU/As/EmxxwLl5dxN16SGcxdp4YmB1ovG
-         Dgk2zNtzOfDbdenCJansYRsOeDE2ryvCvu56Iz+tS0d9s44v7wwu4TjULA4tDVPj6J
-         ALqktbowU323PXO3ZQISMbPVFolDyaYWk9Y0S1MxPPbvW3aL4otvrxVYOciSgjodxe
-         0GjTS/5X5+ADw==
-Date:   Mon, 11 Sep 2023 15:00:28 +0200
-From:   Christian Brauner <brauner@kernel.org>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     David Sterba <dsterba@suse.com>, Jan Kara <jack@suse.cz>,
-        Christoph Hellwig <hch@lst.de>, linux-fsdevel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org
-Subject: Re: btrfs freezing question
-Message-ID: <20230911-spotten-tadel-4a4cf4e17729@brauner>
-References: <20230908-merklich-bebauen-11914a630db4@brauner>
- <20230908143221.GA1977092@perftesting>
+        Mon, 11 Sep 2023 06:41:01 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F33F3CDC
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 03:40:55 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id B03BB21858
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 10:40:54 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1694428854; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=qLyc/dgEF+tHVRZknsZ5GZTNdgTx2/JnhAJr9R5U3mY=;
+        b=o7uNoNo34SGOcm/qCDa59pN/L39bXiIS4SzWeS1eH2ujV88Dtvecw5LayiwE7FnV9vAjlo
+        RZ+dPk/tCwFZaOvP0lduj+y2BNpFsGhlZawMdoT5zMvvMNInW8lLx7xVkZKqEpZvtJhTMR
+        kTw4uUSOG60OM7acPsM9YQT1wnB/G4U=
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id AD5F913780
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 10:40:53 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id +NTYFrXu/mQPTwAAMHmgww
+        (envelope-from <wqu@suse.com>)
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 10:40:53 +0000
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/3] btrfs-progs: fix all -Wshadow warnings and enable -Wshadow for default builds
+Date:   Mon, 11 Sep 2023 20:10:31 +0930
+Message-ID: <cover.1694428549.git.wqu@suse.com>
+X-Mailer: git-send-email 2.42.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-In-Reply-To: <20230908143221.GA1977092@perftesting>
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-> Eesh, no you're right, seems like we only set this when we're moving devices
-> around, so it must have gotten removed at some point.
+Recently David fixes quite some errno usage in kernel code, to avoid
+overwriting user space @errno variable.
 
-Thanks for taking a look, Josef!
+This inspired me that, those problems can be detected by -Wshadow, thus
+let's enable -Wshadow for default builds.
 
-> > My series can proceed independent of fixing btrfs but I'm just trying to
-> > make people aware in case that somehow wasn't known.
-> 
-> Thanks for that, we definitely need to get this fixed.  Is the bdev->bd_holder
-> part of the new mount api, or is it some other thing that we can do right now
-> and then be in a good spot when your new patchset lands?  Let me know and we can
-> prioritize that work.  Thanks,
+The biggest cause of -Wshadow warnings is min()/max() which all uses the
+same __x and __y.
+To fix that, pull the kernel version with the usage of __UNIQUE_ID() to
+address the problem.
 
-This is independent of converting btrfs to the new mount api.
+The remaining ones are mostly bad namings and harmless, but there is
+still some bad ones, detailed in the 2nd patch.
 
-Christoph has landed a patch series this cycle that sets bdev->bd_holder
-to the superblock owning the block device. Before his work
-bdev->bd_holder was set to the filesystem type. Roughly, this has
-enabled us to go from a block device straight to the owning superblock.
+Tested with both GCC 13.2.1 and Clang 16.0.6, the first one is fully
+clean, the latter one has some unrelated warnings, but no -Wshadow
+warnings.
 
-Associated with changing bdev->bd_holder is using a set of holder
-operations: fs_holder_ops (see fs/super.c). These can be used to perform
-various operations on the holder: in this case on the superblock.
+Qu Wenruo (3):
+  btrfs-progs: pull in the full max/min/clamp implementation from kernel
+  btrfs-progs: fix all variable shadowing
+  btrfs-progs: enable -Wshadow for default build
 
-IOW, we don't need to find the owning superblock anymore we just need to
-go straight from block device to owning superblock. You can see this
-e.g., in block/bdev.c:bdev_mark_dead() = fs/super.c:fs_bdev_mark_dead().
+ Makefile                     |   3 +-
+ Makefile.extrawarn           |   1 -
+ check/main.c                 |   6 +-
+ check/mode-lowmem.c          |   4 +-
+ check/qgroup-verify.c        |  23 +++---
+ check/repair.c               |   7 +-
+ cmds/filesystem-usage.c      |   8 +-
+ cmds/subvolume-list.c        |   2 +-
+ common/internal.h            | 147 +++++++++++++++++++++++++++++++----
+ image/image-restore.c        |  10 +--
+ kernel-shared/async-thread.c |   2 +-
+ kernel-shared/extent-tree.c  |   1 -
+ tune/change-csum.c           |  10 +--
+ 13 files changed, 167 insertions(+), 57 deletions(-)
 
-What we need is to switch btrfs to bdev->bd_holder = sb and the usage of
-fs/super.c:fs_holder_ops if possible. We did this anyway to avoid
-deadlocks, allow dropping of s_umount when opening block devices and
-ultimately we can find matching superblocks before opening block devices
-which will allow us to restrict writers to block devices in v6.7 (Jan's
-work).
+--
+2.42.0
 
-We converted all block-based filesystems to use this new mechanism but
-David insisted on taking the btrfs portion through btrfs itself. So none
-of the btrfs patches in the series linked below have made it upstream
-for v6.6 and so you're unfortunately the only fs which still uses the
-old mechanism:
-
-Subject: [PATCH 05/17] btrfs: open block devices after superblock
-https://lore.kernel.org/linux-block/20230811100828.1897174-6-hch@lst.de
-
-What would help is if you would start to take these patches.

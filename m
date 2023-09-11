@@ -2,80 +2,90 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D644BCA0EC3
-	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Sep 2023 22:06:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 056BCCA0EC7
+	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Sep 2023 22:06:32 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236728AbjIKWAy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 11 Sep 2023 18:00:54 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52522 "EHLO
+        id S1355569AbjIKWA6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 11 Sep 2023 18:00:58 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41864 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S243725AbjIKRfJ (ORCPT
+        with ESMTP id S240348AbjIKOmK (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Sep 2023 13:35:09 -0400
+        Mon, 11 Sep 2023 10:42:10 -0400
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A19631B8
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 10:35:01 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 33259E40
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 07:42:05 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 6482121842;
-        Mon, 11 Sep 2023 17:35:00 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 5409621847;
+        Mon, 11 Sep 2023 14:42:03 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1694453700;
+        t=1694443323;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=IYRYgjntgu6b6mEWldKuccG3gcBVqn6OG8aZTDbKTLk=;
-        b=XkZeSMgQOHsmLpNZAPzyar7JdKkVkzywcuWT64/rkjCnlSvriwgmoEXjNhl+VrxziYcaPq
-        +O1A82Sfkimm18oXrowbrWMj8chAZkRK2bsAcPEQO2axeW00nnl/ttXImh8tPvtjI9pthV
-        yJyBBDx3tpgYr/3HVXo3M2I4YnOrJz4=
+        bh=lan2WQ0FKxOqktmgh4WSaeI0r1Nm1KmyBkm0kxaLsCU=;
+        b=hS6dMw7LW/k+JZlg4AvK7D3/R42rSSGDCg/8CJVa4EGNww6jmQqzdIxQ/B3zraHwYAlEzv
+        MNw8J7Wbwuxje3jYq6OxitS9loAODspxeSvdi8fxRzoio0vKt3QyyhO6JG1k2d2+hfIWy3
+        Aa4r3lfmbBy1FD4R8Jt05CKTuqnhouk=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1694453700;
+        s=susede2_ed25519; t=1694443323;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=IYRYgjntgu6b6mEWldKuccG3gcBVqn6OG8aZTDbKTLk=;
-        b=enYs8R50BKyyN1+J6Uj0v61oS5zuIaFxXhcjYjVH1/EKry0JyCInrGWdJ5clWRsxmo9dqZ
-        AEKw79XLdUcVLvBw==
+        bh=lan2WQ0FKxOqktmgh4WSaeI0r1Nm1KmyBkm0kxaLsCU=;
+        b=764pi+xGLP9CmqT5a5tlNreTAvOA2daJq6CYaYoFZnu113SdE1r9u+Du77xJ90j3iq87Xp
+        77xAaYpylGyyspCw==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 49E3513780;
-        Mon, 11 Sep 2023 17:35:00 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 2C023139CC;
+        Mon, 11 Sep 2023 14:42:03 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id 5ZpYEcRP/2SiKQAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Mon, 11 Sep 2023 17:35:00 +0000
-Date:   Mon, 11 Sep 2023 19:28:26 +0200
+        id kVIJCjsn/2TgUgAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Mon, 11 Sep 2023 14:42:03 +0000
+Date:   Mon, 11 Sep 2023 16:35:29 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     fdmanana@kernel.org
-Cc:     linux-btrfs@vger.kernel.org, ian@ianjohnson.dev,
-        Filipe Manana <fdmanana@suse.com>
-Subject: Re: [PATCH 0/2] btrfs: updates for directory reading
-Message-ID: <20230911172825.GD3159@twin.jikos.cz>
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: rename errno identifiers to error
+Message-ID: <20230911143529.GB3159@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <cover.1694260751.git.fdmanana@suse.com>
+References: <20230908191006.31940-1-dsterba@suse.com>
+ <43024b78-debe-4764-8dc2-098e398df719@gmx.com>
+ <8dbd9c7b-0f51-4edd-a6e5-0ad6c30e2dd2@gmx.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <cover.1694260751.git.fdmanana@suse.com>
+In-Reply-To: <8dbd9c7b-0f51-4edd-a6e5-0ad6c30e2dd2@gmx.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sat, Sep 09, 2023 at 01:08:30PM +0100, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
+On Sun, Sep 10, 2023 at 02:35:30PM +0930, Qu Wenruo wrote:
+> On 2023/9/10 14:28, Qu Wenruo wrote:
+> > On 2023/9/9 04:40, David Sterba wrote:
+> >> We sync the kernel files to userspace and the 'errno' symbol is defined
+> >> by standard library, which does not matter in kernel but the parameters
+> >> or local variables could clash. Rename them all.
+> > 
+> > Well, initially I thought this problem should be exposed by -Wshadow in
+> > btrfs-progs, but I'm wrong.
+> > 
+> > When going W=2 for btrfs-progs, we indeed got some error on some shadows
+> > but not any @errno one in the current devel.
+> > 
+> > Is there some warning option we can use in progs to expose such warnings?
 > 
-> Tweak and fix a bug when reading directory entries after a rewinddir(3)
-> call. Reported by Ian Johnson.
+> Never mind, those files are not yet synced to btrfs-progs, thus no such 
+> variable shadowing problem.
 > 
-> Link: https://lore.kernel.org/linux-btrfs/YR1P0S.NGASEG570GJ8@ianjohnson.dev/T/#u
-> 
-> Filipe Manana (2):
->   btrfs: set last dir index to the current last index when opening dir
->   btrfs: refresh dir last index during a rewinddir(3) call
+> For this -Wshadow, I think after cleaning up all those existing warning 
+> we may consider put it into the default warning options.
 
-Thanks for the quick fixes, added to misc-next.
+Agreed.

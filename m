@@ -2,125 +2,128 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7FAB0CA0ED0
-	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Sep 2023 22:07:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 88AEDCA0EC6
+	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Sep 2023 22:07:03 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1355899AbjIKWCS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 11 Sep 2023 18:02:18 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56090 "EHLO
+        id S1355873AbjIKWCP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 11 Sep 2023 18:02:15 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52112 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S243486AbjIKROx (ORCPT
+        with ESMTP id S243953AbjIKSbc (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Sep 2023 13:14:53 -0400
-Received: from mail-wr1-x433.google.com (mail-wr1-x433.google.com [IPv6:2a00:1450:4864:20::433])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BAF861AB
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 10:14:46 -0700 (PDT)
-Received: by mail-wr1-x433.google.com with SMTP id ffacd0b85a97d-31c5cac3ae2so4340280f8f.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2023 10:14:46 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20221208; t=1694452485; x=1695057285; darn=vger.kernel.org;
-        h=content-transfer-encoding:autocrypt:subject:from:cc:to
-         :content-language:user-agent:mime-version:date:message-id:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=8yEN/04sCkB0JWg0biIvGJdl+0VCY8HY0U7JZa6XrY0=;
-        b=L1h3PEMwjxS03WriTTLXkpKVJ2MC0dJMXAfPOuo13TLzKiWCsyP1glrWavWtV/DZBA
-         vlEoPjqQ0k2t1ppTd/IwKpKdf5hV+CVH23zM7CeHQ7Zh4+6XYUGJ4WYHzUqla4ELtNVs
-         h30Jf43CXZlzTYr94FlDlcSKkCK3WiwWtB8p2nZdFNKsW0IoqBnmtPfee7yxRMfbwZo+
-         yYUwCFtqiWYLtw1Ssa9TyH66PeOaWQLGH2gUSvP9qJNzig4HVQ8Sfc9h88VMm7+M3cyp
-         +CjF3phz4uGDF89xuDoDyZ599i3bCJDvmGrKYolIV9HXGKnKd/djaXevku8q4P1VpAdq
-         q2iw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1694452485; x=1695057285;
-        h=content-transfer-encoding:autocrypt:subject:from:cc:to
-         :content-language:user-agent:mime-version:date:message-id
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=8yEN/04sCkB0JWg0biIvGJdl+0VCY8HY0U7JZa6XrY0=;
-        b=V6h5MZkrMxIxVPzsIXvxZLIcmjMSao6sw6wAtlVHoEyyYwDI+CUsQDLsTtep8Ur6Uo
-         3J/tSTrIB8mAx4Y2L7A441QHZ9UMnX1jHeyhCZ6sN3IqI8U2i0nAnkfYKXlc74nJOg+2
-         uAJE/OqrcdZiSjuEqZMf5jJcTEEd7Gh82Nca3ENm4cHlPOILkJXXYUvTaHtbj6sbi0Z8
-         gOKcZIMavu7qLSi2Lf2GdO96s7ATFOp5CEZHInk2YoUcguhLfRNjXhBD36e1B+5Ut4q1
-         Dc/ZKZ0zcoFYpRQCoGhf5OT9G3hpOD+rlf8cS+D6N46/Cf6bsQO3cWLSTy+MmD0nrPND
-         djWw==
-X-Gm-Message-State: AOJu0YwkIZb8YWrItFxSI0WLSrcPUubNCSoJxrB/vcMx3X9qUDNkTI/L
-        3P4yE+p31oamdlU8fNf6oKjOanB1LyPMTmMn
-X-Google-Smtp-Source: AGHT+IFL9g3UVbIYUYaiiR6klNUyEb7Ya2Dxii0mi2OCJEEDgjLp/MGDVaEe4ebAmHzUaLtrJrIA8Q==
-X-Received: by 2002:adf:eece:0:b0:319:79bb:980c with SMTP id a14-20020adfeece000000b0031979bb980cmr8682618wrp.64.1694452484466;
-        Mon, 11 Sep 2023 10:14:44 -0700 (PDT)
-Received: from [192.168.20.10] ([141.0.156.136])
-        by smtp.gmail.com with ESMTPSA id h5-20020adfe985000000b0031ae8d86af4sm10509811wrm.103.2023.09.11.10.14.43
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 11 Sep 2023 10:14:43 -0700 (PDT)
-Message-ID: <1ab61090-5c9a-434a-895b-3de2899d3e72@gmail.com>
-Date:   Mon, 11 Sep 2023 20:14:42 +0300
+        Mon, 11 Sep 2023 14:31:32 -0400
+Received: from wout4-smtp.messagingengine.com (wout4-smtp.messagingengine.com [64.147.123.20])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 49C61198;
+        Mon, 11 Sep 2023 11:31:27 -0700 (PDT)
+Received: from compute3.internal (compute3.nyi.internal [10.202.2.43])
+        by mailout.west.internal (Postfix) with ESMTP id E2EA83200912;
+        Mon, 11 Sep 2023 14:31:23 -0400 (EDT)
+Received: from mailfrontend2 ([10.202.2.163])
+  by compute3.internal (MEProxy); Mon, 11 Sep 2023 14:31:24 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
+        :content-type:content-type:date:date:from:from:in-reply-to
+        :in-reply-to:message-id:mime-version:references:reply-to:sender
+        :subject:subject:to:to; s=fm2; t=1694457083; x=1694543483; bh=Ec
+        MFYvhUrMnasEqJwEyJPej38pS4lZZ3N7GELDh7r38=; b=nMcci+o/59MCemrXW5
+        8dcZVnfHs5GPM/Dq4tcYijrGi7fvsxjxnWFulAC+EaeWcnl3ZwVgO7HOZ8kx268J
+        v3J5+OGvDxhy13nngEYTNboVIzpeafHZ+HFPftahw0sACD266c3kbfX4Vc2cXwtR
+        guQMSJV37NO13UnGXSzRuLPMURW4gK49vti+MfkO9Rw2Fm5cp2ev8btsP22PKoGw
+        43U7F1WShYKCs4fNKvClrt+NYXWBRiBLZKbbwVGTTUdr1tLhbPHnP+KJTDd0PJA0
+        h/WrFRkJQTs+2bIqEzNrp7S+Ph8Vx7MPWYS9p5+mBn6ZbIkzKk7Ln8wbEQMEXsxF
+        jjtA==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+        messagingengine.com; h=cc:cc:content-type:content-type:date:date
+        :feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
+        :message-id:mime-version:references:reply-to:sender:subject
+        :subject:to:to:x-me-proxy:x-me-proxy:x-me-sender:x-me-sender
+        :x-sasl-enc; s=fm1; t=1694457083; x=1694543483; bh=EcMFYvhUrMnas
+        EqJwEyJPej38pS4lZZ3N7GELDh7r38=; b=vsmmCu4Nv39Ay3NHLb3N2iQhwjdzZ
+        BHtUv5ei4e6U18ndUC855+9I8tupLZfAvGOrKojYzPcKvyGm9rbUYicMFehpzWi6
+        VTWygoxtHLzqZFVbBngs5RmEKrdpeqAD/4wJn9t52HZk9DZFotfluoEsFGiBsQMF
+        7Vi7rZS4i2Ot48+hvYOwK6fBAUSsAr/KsMzwvwYKzJATlEcKEyx8fWZODYQX7pDW
+        WV0hMtqoZKrnPzL6zpxcYHvN7NbX97pcPiDQdqSBq50iF+L/VAP3MV/UnDl4PlhH
+        X1dQF2fxUGBkGuLXAOee0jgFpplCm4rWaxLFo1pnmic4vsJjTGgm+yXmA==
+X-ME-Sender: <xms:-lz_ZJV4NRGW4-f1uSPJpD7Oxc8MxeJspcisSUu-1QcSt5YLYqca2g>
+    <xme:-lz_ZJlRbAVOz4Ei9KNaGwr7vZRP4h9Ldi-Eng8xmjdYceIDn1ZieZuJTuJ9p2pjW
+    yOEquAQ-P6-djvLve4>
+X-ME-Received: <xmr:-lz_ZFaM2n4rds7OPzAmWpOwf_9VWzGQKFXX2HcHmvutSQGy0kgkXcOWwATYCY-NqEvExsAQTZFn-69Pp1EojYdvgo0>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedviedrudeigedguddvfecutefuodetggdotefrod
+    ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfgh
+    necuuegrihhlohhuthemuceftddtnecusecvtfgvtghiphhivghnthhsucdlqddutddtmd
+    enucfjughrpeffhffvvefukfhfgggtuggjsehttdertddttddvnecuhfhrohhmpeeuohhr
+    ihhsuceuuhhrkhhovhcuoegsohhrihhssegsuhhrrdhioheqnecuggftrfgrthhtvghrnh
+    epkedvkeffjeellefhveehvdejudfhjedthfdvveeiieeiudfguefgtdejgfefleejnecu
+    vehluhhsthgvrhfuihiivgeptdenucfrrghrrghmpehmrghilhhfrhhomhepsghorhhish
+    essghurhdrihho
+X-ME-Proxy: <xmx:-lz_ZMVwTpWjiCQ1Vxt_CmqHxv309uYBiPfgXqCLX1PsG4iWeuhLmA>
+    <xmx:-lz_ZDnGlhPaDrEhBiaWcUznyk3y9N6iqr2sFtOmoS_5TqXw4OvaPw>
+    <xmx:-lz_ZJc4vHhoT5JBEyY8ouXTZBxcHtl7K5IPajJLiXIe2e0sL2ifww>
+    <xmx:-1z_ZLvv9rmbrXM3dNZ0bG1VPErrBmXwyt3b8OS0BjizFISdtHhyzA>
+Feedback-ID: i083147f8:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Mon,
+ 11 Sep 2023 14:31:22 -0400 (EDT)
+Date:   Mon, 11 Sep 2023 11:32:19 -0700
+From:   Boris Burkov <boris@bur.io>
+To:     Anand Jain <anand.jain@oracle.com>
+Cc:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] fstests: btrfs/185 update for single device pseudo
+ device-scan
+Message-ID: <20230911183219.GA1770132@zen>
+References: <7558eed09a89d25fbd8083d45078cfe2e9601f45.1694017375.git.anand.jain@oracle.com>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Content-Language: en-GB
-To:     linux-btrfs@vger.kernel.org
-Cc:     Leonidas Spyropoulos <artafinde@gmail.com>
-From:   Leonidas Spyropoulos <artafinde@gmail.com>
-Subject: Mailing List missing messages
-Autocrypt: addr=artafinde@gmail.com; keydata=
- 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
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <7558eed09a89d25fbd8083d45078cfe2e9601f45.1694017375.git.anand.jain@oracle.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
+On Thu, Sep 07, 2023 at 12:24:43AM +0800, Anand Jain wrote:
+> As we are obliterating the need for the device scan for the single device,
+> which will return success if the basic superblock verification passes,
+> even for the duplicate device of the mounted filesystem, drop the check
+> for the return code in this testcase and continue to verify if the device
+> path of the mounted filesystem remains unaltered after the scan.
+> 
+> Also, if the test fails, it leaves the local non-standard mount point
+> remained mounted, leading to further test cases failing. Call unmount
+> in _cleanup().
 
-I've noticed the Mailing List archives contain messages I never received
-in my email. Anyone else experienced this issue?
+This was also affecting my setup, thanks for the fix!
 
-I'm comparing my inbox with: https://lore.kernel.org/linux-btrfs/
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> ---
+>  tests/btrfs/185 | 5 +++--
+>  1 file changed, 3 insertions(+), 2 deletions(-)
+> 
+> diff --git a/tests/btrfs/185 b/tests/btrfs/185
+> index ba0200617e69..c7b8d2d46951 100755
+> --- a/tests/btrfs/185
+> +++ b/tests/btrfs/185
+> @@ -15,6 +15,7 @@ mnt=$TEST_DIR/$seq.mnt
+>  # Override the default cleanup function.
+>  _cleanup()
+>  {
+> +	$UMOUNT_PROG $mnt > /dev/null 2>&1
 
-Example message I never received:
-https://lore.kernel.org/linux-btrfs/f6ad7269b879d0ac24f3b051c3ff6530dc0953b4.1694260751.git.fdmanana@suse.com/T/#u
+Do you mean to umount before calling rm -rf on it? That seems.. risky.
 
-
-PS: I think previous messages were dropped due to pgp signatures (?)
-
-Regards,
-Leonidas
-
+>  	rm -rf $mnt > /dev/null 2>&1
+>  	cd /
+>  	rm -f $tmp.*
+> @@ -51,9 +52,9 @@ for sb_bytenr in 65536 67108864; do
+>  	echo ..:$? >> $seqres.full
+>  done
+>  
+> -# Original device is mounted, scan of its clone should fail
+> +# Original device is mounted, scan of its clone must not alter the
+> +# filesystem device path
+>  $BTRFS_UTIL_PROG device scan $device_2 >> $seqres.full 2>&1
+> -[[ $? != 1 ]] && _fail "cloned device scan should fail"
+>  
+>  [[ $(findmnt $mnt | grep -v TARGET | $AWK_PROG '{print $2}') != $device_1 ]] && \
+>  						_fail "mounted device changed"
+> -- 
+> 2.39.3
+> 

@@ -2,37 +2,39 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 856A8CA0EC3
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Sep 2023 12:04:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5DBBFCA0ECF
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Sep 2023 12:04:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234876AbjILMEw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 12 Sep 2023 08:04:52 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45136 "EHLO
+        id S234919AbjILMEy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 12 Sep 2023 08:04:54 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45188 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234892AbjILMEm (ORCPT
+        with ESMTP id S234932AbjILMEp (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 12 Sep 2023 08:04:42 -0400
+        Tue, 12 Sep 2023 08:04:45 -0400
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 79B4310D0
-        for <linux-btrfs@vger.kernel.org>; Tue, 12 Sep 2023 05:04:38 -0700 (PDT)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9714DC433CB
-        for <linux-btrfs@vger.kernel.org>; Tue, 12 Sep 2023 12:04:37 +0000 (UTC)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8227710D2
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Sep 2023 05:04:41 -0700 (PDT)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id A6343C433C7
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Sep 2023 12:04:40 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1694520278;
-        bh=qpls9Im8qQr8gF64uTTMuIIvTSlrIHyTeHhiRk9OTo4=;
-        h=From:To:Subject:Date:From;
-        b=kIH5kuDiXVdS6y1q9Vr9MUpB6YAymk8YuYnB7g3Lb0vpk8aCHdsbbvxVE9Vd1qV6S
-         KUIgwldBDZcTm0Yh5HQS1h5pqCZBsAR3m7ZP7jULudEg9nZq+uDJrD/2GHXs+imUh0
-         NXy2RytGWtMOMZrqLXSnkTmkDcw4FpGUroCLREw4Lnhf+SAFT37VJRCEffdKJmUXLJ
-         GNIHuv380h4vYjQLPsQS8QYnvZ8lkm97mIyg9ESfY81G3uVgMVVBSXj20TJHyWHXNg
-         dECiJxnvKHsb0mjRX+Hw3eA9PFxsf2DNlgiqFwdcrRnNuBDrBoOhl4jv+g+58Q2xXi
-         QfZUOL6i5tPyQ==
+        s=k20201202; t=1694520281;
+        bh=3pNzE7A94CNt36pJ3NPac0NN6y3mTQgiIFBkPFYOGcs=;
+        h=From:To:Subject:Date:In-Reply-To:References:From;
+        b=g3SzGNOkv/F2k0mMdudO+FGF0Gtfy28WZ93/ieAw4ZzFex325Mq3eRHBhDI0NDCpw
+         ys60nribUmPAbmS8JssfCGFfg3MePwDhFAhe+lF1OA4TLl0xgvvhFJbiu7TidadDjj
+         hhqbHBKpVD61h3AAGmdGXKyNcgi9W0FqlkwvOQMHvfL804XsopZxj+6O/71BnLiJZd
+         y/iAJbesKD/CPgbKikamoz3a4EU1rTAoI6auqsDABHNg91wLi26nZC9/C8E4eRiB+q
+         LbevgriQuWrr4pXh44E0JUXBZnoOb+98loohm7JBx93UXqz5pRLwRbgeQlHo+ugKgD
+         9jD6SeOwQWfYg==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/3] btrfs: some updates to btrfs_mark_buffer_dirty()
-Date:   Tue, 12 Sep 2023 13:04:28 +0100
-Message-Id: <cover.1694519543.git.fdmanana@suse.com>
+Subject: [PATCH 3/3] btrfs: mark transaction id check as unlikely at btrfs_mark_buffer_dirty()
+Date:   Tue, 12 Sep 2023 13:04:31 +0100
+Message-Id: <fbe818ae8d68519e419b53ba847ab7ac70285f13.1694519544.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.34.1
+In-Reply-To: <cover.1694519543.git.fdmanana@suse.com>
+References: <cover.1694519543.git.fdmanana@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
@@ -41,44 +43,30 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-A few updates to btrfs_mark_buffer_dirty(), with the most important one
-to not allow a transaction to commit when we know there's some corruption
-due to marking an extent buffer as dirty when its generation does not
-match the current transaction's generation. More details on the change
-logs of each patch.
+At btrfs_mark_buffer_dirty(), having a transaction id mismatch is never
+expected to happen and it usually means there's a bug or some memory
+corruption due to a bitflip for example. So mark the condition as unlikely
+to optimize code generation as well as to make it obvious for human
+readers that it is a very unexpected condition.
 
-Filipe Manana (3):
-  btrfs: abort transaction on generation mismatch when marking eb as dirty
-  btrfs: use btrfs_crit at btrfs_mark_buffer_dirty()
-  btrfs: mark transaction id check as unlikely at btrfs_mark_buffer_dirty()
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/disk-io.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
- fs/btrfs/block-group.c               |   4 +-
- fs/btrfs/ctree.c                     | 109 +++++++++++++++------------
- fs/btrfs/ctree.h                     |  11 ++-
- fs/btrfs/delayed-inode.c             |   2 +-
- fs/btrfs/dev-replace.c               |   2 +-
- fs/btrfs/dir-item.c                  |   8 +-
- fs/btrfs/disk-io.c                   |  18 +++--
- fs/btrfs/disk-io.h                   |   3 +-
- fs/btrfs/extent-tree.c               |  36 +++++----
- fs/btrfs/file-item.c                 |  17 +++--
- fs/btrfs/file.c                      |  34 ++++-----
- fs/btrfs/free-space-cache.c          |   6 +-
- fs/btrfs/free-space-tree.c           |  17 +++--
- fs/btrfs/inode-item.c                |  16 ++--
- fs/btrfs/inode.c                     |  10 +--
- fs/btrfs/ioctl.c                     |   4 +-
- fs/btrfs/qgroup.c                    |  14 ++--
- fs/btrfs/relocation.c                |  10 +--
- fs/btrfs/root-tree.c                 |   4 +-
- fs/btrfs/tests/extent-buffer-tests.c |   6 +-
- fs/btrfs/tests/inode-tests.c         |  12 ++-
- fs/btrfs/tree-log.c                  |  12 +--
- fs/btrfs/uuid-tree.c                 |   6 +-
- fs/btrfs/volumes.c                   |  10 +--
- fs/btrfs/xattr.c                     |   8 +-
- 25 files changed, 208 insertions(+), 171 deletions(-)
-
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index d906368a2d3f..163f37ad1b27 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -4403,7 +4403,7 @@ void btrfs_mark_buffer_dirty(struct btrfs_trans_handle *trans,
+ 	/* This is an active transaction (its state < TRANS_STATE_UNBLOCKED). */
+ 	ASSERT(trans->transid == fs_info->generation);
+ 	btrfs_assert_tree_write_locked(buf);
+-	if (transid != fs_info->generation) {
++	if (unlikely(transid != fs_info->generation)) {
+ 		btrfs_abort_transaction(trans, -EUCLEAN);
+ 		btrfs_crit(fs_info,
+ "dirty buffer transid mismatch, logical %llu found transid %llu running transid %llu",
 -- 
 2.40.1
 

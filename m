@@ -2,61 +2,87 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3A54BEE01FE
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Sep 2023 18:04:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 94BB7EE0213
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Sep 2023 22:44:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231272AbjIMSE4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 13 Sep 2023 14:04:56 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34858 "EHLO
+        id S230229AbjIMWoX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 13 Sep 2023 18:44:23 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44658 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229552AbjIMSEz (ORCPT
+        with ESMTP id S229455AbjIMWoW (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 13 Sep 2023 14:04:55 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BD1B019AE
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Sep 2023 11:04:51 -0700 (PDT)
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out2.suse.de (Postfix) with ESMTP id 4F7251F383
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Sep 2023 18:04:50 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1694628290; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=vklxo71o5FhKnvJOs7l0Qv/W8zUrbEnbrJk74CgEuJo=;
-        b=Onodq2dxfn531xPo7WWr/SE5LNikQlF04cl77DCivZs/zquC7qTz5+1NwnPPzEM6zaJpHQ
-        ZQk7y7WDtXP1hmmrtim+qBFPBaQiURHcfpxLBfVqXLSK0Xa2ah0+n4isU0s6xIIQ8uc1Nr
-        hp9UUq753JK2ZjkXyI4CR0Ed8p3QxSs=
-Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 3CF542C142
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Sep 2023 18:04:50 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 2C6A2DA8A7; Wed, 13 Sep 2023 20:04:48 +0200 (CEST)
-From:   David Sterba <dsterba@suse.com>
+        Wed, 13 Sep 2023 18:44:22 -0400
+Received: from fanzine2.igalia.com (fanzine.igalia.com [178.60.130.6])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 73EEF1BCB;
+        Wed, 13 Sep 2023 15:44:18 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=igalia.com;
+        s=20170329; h=Content-Transfer-Encoding:MIME-Version:Message-ID:Date:Subject:
+        Cc:To:From:Sender:Reply-To:Content-Type:Content-ID:Content-Description:
+        Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:
+        In-Reply-To:References:List-Id:List-Help:List-Unsubscribe:List-Subscribe:
+        List-Post:List-Owner:List-Archive;
+        bh=aoawsj0y9Fl/8/hECDjcCmSLe02tbdgQ6ntQkPkRi9E=; b=lowWYAUPakQI31wBdFjbGIYdAd
+        JR3O/THJm2b5BSA7H+jdeT73ZiltUWeS7TAXT/HHTNXeqPFr7Hjxwy0eVqo1yeEUr2wRHIUX15Fnp
+        ZoKyxcqc4w8azzZLVhvS3UoFh2IByIWgWo90x8/jeqIVCPtJ00ywnXUa3bDLPz0lK+a68f7gvP/dS
+        ol10/HZ3/FKiPDZgmJKbHikhuHNSJpKtV0cEevLEdzlZDFVkYA9Hd41mmn9/Mn3/n/QUjjAZfk5Ju
+        5mQOtz+n1uDWMyWm7LQcROf+k0RrRDwU70LfgYnhvfWgRGd43Kt8mRMJ1qGewRDVcbwwVxio9YGjE
+        gZfodmnA==;
+Received: from [187.116.122.196] (helo=localhost)
+        by fanzine2.igalia.com with esmtpsa 
+        (Cipher TLS1.3:ECDHE_SECP256R1__RSA_PSS_RSAE_SHA256__AES_256_GCM:256) (Exim)
+        id 1qgYah-003Z6W-Ok; Thu, 14 Sep 2023 00:44:12 +0200
+From:   "Guilherme G. Piccoli" <gpiccoli@igalia.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: Btrfs progs release 6.5.1
-Date:   Wed, 13 Sep 2023 20:04:47 +0200
-Message-ID: <20230913180448.9431-1-dsterba@suse.com>
-X-Mailer: git-send-email 2.41.0
+Cc:     clm@fb.com, josef@toxicpanda.com, dsterba@suse.com,
+        dsterba@suse.cz, linux-fsdevel@vger.kernel.org,
+        kernel@gpiccoli.net, kernel-dev@igalia.com, anand.jain@oracle.com,
+        david@fromorbit.com, kreijack@libero.it, johns@valvesoftware.com,
+        ludovico.denittis@collabora.com, quwenruo.btrfs@gmx.com,
+        wqu@suse.com, vivek@collabora.com,
+        "Guilherme G. Piccoli" <gpiccoli@igalia.com>
+Subject: [PATCH v4 0/2]  Supporting same fsid mounting through the temp-fsid feature
+Date:   Wed, 13 Sep 2023 19:36:14 -0300
+Message-ID: <20230913224402.3940543-1-gpiccoli@igalia.com>
+X-Mailer: git-send-email 2.42.0
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
+Hi, this is the 4th round of the same fsid mounting patch. Our goal
+is to allow btrfs to have the same filesystem mounting at the same time.
+The main change this time was the name of the feature, from single-dev to
+temp-fsid, which seems the less disliked name heh
 
-btrfs-progs version 6.5.1 have been released. This is a bugfix release.
+More details in the patches' changelogs.
+Thanks,
 
-The accelerated crc32c implementation in 6.5 did not work on older compilers
-or 32bit CPUs without PCLMUL supoort, now fixed.
+Guilherme
 
-Changelog:
-   * build fixes:
-      * crc32c if PIE or relro is enabled
-      * detect if PCLMUL feature is recognized by compiler and also detect that
-        at runtime
-   * check: verify metadata item level when skinny-metadata is enabled
-   * other: minor build and docs updates
 
-Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
-Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
-Release: https://github.com/kdave/btrfs-progs/releases/tag/v6.3.3
+Guilherme G. Piccoli (2):
+  btrfs-progs: Add the temp-fsid feature (to both mkfs/tune)
+  btrfs: Introduce the temp-fsid feature
+
+btrfs-progs:
+ common/fsfeatures.c        |  7 ++++
+ kernel-shared/ctree.h      |  3 +-
+ kernel-shared/uapi/btrfs.h |  7 ++++
+ mkfs/main.c                |  4 ++-
+ tune/main.c                | 72 +++++++++++++++++++++++++-------------
+ 5 files changed, 66 insertions(+), 27 deletions(-)
+
+kernel:
+ fs/btrfs/disk-io.c         | 18 +++++++++-
+ fs/btrfs/fs.h              |  3 +-
+ fs/btrfs/ioctl.c           | 18 ++++++++++
+ fs/btrfs/sysfs.c           |  2 ++
+ fs/btrfs/volumes.c         | 70 +++++++++++++++++++++++++++++++-------
+ fs/btrfs/volumes.h         |  5 +++
+ include/uapi/linux/btrfs.h |  7 ++++
+ 7 files changed, 109 insertions(+), 14 deletions(-)
+
+-- 
+2.42.0
+

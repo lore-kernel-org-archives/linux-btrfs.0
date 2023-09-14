@@ -2,316 +2,217 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A5FECEEAA55
-	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Sep 2023 16:05:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A188CEEAA54
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Sep 2023 16:05:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S241481AbjINQFv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 14 Sep 2023 12:05:51 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55934 "EHLO
+        id S241500AbjINQFx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 14 Sep 2023 12:05:53 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55974 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S241300AbjINQFt (ORCPT
+        with ESMTP id S241469AbjINQFu (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 14 Sep 2023 12:05:49 -0400
+        Thu, 14 Sep 2023 12:05:50 -0400
 Received: from esa4.hgst.iphmx.com (esa4.hgst.iphmx.com [216.71.154.42])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0B6CD1BE1
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D76201BDD
         for <linux-btrfs@vger.kernel.org>; Thu, 14 Sep 2023 09:05:45 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
   t=1694707545; x=1726243545;
   h=from:date:subject:mime-version:content-transfer-encoding:
    message-id:references:in-reply-to:to:cc;
-  bh=Gzghtc64t6MDPgziAXVJWilOZTxzWpOTUJKusY4KU64=;
-  b=hHx2f+Sf0HqNgr1KJ5qcH4ht7Xi1k+KqvrwKC6SR1kN12lneSHN1x6MZ
-   m7NaISiCWW6g9gWsncJ5Y1R7xWwnGzxBNE0KPLQzumqVoBVKd9H7tmm5c
-   9vbbw/ksdhmUto5DPrR5ZsmS7JcyZLMyHP09gqS5v4rf88o9R6Pvsb/ca
-   9tjojtNYhKmSg57jOyfuLbWPqFFigQessXF88ug382leGM4QbMPGioGbn
-   kmHwrjLflD55WNyjI+A/oAlANphzRn4oXD9i4qgpu/0tcMCnO5CL0mDlx
-   67eCQfABK020T44iK7gzWbYNGDwFNH3kdtDQ9pjTTfE/Mw8MeOnqVpUXZ
-   w==;
-X-CSE-ConnectionGUID: 0PrTYKppS7SdDb2Se3+t0Q==
-X-CSE-MsgGUID: bNU7rFJsSyiJopAC6qDg5w==
+  bh=zApmCeqyy3SfHYiANMzUPLxS2p9rjxha3fR6HA0U5Bc=;
+  b=J6dNZ6gjveH/SLKfuDmjZrMp7cvMQGzUrlePwOH6sKPRKC4HklyPBCHk
+   DL9VyegE+N42KjOY+c4XNHm94QpM0gYAVr7mi5EcsHdipWBCc42rf79d+
+   k4CC30kZcqljmuaKFzcz3jMEaT1m1lyXcxWI8gHo6dR/GxpgjtgX4rfbO
+   n8CHW037F5GwbMQev/A9ZeVOcZ1MQQ9ZFTpDpdXGPXAEGJ6Ffem4r8BJr
+   Tm4p13pDOcuqKcpUxJUfcqwEV3GuHsye6pzWdsJlPTft4h36XljXYCu/Q
+   FybxGS4taUi/mgdh27XIkFe0brrr8rHfPMn+EiKvMjF3exkCApt+hwey2
+   A==;
+X-CSE-ConnectionGUID: g8EtlwefRVKgza/XDWPPEQ==
+X-CSE-MsgGUID: oRZicmpbT2+cWOKi03fKlA==
 X-IronPort-AV: E=Sophos;i="6.02,146,1688400000"; 
-   d="scan'208";a="242196091"
+   d="scan'208";a="242196094"
 Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 15 Sep 2023 00:05:44 +0800
-IronPort-SDR: i4QsQGcdzg0DrHYlj+8CxIBtY74QSTSKBo17WxOuPjIl8hGStowHyOvxR3wqAHWiaSc1zc2ITG
- ol0d3dBwm4zEMWrb9dGCSXexj2pALU+oX93a5yk+0fxgIUN2su7Rm6aiXbzV/kkV5YTcRdxAhJ
- 2b8a5QWtMrJj2LE9JVnhF3yaIdczgD+OQI6yKUoU4Iio4OyKK9FgnrHUqLmBThxBG6QE0yrdj3
- MPPGZZLeAzLJHyMsjcFaF6+WsU6N/Heh6hSpJYXxSPcxVDvdUsTp3NWdbuzRZOv5+KzdVsxr1d
- 9p8=
+  by ob1.hgst.iphmx.com with ESMTP; 15 Sep 2023 00:05:45 +0800
+IronPort-SDR: Skx1s6jW8r373EiJlOAvWwyoNIrD65eyeIPZ/N6Zxu71p1kI/zk/MeSp9/cT+aoWskrYulcNBg
+ 5bcMXnhUc6ag3oYELkb/uSDReORyYKe7fzyNGpLT3YbpLxYdyG/ZcsnPXRBa3WowrpycP7GjG4
+ aomeQ1GbGk64KqhFOFWpDQcapbjNejkARfTJqqz1H38c9XqjbH8+PCkrN4ZKiuC/6usdYwDypp
+ Dfr2olWBVRcIIyJnShWZ+4cgAquLOpm93WVgsB3NmIxupCVYxYh4y86JHV8jjI5oPo3zTdo7rA
+ poY=
 Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 14 Sep 2023 08:18:27 -0700
-IronPort-SDR: Kk6h0yfhJNNgBwAbhKwoIW3mGOApNWoRdt1WkCqez0JDw4BetZFthmKiwb5JTBCOXQCQJiSdak
- /twHPXBLQ3il5zqtGMXJepd/dweWtXllDLTrwIXpmbjBLeJb1UZ3oN79aIK9575aJzIT/7aJG4
- +jvQWIY8nG33ZxIN/DDU4KBxEli5foqS14WxjaxIrhtNi+xpzTFoWaSp/43WyZdMe0Es1VOSbH
- z246Z5ArRSg2IgnJ5CTPk4XHStyWb9RQLwOQoIGILsENN++yxc1V9+Rsc5/oV4QNNYKPjX6ZoJ
- p54=
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 14 Sep 2023 08:18:28 -0700
+IronPort-SDR: 69iFPuve+Xn+LfDduX4MaOY2XahvPTUNkvzuEb6cx/YGr8Paq5g2YQ4RghWjHELC0Cn1LC4Z9Q
+ 0Hh384GupQt8LAuaYaxXXXKcz+5wP0JYp+bAj5jOD3u5e481yGGBLILRgBr/vnXvMyxIhhHYdZ
+ gyOGYdu89BhKMAzAJDfdXsfessXG2OqKnFqRYOOFLQIbm6m2kA+6MmsSu/M1QZmGbSxLKyz2kZ
+ cfGRyAtiBp5QmsTENKoyVeTquceVDvGDx479aAcopetEaETZ59jMu9gSOQgusfWJ4JZqjPM5Ks
+ YYY=
 WDCIronportException: Internal
 Received: from unknown (HELO redsun91.ssa.fujisawa.hgst.com) ([10.149.66.6])
-  by uls-op-cesaip01.wdc.com with ESMTP; 14 Sep 2023 09:05:45 -0700
+  by uls-op-cesaip01.wdc.com with ESMTP; 14 Sep 2023 09:05:46 -0700
 From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Date:   Thu, 14 Sep 2023 09:05:35 -0700
-Subject: [PATCH v4 4/6] btrfs-progs: allow zoned RAID
+Date:   Thu, 14 Sep 2023 09:05:37 -0700
+Subject: [PATCH v4 6/6] btrfs-progs: read stripe tree when mapping blocks
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-Message-Id: <20230914-raid-stripe-tree-v4-4-c921c15ec052@wdc.com>
+Message-Id: <20230914-raid-stripe-tree-v4-6-c921c15ec052@wdc.com>
 References: <20230914-raid-stripe-tree-v4-0-c921c15ec052@wdc.com>
 In-Reply-To: <20230914-raid-stripe-tree-v4-0-c921c15ec052@wdc.com>
 To:     David Sterba <dsterba@suse.com>
 Cc:     linux-btrfs@vger.kernel.org,
         Johannes Thumshirn <johannes.thumshirn@wdc.com>
 X-Mailer: b4 0.12.3
-X-Developer-Signature: v=1; a=ed25519-sha256; t=1694707540; l=7572;
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1694707540; l=3680;
  i=johannes.thumshirn@wdc.com; s=20230613; h=from:subject:message-id;
- bh=Gzghtc64t6MDPgziAXVJWilOZTxzWpOTUJKusY4KU64=;
- b=0TisWmauFK81TzBnJkyP6dPV0AteeGKl57g7JkV+v9OiyFmXuhZSseI96qUCEy1TWbJ5I5nFr
- YC+XfKTo4qkAmSIqQbX8Jes4kfK2+ZxFB050PiowUI5/KbJE8bxj5hx
+ bh=zApmCeqyy3SfHYiANMzUPLxS2p9rjxha3fR6HA0U5Bc=;
+ b=jLrWyk9NsnDv2EftcMZ/NaxnZNBf5bg/Td5HTBO711oF569qZG+qdOhAPyOJfaBzFphdt6jCj
+ Ub9yDAYYZLaBVyfe4GRRvusPCAXDxBHFZiF62Wz49knsSoFZkkYJulQ
 X-Developer-Key: i=johannes.thumshirn@wdc.com; a=ed25519;
  pk=TGmHKs78FdPi+QhrViEvjKIGwReUGCfa+3LEnGoR2KM=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Allow for RAID levels 0, 1 and 10 on zoned devices if the RAID stripe tree
-is used.
-
 Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- common/fsfeatures.c   |  8 ++++++
- kernel-shared/ctree.h |  3 +-
- kernel-shared/zoned.c | 34 ++++++++++++++++++++--
- kernel-shared/zoned.h |  4 +--
- mkfs/main.c           | 79 ++++++++++++++++++++++++++++++++++++++++++++++++---
- 5 files changed, 118 insertions(+), 10 deletions(-)
+ kernel-shared/volumes.c | 116 ++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 113 insertions(+), 3 deletions(-)
 
-diff --git a/common/fsfeatures.c b/common/fsfeatures.c
-index 00658fa5159f..2658f5072af4 100644
---- a/common/fsfeatures.c
-+++ b/common/fsfeatures.c
-@@ -189,6 +189,14 @@ static const struct btrfs_feature mkfs_features[] = {
- 		VERSION_NULL(safe),
- 		VERSION_NULL(default),
- 		.desc		= "new extent tree format"
-+	} , {
-+		.name		= "raid-stripe-tree",
-+		.incompat_flag	= BTRFS_FEATURE_INCOMPAT_RAID_STRIPE_TREE,
-+		.sysfs_name	= NULL,
-+		VERSION_NULL(compat),
-+		VERSION_NULL(safe),
-+		VERSION_NULL(default),
-+		.desc		= "raid stripe tree"
- 	},
- #endif
- 	/* Keep this one last */
-diff --git a/kernel-shared/ctree.h b/kernel-shared/ctree.h
-index de09c15ca0eb..f6ee467adaab 100644
---- a/kernel-shared/ctree.h
-+++ b/kernel-shared/ctree.h
-@@ -102,7 +102,8 @@ static inline u32 __BTRFS_LEAF_DATA_SIZE(u32 nodesize)
- 	 BTRFS_FEATURE_INCOMPAT_RAID1C34 |		\
- 	 BTRFS_FEATURE_INCOMPAT_METADATA_UUID |		\
- 	 BTRFS_FEATURE_INCOMPAT_ZONED |			\
--	 BTRFS_FEATURE_INCOMPAT_EXTENT_TREE_V2)
-+	 BTRFS_FEATURE_INCOMPAT_EXTENT_TREE_V2 |	\
-+	 BTRFS_FEATURE_INCOMPAT_RAID_STRIPE_TREE)
- #else
- #define BTRFS_FEATURE_INCOMPAT_SUPP			\
- 	(BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF |		\
-diff --git a/kernel-shared/zoned.c b/kernel-shared/zoned.c
-index d187c5763406..d8fad4319e44 100644
---- a/kernel-shared/zoned.c
-+++ b/kernel-shared/zoned.c
-@@ -737,7 +737,7 @@ out:
- 	return ret;
+diff --git a/kernel-shared/volumes.c b/kernel-shared/volumes.c
+index 95d5930b95d8..2081f7db088f 100644
+--- a/kernel-shared/volumes.c
++++ b/kernel-shared/volumes.c
+@@ -1796,6 +1796,105 @@ int btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
+ 				 multi_ret, mirror_num, raid_map_ret);
  }
  
--bool zoned_profile_supported(u64 map_type)
-+bool zoned_profile_supported(u64 map_type, bool rst)
- {
- 	bool data = (map_type & BTRFS_BLOCK_GROUP_DATA);
- 	u64 flags = (map_type & BTRFS_BLOCK_GROUP_PROFILE_MASK);
-@@ -746,9 +746,37 @@ bool zoned_profile_supported(u64 map_type)
- 	if (flags == 0)
- 		return true;
- 
--	/* We can support DUP on metadata */
-+#if EXPERIMENTAL
-+	if (data) {
-+		if ((flags & BTRFS_BLOCK_GROUP_DUP) && rst)
-+			return true;
-+		/* Data RAID1 needs a raid-stripe-tree */
-+		if ((flags & BTRFS_BLOCK_GROUP_RAID1_MASK) && rst)
-+			return true;
-+		/* Data RAID0 needs a raid-stripe-tree */
-+		if ((flags & BTRFS_BLOCK_GROUP_RAID0) && rst)
-+			return true;
-+		/* Data RAID10 needs a raid-stripe-tree */
-+		if ((flags & BTRFS_BLOCK_GROUP_RAID10) && rst)
-+			return true;
-+	} else {
-+		/* We can support DUP on metadata/system */
-+		if (flags & BTRFS_BLOCK_GROUP_DUP)
-+			return true;
-+		/* We can support RAID1 on metadata/system */
-+		if (flags & BTRFS_BLOCK_GROUP_RAID1_MASK)
-+			return true;
-+		/* We can support RAID0 on metadata/system */
-+		if (flags & BTRFS_BLOCK_GROUP_RAID0)
-+			return true;
-+		/* We can support RAID10 on metadata/system */
-+		if (flags & BTRFS_BLOCK_GROUP_RAID10)
-+			return true;
-+	}
-+#else
- 	if (!data && (flags & BTRFS_BLOCK_GROUP_DUP))
- 		return true;
-+#endif
- 
- 	/* All other profiles are not supported yet */
- 	return false;
-@@ -863,7 +891,7 @@ int btrfs_load_block_group_zone_info(struct btrfs_fs_info *fs_info,
- 		}
- 	}
- 
--	if (!zoned_profile_supported(map->type)) {
-+	if (!zoned_profile_supported(map->type, !!fs_info->stripe_root)) {
- 		error("zoned: profile %s not yet supported",
- 		      btrfs_group_profile_str(map->type));
- 		ret = -EINVAL;
-diff --git a/kernel-shared/zoned.h b/kernel-shared/zoned.h
-index 9e4162cf25c5..6efc60281bc9 100644
---- a/kernel-shared/zoned.h
-+++ b/kernel-shared/zoned.h
-@@ -133,7 +133,7 @@ static inline bool btrfs_dev_is_empty_zone(struct btrfs_device *device, u64 pos)
- 	return zinfo->zones[zno].cond == BLK_ZONE_COND_EMPTY;
- }
- 
--bool zoned_profile_supported(u64 map_type);
-+bool zoned_profile_supported(u64 map_type, bool rst);
- int btrfs_reset_dev_zone(int fd, struct blk_zone *zone);
- u64 btrfs_find_allocatable_zones(struct btrfs_device *device, u64 hole_start,
- 				 u64 hole_end, u64 num_bytes);
-@@ -214,7 +214,7 @@ static inline int btrfs_wipe_temporary_sb(struct btrfs_fs_devices *fs_devices)
- 	return 0;
- }
- 
--static inline bool zoned_profile_supported(u64 map_type)
-+static inline bool zoned_profile_supported(u64 map_type, bool rst)
- {
- 	return false;
- }
-diff --git a/mkfs/main.c b/mkfs/main.c
-index 7acd39ec6531..7d07ba1e7001 100644
---- a/mkfs/main.c
-+++ b/mkfs/main.c
-@@ -962,6 +962,38 @@ fail:
- 	return ret;
- }
- 
-+static int setup_raid_stripe_tree_root(struct btrfs_fs_info *fs_info)
++static bool btrfs_need_stripe_tree_update(struct btrfs_fs_info *fs_info,
++					u64 map_type)
 +{
-+	struct btrfs_trans_handle *trans;
-+	struct btrfs_root *stripe_root;
-+	struct btrfs_key key = {
-+		.objectid = BTRFS_RAID_STRIPE_TREE_OBJECTID,
-+		.type = BTRFS_ROOT_ITEM_KEY,
-+	};
++#if EXPERIMENTAL
++	const bool is_data = (map_type & BTRFS_BLOCK_GROUP_DATA);
++
++	if (!btrfs_fs_incompat(fs_info, RAID_STRIPE_TREE))
++		return false;
++
++	if (!fs_info->stripe_root)
++		return false;
++
++	if (!is_data)
++		return false;
++
++	if (map_type & BTRFS_BLOCK_GROUP_DUP)
++		return true;
++
++	if (map_type & BTRFS_BLOCK_GROUP_RAID1_MASK)
++		return true;
++
++	if (map_type & BTRFS_BLOCK_GROUP_RAID0)
++		return true;
++
++	if (map_type & BTRFS_BLOCK_GROUP_RAID10)
++		return true;
++
++#endif
++	return false;
++}
++
++static int btrfs_stripe_tree_logical_to_physical(struct btrfs_fs_info *fs_info,
++						u64 logical,
++						struct btrfs_bio_stripe *stripe)
++{
++	struct btrfs_root *root = fs_info->stripe_root;
++	struct btrfs_path path = { 0 };
++	struct btrfs_key key;
++	struct extent_buffer *leaf;
++	int slot;
 +	int ret;
 +
-+	trans = btrfs_start_transaction(fs_info->tree_root, 0);
-+	if (IS_ERR(trans))
-+		return PTR_ERR(trans);
++	key.objectid = logical;
++	key.type = BTRFS_RAID_STRIPE_KEY;
++	key.offset = 0;
 +
-+	stripe_root = btrfs_create_tree(trans, fs_info, &key);
-+	if (IS_ERR(stripe_root))  {
-+		ret =  PTR_ERR(stripe_root);
-+		goto abort;
-+	}
-+	fs_info->stripe_root = stripe_root;
-+	add_root_to_dirty_list(stripe_root);
-+
-+	ret = btrfs_commit_transaction(trans, fs_info->tree_root);
-+	if (ret)
++	ret = btrfs_search_slot(NULL, root, &key, &path, 0, 0);
++	if (ret < 0)
 +		return ret;
 +
-+	return 0;
-+abort:
-+	btrfs_abort_transaction(trans, ret);
++	while (1) {
++		struct btrfs_key found_key;
++		struct btrfs_stripe_extent *extent;
++		int num_stripes;
++		u32 item_size;
++		int i;
++
++		leaf = path.nodes[0];
++		slot = path.slots[0];
++
++		if (slot >= btrfs_header_nritems(leaf)) {
++			ret = btrfs_next_leaf(root, &path);
++			if (ret == 0)
++				continue;
++			if (ret < 0)
++				goto error;
++			break;
++		}
++
++		btrfs_item_key_to_cpu(leaf, &found_key, slot);
++
++		if (found_key.type != BTRFS_RAID_STRIPE_KEY)
++			goto next;
++
++		extent = btrfs_item_ptr(leaf, slot,
++					struct btrfs_stripe_extent);
++		item_size = btrfs_item_size(leaf, slot);
++		num_stripes = (item_size -
++			offsetof(struct btrfs_stripe_extent, strides)) /
++			sizeof(struct btrfs_raid_stride);
++
++		for (i = 0; i < num_stripes; i++) {
++			if (stripe->dev->devid !=
++				btrfs_raid_stride_devid_nr(leaf, extent, i))
++				continue;
++			stripe->physical = btrfs_raid_stride_offset_nr(leaf, extent, i);
++			btrfs_release_path(&path);
++			return 0;
++		}
++
++next:
++		path.slots[0]++;
++	}
++
++	btrfs_release_path(&path);
++error:
 +	return ret;
 +}
 +
- /* Thread callback for device preparation */
- static void *prepare_one_device(void *ctx)
- {
-@@ -1472,10 +1504,39 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
- 	if (ret)
- 		goto error;
+ int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
+ 		      u64 logical, u64 *length, u64 *type,
+ 		      struct btrfs_multi_bio **multi_ret, int mirror_num,
+@@ -1988,10 +2087,21 @@ again:
+ 	BUG_ON(stripe_index >= map->num_stripes);
  
--	if (opt_zoned && (!zoned_profile_supported(BTRFS_BLOCK_GROUP_METADATA | metadata_profile) ||
--		      !zoned_profile_supported(BTRFS_BLOCK_GROUP_DATA | data_profile))) {
--		error("zoned mode does not yet support RAID/DUP profiles, please specify '-d single -m single' manually");
--		goto error;
-+#if EXPERIMENTAL
-+	if (opt_zoned && device_count) {
-+		switch (data_profile & BTRFS_BLOCK_GROUP_PROFILE_MASK) {
-+		case BTRFS_BLOCK_GROUP_DUP:
-+		case BTRFS_BLOCK_GROUP_RAID1:
-+		case BTRFS_BLOCK_GROUP_RAID1C3:
-+		case BTRFS_BLOCK_GROUP_RAID1C4:
-+		case BTRFS_BLOCK_GROUP_RAID0:
-+		case BTRFS_BLOCK_GROUP_RAID10:
-+			features.incompat_flags |=
-+				BTRFS_FEATURE_INCOMPAT_RAID_STRIPE_TREE;
-+			break;
-+		default:
-+			break;
+ 	for (i = 0; i < multi->num_stripes; i++) {
+-		multi->stripes[i].physical =
+-			map->stripes[stripe_index].physical + stripe_offset +
+-			stripe_nr * map->stripe_len;
+ 		multi->stripes[i].dev = map->stripes[stripe_index].dev;
++
++		if (stripes_allocated &&
++			btrfs_need_stripe_tree_update(fs_info, map->type)) {
++			int ret;
++
++			ret = btrfs_stripe_tree_logical_to_physical(fs_info, logical,
++								&multi->stripes[i]);
++			if (ret)
++				return ret;
++		} else {
++			multi->stripes[i].physical =
++				map->stripes[stripe_index].physical +
++				stripe_offset + stripe_nr * map->stripe_len;
 +		}
-+	}
-+#endif
-+
-+	if (opt_zoned) {
-+		u64 metadata = BTRFS_BLOCK_GROUP_METADATA | metadata_profile;
-+		u64 data = BTRFS_BLOCK_GROUP_DATA | data_profile;
-+#if EXPERIMENTAL
-+		bool rst = features.incompat_flags &
-+			BTRFS_FEATURE_INCOMPAT_RAID_STRIPE_TREE;
-+#else
-+		bool rst = false;
-+#endif
-+
-+		if (!zoned_profile_supported(metadata, rst) ||
-+		    !zoned_profile_supported(data, rst)) {
-+			error("zoned mode does not yet support RAID/DUP profiles, please specify '-d single -m single' manually");
-+			goto error;
-+		}
+ 		stripe_index++;
  	}
- 
- 	t_prepare = calloc(device_count, sizeof(*t_prepare));
-@@ -1585,6 +1646,15 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
- 		goto error;
- 	}
- 
-+	if (features.incompat_flags & BTRFS_FEATURE_INCOMPAT_RAID_STRIPE_TREE) {
-+		ret = setup_raid_stripe_tree_root(fs_info);
-+		if (ret < 0) {
-+			error("failed to initialize raid-stripe-tree: %d (%m)",
-+			      ret);
-+			goto out;
-+		}
-+	}
-+
- 	trans = btrfs_start_transaction(root, 1);
- 	if (IS_ERR(trans)) {
- 		errno = -PTR_ERR(trans);
-@@ -1750,6 +1820,7 @@ raid_groups:
- 			goto out;
- 		}
- 	}
-+
- 	if (bconf.verbose) {
- 		char features_buf[BTRFS_FEATURE_STRING_BUF_SIZE];
- 
+ 	*multi_ret = multi;
 
 -- 
 2.41.0

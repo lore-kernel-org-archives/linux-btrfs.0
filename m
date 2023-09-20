@@ -2,149 +2,174 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 574CCCE79D2
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Sep 2023 14:07:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E2644CE79CE
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Sep 2023 14:10:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235469AbjITOHL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 20 Sep 2023 10:07:11 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53936 "EHLO
+        id S234547AbjITOKn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 20 Sep 2023 10:10:43 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59402 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236279AbjITOHK (ORCPT
+        with ESMTP id S234100AbjITOKm (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Sep 2023 10:07:10 -0400
-Received: from mail-qk1-f179.google.com (mail-qk1-f179.google.com [209.85.222.179])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EF818C6
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Sep 2023 07:07:03 -0700 (PDT)
-Received: by mail-qk1-f179.google.com with SMTP id af79cd13be357-773ca5c1503so240899585a.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Sep 2023 07:07:03 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1695218822; x=1695823622;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=Y/W4N5r426GKb9x1dneBJYVT4qJsb+kwhD7PIIfH2cA=;
-        b=jtv1k6GFROkztEeK1coYCGN/1EiBImLhKNTjRdYp+dWIjDQBNm6OxEFfOx9NSlcVT1
-         isUrpVt6GFOQjHNlyyuszHLB645S2s06BEkYTeAVxEi8ndsrR7gluj6lZ3csjIXjBMMk
-         U1QigZ5GS/TxxWb942B5oeXokJXlaqwZTFrOLJkgRLCNea8c1VQTaY5i/NkUXpjffHl+
-         K2xWu3qS6Sybtu+6TF9zANeokelgoPm0Gu58hQmb6ReUorIAc37KfG+6efaUkf7ApZo0
-         Gb/xVbQVG8njLqesbKCD9SGzJkb4Y5EF0/P2fhSaw5Zdmtpscv2sp54KS9O1F98TbcqV
-         8iaQ==
-X-Gm-Message-State: AOJu0YwpIpID2uIjrlPx63Q9sJhy90HUHcNJ4oPIITQk+9Gous0SWF6D
-        Qi9y1Y33W6jGsOr3OjSHtFYb2ckjMI8HFB9O
-X-Google-Smtp-Source: AGHT+IGt/gXIL3E8KsfDBSN3PzrNo2mxFinif+HNB4o1UFl9Rr3eOyrdjvzhYA3ko4Bz5kwdAoO7gA==
-X-Received: by 2002:a05:6214:716:b0:649:cbd0:8127 with SMTP id c22-20020a056214071600b00649cbd08127mr2149035qvz.57.1695218822560;
-        Wed, 20 Sep 2023 07:07:02 -0700 (PDT)
-Received: from Belldandy-Slimbook.tail03774.ts.net (ool-18e49371.dyn.optonline.net. [24.228.147.113])
-        by smtp.gmail.com with ESMTPSA id v1-20020a0cdd81000000b006589375b888sm345447qvk.67.2023.09.20.07.07.01
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 20 Sep 2023 07:07:01 -0700 (PDT)
-From:   Neal Gompa <neal@gompa.dev>
-To:     Linux BTRFS Development <linux-btrfs@vger.kernel.org>
-Cc:     Neal Gompa <neal@gompa.dev>, Anand Jain <anand.jain@oracle.com>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>, Qu Wenruo <wqu@suse.com>,
-        David Sterba <dsterba@suse.cz>,
-        Hector Martin <marcan@marcan.st>,
-        Sven Peter <sven@svenpeter.dev>,
-        Davide Cavalca <davide@cavalca.name>,
-        Jens Axboe <axboe@fb.com>, Asahi Lina <lina@asahilina.net>,
-        Asahi Linux <asahi@lists.linux.dev>,
-        Josef Bacik <josef@toxicpanda.com>
-Subject: [PATCH v2 1/1] btrfs-progs: mkfs: Enforce 4k sectorsize by default
-Date:   Wed, 20 Sep 2023 10:06:14 -0400
-Message-ID: <20230920140635.2066172-2-neal@gompa.dev>
-X-Mailer: git-send-email 2.41.0
-In-Reply-To: <20230920140635.2066172-1-neal@gompa.dev>
-References: <20230920140635.2066172-1-neal@gompa.dev>
+        Wed, 20 Sep 2023 10:10:42 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 43F58AC
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Sep 2023 07:10:36 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 01D04200DB;
+        Wed, 20 Sep 2023 14:10:35 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1695219035;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=bVc1bOmLqte9Q7y2gDxvd8gmd/8A/frcyowN4odZMpI=;
+        b=2nlsMlciChTQrvyFz912gExjUI9v69Hr+Lznt2UjMyQqZ0hvelAyXhM6anH3l+6z2m9bWu
+        7e7Hvshv5n1HBopHGeA73UcNfMqY74WfCEsR/ubTTD5xudWlLksiXJu5uRAYJYtgZIMBu3
+        ow6Z+oO8NnqH0TaZLaIv78j/SRXHOtQ=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1695219035;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=bVc1bOmLqte9Q7y2gDxvd8gmd/8A/frcyowN4odZMpI=;
+        b=tDQnBTTCAZqZyvh0ABYBjcZK6jp/pFnMvSM0zpL2EmVxQGJ/Ozxx7zn7vcZkY/q/lgOFrf
+        dFwzTEqk024r1oDw==
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id C29851333E;
+        Wed, 20 Sep 2023 14:10:34 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id 5JTHLlr9CmUZGQAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Wed, 20 Sep 2023 14:10:34 +0000
+Date:   Wed, 20 Sep 2023 16:04:00 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: Re: [PATCH] btrfs: adjust overcommit logic when very close to full
+Message-ID: <20230920140400.GA2268@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <b97e47ce0ce1d41d221878de7d6090b90aa7a597.1695065233.git.josef@toxicpanda.com>
+ <20230918212950.GP2747@twin.jikos.cz>
+ <20230920140147.GB3796940@perftesting>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20230920140147.GB3796940@perftesting>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We have had working subpage support in Btrfs for many cycles now.
-Generally, we do not want people creating filesystems by default
-with non-4k sectorsizes since it creates portability problems.
+On Wed, Sep 20, 2023 at 10:01:47AM -0400, Josef Bacik wrote:
+> On Mon, Sep 18, 2023 at 11:29:50PM +0200, David Sterba wrote:
+> > On Mon, Sep 18, 2023 at 03:27:47PM -0400, Josef Bacik wrote:
+> > > A user reported some unpleasant behavior with very small file systems.
+> > > The reproducer is this
+> > > 
+> > > mkfs.btrfs -f -m single -b 8g /dev/vdb
+> > > mount /dev/vdb /mnt/test
+> > > dd if=/dev/zero of=/mnt/test/testfile bs=512M count=20
+> > > 
+> > > This will result in usage that looks like this
+> > > 
+> > > Overall:
+> > >     Device size:                   8.00GiB
+> > >     Device allocated:              8.00GiB
+> > >     Device unallocated:            1.00MiB
+> > >     Device missing:                  0.00B
+> > >     Device slack:                  2.00GiB
+> > >     Used:                          5.47GiB
+> > >     Free (estimated):              2.52GiB      (min: 2.52GiB)
+> > >     Free (statfs, df):               0.00B
+> > >     Data ratio:                       1.00
+> > >     Metadata ratio:                   1.00
+> > >     Global reserve:                5.50MiB      (used: 0.00B)
+> > >     Multiple profiles:                  no
+> > > 
+> > > Data,single: Size:7.99GiB, Used:5.46GiB (68.41%)
+> > >    /dev/vdb        7.99GiB
+> > > 
+> > > Metadata,single: Size:8.00MiB, Used:5.77MiB (72.07%)
+> > >    /dev/vdb        8.00MiB
+> > > 
+> > > System,single: Size:4.00MiB, Used:16.00KiB (0.39%)
+> > >    /dev/vdb        4.00MiB
+> > > 
+> > > Unallocated:
+> > >    /dev/vdb        1.00MiB
+> > > 
+> > > As you can see we've gotten ourselves quite full with metadata, with all
+> > > of the disk being allocated for data.
+> > > 
+> > > On smaller file systems there's not a lot of time before we get full, so
+> > > our overcommit behavior bites us here.  Generally speaking data
+> > > reservations result in chunk allocations as we assume reservation ==
+> > > actual use for data.  This means at any point we could end up with a
+> > > chunk allocation for data, and if we're very close to full we could do
+> > > this before we have a chance to figure out that we need another metadata
+> > > chunk.
+> > > 
+> > > Address this by adjusting the overcommit logic.  Simply put we need to
+> > > take away 1 chunk from the available chunk space in case of a data
+> > > reservation.  This will allow us to stop overcommitting before we
+> > > potentially lose this space to a data allocation.  With this fix in
+> > > place we properly allocate a metadata chunk before we're completely
+> > > full, allowing for enough slack space in metadata.
+> > > 
+> > > Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> > > ---
+> > >  fs/btrfs/space-info.c | 17 +++++++++++++++++
+> > >  1 file changed, 17 insertions(+)
+> > > 
+> > > diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
+> > > index d7e8cd4f140c..7aa53058d893 100644
+> > > --- a/fs/btrfs/space-info.c
+> > > +++ b/fs/btrfs/space-info.c
+> > > @@ -365,6 +365,23 @@ static u64 calc_available_free_space(struct btrfs_fs_info *fs_info,
+> > >  	factor = btrfs_bg_type_to_factor(profile);
+> > >  	avail = div_u64(avail, factor);
+> > >  
+> > > +	/*
+> > > +	 * Since data allocations immediately use block groups as part of the
+> > > +	 * reservation, because we assume that data reservations will == actual
+> > > +	 * usage, we could potentially overcommit and then immediately have that
+> > > +	 * available space used by a data allocation, which could put us in a
+> > > +	 * bind when we get close to filling the file system.
+> > > +	 *
+> > > +	 * To handle this simply remove 1G (which is our current maximum chunk
+> > > +	 * allocation size) from the available space.  If we are relatively
+> > > +	 * empty this won't affect our ability to overcommit much, and if we're
+> > > +	 * very close to full it'll keep us from getting into a position where
+> > > +	 * we've given ourselves very little metadata wiggle room.
+> > > +	 */
+> > > +	if (avail < SZ_1G)
+> > > +		return 0;
+> > > +	avail -= SZ_1G;
+> > 
+> > Should the value be derived from the alloc_chunk_ctl::max_chunk_size or
+> > chunk_size? Or at least use a named constant, similar to
+> > BTRFS_MAX_DATA_CHUNK_SIZE .
+> 
+> I originally had this, but we still have this logic in the chunk allocator
+> 
+> 	/* Stripe size should not go beyond 1G. */
+> 	ctl->stripe_size = min_t(u64, ctl->stripe_size, SZ_1G);
+> 
+> max_chunk_size tends to be larger than this, BTRFS_MAX_DATA_CHUNK_SIZE is 10G.
+> 
+> We need to go back and clean up the logic to not have the SZ_1G here, rename it
+> to BTRFS_MAX_CHUNK_SIZE or something like that, and then update my patch to use
+> this.
+> 
+> I opted for the cleanest fix for now, the cleanups can come after.
+> Alternatively I can do the cleanups and do the fix, it's up to you.  Thanks,
 
-Signed-off-by: Neal Gompa <neal@gompa.dev>
-
-Reviewed-by: Anand Jain <anand.jain@oracle.com>
-Reviewed-by: Qu Wenruo <wqu@suse.com>
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
----
- Documentation/Subpage.rst    | 17 +++++++++--------
- Documentation/mkfs.btrfs.rst | 13 +++++++++----
- mkfs/main.c                  |  2 +-
- 3 files changed, 19 insertions(+), 13 deletions(-)
-
-diff --git a/Documentation/Subpage.rst b/Documentation/Subpage.rst
-index c762b6a3..c9c42341 100644
---- a/Documentation/Subpage.rst
-+++ b/Documentation/Subpage.rst
-@@ -9,18 +9,19 @@ to the exactly same size of the block and page. On x86_64 this is typically
- pages, like 64KiB on 64bit ARM or PowerPC. This means filesystems created
- with 64KiB sector size cannot be mounted on a system with 4KiB page size.
- 
--While with subpage support systems with 64KiB page size can create
--and mount filesystems with 4KiB sectorsize.  This still needs to use option "-s
--4k" option for :command:`mkfs.btrfs`.
-+Since v6.6, filesystems are created with a 4KiB sectorsize by default,
-+though it remains possible to create filesystems with other page sizes
-+(such as 64KiB with the "-s 64k" option for :command:`mkfs.btrfs`). This
-+ensures that new filesystems are compatible across other architecture
-+variants using larger page sizes.
- 
- Requirements, limitations
- -------------------------
- 
--The initial subpage support has been added in v5.15, although it's still
--considered as experimental, most features are already working without problems.
--On a 64KiB page system filesystem with 4KiB sectorsize can be mounted and used
--as usual as long as the initial mount succeeds. There are cases a mount will be
--rejected when verifying compatible features.
-+The initial subpage support has been added in v5.15. Most features are
-+already working without problems. On a 64KiB page system, a filesystem with
-+4KiB sectorsize can be mounted and used as long as the initial mount succeeds.
-+Subpage support is used by default for systems with a non-4KiB page size since v6.6.
- 
- Please refer to status page of :ref:`status-subpage-block-size` for
- compatibility.
-diff --git a/Documentation/mkfs.btrfs.rst b/Documentation/mkfs.btrfs.rst
-index 1fca7448..034473f4 100644
---- a/Documentation/mkfs.btrfs.rst
-+++ b/Documentation/mkfs.btrfs.rst
-@@ -122,10 +122,15 @@ OPTIONS
- -s|--sectorsize <size>
-         Specify the sectorsize, the minimum data block allocation unit.
- 
--        The default value is the page size and is autodetected. If the sectorsize
--        differs from the page size, the created filesystem may not be mountable by the
--        running kernel. Therefore it is not recommended to use this option unless you
--        are going to mount it on a system with the appropriate page size.
-+        By default, the value is 4KiB, but it can be manually set to match the
-+        system page size. However, if the sector size is different from the page
-+        size, the resulting filesystem may not be mountable by the current
-+        kernel, apart from the default 4KiB. Hence, using this option is not
-+        advised unless you intend to mount it on a system with the suitable
-+        page size.
-+
-+        .. note::
-+                Versions prior to 6.6 set the sectorsize matching to the page size.
- 
- -L|--label <string>
-         Specify a label for the filesystem. The *string* should be less than 256
-diff --git a/mkfs/main.c b/mkfs/main.c
-index 1c5d668e..bd2e4350 100644
---- a/mkfs/main.c
-+++ b/mkfs/main.c
-@@ -1204,7 +1204,7 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
- 	}
- 
- 	if (!sectorsize)
--		sectorsize = (u32)sysconf(_SC_PAGESIZE);
-+		sectorsize = (u32)SZ_4K;
- 	if (btrfs_check_sectorsize(sectorsize))
- 		goto error;
- 
--- 
-2.41.0
-
+For a quick fix it's ok, at least it's commented and not just a random
+magic constant. The cleanups can be done later. Thanks.

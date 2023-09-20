@@ -2,173 +2,127 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BE4CDC04A97
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Sep 2023 15:36:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D1A50C04AA7
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Sep 2023 15:40:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236594AbjITPgG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 20 Sep 2023 11:36:06 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55856 "EHLO
+        id S236617AbjITPkr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 20 Sep 2023 11:40:47 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55636 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235406AbjITPgD (ORCPT
+        with ESMTP id S236627AbjITPkq (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Sep 2023 11:36:03 -0400
+        Wed, 20 Sep 2023 11:40:46 -0400
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A45F6AF;
-        Wed, 20 Sep 2023 08:35:57 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CA309D9;
+        Wed, 20 Sep 2023 08:40:38 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 5E66821FDD;
-        Wed, 20 Sep 2023 15:35:56 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 8093122008;
+        Wed, 20 Sep 2023 15:40:37 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1695224156;
+        t=1695224437;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=zxSJenUlNqGXEO8c0cbIPmym8JyNrPQo7RsQf1P+u4I=;
-        b=p6Dmul3+Wvg6lGgxB2gCRlUba39jDjlkx/YfgwSXblEVN4H15iO7SqSJD+dM+aAzVkFgDM
-        Ix6DscwLAh50WdZSj2VZnXPKwnzNA10OfEh0AZk5oFzqfxL3V8oyIog3MgJbia2aDbgWXe
-        MlszYhSIDPxAY0p8rHN3eq2q4Uk+eIc=
+        bh=qGHbOYY7FsnjaS3nEMPoYfjC2fCOhS5YY3UGPdYWWqA=;
+        b=eUEUXDPJpfeyk0v2ba1gL0uQKM+jaVmIO63x8U5ylhQzfXlh8sClPT8caUaVp1Okm1lvDH
+        vkSmEXH5KFJtIEIx5rkx3XuwqyJRvNxg5RHjnl+ynx4ocAGvtvLd7bIi9mQqVlzBub0ivQ
+        XKWoywhL5PGOnZrOHiQu3M8EEHa9P6w=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1695224156;
+        s=susede2_ed25519; t=1695224437;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=zxSJenUlNqGXEO8c0cbIPmym8JyNrPQo7RsQf1P+u4I=;
-        b=sxwEx9BCYyuUL+uKjVahABT2/jeQUemeP29QGJGkGMm0Y5WuoyUlK9azsEy+tgjBcfTUgo
-        niDoI3VXruTCCFCQ==
+        bh=qGHbOYY7FsnjaS3nEMPoYfjC2fCOhS5YY3UGPdYWWqA=;
+        b=f87QlHrOYk6ACyn7nYXDy+EjkZ/aqwGw6soUlxxliaVK2q1+VSJYLg0A7BWUvXuhR2zpl3
+        gypAKvtw9+KA7uBw==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 1EC3F132C7;
-        Wed, 20 Sep 2023 15:35:56 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 37275132C7;
+        Wed, 20 Sep 2023 15:40:37 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id WIHFBlwRC2U6SgAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Wed, 20 Sep 2023 15:35:56 +0000
-Date:   Wed, 20 Sep 2023 17:29:22 +0200
+        id waTIDHUSC2XXTAAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Wed, 20 Sep 2023 15:40:37 +0000
+Date:   Wed, 20 Sep 2023 17:34:03 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     Mirsad Todorovac <mirsad.todorovac@alu.unizg.hr>
-Cc:     linux-btrfs@vger.kernel.org, Josef Bacik <josef@toxicpanda.com>,
-        Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
-        linux-kernel@vger.kernel.org
-Subject: Re: BUG: KCSAN: data-race in btrfs_calculate_inode_block_rsv_size
- [btrfs] / btrfs_use_block_rsv [btrfs] [EXPERIMENTAL PATCH]
-Message-ID: <20230920152922.GC2268@twin.jikos.cz>
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     dsterba@suse.cz, Johannes Thumshirn <Johannes.Thumshirn@wdc.com>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>, Qu Wenru <wqu@suse.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+Subject: Re: [PATCH 1/4] btrfs: fix 64bit division in
+ btrfs_insert_striped_mirrored_raid_extents
+Message-ID: <20230920153403.GD2268@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <c9e4e480-6f52-949b-e4b6-3eb0fcda3f83@alu.unizg.hr>
+References: <20230918-rst-updates-v1-0-17686dc06859@wdc.com>
+ <20230918-rst-updates-v1-1-17686dc06859@wdc.com>
+ <CAMuHMdWM3_cj4Nb96pZQfErx7n+0Cd7RUQZV+bpvr1Tz5T3sgw@mail.gmail.com>
+ <e12a171e-d3b8-401e-b01a-9440f5c75293@wdc.com>
+ <20230918162448.GI2747@suse.cz>
+ <a0a5c7a3-4e55-4490-a2f9-fae2b0247829@gmx.com>
+ <20230919135810.GT2747@twin.jikos.cz>
+ <a364f344-b718-48ff-9e2a-484c5ded6e7f@gmx.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <c9e4e480-6f52-949b-e4b6-3eb0fcda3f83@alu.unizg.hr>
+In-Reply-To: <a364f344-b718-48ff-9e2a-484c5ded6e7f@gmx.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Sep 20, 2023 at 08:18:35AM +0200, Mirsad Todorovac wrote:
-> Hi,
+On Wed, Sep 20, 2023 at 07:20:49AM +0930, Qu Wenruo wrote:
+> >>>>> What if the quotient does not fit in a signed 32-bit value?
+> >>>>
+> >>>> Then you've bought a lot of HDDs ;-)
+> >>>>
+> >>>> Jokes aside, yes this is theoretically correct. Dave can you fix
+> >>>> max_stripes up to be u64 when applying?
+> >>>
+> >>> I think we can keep it int, or unsigned int if needed, we can't hit such
+> >>> huge values for rw_devices. The 'theoretically' would fit for a machine
+> >>> with infinite resources, otherwise the maximum number of devices I'd
+> >>> expect is a few thousand.
+> >>
+> >> In fact, we already have an check in btrfs_validate_super(), if the
+> >> num_devices is over 1<<31, we would reject the fs.
+> >
+> > No, it's just a warning in that case.
 > 
-> This is your friendly bug reporter again.
+> We can make it a proper reject.
 > 
-> Please don't throw stuff at me, as I found another KCSAN data-race problem.
+> >
+> >> I think we should be safe to further reduce the threshold.
+> >>
+> >> U16_MAX sounds a valid and sane value to me.
+> >> If no rejection I can send out a patch for this.
+> >>
+> >> And later change internal rw_devices/num_devices to u16.
+> >
+> > U16 does not make sense here, it's not a native int type on many
+> > architectures and generates awkward assembly code. We use it in
+> > justified cases where it's saving space in structures that are allocated
+> > thousand times. The arbitrary limit 65536 is probably sane but not
+> > much different than 1<<31, practically not hit and was useful to
+> > note fuzzed superblocks.
 > 
-> I feel like a boy who cried wolf ...
+> OK, we can make it unsigned int (mostly u32) for fs_info::*_devices, but
+> still do extra limits on things like device add to limit it to U16_MAX.
 > 
-> I hope this will get some attention, as it looks this time like a real btrfs problem that could cause
-> the kernel module to make a wrong turn when managing storage in different threads simultaneously and
-> lead to the corruption of data. However, I do not have an example of this corruption, it is by now only
-> theoretical in this otherwise great filesystem.
-> 
-> In fact, I can announce quite a number of KCSAN bugs already in dmesg log:
-> 
->     # of
-> occuren
->      ces problematic function
-> -------------------------------------------
->      182 __bitmap_and+0xa3/0x110
->        2 __bitmap_weight+0x62/0xa0
->      138 __call_rcu_common.constprop.0
->        3 __cgroup_account_cputime
->        1 __dentry_kill
->        3 __mod_lruvec_page_state
->       15 __percpu_counter_compare
->        1 __percpu_counter_sum+0x8f/0x120
->        1 acpi_ut_acquire_mutex
->        2 amdgpu_fence_emit
->        1 btrfs_calculate_inode_block_rsv_size
->        1 btrfs_page_set_uptodate
->       28 copy_from_read_buf
->        3 d_add
->        3 d_splice_alias
->        1 delayacct_add_tsk+0x10d/0x630
->        7 do_epoll_ctl
->        1 do_vmi_align_munmap
->       86 drm_sched_entity_is_ready
->        4 drm_sched_entity_pop_job
->        3 enqueue_timer
->        1 finish_fault+0xde/0x360
->        2 generic_fillattr
->        2 getrusage
->        9 getrusage+0x3ba/0xaa0
->        1 getrusage+0x3df/0xaa0
->        6 inode_needs_update_time
->        1 inode_set_ctime_current
->        1 inode_update_timestamps
->        3 kernfs_refresh_inode
->       22 ktime_get_mono_fast_ns+0x87/0x120
->       13 ktime_get_mono_fast_ns+0xb0/0x120
->       24 ktime_get_mono_fast_ns+0xc0/0x120
->       79 mas_topiary_replace
->       12 mas_wr_modify
->       61 mas_wr_node_store
->        1 memchr_inv+0x71/0x160
->        1 memchr_inv+0xcf/0x160
->       19 n_tty_check_unthrottle
->        5 n_tty_kick_worker
->       35 n_tty_poll
->       32 n_tty_read
->        1 n_tty_read+0x5f8/0xaf0
->        3 osq_lock
->       27 process_one_work
->        4 process_one_work+0x169/0x700
->        2 rcu_implicit_dynticks_qs
->        1 show_stat+0x45b/0xb70
->        3 task_mem
->      344 tick_nohz_idle_stop_tick
->       32 tick_nohz_next_event
->        1 tick_nohz_next_event+0xe7/0x1e0
->       90 tick_sched_do_timer
->        5 tick_sched_do_timer+0x2c/0x120
->        1 wbt_done
->        1 wbt_issue
->        2 wq_worker_tick
->       37 xas_clear_mark
-> 
-> ------------------------------------------------------
-> 
-> This report is from a vanilla torvalds tree 6.6-rc2 kernel on Ubuntu 22.04:
-> 
-> [13429.116126] ==================================================================
-> [13429.116794] BUG: KCSAN: data-race in btrfs_calculate_inode_block_rsv_size [btrfs] / btrfs_use_block_rsv [btrfs]
+> Would this be a better solution?
+> At least it would still half the width while keep it native to most (if
+> not all) archs.
 
-Thanks for the report.  Some data races are known to happen in the
-reservation code but all the critical changes are done under locks, so
-an optimistic check may skip locking to check a status but then it's
-done properly again under a lock. Generally speaking.
-
-We had several reports from static checkers and at least in one case we
-added an annotation so KCSAN does not complain:
-
-https://git.kernel.org/linus/748f553c3c4c4f175c6c834358632aff802d72cf
-
-The original report is at
-
-https://lore.kernel.org/linux-btrfs/CAAwBoOJDjei5Hnem155N_cJwiEkVwJYvgN-tQrwWbZQGhFU=cA@mail.gmail.com/
-
-I have briefly looked at your report, it seems to be different from the
-one above but still matches the general approach to the reservations. If
-it's a false flag then we can add another wrapper with the annotation,
-unless it's a real bug.
+I don't see much point changing it from u64, it copies the on-disk type,
+we validate the value on input, then use it as an int type. There are
+not even theoretical problems stemming from the type width. With the
+validations in place we don't need to add any artificial limits to the
+number of devices, like we don't add such limitations elsewhere if not
+necessary.

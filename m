@@ -2,174 +2,185 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E2644CE79CE
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Sep 2023 14:10:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 082A9CE79D3
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Sep 2023 14:12:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234547AbjITOKn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 20 Sep 2023 10:10:43 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59402 "EHLO
+        id S235042AbjITOMS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 20 Sep 2023 10:12:18 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36074 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234100AbjITOKm (ORCPT
+        with ESMTP id S234579AbjITOMR (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Sep 2023 10:10:42 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 43F58AC
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Sep 2023 07:10:36 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 01D04200DB;
-        Wed, 20 Sep 2023 14:10:35 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1695219035;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=bVc1bOmLqte9Q7y2gDxvd8gmd/8A/frcyowN4odZMpI=;
-        b=2nlsMlciChTQrvyFz912gExjUI9v69Hr+Lznt2UjMyQqZ0hvelAyXhM6anH3l+6z2m9bWu
-        7e7Hvshv5n1HBopHGeA73UcNfMqY74WfCEsR/ubTTD5xudWlLksiXJu5uRAYJYtgZIMBu3
-        ow6Z+oO8NnqH0TaZLaIv78j/SRXHOtQ=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1695219035;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=bVc1bOmLqte9Q7y2gDxvd8gmd/8A/frcyowN4odZMpI=;
-        b=tDQnBTTCAZqZyvh0ABYBjcZK6jp/pFnMvSM0zpL2EmVxQGJ/Ozxx7zn7vcZkY/q/lgOFrf
-        dFwzTEqk024r1oDw==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id C29851333E;
-        Wed, 20 Sep 2023 14:10:34 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id 5JTHLlr9CmUZGQAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Wed, 20 Sep 2023 14:10:34 +0000
-Date:   Wed, 20 Sep 2023 16:04:00 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH] btrfs: adjust overcommit logic when very close to full
-Message-ID: <20230920140400.GA2268@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <b97e47ce0ce1d41d221878de7d6090b90aa7a597.1695065233.git.josef@toxicpanda.com>
- <20230918212950.GP2747@twin.jikos.cz>
- <20230920140147.GB3796940@perftesting>
+        Wed, 20 Sep 2023 10:12:17 -0400
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EBE59AD;
+        Wed, 20 Sep 2023 07:12:11 -0700 (PDT)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id BC577C433C7;
+        Wed, 20 Sep 2023 14:12:04 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1695219131;
+        bh=4g0uOk8VBf1uS75R3xOmF3VYJZplWwaP5KLfTlgZo2s=;
+        h=Subject:From:To:Cc:Date:In-Reply-To:References:From;
+        b=BENAfEB/HgQmzD5fI+RYaDQKDw2xSO1A8gbs1mzNEAHZ5eF8Mrg+6+5ditzXbNu5p
+         pJHpwniOJZIpzKCEwFQ09IJaAHI7KYgRKjCiMQRUtr4BdK4vCfNSLf6m1g3NIG7Bw2
+         t18SQAAwoEYSiyBR9LIAUbvAdpXSkrsXjXrkCLr8mBWZQuFbW6PsG9s7WcFHD8kdyJ
+         03cq+sqpDgP8w5cLlAdzE9yzPnkbAPMB5ds0dQ0he+hsuib1kWK9O/1OH5JLJOL14v
+         Bz5P7t1MhdAWiT9KOpNZ1oU51CzNnamG4hM2zLClIkwQAUTtJF6gIvJ3kqYSLPkijU
+         /Ijv/Gjrhoy5g==
+Message-ID: <ca82af4d6a72d7f83223c0ddd74fd9f7bcfa96b1.camel@kernel.org>
+Subject: Re: [PATCH v7 12/13] ext4: switch to multigrain timestamps
+From:   Jeff Layton <jlayton@kernel.org>
+To:     Jan Kara <jack@suse.cz>
+Cc:     Christian Brauner <brauner@kernel.org>,
+        Bruno Haible <bruno@clisp.org>,
+        Xi Ruoyao <xry111@linuxfromscratch.org>, bug-gnulib@gnu.org,
+        Alexander Viro <viro@zeniv.linux.org.uk>,
+        Eric Van Hensbergen <ericvh@kernel.org>,
+        Latchesar Ionkov <lucho@ionkov.net>,
+        Dominique Martinet <asmadeus@codewreck.org>,
+        Christian Schoenebeck <linux_oss@crudebyte.com>,
+        David Howells <dhowells@redhat.com>,
+        Marc Dionne <marc.dionne@auristor.com>,
+        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>, Xiubo Li <xiubli@redhat.com>,
+        Ilya Dryomov <idryomov@gmail.com>,
+        Jan Harkes <jaharkes@cs.cmu.edu>, coda@cs.cmu.edu,
+        Tyler Hicks <code@tyhicks.com>, Gao Xiang <xiang@kernel.org>,
+        Chao Yu <chao@kernel.org>, Yue Hu <huyue2@coolpad.com>,
+        Jeffle Xu <jefflexu@linux.alibaba.com>,
+        Namjae Jeon <linkinjeon@kernel.org>,
+        Sungjong Seo <sj1557.seo@samsung.com>,
+        Jan Kara <jack@suse.com>, Theodore Ts'o <tytso@mit.edu>,
+        Andreas Dilger <adilger.kernel@dilger.ca>,
+        Jaegeuk Kim <jaegeuk@kernel.org>,
+        OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>,
+        Miklos Szeredi <miklos@szeredi.hu>,
+        Bo b Peterson <rpeterso@redhat.com>,
+        Andreas Gruenbacher <agruenba@redhat.com>,
+        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+        Tejun Heo <tj@kernel.org>,
+        Trond Myklebust <trond.myklebust@hammerspace.com>,
+        Anna Schumaker <anna@kernel.org>,
+        Konstantin Komarov <almaz.alexandrovich@paragon-software.com>,
+        Mark Fasheh <mark@fasheh.com>,
+        Joel Becker <jlbec@evilplan.org>,
+        Joseph Qi <joseph.qi@linux.alibaba.com>,
+        Mike Marshall <hubcap@omnibond.com>,
+        Martin Brandenburg <martin@omnibond.com>,
+        Luis Chamberlain <mcgrof@kernel.org>,
+        Kees Cook <keescook@chromium.org>,
+        Iurii Zaikin <yzaikin@google.com>,
+        Steve French <sfrench@samba.org>,
+        Paulo Alcantara <pc@manguebit.com>,
+        Ronnie Sahlberg <ronniesahlberg@gmail.com>,
+        Shyam Prasad N <sprasad@microsoft.com>,
+        Tom Talpey <tom@talpey.com>,
+        Sergey Senozhatsky <senozhatsky@chromium.org>,
+        Richard Weinberger <richard@nod.at>,
+        Hans de Goede <hdegoede@redhat.com>,
+        Hugh Dickins <hughd@google.com>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Amir Goldstein <l@gmail.com>,
+        "Darrick J. Wong" <djwong@kernel.org>,
+        Benjamin Coddington <bcodding@redhat.com>,
+        linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
+        v9fs@lists.linux.dev, linux-afs@lists.infradead.org,
+        linux-btrfs@vger.kernel.org, ceph-devel@vger.kernel.org,
+        codalist@coda.cs.cmu.edu, ecryptfs@vger.kernel.org,
+        linux-erofs@lists.ozlabs.org, linux-ext4@vger.kernel.org,
+        linux-f2fs-devel@lists.sourceforge.net, cluster-devel@redhat.com,
+        linux-nfs@vger.kernel.org, ntfs3@lists.linux.dev,
+        ocfs2-devel@lists.linux.dev, devel@lists.orangefs.org,
+        linux-cifs@vger.kernel.org, samba-technical@lists.samba.org,
+        linux-mtd@lists.infradead.org, linux-mm@kvack.org,
+        linux-unionfs@vger.kernel.org, linux-xfs@vger.kernel.org
+Date:   Wed, 20 Sep 2023 10:12:03 -0400
+In-Reply-To: <20230920124823.ghl6crb5sh4x2pmt@quack3>
+References: <20230807-mgctime-v7-0-d1dec143a704@kernel.org>
+         <20230919110457.7fnmzo4nqsi43yqq@quack3>
+         <1f29102c09c60661758c5376018eac43f774c462.camel@kernel.org>
+         <4511209.uG2h0Jr0uP@nimes>
+         <08b5c6fd3b08b87fa564bb562d89381dd4e05b6a.camel@kernel.org>
+         <20230920-leerung-krokodil-52ec6cb44707@brauner>
+         <20230920101731.ym6pahcvkl57guto@quack3>
+         <317d84b1b909b6c6519a2406fcb302ce22dafa41.camel@kernel.org>
+         <20230920124823.ghl6crb5sh4x2pmt@quack3>
+Content-Type: text/plain; charset="ISO-8859-15"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.48.4 (3.48.4-1.fc38) 
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20230920140147.GB3796940@perftesting>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Sep 20, 2023 at 10:01:47AM -0400, Josef Bacik wrote:
-> On Mon, Sep 18, 2023 at 11:29:50PM +0200, David Sterba wrote:
-> > On Mon, Sep 18, 2023 at 03:27:47PM -0400, Josef Bacik wrote:
-> > > A user reported some unpleasant behavior with very small file systems.
-> > > The reproducer is this
-> > > 
-> > > mkfs.btrfs -f -m single -b 8g /dev/vdb
-> > > mount /dev/vdb /mnt/test
-> > > dd if=/dev/zero of=/mnt/test/testfile bs=512M count=20
-> > > 
-> > > This will result in usage that looks like this
-> > > 
-> > > Overall:
-> > >     Device size:                   8.00GiB
-> > >     Device allocated:              8.00GiB
-> > >     Device unallocated:            1.00MiB
-> > >     Device missing:                  0.00B
-> > >     Device slack:                  2.00GiB
-> > >     Used:                          5.47GiB
-> > >     Free (estimated):              2.52GiB      (min: 2.52GiB)
-> > >     Free (statfs, df):               0.00B
-> > >     Data ratio:                       1.00
-> > >     Metadata ratio:                   1.00
-> > >     Global reserve:                5.50MiB      (used: 0.00B)
-> > >     Multiple profiles:                  no
-> > > 
-> > > Data,single: Size:7.99GiB, Used:5.46GiB (68.41%)
-> > >    /dev/vdb        7.99GiB
-> > > 
-> > > Metadata,single: Size:8.00MiB, Used:5.77MiB (72.07%)
-> > >    /dev/vdb        8.00MiB
-> > > 
-> > > System,single: Size:4.00MiB, Used:16.00KiB (0.39%)
-> > >    /dev/vdb        4.00MiB
-> > > 
-> > > Unallocated:
-> > >    /dev/vdb        1.00MiB
-> > > 
-> > > As you can see we've gotten ourselves quite full with metadata, with all
-> > > of the disk being allocated for data.
-> > > 
-> > > On smaller file systems there's not a lot of time before we get full, so
-> > > our overcommit behavior bites us here.  Generally speaking data
-> > > reservations result in chunk allocations as we assume reservation ==
-> > > actual use for data.  This means at any point we could end up with a
-> > > chunk allocation for data, and if we're very close to full we could do
-> > > this before we have a chance to figure out that we need another metadata
-> > > chunk.
-> > > 
-> > > Address this by adjusting the overcommit logic.  Simply put we need to
-> > > take away 1 chunk from the available chunk space in case of a data
-> > > reservation.  This will allow us to stop overcommitting before we
-> > > potentially lose this space to a data allocation.  With this fix in
-> > > place we properly allocate a metadata chunk before we're completely
-> > > full, allowing for enough slack space in metadata.
-> > > 
-> > > Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-> > > ---
-> > >  fs/btrfs/space-info.c | 17 +++++++++++++++++
-> > >  1 file changed, 17 insertions(+)
-> > > 
-> > > diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-> > > index d7e8cd4f140c..7aa53058d893 100644
-> > > --- a/fs/btrfs/space-info.c
-> > > +++ b/fs/btrfs/space-info.c
-> > > @@ -365,6 +365,23 @@ static u64 calc_available_free_space(struct btrfs_fs_info *fs_info,
-> > >  	factor = btrfs_bg_type_to_factor(profile);
-> > >  	avail = div_u64(avail, factor);
-> > >  
-> > > +	/*
-> > > +	 * Since data allocations immediately use block groups as part of the
-> > > +	 * reservation, because we assume that data reservations will == actual
-> > > +	 * usage, we could potentially overcommit and then immediately have that
-> > > +	 * available space used by a data allocation, which could put us in a
-> > > +	 * bind when we get close to filling the file system.
-> > > +	 *
-> > > +	 * To handle this simply remove 1G (which is our current maximum chunk
-> > > +	 * allocation size) from the available space.  If we are relatively
-> > > +	 * empty this won't affect our ability to overcommit much, and if we're
-> > > +	 * very close to full it'll keep us from getting into a position where
-> > > +	 * we've given ourselves very little metadata wiggle room.
-> > > +	 */
-> > > +	if (avail < SZ_1G)
-> > > +		return 0;
-> > > +	avail -= SZ_1G;
-> > 
-> > Should the value be derived from the alloc_chunk_ctl::max_chunk_size or
-> > chunk_size? Or at least use a named constant, similar to
-> > BTRFS_MAX_DATA_CHUNK_SIZE .
-> 
-> I originally had this, but we still have this logic in the chunk allocator
-> 
-> 	/* Stripe size should not go beyond 1G. */
-> 	ctl->stripe_size = min_t(u64, ctl->stripe_size, SZ_1G);
-> 
-> max_chunk_size tends to be larger than this, BTRFS_MAX_DATA_CHUNK_SIZE is 10G.
-> 
-> We need to go back and clean up the logic to not have the SZ_1G here, rename it
-> to BTRFS_MAX_CHUNK_SIZE or something like that, and then update my patch to use
-> this.
-> 
-> I opted for the cleanest fix for now, the cleanups can come after.
-> Alternatively I can do the cleanups and do the fix, it's up to you.  Thanks,
+On Wed, 2023-09-20 at 14:48 +0200, Jan Kara wrote:
+> On Wed 20-09-23 06:35:18, Jeff Layton wrote:
+> > On Wed, 2023-09-20 at 12:17 +0200, Jan Kara wrote:
+> > > If I were a sysadmin, I'd rather opt for something like
+> > > finegrained timestamps + lazytime (if I needed the finegrained timest=
+amps
+> > > functionality). That should avoid the IO overhead of finegrained time=
+stamps
+> > > as well and I'd know I can have problems with timestamps only after a
+> > > system crash.
+> >=20
+> > > I've just got another idea how we could solve the problem: Couldn't w=
+e
+> > > always just report coarsegrained timestamp to userspace and provide a=
+ccess
+> > > to finegrained value only to NFS which should know what it's doing?
+> > >=20
+> >=20
+> > I think that'd be hard. First of all, where would we store the second
+> > timestamp? We can't just truncate the fine-grained ones to come up with
+> > a coarse-grained one. It might also be confusing having nfsd and local
+> > filesystems present different attributes.
+>=20
+> So what I had in mind (and I definitely miss all the NFS intricacies so t=
+he
+> idea may be bogus) was that inode->i_ctime would be maintained exactly as
+> is now. There will be new (kernel internal at least for now) STATX flag
+> STATX_MULTIGRAIN_TS. fill_mg_cmtime() will return timestamp truncated to
+> sb->s_time_gran unless STATX_MULTIGRAIN_TS is set. Hence unless you set
+> STATX_MULTIGRAIN_TS, there is no difference in the returned timestamps
+> compared to the state before multigrain timestamps were introduced. With
+> STATX_MULTIGRAIN_TS we return full precision timestamp as stored in the
+> inode. Then NFS in fh_fill_pre_attrs() and fh_fill_post_attrs() needs to
+> make sure STATX_MULTIGRAIN_TS is set when calling vfs_getattr() to get
+> multigrain time.
 
-For a quick fix it's ok, at least it's commented and not just a random
-magic constant. The cleanups can be done later. Thanks.
+> I agree nfsd may now be presenting slightly different timestamps than use=
+r
+> is able to see with stat(2) directly on the filesystem. But is that a
+> problem? Essentially it is a similar solution as the mgtime mount option
+> but now sysadmin doesn't have to decide on filesystem mount how to report
+> timestamps but the stat caller knowingly opts into possibly inconsistent
+> (among files) but high precision timestamps. And in the particular NFS
+> usecase where stat is called all the time anyway, timestamps will likely
+> even be consistent among files.
+>=20
+
+I like this idea...
+
+Would we also need to raise sb->s_time_gran to something corresponding
+to HZ on these filesystems? If we truncate the timestamps at a
+granularity corresponding to HZ before presenting them via statx and the
+like then that should work around the problem with programs that compare
+timestamps between inodes.
+
+With NFSv4, when a filesystem doesn't report a STATX_CHANGE_COOKIE, nfsd
+will fake one up using the ctime. It's fine for that to use a full fine-
+grained timestamp since we don't expect to be able to compare that value
+with one of a different inode.
+
+I think we'd want nfsd to present the mtime/ctime values as truncated,
+just like we would with a local fs. We could hit the same problem of an
+earlier-looking timestamp with NFS if we try to present the actual fine-
+grained values to the clients. IOW, I'm convinced that we need to avoid
+this behavior in most situations.
+
+If we do this, then we technically don't need the mount option either.
+We could still add it though, and have it govern whether fill_mg_cmtime
+truncates the timestamps before storing them in the kstat.
+--=20
+Jeff Layton <jlayton@kernel.org>

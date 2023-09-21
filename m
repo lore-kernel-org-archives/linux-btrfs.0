@@ -2,244 +2,353 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 28C40E7D0AA
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Sep 2023 21:30:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 20287E7D0B4
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Sep 2023 21:34:27 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232041AbjIUVa6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 21 Sep 2023 17:30:58 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54158 "EHLO
+        id S230014AbjIUVea (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 21 Sep 2023 17:34:30 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38378 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232155AbjIUVap (ORCPT
+        with ESMTP id S231718AbjIUVeF (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Sep 2023 17:30:45 -0400
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.21])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5D9B0A659E
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 Sep 2023 14:06:12 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.com; s=s31663417;
- t=1695330369; x=1695935169; i=quwenruo.btrfs@gmx.com;
- bh=BlO2COiptEZRyQ90tMGuQfXVzTJ74ti2GIB747Lg8WY=;
- h=X-UI-Sender-Class:Date:Subject:To:References:From:In-Reply-To;
- b=Kn//989Eg3xZz9wF8rcD9DLPaWA7m54aVXmvMESZo8dHs3CfS3PDDD1iJL0gGjoZXYZloeWpMYk
- xH0+QnWoZKM36zjMQR+IOlO3XT+YVPQBGsWHG0Onkc9nap+09D57wLh2Y4mGukI/FTmFQfbVC4OZC
- fYLQ8SFJOBw5no09hhuQ/Va8p/10woEdDxDeGj9VWkz79RGamorVh/ludDfMa+DymQcYpYfwNgU5R
- Hthssny9S/2hajZSpJVKGIbKdwBbC66oy5DxiX8gDGHBBi83/HnHsphtLZnFZHuAyL2TLbuT1sfJE
- m29iaLKv/OaNoX35Xs3Tx9h+dkic2TBEyjdA==
-X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from [172.16.0.117] ([218.215.59.251]) by mail.gmx.net (mrgmx104
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1Mwwdf-1rdBEJ48OB-00yQrM; Thu, 21
- Sep 2023 23:06:09 +0200
-Content-Type: multipart/mixed; boundary="------------dxdrLdsJx70r1UhrjKoj3700"
-Message-ID: <0b7b9bd4-9b0c-467c-be20-b7d6b613e5d3@gmx.com>
-Date:   Fri, 22 Sep 2023 06:36:05 +0930
+        Thu, 21 Sep 2023 17:34:05 -0400
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5577446A2;
+        Thu, 21 Sep 2023 10:22:28 -0700 (PDT)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 38B33C193E8;
+        Thu, 21 Sep 2023 09:05:58 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1695287158;
+        bh=7iGRP0Te8BQrkv3ugWrdAtmFNQSsZNKGzyjjRhXwezU=;
+        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+        b=mL0hKpzBfI3KsVpVsxGoA/OJYJvVVRCQkAZUr8isRmK7JoSP7xNOjPLfUxsE4lUfP
+         Xr235pvFbAJPmQT6/0ychSUN1tBSBgGspg181EJU5OFOm7AGK5cEg0ZEejtJBisJNa
+         6zdFvuJBIQzCTm5RcVafAK3wh64oYG2RRmSPYTy9MHMXlh22wh+Pb11C7mIZrch1ba
+         J4GCFBMnNriaGy5gqygb62fsTjkq7aEVUIuQa6yp9L+YEn+tNLoRsehFWT4ICinazV
+         icsp/P4Ad0VKOytTiSnZ4qlTz3aTbIixcXs2IGCNQH2kuwv6jKVFA5jId21CLBHwgA
+         2tHQfBiHpCHxw==
+Received: by mail-oo1-f42.google.com with SMTP id 006d021491bc7-57b5ef5b947so74632eaf.0;
+        Thu, 21 Sep 2023 02:05:58 -0700 (PDT)
+X-Gm-Message-State: AOJu0YyD1SoJSAI9M658PsvNTNRFTH6I9tTh1releY7B+rFOHKuDGZIS
+        m5tguN6TvJkJzt1XYedu8j2LIGF38570/3UsYzQ=
+X-Google-Smtp-Source: AGHT+IF2Z9XncYAzeLzIhqKMkgRCz+bYmKv6XecT1HHYJteTmKGnDYKP3vgaHgb59xNrftIE4LL8xpM2ZNI1Ca2ROTc=
+X-Received: by 2002:a05:6870:c207:b0:1bf:4a66:d54f with SMTP id
+ z7-20020a056870c20700b001bf4a66d54fmr4846399oae.56.1695287157411; Thu, 21 Sep
+ 2023 02:05:57 -0700 (PDT)
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: btrfstune --convert-to-block-group-tree segfaulted. now
- filesystem is unmountable
-Content-Language: en-US
-To:     Konstantinos Skarlatos <k.skarlatos@gmail.com>,
-        linux-btrfs@vger.kernel.org
-References: <3c93d0b5-a8cb-ebe3-f8d6-76ea6340f23e@gmail.com>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCY00iVQUJDToH
- pgAKCRDCPZHzoSX+qNKACACkjDLzCvcFuDlgqCiS4ajHAo6twGra3uGgY2klo3S4JespWifr
- BLPPak74oOShqNZ8yWzB1Bkz1u93Ifx3c3H0r2vLWrImoP5eQdymVqMWmDAq+sV1Koyt8gXQ
- XPD2jQCrfR9nUuV1F3Z4Lgo+6I5LjuXBVEayFdz/VYK63+YLEAlSowCF72Lkz06TmaI0XMyj
- jgRNGM2MRgfxbprCcsgUypaDfmhY2nrhIzPUICURfp9t/65+/PLlV4nYs+DtSwPyNjkPX72+
- LdyIdY+BqS8cZbPG5spCyJIlZonADojLDYQq4QnufARU51zyVjzTXMg5gAttDZwTH+8LbNI4
- mm2YzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCY00ibgUJDToHvwAK
- CRDCPZHzoSX+qK6vB/9yyZlsS+ijtsvwYDjGA2WhVhN07Xa5SBBvGCAycyGGzSMkOJcOtUUf
- tD+ADyrLbLuVSfRN1ke738UojphwkSFj4t9scG5A+U8GgOZtrlYOsY2+cG3R5vjoXUgXMP37
- INfWh0KbJodf0G48xouesn08cbfUdlphSMXujCA8y5TcNyRuNv2q5Nizl8sKhUZzh4BascoK
- DChBuznBsucCTAGrwPgG4/ul6HnWE8DipMKvkV9ob1xJS2W4WJRPp6QdVrBWJ9cCdtpR6GbL
- iQi22uZXoSPv/0oUrGU+U5X4IvdnvT+8viPzszL5wXswJZfqfy8tmHM85yjObVdIG6AlnrrD
-In-Reply-To: <3c93d0b5-a8cb-ebe3-f8d6-76ea6340f23e@gmail.com>
-X-Provags-ID: V03:K1:vStQoGUghZ7OJ8HkUGeru3g3+7aFcv+Hc716fy71O3KqLN8RqPD
- e6YJxswovngrxAmP9jzuhK5GIUxgr75bFj8Vo1eScwx2Wovawy0xdXEj/qWB+hxSRvBUxbJ
- JPv+P3265B5FEWPOrYQQm3Wl4J+gFtGcMCUwjvhZf92DOAn161N9xVNy03asn+7clQ+eZhw
- BA8gJMbhq/4eP4k92FG7A==
-UI-OutboundReport: notjunk:1;M01:P0:D/FynR+9jvY=;+3gD8g9gYfcghgQH+K3EMrycalw
- 6rRSDb8QwuQ1CEbrAA+CPF4qkpQON9tfAmB1cHSepI957pWtXkjoZiTvYB7LZ0PVB2wvQDdr3
- 1LmTSnYmPNJN0uWK68SLynxRrNUBKlmGqbUCnsa/9/tF98By1zDoTNjH6oOw5xji0/P+PHzjy
- mOIb41lGMZOv5MWzrfmlWEs5Og8CDWOFxRsym08+e/h8JOf8cHzUobmex9bb/xRyF13da7mkH
- pIjJU53uG9iouvBF2kVn0rZDTW5g4yt+1yvH6ljqxfnR7cqC1PX8vNpFVEueCNeeAzyzKlqND
- kY9Kqzu8J7W4iiH5qBwLiIs61768cid8YkTvpy0l+Ggn553wJmPHBO8Dz01vXtuQmKmtk1mCi
- ulNZ2WktzVEwka6ordCCUhHFliV+NEEDekj33R1M9AR0x+ZrdlX+Z3M/sN4LjJp0vmPThXZ+J
- MEtxdbw6RZ5KihEOygm940QZ0YO0qSYop2QCm5IBf4DOkL4DTWsizPJ9I67//PEJEcCHVwvsD
- ELCekjLd10bND58WNklr08s4/APk+p6pZEbDIPIpFd+tAflVi3UQ6WC5WNrCZHaqavmxTY5Z6
- uMe6ywSfXK2Ij4Z757tGSN3lS5EOA2IMs5hqoDTUVRswlQH7GCdOEaItNtvrvcTyl4iKMLeBJ
- RspjpWzXy6CkKQ4lSFqP5org1pLFQ8MTvQjdoRhIBObGisEW06SsQHVYe0G73uhNwyAdJo4c2
- tNfc9z/Drq1tSe7T7Is8+KMOUDa4t5ABHZcaDmp9ge1eT6bblj/UJN0hnmf6EAY+exir8ZQKZ
- BrzFZHbg8p57xATVsUwlJN3pFRg0IfrFm0zHn1tIDvZ/FbAEw2J/FM7xKUgY9m1tbHi4IeiOn
- Z20T31BFAQXQdlnvKKux6ohmYhGfYATSU+RSLCwkbygLMWEa+5kKfw6gBgLwkFMtyf8QK07Pl
- SMTZSpo2FL89xT9rVjpe/nR4PM8=
+References: <1888d81c5fad8204dd4948d36291d24f00354b22.1694705838.git.fdmanana@suse.com>
+In-Reply-To: <1888d81c5fad8204dd4948d36291d24f00354b22.1694705838.git.fdmanana@suse.com>
+From:   Filipe Manana <fdmanana@kernel.org>
+Date:   Thu, 21 Sep 2023 10:05:21 +0100
+X-Gmail-Original-Message-ID: <CAL3q7H4xMFiSCj=A4b-CEMo_-ce_O_ZRHN4FjcjKHS65cZHtVA@mail.gmail.com>
+Message-ID: <CAL3q7H4xMFiSCj=A4b-CEMo_-ce_O_ZRHN4FjcjKHS65cZHtVA@mail.gmail.com>
+Subject: Re: [PATCH] generic: test new directory entries are returned after
+ rewinding directory
+To:     fstests@vger.kernel.org
+Cc:     linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is a multi-part message in MIME format.
---------------dxdrLdsJx70r1UhrjKoj3700
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: base64
+On Thu, Sep 14, 2023 at 4:44=E2=80=AFPM <fdmanana@kernel.org> wrote:
+>
+> From: Filipe Manana <fdmanana@suse.com>
+>
+> Test that if names are added to a directory after an opendir(3) call and
+> before a rewinddir(3) call, future readdir(3) calls will return the names=
+.
+> This is mandated by POSIX:
+>
+>   https://pubs.opengroup.org/onlinepubs/007904875/functions/rewinddir.htm=
+l
+>
+> This exercises a regression in btrfs which is fixed by a kernel patch tha=
+t
+> has the following subject:
+>
+>   ""btrfs: refresh dir last index during a rewinddir(3) call""
+>
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
+>  .gitignore            |   1 +
+>  src/Makefile          |   2 +-
+>  src/rewinddir-test.c  | 159 ++++++++++++++++++++++++++++++++++++++++++
+>  tests/generic/471     |  39 +++++++++++
+>  tests/generic/471.out |   2 +
+>  5 files changed, 202 insertions(+), 1 deletion(-)
+>  create mode 100644 src/rewinddir-test.c
+>  create mode 100755 tests/generic/471
+>  create mode 100644 tests/generic/471.out
+>
+> diff --git a/.gitignore b/.gitignore
+> index 644290f0..4c32ac42 100644
+> --- a/.gitignore
+> +++ b/.gitignore
+> @@ -124,6 +124,7 @@ tags
+>  /src/rename
+>  /src/renameat2
+>  /src/resvtest
+> +/src/rewinddir-test
+>  /src/runas
+>  /src/seek_copy_test
+>  /src/seek_sanity_test
+> diff --git a/src/Makefile b/src/Makefile
+> index aff871d0..2815f919 100644
+> --- a/src/Makefile
+> +++ b/src/Makefile
+> @@ -19,7 +19,7 @@ TARGETS =3D dirstress fill fill2 getpagesize holes lsta=
+t64 \
+>         t_ofd_locks t_mmap_collision mmap-write-concurrent \
+>         t_get_file_time t_create_short_dirs t_create_long_dirs t_enospc \
+>         t_mmap_writev_overlap checkpoint_journal mmap-rw-fault allocstale=
+ \
+> -       t_mmap_cow_memory_failure fake-dump-rootino dio-buf-fault
+> +       t_mmap_cow_memory_failure fake-dump-rootino dio-buf-fault rewindd=
+ir-test
+>
+>  LINUX_TARGETS =3D xfsctl bstat t_mtab getdevicesize preallo_rw_pattern_r=
+eader \
+>         preallo_rw_pattern_writer ftrunc trunc fs_perms testx looptest \
+> diff --git a/src/rewinddir-test.c b/src/rewinddir-test.c
+> new file mode 100644
+> index 00000000..9f7505a2
+> --- /dev/null
+> +++ b/src/rewinddir-test.c
+> @@ -0,0 +1,159 @@
+> +// SPDX-License-Identifier: GPL-2.0
+> +/*
+> + * Copyright (c) 2023 SUSE Linux Products GmbH.  All Rights Reserved.
+> + */
+> +#include <dirent.h>
+> +#include <stdio.h>
+> +#include <stdlib.h>
+> +#include <string.h>
+> +#include <errno.h>
+> +#include <unistd.h>
+> +#include <sys/stat.h>
+> +
+> +/*
+> + * Number of files we add to the test directory after calling opendir(3)=
+ and
+> + * before calling rewinddir(3).
+> + */
+> +#define NUM_FILES 10000
+> +
+> +int main(int argc, char *argv[])
+> +{
+> +       int file_counters[NUM_FILES] =3D { 0 };
+> +       int dot_count =3D 0;
+> +       int dot_dot_count =3D 0;
+> +       struct dirent *entry;
+> +       DIR *dir =3D NULL;
+> +       char *dir_path =3D NULL;
+> +       char *file_path =3D NULL;
+> +       int ret =3D 0;
+> +       int i;
+> +
+> +       if (argc !=3D 2) {
+> +               fprintf(stderr, "Usage:  %s <directory>\n", argv[0]);
+> +               ret =3D 1;
+> +               goto out;
+> +       }
+> +
+> +       dir_path =3D malloc(strlen(argv[1]) + strlen("/testdir") + 1);
+> +       if (!dir_path) {
+> +               fprintf(stderr, "malloc failure\n");
+> +               ret =3D ENOMEM;
+> +               goto out;
+> +       }
+> +       i =3D strlen(argv[1]);
+> +       memcpy(dir_path, argv[1], i);
+> +       memcpy(dir_path + i, "/testdir", strlen("/testdir"));
+> +       dir_path[i + strlen("/testdir")] =3D '\0';
+> +
+> +       /* More than enough to contain any full file path. */
+> +       file_path =3D malloc(strlen(dir_path) + 12);
+> +       if (!file_path) {
+> +               fprintf(stderr, "malloc failure\n");
+> +               ret =3D ENOMEM;
+> +               goto out;
+> +       }
+> +
+> +       ret =3D mkdir(dir_path, 0700);
+> +       if (ret =3D=3D -1) {
+> +               fprintf(stderr, "Failed to create test directory: %d\n", =
+errno);
+> +               ret =3D errno;
+> +               goto out;
+> +       }
+> +
+> +       /* Open the directory first. */
+> +       dir =3D opendir(dir_path);
+> +       if (dir =3D=3D NULL) {
+> +               fprintf(stderr, "Failed to open directory: %d\n", errno);
+> +               ret =3D errno;
+> +               goto out;
+> +       }
+> +
+> +       /*
+> +        * Now create all files inside the directory.
+> +        * File names go from 1 to NUM_FILES, 0 is unused as it's the ret=
+urn
+> +        * value for atoi(3) when an error happens.
+> +        */
+> +       for (i =3D 1; i <=3D NUM_FILES; i++) {
+> +               FILE *f;
+> +
+> +               sprintf(file_path, "%s/%d", dir_path, i);
+> +               f =3D fopen(file_path, "w");
+> +               if (f =3D=3D NULL) {
+> +                       fprintf(stderr, "Failed to create file number %d:=
+ %d\n",
+> +                               i, errno);
+> +                       ret =3D errno;
+> +                       goto out;
+> +               }
+> +               fclose(f);
+> +       }
+> +
+> +       /*
+> +        * Rewind the directory and read it.
+> +        * POSIX requires that after a rewind, any new names added to the
+> +        * directory after the openddir(3) call and before the rewinddir(=
+3)
+> +        * call, must be returned by readdir(3) calls
+> +        */
+> +       rewinddir(dir);
+> +
+> +       /*
+> +        * readdir(3) returns NULL when it reaches the end of the directo=
+ry or
+> +        * when an error happens, so reset errno to 0 to distinguish betw=
+een
+> +        * both cases later.
+> +        */
+> +       errno =3D 0;
+> +       while ((entry =3D readdir(dir)) !=3D NULL) {
+> +               if (strcmp(entry->d_name, ".") =3D=3D 0) {
+> +                       dot_count++;
+> +                       continue;
+> +               }
+> +               if (strcmp(entry->d_name, "..") =3D=3D 0) {
+> +                       dot_dot_count++;
+> +                       continue;
+> +               }
+> +               i =3D atoi(entry->d_name);
+> +               if (i =3D=3D 0) {
+> +                       fprintf(stderr,
+> +                               "Failed to parse name '%s' to integer: %d=
+\n",
+> +                               entry->d_name, errno);
+> +                       ret =3D errno;
+> +                       goto out;
+> +               }
+> +               /* File names go from 1 to NUM_FILES, so subtract 1. */
+> +               file_counters[i - 1]++;
+> +       }
+> +
+> +       if (errno) {
+> +               fprintf(stderr, "Failed to read directory: %d\n", errno);
+> +               ret =3D errno;
+> +               goto out;
+> +       }
+> +
+> +       /*
+> +        * Now check that the readdir() calls return every single file na=
+me
+> +        * and without repeating any of them. If any name is missing or
+> +        * repeated, don't exit immediatelly, so that we print a message =
+for
+> +        * all missing or repeated names.
+> +        */
+> +       for (i =3D 0; i < NUM_FILES; i++) {
+> +               if (file_counters[i] !=3D 1) {
+> +                       fprintf(stderr, "File name %d appeared %d times\n=
+",
+> +                               i + 1,  file_counters[i]);
+> +                       ret =3D EINVAL;
+> +               }
+> +       }
+> +       if (dot_count !=3D 1) {
+> +               fprintf(stderr, "File name . appeared %d times\n", dot_co=
+unt);
+> +               ret =3D EINVAL;
+> +       }
+> +       if (dot_dot_count !=3D 1) {
+> +               fprintf(stderr, "File name .. appeared %d times\n", dot_d=
+ot_count);
+> +               ret =3D EINVAL;
+> +       }
+> +out:
+> +       free(dir_path);
+> +       free(file_path);
+> +       if (dir !=3D NULL)
+> +               closedir(dir);
+> +
+> +       return ret;
+> +}
+> diff --git a/tests/generic/471 b/tests/generic/471
+> new file mode 100755
+> index 00000000..15dc89f3
+> --- /dev/null
+> +++ b/tests/generic/471
+> @@ -0,0 +1,39 @@
+> +#! /bin/bash
+> +# SPDX-License-Identifier: GPL-2.0
+> +# Copyright (C) 2023 SUSE Linux Products GmbH. All Rights Reserved.
+> +#
+> +# FS QA Test 471
+> +#
+> +# Test that if names are added to a directory after an opendir(3) call a=
+nd
+> +# before a rewinddir(3) call, future readdir(3) calls will return the na=
+mes.
+> +# This is mandated by POSIX:
+> +#
+> +# https://pubs.opengroup.org/onlinepubs/007904875/functions/rewinddir.ht=
+ml
+> +#
+> +. ./common/preamble
+> +_begin_fstest auto quick
+> +
+> +_cleanup()
+> +{
+> +       cd /
+> +       rm -fr $tmp.*
+> +       [ -n "$target_dir" ] && rm -fr $target_dir
+> +}
+> +
+> +_supported_fs generic
+> +_require_test
+> +_require_test_program rewinddir-test
+> +
+> +[ $FSTYP =3D=3D "btrfs" ] && _fixed_by_kernel_commit xxxxxxxxxxxx \
+> +       "btrfs: refresh dir last index during a rewinddir(3) call"
 
-DQoNCk9uIDIwMjMvOS8yMSAyMjo1NywgS29uc3RhbnRpbm9zIFNrYXJsYXRvcyB3cm90ZToNCj4g
-SGkgYWxsLA0KPiBpIHRyaWVkIHRvIGNvbnZlcnQgbXkgQlRSRlMgZmlsZXN5c3RlbSB0byBibG9j
-ay1ncm91cC10cmVlIGJ1dCBpdA0KPiBzZWdmYXVsdGVkIGFuZCBub3cgdGhlIGZzIGlzIG5vdCBt
-b3VudGFibGUuDQo+IA0KPiDina8gYnRyZnN0dW5lIC0tY29udmVydC10by1ibG9jay1ncm91cC10
-cmVlIC9kZXYvc2RhDQo+IFsxXcKgwqDCoCAxNzQwNDcgc2VnbWVudGF0aW9uIGZhdWx0IChjb3Jl
-IGR1bXBlZCnCoCBidHJmc3R1bmUNCj4gLS1jb252ZXJ0LXRvLWJsb2NrLWdyb3VwLXRyZWUgL2Rl
-di9zZGENCj4gDQo+IA0KPiBbMjUzMTcxNS4xOTA4MDJdIGJ0cmZzdHVuZVsxNzQwNDddOiBzZWdm
-YXVsdCBhdCAxZiBpcCAwMDAwNTVlYzQwOWZkMTk4DQo+IHNwIDAwMDA3ZmZkMGE3NzJlYjAgZXJy
-b3IgNCBpbiBidHJmc3R1bmVbNTVlYzQwOWQ2MDAwKzZhMDAwXSBsaWtlbHkgb24NCj4gQ1BVIDMg
-KGNvcmUgMiwgc29ja2V0IDApDQo+IFsyNTMxNzE1LjE5MDgxOF0gQ29kZTogNDAgMDAgZjMgMGYg
-MWUgZmEgNDEgNTYgNDEgNTUgNDkgODkgZmQgNDEgNTQgNDkNCj4gODkgZjQgNTUgODkgZDUgNTMg
-NDggOGIgNWYgNjggNDkgODkgZWUgNDggODUgZGIgNzQgM2YgNDggOGQgNzQgMzUgMDAgMGYNCj4g
-MWYgMDAgPDQ4PiA4YiA0MyAyMCA0OCA4YiA0YiAyOCA0OCAwMSBjMSA0OSAzOSBjYyAwZiA4MyA4
-YyAwMCAwMCAwMCA0OCAzOQ0KPiANCj4gWzE3NDEzMV06IFByb2Nlc3MgMTc0MDQ3IChidHJmc3R1
-bmUpIG9mIHVzZXIgMCBkdW1wZWQgY29yZS4NCj4gDQo+ICDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
-wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
-oMKgwqDCoMKgwqDCoMKgwqDCoCBTdGFjayB0cmFjZSBvZiB0aHJlYWQNCj4gMTc0MDQ3Og0KPiAg
-wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
-oMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqAgIzDCoCAweDAwMDA1NWVj
-NDA5ZmQxOTgNCj4gYWxsb2NfZXh0ZW50X2J1ZmZlciAoYnRyZnN0dW5lICsgMHgzNDE5OCkNCj4g
-IMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
-wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgICMxwqAgMHgwMDAwNTVl
-YzQwOWVlNGY1DQo+IHJlYWRfdHJlZV9ibG9jayAoYnRyZnN0dW5lICsgMHgyNTRmNSkNCj4gIMKg
-wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
-oMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgICMywqAgMHgwMDAwNTVlYzQw
-OWRiNWE2DQo+IHJlYWRfbm9kZV9zbG90IChidHJmc3R1bmUgKyAweDEyNWE2KQ0KPiAgwqDCoMKg
-wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
-oMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqAgIzPCoCAweDAwMDA1NWVjNDA5ZTZl
-MmQNCj4gbi9hIChidHJmc3R1bmUgKyAweDFkZTJkKQ0KPiAgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
-oMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
-wqDCoMKgwqDCoMKgwqDCoMKgwqAgIzTCoCAweDAwMDA1NWVjNDA5ZThhNGQNCj4gbi9hIChidHJm
-c3R1bmUgKyAweDFmYTRkKQ0KPiAgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
-wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
-oMKgwqAgIzXCoCAweDAwMDA1NWVjNDA5ZGVmMDENCj4gYnRyZnNfc2VhcmNoX3Nsb3QgKGJ0cmZz
-dHVuZSArIDB4MTVmMDEpDQo+ICDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
-oMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
-wqDCoCAjNsKgIDB4MDAwMDU1ZWM0MDllOWM3OQ0KPiBidHJmc19pbnNlcnRfZW1wdHlfaXRlbXMg
-KGJ0cmZzdHVuZSArIDB4MjBjNzkpDQo+ICDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
-oMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
-wqDCoMKgwqDCoCAjN8KgIDB4MDAwMDU1ZWM0MGEwMDkwYw0KPiBuL2EgKGJ0cmZzdHVuZSArIDB4
-Mzc5MGMpDQo+ICDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
-wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoCAjOMKg
-IDB4MDAwMDU1ZWM0MGEwNTE4NQ0KPiBuL2EgKGJ0cmZzdHVuZSArIDB4M2MxODUpDQo+ICDCoMKg
-wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
-oMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoCAjOcKgIDB4MDAwMDU1ZWM0MGEw
-NWM3NQ0KPiBhZGRfdG9fZnJlZV9zcGFjZV90cmVlIChidHJmc3R1bmUgKyAweDNjYzc1KQ0KDQpU
-aGVyZSBzZWVtcyB0byBiZSBzb21ldGhpbmcgd3Jvbmcgd2l0aCBmcmVlIHNwYWNlIHRyZWUgY29k
-ZSBoZXJlLg0KTm90IHN1cmUgd2hpY2ggcGFydCBpcyBjYXVzaW5nIHRoZSBwcm9ibGVtLCB0aGUg
-ZnN0IG9yIHRoZSBjb252ZXJzaW9uIHBhcnQuDQoNCj4gIMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
-oMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
-wqDCoMKgwqDCoMKgwqDCoMKgICMxMCAweDAwMDA1NWVjNDBhM2VjNDkNCj4gbi9hIChidHJmc3R1
-bmUgKyAweDc1YzQ5KQ0KPiAgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
-oMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
-wqAgIzExIDB4MDAwMDU1ZWM0MDlmYjUyYQ0KPiBidHJmc19ydW5fZGVsYXllZF9yZWZzIChidHJm
-c3R1bmUgKyAweDMyNTJhKQ0KPiAgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
-wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
-oMKgwqAgIzEyIDB4MDAwMDU1ZWM0MGExMzA5MQ0KPiBidHJmc19jb21taXRfdHJhbnNhY3Rpb24g
-KGJ0cmZzdHVuZSArIDB4NGEwOTEpDQo+ICDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
-oMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
-wqDCoMKgwqDCoCAjMTMgMHgwMDAwNTVlYzQwOWRjZmRkDQo+IGNvbnZlcnRfdG9fYmdfdHJlZSAo
-YnRyZnN0dW5lICsgMHgxM2ZkZCkNCj4gIMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
-wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
-oMKgwqDCoMKgICMxNCAweDAwMDA1NWVjNDA5ZDY0MGENCj4gbWFpbiAoYnRyZnN0dW5lICsgMHhk
-NDBhKQ0KPiAgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
-wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqAgIzE1IDB4
-MDAwMDdmNDRhY2UyN2NkMA0KPiBuL2EgKGxpYmMuc28uNiArIDB4MjdjZDApDQo+ICDCoMKgwqDC
-oMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
-wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoCAjMTYgMHgwMDAwN2Y0NGFjZTI3ZDhh
-DQo+IF9fbGliY19zdGFydF9tYWluIChsaWJjLnNvLjYgKyAweDI3ZDhhKQ0KPiAgwqDCoMKgwqDC
-oMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
-wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqAgIzE3IDB4MDAwMDU1ZWM0MDlkN2RiNQ0K
-PiBfc3RhcnQgKGJ0cmZzdHVuZSArIDB4ZWRiNSkNCj4gIMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
-oMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
-wqDCoMKgwqDCoMKgwqDCoMKgIEVMRiBvYmplY3QgYmluYXJ5DQo+IGFyY2hpdGVjdHVyZTogQU1E
-IHg4Ni02NA0KPiANCj4gDQo+IOKdryBidHJmc3R1bmUgLS1jb252ZXJ0LWZyb20tYmxvY2stZ3Jv
-dXAtdHJlZSAvZGV2L3NkYQ0KPiBFUlJPUjogZmlsZXN5c3RlbSBkb2Vzbid0IGhhdmUgYmxvY2st
-Z3JvdXAtdHJlZSBmZWF0dXJlDQo+IA0KPiANCj4g4p2vIG1vdW50IC9kZXYvc2RhIC9zdG9yYWdl
-L2J0cmZzIC1vIHJvDQo+IG1vdW50OiAvc3RvcmFnZS9idHJmczogd3JvbmcgZnMgdHlwZSwgYmFk
-IG9wdGlvbiwgYmFkIHN1cGVyYmxvY2sgb24NCj4gL2Rldi9zZGEsIG1pc3NpbmcgY29kZXBhZ2Ug
-b3IgaGVscGVyIHByb2dyYW0sIG9yIG90aGVyIGVycm9yLg0KPiAgwqDCoMKgwqDCoMKgIGRtZXNn
-KDEpIG1heSBoYXZlIG1vcmUgaW5mb3JtYXRpb24gYWZ0ZXIgZmFpbGVkIG1vdW50IHN5c3RlbSBj
-YWxsLg0KPiANCj4gU2VwIDE5IDE3OjE4OjIzIGVsc2lua2kga2VybmVsOiBCVFJGUyBpbmZvIChk
-ZXZpY2Ugc2RhKTogdXNpbmcgY3JjMzJjDQo+IChjcmMzMmMtZ2VuZXJpYykgY2hlY2tzdW0gYWxn
-b3JpdGhtDQo+IFNlcCAxOSAxNzoxODoyMyBlbHNpbmtpIGtlcm5lbDogQlRSRlMgZXJyb3IgKGRl
-dmljZSBzZGEpOiB1bnJlY29nbml6ZWQNCj4gb3IgdW5zdXBwb3J0ZWQgc3VwZXIgZmxhZzogMjc0
-ODc3OTA2OTQ0DQo+IFNlcCAxOSAxNzoxODoyMyBlbHNpbmtpIGtlcm5lbDogQlRSRlMgZXJyb3Ig
-KGRldmljZSBzZGEpOiBzdXBlcmJsb2NrDQo+IGNvbnRhaW5zIGZhdGFsIGVycm9ycw0KPiBTZXAg
-MTkgMTc6MTg6MjMgZWxzaW5raSBrZXJuZWw6IEJUUkZTIGVycm9yIChkZXZpY2Ugc2RhKTogb3Bl
-bl9jdHJlZSBmYWlsZWQNCj4gDQo+IA0KPiDina8gYnRyZnN0dW5lIC0tY29udmVydC10by1ibG9j
-ay1ncm91cC10cmVlIC9kZXYvc2RhDQo+IEVSUk9SOiBmYWlsZWQgdG8gZmluZCBibG9jayBncm91
-cCBmb3IgYnl0ZW5yIDIwMTk2Mjg1MzQ5ODg4DQoNClRoaXMgaXMgdGhlIGNvcnJlY3Qgd2F5IHRv
-IHJlc3VtZSB0aGUgZmFpbGVkIGNvbnZlcnNpb24uDQoNCkJ1dCBieSBzb21laG93IHRoZSBibG9j
-ayBncm91cCBpdGVtIHNlZW1zIHRvIGJlIG1pc3NpbmcgZnJvbSBib3RoIG9sZCANCmFuZCBuZXcg
-dHJlZXMuDQoNCk1pbmQgdG8gdGVzdCBpZiB0aGUgYXR0YWNoZWQgcGF0Y2ggY2FuIGhlbHA/DQoN
-Cg0KDQo+IEVSUk9SOiBmYWlsZWQgdG8gY29udmVydCB0aGUgZmlsZXN5c3RlbSB0byBibG9jayBn
-cm91cCB0cmVlIGZlYXR1cmUNCj4gZXh0ZW50IGJ1ZmZlciBsZWFrOiBzdGFydCAxNzgyNTU3NjYz
-MjMyMCBsZW4gMTYzODQNCj4gDQo+IOKdryBidHJmcyBmaWxlc3lzdGVtIHNob3cNCj4gTGFiZWw6
-IG5vbmXCoCB1dWlkOiA1YTU4M2QzNS0zZWIyLTQxMGItOTA0NC0xYWM4N2EwNjIyNDcNCj4gIMKg
-wqDCoMKgwqDCoMKgIFRvdGFsIGRldmljZXMgMyBGUyBieXRlcyB1c2VkIDkuNTNUaUINCj4gIMKg
-wqDCoMKgwqDCoMKgIGRldmlkwqDCoMKgIDEgc2l6ZSAzLjY0VGlCIHVzZWQgMy42NFRpQiBwYXRo
-IC9kZXYvc2RhDQo+ICDCoMKgwqDCoMKgwqDCoCBkZXZpZMKgwqDCoCAyIHNpemUgMy42NFRpQiB1
-c2VkIDMuNjRUaUIgcGF0aCAvZGV2L3NkYw0KPiAgwqDCoMKgwqDCoMKgwqAgZGV2aWTCoMKgwqAg
-MyBzaXplIDMuNjRUaUIgdXNlZCAzLjY0VGlCIHBhdGggL2Rldi9zZGQNCj4gDQo+IOKdryBidHJm
-cyBjaGVjayAtLW1vZGUgbG93bWVtIC9kZXYvc2RhDQo+IE9wZW5pbmcgZmlsZXN5c3RlbSB0byBj
-aGVjay4uLg0KPiBDaGVja2luZyBmaWxlc3lzdGVtIG9uIC9kZXYvc2RhDQo+IFVVSUQ6IDVhNTgz
-ZDM1LTNlYjItNDEwYi05MDQ0LTFhYzg3YTA2MjI0Nw0KPiBbMS83XSBjaGVja2luZyByb290IGl0
-ZW1zDQo+IFsyLzddIGNoZWNraW5nIGV4dGVudHMNCj4gRVJST1I6IGNodW5rIFsyMDE5NzM1OTA5
-MTcxMiAyMDE5ODQzMjgzMzUzNikgZG9lc24ndCBoYXZlIHJlbGF0ZWQgYmxvY2sNCj4gZ3JvdXAg
-aXRlbQ0KWy4uLl0+IEVSUk9SOiBjaHVuayBbMjA2NzQwODgzMzc0MDggMjA2NzQwOTY3MjYwMTYp
-IGRvZXNuJ3QgaGF2ZSByZWxhdGVkIA0KYmxvY2sNCj4gZ3JvdXAgaXRlbQ0KDQpUaGlzIHNob3dz
-IG1vc3Qgb2YgdGhlIGJsb2NrIGdyb3VwcyBoYXZlIGJlZW4gY29udmVydGVkLg0KSG9wZSB0aGUg
-cGF0Y2ggY2FuIGZpbmlzaCB0aGUgY29udmVyc2lvbi4NCg0KVGhhbmtzLA0KUXUNCj4gDQo+IA0K
-PiBteSBzeXN0ZW0gc3BlY3MgYXJlOg0KPiBBTUQgUGhlbm9tKHRtKSBJSSBYNCA5NjUgUHJvY2Vz
-c29yIEAzNDAwTUh6DQo+IDhHQiBSQU0NCj4gDQo+IOKdryB1bmFtZSAtcg0KPiA2LjQuOS1hcmNo
-MS0xDQo+IA0KPiANCg==
+This landed yesterday in Linus' tree, the commit id is e60aa5da14d0.
+If needed I'll send a v2 with just that change.
 
---------------dxdrLdsJx70r1UhrjKoj3700
-Content-Type: text/plain; charset=UTF-8; name="diff"
-Content-Disposition: attachment; filename="diff"
-Content-Transfer-Encoding: base64
-
-ZGlmZiAtLWdpdCBhL2tlcm5lbC1zaGFyZWQvZXh0ZW50LXRyZWUuYyBiL2tlcm5lbC1zaGFy
-ZWQvZXh0ZW50LXRyZWUuYwppbmRleCA3MDIyNjQzYTk4NDMuLjNmYzhiYmQxOTFkYiAxMDA2
-NDQKLS0tIGEva2VybmVsLXNoYXJlZC9leHRlbnQtdHJlZS5jCisrKyBiL2tlcm5lbC1zaGFy
-ZWQvZXh0ZW50LXRyZWUuYwpAQCAtMzkzMiw3ICszOTMyLDcgQEAgaW50IGJ0cmZzX2NvbnZl
-cnRfb25lX2JnKHN0cnVjdCBidHJmc190cmFuc19oYW5kbGUgKnRyYW5zLCB1NjQgYnl0ZW5y
-KQogCSAqIHRoZSBuZXcgcm9vdC4KIAkgKi8KIAlyZXQgPSBpbnNlcnRfYmxvY2tfZ3JvdXBf
-aXRlbSh0cmFucywgYmcpOwotCWlmIChyZXQgPCAwKSB7CisJaWYgKHJldCA8IDAgJiYgcmV0
-ICE9IC1FRVhJU1QpIHsKIAkJZXJyb3IoImZhaWxlZCB0byBpbnNlcnQgYmxvY2sgZ3JvdXAg
-aXRlbSBpbnRvIHRoZSBuZXcgcm9vdDogJWQiLAogCQkgICAgICByZXQpOwogCQlyZXR1cm4g
-cmV0OwpkaWZmIC0tZ2l0IGEvdHVuZS9jb252ZXJ0LWJndC5jIGIvdHVuZS9jb252ZXJ0LWJn
-dC5jCmluZGV4IDc3Y2JhMzkzMGFlMS4uNDU3MzEzOWNlYTdmIDEwMDY0NAotLS0gYS90dW5l
-L2NvbnZlcnQtYmd0LmMKKysrIGIvdHVuZS9jb252ZXJ0LWJndC5jCkBAIC04MCwyNSArODAs
-NyBAQCBpbnQgY29udmVydF90b19iZ190cmVlKHN0cnVjdCBidHJmc19mc19pbmZvICpmc19p
-bmZvKQogCX0KIAogaXRlcmF0ZV9iZ3M6Ci0JaWYgKGZzX2luZm8tPmxhc3RfY29udmVydGVk
-X2JnX2J5dGVuciA9PSAodTY0KS0xKSB7Ci0JCWNlID0gbGFzdF9jYWNoZV9leHRlbnQoJmZz
-X2luZm8tPm1hcHBpbmdfdHJlZS5jYWNoZV90cmVlKTsKLQl9IGVsc2UgewotCQljZSA9IHNl
-YXJjaF9jYWNoZV9leHRlbnQoJmZzX2luZm8tPm1hcHBpbmdfdHJlZS5jYWNoZV90cmVlLAot
-CQkJCQkgZnNfaW5mby0+bGFzdF9jb252ZXJ0ZWRfYmdfYnl0ZW5yKTsKLQkJaWYgKCFjZSkg
-ewotCQkJZXJyb3IoImZhaWxlZCB0byBmaW5kIGJsb2NrIGdyb3VwIGZvciBieXRlbnIgJWxs
-dSIsCi0JCQkgICAgICBmc19pbmZvLT5sYXN0X2NvbnZlcnRlZF9iZ19ieXRlbnIpOwotCQkJ
-cmV0ID0gLUVOT0VOVDsKLQkJCWdvdG8gZXJyb3I7Ci0JCX0KLQkJY2UgPSBwcmV2X2NhY2hl
-X2V4dGVudChjZSk7Ci0JCWlmICghY2UpIHsKLQkJCWVycm9yKCJubyBtb3JlIGJsb2NrIGdy
-b3VwcyBiZWZvcmUgYnl0ZW5yICVsbHUiLAotCQkJICAgICAgZnNfaW5mby0+bGFzdF9jb252
-ZXJ0ZWRfYmdfYnl0ZW5yKTsKLQkJCXJldCA9IC1FTk9FTlQ7Ci0JCQlnb3RvIGVycm9yOwot
-CQl9Ci0JfQorCWNlID0gbGFzdF9jYWNoZV9leHRlbnQoJmZzX2luZm8tPm1hcHBpbmdfdHJl
-ZS5jYWNoZV90cmVlKTsKIAogCS8qIE5vdyBjb252ZXJ0IGVhY2ggYmxvY2sgKi8KIAl3aGls
-ZSAoY2UpIHsK
-
---------------dxdrLdsJx70r1UhrjKoj3700--
+> +
+> +target_dir=3D"$TEST_DIR/test-$seq"
+> +rm -fr $target_dir
+> +mkdir $target_dir
+> +
+> +$here/src/rewinddir-test $target_dir
+> +
+> +# success, all done
+> +echo "Silence is golden"
+> +status=3D0
+> +exit
+> diff --git a/tests/generic/471.out b/tests/generic/471.out
+> new file mode 100644
+> index 00000000..260f629e
+> --- /dev/null
+> +++ b/tests/generic/471.out
+> @@ -0,0 +1,2 @@
+> +QA output created by 471
+> +Silence is golden
+> --
+> 2.40.1
+>

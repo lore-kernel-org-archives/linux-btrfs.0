@@ -2,123 +2,183 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 065D7E7D0A6
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Sep 2023 19:27:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 076E1E7D0A7
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Sep 2023 19:55:01 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229894AbjIUT1u (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 21 Sep 2023 15:27:50 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43496 "EHLO
+        id S229608AbjIUTzE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 21 Sep 2023 15:55:04 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44990 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229781AbjIUT1a (ORCPT
+        with ESMTP id S231231AbjIUTyY (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Sep 2023 15:27:30 -0400
-Received: from esa2.hgst.iphmx.com (esa2.hgst.iphmx.com [68.232.143.124])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2A38AA75F9;
-        Thu, 21 Sep 2023 11:01:19 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1695319280; x=1726855280;
-  h=from:to:cc:subject:date:message-id:mime-version:
-   content-transfer-encoding;
-  bh=Xbsa5OcnCXXXs0TqjLs951q126IEREQqxyCG6U4LtuA=;
-  b=UESu6cIe0Put/kP0/geCUo4Fggu/d5ygOzcBV/GAdRMs8ZGZxmKQ3leW
-   NB2iEjvqNkvVY1Uh3t+TT3wUnL/2T+44vvBEEcRLPderSP5O4xA26msqf
-   dUXwfzbSFDIxo3Np0iAfLssIUZMScU2KmvZZccO4FrZaXOBlwEP9ASDze
-   BsAIM4O8zMKmCRqyaXtocOzOSW9ftvk+CNheZ9gtT1s0SboiidPFXUh1u
-   hj1pnIoOKbENpa2o4fFbgXUZIvkDHi1IFCEe91K6GtVdkTrGIcOfLjJIy
-   eCQA5IzIvagIV6bT3P2EiHipuzWbWrkKcNP2y0NOdvub7ePPwA0mk4OmM
-   Q==;
-X-CSE-ConnectionGUID: YnpFUizWSB6CDHxAWUx8Zw==
-X-CSE-MsgGUID: ECMHY59KQGyc7NXkvIJfXw==
-X-IronPort-AV: E=Sophos;i="6.03,165,1694707200"; 
-   d="scan'208";a="349826984"
-Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 21 Sep 2023 17:42:05 +0800
-IronPort-SDR: eGE4G3/ZtroGBAQ+l/Esw4npXUV+tBih74Odx8gDpEJK1hftiHjpgr9mgFtTsuS/lA49HWPmJc
- kmIiW7lMAQk7bhYzZjgdas0fFFtESkk8bC5sYBz2/3/gqmWtd9qXftT0f6QqQZ0cR2nSf3GKuJ
- sv1NtyUISa7K6+/5QrdGfGgIV3GIjxSB1xiM2VGm5OEa0yPDuppGkwv7ssP1uYmcar1DpRjUPg
- dbGvKYtaT57YlfcfkT8maJvHYd6Iy8llSM0sBL9LXs6PxYa7fOaxoZ5/HLGCR/0JUl/FYMM5gU
- NlQ=
-Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 21 Sep 2023 01:48:58 -0700
-IronPort-SDR: OyE5cX3Kz8opQiaSpy4r/0cdHLG3+l5ROEH9e5GYmfk1zEoJ/SUKZUwNMvx9v95+bQTEMT48Za
- xQXJgtNz1qRo08l6cETqC0GV7hMyngmN8Q+3O1R07Mcmk/ZYKy+/Po4hyKI0+ViLMSMlfkPnS4
- szN0xNRLcJmp53VJ3KqXPpjOhR/ohWcEQCFuqJxEp6uQL4YNurQjDR6OKX+CqgN5UoEJ1Zgod+
- YKdWF2FmuJ5XmpBbXeNHZC/b98+2ZgC9O1ZjyMobqxDxophsXyZ6nP3DkK0l6R86+F2SBzkvB7
- 8UA=
-WDCIronportException: Internal
-Received: from unknown (HELO naota-xeon.wdc.com) ([10.225.163.94])
-  by uls-op-cesaip01.wdc.com with ESMTP; 21 Sep 2023 02:42:04 -0700
-From:   Naohiro Aota <naohiro.aota@wdc.com>
-To:     fstests@vger.kernel.org
-Cc:     linux-btrfs@vger.kernel.org, Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH] btrfs/239: call fsync to create tree-log dedicated block group for zoned mode
-Date:   Thu, 21 Sep 2023 18:41:58 +0900
-Message-ID: <20230921094158.1391328-1-naohiro.aota@wdc.com>
-X-Mailer: git-send-email 2.42.0
+        Thu, 21 Sep 2023 15:54:24 -0400
+Received: from domac.alu.hr (domac.alu.unizg.hr [IPv6:2001:b68:2:2800::3])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5447091B9A;
+        Thu, 21 Sep 2023 12:22:14 -0700 (PDT)
+Received: from localhost (localhost [127.0.0.1])
+        by domac.alu.hr (Postfix) with ESMTP id 2568560173;
+        Thu, 21 Sep 2023 21:22:12 +0200 (CEST)
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=alu.unizg.hr; s=mail;
+        t=1695324132; bh=PX2wFqIBZFyJNoXhgscY4UnjGGPUhV+rQrGGeIoS6t0=;
+        h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
+        b=z9/HFKocD8VYsdYFkOAyTegMz5blGVk6WQdA+6k6I2RedlbTq8Ot//rhItc8QQsSg
+         HRkOd18etVv9B2sL1AIItuAk7E321PQ30pO8DCSLaRFLvDyQDUPRX6QCC+D16LZIdK
+         s10/AVqlQpnMOXudkQPf+Wl+KVN6NvHd6QwPsy1rqGSsxImmtkAo8slC+YgL7cir5I
+         iNAaBT47/Lkn/5jMFOKLdhNtJoTpCmxJb3Yom7CIoVxJpxWFFpIOVwkTj1PkWajB/n
+         Qoa1Zfz1263E6jV5ONeipFjbFs/txDwuRxgAfncL1YY3LtGWmN4vuqt7G11T3ZN4xZ
+         zA+hHK9aH321g==
+X-Virus-Scanned: Debian amavisd-new at domac.alu.hr
+Received: from domac.alu.hr ([127.0.0.1])
+        by localhost (domac.alu.hr [127.0.0.1]) (amavisd-new, port 10024)
+        with ESMTP id uhgac2be-zFF; Thu, 21 Sep 2023 21:22:09 +0200 (CEST)
+Received: from [192.168.1.6] (78-3-40-141.adsl.net.t-com.hr [78.3.40.141])
+        by domac.alu.hr (Postfix) with ESMTPSA id 26B0A60157;
+        Thu, 21 Sep 2023 21:22:08 +0200 (CEST)
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=alu.unizg.hr; s=mail;
+        t=1695324129; bh=PX2wFqIBZFyJNoXhgscY4UnjGGPUhV+rQrGGeIoS6t0=;
+        h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
+        b=FhYVaIFb5/dEMbZ4a0ziNrSbCjxs/yhfZC7YCAIBaxiMevk9S5d8eau5pbVuzxuEP
+         X3px327+nfU8W5QSqceGMkAZCkZfwcll7IJXnM7VY32xWDxkAAhGq/nTMZtksmjNpu
+         Y3Eg8h2eC6LZky+OZb6jJ6SP633S2Va0Wq2Smo7pPw4rgA020CmT7kiz1ldj42N9h5
+         Cz8iwEN1Fs9qOVCO2TbWOpuZgLeKz33qv6hEX3of8QCo1QIoEX91+jmNH/ReUu+qcl
+         ftGsndfPmt3LSJQKw8rDpDB2DqIm4cXlwA2JQYV6QsqBd594Cn9pF3pHUvvj+J0joQ
+         88pp1QLVfFdUg==
+Message-ID: <b936c22f-5eb0-4f12-a6d5-7f69a42286f7@alu.unizg.hr>
+Date:   Thu, 21 Sep 2023 21:22:07 +0200
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+User-Agent: Mozilla Thunderbird
+Subject: Re: BUG: KCSAN: data-race in btrfs_calculate_inode_block_rsv_size
+ [btrfs] / btrfs_use_block_rsv [btrfs] [EXPERIMENTAL PATCH]
+Content-Language: en-US
+To:     dsterba@suse.cz
+Cc:     linux-btrfs@vger.kernel.org, Josef Bacik <josef@toxicpanda.com>,
+        Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
+        linux-kernel@vger.kernel.org
+References: <c9e4e480-6f52-949b-e4b6-3eb0fcda3f83@alu.unizg.hr>
+ <20230920152922.GC2268@twin.jikos.cz>
+From:   Mirsad Todorovac <mirsad.todorovac@alu.unizg.hr>
+In-Reply-To: <20230920152922.GC2268@twin.jikos.cz>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Running btrfs/239 on a zoned device often fails with the following error.
+On 9/20/23 17:29, David Sterba wrote:
+> On Wed, Sep 20, 2023 at 08:18:35AM +0200, Mirsad Todorovac wrote:
+>> Hi,
+>>
+>> This is your friendly bug reporter again.
+>>
+>> Please don't throw stuff at me, as I found another KCSAN data-race problem.
+>>
+>> I feel like a boy who cried wolf ...
+>>
+>> I hope this will get some attention, as it looks this time like a real btrfs problem that could cause
+>> the kernel module to make a wrong turn when managing storage in different threads simultaneously and
+>> lead to the corruption of data. However, I do not have an example of this corruption, it is by now only
+>> theoretical in this otherwise great filesystem.
+>>
+>> In fact, I can announce quite a number of KCSAN bugs already in dmesg log:
+>>
+>>      # of
+>> occuren
+>>       ces problematic function
+>> -------------------------------------------
+>>       182 __bitmap_and+0xa3/0x110
+>>         2 __bitmap_weight+0x62/0xa0
+>>       138 __call_rcu_common.constprop.0
+>>         3 __cgroup_account_cputime
+>>         1 __dentry_kill
+>>         3 __mod_lruvec_page_state
+>>        15 __percpu_counter_compare
+>>         1 __percpu_counter_sum+0x8f/0x120
+>>         1 acpi_ut_acquire_mutex
+>>         2 amdgpu_fence_emit
+>>         1 btrfs_calculate_inode_block_rsv_size
+>>         1 btrfs_page_set_uptodate
+>>        28 copy_from_read_buf
+>>         3 d_add
+>>         3 d_splice_alias
+>>         1 delayacct_add_tsk+0x10d/0x630
+>>         7 do_epoll_ctl
+>>         1 do_vmi_align_munmap
+>>        86 drm_sched_entity_is_ready
+>>         4 drm_sched_entity_pop_job
+>>         3 enqueue_timer
+>>         1 finish_fault+0xde/0x360
+>>         2 generic_fillattr
+>>         2 getrusage
+>>         9 getrusage+0x3ba/0xaa0
+>>         1 getrusage+0x3df/0xaa0
+>>         6 inode_needs_update_time
+>>         1 inode_set_ctime_current
+>>         1 inode_update_timestamps
+>>         3 kernfs_refresh_inode
+>>        22 ktime_get_mono_fast_ns+0x87/0x120
+>>        13 ktime_get_mono_fast_ns+0xb0/0x120
+>>        24 ktime_get_mono_fast_ns+0xc0/0x120
+>>        79 mas_topiary_replace
+>>        12 mas_wr_modify
+>>        61 mas_wr_node_store
+>>         1 memchr_inv+0x71/0x160
+>>         1 memchr_inv+0xcf/0x160
+>>        19 n_tty_check_unthrottle
+>>         5 n_tty_kick_worker
+>>        35 n_tty_poll
+>>        32 n_tty_read
+>>         1 n_tty_read+0x5f8/0xaf0
+>>         3 osq_lock
+>>        27 process_one_work
+>>         4 process_one_work+0x169/0x700
+>>         2 rcu_implicit_dynticks_qs
+>>         1 show_stat+0x45b/0xb70
+>>         3 task_mem
+>>       344 tick_nohz_idle_stop_tick
+>>        32 tick_nohz_next_event
+>>         1 tick_nohz_next_event+0xe7/0x1e0
+>>        90 tick_sched_do_timer
+>>         5 tick_sched_do_timer+0x2c/0x120
+>>         1 wbt_done
+>>         1 wbt_issue
+>>         2 wq_worker_tick
+>>        37 xas_clear_mark
+>>
+>> ------------------------------------------------------
+>>
+>> This report is from a vanilla torvalds tree 6.6-rc2 kernel on Ubuntu 22.04:
+>>
+>> [13429.116126] ==================================================================
+>> [13429.116794] BUG: KCSAN: data-race in btrfs_calculate_inode_block_rsv_size [btrfs] / btrfs_use_block_rsv [btrfs]
+> 
+> Thanks for the report.  Some data races are known to happen in the
+> reservation code but all the critical changes are done under locks, so
+> an optimistic check may skip locking to check a status but then it's
+> done properly again under a lock. Generally speaking.
+> 
+> We had several reports from static checkers and at least in one case we
+> added an annotation so KCSAN does not complain:
+> 
+> https://git.kernel.org/linus/748f553c3c4c4f175c6c834358632aff802d72cf
+> 
+> The original report is at
+> 
+> https://lore.kernel.org/linux-btrfs/CAAwBoOJDjei5Hnem155N_cJwiEkVwJYvgN-tQrwWbZQGhFU=cA@mail.gmail.com/
+> 
+> I have briefly looked at your report, it seems to be different from the
+> one above but still matches the general approach to the reservations. If
+> it's a false flag then we can add another wrapper with the annotation,
+> unless it's a real bug.
 
-  btrfs/239 5s ... - output mismatch (see /host/btrfs/239.out.bad)
-      --- tests/btrfs/239.out     2023-09-21 16:56:37.735204924 +0900
-      +++ /host/btrfs/239.out.bad  2023-09-21 18:22:45.401433408 +0900
-      @@ -1,4 +1,6 @@
-       QA output created by 239
-      +/testdir/dira still exists
-      +/dira does not exists
-       File SCRATCH_MNT/testdir/file1 data:
-       0000000 ab ab ab ab ab ab ab ab ab ab ab ab ab ab ab ab
-       *
-      ...
+Thank you for your bug report evaluation.
 
-This happens because "testdir" and "dira" are not logged on the first fsync
-(fsync $SCRATCH_MNT/testdir), but are written as a full commit. That
-prevents updating the log on "mv" time, leaving them pre-mv state.
+I cannot do more but pass on what KCSAN provides - my experience with btrfs is far from
+required (on the level of fresh user).
 
-The full commit is induced by the creation of a new block group. On the
-zoned mode, we use a dedicated block group for tree-log. That block group
-is created on-demand or assigned to a metadata block group if there is
-none. On the first mount of a file system, we need to create one because
-there is only one metadata block group available for the regular
-metadata. That creation of a new block group forces tree-log to be a full
-commit on that transaction, which prevents logging "testdir" and "dira".
+However, without attempting to argue, it seems to be possible that there is a data-race,
+because the read side is in the function is not protected by a lock, and theoretically
+the block_rsv->failfast can change by the write-side thread while the read-side thread
+is using various parts of the block_rsv structure w/o a read lock.
 
-Fix the issue by calling fsync before the first "sync", which creates the
-dedicated block group and let the files be properly logged.
-
-Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
----
- tests/btrfs/239 | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
-
-diff --git a/tests/btrfs/239 b/tests/btrfs/239
-index 3fbeaedd2c39..5a2dbe58d5fb 100755
---- a/tests/btrfs/239
-+++ b/tests/btrfs/239
-@@ -83,6 +83,18 @@ done
- #
- mkdir $SCRATCH_MNT/testdir/dira
- 
-+# This fsync is for the zoned mode. On the zoned mode, we use a dedicated block
-+# group for tree-log. That block group is created on-demand or assigned to a
-+# metadata block group if there is none. On the first mount of a file system, we
-+# need to create one because there is only one metadata block group available
-+# for the regular metadata. That creation of a new block group forces tree-log
-+# to be a full commit on that transaction, which prevents logging "testdir" and
-+# "dira" and screws up the result.
-+#
-+# Calling fsync here will create the dedicated block group, and let them be
-+# logged.
-+$XFS_IO_PROG -c "fsync" $SCRATCH_MNT
-+
- # Make sure everything done so far is durably persisted.
- sync
- 
--- 
-2.42.0
-
+Best regards,
+Mirsad Todorovac

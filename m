@@ -2,73 +2,119 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 23D19CE79A8
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Sep 2023 17:10:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D8930E7D0A3
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Sep 2023 17:22:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229708AbjIURKr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 21 Sep 2023 13:10:47 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39312 "EHLO
+        id S229539AbjIURWi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 21 Sep 2023 13:22:38 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60742 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230141AbjIURJX (ORCPT
+        with ESMTP id S229463AbjIURWZ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Sep 2023 13:09:23 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F066C7280
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 Sep 2023 10:05:24 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 4DC681F460;
-        Thu, 21 Sep 2023 16:47:14 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1695314834;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=O8V7mHc8IrcXYXf11NPbIduvlDjbXiRa4A9aFf6YEJM=;
-        b=pLHgJYnAb9yLTnDkun0IZZpQPwHRIfsWllLC5Au82vM1qfrZPM5D1p8zTNgfx4Ql8yZLEd
-        uHjyEIaMvuIoCHaryQ2Cu0vOo00fDfjO4oJ8r5kuAi8gAS5qXXrNQSQ2JhdoJWVcVQFvy1
-        QbYSjFe4TFGont4RfE2p7j0advCw9os=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1695314834;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=O8V7mHc8IrcXYXf11NPbIduvlDjbXiRa4A9aFf6YEJM=;
-        b=hsxjDIoWUKVAFNCDddV2m53cuq5kQtCSwwY6dgKJwSl6droITg3VKJBO+RjxHYO7nSbAc8
-        /Nswasd98qJm+RCw==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 2857413513;
-        Thu, 21 Sep 2023 16:47:14 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id MaYZCZJzDGXNIwAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Thu, 21 Sep 2023 16:47:14 +0000
-Date:   Thu, 21 Sep 2023 18:40:39 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Cc:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: fix RAID10 writing
-Message-ID: <20230921164039.GA5906@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <a2cecda31933ba147591d3b8017e09acf9605681.1695293696.git.johannes.thumshirn@wdc.com>
+        Thu, 21 Sep 2023 13:22:25 -0400
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E71EA44F58
+        for <linux-btrfs@vger.kernel.org>; Thu, 21 Sep 2023 10:13:45 -0700 (PDT)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 3BEF8C4E660;
+        Thu, 21 Sep 2023 13:33:19 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1695303200;
+        bh=mCuXRDN/Fl0nhpc3xAYyMwnxfQqvzEbCut3DXdqKvis=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=JtzfFVQ/6rS10ThlmwXXMIOvjPjOkd9Ig0qS1qm8O+bB1Xlje9ZpkZNM8yEUYA0PD
+         6QRHATMcVEKNoug1vGYOAQriOIyFM8kXte1C10yO57ZkyzkCfS2syMM1F3qRpgSfIE
+         BPblse9oSPafvjdv4uZnBa4L6Rgfn1+3X7Drd8WP56I3W4uZYsZDGEmSe5s/+ak89p
+         cB9NM1dsAc1ZkqZQQBFCNOYfAXZ7hba91+kYIG9aGp0zmVlkPqnmZObAwViMJS+a6a
+         Bqu4nco9lDAc2Kd0D3KV/7P/OETq2pBLfFBTalVE2bUUHZB/5hJRFDWFpzq1S3Xp+n
+         NvwImabNBfLtA==
+Date:   Thu, 21 Sep 2023 15:33:16 +0200
+From:   Christian Brauner <brauner@kernel.org>
+To:     Jan Kara <jack@suse.cz>
+Cc:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        Christoph Hellwig <hch@infradead.org>,
+        Josef Bacik <josef@toxicpanda.com>,
+        Christoph Hellwig <hch@lst.de>
+Subject: Re: [PATCH RESEND] btrfs: use the super_block as holder when
+ mounting file systems
+Message-ID: <20230921-blumig-aneinander-c0298538fe40@brauner>
+References: <20230921121945.4701-1-jack@suse.cz>
+ <20230921-wettrennen-warfen-1067d17aef27@brauner>
+ <20230921130729.rmxq43efbod4gd3a@quack3>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <a2cecda31933ba147591d3b8017e09acf9605681.1695293696.git.johannes.thumshirn@wdc.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <20230921130729.rmxq43efbod4gd3a@quack3>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Sep 21, 2023 at 03:55:43AM -0700, Johannes Thumshirn wrote:
-> Fix out of bounds write uncovered by fsstress testing RAID10.
+On Thu, Sep 21, 2023 at 03:07:29PM +0200, Jan Kara wrote:
+> On Thu 21-09-23 14:50:07, Christian Brauner wrote:
+> > On Thu, Sep 21, 2023 at 02:19:45PM +0200, Jan Kara wrote:
+> > > From: Christoph Hellwig <hch@lst.de>
+> > > 
+> > > The file system type is not a very useful holder as it doesn't allow us
+> > > to go back to the actual file system instance.  Pass the super_block
+> > > instead which is useful when passed back to the file system driver.
+> > > 
+> > > This matches what is done for all other block device based file systems and it
+> > > also fixes an issue that block device freezing (as used e.g. by LVM when
+> > > performing device snapshots) starts working for btrfs.
+> > > 
+> > > Signed-off-by: Christoph Hellwig <hch@lst.de>
+> > > Acked-by: Christian Brauner <brauner@kernel.org>
+> > > Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+> > > Message-Id: <20230811100828.1897174-7-hch@lst.de>
+> > > Signed-off-by: Jan Kara <jack@suse.cz>
+> > > ---
+> > >  fs/btrfs/super.c | 7 ++-----
+> > >  1 file changed, 2 insertions(+), 5 deletions(-)
+> > > 
+> > > Hello,
+> > > 
+> > > I'm resending this btrfs fix. Can you please merge it David? It's the only bit
+> > > remaining from the original Christoph's block device opening patches and is
+> > > blocking me in pushing out the opening of block devices using bdev_handle.
+> > > Thanks!
+> > 
+> > Thanks for resending.
+> > 
+> > Next time we will ensure that a vfs triggered conversion must go through
+> > a vfs tree as this half converted state with forgotten patches is not
+> > something that we should repeat.
 > 
-> Fixes: 341908a5aaa0 ("btrfs: add support for inserting raid stripe extents")
-> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+> Yeah, I agree it would be good to find a smoother way to handle such
+> merges. I understand David's desire to give changes proper testing which
+> generally doesn't happen in linux-next but on maintainer's own branches and
+> infrastructure but perhaps some stable branch in VFS tree that filesystem
+> maintainers could pull when putting together the branch they push out to
+> the testing infrastructure would work?
 
-Commit updated, thanks.
+Yes, I'm very happy to provide this. Also worth nothing that everything
+that goes through vfs.git sees xfstests for all affected filesystems.
+
+Ideally we'll automate this directly on that repo at some point for all
+official branches.
+
+Right now I personally have:
+
+https://github.com/brauner/mkosi-kernel
+
+which uses mkosi to build a GPT image fully unprivileged with an:
+
+ESP partition
+root partition (of chosen format)
+2-4 testing partitions
+
+for any distro I need with any kernel config I want:
+
+mkosi -d debian -t disk -f
+
+During boot it generates a bunch of unprivileged users via
+systemd-userdb drop-ins placed in /etc/userdb/ during build:
+https://github.com/brauner/mkosi-kernel/tree/main/mkosi.extra/etc/userdb
+creating testing users (user1, fsgqa, fgqa2, 123456-fsgqa) for xfstests.
+
+Then I just fire the relevant tests using incus (formerly LXD). All
+branches get the same treatment usually for ext4, xfs, btrfs via
+-g quick (btrfs gets multiple devices - that's why there's 4 partitions).

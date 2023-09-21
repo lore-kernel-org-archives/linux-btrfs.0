@@ -2,103 +2,127 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C60C0E7D0AA
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Sep 2023 21:15:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8816CE7D0B0
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Sep 2023 21:15:40 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229999AbjIUVPm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 21 Sep 2023 17:15:42 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52660 "EHLO
+        id S231280AbjIUVPn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 21 Sep 2023 17:15:43 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54250 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233074AbjIUVPP (ORCPT
+        with ESMTP id S232617AbjIUVOb (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Sep 2023 17:15:15 -0400
-Received: from esa2.hgst.iphmx.com (esa2.hgst.iphmx.com [68.232.143.124])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BD039A75EF;
-        Thu, 21 Sep 2023 11:01:15 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1695319276; x=1726855276;
-  h=from:to:cc:subject:date:message-id:in-reply-to:
-   references:mime-version:content-transfer-encoding;
-  bh=J5/Mm01U/8HkGqBt2NFeAHTMA49ugVf9griRdMZM9bc=;
-  b=OjT/9BopjpGX/QNuLb4abuT0d4KM+xdm3f9ieaUJIXwk5KptG7rXgUQG
-   KwlBNj0GlFa6JcuiiEvsmHFwbGR0J0FzOYt5UcykpuEOHdevfYLUal3Ia
-   mDXm8EhjOZwkN2yVVIqt1E3kdeG4GLFAiBCuJIVpXaTXBU3PKy3NNbXeL
-   nkOhm888l2TyelQ/t64vuO8dQCiqn118auUf2+7gOYIHI2sVioq8EPETH
-   BaoSRjP78diBsuCqfeXEejBkOnS5TnDCqf8t1IA45XfgPmuja0xwRxgOX
-   KBJTP0vhgvxbahFgF9tsZotInxw3LFidC+FBzoKVExV8knC9Zf1lRI1fX
-   g==;
-X-CSE-ConnectionGUID: KC3GDAmJQb+sCHBT0IJTIw==
-X-CSE-MsgGUID: W6TQwcbCS2eFrOn2iQW9kA==
-X-IronPort-AV: E=Sophos;i="6.03,164,1694707200"; 
-   d="scan'208";a="349818423"
-Received: from h199-255-45-15.hgst.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 21 Sep 2023 15:44:24 +0800
-IronPort-SDR: 9njPc3Ld3pehKnMA4GMgoGnwp3W5DkuYVIBxLNWbvFlyEqb3czJyp8wO5axNlL1HnV+RNSX0Lb
- 478Of/WrC79BO7CSOwluqDe+jekcXxdnNkK/ulLRsKsJ+N9tbyD5v62jxkQLJVd5iekEtWu6JO
- 8X0WHUbXznlDB712d/N0JxdLVb+d3IrGPQVp0TJf4hJAmWquBcObeM36QcLhBSJUClmicYzgD/
- Skiu/ElIhp5dx2Q7wC8jXBSbVDrI016k0QszEgHciskFDrrB182mGdRellVNxprwfDVK9weTTf
- baA=
-Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 20 Sep 2023 23:51:18 -0700
-IronPort-SDR: rF0sQVydsUig2QapScE+ESHXYYV/2xwQ0BDCzBhdhS8rzjf1gV4VqizBjMOauCwYwDtQqTrVbQ
- nMoh5LNSbWwwt0BqgTRYuwAWwU7slTTG8g7ZJBtsNin/T/8jC0+JHgzyyOH8tpV1F7cTA3CSis
- PUAZqIHETGziMISImKxj/viu8V4+cjl7spkF/w1eS1bYvPhp2oHild3j/ac3Iv0WgO97BgawI7
- 40HhuE5ewLfvsS/M+a2xTwHCJsTwKlnHRTpHYVsNXYkqAXs8SyW5kst7Iup3tnFggNLad/aR8W
- qvE=
-WDCIronportException: Internal
-Received: from unknown (HELO naota-xeon.wdc.com) ([10.225.163.94])
-  by uls-op-cesaip01.wdc.com with ESMTP; 21 Sep 2023 00:44:24 -0700
-From:   Naohiro Aota <naohiro.aota@wdc.com>
-To:     fstests@vger.kernel.org
-Cc:     linux-btrfs@vger.kernel.org, Naohiro Aota <naohiro.aota@wdc.com>,
-        Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v3 2/2] btrfs/076: use _fixed_by_kernel_commit to tell the fixing kernel commit
-Date:   Thu, 21 Sep 2023 16:44:08 +0900
-Message-ID: <74525f6b1fd645ac276b701e5032f3f913ed8ce0.1695282094.git.naohiro.aota@wdc.com>
-X-Mailer: git-send-email 2.42.0
-In-Reply-To: <cover.1695282094.git.naohiro.aota@wdc.com>
-References: <cover.1695282094.git.naohiro.aota@wdc.com>
+        Thu, 21 Sep 2023 17:14:31 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9A7F112452
+        for <linux-btrfs@vger.kernel.org>; Thu, 21 Sep 2023 10:06:54 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id D84E3338A7;
+        Thu, 21 Sep 2023 12:19:54 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1695298794; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=/IvyR5teJIDpXHPqwwG2InOXmelIIpG9En6DQgpMvUY=;
+        b=kRXFK1xbl6JapWXWNJ738DCzg4NIj6Lhitne+Irhfh5PA0BAO1el94YBk3FDwsgxISs1bc
+        d+gvaUZSMNv6YVN8HSTqmW4JgDF6gYKBvHRi0OML52Cm/4rSwok9YB9r3e3Zi1v2MPzIFv
+        DY1KzdoomkEcAkxfvDTNV0ViObhAgGE=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1695298794;
+        h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=/IvyR5teJIDpXHPqwwG2InOXmelIIpG9En6DQgpMvUY=;
+        b=G7yGpz7tgBx/LW+qI0maxV+Ttv5yaGl8ym2TV0OFP+fZDH2NMCsieuNqLQ4kvTa1R8V5fa
+        H2kkgffGZSgXCVBA==
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id BBF0613513;
+        Thu, 21 Sep 2023 12:19:54 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id YHk+Leo0DGU+FQAAMHmgww
+        (envelope-from <jack@suse.cz>); Thu, 21 Sep 2023 12:19:54 +0000
+Received: by quack3.suse.cz (Postfix, from userid 1000)
+        id 34DF3A077D; Thu, 21 Sep 2023 14:19:54 +0200 (CEST)
+From:   Jan Kara <jack@suse.cz>
+To:     David Sterba <dsterba@suse.com>
+Cc:     linux-btrfs@vger.kernel.org, Christoph Hellwig <hch@infradead.org>,
+        Christian Brauner <brauner@kernel.org>,
+        Josef Bacik <josef@toxicpanda.com>,
+        Christoph Hellwig <hch@lst.de>, Jan Kara <jack@suse.cz>
+Subject: [PATCH RESEND] btrfs: use the super_block as holder when mounting file systems
+Date:   Thu, 21 Sep 2023 14:19:45 +0200
+Message-Id: <20230921121945.4701-1-jack@suse.cz>
+X-Mailer: git-send-email 2.35.3
 MIME-Version: 1.0
+X-Developer-Signature: v=1; a=openpgp-sha256; l=2374; i=jack@suse.cz; h=from:subject; bh=tDDmoV+ckhbcmWWGyi5En+lo2KqOpx0jSYdkvjOmBzQ=; b=owEBbQGS/pANAwAIAZydqgc/ZEDZAcsmYgBlDDTRBA/jF5vBYnT+vIt48rvHJkjgD9KVFYFTzEor Mu2Yjy2JATMEAAEIAB0WIQSrWdEr1p4yirVVKBycnaoHP2RA2QUCZQw00QAKCRCcnaoHP2RA2dHvB/ 4tXbH6vmX+GoC/4FEA181hfoZlRfONcPdCn6t+bU1B4XVwJrgy0pleQdNUeGx1F9nwlX01TqvO84pl gg2mHlWJezvst026DeBUCc+BQd4zCvQaRwMtI8iv1kKOY48QQf+3mzR6YYAtK4yPlNMwACma1xNtXQ Btzy8l3MfZJMyJv2JRIy6RC9PgYaoJIiOTanRVwmB8d92kRhcLGnm4dqWFMiBFhIlO5lUqIE8Q6BBX joQjnDe4HySR2bUF4ZJLNm6hLfiVes4CzemU9t0X/hK9M2quAmTNs2qYr3SOn0JHMWiJwXLV0ocA+l HRu7S3n1BErWgLqLYwUTEeaS0C1Rm9
+X-Developer-Key: i=jack@suse.cz; a=openpgp; fpr=93C6099A142276A28BBE35D815BC833443038D8C
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The fix commit is written in the comment without a commit hash. Use
-_fixed_by_kernel_commit command to describe it.
+From: Christoph Hellwig <hch@lst.de>
 
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
-Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+The file system type is not a very useful holder as it doesn't allow us
+to go back to the actual file system instance.  Pass the super_block
+instead which is useful when passed back to the file system driver.
+
+This matches what is done for all other block device based file systems and it
+also fixes an issue that block device freezing (as used e.g. by LVM when
+performing device snapshots) starts working for btrfs.
+
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+Acked-by: Christian Brauner <brauner@kernel.org>
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+Message-Id: <20230811100828.1897174-7-hch@lst.de>
+Signed-off-by: Jan Kara <jack@suse.cz>
 ---
- tests/btrfs/076 | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ fs/btrfs/super.c | 7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
 
-diff --git a/tests/btrfs/076 b/tests/btrfs/076
-index 43dbff538278..894a1ac7fa5d 100755
---- a/tests/btrfs/076
-+++ b/tests/btrfs/076
-@@ -5,10 +5,8 @@
- # FS QA Test No. btrfs/076
- #
- # Regression test for btrfs incorrect inode ratio detection.
--# This was fixed in the following linux kernel patch:
--#
--#     Btrfs: fix incorrect compression ratio detection
- #
-+
- . ./common/preamble
- _begin_fstest auto quick compress
+Hello,
+
+I'm resending this btrfs fix. Can you please merge it David? It's the only bit
+remaining from the original Christoph's block device opening patches and is
+blocking me in pushing out the opening of block devices using bdev_handle.
+Thanks!
+
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 4577cd64da2e..94ca2236e57f 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -70,8 +70,6 @@ static const struct super_operations btrfs_super_ops;
+  * requested by subvol=/path. That way the callchain is straightforward and we
+  * don't have to play tricks with the mount options and recursive calls to
+  * btrfs_mount.
+- *
+- * The new btrfs_root_fs_type also servers as a tag for the bdev_holder.
+  */
+ static struct file_system_type btrfs_fs_type;
+ static struct file_system_type btrfs_root_fs_type;
+@@ -1462,8 +1460,7 @@ static struct dentry *btrfs_mount_root(struct file_system_type *fs_type,
+ 		struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
  
-@@ -27,6 +25,8 @@ _cleanup()
- _supported_fs btrfs
- _require_test
- _require_scratch
-+_fixed_by_kernel_commit 4bcbb3325513 \
-+	"Btrfs: fix incorrect compression ratio detection"
- 
- # An extent size can be up to BTRFS_MAX_UNCOMPRESSED
- max_extent_size=$(( 128 * 1024 ))
+ 		mutex_lock(&uuid_mutex);
+-		error = btrfs_open_devices(fs_devices, sb_open_mode(flags),
+-					   fs_type);
++		error = btrfs_open_devices(fs_devices, sb_open_mode(flags), s);
+ 		mutex_unlock(&uuid_mutex);
+ 		if (error)
+ 			goto error_deactivate;
+@@ -1477,7 +1474,7 @@ static struct dentry *btrfs_mount_root(struct file_system_type *fs_type,
+ 			 fs_devices->latest_dev->bdev);
+ 		shrinker_debugfs_rename(&s->s_shrink, "sb-%s:%s", fs_type->name,
+ 					s->s_id);
+-		btrfs_sb(s)->bdev_holder = fs_type;
++		btrfs_sb(s)->bdev_holder = s;
+ 		error = btrfs_fill_super(s, fs_devices, data);
+ 	}
+ 	if (!error)
 -- 
-2.42.0
+2.35.3
 

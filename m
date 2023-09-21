@@ -2,119 +2,152 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D8930E7D0A3
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Sep 2023 17:22:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 45A5AE7D0A2
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Sep 2023 17:25:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229539AbjIURWi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 21 Sep 2023 13:22:38 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60742 "EHLO
+        id S229627AbjIURZr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 21 Sep 2023 13:25:47 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60734 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229463AbjIURWZ (ORCPT
+        with ESMTP id S229643AbjIURZS (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Sep 2023 13:22:25 -0400
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E71EA44F58
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 Sep 2023 10:13:45 -0700 (PDT)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 3BEF8C4E660;
-        Thu, 21 Sep 2023 13:33:19 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1695303200;
-        bh=mCuXRDN/Fl0nhpc3xAYyMwnxfQqvzEbCut3DXdqKvis=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=JtzfFVQ/6rS10ThlmwXXMIOvjPjOkd9Ig0qS1qm8O+bB1Xlje9ZpkZNM8yEUYA0PD
-         6QRHATMcVEKNoug1vGYOAQriOIyFM8kXte1C10yO57ZkyzkCfS2syMM1F3qRpgSfIE
-         BPblse9oSPafvjdv4uZnBa4L6Rgfn1+3X7Drd8WP56I3W4uZYsZDGEmSe5s/+ak89p
-         cB9NM1dsAc1ZkqZQQBFCNOYfAXZ7hba91+kYIG9aGp0zmVlkPqnmZObAwViMJS+a6a
-         Bqu4nco9lDAc2Kd0D3KV/7P/OETq2pBLfFBTalVE2bUUHZB/5hJRFDWFpzq1S3Xp+n
-         NvwImabNBfLtA==
-Date:   Thu, 21 Sep 2023 15:33:16 +0200
-From:   Christian Brauner <brauner@kernel.org>
-To:     Jan Kara <jack@suse.cz>
-Cc:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        Christoph Hellwig <hch@infradead.org>,
-        Josef Bacik <josef@toxicpanda.com>,
-        Christoph Hellwig <hch@lst.de>
-Subject: Re: [PATCH RESEND] btrfs: use the super_block as holder when
- mounting file systems
-Message-ID: <20230921-blumig-aneinander-c0298538fe40@brauner>
-References: <20230921121945.4701-1-jack@suse.cz>
- <20230921-wettrennen-warfen-1067d17aef27@brauner>
- <20230921130729.rmxq43efbod4gd3a@quack3>
+        Thu, 21 Sep 2023 13:25:18 -0400
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 16FDC423A
+        for <linux-btrfs@vger.kernel.org>; Thu, 21 Sep 2023 10:09:45 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+        s=mimecast20190719; t=1695316185;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=tKNfKAr0ozqZGJU0pTiqUwEte0aBUe4YFp+VlpUsJO0=;
+        b=hoE+4S7cJwNqtRK/6mPjZEp8H2n2jzptgbK8Y0naKc/JwNIrJYB6mCSR1EtUX3i9sOiCso
+        GDkcSVUJtOEkqvN1tXWh8t8l1jP6NMgOUfjZgdenIQta+O1/U6onfTtZqkaPaDxxPmSVS2
+        VkFFMQ6vxcFKNH0qTRMqn7Yx2pMmw74=
+Received: from mail-pg1-f199.google.com (mail-pg1-f199.google.com
+ [209.85.215.199]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
+ us-mta-543-ckR3MukdMzS4N-gwhKrBTg-1; Thu, 21 Sep 2023 13:09:43 -0400
+X-MC-Unique: ckR3MukdMzS4N-gwhKrBTg-1
+Received: by mail-pg1-f199.google.com with SMTP id 41be03b00d2f7-577f80e2385so988028a12.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 21 Sep 2023 10:09:43 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1695316183; x=1695920983;
+        h=in-reply-to:content-transfer-encoding:content-disposition
+         :mime-version:references:message-id:subject:cc:to:from:date
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=tKNfKAr0ozqZGJU0pTiqUwEte0aBUe4YFp+VlpUsJO0=;
+        b=N0ZWFUjBC7XaPD8dixEt4EruVYWfqeFUDVpJ6DtvgS+AfhgjMWVivdznEnV1yl4QbC
+         rla8K4oTNKXuvGLexX8lj1+6u2XaSuXPNlWE0iuguTJO8T37huX9nA8n7EQysHKpGHPm
+         ZASrxKk1NxhUuba2uIDsD2fhdCh0mwqD4KVzUE/5DPTg+hHGlpaiKDzd5eBXfLvZY7Ss
+         TOTRQ1E2VBL0ZZk9sT49hSBHhWFTK/ML8Uv0xo89bGYASgvu7zZfY15pjc39riloRFND
+         IYcXAx+RR6kEoxNbhksrGf99Th5URK+Pw5iS2u5+w5Rcr+Ls+p1y9XFxpXCuuxim26nU
+         nxDA==
+X-Gm-Message-State: AOJu0YzE3z7bNufLhpXQ0EHnxezIMkMKqRNSszarnB7CLyb5746PBROk
+        zlsu7LUmw1J6hWpWKozWcDJ06ERXooSbxwLbmPhumIGpvb6n5btsa97e0xqQRh21Ne8Mq02zmLv
+        QtNvaUxhsw3BhdFnxpnevsM0=
+X-Received: by 2002:a05:6a20:7288:b0:135:7975:f55 with SMTP id o8-20020a056a20728800b0013579750f55mr6850187pzk.47.1695316182849;
+        Thu, 21 Sep 2023 10:09:42 -0700 (PDT)
+X-Google-Smtp-Source: AGHT+IFXjXLWs9og+M2o/PuwMBg3kbrihV1cC6ZfxlgM5RSSjiSZfNB5O+lCT7qMFEg9lAwA29B+3A==
+X-Received: by 2002:a05:6a20:7288:b0:135:7975:f55 with SMTP id o8-20020a056a20728800b0013579750f55mr6850165pzk.47.1695316182484;
+        Thu, 21 Sep 2023 10:09:42 -0700 (PDT)
+Received: from dell-per750-06-vm-08.rhts.eng.pek2.redhat.com ([43.228.180.230])
+        by smtp.gmail.com with ESMTPSA id mu4-20020a17090b388400b0025bfda134ccsm1686141pjb.16.2023.09.21.10.09.40
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Thu, 21 Sep 2023 10:09:42 -0700 (PDT)
+Date:   Fri, 22 Sep 2023 01:09:38 +0800
+From:   Zorro Lang <zlang@redhat.com>
+To:     Naohiro Aota <Naohiro.Aota@wdc.com>
+Cc:     Filipe Manana <fdmanana@kernel.org>,
+        "fstests@vger.kernel.org" <fstests@vger.kernel.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v2 1/2] btrfs/076: support smaller extent size limit
+Message-ID: <20230921170938.jerqehx5427tgj45@dell-per750-06-vm-08.rhts.eng.pek2.redhat.com>
+References: <cover.1694762532.git.naohiro.aota@wdc.com>
+ <f03093d83baa5bcd4229a0dc9a473add534ee016.1694762532.git.naohiro.aota@wdc.com>
+ <CAL3q7H5m-kGMT7=wAmfDm-ZJ3bpdmN0=GhRkinMciRq8GfF-QQ@mail.gmail.com>
+ <lrlnkxdh47dd55y3uwdimbczoystuoikolaymnapsuheylvbs3@vztqzs75tlfx>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <20230921130729.rmxq43efbod4gd3a@quack3>
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <lrlnkxdh47dd55y3uwdimbczoystuoikolaymnapsuheylvbs3@vztqzs75tlfx>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Sep 21, 2023 at 03:07:29PM +0200, Jan Kara wrote:
-> On Thu 21-09-23 14:50:07, Christian Brauner wrote:
-> > On Thu, Sep 21, 2023 at 02:19:45PM +0200, Jan Kara wrote:
-> > > From: Christoph Hellwig <hch@lst.de>
-> > > 
-> > > The file system type is not a very useful holder as it doesn't allow us
-> > > to go back to the actual file system instance.  Pass the super_block
-> > > instead which is useful when passed back to the file system driver.
-> > > 
-> > > This matches what is done for all other block device based file systems and it
-> > > also fixes an issue that block device freezing (as used e.g. by LVM when
-> > > performing device snapshots) starts working for btrfs.
-> > > 
-> > > Signed-off-by: Christoph Hellwig <hch@lst.de>
-> > > Acked-by: Christian Brauner <brauner@kernel.org>
-> > > Reviewed-by: Josef Bacik <josef@toxicpanda.com>
-> > > Message-Id: <20230811100828.1897174-7-hch@lst.de>
-> > > Signed-off-by: Jan Kara <jack@suse.cz>
+On Thu, Sep 21, 2023 at 07:41:19AM +0000, Naohiro Aota wrote:
+> On Fri, Sep 15, 2023 at 10:16:32AM +0100, Filipe Manana wrote:
+> > On Fri, Sep 15, 2023 at 8:28 AM Naohiro Aota <naohiro.aota@wdc.com> wrote:
+> > >
+> > > Running btrfs/076 on a zoned null_blk device will fail with the following error.
+> > >
+> > >   - output mismatch (see /host/results/btrfs/076.out.bad)
+> > >       --- tests/btrfs/076.out     2021-02-05 01:44:20.000000000 +0000
+> > >       +++ /host/results/btrfs/076.out.bad 2023-09-15 01:49:36.000000000 +0000
+> > >       @@ -1,3 +1,3 @@
+> > >        QA output created by 076
+> > >       -80
+> > >       -80
+> > >       +83
+> > >       +83
+> > >       ...
+> > >
+> > > This is because the default value of zone_append_max_bytes is 127.5 KB
+> > > which is smaller than BTRFS_MAX_UNCOMPRESSED (128K). So, the extent size is
+> > > limited to 126976 (= ROUND_DOWN(127.5K, 4096)), which makes the number of
+> > > extents larger, and fails the test.
+> > >
+> > > Instead of hard-coding the number of extents, we can calculate it using the
+> > > max extent size of an extent. It is limited by either
+> > > BTRFS_MAX_UNCOMPRESSED or zone_append_max_bytes.
+> > >
+> > > Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+> > 
+> > Looks good,
+> > 
+> > Reviewed-by: Filipe Manana <fdmanana@suse.com>
+> > 
+> > Just two minor comments below.
+> > 
 > > > ---
-> > >  fs/btrfs/super.c | 7 ++-----
-> > >  1 file changed, 2 insertions(+), 5 deletions(-)
-> > > 
-> > > Hello,
-> > > 
-> > > I'm resending this btrfs fix. Can you please merge it David? It's the only bit
-> > > remaining from the original Christoph's block device opening patches and is
-> > > blocking me in pushing out the opening of block devices using bdev_handle.
-> > > Thanks!
+> > >  tests/btrfs/076     | 23 +++++++++++++++++++++--
+> > >  tests/btrfs/076.out |  3 +--
+> > >  2 files changed, 22 insertions(+), 4 deletions(-)
+> > >
+> > > diff --git a/tests/btrfs/076 b/tests/btrfs/076
+> > > index 89e9672d09e2..a5cc3eb96b2f 100755
+> > > --- a/tests/btrfs/076
+> > > +++ b/tests/btrfs/076
+> > > @@ -28,13 +28,28 @@ _supported_fs btrfs
+> > >  _require_test
+> > >  _require_scratch
+> > >
+> > > +# An extent size can be up to BTRFS_MAX_UNCOMPRESSED
+> > > +max_extent_size=$(( 128 << 10 ))
 > > 
-> > Thanks for resending.
+> > For consistency with every other test and common files, using 128 *
+> > 1024 would be perhaps better. I certainly find it easier to read, but
+> > that's a personal preference only.
 > > 
-> > Next time we will ensure that a vfs triggered conversion must go through
-> > a vfs tree as this half converted state with forgotten patches is not
-> > something that we should repeat.
+> > > +if _scratch_btrfs_is_zoned; then
+> > > +       zone_append_max=$(cat "/sys/block/$(_short_dev $SCRATCH_DEV)/queue/zone_append_max_bytes")
+> > > +       if [[ $zone_append_max -gt 0 && $zone_append_max -lt $max_extent_size ]]; then
+> > > +               # Round down to PAGE_SIZE
+> > > +               max_extent_size=$(( $zone_append_max / 4096 * 4096 ))
+> > > +       fi
+> > > +fi
+> > > +file_size=$(( 10 << 20 ))
+> > 
+> > And this one it's even less immediate to understand, having 1 * 1024 *
+> > 1024 would make it much more easier to read.
 > 
-> Yeah, I agree it would be good to find a smoother way to handle such
-> merges. I understand David's desire to give changes proper testing which
-> generally doesn't happen in linux-next but on maintainer's own branches and
-> infrastructure but perhaps some stable branch in VFS tree that filesystem
-> maintainers could pull when putting together the branch they push out to
-> the testing infrastructure would work?
+> Agreed. I'll use 1024 and repost. Thanks.
 
-Yes, I'm very happy to provide this. Also worth nothing that everything
-that goes through vfs.git sees xfstests for all affected filesystems.
+I've changed that part when I merged this patch (haven't pushed), so you
+don't need to send this patch again, save that time :)
 
-Ideally we'll automate this directly on that repo at some point for all
-official branches.
+Thanks,
+Zorro
 
-Right now I personally have:
-
-https://github.com/brauner/mkosi-kernel
-
-which uses mkosi to build a GPT image fully unprivileged with an:
-
-ESP partition
-root partition (of chosen format)
-2-4 testing partitions
-
-for any distro I need with any kernel config I want:
-
-mkosi -d debian -t disk -f
-
-During boot it generates a bunch of unprivileged users via
-systemd-userdb drop-ins placed in /etc/userdb/ during build:
-https://github.com/brauner/mkosi-kernel/tree/main/mkosi.extra/etc/userdb
-creating testing users (user1, fsgqa, fgqa2, 123456-fsgqa) for xfstests.
-
-Then I just fire the relevant tests using incus (formerly LXD). All
-branches get the same treatment usually for ext4, xfs, btrfs via
--g quick (btrfs gets multiple devices - that's why there's 4 partitions).

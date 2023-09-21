@@ -2,615 +2,192 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 07CD3CD493F
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Sep 2023 02:13:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 35EE1E71096
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Sep 2023 16:57:38 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229801AbjIUCNj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 20 Sep 2023 22:13:39 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52922 "EHLO
+        id S229659AbjIUQ5m (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 21 Sep 2023 12:57:42 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48718 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229730AbjIUCNi (ORCPT
+        with ESMTP id S229655AbjIUQ5l (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Sep 2023 22:13:38 -0400
-Received: from EUR04-DB3-obe.outbound.protection.outlook.com (mail-db3eur04on2089.outbound.protection.outlook.com [40.107.6.89])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6535FCC
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Sep 2023 19:13:30 -0700 (PDT)
+        Thu, 21 Sep 2023 12:57:41 -0400
+Received: from esa3.hgst.iphmx.com (esa3.hgst.iphmx.com [216.71.153.141])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 47269E4D;
+        Thu, 21 Sep 2023 09:56:41 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1695315402; x=1726851402;
+  h=from:to:cc:subject:date:message-id:references:
+   in-reply-to:content-id:content-transfer-encoding:
+   mime-version;
+  bh=OCBVb8sVs/CsbocDmeprnTcaiuISLgGQR2m/7Y6FCX0=;
+  b=TnN2rMrxY4P6/g50HtOfYmi3arvFioXm3BBDkE6NTpIJx3fLrHjDCMFW
+   yQz1n5cEu6ZzCFFQ5mcCgHR9WfpKAZxGM1l33lKB7k9u2PiFefAqDflxZ
+   8KV96JExv38BZMDbGO7UgY2jNSbbEjrQcV61sbdIbdAsaw0IEgr2ns1WA
+   LWlvAPfcCDHTkn/+rpvJNdR1P6rWHswqJAe5XSMvDsNOmuwSNWivY/Z3q
+   EIlJMZkm0nKQBtwd2hXozWC27YaaZDw0uVnPpaXDZuFzOTHO9oPUjF4Ki
+   AMZUZhUxmW+inX0jD74+AQwd3Dal2oAlkiuepO+uxWxleCKXuqDxgYd+u
+   A==;
+X-CSE-ConnectionGUID: v4T5YmwtQAeKb38vsxyfug==
+X-CSE-MsgGUID: z0GpsfcxQDymgheEalDfSw==
+X-IronPort-AV: E=Sophos;i="6.03,164,1694707200"; 
+   d="scan'208";a="249012288"
+Received: from mail-dm6nam11lp2174.outbound.protection.outlook.com (HELO NAM11-DM6-obe.outbound.protection.outlook.com) ([104.47.57.174])
+  by ob1.hgst.iphmx.com with ESMTP; 21 Sep 2023 15:41:21 +0800
 ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
- b=hIgFkuJjLHobITzzjRcEtKk39bXuqVY8Y6KAMxWIAHIzWNzlszlwJNLG70wpcTML2cTASQmhoiZGdMZPmSTAT5/pCfyZaGHpyccAz5boD7cnqhAHc2pzcMbeUchVWvcD/iMqdge85gmrpPfAUZIGfJwm2B581EZFDSlEg3ktH2g/IOIRxPjxQsmyTYXyR4JWaOH0WE8/tUx+ojGmvtqsVz0jyxDUVW026gnTufbyA18DvSf3KqecPAPId3peLZMnuRHh3sgbBZC5arnIR/jdXr+tDsKManAkoGaFJZ4HUQRPpyWLy+IhkBZ4hH0AGIrOmSl6oEwfx6b15n1vcMElSg==
+ b=dfgacLd4Tvk7r9DhACW8uYTRgSSwS1rHp2nbuNomM4+F4wOpuemeqALXzy/EJK/poDpYivZ4n3k6UcDqsU6g1dRQOxoXHajufAb1igRY6PUS6a+a0lYq0nW3evd68Sv6ehqZrHi4gE+lAXEq0KUAG8YAzYjWsse82Q7H7DYNKeTgs7Cn4MeceywLyUejQf4T4pf5G2VaJbZjfgDGLoncHC0me85EaSCMFPTVwJmr8+Ey/qhur4cCmZ8vkajlG/pIdXq7Pe1sB/5JiWFNB/pDnYQrWEg0nvjG6qGG4rqkibWaQy1nG8vgKium/GLiugrIzAPy/MukZsTnGsS/zcCvPQ==
 ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
  s=arcselector9901;
  h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
- bh=Xk9TqCBihA+nSHzTOXUPZ1kCfHlxAbA2pxQhKCoNaWM=;
- b=RfEqFJ1485ODU994MAulygnj+C/FdyyfbNxDCdvY44MONsTYyr6b/pABLMqWPAY10zx5dbKIrxztZpphp0udzadW7N0Gm25cowW7mH9vR08w8NtCsIBuxbAeEviXQgFQE+yTu6TJ56CDR41QZ0Ca3/R3AyyFg4M2UYegf0NrjilSPwxXnxEtmmBT0it9cDc0zi06+bckx0ix0h8sXHbv/8Ja744/NzFEHACunwWCJd/TipYXdiDD9vb3f7REFaEXfFhcNwAnNQ2Yl3mo4PowmS6OQFKIW93J3N5CnBvqvchWi4PnQTHreV0A2yD1u9a5xGOPZQwadUkVTtGrBqnZoQ==
+ bh=OCBVb8sVs/CsbocDmeprnTcaiuISLgGQR2m/7Y6FCX0=;
+ b=Ddj3YTu2zn2JdiRV/iDncytSG1oLd6XKJjPbE6qONfTsmv6DF8n5IdoqO0JRKI3DsE2GfwaanbGLeml2ekBNzxyMiZfhPVhQ3z+Fl3legchDgkthQlA6bpdCZaPKp01jCjPVa7L8WoSkXxbFuTg5F5UtOmnEkP2BDq8TfV2a6ylsiOvONaCK/i/3qIK3CLxW8wlVSyjuJ5uVKc1htPraLsnb3+1I5YtV1ZsKW9VY+b3PBI70myvwrxV3qyqYcKDNPCt7hzG/dgM2vupz8yIFwHlWWFSDClxQ3/Q0ZaI/0OAuOX5Ce9RmBBjbwjqjjaA1aVbYTtfAVI2BJMhZEU/3vw==
 ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=suse.com; dmarc=pass action=none header.from=suse.com;
- dkim=pass header.d=suse.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=selector1;
+ smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
+ header.d=wdc.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
  h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=Xk9TqCBihA+nSHzTOXUPZ1kCfHlxAbA2pxQhKCoNaWM=;
- b=eUOd6zKOHIE6a5PRyt5nL7HDIfSopIHG7IcsVbqAEe3aeCJ3SZ4fLLgaUWX6etw1+FUtc1rlNaw4Fbs7RF40ppv7ICqE7Hvcp6faitKZ3PRyiDZ4Vqwd7ZJqJGcM375F+hGKURYRnZpgLDj7WLYQKF6etO1jZqzsDKXWK8FfxTTLt4vtO19RXA+k5bGAeZhxshsZRf3FNVLDRpBMEsK0g1q7dKz1XYqJZg5Jc41JQyteh1BxAr9t3lkA/pL96xjImGx8yRzFBsQgza1InotiHEftg/CJLh/LaThoQHgS72LZJ97hYppG+iMK8DSqzdn6ke2KWsrjl7CaIh4ETYGW9g==
-Authentication-Results: dkim=none (message not signed)
- header.d=none;dmarc=none action=none header.from=suse.com;
-Received: from AS8PR04MB8465.eurprd04.prod.outlook.com (2603:10a6:20b:348::19)
- by PAXPR04MB8911.eurprd04.prod.outlook.com (2603:10a6:102:20e::20) with
+ bh=OCBVb8sVs/CsbocDmeprnTcaiuISLgGQR2m/7Y6FCX0=;
+ b=CHDWR4CnGgYCZH+rVDo8ud1u2aRTbaTzilT1iEpc9KHiRS2hCYoVOTSMgj/e25AYWRN1yXiAvyMiqwWJm+7i5mD+tQk0ASe6yimbu4qOAZPv9pgBZVlUx3hAgI7SNVBj1oqGiqt448KSd9nZo8CXhSnXX8+PL946VqrQzSrUT2w=
+Received: from SJ0PR04MB7776.namprd04.prod.outlook.com (2603:10b6:a03:300::11)
+ by DM6PR04MB6745.namprd04.prod.outlook.com (2603:10b6:5:22a::10) with
  Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.6813.20; Thu, 21 Sep
- 2023 02:13:27 +0000
-Received: from AS8PR04MB8465.eurprd04.prod.outlook.com
- ([fe80::21dc:8a5f:80a7:ad6b]) by AS8PR04MB8465.eurprd04.prod.outlook.com
- ([fe80::21dc:8a5f:80a7:ad6b%6]) with mapi id 15.20.6813.017; Thu, 21 Sep 2023
- 02:13:27 +0000
-Message-ID: <c03e9f3f-39a6-457c-a1d7-f6f4d0388f55@suse.com>
-Date:   Thu, 21 Sep 2023 11:43:15 +0930
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 2/7] btrfs-progs: cmds: add "btrfs tune set" subcommand
- group
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.6838.10; Thu, 21 Sep
+ 2023 07:41:20 +0000
+Received: from SJ0PR04MB7776.namprd04.prod.outlook.com
+ ([fe80::46a9:c01a:e75d:3b6a]) by SJ0PR04MB7776.namprd04.prod.outlook.com
+ ([fe80::46a9:c01a:e75d:3b6a%4]) with mapi id 15.20.6813.017; Thu, 21 Sep 2023
+ 07:41:19 +0000
+From:   Naohiro Aota <Naohiro.Aota@wdc.com>
+To:     Filipe Manana <fdmanana@kernel.org>
+CC:     "fstests@vger.kernel.org" <fstests@vger.kernel.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v2 1/2] btrfs/076: support smaller extent size limit
+Thread-Topic: [PATCH v2 1/2] btrfs/076: support smaller extent size limit
+Thread-Index: AQHZ56XKIbGRAZ95rkmj58P24gDPeLAbm1YAgAlTY4A=
+Date:   Thu, 21 Sep 2023 07:41:19 +0000
+Message-ID: <lrlnkxdh47dd55y3uwdimbczoystuoikolaymnapsuheylvbs3@vztqzs75tlfx>
+References: <cover.1694762532.git.naohiro.aota@wdc.com>
+ <f03093d83baa5bcd4229a0dc9a473add534ee016.1694762532.git.naohiro.aota@wdc.com>
+ <CAL3q7H5m-kGMT7=wAmfDm-ZJ3bpdmN0=GhRkinMciRq8GfF-QQ@mail.gmail.com>
+In-Reply-To: <CAL3q7H5m-kGMT7=wAmfDm-ZJ3bpdmN0=GhRkinMciRq8GfF-QQ@mail.gmail.com>
+Accept-Language: ja-JP, en-US
 Content-Language: en-US
-To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-References: <cover.1693900169.git.wqu@suse.com>
- <1c294f739f028da499cf7f57deb334f419979097.1693900169.git.wqu@suse.com>
- <2adb8c79-d1d2-dffa-dd6b-5254d75c9c86@oracle.com>
-From:   Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJjTSJVBQkNOgemAAoJEMI9kfOh
- Jf6oapEH/3r/xcalNXMvyRODoprkDraOPbCnULLPNwwp4wLP0/nKXvAlhvRbDpyx1+Ht/3gW
- p+Klw+S9zBQemxu+6v5nX8zny8l7Q6nAM5InkLaD7U5OLRgJ0O1MNr/UTODIEVx3uzD2X6MR
- ECMigQxu9c3XKSELXVjTJYgRrEo8o2qb7xoInk4mlleji2rRrqBh1rS0pEexImWphJi+Xgp3
- dxRGHsNGEbJ5+9yK9Nc5r67EYG4bwm+06yVT8aQS58ZI22C/UeJpPwcsYrdABcisd7dddj4Q
- RhWiO4Iy5MTGUD7PdfIkQ40iRcQzVEL1BeidP8v8C4LVGmk4vD1wF6xTjQRKfXHOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJjTSJuBQkNOge/AAoJEMI9kfOhJf6o
- rq8H/3LJmWxL6KO2y/BgOMYDZaFWE3TtdrlIEG8YIDJzIYbNIyQ4lw61RR+0P4APKstsu5VJ
- 9E3WR7vfxSiOmHCRIWPi32xwbkD5TwaA5m2uVg6xjb5wbdHm+OhdSBcw/fsg19aHQpsmh1/Q
- bjzGi56yfTxxt9R2WmFIxe6MIDzLlNw3JG42/ark2LOXywqFRnOHgFqxygoMKEG7OcGy5wJM
- AavA+Abj+6XoedYTwOKkwq+RX2hvXElLZbhYlE+npB1WsFYn1wJ22lHoZsuJCLba5lehI+//
- ShSsZT5Tlfgi92e9P7y+I/OzMvnBezAll+p/Ly2YczznKM5tV0gboCWeusM=
-In-Reply-To: <2adb8c79-d1d2-dffa-dd6b-5254d75c9c86@oracle.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
-X-ClientProxiedBy: MEWP282CA0135.AUSP282.PROD.OUTLOOK.COM
- (2603:10c6:220:1d1::20) To AS8PR04MB8465.eurprd04.prod.outlook.com
- (2603:10a6:20b:348::19)
+X-MS-Has-Attach: 
+X-MS-TNEF-Correlator: 
+authentication-results: dkim=none (message not signed)
+ header.d=none;dmarc=none action=none header.from=wdc.com;
+x-ms-publictraffictype: Email
+x-ms-traffictypediagnostic: SJ0PR04MB7776:EE_|DM6PR04MB6745:EE_
+x-ms-office365-filtering-correlation-id: 913e56c7-10d1-4a02-4419-08dbba762551
+wdcipoutbound: EOP-TRUE
+x-ms-exchange-senderadcheck: 1
+x-ms-exchange-antispam-relay: 0
+x-microsoft-antispam: BCL:0;
+x-microsoft-antispam-message-info: GwXKjWnDLOfFTTh03ACar69MHPZ6ATc3f+vUBfnUP943Sc90DEEhNFaQLKQFfGkTMtVtIQAvYPgslXX5pVfan5fTjmlVhvbwlrtCqI/lmOQeZBzS7eATJif2nJe2VZ4WqjISeEyjCHl9wUhbKHlaaIhlb5ihTMBsksRLUKZrd9XJXMEwotvelR8D12oku4GXf9ZViCh6wv3xHUDJYUtvis298sJpMZfK0cAKazZun+cTP8WHLB2sCuHIxkVaPVzoiD31HlagE8B7X8ijMN9n3SV1kXj8dgPRX0p9CKBEU162CBX8NJGdaIMfA8QIkARJWYIMBFBpdJ+AMR9ZsmM01Tvr6dH236CT6sn+AiLOyD0mljjoOAFiW2HW0UUEh06S9pQzL0ka+6RQmVs4sOpbM3Ri2ynW1/8izLSQd2YyIZBZbkr/ky6f+BHfGY+5i/Ca0iMZ64GM2gKFpr6hxjvLzT8D6W2Qwuh5Hac9QypzqIxuMGURAe6wPPpaa7WWg9DmwjAC8FabwNLdJbNlRDkktzg0N2C9OGDC6VTFZVrBjlq1dWUiCF3spnmXtTYjg+Q6aSkN056HRtvJLIzpiEvX0yu3OAb00GIQ+oTq7YAZkSdiooNkA55NvbIorx1iDsIk
+x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SJ0PR04MB7776.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230031)(7916004)(396003)(39860400002)(376002)(136003)(346002)(366004)(1800799009)(451199024)(186009)(83380400001)(53546011)(33716001)(71200400001)(64756008)(54906003)(66556008)(66476007)(316002)(6916009)(66946007)(66446008)(122000001)(6506007)(6512007)(9686003)(6486002)(26005)(478600001)(91956017)(5660300002)(2906002)(82960400001)(76116006)(8936002)(38070700005)(38100700002)(8676002)(4326008)(86362001)(41300700001);DIR:OUT;SFP:1102;
+x-ms-exchange-antispam-messagedata-chunkcount: 1
+x-ms-exchange-antispam-messagedata-0: =?utf-8?B?RjNOYVpXZStlKzhCWWVUKzZMT3llMzhER2ZOaFpnQTA3eDVyd2Y1VmxFejN2?=
+ =?utf-8?B?L0U5aEVoMFY4NFFCSWE5emxKRERsYVVKU0xDZjlKS3RYaUNLaVA2UVZRRHFT?=
+ =?utf-8?B?bVJVbXZqbHdBQ0NzczBMNVNvY3ArWkVScW5sK0VHd1M0dTdjWUZNU3IyN1lG?=
+ =?utf-8?B?NGgzTlhMVmI0Wk1PWUczc3dZbzdIamlXZ0VuQU52ZERQaXVHQ0MrZnQxc29o?=
+ =?utf-8?B?K2N5ZTBIYVVkTmxjOHEyUGtidURuV3l2Ry91VFYwaERzVm93ZWJhOWRBdUlp?=
+ =?utf-8?B?SmtCTnVONlJjL1ZRNDBjZW1tbDZwdm8xOTFwQ3J4dnk4cTZaYzNETzlIOCtZ?=
+ =?utf-8?B?c0xqYno1Mytzc2dxL0dYK0RPVGdHcURpY1hrV2ZnaFMzaVM1UFpuTWNaazZX?=
+ =?utf-8?B?SFhrVWJlelRNUXZpbmZ0d2FNOHEzc0ZvNlYreWJTMHVqNzBiK0s2aVE1b1ZO?=
+ =?utf-8?B?eDVMY1dpS1NObUZtS2MyaDZQR0piVXVNZ0ZIYS82dVpVVXpjVFRZL2ZuVFAx?=
+ =?utf-8?B?dzQ4d1I2MnZSWE1oa0tZM1p6Q3JFUHRQYWZ3d002bTU4VEg0d1dHVE1QZy9P?=
+ =?utf-8?B?cFR0Z3ZPa21mcGZETXlDWCtsWG5zeFI4Wk9zMm9sMDFzOG5TNE9jTDU5L2pQ?=
+ =?utf-8?B?UkJVZ09TanB0SzZpN2I3RkJ6YVNwaDRDMlovalp0OFJReXdCRzl1eTR4QmRF?=
+ =?utf-8?B?N2d1aE1PZDBlbW1lbmsxTStWaVVJWlhPaER3VitPWUV2RWI4Tlo4bWJ3TTY1?=
+ =?utf-8?B?NDVMVzZNd0Z3MFNmY0xvN0Uzc2tTb2hGeGU1NXQ2K3BKY1RrazZnY2l2T3Vr?=
+ =?utf-8?B?dDVaR1J1SXRhWDJWSXdaSlBMOVhFUC92SGFTdkxlUzFFUzZIYnJMaXZHMDg4?=
+ =?utf-8?B?ZWI4TVlwZEUwanZQZ3ZEdzJXaWpiblIrZkxiTDVLUmdFeUVDVm1ZQTdiaW1O?=
+ =?utf-8?B?VFNqVlMzRlkyRFYyWnovQVEzV3pFRStDRXpQeVVSSTV2Z2ZoVkFVRmYySUIv?=
+ =?utf-8?B?RzVvc2ZhMlowck9kenBrOFFpTHVOU0psU0FqUmJaaExTc1JWNWdsWkxva0g2?=
+ =?utf-8?B?RThjZ1FNbUdzNUJENU91SEQyb2lyY0FtVnMxeEdXSkcySnRST0xXUWlZQU5z?=
+ =?utf-8?B?cmhpMkxjaDNNYXZTZHp5VDduTHVqTDJaV3N4VUZ0ZmMrUkZ0WjlVbCsrc00z?=
+ =?utf-8?B?K29IOTRTTVg0am5Pc2pBbG4rdjA2R0V4MmROVGVKQzdITTZudytVNDNGVXpU?=
+ =?utf-8?B?WklvN2RBaUJDeEhmdEU3TE04aXc2eWJrS1pQdmtmcm9XR3FtOTJOczhHVjlN?=
+ =?utf-8?B?eHEyWFFBUWYrN0RUV2R4ZEJUeExtL3BQWjRtaWlqS2EyZnUzRldaSUtGVmxl?=
+ =?utf-8?B?SnJGaTBZWWNZKzVBTjVtbVhSdWZlMmZwNk1scTRlYUNrOGt2WjNSWVFHNlU0?=
+ =?utf-8?B?c1FHdjF1RkpyZzJXODhjN09YTW1sOFRGRG1PTUtnd3dhMyttY2FMYWNrSDIx?=
+ =?utf-8?B?NmhhMWtBT3V3NW5kdnR6VmJST01VME85cGhvYTRJSnVxSkxqRVFzSEhWdFY2?=
+ =?utf-8?B?TzhLNzZjcmxaQnV4RW5CTS8vV1RUNkNvOEtJMFNzYWlIbW1IRFBabUJFZmRv?=
+ =?utf-8?B?cnowK1BOc3FkMmhoanFJWVFBL3U0WURsMDRqelBOaXl5MEh0SW95OVIwMU9D?=
+ =?utf-8?B?dkVRcHdHNjVzeU4wZ09jckxWTlkwbVc1ZTA0aGpRNnJJaHdDRDFuVjZIaW1s?=
+ =?utf-8?B?K3VabWdRSW12NlA3SmNIL280TmtiNSsrMkRJY0UrSGhKUzc4OWFRTUxxMTc0?=
+ =?utf-8?B?YzlTalREKzNzQXhWM2lKY1piK3V6UHNNL1J3OEVwOWU5TFpNQWhCbW1UZXF0?=
+ =?utf-8?B?STdFTitjVkkwNGlXbnFEcFdaL2hCUjFyK3h3dWQ5UEdObkEvTHZQTXNSWWd1?=
+ =?utf-8?B?V3pmRDg4UmVLU3grc3RMRmFlU0puWjZNWVhXdEpiaHlaZjRtaldDa2ZRcnZM?=
+ =?utf-8?B?MExWYkl3OW1naHVnTUJhOURKczNSajdCaklVdmE5V0EvNHJ1NVVlMGozc3lD?=
+ =?utf-8?B?V3VEREpkNi9ZcFFkN0lFZUdBU0R5MWNQZy9qL3U1UDBUdHk5ZVdzSDZTbUFX?=
+ =?utf-8?B?NmM5UXhTZkJKRXU3cUJkcytQY2pyWGxDVVRad2hQNHlUeDFzQzFvdzZsRlor?=
+ =?utf-8?B?Z1E9PQ==?=
+Content-Type: text/plain; charset="utf-8"
+Content-ID: <68F2FECB840F584BA3F3C0BD074418BF@namprd04.prod.outlook.com>
+Content-Transfer-Encoding: base64
 MIME-Version: 1.0
-X-MS-PublicTrafficType: Email
-X-MS-TrafficTypeDiagnostic: AS8PR04MB8465:EE_|PAXPR04MB8911:EE_
-X-MS-Office365-Filtering-Correlation-Id: 88cc6d5a-e0f3-49d9-23aa-08dbba485786
-X-MS-Exchange-SenderADCheck: 1
-X-MS-Exchange-AntiSpam-Relay: 0
-X-Microsoft-Antispam: BCL:0;
-X-Microsoft-Antispam-Message-Info: mslVGIdGKSvKm4Zv62rUFgndtMBuPEW/8Pkz9ZfdateU6T0ti1Vq8Xqd6oXDcKjKoJIpLqasXVlAc+rvMFEIkSWXk7Y7GUy2f3usxGqFwMGBE7TS2vhvfFYAYJlqvO1RHfsLU8UAbkGLd1N4FzRk2A+0G5Dh+XwRb1qwuEQGGcW7Stiy5wg5FByxuVFNrvKdvQXYb6HJBdKaceyoSkTNZbfmukhM6+FESIhYSC1cC8FVJBmqrpWbc+SGCJdo1LHFDgviCrDncyI1n/3NQbC2wSPNtiJdrJnpc50XsjuzGYO2eaSs++QKgzMzD8lrFdnrgmT8s5Dj3pbRc8HoQ+RIMQmN9ikMym6ulUbJc81fPZucBRRUjRWCwMjPX881VOiLoKpcXSziJ+eszMCSaCQTLX3Z2b7drxp1k2LdNv1DxRoLuhLymLEYQfIQtFJ1drgPLkzt/SOS6c3TDSqIhdbL59Za+JflQFh/rb3z8F95dxLO1Ia+InmnWCAcQgICkjdaUaeST2zFOhmt5k3bWLUdlJvC0C5so44XQJaNWbZjJwfQPoRa4G04xUD2Z2iDqMjDEniGLIP9Zb++S5cFRgc5ruG61wPeGA/Cuqj5f2xDVMuAQiFs7aMpthgJpbWjAfgxA8hpy+aXO17+BJVvkTgMfM3GrQgZ/gDgbCd4KQDJ/Gn1doKqJJ9vbk7M/GyJS9+X
-X-Forefront-Antispam-Report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:AS8PR04MB8465.eurprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230031)(136003)(366004)(376002)(346002)(396003)(39860400002)(186009)(451199024)(1800799009)(2906002)(5660300002)(26005)(316002)(66556008)(41300700001)(66476007)(66946007)(30864003)(31686004)(8936002)(8676002)(478600001)(6506007)(6666004)(6486002)(6512007)(53546011)(36756003)(2616005)(38100700002)(86362001)(31696002)(83380400001)(2004002)(45980500001)(43740500002)(309714004);DIR:OUT;SFP:1101;
-X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
-X-MS-Exchange-AntiSpam-MessageData-0: =?utf-8?B?WnJaaER3bG1rR2Y5RDg4anREMFZTSlZIQlZsKzNhZFNZaXpmYW1BYldVWGNo?=
- =?utf-8?B?Q0hlYkl4WmNwNFFlY1JRd0IxSnBTWVhjb1BHUzhCV2R5NU4xeGhReUxNQnBk?=
- =?utf-8?B?cjFydm1tRitSVmprTnZqdjQ3QW9zbEVLTkVEa2ovK3hXZWNNelEzNHo3UXky?=
- =?utf-8?B?ZklCSEkrTmxCdUFwK3l6UzhhNTJ5R09oczI0T0lBZVN3RVhYQzhNd0ZkS3BM?=
- =?utf-8?B?K0xlQ25xT1hZeHBkczBBa2JDa0dSaVJZSDIzbEpjdGV1R2lvTlFEOWdEZXVj?=
- =?utf-8?B?SGxZQTRqZ1JQelFwcHE0OVJyamJzVGxQNlFDS2J2SS8vWEZ5cXhheUNqRklG?=
- =?utf-8?B?N29RSU1BTWlKRmZtYVl3WENWN3lmYTVZWlBIcHlaRzdMNHBqdnlPUXNKYWFC?=
- =?utf-8?B?Uy81cWwvRkRyWmY5cDZ1VFpmdyt4dmRVeDg5aEZTMlBYbGduUGZibTNKTkZn?=
- =?utf-8?B?VTI3azcxNFBXNmZBRyt4OUpMd252RXBWZ05HUVpwR3dMdHJUcGphTFJmeDVq?=
- =?utf-8?B?djEyenZvaG92dE9MVXZKbHJEMEs2WjMvMVFvT1BONWJaTTA5WkprQUdMVTR3?=
- =?utf-8?B?T1hCaFZkNU42VzhsNXlORE1Pa1g2dlh2ZzFzbXhZczlINEhaY0lGSmdvZnFw?=
- =?utf-8?B?Q296MkhWRmNyQWRncUdnZXRkQnlxc3QzNFRxbVQ2cmd1NWRRcjc4VFh5M0VV?=
- =?utf-8?B?Y3JJZUJGeXFQYWVyaDZwS2xVTU51UWVycG01dkV5UlFGTlJoeXJvU3ArWDZi?=
- =?utf-8?B?dk5tNGlCRjhlRXF6ekRFYm00ZURzenROWWNXUExLdjlSRGFQNlh0Z2dSMy8w?=
- =?utf-8?B?ZzREOGszNVk1a3l6eGRMTUQ0cTZmdUF4S0Qvd3pzaFVUVjU1VWdrZFc4enZo?=
- =?utf-8?B?K2xXRmJ1SWRVWHkxWkQzNUZsMXNhcWxQMjg1eUc2a2ZxLzdTdGFjK29BeFpl?=
- =?utf-8?B?TlQxSmJSZFdkNHNEQkF4NDU2L0lEakFCUnVyLzRjbjBWakNxNjYxVDlUZU10?=
- =?utf-8?B?ZmVGWjVsNWtVR0hvNWRwcnFlSmpiMncwSWRXYWgxaVpGeHBXMmpySko4T3VL?=
- =?utf-8?B?dXAwRHpWU3BYbHN0Ulh6bjlBU2hIM1R4NElobFc3NkF0TmtmNXNlSjQ3ZEpU?=
- =?utf-8?B?TGgvb1ljcmx2QW9KYjhXUzUwNVF6MGxqRVRGVzBWK0pBVVJRVUtVRXZHNG51?=
- =?utf-8?B?NVB2SXd3Nk1kWUZzR0lLckNjY2NweldvYUxXMStlZWYwbGFNNi9ib0lwaXRI?=
- =?utf-8?B?VTI0dnNUZFFwMGtNRWxHQzhVcklGSkZyUlloL05rOHJsOWRwWXJ0MVRSYWhN?=
- =?utf-8?B?T0xaU3hHa1AyYUdkRUJwMVdmQytGdERBaUxEUFRHbEhtVlJ4Q2N2MnBJSjVO?=
- =?utf-8?B?cDJRVmpuT2N1RVNDeGRqYktiTW9VWS9FdFI1Tk5DTm9yYXBHSjZmSXE0QldU?=
- =?utf-8?B?MkxMOGdaUnZOdGZIYjFhMGg3ajFUYjhBd1hoN0M2K0p6L0ZkWFZURnRpVXdX?=
- =?utf-8?B?ZzFCOG9GVDlGbDZOL2QwQUM3SWF4NDIyanVjTE5kbG0wRWE3NTg2cU5UQzdS?=
- =?utf-8?B?N1hFKzVUSGhNMGhQMWYxNXpQc2x4MUltUWJhWHdJRmM1Z0tERjVwd2orSzRE?=
- =?utf-8?B?MDBpRWJ5T3E0UEd0RnFFY09NcDc1SWFRMlhEck9wRWZlTHZFdzBhdGpXSUtK?=
- =?utf-8?B?QW5uVURpQ0RUVnlJeWJjd3hBT2FYUUNCNWd3QUZ6ZVI2UmpGTmVzaHRNVmdD?=
- =?utf-8?B?ZFFzRWQ5QnhoQm5zbmNTeTNzRVRNUHZyeFNldi8zd2sxY2VoQ2Yvc3Yxb2lo?=
- =?utf-8?B?SWFQSVRvU3FjTVFnQVlnWEFpY09KYWt1dXZXVUhMU0YvQTVsbnJEbXd2L1hM?=
- =?utf-8?B?SUZQTzhiT2lKbTR3NnVhNkh4RDZOeWYrN0t3NzE2VDZ5OHRrNXhlRHdJTG9X?=
- =?utf-8?B?TU5VYTFtRlJSYXNSaHRWR3NKd0J4a1ZmWDZuYVE2NFZ5TVF1NkpVVjdZZXBz?=
- =?utf-8?B?a0llUHpVRTdZK0dxZk1oRHBjVUJuUkIxRndhL0JyV1dkblcyYjZqWUYrMEZ0?=
- =?utf-8?B?YW9GcGV6bTYwOGRyU3Q5S0NGK2FIUVBFQnlHTlhJRzczdEFteG1HQzNHMjND?=
- =?utf-8?Q?ZZ/0=3D?=
-X-OriginatorOrg: suse.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: 88cc6d5a-e0f3-49d9-23aa-08dbba485786
-X-MS-Exchange-CrossTenant-AuthSource: AS8PR04MB8465.eurprd04.prod.outlook.com
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0: Ps0GPVIa6J5659YWME7Dg4EkRn3H1eGa8+/6ROkFxKBNpkvNA+nbJrJkSx3Jj/awzQCHO8d7/96/0H0aduWH13oFbAvmaLNw/Aj5+e20QaOIpsg9t12Y5Q45cdtGV8DFYrEZvrHGQItOQRVahO2I/8ibf2kJfOR6qBTlJCZ+bA3MtMFIKIwpWshtUfkdW0yAo5VqXH4pMdRCR8bMTS7z4inIx7wiepGAgVzRMFp7gwizEQ/98a7V/OUFFwd9RDyVV7tlcMnhrKXvjaRI/6ubrLkT5GYlQTbrmuaOtzSSgA6mgf2qU2niNugp3n/8hA6L96U0Wyp7AffpDcNqrUU2hlwHLEO8KFxre0ip1onOT9sz7wE5XTKujWo87bLcMjeuTF1gdVP3dJTNAw/jHF1xTqlzlzSZkZITS63yPcqGZbXFElADf4eIwcPXKXyqE20RJkve52jgYF8HElpHWyjIZEjjp2wvfZpt1gB8FFREEea5Lou9jsPFpEujiuETJi0gokCbmmuq/K5nmm53w8olz6y48D94Zd4Iq3y2O+oBti+9J2lwaFAVnrSPqgMMGuyV7zOZ+3zdjXR3izpA22tSfX+dk1B1PTxj7i+RLa9f4UEeApMqjsPaoDoVGuMMAgLOCdkAYqXmtVRWWVyJICq/DfFvzkrzMcJG158G06NW6yfF5Oufi2PsvXExcx4uh6Q82HZ/uBH74cmaKVYTzKR4EAqMZIJeP51WmgbyXu1gHXdUSK+t+KEMFjUVVXEISgiuzpI12rw9d2cNfLYzoKThPSvzYFcq5KP2Y8sLShkjZQpzUygwhXn+6ebh3GvwFiao
+X-OriginatorOrg: wdc.com
 X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-OriginalArrivalTime: 21 Sep 2023 02:13:27.3378
+X-MS-Exchange-CrossTenant-AuthSource: SJ0PR04MB7776.namprd04.prod.outlook.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 913e56c7-10d1-4a02-4419-08dbba762551
+X-MS-Exchange-CrossTenant-originalarrivaltime: 21 Sep 2023 07:41:19.7954
  (UTC)
-X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
-X-MS-Exchange-CrossTenant-Id: f7a17af6-1c5c-4a36-aa8b-f5be247aa4ba
-X-MS-Exchange-CrossTenant-MailboxType: HOSTED
-X-MS-Exchange-CrossTenant-UserPrincipalName: 9VkfHjfn6pJQhTXgjPIdCd8Xb585RgLH9dkioadeH5QK4A5uMEIaUXtR6EOpNjKa
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: PAXPR04MB8911
+X-MS-Exchange-CrossTenant-fromentityheader: Hosted
+X-MS-Exchange-CrossTenant-id: b61c8803-16f3-4c35-9b17-6f65f441df86
+X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
+X-MS-Exchange-CrossTenant-userprincipalname: wOVMGircjInx7mPuA7hxjTiUAplMC0S5rypHIXxwjlK0TvZAu1cRvWElnOZZKlJAsXcnho2Dbb6cleeGQ8c8aA==
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: DM6PR04MB6745
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-
-
-On 2023/9/21 10:23, Anand Jain wrote:
-> On 05/09/2023 15:51, Qu Wenruo wrote:
->> As the first step to convert btrfstune into "btrfs tune" subcommand
->> group, this patch would add the following subcommand group:
->>
->>   btrfs tune set <feature> [<device>]
->>
->> For now the following features are supported:
->>
->> - extref
->> - skinny-metadata
->> - no-holes
->>    All those are simple super block flags toggle.
->>
->> - list-all
->>    This acts the same way as "mkfs.btrfs -O list-all", the difference is
->>    it would only list the supported features.
->>    (In the future, there will be "btrfs tune clear" subcommand, which
->>     would support a different set of features).
->>
-> 
-> With this patchset, the syntax is structured as follows:
-> 
-> 
->     $ btrfs tune --help
->     usage: btrfs tune <command> <args>
-> 
->        btrfs tune set <feature> [<device>]
->            Set/enable specified feature for the unmounted filesystem
->        btrfs tune clear <feature> [<device>]
->            Clear/disable specified feature for the unmounted filesystem
-> 
->     change various btrfs features
-> 
-> 
-> 
-> However, for consistency, I suggest the following syntax:
-> 
->    set:
->     $ btrfs tune <feature> /dev/sda
-> 
->    clear:
->     $ btrfs tune <feature> --clear /dev/sda
-> 
->    list:
->     $ btrfs tune --list-all
-
-This can be confusing instead.
-
-Remember set and clear have different supported feature set.
-E.g. we can not disable no-holes/extref features.
-
-Thus here we want set/clear as subcommands, not the features name itself.
-
-Furthermore, using <feature> as the subcommand wil later conflicts with 
-other subcommand like "change-csum" and "change-fsid".
-
-> 
-> This syntax aligns with the:
-> 
->     $ btrfs device scan --forget
-
-In fact, the current "set/clear" follows the existing behavior, it's 
-more clear if you scan a single device:
-
-   btrfs device scan <device_name>
-
-As for btrfs tune it goes:
-
-   btrfs tune set <feature_name> <mnt>
-
-We should put the variable parameter last, not between some fixed 
-subcommand.
-
-Thanks,
-Qu
-
-> 
-> 
-> Thanks, Anand
-> 
-> 
->> Signed-off-by: Qu Wenruo <wqu@suse.com>
->> ---
->>   Documentation/btrfs-tune.rst |  40 ++++++
->>   Documentation/btrfs.rst      |   5 +
->>   Documentation/conf.py        |   1 +
->>   Documentation/man-index.rst  |   1 +
->>   Makefile                     |   2 +-
->>   btrfs.c                      |   1 +
->>   cmds/commands.h              |   1 +
->>   cmds/tune.c                  | 227 +++++++++++++++++++++++++++++++++++
->>   8 files changed, 277 insertions(+), 1 deletion(-)
->>   create mode 100644 Documentation/btrfs-tune.rst
->>   create mode 100644 cmds/tune.c
->>
->> diff --git a/Documentation/btrfs-tune.rst b/Documentation/btrfs-tune.rst
->> new file mode 100644
->> index 000000000000..827c92eadb72
->> --- /dev/null
->> +++ b/Documentation/btrfs-tune.rst
->> @@ -0,0 +1,40 @@
->> +btrfs-tune(8)
->> +==================
->> +
->> +SYNOPSIS
->> +--------
->> +
->> +**btrfs tune** <subcommand> [<args>]
->> +
->> +DESCRIPTION
->> +-----------
->> +
->> +:command:`btrfs tune` is used to tweak various btrfs features on a
->> +unmounted filesystem.
->> +
->> +SUBCOMMAND
->> +-----------
->> +
->> +set <feature> [<device>]
->> +        Set/enable a feature.
->> +
->> +        If *feature* is `list-all`, all supported features would be 
->> listed, and
->> +    no *device* parameter is needed.
->> +
->> +EXIT STATUS
->> +-----------
->> +
->> +**btrfs tune** returns a zero exit status if it succeeds. A non-zero 
->> value is
->> +returned in case of failure.
->> +
->> +AVAILABILITY
->> +------------
->> +
->> +**btrfs** is part of btrfs-progs.  Please refer to the documentation at
->> +`https://btrfs.readthedocs.io <https://btrfs.readthedocs.io>`_.
->> +
->> +SEE ALSO
->> +--------
->> +
->> +:doc:`mkfs.btrfs`,
->> +``mount(8)``
->> diff --git a/Documentation/btrfs.rst b/Documentation/btrfs.rst
->> index e878f158aaa1..5aea0d1a208c 100644
->> --- a/Documentation/btrfs.rst
->> +++ b/Documentation/btrfs.rst
->> @@ -134,6 +134,10 @@ subvolume
->>       Create/delete/list/manage btrfs subvolume.
->>       See :doc:`btrfs-subvolume` for details.
->> +tune
->> +    Change various btrfs features.
->> +    See :doc:`btrfs-tune` for details.
->> +
->>   .. _man-btrfs8-standalone-tools:
->>   STANDALONE TOOLS
->> @@ -150,6 +154,7 @@ btrfs-convert
->>           in-place conversion from ext2/3/4 filesystems to btrfs
->>   btrfstune
->>           tweak some filesystem properties on a unmounted filesystem
->> +    (will be replaced by `btrfs-tune`)
->>   btrfs-select-super
->>           rescue tool to overwrite primary superblock from a spare copy
->>   btrfs-find-root
->> diff --git a/Documentation/conf.py b/Documentation/conf.py
->> index 1025e10d7206..e0801bca4686 100644
->> --- a/Documentation/conf.py
->> +++ b/Documentation/conf.py
->> @@ -66,6 +66,7 @@ man_pages = [
->>       ('btrfs-check', 'btrfs-check', 'check or repair a btrfs 
->> filesystem', '', 8),
->>       ('btrfs-balance', 'btrfs-balance', 'balance block groups on a 
->> btrfs filesystem', '', 8),
->>       ('btrfs-subvolume', 'btrfs-subvolume', 'manage btrfs 
->> subvolumes', '', 8),
->> +    ('btrfs-tune', 'btrfs-tune', 'tweak btrfs features', '', 8),
->>       ('btrfs-map-logical', 'btrfs-map-logical', 'map btrfs logical 
->> extent to physical extent', '', 8),
->>       ('btrfs', 'btrfs', 'a toolbox to manage btrfs filesystems', '', 8),
->>       ('mkfs.btrfs', 'mkfs.btrfs', 'create a btrfs filesystem', '', 8),
->> diff --git a/Documentation/man-index.rst b/Documentation/man-index.rst
->> index 36d45d2903ea..5fcd4cbc4bee 100644
->> --- a/Documentation/man-index.rst
->> +++ b/Documentation/man-index.rst
->> @@ -28,6 +28,7 @@ Manual pages
->>      btrfs-select-super
->>      btrfs-send
->>      btrfs-subvolume
->> +   btrfs-tune
->>      btrfstune
->>      fsck.btrfs
->>      mkfs.btrfs
->> diff --git a/Makefile b/Makefile
->> index f4feb1fff8e1..9857daaa42ac 100644
->> --- a/Makefile
->> +++ b/Makefile
->> @@ -239,7 +239,7 @@ cmds_objects = cmds/subvolume.o 
->> cmds/subvolume-list.o \
->>              cmds/rescue-super-recover.o \
->>              cmds/property.o cmds/filesystem-usage.o 
->> cmds/inspect-dump-tree.o \
->>              cmds/inspect-dump-super.o cmds/inspect-tree-stats.o 
->> cmds/filesystem-du.o \
->> -           cmds/reflink.o \
->> +           cmds/reflink.o cmds/tune.o \
->>              mkfs/common.o check/mode-common.o check/mode-lowmem.o \
->>              check/clear-cache.o
->> diff --git a/btrfs.c b/btrfs.c
->> index 751f193ee2e0..c2dae0303ffe 100644
->> --- a/btrfs.c
->> +++ b/btrfs.c
->> @@ -389,6 +389,7 @@ static const struct cmd_group btrfs_cmd_group = {
->>           &cmd_struct_scrub,
->>           &cmd_struct_send,
->>           &cmd_struct_subvolume,
->> +        &cmd_struct_tune,
->>           /* Help and version stay last */
->>           &cmd_struct_help,
->> diff --git a/cmds/commands.h b/cmds/commands.h
->> index 5ab7c881f634..aebacd718a7b 100644
->> --- a/cmds/commands.h
->> +++ b/cmds/commands.h
->> @@ -151,5 +151,6 @@ DECLARE_COMMAND(qgroup);
->>   DECLARE_COMMAND(replace);
->>   DECLARE_COMMAND(restore);
->>   DECLARE_COMMAND(rescue);
->> +DECLARE_COMMAND(tune);
->>   #endif
->> diff --git a/cmds/tune.c b/cmds/tune.c
->> new file mode 100644
->> index 000000000000..92c7b9f1502c
->> --- /dev/null
->> +++ b/cmds/tune.c
->> @@ -0,0 +1,227 @@
->> +/*
->> + * This program is free software; you can redistribute it and/or
->> + * modify it under the terms of the GNU General Public
->> + * License v2 as published by the Free Software Foundation.
->> + *
->> + * This program is distributed in the hope that it will be useful,
->> + * but WITHOUT ANY WARRANTY; without even the implied warranty of
->> + * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
->> + * General Public License for more details.
->> + *
->> + * You should have received a copy of the GNU General Public
->> + * License along with this program; if not, write to the
->> + * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
->> + * Boston, MA 021110-1307, USA.
->> + */
->> +
->> +#include <unistd.h>
->> +#include "kerncompat.h"
->> +#include "cmds/commands.h"
->> +#include "common/help.h"
->> +#include "common/fsfeatures.h"
->> +#include "kernel-shared/messages.h"
->> +#include "kernel-shared/disk-io.h"
->> +#include "kernel-shared/transaction.h"
->> +
->> +static const char * const cmd_tune_set_usage[] = {
->> +    "btrfs tune set <feature> [<device>]",
->> +    "Set/enable specified feature for the unmounted filesystem",
->> +    "",
->> +    HELPINFO_INSERT_GLOBALS,
->> +    HELPINFO_INSERT_VERBOSE,
->> +    NULL,
->> +};
->> +
->> +static const struct btrfs_feature set_features[] = {
->> +    {
->> +        .name        = "extref",
->> +        .incompat_flag    = BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF,
->> +        .sysfs_name    = "extended_iref",
->> +        VERSION_TO_STRING2(compat, 3,7),
->> +        VERSION_TO_STRING2(safe, 3,12),
->> +        VERSION_TO_STRING2(default, 3,12),
->> +        .desc        = "increased hardlink limit per file to 65536"
->> +    }, {
->> +        .name        = "skinny-metadata",
->> +        .incompat_flag    = BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA,
->> +        .sysfs_name    = "skinny_metadata",
->> +        VERSION_TO_STRING2(compat, 3,10),
->> +        VERSION_TO_STRING2(safe, 3,18),
->> +        VERSION_TO_STRING2(default, 3,18),
->> +        .desc        = "reduced-size metadata extent refs"
->> +    }, {
->> +        .name        = "no-holes",
->> +        .incompat_flag    = BTRFS_FEATURE_INCOMPAT_NO_HOLES,
->> +        .sysfs_name    = "no_holes",
->> +        VERSION_TO_STRING2(compat, 3,14),
->> +        VERSION_TO_STRING2(safe, 4,0),
->> +        VERSION_TO_STRING2(default, 5,15),
->> +        .desc        = "no explicit hole extents for files"
->> +    },
->> +    /* Keep this one last */
->> +    {
->> +        .name        = "list-all",
->> +        .runtime_flag    = BTRFS_FEATURE_RUNTIME_LIST_ALL,
->> +        .sysfs_name    = NULL,
->> +        VERSION_NULL(compat),
->> +        VERSION_NULL(safe),
->> +        VERSION_NULL(default),
->> +        .desc        = NULL
->> +    }
->> +};
->> +
->> +static void list_all_features(const char *prefix,
->> +                  const struct btrfs_feature *features,
->> +                  int nr_features)
->> +{
->> +    /* We should have at least one empty feature. */
->> +    ASSERT(nr_features > 1);
->> +
->> +    printf("features available to %s:\n", prefix);
->> +    for (int i = 0; i < nr_features - 1; i++) {
->> +        const struct btrfs_feature *feat = features + i;
->> +        const char *sep = "";
->> +
->> +        fprintf(stderr, "%-20s- %s (", feat->name, feat->desc);
->> +        if (feat->compat_ver) {
->> +            fprintf(stderr, "compat=%s", feat->compat_str);
->> +            sep = ", ";
->> +        }
->> +        if (feat->safe_ver) {
->> +            fprintf(stderr, "%ssafe=%s", sep, feat->safe_str);
->> +            sep = ", ";
->> +        }
->> +        if (feat->default_ver)
->> +            fprintf(stderr, "%sdefault=%s", sep, feat->default_str);
->> +        fprintf(stderr, ")\n");
->> +    }
->> +}
->> +
->> +static int check_features(const char *name, const struct 
->> btrfs_feature *features,
->> +              int nr_features)
->> +{
->> +    bool found = false;
->> +
->> +    for (int i = 0; i < nr_features; i++) {
->> +        const struct btrfs_feature *feat = features + i;
->> +
->> +        if (!strcmp(feat->name, name)) {
->> +            found = true;
->> +            break;
->> +        }
->> +    }
->> +    if (found)
->> +        return 0;
->> +    return -EINVAL;
->> +}
->> +
->> +static int set_super_incompat_flags(struct btrfs_fs_info *fs_info, 
->> u64 flags)
->> +{
->> +    struct btrfs_root *root = fs_info->tree_root;
->> +    struct btrfs_trans_handle *trans;
->> +    struct btrfs_super_block *disk_super;
->> +    u64 super_flags;
->> +    int ret;
->> +
->> +    disk_super = fs_info->super_copy;
->> +    super_flags = btrfs_super_incompat_flags(disk_super);
->> +    super_flags |= flags;
->> +    trans = btrfs_start_transaction(root, 1);
->> +    BUG_ON(IS_ERR(trans));
->> +    btrfs_set_super_incompat_flags(disk_super, super_flags);
->> +    ret = btrfs_commit_transaction(trans, root);
->> +
->> +    return ret;
->> +}
->> +
->> +static int cmd_tune_set(const struct cmd_struct *cmd, int argc, char 
->> **argv)
->> +{
->> +    struct btrfs_fs_info *fs_info;
->> +    struct open_ctree_args oca = { 0 };
->> +    char *feature;
->> +    char *path;
->> +    int ret = 0;
->> +
->> +    optind = 0;
->> +    while (1) {
->> +        int c = getopt(argc, argv, "");
->> +        if (c < 0)
->> +            break;
->> +
->> +        switch (c) {
->> +        default:
->> +            usage_unknown_option(cmd, argv);
->> +        }
->> +    }
->> +
->> +    if (check_argc_min(argc - optind, 1))
->> +        return 1;
->> +
->> +    feature = argv[optind];
->> +
->> +    if (check_features(feature, set_features, 
->> ARRAY_SIZE(set_features))) {
->> +        error("Unknown feature to set: %s", feature);
->> +        return 1;
->> +    }
->> +    if (!strcmp(feature, "list-all")) {
->> +        list_all_features("set", set_features, 
->> ARRAY_SIZE(set_features));
->> +        return 0;
->> +    }
->> +
->> +    if (check_argc_exact(argc - optind, 2))
->> +        return 1;
->> +
->> +    path = argv[optind + 1];
->> +    oca.flags = OPEN_CTREE_WRITES;
->> +    oca.filename = path;
->> +    fs_info = open_ctree_fs_info(&oca);
->> +    if (!fs_info) {
->> +        error("failed to open btrfs");
->> +        ret = -EIO;
->> +        goto out;
->> +    }
->> +    /*
->> +     * For those 3 features, we only need to update the superblock to 
->> add
->> +     * the new feature flags.
->> +     */
->> +    if (!strcmp(feature, "extref") ||
->> +        !strcmp(feature, "skinny-metadata") ||
->> +        !strcmp(feature, "no-holes")) {
->> +        u64 incompat_flags = 0;
->> +
->> +        if (!strcmp(feature, "extref"))
->> +            incompat_flags |= BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF;
->> +        if (!strcmp(feature, "skinny-metadata"))
->> +            incompat_flags |= BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA;
->> +        if (!strcmp(feature, "no-holes"))
->> +            incompat_flags |= BTRFS_FEATURE_INCOMPAT_NO_HOLES;
->> +        ret = set_super_incompat_flags(fs_info, incompat_flags);
->> +        if (ret < 0) {
->> +            errno = -ret;
->> +            error("failed to set feature '%s': %m", feature);
->> +        }
->> +        goto out;
->> +    }
->> +
->> +out:
->> +    if (fs_info)
->> +        close_ctree_fs_info(fs_info);
->> +    return !!ret;
->> +}
->> +
->> +static DEFINE_SIMPLE_COMMAND(tune_set, "set");
->> +
->> +static const char * const tune_cmd_group_usage[] = {
->> +    "btrfs tune <command> <args>",
->> +    NULL,
->> +};
->> +
->> +static const char tune_cmd_group_info[] = "change various btrfs 
->> features";
->> +
->> +static const struct cmd_group tune_cmd_group = {
->> +    tune_cmd_group_usage, tune_cmd_group_info, {
->> +        &cmd_struct_tune_set,
->> +        NULL
->> +    }
->> +};
->> +DEFINE_GROUP_COMMAND_TOKEN(tune);
-> 
+T24gRnJpLCBTZXAgMTUsIDIwMjMgYXQgMTA6MTY6MzJBTSArMDEwMCwgRmlsaXBlIE1hbmFuYSB3
+cm90ZToNCj4gT24gRnJpLCBTZXAgMTUsIDIwMjMgYXQgODoyOOKAr0FNIE5hb2hpcm8gQW90YSA8
+bmFvaGlyby5hb3RhQHdkYy5jb20+IHdyb3RlOg0KPiA+DQo+ID4gUnVubmluZyBidHJmcy8wNzYg
+b24gYSB6b25lZCBudWxsX2JsayBkZXZpY2Ugd2lsbCBmYWlsIHdpdGggdGhlIGZvbGxvd2luZyBl
+cnJvci4NCj4gPg0KPiA+ICAgLSBvdXRwdXQgbWlzbWF0Y2ggKHNlZSAvaG9zdC9yZXN1bHRzL2J0
+cmZzLzA3Ni5vdXQuYmFkKQ0KPiA+ICAgICAgIC0tLSB0ZXN0cy9idHJmcy8wNzYub3V0ICAgICAy
+MDIxLTAyLTA1IDAxOjQ0OjIwLjAwMDAwMDAwMCArMDAwMA0KPiA+ICAgICAgICsrKyAvaG9zdC9y
+ZXN1bHRzL2J0cmZzLzA3Ni5vdXQuYmFkIDIwMjMtMDktMTUgMDE6NDk6MzYuMDAwMDAwMDAwICsw
+MDAwDQo+ID4gICAgICAgQEAgLTEsMyArMSwzIEBADQo+ID4gICAgICAgIFFBIG91dHB1dCBjcmVh
+dGVkIGJ5IDA3Ng0KPiA+ICAgICAgIC04MA0KPiA+ICAgICAgIC04MA0KPiA+ICAgICAgICs4Mw0K
+PiA+ICAgICAgICs4Mw0KPiA+ICAgICAgIC4uLg0KPiA+DQo+ID4gVGhpcyBpcyBiZWNhdXNlIHRo
+ZSBkZWZhdWx0IHZhbHVlIG9mIHpvbmVfYXBwZW5kX21heF9ieXRlcyBpcyAxMjcuNSBLQg0KPiA+
+IHdoaWNoIGlzIHNtYWxsZXIgdGhhbiBCVFJGU19NQVhfVU5DT01QUkVTU0VEICgxMjhLKS4gU28s
+IHRoZSBleHRlbnQgc2l6ZSBpcw0KPiA+IGxpbWl0ZWQgdG8gMTI2OTc2ICg9IFJPVU5EX0RPV04o
+MTI3LjVLLCA0MDk2KSksIHdoaWNoIG1ha2VzIHRoZSBudW1iZXIgb2YNCj4gPiBleHRlbnRzIGxh
+cmdlciwgYW5kIGZhaWxzIHRoZSB0ZXN0Lg0KPiA+DQo+ID4gSW5zdGVhZCBvZiBoYXJkLWNvZGlu
+ZyB0aGUgbnVtYmVyIG9mIGV4dGVudHMsIHdlIGNhbiBjYWxjdWxhdGUgaXQgdXNpbmcgdGhlDQo+
+ID4gbWF4IGV4dGVudCBzaXplIG9mIGFuIGV4dGVudC4gSXQgaXMgbGltaXRlZCBieSBlaXRoZXIN
+Cj4gPiBCVFJGU19NQVhfVU5DT01QUkVTU0VEIG9yIHpvbmVfYXBwZW5kX21heF9ieXRlcy4NCj4g
+Pg0KPiA+IFNpZ25lZC1vZmYtYnk6IE5hb2hpcm8gQW90YSA8bmFvaGlyby5hb3RhQHdkYy5jb20+
+DQo+IA0KPiBMb29rcyBnb29kLA0KPiANCj4gUmV2aWV3ZWQtYnk6IEZpbGlwZSBNYW5hbmEgPGZk
+bWFuYW5hQHN1c2UuY29tPg0KPiANCj4gSnVzdCB0d28gbWlub3IgY29tbWVudHMgYmVsb3cuDQo+
+IA0KPiA+IC0tLQ0KPiA+ICB0ZXN0cy9idHJmcy8wNzYgICAgIHwgMjMgKysrKysrKysrKysrKysr
+KysrKysrLS0NCj4gPiAgdGVzdHMvYnRyZnMvMDc2Lm91dCB8ICAzICstLQ0KPiA+ICAyIGZpbGVz
+IGNoYW5nZWQsIDIyIGluc2VydGlvbnMoKyksIDQgZGVsZXRpb25zKC0pDQo+ID4NCj4gPiBkaWZm
+IC0tZ2l0IGEvdGVzdHMvYnRyZnMvMDc2IGIvdGVzdHMvYnRyZnMvMDc2DQo+ID4gaW5kZXggODll
+OTY3MmQwOWUyLi5hNWNjM2ViOTZiMmYgMTAwNzU1DQo+ID4gLS0tIGEvdGVzdHMvYnRyZnMvMDc2
+DQo+ID4gKysrIGIvdGVzdHMvYnRyZnMvMDc2DQo+ID4gQEAgLTI4LDEzICsyOCwyOCBAQCBfc3Vw
+cG9ydGVkX2ZzIGJ0cmZzDQo+ID4gIF9yZXF1aXJlX3Rlc3QNCj4gPiAgX3JlcXVpcmVfc2NyYXRj
+aA0KPiA+DQo+ID4gKyMgQW4gZXh0ZW50IHNpemUgY2FuIGJlIHVwIHRvIEJUUkZTX01BWF9VTkNP
+TVBSRVNTRUQNCj4gPiArbWF4X2V4dGVudF9zaXplPSQoKCAxMjggPDwgMTAgKSkNCj4gDQo+IEZv
+ciBjb25zaXN0ZW5jeSB3aXRoIGV2ZXJ5IG90aGVyIHRlc3QgYW5kIGNvbW1vbiBmaWxlcywgdXNp
+bmcgMTI4ICoNCj4gMTAyNCB3b3VsZCBiZSBwZXJoYXBzIGJldHRlci4gSSBjZXJ0YWlubHkgZmlu
+ZCBpdCBlYXNpZXIgdG8gcmVhZCwgYnV0DQo+IHRoYXQncyBhIHBlcnNvbmFsIHByZWZlcmVuY2Ug
+b25seS4NCj4gDQo+ID4gK2lmIF9zY3JhdGNoX2J0cmZzX2lzX3pvbmVkOyB0aGVuDQo+ID4gKyAg
+ICAgICB6b25lX2FwcGVuZF9tYXg9JChjYXQgIi9zeXMvYmxvY2svJChfc2hvcnRfZGV2ICRTQ1JB
+VENIX0RFVikvcXVldWUvem9uZV9hcHBlbmRfbWF4X2J5dGVzIikNCj4gPiArICAgICAgIGlmIFtb
+ICR6b25lX2FwcGVuZF9tYXggLWd0IDAgJiYgJHpvbmVfYXBwZW5kX21heCAtbHQgJG1heF9leHRl
+bnRfc2l6ZSBdXTsgdGhlbg0KPiA+ICsgICAgICAgICAgICAgICAjIFJvdW5kIGRvd24gdG8gUEFH
+RV9TSVpFDQo+ID4gKyAgICAgICAgICAgICAgIG1heF9leHRlbnRfc2l6ZT0kKCggJHpvbmVfYXBw
+ZW5kX21heCAvIDQwOTYgKiA0MDk2ICkpDQo+ID4gKyAgICAgICBmaQ0KPiA+ICtmaQ0KPiA+ICtm
+aWxlX3NpemU9JCgoIDEwIDw8IDIwICkpDQo+IA0KPiBBbmQgdGhpcyBvbmUgaXQncyBldmVuIGxl
+c3MgaW1tZWRpYXRlIHRvIHVuZGVyc3RhbmQsIGhhdmluZyAxICogMTAyNCAqDQo+IDEwMjQgd291
+bGQgbWFrZSBpdCBtdWNoIG1vcmUgZWFzaWVyIHRvIHJlYWQuDQoNCkFncmVlZC4gSSdsbCB1c2Ug
+MTAyNCBhbmQgcmVwb3N0LiBUaGFua3Mu

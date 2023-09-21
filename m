@@ -2,318 +2,103 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 61AA5E7D0A2
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Sep 2023 20:56:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C60C0E7D0AA
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Sep 2023 21:15:38 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231699AbjIUU4g (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 21 Sep 2023 16:56:36 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57530 "EHLO
+        id S229999AbjIUVPm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 21 Sep 2023 17:15:42 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52660 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232386AbjIUUfD (ORCPT
+        with ESMTP id S233074AbjIUVPP (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Sep 2023 16:35:03 -0400
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2168986804;
-        Thu, 21 Sep 2023 10:38:00 -0700 (PDT)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2FE54C4E762;
-        Thu, 21 Sep 2023 15:16:41 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1695309402;
-        bh=pMG68veemBfAguTkOcpkKRmCG8VduN+UWYhtF1GDjaw=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=M2CmkZNRv6LbhvH7HpSVfjKcTnDcuv6IevX7c38UoeMaKyL2qxbDke8sNcv0AYzO+
-         i85ExxdGYhJWvQ/epA8ao4dLBFdfKeRP0bSuVhsLjRi7KsHm1ONxLWxTD+zA8q7anO
-         rbOb7DFMg6x4KlB3h85VF6A6YRgcd7y+3F4EPt474Il1CxGMgttWaCe3zmv01b09QS
-         E5cuoihvFWNyP6oMJFiAb9rd1G+8JcBZSj/SboVw5xoEz2D/XDpi3xYO9X5y1IsasP
-         NtmKH93yi4DiOrqm5y2vbmCmZPh7UU7a3gw8ac4fpfhWBPXE3gytInECWTgWw5hRX7
-         +H3wYHoAhrTyA==
-From:   fdmanana@kernel.org
+        Thu, 21 Sep 2023 17:15:15 -0400
+Received: from esa2.hgst.iphmx.com (esa2.hgst.iphmx.com [68.232.143.124])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BD039A75EF;
+        Thu, 21 Sep 2023 11:01:15 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1695319276; x=1726855276;
+  h=from:to:cc:subject:date:message-id:in-reply-to:
+   references:mime-version:content-transfer-encoding;
+  bh=J5/Mm01U/8HkGqBt2NFeAHTMA49ugVf9griRdMZM9bc=;
+  b=OjT/9BopjpGX/QNuLb4abuT0d4KM+xdm3f9ieaUJIXwk5KptG7rXgUQG
+   KwlBNj0GlFa6JcuiiEvsmHFwbGR0J0FzOYt5UcykpuEOHdevfYLUal3Ia
+   mDXm8EhjOZwkN2yVVIqt1E3kdeG4GLFAiBCuJIVpXaTXBU3PKy3NNbXeL
+   nkOhm888l2TyelQ/t64vuO8dQCiqn118auUf2+7gOYIHI2sVioq8EPETH
+   BaoSRjP78diBsuCqfeXEejBkOnS5TnDCqf8t1IA45XfgPmuja0xwRxgOX
+   KBJTP0vhgvxbahFgF9tsZotInxw3LFidC+FBzoKVExV8knC9Zf1lRI1fX
+   g==;
+X-CSE-ConnectionGUID: KC3GDAmJQb+sCHBT0IJTIw==
+X-CSE-MsgGUID: W6TQwcbCS2eFrOn2iQW9kA==
+X-IronPort-AV: E=Sophos;i="6.03,164,1694707200"; 
+   d="scan'208";a="349818423"
+Received: from h199-255-45-15.hgst.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
+  by ob1.hgst.iphmx.com with ESMTP; 21 Sep 2023 15:44:24 +0800
+IronPort-SDR: 9njPc3Ld3pehKnMA4GMgoGnwp3W5DkuYVIBxLNWbvFlyEqb3czJyp8wO5axNlL1HnV+RNSX0Lb
+ 478Of/WrC79BO7CSOwluqDe+jekcXxdnNkK/ulLRsKsJ+N9tbyD5v62jxkQLJVd5iekEtWu6JO
+ 8X0WHUbXznlDB712d/N0JxdLVb+d3IrGPQVp0TJf4hJAmWquBcObeM36QcLhBSJUClmicYzgD/
+ Skiu/ElIhp5dx2Q7wC8jXBSbVDrI016k0QszEgHciskFDrrB182mGdRellVNxprwfDVK9weTTf
+ baA=
+Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 20 Sep 2023 23:51:18 -0700
+IronPort-SDR: rF0sQVydsUig2QapScE+ESHXYYV/2xwQ0BDCzBhdhS8rzjf1gV4VqizBjMOauCwYwDtQqTrVbQ
+ nMoh5LNSbWwwt0BqgTRYuwAWwU7slTTG8g7ZJBtsNin/T/8jC0+JHgzyyOH8tpV1F7cTA3CSis
+ PUAZqIHETGziMISImKxj/viu8V4+cjl7spkF/w1eS1bYvPhp2oHild3j/ac3Iv0WgO97BgawI7
+ 40HhuE5ewLfvsS/M+a2xTwHCJsTwKlnHRTpHYVsNXYkqAXs8SyW5kst7Iup3tnFggNLad/aR8W
+ qvE=
+WDCIronportException: Internal
+Received: from unknown (HELO naota-xeon.wdc.com) ([10.225.163.94])
+  by uls-op-cesaip01.wdc.com with ESMTP; 21 Sep 2023 00:44:24 -0700
+From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     fstests@vger.kernel.org
-Cc:     linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v2] generic: test new directory entries are returned after rewinding directory
-Date:   Thu, 21 Sep 2023 16:16:34 +0100
-Message-Id: <603deada0f5b9ddff2446dae87a96cb05d566c2c.1695309198.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.40.1
-In-Reply-To: <1888d81c5fad8204dd4948d36291d24f00354b22.1694705838.git.fdmanana@suse.com>
-References: <1888d81c5fad8204dd4948d36291d24f00354b22.1694705838.git.fdmanana@suse.com>
+Cc:     linux-btrfs@vger.kernel.org, Naohiro Aota <naohiro.aota@wdc.com>,
+        Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH v3 2/2] btrfs/076: use _fixed_by_kernel_commit to tell the fixing kernel commit
+Date:   Thu, 21 Sep 2023 16:44:08 +0900
+Message-ID: <74525f6b1fd645ac276b701e5032f3f913ed8ce0.1695282094.git.naohiro.aota@wdc.com>
+X-Mailer: git-send-email 2.42.0
+In-Reply-To: <cover.1695282094.git.naohiro.aota@wdc.com>
+References: <cover.1695282094.git.naohiro.aota@wdc.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+The fix commit is written in the comment without a commit hash. Use
+_fixed_by_kernel_commit command to describe it.
 
-Test that if names are added to a directory after an opendir(3) call and
-before a rewinddir(3) call, future readdir(3) calls will return the names.
-This is mandated by POSIX:
-
-  https://pubs.opengroup.org/onlinepubs/007904875/functions/rewinddir.html
-
-This exercises a regression in btrfs which is fixed by a kernel patch that
-has the following subject:
-
-  ""btrfs: refresh dir last index during a rewinddir(3) call""
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
+Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
+ tests/btrfs/076 | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-V2: Add test to dir group.
-    Add commit id now that the fix is in Linus' tree (as of yesterday).
-
- .gitignore            |   1 +
- src/Makefile          |   2 +-
- src/rewinddir-test.c  | 159 ++++++++++++++++++++++++++++++++++++++++++
- tests/generic/471     |  39 +++++++++++
- tests/generic/471.out |   2 +
- 5 files changed, 202 insertions(+), 1 deletion(-)
- create mode 100644 src/rewinddir-test.c
- create mode 100755 tests/generic/471
- create mode 100644 tests/generic/471.out
-
-diff --git a/.gitignore b/.gitignore
-index 644290f0..4c32ac42 100644
---- a/.gitignore
-+++ b/.gitignore
-@@ -124,6 +124,7 @@ tags
- /src/rename
- /src/renameat2
- /src/resvtest
-+/src/rewinddir-test
- /src/runas
- /src/seek_copy_test
- /src/seek_sanity_test
-diff --git a/src/Makefile b/src/Makefile
-index aff871d0..2815f919 100644
---- a/src/Makefile
-+++ b/src/Makefile
-@@ -19,7 +19,7 @@ TARGETS = dirstress fill fill2 getpagesize holes lstat64 \
- 	t_ofd_locks t_mmap_collision mmap-write-concurrent \
- 	t_get_file_time t_create_short_dirs t_create_long_dirs t_enospc \
- 	t_mmap_writev_overlap checkpoint_journal mmap-rw-fault allocstale \
--	t_mmap_cow_memory_failure fake-dump-rootino dio-buf-fault
-+	t_mmap_cow_memory_failure fake-dump-rootino dio-buf-fault rewinddir-test
+diff --git a/tests/btrfs/076 b/tests/btrfs/076
+index 43dbff538278..894a1ac7fa5d 100755
+--- a/tests/btrfs/076
++++ b/tests/btrfs/076
+@@ -5,10 +5,8 @@
+ # FS QA Test No. btrfs/076
+ #
+ # Regression test for btrfs incorrect inode ratio detection.
+-# This was fixed in the following linux kernel patch:
+-#
+-#     Btrfs: fix incorrect compression ratio detection
+ #
++
+ . ./common/preamble
+ _begin_fstest auto quick compress
  
- LINUX_TARGETS = xfsctl bstat t_mtab getdevicesize preallo_rw_pattern_reader \
- 	preallo_rw_pattern_writer ftrunc trunc fs_perms testx looptest \
-diff --git a/src/rewinddir-test.c b/src/rewinddir-test.c
-new file mode 100644
-index 00000000..9f7505a2
---- /dev/null
-+++ b/src/rewinddir-test.c
-@@ -0,0 +1,159 @@
-+// SPDX-License-Identifier: GPL-2.0
-+/*
-+ * Copyright (c) 2023 SUSE Linux Products GmbH.  All Rights Reserved.
-+ */
-+#include <dirent.h>
-+#include <stdio.h>
-+#include <stdlib.h>
-+#include <string.h>
-+#include <errno.h>
-+#include <unistd.h>
-+#include <sys/stat.h>
-+
-+/*
-+ * Number of files we add to the test directory after calling opendir(3) and
-+ * before calling rewinddir(3).
-+ */
-+#define NUM_FILES 10000
-+
-+int main(int argc, char *argv[])
-+{
-+	int file_counters[NUM_FILES] = { 0 };
-+	int dot_count = 0;
-+	int dot_dot_count = 0;
-+	struct dirent *entry;
-+	DIR *dir = NULL;
-+	char *dir_path = NULL;
-+	char *file_path = NULL;
-+	int ret = 0;
-+	int i;
-+
-+	if (argc != 2) {
-+		fprintf(stderr, "Usage:  %s <directory>\n", argv[0]);
-+		ret = 1;
-+		goto out;
-+	}
-+
-+	dir_path = malloc(strlen(argv[1]) + strlen("/testdir") + 1);
-+	if (!dir_path) {
-+		fprintf(stderr, "malloc failure\n");
-+		ret = ENOMEM;
-+		goto out;
-+	}
-+	i = strlen(argv[1]);
-+	memcpy(dir_path, argv[1], i);
-+	memcpy(dir_path + i, "/testdir", strlen("/testdir"));
-+	dir_path[i + strlen("/testdir")] = '\0';
-+
-+	/* More than enough to contain any full file path. */
-+	file_path = malloc(strlen(dir_path) + 12);
-+	if (!file_path) {
-+		fprintf(stderr, "malloc failure\n");
-+		ret = ENOMEM;
-+		goto out;
-+	}
-+
-+	ret = mkdir(dir_path, 0700);
-+	if (ret == -1) {
-+		fprintf(stderr, "Failed to create test directory: %d\n", errno);
-+		ret = errno;
-+		goto out;
-+	}
-+
-+	/* Open the directory first. */
-+	dir = opendir(dir_path);
-+	if (dir == NULL) {
-+		fprintf(stderr, "Failed to open directory: %d\n", errno);
-+		ret = errno;
-+		goto out;
-+	}
-+
-+	/*
-+	 * Now create all files inside the directory.
-+	 * File names go from 1 to NUM_FILES, 0 is unused as it's the return
-+	 * value for atoi(3) when an error happens.
-+	 */
-+	for (i = 1; i <= NUM_FILES; i++) {
-+		FILE *f;
-+
-+		sprintf(file_path, "%s/%d", dir_path, i);
-+		f = fopen(file_path, "w");
-+		if (f == NULL) {
-+			fprintf(stderr, "Failed to create file number %d: %d\n",
-+				i, errno);
-+			ret = errno;
-+			goto out;
-+		}
-+		fclose(f);
-+	}
-+
-+	/*
-+	 * Rewind the directory and read it.
-+	 * POSIX requires that after a rewind, any new names added to the
-+	 * directory after the openddir(3) call and before the rewinddir(3)
-+	 * call, must be returned by readdir(3) calls
-+	 */
-+	rewinddir(dir);
-+
-+	/*
-+	 * readdir(3) returns NULL when it reaches the end of the directory or
-+	 * when an error happens, so reset errno to 0 to distinguish between
-+	 * both cases later.
-+	 */
-+	errno = 0;
-+	while ((entry = readdir(dir)) != NULL) {
-+		if (strcmp(entry->d_name, ".") == 0) {
-+			dot_count++;
-+			continue;
-+		}
-+		if (strcmp(entry->d_name, "..") == 0) {
-+			dot_dot_count++;
-+			continue;
-+		}
-+		i = atoi(entry->d_name);
-+		if (i == 0) {
-+			fprintf(stderr,
-+				"Failed to parse name '%s' to integer: %d\n",
-+				entry->d_name, errno);
-+			ret = errno;
-+			goto out;
-+		}
-+		/* File names go from 1 to NUM_FILES, so subtract 1. */
-+		file_counters[i - 1]++;
-+	}
-+
-+	if (errno) {
-+		fprintf(stderr, "Failed to read directory: %d\n", errno);
-+		ret = errno;
-+		goto out;
-+	}
-+
-+	/*
-+	 * Now check that the readdir() calls return every single file name
-+	 * and without repeating any of them. If any name is missing or
-+	 * repeated, don't exit immediatelly, so that we print a message for
-+	 * all missing or repeated names.
-+	 */
-+	for (i = 0; i < NUM_FILES; i++) {
-+		if (file_counters[i] != 1) {
-+			fprintf(stderr, "File name %d appeared %d times\n",
-+				i + 1,  file_counters[i]);
-+			ret = EINVAL;
-+		}
-+	}
-+	if (dot_count != 1) {
-+		fprintf(stderr, "File name . appeared %d times\n", dot_count);
-+		ret = EINVAL;
-+	}
-+	if (dot_dot_count != 1) {
-+		fprintf(stderr, "File name .. appeared %d times\n", dot_dot_count);
-+		ret = EINVAL;
-+	}
-+out:
-+	free(dir_path);
-+	free(file_path);
-+	if (dir != NULL)
-+		closedir(dir);
-+
-+	return ret;
-+}
-diff --git a/tests/generic/471 b/tests/generic/471
-new file mode 100755
-index 00000000..6d40d0e2
---- /dev/null
-+++ b/tests/generic/471
-@@ -0,0 +1,39 @@
-+#! /bin/bash
-+# SPDX-License-Identifier: GPL-2.0
-+# Copyright (C) 2023 SUSE Linux Products GmbH. All Rights Reserved.
-+#
-+# FS QA Test 471
-+#
-+# Test that if names are added to a directory after an opendir(3) call and
-+# before a rewinddir(3) call, future readdir(3) calls will return the names.
-+# This is mandated by POSIX:
-+#
-+# https://pubs.opengroup.org/onlinepubs/007904875/functions/rewinddir.html
-+#
-+. ./common/preamble
-+_begin_fstest auto quick dir
-+
-+_cleanup()
-+{
-+	cd /
-+	rm -fr $tmp.*
-+	rm -fr $target_dir
-+}
-+
-+_supported_fs generic
-+_require_test
-+_require_test_program rewinddir-test
-+
-+[ $FSTYP == "btrfs" ] && _fixed_by_kernel_commit e60aa5da14d0 \
-+	"btrfs: refresh dir last index during a rewinddir(3) call"
-+
-+target_dir="$TEST_DIR/test-$seq"
-+rm -fr $target_dir
-+mkdir $target_dir
-+
-+$here/src/rewinddir-test $target_dir
-+
-+# success, all done
-+echo "Silence is golden"
-+status=0
-+exit
-diff --git a/tests/generic/471.out b/tests/generic/471.out
-new file mode 100644
-index 00000000..260f629e
---- /dev/null
-+++ b/tests/generic/471.out
-@@ -0,0 +1,2 @@
-+QA output created by 471
-+Silence is golden
+@@ -27,6 +25,8 @@ _cleanup()
+ _supported_fs btrfs
+ _require_test
+ _require_scratch
++_fixed_by_kernel_commit 4bcbb3325513 \
++	"Btrfs: fix incorrect compression ratio detection"
+ 
+ # An extent size can be up to BTRFS_MAX_UNCOMPRESSED
+ max_extent_size=$(( 128 * 1024 ))
 -- 
-2.40.1
+2.42.0
 

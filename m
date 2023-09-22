@@ -2,38 +2,62 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8729FCD4853
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Sep 2023 19:13:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C8C2ACD4853
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Sep 2023 19:14:51 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231560AbjIVTOB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 22 Sep 2023 15:14:01 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50630 "EHLO
+        id S232944AbjIVTOz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 22 Sep 2023 15:14:55 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45622 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231226AbjIVTOA (ORCPT
+        with ESMTP id S231226AbjIVTOz (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Sep 2023 15:14:00 -0400
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1DB04A3
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Sep 2023 12:13:54 -0700 (PDT)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 59279C433C8;
-        Fri, 22 Sep 2023 19:13:53 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1695410033;
-        bh=XGPiMMoYQ4FFW8QMkusycxbgYJUT+OrOOd5M141Ztf8=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=Ubh0ODZejc+3wgJg1wEDzB3nIo4Ral8UkukTozXLPlxUwoV2mgxtpc/bJoZ0U/++9
-         5Pkx9eHHNCL4QTFpvSjygl4NPGkuhM7jIvgaw9FGUAPuJfx6B+2dhzCTU+RmvGfw9n
-         nfqN1KhsW5NIgPwkAgxKJ5gKyQo3c3ypD+H62JPnPEzXABpNf3ahrIFlbLhDH/+8yb
-         vZqI8ftB3bLIKQJ8WdmPFFcMY8hvnNWb82wSkF/qhJcvSyfK76LNpPar8HQpji1ki8
-         A/wHM/6ygPbNbsq3s0/dk/G4perZq00XcFuuRKd6yAxQHbyBUOYQVT+g1YWreVGE0s
-         X/xnHEOPTYj3Q==
-Date:   Fri, 22 Sep 2023 20:13:50 +0100
-From:   Filipe Manana <fdmanana@kernel.org>
-To:     dsterba@suse.cz
-Cc:     linux-btrfs@vger.kernel.org
+        Fri, 22 Sep 2023 15:14:55 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 49B55A3
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Sep 2023 12:14:45 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id E403F1FE31;
+        Fri, 22 Sep 2023 19:14:43 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1695410083;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=aNG3ASvLdfQoVVxcSMT9vIb1eqIaW4hff6VWvG5LXqE=;
+        b=HQyx+d7JL7cbFKj0HF8e0veAmKuEuZ7Or+xs68nesdZPRU+okPeWdb6+UyrUeQ95iGQB6j
+        krFZEQZwX2sas0jxC3BNXE2+GDNPtRjXf4qqyyqOPkQWxQtf+fTiF+nHcRgUE8owFhwSPe
+        gJ9aP5+cEF2PKQ3mDXPy4aR9s3QBmmU=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1695410083;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=aNG3ASvLdfQoVVxcSMT9vIb1eqIaW4hff6VWvG5LXqE=;
+        b=gDQz/YV7hq7MqNruPrdrzSO3jLehJZYmysi6XQ1YJYsKAeEBCFrYKKKCZCg9UPYCNHTCJs
+        mHUut5nsQUjYbTAw==
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id A50BD13478;
+        Fri, 22 Sep 2023 19:14:43 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id /6aBJ6PnDWVfBQAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Fri, 22 Sep 2023 19:14:43 +0000
+Date:   Fri, 22 Sep 2023 21:08:08 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Filipe Manana <fdmanana@kernel.org>
+Cc:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH 0/8] btrfs: some speedups for io tree operations and
  cleanups
-Message-ID: <ZQ3nbut84wv6jWiT@debian0.Home>
+Message-ID: <20230922190808.GI13697@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <cover.1695333278.git.fdmanana@suse.com>
  <20230922181807.GG13697@twin.jikos.cz>
  <CAL3q7H62P3h3ABOXn2HjqQ3ZwBp1XBhHqbXsQnktrfHZCyGMMQ@mail.gmail.com>
@@ -42,6 +66,7 @@ Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
 In-Reply-To: <CAL3q7H62P3h3ABOXn2HjqQ3ZwBp1XBhHqbXsQnktrfHZCyGMMQ@mail.gmail.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
@@ -164,56 +189,4 @@ On Fri, Sep 22, 2023 at 07:43:24PM +0100, Filipe Manana wrote:
 > 
 > Do you want me to send a v2 with the cond_resched() line deleted?
 
-Better, we can keep the cond_resched_lock() safely with this incremental on
-top of the patch:
-
-diff --git a/fs/btrfs/extent-io-tree.c b/fs/btrfs/extent-io-tree.c
-index 6e3645afaa38..32788fb7837e 100644
---- a/fs/btrfs/extent-io-tree.c
-+++ b/fs/btrfs/extent-io-tree.c
-@@ -114,11 +114,14 @@ void extent_io_tree_init(struct btrfs_fs_info *fs_info,
-  */
- void extent_io_tree_release(struct extent_io_tree *tree)
- {
-+       struct rb_root root;
-        struct extent_state *state;
-        struct extent_state *tmp;
- 
-        spin_lock(&tree->lock);
--       rbtree_postorder_for_each_entry_safe(state, tmp, &tree->state, rb_node) {
-+       root = tree->state;
-+       tree->state = RB_ROOT;
-+       rbtree_postorder_for_each_entry_safe(state, tmp, &root, rb_node) {
-                /* Clear node to keep free_extent_state() happy. */
-                RB_CLEAR_NODE(&state->rb_node);
-                ASSERT(!(state->state & EXTENT_LOCKED));
-@@ -129,9 +132,13 @@ void extent_io_tree_release(struct extent_io_tree *tree)
-                 */
-                ASSERT(!waitqueue_active(&state->wq));
-                free_extent_state(state);
--               cond_resched();
-+               cond_resched_lock(&tree->lock);
-        }
--       tree->state = RB_ROOT;
-+       /*
-+        * Should still be empty even after a reschedule, no other task should
-+        * be accessing the tree anymore.
-+        */
-+       ASSERT(RB_EMPTY_ROOT(&tree->state));
-        spin_unlock(&tree->lock);
- }
- 
-Also pasted at: https://pastebin.com/raw/uVMP2e5b
-
-Let me know if you prefer I send a v2 or squash this patch.
-
-Thanks.
-
-> 
-> Thanks.
-> 
-> >
-> >  133         }
-> >  134         tree->state = RB_ROOT;
-> >  135         spin_unlock(&tree->lock);
-> >  136 }
+No need to resend for that.

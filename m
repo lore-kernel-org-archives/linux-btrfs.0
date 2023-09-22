@@ -2,36 +2,36 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3E20FCD4F58
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Sep 2023 10:37:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7EC14CD4F59
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Sep 2023 10:37:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233367AbjIVKhn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 22 Sep 2023 06:37:43 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58194 "EHLO
+        id S233376AbjIVKhp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 22 Sep 2023 06:37:45 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34804 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233386AbjIVKhi (ORCPT
+        with ESMTP id S233395AbjIVKhl (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Sep 2023 06:37:38 -0400
+        Fri, 22 Sep 2023 06:37:41 -0400
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B711BAC
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Sep 2023 03:37:31 -0700 (PDT)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id D0A79C433CC
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Sep 2023 10:37:30 +0000 (UTC)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E3A2F1B1
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Sep 2023 03:37:33 -0700 (PDT)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id B5336C433C8
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Sep 2023 10:37:32 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1695379051;
-        bh=2mgkuHC6nbX2N7ujQgJtLXW/glxXe8o4C6CbkpHTuhM=;
+        s=k20201202; t=1695379053;
+        bh=1PZGIpQhgfgv1p7tmvCtm1bOPZdWAM8ReixEaHfZ+Oo=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=ucVgmhFVxnRJ9I1texObxeCYMsQT67alxudMaLJ87+5gt0M+wHxpVbZbj5xLRgpKF
-         RzJyGaKp03Vn0r5gGs92xgRb/kuHiDhxH2EAQHXMBQZTl8Wn6W06RdkLcnkHICbvGk
-         Ysl8QQwyzzomFjhcB3OpxqfVWrbRqv+skbbVj+oD2cAHQfTmYmbAQVm9/Fuls8Bn69
-         UrLnp4tDOgKHOeJLHCFzSe0y0nnUNZEII8+KtFMW+dvEaMjCYcxtP2zQV5+bWuQ8rz
-         sZcNW6kY8Phbcp9DKkTv5Gv1urVUrw+rWYrBTDk6UybHyugfE8lUurfsffOax20LlY
-         V51ZbsHvOgjdg==
+        b=UZ1iOpPNI9XiqdboPbVvSjtLYnm1Qs0NPIlqFs41w5SgZfUcw69gK7zYW+X+MAFc1
+         pMjdMvxLUptdE/0oyms/UL4/qWfDT1600tgaPV5hYyxwjOYf3zjzJoG+kz9ANkOGTq
+         kFEL1Ebk38uJ2+hWAsAaA+DAnilBzJb+jIpxG/HcQ5O7+I2BhbQgBTlxBngVxRPJeu
+         x4S5BG0dYIIG7QiKeBTHZolKK1VEvgG1X8ZSh1I7fxW52NYKLFzEMRLPFKG5rQNIXx
+         pzg3bgHq4ihW7fvfYKU++q6EyDIMO8i90N3M1/w4yGqSfXFIsyLYLYjBqOh+1uzA6y
+         P29eMPGpjlkuw==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/8] btrfs: simplify error check condition at btrfs_dirty_inode()
-Date:   Fri, 22 Sep 2023 11:37:19 +0100
-Message-Id: <5d46b47eaa1ab5c82ad17cb4e3d59ddf9857ff4e.1695333082.git.fdmanana@suse.com>
+Subject: [PATCH 3/8] btrfs: remove redundant root argument from btrfs_update_inode_fallback()
+Date:   Fri, 22 Sep 2023 11:37:21 +0100
+Message-Id: <341efed98859d5db55fcb05c7288780762ddf497.1695333082.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.34.1
 In-Reply-To: <cover.1695333082.git.fdmanana@suse.com>
 References: <cover.1695333082.git.fdmanana@suse.com>
@@ -43,44 +43,91 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-The following condition at btrfs_dirty_inode() is redundant:
-
-  if (ret && (ret == -ENOSPC || ret == -EDQUOT))
-
-The first check for a non-zero 'ret' value is pointless, we can simplify
-this to simply:
-
-  if (ret == -ENOSPC || ret == -EDQUOT)
-
-Not only this makes it easier to read, it also slightly reduces the text
-size of the btrfs kernel module:
-
-  $ size fs/btrfs/btrfs.ko.before
-     text	   data	    bss	    dec	    hex	filename
-  1641400	 168265	  16864	1826529	 1bdee1	fs/btrfs/btrfs.ko.before
-
-  $ size fs/btrfs/btrfs.ko.after
-     text	   data	    bss	    dec	    hex	filename
-  1641224	 168181	  16864	1826269	 1bdddd	fs/btrfs/btrfs.ko.after
+The root argument for btrfs_update_inode_fallback() always matches the
+root of the given inode, so remove the root argument and get it from the
+inode argument.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/inode.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/btrfs/btrfs_inode.h |  2 +-
+ fs/btrfs/inode.c       | 12 ++++++------
+ fs/btrfs/transaction.c |  2 +-
+ 3 files changed, 8 insertions(+), 8 deletions(-)
 
+diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+index 4311ac9ca0ae..d12556627cce 100644
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -484,7 +484,7 @@ struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
+ int btrfs_update_inode(struct btrfs_trans_handle *trans,
+ 		       struct btrfs_root *root, struct btrfs_inode *inode);
+ int btrfs_update_inode_fallback(struct btrfs_trans_handle *trans,
+-				struct btrfs_root *root, struct btrfs_inode *inode);
++				struct btrfs_inode *inode);
+ int btrfs_orphan_add(struct btrfs_trans_handle *trans, struct btrfs_inode *inode);
+ int btrfs_orphan_cleanup(struct btrfs_root *root);
+ int btrfs_cont_expand(struct btrfs_inode *inode, loff_t oldsize, loff_t size);
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 514d2e8a4f52..f16dfeabeaf0 100644
+index fb7d7d0077f0..44836d1f99a9 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -6011,7 +6011,7 @@ static int btrfs_dirty_inode(struct btrfs_inode *inode)
- 		return PTR_ERR(trans);
+@@ -3074,7 +3074,7 @@ int btrfs_finish_one_ordered(struct btrfs_ordered_extent *ordered_extent)
+ 			goto out;
+ 		}
+ 		trans->block_rsv = &inode->block_rsv;
+-		ret = btrfs_update_inode_fallback(trans, root, inode);
++		ret = btrfs_update_inode_fallback(trans, inode);
+ 		if (ret) /* -ENOMEM or corruption */
+ 			btrfs_abort_transaction(trans, ret);
+ 		goto out;
+@@ -3144,7 +3144,7 @@ int btrfs_finish_one_ordered(struct btrfs_ordered_extent *ordered_extent)
+ 				 &cached_state);
  
- 	ret = btrfs_update_inode(trans, root, inode);
--	if (ret && (ret == -ENOSPC || ret == -EDQUOT)) {
-+	if (ret == -ENOSPC || ret == -EDQUOT) {
- 		/* whoops, lets try again with the full transaction */
- 		btrfs_end_transaction(trans);
- 		trans = btrfs_start_transaction(root, 1);
+ 	btrfs_inode_safe_disk_i_size_write(inode, 0);
+-	ret = btrfs_update_inode_fallback(trans, root, inode);
++	ret = btrfs_update_inode_fallback(trans, inode);
+ 	if (ret) { /* -ENOMEM or corruption */
+ 		btrfs_abort_transaction(trans, ret);
+ 		goto out;
+@@ -4030,13 +4030,13 @@ int btrfs_update_inode(struct btrfs_trans_handle *trans,
+ }
+ 
+ int btrfs_update_inode_fallback(struct btrfs_trans_handle *trans,
+-				struct btrfs_root *root, struct btrfs_inode *inode)
++				struct btrfs_inode *inode)
+ {
+ 	int ret;
+ 
+-	ret = btrfs_update_inode(trans, root, inode);
++	ret = btrfs_update_inode(trans, inode->root, inode);
+ 	if (ret == -ENOSPC)
+-		return btrfs_update_inode_item(trans, root, inode);
++		return btrfs_update_inode_item(trans, inode->root, inode);
+ 	return ret;
+ }
+ 
+@@ -4316,7 +4316,7 @@ static int btrfs_unlink_subvol(struct btrfs_trans_handle *trans,
+ 	btrfs_i_size_write(dir, dir->vfs_inode.i_size - fname.disk_name.len * 2);
+ 	inode_inc_iversion(&dir->vfs_inode);
+ 	dir->vfs_inode.i_mtime = inode_set_ctime_current(&dir->vfs_inode);
+-	ret = btrfs_update_inode_fallback(trans, root, dir);
++	ret = btrfs_update_inode_fallback(trans, dir);
+ 	if (ret)
+ 		btrfs_abort_transaction(trans, ret);
+ out:
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 3f9f933039c6..240dad25fa16 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1942,7 +1942,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	btrfs_i_size_write(BTRFS_I(parent_inode), parent_inode->i_size +
+ 						  fname.disk_name.len * 2);
+ 	parent_inode->i_mtime = inode_set_ctime_current(parent_inode);
+-	ret = btrfs_update_inode_fallback(trans, parent_root, BTRFS_I(parent_inode));
++	ret = btrfs_update_inode_fallback(trans, BTRFS_I(parent_inode));
+ 	if (ret) {
+ 		btrfs_abort_transaction(trans, ret);
+ 		goto fail;
 -- 
 2.40.1
 

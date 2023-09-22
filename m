@@ -2,36 +2,36 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B5186CD4F49
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Sep 2023 10:37:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 42A19CD4F58
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Sep 2023 10:37:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233393AbjIVKhu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 22 Sep 2023 06:37:50 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34840 "EHLO
+        id S233401AbjIVKhv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 22 Sep 2023 06:37:51 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34868 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233389AbjIVKhn (ORCPT
+        with ESMTP id S233395AbjIVKhr (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Sep 2023 06:37:43 -0400
+        Fri, 22 Sep 2023 06:37:47 -0400
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C43F2CC0
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Sep 2023 03:37:35 -0700 (PDT)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9DBAAC433CC
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Sep 2023 10:37:34 +0000 (UTC)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E0C20C2
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Sep 2023 03:37:37 -0700 (PDT)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 83963C433CA
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Sep 2023 10:37:36 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1695379055;
-        bh=yt4UElT14Y9oW2SjVl0E8mfNhIf+J8qCKetMf5ye69g=;
+        s=k20201202; t=1695379057;
+        bh=TXEcJ5cXY5nBd7zG0LE6Yrm5/eIMTS0pnCgsOdUM4pg=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=Znv/fj45vHHZtTKefxA9YQ+SEJO/gJsjEC8gCzf3FL7OUPmDonAWGErRIusTGBUkQ
-         ZttaEbayzG2IuBVWoO3o2xYJN9TMTaNNczbgtMAEGiHnC7jXoHqrG0SJbMUl4SaCze
-         Q2RLfvAJczvwmCu4bHONvmFW3mgFyE5nPMvKF0ScmAzXohmp2UdwJzil8sQsVICtwN
-         D9L5UCo5zJ5gqRzkr0S8EW9bMmBD4RF5kwElVMDwhaN7pBFxbR2+8EbBuW6qjsFneg
-         FuF6M4zDUjrc++5vT4SZXmqb5VxTbZQAL+5HRozt8NbtRQoRVIr2gm4SeLiDRavJNZ
-         qurthb+m9HZjg==
+        b=CzVf5JcjLKg3aOYj6lHRdIizhHk+cHW4uVb1WTAg1lJxnknNIsjNYO56v4tcLYtJl
+         CUoZqwa49X1Wa6xZ2okNKbOOeV5d+1mXvhjLSGZAiFUQA896Z2DwQNycvFnNRqkQ4x
+         BVgtNGShnhf7+kQJFWpLUWtDnVKGm6VTLcQ2o71DbLATsdJ4kT39UCZ3BrOui2/gqH
+         Af++rNCdfhyNHCF/ZXe25eOMT3laYHCdWYT3CPCuRMQYLCJ3bkBNsXW7wmy2o0I5AZ
+         jqqY4q0Suy1Pfa5O7CWDvBQ/KCEG2Up3SkvIRJd0dgr9JOEW8h1uzAceFVJ0yFROSx
+         7fC2pBiJEJVTQ==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 5/8] btrfs: remove redundant root argument from btrfs_update_inode_item()
-Date:   Fri, 22 Sep 2023 11:37:23 +0100
-Message-Id: <4472470053d1a06d99e80292f6a2fe06d6f40041.1695333082.git.fdmanana@suse.com>
+Subject: [PATCH 7/8] btrfs: remove redundant root argument from maybe_insert_hole()
+Date:   Fri, 22 Sep 2023 11:37:25 +0100
+Message-Id: <6f3a5b0048ea27c88a69e4861e2b6b86afd284f9.1695333082.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.34.1
 In-Reply-To: <cover.1695333082.git.fdmanana@suse.com>
 References: <cover.1695333082.git.fdmanana@suse.com>
@@ -43,55 +43,40 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-The root argument for btrfs_update_inode_item() always matches the root of
-the given inode, so remove the root argument and get it from the inode
+The root argument for maybe_insert_hole() always matches the root of the
+given inode, so remove the root argument and get it from the inode
 argument.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/inode.c | 9 ++++-----
- 1 file changed, 4 insertions(+), 5 deletions(-)
+ fs/btrfs/inode.c | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 13a97d3ce34a..c4b5d4047c5d 100644
+index 54647b7fb600..52576deda654 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -3966,8 +3966,7 @@ static void fill_inode_item(struct btrfs_trans_handle *trans,
-  * copy everything in the in-memory inode into the btree.
-  */
- static noinline int btrfs_update_inode_item(struct btrfs_trans_handle *trans,
--				struct btrfs_root *root,
--				struct btrfs_inode *inode)
-+					    struct btrfs_inode *inode)
- {
- 	struct btrfs_inode_item *inode_item;
- 	struct btrfs_path *path;
-@@ -3978,7 +3977,7 @@ static noinline int btrfs_update_inode_item(struct btrfs_trans_handle *trans,
- 	if (!path)
- 		return -ENOMEM;
- 
--	ret = btrfs_lookup_inode(trans, root, path, &inode->location, 1);
-+	ret = btrfs_lookup_inode(trans, inode->root, path, &inode->location, 1);
- 	if (ret) {
- 		if (ret > 0)
- 			ret = -ENOENT;
-@@ -4026,7 +4025,7 @@ int btrfs_update_inode(struct btrfs_trans_handle *trans,
- 		return ret;
- 	}
- 
--	return btrfs_update_inode_item(trans, root, inode);
-+	return btrfs_update_inode_item(trans, inode);
- }
- 
- int btrfs_update_inode_fallback(struct btrfs_trans_handle *trans,
-@@ -4036,7 +4035,7 @@ int btrfs_update_inode_fallback(struct btrfs_trans_handle *trans,
- 
- 	ret = btrfs_update_inode(trans, inode);
- 	if (ret == -ENOSPC)
--		return btrfs_update_inode_item(trans, inode->root, inode);
-+		return btrfs_update_inode_item(trans, inode);
+@@ -4800,9 +4800,9 @@ int btrfs_truncate_block(struct btrfs_inode *inode, loff_t from, loff_t len,
  	return ret;
  }
+ 
+-static int maybe_insert_hole(struct btrfs_root *root, struct btrfs_inode *inode,
+-			     u64 offset, u64 len)
++static int maybe_insert_hole(struct btrfs_inode *inode, u64 offset, u64 len)
+ {
++	struct btrfs_root *root = inode->root;
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+ 	struct btrfs_trans_handle *trans;
+ 	struct btrfs_drop_extents_args drop_args = { 0 };
+@@ -4898,8 +4898,7 @@ int btrfs_cont_expand(struct btrfs_inode *inode, loff_t oldsize, loff_t size)
+ 		if (!test_bit(EXTENT_FLAG_PREALLOC, &em->flags)) {
+ 			struct extent_map *hole_em;
+ 
+-			err = maybe_insert_hole(root, inode, cur_offset,
+-						hole_size);
++			err = maybe_insert_hole(inode, cur_offset, hole_size);
+ 			if (err)
+ 				break;
  
 -- 
 2.40.1

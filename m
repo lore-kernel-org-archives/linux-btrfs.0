@@ -2,36 +2,36 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B0240CD4F58
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Sep 2023 10:37:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CE70CCD4F59
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Sep 2023 10:37:44 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233380AbjIVKhr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 22 Sep 2023 06:37:47 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58260 "EHLO
+        id S233365AbjIVKhs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 22 Sep 2023 06:37:48 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58322 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233360AbjIVKhj (ORCPT
+        with ESMTP id S233387AbjIVKhn (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Sep 2023 06:37:39 -0400
+        Fri, 22 Sep 2023 06:37:43 -0400
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D2CDF180
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Sep 2023 03:37:32 -0700 (PDT)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id C1C38C433CA
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Sep 2023 10:37:31 +0000 (UTC)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 39F35AC
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Sep 2023 03:37:36 -0700 (PDT)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 91318C433CB
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Sep 2023 10:37:35 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1695379052;
-        bh=4yzHn+H4coxQ7pJvHFrIwhY2XlutsNk7ePQVuM0Vaic=;
+        s=k20201202; t=1695379056;
+        bh=KVX9zKgXOgOqLlkcwI+VMVJu3EmQ6tHatj73+xJNW7E=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=PMwj8VjAGZcZavdKyML3q49p8cO1GOmRGAJomfkDIa6nGniNSA/f31PaTthr3oant
-         GCy/q+f689c4gqohB7dXy8devqFi+nhGxZOXIjERNe4oHdIplQT09BMN4fys+norBI
-         ZesOCI3enQALmyIYYXC2Awy4ucl8Wd/ccn0TMlhT1ynQshrmHDuSG0gd6sBi7Zn2r/
-         0hXhQgB37cNv2sIwP0Hf4t2Lm+nlGOnCb0yB2SQ5ncahNTEduiiFu9IiMt8LAVc4EN
-         TkLgRi00c5rOjLbagPyGHPwYS/zpWXqhaGop5xiHyapJbMqEaJE+26jdwba1iSavg9
-         j+YxwkHVpwlUg==
+        b=a1Kdl90kKfyyFoxECKTMl70dE4QvThxqkTUNjDJQgPCyy/smTo8qXS3XfbqsiMDDY
+         1Px/3goIKQBJ7EGsbkf4kx6CUbY6+fFIY/OfvpAIbtWGlcDG9Y0qpjZx6mdTcJJM35
+         rK5ZePJEipIfgrTRUJICLGCKpW+qRov1l14d9txb75fFW/IWWljaoiP6Sn94PIpuAp
+         dya9OGBw+uSLvjoSfiMD3bqnCFIIrQpcv2vnxHjgsQ/huoRBT6eI+JaohxHA+DYgn9
+         yK1WdDgCXddjxndXLFKvEIsKXtHwNKKf3rYPDdpJg+ldFu5DgUwSkeItc3fIJaQ64g
+         Wmn3obcX1mlZQ==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/8] btrfs: remove noline from btrfs_update_inode()
-Date:   Fri, 22 Sep 2023 11:37:20 +0100
-Message-Id: <dcf9aac4d009439f8becedb0d50b6f2702c0897f.1695333082.git.fdmanana@suse.com>
+Subject: [PATCH 6/8] btrfs: remove redundant root argument from btrfs_delayed_update_inode()
+Date:   Fri, 22 Sep 2023 11:37:24 +0100
+Message-Id: <38eb656f778e10215d4b52a1bbb3401025b9110e.1695333082.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.34.1
 In-Reply-To: <cover.1695333082.git.fdmanana@suse.com>
 References: <cover.1695333082.git.fdmanana@suse.com>
@@ -43,31 +43,57 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-The noinline attribute of btrfs_update_inode() is pointless as the
-function is exported and widely used, so remove it.
+The root argument for btrfs_delayed_update_inode() always matches the root
+of the given inode, so remove the root argument and get it from the inode
+argument.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/inode.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ fs/btrfs/delayed-inode.c | 2 +-
+ fs/btrfs/delayed-inode.h | 1 -
+ fs/btrfs/inode.c         | 2 +-
+ 3 files changed, 2 insertions(+), 3 deletions(-)
 
+diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+index 8ba045ae1d75..35d7616615c1 100644
+--- a/fs/btrfs/delayed-inode.c
++++ b/fs/btrfs/delayed-inode.c
+@@ -1913,9 +1913,9 @@ int btrfs_fill_inode(struct inode *inode, u32 *rdev)
+ }
+ 
+ int btrfs_delayed_update_inode(struct btrfs_trans_handle *trans,
+-			       struct btrfs_root *root,
+ 			       struct btrfs_inode *inode)
+ {
++	struct btrfs_root *root = inode->root;
+ 	struct btrfs_delayed_node *delayed_node;
+ 	int ret = 0;
+ 
+diff --git a/fs/btrfs/delayed-inode.h b/fs/btrfs/delayed-inode.h
+index dc1085b2a397..d050e572c7f9 100644
+--- a/fs/btrfs/delayed-inode.h
++++ b/fs/btrfs/delayed-inode.h
+@@ -135,7 +135,6 @@ int btrfs_commit_inode_delayed_inode(struct btrfs_inode *inode);
+ 
+ 
+ int btrfs_delayed_update_inode(struct btrfs_trans_handle *trans,
+-			       struct btrfs_root *root,
+ 			       struct btrfs_inode *inode);
+ int btrfs_fill_inode(struct inode *inode, u32 *rdev);
+ int btrfs_delayed_delete_inode_ref(struct btrfs_inode *inode);
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index f16dfeabeaf0..fb7d7d0077f0 100644
+index c4b5d4047c5d..54647b7fb600 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -4001,9 +4001,9 @@ static noinline int btrfs_update_inode_item(struct btrfs_trans_handle *trans,
- /*
-  * copy everything in the in-memory inode into the btree.
-  */
--noinline int btrfs_update_inode(struct btrfs_trans_handle *trans,
--				struct btrfs_root *root,
--				struct btrfs_inode *inode)
-+int btrfs_update_inode(struct btrfs_trans_handle *trans,
-+		       struct btrfs_root *root,
-+		       struct btrfs_inode *inode)
- {
- 	struct btrfs_fs_info *fs_info = root->fs_info;
- 	int ret;
+@@ -4019,7 +4019,7 @@ int btrfs_update_inode(struct btrfs_trans_handle *trans,
+ 	    && !test_bit(BTRFS_FS_LOG_RECOVERING, &fs_info->flags)) {
+ 		btrfs_update_root_times(trans, root);
+ 
+-		ret = btrfs_delayed_update_inode(trans, root, inode);
++		ret = btrfs_delayed_update_inode(trans, inode);
+ 		if (!ret)
+ 			btrfs_set_inode_last_trans(trans, inode);
+ 		return ret;
 -- 
 2.40.1
 

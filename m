@@ -2,116 +2,103 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 90227CE7A90
-	for <linux-btrfs@archiver.kernel.org>; Sun, 24 Sep 2023 13:31:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EC9EECE7A89
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Sep 2023 04:05:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231605AbjIXNbt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 24 Sep 2023 09:31:49 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38806 "EHLO
+        id S230194AbjIYEFX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Sep 2023 00:05:23 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38206 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231470AbjIXNb3 (ORCPT
+        with ESMTP id S229907AbjIYEFU (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 24 Sep 2023 09:31:29 -0400
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C8D612722;
-        Sun, 24 Sep 2023 06:18:17 -0700 (PDT)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 84B13C433D9;
-        Sun, 24 Sep 2023 13:18:16 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1695561497;
-        bh=qi5/mwH2HAKmqTTdE46upKbXGCSprpRBjoezJq7LS/Y=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=vPlJKHpAQvtZURp8MPLoPrdyN6xirKtDjOfV2BPnNbAErhQM2yUMu1NNrUrxj89UO
-         RU3y6xveS9J9teLtrSijIRoHy+m7SuSUS0gmOFjDRug6lK1vbI8ldMmmgL+WHEVL+c
-         seJaUfcdVLIq8BUlMI+0Q/iA3D1Gs2TAEZrkZkIvjBIbgrO6bH9I965QevnSDTxsP/
-         5HNKweLxQLSqyVaMTNSnKDBuwgScXlbZJFdPDwqrnAPZRfvMmiLEeyO9VFsGnj07C/
-         WCwu6UQ0laYpRx8CuRc8PpnrHpCvlKXkTVKt++fqUYjyRZcdlncZsQPWFpVniSuVVz
-         KzY4qRjvxyD5w==
-From:   Sasha Levin <sashal@kernel.org>
-To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Filipe Manana <fdmanana@suse.com>, Qu Wenruo <wqu@suse.com>,
-        David Sterba <dsterba@suse.com>,
-        Sasha Levin <sashal@kernel.org>, clm@fb.com,
-        josef@toxicpanda.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 6.1 12/28] btrfs: assert delayed node locked when removing delayed item
-Date:   Sun, 24 Sep 2023 09:17:29 -0400
-Message-Id: <20230924131745.1275960-12-sashal@kernel.org>
-X-Mailer: git-send-email 2.40.1
-In-Reply-To: <20230924131745.1275960-1-sashal@kernel.org>
-References: <20230924131745.1275960-1-sashal@kernel.org>
+        Mon, 25 Sep 2023 00:05:20 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C71A3DF
+        for <linux-btrfs@vger.kernel.org>; Sun, 24 Sep 2023 21:05:13 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id C6C082184F
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Sep 2023 04:05:11 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1695614711; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=1xYV9VWWwk2gHqMQgRnHqXTX2nAucL1uU2Dk6aT+i3w=;
+        b=NZxl6mBb/PsPDLUc6wEGLMdAE0zWal+zsEQRbr8bh2CqlHrc4Aeqgyz/6BRu2b9oIpvlaf
+        s47/Km3F6c7IgniFMnqllH8LHgZlENcrVKRPMjBTzLmjlMJgS2Dht7VqeiP+4Pd+Sl1r8n
+        OiD/iQ/pCm6Z7jFkXyGRtjtbQdg987g=
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 060C21391E
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Sep 2023 04:05:10 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id jLJDDfYGEWWhXQAAMHmgww
+        (envelope-from <wqu@suse.com>)
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Sep 2023 04:05:10 +0000
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH RFC] btrfs: save the physical address for append writes before updating bi_status
+Date:   Mon, 25 Sep 2023 13:35:07 +0930
+Message-ID: <1fdf92c9de7d496e7591e67624def3dfdbbe577e.1695614683.git.wqu@suse.com>
+X-Mailer: git-send-email 2.42.0
 MIME-Version: 1.0
-X-stable: review
-X-Patchwork-Hint: Ignore
-X-stable-base: Linux 6.1.55
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+There is a possible bug in side btrfs_orig_wrte_end_io(), that if the
+last mirror itself failed to do the APPEND write, but other mirrors
+succeeded.
 
-[ Upstream commit a57c2d4e46f519b24558ae0752c17eec416ac72a ]
+In that case, we know the write itself still succeeded, thus we reset
+bio->bi_status to BLK_STS_OK.
 
-When removing a delayed item, or releasing which will remove it as well,
-we will modify one of the delayed node's rbtrees and item counter if the
-delayed item is in one of the rbtrees. This require having the delayed
-node's mutex locked, otherwise we will race with other tasks modifying
-the rbtrees and the counter.
+But the next step, which would record the physical address, is dependent
+on the newly updated bio->bi_status (BLK_STS_OK).
 
-This is motivated by a previous version of another patch actually calling
-btrfs_release_delayed_item() after unlocking the delayed node's mutex and
-against a delayed item that is in a rbtree.
+This means even the last mirror write failed, we still update the
+physical address for that stripe.
 
-So assert at __btrfs_remove_delayed_item() that the delayed node's mutex
-is locked.
+Unfortunately I don't have any better solution for now but only move the
+"stripe->physical" assignment before the bi_status update.
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
-Reviewed-by: David Sterba <dsterba@suse.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
-Signed-off-by: Sasha Levin <sashal@kernel.org>
+The proper fix needs some work from RST/zoned mode to handle such cases.
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/delayed-inode.c | 12 ++++++++----
- 1 file changed, 8 insertions(+), 4 deletions(-)
+ fs/btrfs/bio.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index 221d34f2ddf9a..bd701c249b21e 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -407,6 +407,7 @@ static void finish_one_item(struct btrfs_delayed_root *delayed_root)
+diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
+index 4f3b693a16b1..42f1f87f1872 100644
+--- a/fs/btrfs/bio.c
++++ b/fs/btrfs/bio.c
+@@ -407,6 +407,10 @@ static void btrfs_orig_write_end_io(struct bio *bio)
+ 		btrfs_log_dev_io_error(bio, stripe->dev);
+ 	}
  
- static void __btrfs_remove_delayed_item(struct btrfs_delayed_item *delayed_item)
- {
-+	struct btrfs_delayed_node *delayed_node = delayed_item->delayed_node;
- 	struct rb_root_cached *root;
- 	struct btrfs_delayed_root *delayed_root;
- 
-@@ -414,18 +415,21 @@ static void __btrfs_remove_delayed_item(struct btrfs_delayed_item *delayed_item)
- 	if (RB_EMPTY_NODE(&delayed_item->rb_node))
- 		return;
- 
--	delayed_root = delayed_item->delayed_node->root->fs_info->delayed_root;
-+	/* If it's in a rbtree, then we need to have delayed node locked. */
-+	lockdep_assert_held(&delayed_node->mutex);
++	/* TODO: Add proper error handling for a single failed mirror case. */
++	if (bio_op(bio) == REQ_OP_ZONE_APPEND && !bio->bi_status)
++		stripe->physical = bio->bi_iter.bi_sector << SECTOR_SHIFT;
 +
-+	delayed_root = delayed_node->root->fs_info->delayed_root;
- 
- 	BUG_ON(!delayed_root);
- 
- 	if (delayed_item->type == BTRFS_DELAYED_INSERTION_ITEM)
--		root = &delayed_item->delayed_node->ins_root;
-+		root = &delayed_node->ins_root;
+ 	/*
+ 	 * Only send an error to the higher layers if it is beyond the tolerance
+ 	 * threshold.
+@@ -416,9 +420,6 @@ static void btrfs_orig_write_end_io(struct bio *bio)
  	else
--		root = &delayed_item->delayed_node->del_root;
-+		root = &delayed_node->del_root;
+ 		bio->bi_status = BLK_STS_OK;
  
- 	rb_erase_cached(&delayed_item->rb_node, root);
- 	RB_CLEAR_NODE(&delayed_item->rb_node);
--	delayed_item->delayed_node->count--;
-+	delayed_node->count--;
- 
- 	finish_one_item(delayed_root);
+-	if (bio_op(bio) == REQ_OP_ZONE_APPEND && !bio->bi_status)
+-		stripe->physical = bio->bi_iter.bi_sector << SECTOR_SHIFT;
+-
+ 	btrfs_orig_bbio_end_io(bbio);
+ 	btrfs_put_bioc(bioc);
  }
 -- 
-2.40.1
+2.42.0
 

@@ -2,97 +2,217 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 86D93CE7A89
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Sep 2023 05:55:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B94AECE7A9C
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Sep 2023 05:59:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229658AbjIYFzy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Sep 2023 01:55:54 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50498 "EHLO
+        id S232097AbjIYF7S (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Sep 2023 01:59:18 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41800 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229604AbjIYFzx (ORCPT
+        with ESMTP id S232063AbjIYF7K (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Sep 2023 01:55:53 -0400
-Received: from esa4.hgst.iphmx.com (esa4.hgst.iphmx.com [216.71.154.42])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 294A983;
-        Sun, 24 Sep 2023 22:55:46 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1695621345; x=1727157345;
-  h=from:to:cc:subject:date:message-id:mime-version:
-   content-transfer-encoding;
-  bh=5dHZwuLOoad7Dv/ZTwEbxO/erIfjG+1LZsKASkt7Ap4=;
-  b=dVqviYJXATN78qSr5iy8BAQBOHwj0MXTx7swu3oJGpLblYdooqT0H1Z8
-   EYZw/lbfwNkVVoPkvoLp+4M0SDReZHfrsJdD2XjdOAXPln+c7gozVOAlP
-   4h9dWrUyFvOMP241VVL7gTomewfRbGovVyoIjeBfocPrXEc9UYw+r7HxX
-   TX3i8yzuVqixmThhrKzNsXWJ5JsRoYumUQnYkg11eqpwvxLQo3L4NWnKu
-   3UfDt8io9VZQznSddnFsklG/b5iBv0NY8Gfn3cz1Q4297G+QnBf59nntE
-   4ur1BwlbkoXEKhF/aRsEgmloyvDvhpAxY4j+kmT/z/GFKdhYVhgy40VGC
-   A==;
-X-CSE-ConnectionGUID: CE7OxVVlTwGDL83nMo0a1w==
-X-CSE-MsgGUID: BW09gjArQQKPhSnzJpCrKQ==
-X-IronPort-AV: E=Sophos;i="6.03,174,1694707200"; 
-   d="scan'208";a="243047963"
-Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 25 Sep 2023 13:55:45 +0800
-IronPort-SDR: uGShNZF43c3j5+w2X9/nujs3hkBVrYrxK18fVCpYpAZH1kyMIQLsFuDFDUhFdNl/Bi00EtGFY9
- IbS4X6dZL7w4uGaT0bxhBIi7l0/P3gKw76JCAasvZs+obdUue9waO/eZ6BhE54vINmi8dusbju
- wrZuddCYDSkd0aQwLo1FnzKR8pNV1A0Ay/3K5Y8o5TFuLq0cazlAsiOltu32fKnQfATJf24eRz
- oPfflZVAu/gQ3u8EJjGhNrswoJFwFpIw24P3yvujwzjthY1Hx59DGNx1UXIcDXjSn6m99h3PTH
- ePI=
-Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 24 Sep 2023 22:08:15 -0700
-IronPort-SDR: UJhujDd9w5X7dpN+JmBfI56u/X+DZXQLFWYfAtk+LWWZylHRZqpBr2tK7B0AXpUGw4O2iUegdT
- Fm4WHNeR+PRtEqMET5QwXY4MA80HqYX91Bo68z3NcpsAfozPIDORoKmvSxyaJopnj58Ksbc4Yj
- /3Layi+ilyySdJYULoJ9zqYxszrs15YV+V4QDQCNpJlQhsA0zQfRnv7k/G8Rbdw6ioaSoYPk1U
- Rba9Y6D6LAvyZq272KB2KDt4aAztdhHkACl2fuigooQmyOGXdt8KOhiwLsyx1Xq0qslmu8H9V6
- iUQ=
-WDCIronportException: Internal
-Received: from unknown (HELO naota-xeon.wdc.com) ([10.225.163.101])
-  by uls-op-cesaip01.wdc.com with ESMTP; 24 Sep 2023 22:55:44 -0700
-From:   Naohiro Aota <naohiro.aota@wdc.com>
-To:     fstests@vger.kernel.org
-Cc:     linux-btrfs@vger.kernel.org, Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH] btrfs/283: skip if we cannot write into one extent
-Date:   Mon, 25 Sep 2023 14:55:41 +0900
-Message-ID: <20230925055541.2848073-1-naohiro.aota@wdc.com>
+        Mon, 25 Sep 2023 01:59:10 -0400
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 325FF112;
+        Sun, 24 Sep 2023 22:58:59 -0700 (PDT)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8020DC433C8;
+        Mon, 25 Sep 2023 05:58:58 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1695621538;
+        bh=idiVzlkasc6EOKYjPFwNaxxpxVhmkIQdbuE4cRL0Tzs=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+        b=qd9ipEV70X7+ByaaCBd7HAb+BHhngMqY7dpRA/jPvTYup4xniVJ91BMtXoo5Sr35f
+         6ONvHB4Yw2HGU9DRLYDTcdhq033DvfAPl4w90ommQ9+5w0dZRhTR0+3DMQ9vB7hue5
+         8wo/OJb2lAf0B0Jp74s8nVrYNXjTqWO3vXQ/IxIIaKyR5WsTK4BTo88HrCyxXDwapK
+         T6FMGs+vM0hSUM/LF4ERbrlSapj8atL5o1cLkPg6BUG5dVKN26Wg7TMz36/D/c6Xhm
+         S4QVUJAR5/Fu8d/OlogAZo5LmHB6l0P2tqTRZ0GTMeKgaP8gwJtkaN+IpgFSAJ7knu
+         Qy72UYYc6vkoQ==
+From:   Eric Biggers <ebiggers@kernel.org>
+To:     linux-fscrypt@vger.kernel.org
+Cc:     linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-f2fs-devel@lists.sourceforge.net,
+        linux-btrfs@vger.kernel.org, Theodore Ts'o <tytso@mit.edu>,
+        Jaegeuk Kim <jaegeuk@kernel.org>
+Subject: [PATCH v3 1/5] fscrypt: make it clearer that key_prefix is deprecated
+Date:   Sun, 24 Sep 2023 22:54:47 -0700
+Message-ID: <20230925055451.59499-2-ebiggers@kernel.org>
 X-Mailer: git-send-email 2.42.0
+In-Reply-To: <20230925055451.59499-1-ebiggers@kernel.org>
+References: <20230925055451.59499-1-ebiggers@kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On the zoned mode, the extent size is limited also by
-queue/zone_append_max_bytes. This breaks the assumption that the file "foo"
-has a single extent and corrupts the test output.
+From: Eric Biggers <ebiggers@google.com>
 
-It is difficult to support the case, so let's just skip the test in this
-case.
+fscrypt_operations::key_prefix should not be set by any filesystems that
+aren't setting it already.  This is already documented, but apparently
+it's not sufficiently clear, as both ceph and btrfs have tried to set
+it.  Rename the field to legacy_key_prefix and improve the documentation
+to hopefully make it clearer.
 
-Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+Signed-off-by: Eric Biggers <ebiggers@google.com>
 ---
- tests/btrfs/283 | 8 ++++++++
- 1 file changed, 8 insertions(+)
+ fs/crypto/keysetup_v1.c |  5 +++--
+ fs/ext4/crypto.c        |  2 +-
+ fs/f2fs/super.c         |  2 +-
+ fs/ubifs/crypto.c       |  2 +-
+ include/linux/fscrypt.h | 14 +++++++++-----
+ 5 files changed, 15 insertions(+), 10 deletions(-)
 
-diff --git a/tests/btrfs/283 b/tests/btrfs/283
-index c1f6007d5398..118df08b8958 100755
---- a/tests/btrfs/283
-+++ b/tests/btrfs/283
-@@ -25,6 +25,14 @@ _require_fssum
- _wants_kernel_commit c7499a64dcf6 \
- 	     "btrfs: send: optimize clone detection to increase extent sharing"
+diff --git a/fs/crypto/keysetup_v1.c b/fs/crypto/keysetup_v1.c
+index 75dabd9b27f9b..86b48a2b47d1b 100644
+--- a/fs/crypto/keysetup_v1.c
++++ b/fs/crypto/keysetup_v1.c
+@@ -292,29 +292,30 @@ static int setup_v1_file_key_derived(struct fscrypt_info *ci,
+ int fscrypt_setup_v1_file_key(struct fscrypt_info *ci, const u8 *raw_master_key)
+ {
+ 	if (ci->ci_policy.v1.flags & FSCRYPT_POLICY_FLAG_DIRECT_KEY)
+ 		return setup_v1_file_key_direct(ci, raw_master_key);
+ 	else
+ 		return setup_v1_file_key_derived(ci, raw_master_key);
+ }
  
-+extent_size=$(( 128 * 1024 ))
-+if _scratch_btrfs_is_zoned; then
-+	zone_append_max=$(cat "/sys/block/$(_short_dev $SCRATCH_DEV)/queue/zone_append_max_bytes")
-+	if [[ $zone_append_max -gt 0 && $zone_append_max -lt $extent_size ]]; then
-+		_notrun "zone append max $zone_append_max is smaller than wanted extent size $extent_size"
-+	fi
-+fi
-+
- send_files_dir=$TEST_DIR/btrfs-test-$seq
- send_stream=$send_files_dir/snap.stream
- snap_fssum=$send_files_dir/snap.fssum
+ int fscrypt_setup_v1_file_key_via_subscribed_keyrings(struct fscrypt_info *ci)
+ {
++	const struct super_block *sb = ci->ci_inode->i_sb;
+ 	struct key *key;
+ 	const struct fscrypt_key *payload;
+ 	int err;
+ 
+ 	key = find_and_lock_process_key(FSCRYPT_KEY_DESC_PREFIX,
+ 					ci->ci_policy.v1.master_key_descriptor,
+ 					ci->ci_mode->keysize, &payload);
+-	if (key == ERR_PTR(-ENOKEY) && ci->ci_inode->i_sb->s_cop->key_prefix) {
+-		key = find_and_lock_process_key(ci->ci_inode->i_sb->s_cop->key_prefix,
++	if (key == ERR_PTR(-ENOKEY) && sb->s_cop->legacy_key_prefix) {
++		key = find_and_lock_process_key(sb->s_cop->legacy_key_prefix,
+ 						ci->ci_policy.v1.master_key_descriptor,
+ 						ci->ci_mode->keysize, &payload);
+ 	}
+ 	if (IS_ERR(key))
+ 		return PTR_ERR(key);
+ 
+ 	err = fscrypt_setup_v1_file_key(ci, payload->raw);
+ 	up_read(&key->sem);
+ 	key_put(key);
+ 	return err;
+diff --git a/fs/ext4/crypto.c b/fs/ext4/crypto.c
+index 453d4da5de520..99a4769a53f63 100644
+--- a/fs/ext4/crypto.c
++++ b/fs/ext4/crypto.c
+@@ -233,18 +233,18 @@ static bool ext4_has_stable_inodes(struct super_block *sb)
+ }
+ 
+ static void ext4_get_ino_and_lblk_bits(struct super_block *sb,
+ 				       int *ino_bits_ret, int *lblk_bits_ret)
+ {
+ 	*ino_bits_ret = 8 * sizeof(EXT4_SB(sb)->s_es->s_inodes_count);
+ 	*lblk_bits_ret = 8 * sizeof(ext4_lblk_t);
+ }
+ 
+ const struct fscrypt_operations ext4_cryptops = {
+-	.key_prefix		= "ext4:",
++	.legacy_key_prefix	= "ext4:",
+ 	.get_context		= ext4_get_context,
+ 	.set_context		= ext4_set_context,
+ 	.get_dummy_policy	= ext4_get_dummy_policy,
+ 	.empty_dir		= ext4_empty_dir,
+ 	.has_stable_inodes	= ext4_has_stable_inodes,
+ 	.get_ino_and_lblk_bits	= ext4_get_ino_and_lblk_bits,
+ };
+diff --git a/fs/f2fs/super.c b/fs/f2fs/super.c
+index a8c8232852bb1..f60062b558fd1 100644
+--- a/fs/f2fs/super.c
++++ b/fs/f2fs/super.c
+@@ -3224,21 +3224,21 @@ static struct block_device **f2fs_get_devices(struct super_block *sb,
+ 	if (!devs)
+ 		return ERR_PTR(-ENOMEM);
+ 
+ 	for (i = 0; i < sbi->s_ndevs; i++)
+ 		devs[i] = FDEV(i).bdev;
+ 	*num_devs = sbi->s_ndevs;
+ 	return devs;
+ }
+ 
+ static const struct fscrypt_operations f2fs_cryptops = {
+-	.key_prefix		= "f2fs:",
++	.legacy_key_prefix	= "f2fs:",
+ 	.get_context		= f2fs_get_context,
+ 	.set_context		= f2fs_set_context,
+ 	.get_dummy_policy	= f2fs_get_dummy_policy,
+ 	.empty_dir		= f2fs_empty_dir,
+ 	.has_stable_inodes	= f2fs_has_stable_inodes,
+ 	.get_ino_and_lblk_bits	= f2fs_get_ino_and_lblk_bits,
+ 	.get_devices		= f2fs_get_devices,
+ };
+ #endif
+ 
+diff --git a/fs/ubifs/crypto.c b/fs/ubifs/crypto.c
+index 3125e76376ee6..1be3e11da3b3e 100644
+--- a/fs/ubifs/crypto.c
++++ b/fs/ubifs/crypto.c
+@@ -82,15 +82,15 @@ int ubifs_decrypt(const struct inode *inode, struct ubifs_data_node *dn,
+ 		ubifs_err(c, "fscrypt_decrypt_block_inplace() failed: %d", err);
+ 		return err;
+ 	}
+ 	*out_len = clen;
+ 
+ 	return 0;
+ }
+ 
+ const struct fscrypt_operations ubifs_crypt_operations = {
+ 	.flags			= FS_CFLG_OWN_PAGES,
+-	.key_prefix		= "ubifs:",
++	.legacy_key_prefix	= "ubifs:",
+ 	.get_context		= ubifs_crypt_get_context,
+ 	.set_context		= ubifs_crypt_set_context,
+ 	.empty_dir		= ubifs_crypt_empty_dir,
+ };
+diff --git a/include/linux/fscrypt.h b/include/linux/fscrypt.h
+index c895b12737a19..b0037566ce308 100644
+--- a/include/linux/fscrypt.h
++++ b/include/linux/fscrypt.h
+@@ -66,26 +66,30 @@ struct fscrypt_name {
+  */
+ #define FS_CFLG_OWN_PAGES (1U << 1)
+ 
+ /* Crypto operations for filesystems */
+ struct fscrypt_operations {
+ 
+ 	/* Set of optional flags; see above for allowed flags */
+ 	unsigned int flags;
+ 
+ 	/*
+-	 * If set, this is a filesystem-specific key description prefix that
+-	 * will be accepted for "logon" keys for v1 fscrypt policies, in
+-	 * addition to the generic prefix "fscrypt:".  This functionality is
+-	 * deprecated, so new filesystems shouldn't set this field.
++	 * This field exists only for backwards compatibility reasons and should
++	 * only be set by the filesystems that are setting it already.  It
++	 * contains the filesystem-specific key description prefix that is
++	 * accepted for "logon" keys for v1 fscrypt policies.  This
++	 * functionality is deprecated in favor of the generic prefix
++	 * "fscrypt:", which itself is deprecated in favor of the filesystem
++	 * keyring ioctls such as FS_IOC_ADD_ENCRYPTION_KEY.  Filesystems that
++	 * are newly adding fscrypt support should not set this field.
+ 	 */
+-	const char *key_prefix;
++	const char *legacy_key_prefix;
+ 
+ 	/*
+ 	 * Get the fscrypt context of the given inode.
+ 	 *
+ 	 * @inode: the inode whose context to get
+ 	 * @ctx: the buffer into which to get the context
+ 	 * @len: length of the @ctx buffer in bytes
+ 	 *
+ 	 * Return: On success, returns the length of the context in bytes; this
+ 	 *	   may be less than @len.  On failure, returns -ENODATA if the
+
+base-commit: 6465e260f48790807eef06b583b38ca9789b6072
 -- 
 2.42.0
 

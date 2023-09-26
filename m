@@ -2,62 +2,61 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 48EB0EE020B
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Sep 2023 18:03:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 045B4E7E65F
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Sep 2023 18:03:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235486AbjIZSDn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 26 Sep 2023 14:03:43 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33660 "EHLO
+        id S235483AbjIZSDr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 26 Sep 2023 14:03:47 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33794 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235476AbjIZSDl (ORCPT
+        with ESMTP id S235482AbjIZSDp (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 26 Sep 2023 14:03:41 -0400
-Received: from mail-qt1-x82e.google.com (mail-qt1-x82e.google.com [IPv6:2607:f8b0:4864:20::82e])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EDC4E11F
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 Sep 2023 11:03:34 -0700 (PDT)
-Received: by mail-qt1-x82e.google.com with SMTP id d75a77b69052e-41820eecff2so19631741cf.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 Sep 2023 11:03:34 -0700 (PDT)
+        Tue, 26 Sep 2023 14:03:45 -0400
+Received: from mail-qv1-xf31.google.com (mail-qv1-xf31.google.com [IPv6:2607:f8b0:4864:20::f31])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 82AD219F
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 Sep 2023 11:03:38 -0700 (PDT)
+Received: by mail-qv1-xf31.google.com with SMTP id 6a1803df08f44-65b051a28b3so31676796d6.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 Sep 2023 11:03:38 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1695751414; x=1696356214; darn=vger.kernel.org;
+        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1695751417; x=1696356217; darn=vger.kernel.org;
         h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=9KLmh2uaP15Sf9VJ5dLtRkPlzZHoo+djMGrpIoeSOJk=;
-        b=shf1DcHi9otxTUCLdnixnQHt2PLxxOP76AMPtM61f9ri8ZwhBzEMbyZaQOaPCzzSWG
-         5kNyvzlII5cvi27IlmgoAzSsBTWlWFu59d2X8vpiJeSQnC72R3/wAHVVs9mbRvgnKBkS
-         F52gMfUXGzKTx98MA9tUyF+g2rb1ABFBJ9yBtWhDUtXqAGI+YRJPM5CzRGan86obGScc
-         HsBHmaSz6tHRwWfZrGGGnBLUAbzmzdeSa6O+AtaMKqtZR9xzxaS8biIGlpHDLeEzckWL
-         2nCt8FPM6gGRtBMMpWptKOuvLzpuUAMqd0foJ96y5zUJ1QWeTDobErMNA/kVl1Rq2hMb
-         lyrw==
+         :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=aMVZOqD5qMhAARWUPM9bumwM6QRjAQ+JBEENF8lhuIs=;
+        b=eBx6fdTxUa1Q+Vmi6yML2Ohg7PDzxfwCO8K689z0nsYBP2GFUMO3qLGJVHjLphW0ro
+         pL7tKN+E+7bN25kXHNNcTdQiK6VVgZQkWArkoxtzZZzi2pO9+6r2tcnRoPHm5gDP+TmU
+         QxKTjx0b5IGf7ReeXG+k6eZrmxkFVptBMcmM4A3H26Q+eN2gpQirJqEOuPcMAnHokJpI
+         W5R0NoTRY33wlHWbdFfGpLZNkRLeaUgy4ZmulJ7TzBWQQV8sEf+icoFrPmxgZNvRTpdL
+         vx89+8BlQkkdyVCRerwkD8/kM9wh/CPPHL5xP0m0OazwZa3dQePrF2oYGfAb9rSzH1Qj
+         QHRg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1695751414; x=1696356214;
+        d=1e100.net; s=20230601; t=1695751417; x=1696356217;
         h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
+         :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=9KLmh2uaP15Sf9VJ5dLtRkPlzZHoo+djMGrpIoeSOJk=;
-        b=UE/AZi+GHxpJ81w/Kc848/QRCzRUtRDkxalZxQAjyrzOGbd+caCTC0Xnw6MdD1T588
-         u1NMQ5OaOuwa36fWHxv6xLLU/cJefLWMmceeVGL0E+hp1zG9chMyxZx6XlzfoWqGyuGf
-         GI1Wp+IK7P/izYeK1tL6PQApBe5VyxqSBYyMtF4TG/CXkwKBcOOLYekM6KsTC/hZx8lx
-         8gdpYPODj8NPdmPIAYF0hjpr0yQL2smPXfIWzP8VdtTZOZLKBNq4rADA8YrE3683hLVw
-         c8rQLuoXVpYOk2rw5ds0kF9lVkrDvsN0AjUt5WcD4esHb9oy+olXIt+7OSUM5ZkoBBcy
-         SdSQ==
-X-Gm-Message-State: AOJu0Yw0iGd9FFLAeIOxctRT1TwPiZBGvh/GBRvg9DEmvdSvPgPT0ilw
-        sfawktrYWOFeTSob5aWZurETKVvTx+TEhzDGv1MqzQ==
-X-Google-Smtp-Source: AGHT+IEXrkR7x9Pl2saCQ8KSIwNXmAj6BRTstm+LKNEDSuk08JhC7QykpQg3Fx5yvNLDXUu/U6NaCA==
-X-Received: by 2002:a05:622a:34a:b0:417:fe9c:6dce with SMTP id r10-20020a05622a034a00b00417fe9c6dcemr12030385qtw.25.1695751413829;
-        Tue, 26 Sep 2023 11:03:33 -0700 (PDT)
+        bh=aMVZOqD5qMhAARWUPM9bumwM6QRjAQ+JBEENF8lhuIs=;
+        b=X2Jw0ZmiqTFzWJgjwPbdc1LBBueiepLxmfs3UNdfzrdMVlM1DSvp5k2/sIShnyquvQ
+         4B/fm0F/dL4BgAtPGynCbbybbKn6HthxfohZFhfQFea+DpNt8UwfptWZhXqGQmDbcki9
+         lkdVksIwgo9z9s1jim0F1bs/dlyBT55JUjp2DIcjPBagpb2IyH0aI+FEYUFxcatxTGYh
+         IiuUy9nduAMBqCjwNdOBvw7LyXLK8C3Yddad+FrEpE52K9/HRg8b6Kknq7GOJy0VN9Zw
+         meWzf9Tcx6pnD1jfrgdNxmHv4KsZMpxzJphX4ERZMOitHXdbBa+G5VeJtPIUKEoyiK57
+         c7BQ==
+X-Gm-Message-State: AOJu0Yw9lT5aIgsBna4fPMulDc7uJNIoEtkhHU6wcraEtlNmgmM3J6IS
+        B19PYWdnS9G+GTAsAFy7izGUHTNkqo3ZpuBQoG9x9Q==
+X-Google-Smtp-Source: AGHT+IGkbl+aPJ9BFcngOs3WUasdj0u/1uUNnx3vaBJ9ZrmuA25de+95BHcI3QUOql1n+cL9d7ZTnQ==
+X-Received: by 2002:a05:6214:5191:b0:656:de90:3135 with SMTP id kl17-20020a056214519100b00656de903135mr14335917qvb.7.1695751417304;
+        Tue, 26 Sep 2023 11:03:37 -0700 (PDT)
 Received: from localhost (cpe-76-182-20-124.nc.res.rr.com. [76.182.20.124])
-        by smtp.gmail.com with ESMTPSA id fp6-20020a05622a508600b004181aa90b46sm1671764qtb.89.2023.09.26.11.03.33
+        by smtp.gmail.com with ESMTPSA id c2-20020a05620a134200b007743360b3fasm1872163qkl.34.2023.09.26.11.03.36
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 26 Sep 2023 11:03:33 -0700 (PDT)
+        Tue, 26 Sep 2023 11:03:37 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com,
         ebiggers@kernel.org, linux-fscrypt@vger.kernel.org,
         ngompa13@gmail.com
-Cc:     Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-Subject: [PATCH 18/35] btrfs: turn on inlinecrypt mount option for encrypt
-Date:   Tue, 26 Sep 2023 14:01:44 -0400
-Message-ID: <e4816641d25052d421cf2118739e6297f225e641.1695750478.git.josef@toxicpanda.com>
+Subject: [PATCH 21/35] btrfs: add fscrypt_info and encryption_type to ordered_extent
+Date:   Tue, 26 Sep 2023 14:01:47 -0400
+Message-ID: <47feb58788c2adb906a6df4c7994058a4e7d2d75.1695750478.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <cover.1695750478.git.josef@toxicpanda.com>
 References: <cover.1695750478.git.josef@toxicpanda.com>
@@ -67,57 +66,60 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
+We're going to need these to update the file extent items once the
+writes are complete.  Add them and add the pieces necessary to assign
+them and free everything.
 
-fscrypt's extent encryption requires the use of inline encryption or the
-software fallback that the block layer provides; it is rather
-complicated to allow software encryption with extent encryption due to
-the timing of memory allocations. Thus, if btrfs has ever had a
-encrypted file, or when encryption is enabled on a directory, update the
-mount flags to include inlinecrypt.
-
-Signed-off-by: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/ioctl.c |  3 +++
- fs/btrfs/super.c | 10 ++++++++++
- 2 files changed, 13 insertions(+)
+ fs/btrfs/ordered-data.c | 2 ++
+ fs/btrfs/ordered-data.h | 6 ++++++
+ 2 files changed, 8 insertions(+)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 8e5f9dbb547a..33bf4d9416a9 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -4599,6 +4599,9 @@ long btrfs_ioctl(struct file *file, unsigned int
- 		 * state persists.
- 		 */
- 		btrfs_set_fs_incompat(fs_info, ENCRYPT);
-+		if (!(inode->i_sb->s_flags & SB_INLINECRYPT)) {
-+			inode->i_sb->s_flags |= SB_INLINECRYPT;
-+		}
- 		return fscrypt_ioctl_set_policy(file, (const void __user *)arg);
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index b133ea0bc459..d33a780d9893 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -182,6 +182,7 @@ static struct btrfs_ordered_extent *alloc_ordered_extent(
+ 	entry->bytes_left = num_bytes;
+ 	entry->inode = igrab(&inode->vfs_inode);
+ 	entry->compress_type = compress_type;
++	entry->encryption_type = BTRFS_ENCRYPTION_NONE;
+ 	entry->truncated_len = (u64)-1;
+ 	entry->qgroup_rsv = ret;
+ 	entry->flags = flags;
+@@ -568,6 +569,7 @@ void btrfs_put_ordered_extent(struct btrfs_ordered_extent *entry)
+ 			list_del(&sum->list);
+ 			kvfree(sum);
+ 		}
++		fscrypt_put_extent_info(entry->fscrypt_info);
+ 		kmem_cache_free(btrfs_ordered_extent_cache, entry);
  	}
- 	case FS_IOC_GET_ENCRYPTION_POLICY:
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 2b5d60cb7fed..a8a609f4a9f4 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1120,6 +1120,16 @@ static int btrfs_fill_super(struct super_block *sb,
- 		return err;
- 	}
+ }
+diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
+index 1c51ac57e5df..607814876f1f 100644
+--- a/fs/btrfs/ordered-data.h
++++ b/fs/btrfs/ordered-data.h
+@@ -122,6 +122,9 @@ struct btrfs_ordered_extent {
+ 	/* compression algorithm */
+ 	int compress_type;
  
-+	if (btrfs_fs_incompat(fs_info, ENCRYPT)) {
-+		if (IS_ENABLED(CONFIG_FS_ENCRYPTION_INLINE_CRYPT)) {
-+			sb->s_flags |= SB_INLINECRYPT;
-+		} else {
-+			btrfs_err(fs_info, "encryption not supported");
-+			err = -EINVAL;
-+			goto fail_close;
-+		}
-+	}
++	/* encryption mode */
++	int encryption_type;
 +
- 	inode = btrfs_iget(sb, BTRFS_FIRST_FREE_OBJECTID, fs_info->fs_root);
- 	if (IS_ERR(inode)) {
- 		err = PTR_ERR(inode);
+ 	/* Qgroup reserved space */
+ 	int qgroup_rsv;
+ 
+@@ -131,6 +134,9 @@ struct btrfs_ordered_extent {
+ 	/* the inode we belong to */
+ 	struct inode *inode;
+ 
++	/* the fscrypt_info for this extent, if necessary */
++	struct fscrypt_extent_info *fscrypt_info;
++
+ 	/* list of checksums for insertion when the extent io is done */
+ 	struct list_head list;
+ 
 -- 
 2.41.0
 

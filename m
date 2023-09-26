@@ -2,218 +2,110 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 73D8AE7E62B
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Sep 2023 18:03:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EA024E7E654
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Sep 2023 18:03:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235323AbjIZSDV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 26 Sep 2023 14:03:21 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36454 "EHLO
+        id S235391AbjIZSDZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 26 Sep 2023 14:03:25 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43312 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235301AbjIZSDU (ORCPT
+        with ESMTP id S235395AbjIZSDY (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 26 Sep 2023 14:03:20 -0400
-Received: from mail-qv1-xf2b.google.com (mail-qv1-xf2b.google.com [IPv6:2607:f8b0:4864:20::f2b])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B9000124
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 Sep 2023 11:03:12 -0700 (PDT)
-Received: by mail-qv1-xf2b.google.com with SMTP id 6a1803df08f44-65af8d30b33so29327616d6.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 Sep 2023 11:03:12 -0700 (PDT)
+        Tue, 26 Sep 2023 14:03:24 -0400
+Received: from mail-qk1-x72a.google.com (mail-qk1-x72a.google.com [IPv6:2607:f8b0:4864:20::72a])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0D242136
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 Sep 2023 11:03:18 -0700 (PDT)
+Received: by mail-qk1-x72a.google.com with SMTP id af79cd13be357-7741b18a06aso552473885a.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 Sep 2023 11:03:18 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1695751391; x=1696356191; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:to
-         :from:from:to:cc:subject:date:message-id:reply-to;
-        bh=WHOM6S388KJvwFqokXWA615UUFzLeMQLny+zps3lA8c=;
-        b=QpTLormUBChBXCdWKEv8pcjeQoMc13ZyJLBjpI5FBh5KVFUZjFVU5HOqkNiviysXtg
-         TDseapZlyb/Z3AQqQ2lOWPj/EBVx8BU0ptrBrLccCjE08osjk+oyGT+/AgKvsI/wjxkh
-         6Lj39PkANmAylEdIuahbh9e35uh8X4PcrsgnnAxNGxLsCYE0JLcIccoYwJtjuzBltq7w
-         Zi7+0DpJFNv1gkQEb1xJw6y58JxFEhsCuItyOqE92eTNfB0AhbaV+oPGq7bJ5cJmEs1L
-         ISerTtv8DuQZjVU2NoGNmQPrwSHUm71WjOgplcq+eDSH4PIs2sN58+/jM42xPp/WrPha
-         BX8Q==
+        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1695751397; x=1696356197; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=HEpmLdsd71BpfsLvuAMqA7qaAsmnnp9uGs4TsFTYoJo=;
+        b=dIRJlr/og8wRBSOw7jq66Uqs+QFeqZRIqJjFUjIiT8oWyeHM+d/LEj4sb65aFKrnQU
+         eIDjYlSJydx1Tkjf5FqiQQtL8daYg2X6xLqHrGyx0arfkj+BDSoNZsOLzYmV2hH7dcYf
+         ea/+2MtYSfk4L/XpLNKIdt/fp1aaqmKBicvaB9IfivoT8kjv0vwikWxhDkAZpWbemY/a
+         LyFQt4hw5Le62cDmuAYhUfUI+WjIi12OFzRbfKNTsgmDFNX3HX240Wv2aMB3jG726pvF
+         KjdL/sB+VC27giyshXilgHIun1BiIbjqU9RvbZNhP4UUKy2EzKa8IjatrGzxgsoZkTVa
+         mt7w==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1695751391; x=1696356191;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:to
-         :from:x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=WHOM6S388KJvwFqokXWA615UUFzLeMQLny+zps3lA8c=;
-        b=SIWYBAaMB6WjPnt7za2yKn6cGOE2NMt/8C2RBfsfutl12H3XYqo+t9bC/Rafh2LeCA
-         4442eJjsPWmxzkvNRg8VU3GI9cXVhDSyhvxex9gN5Y9wsltxIaSakfAyrxtFCNsBLgUB
-         C59A59kN6RoofQVKrBY4U/nIS0BLzylzDa8DclJVSKlxWN76Lz1eR9B1TX+YRZaN1q2y
-         UlFnkObU+zaPXWi6sw74+qswAqAaN8RQFYBWLwF25JglkGhIiA352kw7b/bd6EBUaaal
-         LaM5D/YbXRtBW3ovP54ZjSyN1jTtX8qCTgqKW+CPjVLDzrg6IgYLdImSqMCpFUdZT8aH
-         OeQw==
-X-Gm-Message-State: AOJu0YzJF6mRfcLQPzpKofgm7kao/3xMFQaoGH3mjwkWyxa6uV6pja0E
-        zBuciHjmkgbAQP5vPiuvKaOmNLxfW7o7/8wR4LYGHQ==
-X-Google-Smtp-Source: AGHT+IH+6EMpDxABlT0IpUA8lYBqo0sKvwOQOujEXmCAb6T9R6kporWo3WGtNo6GLwyCfE7sVdvAGQ==
-X-Received: by 2002:ad4:5e8e:0:b0:65b:4f2:13fa with SMTP id jl14-20020ad45e8e000000b0065b04f213famr4604105qvb.2.1695751391610;
-        Tue, 26 Sep 2023 11:03:11 -0700 (PDT)
+        d=1e100.net; s=20230601; t=1695751397; x=1696356197;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=HEpmLdsd71BpfsLvuAMqA7qaAsmnnp9uGs4TsFTYoJo=;
+        b=s4AkCP2TbkgtMEys5J0iIFlia9BOWKu7aOTeqtBILwXmPhjtaoxQIbKQy1WKD0gwX8
+         VaVzCuSM5u0e5zk9aysw8sffi1layUZTxs3soQIiF+xkuCVBhLZIywTIMwnlbm0+4BlO
+         9v3b5IzaBix6iN9mJByh9adZnhYi8O0AVtnujJXgKhXtV06QGAMmS21uE/CVm89qElUr
+         FwTtb0KPrSX12MwEf5OmOUfaMIpYwQdfUhA9V7h0MiGAcKKYrMYdnxLpaT7fk9ulLm4L
+         u5Hf0FRmrQTx4HmKMVbDo/4axlaMSSxgFnTtLQiRC+5yQ/sPHI3G+YfXtspmuUXuq0p2
+         7Q9Q==
+X-Gm-Message-State: AOJu0YzWMVYlQZnV4OkosXfT0/sj5Bc2KqI/6FtVGbmvpfqSF5SWvpQT
+        w3oh3QK6FLZSpWivrjHNNF+fPjAYoHc1oRK2b2tc3Q==
+X-Google-Smtp-Source: AGHT+IF0mKQpS6T1d8wH4tTeSy6fbusjTkiYCZU8OiOcNlGtAJV5M3Poeik33Kjjt4TwbPof9fL2YA==
+X-Received: by 2002:a05:620a:1424:b0:76d:2725:f36f with SMTP id k4-20020a05620a142400b0076d2725f36fmr9709782qkj.71.1695751397077;
+        Tue, 26 Sep 2023 11:03:17 -0700 (PDT)
 Received: from localhost (cpe-76-182-20-124.nc.res.rr.com. [76.182.20.124])
-        by smtp.gmail.com with ESMTPSA id u18-20020a0cb412000000b0065896b9fb15sm1675930qve.29.2023.09.26.11.03.11
+        by smtp.gmail.com with ESMTPSA id a14-20020a05620a124e00b00767dc4c539bsm4943739qkl.44.2023.09.26.11.03.16
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 26 Sep 2023 11:03:11 -0700 (PDT)
+        Tue, 26 Sep 2023 11:03:16 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com,
         ebiggers@kernel.org, linux-fscrypt@vger.kernel.org,
         ngompa13@gmail.com
-Subject: [PATCH 00/35] btrfs: add fscrypt support
-Date:   Tue, 26 Sep 2023 14:01:26 -0400
-Message-ID: <cover.1695750478.git.josef@toxicpanda.com>
+Subject: [PATCH 03/35] fscrypt: disable all but standard v2 policies for extent encryption
+Date:   Tue, 26 Sep 2023 14:01:29 -0400
+Message-ID: <e3c4c6b472513c922e3881f65ec9c631b461dc19.1695750478.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.41.0
+In-Reply-To: <cover.1695750478.git.josef@toxicpanda.com>
+References: <cover.1695750478.git.josef@toxicpanda.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hello,
+The different encryption related options for fscrypt are too numerous to
+support for extent based encryption.  Support for a few of these options
+could possibly be added, but since they're niche options simply reject
+them for file systems using extent based encryption.
 
-This is the newly reworked fscrypt support for btrfs.  There have been a few
-things changed since Sweet Tea's last post[1], and my RFC[2].  The changes from
-Sweet Tea's patchset are mostly related to the fscrypt changes, but I'll detail
-them here
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+---
+ fs/crypto/policy.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
-- We have a fscrypt_extent_info struct that simply has the blk key in it and a
-  nonce.
-- We have a stripped down on disk context that just has what we need for
-  extents.  At this time we only care about the nonce, everything else is
-  supposed to match the owning inode.
-- I've disabled everything except bog standard v2 policies to limit the
-  complexity.
-- Added the necessary hooks we needed for checksumming the encrypted bios.
-- Reworked the on-disk stuff to be better described and accessed through
-  helpers.
-- Plumbed through the fscrypt_extent_info through everything to simplify the
-  API calls we need from fscrypt.
-- Instead of handling async key free'ing in fscrypt, handle the case where we're
-  freeing extent_maps under the lock in a safe way.  This is cleaner than
-  pushing this into fscrypt.
-- Fixed a few things that fsstress uncovered in testing.
-
-Changes to the fscrypt code since my RFC
-
-- Took Eric's advice and added the policy and key to the extent context, this
-  way if we want to in the future we could handle key changing.
-- Added a helper to give us the fscrypt extent info context size.  We need the
-  size ahead of time to setup the item properly.
-- Fixed the blk crypto fallback not actually working with our process_bio
-  callback.  Added a policy flag to make sure the checks work properly.
-- Added some documentation.
-
-Things left to do
-
-- I still have to update fstests to deal with v2 only policies.  I haven't
-  touched fstests at all yet, I've merely done my own rough testing with
-  fsstress.
-- Update the btrfs-progs patches.  This needs to be done to get the fstests
-  stuff to work as well.
-- fsverity still isn't encrypted.  I'm going to hit that next, it should be
-  straightforward enough.
-
-This is based on for-next from Dave's tree [3], but in case that moves between
-now and then you can see my current branch here [4].  Thanks,
-
-Josef
-
-[1] https://lore.kernel.org/linux-fscrypt/cover.1693630890.git.sweettea-kernel@dorminy.me/
-[2] https://lore.kernel.org/linux-btrfs/cover.1694738282.git.josef@toxicpanda.com/
-[3] https://github.com/kdave/btrfs-devel/tree/for-next
-[4] https://github.com/josefbacik/linux/tree/fscrypt
-
-Josef Bacik (20):
-  fscrypt: rename fscrypt_info => fscrypt_inode_info
-  fscrypt: add per-extent encryption support
-  fscrypt: disable all but standard v2 policies for extent encryption
-  blk-crypto: add a process bio callback
-  fscrypt: add documentation about extent encryption
-  btrfs: add infrastructure for safe em freeing
-  btrfs: add fscrypt_info and encryption_type to ordered_extent
-  btrfs: plumb through setting the fscrypt_info for ordered extents
-  btrfs: populate the ordered_extent with the fscrypt context
-  btrfs: keep track of fscrypt info and orig_start for dio reads
-  btrfs: add an optional encryption context to the end of file extents
-  btrfs: pass through fscrypt_extent_info to the file extent helpers
-  btrfs: pass the fscrypt_info through the replace extent infrastructure
-  btrfs: implement the fscrypt extent encryption hooks
-  btrfs: setup fscrypt_extent_info for new extents
-  btrfs: populate ordered_extent with the orig offset
-  btrfs: set the bio fscrypt context when applicable
-  btrfs: add a bio argument to btrfs_csum_one_bio
-  btrfs: add orig_logical to btrfs_bio
-  btrfs: implement process_bio cb for fscrypt
-
-Omar Sandoval (7):
-  fscrypt: expose fscrypt_nokey_name
-  btrfs: disable various operations on encrypted inodes
-  btrfs: start using fscrypt hooks
-  btrfs: add inode encryption contexts
-  btrfs: add new FEATURE_INCOMPAT_ENCRYPT flag
-  btrfs: adapt readdir for encrypted and nokey names
-  btrfs: implement fscrypt ioctls
-
-Sweet Tea Dorminy (8):
-  btrfs: disable verity on encrypted inodes
-  btrfs: handle nokey names.
-  btrfs: add encryption to CONFIG_BTRFS_DEBUG
-  btrfs: add get_devices hook for fscrypt
-  btrfs: turn on inlinecrypt mount option for encrypt
-  btrfs: set file extent encryption excplicitly
-  btrfs: add fscrypt_info and encryption_type to extent_map
-  btrfs: explicitly track file extent length for replace and drop
-
- Documentation/filesystems/fscrypt.rst |  36 ++
- block/blk-crypto-fallback.c           |  28 ++
- block/blk-crypto-profile.c            |   2 +
- block/blk-crypto.c                    |   6 +-
- fs/btrfs/Makefile                     |   1 +
- fs/btrfs/accessors.h                  |  50 +++
- fs/btrfs/bio.c                        |  45 ++-
- fs/btrfs/bio.h                        |   6 +
- fs/btrfs/btrfs_inode.h                |   3 +-
- fs/btrfs/compression.c                |   6 +
- fs/btrfs/ctree.h                      |   4 +
- fs/btrfs/defrag.c                     |  10 +-
- fs/btrfs/delayed-inode.c              |  29 +-
- fs/btrfs/delayed-inode.h              |   6 +-
- fs/btrfs/dir-item.c                   | 108 +++++-
- fs/btrfs/dir-item.h                   |  11 +-
- fs/btrfs/extent_io.c                  |  81 ++++-
- fs/btrfs/extent_io.h                  |   3 +
- fs/btrfs/extent_map.c                 | 106 +++++-
- fs/btrfs/extent_map.h                 |  12 +
- fs/btrfs/file-item.c                  |  17 +-
- fs/btrfs/file-item.h                  |   7 +-
- fs/btrfs/file.c                       |  16 +-
- fs/btrfs/fs.h                         |   3 +-
- fs/btrfs/fscrypt.c                    | 326 ++++++++++++++++++
- fs/btrfs/fscrypt.h                    |  95 +++++
- fs/btrfs/inode.c                      | 476 ++++++++++++++++++++------
- fs/btrfs/ioctl.c                      |  41 ++-
- fs/btrfs/ordered-data.c               |  26 +-
- fs/btrfs/ordered-data.h               |  21 +-
- fs/btrfs/reflink.c                    |   8 +
- fs/btrfs/root-tree.c                  |   8 +-
- fs/btrfs/root-tree.h                  |   2 +-
- fs/btrfs/super.c                      |  17 +
- fs/btrfs/sysfs.c                      |   6 +
- fs/btrfs/tree-checker.c               |  66 +++-
- fs/btrfs/tree-log.c                   |  26 +-
- fs/btrfs/verity.c                     |   3 +
- fs/crypto/crypto.c                    |  23 +-
- fs/crypto/fname.c                     |  45 +--
- fs/crypto/fscrypt_private.h           |  87 ++++-
- fs/crypto/hooks.c                     |   2 +-
- fs/crypto/inline_crypt.c              | 100 +++++-
- fs/crypto/keyring.c                   |   4 +-
- fs/crypto/keysetup.c                  | 190 +++++++++-
- fs/crypto/keysetup_v1.c               |  14 +-
- fs/crypto/policy.c                    |  70 +++-
- include/linux/blk-crypto-profile.h    |   7 +
- include/linux/blk-crypto.h            |   9 +-
- include/linux/fs.h                    |   4 +-
- include/linux/fscrypt.h               | 123 ++++++-
- include/uapi/linux/btrfs.h            |   1 +
- include/uapi/linux/btrfs_tree.h       |  35 +-
- 53 files changed, 2144 insertions(+), 287 deletions(-)
- create mode 100644 fs/btrfs/fscrypt.c
- create mode 100644 fs/btrfs/fscrypt.h
-
+diff --git a/fs/crypto/policy.c b/fs/crypto/policy.c
+index 8b8da04068b8..38807d0ee742 100644
+--- a/fs/crypto/policy.c
++++ b/fs/crypto/policy.c
+@@ -198,6 +198,12 @@ static bool fscrypt_supported_v1_policy(const struct fscrypt_policy_v1 *policy,
+ 		return false;
+ 	}
+ 
++	if (inode->i_sb->s_cop->flags & FS_CFLG_EXTENT_ENCRYPTION) {
++		fscrypt_warn(inode,
++			     "v1 policies can't be used on file systems that use extent encryption");
++		return false;
++	}
++
+ 	return true;
+ }
+ 
+@@ -233,6 +239,12 @@ static bool fscrypt_supported_v2_policy(const struct fscrypt_policy_v2 *policy,
+ 		return false;
+ 	}
+ 
++	if ((inode->i_sb->s_cop->flags & FS_CFLG_EXTENT_ENCRYPTION) && count) {
++		fscrypt_warn(inode,
++			     "Encryption flags aren't supported on file systems that use extent encryption");
++		return false;
++	}
++
+ 	if ((policy->flags & FSCRYPT_POLICY_FLAG_DIRECT_KEY) &&
+ 	    !supported_direct_key_modes(inode, policy->contents_encryption_mode,
+ 					policy->filenames_encryption_mode))
 -- 
 2.41.0
 

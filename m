@@ -2,95 +2,94 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5C9C2E82CBB
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Sep 2023 17:47:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4096DE82CA1
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Sep 2023 17:47:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229595AbjI0RrN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 27 Sep 2023 13:47:13 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58098 "EHLO
+        id S229601AbjI0RrO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 27 Sep 2023 13:47:14 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58120 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229459AbjI0RrN (ORCPT
+        with ESMTP id S229593AbjI0RrN (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 27 Sep 2023 13:47:13 -0400
 Received: from mail-qk1-x72a.google.com (mail-qk1-x72a.google.com [IPv6:2607:f8b0:4864:20::72a])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8EAACB4
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Sep 2023 10:47:10 -0700 (PDT)
-Received: by mail-qk1-x72a.google.com with SMTP id af79cd13be357-7742be66bd3so507419785a.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Sep 2023 10:47:10 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CD30FEB
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Sep 2023 10:47:12 -0700 (PDT)
+Received: by mail-qk1-x72a.google.com with SMTP id af79cd13be357-7740c8509c8so699808585a.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Sep 2023 10:47:12 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1695836829; x=1696441629; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:to
-         :from:from:to:cc:subject:date:message-id:reply-to;
-        bh=8i9/QHLfcoxb5XIiB/cn7XVFrCaueq8mVZ+yI+OIZrs=;
-        b=ddBO72s0CTmtQofYX5fF9fGIMdxSSTFsrx9+LgNonzAig1Tdxh7dsEeAqKwQas92qd
-         07GkymvcDTLdotMFLjlsLkfr2irUid+2RG4/fWIpI+NFhrY24tl6+f4Bzx5/JOdhh3Xl
-         DYOf0IS8KwR/jZWx8ypBIP0kooyHqybdPDP/tadXTDvJdOuoZToJwyHfbB2iX6ZLhj/d
-         vypGQ7Z2O5L1BKD9WRZ78RwMhdUo2+8OCbX5THHd4eFxfRjUYubkdXkH30BdgaK9cLVf
-         iyRmWI80HBZuRi7Zx7h6IijSzbDfNCzaoAj/nKpPJCWm92r2mXJww3+FlhQK/+JELoUb
-         99MA==
+        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1695836832; x=1696441632; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=x/vuMoLckYaeutabTNUQ3SzvUz8X85Zc7zWQhmqXj8k=;
+        b=gdjyqRB9P82jdOhCbPQOWZlwANwzP4WNgcsEg4al+pWc9eb6KWfsA92754s8oS9IM2
+         kdWW8VW7OeXwWcpzSgmoiTD1HahfXyNB0QvnlODhUmGipspiNiGg3EMaiEylmM/Y7ZtT
+         mT0Fu7pv3EqDop+s3xSgcABu4+PRJ6gaXIWl792/349YSwrmwxqTk3u1ucA8hZ8tLYaK
+         PW9A25CCUhlsbt9Ob7ReUR1GjFPPfaOYqj++AeZ5ikcUzgqzyGnHzsjbYV+065bsPULl
+         SdYMChv5bFdZTv2mIXg22gTxQnEm3VY3taV9p3LHk989CTUacS+00g70DRm7dNDZUpjt
+         s55w==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1695836829; x=1696441629;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:to
-         :from:x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=8i9/QHLfcoxb5XIiB/cn7XVFrCaueq8mVZ+yI+OIZrs=;
-        b=R12MK9QaMOW7gKbDmfBayMZj88U0Xfw3Oy9ShQfu1Mzcf3AEVh4c2NPqmRwk+O86qZ
-         PiqYRLpOuuTbtvZaK9tRKvDSiSBbW0eloTpX34NHpmrtES47ljhcp4DpgK+Wh47FeDPG
-         vJIK8D6Hl7Syz/tIRA6XQQ+F3eTNUm0tJ+g4swUbINfnuKbPGwnRt3ae0BX9p3z6s4fg
-         8LUGuIc2uJikThqrwvlv+c7rda9LkicpwoV/XBgFjPvAoIYoJD2KBdo2l+AUGHfWSrHV
-         fNN75+F3nInQCNQ8gfn8JMxGNJrbcjbV4cmP+ddUkR1SkTDFDasNrCZWHhX/6T3Qhv4j
-         02tg==
-X-Gm-Message-State: AOJu0YzV2A3NxtTqPFznjah4B4ccdglEePEVV3lpFUbnAFyEI/GPTWpy
-        TkjmZPCZQk8FPolfYIWGit4NJg4a3PHgoZJdSkt40A==
-X-Google-Smtp-Source: AGHT+IFJEE+mVjjaybnKnBaeXjsnqglXJMzs00iEDWQJH91R3UdQ591MZZQJ85LenvvfDksemwwSoA==
-X-Received: by 2002:a0c:e1d2:0:b0:65a:fcc7:d77 with SMTP id v18-20020a0ce1d2000000b0065afcc70d77mr2758358qvl.55.1695836829492;
-        Wed, 27 Sep 2023 10:47:09 -0700 (PDT)
+        d=1e100.net; s=20230601; t=1695836832; x=1696441632;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=x/vuMoLckYaeutabTNUQ3SzvUz8X85Zc7zWQhmqXj8k=;
+        b=NifjoNMfvGopMlnnklrDlBy5acEWZMp4PNJnF2iG73/e9pEYZlKHQR7OHcxoDP/ybe
+         rQe3WyVfp+QvCQp4++bkELmNAnZBCaaEQ4y2w0fQ0pO5mogXgNdVKtgvZLM2FZktFB34
+         nCpSOFejCOwMUgNtlGQHoXrGFvB5bVq7c3BZQhXC5AWN5gHe76K781vLhz4j/IK5Glv1
+         jAzShjx1GVixTFityzkcxI0VErvqKbD6pBFiQZaAURXNbKyUwOLCiqJC1OS7EJcRBj1I
+         pveYwZsRCR/Tgky1iXYzkc/cW3J0GZ85d276LY3lgTxviCid11x+q3iqVy58zK5iD9gp
+         fh1Q==
+X-Gm-Message-State: AOJu0YxHTyHvih/Nw0PBS3jj3zPsdNNMohTGMIdwgV2K5OM5cxFaNDss
+        G/3TF7TPFJKM9QROgtx06k+A11t5G1hcD1PJd/olcw==
+X-Google-Smtp-Source: AGHT+IFy8zPIntKD4PPb5uR9p+IikxxXZ/rGi0AqZqSQQKYqcK/7nPC//tB6dC89huVduar7hWHxNQ==
+X-Received: by 2002:a05:620a:7f0:b0:774:15ea:55f with SMTP id k16-20020a05620a07f000b0077415ea055fmr2150817qkk.77.1695836831737;
+        Wed, 27 Sep 2023 10:47:11 -0700 (PDT)
 Received: from localhost (cpe-76-182-20-124.nc.res.rr.com. [76.182.20.124])
-        by smtp.gmail.com with ESMTPSA id n14-20020a0cdc8e000000b0064f77d37798sm4055386qvk.5.2023.09.27.10.47.08
+        by smtp.gmail.com with ESMTPSA id m14-20020ae9e00e000000b007742ad3047asm3304264qkk.54.2023.09.27.10.47.11
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 27 Sep 2023 10:47:09 -0700 (PDT)
+        Wed, 27 Sep 2023 10:47:11 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v2 0/3] btrfs: adjust overcommit logic and fixes
-Date:   Wed, 27 Sep 2023 13:46:58 -0400
-Message-ID: <cover.1695836511.git.josef@toxicpanda.com>
+Subject: [PATCH v2 2/3] btrfs: increase ->free_chunk_space in btrfs_grow_device
+Date:   Wed, 27 Sep 2023 13:47:00 -0400
+Message-ID: <c94cdbf63118d14cfc0f95827cd67d8be1bae068.1695836511.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.41.0
+In-Reply-To: <cover.1695836511.git.josef@toxicpanda.com>
+References: <cover.1695836511.git.josef@toxicpanda.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hello,
+My overcommit patch exposed a bug with btrfs/177.  The problem here is
+that when we grow the device we're not adding to ->free_chunk_space, so
+subsequent allocations can cause ->free_chunk_space to wrap, which
+causes problems in can_overcommit because we add this to ->total_bytes,
+which causes the counter to wrap and gives us an unexpected ENOSPC.
 
-This is an update to my original patch
+Fix this by properly updating ->free_chunk_space with the new available
+space in btrfs_grow_device.
 
-https://lore.kernel.org/linux-btrfs/b97e47ce0ce1d41d221878de7d6090b90aa7a597.1695065233.git.josef@toxicpanda.com/
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+---
+ fs/btrfs/volumes.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-This was causing failures with btrfs/156 and btrfs/177.  The btrfs/156 problem
-was caused by the fact that I was just subtracting 1g from the available space.
-I missed a spot where we also limit the chunk size to 10% of the file system, so
-I've updated the calculation to be exactly what we choose from the chunk
-allocator, and this resovled the btrfs/156 failure.
-
-The btrfs/177 failure was actually due to a underflow in ->free_chunk_space
-where we weren't adding the new space we got from btrfs_grow_device.  I also
-noticed a slight issue with how we remove space from ->free_chunk_space in
-btrfs_srhink_device so I fixed that as well.
-
-With these 3 patches we're no longer seeing the above failures and the original
-test case is also fixed.  Thanks,
-
-Josef
-
-Josef Bacik (3):
-  btrfs: fix ->free_chunk_space math in btrfs_shrink_device
-  btrfs: increase ->free_chunk_space in btrfs_grow_device
-  btrfs: adjust overcommit logic when very close to full
-
- fs/btrfs/space-info.c | 32 ++++++++++++++++++++++++++++++++
- fs/btrfs/volumes.c    | 21 ++++++++++++++++++---
- 2 files changed, 50 insertions(+), 3 deletions(-)
-
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 907ea775f4e4..1aedd15d1db7 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2932,6 +2932,7 @@ int btrfs_grow_device(struct btrfs_trans_handle *trans,
+ 	btrfs_set_super_total_bytes(super_copy,
+ 			round_down(old_total + diff, fs_info->sectorsize));
+ 	device->fs_devices->total_rw_bytes += diff;
++	atomic64_add(diff, &fs_info->free_chunk_space);
+ 
+ 	btrfs_device_set_total_bytes(device, new_size);
+ 	btrfs_device_set_disk_total_bytes(device, new_size);
 -- 
 2.41.0
 

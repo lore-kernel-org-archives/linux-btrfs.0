@@ -2,121 +2,119 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AB321E82CA1
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Sep 2023 17:49:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4301FE82CBB
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Sep 2023 17:54:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229460AbjI0Rtp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 27 Sep 2023 13:49:45 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49310 "EHLO
+        id S229539AbjI0RyY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 27 Sep 2023 13:54:24 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46890 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229458AbjI0Rto (ORCPT
+        with ESMTP id S229458AbjI0RyW (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 Sep 2023 13:49:44 -0400
+        Wed, 27 Sep 2023 13:54:22 -0400
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3E7E3A1
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Sep 2023 10:49:43 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1E8C4B4
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Sep 2023 10:54:21 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id C551D1F894;
-        Wed, 27 Sep 2023 17:49:41 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id B324A1F894;
+        Wed, 27 Sep 2023 17:54:19 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1695836981;
+        t=1695837259;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=cbvov6lllapcTfBaXuvE83V+QnAV1M+HXZBmpPVRGps=;
-        b=Z3Y6DEErhB7ERRItxkVfAFNoKRW2nNvderQx1e5gP+Ysoqn/DiIWMlqrJOxLPtJxXD0Dsc
-        G99ZVUw2B6ytgpIyEJCXkhxpbNOJh9v9PKr31RWfm+jrus4Ea4jdrWUAZrYvK7jRIIaIKr
-        FJAvCPOWeB9pGhWL3fjUphnp4wdsz8k=
+        bh=gKz7vBGoZiKKYNXwmXjqL+IUg1a8EpVt4fMP4w1b5rY=;
+        b=KuXNbqSTL30a9C6k0H7f+zif1LRBpB2Iac2K9zG6xj7JK55tW4YJIDafDos+cQwRGtRQSM
+        25I4Oyhm1nf+yWTUqh6TThatt4nfjVMwgMrYCVA2wAHkMIycVR0ZsOntOzxG4G1pPJyoAm
+        gjhWZiPj7QNpwF2Z5S193rvezlk7OnA=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1695836981;
+        s=susede2_ed25519; t=1695837259;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=cbvov6lllapcTfBaXuvE83V+QnAV1M+HXZBmpPVRGps=;
-        b=njL56WNrZGppKWB3YBYFJdtPZfF8JG9cINKjSQfim+cx9WstzEJiCEAe9gs3SKthOPg5bK
-        DE/pZcUj6XmTNGAA==
+        bh=gKz7vBGoZiKKYNXwmXjqL+IUg1a8EpVt4fMP4w1b5rY=;
+        b=TwrWpqAGZ3uHM2QKtmlvsnLddH1YbNpcbM2bC0jGIx6b7s0iYAdBhqqNmgT11GbQB7Aqem
+        tbQLGEDyfulelEDA==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id A42BE13479;
-        Wed, 27 Sep 2023 17:49:41 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 7336413479;
+        Wed, 27 Sep 2023 17:54:19 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id RTRMJzVrFGUaNAAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Wed, 27 Sep 2023 17:49:41 +0000
-Date:   Wed, 27 Sep 2023 19:43:03 +0200
+        id LvBpG0tsFGU+NgAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Wed, 27 Sep 2023 17:54:19 +0000
+Date:   Wed, 27 Sep 2023 19:47:41 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/2 v2] btrfs: reject device with CHANGING_FSID_V2 flag
-Message-ID: <20230927174303.GA13697@twin.jikos.cz>
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     Filipe Manana <fdmanana@kernel.org>,
+        kernel test robot <oliver.sang@intel.com>,
+        Filipe Manana <fdmanana@suse.com>, oe-lkp@lists.linux.dev,
+        lkp@intel.com, David Sterba <dsterba@suse.com>,
+        linux-btrfs@vger.kernel.org, ying.huang@intel.com,
+        feng.tang@intel.com, fengwei.yin@intel.com
+Subject: Re: [kdave-btrfs-devel:dev/guilherme/temp-fsid-v4] [btrfs]
+ 6c9131ed0d: stress-ng.sync-file.ops_per_sec -44.2% regression
+Message-ID: <20230927174741.GB13697@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <cover.1695244296.git.anand.jain@oracle.com>
- <20230925165806.GR13697@twin.jikos.cz>
- <757517d8-2f79-4897-7d43-5c12fd6274bd@oracle.com>
+References: <202309261552.a03eeb4c-oliver.sang@intel.com>
+ <ZRMqjzDP/G+MKL5R@debian0.Home>
+ <20230926190824.GA407285@perftesting>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <757517d8-2f79-4897-7d43-5c12fd6274bd@oracle.com>
+In-Reply-To: <20230926190824.GA407285@perftesting>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Sep 26, 2023 at 07:56:57AM +0800, Anand Jain wrote:
-> On 26/09/2023 00:58, David Sterba wrote:
-> > On Thu, Sep 21, 2023 at 05:51:12AM +0800, Anand Jain wrote:
-> >> v2: Splits the patch into two parts: one for the new code to reject
-> >> devices with CHANGING_FSID_V2 and the second to remove the unused code.
-> >>
-> >> The btrfs-progs code to reunite devices with the CHANGING_FSID_V2 flag,
-> >> which is ported from the kernel, can be found in the following btrfs-progs
-> >> patchset:
-> >>
-> >>   [PATCH 0/4 v4] btrfs-progs: recover from failed metadata_uuid port kernel
-> >>      btrfs-progs: tune use the latest bdev in fs_devices for super_copy
-> >>      btrfs-progs: add support to fix superblock with CHANGING_FSID_V2 flag
-> >>      btrfs-progs: recover from the failed btrfstune -m|M
-> >>      btrfs-progs: test btrfstune -m|M ability to fix previous failures
-> >>
-> >> Furthermore, when the kernel stops supporting the CHANGING_FSID_V2 flag,
-> >> we will need to update the btrfs-progs test case accordingly:
-> >>
-> >>      btrfs-progs: misc-tests/034-metadata-uuid remove kernel support
-> >>
-> >> v1:
-> >> https://lore.kernel.org/linux-btrfs/02d59bdd7a8b778deb17e300354558498db59376.1692178060.git.anand.jain@oracle.com
-> >>
-> >>
-> >> Anand Jain (2):
-> >>    btrfs: reject device with CHANGING_FSID_V2
-> >>    btrfs: remove unused code related to the CHANGING_FSID_V2 flag
+On Tue, Sep 26, 2023 at 03:08:24PM -0400, Josef Bacik wrote:
+> On Tue, Sep 26, 2023 at 08:01:35PM +0100, Filipe Manana wrote:
+> > On Tue, Sep 26, 2023 at 03:34:59PM +0800, kernel test robot wrote:
+> > > Hello,
+> > > 
+> > > kernel test robot noticed a -44.2% regression of stress-ng.sync-file.ops_per_sec on:
+> > > commit: 6c9131ed0d644324adeeaccd2feeef8d04950b2d ("btrfs: always reserve space for delayed refs when starting transaction")
+> > > https://github.com/kdave/btrfs-devel.git dev/guilherme/temp-fsid-v4
 > > 
+> > David, can you remove this patch from misc-next/for-next in the meanwhile?
+> > 
+> > Starting to reserve space in advance for delayed refs is causing the slowdown,
+> > and I can reproduce it with the stress-ng test reported below.
+> > 
+> > By avoiding refilling the delayed block reserve I can recover about 60% of the
+> > lost performance, but that increases the chance in extreme scenarios of exhausting
+> > the global reserve and reaching a dead end -ENOSPC while committing transactions.
+> > It has happened rarely, both upstream and on SLE kernels.
+> > 
+> > At the moment I don't see how to keep both the upfront reservation of space for
+> > delayed refs and the refill of the delayed refs reserve without the performance
+> > impact on a test like that stress-ng test.
 > 
+> It's ok to eat a performance regression for correctness.  I think if you can
+> reduce the pain that's good, but going slower is better than not going at all.
 > 
-> > Added to misc-next, thanks.
+> Long term I have plans to make this better, stress-ng hilights the problem here
+> quite nicely.  The more pressure we have on the enospc machinery the more likely
+> we're going to do tickets and hit arbitrary waits.
 > 
-> > I've updated the 2nd patch with some
-> > historical background.
+> What I want to do is take away the strict "we're over the limit, you now must
+> flush and wait" behavior and instead have something more akin to what MM does,
+> simply allow overcommit to occur, add the usage to a per-cpu counter everywhere
+> to avoid the spin lock contention, and then switch to the normal "ticket and
+> wait" system once we exceed certain thresholds.
 > 
-> Now much more complete! Thanks.
+> Basically I want ENOSPC to not do anything until we're down to no chunk space
+> left and we're within 80% full in the available metadata block group.  This will
+> drastically improve performance, but is a larger project.
 > 
-> > The temp-fsid patch now does not apply cleanly,
-> > I'll do a refresh on top of this series. Once it's in for-next, please
-> > have a look. Thanks.
-> 
-> Sure. But, temp-fsid v4 still has a subvol mount bug, as reported
-> before. I have a fix that is in-memory only. I am trying to get a
-> reasonable list of fstests passed before sending it out. Guilherme
-> can add the super-block flag on top of this, although it is not
-> mandatory from the btrfs internals pov. I will send out the
-> in-memory based temp-fsid soon I get the fstests (with some fix)
-> working today.
+> Until then trading performance for correctness is simply what we have to do.
+> Thanks,
 
-Feel free the send the patches even if there are still failing tests,
-I'd like to get an idea of how are you fixing the remaining problem(s).
-Thanks.
+So the conclusion is to keep the patch for now, right? The performance
+fixes could be done on top of that, so the correctness comes first.

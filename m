@@ -2,72 +2,72 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 13AF0E743CF
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C3D42E743CE
 	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Sep 2023 23:16:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231877AbjI1XQI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 28 Sep 2023 19:16:08 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58340 "EHLO
+        id S231925AbjI1XQJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 28 Sep 2023 19:16:09 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48962 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230246AbjI1XQF (ORCPT
+        with ESMTP id S231790AbjI1XQI (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Sep 2023 19:16:05 -0400
+        Thu, 28 Sep 2023 19:16:08 -0400
 Received: from out4-smtp.messagingengine.com (out4-smtp.messagingengine.com [66.111.4.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3AD1AAC;
-        Thu, 28 Sep 2023 16:16:02 -0700 (PDT)
-Received: from compute2.internal (compute2.nyi.internal [10.202.2.46])
-        by mailout.nyi.internal (Postfix) with ESMTP id A71D45C0D7F;
-        Thu, 28 Sep 2023 19:16:01 -0400 (EDT)
-Received: from mailfrontend1 ([10.202.2.162])
-  by compute2.internal (MEProxy); Thu, 28 Sep 2023 19:16:01 -0400
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B5B36AC;
+        Thu, 28 Sep 2023 16:16:05 -0700 (PDT)
+Received: from compute3.internal (compute3.nyi.internal [10.202.2.43])
+        by mailout.nyi.internal (Postfix) with ESMTP id 2CDA55C013C;
+        Thu, 28 Sep 2023 19:16:05 -0400 (EDT)
+Received: from mailfrontend2 ([10.202.2.163])
+  by compute3.internal (MEProxy); Thu, 28 Sep 2023 19:16:05 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc
         :content-transfer-encoding:content-type:date:date:from:from
         :in-reply-to:in-reply-to:message-id:mime-version:references
-        :reply-to:sender:subject:subject:to:to; s=fm3; t=1695942961; x=
-        1696029361; bh=x2QHxuH8lObiGj2LOCOlk8XB1T+HkuJFk5TsMTDz7T0=; b=P
-        dsJ1YsNkdEcorYqyT8qd17n/4zqSM1d6QH3RhHwbMQ8M3B3hrQqPqkwm2lYaI2sF
-        7YMCv8aur/DmkYn6jb7HAiZo7iVKubKBf4P+4gzjmQTgP2bgWRBzEpcYJULVZHHT
-        zsjGTNeMG9bVdCZ6LXTZ9icf67/iKHWJAZhEpu7nKAwU+zMjtVzQo5ArLu9esLAC
-        q+SN7xuSFnGtrG3y2ghEDG8cvgIT4MflPYrUIwlxHiyvlgVqPPn4q5f4iPwrNOyO
-        YjHDeIqGXH3sbvZK+Qm7MYOdCGfZszpB/5aXvTTX4gKEMLd7+ELz4zIRL7q3HWT/
-        mHgieDRpeNj0BMYhJd64A==
+        :reply-to:sender:subject:subject:to:to; s=fm3; t=1695942965; x=
+        1696029365; bh=jRmpQnQRDBNFYsmZr9zixenkAAlEEq75rTWdTPQkDAw=; b=M
+        i6dkTIJMx40+SQjAi8ntcfkmeRBJwgl4SOUyu/TXd+quD0xAhl8Eznxzmqj6IRxn
+        lzXU/0PKWKPEWo7k22W9C+NUr8TCSbdmBDzRA1P2eYYYJoMy2afkeH4j4NOTekNA
+        /9zSE949cWGYVeYKGNWRGohUEvXBqUrHIWoKEpLzCHaBJpCkBQLMVct+/czTThHl
+        LpKj6oBVR9RLjKlrXn+W7mhEj7k0c1v1FlK0pSM1lns1Q/8wFJQq6C4+X2ncednK
+        ZzNV8BANsZj8vXyQtLja7l++cCVP0jZmlF0QGCroLlps6Zf7t4Fv1b0702+QwWAk
+        IrL/vdRTK+H7PdoRy6klQ==
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
         messagingengine.com; h=cc:content-transfer-encoding:content-type
         :date:date:feedback-id:feedback-id:from:from:in-reply-to
         :in-reply-to:message-id:mime-version:references:reply-to:sender
         :subject:subject:to:to:x-me-proxy:x-me-proxy:x-me-sender
-        :x-me-sender:x-sasl-enc; s=fm2; t=1695942961; x=1696029361; bh=x
-        2QHxuH8lObiGj2LOCOlk8XB1T+HkuJFk5TsMTDz7T0=; b=NFteT+sSN05eM+1DM
-        u8Wbcxh4FF66oLPXPVEbdE4ZxTOxA2lzVD4L/P+8HQw/BPNAnuHc6xXCEwylJW9X
-        VNYDqTq3pkz2f7GV4RLd0pPvU9amdRN6PT3VC3VkDxXWU9miN7G95iFhd4oilice
-        /wM64/2VNqhwc38m7eWJ2bOFXnKOcOV9P46lEenDtIKtwO8/lAW5C+xVhJ74QYdM
-        tNgoA4vJLhs52kC1Od+kc4mhE/G8BDdoTz7rSCPfiDDm17SlS//EOhJJWjmj54fR
-        CRSAFeilKbZpWCruJMW6qQJGLKYgKFK4tk58dDXnawKgn05aJCNh7GmTGhhsxG+Q
-        b4OsQ==
-X-ME-Sender: <xms:MQkWZRCu2dkURh9FlXmJVCB64QasmpbnyxNVLeKXvNgY3q44qOOG1w>
-    <xme:MQkWZfiYx_KDkCmMuecLLr06lESEaXkbEITQ41S6QshjM0G3DzZ1uBt0E2bS6azLO
-    cK32LipcacRvAB0Pck>
-X-ME-Received: <xmr:MQkWZclJa742X67JuvYkzGWpAZpGq8d_rr884MbTfjNSXzl4jach7na6H6k4-K6YN6MQCnf06MjfhtlmoD-sq07W4H4>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvkedrtddugddvudcutefuodetggdotefrodftvf
+        :x-me-sender:x-sasl-enc; s=fm2; t=1695942965; x=1696029365; bh=j
+        RmpQnQRDBNFYsmZr9zixenkAAlEEq75rTWdTPQkDAw=; b=e3fJmO1uwdqm3z2DP
+        KKjrEI70wR9ARHS67B0zWovQlsgcqoPyQOJ3y7wocWLLBofuFfbMI0gECbxyTWwH
+        vYjlKOzaxBrmjLXwNi4o/swgqCK3HlCz6j3jxfYxbhPNDGP3cjUVzCY5uIMkk9/f
+        4qLjfezkA3O4yEGmgK0rESQgUuHYgUrAW5OfQmcBp9fsY3m7czv7S5aGtQkHp9Xp
+        BFUZNpJLY2xiGbtO7qdcB2bDjgsQ2KNSS+aTKciuDffrZfw5bRtS+/6Oio6QqsE9
+        4RdygI113RqE+vfUyzpoauQ8HPsQhimk1+1/7lNsbosYveMW4CSu592vFw++e0Ex
+        bNCGw==
+X-ME-Sender: <xms:NAkWZTHxFh1cNrO7z7TgC6lO8fV6WAi2zXZc-cnRq5Hb1oLhCC2FCQ>
+    <xme:NAkWZQXUmB6LIW2GXMm7YSUtukSTVYxJTQR2nFVc14nUZ9v34yjK8CE8Eun18zCjD
+    bvC8xE2MsK-mv_SKaY>
+X-ME-Received: <xmr:NAkWZVIcixcov6B4ikPjPO6bHhSGwRh-dm0JgJQwNnkAmlu8Ic3NOjtkYWIrs49n5BHEGW-U_7-y5xyr6BvWClEcc_8>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvkedrtddugddvtdcutefuodetggdotefrodftvf
     curfhrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfghnecu
     uegrihhlohhuthemuceftddtnecunecujfgurhephffvufffkffojghfggfgsedtkeertd
     ertddtnecuhfhrohhmpeeuohhrihhsuceuuhhrkhhovhcuoegsohhrihhssegsuhhrrdhi
     oheqnecuggftrfgrthhtvghrnhepieeuffeuvdeiueejhfehiefgkeevudejjeejffevvd
-    ehtddufeeihfekgeeuheelnecuvehluhhsthgvrhfuihiivgeptdenucfrrghrrghmpehm
+    ehtddufeeihfekgeeuheelnecuvehluhhsthgvrhfuihiivgepudenucfrrghrrghmpehm
     rghilhhfrhhomhepsghorhhishessghurhdrihho
-X-ME-Proxy: <xmx:MQkWZbxsKBDzXFcpaTs4Dr2mGsHO3hH1YgS_u2ipq9wzXQ7MJJaftg>
-    <xmx:MQkWZWT4erSwEVXlcD5D3cedQfOMTzjaXS5J8GQRZkmzV17MwhSnOA>
-    <xmx:MQkWZeY2nIjmyKbkoBIdjOOMdLa_NwHD0A4_mpRWUkkTIMIfDFA2qw>
-    <xmx:MQkWZZLTQcef2bvNRriTuOtcCmqC16lt2Xh1hS5TXt9hCP3lSo8LzQ>
+X-ME-Proxy: <xmx:NQkWZREnKH7Vm1daOKnYXYfJ8-IPCfffBic-oM8cy-YVNMFEjVT9Ew>
+    <xmx:NQkWZZWsIcjMuZg9ATSdJ-qUqtkLDPbTaELhwsRD44Do776AdLNYLA>
+    <xmx:NQkWZcP1pkdseMz7RJuBz87kGpc_VU-5HKSri6aDEgAoynwNx9a_ZA>
+    <xmx:NQkWZYejPINvlvynOaG0AqV7F3tCy8uWpP5oUeaNaqGVIdJEtd2ziQ>
 Feedback-ID: i083147f8:Fastmail
 Received: by mail.messagingengine.com (Postfix) with ESMTPA; Thu,
- 28 Sep 2023 19:16:01 -0400 (EDT)
+ 28 Sep 2023 19:16:04 -0400 (EDT)
 From:   Boris Burkov <boris@bur.io>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com,
         fstests@vger.kernel.org
-Subject: [PATCH v4 3/6] btrfs/301: new test for simple quotas
-Date:   Thu, 28 Sep 2023 16:16:45 -0700
-Message-ID: <f5ef8dfbc07c5a3265268f75caeb0a15b0e54d6a.1695942727.git.boris@bur.io>
+Subject: [PATCH v4 5/6] btrfs: use new rescan wrapper
+Date:   Thu, 28 Sep 2023 16:16:47 -0700
+Message-ID: <7264ca978836109af1be53f93153837ede2705da.1695942727.git.boris@bur.io>
 X-Mailer: git-send-email 2.42.0
 In-Reply-To: <cover.1695942727.git.boris@bur.io>
 References: <cover.1695942727.git.boris@bur.io>
@@ -77,485 +77,272 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Test some interesting basic and edge cases of simple quotas.
-
-To some extent, this is redundant with the alternate testing strategy of
-using MKFS_OPTIONS to enable simple quotas, running the full suite and
-relying on kernel warnings and fsck to surface issues.
+These tests can pass in simple quota mode if we skip the rescans via the
+wrapper.
 
 Signed-off-by: Boris Burkov <boris@bur.io>
 ---
- tests/btrfs/301     | 435 ++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/301.out |  18 ++
- 2 files changed, 453 insertions(+)
- create mode 100755 tests/btrfs/301
- create mode 100644 tests/btrfs/301.out
+ tests/btrfs/022 | 1 +
+ tests/btrfs/028 | 2 +-
+ tests/btrfs/104 | 2 +-
+ tests/btrfs/123 | 2 +-
+ tests/btrfs/126 | 2 +-
+ tests/btrfs/139 | 2 +-
+ tests/btrfs/153 | 2 +-
+ tests/btrfs/171 | 6 +++---
+ tests/btrfs/179 | 2 +-
+ tests/btrfs/180 | 2 +-
+ tests/btrfs/190 | 2 +-
+ tests/btrfs/193 | 2 +-
+ tests/btrfs/210 | 2 +-
+ tests/btrfs/224 | 6 +++---
+ tests/btrfs/230 | 2 +-
+ tests/btrfs/232 | 2 +-
+ 16 files changed, 20 insertions(+), 19 deletions(-)
 
-diff --git a/tests/btrfs/301 b/tests/btrfs/301
-new file mode 100755
-index 000000000..227ce9fc5
---- /dev/null
-+++ b/tests/btrfs/301
-@@ -0,0 +1,435 @@
-+#! /bin/bash
-+# SPDX-License-Identifier: GPL-2.0
-+# Copyright (c) 2023 Meta Platforms, Inc.  All Rights Reserved.
-+#
-+# FS QA Test 301
-+#
-+# Test common btrfs simple quotas scenarios involving sharing extents and
-+# removing them in various orders.
-+#
-+. ./common/preamble
-+_begin_fstest auto quick qgroup clone subvol prealloc snapshot
-+
-+# Import common functions.
-+. ./common/reflink
-+
-+# Real QA test starts here.
-+
-+# Modify as appropriate.
-+_supported_fs btrfs
-+_require_scratch_reflink
-+_require_cp_reflink
-+_require_btrfs_command inspect-internal dump-tree
-+_require_xfs_io_command "falloc"
-+_require_scratch_enable_simple_quota
-+
-+subv=$SCRATCH_MNT/subv
-+nested=$SCRATCH_MNT/subv/nested
-+snap=$SCRATCH_MNT/snap
-+nr_fill=512
-+fill_sz=$((8 * 1024))
-+total_fill=$(($nr_fill * $fill_sz))
-+nodesize=$($BTRFS_UTIL_PROG inspect-internal dump-super $SCRATCH_DEV | grep nodesize | $AWK_PROG '{print $2}')
-+ext_sz=$((128 * 1024 * 1024))
-+limit_nr=8
-+limit=$(($ext_sz * $limit_nr))
-+
-+prep_fio_config=$tmp.fio
-+fio_out=$tmp.fio.out
-+cat >$prep_fio_config <<EOF
-+[randwrite]
-+name=filler
-+directory=${subv}
-+rw=randwrite
-+nrfiles=${nr_fill}
-+filesize=${fill_sz}
-+EOF
-+_require_fio $fio_config
-+
-+get_qgroup_usage()
-+{
-+	local qgroupid=$1
-+
-+	$BTRFS_UTIL_PROG qgroup show --sync --raw $SCRATCH_MNT | grep "$qgroupid" | $AWK_PROG '{print $3}'
-+}
-+
-+get_subvol_usage()
-+{
-+	local subvolid=$1
-+	get_qgroup_usage "0/$subvolid"
-+}
-+
-+count_subvol_owned_metadata()
-+{
-+	local subvolid=$1
-+	# We need to sync so that the metadata extents are on disk and visible to dump-tree.
-+	sync
-+	# Find nodes and leaves owned by the subvol, then get unique offsets
-+	# to account for snapshots sharing metadata.
-+	count=$($BTRFS_UTIL_PROG inspect-internal dump-tree $SCRATCH_DEV | \
-+		grep "owner $subvolid" | $AWK_PROG '{print $2}' | sort | uniq | wc -l)
-+	# Output bytes rather than number of metadata blocks.
-+	echo $(($count * $nodesize))
-+}
-+
-+check_qgroup_usage()
-+{
-+	local qgroupid=$1
-+	local expected=$2
-+	local actual=$(get_qgroup_usage $qgroupid)
-+
-+	[ $expected -eq $actual ] || echo "qgroup $qgroupid mismatched usage $actual vs $expected"
-+}
-+
-+check_subvol_usage()
-+{
-+	local subvolid=$1
-+	local expected_data=$2
-+
-+	local expected_meta=$(count_subvol_owned_metadata $subvolid)
-+	local actual=$(get_subvol_usage $subvolid)
-+	local expected=$(($expected_data + $expected_meta))
-+
-+	[ $expected -eq $actual ] || echo "subvol $subvolid mismatched usage $actual vs $expected (expected data $expected_data expected meta $expected_meta diff $(($actual - $expected)))"
-+}
-+
-+set_subvol_limit()
-+{
-+	local subvolid=$1
-+	local limit=$2
-+
-+	$BTRFS_UTIL_PROG qgroup limit $2 0/$1 $SCRATCH_MNT
-+}
-+
-+# We need the cleaner thread to run to actually delete extents for test
-+# cases that care about that. The remount wakes up the cleaner thread and sets
-+# the commit interval to 1s, so the 1.5s sleep is enough to wait for the cleaner
-+# thread to run.
-+trigger_cleaner()
-+{
-+	_scratch_remount commit=1
-+	sleep 1.5
-+}
-+
-+cycle_mount_check_subvol_usage()
-+{
-+	_scratch_cycle_mount
-+	check_subvol_usage $@
-+}
-+
-+
-+do_write()
-+{
-+	local file=$1
-+	local sz=$2
-+
-+	$XFS_IO_PROG -fc "pwrite -q 0 $sz" $file
-+}
-+
-+do_enospc_write()
-+{
-+	local file=$1
-+	local sz=$2
-+
-+	do_write $file $sz
-+}
-+
-+do_falloc()
-+{
-+	local file=$1
-+	local sz=$2
-+
-+	$XFS_IO_PROG -fc "falloc 0 $sz" $file
-+}
-+
-+do_enospc_falloc()
-+{
-+	local file=$1
-+	local sz=$2
-+
-+	do_falloc $file $sz
-+}
-+
-+enable_quota()
-+{
-+	local mode=$1
-+
-+	[ $mode == "n" ] && return
-+	arg=$([ $mode == "s" ] && echo "--simple")
-+
-+	$BTRFS_UTIL_PROG quota enable $arg $SCRATCH_MNT
-+}
-+
-+prepare()
-+{
-+	_scratch_mkfs >> $seqres.full
-+	_scratch_mount
-+	enable_quota "s"
-+	$BTRFS_UTIL_PROG subvolume create $subv >> $seqres.full
-+	set_subvol_limit 256 $limit
-+	check_subvol_usage 256 0
-+
-+	# Create a bunch of little filler files to generate several levels in
-+	# the btree, to make snapshotting sharing scenarios complex enough.
-+	$FIO_PROG $prep_fio_config --output=$fio_out
-+	check_subvol_usage 256 $total_fill
-+
-+	# Create a single file whose extents we will explicitly share/unshare.
-+	do_write $subv/f $ext_sz
-+	check_subvol_usage 256 $(($total_fill + $ext_sz))
-+}
-+
-+prepare_snapshotted()
-+{
-+	prepare
-+	$BTRFS_UTIL_PROG subvolume snapshot $subv $snap >> $seqres.full
-+	check_subvol_usage 256 $(($total_fill + $ext_sz))
-+	check_subvol_usage 257 0
-+}
-+
-+prepare_nested()
-+{
-+	prepare
-+	$BTRFS_UTIL_PROG qgroup create 1/100 $SCRATCH_MNT
-+	$BTRFS_UTIL_PROG qgroup limit $limit 1/100 $SCRATCH_MNT
-+	$BTRFS_UTIL_PROG qgroup assign 0/256 1/100 $SCRATCH_MNT >> $seqres.full
-+	$BTRFS_UTIL_PROG subvolume create $nested >> $seqres.full
-+	do_write $nested/f $ext_sz
-+	check_subvol_usage 257 $ext_sz
-+	check_subvol_usage 256 $(($total_fill + $ext_sz))
-+	local subv_usage=$(get_subvol_usage 256)
-+	local nested_usage=$(get_subvol_usage 257)
-+	check_qgroup_usage 1/100 $(($subv_usage + $nested_usage))
-+}
-+
-+# Write in a single subvolume, including going over the limit.
-+basic_accounting()
-+{
-+	echo "basic accounting"
-+	prepare
-+	rm $subv/f
-+	check_subvol_usage 256 $total_fill
-+	cycle_mount_check_subvol_usage 256 $total_fill
-+	do_write $subv/tmp 512M
-+	rm $subv/tmp
-+	do_write $subv/tmp 512M
-+	rm $subv/tmp
-+	do_enospc_falloc $subv/large_falloc 2G
-+	do_enospc_write $subv/large 2G
-+	_scratch_unmount
-+}
-+
-+# Write to the same range of a file a bunch of times in a row
-+# to test extent aware reservations.
-+reservation_accounting()
-+{
-+	echo "reservation accounting"
-+	prepare
-+	for i in $(seq 10); do
-+		do_write $subv/tmp 512M
-+		rm $subv/tmp
-+	done
-+	do_enospc_write $subv/large 2G
-+	_scratch_unmount
-+}
-+
-+# Write in a snapshot.
-+snapshot_accounting()
-+{
-+	echo "snapshot accounting"
-+	prepare_snapshotted
-+	touch $snap/f
-+	check_subvol_usage 256 $(($total_fill + $ext_sz))
-+	check_subvol_usage 257 0
-+	do_write $snap/f $ext_sz
-+	check_subvol_usage 256 $(($total_fill + $ext_sz))
-+	check_subvol_usage 257 $ext_sz
-+	rm $snap/f
-+	check_subvol_usage 256 $(($total_fill + $ext_sz))
-+	check_subvol_usage 257 0
-+	rm $subv/f
-+	check_subvol_usage 256 $total_fill
-+	check_subvol_usage 257 0
-+	cycle_mount_check_subvol_usage 256 $total_fill
-+	check_subvol_usage 257 0
-+	_scratch_unmount
-+}
-+
-+# Delete the original ref first after a snapshot.
-+delete_snapshot_src_ref()
-+{
-+	echo "delete src ref first"
-+	prepare_snapshotted
-+	rm $subv/f
-+	check_subvol_usage 256 $(($total_fill + $ext_sz))
-+	check_subvol_usage 257 0
-+	rm $snap/f
-+	trigger_cleaner
-+	check_subvol_usage 256 $total_fill
-+	check_subvol_usage 257 0
-+	cycle_mount_check_subvol_usage 256 $total_fill
-+	check_subvol_usage 257 0
-+	_scratch_unmount
-+}
-+
-+# Delete the snapshot ref first after a snapshot.
-+delete_snapshot_ref()
-+{
-+	echo "delete snapshot ref first"
-+	prepare_snapshotted
-+	rm $snap/f
-+	check_subvol_usage 256 $(($total_fill + $ext_sz))
-+	check_subvol_usage 257 0
-+	rm $subv/f
-+	check_subvol_usage 256 $total_fill
-+	check_subvol_usage 257 0
-+	cycle_mount_check_subvol_usage 256 $total_fill
-+	check_subvol_usage 257 0
-+	_scratch_unmount
-+}
-+
-+# Delete the snapshotted subvolume after a snapshot.
-+delete_snapshot_src()
-+{
-+	echo "delete snapshot src first"
-+	prepare_snapshotted
-+	$BTRFS_UTIL_PROG subvolume delete $subv >> $seqres.full
-+	check_subvol_usage 256 $(($total_fill + $ext_sz))
-+	check_subvol_usage 257 0
-+	rm $snap/f
-+	trigger_cleaner
-+	check_subvol_usage 256 $total_fill
-+	check_subvol_usage 257 0
-+	$BTRFS_UTIL_PROG subvolume delete $snap >> $seqres.full
-+	trigger_cleaner
-+	check_subvol_usage 256 0
-+	check_subvol_usage 257 0
-+	cycle_mount_check_subvol_usage 256 0
-+	check_subvol_usage 257 0
-+	_scratch_unmount
-+}
-+
-+# Delete the snapshot subvolume after a snapshot.
-+delete_snapshot()
-+{
-+	echo "delete snapshot first"
-+	prepare_snapshotted
-+	$BTRFS_UTIL_PROG subvolume delete $snap >> $seqres.full
-+	check_subvol_usage 256 $(($total_fill + $ext_sz))
-+	check_subvol_usage 257 0
-+	$BTRFS_UTIL_PROG subvolume delete $subv >> $seqres.full
-+	trigger_cleaner
-+	check_subvol_usage 256 0
-+	check_subvol_usage 257 0
-+	_scratch_unmount
-+}
-+
-+# Write to a subvolume nested in another subvolume.
-+# Exercises the auto-inheritance feature of simple quotas.
-+nested_accounting()
-+{
-+	echo "nested accounting"
-+	prepare_nested
-+	rm $subv/f
-+	check_subvol_usage 256 $total_fill
-+	check_subvol_usage 257 $ext_sz
-+	local subv_usage=$(get_subvol_usage 256)
-+	local nested_usage=$(get_subvol_usage 257)
-+	check_qgroup_usage 1/100 $(($subv_usage + $nested_usage))
-+	rm $nested/f
-+	check_subvol_usage 256 $total_fill
-+	check_subvol_usage 257 0
-+	subv_usage=$(get_subvol_usage 256)
-+	nested_usage=$(get_subvol_usage 257)
-+	check_qgroup_usage 1/100 $(($subv_usage + $nested_usage))
-+	do_enospc_falloc $nested/large_falloc 2G
-+	do_enospc_write $nested/large 2G
-+	_scratch_unmount
-+}
-+
-+# Enable simple quotas on a filesystem with existing extents.
-+enable_mature()
-+{
-+	echo "enable mature"
-+	_scratch_mkfs >> $seqres.full
-+	_scratch_mount
-+	$BTRFS_UTIL_PROG subvolume create $subv >> $seqres.full
-+	do_write $subv/f $ext_sz
-+	# Sync before enabling squotas to reliably *not* count the writes
-+	# we did before enabling.
-+	sync
-+	enable_quota "s"
-+	set_subvol_limit 256 $limit
-+	_scratch_cycle_mount
-+	usage=$(get_subvol_usage 256)
-+	[ $usage -lt $ext_sz ] || echo "captured usage from before enable $usage >= $ext_sz"
-+	do_write $subv/g $ext_sz
-+	usage=$(get_subvol_usage 256)
-+	[ $usage -lt $ext_sz ] && echo "failed to capture usage after enable $usage < $ext_sz"
-+	check_subvol_usage 256 $ext_sz
-+	rm $subv/f
-+	check_subvol_usage 256 $ext_sz
-+	_scratch_cycle_mount
-+	rm $subv/g
-+	check_subvol_usage 256 0
-+	_scratch_unmount
-+}
-+
-+# Reflink a file within the subvolume.
-+reflink_accounting()
-+{
-+	echo "reflink"
-+	prepare
-+	# Do enough reflinks to prove that they're free. If they counted, then this wouldn't fit in the limit.
-+	for i in $(seq $(($limit_nr * 2))); do
-+		_cp_reflink $subv/f $subv/f.i
-+	done
-+	# Confirm that there is no additional data usage from the reflinks.
-+	check_subvol_usage 256 $(($total_fill + $ext_sz))
-+	_scratch_unmount
-+}
-+
-+# Delete the src ref of a reflink first.
-+delete_reflink_src_ref()
-+{
-+	echo "delete reflink src ref"
-+	prepare
-+	_cp_reflink $subv/f $subv/f.link
-+	check_subvol_usage 256 $(($total_fill + $ext_sz))
-+	rm $subv/f
-+	check_subvol_usage 256 $(($total_fill + $ext_sz))
-+	rm $subv/f.link
-+	check_subvol_usage 256 $(($total_fill))
-+	_scratch_unmount
-+}
-+
-+# Delete the link ref of a reflink first.
-+delete_reflink_ref()
-+{
-+	echo "delete reflink ref"
-+	prepare
-+	_cp_reflink $subv/f $subv/f.link
-+	check_subvol_usage 256 $(($total_fill + $ext_sz))
-+	rm $subv/f.link
-+	check_subvol_usage 256 $(($total_fill + $ext_sz))
-+	rm $subv/f
-+	check_subvol_usage 256 $(($total_fill))
-+	_scratch_unmount
-+}
-+
-+basic_accounting
-+reservation_accounting
-+snapshot_accounting
-+delete_snapshot_src_ref
-+delete_snapshot_ref
-+delete_snapshot_src
-+delete_snapshot
-+nested_accounting
-+enable_mature
-+reflink_accounting
-+delete_reflink_src_ref
-+delete_reflink_ref
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/btrfs/301.out b/tests/btrfs/301.out
-new file mode 100644
-index 000000000..1c502689d
---- /dev/null
-+++ b/tests/btrfs/301.out
-@@ -0,0 +1,18 @@
-+QA output created by 301
-+basic accounting
-+fallocate: Disk quota exceeded
-+pwrite: Disk quota exceeded
-+reservation accounting
-+pwrite: Disk quota exceeded
-+snapshot accounting
-+delete src ref first
-+delete snapshot ref first
-+delete snapshot src first
-+delete snapshot first
-+nested accounting
-+fallocate: Disk quota exceeded
-+pwrite: Disk quota exceeded
-+enable mature
-+reflink
-+delete reflink src ref
-+delete reflink ref
+diff --git a/tests/btrfs/022 b/tests/btrfs/022
+index e2d37b094..b1ef2fdf7 100755
+--- a/tests/btrfs/022
++++ b/tests/btrfs/022
+@@ -14,6 +14,7 @@ _begin_fstest auto qgroup limit
+ 
+ _supported_fs btrfs
+ _require_scratch
++_require_qgroup_rescan
+ _require_btrfs_qgroup_report
+ 
+ # Test to make sure we can actually turn it on and it makes sense
+diff --git a/tests/btrfs/028 b/tests/btrfs/028
+index fe0678f86..c4080c950 100755
+--- a/tests/btrfs/028
++++ b/tests/btrfs/028
+@@ -25,7 +25,7 @@ _scratch_mkfs >/dev/null
+ _scratch_mount
+ 
+ _run_btrfs_util_prog quota enable $SCRATCH_MNT
+-_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
++_qgroup_rescan $SCRATCH_MNT
+ 
+ # Increase the probability of generating de-refer extent, and decrease
+ # other.
+diff --git a/tests/btrfs/104 b/tests/btrfs/104
+index 499de6bfb..c9528eb13 100755
+--- a/tests/btrfs/104
++++ b/tests/btrfs/104
+@@ -94,7 +94,7 @@ _explode_fs_tree 1 $SCRATCH_MNT/snap2/files-snap2
+ # Enable qgroups now that we have our filesystem prepared. This
+ # will kick off a scan which we will have to wait for.
+ _run_btrfs_util_prog quota enable $SCRATCH_MNT
+-_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
++_qgroup_rescan $SCRATCH_MNT
+ 
+ # Remount to clear cache, force everything to disk
+ _scratch_cycle_mount
+diff --git a/tests/btrfs/123 b/tests/btrfs/123
+index c179eeec9..4c5b7e116 100755
+--- a/tests/btrfs/123
++++ b/tests/btrfs/123
+@@ -39,7 +39,7 @@ sync
+ 
+ # enable quota and rescan to get correct number
+ _run_btrfs_util_prog quota enable $SCRATCH_MNT
+-_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
++_qgroup_rescan $SCRATCH_MNT
+ 
+ # now balance data block groups to corrupt qgroup
+ _run_btrfs_balance_start -d $SCRATCH_MNT >> $seqres.full
+diff --git a/tests/btrfs/126 b/tests/btrfs/126
+index 2b0edb65b..1bb24e00f 100755
+--- a/tests/btrfs/126
++++ b/tests/btrfs/126
+@@ -28,7 +28,7 @@ _scratch_mkfs >/dev/null
+ _scratch_mount "-o enospc_debug"
+ 
+ _run_btrfs_util_prog quota enable $SCRATCH_MNT
+-_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
++_qgroup_rescan $SCRATCH_MNT
+ _run_btrfs_util_prog qgroup limit 512K 0/5 $SCRATCH_MNT
+ 
+ # The amount of written data may change due to different nodesize at mkfs time,
+diff --git a/tests/btrfs/139 b/tests/btrfs/139
+index c4b09f9fc..f3d92ba46 100755
+--- a/tests/btrfs/139
++++ b/tests/btrfs/139
+@@ -30,7 +30,7 @@ SUBVOL=$SCRATCH_MNT/subvol
+ 
+ _run_btrfs_util_prog subvolume create $SUBVOL
+ _run_btrfs_util_prog quota enable $SCRATCH_MNT
+-_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
++_qgroup_rescan $SCRATCH_MNT
+ _run_btrfs_util_prog qgroup limit -e 1G $SUBVOL
+ 
+ # Write and delete files within 1G limits, multiple times
+diff --git a/tests/btrfs/153 b/tests/btrfs/153
+index 99fab1018..4a5fe2b8c 100755
+--- a/tests/btrfs/153
++++ b/tests/btrfs/153
+@@ -24,7 +24,7 @@ _scratch_mkfs >/dev/null
+ _scratch_mount
+ 
+ _run_btrfs_util_prog quota enable $SCRATCH_MNT
+-_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
++_qgroup_rescan $SCRATCH_MNT
+ _run_btrfs_util_prog qgroup limit 100M 0/5 $SCRATCH_MNT
+ 
+ testfile1=$SCRATCH_MNT/testfile1
+diff --git a/tests/btrfs/171 b/tests/btrfs/171
+index 461cdd0fa..6a1ed1c1a 100755
+--- a/tests/btrfs/171
++++ b/tests/btrfs/171
+@@ -35,7 +35,7 @@ $BTRFS_UTIL_PROG subvolume snapshot "$SCRATCH_MNT/subvol" \
+ 	"$SCRATCH_MNT/snapshot" > /dev/null
+ 
+ $BTRFS_UTIL_PROG quota enable "$SCRATCH_MNT" > /dev/null
+-$BTRFS_UTIL_PROG quota rescan -w "$SCRATCH_MNT" > /dev/null
++_qgroup_rescan $SCRATCH_MNT > /dev/null
+ 
+ # Create high level qgroup
+ $BTRFS_UTIL_PROG qgroup create 1/0 "$SCRATCH_MNT"
+@@ -45,7 +45,7 @@ $BTRFS_UTIL_PROG qgroup assign "$SCRATCH_MNT/snapshot" 1/0 "$SCRATCH_MNT" \
+ 
+ # Above assignment will mark qgroup inconsistent due to the shared extents
+ # between subvol/snapshot/high level qgroup, do rescan here.
+-$BTRFS_UTIL_PROG quota rescan -w "$SCRATCH_MNT" > /dev/null
++_qgroup_rescan $SCRATCH_MNT > /dev/null
+ 
+ # Now remove the qgroup relationship and make 1/0 childless
+ # Due to the shared extent outside of 1/0, we will mark qgroup inconsistent
+@@ -54,7 +54,7 @@ $BTRFS_UTIL_PROG qgroup remove "$SCRATCH_MNT/snapshot" 1/0 "$SCRATCH_MNT" \
+ 	2>&1 | _filter_btrfs_qgroup_assign_warnings
+ 
+ # Above removal also marks qgroup inconsistent, rescan again
+-$BTRFS_UTIL_PROG quota rescan -w "$SCRATCH_MNT" > /dev/null
++_qgroup_rescan $SCRATCH_MNT > /dev/null
+ 
+ # After the test, btrfs check will verify qgroup numbers to catch any
+ # corruption.
+diff --git a/tests/btrfs/179 b/tests/btrfs/179
+index 479667f05..00013af0a 100755
+--- a/tests/btrfs/179
++++ b/tests/btrfs/179
+@@ -33,7 +33,7 @@ _scratch_mount
+ mkdir -p "$SCRATCH_MNT/snapshots"
+ $BTRFS_UTIL_PROG subvolume create "$SCRATCH_MNT/src" > /dev/null
+ $BTRFS_UTIL_PROG quota enable "$SCRATCH_MNT" > /dev/null
+-$BTRFS_UTIL_PROG quota rescan -w "$SCRATCH_MNT" > /dev/null
++_qgroup_rescan "$SCRATCH_MNT" > /dev/null
+ 
+ fill_workload()
+ {
+diff --git a/tests/btrfs/180 b/tests/btrfs/180
+index b7c8dac96..aa195f7b4 100755
+--- a/tests/btrfs/180
++++ b/tests/btrfs/180
+@@ -27,7 +27,7 @@ _scratch_mkfs > /dev/null
+ _scratch_mount
+ 
+ $BTRFS_UTIL_PROG quota enable "$SCRATCH_MNT" > /dev/null
+-$BTRFS_UTIL_PROG quota rescan -w "$SCRATCH_MNT" > /dev/null
++_qgroup_rescan "$SCRATCH_MNT" > /dev/null
+ $BTRFS_UTIL_PROG qgroup limit -e 1G "$SCRATCH_MNT"
+ 
+ $XFS_IO_PROG -f -c "falloc 0 900M" "$SCRATCH_MNT/padding"
+diff --git a/tests/btrfs/190 b/tests/btrfs/190
+index 974438c15..f78c14fe4 100755
+--- a/tests/btrfs/190
++++ b/tests/btrfs/190
+@@ -30,7 +30,7 @@ _log_writes_mkfs >> $seqres.full 2>&1
+ 
+ _log_writes_mount
+ $BTRFS_UTIL_PROG quota enable $SCRATCH_MNT >> $seqres.full
+-$BTRFS_UTIL_PROG quota rescan -w $SCRATCH_MNT >> $seqres.full
++_qgroup_rescan $SCRATCH_MNT >> $seqres.full
+ 
+ # Create enough metadata for later balance
+ for ((i = 0; i < $nr_files; i++)); do
+diff --git a/tests/btrfs/193 b/tests/btrfs/193
+index b4632ab0a..67220c7a5 100755
+--- a/tests/btrfs/193
++++ b/tests/btrfs/193
+@@ -26,7 +26,7 @@ _scratch_mkfs > /dev/null
+ _scratch_mount
+ 
+ $BTRFS_UTIL_PROG quota enable "$SCRATCH_MNT" > /dev/null
+-$BTRFS_UTIL_PROG quota rescan -w "$SCRATCH_MNT" > /dev/null
++_qgroup_rescan "$SCRATCH_MNT" > /dev/null
+ $BTRFS_UTIL_PROG qgroup limit -e 256M "$SCRATCH_MNT"
+ 
+ # Create a file with the following layout:
+diff --git a/tests/btrfs/210 b/tests/btrfs/210
+index 383a307ff..f3d769fa0 100755
+--- a/tests/btrfs/210
++++ b/tests/btrfs/210
+@@ -29,7 +29,7 @@ _pwrite_byte 0xcd 0 16M "$SCRATCH_MNT/src/file" > /dev/null
+ # by qgroup
+ sync
+ $BTRFS_UTIL_PROG quota enable "$SCRATCH_MNT"
+-$BTRFS_UTIL_PROG quota rescan -w "$SCRATCH_MNT" > /dev/null
++_qgroup_rescan "$SCRATCH_MNT" > /dev/null
+ $BTRFS_UTIL_PROG qgroup create 1/0 "$SCRATCH_MNT"
+ 
+ # Create a snapshot with qgroup inherit
+diff --git a/tests/btrfs/224 b/tests/btrfs/224
+index d7ec57360..de10942fe 100755
+--- a/tests/btrfs/224
++++ b/tests/btrfs/224
+@@ -30,7 +30,7 @@ assign_shared_test()
+ 
+ 	echo "=== qgroup assign shared test ===" >> $seqres.full
+ 	$BTRFS_UTIL_PROG quota enable $SCRATCH_MNT
+-	$BTRFS_UTIL_PROG quota rescan -w $SCRATCH_MNT >> $seqres.full
++	_qgroup_rescan $SCRATCH_MNT >> $seqres.full
+ 
+ 	$BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/a >> $seqres.full
+ 	$BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/b >> $seqres.full
+@@ -54,7 +54,7 @@ assign_no_shared_test()
+ 
+ 	echo "=== qgroup assign no shared test ===" >> $seqres.full
+ 	$BTRFS_UTIL_PROG quota enable $SCRATCH_MNT
+-	$BTRFS_UTIL_PROG quota rescan -w $SCRATCH_MNT >> $seqres.full
++	_qgroup_rescan $SCRATCH_MNT >> $seqres.full
+ 
+ 	$BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/a >> $seqres.full
+ 	$BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/b >> $seqres.full
+@@ -75,7 +75,7 @@ snapshot_test()
+ 
+ 	echo "=== qgroup snapshot test ===" >> $seqres.full
+ 	$BTRFS_UTIL_PROG quota enable $SCRATCH_MNT
+-	$BTRFS_UTIL_PROG quota rescan -w $SCRATCH_MNT >> $seqres.full
++	_qgroup_rescan $SCRATCH_MNT >> $seqres.full
+ 
+ 	$BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/a >> $seqres.full
+ 	_ddt of="$SCRATCH_MNT"/a/file1 bs=1M count=1 >> $seqres.full 2>&1
+diff --git a/tests/btrfs/230 b/tests/btrfs/230
+index 46b0c6369..7a4cd18e9 100755
+--- a/tests/btrfs/230
++++ b/tests/btrfs/230
+@@ -31,7 +31,7 @@ _pwrite_byte 0xcd 0 1G $SCRATCH_MNT/file >> $seqres.full
+ sync
+ 
+ $BTRFS_UTIL_PROG quota enable $SCRATCH_MNT
+-$BTRFS_UTIL_PROG quota rescan -w $SCRATCH_MNT >> $seqres.full
++_qgroup_rescan $SCRATCH_MNT >> $seqres.full
+ 
+ # Set the limit to just 512MiB, which is way below the existing usage
+ $BTRFS_UTIL_PROG qgroup limit  512M 0/5 $SCRATCH_MNT
+diff --git a/tests/btrfs/232 b/tests/btrfs/232
+index 02c7e49de..debe070bb 100755
+--- a/tests/btrfs/232
++++ b/tests/btrfs/232
+@@ -46,7 +46,7 @@ _pwrite_byte 0xcd 0 900m $SCRATCH_MNT/file >> $seqres.full
+ sync
+ 
+ $BTRFS_UTIL_PROG quota enable $SCRATCH_MNT
+-$BTRFS_UTIL_PROG quota rescan -w $SCRATCH_MNT >> $seqres.full
++_qgroup_rescan $SCRATCH_MNT >> $seqres.full
+ # set the limit to 1 g, leaving us just 100mb of slack space
+ $BTRFS_UTIL_PROG qgroup limit 1G 0/5 $SCRATCH_MNT
+ 
 -- 
 2.42.0
 

@@ -2,308 +2,250 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 546A7E732C0
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Sep 2023 11:05:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 890F6E732C7
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Sep 2023 11:19:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232298AbjI1LFh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 28 Sep 2023 07:05:37 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38398 "EHLO
+        id S232327AbjI1LTK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 28 Sep 2023 07:19:10 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48082 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231981AbjI1LEl (ORCPT
+        with ESMTP id S232043AbjI1LTA (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Sep 2023 07:04:41 -0400
+        Thu, 28 Sep 2023 07:19:00 -0400
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D442F1A4;
-        Thu, 28 Sep 2023 04:04:37 -0700 (PDT)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2FEA5C433C9;
-        Thu, 28 Sep 2023 11:04:37 +0000 (UTC)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1E9953C0E;
+        Thu, 28 Sep 2023 04:06:10 -0700 (PDT)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 4B45DC433C8;
+        Thu, 28 Sep 2023 11:05:56 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1695899077;
-        bh=ruBVBlbxk43QmbfwYylX+XKh2opy3/NQx5bRlLNo8m8=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=BiewGpLq2Ju9FF4X5MfXOLjuyzPXKBGx+Dp4rMCgVoZr8X5Nhm8d142DHdibiaZP+
-         ua5iyJ+YAOv4lHl/ygQTjt2hzLx/vaRiJF6DZHRTju11SbID1WA31rEZHMATOqdYBO
-         IVhB23S3lFZvugNAb0+RfA1TjpI6tiZcc0GefmMD6LOQBof/r2fi5n5x5pyQjIRzs7
-         S8/dlv8sr4TEBDdj9yuyZAujIM65oX5Sk4W7ybZeYbuAOfSwtjq255CjVmHyo7RO9z
-         5oonsTrCFKd4T51EiDXSUjpOm61C8IUuUVhumDolbhEEA6PV64+EVnAy1rgrDN/AMj
-         igRYnN5RZgMpw==
+        s=k20201202; t=1695899170;
+        bh=AhfBjRw4Zieo7d/UWgS6g+DDX4jTgfxPdqjByEx9qhM=;
+        h=From:To:Cc:Subject:Date:From;
+        b=V+wOzFncXPhDXQFQdHny1CsSK9qUJSENwQ3KCibIzAaql9xTx9HnhDcijW4/7BOtC
+         kszW/YDyA0AMr7XQAUyJiZeb60fme2uDkyobxKoT8cY6VhZHy5eoMPnsaN6X7TtxCq
+         QTaef29MEouz7MkE+tPPdhmCepxFcMdSgkZxMJFkcJInXSuCSMx/JWDM3dr1kZYemo
+         enoSOcU6aqdkN9wSvXmqf6Z9xnaErzYq51O9jQbKnwkBY5wjm/kE01rgGkYxHItLa5
+         5cRJCieL6/r3mfMz8yZQYtWkWaXM39nIwleCYU584hrkq3VtvO021SVUVEZ1qpwd4S
+         nSI/tWahGoeXg==
 From:   Jeff Layton <jlayton@kernel.org>
 To:     Alexander Viro <viro@zeniv.linux.org.uk>,
         Christian Brauner <brauner@kernel.org>,
-        linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org
-Cc:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 22/87] fs/btrfs: convert to new inode {a,m}time accessors
-Date:   Thu, 28 Sep 2023 07:02:31 -0400
-Message-ID: <20230928110413.33032-21-jlayton@kernel.org>
+        Linus Torvalds <torvalds@linux-foundation.org>,
+        David Sterba <dsterba@suse.cz>,
+        Amir Goldstein <amir73il@gmail.com>,
+        Theodore Ts'o <tytso@mit.edu>,
+        Eric Biederman <ebiederm@xmission.com>,
+        Kees Cook <keescook@chromium.org>, Jeremy Kerr <jk@ozlabs.org>,
+        Arnd Bergmann <arnd@arndb.de>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Nicholas Piggin <npiggin@gmail.com>,
+        Christophe Leroy <christophe.leroy@csgroup.eu>,
+        Heiko Carstens <hca@linux.ibm.com>,
+        Vasily Gorbik <gor@linux.ibm.com>,
+        Alexander Gordeev <agordeev@linux.ibm.com>,
+        Christian Borntraeger <borntraeger@linux.ibm.com>,
+        Sven Schnelle <svens@linux.ibm.com>,
+        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+        =?UTF-8?q?Arve=20Hj=C3=B8nnev=C3=A5g?= <arve@android.com>,
+        Todd Kjos <tkjos@android.com>,
+        Martijn Coenen <maco@android.com>,
+        Joel Fernandes <joel@joelfernandes.org>,
+        Carlos Llamas <cmllamas@google.com>,
+        Suren Baghdasaryan <surenb@google.com>,
+        Mattia Dongili <malattia@linux.it>,
+        Dennis Dalessandro <dennis.dalessandro@cornelisnetworks.com>,
+        Jason Gunthorpe <jgg@ziepe.ca>,
+        Leon Romanovsky <leon@kernel.org>,
+        Brad Warrum <bwarrum@linux.ibm.com>,
+        Ritu Agarwal <rituagar@linux.ibm.com>,
+        Hans de Goede <hdegoede@redhat.com>,
+        =?UTF-8?q?Ilpo=20J=C3=A4rvinen?= <ilpo.jarvinen@linux.intel.com>,
+        Mark Gross <markgross@kernel.org>,
+        Jiri Slaby <jirislaby@kernel.org>,
+        Eric Van Hensbergen <ericvh@kernel.org>,
+        Latchesar Ionkov <lucho@ionkov.net>,
+        Dominique Martinet <asmadeus@codewreck.org>,
+        Christian Schoenebeck <linux_oss@crudebyte.com>,
+        David Sterba <dsterba@suse.com>,
+        David Howells <dhowells@redhat.com>,
+        Marc Dionne <marc.dionne@auristor.com>,
+        Ian Kent <raven@themaw.net>,
+        Luis de Bethencourt <luisbg@kernel.org>,
+        Salah Triki <salah.triki@gmail.com>,
+        "Tigran A. Aivazian" <aivazian.tigran@gmail.com>,
+        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        Xiubo Li <xiubli@redhat.com>,
+        Ilya Dryomov <idryomov@gmail.com>,
+        Jan Harkes <jaharkes@cs.cmu.edu>, coda@cs.cmu.edu,
+        Joel Becker <jlbec@evilplan.org>,
+        Christoph Hellwig <hch@lst.de>,
+        Nicolas Pitre <nico@fluxnic.net>,
+        "Rafael J. Wysocki" <rafael@kernel.org>,
+        Ard Biesheuvel <ardb@kernel.org>, Gao Xiang <xiang@kernel.org>,
+        Chao Yu <chao@kernel.org>, Yue Hu <huyue2@coolpad.com>,
+        Jeffle Xu <jefflexu@linux.alibaba.com>,
+        Namjae Jeon <linkinjeon@kernel.org>,
+        Sungjong Seo <sj1557.seo@samsung.com>,
+        Jan Kara <jack@suse.com>,
+        Andreas Dilger <adilger.kernel@dilger.ca>,
+        Jaegeuk Kim <jaegeuk@kernel.org>,
+        OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>,
+        Christoph Hellwig <hch@infradead.org>,
+        Miklos Szeredi <miklos@szeredi.hu>,
+        Bob Peterson <rpeterso@redhat.com>,
+        Andreas Gruenbacher <agruenba@redhat.com>,
+        Richard Weinberger <richard@nod.at>,
+        Anton Ivanov <anton.ivanov@cambridgegreys.com>,
+        Johannes Berg <johannes@sipsolutions.net>,
+        Mikulas Patocka <mikulas@artax.karlin.mff.cuni.cz>,
+        Mike Kravetz <mike.kravetz@oracle.com>,
+        Muchun Song <muchun.song@linux.dev>, Jan Kara <jack@suse.cz>,
+        David Woodhouse <dwmw2@infradead.org>,
+        Dave Kleikamp <shaggy@kernel.org>, Tejun Heo <tj@kernel.org>,
+        Trond Myklebust <trond.myklebust@hammerspace.com>,
+        Anna Schumaker <anna@kernel.org>,
+        Chuck Lever <chuck.lever@oracle.com>,
+        Neil Brown <neilb@suse.de>,
+        Olga Kornievskaia <kolga@netapp.com>,
+        Dai Ngo <Dai.Ngo@oracle.com>, Tom Talpey <tom@talpey.com>,
+        Ryusuke Konishi <konishi.ryusuke@gmail.com>,
+        Anton Altaparmakov <anton@tuxera.com>,
+        Konstantin Komarov <almaz.alexandrovich@paragon-software.com>,
+        Mark Fasheh <mark@fasheh.com>,
+        Joseph Qi <joseph.qi@linux.alibaba.com>,
+        Bob Copeland <me@bobcopeland.com>,
+        Mike Marshall <hubcap@omnibond.com>,
+        Martin Brandenburg <martin@omnibond.com>,
+        Luis Chamberlain <mcgrof@kernel.org>,
+        Iurii Zaikin <yzaikin@google.com>,
+        Tony Luck <tony.luck@intel.com>,
+        "Guilherme G. Piccoli" <gpiccoli@igalia.com>,
+        Anders Larsen <al@alarsen.net>,
+        Steve French <sfrench@samba.org>,
+        Paulo Alcantara <pc@manguebit.com>,
+        Ronnie Sahlberg <lsahlber@redhat.com>,
+        Shyam Prasad N <sprasad@microsoft.com>,
+        Sergey Senozhatsky <senozhatsky@chromium.org>,
+        Phillip Lougher <phillip@squashfs.org.uk>,
+        Steven Rostedt <rostedt@goodmis.org>,
+        Masami Hiramatsu <mhiramat@kernel.org>,
+        Evgeniy Dushistov <dushistov@mail.ru>,
+        Chandan Babu R <chandan.babu@oracle.com>,
+        "Darrick J. Wong" <djwong@kernel.org>,
+        Damien Le Moal <dlemoal@kernel.org>,
+        Naohiro Aota <naohiro.aota@wdc.com>,
+        Johannes Thumshirn <jth@kernel.org>,
+        Alexei Starovoitov <ast@kernel.org>,
+        Daniel Borkmann <daniel@iogearbox.net>,
+        Andrii Nakryiko <andrii@kernel.org>,
+        Martin KaFai Lau <martin.lau@linux.dev>,
+        Song Liu <song@kernel.org>,
+        Yonghong Song <yonghong.song@linux.dev>,
+        John Fastabend <john.fastabend@gmail.com>,
+        KP Singh <kpsingh@kernel.org>,
+        Stanislav Fomichev <sdf@google.com>,
+        Hao Luo <haoluo@google.com>, Jiri Olsa <jolsa@kernel.org>,
+        Hugh Dickins <hughd@google.com>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        "David S. Miller" <davem@davemloft.net>,
+        Eric Dumazet <edumazet@google.com>,
+        Jakub Kicinski <kuba@kernel.org>,
+        Paolo Abeni <pabeni@redhat.com>,
+        John Johansen <john.johansen@canonical.com>,
+        Paul Moore <paul@paul-moore.com>,
+        James Morris <jmorris@namei.org>,
+        "Serge E. Hallyn" <serge@hallyn.com>,
+        Stephen Smalley <stephen.smalley.work@gmail.com>,
+        Eric Paris <eparis@parisplace.org>
+Cc:     linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-mm@kvack.org, linuxppc-dev@lists.ozlabs.org,
+        linux-s390@vger.kernel.org, platform-driver-x86@vger.kernel.org,
+        linux-rdma@vger.kernel.org, linux-serial@vger.kernel.org,
+        linux-usb@vger.kernel.org, v9fs@lists.linux.dev,
+        linux-afs@lists.infradead.org, autofs@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, ceph-devel@vger.kernel.org,
+        codalist@coda.cs.cmu.edu, linux-efi@vger.kernel.org,
+        linux-erofs@lists.ozlabs.org, linux-ext4@vger.kernel.org,
+        linux-f2fs-devel@lists.sourceforge.net, gfs2@lists.linux.dev,
+        linux-um@lists.infradead.org, linux-mtd@lists.infradead.org,
+        jfs-discussion@lists.sourceforge.net, linux-nfs@vger.kernel.org,
+        linux-nilfs@vger.kernel.org, linux-ntfs-dev@lists.sourceforge.net,
+        ntfs3@lists.linux.dev, ocfs2-devel@lists.linux.dev,
+        linux-karma-devel@lists.sourceforge.net, devel@lists.orangefs.org,
+        linux-unionfs@vger.kernel.org, linux-hardening@vger.kernel.org,
+        reiserfs-devel@vger.kernel.org, linux-cifs@vger.kernel.org,
+        samba-technical@lists.samba.org,
+        linux-trace-kernel@vger.kernel.org, linux-xfs@vger.kernel.org,
+        bpf@vger.kernel.org, netdev@vger.kernel.org,
+        apparmor@lists.ubuntu.com, linux-security-module@vger.kernel.org,
+        selinux@vger.kernel.org
+Subject: [PATCH 85/87] fs: rename i_atime and i_mtime fields to __i_atime and __i_mtime
+Date:   Thu, 28 Sep 2023 07:05:52 -0400
+Message-ID: <20230928110554.34758-1-jlayton@kernel.org>
 X-Mailer: git-send-email 2.41.0
-In-Reply-To: <20230928110413.33032-1-jlayton@kernel.org>
-References: <20230928110300.32891-1-jlayton@kernel.org>
- <20230928110413.33032-1-jlayton@kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+Make it clear that these fields are private now, and that the accessors
+should be used instead.
+
 Signed-off-by: Jeff Layton <jlayton@kernel.org>
 ---
- fs/btrfs/delayed-inode.c | 16 ++++++++--------
- fs/btrfs/file.c          | 18 ++++++++++--------
- fs/btrfs/inode.c         | 39 ++++++++++++++++++++-------------------
- fs/btrfs/reflink.c       |  2 +-
- fs/btrfs/transaction.c   |  3 ++-
- fs/btrfs/tree-log.c      |  8 ++++----
- 6 files changed, 45 insertions(+), 41 deletions(-)
+ include/linux/fs.h | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
 
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index caf0bbd028d1..c578a6fc796c 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -1834,14 +1834,14 @@ static void fill_stack_inode_item(struct btrfs_trans_handle *trans,
- 	btrfs_set_stack_inode_block_group(inode_item, 0);
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 12d247b82aa0..831657011036 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -671,9 +671,9 @@ struct inode {
+ 	};
+ 	dev_t			i_rdev;
+ 	loff_t			i_size;
+-	struct timespec64	i_atime;
+-	struct timespec64	i_mtime;
+-	struct timespec64	__i_ctime; /* use inode_*_ctime accessors! */
++	struct timespec64	__i_atime; /* use inode_*_atime accessors */
++	struct timespec64	__i_mtime; /* use inode_*_mtime accessors */
++	struct timespec64	__i_ctime; /* use inode_*_ctime accessors */
+ 	spinlock_t		i_lock;	/* i_blocks, i_bytes, maybe i_size */
+ 	unsigned short          i_bytes;
+ 	u8			i_blkbits;
+@@ -1555,13 +1555,13 @@ static inline struct timespec64 inode_set_ctime(struct inode *inode,
  
- 	btrfs_set_stack_timespec_sec(&inode_item->atime,
--				     inode->i_atime.tv_sec);
-+				     inode_get_atime(inode).tv_sec);
- 	btrfs_set_stack_timespec_nsec(&inode_item->atime,
--				      inode->i_atime.tv_nsec);
-+				      inode_get_atime(inode).tv_nsec);
- 
- 	btrfs_set_stack_timespec_sec(&inode_item->mtime,
--				     inode->i_mtime.tv_sec);
-+				     inode_get_mtime(inode).tv_sec);
- 	btrfs_set_stack_timespec_nsec(&inode_item->mtime,
--				      inode->i_mtime.tv_nsec);
-+				      inode_get_mtime(inode).tv_nsec);
- 
- 	btrfs_set_stack_timespec_sec(&inode_item->ctime,
- 				     inode_get_ctime(inode).tv_sec);
-@@ -1891,11 +1891,11 @@ int btrfs_fill_inode(struct inode *inode, u32 *rdev)
- 	btrfs_inode_split_flags(btrfs_stack_inode_flags(inode_item),
- 				&BTRFS_I(inode)->flags, &BTRFS_I(inode)->ro_flags);
- 
--	inode->i_atime.tv_sec = btrfs_stack_timespec_sec(&inode_item->atime);
--	inode->i_atime.tv_nsec = btrfs_stack_timespec_nsec(&inode_item->atime);
-+	inode_set_atime(inode, btrfs_stack_timespec_sec(&inode_item->atime),
-+			btrfs_stack_timespec_nsec(&inode_item->atime));
- 
--	inode->i_mtime.tv_sec = btrfs_stack_timespec_sec(&inode_item->mtime);
--	inode->i_mtime.tv_nsec = btrfs_stack_timespec_nsec(&inode_item->mtime);
-+	inode_set_mtime(inode, btrfs_stack_timespec_sec(&inode_item->mtime),
-+			btrfs_stack_timespec_nsec(&inode_item->mtime));
- 
- 	inode_set_ctime(inode, btrfs_stack_timespec_sec(&inode_item->ctime),
- 			btrfs_stack_timespec_nsec(&inode_item->ctime));
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 361535c71c0f..278a4ea651e1 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1108,17 +1108,18 @@ void btrfs_check_nocow_unlock(struct btrfs_inode *inode)
- 
- static void update_time_for_write(struct inode *inode)
+ static inline struct timespec64 inode_get_atime(const struct inode *inode)
  {
--	struct timespec64 now, ctime;
-+	struct timespec64 now, ts;
+-	return inode->i_atime;
++	return inode->__i_atime;
+ }
  
- 	if (IS_NOCMTIME(inode))
- 		return;
+ static inline struct timespec64 inode_set_atime_to_ts(struct inode *inode,
+ 						      struct timespec64 ts)
+ {
+-	inode->i_atime = ts;
++	inode->__i_atime = ts;
+ 	return ts;
+ }
  
- 	now = current_time(inode);
--	if (!timespec64_equal(&inode->i_mtime, &now))
--		inode->i_mtime = now;
-+	ts = inode_get_mtime(inode);
-+	if (!timespec64_equal(&ts, &now))
-+		inode_set_mtime_to_ts(inode, now);
+@@ -1575,13 +1575,13 @@ static inline struct timespec64 inode_set_atime(struct inode *inode,
  
--	ctime = inode_get_ctime(inode);
--	if (!timespec64_equal(&ctime, &now))
-+	ts = inode_get_ctime(inode);
-+	if (!timespec64_equal(&ts, &now))
- 		inode_set_ctime_to_ts(inode, now);
+ static inline struct timespec64 inode_get_mtime(const struct inode *inode)
+ {
+-	return inode->i_mtime;
++	return inode->__i_mtime;
+ }
  
- 	if (IS_I_VERSION(inode))
-@@ -2473,7 +2474,8 @@ int btrfs_replace_file_extents(struct btrfs_inode *inode,
- 		inode_inc_iversion(&inode->vfs_inode);
+ static inline struct timespec64 inode_set_mtime_to_ts(struct inode *inode,
+ 						      struct timespec64 ts)
+ {
+-	inode->i_mtime = ts;
++	inode->__i_mtime = ts;
+ 	return ts;
+ }
  
- 		if (!extent_info || extent_info->update_times)
--			inode->vfs_inode.i_mtime = inode_set_ctime_current(&inode->vfs_inode);
-+			inode_set_mtime_to_ts(&inode->vfs_inode,
-+					      inode_set_ctime_current(&inode->vfs_inode));
- 
- 		ret = btrfs_update_inode(trans, root, inode);
- 		if (ret)
-@@ -2714,7 +2716,7 @@ static int btrfs_punch_hole(struct file *file, loff_t offset, loff_t len)
- 
- 	ASSERT(trans != NULL);
- 	inode_inc_iversion(inode);
--	inode->i_mtime = inode_set_ctime_current(inode);
-+	inode_set_mtime_to_ts(inode, inode_set_ctime_current(inode));
- 	ret = btrfs_update_inode(trans, root, BTRFS_I(inode));
- 	updated_inode = true;
- 	btrfs_end_transaction(trans);
-@@ -2734,7 +2736,7 @@ static int btrfs_punch_hole(struct file *file, loff_t offset, loff_t len)
- 		struct timespec64 now = inode_set_ctime_current(inode);
- 
- 		inode_inc_iversion(inode);
--		inode->i_mtime = now;
-+		inode_set_mtime_to_ts(inode, now);
- 		trans = btrfs_start_transaction(root, 1);
- 		if (IS_ERR(trans)) {
- 			ret = PTR_ERR(trans);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 7814b9d654ce..e35939e68fc5 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3754,11 +3754,11 @@ static int btrfs_read_locked_inode(struct inode *inode,
- 	btrfs_inode_set_file_extent_range(BTRFS_I(inode), 0,
- 			round_up(i_size_read(inode), fs_info->sectorsize));
- 
--	inode->i_atime.tv_sec = btrfs_timespec_sec(leaf, &inode_item->atime);
--	inode->i_atime.tv_nsec = btrfs_timespec_nsec(leaf, &inode_item->atime);
-+	inode_set_atime(inode, btrfs_timespec_sec(leaf, &inode_item->atime),
-+			btrfs_timespec_nsec(leaf, &inode_item->atime));
- 
--	inode->i_mtime.tv_sec = btrfs_timespec_sec(leaf, &inode_item->mtime);
--	inode->i_mtime.tv_nsec = btrfs_timespec_nsec(leaf, &inode_item->mtime);
-+	inode_set_mtime(inode, btrfs_timespec_sec(leaf, &inode_item->mtime),
-+			btrfs_timespec_nsec(leaf, &inode_item->mtime));
- 
- 	inode_set_ctime(inode, btrfs_timespec_sec(leaf, &inode_item->ctime),
- 			btrfs_timespec_nsec(leaf, &inode_item->ctime));
-@@ -3922,14 +3922,14 @@ static void fill_inode_item(struct btrfs_trans_handle *trans,
- 	btrfs_set_token_inode_nlink(&token, item, inode->i_nlink);
- 
- 	btrfs_set_token_timespec_sec(&token, &item->atime,
--				     inode->i_atime.tv_sec);
-+				     inode_get_atime(inode).tv_sec);
- 	btrfs_set_token_timespec_nsec(&token, &item->atime,
--				      inode->i_atime.tv_nsec);
-+				      inode_get_atime(inode).tv_nsec);
- 
- 	btrfs_set_token_timespec_sec(&token, &item->mtime,
--				     inode->i_mtime.tv_sec);
-+				     inode_get_mtime(inode).tv_sec);
- 	btrfs_set_token_timespec_nsec(&token, &item->mtime,
--				      inode->i_mtime.tv_nsec);
-+				      inode_get_mtime(inode).tv_nsec);
- 
- 	btrfs_set_token_timespec_sec(&token, &item->ctime,
- 				     inode_get_ctime(inode).tv_sec);
-@@ -4133,7 +4133,7 @@ static int __btrfs_unlink_inode(struct btrfs_trans_handle *trans,
- 	inode_inc_iversion(&inode->vfs_inode);
- 	inode_inc_iversion(&dir->vfs_inode);
- 	inode_set_ctime_current(&inode->vfs_inode);
--	dir->vfs_inode.i_mtime = inode_set_ctime_current(&dir->vfs_inode);
-+	inode_set_mtime_to_ts(&dir->vfs_inode, inode_set_ctime_current(&dir->vfs_inode));
- 	ret = btrfs_update_inode(trans, root, dir);
- out:
- 	return ret;
-@@ -4306,7 +4306,7 @@ static int btrfs_unlink_subvol(struct btrfs_trans_handle *trans,
- 
- 	btrfs_i_size_write(dir, dir->vfs_inode.i_size - fname.disk_name.len * 2);
- 	inode_inc_iversion(&dir->vfs_inode);
--	dir->vfs_inode.i_mtime = inode_set_ctime_current(&dir->vfs_inode);
-+	inode_set_mtime_to_ts(&dir->vfs_inode, inode_set_ctime_current(&dir->vfs_inode));
- 	ret = btrfs_update_inode_fallback(trans, root, dir);
- 	if (ret)
- 		btrfs_abort_transaction(trans, ret);
-@@ -4956,7 +4956,8 @@ static int btrfs_setsize(struct inode *inode, struct iattr *attr)
- 	if (newsize != oldsize) {
- 		inode_inc_iversion(inode);
- 		if (!(mask & (ATTR_CTIME | ATTR_MTIME))) {
--			inode->i_mtime = inode_set_ctime_current(inode);
-+			inode_set_mtime_to_ts(inode,
-+					      inode_set_ctime_current(inode));
- 		}
- 	}
- 
-@@ -5600,9 +5601,9 @@ static struct inode *new_simple_dir(struct inode *dir,
- 	inode->i_opflags &= ~IOP_XATTR;
- 	inode->i_fop = &simple_dir_operations;
- 	inode->i_mode = S_IFDIR | S_IRUGO | S_IWUSR | S_IXUGO;
--	inode->i_mtime = inode_set_ctime_current(inode);
--	inode->i_atime = dir->i_atime;
--	BTRFS_I(inode)->i_otime = inode->i_mtime;
-+	inode_set_mtime_to_ts(inode, inode_set_ctime_current(inode));
-+	inode_set_atime_to_ts(inode, inode_get_atime(dir));
-+	BTRFS_I(inode)->i_otime = inode_get_mtime(inode);
- 	inode->i_uid = dir->i_uid;
- 	inode->i_gid = dir->i_gid;
- 
-@@ -6277,9 +6278,9 @@ int btrfs_create_new_inode(struct btrfs_trans_handle *trans,
- 		goto discard;
- 	}
- 
--	inode->i_mtime = inode_set_ctime_current(inode);
--	inode->i_atime = inode->i_mtime;
--	BTRFS_I(inode)->i_otime = inode->i_mtime;
-+	simple_inode_init_ts(inode);
-+	
-+	BTRFS_I(inode)->i_otime = inode_get_mtime(inode);
- 
- 	/*
- 	 * We're going to fill the inode item now, so at this point the inode
-@@ -6444,8 +6445,8 @@ int btrfs_add_link(struct btrfs_trans_handle *trans,
- 	 * values (the ones it had when the fsync was done).
- 	 */
- 	if (!test_bit(BTRFS_FS_LOG_RECOVERING, &root->fs_info->flags))
--		parent_inode->vfs_inode.i_mtime =
--			inode_set_ctime_current(&parent_inode->vfs_inode);
-+		inode_set_mtime_to_ts(&parent_inode->vfs_inode,
-+				      inode_set_ctime_current(&parent_inode->vfs_inode));
- 
- 	ret = btrfs_update_inode(trans, root, parent_inode);
- 	if (ret)
-diff --git a/fs/btrfs/reflink.c b/fs/btrfs/reflink.c
-index 65d2bd6910f2..13ecb4f85941 100644
---- a/fs/btrfs/reflink.c
-+++ b/fs/btrfs/reflink.c
-@@ -30,7 +30,7 @@ static int clone_finish_inode_update(struct btrfs_trans_handle *trans,
- 
- 	inode_inc_iversion(inode);
- 	if (!no_time_update) {
--		inode->i_mtime = inode_set_ctime_current(inode);
-+		inode_set_mtime_to_ts(inode, inode_set_ctime_current(inode));
- 	}
- 	/*
- 	 * We round up to the block size at eof when determining which
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index c780d3729463..38a2775c5c7b 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1860,7 +1860,8 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 
- 	btrfs_i_size_write(BTRFS_I(parent_inode), parent_inode->i_size +
- 						  fname.disk_name.len * 2);
--	parent_inode->i_mtime = inode_set_ctime_current(parent_inode);
-+	inode_set_mtime_to_ts(parent_inode,
-+			      inode_set_ctime_current(parent_inode));
- 	ret = btrfs_update_inode_fallback(trans, parent_root, BTRFS_I(parent_inode));
- 	if (ret) {
- 		btrfs_abort_transaction(trans, ret);
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index cbb17b542131..3f33e18f6d3e 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -4138,14 +4138,14 @@ static void fill_inode_item(struct btrfs_trans_handle *trans,
- 	btrfs_set_token_inode_nlink(&token, item, inode->i_nlink);
- 
- 	btrfs_set_token_timespec_sec(&token, &item->atime,
--				     inode->i_atime.tv_sec);
-+				     inode_get_atime(inode).tv_sec);
- 	btrfs_set_token_timespec_nsec(&token, &item->atime,
--				      inode->i_atime.tv_nsec);
-+				      inode_get_atime(inode).tv_nsec);
- 
- 	btrfs_set_token_timespec_sec(&token, &item->mtime,
--				     inode->i_mtime.tv_sec);
-+				     inode_get_mtime(inode).tv_sec);
- 	btrfs_set_token_timespec_nsec(&token, &item->mtime,
--				      inode->i_mtime.tv_nsec);
-+				      inode_get_mtime(inode).tv_nsec);
- 
- 	btrfs_set_token_timespec_sec(&token, &item->ctime,
- 				     inode_get_ctime(inode).tv_sec);
 -- 
 2.41.0
 

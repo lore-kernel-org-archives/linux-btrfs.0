@@ -2,72 +2,72 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B112BE743D1
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Sep 2023 23:16:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1E27EE743D6
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Sep 2023 23:16:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230523AbjI1XQF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 28 Sep 2023 19:16:05 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58324 "EHLO
+        id S231676AbjI1XQH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 28 Sep 2023 19:16:07 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58350 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229654AbjI1XQE (ORCPT
+        with ESMTP id S229541AbjI1XQF (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Sep 2023 19:16:04 -0400
+        Thu, 28 Sep 2023 19:16:05 -0400
 Received: from out4-smtp.messagingengine.com (out4-smtp.messagingengine.com [66.111.4.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7B1E31A3;
-        Thu, 28 Sep 2023 16:16:00 -0700 (PDT)
-Received: from compute3.internal (compute3.nyi.internal [10.202.2.43])
-        by mailout.nyi.internal (Postfix) with ESMTP id E7B485C00FD;
-        Thu, 28 Sep 2023 19:15:59 -0400 (EDT)
-Received: from mailfrontend2 ([10.202.2.163])
-  by compute3.internal (MEProxy); Thu, 28 Sep 2023 19:15:59 -0400
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0F7B219D;
+        Thu, 28 Sep 2023 16:16:04 -0700 (PDT)
+Received: from compute2.internal (compute2.nyi.internal [10.202.2.46])
+        by mailout.nyi.internal (Postfix) with ESMTP id 66F205C0DBB;
+        Thu, 28 Sep 2023 19:16:03 -0400 (EDT)
+Received: from mailfrontend1 ([10.202.2.162])
+  by compute2.internal (MEProxy); Thu, 28 Sep 2023 19:16:03 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc
         :content-transfer-encoding:content-type:date:date:from:from
         :in-reply-to:in-reply-to:message-id:mime-version:references
-        :reply-to:sender:subject:subject:to:to; s=fm3; t=1695942959; x=
-        1696029359; bh=l4ZHhDlqoTZg/LmFnodXCFvG0S8zJyyVhIsZF/Z9sbM=; b=s
-        ockXJQFlkYxVGwE1Blqy/lRP9JYRw49NyL0+UW1EX3Mym+9BLSVBy2ol9MPLkU9K
-        AC1r1ufbTzFaT2x1cgPPVVF05pLfH3q7WCuJDUZfAVno5yl/vz4aOLNvlxQp2fxV
-        ZihmIu5QLRKdkMZ+neRcBeaiD+r24++NYMH1QKsWkiMMDAkrjgMucmrz3BhdCA3K
-        OlO5xQbAvUPHzGixXO+dXkFIrnNNn0WjON+nLj1SqucWTios2S8ERvef2Pw2pUZ4
-        cLKeg4E4zMQXqbdlytK2oTs5xddmiYnr6tZYo8FYyskA4fuaDXOYIxcb1JinaqT5
-        Idx18t8mJAPfCjfA4E0cg==
+        :reply-to:sender:subject:subject:to:to; s=fm3; t=1695942963; x=
+        1696029363; bh=VHL3K3RZ6/F72JVZUkxSZ3tzq++vFi+1nAyKppki0Dw=; b=J
+        x0oBJlUNjK/350NJed494eMGRaPCFeHHUEWTOXBn9Btnc6+uZe57GHfAqp8A2a7g
+        iHvGWnGm/jgCkJGAAppocR+EeSq/k3C5jVWkZXV4fDxboBnBqZij10iaSyrW69/H
+        73cqy7FP7RrRaaNd+YFq/aFy9DfumJ4h0eMyXH9poVTk9ePRTILWXBHRpx7C+Qtu
+        hMPU0s+/qQEC2kkoJsoZAxaHFdSMhmBgwkC3HBBBHqh7JFtVkhRIsgicX0BSzxst
+        JjRCLcrRCxilXoyuvRR7p17jfwY7vBohkN0CWwK0okb9pevnMIh1muMIvKi1P7rB
+        K2PhaPfPL5b4nI5++lQsQ==
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
         messagingengine.com; h=cc:content-transfer-encoding:content-type
         :date:date:feedback-id:feedback-id:from:from:in-reply-to
         :in-reply-to:message-id:mime-version:references:reply-to:sender
         :subject:subject:to:to:x-me-proxy:x-me-proxy:x-me-sender
-        :x-me-sender:x-sasl-enc; s=fm2; t=1695942959; x=1696029359; bh=l
-        4ZHhDlqoTZg/LmFnodXCFvG0S8zJyyVhIsZF/Z9sbM=; b=QsKXBuursVlY9h8B4
-        urAK3GktizBVXAxFPVysDgocC23WsdHsDzANWc6IcrDllBnUuyFHClInSUTYRvac
-        nRRz6gjxawIttMFmiV9UULXcsN3ScnrbIHHU1FsGc7I/o2rZ3Wi3CNdVLAA0TsF1
-        FDJHd18sSxPNs9x3NLbCnhJag2n/FamyluN5OC1yHvA+evpv8m7mxc/4gJObJM/K
-        HlpU291w6aTkJuceSDl2a4g0LR6alNC0+4j2luvlUzsqRKN2HGfhwpETJwa2gUqw
-        lHsBEuYmj+R2R1N5jcvMDT33itdggmeTj56SjeSZ12r9+MzHmnxebQwdQmcrq/U9
-        BIelg==
-X-ME-Sender: <xms:LwkWZTQfuO26awM6MYyMJB2ErvP2wbOmaU-UcJS-GoeoxRBF0sCedQ>
-    <xme:LwkWZUwdVMcZepaThyb0e_xkR-Z_N9DMSJgHBUaEK-W1w2uIVPsROw21PD3OLZ6m6
-    1REu4H1eQ4zprfsSMk>
-X-ME-Received: <xmr:LwkWZY0Zk1J4Of8m5kilPHBJ3oVKJ5oGO3KFf76OTd76CQfarWztAEg7av0w4qAonmzGWAuk06ufAu1BWP4eyKRQIkc>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvkedrtddugddvtdcutefuodetggdotefrodftvf
+        :x-me-sender:x-sasl-enc; s=fm2; t=1695942963; x=1696029363; bh=V
+        HL3K3RZ6/F72JVZUkxSZ3tzq++vFi+1nAyKppki0Dw=; b=UTJvTibAEM9WfDnz9
+        3MFoYJ3e4UNHO/k8G2p7PUTbT9e2ni/UBCRGmEAl+iGLPGSu1oC8oZOb30bSdT18
+        V12HIDS+nVf8C11vTM/KgbHogDErAAYyKHBQfOWi1WJPt2FjhQVuh0IFo1ODoJSx
+        uobgIK4Ei1vIuKOIn+9J8Ctzat/6F4/Yd+jLj7cmz2HyFqtItfeiGJCInIBzbbNj
+        kWy97hJn7xgD24xmCq+qn7cmZ6w1FdpAkdKWKSHeISjvPqPVfEThyznnS6rea3Ob
+        6E1pfQ3mMcd2+2Tq0GnM/6Ip490xnMQRNlAXyBxTtazs+tICsf01x31iIW8G0Wuo
+        Pthzw==
+X-ME-Sender: <xms:MwkWZRUK3GNpEYIf-YIl-eC_TVNuUHtzwjsPLUoLJPodvSoMxUypeQ>
+    <xme:MwkWZRlFEf9WRdaTIGLE4BYrndcxuGxIsXnZoHunOf7d7mqOuwiGM0u91ACdcPoHv
+    HFcH08B7YkHHbCr_RM>
+X-ME-Received: <xmr:MwkWZdY523YG3h5GzBl-XpTLdHq6wY61rAJPIx44FAVJ8MrtdfFILV33ErYdfnKhdEVOiYE-jna36HTg51hh9eQqvxQ>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvkedrtddugddvudcutefuodetggdotefrodftvf
     curfhrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfghnecu
     uegrihhlohhuthemuceftddtnecunecujfgurhephffvufffkffojghfggfgsedtkeertd
     ertddtnecuhfhrohhmpeeuohhrihhsuceuuhhrkhhovhcuoegsohhrihhssegsuhhrrdhi
     oheqnecuggftrfgrthhtvghrnhepieeuffeuvdeiueejhfehiefgkeevudejjeejffevvd
     ehtddufeeihfekgeeuheelnecuvehluhhsthgvrhfuihiivgeptdenucfrrghrrghmpehm
     rghilhhfrhhomhepsghorhhishessghurhdrihho
-X-ME-Proxy: <xmx:LwkWZTD7dWrIp3692BAmfGBJiNXTKGp_bHcqRVa5QaYJ2oM8XuQC-g>
-    <xmx:LwkWZcjXbMCfhVMX_fW0OvQJzgL80xOPWW4e_SByzziCREE-wEY0HA>
-    <xmx:LwkWZXosfJXwA_2MYcgZUssPuBYs2Q8-geymLoIwpBSOERXeKQYvDg>
-    <xmx:LwkWZYY8fzkU5bCZe_jhbmOLPkIkbbFCJGxH_gPvW8h9w6GOffSZcg>
+X-ME-Proxy: <xmx:MwkWZUVQebtHF_G7WcvKsJwzd1Ped7WrUYStG8ajca9xM5kKe_M6NQ>
+    <xmx:MwkWZbnvpOK7q37LOFTFSFvrMSPGbf15Qhvq11bzHb6Rlq5dCAr_jQ>
+    <xmx:MwkWZRfkDJ3v7jS_Q1ruSpeWZQ9V6d1reUxt_IHpD5FSjm_P1oTglg>
+    <xmx:MwkWZTs_zhOkpFi573XIlfT1sKBhFSZe_YvK81UzhJ--dOI6COvU4g>
 Feedback-ID: i083147f8:Fastmail
 Received: by mail.messagingengine.com (Postfix) with ESMTPA; Thu,
- 28 Sep 2023 19:15:59 -0400 (EDT)
+ 28 Sep 2023 19:16:02 -0400 (EDT)
 From:   Boris Burkov <boris@bur.io>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com,
         fstests@vger.kernel.org
-Subject: [PATCH v4 2/6] btrfs: quota mode helpers
-Date:   Thu, 28 Sep 2023 16:16:44 -0700
-Message-ID: <fd723f002c3019b79c515d3408f951f0897f414f.1695942727.git.boris@bur.io>
+Subject: [PATCH v4 4/6] btrfs: quota rescan helpers
+Date:   Thu, 28 Sep 2023 16:16:46 -0700
+Message-ID: <1f8549eb7f043ab9071faf896121896e759daab7.1695942727.git.boris@bur.io>
 X-Mailer: git-send-email 2.42.0
 In-Reply-To: <cover.1695942727.git.boris@bur.io>
 References: <cover.1695942727.git.boris@bur.io>
@@ -77,61 +77,45 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-To facilitate skipping tests depending on the qgroup mode after mkfs,
-add support for figuring out the mode. This cannot just rely on the new
-sysfs file, since it might not be present on older kernels.
+Many btrfs tests explicitly trigger quota rescan. This is not a
+meaningful operation for simple quotas, so we wrap it in a helper that
+doesn't blow up quite so badly and lets us run those tests where the
+rescan is a qgroup detail.
 
 Signed-off-by: Boris Burkov <boris@bur.io>
 ---
- common/btrfs | 38 ++++++++++++++++++++++++++++++++++++++
- 1 file changed, 38 insertions(+)
+ common/btrfs | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
 
 diff --git a/common/btrfs b/common/btrfs
-index c9903a413..8d51bd522 100644
+index 8d51bd522..34fa3a157 100644
 --- a/common/btrfs
 +++ b/common/btrfs
-@@ -689,3 +689,41 @@ _require_btrfs_scratch_logical_resolve_v2()
- 	fi
- 	_scratch_unmount
+@@ -710,6 +710,24 @@ _check_regular_qgroup()
+ 	_qgroup_mode "$@" | grep -q 'qgroup'
  }
-+
-+_qgroup_mode()
+ 
++_qgroup_rescan()
 +{
-+	local dev=$1
++	local mnt=$1
++	local dev=$(findmnt -n -o SOURCE $mnt)
 +
-+	if [ ! -b "$dev" ]; then
-+		_fail "Usage: _qgroup_mode <mounted_device>"
-+	fi
-+
-+	if _has_fs_sysfs_attr $dev /qgroups/mode; then
-+		_get_fs_sysfs_attr $dev qgroups/mode
-+	else
-+		echo "disabled"
-+	fi
++	_check_regular_qgroup $dev || return 1
++	_run_btrfs_util_prog quota rescan -w $mnt
 +}
 +
-+_check_regular_qgroup()
-+{
-+	_qgroup_mode "$@" | grep -q 'qgroup'
-+}
-+
-+_require_scratch_qgroup()
++_require_qgroup_rescan()
 +{
 +	_scratch_mkfs >>$seqres.full 2>&1
 +	_scratch_mount
 +	_run_btrfs_util_prog quota enable $SCRATCH_MNT
-+	_check_regular_qgroup $SCRATCH_DEV || _notrun "not running normal qgroups"
++	$BTRFS_UTIL_PROG quota rescan -w $SCRATCH_MNT ||  _notrun "not able to run quota rescan"
 +	_scratch_unmount
 +}
 +
-+_require_scratch_enable_simple_quota()
-+{
-+	_scratch_mkfs >>$seqres.full 2>&1
-+	_scratch_mount
-+	_qgroup_mode $SCRATCH_DEV | grep 'squota' && _notrun "cannot enable simple quota; on by default"
-+	$BTRFS_UTIL_PROG quota enable --simple $SCRATCH_MNT || _notrun "simple quotas not available"
-+	_scratch_unmount
-+}
+ _require_scratch_qgroup()
+ {
+ 	_scratch_mkfs >>$seqres.full 2>&1
 -- 
 2.42.0
 

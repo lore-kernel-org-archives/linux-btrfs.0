@@ -2,61 +2,63 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 95468E8FDD1
-	for <linux-btrfs@archiver.kernel.org>; Wed,  4 Oct 2023 07:56:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5A29CE8FDDA
+	for <linux-btrfs@archiver.kernel.org>; Wed,  4 Oct 2023 07:56:33 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S241620AbjJDH4c (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 4 Oct 2023 03:56:32 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45390 "EHLO
+        id S241628AbjJDH4d (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 4 Oct 2023 03:56:33 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45384 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S241605AbjJDH42 (ORCPT
+        with ESMTP id S241604AbjJDH42 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Oct 2023 03:56:28 -0400
 Received: from esa2.hgst.iphmx.com (esa2.hgst.iphmx.com [68.232.143.124])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 353A6AC;
-        Wed,  4 Oct 2023 00:56:25 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7B731A1;
+        Wed,  4 Oct 2023 00:56:22 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1696406185; x=1727942185;
-  h=from:date:subject:mime-version:content-transfer-encoding:
-   message-id:references:in-reply-to:to:cc;
-  bh=+rpwer5aJHTGV8tKBiNFMEqa/oSZvlhrh7ptZ83X8Hs=;
-  b=eQiVDOKoSnRQu27G1Q63LSg3EyHo3/QY+DxnTdRTnYX5mAYLEQYcw/j+
-   wXehgeBO+JR2kVcyj8C5Bqzd6vzZ7fMA89U2GgjNLpL6zxpMbXW2LyCPb
-   feXVTh1u5+wX2wZKJtt94UHdRQY5fWT068gnqBccZz1pEs4/avMbpP1qo
-   fgIt4SP9HflujXHR8p6IItoKpm/mUHtjsp4Im+5TyNqHcNAmEHGBDCdzs
-   fFGePOh+9oZ2+XHi0ZjwEGBs+zxZ+qNeP1kcNKoJcH+KUXTQhubnGhCUh
-   x+eMJ9HqhFO5Q25r+BhtOdQO8WlISr3ppz/b1iitsPZd9sIp4W7fCODwO
-   g==;
-X-CSE-ConnectionGUID: 0BTl8Gs3RvCsybL0Dv/UhQ==
-X-CSE-MsgGUID: YAQdQu+nSrSLEb6SX85/AQ==
+  t=1696406182; x=1727942182;
+  h=from:subject:date:message-id:mime-version:
+   content-transfer-encoding:to:cc;
+  bh=JvR2C6eUuboS/j3eliOTn5ekCfiAeAmkp3on/GxQzwo=;
+  b=fqc0g03mvvma3/he8nDrbKkxovDdKfvfls1i+6dDLeam3ZimASbRITpn
+   jdAt/yGGOJRCIR97v6FHQPEYgjhXqhQ47iDkAvXLVUlJRNnTWjh5qn3Vm
+   jkAGullPUXT3Fztl4baShnwkwdi7XwgyoLKu4JYWl2eWyv3qqDsOM6BT+
+   dCZMKv8zQGuWle7Tbfg5gKOxUNIZ8pGiyWAQanUMgrT2WL++aVZMKQHZg
+   2UakT42QDa9LBwrGmnIjyHbCiggk0+6AHv4cWPk4PZ6z1T0TO8RF+k7wt
+   fwjerAPVBH8vzAT0rILSlQG4lAFsmRjZ1CoshGQ5yAuwBsLsy0efDp9II
+   w==;
+X-CSE-ConnectionGUID: v9bhVRLkQxutlGXFCsFoEA==
+X-CSE-MsgGUID: DKkXnFM/TaaDvG5fItj58A==
 X-IronPort-AV: E=Sophos;i="6.03,199,1694707200"; 
-   d="scan'208";a="351024164"
+   d="scan'208";a="351024158"
 Received: from h199-255-45-15.hgst.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 04 Oct 2023 15:56:24 +0800
-IronPort-SDR: lEn3nUO0s1/ih0kKKjXXW+hZDe7B1CTR1i2pRqP++iZSRnHVjqezNHrZgXgHZ/Nh0dSvwZ3+nd
- b7HCUdKpdHOkemxuYET1MglVtLAfkxyeUNPbs+cFpjBydBZCVeRCTvXyaKrCNXxEx//NZRpDi8
- 0erAEVl4aFJsDXGqloR2pcADE4RrmlDCJQKupA85L2eWtWvkBQDRHBYorUNyRwgMtQnAxTJh3b
- ncjuTpb4Fq07WgQcHHdwXforR3/AKgp7k+/voK1//cuWCyOAnUieNiMYVCCa6If1NiKjVVQPW/
- NOo=
+  by ob1.hgst.iphmx.com with ESMTP; 04 Oct 2023 15:56:21 +0800
+IronPort-SDR: +lGans4/E0RpKHho5agL04usIMX2aCMo2P/iMjFaoxSuoQhVuVW3G6YeR31EqiqWsdj90RPV6y
+ 7UZqVujtfpMMoxyp1GW2EbNTne2cTuVHWbeqOl2sv7pYqGnHBzCym4CshbVr8h0dbGLuy0jg2/
+ cAscI0DCqPmKiKQVkzJRHaguPcR70er51+SiQIzZNrQQVB+BcgBbBqApZykteShu4zEMcYCt9+
+ vtR1IOupbi9zhdsqvJsYlDNR2Er3fZvbNgXez3J6PkkdntFjb/MyKNI/wSLSPDjBvlI6Em09XN
+ Jhs=
 Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 04 Oct 2023 00:03:02 -0700
-IronPort-SDR: GdLfE7MqiqgQ5NE0Qwt6Z/UiQy9GUgSqF2KqMRFJTBePsObtVcO2yZ7AvAMg/6dxu4AW0TwdrB
- 6MTEeb0akGEjAVWapE8Qxp5yYkiiDe6dD/dSCtHyad+SaOnmxnPnehAardjsn8/07iL2xf+76U
- hyZ/n/roguX7s9d+N9xsMHNbeQjosnF6obI4OJ7pyHI1HIg0uN4fqpqQxZh2Ex/sdzUoOgP6cq
- w2xD7tKWthuBy3bKmR/3qJMM11EJAY/hqeNCILbE9TcBbtvpxfPwn/IJ5BWBRDyBCeHo8CwOmT
- S8w=
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 04 Oct 2023 00:02:59 -0700
+IronPort-SDR: Tdj5abqT7pMwzozbCq6+vEWY7CXsVYEZR79c2Wvnq1NyvXHnzGyOMLZOtEbZTxvR81vjhwWJyq
+ Iv8QgJSpRtfolDIaVi12H1bU9kkwbkVKzY5S2xO9M6oS/1jS72bRcwYBMmgsT9doE5cl90Io6k
+ bmzKr6nkytvQuUade9ewSr/VUqCTo2+X7Su9lwGHW0AWm4vFiA1wMVBLkt7FwGMA4hTAQGjkcg
+ doHltGyGsMYE8c2pOtMQC1kG7hb5bgrMi3XV5QBGJFYMw8pOW23tZGnc9LaQLLJRxH+AJSJwG4
+ iJs=
 WDCIronportException: Internal
 Received: from unknown (HELO redsun91.ssa.fujisawa.hgst.com) ([10.149.66.6])
-  by uls-op-cesaip01.wdc.com with ESMTP; 04 Oct 2023 00:56:24 -0700
+  by uls-op-cesaip01.wdc.com with ESMTP; 04 Oct 2023 00:56:21 -0700
 From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Date:   Wed, 04 Oct 2023 00:56:17 -0700
-Subject: [PATCH v3 2/4] btrfs: remove stride length check on read
+Subject: [PATCH v3 0/4] btrfs: RAID stripe tree updates
+Date:   Wed, 04 Oct 2023 00:56:15 -0700
+Message-Id: <20231004-rst-updates-v3-0-7729c4474ade@wdc.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-Message-Id: <20231004-rst-updates-v3-2-7729c4474ade@wdc.com>
-References: <20231004-rst-updates-v3-0-7729c4474ade@wdc.com>
-In-Reply-To: <20231004-rst-updates-v3-0-7729c4474ade@wdc.com>
+X-B4-Tracking: v=1; b=H4sIAJ8aHWUC/1XM0Q6CIBiG4Vtx/3E0QED0qPtoHdAPJgepA6Oa8
+ 95Dt1Yeft/2PjNEF7yL0BQzBJd89EOfR3koADvT3xzxNm/glJe0ZpKEOJHHaM3kItEoZaUFGuF
+ ayMUYXOtfm3a+5N35OA3hveGJre/X0TsnMUIJq5RWFqnSsj49LR5xuMOqJP5XcroveS6vwiKTw
+ iih21+5LMsH97KF3N4AAAA=
 To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>
 Cc:     Qu Wenru <wqu@suse.com>, Damien Le Moal <dlemoal@kernel.org>,
@@ -64,44 +66,48 @@ Cc:     Qu Wenru <wqu@suse.com>, Damien Le Moal <dlemoal@kernel.org>,
         linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
         Johannes Thumshirn <johannes.thumshirn@wdc.com>
 X-Mailer: b4 0.12.3
-X-Developer-Signature: v=1; a=ed25519-sha256; t=1696406180; l=879;
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1696406180; l=1334;
  i=johannes.thumshirn@wdc.com; s=20230613; h=from:subject:message-id;
- bh=+rpwer5aJHTGV8tKBiNFMEqa/oSZvlhrh7ptZ83X8Hs=;
- b=9hiIY4SWywRd+xkjGxXBtyXHIbTYuXF2rdSQFRyKyaykhcSRR6adSUIXXNeY4559N3vZWbQxr
- dtvil4DqvckBaMQBMdVJqHT817/W+TOLTEkOD5UahXQti+U6fngK39g
+ bh=JvR2C6eUuboS/j3eliOTn5ekCfiAeAmkp3on/GxQzwo=;
+ b=mbsT9Efc45q1ci4kS1sweCGnjA7YXPUjgw8YVfmYNb6yB2fGLMJevPS95BdwPhpVFi2/417pK
+ YR+MIve6hDQCTyjUlpqVj4Eiifg0ysBWUF4KCidZvtAPbgoi+DTeNYM
 X-Developer-Key: i=johannes.thumshirn@wdc.com; a=ed25519;
  pk=TGmHKs78FdPi+QhrViEvjKIGwReUGCfa+3LEnGoR2KM=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+This batch of RST updates contains the on-disk format changes Qu
+suggested. It drastically simplifies the write and path, especially for
+RAID10.
+
+Instead of recording all strides of a striped RAID into one stripe tree
+entry, we create multiple entries per stride. This allows us to remove the
+length in the stride as we can use the length from the key. Using this
+method RAID10 becomes RAID1 and RAID0 becomes single from the point of
+view of the stripe tree.
+
 ---
- fs/btrfs/raid-stripe-tree.c | 8 --------
- 1 file changed, 8 deletions(-)
+- Link to first batch: https://lore.kernel.org/r/20230918-rst-updates-v1-0-17686dc06859@wdc.com
+- Link to second batch: https://lore.kernel.org/r/20230920-rst-updates-v2-0-b4dc154a648f@wdc.com
 
-diff --git a/fs/btrfs/raid-stripe-tree.c b/fs/btrfs/raid-stripe-tree.c
-index 248e048810d3..944e8f1862aa 100644
---- a/fs/btrfs/raid-stripe-tree.c
-+++ b/fs/btrfs/raid-stripe-tree.c
-@@ -237,16 +237,8 @@ int btrfs_get_raid_extent_offset(struct btrfs_fs_info *fs_info,
- 	for (int i = 0; i < num_stripes; i++) {
- 		struct btrfs_raid_stride *stride = &stripe_extent->strides[i];
- 		u64 devid = btrfs_raid_stride_devid(leaf, stride);
--		u64 len = btrfs_raid_stride_length(leaf, stride);
- 		u64 physical = btrfs_raid_stride_physical(leaf, stride);
- 
--		if (offset >= len) {
--			offset -= len;
--
--			if (offset >= BTRFS_STRIPE_LEN)
--				continue;
--		}
--
- 		if (devid != stripe->dev->devid)
- 			continue;
- 
+---
+Johannes Thumshirn (4):
+      btrfs: change RST write
+      btrfs: remove stride length check on read
+      btrfs: remove raid stride length in tree printer
+      btrfs: remove stride length from on-disk format
 
+ fs/btrfs/accessors.h            |   2 -
+ fs/btrfs/print-tree.c           |   5 +-
+ fs/btrfs/raid-stripe-tree.c     | 173 ++--------------------------------------
+ include/uapi/linux/btrfs_tree.h |   2 -
+ 4 files changed, 7 insertions(+), 175 deletions(-)
+---
+base-commit: 8d3aed36ee6cac09c7bd6bee6ad67dc2a35615af
+change-id: 20230915-rst-updates-8c55784ca4ef
+
+Best regards,
 -- 
-2.41.0
+Johannes Thumshirn <johannes.thumshirn@wdc.com>
 

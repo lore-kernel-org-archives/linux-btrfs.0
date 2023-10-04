@@ -2,35 +2,35 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B055BE7B5E9
-	for <linux-btrfs@archiver.kernel.org>; Wed,  4 Oct 2023 10:39:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 37D74E7B5E7
+	for <linux-btrfs@archiver.kernel.org>; Wed,  4 Oct 2023 10:39:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S242138AbjJDKjD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 4 Oct 2023 06:39:03 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50752 "EHLO
+        id S242163AbjJDKjF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 4 Oct 2023 06:39:05 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50760 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S242191AbjJDKjB (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Oct 2023 06:39:01 -0400
+        with ESMTP id S242200AbjJDKjE (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Oct 2023 06:39:04 -0400
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 27A26B7
-        for <linux-btrfs@vger.kernel.org>; Wed,  4 Oct 2023 03:38:58 -0700 (PDT)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 4A030C433C8
-        for <linux-btrfs@vger.kernel.org>; Wed,  4 Oct 2023 10:38:57 +0000 (UTC)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 18514A6
+        for <linux-btrfs@vger.kernel.org>; Wed,  4 Oct 2023 03:39:00 -0700 (PDT)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 30CF9C433CC
+        for <linux-btrfs@vger.kernel.org>; Wed,  4 Oct 2023 10:38:59 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1696415937;
-        bh=EseAbabR5mlDTqsWprArFxDdKmDzWorSCWCOy50pyB0=;
+        s=k20201202; t=1696415939;
+        bh=KK0k/f0UYxxWCfuuBXQ9MHfd3RhScqt7GzV5w4GLiaw=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=NE8NEdwJNhc6+3Z90HM61HtErgyM0ZvU83zHULOTO+S4OXnGv5KyQpBYZajZLroos
-         gph1g7Yb7BFCMFUs47WqF1GaVmflSwKv8hppep1HowKUGukdFdyECVBhde7X0uEBCc
-         IC8AkvHGOh7y6fyTMZeTYUx4PA+Tu1l2d3v6XHlZrEqJOF7LOVegWjkq2turKQp0s5
-         u9uwhkY8GiBhqCRzT1idVv/hArT5ZIOrtziQH7yfFPzkIZ6wA9MCYZn1onsYNvJG5S
-         y1nhbOVFVsiKLqZLmUdehT39keKEEXH4YH1EpjUbuBmP0DmNgqcex8IQKufcT4S82A
-         UAz7cT3NqFM/A==
+        b=SO4xtp9wI97R55hbQCjMBSToBqxrV5EB3nAxIFm73lJeWaLsWGah39gCAisDftuDe
+         Nhy+/6+hpOZwQxcpZimAiNI334+jFwVCHFxkyfvMEGvhomhjKwHDqwRIVAXExt0LVc
+         uVC6OdVRjXCbZmTtMKAeWjklzkinl3p01FDWNOCCuxAMYnUNVqOKz7/34Lib+O3L7g
+         h6zOx3uoR4t0KhNCIjb5fR89ekPNJ4BO0jUFPJ2YLk7rEoXL7BWw/L6VWrMgowMbXG
+         565MDRN2gfIf/7yfMj+LXQESF0YybidypfGRqFQDE9s8bkzjCtAPy+9sWaX61YIrRx
+         QHQS+9YRf69SA==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/6] btrfs: add and use helpers for reading and writing last_log_commit
-Date:   Wed,  4 Oct 2023 11:38:48 +0100
-Message-Id: <b3319eb9fc301af8e735a556243c33b5b410a212.1696415673.git.fdmanana@suse.com>
+Subject: [PATCH 3/6] btrfs: add and use helpers for reading and writing fs_info->generation
+Date:   Wed,  4 Oct 2023 11:38:50 +0100
+Message-Id: <2d4e16f4c5ad1f0e6274b4f577b0944546b81517.1696415673.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.34.1
 In-Reply-To: <cover.1696415673.git.fdmanana@suse.com>
 References: <cover.1696415673.git.fdmanana@suse.com>
@@ -42,113 +42,163 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-Currently, the last_log_commit of a root can be accessed concurrently
-without any lock protection. Readers can be calling btrfs_inode_in_log()
-early in a fsync call, which reads a root's last_log_commit, while a
-writer can change the last_log_commit while a log tree if being synced,
-at btrfs_sync_log(). Any races here should be harmless, and in the worst
+Currently the generation field of struct btrfs_fs_info is always modified
+while holding fs_info->trans_lock locked. Most readers will access this
+field without taking that lock but while holding a transaction handle,
+which is safe to do due to the transaction life cycle.
+
+However there are other readers that are neither holding the lock nor
+holding a transaction handle open:
+
+1) When reading an inode from disk, at btrfs_read_locked_inode();
+
+2) When reading the generation to expose it to sysfs, at
+   btrfs_generation_show();
+
+3) Early in the fsync path, at skip_inode_logging();
+
+4) When creating a hole at btrfs_cont_expand(), during write paths,
+   truncate and reflinking;
+
+5) In the fs_info ioctl (btrfs_ioctl_fs_info());
+
+6) While mounting the filesystem, in the open_ctree() path. In these
+   cases it's safe to directly read fs_info->generation as no one
+   can concurrently start a transaction and update fs_info->generation.
+
+In case of the fsync path, races here should be harmless, and in the worst
 case they may cause a fsync to log an inode when it's not really needed,
-so nothing bad from a functional perspective.
+so nothing bad from a functional perspective. In the other cases it's not
+so clear if functional problems may arise, though in case 1 rare things
+like a load/store tearing [1] may cause the BTRFS_INODE_NEEDS_FULL_SYNC
+flag not being set on an inode and therefore result in incorrect logging
+later on in case a fsync call is made.
 
 To avoid data race warnings from tools like KCSAN and other issues such
 as load and store tearing (amongst others, see [1]), create helpers to
-access the last_log_commit field of a root using READ_ONCE() and
-WRITE_ONCE(), and use these helpers everywhere.
+access the generation field of struct btrfs_fs_info using READ_ONCE() and
+WRITE_ONCE(), and use these helpers where needed.
 
 [1] https://lwn.net/Articles/793253/
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/btrfs_inode.h |  2 +-
- fs/btrfs/ctree.h       | 16 +++++++++++++++-
- fs/btrfs/disk-io.c     |  4 ++--
- fs/btrfs/tree-log.c    |  4 ++--
- 4 files changed, 20 insertions(+), 6 deletions(-)
+ fs/btrfs/file.c        |  2 +-
+ fs/btrfs/fs.h          | 16 ++++++++++++++++
+ fs/btrfs/inode.c       |  4 ++--
+ fs/btrfs/ioctl.c       |  2 +-
+ fs/btrfs/sysfs.c       |  2 +-
+ fs/btrfs/transaction.c |  2 +-
+ 6 files changed, 22 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 81bf514d988f..d32ef248828e 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -390,7 +390,7 @@ static inline bool btrfs_inode_in_log(struct btrfs_inode *inode, u64 generation)
- 	spin_lock(&inode->lock);
- 	if (inode->logged_trans == generation &&
- 	    inode->last_sub_trans <= inode->last_log_commit &&
--	    inode->last_sub_trans <= inode->root->last_log_commit)
-+	    inode->last_sub_trans <= btrfs_get_root_last_log_commit(inode->root))
- 		ret = true;
- 	spin_unlock(&inode->lock);
- 	return ret;
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 208a1888ca07..3ebb5229660a 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -194,7 +194,11 @@ struct btrfs_root {
- 	int log_transid;
- 	/* No matter the commit succeeds or not*/
- 	int log_transid_committed;
--	/* Just be updated when the commit succeeds. */
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 004c53482f05..723f0c70452e 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1749,7 +1749,7 @@ static inline bool skip_inode_logging(const struct btrfs_log_ctx *ctx)
+ 	struct btrfs_inode *inode = BTRFS_I(ctx->inode);
+ 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+ 
+-	if (btrfs_inode_in_log(inode, fs_info->generation) &&
++	if (btrfs_inode_in_log(inode, btrfs_get_fs_generation(fs_info)) &&
+ 	    list_empty(&ctx->ordered_extents))
+ 		return true;
+ 
+diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
+index 2bd9bedc7095..d04b729cbdf3 100644
+--- a/fs/btrfs/fs.h
++++ b/fs/btrfs/fs.h
+@@ -416,6 +416,12 @@ struct btrfs_fs_info {
+ 
+ 	struct btrfs_block_rsv empty_block_rsv;
+ 
 +	/*
-+	 * Just be updated when the commit succeeds. Use
-+	 * btrfs_get_root_last_log_commit() and btrfs_set_root_last_log_commit()
-+	 * to access this field.
++	 * Updated while holding the lock 'trans_lock'. Due to the life cycle of
++	 * a transaction, it can be directly read while holding a transaction
++	 * handle, everywhere else must be read with btrfs_get_fs_generation().
++	 * Should always be updated using btrfs_set_fs_generation().
 +	 */
- 	int last_log_commit;
- 	pid_t log_start_pid;
+ 	u64 generation;
+ 	u64 last_trans_committed;
+ 	/*
+@@ -817,6 +823,16 @@ struct btrfs_fs_info {
+ #endif
+ };
  
-@@ -328,6 +332,16 @@ static inline u64 btrfs_root_id(const struct btrfs_root *root)
- 	return root->root_key.objectid;
- }
- 
-+static inline int btrfs_get_root_last_log_commit(const struct btrfs_root *root)
++static inline u64 btrfs_get_fs_generation(const struct btrfs_fs_info *fs_info)
 +{
-+	return READ_ONCE(root->last_log_commit);
++	return READ_ONCE(fs_info->generation);
 +}
 +
-+static inline void btrfs_set_root_last_log_commit(struct btrfs_root *root, int commit_id)
++static inline void btrfs_set_fs_generation(struct btrfs_fs_info *fs_info, u64 gen)
 +{
-+	WRITE_ONCE(root->last_log_commit, commit_id);
++	WRITE_ONCE(fs_info->generation, gen);
 +}
 +
- /*
-  * Structure that conveys information about an extent that is going to replace
-  * all the extents in a file range.
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index ff3802986b3e..fe18c54cec10 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -677,7 +677,7 @@ static void __setup_root(struct btrfs_root *root, struct btrfs_fs_info *fs_info,
- 	atomic_set(&root->nr_swapfiles, 0);
- 	root->log_transid = 0;
- 	root->log_transid_committed = -1;
--	root->last_log_commit = 0;
-+	btrfs_set_root_last_log_commit(root, 0);
- 	root->anon_dev = 0;
- 	if (!dummy) {
- 		extent_io_tree_init(fs_info, &root->dirty_log_pages,
-@@ -1006,7 +1006,7 @@ int btrfs_add_log_tree(struct btrfs_trans_handle *trans,
- 	root->log_root = log_root;
- 	root->log_transid = 0;
- 	root->log_transid_committed = -1;
--	root->last_log_commit = 0;
-+	btrfs_set_root_last_log_commit(root, 0);
- 	return 0;
- }
- 
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 2c4685316c43..28a61a7dd371 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -3133,8 +3133,8 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 	 * someone else already started it. We use <= and not < because the
- 	 * first log transaction has an ID of 0.
+ static inline void btrfs_set_last_root_drop_gen(struct btrfs_fs_info *fs_info,
+ 						u64 gen)
+ {
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 3b3aec302c33..c9317c047587 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3800,7 +3800,7 @@ static int btrfs_read_locked_inode(struct inode *inode,
+ 	 * This is required for both inode re-read from disk and delayed inode
+ 	 * in delayed_nodes_tree.
  	 */
--	ASSERT(root->last_log_commit <= log_transid);
--	root->last_log_commit = log_transid;
-+	ASSERT(btrfs_get_root_last_log_commit(root) <= log_transid);
-+	btrfs_set_root_last_log_commit(root, log_transid);
+-	if (BTRFS_I(inode)->last_trans == fs_info->generation)
++	if (BTRFS_I(inode)->last_trans == btrfs_get_fs_generation(fs_info))
+ 		set_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
+ 			&BTRFS_I(inode)->runtime_flags);
  
- out_wake_log_root:
- 	mutex_lock(&log_root_tree->log_mutex);
+@@ -4923,7 +4923,7 @@ int btrfs_cont_expand(struct btrfs_inode *inode, loff_t oldsize, loff_t size)
+ 			hole_em->orig_block_len = 0;
+ 			hole_em->ram_bytes = hole_size;
+ 			hole_em->compress_type = BTRFS_COMPRESS_NONE;
+-			hole_em->generation = fs_info->generation;
++			hole_em->generation = btrfs_get_fs_generation(fs_info);
+ 
+ 			err = btrfs_replace_extent_map_range(inode, hole_em, true);
+ 			free_extent_map(hole_em);
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 848b7e6f6421..7ab21283fae8 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2822,7 +2822,7 @@ static long btrfs_ioctl_fs_info(struct btrfs_fs_info *fs_info,
+ 	}
+ 
+ 	if (flags_in & BTRFS_FS_INFO_FLAG_GENERATION) {
+-		fi_args->generation = fs_info->generation;
++		fi_args->generation = btrfs_get_fs_generation(fs_info);
+ 		fi_args->flags |= BTRFS_FS_INFO_FLAG_GENERATION;
+ 	}
+ 
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index e07be193323a..21ab8b9b62ce 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -1201,7 +1201,7 @@ static ssize_t btrfs_generation_show(struct kobject *kobj,
+ {
+ 	struct btrfs_fs_info *fs_info = to_fs_info(kobj);
+ 
+-	return sysfs_emit(buf, "%llu\n", fs_info->generation);
++	return sysfs_emit(buf, "%llu\n", btrfs_get_fs_generation(fs_info));
+ }
+ BTRFS_ATTR(, generation, btrfs_generation_show);
+ 
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 3aa59cfa4ab0..f5db3a483f40 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -386,7 +386,7 @@ static noinline int join_transaction(struct btrfs_fs_info *fs_info,
+ 			IO_TREE_TRANS_DIRTY_PAGES);
+ 	extent_io_tree_init(fs_info, &cur_trans->pinned_extents,
+ 			IO_TREE_FS_PINNED_EXTENTS);
+-	fs_info->generation++;
++	btrfs_set_fs_generation(fs_info, fs_info->generation + 1);
+ 	cur_trans->transid = fs_info->generation;
+ 	fs_info->running_transaction = cur_trans;
+ 	cur_trans->aborted = 0;
 -- 
 2.40.1
 

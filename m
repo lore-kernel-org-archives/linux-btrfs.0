@@ -2,35 +2,35 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 37D74E7B5E7
-	for <linux-btrfs@archiver.kernel.org>; Wed,  4 Oct 2023 10:39:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 94B7BE7B5E9
+	for <linux-btrfs@archiver.kernel.org>; Wed,  4 Oct 2023 10:39:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S242163AbjJDKjF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 4 Oct 2023 06:39:05 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50760 "EHLO
+        id S242194AbjJDKjN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 4 Oct 2023 06:39:13 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50650 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S242200AbjJDKjE (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Oct 2023 06:39:04 -0400
+        with ESMTP id S242151AbjJDKjF (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Oct 2023 06:39:05 -0400
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 18514A6
-        for <linux-btrfs@vger.kernel.org>; Wed,  4 Oct 2023 03:39:00 -0700 (PDT)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 30CF9C433CC
-        for <linux-btrfs@vger.kernel.org>; Wed,  4 Oct 2023 10:38:59 +0000 (UTC)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E5E95B0
+        for <linux-btrfs@vger.kernel.org>; Wed,  4 Oct 2023 03:39:01 -0700 (PDT)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 16492C433C9
+        for <linux-btrfs@vger.kernel.org>; Wed,  4 Oct 2023 10:39:00 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1696415939;
-        bh=KK0k/f0UYxxWCfuuBXQ9MHfd3RhScqt7GzV5w4GLiaw=;
+        s=k20201202; t=1696415941;
+        bh=SxTagRU+N0LdKkxGyXvivIdXGe0ejMA71/KTArUrXZM=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=SO4xtp9wI97R55hbQCjMBSToBqxrV5EB3nAxIFm73lJeWaLsWGah39gCAisDftuDe
-         Nhy+/6+hpOZwQxcpZimAiNI334+jFwVCHFxkyfvMEGvhomhjKwHDqwRIVAXExt0LVc
-         uVC6OdVRjXCbZmTtMKAeWjklzkinl3p01FDWNOCCuxAMYnUNVqOKz7/34Lib+O3L7g
-         h6zOx3uoR4t0KhNCIjb5fR89ekPNJ4BO0jUFPJ2YLk7rEoXL7BWw/L6VWrMgowMbXG
-         565MDRN2gfIf/7yfMj+LXQESF0YybidypfGRqFQDE9s8bkzjCtAPy+9sWaX61YIrRx
-         QHQS+9YRf69SA==
+        b=nt57JxKupwOcPEAp0S60RT4EbgpSxiaz21FatcLwP2LlDDj4MoCbysSHFcC+xwqqh
+         1VOpRJA5C8fSGuWIYLDJij6iy2YxijUPmt3efAwH1pwJgm0yrpr3Z2untRRjLsRJxW
+         yV/T8lv/JeHzGR8t+F0npC79d3qAST44FN7oDWhXYVpHtYxvDeBQZg5FD27Wl1fpyJ
+         OfnKlT2Vwx/tuRNFOohuAeQIQGGranzwIKpTWW3UTdNkj6LeDxLwPXGMR7gOIUgDHY
+         6Bxy8E43OToTetVrzJhTY2GITbwqQdm+7uFGh/Vo5/eXl1nIfj6II4f1GZt8U7dM1v
+         LkMA3cCM5y0RQ==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/6] btrfs: add and use helpers for reading and writing fs_info->generation
-Date:   Wed,  4 Oct 2023 11:38:50 +0100
-Message-Id: <2d4e16f4c5ad1f0e6274b4f577b0944546b81517.1696415673.git.fdmanana@suse.com>
+Subject: [PATCH 5/6] btrfs: remove pointless barrier from btrfs_sync_file()
+Date:   Wed,  4 Oct 2023 11:38:52 +0100
+Message-Id: <ba7f7646404185a0713f55c50be90e659d29a566.1696415673.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.34.1
 In-Reply-To: <cover.1696415673.git.fdmanana@suse.com>
 References: <cover.1696415673.git.fdmanana@suse.com>
@@ -42,163 +42,35 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-Currently the generation field of struct btrfs_fs_info is always modified
-while holding fs_info->trans_lock locked. Most readers will access this
-field without taking that lock but while holding a transaction handle,
-which is safe to do due to the transaction life cycle.
+The memory barrier (smp_mb()) at btrfs_sync_file() is completely redundant
+now that fs_info->last_trans_committed is read using READ_ONCE(), with the
+helper btrfs_get_last_trans_committed(), and written using WRITE_ONCE()
+with the helper btrfs_set_last_trans_committed().
 
-However there are other readers that are neither holding the lock nor
-holding a transaction handle open:
+This barrier was introduced in 2011, by commit a4abeea41adf ("Btrfs: kill
+trans_mutex"), but even back then it was not correct since the writer side
+(in btrfs_commit_transaction()), did not issue a pairing memory barrier
+after it updated fs_info->last_trans_committed.
 
-1) When reading an inode from disk, at btrfs_read_locked_inode();
-
-2) When reading the generation to expose it to sysfs, at
-   btrfs_generation_show();
-
-3) Early in the fsync path, at skip_inode_logging();
-
-4) When creating a hole at btrfs_cont_expand(), during write paths,
-   truncate and reflinking;
-
-5) In the fs_info ioctl (btrfs_ioctl_fs_info());
-
-6) While mounting the filesystem, in the open_ctree() path. In these
-   cases it's safe to directly read fs_info->generation as no one
-   can concurrently start a transaction and update fs_info->generation.
-
-In case of the fsync path, races here should be harmless, and in the worst
-case they may cause a fsync to log an inode when it's not really needed,
-so nothing bad from a functional perspective. In the other cases it's not
-so clear if functional problems may arise, though in case 1 rare things
-like a load/store tearing [1] may cause the BTRFS_INODE_NEEDS_FULL_SYNC
-flag not being set on an inode and therefore result in incorrect logging
-later on in case a fsync call is made.
-
-To avoid data race warnings from tools like KCSAN and other issues such
-as load and store tearing (amongst others, see [1]), create helpers to
-access the generation field of struct btrfs_fs_info using READ_ONCE() and
-WRITE_ONCE(), and use these helpers where needed.
-
-[1] https://lwn.net/Articles/793253/
+So remove this barrier.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/file.c        |  2 +-
- fs/btrfs/fs.h          | 16 ++++++++++++++++
- fs/btrfs/inode.c       |  4 ++--
- fs/btrfs/ioctl.c       |  2 +-
- fs/btrfs/sysfs.c       |  2 +-
- fs/btrfs/transaction.c |  2 +-
- 6 files changed, 22 insertions(+), 6 deletions(-)
+ fs/btrfs/file.c | 1 -
+ 1 file changed, 1 deletion(-)
 
 diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 004c53482f05..723f0c70452e 100644
+index 92e6f224bff9..92419cb8508a 100644
 --- a/fs/btrfs/file.c
 +++ b/fs/btrfs/file.c
-@@ -1749,7 +1749,7 @@ static inline bool skip_inode_logging(const struct btrfs_log_ctx *ctx)
- 	struct btrfs_inode *inode = BTRFS_I(ctx->inode);
- 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+@@ -1889,7 +1889,6 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
  
--	if (btrfs_inode_in_log(inode, fs_info->generation) &&
-+	if (btrfs_inode_in_log(inode, btrfs_get_fs_generation(fs_info)) &&
- 	    list_empty(&ctx->ordered_extents))
- 		return true;
+ 	atomic_inc(&root->log_batch);
  
-diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
-index 2bd9bedc7095..d04b729cbdf3 100644
---- a/fs/btrfs/fs.h
-+++ b/fs/btrfs/fs.h
-@@ -416,6 +416,12 @@ struct btrfs_fs_info {
- 
- 	struct btrfs_block_rsv empty_block_rsv;
- 
-+	/*
-+	 * Updated while holding the lock 'trans_lock'. Due to the life cycle of
-+	 * a transaction, it can be directly read while holding a transaction
-+	 * handle, everywhere else must be read with btrfs_get_fs_generation().
-+	 * Should always be updated using btrfs_set_fs_generation().
-+	 */
- 	u64 generation;
- 	u64 last_trans_committed;
- 	/*
-@@ -817,6 +823,16 @@ struct btrfs_fs_info {
- #endif
- };
- 
-+static inline u64 btrfs_get_fs_generation(const struct btrfs_fs_info *fs_info)
-+{
-+	return READ_ONCE(fs_info->generation);
-+}
-+
-+static inline void btrfs_set_fs_generation(struct btrfs_fs_info *fs_info, u64 gen)
-+{
-+	WRITE_ONCE(fs_info->generation, gen);
-+}
-+
- static inline void btrfs_set_last_root_drop_gen(struct btrfs_fs_info *fs_info,
- 						u64 gen)
- {
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 3b3aec302c33..c9317c047587 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3800,7 +3800,7 @@ static int btrfs_read_locked_inode(struct inode *inode,
- 	 * This is required for both inode re-read from disk and delayed inode
- 	 * in delayed_nodes_tree.
- 	 */
--	if (BTRFS_I(inode)->last_trans == fs_info->generation)
-+	if (BTRFS_I(inode)->last_trans == btrfs_get_fs_generation(fs_info))
- 		set_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
- 			&BTRFS_I(inode)->runtime_flags);
- 
-@@ -4923,7 +4923,7 @@ int btrfs_cont_expand(struct btrfs_inode *inode, loff_t oldsize, loff_t size)
- 			hole_em->orig_block_len = 0;
- 			hole_em->ram_bytes = hole_size;
- 			hole_em->compress_type = BTRFS_COMPRESS_NONE;
--			hole_em->generation = fs_info->generation;
-+			hole_em->generation = btrfs_get_fs_generation(fs_info);
- 
- 			err = btrfs_replace_extent_map_range(inode, hole_em, true);
- 			free_extent_map(hole_em);
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 848b7e6f6421..7ab21283fae8 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2822,7 +2822,7 @@ static long btrfs_ioctl_fs_info(struct btrfs_fs_info *fs_info,
- 	}
- 
- 	if (flags_in & BTRFS_FS_INFO_FLAG_GENERATION) {
--		fi_args->generation = fs_info->generation;
-+		fi_args->generation = btrfs_get_fs_generation(fs_info);
- 		fi_args->flags |= BTRFS_FS_INFO_FLAG_GENERATION;
- 	}
- 
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index e07be193323a..21ab8b9b62ce 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -1201,7 +1201,7 @@ static ssize_t btrfs_generation_show(struct kobject *kobj,
- {
- 	struct btrfs_fs_info *fs_info = to_fs_info(kobj);
- 
--	return sysfs_emit(buf, "%llu\n", fs_info->generation);
-+	return sysfs_emit(buf, "%llu\n", btrfs_get_fs_generation(fs_info));
- }
- BTRFS_ATTR(, generation, btrfs_generation_show);
- 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 3aa59cfa4ab0..f5db3a483f40 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -386,7 +386,7 @@ static noinline int join_transaction(struct btrfs_fs_info *fs_info,
- 			IO_TREE_TRANS_DIRTY_PAGES);
- 	extent_io_tree_init(fs_info, &cur_trans->pinned_extents,
- 			IO_TREE_FS_PINNED_EXTENTS);
--	fs_info->generation++;
-+	btrfs_set_fs_generation(fs_info, fs_info->generation + 1);
- 	cur_trans->transid = fs_info->generation;
- 	fs_info->running_transaction = cur_trans;
- 	cur_trans->aborted = 0;
+-	smp_mb();
+ 	if (skip_inode_logging(&ctx)) {
+ 		/*
+ 		 * We've had everything committed since the last time we were
 -- 
 2.40.1
 

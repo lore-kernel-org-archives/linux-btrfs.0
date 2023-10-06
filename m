@@ -2,252 +2,185 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6D20FE81E02
-	for <linux-btrfs@archiver.kernel.org>; Fri,  6 Oct 2023 14:43:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5C253E81E04
+	for <linux-btrfs@archiver.kernel.org>; Fri,  6 Oct 2023 14:43:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232594AbjJFOnD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 6 Oct 2023 10:43:03 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48970 "EHLO
+        id S232558AbjJFOnF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 6 Oct 2023 10:43:05 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54930 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232627AbjJFOmy (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Oct 2023 10:42:54 -0400
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C4E4E10F
-        for <linux-btrfs@vger.kernel.org>; Fri,  6 Oct 2023 07:42:51 -0700 (PDT)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 55DA5C433CB
-        for <linux-btrfs@vger.kernel.org>; Fri,  6 Oct 2023 14:42:51 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1696603371;
-        bh=COUvKRA+mlphi36VvoqtqbmdNoB3xfCdLIn11HqOnkQ=;
-        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-        b=rwFTk23OEkUZkigRDzx3lRnfQKxw5/DCgqPsehkkKWt7qj2P6HhXnxD0wESyZ4WrK
-         xrROU/xl0X3DSYvwkJGIPP/EoUsfkarujdWEWHPiAoY5IVFP8nQ/PxisfMWip4AQSz
-         FL9WMdV/RcEbKVFKPOFs2r7voaieLMhoWfS6KY6WqIexDmmva/cj/GcX94j6hpAEGX
-         oOpAuTctAYQfIN6Ml2dUouAjVMzWQXkdundTgUFxEVeMLYlGzsyquHtGB44zVv9+hz
-         ZYSAIucRtO8hIXGLg1pjsUzYHIunmFRK4ksbeL4M24e68SkazOM8Q8R44cSZWLzuaW
-         ogwyz4GtYDuyA==
-Received: by mail-oa1-f51.google.com with SMTP id 586e51a60fabf-1dcfe9cd337so1274008fac.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 06 Oct 2023 07:42:51 -0700 (PDT)
-X-Gm-Message-State: AOJu0Yyo/NMran3D/0WqfclozGWqkprTK77WxQVQoboK49sq6XVV6e9v
-        FUdB8w4MrGObOljZv5oXIy+QfyxnwgMTj3PWADo=
-X-Google-Smtp-Source: AGHT+IE0Xg12ewqva01Jh/FVx0luhEGQfBmDTgS8fvZE66wPD2q251LHzIw/AkuAxVXxj+PVg2f/kmw4pWVmaqcD8ro=
-X-Received: by 2002:a05:6870:3046:b0:1dd:5857:e28b with SMTP id
- u6-20020a056870304600b001dd5857e28bmr8868771oau.23.1696603370574; Fri, 06 Oct
- 2023 07:42:50 -0700 (PDT)
-MIME-Version: 1.0
-References: <cover.1696415673.git.fdmanana@suse.com> <2d4e16f4c5ad1f0e6274b4f577b0944546b81517.1696415673.git.fdmanana@suse.com>
- <20231006141645.GC28758@twin.jikos.cz>
-In-Reply-To: <20231006141645.GC28758@twin.jikos.cz>
-From:   Filipe Manana <fdmanana@kernel.org>
-Date:   Fri, 6 Oct 2023 15:42:14 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H6T0v_WGEx2T8tsc3NR7jy9RPtqvhmOQ-1NQ_TLzmpmvg@mail.gmail.com>
-Message-ID: <CAL3q7H6T0v_WGEx2T8tsc3NR7jy9RPtqvhmOQ-1NQ_TLzmpmvg@mail.gmail.com>
-Subject: Re: [PATCH 3/6] btrfs: add and use helpers for reading and writing fs_info->generation
-To:     dsterba@suse.cz
+        with ESMTP id S232583AbjJFOnA (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Oct 2023 10:43:00 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C074FF2
+        for <linux-btrfs@vger.kernel.org>; Fri,  6 Oct 2023 07:42:59 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 7E7F21F895;
+        Fri,  6 Oct 2023 14:42:58 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1696603378;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=GiUDM7DCoQx8URk4+1kkgczNVXL9StWlpt+4zrAgoMA=;
+        b=ptTksd6nrLRa6lIcQYst926a3cbdEhjBd3QG6RVC4fQQgFm476cb5Hb5GI23boUg5ghSnE
+        eI8dds5fsOElnd09UNSr6HZhPWRDXBhHTwH2gL/cV/zs0/Mu78CnYuzt35JhNmwJ6Eq+FX
+        TJ5WAa9h9xV4OAeqh87z0Vg4VivJfC4=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1696603378;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=GiUDM7DCoQx8URk4+1kkgczNVXL9StWlpt+4zrAgoMA=;
+        b=AqK1pY8jcEAYhKMxztFYW6fX1XhGbE4mEMdvusZ2mdFQ1n70LzSfjaqEuh/wDr0hwqrG6P
+        FoDeavHz2ex5gcCA==
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 595CC13586;
+        Fri,  6 Oct 2023 14:42:58 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id jdPqFPIcIGUAZgAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Fri, 06 Oct 2023 14:42:58 +0000
+Date:   Fri, 6 Oct 2023 16:36:14 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Qu Wenruo <wqu@suse.com>
 Cc:     linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Subject: Re: [PATCH] btrfs: output extra info when delayed inode update failed
+Message-ID: <20231006143614.GF28758@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <aee666e094ffa89d5d4f6bc733230ae60ee3e6d8.1696573282.git.wqu@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <aee666e094ffa89d5d4f6bc733230ae60ee3e6d8.1696573282.git.wqu@suse.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Oct 6, 2023 at 3:23=E2=80=AFPM David Sterba <dsterba@suse.cz> wrote=
-:
->
-> On Wed, Oct 04, 2023 at 11:38:50AM +0100, fdmanana@kernel.org wrote:
-> > From: Filipe Manana <fdmanana@suse.com>
-> >
-> > Currently the generation field of struct btrfs_fs_info is always modifi=
-ed
-> > while holding fs_info->trans_lock locked. Most readers will access this
-> > field without taking that lock but while holding a transaction handle,
-> > which is safe to do due to the transaction life cycle.
-> >
-> > However there are other readers that are neither holding the lock nor
-> > holding a transaction handle open:
-> >
-> > 1) When reading an inode from disk, at btrfs_read_locked_inode();
-> >
-> > 2) When reading the generation to expose it to sysfs, at
-> >    btrfs_generation_show();
-> >
-> > 3) Early in the fsync path, at skip_inode_logging();
-> >
-> > 4) When creating a hole at btrfs_cont_expand(), during write paths,
-> >    truncate and reflinking;
-> >
-> > 5) In the fs_info ioctl (btrfs_ioctl_fs_info());
-> >
-> > 6) While mounting the filesystem, in the open_ctree() path. In these
-> >    cases it's safe to directly read fs_info->generation as no one
-> >    can concurrently start a transaction and update fs_info->generation.
-> >
-> > In case of the fsync path, races here should be harmless, and in the wo=
-rst
-> > case they may cause a fsync to log an inode when it's not really needed=
-,
-> > so nothing bad from a functional perspective. In the other cases it's n=
-ot
-> > so clear if functional problems may arise, though in case 1 rare things
-> > like a load/store tearing [1] may cause the BTRFS_INODE_NEEDS_FULL_SYNC
-> > flag not being set on an inode and therefore result in incorrect loggin=
-g
-> > later on in case a fsync call is made.
-> >
-> > To avoid data race warnings from tools like KCSAN and other issues such
-> > as load and store tearing (amongst others, see [1]), create helpers to
-> > access the generation field of struct btrfs_fs_info using READ_ONCE() a=
-nd
-> > WRITE_ONCE(), and use these helpers where needed.
-> >
-> > [1] https://lwn.net/Articles/793253/
-> >
-> > Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> > ---
-> >  fs/btrfs/file.c        |  2 +-
-> >  fs/btrfs/fs.h          | 16 ++++++++++++++++
-> >  fs/btrfs/inode.c       |  4 ++--
-> >  fs/btrfs/ioctl.c       |  2 +-
-> >  fs/btrfs/sysfs.c       |  2 +-
-> >  fs/btrfs/transaction.c |  2 +-
-> >  6 files changed, 22 insertions(+), 6 deletions(-)
-> >
-> > diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> > index 004c53482f05..723f0c70452e 100644
-> > --- a/fs/btrfs/file.c
-> > +++ b/fs/btrfs/file.c
-> > @@ -1749,7 +1749,7 @@ static inline bool skip_inode_logging(const struc=
-t btrfs_log_ctx *ctx)
-> >       struct btrfs_inode *inode =3D BTRFS_I(ctx->inode);
-> >       struct btrfs_fs_info *fs_info =3D inode->root->fs_info;
-> >
-> > -     if (btrfs_inode_in_log(inode, fs_info->generation) &&
-> > +     if (btrfs_inode_in_log(inode, btrfs_get_fs_generation(fs_info)) &=
-&
-> >           list_empty(&ctx->ordered_extents))
-> >               return true;
-> >
-> > diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
-> > index 2bd9bedc7095..d04b729cbdf3 100644
-> > --- a/fs/btrfs/fs.h
-> > +++ b/fs/btrfs/fs.h
-> > @@ -416,6 +416,12 @@ struct btrfs_fs_info {
-> >
-> >       struct btrfs_block_rsv empty_block_rsv;
-> >
-> > +     /*
-> > +      * Updated while holding the lock 'trans_lock'. Due to the life c=
-ycle of
-> > +      * a transaction, it can be directly read while holding a transac=
-tion
-> > +      * handle, everywhere else must be read with btrfs_get_fs_generat=
-ion().
-> > +      * Should always be updated using btrfs_set_fs_generation().
-> > +      */
-> >       u64 generation;
-> >       u64 last_trans_committed;
-> >       /*
-> > @@ -817,6 +823,16 @@ struct btrfs_fs_info {
-> >  #endif
-> >  };
-> >
-> > +static inline u64 btrfs_get_fs_generation(const struct btrfs_fs_info *=
-fs_info)
-> > +{
-> > +     return READ_ONCE(fs_info->generation);
-> > +}
-> > +
-> > +static inline void btrfs_set_fs_generation(struct btrfs_fs_info *fs_in=
-fo, u64 gen)
-> > +{
-> > +     WRITE_ONCE(fs_info->generation, gen);
-> > +}
-> > +
-> >  static inline void btrfs_set_last_root_drop_gen(struct btrfs_fs_info *=
-fs_info,
-> >                                               u64 gen)
-> >  {
-> > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> > index 3b3aec302c33..c9317c047587 100644
-> > --- a/fs/btrfs/inode.c
-> > +++ b/fs/btrfs/inode.c
-> > @@ -3800,7 +3800,7 @@ static int btrfs_read_locked_inode(struct inode *=
-inode,
-> >        * This is required for both inode re-read from disk and delayed =
-inode
-> >        * in delayed_nodes_tree.
-> >        */
-> > -     if (BTRFS_I(inode)->last_trans =3D=3D fs_info->generation)
-> > +     if (BTRFS_I(inode)->last_trans =3D=3D btrfs_get_fs_generation(fs_=
-info))
-> >               set_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
-> >                       &BTRFS_I(inode)->runtime_flags);
-> >
-> > @@ -4923,7 +4923,7 @@ int btrfs_cont_expand(struct btrfs_inode *inode, =
-loff_t oldsize, loff_t size)
-> >                       hole_em->orig_block_len =3D 0;
-> >                       hole_em->ram_bytes =3D hole_size;
-> >                       hole_em->compress_type =3D BTRFS_COMPRESS_NONE;
-> > -                     hole_em->generation =3D fs_info->generation;
-> > +                     hole_em->generation =3D btrfs_get_fs_generation(f=
-s_info);
-> >
-> >                       err =3D btrfs_replace_extent_map_range(inode, hol=
-e_em, true);
-> >                       free_extent_map(hole_em);
-> > diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> > index 848b7e6f6421..7ab21283fae8 100644
-> > --- a/fs/btrfs/ioctl.c
-> > +++ b/fs/btrfs/ioctl.c
-> > @@ -2822,7 +2822,7 @@ static long btrfs_ioctl_fs_info(struct btrfs_fs_i=
-nfo *fs_info,
-> >       }
-> >
-> >       if (flags_in & BTRFS_FS_INFO_FLAG_GENERATION) {
-> > -             fi_args->generation =3D fs_info->generation;
-> > +             fi_args->generation =3D btrfs_get_fs_generation(fs_info);
-> >               fi_args->flags |=3D BTRFS_FS_INFO_FLAG_GENERATION;
-> >       }
-> >
-> > diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-> > index e07be193323a..21ab8b9b62ce 100644
-> > --- a/fs/btrfs/sysfs.c
-> > +++ b/fs/btrfs/sysfs.c
-> > @@ -1201,7 +1201,7 @@ static ssize_t btrfs_generation_show(struct kobje=
-ct *kobj,
-> >  {
-> >       struct btrfs_fs_info *fs_info =3D to_fs_info(kobj);
-> >
-> > -     return sysfs_emit(buf, "%llu\n", fs_info->generation);
-> > +     return sysfs_emit(buf, "%llu\n", btrfs_get_fs_generation(fs_info)=
-);
-> >  }
-> >  BTRFS_ATTR(, generation, btrfs_generation_show);
-> >
-> > diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> > index 3aa59cfa4ab0..f5db3a483f40 100644
-> > --- a/fs/btrfs/transaction.c
-> > +++ b/fs/btrfs/transaction.c
-> > @@ -386,7 +386,7 @@ static noinline int join_transaction(struct btrfs_f=
-s_info *fs_info,
-> >                       IO_TREE_TRANS_DIRTY_PAGES);
-> >       extent_io_tree_init(fs_info, &cur_trans->pinned_extents,
-> >                       IO_TREE_FS_PINNED_EXTENTS);
-> > -     fs_info->generation++;
-> > +     btrfs_set_fs_generation(fs_info, fs_info->generation + 1);
->
-> Should this also use the helper for the part where it reads the value?
->
->         btrfs_set_fs_generation(fs_info, btrfs_get_fs_generation(fs_info)=
- + 1);
+On Fri, Oct 06, 2023 at 04:52:09PM +1030, Qu Wenruo wrote:
+> There are at least 2 bug reports internally showing transaction abort
 
-Nop. As mentioned in the comment added over the field in the struct, the fi=
-eld
-is only updated while holding fs_info->trans_lock - in fact this is
-the only place
-we update the field. So it is not necessary to use the helper to read here.
+Please add links to the reports
 
->
-> It's a matter of annotation not a functional fix, I don't know if KCSAN
-> would warn here. I'd expect that the unprotected access uses the helpers
-> consistently, ie. both or none.
+> due to -ENOENT, from the btrfs_abort_transaction() call inside
+> __btrfs_run_delayed_items().
+> 
+> For now I don't have a concrete idea on why, but strongly it's the
+> following call chain causing the problem:
+> 
+> __btrfs_commit_inode_delayed_items()
+> `- btrfs_update_delayed_inode()
+>    `- __btrfs_update_delayed_inode()
+>       `- btrfs_lookup_inode()
+> 
+> This patch would add extra debug for the involved call chain, with
+> possible leaf dump if needed.
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+> I strongly assume it's the the case described above, in that case the
+> fix would just follow btrfs_delete_delayed_inode() to exit early if no
+> inode item can be found, and not return -ENOENT.
+> 
+> In that case, some debug here can also be removed as they would be too
+> noisy for regular operations.
+
+This is under the -- marker but somehow feels like it should be in the
+changelog to as it adds more context, you can add it as a Note: to make
+it separate from the regular changelog.
+
+> ---
+>  fs/btrfs/delayed-inode.c | 30 ++++++++++++++++++++++++++----
+>  1 file changed, 26 insertions(+), 4 deletions(-)
+> 
+> diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+> index 35d7616615c1..1b05c7a818ec 100644
+> --- a/fs/btrfs/delayed-inode.c
+> +++ b/fs/btrfs/delayed-inode.c
+> @@ -19,6 +19,7 @@
+>  #include "space-info.h"
+>  #include "accessors.h"
+>  #include "file-item.h"
+> +#include "print-tree.h"
+>  
+>  #define BTRFS_DELAYED_WRITEBACK		512
+>  #define BTRFS_DELAYED_BACKGROUND	128
+> @@ -1021,10 +1022,16 @@ static int __btrfs_update_delayed_inode(struct btrfs_trans_handle *trans,
+>  		mod = 1;
+>  
+>  	ret = btrfs_lookup_inode(trans, root, path, &key, mod);
+> -	if (ret > 0)
+> +	if (ret > 0) {
+> +		btrfs_print_leaf(path->nodes[0]);
+>  		ret = -ENOENT;
+> -	if (ret < 0)
+> +	}
+> +	if (ret < 0) {
+> +		btrfs_err(fs_info,
+> +			"failed to locate inode item for root %lld ino %lld: %d",
+> +			root->root_key.objectid, node->inode_id, ret);
+>  		goto out;
+> +	}
+>  
+>  	leaf = path->nodes[0];
+>  	inode_item = btrfs_item_ptr(leaf, path->slots[0],
+> @@ -1054,6 +1061,12 @@ static int __btrfs_update_delayed_inode(struct btrfs_trans_handle *trans,
+>  	 * in the same item doesn't exist.
+>  	 */
+>  	ret = btrfs_del_item(trans, root, path);
+> +	if (ret < 0) {
+> +		btrfs_print_leaf(path->nodes[0]);
+> +		btrfs_err(fs_info,
+> +		"failed to delete inode ref item, key (%llu %u %llu): %d",
+> +			  key.objectid, key.type, key.offset, ret);
+
+It looks like a return or goto error is missing here, if this is
+supposed to continue without that then please add a comment like
+/* Fallthrough */.
+
+> +	}
+>  out:
+>  	btrfs_release_delayed_iref(node);
+>  	btrfs_release_path(path);
+> @@ -1114,14 +1127,23 @@ __btrfs_commit_inode_delayed_items(struct btrfs_trans_handle *trans,
+>  	int ret;
+>  
+>  	ret = btrfs_insert_delayed_items(trans, path, node->root, node);
+> -	if (ret)
+> +	if (ret) {
+> +		btrfs_err(trans->fs_info, "failedd to insert delayed items: %d",
+                                           ^^^^^^^
+
+> +			  ret);
+>  		return ret;
+> +	}
+>  
+>  	ret = btrfs_delete_delayed_items(trans, path, node->root, node);
+> -	if (ret)
+> +	if (ret) {
+> +		btrfs_err(trans->fs_info, "failedd to delete delayed items: %d",
+                                           ^^^^^^^
+> +			  ret);
+>  		return ret;
+> +	}
+>  
+>  	ret = btrfs_update_delayed_inode(trans, node->root, path, node);
+> +	if (ret)
+> +		btrfs_err(trans->fs_info, "failedd to update delayed items: %d",
+                                           ^^^^^^^
+
+typos
+
+> +			  ret);
+>  	return ret;
+>  }
+>  
+> -- 
+> 2.42.0

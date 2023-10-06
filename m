@@ -2,185 +2,133 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5C253E81E04
-	for <linux-btrfs@archiver.kernel.org>; Fri,  6 Oct 2023 14:43:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D0D03E81E03
+	for <linux-btrfs@archiver.kernel.org>; Fri,  6 Oct 2023 15:02:40 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232558AbjJFOnF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 6 Oct 2023 10:43:05 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54930 "EHLO
+        id S232704AbjJFPCk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 6 Oct 2023 11:02:40 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52076 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232583AbjJFOnA (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Oct 2023 10:43:00 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C074FF2
-        for <linux-btrfs@vger.kernel.org>; Fri,  6 Oct 2023 07:42:59 -0700 (PDT)
+        with ESMTP id S232701AbjJFPCj (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Oct 2023 11:02:39 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 50255A6
+        for <linux-btrfs@vger.kernel.org>; Fri,  6 Oct 2023 08:02:38 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 7E7F21F895;
-        Fri,  6 Oct 2023 14:42:58 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id F0CCD1F896;
+        Fri,  6 Oct 2023 15:02:33 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1696603378;
+        t=1696604553;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=GiUDM7DCoQx8URk4+1kkgczNVXL9StWlpt+4zrAgoMA=;
-        b=ptTksd6nrLRa6lIcQYst926a3cbdEhjBd3QG6RVC4fQQgFm476cb5Hb5GI23boUg5ghSnE
-        eI8dds5fsOElnd09UNSr6HZhPWRDXBhHTwH2gL/cV/zs0/Mu78CnYuzt35JhNmwJ6Eq+FX
-        TJ5WAa9h9xV4OAeqh87z0Vg4VivJfC4=
+        bh=vOQFu3c1nzh9DAstorQTah1FtHTOqsiuCeHRuVHWv7c=;
+        b=z6CSg4vLt3Fn6TclG8qNSALjOejlYt+LhRGpcEVXx+AeNxcVIUySiqAyzFOhHHn8TKvuHW
+        hkQiK+rDsgRoDxYSFIWHOC8g8RY8Z+AFF2IjAInC+scenGv9dup2l/LraUsQAwLO3ZtEtK
+        0guESs/x3CkKZkgvk0YOnkRIXXUpN2g=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1696603378;
+        s=susede2_ed25519; t=1696604553;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=GiUDM7DCoQx8URk4+1kkgczNVXL9StWlpt+4zrAgoMA=;
-        b=AqK1pY8jcEAYhKMxztFYW6fX1XhGbE4mEMdvusZ2mdFQ1n70LzSfjaqEuh/wDr0hwqrG6P
-        FoDeavHz2ex5gcCA==
+        bh=vOQFu3c1nzh9DAstorQTah1FtHTOqsiuCeHRuVHWv7c=;
+        b=z3qZYZoX8r7twYhO/7+BpmJKkJuQSs1OVy/ZpaUakAWzbqnh+KdeefgTKhkV84sm8hgpht
+        p00+tB2O9+7UNqBA==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 595CC13586;
-        Fri,  6 Oct 2023 14:42:58 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id BB77413A2E;
+        Fri,  6 Oct 2023 15:02:33 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id jdPqFPIcIGUAZgAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Fri, 06 Oct 2023 14:42:58 +0000
-Date:   Fri, 6 Oct 2023 16:36:14 +0200
+        id FIy/LIkhIGWxcAAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Fri, 06 Oct 2023 15:02:33 +0000
+Date:   Fri, 6 Oct 2023 16:55:50 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: output extra info when delayed inode update failed
-Message-ID: <20231006143614.GF28758@twin.jikos.cz>
+To:     Anand Jain <anand.jain@oracle.com>
+Cc:     linux-btrfs@vger.kernel.org, dsterba@suse.com, gpiccoli@igalia.com
+Subject: Re: [PATCH 4/4] btrfs: show temp_fsid feature in sysfs
+Message-ID: <20231006145550.GG28758@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <aee666e094ffa89d5d4f6bc733230ae60ee3e6d8.1696573282.git.wqu@suse.com>
+References: <cover.1696431315.git.anand.jain@oracle.com>
+ <9fca0011d2ac24f7b84990db1c4af5eaa60da876.1696431315.git.anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <aee666e094ffa89d5d4f6bc733230ae60ee3e6d8.1696573282.git.wqu@suse.com>
+In-Reply-To: <9fca0011d2ac24f7b84990db1c4af5eaa60da876.1696431315.git.anand.jain@oracle.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Oct 06, 2023 at 04:52:09PM +1030, Qu Wenruo wrote:
-> There are at least 2 bug reports internally showing transaction abort
+On Wed, Oct 04, 2023 at 11:00:27PM +0800, Anand Jain wrote:
+> This adds sysfs objects to indicate temp_fsid feature support and
+> its status.
+> 
+>   /sys/fs/btrfs/features/temp_fsid
+>   /sys/fs/btrfs/<UUID>/temp_fsid
+> 
+>   For example:
+> 
+>      Consider two cloned and mounted devices.
+> 
+> 	$ blkid /dev/sdc[1-2]
+> 	/dev/sdc1: UUID="509ad44b-ad2a-4a8a-bc8d-fe69db7220d5" ..
+> 	/dev/sdc2: UUID="509ad44b-ad2a-4a8a-bc8d-fe69db7220d5" ..
+> 
+>      One gets actual fsid, and the other gets the temp_fsid when
+>      mounted.
+> 
+> 	$ btrfs filesystem show -m
+> 	Label: none  uuid: 509ad44b-ad2a-4a8a-bc8d-fe69db7220d5
+> 		Total devices 1 FS bytes used 54.14MiB
+> 		devid    1 size 300.00MiB used 144.00MiB path /dev/sdc1
+> 
+> 	Label: none  uuid: 33bad74e-c91b-43a5-aef8-b3cab97ae63a
+> 		Total devices 1 FS bytes used 54.14MiB
+> 		devid    1 size 300.00MiB used 144.00MiB path /dev/sdc2
+> 
+>      Their sysfs as below.
+> 
+> 	$ cat /sys/fs/btrfs/features/temp_fsid
+> 	0
+> 
+> 	$ cat /sys/fs/btrfs/509ad44b-ad2a-4a8a-bc8d-fe69db7220d5/temp_fsid
+> 	0
+> 
+> 	$ cat /sys/fs/btrfs/33bad74e-c91b-43a5-aef8-b3cab97ae63a/temp_fsid
+> 	1
 
-Please add links to the reports
+So the fsid used for the directory is always the new one, is there a way
+to read which is the original filesystem's fsid? In this case it would
+be the 509ad44b-... We could print it in that file instead of '1',
+though it could be confusing that it's not the temp_fsid but the
+original one, file name mismatches the contents on first look.
 
-> due to -ENOENT, from the btrfs_abort_transaction() call inside
-> __btrfs_run_delayed_items().
-> 
-> For now I don't have a concrete idea on why, but strongly it's the
-> following call chain causing the problem:
-> 
-> __btrfs_commit_inode_delayed_items()
-> `- btrfs_update_delayed_inode()
->    `- __btrfs_update_delayed_inode()
->       `- btrfs_lookup_inode()
-> 
-> This patch would add extra debug for the involved call chain, with
-> possible leaf dump if needed.
-> 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 > ---
-> I strongly assume it's the the case described above, in that case the
-> fix would just follow btrfs_delete_delayed_inode() to exit early if no
-> inode item can be found, and not return -ENOENT.
+>  fs/btrfs/sysfs.c | 20 ++++++++++++++++++++
+>  1 file changed, 20 insertions(+)
 > 
-> In that case, some debug here can also be removed as they would be too
-> noisy for regular operations.
-
-This is under the -- marker but somehow feels like it should be in the
-changelog to as it adds more context, you can add it as a Note: to make
-it separate from the regular changelog.
-
-> ---
->  fs/btrfs/delayed-inode.c | 30 ++++++++++++++++++++++++++----
->  1 file changed, 26 insertions(+), 4 deletions(-)
-> 
-> diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-> index 35d7616615c1..1b05c7a818ec 100644
-> --- a/fs/btrfs/delayed-inode.c
-> +++ b/fs/btrfs/delayed-inode.c
-> @@ -19,6 +19,7 @@
->  #include "space-info.h"
->  #include "accessors.h"
->  #include "file-item.h"
-> +#include "print-tree.h"
->  
->  #define BTRFS_DELAYED_WRITEBACK		512
->  #define BTRFS_DELAYED_BACKGROUND	128
-> @@ -1021,10 +1022,16 @@ static int __btrfs_update_delayed_inode(struct btrfs_trans_handle *trans,
->  		mod = 1;
->  
->  	ret = btrfs_lookup_inode(trans, root, path, &key, mod);
-> -	if (ret > 0)
-> +	if (ret > 0) {
-> +		btrfs_print_leaf(path->nodes[0]);
->  		ret = -ENOENT;
-> -	if (ret < 0)
-> +	}
-> +	if (ret < 0) {
-> +		btrfs_err(fs_info,
-> +			"failed to locate inode item for root %lld ino %lld: %d",
-> +			root->root_key.objectid, node->inode_id, ret);
->  		goto out;
-> +	}
->  
->  	leaf = path->nodes[0];
->  	inode_item = btrfs_item_ptr(leaf, path->slots[0],
-> @@ -1054,6 +1061,12 @@ static int __btrfs_update_delayed_inode(struct btrfs_trans_handle *trans,
->  	 * in the same item doesn't exist.
->  	 */
->  	ret = btrfs_del_item(trans, root, path);
-> +	if (ret < 0) {
-> +		btrfs_print_leaf(path->nodes[0]);
-> +		btrfs_err(fs_info,
-> +		"failed to delete inode ref item, key (%llu %u %llu): %d",
-> +			  key.objectid, key.type, key.offset, ret);
-
-It looks like a return or goto error is missing here, if this is
-supposed to continue without that then please add a comment like
-/* Fallthrough */.
-
-> +	}
->  out:
->  	btrfs_release_delayed_iref(node);
->  	btrfs_release_path(path);
-> @@ -1114,14 +1127,23 @@ __btrfs_commit_inode_delayed_items(struct btrfs_trans_handle *trans,
->  	int ret;
->  
->  	ret = btrfs_insert_delayed_items(trans, path, node->root, node);
-> -	if (ret)
-> +	if (ret) {
-> +		btrfs_err(trans->fs_info, "failedd to insert delayed items: %d",
-                                           ^^^^^^^
-
-> +			  ret);
->  		return ret;
-> +	}
->  
->  	ret = btrfs_delete_delayed_items(trans, path, node->root, node);
-> -	if (ret)
-> +	if (ret) {
-> +		btrfs_err(trans->fs_info, "failedd to delete delayed items: %d",
-                                           ^^^^^^^
-> +			  ret);
->  		return ret;
-> +	}
->  
->  	ret = btrfs_update_delayed_inode(trans, node->root, path, node);
-> +	if (ret)
-> +		btrfs_err(trans->fs_info, "failedd to update delayed items: %d",
-                                           ^^^^^^^
-
-typos
-
-> +			  ret);
->  	return ret;
+> diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+> index e07be193323a..7f9a4790e013 100644
+> --- a/fs/btrfs/sysfs.c
+> +++ b/fs/btrfs/sysfs.c
+> @@ -425,6 +425,15 @@ static ssize_t acl_show(struct kobject *kobj, struct kobj_attribute *a, char *bu
 >  }
+>  BTRFS_ATTR(static_feature, acl, acl_show);
 >  
-> -- 
-> 2.42.0
+> +static ssize_t temp_fsid_supported_show(struct kobject *kobj,
+> +					struct kobj_attribute *a, char *buf)
+> +{
+> +	int ret = 0;
+> +
+> +	return sysfs_emit(buf, "%d\n", ret);
+
+This can be
+
+	return sysfs_emit(buf, "0\n");

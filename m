@@ -2,47 +2,47 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B1C16E95A67
-	for <linux-btrfs@archiver.kernel.org>; Sun,  8 Oct 2023 01:07:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1B570E95A67
+	for <linux-btrfs@archiver.kernel.org>; Sun,  8 Oct 2023 01:17:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234248AbjJHBH4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 7 Oct 2023 21:07:56 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41272 "EHLO
+        id S234320AbjJHBRs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 7 Oct 2023 21:17:48 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48912 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234245AbjJHBHr (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 7 Oct 2023 21:07:47 -0400
+        with ESMTP id S1344373AbjJHBR3 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 7 Oct 2023 21:17:29 -0400
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8F7C4170C;
-        Sat,  7 Oct 2023 17:51:01 -0700 (PDT)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 78479C433BC;
-        Sun,  8 Oct 2023 00:50:44 +0000 (UTC)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7C291D63;
+        Sat,  7 Oct 2023 17:50:18 -0700 (PDT)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id C025CC4339A;
+        Sun,  8 Oct 2023 00:50:14 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1696726245;
-        bh=4lTz0m1Ecl9rKGsv6t5c3j1SoC5s2w/cS1YY3MckaPw=;
+        s=k20201202; t=1696726215;
+        bh=TyMz79vf+jJWKjmRCbusXlB8fr5QIgnQO6azCepsWng=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=hCr7S2KklWtwTooR79HBNXk5S/AniCv96NwJUvt2F/TkKs02JZ2pfPxywzvQEg/lC
-         hFWgNkW7Q4lOGiZpegobmuWl4tHfZZ/1ROG46uXcKyjA4yde8L93zYoLfEyTlSVJCW
-         zCNHOrqiikSnaX0PYtiusdLNQghSuG/idktTPy3gNvAOtYnpUjDkaZONmebENZYWqv
-         OQDXUmWPpxYtRgeQ6sUS9Y0TiKBEmH9ne1ic0mA3i0L8xD9Eg1Ebq8PHvsfNNzP/P/
-         z9umH5q+Zsz3IlxbdgioL4svK506L1egdaAPvCTbBo7dppnk30A0fF6+LdfM9Xvf/v
-         aSq4Gntxf4Gkw==
+        b=qTr70R9kfI1vb8sCChDZT7CDh8hCmcTahRdoTc1/t36PrYCR9/YgNtfUuWxT6lpWh
+         UMCTTNyatNn8Opt+lnd/JRQ5U9TXMIR3FBZOgnTv5Senp7abCICTE46Ff13h0Agk0R
+         5bDqD2Oel+GhjWnMuoa9KJQVATdEBblJGIitXjhEGi7vYLt9DWkv5UY+I1bpbpY3jR
+         J6Ciw3eeaFCn3KqKRevN61PvoFji/krrdDtblEqIcO1Iz2alE7AogRukMNEG8orxwi
+         jPqHtoQ06ukc5VspEbhPyfhZke4rjH4/gGJd5WlW+DpGGxQJ5QvnUMiVObU1N4obeb
+         NN8/WPCIErRTA==
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
 Cc:     Josef Bacik <josef@toxicpanda.com>, Jens Axboe <axboe@kernel.dk>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, clm@fb.com,
         linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 4.19 3/8] btrfs: initialize start_slot in btrfs_log_prealloc_extents
-Date:   Sat,  7 Oct 2023 20:50:33 -0400
-Message-Id: <20231008005039.3768522-3-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 5.10 3/8] btrfs: initialize start_slot in btrfs_log_prealloc_extents
+Date:   Sat,  7 Oct 2023 20:50:04 -0400
+Message-Id: <20231008005009.3768314-3-sashal@kernel.org>
 X-Mailer: git-send-email 2.40.1
-In-Reply-To: <20231008005039.3768522-1-sashal@kernel.org>
-References: <20231008005039.3768522-1-sashal@kernel.org>
+In-Reply-To: <20231008005009.3768314-1-sashal@kernel.org>
+References: <20231008005009.3768314-1-sashal@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 X-stable: review
 X-Patchwork-Hint: Ignore
-X-stable-base: Linux 4.19.295
+X-stable-base: Linux 5.10.197
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -82,10 +82,10 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 0fe32c567ed74..23ec766eeb0a3 100644
+index 9a8dc16673b43..10a0913ffb492 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
-@@ -4236,7 +4236,7 @@ static int btrfs_log_prealloc_extents(struct btrfs_trans_handle *trans,
+@@ -4337,7 +4337,7 @@ static int btrfs_log_prealloc_extents(struct btrfs_trans_handle *trans,
  	struct extent_buffer *leaf;
  	int slot;
  	int ins_nr = 0;

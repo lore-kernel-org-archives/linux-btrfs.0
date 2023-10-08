@@ -2,38 +2,40 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D0D4CE95A67
-	for <linux-btrfs@archiver.kernel.org>; Sun,  8 Oct 2023 00:49:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8D786E95A8B
+	for <linux-btrfs@archiver.kernel.org>; Sun,  8 Oct 2023 00:49:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1344282AbjJHAtF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 7 Oct 2023 20:49:05 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40252 "EHLO
+        id S234202AbjJHAtR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 7 Oct 2023 20:49:17 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39904 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1344271AbjJHAtE (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 7 Oct 2023 20:49:04 -0400
+        with ESMTP id S233855AbjJHAtP (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 7 Oct 2023 20:49:15 -0400
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DB2F0BC;
-        Sat,  7 Oct 2023 17:49:03 -0700 (PDT)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id AB13AC433C8;
-        Sun,  8 Oct 2023 00:49:02 +0000 (UTC)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CE3CADB;
+        Sat,  7 Oct 2023 17:49:07 -0700 (PDT)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 7C594C433C7;
+        Sun,  8 Oct 2023 00:49:06 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1696726143;
-        bh=sA0/nicX7nC1P+pWnJXcU9ifbUJJQIZG7AVMdagXU34=;
+        s=k20201202; t=1696726147;
+        bh=A3kjQty4vI/GS8IYqcujAel4pBfkUQWJdq8CYZ1+6Oo=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=T7fNbWEDBkZXGvNlBwRfd1m1kziBy6K2u/zNXo0EcG4jIWVxU1A8H+3oatcbsmRZB
-         SWLEbhncITgzs8lrRP9VlptMsBJ0nD3bdxDxt37y5m/nl0HTOx6MPVlMdBa1QmbH/b
-         Y6atvPnqtHVUQ/WS9S+eiX33ke4F6sEkvAE/Syqm8WUMCvuLL/eHMNDTvSvirMAcW+
-         CJNIuWwReQ21R3ELQMZd8vKdwVchNtFwQowHnZ5sdgvgG5QHZuksesqf8mAFoGvV3c
-         pyMiDHo95kGoBB4Jc90JTO8x3bFI6GQ200qwf8jzrs8Z/B5Hlrc0QWa0QAP1Lvny2s
-         W+DR3MzRbMzkg==
+        b=G77b62kvu4+7SZg0+l587nOi5muXR+SElSzdAQXSGKcT3O1ojfJmGHlqFko8lh9oF
+         JGIweckuzUFmlFFWYYkvFDeerRaCbryXOMHCCq5LUJeVAfApi2CZwIwX9fp+xd3sNy
+         +lK/6hRwTH1/DzQ1MVJ2zZn7iTI5N/dytrv0pvFNxOy1TOrxtxpO5sdiMrpis9dP55
+         GLy+iTttLjSAHdyqlqOvk91nTfnQpn+y0ehWBzMbebCV6HnZiF2xbMm4CbhBQMinG3
+         Qp8fp7vw2SqlrQNyVLG+Lcj/I8juDiRaPxxp22RmcfAHSYqeUmvny9EspnPh8I+xDQ
+         JExRT58c3hizA==
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Filipe Manana <fdmanana@suse.com>, David Sterba <dsterba@suse.com>,
+Cc:     Filipe Manana <fdmanana@suse.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, clm@fb.com,
-        josef@toxicpanda.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 6.5 05/18] btrfs: fix race when refilling delayed refs block reserve
-Date:   Sat,  7 Oct 2023 20:48:39 -0400
-Message-Id: <20231008004853.3767621-5-sashal@kernel.org>
+        linux-btrfs@vger.kernel.org
+Subject: [PATCH AUTOSEL 6.5 07/18] btrfs: return -EUCLEAN for delayed tree ref with a ref count not equals to 1
+Date:   Sat,  7 Oct 2023 20:48:41 -0400
+Message-Id: <20231008004853.3767621-7-sashal@kernel.org>
 X-Mailer: git-send-email 2.40.1
 In-Reply-To: <20231008004853.3767621-1-sashal@kernel.org>
 References: <20231008004853.3767621-1-sashal@kernel.org>
@@ -48,104 +50,46 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-[ Upstream commit 2ed45c0f1879079b30248568c515cf60fc668d8a ]
+[ Upstream commit 1bf76df3fee56d6637718e267f7c34ed70d0c7dc ]
 
-If we have two (or more) tasks attempting to refill the delayed refs block
-reserve we can end up with the delayed block reserve being over reserved,
-that is, with a reserved space greater than its size. If this happens, we
-are holding to more reserved space than necessary for a while.
+When running a delayed tree reference, if we find a ref count different
+from 1, we return -EIO. This isn't an IO error, as it indicates either a
+bug in the delayed refs code or a memory corruption, so change the error
+code from -EIO to -EUCLEAN. Also tag the branch as 'unlikely' as this is
+not expected to ever happen, and change the error message to print the
+tree block's bytenr without the parenthesis (and there was a missing space
+between the 'block' word and the opening parenthesis), for consistency as
+that's the style we used everywhere else.
 
-The race happens like this:
-
-1) The delayed refs block reserve has a size of 8M and a reserved space of
-   6M for example;
-
-2) Task A calls btrfs_delayed_refs_rsv_refill();
-
-3) Task B also calls btrfs_delayed_refs_rsv_refill();
-
-4) Task A sees there's a 2M difference between the size and the reserved
-   space of the delayed refs rsv, so it will reserve 2M of space by
-   calling btrfs_reserve_metadata_bytes();
-
-5) Task B also sees that 2M difference, and like task A, it reserves
-   another 2M of metadata space;
-
-6) Both task A and task B increase the reserved space of block reserve
-   by 2M, by calling btrfs_block_rsv_add_bytes(), so the block reserve
-   ends up with a size of 8M and a reserved space of 10M;
-
-7) The extra, over reserved space will eventually be freed by some task
-   calling btrfs_delayed_refs_rsv_release() -> btrfs_block_rsv_release()
-   -> block_rsv_release_bytes(), as there we will detect the over reserve
-   and release that space.
-
-So fix this by checking if we still need to add space to the delayed refs
-block reserve after reserving the metadata space, and if we don't, just
-release that space immediately.
-
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Reviewed-by: David Sterba <dsterba@suse.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/btrfs/delayed-ref.c | 37 ++++++++++++++++++++++++++++++++++---
- 1 file changed, 34 insertions(+), 3 deletions(-)
+ fs/btrfs/extent-tree.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index 6a13cf00218bc..1043f66cc130d 100644
---- a/fs/btrfs/delayed-ref.c
-+++ b/fs/btrfs/delayed-ref.c
-@@ -163,6 +163,8 @@ int btrfs_delayed_refs_rsv_refill(struct btrfs_fs_info *fs_info,
- 	struct btrfs_block_rsv *block_rsv = &fs_info->delayed_refs_rsv;
- 	u64 limit = btrfs_calc_delayed_ref_bytes(fs_info, 1);
- 	u64 num_bytes = 0;
-+	u64 refilled_bytes;
-+	u64 to_free;
- 	int ret = -ENOSPC;
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 0917c5f39e3d0..2cf8d646085c2 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -1715,12 +1715,12 @@ static int run_delayed_tree_ref(struct btrfs_trans_handle *trans,
+ 		parent = ref->parent;
+ 	ref_root = ref->root;
  
- 	spin_lock(&block_rsv->lock);
-@@ -178,9 +180,38 @@ int btrfs_delayed_refs_rsv_refill(struct btrfs_fs_info *fs_info,
- 	ret = btrfs_reserve_metadata_bytes(fs_info, block_rsv, num_bytes, flush);
- 	if (ret)
- 		return ret;
--	btrfs_block_rsv_add_bytes(block_rsv, num_bytes, false);
--	trace_btrfs_space_reservation(fs_info, "delayed_refs_rsv",
--				      0, num_bytes, 1);
-+
-+	/*
-+	 * We may have raced with someone else, so check again if we the block
-+	 * reserve is still not full and release any excess space.
-+	 */
-+	spin_lock(&block_rsv->lock);
-+	if (block_rsv->reserved < block_rsv->size) {
-+		u64 needed = block_rsv->size - block_rsv->reserved;
-+
-+		if (num_bytes >= needed) {
-+			block_rsv->reserved += needed;
-+			block_rsv->full = true;
-+			to_free = num_bytes - needed;
-+			refilled_bytes = needed;
-+		} else {
-+			block_rsv->reserved += num_bytes;
-+			to_free = 0;
-+			refilled_bytes = num_bytes;
-+		}
-+	} else {
-+		to_free = num_bytes;
-+		refilled_bytes = 0;
-+	}
-+	spin_unlock(&block_rsv->lock);
-+
-+	if (to_free > 0)
-+		btrfs_space_info_free_bytes_may_use(fs_info, block_rsv->space_info,
-+						    to_free);
-+
-+	if (refilled_bytes > 0)
-+		trace_btrfs_space_reservation(fs_info, "delayed_refs_rsv", 0,
-+					      refilled_bytes, 1);
- 	return 0;
- }
- 
+-	if (node->ref_mod != 1) {
++	if (unlikely(node->ref_mod != 1)) {
+ 		btrfs_err(trans->fs_info,
+-	"btree block(%llu) has %d references rather than 1: action %d ref_root %llu parent %llu",
++	"btree block %llu has %d references rather than 1: action %d ref_root %llu parent %llu",
+ 			  node->bytenr, node->ref_mod, node->action, ref_root,
+ 			  parent);
+-		return -EIO;
++		return -EUCLEAN;
+ 	}
+ 	if (node->action == BTRFS_ADD_DELAYED_REF && insert_reserved) {
+ 		BUG_ON(!extent_op || !extent_op->update_flags);
 -- 
 2.40.1
 

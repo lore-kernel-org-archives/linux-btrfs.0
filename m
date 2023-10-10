@@ -2,60 +2,60 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2C8D5CD68E9
-	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Oct 2023 20:41:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 639A7CD8CB9
+	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Oct 2023 20:41:30 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234654AbjJJUlZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 10 Oct 2023 16:41:25 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55310 "EHLO
+        id S234641AbjJJUl1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 10 Oct 2023 16:41:27 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55226 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234614AbjJJUlO (ORCPT
+        with ESMTP id S234393AbjJJUlQ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Oct 2023 16:41:14 -0400
-Received: from mail-yw1-x1134.google.com (mail-yw1-x1134.google.com [IPv6:2607:f8b0:4864:20::1134])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2744AD3
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Oct 2023 13:41:11 -0700 (PDT)
-Received: by mail-yw1-x1134.google.com with SMTP id 00721157ae682-5a7ad24b3aaso22705377b3.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Oct 2023 13:41:11 -0700 (PDT)
+        Tue, 10 Oct 2023 16:41:16 -0400
+Received: from mail-yw1-x1131.google.com (mail-yw1-x1131.google.com [IPv6:2607:f8b0:4864:20::1131])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5E0CD94
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Oct 2023 13:41:14 -0700 (PDT)
+Received: by mail-yw1-x1131.google.com with SMTP id 00721157ae682-5a7b3d33663so21283877b3.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Oct 2023 13:41:14 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1696970470; x=1697575270; darn=vger.kernel.org;
+        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1696970473; x=1697575273; darn=vger.kernel.org;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=3m4RAmLF+khaONHXt5qu//wFJJoUrRtGots1ic/eLAI=;
-        b=WjfFi+gH5h5K1Rxx88fOl7il7cMo1NwVuHfhNO9uPV/j+y2+ahEQd4RjsgDL5154by
-         RWeE+SibHed/VdWh/hho6I2YbWoyMVip28dIWPKHu174IYo2U/+z21MrZwuqWYp4EiVg
-         05Rr5czj4m+0KvVdJNfMUxT/xH0VzgKoO4r5Zr0oFpRAh1yTgNU/Sx6wZMAlDhODlFpc
-         n8/5xsl5LbO18JHqI41LT3qyyoAXaOafyCKF0uktkzV3+rjU1VHgVQlcFXqflpZQgTve
-         ICJTARlqXYiGTJ8mgVrXIKI3jGRY/Ez4M1a0ITVB/tuX9nyC2U/aL3mv6UCdLu2Wy32C
-         bxIw==
+        bh=gnxchsTqt7xlkIIa+flWeo9ILMxv8/p1t4FXazb249Y=;
+        b=YxaSsmyz87izCljeWQWbJIRmkYKLwGfCDc4paEZLkpl30VQJfyAp4/nMxhilTY8XkL
+         e4FABn52fCZvfsYH3VvGGoOKAsnF7zSVlB7M77j2G+LVszqy4nO1v5QCrdQgtAEDQWRH
+         MCVwKvT1K3bQJKk7cDVac9JPMWPQpHg0h1rboXyLONjaPuYLZn8SEr65nNk6QPKkI1lM
+         q4/u0+7r30WgtWUBE8DUO39VqFRtwgYWI+/JLXijVHps1+ziRwnMyWjdPNsOunzr02yi
+         6gvkBSnrMtIrd8Uqqc9mfsFA5p5M3wjJbRdX0C9kWdChfZbyklAPcn5Nuil4CoWz53/V
+         GOYQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1696970470; x=1697575270;
+        d=1e100.net; s=20230601; t=1696970473; x=1697575273;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=3m4RAmLF+khaONHXt5qu//wFJJoUrRtGots1ic/eLAI=;
-        b=KNXsLdwbEI3JC12gYLo4+Hw+jmDBt02f+Zu2IMXprTv7lcyBM9UqSyAgC9Gq1SjIjh
-         Ol82Jy7CU1jXjctLMSHy/tZU0s8sHpDtc3pmSE1XrFckUDIEtQs+ZVQuZTcgZ9llGXB1
-         WBOCWHIeMOeiwHVh+kGN8hOza4lcMe/bBnlPsoyBOScfNdTnHxutuiz10fjiwdxb0AX5
-         jD+o/4JvPXiVPDXlgmUM7nPWtPmOaRYj92H7AaYq30R0bvFRyed4IhH4ulCfGR8IwzyB
-         54zwyML7TgEx5m8tk1HTOkdO86mfd4GCqDOGBAL1xz6z5vWBch6LOsCZ97XHAVT83RYz
-         S6oQ==
-X-Gm-Message-State: AOJu0Yz+9GvnG1OMmg/Ami2gWM3vdKozCkxpXGpgtp7aUmQmHv9mKWB1
-        NPUh6OpcRwEzG35A5x7X3uErQy8EDWBbxkIGoO1M9A==
-X-Google-Smtp-Source: AGHT+IEouGSIjN904f72tEDHIxSSZumqXFfqa+Z9ibdW067FA51KO6BL+bO0SLL2rzK/kWN9sdei7g==
-X-Received: by 2002:a81:4e4a:0:b0:5a7:ca59:82b9 with SMTP id c71-20020a814e4a000000b005a7ca5982b9mr2301640ywb.16.1696970470319;
-        Tue, 10 Oct 2023 13:41:10 -0700 (PDT)
+        bh=gnxchsTqt7xlkIIa+flWeo9ILMxv8/p1t4FXazb249Y=;
+        b=EdYoTqchQnJY725G0J3skfgpIhof9yf4Ota6b7mvfBTRyTEe8u4AJHSau9f3OIi0TH
+         jhA9Im6AvVizg65lrNI0Pw+CvNGGUbWO5V3G5KCQEuPZHvik10/Px+74PtkF2VB3tauf
+         0LbKri3eXco1gFXlT1dTf/xXmWEMVa4mrhXk7x6wQIBIGoYtBgekFqs8GMAwTZeqtYNe
+         H1ecO3FCazJi88ieJSY+wbdqbO1zEgv5mRmrGW5bki1GdUiod0xWLGD7cq3S2F3Pxf2r
+         22OUbDdm2ateo/tkKv+epm6zuQ6KP9jX4YAy+NJeFJTktr2h4igKENsKi/G9q2AyoIT2
+         cMhg==
+X-Gm-Message-State: AOJu0YymTHB2GortM5r9NP/YzVX5F7Gs0Wr8roaD+lbIC/+5Lg+/sHng
+        LQEnJQl2LdJ52eJeCe2aIRcTYw==
+X-Google-Smtp-Source: AGHT+IEL7uLXgLh7+c0J/e4v1Krpm32gxaFvmrrmYabG8AJ596LCVEdVrofQHNhkUSM5CPz7d2FKVA==
+X-Received: by 2002:a0d:dfc6:0:b0:57a:2e83:4daf with SMTP id i189-20020a0ddfc6000000b0057a2e834dafmr19660246ywe.32.1696970473563;
+        Tue, 10 Oct 2023 13:41:13 -0700 (PDT)
 Received: from localhost (cpe-76-182-20-124.nc.res.rr.com. [76.182.20.124])
-        by smtp.gmail.com with ESMTPSA id n184-20020a0de4c1000000b005a4d922cf77sm4656731ywe.119.2023.10.10.13.41.09
+        by smtp.gmail.com with ESMTPSA id m73-20020a0dca4c000000b005a7db2a0dddsm101985ywd.3.2023.10.10.13.41.13
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 10 Oct 2023 13:41:09 -0700 (PDT)
+        Tue, 10 Oct 2023 13:41:13 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-fscrypt@vger.kernel.org, ebiggers@kernel.org,
         linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 05/36] blk-crypto: add a process bio callback
-Date:   Tue, 10 Oct 2023 16:40:20 -0400
-Message-ID: <ab3493e225d34845fa953c429b3cd07c112ec7e7.1696970227.git.josef@toxicpanda.com>
+Subject: [PATCH v2 08/36] btrfs: add infrastructure for safe em freeing
+Date:   Tue, 10 Oct 2023 16:40:23 -0400
+Message-ID: <bcb6e0cc41521b130c78a98384706cf697bd7bce.1696970227.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <cover.1696970227.git.josef@toxicpanda.com>
 References: <cover.1696970227.git.josef@toxicpanda.com>
@@ -65,232 +65,227 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Btrfs does checksumming, and the checksums need to match the bytes on
-disk.  In order to facilitate this add a process bio callback for the
-blk-crypto layer.  This allows the file system to specify a callback and
-then can process the encrypted bio as necessary.
+When we add fscrypt support we're going to have fscrypt objects hanging
+off of extent_maps.  This includes a block key, which if we're the last
+one freeing the key we may have to unregister it from the block layer.
+This requires taking a semaphore in the block layer, which means we
+can't free em's under the extent map tree lock.
 
-For btrfs, writes will have the checksums calculated and saved into our
-relevant data structures for storage once the write completes.  For
-reads we will validate the checksums match what is on disk and error out
-if there is a mismatch.
+Thankfully we only do this in two places, one where we're dropping a
+range of extent maps, and when we're freeing logged extents.  Add a
+free_extent_map_safe() which will add the em to a list in the em_tree if
+we free'd the object.  Currently this is unconditional but will be
+changed to conditional on the fscrypt object we will add in a later
+patch.
 
-This is incompatible with native encryption obviously, so make sure we
-don't use native encryption if this callback is set.
+To process these delayed objects add a free_pending_extent_maps() that
+is called after the lock has been dropped on the em_tree.  This will
+process the extent maps on the freed list and do the appropriate freeing
+work in a safe manner.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- block/blk-crypto-fallback.c        | 28 ++++++++++++++++++++++++++++
- block/blk-crypto-profile.c         |  2 ++
- block/blk-crypto.c                 |  6 +++++-
- fs/crypto/inline_crypt.c           |  3 ++-
- include/linux/blk-crypto-profile.h |  7 +++++++
- include/linux/blk-crypto.h         |  9 +++++++--
- include/linux/fscrypt.h            | 14 ++++++++++++++
- 7 files changed, 65 insertions(+), 4 deletions(-)
+ fs/btrfs/extent_map.c | 80 ++++++++++++++++++++++++++++++++++++++++---
+ fs/btrfs/extent_map.h | 10 ++++++
+ fs/btrfs/tree-log.c   |  6 ++--
+ 3 files changed, 89 insertions(+), 7 deletions(-)
 
-diff --git a/block/blk-crypto-fallback.c b/block/blk-crypto-fallback.c
-index e6468eab2681..8b4a83534127 100644
---- a/block/blk-crypto-fallback.c
-+++ b/block/blk-crypto-fallback.c
-@@ -346,6 +346,15 @@ static bool blk_crypto_fallback_encrypt_bio(struct bio **bio_ptr)
- 		}
- 	}
- 
-+	/* Process the encrypted bio before we submit it. */
-+	if (bc->bc_key->crypto_cfg.process_bio) {
-+		blk_st = bc->bc_key->crypto_cfg.process_bio(src_bio, enc_bio);
-+		if (blk_st != BLK_STS_OK) {
-+			src_bio->bi_status = blk_st;
-+			goto out_free_bounce_pages;
-+		}
-+	}
-+
- 	enc_bio->bi_private = src_bio;
- 	enc_bio->bi_end_io = blk_crypto_fallback_encrypt_endio;
- 	*bio_ptr = enc_bio;
-@@ -391,6 +400,24 @@ static void blk_crypto_fallback_decrypt_bio(struct work_struct *work)
- 	unsigned int i;
- 	blk_status_t blk_st;
- 
-+	/*
-+	 * Process the bio first before trying to decrypt.
-+	 *
-+	 * NOTE: btrfs expects that this bio is the same that was submitted.  If
-+	 * at any point this changes we will need to update process_bio to take
-+	 * f_ctx->crypt_iter in order to make sure we can iterate the pages for
-+	 * checksumming.  We're currently saving this in our btrfs_bio, so this
-+	 * works, but if at any point in the future we start allocating a bounce
-+	 * bio or something we need to update this callback.
-+	 */
-+	if (bc->bc_key->crypto_cfg.process_bio) {
-+		blk_st = bc->bc_key->crypto_cfg.process_bio(bio, bio);
-+		if (blk_st != BLK_STS_OK) {
-+			bio->bi_status = blk_st;
-+			goto out_no_keyslot;
-+		}
-+	}
-+
- 	/*
- 	 * Get a blk-crypto-fallback keyslot that contains a crypto_skcipher for
- 	 * this bio's algorithm and key.
-@@ -560,6 +587,7 @@ static int blk_crypto_fallback_init(void)
- 
- 	blk_crypto_fallback_profile->ll_ops = blk_crypto_fallback_ll_ops;
- 	blk_crypto_fallback_profile->max_dun_bytes_supported = BLK_CRYPTO_MAX_IV_SIZE;
-+	blk_crypto_fallback_profile->process_bio_supported = true;
- 
- 	/* All blk-crypto modes have a crypto API fallback. */
- 	for (i = 0; i < BLK_ENCRYPTION_MODE_MAX; i++)
-diff --git a/block/blk-crypto-profile.c b/block/blk-crypto-profile.c
-index 7fabc883e39f..640cf2ea3fcc 100644
---- a/block/blk-crypto-profile.c
-+++ b/block/blk-crypto-profile.c
-@@ -352,6 +352,8 @@ bool __blk_crypto_cfg_supported(struct blk_crypto_profile *profile,
- 		return false;
- 	if (profile->max_dun_bytes_supported < cfg->dun_bytes)
- 		return false;
-+	if (cfg->process_bio && !profile->process_bio_supported)
-+		return false;
- 	return true;
+diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
+index a6d8368ed0ed..af5ff6b10865 100644
+--- a/fs/btrfs/extent_map.c
++++ b/fs/btrfs/extent_map.c
+@@ -35,7 +35,9 @@ void __cold extent_map_exit(void)
+ void extent_map_tree_init(struct extent_map_tree *tree)
+ {
+ 	tree->map = RB_ROOT_CACHED;
++	tree->flags = 0;
+ 	INIT_LIST_HEAD(&tree->modified_extents);
++	INIT_LIST_HEAD(&tree->freed_extents);
+ 	rwlock_init(&tree->lock);
  }
  
-diff --git a/block/blk-crypto.c b/block/blk-crypto.c
-index 4d760b092deb..50556952df19 100644
---- a/block/blk-crypto.c
-+++ b/block/blk-crypto.c
-@@ -321,6 +321,8 @@ int __blk_crypto_rq_bio_prep(struct request *rq, struct bio *bio,
-  * @dun_bytes: number of bytes that will be used to specify the DUN when this
-  *	       key is used
-  * @data_unit_size: the data unit size to use for en/decryption
-+ * @process_bio: the call back if the upper layer needs to process the encrypted
-+ *		 bio
-  *
-  * Return: 0 on success, -errno on failure.  The caller is responsible for
-  *	   zeroizing both blk_key and raw_key when done with them.
-@@ -328,7 +330,8 @@ int __blk_crypto_rq_bio_prep(struct request *rq, struct bio *bio,
- int blk_crypto_init_key(struct blk_crypto_key *blk_key, const u8 *raw_key,
- 			enum blk_crypto_mode_num crypto_mode,
- 			unsigned int dun_bytes,
--			unsigned int data_unit_size)
-+			unsigned int data_unit_size,
-+			blk_crypto_process_bio_t process_bio)
+@@ -53,9 +55,17 @@ struct extent_map *alloc_extent_map(void)
+ 	em->compress_type = BTRFS_COMPRESS_NONE;
+ 	refcount_set(&em->refs, 1);
+ 	INIT_LIST_HEAD(&em->list);
++	INIT_LIST_HEAD(&em->free_list);
+ 	return em;
+ }
+ 
++static void __free_extent_map(struct extent_map *em)
++{
++	if (test_bit(EXTENT_FLAG_FS_MAPPING, &em->flags))
++		kfree(em->map_lookup);
++	kmem_cache_free(extent_map_cache, em);
++}
++
+ /*
+  * Drop the reference out on @em by one and free the structure if the reference
+  * count hits zero.
+@@ -67,12 +77,69 @@ void free_extent_map(struct extent_map *em)
+ 	if (refcount_dec_and_test(&em->refs)) {
+ 		WARN_ON(extent_map_in_tree(em));
+ 		WARN_ON(!list_empty(&em->list));
+-		if (test_bit(EXTENT_FLAG_FS_MAPPING, &em->flags))
+-			kfree(em->map_lookup);
+-		kmem_cache_free(extent_map_cache, em);
++		__free_extent_map(em);
+ 	}
+ }
+ 
++/*
++ * Drop a ref for the extent map in the given tree.
++ *
++ * @tree:	tree that the em is a part of.
++ * @em:		the em to drop the reference to.
++ *
++ * Drop the reference count on @em by one, if the reference count hits 0 and
++ * there is an object on the em that can't be safely freed in the current
++ * context (if we are holding the extent_map_tree->lock for example), then add
++ * it to the freed_extents list on the extent_map_tree for later processing.
++ *
++ * This must be followed by a free_pending_extent_maps() to clear the pending
++ * frees.
++ */
++void free_extent_map_safe(struct extent_map_tree *tree,
++			  struct extent_map *em)
++{
++	lockdep_assert_held_write(&tree->lock);
++
++	if (!em)
++		return;
++
++	if (refcount_dec_and_test(&em->refs)) {
++		WARN_ON(extent_map_in_tree(em));
++		WARN_ON(!list_empty(&em->list));
++		list_add_tail(&em->free_list, &tree->freed_extents);
++		set_bit(EXTENT_MAP_TREE_PENDING_FREES, &tree->flags);
++	}
++}
++
++/*
++ * Free the em objects that exist on the em tree
++ *
++ * @tree:	the tree to free the objects from.
++ *
++ * If there are any objects on the em->freed_extents list go ahead and free them
++ * here in a safe way.  This is to be coupled with any uses of
++ * free_extent_map_safe().
++ */
++void free_pending_extent_maps(struct extent_map_tree *tree)
++{
++	struct extent_map *em;
++
++	/* Avoid taking the write lock if we don't have any pending frees. */
++	if (!test_and_clear_bit(EXTENT_MAP_TREE_PENDING_FREES, &tree->flags))
++		return;
++
++	write_lock(&tree->lock);
++	while ((em = list_first_entry_or_null(&tree->freed_extents,
++					      struct extent_map, free_list))) {
++		list_del_init(&em->free_list);
++		write_unlock(&tree->lock);
++		__free_extent_map(em);
++		cond_resched();
++		write_lock(&tree->lock);
++	}
++	write_unlock(&tree->lock);
++}
++
+ /* Do the math around the end of an extent, handling wrapping. */
+ static u64 range_end(u64 start, u64 len)
  {
- 	const struct blk_crypto_mode *mode;
- 
-@@ -350,6 +353,7 @@ int blk_crypto_init_key(struct blk_crypto_key *blk_key, const u8 *raw_key,
- 	blk_key->crypto_cfg.crypto_mode = crypto_mode;
- 	blk_key->crypto_cfg.dun_bytes = dun_bytes;
- 	blk_key->crypto_cfg.data_unit_size = data_unit_size;
-+	blk_key->crypto_cfg.process_bio = process_bio;
- 	blk_key->data_unit_size_bits = ilog2(data_unit_size);
- 	blk_key->size = mode->keysize;
- 	memcpy(blk_key->raw, raw_key, mode->keysize);
-diff --git a/fs/crypto/inline_crypt.c b/fs/crypto/inline_crypt.c
-index 4eeb75410ba8..57776c548a06 100644
---- a/fs/crypto/inline_crypt.c
-+++ b/fs/crypto/inline_crypt.c
-@@ -168,7 +168,8 @@ int fscrypt_prepare_inline_crypt_key(struct fscrypt_prepared_key *prep_key,
- 
- 	err = blk_crypto_init_key(blk_key, raw_key, crypto_mode,
- 				  fscrypt_get_dun_bytes(ci),
--				  1U << ci->ci_data_unit_bits);
-+				  1U << ci->ci_data_unit_bits,
-+				  sb->s_cop->process_bio);
- 	if (err) {
- 		fscrypt_err(inode, "error %d initializing blk-crypto key", err);
- 		goto fail;
-diff --git a/include/linux/blk-crypto-profile.h b/include/linux/blk-crypto-profile.h
-index 90ab33cb5d0e..3c002e85631a 100644
---- a/include/linux/blk-crypto-profile.h
-+++ b/include/linux/blk-crypto-profile.h
-@@ -100,6 +100,13 @@ struct blk_crypto_profile {
- 	 */
- 	struct device *dev;
- 
-+	/**
-+	 * @process_bio_supported: Some things, like btrfs, require the
-+	 * encrypted data for checksumming. Drivers set this to true if they can
-+	 * handle the process_bio() callback.
-+	 */
-+	bool process_bio_supported;
+@@ -684,10 +751,12 @@ static void drop_all_extent_maps_fast(struct extent_map_tree *tree)
+ 		clear_bit(EXTENT_FLAG_PINNED, &em->flags);
+ 		clear_bit(EXTENT_FLAG_LOGGING, &em->flags);
+ 		remove_extent_mapping(tree, em);
+-		free_extent_map(em);
++		free_extent_map_safe(tree, em);
+ 		cond_resched_rwlock_write(&tree->lock);
+ 	}
+ 	write_unlock(&tree->lock);
 +
- 	/* private: The following fields shouldn't be accessed by drivers. */
- 
- 	/* Number of keyslots, or 0 if not applicable */
-diff --git a/include/linux/blk-crypto.h b/include/linux/blk-crypto.h
-index 5e5822c18ee4..194c1d727013 100644
---- a/include/linux/blk-crypto.h
-+++ b/include/linux/blk-crypto.h
-@@ -6,7 +6,7 @@
- #ifndef __LINUX_BLK_CRYPTO_H
- #define __LINUX_BLK_CRYPTO_H
- 
--#include <linux/types.h>
-+#include <linux/blk_types.h>
- 
- enum blk_crypto_mode_num {
- 	BLK_ENCRYPTION_MODE_INVALID,
-@@ -17,6 +17,9 @@ enum blk_crypto_mode_num {
- 	BLK_ENCRYPTION_MODE_MAX,
- };
- 
-+typedef blk_status_t (blk_crypto_process_bio_t)(struct bio *orig_bio,
-+						struct bio *enc_bio);
-+
- #define BLK_CRYPTO_MAX_KEY_SIZE		64
- /**
-  * struct blk_crypto_config - an inline encryption key's crypto configuration
-@@ -31,6 +34,7 @@ struct blk_crypto_config {
- 	enum blk_crypto_mode_num crypto_mode;
- 	unsigned int data_unit_size;
- 	unsigned int dun_bytes;
-+	blk_crypto_process_bio_t *process_bio;
- };
- 
- /**
-@@ -90,7 +94,8 @@ bool bio_crypt_dun_is_contiguous(const struct bio_crypt_ctx *bc,
- int blk_crypto_init_key(struct blk_crypto_key *blk_key, const u8 *raw_key,
- 			enum blk_crypto_mode_num crypto_mode,
- 			unsigned int dun_bytes,
--			unsigned int data_unit_size);
-+			unsigned int data_unit_size,
-+			blk_crypto_process_bio_t process_bio);
- 
- int blk_crypto_start_using_key(struct block_device *bdev,
- 			       const struct blk_crypto_key *key);
-diff --git a/include/linux/fscrypt.h b/include/linux/fscrypt.h
-index ea8fdc6f3b83..a3576da6a9fa 100644
---- a/include/linux/fscrypt.h
-+++ b/include/linux/fscrypt.h
-@@ -16,6 +16,7 @@
- #include <linux/fs.h>
- #include <linux/mm.h>
- #include <linux/slab.h>
-+#include <linux/blk-crypto.h>
- #include <uapi/linux/fscrypt.h>
++	free_pending_extent_maps(tree);
+ }
  
  /*
-@@ -199,6 +200,19 @@ struct fscrypt_operations {
- 	 */
- 	struct block_device **(*get_devices)(struct super_block *sb,
- 					     unsigned int *num_devs);
+@@ -908,13 +977,14 @@ void btrfs_drop_extent_map_range(struct btrfs_inode *inode, u64 start, u64 end,
+ 		free_extent_map(em);
+ next:
+ 		/* Once for us (for our lookup reference). */
+-		free_extent_map(em);
++		free_extent_map_safe(em_tree, em);
+ 
+ 		em = next_em;
+ 	}
+ 
+ 	write_unlock(&em_tree->lock);
+ 
++	free_pending_extent_maps(em_tree);
+ 	free_extent_map(split);
+ 	free_extent_map(split2);
+ }
+diff --git a/fs/btrfs/extent_map.h b/fs/btrfs/extent_map.h
+index 35d27c756e08..2093720271ea 100644
+--- a/fs/btrfs/extent_map.h
++++ b/fs/btrfs/extent_map.h
+@@ -55,11 +55,18 @@ struct extent_map {
+ 	refcount_t refs;
+ 	unsigned int compress_type;
+ 	struct list_head list;
++	struct list_head free_list;
++};
 +
-+	/*
-+	 * A callback if the file system requires the ability to process the
-+	 * encrypted bio.
-+	 *
-+	 * @orig_bio: the original bio submitted.
-+	 * @enc_bio: the encrypted bio.
-+	 *
-+	 * For writes the enc_bio will be different from the orig_bio, for reads
-+	 * they will be the same.  For reads we get the bio before it is
-+	 * decrypted, for writes we get the bio before it is submitted.
-+	 */
-+	blk_crypto_process_bio_t *process_bio;
++enum extent_map_flags {
++	EXTENT_MAP_TREE_PENDING_FREES,
  };
  
- static inline struct fscrypt_inode_info *
+ struct extent_map_tree {
+ 	struct rb_root_cached map;
++	unsigned long flags;
+ 	struct list_head modified_extents;
++	struct list_head freed_extents;
+ 	rwlock_t lock;
+ };
+ 
+@@ -95,6 +102,9 @@ int split_extent_map(struct btrfs_inode *inode, u64 start, u64 len, u64 pre,
+ 
+ struct extent_map *alloc_extent_map(void);
+ void free_extent_map(struct extent_map *em);
++void free_extent_map_safe(struct extent_map_tree *tree,
++			  struct extent_map *em);
++void free_pending_extent_maps(struct extent_map_tree *tree);
+ int __init extent_map_init(void);
+ void __cold extent_map_exit(void);
+ int unpin_extent_cache(struct extent_map_tree *tree, u64 start, u64 len, u64 gen);
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 8b3893c01734..d3803db10939 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -4884,7 +4884,7 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
+ 		 */
+ 		if (ret) {
+ 			clear_em_logging(tree, em);
+-			free_extent_map(em);
++			free_extent_map_safe(tree, em);
+ 			continue;
+ 		}
+ 
+@@ -4893,11 +4893,13 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
+ 		ret = log_one_extent(trans, inode, em, path, ctx);
+ 		write_lock(&tree->lock);
+ 		clear_em_logging(tree, em);
+-		free_extent_map(em);
++		free_extent_map_safe(tree, em);
+ 	}
+ 	WARN_ON(!list_empty(&extents));
+ 	write_unlock(&tree->lock);
+ 
++	free_pending_extent_maps(tree);
++
+ 	if (!ret)
+ 		ret = btrfs_log_prealloc_extents(trans, inode, path);
+ 	if (ret)
 -- 
 2.41.0
 

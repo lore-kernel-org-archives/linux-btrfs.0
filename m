@@ -2,60 +2,60 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C7188CD8CB7
-	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Oct 2023 20:28:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C8FF5CD8CB8
+	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Oct 2023 20:28:38 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234480AbjJJU2g (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 10 Oct 2023 16:28:36 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39000 "EHLO
+        id S1343693AbjJJU2i (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 10 Oct 2023 16:28:38 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59694 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234442AbjJJU2f (ORCPT
+        with ESMTP id S1343548AbjJJU2g (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Oct 2023 16:28:35 -0400
-Received: from mail-yw1-x1132.google.com (mail-yw1-x1132.google.com [IPv6:2607:f8b0:4864:20::1132])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 165FAA4
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Oct 2023 13:28:33 -0700 (PDT)
-Received: by mail-yw1-x1132.google.com with SMTP id 00721157ae682-5a7b92cd0ccso18786867b3.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Oct 2023 13:28:33 -0700 (PDT)
+        Tue, 10 Oct 2023 16:28:36 -0400
+Received: from mail-yw1-x112f.google.com (mail-yw1-x112f.google.com [IPv6:2607:f8b0:4864:20::112f])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 283E691
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Oct 2023 13:28:35 -0700 (PDT)
+Received: by mail-yw1-x112f.google.com with SMTP id 00721157ae682-5a7ac4c3666so22749487b3.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Oct 2023 13:28:35 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1696969712; x=1697574512; darn=vger.kernel.org;
+        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1696969714; x=1697574514; darn=vger.kernel.org;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=YQcM66izjkkHNOvP6iDeJB5xjXS7gzV4FjRngbaMKvQ=;
-        b=Vbx3AEed7lVN/jMCcHBG/jR+2q9bgS7SXXgdRRy8Xp6p6BLjqGDuxDzSJKsn3VSw6a
-         g6sDU78+duGoV18a51aWmhqTXLzFeJzc69epj4nLsE/jGQFRQ5cKF9YoHCAd3zwibDBI
-         rPbpyN12cVa1IoA3Z2wvWuIAvBP0Jj2gM9gudOpqc578yAWesHEfnacXKpb3QL2aJj0l
-         h4E0JgAfCGcPa3Nep9W/AbrggLiecUORr1U/6gOdF54ZiPymuNJB1M6WmxIJGzbgALrD
-         uf6/HuGeDncJiL/AVju6ak+NNTo7IKPo2mAsL3LRzECHX+XHKEQrrcWQBhE0yjn65UaF
-         GpTg==
+        bh=7JoAqvQEt6eH9DqcEa1Y5bx41bv20K2cSzoQx+Xkzm0=;
+        b=tXniS0Iwgab0oaVCYe2r4vPKcZ+SK8D6cRqBgujIxvVhNuwoLXCbh8/A9Ui9eaHaIK
+         gKzWbPRmzYIc9DX5evLHXWbJFEodgckNRZ2S/IP1aZA4TYYIm4FpnfsjYisweDCqhPxU
+         IpWNhm/lxBjekopsSAf5AtOwV34KUnSunf4HULAowBtNFcwgfcFdGXhovJrghjSumrKd
+         ZemYBTz+EvdIP/MQMyt+23eEynZ9jN1bebbG/U6CD4sUt7bNHmbhjIVxaRGBcUbYEjQ8
+         kdY2/pZDgVfG3AGMXyZ8YZuAO/mShBamCE80q04bEpzVd42fagTKaVr64KETnRXTmEvW
+         zLkw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1696969712; x=1697574512;
+        d=1e100.net; s=20230601; t=1696969714; x=1697574514;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=YQcM66izjkkHNOvP6iDeJB5xjXS7gzV4FjRngbaMKvQ=;
-        b=LT1x650U/4AF6DImYorC6fRNxFYmu1qJboslRIwusF0qC4S5P/AFlRCIZGksKk/G9u
-         7ScNc9VdNfdZL1r/y2pBj0CH2w6jU0rPXc9PO3u+nr8LzrfQ+CsgNiBEWjrRGMDL0nv0
-         NEmgG1iyjSI5k0zN6f3tqSSHYYVC/3NKeb4e0meaHLAakZOypkC2/mGlfM+mm/SIm+LL
-         VJ1Th8LFMN6fKB3glRampTc4Br6Lp/uSl6553Iv8uO4HA1HIstSc0KsyyEwju6gH4K2t
-         kN4jQLW0Eyykfu/ls+gCdPhvA9wsGHFAkcsKRfM3+Q9eHH7BsEYtO1E038iI5ZoIXjJj
-         TQbw==
-X-Gm-Message-State: AOJu0YwFwrbi6Z84vUQnkNAEZ18qT9eYwEHu1rApcsrSbxZ9/p92kH7n
-        ChI/f/sOq5O4MCd8rlK7qwrAspVi8of9RItoibnXLw==
-X-Google-Smtp-Source: AGHT+IFWnZNCGiFe9IqnpC67uyPvginJ837m6qhil5MvjltxZoO357m1lJ9w8cnTZyKeRmVhExXfVA==
-X-Received: by 2002:a81:78d3:0:b0:5a7:a817:be43 with SMTP id t202-20020a8178d3000000b005a7a817be43mr4645258ywc.6.1696969712140;
-        Tue, 10 Oct 2023 13:28:32 -0700 (PDT)
+        bh=7JoAqvQEt6eH9DqcEa1Y5bx41bv20K2cSzoQx+Xkzm0=;
+        b=iWWwt3CMGPTLvJcbGkZv0n9AikRzgSYzg1ggXuIWvaUF+Ztqo4VmW/w4UL4deo9Op0
+         gQrtudrPofD/paPCPJpL+73/JJA8unjoiLlisEHt16LadqEoB/oq+7ooAvodGGKNSWfb
+         m6MA5q8yY6sMJ96dpFuH9v47IURaA6f45JGPcNzIGfZeQUsDmJ9GdO7JaZrqpM+fqBxf
+         KtcEBcQQJF8fl1MZgczuSp9i2gW8B+9KlXGzHiv4hcRurViavB7U5wKoNLLBV66sT6q8
+         j8EE+QISsF7PRn2uBV+cczXKn11C0BbMX9S2XeO4jDfjhBUCahi9Ia7x/VJVZp5E9hJr
+         qorQ==
+X-Gm-Message-State: AOJu0Ywg/prnXmHrgCFLCO3MClx+3t+ddJAtqGDGGJpRKc1P+lOKkKkx
+        iK1I7B7y12peRQm9wVvLuDjvhEFN7Ih6O0uBVItQ3g==
+X-Google-Smtp-Source: AGHT+IFMJNpyPjuutYCWXJhQXe+nhGdrKqerW1hhVlRYpct9UOvDXz2j63jwLyzBY3s41HDDIROzMg==
+X-Received: by 2002:a0d:d4d3:0:b0:5a7:be23:6a7c with SMTP id w202-20020a0dd4d3000000b005a7be236a7cmr3275971ywd.6.1696969714259;
+        Tue, 10 Oct 2023 13:28:34 -0700 (PDT)
 Received: from localhost (cpe-76-182-20-124.nc.res.rr.com. [76.182.20.124])
-        by smtp.gmail.com with ESMTPSA id ft18-20020a05690c361200b0059b20231f1dsm3382648ywb.121.2023.10.10.13.28.31
+        by smtp.gmail.com with ESMTPSA id d1-20020a81ab41000000b0059511008958sm4555970ywk.76.2023.10.10.13.28.33
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 10 Oct 2023 13:28:31 -0700 (PDT)
+        Tue, 10 Oct 2023 13:28:33 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-Subject: [PATCH 2/8] btrfs-progs: add new FEATURE_INCOMPAT_ENCRYPT flag
-Date:   Tue, 10 Oct 2023 16:28:19 -0400
-Message-ID: <8328d47baed55c7e275eef41ddcab003c2c43e3a.1696969632.git.josef@toxicpanda.com>
+Subject: [PATCH 4/8] btrfs-progs: add inode encryption contexts
+Date:   Tue, 10 Oct 2023 16:28:21 -0400
+Message-ID: <1a456b16da0ab1dbf643e62235954d8a7de5e61a.1696969632.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <cover.1696969632.git.josef@toxicpanda.com>
 References: <cover.1696969632.git.josef@toxicpanda.com>
@@ -67,40 +67,43 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
 
-Matches kernel change by the same name.
+Recapitulates relevant parts of kernel change 'btrfs: add inode
+encryption contexts'.
 
 Signed-off-by: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
 ---
- kernel-shared/ctree.h      | 3 ++-
- kernel-shared/uapi/btrfs.h | 1 +
- 2 files changed, 3 insertions(+), 1 deletion(-)
+ kernel-shared/uapi/btrfs_tree.h | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/kernel-shared/ctree.h b/kernel-shared/ctree.h
-index 59533879..6c9ff866 100644
---- a/kernel-shared/ctree.h
-+++ b/kernel-shared/ctree.h
-@@ -103,7 +103,8 @@ static inline u32 __BTRFS_LEAF_DATA_SIZE(u32 nodesize)
- 	 BTRFS_FEATURE_INCOMPAT_RAID1C34 |		\
- 	 BTRFS_FEATURE_INCOMPAT_METADATA_UUID |		\
- 	 BTRFS_FEATURE_INCOMPAT_ZONED |			\
--	 BTRFS_FEATURE_INCOMPAT_EXTENT_TREE_V2)
-+	 BTRFS_FEATURE_INCOMPAT_EXTENT_TREE_V2 |	\
-+	 BTRFS_FEATURE_INCOMPAT_ENCRYPT)
- #else
- #define BTRFS_FEATURE_INCOMPAT_SUPP			\
- 	(BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF |		\
-diff --git a/kernel-shared/uapi/btrfs.h b/kernel-shared/uapi/btrfs.h
-index 85b04f89..cd00be93 100644
---- a/kernel-shared/uapi/btrfs.h
-+++ b/kernel-shared/uapi/btrfs.h
-@@ -356,6 +356,7 @@ _static_assert(sizeof(struct btrfs_ioctl_fs_info_args) == 1024);
- #define BTRFS_FEATURE_INCOMPAT_RAID1C34		(1ULL << 11)
- #define BTRFS_FEATURE_INCOMPAT_ZONED		(1ULL << 12)
- #define BTRFS_FEATURE_INCOMPAT_EXTENT_TREE_V2	(1ULL << 13)
-+#define BTRFS_FEATURE_INCOMPAT_ENCRYPT		(1ULL << 15)
+diff --git a/kernel-shared/uapi/btrfs_tree.h b/kernel-shared/uapi/btrfs_tree.h
+index f49ae534..37869fea 100644
+--- a/kernel-shared/uapi/btrfs_tree.h
++++ b/kernel-shared/uapi/btrfs_tree.h
+@@ -162,6 +162,8 @@
+ #define BTRFS_VERITY_DESC_ITEM_KEY	36
+ #define BTRFS_VERITY_MERKLE_ITEM_KEY	37
  
- struct btrfs_ioctl_feature_flags {
- 	__u64 compat_flags;
++#define BTRFS_FSCRYPT_CTXT_ITEM_KEY	41
++
+ #define BTRFS_ORPHAN_ITEM_KEY		48
+ /* reserve 2-15 close to the inode for later flexibility */
+ 
+@@ -400,6 +402,7 @@ static inline __u8 btrfs_dir_flags_to_ftype(__u8 flags)
+ #define BTRFS_INODE_NOATIME		(1U << 9)
+ #define BTRFS_INODE_DIRSYNC		(1U << 10)
+ #define BTRFS_INODE_COMPRESS		(1U << 11)
++#define BTRFS_INODE_ENCRYPT	(1U << 12)
+ 
+ #define BTRFS_INODE_ROOT_ITEM_INIT	(1U << 31)
+ 
+@@ -416,6 +419,7 @@ static inline __u8 btrfs_dir_flags_to_ftype(__u8 flags)
+ 	 BTRFS_INODE_NOATIME |						\
+ 	 BTRFS_INODE_DIRSYNC |						\
+ 	 BTRFS_INODE_COMPRESS |						\
++	 BTRFS_INODE_ENCRYPT |						\
+ 	 BTRFS_INODE_ROOT_ITEM_INIT)
+ 
+ #define BTRFS_INODE_RO_VERITY		(1U << 0)
 -- 
 2.41.0
 

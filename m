@@ -2,60 +2,60 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D8E10CD8CB9
-	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Oct 2023 20:41:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2C8D5CD68E9
+	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Oct 2023 20:41:27 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1343651AbjJJUlX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 10 Oct 2023 16:41:23 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55286 "EHLO
+        id S234654AbjJJUlZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 10 Oct 2023 16:41:25 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55310 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234631AbjJJUlP (ORCPT
+        with ESMTP id S234614AbjJJUlO (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Oct 2023 16:41:15 -0400
-Received: from mail-yw1-x112a.google.com (mail-yw1-x112a.google.com [IPv6:2607:f8b0:4864:20::112a])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5EB188E
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Oct 2023 13:41:13 -0700 (PDT)
-Received: by mail-yw1-x112a.google.com with SMTP id 00721157ae682-5a7ad24b3aaso22706227b3.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Oct 2023 13:41:13 -0700 (PDT)
+        Tue, 10 Oct 2023 16:41:14 -0400
+Received: from mail-yw1-x1134.google.com (mail-yw1-x1134.google.com [IPv6:2607:f8b0:4864:20::1134])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2744AD3
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Oct 2023 13:41:11 -0700 (PDT)
+Received: by mail-yw1-x1134.google.com with SMTP id 00721157ae682-5a7ad24b3aaso22705377b3.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Oct 2023 13:41:11 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1696970472; x=1697575272; darn=vger.kernel.org;
+        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1696970470; x=1697575270; darn=vger.kernel.org;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=04NXAXYAL76rZFvqx8617y1QivsQaz2o0HkmETeNnJo=;
-        b=lM7P5Us7VcNlJkQwcpe0kT7qPTAi32j9o+e5Z8XCWMTd410DKf5bjw6OlKq+BpnVmo
-         f7QIp7P8/+PLr6pR5DbGZpjovCQ/SDVhdZltsO0HJutfAf+waf3SZardf9TnYlYuixEu
-         o+drhTwQed7kmDkCNNQHmB/ISW++a6h4vsmQRK0Vc2LFnbfuduWQn2D/WjxnkxhzU3Yu
-         BauHWhoHRNh/Ns9sISO/Da11RiRUNiZZCkVYwRdizLR9N4V0HqxAT5Y5fRsBjpPzkE+I
-         46XCVXU87T/IeH/MNW/s6TYFd8k1gyf34LhH3g0A6ctlhEq9Q2gGHBpqgjWVhADcPNs3
-         wCnA==
+        bh=3m4RAmLF+khaONHXt5qu//wFJJoUrRtGots1ic/eLAI=;
+        b=WjfFi+gH5h5K1Rxx88fOl7il7cMo1NwVuHfhNO9uPV/j+y2+ahEQd4RjsgDL5154by
+         RWeE+SibHed/VdWh/hho6I2YbWoyMVip28dIWPKHu174IYo2U/+z21MrZwuqWYp4EiVg
+         05Rr5czj4m+0KvVdJNfMUxT/xH0VzgKoO4r5Zr0oFpRAh1yTgNU/Sx6wZMAlDhODlFpc
+         n8/5xsl5LbO18JHqI41LT3qyyoAXaOafyCKF0uktkzV3+rjU1VHgVQlcFXqflpZQgTve
+         ICJTARlqXYiGTJ8mgVrXIKI3jGRY/Ez4M1a0ITVB/tuX9nyC2U/aL3mv6UCdLu2Wy32C
+         bxIw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1696970472; x=1697575272;
+        d=1e100.net; s=20230601; t=1696970470; x=1697575270;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=04NXAXYAL76rZFvqx8617y1QivsQaz2o0HkmETeNnJo=;
-        b=j9AZ8L74Uup6ieIcyr3DhiB7kxQAx51gYnmkvxJRDEvITtzd9+BSgq2WezEDqFPEpv
-         NHjSZS6ce6Br/hMrPLGI00NHV6cJQLS3a6iHYvrUmZo/6Yl7aI1zYzaQtzue0WdVga0Q
-         TLkFejqruUGVIYIGMrMQZ65vhq/UZlcBfX/tT9pgk8Cz0AXr4GLqgTLywhMmxcHNiVYA
-         rjdc9NpQoExSHCoBUJDcQL8t/9Sl24b1vC6IHnespqSRf7825cpI5sNrZVo2jn/9u9zf
-         R1Z2WytDtyz30rB9IZT75wUVk9/NuBnTSMeVBTekaF1iIChIPmxpJF8s0v6X6hSmtguJ
-         Q0gw==
-X-Gm-Message-State: AOJu0YzwJ262alG5VcVOcT7FdeSqHn8BJAkRHjF8VsJNujR+lGo0gA8T
-        CLUPspuGkvNMJ/hbzBlaYqjDLQ9caLMesqmNZZLbOg==
-X-Google-Smtp-Source: AGHT+IGmi7RnyAArKPVXwSMJyCrhSIl3U3g2YRLot+FS8OSdQ1I1a+5v9lOo+SGVn0zVU+Ma7bA0ww==
-X-Received: by 2002:a0d:cac5:0:b0:59f:5895:6e38 with SMTP id m188-20020a0dcac5000000b0059f58956e38mr21172770ywd.4.1696970472539;
-        Tue, 10 Oct 2023 13:41:12 -0700 (PDT)
+        bh=3m4RAmLF+khaONHXt5qu//wFJJoUrRtGots1ic/eLAI=;
+        b=KNXsLdwbEI3JC12gYLo4+Hw+jmDBt02f+Zu2IMXprTv7lcyBM9UqSyAgC9Gq1SjIjh
+         Ol82Jy7CU1jXjctLMSHy/tZU0s8sHpDtc3pmSE1XrFckUDIEtQs+ZVQuZTcgZ9llGXB1
+         WBOCWHIeMOeiwHVh+kGN8hOza4lcMe/bBnlPsoyBOScfNdTnHxutuiz10fjiwdxb0AX5
+         jD+o/4JvPXiVPDXlgmUM7nPWtPmOaRYj92H7AaYq30R0bvFRyed4IhH4ulCfGR8IwzyB
+         54zwyML7TgEx5m8tk1HTOkdO86mfd4GCqDOGBAL1xz6z5vWBch6LOsCZ97XHAVT83RYz
+         S6oQ==
+X-Gm-Message-State: AOJu0Yz+9GvnG1OMmg/Ami2gWM3vdKozCkxpXGpgtp7aUmQmHv9mKWB1
+        NPUh6OpcRwEzG35A5x7X3uErQy8EDWBbxkIGoO1M9A==
+X-Google-Smtp-Source: AGHT+IEouGSIjN904f72tEDHIxSSZumqXFfqa+Z9ibdW067FA51KO6BL+bO0SLL2rzK/kWN9sdei7g==
+X-Received: by 2002:a81:4e4a:0:b0:5a7:ca59:82b9 with SMTP id c71-20020a814e4a000000b005a7ca5982b9mr2301640ywb.16.1696970470319;
+        Tue, 10 Oct 2023 13:41:10 -0700 (PDT)
 Received: from localhost (cpe-76-182-20-124.nc.res.rr.com. [76.182.20.124])
-        by smtp.gmail.com with ESMTPSA id c65-20020a0df344000000b005925765aa30sm4697647ywf.135.2023.10.10.13.41.12
+        by smtp.gmail.com with ESMTPSA id n184-20020a0de4c1000000b005a4d922cf77sm4656731ywe.119.2023.10.10.13.41.09
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 10 Oct 2023 13:41:12 -0700 (PDT)
+        Tue, 10 Oct 2023 13:41:09 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-fscrypt@vger.kernel.org, ebiggers@kernel.org,
         linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 07/36] fscrypt: add documentation about extent encryption
-Date:   Tue, 10 Oct 2023 16:40:22 -0400
-Message-ID: <68d59d78499743cecf1cdde9d77bfc6fbe1e6a0c.1696970227.git.josef@toxicpanda.com>
+Subject: [PATCH v2 05/36] blk-crypto: add a process bio callback
+Date:   Tue, 10 Oct 2023 16:40:20 -0400
+Message-ID: <ab3493e225d34845fa953c429b3cd07c112ec7e7.1696970227.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <cover.1696970227.git.josef@toxicpanda.com>
 References: <cover.1696970227.git.josef@toxicpanda.com>
@@ -65,68 +65,232 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Add a couple of sections to the fscrypt documentation about per-extent
-encryption.
+Btrfs does checksumming, and the checksums need to match the bytes on
+disk.  In order to facilitate this add a process bio callback for the
+blk-crypto layer.  This allows the file system to specify a callback and
+then can process the encrypted bio as necessary.
+
+For btrfs, writes will have the checksums calculated and saved into our
+relevant data structures for storage once the write completes.  For
+reads we will validate the checksums match what is on disk and error out
+if there is a mismatch.
+
+This is incompatible with native encryption obviously, so make sure we
+don't use native encryption if this callback is set.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- Documentation/filesystems/fscrypt.rst | 36 +++++++++++++++++++++++++++
- 1 file changed, 36 insertions(+)
+ block/blk-crypto-fallback.c        | 28 ++++++++++++++++++++++++++++
+ block/blk-crypto-profile.c         |  2 ++
+ block/blk-crypto.c                 |  6 +++++-
+ fs/crypto/inline_crypt.c           |  3 ++-
+ include/linux/blk-crypto-profile.h |  7 +++++++
+ include/linux/blk-crypto.h         |  9 +++++++--
+ include/linux/fscrypt.h            | 14 ++++++++++++++
+ 7 files changed, 65 insertions(+), 4 deletions(-)
 
-diff --git a/Documentation/filesystems/fscrypt.rst b/Documentation/filesystems/fscrypt.rst
-index 28700fb41a00..6235b1caec2d 100644
---- a/Documentation/filesystems/fscrypt.rst
-+++ b/Documentation/filesystems/fscrypt.rst
-@@ -256,6 +256,21 @@ alternative master keys or to support rotating master keys.  Instead,
- the master keys may be wrapped in userspace, e.g. as is done by the
- `fscrypt <https://github.com/google/fscrypt>`_ tool.
+diff --git a/block/blk-crypto-fallback.c b/block/blk-crypto-fallback.c
+index e6468eab2681..8b4a83534127 100644
+--- a/block/blk-crypto-fallback.c
++++ b/block/blk-crypto-fallback.c
+@@ -346,6 +346,15 @@ static bool blk_crypto_fallback_encrypt_bio(struct bio **bio_ptr)
+ 		}
+ 	}
  
-+Per-extent encryption keys
-+--------------------------
++	/* Process the encrypted bio before we submit it. */
++	if (bc->bc_key->crypto_cfg.process_bio) {
++		blk_st = bc->bc_key->crypto_cfg.process_bio(src_bio, enc_bio);
++		if (blk_st != BLK_STS_OK) {
++			src_bio->bi_status = blk_st;
++			goto out_free_bounce_pages;
++		}
++	}
 +
-+For certain file systems, such as btrfs, it's desired to derive a
-+per-extent encryption key.  This is to enable features such as snapshots
-+and reflink, where you could have different inodes pointing at the same
-+extent.  When a new extent is created fscrypt randomly generates a
-+16-byte nonce and the file system stores it along side the extent.
-+Then, it uses a KDF (as described in `Key derivation function`_) to
-+derive the extent's key from the master key and nonce.
-+
-+Currently the inode's master key and encryption policy must match the
-+extent, so you cannot share extents between inodes that were encrypted
-+differently.
-+
- DIRECT_KEY policies
- -------------------
+ 	enc_bio->bi_private = src_bio;
+ 	enc_bio->bi_end_io = blk_crypto_fallback_encrypt_endio;
+ 	*bio_ptr = enc_bio;
+@@ -391,6 +400,24 @@ static void blk_crypto_fallback_decrypt_bio(struct work_struct *work)
+ 	unsigned int i;
+ 	blk_status_t blk_st;
  
-@@ -1394,6 +1409,27 @@ by the kernel and is used as KDF input or as a tweak to cause
- different files to be encrypted differently; see `Per-file encryption
- keys`_ and `DIRECT_KEY policies`_.
++	/*
++	 * Process the bio first before trying to decrypt.
++	 *
++	 * NOTE: btrfs expects that this bio is the same that was submitted.  If
++	 * at any point this changes we will need to update process_bio to take
++	 * f_ctx->crypt_iter in order to make sure we can iterate the pages for
++	 * checksumming.  We're currently saving this in our btrfs_bio, so this
++	 * works, but if at any point in the future we start allocating a bounce
++	 * bio or something we need to update this callback.
++	 */
++	if (bc->bc_key->crypto_cfg.process_bio) {
++		blk_st = bc->bc_key->crypto_cfg.process_bio(bio, bio);
++		if (blk_st != BLK_STS_OK) {
++			bio->bi_status = blk_st;
++			goto out_no_keyslot;
++		}
++	}
++
+ 	/*
+ 	 * Get a blk-crypto-fallback keyslot that contains a crypto_skcipher for
+ 	 * this bio's algorithm and key.
+@@ -560,6 +587,7 @@ static int blk_crypto_fallback_init(void)
  
-+Extent encryption context
-+-------------------------
-+
-+The extent encryption context mirrors the important parts of the above
-+`Encryption context`_, with a few ommisions.  The struct is defined as
-+follows::
-+
-+        struct fscrypt_extent_context {
-+                u8 version;
-+                u8 encryption_mode;
-+                u8 master_key_identifier[FSCRYPT_KEY_IDENTIFIER_SIZE];
-+                u8 nonce[FSCRYPT_FILE_NONCE_SIZE];
-+        };
-+
-+Currently all fields much match the containing inode's encryption
-+context, with the exception of the nonce.
-+
-+Additionally extent encryption is only supported with
-+FSCRYPT_EXTENT_CONTEXT_V2 using the standard policy, all other policies
-+are disallowed.
-+
- Data path changes
- -----------------
+ 	blk_crypto_fallback_profile->ll_ops = blk_crypto_fallback_ll_ops;
+ 	blk_crypto_fallback_profile->max_dun_bytes_supported = BLK_CRYPTO_MAX_IV_SIZE;
++	blk_crypto_fallback_profile->process_bio_supported = true;
  
+ 	/* All blk-crypto modes have a crypto API fallback. */
+ 	for (i = 0; i < BLK_ENCRYPTION_MODE_MAX; i++)
+diff --git a/block/blk-crypto-profile.c b/block/blk-crypto-profile.c
+index 7fabc883e39f..640cf2ea3fcc 100644
+--- a/block/blk-crypto-profile.c
++++ b/block/blk-crypto-profile.c
+@@ -352,6 +352,8 @@ bool __blk_crypto_cfg_supported(struct blk_crypto_profile *profile,
+ 		return false;
+ 	if (profile->max_dun_bytes_supported < cfg->dun_bytes)
+ 		return false;
++	if (cfg->process_bio && !profile->process_bio_supported)
++		return false;
+ 	return true;
+ }
+ 
+diff --git a/block/blk-crypto.c b/block/blk-crypto.c
+index 4d760b092deb..50556952df19 100644
+--- a/block/blk-crypto.c
++++ b/block/blk-crypto.c
+@@ -321,6 +321,8 @@ int __blk_crypto_rq_bio_prep(struct request *rq, struct bio *bio,
+  * @dun_bytes: number of bytes that will be used to specify the DUN when this
+  *	       key is used
+  * @data_unit_size: the data unit size to use for en/decryption
++ * @process_bio: the call back if the upper layer needs to process the encrypted
++ *		 bio
+  *
+  * Return: 0 on success, -errno on failure.  The caller is responsible for
+  *	   zeroizing both blk_key and raw_key when done with them.
+@@ -328,7 +330,8 @@ int __blk_crypto_rq_bio_prep(struct request *rq, struct bio *bio,
+ int blk_crypto_init_key(struct blk_crypto_key *blk_key, const u8 *raw_key,
+ 			enum blk_crypto_mode_num crypto_mode,
+ 			unsigned int dun_bytes,
+-			unsigned int data_unit_size)
++			unsigned int data_unit_size,
++			blk_crypto_process_bio_t process_bio)
+ {
+ 	const struct blk_crypto_mode *mode;
+ 
+@@ -350,6 +353,7 @@ int blk_crypto_init_key(struct blk_crypto_key *blk_key, const u8 *raw_key,
+ 	blk_key->crypto_cfg.crypto_mode = crypto_mode;
+ 	blk_key->crypto_cfg.dun_bytes = dun_bytes;
+ 	blk_key->crypto_cfg.data_unit_size = data_unit_size;
++	blk_key->crypto_cfg.process_bio = process_bio;
+ 	blk_key->data_unit_size_bits = ilog2(data_unit_size);
+ 	blk_key->size = mode->keysize;
+ 	memcpy(blk_key->raw, raw_key, mode->keysize);
+diff --git a/fs/crypto/inline_crypt.c b/fs/crypto/inline_crypt.c
+index 4eeb75410ba8..57776c548a06 100644
+--- a/fs/crypto/inline_crypt.c
++++ b/fs/crypto/inline_crypt.c
+@@ -168,7 +168,8 @@ int fscrypt_prepare_inline_crypt_key(struct fscrypt_prepared_key *prep_key,
+ 
+ 	err = blk_crypto_init_key(blk_key, raw_key, crypto_mode,
+ 				  fscrypt_get_dun_bytes(ci),
+-				  1U << ci->ci_data_unit_bits);
++				  1U << ci->ci_data_unit_bits,
++				  sb->s_cop->process_bio);
+ 	if (err) {
+ 		fscrypt_err(inode, "error %d initializing blk-crypto key", err);
+ 		goto fail;
+diff --git a/include/linux/blk-crypto-profile.h b/include/linux/blk-crypto-profile.h
+index 90ab33cb5d0e..3c002e85631a 100644
+--- a/include/linux/blk-crypto-profile.h
++++ b/include/linux/blk-crypto-profile.h
+@@ -100,6 +100,13 @@ struct blk_crypto_profile {
+ 	 */
+ 	struct device *dev;
+ 
++	/**
++	 * @process_bio_supported: Some things, like btrfs, require the
++	 * encrypted data for checksumming. Drivers set this to true if they can
++	 * handle the process_bio() callback.
++	 */
++	bool process_bio_supported;
++
+ 	/* private: The following fields shouldn't be accessed by drivers. */
+ 
+ 	/* Number of keyslots, or 0 if not applicable */
+diff --git a/include/linux/blk-crypto.h b/include/linux/blk-crypto.h
+index 5e5822c18ee4..194c1d727013 100644
+--- a/include/linux/blk-crypto.h
++++ b/include/linux/blk-crypto.h
+@@ -6,7 +6,7 @@
+ #ifndef __LINUX_BLK_CRYPTO_H
+ #define __LINUX_BLK_CRYPTO_H
+ 
+-#include <linux/types.h>
++#include <linux/blk_types.h>
+ 
+ enum blk_crypto_mode_num {
+ 	BLK_ENCRYPTION_MODE_INVALID,
+@@ -17,6 +17,9 @@ enum blk_crypto_mode_num {
+ 	BLK_ENCRYPTION_MODE_MAX,
+ };
+ 
++typedef blk_status_t (blk_crypto_process_bio_t)(struct bio *orig_bio,
++						struct bio *enc_bio);
++
+ #define BLK_CRYPTO_MAX_KEY_SIZE		64
+ /**
+  * struct blk_crypto_config - an inline encryption key's crypto configuration
+@@ -31,6 +34,7 @@ struct blk_crypto_config {
+ 	enum blk_crypto_mode_num crypto_mode;
+ 	unsigned int data_unit_size;
+ 	unsigned int dun_bytes;
++	blk_crypto_process_bio_t *process_bio;
+ };
+ 
+ /**
+@@ -90,7 +94,8 @@ bool bio_crypt_dun_is_contiguous(const struct bio_crypt_ctx *bc,
+ int blk_crypto_init_key(struct blk_crypto_key *blk_key, const u8 *raw_key,
+ 			enum blk_crypto_mode_num crypto_mode,
+ 			unsigned int dun_bytes,
+-			unsigned int data_unit_size);
++			unsigned int data_unit_size,
++			blk_crypto_process_bio_t process_bio);
+ 
+ int blk_crypto_start_using_key(struct block_device *bdev,
+ 			       const struct blk_crypto_key *key);
+diff --git a/include/linux/fscrypt.h b/include/linux/fscrypt.h
+index ea8fdc6f3b83..a3576da6a9fa 100644
+--- a/include/linux/fscrypt.h
++++ b/include/linux/fscrypt.h
+@@ -16,6 +16,7 @@
+ #include <linux/fs.h>
+ #include <linux/mm.h>
+ #include <linux/slab.h>
++#include <linux/blk-crypto.h>
+ #include <uapi/linux/fscrypt.h>
+ 
+ /*
+@@ -199,6 +200,19 @@ struct fscrypt_operations {
+ 	 */
+ 	struct block_device **(*get_devices)(struct super_block *sb,
+ 					     unsigned int *num_devs);
++
++	/*
++	 * A callback if the file system requires the ability to process the
++	 * encrypted bio.
++	 *
++	 * @orig_bio: the original bio submitted.
++	 * @enc_bio: the encrypted bio.
++	 *
++	 * For writes the enc_bio will be different from the orig_bio, for reads
++	 * they will be the same.  For reads we get the bio before it is
++	 * decrypted, for writes we get the bio before it is submitted.
++	 */
++	blk_crypto_process_bio_t *process_bio;
+ };
+ 
+ static inline struct fscrypt_inode_info *
 -- 
 2.41.0
 

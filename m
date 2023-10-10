@@ -2,60 +2,60 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1FCF6CD690E
-	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Oct 2023 20:42:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 184B1CD6115
+	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Oct 2023 20:42:00 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234314AbjJJUl7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 10 Oct 2023 16:41:59 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33478 "EHLO
+        id S234483AbjJJUl5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 10 Oct 2023 16:41:57 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45904 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234749AbjJJUll (ORCPT
+        with ESMTP id S234726AbjJJUli (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Oct 2023 16:41:41 -0400
-Received: from mail-yw1-x112f.google.com (mail-yw1-x112f.google.com [IPv6:2607:f8b0:4864:20::112f])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F3931FA
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Oct 2023 13:41:38 -0700 (PDT)
-Received: by mail-yw1-x112f.google.com with SMTP id 00721157ae682-5a7c7262d5eso11152507b3.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Oct 2023 13:41:38 -0700 (PDT)
+        Tue, 10 Oct 2023 16:41:38 -0400
+Received: from mail-yw1-x1130.google.com (mail-yw1-x1130.google.com [IPv6:2607:f8b0:4864:20::1130])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 51F1EB8
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Oct 2023 13:41:34 -0700 (PDT)
+Received: by mail-yw1-x1130.google.com with SMTP id 00721157ae682-5a505762c9dso75055897b3.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Oct 2023 13:41:34 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1696970497; x=1697575297; darn=vger.kernel.org;
+        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1696970493; x=1697575293; darn=vger.kernel.org;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=qMKykqBQS3RwEEufY+WMuQHq/EYaymfByQ3Narp/qxc=;
-        b=Pf6sO2Q8PbPLwXjPDfItr2/XiXAiSYTSmX1/ppJ8y9kuMaQBJ65oIRI2u1uRbmeuac
-         4Z3vz1HNiQ7BMc997V5OHwpfUUtE/TwrlG3NdhQl5Nvla5bkbfNsZ0HnfeDZ1TANxQ9K
-         rm3+RrWSiTWqrblMqgAOgaeweaWUUcYntkffgPhwKXVuF+RBPGHdX5CXozBFHHYqTu/b
-         0dv3zmTGg3LGW9+adu6RGf3QTFSH/YGZPWmiRTlmmp94gkjtf1Y9YtzkOoEKyQog3K+y
-         3yEarudlPP7kNJrgtqExtv4k8RHspW9UuxUu1pSSBTa20HFbuyBxcIO10yK7N2eXBm9G
-         AsAw==
+        bh=NKfV0mKcd78LD0F5M7sHTMzeB633X8okqEPfgdPomZI=;
+        b=wSeLYH8qSOP8DCgeRHGEdi+ovvHZlRPviKh3ftbSPwBVFZxdAGj8QdRBMTuiX7z8xu
+         Y7GLI4KR5c3Qx+DUWwEKa1nqyM5CMwhqmZb865TTYnWkqHwysjkYliqiggKB7M8Akbdb
+         6AqLMX8/HyE9Mb1ZmibMKjGSaEnGvm1OwBw33gDw7yI0KfBC+k4lFSFZTUsrVPpOeGjQ
+         Zfmd+Q7T/tGo40AwUDnFm1zxT3/xogf2OtY9oh3whw9RlSDZBLjgnEUY3SGhgTCCD2dH
+         gZQ76oZDrFQZUG3ZZh93b+t4RPX47B1goBtqPNQ/57g7V7apqOl3eIfyYPe0myh4ap/u
+         zXXw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1696970497; x=1697575297;
+        d=1e100.net; s=20230601; t=1696970493; x=1697575293;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=qMKykqBQS3RwEEufY+WMuQHq/EYaymfByQ3Narp/qxc=;
-        b=PZqzD8xh9YqmHNAsB23QGWSPU4JjB9TEdT7Y9WmGxeLo1Hm5jMXukwoPd0JuOc6Sl7
-         XJ3R02c2OXoz5uahpBHI6riiHjDNABb6vRKkFLa5UYS6dIu2W4183dRO7eqbbpsX3Kl/
-         d/Bf3f1PnOsPe+kjKYyDhPF1HPS/V2Zo32YA/HxfNkrKveyslZfykWdgOVTHQhP+iUcH
-         5NJ87L8w45mYoPBS5/C7HWwXiScmPkm3hjyjhpENnVBfqZeCWr1iHSnma9wbxTHfDI75
-         Bfws+86BWcl+KaguMB559XnRrBINkxyUVe0Vmnc+8ay6vR1Uu37dp4g8zscQWg4ufQgY
-         4Psg==
-X-Gm-Message-State: AOJu0YwHJNSWxAU4bM3OWyb97cZEPMnQZQ1AtLQGxwNm0AB2yrQ/J1XA
-        u6yldXIsu5tQ2UnXNYAUb4u3EQ==
-X-Google-Smtp-Source: AGHT+IETd3bX/He5a3vC5KS58JgFRitZ1HZTBIPqZbrgbbwE0f9wBdGtCYbfHzTtf7J3O+rl/SIdtQ==
-X-Received: by 2002:a0d:e607:0:b0:5a1:c610:1154 with SMTP id p7-20020a0de607000000b005a1c6101154mr20541272ywe.10.1696970497546;
-        Tue, 10 Oct 2023 13:41:37 -0700 (PDT)
+        bh=NKfV0mKcd78LD0F5M7sHTMzeB633X8okqEPfgdPomZI=;
+        b=FJMQ6Amek544rwzmuVOb7Nii7d422MG6WIDsbEBsomaFh3YTIMqVFz8+pTimPXsOun
+         gGoGNa6Dx2SAdMdY8zwA5VcD3kOJNP7EALHvZn41g0D4Mw+yDemKW2Cb27AB92Uan7VD
+         MDnMxW4aLHBEbBjI8VTYRBNk47ya5UufuECVjSyy9qt/86IKMR8hZwSEBB7cu/CcjpwI
+         BG/Kvr2ZgyhyzX3kDeFW+qhF0Hb6dTUtIlm++iAVez3ed7CzBlRjOXLSwUGvf6vvB563
+         zHpmJkznL5rX/NdF1VxwCE92Zy/oyEwi/xCfdgXCWcWHD9MZllQ5949CQBRnXMfu4U+M
+         oD/w==
+X-Gm-Message-State: AOJu0YyX+XOiYQGWn4WqGJ3oLD+531zzsWp0wHfTTPd7bEseLSRFkrBL
+        LHj0dCAzYuZBA9J6RltC7p6UzQ==
+X-Google-Smtp-Source: AGHT+IGzD8eE4ccFpvq+0Zb1MfG2ccpgcstraFCLPGLBmuyH6GgOZaY66pNZKwrTU6ioTPzfgJHHaA==
+X-Received: by 2002:a0d:d546:0:b0:58f:a19f:2b79 with SMTP id x67-20020a0dd546000000b0058fa19f2b79mr20760135ywd.9.1696970493506;
+        Tue, 10 Oct 2023 13:41:33 -0700 (PDT)
 Received: from localhost (cpe-76-182-20-124.nc.res.rr.com. [76.182.20.124])
-        by smtp.gmail.com with ESMTPSA id y129-20020a0def87000000b00582fae92aa7sm4650659ywe.93.2023.10.10.13.41.37
+        by smtp.gmail.com with ESMTPSA id ex5-20020a05690c2fc500b005a7a4e3816esm1213834ywb.89.2023.10.10.13.41.33
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 10 Oct 2023 13:41:37 -0700 (PDT)
+        Tue, 10 Oct 2023 13:41:33 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-fscrypt@vger.kernel.org, ebiggers@kernel.org,
         linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 29/36] btrfs: pass the fscrypt_info through the replace extent infrastructure
-Date:   Tue, 10 Oct 2023 16:40:44 -0400
-Message-ID: <3b71dffa339c14a6c973ed5a29a5ca4b879ce847.1696970227.git.josef@toxicpanda.com>
+Subject: [PATCH v2 26/36] btrfs: add an optional encryption context to the end of file extents
+Date:   Tue, 10 Oct 2023 16:40:41 -0400
+Message-ID: <8f92ec76d56b2a4c56e34a91c6afdfdb5fc9fa45.1696970227.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <cover.1696970227.git.josef@toxicpanda.com>
 References: <cover.1696970227.git.josef@toxicpanda.com>
@@ -65,42 +65,216 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Prealloc uses the btrfs_replace_file_extents() infrastructure to insert
-its new extents.  We need to set the fscrypt context on these extents,
-so pass this through the btrfs_replace_extent_info so it can be used in
-a later patch when we hook in this infrastructure.
+The fscrypt encryption context can be extended to include different
+things in the future.  To facilitate future expansion add an optional
+btrfs_encryption_info to the end of the file extent.  This will hold the
+size of the context and then will have the binary context tacked onto
+the end of the extent item.
+
+Add the appropriate accessors to make it easy to read this information
+if we have encryption set, and then update the tree-checker to validate
+that if this is indeed set properly that the size matches properly.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/ctree.h | 2 ++
- fs/btrfs/inode.c | 1 +
- 2 files changed, 3 insertions(+)
+ fs/btrfs/accessors.h            | 48 +++++++++++++++++++++++++++
+ fs/btrfs/tree-checker.c         | 58 ++++++++++++++++++++++++++++-----
+ include/uapi/linux/btrfs_tree.h | 17 +++++++++-
+ 3 files changed, 113 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index e5879bd7f2f7..f5367091c0cd 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -374,6 +374,8 @@ struct btrfs_replace_extent_info {
- 	char *extent_buf;
- 	/* The length of @extent_buf */
- 	u32 extent_buf_size;
-+	/* The fscrypt_extent_info for a new extent. */
-+	struct fscrypt_extent_info *fscrypt_info;
- 	/*
- 	 * Set to true when attempting to replace a file range with a new extent
- 	 * described by this structure, set to false when attempting to clone an
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 87b38be47d0b..99fb5a613fb8 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -9714,6 +9714,7 @@ static struct btrfs_trans_handle *insert_prealloc_file_extent(
- 	extent_info.update_times = true;
- 	extent_info.qgroup_reserved = qgroup_released;
- 	extent_info.insertions = 0;
-+	extent_info.fscrypt_info = fscrypt_info;
+diff --git a/fs/btrfs/accessors.h b/fs/btrfs/accessors.h
+index 5aaf204fa55f..a54a4671bd15 100644
+--- a/fs/btrfs/accessors.h
++++ b/fs/btrfs/accessors.h
+@@ -932,6 +932,10 @@ BTRFS_SETGET_STACK_FUNCS(super_uuid_tree_generation, struct btrfs_super_block,
+ BTRFS_SETGET_STACK_FUNCS(super_nr_global_roots, struct btrfs_super_block,
+ 			 nr_global_roots, 64);
  
- 	path = btrfs_alloc_path();
- 	if (!path) {
++/* struct btrfs_file_extent_encryption_info */
++BTRFS_SETGET_FUNCS(encryption_info_size, struct btrfs_encryption_info, size,
++		   32);
++
+ /* struct btrfs_file_extent_item */
+ BTRFS_SETGET_STACK_FUNCS(stack_file_extent_type, struct btrfs_file_extent_item,
+ 			 type, 8);
+@@ -973,6 +977,50 @@ BTRFS_SETGET_FUNCS(file_extent_encryption, struct btrfs_file_extent_item,
+ BTRFS_SETGET_FUNCS(file_extent_other_encoding, struct btrfs_file_extent_item,
+ 		   other_encoding, 16);
+ 
++static inline struct btrfs_encryption_info *btrfs_file_extent_encryption_info(
++					const struct btrfs_file_extent_item *ei)
++{
++	unsigned long offset = (unsigned long)ei;
++
++	offset += offsetof(struct btrfs_file_extent_item, encryption_info);
++	return (struct btrfs_encryption_info *)offset;
++}
++
++static inline unsigned long btrfs_file_extent_encryption_ctx_offset(
++					const struct btrfs_file_extent_item *ei)
++{
++	unsigned long offset = (unsigned long)ei;
++
++	offset += offsetof(struct btrfs_file_extent_item, encryption_info);
++	return offset + offsetof(struct btrfs_encryption_info, context);
++}
++
++static inline u32 btrfs_file_extent_encryption_ctx_size(
++					const struct extent_buffer *eb,
++					const struct btrfs_file_extent_item *ei)
++{
++	return btrfs_encryption_info_size(eb,
++					  btrfs_file_extent_encryption_info(ei));
++}
++
++static inline void btrfs_set_file_extent_encryption_ctx_size(
++						const struct extent_buffer *eb,
++						struct btrfs_file_extent_item *ei,
++						u32 val)
++{
++	btrfs_set_encryption_info_size(eb,
++				       btrfs_file_extent_encryption_info(ei),
++				       val);
++}
++
++static inline u32 btrfs_file_extent_encryption_info_size(
++					const struct extent_buffer *eb,
++					const struct btrfs_file_extent_item *ei)
++{
++	return btrfs_encryption_info_size(eb,
++					  btrfs_file_extent_encryption_info(ei));
++}
++
+ /* btrfs_qgroup_status_item */
+ BTRFS_SETGET_FUNCS(qgroup_status_generation, struct btrfs_qgroup_status_item,
+ 		   generation, 64);
+diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
+index 825b235927c6..0b671c1e96f1 100644
+--- a/fs/btrfs/tree-checker.c
++++ b/fs/btrfs/tree-checker.c
+@@ -211,6 +211,7 @@ static int check_extent_data_item(struct extent_buffer *leaf,
+ 	u32 item_size = btrfs_item_size(leaf, slot);
+ 	u64 extent_end;
+ 	u8 policy;
++	u8 fe_type;
+ 
+ 	if (unlikely(!IS_ALIGNED(key->offset, sectorsize))) {
+ 		file_extent_err(leaf, slot,
+@@ -241,12 +242,12 @@ static int check_extent_data_item(struct extent_buffer *leaf,
+ 				SZ_4K);
+ 		return -EUCLEAN;
+ 	}
+-	if (unlikely(btrfs_file_extent_type(leaf, fi) >=
+-		     BTRFS_NR_FILE_EXTENT_TYPES)) {
++
++	fe_type = btrfs_file_extent_type(leaf, fi);
++	if (unlikely(fe_type >= BTRFS_NR_FILE_EXTENT_TYPES)) {
+ 		file_extent_err(leaf, slot,
+ 		"invalid type for file extent, have %u expect range [0, %u]",
+-			btrfs_file_extent_type(leaf, fi),
+-			BTRFS_NR_FILE_EXTENT_TYPES - 1);
++			fe_type, BTRFS_NR_FILE_EXTENT_TYPES - 1);
+ 		return -EUCLEAN;
+ 	}
+ 
+@@ -295,12 +296,51 @@ static int check_extent_data_item(struct extent_buffer *leaf,
+ 		return 0;
+ 	}
+ 
+-	/* Regular or preallocated extent has fixed item size */
+-	if (unlikely(item_size != sizeof(*fi))) {
+-		file_extent_err(leaf, slot,
++	if (policy == BTRFS_ENCRYPTION_FSCRYPT) {
++		size_t fe_size = sizeof(*fi) +
++			sizeof(struct btrfs_encryption_info);
++		u32 ctxsize;
++
++		if (unlikely(item_size < fe_size)) {
++			file_extent_err(leaf, slot,
++	"invalid item size for encrypted file extent, have %u expect = %zu + size of u32",
++					item_size, sizeof(*fi));
++			return -EUCLEAN;
++		}
++
++		ctxsize = btrfs_file_extent_encryption_info_size(leaf, fi);
++		if (unlikely(item_size != (fe_size + ctxsize))) {
++			file_extent_err(leaf, slot,
++	"invalid item size for encrypted file extent, have %u expect = %zu + context of size %u",
++					item_size, fe_size, ctxsize);
++			return -EUCLEAN;
++		}
++
++		if (unlikely(ctxsize > BTRFS_MAX_EXTENT_CTX_SIZE)) {
++			file_extent_err(leaf, slot,
++	"invalid file extent context size, have %u expect a maximum of %u",
++					ctxsize, BTRFS_MAX_EXTENT_CTX_SIZE);
++			return -EUCLEAN;
++		}
++
++		/*
++		 * Only regular and prealloc extents should have an encryption
++		 * context.
++		 */
++		if (unlikely(fe_type != BTRFS_FILE_EXTENT_REG &&
++			     fe_type != BTRFS_FILE_EXTENT_PREALLOC)) {
++			file_extent_err(leaf, slot,
++		"invalid type for encrypted file extent, have %u",
++					btrfs_file_extent_type(leaf, fi));
++			return -EUCLEAN;
++		}
++	} else {
++		if (unlikely(item_size != sizeof(*fi))) {
++			file_extent_err(leaf, slot,
+ 	"invalid item size for reg/prealloc file extent, have %u expect %zu",
+-			item_size, sizeof(*fi));
+-		return -EUCLEAN;
++					item_size, sizeof(*fi));
++			return -EUCLEAN;
++		}
+ 	}
+ 	if (unlikely(CHECK_FE_ALIGNED(leaf, slot, fi, ram_bytes, sectorsize) ||
+ 		     CHECK_FE_ALIGNED(leaf, slot, fi, disk_bytenr, sectorsize) ||
+diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
+index e5a4ba9573a0..98f29f36a359 100644
+--- a/include/uapi/linux/btrfs_tree.h
++++ b/include/uapi/linux/btrfs_tree.h
+@@ -1065,12 +1065,24 @@ enum {
+ 	BTRFS_NR_FILE_EXTENT_TYPES = 3,
+ };
+ 
++/*
++ * Currently just the FSCRYPT_SET_CONTEXT_MAX_SIZE, which is larger than the
++ * current extent context size from fscrypt, so this should give us plenty of
++ * breathing room for expansion later.
++ */
++#define BTRFS_MAX_EXTENT_CTX_SIZE 40
++
+ enum {
+ 	BTRFS_ENCRYPTION_NONE,
+ 	BTRFS_ENCRYPTION_FSCRYPT,
+ 	BTRFS_NR_ENCRYPTION_TYPES,
+ };
+ 
++struct btrfs_encryption_info {
++	__le32 size;
++	__u8 context[0];
++};
++
+ struct btrfs_file_extent_item {
+ 	/*
+ 	 * transaction id that created this extent
+@@ -1126,7 +1138,10 @@ struct btrfs_file_extent_item {
+ 	 * always reflects the size uncompressed and without encoding.
+ 	 */
+ 	__le64 num_bytes;
+-
++	/*
++	 * the encryption info, if any
++	 */
++	struct btrfs_encryption_info encryption_info[0];
+ } __attribute__ ((__packed__));
+ 
+ struct btrfs_csum_item {
 -- 
 2.41.0
 

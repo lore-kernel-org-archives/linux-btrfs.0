@@ -2,185 +2,121 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B972ACD8CB9
-	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Oct 2023 20:41:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 68D7ECD8CBF
+	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Oct 2023 20:41:16 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1343597AbjJJUlI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 10 Oct 2023 16:41:08 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55158 "EHLO
+        id S234410AbjJJUlP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 10 Oct 2023 16:41:15 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55198 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234244AbjJJUlG (ORCPT
+        with ESMTP id S234244AbjJJUlI (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Oct 2023 16:41:06 -0400
-Received: from mail-yw1-x1135.google.com (mail-yw1-x1135.google.com [IPv6:2607:f8b0:4864:20::1135])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AF0C899
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Oct 2023 13:41:04 -0700 (PDT)
-Received: by mail-yw1-x1135.google.com with SMTP id 00721157ae682-5a7ba0828efso17954817b3.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Oct 2023 13:41:04 -0700 (PDT)
+        Tue, 10 Oct 2023 16:41:08 -0400
+Received: from mail-yw1-x112a.google.com (mail-yw1-x112a.google.com [IPv6:2607:f8b0:4864:20::112a])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0E5468E
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Oct 2023 13:41:07 -0700 (PDT)
+Received: by mail-yw1-x112a.google.com with SMTP id 00721157ae682-5a7c7262d5eso11146907b3.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Oct 2023 13:41:07 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1696970464; x=1697575264; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:to
-         :from:from:to:cc:subject:date:message-id:reply-to;
-        bh=aSLAHv4ovY92dSVytiyYNj1arXZjJNGuUbk0RVfgU/Q=;
-        b=v//mmXOU/e3JAkIvtAOtW02PMu6D985voR7Ofdh2kdo1Q/8pSn9wPmZ7WGiYW+wUng
-         koWeoKQu34Pr5q0qDPN5R8EZ+UaG+3dIO0l4IVLwhi/G4hmhUhmchWRyvY7JcjiDFJnL
-         ywukN05AojwxW2u6TKduWvVFtEgOPNLCcvsNe0t3rpBiZXntyxBmmTzfZr1IWEGXBLp+
-         P5GLASqXfGeXS2pFqefYPey4P1Ha095Ooft7qBDZUFys+3UeJNC2/qQch9rtqEZ7NJAD
-         b2oClOrjkXnncSrO4NYiGuHlLoaNG+LYKZkjp3VIw4KkQiUWKpsEJJ3u+ap2db+n31wj
-         ycrw==
+        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1696970466; x=1697575266; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=fkPDGYDbzsyT2iviorbG84fmLsSBIDBYGMivDDhcaSA=;
+        b=Fw12OkQzJz1RqOIy5OpR4Cy7l7SIn84viBkp36/p04qC2CLP6ebe34hP9ZoxPltmEd
+         pVn1HTMK3VTJIxIr4J5fT3wVDrLvSBPx7tzV9AKA/aRVRc0qE3X9+RPT3Kt4rBj/SqZy
+         sknmKjtZedi63p56frXZy/tZYILauVt+Ibl96h8Kuw9r+ZjJ1GDVQn7wZpUIlJX+D5qV
+         zBHa9yHrL+uc6wrWDDnsWXrLQvCy7MHfnKhYBPEsPPoOUtShOx2wuZP75hITrWbrRxcu
+         Brs/s7KGnbDCNM5h/IfZL+xzF/FvkCi85wHQZxo17HN2X1OlTmyZIWq4hRqtd0vrKr0d
+         oSOQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1696970464; x=1697575264;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:to
-         :from:x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=aSLAHv4ovY92dSVytiyYNj1arXZjJNGuUbk0RVfgU/Q=;
-        b=g1LNgvR3wRy8vjLJszOffujEhUSNbdHkx5yZh8b8Bw0VwnrNXxszo7NdBKogC/O2y1
-         JIeNQ8VQ4JtzZKQECX3nHm24jQOwc99xiCX5+dn+sKkpuHXFgg10C39zbBjQxvzyGHHO
-         yauu0/EMT/r/jPZG+62NL69O7QhOuUSmJV5obRZ7VixoNV/LBdRU3q3vTbJwLpmnyx+v
-         wz2bNznu0KANcrsA/8vUcbzVHPwTT2l/8cav7zExSyzv0gUehczZYTX7odXQ51dobFOa
-         dDtDzwCVJW66/B3N2dG2JuBeQj9YTpfotsqH+FMXeydsKklGQoXKo1l+1WJAFxqvpUQ8
-         PXZQ==
-X-Gm-Message-State: AOJu0YxMPWVtaLxd5PMZK64HdkleHaJUPyS774bmIw50xQv6aosPgyl0
-        6NWzGXeGKBXV9J81IRVoS6r7WOi3x+n3zo79YkToAw==
-X-Google-Smtp-Source: AGHT+IHIW8d1IdN87vrDs5Le/UR/xYniotTN/kKZjEgqzFr1DTyHEyekL4hyeaU39/91tAHyBJZoZA==
-X-Received: by 2002:a0d:fdc7:0:b0:58e:a9d3:bf98 with SMTP id n190-20020a0dfdc7000000b0058ea9d3bf98mr19144616ywf.27.1696970463882;
-        Tue, 10 Oct 2023 13:41:03 -0700 (PDT)
+        d=1e100.net; s=20230601; t=1696970466; x=1697575266;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=fkPDGYDbzsyT2iviorbG84fmLsSBIDBYGMivDDhcaSA=;
+        b=wSILDIDPNu1cSxlM7z8kJalkCET5Qv8f3F/77XPcPByTW2ZgtKFnkRqkxLwgOBQoDb
+         d3eN36KnTp39TDB8eeWEXaThorPz1axVck2XVuKjzmVz8XxJaayMS4YYTa6u+teP12fp
+         8QpvpEkYmIiSMerJHpVRiXCHZqVuCMBc60Tbx4XkvV5KAdsti1hk5w89di61hoa0NbFh
+         nktS1d83tJmdGSVD1ZWJyjhdmyCo7BrjOy61tYlb0OsNGbbPeOlPw/rrz3JCLDQvktyH
+         Htbz4W6QfQxKCenEX/LsL3hlcHDerDJnCHTXO+o6DxVC+JoPRi/zfDaAqRMVZkXWEPsR
+         9d+Q==
+X-Gm-Message-State: AOJu0YxzUSyQQPBEBMQLull55jxDOVP9F0XbIMK3ULJTjAHFw8rwbM5f
+        H6+m5JmvwORXWBdxCK/PuFx6JjD4G2HSkArNRE9viQ==
+X-Google-Smtp-Source: AGHT+IF3+989+mVbsCnTHYZ6gvtzCY6x1ia4u7mwISczqB7A5h4+dXkdgsfoaI3v75hIIbv4o4zN9Q==
+X-Received: by 2002:a81:6f85:0:b0:569:e7cb:cd4e with SMTP id k127-20020a816f85000000b00569e7cbcd4emr18009889ywc.48.1696970466174;
+        Tue, 10 Oct 2023 13:41:06 -0700 (PDT)
 Received: from localhost (cpe-76-182-20-124.nc.res.rr.com. [76.182.20.124])
-        by smtp.gmail.com with ESMTPSA id d139-20020a0ddb91000000b005a2202905casm4675182ywe.43.2023.10.10.13.41.03
+        by smtp.gmail.com with ESMTPSA id c65-20020a0df344000000b005925765aa30sm4697589ywf.135.2023.10.10.13.41.05
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 10 Oct 2023 13:41:03 -0700 (PDT)
+        Tue, 10 Oct 2023 13:41:05 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-fscrypt@vger.kernel.org, ebiggers@kernel.org,
         linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 00/36] btrfs: add fscrypt support
-Date:   Tue, 10 Oct 2023 16:40:15 -0400
-Message-ID: <cover.1696970227.git.josef@toxicpanda.com>
+Subject: [PATCH v2 02/36] fscrypt: don't wipe mk secret until the last active user is gone
+Date:   Tue, 10 Oct 2023 16:40:17 -0400
+Message-ID: <e5cce8880fd1072bd08988ddd8fb2d619445bda3.1696970227.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.41.0
+In-Reply-To: <cover.1696970227.git.josef@toxicpanda.com>
+References: <cover.1696970227.git.josef@toxicpanda.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hello,
+Previously we were wiping the master key secret when we do
+FS_IOC_REMOVE_ENCRYPTION_KEY, and then using the fact that it was
+cleared as the mechanism from keeping new users from being setup.  This
+works with inode based encryption, as the per-inode key is derived at
+setup time, so the secret disappearing doesn't affect any currently open
+files from being able to continue working.
 
-This is the next version of the fscrypt support.  It is based on a combination
-of Sterba's for-next branch and the fscrypt for-next branch.  The fscrypt stuff
-should apply cleanly to the fscrypt for-next, but it won't apply cleanly to our
-btrfs for-next branch.  I did this in case Eric wants to go ahead and merge the
-fscrypt side, then we can figure out what to do on the btrfs side.
+However for extent based encryption we do our key derivation at page
+writeout and readpage time, which means we need the master key secret to
+be available while we still have our file open.
 
-v1 was posted here
+Since the master key lifetime is controlled by a flag, move the clearing
+of the secret to the mk_active_users cleanup stage.  This counter
+represents the actively open files that still exist on the file system,
+and thus should still be able to operate normally.  Once the last user
+is closed we can clear the secret.  Until then no new users are allowed,
+and this allows currently open files to continue to operate until
+they're closed.
 
-https://lore.kernel.org/linux-btrfs/cover.1695750478.git.josef@toxicpanda.com/
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+---
+ fs/crypto/keyring.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-v1->v2:
-- Dropped the rename patch as it's in the fscrypt tree.
-- Implemented the soft delete master key idea in a different way that's
-  hopefully more straightforward and easier to understand.
-- A small fixup related to master keys being removed.
-
-This has been tested with the updated fstests, everything appears to be working
-well.  Thanks,
-
-Josef
-
-Josef Bacik (21):
-  fscrypt: use a flag to indicate that the master key is being evicted
-  fscrypt: don't wipe mk secret until the last active user is gone
-  fscrypt: add per-extent encryption support
-  fscrypt: disable all but standard v2 policies for extent encryption
-  blk-crypto: add a process bio callback
-  fscrypt: add documentation about extent encryption
-  btrfs: add infrastructure for safe em freeing
-  btrfs: add fscrypt_info and encryption_type to ordered_extent
-  btrfs: plumb through setting the fscrypt_info for ordered extents
-  btrfs: populate the ordered_extent with the fscrypt context
-  btrfs: keep track of fscrypt info and orig_start for dio reads
-  btrfs: add an optional encryption context to the end of file extents
-  btrfs: pass through fscrypt_extent_info to the file extent helpers
-  btrfs: pass the fscrypt_info through the replace extent infrastructure
-  btrfs: implement the fscrypt extent encryption hooks
-  btrfs: setup fscrypt_extent_info for new extents
-  btrfs: populate ordered_extent with the orig offset
-  btrfs: set the bio fscrypt context when applicable
-  btrfs: add a bio argument to btrfs_csum_one_bio
-  btrfs: add orig_logical to btrfs_bio
-  btrfs: implement process_bio cb for fscrypt
-
-Omar Sandoval (7):
-  fscrypt: expose fscrypt_nokey_name
-  btrfs: disable various operations on encrypted inodes
-  btrfs: start using fscrypt hooks
-  btrfs: add inode encryption contexts
-  btrfs: add new FEATURE_INCOMPAT_ENCRYPT flag
-  btrfs: adapt readdir for encrypted and nokey names
-  btrfs: implement fscrypt ioctls
-
-Sweet Tea Dorminy (8):
-  btrfs: disable verity on encrypted inodes
-  btrfs: handle nokey names.
-  btrfs: add encryption to CONFIG_BTRFS_DEBUG
-  btrfs: add get_devices hook for fscrypt
-  btrfs: turn on inlinecrypt mount option for encrypt
-  btrfs: set file extent encryption excplicitly
-  btrfs: add fscrypt_info and encryption_type to extent_map
-  btrfs: explicitly track file extent length for replace and drop
-
- Documentation/filesystems/fscrypt.rst |  36 ++
- block/blk-crypto-fallback.c           |  28 ++
- block/blk-crypto-profile.c            |   2 +
- block/blk-crypto.c                    |   6 +-
- fs/btrfs/Makefile                     |   1 +
- fs/btrfs/accessors.h                  |  50 +++
- fs/btrfs/bio.c                        |  45 ++-
- fs/btrfs/bio.h                        |   6 +
- fs/btrfs/btrfs_inode.h                |   3 +-
- fs/btrfs/compression.c                |   6 +
- fs/btrfs/ctree.h                      |   4 +
- fs/btrfs/defrag.c                     |  10 +-
- fs/btrfs/delayed-inode.c              |  29 +-
- fs/btrfs/delayed-inode.h              |   6 +-
- fs/btrfs/dir-item.c                   | 108 +++++-
- fs/btrfs/dir-item.h                   |  11 +-
- fs/btrfs/extent_io.c                  |  81 ++++-
- fs/btrfs/extent_io.h                  |   3 +
- fs/btrfs/extent_map.c                 | 106 +++++-
- fs/btrfs/extent_map.h                 |  12 +
- fs/btrfs/file-item.c                  |  17 +-
- fs/btrfs/file-item.h                  |   7 +-
- fs/btrfs/file.c                       |  16 +-
- fs/btrfs/fs.h                         |   3 +-
- fs/btrfs/fscrypt.c                    | 326 ++++++++++++++++++
- fs/btrfs/fscrypt.h                    |  95 +++++
- fs/btrfs/inode.c                      | 476 ++++++++++++++++++++------
- fs/btrfs/ioctl.c                      |  41 ++-
- fs/btrfs/ordered-data.c               |  26 +-
- fs/btrfs/ordered-data.h               |  21 +-
- fs/btrfs/reflink.c                    |   8 +
- fs/btrfs/root-tree.c                  |   8 +-
- fs/btrfs/root-tree.h                  |   2 +-
- fs/btrfs/super.c                      |  17 +
- fs/btrfs/sysfs.c                      |   6 +
- fs/btrfs/tree-checker.c               |  66 +++-
- fs/btrfs/tree-log.c                   |  26 +-
- fs/btrfs/verity.c                     |   3 +
- fs/crypto/crypto.c                    |  10 +-
- fs/crypto/fname.c                     |  39 +--
- fs/crypto/fscrypt_private.h           |  61 +++-
- fs/crypto/hooks.c                     |   2 +-
- fs/crypto/inline_crypt.c              |  87 ++++-
- fs/crypto/keyring.c                   |  23 +-
- fs/crypto/keysetup.c                  | 159 ++++++++-
- fs/crypto/policy.c                    |  59 ++++
- include/linux/blk-crypto-profile.h    |   7 +
- include/linux/blk-crypto.h            |   9 +-
- include/linux/fscrypt.h               | 122 +++++++
- include/uapi/linux/btrfs.h            |   1 +
- include/uapi/linux/btrfs_tree.h       |  35 +-
- 51 files changed, 2095 insertions(+), 236 deletions(-)
- create mode 100644 fs/btrfs/fscrypt.c
- create mode 100644 fs/btrfs/fscrypt.h
-
+diff --git a/fs/crypto/keyring.c b/fs/crypto/keyring.c
+index e0e311ed6b88..31ea81d97075 100644
+--- a/fs/crypto/keyring.c
++++ b/fs/crypto/keyring.c
+@@ -116,6 +116,7 @@ void fscrypt_put_master_key_activeref(struct super_block *sb,
+ 	memzero_explicit(&mk->mk_ino_hash_key,
+ 			 sizeof(mk->mk_ino_hash_key));
+ 	mk->mk_ino_hash_key_initialized = false;
++	wipe_master_key_secret(&mk->mk_secret);
+ 
+ 	/* Drop the structural ref associated with the active refs. */
+ 	fscrypt_put_master_key(mk);
+@@ -245,7 +246,6 @@ void fscrypt_destroy_keyring(struct super_block *sb)
+ 			WARN_ON_ONCE(refcount_read(&mk->mk_active_refs) != 1);
+ 			WARN_ON_ONCE(refcount_read(&mk->mk_struct_refs) != 1);
+ 			WARN_ON_ONCE(!is_master_key_secret_present(mk));
+-			wipe_master_key_secret(&mk->mk_secret);
+ 			set_bit(FSCRYPT_MK_FLAG_EVICTED, &mk->mk_flags);
+ 			fscrypt_put_master_key_activeref(sb, mk);
+ 		}
+@@ -1064,7 +1064,6 @@ static int do_remove_key(struct file *filp, void __user *_uarg, bool all_users)
+ 	/* No user claims remaining.  Go ahead and wipe the secret. */
+ 	err = -ENOKEY;
+ 	if (!test_and_set_bit(FSCRYPT_MK_FLAG_EVICTED, &mk->mk_flags)) {
+-		wipe_master_key_secret(&mk->mk_secret);
+ 		fscrypt_put_master_key_activeref(sb, mk);
+ 		err = 0;
+ 	}
 -- 
 2.41.0
 

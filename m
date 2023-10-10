@@ -2,60 +2,60 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8C544CD68ED
-	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Oct 2023 20:41:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E2066CD8CB9
+	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Oct 2023 20:41:19 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1343612AbjJJUlQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 10 Oct 2023 16:41:16 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55188 "EHLO
+        id S234510AbjJJUlR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 10 Oct 2023 16:41:17 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55228 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234253AbjJJUlI (ORCPT
+        with ESMTP id S234411AbjJJUlN (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Oct 2023 16:41:08 -0400
-Received: from mail-yw1-x112b.google.com (mail-yw1-x112b.google.com [IPv6:2607:f8b0:4864:20::112b])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 462E691
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Oct 2023 13:41:06 -0700 (PDT)
-Received: by mail-yw1-x112b.google.com with SMTP id 00721157ae682-5a7db1f864bso2043347b3.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Oct 2023 13:41:06 -0700 (PDT)
+        Tue, 10 Oct 2023 16:41:13 -0400
+Received: from mail-yw1-x112f.google.com (mail-yw1-x112f.google.com [IPv6:2607:f8b0:4864:20::112f])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CB2F3AF
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Oct 2023 13:41:09 -0700 (PDT)
+Received: by mail-yw1-x112f.google.com with SMTP id 00721157ae682-5a7db1f864bso2044087b3.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Oct 2023 13:41:09 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1696970465; x=1697575265; darn=vger.kernel.org;
+        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1696970469; x=1697575269; darn=vger.kernel.org;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=t3AtE57cfE4ke3TNDK2zyjx2+8CAXIno7J26EywbEhE=;
-        b=tLiDHazrIRdBQE7hE24ZJ//35zg8mXot0ALA6hPjIxiFicGeSBDYKffxuVPku7RfJG
-         W/8L884yPAbQbPSAeyTi9q0G1z50fN0rQq0Qb20XuEyUS1v+QqbuyfJvyKMOnh7ekl+e
-         IpsbsE+tHGmspA86K8nyyP7Fr4WHLHL867GJf6JKlWcegxERdcVFpdZDpm5yzQOJJYvG
-         xJhBq6AVpvflcV2zLY9HIPACje+O8NZT/NW3G5ASwIuhMRXQvFIN4g/MEX6PDfFYDATW
-         IeGwsYt+PR5xWrG9YK9Oc8f9JDIVR8u7GBG/g85Bf4GrUs1BWlnyIPi1F6kxKhp8RqBg
-         45jQ==
+        bh=jrb2x4Nys7RjPe3v/rGBGWIlt1Z2rhPrxm8XK7K5cwQ=;
+        b=m15I01bX++RnRJ2N6taEInQ8ysuvzm5drw4IvDneNm0y35/ESqV4aFEvWWzL/Cm6RY
+         GEAtzAR+9aj6ih/+RUbcPnvZj6oDGj7tCKb5ITIFxr44LlegRM4ff6cvNkIftoiBFT4c
+         d2j6IeLh6bKT1tqJ7oPXFX2x9w2MdrwlPWNfr9n87RVs0i05LO2UEPMLad7bdQWAxmlE
+         Vo2NuQ9TO2QMGlsSuENGttx29QRx+RDj8UlNVRel8G3HFEEuTdrBXNNdTlvvowRV37JE
+         8m+fkDb2bH2piMbXm7GrNTsAJloAEDTdTZFYWjKpyQB4qy5fWQpJWHWaAWaeMZGFvM+/
+         CpLA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1696970465; x=1697575265;
+        d=1e100.net; s=20230601; t=1696970469; x=1697575269;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=t3AtE57cfE4ke3TNDK2zyjx2+8CAXIno7J26EywbEhE=;
-        b=inIh+XDTcIgPr0IMC3e5mTxxO4DK+OaazZ4Fv+GwVns9U9wnx9eij8bu8Fl2sK63us
-         /JHEC0pAhxWT5OvW8U5o9ckRv7nXgpFE0FRgJKgkIAkuVfZ5WyjIdrWU6+lKkdiy4mgQ
-         0TkVFLvWbCdxYopz37oDTjuHQIm/zhlhlJ5/Htnj2n+98jSKHZZkJ8yyaO4Ak7D/Ca0p
-         YExzA0v3N8NlT+EvQPCj+FnOqn/d46yq0CQYUUNgNuMq81OsUljt1cHoVY+zisgaB2HU
-         waXjZjsMImkQCUi0Wp2k1IpMY5LAQgWmPGfqAoSKjskC1f8ONVGZaFlvh1f4NsU8YwmK
-         4G2A==
-X-Gm-Message-State: AOJu0YwS4nYzvMuXP9E1w7vTk+EbOBzuzs6zQdSqQs71q931o/3FxIbC
-        zi53G7/q5K/SiuTWkf+IOXobew==
-X-Google-Smtp-Source: AGHT+IH+HddtrEfyeHZpxOqvjphtb2wnL6aRU96LWS6eFgRyVsdxV1iw7xuXsyX64rDKY8i5bwPDVA==
-X-Received: by 2002:a25:8f8d:0:b0:d48:1936:14d0 with SMTP id u13-20020a258f8d000000b00d48193614d0mr19368582ybl.53.1696970464995;
-        Tue, 10 Oct 2023 13:41:04 -0700 (PDT)
+        bh=jrb2x4Nys7RjPe3v/rGBGWIlt1Z2rhPrxm8XK7K5cwQ=;
+        b=gqIvg+rJA1raVXcut9y4iEj4oFWyxpX5XSV8+fJajVwWpUQ/uk+3lSVuOHVSo1wxPZ
+         y9Pc6o4ra0OT+y9RSeca0L6NtAdS1KIxvWEOsFnFuV+iCLb4vtOs4e31HggWU0FZkchh
+         er42JTRUI2f0Er+9WUnh/d78ae40niXiEJr0+I5oOC/baM+uHQCSDMTKouH7qxXYGU8V
+         ZbkhHyVEU5nWD2qJ4lDwd0JesekQ88F/U5dk/IVpF+1qK0SW+HEaoj9cV7vchlyw0+6w
+         R/c2WHiujryFPmHUqC8TrjuUFoHG6rs8t21snpLMdMQva0hhLIsdgLffd8BltaVBDIk2
+         gHnA==
+X-Gm-Message-State: AOJu0Yx2KDjQIn++BLIQUW0iJFMCzhh8IM1Te/jxlZrhaKUKiVWU3xdF
+        Vs8320iBP5iWRSqSaBRpxUE/wB4d2fi2mzcb00IHJA==
+X-Google-Smtp-Source: AGHT+IEsUZ8erj5VJUQi36nUP18bhs4RN8p0sJyQDvO1xm2DGVPUtjgqSMHSC1IGo7/9xFp31iPXkA==
+X-Received: by 2002:a81:73c1:0:b0:59b:5d6b:5110 with SMTP id o184-20020a8173c1000000b0059b5d6b5110mr20946525ywc.21.1696970468986;
+        Tue, 10 Oct 2023 13:41:08 -0700 (PDT)
 Received: from localhost (cpe-76-182-20-124.nc.res.rr.com. [76.182.20.124])
-        by smtp.gmail.com with ESMTPSA id a5-20020a259805000000b00d7bb3c4893fsm3907331ybo.8.2023.10.10.13.41.04
+        by smtp.gmail.com with ESMTPSA id d184-20020a0ddbc1000000b00586108dd8f5sm4608386ywe.18.2023.10.10.13.41.08
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 10 Oct 2023 13:41:04 -0700 (PDT)
+        Tue, 10 Oct 2023 13:41:08 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-fscrypt@vger.kernel.org, ebiggers@kernel.org,
         linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 01/36] fscrypt: use a flag to indicate that the master key is being evicted
-Date:   Tue, 10 Oct 2023 16:40:16 -0400
-Message-ID: <e86c16dddc049ff065f877d793ad773e4c6bfad9.1696970227.git.josef@toxicpanda.com>
+Subject: [PATCH v2 04/36] fscrypt: disable all but standard v2 policies for extent encryption
+Date:   Tue, 10 Oct 2023 16:40:19 -0400
+Message-ID: <39faa5d97713d44564249b50518c0212e5bf04cc.1696970227.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <cover.1696970227.git.josef@toxicpanda.com>
 References: <cover.1696970227.git.josef@toxicpanda.com>
@@ -65,165 +65,46 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Currently we wipe the mk->mk_secret when we remove the master key, and
-we use this status to tell everybody whether or not the master key is
-available for use.
-
-With extent based encryption we're going to need to keep the secret
-around until the inode is evicted, so we need a different mechanism to
-tell everybody that the key is currently unusable.
-
-Accomplish this with a mk_flags member in the master key, and update the
-is_master_key_secret_present() helper to return the status of this bit.
-Update the removal and adding helpers to manipulate this bit and use it
-as the source of truth about whether or not the key is available for
-use.
+The different encryption related options for fscrypt are too numerous to
+support for extent based encryption.  Support for a few of these options
+could possibly be added, but since they're niche options simply reject
+them for file systems using extent based encryption.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/crypto/fscrypt_private.h | 17 ++++++++---------
- fs/crypto/hooks.c           |  2 +-
- fs/crypto/keyring.c         | 20 ++++++++++++++------
- fs/crypto/keysetup.c        |  4 ++--
- 4 files changed, 25 insertions(+), 18 deletions(-)
+ fs/crypto/policy.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
-diff --git a/fs/crypto/fscrypt_private.h b/fs/crypto/fscrypt_private.h
-index 2fb4ba435d27..f44342f17269 100644
---- a/fs/crypto/fscrypt_private.h
-+++ b/fs/crypto/fscrypt_private.h
-@@ -471,6 +471,10 @@ struct fscrypt_master_key_secret {
+diff --git a/fs/crypto/policy.c b/fs/crypto/policy.c
+index 4729f21e21d8..75a69f02f11d 100644
+--- a/fs/crypto/policy.c
++++ b/fs/crypto/policy.c
+@@ -209,6 +209,12 @@ static bool fscrypt_supported_v1_policy(const struct fscrypt_policy_v1 *policy,
+ 		return false;
+ 	}
  
- } __randomize_layout;
- 
-+enum fscrypt_mk_flags {
-+	FSCRYPT_MK_FLAG_EVICTED = BIT(0),
-+};
++	if (inode->i_sb->s_cop->has_per_extent_encryption) {
++		fscrypt_warn(inode,
++			     "v1 policies can't be used on file systems that use extent encryption");
++		return false;
++	}
 +
- /*
-  * fscrypt_master_key - an in-use master key
-  *
-@@ -565,19 +569,14 @@ struct fscrypt_master_key {
- 	siphash_key_t		mk_ino_hash_key;
- 	bool			mk_ino_hash_key_initialized;
- 
-+	/* Flags for the master key. */
-+	unsigned long		mk_flags;
- } __randomize_layout;
- 
- static inline bool
--is_master_key_secret_present(const struct fscrypt_master_key_secret *secret)
-+is_master_key_secret_present(const struct fscrypt_master_key *mk)
- {
--	/*
--	 * The READ_ONCE() is only necessary for fscrypt_drop_inode().
--	 * fscrypt_drop_inode() runs in atomic context, so it can't take the key
--	 * semaphore and thus 'secret' can change concurrently which would be a
--	 * data race.  But fscrypt_drop_inode() only need to know whether the
--	 * secret *was* present at the time of check, so READ_ONCE() suffices.
--	 */
--	return READ_ONCE(secret->size) != 0;
-+	return !test_bit(FSCRYPT_MK_FLAG_EVICTED, &mk->mk_flags);
+ 	return true;
  }
  
- static inline const char *master_key_spec_type(
-diff --git a/fs/crypto/hooks.c b/fs/crypto/hooks.c
-index 85d2975b69b7..f7cf724cf256 100644
---- a/fs/crypto/hooks.c
-+++ b/fs/crypto/hooks.c
-@@ -187,7 +187,7 @@ int fscrypt_prepare_setflags(struct inode *inode,
- 			return -EINVAL;
- 		mk = ci->ci_master_key;
- 		down_read(&mk->mk_sem);
--		if (is_master_key_secret_present(&mk->mk_secret))
-+		if (is_master_key_secret_present(mk))
- 			err = fscrypt_derive_dirhash_key(ci, mk);
- 		else
- 			err = -ENOKEY;
-diff --git a/fs/crypto/keyring.c b/fs/crypto/keyring.c
-index a51fa6a33de1..e0e311ed6b88 100644
---- a/fs/crypto/keyring.c
-+++ b/fs/crypto/keyring.c
-@@ -102,7 +102,7 @@ void fscrypt_put_master_key_activeref(struct super_block *sb,
- 	 * ->mk_active_refs == 0 implies that ->mk_secret is not present and
- 	 * that ->mk_decrypted_inodes is empty.
- 	 */
--	WARN_ON_ONCE(is_master_key_secret_present(&mk->mk_secret));
-+	WARN_ON_ONCE(is_master_key_secret_present(mk));
- 	WARN_ON_ONCE(!list_empty(&mk->mk_decrypted_inodes));
- 
- 	for (i = 0; i <= FSCRYPT_MODE_MAX; i++) {
-@@ -236,11 +236,17 @@ void fscrypt_destroy_keyring(struct super_block *sb)
- 			 * the keyring due to the single active ref associated
- 			 * with ->mk_secret.  There should be no structural refs
- 			 * beyond the one associated with the active ref.
-+			 *
-+			 * We set the EVICTED flag in order to avoid the
-+			 * WARN_ON_ONCE(is_master_key_secret_present(mk)) in
-+			 * fscrypt_put_master_key_activeref(), as we want to
-+			 * maintain that warning for improper cleanup elsewhere.
- 			 */
- 			WARN_ON_ONCE(refcount_read(&mk->mk_active_refs) != 1);
- 			WARN_ON_ONCE(refcount_read(&mk->mk_struct_refs) != 1);
--			WARN_ON_ONCE(!is_master_key_secret_present(&mk->mk_secret));
-+			WARN_ON_ONCE(!is_master_key_secret_present(mk));
- 			wipe_master_key_secret(&mk->mk_secret);
-+			set_bit(FSCRYPT_MK_FLAG_EVICTED, &mk->mk_flags);
- 			fscrypt_put_master_key_activeref(sb, mk);
+@@ -269,6 +275,12 @@ static bool fscrypt_supported_v2_policy(const struct fscrypt_policy_v2 *policy,
  		}
  	}
-@@ -479,9 +485,11 @@ static int add_existing_master_key(struct fscrypt_master_key *mk,
- 	}
  
- 	/* Re-add the secret if needed. */
--	if (!is_master_key_secret_present(&mk->mk_secret)) {
--		if (!refcount_inc_not_zero(&mk->mk_active_refs))
-+	if (test_and_clear_bit(FSCRYPT_MK_FLAG_EVICTED, &mk->mk_flags)) {
-+		if (!refcount_inc_not_zero(&mk->mk_active_refs)) {
-+			set_bit(FSCRYPT_MK_FLAG_EVICTED, &mk->mk_flags);
- 			return KEY_DEAD;
-+		}
- 		move_master_key_secret(&mk->mk_secret, secret);
- 	}
- 
-@@ -1055,7 +1063,7 @@ static int do_remove_key(struct file *filp, void __user *_uarg, bool all_users)
- 
- 	/* No user claims remaining.  Go ahead and wipe the secret. */
- 	err = -ENOKEY;
--	if (is_master_key_secret_present(&mk->mk_secret)) {
-+	if (!test_and_set_bit(FSCRYPT_MK_FLAG_EVICTED, &mk->mk_flags)) {
- 		wipe_master_key_secret(&mk->mk_secret);
- 		fscrypt_put_master_key_activeref(sb, mk);
- 		err = 0;
-@@ -1150,7 +1158,7 @@ int fscrypt_ioctl_get_key_status(struct file *filp, void __user *uarg)
- 	}
- 	down_read(&mk->mk_sem);
- 
--	if (!is_master_key_secret_present(&mk->mk_secret)) {
-+	if (!is_master_key_secret_present(mk)) {
- 		arg.status = refcount_read(&mk->mk_active_refs) > 0 ?
- 			FSCRYPT_KEY_STATUS_INCOMPLETELY_REMOVED :
- 			FSCRYPT_KEY_STATUS_ABSENT /* raced with full removal */;
-diff --git a/fs/crypto/keysetup.c b/fs/crypto/keysetup.c
-index 094d1b7a1ae6..92eca1400b2d 100644
---- a/fs/crypto/keysetup.c
-+++ b/fs/crypto/keysetup.c
-@@ -487,7 +487,7 @@ static int setup_file_encryption_key(struct fscrypt_inode_info *ci,
- 	down_read(&mk->mk_sem);
- 
- 	/* Has the secret been removed (via FS_IOC_REMOVE_ENCRYPTION_KEY)? */
--	if (!is_master_key_secret_present(&mk->mk_secret)) {
-+	if (!is_master_key_secret_present(mk)) {
- 		err = -ENOKEY;
- 		goto out_release_key;
- 	}
-@@ -808,6 +808,6 @@ int fscrypt_drop_inode(struct inode *inode)
- 	 * then the thread removing the key will either evict the inode itself
- 	 * or will correctly detect that it wasn't evicted due to the race.
- 	 */
--	return !is_master_key_secret_present(&ci->ci_master_key->mk_secret);
-+	return !is_master_key_secret_present(ci->ci_master_key);
- }
- EXPORT_SYMBOL_GPL(fscrypt_drop_inode);
++	if ((inode->i_sb->s_cop->has_per_extent_encryption) && count) {
++		fscrypt_warn(inode,
++			     "Encryption flags aren't supported on file systems that use extent encryption");
++		return false;
++	}
++
+ 	if ((policy->flags & FSCRYPT_POLICY_FLAG_DIRECT_KEY) &&
+ 	    !supported_direct_key_modes(inode, policy->contents_encryption_mode,
+ 					policy->filenames_encryption_mode))
 -- 
 2.41.0
 

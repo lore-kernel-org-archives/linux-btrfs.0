@@ -2,114 +2,222 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 41BCFCD6E59
-	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Oct 2023 10:37:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4A138CDB47E
+	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Oct 2023 20:49:51 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234788AbjJKKg6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 11 Oct 2023 06:36:58 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36404 "EHLO
+        id S235164AbjJKUtu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 11 Oct 2023 16:49:50 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52284 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231657AbjJKKg4 (ORCPT
+        with ESMTP id S233360AbjJKUtu (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Oct 2023 06:36:56 -0400
-Received: from mgamail.intel.com (mgamail.intel.com [192.55.52.88])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 912BFB7;
-        Wed, 11 Oct 2023 03:36:55 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1697020615; x=1728556615;
-  h=date:from:to:cc:subject:message-id:references:
-   mime-version:in-reply-to;
-  bh=52YiH9Rm64BW8CkQzXjUhpKwgm4oo9z7eHhxwksiAv4=;
-  b=UglVFxDZiGCyI1bnaBQ4VxS4tOIW5Hp8CO60QnsG+tYHH8Isk3iRwnpc
-   NwHL4gdZeEj5MNzNdofCvtp/3WXbSYK+6NBIhVGQq655fVZr4rKczu0dz
-   PKe/Lfh7nZ9QtX4sKr0b4rhInphagaLr12aJnzAhT14L6hUDwW6wutghx
-   P5hV7jTi3B+AP6/noFqd3FfV3XXcaA8GefjLOl6LEH2DeuHXJq3OVMDWx
-   htVxoB9Vz5eZUR0aXEun8HTzXFe4oVemN84RPocqsrEgBhjU6nszso4MC
-   hhlSjIJiiqo3pzlwW1WMEkiRYdlbtrN5JiNTmk+YAse927WA9nPM/lBbO
-   Q==;
-X-IronPort-AV: E=McAfee;i="6600,9927,10859"; a="415675482"
-X-IronPort-AV: E=Sophos;i="6.03,214,1694761200"; 
-   d="scan'208";a="415675482"
-Received: from fmsmga004.fm.intel.com ([10.253.24.48])
-  by fmsmga101.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 11 Oct 2023 03:36:54 -0700
-X-ExtLoop1: 1
-X-IronPort-AV: E=McAfee;i="6600,9927,10859"; a="824114342"
-X-IronPort-AV: E=Sophos;i="6.03,214,1694761200"; 
-   d="scan'208";a="824114342"
-Received: from unknown (HELO smile.fi.intel.com) ([10.237.72.54])
-  by fmsmga004.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 11 Oct 2023 03:36:50 -0700
-Received: from andy by smile.fi.intel.com with local (Exim 4.97-RC1)
-        (envelope-from <andriy.shevchenko@linux.intel.com>)
-        id 1qqWa7-00000004azc-2aLH;
-        Wed, 11 Oct 2023 13:36:47 +0300
-Date:   Wed, 11 Oct 2023 13:36:47 +0300
-From:   Andy Shevchenko <andriy.shevchenko@linux.intel.com>
-To:     Alexander Lobakin <aleksander.lobakin@intel.com>
-Cc:     Yury Norov <yury.norov@gmail.com>,
-        Rasmus Villemoes <linux@rasmusvillemoes.dk>,
-        Alexander Potapenko <glider@google.com>,
-        Jakub Kicinski <kuba@kernel.org>,
-        Eric Dumazet <edumazet@google.com>,
-        David Ahern <dsahern@kernel.org>,
-        Przemek Kitszel <przemyslaw.kitszel@intel.com>,
-        Simon Horman <simon.horman@corigine.com>,
-        netdev@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        dm-devel@redhat.com, ntfs3@lists.linux.dev,
-        linux-s390@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH 09/14] bitmap: extend bitmap_{get,set}_value8() to
- bitmap_{get,set}_bits()
-Message-ID: <ZSZ6v1qgZbqKgKXa@smile.fi.intel.com>
-References: <20231009151026.66145-1-aleksander.lobakin@intel.com>
- <20231009151026.66145-10-aleksander.lobakin@intel.com>
- <ZSQq02A9mTireK71@yury-ThinkPad>
- <a28542e2-4a5b-4c29-9d4a-12a0d2ab5527@intel.com>
+        Wed, 11 Oct 2023 16:49:50 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 05A989E
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Oct 2023 13:49:47 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id A89F71F45F
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Oct 2023 20:49:46 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1697057386; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=8yjNpkbDGv1WSdgrer/raX0gZJGhGZIVJmstQL6B2lg=;
+        b=Tmqyp4DCuZvsWdYh6+JgSmfO7IvYOUbxvkbnmlN7rN0hgyYnlQ+cC+V0KLpahkrLeNBb0h
+        jhho2d/surUYIUevnLJkwWiWdOdV7G5JJOs9KBhWeflJeZ5z6+E2Grfj6fc2hUrlv7joNP
+        G+XV55q9Y7g6xdTmjJUg58nRs+EbYuA=
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id D8FBB134F5
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Oct 2023 20:49:45 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id IGCWJWkKJ2XCJAAAMHmgww
+        (envelope-from <wqu@suse.com>)
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Oct 2023 20:49:45 +0000
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH v3 1/2] btrfs-progs: mkfs/rootdir: copy missing attributes for the rootdir inode
+Date:   Thu, 12 Oct 2023 07:19:25 +1030
+Message-ID: <d33e5e10e92a0c8c2a82005eba1da47927bf286a.1697057301.git.wqu@suse.com>
+X-Mailer: git-send-email 2.42.0
+In-Reply-To: <cover.1697057301.git.wqu@suse.com>
+References: <cover.1697057301.git.wqu@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <a28542e2-4a5b-4c29-9d4a-12a0d2ab5527@intel.com>
-Organization: Intel Finland Oy - BIC 0357606-4 - Westendinkatu 7, 02160 Espoo
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Oct 11, 2023 at 11:33:25AM +0200, Alexander Lobakin wrote:
-> From: Yury Norov <yury.norov@gmail.com>
-> Date: Mon, 9 Oct 2023 09:31:15 -0700
-> 
-> > + Alexander Potapenko <glider@google.com>
-> > 
-> > On Mon, Oct 09, 2023 at 05:10:21PM +0200, Alexander Lobakin wrote:
-> >> Sometimes there's need to get a 8/16/...-bit piece of a bitmap at a
-> >> particular offset. Currently, there are only bitmap_{get,set}_value8()
-> >> to do that for 8 bits and that's it.
-> > 
-> > And also a series from Alexander Potapenko, which I really hope will
-> > get into the -next really soon. It introduces bitmap_read/write which
-> > can set up to BITS_PER_LONG at once, with no limitations on alignment
-> > of position and length:
-> > 
-> > https://lore.kernel.org/linux-arm-kernel/ZRXbOoKHHafCWQCW@yury-ThinkPad/T/#mc311037494229647088b3a84b9f0d9b50bf227cb
-> > 
-> > Can you consider building your series on top of it?
-> 
-> Yeah, I mentioned in the cover letter that I'm aware of it and in fact
-> it doesn't conflict much, as the functions I'm adding here get optimized
-> as much as the original bitmap_{get,set}_value8(), while Alexander's
-> generic helpers are heavier.
-> I realize lots of calls will be optimized as well due to the offset and
-> the width being compile-time constants, but not all of them. The idea of
-> keeping two pairs of helpers initially came from Andy if I understood
-> him correctly.
+[BUG]
+When using "mkfs.btrfs" with "--rootdir" option, the top level inode
+(rootdir) will not get the same xattr from the source dir:
 
-Just a disclaimer: The idea came before I saw the series by Alexander Potapenko.
+  mkdir -p source_dir/
+  touch source_dir/file
+  setfattr -n user.rootdir_xattr source_dir/
+  setfattr -n user.regular_xattr source_dir/file
+  mkfs.btrfs -f --rootdir source_dir $dev
+  mount $dev $mnt
+  getfattr $mnt
+  # Nothing <<<
+  getfattr $mnt/file
+  # file: $mnt/file
+  user.regular_xattr <<<
 
-> What do you think? I can provide some bloat-o-meter stats after
-> rebasing. And either way, I see no issue in basing this series on top of
-> Alex' one.
+[CAUSE]
+In function traverse_directory(), we only call add_xattr_item() for all
+the child inodes, not really for the rootdir inode itself, leading to
+the missing xattr items.
 
+Not only xattr, in fact we also miss the uid/gid/timestamps/mode for the
+rootdir inode.
+
+[FIX]
+Extract a dedicated function, copy_rootdir_inode(), to handle every
+needed attributes for the rootdir inode, including:
+
+- xattr
+- uid
+- gid
+- mode
+- timestamps
+
+Issue: #688
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ mkfs/rootdir.c | 88 ++++++++++++++++++++++++++++++++++++++------------
+ 1 file changed, 67 insertions(+), 21 deletions(-)
+
+diff --git a/mkfs/rootdir.c b/mkfs/rootdir.c
+index a413a31eb2d6..24e26cdf50e0 100644
+--- a/mkfs/rootdir.c
++++ b/mkfs/rootdir.c
+@@ -429,6 +429,69 @@ end:
+ 	return ret;
+ }
+ 
++static int copy_rootdir_inode(struct btrfs_trans_handle *trans,
++			      struct btrfs_root *root, const char *dir_name)
++{
++	u64 root_dir_inode_size;
++	struct btrfs_inode_item *inode_item;
++	struct btrfs_path path = { 0 };
++	struct btrfs_key key;
++	struct extent_buffer *leaf;
++	struct stat st;
++	int ret;
++
++	ret = stat(dir_name, &st);
++	if (ret < 0) {
++		ret = -errno;
++		error("lstat failed for direcotry %s: $m", dir_name);
++		return ret;
++	}
++
++	ret = add_xattr_item(trans, root, btrfs_root_dirid(&root->root_item),
++			     dir_name);
++	if (ret < 0) {
++		errno = -ret;
++		error("failed to add xattr item for the top level inode: %m");
++		return ret;
++	}
++
++	key.objectid = btrfs_root_dirid(&root->root_item);
++	key.offset = 0;
++	key.type = BTRFS_INODE_ITEM_KEY;
++	ret = btrfs_lookup_inode(trans, root, &path, &key, 1);
++	if (ret > 0)
++		ret = -ENOENT;
++	if (ret) {
++		error("failed to lookup root dir: %d", ret);
++		goto error;
++	}
++
++	leaf = path.nodes[0];
++	inode_item = btrfs_item_ptr(leaf, path.slots[0],
++				    struct btrfs_inode_item);
++
++	root_dir_inode_size = calculate_dir_inode_size(dir_name);
++	btrfs_set_inode_size(leaf, inode_item, root_dir_inode_size);
++
++	/* Unlike fill_inode_item, we only need to copy part of the attributes. */
++	btrfs_set_inode_uid(leaf, inode_item, st.st_uid);
++	btrfs_set_inode_gid(leaf, inode_item, st.st_gid);
++	btrfs_set_inode_mode(leaf, inode_item, st.st_mode);
++	btrfs_set_timespec_sec(leaf, &inode_item->atime, st.st_atime);
++	btrfs_set_timespec_nsec(leaf, &inode_item->atime, 0);
++	btrfs_set_timespec_sec(leaf, &inode_item->ctime, st.st_ctime);
++	btrfs_set_timespec_nsec(leaf, &inode_item->ctime, 0);
++	btrfs_set_timespec_sec(leaf, &inode_item->mtime, st.st_mtime);
++	btrfs_set_timespec_nsec(leaf, &inode_item->mtime, 0);
++	btrfs_set_timespec_sec(leaf, &inode_item->otime, 0);
++	btrfs_set_timespec_nsec(leaf, &inode_item->otime, 0);
++	btrfs_mark_buffer_dirty(leaf);
++
++error:
++	btrfs_release_path(&path);
++	return ret;
++}
++
+ static int traverse_directory(struct btrfs_trans_handle *trans,
+ 			      struct btrfs_root *root, const char *dir_name,
+ 			      struct directory_name_entry *dir_head)
+@@ -436,7 +499,6 @@ static int traverse_directory(struct btrfs_trans_handle *trans,
+ 	int ret = 0;
+ 
+ 	struct btrfs_inode_item cur_inode;
+-	struct btrfs_inode_item *inode_item;
+ 	int count, i, dir_index_cnt;
+ 	struct dirent **files;
+ 	struct stat st;
+@@ -445,10 +507,6 @@ static int traverse_directory(struct btrfs_trans_handle *trans,
+ 	ino_t parent_inum, cur_inum;
+ 	ino_t highest_inum = 0;
+ 	const char *parent_dir_name;
+-	struct btrfs_path path = { 0 };
+-	struct extent_buffer *leaf;
+-	struct btrfs_key root_dir_key;
+-	u64 root_dir_inode_size = 0;
+ 
+ 	/* Add list for source directory */
+ 	dir_entry = malloc(sizeof(struct directory_name_entry));
+@@ -466,25 +524,13 @@ static int traverse_directory(struct btrfs_trans_handle *trans,
+ 	dir_entry->inum = parent_inum;
+ 	list_add_tail(&dir_entry->list, &dir_head->list);
+ 
+-	root_dir_key.objectid = btrfs_root_dirid(&root->root_item);
+-	root_dir_key.offset = 0;
+-	root_dir_key.type = BTRFS_INODE_ITEM_KEY;
+-	ret = btrfs_lookup_inode(trans, root, &path, &root_dir_key, 1);
+-	if (ret) {
+-		error("failed to lookup root dir: %d", ret);
++	ret = copy_rootdir_inode(trans, root, dir_name);
++	if (ret < 0) {
++		errno = -ret;
++		error("failed to copy rootdir inode: %m");
+ 		goto fail_no_dir;
+ 	}
+ 
+-	leaf = path.nodes[0];
+-	inode_item = btrfs_item_ptr(leaf, path.slots[0],
+-				    struct btrfs_inode_item);
+-
+-	root_dir_inode_size = calculate_dir_inode_size(dir_name);
+-	btrfs_set_inode_size(leaf, inode_item, root_dir_inode_size);
+-	btrfs_mark_buffer_dirty(leaf);
+-
+-	btrfs_release_path(&path);
+-
+ 	do {
+ 		parent_dir_entry = list_entry(dir_head->list.next,
+ 					      struct directory_name_entry,
 -- 
-With Best Regards,
-Andy Shevchenko
-
+2.42.0
 

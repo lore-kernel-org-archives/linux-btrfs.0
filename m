@@ -2,43 +2,43 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 03F94CDB474
-	for <linux-btrfs@archiver.kernel.org>; Mon, 16 Oct 2023 17:08:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id ADBD0CDB482
+	for <linux-btrfs@archiver.kernel.org>; Mon, 16 Oct 2023 17:21:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234051AbjJPRIE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 16 Oct 2023 13:08:04 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41352 "EHLO
+        id S233863AbjJPRVK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 16 Oct 2023 13:21:10 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34962 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234811AbjJPRHn (ORCPT
+        with ESMTP id S234029AbjJPRU7 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 16 Oct 2023 13:07:43 -0400
+        Mon, 16 Oct 2023 13:20:59 -0400
 Received: from mgamail.intel.com (mgamail.intel.com [192.55.52.136])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B062C47A3;
-        Mon, 16 Oct 2023 09:54:51 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E2FEA5597;
+        Mon, 16 Oct 2023 09:54:53 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
   d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1697475291; x=1729011291;
+  t=1697475293; x=1729011293;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=WySdeCiri6Or54ZG9c0arESedDvutgGIpRkDALN3TpA=;
-  b=flQ/Si7iC9hyue9Is62kxHVvN1Tixd4rORAg2PxuUkIYnwsqvF85dUE+
-   Z5ZgfrRcVrjqFjFiQWdpiyfy/0kTiRmWJD+TrRFWGlSWTNuS0xWlreOPN
-   q9ObYICQUMuy+hugKsHZJkUc2fMC24CaOUVC9ENMe+C5SZEI8YUndSolr
-   ofsuSxREUAik/FDGwrwixjuSq+aSSrr14Lo2q+r1pTWi7ftZfKfVRJXNY
-   fCpyCEL1gvjETiKK1jy5TyoX3MT7eV+tJbHWJ3PcYmdDEZdwOEalqh+uY
-   bIF/+5uBTWSRouipjStuYXPFR5l3frlRlZc810NSQlp0VnGhot7juOSGL
+  bh=i21kd6AeKomZdc1TqWxn7QM4w2IfN7Rhf2ra9QvIXLw=;
+  b=cZqsK9j46AKN4dfyShU0UQzROy3XTvzpaaSGsEN1QAA/I/lYhgqD7oMx
+   orD0zbO7PcEiKUTbwm3d133txHIo9TWtDhnfl7BhSHRT9UJR0rLp0zBTq
+   Z6QbNOdtNr5xUzMSAmdZ/6J+fvE6J54A+FcnxNEPdTy5PQ7ONoWnE5vpX
+   56b81dnCJ64Os1NtXzlnIrt1pl6tPJLbdFUElK9RF6dcgakbrnLxL4iH1
+   lwtmz9EhFU5UtwbQBU4oajBVK+t4+8xL6GE9G5Bc/DaTg4J8b/7lQOw8r
+   xYsiLu58/FjRHzhNmcoqnMnheThbcNs6tftGKlDnszenuGTgzTE/47isA
    w==;
-X-IronPort-AV: E=McAfee;i="6600,9927,10865"; a="364937200"
+X-IronPort-AV: E=McAfee;i="6600,9927,10865"; a="364937226"
 X-IronPort-AV: E=Sophos;i="6.03,229,1694761200"; 
-   d="scan'208";a="364937200"
+   d="scan'208";a="364937226"
 Received: from fmsmga004.fm.intel.com ([10.253.24.48])
-  by fmsmga106.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 16 Oct 2023 09:54:51 -0700
+  by fmsmga106.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 16 Oct 2023 09:54:53 -0700
 X-ExtLoop1: 1
-X-IronPort-AV: E=McAfee;i="6600,9927,10865"; a="826084219"
+X-IronPort-AV: E=McAfee;i="6600,9927,10865"; a="826084295"
 X-IronPort-AV: E=Sophos;i="6.03,229,1694761200"; 
-   d="scan'208";a="826084219"
+   d="scan'208";a="826084295"
 Received: from newjersey.igk.intel.com ([10.102.20.203])
-  by fmsmga004.fm.intel.com with ESMTP; 16 Oct 2023 09:54:34 -0700
+  by fmsmga004.fm.intel.com with ESMTP; 16 Oct 2023 09:54:49 -0700
 From:   Alexander Lobakin <aleksander.lobakin@intel.com>
 To:     Yury Norov <yury.norov@gmail.com>
 Cc:     Alexander Lobakin <aleksander.lobakin@intel.com>,
@@ -53,9 +53,9 @@ Cc:     Alexander Lobakin <aleksander.lobakin@intel.com>,
         netdev@vger.kernel.org, linux-btrfs@vger.kernel.org,
         dm-devel@redhat.com, ntfs3@lists.linux.dev,
         linux-s390@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: [PATCH v2 06/13] fs/ntfs3: add prefix to bitmap_size() and use BITS_TO_U64()
-Date:   Mon, 16 Oct 2023 18:52:40 +0200
-Message-ID: <20231016165247.14212-7-aleksander.lobakin@intel.com>
+Subject: [PATCH v2 08/13] bitmap: introduce generic optimized bitmap_size()
+Date:   Mon, 16 Oct 2023 18:52:42 +0200
+Message-ID: <20231016165247.14212-9-aleksander.lobakin@intel.com>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <20231016165247.14212-1-aleksander.lobakin@intel.com>
 References: <20231016165247.14212-1-aleksander.lobakin@intel.com>
@@ -65,124 +65,184 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-bitmap_size() is a pretty generic name and one may want to use it for
-a generic bitmap API function. At the same time, its logic is
-NTFS-specific, as it aligns to the sizeof(u64), not the sizeof(long)
-(although it uses ideologically right ALIGN() instead of division).
-Add the prefix 'ntfs3_' used for that FS (not just 'ntfs_' to not mix
-it with the legacy module) and use generic BITS_TO_U64() while at it.
+The number of times yet another open coded
+`BITS_TO_LONGS(nbits) * sizeof(long)` can be spotted is huge.
+Some generic helper is long overdue.
 
-Suggested-by: Yury Norov <yury.norov@gmail.com> # BITS_TO_U64()
+Add one, bitmap_size(), but with one detail.
+BITS_TO_LONGS() uses DIV_ROUND_UP(). The latter works well when both
+divident and divisor are compile-time constants or when the divisor
+is not a pow-of-2. When it is however, the compilers sometimes tend
+to generate suboptimal code (GCC 13):
+
+48 83 c0 3f          	add    $0x3f,%rax
+48 c1 e8 06          	shr    $0x6,%rax
+48 8d 14 c5 00 00 00 00	lea    0x0(,%rax,8),%rdx
+
+%BITS_PER_LONG is always a pow-2 (either 32 or 64), but GCC still does
+full division of `nbits + 63` by it and then multiplication by 8.
+Instead of BITS_TO_LONGS(), use ALIGN() and then divide by 8. GCC:
+
+8d 50 3f             	lea    0x3f(%rax),%edx
+c1 ea 03             	shr    $0x3,%edx
+81 e2 f8 ff ff 1f    	and    $0x1ffffff8,%edx
+
+Now it divides `nbits + 63` by 8 and then masks bits[2:0].
+bloat-o-meter:
+
+add/remove: 0/0 grow/shrink: 20/133 up/down: 156/-773 (-617)
+
+Clang does it better and generates the same code before/after starting
+from -O1, except that with the ALIGN() approach it uses %edx and thus
+still saves some bytes:
+
+add/remove: 0/0 grow/shrink: 9/133 up/down: 18/-538 (-520)
+
+Note that we can't expand DIV_ROUND_UP() by adding a check and using
+this approach there, as it's used in array declarations where
+expressions are not allowed.
+Add this helper to tools/ as well.
+
 Reviewed-by: Przemek Kitszel <przemyslaw.kitszel@intel.com>
+Acked-by: Yury Norov <yury.norov@gmail.com>
 Signed-off-by: Alexander Lobakin <aleksander.lobakin@intel.com>
 ---
- fs/ntfs3/bitmap.c  |  4 ++--
- fs/ntfs3/fsntfs.c  |  2 +-
- fs/ntfs3/index.c   | 11 ++++++-----
- fs/ntfs3/ntfs_fs.h |  4 ++--
- fs/ntfs3/super.c   |  2 +-
- 5 files changed, 12 insertions(+), 11 deletions(-)
+ drivers/md/dm-clone-metadata.c | 5 -----
+ drivers/s390/cio/idset.c       | 2 +-
+ include/linux/bitmap.h         | 8 +++++---
+ include/linux/cpumask.h        | 2 +-
+ lib/math/prime_numbers.c       | 2 --
+ tools/include/linux/bitmap.h   | 8 +++++---
+ 6 files changed, 12 insertions(+), 15 deletions(-)
 
-diff --git a/fs/ntfs3/bitmap.c b/fs/ntfs3/bitmap.c
-index 107e808e06ea..a2e18f13e93a 100644
---- a/fs/ntfs3/bitmap.c
-+++ b/fs/ntfs3/bitmap.c
-@@ -653,7 +653,7 @@ int wnd_init(struct wnd_bitmap *wnd, struct super_block *sb, size_t nbits)
- 	wnd->total_zeroes = nbits;
- 	wnd->extent_max = MINUS_ONE_T;
- 	wnd->zone_bit = wnd->zone_end = 0;
--	wnd->nwnd = bytes_to_block(sb, bitmap_size(nbits));
-+	wnd->nwnd = bytes_to_block(sb, ntfs3_bitmap_size(nbits));
- 	wnd->bits_last = nbits & (wbits - 1);
- 	if (!wnd->bits_last)
- 		wnd->bits_last = wbits;
-@@ -1345,7 +1345,7 @@ int wnd_extend(struct wnd_bitmap *wnd, size_t new_bits)
- 		return -EINVAL;
+diff --git a/drivers/md/dm-clone-metadata.c b/drivers/md/dm-clone-metadata.c
+index c43d55672bce..47c1fa7aad8b 100644
+--- a/drivers/md/dm-clone-metadata.c
++++ b/drivers/md/dm-clone-metadata.c
+@@ -465,11 +465,6 @@ static void __destroy_persistent_data_structures(struct dm_clone_metadata *cmd)
  
- 	/* Align to 8 byte boundary. */
--	new_wnd = bytes_to_block(sb, bitmap_size(new_bits));
-+	new_wnd = bytes_to_block(sb, ntfs3_bitmap_size(new_bits));
- 	new_last = new_bits & (wbits - 1);
- 	if (!new_last)
- 		new_last = wbits;
-diff --git a/fs/ntfs3/fsntfs.c b/fs/ntfs3/fsntfs.c
-index 33afee0f5559..7a14d2347f27 100644
---- a/fs/ntfs3/fsntfs.c
-+++ b/fs/ntfs3/fsntfs.c
-@@ -522,7 +522,7 @@ static int ntfs_extend_mft(struct ntfs_sb_info *sbi)
- 	ni->mi.dirty = true;
+ /*---------------------------------------------------------------------------*/
  
- 	/* Step 2: Resize $MFT::BITMAP. */
--	new_bitmap_bytes = bitmap_size(new_mft_total);
-+	new_bitmap_bytes = ntfs3_bitmap_size(new_mft_total);
- 
- 	err = attr_set_size(ni, ATTR_BITMAP, NULL, 0, &sbi->mft.bitmap.run,
- 			    new_bitmap_bytes, &new_bitmap_bytes, true, NULL);
-diff --git a/fs/ntfs3/index.c b/fs/ntfs3/index.c
-index 124c6e822623..ab53a4b6ddf8 100644
---- a/fs/ntfs3/index.c
-+++ b/fs/ntfs3/index.c
-@@ -1453,8 +1453,8 @@ static int indx_create_allocate(struct ntfs_index *indx, struct ntfs_inode *ni,
- 
- 	alloc->nres.valid_size = alloc->nres.data_size = cpu_to_le64(data_size);
- 
--	err = ni_insert_resident(ni, bitmap_size(1), ATTR_BITMAP, in->name,
--				 in->name_len, &bitmap, NULL, NULL);
-+	err = ni_insert_resident(ni, ntfs3_bitmap_size(1), ATTR_BITMAP,
-+				 in->name, in->name_len, &bitmap, NULL, NULL);
- 	if (err)
- 		goto out2;
- 
-@@ -1515,8 +1515,9 @@ static int indx_add_allocate(struct ntfs_index *indx, struct ntfs_inode *ni,
- 	if (bmp) {
- 		/* Increase bitmap. */
- 		err = attr_set_size(ni, ATTR_BITMAP, in->name, in->name_len,
--				    &indx->bitmap_run, bitmap_size(bit + 1),
--				    NULL, true, NULL);
-+				    &indx->bitmap_run,
-+				    ntfs3_bitmap_size(bit + 1), NULL, true,
-+				    NULL);
- 		if (err)
- 			goto out1;
- 	}
-@@ -2089,7 +2090,7 @@ static int indx_shrink(struct ntfs_index *indx, struct ntfs_inode *ni,
- 	if (in->name == I30_NAME)
- 		ni->vfs_inode.i_size = new_data;
- 
--	bpb = bitmap_size(bit);
-+	bpb = ntfs3_bitmap_size(bit);
- 	if (bpb * 8 == nbits)
- 		return 0;
- 
-diff --git a/fs/ntfs3/ntfs_fs.h b/fs/ntfs3/ntfs_fs.h
-index 629403ede6e5..b632305d2530 100644
---- a/fs/ntfs3/ntfs_fs.h
-+++ b/fs/ntfs3/ntfs_fs.h
-@@ -961,9 +961,9 @@ static inline bool run_is_empty(struct runs_tree *run)
- }
- 
- /* NTFS uses quad aligned bitmaps. */
--static inline size_t bitmap_size(size_t bits)
-+static inline size_t ntfs3_bitmap_size(size_t bits)
+-static size_t bitmap_size(unsigned long nr_bits)
+-{
+-	return BITS_TO_LONGS(nr_bits) * sizeof(long);
+-}
+-
+ static int __dirty_map_init(struct dirty_map *dmap, unsigned long nr_words,
+ 			    unsigned long nr_regions)
  {
--	return ALIGN((bits + 7) >> 3, 8);
-+	return BITS_TO_U64(bits) * sizeof(u64);
+diff --git a/drivers/s390/cio/idset.c b/drivers/s390/cio/idset.c
+index 0a1105a483bf..e5f28370a903 100644
+--- a/drivers/s390/cio/idset.c
++++ b/drivers/s390/cio/idset.c
+@@ -18,7 +18,7 @@ struct idset {
+ 
+ static inline unsigned long idset_bitmap_size(int num_ssid, int num_id)
+ {
+-	return BITS_TO_LONGS(num_ssid * num_id) * sizeof(unsigned long);
++	return bitmap_size(size_mul(num_ssid, num_id));
  }
  
- #define _100ns2seconds 10000000
-diff --git a/fs/ntfs3/super.c b/fs/ntfs3/super.c
-index cfec5e0c7f66..b1fb6efe7084 100644
---- a/fs/ntfs3/super.c
-+++ b/fs/ntfs3/super.c
-@@ -1285,7 +1285,7 @@ static int ntfs_fill_super(struct super_block *sb, struct fs_context *fc)
+ static struct idset *idset_new(int num_ssid, int num_id)
+diff --git a/include/linux/bitmap.h b/include/linux/bitmap.h
+index c413e2ecb628..2020cb534ed7 100644
+--- a/include/linux/bitmap.h
++++ b/include/linux/bitmap.h
+@@ -241,9 +241,11 @@ extern int bitmap_print_list_to_buf(char *buf, const unsigned long *maskp,
+ #define BITMAP_FIRST_WORD_MASK(start) (~0UL << ((start) & (BITS_PER_LONG - 1)))
+ #define BITMAP_LAST_WORD_MASK(nbits) (~0UL >> (-(nbits) & (BITS_PER_LONG - 1)))
  
- 	/* Check bitmap boundary. */
- 	tt = sbi->used.bitmap.nbits;
--	if (inode->i_size < bitmap_size(tt)) {
-+	if (inode->i_size < ntfs3_bitmap_size(tt)) {
- 		ntfs_err(sb, "$Bitmap is corrupted.");
- 		err = -EINVAL;
- 		goto put_inode_out;
++#define bitmap_size(nbits)	(ALIGN(nbits, BITS_PER_LONG) / BITS_PER_BYTE)
++
+ static inline void bitmap_zero(unsigned long *dst, unsigned int nbits)
+ {
+-	unsigned int len = BITS_TO_LONGS(nbits) * sizeof(unsigned long);
++	unsigned int len = bitmap_size(nbits);
+ 
+ 	if (small_const_nbits(nbits))
+ 		*dst = 0;
+@@ -253,7 +255,7 @@ static inline void bitmap_zero(unsigned long *dst, unsigned int nbits)
+ 
+ static inline void bitmap_fill(unsigned long *dst, unsigned int nbits)
+ {
+-	unsigned int len = BITS_TO_LONGS(nbits) * sizeof(unsigned long);
++	unsigned int len = bitmap_size(nbits);
+ 
+ 	if (small_const_nbits(nbits))
+ 		*dst = ~0UL;
+@@ -264,7 +266,7 @@ static inline void bitmap_fill(unsigned long *dst, unsigned int nbits)
+ static inline void bitmap_copy(unsigned long *dst, const unsigned long *src,
+ 			unsigned int nbits)
+ {
+-	unsigned int len = BITS_TO_LONGS(nbits) * sizeof(unsigned long);
++	unsigned int len = bitmap_size(nbits);
+ 
+ 	if (small_const_nbits(nbits))
+ 		*dst = *src;
+diff --git a/include/linux/cpumask.h b/include/linux/cpumask.h
+index f10fb87d49db..dbdbf1451cad 100644
+--- a/include/linux/cpumask.h
++++ b/include/linux/cpumask.h
+@@ -821,7 +821,7 @@ static inline int cpulist_parse(const char *buf, struct cpumask *dstp)
+  */
+ static inline unsigned int cpumask_size(void)
+ {
+-	return BITS_TO_LONGS(large_cpumask_bits) * sizeof(long);
++	return bitmap_size(large_cpumask_bits);
+ }
+ 
+ /*
+diff --git a/lib/math/prime_numbers.c b/lib/math/prime_numbers.c
+index d42cebf7407f..d3b64b10da1c 100644
+--- a/lib/math/prime_numbers.c
++++ b/lib/math/prime_numbers.c
+@@ -6,8 +6,6 @@
+ #include <linux/prime_numbers.h>
+ #include <linux/slab.h>
+ 
+-#define bitmap_size(nbits) (BITS_TO_LONGS(nbits) * sizeof(unsigned long))
+-
+ struct primes {
+ 	struct rcu_head rcu;
+ 	unsigned long last, sz;
+diff --git a/tools/include/linux/bitmap.h b/tools/include/linux/bitmap.h
+index f3566ea0f932..81a2299ace15 100644
+--- a/tools/include/linux/bitmap.h
++++ b/tools/include/linux/bitmap.h
+@@ -2,6 +2,7 @@
+ #ifndef _TOOLS_LINUX_BITMAP_H
+ #define _TOOLS_LINUX_BITMAP_H
+ 
++#include <linux/align.h>
+ #include <string.h>
+ #include <linux/bitops.h>
+ #include <linux/find.h>
+@@ -25,13 +26,14 @@ bool __bitmap_intersects(const unsigned long *bitmap1,
+ #define BITMAP_FIRST_WORD_MASK(start) (~0UL << ((start) & (BITS_PER_LONG - 1)))
+ #define BITMAP_LAST_WORD_MASK(nbits) (~0UL >> (-(nbits) & (BITS_PER_LONG - 1)))
+ 
++#define bitmap_size(nbits)	(ALIGN(nbits, BITS_PER_LONG) / BITS_PER_BYTE)
++
+ static inline void bitmap_zero(unsigned long *dst, unsigned int nbits)
+ {
+ 	if (small_const_nbits(nbits))
+ 		*dst = 0UL;
+ 	else {
+-		int len = BITS_TO_LONGS(nbits) * sizeof(unsigned long);
+-		memset(dst, 0, len);
++		memset(dst, 0, bitmap_size(nbits));
+ 	}
+ }
+ 
+@@ -83,7 +85,7 @@ static inline void bitmap_or(unsigned long *dst, const unsigned long *src1,
+  */
+ static inline unsigned long *bitmap_zalloc(int nbits)
+ {
+-	return calloc(1, BITS_TO_LONGS(nbits) * sizeof(unsigned long));
++	return calloc(1, bitmap_size(nbits));
+ }
+ 
+ /*
 -- 
 2.41.0
 

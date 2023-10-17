@@ -2,115 +2,123 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 935B9CDB474
-	for <linux-btrfs@archiver.kernel.org>; Tue, 17 Oct 2023 20:45:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2B609CDB474
+	for <linux-btrfs@archiver.kernel.org>; Tue, 17 Oct 2023 23:18:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234927AbjJQUpz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 17 Oct 2023 16:45:55 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35574 "EHLO
+        id S233940AbjJQXSX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 17 Oct 2023 19:18:23 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55422 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1344367AbjJQTqI (ORCPT
+        with ESMTP id S229459AbjJQXSW (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 17 Oct 2023 15:46:08 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B3E43FF
-        for <linux-btrfs@vger.kernel.org>; Tue, 17 Oct 2023 12:46:06 -0700 (PDT)
+        Tue, 17 Oct 2023 19:18:22 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7338B98
+        for <linux-btrfs@vger.kernel.org>; Tue, 17 Oct 2023 16:18:21 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id ACC7121D0A;
-        Tue, 17 Oct 2023 19:46:04 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id F0FA91F8D7;
+        Tue, 17 Oct 2023 23:18:18 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1697571964;
+        t=1697584698;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=ILcR7dytKkwv86ZOHX73Q9yGFvto7ahBUly1tMdiY24=;
-        b=UM+TJoSp8J4gofk3y0InEf56MnKsA3UHRmHqKUgmNW0UPxQzzApQ/tvjqHbUn3bNQmjaI7
-        DsIyryEB3e50HftUZmIw1cXkLhM7+re4+cRW9J5nQxrIwt+Gr1S9d8hP/opgksLAQAOJSZ
-        8RlXI9w248H2eRWWauQszCh7KZF6eoM=
+        bh=6aOtzOP+jqF8V3NFDXXKQ2g1iXwHGnvP+6Tvb9Zo4MY=;
+        b=r0eKgRe3tWNO4XvE/1MitdVAdOjcQ7IVV8mdD/dLt/pUSEsLkpJcgKaUWpI27PBAuePTdB
+        ilexmQib9iz27qVq9OU1XdGhVLOTWKM5uBLyo5Zov3ht6OXYVgjGwtDjs1wnUXXPpCsQKr
+        nLQl4TM5w5JtGLSqPmaCIyiQ83L/x4I=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1697571964;
+        s=susede2_ed25519; t=1697584698;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=ILcR7dytKkwv86ZOHX73Q9yGFvto7ahBUly1tMdiY24=;
-        b=a+4CSrtV/vFLpffCOgmf01rITsYCtLN9qmQ2aFZNEfxGJq/+nfrg5RETcDWqvzjns9a3pK
-        +SH3QNq9x/Bg7WBQ==
+        bh=6aOtzOP+jqF8V3NFDXXKQ2g1iXwHGnvP+6Tvb9Zo4MY=;
+        b=kuUoFDU7yAkuVFAOHWcuJudxoJoROqus6piY9x4gZMyRLatL9+7+7iiCJ3+AjkxiWzUjY0
+        Xfu4XhtfrvVcXIAg==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 81F5413597;
-        Tue, 17 Oct 2023 19:46:04 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id C807E13584;
+        Tue, 17 Oct 2023 23:18:18 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id bIzYHnzkLmVXOgAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Tue, 17 Oct 2023 19:46:04 +0000
-Date:   Tue, 17 Oct 2023 21:39:14 +0200
+        id nBwuMDoWL2XuFwAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Tue, 17 Oct 2023 23:18:18 +0000
+Date:   Wed, 18 Oct 2023 01:11:28 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     Naohiro Aota <naohiro.aota@wdc.com>
-Cc:     linux-btrfs@vger.kernel.org,
-        Shinichiro Kawasaki <shinichiro.kawasaki@wdc.com>
-Subject: Re: [PATCH] btrfs: zoned: wait for data BG to be finished on direct
- IO allocation
-Message-ID: <20231017193914.GC2211@twin.jikos.cz>
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     Josef Bacik <josef@toxicpanda.com>, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 4/6] btrfs-progs: use a unified btrfs_make_subvol()
+ implementation
+Message-ID: <20231017231128.GA26353@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <36d4b7502a8654882718421a18472d41dbc1c83c.1697529529.git.naohiro.aota@wdc.com>
+References: <cover.1697430866.git.wqu@suse.com>
+ <7b951f3a0619880f35f2490e2e251eb35e2f2292.1697430866.git.wqu@suse.com>
+ <20231017134929.GA2350212@perftesting>
+ <3df53251-41f6-4655-a0fe-a7baecb2a66d@gmx.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <36d4b7502a8654882718421a18472d41dbc1c83c.1697529529.git.naohiro.aota@wdc.com>
+In-Reply-To: <3df53251-41f6-4655-a0fe-a7baecb2a66d@gmx.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-Authentication-Results: smtp-out1.suse.de;
+Authentication-Results: smtp-out2.suse.de;
         none
-X-Spamd-Result: default: False [-3.85 / 50.00];
+X-Spamd-Result: default: False [-6.80 / 50.00];
          ARC_NA(0.00)[];
          HAS_REPLYTO(0.30)[dsterba@suse.cz];
          RCVD_VIA_SMTP_AUTH(0.00)[];
          FROM_HAS_DN(0.00)[];
-         RCPT_COUNT_THREE(0.00)[3];
+         RCPT_COUNT_THREE(0.00)[4];
          TO_DN_SOME(0.00)[];
          TO_MATCH_ENVRCPT_ALL(0.00)[];
          MIME_GOOD(-0.10)[text/plain];
          REPLYTO_ADDR_EQ_FROM(0.00)[];
          NEURAL_HAM_LONG(-3.00)[-1.000];
+         FREEMAIL_ENVRCPT(0.00)[gmx.com];
          DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
          NEURAL_HAM_SHORT(-1.00)[-1.000];
+         FREEMAIL_TO(0.00)[gmx.com];
          FROM_EQ_ENVFROM(0.00)[];
          MIME_TRACE(0.00)[0:+];
          RCVD_COUNT_TWO(0.00)[2];
          RCVD_TLS_ALL(0.00)[];
-         BAYES_HAM(-0.05)[59.91%]
+         BAYES_HAM(-3.00)[100.00%]
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Oct 17, 2023 at 05:00:31PM +0900, Naohiro Aota wrote:
-> Running the fio command below on a ZNS device results in "Resource
-> temporarily unavailable" error.
+On Wed, Oct 18, 2023 at 06:44:22AM +1030, Qu Wenruo wrote:
+> On 2023/10/18 00:19, Josef Bacik wrote:
+> > On Mon, Oct 16, 2023 at 03:08:50PM +1030, Qu Wenruo wrote:
+> >> --- a/kernel-shared/ctree.h
+> >> +++ b/kernel-shared/ctree.h
+> >> @@ -1134,6 +1134,10 @@ int btrfs_update_root(struct btrfs_trans_handle *trans, struct btrfs_root
+> >>   		      *item);
+> >>   int btrfs_find_last_root(struct btrfs_root *root, u64 objectid, struct
+> >>   			 btrfs_root_item *item, struct btrfs_key *key);
+> >> +int btrfs_make_root_dir(struct btrfs_trans_handle *trans,
+> >> +			struct btrfs_root *root, u64 objectid);
+> >> +struct btrfs_root *btrfs_create_subvol(struct btrfs_trans_handle *trans,
+> >> +				       u64 objectid);
+> >>   /* dir-item.c */
+> >>   int btrfs_insert_dir_item(struct btrfs_trans_handle *trans, struct btrfs_root
+> >>   			  *root, const char *name, int name_len, u64 dir,
+> >> diff --git a/kernel-shared/root-tree.c b/kernel-shared/root-tree.c
+> >> index 33f9e4697b18..1fe7d535fdc7 100644
+> >> --- a/kernel-shared/root-tree.c
+> >> +++ b/kernel-shared/root-tree.c
+> >
+> > We're moving towards a world where kernel-shared will be an exact-ish copy of
+> > the kernel code.  Please put helpers like this in common/, I did this for
+> > several of the extent tree related helpers we need for fsck, this is a good fit
+> > for that.  Thanks,
 > 
-> fio: io_u error on file /mnt/w.2.0: Resource temporarily unavailable: write offset=117440512, buflen=16777216
-> fio: io_u error on file /mnt/w.2.0: Resource temporarily unavailable: write offset=134217728, buflen=16777216
-> ...
-> 
-> This happens because -EAGAIN error returned from btrfs_reserve_extent()
-> called from btrfs_new_extent_direct() is splling over to the userland.
-> 
-> btrfs_reserve_extent() returns -EAGAIN when there is no active zone
-> available. Then, the caller should wait for some other on-going IO to
-> finish a zone and retry the allocation.
-> 
-> This logic is already implemented for buffered write in cow_file_range(),
-> but it is missing for the direct IO counterpart. Implement the same logic
-> for it.
-> 
-> Fixes: 2ce543f47843 ("btrfs: zoned: wait until zone is finished when allocation didn't progress")
-> CC: stable@vger.kernel.org # 6.1+
-> Reported-by: Shinichiro Kawasaki <shinichiro.kawasaki@wdc.com>
-> Tested-by: Shinichiro Kawasaki <shinichiro.kawasaki@wdc.com>
-> Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+> Sure, and this also reminds me to copy whatever we can from kernel.
 
-With fixed spelling and added fio command, patch added to misc-next,
-thanks.
+I do syncs from kernel before a release but all the low hanging fruit is
+probably gone so it needs targeted updates.

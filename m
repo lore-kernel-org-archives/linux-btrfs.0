@@ -2,52 +2,56 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F2543C00A98
-	for <linux-btrfs@archiver.kernel.org>; Thu, 19 Oct 2023 22:30:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 961CFC001DF
+	for <linux-btrfs@archiver.kernel.org>; Thu, 19 Oct 2023 22:30:42 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1346645AbjJSWak (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 19 Oct 2023 18:30:40 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47522 "EHLO
+        id S1346648AbjJSWal (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 19 Oct 2023 18:30:41 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47536 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235559AbjJSWaf (ORCPT
+        with ESMTP id S235560AbjJSWaf (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Thu, 19 Oct 2023 18:30:35 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2CE9C124
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Oct 2023 15:30:30 -0700 (PDT)
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5DF0C130
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Oct 2023 15:30:33 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 9066A1FD82
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Oct 2023 22:30:27 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 7703D21A0C
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Oct 2023 22:30:31 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1697754627; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=52LRG/LW7EnWYvmu5LqH+WQF1tTTKZvQY0NReQO9kJg=;
-        b=E5MKjdG1N/LadYZGDKK20nTZuTaeUaFVbzU1/HognWuIk96MWC2dkJQMQIjUL3l9oUC7/q
-        fMgTzrKiaUSIQspIs4GIPSY57769i93GWIwXEEQrye44cZYfgfD26GnFavnJlSA8ApvYtw
-        OCYbRq4AUsmVQfrlIlohegtRQ0R9JR0=
+        t=1697754631; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=B+Q9nezLpsg+URhe1ssECB72DOay3J8MQGWKq3d5KO0=;
+        b=oY6BqRee80Z1YrBUe+1njLdvVY4VKsL8jCnTkmj51K6VO28DbO6yPS8VtsEkTdub6+PfPC
+        1VmOUM4NfzpRqq7l5bJOOOym/52IpjgNE4dAWg8LcY74KEsWM9t/YYcp2QGFTJ9qWWeP0N
+        +ILVB8EGOB1E+22YPoqtW+Rnh/zKrCA=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id C4FBD1357F
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Oct 2023 22:30:26 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id A99961357F
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Oct 2023 22:30:30 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id Q4TxIAKuMWXzWgAAMHmgww
+        id 0KouGgauMWXzWgAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Oct 2023 22:30:26 +0000
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Oct 2023 22:30:30 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 0/9] btrfs-progs: mkfs: introduce an experimental --subvol option
-Date:   Fri, 20 Oct 2023 08:59:59 +1030
-Message-ID: <cover.1697754500.git.wqu@suse.com>
+Subject: [PATCH v2 3/9] btrfs-progs: remove filetype parameter of btrfs_add_link()
+Date:   Fri, 20 Oct 2023 09:00:02 +1030
+Message-ID: <c3b626c5960905ae1d4dbc1e8e9053220d2cdea6.1697754500.git.wqu@suse.com>
 X-Mailer: git-send-email 2.42.0
+In-Reply-To: <cover.1697754500.git.wqu@suse.com>
+References: <cover.1697754500.git.wqu@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-Authentication-Results: smtp-out2.suse.de;
+Authentication-Results: smtp-out1.suse.de;
         none
 X-Spamd-Result: default: False [-2.10 / 50.00];
          ARC_NA(0.00)[];
@@ -73,103 +77,208 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-[CHANGELOG]
-v2:
-- Crossport fs_types from kernel
-  So that we can have infrastructure more in-line with kernel code.
-  Unfortunately we still need a new fs_ftypes_to_umode() helper for
-  progs.
+The function btrfs_add_link() utilized @filetype parameter to insert the
+DIR_ITEM/DIR_INDEX.
 
-- More cleanups for btrfs_add_link()
+However for all call sites of btrfs_add_link() we already have the
+proper inode number of the child, and can grab the imode of that inode,
+then convert it to filetype.
 
-- Make btrfs_add_link() have the same ability of the kernel one
-  This is to allow btrfs_add_link() to link a subvolume to a parent
-  inode.
-  Unfortunately the parameter list is still quite different due to the
-  lack of btrfs_inode and dentry.
+Thus no need to grab the @filetype parameter.
 
-- Merge btrfs_mksubvol() into btrfs_add_link()
-  Since btrfs_add_link() can now handle linking of a subvolume, we
-  can remove the progs specific code.
+This is still true for repair code, where if we hit a inode without its
+INODE_ITEM, the repair is always done by inserting a new INODE_ITEM
+first, then do btrfs_add_link(), thus we should still be able to grab
+the imode.
 
-- New common/inode.[ch] for btrfs_create_subvol() and
-  btrfs_make_root_dir()
-  Those two functions are progs specific and would be utilized by code
-  out of check/convert. Thus moving them to common/ would be better
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ check/main.c          |  2 +-
+ check/mode-common.c   |  4 ++--
+ check/mode-lowmem.c   | 18 ++++++++----------
+ convert/main.c        |  2 +-
+ kernel-shared/ctree.h |  2 +-
+ kernel-shared/inode.c | 23 ++++++++++++++++++++---
+ 6 files changed, 33 insertions(+), 18 deletions(-)
 
-
-Issue #42 (good number by the way) is suggesting a very useful feature
-for rootfs image creation.
-
-Currently we only support "mkfs.btrfs --rootdir" to fill the fs tree
-with target directory, but there has no btrfs specific features
-involved.
-
-If we can create certain paths as subvolumes, not pure directories, it
-can be very useful to create the whole btrfs image just by "mkfs.btrfs"
-
-This series is the first step torwards this idea.
-
-Now we have a new experimental option "--subvol" for mkfs.btrfs, but
-with the following limits:
-
-- No co-operation with --rootdir
-  This requires --rootdir to have extra handling for any existing
-  inodes.
-  (Currently --rootdir assumes the fs tree is completely empty)
-
-- No multiple --subvol options supports
-  This requires us to collect and sort all the paths and start creating
-  subvolumes from the shortest path.
-  Furthermore this requires us to create subvolume under another
-  subvolume.
-
-Each limit would need a new series of patches to address, but this
-series would already provide a working but not-that-useful
-implementation of "--subvol" option, along with a basic test case for
-it.
-
-Qu Wenruo (9):
-  btrfs-progs: cross-port fs_types from kernel
-  btrfs-progs: remove add_backref parameter from btrfs_add_link()
-  btrfs-progs: remove filetype parameter of btrfs_add_link()
-  btrfs-progs: merge btrfs_mksubvol() into btrfs_add_link()
-  btrfs-progs: enhance btrfs_mkdir() function
-  btrfs-progs: enhance btrfs_create_root() function
-  btrfs-progs: use a unified btrfs_make_subvol() implementation
-  btrfs-progs: mkfs: introduce experimental --subvol option
-  btrfs-progs: mkfs-tests: introduce a test case to verify --subvol
-    option
-
- Makefile                                   |   2 +
- check/main.c                               |  17 +-
- check/mode-common.c                        |  12 +-
- check/mode-common.h                        |  32 --
- check/mode-lowmem.c                        |  40 ++-
- common/inode.c                             |  90 ++++++
- common/inode.h                             |  16 +
- convert/main.c                             | 139 ++++++---
- include/kerncompat.h                       |   1 +
- kernel-shared/ctree.c                      | 106 +++----
- kernel-shared/ctree.h                      |  17 +-
- kernel-shared/fs_types.c                   |  62 ++++
- kernel-shared/fs_types.h                   |  87 ++++++
- kernel-shared/inode.c                      | 347 ++++++++++-----------
- mkfs/common.c                              |  39 ---
- mkfs/common.h                              |   2 -
- mkfs/main.c                                | 106 ++-----
- mkfs/rootdir.c                             | 157 ++++++++++
- mkfs/rootdir.h                             |   1 +
- tests/mkfs-tests/031-subvol-option/test.sh |  39 +++
- tune/convert-bgt.c                         |   3 +-
- tune/quota.c                               |   2 +-
- 22 files changed, 829 insertions(+), 488 deletions(-)
- create mode 100644 common/inode.c
- create mode 100644 common/inode.h
- create mode 100644 kernel-shared/fs_types.c
- create mode 100644 kernel-shared/fs_types.h
- create mode 100755 tests/mkfs-tests/031-subvol-option/test.sh
-
---
+diff --git a/check/main.c b/check/main.c
+index b53ce9327fb4..4beeb0adae76 100644
+--- a/check/main.c
++++ b/check/main.c
+@@ -2456,7 +2456,7 @@ static int reset_nlink(struct btrfs_trans_handle *trans,
+ 	list_for_each_entry(backref, &rec->backrefs, list) {
+ 		ret = btrfs_add_link(trans, root, rec->ino, backref->dir,
+ 				     backref->name, backref->namelen,
+-				     backref->filetype, &backref->index, 0);
++				     &backref->index, 0);
+ 		if (ret < 0)
+ 			goto out;
+ 	}
+diff --git a/check/mode-common.c b/check/mode-common.c
+index 647b65cb3f03..1f42743c390a 100644
+--- a/check/mode-common.c
++++ b/check/mode-common.c
+@@ -464,7 +464,7 @@ int link_inode_to_lostfound(struct btrfs_trans_handle *trans,
+ 		goto out;
+ 	}
+ 	ret = btrfs_add_link(trans, root, ino, lost_found_ino,
+-			     namebuf, name_len, filetype, NULL, 0);
++			     namebuf, name_len, NULL, 0);
+ 	/*
+ 	 * Add ".INO" suffix several times to handle case where
+ 	 * "FILENAME.INO" is already taken by another file.
+@@ -481,7 +481,7 @@ int link_inode_to_lostfound(struct btrfs_trans_handle *trans,
+ 			 ".%llu", ino);
+ 		name_len += count_digits(ino) + 1;
+ 		ret = btrfs_add_link(trans, root, ino, lost_found_ino, namebuf,
+-				     name_len, filetype, NULL, 0);
++				     name_len, NULL, 0);
+ 	}
+ 	if (ret < 0) {
+ 		errno = -ret;
+diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
+index 66a9c84415a8..275f6d16ebc7 100644
+--- a/check/mode-lowmem.c
++++ b/check/mode-lowmem.c
+@@ -1007,8 +1007,7 @@ out:
+  * returns not 0 means on error;
+  */
+ static int repair_ternary_lowmem(struct btrfs_root *root, u64 dir_ino, u64 ino,
+-			  u64 index, char *name, int name_len, u8 filetype,
+-			  int err)
++			  u64 index, char *name, int name_len, int err)
+ {
+ 	struct btrfs_trans_handle *trans;
+ 	int stage = 0;
+@@ -1042,19 +1041,19 @@ static int repair_ternary_lowmem(struct btrfs_root *root, u64 dir_ino, u64 ino,
+ 		if (ret)
+ 			goto out;
+ 		ret = btrfs_add_link(trans, root, ino, dir_ino, name, name_len,
+-			       filetype, &index, 1);
++				     &index, 1);
+ 		goto out;
+ 	}
+ out:
+ 	btrfs_commit_transaction(trans, root);
+ 
+ 	if (ret)
+-		error("fail to repair inode %llu name %s filetype %u",
+-		      ino, name, filetype);
++		error("fail to repair inode %llu name %s",
++		      ino, name);
+ 	else
+-		printf("%s ref/dir_item of inode %llu name %s filetype %u\n",
++		printf("%s ref/dir_item of inode %llu name %s\n",
+ 		       stage == 2 ? "Delete" : "Add",
+-		       ino, name, filetype);
++		       ino, name);
+ 
+ 	return ret;
+ }
+@@ -1212,8 +1211,7 @@ end:
+ 	if (tmp_err && opt_check_repair) {
+ 		ret = repair_ternary_lowmem(root, ref_key->offset,
+ 					    ref_key->objectid, index, namebuf,
+-					    name_len, btrfs_inode_type(mode),
+-					    tmp_err);
++					    name_len, tmp_err);
+ 		if (!ret) {
+ 			need_research = 1;
+ 			goto begin;
+@@ -1619,7 +1617,7 @@ static int repair_dir_item(struct btrfs_root *root, struct btrfs_key *di_key,
+ 
+ 	if (err & ~(INODE_ITEM_MISMATCH | INODE_ITEM_MISSING)) {
+ 		ret = repair_ternary_lowmem(root, dirid, ino, index, namebuf,
+-					    name_len, filetype, err);
++					    name_len, err);
+ 		if (!ret) {
+ 			err &= ~(DIR_INDEX_MISMATCH | DIR_INDEX_MISSING);
+ 			err &= ~(DIR_ITEM_MISMATCH | DIR_ITEM_MISSING);
+diff --git a/convert/main.c b/convert/main.c
+index 16c517422259..c1047bacbe01 100644
+--- a/convert/main.c
++++ b/convert/main.c
+@@ -841,7 +841,7 @@ static int create_image(struct btrfs_root *root,
+ 		goto out;
+ 	}
+ 	ret = btrfs_add_link(trans, root, ino, BTRFS_FIRST_FREE_OBJECTID, name,
+-			     strlen(name), BTRFS_FT_REG_FILE, NULL, 0);
++			     strlen(name), NULL, 0);
+ 	if (ret < 0) {
+ 		errno = -ret;
+ 		error("failed to link ino %llu to '/%s' in root %llu: %m",
+diff --git a/kernel-shared/ctree.h b/kernel-shared/ctree.h
+index 03fd25368181..501feaa08a0a 100644
+--- a/kernel-shared/ctree.h
++++ b/kernel-shared/ctree.h
+@@ -1227,7 +1227,7 @@ int btrfs_change_inode_flags(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_root *root, u64 ino, u64 flags);
+ int btrfs_add_link(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 		   u64 ino, u64 parent_ino, char *name, int namelen,
+-		   u8 type, u64 *index, int ignore_existed);
++		   u64 *index, int ignore_existed);
+ int btrfs_unlink(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 		 u64 ino, u64 parent_ino, u64 index, const char *name,
+ 		 int namelen, int add_orphan);
+diff --git a/kernel-shared/inode.c b/kernel-shared/inode.c
+index ba8c8ad02a78..43ab685a45e1 100644
+--- a/kernel-shared/inode.c
++++ b/kernel-shared/inode.c
+@@ -178,11 +178,12 @@ out:
+  */
+ int btrfs_add_link(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 		   u64 ino, u64 parent_ino, char *name, int namelen,
+-		   u8 type, u64 *index, int ignore_existed)
++		   u64 *index, int ignore_existed)
+ {
+ 	struct btrfs_path *path;
+ 	struct btrfs_key key;
+ 	struct btrfs_inode_item *inode_item;
++	u32 imode;
+ 	u32 nlink;
+ 	u64 inode_size;
+ 	u64 ret_index = 0;
+@@ -192,6 +193,22 @@ int btrfs_add_link(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 	if (!path)
+ 		return -ENOMEM;
+ 
++	key.objectid = ino;
++	key.type = BTRFS_INODE_ITEM_KEY;
++	key.offset = 0;
++	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
++	if (ret > 0) {
++		ret = -ENOENT;
++		/* fallthrough */
++	}
++	if (ret < 0)
++		goto out;
++
++	inode_item = btrfs_item_ptr(path->nodes[0], path->slots[0],
++				    struct btrfs_inode_item);
++	imode = btrfs_inode_mode(path->nodes[0], inode_item);
++	btrfs_release_path(path);
++
+ 	if (index && *index) {
+ 		ret_index = *index;
+ 	} else {
+@@ -237,7 +254,7 @@ int btrfs_add_link(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 	key.type = BTRFS_INODE_ITEM_KEY;
+ 	key.offset = 0;
+ 	ret = btrfs_insert_dir_item(trans, root, name, namelen, parent_ino,
+-				    &key, type, ret_index);
++				    &key, fs_umode_to_ftype(imode), ret_index);
+ 	if (ret < 0)
+ 		goto out;
+ 
+@@ -580,7 +597,7 @@ int btrfs_mkdir(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 	if (ret)
+ 		goto out;
+ 	ret = btrfs_add_link(trans, root, ret_ino, parent_ino, name, namelen,
+-			     BTRFS_FT_DIR, NULL, 0);
++			     NULL, 0);
+ 	if (ret)
+ 		goto out;
+ out:
+-- 
 2.42.0
 

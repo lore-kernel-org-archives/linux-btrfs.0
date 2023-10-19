@@ -2,50 +2,50 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 20F5CC001DF
-	for <linux-btrfs@archiver.kernel.org>; Thu, 19 Oct 2023 22:30:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 05D75C004C0
+	for <linux-btrfs@archiver.kernel.org>; Thu, 19 Oct 2023 22:30:47 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1346639AbjJSWap (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 19 Oct 2023 18:30:45 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41054 "EHLO
+        id S1346657AbjJSWaq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 19 Oct 2023 18:30:46 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41064 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1346641AbjJSWaj (ORCPT
+        with ESMTP id S1346647AbjJSWal (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Oct 2023 18:30:39 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A05E9CA
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Oct 2023 15:30:34 -0700 (PDT)
+        Thu, 19 Oct 2023 18:30:41 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0BBE9FA
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Oct 2023 15:30:38 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id C00DE1FD8C
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Oct 2023 22:30:32 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id A6B941FD82
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Oct 2023 22:30:36 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1697754632; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1697754636; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=NDrBG4tfn0mFK8mYHMGERBtuIclJceYweLF4z9hkYyE=;
-        b=ijy2NiVtbXEdR/t8VtgrPpyJuv1I0EuvP1IVnczHfY3vcFLI77cH2DEPO1bMPTF/F5ZkT/
-        pxdJojClkOa8qsD0u+6oacjGUpt0+67H4ceytFcj//8pCDTamhWA7Sw5IpkqRU5RXfJ9I3
-        nmj0YccKQyUfeJF1SGmvaNr8baz6b7M=
+        bh=IwDgKjnFmo+acrflWgPtHzj0veU3VUesuJUJo/nbMh4=;
+        b=H+dFKum0wwjS8X8FQf0jNwlnTVZN5yhV/b8ldCyRkRuP/wX9V5pW9R03SAP7mscDlInaPa
+        onTHOF5rd/Fu3Ul9kcuSUprGY4fO23dKseiwrlDgKDDWLFCAlX/ddbuBNyQNNKLlL1LgfK
+        Oa9JmCJrehffO6POX/ategXxnthEUkQ=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id F0E051357F
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Oct 2023 22:30:31 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id D93891357F
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Oct 2023 22:30:35 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id OM9KKweuMWXzWgAAMHmgww
+        id UBGNJQuuMWXzWgAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Oct 2023 22:30:31 +0000
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Oct 2023 22:30:35 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 4/9] btrfs-progs: merge btrfs_mksubvol() into btrfs_add_link()
-Date:   Fri, 20 Oct 2023 09:00:03 +1030
-Message-ID: <4cc3c23201591b951500033213ddaa7a7531ad56.1697754500.git.wqu@suse.com>
+Subject: [PATCH v2 7/9] btrfs-progs: use a unified btrfs_make_subvol() implementation
+Date:   Fri, 20 Oct 2023 09:00:06 +1030
+Message-ID: <ba9e53b1f4f17c50b0e57c1c9e5ca95e4199649c.1697754500.git.wqu@suse.com>
 X-Mailer: git-send-email 2.42.0
 In-Reply-To: <cover.1697754500.git.wqu@suse.com>
 References: <cover.1697754500.git.wqu@suse.com>
@@ -77,545 +77,448 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The function btrfs_mksubvol() is only utilized by convert, and its
-functionality is not to create a subvolume, but linking one to fs_tree.
+To create a subvolume there are several different helpers:
 
-In kernel code, btrfs_add_link() can handle the following cases:
+- create_subvol() from convert/main.c
+  This relies one using an empty fs_root tree to copy its root item.
+  But otherwise has a pretty well wrapper btrfs_ake_root_dir() helper to
+  handle the inode item/ref insertion.
 
-- Linking one inode to a directory inside the same subvolume
-- Linking one root to a directory inside another subvolume
+- create_data_reloc_tree() from mkfs/main.c
+  This is already pretty usable for generic subvolume creation, the only
+  bad code is the open-coded rootdir setup.
 
-Although the parameters are different in btrfs-progs, there is not much
-reason not to do the same in btrfs-progs.
+So here this patch introduce a better version with all the benefit from
+the above implementations:
 
-So this patch would:
+- Move btrfs_make_root_dir() into common/inode.[ch]
 
-- Make btrfs_add_link() able to handle linking subvolume
-  * Add a @parent_root parameter
-  * Rename existing @ino/@root to @child_ino/@child_root
-  * Add extra check to make sure if linking a subvolume, the @child_ino
-    is the rootdir
-  * If linking a subvolume, insert root and backref for @child_root
-  * If linking a subvolume, use the root_key of @child_root
-
-- Use btrfs_add_link() to implement link_image_subvol() for convert
-  Since btrfs_add_link() would return -EEXIST before inserting any
-  dir items, it's very safe to retry for a new subvolume name.
+- Implement a unified btrfs_make_subvol() to replace above two implementations
+  It would go with btrfs_create_root(), and btrfs_make_root_dir() to
+  remove duplicated code, and return a btrfs_root pointer for caller
+  to utilize.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- check/main.c          |   2 +-
- check/mode-common.c   |   6 +-
- check/mode-lowmem.c   |   4 +-
- convert/main.c        |  83 ++++++++++++++-
- kernel-shared/ctree.h |   6 +-
- kernel-shared/inode.c | 241 +++++++++++++++---------------------------
- 6 files changed, 172 insertions(+), 170 deletions(-)
+ Makefile       |  1 +
+ check/main.c   |  1 +
+ common/inode.c | 90 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ common/inode.h | 16 +++++++++
+ convert/main.c | 56 +++++++------------------------
+ mkfs/common.c  | 39 ----------------------
+ mkfs/common.h  |  2 --
+ mkfs/main.c    | 79 ++++----------------------------------------
+ 8 files changed, 127 insertions(+), 157 deletions(-)
+ create mode 100644 common/inode.c
+ create mode 100644 common/inode.h
 
+diff --git a/Makefile b/Makefile
+index 273a1f0e3b7c..e3534be600fd 100644
+--- a/Makefile
++++ b/Makefile
+@@ -209,6 +209,7 @@ objects = \
+ 	common/fsfeatures.o	\
+ 	common/help.o	\
+ 	common/inject-error.o	\
++	common/inode.o		\
+ 	common/messages.o	\
+ 	common/open-utils.o	\
+ 	common/parse-utils.o	\
 diff --git a/check/main.c b/check/main.c
-index 4beeb0adae76..4a88cc8f8708 100644
+index 4a88cc8f8708..8c884a9332f8 100644
 --- a/check/main.c
 +++ b/check/main.c
-@@ -2454,7 +2454,7 @@ static int reset_nlink(struct btrfs_trans_handle *trans,
- 	 * add_link() will handle the nlink inc, so new nlink must be correct
- 	 */
- 	list_for_each_entry(backref, &rec->backrefs, list) {
--		ret = btrfs_add_link(trans, root, rec->ino, backref->dir,
-+		ret = btrfs_add_link(trans, root, rec->ino, root, backref->dir,
- 				     backref->name, backref->namelen,
- 				     &backref->index, 0);
- 		if (ret < 0)
-diff --git a/check/mode-common.c b/check/mode-common.c
-index 1f42743c390a..0dca0a789a4d 100644
---- a/check/mode-common.c
-+++ b/check/mode-common.c
-@@ -463,7 +463,7 @@ int link_inode_to_lostfound(struct btrfs_trans_handle *trans,
- 		error("failed to create '%s' dir: %m", dir_name);
- 		goto out;
- 	}
--	ret = btrfs_add_link(trans, root, ino, lost_found_ino,
-+	ret = btrfs_add_link(trans, root, ino, root, lost_found_ino,
- 			     namebuf, name_len, NULL, 0);
- 	/*
- 	 * Add ".INO" suffix several times to handle case where
-@@ -480,8 +480,8 @@ int link_inode_to_lostfound(struct btrfs_trans_handle *trans,
- 		snprintf(namebuf + name_len, BTRFS_NAME_LEN - name_len,
- 			 ".%llu", ino);
- 		name_len += count_digits(ino) + 1;
--		ret = btrfs_add_link(trans, root, ino, lost_found_ino, namebuf,
--				     name_len, NULL, 0);
-+		ret = btrfs_add_link(trans, root, ino, root, lost_found_ino,
-+				     namebuf, name_len, NULL, 0);
- 	}
- 	if (ret < 0) {
- 		errno = -ret;
-diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
-index 275f6d16ebc7..b52316754753 100644
---- a/check/mode-lowmem.c
-+++ b/check/mode-lowmem.c
-@@ -1040,8 +1040,8 @@ static int repair_ternary_lowmem(struct btrfs_root *root, u64 dir_ino, u64 ino,
- 				name_len, 0);
- 		if (ret)
- 			goto out;
--		ret = btrfs_add_link(trans, root, ino, dir_ino, name, name_len,
--				     &index, 1);
-+		ret = btrfs_add_link(trans, root, ino, root, dir_ino, name,
-+				     name_len, &index, 1);
- 		goto out;
- 	}
- out:
-diff --git a/convert/main.c b/convert/main.c
-index c1047bacbe01..bcd310228fcd 100644
---- a/convert/main.c
-+++ b/convert/main.c
-@@ -104,6 +104,7 @@
- #include "kernel-shared/transaction.h"
- #include "kernel-shared/free-space-tree.h"
+@@ -48,6 +48,7 @@
  #include "kernel-shared/file-item.h"
-+#include "kernel-shared/ctree.h"
- #include "crypto/hash.h"
+ #include "kernel-shared/tree-checker.h"
  #include "common/defs.h"
++#include "common/inode.h"
  #include "common/extent-cache.h"
-@@ -840,8 +841,8 @@ static int create_image(struct btrfs_root *root,
- 			ino, root->root_key.objectid);
- 		goto out;
- 	}
--	ret = btrfs_add_link(trans, root, ino, BTRFS_FIRST_FREE_OBJECTID, name,
--			     strlen(name), NULL, 0);
-+	ret = btrfs_add_link(trans, root, ino, root, BTRFS_FIRST_FREE_OBJECTID,
-+			     name, strlen(name), NULL, 0);
- 	if (ret < 0) {
- 		errno = -ret;
- 		error("failed to link ino %llu to '/%s' in root %llu: %m",
-@@ -1145,6 +1146,79 @@ static int convert_open_fs(const char *devname,
- 	return -1;
- }
- 
-+static struct btrfs_root *link_image_subvol(struct btrfs_fs_info *fs_info,
-+					    const char *base)
+ #include "common/internal.h"
+ #include "common/messages.h"
+diff --git a/common/inode.c b/common/inode.c
+new file mode 100644
+index 000000000000..712d50d6e1a9
+--- /dev/null
++++ b/common/inode.c
+@@ -0,0 +1,90 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++
++#include <time.h>
++#include "kernel-shared/transaction.h"
++#include "kernel-shared/disk-io.h"
++#include "common/inode.h"
++#include "common/messages.h"
++
++int btrfs_make_root_dir(struct btrfs_trans_handle *trans,
++			struct btrfs_root *root, u64 objectid)
 +{
-+	struct btrfs_root *fs_root = fs_info->fs_root;
-+	struct btrfs_root *image_root;
-+	struct btrfs_trans_handle *trans;
-+	struct btrfs_key key;
-+	char buf[BTRFS_NAME_LEN + 1]; /* for snprintf null */
-+	int len;
 +	int ret;
++	struct btrfs_inode_item inode_item;
++	time_t now = time(NULL);
 +
-+	strcpy(buf, base);
-+	len = strlen(base);
-+	if (len == 0 || len > BTRFS_NAME_LEN) {
-+		ret = -EINVAL;
-+		error("invalid image subvolume name: %s", base);
-+		image_root = ERR_PTR(ret);
-+		goto out;
-+	}
++	memset(&inode_item, 0, sizeof(inode_item));
++	btrfs_set_stack_inode_generation(&inode_item, trans->transid);
++	btrfs_set_stack_inode_size(&inode_item, 0);
++	btrfs_set_stack_inode_nlink(&inode_item, 1);
++	btrfs_set_stack_inode_nbytes(&inode_item, root->fs_info->nodesize);
++	btrfs_set_stack_inode_mode(&inode_item, S_IFDIR | 0755);
++	btrfs_set_stack_timespec_sec(&inode_item.atime, now);
++	btrfs_set_stack_timespec_nsec(&inode_item.atime, 0);
++	btrfs_set_stack_timespec_sec(&inode_item.ctime, now);
++	btrfs_set_stack_timespec_nsec(&inode_item.ctime, 0);
++	btrfs_set_stack_timespec_sec(&inode_item.mtime, now);
++	btrfs_set_stack_timespec_nsec(&inode_item.mtime, 0);
++	btrfs_set_stack_timespec_sec(&inode_item.otime, now);
++	btrfs_set_stack_timespec_nsec(&inode_item.otime, 0);
 +
-+	/*
-+	 * 1 root ref, 1 root backref,
-+	 * 1 dir_index, 1 dir_item.
-+	 */
-+	trans = btrfs_start_transaction(fs_root, 4);
-+	if (IS_ERR(trans)) {
-+		ret = PTR_ERR(trans);
-+		errno = -ret;
-+		error_msg(ERROR_MSG_START_TRANS, "%m");
-+		image_root = ERR_PTR(ret);
-+		goto out;
-+	}
-+	key.objectid = CONV_IMAGE_SUBVOL_OBJECTID;
-+	key.type = BTRFS_ROOT_ITEM_KEY;
-+	key.offset = (u64)-1;
-+	image_root = btrfs_read_fs_root(fs_info, &key);
-+	if (IS_ERR(image_root)) {
-+		ret = PTR_ERR(image_root);
-+		errno = -ret;
-+		error("failed to read convert image subvolume: %m");
-+		image_root = ERR_PTR(ret);
-+		goto out;
-+	}
-+	for (int i = 0; i < 1024; i++) {
-+		ret = btrfs_add_link(trans,
-+			image_root, btrfs_root_dirid(&image_root->root_item),
-+			fs_root, btrfs_root_dirid(&fs_root->root_item),
-+			buf, len, NULL, 0);
-+		if (ret != -EEXIST)
-+			break;
-+		len = snprintf(buf, ARRAY_SIZE(buf), "%s%d", base, i);
-+		if (len < 1 || len > BTRFS_NAME_LEN) {
-+			ret = -EINVAL;
-+			break;
-+		}
-+	}
-+	if (ret < 0) {
-+		errno = -ret;
-+		error("failed to link image subvolume: %m");
-+		image_root = ERR_PTR(ret);
-+		goto out;
-+	}
-+	ret = btrfs_commit_transaction(trans, fs_root);
-+	if (ret < 0) {
-+		errno = -ret;
-+		error("failed to commit transaction: %m");
-+		image_root = ERR_PTR(ret);
-+		goto out;
-+	}
-+out:
-+	return image_root;
++	if (root->fs_info->tree_root == root)
++		btrfs_set_super_root_dir(root->fs_info->super_copy, objectid);
++
++	ret = btrfs_insert_inode(trans, root, objectid, &inode_item);
++	if (ret)
++		goto error;
++
++	ret = btrfs_insert_inode_ref(trans, root, "..", 2, objectid, objectid, 0);
++	if (ret)
++		goto error;
++
++	btrfs_set_root_dirid(&root->root_item, objectid);
++	ret = 0;
++error:
++	return ret;
 +}
 +
- static int do_convert(const char *devname, u32 convert_flags, u32 nodesize,
- 		const char *fslabel, int progress,
- 		struct btrfs_mkfs_features *features, u16 csum_type,
-@@ -1311,9 +1385,8 @@ static int do_convert(const char *devname, u32 convert_flags, u32 nodesize,
- 		task_deinit(ctx.info);
- 	}
- 
--	image_root = btrfs_mksubvol(root, subvol_name,
--				    CONV_IMAGE_SUBVOL_OBJECTID, true);
--	if (!image_root) {
-+	image_root = link_image_subvol(root->fs_info, subvol_name);
-+	if (IS_ERR(image_root)) {
- 		error("unable to link subvolume %s", subvol_name);
- 		goto fail;
- 	}
-diff --git a/kernel-shared/ctree.h b/kernel-shared/ctree.h
-index 501feaa08a0a..ff43fefca802 100644
---- a/kernel-shared/ctree.h
-+++ b/kernel-shared/ctree.h
-@@ -1225,8 +1225,10 @@ int btrfs_new_inode(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 		u64 ino, u32 mode);
- int btrfs_change_inode_flags(struct btrfs_trans_handle *trans,
- 			     struct btrfs_root *root, u64 ino, u64 flags);
--int btrfs_add_link(struct btrfs_trans_handle *trans, struct btrfs_root *root,
--		   u64 ino, u64 parent_ino, char *name, int namelen,
-+int btrfs_add_link(struct btrfs_trans_handle *trans,
-+		   struct btrfs_root *child_root, u64 child_ino,
-+		   struct btrfs_root *parent_root, u64 parent_ino,
-+		   char *name, int namelen,
- 		   u64 *index, int ignore_existed);
- int btrfs_unlink(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 		 u64 ino, u64 parent_ino, u64 index, const char *name,
-diff --git a/kernel-shared/inode.c b/kernel-shared/inode.c
-index 43ab685a45e1..38ca882141e2 100644
---- a/kernel-shared/inode.c
-+++ b/kernel-shared/inode.c
-@@ -170,33 +170,44 @@ out:
- }
- 
- /*
-- * Add dir_item/index for 'parent_ino' if add_backref is true, also insert a
-- * backref from the ino to parent dir and update the nlink(Kernel version does
-- * not do this thing)
-+ * Link child inode (@child_ino of @child_root) under the directory of parent
-+ * inode (@parent_ino of @parent_root, must be a directory inode), using
-+ * @name.
-  *
-- * Currently only supports adding link from an inode to another inode.
-+ * If @child_root and @parent_root are different, @child_ino must be the rootdir
-+ * of @child_root.
-+ *
-+ * If @index is not NULL, and points to a non-zero value, this function would use
-+ * *index as the DIR_INDEX, caller must ensure there is no conflicts.
-+ * If @ignore_existed is true, any conflicting DIR_ITEM/DIR_INDEX would be ignored.
-  */
--int btrfs_add_link(struct btrfs_trans_handle *trans, struct btrfs_root *root,
--		   u64 ino, u64 parent_ino, char *name, int namelen,
-+int btrfs_add_link(struct btrfs_trans_handle *trans,
-+		   struct btrfs_root *child_root, u64 child_ino,
-+		   struct btrfs_root *parent_root, u64 parent_ino,
-+		   char *name, int namelen,
- 		   u64 *index, int ignore_existed)
- {
- 	struct btrfs_path *path;
- 	struct btrfs_key key;
- 	struct btrfs_inode_item *inode_item;
-+	bool link_subvol = false;
- 	u32 imode;
- 	u32 nlink;
- 	u64 inode_size;
- 	u64 ret_index = 0;
- 	int ret = 0;
- 
-+	if (btrfs_comp_cpu_keys(&child_root->root_key, &parent_root->root_key))
-+		link_subvol = true;
++struct btrfs_root *btrfs_create_subvol(struct btrfs_trans_handle *trans,
++				       u64 objectid)
++{
++	struct btrfs_fs_info *fs_info = trans->fs_info;
++	struct btrfs_root *root;
++	struct btrfs_key key;
++	int ret;
 +
- 	path = btrfs_alloc_path();
- 	if (!path)
- 		return -ENOMEM;
- 
--	key.objectid = ino;
-+	key.objectid = child_ino;
- 	key.type = BTRFS_INODE_ITEM_KEY;
- 	key.offset = 0;
--	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
-+	ret = btrfs_search_slot(NULL, child_root, &key, path, 0, 0);
- 	if (ret > 0) {
- 		ret = -ENOENT;
- 		/* fallthrough */
-@@ -209,31 +220,72 @@ int btrfs_add_link(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 	imode = btrfs_inode_mode(path->nodes[0], inode_item);
- 	btrfs_release_path(path);
- 
-+	/*
-+	 * If linking a subvolume, child_ino must be the rootdir of that
-+	 * subvolume.
-+	 */
-+	if (link_subvol && child_ino != btrfs_root_dirid(&child_root->root_item)) {
-+		error("child ino is not rootdir, has %llu expect %llu",
-+		      child_ino, btrfs_root_dirid(&child_root->root_item));
-+		ret = -EUCLEAN;
-+		goto out;
++	ret = btrfs_create_root(trans, objectid);
++	if (ret < 0) {
++		errno = -ret;
++		error("failed to create root %lld: %m", objectid);
++		return ERR_PTR(ret);
++	}
++	key.objectid = objectid;
++	key.type = BTRFS_ROOT_ITEM_KEY;
++	key.offset = 0;
++
++	root = btrfs_read_fs_root(fs_info, &key);
++	if (IS_ERR(root)) {
++		ret = PTR_ERR(root);
++		errno = -ret;
++		error("failed to read created subvolume %lld: %m", objectid);
++		return ERR_PTR(ret);
 +	}
 +
- 	if (index && *index) {
- 		ret_index = *index;
- 	} else {
--		ret = btrfs_find_free_dir_index(root, parent_ino, &ret_index);
-+		ret = btrfs_find_free_dir_index(parent_root, parent_ino,
-+						&ret_index);
- 		if (ret < 0)
- 			goto out;
- 	}
- 
--	ret = check_dir_conflict(root, name, namelen, parent_ino, ret_index);
-+	ret = check_dir_conflict(parent_root, name, namelen, parent_ino,
-+				 ret_index);
- 	if (ret < 0 && !(ignore_existed && ret == -EEXIST))
- 		goto out;
- 
--	/* Add inode ref */
--	ret = btrfs_insert_inode_ref(trans, root, name, namelen,
--				     ino, parent_ino, ret_index);
--	if (ret < 0 && !(ignore_existed && ret == -EEXIST))
--		goto out;
-+	if (link_subvol) {
-+		struct btrfs_root *tree_root = trans->fs_info->tree_root;
-+
-+		/* Add root backref. */
-+		ret = btrfs_add_root_ref(trans, tree_root,
-+				child_root->root_key.objectid,
-+				BTRFS_ROOT_BACKREF_KEY,
-+				parent_root->root_key.objectid,
-+				parent_ino, ret_index, name, namelen);
-+		if (ret < 0) {
-+			errno = -ret;
-+			error("failed to add backref for child root %lld: %m",
-+			      child_root->root_key.objectid);
-+			goto out;
-+		}
-+
-+		ret = btrfs_add_root_ref(trans, tree_root,
-+				parent_root->root_key.objectid,
-+				BTRFS_ROOT_REF_KEY, child_root->root_key.objectid,
-+				parent_ino, ret_index, name, namelen);
-+		if (ret < 0) {
-+			errno = -ret;
-+			error("failed to add root ref for child root %lld: %m",
-+			      child_root->root_key.objectid);
-+			goto out;
-+		}
-+	} else {
-+		/* Add inode ref */
-+		ret = btrfs_insert_inode_ref(trans, child_root, name, namelen,
-+					     child_ino, parent_ino, ret_index);
-+		if (ret < 0 && !(ignore_existed && ret == -EEXIST))
-+			goto out;
++	ret = btrfs_make_root_dir(trans, root, BTRFS_FIRST_FREE_OBJECTID);
++	if (ret < 0) {
++		errno = -ret;
++		error("failed to update root dir for root %llu",
++		      root->root_key.objectid);
++		return ERR_PTR(ret);
 +	}
- 
- 	/* do not update nlinks if existed */
--	if (!ret) {
--		/* Update nlinks for the inode */
--		key.objectid = ino;
-+	if (!ret && !link_subvol) {
-+		/* Update nlinks for the child inode. */
-+		key.objectid = child_ino;
- 		key.type = BTRFS_INODE_ITEM_KEY;
- 		key.offset = 0;
--		ret = btrfs_search_slot(trans, root, &key, path, 1, 1);
-+		ret = btrfs_search_slot(trans, child_root, &key, path, 1, 1);
- 		if (ret) {
- 			if (ret > 0)
- 				ret = -ENOENT;
-@@ -250,11 +302,16 @@ int btrfs_add_link(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 	}
- 
- 	/* Add dir_item and dir_index */
--	key.objectid = ino;
--	key.type = BTRFS_INODE_ITEM_KEY;
--	key.offset = 0;
--	ret = btrfs_insert_dir_item(trans, root, name, namelen, parent_ino,
--				    &key, fs_umode_to_ftype(imode), ret_index);
-+	if (link_subvol) {
-+		memcpy(&key, &child_root->root_key, sizeof(struct btrfs_key));
-+	} else {
-+		key.objectid = child_ino;
-+		key.type = BTRFS_INODE_ITEM_KEY;
-+		key.offset = 0;
++	ret = btrfs_update_root(trans, trans->fs_info->tree_root,
++				&root->root_key, &root->root_item);
++	if (ret < 0) {
++		errno = -ret;
++		error("failed to update root %llu",
++		      root->root_key.objectid);
++		return ERR_PTR(ret);
 +	}
-+	ret = btrfs_insert_dir_item(trans, parent_root, name, namelen,
-+				    parent_ino, &key,
-+				    fs_umode_to_ftype(imode), ret_index);
- 	if (ret < 0)
- 		goto out;
- 
-@@ -262,7 +319,7 @@ int btrfs_add_link(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 	key.objectid = parent_ino;
- 	key.type = BTRFS_INODE_ITEM_KEY;
- 	key.offset = 0;
--	ret = btrfs_search_slot(trans, root, &key, path, 1, 1);
-+	ret = btrfs_search_slot(trans, parent_root, &key, path, 1, 1);
- 	if (ret)
- 		goto out;
- 	inode_item = btrfs_item_ptr(path->nodes[0], path->slots[0],
-@@ -596,8 +653,8 @@ int btrfs_mkdir(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 	ret = btrfs_new_inode(trans, root, ret_ino, mode | S_IFDIR);
- 	if (ret)
- 		goto out;
--	ret = btrfs_add_link(trans, root, ret_ino, parent_ino, name, namelen,
--			     NULL, 0);
-+	ret = btrfs_add_link(trans, root, ret_ino, root, parent_ino, name,
-+			     namelen, NULL, 0);
- 	if (ret)
- 		goto out;
- out:
-@@ -607,136 +664,6 @@ out:
++	return root;
++}
+diff --git a/common/inode.h b/common/inode.h
+new file mode 100644
+index 000000000000..912caf1f7904
+--- /dev/null
++++ b/common/inode.h
+@@ -0,0 +1,16 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++
++/*
++ * This is the btrfs-progs specific inode related helpers, which is different
++ * from kernel code.
++ */
++#ifndef __BTRFS_INODE_H__
++#define __BTRFS_INODE_H__
++
++#include "kernel-shared/ctree.h"
++
++int btrfs_make_root_dir(struct btrfs_trans_handle *trans,
++			struct btrfs_root *root, u64 objectid);
++struct btrfs_root *btrfs_create_subvol(struct btrfs_trans_handle *trans,
++				       u64 objectid);
++#endif
+diff --git a/convert/main.c b/convert/main.c
+index bcd310228fcd..991e45556c04 100644
+--- a/convert/main.c
++++ b/convert/main.c
+@@ -107,6 +107,7 @@
+ #include "kernel-shared/ctree.h"
+ #include "crypto/hash.h"
+ #include "common/defs.h"
++#include "common/inode.h"
+ #include "common/extent-cache.h"
+ #include "common/internal.h"
+ #include "common/cpu-utils.h"
+@@ -916,44 +917,6 @@ out:
  	return ret;
  }
  
--struct btrfs_root *btrfs_mksubvol(struct btrfs_root *root,
--				  const char *base, u64 root_objectid,
--				  bool convert)
+-static int create_subvol(struct btrfs_trans_handle *trans,
+-			 struct btrfs_root *root, u64 root_objectid)
 -{
--	struct btrfs_trans_handle *trans;
--	struct btrfs_fs_info *fs_info = root->fs_info;
--	struct btrfs_root *tree_root = fs_info->tree_root;
--	struct btrfs_root *new_root = NULL;
--	struct btrfs_path path = { 0 };
--	struct btrfs_inode_item *inode_item;
--	struct extent_buffer *leaf;
+-	struct extent_buffer *tmp;
+-	struct btrfs_root *new_root;
 -	struct btrfs_key key;
--	u64 dirid = btrfs_root_dirid(&root->root_item);
--	u64 index = 2;
--	char buf[BTRFS_NAME_LEN + 1]; /* for snprintf null */
--	int len;
--	int i;
+-	struct btrfs_root_item root_item;
 -	int ret;
 -
--	len = strlen(base);
--	if (len == 0 || len > BTRFS_NAME_LEN)
--		return NULL;
+-	ret = btrfs_copy_root(trans, root, root->node, &tmp,
+-			      root_objectid);
+-	if (ret)
+-		return ret;
 -
--	key.objectid = dirid;
--	key.type = BTRFS_DIR_INDEX_KEY;
--	key.offset = (u64)-1;
--
--	ret = btrfs_search_slot(NULL, root, &key, &path, 0, 0);
--	if (ret <= 0) {
--		error("search for DIR_INDEX dirid %llu failed: %d",
--				(unsigned long long)dirid, ret);
--		goto fail;
--	}
--
--	if (path.slots[0] > 0) {
--		path.slots[0]--;
--		btrfs_item_key_to_cpu(path.nodes[0], &key, path.slots[0]);
--		if (key.objectid == dirid && key.type == BTRFS_DIR_INDEX_KEY)
--			index = key.offset + 1;
--	}
--	btrfs_release_path(&path);
--
--	trans = btrfs_start_transaction(root, 1);
--	if (IS_ERR(trans)) {
--		ret = PTR_ERR(trans);
--		errno = -ret;
--		error_msg(ERROR_MSG_START_TRANS, "%m");
--		goto fail;
--	}
--
--	key.objectid = dirid;
--	key.offset = 0;
--	key.type =  BTRFS_INODE_ITEM_KEY;
--
--	ret = btrfs_lookup_inode(trans, root, &path, &key, 1);
--	if (ret) {
--		error("search for INODE_ITEM %llu failed: %d",
--				(unsigned long long)dirid, ret);
--		goto fail;
--	}
--	leaf = path.nodes[0];
--	inode_item = btrfs_item_ptr(leaf, path.slots[0],
--				    struct btrfs_inode_item);
+-	memcpy(&root_item, &root->root_item, sizeof(root_item));
+-	btrfs_set_root_bytenr(&root_item, tmp->start);
+-	btrfs_set_root_level(&root_item, btrfs_header_level(tmp));
+-	btrfs_set_root_generation(&root_item, trans->transid);
+-	free_extent_buffer(tmp);
 -
 -	key.objectid = root_objectid;
--	key.offset = (u64)-1;
 -	key.type = BTRFS_ROOT_ITEM_KEY;
+-	key.offset = trans->transid;
+-	ret = btrfs_insert_root(trans, root->fs_info->tree_root,
+-				&key, &root_item);
 -
--	memcpy(buf, base, len);
--	if (convert) {
--		for (i = 0; i < 1024; i++) {
--			ret = btrfs_insert_dir_item(trans, root, buf, len,
--					dirid, &key, BTRFS_FT_DIR, index);
--			if (ret != -EEXIST)
--				break;
--			len = snprintf(buf, ARRAY_SIZE(buf), "%s%d", base, i);
--			if (len < 1 || len > BTRFS_NAME_LEN) {
--				ret = -EINVAL;
--				break;
--			}
--		}
--	} else {
--		ret = btrfs_insert_dir_item(trans, root, buf, len, dirid, &key,
--					    BTRFS_FT_DIR, index);
--	}
--	if (ret)
--		goto fail;
--
--	btrfs_set_inode_size(leaf, inode_item, len * 2 +
--			     btrfs_inode_size(leaf, inode_item));
--	btrfs_mark_buffer_dirty(leaf);
--	btrfs_release_path(&path);
--
--	/* add the backref first */
--	ret = btrfs_add_root_ref(trans, tree_root, root_objectid,
--				 BTRFS_ROOT_BACKREF_KEY,
--				 root->root_key.objectid,
--				 dirid, index, buf, len);
--	if (ret) {
--		error("unable to add root backref for %llu: %d",
--				root->root_key.objectid, ret);
--		goto fail;
--	}
--
--	/* now add the forward ref */
--	ret = btrfs_add_root_ref(trans, tree_root, root->root_key.objectid,
--				 BTRFS_ROOT_REF_KEY, root_objectid,
--				 dirid, index, buf, len);
--	if (ret) {
--		error("unable to add root ref for %llu: %d",
--				root->root_key.objectid, ret);
--		goto fail;
--	}
--
--	ret = btrfs_commit_transaction(trans, root);
--	if (ret) {
--		errno = -ret;
--		error_msg(ERROR_MSG_COMMIT_TRANS, "%m");
--		goto fail;
--	}
--
--	new_root = btrfs_read_fs_root(fs_info, &key);
--	if (IS_ERR(new_root)) {
+-	key.offset = (u64)-1;
+-	new_root = btrfs_read_fs_root(root->fs_info, &key);
+-	if (!new_root || IS_ERR(new_root)) {
 -		error("unable to fs read root: %lu", PTR_ERR(new_root));
--		new_root = NULL;
+-		return PTR_ERR(new_root);
 -	}
--fail:
--	return new_root;
+-
+-	ret = btrfs_make_root_dir(trans, new_root, BTRFS_FIRST_FREE_OBJECTID);
+-
+-	return ret;
 -}
 -
  /*
-  * Walk the tree of allocated inodes and find a hole.
-  */
+  * New make_btrfs() has handle system and meta chunks quite well.
+  * So only need to add remaining data chunks.
+@@ -1013,6 +976,7 @@ static int make_convert_data_block_groups(struct btrfs_trans_handle *trans,
+ static int init_btrfs(struct btrfs_mkfs_config *cfg, struct btrfs_root *root,
+ 			 struct btrfs_convert_context *cctx, u32 convert_flags)
+ {
++	struct btrfs_root *created_root;
+ 	struct btrfs_key location;
+ 	struct btrfs_trans_handle *trans;
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+@@ -1058,15 +1022,19 @@ static int init_btrfs(struct btrfs_mkfs_config *cfg, struct btrfs_root *root,
+ 			     BTRFS_FIRST_FREE_OBJECTID);
+ 
+ 	/* subvol for fs image file */
+-	ret = create_subvol(trans, root, CONV_IMAGE_SUBVOL_OBJECTID);
+-	if (ret < 0) {
+-		error("failed to create subvolume image root: %d", ret);
++	created_root = btrfs_create_subvol(trans, CONV_IMAGE_SUBVOL_OBJECTID);
++	if (IS_ERR(created_root)) {
++		ret = PTR_ERR(created_root);
++		errno = -ret;
++		error("failed to create subvolume image root: %m");
+ 		goto err;
+ 	}
+ 	/* subvol for data relocation tree */
+-	ret = create_subvol(trans, root, BTRFS_DATA_RELOC_TREE_OBJECTID);
+-	if (ret < 0) {
+-		error("failed to create DATA_RELOC root: %d", ret);
++	created_root = btrfs_create_subvol(trans, BTRFS_DATA_RELOC_TREE_OBJECTID);
++	if (IS_ERR(created_root)) {
++		ret = PTR_ERR(created_root);
++		errno = -ret;
++		error("failed to create DATA_RELOC root: %m");
+ 		goto err;
+ 	}
+ 
+diff --git a/mkfs/common.c b/mkfs/common.c
+index 5e56b33dda6d..de370a86fd97 100644
+--- a/mkfs/common.c
++++ b/mkfs/common.c
+@@ -757,45 +757,6 @@ out:
+ 	return ret;
+ }
+ 
+-int btrfs_make_root_dir(struct btrfs_trans_handle *trans,
+-			struct btrfs_root *root, u64 objectid)
+-{
+-	int ret;
+-	struct btrfs_inode_item inode_item;
+-	time_t now = time(NULL);
+-
+-	memset(&inode_item, 0, sizeof(inode_item));
+-	btrfs_set_stack_inode_generation(&inode_item, trans->transid);
+-	btrfs_set_stack_inode_size(&inode_item, 0);
+-	btrfs_set_stack_inode_nlink(&inode_item, 1);
+-	btrfs_set_stack_inode_nbytes(&inode_item, root->fs_info->nodesize);
+-	btrfs_set_stack_inode_mode(&inode_item, S_IFDIR | 0755);
+-	btrfs_set_stack_timespec_sec(&inode_item.atime, now);
+-	btrfs_set_stack_timespec_nsec(&inode_item.atime, 0);
+-	btrfs_set_stack_timespec_sec(&inode_item.ctime, now);
+-	btrfs_set_stack_timespec_nsec(&inode_item.ctime, 0);
+-	btrfs_set_stack_timespec_sec(&inode_item.mtime, now);
+-	btrfs_set_stack_timespec_nsec(&inode_item.mtime, 0);
+-	btrfs_set_stack_timespec_sec(&inode_item.otime, now);
+-	btrfs_set_stack_timespec_nsec(&inode_item.otime, 0);
+-
+-	if (root->fs_info->tree_root == root)
+-		btrfs_set_super_root_dir(root->fs_info->super_copy, objectid);
+-
+-	ret = btrfs_insert_inode(trans, root, objectid, &inode_item);
+-	if (ret)
+-		goto error;
+-
+-	ret = btrfs_insert_inode_ref(trans, root, "..", 2, objectid, objectid, 0);
+-	if (ret)
+-		goto error;
+-
+-	btrfs_set_root_dirid(&root->root_item, objectid);
+-	ret = 0;
+-error:
+-	return ret;
+-}
+-
+ /*
+  * Btrfs minimum size calculation is complicated, it should include at least:
+  * 1. system group size
+diff --git a/mkfs/common.h b/mkfs/common.h
+index d9183c997bb2..d1c0eec80e1e 100644
+--- a/mkfs/common.h
++++ b/mkfs/common.h
+@@ -103,8 +103,6 @@ struct btrfs_mkfs_config {
+ };
+ 
+ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg);
+-int btrfs_make_root_dir(struct btrfs_trans_handle *trans,
+-			struct btrfs_root *root, u64 objectid);
+ u64 btrfs_min_dev_size(u32 nodesize, int mixed, u64 meta_profile,
+ 		       u64 data_profile);
+ int test_minimum_size(const char *file, u64 min_dev_size);
+diff --git a/mkfs/main.c b/mkfs/main.c
+index cf8922999b31..e5201fbc9c31 100644
+--- a/mkfs/main.c
++++ b/mkfs/main.c
+@@ -44,6 +44,7 @@
+ #include "crypto/hash.h"
+ #include "common/defs.h"
+ #include "common/internal.h"
++#include "common/inode.h"
+ #include "common/messages.h"
+ #include "common/cpu-utils.h"
+ #include "common/utils.h"
+@@ -706,75 +707,6 @@ static void update_chunk_allocation(struct btrfs_fs_info *fs_info,
+ 	}
+ }
+ 
+-static int create_data_reloc_tree(struct btrfs_trans_handle *trans)
+-{
+-	struct btrfs_fs_info *fs_info = trans->fs_info;
+-	struct btrfs_inode_item *inode;
+-	struct btrfs_root *root;
+-	struct btrfs_path path = { 0 };
+-	struct btrfs_key key = {
+-		.objectid = BTRFS_DATA_RELOC_TREE_OBJECTID,
+-		.type = BTRFS_ROOT_ITEM_KEY,
+-	};
+-	u64 ino = BTRFS_FIRST_FREE_OBJECTID;
+-	char *name = "..";
+-	int ret;
+-
+-	root = btrfs_create_tree(trans, fs_info, &key);
+-	if (IS_ERR(root)) {
+-		ret = PTR_ERR(root);
+-		goto out;
+-	}
+-	/* Update dirid as created tree has default dirid 0 */
+-	btrfs_set_root_dirid(&root->root_item, ino);
+-	ret = btrfs_update_root(trans, fs_info->tree_root, &root->root_key,
+-				&root->root_item);
+-	if (ret < 0)
+-		goto out;
+-
+-	/* Cache this tree so it can be cleaned up at close_ctree() */
+-	ret = rb_insert(&fs_info->fs_root_tree, &root->rb_node,
+-			btrfs_fs_roots_compare_roots);
+-	if (ret < 0)
+-		goto out;
+-
+-	/* Insert INODE_ITEM */
+-	ret = btrfs_new_inode(trans, root, ino, 0755 | S_IFDIR);
+-	if (ret < 0)
+-		goto out;
+-
+-	/* then INODE_REF */
+-	ret = btrfs_insert_inode_ref(trans, root, name, strlen(name), ino, ino,
+-				     0);
+-	if (ret < 0)
+-		goto out;
+-
+-	/* Update nlink of that inode item */
+-	key.objectid = ino;
+-	key.type = BTRFS_INODE_ITEM_KEY;
+-	key.offset = 0;
+-
+-	ret = btrfs_search_slot(trans, root, &key, &path, 0, 1);
+-	if (ret > 0) {
+-		ret = -ENOENT;
+-		btrfs_release_path(&path);
+-		goto out;
+-	}
+-	if (ret < 0) {
+-		btrfs_release_path(&path);
+-		goto out;
+-	}
+-	inode = btrfs_item_ptr(path.nodes[0], path.slots[0],
+-			       struct btrfs_inode_item);
+-	btrfs_set_inode_nlink(path.nodes[0], inode, 1);
+-	btrfs_mark_buffer_dirty(path.nodes[0]);
+-	btrfs_release_path(&path);
+-	return 0;
+-out:
+-	btrfs_abort_transaction(trans, ret);
+-	return ret;
+-}
+-
+ static int btrfs_uuid_tree_add(struct btrfs_trans_handle *trans, u8 *uuid,
+ 			       u8 type, u64 subvol_id_cpu)
+ {
+@@ -1139,6 +1071,7 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
+ {
+ 	char *file;
+ 	struct btrfs_root *root;
++	struct btrfs_root *data_reloc_root;
+ 	struct btrfs_fs_info *fs_info;
+ 	struct btrfs_trans_handle *trans;
+ 	struct open_ctree_args oca = { 0 };
+@@ -1915,9 +1848,11 @@ raid_groups:
+ 		goto out;
+ 	}
+ 
+-	ret = create_data_reloc_tree(trans);
+-	if (ret) {
+-		error("unable to create data reloc tree: %d", ret);
++	data_reloc_root = btrfs_create_subvol(trans, BTRFS_DATA_RELOC_TREE_OBJECTID);
++	if (IS_ERR(data_reloc_root)) {
++		ret = PTR_ERR(data_reloc_root);
++		errno = -ret;
++		error("unable to create data reloc tree: %m");
+ 		goto out;
+ 	}
+ 
 -- 
 2.42.0
 

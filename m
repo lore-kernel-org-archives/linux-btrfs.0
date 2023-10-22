@@ -2,58 +2,54 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 258BACDB474
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 38CA0C001DF
 	for <linux-btrfs@archiver.kernel.org>; Sun, 22 Oct 2023 03:40:38 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229943AbjJVDkh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 21 Oct 2023 23:40:37 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35172 "EHLO
+        id S229790AbjJVDkg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 21 Oct 2023 23:40:36 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35158 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229472AbjJVDkf (ORCPT
+        with ESMTP id S229478AbjJVDkf (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Sat, 21 Oct 2023 23:40:35 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2C838119
-        for <linux-btrfs@vger.kernel.org>; Sat, 21 Oct 2023 20:40:32 -0700 (PDT)
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E8211114
+        for <linux-btrfs@vger.kernel.org>; Sat, 21 Oct 2023 20:40:31 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id AB8641FDC5
-        for <linux-btrfs@vger.kernel.org>; Sun, 22 Oct 2023 03:40:30 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 0E44F1FDC2
+        for <linux-btrfs@vger.kernel.org>; Sun, 22 Oct 2023 03:40:28 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1697946030; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=OLuM71+LAmTLpVS8XwEQ1AInfmtYktUm2GHJrn4y7Qs=;
-        b=Zpf4ELiO/rqWmY9a9yUSY+iSfJ2eMJu8jzOtaTR4zJB0fQqBsbC5vZSxQg82+NI5+vZlVx
-        b1vIBTiCv1OuFo0KPQIqzxhBqhK3MX6tZhzLwUBj4SW6f+U66eAEUd7Pj4eBqeHr9QftUb
-        LXlQhMWVKd40Z0Vx+MeoZuVHSIp7H5U=
+        t=1697946028; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=lAaCa1nD7MKgJwisi4XDz5JpauqMqs0hlxUShYmm2eo=;
+        b=K9ahWw5GkbR0HSmi5a98mjBrtn3VmsKlcXb/JJSI2+qqZghp5Fh7Ngt5J+JgzieSKpnok0
+        gSVQZx1DTPXjsSEVuhvKvKj5WjM88n0cA4HvAEm2ka4P7ClwnQGV6coPC3l2K/cHLTEpJr
+        BVJJPIuZADMMQ5divH1bidqm7YNqBvY=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id D84201348C
-        for <linux-btrfs@vger.kernel.org>; Sun, 22 Oct 2023 03:40:29 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 3C46C1348C
+        for <linux-btrfs@vger.kernel.org>; Sun, 22 Oct 2023 03:40:26 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id 6N65JK2ZNGVHZwAAMHmgww
+        id vRkpO6qZNGVHZwAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Sun, 22 Oct 2023 03:40:29 +0000
+        for <linux-btrfs@vger.kernel.org>; Sun, 22 Oct 2023 03:40:26 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/3] btrfs-progs: check/lowmem: verify the sequence of inline backref items
-Date:   Sun, 22 Oct 2023 14:10:08 +1030
-Message-ID: <0af53e129f107cb91b7ce3f6d22e6f83e4457e70.1697945679.git.wqu@suse.com>
+Subject: [PATCH 0/3] btrfs-progs: follow-ups for issue #622
+Date:   Sun, 22 Oct 2023 14:10:06 +1030
+Message-ID: <cover.1697945679.git.wqu@suse.com>
 X-Mailer: git-send-email 2.42.0
-In-Reply-To: <cover.1697945679.git.wqu@suse.com>
-References: <cover.1697945679.git.wqu@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Authentication-Results: smtp-out2.suse.de;
         none
-X-Spamd-Result: default: False [0.81 / 50.00];
+X-Spamd-Result: default: False [-1.73 / 50.00];
          ARC_NA(0.00)[];
          RCVD_VIA_SMTP_AUTH(0.00)[];
          FROM_HAS_DN(0.00)[];
@@ -72,99 +68,57 @@ X-Spamd-Result: default: False [0.81 / 50.00];
          MIME_TRACE(0.00)[0:+];
          RCVD_COUNT_TWO(0.00)[2];
          RCVD_TLS_ALL(0.00)[];
-         BAYES_HAM(-0.09)[64.17%]
+         BAYES_HAM(-2.63)[98.38%]
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Commit 6cf11f3e3815 ("btrfs-progs: check: check order of inline extent
-refs") added the ability to detect out-of-order inline extent backref
-items.
+Issue #622 is a very interesting bug report, that ntfs2btrfs has a fixed
+bug that it can generate out-of-order inline backref items.
 
-Meanwhile there is no such ability in lowmem mode, this patch would
-introduce such ability to lowmem mode.
+This leads to kernel transaction abort, but btrfs-check failed to detect
+it at all.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- check/mode-lowmem.c | 31 +++++++++++++++++++++++++++++++
- check/mode-lowmem.h |  1 +
- 2 files changed, 32 insertions(+)
+Although the fix for btrfs-progs is already merged in the latest v6.5.3
+release, we still lacks the following thing:
 
-diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
-index 3b2807cc5de9..19b7b1a72a1f 100644
---- a/check/mode-lowmem.c
-+++ b/check/mode-lowmem.c
-@@ -4234,6 +4234,7 @@ static int check_extent_item(struct btrfs_path *path)
- 	unsigned long ptr;
- 	int slot = path->slots[0];
- 	int type;
-+	int last_type = 0;
- 	u32 nodesize = btrfs_super_nodesize(gfs_info->super_copy);
- 	u32 item_size = btrfs_item_size(eb, slot);
- 	u64 flags;
-@@ -4245,6 +4246,8 @@ static int check_extent_item(struct btrfs_path *path)
- 	u64 owner;
- 	u64 owner_offset;
- 	u64 super_gen;
-+	u64 seq;
-+	u64 last_seq = U64_MAX;
- 	int metadata = 0;
- 	/* To handle corrupted values in skinny backref */
- 	u64 level;
-@@ -4342,6 +4345,32 @@ next:
- 	iref = (struct btrfs_extent_inline_ref *)ptr;
- 	type = btrfs_extent_inline_ref_type(eb, iref);
- 	offset = btrfs_extent_inline_ref_offset(eb, iref);
-+	if (type == BTRFS_EXTENT_DATA_REF_KEY) {
-+		dref = (struct btrfs_extent_data_ref *)(&iref->offset);
-+		seq = hash_extent_data_ref(
-+				btrfs_extent_data_ref_root(eb, dref),
-+				btrfs_extent_data_ref_objectid(eb, dref),
-+				btrfs_extent_data_ref_offset(eb, dref));
-+	} else {
-+		seq = offset;
-+	}
-+	/*
-+	 * The @type should be ascending, while inside the same type, the
-+	 * @seq should be descending.
-+	 */
-+	if (type < last_type)
-+		tmp_err |= BACKREF_OUT_OF_ORDER;
-+	else if (type > last_type)
-+		last_seq = U64_MAX;
-+
-+	if (seq > last_seq)
-+		tmp_err |= BACKREF_OUT_OF_ORDER;
-+
-+	if (tmp_err & BACKREF_OUT_OF_ORDER)
-+		error(
-+"inline extent backref (type %u seq 0x%llx) of extent [%llu %u %llu] is out of order",
-+		      type, seq, key.objectid, key.type, key.offset);
-+
- 	switch (type) {
- 	case BTRFS_TREE_BLOCK_REF_KEY:
- 		root_objectid = offset;
-@@ -4420,6 +4449,8 @@ next:
- 
- 	err |= tmp_err;
- 	ptr_offset += btrfs_extent_inline_ref_size(type);
-+	last_type = type;
-+	last_seq = seq;
- 	goto next;
- 
- out:
-diff --git a/check/mode-lowmem.h b/check/mode-lowmem.h
-index c3cf0878147f..3f84280a89f7 100644
---- a/check/mode-lowmem.h
-+++ b/check/mode-lowmem.h
-@@ -64,6 +64,7 @@
- #define UNKNOWN_TYPE		(1 << 6) /* Unknown type */
- #define ACCOUNTING_MISMATCH	(1 << 7) /* Used space accounting error */
- #define CHUNK_TYPE_MISMATCH	(1 << 8)
-+#define BACKREF_OUT_OF_ORDER	(1 << 9)
- 
- int check_fs_roots_lowmem(void);
- int check_chunks_and_extents_lowmem(void);
--- 
+- Better dump-tree support to show the weird inline backref order
+  This is very weird, as we have the inline type in ascending order,
+  but for the sequence number (hash for EXTENT_DATA_REF, offset for all
+  other types) it is descending inside the same type.
+
+  That's why the following output of one data extent item looks
+  out-of-order:
+
+	item 0 key (13631488 EXTENT_ITEM 4096) itemoff 16143 itemsize 140
+		refs 4 gen 7 flags DATA
+		extent data backref root FS_TREE objectid 258 offset 0 count 1
+		extent data backref root FS_TREE objectid 257 offset 0 count 1
+		extent data backref root FS_TREE objectid 260 offset 0 count 1
+		extent data backref root FS_TREE objectid 259 offset 0 count 1
+
+- Lowmem mode support to detect the error
+
+- Test case to make sure we can detect the error
+
+This series would address all the three points above.
+
+Qu Wenruo (3):
+  btrfs-progs: dump-tree: output the sequence number for inline
+    references
+  btrfs-progs: check/lowmem: verify the sequence of inline backref items
+  btrfs-progs: fsck-tests: add test image of out-of-order inline backref
+    items
+
+ check/mode-lowmem.c                           |  31 ++++++++++++++++++
+ check/mode-lowmem.h                           |   1 +
+ kernel-shared/print-tree.c                    |  31 +++++++++++-------
+ .../btrfs_image.xz                            | Bin 0 -> 2264 bytes
+ .../061-out-of-order-inline-backref/test.sh   |  19 +++++++++++
+ 5 files changed, 70 insertions(+), 12 deletions(-)
+ create mode 100644 tests/fsck-tests/061-out-of-order-inline-backref/btrfs_image.xz
+ create mode 100755 tests/fsck-tests/061-out-of-order-inline-backref/test.sh
+
+--
 2.42.0
 

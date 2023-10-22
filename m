@@ -2,131 +2,169 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 28166C00A8F
-	for <linux-btrfs@archiver.kernel.org>; Sun, 22 Oct 2023 02:47:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 258BACDB474
+	for <linux-btrfs@archiver.kernel.org>; Sun, 22 Oct 2023 03:40:38 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229623AbjJVCk5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 21 Oct 2023 22:40:57 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40316 "EHLO
+        id S229943AbjJVDkh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 21 Oct 2023 23:40:37 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35172 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229478AbjJVCk4 (ORCPT
+        with ESMTP id S229472AbjJVDkf (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 21 Oct 2023 22:40:56 -0400
-Received: from mail-oa1-f80.google.com (mail-oa1-f80.google.com [209.85.160.80])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 78FCEDF
-        for <linux-btrfs@vger.kernel.org>; Sat, 21 Oct 2023 19:40:54 -0700 (PDT)
-Received: by mail-oa1-f80.google.com with SMTP id 586e51a60fabf-1e9a324c12fso3533985fac.2
-        for <linux-btrfs@vger.kernel.org>; Sat, 21 Oct 2023 19:40:54 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1697942454; x=1698547254;
-        h=to:from:subject:message-id:date:mime-version:x-gm-message-state
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=uU8lb1l1yKfhs7iHHIqOMOJAFdCISWoOXZEw6aTB7b4=;
-        b=U7+C/7oWRRB7tx8oztXGIgtO18jcZ2XEXP1mgpu4qN8X0+zTQ3MLu4ZnMOIHdgtaKp
-         SUt2RW3lYHXQgPcn+ORntLWJlBQRG1aY6sNbrMUuLNbmQ8PwO4A0XP1Zk4D4JHu+niAg
-         ECoQQdWc+pMYpTyc10B+KqTuG5e22Esxy4EhEIImD7FtauBm6GT+livL6Shyf5ddxyCI
-         jrRsVjPMjNBaHjQlrMWTooA6XAualagCxKmgA5EfObEvLmJT18SyQlXEmza6eMHazEj+
-         OS/DA/NalmFSo9VmKQ3mMfx7AvP0YVOr345ZyYtSUaRy5wbCZv633Q4nekQ4o9wPH5z6
-         dMJQ==
-X-Gm-Message-State: AOJu0YxbPLTpkHNY9y/bPgjMhe0JX+1AWXJBOUGueiVA94yojzz1jve6
-        FphSszUVfIAzcYozp/RXtOIHJJQAj8OxxRt+MOJrwFxdXt4y
-X-Google-Smtp-Source: AGHT+IFHZ6P7o+3eMU28/NkHHkQTYEEHjSvBSzx432SAOF7tvLU7F4B1w1hLQmsTWuE5/cSvMxyb5JkINrs9wcT8EwARUgU91GPM
+        Sat, 21 Oct 2023 23:40:35 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2C838119
+        for <linux-btrfs@vger.kernel.org>; Sat, 21 Oct 2023 20:40:32 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id AB8641FDC5
+        for <linux-btrfs@vger.kernel.org>; Sun, 22 Oct 2023 03:40:30 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1697946030; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=OLuM71+LAmTLpVS8XwEQ1AInfmtYktUm2GHJrn4y7Qs=;
+        b=Zpf4ELiO/rqWmY9a9yUSY+iSfJ2eMJu8jzOtaTR4zJB0fQqBsbC5vZSxQg82+NI5+vZlVx
+        b1vIBTiCv1OuFo0KPQIqzxhBqhK3MX6tZhzLwUBj4SW6f+U66eAEUd7Pj4eBqeHr9QftUb
+        LXlQhMWVKd40Z0Vx+MeoZuVHSIp7H5U=
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id D84201348C
+        for <linux-btrfs@vger.kernel.org>; Sun, 22 Oct 2023 03:40:29 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id 6N65JK2ZNGVHZwAAMHmgww
+        (envelope-from <wqu@suse.com>)
+        for <linux-btrfs@vger.kernel.org>; Sun, 22 Oct 2023 03:40:29 +0000
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH 2/3] btrfs-progs: check/lowmem: verify the sequence of inline backref items
+Date:   Sun, 22 Oct 2023 14:10:08 +1030
+Message-ID: <0af53e129f107cb91b7ce3f6d22e6f83e4457e70.1697945679.git.wqu@suse.com>
+X-Mailer: git-send-email 2.42.0
+In-Reply-To: <cover.1697945679.git.wqu@suse.com>
+References: <cover.1697945679.git.wqu@suse.com>
 MIME-Version: 1.0
-X-Received: by 2002:a05:6870:5692:b0:1ea:1bc4:d06b with SMTP id
- p18-20020a056870569200b001ea1bc4d06bmr2659490oao.10.1697942453878; Sat, 21
- Oct 2023 19:40:53 -0700 (PDT)
-Date:   Sat, 21 Oct 2023 19:40:53 -0700
-X-Google-Appengine-App-Id: s~syzkaller
-X-Google-Appengine-App-Id-Alias: syzkaller
-Message-ID: <000000000000d005440608450810@google.com>
-Subject: [syzbot] [btrfs?] BUG: MAX_LOCKDEP_CHAIN_HLOCKS too low! (4)
-From:   syzbot <syzbot+b2869947e0c9467a41b6@syzkaller.appspotmail.com>
-To:     clm@fb.com, dsterba@suse.com, josef@toxicpanda.com,
-        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
+Authentication-Results: smtp-out2.suse.de;
+        none
+X-Spamd-Result: default: False [0.81 / 50.00];
+         ARC_NA(0.00)[];
+         RCVD_VIA_SMTP_AUTH(0.00)[];
+         FROM_HAS_DN(0.00)[];
+         TO_MATCH_ENVRCPT_ALL(0.00)[];
+         R_MISSING_CHARSET(2.50)[];
+         MIME_GOOD(-0.10)[text/plain];
+         TO_DN_NONE(0.00)[];
+         BROKEN_CONTENT_TYPE(1.50)[];
+         PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+         RCPT_COUNT_ONE(0.00)[1];
+         DKIM_SIGNED(0.00)[suse.com:s=susede1];
+         NEURAL_HAM_LONG(-3.00)[-1.000];
+         NEURAL_HAM_SHORT(-1.00)[-1.000];
+         MID_CONTAINS_FROM(1.00)[];
+         FROM_EQ_ENVFROM(0.00)[];
+         MIME_TRACE(0.00)[0:+];
+         RCVD_COUNT_TWO(0.00)[2];
+         RCVD_TLS_ALL(0.00)[];
+         BAYES_HAM(-0.09)[64.17%]
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hello,
+Commit 6cf11f3e3815 ("btrfs-progs: check: check order of inline extent
+refs") added the ability to detect out-of-order inline extent backref
+items.
 
-syzbot found the following issue on:
+Meanwhile there is no such ability in lowmem mode, this patch would
+introduce such ability to lowmem mode.
 
-HEAD commit:    78124b0c1d10 Merge branch 'for-next/core' into for-kernelci
-git tree:       git://git.kernel.org/pub/scm/linux/kernel/git/arm64/linux.git for-kernelci
-console output: https://syzkaller.appspot.com/x/log.txt?x=1557da89680000
-kernel config:  https://syzkaller.appspot.com/x/.config?x=f27cd6e68911e026
-dashboard link: https://syzkaller.appspot.com/bug?extid=b2869947e0c9467a41b6
-compiler:       Debian clang version 15.0.6, GNU ld (GNU Binutils for Debian) 2.40
-userspace arch: arm64
-syz repro:      https://syzkaller.appspot.com/x/repro.syz?x=137ac45d680000
-C reproducer:   https://syzkaller.appspot.com/x/repro.c?x=16e4640b680000
-
-Downloadable assets:
-disk image: https://storage.googleapis.com/syzbot-assets/bd512de820ae/disk-78124b0c.raw.xz
-vmlinux: https://storage.googleapis.com/syzbot-assets/a47a437b1d4f/vmlinux-78124b0c.xz
-kernel image: https://storage.googleapis.com/syzbot-assets/3ae8b966bcd7/Image-78124b0c.gz.xz
-mounted in repro: https://storage.googleapis.com/syzbot-assets/d5d514495f15/mount_0.gz
-
-IMPORTANT: if you fix the issue, please add the following tag to the commit:
-Reported-by: syzbot+b2869947e0c9467a41b6@syzkaller.appspotmail.com
-
-BUG: MAX_LOCKDEP_CHAIN_HLOCKS too low!
-turning off the locking correctness validator.
-CPU: 0 PID: 5571 Comm: kworker/u4:8 Not tainted 6.6.0-rc6-syzkaller-g78124b0c1d10 #0
-Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/06/2023
-Workqueue: btrfs-cache btrfs_work_helper
-Call trace:
- dump_backtrace+0x1b8/0x1e4 arch/arm64/kernel/stacktrace.c:233
- show_stack+0x2c/0x44 arch/arm64/kernel/stacktrace.c:240
- __dump_stack lib/dump_stack.c:88 [inline]
- dump_stack_lvl+0xd0/0x124 lib/dump_stack.c:106
- dump_stack+0x1c/0x28 lib/dump_stack.c:113
- lookup_chain_cache_add kernel/locking/lockdep.c:3815 [inline]
- validate_chain kernel/locking/lockdep.c:3836 [inline]
- __lock_acquire+0x1c60/0x75e8 kernel/locking/lockdep.c:5136
- lock_acquire+0x23c/0x71c kernel/locking/lockdep.c:5753
- __raw_spin_lock include/linux/spinlock_api_smp.h:133 [inline]
- _raw_spin_lock+0x48/0x60 kernel/locking/spinlock.c:154
- spin_lock include/linux/spinlock.h:351 [inline]
- __clear_extent_bit+0x1b4/0xaf0 fs/btrfs/extent-io-tree.c:596
- clear_extent_bit fs/btrfs/extent-io-tree.h:146 [inline]
- clear_extent_bits fs/btrfs/extent-io-tree.h:158 [inline]
- btrfs_free_excluded_extents fs/btrfs/block-group.c:840 [inline]
- caching_thread+0x18bc/0x1b64 fs/btrfs/block-group.c:909
- btrfs_work_helper+0x340/0x1504 fs/btrfs/async-thread.c:314
- process_one_work+0x694/0x1204 kernel/workqueue.c:2630
- process_scheduled_works kernel/workqueue.c:2703 [inline]
- worker_thread+0x938/0xef4 kernel/workqueue.c:2784
- kthread+0x288/0x310 kernel/kthread.c:388
- ret_from_fork+0x10/0x20 arch/arm64/kernel/entry.S:857
-BTRFS info (device loop0): qgroup scan completed (inconsistency flag cleared)
-BTRFS info (device loop0): qgroup scan completed (inconsistency flag cleared)
-BTRFS info (device loop0): qgroup scan completed (inconsistency flag cleared)
-
-
+Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
-This report is generated by a bot. It may contain errors.
-See https://goo.gl/tpsmEJ for more information about syzbot.
-syzbot engineers can be reached at syzkaller@googlegroups.com.
+ check/mode-lowmem.c | 31 +++++++++++++++++++++++++++++++
+ check/mode-lowmem.h |  1 +
+ 2 files changed, 32 insertions(+)
 
-syzbot will keep track of this issue. See:
-https://goo.gl/tpsmEJ#status for how to communicate with syzbot.
+diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
+index 3b2807cc5de9..19b7b1a72a1f 100644
+--- a/check/mode-lowmem.c
++++ b/check/mode-lowmem.c
+@@ -4234,6 +4234,7 @@ static int check_extent_item(struct btrfs_path *path)
+ 	unsigned long ptr;
+ 	int slot = path->slots[0];
+ 	int type;
++	int last_type = 0;
+ 	u32 nodesize = btrfs_super_nodesize(gfs_info->super_copy);
+ 	u32 item_size = btrfs_item_size(eb, slot);
+ 	u64 flags;
+@@ -4245,6 +4246,8 @@ static int check_extent_item(struct btrfs_path *path)
+ 	u64 owner;
+ 	u64 owner_offset;
+ 	u64 super_gen;
++	u64 seq;
++	u64 last_seq = U64_MAX;
+ 	int metadata = 0;
+ 	/* To handle corrupted values in skinny backref */
+ 	u64 level;
+@@ -4342,6 +4345,32 @@ next:
+ 	iref = (struct btrfs_extent_inline_ref *)ptr;
+ 	type = btrfs_extent_inline_ref_type(eb, iref);
+ 	offset = btrfs_extent_inline_ref_offset(eb, iref);
++	if (type == BTRFS_EXTENT_DATA_REF_KEY) {
++		dref = (struct btrfs_extent_data_ref *)(&iref->offset);
++		seq = hash_extent_data_ref(
++				btrfs_extent_data_ref_root(eb, dref),
++				btrfs_extent_data_ref_objectid(eb, dref),
++				btrfs_extent_data_ref_offset(eb, dref));
++	} else {
++		seq = offset;
++	}
++	/*
++	 * The @type should be ascending, while inside the same type, the
++	 * @seq should be descending.
++	 */
++	if (type < last_type)
++		tmp_err |= BACKREF_OUT_OF_ORDER;
++	else if (type > last_type)
++		last_seq = U64_MAX;
++
++	if (seq > last_seq)
++		tmp_err |= BACKREF_OUT_OF_ORDER;
++
++	if (tmp_err & BACKREF_OUT_OF_ORDER)
++		error(
++"inline extent backref (type %u seq 0x%llx) of extent [%llu %u %llu] is out of order",
++		      type, seq, key.objectid, key.type, key.offset);
++
+ 	switch (type) {
+ 	case BTRFS_TREE_BLOCK_REF_KEY:
+ 		root_objectid = offset;
+@@ -4420,6 +4449,8 @@ next:
+ 
+ 	err |= tmp_err;
+ 	ptr_offset += btrfs_extent_inline_ref_size(type);
++	last_type = type;
++	last_seq = seq;
+ 	goto next;
+ 
+ out:
+diff --git a/check/mode-lowmem.h b/check/mode-lowmem.h
+index c3cf0878147f..3f84280a89f7 100644
+--- a/check/mode-lowmem.h
++++ b/check/mode-lowmem.h
+@@ -64,6 +64,7 @@
+ #define UNKNOWN_TYPE		(1 << 6) /* Unknown type */
+ #define ACCOUNTING_MISMATCH	(1 << 7) /* Used space accounting error */
+ #define CHUNK_TYPE_MISMATCH	(1 << 8)
++#define BACKREF_OUT_OF_ORDER	(1 << 9)
+ 
+ int check_fs_roots_lowmem(void);
+ int check_chunks_and_extents_lowmem(void);
+-- 
+2.42.0
 
-If the bug is already fixed, let syzbot know by replying with:
-#syz fix: exact-commit-title
-
-If you want syzbot to run the reproducer, reply with:
-#syz test: git://repo/address.git branch-or-commit-hash
-If you attach or paste a git patch, syzbot will apply it before testing.
-
-If you want to overwrite bug's subsystems, reply with:
-#syz set subsystems: new-subsystem
-(See the list of subsystem names on the web dashboard)
-
-If the bug is a duplicate of another bug, reply with:
-#syz dup: exact-subject-of-another-report
-
-If you want to undo deduplication, reply with:
-#syz undup

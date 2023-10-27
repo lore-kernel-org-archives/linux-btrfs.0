@@ -2,183 +2,260 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 52726C25B67
-	for <linux-btrfs@archiver.kernel.org>; Fri, 27 Oct 2023 12:16:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CCD2BC27C48
+	for <linux-btrfs@archiver.kernel.org>; Fri, 27 Oct 2023 23:59:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1345787AbjJ0MQM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 27 Oct 2023 08:16:12 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48610 "EHLO
+        id S230104AbjJ0X7J (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 27 Oct 2023 19:59:09 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60776 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1345420AbjJ0MQL (ORCPT
+        with ESMTP id S229712AbjJ0X7I (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 27 Oct 2023 08:16:11 -0400
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AA1C3C0
-        for <linux-btrfs@vger.kernel.org>; Fri, 27 Oct 2023 05:15:31 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-        s=mimecast20190719; t=1698408930;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=lmcBpkcMtUzkFnS0Z4xfn2QsFi+vB2x0NJn50Z9ibvY=;
-        b=hEiKujsNacVnt/bYWn0oqQmO1jaHCO6Pbq4wslqkre+Qg1X9mdzDXa9nsK7+7WHLbJmX0o
-        JEimGvPTZyoXiOerKWc0xmaTgkmoPqBRJoHywcYvF/68c6RWuuzCK4DS5K95PgUZaZPdmD
-        8wmHCc8hPvGNi/hFfL8EBN0ssFY+9aY=
-Received: from mail-pg1-f199.google.com (mail-pg1-f199.google.com
- [209.85.215.199]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
- us-mta-314-IWDMgMGvPq-JCDQkGzpuTQ-1; Fri, 27 Oct 2023 08:15:29 -0400
-X-MC-Unique: IWDMgMGvPq-JCDQkGzpuTQ-1
-Received: by mail-pg1-f199.google.com with SMTP id 41be03b00d2f7-5b7f3f47547so1765022a12.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 27 Oct 2023 05:15:29 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1698408928; x=1699013728;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=lmcBpkcMtUzkFnS0Z4xfn2QsFi+vB2x0NJn50Z9ibvY=;
-        b=EuwWT4Pl1BuOrBDsoK07rOZADP7ZhHJ4cUB7gkNgsVcJF0QqEzUFICTKNK0IF3gFQW
-         LpCsektFOoW3CxljgxKlHubgPKVxF5lXgify9vw8oPW0cZmna8Haw1BLtEOKQ3TyLGr4
-         fHgVhg0NAYu01agkzmhWrfOHiwh30/PyHI+L/Q8mNHfCmfFjQ5yX0NjDhDYZmEmA8jRG
-         Iodu/DoxN/vHkEW18VvacgnEY0ia6eMDtcpr2HcfTTEzjfMaoMQDPW+XjxVor9oI0OUO
-         AEuYZh7IrSsNAivtzVCA08iNMfee8Qsi0mZC3OdFD5XREt3iZfzn1iovvq5PbjmyPwQ9
-         oaVg==
-X-Gm-Message-State: AOJu0YwtlvWcIfX5lwZr7MLd+37wtwUid8aImzOaSydOOgKg4fetZyo/
-        W6k4uO+Kj6YMSxQ7QzAwMMRqnKtYUgU0d1V+Q9QiDBE8WsygPFJdN/LJvYk34oaLe8k8DGGzPLx
-        2V5oRkHdWVuMDZrGBlk0BJX0=
-X-Received: by 2002:a17:902:dcc5:b0:1cc:b3f:dd81 with SMTP id t5-20020a170902dcc500b001cc0b3fdd81mr1928419pll.67.1698408928352;
-        Fri, 27 Oct 2023 05:15:28 -0700 (PDT)
-X-Google-Smtp-Source: AGHT+IHoLJf/9t+MxP2adSki0TQVAXmyVyTSsD8IcnwXQzAwyeGADdDb8gCK5sui/PYuTQpwtmJnPA==
-X-Received: by 2002:a17:902:dcc5:b0:1cc:b3f:dd81 with SMTP id t5-20020a170902dcc500b001cc0b3fdd81mr1928401pll.67.1698408928020;
-        Fri, 27 Oct 2023 05:15:28 -0700 (PDT)
-Received: from dell-per750-06-vm-08.rhts.eng.pek2.redhat.com ([43.228.180.230])
-        by smtp.gmail.com with ESMTPSA id ik30-20020a170902ab1e00b001cc2c7a30e0sm49063plb.159.2023.10.27.05.15.26
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 27 Oct 2023 05:15:27 -0700 (PDT)
-Date:   Fri, 27 Oct 2023 20:15:24 +0800
-From:   Zorro Lang <zlang@redhat.com>
-To:     fdmanana@kernel.org
-Cc:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] btrfs: test snapshotting a subvolume that was just
- created
-Message-ID: <20231027121524.247ewzfnns3otte4@dell-per750-06-vm-08.rhts.eng.pek2.redhat.com>
-References: <3149ccc2900f5574a046e675a6db79b019af2bac.1697718086.git.fdmanana@suse.com>
- <c0b651af75a999cb1356e64d936080b65067ae56.1698146559.git.fdmanana@suse.com>
+        Fri, 27 Oct 2023 19:59:08 -0400
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.20])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2DFFE1B1
+        for <linux-btrfs@vger.kernel.org>; Fri, 27 Oct 2023 16:59:04 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.com;
+        s=s31663417; t=1698451143; x=1699055943; i=quwenruo.btrfs@gmx.com;
+        bh=Vae0WTroQByWhLytmJMAVBjJIHDo7jssoXq2D8/eFIQ=;
+        h=X-UI-Sender-Class:Date:Subject:To:References:From:In-Reply-To;
+        b=V5qnr1vxyaKc3fhr06JR4USAJompWnTIvl+rZNs36raBJw3MmYKkIf6Xz0Tj24aF
+         laludtl05qMpGFmWm3btDvpSsWdjzg9mjP1SM1ubptGqhNiDpFrsff7Lque8XLdFq
+         M4GHdQVJQpdFOUWBkX8NZbkU3S7bkliYlEg1DBxp1B1MrjOKnnX0J18yVc6+vvtNK
+         Wz4Ri0zVle4nS6SjC8oaWXQYR5xrxyjkNKP/Paf3o5mA1ocaivALoe51fmAcmefpv
+         vvXuiS0pisUw+1ba4Y0OEK/Hn0a45fwqX0JGb7s2F9VLpvMMIWszWcvRs7eHQsMen
+         3WbkYvZCkUMjJ1Y87Q==
+X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
+Received: from [172.16.0.101] ([122.151.37.21]) by mail.gmx.net (mrgmx105
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MhU5b-1rSIqb1Wjr-00ebg7; Sat, 28
+ Oct 2023 01:59:03 +0200
+Message-ID: <57b56cb5-ea82-4bf3-ab11-a487ce46ddec@gmx.com>
+Date:   Sat, 28 Oct 2023 10:28:58 +1030
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <c0b651af75a999cb1356e64d936080b65067ae56.1698146559.git.fdmanana@suse.com>
+User-Agent: Mozilla Thunderbird
+Subject: Re: Help with USB HD needed
+Content-Language: en-US
+To:     "Werner I." <theweio@gmail.com>, linux-btrfs@vger.kernel.org
+References: <CAFYMhu0VRKCZOFE3AUKpY6zRftqFTQ6dpsa4sVpYyBhxNHLTYQ@mail.gmail.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCY00iVQUJDToH
+ pgAKCRDCPZHzoSX+qNKACACkjDLzCvcFuDlgqCiS4ajHAo6twGra3uGgY2klo3S4JespWifr
+ BLPPak74oOShqNZ8yWzB1Bkz1u93Ifx3c3H0r2vLWrImoP5eQdymVqMWmDAq+sV1Koyt8gXQ
+ XPD2jQCrfR9nUuV1F3Z4Lgo+6I5LjuXBVEayFdz/VYK63+YLEAlSowCF72Lkz06TmaI0XMyj
+ jgRNGM2MRgfxbprCcsgUypaDfmhY2nrhIzPUICURfp9t/65+/PLlV4nYs+DtSwPyNjkPX72+
+ LdyIdY+BqS8cZbPG5spCyJIlZonADojLDYQq4QnufARU51zyVjzTXMg5gAttDZwTH+8LbNI4
+ mm2YzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCY00ibgUJDToHvwAK
+ CRDCPZHzoSX+qK6vB/9yyZlsS+ijtsvwYDjGA2WhVhN07Xa5SBBvGCAycyGGzSMkOJcOtUUf
+ tD+ADyrLbLuVSfRN1ke738UojphwkSFj4t9scG5A+U8GgOZtrlYOsY2+cG3R5vjoXUgXMP37
+ INfWh0KbJodf0G48xouesn08cbfUdlphSMXujCA8y5TcNyRuNv2q5Nizl8sKhUZzh4BascoK
+ DChBuznBsucCTAGrwPgG4/ul6HnWE8DipMKvkV9ob1xJS2W4WJRPp6QdVrBWJ9cCdtpR6GbL
+ iQi22uZXoSPv/0oUrGU+U5X4IvdnvT+8viPzszL5wXswJZfqfy8tmHM85yjObVdIG6AlnrrD
+In-Reply-To: <CAFYMhu0VRKCZOFE3AUKpY6zRftqFTQ6dpsa4sVpYyBhxNHLTYQ@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:CWfG/UPxr0saALiKri97ewH5+As4FpLQSano7YEc6qbipelIlm8
+ JxJR0FctsXFNb2+io0heFOzDiN2G9DRUhfufl55IMLABJ21rJjVb/lrcQeEiu9yAStj6WY2
+ 2Xb4EBjIFUxUmpziFzgpYDLURSof1vDgMINP9fXC5vI6Ev5v9m8yfuYaKyQru6bMn5AeR/q
+ iD/mLAQmzLXJ3PENT7z6Q==
+UI-OutboundReport: notjunk:1;M01:P0:FyYT9BmQ6IE=;2eEFUx7a1YBP55KHGx95cEpe6UD
+ WsA8OD2CVK4YDlIx+q/c3jYIRv0jCb2BaSrF1uG+NHqevcydwhyNruKgdpaJnaG+WX9cnCBFu
+ ClomkXdT3C15w5WaxrpX/jD1T6OAlakNpINu/Jzr7KQ2m7uVuqmPl60ct2mt6ylX07xiZ0KjG
+ 0vOZYTIKcAqgPuPqmVn27GrOo066llwUGs3Nk+ZKJu5dbn5neA9nB0RHZLhPDiAVOpglxX6+M
+ NskRhL6L3pFJjc73sugHMSOWNnciTdSyParJBLJAyWgq9vUeICCsD5T908X0ktnlQEj5Q4zfP
+ qZXGtKaK06O9hoeiUnO5yhJFgrW4rSqqbiVX7k0cB9SjWsn+RkdJlSXpnq+LGDdSyxt0lg0mX
+ vtA2ZZ1NGsFrT4k6Y/tFHUEGUazWuR7d4bhlbP7swgyU3SK1gSm96rcXDqdPI7+Ovk5x5YBkY
+ 9fedfF9UENrxdHE7jmwI/kTtD6Io4OpfkSAQY7WLfVqnZ58pScx8/jeUsC50RV3bf0wAapfRU
+ RxsgVJEbTmoS9BuecPxMxe0zr1dy4fLJWzRFem8q+V+tMIGoUQ+vriANIW32XXRNT5iSWi25l
+ uBoeBF49aBHrLzrAaRIc6aJKAJQpO/E/B3QqBCEdd5HsoeVQokKPjx6O9NwuCWcok+XQXz2C+
+ LV7SAhplxyK8CXA8L09oImrQD8bXCK5Xi/kjSllhv96lNbIwjl3riH/N1W+P1QnmtJ/cVNcU3
+ PpInDehwtYsZpbmr5aktbpqIgX9Zw2o1yNzeNh/6/0K9RIbGmZGlHHMQS/QV52iE+MCrYLRXV
+ IjlB4AML08bVjagBXCFsXkh9YIwekiq5UZRdqKyYDW+Lrk5yoaRqzusTmRmfS0e9DPlbJqfuM
+ n8VxiMNSagYQlHfCJTGbmsZ26EEk2Qwo+QDpR1tI6bpLZvOxFB6ZlxEX1YeMpDhGNB+3iutBD
+ 0p+0pdzi0iiRMIpGZclVoRjOAOs=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Oct 24, 2023 at 12:23:46PM +0100, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> Test that snapshotting a new subvolume (created in the current transaction)
-> that has a btree with a height > 1, works and does not result in a fs
-> corruption.
-> 
-> This exercises a regression introduced in kernel 6.5 by the kernel commit:
-> 
->   1b53e51a4a8f ("btrfs: don't commit transaction for every subvol create")
-> 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> Reviewed-by: Josef Bacik <josef@toxicpanda.com>
-> ---
-> 
-> v2: Add git commit ID for the kernel fix, as it was merged yesterday into
->     Linus' tree. Also fixed a typo and included Josef's Reviewed-by tag.
 
-Thanks for doing this!
 
-Reviewed-by: Zorro Lang <zlang@redhat.com>
+On 2023/10/28 01:34, Werner I. wrote:
+> Hi,
+>
+> after a power outage one of my btrfs formatted USB HDs can't be mounted =
+anymore.
+> A btrfs check gives me:
+> btrfs check /dev/sdb
+> Opening filesystem to check...
+> checksum verify failed on 2896434544640 wanted 0x49cf072e found 0x383771=
+7b
+> checksum verify failed on 2896434544640 wanted 0x49cf072e found 0x383771=
+7b
+> Csum didn't match
+> ERROR: failed to read block groups: Input/output error
+> ERROR: cannot open file system
+>
+> I tried mounting it with rescue options to no avail.
+> The data on it is not crucial but would be very nice to have back. I
+> should have copies on an decommissioned server but that would be a
+> pain to set up.
+> Help would be very much appreciated. I did NOT use the repair command!
+>
+> Here is the output of the questionnaire from the wiki:
+> Linux omvn100 6.2.16-11-bpo11-pve #1 SMP PREEMPT_DYNAMIC PVE
+> 6.2.16-11~bpo11+2 (2023-09-04T14:49Z) x86_64 GNU/Linux
+> btrfs-progs v5.16.2
+>
+> Label: none  uuid: 1397d17c-5789-47a8-958c-c603f7b47365
+>          Total devices 1 FS bytes used 13.19TiB
+>          devid    1 size 16.37TiB used 13.21TiB path /dev/sda
+>
+> Label: none  uuid: 6d5c6ae1-86df-4863-9ef4-19d4e5bc05e7
+>          Total devices 1 FS bytes used 3.59TiB
+>          devid    1 size 4.55TiB used 3.60TiB path /dev/sdc
+>
+> Label: none  uuid: 359cd817-936a-4451-9dc7-e8ee7910a448
+>          Total devices 1 FS bytes used 3.95TiB
+>          devid    1 size 4.55TiB used 3.95TiB path /dev/sdb
+>
+> [    4.729108] BTRFS: device fsid 359cd817-936a-4451-9dc7-e8ee7910a448
+> devid 1 transid 444227 /dev/sdb scanned by systemd-udevd (306)
+> [    4.866283] BTRFS info (device sdb): using crc32c (crc32c-intel)
+> checksum algorithm
+> [    4.866291] BTRFS info (device sdb): disk space caching is enabled
+> [    4.921450] BTRFS warning (device sdb): checksum verify failed on
+> logical 2896434544640 mirror 1 wanted 0x49cf072e found 0x3837717b
+> level 0
+> [    4.921461] BTRFS error (device sdb): failed to read block groups: -5
+> [    4.922819] BTRFS error (device sdb): open_ctree failed
+> [    5.307709] BTRFS: device fsid 6d5c6ae1-86df-4863-9ef4-19d4e5bc05e7
+> devid 1 transid 7866 /dev/sdc scanned by systemd-udevd (307)
+> [    5.391947] BTRFS info (device sdc): using crc32c (crc32c-intel)
+> checksum algorithm
+> [    5.391954] BTRFS info (device sdc): using free space tree
+> [    7.983815] r8169 0000:01:00.0 enp1s0: Link is Up - 1Gbps/Full -
+> flow control rx/tx
+> [    7.983825] IPv6: ADDRCONF(NETDEV_CHANGE): enp1s0: link becomes ready
+> [    8.432017] audit: type=3D1326 audit(1698404351.369:2):
+> auid=3D4294967295 uid=3D65534 gid=3D65534 ses=3D4294967295 subj=3Dunconf=
+ined
+> pid=3D777 comm=3D"node" exe=3D"/usr/local/bin/node" sig=3D0 arch=3Dc0000=
+03e
+> syscall=3D324 compat=3D0 ip=3D0x7fa3b2807152 code=3D0x50000
+> [    8.805952] audit: type=3D1326 audit(1698404351.741:3):
+> auid=3D4294967295 uid=3D65534 gid=3D65534 ses=3D4294967295 subj=3Dunconf=
+ined
+> pid=3D840 comm=3D"node" exe=3D"/usr/local/bin/node" sig=3D0 arch=3Dc0000=
+03e
+> syscall=3D324 compat=3D0 ip=3D0x7f9d7d23f152 code=3D0x50000
+> [   26.539848] audit: type=3D1326 audit(1698404369.477:4):
+> auid=3D4294967295 uid=3D65534 gid=3D65534 ses=3D4294967295 subj=3Dunconf=
+ined
+> pid=3D873 comm=3D"node" exe=3D"/usr/local/bin/node" sig=3D0 arch=3Dc0000=
+03e
+> syscall=3D324 compat=3D0 ip=3D0x7fcfd93d5152 code=3D0x50000
+> [   54.280616] BTRFS info (device sdc): auto enabling async discard
+> [   54.581643] Initializing XFRM netlink socket
+> [   54.963182] br-ad8d222d3210: port 1(vethd61e22d) entered blocking sta=
+te
+> [   54.963187] br-ad8d222d3210: port 1(vethd61e22d) entered disabled sta=
+te
+> [   54.963270] device vethd61e22d entered promiscuous mode
+> [   54.963609] br-ad8d222d3210: port 1(vethd61e22d) entered blocking sta=
+te
+> [   54.963613] br-ad8d222d3210: port 1(vethd61e22d) entered forwarding s=
+tate
+> [   54.963951] IPv6: ADDRCONF(NETDEV_CHANGE): br-ad8d222d3210: link
+> becomes ready
+> [   54.964030] br-ad8d222d3210: port 1(vethd61e22d) entered disabled sta=
+te
+> [   56.496029] eth0: renamed from veth003002b
+> [   56.527852] IPv6: ADDRCONF(NETDEV_CHANGE): vethd61e22d: link becomes =
+ready
+> [   56.527880] br-ad8d222d3210: port 1(vethd61e22d) entered blocking sta=
+te
+> [   56.527883] br-ad8d222d3210: port 1(vethd61e22d) entered forwarding s=
+tate
+> [   94.658751] BTRFS: device fsid 359cd817-936a-4451-9dc7-e8ee7910a448
+> devid 1 transid 444227 /dev/sdb scanned by mount (5159)
+> [   94.660625] BTRFS info (device sdb): using crc32c (crc32c-intel)
+> checksum algorithm
+> [   94.660632] BTRFS info (device sdb): disk space caching is enabled
+> [   94.715833] BTRFS warning (device sdb): checksum verify failed on
+> logical 2896434544640 mirror 1 wanted 0x49cf072e found 0x3837717b
+> level 0
+> [   94.715843] BTRFS error (device sdb): failed to read block groups: -5
+> [   94.717287] BTRFS error (device sdb): open_ctree failed
+> [  500.689477] audit: type=3D1326 audit(1698404843.392:5):
+> auid=3D4294967295 uid=3D65534 gid=3D65534 ses=3D4294967295 subj=3Dunconf=
+ined
+> pid=3D14849 comm=3D"node" exe=3D"/usr/local/bin/node" sig=3D0 arch=3Dc00=
+0003e
+> syscall=3D324 compat=3D0 ip=3D0x7ff8e0fc0152 code=3D0x50000
+> [  914.697510] BTRFS: device fsid 359cd817-936a-4451-9dc7-e8ee7910a448
+> devid 1 transid 444227 /dev/sdb scanned by mount (15368)
+> [  914.699197] BTRFS info (device sdb): using crc32c (crc32c-intel)
+> checksum algorithm
+> [  914.699205] BTRFS warning (device sdb): 'recovery' is deprecated,
+> use 'rescue=3Dusebackuproot' instead
+> [  914.699207] BTRFS info (device sdb): trying to use backup root at mou=
+nt time
+> [  914.699208] BTRFS info (device sdb): disk space caching is enabled
+> [  914.754095] BTRFS warning (device sdb): checksum verify failed on
+> logical 2896434544640 mirror 1 wanted 0x49cf072e found 0x3837717b
+> level 0
+> [  914.754106] BTRFS error (device sdb): failed to read block groups: -5
+> [  914.755479] BTRFS error (device sdb): open_ctree failed
+> [ 1339.551770] BTRFS: device fsid 359cd817-936a-4451-9dc7-e8ee7910a448
+> devid 1 transid 444227 /dev/sdb scanned by mount (15754)
+> [ 1339.553887] BTRFS info (device sdb): using crc32c (crc32c-intel)
+> checksum algorithm
+> [ 1339.553895] BTRFS warning (device sdb): 'recovery' is deprecated,
+> use 'rescue=3Dusebackuproot' instead
+> [ 1339.553897] BTRFS info (device sdb): trying to use backup root at mou=
+nt time
+> [ 1339.553898] BTRFS info (device sdb): disk space caching is enabled
+> [ 1339.608755] BTRFS warning (device sdb): checksum verify failed on
+> logical 2896434544640 mirror 1 wanted 0x49cf072e found 0x3837717b
+> level 0
+> [ 1339.608765] BTRFS error (device sdb): failed to read block groups: -5
+> [ 1339.610229] BTRFS error (device sdb): open_ctree failed
+> [ 2650.074709] BTRFS: device fsid 359cd817-936a-4451-9dc7-e8ee7910a448
+> devid 1 transid 444227 /dev/sdb scanned by mount (16646)
+> [ 2650.076404] BTRFS info (device sdb): using crc32c (crc32c-intel)
+> checksum algorithm
+> [ 2650.076413] BTRFS info (device sdb): enabling all of the rescue optio=
+ns
+> [ 2650.076414] BTRFS info (device sdb): ignoring data csums
+> [ 2650.076414] BTRFS info (device sdb): ignoring bad roots
+> [ 2650.076415] BTRFS info (device sdb): disabling log replay at mount ti=
+me
+> [ 2650.076416] BTRFS error (device sdb): nologreplay must be used with
+> ro mount option
 
-> 
->  tests/btrfs/302     | 61 +++++++++++++++++++++++++++++++++++++++++++++
->  tests/btrfs/302.out |  4 +++
->  2 files changed, 65 insertions(+)
->  create mode 100755 tests/btrfs/302
->  create mode 100644 tests/btrfs/302.out
-> 
-> diff --git a/tests/btrfs/302 b/tests/btrfs/302
-> new file mode 100755
-> index 00000000..f3e6044b
-> --- /dev/null
-> +++ b/tests/btrfs/302
-> @@ -0,0 +1,61 @@
-> +#! /bin/bash
-> +# SPDX-License-Identifier: GPL-2.0
-> +# Copyright (C) 2023 SUSE Linux Products GmbH. All Rights Reserved.
-> +#
-> +# FS QA Test 302
-> +#
-> +# Test that snapshotting a new subvolume (created in the current transaction)
-> +# that has a btree with a height > 1, works and does not result in a filesystem
-> +# corruption.
-> +#
-> +# This exercises a regression introduced in kernel 6.5 by the kernel commit:
-> +#
-> +#    1b53e51a4a8f ("btrfs: don't commit transaction for every subvol create")
-> +#
-> +. ./common/preamble
-> +_begin_fstest auto quick snapshot subvol
-> +
-> +. ./common/filter
-> +
-> +_supported_fs btrfs
-> +_require_scratch
-> +_require_fssum
-> +
-> +_fixed_by_kernel_commit eb96e221937a \
-> +	"btrfs: fix unwritten extent buffer after snapshotting a new subvolume"
-> +
-> +# Use a filesystem with a 64K node size so that we have the same node size on
-> +# every machine regardless of its page size (on x86_64 default node size is 16K
-> +# due to the 4K page size, while on PPC it's 64K by default). This way we can
-> +# make sure we are able to create a btree for the subvolume with a height of 2.
-> +_scratch_mkfs -n 64K >> $seqres.full 2>&1 || _fail "mkfs failed"
-> +_scratch_mount
-> +
-> +$BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/subvol | _filter_scratch
-> +
-> +# Create a few empty files on the subvolume, this bumps its btree height to 2
-> +# (root node at level 1 and 2 leaves).
-> +for ((i = 1; i <= 300; i++)); do
-> +	echo -n > $SCRATCH_MNT/subvol/file_$i
-> +done
-> +
-> +# Create a checksum of the subvolume's content.
-> +fssum_file="$SCRATCH_MNT/checksum.fssum"
-> +$FSSUM_PROG -A -f -w $fssum_file $SCRATCH_MNT/subvol
-> +
-> +# Now create a snapshot of the subvolume and make it accessible from within the
-> +# subvolume.
-> +$BTRFS_UTIL_PROG subvolume snapshot -r $SCRATCH_MNT/subvol \
-> +		 $SCRATCH_MNT/subvol/snap | _filter_scratch
-> +
-> +# Now unmount and mount again the fs. We want to verify we are able to read all
-> +# metadata for the snapshot from disk (no IO failures, etc).
-> +_scratch_cycle_mount
-> +
-> +# The snapshot's content should match the subvolume's content before we created
-> +# the snapshot.
-> +$FSSUM_PROG -r $fssum_file $SCRATCH_MNT/subvol/snap
-> +
-> +# success, all done
-> +status=0
-> +exit
-> diff --git a/tests/btrfs/302.out b/tests/btrfs/302.out
-> new file mode 100644
-> index 00000000..8770aefc
-> --- /dev/null
-> +++ b/tests/btrfs/302.out
-> @@ -0,0 +1,4 @@
-> +QA output created by 302
-> +Create subvolume 'SCRATCH_MNT/subvol'
-> +Create a readonly snapshot of 'SCRATCH_MNT/subvol' in 'SCRATCH_MNT/subvol/snap'
-> +OK
-> -- 
-> 2.40.1
-> 
+This shows exactly what you need to do, mount it with "-o ro,rescue=3Dall"=
+.
 
+The corruption is only at the extent tree (if that's the only
+corruption), then above read-only rescue mount should work fine.
+
+Thanks,
+Qu
+
+> [ 2650.076497] BTRFS error (device sdb): open_ctree failed
+>
+> If it's needed I can send a dull dmesg log later.
+>
+> Thank you,
+> Werner

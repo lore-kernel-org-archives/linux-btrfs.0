@@ -2,82 +2,84 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D5BCEC4332F
-	for <linux-btrfs@archiver.kernel.org>; Tue, 31 Oct 2023 11:29:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 77A77C4167B
+	for <linux-btrfs@archiver.kernel.org>; Tue, 31 Oct 2023 11:34:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1343734AbjJaL3h (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 31 Oct 2023 07:29:37 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41808 "EHLO
+        id S1343766AbjJaLes (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 31 Oct 2023 07:34:48 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33614 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231197AbjJaL3g (ORCPT
+        with ESMTP id S1343751AbjJaLer (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 31 Oct 2023 07:29:36 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8E4CD91
-        for <linux-btrfs@vger.kernel.org>; Tue, 31 Oct 2023 04:29:33 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 4AF0F21858;
-        Tue, 31 Oct 2023 11:29:32 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1698751772;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=NpLltQkcNveShG8zKODztwYUPtboMhImXBjZGxpD1ac=;
-        b=NmnPYFWTqBLicsW7uROp2RX7yOgb6nd9DCmAVZfWwxlPrgkqEp/wNLYcWL35wb3dOTpFnd
-        78T0Ysot93+/Uqf1w+OxrTDK08m/YfPn9OttH/7oPKRTEH+7EYG92joOTy4wJ2TrUI+Im2
-        FoFRazHeOw74KTv7ybBJ8woDYdBLEbo=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1698751772;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=NpLltQkcNveShG8zKODztwYUPtboMhImXBjZGxpD1ac=;
-        b=cEQD5waiI3zkg9dhG9u/ZPFhkuHuArbcIYQXfCQsHzZ8tfaT6ze3g/m2AMj3gXaU+8rv0f
-        TlcIftCdk7upFEBA==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 2155D138EF;
-        Tue, 31 Oct 2023 11:29:32 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id EIYiBxzlQGXTKgAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Tue, 31 Oct 2023 11:29:32 +0000
-Date:   Tue, 31 Oct 2023 12:22:34 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     kernel test robot <oliver.sang@intel.com>, oe-lkp@lists.linux.dev,
-        lkp@intel.com, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [kdave-btrfs-devel:dev/guilherme/temp-fsid-v4] [btrfs]
- 479361d32b: xfstests.btrfs.185.fail
-Message-ID: <20231031112234.GA11264@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <202310311425.c2e34aef-oliver.sang@intel.com>
- <f291309a-71d3-484b-a876-99382a61363d@oracle.com>
+        Tue, 31 Oct 2023 07:34:47 -0400
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 70E2EC2
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 Oct 2023 04:34:43 -0700 (PDT)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 144E6C433C9;
+        Tue, 31 Oct 2023 11:34:43 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1698752083;
+        bh=PhQNq2XVIR+wGCY7x8vRbmP8syUCby8FlsitCoVSvVE=;
+        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+        b=RRL++muWvTD00V2U0A4JAArjBIo5ZmFY6HR7I4mhNdv3uKAeehUKkhL6gBvMC1llQ
+         R8HtvBD2F/LoNhPuDCnlvhJNAyzZfOwh9u148X36m7d7qHUHQ07/UVOZUHW/8Nupeq
+         gh50yS6Iop5XyeHGw+auTgbreT7aAEFNgM7vvlRilJbXKgZ7hgogwc9DCiU4m7qBka
+         TX5k+oKFfNupiRLVYR9wLo4GnwxO6YyL9h6absTm9V+CPFFhZ5+xj5xfIvj7Wkkqj6
+         /uUxC22bxPPGDlfe0p53EUASUuZI9jB7zpq/AmVDiwxhHlox2lKmLJfUc86D4ntd6h
+         Xuc1o23RAHB9Q==
+Received: by mail-ed1-f48.google.com with SMTP id 4fb4d7f45d1cf-53e3b8f906fso9064872a12.2;
+        Tue, 31 Oct 2023 04:34:42 -0700 (PDT)
+X-Gm-Message-State: AOJu0Yx6RKAfNl29V91pnXmr5QRoia3PB3OJq008diFEA+DrnqeKaXwx
+        KaPDc114N/t0sYawrFln0bnyPS9ekZb86QjvOTM=
+X-Google-Smtp-Source: AGHT+IGTQz+O47doMB+bRP19+Y137xdGNJR8IQsPVj7U/5hBf7CVZbcpAkpRoI8OZMJgUVc3CT/ZQRqUvMfZVsx2cdk=
+X-Received: by 2002:a17:907:a49:b0:9be:834a:f80b with SMTP id
+ be9-20020a1709070a4900b009be834af80bmr10805539ejc.75.1698752081512; Tue, 31
+ Oct 2023 04:34:41 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <f291309a-71d3-484b-a876-99382a61363d@oracle.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+References: <cover.1698674332.git.anand.jain@oracle.com> <077b252e8affc50ad3d7826d57ba42a2a8746d13.1698674332.git.anand.jain@oracle.com>
+ <CAL3q7H7zgJ68UpK3+CiJBtFJC5JoUiXGV6rcpEMVg9ae=omByw@mail.gmail.com> <3fef3451-2a09-4c1d-a096-5b55a9245107@oracle.com>
+In-Reply-To: <3fef3451-2a09-4c1d-a096-5b55a9245107@oracle.com>
+From:   Filipe Manana <fdmanana@kernel.org>
+Date:   Tue, 31 Oct 2023 11:34:04 +0000
+X-Gmail-Original-Message-ID: <CAL3q7H76Ookt_0cDNDMHLgbBSe3bwQnDAxYKZsRJvTdMonmB7Q@mail.gmail.com>
+Message-ID: <CAL3q7H76Ookt_0cDNDMHLgbBSe3bwQnDAxYKZsRJvTdMonmB7Q@mail.gmail.com>
+Subject: Re: [PATCH 3/6 v3] common/btrfs: add helper _has_btrfs_sysfs_feature_attr
+To:     Anand Jain <anand.jain@oracle.com>
+Cc:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Oct 31, 2023 at 05:23:18PM +0800, Anand Jain wrote:
-> Thanks for the report.
-> 
-> >      +cloned device scan should fail
-> 
-> Your fstests is missing the following commit:
->     1348ed0e256a ("fstests: btrfs/185 update for single device pseudo 
-> device-scan")
-> Pls upgrade.
+On Mon, Oct 30, 2023 at 11:30=E2=80=AFPM Anand Jain <anand.jain@oracle.com>=
+ wrote:
+>
+>
+> >> +_has_btrfs_sysfs_feature_attr()
+> >> +{
+> >> +       local feature_attr=3D$1
+> >> +
+> >> +       [ -z $feature_attr ] && \
+> >> +               _fail "Missing feature name argument for _has_btrfs_sy=
+sfs_attr"
+> >> +
+> >> +       modprobe btrfs &> /dev/null
+> >> +
+> >> +       test -e /sys/fs/btrfs/features/$feature_attr
+> >> +}
+> >
+> > We already have _require_btrfs_fs_feature() to do exactly this.
+> > Tried it in patch 5/6 and it works perfectly...
+>
+> I noticed that. But, _require_btrfs_fs_feature() triggers _notrun()
+> when the feature is absent in the kernel. Given our need to run the
+> testcase with and without temp-fsid, it is not suitable.
 
-Yes for the fstests upgrade, but the tested branch is some old snapshot
-of the temp_fsid feature, I don't even have the branch anywhere.
+Yes, nevermind. It's fine then.
+
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
+
+>
+> Thanks, Anand
+>

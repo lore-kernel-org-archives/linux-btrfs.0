@@ -2,49 +2,49 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F1599C4167B
-	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Nov 2023 05:34:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D03C9C41535
+	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Nov 2023 05:34:22 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1348556AbjKBFeU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 2 Nov 2023 01:34:20 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38254 "EHLO
+        id S1348560AbjKBFeX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 2 Nov 2023 01:34:23 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38280 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1348533AbjKBFeT (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Nov 2023 01:34:19 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 709B812C
-        for <linux-btrfs@vger.kernel.org>; Wed,  1 Nov 2023 22:34:13 -0700 (PDT)
+        with ESMTP id S1348559AbjKBFeV (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Nov 2023 01:34:21 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A0AE312F
+        for <linux-btrfs@vger.kernel.org>; Wed,  1 Nov 2023 22:34:14 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id BF5FA215EE
-        for <linux-btrfs@vger.kernel.org>; Thu,  2 Nov 2023 05:34:10 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 64507219EC
+        for <linux-btrfs@vger.kernel.org>; Thu,  2 Nov 2023 05:34:13 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1698903250; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1698903253; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=k9MXKkOVGBXEnhTBHXJFuZSDwCpHr5r3pxdIhgYGGlU=;
-        b=IZpFFGVfM2o+Xn4/NLLqPRLMXhxdRKdtThq+EHl4Yc7fZa9eMUh6ljnxHyVTU89bNpmt2C
-        yzvZ/4dL10beCQ7e8lILZZ+KvVRoWJGCYZGDHYz5yIHcD4xYjcgcKufm6NzBaIaJD9074U
-        mB5ou0YqI7zvvrH+PaQYVlinGldPKsg=
+        bh=B/6I3sL4qQRxet9RVKwxSUIU1lq+8IoUhM84A9BvecU=;
+        b=Rnd25G4dcDgbwjKKbSnqQ9aZM7McmKZbn31guxG0ze1toqeM3g/JaDBQ+QGrGtDBvSKOOE
+        M3dBS/wcZypvktsXhPstkBeBY13UIUEZTdqPU/VjnUMcvupqUmW5u6sjpn8PoC9UqJlDlp
+        WSUVF5zW2L+q8Vm86gp3IF43dCg98ak=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id EC23D13460
-        for <linux-btrfs@vger.kernel.org>; Thu,  2 Nov 2023 05:34:09 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 962F913460
+        for <linux-btrfs@vger.kernel.org>; Thu,  2 Nov 2023 05:34:12 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id IFxVKdE0Q2U/AwAAMHmgww
+        id OMJoFdQ0Q2U/AwAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Thu, 02 Nov 2023 05:34:09 +0000
+        for <linux-btrfs@vger.kernel.org>; Thu, 02 Nov 2023 05:34:12 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/3] btrfs-progs: subvolume create: handle failure for strdup()
-Date:   Thu,  2 Nov 2023 16:03:48 +1030
-Message-ID: <8c3df11d55b5add76a6abfd7896762697520a136.1698903010.git.wqu@suse.com>
+Subject: [PATCH 3/3] btrfs-progs: cli-tests: add test case for subvolume create multiple arguments
+Date:   Thu,  2 Nov 2023 16:03:50 +1030
+Message-ID: <453c0e60ff7db7a1af06df230e2847d0f2b62692.1698903010.git.wqu@suse.com>
 X-Mailer: git-send-email 2.42.0
 In-Reply-To: <cover.1698903010.git.wqu@suse.com>
 References: <cover.1698903010.git.wqu@suse.com>
@@ -54,36 +54,64 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The function strdup() can return NULL if the system is out of memory,
-thus we need to hanle the rare but possible -ENOMEM case.
+The test case would verify the following behaviors:
+
+- Partial failure
+  Should return 1, but the remaining valid destinations would still be
+  created.
+
+- All success
+  That's as usual.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- cmds/subvolume.c | 9 +++++++++
- 1 file changed, 9 insertions(+)
+ .../021-subvolume-multiple-arguments/test.sh  | 37 +++++++++++++++++++
+ 1 file changed, 37 insertions(+)
+ create mode 100755 tests/cli-tests/021-subvolume-multiple-arguments/test.sh
 
-diff --git a/cmds/subvolume.c b/cmds/subvolume.c
-index 8504c380c9ee..bccc4968dad3 100644
---- a/cmds/subvolume.c
-+++ b/cmds/subvolume.c
-@@ -194,8 +194,17 @@ static int cmd_subvolume_create(const struct cmd_struct *cmd, int argc, char **a
- 	}
- 
- 	dupname = strdup(dst);
-+	if (!dupname) {
-+		error("out of memory when duplicating %s", dst);
-+		goto out;
-+	}
- 	newname = basename(dupname);
+diff --git a/tests/cli-tests/021-subvolume-multiple-arguments/test.sh b/tests/cli-tests/021-subvolume-multiple-arguments/test.sh
+new file mode 100755
+index 000000000000..f86763829d31
+--- /dev/null
++++ b/tests/cli-tests/021-subvolume-multiple-arguments/test.sh
+@@ -0,0 +1,37 @@
++#!/bin/bash
++# Create subvolume with multiple destinations
 +
- 	dupdir = strdup(dst);
-+	if (!dupdir) {
-+		error("out of memory when duplicating %s", dst);
-+		goto out;
-+	}
- 	dstdir = dirname(dupdir);
- 
- 	if (!test_issubvolname(newname)) {
++source "$TEST_TOP/common" || exit
++
++setup_root_helper
++prepare_test_dev
++
++run_check_mkfs_test_dev
++run_check_mount_test_dev
++
++# Create one invalid subvolume with 2 valid ones.
++# The command should return 1 but the 2 valid ones should be created.
++run_mustfail "should report error for any failed subvolume creation" \
++	$SUDO_HELPER "$TOP/btrfs" subvolume create \
++	"$TEST_MNT/non-exist-dir/subv0" \
++	"$TEST_MNT/subv1" \
++	"$TEST_MNT/subv2"
++
++run_check $SUDO_HELPER stat "$TEST_MNT/subv1"
++run_check $SUDO_HELPER stat "$TEST_MNT/subv2"
++
++# Create multiple subvolumes with parent
++run_check $SUDO_HELPER "$TOP/btrfs" subvolume create -p \
++	"$TEST_MNT/non-exist-dir/subv0" \
++	"$TEST_MNT/subv1/subv3" \
++	"$TEST_MNT/subv4" \
++
++run_check $SUDO_HELPER stat "$TEST_MNT/non-exist-dir/subv0"
++run_check $SUDO_HELPER stat "$TEST_MNT/subv1/subv3"
++run_check $SUDO_HELPER stat "$TEST_MNT/subv4"
++
++run_check $SUDO_HELPER "$TOP/btrfs" subvolume create -p "$TEST_MNT/dir3/dir1/./..//.///subv3//////"
++run_check $SUDO_HELPER stat "$TEST_MNT/dir3/dir1"
++run_check $SUDO_HELPER stat "$TEST_MNT/dir3/subv3"
++run_check find "$TEST_MNT" -ls
++run_check_umount_test_dev
 -- 
 2.42.0
 

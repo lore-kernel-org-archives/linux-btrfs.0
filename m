@@ -2,214 +2,119 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8192CC4332F
-	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Nov 2023 20:27:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3BCFEC4332F
+	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Nov 2023 20:32:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232974AbjKBU1F (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 2 Nov 2023 16:27:05 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56176 "EHLO
+        id S1345719AbjKBUcu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 2 Nov 2023 16:32:50 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45168 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232106AbjKBU1F (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Nov 2023 16:27:05 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 100EE186
-        for <linux-btrfs@vger.kernel.org>; Thu,  2 Nov 2023 13:26:59 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id B3675219C1;
-        Thu,  2 Nov 2023 20:26:57 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1698956817;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=Ni53vIIU+gBAXhFYzUsGQbhFi9HbbC6FZUS7ML7VznU=;
-        b=kLYnbU6Wg2uFeKpYmxsvxrsL3ZEDNlKHHJetvyD8ySYZ+BrpWf5Ibb/M6CcsIzGjtg5NN/
-        pGQft7/8t7NxfdnsvxTb7sK3oqxAb6L3bMIa32RaVGTjbYceNZZbir7Fq9N83RHXPoa1jJ
-        7HiZ6czpgM0W1+863XUQi2m8fKWUBBE=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1698956817;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=Ni53vIIU+gBAXhFYzUsGQbhFi9HbbC6FZUS7ML7VznU=;
-        b=zv5YGE+H9VOTv667QL2SQ1O3+tGOq6EEMKCJAKMUuPok01x/WYURtdzmEBK4ToxKbFif/X
-        YuMW42a4l5FXfNBg==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 83D13138EC;
-        Thu,  2 Nov 2023 20:26:57 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id HDwoHxEGRGVMOAAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Thu, 02 Nov 2023 20:26:57 +0000
-Date:   Thu, 2 Nov 2023 21:19:58 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     Boris Burkov <boris@bur.io>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: tree-checker: add type and sequence check for
- inline backrefs
-Message-ID: <20231102201958.GJ11264@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <23fbab97bd9dbce7869e858cb59d96a7238db57e.1698105469.git.wqu@suse.com>
- <20231102190720.GA113907@zen.localdomain>
- <d69a339c-0cc2-4168-ac90-f6c1b91517b4@gmx.com>
+        with ESMTP id S1345100AbjKBUct (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Nov 2023 16:32:49 -0400
+Received: from mail-qk1-x731.google.com (mail-qk1-x731.google.com [IPv6:2607:f8b0:4864:20::731])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6FFA01A1
+        for <linux-btrfs@vger.kernel.org>; Thu,  2 Nov 2023 13:32:46 -0700 (PDT)
+Received: by mail-qk1-x731.google.com with SMTP id af79cd13be357-7781b176131so75153585a.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 02 Nov 2023 13:32:46 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1698957165; x=1699561965; darn=vger.kernel.org;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
+        bh=34CPHx89bwh8qwgk3q1mguUkvTQjj2rMimJifw5cT9U=;
+        b=xoN5XwRHizRVuDGtxHnUGiYF1iLNL7fuXG/VIXZAPfXcV4XA3EDE9kwHH5ByjKXK4P
+         5nHKIIrrzkgA97BJWkoa059SQnaiSb501sBz4HnxGOZC4VCIH63rBiEtHvsuENTyny2K
+         KnP3/MUTgHrcosu4MsxjTwEa0qruDbM72ewCN2U78ZOYj3PrqydVuIkZm5OQbsJ7wTc2
+         d+s5+shd229oJKWSwxlUQIFwAoFGX3aRjmeBNkz4kECdMQ0Gqd95onkCnkEvLLhN8WDQ
+         HI/uLf2eTRbnk5GrDES45prHq/ZrY1EtJy6uOwFIyeTyuuxebI39kQGnKdVr7sE5Kjlm
+         e7BA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1698957165; x=1699561965;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=34CPHx89bwh8qwgk3q1mguUkvTQjj2rMimJifw5cT9U=;
+        b=S1o9Ntiib+Jl1XhOu/Ds5Vc7aLlNpY2TBUtYB76hiRSqQSCUyS6YdxAtBb2knyiTQa
+         iYNr93Q4M2KAm+td6/eyb7RIiEZ+XOHsjnHOF9qI57FDPdHL/8TBY4XjKlWAWNvdtoCq
+         D7YzX31jWRgt0nWQdsRZLQol/HOXlg7TYAQpOusTcEEn2jBGaUNYGE4V2G9kAY0+1m3K
+         FdWjGG6lmufMFIWru4BD/EFwmqOkbsyMBIgsdA0wZhdDdcJ+XroYd+mbmHNAyBOfW3mm
+         LoqYwJVT2hYpGz0zXNBCH+16RfBN+OYvAG42BbPMAYZn8ECIdOH+s5QwB0w/6QOJYWWD
+         JA8g==
+X-Gm-Message-State: AOJu0YysfMo9zaui4RnPntS++RI6xmOgEl5/5mJXA1Spn+gsmyoDGNM6
+        5NWY+uUxH/xz23qPGfncpiKBpA==
+X-Google-Smtp-Source: AGHT+IFIQplKj+X0E7szuk90OCKyxC+AYKJdaylmw5GUDC4mFzLeB8eRJWkAA9eAYLGe6Fu3s64l2A==
+X-Received: by 2002:a05:620a:bc8:b0:77a:5112:c1ef with SMTP id s8-20020a05620a0bc800b0077a5112c1efmr5966040qki.1.1698957165464;
+        Thu, 02 Nov 2023 13:32:45 -0700 (PDT)
+Received: from localhost (cpe-76-182-20-124.nc.res.rr.com. [76.182.20.124])
+        by smtp.gmail.com with ESMTPSA id i10-20020a05620a144a00b0076cb3690ae7sm91589qkl.68.2023.11.02.13.32.44
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Thu, 02 Nov 2023 13:32:44 -0700 (PDT)
+Date:   Thu, 2 Nov 2023 16:32:43 -0400
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     David Sterba <dsterba@suse.cz>
+Cc:     Christian Brauner <brauner@kernel.org>,
+        Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Christoph Hellwig <hch@infradead.org>,
+        Amir Goldstein <amir73il@gmail.com>, Jan Kara <jack@suse.cz>,
+        Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
+        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org
+Subject: Re: [PATCH 0/3] fanotify support for btrfs sub-volumes
+Message-ID: <20231102203243.GA3465621@perftesting>
+References: <ZUDxli5HTwDP6fqu@infradead.org>
+ <20231031-anorak-sammeln-8b1c4264f0db@brauner>
+ <ZUE0CWQWdpGHm81L@infradead.org>
+ <20231101-nutzwert-hackbeil-bbc2fa2898ae@brauner>
+ <590e421a-a209-41b6-ad96-33b3d1789643@gmx.com>
+ <20231101-neigen-storch-cde3b0671902@brauner>
+ <20231102051349.GA3292886@perftesting>
+ <20231102-ankurbeln-eingearbeitet-cbeb018bfedc@brauner>
+ <20231102123446.GA3305034@perftesting>
+ <20231102170745.GF11264@suse.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <d69a339c-0cc2-4168-ac90-f6c1b91517b4@gmx.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <20231102170745.GF11264@suse.cz>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Nov 03, 2023 at 06:47:59AM +1030, Qu Wenruo wrote:
+On Thu, Nov 02, 2023 at 06:07:45PM +0100, David Sterba wrote:
+> On Thu, Nov 02, 2023 at 08:34:46AM -0400, Josef Bacik wrote:
+> > On Thu, Nov 02, 2023 at 10:48:35AM +0100, Christian Brauner wrote:
+> > > > We'll be converted to the new mount API tho, so I suppose that's something.
+> > > > Thanks,
+> > > 
+> > > Just in case you forgot about it. I did send a patch to convert btrfs to
+> > > the new mount api in June:
+> > > 
+> > > https://lore.kernel.org/all/20230626-fs-btrfs-mount-api-v1-0-045e9735a00b@kernel.org
+> > > 
+> > 
+> > Yeah Daan told me about this after I had done the bulk of the work.  I
+> > shamelessly stole the dup idea, I had been doing something uglier.
+> > 
+> > > Can I ask you to please please copy just two things from that series:
+> > > 
+> > > (1) Please get rid of the second filesystems type.
+> > > (2) Please fix the silent remount behavior when mounting a subvolume.
+> > >
+> > 
+> > Yeah I've gotten rid of the second file system type, the remount thing is odd,
+> > I'm going to see if I can get away with not bringing that over.  I *think* it's
+> > because the standard distro way of doing things is to do
+> > 
+> > mount -o ro,subvol=/my/root/vol /
+> > mount -o rw,subvol=/my/home/vol /home
+> > <boot some more>
+> > mount -o remount,rw /
+> > 
+> > but I haven't messed with it yet to see if it breaks.  That's on the list to
+> > investigate today.  Thanks,
 > 
-> 
-> On 2023/11/3 05:37, Boris Burkov wrote:
-> > On Tue, Oct 24, 2023 at 12:41:11PM +1030, Qu Wenruo wrote:
-> >> [BUG]
-> >> There is a bug report that ntfs2btrfs had a bug that it can lead to
-> >> transaction abort and the filesystem flips to read-only.
-> >>
-> >> [CAUSE]
-> >> For inline backref items, kernel has a strict requirement for their
-> >> ordered, they must follow the following rules:
-> >>
-> >> - All btrfs_extent_inline_ref::type should be in an ascending order
-> >>
-> >> - Within the same type, the items should follow a descending order by
-> >>    their sequence number
-> >>
-> >>    For EXTENT_DATA_REF type, the sequence number is result from
-> >>    hash_extent_data_ref().
-> >>    For other types, their sequence numbers are
-> >>    btrfs_extent_inline_ref::offset.
-> >>
-> >> Thus if there is any code not following above rules, the resulted
-> >> inline backrefs can prevent the kernel to locate the needed inline
-> >> backref and lead to transaction abort.
-> >>
-> >> [FIX]
-> >> Ntrfs2btrfs has already fixed the problem, and btrfs-progs has added the
-> >> ability to detect such problems.
-> >>
-> >> For kernel, let's be more noisy and be more specific about the order, so
-> >> that the next time kernel hits such problem we would reject it in the
-> >> first place, without leading to transaction abort.
-> >>
-> >> Link: https://github.com/kdave/btrfs-progs/pull/622
-> >> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> >> ---
-> >>   fs/btrfs/tree-checker.c | 38 ++++++++++++++++++++++++++++++++++++++
-> >>   1 file changed, 38 insertions(+)
-> >>
-> >> diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-> >> index a416cbea75d1..981ad301d29d 100644
-> >> --- a/fs/btrfs/tree-checker.c
-> >> +++ b/fs/btrfs/tree-checker.c
-> >> @@ -31,6 +31,7 @@
-> >>   #include "inode-item.h"
-> >>   #include "dir-item.h"
-> >>   #include "raid-stripe-tree.h"
-> >> +#include "extent-tree.h"
-> >>
-> >>   /*
-> >>    * Error message should follow the following format:
-> >> @@ -1276,6 +1277,8 @@ static int check_extent_item(struct extent_buffer *leaf,
-> >>   	unsigned long ptr;	/* Current pointer inside inline refs */
-> >>   	unsigned long end;	/* Extent item end */
-> >>   	const u32 item_size = btrfs_item_size(leaf, slot);
-> >> +	u8 last_type = 0;
-> >> +	u64 last_seq = U64_MAX;
-> >>   	u64 flags;
-> >>   	u64 generation;
-> >>   	u64 total_refs;		/* Total refs in btrfs_extent_item */
-> >> @@ -1322,6 +1325,17 @@ static int check_extent_item(struct extent_buffer *leaf,
-> >>   	 *    2.2) Ref type specific data
-> >>   	 *         Either using btrfs_extent_inline_ref::offset, or specific
-> >>   	 *         data structure.
-> >> +	 *    All above inline items should follow the order:
-> >> +	 *
-> >> +	 *    - All btrfs_extent_inline_ref::type should be in an ascending
-> >> +	 *      order
-> >> +	 *
-> >> +	 *    - Within the same type, the items should follow a descending
-> >> +	 *      order by their sequence number
-> >> +	 *      The sequence number is determined by:
-> >> +	 *      * btrfs_extent_inline_ref::offset for all types  other than
-> >> +	 *        EXTENT_DATA_REF
-> >> +	 *      * hash_extent_data_ref() for EXTENT_DATA_REF
-> >>   	 */
-> >>   	if (unlikely(item_size < sizeof(*ei))) {
-> >>   		extent_err(leaf, slot,
-> >> @@ -1403,6 +1417,7 @@ static int check_extent_item(struct extent_buffer *leaf,
-> >>   		struct btrfs_extent_inline_ref *iref;
-> >>   		struct btrfs_extent_data_ref *dref;
-> >>   		struct btrfs_shared_data_ref *sref;
-> >> +		u64 seq;
-> >>   		u64 dref_offset;
-> >>   		u64 inline_offset;
-> >>   		u8 inline_type;
-> >> @@ -1416,6 +1431,7 @@ static int check_extent_item(struct extent_buffer *leaf,
-> >>   		iref = (struct btrfs_extent_inline_ref *)ptr;
-> >>   		inline_type = btrfs_extent_inline_ref_type(leaf, iref);
-> >>   		inline_offset = btrfs_extent_inline_ref_offset(leaf, iref);
-> >> +		seq = inline_offset;
-> >>   		if (unlikely(ptr + btrfs_extent_inline_ref_size(inline_type) > end)) {
-> >>   			extent_err(leaf, slot,
-> >>   "inline ref item overflows extent item, ptr %lu iref size %u end %lu",
-> >> @@ -1446,6 +1462,10 @@ static int check_extent_item(struct extent_buffer *leaf,
-> >>   		case BTRFS_EXTENT_DATA_REF_KEY:
-> >>   			dref = (struct btrfs_extent_data_ref *)(&iref->offset);
-> >>   			dref_offset = btrfs_extent_data_ref_offset(leaf, dref);
-> >> +			seq = hash_extent_data_ref(
-> >> +					btrfs_extent_data_ref_root(leaf, dref),
-> >> +					btrfs_extent_data_ref_objectid(leaf, dref),
-> >> +					btrfs_extent_data_ref_offset(leaf, dref));
-> >>   			if (unlikely(!IS_ALIGNED(dref_offset,
-> >>   						 fs_info->sectorsize))) {
-> >>   				extent_err(leaf, slot,
-> >> @@ -1475,6 +1495,24 @@ static int check_extent_item(struct extent_buffer *leaf,
-> >>   				   inline_type);
-> >>   			return -EUCLEAN;
-> >>   		}
-> >> +		if (inline_type < last_type) {
-> >> +			extent_err(leaf, slot,
-> >> +				   "inline ref out-of-order: has type %u, prev type %u",
-> >> +				   inline_type, last_type);
-> >> +			return -EUCLEAN;
-> >> +		}
-> >> +		/* Type changed, allow the sequence starts from U64_MAX again. */
-> >> +		if (inline_type > last_type)
-> >> +			last_seq = U64_MAX;
-> >> +		if (seq > last_seq) {
-> >> +			extent_err(leaf, slot,
-> >> +"inline ref out-of-order: has type %u offset %llu seq 0x%llx, prev type %u seq 0x%llx",
-> >> +				   inline_type, inline_offset, seq,
-> >> +				   last_type, last_seq);
-> >> +			return -EUCLEAN;
-> >> +		}
-> >> +		last_type = inline_type;
-> >> +		last_seq = seq;
-> >>   		ptr += btrfs_extent_inline_ref_size(inline_type);
-> >>   	}
-> >>   	/* No padding is allowed */
-> >> --
-> >> 2.42.0
-> >>
-> >
-> > I believe this breaks simple quotas EXTENT_OWNER_REF_KEY items which
-> > have type 188 but come in before the other inline items.
-> 
-> Does it mean EXTENT_OWNER_REF_KEY is another odd ball, which doesn't
-> follow the existing type/inline ref order?
-> 
-> If so, can we fix it in the kernel first?
+> It's a use case for distros, 0723a0473fb4 ("btrfs: allow mounting btrfs
+> subvolumes with different ro/rw options"), the functionality should
+> be preserved else it's a regression.
 
-It's still time to do such changes.
+I'll add an fstest for it then, I could have easily broken this if I didn't see
+Christians giant note about it.  Thanks,
+
+Josef

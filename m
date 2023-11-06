@@ -2,59 +2,59 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 520E7C4167B
-	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Nov 2023 22:08:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 690FAC41535
+	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Nov 2023 22:08:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233230AbjKFWIr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 6 Nov 2023 17:08:47 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56902 "EHLO
+        id S233233AbjKFWIt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 6 Nov 2023 17:08:49 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56914 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233201AbjKFWIq (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Nov 2023 17:08:46 -0500
-Received: from mail-oi1-x22c.google.com (mail-oi1-x22c.google.com [IPv6:2607:f8b0:4864:20::22c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BA31BD73
-        for <linux-btrfs@vger.kernel.org>; Mon,  6 Nov 2023 14:08:40 -0800 (PST)
-Received: by mail-oi1-x22c.google.com with SMTP id 5614622812f47-3b5aee410f2so537395b6e.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 06 Nov 2023 14:08:40 -0800 (PST)
+        with ESMTP id S233226AbjKFWIr (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Nov 2023 17:08:47 -0500
+Received: from mail-qk1-x72c.google.com (mail-qk1-x72c.google.com [IPv6:2607:f8b0:4864:20::72c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3C63CD79
+        for <linux-btrfs@vger.kernel.org>; Mon,  6 Nov 2023 14:08:43 -0800 (PST)
+Received: by mail-qk1-x72c.google.com with SMTP id af79cd13be357-7789cc5c8ccso412127185a.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 06 Nov 2023 14:08:43 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1699308520; x=1699913320; darn=vger.kernel.org;
+        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1699308522; x=1699913322; darn=vger.kernel.org;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=UexHohZT1zGNjOL7yf4hKV+PGAsUG8V/5z9hjR15Oqk=;
-        b=krXZnqioVUXUBH/oA9IzT839MnVk148JbEdrCLGFgtFU5G2jBYuVkmQnWWFxaqrBOG
-         7N+5RlT6cre9a4c6c4vOHHX0i/JYsHbcMMPWYG69EyYNlgD6+Qns30hs5PDbUzdyDLsF
-         2RwrHSgVCcZAabAbvjxBRHbidW1t66eJaxIS2IiyNngTyqAfRJeq5avAGwcs3t0xvsCI
-         rYMigHfG4qVrWt5cpIMAlpjakq/3ICd4wQCCD5PWvqWfU1T8lu05tawhoOsc/hdaPo/z
-         hZ1wsVfBhE7M1MOaHfl1wVetrS2yb4AXzoUGHTPJB7WyGdHRMdz8UWesFSVxAe9CW766
-         OAsA==
+        bh=VYeMWvEhu1+Bmp78UF8eSUChUBLQrH7aUCmO3SKML2c=;
+        b=MW+Mb155zOw+0cfixLVspOpoaLIb4UbRBHkPs+0z5hRPKlkqe2efirqaYvt5lFNGs+
+         vHj2+XM//Gzy9CvXSGH7l2W5X9PDNojWn6LB4LauJVRWsaUXLVJEqwrwLr+kUAa1MN3t
+         +U0czTlKqwK1GSULRt4a+a1R1XjgY5H3auZZZQusIGToATaY9tnGnL+aIBJWlkB1XmxQ
+         4pn0YDmzvtEFWkJMr+KCMjDogJSZURP9NvubIdHCw/eDxzYM6NaU7u6nLdGDQJnkp4qA
+         jamd+lePZ3/5Yg//8fQopQd/sjAJ6hHItnXtqJlpLRWbCu7IrsNOcIz28bgVITppL5QE
+         i4Mw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1699308520; x=1699913320;
+        d=1e100.net; s=20230601; t=1699308522; x=1699913322;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=UexHohZT1zGNjOL7yf4hKV+PGAsUG8V/5z9hjR15Oqk=;
-        b=W7zSe3LIlZr2VVHjtk3hx58imTJgXKLUBu714GyQ8Otj0pHXCeL5yri0Os5NBKfMFW
-         sI2c7tyWuypOvnV59AqBuMylM850Z8pX4xTvNacIp1yhSzcunQZec+ZfWIT6xxlZrcch
-         P9CrBuYJ2lFEGVLAzHKXlCzoWfR3IgflADhM6HquZcOfSDiC3LvSD+FadbUY282CpBwZ
-         8oF8gqSkik/hyaKX25pAggQojkU5i2FMSB9HljH2+5GWMJc1/bcss1cxpHEq6vTuXJ/R
-         /f/UnN4GLUCqodUw0wuEfNIZWOqOjjeslK5ZwIap9PcoWRDQm1LlSJEhxruQAxe/Yzqx
-         P1AQ==
-X-Gm-Message-State: AOJu0Yy8iUQEGQiFK8dcchBcRnhj81ZCWqaD/PufYKA4ACnqsQXzOeGl
-        p5YYk19/VdtkwvyUDAHPxvkQNTzS0+qPrtboDynVLw==
-X-Google-Smtp-Source: AGHT+IEsSkQwqGH/Z2C3WgO1lyNjDiET3eonjemQF3MKYBkI/sWtxgXvCPTVXcEr/xCJAp9Cp+tyDw==
-X-Received: by 2002:a54:4592:0:b0:3af:26e3:92e with SMTP id z18-20020a544592000000b003af26e3092emr25756972oib.28.1699308519919;
-        Mon, 06 Nov 2023 14:08:39 -0800 (PST)
+        bh=VYeMWvEhu1+Bmp78UF8eSUChUBLQrH7aUCmO3SKML2c=;
+        b=Si9zUMu7pScjsdbMC6HzFVj29cxDYSy5piwiUgdC3r6qC+nFR13bU2DzIyfbDPA7nF
+         rYUxvabypimz86OIzaujK6X654f1gsaFK8M0JaP06C5iDssJdcoHayZdEud6CCM9AMK0
+         4+h260XzXz++WZmbXRNmF59+cfvBMt9d56WpUD0F2/y+UuB3Ulh6+qs3nyQmhqQF6FhZ
+         wHpGcIbtvkgPphaowGvdl+HlfkAVq1qJ2c5owejt/coY+D0EksMd2yzeu5OHqRkWgVB7
+         moQw9zIQvjJ7OcMTW5lubUXThJfqPLwLwWgsbDwOKDth4lCBfCDXSGtUXfwyOJpQwKzE
+         JvNQ==
+X-Gm-Message-State: AOJu0YyZ2xHN+grT/FyLnhBpJadRCPycTje98OWe7dqHDHdLJE9p1Bn6
+        iH9gdqJcKwju1CRSvtI1jDnnvuQC3QtYmMO1xSxb/Q==
+X-Google-Smtp-Source: AGHT+IGgX0TZ/9pOIeWUrKZ9XwtYnPoo5FhIp7tFj2JSSmR6IMbGf4K1sZ1sW1noBTkEpzBa0Vk3Sw==
+X-Received: by 2002:a05:620a:bd6:b0:76f:5b9:3f29 with SMTP id s22-20020a05620a0bd600b0076f05b93f29mr1397960qki.2.1699308522116;
+        Mon, 06 Nov 2023 14:08:42 -0800 (PST)
 Received: from localhost (cpe-76-182-20-124.nc.res.rr.com. [76.182.20.124])
-        by smtp.gmail.com with ESMTPSA id u3-20020a0cb403000000b0064f43efc844sm3904755qve.32.2023.11.06.14.08.39
+        by smtp.gmail.com with ESMTPSA id g11-20020ae9e10b000000b0077a7d02cffbsm2365510qkm.24.2023.11.06.14.08.41
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 06 Nov 2023 14:08:39 -0800 (PST)
+        Mon, 06 Nov 2023 14:08:41 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com,
         linux-fsdevel@vger.kernel.org, brauner@kernel.org
-Subject: [PATCH 04/18] btrfs: move space cache settings into open_ctree
-Date:   Mon,  6 Nov 2023 17:08:12 -0500
-Message-ID: <93c7e11e73d40b30cd086b0b32ad8b7a86060442.1699308010.git.josef@toxicpanda.com>
+Subject: [PATCH 06/18] btrfs: split out ro->rw and rw->ro helpers into their own functions
+Date:   Mon,  6 Nov 2023 17:08:14 -0500
+Message-ID: <bb944da42fc7d01832f72495ec07f9a82a133376.1699308010.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <cover.1699308010.git.josef@toxicpanda.com>
 References: <cover.1699308010.git.josef@toxicpanda.com>
@@ -64,152 +64,267 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Currently we pre-load the space cache settings in btrfs_parse_options,
-however when we switch to the new mount API the mount option parsing
-will happen before we have the super block loaded.  Add a helper to set
-the appropriate options based on the fs settings, this will allow us to
-have consistent free space cache settings.
-
-This also folds in the space cache related decisions we make for subpage
-sectorsize support, so all of this is done in one place.
+When we remount ro->rw or rw->ro we have some cleanup tasks that have to
+be managed.  Split these out into their own function to make
+btrfs_remount smaller.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/disk-io.c          | 17 +++++---------
- fs/btrfs/free-space-cache.h |  1 +
- fs/btrfs/super.c            | 44 ++++++++++++++++++++++++++-----------
- fs/btrfs/super.h            |  1 +
- 4 files changed, 39 insertions(+), 24 deletions(-)
+ fs/btrfs/super.c | 233 ++++++++++++++++++++++++-----------------------
+ 1 file changed, 120 insertions(+), 113 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 27bbe0164425..b486cbec492b 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3287,6 +3287,12 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
- 	fs_info->csums_per_leaf = BTRFS_MAX_ITEM_SIZE(fs_info) / fs_info->csum_size;
- 	fs_info->stripesize = stripesize;
- 
-+	/*
-+	 * Handle the space caching options appropriately now that we have the
-+	 * super loaded and validated.
-+	 */
-+	btrfs_set_free_space_cache_settings(fs_info);
-+
- 	ret = btrfs_parse_options(fs_info, options, sb->s_flags);
- 	if (ret)
- 		goto fail_alloc;
-@@ -3298,17 +3304,6 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
- 	if (sectorsize < PAGE_SIZE) {
- 		struct btrfs_subpage_info *subpage_info;
- 
--		/*
--		 * V1 space cache has some hardcoded PAGE_SIZE usage, and is
--		 * going to be deprecated.
--		 *
--		 * Force to use v2 cache for subpage case.
--		 */
--		btrfs_clear_opt(fs_info->mount_opt, SPACE_CACHE);
--		btrfs_set_and_info(fs_info, FREE_SPACE_TREE,
--			"forcing free space tree for sector size %u with page size %lu",
--			sectorsize, PAGE_SIZE);
--
- 		btrfs_warn(fs_info,
- 		"read-write for sector size %u with page size %lu is experimental",
- 			   sectorsize, PAGE_SIZE);
-diff --git a/fs/btrfs/free-space-cache.h b/fs/btrfs/free-space-cache.h
-index 33b4da3271b1..dd0ed730fa7b 100644
---- a/fs/btrfs/free-space-cache.h
-+++ b/fs/btrfs/free-space-cache.h
-@@ -152,6 +152,7 @@ int btrfs_trim_block_group_bitmaps(struct btrfs_block_group *block_group,
- 
- bool btrfs_free_space_cache_v1_active(struct btrfs_fs_info *fs_info);
- int btrfs_set_free_space_cache_v1_active(struct btrfs_fs_info *fs_info, bool active);
-+
- /* Support functions for running our sanity tests */
- #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
- int test_add_free_space_entry(struct btrfs_block_group *cache,
 diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 639601d346d0..aef7e67538a3 100644
+index aef7e67538a3..d7070269e3ea 100644
 --- a/fs/btrfs/super.c
 +++ b/fs/btrfs/super.c
-@@ -266,6 +266,31 @@ static bool check_options(struct btrfs_fs_info *info, unsigned long flags)
- 	return true;
+@@ -1659,6 +1659,119 @@ static inline void btrfs_remount_cleanup(struct btrfs_fs_info *fs_info,
+ 		btrfs_set_free_space_cache_v1_active(fs_info, cache_opt);
  }
  
-+void btrfs_set_free_space_cache_settings(struct btrfs_fs_info *fs_info)
++static int btrfs_remount_rw(struct btrfs_fs_info *fs_info)
 +{
-+	if (btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE))
-+		btrfs_set_opt(fs_info->mount_opt, FREE_SPACE_TREE);
-+	else if (btrfs_free_space_cache_v1_active(fs_info)) {
-+		if (btrfs_is_zoned(fs_info)) {
-+			btrfs_info(fs_info,
-+			"zoned: clearing existing space cache");
-+			btrfs_set_super_cache_generation(fs_info->super_copy, 0);
-+		} else {
-+			btrfs_set_opt(fs_info->mount_opt, SPACE_CACHE);
-+		}
++	int ret;
++
++	if (BTRFS_FS_ERROR(fs_info)) {
++		btrfs_err(fs_info,
++			  "Remounting read-write after error is not allowed");
++		return -EINVAL;
 +	}
 +
-+	if (fs_info->sectorsize < PAGE_SIZE) {
-+		btrfs_clear_opt(fs_info->mount_opt, SPACE_CACHE);
-+		if (!btrfs_test_opt(fs_info, FREE_SPACE_TREE)) {
-+			btrfs_info(fs_info,
-+				   "forcing free space tree for sector size %u with page size %lu",
-+				   fs_info->sectorsize, PAGE_SIZE);
-+			btrfs_set_opt(fs_info->mount_opt, FREE_SPACE_TREE);
-+		}
++	if (fs_info->fs_devices->rw_devices == 0)
++		return -EACCES;
++
++	if (!btrfs_check_rw_degradable(fs_info, NULL)) {
++		btrfs_warn(fs_info,
++			   "too many missing devices, writable remount is not allowed");
++		return -EACCES;
 +	}
++
++	if (btrfs_super_log_root(fs_info->super_copy) != 0) {
++		btrfs_warn(fs_info,
++			   "mount required to replay tree-log, cannot remount read-write");
++		return -EINVAL;
++	}
++
++	/*
++	 * NOTE: when remounting with a change that does writes, don't put it
++	 * anywhere above this point, as we are not sure to be safe to write
++	 * until we pass the above checks.
++	 */
++	ret = btrfs_start_pre_rw_mount(fs_info);
++	if (ret)
++		return ret;
++
++	btrfs_clear_sb_rdonly(fs_info->sb);
++
++	set_bit(BTRFS_FS_OPEN, &fs_info->flags);
++
++	/*
++	 * If we've gone from readonly -> read/write, we need to get our
++	 * sync/async discard lists in the right state.
++	 */
++	btrfs_discard_resume(fs_info);
++
++	return 0;
 +}
 +
- static int parse_rescue_options(struct btrfs_fs_info *info, const char *options)
++static int btrfs_remount_ro(struct btrfs_fs_info *fs_info)
++{
++	/*
++	 * this also happens on 'umount -rf' or on shutdown, when
++	 * the filesystem is busy.
++	 */
++	cancel_work_sync(&fs_info->async_reclaim_work);
++	cancel_work_sync(&fs_info->async_data_reclaim_work);
++
++	btrfs_discard_cleanup(fs_info);
++
++	/* wait for the uuid_scan task to finish */
++	down(&fs_info->uuid_tree_rescan_sem);
++	/* avoid complains from lockdep et al. */
++	up(&fs_info->uuid_tree_rescan_sem);
++
++	btrfs_set_sb_rdonly(fs_info->sb);
++
++	/*
++	 * Setting SB_RDONLY will put the cleaner thread to
++	 * sleep at the next loop if it's already active.
++	 * If it's already asleep, we'll leave unused block
++	 * groups on disk until we're mounted read-write again
++	 * unless we clean them up here.
++	 */
++	btrfs_delete_unused_bgs(fs_info);
++
++	/*
++	 * The cleaner task could be already running before we set the
++	 * flag BTRFS_FS_STATE_RO (and SB_RDONLY in the superblock).
++	 * We must make sure that after we finish the remount, i.e. after
++	 * we call btrfs_commit_super(), the cleaner can no longer start
++	 * a transaction - either because it was dropping a dead root,
++	 * running delayed iputs or deleting an unused block group (the
++	 * cleaner picked a block group from the list of unused block
++	 * groups before we were able to in the previous call to
++	 * btrfs_delete_unused_bgs()).
++	 */
++	wait_on_bit(&fs_info->flags, BTRFS_FS_CLEANER_RUNNING,
++		    TASK_UNINTERRUPTIBLE);
++
++	/*
++	 * We've set the superblock to RO mode, so we might have made
++	 * the cleaner task sleep without running all pending delayed
++	 * iputs. Go through all the delayed iputs here, so that if an
++	 * unmount happens without remounting RW we don't end up at
++	 * finishing close_ctree() with a non-empty list of delayed
++	 * iputs.
++	 */
++	btrfs_run_delayed_iputs(fs_info);
++
++	btrfs_dev_replace_suspend_for_unmount(fs_info);
++	btrfs_scrub_cancel(fs_info);
++	btrfs_pause_balance(fs_info);
++
++	/*
++	 * Pause the qgroup rescan worker if it is running. We don't want
++	 * it to be still running after we are in RO mode, as after that,
++	 * by the time we unmount, it might have left a transaction open,
++	 * so we would leak the transaction and/or crash.
++	 */
++	btrfs_qgroup_wait_for_completion(fs_info, false);
++
++	return btrfs_commit_super(fs_info);
++}
++
+ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
  {
- 	char *opts;
-@@ -345,18 +370,6 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
- 	bool saved_compress_force;
- 	int no_compress = 0;
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(sb);
+@@ -1712,120 +1825,14 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
+ 		}
+ 	}
  
--	if (btrfs_fs_compat_ro(info, FREE_SPACE_TREE))
--		btrfs_set_opt(info->mount_opt, FREE_SPACE_TREE);
--	else if (btrfs_free_space_cache_v1_active(info)) {
--		if (btrfs_is_zoned(info)) {
--			btrfs_info(info,
--			"zoned: clearing existing space cache");
--			btrfs_set_super_cache_generation(info->super_copy, 0);
--		} else {
--			btrfs_set_opt(info->mount_opt, SPACE_CACHE);
--		}
--	}
+-	if ((bool)(*flags & SB_RDONLY) == sb_rdonly(sb))
+-		goto out;
++	ret = 0;
++	if (!sb_rdonly(sb) && (*flags & SB_RDONLY))
++		ret = btrfs_remount_ro(fs_info);
++	else if (sb_rdonly(sb) && !(*flags & SB_RDONLY))
++		ret = btrfs_remount_rw(fs_info);
++	if (ret)
++		goto restore;
+ 
+-	if (*flags & SB_RDONLY) {
+-		/*
+-		 * this also happens on 'umount -rf' or on shutdown, when
+-		 * the filesystem is busy.
+-		 */
+-		cancel_work_sync(&fs_info->async_reclaim_work);
+-		cancel_work_sync(&fs_info->async_data_reclaim_work);
 -
+-		btrfs_discard_cleanup(fs_info);
+-
+-		/* wait for the uuid_scan task to finish */
+-		down(&fs_info->uuid_tree_rescan_sem);
+-		/* avoid complains from lockdep et al. */
+-		up(&fs_info->uuid_tree_rescan_sem);
+-
+-		btrfs_set_sb_rdonly(sb);
+-
+-		/*
+-		 * Setting SB_RDONLY will put the cleaner thread to
+-		 * sleep at the next loop if it's already active.
+-		 * If it's already asleep, we'll leave unused block
+-		 * groups on disk until we're mounted read-write again
+-		 * unless we clean them up here.
+-		 */
+-		btrfs_delete_unused_bgs(fs_info);
+-
+-		/*
+-		 * The cleaner task could be already running before we set the
+-		 * flag BTRFS_FS_STATE_RO (and SB_RDONLY in the superblock).
+-		 * We must make sure that after we finish the remount, i.e. after
+-		 * we call btrfs_commit_super(), the cleaner can no longer start
+-		 * a transaction - either because it was dropping a dead root,
+-		 * running delayed iputs or deleting an unused block group (the
+-		 * cleaner picked a block group from the list of unused block
+-		 * groups before we were able to in the previous call to
+-		 * btrfs_delete_unused_bgs()).
+-		 */
+-		wait_on_bit(&fs_info->flags, BTRFS_FS_CLEANER_RUNNING,
+-			    TASK_UNINTERRUPTIBLE);
+-
+-		/*
+-		 * We've set the superblock to RO mode, so we might have made
+-		 * the cleaner task sleep without running all pending delayed
+-		 * iputs. Go through all the delayed iputs here, so that if an
+-		 * unmount happens without remounting RW we don't end up at
+-		 * finishing close_ctree() with a non-empty list of delayed
+-		 * iputs.
+-		 */
+-		btrfs_run_delayed_iputs(fs_info);
+-
+-		btrfs_dev_replace_suspend_for_unmount(fs_info);
+-		btrfs_scrub_cancel(fs_info);
+-		btrfs_pause_balance(fs_info);
+-
+-		/*
+-		 * Pause the qgroup rescan worker if it is running. We don't want
+-		 * it to be still running after we are in RO mode, as after that,
+-		 * by the time we unmount, it might have left a transaction open,
+-		 * so we would leak the transaction and/or crash.
+-		 */
+-		btrfs_qgroup_wait_for_completion(fs_info, false);
+-
+-		ret = btrfs_commit_super(fs_info);
+-		if (ret)
+-			goto restore;
+-	} else {
+-		if (BTRFS_FS_ERROR(fs_info)) {
+-			btrfs_err(fs_info,
+-				"Remounting read-write after error is not allowed");
+-			ret = -EINVAL;
+-			goto restore;
+-		}
+-		if (fs_info->fs_devices->rw_devices == 0) {
+-			ret = -EACCES;
+-			goto restore;
+-		}
+-
+-		if (!btrfs_check_rw_degradable(fs_info, NULL)) {
+-			btrfs_warn(fs_info,
+-		"too many missing devices, writable remount is not allowed");
+-			ret = -EACCES;
+-			goto restore;
+-		}
+-
+-		if (btrfs_super_log_root(fs_info->super_copy) != 0) {
+-			btrfs_warn(fs_info,
+-		"mount required to replay tree-log, cannot remount read-write");
+-			ret = -EINVAL;
+-			goto restore;
+-		}
+-
+-		/*
+-		 * NOTE: when remounting with a change that does writes, don't
+-		 * put it anywhere above this point, as we are not sure to be
+-		 * safe to write until we pass the above checks.
+-		 */
+-		ret = btrfs_start_pre_rw_mount(fs_info);
+-		if (ret)
+-			goto restore;
+-
+-		btrfs_clear_sb_rdonly(sb);
+-
+-		set_bit(BTRFS_FS_OPEN, &fs_info->flags);
+-
+-		/*
+-		 * If we've gone from readonly -> read/write, we need to get
+-		 * our sync/async discard lists in the right state.
+-		 */
+-		btrfs_discard_resume(fs_info);
+-	}
+-out:
  	/*
- 	 * Even the options are empty, we still need to do extra check
- 	 * against new flags
-@@ -649,8 +662,13 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
- 			 * compat_ro(FREE_SPACE_TREE) set, and we aren't going
- 			 * to allow v1 to be set for extent tree v2, simply
- 			 * ignore this setting if we're extent tree v2.
-+			 *
-+			 * For subpage blocksize we don't allow space cache v1,
-+			 * and we'll turn on v2, so we can skip the settings
-+			 * here as well.
- 			 */
--			if (btrfs_fs_incompat(info, EXTENT_TREE_V2))
-+			if (btrfs_fs_incompat(info, EXTENT_TREE_V2) ||
-+			    info->sectorsize < PAGE_SIZE)
- 				break;
- 			if (token == Opt_space_cache ||
- 			    strcmp(args[0].from, "v1") == 0) {
-diff --git a/fs/btrfs/super.h b/fs/btrfs/super.h
-index 8dbb909b364f..7c1cd7527e76 100644
---- a/fs/btrfs/super.h
-+++ b/fs/btrfs/super.h
-@@ -8,6 +8,7 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
- int btrfs_sync_fs(struct super_block *sb, int wait);
- char *btrfs_get_subvol_name_from_objectid(struct btrfs_fs_info *fs_info,
- 					  u64 subvol_objectid);
-+void btrfs_set_free_space_cache_settings(struct btrfs_fs_info *fs_info);
- 
- static inline struct btrfs_fs_info *btrfs_sb(struct super_block *sb)
- {
+ 	 * We need to set SB_I_VERSION here otherwise it'll get cleared by VFS,
+ 	 * since the absence of the flag means it can be toggled off by remount.
 -- 
 2.41.0
 

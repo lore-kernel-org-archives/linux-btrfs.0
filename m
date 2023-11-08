@@ -1,57 +1,56 @@
 Received: from lindbergh.monkeyblade.net (lindbergh.monkeyblade.net [23.128.96.19])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EDD7D36B0E
-	for <linux-btrfs@vger.kernel.org>; Wed,  8 Nov 2023 19:09:16 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9E01137149
+	for <linux-btrfs@vger.kernel.org>; Wed,  8 Nov 2023 19:09:19 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20230601.gappssmtp.com header.i=@toxicpanda-com.20230601.gappssmtp.com header.b="bUagwmPJ"
-Received: from mail-qk1-x72f.google.com (mail-qk1-x72f.google.com [IPv6:2607:f8b0:4864:20::72f])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7EB5B2110
-	for <linux-btrfs@vger.kernel.org>; Wed,  8 Nov 2023 11:09:16 -0800 (PST)
-Received: by mail-qk1-x72f.google.com with SMTP id af79cd13be357-77891c236fcso591285a.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 08 Nov 2023 11:09:16 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20230601.gappssmtp.com header.i=@toxicpanda-com.20230601.gappssmtp.com header.b="NbuedA4A"
+Received: from mail-qt1-x831.google.com (mail-qt1-x831.google.com [IPv6:2607:f8b0:4864:20::831])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1F4D32111
+	for <linux-btrfs@vger.kernel.org>; Wed,  8 Nov 2023 11:09:19 -0800 (PST)
+Received: by mail-qt1-x831.google.com with SMTP id d75a77b69052e-41cd52c51abso442671cf.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 08 Nov 2023 11:09:19 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1699470555; x=1700075355; darn=vger.kernel.org;
+        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1699470558; x=1700075358; darn=vger.kernel.org;
         h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=BN/A4uIT6ZK9prEkhxKzpA8qYY+Ll7k4xslWTGCzc38=;
-        b=bUagwmPJ7fqwgdhWyv4PGrHiaonCf/KdRoXpaAlfconW6KvIZElaqMJiZ6drLOui0Z
-         AeZXIZrG1xpXtKjd2KDB/E4gYcDn1RIdo++VIf7y998Dnyuni1mzk0I7pJ27Vd00zJu+
-         t9hZ+yPeKbhkROYDuDvAcVb6JLwoFJobr5XHjpgP05jMkOcSMfJGLYBCjPp8lKePL4am
-         Rqeb7QfSVJ7MoQj37aNiCMr0f/lu9y/q6brdPjklvqSHjdF8EIHQqRmzMdBETZcJhpfo
-         rvM8d+vSZL5rPHrgEqt/ZAXemn2SNecS9hU0X06c4LqTSDXHqD/pMcIy48kxQ+g0rpz4
-         XCHg==
+         :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=ehBDfIuN7LiSpCRECNrlmwLyhaoGnDe/cfSCFvX9BgQ=;
+        b=NbuedA4AK12KCMwQao7/ulFKJSgYVPGy19xCR5/oGnzmRZzCadJOnAnsVka+SA488l
+         IpBGZx4VlEnoHBEiytapejgCSc7BcI3OLkZla0Bcx3Ho0T2lJGkyT16N3qNHuk+Ce8il
+         4jzulj24rOzRhummzw4wlBOdXBR9AX+SMG8Vjgbj+ka8MlspVTh2OTQy3lq0Gtkr0ypj
+         HQCWErUiZ3YHsnqtKhMsnwj4C78fhtoyR/+hqgI/7JG210SEEX3oCxVGX/fnOowksYEP
+         BOb5a1BTH1S6t26EX5/YAG3TXHN3VATM8/hYr8BnCvhHYmWl6tp2LS8xNpMnMNhjjYse
+         29Zw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1699470555; x=1700075355;
+        d=1e100.net; s=20230601; t=1699470558; x=1700075358;
         h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
+         :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=BN/A4uIT6ZK9prEkhxKzpA8qYY+Ll7k4xslWTGCzc38=;
-        b=nXaMDfi+oct2LD+M+ToVdlMGh/RqQ/Hpqw9P0DHG07ib5wyZqUMSyvh0p7OMvyVF1E
-         fY9sJ1PwkaeJ+syHbsjlvNwyyQQaUJYAQAGgpp6lpqrcAwGCedF5+gPmVuOihFrxF7XT
-         QyexEUjjY3rEKTtEsoOZCpuyi0BjPTCqrHadNI/4PEA7L2PiqEMpvBoLpx3dlBYTdLvc
-         CdwpvLQKYUastK60g3uTJ6wqa4sU8SAm5ZyP8AlF7fA92cx/ervToU1LigmuDhLLX0xn
-         E2i428bztg2+TYJXqueGeYorFmTwbdG1gQcEd9ao7f6XLllseBbclSwxx5Ms2SvBSL6J
-         jmmg==
-X-Gm-Message-State: AOJu0YzgZoM/lfgW6EeRSU4vm/ojGC3hTHATu3Afi+NCoYfKTlJZDIbF
-	DNL3UUaHM6HmimtzRKsHwaWHA8ygv8yIbri61mXXAw==
-X-Google-Smtp-Source: AGHT+IED454ObjuDy+olL7P3HIYGyc0aVS+mpP474dUYZbjzqUrvqTvkwpglJyEKYvm5jikIENuilQ==
-X-Received: by 2002:a05:622a:446:b0:419:7e82:9190 with SMTP id o6-20020a05622a044600b004197e829190mr3190599qtx.31.1699470555532;
-        Wed, 08 Nov 2023 11:09:15 -0800 (PST)
+        bh=ehBDfIuN7LiSpCRECNrlmwLyhaoGnDe/cfSCFvX9BgQ=;
+        b=QZwhQAu6CTGNcFuJmd6YMT96NLSpJFj81qGRRK6VSF1f8J8V3Y1GzsZMj7rpUuv8+e
+         a5dOcEkooVuuCNgvbJgH/cBx4LxNY15aPRPOJod7xKIxIUdqNa7T/5qZ24CMp6pN7h+1
+         tGOS4OF3hKNKXThNvmWFX7WMHW8j6ZsCJ909xcu17m3ApsGQgYMhgpf+bss2QDXrIfxq
+         zfK3A/r61BQihb6b2UIkN1FOxPo6relE6xuj2rxGYkN+o5+gX5iDqFqdTtzSKUajnRG5
+         4c1rrdeAGOv7gpCIkaX4BHbdhBDSQBOlfhJ462CUIcOxXjkeWswXtBWfg1heBbEZS0ZU
+         e+Cg==
+X-Gm-Message-State: AOJu0YxQ5VyFVTAYr9kYCBIjRYFgdV1zvw1jtCpQTIianA0hT3zHy31d
+	nRzbC1keqCmxZIfBi7U34HTUf6y7DbhID/LbCgWHVA==
+X-Google-Smtp-Source: AGHT+IFindzUn+c01KYR9m8hp6yPBLdpa1aovHkvskMV2xNNSrvhUfof0d1YuPZpWeORj06eqiwOfg==
+X-Received: by 2002:ac8:5a0d:0:b0:41c:376d:20ac with SMTP id n13-20020ac85a0d000000b0041c376d20acmr2758382qta.0.1699470558032;
+        Wed, 08 Nov 2023 11:09:18 -0800 (PST)
 Received: from localhost (cpe-76-182-20-124.nc.res.rr.com. [76.182.20.124])
-        by smtp.gmail.com with ESMTPSA id v12-20020ac8728c000000b0041cc25a75e5sm1176774qto.77.2023.11.08.11.09.15
+        by smtp.gmail.com with ESMTPSA id ff22-20020a05622a4d9600b004198ae7f841sm1183529qtb.90.2023.11.08.11.09.17
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 08 Nov 2023 11:09:15 -0800 (PST)
+        Wed, 08 Nov 2023 11:09:17 -0800 (PST)
 From: Josef Bacik <josef@toxicpanda.com>
 To: linux-btrfs@vger.kernel.org,
 	kernel-team@fb.com,
 	linux-fsdevel@vger.kernel.org,
 	brauner@kernel.org
-Cc: Christoph Hellwig <hch@lst.de>
-Subject: [PATCH v2 01/18] fs: indicate request originates from old mount api
-Date: Wed,  8 Nov 2023 14:08:36 -0500
-Message-ID: <c279b1f82085fcecd6c62e63276f0a2c64f00dac.1699470345.git.josef@toxicpanda.com>
+Subject: [PATCH v2 03/18] btrfs: set default compress type at btrfs_init_fs_info time
+Date: Wed,  8 Nov 2023 14:08:38 -0500
+Message-ID: <e9b7e3a7889af140e2da4b49f232f79f4be1708f.1699470345.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <cover.1699470345.git.josef@toxicpanda.com>
 References: <cover.1699470345.git.josef@toxicpanda.com>
@@ -63,52 +62,43 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-From: Christian Brauner <brauner@kernel.org>
+With the new mount API we'll be setting our compression well before we
+call open_ctree.  We don't want to overwrite our settings, so set the
+default in btrfs_init_fs_info instead of open_ctree.
 
-We already communicate to filesystems when a remount request comes from
-the old mount api as some filesystems choose to implement different
-behavior in the new mount api than the old mount api to e.g., take the
-chance to fix significant api bugs. Allow the same for regular mount
-requests.
-
-Fixes: b330966f79fb ("fuse: reject options on reconfigure via fsconfig(2)")
-Reviewed-by: Christoph Hellwig <hch@lst.de>
-Signed-off-by: Christian Brauner <brauner@kernel.org>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/namespace.c | 11 +++++++++++
- 1 file changed, 11 insertions(+)
+ fs/btrfs/disk-io.c | 10 +++-------
+ 1 file changed, 3 insertions(+), 7 deletions(-)
 
-diff --git a/fs/namespace.c b/fs/namespace.c
-index e157efc54023..bfc5cff0e196 100644
---- a/fs/namespace.c
-+++ b/fs/namespace.c
-@@ -2873,7 +2873,12 @@ static int do_remount(struct path *path, int ms_flags, int sb_flags,
- 	if (IS_ERR(fc))
- 		return PTR_ERR(fc);
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 350e1b02cc8e..27bbe0164425 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2790,6 +2790,9 @@ void btrfs_init_fs_info(struct btrfs_fs_info *fs_info)
+ 	fs_info->sectorsize_bits = ilog2(4096);
+ 	fs_info->stripesize = 4096;
  
-+	/*
-+	 * Indicate to the filesystem that the remount request is coming
-+	 * from the legacy mount system call.
-+	 */
- 	fc->oldapi = true;
++	/* Default compress algorithm when user does -o compress */
++	fs_info->compress_type = BTRFS_COMPRESS_ZLIB;
 +
- 	err = parse_monolithic_mount_data(fc, data);
- 	if (!err) {
- 		down_write(&sb->s_umount);
-@@ -3322,6 +3327,12 @@ static int do_new_mount(struct path *path, const char *fstype, int sb_flags,
- 	if (IS_ERR(fc))
- 		return PTR_ERR(fc);
+ 	fs_info->max_extent_size = BTRFS_MAX_EXTENT_SIZE;
  
-+	/*
-+	 * Indicate to the filesystem that the mount request is coming
-+	 * from the legacy mount system call.
-+	 */
-+	fc->oldapi = true;
-+
- 	if (subtype)
- 		err = vfs_parse_fs_string(fc, "subtype",
- 					  subtype, strlen(subtype));
+ 	spin_lock_init(&fs_info->swapfile_pins_lock);
+@@ -3271,13 +3274,6 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
+ 	if (btrfs_super_flags(disk_super) & BTRFS_SUPER_FLAG_ERROR)
+ 		WRITE_ONCE(fs_info->fs_error, -EUCLEAN);
+ 
+-	/*
+-	 * In the long term, we'll store the compression type in the super
+-	 * block, and it'll be used for per file compression control.
+-	 */
+-	fs_info->compress_type = BTRFS_COMPRESS_ZLIB;
+-
+-
+ 	/* Set up fs_info before parsing mount options */
+ 	nodesize = btrfs_super_nodesize(disk_super);
+ 	sectorsize = btrfs_super_sectorsize(disk_super);
 -- 
 2.41.0
 

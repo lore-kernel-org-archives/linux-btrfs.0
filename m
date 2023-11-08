@@ -1,55 +1,59 @@
 Received: from lindbergh.monkeyblade.net (lindbergh.monkeyblade.net [23.128.96.19])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id ABB1436AFE
-	for <linux-btrfs@vger.kernel.org>; Wed,  8 Nov 2023 19:09:15 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5EB0B37141
+	for <linux-btrfs@vger.kernel.org>; Wed,  8 Nov 2023 19:09:18 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20230601.gappssmtp.com header.i=@toxicpanda-com.20230601.gappssmtp.com header.b="pkjoDkeY"
-Received: from mail-yb1-xb2e.google.com (mail-yb1-xb2e.google.com [IPv6:2607:f8b0:4864:20::b2e])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 32AB8210E
-	for <linux-btrfs@vger.kernel.org>; Wed,  8 Nov 2023 11:09:15 -0800 (PST)
-Received: by mail-yb1-xb2e.google.com with SMTP id 3f1490d57ef6-d9ca471cf3aso42907276.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 08 Nov 2023 11:09:15 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20230601.gappssmtp.com header.i=@toxicpanda-com.20230601.gappssmtp.com header.b="uRyDClvv"
+Received: from mail-qt1-x82d.google.com (mail-qt1-x82d.google.com [IPv6:2607:f8b0:4864:20::82d])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D72CF210E
+	for <linux-btrfs@vger.kernel.org>; Wed,  8 Nov 2023 11:09:17 -0800 (PST)
+Received: by mail-qt1-x82d.google.com with SMTP id d75a77b69052e-41cda69486eso373521cf.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 08 Nov 2023 11:09:17 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1699470554; x=1700075354; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:to
-         :from:from:to:cc:subject:date:message-id:reply-to;
-        bh=iUyZnOjJjsmbC01W/BiV4K6usM0tPRe0taxMLlODapo=;
-        b=pkjoDkeY0AgTHb1WCAseTQFj3XE0f1y6N8xL0PZjjP5NJoHVQvct4yz6dnUuT7n/fd
-         4D8ynP7ZQa8q5xiDG4Yu0f63IxPGzdAUDT33nspU2B/9Jnhie+7pUnqeDqq0RH0zsPIO
-         TTKs6mO6k6SapWs/T7D1Pc6tcE0y5egdo2G25ofktvQ1hpT8/f9TK+p85kgp18IywO4T
-         EfHCfAZCYvHubmBNK6AyLG0PaCqGsLARjJag+4HGylKdD2rinmWJRJNR03MU9GrNDzgA
-         JTaKVLQUycPfbtQX7Yo+59aat/cdWdLzwqAPhQSqxkf5uCu+S/Imqed2otulu4j17rbr
-         msUw==
+        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1699470557; x=1700075357; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=Wju2KDo89W0KqnbnN0qwqJupbKYYoKpOCJuF9HTEAq4=;
+        b=uRyDClvvXhHd3k7M/RgCwZz65rhYU4WYWaoinyTl+3EgPHDgq5LmGZ0hALxCsK1Cmt
+         w4mDpsEouceT7079kc/vcOdsrZoEW4kSw20jdl3QxZdjjY8WMr3tP2V8vLqMrkHaP6AS
+         9nUkck5pjQomLzf4QT6QqU31IFbuG0pggbd0NqTevookLm55nokHt1v2sfxDIkMLchBf
+         M1SusJbJwiNIz7gKPTgkDDs21gfMZ3nQWjUVQL+PREZjbH8xoJBPW1+p2vkHBY1mRYc3
+         EqwDm2sDnOgCDuNPwgLUsK2cbxZi/VDUCeenIG23oJwDrgUXL6LnKAXxwlx27OZCXM6S
+         EzEw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1699470554; x=1700075354;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:to
-         :from:x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=iUyZnOjJjsmbC01W/BiV4K6usM0tPRe0taxMLlODapo=;
-        b=ejFHfJCO5D9O9AvXdaD9uiEM9lI+dKYle/r/ekgEywpCiL5CWQ7MyK/Ss3akAdusot
-         6jEnNpwMS3Hh4YtfcngTtIYbl4gLPmXJB9Z/p7786bgMo+vmImJ1bZgbiqNwQZMgdNiE
-         dcBXHq0ulg7QRDj0LT70sNqUELZ30D7tKMOHoq59uI1AjQ4Oy2AU0rlRyk4vBzmTRCm4
-         DMP88uGGSJOisu19IDygMKP211wb9eExBtOGREvRz687O33f4cKG1Fq23o8cjlOSo96y
-         xRrAeDJxXJ6FvXkkr+jjuZZx4FPJH/SMu+WB7pdOZk6T2wMirrDx5q5Gt0uZxjYJu6at
-         zxow==
-X-Gm-Message-State: AOJu0YxSGl8k7razAVXZuGzg1ws9fs0AocZZDenGBF0JWxbxhzaLBj5u
-	TH4Pc2Hz2WPjqcgnoEqkUwnHxVeRuRqI03xtjms7Kg==
-X-Google-Smtp-Source: AGHT+IGe9bhzz0CbMGYg6WVlHryz/4bG4PED2D0pn+K78rjG5d11rPnM296Y2+SbRoxG8aLyB3TpBg==
-X-Received: by 2002:a25:458:0:b0:da0:cec3:b62e with SMTP id 85-20020a250458000000b00da0cec3b62emr2600387ybe.37.1699470554186;
-        Wed, 08 Nov 2023 11:09:14 -0800 (PST)
+        d=1e100.net; s=20230601; t=1699470557; x=1700075357;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=Wju2KDo89W0KqnbnN0qwqJupbKYYoKpOCJuF9HTEAq4=;
+        b=trNqEuBvHKoZ8LN8E5lpMu+l5ApWA0lyY/hdEj1or0BDVRgsowsQPgIU+2fiTApoSy
+         5DDm7emAlrWzq1Krdvp93l2JEWsaBwLvA/spvOGmPak82KPuk0k8bUHkqWVGq2teBZK4
+         RLLcXevDuNmJnXTGzU3+Wsi7NZoTPL9kgS/a8X2tA27uzFtDDDXRSDMFNyRsjQ+fKRPF
+         D0Ul6FwDNd6ZngGOjKgM7ppunus0ePrrxDHjhXCkT9h/e24fSkxByl2HbdyBks8njfvR
+         Fshbfab7+dJwEThEqM5S1CULAcjvQZO1n1SPjmXiNnwE1NlsNunN59V5e+GPfO8hx2Z5
+         aeww==
+X-Gm-Message-State: AOJu0YzHQGGYL35NSxGau46RkhGKgzohQnKq+HxFCyqBYqSdZoSxUXKz
+	AnGN1V1DRXn3LH3zn8TwJ/c6/udLb/K5FU4enFzK9A==
+X-Google-Smtp-Source: AGHT+IHt4Oah385KFQK1VKUiP11Y0nIjrdVQdzbBfpnhvKSUfnu4hGAFWaasI8rWrjaOuYukVVTA3A==
+X-Received: by 2002:a05:6214:5183:b0:66d:17a2:34cc with SMTP id kl3-20020a056214518300b0066d17a234ccmr2598056qvb.64.1699470556747;
+        Wed, 08 Nov 2023 11:09:16 -0800 (PST)
 Received: from localhost (cpe-76-182-20-124.nc.res.rr.com. [76.182.20.124])
-        by smtp.gmail.com with ESMTPSA id mg3-20020a056214560300b0067266b7b903sm1375657qvb.5.2023.11.08.11.09.13
+        by smtp.gmail.com with ESMTPSA id dy7-20020a05620a60c700b00770f2a690a8sm1337020qkb.53.2023.11.08.11.09.16
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 08 Nov 2023 11:09:13 -0800 (PST)
+        Wed, 08 Nov 2023 11:09:16 -0800 (PST)
 From: Josef Bacik <josef@toxicpanda.com>
 To: linux-btrfs@vger.kernel.org,
 	kernel-team@fb.com,
 	linux-fsdevel@vger.kernel.org,
 	brauner@kernel.org
-Subject: [PATCH v2 00/18] btrfs: convert to the new mount API
-Date: Wed,  8 Nov 2023 14:08:35 -0500
-Message-ID: <cover.1699470345.git.josef@toxicpanda.com>
+Subject: [PATCH v2 02/18] btrfs: split out the mount option validation code into its own helper
+Date: Wed,  8 Nov 2023 14:08:37 -0500
+Message-ID: <f30ace3052a298c6536453fed66577c308c72d2f.1699470345.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.41.0
+In-Reply-To: <cover.1699470345.git.josef@toxicpanda.com>
+References: <cover.1699470345.git.josef@toxicpanda.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -58,79 +62,113 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-v1->v2:
-- Fixed up some nits and paste errors.
-- Fixed build failure with !ZONED.
-- Fixed accidentally dropping BINARY_MOUNTDATA flag.
-- Added Reviewed-by's collected up to this point.
+We're going to need to validate mount options after they're all parsed
+with the new mount api, split this code out into its own helper so we
+can use it when we swap over to the new mount api.
 
-These have run through our CI a few times, they haven't introduced any
-regressions.
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+---
+ fs/btrfs/super.c | 64 ++++++++++++++++++++++++++----------------------
+ 1 file changed, 35 insertions(+), 29 deletions(-)
 
---- Original email ---
-Hello,
-
-These patches convert us to use the new mount API.  Christian tried to do this a
-few months ago, but ran afoul of our preference to have a bunch of small
-changes.  I started this series before I knew he had tried to convert us, so
-there's a fair bit that's different, but I did copy his approach for the remount
-bit.  I've linked to the original patch where I took inspiration, Christian let
-me know if you want some other annotation for credit, I wasn't really sure the
-best way to do that.
-
-There are a few preparatory patches in the beginning, and then cleanups at the
-end.  I took each call back one at a time to try and make it as small as
-possible.  The resulting code is less, but the diffstat shows more insertions
-that deletions.  This is because there are some big comment blocks around some
-of the more subtle things that we're doing to hopefully make it more clear.
-
-This is currently running through our CI.  I thought it was fine last week but
-we had a bunch of new failures when I finished up the remount behavior.  However
-today I discovered this was a regression in btrfs-progs, and I'm re-running the
-tests with the fixes.  If anything major breaks in the CI I'll resend with
-fixes, but I'm pretty sure these patches will pass without issue.
-
-I utilized __maybe_unused liberally to make sure everything compiled while
-applied.  The only "big" patch is where I went and removed the old API.  If
-requested I can break that up a bit more, but I didn't think it was necessary.
-I did make sure to keep it in its own patch, so the switch to the new mount API
-path only has things we need to support the new mount API, and then the next
-patch removes the old code.  Thanks,
-
-Josef
-
-Christian Brauner (1):
-  fs: indicate request originates from old mount api
-
-Josef Bacik (17):
-  btrfs: split out the mount option validation code into its own helper
-  btrfs: set default compress type at btrfs_init_fs_info time
-  btrfs: move space cache settings into open_ctree
-  btrfs: do not allow free space tree rebuild on extent tree v2
-  btrfs: split out ro->rw and rw->ro helpers into their own functions
-  btrfs: add a NOSPACECACHE mount option flag
-  btrfs: add fs_parameter definitions
-  btrfs: add parse_param callback for the new mount api
-  btrfs: add fs context handling functions
-  btrfs: add reconfigure callback for fs_context
-  btrfs: add get_tree callback for new mount API
-  btrfs: handle the ro->rw transition for mounting different subovls
-  btrfs: switch to the new mount API
-  btrfs: move the device specific mount options to super.c
-  btrfs: remove old mount API code
-  btrfs: move one shot mount option clearing to super.c
-  btrfs: set clear_cache if we use usebackuproot
-
- fs/btrfs/disk-io.c |   76 +-
- fs/btrfs/disk-io.h |    1 -
- fs/btrfs/fs.h      |   15 +-
- fs/btrfs/super.c   | 2421 +++++++++++++++++++++++---------------------
- fs/btrfs/super.h   |    5 +-
- fs/btrfs/zoned.c   |   16 +-
- fs/btrfs/zoned.h   |    6 +-
- fs/namespace.c     |   11 +
- 8 files changed, 1317 insertions(+), 1234 deletions(-)
-
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 6ecf78d09694..639601d346d0 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -233,6 +233,39 @@ static bool check_ro_option(struct btrfs_fs_info *fs_info, unsigned long opt,
+ 	return false;
+ }
+ 
++static bool check_options(struct btrfs_fs_info *info, unsigned long flags)
++{
++	if (!(flags & SB_RDONLY) &&
++	    (check_ro_option(info, BTRFS_MOUNT_NOLOGREPLAY, "nologreplay") ||
++	     check_ro_option(info, BTRFS_MOUNT_IGNOREBADROOTS, "ignorebadroots") ||
++	     check_ro_option(info, BTRFS_MOUNT_IGNOREDATACSUMS, "ignoredatacsums")))
++		return false;
++
++	if (btrfs_fs_compat_ro(info, FREE_SPACE_TREE) &&
++	    !btrfs_test_opt(info, FREE_SPACE_TREE) &&
++	    !btrfs_test_opt(info, CLEAR_CACHE)) {
++		btrfs_err(info, "cannot disable free space tree");
++		return false;
++	}
++	if (btrfs_fs_compat_ro(info, BLOCK_GROUP_TREE) &&
++	     !btrfs_test_opt(info, FREE_SPACE_TREE)) {
++		btrfs_err(info, "cannot disable free space tree with block-group-tree feature");
++		return false;
++	}
++
++	if (btrfs_check_mountopts_zoned(info))
++		return false;
++
++	if (!test_bit(BTRFS_FS_STATE_REMOUNTING, &info->fs_state)) {
++		if (btrfs_test_opt(info, SPACE_CACHE))
++			btrfs_info(info, "disk space caching is enabled");
++		if (btrfs_test_opt(info, FREE_SPACE_TREE))
++			btrfs_info(info, "using free space tree");
++	}
++
++	return true;
++}
++
+ static int parse_rescue_options(struct btrfs_fs_info *info, const char *options)
+ {
+ 	char *opts;
+@@ -311,7 +344,6 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
+ 	int saved_compress_level;
+ 	bool saved_compress_force;
+ 	int no_compress = 0;
+-	const bool remounting = test_bit(BTRFS_FS_STATE_REMOUNTING, &info->fs_state);
+ 
+ 	if (btrfs_fs_compat_ro(info, FREE_SPACE_TREE))
+ 		btrfs_set_opt(info->mount_opt, FREE_SPACE_TREE);
+@@ -330,7 +362,7 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
+ 	 * against new flags
+ 	 */
+ 	if (!options)
+-		goto check;
++		goto out;
+ 
+ 	while ((p = strsep(&options, ",")) != NULL) {
+ 		int token;
+@@ -774,35 +806,9 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
+ 			break;
+ 		}
+ 	}
+-check:
+-	/* We're read-only, don't have to check. */
+-	if (new_flags & SB_RDONLY)
+-		goto out;
+-
+-	if (check_ro_option(info, BTRFS_MOUNT_NOLOGREPLAY, "nologreplay") ||
+-	    check_ro_option(info, BTRFS_MOUNT_IGNOREBADROOTS, "ignorebadroots") ||
+-	    check_ro_option(info, BTRFS_MOUNT_IGNOREDATACSUMS, "ignoredatacsums"))
+-		ret = -EINVAL;
+ out:
+-	if (btrfs_fs_compat_ro(info, FREE_SPACE_TREE) &&
+-	    !btrfs_test_opt(info, FREE_SPACE_TREE) &&
+-	    !btrfs_test_opt(info, CLEAR_CACHE)) {
+-		btrfs_err(info, "cannot disable free space tree");
++	if (!ret && !check_options(info, new_flags))
+ 		ret = -EINVAL;
+-	}
+-	if (btrfs_fs_compat_ro(info, BLOCK_GROUP_TREE) &&
+-	     !btrfs_test_opt(info, FREE_SPACE_TREE)) {
+-		btrfs_err(info, "cannot disable free space tree with block-group-tree feature");
+-		ret = -EINVAL;
+-	}
+-	if (!ret)
+-		ret = btrfs_check_mountopts_zoned(info);
+-	if (!ret && !remounting) {
+-		if (btrfs_test_opt(info, SPACE_CACHE))
+-			btrfs_info(info, "disk space caching is enabled");
+-		if (btrfs_test_opt(info, FREE_SPACE_TREE))
+-			btrfs_info(info, "using free space tree");
+-	}
+ 	return ret;
+ }
+ 
 -- 
 2.41.0
 

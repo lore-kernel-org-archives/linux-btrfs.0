@@ -1,109 +1,151 @@
 Received: from lindbergh.monkeyblade.net (lindbergh.monkeyblade.net [23.128.96.19])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1BD1220E6
-	for <linux-btrfs@vger.kernel.org>; Thu,  9 Nov 2023 14:45:36 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="Fmy7kQgW";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="AcBXCHHb"
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2A58B3588
-	for <linux-btrfs@vger.kernel.org>; Thu,  9 Nov 2023 06:45:35 -0800 (PST)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id C0A1921992;
-	Thu,  9 Nov 2023 14:45:33 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1699541133;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=Qqv+bXkRdrVZ0334SQQIY/R3RpTGTpa1m3NoUl7qquk=;
-	b=Fmy7kQgWcKoyXf8jhtrBcaChaOdCXoAl3OeNxQNH56KGTa4s/FqCIB3DrbMLmaJO8Im1Qx
-	DlWEc9qpBDqdWPBzPlaiXnDVzWfIG3RCZhkrw5gQyTud8tmVLV/2CyxdeLBXglM2pI4JM2
-	TMBdVkgP44qv9jBYTktp1fAauFCLYPg=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1699541133;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=Qqv+bXkRdrVZ0334SQQIY/R3RpTGTpa1m3NoUl7qquk=;
-	b=AcBXCHHbJS9U5TrY3P66VSMTHtpSz250sF1al/o43KO9728YSPSM/DgkvByQ8ZxtlzU32b
-	OBNPsbfJpW+NN4Cw==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-	(No client certificate requested)
-	by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 9A200138E5;
-	Thu,  9 Nov 2023 14:45:33 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-	by imap2.suse-dmz.suse.de with ESMTPSA
-	id zdPqJI3wTGVGdgAAMHmgww
-	(envelope-from <dsterba@suse.cz>); Thu, 09 Nov 2023 14:45:33 +0000
-Date: Thu, 9 Nov 2023 15:38:30 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Joe Salmeri <jmscdba@gmail.com>
-Cc: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: Btrfs progs release 6.6.1
-Message-ID: <20231109143830.GT11264@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20231105222046.19483-1-dsterba@suse.com>
- <aa605999-708c-4b8c-a05c-78fd2cc6b5b2@gmail.com>
- <be0c51ba-86bd-44e7-884a-6cfccfa76184@gmail.com>
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B85DF208B0
+	for <linux-btrfs@vger.kernel.org>; Thu,  9 Nov 2023 17:16:26 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; dkim=none
+Received: from mail-pl1-f208.google.com (mail-pl1-f208.google.com [209.85.214.208])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1FBB930D1
+	for <linux-btrfs@vger.kernel.org>; Thu,  9 Nov 2023 09:16:26 -0800 (PST)
+Received: by mail-pl1-f208.google.com with SMTP id d9443c01a7336-1cc0e3a2b6eso11088945ad.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 09 Nov 2023 09:16:26 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1699550185; x=1700154985;
+        h=to:from:subject:message-id:date:mime-version:x-gm-message-state
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=3nvuStkJjLYEBBvyk6oppowE0GjZD5Nq75zlX0wJdtU=;
+        b=i8afOatsBA2KtSf7RnzpR498qaczHA0p2HzCCyWCpQmk8r36xxOoThAoZ3rfcJ10AE
+         FRx77/qamKDONO/v+TicnuZOEibWmBtYSDHOhiYw/fJUAt6BYQPqmILwUaPVtiC91i0E
+         04A46vQ3rKEEFCkbMj5Io9P4CaWp/Ra80n25/RIxzyMaGCAU5zi/ir+ain5H1kyx/KiD
+         IfIJHHt6WhIbe7YHMNY9uMRSoq+VeMgTVjgw7jUEyXJKa3s4JAkTx0qCeSiVmGuO8EQk
+         Z4/TlIwZBzMH/ILMmLtA2mRNC3M5iJ3KvDrLVODiGNxZk5fPlmZkYj0mGi8C4N4JwN83
+         hBFw==
+X-Gm-Message-State: AOJu0YzLk5vqAtQ9DxzTuE9/bjJDZgYAWiHTE+8uc5jqfQd7dTfD3Gfu
+	6sReh47mIuUpwFbTlh8Qz8W+2OGm5FBVynmpttXBH3rBMcyB
+X-Google-Smtp-Source: AGHT+IE5+3A81GAJ1+aCXHStNxoEX4xBmDCrGeMX5aW+aInVyF2KjxeUsDaWZlw2RY7CmDbfBnAq4JvWTGXgRl1DLtdQaBowDExO
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <be0c51ba-86bd-44e7-884a-6cfccfa76184@gmail.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-Received: by 2002:a17:903:6cd:b0:1cc:3ac9:717b with SMTP id
+ kj13-20020a17090306cd00b001cc3ac9717bmr587738plb.6.1699550185738; Thu, 09 Nov
+ 2023 09:16:25 -0800 (PST)
+Date: Thu, 09 Nov 2023 09:16:25 -0800
+X-Google-Appengine-App-Id: s~syzkaller
+X-Google-Appengine-App-Id-Alias: syzkaller
+Message-ID: <0000000000001959d30609bb5d94@google.com>
+Subject: [syzbot] [btrfs?] WARNING in create_pending_snapshot
+From: syzbot <syzbot+4d81015bc10889fd12ea@syzkaller.appspotmail.com>
+To: boris@bur.io, clm@fb.com, dsterba@suse.com, josef@toxicpanda.com, 
+	linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
+Content-Type: text/plain; charset="UTF-8"
 
-On Sun, Nov 05, 2023 at 06:40:45PM -0500, Joe Salmeri wrote:
-> Is there a way for btrfs to remove that directory entry which points to 
-> the inode that does not exist ?
-> 
-> After I removed all the @home snapshots, that got rid of all of them 
-> items that btrfs check reports EXCEPT for the one in the @home subvolume 
-> so deleting a subvolume can remove the items, but I really don't want to 
-> have to delete and restore the @home subvolume to fix it.
-> 
-> And since then btrfs has created new timeline snapshots for @home so 
-> those obviously have the same issue as the ones I deleted but that 
-> problem would go away if I can find a way to remove the offending item 
-> in the @home subvolume.
-> 
-> Is there some way to remove that item ?
-> 
-> Running "ls -al /home/denise/.config/skypeforlinux/blob_storage/" also 
-> shows that offending item:
-> 
->      drwx------ 1 denise joe-denise   72 Nov  1 22:49 .
->      drwxr-xr-x 1 denise joe-denise 3.7K Nov  1 20:07 ..
->      d????????? ? ?      ?             ?            ? 02179466-b671-4313-8fa5-0eb87d716f92
-> 
-> I tried removing /home/denise/.config/skypeforlinux/blob_storage/ since 
-> that is the folder that contains the 
-> i02179466-b671-4313-8fa5-0eb87d716f92 directory item but that fails
-> 
->      rm -rf /home/denise/.config/skypeforlinux/blob_storage/
-> /usr/bin/rm: cannot remove 
-> '/home/denise/.config/skypeforlinux/blob_storage/': Directory not empty
+Hello,
 
-On a mounted filesystem this is not possible, also I'm not sure what
-exactly is the problem there. It looks like the directory entry is valid
-(thus it shows the file name) but the pointer to the inode is either
-damaged (cosmic rays) or the inode is gone for some reason.
+syzbot found the following issue on:
 
-The 'btrfs check' should be able to guess what's the extent of the
-dirent/inode desynchronization and remove the entry eventually, but as
-always 'check + repair' should be used with care and when absolutely
-sure that it's not making the things worse. Some cross checks could be
-possible, e.g. look up the relevant data in the tree dump.
+HEAD commit:    305230142ae0 Merge tag 'pm-6.7-rc1-2' of git://git.kernel...
+git tree:       upstream
+console+strace: https://syzkaller.appspot.com/x/log.txt?x=11777b60e80000
+kernel config:  https://syzkaller.appspot.com/x/.config?x=beb32a598fd79db9
+dashboard link: https://syzkaller.appspot.com/bug?extid=4d81015bc10889fd12ea
+compiler:       Debian clang version 15.0.6, GNU ld (GNU Binutils for Debian) 2.40
+syz repro:      https://syzkaller.appspot.com/x/repro.syz?x=14900138e80000
+C reproducer:   https://syzkaller.appspot.com/x/repro.c?x=10907197680000
+
+Downloadable assets:
+disk image: https://storage.googleapis.com/syzbot-assets/0aab25a831ba/disk-30523014.raw.xz
+vmlinux: https://storage.googleapis.com/syzbot-assets/9d1b7b8fdf8a/vmlinux-30523014.xz
+kernel image: https://storage.googleapis.com/syzbot-assets/e9b6822fcd5f/bzImage-30523014.xz
+mounted in repro: https://storage.googleapis.com/syzbot-assets/82e806de5984/mount_0.gz
+
+The issue was bisected to:
+
+commit 6ed05643ddb166c0fddabac8ee092659006214a9
+Author: Boris Burkov <boris@bur.io>
+Date:   Wed Jun 28 18:00:05 2023 +0000
+
+    btrfs: create qgroup earlier in snapshot creation
+
+bisection log:  https://syzkaller.appspot.com/x/bisect.txt?x=117a7050e80000
+final oops:     https://syzkaller.appspot.com/x/report.txt?x=137a7050e80000
+console output: https://syzkaller.appspot.com/x/log.txt?x=157a7050e80000
+
+IMPORTANT: if you fix the issue, please add the following tag to the commit:
+Reported-by: syzbot+4d81015bc10889fd12ea@syzkaller.appspotmail.com
+Fixes: 6ed05643ddb1 ("btrfs: create qgroup earlier in snapshot creation")
+
+------------[ cut here ]------------
+BTRFS: Transaction aborted (error -17)
+WARNING: CPU: 0 PID: 5057 at fs/btrfs/transaction.c:1778 create_pending_snapshot+0x25f4/0x2b70 fs/btrfs/transaction.c:1778
+Modules linked in:
+CPU: 0 PID: 5057 Comm: syz-executor225 Not tainted 6.6.0-syzkaller-15365-g305230142ae0 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 10/09/2023
+RIP: 0010:create_pending_snapshot+0x25f4/0x2b70 fs/btrfs/transaction.c:1778
+Code: f8 fd 48 c7 c7 00 43 ab 8b 89 de e8 76 4b be fd 0f 0b e9 30 f3 ff ff e8 7a 8d f8 fd 48 c7 c7 00 43 ab 8b 89 de e8 5c 4b be fd <0f> 0b e9 f8 f6 ff ff e8 60 8d f8 fd 48 c7 c7 00 43 ab 8b 89 de e8
+RSP: 0018:ffffc90003abf580 EFLAGS: 00010246
+RAX: 10fb7cf24e10ea00 RBX: 00000000ffffffef RCX: ffff888023ea9dc0
+RDX: 0000000000000000 RSI: 0000000000000001 RDI: 0000000000000000
+RBP: ffffc90003abf870 R08: ffffffff81547c82 R09: 1ffff11017305172
+R10: dffffc0000000000 R11: ffffed1017305173 R12: ffff888078ae2878
+R13: 00000000ffffffef R14: 0000000000000000 R15: ffff888078ae2818
+FS:  000055555667d380(0000) GS:ffff8880b9800000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f6ff7bf2304 CR3: 0000000079f17000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ create_pending_snapshots+0x195/0x1d0 fs/btrfs/transaction.c:1967
+ btrfs_commit_transaction+0xf1c/0x3730 fs/btrfs/transaction.c:2440
+ create_snapshot+0x4a5/0x7e0 fs/btrfs/ioctl.c:845
+ btrfs_mksubvol+0x5d0/0x750 fs/btrfs/ioctl.c:995
+ btrfs_mksnapshot+0xb5/0xf0 fs/btrfs/ioctl.c:1041
+ __btrfs_ioctl_snap_create+0x344/0x460 fs/btrfs/ioctl.c:1294
+ btrfs_ioctl_snap_create+0x13c/0x190 fs/btrfs/ioctl.c:1321
+ btrfs_ioctl+0xbbf/0xd40
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:871 [inline]
+ __se_sys_ioctl+0xf8/0x170 fs/ioctl.c:857
+ do_syscall_x64 arch/x86/entry/common.c:51 [inline]
+ do_syscall_64+0x44/0x110 arch/x86/entry/common.c:82
+ entry_SYSCALL_64_after_hwframe+0x63/0x6b
+RIP: 0033:0x7f2f791127b9
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 61 17 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffc5dc597b8 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
+RAX: ffffffffffffffda RBX: 0030656c69662f2e RCX: 00007f2f791127b9
+RDX: 0000000020000a80 RSI: 0000000050009401 RDI: 0000000000000004
+RBP: 00007f2f7918b610 R08: 00007ffc5dc59988 R09: 00007ffc5dc59988
+R10: 00007ffc5dc59988 R11: 0000000000000246 R12: 0000000000000001
+R13: 00007ffc5dc59978 R14: 0000000000000001 R15: 0000000000000001
+ </TASK>
+
+
+---
+This report is generated by a bot. It may contain errors.
+See https://goo.gl/tpsmEJ for more information about syzbot.
+syzbot engineers can be reached at syzkaller@googlegroups.com.
+
+syzbot will keep track of this issue. See:
+https://goo.gl/tpsmEJ#status for how to communicate with syzbot.
+For information about bisection process see: https://goo.gl/tpsmEJ#bisection
+
+If the report is already addressed, let syzbot know by replying with:
+#syz fix: exact-commit-title
+
+If you want syzbot to run the reproducer, reply with:
+#syz test: git://repo/address.git branch-or-commit-hash
+If you attach or paste a git patch, syzbot will apply it before testing.
+
+If you want to overwrite report's subsystems, reply with:
+#syz set subsystems: new-subsystem
+(See the list of subsystem names on the web dashboard)
+
+If the report is a duplicate of another one, reply with:
+#syz dup: exact-subject-of-another-report
+
+If you want to undo deduplication, reply with:
+#syz undup

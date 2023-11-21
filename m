@@ -1,45 +1,45 @@
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="VOeMVvJm"
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="oD1XuMxl"
 Received: from esa5.hgst.iphmx.com (esa5.hgst.iphmx.com [216.71.153.144])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 52CFB19E;
-	Tue, 21 Nov 2023 08:32:40 -0800 (PST)
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 25FDDCB;
+	Tue, 21 Nov 2023 08:32:42 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1700584360; x=1732120360;
+  t=1700584362; x=1732120362;
   h=from:date:subject:mime-version:content-transfer-encoding:
    message-id:references:in-reply-to:to:cc;
-  bh=L3NVSoa0Cpx4pPFIb1TUWiVH9DFoJOyUHEUP90OBa2o=;
-  b=VOeMVvJmaIxB9oqY60BqtyFKYrkSxRBb1mq2L1T3iR7qHnEf4At7hJwY
-   0orSLXxrxFvtE7CG27IRrOyhrB/xj1u0Kb/LQQhSlJR0o4hmd6ffKmdT3
-   EoHjbO1Es3ND4apR0b3F1oW2MkTZv/chhnVGwhQ2N1zHcwvRFDCIkz75l
-   YY60XsKE0tqg8Wvg6MN33m0IJ6qd0MxmBpioH+jzNMGLbaOvJWHXhF/QV
-   tYnxx5WuIi62s/cxHOnq+1JUPWNO2ya3SUeNFigQQpDH1yylP/7WRNTKS
-   JkapmtWtWwxnBO+ToOQOnRFMEN4kQ8tXXxla/H2d///dc7Ph9VqiiJLM7
+  bh=KYqF9Y5hRQDC61iuaRlo/mKWBf6FC4946cc3kDbAJmc=;
+  b=oD1XuMxl2CvXEXzm4Aylf06lD7TVp70xA22QmDKQ+9pIGskW0vlIEuTS
+   pZZXXp9QjQjFWxoNMHV+YUpuZZcvzPRB+Hs4ttTnzMcD1SvReUmeOCgYx
+   b49OE1cMYTgnVrBsz0n8HBOLnVq6D+hbEZCOz0i6oi1b+/P1pT0a87Oub
+   lUYPMwZtup+AYG1VT3PKSk2+wPEfYsZkUEfrjmNb4BCXWacXnAzqUrdiW
+   af24ksLEvGqywpuUyrtOTO1MxRI+dkGmNdsKvBTAfwHEW0JHx3Win+wnR
+   MLxLUON6jUElR0LdWV5+i8zGDeye9zAsZK5DJATrhTkoozCECtaEQOopf
    A==;
-X-CSE-ConnectionGUID: 3JGdFnzGRSWh2k++jw3oxw==
-X-CSE-MsgGUID: nzNMQh8DQPmy/kX0jkgMBw==
+X-CSE-ConnectionGUID: ugCgiAD8QXWlw5+6DlZFsg==
+X-CSE-MsgGUID: QJXf+cY3Q8OAyQwC/1SwFA==
 X-IronPort-AV: E=Sophos;i="6.04,216,1695657600"; 
-   d="scan'208";a="3076038"
+   d="scan'208";a="3076051"
 Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 22 Nov 2023 00:32:38 +0800
-IronPort-SDR: ZW7tzteNq4G/Ea4JGzf0Pp9WSW6Bz19/35qspf9REDQQlIa5nQ9IjgKpvDd30WnGdgakJeiH/k
- Kiqltc7Y+ua481d33pw1U8n0pLYDRc17Y5vatPQF34ByKz4v9ftxsLBC7eUjqrCkbFMx2mbNFI
- JWeppZgicR8RtGnkC9T0A3EieioOw0zMfa+2xP+DFkxulHTxcSnR3nkG+eeJ/pUxjf3z+lK9FO
- 4LNipNJrvFUcZ5q2tUcPjkB4OFiHgsVEP2Unl11FC3p4dDVlkF0JVXm7T7ZlMYyd3IORMrwXpx
- +Fs=
+  by ob1.hgst.iphmx.com with ESMTP; 22 Nov 2023 00:32:41 +0800
+IronPort-SDR: j3l+E8rPcpsZUg/+pFEc3TAkRf+tmcAyBRYNx5XsLIV8rU6xGGVtUFfXiR0w12KVMRKPl1Jjbd
+ Q/i0mvWHJUfdbOViDK+VP4QAQ1yErNGpMq0f4fmw+EIJEZsbOB9Dz+vmUqbLcyWAolVaLYASLj
+ ZPaym0LGmQZRxfs7BIY13h0+k9WkQI6N1eCJsJOCDOO6YcrFiNBtERy/PmOVOnZm+vqvPusFAA
+ 7oBCspVk59ZXf31mIJKvC0lT53oRY0HbCDMrT4jRyXU5OY3zIx4lvV/EFALIjskv5cxZtEplQe
+ oqc=
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 21 Nov 2023 07:38:16 -0800
-IronPort-SDR: IOKuH+FE/Sxtimd3j5gs6rbKKgH4w5JW7AtaTKCl1+ZX6G+wtmAZPCkaIlDsSVHaZkYYWFk8Oq
- 0vxxGEVQKzpUL8lCaE7fCxR1cEsMMRtPenl/6oFiMuh1fxMGoFDh3N7uJskra70O/A/Odk6lKL
- 6cUJOLxCBc21SesKtl25Xnijz1f8JwpRfdyiPx6lSZgKMy4BTSfKGqHYnMjhnJnG5sBq9URVIL
- EmHHQ/WrieVC8aMYMd+1G1mwd8Kb/xGQnFqym/zstEBKRMQ8YG6ZfQ+CxETtpz0bQtIvTFG13Z
- Kuc=
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 21 Nov 2023 07:38:20 -0800
+IronPort-SDR: ca2BAHrdk9ddzxV8YKca5R7ndER5uM47/utscY1m97ayjWTHF8noM5kSAjcshucyYxkcV3ar9A
+ ueOz0/s9oYfylSYDx0q7PzepthzOG3ULzr8RJre3veOnMOzFa0IuWXxnaIqCOqYI2lM58+1LZ7
+ usMEgLVkJ7BF4uhutJf0TDa1GlEo19VKhPLefsIaDnkLmcM9n6hs3rEz1cMrgh98qcMwdmCg67
+ xToNewAOuNRwnLU1PV7KXHovu3x5Ul1oKbsKLeyZ1OPCFuR6oNKqYM2nhJ5b2YLhZ68bSR/Atb
+ A+E=
 WDCIronportException: Internal
 Received: from unknown (HELO redsun91.ssa.fujisawa.hgst.com) ([10.149.66.6])
-  by uls-op-cesaip02.wdc.com with ESMTP; 21 Nov 2023 08:32:38 -0800
+  by uls-op-cesaip02.wdc.com with ESMTP; 21 Nov 2023 08:32:41 -0800
 From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Date: Tue, 21 Nov 2023 08:32:31 -0800
-Subject: [PATCH 2/5] btrfs: zoned: don't clear dirty flag of extent buffer
+Date: Tue, 21 Nov 2023 08:32:34 -0800
+Subject: [PATCH 5/5] btrfs: reflow btrfs_free_tree_block
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -48,7 +48,7 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-Message-Id: <20231121-josef-generic-163-v1-2-049e37185841@wdc.com>
+Message-Id: <20231121-josef-generic-163-v1-5-049e37185841@wdc.com>
 References: <20231121-josef-generic-163-v1-0-049e37185841@wdc.com>
 In-Reply-To: <20231121-josef-generic-163-v1-0-049e37185841@wdc.com>
 To: Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>, 
@@ -57,78 +57,149 @@ Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
  Christoph Hellwig <hch@lst.de>, Naohiro Aota <Naohiro.Aota@wdc.com>, 
  Johannes Thumshirn <johannes.thumshirn@wdc.com>
 X-Mailer: b4 0.12.3
-X-Developer-Signature: v=1; a=ed25519-sha256; t=1700584354; l=2264;
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1700584354; l=4860;
  i=johannes.thumshirn@wdc.com; s=20230613; h=from:subject:message-id;
- bh=L3NVSoa0Cpx4pPFIb1TUWiVH9DFoJOyUHEUP90OBa2o=;
- b=T9kBt7f2Hj0NyDJUnB2/A2fnDALdHmF2eaDZtiMrukTgRelffox9lplELS0/Arzh7ecOgcrM6
- 1OmbzpOZOpzCtJdugdkd6eXglwZSesqiGu59vI2GkXuBp+uKTtTS3ib
+ bh=KYqF9Y5hRQDC61iuaRlo/mKWBf6FC4946cc3kDbAJmc=;
+ b=wmuqCBrp/etRWMbyM6GgwtlfU9ST83Bn9NyF3BoTDRms6V2Z6xSEOFGRsRFmplvg4yHqXru2+
+ X+4GWpr2gZiC2u/kworslxXGYqhqze4MdHgeIbchpvrAg67LolKQUBF
 X-Developer-Key: i=johannes.thumshirn@wdc.com; a=ed25519;
  pk=TGmHKs78FdPi+QhrViEvjKIGwReUGCfa+3LEnGoR2KM=
 
-One a zoned filesystem, never clear the dirty flag of an extent buffer,
-but instead mark it as cancelled.
+Reflow btrfs_free_tree_block() so that there is one level of indentation
+needed.
 
-On writeout, when encountering cancelled extent_buffers, zero them out.
+This patch has no functional changes.
 
 Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- fs/btrfs/disk-io.c   | 2 +-
- fs/btrfs/extent_io.c | 7 +++++--
- fs/btrfs/zoned.c     | 3 ++-
- 3 files changed, 8 insertions(+), 4 deletions(-)
+ fs/btrfs/extent-tree.c | 97 +++++++++++++++++++++++++-------------------------
+ 1 file changed, 49 insertions(+), 48 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index ff6140e7eef7..f259bae1c3ee 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -255,7 +255,7 @@ blk_status_t btree_csum_one_bio(struct btrfs_bio *bbio)
- 		return BLK_STS_IOERR;
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 6beff11e692e..06818fe90fff 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3426,6 +3426,7 @@ void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
+ {
+ 	struct btrfs_fs_info *fs_info = trans->fs_info;
+ 	struct btrfs_ref generic_ref = { 0 };
++	struct btrfs_block_group *cache;
+ 	int ret;
  
- 	if (test_bit(EXTENT_BUFFER_CANCELLED, &eb->bflags)) {
--		WARN_ON_ONCE(found_start != 0);
-+		memzero_extent_buffer(eb, 0, eb->len);
- 		return BLK_STS_OK;
+ 	btrfs_init_generic_ref(&generic_ref, BTRFS_DROP_DELAYED_REF,
+@@ -3439,64 +3440,64 @@ void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
+ 		BUG_ON(ret); /* -ENOMEM */
  	}
  
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 74f984885719..8bc5025ce278 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3748,6 +3748,11 @@ void btrfs_clear_buffer_dirty(struct btrfs_trans_handle *trans,
- 	if (trans && btrfs_header_generation(eb) != trans->transid)
- 		return;
- 
-+	if (btrfs_is_zoned(fs_info)) {
-+		set_bit(EXTENT_BUFFER_CANCELLED, &eb->bflags);
-+		return;
-+	}
-+
- 	if (!test_and_clear_bit(EXTENT_BUFFER_DIRTY, &eb->bflags))
- 		return;
- 
-@@ -4139,8 +4144,6 @@ static void __write_extent_buffer(const struct extent_buffer *eb,
- 	/* For unmapped (dummy) ebs, no need to check their uptodate status. */
- 	const bool check_uptodate = !test_bit(EXTENT_BUFFER_UNMAPPED, &eb->bflags);
- 
--	WARN_ON(test_bit(EXTENT_BUFFER_CANCELLED, &eb->bflags));
+-	if (last_ref && btrfs_header_generation(buf) == trans->transid) {
+-		struct btrfs_block_group *cache;
+-		bool must_pin = false;
 -
- 	if (check_eb_range(eb, start, len))
- 		return;
+-		if (root_id != BTRFS_TREE_LOG_OBJECTID) {
+-			ret = check_ref_cleanup(trans, buf->start);
+-			if (!ret)
+-				goto out;
+-		}
++	if (!last_ref)
++		return;
  
-diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-index 89cd1664efe1..117e041bdc7a 100644
---- a/fs/btrfs/zoned.c
-+++ b/fs/btrfs/zoned.c
-@@ -1722,7 +1722,8 @@ void btrfs_redirty_list_add(struct btrfs_transaction *trans,
- 	    btrfs_header_flag(eb, BTRFS_HEADER_FLAG_WRITTEN))
- 		return;
+-		cache = btrfs_lookup_block_group(fs_info, buf->start);
++	if (btrfs_header_generation(buf) != trans->transid)
++		goto out;
  
--	ASSERT(!test_bit(EXTENT_BUFFER_DIRTY, &eb->bflags));
-+	ASSERT(test_bit(EXTENT_BUFFER_DIRTY, &eb->bflags));
-+	ASSERT(test_bit(EXTENT_BUFFER_CANCELLED, &eb->bflags));
+-		if (btrfs_header_flag(buf, BTRFS_HEADER_FLAG_WRITTEN)) {
+-			pin_down_extent(trans, cache, buf->start, buf->len, 1);
+-			btrfs_put_block_group(cache);
++	if (root_id != BTRFS_TREE_LOG_OBJECTID) {
++		ret = check_ref_cleanup(trans, buf->start);
++		if (!ret)
+ 			goto out;
+-		}
++	}
  
- 	memzero_extent_buffer(eb, 0, eb->len);
- 	set_bit(EXTENT_BUFFER_CANCELLED, &eb->bflags);
+-		/*
+-		 * If there are tree mod log users we may have recorded mod log
+-		 * operations for this node.  If we re-allocate this node we
+-		 * could replay operations on this node that happened when it
+-		 * existed in a completely different root.  For example if it
+-		 * was part of root A, then was reallocated to root B, and we
+-		 * are doing a btrfs_old_search_slot(root b), we could replay
+-		 * operations that happened when the block was part of root A,
+-		 * giving us an inconsistent view of the btree.
+-		 *
+-		 * We are safe from races here because at this point no other
+-		 * node or root points to this extent buffer, so if after this
+-		 * check a new tree mod log user joins we will not have an
+-		 * existing log of operations on this node that we have to
+-		 * contend with.
+-		 */
+-		if (test_bit(BTRFS_FS_TREE_MOD_LOG_USERS, &fs_info->flags))
+-			must_pin = true;
++	cache = btrfs_lookup_block_group(fs_info, buf->start);
+ 
+-		if (must_pin || btrfs_is_zoned(fs_info)) {
+-			pin_down_extent(trans, cache, buf->start, buf->len, 1);
+-			btrfs_put_block_group(cache);
+-			goto out;
+-		}
++	if (btrfs_header_flag(buf, BTRFS_HEADER_FLAG_WRITTEN)) {
++		pin_down_extent(trans, cache, buf->start, buf->len, 1);
++		btrfs_put_block_group(cache);
++		goto out;
++	}
+ 
+-		WARN_ON(test_bit(EXTENT_BUFFER_DIRTY, &buf->bflags));
++	/*
++	 * If there are tree mod log users we may have recorded mod log
++	 * operations for this node.  If we re-allocate this node we
++	 * could replay operations on this node that happened when it
++	 * existed in a completely different root.  For example if it
++	 * was part of root A, then was reallocated to root B, and we
++	 * are doing a btrfs_old_search_slot(root b), we could replay
++	 * operations that happened when the block was part of root A,
++	 * giving us an inconsistent view of the btree.
++	 *
++	 * We are safe from races here because at this point no other
++	 * node or root points to this extent buffer, so if after this
++	 * check a new tree mod log user joins we will not have an
++	 * existing log of operations on this node that we have to
++	 * contend with.
++	 */
+ 
+-		btrfs_add_free_space(cache, buf->start, buf->len);
+-		btrfs_free_reserved_bytes(cache, buf->len, 0);
++	if (test_bit(BTRFS_FS_TREE_MOD_LOG_USERS, &fs_info->flags)
++		     || btrfs_is_zoned(fs_info)) {
++		pin_down_extent(trans, cache, buf->start, buf->len, 1);
+ 		btrfs_put_block_group(cache);
+-		trace_btrfs_reserved_extent_free(fs_info, buf->start, buf->len);
++		goto out;
+ 	}
++
++	WARN_ON(test_bit(EXTENT_BUFFER_DIRTY, &buf->bflags));
++
++	btrfs_add_free_space(cache, buf->start, buf->len);
++	btrfs_free_reserved_bytes(cache, buf->len, 0);
++	btrfs_put_block_group(cache);
++	trace_btrfs_reserved_extent_free(fs_info, buf->start, buf->len);
++
+ out:
+-	if (last_ref) {
+-		/*
+-		 * Deleting the buffer, clear the corrupt flag since it doesn't
+-		 * matter anymore.
+-		 */
+-		clear_bit(EXTENT_BUFFER_CORRUPT, &buf->bflags);
+-	}
++
++	/*
++	 * Deleting the buffer, clear the corrupt flag since it doesn't
++	 * matter anymore.
++	 */
++	clear_bit(EXTENT_BUFFER_CORRUPT, &buf->bflags);
+ }
+ 
+ /* Can return -ENOMEM */
 
 -- 
 2.41.0

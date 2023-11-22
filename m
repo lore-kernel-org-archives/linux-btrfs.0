@@ -1,50 +1,49 @@
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20230601.gappssmtp.com header.i=@toxicpanda-com.20230601.gappssmtp.com header.b="BF6RVQH+"
-Received: from mail-yb1-xb44.google.com (mail-yb1-xb44.google.com [IPv6:2607:f8b0:4864:20::b44])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 473E31A8
-	for <linux-btrfs@vger.kernel.org>; Wed, 22 Nov 2023 09:18:17 -0800 (PST)
-Received: by mail-yb1-xb44.google.com with SMTP id 3f1490d57ef6-db048181cd3so2511276.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 22 Nov 2023 09:18:17 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20230601.gappssmtp.com header.i=@toxicpanda-com.20230601.gappssmtp.com header.b="G7PmPc8u"
+Received: from mail-yw1-x1133.google.com (mail-yw1-x1133.google.com [IPv6:2607:f8b0:4864:20::1133])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3DE1B83
+	for <linux-btrfs@vger.kernel.org>; Wed, 22 Nov 2023 09:18:24 -0800 (PST)
+Received: by mail-yw1-x1133.google.com with SMTP id 00721157ae682-5cbbe2cba33so19023467b3.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 22 Nov 2023 09:18:24 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1700673496; x=1701278296; darn=vger.kernel.org;
+        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1700673503; x=1701278303; darn=vger.kernel.org;
         h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=gCFi6Tr6kzrxo3mpf8/EcyxbBk6h1X5ogpDYJERsQJ4=;
-        b=BF6RVQH+urpkWnvU6dHOib6K54ZVUbgq4q7BV4RvfJ2dE8l13AEtvfs5LL3GGl5Og9
-         g9C22pNRVYkdGcqyeUIoTMIvg6Whb1Ew+akfT+6J3tTNKI/gTCyQ1AjUtp9MQzEhzfRs
-         TncGWSKOjbuDLuJEck3PzrSdEwfcFPmavxRLpfQbKUK2ETcalvmMhkA4fissovE2/7xc
-         jk9M2BxDohd4B9shf20sZjUfZsNAD1Wb1685p9GXHDDNWpZF4qx87ntOgdP7PVmvZ6ec
-         FaCcAZhCSMWM4Ek2MXBVrVsUmI+OB/zbWS31hPONfZMWyei9c0OCvP+ejLb5f0cNjlpr
-         3e4Q==
+         :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=BiTjWmy4vJZo6BlhqNQcEYY6KSKiyt3LwZZttTCg/UE=;
+        b=G7PmPc8ude4xe7o8U/57d/bvVGthtSOhoTG8yTi3CD4FmgjSb+7azDJzfzUqIKEPKu
+         YB1Q/1shlznt9vSuvhb/PH3Lvm7jyrcSIlD814uGs+At1Ibnmc5H+MaMbm3b3XCUxjU/
+         eaWyrSkOk+F85QDWX50noZkZ6f3D7bkTEFFqy9YgywzpzVId1UESJc730eUmJVXDuW+q
+         fxE8sTb6S8eOEWoYO+rmne4LLOJwOJXh5ah8WXHYU3//0ZzqAJZ71cw4HVH/PD/mLtQu
+         1Vpcwdem/OHhTTEZVkzWQ/ZS44Z63xts4HAVJBXKnSgwJp7/D/YhHXuVmFPKqTti+gau
+         h98g==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1700673496; x=1701278296;
+        d=1e100.net; s=20230601; t=1700673503; x=1701278303;
         h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
+         :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=gCFi6Tr6kzrxo3mpf8/EcyxbBk6h1X5ogpDYJERsQJ4=;
-        b=JYLLScg2BglD9YTu3za2vYY+gVei7McDbQtJARjPTyuT4M/yGmed86aPCCs5mmM8Jb
-         50Jh/Tupj3uLaKYElDOUefjfYA6W9aZ6drGfEQvbjVej4yP9jx38d8vQeOvSf7ys/t0b
-         spedDIg7GrvpXP1IPzsi86sKbM9i8DOVCfrp8b63GNrT/oKTNkF6XGZrHvjmWir6x5lq
-         0AntasNJ5W7QWB92ZHnXwZyVwGyzlGh6g5A9cQTIwPgYy7VDkRg5NxE1kqt9EKDFIpsd
-         ucB0H6bN5CmXKKYx108ZV2s/8ql5WN7NTP69xqM1raYozZrVKrH0TB4ZYWeqzCmKlVKb
-         3m8g==
-X-Gm-Message-State: AOJu0Yy7F1gatrA5pKgl8PTwTdjY5AY5GNpNzFkcl3wkqQb6Ix3szYIZ
-	RAc9MUHDqPB6uv/GeSxjQknwdsHL0qJ0dIM+hzCQj7NkMbU=
-X-Google-Smtp-Source: AGHT+IFr1RLPyXeAlmEqbr28CwctKbTE6vs2ZCtibQednrTEPwibvrJ7HjRSwrv3Pe9dVvZhf54K1w==
-X-Received: by 2002:a25:400d:0:b0:d9a:3811:9c57 with SMTP id n13-20020a25400d000000b00d9a38119c57mr2666038yba.43.1700673495994;
-        Wed, 22 Nov 2023 09:18:15 -0800 (PST)
+        bh=BiTjWmy4vJZo6BlhqNQcEYY6KSKiyt3LwZZttTCg/UE=;
+        b=jwAWwVNcoj4xIE8hDqznpbJ7ryxsEopyrmfQwJoERzWNHgZbbUs+QN/HJ1mS2UhhTK
+         ubrZchinhY17ofkjVeEiqadsJ75ulZvv8OrNmHi+FKhZLqhOT4U9PHpNDPegJyr1gM5U
+         H2C2B7Rbguxn05bTeNfstsxSojmWwmr8giC2X/2wfUAMtFscpxTenE/pjZ+9RfH9TZCL
+         4HI/aqL0mu2PMcUDJFwWlpwLDdNoGTIaULVD/OKmtw6aPnvZp5iTYzSlNaXOnZNsfM+q
+         yl/5poO+IgJnBg8DJMp9LPqZYrlIkP05wZkpy8EEhUllEO/H2yMNnoJKKu8eHOgqI0n6
+         rZLQ==
+X-Gm-Message-State: AOJu0YxzQsREbTNcFQZW/Nne8YqkLbSidBwlYjv6xW5D/v86FgXy1Ukl
+	NBe2kzV2Qk+KGH3QFsL2yOLUIHLt+oSKvD62onCG5sLJ
+X-Google-Smtp-Source: AGHT+IHFt2HnaSBdZqayOZ/jkrIrhK6onRuD2u0+HXeCZlT3pGRtSBS/PCdF45H3N1JkghPQDkNJDA==
+X-Received: by 2002:a81:5c07:0:b0:5ca:6e:35d3 with SMTP id q7-20020a815c07000000b005ca006e35d3mr2711501ywb.30.1700673503318;
+        Wed, 22 Nov 2023 09:18:23 -0800 (PST)
 Received: from localhost (cpe-76-182-20-124.nc.res.rr.com. [76.182.20.124])
-        by smtp.gmail.com with ESMTPSA id k16-20020a056902025000b00d9a36ded1besm1450317ybs.6.2023.11.22.09.18.15
+        by smtp.gmail.com with ESMTPSA id u65-20020a0deb44000000b005cd091e885dsm43713ywe.30.2023.11.22.09.18.22
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 22 Nov 2023 09:18:15 -0800 (PST)
+        Wed, 22 Nov 2023 09:18:22 -0800 (PST)
 From: Josef Bacik <josef@toxicpanda.com>
 To: linux-btrfs@vger.kernel.org,
 	kernel-team@fb.com
-Cc: Christian Brauner <brauner@kernel.org>
-Subject: [PATCH v3 12/19] btrfs: add get_tree callback for new mount API
-Date: Wed, 22 Nov 2023 12:17:48 -0500
-Message-ID: <241685ab2b8d20c5985cbd82f8525bd0e816b2b2.1700673401.git.josef@toxicpanda.com>
+Subject: [PATCH v3 19/19] btrfs: remove code for inode_cache and recovery mount options
+Date: Wed, 22 Nov 2023 12:17:55 -0500
+Message-ID: <91c34f25266be07585b75fde0b580b9118f8786e.1700673401.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <cover.1700673401.git.josef@toxicpanda.com>
 References: <cover.1700673401.git.josef@toxicpanda.com>
@@ -56,277 +55,88 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-This is the actual mounting callback for the new mount API.  Implement
-this using our current fill super as a guideline, making the appropriate
-adjustments for the new mount API.
+We've deprecated these a while ago, go ahead and remove the code for
+them.
 
-Our old mount operation had two fs_types, one to handle the actual
-opening, and the one that we called to handle the actual opening and
-then did the subvol lookup for returning the actual root dentry.  This
-is mirrored here, but simply with different behaviors for ->get_tree.
-We use the existence of ->s_fs_info to tell which part we're in.  The
-initial call allocates the fs_info, then call mount_fc() with a
-duplicated fc to do the actual open_ctree part.  Then we take that
-vfsmount and use it to look up our subvolume that we're mounting and
-return that as our s_root.  This idea was taken from Christians attempt
-to convert us to the new mount api.
-
-References: https://lore.kernel.org/all/20230626-fs-btrfs-mount-api-v1-2-045e9735a00b@kernel.org/
-Reviewed-by: Christian Brauner <brauner@kernel.org>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/super.c | 210 ++++++++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 206 insertions(+), 4 deletions(-)
+ fs/btrfs/super.c | 35 -----------------------------------
+ 1 file changed, 35 deletions(-)
 
 diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 63f17dd21d4e..184d89c0edfd 100644
+index 17fd0a438537..8ce7c880e9ce 100644
 --- a/fs/btrfs/super.c
 +++ b/fs/btrfs/super.c
-@@ -98,6 +98,7 @@ struct btrfs_fs_context {
- 	unsigned long mount_opt;
- 	unsigned long compress_type:4;
- 	unsigned int compress_level;
-+	refcount_t refs;
- };
+@@ -130,10 +130,6 @@ enum {
+ 	Opt_ignoredatacsums,
+ 	Opt_rescue_all,
  
- enum {
-@@ -2809,6 +2810,181 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
- 	return 0;
- }
+-	/* Deprecated options */
+-	Opt_recovery,
+-	Opt_inode_cache,
+-
+ 	/* Debugging options */
+ 	Opt_enospc_debug,
+ #ifdef CONFIG_BTRFS_DEBUG
+@@ -224,7 +220,6 @@ static const struct fs_parameter_spec btrfs_fs_parameters[] = {
+ 	fsparam_string("device", Opt_device),
+ 	fsparam_enum("fatal_errors", Opt_fatal_errors, btrfs_parameter_fatal_errors),
+ 	fsparam_flag_no("flushoncommit", Opt_flushoncommit),
+-	fsparam_flag_no("inode_cache", Opt_inode_cache),
+ 	fsparam_string("max_inline", Opt_max_inline),
+ 	fsparam_flag_no("barrier", Opt_barrier),
+ 	fsparam_flag_no("datacow", Opt_datacow),
+@@ -255,10 +250,6 @@ static const struct fs_parameter_spec btrfs_fs_parameters[] = {
+ 	__fsparam(NULL, "usebackuproot", Opt_usebackuproot, fs_param_deprecated,
+ 		  NULL),
  
-+static int btrfs_fc_test_super(struct super_block *s, struct fs_context *fc)
-+{
-+	struct btrfs_fs_info *p = fc->s_fs_info;
-+	struct btrfs_fs_info *fs_info = btrfs_sb(s);
-+
-+	return fs_info->fs_devices == p->fs_devices;
-+}
-+
-+static int btrfs_get_tree_super(struct fs_context *fc)
-+{
-+	struct btrfs_fs_info *fs_info = fc->s_fs_info;
-+	struct btrfs_fs_context *ctx = fc->fs_private;
-+	struct btrfs_fs_devices *fs_devices = NULL;
-+	struct block_device *bdev;
-+	struct btrfs_device *device;
-+	struct super_block *s;
-+	blk_mode_t mode = sb_open_mode(fc->sb_flags);
-+	int ret;
-+
-+	btrfs_ctx_to_info(fs_info, ctx);
-+	mutex_lock(&uuid_mutex);
-+
-+	/*
-+	 * With 'true' passed to btrfs_scan_one_device() (mount time) we expect
-+	 * either a valid device or an error.
-+	 */
-+	device = btrfs_scan_one_device(fc->source, mode, true);
-+	ASSERT(device != NULL);
-+	if (IS_ERR(device)) {
-+		mutex_unlock(&uuid_mutex);
-+		return PTR_ERR(device);
-+	}
-+
-+	fs_devices = device->fs_devices;
-+	fs_info->fs_devices = fs_devices;
-+
-+	ret = btrfs_open_devices(fs_devices, mode, &btrfs_fs_type);
-+	mutex_unlock(&uuid_mutex);
-+	if (ret)
-+		return ret;
-+
-+	if (!(fc->sb_flags & SB_RDONLY) && fs_devices->rw_devices == 0) {
-+		ret = -EACCES;
-+		goto error;
-+	}
-+
-+	bdev = fs_devices->latest_dev->bdev;
-+
-+	/*
-+	 * If successful, this will transfer the fs_info into the super block,
-+	 * and fc->s_fs_info will be NULL.  However if there's an existing
-+	 * super, we'll still have fc->s_fs_info populated.  If we error
-+	 * completely out it'll be cleaned up when we drop the fs_context,
-+	 * otherwise it's tied to the lifetime of the super_block.
-+	 *
-+	 * Adding this comment because I was horribly confused about the error
-+	 * handling from here on out.
-+	 */
-+	s = sget_fc(fc, btrfs_fc_test_super, set_anon_super_fc);
-+	if (IS_ERR(s)) {
-+		ret = PTR_ERR(s);
-+		goto error;
-+	}
-+
-+	if (s->s_root) {
-+		btrfs_close_devices(fs_devices);
-+		if ((fc->sb_flags ^ s->s_flags) & SB_RDONLY)
-+			ret = -EBUSY;
-+	} else {
-+		snprintf(s->s_id, sizeof(s->s_id), "%pg", bdev);
-+		shrinker_debugfs_rename(s->s_shrink, "sb-btrfs:%s", s->s_id);
-+		btrfs_sb(s)->bdev_holder = &btrfs_fs_type;
-+		ret = btrfs_fill_super(s, fs_devices, NULL);
-+	}
-+
-+	if (ret) {
-+		deactivate_locked_super(s);
-+		return ret;
-+	}
-+
-+	fc->root = dget(s->s_root);
-+	return 0;
-+
-+error:
-+	btrfs_close_devices(fs_devices);
-+	return ret;
-+}
-+
-+static int btrfs_get_tree_subvol(struct fs_context *fc)
-+{
-+	struct btrfs_fs_info *fs_info = NULL;
-+	struct btrfs_fs_context *ctx = fc->fs_private;
-+	struct fs_context *dup_fc;
-+	struct dentry *dentry;
-+	struct vfsmount *mnt;
-+
-+	/*
-+	 * Setup a dummy root and fs_info for test/set super.  This is because
-+	 * we don't actually fill this stuff out until open_ctree, but we need
-+	 * then open_ctree will properly initialize the file system specific
-+	 * settings later.  btrfs_init_fs_info initializes the static elements
-+	 * of the fs_info (locks and such) to make cleanup easier if we find a
-+	 * superblock with our given fs_devices later on at sget() time.
-+	 */
-+	fs_info = kvzalloc(sizeof(struct btrfs_fs_info), GFP_KERNEL);
-+	if (!fs_info)
-+		return -ENOMEM;
-+
-+	fs_info->super_copy = kzalloc(BTRFS_SUPER_INFO_SIZE, GFP_KERNEL);
-+	fs_info->super_for_commit = kzalloc(BTRFS_SUPER_INFO_SIZE, GFP_KERNEL);
-+	if (!fs_info->super_copy || !fs_info->super_for_commit) {
-+		btrfs_free_fs_info(fs_info);
-+		return -ENOMEM;
-+	}
-+	btrfs_init_fs_info(fs_info);
-+
-+	dup_fc = vfs_dup_fs_context(fc);
-+	if (IS_ERR(dup_fc)) {
-+		btrfs_free_fs_info(fs_info);
-+		return PTR_ERR(dup_fc);
-+	}
-+
-+	/*
-+	 * When we do the sget_fc this gets transferred to the sb, so we only
-+	 * need to set it on the dup_fc as this is what creates the super block.
-+	 */
-+	dup_fc->s_fs_info = fs_info;
-+
-+	/*
-+	 * We'll do the security settings in our btrfs_get_tree_super() mount
-+	 * loop, they were duplicated into dup_fc, we can drop the originals
-+	 * here.
-+	 */
-+	security_free_mnt_opts(&fc->security);
-+	fc->security = NULL;
-+
-+	mnt = fc_mount(dup_fc);
-+	put_fs_context(dup_fc);
-+	if (IS_ERR(mnt))
-+		return PTR_ERR(mnt);
-+
-+	/*
-+	 * This free's ->subvol_name, because if it isn't set we have to
-+	 * allocate a buffer to hold the subvol_name, so we just drop our
-+	 * reference to it here.
-+	 */
-+	dentry = mount_subvol(ctx->subvol_name, ctx->subvol_objectid, mnt);
-+	ctx->subvol_name = NULL;
-+	if (IS_ERR(dentry))
-+		return PTR_ERR(dentry);
-+
-+	fc->root = dentry;
-+	return 0;
-+}
-+
-+static int btrfs_get_tree(struct fs_context *fc)
-+{
-+	/*
-+	 * Since we use mount_subtree to mount the default/specified subvol, we
-+	 * have to do mounts in two steps.
-+	 *
-+	 * First pass through we call btrfs_get_tree_subvol(), this is just a
-+	 * wrapper around fc_mount() to call back into here again, and this time
-+	 * we'll call btrfs_get_tree_super().  This will do the open_ctree() and
-+	 * everything to open the devices and file system.  Then we return back
-+	 * with a fully constructed vfsmount in btrfs_get_tree_subvol(), and
-+	 * from there we can do our mount_subvol() call, which will lookup
-+	 * whichever subvol we're mounting and setup this fc with the
-+	 * appropriate dentry for the subvol.
-+	 */
-+	if (fc->s_fs_info)
-+		return btrfs_get_tree_super(fc);
-+	return btrfs_get_tree_subvol(fc);
-+}
-+
- static void btrfs_kill_super(struct super_block *sb)
- {
- 	struct btrfs_fs_info *fs_info = btrfs_sb(sb);
-@@ -2819,17 +2995,42 @@ static void btrfs_kill_super(struct super_block *sb)
- static void btrfs_free_fs_context(struct fs_context *fc)
- {
- 	struct btrfs_fs_context *ctx = fc->fs_private;
-+	struct btrfs_fs_info *fs_info = fc->s_fs_info;
- 
--	if (!ctx)
--		return;
-+	if (fs_info)
-+		btrfs_free_fs_info(fs_info);
- 
--	kfree(ctx->subvol_name);
--	kfree(ctx);
-+	if (ctx && refcount_dec_and_test(&ctx->refs)) {
-+		kfree(ctx->subvol_name);
-+		kfree(ctx);
-+	}
-+}
-+
-+static int btrfs_dup_fs_context(struct fs_context *fc,
-+				struct fs_context *src_fc)
-+{
-+	struct btrfs_fs_context *ctx = src_fc->fs_private;
-+
-+	/*
-+	 * Give a ref to our ctx to this dup, as we want to keep it around for
-+	 * our original fc so we can have the subvolume name or objectid.
-+	 *
-+	 * We unset ->source in the original fc because the dup needs it for
-+	 * mounting, and then once we free the dup it'll free ->source, so we
-+	 * need to make sure we're only pointing to it in one fc.
-+	 */
-+	refcount_inc(&ctx->refs);
-+	fc->fs_private = ctx;
-+	fc->source = src_fc->source;
-+	src_fc->source = NULL;
-+	return 0;
- }
- 
- static const struct fs_context_operations btrfs_fs_context_ops = {
- 	.parse_param	= btrfs_parse_param,
- 	.reconfigure	= btrfs_reconfigure,
-+	.get_tree	= btrfs_get_tree,
-+	.dup		= btrfs_dup_fs_context,
- 	.free		= btrfs_free_fs_context,
- };
- 
-@@ -2841,6 +3042,7 @@ static int __maybe_unused btrfs_init_fs_context(struct fs_context *fc)
- 	if (!ctx)
- 		return -ENOMEM;
- 
-+	refcount_set(&ctx->refs, 1);
- 	fc->fs_private = ctx;
- 	fc->ops = &btrfs_fs_context_ops;
- 
+-	/* Deprecated options */
+-	__fsparam(NULL, "recovery", Opt_recovery,
+-		  fs_param_neg_with_no|fs_param_deprecated, NULL),
+-
+ 	/* Debugging options */
+ 	fsparam_flag_no("enospc_debug", Opt_enospc_debug),
+ #ifdef CONFIG_BTRFS_DEBUG
+@@ -442,28 +433,6 @@ static int btrfs_parse_param(struct fs_context *fc,
+ 		else
+ 			btrfs_clear_opt(ctx->mount_opt, NOTREELOG);
+ 		break;
+-	case Opt_recovery:
+-		/*
+-		 * -o recovery used to be an alias for usebackuproot, and then
+-		 * norecovery was an alias for nologreplay, hence the different
+-		 * behaviors for negated and not.
+-		 */
+-		if (result.negated) {
+-			btrfs_warn(NULL,
+-				   "'norecovery' is deprecated, use 'rescue=nologreplay' instead");
+-			btrfs_set_opt(ctx->mount_opt, NOLOGREPLAY);
+-		} else {
+-			btrfs_warn(NULL,
+-				   "'recovery' is deprecated, use 'rescue=usebackuproot' instead");
+-			btrfs_set_opt(ctx->mount_opt, USEBACKUPROOT);
+-
+-			/*
+-			 * If we're loading the backup roots we can't trust the
+-			 * space cache.
+-			 */
+-			btrfs_set_opt(ctx->mount_opt, CLEAR_CACHE);
+-		}
+-		break;
+ 	case Opt_nologreplay:
+ 		btrfs_warn(NULL,
+ 			   "'nologreplay' is deprecated, use 'rescue=nologreplay' instead");
+@@ -534,10 +503,6 @@ static int btrfs_parse_param(struct fs_context *fc,
+ 	case Opt_rescan_uuid_tree:
+ 		btrfs_set_opt(ctx->mount_opt, RESCAN_UUID_TREE);
+ 		break;
+-	case Opt_inode_cache:
+-		btrfs_warn(NULL,
+-			   "the 'inode_cache' option is deprecated and has no effect since 5.11");
+-		break;
+ 	case Opt_clear_cache:
+ 		btrfs_set_opt(ctx->mount_opt, CLEAR_CACHE);
+ 		break;
 -- 
 2.41.0
 

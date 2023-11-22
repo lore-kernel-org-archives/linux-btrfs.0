@@ -1,49 +1,50 @@
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20230601.gappssmtp.com header.i=@toxicpanda-com.20230601.gappssmtp.com header.b="pGMUb/8f"
-Received: from mail-yw1-x112c.google.com (mail-yw1-x112c.google.com [IPv6:2607:f8b0:4864:20::112c])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0A4271B3
-	for <linux-btrfs@vger.kernel.org>; Wed, 22 Nov 2023 09:18:13 -0800 (PST)
-Received: by mail-yw1-x112c.google.com with SMTP id 00721157ae682-5cccd2d4c4dso5084717b3.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 22 Nov 2023 09:18:13 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20230601.gappssmtp.com header.i=@toxicpanda-com.20230601.gappssmtp.com header.b="jjCoQYd3"
+Received: from mail-yw1-x1135.google.com (mail-yw1-x1135.google.com [IPv6:2607:f8b0:4864:20::1135])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E657911F
+	for <linux-btrfs@vger.kernel.org>; Wed, 22 Nov 2023 09:18:14 -0800 (PST)
+Received: by mail-yw1-x1135.google.com with SMTP id 00721157ae682-5c8c8f731aaso54850617b3.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 22 Nov 2023 09:18:14 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1700673492; x=1701278292; darn=vger.kernel.org;
+        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1700673494; x=1701278294; darn=vger.kernel.org;
         h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=7fkA3lCitnD/iMODXrJglqig2YV4i0dKVL4SuP4eEJE=;
-        b=pGMUb/8f1dFLx0DwMUBL6XXb3RZNArGon9FeGD1pttolDVLcu2RBcAiKbtq8PBCbLy
-         QhsJyj6/rEv+ncpWmOlMs0oYB83ph8uOEIEfL38GrK/3EH1pg05CxZRTOJMxK/ZghPlO
-         jGuB7EdYLpRZA93gStt7xtOuWLbWFg4E1ZD7fKOzb10bGaWF2KrXZ7FYMeAmHVeicOJv
-         cs73jVInxg5+YOtTOSfUycQtxw5iB0UMWvASIQv4Nk1EGI7y1ucmVbszlTUXifsGWOUD
-         2LQ7qKxeBP4G6DXdB2hUrED+FAYYCgcMtHjdy+59V+BPoqbvnw3fP3MdVV4xzuCXasbP
-         lh7A==
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=In9hJLjWS6zK/dhcsmyoCh7QbuZA4L9Viz0TrhYQUBc=;
+        b=jjCoQYd3NOVH7PqObx0E9sPshXek2W87kqMhlivkOFAzun+i31fUDr4aGXnYIdczv7
+         f4bTKGWcnDLQbmlot10ZjAiRk5cPia75X3Ih7qc5HznkXZkBpxx0glrJKEWEBtj8cKLP
+         yOe1QA6m88LkejC4PnPhuXeb6hyO4RQ6UI6pZXFePUB8fBWuxIGhyO3uh4RaKB8f7TVW
+         VOQIiS+NoWfO3nqN6Jit1TV1ZZ+MflZ2HW40zJvayMRmG0cASIY+g0n9JD9sLiFjTtgb
+         OvDJsMDhwAdKmucpUjKIR9vJRgQtLak1/569Eq8ZgtGm4EH/yrivijGEmMX3RD3cj3Sj
+         PL0Q==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1700673492; x=1701278292;
+        d=1e100.net; s=20230601; t=1700673494; x=1701278294;
         h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
+         :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=7fkA3lCitnD/iMODXrJglqig2YV4i0dKVL4SuP4eEJE=;
-        b=BGJcdU3zLBEOlDmoc26/9apAOoNB46UNhtSvrO37NIrr987P/7Jmlp7B0bxtvHgM+j
-         YhINEe9INZKvulEFrhlfm9sifWkf7qyx/6eIIxh6qbEhI9r7AYt7EMgYudMtioH4CR3P
-         EUQK7+fjfeWVuvXUzt3nlQsbuiyKo9nQGYo0iQJydg+7T2BodGwsNnZ+PL5NOLs7Y7zM
-         HkrzE2UmQwi++1ygHLQ6UOBhLLoPaKfBuHhbp+tmAqrMlBPXswV9cOUZZ872KAJOLmQj
-         JQb4l2YZpJvL7oHk3ko6JXJCWhXIKq+Moyavt93aV/4E3hv/Z+DQxYZ7/SH4VMt6zJFf
-         yGHA==
-X-Gm-Message-State: AOJu0YzBFGaWIiEHkKmljTapy4/vxyuAX2RURJfgnrfPxZtK1Yqe+4Ho
-	HhZMuetiBzXAsSAyxpTdar4Qkm7r8BLkfZhqGnoRA4Bp
-X-Google-Smtp-Source: AGHT+IETYkKHOM4YSxxN9MqGSDgqilWwCR4w2yYYdc8jjcvyyeXwuXRPM2YH0vRkDFHrdkqkIuTa7Q==
-X-Received: by 2002:a81:5207:0:b0:5ca:15db:5c66 with SMTP id g7-20020a815207000000b005ca15db5c66mr2915764ywb.18.1700673492034;
-        Wed, 22 Nov 2023 09:18:12 -0800 (PST)
+        bh=In9hJLjWS6zK/dhcsmyoCh7QbuZA4L9Viz0TrhYQUBc=;
+        b=e37FR6jNKd3mSlRKQTvInT8l7VRBr6qPSXVa+KoXMVAiNGk2iyAkmTpLAwGNzh3dsc
+         hJ1ntoZJOh2q3/0309ElTLvC+wCLf8ibONrQ+om9XyN3EgDQkIO1IRty9uRSnvTsHphF
+         uWiCnaNxMV/x5k4/8tbpiPu4QfaYl5pycktK94qvEsB9Y1/CgESGrG0PeDxTzFzXjaXA
+         75bX9Ka9GPGy3bS/C48IJWrTEmcXB8p4m9CRcca2OtEHXBnECe04YXPWibk3oySbB882
+         vGCmcSZHcCldtdwnapPmsVh8S/7VRHd6Z9hA+G0WKPUvwp/lWPM6dCD2SgYASPgio4Gj
+         +P5g==
+X-Gm-Message-State: AOJu0YwFenjjC/QiMHbf7FkkkERItj7V90b6Rf4hX1+0lRJXQDXoOeWu
+	70AbHT4yYOYk2uwOSPLLzJlSVxYy1U0QrhuAxA0LM4I1
+X-Google-Smtp-Source: AGHT+IH4PbK+wpvGEbHamGbl2197DPtnAzDD3QykWVeYddDahHAe/wBRWEj3TfvywkSLL3lTHBLtTQ==
+X-Received: by 2002:a0d:e60f:0:b0:5cb:e94d:17e1 with SMTP id p15-20020a0de60f000000b005cbe94d17e1mr3018302ywe.10.1700673493993;
+        Wed, 22 Nov 2023 09:18:13 -0800 (PST)
 Received: from localhost (cpe-76-182-20-124.nc.res.rr.com. [76.182.20.124])
-        by smtp.gmail.com with ESMTPSA id g74-20020a0ddd4d000000b005cc636ddb1esm544961ywe.41.2023.11.22.09.18.11
+        by smtp.gmail.com with ESMTPSA id h7-20020a81dc07000000b005cb331f463esm1520443ywj.8.2023.11.22.09.18.13
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 22 Nov 2023 09:18:11 -0800 (PST)
+        Wed, 22 Nov 2023 09:18:13 -0800 (PST)
 From: Josef Bacik <josef@toxicpanda.com>
 To: linux-btrfs@vger.kernel.org,
 	kernel-team@fb.com
-Subject: [PATCH v3 08/19] btrfs: add fs_parameter definitions
-Date: Wed, 22 Nov 2023 12:17:44 -0500
-Message-ID: <3421ce0974e8ab4b156640d2c353e0a6cffd914f.1700673401.git.josef@toxicpanda.com>
+Cc: Christian Brauner <brauner@kernel.org>
+Subject: [PATCH v3 10/19] btrfs: add fs context handling functions
+Date: Wed, 22 Nov 2023 12:17:46 -0500
+Message-ID: <505b7f1e781ae401e1e774cbbd01222776a3f5d2.1700673401.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <cover.1700673401.git.josef@toxicpanda.com>
 References: <cover.1700673401.git.josef@toxicpanda.com>
@@ -55,170 +56,66 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-In order to convert to the new mount api we have to change how we do the
-mount option parsing.  For now we're going to duplicate these helpers to
-make it easier to follow, and then remove the old code once everything
-is in place.  This patch contains the re-definiton of all of our mount
-options into the new fs_parameter_spec format.
+We are going to use the fs context to hold the mount options, so
+allocate the btrfs_fs_context when we're asked to init the fs context,
+and free it in the free callback.
 
+Reviewed-by: Christian Brauner <brauner@kernel.org>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/super.c | 128 ++++++++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 127 insertions(+), 1 deletion(-)
+ fs/btrfs/super.c | 36 +++++++++++++++++++++++++++++++++++-
+ 1 file changed, 35 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index e4ac09bfe0fc..2366bcf7a23c 100644
+index b1764efbc8f5..ef7de1e6d242 100644
 --- a/fs/btrfs/super.c
 +++ b/fs/btrfs/super.c
-@@ -27,6 +27,7 @@
- #include <linux/crc32c.h>
- #include <linux/btrfs.h>
- #include <linux/security.h>
-+#include <linux/fs_parser.h>
- #include "messages.h"
- #include "delayed-inode.h"
- #include "ctree.h"
-@@ -135,7 +136,7 @@ enum {
- 	/* Debugging options */
- 	Opt_enospc_debug, Opt_noenospc_debug,
- #ifdef CONFIG_BTRFS_DEBUG
--	Opt_fragment_data, Opt_fragment_metadata, Opt_fragment_all,
-+	Opt_fragment, Opt_fragment_data, Opt_fragment_metadata, Opt_fragment_all,
- #endif
- #ifdef CONFIG_BTRFS_FS_REF_VERIFY
- 	Opt_ref_verify,
-@@ -225,6 +226,131 @@ static const match_table_t rescue_tokens = {
- 	{Opt_err, NULL},
+@@ -2650,10 +2650,44 @@ static void btrfs_kill_super(struct super_block *sb)
+ 	btrfs_free_fs_info(fs_info);
+ }
+ 
+-static const struct fs_context_operations btrfs_fs_context_ops __maybe_unused = {
++static void btrfs_free_fs_context(struct fs_context *fc)
++{
++	struct btrfs_fs_context *ctx = fc->fs_private;
++
++	if (!ctx)
++		return;
++
++	kfree(ctx->subvol_name);
++	kfree(ctx);
++}
++
++static const struct fs_context_operations btrfs_fs_context_ops = {
+ 	.parse_param	= btrfs_parse_param,
++	.free		= btrfs_free_fs_context,
  };
  
-+enum {
-+	Opt_fatal_errors_panic,
-+	Opt_fatal_errors_bug,
-+};
++static int __maybe_unused btrfs_init_fs_context(struct fs_context *fc)
++{
++	struct btrfs_fs_context *ctx;
 +
-+static const struct constant_table btrfs_parameter_fatal_errors[] = {
-+	{ "panic", Opt_fatal_errors_panic },
-+	{ "bug", Opt_fatal_errors_bug },
-+	{}
-+};
++	ctx = kzalloc(sizeof(struct btrfs_fs_context), GFP_KERNEL);
++	if (!ctx)
++		return -ENOMEM;
 +
-+enum {
-+	Opt_discard_sync,
-+	Opt_discard_async,
-+};
-+
-+static const struct constant_table btrfs_parameter_discard[] = {
-+	{ "sync", Opt_discard_sync },
-+	{ "async", Opt_discard_async },
-+	{}
-+};
-+
-+enum {
-+	Opt_space_cache_v1,
-+	Opt_space_cache_v2,
-+};
-+
-+static const struct constant_table btrfs_parameter_space_cache[] = {
-+	{ "v1", Opt_space_cache_v1 },
-+	{ "v2", Opt_space_cache_v2 },
-+	{}
-+};
-+
-+enum {
-+	Opt_rescue_usebackuproot,
-+	Opt_rescue_nologreplay,
-+	Opt_rescue_ignorebadroots,
-+	Opt_rescue_ignoredatacsums,
-+	Opt_rescue_parameter_all,
-+};
-+
-+static const struct constant_table btrfs_parameter_rescue[] = {
-+	{ "usebackuproot", Opt_rescue_usebackuproot },
-+	{ "nologreplay", Opt_rescue_nologreplay },
-+	{ "ignorebadroots", Opt_rescue_ignorebadroots },
-+	{ "ibadroots", Opt_rescue_ignorebadroots },
-+	{ "ignoredatacsums", Opt_rescue_ignoredatacsums },
-+	{ "idatacsums", Opt_rescue_ignoredatacsums },
-+	{ "all", Opt_rescue_parameter_all },
-+	{}
-+};
-+
-+#ifdef CONFIG_BTRFS_DEBUG
-+enum {
-+	Opt_fragment_parameter_data,
-+	Opt_fragment_parameter_metadata,
-+	Opt_fragment_parameter_all,
-+};
-+
-+static const struct constant_table btrfs_parameter_fragment[] = {
-+	{ "data", Opt_fragment_parameter_data },
-+	{ "metadata", Opt_fragment_parameter_metadata },
-+	{ "all", Opt_fragment_parameter_all },
-+	{}
-+};
++	ctx->thread_pool_size = min_t(unsigned long, num_online_cpus() + 2, 8);
++	ctx->max_inline = BTRFS_DEFAULT_MAX_INLINE;
++	ctx->commit_interval = BTRFS_DEFAULT_COMMIT_INTERVAL;
++	ctx->subvol_objectid = BTRFS_FS_TREE_OBJECTID;
++#ifndef CONFIG_BTRFS_FS_POSIX_ACL
++	ctx->noacl = true;
 +#endif
 +
-+static const struct fs_parameter_spec btrfs_fs_parameters[] __maybe_unused = {
-+	fsparam_flag_no("acl", Opt_acl),
-+	fsparam_flag("clear_cache", Opt_clear_cache),
-+	fsparam_u32("commit", Opt_commit_interval),
-+	fsparam_flag("compress", Opt_compress),
-+	fsparam_string("compress", Opt_compress_type),
-+	fsparam_flag("compress-force", Opt_compress_force),
-+	fsparam_string("compress-force", Opt_compress_force_type),
-+	fsparam_flag("degraded", Opt_degraded),
-+	fsparam_string("device", Opt_device),
-+	fsparam_enum("fatal_errors", Opt_fatal_errors, btrfs_parameter_fatal_errors),
-+	fsparam_flag_no("flushoncommit", Opt_flushoncommit),
-+	fsparam_flag_no("inode_cache", Opt_inode_cache),
-+	fsparam_string("max_inline", Opt_max_inline),
-+	fsparam_flag_no("barrier", Opt_barrier),
-+	fsparam_flag_no("datacow", Opt_datacow),
-+	fsparam_flag_no("datasum", Opt_datasum),
-+	fsparam_flag_no("autodefrag", Opt_defrag),
-+	fsparam_flag_no("discard", Opt_discard),
-+	fsparam_enum("discard", Opt_discard_mode, btrfs_parameter_discard),
-+	fsparam_u32("metadata_ratio", Opt_ratio),
-+	fsparam_flag("rescan_uuid_tree", Opt_rescan_uuid_tree),
-+	fsparam_flag("skip_balance", Opt_skip_balance),
-+	fsparam_flag_no("space_cache", Opt_space_cache),
-+	fsparam_enum("space_cache", Opt_space_cache_version, btrfs_parameter_space_cache),
-+	fsparam_flag_no("ssd", Opt_ssd),
-+	fsparam_flag_no("ssd_spread", Opt_ssd_spread),
-+	fsparam_string("subvol", Opt_subvol),
-+	fsparam_flag("subvol=", Opt_subvol_empty),
-+	fsparam_u64("subvolid", Opt_subvolid),
-+	fsparam_u32("thread_pool", Opt_thread_pool),
-+	fsparam_flag_no("treelog", Opt_treelog),
-+	fsparam_flag("user_subvol_rm_allowed", Opt_user_subvol_rm_allowed),
++	fc->fs_private = ctx;
++	fc->ops = &btrfs_fs_context_ops;
 +
-+	/* Rescue options */
-+	fsparam_enum("rescue", Opt_rescue, btrfs_parameter_rescue),
-+	/* Deprecated, with alias rescue=nologreplay */
-+	__fsparam(NULL, "nologreplay", Opt_nologreplay, fs_param_deprecated,
-+		  NULL),
-+	/* Deprecated, with alias rescue=usebackuproot */
-+	__fsparam(NULL, "usebackuproot", Opt_usebackuproot, fs_param_deprecated,
-+		  NULL),
++	return 0;
++}
 +
-+	/* Deprecated options */
-+	__fsparam(NULL, "recovery", Opt_recovery,
-+		  fs_param_neg_with_no|fs_param_deprecated, NULL),
-+
-+	/* Debugging options */
-+	fsparam_flag_no("enospc_debug", Opt_enospc_debug),
-+#ifdef CONFIG_BTRFS_DEBUG
-+	fsparam_enum("fragment", Opt_fragment, btrfs_parameter_fragment),
-+#endif
-+#ifdef CONFIG_BTRFS_FS_REF_VERIFY
-+	fsparam_flag("ref_verify", Opt_ref_verify),
-+#endif
-+	{}
-+};
-+
- static bool check_ro_option(struct btrfs_fs_info *fs_info, unsigned long opt,
- 			    const char *opt_name)
- {
+ static struct file_system_type btrfs_fs_type = {
+ 	.owner		= THIS_MODULE,
+ 	.name		= "btrfs",
 -- 
 2.41.0
 

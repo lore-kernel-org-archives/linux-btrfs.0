@@ -1,46 +1,46 @@
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="UDCLdEd+"
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="R+9dpOg/"
 Received: from esa3.hgst.iphmx.com (esa3.hgst.iphmx.com [216.71.153.141])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A19EAC1;
-	Thu, 23 Nov 2023 07:48:02 -0800 (PST)
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 60E7310C7;
+	Thu, 23 Nov 2023 07:48:05 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1700754483; x=1732290483;
-  h=from:subject:date:message-id:mime-version:
-   content-transfer-encoding:to:cc;
-  bh=CTX5KvvgdrTsg7p8OnAZgf7FxwGXh2z+Mhi27UJgJ4Q=;
-  b=UDCLdEd+Bb6nwhBto1XjllUAqrvU1edxO9a+fExEnSLQW4lnN8EROI9l
-   w6EQcyjtIwumKy8n+40IQ0djA7cxnw/V0I6zq5DUxr3GyikMKeZW+KxP6
-   eUezrO6fKtZcrg31SIf7tK1owY/P/FGA20SWN0wIdXOyjJLQ6+Tda0Pmn
-   1LdLG28qRMsP+eDq3ZwQ1YS77rmydFS1USI4PsBjsXkJ+P3iXep/N4Bxk
-   S4HF2KC4trPGUFpr2czUAh2zAhNvRLdEcZDU8ZQunIUwkwsgJ9BfcQfRB
-   sIG3tI2D9yh6V6xdNSf+qr86Drw/p4Fi5nCqdziJyFEEbzXohdo534tTR
-   A==;
-X-CSE-ConnectionGUID: IbuvLynlSvKRjrA8ik4ZfQ==
-X-CSE-MsgGUID: J6IRFKNHRK2x6R8J40l5pw==
+  t=1700754485; x=1732290485;
+  h=from:date:subject:mime-version:content-transfer-encoding:
+   message-id:references:in-reply-to:to:cc;
+  bh=wDRvUXJ6mVtVEukoOw489ax7uRNihNJAyUogAfyAXjo=;
+  b=R+9dpOg/6Hp3aHGsBdmm0rvSxUfETtUxXGRJrfe4pDF0I6dES9gQQwUl
+   dkNlQNcTF++HUIZM+w9PsFDUVlMS9/USXW5czV5kJbRtvM3JqtNeFJ0r+
+   NO9s6I8T6b/LOnf7i3At4Kw7vGu30xBtR+Uh4C8MarjCLlQ6UwrMh2vpD
+   mkhXgQ/EfojE1WhN2sCvUpuZwfQd/lrJ3NwnlHtWSEKO2k7jobRfzZNyq
+   qoLGgkUGtV01hW4JAzdEs0x8ILESpNdQmixRAElFypUSm+opPCtKprNA9
+   oqjKuh0aY81loE4aa3ZZ9cEeGOYUCUswYbfoKGIa1qhOGcswRbhbHHNvU
+   Q==;
+X-CSE-ConnectionGUID: qm7DTtz6QSmbuesitw53/A==
+X-CSE-MsgGUID: dn+w52BeRFuwgv74kXNuBA==
 X-IronPort-AV: E=Sophos;i="6.04,222,1695657600"; 
-   d="scan'208";a="3129197"
+   d="scan'208";a="3129202"
 Received: from h199-255-45-14.hgst.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 23 Nov 2023 23:47:25 +0800
-IronPort-SDR: yvlYE0fFMMVn3+OAAEFRErHaPTmuEQ5myLsYHxfF3iol+8AHdcUbmeGS89U5f4xQNA5TVkSzeu
- imaALadapih9KbA3Azcqzyj5SMOZDo4I6tcjV8RNCLAcVTmM/9PfkE0hALStEtqSd8kUpTQMbu
- JV5IOXhESeEnopnqo7pWqV3u1sDOiuuQNywsP7mtOkcbSyz6j+KPHQHSOGh3hzUefO6MVVsana
- nMQYv7ocbzXqtTrOxrD31ahou2zQ9YAG0LXZFJVpgeltfKza9r+HeHqi+yoeor7n+2uGzEB3nm
- J+0=
+  by ob1.hgst.iphmx.com with ESMTP; 23 Nov 2023 23:47:30 +0800
+IronPort-SDR: iQWjHGWnJ2d3Al3koAjvSDHT6ncLcFx6OLwirWGTxoRWOVkAAG93GoZ/J9gKGFZt73/bndgdYb
+ gldZet+AtQDEyrOjMC1YoCj68EWhgrYY0HaoxJ7AitfbSfN8H3tb/948RLhT85c1ffLoeP/mMx
+ ghclrDD7DJHG/tswgccqFZNyy/O/hUjqwQgw2jGj4r5mbKlGoUS40uUm2WaDEzkALoj4Lgyb9h
+ fMFVT59YyOBvleveehkFzLor6S9ORxp7ihkMHqgJT3Q5d/z8RAANpgxrfGcia5xcVMuhWv4XTY
+ HFI=
 Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 23 Nov 2023 06:58:41 -0800
-IronPort-SDR: VlVTdledMOtlAk9w60uDMeGBo9FxlsO6K5T5qVN8bPQl8PugdQqlRiY00niArHMbtaAR7mxxJG
- 3z+iVAlMl4ffZzEG8fEcEvzivoLBSNPTcafCoIPFZztExKwHDQ8ojNjbN5bpSM363YvkfP41Wv
- cxHdd7/hZ/urSxenMq5r/CskSg52cr9h/Pvee1HYEwBUJhtDJRLzbpDT4eV702tJ6Ti8u1oA7T
- jP0Q5PF/zkOw0pu0lCTRzBCbBiRfDG9tNcbr2SIrSZyot2uFfeUz7GEVZt6m81CfJ+fvql98FX
- WUc=
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 23 Nov 2023 06:58:46 -0800
+IronPort-SDR: lsfs8oPCU2giWsDgpzJxi9WE8DUXV7CFkSxklSygvHSG9EcNPfeN4Q4gYK83j5EJMjQauUSJbN
+ 0LuCQNzc8GKl7XOJHWw3MJ+mLXoUhI5RZcpXcSLj930p2e7dQtsmHT4fVu7TAtaRYQTXgcM6Zy
+ 6IWKfhkMtvD1srEUhdqhmdJ/3i9CZu9u99dUftFIVRXFOML7abbd3wAoYXeS/ooUCeN2BPlt5p
+ 7neHxvd2fgcTfUu0rwpk/OSaWS44EGWxlLLPpceVXBfNJ7SmN8Phgzsj/OnS4lVDNSIPfCzto3
+ JsU=
 WDCIronportException: Internal
 Received: from unknown (HELO redsun91.ssa.fujisawa.hgst.com) ([10.149.66.6])
-  by uls-op-cesaip01.wdc.com with ESMTP; 23 Nov 2023 07:47:24 -0800
+  by uls-op-cesaip01.wdc.com with ESMTP; 23 Nov 2023 07:47:27 -0800
 From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH v2 0/5] btrfs: zoned: remove extent_buffer redirtying
-Date: Thu, 23 Nov 2023 07:47:14 -0800
-Message-Id: <20231123-josef-generic-163-v2-0-ed1a79a8e51e@wdc.com>
+Date: Thu, 23 Nov 2023 07:47:16 -0800
+Subject: [PATCH v2 2/5] btrfs: zoned: don't clear dirty flag of extent
+ buffer
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -49,71 +49,105 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-X-B4-Tracking: v=1; b=H4sIAAN0X2UC/22NQQrCMBBFr1Jm7UgmiZq68h7SRU0n7Qg2kkhVS
- u9uLLhz+T6892fInIQzHKsZEk+SJY4F9KYCP7RjzyhdYdBKGyKt8BozB+x5LJ5H2hsMtguW24v
- 2tYPi3RMHea3Nc1N4kPyI6b1eTPRdfzX6U5sIFSpbszmQ2zlLp2fntz7eoFmW5QNoHvc5sAAAA
- A==
+Message-Id: <20231123-josef-generic-163-v2-2-ed1a79a8e51e@wdc.com>
+References: <20231123-josef-generic-163-v2-0-ed1a79a8e51e@wdc.com>
+In-Reply-To: <20231123-josef-generic-163-v2-0-ed1a79a8e51e@wdc.com>
 To: Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>, 
  David Sterba <dsterba@suse.com>
 Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, 
  Christoph Hellwig <hch@lst.de>, Naohiro Aota <Naohiro.Aota@wdc.com>, 
  Johannes Thumshirn <johannes.thumshirn@wdc.com>
 X-Mailer: b4 0.12.3
-X-Developer-Signature: v=1; a=ed25519-sha256; t=1700754443; l=1956;
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1700754443; l=3002;
  i=johannes.thumshirn@wdc.com; s=20230613; h=from:subject:message-id;
- bh=CTX5KvvgdrTsg7p8OnAZgf7FxwGXh2z+Mhi27UJgJ4Q=;
- b=+GlT1k7R+eeutsowVFxL6yS5MvlOHpSZVEv3B/yWnSKMMRTx6jtgIymMc/IrkRzr2O/rbECvR
- esX9BpccjubCXAj8GMFlhvzMXbti+8yFaVAWChYlXo38ExV9ZVMJhSV
+ bh=wDRvUXJ6mVtVEukoOw489ax7uRNihNJAyUogAfyAXjo=;
+ b=sWqCwaHo+SgYIPyXduOpD5Wi4szyqt/vJ2WunGbdgKcWSpUf3mkQvzvJRN8D03LagqUwYT2YG
+ ExQbTtlzkgRBdoyFKyIELaHsoyYWiZUrx4ehZgrX39GtkPzHYsyrjo1
 X-Developer-Key: i=johannes.thumshirn@wdc.com; a=ed25519;
  pk=TGmHKs78FdPi+QhrViEvjKIGwReUGCfa+3LEnGoR2KM=
 
-Since the beginning of zoned mode, I've promised Josef to get rid of the
-extent_buffer redirtying, but never actually got around to doing so.
+One a zoned filesystem, never clear the dirty flag of an extent buffer,
+but instead mark it as zeroout.
 
-Then 2 weeks ago our CI has hit an ASSERT() in this area and I started to look
-into it again. After some discussion with Christoph we came to the conclusion
-to finally take the time and get rid of the extent_buffer redirtying once and
-for all.
+On writeout, when encountering a marked extent_buffer, zero it out.
 
-Patch one renames EXTENT_BUFFER_NO_CHECK into EXTENT_BUFFER_ZONED_ZEROOUT,
-because this fits the new model somewhat better.
-
-Number two sets the cancel bit instead of clearing the dirty bit from a zoned
-extent_buffer.
-
-Number three removes the last remaining bits of btrfs_redirty_list_add().
-
-The last two patches in this series are just trivial cleanups I came across
-while looking at the code.
-
+Reviewed-by: Christoph Hellwig <hch@lst.de>
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
-Changes in v2:
-- Rename EXTENT_BUFFER_CANCELLED to EXTENT_BUFFER_ZONED_ZEROOUT
-- Add comments why we're marking the buffer as zeroout and zero it.
-- Add Reviews from Josef and Christoph
-- Link to v1: https://lore.kernel.org/r/20231121-josef-generic-163-v1-0-049e37185841@wdc.com
+ fs/btrfs/disk-io.c   |  7 ++++++-
+ fs/btrfs/extent_io.c | 16 ++++++++++++++--
+ fs/btrfs/zoned.c     |  3 ++-
+ 3 files changed, 22 insertions(+), 4 deletions(-)
 
----
-Johannes Thumshirn (5):
-      btrfs: rename EXTENT_BUFFER_NO_CHECK to EXTENT_BUFFER_ZONED_ZEROOUT
-      btrfs: zoned: don't clear dirty flag of extent buffer
-      btrfs: remove now unneeded btrfs_redirty_list_add
-      btrfs: use memset_page instead of opencoding it
-      btrfs: reflow btrfs_free_tree_block
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 460b88526f56..9c09062d3d0a 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -254,8 +254,13 @@ blk_status_t btree_csum_one_bio(struct btrfs_bio *bbio)
+ 	if (WARN_ON_ONCE(bbio->bio.bi_iter.bi_size != eb->len))
+ 		return BLK_STS_IOERR;
+ 
++	/*
++	 * If an extent_buffer is marked as EXTENT_BUFFER_ZONED_ZEROOUT, don't
++	 * checksum it but zero-out its content. This is done to preserve
++	 * ordering of I/O without unnecessarily writing out data.
++	 */
+ 	if (test_bit(EXTENT_BUFFER_ZONED_ZEROOUT, &eb->bflags)) {
+-		WARN_ON_ONCE(found_start != 0);
++		memzero_extent_buffer(eb, 0, eb->len);
+ 		return BLK_STS_OK;
+ 	}
+ 
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 49514ef829fb..c378094b5cc8 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3748,6 +3748,20 @@ void btrfs_clear_buffer_dirty(struct btrfs_trans_handle *trans,
+ 	if (trans && btrfs_header_generation(eb) != trans->transid)
+ 		return;
+ 
++	/*
++	 * Instead of clearing the dirty flag off of the buffer, mark it as
++	 * EXTENT_BUFFER_ZONED_ZEROOUT. This allows us to preserve
++	 * write-ordering in zoned mode, without the need to later re-dirty
++	 * the extent_buffer.
++	 *
++	 * The actual zeroout of the buffer will happen later in
++	 * btree_csum_one_bio.
++	 */
++	if (btrfs_is_zoned(fs_info)) {
++		set_bit(EXTENT_BUFFER_ZONED_ZEROOUT, &eb->bflags);
++		return;
++	}
++
+ 	if (!test_and_clear_bit(EXTENT_BUFFER_DIRTY, &eb->bflags))
+ 		return;
+ 
+@@ -4139,8 +4153,6 @@ static void __write_extent_buffer(const struct extent_buffer *eb,
+ 	/* For unmapped (dummy) ebs, no need to check their uptodate status. */
+ 	const bool check_uptodate = !test_bit(EXTENT_BUFFER_UNMAPPED, &eb->bflags);
+ 
+-	WARN_ON(test_bit(EXTENT_BUFFER_ZONED_ZEROOUT, &eb->bflags));
+-
+ 	if (check_eb_range(eb, start, len))
+ 		return;
+ 
+diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
+index b9bfde6fb929..ed8e002b33e7 100644
+--- a/fs/btrfs/zoned.c
++++ b/fs/btrfs/zoned.c
+@@ -1722,7 +1722,8 @@ void btrfs_redirty_list_add(struct btrfs_transaction *trans,
+ 	    btrfs_header_flag(eb, BTRFS_HEADER_FLAG_WRITTEN))
+ 		return;
+ 
+-	ASSERT(!test_bit(EXTENT_BUFFER_DIRTY, &eb->bflags));
++	ASSERT(test_bit(EXTENT_BUFFER_DIRTY, &eb->bflags));
++	ASSERT(test_bit(EXTENT_BUFFER_ZONED_ZEROOUT, &eb->bflags));
+ 
+ 	memzero_extent_buffer(eb, 0, eb->len);
+ 	set_bit(EXTENT_BUFFER_ZONED_ZEROOUT, &eb->bflags);
 
- fs/btrfs/disk-io.c     |   9 ++++-
- fs/btrfs/extent-tree.c | 102 ++++++++++++++++++++++++-------------------------
- fs/btrfs/extent_io.c   |  18 +++++++--
- fs/btrfs/extent_io.h   |   3 +-
- fs/btrfs/tree-log.c    |   1 -
- fs/btrfs/zoned.c       |  16 --------
- fs/btrfs/zoned.h       |   5 ---
- 7 files changed, 74 insertions(+), 80 deletions(-)
----
-base-commit: 592afe8e8b7ceee58107757fd29ff3290e6539e3
-change-id: 20231120-josef-generic-163-f4df4eab2c98
-
-Best regards,
 -- 
-Johannes Thumshirn <johannes.thumshirn@wdc.com>
+2.41.0
 

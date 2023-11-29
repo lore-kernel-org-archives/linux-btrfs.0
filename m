@@ -1,105 +1,128 @@
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="MjZWe4mM";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="TpC8O/Qe"
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2a07:de40:b251:101:10:150:64:2])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D7791D48;
-	Wed, 29 Nov 2023 04:02:56 -0800 (PST)
-Received: from imap2.dmz-prg2.suse.org (imap2.dmz-prg2.suse.org [10.150.64.98])
+	dkim=pass (2048-bit key) header.d=marcan.st header.i=@marcan.st header.b="Bv9W7brZ"
+Received: from mail.marcansoft.com (marcansoft.com [212.63.210.85])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2626FBA
+	for <linux-btrfs@vger.kernel.org>; Wed, 29 Nov 2023 04:58:45 -0800 (PST)
+Received: from [127.0.0.1] (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 855351FCFE;
-	Wed, 29 Nov 2023 12:02:53 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1701259373;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=Yw/XIw5coCIlNnynmsFGRhp35bs4mVOy79EN53352Ts=;
-	b=MjZWe4mMM4IznNoH/ARywYBUkxAhkLShnVSX5yiBWbXQ9WgoA62Dl71DEWCtz71PfDnKwn
-	WhL2UpDr7bsj4Z0bntUPXeSCgQQmoBTAIClZINGzm3WvKmi8vaLO1kO24/l4SGrCjwZbTw
-	i8C7VsuORd21IhbuF7odJBb8uQd8y6w=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1701259373;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=Yw/XIw5coCIlNnynmsFGRhp35bs4mVOy79EN53352Ts=;
-	b=TpC8O/QePgE9pVjDkyADQ8SgFGJT9R1eTdkuKNDeLnGV3Sv4VLofH5WJ2mGnYtYvIhzhcI
-	4CGyrACd7n9ZMPCQ==
-Received: from imap2.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap2.dmz-prg2.suse.org (Postfix) with ESMTPS id 66E341336F;
-	Wed, 29 Nov 2023 12:02:53 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([10.150.64.162])
-	by imap2.dmz-prg2.suse.org with ESMTPSA
-	id OibhGG0oZ2X/AgAAn2gu4w
-	(envelope-from <dsterba@suse.cz>); Wed, 29 Nov 2023 12:02:53 +0000
-Date: Wed, 29 Nov 2023 12:55:36 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Arnd Bergmann <arnd@kernel.org>
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-	David Sterba <dsterba@suse.com>, Arnd Bergmann <arnd@arndb.de>,
-	Linux Kernel Functional Testing <lkft@linaro.org>,
-	Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-	Qu Wenruo <wqu@suse.com>, Anand Jain <anand.jain@oracle.com>,
-	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] btrfs: fix btrfs_parse_param() build failure
-Message-ID: <20231129115536.GQ18929@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20231129120036.3908495-1-arnd@kernel.org>
+	(Authenticated sender: marcan@marcan.st)
+	by mail.marcansoft.com (Postfix) with ESMTPSA id 3E97D46CC5;
+	Wed, 29 Nov 2023 12:58:38 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=marcan.st; s=default;
+	t=1701262722; bh=dvn/AHV4uV8LPPwOHZFferkVUsOTGQDImvgHa8sr44U=;
+	h=Date:Subject:To:Cc:References:From:In-Reply-To;
+	b=Bv9W7brZR73xkZYE4DRHPPgyh5FxeTnhqnjT79A/q6vCY86PdZVwRa/Cofs72HEIw
+	 UMcrJyT3VPVJtTUFjJGUtMo1jMGqU6b9Aq6fwa0NzAaznqxCzybW4yCv0+BpXJ0hal
+	 0woYoCWApzvo5uMfy6rVfq7wyTEOifxxCRyyuD2woV5L4C7siYRvqDysxYkKbSPKKM
+	 J0EXjuGvUjCVEeEQsucTDt7JS/SM6miw11zdg4Ntjm9uAcOFsqqajjvGoSJ/2aTYsi
+	 XizWw+HNjANV8AjWTor3iFID1Ohiul+DDU5AvPcszk042hLI5nudWE+UBt+rkpIn1j
+	 QUsCaW9Q+ZqQA==
+Message-ID: <aaee6d4f-4e89-4bc7-8a7e-03ffc8b81a34@marcan.st>
+Date: Wed, 29 Nov 2023 21:58:35 +0900
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20231129120036.3908495-1-arnd@kernel.org>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-Authentication-Results: smtp-out2.suse.de;
-	none
-X-Spam-Level: 
-X-Spamd-Result: default: False [-1.02 / 50.00];
-	 ARC_NA(0.00)[];
-	 HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	 RCVD_VIA_SMTP_AUTH(0.00)[];
-	 FROM_HAS_DN(0.00)[];
-	 TO_DN_SOME(0.00)[];
-	 TO_MATCH_ENVRCPT_ALL(0.00)[];
-	 NEURAL_HAM_LONG(-1.00)[-1.000];
-	 MIME_GOOD(-0.10)[text/plain];
-	 REPLYTO_ADDR_EQ_FROM(0.00)[];
-	 RCVD_COUNT_THREE(0.00)[3];
-	 DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	 NEURAL_HAM_SHORT(-0.20)[-1.000];
-	 RCPT_COUNT_SEVEN(0.00)[11];
-	 DBL_BLOCKED_OPENRESOLVER(0.00)[linaro.org:email,arndb.de:email];
-	 FUZZY_BLOCKED(0.00)[rspamd.com];
-	 FROM_EQ_ENVFROM(0.00)[];
-	 MIME_TRACE(0.00)[0:+];
-	 RCVD_TLS_ALL(0.00)[];
-	 BAYES_HAM(-0.02)[54.68%]
-X-Spam-Score: -1.02
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v4 0/1] Enforce 4k sectorize by default for mkfs
+Content-Language: en-US
+To: Neal Gompa <neal@gompa.dev>, Qu Wenruo <wqu@suse.com>
+Cc: Josef Bacik <josef@toxicpanda.com>,
+ Linux BTRFS Development <linux-btrfs@vger.kernel.org>,
+ Anand Jain <anand.jain@oracle.com>, Qu Wenruo <quwenruo.btrfs@gmx.com>,
+ David Sterba <dsterba@suse.cz>, Sven Peter <sven@svenpeter.dev>,
+ Davide Cavalca <davide@cavalca.name>, Jens Axboe <axboe@fb.com>,
+ Asahi Lina <lina@asahilina.net>, Asahi Linux <asahi@lists.linux.dev>
+References: <20231116160235.2708131-1-neal@gompa.dev>
+ <20231127160705.GC2366036@perftesting>
+ <fb78d997-cb99-4b98-8042-bdcdbff22b88@marcan.st>
+ <f229058e-4f5d-4bd0-9016-41b133688443@suse.com>
+ <CAEg-Je8r0K0k8UMcAafxXyrNuxJrxJbGhkwvo10pUw+rxhCa8g@mail.gmail.com>
+From: Hector Martin <marcan@marcan.st>
+In-Reply-To: <CAEg-Je8r0K0k8UMcAafxXyrNuxJrxJbGhkwvo10pUw+rxhCa8g@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 
-On Wed, Nov 29, 2023 at 01:00:29PM +0100, Arnd Bergmann wrote:
-> From: Arnd Bergmann <arnd@arndb.de>
-> 
-> With CONFIG_BTRFS_FS_POSIX_ACL disabled, the newly added function fails
-> to build because of an apparent broken rebase:
-> 
-> fs/btrfs/super.c: In function 'btrfs_parse_param':
-> fs/btrfs/super.c:416:25: error: 'ret' undeclared (first use in this function); did you mean 'net'?
->   416 |                         ret = -EINVAL;
->       |                         ^~~
-> 
-> Just return the error directly here instead of the incorrect unwinding.
-> 
-> Fixes: a7293bf27082 ("btrfs: add parse_param callback for the new mount api")
-> Reported-by: Linux Kernel Functional Testing <lkft@linaro.org>
-> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 
-Should be fixed in today's for-next snapshot, thanks.
+
+On 2023/11/29 6:24, Neal Gompa wrote:
+> On Tue, Nov 28, 2023 at 2:57 PM Qu Wenruo <wqu@suse.com> wrote:
+>>
+>>
+>>
+>> On 2023/11/29 01:31, Hector Martin wrote:
+>>>
+>>>
+>>> On 2023/11/28 1:07, Josef Bacik wrote:
+>>>> On Thu, Nov 16, 2023 at 11:02:23AM -0500, Neal Gompa wrote:
+>>>>> The Fedora Asahi SIG[0] is working on bringing up support for
+>>>>> Apple Silicon Macintosh computers through the Fedora Asahi Remix[1].
+>>>>>
+>>>>> Apple Silicon Macs are unusual in that they currently require 16k
+>>>>> page sizes, which means that the current default for mkfs.btrfs(8)
+>>>>> makes a filesystem that is unreadable on x86 PCs and most other ARM
+>>>>> PCs.
+>>>>>
+>>>>> This is now even more of a problem within Apple Silicon Macs as it is now
+>>>>> possible to nest 4K Fedora Linux VMs on 16K Fedora Asahi Remix machines to
+>>>>> enable performant x86 emulation[2] and the host storage needs to be compatible
+>>>>> for both environments.
+>>>>>
+>>>>> Thus, I'd like to see us finally make the switchover to 4k sectorsize
+>>>>> for new filesystems by default, regardless of page size.
+>>>>>
+>>>>> The initial test run by Hector Martin[3] at request of Qu Wenruo
+>>>>> looked promising[4], and we've been running with this behavior on
+>>>>> Fedora Linux since Fedora Linux 36 (at around 6.2) with no issues.
+>>>>>
+>>>>
+>>>> This is a good change and well documented.  This isn't being ignored, it's just
+>>>> a policy change that we have to be conservative about considering.  We only in
+>>>> the last 3 months have added a Apple Silicon machine to our testing
+>>>> infrastructure (running Fedora Asahi fwiw) to make sure we're getting consistent
+>>>> subpage-blocksize testing.  Generally speaking it's been fine, we've fixed a few
+>>>> things and haven't broken anything, but it's still comes with some risks when
+>>>> compared to the default of using the pagesize.
+>>>>
+>>>> We will continue to discuss this amongst ourselves and figure out what we think
+>>>> would be a reasonable timeframe to make this switch and let you know what we're
+>>>> thinking ASAP.  Thanks,
+>>>
+>>> Reminder that the Raspberry Pi 5 is also shipping with 16K pages by
+>>> default now. The clock is ticking for an ever-growing stream of people
+>>> upset that they can't mount/data-rescue/etc their rPi5 NAS disks from an
+>>> x86 machine ;)
+>>
+>> As long as they are using 5.15+ kernel, they should be able to mount and
+>> use their RPI NAS with disks from x86 machines.
+>>
+>> The change is only for the default mkfs options.
+>>
+> 
+> Right, and the thing is, it's fairly common for the disks to be
+> formatted from a Raspberry Pi. So until some kind of support for using
+> any sector size on any architecture regardless of page size lands,
+> this is going to be a big problem.
+> 
+
+Yup, I meant what I said.
+
+Someone sets up a rPi5 as a NAS, formats the disk from it, as you would
+normally when setting up such a thing from scratch. Later, the rPi stops
+working, as rPis often do. This person's data is now *completely
+inaccessible* until they find another Raspberry Pi 5 or an Apple Silicon
+laptop.
+
+This is going to be *common*. And since the 16K decision is made at
+format time, these people are going to be oblivious until they find
+themselves with an urgent need to acquire a Raspberry Pi 5 to access
+their data at all, and then they're going to be mad. So the longer you
+wait to flip the switch, the more people unaware of their own data's
+fragile accessibility condition you will build up, and the more upset
+people you're going to have even long after the change was finally made.
+
+- Hector

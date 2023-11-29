@@ -1,78 +1,85 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Authentication-Results: smtp.subspace.kernel.org; dkim=none
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2a07:de40:b251:101:10:150:64:1])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 99BDDD48
+	for <linux-btrfs@vger.kernel.org>; Wed, 29 Nov 2023 04:01:21 -0800 (PST)
+Received: from imap2.dmz-prg2.suse.org (imap2.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:98])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5693D12B72
-	for <linux-btrfs@vger.kernel.org>; Wed, 29 Nov 2023 12:00:41 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="lR8pczz+"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9C8D1C433C8;
-	Wed, 29 Nov 2023 12:00:39 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1701259241;
-	bh=n2nAGxbaM4bdUExVSTPbG6T9Ltt30lIhFwcPWN7vNO8=;
-	h=From:To:Cc:Subject:Date:From;
-	b=lR8pczz+YIOlEBwSdhbDA/LVQ12dQ2u9nO+Hghy/NF/HjnaDVkOfmyvbPCtzx7TKg
-	 tQWbDZW02R9WyulystAPJr+vQwm9E98sAFJv5kRXaIkXd+ZnPNAWfTEfzxWLqheHuM
-	 4XpHvHWTUBF6lNDHTpJYZlWvu2RQ8g81HvWYN5OM5uHsSub98AtYfGNS+Xi/NMqrw8
-	 uQL/2hZv4HFjz2qVRw77alR1CqHdnpi5FHjmogBrOj/ZkN8s1SdDRdkiqmdkbp9lAQ
-	 RCXD4F6J6Oa9zxjbVD6MCca/jPDdpkpwg1QIRtnAe+2uIjEcjJXTAe1YETnOo72cB4
-	 ySy5sSvZnSVWA==
-From: Arnd Bergmann <arnd@kernel.org>
-To: Chris Mason <clm@fb.com>,
-	Josef Bacik <josef@toxicpanda.com>,
-	David Sterba <dsterba@suse.com>
-Cc: Arnd Bergmann <arnd@arndb.de>,
-	Linux Kernel Functional Testing <lkft@linaro.org>,
-	Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-	Qu Wenruo <wqu@suse.com>,
-	Anand Jain <anand.jain@oracle.com>,
-	linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-Subject: [PATCH] btrfs: fix btrfs_parse_param() build failure
-Date: Wed, 29 Nov 2023 13:00:29 +0100
-Message-Id: <20231129120036.3908495-1-arnd@kernel.org>
-X-Mailer: git-send-email 2.39.2
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 07C5F21ACF;
+	Wed, 29 Nov 2023 12:01:20 +0000 (UTC)
+Received: from imap2.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap2.dmz-prg2.suse.org (Postfix) with ESMTPS id E3F611376F;
+	Wed, 29 Nov 2023 12:01:19 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([10.150.64.162])
+	by imap2.dmz-prg2.suse.org with ESMTPSA
+	id OLxpNw8oZ2WXAgAAn2gu4w
+	(envelope-from <dsterba@suse.cz>); Wed, 29 Nov 2023 12:01:19 +0000
+Date: Wed, 29 Nov 2023 12:54:06 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: allocate btrfs_inode::file_extent_tree only
+ without NO_HOLES
+Message-ID: <20231129115406.GO18929@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20231128212307.1838-1-dsterba@suse.com>
+ <35b15f56-c687-d68e-a0f3-aba8445c8ed7@oracle.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <35b15f56-c687-d68e-a0f3-aba8445c8ed7@oracle.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-Spamd-Bar: ++++++++++++++
+X-Spam-Score: 14.51
+X-Rspamd-Server: rspamd1
+Authentication-Results: smtp-out1.suse.de;
+	dkim=none;
+	spf=softfail (smtp-out1.suse.de: 2a07:de40:b281:104:10:150:64:98 is neither permitted nor denied by domain of dsterba@suse.cz) smtp.mailfrom=dsterba@suse.cz;
+	dmarc=none
+X-Rspamd-Queue-Id: 07C5F21ACF
+X-Spamd-Result: default: False [14.51 / 50.00];
+	 ARC_NA(0.00)[];
+	 HAS_REPLYTO(0.30)[dsterba@suse.cz];
+	 RCVD_VIA_SMTP_AUTH(0.00)[];
+	 FROM_HAS_DN(0.00)[];
+	 RCPT_COUNT_THREE(0.00)[3];
+	 TO_DN_SOME(0.00)[];
+	 TO_MATCH_ENVRCPT_ALL(0.00)[];
+	 MIME_GOOD(-0.10)[text/plain];
+	 REPLYTO_ADDR_EQ_FROM(0.00)[];
+	 DMARC_NA(1.20)[suse.cz];
+	 R_SPF_SOFTFAIL(4.60)[~all:c];
+	 NEURAL_SPAM_SHORT(2.82)[0.939];
+	 SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:98:from];
+	 RCVD_COUNT_THREE(0.00)[3];
+	 MX_GOOD(-0.01)[];
+	 NEURAL_SPAM_LONG(3.50)[1.000];
+	 FUZZY_BLOCKED(0.00)[rspamd.com];
+	 FROM_EQ_ENVFROM(0.00)[];
+	 R_DKIM_NA(2.20)[];
+	 MIME_TRACE(0.00)[0:+];
+	 RCVD_TLS_ALL(0.00)[];
+	 BAYES_HAM(-0.00)[18.27%]
 
-From: Arnd Bergmann <arnd@arndb.de>
+On Wed, Nov 29, 2023 at 05:21:44PM +0800, Anand Jain wrote:
+> On 29/11/2023 05:23, David Sterba wrote:
+> > The file_extent_tree was added in 41a2ee75aab0 ("btrfs: introduce
+> > per-inode file extent tree") so we have an explicit mapping of the file
+> > extents to know where it is safe to update i_size. When the feature
+> > NO_HOLES is enabled, and it's been a mkfs default since 5.15, the tree
+> > is not necessary.
+> > 
+> > To save some space in the inode, allocate the tree only when necessary.
+> 
+>    I don't see how the free is taken care? Does it memleak?
 
-With CONFIG_BTRFS_FS_POSIX_ACL disabled, the newly added function fails
-to build because of an apparent broken rebase:
-
-fs/btrfs/super.c: In function 'btrfs_parse_param':
-fs/btrfs/super.c:416:25: error: 'ret' undeclared (first use in this function); did you mean 'net'?
-  416 |                         ret = -EINVAL;
-      |                         ^~~
-
-Just return the error directly here instead of the incorrect unwinding.
-
-Fixes: a7293bf27082 ("btrfs: add parse_param callback for the new mount api")
-Reported-by: Linux Kernel Functional Testing <lkft@linaro.org>
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
----
- fs/btrfs/super.c | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 59fe4ffce6e7..022179a05d76 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -413,8 +413,7 @@ static int btrfs_parse_param(struct fs_context *fc,
- 			fc->sb_flags |= SB_POSIXACL;
- #else
- 			btrfs_err(NULL, "support for ACL not compiled in!");
--			ret = -EINVAL;
--			goto out;
-+			return -EINVAL;
- #endif
- 		}
- 		/*
--- 
-2.39.2
-
+Yes, there's kfree call missing in btrfs_free_inode(), thanks.

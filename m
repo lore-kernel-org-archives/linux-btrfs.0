@@ -1,50 +1,50 @@
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20230601.gappssmtp.com header.i=@toxicpanda-com.20230601.gappssmtp.com header.b="Flj7Hs77"
-Received: from mail-yw1-x112b.google.com (mail-yw1-x112b.google.com [IPv6:2607:f8b0:4864:20::112b])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3A47210F1
-	for <linux-btrfs@vger.kernel.org>; Fri,  1 Dec 2023 14:12:47 -0800 (PST)
-Received: by mail-yw1-x112b.google.com with SMTP id 00721157ae682-5d3758fdd2eso23685737b3.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 01 Dec 2023 14:12:47 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20230601.gappssmtp.com header.i=@toxicpanda-com.20230601.gappssmtp.com header.b="x2lSjB0T"
+Received: from mail-yw1-x112a.google.com (mail-yw1-x112a.google.com [IPv6:2607:f8b0:4864:20::112a])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1596210DB
+	for <linux-btrfs@vger.kernel.org>; Fri,  1 Dec 2023 14:12:49 -0800 (PST)
+Received: by mail-yw1-x112a.google.com with SMTP id 00721157ae682-5cce5075bd6so22789617b3.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 01 Dec 2023 14:12:49 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1701468766; x=1702073566; darn=vger.kernel.org;
+        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1701468768; x=1702073568; darn=vger.kernel.org;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=orFc9ft3N/UoPwsjthsVKSwuN6/TtsfGvyUWZy1WZBs=;
-        b=Flj7Hs77LD2rT4kfqxsPY0crWkFboQ4aWQfViy/PqG6Ha1BzjD/hfeiSZsXNLni2B/
-         4ZDNnBHlPBODBRHJ6DcKAvOFOzj5r4SNHsvAc0fPORmRiC5wYBPCld1X10fA98ca3Al6
-         8vov20qgTN/70LShg9bCTfRbEx8dQ3o77LG0M04Pr4tQjkk08i0MBL2u6e5eARaYN26S
-         8Ic1PJrjO0/9FG+g4pD+WLi1FFkWrXp3/c7KTBgn5uGNB2p2xnWt1Q0Pu3MedNW1UdrH
-         oSvogocXCXcXPFZbYpfdYc6wRE0uDeVn1Ou/ZTft4GSvqvEG2Hxl8zMHyVkuLObMF9jO
-         CKLQ==
+        bh=HNzP1vT2MMiAz4RLg2RxHLY9i1rfgpPqOOdGqsEPy8U=;
+        b=x2lSjB0T3qZ4eCdC+jrA7XI2Eje/EQpnWQtbCJ4wGFMYr9HwNXvSpAIuGXqBS5x+8m
+         G+pvMyW3Ir7HfGZNyeHG22IO8ui9hVeecJdpb73rzqtR2NmTrunimIMConidZMA7itZp
+         6vUbaed1T7lzTGJppkNcZgjdR2cdP5mFedBo0o8Sr8++yL0cBaTCHOc2kemNJEi/RsCk
+         ulwv2Si/eMptzj6EBf6Jal7I9ut5hFOLZDhA5pHSme0/+vVXhDdkKcs6zb83kwAkyS0j
+         i/CO7MTfSdUTklmgkcmsHLaqx6xAH6NqL7pkIUCr3cKOxqsLd521ooykCx3vbX0jsfmB
+         s5hQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1701468766; x=1702073566;
+        d=1e100.net; s=20230601; t=1701468768; x=1702073568;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=orFc9ft3N/UoPwsjthsVKSwuN6/TtsfGvyUWZy1WZBs=;
-        b=DIAGxlNhV+VDWi+TkWw1Pbe0gamnHnZ6jKneKgH9UB0EeYPAZ4X14e1nGQhSLVq65s
-         zM22d81IJYr+wC9z1WwG1ee+NdM7WaouN4m5OWkGLbBCtRl9Sp80YHV5PZSGGeZyvqCk
-         OSLg0ryen5sMAxbhRiAwjXOSW+deXqjbKgDsosz+QMLJe2xm25g0dbX8FP0UMmfImBfx
-         Fbvp9EuBH0HHhhhyzBCo+UlyHHFsvZFcQzvm57V02QTdTldu6p2ezcr7SXSQjLKibFh9
-         mTxh5nxQ2cUKqn8UikiZgY0C2rPQ7odzNN08NBGSJ3f72bdb0JyPAvY9LVkGf+/XM17w
-         SysA==
-X-Gm-Message-State: AOJu0YzViFh7xQMAgbq07mSnOGnj/w+nGUwuVEkEFicQLzsPJpwaGUEY
-	LIIo5sqdYOR4R8VbW5EdzZoaKLyTiBxJeHxMaNp15g==
-X-Google-Smtp-Source: AGHT+IFuUAzLwk16Snq+KtsWjvULMLCdbsTWTAPfoHJhjL6e4RFJJa1D8aicRDwIsxQRCQnLxBqJ4Q==
-X-Received: by 2002:a05:690c:708:b0:5d3:55ae:90db with SMTP id bs8-20020a05690c070800b005d355ae90dbmr6409047ywb.20.1701468766288;
-        Fri, 01 Dec 2023 14:12:46 -0800 (PST)
+        bh=HNzP1vT2MMiAz4RLg2RxHLY9i1rfgpPqOOdGqsEPy8U=;
+        b=XK8k6T1WYSXHzkDHOgMcYi93+20RRy0vKsYRfqPYEIq155BWn9R+iYDO4l9dnmBH7V
+         jhEfFSyR/ycO6Iqy7f74MK1f46hdn2g+soKPvLFd8F32HzJgl5RrFf4qzrM1QsuFJlMe
+         zfsNrstVSsya0Mi5gIQq/tv3PuTa2s5luSW3nHfW8VYnXeyVzlkFcmYC56cBdz+iFbon
+         XEYKS6u/T8KoUfInrgBoJlzn0dGy88EbQXraHEDIg6TJ0xIZ/pJ4/OmdE8PrRmiyp4PT
+         QS/cdz17I9K6sSFRTN7LU2ZEhboMqCWhz4Y3LloxU1Vu7iZ68G1dkC5HBy7r7/rnp9lG
+         KP6Q==
+X-Gm-Message-State: AOJu0Yx64KZogvxh7yqIO9vdMFyvBrFJgz5sJ7Y83rtxNjHAQ6CogUrk
+	bLo3cpTdkKznpqdkdX7y81AGwII71upog5noi5imZw==
+X-Google-Smtp-Source: AGHT+IFwWPI7hv4vRSmcqpd3J+W/DuiDZgkzRZsnuFD1zb8SSLMs9GuVdwO1oAeXjx9/JJ6xRTYUpg==
+X-Received: by 2002:a81:a184:0:b0:5d3:b71b:4d30 with SMTP id y126-20020a81a184000000b005d3b71b4d30mr305795ywg.17.1701468768158;
+        Fri, 01 Dec 2023 14:12:48 -0800 (PST)
 Received: from localhost (076-182-020-124.res.spectrum.com. [76.182.20.124])
-        by smtp.gmail.com with ESMTPSA id q128-20020a819986000000b005ce93212c47sm1388975ywg.134.2023.12.01.14.12.45
+        by smtp.gmail.com with ESMTPSA id z83-20020a814c56000000b005d3c950160csm1011189ywa.4.2023.12.01.14.12.47
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 01 Dec 2023 14:12:45 -0800 (PST)
+        Fri, 01 Dec 2023 14:12:47 -0800 (PST)
 From: Josef Bacik <josef@toxicpanda.com>
 To: linux-btrfs@vger.kernel.org,
 	kernel-team@fb.com,
 	linux-fsdevel@vger.kernel.org
-Subject: [PATCH v4 39/46] btrfs: add test_dummy_encryption support
-Date: Fri,  1 Dec 2023 17:11:36 -0500
-Message-ID: <b50d128bfbae6011473f2eec74fdf7c7e68ea6b7.1701468306.git.josef@toxicpanda.com>
+Subject: [PATCH v4 41/46] btrfs: move inode_to_path higher in backref.c
+Date: Fri,  1 Dec 2023 17:11:38 -0500
+Message-ID: <3ff858fdc4b3b4b3735289999ba652939b2343ab.1701468306.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <cover.1701468305.git.josef@toxicpanda.com>
 References: <cover.1701468305.git.josef@toxicpanda.com>
@@ -56,231 +56,102 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-In order to enable more thorough testing of fscrypt enable the
-test_dummy_encryption mount option.  This is used by fscrypt users to
-easily enable fscrypt on the file system for testing without needing to
-do the key setup and everything.
-
-The only deviation from other file systems we make is we only support
-the fsparam_flag version of this mount option, as it defaults to v2.  We
-don't want to have to bother with rejecting v1 related mount options.
+We have a prototype and then the definition lower below, we don't need
+to do this, simply move the function to where the prototype is.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/disk-io.c |  1 +
- fs/btrfs/fs.h      |  3 +++
- fs/btrfs/fscrypt.c |  6 +++++
- fs/btrfs/super.c   | 58 ++++++++++++++++++++++++++++++++++++++++++++++
- 4 files changed, 68 insertions(+)
+ fs/btrfs/backref.c | 69 ++++++++++++++++++++++------------------------
+ 1 file changed, 33 insertions(+), 36 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 719245d73b99..aedd8a0e4962 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1272,6 +1272,7 @@ void btrfs_free_fs_info(struct btrfs_fs_info *fs_info)
- 	kfree(fs_info->super_copy);
- 	kfree(fs_info->super_for_commit);
- 	kfree(fs_info->subpage_info);
-+	fscrypt_free_dummy_policy(&fs_info->dummy_enc_policy);
- 	kvfree(fs_info);
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index beed7e459dab..f58fe7c745c2 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -2578,8 +2578,40 @@ int iterate_inodes_from_logical(u64 logical, struct btrfs_fs_info *fs_info,
+ 				     build_ino_list, ctx);
  }
  
-diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
-index 1340e71d026c..74752204f3ab 100644
---- a/fs/btrfs/fs.h
-+++ b/fs/btrfs/fs.h
-@@ -7,6 +7,7 @@
- #include <linux/fs.h>
- #include <linux/btrfs_tree.h>
- #include <linux/sizes.h>
-+#include <linux/fscrypt.h>
- #include "extent-io-tree.h"
- #include "extent_map.h"
- #include "async-thread.h"
-@@ -189,6 +190,7 @@ enum {
- 	BTRFS_MOUNT_IGNOREDATACSUMS		= (1UL << 28),
- 	BTRFS_MOUNT_NODISCARD			= (1UL << 29),
- 	BTRFS_MOUNT_NOSPACECACHE		= (1UL << 30),
-+	BTRFS_MOUNT_TEST_DUMMY_ENCRYPTION	= (1UL << 31),
- };
- 
- /*
-@@ -828,6 +830,7 @@ struct btrfs_fs_info {
- 	spinlock_t eb_leak_lock;
- 	struct list_head allocated_ebs;
- #endif
-+	struct fscrypt_dummy_policy dummy_enc_policy;
- };
- 
- static inline u64 btrfs_get_fs_generation(const struct btrfs_fs_info *fs_info)
-diff --git a/fs/btrfs/fscrypt.c b/fs/btrfs/fscrypt.c
-index 85b596711371..2fbceec62dc7 100644
---- a/fs/btrfs/fscrypt.c
-+++ b/fs/btrfs/fscrypt.c
-@@ -242,6 +242,11 @@ static blk_status_t btrfs_process_encrypted_bio(struct bio *orig_bio,
- 	return btrfs_csum_one_bio(bbio, enc_bio);
- }
- 
-+static const union fscrypt_policy *btrfs_get_dummy_policy(struct super_block *sb)
++/*
++ * returns 0 if the path could be dumped (probably truncated)
++ * returns <0 in case of an error
++ */
+ static int inode_to_path(u64 inum, u32 name_len, unsigned long name_off,
+-			 struct extent_buffer *eb, struct inode_fs_paths *ipath);
++			 struct extent_buffer *eb, struct inode_fs_paths *ipath)
 +{
-+	return btrfs_sb(sb)->dummy_enc_policy.policy;
++	char *fspath;
++	char *fspath_min;
++	int i = ipath->fspath->elem_cnt;
++	const int s_ptr = sizeof(char *);
++	u32 bytes_left;
++
++	bytes_left = ipath->fspath->bytes_left > s_ptr ?
++					ipath->fspath->bytes_left - s_ptr : 0;
++
++	fspath_min = (char *)ipath->fspath->val + (i + 1) * s_ptr;
++	fspath = btrfs_ref_to_path(ipath->fs_root, ipath->btrfs_path, name_len,
++				   name_off, eb, inum, fspath_min, bytes_left);
++	if (IS_ERR(fspath))
++		return PTR_ERR(fspath);
++
++	if (fspath > fspath_min) {
++		ipath->fspath->val[i] = (u64)(unsigned long)fspath;
++		++ipath->fspath->elem_cnt;
++		ipath->fspath->bytes_left = fspath - fspath_min;
++	} else {
++		++ipath->fspath->elem_missed;
++		ipath->fspath->bytes_missing += fspath_min - fspath;
++		ipath->fspath->bytes_left = 0;
++	}
++
++	return 0;
 +}
-+
- int btrfs_fscrypt_load_extent_info(struct btrfs_inode *inode,
- 				   struct extent_map *em,
- 				   struct btrfs_fscrypt_ctx *ctx)
-@@ -357,4 +362,5 @@ const struct fscrypt_operations btrfs_fscrypt_ops = {
- 	.empty_dir = btrfs_fscrypt_empty_dir,
- 	.get_devices = btrfs_fscrypt_get_devices,
- 	.process_bio = btrfs_process_encrypted_bio,
-+	.get_dummy_policy = btrfs_get_dummy_policy,
- };
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 462a23db26af..2a7789519a6c 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -88,6 +88,7 @@ struct btrfs_fs_context {
- 	unsigned long compress_type:4;
- 	unsigned int compress_level;
- 	refcount_t refs;
-+	struct fscrypt_dummy_policy dummy_enc_policy;
- };
  
- enum {
-@@ -122,6 +123,7 @@ enum {
- 	Opt_thread_pool,
- 	Opt_treelog,
- 	Opt_user_subvol_rm_allowed,
-+	Opt_test_dummy_encryption,
- 
- 	/* Rescue options */
- 	Opt_rescue,
-@@ -255,6 +257,13 @@ static const struct fs_parameter_spec btrfs_fs_parameters[] = {
- 	fsparam_flag_no("enospc_debug", Opt_enospc_debug),
- #ifdef CONFIG_BTRFS_DEBUG
- 	fsparam_enum("fragment", Opt_fragment, btrfs_parameter_fragment),
-+
-+	/*
-+	 * With -o test_dummy_encryption we default to v2, only allow the flag
-+	 * version, since we don't support v1.
-+	 */
-+	fsparam_flag("test_dummy_encryption", Opt_test_dummy_encryption),
-+
- #endif
- #ifdef CONFIG_BTRFS_FS_REF_VERIFY
- 	fsparam_flag("ref_verify", Opt_ref_verify),
-@@ -268,6 +277,7 @@ static int btrfs_parse_param(struct fs_context *fc,
- 	struct btrfs_fs_context *ctx = fc->fs_private;
- 	struct fs_parse_result result;
- 	int opt;
-+	int ret;
- 
- 	opt = fs_parse(fc, btrfs_fs_parameters, param, &result);
- 	if (opt < 0)
-@@ -598,6 +608,13 @@ static int btrfs_parse_param(struct fs_context *fc,
- 			return -EINVAL;
- 		}
- 		break;
-+	case Opt_test_dummy_encryption:
-+		btrfs_set_opt(ctx->mount_opt, TEST_DUMMY_ENCRYPTION);
-+		ret = fscrypt_parse_test_dummy_encryption(param,
-+							  &ctx->dummy_enc_policy);
-+		if (ret)
-+			return ret;
-+		break;
- #endif
- #ifdef CONFIG_BTRFS_FS_REF_VERIFY
- 	case Opt_ref_verify:
-@@ -946,6 +963,9 @@ static int btrfs_fill_super(struct super_block *sb,
- 		return err;
- 	}
- 
-+	if (fscrypt_is_dummy_policy_set(&fs_info->dummy_enc_policy))
-+		btrfs_set_fs_incompat(fs_info, ENCRYPT);
-+
- 	if (btrfs_fs_incompat(fs_info, ENCRYPT)) {
- 		if (IS_ENABLED(CONFIG_FS_ENCRYPTION_INLINE_CRYPT)) {
- 			sb->s_flags |= SB_INLINECRYPT;
-@@ -1112,6 +1132,9 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
- #endif
- 	if (btrfs_test_opt(info, REF_VERIFY))
- 		seq_puts(seq, ",ref_verify");
-+	if (btrfs_test_opt(info, TEST_DUMMY_ENCRYPTION))
-+		fscrypt_show_test_dummy_encryption(seq, ',', dentry->d_sb);
-+
- 	seq_printf(seq, ",subvolid=%llu",
- 		  BTRFS_I(d_inode(dentry))->root->root_key.objectid);
- 	subvol_name = btrfs_get_subvol_name_from_objectid(info,
-@@ -1384,6 +1407,18 @@ static void btrfs_ctx_to_info(struct btrfs_fs_info *fs_info,
- 	fs_info->mount_opt = ctx->mount_opt;
- 	fs_info->compress_type = ctx->compress_type;
- 	fs_info->compress_level = ctx->compress_level;
-+
-+	/*
-+	 * If there's nothing set, or if the fs_info already has one set, don't
-+	 * do anything.  If the fs_info is set we'll free the dummy one when we
-+	 * free the ctx.
-+	 */
-+	if (!fscrypt_is_dummy_policy_set(&ctx->dummy_enc_policy) ||
-+	    fscrypt_is_dummy_policy_set(&fs_info->dummy_enc_policy))
-+		return;
-+
-+	fs_info->dummy_enc_policy = ctx->dummy_enc_policy;
-+	memset(&ctx->dummy_enc_policy, 0, sizeof(ctx->dummy_enc_policy));
- }
- 
- static void btrfs_info_to_ctx(struct btrfs_fs_info *fs_info,
-@@ -1436,6 +1471,7 @@ static void btrfs_emit_options(struct btrfs_fs_info *info,
- 	btrfs_info_if_set(info, old, USEBACKUPROOT, "trying to use backup root at mount time");
- 	btrfs_info_if_set(info, old, IGNOREBADROOTS, "ignoring bad roots");
- 	btrfs_info_if_set(info, old, IGNOREDATACSUMS, "ignoring data csums");
-+	btrfs_info_if_set(info, old, TEST_DUMMY_ENCRYPTION, "test dummy encryption mode enabled");
- 
- 	btrfs_info_if_unset(info, old, NODATACOW, "setting datacow");
- 	btrfs_info_if_unset(info, old, SSD, "not using ssd optimizations");
-@@ -1467,6 +1503,23 @@ static void btrfs_emit_options(struct btrfs_fs_info *info,
- 			   info->max_inline);
- }
- 
-+static bool btrfs_check_test_dummy_encryption(struct fs_context *fc)
-+{
-+	struct btrfs_fs_context *ctx = fc->fs_private;
-+	struct btrfs_fs_info *fs_info = btrfs_sb(fc->root->d_sb);
-+
-+	if (!fscrypt_is_dummy_policy_set(&ctx->dummy_enc_policy))
-+		return true;
-+
-+	if (fscrypt_dummy_policies_equal(&fs_info->dummy_enc_policy,
-+					 &ctx->dummy_enc_policy))
-+		return true;
-+
-+	btrfs_warn(fs_info,
-+		   "Can't set or change test_dummy_encryption on remount");
-+	return false;
-+}
-+
- static int btrfs_reconfigure(struct fs_context *fc)
+ static int iterate_inode_refs(u64 inum, struct inode_fs_paths *ipath)
  {
- 	struct super_block *sb = fc->root->d_sb;
-@@ -1485,6 +1538,10 @@ static int btrfs_reconfigure(struct fs_context *fc)
- 	    !btrfs_check_options(fs_info, &ctx->mount_opt, fc->sb_flags))
- 		return -EINVAL;
+@@ -2704,41 +2736,6 @@ static int iterate_inode_extrefs(u64 inum, struct inode_fs_paths *ipath)
+ 	return ret;
+ }
  
-+	if (!mount_reconfigure &&
-+	    !btrfs_check_test_dummy_encryption(fc))
-+		return -EINVAL;
-+
- 	ret = btrfs_check_features(fs_info, !(fc->sb_flags & SB_RDONLY));
- 	if (ret < 0)
- 		return ret;
-@@ -2121,6 +2178,7 @@ static void btrfs_free_fs_context(struct fs_context *fc)
- 		btrfs_free_fs_info(fs_info);
- 
- 	if (ctx && refcount_dec_and_test(&ctx->refs)) {
-+		fscrypt_free_dummy_policy(&ctx->dummy_enc_policy);
- 		kfree(ctx->subvol_name);
- 		kfree(ctx);
- 	}
+-/*
+- * returns 0 if the path could be dumped (probably truncated)
+- * returns <0 in case of an error
+- */
+-static int inode_to_path(u64 inum, u32 name_len, unsigned long name_off,
+-			 struct extent_buffer *eb, struct inode_fs_paths *ipath)
+-{
+-	char *fspath;
+-	char *fspath_min;
+-	int i = ipath->fspath->elem_cnt;
+-	const int s_ptr = sizeof(char *);
+-	u32 bytes_left;
+-
+-	bytes_left = ipath->fspath->bytes_left > s_ptr ?
+-					ipath->fspath->bytes_left - s_ptr : 0;
+-
+-	fspath_min = (char *)ipath->fspath->val + (i + 1) * s_ptr;
+-	fspath = btrfs_ref_to_path(ipath->fs_root, ipath->btrfs_path, name_len,
+-				   name_off, eb, inum, fspath_min, bytes_left);
+-	if (IS_ERR(fspath))
+-		return PTR_ERR(fspath);
+-
+-	if (fspath > fspath_min) {
+-		ipath->fspath->val[i] = (u64)(unsigned long)fspath;
+-		++ipath->fspath->elem_cnt;
+-		ipath->fspath->bytes_left = fspath - fspath_min;
+-	} else {
+-		++ipath->fspath->elem_missed;
+-		ipath->fspath->bytes_missing += fspath_min - fspath;
+-		ipath->fspath->bytes_left = 0;
+-	}
+-
+-	return 0;
+-}
+-
+ /*
+  * this dumps all file system paths to the inode into the ipath struct, provided
+  * is has been created large enough. each path is zero-terminated and accessed
 -- 
 2.41.0
 

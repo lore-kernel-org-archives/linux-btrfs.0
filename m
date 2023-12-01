@@ -1,51 +1,51 @@
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20230601.gappssmtp.com header.i=@toxicpanda-com.20230601.gappssmtp.com header.b="ZGyKVaws"
-Received: from mail-yw1-x1141.google.com (mail-yw1-x1141.google.com [IPv6:2607:f8b0:4864:20::1141])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 90B14D63
-	for <linux-btrfs@vger.kernel.org>; Fri,  1 Dec 2023 14:12:15 -0800 (PST)
-Received: by mail-yw1-x1141.google.com with SMTP id 00721157ae682-5c8c26cf056so29827507b3.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 01 Dec 2023 14:12:15 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20230601.gappssmtp.com header.i=@toxicpanda-com.20230601.gappssmtp.com header.b="te1o93ld"
+Received: from mail-yw1-x112e.google.com (mail-yw1-x112e.google.com [IPv6:2607:f8b0:4864:20::112e])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A07EA10F1
+	for <linux-btrfs@vger.kernel.org>; Fri,  1 Dec 2023 14:12:19 -0800 (PST)
+Received: by mail-yw1-x112e.google.com with SMTP id 00721157ae682-5d7084b6bb1so3014677b3.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 01 Dec 2023 14:12:19 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1701468734; x=1702073534; darn=vger.kernel.org;
+        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1701468739; x=1702073539; darn=vger.kernel.org;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=nGaKZfQ8xEUtcj2BvoUGwcXV31Q0VFKb7VLEms82qyQ=;
-        b=ZGyKVaws3S0GoOwsOzviq3RAPMFOGknLTSLTqBg3I6yBiytMNnautYq3Z6FGyhKx0W
-         aezaykvutmCXEoCso83D7mJMR0Mrqg43s98XjrXttGG0O+0/ArUdg+S+jFhISMjcVOK/
-         45E9AnBb3L1SzohKM6zuFxFuXy0WQKaeyjqYDEDDMuYHQ/2MEEjFa5o4PnwcWstFMKkx
-         x3G08Y06VyNzmeo7/gwwIleESZwvuCUW2CJ6DSkXpyljgCJSYCPFhiYBvy4+iRlbNW8P
-         DY9PrPVBP7YxP2j8XuWBbOkwzFOaYfXSV6+W6GVI62X8ZT6AsXrUAGyqAcvx2XXh8lgf
-         RJ5w==
+        bh=Cn/5d23+Piiaq9wfrRh434zM+tA72DN+x3v+pwhuqj8=;
+        b=te1o93ldXA8bGPpTugHIdBQXZbUqnFxjPgdM+XseecIqy2KSdnC2xMk4JbyfOwZAru
+         Uf4ggk70UcK8ULMamB+DXy1s+MLDu/oxLNyMMriy9s/FWPLiLdbsm7P8Shv2ZGbInaaj
+         xU9bbF4TmJp5w/4cuqOS5nnSUnAyvsVYbfzKuA+z2TCB2+Io+hFyv+qEeiKKe35xQumu
+         MfhYquLYoAxUFF8JigQKp1JIhVlFw2hCeWkK9rjBfOgtTI2qyKJ1PS4djrlyc37rXjvJ
+         GEXmE4Gb3kwSQ19btVa52U4NMQassVSHd4ITwvHAQctlKpBxW5NAmCZ6f2hFUGGOd47s
+         /3pQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1701468734; x=1702073534;
+        d=1e100.net; s=20230601; t=1701468739; x=1702073539;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=nGaKZfQ8xEUtcj2BvoUGwcXV31Q0VFKb7VLEms82qyQ=;
-        b=F0t/vFa+pWm0udvMFAKtNuIHG7BDShYg/uiu3EJuy7Z3NkNIkUOd2YujP0moB4MnfU
-         RY2N7TiZQNjyiHwUuJ5wgoEtxMRVHCcx2YMckKGbHKSXX0EfwLbDf+mYdXRd3nJjpUhw
-         TIteg0eZx1+DYehoAQLZYNmJOUA3EyXjisx/KgJXrVOzEGhbB9ILQuDeQe4VW08FaBGr
-         VTvtpPcg+wuNB0YM4lWq+bFiw86Fz06daY20nGXXDWiiMCRQQkFdwcVXksxZA6EvBt9n
-         4rRqrQBC7raDqcyMH2lo/qQH8fRsZrF86booJ3EbwkrNs1eFChNkRaEYpP244lvr9HlF
-         QYUg==
-X-Gm-Message-State: AOJu0Yww8proSO9A8v7rWvlchVCNvSItDE1+NWffumIav7kK63E6pNWf
-	ji5WnOHdCipjWvKLq+KsaPTDTWbvto4loBjiot4SFL+i
-X-Google-Smtp-Source: AGHT+IERfmiIIYpmihLJrdT1pqpTfZYUTDg0+VM8i/Q4h5RqR5xJgNcKO+1ZfO9c3q0JsRg6HDBCGg==
-X-Received: by 2002:a05:690c:3387:b0:5a8:874:bb3a with SMTP id fl7-20020a05690c338700b005a80874bb3amr279105ywb.31.1701468734628;
-        Fri, 01 Dec 2023 14:12:14 -0800 (PST)
+        bh=Cn/5d23+Piiaq9wfrRh434zM+tA72DN+x3v+pwhuqj8=;
+        b=BZJ7Xx5GB6oZtRTqPI5bo2tE8nl4AeWaisaBmI4K2GY7xVn0fphEj7Z95QJLc+GDCg
+         hvnk2uRgQKaHJaluWhBPFkcZBMQAR783c4lnqFEUOkHImi05X0w0wVw6ezkye1816PEU
+         eK1sqb6Fc3N7FKqF93+WPU30tReFaL3D1shI6EsOuIMSyrgpy2mKHDl+mhSM78+BHkAj
+         aZOY5721xlHvHDbLc0UEzEVARJWY8Tw/H4peIVCfXlIUTlPG9T7TItxOA5MCSdxGiSH1
+         vmdmU/WG3BI0sKm/XyVKCBdbywV9OoiTeUZEXL6pHiElow+CDuvzZCEUU0I1Gwbuq1de
+         P36w==
+X-Gm-Message-State: AOJu0YzMxHOna+4uk3KRr9w8n9hiUgDmKBN1GAfpEhmbPuvuPeFQ9Fx1
+	kFr/eWJf1ATMfIdn0FPUBSxMZpa/nnSubt3F17AtBA==
+X-Google-Smtp-Source: AGHT+IGwKgKwJieuod2BvgdYGZbGi6RK3u0kD5BnpiTCasyQjPg9Qmn5EOtaFfHx3/XBEyUTpFupSw==
+X-Received: by 2002:a81:99d4:0:b0:5d7:1940:f3f1 with SMTP id q203-20020a8199d4000000b005d71940f3f1mr149497ywg.89.1701468738787;
+        Fri, 01 Dec 2023 14:12:18 -0800 (PST)
 Received: from localhost (076-182-020-124.res.spectrum.com. [76.182.20.124])
-        by smtp.gmail.com with ESMTPSA id w72-20020a81494b000000b005d70c0a85casm151282ywa.53.2023.12.01.14.12.14
+        by smtp.gmail.com with ESMTPSA id t7-20020a815f07000000b005d0fea7ad01sm1392549ywb.122.2023.12.01.14.12.17
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 01 Dec 2023 14:12:14 -0800 (PST)
+        Fri, 01 Dec 2023 14:12:17 -0800 (PST)
 From: Josef Bacik <josef@toxicpanda.com>
 To: linux-btrfs@vger.kernel.org,
 	kernel-team@fb.com,
 	linux-fsdevel@vger.kernel.org
 Cc: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-Subject: [PATCH v4 15/46] btrfs: handle nokey names.
-Date: Fri,  1 Dec 2023 17:11:12 -0500
-Message-ID: <5729e533bb7e014a124cc48d793dec30507455b7.1701468306.git.josef@toxicpanda.com>
+Subject: [PATCH v4 18/46] btrfs: add get_devices hook for fscrypt
+Date: Fri,  1 Dec 2023 17:11:15 -0500
+Message-ID: <7d727ad8e77df8e05f8e1374abbd4745603221d8.1701468306.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <cover.1701468305.git.josef@toxicpanda.com>
 References: <cover.1701468305.git.josef@toxicpanda.com>
@@ -59,159 +59,74 @@ Content-Transfer-Encoding: 8bit
 
 From: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
 
-For encrypted or unencrypted names, we calculate the offset for the dir
-item by hashing the name for the dir item. However, this doesn't work
-for a long nokey name, where we do not have the complete ciphertext.
-Instead, fscrypt stores the filesystem-provided hash in the nokey name,
-and we can extract it from the fscrypt_name structure in such a case.
-
-Additionally, for nokey names, if we find the nokey name on disk we can
-update the fscrypt_name with the disk name, so add that to searching for
-diritems.
+Since extent encryption requires inline encryption, even though we
+expect to use the inlinecrypt software fallback most of the time, we
+need to enumerate all the devices in use by btrfs.
 
 Signed-off-by: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/dir-item.c | 37 +++++++++++++++++++++++++++++++++++--
- fs/btrfs/fscrypt.c  | 27 +++++++++++++++++++++++++++
- fs/btrfs/fscrypt.h  | 11 +++++++++++
- 3 files changed, 73 insertions(+), 2 deletions(-)
+ fs/btrfs/fscrypt.c | 37 +++++++++++++++++++++++++++++++++++++
+ 1 file changed, 37 insertions(+)
 
-diff --git a/fs/btrfs/dir-item.c b/fs/btrfs/dir-item.c
-index a64cfddff7f0..897fb5477369 100644
---- a/fs/btrfs/dir-item.c
-+++ b/fs/btrfs/dir-item.c
-@@ -231,6 +231,28 @@ struct btrfs_dir_item *btrfs_lookup_dir_item(struct btrfs_trans_handle *trans,
- 	return di;
- }
- 
-+/*
-+ * If appropriate, populate the disk name for a fscrypt_name looked up without
-+ * a key.
-+ *
-+ * @path:	The path to the extent buffer in which the name was found.
-+ * @di:		The dir item corresponding.
-+ * @fname:	The fscrypt_name to perhaps populate.
-+ *
-+ * Returns: 0 if the name is already populated or the dir item doesn't exist
-+ * or the name was successfully populated, else an error code.
-+ */
-+static int ensure_disk_name_from_dir_item(struct btrfs_path *path,
-+					  struct btrfs_dir_item *di,
-+					  struct fscrypt_name *name)
-+{
-+	if (name->disk_name.name || !di)
-+		return 0;
-+
-+	return btrfs_fscrypt_get_disk_name(path->nodes[0], di,
-+					   &name->disk_name);
-+}
-+
- /*
-  * Lookup for a directory item by fscrypt_name.
-  *
-@@ -257,8 +279,12 @@ struct btrfs_dir_item *btrfs_lookup_dir_item_fname(struct btrfs_trans_handle *tr
- 
- 	key.objectid = dir;
- 	key.type = BTRFS_DIR_ITEM_KEY;
--	key.offset = btrfs_name_hash(name->disk_name.name, name->disk_name.len);
--	/* XXX get the right hash for no-key names */
-+
-+	if (!name->disk_name.name)
-+		key.offset = name->hash | ((u64)name->minor_hash << 32);
-+	else
-+		key.offset = btrfs_name_hash(name->disk_name.name,
-+					     name->disk_name.len);
- 
- 	ret = btrfs_search_slot(trans, root, &key, path, mod, -mod);
- 	if (ret == 0)
-@@ -266,6 +292,8 @@ struct btrfs_dir_item *btrfs_lookup_dir_item_fname(struct btrfs_trans_handle *tr
- 
- 	if (ret == -ENOENT || (di && IS_ERR(di) && PTR_ERR(di) == -ENOENT))
- 		return NULL;
-+	if (ret == 0)
-+		ret = ensure_disk_name_from_dir_item(path, di, name);
- 	if (ret < 0)
- 		di = ERR_PTR(ret);
- 
-@@ -382,7 +410,12 @@ btrfs_search_dir_index_item(struct btrfs_root *root, struct btrfs_path *path,
- 	btrfs_for_each_slot(root, &key, &key, path, ret) {
- 		if (key.objectid != dirid || key.type != BTRFS_DIR_INDEX_KEY)
- 			break;
-+
- 		di = btrfs_match_dir_item_fname(root->fs_info, path, name);
-+		if (di)
-+			ret = ensure_disk_name_from_dir_item(path, di, name);
-+		if (ret)
-+			break;
- 		if (di)
- 			return di;
- 	}
 diff --git a/fs/btrfs/fscrypt.c b/fs/btrfs/fscrypt.c
-index 6a4e4f63a660..9103da28af7e 100644
+index 9103da28af7e..2d037b105b5f 100644
 --- a/fs/btrfs/fscrypt.c
 +++ b/fs/btrfs/fscrypt.c
-@@ -14,6 +14,33 @@
+@@ -11,7 +11,9 @@
+ #include "ioctl.h"
+ #include "messages.h"
+ #include "root-tree.h"
++#include "super.h"
  #include "transaction.h"
++#include "volumes.h"
  #include "xattr.h"
  
-+/*
-+ * From a given location in a leaf, read a name into a qstr (usually a
-+ * fscrypt_name's disk_name), allocating the required buffer. Used for
-+ * nokey names.
-+ */
-+int btrfs_fscrypt_get_disk_name(struct extent_buffer *leaf,
-+				struct btrfs_dir_item *dir_item,
-+				struct fscrypt_str *name)
-+{
-+	unsigned long de_name_len = btrfs_dir_name_len(leaf, dir_item);
-+	unsigned long de_name = (unsigned long)(dir_item + 1);
-+	/*
-+	 * For no-key names, we use this opportunity to find the disk
-+	 * name, so future searches don't need to deal with nokey names
-+	 * and we know what the encrypted size is.
-+	 */
-+	name->name = kmalloc(de_name_len, GFP_NOFS);
-+
-+	if (!name->name)
-+		return -ENOMEM;
-+
-+	read_extent_buffer(leaf, name->name, de_name, de_name_len);
-+
-+	name->len = de_name_len;
-+	return 0;
-+}
-+
  /*
-  * This function is extremely similar to fscrypt_match_name() but uses an
-  * extent_buffer.
-diff --git a/fs/btrfs/fscrypt.h b/fs/btrfs/fscrypt.h
-index 1647bbbcd609..c08fd52c99b4 100644
---- a/fs/btrfs/fscrypt.h
-+++ b/fs/btrfs/fscrypt.h
-@@ -9,11 +9,22 @@
- #include "fs.h"
+@@ -178,8 +180,43 @@ static bool btrfs_fscrypt_empty_dir(struct inode *inode)
+ 	return inode->i_size == BTRFS_EMPTY_DIR_SIZE;
+ }
  
- #ifdef CONFIG_FS_ENCRYPTION
-+int btrfs_fscrypt_get_disk_name(struct extent_buffer *leaf,
-+				struct btrfs_dir_item *di,
-+				struct fscrypt_str *qstr);
-+
- bool btrfs_fscrypt_match_name(struct fscrypt_name *fname,
- 			      struct extent_buffer *leaf,
- 			      unsigned long de_name, u32 de_name_len);
- 
- #else
-+static inline int btrfs_fscrypt_get_disk_name(struct extent_buffer *leaf,
-+					      struct btrfs_dir_item *di,
-+					      struct fscrypt_str *qstr)
++static struct block_device **btrfs_fscrypt_get_devices(struct super_block *sb,
++						       unsigned int *num_devs)
 +{
-+	return 0;
++	struct btrfs_fs_info *fs_info = btrfs_sb(sb);
++	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
++	int nr_devices = fs_devices->open_devices;
++	struct block_device **devs;
++	struct btrfs_device *device;
++	int i = 0;
++
++	devs = kmalloc_array(nr_devices, sizeof(*devs), GFP_NOFS | GFP_NOWAIT);
++	if (!devs)
++		return ERR_PTR(-ENOMEM);
++
++	rcu_read_lock();
++	list_for_each_entry_rcu(device, &fs_devices->devices, dev_list) {
++		if (!test_bit(BTRFS_DEV_STATE_IN_FS_METADATA,
++						&device->dev_state) ||
++		    !device->bdev ||
++		    test_bit(BTRFS_DEV_STATE_REPLACE_TGT, &device->dev_state))
++			continue;
++
++		devs[i++] = device->bdev;
++
++		if (i >= nr_devices)
++			break;
++
++	}
++	rcu_read_unlock();
++
++	*num_devs = i;
++	return devs;
 +}
 +
- static inline bool btrfs_fscrypt_match_name(struct fscrypt_name *fname,
- 					    struct extent_buffer *leaf,
- 					    unsigned long de_name,
+ const struct fscrypt_operations btrfs_fscrypt_ops = {
+ 	.get_context = btrfs_fscrypt_get_context,
+ 	.set_context = btrfs_fscrypt_set_context,
+ 	.empty_dir = btrfs_fscrypt_empty_dir,
++	.get_devices = btrfs_fscrypt_get_devices,
+ };
 -- 
 2.41.0
 

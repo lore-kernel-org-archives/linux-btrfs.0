@@ -1,50 +1,50 @@
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20230601.gappssmtp.com header.i=@toxicpanda-com.20230601.gappssmtp.com header.b="TUJY6urd"
-Received: from mail-yb1-xb2a.google.com (mail-yb1-xb2a.google.com [IPv6:2607:f8b0:4864:20::b2a])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A8EC7D63
-	for <linux-btrfs@vger.kernel.org>; Fri,  1 Dec 2023 14:12:36 -0800 (PST)
-Received: by mail-yb1-xb2a.google.com with SMTP id 3f1490d57ef6-da7ea62e76cso1035559276.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 01 Dec 2023 14:12:36 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20230601.gappssmtp.com header.i=@toxicpanda-com.20230601.gappssmtp.com header.b="zfUamOBk"
+Received: from mail-yw1-x1136.google.com (mail-yw1-x1136.google.com [IPv6:2607:f8b0:4864:20::1136])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7A86510EF
+	for <linux-btrfs@vger.kernel.org>; Fri,  1 Dec 2023 14:12:39 -0800 (PST)
+Received: by mail-yw1-x1136.google.com with SMTP id 00721157ae682-5d34d85e610so25973017b3.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 01 Dec 2023 14:12:39 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1701468756; x=1702073556; darn=vger.kernel.org;
+        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1701468758; x=1702073558; darn=vger.kernel.org;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=nBe2SByBGGZwnJKo5cDpxDIxZdLwl3MWb46l7m1eRCM=;
-        b=TUJY6urdiF+q/GYGFcZ3OH9mhFfqDiaV484RDJqbhXZcpSCpk3qLrQAsWxBiRe1m4N
-         nu0U095U4lnBGRejtqwW/BX3ocZ8gnJjF32qUhK4ppjnmhzHra1f/I3xwK9yalDr7SjZ
-         6ibnbbD/Vtzqx1rVF8rab3FqoA2vqHICMXbroyI3KQ0QYbTil5rv+VT7wRWl+Ob5A/SY
-         zwojZuQDbwS0yLYXeuUzkmotk2qyTGgezi+1kwt68dx30iTFEeqvWqRBeSLT48+c2hhJ
-         jqDmIjV3p2k+bu4Yc1g+BlcJrwto7agkDFHFCAjTsIuwiZblVpwDGnu+Ghcm7AJp/PX6
-         qhYg==
+        bh=/gVzeoeMQURNmpVvwynwfw94EyTjX18z8l6sVFepenU=;
+        b=zfUamOBk1mZF62Y8pJofbqt6NsxqKT6LTQrnyfryWYlkHt4b1K8UVQH+aFV63uI8Pw
+         bn11dFDN2FaGhb8xV8IBNoAm/QJs08+pqc7AodzvIyllyFGRu6fpY8EE34aDjywXreZl
+         nZ8tPsougPMKYFAxVylIN6oNP6ScyR5Jl15MKd+yCs10ZS6MQH0KbL2/i8r5hwhk2VkU
+         2+x2O33dla8huYwszfQkjiNj3s6bYEyVGf2GcxL0sahbFXwEe49bm7QwV9bNyHmWrOFJ
+         Ou5J4HU3/62Z20TQSSqt2KtF5KijdR5NAmcWMIWrriyFHsLkg2Go/XEgioOnHAizxuGV
+         opMA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1701468756; x=1702073556;
+        d=1e100.net; s=20230601; t=1701468758; x=1702073558;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=nBe2SByBGGZwnJKo5cDpxDIxZdLwl3MWb46l7m1eRCM=;
-        b=a7bXZ1hk0LVWjZop0BW2L2RGVwlDGibr8kkmMcZ8GF7TUYSpiCBFlkOHXV75rROE/6
-         aljYryHT+FYlSkKqaYxq6/Ti70Jr8TuoinFzKLSlSZbUWzwo7KMnU0CRdYOCan4st1zj
-         VBcABb8nLswZ79CsQVg661gem0aGA6A2ngsZVK1rpzCq4E8bjE0domM4kqUZppsLA0QT
-         N0fhF6AehAarkNevrXrlYjhakJBqEQQsWnKtq2gVpj6P3vum60M0/1la6aYh1Gcsvra1
-         4YffGR7xySDn7DrFxS3gHFxODmp2KULc2Uw3rEKLf1rOZRcpJklId8VkVqBCDhDxPPyV
-         OsOg==
-X-Gm-Message-State: AOJu0YyG3uMIDFLK2SEybssBCkS5f/JCXr8NQk+I0OktEViLQh7aw8lk
-	7WPJuwjRn6AXiFIBjXXsjx0SnY6zvMWle1R4pW+3CQ==
-X-Google-Smtp-Source: AGHT+IGLDjpnc3J07VZ8EZq6s54dsbVBs17DDHvoseuhxrchg5GwgyPv5+P5j1gz2qozr2uJUtrKbQ==
-X-Received: by 2002:a25:ae0a:0:b0:db5:4043:77ad with SMTP id a10-20020a25ae0a000000b00db5404377admr326712ybj.56.1701468755763;
-        Fri, 01 Dec 2023 14:12:35 -0800 (PST)
+        bh=/gVzeoeMQURNmpVvwynwfw94EyTjX18z8l6sVFepenU=;
+        b=qCQJgENbtm6mpA91RW081POrptNX3sFRdVLuNLXUMu6pqZroJEewqeOgqUaJKbfYnH
+         kbW9obRLB7n+wStSllBaXpIdVywqWxRXuuWSVcc/1Pd1s9+vw2+TTTAlMTH+MiPug0su
+         zdrb3wT2bN1wZy7bN2E+jh8zBBxbL+D7ifou3Lzc10+ydc7Egd7pzwWMRzl5ow1ahhBF
+         +7aGD2QMna/trDc6egLoyFYNFSST78ThtHc+n3BQgN/kGI4rW2RGu8WuuFGbRROPEUZ0
+         eZyj58Tgm/wl+UIrDHn7Wt3oV6oHpODITShltZfJQMgfrpJFEcpvtc4Q7G2rPwAstqzq
+         8EEA==
+X-Gm-Message-State: AOJu0YybfDr3u1sHHvLFpT/YQakjPSPRg4oDRi4EUP21+bmf2PVFzbx9
+	F0LuU2YFDLMo+Ni8KryxLkL8Rdrft3hnIe7yR2jXqw==
+X-Google-Smtp-Source: AGHT+IH89hNyf6GR833XcK9wzFi9Ci0Mxcbcl+L3FWkFizNpJnJbUry42lg3AZACHMlWrF3lwLX8xQ==
+X-Received: by 2002:a05:690c:f85:b0:5d7:2c6b:625 with SMTP id df5-20020a05690c0f8500b005d72c6b0625mr45864ywb.34.1701468758582;
+        Fri, 01 Dec 2023 14:12:38 -0800 (PST)
 Received: from localhost (076-182-020-124.res.spectrum.com. [76.182.20.124])
-        by smtp.gmail.com with ESMTPSA id n75-20020a25da4e000000b00db7dcc2ab76sm21299ybf.34.2023.12.01.14.12.35
+        by smtp.gmail.com with ESMTPSA id z143-20020a0dd795000000b005af5bb5e840sm226ywd.34.2023.12.01.14.12.37
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 01 Dec 2023 14:12:35 -0800 (PST)
+        Fri, 01 Dec 2023 14:12:38 -0800 (PST)
 From: Josef Bacik <josef@toxicpanda.com>
 To: linux-btrfs@vger.kernel.org,
 	kernel-team@fb.com,
 	linux-fsdevel@vger.kernel.org
-Subject: [PATCH v4 30/46] btrfs: pass the fscrypt_info through the replace extent infrastructure
-Date: Fri,  1 Dec 2023 17:11:27 -0500
-Message-ID: <c869b58206ae37b2127b636f147b1afedbbf231d.1701468306.git.josef@toxicpanda.com>
+Subject: [PATCH v4 32/46] btrfs: setup fscrypt_extent_info for new extents
+Date: Fri,  1 Dec 2023 17:11:29 -0500
+Message-ID: <506c404aac10482cf64b0fb5e34310a41316f637.1701468306.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <cover.1701468305.git.josef@toxicpanda.com>
 References: <cover.1701468305.git.josef@toxicpanda.com>
@@ -56,42 +56,104 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Prealloc uses the btrfs_replace_file_extents() infrastructure to insert
-its new extents.  We need to set the fscrypt context on these extents,
-so pass this through the btrfs_replace_extent_info so it can be used in
-a later patch when we hook in this infrastructure.
+New extents for encrypted inodes must have a fscrypt_extent_info, which
+has the necessary keys and does all the registration at the block layer
+for them.  This is passed through all of the infrastructure we've
+previously added to make sure the context gets saved properly with the
+file extents.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/ctree.h | 2 ++
- fs/btrfs/inode.c | 1 +
- 2 files changed, 3 insertions(+)
+ fs/btrfs/inode.c | 34 +++++++++++++++++++++++++++++++++-
+ 1 file changed, 33 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index ba73171fb8b0..9eb14b067e1f 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -369,6 +369,8 @@ struct btrfs_replace_extent_info {
- 	char *extent_buf;
- 	/* The length of @extent_buf */
- 	u32 extent_buf_size;
-+	/* The fscrypt_extent_info for a new extent. */
-+	struct fscrypt_extent_info *fscrypt_info;
- 	/*
- 	 * Set to true when attempting to replace a file range with a new extent
- 	 * described by this structure, set to false when attempting to clone an
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 8bd5c7488055..231d9fe6ff8a 100644
+index dc24f11016d9..60d016da1fce 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -9760,6 +9760,7 @@ static struct btrfs_trans_handle *insert_prealloc_file_extent(
- 	extent_info.update_times = true;
- 	extent_info.qgroup_reserved = qgroup_released;
- 	extent_info.insertions = 0;
-+	extent_info.fscrypt_info = fscrypt_info;
+@@ -7434,6 +7434,16 @@ static struct extent_map *create_io_em(struct btrfs_inode *inode,
+ 	if (fscrypt_info) {
+ 		em->encryption_type = BTRFS_ENCRYPTION_FSCRYPT;
+ 		em->fscrypt_info = fscrypt_get_extent_info(fscrypt_info);
++	} else if (IS_ENCRYPTED(&inode->vfs_inode)) {
++		struct fscrypt_extent_info *fscrypt_info;
++
++		em->encryption_type = BTRFS_ENCRYPTION_FSCRYPT;
++		fscrypt_info = fscrypt_prepare_new_extent(&inode->vfs_inode);
++		if (IS_ERR(fscrypt_info)) {
++			free_extent_map(em);
++			return ERR_CAST(fscrypt_info);
++		}
++		em->fscrypt_info = fscrypt_info;
+ 	} else {
+ 		em->encryption_type = BTRFS_ENCRYPTION_NONE;
+ 	}
+@@ -9831,6 +9841,9 @@ static int __btrfs_prealloc_file_range(struct inode *inode, int mode,
+ 	if (trans)
+ 		own_trans = false;
+ 	while (num_bytes > 0) {
++		struct fscrypt_extent_info *fscrypt_info = NULL;
++		int encryption_type = BTRFS_ENCRYPTION_NONE;
++
+ 		cur_bytes = min_t(u64, num_bytes, SZ_256M);
+ 		cur_bytes = max(cur_bytes, min_size);
+ 		/*
+@@ -9845,6 +9858,20 @@ static int __btrfs_prealloc_file_range(struct inode *inode, int mode,
+ 		if (ret)
+ 			break;
  
- 	path = btrfs_alloc_path();
- 	if (!path) {
++		if (IS_ENCRYPTED(inode)) {
++			fscrypt_info = fscrypt_prepare_new_extent(inode);
++			if (IS_ERR(fscrypt_info)) {
++				btrfs_dec_block_group_reservations(fs_info,
++								   ins.objectid);
++				btrfs_free_reserved_extent(fs_info,
++							   ins.objectid,
++							   ins.offset, 0);
++				ret = PTR_ERR(fscrypt_info);
++				break;
++			}
++			encryption_type = BTRFS_ENCRYPTION_FSCRYPT;
++		}
++
+ 		/*
+ 		 * We've reserved this space, and thus converted it from
+ 		 * ->bytes_may_use to ->bytes_reserved.  Any error that happens
+@@ -9856,7 +9883,8 @@ static int __btrfs_prealloc_file_range(struct inode *inode, int mode,
+ 
+ 		last_alloc = ins.offset;
+ 		trans = insert_prealloc_file_extent(trans, BTRFS_I(inode),
+-						    &ins, NULL, cur_offset);
++						    &ins, fscrypt_info,
++						    cur_offset);
+ 		/*
+ 		 * Now that we inserted the prealloc extent we can finally
+ 		 * decrement the number of reservations in the block group.
+@@ -9866,6 +9894,7 @@ static int __btrfs_prealloc_file_range(struct inode *inode, int mode,
+ 		btrfs_dec_block_group_reservations(fs_info, ins.objectid);
+ 		if (IS_ERR(trans)) {
+ 			ret = PTR_ERR(trans);
++			fscrypt_put_extent_info(fscrypt_info);
+ 			btrfs_free_reserved_extent(fs_info, ins.objectid,
+ 						   ins.offset, 0);
+ 			break;
+@@ -9873,6 +9902,7 @@ static int __btrfs_prealloc_file_range(struct inode *inode, int mode,
+ 
+ 		em = alloc_extent_map();
+ 		if (!em) {
++			fscrypt_put_extent_info(fscrypt_info);
+ 			btrfs_drop_extent_map_range(BTRFS_I(inode), cur_offset,
+ 					    cur_offset + ins.offset - 1, false);
+ 			btrfs_set_inode_full_sync(BTRFS_I(inode));
+@@ -9888,6 +9918,8 @@ static int __btrfs_prealloc_file_range(struct inode *inode, int mode,
+ 		em->ram_bytes = ins.offset;
+ 		set_bit(EXTENT_FLAG_PREALLOC, &em->flags);
+ 		em->generation = trans->transid;
++		em->fscrypt_info = fscrypt_info;
++		em->encryption_type = encryption_type;
+ 
+ 		ret = btrfs_replace_extent_map_range(BTRFS_I(inode), em, true);
+ 		free_extent_map(em);
 -- 
 2.41.0
 

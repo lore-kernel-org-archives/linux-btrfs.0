@@ -1,50 +1,50 @@
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20230601.gappssmtp.com header.i=@toxicpanda-com.20230601.gappssmtp.com header.b="xlYeo6ze"
-Received: from mail-yw1-x1135.google.com (mail-yw1-x1135.google.com [IPv6:2607:f8b0:4864:20::1135])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 410ED10D0
-	for <linux-btrfs@vger.kernel.org>; Fri,  1 Dec 2023 14:12:52 -0800 (PST)
-Received: by mail-yw1-x1135.google.com with SMTP id 00721157ae682-5d3c7ef7b31so18905307b3.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 01 Dec 2023 14:12:52 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20230601.gappssmtp.com header.i=@toxicpanda-com.20230601.gappssmtp.com header.b="eXSmI8Ob"
+Received: from mail-yw1-x1133.google.com (mail-yw1-x1133.google.com [IPv6:2607:f8b0:4864:20::1133])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5AF38128
+	for <linux-btrfs@vger.kernel.org>; Fri,  1 Dec 2023 14:12:54 -0800 (PST)
+Received: by mail-yw1-x1133.google.com with SMTP id 00721157ae682-5d4f71f7e9fso10521277b3.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 01 Dec 2023 14:12:54 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1701468771; x=1702073571; darn=vger.kernel.org;
+        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1701468773; x=1702073573; darn=vger.kernel.org;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=G65+p44mGmrcw3g1ylziU5NRee9dMbEGAa4uRdfp8o0=;
-        b=xlYeo6zeg6wvHGuyfMi6+kUoUr36OpIiUzbo6jF4dRRUb612Z0GBkiFqCtsLQ9EsLU
-         iSlkXZw9+AkieZ4VIcLIemcf+VIQJWo1plVAJ/U5zQJ4SYliLFe+FGqgGmq6W2O/2onf
-         KUdMXBTls6kgKsixpPIuGSSF5TwuiksnlyL9tfRIcyh+5AXEho1wwW6cEyoHKT48LeKj
-         kwpdx7fqLnKRA6txVhxcHNYNa2iRNMEgF8awX/ZkXsfg0E42EExcaAUwkMZKqoMM9hFm
-         oUlgFpOqsIsdZxl9nrZw4ffAnjNMp6blLZu+kX/Ud2yoo3A4jk5OnasBiAgLet8W66ER
-         //tA==
+        bh=AJQANW9MIFcPX8D7eKOvMwDwipmxgT+JsIthXMaRo9o=;
+        b=eXSmI8ObEOYIHci6CSQDiLPxnG7aJ+lotlVP2RinbrS+D7UbGHrmHbrtAB8YtkVXue
+         5mLeELpN/VMc8O7KcwFkJ4S3w5+mHPw8Wm7LwVuoibO6+MAJb4z0Refyefnfh4OfRT55
+         JBZJoQse21kAnplCSIPG6CHvMyQpPMS56hqOKGuhN9Pn5A3Tnjvji3Ddvqx6nUd8LTZL
+         po4wotH/iqXyDr8BKzkHAp9sXN0NPagDLRvxQnKoJPEnklvek98e8ilXEV/n15rLqgSg
+         5FVL3ITwmR8AjrqrBcCadOMgA2ruAH18y5AyiuwLfZcyhKJhY+68lsgV6WClel5fV0U4
+         qNfA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1701468771; x=1702073571;
+        d=1e100.net; s=20230601; t=1701468773; x=1702073573;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=G65+p44mGmrcw3g1ylziU5NRee9dMbEGAa4uRdfp8o0=;
-        b=c4gLuvqEE4UVNAfNAlivCnbqhY6GxwpkWDjuCMnRC71RyPdichcFv6KHHWDpKo5+mA
-         lr5Q0ypNF0d6rYzCcqsLQZeTZ1dABpnX4CnTafNSBO1irxpxKsFntZMCF9UBz4C4/JDY
-         99e5pW3HKLTX0dRlZ+XzHPvSoeMzjT/v291t2ydXiRsyxxwxrUxD09/Gjl96Hg0fItK/
-         xKtb2bNN6iJaIk5oaxuPlLFDdt2ulxHcMCAKwTTraQNhm+hI5VCB2bXJWMXDcUxvCmSn
-         z8LqfLtOoa76Rp0ADarb6UbsDb9n/BUpE7Z75sdU4eJWWJ/4UaAuaVgJc4IpBPNkOowE
-         cruQ==
-X-Gm-Message-State: AOJu0Yyc0iTSWmzu5L5KMMxM+a0Raq1SWOkbuyoS8EWZKYAMblg1F0LA
-	yD9Xqps8wE20aNPQlswjlqC99CbCIW6pztGSIVJQRQ==
-X-Google-Smtp-Source: AGHT+IGMXu8ydshCa8rJ4v/ERWlHQ7MaV6TkNFrUdf8axRijnNw6x9bzA6o3POz87QqdoN+lC3Ssrw==
-X-Received: by 2002:a05:690c:3381:b0:5d7:1941:356d with SMTP id fl1-20020a05690c338100b005d71941356dmr196783ywb.84.1701468771338;
-        Fri, 01 Dec 2023 14:12:51 -0800 (PST)
+        bh=AJQANW9MIFcPX8D7eKOvMwDwipmxgT+JsIthXMaRo9o=;
+        b=tYKO/2s3hujZcelK5Su+/SG3bXoLPuozvfHGvkHuAytY3N1Z9OHYYJ/XuFfkJ80zGY
+         0MezIic0EsBQvDtyplEogmDP2CWroARqkKjTcLViyFwtI/KLgY/saMbCll2t4c9ark9U
+         6b9PM5U2qNiF1l3Ep9SdoW4e5+lP4NO/aicVLgpJeEOxriNGApfCmSy9kB1FnaqZA5tl
+         wYppl39t6/h7pCoRZhqCvH7Zx7j3AOQj36DaGQFA8yx62x1iFZmRN0N7uxP+/31uj5eB
+         rG7uy46sTJtlyzBf2hspTpVXOWsQWocXfwY3I+89CLDiFXESdseAinxtwp8zax+OPDaP
+         gUdA==
+X-Gm-Message-State: AOJu0Yw2JjnUtMsDoL67knfe0EWAmODnuLMVUjNJe8XBW+RWU+aRF1k4
+	bfdikIMKCW1bY0kUdMhG8Lievu0rGPxZrZs2sI37ag==
+X-Google-Smtp-Source: AGHT+IF9G1WFmCesqs2EQp0J9KXdyomJKnzntzpVggcdssX2aaGBN29uWVBdrRVM3IVVaBt+6+rkjw==
+X-Received: by 2002:a05:690c:d8f:b0:5ce:aad2:3d6a with SMTP id da15-20020a05690c0d8f00b005ceaad23d6amr267494ywb.14.1701468773395;
+        Fri, 01 Dec 2023 14:12:53 -0800 (PST)
 Received: from localhost (076-182-020-124.res.spectrum.com. [76.182.20.124])
-        by smtp.gmail.com with ESMTPSA id r20-20020a0de814000000b005d39c874019sm1143201ywe.66.2023.12.01.14.12.50
+        by smtp.gmail.com with ESMTPSA id o188-20020a8173c5000000b005d647048e54sm504048ywc.111.2023.12.01.14.12.52
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 01 Dec 2023 14:12:51 -0800 (PST)
+        Fri, 01 Dec 2023 14:12:53 -0800 (PST)
 From: Josef Bacik <josef@toxicpanda.com>
 To: linux-btrfs@vger.kernel.org,
 	kernel-team@fb.com,
 	linux-fsdevel@vger.kernel.org
-Subject: [PATCH v4 44/46] btrfs: deal with encrypted symlinks in send
-Date: Fri,  1 Dec 2023 17:11:41 -0500
-Message-ID: <4ef9ff7d8238e0ed0995ae4ed65e8de276ebcbd3.1701468306.git.josef@toxicpanda.com>
+Subject: [PATCH v4 46/46] btrfs: load the inode context before sending writes
+Date: Fri,  1 Dec 2023 17:11:43 -0500
+Message-ID: <99694dd7249ea1edefcf13b9842447e530fc3f6f.1701468306.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <cover.1701468305.git.josef@toxicpanda.com>
 References: <cover.1701468305.git.josef@toxicpanda.com>
@@ -56,80 +56,68 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Send needs to send the decrypted value of the symlinks, handle the case
-where the inode is encrypted and decrypt the symlink name into a buffer
-and copy this buffer into our fs_path struct.
+For send we will read the pages and copy them into our buffer.  Use the
+fscrypt_inode_open helper to make sure the key is loaded properly before
+trying to read from the inode so the contents are properly decrypted.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/send.c | 47 ++++++++++++++++++++++++++++++++++++++++++++---
- 1 file changed, 44 insertions(+), 3 deletions(-)
+ fs/btrfs/send.c | 35 ++++++++++++++++++++++++++++++++++-
+ 1 file changed, 34 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 3b929f0e8f04..ee5ea16423bb 100644
+index de77321777f4..3475b4cea09d 100644
 --- a/fs/btrfs/send.c
 +++ b/fs/btrfs/send.c
-@@ -1732,9 +1732,8 @@ static int find_extent_clone(struct send_ctx *sctx,
+@@ -5392,6 +5392,37 @@ static int put_file_data(struct send_ctx *sctx, u64 offset, u32 len)
  	return ret;
  }
  
--static int read_symlink(struct btrfs_root *root,
--			u64 ino,
--			struct fs_path *dest)
-+static int read_symlink_unencrypted(struct btrfs_root *root, u64 ino,
-+				    struct fs_path *dest)
- {
- 	int ret;
- 	struct btrfs_path *path;
-@@ -1800,6 +1799,48 @@ static int read_symlink(struct btrfs_root *root,
- 	return ret;
- }
- 
-+static int read_symlink_encrypted(struct btrfs_root *root, u64 ino,
-+				  struct fs_path *dest)
++static int load_fscrypt_context(struct send_ctx *sctx)
 +{
-+	DEFINE_DELAYED_CALL(done);
-+	const char *buf;
-+	struct page *page;
-+	struct inode *inode;
-+	int ret = 0;
++	struct btrfs_root *root = sctx->send_root;
++	struct name_cache_entry *nce;
++	struct inode *dir;
++	int ret;
 +
-+	inode = btrfs_iget(root->fs_info->sb, ino, root);
-+	if (IS_ERR(inode))
-+		return PTR_ERR(inode);
++	if (!IS_ENCRYPTED(sctx->cur_inode))
++		return 0;
 +
-+	page = read_mapping_page(inode->i_mapping, 0, NULL);
-+	if (IS_ERR(page)) {
-+		ret = PTR_ERR(page);
-+		goto out;
++	/*
++	 * We're encrypted, we need to load the parent inode in order to make
++	 * sure the encryption context is loaded, we use this after calling
++	 * get_cur_path() so our nce for the current inode should be here.  If
++	 * not handle it, but ASSERT() for developers.
++	 */
++	nce = name_cache_search(sctx, sctx->cur_ino, sctx->cur_inode_gen);
++	if (!nce) {
++		ASSERT(nce);
++		return -EINVAL;
 +	}
 +
-+	buf = fscrypt_get_symlink(inode, page_address(page),
-+				  BTRFS_MAX_INLINE_DATA_SIZE(root->fs_info),
-+				  &done);
-+	if (IS_ERR(buf))
-+		goto out_page;
-+	ret = fs_path_add(dest, buf, strlen(buf));
-+out_page:
-+	put_page(page);
-+	do_delayed_call(&done);
-+out:
-+	iput(inode);
++	dir = btrfs_iget(root->fs_info->sb, nce->parent_ino, root);
++	if (IS_ERR(dir))
++		return PTR_ERR(dir);
++
++	ret = fscrypt_inode_open(dir, sctx->cur_inode);
++	iput(dir);
 +	return ret;
 +}
 +
-+
-+static int read_symlink(struct btrfs_root *root, u64 ino,
-+			struct fs_path *dest)
-+{
-+	if (btrfs_fs_incompat(root->fs_info, ENCRYPT))
-+		return read_symlink_encrypted(root, ino, dest);
-+	return read_symlink_unencrypted(root, ino, dest);
-+}
-+
  /*
-  * Helper function to generate a file name that is unique in the root of
-  * send_root and parent_root. This is used to generate names for orphan inodes.
+  * Read some bytes from the current inode/file and send a write command to
+  * user space.
+@@ -5415,7 +5446,9 @@ static int send_write(struct send_ctx *sctx, u64 offset, u32 len)
+ 	ret = get_cur_path(sctx, sctx->cur_ino, sctx->cur_inode_gen, p);
+ 	if (ret < 0)
+ 		goto out;
+-
++	ret = load_fscrypt_context(sctx);
++	if (ret < 0)
++		goto out;
+ 	TLV_PUT_PATH(sctx, BTRFS_SEND_A_PATH, p);
+ 	TLV_PUT_U64(sctx, BTRFS_SEND_A_FILE_OFFSET, offset);
+ 	ret = put_file_data(sctx, offset, len);
 -- 
 2.41.0
 

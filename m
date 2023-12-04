@@ -1,134 +1,215 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2a07:de40:b251:101:10:150:64:1])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C1849A4
-	for <linux-btrfs@vger.kernel.org>; Mon,  4 Dec 2023 07:56:53 -0800 (PST)
-Received: from imap2.dmz-prg2.suse.org (imap2.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:98])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 1C7D921BA7;
-	Mon,  4 Dec 2023 15:56:50 +0000 (UTC)
-Received: from imap2.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap2.dmz-prg2.suse.org (Postfix) with ESMTPS id 06D1213588;
-	Mon,  4 Dec 2023 15:56:50 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([10.150.64.162])
-	by imap2.dmz-prg2.suse.org with ESMTPSA
-	id QIl4AcL2bWUGNAAAn2gu4w
-	(envelope-from <dsterba@suse.cz>); Mon, 04 Dec 2023 15:56:50 +0000
-Date: Mon, 4 Dec 2023 16:49:34 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Filipe Manana <fdmanana@kernel.org>
-Cc: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/2] btrfs: use xarray for btrfs_root::delayed_nodes_tree
- instead of radix-tree
-Message-ID: <20231204154934.GA2205@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1701384168.git.dsterba@suse.com>
- <e283f8d460c7b3288e8eb1d8974d6b5842210167.1701384168.git.dsterba@suse.com>
- <CAL3q7H7a0nu8xa6dNZeBzzez1D3e8dr2tUkOcaUNNnPbFJ_YLA@mail.gmail.com>
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 558A42C87D;
+	Mon,  4 Dec 2023 15:59:26 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="iiuze3qT"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id CB986C433C9;
+	Mon,  4 Dec 2023 15:59:26 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1701705566;
+	bh=wUvaW2WBFFWOm+BjvuRxx5B6h8PwUfRkrKqvoO+S1Ek=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+	b=iiuze3qTJqY0ZTaLDWQUIF2NRGmLmhT5cPqKSOBEdoxD8APLf12zSaLU4i9VMMfx/
+	 AsFWl3mLBrBPFTvCH8sjW5WCx+wYnZ/LjsuCRgl3LJY9Cuc1J0ZK2Q7np7ffWTdyvp
+	 c3X7Nv7q/CrHH8EhPoZ1yaJNboPu0+W8LmV93MgYFMbUVpFSAae18KwvAZxv2OGBc6
+	 PJgmCCiIuajRmwBelE80Vr1cGWsRdGBuk05rKbN/FbheErA8T/rRiBueScNgDoaTHX
+	 0f7JJs8ciHfzV+Zpmb3tCKGeC/R8chOXuK3E7wxHPamJV+Wu6o7L6SN+CzxPhOejcp
+	 1Yt9eC0AxAlOg==
+Received: by mail-ej1-f47.google.com with SMTP id a640c23a62f3a-a1a496a73ceso417364466b.2;
+        Mon, 04 Dec 2023 07:59:26 -0800 (PST)
+X-Gm-Message-State: AOJu0Ywib7KYMQ6Y3r1LQZqsGiyEGU8UI9Crc0G91Xo/3ju2AeRCP0NW
+	4z0jIH1NJMobF9OsKgli6NBrvkBFiKBg0iGmr3I=
+X-Google-Smtp-Source: AGHT+IFZikvRXz7xJe/MSqAj5aHRG2tIGIeVIfp1iKGY6Wd/BXEaxjGWkA6LP0xDBbcEyHZhWF6L2QwTmsD2sla07JM=
+X-Received: by 2002:a17:906:710f:b0:a19:a19b:78cb with SMTP id
+ x15-20020a170906710f00b00a19a19b78cbmr3199252ejj.142.1701705565302; Mon, 04
+ Dec 2023 07:59:25 -0800 (PST)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <CAL3q7H7a0nu8xa6dNZeBzzez1D3e8dr2tUkOcaUNNnPbFJ_YLA@mail.gmail.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Spamd-Bar: +++++++++++
-X-Spam-Score: 11.69
-X-Rspamd-Server: rspamd1
-Authentication-Results: smtp-out1.suse.de;
-	dkim=none;
-	spf=softfail (smtp-out1.suse.de: 2a07:de40:b281:104:10:150:64:98 is neither permitted nor denied by domain of dsterba@suse.cz) smtp.mailfrom=dsterba@suse.cz;
-	dmarc=none
-X-Rspamd-Queue-Id: 1C7D921BA7
-X-Spamd-Result: default: False [11.69 / 50.00];
-	 HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	 RCVD_VIA_SMTP_AUTH(0.00)[];
-	 SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:98:from];
-	 FROM_HAS_DN(0.00)[];
-	 RCPT_COUNT_THREE(0.00)[3];
-	 TO_DN_SOME(0.00)[];
-	 TO_MATCH_ENVRCPT_ALL(0.00)[];
-	 MIME_GOOD(-0.10)[text/plain];
-	 REPLYTO_ADDR_EQ_FROM(0.00)[];
-	 ARC_NA(0.00)[];
-	 R_SPF_SOFTFAIL(4.60)[~all];
-	 DMARC_NA(1.20)[suse.cz];
-	 RCVD_COUNT_THREE(0.00)[3];
-	 NEURAL_SPAM_SHORT(3.00)[1.000];
-	 MX_GOOD(-0.01)[];
-	 NEURAL_SPAM_LONG(3.50)[1.000];
-	 DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,lwn.net:url];
-	 FUZZY_BLOCKED(0.00)[rspamd.com];
-	 FROM_EQ_ENVFROM(0.00)[];
-	 R_DKIM_NA(2.20)[];
-	 MIME_TRACE(0.00)[0:+];
-	 RCVD_TLS_ALL(0.00)[];
-	 BAYES_HAM(-3.00)[100.00%]
+References: <20231204-btrfs-raid-v1-0-b254eb1bcff8@wdc.com> <20231204-btrfs-raid-v1-1-b254eb1bcff8@wdc.com>
+In-Reply-To: <20231204-btrfs-raid-v1-1-b254eb1bcff8@wdc.com>
+From: Filipe Manana <fdmanana@kernel.org>
+Date: Mon, 4 Dec 2023 15:58:48 +0000
+X-Gmail-Original-Message-ID: <CAL3q7H4hHiOpN9v1DnKeU166yp2p78Hy+_g4VZ6k9G9CM83a9g@mail.gmail.com>
+Message-ID: <CAL3q7H4hHiOpN9v1DnKeU166yp2p78Hy+_g4VZ6k9G9CM83a9g@mail.gmail.com>
+Subject: Re: [PATCH 1/7] btrfs: add fstest for stripe-tree metadata with 4k write
+To: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Cc: Anand Jain <anand.jain@oracle.com>, fstests@vger.kernel.org, 
+	linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On Fri, Dec 01, 2023 at 11:03:25AM +0000, Filipe Manana wrote:
-> On Thu, Nov 30, 2023 at 10:56 PM David Sterba <dsterba@suse.com> wrote:
-> >
-> > Port btrfs_root::delayed_nodes_tree to the xarray API. The functionality
-> > is equivalent, the flags are still GFP_ATOMIC as the changes are done
-> > under a spin lock. Using a sleeping allocation would need changing the
-> > lock to mutex.
-> >
-> > The conversion is almost direct, btrfs_kill_all_delayed_nodes() uses an
-> > iterator to collect the items to delete.
-> >
-> > The patch is almost the same as 253bf57555e451 ("btrfs: turn
-> > delayed_nodes_tree into an XArray"), there are renames, comments and
-> > change of the GFP flags for xa_insert.
-> 
-> Can we include in the changelog why we are converting from radix tree to xarray?
-> What do we gain with it? Why not the more recent maple tree for example?
+On Mon, Dec 4, 2023 at 1:25=E2=80=AFPM Johannes Thumshirn
+<johannes.thumshirn@wdc.com> wrote:
+>
+> Test a simple 4k write on all RAID profiles currently supported with the
+> raid-stripe-tree.
+>
+> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+> ---
+>  tests/btrfs/302     | 55 +++++++++++++++++++++++++++++++++++++++++++++++=
++++
+>  tests/btrfs/302.out | 58 +++++++++++++++++++++++++++++++++++++++++++++++=
+++++++
+>  2 files changed, 113 insertions(+)
+>
+> diff --git a/tests/btrfs/302 b/tests/btrfs/302
+> new file mode 100755
+> index 000000000000..1d6693beff4c
+> --- /dev/null
+> +++ b/tests/btrfs/302
+> @@ -0,0 +1,55 @@
+> +#! /bin/bash
+> +# SPDX-License-Identifier: GPL-2.0
+> +# Copyright (c) 2023 Western Digital Cooperation.  All Rights Reserved.
+> +#
+> +# FS QA Test 302
+> +#
+> +# Test on-disk layout of RAID Stripe Tree Metadata
 
-I haven't evaluated maple tree for as a replacement. Regarding the
-radix-tree, it's actually implemeted by xarray so it's more or less just
-an API change. The reason to remove radix-tree is that it's an obsolete
-API, https://lwn.net/Articles/745073/
+All the tests in the patchset have this exact same description.
+Can we get a more specific description for each one?
 
-"The current patch set converts a number of radix-tree users to
-XArrays, but some still remain. If all goes according to Wilcox's plan,
-though, those will be converted in the near future and the radix-tree
-API will head toward removal."
+> +#
+> +. ./common/preamble
+> +_begin_fstest auto quick raid remount volume raid-stripe-tree
+> +
+> +. ./common/filter
+> +. ./common/filter.btrfs
+> +
+> +_supported_fs btrfs
+> +_require_test
 
-> Codewise this is about the same amount of LOCs, and I don't find it
-> either particularly simpler or more complex either.
-> Performance wise, there's no indication of anything.
+The test device is not used, this is not needed.
 
-Yeah, line count should not matter, performance should be the same
-(because it's the same underlying data structure).
+> +_require_btrfs_command inspect-internal dump-tree
+> +_require_btrfs_mkfs_feature "raid-stripe-tree"
+> +_require_scratch_dev_pool 4
+> +_require_xfs_io_command "pwrite"
+> +_require_xfs_io_command "fsync"
 
-> It also removed the preallocation using GFP_NOFS and now depends on
-> atomic allocations on insertions.
-> This is odd because we've been making efforts over time to eliminate
-> atomic allocations in order to reduce the chances of allocation
-> failures,
-> yet we are now allowing for more atomic allocations without mentioning
-> what we gain in return.
+This can be skipped, the checks for the pwrite and fsync commands.
+We never check for those as all xfs_io versions should have those, as
+they belong to the most basic and universally available commands.
 
-Right now it's because of the API conversion.  The preload mechanism is
-gone from the API, we might be able to add it using the specialized API
-or xa_reserve. The preload disables preemption so we can't use sleeping
-allocations like GFP_NOFS in xa_insert(). This would need the spinlock
--> mutex conversion.
+> +_require_btrfs_fs_feature "raid_stripe_tree"
+> +
+> +test_4k_write()
+> +{
+> +       profile=3D$1
+> +       ndevs=3D$2
 
-I'd like to get rid of the atomic allocations too, but wuold like to do
-it in steps. The radix-tree -> xarray is almost direct, switching
-preload to atomic allocations is potentially problematic but only in
-some cases. We have other atomic allocations and it does not seem to be
-causing problems.
+These variables should be made local.
 
-The long term plan:
+All these comments also apply to all the other tests introduced in the patc=
+hset.
 
-- radix-tree -> xarray
-- spinlock -> mutex
-- no atomic allocations for xarrays
+Thanks.
+
+> +
+> +       _scratch_dev_pool_get $ndevs
+> +
+> +       echo "=3D=3D=3D=3D Testing $profile =3D=3D=3D=3D"
+> +       _scratch_pool_mkfs -d $profile -m $profile
+> +       _scratch_mount
+> +
+> +       $XFS_IO_PROG -fc "pwrite 0 4k" "$SCRATCH_MNT/foo" | _filter_xfs_i=
+o
+> +
+> +       _scratch_cycle_mount
+> +       md5sum "$SCRATCH_MNT/foo" | _filter_scratch
+> +
+> +       _scratch_unmount
+> +
+> +       $BTRFS_UTIL_PROG inspect-internal dump-tree -t raid_stripe $SCRAT=
+CH_DEV_POOL |\
+> +               _filter_btrfs_version |  _filter_stripe_tree
+> +
+> +       _scratch_dev_pool_put
+> +}
+> +
+> +echo "=3D Test basic 4k write =3D"
+> +test_4k_write raid0 2
+> +test_4k_write raid1 2
+> +test_4k_write raid10 4
+> +
+> +# success, all done
+> +status=3D0
+> +exit
+> diff --git a/tests/btrfs/302.out b/tests/btrfs/302.out
+> new file mode 100644
+> index 000000000000..149630e69501
+> --- /dev/null
+> +++ b/tests/btrfs/302.out
+> @@ -0,0 +1,58 @@
+> +QA output created by 302
+> +=3D Test basic 4k write =3D
+> +=3D=3D=3D=3D Testing raid0 =3D=3D=3D=3D
+> +wrote 4096/4096 bytes at offset 0
+> +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+> +5fed275e7617a806f94c173746a2a723  SCRATCH_MNT/foo
+> +
+> +raid stripe tree key (RAID_STRIPE_TREE ROOT_ITEM 0)
+> +leaf XXXXXXXXX items X free space XXXXX generation X owner RAID_STRIPE_T=
+REE
+> +leaf XXXXXXXXX flags 0x1(WRITTEN) backref revision 1
+> +checksum stored <CHECKSUM>
+> +checksum calced <CHECKSUM>
+> +fs uuid <UUID>
+> +chunk uuid <UUID>
+> +       item 0 key (XXXXXX RAID_STRIPE 4096) itemoff XXXXX itemsize 24
+> +                       encoding: RAID0
+> +                       stripe 0 devid 1 physical XXXXXXXXX
+> +total bytes XXXXXXXX
+> +bytes used XXXXXX
+> +uuid <UUID>
+> +=3D=3D=3D=3D Testing raid1 =3D=3D=3D=3D
+> +wrote 4096/4096 bytes at offset 0
+> +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+> +5fed275e7617a806f94c173746a2a723  SCRATCH_MNT/foo
+> +
+> +raid stripe tree key (RAID_STRIPE_TREE ROOT_ITEM 0)
+> +leaf XXXXXXXXX items X free space XXXXX generation X owner RAID_STRIPE_T=
+REE
+> +leaf XXXXXXXXX flags 0x1(WRITTEN) backref revision 1
+> +checksum stored <CHECKSUM>
+> +checksum calced <CHECKSUM>
+> +fs uuid <UUID>
+> +chunk uuid <UUID>
+> +       item 0 key (XXXXXX RAID_STRIPE 4096) itemoff XXXXX itemsize 40
+> +                       encoding: RAID1
+> +                       stripe 0 devid 1 physical XXXXXXXXX
+> +                       stripe 1 devid 2 physical XXXXXXXXX
+> +total bytes XXXXXXXX
+> +bytes used XXXXXX
+> +uuid <UUID>
+> +=3D=3D=3D=3D Testing raid10 =3D=3D=3D=3D
+> +wrote 4096/4096 bytes at offset 0
+> +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+> +5fed275e7617a806f94c173746a2a723  SCRATCH_MNT/foo
+> +
+> +raid stripe tree key (RAID_STRIPE_TREE ROOT_ITEM 0)
+> +leaf XXXXXXXXX items X free space XXXXX generation X owner RAID_STRIPE_T=
+REE
+> +leaf XXXXXXXXX flags 0x1(WRITTEN) backref revision 1
+> +checksum stored <CHECKSUM>
+> +checksum calced <CHECKSUM>
+> +fs uuid <UUID>
+> +chunk uuid <UUID>
+> +       item 0 key (XXXXXX RAID_STRIPE 4096) itemoff XXXXX itemsize 40
+> +                       encoding: RAID10
+> +                       stripe 0 devid 1 physical XXXXXXXXX
+> +                       stripe 1 devid 2 physical XXXXXXXXX
+> +total bytes XXXXXXXX
+> +bytes used XXXXXX
+> +uuid <UUID>
+>
+> --
+> 2.43.0
+>
+>

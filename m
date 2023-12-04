@@ -1,28 +1,28 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2a07:de40:b251:101:10:150:64:2])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3B393F2
-	for <linux-btrfs@vger.kernel.org>; Sun,  3 Dec 2023 22:56:52 -0800 (PST)
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2a07:de40:b251:101:10:150:64:1])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E284ED3
+	for <linux-btrfs@vger.kernel.org>; Sun,  3 Dec 2023 22:56:55 -0800 (PST)
 Received: from imap2.dmz-prg2.suse.org (imap2.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:98])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id B1C661FE4F
-	for <linux-btrfs@vger.kernel.org>; Mon,  4 Dec 2023 06:56:50 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 5377D21F76
+	for <linux-btrfs@vger.kernel.org>; Mon,  4 Dec 2023 06:56:54 +0000 (UTC)
 Received: from imap2.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap2.dmz-prg2.suse.org (Postfix) with ESMTPS id B07E213588
-	for <linux-btrfs@vger.kernel.org>; Mon,  4 Dec 2023 06:56:49 +0000 (UTC)
+	by imap2.dmz-prg2.suse.org (Postfix) with ESMTPS id 5325C13588
+	for <linux-btrfs@vger.kernel.org>; Mon,  4 Dec 2023 06:56:53 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([10.150.64.162])
 	by imap2.dmz-prg2.suse.org with ESMTPSA
-	id kIW+FzF4bWXABwAAn2gu4w
+	id IB/tADV4bWXABwAAn2gu4w
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Mon, 04 Dec 2023 06:56:49 +0000
+	for <linux-btrfs@vger.kernel.org>; Mon, 04 Dec 2023 06:56:53 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/3] btrfs-progs: check: remove inode cache clearing functionality
-Date: Mon,  4 Dec 2023 17:26:27 +1030
-Message-ID: <9ded4d71f4ab77ee4ed8d3ff31df839e85756def.1701672971.git.wqu@suse.com>
+Subject: [PATCH 3/3] btrfs-progs: tune: add fsck runs before and after a full conversion
+Date: Mon,  4 Dec 2023 17:26:29 +1030
+Message-ID: <f919ead47c266bbb4c24ba873e565e4c36b9377a.1701672971.git.wqu@suse.com>
 X-Mailer: git-send-email 2.43.0
 In-Reply-To: <cover.1701672971.git.wqu@suse.com>
 References: <cover.1701672971.git.wqu@suse.com>
@@ -36,11 +36,11 @@ Content-Transfer-Encoding: 8bit
 X-Spamd-Bar: +++++++++++++++++++++
 X-Spam-Score: 21.50
 X-Rspamd-Server: rspamd1
-Authentication-Results: smtp-out2.suse.de;
+Authentication-Results: smtp-out1.suse.de;
 	dkim=none;
-	spf=fail (smtp-out2.suse.de: domain of wqu@suse.com does not designate 2a07:de40:b281:104:10:150:64:98 as permitted sender) smtp.mailfrom=wqu@suse.com;
+	spf=fail (smtp-out1.suse.de: domain of wqu@suse.com does not designate 2a07:de40:b281:104:10:150:64:98 as permitted sender) smtp.mailfrom=wqu@suse.com;
 	dmarc=fail reason="No valid SPF, No valid DKIM" header.from=suse.com (policy=quarantine)
-X-Rspamd-Queue-Id: B1C661FE4F
+X-Rspamd-Queue-Id: 5377D21F76
 X-Spamd-Result: default: False [21.50 / 50.00];
 	 RCVD_VIA_SMTP_AUTH(0.00)[];
 	 R_SPF_FAIL(1.00)[-all];
@@ -68,76 +68,127 @@ X-Spamd-Result: default: False [21.50 / 50.00];
 	 RCVD_TLS_ALL(0.00)[];
 	 BAYES_HAM(-3.00)[100.00%]
 
-Since we're already directing the end user to use "btrfs rescue
-clear-ino-cache" command, there is not much need to support it in
-btrfs-check.
+We have two bug reports in the mailing list around block group tree
+conversion.
+
+Although currently there is still no strong evidence showing btrfstune
+is the culprit yet, I still want to be extra cautious.
+
+This patch would add an extra safenet for the end users, that a full
+readonly btrfs check would be executed on the filesystem before doing
+any full fs conversion (including bg/extent tree and csum conversion).
+
+This can catch any existing health problem of the filesystem.
+
+Furthermore, after the conversion is done, there would also be a "btrfs
+check" run, to make sure the conversion itself is fine, to make sure we
+have done everything to make sure the problem is not from our side.
+
+One thing to note is, the initial check would only happen on a source
+filesystem which is not under any existing conversion.
+As a fs already under conversion can easily trigger btrfs check false
+alerts.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- check/main.c                                        |  12 ++----------
- .../060-ino-cache-clean}/ino-cache-enabled.raw.xz   | Bin
- .../060-ino-cache-clean}/test.sh                    |   2 +-
- 3 files changed, 3 insertions(+), 11 deletions(-)
- rename tests/{fsck-tests/046-ino-cache-clean => misc-tests/060-ino-cache-clean}/ino-cache-enabled.raw.xz (100%)
- rename tests/{fsck-tests/046-ino-cache-clean => misc-tests/060-ino-cache-clean}/test.sh (97%)
+ Makefile    |  3 ++-
+ tune/main.c | 55 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 57 insertions(+), 1 deletion(-)
 
-diff --git a/check/main.c b/check/main.c
-index 901a7ef5ebcb..30967fd426ca 100644
---- a/check/main.c
-+++ b/check/main.c
-@@ -9994,7 +9994,6 @@ static int cmd_check(const struct cmd_struct *cmd, int argc, char **argv)
- 	int init_csum_tree = 0;
- 	int readonly = 0;
- 	int clear_space_cache = 0;
--	int clear_ino_cache = 0;
- 	int qgroup_report = 0;
- 	int qgroups_repaired = 0;
- 	int qgroup_verify_ret;
-@@ -10118,8 +10117,8 @@ static int cmd_check(const struct cmd_struct *cmd, int argc, char **argv)
- 				ctree_flags |= OPEN_CTREE_WRITES;
- 				break;
- 			case GETOPT_VAL_CLEAR_INO_CACHE:
--				clear_ino_cache = 1;
--				ctree_flags |= OPEN_CTREE_WRITES;
-+				error("--clear-ino-cache option is deprecated, please use \"btrfs rescue clear-ino-cache\" instead");
-+				exit(1);
- 				break;
- 			case GETOPT_VAL_FORCE:
- 				force = 1;
-@@ -10240,13 +10239,6 @@ static int cmd_check(const struct cmd_struct *cmd, int argc, char **argv)
- 		goto close_out;
+diff --git a/Makefile b/Makefile
+index 374f59b99150..47c6421781f3 100644
+--- a/Makefile
++++ b/Makefile
+@@ -267,7 +267,8 @@ mkfs_objects = mkfs/main.o mkfs/common.o mkfs/rootdir.o
+ image_objects = image/main.o image/sanitize.o image/image-create.o image/common.o \
+ 		image/image-restore.o
+ tune_objects = tune/main.o tune/seeding.o tune/change-uuid.o tune/change-metadata-uuid.o \
+-	       tune/convert-bgt.o tune/change-csum.o common/clear-cache.o tune/quota.o
++	       tune/convert-bgt.o tune/change-csum.o common/clear-cache.o tune/quota.o \
++	       check/main.o check/mode-common.o check/mode-lowmem.o mkfs/common.o
+ all_objects = $(objects) $(cmds_objects) $(libbtrfs_objects) $(convert_objects) \
+ 	      $(mkfs_objects) $(image_objects) $(tune_objects) $(libbtrfsutil_objects)
+ 
+diff --git a/tune/main.c b/tune/main.c
+index 9dcb55952b59..f05ab7c3b36e 100644
+--- a/tune/main.c
++++ b/tune/main.c
+@@ -29,6 +29,7 @@
+ #include "kernel-shared/transaction.h"
+ #include "kernel-shared/volumes.h"
+ #include "kernel-shared/free-space-tree.h"
++#include "kernel-shared/zoned.h"
+ #include "common/utils.h"
+ #include "common/open-utils.h"
+ #include "common/device-scan.h"
+@@ -367,6 +368,47 @@ int BOX_MAIN(btrfstune)(int argc, char *argv[])
+ 	if (change_metadata_uuid || random_fsid || new_fsid_str)
+ 		ctree_flags |= OPEN_CTREE_USE_LATEST_BDEV;
+ 
++	/*
++	 * For fs rewrites operations, we need to verify the initial
++	 * filesystem to make sure they are healthy.
++	 * Otherwise the transaction protection is not going to save us.
++	 */
++	if (to_bg_tree || to_extent_tree || csum_type != -1) {
++		struct btrfs_super_block sb = { 0 };
++		u64 sb_flags;
++
++		/*
++		 * Here we just read out the superblock without any extra check,
++		 * as later btrfs_check() would do more comprehensive check on
++		 * it.
++		 */
++		ret = sbread(fd, &sb, 0);
++		if (ret < 0) {
++			errno = -ret;
++			error("failed to read super block from \"%s\"", device);
++			goto free_out;
++		}
++		sb_flags = btrfs_super_flags(&sb);
++		/*
++		 * If we're not resuming the conversion, we should check the fs
++		 * first.
++		 */
++		if (!(sb_flags & (BTRFS_SUPER_FLAG_CHANGING_BG_TREE |
++				  BTRFS_SUPER_FLAG_CHANGING_DATA_CSUM |
++				  BTRFS_SUPER_FLAG_CHANGING_META_CSUM))) {
++			bool check_ret;
++			struct btrfs_check_options options =
++				btrfs_default_check_options;
++
++			check_ret = btrfs_check(device, &options);
++			if (check_ret) {
++				error(
++		"\"btrfs check\" found some errors, will not touch the filesystem");
++				ret = -EUCLEAN;
++				goto free_out;
++			}
++		}
++	}
+ 	root = open_ctree_fd(fd, device, 0, ctree_flags);
+ 
+ 	if (!root) {
+@@ -535,6 +577,19 @@ out:
  	}
+ 	close_ctree(root);
+ 	btrfs_close_all_devices();
++	/* A sucessful run finished, let's verify the fs again. */
++	if (!ret && (to_bg_tree || to_extent_tree || csum_type)) {
++		bool check_ret;
++		struct btrfs_check_options options = btrfs_default_check_options;
++
++		check_ret = btrfs_check(device, &options);
++		if (check_ret) {
++			error(
++	"\"btrfs check\" found some errors after the conversion, please contact the developers");
++			ret = -EUCLEAN;
++		}
++
++	}
  
--	if (clear_ino_cache) {
--		warning("--clear-ino-cache option is deprecated, please use \"btrfs rescue clear-ino-cache\" instead");
--		ret = clear_ino_cache_items(gfs_info);
--		err = ret;
--		goto close_out;
--	}
--
- 	/*
- 	 * repair mode will force us to commit transaction which
- 	 * will make us fail to load log tree when mounting.
-diff --git a/tests/fsck-tests/046-ino-cache-clean/ino-cache-enabled.raw.xz b/tests/misc-tests/060-ino-cache-clean/ino-cache-enabled.raw.xz
-similarity index 100%
-rename from tests/fsck-tests/046-ino-cache-clean/ino-cache-enabled.raw.xz
-rename to tests/misc-tests/060-ino-cache-clean/ino-cache-enabled.raw.xz
-diff --git a/tests/fsck-tests/046-ino-cache-clean/test.sh b/tests/misc-tests/060-ino-cache-clean/test.sh
-similarity index 97%
-rename from tests/fsck-tests/046-ino-cache-clean/test.sh
-rename to tests/misc-tests/060-ino-cache-clean/test.sh
-index cfbadf251d30..10b75cc5f5b0 100755
---- a/tests/fsck-tests/046-ino-cache-clean/test.sh
-+++ b/tests/misc-tests/060-ino-cache-clean/test.sh
-@@ -9,7 +9,7 @@ setup_root_helper
- 
- image=$(extract_image "./ino-cache-enabled.raw.xz")
- 
--run_check "$TOP/btrfs" check --clear-ino-cache "$image"
-+run_check "$TOP/btrfs" rescue clear-ino-cache "$image"
- run_check "$TOP/btrfs" check "$image"
- 
- # Check for FREE_INO items for toplevel subvol
+ free_out:
+ 	return ret;
 -- 
 2.43.0
 

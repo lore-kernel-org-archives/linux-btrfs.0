@@ -1,39 +1,40 @@
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="q1pl2fPP"
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="KfM1U5v/"
 Received: from esa3.hgst.iphmx.com (esa3.hgst.iphmx.com [216.71.153.141])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 75A61423B;
-	Mon,  4 Dec 2023 05:25:39 -0800 (PST)
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 23E041731;
+	Mon,  4 Dec 2023 05:25:13 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1701696339; x=1733232339;
-  h=from:date:subject:mime-version:content-transfer-encoding:
-   message-id:references:in-reply-to:to:cc;
-  bh=YNpmRMEKHZVnVD0dNtGJOvoR99Yv/K6r9YAe1acPrx4=;
-  b=q1pl2fPP9KMmjiM0g01BtAZCIpYvw10vv7WnxHhZRLwy8haQPYqgJQwY
-   kSShLZ+yYqFEzg6uTgWbNpkd2U2J7b4+2Mjou1CR9TJQcPpXK+HHFgFRh
-   ZYzRf5/Bxdk1RVRSnxCG1p7kLS+s56EUjWnMqoUl1EtK3mUFKuWZ7MGZv
-   nn9hZKFFBWxAdS3z/GSmTtGcZZ0vTlU3PG6ixhWb3x/23LS89yY3uXpul
-   kbu/oCpkCmmlTf7mjW8ENIj0CGxqCcagf6VfUxjskR6YtjBUUlRFBNQer
-   Ftpj5Qivh7sZeQCJq9/xGmx3WyrX6/TrkL/mfmfK1AmtiC7kzl/sAOvUT
-   A==;
-X-CSE-ConnectionGUID: KAsHWfkfRDGh5TLb0GFIzQ==
-X-CSE-MsgGUID: hOl9s7ijTYKNmgdEmzp8rg==
+  t=1701696314; x=1733232314;
+  h=from:subject:date:message-id:mime-version:
+   content-transfer-encoding:to:cc;
+  bh=jWZggdfAkKx3qGGgsFwW3RNkyiJ8YocNqsMgRphdzHQ=;
+  b=KfM1U5v/YEMz75u0f/kvS+r5AVsVDvF/naps+82LnyNCllluBGZeTlA8
+   gGAdNd31ZLv5/hga3xlYn9wM2HmgxEVazoYC0g1N98B4pLaHJsO0fixjT
+   fJdQZhw4WcYS1sCZ62iXto4CQzAinITQXHbq5p1bNwsIC6sG8GqPHsCks
+   wD68+1gFZMF11ApP99Qcpe3+q4Hz14fRAUz+oF+eRg9k4526U+X9YC4uK
+   IgZzvXhtO5qnvisWLrE59Tna2h1/Kg0lWHKYbIFJ39DKj9wC8EcLDxxOW
+   NQmWQJiHg8fmvLOvjDxW0kt9RlwWx1x7qgrMZGr2UG8Q9kcgpf4O3gvYs
+   g==;
+X-CSE-ConnectionGUID: PpkBczJ1RliJGqbkv/N/rw==
+X-CSE-MsgGUID: 656Tvk9pSumUF8bs4s+H0Q==
 X-IronPort-AV: E=Sophos;i="6.04,249,1695657600"; 
-   d="scan'208";a="3929125"
+   d="scan'208";a="3929116"
 Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 04 Dec 2023 21:25:16 +0800
-IronPort-SDR: tCy/lqpa6OgIpQteIqetPqYIOApzNUvuXwVTL7pl4Pds1d4krWPyJOSNLIBPj7HRF+j2XgP/tK
- +AKLMAnakXGA==
+  by ob1.hgst.iphmx.com with ESMTP; 04 Dec 2023 21:25:13 +0800
+IronPort-SDR: yRxh2+03SM9cIWiPO1brIukWC1PvMhB7KAzUx81DbUbIzJDHxkp0bN7loq2AnDNwn4ks+YUoiG
+ C62A2iDyos0g==
 Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 04 Dec 2023 04:36:19 -0800
-IronPort-SDR: RQuNeRdXlKh8fSTrkOYA52+tOKrqDXEPCVXuaTFkoJ9MWC1X597xfwA0sHfSAOvnA8Tdj8XPP3
- cqNYqro/3bkQ==
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 04 Dec 2023 04:36:16 -0800
+IronPort-SDR: F4+n3/Ta9pWhJdr0BEJUy3mkY4NFn602108OiwaLdb6XC+ayQVAKu9DpflRSwtJcp+1S9AERHv
+ PVDYga26qriQ==
 WDCIronportException: Internal
 Received: from unknown (HELO redsun91.ssa.fujisawa.hgst.com) ([10.149.66.6])
-  by uls-op-cesaip01.wdc.com with ESMTP; 04 Dec 2023 05:25:15 -0800
+  by uls-op-cesaip01.wdc.com with ESMTP; 04 Dec 2023 05:25:12 -0800
 From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Date: Mon, 04 Dec 2023 05:25:07 -0800
-Subject: [PATCH 4/7] btrfs: add fstests to write 128k to a RST filesystem
+Subject: [PATCH 0/7] fstests: add tests for btrfs' raid-stripe-tree feature
+Date: Mon, 04 Dec 2023 05:25:03 -0800
+Message-Id: <20231204-btrfs-raid-v1-0-b254eb1bcff8@wdc.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -42,163 +43,57 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-Message-Id: <20231204-btrfs-raid-v1-4-b254eb1bcff8@wdc.com>
-References: <20231204-btrfs-raid-v1-0-b254eb1bcff8@wdc.com>
-In-Reply-To: <20231204-btrfs-raid-v1-0-b254eb1bcff8@wdc.com>
+X-B4-Tracking: v=1; b=H4sIAC/TbWUC/6tWKk4tykwtVrJSqFYqSi3LLM7MzwNyDHUUlJIzE
+ vPSU3UzU4B8JSMDI2NDIwMT3aSSorRi3aLEzBRdc1NLc1NzS/M0S/MUJaCGgqLUtMwKsGHRsbW
+ 1ACiTKG9cAAAA
 To: Anand Jain <anand.jain@oracle.com>
 Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org, 
  Johannes Thumshirn <johannes.thumshirn@wdc.com>
 X-Mailer: b4 0.12.3
-X-Developer-Signature: v=1; a=ed25519-sha256; t=1701696311; l=4439;
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1701696311; l=1735;
  i=johannes.thumshirn@wdc.com; s=20230613; h=from:subject:message-id;
- bh=YNpmRMEKHZVnVD0dNtGJOvoR99Yv/K6r9YAe1acPrx4=;
- b=c1T2qOi/vL0vCYBmCrgS8kchBLS+9YXH3s9aYGCBiZSEiYKx/vn+5qL9xAgwQTcQQ8CtKsZp1
- kYUst/fgcJ1A4Y5jnbkcro3t86txpsbvzgjh+/bqVlNqCH9eZwtV1eO
+ bh=jWZggdfAkKx3qGGgsFwW3RNkyiJ8YocNqsMgRphdzHQ=;
+ b=EQS+Qvu47ZIuudW7FDRidJLysBFaVeGdmZJQ68r8GWnf3rFXsDPE+2mE6/oyEgXfwpGZQhcmv
+ o1nXlwAoeX+BCoB/vdOzjUH1TS9f1T+a+fPzCBXSOgB/N/Nb3y6BGKd
 X-Developer-Key: i=johannes.thumshirn@wdc.com; a=ed25519;
  pk=TGmHKs78FdPi+QhrViEvjKIGwReUGCfa+3LEnGoR2KM=
 
-Add a test writing 128k to a file on an empty filesystem formatted with a
-raid-stripe-tree.
+Add tests for btrfs' raid-stripe-tree feature. All of these test work by
+writing a specific pattern to a newly created filesystem and afterwards
+using `btrfs inspect-internal -t raid-stripe $SCRATCH_DEV_POOL` to verify
+the placement and the layout of the metadata.
 
-Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+The md5sum of each file will be compared as welli after a re-mount of the
+filesystem.
+
 ---
- tests/btrfs/305     | 55 +++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/305.out | 65 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 120 insertions(+)
+Johannes Thumshirn (7):
+      btrfs: add fstest for stripe-tree metadata with 4k write
+      btrfs: add fstest for 8k write spanning two stripes on raid-stripe-tree
+      btrfs: add fstest for writing to a file at an offset with RST
+      btrfs: add fstests to write 128k to a RST filesystem
+      btrfs: add fstest for overwriting a file partially with RST
+      common: add filter for btrfs raid-stripe dump
+      fstests: doc: add new raid-stripe-tree group
 
-diff --git a/tests/btrfs/305 b/tests/btrfs/305
-new file mode 100755
-index 000000000000..8b84fccd692b
---- /dev/null
-+++ b/tests/btrfs/305
-@@ -0,0 +1,55 @@
-+#! /bin/bash
-+# SPDX-License-Identifier: GPL-2.0
-+# Copyright (c) 2023 Western Digital Cooperation.  All Rights Reserved.
-+#
-+# FS QA Test 305
-+#
-+# Test on-disk layout of RAID Stripe Tree Metadata
-+#
-+. ./common/preamble
-+_begin_fstest auto quick raid remount volume raid-stripe-tree
-+
-+. ./common/filter
-+. ./common/filter.btrfs
-+
-+_supported_fs btrfs
-+_require_test
-+_require_btrfs_command inspect-internal dump-tree
-+_require_btrfs_mkfs_feature "raid-stripe-tree"
-+_require_scratch_dev_pool 4
-+_require_xfs_io_command "pwrite"
-+_require_xfs_io_command "fsync"
-+_require_btrfs_fs_feature "raid_stripe_tree"
-+
-+test_128k_write()
-+{
-+	profile=$1
-+	ndevs=$2
-+
-+	_scratch_dev_pool_get $ndevs
-+
-+	echo "==== Testing $profile ===="
-+	_scratch_pool_mkfs -d $profile -m $profile
-+	_scratch_mount
-+
-+	$XFS_IO_PROG -fc "pwrite 0 128k" "$SCRATCH_MNT/foo" | _filter_xfs_io
-+
-+	_scratch_cycle_mount
-+	md5sum "$SCRATCH_MNT/foo" | _filter_scratch
-+
-+	_scratch_unmount
-+
-+	$BTRFS_UTIL_PROG inspect-internal dump-tree -t raid_stripe $SCRATCH_DEV_POOL |\
-+		_filter_btrfs_version | _filter_stripe_tree
-+
-+	_scratch_dev_pool_put
-+}
-+
-+echo "= Test 128k write to empty file  ="
-+test_128k_write raid0 2
-+test_128k_write raid1 2
-+test_128k_write raid10 4
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/btrfs/305.out b/tests/btrfs/305.out
-new file mode 100644
-index 000000000000..0dbd3beca77f
---- /dev/null
-+++ b/tests/btrfs/305.out
-@@ -0,0 +1,65 @@
-+QA output created by 305
-+= Test 128k write to empty file  =
-+==== Testing raid0 ====
-+wrote 131072/131072 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+d48858312a922db7eb86377f638dbc9f  SCRATCH_MNT/foo
-+
-+raid stripe tree key (RAID_STRIPE_TREE ROOT_ITEM 0) 
-+leaf XXXXXXXXX items X free space XXXXX generation X owner RAID_STRIPE_TREE
-+leaf XXXXXXXXX flags 0x1(WRITTEN) backref revision 1
-+checksum stored <CHECKSUM>
-+checksum calced <CHECKSUM>
-+fs uuid <UUID>
-+chunk uuid <UUID>
-+	item 0 key (XXXXXX RAID_STRIPE 65536) itemoff XXXXX itemsize 24
-+			encoding: RAID0
-+			stripe 0 devid 1 physical XXXXXXXXX
-+	item 1 key (XXXXXX RAID_STRIPE 65536) itemoff XXXXX itemsize 24
-+			encoding: RAID0
-+			stripe 0 devid 2 physical XXXXXXXXX
-+total bytes XXXXXXXX
-+bytes used XXXXXX
-+uuid <UUID>
-+==== Testing raid1 ====
-+wrote 131072/131072 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+d48858312a922db7eb86377f638dbc9f  SCRATCH_MNT/foo
-+
-+raid stripe tree key (RAID_STRIPE_TREE ROOT_ITEM 0) 
-+leaf XXXXXXXXX items X free space XXXXX generation X owner RAID_STRIPE_TREE
-+leaf XXXXXXXXX flags 0x1(WRITTEN) backref revision 1
-+checksum stored <CHECKSUM>
-+checksum calced <CHECKSUM>
-+fs uuid <UUID>
-+chunk uuid <UUID>
-+	item 0 key (XXXXXX RAID_STRIPE 131072) itemoff XXXXX itemsize 40
-+			encoding: RAID1
-+			stripe 0 devid 1 physical XXXXXXXXX
-+			stripe 1 devid 2 physical XXXXXXXXX
-+total bytes XXXXXXXX
-+bytes used XXXXXX
-+uuid <UUID>
-+==== Testing raid10 ====
-+wrote 131072/131072 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+d48858312a922db7eb86377f638dbc9f  SCRATCH_MNT/foo
-+
-+raid stripe tree key (RAID_STRIPE_TREE ROOT_ITEM 0) 
-+leaf XXXXXXXXX items X free space XXXXX generation X owner RAID_STRIPE_TREE
-+leaf XXXXXXXXX flags 0x1(WRITTEN) backref revision 1
-+checksum stored <CHECKSUM>
-+checksum calced <CHECKSUM>
-+fs uuid <UUID>
-+chunk uuid <UUID>
-+	item 0 key (XXXXXX RAID_STRIPE 65536) itemoff XXXXX itemsize 40
-+			encoding: RAID10
-+			stripe 0 devid 1 physical XXXXXXXXX
-+			stripe 1 devid 2 physical XXXXXXXXX
-+	item 1 key (XXXXXX RAID_STRIPE 65536) itemoff XXXXX itemsize 40
-+			encoding: RAID10
-+			stripe 0 devid 3 physical XXXXXXXXX
-+			stripe 1 devid 4 physical XXXXXXXXX
-+total bytes XXXXXXXX
-+bytes used XXXXXX
-+uuid <UUID>
+ common/filter.btrfs |  14 +++++++
+ doc/group-names.txt |   1 +
+ tests/btrfs/302     |  55 +++++++++++++++++++++++++++
+ tests/btrfs/302.out |  58 ++++++++++++++++++++++++++++
+ tests/btrfs/303     |  59 +++++++++++++++++++++++++++++
+ tests/btrfs/303.out |  82 ++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/304     |  57 ++++++++++++++++++++++++++++
+ tests/btrfs/304.out |  75 +++++++++++++++++++++++++++++++++++++
+ tests/btrfs/305     |  55 +++++++++++++++++++++++++++
+ tests/btrfs/305.out |  65 ++++++++++++++++++++++++++++++++
+ tests/btrfs/306     |  57 ++++++++++++++++++++++++++++
+ tests/btrfs/306.out | 106 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 12 files changed, 684 insertions(+)
+---
+base-commit: baca8a2b5cb6e798ce3a07e79a081031370c6cb8
+change-id: 20231204-btrfs-raid-75975797f97d
 
+Best regards,
 -- 
-2.43.0
+Johannes Thumshirn <johannes.thumshirn@wdc.com>
 

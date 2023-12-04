@@ -1,63 +1,146 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 804C322071;
-	Mon,  4 Dec 2023 15:45:36 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="ECs/ebmK"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 09071C433C8;
-	Mon,  4 Dec 2023 15:45:34 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1701704735;
-	bh=yLz327e1xTQk+nxRMTwZIMbD5St1aq+35xCKeU8bTOo=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-	b=ECs/ebmKWEZwL8xVqb6uvLixhHVA3yzp/mlPqFRJ/DUfK8zVfpZugQskvNXm3APAy
-	 aClzKY4Q9gFH5Leo+n8sjeqJBCbyTvkoxsJlHjbJJ/S8RXrcpCg+8/dtqMiJtkxAxR
-	 NrJbUAQv+PtZLRlXLacswOkbbA6l2rR2tveMqjFRUgQlhozEDmv/0s8tonNe0HZhfm
-	 NxiZrQEmsdNxMQeubMMiV2upDyMViJ706txp/DPyN7s1OqnWLVFjwrtMpAXxpTAYgp
-	 8/SJIlw0x7BKhvkrh8eGlkxFJ+XIqAfHRu208m1YzvvmIA2uLqkcUxL4izS3Y2odA6
-	 64dfPsvhQ4ARQ==
-From: fdmanana@kernel.org
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org,
-	Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH 2/2] btrfs/048: add missing groups 'subvol', 'snapshot' and 'send'
-Date: Mon,  4 Dec 2023 15:45:11 +0000
-Message-Id: <bb893d210f2cb43467f219a817003cbd6b596b6c.1701704559.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.40.1
-In-Reply-To: <cover.1701704557.git.fdmanana@suse.com>
-References: <cover.1701704557.git.fdmanana@suse.com>
+Received: from mail-ej1-f41.google.com (mail-ej1-f41.google.com [209.85.218.41])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CCCB8A4
+	for <linux-btrfs@vger.kernel.org>; Mon,  4 Dec 2023 07:50:57 -0800 (PST)
+Received: by mail-ej1-f41.google.com with SMTP id a640c23a62f3a-a1b7b6bf098so165242566b.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 Dec 2023 07:50:57 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1701705055; x=1702309855;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=g/n6Z7YnJlCIWTsaHqbnpnO3LzBqMi7wD11sZnELj6k=;
+        b=vNRAXPgVt2gExEHy2Zg5T8LqSaulhPic2veJqMXR+DGIZ2Qyb0X5TB7XrexVhjjLa6
+         1+U+phJvkHBbdb5hUB4R+SDf0b9qmT/Vp9HxeMiKsCc0MNvG+jULG2XQzX0u57C5JLti
+         pNq9Pz0qmKGYI7dHhB9lM99tRj+GnpcmAPuw9hZh4J/Mj/5AOYGNsv/6OmiEsbdlXgn/
+         f+bXHRjMG0eTFoliOL0A4M7K/Opg5JWpTfYHbxHJKsqS5FiMh6iZ5XQW7dC205PFn6aw
+         0oZ0dBk53715Tk7kiHX/rPu2DyCWJxOE7t/nU1MeGOlzQgY9+dfFI/0ktsZAow0i6bF+
+         ZPXQ==
+X-Gm-Message-State: AOJu0Yxpf6PvqTTWMKuRUZmRYuNIUKxreK7AbOXNP60Ng5VS9A6A9uq7
+	PnZLgJAy9BjhJbYJqH8Gh042A+8EhjKMFQ==
+X-Google-Smtp-Source: AGHT+IHzui22i2xUMXTuhUgCaipTUY+1qyGdMJEl/XFEAyXMhOgmbVgADd+phdDqCjkffeolST3rnQ==
+X-Received: by 2002:a17:906:103:b0:a17:d879:7f06 with SMTP id 3-20020a170906010300b00a17d8797f06mr6096165eje.4.1701705055452;
+        Mon, 04 Dec 2023 07:50:55 -0800 (PST)
+Received: from mail-ej1-f43.google.com (mail-ej1-f43.google.com. [209.85.218.43])
+        by smtp.gmail.com with ESMTPSA id oz11-20020a170906cd0b00b009fc990d9edbsm5391275ejb.192.2023.12.04.07.50.55
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 04 Dec 2023 07:50:55 -0800 (PST)
+Received: by mail-ej1-f43.google.com with SMTP id a640c23a62f3a-a18b0f69b33so825406966b.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 Dec 2023 07:50:55 -0800 (PST)
+X-Received: by 2002:a17:906:88f:b0:a19:a409:37e1 with SMTP id
+ n15-20020a170906088f00b00a19a40937e1mr6286847eje.58.1701705055092; Mon, 04
+ Dec 2023 07:50:55 -0800 (PST)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+References: <d28d747954ec9967f6e01dcc2185229f1667b7db.1701658076.git.wqu@suse.com>
+In-Reply-To: <d28d747954ec9967f6e01dcc2185229f1667b7db.1701658076.git.wqu@suse.com>
+From: Neal Gompa <neal@gompa.dev>
+Date: Mon, 4 Dec 2023 10:50:18 -0500
+X-Gmail-Original-Message-ID: <CAEg-Je8bQmfC5tWztqz3LRym0BWA01JVLuNQf0VB6AFDR7ufuA@mail.gmail.com>
+Message-ID: <CAEg-Je8bQmfC5tWztqz3LRym0BWA01JVLuNQf0VB6AFDR7ufuA@mail.gmail.com>
+Subject: Re: [PATCH] btrfs-progs: Documentation: update the man page for btrfs
+ check lowmem mode
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-From: Filipe Manana <fdmanana@suse.com>
+On Sun, Dec 3, 2023 at 9:48=E2=80=AFPM Qu Wenruo <wqu@suse.com> wrote:
+>
+> Lowmem mode has improved quite a lot since its introduction, for
+> read-only check it's definitely fine.
+>
+> For repair mode, both lowmem and original mode are considered dangerous
+> especially for complex corruptions.
+>
+> For now lowmem mode is only bad at fixing fundamentally corrupted cases,
+> like bad shift offsets or transid, which in real world it's not an easy
+> repair for the original mode either.
+>
+> This patch would move the --mode option out of the dangerous section and
+> update the notes for the lowmem mode on its limitation.
+>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  Documentation/btrfs-check.rst | 32 ++++++++++++++------------------
+>  1 file changed, 14 insertions(+), 18 deletions(-)
+>
+> diff --git a/Documentation/btrfs-check.rst b/Documentation/btrfs-check.rs=
+t
+> index 046aec52923a..41ab39fab317 100644
+> --- a/Documentation/btrfs-check.rst
+> +++ b/Documentation/btrfs-check.rst
+> @@ -57,6 +57,20 @@ SAFE OR ADVISORY OPTIONS
+>  -E|--subvol-extents <subvolid>
+>          show extent state for the given subvolume
+>
+> +--mode <MODE>
+> +        select mode of operation regarding memory and IO
+> +
+> +        The *MODE* can be one of:
+> +
+> +        original
+> +                The metadata are read into memory and verified, thus the=
+ requirements are high
+> +                on large filesystems and can even lead to out-of-memory =
+conditions.  The
+> +                possible workaround is to export the block device over n=
+etwork to a machine
+> +                with enough memory.
+> +        lowmem
+> +                This mode is supposed to address the high memory consump=
+tion at the cost of
+> +                increased IO when it needs to re-read blocks.  This may =
+increase run time.
+> +
+>  -p|--progress
+>          indicate progress at various checking phases
+>
+> @@ -117,24 +131,6 @@ DANGEROUS OPTIONS
+>          .. warning::
+>                  Do not use unless you know what you're doing.
+>
+> ---mode <MODE>
+> -        select mode of operation regarding memory and IO
+> -
+> -        The *MODE* can be one of:
+> -
+> -        original
+> -                The metadata are read into memory and verified, thus the=
+ requirements are high
+> -                on large filesystems and can even lead to out-of-memory =
+conditions.  The
+> -                possible workaround is to export the block device over n=
+etwork to a machine
+> -                with enough memory.
+> -        lowmem
+> -                This mode is supposed to address the high memory consump=
+tion at the cost of
+> -                increased IO when it needs to re-read blocks.  This may =
+increase run time.
+> -
+> -        .. note::
+> -                *lowmem* mode does not work with *--repair* yet, and is =
+still considered
+> -                experimental.
+> -
+>  .. _man-check-option-force:
+>
+>  --force
+> --
+> 2.43.0
+>
+>
 
-This test case exercises subvolumes, snapshot and send/receive, so add
-the corresponding groups to the test.
+This patch should also include updating the code in check/main.c to
+drop the warnings and notes of its experimental nature too.
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- tests/btrfs/048 | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/tests/btrfs/048 b/tests/btrfs/048
-index 7816a997..8a88b8cc 100755
---- a/tests/btrfs/048
-+++ b/tests/btrfs/048
-@@ -11,7 +11,7 @@
- #  btrfs: fix zstd compression parameter
- #
- . ./common/preamble
--_begin_fstest auto quick compress
-+_begin_fstest auto quick compress subvol snapshot send
- 
- # Override the default cleanup function.
- _cleanup()
--- 
-2.40.1
 
+--
+=E7=9C=9F=E5=AE=9F=E3=81=AF=E3=81=84=E3=81=A4=E3=82=82=E4=B8=80=E3=81=A4=EF=
+=BC=81/ Always, there's only one truth!

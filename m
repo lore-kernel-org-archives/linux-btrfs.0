@@ -1,40 +1,39 @@
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="KfM1U5v/"
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="PdKSxena"
 Received: from esa3.hgst.iphmx.com (esa3.hgst.iphmx.com [216.71.153.141])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 23E041731;
-	Mon,  4 Dec 2023 05:25:13 -0800 (PST)
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 436221BD3;
+	Mon,  4 Dec 2023 05:26:03 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1701696314; x=1733232314;
-  h=from:subject:date:message-id:mime-version:
-   content-transfer-encoding:to:cc;
-  bh=jWZggdfAkKx3qGGgsFwW3RNkyiJ8YocNqsMgRphdzHQ=;
-  b=KfM1U5v/YEMz75u0f/kvS+r5AVsVDvF/naps+82LnyNCllluBGZeTlA8
-   gGAdNd31ZLv5/hga3xlYn9wM2HmgxEVazoYC0g1N98B4pLaHJsO0fixjT
-   fJdQZhw4WcYS1sCZ62iXto4CQzAinITQXHbq5p1bNwsIC6sG8GqPHsCks
-   wD68+1gFZMF11ApP99Qcpe3+q4Hz14fRAUz+oF+eRg9k4526U+X9YC4uK
-   IgZzvXhtO5qnvisWLrE59Tna2h1/Kg0lWHKYbIFJ39DKj9wC8EcLDxxOW
-   NQmWQJiHg8fmvLOvjDxW0kt9RlwWx1x7qgrMZGr2UG8Q9kcgpf4O3gvYs
-   g==;
-X-CSE-ConnectionGUID: PpkBczJ1RliJGqbkv/N/rw==
-X-CSE-MsgGUID: 656Tvk9pSumUF8bs4s+H0Q==
+  t=1701696363; x=1733232363;
+  h=from:date:subject:mime-version:content-transfer-encoding:
+   message-id:references:in-reply-to:to:cc;
+  bh=0vFVxyKpqAp7DKayL6Ik1UXOmUX6REN6nOAs9orTBSo=;
+  b=PdKSxena9VF4a0IVe0N3XOGlUyvHKNPQqGTCngxpMVgesPjcjuermx+H
+   GpxJ6r95NJ3PWc7WbfNPle6gs97TtohLB7s1lm67uXJPAI+lnW+VPZtWY
+   tGvxuPzR2vD3QxAZlkYGDUeBGNip28V55Mz/RrePKn7RpbbOgm5FJ40+S
+   pgN78tztgtTMzjYfC+4/Np5i+11D1cNr85XnfFIopmO3GebwWEG/nnt9K
+   XvycGki+A1B3UdwUEk54OSSZi4kTXxzbwEAZdAfCQREzENgRc3CjhYOhd
+   /yCNha56zbkT0Q3CtpA1vizlxnxb3D58yKN1N0KKZSWJwSKOitTH8EJZs
+   A==;
+X-CSE-ConnectionGUID: i6JTjpMCRcWeMM/ZN5ZMRg==
+X-CSE-MsgGUID: FBmLLc5PRQymz+hyTuSoQA==
 X-IronPort-AV: E=Sophos;i="6.04,249,1695657600"; 
-   d="scan'208";a="3929116"
+   d="scan'208";a="3929134"
 Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 04 Dec 2023 21:25:13 +0800
-IronPort-SDR: yRxh2+03SM9cIWiPO1brIukWC1PvMhB7KAzUx81DbUbIzJDHxkp0bN7loq2AnDNwn4ks+YUoiG
- C62A2iDyos0g==
+  by ob1.hgst.iphmx.com with ESMTP; 04 Dec 2023 21:25:19 +0800
+IronPort-SDR: SlbzCfDgY6rqJF47o4f2h2b5lUJbI/2u43W5X2E+a17ABxi5u42msF2XC0foXCOlCNbLJ+GcPy
+ 02DtHEcpZXDQ==
 Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 04 Dec 2023 04:36:16 -0800
-IronPort-SDR: F4+n3/Ta9pWhJdr0BEJUy3mkY4NFn602108OiwaLdb6XC+ayQVAKu9DpflRSwtJcp+1S9AERHv
- PVDYga26qriQ==
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 04 Dec 2023 04:36:22 -0800
+IronPort-SDR: J8BjInL79iaOnoc38YL82nOnQ8UhWuBTBiwW9DPApqst4JwI00/8TDnwmc9vtc8SnMymKL+6TK
+ Zn6u+voJUf6A==
 WDCIronportException: Internal
 Received: from unknown (HELO redsun91.ssa.fujisawa.hgst.com) ([10.149.66.6])
-  by uls-op-cesaip01.wdc.com with ESMTP; 04 Dec 2023 05:25:12 -0800
+  by uls-op-cesaip01.wdc.com with ESMTP; 04 Dec 2023 05:25:17 -0800
 From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH 0/7] fstests: add tests for btrfs' raid-stripe-tree feature
-Date: Mon, 04 Dec 2023 05:25:03 -0800
-Message-Id: <20231204-btrfs-raid-v1-0-b254eb1bcff8@wdc.com>
+Date: Mon, 04 Dec 2023 05:25:09 -0800
+Subject: [PATCH 6/7] common: add filter for btrfs raid-stripe dump
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -43,57 +42,51 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-X-B4-Tracking: v=1; b=H4sIAC/TbWUC/6tWKk4tykwtVrJSqFYqSi3LLM7MzwNyDHUUlJIzE
- vPSU3UzU4B8JSMDI2NDIwMT3aSSorRi3aLEzBRdc1NLc1NzS/M0S/MUJaCGgqLUtMwKsGHRsbW
- 1ACiTKG9cAAAA
+Message-Id: <20231204-btrfs-raid-v1-6-b254eb1bcff8@wdc.com>
+References: <20231204-btrfs-raid-v1-0-b254eb1bcff8@wdc.com>
+In-Reply-To: <20231204-btrfs-raid-v1-0-b254eb1bcff8@wdc.com>
 To: Anand Jain <anand.jain@oracle.com>
 Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org, 
  Johannes Thumshirn <johannes.thumshirn@wdc.com>
 X-Mailer: b4 0.12.3
-X-Developer-Signature: v=1; a=ed25519-sha256; t=1701696311; l=1735;
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1701696311; l=1491;
  i=johannes.thumshirn@wdc.com; s=20230613; h=from:subject:message-id;
- bh=jWZggdfAkKx3qGGgsFwW3RNkyiJ8YocNqsMgRphdzHQ=;
- b=EQS+Qvu47ZIuudW7FDRidJLysBFaVeGdmZJQ68r8GWnf3rFXsDPE+2mE6/oyEgXfwpGZQhcmv
- o1nXlwAoeX+BCoB/vdOzjUH1TS9f1T+a+fPzCBXSOgB/N/Nb3y6BGKd
+ bh=0vFVxyKpqAp7DKayL6Ik1UXOmUX6REN6nOAs9orTBSo=;
+ b=Zk65r4w5MZcoUK9r5+7MvpnuHn9bYAWbImFlEfU7zYEzSNK3VDlgywPPDAXNjrdszkbWYyqYU
+ A7O3Y9pg13IBbxtXeWA7zZ8bkei0nmZmoc7Und6fBHNZKBamzk/x5UF
 X-Developer-Key: i=johannes.thumshirn@wdc.com; a=ed25519;
  pk=TGmHKs78FdPi+QhrViEvjKIGwReUGCfa+3LEnGoR2KM=
 
-Add tests for btrfs' raid-stripe-tree feature. All of these test work by
-writing a specific pattern to a newly created filesystem and afterwards
-using `btrfs inspect-internal -t raid-stripe $SCRATCH_DEV_POOL` to verify
-the placement and the layout of the metadata.
-
-The md5sum of each file will be compared as welli after a re-mount of the
-filesystem.
-
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
-Johannes Thumshirn (7):
-      btrfs: add fstest for stripe-tree metadata with 4k write
-      btrfs: add fstest for 8k write spanning two stripes on raid-stripe-tree
-      btrfs: add fstest for writing to a file at an offset with RST
-      btrfs: add fstests to write 128k to a RST filesystem
-      btrfs: add fstest for overwriting a file partially with RST
-      common: add filter for btrfs raid-stripe dump
-      fstests: doc: add new raid-stripe-tree group
+ common/filter.btrfs | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
 
- common/filter.btrfs |  14 +++++++
- doc/group-names.txt |   1 +
- tests/btrfs/302     |  55 +++++++++++++++++++++++++++
- tests/btrfs/302.out |  58 ++++++++++++++++++++++++++++
- tests/btrfs/303     |  59 +++++++++++++++++++++++++++++
- tests/btrfs/303.out |  82 ++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/304     |  57 ++++++++++++++++++++++++++++
- tests/btrfs/304.out |  75 +++++++++++++++++++++++++++++++++++++
- tests/btrfs/305     |  55 +++++++++++++++++++++++++++
- tests/btrfs/305.out |  65 ++++++++++++++++++++++++++++++++
- tests/btrfs/306     |  57 ++++++++++++++++++++++++++++
- tests/btrfs/306.out | 106 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- 12 files changed, 684 insertions(+)
----
-base-commit: baca8a2b5cb6e798ce3a07e79a081031370c6cb8
-change-id: 20231204-btrfs-raid-75975797f97d
+diff --git a/common/filter.btrfs b/common/filter.btrfs
+index 02c6b92dfa94..2003ba7b7015 100644
+--- a/common/filter.btrfs
++++ b/common/filter.btrfs
+@@ -125,5 +125,19 @@ _filter_btrfs_cloner_error()
+ 	sed -e "s/\(clone failed:\) Operation not supported/\1 Invalid argument/g"
+ }
+ 
++# filter output of "btrfs inspect-internal dump-tree -t raid-stripe"
++_filter_stripe_tree()
++{
++	sed -E -e "s/leaf [0-9]+ items [0-9]+ free space [0-9]+ generation [0-9]+ owner RAID_STRIPE_TREE/leaf XXXXXXXXX items X free space XXXXX generation X owner RAID_STRIPE_TREE/" \
++		-e "s/leaf [0-9]+ flags 0x1\(WRITTEN\) backref revision 1/leaf XXXXXXXXX flags 0x1\(WRITTEN\) backref revision 1/" \
++		-e "s/checksum stored [0-9a-f]+/checksum stored <CHECKSUM>/"  \
++		-e "s/checksum calced [0-9a-f]+/checksum calced <CHECKSUM>/"  \
++		-e "s/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/<UUID>/" \
++		-e "s/item ([0-9]+) key \([0-9]+ RAID_STRIPE ([0-9]+)\) itemoff [0-9]+ itemsize ([0-9]+)/item \1 key \(XXXXXX RAID_STRIPE \2\) itemoff XXXXX itemsize \3/" \
++		-e "s/stripe ([0-9]+) devid ([0-9]+) physical [0-9]+/stripe \1 devid \2 physical XXXXXXXXX/" \
++		-e "s/total bytes [0-9]+/total bytes XXXXXXXX/" \
++		-e "s/bytes used [0-9]+/bytes used XXXXXX/"
++}
++
+ # make sure this script returns success
+ /bin/true
 
-Best regards,
 -- 
-Johannes Thumshirn <johannes.thumshirn@wdc.com>
+2.43.0
 

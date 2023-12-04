@@ -1,40 +1,39 @@
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="LoZ3iISg"
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="q1pl2fPP"
 Received: from esa3.hgst.iphmx.com (esa3.hgst.iphmx.com [216.71.153.141])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D2F4D1739;
-	Mon,  4 Dec 2023 05:25:37 -0800 (PST)
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 75A61423B;
+	Mon,  4 Dec 2023 05:25:39 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1701696338; x=1733232338;
+  t=1701696339; x=1733232339;
   h=from:date:subject:mime-version:content-transfer-encoding:
    message-id:references:in-reply-to:to:cc;
-  bh=JoF+ZfHIjhHZHR/UcIEiH5N4/5754pd9YZRZITs13RE=;
-  b=LoZ3iISgEgffygB0n20ELNL4Fx484UTGzQG+kl8lAusIOuI5JrLDJ1sd
-   GYaekVq47xK/QuUg8rH5h2nYQK+XPhEsuVwxmralePv382y/PmmazJGrm
-   U+jFzt5BRCmE+BkLAhoXsCTMlxppBkWWSjwyK4zMHXpXWh89ABugbq0+R
-   BTvVxU1H03k2NJzKuA7icGkPRixTH/Qq3gG9xKyCWISNDouAI6CB0UQK3
-   4nJL4kwmaV8CyQOdRLw1vS3y0JqMnZh2K9krapah1TXRvMupbEJRTc63z
-   kzVvOas7jKj2FCGWXrM2EwBRaWdsqng161sTbnIVrrLL0lob88Dp/zpUP
+  bh=YNpmRMEKHZVnVD0dNtGJOvoR99Yv/K6r9YAe1acPrx4=;
+  b=q1pl2fPP9KMmjiM0g01BtAZCIpYvw10vv7WnxHhZRLwy8haQPYqgJQwY
+   kSShLZ+yYqFEzg6uTgWbNpkd2U2J7b4+2Mjou1CR9TJQcPpXK+HHFgFRh
+   ZYzRf5/Bxdk1RVRSnxCG1p7kLS+s56EUjWnMqoUl1EtK3mUFKuWZ7MGZv
+   nn9hZKFFBWxAdS3z/GSmTtGcZZ0vTlU3PG6ixhWb3x/23LS89yY3uXpul
+   kbu/oCpkCmmlTf7mjW8ENIj0CGxqCcagf6VfUxjskR6YtjBUUlRFBNQer
+   Ftpj5Qivh7sZeQCJq9/xGmx3WyrX6/TrkL/mfmfK1AmtiC7kzl/sAOvUT
    A==;
-X-CSE-ConnectionGUID: KeVkF4JHS9GLGXcpqfsj8g==
-X-CSE-MsgGUID: Lwhxu+oNQP+GaLejkAxGnQ==
+X-CSE-ConnectionGUID: KAsHWfkfRDGh5TLb0GFIzQ==
+X-CSE-MsgGUID: hOl9s7ijTYKNmgdEmzp8rg==
 X-IronPort-AV: E=Sophos;i="6.04,249,1695657600"; 
-   d="scan'208";a="3929122"
+   d="scan'208";a="3929125"
 Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 04 Dec 2023 21:25:15 +0800
-IronPort-SDR: 6YqBnzj4nOeFuzmV9AGuFvSxtAGs54KNzFOXiiA/jbu5Xf8X+xaCMDzhg5UwcsjQU4a9phrcB8
- bSsk8F3hSU7w==
+  by ob1.hgst.iphmx.com with ESMTP; 04 Dec 2023 21:25:16 +0800
+IronPort-SDR: tCy/lqpa6OgIpQteIqetPqYIOApzNUvuXwVTL7pl4Pds1d4krWPyJOSNLIBPj7HRF+j2XgP/tK
+ +AKLMAnakXGA==
 Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 04 Dec 2023 04:36:18 -0800
-IronPort-SDR: nDzczwv6F+G2iWB+SkEgr3AnnDDUciFBz+riPrXgrJ1hWINvRPXuOHjXn3emOusHBhrYax49cg
- JjwJTpXPwsDg==
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 04 Dec 2023 04:36:19 -0800
+IronPort-SDR: RQuNeRdXlKh8fSTrkOYA52+tOKrqDXEPCVXuaTFkoJ9MWC1X597xfwA0sHfSAOvnA8Tdj8XPP3
+ cqNYqro/3bkQ==
 WDCIronportException: Internal
 Received: from unknown (HELO redsun91.ssa.fujisawa.hgst.com) ([10.149.66.6])
   by uls-op-cesaip01.wdc.com with ESMTP; 04 Dec 2023 05:25:15 -0800
 From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Date: Mon, 04 Dec 2023 05:25:06 -0800
-Subject: [PATCH 3/7] btrfs: add fstest for writing to a file at an offset
- with RST
+Date: Mon, 04 Dec 2023 05:25:07 -0800
+Subject: [PATCH 4/7] btrfs: add fstests to write 128k to a RST filesystem
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -43,46 +42,46 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-Message-Id: <20231204-btrfs-raid-v1-3-b254eb1bcff8@wdc.com>
+Message-Id: <20231204-btrfs-raid-v1-4-b254eb1bcff8@wdc.com>
 References: <20231204-btrfs-raid-v1-0-b254eb1bcff8@wdc.com>
 In-Reply-To: <20231204-btrfs-raid-v1-0-b254eb1bcff8@wdc.com>
 To: Anand Jain <anand.jain@oracle.com>
 Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org, 
  Johannes Thumshirn <johannes.thumshirn@wdc.com>
 X-Mailer: b4 0.12.3
-X-Developer-Signature: v=1; a=ed25519-sha256; t=1701696311; l=5139;
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1701696311; l=4439;
  i=johannes.thumshirn@wdc.com; s=20230613; h=from:subject:message-id;
- bh=JoF+ZfHIjhHZHR/UcIEiH5N4/5754pd9YZRZITs13RE=;
- b=nQCaP9GQH76TS07/jWZcmQI+0ZTO5KAV6Ew6+oZpTCt8em6EOZYfn6RRBHyLh6DoPvA4vOliF
- qip/01DZR+jA9cwIRfNWAnOwAIJ58tsCFZm4MyCHvrcUJ00eR6ZJ0Iu
+ bh=YNpmRMEKHZVnVD0dNtGJOvoR99Yv/K6r9YAe1acPrx4=;
+ b=c1T2qOi/vL0vCYBmCrgS8kchBLS+9YXH3s9aYGCBiZSEiYKx/vn+5qL9xAgwQTcQQ8CtKsZp1
+ kYUst/fgcJ1A4Y5jnbkcro3t86txpsbvzgjh+/bqVlNqCH9eZwtV1eO
 X-Developer-Key: i=johannes.thumshirn@wdc.com; a=ed25519;
  pk=TGmHKs78FdPi+QhrViEvjKIGwReUGCfa+3LEnGoR2KM=
 
-Add a fstest writing 4k at offset 64k to a file with one RAID tripe
-already pre-filled for a raid-stripe-tree formatted file system.
+Add a test writing 128k to a file on an empty filesystem formatted with a
+raid-stripe-tree.
 
 Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- tests/btrfs/304     | 57 ++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/304.out | 75 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 132 insertions(+)
+ tests/btrfs/305     | 55 +++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/305.out | 65 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 120 insertions(+)
 
-diff --git a/tests/btrfs/304 b/tests/btrfs/304
+diff --git a/tests/btrfs/305 b/tests/btrfs/305
 new file mode 100755
-index 000000000000..5ef7b2382f7c
+index 000000000000..8b84fccd692b
 --- /dev/null
-+++ b/tests/btrfs/304
-@@ -0,0 +1,57 @@
++++ b/tests/btrfs/305
+@@ -0,0 +1,55 @@
 +#! /bin/bash
 +# SPDX-License-Identifier: GPL-2.0
 +# Copyright (c) 2023 Western Digital Cooperation.  All Rights Reserved.
 +#
-+# FS QA Test 304
++# FS QA Test 305
 +#
 +# Test on-disk layout of RAID Stripe Tree Metadata
 +#
 +. ./common/preamble
-+_begin_fstest auto quick raid remount volume raid-stripe-tree 
++_begin_fstest auto quick raid remount volume raid-stripe-tree
 +
 +. ./common/filter
 +. ./common/filter.btrfs
@@ -96,7 +95,7 @@ index 000000000000..5ef7b2382f7c
 +_require_xfs_io_command "fsync"
 +_require_btrfs_fs_feature "raid_stripe_tree"
 +
-+test_4k_write_64koff()
++test_128k_write()
 +{
 +	profile=$1
 +	ndevs=$2
@@ -107,10 +106,7 @@ index 000000000000..5ef7b2382f7c
 +	_scratch_pool_mkfs -d $profile -m $profile
 +	_scratch_mount
 +
-+	# precondition one stripe
-+	$XFS_IO_PROG -fc "pwrite 0 64k" "$SCRATCH_MNT/bar" | _filter_xfs_io
-+
-+	$XFS_IO_PROG -fc "pwrite 64k 4k" "$SCRATCH_MNT/foo" | _filter_xfs_io
++	$XFS_IO_PROG -fc "pwrite 0 128k" "$SCRATCH_MNT/foo" | _filter_xfs_io
 +
 +	_scratch_cycle_mount
 +	md5sum "$SCRATCH_MNT/foo" | _filter_scratch
@@ -122,28 +118,27 @@ index 000000000000..5ef7b2382f7c
 +
 +	_scratch_dev_pool_put
 +}
-+echo "= Test 4k write to an empty file at offset 64k with one stripe prefilled ="
-+test_4k_write_64koff raid0 2
-+test_4k_write_64koff raid1 2
-+test_4k_write_64koff raid10 4
++
++echo "= Test 128k write to empty file  ="
++test_128k_write raid0 2
++test_128k_write raid1 2
++test_128k_write raid10 4
 +
 +# success, all done
 +status=0
 +exit
-diff --git a/tests/btrfs/304.out b/tests/btrfs/304.out
+diff --git a/tests/btrfs/305.out b/tests/btrfs/305.out
 new file mode 100644
-index 000000000000..e94deec1ab21
+index 000000000000..0dbd3beca77f
 --- /dev/null
-+++ b/tests/btrfs/304.out
-@@ -0,0 +1,75 @@
-+QA output created by 304
-+= Test 4k write to an empty file at offset 64k with one stripe prefilled =
++++ b/tests/btrfs/305.out
+@@ -0,0 +1,65 @@
++QA output created by 305
++= Test 128k write to empty file  =
 +==== Testing raid0 ====
-+wrote 65536/65536 bytes at offset 0
++wrote 131072/131072 bytes at offset 0
 +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 4096/4096 bytes at offset 65536
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+381b0e7d72cb4f75286fe2b445e8d92a  SCRATCH_MNT/foo
++d48858312a922db7eb86377f638dbc9f  SCRATCH_MNT/foo
 +
 +raid stripe tree key (RAID_STRIPE_TREE ROOT_ITEM 0) 
 +leaf XXXXXXXXX items X free space XXXXX generation X owner RAID_STRIPE_TREE
@@ -155,18 +150,16 @@ index 000000000000..e94deec1ab21
 +	item 0 key (XXXXXX RAID_STRIPE 65536) itemoff XXXXX itemsize 24
 +			encoding: RAID0
 +			stripe 0 devid 1 physical XXXXXXXXX
-+	item 1 key (XXXXXX RAID_STRIPE 4096) itemoff XXXXX itemsize 24
++	item 1 key (XXXXXX RAID_STRIPE 65536) itemoff XXXXX itemsize 24
 +			encoding: RAID0
 +			stripe 0 devid 2 physical XXXXXXXXX
 +total bytes XXXXXXXX
 +bytes used XXXXXX
 +uuid <UUID>
 +==== Testing raid1 ====
-+wrote 65536/65536 bytes at offset 0
++wrote 131072/131072 bytes at offset 0
 +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 4096/4096 bytes at offset 65536
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+381b0e7d72cb4f75286fe2b445e8d92a  SCRATCH_MNT/foo
++d48858312a922db7eb86377f638dbc9f  SCRATCH_MNT/foo
 +
 +raid stripe tree key (RAID_STRIPE_TREE ROOT_ITEM 0) 
 +leaf XXXXXXXXX items X free space XXXXX generation X owner RAID_STRIPE_TREE
@@ -175,11 +168,7 @@ index 000000000000..e94deec1ab21
 +checksum calced <CHECKSUM>
 +fs uuid <UUID>
 +chunk uuid <UUID>
-+	item 0 key (XXXXXX RAID_STRIPE 65536) itemoff XXXXX itemsize 40
-+			encoding: RAID1
-+			stripe 0 devid 1 physical XXXXXXXXX
-+			stripe 1 devid 2 physical XXXXXXXXX
-+	item 1 key (XXXXXX RAID_STRIPE 4096) itemoff XXXXX itemsize 40
++	item 0 key (XXXXXX RAID_STRIPE 131072) itemoff XXXXX itemsize 40
 +			encoding: RAID1
 +			stripe 0 devid 1 physical XXXXXXXXX
 +			stripe 1 devid 2 physical XXXXXXXXX
@@ -187,11 +176,9 @@ index 000000000000..e94deec1ab21
 +bytes used XXXXXX
 +uuid <UUID>
 +==== Testing raid10 ====
-+wrote 65536/65536 bytes at offset 0
++wrote 131072/131072 bytes at offset 0
 +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 4096/4096 bytes at offset 65536
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+381b0e7d72cb4f75286fe2b445e8d92a  SCRATCH_MNT/foo
++d48858312a922db7eb86377f638dbc9f  SCRATCH_MNT/foo
 +
 +raid stripe tree key (RAID_STRIPE_TREE ROOT_ITEM 0) 
 +leaf XXXXXXXXX items X free space XXXXX generation X owner RAID_STRIPE_TREE
@@ -204,7 +191,7 @@ index 000000000000..e94deec1ab21
 +			encoding: RAID10
 +			stripe 0 devid 1 physical XXXXXXXXX
 +			stripe 1 devid 2 physical XXXXXXXXX
-+	item 1 key (XXXXXX RAID_STRIPE 4096) itemoff XXXXX itemsize 40
++	item 1 key (XXXXXX RAID_STRIPE 65536) itemoff XXXXX itemsize 40
 +			encoding: RAID10
 +			stripe 0 devid 3 physical XXXXXXXXX
 +			stripe 1 devid 4 physical XXXXXXXXX

@@ -1,73 +1,302 @@
-Received: from mail-oo1-f54.google.com (mail-oo1-f54.google.com [209.85.161.54])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9CBD9A1;
-	Tue,  5 Dec 2023 09:03:55 -0800 (PST)
-Received: by mail-oo1-f54.google.com with SMTP id 006d021491bc7-58ceab7daddso2484286eaf.3;
-        Tue, 05 Dec 2023 09:03:55 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1701795835; x=1702400635;
-        h=content-transfer-encoding:in-reply-to:from:references:cc:to
-         :content-language:subject:user-agent:mime-version:date:message-id
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=5Kxt6CKccKyM2aD5KqaYbJ+5NRAtsSu20TdTe87tfro=;
-        b=gC36X4NARMJFnoLUNZ6eIGcjEc1l5871SjthUiIspKmoaHf1kKjnlSO/V046uFgT2E
-         ANpe+rE5YEEqD2ycQzEEJ2mRgqdkimd665BviZzZGLt00siu1fKb6fMq6SofmFtGR9Px
-         /zZsUIDflXJhqBv7j8JhsaId5oPThrEeECQf5cm+TU/s04ZWVnfKzi3t9ivWG7FV5IV7
-         HAKl0s0DEmaS9cO/6BzT6PWwXhne8jh6A1fDwzLnkdgkZjOzP56x2wDgqZCl+pc1x+lZ
-         w4m5sa7rw0F01s7QLkdN9wIPpD6NKIHh+cJB34LW3DHrhW2juZF4rQu33NAJsvjscxVW
-         LC8Q==
-X-Gm-Message-State: AOJu0YyRYu6XQo6MkLfAFga6iBIY3nm9gjjsFU1upk6OFnZLq5EGsGF2
-	MNkzx2aSUSOJ7Mqx2nFdsWg=
-X-Google-Smtp-Source: AGHT+IHREsBDTR/fguPuUAOPGrQJFqdX7+L934/9nqEfo9v3T6jgbM8x1qOuTAd7fOfx1S8tYfwMzA==
-X-Received: by 2002:a05:6358:6f95:b0:16e:43a1:6881 with SMTP id s21-20020a0563586f9500b0016e43a16881mr2252180rwn.26.1701795834695;
-        Tue, 05 Dec 2023 09:03:54 -0800 (PST)
-Received: from [172.20.2.177] (rrcs-173-197-90-226.west.biz.rr.com. [173.197.90.226])
-        by smtp.gmail.com with ESMTPSA id s25-20020a639259000000b00578afd8e012sm5146562pgn.92.2023.12.05.09.03.49
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 05 Dec 2023 09:03:54 -0800 (PST)
-Message-ID: <189fa9b2-bcc8-4839-ac04-33a29bba9aaa@acm.org>
-Date: Tue, 5 Dec 2023 09:03:48 -0800
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+	(No client certificate requested)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 27C7269280;
+	Tue,  5 Dec 2023 17:12:34 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="a2RHd8mV"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id F408CC433CA;
+	Tue,  5 Dec 2023 17:12:33 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1701796354;
+	bh=rlO4lkoCXGkMera4lmhIUIcIjy9QH55qBibOPis3qTk=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+	b=a2RHd8mVoTQ2i9/82HAuWPr5dmO7VjglSKdh+w6gV9Xkgq7ALWt17vrzhe2i2dD6C
+	 JFxPMdvbyuuLf3ujRNnQZYv5VJunijLYLxNRqrGZyCEdeEQZ/ayxwKX1MTW9fixhpZ
+	 CDuYrEPlYcag8mr6hB/dx+z/EUPd0iqGOp9tGwnA6C/sw71995a73ToLFFlr3y9Qbd
+	 B1SiaK4zV8JRQntlvIYuRmhRwPIxKyGovz446/NwsLUDa0kVEubEp/drDh6LsT4KpR
+	 9A3x5VHgnO7FqIurvWSMi0sRBhW1VXUQfR7fHyXgIhGembH0F2m1mdzhuUMTjiZ+lX
+	 14fqpbbsQDeDw==
+Received: by mail-ed1-f51.google.com with SMTP id 4fb4d7f45d1cf-54bf9a54fe3so7582027a12.3;
+        Tue, 05 Dec 2023 09:12:33 -0800 (PST)
+X-Gm-Message-State: AOJu0Yww+bHvyQqlwEMozL8oJOoppR3X5RcNL9QW2qEhTOzy9RQY0PEX
+	IHV7lwEEhVm9T9GNgttYC8SA8pjhio/J08QN79Y=
+X-Google-Smtp-Source: AGHT+IEllBrCx3Xd2WGAGdqO6gqS6+tZrb24MmPH8yzeJ30/U95zv+SFnul5aRN6jc3EzuBjL7+MSuZRYpKS9WpAeIk=
+X-Received: by 2002:a17:906:dc05:b0:a1c:2eb:3839 with SMTP id
+ yy5-20020a170906dc0500b00a1c02eb3839mr980577ejb.67.1701796352314; Tue, 05 Dec
+ 2023 09:12:32 -0800 (PST)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH -next RFC 01/14] block: add some bdev apis
-Content-Language: en-US
-To: Yu Kuai <yukuai1@huaweicloud.com>, axboe@kernel.dk, roger.pau@citrix.com,
- colyli@suse.de, kent.overstreet@gmail.com, joern@lazybastard.org,
- miquel.raynal@bootlin.com, richard@nod.at, vigneshr@ti.com,
- sth@linux.ibm.com, hoeppner@linux.ibm.com, hca@linux.ibm.com,
- gor@linux.ibm.com, agordeev@linux.ibm.com, jejb@linux.ibm.com,
- martin.petersen@oracle.com, clm@fb.com, josef@toxicpanda.com,
- dsterba@suse.com, nico@fluxnic.net, xiang@kernel.org, chao@kernel.org,
- tytso@mit.edu, adilger.kernel@dilger.ca, agruenba@redhat.com, jack@suse.com,
- konishi.ryusuke@gmail.com, willy@infradead.org, akpm@linux-foundation.org,
- hare@suse.de, p.raghav@samsung.com
-Cc: linux-block@vger.kernel.org, linux-kernel@vger.kernel.org,
- xen-devel@lists.xenproject.org, linux-bcache@vger.kernel.org,
- linux-mtd@lists.infradead.org, linux-s390@vger.kernel.org,
- linux-scsi@vger.kernel.org, linux-bcachefs@vger.kernel.org,
- linux-btrfs@vger.kernel.org, linux-erofs@lists.ozlabs.org,
- linux-ext4@vger.kernel.org, gfs2@lists.linux.dev,
- linux-nilfs@vger.kernel.org, yukuai3@huawei.com, yi.zhang@huawei.com,
- yangerkun@huawei.com
-References: <20231205123728.1866699-1-yukuai1@huaweicloud.com>
- <20231205123728.1866699-2-yukuai1@huaweicloud.com>
-From: Bart Van Assche <bvanassche@acm.org>
-In-Reply-To: <20231205123728.1866699-2-yukuai1@huaweicloud.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+References: <20231205-btrfs-raid-v2-0-25f80eea345b@wdc.com> <20231205-btrfs-raid-v2-3-25f80eea345b@wdc.com>
+In-Reply-To: <20231205-btrfs-raid-v2-3-25f80eea345b@wdc.com>
+From: Filipe Manana <fdmanana@kernel.org>
+Date: Tue, 5 Dec 2023 17:11:55 +0000
+X-Gmail-Original-Message-ID: <CAL3q7H62=-Y9KZeLQeVAAy8Q2STDdTsUEJLC9BrEFsVyTJON6A@mail.gmail.com>
+Message-ID: <CAL3q7H62=-Y9KZeLQeVAAy8Q2STDdTsUEJLC9BrEFsVyTJON6A@mail.gmail.com>
+Subject: Re: [PATCH v2 3/7] btrfs: add fstest for stripe-tree metadata with 4k write
+To: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Cc: Anand Jain <anand.jain@oracle.com>, Zorro Lang <zlang@redhat.com>, 
+	Filipe Manana <fdmanana@suse.com>, fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On 12/5/23 04:37, Yu Kuai wrote:
-> +static inline u8 block_bits(struct block_device *bdev)
+On Tue, Dec 5, 2023 at 12:45=E2=80=AFPM Johannes Thumshirn
+<johannes.thumshirn@wdc.com> wrote:
+>
+> Test a simple 4k write on all RAID profiles currently supported with the
+> raid-stripe-tree.
+>
+> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+> ---
+>  tests/btrfs/302     | 53 +++++++++++++++++++++++++++++++++++++++++++++++=
++
+>  tests/btrfs/302.out | 58 +++++++++++++++++++++++++++++++++++++++++++++++=
+++++++
+
+Btw, tests 302 and 303 already exist, you need to refresh your local repo.
+
+So I tried this locally, renaming the test from 302 to 304, and it
+fails on current misc-next and btrfs-progs 6.6.2:
+
+root 17:08:09 /home/fdmanana/git/hub/xfstests > ./check btrfs/304
+FSTYP         -- btrfs
+PLATFORM      -- Linux/x86_64 debian0 6.7.0-rc3-btrfs-next-143+ #1 SMP
+PREEMPT_DYNAMIC Mon Dec  4 11:01:37 WET 2023
+MKFS_OPTIONS  -- /dev/sdb
+MOUNT_OPTIONS -- /dev/sdb /home/fdmanana/btrfs-tests/scratch_1
+
+btrfs/304       - output mismatch (see
+/home/fdmanana/git/hub/xfstests/results//btrfs/304.out.bad)
+    --- tests/btrfs/304.out 2023-12-05 17:08:16.096135003 +0000
+    +++ /home/fdmanana/git/hub/xfstests/results//btrfs/304.out.bad
+2023-12-05 17:08:18.700218463 +0000
+    @@ -5,16 +5,6 @@
+     XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+     5fed275e7617a806f94c173746a2a723  SCRATCH_MNT/foo
+
+    -raid stripe tree key (RAID_STRIPE_TREE ROOT_ITEM 0)
+    -leaf XXXXXXXXX items X free space XXXXX generation X owner RAID_STRIPE=
+_TREE
+    -leaf XXXXXXXXX flags 0x1(WRITTEN) backref revision 1
+    -checksum stored <CHECKSUM>
+    ...
+    (Run 'diff -u /home/fdmanana/git/hub/xfstests/tests/btrfs/304.out
+/home/fdmanana/git/hub/xfstests/results//btrfs/304.out.bad'  to see
+the entire diff)
+Ran: btrfs/304
+Failures: btrfs/304
+Failed 1 of 1 tests
+
+root 17:08:18 /home/fdmanana/git/hub/xfstests > diff -u
+/home/fdmanana/git/hub/xfstests/tests/btrfs/304.out
+/home/fdmanana/git/hub/xfstests/results//btrfs/304.out.bad
+--- /home/fdmanana/git/hub/xfstests/tests/btrfs/304.out 2023-12-05
+17:08:16.096135003 +0000
++++ /home/fdmanana/git/hub/xfstests/results//btrfs/304.out.bad
+2023-12-05 17:08:18.700218463 +0000
+@@ -5,16 +5,6 @@
+ XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+ 5fed275e7617a806f94c173746a2a723  SCRATCH_MNT/foo
+
+-raid stripe tree key (RAID_STRIPE_TREE ROOT_ITEM 0)
+-leaf XXXXXXXXX items X free space XXXXX generation X owner RAID_STRIPE_TRE=
+E
+-leaf XXXXXXXXX flags 0x1(WRITTEN) backref revision 1
+-checksum stored <CHECKSUM>
+-checksum calced <CHECKSUM>
+-fs uuid <UUID>
+-chunk uuid <UUID>
+- item 0 key (XXXXXX RAID_STRIPE 4096) itemoff XXXXX itemsize 24
+- encoding: RAID0
+- stripe 0 devid 1 physical XXXXXXXXX
+ total bytes XXXXXXXX
+ bytes used XXXXXX
+ uuid <UUID>
+@@ -23,17 +13,6 @@
+ XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+ 5fed275e7617a806f94c173746a2a723  SCRATCH_MNT/foo
+
+-raid stripe tree key (RAID_STRIPE_TREE ROOT_ITEM 0)
+-leaf XXXXXXXXX items X free space XXXXX generation X owner RAID_STRIPE_TRE=
+E
+-leaf XXXXXXXXX flags 0x1(WRITTEN) backref revision 1
+-checksum stored <CHECKSUM>
+-checksum calced <CHECKSUM>
+-fs uuid <UUID>
+-chunk uuid <UUID>
+- item 0 key (XXXXXX RAID_STRIPE 4096) itemoff XXXXX itemsize 40
+- encoding: RAID1
+- stripe 0 devid 1 physical XXXXXXXXX
+- stripe 1 devid 2 physical XXXXXXXXX
+ total bytes XXXXXXXX
+ bytes used XXXXXX
+ uuid <UUID>
+@@ -42,17 +21,6 @@
+ XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+ 5fed275e7617a806f94c173746a2a723  SCRATCH_MNT/foo
+
+-raid stripe tree key (RAID_STRIPE_TREE ROOT_ITEM 0)
+-leaf XXXXXXXXX items X free space XXXXX generation X owner RAID_STRIPE_TRE=
+E
+-leaf XXXXXXXXX flags 0x1(WRITTEN) backref revision 1
+-checksum stored <CHECKSUM>
+-checksum calced <CHECKSUM>
+-fs uuid <UUID>
+-chunk uuid <UUID>
+- item 0 key (XXXXXX RAID_STRIPE 4096) itemoff XXXXX itemsize 40
+- encoding: RAID10
+- stripe 0 devid 1 physical XXXXXXXXX
+- stripe 1 devid 2 physical XXXXXXXXX
+ total bytes XXXXXXXX
+ bytes used XXXXXX
+-uuid <UUID>
+\ No newline at end of file
++uuid <UUID>
+root 17:08:34 /home/fdmanana/git/hub/xfstests >
+
+
+Any ideias?
+
+Thanks.
+
+
+>  2 files changed, 111 insertions(+)
+>
+> diff --git a/tests/btrfs/302 b/tests/btrfs/302
+> new file mode 100755
+> index 000000000000..5d32ca8ba92f
+> --- /dev/null
+> +++ b/tests/btrfs/302
+> @@ -0,0 +1,53 @@
+> +#! /bin/bash
+> +# SPDX-License-Identifier: GPL-2.0
+> +# Copyright (c) 2023 Western Digital Cooperation.  All Rights Reserved.
+> +#
+> +# FS QA Test 302
+> +#
+> +# Test on-disk layout of RAID Stripe Tree Metadata writing 4k to a new f=
+ile on
+> +# a pristine file system.
+> +#
+> +. ./common/preamble
+> +_begin_fstest auto quick raid remount volume raid-stripe-tree
+> +
+> +. ./common/filter
+> +. ./common/filter.btrfs
+> +
+> +_supported_fs btrfs
+> +_require_btrfs_command inspect-internal dump-tree
+> +_require_btrfs_mkfs_feature "raid-stripe-tree"
+> +_require_scratch_dev_pool 4
+> +_require_btrfs_fs_feature "raid_stripe_tree"
+> +
+> +test_4k_write()
 > +{
-> +	return bdev->bd_inode->i_blkbits;
+> +       local profile=3D$1
+> +       local ndevs=3D$2
+> +
+> +       _scratch_dev_pool_get $ndevs
+> +
+> +       echo "=3D=3D=3D=3D Testing $profile =3D=3D=3D=3D"
+> +       _scratch_pool_mkfs -d $profile -m $profile
+> +       _scratch_mount
+> +
+> +       $XFS_IO_PROG -fc "pwrite 0 4k" "$SCRATCH_MNT/foo" | _filter_xfs_i=
+o
+> +
+> +       _scratch_cycle_mount
+> +       md5sum "$SCRATCH_MNT/foo" | _filter_scratch
+> +
+> +       _scratch_unmount
+> +
+> +       $BTRFS_UTIL_PROG inspect-internal dump-tree -t raid_stripe $SCRAT=
+CH_DEV_POOL |\
+> +               _filter_btrfs_version |  _filter_stripe_tree
+> +
+> +       _scratch_dev_pool_put
 > +}
-
-This function needs a name that's more descriptive.
-
-Thanks,
-
-Bart.
+> +
+> +echo "=3D Test basic 4k write =3D"
+> +test_4k_write raid0 2
+> +test_4k_write raid1 2
+> +test_4k_write raid10 4
+> +
+> +# success, all done
+> +status=3D0
+> +exit
+> diff --git a/tests/btrfs/302.out b/tests/btrfs/302.out
+> new file mode 100644
+> index 000000000000..149630e69501
+> --- /dev/null
+> +++ b/tests/btrfs/302.out
+> @@ -0,0 +1,58 @@
+> +QA output created by 302
+> +=3D Test basic 4k write =3D
+> +=3D=3D=3D=3D Testing raid0 =3D=3D=3D=3D
+> +wrote 4096/4096 bytes at offset 0
+> +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+> +5fed275e7617a806f94c173746a2a723  SCRATCH_MNT/foo
+> +
+> +raid stripe tree key (RAID_STRIPE_TREE ROOT_ITEM 0)
+> +leaf XXXXXXXXX items X free space XXXXX generation X owner RAID_STRIPE_T=
+REE
+> +leaf XXXXXXXXX flags 0x1(WRITTEN) backref revision 1
+> +checksum stored <CHECKSUM>
+> +checksum calced <CHECKSUM>
+> +fs uuid <UUID>
+> +chunk uuid <UUID>
+> +       item 0 key (XXXXXX RAID_STRIPE 4096) itemoff XXXXX itemsize 24
+> +                       encoding: RAID0
+> +                       stripe 0 devid 1 physical XXXXXXXXX
+> +total bytes XXXXXXXX
+> +bytes used XXXXXX
+> +uuid <UUID>
+> +=3D=3D=3D=3D Testing raid1 =3D=3D=3D=3D
+> +wrote 4096/4096 bytes at offset 0
+> +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+> +5fed275e7617a806f94c173746a2a723  SCRATCH_MNT/foo
+> +
+> +raid stripe tree key (RAID_STRIPE_TREE ROOT_ITEM 0)
+> +leaf XXXXXXXXX items X free space XXXXX generation X owner RAID_STRIPE_T=
+REE
+> +leaf XXXXXXXXX flags 0x1(WRITTEN) backref revision 1
+> +checksum stored <CHECKSUM>
+> +checksum calced <CHECKSUM>
+> +fs uuid <UUID>
+> +chunk uuid <UUID>
+> +       item 0 key (XXXXXX RAID_STRIPE 4096) itemoff XXXXX itemsize 40
+> +                       encoding: RAID1
+> +                       stripe 0 devid 1 physical XXXXXXXXX
+> +                       stripe 1 devid 2 physical XXXXXXXXX
+> +total bytes XXXXXXXX
+> +bytes used XXXXXX
+> +uuid <UUID>
+> +=3D=3D=3D=3D Testing raid10 =3D=3D=3D=3D
+> +wrote 4096/4096 bytes at offset 0
+> +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+> +5fed275e7617a806f94c173746a2a723  SCRATCH_MNT/foo
+> +
+> +raid stripe tree key (RAID_STRIPE_TREE ROOT_ITEM 0)
+> +leaf XXXXXXXXX items X free space XXXXX generation X owner RAID_STRIPE_T=
+REE
+> +leaf XXXXXXXXX flags 0x1(WRITTEN) backref revision 1
+> +checksum stored <CHECKSUM>
+> +checksum calced <CHECKSUM>
+> +fs uuid <UUID>
+> +chunk uuid <UUID>
+> +       item 0 key (XXXXXX RAID_STRIPE 4096) itemoff XXXXX itemsize 40
+> +                       encoding: RAID10
+> +                       stripe 0 devid 1 physical XXXXXXXXX
+> +                       stripe 1 devid 2 physical XXXXXXXXX
+> +total bytes XXXXXXXX
+> +bytes used XXXXXX
+> +uuid <UUID>
+>
+> --
+> 2.43.0
+>
+>

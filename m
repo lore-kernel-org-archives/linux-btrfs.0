@@ -1,69 +1,142 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 996D684
-	for <linux-btrfs@vger.kernel.org>; Wed,  6 Dec 2023 11:00:23 -0800 (PST)
-Received: from imap2.dmz-prg2.suse.org (imap2.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:98])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 1F4E92207A;
-	Wed,  6 Dec 2023 19:00:22 +0000 (UTC)
-Received: from imap2.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap2.dmz-prg2.suse.org (Postfix) with ESMTPS id DCA2713403;
-	Wed,  6 Dec 2023 19:00:21 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([10.150.64.162])
-	by imap2.dmz-prg2.suse.org with ESMTPSA
-	id yuHbM8XEcGUeWgAAn2gu4w
-	(envelope-from <dsterba@suse.cz>); Wed, 06 Dec 2023 19:00:21 +0000
-Date: Wed, 6 Dec 2023 19:53:31 +0100
-From: David Sterba <dsterba@suse.cz>
-To: David Disseldorp <ddiss@suse.de>
-Cc: David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: drop unused memparse() parameter
-Message-ID: <20231206185330.GS2751@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20231205111329.6652-1-ddiss@suse.de>
- <20231205142253.GD2751@twin.jikos.cz>
- <20231206112143.7d1df045@echidna>
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (1024-bit key) header.d=tiscali.it header.i=@tiscali.it header.b="v6sgIjui"
+Received: from smtp.tiscali.it (santino.mail.tiscali.it [213.205.33.245])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTP id A39FF1A5
+	for <linux-btrfs@vger.kernel.org>; Wed,  6 Dec 2023 11:52:27 -0800 (PST)
+Received: from venice.bhome ([84.220.171.3])
+	by santino.mail.tiscali.it with 
+	id K7rM2B00T04l9eU017rNXc; Wed, 06 Dec 2023 19:51:22 +0000
+X-Spam-Final-Verdict: clean
+X-Spam-State: 0
+X-Spam-Score: -100
+X-Spam-Verdict: clean
+x-auth-user: kreijack@tiscali.it
+From: Goffredo Baroncelli <kreijack@tiscali.it>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>,
+	Goffredo Baroncelli <kreijack@inwind.it>
+Subject: [PATCH 4/4] btrfs-progs: 'btrfs fi label' using a dev instead of a path
+Date: Wed,  6 Dec 2023 20:32:45 +0100
+Message-ID: <d8029a3418079187b092a0542deb1003e24a9355.1701891165.git.kreijack@inwind.it>
+X-Mailer: git-send-email 2.43.0
+In-Reply-To: <cover.1701891165.git.kreijack@inwind.it>
+References: <cover.1701891165.git.kreijack@inwind.it>
+Reply-To: Goffredo Baroncelli <kreijack@libero.it>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20231206112143.7d1df045@echidna>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Rspamd-Queue-Id: 1F4E92207A
-X-Spam-Level: 
-X-Spamd-Result: default: False [-4.00 / 50.00];
-	 REPLY(-4.00)[]
-X-Spam-Score: -4.00
-Authentication-Results: smtp-out1.suse.de;
-	none
-X-Rspamd-Server: rspamd1
+Content-Transfer-Encoding: 8bit
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=tiscali.it; s=smtp;
+	t=1701892282; bh=82GUdcLPhIz1ZumbSN3IupfLpctMESRlxsmHK5zKNC0=;
+	h=From:To:Cc:Subject:Date:In-Reply-To:References:Reply-To;
+	b=v6sgIjuiW6FD1cILFzGVpoRYTDBCUMXliTkS3filhXIb0bnMWE5xFmFbAGYEaiWvb
+	 7AD+dho0XKFQAjCHpxF3HSg4ycEeGmoP4yPdKXd0bkMIfA7M9QZQS/4Ond/FxB89bw
+	 gG5Kq+6RKhq74ANhYiSm92i3Bo5hU9qTKBuPG/dg=
 
-On Wed, Dec 06, 2023 at 11:21:43AM +1100, David Disseldorp wrote:
-> On Tue, 5 Dec 2023 15:22:53 +0100, David Sterba wrote:
-> 
-> > On Tue, Dec 05, 2023 at 10:13:29PM +1100, David Disseldorp wrote:
-> > > The @retptr parameter for memparse() is optional.
-> > > btrfs_devinfo_scrub_speed_max_store() doesn't use it for any input
-> > > validation, so the parameter can be dropped.  
-> > 
-> > Or should it be used for validation? memparse is also used in
-> > btrfs_chunk_size_store() that accepts whitespace as trailing characters
-> > (namely '\n' if the value is from echo).
-> 
-> It probably should have been used for validation when originally added,
-> but the current behaviour is now part of the sysfs scrub_speed_max API.
-> Failing on invalid input would break scripts which do things like
->   echo clear > /sys/fs/btrfs/UUID/devinfo/1/scrub_speed_max
+From: Goffredo Baroncelli <kreijack@inwind.it>
 
-I'm not sure the 'part of the API' is a valid agrument here. It's
-documented that the value is in bytes and that suffixes can be passed
-for convenience. How come anybody would use 'clear' in the first place
-and expect it to work with undefined meaning?
+'btrfs fi label' has a strange behaviour: when the filesystem
+is unmounted, it has to be invoked against a device.
+When the filesystem is mounted, it has to be invoked against
+a filesystem path.
+
+Even tough it has a technical explanation, this may confuses
+the users.
+
+This patch allow to pass a device even in the latter cases.
+Alternatevely, it is possible to pass a UUID=xxx or a
+LABEL=zzz identification.
+
+Signed-off-by: Goffredo Baroncelli <kreijack@libero.it>
+---
+ common/filesystem-utils.c | 51 ++++++++++++++++++++++++++++++---------
+ 1 file changed, 39 insertions(+), 12 deletions(-)
+
+diff --git a/common/filesystem-utils.c b/common/filesystem-utils.c
+index 8c159365..655f4c72 100644
+--- a/common/filesystem-utils.c
++++ b/common/filesystem-utils.c
+@@ -29,6 +29,7 @@
+ #include "common/messages.h"
+ #include "common/open-utils.h"
+ #include "common/path-utils.h"
++#include "common/btrfs-info.h"
+ 
+ /*
+  * For a given:
+@@ -189,31 +190,57 @@ int get_label_mounted(const char *mount_path, char *labelp)
+ 	return 0;
+ }
+ 
+-int get_label(const char *btrfs_dev, char *label)
++int get_label(const char *path, char *label)
+ {
+ 	int ret;
++	const struct btrfs_info *bi;
+ 
+-	ret = path_is_reg_or_block_device(btrfs_dev);
+-	if (!ret)
+-		ret = get_label_mounted(btrfs_dev, label);
+-	else if (ret > 0)
+-		ret = get_label_unmounted(btrfs_dev, label);
++	ret = btrfs_info_find(path, &bi);
++	if (ret == -ENOENT) {
++		error("'%s' is not a btrfs filesystem", path);
++		return -ENOENT;
++	}
++	if (ret < 0) {
++		error("unable to access btrfs filesystem info");
++		return -EINVAL;
++	}
++
++	if (btrfs_info_is_mounted(bi)) {
++		path = btrfs_info_find_valid_path(bi);
++		ret = get_label_mounted(path, label);
++	} else {
++		path = btrfs_info_find_valid_dev(bi);
++		ret = get_label_unmounted(path, label);
++	}
+ 
+ 	return ret;
+ }
+ 
+-int set_label(const char *btrfs_dev, const char *label)
++int set_label(const char *path, const char *label)
+ {
+ 	int ret;
++	const struct btrfs_info *bi;
+ 
+ 	if (check_label(label))
+ 		return -1;
+ 
+-	ret = path_is_reg_or_block_device(btrfs_dev);
+-	if (!ret)
+-		ret = set_label_mounted(btrfs_dev, label);
+-	else if (ret > 0)
+-		ret = set_label_unmounted(btrfs_dev, label);
++	ret = btrfs_info_find(path, &bi);
++	if (ret == -ENOENT) {
++		error("'%s' is not a btrfs filesystem", path);
++		return -ENOENT;
++	}
++	if (ret < 0) {
++		error("unable to access btrfs filesystem info");
++		return -EINVAL;
++	}
++
++	if (btrfs_info_is_mounted(bi)) {
++		path = btrfs_info_find_valid_path(bi);
++		ret = set_label_mounted(path, label);
++	} else {
++		path = btrfs_info_find_valid_dev(bi);
++		ret = set_label_unmounted(path, label);
++	}
+ 
+ 	return ret;
+ }
+-- 
+2.43.0
+

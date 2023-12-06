@@ -1,284 +1,110 @@
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="nU4LDPs8"
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2a07:de40:b251:101:10:150:64:2])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3F986D50
-	for <linux-btrfs@vger.kernel.org>; Wed,  6 Dec 2023 06:22:54 -0800 (PST)
-Received: from ds.suse.cz (unknown [10.100.12.205])
-	by smtp-out2.suse.de (Postfix) with ESMTP id B6FFA1FD13;
-	Wed,  6 Dec 2023 14:22:52 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1701872572; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=9pgYsLtKm73FD1m5TnP4W3OjGE7VDCk74un8Hqm4CZQ=;
-	b=nU4LDPs8gyDPLij27DdTWr1s9DjF5g7JkrPLg/5/duyF6muYYwHY4O7q/W+QcOpwUguxOw
-	h3yIcgXhuo3Y1ag/erLYXXGSyaUbdb5Dq318DTuBUwi/159tYR3/qzOqbL5LXCu1T7WM81
-	kyNErwHfmwFCgsNxtT/V96QcrurjOCE=
-Received: by ds.suse.cz (Postfix, from userid 10065)
-	id A0C0BDA900; Wed,  6 Dec 2023 15:16:03 +0100 (CET)
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 1/1 v2] btrfs: switch btrfs_root::delayed_nodes_tree to xarray from radix-tree
-Date: Wed,  6 Dec 2023 15:16:03 +0100
-Message-ID: <c8269e17d8295c223043c2b6bc09b04beab52a18.1701871671.git.dsterba@suse.com>
-X-Mailer: git-send-email 2.42.1
-In-Reply-To: <cover.1701871671.git.dsterba@suse.com>
-References: <cover.1701871671.git.dsterba@suse.com>
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="ojDk7+bv"
+Received: from casper.infradead.org (casper.infradead.org [IPv6:2001:8b0:10b:1236::1])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E6017B5;
+	Wed,  6 Dec 2023 06:59:38 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
+	References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+	Content-Transfer-Encoding:Content-ID:Content-Description;
+	bh=s+7kV2NOaPEBmhFkJpDv/pC5Llv4VXEE9i8fdKbvmjw=; b=ojDk7+bvhmkVaj86d9uPvOhQaz
+	kbAJJlz3eiFA7yxHtxf02BCaqsNM5pS9C8k5lXRoPly3/N/e0u5QADIgtZKFOwGOJtwsI5ZzSsYPS
+	PKyktYqelsFB3E+G8W+4/yQSFmaQ2jHSWEigX57CwcwQszQ0bDoxOOqdU2sc0+ZoE3Ff1wwcpqslV
+	VWLgXJnu2MrDZGBo0sVLqXRdAvGI+d1WdlsXWEVkM0crARzZz5+nD3AR2Avd8/g6eRde0hkW/FoXX
+	agEz57imZpOlmdW73T5pzua0TfxBEP/xRZ/WXwPlD7/tpJRN5cqF7OvXJrtIdGRYW6omWvwYwBXvA
+	OJr6nVaw==;
+Received: from willy by casper.infradead.org with local (Exim 4.94.2 #2 (Red Hat Linux))
+	id 1rAtMN-002zkJ-Nc; Wed, 06 Dec 2023 14:58:47 +0000
+Date: Wed, 6 Dec 2023 14:58:47 +0000
+From: Matthew Wilcox <willy@infradead.org>
+To: Yu Kuai <yukuai1@huaweicloud.com>
+Cc: axboe@kernel.dk, roger.pau@citrix.com, colyli@suse.de,
+	kent.overstreet@gmail.com, joern@lazybastard.org,
+	miquel.raynal@bootlin.com, richard@nod.at, vigneshr@ti.com,
+	sth@linux.ibm.com, hoeppner@linux.ibm.com, hca@linux.ibm.com,
+	gor@linux.ibm.com, agordeev@linux.ibm.com, jejb@linux.ibm.com,
+	martin.petersen@oracle.com, clm@fb.com, josef@toxicpanda.com,
+	dsterba@suse.com, nico@fluxnic.net, xiang@kernel.org,
+	chao@kernel.org, tytso@mit.edu, adilger.kernel@dilger.ca,
+	agruenba@redhat.com, jack@suse.com, konishi.ryusuke@gmail.com,
+	akpm@linux-foundation.org, hare@suse.de, p.raghav@samsung.com,
+	linux-block@vger.kernel.org, linux-kernel@vger.kernel.org,
+	xen-devel@lists.xenproject.org, linux-bcache@vger.kernel.org,
+	linux-mtd@lists.infradead.org, linux-s390@vger.kernel.org,
+	linux-scsi@vger.kernel.org, linux-bcachefs@vger.kernel.org,
+	linux-btrfs@vger.kernel.org, linux-erofs@lists.ozlabs.org,
+	linux-ext4@vger.kernel.org, gfs2@lists.linux.dev,
+	linux-nilfs@vger.kernel.org, yukuai3@huawei.com,
+	yi.zhang@huawei.com, yangerkun@huawei.com
+Subject: Re: [PATCH -next RFC 01/14] block: add some bdev apis
+Message-ID: <ZXCMJ9skAAgPm4z3@casper.infradead.org>
+References: <20231205123728.1866699-1-yukuai1@huaweicloud.com>
+ <20231205123728.1866699-2-yukuai1@huaweicloud.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spam-Level: 
-Authentication-Results: smtp-out2.suse.de;
-	none
-X-Spam-Score: -1.70
-X-Spamd-Result: default: False [-1.70 / 50.00];
-	 ARC_NA(0.00)[];
-	 FUZZY_BLOCKED(0.00)[rspamd.com];
-	 FROM_HAS_DN(0.00)[];
-	 TO_DN_SOME(0.00)[];
-	 R_MISSING_CHARSET(2.50)[];
-	 TO_MATCH_ENVRCPT_ALL(0.00)[];
-	 MIME_GOOD(-0.10)[text/plain];
-	 REPLY(-4.00)[];
-	 BROKEN_CONTENT_TYPE(1.50)[];
-	 DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	 RCPT_COUNT_TWO(0.00)[2];
-	 MID_CONTAINS_FROM(1.00)[];
-	 DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email];
-	 FORGED_SENDER(0.30)[dsterba@suse.com,dsterba@suse.cz];
-	 RCVD_COUNT_ZERO(0.00)[0];
-	 MIME_TRACE(0.00)[0:+];
-	 FROM_NEQ_ENVFROM(0.10)[dsterba@suse.com,dsterba@suse.cz];
-	 BAYES_HAM(-3.00)[100.00%]
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20231205123728.1866699-2-yukuai1@huaweicloud.com>
 
-The radix-tree has been superseded by the xarray
-(https://lwn.net/Articles/745073), this patch converts the
-btrfs_root::delayed_nodes, the APIs are used in a simple way.
+On Tue, Dec 05, 2023 at 08:37:15PM +0800, Yu Kuai wrote:
+> +struct folio *bdev_read_folio(struct block_device *bdev, pgoff_t index)
+> +{
+> +	return read_mapping_folio(bdev->bd_inode->i_mapping, index, NULL);
+> +}
+> +EXPORT_SYMBOL_GPL(bdev_read_folio);
 
-First idea is to do xa_insert() but this would require GFP_ATOMIC
-allocation which we want to avoid if possible. The preload mechanism of
-radix-tree can be emulated within the xarray API.
+I'm coming to the opinion that 'index' is the wrong parameter here.
+Looking through all the callers of bdev_read_folio() in this patchset,
+they all have a position in bytes, and they all convert it to
+index for this call.  The API should probably be:
 
-- xa_reserve() with GFP_NOFS outside of the lock, the reserved entry
-  is inserted atomically at most once
+struct folio *bdev_read_folio(struct block_device *bdev, loff_t pos)
+{
+	return read_mapping_folio(bdev->bd_inode->i_mapping,
+			pos / PAGE_SIZE, NULL);
+}
 
-- xa_store() under a lock, in case something races in we can detect that
-  and xa_load() returns a valid pointer
+... and at some point, we'll get round to converting read_mapping_folio()
+to take its argument in loff_t.
 
-All uses of xa_load() must check for a valid pointer in case they manage
-to get between the xa_reserve() and xa_store(), this is handled in
-btrfs_get_delayed_node().
+Similiarly for these two APIs:
 
-Otherwise the functionality is equivalent, xarray implements the
-radix-tree and there should be no performance difference.
+> +struct folio *bdev_read_folio_gfp(struct block_device *bdev, pgoff_t index,
+> +				  gfp_t gfp)
+> +struct folio *bdev_get_folio(struct block_device *bdev, pgoff_t index)
 
-The patch continues the efforts started in 253bf57555e451 ("btrfs: turn
-delayed_nodes_tree into an XArray") and fixes the problems with locking
-and GFP flags 088aea3b97e0ae ("Revert "btrfs: turn delayed_nodes_tree
-into an XArray"").
+> +struct folio *bdev_find_or_create_folio(struct block_device *bdev,
+> +					pgoff_t index, gfp_t gfp)
+> +{
+> +	return __filemap_get_folio(bdev->bd_inode->i_mapping, index,
+> +				   FGP_LOCK | FGP_ACCESSED | FGP_CREAT, gfp);
+> +}
+> +EXPORT_SYMBOL_GPL(bdev_find_or_create_folio);
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/ctree.h         |  6 ++--
- fs/btrfs/delayed-inode.c | 64 ++++++++++++++++++++++------------------
- fs/btrfs/disk-io.c       |  3 +-
- fs/btrfs/inode.c         |  2 +-
- 4 files changed, 41 insertions(+), 34 deletions(-)
+This one probably shouldn't exist.  I've been converting callers of
+find_or_create_page() to call __filemap_get_folio; I suspect we
+should expose a __bdev_get_folio and have the callers use the FGP
+arguments directly, but I'm open to other opinions here.
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 54fd4eb92745..70e828d33177 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -227,10 +227,10 @@ struct btrfs_root {
- 	struct rb_root inode_tree;
- 
- 	/*
--	 * radix tree that keeps track of delayed nodes of every inode,
--	 * protected by inode_lock
-+	 * Xarray that keeps track of delayed nodes of every inode, protected
-+	 * by @inode_lock.
- 	 */
--	struct radix_tree_root delayed_nodes_tree;
-+	struct xarray delayed_nodes;
- 	/*
- 	 * right now this just gets used so that a root has its own devid
- 	 * for stat.  It may be used for more later
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index 91159dd7355b..0247faf5bb01 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -71,7 +71,7 @@ static struct btrfs_delayed_node *btrfs_get_delayed_node(
- 	}
- 
- 	spin_lock(&root->inode_lock);
--	node = radix_tree_lookup(&root->delayed_nodes_tree, ino);
-+	node = xa_load(&root->delayed_nodes, ino);
- 
- 	if (node) {
- 		if (btrfs_inode->delayed_node) {
-@@ -83,9 +83,9 @@ static struct btrfs_delayed_node *btrfs_get_delayed_node(
- 
- 		/*
- 		 * It's possible that we're racing into the middle of removing
--		 * this node from the radix tree.  In this case, the refcount
-+		 * this node from the xarray.  In this case, the refcount
- 		 * was zero and it should never go back to one.  Just return
--		 * NULL like it was never in the radix at all; our release
-+		 * NULL like it was never in the xarray at all; our release
- 		 * function is in the process of removing it.
- 		 *
- 		 * Some implementations of refcount_inc refuse to bump the
-@@ -93,7 +93,7 @@ static struct btrfs_delayed_node *btrfs_get_delayed_node(
- 		 * here, refcount_inc() may decide to just WARN_ONCE() instead
- 		 * of actually bumping the refcount.
- 		 *
--		 * If this node is properly in the radix, we want to bump the
-+		 * If this node is properly in the xarray, we want to bump the
- 		 * refcount twice, once for the inode and once for this get
- 		 * operation.
- 		 */
-@@ -120,6 +120,7 @@ static struct btrfs_delayed_node *btrfs_get_or_create_delayed_node(
- 	struct btrfs_root *root = btrfs_inode->root;
- 	u64 ino = btrfs_ino(btrfs_inode);
- 	int ret;
-+	void *ptr;
- 
- again:
- 	node = btrfs_get_delayed_node(btrfs_inode);
-@@ -131,26 +132,30 @@ static struct btrfs_delayed_node *btrfs_get_or_create_delayed_node(
- 		return ERR_PTR(-ENOMEM);
- 	btrfs_init_delayed_node(node, root, ino);
- 
--	/* cached in the btrfs inode and can be accessed */
-+	/* Cached in the inode and can be accessed. */
- 	refcount_set(&node->refs, 2);
- 
--	ret = radix_tree_preload(GFP_NOFS);
--	if (ret) {
-+	/* Allocate and reserve the slot, from now it can return a NULL on xa_load(). */
-+	ret = xa_reserve(&root->delayed_nodes, ino, GFP_NOFS);
-+	if (ret == -ENOMEM) {
- 		kmem_cache_free(delayed_node_cache, node);
--		return ERR_PTR(ret);
-+		return ERR_PTR(-ENOMEM);
- 	}
--
- 	spin_lock(&root->inode_lock);
--	ret = radix_tree_insert(&root->delayed_nodes_tree, ino, node);
--	if (ret == -EEXIST) {
-+	ptr = xa_load(&root->delayed_nodes, ino);
-+	if (ptr) {
-+		/* Somebody inserted it, go back and read it. */
- 		spin_unlock(&root->inode_lock);
- 		kmem_cache_free(delayed_node_cache, node);
--		radix_tree_preload_end();
-+		node = NULL;
- 		goto again;
- 	}
-+	ptr = xa_store(&root->delayed_nodes, ino, node, GFP_ATOMIC);
-+	ASSERT(xa_err(ptr) != -EINVAL);
-+	ASSERT(xa_err(ptr) != -ENOMEM);
-+	ASSERT(ptr == NULL);
- 	btrfs_inode->delayed_node = node;
- 	spin_unlock(&root->inode_lock);
--	radix_tree_preload_end();
- 
- 	return node;
- }
-@@ -269,8 +274,7 @@ static void __btrfs_release_delayed_node(
- 		 * back up.  We can delete it now.
- 		 */
- 		ASSERT(refcount_read(&delayed_node->refs) == 0);
--		radix_tree_delete(&root->delayed_nodes_tree,
--				  delayed_node->inode_id);
-+		xa_erase(&root->delayed_nodes, delayed_node->inode_id);
- 		spin_unlock(&root->inode_lock);
- 		kmem_cache_free(delayed_node_cache, delayed_node);
- 	}
-@@ -2038,34 +2042,36 @@ void btrfs_kill_delayed_inode_items(struct btrfs_inode *inode)
- 
- void btrfs_kill_all_delayed_nodes(struct btrfs_root *root)
- {
--	u64 inode_id = 0;
-+	unsigned long index = 0;
- 	struct btrfs_delayed_node *delayed_nodes[8];
--	int i, n;
- 
- 	while (1) {
-+		struct btrfs_delayed_node *node;
-+		int count;
-+
- 		spin_lock(&root->inode_lock);
--		n = radix_tree_gang_lookup(&root->delayed_nodes_tree,
--					   (void **)delayed_nodes, inode_id,
--					   ARRAY_SIZE(delayed_nodes));
--		if (!n) {
-+		if (xa_empty(&root->delayed_nodes)) {
- 			spin_unlock(&root->inode_lock);
--			break;
-+			return;
- 		}
- 
--		inode_id = delayed_nodes[n - 1]->inode_id + 1;
--		for (i = 0; i < n; i++) {
-+		count = 0;
-+		xa_for_each_start(&root->delayed_nodes, index, node, index) {
- 			/*
- 			 * Don't increase refs in case the node is dead and
- 			 * about to be removed from the tree in the loop below
- 			 */
--			if (!refcount_inc_not_zero(&delayed_nodes[i]->refs))
--				delayed_nodes[i] = NULL;
-+			if (refcount_inc_not_zero(&node->refs)) {
-+				delayed_nodes[count] = node;
-+				count++;
-+			}
-+			if (count >= ARRAY_SIZE(delayed_nodes))
-+				break;
- 		}
- 		spin_unlock(&root->inode_lock);
-+		index++;
- 
--		for (i = 0; i < n; i++) {
--			if (!delayed_nodes[i])
--				continue;
-+		for (int i = 0; i < count; i++) {
- 			__btrfs_kill_delayed_node(delayed_nodes[i]);
- 			btrfs_release_delayed_node(delayed_nodes[i]);
- 		}
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index a1f440cd6d45..5e64316f8026 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -655,7 +655,8 @@ static void __setup_root(struct btrfs_root *root, struct btrfs_fs_info *fs_info,
- 	root->nr_delalloc_inodes = 0;
- 	root->nr_ordered_extents = 0;
- 	root->inode_tree = RB_ROOT;
--	INIT_RADIX_TREE(&root->delayed_nodes_tree, GFP_ATOMIC);
-+	/* GFP flags are compatible with XA_FLAGS_*. */
-+	xa_init_flags(&root->delayed_nodes, GFP_ATOMIC);
- 
- 	btrfs_init_root_block_rsv(root);
- 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 4fa7fabca2c5..4e8c82e5d7a6 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3805,7 +3805,7 @@ static int btrfs_read_locked_inode(struct inode *inode,
- 	 * cache.
- 	 *
- 	 * This is required for both inode re-read from disk and delayed inode
--	 * in delayed_nodes_tree.
-+	 * in the delayed_nodes xarray.
- 	 */
- 	if (BTRFS_I(inode)->last_trans == btrfs_get_fs_generation(fs_info))
- 		set_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
--- 
-2.42.1
+> +void bdev_sync_readahead(struct block_device *bdev, struct file_ra_state *ra,
+> +			 struct file *file, pgoff_t index,
+> +			 unsigned long req_count)
+> +{
+> +	struct file_ra_state tmp_ra = {};
+> +
+> +	if (!ra) {
+> +		ra = &tmp_ra;
+> +		file_ra_state_init(ra, bdev->bd_inode->i_mapping);
+> +	}
+> +	page_cache_sync_readahead(bdev->bd_inode->i_mapping, ra, file, index,
+> +				  req_count);
+> +}
 
+I think the caller should always be passing in a valid file_ra_state.
+It's only cramfs that doesn't have one, and it really should!
+Not entirely sure about the arguments here; part of me says "bytes",
+but this is weird enough to maybe take arguments in pages.

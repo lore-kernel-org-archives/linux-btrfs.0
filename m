@@ -1,85 +1,79 @@
-Received: from wp530.webpack.hosteurope.de (wp530.webpack.hosteurope.de [80.237.130.52])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 338161BD
-	for <linux-btrfs@vger.kernel.org>; Wed,  6 Dec 2023 06:22:22 -0800 (PST)
-Received: from [2a02:8108:8980:2478:8cde:aa2c:f324:937e]; authenticated
-	by wp530.webpack.hosteurope.de running ExIM with esmtpsa (TLS1.3:ECDHE_RSA_AES_128_GCM_SHA256:128)
-	id 1rAsn5-0002Jb-Pp; Wed, 06 Dec 2023 15:22:19 +0100
-Message-ID: <149bf20e-538b-4051-9ee3-a9d98e09c3bd@leemhuis.info>
-Date: Wed, 6 Dec 2023 15:22:19 +0100
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="lSbz0iem"
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 876B9D4D
+	for <linux-btrfs@vger.kernel.org>; Wed,  6 Dec 2023 06:22:52 -0800 (PST)
+Received: from ds.suse.cz (unknown [10.100.12.205])
+	by smtp-out1.suse.de (Postfix) with ESMTP id A8AC52207B;
+	Wed,  6 Dec 2023 14:22:50 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1701872570; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=1XMy5oUkj27MX0cg1vN8k/TDlELlQEFp8/7ghkz9m6E=;
+	b=lSbz0iem7h6NCAbpDMz8YvmSMKUB9TdJ9bSuYha+0mBerWnyvJ/R8vplCxJpI9A7u76U9t
+	aD4IIYq9ibgZTHGT4WBB55/nMuFGd9I2+wkC/nBAmwHoEzmJI42evgLUOEQK10Zns/gUuW
+	+BYySY8tL+VlMn2qLSV2NC8Qym9jX68=
+Received: by ds.suse.cz (Postfix, from userid 10065)
+	id 7343DDA900; Wed,  6 Dec 2023 15:16:01 +0100 (CET)
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH 0/1 v2] Convert btrfs_root::delayed_nodes_tree to xarray
+Date: Wed,  6 Dec 2023 15:16:01 +0100
+Message-ID: <cover.1701871671.git.dsterba@suse.com>
+X-Mailer: git-send-email 2.42.1
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: btrfs write-bandwidth performance regression of 6.5-rc4/rc3
-Content-Language: en-US, de-DE
-From: "Linux regression tracking (Thorsten Leemhuis)"
- <regressions@leemhuis.info>
-To: Wang Yugui <wangyugui@e16-tech.com>, Chris Mason <clm@meta.com>
-Cc: Christoph Hellwig <hch@lst.de>, linux-btrfs@vger.kernel.org,
- Chris Mason <clm@fb.com>,
- Linux kernel regressions list <regressions@lists.linux.dev>
-Reply-To: Linux regressions mailing list <regressions@lists.linux.dev>,
- Linux regressions mailing list <regressions@lists.linux.dev>
-References: <20230811222321.2AD2.409509F4@e16-tech.com>
- <20ab0be0-e7d0-632b-b94c-89d76911f1ed@meta.com>
- <20230813175032.AA17.409509F4@e16-tech.com>
- <4108c514-77ff-a247-d6e1-2c12a5dea295@leemhuis.info>
-In-Reply-To: <4108c514-77ff-a247-d6e1-2c12a5dea295@leemhuis.info>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
-X-bounce-key: webpack.hosteurope.de;regressions@leemhuis.info;1701872542;fe37b2ff;
-X-HE-SMSGID: 1rAsn5-0002Jb-Pp
+Content-Transfer-Encoding: 8bit
+Authentication-Results: smtp-out1.suse.de;
+	none
+X-Spam-Score: 5.10
+X-Spamd-Result: default: False [5.10 / 50.00];
+	 ARC_NA(0.00)[];
+	 FUZZY_BLOCKED(0.00)[rspamd.com];
+	 FROM_HAS_DN(0.00)[];
+	 TO_DN_SOME(0.00)[];
+	 R_MISSING_CHARSET(2.50)[];
+	 TO_MATCH_ENVRCPT_ALL(0.00)[];
+	 MIME_GOOD(-0.10)[text/plain];
+	 BROKEN_CONTENT_TYPE(1.50)[];
+	 DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	 NEURAL_HAM_SHORT(-0.20)[-0.998];
+	 RCPT_COUNT_TWO(0.00)[2];
+	 MID_CONTAINS_FROM(1.00)[];
+	 FORGED_SENDER(0.30)[dsterba@suse.com,dsterba@suse.cz];
+	 RCVD_COUNT_ZERO(0.00)[0];
+	 MIME_TRACE(0.00)[0:+];
+	 FROM_NEQ_ENVFROM(0.10)[dsterba@suse.com,dsterba@suse.cz];
+	 BAYES_HAM(-0.00)[21.44%]
 
-On 29.08.23 11:45, Linux regression tracking (Thorsten Leemhuis) wrote:
-> On 13.08.23 11:50, Wang Yugui wrote:
->>> On 8/11/23 10:23 AM, Wang Yugui wrote:
->>>>> On Wed, Aug 02, 2023 at 08:04:57AM +0800, Wang Yugui wrote:
->>>>>>> And with only a revert of
->>>>>>>
->>>>>>> "btrfs: submit IO synchronously for fast checksum implementations"?
->>>>>> GOOD performance when only (Revert "btrfs: submit IO synchronously for fast
->>>>>> checksum implementations") 
->>>>> Ok, so you have a case where the offload for the checksumming generation
->>>>> actually helps (by a lot).  Adding Chris to the Cc list as he was
->>>>> involved with this.
->>>>>
->>>>>>>> -       if (test_bit(BTRFS_FS_CSUM_IMPL_FAST, &bbio->fs_info->flags))
->>>>>>>> +       if ((bbio->bio.bi_opf & REQ_META) && test_bit(BTRFS_FS_CSUM_IMPL_FAST, &bbio->fs_info->flags))
->>>>>>>>                 return false;
->>>>>>> This disables synchronous checksum calculation entirely for data I/O.
->>>>>> without this fix, data I/O checksum is always synchronous?
->>>>>> this is a feature change of "btrfs: submit IO synchronously for fast checksum implementations"?
->>>>> It is never with the above patch.
->>>>>
->>>>>>> Also I'm curious if you see any differents for a non-RAID0 (i.e.
->>>>>>> single profile) workload.
->>>>>> '-m single -d single' is about 10% slow that '-m raid1 -d raid0' in this test
->>>>>> case.
->>>>> How does it compare with and without the revert?  Can you add the numbers?
->>>
->>> Looking through the thread, you're comparing -m single -d single, but
->>> btrfs is still doing the raid.
->>>
->>> Sorry to keep asking for more runs, but these numbers are a surprise,
->>> and I probably won't have time today to reproduce before vacation next
->>> week (sadly, Christoph and I aren't going together).
+v2:
+- rework it so we can still use GFP_NOFS for allocation, emulating the
+  preload mechanism with the xarray API, no changes to locking needed
+- tested with error injections instead of xa_reserve()
 
-FWIW, seems this thread died down and the underlying reason for the
-regression despite quite a bit of effort from the developers wasn't
-found. Haven't noticed any similar reports either. Reverting apparently
-is not a option. So in the end this afaics remains unfixed. In an ideal
-"no regressions" world this shouldn't happen, but well, we sadly don't
-live in one. So I'll stop tracking this issue, it's not worth the effort:
+v1:
 
-#regzbot inconclusive: despite some efforts from the developers could
-not be fixed
-#regzbot ignore-activity
+This restarts the radix-tree to xarray conversion that we had to revert.
+There are two more structures to convert, possibly with also spinlock to
+mutex conversions needed (buffer_radix and fs_roots_radix), but for the
+buffer radix I don't want to do now as we have the folio conversion
+ongoing. The fs_roots will most likely need the lock conversion so
+that's a change that I want to take the whole dev cycle, planned for 6.9.
 
-Ciao, Thorsten (wearing his 'the Linux kernel's regression tracker' hat)
---
-Everything you wanna know about Linux kernel regression tracking:
-https://linux-regtracking.leemhuis.info/about/#tldr
-That page also explains what to do if mails like this annoy you.
+David Sterba (1):
+  btrfs: switch btrfs_root::delayed_nodes_tree to xarray from radix-tree
+
+ fs/btrfs/ctree.h         |  6 ++--
+ fs/btrfs/delayed-inode.c | 64 ++++++++++++++++++++++------------------
+ fs/btrfs/disk-io.c       |  3 +-
+ fs/btrfs/inode.c         |  2 +-
+ 4 files changed, 41 insertions(+), 34 deletions(-)
+
+-- 
+2.42.1
+

@@ -1,12 +1,11 @@
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=tiscali.it header.i=@tiscali.it header.b="0XHSktNv"
-X-Greylist: delayed 64 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Wed, 06 Dec 2023 11:52:27 PST
+	dkim=pass (1024-bit key) header.d=tiscali.it header.i=@tiscali.it header.b="G/YGS07D"
 Received: from smtp.tiscali.it (santino.mail.tiscali.it [213.205.33.245])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTP id 99467FA
+	by lindbergh.monkeyblade.net (Postfix) with ESMTP id A3755122
 	for <linux-btrfs@vger.kernel.org>; Wed,  6 Dec 2023 11:52:27 -0800 (PST)
 Received: from venice.bhome ([84.220.171.3])
 	by santino.mail.tiscali.it with 
-	id K7rM2B00T04l9eU017rMWX; Wed, 06 Dec 2023 19:51:22 +0000
+	id K7rM2B00T04l9eU017rNXC; Wed, 06 Dec 2023 19:51:22 +0000
 X-Spam-Final-Verdict: clean
 X-Spam-State: 0
 X-Spam-Score: -100
@@ -16,10 +15,12 @@ From: Goffredo Baroncelli <kreijack@tiscali.it>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.cz>,
 	Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 0/4] RFC: add the btrfs_info helper
-Date: Wed,  6 Dec 2023 20:32:41 +0100
-Message-ID: <cover.1701891165.git.kreijack@inwind.it>
+Subject: [PATCH 2/4] new command: btrfs filesystem info [<path>...]
+Date: Wed,  6 Dec 2023 20:32:43 +0100
+Message-ID: <c86c826dcc398a49fc6d3afb68683b104763eceb.1701891165.git.kreijack@inwind.it>
 X-Mailer: git-send-email 2.43.0
+In-Reply-To: <cover.1701891165.git.kreijack@inwind.it>
+References: <cover.1701891165.git.kreijack@inwind.it>
 Reply-To: Goffredo Baroncelli <kreijack@libero.it>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
@@ -29,76 +30,135 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=tiscali.it; s=smtp;
-	t=1701892282; bh=/Py/Q3SFsBIS7vXoE3drYtcYTpe97S9QxCVIzK1/9zk=;
-	h=From:To:Cc:Subject:Date:Reply-To;
-	b=0XHSktNvLuk9NWdm/9BXD75XMVAXXiOZGdlIzkw5yheJagQkH7C9WemFG37yyIxxk
-	 TrU7zso0d5Xi9Up/XmJ4P0eGnG1rt33WExRcr0aQgE8zDVztEH7miQ6l5T+D10Cvqb
-	 oVBEhAzwZ8CPUMFsdD7aCSlvud30HMY76r+zTe8U=
+	t=1701892282; bh=r1+jlvKdEoEeQcNpDbXawfZ20GX41C5akkAdBBVFRTE=;
+	h=From:To:Cc:Subject:Date:In-Reply-To:References:Reply-To;
+	b=G/YGS07D/fCLdWcUVkiJX7hWLaqQxb0PWAroKgwW+3dcL+lFOzT28totDLokRC0Fs
+	 btNAK1FG9xw35Nd6MU3Ur7FYb9IA+bKGnDFhHQFVa8esKssCnhtny6l11XRCq/ujjl
+	 Y1Ux6U9DNfMoq8q0wVfGOXdycGNfHmPoa2cbLLMM=
 
 From: Goffredo Baroncelli <kreijack@inwind.it>
 
-The aim of this patches set is to add some helper to query the layout
-of a btrfs filesystem.
+This command shows all the main info of a (or all) btrfs filesystem.
+The argument may be in any of the following form:
+- btrfs filesystem path
+- btrfs device
+- UUID=<uuid>
+- UUID_sub=<uuid_sub>
+- PARTUUID=<partuuid>
 
-A btrfs filesystem may be composed by multiple disks, and several
-mountpoints on which different subvolumes are mounted.
+If no argument is passed, the informaton of all the filesystem are showed.
 
-Sometime we need to know the devices list starting from a path, or
-a path starting from a device.
+Typical output
+---------------------------------------------------
+$ btrfs fi info /mnt/btrfs-raid1
+UUID:    b39b0b27-ff80-4cb4-bf48-0be939ff0788
+LABEL:   raid1
+devices:
+        dev:      /dev/sda2
+        UUID_SUB: 65a4f76b-abaa-4d98-a1d5-4c586ffdcbf0
+        PARTUUID: fb9c0cc8-02
+        major:    8
+        minor:    2
+        devid:    1
 
-These helpers allow to know all the information of a filesystem like
-- UUID
-- Label
-- Mountpoints list (if mounted), and for each mountpoint
-   - subvolume
-   - options
-- Devices list, and for each device
-   - major, minor
-   - device name
-   - partuuid, uuid_sub 
-   - devid (if the user is root)
+        dev:      /dev/sdb2
+        UUID_SUB: 5f7f141f-0bdf-44fb-a910-fdc502a6fa7d
+        PARTUUID:
+        major:    8
+        minor:    18
+        devid:    2
 
-And it is possible to build these information giving any of:
-- a path (if mounted)
-- UUID
-- Label
-- partuuid
-- uuid_sub
+mounts:
+        dest:     /mnt/btrfs-raid1
+        rootpath: /
+        subvol:   /
+        options:  rw,noatime,nodiratime,rw,space_cache,subvolid=5,subvol=/
+        seq:      93
+        over:     30
 
+        dest:     /var/log
+        rootpath: /@log
+        subvol:   /@log
+        options:  rw,noatime,nodiratime,rw,nossd,discard=async,space_cache,subvolid=447,subvol=/@log
+        seq:      64
+        over:     30
 
-These helpers uses only libblkid and /proc/self/mountinfo to extract all
-these information. It is not required to be root; if the user is root
-it is returned also the devid of a device.
+-----------------------------------------------------
 
-The first patch add the helpers. From the second patch there are two new
-commands ('btrfs fi info' and 'btrfs fi get-info') and an enachement of 
-'btrfs fi label', which can be used passing both a device or a path,
- or UUID=<uuid>, LABEL=<label>... ; before the user has to pass a path
-if the filesystem is mounted, and a device otherwise. This command
-refuse to work with a device when the fielsystem is mounted, which is
-not very user friendly.
+Signed-off-by: Goffredo Baroncelli <kreijack@libero.it>
+---
+ cmds/filesystem.c | 44 ++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 44 insertions(+)
 
-The goal is to enanche some btrfs commands that now force the user to
-pass a device or a path even when it is possible to pass any valid
-reference to a btrfs filesystem (like UUID or Label).
-
-BR
-
-Goffredo Baroncelli (4):
-  btrfs-info: some utility to query a filesystem info
-  new command: btrfs filesystem info [<path>...]
-  new command: btrfs filesystem get-info ...
-  btrfs-progs: 'btrfs fi label' using a dev instead of a path
-
- Makefile                  |    1 +
- cmds/filesystem.c         |  141 +++++
- common/btrfs-info.c       | 1036 +++++++++++++++++++++++++++++++++++++
- common/btrfs-info.h       |  220 ++++++++
- common/filesystem-utils.c |   51 +-
- 5 files changed, 1437 insertions(+), 12 deletions(-)
- create mode 100644 common/btrfs-info.c
- create mode 100644 common/btrfs-info.h
-
+diff --git a/cmds/filesystem.c b/cmds/filesystem.c
+index 1b444b8f..38a0787f 100644
+--- a/cmds/filesystem.c
++++ b/cmds/filesystem.c
+@@ -55,6 +55,7 @@
+ #include "common/parse-utils.h"
+ #include "common/filesystem-utils.h"
+ #include "common/format-output.h"
++#include "common/btrfs-info.h"
+ #include "cmds/commands.h"
+ #include "cmds/filesystem-usage.h"
+ 
+@@ -1503,6 +1504,48 @@ static int cmd_filesystem_label(const struct cmd_struct *cmd,
+ }
+ static DEFINE_SIMPLE_COMMAND(filesystem_label, "label");
+ 
++static const char * const cmd_filesystem_info_usage[] = {
++	"btrfs filesystem info [UUID=<uuid>|UUID_SUB=<subuuid>|PARTUUID=<partuuid>|LABEL=<label>|<device>|<mount_point>] ...",
++	"Show the information of a btrfs filesystem.",
++	NULL
++};
++
++static int cmd_filesystem_info(const struct cmd_struct *cmd,
++				int argc, char **argv)
++{
++	clean_args_no_options(cmd, argc, argv);
++
++	if (argc - optind == 0) {
++		const struct btrfs_info *bi;
++		int r = btrfs_info_get(&bi);
++		if (r < 0) {
++			error("Cannot get info: %d - %s\n", -r, strerror(-r));
++			return 2;
++		}
++		btrfs_info_dump(bi, stdout);
++	} else {
++		for (int i = 1 ; i < argc ; i++) {
++			printf("Target: %s\n", argv[i]);
++
++			const struct btrfs_info *bi;
++			int r = btrfs_info_find(argv[i], &bi);
++			if (r < 0) {
++				error("Cannot get info for '%s': %d - %s\n",
++				      argv[i], -r, strerror(-r));
++				return 2;
++			}
++
++			btrfs_info_dump_single_entry(bi, stdout);
++
++			if (i < argc - 1)
++				printf("\n");
++		}
++	}
++
++	return 0;
++}
++static DEFINE_SIMPLE_COMMAND(filesystem_info, "info");
++
+ static const char * const cmd_filesystem_balance_usage[] = {
+ 	"btrfs filesystem balance [args...] (alias of \"btrfs balance\")",
+ 	"Please see \"btrfs balance --help\" for more information.",
+@@ -1707,6 +1750,7 @@ static const struct cmd_group filesystem_cmd_group = {
+ 		&cmd_struct_filesystem_balance,
+ 		&cmd_struct_filesystem_resize,
+ 		&cmd_struct_filesystem_label,
++		&cmd_struct_filesystem_info,
+ 		&cmd_struct_filesystem_usage,
+ 		&cmd_struct_filesystem_mkswapfile,
+ 		NULL
 -- 
 2.43.0
 

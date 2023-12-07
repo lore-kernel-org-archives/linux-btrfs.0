@@ -1,134 +1,103 @@
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="PICrZt+i";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="mcfM03uD";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="PICrZt+i";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="mcfM03uD"
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 38746D5E
-	for <linux-btrfs@vger.kernel.org>; Thu,  7 Dec 2023 05:50:15 -0800 (PST)
-Received: from imap2.dmz-prg2.suse.org (imap2.dmz-prg2.suse.org [10.150.64.98])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0EA43133
+	for <linux-btrfs@vger.kernel.org>; Thu,  7 Dec 2023 05:56:59 -0800 (PST)
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id BF5271FB69;
-	Thu,  7 Dec 2023 13:50:13 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1701957013;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=TgAUd+TPuIRlZ7KLPwzwwGWGnkPBeynQBMz/lmtgc7Q=;
-	b=PICrZt+ignnodCUHEmYgsVJwo1678LI1Rn6//6gfkxiy5U/NoiK1jS6ps4Yt+KMKkBleER
-	q990NowiBDcIUO1PmjINrOXI92dufmaINj4hEReh40pgZb0BjEMGsYspJ+V/m1IoJZh3Va
-	b1ck2SbGFfaqQrUK3xa9UgA9s07ZWgo=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1701957013;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=TgAUd+TPuIRlZ7KLPwzwwGWGnkPBeynQBMz/lmtgc7Q=;
-	b=mcfM03uDTxM1BFT+3F9S2StmaMysbTfVBrr62J57k2ZwYCdKAXeqaUVvq9ec6hs2aR4dej
-	HnU5r6okL0voelBQ==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1701957013;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=TgAUd+TPuIRlZ7KLPwzwwGWGnkPBeynQBMz/lmtgc7Q=;
-	b=PICrZt+ignnodCUHEmYgsVJwo1678LI1Rn6//6gfkxiy5U/NoiK1jS6ps4Yt+KMKkBleER
-	q990NowiBDcIUO1PmjINrOXI92dufmaINj4hEReh40pgZb0BjEMGsYspJ+V/m1IoJZh3Va
-	b1ck2SbGFfaqQrUK3xa9UgA9s07ZWgo=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1701957013;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=TgAUd+TPuIRlZ7KLPwzwwGWGnkPBeynQBMz/lmtgc7Q=;
-	b=mcfM03uDTxM1BFT+3F9S2StmaMysbTfVBrr62J57k2ZwYCdKAXeqaUVvq9ec6hs2aR4dej
-	HnU5r6okL0voelBQ==
-Received: from imap2.dmz-prg2.suse.org (localhost [127.0.0.1])
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 83FAC21CE4;
+	Thu,  7 Dec 2023 13:56:58 +0000 (UTC)
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap2.dmz-prg2.suse.org (Postfix) with ESMTPS id A694A13907;
-	Thu,  7 Dec 2023 13:50:13 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([10.150.64.162])
-	by imap2.dmz-prg2.suse.org with ESMTPSA
-	id gYJwKJXNcWWHGgAAn2gu4w
-	(envelope-from <dsterba@suse.cz>); Thu, 07 Dec 2023 13:50:13 +0000
-Date: Thu, 7 Dec 2023 14:43:22 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v3 2/2] btrfs: cleanup metadata page pointer usage
-Message-ID: <20231207134322.GW2751@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1701902977.git.wqu@suse.com>
- <55a172a8d8501f8111ef300fa8919ecb813acff8.1701902977.git.wqu@suse.com>
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 7243D13B6A;
+	Thu,  7 Dec 2023 13:56:56 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id Sb1PBSjPcWU6KgAAD6G6ig
+	(envelope-from <ddiss@suse.de>); Thu, 07 Dec 2023 13:56:56 +0000
+From: David Disseldorp <ddiss@suse.de>
+To: linux-btrfs@vger.kernel.org
+Cc: Qu Wenruo <wqu@suse.com>,
+	David Disseldorp <ddiss@suse.de>
+Subject: [PATCH] btrfs-progs: scrub: improve Rate reporting for sub-second durations
+Date: Fri,  8 Dec 2023 00:56:47 +1100
+Message-Id: <20231207135647.24332-1-ddiss@suse.de>
+X-Mailer: git-send-email 2.35.3
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <55a172a8d8501f8111ef300fa8919ecb813acff8.1701902977.git.wqu@suse.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Spam-Level: 
-X-Spam-Score: -3.96
-Authentication-Results: smtp-out2.suse.de;
-	none
-X-Spam-Level: 
-X-Spam-Score: -5.16
-X-Spamd-Result: default: False [-5.16 / 50.00];
+Content-Transfer-Encoding: 8bit
+X-Spamd-Result: default: False [11.79 / 50.00];
 	 ARC_NA(0.00)[];
-	 HAS_REPLYTO(0.30)[dsterba@suse.cz];
 	 RCVD_VIA_SMTP_AUTH(0.00)[];
+	 RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
 	 FROM_HAS_DN(0.00)[];
-	 TO_DN_SOME(0.00)[];
+	 RCPT_COUNT_THREE(0.00)[3];
+	 R_MISSING_CHARSET(2.50)[];
 	 TO_MATCH_ENVRCPT_ALL(0.00)[];
-	 NEURAL_HAM_LONG(-1.00)[-1.000];
 	 MIME_GOOD(-0.10)[text/plain];
-	 REPLYTO_ADDR_EQ_FROM(0.00)[];
-	 REPLY(-4.00)[];
+	 BROKEN_CONTENT_TYPE(1.50)[];
+	 R_SPF_SOFTFAIL(4.60)[~all:c];
 	 RCVD_COUNT_THREE(0.00)[3];
-	 DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	 NEURAL_HAM_SHORT(-0.20)[-1.000];
-	 RCPT_COUNT_TWO(0.00)[2];
+	 TO_DN_SOME(0.00)[];
+	 MX_GOOD(-0.01)[];
+	 RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	 MID_CONTAINS_FROM(1.00)[];
+	 DBL_BLOCKED_OPENRESOLVER(0.00)[suse.de:email];
 	 FUZZY_BLOCKED(0.00)[rspamd.com];
 	 FROM_EQ_ENVFROM(0.00)[];
+	 R_DKIM_NA(2.20)[];
 	 MIME_TRACE(0.00)[0:+];
 	 RCVD_TLS_ALL(0.00)[];
-	 BAYES_HAM(-0.16)[69.39%]
-X-Spam-Flag: NO
+	 DMARC_POLICY_SOFTFAIL(0.10)[suse.de : No valid SPF, No valid DKIM,none]
+X-Spamd-Bar: +++++++++++
+Authentication-Results: smtp-out1.suse.de;
+	dkim=none;
+	dmarc=fail reason="No valid SPF, No valid DKIM" header.from=suse.de (policy=none);
+	spf=softfail (smtp-out1.suse.de: 2a07:de40:b281:104:10:150:64:97 is neither permitted nor denied by domain of ddiss@suse.de) smtp.mailfrom=ddiss@suse.de
+X-Rspamd-Server: rspamd1
+X-Rspamd-Queue-Id: 83FAC21CE4
+X-Spam-Score: 11.79
 
-On Thu, Dec 07, 2023 at 09:39:28AM +1030, Qu Wenruo wrote:
->  /* Release all pages attached to the extent buffer */
->  static void btrfs_release_extent_buffer_pages(struct extent_buffer *eb)
->  {
->  	int i;
-> -	int num_pages;
-> +	int num_folios;
->  
->  	ASSERT(!extent_buffer_under_io(eb));
->  
-> -	num_pages = num_extent_pages(eb);
-> -	for (i = 0; i < num_pages; i++) {
-> -		struct page *page = folio_page(eb->folios[i], 0);
-> +	num_folios = num_extent_folios(eb);
-> +	for (i = 0; i < num_folios; i++) {
+Scrubs which complete in under one second may carry a duration rounded
+down to zero. This subsequently results in a bytes_per_sec value of
+zero, which corresponds to the Rate metric output, causing intermittent
+tests/btrfs/282 failures.
 
-I could not resist and updated the style in a few functions to
+This change ensures that Rate reflects any sub-second bytes processed.
+Time left and ETA metrics are also affected by this change, in that they
+increase to account for (sub-second) bytes_per_sec.
 
-	int num_folios = num_extent_folios(eb);
+Signed-off-by: David Disseldorp <ddiss@suse.de>
+---
+ cmds/scrub.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
 
-	for (int i = 0; ...) {
-	}
+diff --git a/cmds/scrub.c b/cmds/scrub.c
+index 4a741355..72ea3b67 100644
+--- a/cmds/scrub.c
++++ b/cmds/scrub.c
+@@ -152,7 +152,14 @@ static void print_scrub_summary(struct btrfs_scrub_progress *p, struct scrub_sta
+ 	time_t sec_eta;
+ 
+ 	bytes_scrubbed = p->data_bytes_scrubbed + p->tree_bytes_scrubbed;
+-	if (s->duration > 0)
++	/*
++	 * If duration is zero seconds (rounded down), then the Rate metric
++	 * should still reflect the amount of bytes that have been processed
++	 * in under a second.
++	 */
++	if (s->duration == 0)
++		bytes_per_sec = bytes_scrubbed;
++	else
+ 		bytes_per_sec = bytes_scrubbed / s->duration;
+ 	if (bytes_per_sec > 0)
+ 		sec_left = (bytes_total - bytes_scrubbed) / bytes_per_sec;
+-- 
+2.35.3
 
-i.e. move num_extent_folios() to the declarataions unless there's some
-'return/return' between them and moved the global 'int i' to the for()
-loop.
-
-It's a cleanup but the lines are changed anyway and we'll probabaly not
-touch this code anytime soon.

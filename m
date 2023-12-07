@@ -1,39 +1,39 @@
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="nw+vVDra"
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="TstjjkRl"
 Received: from esa6.hgst.iphmx.com (esa6.hgst.iphmx.com [216.71.154.45])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 186C91AD;
-	Thu,  7 Dec 2023 01:03:37 -0800 (PST)
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D4470D53;
+	Thu,  7 Dec 2023 01:03:38 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1701939817; x=1733475817;
+  t=1701939818; x=1733475818;
   h=from:date:subject:mime-version:content-transfer-encoding:
    message-id:references:in-reply-to:to:cc;
-  bh=0vFVxyKpqAp7DKayL6Ik1UXOmUX6REN6nOAs9orTBSo=;
-  b=nw+vVDraCk/INGL01jr1RyGRSGnwamyW/IuULV/vUd6jix4yvGU626ke
-   cxRxlAPES1ifnrk7SLLDIM1BASJXKtqaTrjakidu+NcdhvPatpSNtZg2a
-   UJylBfn5/xniYV460jdsFpRN6Bz1mIQD6a2lnTAoDMm2dNEOjHLr7xUPx
-   KZfCAfBtUDdBObe/578ObKm8eEqh2PQbXHR6WMY1Gngc9rR9plBbd321R
-   5tHChmoI22Qo1f3p1XbaNhBN2FXzQX0TlYrUfKE/jNGhdDhgP6hLvP3UJ
-   GKk//I8xuW97vA0B0kgHMIBLctmVvD6PCfJQzqQ3xTPVF/RkfxlzSGiTY
-   g==;
-X-CSE-ConnectionGUID: CwlxlzevSSuzO6mA9HwhvA==
-X-CSE-MsgGUID: SpXvHt3GSQGtygJGLAKMxw==
+  bh=rATPhERYyunlfOBEUNyI4hcJ3o86Yremm7GSLR2lMKw=;
+  b=TstjjkRlINUNCjlgCZk4I1e6IPL3x1mWPip4mbwFn4IN3q8ja5D+q1Uz
+   MCdu1WcYfLwNDXTl1FzlxHW5rZ3LydoHoWc9fytM7ztnK41wrN8DRPwr/
+   T0aSrbfnZGqh+4i/6Dy/9dRcqvsjLHOWmMnYQA/ul8z5OrsZ8wyIWi3vY
+   o+ZVO/A/V89N7HG9WUL/BMQAA+Y8P2miNF4evOCo7Yl2Xigv6mxeyOccM
+   Kn/VAsFH9DqGYO7Pbg+tjhflBSCp07+AYSISPzs/0I6yaYuvKPkIuuliW
+   9aT7T3XBUpxjhpMvG5TFwq9XqHQs+kdhszpu9y7OM1biXNx1aiMYDyv4V
+   A==;
+X-CSE-ConnectionGUID: WjgvveiJQESgxZvWdn7BLw==
+X-CSE-MsgGUID: rUfJRpmrT8aHsYswrXqJ6g==
 X-IronPort-AV: E=Sophos;i="6.04,256,1695657600"; 
-   d="scan'208";a="4272768"
+   d="scan'208";a="4272776"
 Received: from h199-255-45-14.hgst.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 07 Dec 2023 17:03:35 +0800
-IronPort-SDR: 4B/iUxFFCKP2v5AJVBVGU1Wtsc2M/+k5x8nN+SytVgODMyd6NVQiO6a3ynxn0qSn5ytIGNI4LT
- ifQVtz30/C1g==
+  by ob1.hgst.iphmx.com with ESMTP; 07 Dec 2023 17:03:38 +0800
+IronPort-SDR: ud0VF/Dbyb5UbTHff9sXXYvBv8D2SZvMgA8UiFCnW6PKgJc1G2QQz7SoyWg3uJpblX2YGUs/AU
+ 5SOsOotL/omA==
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 07 Dec 2023 00:14:35 -0800
-IronPort-SDR: KU1m3L/PXGy47AsenK6ylmVSlMmg/KTiBJz9Xsr+CV1kX7uX+SCWEVUn/rFV8FY4OT9dmrLkdI
- EIzydUBrh2FQ==
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 07 Dec 2023 00:14:38 -0800
+IronPort-SDR: 8+L/iOPXot5y5boZ4r8tXZ+3F3S5ZVD6uG2mOMzcEwKbVth7z24noYkMDMKctvyF28WHPp2IPk
+ jr2reDtRWeEQ==
 WDCIronportException: Internal
 Received: from unknown (HELO redsun91.ssa.fujisawa.hgst.com) ([10.149.66.6])
-  by uls-op-cesaip02.wdc.com with ESMTP; 07 Dec 2023 01:03:34 -0800
+  by uls-op-cesaip02.wdc.com with ESMTP; 07 Dec 2023 01:03:37 -0800
 From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Date: Thu, 07 Dec 2023 01:03:29 -0800
-Subject: [PATCH v5 2/9] common: add filter for btrfs raid-stripe dump
+Date: Thu, 07 Dec 2023 01:03:31 -0800
+Subject: [PATCH v5 4/9] common: add _require_btrfs_free_space_tree
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -42,7 +42,7 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-Message-Id: <20231207-btrfs-raid-v5-2-44aa1affe856@wdc.com>
+Message-Id: <20231207-btrfs-raid-v5-4-44aa1affe856@wdc.com>
 References: <20231207-btrfs-raid-v5-0-44aa1affe856@wdc.com>
 In-Reply-To: <20231207-btrfs-raid-v5-0-44aa1affe856@wdc.com>
 To: Anand Jain <anand.jain@oracle.com>, Zorro Lang <zlang@redhat.com>
@@ -50,43 +50,40 @@ Cc: Filipe Manana <fdmanana@suse.com>, fstests@vger.kernel.org,
  linux-btrfs@vger.kernel.org, 
  Johannes Thumshirn <johannes.thumshirn@wdc.com>
 X-Mailer: b4 0.12.3
-X-Developer-Signature: v=1; a=ed25519-sha256; t=1701939810; l=1491;
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1701939810; l=637;
  i=johannes.thumshirn@wdc.com; s=20230613; h=from:subject:message-id;
- bh=0vFVxyKpqAp7DKayL6Ik1UXOmUX6REN6nOAs9orTBSo=;
- b=LPpQjcxYTD+IH+jwsx46OyY1hy3CXKQxkjcMpcPAeVnFYFylY49ZG+LadQWx8LucEL5qg+Xnm
- yk/EGl/48ZOAs0nIh3+em4Bal/WRZ9tX8cw+zQ0kfEeMqPucYJ5qhb+
+ bh=rATPhERYyunlfOBEUNyI4hcJ3o86Yremm7GSLR2lMKw=;
+ b=dVvopVIn6PQJ6Flr4uSo3IMKUrAGqhKM2f+pFNHtoJvaQwkU7Zl4OY6yb6g5Tx2Yz4c9Lwsn4
+ I8tay/3w8X4C6oUW1Zr3qCtDaY+XNCYL3Oj5QBLwWxc5L3qV8iNkZ+F
 X-Developer-Key: i=johannes.thumshirn@wdc.com; a=ed25519;
  pk=TGmHKs78FdPi+QhrViEvjKIGwReUGCfa+3LEnGoR2KM=
 
 Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- common/filter.btrfs | 14 ++++++++++++++
- 1 file changed, 14 insertions(+)
+ common/btrfs | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-diff --git a/common/filter.btrfs b/common/filter.btrfs
-index 02c6b92dfa94..2003ba7b7015 100644
---- a/common/filter.btrfs
-+++ b/common/filter.btrfs
-@@ -125,5 +125,19 @@ _filter_btrfs_cloner_error()
- 	sed -e "s/\(clone failed:\) Operation not supported/\1 Invalid argument/g"
+diff --git a/common/btrfs b/common/btrfs
+index bf69bcee158b..95e46726a801 100644
+--- a/common/btrfs
++++ b/common/btrfs
+@@ -137,6 +137,16 @@ _require_btrfs_no_block_group_tree()
+ 	fi
  }
  
-+# filter output of "btrfs inspect-internal dump-tree -t raid-stripe"
-+_filter_stripe_tree()
++_require_btrfs_free_space_tree()
 +{
-+	sed -E -e "s/leaf [0-9]+ items [0-9]+ free space [0-9]+ generation [0-9]+ owner RAID_STRIPE_TREE/leaf XXXXXXXXX items X free space XXXXX generation X owner RAID_STRIPE_TREE/" \
-+		-e "s/leaf [0-9]+ flags 0x1\(WRITTEN\) backref revision 1/leaf XXXXXXXXX flags 0x1\(WRITTEN\) backref revision 1/" \
-+		-e "s/checksum stored [0-9a-f]+/checksum stored <CHECKSUM>/"  \
-+		-e "s/checksum calced [0-9a-f]+/checksum calced <CHECKSUM>/"  \
-+		-e "s/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/<UUID>/" \
-+		-e "s/item ([0-9]+) key \([0-9]+ RAID_STRIPE ([0-9]+)\) itemoff [0-9]+ itemsize ([0-9]+)/item \1 key \(XXXXXX RAID_STRIPE \2\) itemoff XXXXX itemsize \3/" \
-+		-e "s/stripe ([0-9]+) devid ([0-9]+) physical [0-9]+/stripe \1 devid \2 physical XXXXXXXXX/" \
-+		-e "s/total bytes [0-9]+/total bytes XXXXXXXX/" \
-+		-e "s/bytes used [0-9]+/bytes used XXXXXX/"
++	_scratch_mkfs > /dev/null 2>&1
++	if ! $BTRFS_UTIL_PROG inspect-internal dump-super $SCRATCH_DEV | \
++		grep -q "FREE_SPACE_TREE"
++	then
++		_notrun "This test requires a free-space-tree"
++	fi
 +}
 +
- # make sure this script returns success
- /bin/true
+ _check_btrfs_filesystem()
+ {
+ 	device=$1
 
 -- 
 2.43.0

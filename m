@@ -1,39 +1,28 @@
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="OKAEO8pA"
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2a07:de40:b251:101:10:150:64:1])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D603110CA
-	for <linux-btrfs@vger.kernel.org>; Fri,  8 Dec 2023 01:54:46 -0800 (PST)
-Received: from imap2.dmz-prg2.suse.org (imap2.dmz-prg2.suse.org [10.150.64.98])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A3BB710E6
+	for <linux-btrfs@vger.kernel.org>; Fri,  8 Dec 2023 01:54:50 -0800 (PST)
+Received: from imap2.dmz-prg2.suse.org (imap2.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:98])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 6A6CF21D5E
-	for <linux-btrfs@vger.kernel.org>; Fri,  8 Dec 2023 09:54:45 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1702029285; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=8hUm3osjwieKBkujsOltOHRfdiIRWin0t7jgthoX/aU=;
-	b=OKAEO8pAomiGIbLSUW3e58TN1RczE4DNSIYdkcR3Vtpg7LXDE1zCGGFlpweRfwuFJrCymI
-	HSAi4MtG8EyXktTthhkT6hQ0lAfAe2ov6GoJ65nrAYaMhk60pUpJrEBLSP93NNdHzCSHyZ
-	Va+TSQvByL0pSPnFfO2sDr0rlzV6p8E=
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 2384021E39
+	for <linux-btrfs@vger.kernel.org>; Fri,  8 Dec 2023 09:54:49 +0000 (UTC)
 Received: from imap2.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap2.dmz-prg2.suse.org (Postfix) with ESMTPS id 5E7DC13B42
-	for <linux-btrfs@vger.kernel.org>; Fri,  8 Dec 2023 09:54:44 +0000 (UTC)
+	by imap2.dmz-prg2.suse.org (Postfix) with ESMTPS id 1B23613B42
+	for <linux-btrfs@vger.kernel.org>; Fri,  8 Dec 2023 09:54:47 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([10.150.64.162])
 	by imap2.dmz-prg2.suse.org with ESMTPSA
-	id qHAqA+TncmUnRgAAn2gu4w
+	id uPRRLufncmUnRgAAn2gu4w
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Fri, 08 Dec 2023 09:54:44 +0000
+	for <linux-btrfs@vger.kernel.org>; Fri, 08 Dec 2023 09:54:47 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/3] btrfs: migrate get_eb_page_index() and get_eb_offset_in_page() to folios
-Date: Fri,  8 Dec 2023 20:24:21 +1030
-Message-ID: <252dc97900df5a9a15f46f802830e156dc9e544c.1702028578.git.wqu@suse.com>
+Subject: [PATCH 3/3] btrfs: migrate various btrfs end io functions to folios
+Date: Fri,  8 Dec 2023 20:24:23 +1030
+Message-ID: <f7b9c6764117f29b7e930e17d3bbc0c0d39ec76e.1702028578.git.wqu@suse.com>
 X-Mailer: git-send-email 2.43.0
 In-Reply-To: <cover.1702028578.git.wqu@suse.com>
 References: <cover.1702028578.git.wqu@suse.com>
@@ -44,10 +33,12 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [1.90 / 50.00];
-	 ARC_NA(0.00)[];
+X-Spamd-Result: default: False [15.00 / 50.00];
 	 RCVD_VIA_SMTP_AUTH(0.00)[];
+	 R_SPF_FAIL(1.00)[-all];
+	 ARC_NA(0.00)[];
 	 FROM_HAS_DN(0.00)[];
+	 DMARC_POLICY_QUARANTINE(1.50)[suse.com : No valid SPF, No valid DKIM,quarantine];
 	 R_MISSING_CHARSET(2.50)[];
 	 TO_MATCH_ENVRCPT_ALL(0.00)[];
 	 MIME_GOOD(-0.10)[text/plain];
@@ -56,638 +47,412 @@ X-Spamd-Result: default: False [1.90 / 50.00];
 	 RCPT_COUNT_ONE(0.00)[1];
 	 RCVD_COUNT_THREE(0.00)[3];
 	 TO_DN_NONE(0.00)[];
-	 DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	 MX_GOOD(-0.01)[];
 	 MID_CONTAINS_FROM(1.00)[];
 	 DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email];
 	 FUZZY_BLOCKED(0.00)[rspamd.com];
 	 FROM_EQ_ENVFROM(0.00)[];
+	 R_DKIM_NA(2.20)[];
 	 MIME_TRACE(0.00)[0:+];
 	 RCVD_TLS_ALL(0.00)[];
 	 BAYES_HAM(-3.00)[100.00%]
+X-Spamd-Bar: +++++++++++++++
 Authentication-Results: smtp-out1.suse.de;
-	none
-X-Spam-Score: 1.90
+	dkim=none;
+	dmarc=fail reason="No valid SPF, No valid DKIM" header.from=suse.com (policy=quarantine);
+	spf=fail (smtp-out1.suse.de: domain of wqu@suse.com does not designate 2a07:de40:b281:104:10:150:64:98 as permitted sender) smtp.mailfrom=wqu@suse.com
+X-Rspamd-Server: rspamd1
+X-Rspamd-Queue-Id: 2384021E39
+X-Spam-Score: 15.00
+X-Spam: Yes
 
-These two functions are still using the old page based code, which is
-not going to handle larger folios at all.
+If we still go the old page based iterator functions, like
+bio_for_each_segment_all(), we can hit middle pages of a folio (compound
+page).
 
-The migration itself is going to involve the following changes:
+In that case if we set any page flag on those middle pages, we can
+easily trigger VM_BUG_ON(), as for compound page flags, they should
+follow their flag policies (normally only set on leading or tail pages).
 
-- PAGE_SIZE -> folio_size()
-- PAGE_SHIFT -> folio_shift()
-- get_eb_page_index() -> get_eb_folio_index()
-- get_eb_offset_in_page() -> get_eb_offset_in_folio()
+To avoid such problem in the future full folio migration, here we do:
 
-And since we're going to support larger folios, although above straight
-convert is good enough, this patch would add extra comments in the
-involved functions to explain why the same single line code can now
-cover 3 cases:
+- Change from bio_for_each_segment_all() to bio_for_each_folio_all()
+  This completely removes the ability to access the middle page.
 
-- folio_size == PAGE_SIZE, sectorsize == PAGE_SIZE, nodesize >= PAGE_SIZE
-  The common, non-subpage case with per-page folio.
+- Add extra ASSERT()s for data read/write paths
+  To ensure we only get single paged folio for data now.
 
-- folio_size > PAGE_SIZE, sectorsize == PAGE_SIZE, nodesize >= PAGE_SIZE
-  The incoming larger folio, non-subpage case.
+- Rename those end io functions to follow a certain schema
+  * end_bbio_compressed_read()
+  * end_bbio_compressed_write()
 
-- folio_size == PAGE_SIZE, sectorsize < PAGE_SIZE, nodesize < PAGE_SIZE
-  The existing subpage case, we won't larger folio anyway.
+    These two endio function doesn't set any page flags, as they use pages
+    not mapped to any address space.
+    They can be very good candidates for higher order folio testing.
+
+    And they are shared between compression and encoded IO.
+
+  * end_bbio_data_read()
+  * end_bbio_data_write()
+  * end_bbio_meta_read()
+  * end_bbio_meta_write()
+
+  The old function names are a disaster:
+    - end_bio_extent_writepage()
+    - end_bio_extent_readpage()
+    - extent_buffer_write_end_io()
+    - extent_buffer_read_end_io()
+
+  They share no schema on where the "end_*io" string should be, nor can
+  be confusing just using "extent_buffer" and "extent" to distinguish
+  data and metadata paths.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/accessors.c |  80 +++++++++++++++------------
- fs/btrfs/ctree.c     |  13 ++---
- fs/btrfs/disk-io.c   |   2 +-
- fs/btrfs/extent_io.c | 126 ++++++++++++++++++++++---------------------
- fs/btrfs/extent_io.h |  40 +++++++++-----
- 5 files changed, 145 insertions(+), 116 deletions(-)
+ fs/btrfs/compression.c |   8 +--
+ fs/btrfs/extent_io.c   | 148 +++++++++++++++++++++--------------------
+ 2 files changed, 80 insertions(+), 76 deletions(-)
 
-diff --git a/fs/btrfs/accessors.c b/fs/btrfs/accessors.c
-index 8f7cbb7154d4..3b3fcd2477a8 100644
---- a/fs/btrfs/accessors.c
-+++ b/fs/btrfs/accessors.c
-@@ -59,29 +59,32 @@ void btrfs_init_map_token(struct btrfs_map_token *token, struct extent_buffer *e
- u##bits btrfs_get_token_##bits(struct btrfs_map_token *token,		\
- 			       const void *ptr, unsigned long off)	\
- {									\
-+	struct extent_buffer *eb = token->eb;				\
- 	const unsigned long member_offset = (unsigned long)ptr + off;	\
--	const unsigned long idx = get_eb_page_index(member_offset);	\
--	const unsigned long oip = get_eb_offset_in_page(token->eb,	\
--							member_offset);	\
-+	const unsigned long idx = get_eb_folio_index(eb, member_offset);\
-+	const unsigned long oil = get_eb_offset_in_folio(eb,		\
-+							 member_offset);\
-+	const int unit_size = folio_size(eb->folios[0]);		\
-+	const int unit_shift = folio_shift(eb->folios[0]);		\
- 	const int size = sizeof(u##bits);				\
- 	u8 lebytes[sizeof(u##bits)];					\
--	const int part = PAGE_SIZE - oip;				\
-+	const int part = unit_size - oil;				\
- 									\
- 	ASSERT(token);							\
- 	ASSERT(token->kaddr);						\
- 	ASSERT(check_setget_bounds(token->eb, ptr, off, size));		\
- 	if (token->offset <= member_offset &&				\
--	    member_offset + size <= token->offset + PAGE_SIZE) {	\
--		return get_unaligned_le##bits(token->kaddr + oip);	\
-+	    member_offset + size <= token->offset + unit_size) {	\
-+		return get_unaligned_le##bits(token->kaddr + oil);	\
- 	}								\
- 	token->kaddr = folio_address(token->eb->folios[idx]);		\
--	token->offset = idx << PAGE_SHIFT;				\
--	if (INLINE_EXTENT_BUFFER_PAGES == 1 || oip + size <= PAGE_SIZE ) \
--		return get_unaligned_le##bits(token->kaddr + oip);	\
-+	token->offset = idx << unit_shift;				\
-+	if (INLINE_EXTENT_BUFFER_PAGES == 1 || oil + size <= unit_size) \
-+		return get_unaligned_le##bits(token->kaddr + oil);	\
- 									\
--	memcpy(lebytes, token->kaddr + oip, part);			\
-+	memcpy(lebytes, token->kaddr + oil, part);			\
- 	token->kaddr = folio_address(token->eb->folios[idx + 1]);	\
--	token->offset = (idx + 1) << PAGE_SHIFT;			\
-+	token->offset = (idx + 1) << unit_shift;			\
- 	memcpy(lebytes + part, token->kaddr, size - part);		\
- 	return get_unaligned_le##bits(lebytes);				\
- }									\
-@@ -89,18 +92,20 @@ u##bits btrfs_get_##bits(const struct extent_buffer *eb,		\
- 			 const void *ptr, unsigned long off)		\
- {									\
- 	const unsigned long member_offset = (unsigned long)ptr + off;	\
--	const unsigned long oip = get_eb_offset_in_page(eb, member_offset); \
--	const unsigned long idx = get_eb_page_index(member_offset);	\
-+	const unsigned long idx = get_eb_folio_index(eb, member_offset);\
-+	const unsigned long oil = get_eb_offset_in_folio(eb,		\
-+							 member_offset);\
-+	const int unit_size = folio_size(eb->folios[0]);		\
- 	char *kaddr = folio_address(eb->folios[idx]);			\
- 	const int size = sizeof(u##bits);				\
--	const int part = PAGE_SIZE - oip;				\
-+	const int part = unit_size - oil;				\
- 	u8 lebytes[sizeof(u##bits)];					\
- 									\
- 	ASSERT(check_setget_bounds(eb, ptr, off, size));		\
--	if (INLINE_EXTENT_BUFFER_PAGES == 1 || oip + size <= PAGE_SIZE)	\
--		return get_unaligned_le##bits(kaddr + oip);		\
-+	if (INLINE_EXTENT_BUFFER_PAGES == 1 || oil + size <= unit_size)	\
-+		return get_unaligned_le##bits(kaddr + oil);		\
- 									\
--	memcpy(lebytes, kaddr + oip, part);				\
-+	memcpy(lebytes, kaddr + oil, part);				\
- 	kaddr = folio_address(eb->folios[idx + 1]);			\
- 	memcpy(lebytes + part, kaddr, size - part);			\
- 	return get_unaligned_le##bits(lebytes);				\
-@@ -109,53 +114,60 @@ void btrfs_set_token_##bits(struct btrfs_map_token *token,		\
- 			    const void *ptr, unsigned long off,		\
- 			    u##bits val)				\
- {									\
-+	struct extent_buffer *eb = token->eb;				\
- 	const unsigned long member_offset = (unsigned long)ptr + off;	\
--	const unsigned long idx = get_eb_page_index(member_offset);	\
--	const unsigned long oip = get_eb_offset_in_page(token->eb,	\
--							member_offset);	\
-+	const unsigned long idx = get_eb_folio_index(eb, member_offset);\
-+	const unsigned long oil = get_eb_offset_in_folio(eb,		\
-+							 member_offset);\
-+	const int unit_size = folio_size(eb->folios[0]);		\
-+	const int unit_shift = folio_shift(eb->folios[0]);		\
- 	const int size = sizeof(u##bits);				\
- 	u8 lebytes[sizeof(u##bits)];					\
--	const int part = PAGE_SIZE - oip;				\
-+	const int part = unit_size - oil;				\
- 									\
- 	ASSERT(token);							\
- 	ASSERT(token->kaddr);						\
- 	ASSERT(check_setget_bounds(token->eb, ptr, off, size));		\
- 	if (token->offset <= member_offset &&				\
--	    member_offset + size <= token->offset + PAGE_SIZE) {	\
--		put_unaligned_le##bits(val, token->kaddr + oip);	\
-+	    member_offset + size <= token->offset + unit_size) {	\
-+		put_unaligned_le##bits(val, token->kaddr + oil);	\
- 		return;							\
- 	}								\
- 	token->kaddr = folio_address(token->eb->folios[idx]);		\
--	token->offset = idx << PAGE_SHIFT;				\
--	if (INLINE_EXTENT_BUFFER_PAGES == 1 || oip + size <= PAGE_SIZE) { \
--		put_unaligned_le##bits(val, token->kaddr + oip);	\
-+	token->offset = idx << unit_shift;				\
-+	if (INLINE_EXTENT_BUFFER_PAGES == 1 ||				\
-+	    oil + size <= unit_size) {					\
-+		put_unaligned_le##bits(val, token->kaddr + oil);	\
- 		return;							\
- 	}								\
- 	put_unaligned_le##bits(val, lebytes);				\
--	memcpy(token->kaddr + oip, lebytes, part);			\
-+	memcpy(token->kaddr + oil, lebytes, part);			\
- 	token->kaddr = folio_address(token->eb->folios[idx + 1]);	\
--	token->offset = (idx + 1) << PAGE_SHIFT;			\
-+	token->offset = (idx + 1) << unit_shift;			\
- 	memcpy(token->kaddr, lebytes + part, size - part);		\
- }									\
- void btrfs_set_##bits(const struct extent_buffer *eb, void *ptr,	\
- 		      unsigned long off, u##bits val)			\
- {									\
- 	const unsigned long member_offset = (unsigned long)ptr + off;	\
--	const unsigned long oip = get_eb_offset_in_page(eb, member_offset); \
--	const unsigned long idx = get_eb_page_index(member_offset);	\
-+	const unsigned long idx = get_eb_folio_index(eb, member_offset);\
-+	const unsigned long oil = get_eb_offset_in_folio(eb,		\
-+							 member_offset);\
-+	const int unit_size = folio_size(eb->folios[0]);		\
- 	char *kaddr = folio_address(eb->folios[idx]);			\
- 	const int size = sizeof(u##bits);				\
--	const int part = PAGE_SIZE - oip;				\
-+	const int part = unit_size - oil;				\
- 	u8 lebytes[sizeof(u##bits)];					\
- 									\
- 	ASSERT(check_setget_bounds(eb, ptr, off, size));		\
--	if (INLINE_EXTENT_BUFFER_PAGES == 1 || oip + size <= PAGE_SIZE) { \
--		put_unaligned_le##bits(val, kaddr + oip);		\
-+	if (INLINE_EXTENT_BUFFER_PAGES == 1 ||				\
-+	    oil + size <= unit_size) {					\
-+		put_unaligned_le##bits(val, kaddr + oil);		\
- 		return;							\
- 	}								\
- 									\
- 	put_unaligned_le##bits(val, lebytes);				\
--	memcpy(kaddr + oip, lebytes, part);				\
-+	memcpy(kaddr + oil, lebytes, part);				\
- 	kaddr = folio_address(eb->folios[idx + 1]);			\
- 	memcpy(kaddr, lebytes + part, size - part);			\
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index ba661bc9ee99..c43572af5e68 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -264,7 +264,7 @@ void btrfs_free_compr_page(struct page *page)
+ 	put_page(page);
  }
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index e6c535cf3749..e65e012bac55 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -820,7 +820,8 @@ int btrfs_bin_search(struct extent_buffer *eb, int first_slot,
- 	}
  
- 	while (low < high) {
--		unsigned long oip;
-+		const int unit_size = folio_size(eb->folios[0]);
-+		unsigned long oil;
- 		unsigned long offset;
- 		struct btrfs_disk_key *tmp;
- 		struct btrfs_disk_key unaligned;
-@@ -828,14 +829,14 @@ int btrfs_bin_search(struct extent_buffer *eb, int first_slot,
+-static void end_compressed_bio_read(struct btrfs_bio *bbio)
++static void end_bbio_comprssed_read(struct btrfs_bio *bbio)
+ {
+ 	struct compressed_bio *cb = to_compressed_bio(bbio);
+ 	blk_status_t status = bbio->bio.bi_status;
+@@ -337,7 +337,7 @@ static void btrfs_finish_compressed_write_work(struct work_struct *work)
+  * This also calls the writeback end hooks for the file pages so that metadata
+  * and checksums can be updated in the file.
+  */
+-static void end_compressed_bio_write(struct btrfs_bio *bbio)
++static void end_bbio_comprssed_write(struct btrfs_bio *bbio)
+ {
+ 	struct compressed_bio *cb = to_compressed_bio(bbio);
+ 	struct btrfs_fs_info *fs_info = bbio->inode->root->fs_info;
+@@ -384,7 +384,7 @@ void btrfs_submit_compressed_write(struct btrfs_ordered_extent *ordered,
  
- 		mid = (low + high) / 2;
- 		offset = p + mid * item_size;
--		oip = offset_in_page(offset);
-+		oil = get_eb_offset_in_folio(eb, offset);
+ 	cb = alloc_compressed_bio(inode, ordered->file_offset,
+ 				  REQ_OP_WRITE | write_flags,
+-				  end_compressed_bio_write);
++				  end_bbio_comprssed_write);
+ 	cb->start = ordered->file_offset;
+ 	cb->len = ordered->num_bytes;
+ 	cb->compressed_pages = compressed_pages;
+@@ -589,7 +589,7 @@ void btrfs_submit_compressed_read(struct btrfs_bio *bbio)
+ 	compressed_len = em->block_len;
  
--		if (oip + key_size <= PAGE_SIZE) {
--			const unsigned long idx = get_eb_page_index(offset);
-+		if (oil + key_size <= unit_size) {
-+			const unsigned long idx = get_eb_folio_index(eb, offset);
- 			char *kaddr = folio_address(eb->folios[idx]);
+ 	cb = alloc_compressed_bio(inode, file_offset, REQ_OP_READ,
+-				  end_compressed_bio_read);
++				  end_bbio_comprssed_read);
  
--			oip = get_eb_offset_in_page(eb, offset);
--			tmp = (struct btrfs_disk_key *)(kaddr + oip);
-+			oil = get_eb_offset_in_folio(eb, offset);
-+			tmp = (struct btrfs_disk_key *)(kaddr + oil);
- 		} else {
- 			read_extent_buffer(eb, &unaligned, offset, key_size);
- 			tmp = &unaligned;
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index a5ace9f6e790..05f797cf3b63 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -395,7 +395,7 @@ int btrfs_validate_extent_buffer(struct extent_buffer *eb,
- 
- 	csum_tree_block(eb, result);
- 	header_csum = folio_address(eb->folios[0]) +
--		get_eb_offset_in_page(eb, offsetof(struct btrfs_header, csum));
-+		get_eb_offset_in_folio(eb, offsetof(struct btrfs_header, csum));
- 
- 	if (memcmp(result, header_csum, csum_size) != 0) {
- 		btrfs_warn_rl(fs_info,
+ 	cb->start = em->orig_start;
+ 	em_len = em->len;
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index c8b14ba362f6..299466602588 100644
+index ec1b809a06fc..c77e8a9e0579 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -4172,12 +4172,11 @@ static inline int check_eb_range(const struct extent_buffer *eb,
- void read_extent_buffer(const struct extent_buffer *eb, void *dstv,
- 			unsigned long start, unsigned long len)
- {
-+	const int unit_size = folio_size(eb->folios[0]);
- 	size_t cur;
- 	size_t offset;
--	struct page *page;
--	char *kaddr;
- 	char *dst = (char *)dstv;
--	unsigned long i = get_eb_page_index(start);
-+	unsigned long i = get_eb_folio_index(eb, start);
- 
- 	if (check_eb_range(eb, start, len)) {
- 		/*
-@@ -4193,13 +4192,13 @@ void read_extent_buffer(const struct extent_buffer *eb, void *dstv,
- 		return;
- 	}
- 
--	offset = get_eb_offset_in_page(eb, start);
-+	offset = get_eb_offset_in_folio(eb, start);
- 
- 	while (len > 0) {
--		page = folio_page(eb->folios[i], 0);
-+		char *kaddr;
- 
--		cur = min(len, (PAGE_SIZE - offset));
--		kaddr = page_address(page);
-+		cur = min(len, unit_size - offset);
-+		kaddr = folio_address(eb->folios[i]);
- 		memcpy(dst, kaddr + offset, cur);
- 
- 		dst += cur;
-@@ -4213,12 +4212,11 @@ int read_extent_buffer_to_user_nofault(const struct extent_buffer *eb,
- 				       void __user *dstv,
- 				       unsigned long start, unsigned long len)
- {
-+	const int unit_size = folio_size(eb->folios[0]);
- 	size_t cur;
- 	size_t offset;
--	struct page *page;
--	char *kaddr;
- 	char __user *dst = (char __user *)dstv;
--	unsigned long i = get_eb_page_index(start);
-+	unsigned long i = get_eb_folio_index(eb, start);
- 	int ret = 0;
- 
- 	WARN_ON(start > eb->len);
-@@ -4230,13 +4228,13 @@ int read_extent_buffer_to_user_nofault(const struct extent_buffer *eb,
- 		return ret;
- 	}
- 
--	offset = get_eb_offset_in_page(eb, start);
-+	offset = get_eb_offset_in_folio(eb, start);
- 
- 	while (len > 0) {
--		page = folio_page(eb->folios[i], 0);
-+		char *kaddr;
- 
--		cur = min(len, (PAGE_SIZE - offset));
--		kaddr = page_address(page);
-+		cur = min(len, unit_size - offset);
-+		kaddr = folio_address(eb->folios[i]);
- 		if (copy_to_user_nofault(dst, kaddr + offset, cur)) {
- 			ret = -EFAULT;
- 			break;
-@@ -4254,12 +4252,12 @@ int read_extent_buffer_to_user_nofault(const struct extent_buffer *eb,
- int memcmp_extent_buffer(const struct extent_buffer *eb, const void *ptrv,
- 			 unsigned long start, unsigned long len)
- {
-+	const int unit_size = folio_size(eb->folios[0]);
- 	size_t cur;
- 	size_t offset;
--	struct page *page;
- 	char *kaddr;
- 	char *ptr = (char *)ptrv;
--	unsigned long i = get_eb_page_index(start);
-+	unsigned long i = get_eb_folio_index(eb, start);
- 	int ret = 0;
- 
- 	if (check_eb_range(eb, start, len))
-@@ -4268,14 +4266,12 @@ int memcmp_extent_buffer(const struct extent_buffer *eb, const void *ptrv,
- 	if (eb->addr)
- 		return memcmp(ptrv, eb->addr + start, len);
- 
--	offset = get_eb_offset_in_page(eb, start);
-+	offset = get_eb_offset_in_folio(eb, start);
- 
- 	while (len > 0) {
--		page = folio_page(eb->folios[i], 0);
-+		cur = min(len, unit_size - offset);
- 
--		cur = min(len, (PAGE_SIZE - offset));
--
--		kaddr = page_address(page);
-+		kaddr = folio_address(eb->folios[i]);
- 		ret = memcmp(ptr, kaddr + offset, cur);
- 		if (ret)
- 			break;
-@@ -4294,10 +4290,12 @@ int memcmp_extent_buffer(const struct extent_buffer *eb, const void *ptrv,
-  * For regular sector size == PAGE_SIZE case, check if @page is uptodate.
-  * For subpage case, check if the range covered by the eb has EXTENT_UPTODATE.
-  */
--static void assert_eb_page_uptodate(const struct extent_buffer *eb,
--				    struct page *page)
-+static void assert_eb_folio_uptodate(const struct extent_buffer *eb, int i)
- {
- 	struct btrfs_fs_info *fs_info = eb->fs_info;
-+	struct folio *folio = eb->folios[i];
-+
-+	ASSERT(folio);
- 
- 	/*
- 	 * If we are using the commit root we could potentially clear a page
-@@ -4311,11 +4309,13 @@ static void assert_eb_page_uptodate(const struct extent_buffer *eb,
- 		return;
- 
- 	if (fs_info->nodesize < PAGE_SIZE) {
-+		struct page *page = folio_page(folio, 0);
-+
- 		if (WARN_ON(!btrfs_subpage_test_uptodate(fs_info, page,
- 							 eb->start, eb->len)))
- 			btrfs_subpage_dump_bitmap(fs_info, page, eb->start, eb->len);
- 	} else {
--		WARN_ON(!PageUptodate(page));
-+		WARN_ON(!folio_test_uptodate(folio));
- 	}
- }
- 
-@@ -4323,12 +4323,12 @@ static void __write_extent_buffer(const struct extent_buffer *eb,
- 				  const void *srcv, unsigned long start,
- 				  unsigned long len, bool use_memmove)
- {
-+	const int unit_size = folio_size(eb->folios[0]);
- 	size_t cur;
- 	size_t offset;
--	struct page *page;
- 	char *kaddr;
- 	char *src = (char *)srcv;
--	unsigned long i = get_eb_page_index(start);
-+	unsigned long i = get_eb_folio_index(eb, start);
- 	/* For unmapped (dummy) ebs, no need to check their uptodate status. */
- 	const bool check_uptodate = !test_bit(EXTENT_BUFFER_UNMAPPED, &eb->bflags);
- 
-@@ -4343,15 +4343,14 @@ static void __write_extent_buffer(const struct extent_buffer *eb,
- 		return;
- 	}
- 
--	offset = get_eb_offset_in_page(eb, start);
-+	offset = get_eb_offset_in_folio(eb, start);
- 
- 	while (len > 0) {
--		page = folio_page(eb->folios[i], 0);
- 		if (check_uptodate)
--			assert_eb_page_uptodate(eb, page);
-+			assert_eb_folio_uptodate(eb, i);
- 
--		cur = min(len, PAGE_SIZE - offset);
--		kaddr = page_address(page);
-+		cur = min(len, unit_size - offset);
-+		kaddr = folio_address(eb->folios[i]);
- 		if (use_memmove)
- 			memmove(kaddr + offset, src, cur);
- 		else
-@@ -4373,6 +4372,7 @@ void write_extent_buffer(const struct extent_buffer *eb, const void *srcv,
- static void memset_extent_buffer(const struct extent_buffer *eb, int c,
- 				 unsigned long start, unsigned long len)
- {
-+	const int unit_size = folio_size(eb->folios[0]);
- 	unsigned long cur = start;
- 
- 	if (eb->addr) {
-@@ -4381,13 +4381,13 @@ static void memset_extent_buffer(const struct extent_buffer *eb, int c,
- 	}
- 
- 	while (cur < start + len) {
--		unsigned long index = get_eb_page_index(cur);
--		unsigned int offset = get_eb_offset_in_page(eb, cur);
--		unsigned int cur_len = min(start + len - cur, PAGE_SIZE - offset);
--		struct page *page = folio_page(eb->folios[index], 0);
-+		unsigned long index = get_eb_folio_index(eb, cur);
-+		unsigned int offset = get_eb_offset_in_folio(eb, cur);
-+		unsigned int cur_len = min(start + len - cur,
-+					   unit_size - offset);
- 
--		assert_eb_page_uptodate(eb, page);
--		memset_page(page, offset, c, cur_len);
-+		assert_eb_folio_uptodate(eb, index);
-+		memset(folio_address(eb->folios[index]) + offset, c, cur_len);
- 
- 		cur += cur_len;
- 	}
-@@ -4404,14 +4404,15 @@ void memzero_extent_buffer(const struct extent_buffer *eb, unsigned long start,
- void copy_extent_buffer_full(const struct extent_buffer *dst,
- 			     const struct extent_buffer *src)
- {
-+	const int unit_size = folio_size(src->folios[0]);
- 	unsigned long cur = 0;
- 
- 	ASSERT(dst->len == src->len);
- 
- 	while (cur < src->len) {
--		unsigned long index = get_eb_page_index(cur);
--		unsigned long offset = get_eb_offset_in_page(src, cur);
--		unsigned long cur_len = min(src->len, PAGE_SIZE - offset);
-+		unsigned long index = get_eb_folio_index(src, cur);
-+		unsigned long offset = get_eb_offset_in_folio(src, cur);
-+		unsigned long cur_len = min(src->len, unit_size - offset);
- 		void *addr = folio_address(src->folios[index]) + offset;
- 
- 		write_extent_buffer(dst, addr, cur, cur_len);
-@@ -4425,12 +4426,12 @@ void copy_extent_buffer(const struct extent_buffer *dst,
- 			unsigned long dst_offset, unsigned long src_offset,
- 			unsigned long len)
- {
-+	const int unit_size = folio_size(dst->folios[0]);
- 	u64 dst_len = dst->len;
- 	size_t cur;
- 	size_t offset;
--	struct page *page;
- 	char *kaddr;
--	unsigned long i = get_eb_page_index(dst_offset);
-+	unsigned long i = get_eb_folio_index(dst, dst_offset);
- 
- 	if (check_eb_range(dst, dst_offset, len) ||
- 	    check_eb_range(src, src_offset, len))
-@@ -4438,15 +4439,14 @@ void copy_extent_buffer(const struct extent_buffer *dst,
- 
- 	WARN_ON(src->len != dst_len);
- 
--	offset = get_eb_offset_in_page(dst, dst_offset);
-+	offset = get_eb_offset_in_folio(dst, dst_offset);
- 
- 	while (len > 0) {
--		page = folio_page(dst->folios[i], 0);
--		assert_eb_page_uptodate(dst, page);
-+		assert_eb_folio_uptodate(dst, i);
- 
--		cur = min(len, (unsigned long)(PAGE_SIZE - offset));
-+		cur = min(len, (unsigned long)(unit_size - offset));
- 
--		kaddr = page_address(page);
-+		kaddr = folio_address(dst->folios[i]);
- 		read_extent_buffer(src, kaddr + offset, src_offset, cur);
- 
- 		src_offset += cur;
-@@ -4505,18 +4505,18 @@ int extent_buffer_test_bit(const struct extent_buffer *eb, unsigned long start,
- 
- 	eb_bitmap_offset(eb, start, nr, &i, &offset);
- 	page = folio_page(eb->folios[i], 0);
--	assert_eb_page_uptodate(eb, page);
-+	assert_eb_folio_uptodate(eb, i);
- 	kaddr = page_address(page);
- 	return 1U & (kaddr[offset] >> (nr & (BITS_PER_BYTE - 1)));
- }
- 
- static u8 *extent_buffer_get_byte(const struct extent_buffer *eb, unsigned long bytenr)
- {
--	unsigned long index = get_eb_page_index(bytenr);
-+	unsigned long index = get_eb_folio_index(eb, bytenr);
- 
- 	if (check_eb_range(eb, bytenr, 1))
- 		return NULL;
--	return folio_address(eb->folios[index]) + get_eb_offset_in_page(eb, bytenr);
-+	return folio_address(eb->folios[index]) + get_eb_offset_in_folio(eb, bytenr);
+@@ -451,44 +451,48 @@ static void end_page_read(struct page *page, bool uptodate, u64 start, u32 len)
  }
  
  /*
-@@ -4601,6 +4601,7 @@ void memcpy_extent_buffer(const struct extent_buffer *dst,
- 			  unsigned long dst_offset, unsigned long src_offset,
- 			  unsigned long len)
- {
-+	const int unit_size = folio_size(dst->folios[0]);
- 	unsigned long cur_off = 0;
- 
- 	if (check_eb_range(dst, dst_offset, len) ||
-@@ -4619,11 +4620,12 @@ void memcpy_extent_buffer(const struct extent_buffer *dst,
- 
- 	while (cur_off < len) {
- 		unsigned long cur_src = cur_off + src_offset;
--		unsigned long pg_index = get_eb_page_index(cur_src);
--		unsigned long pg_off = get_eb_offset_in_page(dst, cur_src);
-+		unsigned long folio_index = get_eb_folio_index(dst, cur_src);
-+		unsigned long folio_off = get_eb_offset_in_folio(dst, cur_src);
- 		unsigned long cur_len = min(src_offset + len - cur_src,
--					    PAGE_SIZE - pg_off);
--		void *src_addr = folio_address(dst->folios[pg_index]) + pg_off;
-+					    unit_size - folio_off);
-+		void *src_addr = folio_address(dst->folios[folio_index]) +
-+				 folio_off;
- 		const bool use_memmove = areas_overlap(src_offset + cur_off,
- 						       dst_offset + cur_off, cur_len);
- 
-@@ -4657,20 +4659,20 @@ void memmove_extent_buffer(const struct extent_buffer *dst,
- 	while (len > 0) {
- 		unsigned long src_i;
- 		size_t cur;
--		size_t dst_off_in_page;
--		size_t src_off_in_page;
-+		size_t dst_off_in_folio;
-+		size_t src_off_in_folio;
- 		void *src_addr;
- 		bool use_memmove;
- 
--		src_i = get_eb_page_index(src_end);
-+		src_i = get_eb_folio_index(dst, src_end);
- 
--		dst_off_in_page = get_eb_offset_in_page(dst, dst_end);
--		src_off_in_page = get_eb_offset_in_page(dst, src_end);
-+		dst_off_in_folio = get_eb_offset_in_folio(dst, dst_end);
-+		src_off_in_folio = get_eb_offset_in_folio(dst, src_end);
- 
--		cur = min_t(unsigned long, len, src_off_in_page + 1);
--		cur = min(cur, dst_off_in_page + 1);
-+		cur = min_t(unsigned long, len, src_off_in_folio + 1);
-+		cur = min(cur, dst_off_in_folio + 1);
- 
--		src_addr = folio_address(dst->folios[src_i]) + src_off_in_page -
-+		src_addr = folio_address(dst->folios[src_i]) + src_off_in_folio -
- 					 cur + 1;
- 		use_memmove = areas_overlap(src_end - cur + 1, dst_end - cur + 1,
- 					    cur);
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index a5fd5cb20a3c..46050500529b 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -121,29 +121,43 @@ struct btrfs_eb_write_context {
+- * after a writepage IO is done, we need to:
+- * clear the uptodate bits on error
+- * clear the writeback bits in the extent tree for this IO
+- * end_page_writeback if the page has no more pending IO
++ * After a write IO is done, we need to:
++ *
++ * - clear the uptodate bits on error
++ * - clear the writeback bits in the extent tree for the range
++ * - filio_end_writeback()  if there is no more pending io for the folio
   *
-  * Will handle both sectorsize == PAGE_SIZE and sectorsize < PAGE_SIZE cases.
+  * Scheduling is not allowed, so the extent state tree is expected
+  * to have one and only one object corresponding to this IO.
   */
--static inline size_t get_eb_offset_in_page(const struct extent_buffer *eb,
--					   unsigned long offset)
-+static inline size_t get_eb_offset_in_folio(const struct extent_buffer *eb,
-+					    unsigned long offset)
+-static void end_bio_extent_writepage(struct btrfs_bio *bbio)
++static void end_bbio_data_write(struct btrfs_bio *bbio)
  {
- 	/*
--	 * For sectorsize == PAGE_SIZE case, eb->start will always be aligned
--	 * to PAGE_SIZE, thus adding it won't cause any difference.
-+	 * 1) sectorsize == PAGE_SIZE and nodesize >= PAGE_SIZE case
-+	 *    1.1) One large folio covering the whole eb
-+	 *	   The eb->start is aligned to folio size, thus adding it
-+	 *	   won't cause any difference.
-+	 *    1.2) Several page sized folios
-+	 *	   The eb->start is aligned to folio (page) size, thus
-+	 *	   adding it won't cause any difference.
- 	 *
--	 * For sectorsize < PAGE_SIZE, we must only read the data that belongs
--	 * to the eb, thus we have to take the eb->start into consideration.
-+	 * 2) sectorsize < PAGE_SIZE and nodesize < PAGE_SIZE case
-+	 *    In this case there would only be one page sized folio, and there
-+	 *    may be several different extent buffers in the page/folio.
-+	 *    We need to add eb->start to properly access the offset inside
-+	 *    that eb.
- 	 */
--	return offset_in_page(offset + eb->start);
-+	return offset_in_folio(eb->folios[0], offset + eb->start);
- }
+ 	struct bio *bio = &bbio->bio;
+ 	int error = blk_status_to_errno(bio->bi_status);
+-	struct bio_vec *bvec;
+-	struct bvec_iter_all iter_all;
++	struct folio_iter fi;
  
--static inline unsigned long get_eb_page_index(unsigned long offset)
-+static inline unsigned long get_eb_folio_index(const struct extent_buffer *eb,
-+					       unsigned long offset)
- {
- 	/*
--	 * For sectorsize == PAGE_SIZE case, plain >> PAGE_SHIFT is enough.
-+	 * 1) sectorsize == PAGE_SIZE and nodesize >= PAGE_SIZE case
-+	 *    1.1) One large folio covering the whole eb.
-+	 *	   the folio_shift would be large enough to always make us
-+	 *	   return 0 as index.
-+	 *    1.2) Several page sized folios
-+	 *         The folio_shift() would be PAGE_SHIFT, giving us the correct
-+	 *         index.
- 	 *
--	 * For sectorsize < PAGE_SIZE case, we only support 64K PAGE_SIZE,
--	 * and have ensured that all tree blocks are contained in one page,
--	 * thus we always get index == 0.
-+	 * 2) sectorsize < PAGE_SIZE and nodesize < PAGE_SIZE case
-+	 *    The folio would only be page sized, and always give us 0 as index.
- 	 */
--	return offset >> PAGE_SHIFT;
-+	return offset >> folio_shift(eb->folios[0]);
+ 	ASSERT(!bio_flagged(bio, BIO_CLONED));
+-	bio_for_each_segment_all(bvec, bio, iter_all) {
+-		struct page *page = bvec->bv_page;
+-		struct inode *inode = page->mapping->host;
++	bio_for_each_folio_all(fi, bio) {
++		struct folio *folio = fi.folio;
++		struct inode *inode = folio->mapping->host;
+ 		struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+ 		const u32 sectorsize = fs_info->sectorsize;
+-		u64 start = page_offset(page) + bvec->bv_offset;
+-		u32 len = bvec->bv_len;
++		u64 start = folio_pos(folio) + fi.offset;
++		u32 len = fi.length;
++
++		/* Only order 0 (single page) folios are allowed for data. */
++		ASSERT(folio_order(folio) == 0);
+ 
+ 		/* Our read/write should always be sector aligned. */
+-		if (!IS_ALIGNED(bvec->bv_offset, sectorsize))
++		if (!IS_ALIGNED(fi.offset, sectorsize))
+ 			btrfs_err(fs_info,
+-		"partial page write in btrfs with offset %u and length %u",
+-				  bvec->bv_offset, bvec->bv_len);
+-		else if (!IS_ALIGNED(bvec->bv_len, sectorsize))
++		"partial page write in btrfs with offset %zu and length %zu",
++				  fi.offset, fi.length);
++		else if (!IS_ALIGNED(fi.length, sectorsize))
+ 			btrfs_info(fs_info,
+-		"incomplete page write with offset %u and length %u",
+-				   bvec->bv_offset, bvec->bv_len);
++		"incomplete page write with offset %zu and length %zu",
++				   fi.offset, fi.length);
+ 
+-		btrfs_finish_ordered_extent(bbio->ordered, page, start, len, !error);
++		btrfs_finish_ordered_extent(bbio->ordered,
++				folio_page(folio, 0), start, len, !error);
+ 		if (error)
+-			mapping_set_error(page->mapping, error);
+-		btrfs_folio_clear_writeback(fs_info, page_folio(page), start, len);
++			mapping_set_error(folio->mapping, error);
++		btrfs_folio_clear_writeback(fs_info, folio, start, len);
+ 	}
+ 
+ 	bio_put(bio);
+@@ -576,64 +580,65 @@ static void begin_page_read(struct btrfs_fs_info *fs_info, struct page *page)
  }
  
  /*
+- * after a readpage IO is done, we need to:
+- * clear the uptodate bits on error
+- * set the uptodate bits if things worked
+- * set the page up to date if all extents in the tree are uptodate
+- * clear the lock bit in the extent tree
+- * unlock the page if there are no other extents locked for it
++ * After a data read IO is done, we need to:
++ *
++ * - clear the uptodate bits on error
++ * - set the uptodate bits if things worked
++ * - set the folio up to date if all extents in the tree are uptodate
++ * - clear the lock bit in the extent tree
++ * - unlock the folio if there are no other extents locked for it
+  *
+  * Scheduling is not allowed, so the extent state tree is expected
+  * to have one and only one object corresponding to this IO.
+  */
+-static void end_bio_extent_readpage(struct btrfs_bio *bbio)
++static void end_bbio_data_read(struct btrfs_bio *bbio)
+ {
+ 	struct bio *bio = &bbio->bio;
+-	struct bio_vec *bvec;
+ 	struct processed_extent processed = { 0 };
++	struct folio_iter fi;
+ 	/*
+ 	 * The offset to the beginning of a bio, since one bio can never be
+ 	 * larger than UINT_MAX, u32 here is enough.
+ 	 */
+ 	u32 bio_offset = 0;
+-	struct bvec_iter_all iter_all;
+ 
+ 	ASSERT(!bio_flagged(bio, BIO_CLONED));
+-	bio_for_each_segment_all(bvec, bio, iter_all) {
++	bio_for_each_folio_all(fi, &bbio->bio) {
+ 		bool uptodate = !bio->bi_status;
+-		struct page *page = bvec->bv_page;
+-		struct inode *inode = page->mapping->host;
++		struct folio *folio = fi.folio;
++		struct inode *inode = folio->mapping->host;
+ 		struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+ 		const u32 sectorsize = fs_info->sectorsize;
+ 		u64 start;
+ 		u64 end;
+ 		u32 len;
+ 
++		/* For now only order 0 folios are supported for data. */
++		ASSERT(folio_order(folio) == 0);
+ 		btrfs_debug(fs_info,
+-			"end_bio_extent_readpage: bi_sector=%llu, err=%d, mirror=%u",
+-			bio->bi_iter.bi_sector, bio->bi_status,
++			"%s: bi_sector=%llu, err=%d, mirror=%u",
++			__func__, bio->bi_iter.bi_sector, bio->bi_status,
+ 			bbio->mirror_num);
+ 
+ 		/*
+ 		 * We always issue full-sector reads, but if some block in a
+-		 * page fails to read, blk_update_request() will advance
++		 * folio fails to read, blk_update_request() will advance
+ 		 * bv_offset and adjust bv_len to compensate.  Print a warning
+ 		 * for unaligned offsets, and an error if they don't add up to
+ 		 * a full sector.
+ 		 */
+-		if (!IS_ALIGNED(bvec->bv_offset, sectorsize))
++		if (!IS_ALIGNED(fi.offset, sectorsize))
+ 			btrfs_err(fs_info,
+-		"partial page read in btrfs with offset %u and length %u",
+-				  bvec->bv_offset, bvec->bv_len);
+-		else if (!IS_ALIGNED(bvec->bv_offset + bvec->bv_len,
+-				     sectorsize))
++		"partial page read in btrfs with offset %zu and length %zu",
++				  fi.offset, fi.length);
++		else if (!IS_ALIGNED(fi.offset + fi.length, sectorsize))
+ 			btrfs_info(fs_info,
+-		"incomplete page read with offset %u and length %u",
+-				   bvec->bv_offset, bvec->bv_len);
++		"incomplete page read with offset %zu and length %zu",
++				   fi.offset, fi.length);
+ 
+-		start = page_offset(page) + bvec->bv_offset;
+-		end = start + bvec->bv_len - 1;
+-		len = bvec->bv_len;
++		start = folio_pos(folio) + fi.offset;
++		end = start + fi.length - 1;
++		len = fi.length;
+ 
+ 		if (likely(uptodate)) {
+ 			loff_t i_size = i_size_read(inode);
+@@ -643,22 +648,23 @@ static void end_bio_extent_readpage(struct btrfs_bio *bbio)
+ 			 * Zero out the remaining part if this range straddles
+ 			 * i_size.
+ 			 *
+-			 * Here we should only zero the range inside the bvec,
++			 * Here we should only zero the range inside the folio,
+ 			 * not touch anything else.
+ 			 *
+ 			 * NOTE: i_size is exclusive while end is inclusive.
+ 			 */
+-			if (page->index == end_index && i_size <= end) {
+-				u32 zero_start = max(offset_in_page(i_size),
+-						     offset_in_page(start));
++			if (folio_index(folio) == end_index && i_size <= end) {
++				u32 zero_start = max(offset_in_folio(folio, i_size),
++						     offset_in_folio(folio, start));
++				u32 zero_len = offset_in_folio(folio, end) + 1 -
++					       zero_start;
+ 
+-				zero_user_segment(page, zero_start,
+-						  offset_in_page(end) + 1);
++				folio_zero_range(folio, zero_start, zero_len);
+ 			}
+ 		}
+ 
+ 		/* Update page status and unlock. */
+-		end_page_read(page, uptodate, start, len);
++		end_page_read(folio_page(folio, 0), uptodate, start, len);
+ 		endio_readpage_release_extent(&processed, BTRFS_I(inode),
+ 					      start, end, uptodate);
+ 
+@@ -1031,7 +1037,7 @@ static int btrfs_do_readpage(struct page *page, struct extent_map **em_cached,
+ 			memzero_page(page, zero_offset, iosize);
+ 		}
+ 	}
+-	bio_ctrl->end_io_func = end_bio_extent_readpage;
++	bio_ctrl->end_io_func = end_bbio_data_read;
+ 	begin_page_read(fs_info, page);
+ 	while (cur <= end) {
+ 		enum btrfs_compression_type compress_type = BTRFS_COMPRESS_NONE;
+@@ -1336,7 +1342,7 @@ static noinline_for_stack int __extent_writepage_io(struct btrfs_inode *inode,
+ 		return 1;
+ 	}
+ 
+-	bio_ctrl->end_io_func = end_bio_extent_writepage;
++	bio_ctrl->end_io_func = end_bbio_data_write;
+ 	while (cur <= end) {
+ 		u32 len = end - cur + 1;
+ 		u64 disk_bytenr;
+@@ -1638,24 +1644,23 @@ static struct extent_buffer *find_extent_buffer_nolock(
+ 	return NULL;
+ }
+ 
+-static void extent_buffer_write_end_io(struct btrfs_bio *bbio)
++static void end_bbio_meta_write(struct btrfs_bio *bbio)
+ {
+ 	struct extent_buffer *eb = bbio->private;
+ 	struct btrfs_fs_info *fs_info = eb->fs_info;
+ 	bool uptodate = !bbio->bio.bi_status;
+-	struct bvec_iter_all iter_all;
+-	struct bio_vec *bvec;
++	struct folio_iter fi;
+ 	u32 bio_offset = 0;
+ 
+ 	if (!uptodate)
+ 		set_btree_ioerr(eb);
+ 
+-	bio_for_each_segment_all(bvec, &bbio->bio, iter_all) {
++	bio_for_each_folio_all(fi, &bbio->bio) {
+ 		u64 start = eb->start + bio_offset;
+-		struct page *page = bvec->bv_page;
+-		u32 len = bvec->bv_len;
++		struct folio *folio = fi.folio;
++		u32 len = fi.length;
+ 
+-		btrfs_folio_clear_writeback(fs_info, page_folio(page), start, len);
++		btrfs_folio_clear_writeback(fs_info, folio, start, len);
+ 		bio_offset += len;
+ 	}
+ 
+@@ -1704,7 +1709,7 @@ static noinline_for_stack void write_one_eb(struct extent_buffer *eb,
+ 
+ 	bbio = btrfs_bio_alloc(INLINE_EXTENT_BUFFER_PAGES,
+ 			       REQ_OP_WRITE | REQ_META | wbc_to_write_flags(wbc),
+-			       eb->fs_info, extent_buffer_write_end_io, eb);
++			       eb->fs_info, end_bbio_meta_write, eb);
+ 	bbio->bio.bi_iter.bi_sector = eb->start >> SECTOR_SHIFT;
+ 	bio_set_dev(&bbio->bio, fs_info->fs_devices->latest_dev->bdev);
+ 	wbc_init_bio(wbc, &bbio->bio);
+@@ -4041,13 +4046,12 @@ void set_extent_buffer_uptodate(struct extent_buffer *eb)
+ 	}
+ }
+ 
+-static void extent_buffer_read_end_io(struct btrfs_bio *bbio)
++static void end_bbio_meta_read(struct btrfs_bio *bbio)
+ {
+ 	struct extent_buffer *eb = bbio->private;
+ 	struct btrfs_fs_info *fs_info = eb->fs_info;
+ 	bool uptodate = !bbio->bio.bi_status;
+-	struct bvec_iter_all iter_all;
+-	struct bio_vec *bvec;
++	struct folio_iter fi;
+ 	u32 bio_offset = 0;
+ 
+ 	eb->read_mirror = bbio->mirror_num;
+@@ -4063,15 +4067,15 @@ static void extent_buffer_read_end_io(struct btrfs_bio *bbio)
+ 		set_bit(EXTENT_BUFFER_READ_ERR, &eb->bflags);
+ 	}
+ 
+-	bio_for_each_segment_all(bvec, &bbio->bio, iter_all) {
++	bio_for_each_folio_all(fi, &bbio->bio) {
++		struct folio *folio = fi.folio;
+ 		u64 start = eb->start + bio_offset;
+-		struct page *page = bvec->bv_page;
+-		u32 len = bvec->bv_len;
++		u32 len = fi.length;
+ 
+ 		if (uptodate)
+-			btrfs_folio_set_uptodate(fs_info, page_folio(page), start, len);
++			btrfs_folio_set_uptodate(fs_info, folio, start, len);
+ 		else
+-			btrfs_folio_clear_uptodate(fs_info, page_folio(page), start, len);
++			btrfs_folio_clear_uptodate(fs_info, folio, start, len);
+ 
+ 		bio_offset += len;
+ 	}
+@@ -4112,7 +4116,7 @@ int read_extent_buffer_pages(struct extent_buffer *eb, int wait, int mirror_num,
+ 
+ 	bbio = btrfs_bio_alloc(INLINE_EXTENT_BUFFER_PAGES,
+ 			       REQ_OP_READ | REQ_META, eb->fs_info,
+-			       extent_buffer_read_end_io, eb);
++			       end_bbio_meta_read, eb);
+ 	bbio->bio.bi_iter.bi_sector = eb->start >> SECTOR_SHIFT;
+ 	bbio->inode = BTRFS_I(eb->fs_info->btree_inode);
+ 	bbio->file_offset = eb->start;
 -- 
 2.43.0
 

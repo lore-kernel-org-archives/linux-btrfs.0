@@ -1,11 +1,11 @@
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=tiscali.it header.i=@tiscali.it header.b="tz4dudy+"
+	dkim=pass (1024-bit key) header.d=tiscali.it header.i=@tiscali.it header.b="s7WLQT2r"
 Received: from smtp.tiscali.it (michael.mail.tiscali.it [213.205.33.246])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTP id DBEE1B7
+	by lindbergh.monkeyblade.net (Postfix) with ESMTP id 00E2413A
 	for <linux-btrfs@vger.kernel.org>; Sat,  9 Dec 2023 11:27:25 -0800 (PST)
 Received: from venice.bhome ([84.220.171.3])
 	by michael.mail.tiscali.it with 
-	id LKTN2B00x04l9eU01KTPYu; Sat, 09 Dec 2023 19:27:23 +0000
+	id LKTN2B00x04l9eU01KTPZE; Sat, 09 Dec 2023 19:27:23 +0000
 X-Spam-Final-Verdict: clean
 X-Spam-State: 0
 X-Spam-Score: 0
@@ -14,9 +14,9 @@ x-auth-user: kreijack@tiscali.it
 From: Goffredo Baroncelli <kreijack@tiscali.it>
 To: linux-btrfs@vger.kernel.org
 Cc: Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 4/9] Killing dirstream: replace open_path_or_dev_mnt with btrfs_open_mnt_fd
-Date: Sat,  9 Dec 2023 19:53:24 +0100
-Message-ID: <ae844eb1981e943b2d1df8263ff804c6b4ab4425.1702148009.git.kreijack@inwind.it>
+Subject: [PATCH 7/9] Killing dirstream: replace open_file_or_dir with btrfs_open_fd2
+Date: Sat,  9 Dec 2023 19:53:27 +0100
+Message-ID: <fa0072bf75d989568f544697d96afd14cd4b8a27.1702148009.git.kreijack@inwind.it>
 X-Mailer: git-send-email 2.43.0
 In-Reply-To: <cover.1702148009.git.kreijack@inwind.it>
 References: <cover.1702148009.git.kreijack@inwind.it>
@@ -29,11 +29,11 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=tiscali.it; s=smtp;
-	t=1702150043; bh=P6OCVooQgoBWxiByXjNP2g9KEq5EHhoq33NLkrfbqbI=;
+	t=1702150043; bh=FcohxgN9SIsC52bo1UwLy7QzjN1xO0jMBOFErq01s00=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:Reply-To;
-	b=tz4dudy+Hd/nHqPDx6QjAYIjRhurb3k1+olsOtqv6V6RKfSXaUfZlY/Q8mwiQYGAS
-	 VDBUE3RKB6g4mqDZOKA7wP7Il5NYU4e3/GBzRgfMVLVnXxaQPL/5cqhkWvYMX0hgRX
-	 jtwQOsIlYQeQNvMrTGV+ElIUeGG4QA8aduS8Pdrw=
+	b=s7WLQT2rG2FtiHhNsRDd/NtOsmh3lT/LGsYfjK8FRQFgm3sofe17wCfq+Fq1San/i
+	 g0ArvbfFkU3ba4RnS6sv1HR4Hu8HA70uuyfJHthqSD/9oxXavmWwWzLklRTdgiB9Or
+	 VgPeDf2m7t5B4s4KCw8BkD03QxWLfBWXSZmBVYEg=
 
 From: Goffredo Baroncelli <kreijack@inwind.it>
 
@@ -43,167 +43,107 @@ the 'DIR *dirstream' value when a dir is opened.
 However this is never used. So avoid calling diropen() and return
 only the fd.
 
-This patch replace open_path_or_dev_mnt() with btrfs_open_mnt_fd() removing
+This patch replace open_file_or_dir() with btrfs_open_fd2() removing
 any reference to the unused/useless dirstream variables.
+btrfs_open_fd2() is required to avoid spourious error messages.
 
 Signed-off-by: Goffredo Baroncelli <kreijack@libero.it>
 ---
- cmds/device.c  |  5 ++---
- cmds/replace.c |  7 +++----
- cmds/scrub.c   | 15 ++++++---------
- 3 files changed, 11 insertions(+), 16 deletions(-)
+ cmds/inspect.c   | 5 ++---
+ cmds/subvolume.c | 5 ++---
+ common/utils.c   | 5 ++---
+ 3 files changed, 6 insertions(+), 9 deletions(-)
 
-diff --git a/cmds/device.c b/cmds/device.c
-index 0b75e110..3ff7120f 100644
---- a/cmds/device.c
-+++ b/cmds/device.c
-@@ -692,7 +692,6 @@ static int cmd_device_stats(const struct cmd_struct *cmd, int argc, char **argv)
- 	bool free_table = false;
- 	bool tabular = false;
- 	__u64 flags = 0;
--	DIR *dirstream = NULL;
- 	struct format_ctx fctx;
- 
- 	optind = 0;
-@@ -728,7 +727,7 @@ static int cmd_device_stats(const struct cmd_struct *cmd, int argc, char **argv)
- 
- 	dev_path = argv[optind];
- 
--	fdmnt = open_path_or_dev_mnt(dev_path, &dirstream, 1);
-+	fdmnt = btrfs_open_mnt_fd(dev_path, true);
- 	if (fdmnt < 0)
- 		return 1;
- 
-@@ -814,7 +813,7 @@ static int cmd_device_stats(const struct cmd_struct *cmd, int argc, char **argv)
- 
- out:
- 	free(di_args);
--	close_file_or_dir(fdmnt, dirstream);
-+	close(fdmnt);
- 	if (free_table)
- 		table_free(table);
- 
-diff --git a/cmds/replace.c b/cmds/replace.c
-index 171a72b4..f1db9477 100644
---- a/cmds/replace.c
-+++ b/cmds/replace.c
-@@ -136,7 +136,6 @@ static int cmd_replace_start(const struct cmd_struct *cmd,
- 	bool force_using_targetdev = false;
- 	u64 dstdev_block_count;
- 	bool do_not_background = false;
--	DIR *dirstream = NULL;
- 	u64 srcdev_size;
- 	u64 dstdev_size;
- 	bool enqueue = false;
-@@ -184,7 +183,7 @@ static int cmd_replace_start(const struct cmd_struct *cmd,
- 		return 1;
- 	path = argv[optind + 2];
- 
--	fdmnt = open_path_or_dev_mnt(path, &dirstream, 1);
-+	fdmnt = btrfs_open_mnt_fd(path, true);
- 	if (fdmnt < 0)
- 		goto leave_with_error;
- 
-@@ -200,7 +199,7 @@ static int cmd_replace_start(const struct cmd_struct *cmd,
- 	if (ret != 0) {
- 		if (ret < 0)
- 			error("unable to check status of exclusive operation: %m");
--		close_file_or_dir(fdmnt, dirstream);
-+		close(fdmnt);
- 		goto leave_with_error;
- 	}
- 
-@@ -348,7 +347,7 @@ static int cmd_replace_start(const struct cmd_struct *cmd,
- 			goto leave_with_error;
- 		}
- 	}
--	close_file_or_dir(fdmnt, dirstream);
-+	close(fdmnt);
- 	return 0;
- 
- leave_with_error:
-diff --git a/cmds/scrub.c b/cmds/scrub.c
-index 4a741355..85626d11 100644
---- a/cmds/scrub.c
-+++ b/cmds/scrub.c
-@@ -1203,7 +1203,6 @@ static int scrub_start(const struct cmd_struct *cmd, int argc, char **argv,
- 	pthread_mutex_t spc_write_mutex = PTHREAD_MUTEX_INITIALIZER;
- 	void *terr;
- 	u64 devid;
--	DIR *dirstream = NULL;
- 	bool force = false;
- 	bool nothing_to_resume = false;
- 
-@@ -1260,7 +1259,7 @@ static int scrub_start(const struct cmd_struct *cmd, int argc, char **argv,
- 
- 	path = argv[optind];
- 
--	fdmnt = open_path_or_dev_mnt(path, &dirstream, !do_quiet);
-+	fdmnt = btrfs_open_mnt_fd(path, !do_quiet);
- 	if (fdmnt < 0)
- 		return 1;
- 
-@@ -1618,7 +1617,7 @@ out:
- 		if (sock_path[0])
- 			unlink(sock_path);
- 	}
--	close_file_or_dir(fdmnt, dirstream);
-+	close(fdmnt);
- 
- 	if (err)
- 		return 1;
-@@ -1671,7 +1670,6 @@ static int cmd_scrub_cancel(const struct cmd_struct *cmd, int argc, char **argv)
- 	char *path;
+diff --git a/cmds/inspect.c b/cmds/inspect.c
+index 4d4e24d2..268a902a 100644
+--- a/cmds/inspect.c
++++ b/cmds/inspect.c
+@@ -1020,7 +1020,6 @@ static int cmd_inspect_list_chunks(const struct cmd_struct *cmd,
  	int ret;
- 	int fdmnt = -1;
+ 	int fd;
+ 	int i;
 -	DIR *dirstream = NULL;
- 
- 	clean_args_no_options(cmd, argc, argv);
- 
-@@ -1680,7 +1678,7 @@ static int cmd_scrub_cancel(const struct cmd_struct *cmd, int argc, char **argv)
+ 	unsigned unit_mode;
+ 	char *sortmode = NULL;
+ 	bool with_usage = true;
+@@ -1083,7 +1082,7 @@ static int cmd_inspect_list_chunks(const struct cmd_struct *cmd,
  
  	path = argv[optind];
  
--	fdmnt = open_path_or_dev_mnt(path, &dirstream, 1);
-+	fdmnt = btrfs_open_mnt_fd(path, true);
- 	if (fdmnt < 0) {
- 		ret = 1;
+-	fd = open_file_or_dir(path, &dirstream);
++	fd = btrfs_open_fd2(path, false, true, false);
+ 	if (fd < 0) {
+ 	        error("cannot access '%s': %m", path);
+ 		return 1;
+@@ -1187,7 +1186,7 @@ static int cmd_inspect_list_chunks(const struct cmd_struct *cmd,
+ 	}
+ 
+ 	ret = print_list_chunks(&ctx, sortmode, unit_mode, with_usage, with_empty);
+-	close_file_or_dir(fd, dirstream);
++	close(fd);
+ 
+ out_nomem:
+ 	free(ctx.stats);
+diff --git a/cmds/subvolume.c b/cmds/subvolume.c
+index cc1a660b..b6653a40 100644
+--- a/cmds/subvolume.c
++++ b/cmds/subvolume.c
+@@ -1492,7 +1492,6 @@ static int cmd_subvolume_show(const struct cmd_struct *cmd, int argc, char **arg
+ 	char *fullpath = NULL;
+ 	int fd = -1;
+ 	int ret = 1;
+-	DIR *dirstream1 = NULL;
+ 	int by_rootid = 0;
+ 	int by_uuid = 0;
+ 	u64 rootid_arg = 0;
+@@ -1550,7 +1549,7 @@ static int cmd_subvolume_show(const struct cmd_struct *cmd, int argc, char **arg
  		goto out;
-@@ -1702,7 +1700,7 @@ static int cmd_scrub_cancel(const struct cmd_struct *cmd, int argc, char **argv)
- 	pr_verbose(LOG_DEFAULT, "scrub cancelled\n");
+ 	}
+ 
+-	fd = open_file_or_dir(fullpath, &dirstream1);
++	fd = btrfs_open_fd2(fullpath, false, true, false);
+ 	if (fd < 0) {
+ 		error("can't access '%s'", fullpath);
+ 		goto out;
+@@ -1688,7 +1687,7 @@ out2:
  
  out:
--	close_file_or_dir(fdmnt, dirstream);
-+	close(fdmnt);
+ 	free(subvol_path);
+-	close_file_or_dir(fd, dirstream1);
++	close(fd);
+ 	free(fullpath);
+ 	return !!ret;
+ }
+diff --git a/common/utils.c b/common/utils.c
+index 0c2fa8fe..3b86c9f3 100644
+--- a/common/utils.c
++++ b/common/utils.c
+@@ -211,7 +211,6 @@ int get_fs_info(const char *path, struct btrfs_ioctl_fs_info_args *fi_args,
+ 	struct btrfs_ioctl_dev_info_args *di_args;
+ 	struct btrfs_ioctl_dev_info_args tmp;
+ 	char mp[PATH_MAX];
+-	DIR *dirstream = NULL;
+ 
+ 	memset(fi_args, 0, sizeof(*fi_args));
+ 
+@@ -251,7 +250,7 @@ int get_fs_info(const char *path, struct btrfs_ioctl_fs_info_args *fi_args,
+ 	}
+ 
+ 	/* at this point path must not be for a block device */
+-	fd = open_file_or_dir(path, &dirstream);
++	fd = btrfs_open_fd2(path, false, true, false);
+ 	if (fd < 0) {
+ 		ret = -errno;
+ 		goto out;
+@@ -317,7 +316,7 @@ int get_fs_info(const char *path, struct btrfs_ioctl_fs_info_args *fi_args,
+ 	}
+ 
+ out:
+-	close_file_or_dir(fd, dirstream);
++	close(fd);
  	return ret;
  }
- static DEFINE_SIMPLE_COMMAND(scrub_cancel, "cancel");
-@@ -1761,7 +1759,6 @@ static int cmd_scrub_status(const struct cmd_struct *cmd, int argc, char **argv)
- 	char fsid[BTRFS_UUID_UNPARSED_SIZE];
- 	int fdres = -1;
- 	int err = 0;
--	DIR *dirstream = NULL;
  
- 	unit_mode = get_unit_mode_from_arg(&argc, argv, 0);
- 
-@@ -1784,7 +1781,7 @@ static int cmd_scrub_status(const struct cmd_struct *cmd, int argc, char **argv)
- 
- 	path = argv[optind];
- 
--	fdmnt = open_path_or_dev_mnt(path, &dirstream, 1);
-+	fdmnt = btrfs_open_mnt_fd(path, true);
- 	if (fdmnt < 0)
- 		return 1;
- 
-@@ -1888,7 +1885,7 @@ out:
- 	free(si_args);
- 	if (fdres > -1)
- 		close(fdres);
--	close_file_or_dir(fdmnt, dirstream);
-+	close(fdmnt);
- 
- 	return !!err;
- }
 -- 
 2.43.0
 

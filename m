@@ -1,11 +1,11 @@
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=tiscali.it header.i=@tiscali.it header.b="eJA2d2xG"
+	dkim=pass (1024-bit key) header.d=tiscali.it header.i=@tiscali.it header.b="tz4dudy+"
 Received: from smtp.tiscali.it (michael.mail.tiscali.it [213.205.33.246])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTP id 00C8C137
+	by lindbergh.monkeyblade.net (Postfix) with ESMTP id DBEE1B7
 	for <linux-btrfs@vger.kernel.org>; Sat,  9 Dec 2023 11:27:25 -0800 (PST)
 Received: from venice.bhome ([84.220.171.3])
 	by michael.mail.tiscali.it with 
-	id LKTN2B00x04l9eU01KTNYM; Sat, 09 Dec 2023 19:27:22 +0000
+	id LKTN2B00x04l9eU01KTPYu; Sat, 09 Dec 2023 19:27:23 +0000
 X-Spam-Final-Verdict: clean
 X-Spam-State: 0
 X-Spam-Score: 0
@@ -14,10 +14,12 @@ x-auth-user: kreijack@tiscali.it
 From: Goffredo Baroncelli <kreijack@tiscali.it>
 To: linux-btrfs@vger.kernel.org
 Cc: Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 0/9][btrfs-progs] Remove unused dirstream variable
-Date: Sat,  9 Dec 2023 19:53:20 +0100
-Message-ID: <cover.1702148009.git.kreijack@inwind.it>
+Subject: [PATCH 4/9] Killing dirstream: replace open_path_or_dev_mnt with btrfs_open_mnt_fd
+Date: Sat,  9 Dec 2023 19:53:24 +0100
+Message-ID: <ae844eb1981e943b2d1df8263ff804c6b4ab4425.1702148009.git.kreijack@inwind.it>
 X-Mailer: git-send-email 2.43.0
+In-Reply-To: <cover.1702148009.git.kreijack@inwind.it>
+References: <cover.1702148009.git.kreijack@inwind.it>
 Reply-To: Goffredo Baroncelli <kreijack@libero.it>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
@@ -27,95 +29,181 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=tiscali.it; s=smtp;
-	t=1702150042; bh=BcM0igVkFhVrY9loV5TGfCI8BiWsvEF9YCS25PjeuQA=;
-	h=From:To:Cc:Subject:Date:Reply-To;
-	b=eJA2d2xGAoJ+9UYruEjwpsbo+5wYde+iEM0Ds6Hxhi7vNMjovXowOKuBD3diDTB+4
-	 IqsPT06LKrWWneDFUiEffotANe0OCE/5EsJy7UHk+6ruBujBYyIX82U4TJ/ZJzWz/l
-	 OBJTNT+/JFg+vzcerrh/ViE5rxbcaNgfz5QbPClc=
+	t=1702150043; bh=P6OCVooQgoBWxiByXjNP2g9KEq5EHhoq33NLkrfbqbI=;
+	h=From:To:Cc:Subject:Date:In-Reply-To:References:Reply-To;
+	b=tz4dudy+Hd/nHqPDx6QjAYIjRhurb3k1+olsOtqv6V6RKfSXaUfZlY/Q8mwiQYGAS
+	 VDBUE3RKB6g4mqDZOKA7wP7Il5NYU4e3/GBzRgfMVLVnXxaQPL/5cqhkWvYMX0hgRX
+	 jtwQOsIlYQeQNvMrTGV+ElIUeGG4QA8aduS8Pdrw=
 
 From: Goffredo Baroncelli <kreijack@inwind.it>
 
-For historical reason, the helpers [btrfs_]open_[file_or_]dir() work with
-directory returning the 'fd' and a 'dirstream' variable returned by
-opendir(3).
+For historical reason the helpers [btrfs_]open_dir... return also
+the 'DIR *dirstream' value when a dir is opened.
 
-If the path is a file, the 'fd' is computed from open(2) and
-dirstream is set to NULL.
-If the path is a directory, first the directory is opened by opendir(3), then
-the 'fd' is computed using dirfd(3).
-However the 'dirstream' returned by opendir(3) is left open until 'fd'
-is not needed anymore.
+However this is never used. So avoid calling diropen() and return
+only the fd.
 
-In near every case the 'dirstream' variable is not used. Only 'fd' is
-used.
+This patch replace open_path_or_dev_mnt() with btrfs_open_mnt_fd() removing
+any reference to the unused/useless dirstream variables.
 
-A call to close_file_or_dir() freed both 'fd' and 'dirstream'.
+Signed-off-by: Goffredo Baroncelli <kreijack@libero.it>
+---
+ cmds/device.c  |  5 ++---
+ cmds/replace.c |  7 +++----
+ cmds/scrub.c   | 15 ++++++---------
+ 3 files changed, 11 insertions(+), 16 deletions(-)
 
-Aim of this patch set is to getrid of this complexity; when the path of
-a directory is passed, the fd is get directly using open(path, O_RDONLY):
-so we don't need to use readdir(3) and to maintain the not used variable
-'dirstream'.
-
-So each call of a legacy [btrfs_]open_[file_or_]dir() helper is
-replaced by a call to the new btrfs_open_[file_or_]dir_fd() functions.
-These functions return only the file descriptor.
-
-Also close_file_or_dir() is not needed anymore.
-
-The first patch, introduces the new helpers; the last patch removed the
-unused older helpers. The intermediate patches updated the code.
-
-The 3rd patch updated also the add_seen_fsid() function. Before it
-stored the dirstream variable. But now it is not needed anymore.
-So we removed a parameter of the functions and a field in the structure.
-
-In the 8th patch, the only occurrences where 'dirstream' is used was
-corrected: the dirstream is computed using fdopendir(3), and the cleanup
-is updated according.
-
-The results is:
-- removed 7 functions
-- add 4 new functions
-- removed 100 lines
-- removed 43 occurrences of an unused 'dirstream' variable.
-
-BR
-G.Baroncelli
-
-*** BLURB HERE ***
-
-Goffredo Baroncelli (9):
-  Killing dirstream: add helpers
-  Killing dirstream: replace btrfs_open_dir with btrfs_open_dir_fd
-  Killing dirstream: replace btrfs_open_dir with btrfs_open_dir_fd
-  Killing dirstream: replace open_path_or_dev_mnt with btrfs_open_mnt_fd
-  Killing dirstream: replace open_file_or_dir3 with btrfs_open_fd2
-  Killing dirstream: replace btrfs_open_file_or_dir with
-    btrfs_open_file_or_dir_fd
-  Killing dirstream: replace open_file_or_dir with btrfs_open_fd2
-  Killing dirstream: remove open_file_or_dir3 from du_add_file
-  Killing dirstream: remove unused functions
-
- cmds/balance.c          |  27 ++++-----
- cmds/device.c           |  26 ++++----
- cmds/filesystem-du.c    |  18 +++++-
- cmds/filesystem-usage.c |   5 +-
- cmds/filesystem.c       |  26 ++++----
- cmds/inspect.c          |  35 +++++------
- cmds/property.c         |   5 +-
- cmds/qgroup.c           |  29 ++++-----
- cmds/quota.c            |  16 +++--
- cmds/replace.c          |  17 +++---
- cmds/scrub.c            |  15 ++---
- cmds/subvolume-list.c   |   5 +-
- cmds/subvolume.c        |  44 ++++++--------
- common/device-scan.c    |   6 +-
- common/device-scan.h    |   4 +-
- common/open-utils.c     | 127 ++++++++++++----------------------------
- common/open-utils.h     |  13 ++--
- common/utils.c          |   5 +-
- 18 files changed, 164 insertions(+), 259 deletions(-)
-
+diff --git a/cmds/device.c b/cmds/device.c
+index 0b75e110..3ff7120f 100644
+--- a/cmds/device.c
++++ b/cmds/device.c
+@@ -692,7 +692,6 @@ static int cmd_device_stats(const struct cmd_struct *cmd, int argc, char **argv)
+ 	bool free_table = false;
+ 	bool tabular = false;
+ 	__u64 flags = 0;
+-	DIR *dirstream = NULL;
+ 	struct format_ctx fctx;
+ 
+ 	optind = 0;
+@@ -728,7 +727,7 @@ static int cmd_device_stats(const struct cmd_struct *cmd, int argc, char **argv)
+ 
+ 	dev_path = argv[optind];
+ 
+-	fdmnt = open_path_or_dev_mnt(dev_path, &dirstream, 1);
++	fdmnt = btrfs_open_mnt_fd(dev_path, true);
+ 	if (fdmnt < 0)
+ 		return 1;
+ 
+@@ -814,7 +813,7 @@ static int cmd_device_stats(const struct cmd_struct *cmd, int argc, char **argv)
+ 
+ out:
+ 	free(di_args);
+-	close_file_or_dir(fdmnt, dirstream);
++	close(fdmnt);
+ 	if (free_table)
+ 		table_free(table);
+ 
+diff --git a/cmds/replace.c b/cmds/replace.c
+index 171a72b4..f1db9477 100644
+--- a/cmds/replace.c
++++ b/cmds/replace.c
+@@ -136,7 +136,6 @@ static int cmd_replace_start(const struct cmd_struct *cmd,
+ 	bool force_using_targetdev = false;
+ 	u64 dstdev_block_count;
+ 	bool do_not_background = false;
+-	DIR *dirstream = NULL;
+ 	u64 srcdev_size;
+ 	u64 dstdev_size;
+ 	bool enqueue = false;
+@@ -184,7 +183,7 @@ static int cmd_replace_start(const struct cmd_struct *cmd,
+ 		return 1;
+ 	path = argv[optind + 2];
+ 
+-	fdmnt = open_path_or_dev_mnt(path, &dirstream, 1);
++	fdmnt = btrfs_open_mnt_fd(path, true);
+ 	if (fdmnt < 0)
+ 		goto leave_with_error;
+ 
+@@ -200,7 +199,7 @@ static int cmd_replace_start(const struct cmd_struct *cmd,
+ 	if (ret != 0) {
+ 		if (ret < 0)
+ 			error("unable to check status of exclusive operation: %m");
+-		close_file_or_dir(fdmnt, dirstream);
++		close(fdmnt);
+ 		goto leave_with_error;
+ 	}
+ 
+@@ -348,7 +347,7 @@ static int cmd_replace_start(const struct cmd_struct *cmd,
+ 			goto leave_with_error;
+ 		}
+ 	}
+-	close_file_or_dir(fdmnt, dirstream);
++	close(fdmnt);
+ 	return 0;
+ 
+ leave_with_error:
+diff --git a/cmds/scrub.c b/cmds/scrub.c
+index 4a741355..85626d11 100644
+--- a/cmds/scrub.c
++++ b/cmds/scrub.c
+@@ -1203,7 +1203,6 @@ static int scrub_start(const struct cmd_struct *cmd, int argc, char **argv,
+ 	pthread_mutex_t spc_write_mutex = PTHREAD_MUTEX_INITIALIZER;
+ 	void *terr;
+ 	u64 devid;
+-	DIR *dirstream = NULL;
+ 	bool force = false;
+ 	bool nothing_to_resume = false;
+ 
+@@ -1260,7 +1259,7 @@ static int scrub_start(const struct cmd_struct *cmd, int argc, char **argv,
+ 
+ 	path = argv[optind];
+ 
+-	fdmnt = open_path_or_dev_mnt(path, &dirstream, !do_quiet);
++	fdmnt = btrfs_open_mnt_fd(path, !do_quiet);
+ 	if (fdmnt < 0)
+ 		return 1;
+ 
+@@ -1618,7 +1617,7 @@ out:
+ 		if (sock_path[0])
+ 			unlink(sock_path);
+ 	}
+-	close_file_or_dir(fdmnt, dirstream);
++	close(fdmnt);
+ 
+ 	if (err)
+ 		return 1;
+@@ -1671,7 +1670,6 @@ static int cmd_scrub_cancel(const struct cmd_struct *cmd, int argc, char **argv)
+ 	char *path;
+ 	int ret;
+ 	int fdmnt = -1;
+-	DIR *dirstream = NULL;
+ 
+ 	clean_args_no_options(cmd, argc, argv);
+ 
+@@ -1680,7 +1678,7 @@ static int cmd_scrub_cancel(const struct cmd_struct *cmd, int argc, char **argv)
+ 
+ 	path = argv[optind];
+ 
+-	fdmnt = open_path_or_dev_mnt(path, &dirstream, 1);
++	fdmnt = btrfs_open_mnt_fd(path, true);
+ 	if (fdmnt < 0) {
+ 		ret = 1;
+ 		goto out;
+@@ -1702,7 +1700,7 @@ static int cmd_scrub_cancel(const struct cmd_struct *cmd, int argc, char **argv)
+ 	pr_verbose(LOG_DEFAULT, "scrub cancelled\n");
+ 
+ out:
+-	close_file_or_dir(fdmnt, dirstream);
++	close(fdmnt);
+ 	return ret;
+ }
+ static DEFINE_SIMPLE_COMMAND(scrub_cancel, "cancel");
+@@ -1761,7 +1759,6 @@ static int cmd_scrub_status(const struct cmd_struct *cmd, int argc, char **argv)
+ 	char fsid[BTRFS_UUID_UNPARSED_SIZE];
+ 	int fdres = -1;
+ 	int err = 0;
+-	DIR *dirstream = NULL;
+ 
+ 	unit_mode = get_unit_mode_from_arg(&argc, argv, 0);
+ 
+@@ -1784,7 +1781,7 @@ static int cmd_scrub_status(const struct cmd_struct *cmd, int argc, char **argv)
+ 
+ 	path = argv[optind];
+ 
+-	fdmnt = open_path_or_dev_mnt(path, &dirstream, 1);
++	fdmnt = btrfs_open_mnt_fd(path, true);
+ 	if (fdmnt < 0)
+ 		return 1;
+ 
+@@ -1888,7 +1885,7 @@ out:
+ 	free(si_args);
+ 	if (fdres > -1)
+ 		close(fdres);
+-	close_file_or_dir(fdmnt, dirstream);
++	close(fdmnt);
+ 
+ 	return !!err;
+ }
 -- 
 2.43.0
 

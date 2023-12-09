@@ -1,11 +1,11 @@
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=tiscali.it header.i=@tiscali.it header.b="SHKmkMVT"
+	dkim=pass (1024-bit key) header.d=tiscali.it header.i=@tiscali.it header.b="5LnkQ0zr"
 Received: from smtp.tiscali.it (michael.mail.tiscali.it [213.205.33.246])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTP id 012D810C8
+	by lindbergh.monkeyblade.net (Postfix) with ESMTP id 01062D54
 	for <linux-btrfs@vger.kernel.org>; Sat,  9 Dec 2023 11:27:25 -0800 (PST)
 Received: from venice.bhome ([84.220.171.3])
 	by michael.mail.tiscali.it with 
-	id LKTN2B00x04l9eU01KTNYW; Sat, 09 Dec 2023 19:27:22 +0000
+	id LKTN2B00x04l9eU01KTPYp; Sat, 09 Dec 2023 19:27:23 +0000
 X-Spam-Final-Verdict: clean
 X-Spam-State: 0
 X-Spam-Score: 0
@@ -14,9 +14,9 @@ x-auth-user: kreijack@tiscali.it
 From: Goffredo Baroncelli <kreijack@tiscali.it>
 To: linux-btrfs@vger.kernel.org
 Cc: Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 1/9] Killing dirstream: add helpers
-Date: Sat,  9 Dec 2023 19:53:21 +0100
-Message-ID: <802bd72e2f67add884e8725ec87063e7554f8f40.1702148009.git.kreijack@inwind.it>
+Subject: [PATCH 3/9] Killing dirstream: replace btrfs_open_dir with btrfs_open_dir_fd
+Date: Sat,  9 Dec 2023 19:53:23 +0100
+Message-ID: <28855b5c4f82323dda5b171c0169163e3ef258a2.1702148009.git.kreijack@inwind.it>
 X-Mailer: git-send-email 2.43.0
 In-Reply-To: <cover.1702148009.git.kreijack@inwind.it>
 References: <cover.1702148009.git.kreijack@inwind.it>
@@ -29,11 +29,11 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=tiscali.it; s=smtp;
-	t=1702150042; bh=9x4u0mYTUs1yQZRmVU9e994uQ8ynuFpiVdFtB4c0xco=;
+	t=1702150043; bh=Rqr0lnNjerWpE5l7vhE0gHMYkejJT13EMSLrQZ3YJZ8=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:Reply-To;
-	b=SHKmkMVTofiQits1GtDV1bDEtJXQrji345dglZt2vmdW+k7rT4uEY98uDV7+isvVD
-	 p9EpjhDa1i2FmiZxVlSWuvVFwX4pIm9DE07s6hE8Id6sP1+aWzdTxf97kHA/zmmSyL
-	 BDna40yUpGuBevpD/6AbWj4txwn1um7ChiXNdZlo=
+	b=5LnkQ0zreEjdNVb5+TquMUMbR9UbXEEqXhxnUeLrnSHKuBoACxv5/3R5rYZSye6aJ
+	 1hX2Ec3Yg2aKq1uT2wawmIVJTTu1WH59L27YWflvLw/yrOWkUdWECCJEKE1tICBxin
+	 tZfr0xcPOHiMZQQ2hCYs2rq40dGpNg2ytcAYV3wI=
 
 From: Goffredo Baroncelli <kreijack@inwind.it>
 
@@ -43,116 +43,137 @@ the 'DIR *dirstream' value when a dir is opened.
 However this is never used. So avoid calling diropen() and return
 only the fd.
 
-This is a preparatory patch that adds some helpers.
+This patch replaces the last btrfs_open_dir() call with btrfs_open_dir_fd()
+removing any reference to the unused/useless dirstream variables.
+
+At the same time this patch updates the add_seen_fsid() function removing
+any reference to dir stream (again this is never used).
 
 Signed-off-by: Goffredo Baroncelli <kreijack@libero.it>
 ---
- common/open-utils.c | 80 +++++++++++++++++++++++++++++++++++++++++++++
- common/open-utils.h |  5 +++
- 2 files changed, 85 insertions(+)
+ cmds/filesystem.c    | 4 ++--
+ cmds/subvolume.c     | 8 +++-----
+ common/device-scan.c | 6 ++----
+ common/device-scan.h | 4 +---
+ 4 files changed, 8 insertions(+), 14 deletions(-)
 
-diff --git a/common/open-utils.c b/common/open-utils.c
-index 111a51d9..61153294 100644
---- a/common/open-utils.c
-+++ b/common/open-utils.c
-@@ -318,3 +318,83 @@ void close_file_or_dir(int fd, DIR *dirstream)
+diff --git a/cmds/filesystem.c b/cmds/filesystem.c
+index cad97238..9a89e2c6 100644
+--- a/cmds/filesystem.c
++++ b/cmds/filesystem.c
+@@ -306,7 +306,7 @@ static void print_one_uuid(struct btrfs_fs_devices *fs_devices,
+ 	u64 devs_found = 0;
+ 	u64 total;
+ 
+-	if (add_seen_fsid(fs_devices->fsid, seen_fsid_hash, -1, NULL))
++	if (add_seen_fsid(fs_devices->fsid, seen_fsid_hash, -1))
+ 		return;
+ 
+ 	uuid_unparse(fs_devices->fsid, uuidbuf);
+@@ -351,7 +351,7 @@ static int print_one_fs(struct btrfs_ioctl_fs_info_args *fs_info,
+ 	struct btrfs_ioctl_dev_info_args *tmp_dev_info;
+ 	int ret;
+ 
+-	ret = add_seen_fsid(fs_info->fsid, seen_fsid_hash, -1, NULL);
++	ret = add_seen_fsid(fs_info->fsid, seen_fsid_hash, -1);
+ 	if (ret == -EEXIST)
+ 		return 0;
+ 	else if (ret)
+diff --git a/cmds/subvolume.c b/cmds/subvolume.c
+index 17fb23fb..cc1a660b 100644
+--- a/cmds/subvolume.c
++++ b/cmds/subvolume.c
+@@ -325,7 +325,6 @@ static int cmd_subvolume_delete(const struct cmd_struct *cmd, int argc, char **a
+ 	char	*dupdname = NULL;
+ 	char	*dupvname = NULL;
+ 	char	*path = NULL;
+-	DIR	*dirstream = NULL;
+ 	int commit_mode = 0;
+ 	bool subvol_path_not_found = false;
+ 	u8 fsid[BTRFS_FSID_SIZE];
+@@ -438,7 +437,7 @@ again:
+ 	if (subvolid > 0)
+ 		dname = dupvname;
+ 
+-	fd = btrfs_open_dir(dname, &dirstream, 1);
++	fd = btrfs_open_dir_fd(dname);
+ 	if (fd < 0) {
+ 		ret = 1;
+ 		goto out;
+@@ -518,7 +517,7 @@ again:
+ 			goto out;
+ 		}
+ 
+-		if (add_seen_fsid(fsid, seen_fsid_hash, fd, dirstream) == 0) {
++		if (add_seen_fsid(fsid, seen_fsid_hash, fd) == 0) {
+ 			uuid_unparse(fsid, uuidbuf);
+ 			pr_verbose(LOG_INFO, "  new fs is found for '%s', fsid: %s\n",
+ 				   path, uuidbuf);
+@@ -532,10 +531,9 @@ again:
+ 	}
+ 
+ out:
+-	close_file_or_dir(fd, dirstream);
++	close(fd);
+ keep_fd:
+ 	fd = -1;
+-	dirstream = NULL;
+ 	free(dupdname);
+ 	free(dupvname);
+ 	dupdname = NULL;
+diff --git a/common/device-scan.c b/common/device-scan.c
+index c1cd7266..c04c2388 100644
+--- a/common/device-scan.c
++++ b/common/device-scan.c
+@@ -313,8 +313,7 @@ int is_seen_fsid(u8 *fsid, struct seen_fsid *seen_fsid_hash[])
+ 	return 0;
  }
  
+-int add_seen_fsid(u8 *fsid, struct seen_fsid *seen_fsid_hash[],
+-		int fd, DIR *dirstream)
++int add_seen_fsid(u8 *fsid, struct seen_fsid *seen_fsid_hash[], int fd)
+ {
+ 	u8 hash = fsid[0];
+ 	int slot = hash % SEEN_FSID_HASH_SIZE;
+@@ -342,7 +341,6 @@ insert:
+ 	alloc->next = NULL;
+ 	memcpy(alloc->fsid, fsid, BTRFS_FSID_SIZE);
+ 	alloc->fd = fd;
+-	alloc->dirstream = dirstream;
  
-+/*
-+ * Do the following checks before calling open:
-+ * 1: path is in a btrfs filesystem
-+ */
-+int btrfs_open_fd2(const char *path, bool verbose, bool read_write, bool dir_only)
-+{
-+	struct statfs stfs;
-+	struct stat st;
-+	int ret;
-+
-+	if (stat(path, &st) != 0) {
-+		error_on(verbose, "cannot access '%s': %m", path);
-+		return -1;
-+	}
-+
-+	if (statfs(path, &stfs) != 0) {
-+		error_on(verbose, "cannot access '%s': %m", path);
-+		return -1;
-+	}
-+
-+	if (stfs.f_type != BTRFS_SUPER_MAGIC) {
-+		error_on(verbose, "not a btrfs filesystem: %s", path);
-+		return -2;
-+	}
-+
-+	if (dir_only && !S_ISDIR(st.st_mode)) {
-+		error_on(verbose, "not a directory: %s", path);
-+		return -3;
-+	}
-+
-+	if (S_ISDIR(st.st_mode) || !read_write)
-+		ret = open(path, O_RDONLY);
-+	else
-+		ret = open(path, O_RDWR);
-+	if (ret < 0) {
-+		error_on(verbose, "cannot access '%s': %m", path);
-+	}
-+
-+	return ret;
-+}
-+
-+int btrfs_open_file_or_dir_fd(const char *path)
-+{
-+	return btrfs_open_fd2(path, true, true, false);
-+}
-+
-+int btrfs_open_dir_fd(const char *path)
-+{
-+	return btrfs_open_fd2(path, true, true, true);
-+}
-+
-+
-+/*
-+ * Given a pathname, return a filehandle to:
-+ * 	the original pathname or,
-+ * 	if the pathname is a mounted btrfs device, to its mountpoint.
-+ *
-+ * On error, return -1, errno should be set.
-+ */
-+int btrfs_open_mnt_fd(const char *path, bool verbose)
-+{
-+	char mp[PATH_MAX];
-+	int ret;
-+
-+	if (path_is_block_device(path)) {
-+		ret = get_btrfs_mount(path, mp, sizeof(mp));
-+		if (ret < 0) {
-+			/* not a mounted btrfs dev */
-+			error_on(verbose, "'%s' is not a mounted btrfs device",
-+				 path);
-+			errno = EINVAL;
-+			return -1;
-+		}
-+		ret = btrfs_open_fd2(mp, verbose, true, true);
-+	} else {
-+		ret = btrfs_open_dir_fd(path);
-+	}
-+
-+	return ret;
-+}
-diff --git a/common/open-utils.h b/common/open-utils.h
-index 3f8c004e..96d99f5d 100644
---- a/common/open-utils.h
-+++ b/common/open-utils.h
-@@ -39,4 +39,9 @@ int btrfs_open_file_or_dir(const char *path, DIR **dirstream, int verbose);
+ 	if (seen)
+ 		seen->next = alloc;
+@@ -362,7 +360,7 @@ void free_seen_fsid(struct seen_fsid *seen_fsid_hash[])
+ 		seen = seen_fsid_hash[slot];
+ 		while (seen) {
+ 			next = seen->next;
+-			close_file_or_dir(seen->fd, seen->dirstream);
++			close(seen->fd);
+ 			free(seen);
+ 			seen = next;
+ 		}
+diff --git a/common/device-scan.h b/common/device-scan.h
+index 8a875832..90ec766d 100644
+--- a/common/device-scan.h
++++ b/common/device-scan.h
+@@ -41,7 +41,6 @@ struct btrfs_trans_handle;
+ struct seen_fsid {
+ 	u8 fsid[BTRFS_FSID_SIZE];
+ 	struct seen_fsid *next;
+-	DIR *dirstream;
+ 	int fd;
+ };
  
- void close_file_or_dir(int fd, DIR *dirstream);
+@@ -56,8 +55,7 @@ int btrfs_add_to_fsid(struct btrfs_trans_handle *trans,
+ int btrfs_device_already_in_root(struct btrfs_root *root, int fd,
+ 				 int super_offset);
+ int is_seen_fsid(u8 *fsid, struct seen_fsid *seen_fsid_hash[]);
+-int add_seen_fsid(u8 *fsid, struct seen_fsid *seen_fsid_hash[],
+-		int fd, DIR *dirstream);
++int add_seen_fsid(u8 *fsid, struct seen_fsid *seen_fsid_hash[], int fd);
+ void free_seen_fsid(struct seen_fsid *seen_fsid_hash[]);
+ int test_uuid_unique(const char *uuid_str);
  
-+int btrfs_open_fd2(const char *path, bool verbose, bool read_write, bool dir_only);
-+int btrfs_open_file_or_dir_fd(const char *path);
-+int btrfs_open_dir_fd(const char *path);
-+int btrfs_open_mnt_fd(const char *path, bool verbose);
-+
- #endif
 -- 
 2.43.0
 

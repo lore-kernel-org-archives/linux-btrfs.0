@@ -1,984 +1,278 @@
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=tiscali.it header.i=@tiscali.it header.b="fjchcrL2"
-Received: from smtp.tiscali.it (michael.mail.tiscali.it [213.205.33.246])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTP id 00F311BB
-	for <linux-btrfs@vger.kernel.org>; Sat,  9 Dec 2023 11:27:25 -0800 (PST)
-Received: from venice.bhome ([84.220.171.3])
-	by michael.mail.tiscali.it with 
-	id LKTN2B00x04l9eU01KTNYe; Sat, 09 Dec 2023 19:27:23 +0000
-X-Spam-Final-Verdict: clean
-X-Spam-State: 0
-X-Spam-Score: 0
-X-Spam-Verdict: clean
-x-auth-user: kreijack@tiscali.it
-From: Goffredo Baroncelli <kreijack@tiscali.it>
-To: linux-btrfs@vger.kernel.org
-Cc: Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 2/9] Killing dirstream: replace btrfs_open_dir with btrfs_open_dir_fd
-Date: Sat,  9 Dec 2023 19:53:22 +0100
-Message-ID: <40eccb4ab3c47dc77f868755b7dce2f79f6823ba.1702148009.git.kreijack@inwind.it>
-X-Mailer: git-send-email 2.43.0
-In-Reply-To: <cover.1702148009.git.kreijack@inwind.it>
-References: <cover.1702148009.git.kreijack@inwind.it>
-Reply-To: Goffredo Baroncelli <kreijack@libero.it>
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="api9viFk"
+Received: from mail-lj1-x22e.google.com (mail-lj1-x22e.google.com [IPv6:2a00:1450:4864:20::22e])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AF759F4
+	for <linux-btrfs@vger.kernel.org>; Sat,  9 Dec 2023 13:09:39 -0800 (PST)
+Received: by mail-lj1-x22e.google.com with SMTP id 38308e7fff4ca-2cb21afa6c1so26163891fa.0
+        for <linux-btrfs@vger.kernel.org>; Sat, 09 Dec 2023 13:09:39 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1702156178; x=1702760978; darn=vger.kernel.org;
+        h=in-reply-to:autocrypt:from:content-language:references:to:subject
+         :user-agent:mime-version:date:message-id:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=GEejwOHD83hUSs+OJE4OJ+NSXjHJjuEFpor+Yo++fl0=;
+        b=api9viFkms1r8BUHZdwq8ewZ2XMVThT/wJq2tfUK0IoafaYDncy37X9CpyK19qsfUv
+         dpW38NmNqyoAzTqWp8nOKn4K0lHGzd4+2dRvjD2TOERANKbhFmheVKMzDmdNL4vq5yEg
+         7V6QkFqEMVdXM21/5bsO0v1ejkqOeiPAwh4iQ+noLF3+TUaVhXkJR0layaontUYj5jKE
+         XQz4FxC/MGARf6FBP40KPHZLSJIYuNSA/3Zeb0R7Vpf95NvY4XEBxuY8LKNiMbT7rsW8
+         5m78TaB8ZaNhPiNIWYmpnlgt+LDLB+C46lefUN0Yt++z6Z1/TBHej/fPxdY6wc/vq1i/
+         v/tA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1702156178; x=1702760978;
+        h=in-reply-to:autocrypt:from:content-language:references:to:subject
+         :user-agent:mime-version:date:message-id:x-gm-message-state:from:to
+         :cc:subject:date:message-id:reply-to;
+        bh=GEejwOHD83hUSs+OJE4OJ+NSXjHJjuEFpor+Yo++fl0=;
+        b=YpoN8yBISlS3k/A3erUBjWjy/NsB88vpfV4FGghNzvRlgWRAtOQsz760HCnYo09Zk7
+         T2qV2xt+kkiTvG0GxzuuwDiDsl8ycyCgFzmhVxXwtkYIRzYnrT8EAnWJCxd6CbnSZupz
+         Wu90lSu5va+fUk19eO3df96cOVOaUELHZJSCpzpZHChpKygQoAYXNrEJlAAIAkm1Bo/q
+         pHskETf7UkknaGwB9i9j11E0QhDpdCtY4FzFHrdWwgVF/yYrhPfX7lXCEuepBbDlv6yL
+         8fKOn2ZXO4Gmq4jdBLNcHEGoCjfCIobEAGYmvQEMLR9NM29iq7eDARZfdmtwYwz9cuYQ
+         gskg==
+X-Gm-Message-State: AOJu0YwRXbi987OIWKoMIIK5a47VMdGanaJjZ2Q164NO8/65fEqB5NRX
+	jbex8kFkJJTS/JT49ZjPzzqfTg==
+X-Google-Smtp-Source: AGHT+IFHgto4zmBkqoKhOK/Nwv5DDHNXW+R8lKAHdk33d7km6LBCVpRI3VUW1Jj4Mr7s2bvL2m9bdw==
+X-Received: by 2002:a2e:6a01:0:b0:2ca:24c:e252 with SMTP id f1-20020a2e6a01000000b002ca024ce252mr945890ljc.91.1702156177918;
+        Sat, 09 Dec 2023 13:09:37 -0800 (PST)
+Received: from ?IPV6:2001:4479:a500:4d00::959? ([2001:4479:a500:4d00::959])
+        by smtp.gmail.com with ESMTPSA id f16-20020aa782d0000000b006ce6878b274sm3612203pfn.216.2023.12.09.13.09.34
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Sat, 09 Dec 2023 13:09:37 -0800 (PST)
+Message-ID: <d8a5e127-25e6-44df-abe4-73776f43825f@suse.com>
+Date: Sun, 10 Dec 2023 07:39:31 +1030
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=tiscali.it; s=smtp;
-	t=1702150043; bh=kpeBWLG0gagT05Mo8ded7516OPgVCxi7k/mlJmRH/pM=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:Reply-To;
-	b=fjchcrL22Qt3OW5MQXl2BuVpwDJBSu3D7XZh9/+VFKekfUyybQosp2dFw2BNLw2ep
-	 YMtR3GBYxYwf6bSYXSHKUN75W7pZ7L9cH+wta3N57D6YvelUyoFUp01byrVX14/9K6
-	 NZGlPALbVNQYAW0A6K5OGb4jfYL9BcWqAuJ/OwcA=
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH 1/1] btrfs: scrub: Fix use of uninitialized variable
+To: 'Guanjun' <guanjun@linux.alibaba.com>, wqu@suse.com, dsterba@suse.com,
+ clm@fb.com, josef@toxicpanda.com, linux-btrfs@vger.kernel.org
+References: <20231209082132.2690130-1-guanjun@linux.alibaba.com>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJjTSJVBQkNOgemAAoJEMI9kfOh
+ Jf6oapEH/3r/xcalNXMvyRODoprkDraOPbCnULLPNwwp4wLP0/nKXvAlhvRbDpyx1+Ht/3gW
+ p+Klw+S9zBQemxu+6v5nX8zny8l7Q6nAM5InkLaD7U5OLRgJ0O1MNr/UTODIEVx3uzD2X6MR
+ ECMigQxu9c3XKSELXVjTJYgRrEo8o2qb7xoInk4mlleji2rRrqBh1rS0pEexImWphJi+Xgp3
+ dxRGHsNGEbJ5+9yK9Nc5r67EYG4bwm+06yVT8aQS58ZI22C/UeJpPwcsYrdABcisd7dddj4Q
+ RhWiO4Iy5MTGUD7PdfIkQ40iRcQzVEL1BeidP8v8C4LVGmk4vD1wF6xTjQRKfXHOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJjTSJuBQkNOge/AAoJEMI9kfOhJf6o
+ rq8H/3LJmWxL6KO2y/BgOMYDZaFWE3TtdrlIEG8YIDJzIYbNIyQ4lw61RR+0P4APKstsu5VJ
+ 9E3WR7vfxSiOmHCRIWPi32xwbkD5TwaA5m2uVg6xjb5wbdHm+OhdSBcw/fsg19aHQpsmh1/Q
+ bjzGi56yfTxxt9R2WmFIxe6MIDzLlNw3JG42/ark2LOXywqFRnOHgFqxygoMKEG7OcGy5wJM
+ AavA+Abj+6XoedYTwOKkwq+RX2hvXElLZbhYlE+npB1WsFYn1wJ22lHoZsuJCLba5lehI+//
+ ShSsZT5Tlfgi92e9P7y+I/OzMvnBezAll+p/Ly2YczznKM5tV0gboCWeusM=
+In-Reply-To: <20231209082132.2690130-1-guanjun@linux.alibaba.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="------------IQ0eZQFN1TZ0gSR83IsG9gvN"
 
-From: Goffredo Baroncelli <kreijack@inwind.it>
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--------------IQ0eZQFN1TZ0gSR83IsG9gvN
+Content-Type: multipart/mixed; boundary="------------9Xr5MdSjhRuokWfP3gziTlHe";
+ protected-headers="v1"
+From: Qu Wenruo <wqu@suse.com>
+To: 'Guanjun' <guanjun@linux.alibaba.com>, wqu@suse.com, dsterba@suse.com,
+ clm@fb.com, josef@toxicpanda.com, linux-btrfs@vger.kernel.org
+Message-ID: <d8a5e127-25e6-44df-abe4-73776f43825f@suse.com>
+Subject: Re: [PATCH 1/1] btrfs: scrub: Fix use of uninitialized variable
+References: <20231209082132.2690130-1-guanjun@linux.alibaba.com>
+In-Reply-To: <20231209082132.2690130-1-guanjun@linux.alibaba.com>
 
-For historical reason the helpers [btrfs_]open_dir... return also
-the 'DIR *dirstream' value when a dir is opened.
+--------------9Xr5MdSjhRuokWfP3gziTlHe
+Content-Type: multipart/mixed; boundary="------------GvcMG5VA8KZBddarWOy9hEdY"
 
-However this is never used. So avoid calling diropen() and return
-only the fd.
+--------------GvcMG5VA8KZBddarWOy9hEdY
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: base64
 
-This patch replaces btrfs_open_dir() with btrfs_open_dir_fd() removing
-any reference to the unused/useless dirstream variables.
+DQoNCk9uIDIwMjMvMTIvOSAxODo1MSwgJ0d1YW5qdW4nIHdyb3RlOg0KPiBGcm9tOiBHdWFu
+anVuIDxndWFuanVuQGxpbnV4LmFsaWJhYmEuY29tPg0KPiANCj4gJ3JldCcgd2lsbCBiZSB1
+bmluaXRpYWxpemVkIGluIGNhc2UgdGhhdCB0aGUgbG9naWNhbF9sZW5ndGgNCj4gaXMgMC4g
+RXZlbiBpZiB0aGUgY2FsbGVyIGhhcyBhbHJlYWR5IGVuc3VyZWQgdGhhdCBsb2dpY2FsX2xl
+bmd0aA0KPiBpcyBncmVhdGVyIHRoYW4gMCwgd2Ugc3RpbGwgbmVlZCB0byBmaXggdGhpcyBp
+c3N1ZS4gRHVlIHRvIHRoZQ0KPiBjb21waWxlciBtYXkgY29tcGxhaW4gbGlrZSB0aGlzOg0K
+PiANCj4gZnMvYnRyZnMvc2NydWIuYzogSW4gZnVuY3Rpb24g4oCYc2NydWJfc2ltcGxlX21p
+cnJvci5jb25zdHByb3DigJk6DQo+IGZzL2J0cmZzL3NjcnViLmM6MjEyMzo5OiBlcnJvcjog
+4oCYcmV04oCZIG1heSBiZSB1c2VkIHVuaW5pdGlhbGl6ZWQgaW4gdGhpcyBmdW5jdGlvbiBb
+LVdlcnJvcj1tYXliZS11bmluaXRpYWxpemVkXQ0KPiAgIDIxMjMgfCAgcmV0dXJuIHJldDsN
+Cj4gICAgICAgIHwgICAgICAgICBefn4NCj4gDQoNCkNvbXBpbGVyIHZlcnNpb24gYW5kIGNv
+bmZpZyBwbGVhc2UuDQoNCllvdSBrbm93IGJ0cmZzIGhhcyBlbmFibGVkIC1XbWF5YmUtdW5p
+bml0aWFsaXplZCBhbHJlYWR5IGFuZCBhbGwgDQp3YXJuaW5ncyB3b3VsZCBiZSB0cmVhdGVk
+IGFzIGVycm9yLg0KVGhpcyBtZWFucyBpZiB0aGlzIGlzIHJlYWxseSB2YWxpZCwgdG9ucyBv
+ZiB0ZXN0ZXJzIHdvdWxkIGFscmVhZHkgaGl0IGl0Lg0KDQpUaHVzIEknbSB3b25kZXJpbmcg
+aWYgaXQncyBzb21lIGludGVybmFsIG91dC1vZi1kYXRlIHRvb2xjaGFpbiBvbiB5b3VyIHNp
+ZGUuDQoNCg0KRnVydGhlcm1vcmUsIGlmIHlvdSByZWFsbHkgd2FudCB0byBmaXggdGhlIHBy
+b2JsZW0sIEkgc3Ryb25nbHkgDQpkaXNjb3VyYWdlIGZyb20gYmxpbmRseSBzZXR0aW5nIHRo
+ZSBAcmV0IHRvIDAuDQoNCkJ1dCBjaGFuZ2UgYWxsIHRoZSBicmVhayBjYWxscyBvZiB0aGUg
+bG9vcCB0byByZXR1cm4gZGlyZWN0bHksIHNvIHRoYXQgDQp0aGUgZmluYWwgcmV0dXJuIG91
+dCBvZiB0aGUgbG9vcCBjYW4gYWx3YXlzIHJldHVybiAwLCBzbyB0aGF0IEByZXQgY2FuIA0K
+YmUgZGVmaW5lZCBpbnNpZGUgdGhlIGxvb3AsIGFuZCBiZSBtdWNoIHNhZmVyLg0KDQpUaGFu
+a3MsDQpRdQ0KDQo+IEZpeGVzOiAwOTAyMmIxNGZhZmMgKGJ0cmZzOiBzY3J1YjogaW50cm9k
+dWNlIGRlZGljYXRlZCBoZWxwZXIgdG8gc2NydWIgc2ltcGxlLW1pcnJvciBiYXNlZCByYW5n
+ZSkNCj4gU2lnbmVkLW9mZi1ieTogR3Vhbmp1biA8Z3Vhbmp1bkBsaW51eC5hbGliYWJhLmNv
+bT4NCj4gLS0tDQo+ICAgZnMvYnRyZnMvc2NydWIuYyB8IDIgKy0NCj4gICAxIGZpbGUgY2hh
+bmdlZCwgMSBpbnNlcnRpb24oKyksIDEgZGVsZXRpb24oLSkNCj4gDQo+IGRpZmYgLS1naXQg
+YS9mcy9idHJmcy9zY3J1Yi5jIGIvZnMvYnRyZnMvc2NydWIuYw0KPiBpbmRleCBhMDE4MDdj
+YmQ0ZDQuLjEzMDI0MTMxZjc3ZCAxMDA2NDQNCj4gLS0tIGEvZnMvYnRyZnMvc2NydWIuYw0K
+PiArKysgYi9mcy9idHJmcy9zY3J1Yi5jDQo+IEBAIC0yMDcxLDcgKzIwNzEsNyBAQCBzdGF0
+aWMgaW50IHNjcnViX3NpbXBsZV9taXJyb3Ioc3RydWN0IHNjcnViX2N0eCAqc2N0eCwNCj4g
+ICAJc3RydWN0IGJ0cmZzX2ZzX2luZm8gKmZzX2luZm8gPSBzY3R4LT5mc19pbmZvOw0KPiAg
+IAljb25zdCB1NjQgbG9naWNhbF9lbmQgPSBsb2dpY2FsX3N0YXJ0ICsgbG9naWNhbF9sZW5n
+dGg7DQo+ICAgCXU2NCBjdXJfbG9naWNhbCA9IGxvZ2ljYWxfc3RhcnQ7DQo+IC0JaW50IHJl
+dDsNCj4gKwlpbnQgcmV0ID0gMDsNCj4gICANCj4gICAJLyogVGhlIHJhbmdlIG11c3QgYmUg
+aW5zaWRlIHRoZSBiZyAqLw0KPiAgIAlBU1NFUlQobG9naWNhbF9zdGFydCA+PSBiZy0+c3Rh
+cnQgJiYgbG9naWNhbF9lbmQgPD0gYmctPnN0YXJ0ICsgYmctPmxlbmd0aCk7DQo=
+--------------GvcMG5VA8KZBddarWOy9hEdY
+Content-Type: application/pgp-keys; name="OpenPGP_0xC23D91F3A125FEA8.asc"
+Content-Disposition: attachment; filename="OpenPGP_0xC23D91F3A125FEA8.asc"
+Content-Description: OpenPGP public key
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Goffredo Baroncelli <kreijack@libero.it>
----
- cmds/balance.c          | 27 +++++++++++----------------
- cmds/device.c           | 21 +++++++++------------
- cmds/filesystem-usage.c |  5 ++---
- cmds/filesystem.c       | 14 ++++++--------
- cmds/inspect.c          | 25 ++++++++++---------------
- cmds/qgroup.c           | 29 ++++++++++++-----------------
- cmds/quota.c            | 16 +++++++---------
- cmds/replace.c          | 10 ++++------
- cmds/subvolume-list.c   |  5 ++---
- cmds/subvolume.c        | 31 +++++++++++++------------------
- 10 files changed, 76 insertions(+), 107 deletions(-)
+-----BEGIN PGP PUBLIC KEY BLOCK-----
 
-diff --git a/cmds/balance.c b/cmds/balance.c
-index 65c7da0b..7c15729c 100644
---- a/cmds/balance.c
-+++ b/cmds/balance.c
-@@ -299,9 +299,8 @@ static int do_balance(const char *path, struct btrfs_ioctl_balance_args *args,
- {
- 	int fd;
- 	int ret;
--	DIR *dirstream = NULL;
- 
--	fd = btrfs_open_dir(path, &dirstream, 1);
-+	fd = btrfs_open_dir_fd(path);
- 	if (fd < 0)
- 		return 1;
- 
-@@ -309,7 +308,7 @@ static int do_balance(const char *path, struct btrfs_ioctl_balance_args *args,
- 	if (ret != 0) {
- 		if (ret < 0)
- 			error("unable to check status of exclusive operation: %m");
--		close_file_or_dir(fd, dirstream);
-+		close(fd);
- 		return 1;
- 	}
- 
-@@ -348,7 +347,7 @@ static int do_balance(const char *path, struct btrfs_ioctl_balance_args *args,
- 	}
- 
- out:
--	close_file_or_dir(fd, dirstream);
-+	close(fd);
- 	return ret;
- }
- 
-@@ -606,7 +605,6 @@ static int cmd_balance_pause(const struct cmd_struct *cmd,
- 	const char *path;
- 	int fd;
- 	int ret;
--	DIR *dirstream = NULL;
- 
- 	clean_args_no_options(cmd, argc, argv);
- 
-@@ -615,7 +613,7 @@ static int cmd_balance_pause(const struct cmd_struct *cmd,
- 
- 	path = argv[optind];
- 
--	fd = btrfs_open_dir(path, &dirstream, 1);
-+	fd = btrfs_open_dir_fd(path);
- 	if (fd < 0)
- 		return 1;
- 
-@@ -630,7 +628,7 @@ static int cmd_balance_pause(const struct cmd_struct *cmd,
- 	}
- 
- 	btrfs_warn_multiple_profiles(fd);
--	close_file_or_dir(fd, dirstream);
-+	close(fd);
- 	return ret;
- }
- static DEFINE_SIMPLE_COMMAND(balance_pause, "pause");
-@@ -647,7 +645,6 @@ static int cmd_balance_cancel(const struct cmd_struct *cmd,
- 	const char *path;
- 	int fd;
- 	int ret;
--	DIR *dirstream = NULL;
- 
- 	clean_args_no_options(cmd, argc, argv);
- 
-@@ -656,7 +653,7 @@ static int cmd_balance_cancel(const struct cmd_struct *cmd,
- 
- 	path = argv[optind];
- 
--	fd = btrfs_open_dir(path, &dirstream, 1);
-+	fd = btrfs_open_dir_fd(path);
- 	if (fd < 0)
- 		return 1;
- 
-@@ -671,7 +668,7 @@ static int cmd_balance_cancel(const struct cmd_struct *cmd,
- 	}
- 
- 	btrfs_warn_multiple_profiles(fd);
--	close_file_or_dir(fd, dirstream);
-+	close(fd);
- 	return ret;
- }
- static DEFINE_SIMPLE_COMMAND(balance_cancel, "cancel");
-@@ -689,7 +686,6 @@ static int cmd_balance_resume(const struct cmd_struct *cmd,
- {
- 	struct btrfs_ioctl_balance_args args;
- 	const char *path;
--	DIR *dirstream = NULL;
- 	int fd;
- 	int ret;
- 
-@@ -700,7 +696,7 @@ static int cmd_balance_resume(const struct cmd_struct *cmd,
- 
- 	path = argv[optind];
- 
--	fd = btrfs_open_dir(path, &dirstream, 1);
-+	fd = btrfs_open_dir_fd(path);
- 	if (fd < 0)
- 		return 1;
- 
-@@ -734,7 +730,7 @@ static int cmd_balance_resume(const struct cmd_struct *cmd,
- 			   args.stat.completed, args.stat.considered);
- 	}
- 
--	close_file_or_dir(fd, dirstream);
-+	close(fd);
- 	return ret;
- }
- static DEFINE_SIMPLE_COMMAND(balance_resume, "resume");
-@@ -760,7 +756,6 @@ static int cmd_balance_status(const struct cmd_struct *cmd,
- {
- 	struct btrfs_ioctl_balance_args args;
- 	const char *path;
--	DIR *dirstream = NULL;
- 	int fd;
- 	int ret;
- 
-@@ -790,7 +785,7 @@ static int cmd_balance_status(const struct cmd_struct *cmd,
- 
- 	path = argv[optind];
- 
--	fd = btrfs_open_dir(path, &dirstream, 1);
-+	fd = btrfs_open_dir_fd(path);
- 	if (fd < 0)
- 		return 2;
- 
-@@ -828,7 +823,7 @@ static int cmd_balance_status(const struct cmd_struct *cmd,
- 
- 	ret = 1;
- out:
--	close_file_or_dir(fd, dirstream);
-+	close(fd);
- 	return ret;
- }
- static DEFINE_SIMPLE_COMMAND(balance_status, "status");
-diff --git a/cmds/device.c b/cmds/device.c
-index 5e20498d..0b75e110 100644
---- a/cmds/device.c
-+++ b/cmds/device.c
-@@ -62,7 +62,6 @@ static int cmd_device_add(const struct cmd_struct *cmd,
- {
- 	char	*mntpnt;
- 	int i, fdmnt, ret = 0;
--	DIR	*dirstream = NULL;
- 	bool discard = true;
- 	bool force = false;
- 	int last_dev;
-@@ -105,7 +104,7 @@ static int cmd_device_add(const struct cmd_struct *cmd,
- 	last_dev = argc - 1;
- 	mntpnt = argv[last_dev];
- 
--	fdmnt = btrfs_open_dir(mntpnt, &dirstream, 1);
-+	fdmnt = btrfs_open_dir_fd(mntpnt);
- 	if (fdmnt < 0)
- 		return 1;
- 
-@@ -113,7 +112,7 @@ static int cmd_device_add(const struct cmd_struct *cmd,
- 	if (ret != 0) {
- 		if (ret < 0)
- 			error("unable to check status of exclusive operation: %m");
--		close_file_or_dir(fdmnt, dirstream);
-+		close(fdmnt);
- 		return 1;
- 	}
- 
-@@ -181,7 +180,7 @@ static int cmd_device_add(const struct cmd_struct *cmd,
- 
- error_out:
- 	btrfs_warn_multiple_profiles(fdmnt);
--	close_file_or_dir(fdmnt, dirstream);
-+	close(fdmnt);
- 	return !!ret;
- }
- static DEFINE_SIMPLE_COMMAND(device_add, "add");
-@@ -191,7 +190,6 @@ static int _cmd_device_remove(const struct cmd_struct *cmd,
- {
- 	char	*mntpnt;
- 	int i, fdmnt, ret = 0;
--	DIR	*dirstream = NULL;
- 	bool enqueue = false;
- 	bool cancel = false;
- 
-@@ -221,7 +219,7 @@ static int _cmd_device_remove(const struct cmd_struct *cmd,
- 
- 	mntpnt = argv[argc - 1];
- 
--	fdmnt = btrfs_open_dir(mntpnt, &dirstream, 1);
-+	fdmnt = btrfs_open_dir_fd(mntpnt);
- 	if (fdmnt < 0)
- 		return 1;
- 
-@@ -230,7 +228,7 @@ static int _cmd_device_remove(const struct cmd_struct *cmd,
- 		if (cancel) {
- 			error("cancel requested but another device specified: %s\n",
- 				argv[i]);
--			close_file_or_dir(fdmnt, dirstream);
-+			close(fdmnt);
- 			return 1;
- 		}
- 		if (strcmp("cancel", argv[i]) == 0) {
-@@ -246,7 +244,7 @@ static int _cmd_device_remove(const struct cmd_struct *cmd,
- 			if (ret < 0)
- 				error(
- 			"unable to check status of exclusive operation: %m");
--			close_file_or_dir(fdmnt, dirstream);
-+			close(fdmnt);
- 			return 1;
- 		}
- 	}
-@@ -312,7 +310,7 @@ static int _cmd_device_remove(const struct cmd_struct *cmd,
- 	}
- 
- 	btrfs_warn_multiple_profiles(fdmnt);
--	close_file_or_dir(fdmnt, dirstream);
-+	close(fdmnt);
- 	return !!ret;
- }
- 
-@@ -875,12 +873,11 @@ static int cmd_device_usage(const struct cmd_struct *cmd, int argc, char **argv)
- 
- 	for (i = optind; i < argc; i++) {
- 		int fd;
--		DIR *dirstream = NULL;
- 
- 		if (i > 1)
- 			pr_verbose(LOG_DEFAULT, "\n");
- 
--		fd = btrfs_open_dir(argv[i], &dirstream, 1);
-+		fd = btrfs_open_dir_fd(argv[i]);
- 		if (fd < 0) {
- 			ret = 1;
- 			break;
-@@ -888,7 +885,7 @@ static int cmd_device_usage(const struct cmd_struct *cmd, int argc, char **argv)
- 
- 		ret = _cmd_device_usage(fd, argv[i], unit_mode);
- 		btrfs_warn_multiple_profiles(fd);
--		close_file_or_dir(fd, dirstream);
-+		close(fd);
- 
- 		if (ret)
- 			break;
-diff --git a/cmds/filesystem-usage.c b/cmds/filesystem-usage.c
-index 0db91e9c..d9d218fe 100644
---- a/cmds/filesystem-usage.c
-+++ b/cmds/filesystem-usage.c
-@@ -1216,11 +1216,10 @@ static int cmd_filesystem_usage(const struct cmd_struct *cmd,
- 
- 	for (i = optind; i < argc; i++) {
- 		int fd;
--		DIR *dirstream = NULL;
- 		struct array chunkinfos = { 0 };
- 		struct array devinfos = { 0 };
- 
--		fd = btrfs_open_dir(argv[i], &dirstream, 1);
-+		fd = btrfs_open_dir_fd(argv[i]);
- 		if (fd < 0) {
- 			ret = 1;
- 			goto out;
-@@ -1240,7 +1239,7 @@ static int cmd_filesystem_usage(const struct cmd_struct *cmd,
- 		ret = print_filesystem_usage_by_chunk(fd, &chunkinfos,
- 				&devinfos, argv[i], unit_mode, tabular);
- cleanup:
--		close_file_or_dir(fd, dirstream);
-+		close(fd);
- 		array_free_elements(&chunkinfos);
- 		array_free(&chunkinfos);
- 		array_free_elements(&devinfos);
-diff --git a/cmds/filesystem.c b/cmds/filesystem.c
-index 1b444b8f..cad97238 100644
---- a/cmds/filesystem.c
-+++ b/cmds/filesystem.c
-@@ -146,7 +146,6 @@ static int cmd_filesystem_df(const struct cmd_struct *cmd,
- 	int ret;
- 	int fd;
- 	char *path;
--	DIR *dirstream = NULL;
- 	unsigned unit_mode;
- 
- 	unit_mode = get_unit_mode_from_arg(&argc, argv, 1);
-@@ -158,7 +157,7 @@ static int cmd_filesystem_df(const struct cmd_struct *cmd,
- 
- 	path = argv[optind];
- 
--	fd = btrfs_open_dir(path, &dirstream, 1);
-+	fd = btrfs_open_dir_fd(path);
- 	if (fd < 0)
- 		return 1;
- 
-@@ -176,7 +175,7 @@ static int cmd_filesystem_df(const struct cmd_struct *cmd,
- 	}
- 
- 	btrfs_warn_multiple_profiles(fd);
--	close_file_or_dir(fd, dirstream);
-+	close(fd);
- 	return !!ret;
- }
- static DEFINE_COMMAND_WITH_FLAGS(filesystem_df, "df", CMD_FORMAT_JSON);
-@@ -1361,7 +1360,6 @@ static int cmd_filesystem_resize(const struct cmd_struct *cmd,
- 	struct btrfs_ioctl_vol_args	args;
- 	int	fd, res, len, e;
- 	char	*amount, *path;
--	DIR	*dirstream = NULL;
- 	u64 devid;
- 	int ret;
- 	bool enqueue = false;
-@@ -1399,7 +1397,7 @@ static int cmd_filesystem_resize(const struct cmd_struct *cmd,
- 
- 	cancel = (strcmp("cancel", amount) == 0);
- 
--	fd = btrfs_open_dir(path, &dirstream, 1);
-+	fd = btrfs_open_dir_fd(path);
- 	if (fd < 0) {
- 		/* The path is a directory */
- 		if (fd == -3) {
-@@ -1422,14 +1420,14 @@ static int cmd_filesystem_resize(const struct cmd_struct *cmd,
- 			if (ret < 0)
- 				error(
- 			"unable to check status of exclusive operation: %m");
--			close_file_or_dir(fd, dirstream);
-+			close(fd);
- 			return 1;
- 		}
- 	}
- 
- 	ret = check_resize_args(amount, path, &devid);
- 	if (ret != 0) {
--		close_file_or_dir(fd, dirstream);
-+		close(fd);
- 		return 1;
- 	}
- 
-@@ -1444,7 +1442,7 @@ static int cmd_filesystem_resize(const struct cmd_struct *cmd,
- 	pr_verbose(LOG_VERBOSE, "adjust resize argument to: %s\n", args.name);
- 	res = ioctl(fd, BTRFS_IOC_RESIZE, &args);
- 	e = errno;
--	close_file_or_dir(fd, dirstream);
-+	close(fd);
- 	if( res < 0 ){
- 		switch (e) {
- 		case EFBIG:
-diff --git a/cmds/inspect.c b/cmds/inspect.c
-index a90c373a..86023270 100644
---- a/cmds/inspect.c
-+++ b/cmds/inspect.c
-@@ -109,7 +109,6 @@ static int cmd_inspect_inode_resolve(const struct cmd_struct *cmd,
- {
- 	int fd;
- 	int ret;
--	DIR *dirstream = NULL;
- 
- 	optind = 0;
- 	while (1) {
-@@ -129,12 +128,12 @@ static int cmd_inspect_inode_resolve(const struct cmd_struct *cmd,
- 	if (check_argc_exact(argc - optind, 2))
- 		return 1;
- 
--	fd = btrfs_open_dir(argv[optind + 1], &dirstream, 1);
-+	fd = btrfs_open_dir_fd(argv[optind + 1]);
- 	if (fd < 0)
- 		return 1;
- 
- 	ret = __ino_to_path_fd(arg_strtou64(argv[optind]), fd, argv[optind+1]);
--	close_file_or_dir(fd, dirstream);
-+	close(fd);
- 	return !!ret;
- 
- }
-@@ -169,7 +168,6 @@ static int cmd_inspect_logical_resolve(const struct cmd_struct *cmd,
- 	u64 size = SZ_64K;
- 	char full_path[PATH_MAX];
- 	char *path_ptr;
--	DIR *dirstream = NULL;
- 	u64 flags = 0;
- 	unsigned long request = BTRFS_IOC_LOGICAL_INO;
- 
-@@ -214,7 +212,7 @@ static int cmd_inspect_logical_resolve(const struct cmd_struct *cmd,
- 	loi.flags = flags;
- 	loi.inodes = ptr_to_u64(inodes);
- 
--	fd = btrfs_open_dir(argv[optind + 1], &dirstream, 1);
-+	fd = btrfs_open_dir_fd(argv[optind + 1]);
- 	if (fd < 0) {
- 		ret = 12;
- 		goto out;
-@@ -247,7 +245,6 @@ static int cmd_inspect_logical_resolve(const struct cmd_struct *cmd,
- 		u64 offset = inodes->val[i+1];
- 		u64 root = inodes->val[i+2];
- 		int path_fd;
--		DIR *dirs = NULL;
- 
- 		if (getpath) {
- 			char mount_path[PATH_MAX];
-@@ -296,7 +293,7 @@ static int cmd_inspect_logical_resolve(const struct cmd_struct *cmd,
- 				strncpy(mount_path, mounted, PATH_MAX);
- 				free(mounted);
- 
--				path_fd = btrfs_open_dir(mount_path, &dirs, 1);
-+				path_fd = btrfs_open_dir_fd(mount_path);
- 				if (path_fd < 0) {
- 					ret = -ENOENT;
- 					goto out;
-@@ -304,7 +301,7 @@ static int cmd_inspect_logical_resolve(const struct cmd_struct *cmd,
- 			}
- 			ret = __ino_to_path_fd(inum, path_fd, mount_path);
- 			if (path_fd != fd)
--				close_file_or_dir(path_fd, dirs);
-+				close(path_fd);
- 		} else {
- 			pr_verbose(LOG_DEFAULT, "inode %llu offset %llu root %llu\n", inum,
- 				offset, root);
-@@ -312,7 +309,7 @@ static int cmd_inspect_logical_resolve(const struct cmd_struct *cmd,
- 	}
- 
- out:
--	close_file_or_dir(fd, dirstream);
-+	close(fd);
- 	free(inodes);
- 	return !!ret;
- }
-@@ -331,14 +328,13 @@ static int cmd_inspect_subvolid_resolve(const struct cmd_struct *cmd,
- 	int fd = -1;
- 	u64 subvol_id;
- 	char path[PATH_MAX];
--	DIR *dirstream = NULL;
- 
- 	clean_args_no_options(cmd, argc, argv);
- 
- 	if (check_argc_exact(argc - optind, 2))
- 		return 1;
- 
--	fd = btrfs_open_dir(argv[optind + 1], &dirstream, 1);
-+	fd = btrfs_open_dir_fd(argv[optind + 1]);
- 	if (fd < 0) {
- 		ret = -ENOENT;
- 		goto out;
-@@ -356,7 +352,7 @@ static int cmd_inspect_subvolid_resolve(const struct cmd_struct *cmd,
- 	pr_verbose(LOG_DEFAULT, "%s\n", path);
- 
- out:
--	close_file_or_dir(fd, dirstream);
-+	close(fd);
- 	return !!ret;
- }
- static DEFINE_SIMPLE_COMMAND(inspect_subvolid_resolve, "subvolid-resolve");
-@@ -655,7 +651,6 @@ static int cmd_inspect_min_dev_size(const struct cmd_struct *cmd,
- {
- 	int ret;
- 	int fd = -1;
--	DIR *dirstream = NULL;
- 	u64 devid = 1;
- 
- 	optind = 0;
-@@ -682,14 +677,14 @@ static int cmd_inspect_min_dev_size(const struct cmd_struct *cmd,
- 	if (check_argc_exact(argc - optind, 1))
- 		return 1;
- 
--	fd = btrfs_open_dir(argv[optind], &dirstream, 1);
-+	fd = btrfs_open_dir_fd(argv[optind]);
- 	if (fd < 0) {
- 		ret = -ENOENT;
- 		goto out;
- 	}
- 
- 	ret = print_min_dev_size(fd, devid);
--	close_file_or_dir(fd, dirstream);
-+	close(fd);
- out:
- 	return !!ret;
- }
-diff --git a/cmds/qgroup.c b/cmds/qgroup.c
-index 2f1893cb..43f973d7 100644
---- a/cmds/qgroup.c
-+++ b/cmds/qgroup.c
-@@ -1740,7 +1740,6 @@ static int _cmd_qgroup_assign(const struct cmd_struct *cmd, int assign,
- 	bool rescan = true;
- 	char *path;
- 	struct btrfs_ioctl_qgroup_assign_args args;
--	DIR *dirstream = NULL;
- 
- 	optind = 0;
- 	while (1) {
-@@ -1785,7 +1784,7 @@ static int _cmd_qgroup_assign(const struct cmd_struct *cmd, int assign,
- 		error("bad relation requested: %s", path);
- 		return 1;
- 	}
--	fd = btrfs_open_dir(path, &dirstream, 1);
-+	fd = btrfs_open_dir_fd(path);
- 	if (fd < 0)
- 		return 1;
- 
-@@ -1794,7 +1793,7 @@ static int _cmd_qgroup_assign(const struct cmd_struct *cmd, int assign,
- 		error("unable to assign quota group: %s",
- 				errno == ENOTCONN ? "quota not enabled"
- 						: strerror(errno));
--		close_file_or_dir(fd, dirstream);
-+		close(fd);
- 		return 1;
- 	}
- 
-@@ -1820,7 +1819,7 @@ static int _cmd_qgroup_assign(const struct cmd_struct *cmd, int assign,
- 			ret = 0;
- 		}
- 	}
--	close_file_or_dir(fd, dirstream);
-+	close(fd);
- 	return ret;
- }
- 
-@@ -1830,7 +1829,6 @@ static int _cmd_qgroup_create(int create, int argc, char **argv)
- 	int fd;
- 	char *path;
- 	struct btrfs_ioctl_qgroup_create_args args;
--	DIR *dirstream = NULL;
- 
- 	if (check_argc_exact(argc - optind, 2))
- 		return 1;
-@@ -1844,12 +1842,12 @@ static int _cmd_qgroup_create(int create, int argc, char **argv)
- 	}
- 	path = argv[optind + 1];
- 
--	fd = btrfs_open_dir(path, &dirstream, 1);
-+	fd = btrfs_open_dir_fd(path);
- 	if (fd < 0)
- 		return 1;
- 
- 	ret = ioctl(fd, BTRFS_IOC_QGROUP_CREATE, &args);
--	close_file_or_dir(fd, dirstream);
-+	close(fd);
- 	if (ret < 0) {
- 		error("unable to %s quota group: %s",
- 			create ? "create":"destroy",
-@@ -1957,7 +1955,6 @@ static int cmd_qgroup_show(const struct cmd_struct *cmd, int argc, char **argv)
- 	char *path;
- 	int ret = 0;
- 	int fd;
--	DIR *dirstream = NULL;
- 	u64 qgroupid;
- 	int filter_flag = 0;
- 	unsigned unit_mode;
-@@ -2030,7 +2027,7 @@ static int cmd_qgroup_show(const struct cmd_struct *cmd, int argc, char **argv)
- 		return 1;
- 
- 	path = argv[optind];
--	fd = btrfs_open_dir(path, &dirstream, 1);
-+	fd = btrfs_open_dir_fd(path);
- 	if (fd < 0) {
- 		free(filter_set);
- 		free(comparer_set);
-@@ -2048,7 +2045,7 @@ static int cmd_qgroup_show(const struct cmd_struct *cmd, int argc, char **argv)
- 		if (ret < 0) {
- 			errno = -ret;
- 			error("cannot resolve rootid for %s: %m", path);
--			close_file_or_dir(fd, dirstream);
-+			close(fd);
- 			goto out;
- 		}
- 		if (filter_flag & 0x1)
-@@ -2061,7 +2058,7 @@ static int cmd_qgroup_show(const struct cmd_struct *cmd, int argc, char **argv)
- 					qgroupid);
- 	}
- 	ret = show_qgroups(fd, filter_set, comparer_set);
--	close_file_or_dir(fd, dirstream);
-+	close(fd);
- 	free(filter_set);
- 	free(comparer_set);
- 
-@@ -2088,7 +2085,6 @@ static int cmd_qgroup_limit(const struct cmd_struct *cmd, int argc, char **argv)
- 	unsigned long long size;
- 	bool compressed = false;
- 	bool exclusive = false;
--	DIR *dirstream = NULL;
- 	enum btrfs_util_error err;
- 
- 	optind = 0;
-@@ -2146,12 +2142,12 @@ static int cmd_qgroup_limit(const struct cmd_struct *cmd, int argc, char **argv)
- 	} else
- 		usage(cmd, 1);
- 
--	fd = btrfs_open_dir(path, &dirstream, 1);
-+	fd = btrfs_open_dir_fd(path);
- 	if (fd < 0)
- 		return 1;
- 
- 	ret = ioctl(fd, BTRFS_IOC_QGROUP_LIMIT, &args);
--	close_file_or_dir(fd, dirstream);
-+	close(fd);
- 	if (ret < 0) {
- 		error("unable to limit requested quota group: %s",
- 				errno == ENOTCONN ? "quota not enabled"
-@@ -2179,7 +2175,6 @@ static int cmd_qgroup_clear_stale(const struct cmd_struct *cmd, int argc, char *
- 	int ret = 0;
- 	int fd;
- 	char *path = NULL;
--	DIR *dirstream = NULL;
- 	struct qgroup_lookup qgroup_lookup;
- 	struct rb_node *node;
- 	struct btrfs_qgroup *entry;
-@@ -2189,7 +2184,7 @@ static int cmd_qgroup_clear_stale(const struct cmd_struct *cmd, int argc, char *
- 
- 	path = argv[optind];
- 
--	fd = btrfs_open_dir(path, &dirstream, 1);
-+	fd = btrfs_open_dir_fd(path);
- 	if (fd < 0)
- 		return 1;
- 
-@@ -2225,7 +2220,7 @@ static int cmd_qgroup_clear_stale(const struct cmd_struct *cmd, int argc, char *
- 	}
- 
- out:
--	close_file_or_dir(fd, dirstream);
-+	close(fd);
- 	return !!ret;
- }
- static DEFINE_SIMPLE_COMMAND(qgroup_clear_stale, "clear-stale");
-diff --git a/cmds/quota.c b/cmds/quota.c
-index fa069d79..adf7bf1a 100644
---- a/cmds/quota.c
-+++ b/cmds/quota.c
-@@ -41,17 +41,16 @@ static int quota_ctl(int cmd, char *path)
- 	int ret = 0;
- 	int fd;
- 	struct btrfs_ioctl_quota_ctl_args args;
--	DIR *dirstream = NULL;
- 
- 	memset(&args, 0, sizeof(args));
- 	args.cmd = cmd;
- 
--	fd = btrfs_open_dir(path, &dirstream, 1);
-+	fd = btrfs_open_dir_fd(path);
- 	if (fd < 0)
- 		return 1;
- 
- 	ret = ioctl(fd, BTRFS_IOC_QUOTA_CTL, &args);
--	close_file_or_dir(fd, dirstream);
-+	close(fd);
- 	if (ret < 0) {
- 		error("quota command failed: %m");
- 		return 1;
-@@ -148,7 +147,6 @@ static int cmd_quota_rescan(const struct cmd_struct *cmd, int argc, char **argv)
- 	char *path = NULL;
- 	struct btrfs_ioctl_quota_rescan_args args;
- 	unsigned long ioctlnum = BTRFS_IOC_QUOTA_RESCAN;
--	DIR *dirstream = NULL;
- 	bool wait_for_completion = false;
- 
- 	optind = 0;
-@@ -193,7 +191,7 @@ static int cmd_quota_rescan(const struct cmd_struct *cmd, int argc, char **argv)
- 	memset(&args, 0, sizeof(args));
- 
- 	path = argv[optind];
--	fd = btrfs_open_dir(path, &dirstream, 1);
-+	fd = btrfs_open_dir_fd(path);
- 	if (fd < 0)
- 		return 1;
- 
-@@ -203,7 +201,7 @@ static int cmd_quota_rescan(const struct cmd_struct *cmd, int argc, char **argv)
- 	}
- 
- 	if (ioctlnum == BTRFS_IOC_QUOTA_RESCAN_STATUS) {
--		close_file_or_dir(fd, dirstream);
-+		close(fd);
- 		if (ret < 0) {
- 			error("could not obtain quota rescan status: %m");
- 			return 1;
-@@ -221,7 +219,7 @@ static int cmd_quota_rescan(const struct cmd_struct *cmd, int argc, char **argv)
- 		fflush(stdout);
- 	} else if (ret < 0 && (!wait_for_completion || e != EINPROGRESS)) {
- 		error("quota rescan failed: %m");
--		close_file_or_dir(fd, dirstream);
-+		close(fd);
- 		return 1;
- 	}
- 
-@@ -230,12 +228,12 @@ static int cmd_quota_rescan(const struct cmd_struct *cmd, int argc, char **argv)
- 		e = errno;
- 		if (ret < 0) {
- 			error("quota rescan wait failed: %m");
--			close_file_or_dir(fd, dirstream);
-+			close(fd);
- 			return 1;
- 		}
- 	}
- 
--	close_file_or_dir(fd, dirstream);
-+	close(fd);
- 	return 0;
- }
- static DEFINE_SIMPLE_COMMAND(quota_rescan, "rescan");
-diff --git a/cmds/replace.c b/cmds/replace.c
-index 138a22e4..171a72b4 100644
---- a/cmds/replace.c
-+++ b/cmds/replace.c
-@@ -378,7 +378,6 @@ static int cmd_replace_status(const struct cmd_struct *cmd,
- 	char *path;
- 	int once = 0;
- 	int ret;
--	DIR *dirstream = NULL;
- 
- 	optind = 0;
- 	while ((c = getopt(argc, argv, "1")) != -1) {
-@@ -395,12 +394,12 @@ static int cmd_replace_status(const struct cmd_struct *cmd,
- 		return 1;
- 
- 	path = argv[optind];
--	fd = btrfs_open_dir(path, &dirstream, 1);
-+	fd = btrfs_open_dir_fd(path);
- 	if (fd < 0)
- 		return 1;
- 
- 	ret = print_replace_status(fd, path, once);
--	close_file_or_dir(fd, dirstream);
-+	close(fd);
- 	return !!ret;
- }
- static DEFINE_SIMPLE_COMMAND(replace_status, "status");
-@@ -546,7 +545,6 @@ static int cmd_replace_cancel(const struct cmd_struct *cmd,
- 	int c;
- 	int fd;
- 	char *path;
--	DIR *dirstream = NULL;
- 
- 	optind = 0;
- 	while ((c = getopt(argc, argv, "")) != -1) {
-@@ -561,14 +559,14 @@ static int cmd_replace_cancel(const struct cmd_struct *cmd,
- 		return 1;
- 
- 	path = argv[optind];
--	fd = btrfs_open_dir(path, &dirstream, 1);
-+	fd = btrfs_open_dir_fd(path);
- 	if (fd < 0)
- 		return 1;
- 
- 	args.cmd = BTRFS_IOCTL_DEV_REPLACE_CMD_CANCEL;
- 	args.result = BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_RESULT;
- 	ret = ioctl(fd, BTRFS_IOC_DEV_REPLACE, &args);
--	close_file_or_dir(fd, dirstream);
-+	close(fd);
- 	if (ret < 0) {
- 		error("ioctl(DEV_REPLACE_CANCEL) failed on \"%s\": %m", path);
- 		if (args.result != BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_RESULT)
-diff --git a/cmds/subvolume-list.c b/cmds/subvolume-list.c
-index 5a91f41d..a26e8b02 100644
---- a/cmds/subvolume-list.c
-+++ b/cmds/subvolume-list.c
-@@ -1587,7 +1587,6 @@ static int cmd_subvolume_list(const struct cmd_struct *cmd, int argc, char **arg
- 	char *subvol;
- 	bool is_list_all = false;
- 	bool is_only_in_path = false;
--	DIR *dirstream = NULL;
- 	enum btrfs_list_layout layout = BTRFS_LIST_LAYOUT_DEFAULT;
- 
- 	filter_set = btrfs_list_alloc_filter_set();
-@@ -1689,7 +1688,7 @@ static int cmd_subvolume_list(const struct cmd_struct *cmd, int argc, char **arg
- 		goto out;
- 
- 	subvol = argv[optind];
--	fd = btrfs_open_dir(subvol, &dirstream, 1);
-+	fd = btrfs_open_dir_fd(subvol);
- 	if (fd < 0) {
- 		ret = -1;
- 		error("can't access '%s'", subvol);
-@@ -1729,7 +1728,7 @@ static int cmd_subvolume_list(const struct cmd_struct *cmd, int argc, char **arg
- 			layout, !is_list_all && !is_only_in_path, NULL);
- 
- out:
--	close_file_or_dir(fd, dirstream);
-+	close(fd);
- 	if (filter_set)
- 		free(filter_set);
- 	if (comparer_set)
-diff --git a/cmds/subvolume.c b/cmds/subvolume.c
-index 8504c380..17fb23fb 100644
---- a/cmds/subvolume.c
-+++ b/cmds/subvolume.c
-@@ -136,7 +136,6 @@ static int cmd_subvolume_create(const struct cmd_struct *cmd, int argc, char **a
- 	char	*dstdir;
- 	char	*dst;
- 	struct btrfs_qgroup_inherit *inherit = NULL;
--	DIR	*dirstream = NULL;
- 	bool create_parents = false;
- 
- 	optind = 0;
-@@ -238,7 +237,7 @@ static int cmd_subvolume_create(const struct cmd_struct *cmd, int argc, char **a
- 		}
- 	}
- 
--	fddst = btrfs_open_dir(dstdir, &dirstream, 1);
-+	fddst = btrfs_open_dir_fd(dstdir);
- 	if (fddst < 0)
- 		goto out;
- 
-@@ -269,7 +268,7 @@ static int cmd_subvolume_create(const struct cmd_struct *cmd, int argc, char **a
- 
- 	retval = 0;	/* success */
- out:
--	close_file_or_dir(fddst, dirstream);
-+	close(fddst);
- 	free(inherit);
- 	free(dupname);
- 	free(dupdir);
-@@ -610,7 +609,6 @@ static int cmd_subvolume_snapshot(const struct cmd_struct *cmd, int argc, char *
- 	enum btrfs_util_error err;
- 	struct btrfs_ioctl_vol_args_v2	args;
- 	struct btrfs_qgroup_inherit *inherit = NULL;
--	DIR *dirstream1 = NULL, *dirstream2 = NULL;
- 
- 	memset(&args, 0, sizeof(args));
- 	optind = 0;
-@@ -697,11 +695,11 @@ static int cmd_subvolume_snapshot(const struct cmd_struct *cmd, int argc, char *
- 		goto out;
- 	}
- 
--	fddst = btrfs_open_dir(dstdir, &dirstream1, 1);
-+	fddst = btrfs_open_dir_fd(dstdir);
- 	if (fddst < 0)
- 		goto out;
- 
--	fd = btrfs_open_dir(subvol, &dirstream2, 1);
-+	fd = btrfs_open_dir_fd(subvol);
- 	if (fd < 0)
- 		goto out;
- 
-@@ -736,8 +734,8 @@ static int cmd_subvolume_snapshot(const struct cmd_struct *cmd, int argc, char *
- 	retval = 0;	/* success */
- 
- out:
--	close_file_or_dir(fddst, dirstream1);
--	close_file_or_dir(fd, dirstream2);
-+	close(fddst);
-+	close(fd);
- 	free(inherit);
- 	free(dupname);
- 	free(dupdir);
-@@ -761,7 +759,6 @@ static int cmd_subvolume_get_default(const struct cmd_struct *cmd, int argc, cha
- 	int fd = -1;
- 	int ret = 1;
- 	uint64_t default_id;
--	DIR *dirstream = NULL;
- 	enum btrfs_util_error err;
- 	struct btrfs_util_subvolume_info subvol;
- 	struct format_ctx fctx;
-@@ -772,7 +769,7 @@ static int cmd_subvolume_get_default(const struct cmd_struct *cmd, int argc, cha
- 	if (check_argc_exact(argc - optind, 1))
- 		return 1;
- 
--	fd = btrfs_open_dir(argv[1], &dirstream, 1);
-+	fd = btrfs_open_dir_fd(argv[1]);
- 	if (fd < 0)
- 		return 1;
- 
-@@ -824,7 +821,7 @@ static int cmd_subvolume_get_default(const struct cmd_struct *cmd, int argc, cha
- 
- 	ret = 0;
- out:
--	close_file_or_dir(fd, dirstream);
-+	close(fd);
- 	return ret;
- }
- #if EXPERIMENTAL
-@@ -1295,7 +1292,6 @@ static int cmd_subvolume_find_new(const struct cmd_struct *cmd, int argc, char *
- 	int ret;
- 	char *subvol;
- 	u64 last_gen;
--	DIR *dirstream = NULL;
- 	enum btrfs_util_error err;
- 
- 	clean_args_no_options(cmd, argc, argv);
-@@ -1312,19 +1308,19 @@ static int cmd_subvolume_find_new(const struct cmd_struct *cmd, int argc, char *
- 		return 1;
- 	}
- 
--	fd = btrfs_open_dir(subvol, &dirstream, 1);
-+	fd = btrfs_open_dir_fd(subvol);
- 	if (fd < 0)
- 		return 1;
- 
- 	err = btrfs_util_sync_fd(fd);
- 	if (err) {
- 		error_btrfs_util(err);
--		close_file_or_dir(fd, dirstream);
-+		close(fd);
- 		return 1;
- 	}
- 
- 	ret = btrfs_list_find_updated_files(fd, 0, last_gen);
--	close_file_or_dir(fd, dirstream);
-+	close(fd);
- 	return !!ret;
- }
- static DEFINE_SIMPLE_COMMAND(subvolume_find_new, "find-new");
-@@ -1721,7 +1717,6 @@ static int cmd_subvolume_sync(const struct cmd_struct *cmd, int argc, char **arg
- {
- 	int fd = -1;
- 	int ret = 1;
--	DIR *dirstream = NULL;
- 	uint64_t *ids = NULL;
- 	size_t id_count, i;
- 	int sleep_interval = 1;
-@@ -1751,7 +1746,7 @@ static int cmd_subvolume_sync(const struct cmd_struct *cmd, int argc, char **arg
- 	if (check_argc_min(argc - optind, 1))
- 		return 1;
- 
--	fd = btrfs_open_dir(argv[optind], &dirstream, 1);
-+	fd = btrfs_open_dir_fd(argv[optind]);
- 	if (fd < 0) {
- 		ret = 1;
- 		goto out;
-@@ -1804,7 +1799,7 @@ static int cmd_subvolume_sync(const struct cmd_struct *cmd, int argc, char **arg
- 
- out:
- 	free(ids);
--	close_file_or_dir(fd, dirstream);
-+	close(fd);
- 
- 	return !!ret;
- }
--- 
-2.43.0
+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
+SBugJZ66ww=3D=3D
+=3D/5yp
+-----END PGP PUBLIC KEY BLOCK-----
 
+--------------GvcMG5VA8KZBddarWOy9hEdY--
+
+--------------9Xr5MdSjhRuokWfP3gziTlHe--
+
+--------------IQ0eZQFN1TZ0gSR83IsG9gvN
+Content-Type: application/pgp-signature; name="OpenPGP_signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="OpenPGP_signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+wsB5BAABCAAjFiEELd9y5aWlW6idqkLhwj2R86El/qgFAmV014sFAwAAAAAACgkQwj2R86El/qiH
+ZAgAjGYy9rqns+I34Kwg0AK6dj3cDDdOfEkQ1XayvK7I2ZXtepCnlkdSLhlzK5692B+9mo6bJOX0
+FpL2s+2ll2S1/z0wYb0N09ZOfRAO37fpXTwXgwihl1ldTV3/a6dmLQqTpyuCtgtmydTUd1s4qXVW
+QeJvCroUz1zPZemwsbtc+x34LB9iSxW5cOjiq5oY5Z8RBCh639aElSMoNQD0JY/mg2dtlXml0Ncq
+vCGAPH1/RZf6mqlms7EFTGlNLam0CU0Lm3nke2aX8Y1Y76+QJq4AeBoOQq3rNQG9OeSQDOtt4C0m
+zZY6BEkam3tiWLSuoTq632cycSF2WdBIw1wycaApWA==
+=4SYI
+-----END PGP SIGNATURE-----
+
+--------------IQ0eZQFN1TZ0gSR83IsG9gvN--

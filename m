@@ -1,18 +1,31 @@
-Received: from verein.lst.de (verein.lst.de [213.95.11.211])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BD83AA5;
-	Wed, 13 Dec 2023 00:41:26 -0800 (PST)
-Received: by verein.lst.de (Postfix, from userid 2407)
-	id 5D36767373; Wed, 13 Dec 2023 09:41:23 +0100 (CET)
-Date: Wed, 13 Dec 2023 09:41:23 +0100
-From: Christoph Hellwig <hch@lst.de>
-To: Eric Biggers <ebiggers@kernel.org>
-Cc: linux-fsdevel@vger.kernel.org, linux-fscrypt@vger.kernel.org,
-	linux-btrfs@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
-	Josef Bacik <josef@toxicpanda.com>, Christoph Hellwig <hch@lst.de>,
-	Christian Brauner <brauner@kernel.org>
-Subject: Re: [PATCH 1/3] btrfs: call btrfs_close_devices from ->kill_sb
-Message-ID: <20231213084123.GA6184@lst.de>
-References: <20231213040018.73803-1-ebiggers@kernel.org> <20231213040018.73803-2-ebiggers@kernel.org>
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="QCb0AqSk"
+Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 36826E8;
+	Wed, 13 Dec 2023 00:49:38 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
+	:References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+	Content-Transfer-Encoding:Content-ID:Content-Description;
+	bh=I+dkvxeAcae4QrSyLPuuRO1x+IeiVhS+Knt3ouNUsYk=; b=QCb0AqSkp4xdsj2xNyFWhYHV+F
+	5D6njHGju8uCFzrj9nxpbiOXMeQsgpOyg4rX/SgXH69cD+nVAZROL904DvKZW8IVwEg8nmiakvXZx
+	MJ9zQAq7fRXDPAYCe5FYSx18oeCwfmD1XVCn1kWueFpbqhZfFV1d0/82E7r8X+pyOmFcNqUfphQYp
+	r92j0FLSF4jlcVBD8U/6GLKha1o03Z8DWeBOJTKp3o5IyUw8o3V39O5gv7B9H5ylR+ABXjI3IkToz
+	skDWmPOwgXvjjB99RtsCqDkHzjLs/M1qecbS/cqn2QOKllZZFo1MQtBbLARyE0g7KWWXPNOjqDmrG
+	eaKXiJPA==;
+Received: from hch by bombadil.infradead.org with local (Exim 4.96 #2 (Red Hat Linux))
+	id 1rDKvu-00E5Bt-0l;
+	Wed, 13 Dec 2023 08:49:34 +0000
+Date: Wed, 13 Dec 2023 00:49:34 -0800
+From: Christoph Hellwig <hch@infradead.org>
+To: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Cc: Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+	David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+Subject: Re: [PATCH 01/13] btrfs: factor out helper for single device IO check
+Message-ID: <ZXlwHgQpFTWxd7Ag@infradead.org>
+References: <20231212-btrfs_map_block-cleanup-v1-0-b2d954d9a55b@wdc.com>
+ <20231212-btrfs_map_block-cleanup-v1-1-b2d954d9a55b@wdc.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -21,31 +34,16 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20231213040018.73803-2-ebiggers@kernel.org>
-User-Agent: Mutt/1.5.17 (2007-11-01)
+In-Reply-To: <20231212-btrfs_map_block-cleanup-v1-1-b2d954d9a55b@wdc.com>
+X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 
-On Tue, Dec 12, 2023 at 08:00:16PM -0800, Eric Biggers wrote:
-> From: Christoph Hellwig <hch@lst.de>
+On Tue, Dec 12, 2023 at 04:37:59AM -0800, Johannes Thumshirn wrote:
+> The check in btrfs_map_block() deciding if a particular I/O is targeting a
+> single device is getting more and more convoluted.
 > 
-> blkdev_put must not be called under sb->s_umount to avoid a lock order
-> reversal with disk->open_mutex once call backs from block devices to
-> the file system using the holder ops are supported.  Move the call
-> to btrfs_close_devices into btrfs_free_fs_info so that it is closed
-> from ->kill_sb (which is also called from the mount failure handling
-> path unlike ->put_super) as well as when an fs_info is freed because
-> an existing superblock already exists.
+> Factor out the check conditions into a helper function, with no functional
+> change otherwise.
 
-Thanks, this looks roughly the same to what I have locally.
+Looks good:
 
-I did in fact forward port everything missing from the get_super
-series yesterday, but on my test setup btrfs/142 hangs even in the
-baseline setup.  I went back to Linux before giving up for now.
-
-Josef, any chane you could throw this branch:
-
-    git://git.infradead.org/users/hch/misc.git btrfs-holder
-
-into your CI setup and see if it sticks?  Except for the trivial last
-three patches this is basically what you reviewed already, although
-there was some heavy rebasing due to the mount API converison.
-
+Reviewed-by: Christoph Hellwig <hch@lst.de>

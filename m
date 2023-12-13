@@ -1,40 +1,40 @@
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="YEFxn6+6"
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="kmYLvyMj"
 Received: from esa4.hgst.iphmx.com (esa4.hgst.iphmx.com [216.71.154.42])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E7C26111;
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E9365113;
 	Wed, 13 Dec 2023 06:43:22 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
   t=1702478603; x=1734014603;
   h=from:date:subject:mime-version:content-transfer-encoding:
    message-id:references:in-reply-to:to:cc;
-  bh=e/guiXA3HBcKLNpRnItMMeCwjZTheHhEwP/jrp5atmY=;
-  b=YEFxn6+6IlKeT0YQC4cpeK0ELg1lr/xsOgW5A3XgKFt09X+KbQfDre3h
-   xVWfQTm+rFqSJ2aVK82dExss7co5KFERtMAECGzPm5K25+HTzIpWeQ/pp
-   0g2pi890oR/fcoNYUoTHktKX3eoN/iBqMRvapkoiV3sPcKZO7Tu6AztTP
-   B+J2DbjRLSR8OJh7imXZ78Pr4sX8DKRNpckvjFcty0N5vi6wafhP3ZqkE
-   VqvQRPG7gI1nCNxA90Jfn434o/vNV652rADDF/nuXAJG/LpdOmo2NNcWI
-   0akP7X7C+YR1BWxIeg8WQNSkJWqURufHbCnIhiPOSoU+ApwL3vv8ovO2x
+  bh=eZt1O9QucdaQ99WccyAeIMWXNVcbEm/Y3+q0saMB1e4=;
+  b=kmYLvyMjHizh3TsdZFSbhXlm77dPnp7ST3LJS+X5GkGe2otFHSVWRYL+
+   7eqU/aI7osADAFMyeWZqhliRcddSjsO6ygZ0fxSkJlmH8GO7rxc9Gb/RO
+   FjMp9o8RZROgNn96Al8nFe1QtKl0feUsDIxZiraf2L769r8PbYGmNwaSO
+   0DWhNKdiatwsCCAOp+WzrA5dKS6wDEmAT5ITjeZmaDm+IU3N/0ADBXfoF
+   qV0sfUJdb3k/TgkPN6xUSgnmAYmeY1XlLzwdVVnw8Z9sPV7oggYUG1J38
+   LCuDfWozEoBYw35YAxhCUrAit1ffdFVdDcrMkfSVimFR1al8t2uJhZmzn
    w==;
-X-CSE-ConnectionGUID: 3Rfrop7cQL+I8pt+OZDsgg==
-X-CSE-MsgGUID: NtmwwGUHSf+D2X5YTBQt0w==
+X-CSE-ConnectionGUID: UiNuIYSbTj+0pO70I3pRrw==
+X-CSE-MsgGUID: s9FO/aUeQkyvOyC0yD1ThQ==
 X-IronPort-AV: E=Sophos;i="6.04,272,1695657600"; 
-   d="scan'208";a="4580767"
+   d="scan'208";a="4580769"
 Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
   by ob1.hgst.iphmx.com with ESMTP; 13 Dec 2023 22:43:22 +0800
-IronPort-SDR: E3ko+KObtmN9TWOk2pjWdNbkx8lZGuD4z2YPFejS1loJAazcKfeP+3OJ0AtdU1lPoeKRM6ci/G
- VKdnn5BS/XuQ==
+IronPort-SDR: ctGPnXkYGwXbRolnSzBm89i7vg3m3zdNMdvCeF26KmMh2AR9p9+LPa4rDdMT5wdv/UUSlrssbX
+ yx9zFGXMjpAw==
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 13 Dec 2023 05:48:31 -0800
-IronPort-SDR: GdIZ5OuzcBMxPNwuIsC7fpMODao02c7yFLhY+nG/WPXU5q3TmOAJNaJaxsiCANvkOcy6gqcF+c
- nfFvpZLHs1LA==
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 13 Dec 2023 05:48:34 -0800
+IronPort-SDR: n1d5fkQCkaI8Fdxj7iL1ktPusJ8p+V4vkMrytCZTeuAigmV32ihbqQhQ8BM1D9HqUyagPCYDGp
+ NCmBpl3MpoCQ==
 WDCIronportException: Internal
 Received: from unknown (HELO redsun91.ssa.fujisawa.hgst.com) ([10.149.66.6])
-  by uls-op-cesaip02.wdc.com with ESMTP; 13 Dec 2023 06:43:19 -0800
+  by uls-op-cesaip02.wdc.com with ESMTP; 13 Dec 2023 06:43:21 -0800
 From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Date: Wed, 13 Dec 2023 06:43:05 -0800
-Subject: [PATCH v2 10/13] btrfs: btrfs: untagle if else maze in
- btrfs_map_block
+Date: Wed, 13 Dec 2023 06:43:07 -0800
+Subject: [PATCH v2 12/13] btrfs: pass struct btrfs_io_geometry to
+ set_io_stripe
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -43,82 +43,93 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-Message-Id: <20231213-btrfs_map_block-cleanup-v2-10-cf5cfb9e2400@wdc.com>
+Message-Id: <20231213-btrfs_map_block-cleanup-v2-12-cf5cfb9e2400@wdc.com>
 References: <20231213-btrfs_map_block-cleanup-v2-0-cf5cfb9e2400@wdc.com>
 In-Reply-To: <20231213-btrfs_map_block-cleanup-v2-0-cf5cfb9e2400@wdc.com>
 To: Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>, 
  David Sterba <dsterba@suse.com>
 Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, 
- Christoph Hellwig <hch@lst.de>, 
  Johannes Thumshirn <johannes.thumshirn@wdc.com>
 X-Mailer: b4 0.12.3
-X-Developer-Signature: v=1; a=ed25519-sha256; t=1702478586; l=2122;
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1702478586; l=2892;
  i=johannes.thumshirn@wdc.com; s=20230613; h=from:subject:message-id;
- bh=e/guiXA3HBcKLNpRnItMMeCwjZTheHhEwP/jrp5atmY=;
- b=4lWlvPgsM4isrIKCCNY0se1/2neTvCtcmnMZFfFbAQn0bacYYcdj2A4V6CHCxVwmCbEM8RHZG
- jvkhaRP43FxA3v5CAJstrbh3wAgHkxCOhW6ID2+ovZJHFPnZg22Pr1D
+ bh=eZt1O9QucdaQ99WccyAeIMWXNVcbEm/Y3+q0saMB1e4=;
+ b=g41Ospujk+QFP0sv8LXM/Gi1HPxraC4KaS5+vr9p2XRrIj+7JcgZIcoTnZd1cpUmQmL0imz3A
+ vWBspq5WS/UC5cvDkzyu03wXNWGML/vtQXAofqiYT/5bC46CRLtmDkj
 X-Developer-Key: i=johannes.thumshirn@wdc.com; a=ed25519;
  pk=TGmHKs78FdPi+QhrViEvjKIGwReUGCfa+3LEnGoR2KM=
 
-Untangle the if-else maze in btrfs_map_block into a switch statement,
-checking the different block-group profile types and call out into the
-per-profile block mapping helpers.
+Instead of passing three members of 'struct btrfs_io_geometry' into
+set_io_stripe() pass a pointer to the whole structure and then get the needed
+members out of btrfs_io_geometry.
 
-Reviewed-by: Christoph Hellwig <hch@lst.de>
 Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- fs/btrfs/volumes.c | 22 ++++++++++++++++------
- 1 file changed, 16 insertions(+), 6 deletions(-)
+ fs/btrfs/volumes.c | 33 ++++++++++++++++-----------------
+ 1 file changed, 16 insertions(+), 17 deletions(-)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index e23c7d2842a6..efb31c3005b7 100644
+index 5e4885a01796..440ac0c1c907 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -6578,28 +6578,38 @@ int btrfs_map_block(struct btrfs_fs_info *fs_info, enum btrfs_map_op op,
- 	if (!dev_replace_is_ongoing)
- 		up_read(&dev_replace->rwsem);
+@@ -6325,19 +6325,22 @@ static u64 btrfs_max_io_len(struct btrfs_chunk_map *map, enum btrfs_map_op op,
+ 	return U64_MAX;
+ }
  
--	if (map->type & BTRFS_BLOCK_GROUP_RAID0) {
-+	switch (map->type & BTRFS_BLOCK_GROUP_PROFILE_MASK) {
-+	case BTRFS_BLOCK_GROUP_RAID0:
- 		map_blocks_raid0(map, &io_geom);
--	} else if (map->type & BTRFS_BLOCK_GROUP_RAID1_MASK) {
-+		break;
-+	case BTRFS_BLOCK_GROUP_RAID1:
-+	case BTRFS_BLOCK_GROUP_RAID1C3:
-+	case BTRFS_BLOCK_GROUP_RAID1C4:
- 		map_blocks_raid1(fs_info, map, &io_geom,
- 				 dev_replace_is_ongoing);
--	} else if (map->type & BTRFS_BLOCK_GROUP_DUP) {
-+		break;
-+	case BTRFS_BLOCK_GROUP_DUP:
- 		map_blocks_dup(map, &io_geom);
--	} else if (map->type & BTRFS_BLOCK_GROUP_RAID10) {
-+		break;
-+	case BTRFS_BLOCK_GROUP_RAID10:
- 		map_blocks_raid10(fs_info, map, &io_geom,
- 				  dev_replace_is_ongoing);
--	} else if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
-+		break;
-+	case BTRFS_BLOCK_GROUP_RAID5:
-+	case BTRFS_BLOCK_GROUP_RAID6:
- 		if (op != BTRFS_MAP_READ || io_geom.mirror_num > 1)
- 			map_blocks_raid56_write(map, &io_geom, logical, length);
- 		else
- 			map_blocks_raid56_read(map, &io_geom);
--	} else {
-+		break;
-+	default:
- 		/*
- 		 * After this, stripe_nr is the number of stripes on this
- 		 * device we have to walk to find the data, and stripe_index is
- 		 * the number of our device in the stripe array
+-static int set_io_stripe(struct btrfs_fs_info *fs_info, enum btrfs_map_op op,
+-			 u64 logical, u64 *length, struct btrfs_io_stripe *dst,
+-			 struct btrfs_chunk_map *map, u32 stripe_index,
+-			 u64 stripe_offset, u64 stripe_nr)
++static int set_io_stripe(struct btrfs_fs_info *fs_info, u64 logical,
++			 u64 *length, struct btrfs_io_stripe *dst,
++			 struct btrfs_chunk_map *map,
++			 struct btrfs_io_geometry *io_geom)
+ {
+-	dst->dev = map->stripes[stripe_index].dev;
++	dst->dev = map->stripes[io_geom->stripe_index].dev;
+ 
+-	if (op == BTRFS_MAP_READ && btrfs_need_stripe_tree_update(fs_info, map->type))
++	if (io_geom->op == BTRFS_MAP_READ &&
++	    btrfs_need_stripe_tree_update(fs_info, map->type))
+ 		return btrfs_get_raid_extent_offset(fs_info, logical, length,
+-						    map->type, stripe_index, dst);
++						    map->type,
++						    io_geom->stripe_index, dst);
+ 
+-	dst->physical = map->stripes[stripe_index].physical +
+-			stripe_offset + btrfs_stripe_nr_to_offset(stripe_nr);
++	dst->physical = map->stripes[io_geom->stripe_index].physical +
++			io_geom->stripe_offset +
++			btrfs_stripe_nr_to_offset(io_geom->stripe_nr);
+ 	return 0;
+ }
+ 
+@@ -6638,9 +6641,8 @@ int btrfs_map_block(struct btrfs_fs_info *fs_info, enum btrfs_map_op op,
+ 	 */
+ 	if (is_single_device_io(fs_info, smap, map, num_alloc_stripes, op,
+ 			      io_geom.mirror_num)) {
+-		ret = set_io_stripe(fs_info, op, logical, length, smap, map,
+-				    io_geom.stripe_index, io_geom.stripe_offset,
+-				    io_geom.stripe_nr);
++		ret = set_io_stripe(fs_info, logical, length, smap, map,
++				    &io_geom);
+ 		if (mirror_num_ret)
+ 			*mirror_num_ret = io_geom.mirror_num;
+ 		*bioc_ret = NULL;
+@@ -6692,11 +6694,8 @@ int btrfs_map_block(struct btrfs_fs_info *fs_info, enum btrfs_map_op op,
+ 		 * stripe into the bioc.
  		 */
- 		map_blocks_single(map, &io_geom);
-+		break;
- 	}
- 	if (io_geom.stripe_index >= map->num_stripes) {
- 		btrfs_crit(fs_info,
+ 		for (i = 0; i < io_geom.num_stripes; i++) {
+-			ret = set_io_stripe(fs_info, op, logical, length,
+-					    &bioc->stripes[i], map,
+-					    io_geom.stripe_index,
+-					    io_geom.stripe_offset,
+-					    io_geom.stripe_nr);
++			ret = set_io_stripe(fs_info, logical, length,
++					    &bioc->stripes[i], map, &io_geom);
+ 			if (ret < 0)
+ 				break;
+ 			io_geom.stripe_index++;
 
 -- 
 2.43.0

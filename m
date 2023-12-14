@@ -1,55 +1,142 @@
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="VC8O7OZf"
-Received: from casper.infradead.org (casper.infradead.org [IPv6:2001:8b0:10b:1236::1])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4D0D8E8
-	for <linux-btrfs@vger.kernel.org>; Thu, 14 Dec 2023 08:13:46 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=infradead.org; s=casper.20170209; h=Content-Transfer-Encoding:MIME-Version:
-	Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:Content-Type:Content-ID:
-	Content-Description:In-Reply-To:References;
-	bh=1faX2j6ztTbgGq3oCx4KsuIdr8SFefn0me4AXBHGi0Q=; b=VC8O7OZfxWg8xU+f6xGfg5EY8v
-	WT52HshRTVndM/XZ0ZeOI7nmZi1f2YFgVk2a03IL6L3qEL+BZcnqPc0XAlJau6aZHiGz4tZC2808J
-	a+NszLtom/i6r2Kcjys8169sLm5O2wNh92l2A45qqQfYuFKjWuZKY6h8qyBai8XwiipN4MExXYFiK
-	wkR8s74hOkidB25RyE9h2bm2y415kAzTt59FpU8//tt3KRYNcV4pYIlGnwi9bgid54E7ep0h0zMtl
-	HUCtDjY1JfuVf8M3fSnXHmv/Vf3ulSDpGkrpuHIiVzFQ22XUF7rWUYWvG2T5cjHtTW40SIy8/LrDi
-	+0iTkP3g==;
-Received: from willy by casper.infradead.org with local (Exim 4.94.2 #2 (Red Hat Linux))
-	id 1rDoL6-008U8B-Ny; Thu, 14 Dec 2023 16:13:32 +0000
-From: "Matthew Wilcox (Oracle)" <willy@infradead.org>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: "Matthew Wilcox (Oracle)" <willy@infradead.org>,
-	Chris Mason <clm@fb.com>,
-	Josef Bacik <josef@toxicpanda.com>,
-	David Sterba <dsterba@suse.com>,
-	linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 0/3] Convert btrfs defrag to use folios
-Date: Thu, 14 Dec 2023 16:13:28 +0000
-Message-Id: <20231214161331.2022416-1-willy@infradead.org>
-X-Mailer: git-send-email 2.37.1
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="frEzd1YL";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="pNRnZzID";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="frEzd1YL";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="pNRnZzID"
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2a07:de40:b251:101:10:150:64:1])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7DF6CE8
+	for <linux-btrfs@vger.kernel.org>; Thu, 14 Dec 2023 08:18:00 -0800 (PST)
+Received: from imap2.dmz-prg2.suse.org (imap2.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:98])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id B4A7D21C78;
+	Thu, 14 Dec 2023 16:17:58 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1702570678;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=3oYDGU+DjAXL19mWHeqkjqYO32IPBsjpBPSQEXTuQwI=;
+	b=frEzd1YLVzxfELTiFtjeCYBsh2uWYZevY83G5/hmifiq6u0aGOdD64G8Psn1uK49nKZdlD
+	sZuZPOg+EqUK/dt5LqWecQgMRA5/rkoTYitA2QLfEyIFVMYuXI42nn0gW1wRcuZk4uCg27
+	88DsjUFFC6Ap4ihbuWphbg9oT+tWLos=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1702570678;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=3oYDGU+DjAXL19mWHeqkjqYO32IPBsjpBPSQEXTuQwI=;
+	b=pNRnZzIDrjWlIbdNmXG+WLgOHxxTHisS6AKl4bA7uJ229vk2kZlmChSCMwfE9IhVi1bcgV
+	BCAAK7trRYVo0/Cg==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1702570678;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=3oYDGU+DjAXL19mWHeqkjqYO32IPBsjpBPSQEXTuQwI=;
+	b=frEzd1YLVzxfELTiFtjeCYBsh2uWYZevY83G5/hmifiq6u0aGOdD64G8Psn1uK49nKZdlD
+	sZuZPOg+EqUK/dt5LqWecQgMRA5/rkoTYitA2QLfEyIFVMYuXI42nn0gW1wRcuZk4uCg27
+	88DsjUFFC6Ap4ihbuWphbg9oT+tWLos=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1702570678;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=3oYDGU+DjAXL19mWHeqkjqYO32IPBsjpBPSQEXTuQwI=;
+	b=pNRnZzIDrjWlIbdNmXG+WLgOHxxTHisS6AKl4bA7uJ229vk2kZlmChSCMwfE9IhVi1bcgV
+	BCAAK7trRYVo0/Cg==
+Received: from imap2.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap2.dmz-prg2.suse.org (Postfix) with ESMTPS id 86488138F2;
+	Thu, 14 Dec 2023 16:17:58 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([10.150.64.162])
+	by imap2.dmz-prg2.suse.org with ESMTPSA
+	id TPyDH7Yqe2U7OgAAn2gu4w
+	(envelope-from <dsterba@suse.cz>); Thu, 14 Dec 2023 16:17:58 +0000
+Date: Thu, 14 Dec 2023 17:17:49 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Goffredo Baroncelli <kreijack@libero.it>
+Cc: linux-btrfs@vger.kernel.org, Goffredo Baroncelli <kreijack@inwind.it>
+Subject: Re: [PATCH 0/9][btrfs-progs] Remove unused dirstream variable
+Message-ID: <20231214161749.GA9795@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <cover.1702148009.git.kreijack@inwind.it>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <cover.1702148009.git.kreijack@inwind.it>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-Spamd-Bar: ++++
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b=frEzd1YL;
+	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=pNRnZzID;
+	dmarc=none;
+	spf=softfail (smtp-out1.suse.de: 2a07:de40:b281:104:10:150:64:98 is neither permitted nor denied by domain of dsterba@suse.cz) smtp.mailfrom=dsterba@suse.cz
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Spamd-Result: default: False [4.60 / 50.00];
+	 HAS_REPLYTO(0.30)[dsterba@suse.cz];
+	 RCVD_VIA_SMTP_AUTH(0.00)[];
+	 R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	 ARC_NA(0.00)[];
+	 FROM_HAS_DN(0.00)[];
+	 RCPT_COUNT_THREE(0.00)[3];
+	 FREEMAIL_ENVRCPT(0.00)[inwind.it,libero.it];
+	 TO_MATCH_ENVRCPT_ALL(0.00)[];
+	 MIME_GOOD(-0.10)[text/plain];
+	 REPLYTO_ADDR_EQ_FROM(0.00)[];
+	 DMARC_NA(1.20)[suse.cz];
+	 TO_DN_SOME(0.00)[];
+	 R_SPF_SOFTFAIL(4.60)[~all];
+	 NEURAL_HAM_LONG(-1.00)[-1.000];
+	 RCVD_COUNT_THREE(0.00)[3];
+	 DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	 DKIM_TRACE(0.00)[suse.cz:+];
+	 MX_GOOD(-0.01)[];
+	 NEURAL_HAM_SHORT(-0.19)[-0.970];
+	 FREEMAIL_TO(0.00)[libero.it];
+	 FUZZY_BLOCKED(0.00)[rspamd.com];
+	 FROM_EQ_ENVFROM(0.00)[];
+	 MIME_TRACE(0.00)[0:+];
+	 FREEMAIL_CC(0.00)[vger.kernel.org,inwind.it];
+	 RCVD_TLS_ALL(0.00)[]
+X-Spam-Score: 4.60
+X-Rspamd-Queue-Id: B4A7D21C78
 
-Use the folio APIs throughout the defrag process.
+On Sat, Dec 09, 2023 at 07:53:20PM +0100, Goffredo Baroncelli wrote:
+> From: Goffredo Baroncelli <kreijack@inwind.it>
+> 
+> For historical reason, the helpers [btrfs_]open_[file_or_]dir() work with
+> directory returning the 'fd' and a 'dirstream' variable returned by
+> opendir(3).
+> 
+> If the path is a file, the 'fd' is computed from open(2) and
+> dirstream is set to NULL.
+> If the path is a directory, first the directory is opened by opendir(3), then
+> the 'fd' is computed using dirfd(3).
+> However the 'dirstream' returned by opendir(3) is left open until 'fd'
+> is not needed anymore.
+> 
+> In near every case the 'dirstream' variable is not used. Only 'fd' is
+> used.
 
-v2:
- - Add set_folio_extent_mapped()
- - Rebase to next-20231214
+As I'm reading dirfd manual page, dirfd returns the internal file
+descriptor of the dirstream and it gets closed after call to closedir().
+This means if we pass a directory and want a file descriptor then its
+lifetime matches the correspoinding DIR.
 
-Matthew Wilcox (Oracle) (3):
-  btrfs; Add set_folio_extent_mapped()
-  btrfs: Convert defrag_prepare_one_page() to use a folio
-  btrfs: Use a folio array throughout the defrag process
+> A call to close_file_or_dir() freed both 'fd' and 'dirstream'.
+> 
+> Aim of this patch set is to getrid of this complexity; when the path of
+> a directory is passed, the fd is get directly using open(path, O_RDONLY):
+> so we don't need to use readdir(3) and to maintain the not used variable
+> 'dirstream'.
 
- fs/btrfs/defrag.c    | 93 ++++++++++++++++++++++----------------------
- fs/btrfs/extent_io.c | 12 ++++--
- fs/btrfs/extent_io.h |  1 +
- 3 files changed, 55 insertions(+), 51 deletions(-)
-
--- 
-2.42.0
-
+Does this work the same way as with the dirstream?

@@ -1,82 +1,93 @@
-Received: from shout02.mail.de (shout02.mail.de [62.201.172.25])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-lf1-f54.google.com (mail-lf1-f54.google.com [209.85.167.54])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0B4E830641
-	for <linux-btrfs@vger.kernel.org>; Sat, 16 Dec 2023 14:52:47 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=mail.ch
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=mail.ch
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C92E62FE3A
+	for <linux-btrfs@vger.kernel.org>; Sat, 16 Dec 2023 16:45:29 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=mail.de header.i=@mail.de header.b="Ujopa9xC";
-	dkim=pass (1024-bit key) header.d=mail.ch header.i=@mail.ch header.b="LPtOtNJ4"
-Received: from postfix03.mail.de (postfix03.bt.mail.de [10.0.121.127])
-	by shout02.mail.de (Postfix) with ESMTP id 09204240D3F
-	for <linux-btrfs@vger.kernel.org>; Sat, 16 Dec 2023 15:47:40 +0100 (CET)
-Received: from smtp01.mail.de (smtp01.bt.mail.de [10.0.121.211])
-	by postfix03.mail.de (Postfix) with ESMTP id E249E80297
-	for <linux-btrfs@vger.kernel.org>; Sat, 16 Dec 2023 15:47:39 +0100 (CET)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=mail.de;
-	s=mailde202009; t=1702738059;
-	bh=HR/3ijSP+STrSZpiK4CSM52mZMVtuejeGd4xdnM5Wgw=;
-	h=Message-ID:Date:From:Subject:To:From:To:CC:Subject:Reply-To;
-	b=Ujopa9xC0NCuYAZJiUMtg/I1EfoE3Y/SlqIza0TP73SAfr+jcF0xdy9u3crNZrxcc
-	 tr6Nb78/vadJTpq44CGvrr5TZ8UgoEqps3J6c0HvvqBfB1zJHj+4/LtNo9DEsf6CCm
-	 lr2v14SRW8AIvPenvql6+cy6JFsegk686rDG/UVy/NhiEQQrH7cUcwQVkh9rIuUvcl
-	 rbcKI4uwrS7I/4O5tW1gRjz0+jNHpB8ROVPTxeTqyBZPmW4mBr5u+zklkjYCqByM0G
-	 n7kK40XJHIDLeSLmohTR1sIpU3tKHImi30nLHaQB1o4mRzBcsGMs6Mmo6bbACMgAHp
-	 XRjGZ2G+w1DuA==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=mail.ch;
-	s=mailch201610; t=1702738059;
-	bh=HR/3ijSP+STrSZpiK4CSM52mZMVtuejeGd4xdnM5Wgw=;
-	h=Message-ID:Date:From:Subject:To:From:To:CC:Subject:Reply-To;
-	b=LPtOtNJ4TRHZNhYwDS2KGK5lJ5oJ2wUQqSRVcBfSzG+cTvKYA6Fch22W64F919OTt
-	 oy/w1dDzaKN1rqiiWvPteHM4wA8FJPfSS3PDD4yDTr3fYni5VIvHQAj6d1sst3PFfG
-	 NHTzFCjEbjkeZSUfMr2ChfWYD4pZCVZv6pPh/XNU=
-Received: from [127.0.0.1] (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp01.mail.ch (Postfix) with ESMTPSA id A5C31240C83
-	for <linux-btrfs@vger.kernel.org>; Sat, 16 Dec 2023 15:47:39 +0100 (CET)
-Message-ID: <a41a77e3-95aa-450f-9712-c5681f8a8912@mail.ch>
-Date: Sat, 16 Dec 2023 15:47:37 +0100
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="DaRbNYXR"
+Received: by mail-lf1-f54.google.com with SMTP id 2adb3069b0e04-50e25e5a4easo244758e87.0
+        for <linux-btrfs@vger.kernel.org>; Sat, 16 Dec 2023 08:45:29 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1702745128; x=1703349928; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:from:references:to
+         :content-language:subject:user-agent:mime-version:date:message-id
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=hYgJqErR42aQ5FqRo4EvRhisC9A7K6XvNizFhteCsDk=;
+        b=DaRbNYXRQ4EoDH3JN0JYALnHaUQEXDHt1oq1z3XLni2O2v2CXW1uwUbOv9UAY9V2Wx
+         EsIGvRrWyNRiYw/1DoJ1Olm5lageNrQq7vlCY8OftG3ji+nviXGkCH1kDlDoYXOQ1yMG
+         TnHg8q0S/vNW4gxLDc5T24WE65q5/VOlIruX4gdMGhJ+3mFz/I1HhmIAHBJG6o/FI95j
+         HAwFZs0l1GNWw4FukM80cJhhec/vG6to1NmJTARjlxydPB3kKMX0uNmzO9WOIrARHm2T
+         C1Bz5z3VBoBF72Rk/VMqRnUSIEu1l20/gqq5/sAQO9kXvOdDHP3iI5DgOH8tlFP7GL91
+         vVZw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1702745128; x=1703349928;
+        h=content-transfer-encoding:in-reply-to:from:references:to
+         :content-language:subject:user-agent:mime-version:date:message-id
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=hYgJqErR42aQ5FqRo4EvRhisC9A7K6XvNizFhteCsDk=;
+        b=oOMYeIAVLXKAeqfMLHpG8oNTZPYyC5HiYLqoCwNVbLhOgkE9JsVxTjikbn+UgV92Gm
+         UulouLaQpmA7L3nMveOYC4sln0SsaKGuQByVduhw3Iwxl7FEoBqMg/9VoK2FWxuYjS4S
+         C/Vo9wxMdgee4+pWaUZTBv/BcjJlinpkZq6UbzfI/G37Hmg6mvWNbvGND5m2CeYddT4L
+         7gB0Z/pT35x7MzlvYOudeJKGsKH89eDhf8AI3fnEotP6OKnumbYcTC0UmSko0FTYbZsW
+         vtiUXYpq6mThVYgyWJRthfQNcTItHQEF317N+sKUqLdfdo21F6cbsF34CmcP4uU3x4gm
+         9JxA==
+X-Gm-Message-State: AOJu0YyZnN+kbfhj7MfUIaLNtqIquxSjTqthsqfrJ7/yiNz9JYhLSI74
+	8ddJ1MqU2cnufhbV1PUUP5gceUBIZyE=
+X-Google-Smtp-Source: AGHT+IGbpSmHhKhgc028XNtYSHE2SVib+PR12nLfHDQ5VS/vFM+2gTr4kkZFQ0/12//Y/61vSlLQgA==
+X-Received: by 2002:a05:6512:b26:b0:50e:18e0:697 with SMTP id w38-20020a0565120b2600b0050e18e00697mr4298283lfu.6.1702745127504;
+        Sat, 16 Dec 2023 08:45:27 -0800 (PST)
+Received: from ?IPV6:2a00:1370:8180:2474:5264:f1ab:8b82:c744? ([2a00:1370:8180:2474:5264:f1ab:8b82:c744])
+        by smtp.gmail.com with ESMTPSA id br21-20020a056512401500b0050bfcae9637sm2437639lfb.12.2023.12.16.08.45.27
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Sat, 16 Dec 2023 08:45:27 -0800 (PST)
+Message-ID: <a5699aee-0e36-4c4c-96b3-aaa04e6b74ea@gmail.com>
+Date: Sat, 16 Dec 2023 19:45:26 +0300
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Language: en-US
-From: thomas <thomas85@mail.ch>
-Subject: btrfs send subvolume from read-only mount with missing ro=true flag?
-To: linux-btrfs@vger.kernel.org
+User-Agent: Mozilla Thunderbird
+Subject: Re: btrfs send subvolume from read-only mount with missing ro=true
+ flag?
+Content-Language: en-US, ru-RU
+To: thomas <thomas85@mail.ch>, linux-btrfs@vger.kernel.org
+References: <a41a77e3-95aa-450f-9712-c5681f8a8912@mail.ch>
+From: Andrei Borzenkov <arvidjaar@gmail.com>
+In-Reply-To: <a41a77e3-95aa-450f-9712-c5681f8a8912@mail.ch>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 7bit
-X-purgate: clean
-X-purgate: This mail is considered clean (visit http://www.eleven.de for further information)
-X-purgate-type: clean
-X-purgate-Ad: Categorized by eleven eXpurgate (R) http://www.eleven.de
-X-purgate: This mail is considered clean (visit http://www.eleven.de for further information)
-X-purgate: clean
-X-purgate-size: 912
-X-purgate-ID: 154282::1702738059-23DBA670-F7B560F4/0/0
 
-I have a btrfs volume damaged (it seems beyond repair..) by writing to 
-it via an unstable USB connection which disconnected at a particularly 
-bad time it seems.
+On 16.12.2023 17:47, thomas wrote:
+> I have a btrfs volume damaged (it seems beyond repair..) by writing to
+> it via an unstable USB connection which disconnected at a particularly
+> bad time it seems.
+> 
+> I found I can still mount said volume in read-only mount using:
+> 
+> |mount -t btrfs -o ro,rescue=ignorebadroots,rescue=ignoredatacsums
+> /dev/ice /mnt/point |
+> 
+> Now I would have liked to copy some of the subvolumes from that damaged
+> volume over to a new one, but sadly |`btrfs send||`| disallows using
+> subvolumes that don't already have a ro=true flag on them, so only
+> read-only snapshots are allowed as source.
+> 
+> Can I somehow make |`btrfs send||`| believe that on a read-only mount
+> everything is guaranteed to be read-only, even if the subvolume does not
+> have that read-only flag? Sadly because I can only mount said damaged
+> btrfs volume in read-only mode I can't add the read-only flag to the
+> subvolumes I'd like to copy..
+> 
+> 
 
-I found I can still mount said volume in read-only mount using:
+Theoretically even if filesystem is mounted ro, it is possible to 
+remount it rw on the fly. So one would need to add some mutual exclusion 
+between "btrfs send" and "mount -o remount,rw". Not sure how difficult 
+it is or whether it is worth the troubles.
 
-|mount -t btrfs -o ro,rescue=ignorebadroots,rescue=ignoredatacsums 
-/dev/ice /mnt/point |
-
-Now I would have liked to copy some of the subvolumes from that damaged 
-volume over to a new one, but sadly |`btrfs send||`| disallows using 
-subvolumes that don't already have a ro=true flag on them, so only 
-read-only snapshots are allowed as source.
-
-Can I somehow make |`btrfs send||`| believe that on a read-only mount 
-everything is guaranteed to be read-only, even if the subvolume does not 
-have that read-only flag? Sadly because I can only mount said damaged 
-btrfs volume in read-only mode I can't add the read-only flag to the 
-subvolumes I'd like to copy..
-
+What is the exact reason to use "btrfs send" in this case? Why cannot 
+you simply archive the content and extract on new filesystem?

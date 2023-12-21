@@ -1,103 +1,108 @@
-Received: from dragonfly.birch.relay.mailchannels.net (dragonfly.birch.relay.mailchannels.net [23.83.209.51])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-vs1-f42.google.com (mail-vs1-f42.google.com [209.85.217.42])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 060BC360B5
-	for <linux-btrfs@vger.kernel.org>; Thu, 21 Dec 2023 14:05:12 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=scientia.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=scientia.org
-X-Sender-Id: instrampxe0y3a|x-authuser|calestyo@scientia.org
-Received: from relay.mailchannels.net (localhost [127.0.0.1])
-	by relay.mailchannels.net (Postfix) with ESMTP id 10C6E804B67;
-	Thu, 21 Dec 2023 13:46:54 +0000 (UTC)
-Received: from cpanel-007-fra.hostingww.com (unknown [127.0.0.6])
-	(Authenticated sender: instrampxe0y3a)
-	by relay.mailchannels.net (Postfix) with ESMTPA id DA885804A84;
-	Thu, 21 Dec 2023 13:46:48 +0000 (UTC)
-ARC-Seal: i=1; s=arc-2022; d=mailchannels.net; t=1703166409; a=rsa-sha256;
-	cv=none;
-	b=vR2SV30M9TJA0msqY2cmA4DDfCbMxnBDZwV+dM5EjvQrQRp1jcWyzREqDzbaRwZI073r2Z
-	3JtbjtvX1sNgMTd0EuCJQK/DB9fB2/Y8eiy932l9XtHXB9+GvYiQQuMmzCcj+17IRM3Nzx
-	a9r2Y8hv6sZ2KLMef9YQjbrh4t9Rq1uNhQXXz9Dp8HK+njJ2CHa9qdxjUDzkEULCnhm9CM
-	4La45i2E+jv/rmxZr1/nNzD8g1/Crhlbw8xEA2mWCjkUOzka8nF7DC2LyryPHywBe8DKOR
-	QG6onxlJCO0eQw4zVdErQCyrBwbJqfHnMZIPE+eMM0Reg8FTSom/n5QloJyYhQ==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed;
- d=mailchannels.net;
-	s=arc-2022; t=1703166409;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=KuH6PFzaTdchlc8pqXhx9NwSaXmYut5GrEzULZ8+spI=;
-	b=lnpXSYyYRHvuYbtrlYXpkNHTwk28KKsc7nsWBhXO5HosXNfnqjQEgHnUlFiuEj3PISYqfh
-	iZjnciQLiYt5Oo1xg/NXWHgnVfMNISDxdaEZqb3mgg3dEP0KMmvXGvehYjLSu6iGCCKwBf
-	5tnBgjXgLRO25bwrIEUx+3gSrDriyexyW2h628Dq0p2mRIQGZ1qWtK7Hz2iKM0WsfoXO0B
-	7M5FLuPa30s+WM7EjMLtLhTmYQm/q38XfSeXPlU1nDu+UgEU97bxthLcwpZNCCZHvGy2N8
-	b9FgPSj+fO5iEhdaZ4o6RHfG/MdAMqSaVW+YCNLvg+L5pILqHRpSvDFlHtyHSQ==
-ARC-Authentication-Results: i=1;
-	rspamd-856c7f878f-ds55r;
-	auth=pass smtp.auth=instrampxe0y3a smtp.mailfrom=calestyo@scientia.org
-X-Sender-Id: instrampxe0y3a|x-authuser|calestyo@scientia.org
-X-MC-Relay: Neutral
-X-MailChannels-SenderId: instrampxe0y3a|x-authuser|calestyo@scientia.org
-X-MailChannels-Auth-Id: instrampxe0y3a
-X-Well-Made-Skirt: 21bf68de6c506d39_1703166409810_3125382575
-X-MC-Loop-Signature: 1703166409810:981188549
-X-MC-Ingress-Time: 1703166409809
-Received: from cpanel-007-fra.hostingww.com (cpanel-007-fra.hostingww.com
- [3.69.87.180])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384)
-	by 100.108.178.186 (trex/6.9.2);
-	Thu, 21 Dec 2023 13:46:49 +0000
-Received: from dhcp-138-246-3-41.dynamic.eduroam.mwn.de ([138.246.3.41]:43602 helo=[10.183.50.88])
-	by cpanel-007-fra.hostingww.com with esmtpsa  (TLS1.2) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-	(Exim 4.96)
-	(envelope-from <calestyo@scientia.org>)
-	id 1rGJNt-0003c7-0g;
-	Thu, 21 Dec 2023 13:46:47 +0000
-Message-ID: <b47ed92f14edde7db5c1037a75b38652afa6c1c1.camel@scientia.org>
-Subject: Re: btrfs thinks fs is full, though 11GB should be still free
-From: Christoph Anton Mitterer <calestyo@scientia.org>
-To: Andrei Borzenkov <arvidjaar@gmail.com>
-Cc: kreijack@inwind.it, Qu Wenruo <quwenruo.btrfs@gmx.com>, 
-	linux-btrfs@vger.kernel.org
-Date: Thu, 21 Dec 2023 14:46:41 +0100
-In-Reply-To: <CAA91j0VNf9UQTYOn688eboGB_bw4YeKOXnKAt1uAYRZwYA3UPg@mail.gmail.com>
-References: <0f4a5a08fe9c4a6fe1bfcb0785691a7532abb958.camel@scientia.org>
-	 <253c6b4e-2b33-4892-8d6f-c0f783732cb6@gmx.com>
-	 <95692519c19990e9993d5a93985aab854289632a.camel@scientia.org>
-	 <656b69f7-d897-4e9d-babe-39727b8e3433@gmx.com>
-	 <cf65cb296cf4bca8abb0e1ee260436990bc9d3ca.camel@scientia.org>
-	 <f2dfb764-1356-4a3c-81e8-a2225f40fea5@gmx.com>
-	 <f1f3b0f2a48f9092ea54f05b0f6596c58370e0b2.camel@scientia.org>
-	 <3cfc3cdf-e6f2-400e-ac12-5ddb2840954d@gmx.com>
-	 <2d5838efc179a557b41c84e9ca9a608be6a159e8.camel@scientia.org>
-	 <9ce30564e238d1be0deafb8cab8968f800a8deaa.camel@scientia.org>
-	 <8a9b6743-37e6-4a71-9423-6ce5169959ac@gmx.com>
-	 <62e9ad23d4829f30600ea6e611d2cd4636f080cc.camel@scientia.org>
-	 <7acc8ea1-079d-42bb-8880-dbd9bbfa100b@libero.it>
-	 <fecad7ce2cea1ff125a842d8c53f1fbfe4f1d231.camel@scientia.org>
-	 <CAA91j0VNf9UQTYOn688eboGB_bw4YeKOXnKAt1uAYRZwYA3UPg@mail.gmail.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: base64
-User-Agent: Evolution 3.50.2-1 
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 68FA36D6D7;
+	Thu, 21 Dec 2023 14:54:48 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="fr/DFr0B"
+Received: by mail-vs1-f42.google.com with SMTP id ada2fe7eead31-4669068a20bso188487137.1;
+        Thu, 21 Dec 2023 06:54:48 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1703170487; x=1703775287; darn=vger.kernel.org;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=pURYtu0NLCnQlpjaLQBb3A9CXAcN65Ivjf7L8viYZIQ=;
+        b=fr/DFr0B2e2D5pVAdRa8efpUmsqmuL2g3QPZBhjlG3AKquL6JIi+P/pwiOurUM+Krp
+         E8jOaHtXIoPU+ASnXxD/WU+K/VNMfFPqrfUx6VQ0rRmT8Mr0p+L2bMgQ33KT1YBpanT5
+         7LW+1EkG89UMJ78nqCi0fjvxIugayr3H6l25dY2AWUI32pOCJnGtRXNP8lRmto9u4Cqs
+         aciB5LcgZsEoAN9oMA78JVOUCDvrhJIDbtKIQMEHh50OdbB0R7f2UVJMOOy5PqhCQzsS
+         xE2krxIQmkhbo+7kOqMqYuqO3ztnTdxpCUnTfodfTsslG18eVAluCR+r1lIebDLR/j+b
+         B7PA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1703170487; x=1703775287;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=pURYtu0NLCnQlpjaLQBb3A9CXAcN65Ivjf7L8viYZIQ=;
+        b=lMJq6webPomHaUSuC44KN+Y6mKw9tcqg9I7AXceK4Vfz31mvR/pofNbotUqLArlpJe
+         WSu45gjs9Apoy+Wrnz6g7k5yX93fLOjeAn8ZltZzmHsUG74N+l/q1z7IFVETso8YouHt
+         6Pg45PvHga0trHcwR6fb40c/uPoS/z5VNKUofjaUG8doHHYxriNCqtX+w6eISyhEk4qC
+         6HGl/PYDWD5jvLKUs9nLHf9hJVwTLv1OpJ05StG5XIzt0biLqlDGAtaRFQOmebLWnXS3
+         IpvGlxPQaHgZFNWK0SoJyCuGEFX50Lr44sSIqOph7QLFFytxw910U/L5DjX/Yoq47NuF
+         1Pog==
+X-Gm-Message-State: AOJu0YycRWFzlvy6n8Q6oniyXgpBkR93BXMRVhZsEh/zJqYpttIKdbKn
+	J6XmrZk/cIVA96ISUxyt1zxfHzcAuwXdM2XyVDc=
+X-Google-Smtp-Source: AGHT+IFN1NuYgs8WiPh35+AiECRKwSlqz0ZEDe3FqBLZ5rzeC9cKopqWDVql1xxie4BTiSGNKZ2Qkn8RU8vM8AW8lKI=
+X-Received: by 2002:a05:6102:2c19:b0:466:a0dd:4b2 with SMTP id
+ ie25-20020a0561022c1900b00466a0dd04b2mr1276429vsb.51.1703170487175; Thu, 21
+ Dec 2023 06:54:47 -0800 (PST)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-AuthUser: calestyo@scientia.org
+References: <20231221085712.1766333-1-yukuai1@huaweicloud.com> <20231221085839.1768763-1-yukuai1@huaweicloud.com>
+In-Reply-To: <20231221085839.1768763-1-yukuai1@huaweicloud.com>
+From: Ryusuke Konishi <konishi.ryusuke@gmail.com>
+Date: Thu, 21 Dec 2023 23:54:30 +0900
+Message-ID: <CAKFNMo=TuhzyEs_NEOdYgJz+UVizU6Ojx4ZKXowDaux3kKddUQ@mail.gmail.com>
+Subject: Re: [PATCH RFC v3 for-6.8/block 12/17] nilfs2: use bdev api in nilfs_attach_log_writer()
+To: Yu Kuai <yukuai1@huaweicloud.com>
+Cc: axboe@kernel.dk, roger.pau@citrix.com, colyli@suse.de, 
+	kent.overstreet@gmail.com, joern@lazybastard.org, miquel.raynal@bootlin.com, 
+	richard@nod.at, vigneshr@ti.com, sth@linux.ibm.com, hoeppner@linux.ibm.com, 
+	hca@linux.ibm.com, gor@linux.ibm.com, agordeev@linux.ibm.com, 
+	jejb@linux.ibm.com, martin.petersen@oracle.com, clm@fb.com, 
+	josef@toxicpanda.com, dsterba@suse.com, viro@zeniv.linux.org.uk, 
+	brauner@kernel.org, nico@fluxnic.net, xiang@kernel.org, chao@kernel.org, 
+	tytso@mit.edu, adilger.kernel@dilger.ca, jack@suse.com, willy@infradead.org, 
+	akpm@linux-foundation.org, hare@suse.de, p.raghav@samsung.com, 
+	linux-block@vger.kernel.org, linux-kernel@vger.kernel.org, 
+	xen-devel@lists.xenproject.org, linux-bcache@vger.kernel.org, 
+	linux-mtd@lists.infradead.org, linux-s390@vger.kernel.org, 
+	linux-scsi@vger.kernel.org, linux-bcachefs@vger.kernel.org, 
+	linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
+	linux-erofs@lists.ozlabs.org, linux-ext4@vger.kernel.org, 
+	linux-nilfs@vger.kernel.org, yukuai3@huawei.com, yi.zhang@huawei.com, 
+	yangerkun@huawei.com
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-T24gVHVlLCAyMDIzLTEyLTE5IGF0IDExOjIyICswMzAwLCBBbmRyZWkgQm9yemVua292IHdyb3Rl
-Ogo+IC9kYXRhL21haW4vcHJvbWV0aGV1cy9tZXRyaWNzMi8wMUhIRkVaUEo4VFBGVllUWFYxMVI3
-Wkg0WC9jaHVua3MvMDAwMAo+IDAxCj4gUHJvY2Vzc2VkIDEgZmlsZSwgMSByZWd1bGFyIGV4dGVu
-dHMgKDEgcmVmcyksIDAgaW5saW5lLgo+IFR5cGXCoMKgwqDCoMKgwqAgUGVyY8KgwqDCoMKgIERp
-c2sgVXNhZ2XCoMKgIFVuY29tcHJlc3NlZCBSZWZlcmVuY2VkCj4gVE9UQUzCoMKgwqDCoMKgIDEw
-MCXCoMKgwqDCoMKgIDI1Nk3CoMKgwqDCoMKgwqDCoMKgIDI1Nk3CoMKgwqDCoMKgwqDCoMKgwqAg
-MTVNCj4gbm9uZcKgwqDCoMKgwqDCoCAxMDAlwqDCoMKgwqDCoCAyNTZNwqDCoMKgwqDCoMKgwqDC
-oCAyNTZNwqDCoMKgwqDCoMKgwqDCoMKgIDE1TQo+IAo+IEkgd291bGQgdHJ5IHRvIGZpbmQgb3V0
-IHdoZXRoZXIgdGhpcyBzaW5nbGUgZXh0ZW50IGlzIHNoYXJlZCwgd2hlcmUKPiB0aGUgZGF0YSBp
-cyBsb2NhdGVkIGluc2lkZSB0aGlzIGV4dGVudC4gQ291bGQgaXQgYmUgdGhhdCBmaWxlIHdhcwo+
-IHRydW5jYXRlZCBvciB0aGUgaG9sZSB3YXMgcHVuY2hlZCBpbiBpdD8KCkhvdyB3b3VsZCBJIGRv
-IHRoYXQ/IDotKQoKVGhhbmtzLApDaHJpcy4K
+On Thu, Dec 21, 2023 at 6:00=E2=80=AFPM Yu Kuai wrote:
+>
+> From: Yu Kuai <yukuai3@huawei.com>
+>
+> Avoid to access bd_inode directly, prepare to remove bd_inode from
+> block_device.
+>
+> Signed-off-by: Yu Kuai <yukuai3@huawei.com>
+> ---
+>  fs/nilfs2/segment.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+>
+> diff --git a/fs/nilfs2/segment.c b/fs/nilfs2/segment.c
+> index 55e31cc903d1..a1130e384937 100644
+> --- a/fs/nilfs2/segment.c
+> +++ b/fs/nilfs2/segment.c
+> @@ -2823,7 +2823,7 @@ int nilfs_attach_log_writer(struct super_block *sb,=
+ struct nilfs_root *root)
+>         if (!nilfs->ns_writer)
+>                 return -ENOMEM;
+>
+> -       inode_attach_wb(nilfs->ns_bdev->bd_inode, NULL);
+> +       bdev_attach_wb(nilfs->ns_bdev);
+>
+>         err =3D nilfs_segctor_start_thread(nilfs->ns_writer);
+>         if (unlikely(err))
+> --
+> 2.39.2
+>
 
+Acked-by: Ryusuke Konishi <konishi.ryusuke@gmail.com>
+
+Thanks,
+Ryusuke Konishi

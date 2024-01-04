@@ -1,74 +1,75 @@
-Received: from mx0a-00069f02.pphosted.com (mx0a-00069f02.pphosted.com [205.220.165.32])
+Received: from mx0b-00069f02.pphosted.com (mx0b-00069f02.pphosted.com [205.220.177.32])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 453591DFDA;
-	Thu,  4 Jan 2024 05:49:47 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E6B791F95F;
+	Thu,  4 Jan 2024 05:49:52 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=oracle.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=oracle.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="VyT33t0G";
-	dkim=pass (1024-bit key) header.d=oracle.onmicrosoft.com header.i=@oracle.onmicrosoft.com header.b="pjBfdKIk"
-Received: from pps.filterd (m0246627.ppops.net [127.0.0.1])
-	by mx0b-00069f02.pphosted.com (8.17.1.19/8.17.1.19) with ESMTP id 40433ojp006640;
-	Thu, 4 Jan 2024 05:49:44 GMT
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="Nvox5sYR";
+	dkim=pass (1024-bit key) header.d=oracle.onmicrosoft.com header.i=@oracle.onmicrosoft.com header.b="LVJBBpvz"
+Received: from pps.filterd (m0246632.ppops.net [127.0.0.1])
+	by mx0b-00069f02.pphosted.com (8.17.1.19/8.17.1.19) with ESMTP id 403MLgci001984;
+	Thu, 4 Jan 2024 05:49:50 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
  subject : date : message-id : in-reply-to : references :
  content-transfer-encoding : content-type : mime-version;
- s=corp-2023-11-20; bh=VT/WXzOhC0mvXN7mFGMtAg1qZxAlXLSxYBoljRC9WmI=;
- b=VyT33t0GIuUx5vJNpmqAQ/Rvx6ndBQVod1xiKgNAtTTsIbmJCJz2BAEKinXK5eOnyDkg
- 2NWuw07+kPChc/x9PZ7vMbjg6ydyqY1Gz6VtCWFhUC1xhT9oj+y8ie/KaEFQTEF1Zlqd
- kiWMsZUtg9b9lHfw/gAGiPKav72mZnCQouNX30DRm2c+fYPpv3MIDgTg8oQMkwf/OPCG
- 9UV1RDXZcM7V7xqSja3X3/R4FpL2skwZZxPmL+u4K8jkQgjr4K4Yg1gj4ZQ6HJyA/Ma7
- LmwvjyKfGfEQJh7aHWmpEPohbNiRBYjcJD3Dt2Cf996rAbp1QRbJHBchG/49XMCx2zVt Ig== 
-Received: from iadpaimrmta02.imrmtpd1.prodappiadaev1.oraclevcn.com (iadpaimrmta02.appoci.oracle.com [147.154.18.20])
-	by mx0b-00069f02.pphosted.com (PPS) with ESMTPS id 3va9t26fe0-1
+ s=corp-2023-11-20; bh=1gcqeyqRrXesq0iCHCTMjAS18ugSCsKZSJGsyOu/FFE=;
+ b=Nvox5sYRla8mo2G2j9q2MRlQmPl1crzWWvxDrty2zT3CEgDtGxUmfVQfRsY77FUdm/pa
+ iWD6EUXwfd5rxLjivFsCaG5mA28P5FEJlZlRtAzlpX+nBVsvh2ehm9zR1mQ1Bjj0pxmH
+ +zA4deGAxXVX7RP3zCJG+L2ydMOwsPwOOx6WmZ8dDA9ju8HurEMktfk2DAI0owo04pzM
+ NrY2NFNHiS+6BDdk02/uMYusU/PIDtw/Kse1GFlPKqEX3gmHoLU5YJMppZ2UAqfEstXF
+ LAMKCOUpcb61uFIstQzV0ypIRAnS+plxL0EbViFmpoiLY2hgKTXyjOq45NxnP5nrK8Z+ og== 
+Received: from phxpaimrmta01.imrmtpd1.prodappphxaev1.oraclevcn.com (phxpaimrmta01.appoci.oracle.com [138.1.114.2])
+	by mx0b-00069f02.pphosted.com (PPS) with ESMTPS id 3vaatu6bqr-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Thu, 04 Jan 2024 05:49:43 +0000
-Received: from pps.filterd (iadpaimrmta02.imrmtpd1.prodappiadaev1.oraclevcn.com [127.0.0.1])
-	by iadpaimrmta02.imrmtpd1.prodappiadaev1.oraclevcn.com (8.17.1.19/8.17.1.19) with ESMTP id 4045lcoK015771;
-	Thu, 4 Jan 2024 05:49:42 GMT
+	Thu, 04 Jan 2024 05:49:50 +0000
+Received: from pps.filterd (phxpaimrmta01.imrmtpd1.prodappphxaev1.oraclevcn.com [127.0.0.1])
+	by phxpaimrmta01.imrmtpd1.prodappphxaev1.oraclevcn.com (8.17.1.19/8.17.1.19) with ESMTP id 4045mfTI014824;
+	Thu, 4 Jan 2024 05:49:49 GMT
 Received: from nam12-mw2-obe.outbound.protection.outlook.com (mail-mw2nam12lp2041.outbound.protection.outlook.com [104.47.66.41])
-	by iadpaimrmta02.imrmtpd1.prodappiadaev1.oraclevcn.com (PPS) with ESMTPS id 3vdpudg1r6-7
+	by phxpaimrmta01.imrmtpd1.prodappphxaev1.oraclevcn.com (PPS) with ESMTPS id 3vdpkc18c4-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Thu, 04 Jan 2024 05:49:42 +0000
+	Thu, 04 Jan 2024 05:49:48 +0000
 ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
- b=lfW4i7HQOOAZsR8SNTbnUW6EKjVGEMXpLidrORMv2JTpMXLZcXlUCzaLvJ0qalknyXeKfwG8+BfSGcHWIjt/XNy/rXzSqdWxud/DOrhD41oYSvNX3jt9qS4Otn5J1q/LrXtLrPbC/mbJmws3Y9QOPtCTexVL63/iQ0dGbsyi4LoR3rap7MIpdfMZaTlKkeipld7gZYXdmWbTyA/37vGDYczrzmm1fyF4cBBvMKg/tLSolQvTQOhpMUuoC+a3nFG8vbeW3qTpb6xPffTqsVD0vWR6DE0hNtXFmUIwjbzplEGMMaIm7PTo+tCE4eHsuPDDLOMN+JLNxO0TtTZSQfxIcw==
+ b=Eu7+vHUXNs9GKYrBRnII5J1X6u0BFIjV6pHE9jlUQxqeXHAwc845U4568O+twJY5Jdr6KTB1QSmGg37UfT4VIIxgE+LAO785AT6Pha5hDZpg5Os1IBVgqPaFUJB/w4TP2qzDupxFr26iuObAQomEeYQp8PEtOxtYbPtIL1BOL2+uM9H42CaH4AJ4yvFAwGBt75MuzzSrkPvUm5psz8U24i/fCQScNixgo5yHRTj8aBPuqfGkYhgJqelN4jieWQfQSbkhCl0H8CCyyBepgk4LQnLQBpp7qzfKjkDccZrvvqq2fcHMaqw3Tt6WH1OqKNntd8OfA2Aky0K+jEjzK7mEpw==
 ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
  s=arcselector9901;
  h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
- bh=VT/WXzOhC0mvXN7mFGMtAg1qZxAlXLSxYBoljRC9WmI=;
- b=Mj46DZk0BpvErBJx+A9c3xb8sBRDdR/VQ5l4App2O2qZgcz5ApGRHFlHArPNrD477MzdKj1OXR+abuSSJmw6ri7g7WPYmJnXedC0DeUX1uNSQWtW5eDkZn67jre1zqYuR577ZiRA7uYdtxfui8iHEkXTXdIyr2h88JDMyIgJSpxg6sMG/5rp8GeXihFgEBSDpj7+nerKCP3pVhF3QfwJUF9rkpfUItOdNT1ZhIsY+XuBgY1FOHjVCqIacDUuKY30nWBra/kietHHNfsvdcvHIDZcu/oorVNzgIm6Flkm9FuZEBTKBmnKKGL2vsHw7xZwyw/F/E4ybacmNwMzR/3AvQ==
+ bh=1gcqeyqRrXesq0iCHCTMjAS18ugSCsKZSJGsyOu/FFE=;
+ b=NjpglMR6xF+dQB+WWtUjQbmhMSE/zw07FhTEFHDyHfnw0YgDeDaqDUel+RIpVs0nSfQ44cuu2GkWcpIn5KpFxVyLOjHJdKV7HtMlBOtXxGRyiHmaUKUp5MsDGXhKIS9t+J1osV2K9mVWMyEJDt4puXWUhvwhs11+b58J/9KCg4ugWyXqtyTTc3gCHqIjEp4wlnTj663v7rfodHH6SCxy1hEeVVovQYe2LOeAkEDj/yzX0SzTECmTsmVGWiwCwHmkvmTlaDDFFa6aNfW1AjjuM9Syx53J6qV1K8loW2CB9SYauybXu7NUxKtZ79zMQk+KwWYBRxxMcc/T+2pQGJa0Wg==
 ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
  smtp.mailfrom=oracle.com; dmarc=pass action=none header.from=oracle.com;
  dkim=pass header.d=oracle.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=oracle.onmicrosoft.com; s=selector2-oracle-onmicrosoft-com;
  h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=VT/WXzOhC0mvXN7mFGMtAg1qZxAlXLSxYBoljRC9WmI=;
- b=pjBfdKIk6F3u/McJVD3Tg6QpVORizIeHoYZPHIblQOLPHVnSSvKxQAk+Ahi1FuZ+VnxDdp1o9ddB4p7T25NIrBfne5UM76BeoiEhuwOJP44oHRZ+Ca1/UV3ZN5UWBlyLVD3SRIOnadMnErYE5xKn5I7Grumo8yFJJtjthztESZo=
+ bh=1gcqeyqRrXesq0iCHCTMjAS18ugSCsKZSJGsyOu/FFE=;
+ b=LVJBBpvz3EgtLd3lEPqCDSFTwT5oXGIAcXsJrpZT6vu2SmUbpmENATky7mvu241A3lt8HuyzBq11wRFv1wOjuz8DWDZIT0M8Bi8nqvsXkPKhdwFdAslVau3x6UZCP8XwwzuFml8IZPKN0uAQJP1kL4NiGT8cQhzFefRxD8hwI1k=
 Received: from PH0PR10MB5706.namprd10.prod.outlook.com (2603:10b6:510:148::10)
  by PH0PR10MB5611.namprd10.prod.outlook.com (2603:10b6:510:f9::16) with
  Microsoft SMTP Server (version=TLS1_2,
  cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.7159.13; Thu, 4 Jan
- 2024 05:49:11 +0000
+ 2024 05:48:45 +0000
 Received: from PH0PR10MB5706.namprd10.prod.outlook.com
  ([fe80::2000:9c78:19f5:176a]) by PH0PR10MB5706.namprd10.prod.outlook.com
  ([fe80::2000:9c78:19f5:176a%3]) with mapi id 15.20.7135.023; Thu, 4 Jan 2024
- 05:49:11 +0000
+ 05:48:45 +0000
 From: Anand Jain <anand.jain@oracle.com>
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, johannes.thumshirn@wdc.com,
         fdmanana@kernel.org
-Subject: [PATCH v8 10/10] btrfs: add fstest for overwriting a file partially with RST
-Date: Thu,  4 Jan 2024 11:18:16 +0530
-Message-Id: <268a2a2a0e389e4de088a4d85ea4dfdd91bf11ea.1704344811.git.anand.jain@oracle.com>
+Subject: [PATCH v8 04/10] common: add _filter_trailing_whitespace
+Date: Thu,  4 Jan 2024 11:18:10 +0530
+Message-Id: <6f15c20d955e7a0bd57c5647ad0f6548af43fd2e.1704344811.git.anand.jain@oracle.com>
 X-Mailer: git-send-email 2.38.1
 In-Reply-To: <cover.1704344811.git.anand.jain@oracle.com>
 References: <cover.1704344811.git.anand.jain@oracle.com>
 Content-Transfer-Encoding: 8bit
 Content-Type: text/plain
-X-ClientProxiedBy: SI2P153CA0023.APCP153.PROD.OUTLOOK.COM (2603:1096:4:190::6)
- To PH0PR10MB5706.namprd10.prod.outlook.com (2603:10b6:510:148::10)
+X-ClientProxiedBy: SI2PR01CA0030.apcprd01.prod.exchangelabs.com
+ (2603:1096:4:192::15) To PH0PR10MB5706.namprd10.prod.outlook.com
+ (2603:10b6:510:148::10)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -77,265 +78,91 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 X-MS-PublicTrafficType: Email
 X-MS-TrafficTypeDiagnostic: PH0PR10MB5706:EE_|PH0PR10MB5611:EE_
-X-MS-Office365-Filtering-Correlation-Id: 5ae21a44-7371-431f-8a65-08dc0ce8dfea
+X-MS-Office365-Filtering-Correlation-Id: 6ecf88ba-41d0-4c4c-b5f9-08dc0ce8d080
 X-MS-Exchange-SenderADCheck: 1
 X-MS-Exchange-AntiSpam-Relay: 0
 X-Microsoft-Antispam: BCL:0;
 X-Microsoft-Antispam-Message-Info: 
-	G/boUEa8iSdVYIlg7zppgUDOct6ASSNnBlOl52J76gxK4Ni4dca1n5fXNSyfMYfdCUF0LdrFc8c6/IhPH70vAC//7s7vmMKj78TwWvumMLxU1fqTAH8r/uSy5O+pP9jUBW9KAFsBVlAEklvXAMqt3xvbyNFY3zCgApHd9nvSOWiLXgdPZcalqmFEt/Hvpgd2LT0dH8eCDjsOePNb0fTNXyBizehXUmMxg2J2czH7X8pkoRfgCWo+gNS0LkiIViIcrLAHpbiGuW30gt4N3SdBp3QSP3mvf4wbUDeFpMeyU5IG9Dj2GfNC+0DL4XhFL/lpQ50bjgUm0G6OyIUWYVnYEPLMsLADyd5KR9J+0MvPzXN+Zd0jH78jgTC1Akgczbg0E2OBua6J82bTjxwaMglfHPlpVbsWxfkJV2zl3aW6lKrvx7bh2Hb5c47oWNifMY9V5X8CvfqgdEADiwtsUk5wbd9GJYF4k9SrHs6L+0VnWbUDRZ67YtZtBOn1Zp0PoxQt3LgO84Dgzyk3tMVOVntwcu7rg49Abugbyq/J0xpsYtNiuCBEfgF5eW4yPPgPRO3po0nQJi7Npa3D+zkFtIf9E02voJ8Rc3FYBIYb61tmBdA=
+	5iwv3z8ZfqSnyGTVn4vgS3mQMVU1apgQD8KwT/30gWKDPMNqWf+J0j/eakwOubFcnNSQIIILA2+d1KrhT/ycotIYskP/OxT9CIDbZOTcC3FENoKTgsKYtVicIQ96sdH8c7i/ostre2dCEKOwxwmtqTIQ1EbsDAagHZ72feyprMzg88hFLCc5in73nQ8qePO6iW2uQC3AdkfqZ569rdEkXHcJpGEG/t7GuJbHefs7jW1MrWtbHdKqcJPFZzOC/yujyvShQUPUQkuAb/vo4Bm19afwHeh8NAsKgl09Vr4MEkAPa37fvpLmSq6qbOXWuePzEUpHMz9Q9nlgVzCIZk61Mkoya8dQtwMHmh3sTx5fVYgTNaDr4X+5mcE7/XGX0VHn9KOFd+PPnxJrmrtmUQzU+7Xwnz2tV6+fBPbhxNGMrNECL8PrUHmf81PslP4OgawyZ5Azx4+8h6rV5csnyRjRNhuuKzyD8Had7xe4b4qD0mKUaO0Yb5Wi3Q1Ydyp6++qwWS9LFZuhPOuF6lkrJXHoSu45la7pmylltfkhJKIoeYmfE4iLbwD3iRXKyPORfDRx
 X-Forefront-Antispam-Report: 
-	CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:PH0PR10MB5706.namprd10.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230031)(376002)(136003)(346002)(39860400002)(366004)(396003)(230922051799003)(186009)(64100799003)(1800799012)(451199024)(5660300002)(2906002)(4326008)(316002)(8936002)(8676002)(66556008)(66476007)(6916009)(66946007)(44832011)(2616005)(26005)(6512007)(41300700001)(38100700002)(36756003)(86362001)(6506007)(478600001)(6486002)(21314003);DIR:OUT;SFP:1101;
+	CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:PH0PR10MB5706.namprd10.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230031)(376002)(136003)(346002)(39860400002)(366004)(396003)(230922051799003)(186009)(64100799003)(1800799012)(451199024)(5660300002)(4744005)(2906002)(4326008)(316002)(8936002)(8676002)(66556008)(66476007)(6916009)(66946007)(44832011)(2616005)(26005)(6512007)(41300700001)(38100700002)(36756003)(86362001)(6506007)(6666004)(478600001)(6486002);DIR:OUT;SFP:1101;
 X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
 X-MS-Exchange-AntiSpam-MessageData-0: 
-	=?us-ascii?Q?mU2mfpkKA00J1nTm+HJeASM9cb6GvC2ztT/Qo/DLfl06RmhSKQSMCb42P/jM?=
- =?us-ascii?Q?IvlYN0gyU3u+FQ2dGQGqgxhdooCp80Vc6EIi5vhggJFiRZHRW7OOfYRL/aAx?=
- =?us-ascii?Q?IKev3RsA8vvRKKyOGdScmUP+emdZugSXTTkF6EEbKEQp0xyGjQAxk+47pjS+?=
- =?us-ascii?Q?snH1iVnMKPl5+MstI+66FCrlwo+MngK99coJ8eihi7gID3wGtQYQK69hbbJw?=
- =?us-ascii?Q?heN7dAF+6fT96HJAfnHs/jEUaj2BSBkUf8FIopetTOBpPoo1LGhKYRCJWntU?=
- =?us-ascii?Q?yohW+u9GwEsJqAD5f9gTm9+tdmZVSND6Bap2OFRRFgMtPIOz4jcUCq0XhZcN?=
- =?us-ascii?Q?B0AyJDhh383x9IABKD1XCadqEs5953k8V2ZSeARfwVjr0pw1qSnLMZtCCxN8?=
- =?us-ascii?Q?V/Exmpi4ziDrS3M4p0kwcDJdT4aHozAOr4c/FC1sj9wT8U4UN/JT1MYAmET6?=
- =?us-ascii?Q?I5CeueDAiZxBHirmEGDZcCbMJ8MEJxKvVD9R6JJ4H0ikrpkOuL9o14vsabgn?=
- =?us-ascii?Q?mIBoiOm1tr9HuzNqYxOb4hMgXX2f41qKGX9agvGxCIbyLWx+9VdyRQTGgn1N?=
- =?us-ascii?Q?FGE3rQOr7lpaMTz2eyqO2AKfDQ/cqwpPFs4Shkm0Sb2at5Ukau+U3nluwSMc?=
- =?us-ascii?Q?zi5Z8dzAaiAv508uBRT3BIltWFoXfG/ZyDKRFEse2EKZ5wNH64GHgYsdjmHB?=
- =?us-ascii?Q?V4veQNW9PeiiYCl/oO7pptxtqD3SXjDtQok64lYQma4dQMqscY8B/xgscQ6I?=
- =?us-ascii?Q?wvxE2qmP5hNETzMQSqMIl2q99VA9PbBiT4zoDsNOFPbmJg2Y/23nxzV6A2BV?=
- =?us-ascii?Q?oA68/jTuQGu7wrBVzAcQQm5ZA3xhvXCsxtOhLHM4r01dHR+DHsvzfkSRZw6b?=
- =?us-ascii?Q?Lv8EoQntsh7GqfdXmdj9ojxXu9+gYqipzpWZMaOX03ceSL2nx3tXwoq6ghMq?=
- =?us-ascii?Q?QCkr24FDzoZvNkAtO5SE71na6ERX8otApuE1y+v49GevEKpr5f//VHEAVgOq?=
- =?us-ascii?Q?HLMJnrCA3rpls5tZjCu+fg6TCx0nESbRZ3ZsOmSWkCyXEeI5joBLrWEiBdc3?=
- =?us-ascii?Q?hhHqhNdSGRhS94oACaqCZTiy0cJQ3EPSDz6yEyiIhE5sp9RqODLcOrOr/QoL?=
- =?us-ascii?Q?WevZE96AaO4LnDq6YZ+uihjOeWosaOaixJ4Vp9DLS8M9HIo8EDcbhHiQ27nb?=
- =?us-ascii?Q?12SFSQeo0GlBIkZcIwieOAYvdO9TCvc4/rtfzWbOr67eR2q/MokDCaReO21O?=
- =?us-ascii?Q?hN3EJnX32wbD60fyoNZjy5U2BzNKYlH9Xz6NfwNme3/32DCL3lMVrziA+alq?=
- =?us-ascii?Q?yJLbDuf2l0MbxfJtsGb+kBnvTyB1Y8QGwiSI2xGPT+3Jg74tSx8bk6h9BEcW?=
- =?us-ascii?Q?6LB5+ykDoDFRiYL8GmN5bscy2YsNJwFjxUPVQBJKIePGi3VRu2qSgxTYHBac?=
- =?us-ascii?Q?S7L77tuVPMGhxMqd1N6ehSRRM+0mTZO2NoUDWThRCD19hsB6dWuGBO6ecj/9?=
- =?us-ascii?Q?CZW+5zjTX2GgjXlOOSdQ4G508rhZaAwS+NTLacS265TnQFA8uRgatKxT+WEj?=
- =?us-ascii?Q?R3+tOkZrUl46l3dPfjP5PL2UCki0fm5t0iY2Go/QjpdNzacVlMEYSsMoXlyF?=
- =?us-ascii?Q?gg=3D=3D?=
+	=?us-ascii?Q?vqq0YPDuLH7LSgMCy7KbBXEwNCoQXSTRaAWy/QvzupCMiCNdLBybTNicyvK4?=
+ =?us-ascii?Q?fXZYuUE5qfuH0Ub5RUNgNwtaBQHy9sNvCpn4Jf0ofrsLk25OsOmxgeb9WgG2?=
+ =?us-ascii?Q?IwChkkBj5zsVtzN+8k2N1wmz0o+Ei1DURkCyc8VtAi0mQU64sbS0U2wb2mq8?=
+ =?us-ascii?Q?Uq7NKraljePyEx1w1E0f3z/+cNoY5ts+yduel+N55hGOJtr223c+wkxY1heg?=
+ =?us-ascii?Q?eeD/3kRc7477FceEaEzuLj+rdSEn2cUwQBUqTmxoprlW6FK3+PFofEIOynHT?=
+ =?us-ascii?Q?BomAm4p82cGUCF8iznmRKHHt75dfUn6wTfN/U4PUWpcg5+lks+Pyrjnl4lav?=
+ =?us-ascii?Q?Zq7hRrxJ9egS426uuS+S/Lc4Utql5pYeg0i7C0wCZAsLoCcpbpqJ8MV7JpRb?=
+ =?us-ascii?Q?NBkvCdi9annkd3CemL7PzdE3lLBrDmruWyAFkXVo9hFkdnX2WZ8LPGy826g/?=
+ =?us-ascii?Q?UxUY98P2fP38faTOseazif5fkKWMqg+torIlUPiYeqPQUdUIsyXCMiTOsYa5?=
+ =?us-ascii?Q?T1ATgOOpA2qjA6UV7jVOjKUC0OwJxSqPWQdxyBFizwaxmBfV8aMYHJShgWuf?=
+ =?us-ascii?Q?uydtEhQEJA8fOE7qrffeVJJefJRBkJ1ZvPPbu/k3TvWCnn31DuDtU1dVzgsJ?=
+ =?us-ascii?Q?TlZaALp8ar1P6g1Pv+VHVtgnY94V/YwGtxA5Y6M48Ns6NCES8z/hCZPCP0PL?=
+ =?us-ascii?Q?nu5HV4BlfmWEm9fM7AKGDNMSvD8N/6Ku7E90YiSEVHeu96nQIUrrYm5SL3UO?=
+ =?us-ascii?Q?ZMciWTJQFFFDLL2WFkdQWvfb8ufvBtpL7IRgCvGwVHllYuQxkdejsXvTh2wA?=
+ =?us-ascii?Q?p/d2OEH+siTiLucMKKBlW9C95w/upKFPHz5RdgN1tNYtrJRVOn4mB6mIrjFu?=
+ =?us-ascii?Q?ViZ5QiUouSlxsmF22vZZ3gFeyu0QneBS/vv05+V0a7Cw2+8IgsApvaJlE830?=
+ =?us-ascii?Q?DtTURAyQes7jxHnTxtAFB0YXBQu4IFVIVkvPaEBCghNuj0FQtVWAtH0i7Pm+?=
+ =?us-ascii?Q?Y9U3xU0io7/0S0RMeO6oNhZEOsvNQJRqjJrl6E1Mx21Z9I6sDq4r/vH9XeuA?=
+ =?us-ascii?Q?E7i29LidKxsCauJOW3yKKz02JNywCCQF2nDpWlvV97GiiUwh9o+3nE8hHfhP?=
+ =?us-ascii?Q?+2nBdbagOjzQHjGrBWeTLtt+MQjURgrgW7cEwYlejBnW7ytZYTgjTf8Lya/j?=
+ =?us-ascii?Q?h/nWLJVn8JGHJnX5oMe8o4JLPm3juZUI+T+qVGOehJvBcLJE+DWSZuJ9uikE?=
+ =?us-ascii?Q?3sXExZO8yYdtVGGNWmWhpIQ8fP6WGuFCn61s3aOlKItqX6c2/ea9GBzGjgIO?=
+ =?us-ascii?Q?5WwerC1q5uWr3WHFUS4vXYhpcdU1kmo3ORl+51p8Hw87ZLPbO1kRxMScox41?=
+ =?us-ascii?Q?xDop+6rL5j463B9WJ8Atmvi7nlu2CmgMmFJshaX/sK1PDv4wHCqoFZ7a5UPl?=
+ =?us-ascii?Q?d1MvKpzFNGJcqOj6rG7paIGwQILrKIYrteRsMFj2agkOhNCzo+M2FvfKompP?=
+ =?us-ascii?Q?BpAjhMFiKI0iNUPvAFDrMTcySXUJFCvR7f4F33Sojzp4h6NfGHosEG7I+gcA?=
+ =?us-ascii?Q?SpvGSoSwBHkm9zhnhxB5dUOGRC2Zu2rUysyuJifB?=
 X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount: 1
 X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0: 
-	31Zqcp6yWnorbuoc4Pw7mD5BR0FOsm9OCym9pkR7BmBVbit5bl4vw/9FLFCwtTpR5maRPQfZWY15H8XsRBS/U5lhN4xrhsIu+G/Y4Sa+3bicvdGTg4p4+1mc6mXoKHmGQ5uMVAShFpKfArEFMSfnlxzhDaSCpNydCwfXsjMhGQX78O3AJM3UnxM9xm52zo6yWaG9MAjj5ulnwOJUnaonAUhRvL0vzWIaz2AtQRmH8YYrur+/mUBdcaXo2v3ZGOzJ2NOUlmbqBp1vAt4CXbQ9RGqUJmz6p64CIzqaMoe6F5KSlvA4zf4l2FldzV1nJLqYtQGyvKzPHK6i1iGqqrvzjJ7iJmBcl0KYgIc3UCjFcpE/vOcjRWm1HPY3o43hCuwwUQZL3XeuGHbXNdCaVecS9jnEQDknDlTinwm/q6qK7IgOVNEn9IelJSq+CsC/vwXYB+2EIG/PrDCXWUEPE7Wv6U594VCdwlaf+7Go9jzHQDALuvFReLS+5nuvsJ0LL4YHQgQkXsUorZdtkN64QkdaTT2hbOUKZrXOVKtxTHBsYBoI9/ya2rHHkMupjgRrdV5h77D0EvyG9Oexj/QUq60jHJ8H0o2mLZ4aocuQGvYr34g=
+	qvckiaGrYLiJVi7kaoITQfcB3ZlpdLZg7py+9JNttKCCt7//8wEYQly4o1wa/8NsgGK2lHBVtzBK33y7KEcA2Lv9YlaTc4zemlHswN7h1I+wPWKVuApxySRCJbpRJjXb5oMyjnraBRDGQ966WDNUp6kq7IpTr6DHi6+aQsQvcCvwl9r/v1SkriobkrIHqoPITkr/YwtdcsXOXqHovk1H2i768upIuR5THC4Y8HDVysK6uAlNH3XFzBrBg89xg6xifadLbsVsLgm20toZuJ2u4agWzpIq0Y5hmeKh/QYRUueihE6tVFPVv7JgQ9GvdaO/fhEYYmpTGqFlhU9Hzqt+b8bWsP6Pcu013UOK4Dad8XYEN3mlmQvpX1sDMOt+TYn2UfqJe7GGBSovH1sN3glKGlrD2i8kBOF5YAXAikRtZz6fbnLikjwx0ASEnoiR4A64B+kYsQ5BvCrO8/r/TQ+JdnBTzZBoxtJRl+Eg3YGhHGgx14m5p5elkc2gjbcEEcrUAP3ZKhZy5zkz4kSJ6gV+JE+7UjkkUkhjqykhQ20iAjHKtbsVn1xZDEXGF7saZITFSKHol62gQnHOsyiGQkcQZ4DLETy6r4EGP1wcmQ3bT78=
 X-OriginatorOrg: oracle.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: 5ae21a44-7371-431f-8a65-08dc0ce8dfea
+X-MS-Exchange-CrossTenant-Network-Message-Id: 6ecf88ba-41d0-4c4c-b5f9-08dc0ce8d080
 X-MS-Exchange-CrossTenant-AuthSource: PH0PR10MB5706.namprd10.prod.outlook.com
 X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-OriginalArrivalTime: 04 Jan 2024 05:49:11.1279
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 04 Jan 2024 05:48:45.1163
  (UTC)
 X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
 X-MS-Exchange-CrossTenant-Id: 4e2c6054-71cb-48f1-bd6c-3a9705aca71b
 X-MS-Exchange-CrossTenant-MailboxType: HOSTED
-X-MS-Exchange-CrossTenant-UserPrincipalName: 5JG/bY/DVobvsjIOUyFSL+cWMWYC1Ufa0A2AGLZL/mjYT9QT/qLOMFU8JySgaIfAQEkUO3ESRL+4iVO8RKtxAg==
+X-MS-Exchange-CrossTenant-UserPrincipalName: BSUkZ18DMDp+KEbf0/Ycd0bd61J5sNozB9zdafo0kuDOQgeOI1+yd6UYnS+0vbnyw0FEjgRcF3d1LXwtpwAxpA==
 X-MS-Exchange-Transport-CrossTenantHeadersStamped: PH0PR10MB5611
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.272,Aquarius:18.0.997,Hydra:6.0.619,FMLib:17.11.176.26
  definitions=2024-01-04_02,2024-01-03_01,2023-05-22_02
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 malwarescore=0 bulkscore=0 mlxscore=0
- mlxlogscore=999 phishscore=0 suspectscore=0 adultscore=0 spamscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2311290000
- definitions=main-2401040039
-X-Proofpoint-GUID: aOBoTAZnJPv-gjQvZ87s3mLunIVj0u2E
-X-Proofpoint-ORIG-GUID: aOBoTAZnJPv-gjQvZ87s3mLunIVj0u2E
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 adultscore=0 bulkscore=0
+ mlxlogscore=999 suspectscore=0 spamscore=0 malwarescore=0 phishscore=0
+ mlxscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2311290000 definitions=main-2401040039
+X-Proofpoint-GUID: HBFD_13GOCgSJZqJdCv4VOrSBbmv05fj
+X-Proofpoint-ORIG-GUID: HBFD_13GOCgSJZqJdCv4VOrSBbmv05fj
 
-From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+The command 'btrfs inspect-internal dump-tree -t raid_stripe'
+introduces trailing whitespace in its output.
+Apply a filter to remove it. Used in btrfs/30[4-8][.out].
 
-Add a test writing 128k to an empty file with one stripe already
-pre-filled on-disk. Then overwrite a portion of the file in the middle.
-
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
-Reviewed-by: Anand Jain <anand.jain@oracle.com>
-Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
-[Fixed the test statement and trailing white space in the .out file.]
 ---
- tests/btrfs/308     |  62 ++++++++++++++++++++++++++
- tests/btrfs/308.out | 106 ++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 168 insertions(+)
- create mode 100755 tests/btrfs/308
- create mode 100644 tests/btrfs/308.out
+ common/filter | 5 +++++
+ 1 file changed, 5 insertions(+)
 
-diff --git a/tests/btrfs/308 b/tests/btrfs/308
-new file mode 100755
-index 000000000000..ee9f15f00423
---- /dev/null
-+++ b/tests/btrfs/308
-@@ -0,0 +1,62 @@
-+#! /bin/bash
-+# SPDX-License-Identifier: GPL-2.0
-+# Copyright (c) 2023 Western Digital Cooperation.  All Rights Reserved.
-+#
-+# FS QA Test 308
-+#
-+# Test on-disk layout of RAID Stripe Tree Metadata by writing 128k to an empty
-+# file on a filesystem that has one stripe already pre-filled. Afterwards
-+# overwrite a portion of the file.
-+#
-+. ./common/preamble
-+_begin_fstest auto quick raid remount volume raid-stripe-tree
-+
-+. ./common/filter
-+. ./common/filter.btrfs
-+
-+_supported_fs btrfs
-+_require_btrfs_command inspect-internal dump-tree
-+_require_btrfs_mkfs_feature "raid-stripe-tree"
-+_require_scratch_dev_pool 4
-+_require_btrfs_fs_feature "raid_stripe_tree"
-+_require_btrfs_fs_feature "free_space_tree"
-+_require_btrfs_free_space_tree
-+_require_btrfs_no_compress
-+_require_btrfs_no_nodatacow
-+
-+test $(_get_page_size) -eq 4096 || _notrun "this tests requires 4k pagesize"
-+
-+test_128k_write_overwrite()
+diff --git a/common/filter b/common/filter
+index 509ee95039ac..36d51bd957dd 100644
+--- a/common/filter
++++ b/common/filter
+@@ -651,5 +651,10 @@ _filter_bash()
+ 	sed -e "s/^bash: line 1: /bash: /"
+ }
+ 
++_filter_trailing_whitespace()
 +{
-+	local profile=$1
-+	local ndevs=$2
-+
-+	_scratch_dev_pool_get $ndevs
-+
-+	echo "==== Testing $profile ===="
-+	_scratch_pool_mkfs -d $profile -m $profile -O raid-stripe-tree
-+	_scratch_mount
-+
-+	$XFS_IO_PROG -fc "pwrite -W 0 32k" "$SCRATCH_MNT/bar" | _filter_xfs_io
-+	$XFS_IO_PROG -fc "pwrite -W 0 128k" "$SCRATCH_MNT/foo" | _filter_xfs_io
-+	$XFS_IO_PROG -fc "pwrite -W 64k 8k" "$SCRATCH_MNT/foo" | _filter_xfs_io
-+
-+	_scratch_cycle_mount
-+	md5sum "$SCRATCH_MNT/foo" | _filter_scratch
-+
-+	_scratch_unmount
-+
-+	$BTRFS_UTIL_PROG inspect-internal dump-tree -t raid_stripe $SCRATCH_DEV_POOL |\
-+		_filter_stripe_tree
-+
-+	_scratch_dev_pool_put
++	sed -E -e "s/\s+$//"
 +}
 +
-+echo "= Test 128k write to empty file with 1st stripe partially prefilled then overwrite ="
-+test_128k_write_overwrite raid0 2
-+test_128k_write_overwrite raid1 2
-+test_128k_write_overwrite raid10 4
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/btrfs/308.out b/tests/btrfs/308.out
-new file mode 100644
-index 000000000000..23b31dd32959
---- /dev/null
-+++ b/tests/btrfs/308.out
-@@ -0,0 +1,106 @@
-+QA output created by 308
-+= Test 128k write to empty file with 1st stripe partially prefilled then overwrite =
-+==== Testing raid0 ====
-+wrote 32768/32768 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 131072/131072 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 8192/8192 bytes at offset 65536
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+d48858312a922db7eb86377f638dbc9f  SCRATCH_MNT/foo
-+
-+raid stripe tree key (RAID_STRIPE_TREE ROOT_ITEM 0)
-+leaf XXXXXXXXX items X free space XXXXX generation X owner RAID_STRIPE_TREE
-+leaf XXXXXXXXX flags 0x1(WRITTEN) backref revision 1
-+checksum stored <CHECKSUM>
-+checksum calced <CHECKSUM>
-+fs uuid <UUID>
-+chunk uuid <UUID>
-+	item 0 key (XXXXXX RAID_STRIPE 32768) itemoff XXXXX itemsize 24
-+			encoding: RAID0
-+			stripe 0 devid 1 physical XXXXXXXXX
-+	item 1 key (XXXXXX RAID_STRIPE 32768) itemoff XXXXX itemsize 24
-+			encoding: RAID0
-+			stripe 0 devid 1 physical XXXXXXXXX
-+	item 2 key (XXXXXX RAID_STRIPE 65536) itemoff XXXXX itemsize 24
-+			encoding: RAID0
-+			stripe 0 devid 2 physical XXXXXXXXX
-+	item 3 key (XXXXXX RAID_STRIPE 32768) itemoff XXXXX itemsize 24
-+			encoding: RAID0
-+			stripe 0 devid 1 physical XXXXXXXXX
-+	item 4 key (XXXXXX RAID_STRIPE 8192) itemoff XXXXX itemsize 24
-+			encoding: RAID0
-+			stripe 0 devid 1 physical XXXXXXXXX
-+total bytes XXXXXXXX
-+bytes used XXXXXX
-+uuid <UUID>
-+==== Testing raid1 ====
-+wrote 32768/32768 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 131072/131072 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 8192/8192 bytes at offset 65536
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+d48858312a922db7eb86377f638dbc9f  SCRATCH_MNT/foo
-+
-+raid stripe tree key (RAID_STRIPE_TREE ROOT_ITEM 0)
-+leaf XXXXXXXXX items X free space XXXXX generation X owner RAID_STRIPE_TREE
-+leaf XXXXXXXXX flags 0x1(WRITTEN) backref revision 1
-+checksum stored <CHECKSUM>
-+checksum calced <CHECKSUM>
-+fs uuid <UUID>
-+chunk uuid <UUID>
-+	item 0 key (XXXXXX RAID_STRIPE 32768) itemoff XXXXX itemsize 40
-+			encoding: RAID1
-+			stripe 0 devid 1 physical XXXXXXXXX
-+			stripe 1 devid 2 physical XXXXXXXXX
-+	item 1 key (XXXXXX RAID_STRIPE 131072) itemoff XXXXX itemsize 40
-+			encoding: RAID1
-+			stripe 0 devid 1 physical XXXXXXXXX
-+			stripe 1 devid 2 physical XXXXXXXXX
-+	item 2 key (XXXXXX RAID_STRIPE 8192) itemoff XXXXX itemsize 40
-+			encoding: RAID1
-+			stripe 0 devid 1 physical XXXXXXXXX
-+			stripe 1 devid 2 physical XXXXXXXXX
-+total bytes XXXXXXXX
-+bytes used XXXXXX
-+uuid <UUID>
-+==== Testing raid10 ====
-+wrote 32768/32768 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 131072/131072 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 8192/8192 bytes at offset 65536
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+d48858312a922db7eb86377f638dbc9f  SCRATCH_MNT/foo
-+
-+raid stripe tree key (RAID_STRIPE_TREE ROOT_ITEM 0)
-+leaf XXXXXXXXX items X free space XXXXX generation X owner RAID_STRIPE_TREE
-+leaf XXXXXXXXX flags 0x1(WRITTEN) backref revision 1
-+checksum stored <CHECKSUM>
-+checksum calced <CHECKSUM>
-+fs uuid <UUID>
-+chunk uuid <UUID>
-+	item 0 key (XXXXXX RAID_STRIPE 32768) itemoff XXXXX itemsize 40
-+			encoding: RAID10
-+			stripe 0 devid 1 physical XXXXXXXXX
-+			stripe 1 devid 2 physical XXXXXXXXX
-+	item 1 key (XXXXXX RAID_STRIPE 32768) itemoff XXXXX itemsize 40
-+			encoding: RAID10
-+			stripe 0 devid 1 physical XXXXXXXXX
-+			stripe 1 devid 2 physical XXXXXXXXX
-+	item 2 key (XXXXXX RAID_STRIPE 65536) itemoff XXXXX itemsize 40
-+			encoding: RAID10
-+			stripe 0 devid 3 physical XXXXXXXXX
-+			stripe 1 devid 4 physical XXXXXXXXX
-+	item 3 key (XXXXXX RAID_STRIPE 32768) itemoff XXXXX itemsize 40
-+			encoding: RAID10
-+			stripe 0 devid 1 physical XXXXXXXXX
-+			stripe 1 devid 2 physical XXXXXXXXX
-+	item 4 key (XXXXXX RAID_STRIPE 8192) itemoff XXXXX itemsize 40
-+			encoding: RAID10
-+			stripe 0 devid 1 physical XXXXXXXXX
-+			stripe 1 devid 2 physical XXXXXXXXX
-+total bytes XXXXXXXX
-+bytes used XXXXXX
-+uuid <UUID>
+ # make sure this script returns success
+ /bin/true
 -- 
 2.38.1
 

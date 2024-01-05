@@ -1,110 +1,429 @@
-Received: from toucan.tulip.relay.mailchannels.net (toucan.tulip.relay.mailchannels.net [23.83.218.254])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8C346566E
-	for <linux-btrfs@vger.kernel.org>; Fri,  5 Jan 2024 05:51:56 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=scientia.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=scientia.org
-X-Sender-Id: instrampxe0y3a|x-authuser|calestyo@scientia.org
-Received: from relay.mailchannels.net (localhost [127.0.0.1])
-	by relay.mailchannels.net (Postfix) with ESMTP id 03F5E8432CD;
-	Fri,  5 Jan 2024 03:30:41 +0000 (UTC)
-Received: from cpanel-007-fra.hostingww.com (unknown [127.0.0.6])
-	(Authenticated sender: instrampxe0y3a)
-	by relay.mailchannels.net (Postfix) with ESMTPA id BC340841F44;
-	Fri,  5 Jan 2024 03:30:39 +0000 (UTC)
-ARC-Seal: i=1; s=arc-2022; d=mailchannels.net; t=1704425440; a=rsa-sha256;
-	cv=none;
-	b=2ofxQ5cW1e7qdO4EXU7kMsECMdNgihLuOJn00ArlEQED7UiX+rx6VH16SDCWHWYUtFJyFe
-	l/RJ/s7pFYHWnHSj8V/HCtN8WrKIYaZW7izjjPIUU+mJAco+xb1QFcdb6MxKaZQiCgM6+H
-	4CNY/buCvMDNhkotlakW6X1HShmKx+Cq5pe7F/qxcpsb7moY25jwkUdpTTtV/UVWiOHa/B
-	STv2/xiE2LT33xZF7BTfrMpRuuqiSBW/Wmdfj8ey7A1Cn/+VeR6QDGBQu78oDuQ3A1fIeH
-	l7zdmm+VLAAY3ftnGFWZD+5k3s1Cjkf53ygqUk86SjoQKvXfWBbEVlRc9deNUw==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed;
- d=mailchannels.net;
-	s=arc-2022; t=1704425440;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=8rySMi6BtJsyka161CnrLOEiS6YwQAVTrLDqoVNmAwg=;
-	b=RK11zIZHo7/iYcA08lHA+bDB/6g1xXmIkqz1ROEMGF9xwI6Ok2z1dc4X5Knmlgoz5pkHVL
-	L70j8FM3kGpR9mpR+HYWJwkHE6cNdJ/9inqPseUMsEqdN8qU+OdADy6da26n7gKWLBp9It
-	RjPL+CPbuq5LOGgPBqDw4wjnS6r2hlczKLbZ1oc0TP7I8uvBLKkM1DLxmzR9z4U20FQqbz
-	lFpy2dEN3I/Hp9ZlnbuomRZlk8jhw1EFUgYZGBNKPQ3owaCvr5PEjVEYHbyE2DXUf/SgyX
-	XVL/aBahadMvBs0Cp4uJpMcjHyiCu4+xnKPA8SDhpCvscu+kc02K5L7zyHus1Q==
-ARC-Authentication-Results: i=1;
-	rspamd-b89458897-qp4r5;
-	auth=pass smtp.auth=instrampxe0y3a smtp.mailfrom=calestyo@scientia.org
-X-Sender-Id: instrampxe0y3a|x-authuser|calestyo@scientia.org
-X-MC-Relay: Neutral
-X-MailChannels-SenderId: instrampxe0y3a|x-authuser|calestyo@scientia.org
-X-MailChannels-Auth-Id: instrampxe0y3a
-X-Society-Chief: 4609ead234f7024a_1704425440399_1175336222
-X-MC-Loop-Signature: 1704425440399:961303175
-X-MC-Ingress-Time: 1704425440399
-Received: from cpanel-007-fra.hostingww.com (cpanel-007-fra.hostingww.com
- [3.69.87.180])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384)
-	by 100.100.10.103 (trex/6.9.2);
-	Fri, 05 Jan 2024 03:30:40 +0000
-Received: from p5b07194d.dip0.t-ipconnect.de ([91.7.25.77]:55560 helo=heisenberg.fritz.box)
-	by cpanel-007-fra.hostingww.com with esmtpsa  (TLS1.2) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-	(Exim 4.96)
-	(envelope-from <calestyo@scientia.org>)
-	id 1rLaup-0000je-2u;
-	Fri, 05 Jan 2024 03:30:38 +0000
-Message-ID: <513dfa2b00cf496e6f682508037616b6165fcc53.camel@scientia.org>
-Subject: Re: btrfs thinks fs is full, though 11GB should be still free
-From: Christoph Anton Mitterer <calestyo@scientia.org>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: linux-btrfs@vger.kernel.org
-Date: Fri, 05 Jan 2024 04:30:22 +0100
-In-Reply-To: <57a0f910-a100-4f31-ad22-762e8c0ecb39@gmx.com>
-References: <0f4a5a08fe9c4a6fe1bfcb0785691a7532abb958.camel@scientia.org>
-	 <f1f3b0f2a48f9092ea54f05b0f6596c58370e0b2.camel@scientia.org>
-	 <3cfc3cdf-e6f2-400e-ac12-5ddb2840954d@gmx.com>
-	 <2d5838efc179a557b41c84e9ca9a608be6a159e8.camel@scientia.org>
-	 <9ce30564e238d1be0deafb8cab8968f800a8deaa.camel@scientia.org>
-	 <8a9b6743-37e6-4a71-9423-6ce5169959ac@gmx.com>
-	 <62e9ad23d4829f30600ea6e611d2cd4636f080cc.camel@scientia.org>
-	 <7acc8ea1-079d-42bb-8880-dbd9bbfa100b@libero.it>
-	 <fecad7ce2cea1ff125a842d8c53f1fbfe4f1d231.camel@scientia.org>
-	 <CAA91j0VNf9UQTYOn688eboGB_bw4YeKOXnKAt1uAYRZwYA3UPg@mail.gmail.com>
-	 <b47ed92f14edde7db5c1037a75b38652afa6c1c1.camel@scientia.org>
-	 <e6ef9ab3-06ab-4360-b205-3a7559b6b388@gmx.com>
-	 <979fd68a4a766f823366797eab1060e5c515a776.camel@scientia.org>
-	 <ba9556f9-4784-4bf8-8fa1-49b17df6d31e@gmx.com>
-	 <c085dabb449f8088156d906062db0b9fa0f7fe32.camel@scientia.org>
-	 <aa69e84f-d466-457d-9b29-47043c2aef53@suse.com>
-	 <bf5726d2a30996d06204b17d05daec9c77b7d769.camel@scientia.org>
-	 <57a0f910-a100-4f31-ad22-762e8c0ecb39@gmx.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.50.2-1 
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 277241DDCA
+	for <linux-btrfs@vger.kernel.org>; Fri,  5 Jan 2024 05:57:27 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="GQ2MkCqD";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="WX6PsU7J"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id D8BD11F890
+	for <linux-btrfs@vger.kernel.org>; Fri,  5 Jan 2024 05:57:25 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1704434246; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=8/26tn8OEpodpfI01+Mkd8VPztxnzVF37bt3XRmrtwc=;
+	b=GQ2MkCqDcppJNB7QaQte1tTjdMNRitY6x28c5cuCG7HP6OwFH6iTlG3qq01nRZ/mFr/GxP
+	eoPeZLoZGCvcdjb5GeBW8ZMJXlYLeRFY75jK2QbRK9nkvd6h7wQEHSsmmuFlDBTjgh+uLP
+	/ksChS1oI5joYnMEozBMeHsT2v6CMwA=
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1704434245; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=8/26tn8OEpodpfI01+Mkd8VPztxnzVF37bt3XRmrtwc=;
+	b=WX6PsU7JJczU1xV7NWovWPdQdbMoOXFSQPfEVwDpQQkmf7hXrJuK7nMf/uNr6+aTHuYKt8
+	xDPXiR5crko2fj4FrAvYPB8W8zEughhaX88C5sU5n955Yn4g7hYzQ6teAFXw1IZxkpGUu3
+	SJUlqpRVecYvUVpjdiderd7uG+SWINg=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id A5D5313C99
+	for <linux-btrfs@vger.kernel.org>; Fri,  5 Jan 2024 05:57:24 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([10.150.64.162])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id /pNAEESal2XgGAAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Fri, 05 Jan 2024 05:57:24 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2] btrfs: prefer to allocate larger folio for metadata
+Date: Fri,  5 Jan 2024 16:27:01 +1030
+Message-ID: <b2a33b0d75b29a0945b58342d021b24cf157114c.1704434178.git.wqu@suse.com>
+X-Mailer: git-send-email 2.43.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-AuthUser: calestyo@scientia.org
+Content-Transfer-Encoding: 8bit
+X-Spam-Level: 
+X-Spam-Level: 
+X-Spam-Score: 0.49
+X-Rspamd-Queue-Id: D8BD11F890
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=WX6PsU7J
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Spamd-Bar: /
+X-Spam-Flag: NO
+X-Spamd-Result: default: False [0.49 / 50.00];
+	 RCVD_VIA_SMTP_AUTH(0.00)[];
+	 SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	 R_MISSING_CHARSET(2.50)[];
+	 TO_DN_NONE(0.00)[];
+	 BROKEN_CONTENT_TYPE(1.50)[];
+	 RCVD_COUNT_THREE(0.00)[3];
+	 DKIM_TRACE(0.00)[suse.com:+];
+	 MX_GOOD(-0.01)[];
+	 NEURAL_HAM_SHORT(-0.20)[-1.000];
+	 FROM_EQ_ENVFROM(0.00)[];
+	 MIME_TRACE(0.00)[0:+];
+	 BAYES_HAM(-3.00)[100.00%];
+	 ARC_NA(0.00)[];
+	 R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
+	 URIBL_BLOCKED(0.00)[suse.com:email,suse.com:dkim];
+	 FROM_HAS_DN(0.00)[];
+	 TO_MATCH_ENVRCPT_ALL(0.00)[];
+	 NEURAL_HAM_LONG(-1.00)[-1.000];
+	 MIME_GOOD(-0.10)[text/plain];
+	 PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	 RCPT_COUNT_ONE(0.00)[1];
+	 DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	 MID_CONTAINS_FROM(1.00)[];
+	 DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:dkim];
+	 FUZZY_BLOCKED(0.00)[rspamd.com];
+	 RCVD_TLS_ALL(0.00)[]
 
-Hey there.
+With all the migration (including the previous ones which are only
+detected through this patch), we can finally enable larger folio support
+for metadata.
 
-On Fri, 2023-12-22 at 11:43 +1030, Qu Wenruo wrote:
-> That's not a big deal, because before sending that reply, I have
-> already
-> reproduced the problem using 6.6 kernel, so it's a long existing
-> problem.
-> Just like the whole PREALLOC and compression problem.
+For btrfs metadata, the high order folios are only utilized in the
+following way:
 
+- The extent buffer start is aligned to nodesize
+  This should be the common case for any btrfs in the last 5 years.
 
-Just wondered whether there's anything new on this or whether the best
-for now would be to switch the fs?
+- The nodesize is larger than page size
+  Or there is no need to use larger folios at all.
 
-Also, do you think that NODATACOW would also be affected by the
-underlying "issue"?
+- MM layer can fulfill our request without retry
+  If we're going to retry, it's better just falling back to per-page
+  allocation.
+  This would also help us to expose some corner cases mentioned below.
 
-Cheers.
-Chris
+- The larger folio must exactly cover the extent buffer
+  No longer no smaller, must be an exact fit.
+
+  This is to make extent buffer accessors much easier.
+  They only need to check the first slot in eb->folios[], to determine
+  their access unit (need per-page handling or a large folio covering
+  the whole eb).
+
+There is another small blockage, filemap APIs can not guarantee the
+folio size.
+For example, by default we go 16K nodesize on x86_64, meaning a larger
+folio we expect would be with order 2 (size 16K).
+We don't accept 2 order 1 (size 8K) folios, but accept 4 order 0 (size
+4K) folios.
+
+So here we go a different workaround, allocate a order 2 folio first,
+then attach them to the filemap of metadata.
+
+Thus here comes several cases, all would be addressed inside
+attach_eb_folio_to_filemap():
+
+1) We can attach the pre-allocated eb folio to filemap
+   This is the most simple and hot path, we just continue our work
+   setting up the extent buffer.
+
+2) There is an existing folio in the filemap
+
+   2.0) Subpage case
+        We would reuse the folio no matter what, subpage is doing a
+	different way handling folio->private (a bitmap other than a
+	pointer to an existing eb).
+
+   2.1) There is already a live extent buffer attached to the filemap
+        folio
+	This should be more or less hot path, we grab the existing eb
+	and free the current one.
+
+   2.2) No live eb.
+   2.2.1) The filemap folio is larger than eb folio
+          This is a better case, we can reuse the filemap folio, but
+	  we need to cleanup all the pre-allocated folios of the
+	  new eb before reusing.
+	  Later code should take the folio size change into
+	  consideration.
+
+   2.2.2) The filemap folio is the same size of eb folio
+          We just free the current folio, and reuse the filemap one.
+	  No other special handling needed.
+
+   2.2.3) The filemap folio is smaller than eb folio
+          This is the most tricky corner case, we can not easily replace
+	  the folio in filemap using our eb folio.
+
+	  Thus here we return -EAGAIN, to inform our caller to re-try
+	  with order 0 (of course with our larger folio freed).
+
+Otherwise all the needed infrastructure is already here, we only need to
+try allocate larger folio as our first try in alloc_eb_folio_array().
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/extent_io.c | 152 ++++++++++++++++++++++++++++++-------------
+ 1 file changed, 107 insertions(+), 45 deletions(-)
+---
+Changelog:
+v2:
+- Rebased to handle the change in "btrfs: cache folio size and shift in extent_buffer"
+
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 6ee63ff61e4a..635d3ae32d08 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -726,12 +726,32 @@ int btrfs_alloc_page_array(unsigned int nr_pages, struct page **page_array,
+  *
+  * For now, the folios populated are always in order 0 (aka, single page).
+  */
+-static int alloc_eb_folio_array(struct extent_buffer *eb, gfp_t extra_gfp)
++static int alloc_eb_folio_array(struct extent_buffer *eb, gfp_t extra_gfp,
++				int order)
+ {
+ 	struct page *page_array[INLINE_EXTENT_BUFFER_PAGES] = { 0 };
+ 	int num_pages = num_extent_pages(eb);
+ 	int ret;
+ 
++	if (order) {
++		/*
++		 * For higher order folio allocation, we discard the extra_gfp
++		 * (should only be __GFP_NOFAIL, and conflicts with higher order
++		 * folio).
++		 *
++		 * Instead we want no warning when allocation failed, and no
++		 * extra retry (to get a faster allocation).
++		 * As we're completely fine to fall back to lower order.
++		 */
++		eb->folios[0] = folio_alloc(GFP_NOFS | __GFP_NOWARN |
++					    __GFP_NORETRY, order);
++		if (eb->folios[0]) {
++			eb->folio_size = folio_size(eb->folios[0]);
++			eb->folio_shift = folio_shift(eb->folios[0]);
++			return 0;
++		}
++		/* Fallback to 0 order (single page) folios. */
++	}
+ 	ret = btrfs_alloc_page_array(num_pages, page_array, extra_gfp);
+ 	if (ret < 0)
+ 		return ret;
+@@ -3251,7 +3271,7 @@ struct extent_buffer *btrfs_clone_extent_buffer(const struct extent_buffer *src)
+ 	 */
+ 	set_bit(EXTENT_BUFFER_UNMAPPED, &new->bflags);
+ 
+-	ret = alloc_eb_folio_array(new, 0);
++	ret = alloc_eb_folio_array(new, 0, folio_order(src->folios[0]));
+ 	if (ret) {
+ 		btrfs_release_extent_buffer(new);
+ 		return NULL;
+@@ -3285,7 +3305,7 @@ struct extent_buffer *__alloc_dummy_extent_buffer(struct btrfs_fs_info *fs_info,
+ 	if (!eb)
+ 		return NULL;
+ 
+-	ret = alloc_eb_folio_array(eb, 0);
++	ret = alloc_eb_folio_array(eb, 0, 0);
+ 	if (ret)
+ 		goto err;
+ 
+@@ -3498,6 +3518,18 @@ static int check_eb_alignment(struct btrfs_fs_info *fs_info, u64 start)
+ 	return 0;
+ }
+ 
++/*
++ * A helper to free all eb folios, should only be utilized in eb allocation
++ * path where we know all the folios are safe to be dropped.
++ */
++static void free_all_eb_folios(struct extent_buffer *eb)
++{
++	for (int i = 0; i < INLINE_EXTENT_BUFFER_PAGES; i++) {
++		if (eb->folios[i])
++			folio_put(eb->folios[i]);
++		eb->folios[i] = NULL;
++	}
++}
+ 
+ /*
+  * Return 0 if eb->folios[i] is attached to btree inode successfully.
+@@ -3514,7 +3546,10 @@ static int attach_eb_folio_to_filemap(struct extent_buffer *eb, int i,
+ 	struct btrfs_fs_info *fs_info = eb->fs_info;
+ 	struct address_space *mapping = fs_info->btree_inode->i_mapping;
+ 	const unsigned long index = eb->start >> PAGE_SHIFT;
++	struct extent_buffer *existing_eb;
+ 	struct folio *existing_folio;
++	int eb_order = folio_order(eb->folios[0]);
++	int existing_order;
+ 	int ret;
+ 
+ 	ASSERT(found_eb_ret);
+@@ -3533,37 +3568,63 @@ static int attach_eb_folio_to_filemap(struct extent_buffer *eb, int i,
+ 	if (IS_ERR(existing_folio))
+ 		goto retry;
+ 
+-	/* For now, we should only have single-page folios for btree inode. */
+-	ASSERT(folio_nr_pages(existing_folio) == 1);
+-
+-	if (folio_size(existing_folio) != eb->folio_size) {
+-		folio_unlock(existing_folio);
+-		folio_put(existing_folio);
+-		return -EAGAIN;
+-	}
+-
++	existing_order = folio_order(existing_folio);
+ 	if (fs_info->nodesize < PAGE_SIZE) {
+ 		/*
+ 		 * We're going to reuse the existing page, can drop our page
+ 		 * and subpage structure now.
+ 		 */
+-		__free_page(folio_page(eb->folios[i], 0));
++		folio_put(eb->folios[i]);
+ 		eb->folios[i] = existing_folio;
+-	} else {
+-		struct extent_buffer *existing_eb;
++		return 0;
++	}
+ 
+-		existing_eb = grab_extent_buffer(fs_info,
+-						 folio_page(existing_folio, 0));
+-		if (existing_eb) {
+-			/* The extent buffer still exists, we can use it directly. */
+-			*found_eb_ret = existing_eb;
+-			folio_unlock(existing_folio);
+-			folio_put(existing_folio);
+-			return 1;
+-		}
+-		/* The extent buffer no longer exists, we can reuse the folio. */
+-		__free_page(folio_page(eb->folios[i], 0));
++	/* Non-subpage case, try if we can grab the eb from the existing folio. */
++	existing_eb = grab_extent_buffer(fs_info,
++				folio_page(existing_folio, 0));
++	if (existing_eb) {
++		/*
++		 * The extent buffer still exists, we can use
++		 * it directly.
++		 */
++		*found_eb_ret = existing_eb;
++		folio_unlock(existing_folio);
++		folio_put(existing_folio);
++		return 1;
++	}
++	if (existing_order > eb_order) {
++		/*
++		 * The existing one has higher order, we need to drop
++		 * ALL eb folios before reusing it.
++		 * And this can only happen for the first folio.
++		 */
++		ASSERT(i == 0);
++		free_all_eb_folios(eb);
+ 		eb->folios[i] = existing_folio;
++	} else if (existing_order == eb_order) {
++		/*
++		 * Can safely reuse the filemap folio, just
++		 * release the eb one.
++		 */
++		folio_put(eb->folios[i]);
++		eb->folios[i] = existing_folio;
++	} else if (existing_order < eb_order) {
++		/*
++		 * The existing one has lower order (page based)
++		 * meanwhile we have a better higher order eb.
++		 *
++		 * In theory we should be able to drop all the
++		 * lower order folios in filemap and replace them
++		 * with our better one.
++		 * But we can not as the existing one still has
++		 * private set.
++		 * So here we force to fallback to 0 order folio
++		 * and retry.
++		 */
++		ASSERT(i == 0);
++		folio_unlock(existing_folio);
++		folio_put(existing_folio);
++		return -EAGAIN;
+ 	}
+ 	return 0;
+ }
+@@ -3580,6 +3641,7 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
+ 	struct btrfs_subpage *prealloc = NULL;
+ 	u64 lockdep_owner = owner_root;
+ 	bool page_contig = true;
++	int order = 0;
+ 	int uptodate = 1;
+ 	int ret;
+ 
+@@ -3597,6 +3659,10 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
+ 		btrfs_warn_32bit_limit(fs_info);
+ #endif
+ 
++	if (fs_info->nodesize > PAGE_SIZE &&
++	    IS_ALIGNED(start, fs_info->nodesize))
++		order = ilog2(fs_info->nodesize >> PAGE_SHIFT);
++
+ 	eb = find_extent_buffer(fs_info, start);
+ 	if (eb)
+ 		return eb;
+@@ -3631,7 +3697,7 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
+ 
+ reallocate:
+ 	/* Allocate all pages first. */
+-	ret = alloc_eb_folio_array(eb, __GFP_NOFAIL);
++	ret = alloc_eb_folio_array(eb, __GFP_NOFAIL, order);
+ 	if (ret < 0) {
+ 		btrfs_free_subpage(prealloc);
+ 		goto out;
+@@ -3649,26 +3715,14 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
+ 		}
+ 
+ 		/*
+-		 * TODO: Special handling for a corner case where the order of
+-		 * folios mismatch between the new eb and filemap.
+-		 *
+-		 * This happens when:
+-		 *
+-		 * - the new eb is using higher order folio
+-		 *
+-		 * - the filemap is still using 0-order folios for the range
+-		 *   This can happen at the previous eb allocation, and we don't
+-		 *   have higher order folio for the call.
+-		 *
+-		 * - the existing eb has already been freed
+-		 *
+-		 * In this case, we have to free the existing folios first, and
+-		 * re-allocate using the same order.
+-		 * Thankfully this is not going to happen yet, as we're still
+-		 * using 0-order folios.
++		 * This happens when we got a higher order (better) folio, but
++		 * the filemap still has lower order (single paged) folio.
++		 * We don't have a good way to replace them yet.
++		 * Thus has to retry with lower order (0) folio.
+ 		 */
+ 		if (unlikely(ret == -EAGAIN)) {
+-			ASSERT(0);
++			order = 0;
++			free_all_eb_folios(eb);
+ 			goto reallocate;
+ 		}
+ 		attached++;
+@@ -3681,6 +3735,14 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
+ 		folio = eb->folios[i];
+ 		eb->folio_size = folio_size(folio);
+ 		eb->folio_shift = folio_shift(folio);
++
++		/*
++		 * We may have changed from single page folios to a larger
++		 * folios from filemap.
++		 * Re-calculate num_folios;
++		 */
++		num_folios = num_extent_folios(eb);
++
+ 		spin_lock(&mapping->private_lock);
+ 		/* Should not fail, as we have preallocated the memory */
+ 		ret = attach_extent_buffer_folio(eb, folio, prealloc);
+-- 
+2.43.0
+

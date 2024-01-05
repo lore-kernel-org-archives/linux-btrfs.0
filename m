@@ -1,404 +1,110 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from toucan.tulip.relay.mailchannels.net (toucan.tulip.relay.mailchannels.net [23.83.218.254])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C094E566E
-	for <linux-btrfs@vger.kernel.org>; Fri,  5 Jan 2024 05:36:18 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="m5MY00rd";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="m5MY00rd"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 8C98322154
-	for <linux-btrfs@vger.kernel.org>; Fri,  5 Jan 2024 05:36:16 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1704432976; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=YQKYRByrxh6wdAy3T1WjFkzSGXCFMRP3drOz0doG58g=;
-	b=m5MY00rdrKYYp1mQYpLO3jDounpjfb7+/1pwPlANP1kx/prfrCw5QTzFU5WMlw+cdfko6F
-	2BKQhxMEB/TXou12tSot+2+7C3pcvpyH1PiknwrS1PBNrxdrLXVyLzm94FeoudFxDVHg4/
-	koHj3ifKTIwOn8TDIxr8jBqPBEeo4zs=
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1704432976; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=YQKYRByrxh6wdAy3T1WjFkzSGXCFMRP3drOz0doG58g=;
-	b=m5MY00rdrKYYp1mQYpLO3jDounpjfb7+/1pwPlANP1kx/prfrCw5QTzFU5WMlw+cdfko6F
-	2BKQhxMEB/TXou12tSot+2+7C3pcvpyH1PiknwrS1PBNrxdrLXVyLzm94FeoudFxDVHg4/
-	koHj3ifKTIwOn8TDIxr8jBqPBEeo4zs=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 7B45513AC6
-	for <linux-btrfs@vger.kernel.org>; Fri,  5 Jan 2024 05:36:15 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([10.150.64.162])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id HJJxCU+Vl2VQFAAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Fri, 05 Jan 2024 05:36:15 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: cache folio size and shift in extent_buffer
-Date: Fri,  5 Jan 2024 16:05:55 +1030
-Message-ID: <b4e58a4cbe2b457e5d0a7f844cdbe035103179c2.1704432940.git.wqu@suse.com>
-X-Mailer: git-send-email 2.43.0
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8C346566E
+	for <linux-btrfs@vger.kernel.org>; Fri,  5 Jan 2024 05:51:56 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=scientia.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=scientia.org
+X-Sender-Id: instrampxe0y3a|x-authuser|calestyo@scientia.org
+Received: from relay.mailchannels.net (localhost [127.0.0.1])
+	by relay.mailchannels.net (Postfix) with ESMTP id 03F5E8432CD;
+	Fri,  5 Jan 2024 03:30:41 +0000 (UTC)
+Received: from cpanel-007-fra.hostingww.com (unknown [127.0.0.6])
+	(Authenticated sender: instrampxe0y3a)
+	by relay.mailchannels.net (Postfix) with ESMTPA id BC340841F44;
+	Fri,  5 Jan 2024 03:30:39 +0000 (UTC)
+ARC-Seal: i=1; s=arc-2022; d=mailchannels.net; t=1704425440; a=rsa-sha256;
+	cv=none;
+	b=2ofxQ5cW1e7qdO4EXU7kMsECMdNgihLuOJn00ArlEQED7UiX+rx6VH16SDCWHWYUtFJyFe
+	l/RJ/s7pFYHWnHSj8V/HCtN8WrKIYaZW7izjjPIUU+mJAco+xb1QFcdb6MxKaZQiCgM6+H
+	4CNY/buCvMDNhkotlakW6X1HShmKx+Cq5pe7F/qxcpsb7moY25jwkUdpTTtV/UVWiOHa/B
+	STv2/xiE2LT33xZF7BTfrMpRuuqiSBW/Wmdfj8ey7A1Cn/+VeR6QDGBQu78oDuQ3A1fIeH
+	l7zdmm+VLAAY3ftnGFWZD+5k3s1Cjkf53ygqUk86SjoQKvXfWBbEVlRc9deNUw==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=mailchannels.net;
+	s=arc-2022; t=1704425440;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=8rySMi6BtJsyka161CnrLOEiS6YwQAVTrLDqoVNmAwg=;
+	b=RK11zIZHo7/iYcA08lHA+bDB/6g1xXmIkqz1ROEMGF9xwI6Ok2z1dc4X5Knmlgoz5pkHVL
+	L70j8FM3kGpR9mpR+HYWJwkHE6cNdJ/9inqPseUMsEqdN8qU+OdADy6da26n7gKWLBp9It
+	RjPL+CPbuq5LOGgPBqDw4wjnS6r2hlczKLbZ1oc0TP7I8uvBLKkM1DLxmzR9z4U20FQqbz
+	lFpy2dEN3I/Hp9ZlnbuomRZlk8jhw1EFUgYZGBNKPQ3owaCvr5PEjVEYHbyE2DXUf/SgyX
+	XVL/aBahadMvBs0Cp4uJpMcjHyiCu4+xnKPA8SDhpCvscu+kc02K5L7zyHus1Q==
+ARC-Authentication-Results: i=1;
+	rspamd-b89458897-qp4r5;
+	auth=pass smtp.auth=instrampxe0y3a smtp.mailfrom=calestyo@scientia.org
+X-Sender-Id: instrampxe0y3a|x-authuser|calestyo@scientia.org
+X-MC-Relay: Neutral
+X-MailChannels-SenderId: instrampxe0y3a|x-authuser|calestyo@scientia.org
+X-MailChannels-Auth-Id: instrampxe0y3a
+X-Society-Chief: 4609ead234f7024a_1704425440399_1175336222
+X-MC-Loop-Signature: 1704425440399:961303175
+X-MC-Ingress-Time: 1704425440399
+Received: from cpanel-007-fra.hostingww.com (cpanel-007-fra.hostingww.com
+ [3.69.87.180])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384)
+	by 100.100.10.103 (trex/6.9.2);
+	Fri, 05 Jan 2024 03:30:40 +0000
+Received: from p5b07194d.dip0.t-ipconnect.de ([91.7.25.77]:55560 helo=heisenberg.fritz.box)
+	by cpanel-007-fra.hostingww.com with esmtpsa  (TLS1.2) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+	(Exim 4.96)
+	(envelope-from <calestyo@scientia.org>)
+	id 1rLaup-0000je-2u;
+	Fri, 05 Jan 2024 03:30:38 +0000
+Message-ID: <513dfa2b00cf496e6f682508037616b6165fcc53.camel@scientia.org>
+Subject: Re: btrfs thinks fs is full, though 11GB should be still free
+From: Christoph Anton Mitterer <calestyo@scientia.org>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: linux-btrfs@vger.kernel.org
+Date: Fri, 05 Jan 2024 04:30:22 +0100
+In-Reply-To: <57a0f910-a100-4f31-ad22-762e8c0ecb39@gmx.com>
+References: <0f4a5a08fe9c4a6fe1bfcb0785691a7532abb958.camel@scientia.org>
+	 <f1f3b0f2a48f9092ea54f05b0f6596c58370e0b2.camel@scientia.org>
+	 <3cfc3cdf-e6f2-400e-ac12-5ddb2840954d@gmx.com>
+	 <2d5838efc179a557b41c84e9ca9a608be6a159e8.camel@scientia.org>
+	 <9ce30564e238d1be0deafb8cab8968f800a8deaa.camel@scientia.org>
+	 <8a9b6743-37e6-4a71-9423-6ce5169959ac@gmx.com>
+	 <62e9ad23d4829f30600ea6e611d2cd4636f080cc.camel@scientia.org>
+	 <7acc8ea1-079d-42bb-8880-dbd9bbfa100b@libero.it>
+	 <fecad7ce2cea1ff125a842d8c53f1fbfe4f1d231.camel@scientia.org>
+	 <CAA91j0VNf9UQTYOn688eboGB_bw4YeKOXnKAt1uAYRZwYA3UPg@mail.gmail.com>
+	 <b47ed92f14edde7db5c1037a75b38652afa6c1c1.camel@scientia.org>
+	 <e6ef9ab3-06ab-4360-b205-3a7559b6b388@gmx.com>
+	 <979fd68a4a766f823366797eab1060e5c515a776.camel@scientia.org>
+	 <ba9556f9-4784-4bf8-8fa1-49b17df6d31e@gmx.com>
+	 <c085dabb449f8088156d906062db0b9fa0f7fe32.camel@scientia.org>
+	 <aa69e84f-d466-457d-9b29-47043c2aef53@suse.com>
+	 <bf5726d2a30996d06204b17d05daec9c77b7d769.camel@scientia.org>
+	 <57a0f910-a100-4f31-ad22-762e8c0ecb39@gmx.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.50.2-1 
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spam-Level: **
-X-Spam-Level: 
-X-Spam-Score: 0.49
-X-Rspamd-Queue-Id: 8C98322154
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=m5MY00rd
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Spamd-Bar: /
-X-Spam-Flag: NO
-X-Spamd-Result: default: False [0.49 / 50.00];
-	 ARC_NA(0.00)[];
-	 RCVD_VIA_SMTP_AUTH(0.00)[];
-	 R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	 URIBL_BLOCKED(0.00)[suse.com:email,suse.com:dkim];
-	 FROM_HAS_DN(0.00)[];
-	 R_MISSING_CHARSET(2.50)[];
-	 TO_MATCH_ENVRCPT_ALL(0.00)[];
-	 MIME_GOOD(-0.10)[text/plain];
-	 PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	 BROKEN_CONTENT_TYPE(1.50)[];
-	 RCPT_COUNT_ONE(0.00)[1];
-	 NEURAL_HAM_LONG(-1.00)[-1.000];
-	 RCVD_COUNT_THREE(0.00)[3];
-	 TO_DN_NONE(0.00)[];
-	 DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	 DKIM_TRACE(0.00)[suse.com:+];
-	 MX_GOOD(-0.01)[];
-	 MID_CONTAINS_FROM(1.00)[];
-	 DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:dkim];
-	 FUZZY_BLOCKED(0.00)[rspamd.com];
-	 FROM_EQ_ENVFROM(0.00)[];
-	 MIME_TRACE(0.00)[0:+];
-	 NEURAL_HAM_SHORT(-0.20)[-1.000];
-	 RCVD_TLS_ALL(0.00)[];
-	 BAYES_HAM(-3.00)[100.00%]
+X-AuthUser: calestyo@scientia.org
 
-After the conversion to folio interfaces (but without the patch to
-enable larger folio allocation), there is a LTP report about observable
-performance drop on metadata heavy operations.
+Hey there.
 
-This drop is caused by the extra code of calculating the
-folio_size()/folio_shift(), instead of the old hard coded
-PAGE_SIZE/PAGE_SHIFT.
+On Fri, 2023-12-22 at 11:43 +1030, Qu Wenruo wrote:
+> That's not a big deal, because before sending that reply, I have
+> already
+> reproduced the problem using 6.6 kernel, so it's a long existing
+> problem.
+> Just like the whole PREALLOC and compression problem.
 
-To slightly reduce the overhead, just cache both folio_size and
-folio_shift in extent_buffer.
 
-The two new members (u32 folio_size and u8 folio_shift) is stored inside
-the holes of extent_buffer. (folio_size is shared with len, which is
-reduced to u32).
+Just wondered whether there's anything new on this or whether the best
+for now would be to switch the fs?
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/accessors.c | 12 ++++++------
- fs/btrfs/ctree.c     |  2 +-
- fs/btrfs/disk-io.c   |  2 +-
- fs/btrfs/extent_io.c | 38 +++++++++++++++++++++-----------------
- fs/btrfs/extent_io.h | 16 +++++++++++++---
- 5 files changed, 42 insertions(+), 28 deletions(-)
+Also, do you think that NODATACOW would also be affected by the
+underlying "issue"?
 
-diff --git a/fs/btrfs/accessors.c b/fs/btrfs/accessors.c
-index 1925a0919ca6..6eb850ad37d2 100644
---- a/fs/btrfs/accessors.c
-+++ b/fs/btrfs/accessors.c
-@@ -63,8 +63,8 @@ u##bits btrfs_get_token_##bits(struct btrfs_map_token *token,		\
- 	const unsigned long idx = get_eb_folio_index(token->eb, member_offset); \
- 	const unsigned long oil = get_eb_offset_in_folio(token->eb,	\
- 							 member_offset);\
--	const int unit_size = folio_size(token->eb->folios[0]);		\
--	const int unit_shift = folio_shift(token->eb->folios[0]);	\
-+	const int unit_size = token->eb->folio_size;			\
-+	const int unit_shift = token->eb->folio_shift;			\
- 	const int size = sizeof(u##bits);				\
- 	u8 lebytes[sizeof(u##bits)];					\
- 	const int part = unit_size - oil;				\
-@@ -94,7 +94,7 @@ u##bits btrfs_get_##bits(const struct extent_buffer *eb,		\
- 	const unsigned long idx = get_eb_folio_index(eb, member_offset);\
- 	const unsigned long oil = get_eb_offset_in_folio(eb,		\
- 							 member_offset);\
--	const int unit_size = folio_size(eb->folios[0]);		\
-+	const int unit_size = eb->folio_size;				\
- 	char *kaddr = folio_address(eb->folios[idx]);			\
- 	const int size = sizeof(u##bits);				\
- 	const int part = unit_size - oil;				\
-@@ -117,8 +117,8 @@ void btrfs_set_token_##bits(struct btrfs_map_token *token,		\
- 	const unsigned long idx = get_eb_folio_index(token->eb, member_offset); \
- 	const unsigned long oil = get_eb_offset_in_folio(token->eb,	\
- 							 member_offset);\
--	const int unit_size = folio_size(token->eb->folios[0]);		\
--	const int unit_shift = folio_shift(token->eb->folios[0]);	\
-+	const int unit_size = token->eb->folio_size;			\
-+	const int unit_shift = token->eb->folio_shift;			\
- 	const int size = sizeof(u##bits);				\
- 	u8 lebytes[sizeof(u##bits)];					\
- 	const int part = unit_size - oil;				\
-@@ -151,7 +151,7 @@ void btrfs_set_##bits(const struct extent_buffer *eb, void *ptr,	\
- 	const unsigned long idx = get_eb_folio_index(eb, member_offset);\
- 	const unsigned long oil = get_eb_offset_in_folio(eb,		\
- 							 member_offset);\
--	const int unit_size = folio_size(eb->folios[0]);		\
-+	const int unit_size = eb->folio_size;				\
- 	char *kaddr = folio_address(eb->folios[idx]);			\
- 	const int size = sizeof(u##bits);				\
- 	const int part = unit_size - oil;				\
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index e65e012bac55..33145da449cc 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -820,7 +820,7 @@ int btrfs_bin_search(struct extent_buffer *eb, int first_slot,
- 	}
- 
- 	while (low < high) {
--		const int unit_size = folio_size(eb->folios[0]);
-+		const int unit_size = eb->folio_size;
- 		unsigned long oil;
- 		unsigned long offset;
- 		struct btrfs_disk_key *tmp;
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index c6907d533fe8..57be7dd44da5 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -193,7 +193,7 @@ static int btrfs_repair_eb_io_failure(const struct extent_buffer *eb,
- 		struct folio *folio = eb->folios[i];
- 		u64 start = max_t(u64, eb->start, folio_pos(folio));
- 		u64 end = min_t(u64, eb->start + eb->len,
--				folio_pos(folio) + folio_size(folio));
-+				folio_pos(folio) + eb->folio_size);
- 		u32 len = end - start;
- 
- 		ret = btrfs_repair_io_failure(fs_info, 0, start, len,
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index a0ffd41c5cc1..6ee63ff61e4a 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -78,7 +78,7 @@ void btrfs_extent_buffer_leak_debug_check(struct btrfs_fs_info *fs_info)
- 		eb = list_first_entry(&fs_info->allocated_ebs,
- 				      struct extent_buffer, leak_list);
- 		pr_err(
--	"BTRFS: buffer leak start %llu len %lu refs %d bflags %lu owner %llu\n",
-+	"BTRFS: buffer leak start %llu len %u refs %d bflags %lu owner %llu\n",
- 		       eb->start, eb->len, atomic_read(&eb->refs), eb->bflags,
- 		       btrfs_header_owner(eb));
- 		list_del(&eb->leak_list);
-@@ -738,6 +738,8 @@ static int alloc_eb_folio_array(struct extent_buffer *eb, gfp_t extra_gfp)
- 
- 	for (int i = 0; i < num_pages; i++)
- 		eb->folios[i] = page_folio(page_array[i]);
-+	eb->folio_size = PAGE_SIZE;
-+	eb->folio_shift = PAGE_SHIFT;
- 	return 0;
- }
- 
-@@ -1739,10 +1741,10 @@ static noinline_for_stack void write_one_eb(struct extent_buffer *eb,
- 			folio_lock(folio);
- 			folio_clear_dirty_for_io(folio);
- 			folio_start_writeback(folio);
--			ret = bio_add_folio(&bbio->bio, folio, folio_size(folio), 0);
-+			ret = bio_add_folio(&bbio->bio, folio, eb->folio_size, 0);
- 			ASSERT(ret);
- 			wbc_account_cgroup_owner(wbc, folio_page(folio, 0),
--						 folio_size(folio));
-+						 eb->folio_size);
- 			wbc->nr_to_write -= folio_nr_pages(folio);
- 			folio_unlock(folio);
- 		}
-@@ -3534,7 +3536,7 @@ static int attach_eb_folio_to_filemap(struct extent_buffer *eb, int i,
- 	/* For now, we should only have single-page folios for btree inode. */
- 	ASSERT(folio_nr_pages(existing_folio) == 1);
- 
--	if (folio_size(existing_folio) != folio_size(eb->folios[0])) {
-+	if (folio_size(existing_folio) != eb->folio_size) {
- 		folio_unlock(existing_folio);
- 		folio_put(existing_folio);
- 		return -EAGAIN;
-@@ -3677,6 +3679,8 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
- 		 * and free the allocated page.
- 		 */
- 		folio = eb->folios[i];
-+		eb->folio_size = folio_size(folio);
-+		eb->folio_shift = folio_shift(folio);
- 		spin_lock(&mapping->private_lock);
- 		/* Should not fail, as we have preallocated the memory */
- 		ret = attach_extent_buffer_folio(eb, folio, prealloc);
-@@ -4126,7 +4130,7 @@ int read_extent_buffer_pages(struct extent_buffer *eb, int wait, int mirror_num,
- 		for (int i = 0; i < num_folios; i++) {
- 			struct folio *folio = eb->folios[i];
- 
--			ret = bio_add_folio(&bbio->bio, folio, folio_size(folio), 0);
-+			ret = bio_add_folio(&bbio->bio, folio, eb->folio_size, 0);
- 			ASSERT(ret);
- 		}
- 	}
-@@ -4146,7 +4150,7 @@ static bool report_eb_range(const struct extent_buffer *eb, unsigned long start,
- 			    unsigned long len)
- {
- 	btrfs_warn(eb->fs_info,
--		"access to eb bytenr %llu len %lu out of range start %lu len %lu",
-+		"access to eb bytenr %llu len %u out of range start %lu len %lu",
- 		eb->start, eb->len, start, len);
- 	WARN_ON(IS_ENABLED(CONFIG_BTRFS_DEBUG));
- 
-@@ -4175,7 +4179,7 @@ static inline int check_eb_range(const struct extent_buffer *eb,
- void read_extent_buffer(const struct extent_buffer *eb, void *dstv,
- 			unsigned long start, unsigned long len)
- {
--	const int unit_size = folio_size(eb->folios[0]);
-+	const int unit_size = eb->folio_size;
- 	size_t cur;
- 	size_t offset;
- 	char *dst = (char *)dstv;
-@@ -4215,7 +4219,7 @@ int read_extent_buffer_to_user_nofault(const struct extent_buffer *eb,
- 				       void __user *dstv,
- 				       unsigned long start, unsigned long len)
- {
--	const int unit_size = folio_size(eb->folios[0]);
-+	const int unit_size = eb->folio_size;
- 	size_t cur;
- 	size_t offset;
- 	char __user *dst = (char __user *)dstv;
-@@ -4255,7 +4259,7 @@ int read_extent_buffer_to_user_nofault(const struct extent_buffer *eb,
- int memcmp_extent_buffer(const struct extent_buffer *eb, const void *ptrv,
- 			 unsigned long start, unsigned long len)
- {
--	const int unit_size = folio_size(eb->folios[0]);
-+	const int unit_size = eb->folio_size;
- 	size_t cur;
- 	size_t offset;
- 	char *kaddr;
-@@ -4326,7 +4330,7 @@ static void __write_extent_buffer(const struct extent_buffer *eb,
- 				  const void *srcv, unsigned long start,
- 				  unsigned long len, bool use_memmove)
- {
--	const int unit_size = folio_size(eb->folios[0]);
-+	const int unit_size = eb->folio_size;
- 	size_t cur;
- 	size_t offset;
- 	char *kaddr;
-@@ -4375,7 +4379,7 @@ void write_extent_buffer(const struct extent_buffer *eb, const void *srcv,
- static void memset_extent_buffer(const struct extent_buffer *eb, int c,
- 				 unsigned long start, unsigned long len)
- {
--	const int unit_size = folio_size(eb->folios[0]);
-+	const int unit_size = eb->folio_size;
- 	unsigned long cur = start;
- 
- 	if (eb->addr) {
-@@ -4406,7 +4410,7 @@ void memzero_extent_buffer(const struct extent_buffer *eb, unsigned long start,
- void copy_extent_buffer_full(const struct extent_buffer *dst,
- 			     const struct extent_buffer *src)
- {
--	const int unit_size = folio_size(src->folios[0]);
-+	const int unit_size = src->folio_size;
- 	unsigned long cur = 0;
- 
- 	ASSERT(dst->len == src->len);
-@@ -4428,7 +4432,7 @@ void copy_extent_buffer(const struct extent_buffer *dst,
- 			unsigned long dst_offset, unsigned long src_offset,
- 			unsigned long len)
- {
--	const int unit_size = folio_size(dst->folios[0]);
-+	const int unit_size = dst->folio_size;
- 	u64 dst_len = dst->len;
- 	size_t cur;
- 	size_t offset;
-@@ -4484,10 +4488,10 @@ static inline void eb_bitmap_offset(const struct extent_buffer *eb,
- 	 * the bitmap item in the extent buffer + the offset of the byte in the
- 	 * bitmap item.
- 	 */
--	offset = start + offset_in_folio(eb->folios[0], eb->start) + byte_offset;
-+	offset = start + offset_in_eb_folio(eb, eb->start) + byte_offset;
- 
--	*folio_index = offset >> folio_shift(eb->folios[0]);
--	*folio_offset = offset_in_folio(eb->folios[0], offset);
-+	*folio_index = offset >> eb->folio_shift;
-+	*folio_offset = offset_in_eb_folio(eb, offset);
- }
- 
- /*
-@@ -4601,7 +4605,7 @@ void memcpy_extent_buffer(const struct extent_buffer *dst,
- 			  unsigned long dst_offset, unsigned long src_offset,
- 			  unsigned long len)
- {
--	const int unit_size = folio_size(dst->folios[0]);
-+	const int unit_size = dst->folio_size;
- 	unsigned long cur_off = 0;
- 
- 	if (check_eb_range(dst, dst_offset, len) ||
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 46050500529b..8e5639597800 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -8,6 +8,7 @@
- #include <linux/fiemap.h>
- #include <linux/btrfs_tree.h>
- #include "compression.h"
-+#include "messages.h"
- #include "ulist.h"
- #include "misc.h"
- 
-@@ -75,7 +76,8 @@ void __cold extent_buffer_free_cachep(void);
- #define INLINE_EXTENT_BUFFER_PAGES     (BTRFS_MAX_METADATA_BLOCKSIZE / PAGE_SIZE)
- struct extent_buffer {
- 	u64 start;
--	unsigned long len;
-+	u32 len;
-+	u32 folio_size;
- 	unsigned long bflags;
- 	struct btrfs_fs_info *fs_info;
- 
-@@ -90,6 +92,7 @@ struct extent_buffer {
- 	int read_mirror;
- 	/* >= 0 if eb belongs to a log tree, -1 otherwise */
- 	s8 log_index;
-+	u8 folio_shift;
- 	struct rcu_head rcu_head;
- 
- 	struct rw_semaphore lock;
-@@ -113,6 +116,13 @@ struct btrfs_eb_write_context {
- 	struct btrfs_block_group *zoned_bg;
- };
- 
-+static inline unsigned long offset_in_eb_folio(const struct extent_buffer *eb,
-+					       u64 start)
-+{
-+	ASSERT(eb->folio_size);
-+	return start & (eb->folio_size - 1);
-+}
-+
- /*
-  * Get the correct offset inside the page of extent buffer.
-  *
-@@ -151,13 +161,13 @@ static inline unsigned long get_eb_folio_index(const struct extent_buffer *eb,
- 	 *	   the folio_shift would be large enough to always make us
- 	 *	   return 0 as index.
- 	 *    1.2) Several page sized folios
--	 *         The folio_shift() would be PAGE_SHIFT, giving us the correct
-+	 *         The folio_shift would be PAGE_SHIFT, giving us the correct
- 	 *         index.
- 	 *
- 	 * 2) sectorsize < PAGE_SIZE and nodesize < PAGE_SIZE case
- 	 *    The folio would only be page sized, and always give us 0 as index.
- 	 */
--	return offset >> folio_shift(eb->folios[0]);
-+	return offset >> eb->folio_shift;
- }
- 
- /*
--- 
-2.43.0
-
+Cheers.
+Chris

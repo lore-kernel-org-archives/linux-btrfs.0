@@ -1,28 +1,29 @@
 Received: from mout.gmx.net (mout.gmx.net [212.227.17.22])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9AC983D551
-	for <linux-btrfs@vger.kernel.org>; Tue,  9 Jan 2024 21:19:51 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5FC9A3DB9F
+	for <linux-btrfs@vger.kernel.org>; Tue,  9 Jan 2024 22:17:30 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="LrFmmvfI"
+	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="KvZR+2yw"
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.com;
-	s=s31663417; t=1704835186; x=1705439986; i=quwenruo.btrfs@gmx.com;
-	bh=4T1RKhJK+OuxzPyxdyWEzrKlSS0V8TVGd23+xM12Bus=;
-	h=X-UI-Sender-Class:Date:Subject:To:References:From:In-Reply-To;
-	b=LrFmmvfIRQ8ABBbfzLOeqzI6C5cT7QcKlP6zySRj1UrxfDfGOsGGmRarU2k4pdAK
-	 NzgOLsUQR9TZUSPFTS0bCDt17KHm8twJfRXglLe/HB6UvET+sR6UaEsWlN5hwQ22k
-	 thjRaVdZE143ImCAhLgESRZGZ2+bNH/BrYag4EXyvfxKJFdr+BjjFwbUE0iPw0Mi4
-	 GDQzm2mP/7JPXsLrKuzFq01c/X1YjqjQFr82MVHm7P/PwgKvKAnjtFCvENSs3fFRs
-	 Y4y+YopzYibK2HOnV2RW4qbZRdQ1L0M44WsqKsyKSgpL4gYk+bJp4VM3SA9t6ywnE
-	 NBDnl1BXig/NMxtZZA==
+	s=s31663417; t=1704838644; x=1705443444; i=quwenruo.btrfs@gmx.com;
+	bh=DvTaZldHxuHSANBkjKnuhs50Mh/XS4GkG4G5H45rxrM=;
+	h=X-UI-Sender-Class:Date:Subject:To:Cc:References:From:
+	 In-Reply-To;
+	b=KvZR+2ywos0uJz7qd3fg4Odn5T8IE1uH5fNwBxu45XaSnubRQzOfvJ2JXShYaS7J
+	 88Kn4ff8Lz+XzIaszFePhvHJvcZQ0ltwg1/6RkEdWBGsdOf16ylxq6QdOw+Awivmz
+	 CArffZHvV6PUNA1op+6cJOw730qJYINQEsCD4Ltz0kYS7C5xUzc62X+TmlBcM2uIU
+	 o6+wPxQtB04Tj9wGRbapHqIcvLuTVmGdhYZkk4zGMmtGT1M+lkvQrx5QzQ8FSFpGj
+	 wQJpAhG7lhxHBIHBEleqxDKcsOyoUUXXI9OEr/rRUQ0WYX+gb5cJ8XX/8IkK050NJ
+	 fYCIEheMveOh6IdMLA==
 X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from [172.16.0.153] ([193.115.113.22]) by mail.gmx.net (mrgmx105
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1Mv31c-1r5e8P44Bc-00r3k0; Tue, 09
- Jan 2024 22:19:46 +0100
-Message-ID: <27fb4ed5-c3ce-4ab7-a3fd-d77dc8dd4fb2@gmx.com>
-Date: Wed, 10 Jan 2024 07:49:42 +1030
+Received: from [172.16.0.153] ([193.115.113.22]) by mail.gmx.net (mrgmx104
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MkHQX-1quMJ83BZR-00kgKb; Tue, 09
+ Jan 2024 23:17:24 +0100
+Message-ID: <61b6a8db-61ad-4c59-9f35-49e30a6437cc@gmx.com>
+Date: Wed, 10 Jan 2024 08:47:19 +1030
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -30,11 +31,16 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: Scrub reports uncorrectable errors with correctable errors
- unrepaired, but all files are fine
+Subject: Re: [PATCH] btrfs: defrag: add under utilized extent to defrag target
+ list
 Content-Language: en-US
-To: Rongrong <i@rong.moe>, linux-btrfs@vger.kernel.org
-References: <8bd12a1ee60172f53ee0c27374f41c3ec9976be8.camel@rong.moe>
+To: Christoph Anton Mitterer <calestyo@scientia.org>,
+ Filipe Manana <fdmanana@kernel.org>
+Cc: linux-btrfs@vger.kernel.org
+References: <2c2fac36b67c97c9955eb24a97c6f3c09d21c7ff.1704440000.git.wqu@suse.com>
+ <CAL3q7H5LEjZCkhTwgYJLSeQkG6NsY5AhE__na-2hCa7UuXuCzw@mail.gmail.com>
+ <59615d5b-8802-4218-8b0b-18e3eff47cb3@gmx.com>
+ <adb8b47a1dcb44747b15dde1aa6ac8c2592edd45.camel@scientia.org>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
  xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
@@ -60,135 +66,55 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
  INfWh0KbJodf0G48xouesn08cbfUdlphSMXujCA8y5TcNyRuNv2q5Nizl8sKhUZzh4BascoK
  DChBuznBsucCTAGrwPgG4/ul6HnWE8DipMKvkV9ob1xJS2W4WJRPp6QdVrBWJ9cCdtpR6GbL
  iQi22uZXoSPv/0oUrGU+U5X4IvdnvT+8viPzszL5wXswJZfqfy8tmHM85yjObVdIG6AlnrrD
-In-Reply-To: <8bd12a1ee60172f53ee0c27374f41c3ec9976be8.camel@rong.moe>
+In-Reply-To: <adb8b47a1dcb44747b15dde1aa6ac8c2592edd45.camel@scientia.org>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:1zBKkSRtFbBRBbbCv6jV4VBJl53th8HBr2j6WrH/m2cxSKsD0fd
- ZtzNlXGbpL1a8zVCw1LSQkswEVnyXgLT2r61CSpayzgIstKtVDxLGqPblvrPFaT2YXlQWNe
- inIKVY8Lv/f8CkJ1XIFLrUUHnglE3QqhRJ/Ggcp9WTNGWPa31/6tV47OpOHos5xR5CUI5Nu
- sWn3WjyC7wWUTORy+eOJg==
+X-Provags-ID: V03:K1:0ymA2vWB3H+oCOL0rkL/KKTnEj+A+Zf1CTM5togmPyfg04shAcY
+ L5W3/4G5UF/BGTEpLQ+3v/E1KxF+zbmdAhNmtfX1zDcGmFfCmNXUHH1WyBkK42n8oMdJE8G
+ WzoqQIOndHeM+Xw84NM/NCgFIJxGIW76mgHX06tHeZ2eiOgF08g1Bqo5PWmHu+So68hxR2Z
+ 9q4Egxv4RtjJT5bzAq6IQ==
 X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:1gulMhAugY8=;vOQX1IBXRzr4cE75m71YuQ7huEb
- /W3ozU4sq88Szpx7T2ZwHNoMYeb/8dLH3hqjUQmJveAwfJ3xycZo7/Ugel2l9MRIQcqJMtPw3
- lxfn6vX+WZOCG8xhevgDuOnmtZqHqyLAZEOTf4E+YYUaDkcpf2K2SNTqKTM5FF1ZBTByoLPCG
- pEMOtylddMH7m1fV/bxYjHFbNdiRBeROtS4gZH0ZX6dNRrNYmHYmarcZdZqKmlSviE4tZPweD
- fb4iuYxbuWRz0OU12XgJDoFSsAoSJEV74VKrEA1kaZZlV2VcRdf4E0O1YRRnFUEOmr2MBnq2p
- m82pl7+d8g36pS1xRhjZrI1oFKJJUG64vaW1Y8powv/6Mgq6GA7oYPvdeSxoMvcorbnobZE5u
- J5dMPQbXo3fG3yLBV7FFmrsFMJ1CzIBL957wd5UPGxusZ6cyfFVstBAsBDo43i0ihK/FYWUdi
- nM93INRVTopRMdtNwxv3CU/YxT8vBFCvdTVYp6bKivetTiNU/51lnqzNeQ5ZldN4lurcM9nSP
- SDLRm3yX51s0ic2WxCOC/4O/s9czlEadcedXwC/UbFsntgsMPbWkRTEduZQi60GAnYmHG4+fB
- uUocYwv7LxkgLKUqfQC+JcWXJBbkdNKKTE2EgbbnZvrLtExjxEZgjp8sbRv9GAc5eURkxqZJI
- kxXJ2ySUl+RPpR79mrHnA7IQWqCdWMVMHHf3KI/WRZzk6ip7Ww3VNtSh81JDsgOp3Lc074D+D
- hOmy2c+L7kX8aKZ8BtZ83VCcsW7zTn+m4b5coehLyFOcAH1X9KepXNMuWgWF7k8Q2rQ2DjDtg
- jOxSQRS7bL71tDpumCD7koffQhYqrDoLE9uSnEC77AKWWUnGjjHIBqtbYrw/2flpYfr+m9UCR
- wuj9/j66TSh1O6nXQ8vZFBFCUEAHAuHU2IfK1An98i3sUUS+FL9L0fOhoUp3BeungwB8XxEpT
- gCX0bQ==
+UI-OutboundReport: notjunk:1;M01:P0:OeKyaakCOX8=;otjKE/mIGw9wj2M90p1vkFJiHx/
+ z2S9H7nSi2j2rNC7Ln31XgnOQGVKCPiZQwdb+Xpkv0wU2S37BwnkhDvGIUPsJs4/J4RnePJob
+ FfZQUcbNL2lJTCFK8nVMm5RQrhsKCtnGylbj7boeWJ1FgQaVPLjsNZG2wBaSThy03TzdrC1kr
+ NmcLMc+K/duLg82LZTSwwg1Ep3CaTVRS1OMCTSlCIrI8TS6boswM+8rfCwuH2Z8WknIA2SmoC
+ QrdrIsiC4PluLQMsiDf43HrXfXvTOYbIDae9DCY2GmH0rw2YR7vfpysVbiR2le+p1mqOewWMl
+ WOEmwrmbszCpgmC1risxTOgxXX5JtKBKxJzAeAKQ4CYKOi9ND4j//xtScK6Sqb2xhtT6HZAN3
+ wZGsHquvf6mtZOG0s30ANbvVYgL2ekKUFifhPSZQYc8p8l3sqiWLs8TNvxn0N28qoo4IVDJ38
+ BD3WgnDhm7I0MpqUdln1Ys91r/sAaHjbE/BplTHATlcTSxYs9ocWWR9px7Y5eLJuzhKdvpQRa
+ HyNRMDO6J6DGHx9i2JWEyO+2lmn7bb5/imh3S6oSdvdBWbItCEpPkH45H7JWtAqV9r40SHJkO
+ E7xlfYQ0nY5SRurT4lSQICAddvhrQIbzTxiOkXBpBC0nK3Go6sx6nai/xUdlwZ4GpiHn5krPD
+ hC9zK8INF7EUA5PzIGu34aJunvTenS+MfMn3l5bqO82eYHxXDV3+4sHt2KUTOWSxfsEA/DRdR
+ /M7Ny8GfSYfmFukU1O2wX90Fg6Ih2kJQg29uytoCUYBhAVia2+XuP4hXLBySUtMNOIgLjc8Mv
+ q4qKO4evVnCdFF781JNac1cklyNWGAky6MshVV/Jh2IAv63w+amFnFEEtNOyosF6hOQdJUVnA
+ fT7WkU8KV9JD79TifZliEskVHMk1JGTvMe/1v2nKfGimzeuZ/lYValKI3tgxxDeFtcEsWYCiH
+ 3k91tJS1uk4/E5YoSLFh/n/g8n4=
 
 
 
-On 2024/1/10 04:36, Rongrong wrote:
-> Hi all,
+On 2024/1/10 08:27, Christoph Anton Mitterer wrote:
+> On Wed, 2024-01-10 at 07:34 +1030, Qu Wenruo wrote:
+>> The 1/16 is chosen as a trade-off between wasted space and possible
+>> unnecessary defrag.
 >
-> I recently scrubbed my fs and saw multiple correctable and
-> uncorrectable errors. Weirdly, the correctable errors did not really
-> get repaired ("fixed up") after the scrub was finished. It just
-> persisted and reappeared in the next scrub. But surprisingly, when I
-> tried to archive all files using `rsync -aAHUXxvP /path/to/mountpoint
-> /path/to/archive` (the fs has no subvolume other than <FS_TREE>), no
-> error was raised (both rsync and dmesg) and all files were fine. Both
-> `btrfs check` and `btrfs check --check-data-csum` also finished without
-> error.
->
-> I tried many kernel versions, including 6.5.13, 6.6.10 and 6.7-rc8.
-> btrfs-progs is 6.6.3. The fs is mounted with the below parameters:
-> autodefrag,compress-force=3Dzstd,relatime
->
-> Each time a scrub gets finished, the error summary is the same:
->
-> Error summary: read=3D416
-> Corrected: 168
-> Uncorrectable: 248
-> Unverified: 0
->
-> Only two types of errors were shown in dmesg:
->
-> BTRFS critical (device [D]): unable to find chunk map for logical
-> [LoUc] length [LeUc]
-> BTRFS error (device [D]): fixed up error at logical [LoC] on dev
-> /dev/[D] physical [PhC]
-> (all [PhC] just equaled to the corresponding [LoC])
->
-> I randomly picked some addresses and did some research:
->
-> # btrfs inspect-internal inode-resolve [LoUc] /path/to/mountpoint
-> ERROR: ino paths ioctl: No such file or directory
-> # btrfs inspect-internal logical-resolve [LoUc] /path/to/mountpoint
-> ERROR: ino paths ioctl: No such file or directory
-> # btrfs inspect-internal dump-tree -b [LoUc] /dev/[D]
-> btrfs-progs v6.6.3
-> Invalid mapping for [LoUc]-[LoUc+16384], got [Lo1]-[Lo2]
-> Couldn't map the block [LoUc]
-> ERROR: failed to read tree block [LoUc]
-> # btrfs inspect-internal inode-resolve [LoC] /path/to/mountpoint
-> ERROR: ino paths ioctl: No such file or directory
-> # btrfs inspect-internal logical-resolve [LoC] /path/to/mountpoint
-> /path/to/file
-> # btrfs inspect-internal dump-tree -b [LoC] /dev/[D]
-> btrfs-progs v6.6.3
-> checksum verify failed on [LoC] wanted [csum1] found [csum2]
-> ERROR: failed to read tree block [LoC]
->
-> I checked the commit log of fs/btrfs/scrub.c, and tried scrub on
-> 6.3.12. The scrub finished without error. I assume this is intended as
-> 0096580713ffc061a579bd8be0661120079e3beb was simply not back-ported.
+> Felipe's point doesn't seem so invalid.... wouldn't it be possible to
+> make the trade-off somehow configurable, so that the user can choose
+> via some command line option?
 
-This should not be the case, that commit should only be included in
-newer kernels with the reworked scrub, or it doesn't need to be
-backported at all.
+We have 16 bytes extra space for the ioctl, I think we can go 2 u32 to
+configure both ratio and wasted space if needed.
 
->
-> I guess the root cause of the issue is that one of the DUP metadata
-> copies was somehow corrupted. Am I right?
+Unfortunately we don't have any existing checks on
+btrfs_ioctl_defrag_range_args::flags, which means we have no way to
+detect if the kernel supports new flags.
 
-I don't think so, I think there may be some false alerts, either from
-kernel scrub interface, or btrfs-progs.
-
-> I am to confirm:
-> 1. is this behavior (false "fixed up") of scrub intended?
-
-Nope. Considering "btrfs check" and "btrfs check --check-data-csum" is
-totally fine, this should be a bug related to scrub.
-
-> 2. why btrfs check finished without error under such a circumstance?
-
-Because that is probably the real case.
-
-> 3. since all files were fine and btrfs check finished without error,
-> should these "uncorrectable" errors be actually correctable?
-
-I believe it's some bugs, either from scrub functionality of btrfs
-kernel module, or btrfs-progs reporting.
-
-Would you please try the following?
-
-- A different btrfs-progs to do the same scrub
-   To rule out some btrfs-progs regression.
-
-- "btrfs scrub start -RD"
-   This shows the raw data reported, including where the corruptions are
-   (data/metadata, and scrubbed bytes etc).
-
-- Do a readonly scrub on a readonly mounted btrfs
-   Just to rule out any write-time races, which can help us to pin down
-   the possible cause.
+I'll start adding such rejection first, then we can start adding new
+btrfs_ioctl_defrag_range_args flags/options to support configurable
+ratio/wasted bytes.
 
 Thanks,
 Qu
 
 >
-> I have a full dump of the disk. As long as needed, I can provide
-> further debug assistance and more information about the fs.
->
-> Thanks,
-> Rongrong
->
+> Cheers,
+> Chris.

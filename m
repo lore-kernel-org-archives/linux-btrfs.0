@@ -1,114 +1,89 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from serval.cherry.relay.mailchannels.net (serval.cherry.relay.mailchannels.net [23.83.223.163])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 53F2563D
-	for <linux-btrfs@vger.kernel.org>; Wed, 10 Jan 2024 01:02:10 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="RJMJS7gd";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="DCzFngSm";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="RJMJS7gd";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="DCzFngSm"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 993391F83E;
-	Wed, 10 Jan 2024 01:02:07 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1704848527;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0BD924689
+	for <linux-btrfs@vger.kernel.org>; Wed, 10 Jan 2024 01:24:37 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=scientia.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=scientia.org
+X-Sender-Id: instrampxe0y3a|x-authuser|calestyo@scientia.org
+Received: from relay.mailchannels.net (localhost [127.0.0.1])
+	by relay.mailchannels.net (Postfix) with ESMTP id 58B09362D3B;
+	Tue,  9 Jan 2024 21:57:46 +0000 (UTC)
+Received: from cpanel-007-fra.hostingww.com (unknown [127.0.0.6])
+	(Authenticated sender: instrampxe0y3a)
+	by relay.mailchannels.net (Postfix) with ESMTPA id BE82B362BD4;
+	Tue,  9 Jan 2024 21:57:43 +0000 (UTC)
+ARC-Seal: i=1; s=arc-2022; d=mailchannels.net; t=1704837464; a=rsa-sha256;
+	cv=none;
+	b=DUbJdTLXg6gZekiN5SJcQpsEwYEB1u3RnPzXVBh+Z0jY7LmJsyQZWn1CMuSNLNtElKUIaR
+	50tgf4AeSOgTYkAxLSHjJFQ+pYhhNUC67Wzi3mIbr3eHYHlrC/HEkHm2+3r8wODnugSxWi
+	rAQECD8whVbcuatCqG6p9mkzOA5H3MAOxdBClxTB2HLAzxNPOc7xsqaY45M6Ss6kr4cqNE
+	KolfWVthazu1fn5bS+DjuMpQub6wLoYThh++2WevIFr/VTiiR30SNmtRPuJ4iQlhN+AEk4
+	RQSC2pwHcp+6Drku5j4h0RV0fM73U38zPRsBNeLepGXy/NuJ0MBbCG0oz9+b2g==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=mailchannels.net;
+	s=arc-2022; t=1704837464;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=E4PR5cAxV8IBrZn1PUcg01taecP/flmImpZaNC2zyfE=;
-	b=RJMJS7gdCNVrtjjmFyU3RrrjG+BiBVryjODVmltB61uVvpHpgc8JZq0ukqan4W6k2gtJrX
-	j9b8pcD0t/2RW2RGHs3Xd6jTlkZQs0IoNclDSUQSHgCRNWp4zDsik/yUj9aWL227Wgsr0a
-	j5VPQhR12vLPESs+qWJECkv+jnZR0j4=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1704848527;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=E4PR5cAxV8IBrZn1PUcg01taecP/flmImpZaNC2zyfE=;
-	b=DCzFngSmvXrx4IPuzgEaDmRq84ktOfctINQ4uj5i5muKGrlgEwKFVYv8hXJGDbs5BdLZ14
-	H25A7uRfpMa+TJAA==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1704848527;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=E4PR5cAxV8IBrZn1PUcg01taecP/flmImpZaNC2zyfE=;
-	b=RJMJS7gdCNVrtjjmFyU3RrrjG+BiBVryjODVmltB61uVvpHpgc8JZq0ukqan4W6k2gtJrX
-	j9b8pcD0t/2RW2RGHs3Xd6jTlkZQs0IoNclDSUQSHgCRNWp4zDsik/yUj9aWL227Wgsr0a
-	j5VPQhR12vLPESs+qWJECkv+jnZR0j4=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1704848527;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=E4PR5cAxV8IBrZn1PUcg01taecP/flmImpZaNC2zyfE=;
-	b=DCzFngSmvXrx4IPuzgEaDmRq84ktOfctINQ4uj5i5muKGrlgEwKFVYv8hXJGDbs5BdLZ14
-	H25A7uRfpMa+TJAA==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 8BA3C13786;
-	Wed, 10 Jan 2024 01:02:07 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id UD7eIY/snWVebwAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Wed, 10 Jan 2024 01:02:07 +0000
-Date: Wed, 10 Jan 2024 02:01:53 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Josef Bacik <josef@toxicpanda.com>
-Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH] btrfs: WARN_ON_ONCE() in our leak detection code
-Message-ID: <20240110010153.GO28693@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <f94513bea5369c4ea65c8dab9a5a83403381c521.1704226673.git.josef@toxicpanda.com>
+	bh=4Y9bvWhGq8nYDJt8GesgEBtmMpSmb6gIYeP9yDaHZd8=;
+	b=tNzBfuDcizX//eQ1OdnLlX8MN2StzijKH8zfFI3iwWlZPbnKe1E5oCDfhUHJgcX15htfoe
+	FdbfVJqy2LQ79DcYSRZaz9zCOLsES3wx9Y5pS8bp2PaTMLWLsKtWk5X7S449EyiIwOuEg3
+	+2iIE/fz+fM+sh0so8xUsvmsqdjfu5hlKHPGKjpPndVVvOP4Rhz3adeIoJA7LHKStk2Rnc
+	BaEiz0QQCyYeVuXC69n/LvTkuqKfktPATTDwfn+sjvul0Xu+h33/D5ns0wRizbMbEjtq0D
+	CEHiygLKNZshYHF4C3ZyBFTi9XdKxGNQmzyFT4Z4UMRJ7fG+8XC5nSZu+qNA4A==
+ARC-Authentication-Results: i=1;
+	rspamd-69494b7fd5-l52kv;
+	auth=pass smtp.auth=instrampxe0y3a smtp.mailfrom=calestyo@scientia.org
+X-Sender-Id: instrampxe0y3a|x-authuser|calestyo@scientia.org
+X-MC-Relay: Neutral
+X-MailChannels-SenderId: instrampxe0y3a|x-authuser|calestyo@scientia.org
+X-MailChannels-Auth-Id: instrampxe0y3a
+X-Snatch-Shoe: 179d36936e3c2a97_1704837464545_2758955925
+X-MC-Loop-Signature: 1704837464545:1213073238
+X-MC-Ingress-Time: 1704837464545
+Received: from cpanel-007-fra.hostingww.com (cpanel-007-fra.hostingww.com
+ [3.69.87.180])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384)
+	by 100.102.134.10 (trex/6.9.2);
+	Tue, 09 Jan 2024 21:57:44 +0000
+Received: from p5090f6c2.dip0.t-ipconnect.de ([80.144.246.194]:45414 helo=heisenberg.fritz.box)
+	by cpanel-007-fra.hostingww.com with esmtpsa  (TLS1.2) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+	(Exim 4.96)
+	(envelope-from <calestyo@scientia.org>)
+	id 1rNK6L-0007d5-2s;
+	Tue, 09 Jan 2024 21:57:41 +0000
+Message-ID: <adb8b47a1dcb44747b15dde1aa6ac8c2592edd45.camel@scientia.org>
+Subject: Re: [PATCH] btrfs: defrag: add under utilized extent to defrag
+ target list
+From: Christoph Anton Mitterer <calestyo@scientia.org>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Filipe Manana <fdmanana@kernel.org>
+Cc: linux-btrfs@vger.kernel.org
+Date: Tue, 09 Jan 2024 22:57:35 +0100
+In-Reply-To: <59615d5b-8802-4218-8b0b-18e3eff47cb3@gmx.com>
+References: 
+	<2c2fac36b67c97c9955eb24a97c6f3c09d21c7ff.1704440000.git.wqu@suse.com>
+	 <CAL3q7H5LEjZCkhTwgYJLSeQkG6NsY5AhE__na-2hCa7UuXuCzw@mail.gmail.com>
+	 <59615d5b-8802-4218-8b0b-18e3eff47cb3@gmx.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.50.2-1 
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <f94513bea5369c4ea65c8dab9a5a83403381c521.1704226673.git.josef@toxicpanda.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-Authentication-Results: smtp-out2.suse.de;
-	none
-X-Spam-Level: **
-X-Spam-Score: 2.59
-X-Spamd-Result: default: False [2.59 / 50.00];
-	 ARC_NA(0.00)[];
-	 HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	 RCVD_VIA_SMTP_AUTH(0.00)[];
-	 FROM_HAS_DN(0.00)[];
-	 RCPT_COUNT_THREE(0.00)[3];
-	 TO_DN_SOME(0.00)[];
-	 TO_MATCH_ENVRCPT_ALL(0.00)[];
-	 MIME_GOOD(-0.10)[text/plain];
-	 REPLYTO_ADDR_EQ_FROM(0.00)[];
-	 RCVD_COUNT_THREE(0.00)[3];
-	 DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	 NEURAL_HAM_SHORT(-0.20)[-1.000];
-	 NEURAL_SPAM_LONG(3.50)[1.000];
-	 FUZZY_BLOCKED(0.00)[rspamd.com];
-	 FROM_EQ_ENVFROM(0.00)[];
-	 MIME_TRACE(0.00)[0:+];
-	 RCVD_TLS_ALL(0.00)[];
-	 BAYES_HAM(-0.91)[86.11%]
-X-Spam-Flag: NO
+X-AuthUser: calestyo@scientia.org
 
-On Tue, Jan 02, 2024 at 03:18:07PM -0500, Josef Bacik wrote:
-> fstests looks for WARN_ON's in dmesg.  Add WARN_ON_ONCE() to our leak
-> detection code so that fstests will fail if these things trip at all.
-> This will allow us to easily catch problems with our reference counting
-> that may otherwise go unnoticed.
-> 
-> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+On Wed, 2024-01-10 at 07:34 +1030, Qu Wenruo wrote:
+> The 1/16 is chosen as a trade-off between wasted space and possible
+> unnecessary defrag.
 
-Added to misc-next, thanks.
+Felipe's point doesn't seem so invalid.... wouldn't it be possible to
+make the trade-off somehow configurable, so that the user can choose
+via some command line option?
+
+Cheers,
+Chris.

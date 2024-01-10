@@ -1,89 +1,158 @@
-Received: from serval.cherry.relay.mailchannels.net (serval.cherry.relay.mailchannels.net [23.83.223.163])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0BD924689
-	for <linux-btrfs@vger.kernel.org>; Wed, 10 Jan 2024 01:24:37 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=scientia.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=scientia.org
-X-Sender-Id: instrampxe0y3a|x-authuser|calestyo@scientia.org
-Received: from relay.mailchannels.net (localhost [127.0.0.1])
-	by relay.mailchannels.net (Postfix) with ESMTP id 58B09362D3B;
-	Tue,  9 Jan 2024 21:57:46 +0000 (UTC)
-Received: from cpanel-007-fra.hostingww.com (unknown [127.0.0.6])
-	(Authenticated sender: instrampxe0y3a)
-	by relay.mailchannels.net (Postfix) with ESMTPA id BE82B362BD4;
-	Tue,  9 Jan 2024 21:57:43 +0000 (UTC)
-ARC-Seal: i=1; s=arc-2022; d=mailchannels.net; t=1704837464; a=rsa-sha256;
-	cv=none;
-	b=DUbJdTLXg6gZekiN5SJcQpsEwYEB1u3RnPzXVBh+Z0jY7LmJsyQZWn1CMuSNLNtElKUIaR
-	50tgf4AeSOgTYkAxLSHjJFQ+pYhhNUC67Wzi3mIbr3eHYHlrC/HEkHm2+3r8wODnugSxWi
-	rAQECD8whVbcuatCqG6p9mkzOA5H3MAOxdBClxTB2HLAzxNPOc7xsqaY45M6Ss6kr4cqNE
-	KolfWVthazu1fn5bS+DjuMpQub6wLoYThh++2WevIFr/VTiiR30SNmtRPuJ4iQlhN+AEk4
-	RQSC2pwHcp+6Drku5j4h0RV0fM73U38zPRsBNeLepGXy/NuJ0MBbCG0oz9+b2g==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed;
- d=mailchannels.net;
-	s=arc-2022; t=1704837464;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D6C141376
+	for <linux-btrfs@vger.kernel.org>; Wed, 10 Jan 2024 01:59:36 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="QEwwo7M3";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="ebU4slKe";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="qT90n4rs";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="GllvsqAA"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id BDCE32219D;
+	Wed, 10 Jan 2024 01:59:29 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1704851970;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=4Y9bvWhGq8nYDJt8GesgEBtmMpSmb6gIYeP9yDaHZd8=;
-	b=tNzBfuDcizX//eQ1OdnLlX8MN2StzijKH8zfFI3iwWlZPbnKe1E5oCDfhUHJgcX15htfoe
-	FdbfVJqy2LQ79DcYSRZaz9zCOLsES3wx9Y5pS8bp2PaTMLWLsKtWk5X7S449EyiIwOuEg3
-	+2iIE/fz+fM+sh0so8xUsvmsqdjfu5hlKHPGKjpPndVVvOP4Rhz3adeIoJA7LHKStk2Rnc
-	BaEiz0QQCyYeVuXC69n/LvTkuqKfktPATTDwfn+sjvul0Xu+h33/D5ns0wRizbMbEjtq0D
-	CEHiygLKNZshYHF4C3ZyBFTi9XdKxGNQmzyFT4Z4UMRJ7fG+8XC5nSZu+qNA4A==
-ARC-Authentication-Results: i=1;
-	rspamd-69494b7fd5-l52kv;
-	auth=pass smtp.auth=instrampxe0y3a smtp.mailfrom=calestyo@scientia.org
-X-Sender-Id: instrampxe0y3a|x-authuser|calestyo@scientia.org
-X-MC-Relay: Neutral
-X-MailChannels-SenderId: instrampxe0y3a|x-authuser|calestyo@scientia.org
-X-MailChannels-Auth-Id: instrampxe0y3a
-X-Snatch-Shoe: 179d36936e3c2a97_1704837464545_2758955925
-X-MC-Loop-Signature: 1704837464545:1213073238
-X-MC-Ingress-Time: 1704837464545
-Received: from cpanel-007-fra.hostingww.com (cpanel-007-fra.hostingww.com
- [3.69.87.180])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384)
-	by 100.102.134.10 (trex/6.9.2);
-	Tue, 09 Jan 2024 21:57:44 +0000
-Received: from p5090f6c2.dip0.t-ipconnect.de ([80.144.246.194]:45414 helo=heisenberg.fritz.box)
-	by cpanel-007-fra.hostingww.com with esmtpsa  (TLS1.2) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-	(Exim 4.96)
-	(envelope-from <calestyo@scientia.org>)
-	id 1rNK6L-0007d5-2s;
-	Tue, 09 Jan 2024 21:57:41 +0000
-Message-ID: <adb8b47a1dcb44747b15dde1aa6ac8c2592edd45.camel@scientia.org>
-Subject: Re: [PATCH] btrfs: defrag: add under utilized extent to defrag
- target list
-From: Christoph Anton Mitterer <calestyo@scientia.org>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Filipe Manana <fdmanana@kernel.org>
-Cc: linux-btrfs@vger.kernel.org
-Date: Tue, 09 Jan 2024 22:57:35 +0100
-In-Reply-To: <59615d5b-8802-4218-8b0b-18e3eff47cb3@gmx.com>
-References: 
-	<2c2fac36b67c97c9955eb24a97c6f3c09d21c7ff.1704440000.git.wqu@suse.com>
-	 <CAL3q7H5LEjZCkhTwgYJLSeQkG6NsY5AhE__na-2hCa7UuXuCzw@mail.gmail.com>
-	 <59615d5b-8802-4218-8b0b-18e3eff47cb3@gmx.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.50.2-1 
+	bh=CSwDIRV4DZMIzyvFLCeYPmg0euy+erTMyxRLYBH8TCQ=;
+	b=QEwwo7M3J3ToASO/jzRmh4ktzgUBNhne74P823fd9a2tKaTyfnztsi5EeHeiNe8LEOEcll
+	nmee9fRgHV7GdUlJc5zy0qHOj34hvaPcgxoD4G532TaWg+oeGPfD6XV8Bo3X9SL3L4Xpxe
+	eJkuEgROHxtOnaMsUuHH0+Lha9kP6z8=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1704851970;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=CSwDIRV4DZMIzyvFLCeYPmg0euy+erTMyxRLYBH8TCQ=;
+	b=ebU4slKel5Xb3+2CPuaeDWSe8ePOIs9guxXzKMVnU8j6pdaJkXO8M8inuLuGeVwShZFWs2
+	eoVkD7ZTocBF4NDg==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1704851969;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=CSwDIRV4DZMIzyvFLCeYPmg0euy+erTMyxRLYBH8TCQ=;
+	b=qT90n4rsVQFFN0sZezn6U6vVJVpKvhdshTsXLB9i2ID7ZFYsdB6oXVt2hQSAQKtsBFVc7q
+	KrUccxPhPwtzFFK/wS3EkuPzDWrnNB6wXdtObTPsCT8e+3G5l/QfxQMjTSMUPdZlYxyl5E
+	qHZLcwN/ImdI+K3eOv9W631v7VLQ1nc=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1704851969;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=CSwDIRV4DZMIzyvFLCeYPmg0euy+erTMyxRLYBH8TCQ=;
+	b=GllvsqAAIGwNxW/5c2Bn2N6il5D6rDj9CCh/36j3H+yz753+Dip84OHYIUZwvaHH0SaLiL
+	yCLfOnRFiZN2XRCQ==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id A21C313C94;
+	Wed, 10 Jan 2024 01:59:29 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id 0oFlJwH6nWWBDgAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Wed, 10 Jan 2024 01:59:29 +0000
+Date: Wed, 10 Jan 2024 02:59:11 +0100
+From: David Sterba <dsterba@suse.cz>
+To: kernel test robot <lkp@intel.com>
+Cc: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
+	llvm@lists.linux.dev, oe-kbuild-all@lists.linux.dev
+Subject: Re: [PATCH 1/3] btrfs: zlib: fix and simplify the inline extent
+ decompression
+Message-ID: <20240110015800.GP28693@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <29b7793e53e1cdd559ad212ee69cec211a3b4db2.1704704328.git.wqu@suse.com>
+ <202401091012.pLm6PcKG-lkp@intel.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-AuthUser: calestyo@scientia.org
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <202401091012.pLm6PcKG-lkp@intel.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-Spam-Level: ***
+X-Spamd-Bar: +++
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b=qT90n4rs;
+	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=GllvsqAA
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Spamd-Result: default: False [3.29 / 50.00];
+	 ARC_NA(0.00)[];
+	 HAS_REPLYTO(0.30)[dsterba@suse.cz];
+	 R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	 RCVD_VIA_SMTP_AUTH(0.00)[];
+	 FROM_HAS_DN(0.00)[];
+	 TO_DN_SOME(0.00)[];
+	 TO_MATCH_ENVRCPT_ALL(0.00)[];
+	 RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	 MIME_GOOD(-0.10)[text/plain];
+	 REPLYTO_ADDR_EQ_FROM(0.00)[];
+	 RCPT_COUNT_FIVE(0.00)[5];
+	 SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	 RCVD_COUNT_THREE(0.00)[3];
+	 DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	 DKIM_TRACE(0.00)[suse.cz:+];
+	 MX_GOOD(-0.01)[];
+	 NEURAL_SPAM_LONG(3.50)[1.000];
+	 DBL_BLOCKED_OPENRESOLVER(0.00)[01.org:url,git-scm.com:url,intel.com:email,suse.cz:dkim];
+	 FUZZY_BLOCKED(0.00)[rspamd.com];
+	 FROM_EQ_ENVFROM(0.00)[];
+	 MIME_TRACE(0.00)[0:+];
+	 NEURAL_HAM_SHORT(-0.20)[-1.000];
+	 RCVD_TLS_ALL(0.00)[];
+	 BAYES_HAM(-0.00)[11.44%];
+	 RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from]
+X-Spam-Score: 3.29
+X-Rspamd-Queue-Id: BDCE32219D
+X-Spam-Flag: NO
 
-On Wed, 2024-01-10 at 07:34 +1030, Qu Wenruo wrote:
-> The 1/16 is chosen as a trade-off between wasted space and possible
-> unnecessary defrag.
+On Tue, Jan 09, 2024 at 11:02:54AM +0800, kernel test robot wrote:
+> Hi Qu,
+> 
+> kernel test robot noticed the following build warnings:
+> 
+> [auto build test WARNING on kdave/for-next]
+> [also build test WARNING on next-20240108]
+> [cannot apply to linus/master v6.7]
+> [If your patch is applied to the wrong git tree, kindly drop us a note.
+> And when submitting patch, we suggest to use '--base' as documented in
+> https://git-scm.com/docs/git-format-patch#_base_tree_information]
+> 
+> url:    https://github.com/intel-lab-lkp/linux/commits/Qu-Wenruo/btrfs-zlib-fix-and-simplify-the-inline-extent-decompression/20240108-171206
+> base:   https://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-next
+> patch link:    https://lore.kernel.org/r/29b7793e53e1cdd559ad212ee69cec211a3b4db2.1704704328.git.wqu%40suse.com
+> patch subject: [PATCH 1/3] btrfs: zlib: fix and simplify the inline extent decompression
+> config: i386-allmodconfig (https://download.01.org/0day-ci/archive/20240109/202401091012.pLm6PcKG-lkp@intel.com/config)
+> compiler: ClangBuiltLinux clang version 17.0.6 (https://github.com/llvm/llvm-project 6009708b4367171ccdbf4b5905cb6a803753fe18)
+> reproduce (this is a W=1 build): (https://download.01.org/0day-ci/archive/20240109/202401091012.pLm6PcKG-lkp@intel.com/reproduce)
+> 
+> If you fix the issue in a separate patch/commit (i.e. not just a new version of
+> the same patch/commit), kindly add following tags
+> | Reported-by: kernel test robot <lkp@intel.com>
+> | Closes: https://lore.kernel.org/oe-kbuild-all/202401091012.pLm6PcKG-lkp@intel.com/
+> 
+> All warnings (new ones prefixed by >>):
+> 
+> >> fs/btrfs/zlib.c:402:15: warning: format specifies type 'unsigned long' but the argument has type 'size_t' (aka 'unsigned int') [-Wformat]
+>      401 |                 pr_warn_ratelimited("BTRFS: infalte failed, decompressed=%lu expected=%lu\n",
+>          |                                                                                       ~~~
+>          |                                                                                       %zu
+>      402 |                                         to_copy, destlen);
+>          |                                                  ^~~~~~~
 
-Felipe's point doesn't seem so invalid.... wouldn't it be possible to
-make the trade-off somehow configurable, so that the user can choose
-via some command line option?
-
-Cheers,
-Chris.
+Valid report but I can't reproduce it. Built with clang 17 and
+explicitly enabled -Wformat. We have additional warnings enabled per
+directory fs/btrfs/ so we can add -Wformat, I'd like to know what I'm
+missing, we've had fixups for the size_t printk format so it would make
+sense to catch it early.

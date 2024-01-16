@@ -1,239 +1,84 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from mail-pg1-f196.google.com (mail-pg1-f196.google.com [209.85.215.196])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6BA0D7490
-	for <linux-btrfs@vger.kernel.org>; Tue, 16 Jan 2024 03:31:53 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0171F8826
+	for <linux-btrfs@vger.kernel.org>; Tue, 16 Jan 2024 05:51:41 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="HPqmdh80";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="HPqmdh80"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 509F81FB5F
-	for <linux-btrfs@vger.kernel.org>; Tue, 16 Jan 2024 03:31:49 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1705375909; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=MR1uWFOmaNeyg2XcKhzIWTV8QTWnZxzClwhXfqKSgoE=;
-	b=HPqmdh80pPbpj9F+Zg60hnACl/geQYVllxpAB6+enUMnzuQ4g7z1OLqBQrcuwWGbnPin7k
-	aljOCeij+LcHLBPh+FCa4ytl7i2XlgQtmBdm8/a+iMacQBYyey3GNO7o020yCpxDWi9f9a
-	jxPeb9sr+KSNBSy9UsII7K5sXCLmoG8=
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1705375909; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=MR1uWFOmaNeyg2XcKhzIWTV8QTWnZxzClwhXfqKSgoE=;
-	b=HPqmdh80pPbpj9F+Zg60hnACl/geQYVllxpAB6+enUMnzuQ4g7z1OLqBQrcuwWGbnPin7k
-	aljOCeij+LcHLBPh+FCa4ytl7i2XlgQtmBdm8/a+iMacQBYyey3GNO7o020yCpxDWi9f9a
-	jxPeb9sr+KSNBSy9UsII7K5sXCLmoG8=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 5DC44132FA
-	for <linux-btrfs@vger.kernel.org>; Tue, 16 Jan 2024 03:31:48 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([10.150.64.162])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id oP+6BKT4pWUKOgAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Tue, 16 Jan 2024 03:31:48 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/3] btrfs-progs: add extra chunk alignment checks
-Date: Tue, 16 Jan 2024 14:01:25 +1030
-Message-ID: <cd582deb540064fbf01b10f0651f00809b643e2e.1705375819.git.wqu@suse.com>
-X-Mailer: git-send-email 2.43.0
-In-Reply-To: <cover.1705375819.git.wqu@suse.com>
-References: <cover.1705375819.git.wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="OkejzLjk"
+Received: by mail-pg1-f196.google.com with SMTP id 41be03b00d2f7-5cf87cdc4c5so289534a12.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 15 Jan 2024 21:51:41 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1705384301; x=1705989101; darn=vger.kernel.org;
+        h=to:subject:message-id:date:from:mime-version:from:to:cc:subject
+         :date:message-id:reply-to;
+        bh=eUz24UqMoiRGdyvWpIQc+WFa5h8HIEkpCem8hDMklQA=;
+        b=OkejzLjkSJE/iqFLtKRWz/Kkb+xMhszdqmXh+bMh2MmH6JQBgbf9i+RM5d5UJWYlf2
+         nqz+J787cY1M+OkKvpVaISaGvZCEPs+a1Se4+iCbL7XNU59WudYVRxSo6ATnLFpR4Bf+
+         8FtXyJa/cccFwQnIj5M4oAJe7jfpWfyDMvAR6Iz3vVnEXo6k+2x/NlrmpsJ5ICF/ZFTw
+         ReMQJjMXlt9RcwQC9bLOoLP3h7XpeJbL1YiEuJ+dCS8DuWHEceyQDGQfc+c+g0mcH+Kq
+         B6SulKSuinabaJmD1fyWyveNJjcp49BmdUHD7rfjqkRWmTzOU/pVAyKvV6fPwIIeQIPF
+         mpgA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1705384301; x=1705989101;
+        h=to:subject:message-id:date:from:mime-version:x-gm-message-state
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=eUz24UqMoiRGdyvWpIQc+WFa5h8HIEkpCem8hDMklQA=;
+        b=RTjIo4RsZnLnItDywJ50g5oHnPtYMptV3pEpRaeUoCur152nq7gwqxAPJf6Gkki/ey
+         J3K3GLmf3B0OWbqkgLeA4t5DkG8K58OOhuyVoZm7lrgKPwkUTNoNLkJVj28X0zsHvzzI
+         ++HJGdqKxkAna6DbtDlA8FZtVKHBhlJvWbt90cQdQN/e6fxSEAad/fr4pgsHzP+uFicM
+         B9xcOYepBY5T3YZ9CgIgqJZ3CovsfCKsNgABLDbhMjc2uGiy7zATZ2qTvLWWOHMKHunT
+         ugD2JTTSHc2/BccfWy9/6jKT3hR8Lwwa/DMU3sfX6UTYKaIH6yfdVWPHnYhM2cLTXduN
+         yl4Q==
+X-Gm-Message-State: AOJu0Yz7lBNhhMLSZ8bRQok1ewDLAoxAQmu7GGW+NdnqM3UwCIsIYmne
+	a9wcBWAW7xkmNOrr1vcA/5keRNqxO0vHR7a/uJC0pjmtV9gQG1ZaZB0=
+X-Google-Smtp-Source: AGHT+IFa9v67bUHJVgzmI3YG2P3Ik0QWfMpb+w6kBF8vaiE582y1/k5usrw/pte0iUXSEE9YxuH3k/fI2d9xmYGBOp8=
+X-Received: by 2002:a05:6a21:150d:b0:19a:fc52:4423 with SMTP id
+ nq13-20020a056a21150d00b0019afc524423mr3064653pzb.11.1705384300794; Mon, 15
+ Jan 2024 21:51:40 -0800 (PST)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-Authentication-Results: smtp-out2.suse.de;
-	none
-X-Spam-Level: 
-X-Spam-Score: 0.70
-X-Spamd-Result: default: False [0.70 / 50.00];
-	 ARC_NA(0.00)[];
-	 RCVD_VIA_SMTP_AUTH(0.00)[];
-	 URIBL_BLOCKED(0.00)[suse.com:email];
-	 FROM_HAS_DN(0.00)[];
-	 R_MISSING_CHARSET(2.50)[];
-	 TO_MATCH_ENVRCPT_ALL(0.00)[];
-	 MIME_GOOD(-0.10)[text/plain];
-	 PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	 BROKEN_CONTENT_TYPE(1.50)[];
-	 RCPT_COUNT_ONE(0.00)[1];
-	 NEURAL_HAM_LONG(-1.00)[-0.999];
-	 RCVD_COUNT_THREE(0.00)[3];
-	 TO_DN_NONE(0.00)[];
-	 DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	 NEURAL_HAM_SHORT(-0.20)[-1.000];
-	 MID_CONTAINS_FROM(1.00)[];
-	 DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email];
-	 FUZZY_BLOCKED(0.00)[rspamd.com];
-	 FROM_EQ_ENVFROM(0.00)[];
-	 MIME_TRACE(0.00)[0:+];
-	 RCVD_TLS_ALL(0.00)[];
-	 BAYES_HAM(-3.00)[100.00%]
-X-Spam-Flag: NO
+From: Gowtham <trgowtham123@gmail.com>
+Date: Tue, 16 Jan 2024 11:21:29 +0530
+Message-ID: <CA+XNQ=j6re4bhRDUebzPLDvMtZecqtx+GRRPgpd9apss+vOaBg@mail.gmail.com>
+Subject: Disk write deterioration in 5.x kernel
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 
-Recently we have a scrub use-after-free caused by unaligned chunk
-length, although the fix is submitted, we may want to do extra checks
-for a chunk's alignment.
+Hi
 
-This patch would add such check for the starting bytenr and length of a
-chunk, to make sure they are properly aligned to 64K stripe boundary.
+We use BTRFS as a root filesystem and have recently upgraded our
+servers from Ubuntu 16.04 to 20.04 (from 4.15.0-36 linux kernel to
+5.4.0-137). Post that we see a deterioration in the disk write speeds
 
-By default, the check would only lead to a warning but not treated as an
-error, as we expect kernel to handle such unalignment without any
-problem.
+# dd if=/dev/zero of=/var/nvOS/log/dd.img bs=1G count=2 oflag=dsync;date
+2+0 records in
+2+0 records out
+2147483648 bytes (2.1 GB, 2.0 GiB) copied, 2.72458 s, 788 MB/s
 
-But if the new debug environmental variable,
-BTRFS_PROGS_DEBUG_STRICT_CHUNK_ALIGNMENT, is specified, then we would
-treat it as an error.
-So that we can detect unexpected chunks from btrfs-progs, and fix them
-before reaching the end users.
+vs
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- check/common.h      |  1 +
- check/main.c        | 20 ++++++++++++++++++++
- check/mode-lowmem.c | 11 +++++++++++
- common/utils.c      | 19 +++++++++++++++++++
- common/utils.h      |  1 +
- 5 files changed, 52 insertions(+)
+# dd if=/dev/zero of=/var/nvOS/log/dd.img bs=1G count=2 oflag=dsync;date
+2+0 records in
+2+0 records out
+2147483648 bytes (2.1 GB, 2.0 GiB) copied, 3.11866 s, 689 MB/s
 
-diff --git a/check/common.h b/check/common.h
-index 2d5db2131ba5..d1c8e8de4af9 100644
---- a/check/common.h
-+++ b/check/common.h
-@@ -78,6 +78,7 @@ struct chunk_record {
- 	u32 io_align;
- 	u32 io_width;
- 	u32 sector_size;
-+	bool unaligned;
- 	struct stripe stripes[0];
- };
- 
-diff --git a/check/main.c b/check/main.c
-index 108818688132..99643f0ad7e0 100644
---- a/check/main.c
-+++ b/check/main.c
-@@ -5265,6 +5265,9 @@ struct chunk_record *btrfs_new_chunk_record(struct extent_buffer *leaf,
- 	rec->num_stripes = num_stripes;
- 	rec->sub_stripes = btrfs_chunk_sub_stripes(leaf, ptr);
- 
-+	if (!IS_ALIGNED(rec->cache.start, BTRFS_STRIPE_LEN)||
-+	    !IS_ALIGNED(rec->cache.size, BTRFS_STRIPE_LEN))
-+		rec->unaligned = true;
- 	for (i = 0; i < rec->num_stripes; ++i) {
- 		rec->stripes[i].devid =
- 			btrfs_stripe_devid_nr(leaf, ptr, i);
-@@ -8386,6 +8389,7 @@ int check_chunks(struct cache_tree *chunk_cache,
- 	struct chunk_record *chunk_rec;
- 	struct block_group_record *bg_rec;
- 	struct device_extent_record *dext_rec;
-+	bool strict_alignment = get_env_bool("BTRFS_DEBUG_STRICT_CHUNK_ALIGNMENT");
- 	int err;
- 	int ret = 0;
- 
-@@ -8393,6 +8397,22 @@ int check_chunks(struct cache_tree *chunk_cache,
- 	while (chunk_item) {
- 		chunk_rec = container_of(chunk_item, struct chunk_record,
- 					 cache);
-+		if (chunk_rec->unaligned && !silent) {
-+			if (strict_alignment) {
-+				error(
-+		"chunk[%llu %llu) is not fully aligned to BTRFS_STRIPE_LEN(%u)",
-+				      chunk_rec->cache.start,
-+				      chunk_rec->cache.start + chunk_rec->cache.size,
-+				      BTRFS_STRIPE_LEN);
-+				ret = -EINVAL;
-+			} else {
-+				warning(
-+		"chunk[%llu %llu) is not fully aligned to BTRFS_STRIPE_LEN(%u)",
-+				      chunk_rec->cache.start,
-+				      chunk_rec->cache.start + chunk_rec->cache.size,
-+				      BTRFS_STRIPE_LEN);
-+			}
-+		}
- 		err = check_chunk_refs(chunk_rec, block_group_cache,
- 				       dev_extent_cache, silent);
- 		if (err < 0)
-diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
-index 19b7b1a72a1f..39944c5430ec 100644
---- a/check/mode-lowmem.c
-+++ b/check/mode-lowmem.c
-@@ -4719,6 +4719,17 @@ static int check_chunk_item(struct extent_buffer *eb, int slot)
- 	chunk = btrfs_item_ptr(eb, slot, struct btrfs_chunk);
- 	length = btrfs_chunk_length(eb, chunk);
- 	chunk_end = chunk_key.offset + length;
-+	if (!IS_ALIGNED(chunk_key.offset, BTRFS_STRIPE_LEN) ||
-+	    !IS_ALIGNED(length, BTRFS_STRIPE_LEN)) {
-+		if (get_env_bool("BTRFS_PROGS_DEBUG_STRICT_CHUNK_ALIGNMENT")) {
-+			error("chunk[%llu %llu) is not fully aligned to BTRFS_STRIPE_LEN(%u)",
-+				chunk_key.offset, length, BTRFS_STRIPE_LEN);
-+			err |= BYTES_UNALIGNED;
-+			goto out;
-+		}
-+		warning("chunk[%llu %llu) is not fully aligned to BTRFS_STRIPE_LEN(%u)",
-+			chunk_key.offset, length, BTRFS_STRIPE_LEN);
-+	}
- 	ret = btrfs_check_chunk_valid(eb, chunk, chunk_key.offset);
- 	if (ret < 0) {
- 		error("chunk[%llu %llu) is invalid", chunk_key.offset,
-diff --git a/common/utils.c b/common/utils.c
-index e6070791f5cc..68fa95ece6f8 100644
---- a/common/utils.c
-+++ b/common/utils.c
-@@ -1018,6 +1018,25 @@ int get_env_u64(const char *env_name, u64 *value_ret)
- 	return 0;
- }
- 
-+/*
-+ * Parse a boolean value from an environment variable.
-+ *
-+ * As long as the environment variable is not set to "0", "n" or "\0",
-+ * it would return true.
-+ */
-+bool get_env_bool(const char *env_name)
-+{
-+	char *env_value_str;
-+
-+	env_value_str = getenv(env_name);
-+	if (!env_value_str)
-+		return false;
-+	if (env_value_str[0] == '0' || env_value_str[0] == 'n' ||
-+	    env_value_str[0] == '\0')
-+		return false;
-+	return true;
-+}
-+
- void btrfs_config_init(void)
- {
- 	bconf.output_format = CMD_FORMAT_TEXT;
-diff --git a/common/utils.h b/common/utils.h
-index 30c75339b05b..5bdeeab44bb4 100644
---- a/common/utils.h
-+++ b/common/utils.h
-@@ -133,6 +133,7 @@ u64 rand_u64(void);
- unsigned int rand_range(unsigned int upper);
- void init_rand_seed(u64 seed);
- int get_env_u64(const char *env_name, u64 *value_ret);
-+bool get_env_bool(const char *env_name);
- 
- char *btrfs_test_for_multiple_profiles(int fd);
- int btrfs_warn_multiple_profiles(int fd);
--- 
-2.43.0
+# btrfs --version
+btrfs-progs v5.4.1
 
+BTRFS options
+rw,noatime,compress=lzo,ssd,flushoncommit,space_cache,subvolid=269,subvol=
+
+On average we see 10-15% slower speeds on 20.04 when compared with
+16.04. And this data has been recorded from different systems and
+different types of SSD.
+
+Are there any known enhancements in BTRFS that can affect the write speeds?
+
+Regards,
+Gowtham

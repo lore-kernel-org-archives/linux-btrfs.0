@@ -1,165 +1,95 @@
-Received: from out28-54.mail.aliyun.com (out28-54.mail.aliyun.com [115.124.28.54])
+Received: from hi1smtp01.de.adit-jv.com (smtp1.de.adit-jv.com [93.241.18.167])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 587D063105
-	for <linux-btrfs@vger.kernel.org>; Mon, 29 Jan 2024 13:27:13 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=115.124.28.54
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 13BC0651B3;
+	Mon, 29 Jan 2024 13:39:43 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=93.241.18.167
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1706534841; cv=none; b=lsjqY9QSrNitHeCQACdoGtvXGOX2vJXBubIich53B8WFCSWOvnocXzQ1FmBAjSH/YwqJ3FfhEadZ3V7+/6ibTmCOyCMtmkaPfPsoKqTbD5se+kegRmaTv+FGx4igX72M3Cq/iUky0iTfZlHteORC7M8IShLiW1pmpfuaydbKNlY=
+	t=1706535588; cv=none; b=nSG4J+yua9z+rVB1veTQ7Z35HxyHWKQt2YjfMtppz5mQF2rChX6dvF6n/3rA0A4lY2qVtrVDd2/1FC+qcOHxiPpDfABYbVTZzapOn4wIqTxSezidcn8m2+jqYk+zL9vX21rNRYxQT67PumbIwVoDtYathanNEz9aU2xwYzYhDVw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1706534841; c=relaxed/simple;
-	bh=jH9JiH1etfHxoFogJ30atlVKqm01dzITOUBxGtv1jck=;
-	h=Date:From:To:Subject:In-Reply-To:References:Message-Id:
-	 MIME-Version:Content-Type; b=fUIcYfx900SLQv5VHrW1G+aPwKqGXpWt0sgwrFeEb6nvM14DG2RzZuF4r7HE1iaWPpmhz9TniymqQrZrxvsQYNbTdmoICPqXoz6hQ8CgTEAqCjLRWBjjPesBEHC9LsLldS44L4EjmG+x+fNuzVpwgpeJemhgpCmJxSQvePqKGlE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=e16-tech.com; spf=pass smtp.mailfrom=e16-tech.com; arc=none smtp.client-ip=115.124.28.54
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=e16-tech.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=e16-tech.com
-X-Alimail-AntiSpam:AC=CONTINUE;BC=0.04442335|-1;CH=green;DM=|CONTINUE|false|;DS=CONTINUE|ham_system_inform|0.0130562-0.000483652-0.98646;FP=1934797680062827995|1|1|2|0|-1|-1|-1;HT=ay29a033018047207;MF=wangyugui@e16-tech.com;NM=1;PH=DS;RN=2;RT=2;SR=0;TI=SMTPD_---.WIdi1X1_1706532981;
-Received: from 192.168.2.112(mailfrom:wangyugui@e16-tech.com fp:SMTPD_---.WIdi1X1_1706532981)
-          by smtp.aliyun-inc.com;
-          Mon, 29 Jan 2024 20:56:22 +0800
-Date: Mon, 29 Jan 2024 20:56:22 +0800
-From: Wang Yugui <wangyugui@e16-tech.com>
-To: Naohiro Aota <naohiro.aota@wdc.com>,
- linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/2] btrfs: disable inline checksum for multi-dev striped FS
-In-Reply-To: <20240124081931.1DDE.409509F4@e16-tech.com>
-References: <cover.1705568050.git.naohiro.aota@wdc.com> <20240124081931.1DDE.409509F4@e16-tech.com>
-Message-Id: <20240129205621.1BA8.409509F4@e16-tech.com>
+	s=arc-20240116; t=1706535588; c=relaxed/simple;
+	bh=7GgA4QJ/YqPaqH3ccxIUzVWWETUQQYIXImwrDLEaRlU=;
+	h=Date:From:To:CC:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=E2OAmfkhK49jQ58p4ZAFDhHBGCVAXuUM+xyZWDvjU/mH0NrajPPmPK6ua9ftfvnLXJQ0Yn/jeGkvKRMttGb+20X31DL0CX56UV9tT+/uiKONusb9dEep8Ak1cmS7/VldN+AFKJ3I2pfRa5h/HTee5o5Qb5cRqf5d3Inw273vGBc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=de.adit-jv.com; spf=pass smtp.mailfrom=de.adit-jv.com; arc=none smtp.client-ip=93.241.18.167
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=de.adit-jv.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=de.adit-jv.com
+Received: from hi2exch02.adit-jv.com (hi2exch02.adit-jv.com [10.72.92.28])
+	by hi1smtp01.de.adit-jv.com (Postfix) with ESMTP id 291C1520165;
+	Mon, 29 Jan 2024 14:39:36 +0100 (CET)
+Received: from lxhi-087 (10.72.93.211) by hi2exch02.adit-jv.com (10.72.92.28)
+ with Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.1.2507.35; Mon, 29 Jan
+ 2024 14:39:35 +0100
+Date: Mon, 29 Jan 2024 14:39:31 +0100
+From: Eugeniu Rosca <erosca@de.adit-jv.com>
+To: Filipe Manana <fdmanana@kernel.org>
+CC: Eugeniu Rosca <erosca@de.adit-jv.com>, <linux-btrfs@vger.kernel.org>,
+	<Maksim.Paimushkin@se.bosch.com>, <Matthias.Thomae@de.bosch.com>,
+	<Sebastian.Unger@bosch.com>, <Dirk.Behme@de.bosch.com>,
+	<Eugeniu.Rosca@bosch.com>, <wqu@suse.com>, <dsterba@suse.com>,
+	<stable@vger.kernel.org>, Filipe Manana <fdmanana@suse.com>, Eugeniu Rosca
+	<roscaeugeniu@gmail.com>
+Subject: Re: [PATCH 0/4 for 5.15 stable] btrfs: some directory fixes for
+ stable 5.15
+Message-ID: <20240129133931.GA2758728@lxhi-087>
+References: <cover.1706183427.git.fdmanana@suse.com>
+ <20240126185534.GA2668448@lxhi-087>
+ <CAL3q7H5obj92hJ3qc8qUw_9aiMAwiF+RMZhu0M4dGT+hhp6Qsg@mail.gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="US-ASCII"
-Content-Transfer-Encoding: 7bit
-X-Mailer: Becky! ver. 2.81.05 [en]
+Content-Type: text/plain; charset="utf-8"
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <CAL3q7H5obj92hJ3qc8qUw_9aiMAwiF+RMZhu0M4dGT+hhp6Qsg@mail.gmail.com>
+X-ClientProxiedBy: hi2exch02.adit-jv.com (10.72.92.28) To
+ hi2exch02.adit-jv.com (10.72.92.28)
 
-Hi,
+Hello Filipe,
 
-> Hi,
+On Sat, Jan 27, 2024 at 06:02:55PM +0000, Filipe Manana wrote:
+> On Fri, Jan 26, 2024 at 6:55 PM Eugeniu Rosca <erosca@de.adit-jv.com> wrote:
+
+[..]
+
+> > PS: Could you help me out how (and if at all possible) to preserve the
+> > Author date of the original patch when downloading and applying the
+> > 'raw' file provided by https:// lore.kernel.org/
 > 
-> > There was a report of write performance regression on 6.5-rc4 on RAID0
-> > (4 devices) btrfs [1]. Then, I reported that BTRFS_FS_CSUM_IMPL_FAST
-> > and doing the checksum inline can be bad for performance on RAID0
-> > setup [2]. 
-> > 
-> > [1] https://lore.kernel.org/linux-btrfs/20230731152223.4EFB.409509F4@e16-tech.com/
-> > [2] https://lore.kernel.org/linux-btrfs/p3vo3g7pqn664mhmdhlotu5dzcna6vjtcoc2hb2lsgo2fwct7k@xzaxclba5tae/
-> > 
-> > While inlining the fast checksum is good for single (or two) device,
-> > but it is not fast enough for multi-device striped writing.
-> > 
-> > So, this series first introduces fs_devices->inline_csum_mode and its
-> > sysfs interface to tweak the inline csum behavior (auto/on/off). Then,
-> > it disables inline checksum when it find a block group striped writing
-> > into multiple devices.
+> If I understand you correctly, you applied the diff of patches
+> directly with the "patch" command.
+
+Nope. I download the 'raw' patch [0] (assumed to be in mbox format?),
+then apply it via 'git am'. This workflow should preserve such patch
+metadata like commit description, Author's name/date, etc.
+
+> To get kernel patches and apply them easily, use the b4 tool available at:
 > 
-> We have struct btrfs_inode | sync_writers in kernel 6.1.y, but dropped in recent
-> kernel. 
-> 
-> Is btrfs_inode | sync_writers not implemented very well?
+> git://git.kernel.org/pub/scm/utils/b4/b4.git
 
-I tried the logic blow, some like ' btrfs_inode | sync_writers'.
-- checksum of metadata always sync
-- checksum of data async only when depth over 1,
-	to reduce task switch when low load.
-	to use more cpu core when high load.
+Thanks for sharing. This reminds me of patchwork/pwclient.
 
-performance test result is not good
-	2GiB/s(checksum of data always async) -> 2.1GiB/s when low load.
-	4GiB/s(checksum of data always async) -> 2788MiB/s when high load.
+I've reapplied the patches using 'b4' and Author's Date of the stable
+commits is still altered compared to the vanilla/mainline commits.
 
-but the info  maybe useful, so post it here.
+For example:
+ - Author's date of vanilla [2]: 2023-08-13 12:34:08 +0100 
+ - Author's date of stable [1]:  2024-01-25 11:59:35 +0000 
 
+This likely means that the Author's date is amended during
+porting/cherry-picking. Of course, this is not a major issue,
+but some of us may assume that most of patch metadata (including
+Author's date) is preserved on backporting (as best practice).
 
-- checksum of metadata always sync
+PS: We can likely skip it, since a number of other patches seem to
+alter the Author's date on 5.15 stable tree (~600 out of 21k+ commits).
 
-diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
-index 12b12443efaa..8ef968f0957d 100644
---- a/fs/btrfs/bio.c
-+++ b/fs/btrfs/bio.c
-@@ -598,7 +598,7 @@ static void run_one_async_free(struct btrfs_work *work)
- static bool should_async_write(struct btrfs_bio *bbio)
- {
- 	/* Submit synchronously if the checksum implementation is fast. */
--	if (test_bit(BTRFS_FS_CSUM_IMPL_FAST, &bbio->fs_info->flags))
-+	if ((bbio->bio.bi_opf & REQ_META) && test_bit(BTRFS_FS_CSUM_IMPL_FAST, &bbio->fs_info->flags))
- 		return false;
- 
- 	/*
+[1] https:// lore.kernel.org/stable/f1e33797054fcea8b61d88878e67b8c007b5d5f5.1706183427.git.fdmanana@suse.com/raw
+[2] https:// git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=9b378f6ad48cfa
 
-
-- checksum of data async only when depth over 1, to reduce task switch.
-
-diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
-index efb894967f55..f90b6e8cf53c 100644
---- a/fs/btrfs/bio.c
-+++ b/fs/btrfs/bio.c
-@@ -626,6 +626,9 @@ static bool should_async_write(struct btrfs_bio *bbio)
- 	if ((bbio->bio.bi_opf & REQ_META) && btrfs_is_zoned(bbio->fs_info))
- 		return false;
- 
-+	if (!(bbio->bio.bi_opf & REQ_META) && atomic_read(&bbio->fs_info->depth_checksum_data)==0 )
-+		return false;
-+
- 	return true;
- }
- 
-@@ -725,11 +728,21 @@ static bool btrfs_submit_chunk(struct btrfs_bio *bbio, int mirror_num)
- 		if (inode && !(inode->flags & BTRFS_INODE_NODATASUM) &&
- 		    !test_bit(BTRFS_FS_STATE_NO_CSUMS, &fs_info->fs_state) &&
- 		    !btrfs_is_data_reloc_root(inode->root)) {
--			if (should_async_write(bbio) &&
--			    btrfs_wq_submit_bio(bbio, bioc, &smap, mirror_num))
--				goto done;
--
-+			if (should_async_write(bbio)){
-+				if (!(bbio->bio.bi_opf & REQ_META))
-+					atomic_inc(&bbio->fs_info->depth_checksum_data);
-+				ret = btrfs_wq_submit_bio(bbio, bioc, &smap, mirror_num);
-+				if (!(bbio->bio.bi_opf & REQ_META))
-+					atomic_dec(&bbio->fs_info->depth_checksum_data);
-+				if(ret)
-+					goto done;
-+			}
-+
-+			if (!(bbio->bio.bi_opf & REQ_META))
-+				atomic_inc(&bbio->fs_info->depth_checksum_data);
- 			ret = btrfs_bio_csum(bbio);
-+			if (!(bbio->bio.bi_opf & REQ_META))
-+				atomic_dec(&bbio->fs_info->depth_checksum_data);
- 			if (ret)
- 				goto fail_put_bio;
- 		} else if (use_append) {
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index d7b127443c9a..3fd89be7610a 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2776,6 +2776,7 @@ void btrfs_init_fs_info(struct btrfs_fs_info *fs_info)
- 
- 	fs_info->thread_pool_size = min_t(unsigned long,
- 					  num_online_cpus() + 2, 8);
-+	atomic_set(&fs_info->depth_checksum_data, 0);
- 
- 	INIT_LIST_HEAD(&fs_info->ordered_roots);
- 	spin_lock_init(&fs_info->ordered_root_lock);
-diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
-index 7443bf014639..123cc8fa9be1 100644
---- a/fs/btrfs/fs.h
-+++ b/fs/btrfs/fs.h
-@@ -596,6 +596,7 @@ struct btrfs_fs_info {
- 	struct task_struct *transaction_kthread;
- 	struct task_struct *cleaner_kthread;
- 	u32 thread_pool_size;
-+	atomic_t depth_checksum_data;
- 
- 	struct kobject *space_info_kobj;
- 	struct kobject *qgroups_kobj;
-
-Best Regards
-Wang Yugui (wangyugui@e16-tech.com)
-2024/01/25
-
-
+Thanks,
+Eugeniu

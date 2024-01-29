@@ -1,111 +1,112 @@
-Received: from mail-ej1-f41.google.com (mail-ej1-f41.google.com [209.85.218.41])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from esa1.hgst.iphmx.com (esa1.hgst.iphmx.com [68.232.141.245])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 93D403C473
-	for <linux-btrfs@vger.kernel.org>; Sun, 28 Jan 2024 22:32:19 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.41
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C949752F80;
+	Mon, 29 Jan 2024 07:52:35 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=68.232.141.245
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1706481141; cv=none; b=iDZGZGCVlE/zFBnp4JbcYv5cO7agCfpQDnvpmstRE+ipAnFsauxF5fSCnC7p82VBqstP7GCkSYg9puroc3Zu5M7/fKQpR5dkEh/DDN7Dw5ojf4jiJDWl03RhjNLJSm2rjdA+3V/zhHT/tHMe7S9JpYzh1SzqQLMYMo2xKpnJSXI=
+	t=1706514757; cv=none; b=hD7tQ5YH7pFkUO+lQdNlVQJPDMWNPrKldnhjOCPczT+4wWOnxSpdVzFTMt4aM+Wd8TJv0ItDaRuIwZunLhK77ahkGxMN3sk0bYu8Y24rrS4Z2Q45YF++1k4KiAKrjlgHSpm2MJj7lpdZ/GJZnEp+XoDEssB3xSEwmguj4aDSzmc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1706481141; c=relaxed/simple;
-	bh=AEYZz0WbEa5P8+CB+O4anP0MQfywFaLOnhWBqol5b2w=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=oiHuMesOVN100vVGzMmujirZ70iO7SLYUvzW3Oy6qsrohybmxiku0dZqi4PkJmrePY2sJqdDCBe1PxQt2TrYrB5IhFasvyoBTL6A4MG4sw+VM1JxRynqXcIErx/VuWCcZyzDX7T1HKGg51EkwYTbNzx6pSx0pD2OOiB439aSK5Y=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-foundation.org; spf=pass smtp.mailfrom=linuxfoundation.org; dkim=pass (1024-bit key) header.d=linux-foundation.org header.i=@linux-foundation.org header.b=GmUzxYOA; arc=none smtp.client-ip=209.85.218.41
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-foundation.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linuxfoundation.org
+	s=arc-20240116; t=1706514757; c=relaxed/simple;
+	bh=eGx4McY1FmrYKhrAp3TTxFkfkbSfbNbdZDzzsYbn3SA=;
+	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
+	 In-Reply-To:To:Cc; b=cQvk44QC1tEXNENt9JmSUaoE5bmPpF3WhkF49UHROPf9SvGoAkWgi2sSf/YYGdHMDT0xcsb33ZpWT3ALc98Aj3YZsFni9f/AcU4MKH4l+6ws4xZjLlizyt8jYdRvsfa8Di3govmuiwZey6V4Gt+j7xsULc6UxvnZyLNkYrstCOI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=b0kdW2sE; arc=none smtp.client-ip=68.232.141.245
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linux-foundation.org header.i=@linux-foundation.org header.b="GmUzxYOA"
-Received: by mail-ej1-f41.google.com with SMTP id a640c23a62f3a-a35a7a86b8aso46184566b.2
-        for <linux-btrfs@vger.kernel.org>; Sun, 28 Jan 2024 14:32:19 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=linux-foundation.org; s=google; t=1706481137; x=1707085937; darn=vger.kernel.org;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:from:to:cc:subject:date:message-id:reply-to;
-        bh=bqwd7hhPAgPM5QIH38rfOxpWBqWFIbyQQhTZxa5cgpo=;
-        b=GmUzxYOA42m7h/7H4YNdv34VRamsWfZHNZ0+fFrZ+hcwnOSugC+FDjr97BOejvA/B0
-         15aSABLiDKGWI+Ddja2wklAoPCVjLPunUNcDlKBoPIj7ovhktc5CpY6AhqBsts39Uo9v
-         PoBAqImOt3ALpkfnJXJlAe0T8391j42pTmHrg=
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1706481137; x=1707085937;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=bqwd7hhPAgPM5QIH38rfOxpWBqWFIbyQQhTZxa5cgpo=;
-        b=Xxxri2NNYcz/Wr9lnsd9omSuXwpQ3aM6dQz7qqw/cmcK7L6OY9J78wzps5/wZr7GGe
-         0/1bK1jDIicK+UL4Ueo411Moiym2cDauiJgsCwp8604jlPZwqeKJiXQphzqPSqn572B5
-         FvtF4XqOlj3h9WSQZILr67x5IbnLG3uyw6Mqtp6RatYeZosPFIOHUFLg/8WqSEEk6/bV
-         Z5w0nDrlD4zpkSlWZteInb0rJ3o9qU6Y8x45wY1LHFwmMMI6DlZgmSxfonOq4KcnujHg
-         n3BRIGJvQlcarKbsfzj/Fd1siqH83hjiONtG/mA12jsYBV/7zTtgl4uQzto+v7dXk4ag
-         b4ug==
-X-Gm-Message-State: AOJu0Yw10j5m+k9NCo7eG+6VzPJ+1mL/FL6yKLyBE4OtydB+sITFuPbw
-	7wqGwbpUwq8/71NXDjMZudBYWhEXv6JwSlMxT3kzlcqYS8Ziv1xhVxw5TnLSAdmQZR1RVQX78a2
-	qDxLDPw==
-X-Google-Smtp-Source: AGHT+IHIHvxuHfIx89uaPY0Y5g/Ce7KkENyVP1Fwa0XrVOd/5T2DpVCyYbGiYreryMUnoBsRm1Lmaw==
-X-Received: by 2002:a17:906:27d3:b0:a35:ce76:dd67 with SMTP id k19-20020a17090627d300b00a35ce76dd67mr121150ejc.5.1706481137457;
-        Sun, 28 Jan 2024 14:32:17 -0800 (PST)
-Received: from mail-ed1-f48.google.com (mail-ed1-f48.google.com. [209.85.208.48])
-        by smtp.gmail.com with ESMTPSA id k15-20020a1709065fcf00b00a2cea055d92sm3270145ejv.176.2024.01.28.14.32.16
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sun, 28 Jan 2024 14:32:16 -0800 (PST)
-Received: by mail-ed1-f48.google.com with SMTP id 4fb4d7f45d1cf-55cc182da17so2087493a12.3
-        for <linux-btrfs@vger.kernel.org>; Sun, 28 Jan 2024 14:32:16 -0800 (PST)
-X-Received: by 2002:a05:6402:3509:b0:55e:c6e3:5e24 with SMTP id
- b9-20020a056402350900b0055ec6e35e24mr2150353edd.36.1706481136452; Sun, 28 Jan
- 2024 14:32:16 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="b0kdW2sE"
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1706514755; x=1738050755;
+  h=from:date:subject:mime-version:content-transfer-encoding:
+   message-id:references:in-reply-to:to:cc;
+  bh=eGx4McY1FmrYKhrAp3TTxFkfkbSfbNbdZDzzsYbn3SA=;
+  b=b0kdW2sE4ONRfs8jGwY/v4nA1WUCksxaIE0iQy/LAjNIWbXBQBPxhSf7
+   iyMVK/Ayn7Z1K1Od9nac2bmF4TgczIKpyI3Ngpw3YFWHFZdb8tz3iZg4x
+   Kik5mzwv711q6Do0soiCSMy+4dpNA6p6cdISQ05vq+xESEdDwHnpTZIsP
+   K296N3XM8WytmOHF8q/ZeVQ9nRK8bffKMPVAixf0atxclhayucyHxzjme
+   EkgPL2HexsGMHHJxF95YSwqIvaeIEt5Z5syfgrPKyMGsliBznIl7zo0ux
+   oksxYJAzrVvDq8s5KJwB85ItIEcDMrpH4ypXqmNyF/smdKfFsoj27lWQg
+   g==;
+X-CSE-ConnectionGUID: SX9cJwP2TQOalpS9SLaRMg==
+X-CSE-MsgGUID: m4iXc/eRRye5LfRgd4HTLA==
+X-IronPort-AV: E=Sophos;i="6.05,226,1701100800"; 
+   d="scan'208";a="8194611"
+Received: from h199-255-45-15.hgst.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
+  by ob1.hgst.iphmx.com with ESMTP; 29 Jan 2024 15:52:31 +0800
+IronPort-SDR: cAR7V5dWRuCGGVUIC2Yz+9GQPP42jhwBXAf7VvylpX8W6shxDYvaEPOxq2giVJt+i7d8JMw3gv
+ VZ6B58gXqE9g==
+Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 28 Jan 2024 22:56:46 -0800
+IronPort-SDR: TgaA8LrWz4JmksfFMd9XbYuIoWjMlrDoGLua+Pb607OI4wE3Fe9/wAPKrNdtSrWLoefyzcMDAc
+ YY+ofLHHgnnA==
+WDCIronportException: Internal
+Received: from unknown (HELO redsun91.ssa.fujisawa.hgst.com) ([10.149.66.6])
+  by uls-op-cesaip02.wdc.com with ESMTP; 28 Jan 2024 23:52:27 -0800
+From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Date: Sun, 28 Jan 2024 23:52:16 -0800
+Subject: [PATCH v3 1/5] zonefs: pass GFP_KERNEL to blkdev_zone_mgmt() call
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <0ca26166dd2a4ff5a674b84704ff1517@AcuMS.aculab.com>
- <b564df3f987e4371a445840df1f70561@AcuMS.aculab.com> <CAHk-=whxYjLFhjov39N67ePb3qmCmxrhbVXEtydeadfao53P+A@mail.gmail.com>
- <a756a7712dfe4d03a142520d4c46e7a3@AcuMS.aculab.com>
-In-Reply-To: <a756a7712dfe4d03a142520d4c46e7a3@AcuMS.aculab.com>
-From: Linus Torvalds <torvalds@linux-foundation.org>
-Date: Sun, 28 Jan 2024 14:32:00 -0800
-X-Gmail-Original-Message-ID: <CAHk-=wiacNkOUvT_ib9t4HXX9DSsUCFOCAvbPi+WBkdX3KCq2A@mail.gmail.com>
-Message-ID: <CAHk-=wiacNkOUvT_ib9t4HXX9DSsUCFOCAvbPi+WBkdX3KCq2A@mail.gmail.com>
-Subject: Re: [PATCH next 10/11] block: Use a boolean expression instead of
- max() on booleans
-To: David Laight <David.Laight@aculab.com>
-Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Netdev <netdev@vger.kernel.org>, 
-	"dri-devel@lists.freedesktop.org" <dri-devel@lists.freedesktop.org>, 
-	Andy Shevchenko <andriy.shevchenko@linux.intel.com>, 
-	Andrew Morton <akpm@linux-foundation.org>, "Matthew Wilcox (Oracle)" <willy@infradead.org>, 
-	Christoph Hellwig <hch@infradead.org>, Dan Carpenter <dan.carpenter@linaro.org>, 
-	Linus Walleij <linus.walleij@linaro.org>, "David S . Miller" <davem@davemloft.net>, 
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>, Jens Axboe <axboe@kernel.dk>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+Message-Id: <20240128-zonefs_nofs-v3-1-ae3b7c8def61@wdc.com>
+References: <20240128-zonefs_nofs-v3-0-ae3b7c8def61@wdc.com>
+In-Reply-To: <20240128-zonefs_nofs-v3-0-ae3b7c8def61@wdc.com>
+To: Damien Le Moal <dlemoal@kernel.org>, 
+ Naohiro Aota <naohiro.aota@wdc.com>, Johannes Thumshirn <jth@kernel.org>, 
+ Alasdair Kergon <agk@redhat.com>, Mike Snitzer <snitzer@kernel.org>, 
+ Mikulas Patocka <mpatocka@redhat.com>, dm-devel@lists.linux.dev, 
+ Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>, 
+ David Sterba <dsterba@suse.com>, Jaegeuk Kim <jaegeuk@kernel.org>, 
+ Chao Yu <chao@kernel.org>, Jens Axboe <axboe@kernel.dk>, 
+ Christoph Hellwig <hch@lst.de>, Sagi Grimberg <sagi@grimberg.me>, 
+ Chaitanya Kulkarni <kch@nvidia.com>
+Cc: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org, 
+ linux-btrfs@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, 
+ linux-block@vger.kernel.org, linux-nvme@lists.infradead.org, 
+ Johannes Thumshirn <johannes.thumshirn@wdc.com>
+X-Mailer: b4 0.12.3
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1706514743; l=1041;
+ i=johannes.thumshirn@wdc.com; s=20230613; h=from:subject:message-id;
+ bh=eGx4McY1FmrYKhrAp3TTxFkfkbSfbNbdZDzzsYbn3SA=;
+ b=t4wcaJhs6oV11H9tXDjzJ4heS84olNEuvuiMDoCT7kiC4VWqi/UCfvHK0WP330iTVs0p8G2QQ
+ 0WRameby5F7DGgOvyyko8FG4gi9vkmFaf+HGZUlvOWp9nymIgGBuC/o
+X-Developer-Key: i=johannes.thumshirn@wdc.com; a=ed25519;
+ pk=TGmHKs78FdPi+QhrViEvjKIGwReUGCfa+3LEnGoR2KM=
 
-On Sun, 28 Jan 2024 at 14:22, David Laight <David.Laight@aculab.com> wrote:
->
-> Hmmmm blame gcc :-)
+Pass GFP_KERNEL instead of GFP_NOFS to the blkdev_zone_mgmt() call in
+zonefs_zone_mgmt().
 
-I do agree that the gcc warning quoting is unnecessarily ugly (even
-just visually), but..
+As as zonefs_zone_mgmt() and zonefs_inode_zone_mgmt() are never called
+from a place that can recurse back into the filesystem on memory reclaim,
+it is save to call blkdev_zone_mgmt() with GFP_KERNEL.
 
-> The error message displays as '0' but is e2:80:98 30 e2:80:99
-> I HATE UTF-8, it wouldn't be as bad if it were a bijection.
+Link: https://lore.kernel.org/all/ZZcgXI46AinlcBDP@casper.infradead.org/
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+---
+ fs/zonefs/super.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-No, that's not the problem. The UTF-8 that gcc emits is fine.
+diff --git a/fs/zonefs/super.c b/fs/zonefs/super.c
+index 93971742613a..63fbac018c04 100644
+--- a/fs/zonefs/super.c
++++ b/fs/zonefs/super.c
+@@ -113,7 +113,7 @@ static int zonefs_zone_mgmt(struct super_block *sb,
+ 
+ 	trace_zonefs_zone_mgmt(sb, z, op);
+ 	ret = blkdev_zone_mgmt(sb->s_bdev, op, z->z_sector,
+-			       z->z_size >> SECTOR_SHIFT, GFP_NOFS);
++			       z->z_size >> SECTOR_SHIFT, GFP_KERNEL);
+ 	if (ret) {
+ 		zonefs_err(sb,
+ 			   "Zone management operation %s at %llu failed %d\n",
 
-And your email was also UTF-8:
+-- 
+2.43.0
 
-    Content-Type: text/plain; charset=UTF-8
-
-The problem is that you clearly then used some other tool in between
-that took the UTF-8 byte stream, and used it as (presumably) Latin1,
-which is bogus.
-
-If you just make everything use and stay as UTF-8, it all works out
-beautifully. But I suspect you have an editor or a MUA that is fixed
-in some 1980s mindset, and when you cut-and-pasted the UTF-8, it
-treated it as Latin1.
-
-Just make all your environment be utf-8, like it should be. It's not
-the 80s any more. We don't do mullets, and we don't do Latin1, ok?
-
-            Linus

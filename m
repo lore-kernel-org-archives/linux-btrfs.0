@@ -1,58 +1,55 @@
-Received: from esa1.hc1455-7.c3s2.iphmx.com (esa1.hc1455-7.c3s2.iphmx.com [207.54.90.47])
+Received: from esa3.hgst.iphmx.com (esa3.hgst.iphmx.com [216.71.153.141])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4A534BE55;
-	Fri,  2 Feb 2024 01:54:12 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=207.54.90.47
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 78EAF17BA0
+	for <linux-btrfs@vger.kernel.org>; Fri,  2 Feb 2024 07:17:03 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=216.71.153.141
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1706838855; cv=none; b=U1xggK2bIt3JpVT91mrh4YHKmKBE0r/JkTaWUdnMscv1hN5UCAoBkIg7KorpPPCrmKgXbCPdZmsFmDmhc5IXgZayMbFGJ3KM+HMYwC60xNASlL5TDHtk1bQTtKgwdDPeHxf7OE14gfAn1XryX1aFEo00cfWoNXjUOmFmVt5JVFI=
+	t=1706858225; cv=none; b=n1nPKl4GMFRvw6FOUlcQbYWfnl6IKUULt/muCk6NOmjNoyOWBBfLU0jVRv610ClmmfzGHgdGPcuBgmXEte7QQCeHcinGgWpsqV+veDcinFouoooS0igstapbcYRAmr4aJo2ZANe6LtV8X+MMSKDWNOvt/xU1elD12hpbnt1Wyj4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1706838855; c=relaxed/simple;
-	bh=vsD8NVDlsuUy+gkg9e+2hn/r5frQVC4+m3fkTZ7yDtQ=;
-	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version; b=Wl7+4CiNGUEkLpvJGOtQHq5kZVmWxe+y4k0qVgIJ3wfoSzbgqmramOAqro4uW4T8Tk2yDGdq6rlNWZBJiNBXt44avSkJMT/EKgHqPPOpFDzR7glelPgLilstqz3Reb2xQMhxjfkABozCOjTtHYZo41lJTxAznziXT/J95qBIsRA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=fujitsu.com; spf=pass smtp.mailfrom=fujitsu.com; dkim=pass (2048-bit key) header.d=fujitsu.com header.i=@fujitsu.com header.b=qciq9Dl/; arc=none smtp.client-ip=207.54.90.47
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=fujitsu.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=fujitsu.com
+	s=arc-20240116; t=1706858225; c=relaxed/simple;
+	bh=ZrTu0XyE+6tvz9D3Xgeg8bJbOaNORdgNUlstdr/TVCQ=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=Oy4MWSU6LEfAoz+YpZbO+Ee6GDvZyAlpjUbgC6dQGTzpf79oOsNrVVlnuDQ79ls32NgjKPzi9Yol81e4oqm3Zh2o3Qsx/DXW4G9ZLRAVB6H/0GZCaFVwg5sdsjXzow585V1wkdt13lW8oKt5YeYZ7GpgMC/7JHRAyPxi6w68xJ0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=FUQDn1FH; arc=none smtp.client-ip=216.71.153.141
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fujitsu.com header.i=@fujitsu.com header.b="qciq9Dl/"
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="FUQDn1FH"
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=fujitsu.com; i=@fujitsu.com; q=dns/txt; s=fj2;
-  t=1706838854; x=1738374854;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1706858223; x=1738394223;
   h=from:to:cc:subject:date:message-id:mime-version:
    content-transfer-encoding;
-  bh=vsD8NVDlsuUy+gkg9e+2hn/r5frQVC4+m3fkTZ7yDtQ=;
-  b=qciq9Dl/Lwu3m3NYVALd1ewJPCuO50nmLNZ/H01IjmKQLDI74Gw4Gl+J
-   8nDpDnui5euXKqpcolMK0ftwptAuFr1JrwPNKvYch3l0UmTXMQpwKiUYi
-   prvBeOjBpIyzESb2roWgo7+PiSx6EIft6rUriFwMxPpBVohuQIF3YvCBI
-   wx5BHgyoJNTexARoncMhMmMbrKMRydq3qetokZB1fdne55i/m2QjMFCBa
-   MepOMhvqZrIU2GWsQaNTK8ku8tTIlinA4H7SCXuIrci1cZEuqqbUmegfD
-   FVWQf83jzordoVAh9VSgqMjEmEjli5LmjKqBtw3CRQ1bHHW9iS6nwQZEU
-   g==;
-X-IronPort-AV: E=McAfee;i="6600,9927,10971"; a="147948400"
-X-IronPort-AV: E=Sophos;i="6.05,236,1701097200"; 
-   d="scan'208";a="147948400"
-Received: from unknown (HELO oym-r3.gw.nic.fujitsu.com) ([210.162.30.91])
-  by esa1.hc1455-7.c3s2.iphmx.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 02 Feb 2024 10:53:02 +0900
-Received: from oym-m2.gw.nic.fujitsu.com (oym-nat-oym-m2.gw.nic.fujitsu.com [192.168.87.59])
-	by oym-r3.gw.nic.fujitsu.com (Postfix) with ESMTP id 67617CA205;
-	Fri,  2 Feb 2024 10:52:59 +0900 (JST)
-Received: from kws-ab4.gw.nic.fujitsu.com (kws-ab4.gw.nic.fujitsu.com [192.51.206.22])
-	by oym-m2.gw.nic.fujitsu.com (Postfix) with ESMTP id A5B2FD41E3;
-	Fri,  2 Feb 2024 10:52:58 +0900 (JST)
-Received: from edo.cn.fujitsu.com (edo.cn.fujitsu.com [10.167.33.5])
-	by kws-ab4.gw.nic.fujitsu.com (Postfix) with ESMTP id 46FE2E253A;
-	Fri,  2 Feb 2024 10:52:58 +0900 (JST)
-Received: from rhel93GA.g08.fujitsu.local (unknown [10.167.221.71])
-	by edo.cn.fujitsu.com (Postfix) with ESMTP id E76C41A009A;
-	Fri,  2 Feb 2024 09:52:57 +0800 (CST)
-From: Yang Xu <xuyang2018.jy@fujitsu.com>
-To: fstests@vger.kernel.org,
-	linux-btrfs@vger.kernel.org
-Cc: Yang Xu <xuyang2018.jy@fujitsu.com>
-Subject: [PATCH v2] t_snapshot_deleted_subvolume: add check for BTRFS_IOC_SNAP_DESTROY_V2
-Date: Wed, 31 Jan 2024 23:23:48 -0500
-Message-Id: <20240201042348.147733-1-xuyang2018.jy@fujitsu.com>
-X-Mailer: git-send-email 2.39.3
+  bh=ZrTu0XyE+6tvz9D3Xgeg8bJbOaNORdgNUlstdr/TVCQ=;
+  b=FUQDn1FHlhRw5eGVERw3w6B8kA4wRW8yGLyASlGiLX4Tt3n9vZGFOUha
+   6/qQS6abMskiVrujMfmX/lQnNEm19UXKPhMaliISQ26101gXbAi002Fky
+   ARQA95ydz93ukcRwjYGBAcyTqroLb2f9aQKDlux+W/6wS89/1Qq/h8f+X
+   NsQpA9WDYoTB5BeOHUYelR9Di7ZvtdCS9F4hlNLp8jX4K0wIbym2l33wh
+   hUlGfF9FeOeUy6esuYWLPjrDqhGN/jbvObt4tvPovJYtWUzKo9yzOGVU7
+   eYrHVdeYpCrT2zwLXXW5VUVurF9pWJ1Et+F+dsTmQ0A7Z+Ps+ZFqdey7p
+   w==;
+X-CSE-ConnectionGUID: QgHV6c35TQiBwg363zklTA==
+X-CSE-MsgGUID: emDnG4QbTBGvcpQ8hMg1dw==
+X-IronPort-AV: E=Sophos;i="6.05,237,1701100800"; 
+   d="scan'208";a="8261321"
+Received: from h199-255-45-14.hgst.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
+  by ob1.hgst.iphmx.com with ESMTP; 02 Feb 2024 15:17:00 +0800
+IronPort-SDR: Q4hn/CT+bhZvrnYpr/cpWKWXAge8u6o/3JiVkidKCS8Q1Fbia1rWvO9h7bt4Z1fjgh3RMPjtZF
+ /lRiDRyTsWqg==
+Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 01 Feb 2024 22:26:50 -0800
+IronPort-SDR: vhOktJJ9gFGqExcnpvpxqlb6GQsh7nrhhQpiav7aBALReWz4uUEzNXZ4Hc3PT+N9krmy4GX3AT
+ sDTBf2U9vG1w==
+WDCIronportException: Internal
+Received: from unknown (HELO naota-xeon.wdc.com) ([10.225.163.9])
+  by uls-op-cesaip02.wdc.com with ESMTP; 01 Feb 2024 23:17:00 -0800
+From: Naohiro Aota <naohiro.aota@wdc.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Naohiro Aota <naohiro.aota@wdc.com>
+Subject: [PATCH] btrfs: use (READ_/WRITE_)ONCE for fs_devices->read_policy
+Date: Fri,  2 Feb 2024 16:14:57 +0900
+Message-ID: <ff28792692e72b0888fff775efad8178889b9756.1706858039.git.naohiro.aota@wdc.com>
+X-Mailer: git-send-email 2.43.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -60,74 +57,79 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-TM-AS-GCONF: 00
-X-TM-AS-Product-Ver: IMSS-9.1.0.1417-9.0.0.1002-28158.003
-X-TM-AS-User-Approved-Sender: Yes
-X-TMASE-Version: IMSS-9.1.0.1417-9.0.1002-28158.003
-X-TMASE-Result: 10--0.230800-10.000000
-X-TMASE-MatchedRID: JUGAxiLh1cPcaPLLdBjevxqkhv3OdF4Dh6nwisY6+c0ErOtgylrM6mnX
-	UUBQ4UsQbn+bq+W8j6V2vbKZ0Ubwp5nFDQsuYb5/W1M77Gh1ugYJlr1xKkE5ucC5DTEMxpeQfiq
-	1gj2xET/gr0WZ6u+ypRIlVYCqhV5OHxPMjOKY7A8LbigRnpKlKZx+7GyJjhAUDVqkdheCqj8fYV
-	pT7I/EHPdoaGy1IdC2/4uhiNc5tAeTp/b1uB9fwNvEw5dGxRulytIt/mHZpcMuYHZzOnqbEULkl
-	G2PtdM1mw0Qaktp+ussz+cQMs/Tnp75MOLIf/j3DF+QsB+Q01JoBmTSwRxjXg==
-X-TMASE-SNAP-Result: 1.821001.0001-0-1-22:0,33:0,34:0-0
 
-On some platform, struct btrfs_ioctl_vol_args_v2 is defined, but the
-macros BTRFS_IOC_SNAP_DESTROY_V2 is not defined. This will cause
-compile error. Add check for BTRFS_IOC_SNAP_DESTROY_V2 to solve this
-problem.
+Since we can read/modify the value from the sysfs interface concurrently,
+it would be better to protect it from compiler optimizations.
 
-BTRFS_IOC_SNAP_CREATE_V2 and BTRFS_IOC_SUBVOL_CREATE_V2 were
-introduced together with struct btrfs_ioctl_vol_args_v2 by the
-commit 55e301fd57a6 ("Btrfs: move fs/btrfs/ioctl.h to
-include/uapi/linux/btrfs.h"). So there is no need to check them.
+Currently, there is only one read policy BTRFS_READ_POLICY_PID available,
+so no actual problem can happen now. This is a preparation for the future
+expansion.
 
-Signed-off-by: Yang Xu <xuyang2018.jy@fujitsu.com>
+Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
- configure.ac                       |  1 +
- src/t_snapshot_deleted_subvolume.c | 10 +++++-----
- 2 files changed, 6 insertions(+), 5 deletions(-)
+ fs/btrfs/sysfs.c   |  7 ++++---
+ fs/btrfs/volumes.c | 10 +++++-----
+ 2 files changed, 9 insertions(+), 8 deletions(-)
 
-diff --git a/configure.ac b/configure.ac
-index b22fc52b..b14b1ab8 100644
---- a/configure.ac
-+++ b/configure.ac
-@@ -109,6 +109,7 @@ AC_CHECK_MEMBERS([struct btrfs_ioctl_vol_args_v2.subvolid], [], [], [[
- #include <stddef.h>
- #include <linux/btrfs.h>
- ]])
-+AC_CHECK_DECLS([BTRFS_IOC_SNAP_DESTROY_V2],,,[#include <linux/btrfs.h>])
- 
- AC_CONFIG_HEADERS([include/config.h])
- AC_CONFIG_FILES([include/builddefs])
-diff --git a/src/t_snapshot_deleted_subvolume.c b/src/t_snapshot_deleted_subvolume.c
-index c3adb1c4..402c0515 100644
---- a/src/t_snapshot_deleted_subvolume.c
-+++ b/src/t_snapshot_deleted_subvolume.c
-@@ -20,11 +20,6 @@
- #define BTRFS_IOCTL_MAGIC 0x94
- #endif
- 
--#ifndef BTRFS_IOC_SNAP_DESTROY_V2
--#define BTRFS_IOC_SNAP_DESTROY_V2 \
--	_IOW(BTRFS_IOCTL_MAGIC, 63, struct btrfs_ioctl_vol_args_v2)
--#endif
--
- #ifndef BTRFS_IOC_SNAP_CREATE_V2
- #define BTRFS_IOC_SNAP_CREATE_V2 \
- 	_IOW(BTRFS_IOCTL_MAGIC, 23, struct btrfs_ioctl_vol_args_v2)
-@@ -58,6 +53,11 @@ struct btrfs_ioctl_vol_args_v2 {
- };
- #endif
- 
-+#if !HAVE_DECL_BTRFS_IOC_SNAP_DESTROY_V2
-+#define BTRFS_IOC_SNAP_DESTROY_V2 \
-+	_IOW(BTRFS_IOCTL_MAGIC, 63, struct btrfs_ioctl_vol_args_v2)
-+#endif
-+
- int main(int argc, char **argv)
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index 84c05246ffd8..21586ecc35bf 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -1228,11 +1228,12 @@ static ssize_t btrfs_read_policy_show(struct kobject *kobj,
+ 				      struct kobj_attribute *a, char *buf)
  {
- 	if (argc != 2) {
+ 	struct btrfs_fs_devices *fs_devices = to_fs_devs(kobj);
++	const enum btrfs_read_policy policy = READ_ONCE(fs_devices->read_policy);
+ 	ssize_t ret = 0;
+ 	int i;
+ 
+ 	for (i = 0; i < BTRFS_NR_READ_POLICY; i++) {
+-		if (fs_devices->read_policy == i)
++		if (policy == i)
+ 			ret += sysfs_emit_at(buf, ret, "%s[%s]",
+ 					 (ret == 0 ? "" : " "),
+ 					 btrfs_read_policy_name[i]);
+@@ -1256,8 +1257,8 @@ static ssize_t btrfs_read_policy_store(struct kobject *kobj,
+ 
+ 	for (i = 0; i < BTRFS_NR_READ_POLICY; i++) {
+ 		if (sysfs_streq(buf, btrfs_read_policy_name[i])) {
+-			if (i != fs_devices->read_policy) {
+-				fs_devices->read_policy = i;
++			if (i != READ_ONCE(fs_devices->read_policy)) {
++				WRITE_ONCE(fs_devices->read_policy, i);
+ 				btrfs_info(fs_devices->fs_info,
+ 					   "read policy set to '%s'",
+ 					   btrfs_read_policy_name[i]);
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 474ab7ed65ea..224345658ea5 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -5942,6 +5942,7 @@ static int find_live_mirror(struct btrfs_fs_info *fs_info,
+ 			    struct btrfs_chunk_map *map, int first,
+ 			    int dev_replace_is_ongoing)
+ {
++	const enum btrfs_read_policy policy = READ_ONCE(fs_info->fs_devices->read_policy);
+ 	int i;
+ 	int num_stripes;
+ 	int preferred_mirror;
+@@ -5956,13 +5957,12 @@ static int find_live_mirror(struct btrfs_fs_info *fs_info,
+ 	else
+ 		num_stripes = map->num_stripes;
+ 
+-	switch (fs_info->fs_devices->read_policy) {
++	switch (policy) {
+ 	default:
+ 		/* Shouldn't happen, just warn and use pid instead of failing */
+-		btrfs_warn_rl(fs_info,
+-			      "unknown read_policy type %u, reset to pid",
+-			      fs_info->fs_devices->read_policy);
+-		fs_info->fs_devices->read_policy = BTRFS_READ_POLICY_PID;
++		btrfs_warn_rl(fs_info, "unknown read_policy type %u, reset to pid",
++			      policy);
++		WRITE_ONCE(fs_info->fs_devices->read_policy, BTRFS_READ_POLICY_PID);
+ 		fallthrough;
+ 	case BTRFS_READ_POLICY_PID:
+ 		preferred_mirror = first + (current->pid % num_stripes);
 -- 
-2.39.3
+2.43.0
 

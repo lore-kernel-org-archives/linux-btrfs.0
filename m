@@ -1,22 +1,22 @@
 Received: from smtp.tiscali.it (santino.mail.tiscali.it [213.205.33.245])
-	by smtp.subspace.kernel.org (Postfix) with ESMTP id 488F63F9F6
+	by smtp.subspace.kernel.org (Postfix) with ESMTP id 486FA3F9E3
 	for <linux-btrfs@vger.kernel.org>; Thu,  8 Feb 2024 20:30:49 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=213.205.33.245
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1707424253; cv=none; b=oBtaeVIjspE+vTP/upCfuGKvTkD195MHwOiVhuvc9nkkGUQyXaQoGrqEBa3YCOKishe3xPct5Tr5aT5i/SOTwMGaR/Ta2lvz37HAu/gqHs7FmSdTm+j6upQvNolYwRXNCV/+yvhDWM8R6WOnqQlpgWinzk9lfmzF5j3tDU+PK4w=
+	t=1707424253; cv=none; b=OLvxISdP0LMvnVU/zN5CJT4vbt3F84tAt5OjC+Ivark192k/Gzp6PGjWlUf1A/CAWaYN5aGoAmtWVJrgCCMOk6fNdbLzxbcT9XUwpSzvlxv19LN0uCaD15Wl+d55YYG98tFlDGxMRxmhjrQALvljhmy8FH/MXUIEjfcBS36EkD0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
 	s=arc-20240116; t=1707424253; c=relaxed/simple;
-	bh=aZgkjjCYJB33WIL9BWo06gnUwNXqvi5yh0pljfgzXc4=;
+	bh=iolS9GcuxxCYyqsFPJDGKpGzY/YKpFbE+vgw0p7hjkg=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=cK6oDwRCF0kfAwdsTTgNEW3FnOeX9OZWSHsNvw0gNwerzexwOF/Qg1OsvJfkEagnCioEIkbUBZL2MMovn6CFnldaPxRbtodxtHiflQajJWa5ksxkJGU/47XmVNFSAk1AqRBeWetNM89sp5mTzj50gSDYR3dNFeURBtkkpEV4Ecg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=tiscali.it; spf=pass smtp.mailfrom=tiscali.it; dkim=pass (1024-bit key) header.d=tiscali.it header.i=@tiscali.it header.b=eoh1ZJBS; arc=none smtp.client-ip=213.205.33.245
+	 MIME-Version; b=YWZwpSRj4oV46Z7Euh/NCyc70/jqViepgyGYg/gRTcGL9XJ9Q4ohNppPXHfHp0hiHAZXmZ0OGKQgCKCu5TrwIyPqph4QZswvEVAiI+qPrLlyvQIZxURCEkSKtFuM3K4/p5sZ9lmya3cBrLUm6zZGJQBGjhoylcQ6ahELUeAuBS8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=tiscali.it; spf=pass smtp.mailfrom=tiscali.it; dkim=pass (1024-bit key) header.d=tiscali.it header.i=@tiscali.it header.b=glDMhIri; arc=none smtp.client-ip=213.205.33.245
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=tiscali.it
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=tiscali.it
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=tiscali.it header.i=@tiscali.it header.b="eoh1ZJBS"
+	dkim=pass (1024-bit key) header.d=tiscali.it header.i=@tiscali.it header.b="glDMhIri"
 Received: from venice.bhome ([84.220.171.3])
 	by santino.mail.tiscali.it with 
-	id kkVe2B00g04l9eU01kVeo0; Thu, 08 Feb 2024 20:29:39 +0000
+	id kkVe2B00g04l9eU01kVfoV; Thu, 08 Feb 2024 20:29:39 +0000
 X-Spam-Final-Verdict: clean
 X-Spam-State: 0
 X-Spam-Score: 0
@@ -25,9 +25,9 @@ x-auth-user: kreijack@tiscali.it
 From: Goffredo Baroncelli <kreijack@tiscali.it>
 To: linux-btrfs@vger.kernel.org
 Cc: Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 1/9] Killing dirstream: add helpers
-Date: Thu,  8 Feb 2024 21:19:19 +0100
-Message-ID: <44e4fdd5c74646a72794a91ba9e4078d0d7379ec.1707423567.git.kreijack@inwind.it>
+Subject: [PATCH 5/9] Killing dirstream: replace open_file_or_dir3 with btrfs_open_fd2
+Date: Thu,  8 Feb 2024 21:19:23 +0100
+Message-ID: <28a66d261b14f17625bd355f837beb18c7546014.1707423567.git.kreijack@inwind.it>
 X-Mailer: git-send-email 2.43.0
 In-Reply-To: <cover.1707423567.git.kreijack@inwind.it>
 References: <cover.1707423567.git.kreijack@inwind.it>
@@ -40,11 +40,11 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=tiscali.it; s=smtp;
-	t=1707424179; bh=DZFU/m2tMbjdj1qsBV7DLjEjcvkszvIudGvvAmra66o=;
+	t=1707424179; bh=CaRC4LGdNXxKgL18ZnqV/Sz8/ySRzSMr1RihS6k6psA=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:Reply-To;
-	b=eoh1ZJBS2RMeI6iqUiSlcgWZP2sQWHZHRfVZAOfLNZgaH/8g/BOuun8BxoM3hXjT4
-	 Ic3aegyxXi80labtnWLu8nhFvg1frFdzS9oWq2Zv2xja7mrv4JRvO6Bpr0RVkuuohM
-	 cPCkEZlTmsv6jWwEnfJpc5I4tTh8I1fpbWVc4oIA=
+	b=glDMhIrip0Z+0Uft/1Zk1RDq1bhuLE5m47+RGaZDh84/j1vI+Qm0ZY4WDKhzNhU6u
+	 kr13qU9EesoIbG9m881uXa0/pAXd4VtRLi2uSPY/vaB/29Owpn5+BW3iUKBcDPH8Cp
+	 iAXQBdAvXQvZSiBC2ABWPzPNKGO1Ybk9QENzDk68=
 
 From: Goffredo Baroncelli <kreijack@inwind.it>
 
@@ -54,117 +54,84 @@ the 'DIR *dirstream' value when a dir is opened.
 However this is never used. So avoid calling diropen() and return
 only the fd.
 
-This is a preparatory patch that adds some helpers.
+This patch replace open_file_or_dir3() with btrfs_open_fd2() removing
+any reference to the unused/useless dirstream variables.
+btrfs_open_fd2() is needed because sometime the caller need
+to set the RDONLY/RDWRITE mode, and to avoid spourios diagnosis messages.
 
 Signed-off-by: Goffredo Baroncelli <kreijack@libero.it>
 ---
- common/open-utils.c | 81 +++++++++++++++++++++++++++++++++++++++++++++
- common/open-utils.h |  5 +++
- 2 files changed, 86 insertions(+)
+ cmds/filesystem.c | 8 +++-----
+ cmds/property.c   | 5 ++---
+ 2 files changed, 5 insertions(+), 8 deletions(-)
 
-diff --git a/common/open-utils.c b/common/open-utils.c
-index 111a51d9..87f71196 100644
---- a/common/open-utils.c
-+++ b/common/open-utils.c
-@@ -318,3 +318,84 @@ void close_file_or_dir(int fd, DIR *dirstream)
+diff --git a/cmds/filesystem.c b/cmds/filesystem.c
+index d37b52a3..408ebe82 100644
+--- a/cmds/filesystem.c
++++ b/cmds/filesystem.c
+@@ -1004,7 +1004,6 @@ static int cmd_filesystem_defrag(const struct cmd_struct *cmd,
+ 	bool recursive = false;
+ 	int ret = 0;
+ 	int compress_type = BTRFS_COMPRESS_NONE;
+-	DIR *dirstream;
+ 
+ 	/*
+ 	 * Kernel 4.19+ supports defragmention of files open read-only,
+@@ -1142,8 +1141,7 @@ static int cmd_filesystem_defrag(const struct cmd_struct *cmd,
+ 		struct stat st;
+ 		int defrag_err = 0;
+ 
+-		dirstream = NULL;
+-		fd = open_file_or_dir3(argv[i], &dirstream, defrag_open_mode);
++		fd = btrfs_open_fd2(argv[i], false, defrag_open_mode==O_RDWR, false);
+ 		if (fd < 0) {
+ 			error("cannot open %s: %m", argv[i]);
+ 			ret = -errno;
+@@ -1177,7 +1175,7 @@ static int cmd_filesystem_defrag(const struct cmd_struct *cmd,
+ 				error(
+ "defrag range ioctl not supported in this kernel version, 2.6.33 and newer is required");
+ 				defrag_global_errors++;
+-				close_file_or_dir(fd, dirstream);
++				close(fd);
+ 				break;
+ 			}
+ 			if (ret) {
+@@ -1189,7 +1187,7 @@ static int cmd_filesystem_defrag(const struct cmd_struct *cmd,
+ next:
+ 		if (ret)
+ 			defrag_global_errors++;
+-		close_file_or_dir(fd, dirstream);
++		close(fd);
+ 	}
+ 
+ 	if (defrag_global_errors)
+diff --git a/cmds/property.c b/cmds/property.c
+index be9bdf63..e189e505 100644
+--- a/cmds/property.c
++++ b/cmds/property.c
+@@ -175,12 +175,11 @@ static int prop_compression(enum prop_object_type type,
+ 	int ret;
+ 	ssize_t sret;
+ 	int fd = -1;
+-	DIR *dirstream = NULL;
+ 	char *buf = NULL;
+ 	char *xattr_name = NULL;
+ 	int open_flags = value ? O_RDWR : O_RDONLY;
+ 
+-	fd = open_file_or_dir3(object, &dirstream, open_flags);
++	fd = btrfs_open_fd2(object, false, open_flags == O_RDWR, false);
+ 	if (fd == -1) {
+ 		ret = -errno;
+ 		error("failed to open %s: %m", object);
+@@ -232,7 +231,7 @@ out:
+ 	free(xattr_name);
+ 	free(buf);
+ 	if (fd >= 0)
+-		close_file_or_dir(fd, dirstream);
++		close(fd);
+ 
+ 	return ret;
  }
- 
- 
-+/*
-+ * Do the following checks before calling open:
-+ * 1: path is in a btrfs filesystem
-+ */
-+int btrfs_open_fd2(const char *path, bool verbose, bool read_write, bool dir_only)
-+{
-+	struct statfs stfs;
-+	struct stat st;
-+	int ret;
-+
-+	if (stat(path, &st) != 0) {
-+		error_on(verbose, "cannot access '%s': %m", path);
-+		return -1;
-+	}
-+
-+	if (dir_only && !S_ISDIR(st.st_mode)) {
-+		error_on(verbose, "not a directory: %s", path);
-+		return -3;
-+	}
-+
-+	if (statfs(path, &stfs) != 0) {
-+		error_on(verbose, "cannot access '%s': %m", path);
-+		return -1;
-+	}
-+
-+	if (stfs.f_type != BTRFS_SUPER_MAGIC) {
-+		error_on(verbose, "not a btrfs filesystem: %s", path);
-+		return -2;
-+	}
-+
-+	if (S_ISDIR(st.st_mode) || !read_write)
-+		ret = open(path, O_RDONLY);
-+	else
-+		ret = open(path, O_RDWR);
-+
-+	if (ret < 0) {
-+		error_on(verbose, "cannot access '%s': %m", path);
-+	}
-+
-+	return ret;
-+}
-+
-+int btrfs_open_file_or_dir_fd(const char *path)
-+{
-+	return btrfs_open_fd2(path, true, true, false);
-+}
-+
-+int btrfs_open_dir_fd(const char *path)
-+{
-+	return btrfs_open_fd2(path, true, true, true);
-+}
-+
-+
-+/*
-+ * Given a pathname, return a filehandle to:
-+ * 	the original pathname or,
-+ * 	if the pathname is a mounted btrfs device, to its mountpoint.
-+ *
-+ * On error, return -1, errno should be set.
-+ */
-+int btrfs_open_mnt_fd(const char *path, bool verbose)
-+{
-+	char mp[PATH_MAX];
-+	int ret;
-+
-+	if (path_is_block_device(path)) {
-+		ret = get_btrfs_mount(path, mp, sizeof(mp));
-+		if (ret < 0) {
-+			/* not a mounted btrfs dev */
-+			error_on(verbose, "'%s' is not a mounted btrfs device",
-+				 path);
-+			errno = EINVAL;
-+			return -1;
-+		}
-+		ret = btrfs_open_fd2(mp, verbose, true, true);
-+	} else {
-+		ret = btrfs_open_dir_fd(path);
-+	}
-+
-+	return ret;
-+}
-diff --git a/common/open-utils.h b/common/open-utils.h
-index 3f8c004e..96d99f5d 100644
---- a/common/open-utils.h
-+++ b/common/open-utils.h
-@@ -39,4 +39,9 @@ int btrfs_open_file_or_dir(const char *path, DIR **dirstream, int verbose);
- 
- void close_file_or_dir(int fd, DIR *dirstream);
- 
-+int btrfs_open_fd2(const char *path, bool verbose, bool read_write, bool dir_only);
-+int btrfs_open_file_or_dir_fd(const char *path);
-+int btrfs_open_dir_fd(const char *path);
-+int btrfs_open_mnt_fd(const char *path, bool verbose);
-+
- #endif
 -- 
 2.43.0
 

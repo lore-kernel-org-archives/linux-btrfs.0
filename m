@@ -1,22 +1,22 @@
 Received: from smtp.tiscali.it (santino.mail.tiscali.it [213.205.33.245])
-	by smtp.subspace.kernel.org (Postfix) with ESMTP id 486FA3F9E3
+	by smtp.subspace.kernel.org (Postfix) with ESMTP id 487C03F9F2
 	for <linux-btrfs@vger.kernel.org>; Thu,  8 Feb 2024 20:30:49 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=213.205.33.245
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1707424253; cv=none; b=OLvxISdP0LMvnVU/zN5CJT4vbt3F84tAt5OjC+Ivark192k/Gzp6PGjWlUf1A/CAWaYN5aGoAmtWVJrgCCMOk6fNdbLzxbcT9XUwpSzvlxv19LN0uCaD15Wl+d55YYG98tFlDGxMRxmhjrQALvljhmy8FH/MXUIEjfcBS36EkD0=
+	t=1707424253; cv=none; b=lNJ366jMMuApyRpHwYTyGZQGwrHq3xhrbzwgJQE9+Lg+J4iOqyrYuWLYbCo4Pt1rc2m1VBQBLanJB3m606kPUvTeyJ3gsy4KZHQ4yYxRnTKkjoGhVA/x6rMBzhQvPzz40Uro6tj04FsccYAwucXyuoDxUF09VXQhgChBQ5iLZP8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
 	s=arc-20240116; t=1707424253; c=relaxed/simple;
-	bh=iolS9GcuxxCYyqsFPJDGKpGzY/YKpFbE+vgw0p7hjkg=;
+	bh=4u1qz0HRvOEw2Vbu1xcwtwUaVXvzoaqSlfcd4+ALgDU=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=YWZwpSRj4oV46Z7Euh/NCyc70/jqViepgyGYg/gRTcGL9XJ9Q4ohNppPXHfHp0hiHAZXmZ0OGKQgCKCu5TrwIyPqph4QZswvEVAiI+qPrLlyvQIZxURCEkSKtFuM3K4/p5sZ9lmya3cBrLUm6zZGJQBGjhoylcQ6ahELUeAuBS8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=tiscali.it; spf=pass smtp.mailfrom=tiscali.it; dkim=pass (1024-bit key) header.d=tiscali.it header.i=@tiscali.it header.b=glDMhIri; arc=none smtp.client-ip=213.205.33.245
+	 MIME-Version; b=LHtmyn6cvsVNCVoWk4D3wOWIaWOBuxax4eW2Eex+ki3aLjQe6OjXS60Y2PEpe3+7GjSco33Hi432eKJAG64+Aa3fNrMyDx4TO6kx8dmifK1B7N9euLLL3UaBknDtklJ0eO9lpm+sOT6RijNnCHpuoAmVQIqQCZkGxdRgn7riz9o=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=tiscali.it; spf=pass smtp.mailfrom=tiscali.it; dkim=pass (1024-bit key) header.d=tiscali.it header.i=@tiscali.it header.b=rAcSVtjQ; arc=none smtp.client-ip=213.205.33.245
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=tiscali.it
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=tiscali.it
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=tiscali.it header.i=@tiscali.it header.b="glDMhIri"
+	dkim=pass (1024-bit key) header.d=tiscali.it header.i=@tiscali.it header.b="rAcSVtjQ"
 Received: from venice.bhome ([84.220.171.3])
 	by santino.mail.tiscali.it with 
-	id kkVe2B00g04l9eU01kVfoV; Thu, 08 Feb 2024 20:29:39 +0000
+	id kkVe2B00g04l9eU01kVgoq; Thu, 08 Feb 2024 20:29:40 +0000
 X-Spam-Final-Verdict: clean
 X-Spam-State: 0
 X-Spam-Score: 0
@@ -25,9 +25,9 @@ x-auth-user: kreijack@tiscali.it
 From: Goffredo Baroncelli <kreijack@tiscali.it>
 To: linux-btrfs@vger.kernel.org
 Cc: Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 5/9] Killing dirstream: replace open_file_or_dir3 with btrfs_open_fd2
-Date: Thu,  8 Feb 2024 21:19:23 +0100
-Message-ID: <28a66d261b14f17625bd355f837beb18c7546014.1707423567.git.kreijack@inwind.it>
+Subject: [PATCH 8/9] Killing dirstream: remove open_file_or_dir3 from du_add_file
+Date: Thu,  8 Feb 2024 21:19:26 +0100
+Message-ID: <2eec4ed3dd1574cbf17f2ecb1f91b159f8a90a34.1707423567.git.kreijack@inwind.it>
 X-Mailer: git-send-email 2.43.0
 In-Reply-To: <cover.1707423567.git.kreijack@inwind.it>
 References: <cover.1707423567.git.kreijack@inwind.it>
@@ -40,11 +40,11 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=tiscali.it; s=smtp;
-	t=1707424179; bh=CaRC4LGdNXxKgL18ZnqV/Sz8/ySRzSMr1RihS6k6psA=;
+	t=1707424180; bh=HMX5Q+prtFhmDqdFdqsZLTZh9iXrSPToocenCVlATt8=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:Reply-To;
-	b=glDMhIrip0Z+0Uft/1Zk1RDq1bhuLE5m47+RGaZDh84/j1vI+Qm0ZY4WDKhzNhU6u
-	 kr13qU9EesoIbG9m881uXa0/pAXd4VtRLi2uSPY/vaB/29Owpn5+BW3iUKBcDPH8Cp
-	 iAXQBdAvXQvZSiBC2ABWPzPNKGO1Ybk9QENzDk68=
+	b=rAcSVtjQEaT0n/2S2jrCa0rvXbxnyRysuDwcmxhqPwvKtV3+JzX2nvsBS7Ns3r9QQ
+	 i7iHYEtd+6zZ98l3/tS8R0NzjtQYySX2n+LUQSHNJlAWw76n04JQBrmcW2+Bh2SZaw
+	 EUaMXie45M5YLZlyioNLZo4ki/ulRTCht+e77ny0=
 
 From: Goffredo Baroncelli <kreijack@inwind.it>
 
@@ -54,84 +54,57 @@ the 'DIR *dirstream' value when a dir is opened.
 However this is never used. So avoid calling diropen() and return
 only the fd.
 
-This patch replace open_file_or_dir3() with btrfs_open_fd2() removing
-any reference to the unused/useless dirstream variables.
-btrfs_open_fd2() is needed because sometime the caller need
-to set the RDONLY/RDWRITE mode, and to avoid spourios diagnosis messages.
+This patch replace the last reference to btrfs_open_file_or_dir3()
+with btrfs_open_fd2().
 
 Signed-off-by: Goffredo Baroncelli <kreijack@libero.it>
 ---
- cmds/filesystem.c | 8 +++-----
- cmds/property.c   | 5 ++---
- 2 files changed, 5 insertions(+), 8 deletions(-)
+ cmds/filesystem-du.c | 18 ++++++++++++++++--
+ 1 file changed, 16 insertions(+), 2 deletions(-)
 
-diff --git a/cmds/filesystem.c b/cmds/filesystem.c
-index d37b52a3..408ebe82 100644
---- a/cmds/filesystem.c
-+++ b/cmds/filesystem.c
-@@ -1004,7 +1004,6 @@ static int cmd_filesystem_defrag(const struct cmd_struct *cmd,
- 	bool recursive = false;
- 	int ret = 0;
- 	int compress_type = BTRFS_COMPRESS_NONE;
--	DIR *dirstream;
+diff --git a/cmds/filesystem-du.c b/cmds/filesystem-du.c
+index 4982123d..cffeafd5 100644
+--- a/cmds/filesystem-du.c
++++ b/cmds/filesystem-du.c
+@@ -456,7 +456,7 @@ static int du_add_file(const char *filename, int dirfd,
+ 		ret = sprintf(pathp, "/%s", filename);
+ 	pathp += ret;
  
- 	/*
- 	 * Kernel 4.19+ supports defragmention of files open read-only,
-@@ -1142,8 +1141,7 @@ static int cmd_filesystem_defrag(const struct cmd_struct *cmd,
- 		struct stat st;
- 		int defrag_err = 0;
- 
--		dirstream = NULL;
--		fd = open_file_or_dir3(argv[i], &dirstream, defrag_open_mode);
-+		fd = btrfs_open_fd2(argv[i], false, defrag_open_mode==O_RDWR, false);
- 		if (fd < 0) {
- 			error("cannot open %s: %m", argv[i]);
- 			ret = -errno;
-@@ -1177,7 +1175,7 @@ static int cmd_filesystem_defrag(const struct cmd_struct *cmd,
- 				error(
- "defrag range ioctl not supported in this kernel version, 2.6.33 and newer is required");
- 				defrag_global_errors++;
--				close_file_or_dir(fd, dirstream);
-+				close(fd);
- 				break;
- 			}
- 			if (ret) {
-@@ -1189,7 +1187,7 @@ static int cmd_filesystem_defrag(const struct cmd_struct *cmd,
- next:
- 		if (ret)
- 			defrag_global_errors++;
--		close_file_or_dir(fd, dirstream);
-+		close(fd);
- 	}
- 
- 	if (defrag_global_errors)
-diff --git a/cmds/property.c b/cmds/property.c
-index be9bdf63..e189e505 100644
---- a/cmds/property.c
-+++ b/cmds/property.c
-@@ -175,12 +175,11 @@ static int prop_compression(enum prop_object_type type,
- 	int ret;
- 	ssize_t sret;
- 	int fd = -1;
--	DIR *dirstream = NULL;
- 	char *buf = NULL;
- 	char *xattr_name = NULL;
- 	int open_flags = value ? O_RDWR : O_RDONLY;
- 
--	fd = open_file_or_dir3(object, &dirstream, open_flags);
-+	fd = btrfs_open_fd2(object, false, open_flags == O_RDWR, false);
- 	if (fd == -1) {
+-	fd = open_file_or_dir3(path, &dirstream, O_RDONLY);
++	fd = btrfs_open_fd2(path, false, false, false);
+ 	if (fd < 0) {
  		ret = -errno;
- 		error("failed to open %s: %m", object);
-@@ -232,7 +231,7 @@ out:
- 	free(xattr_name);
- 	free(buf);
- 	if (fd >= 0)
--		close_file_or_dir(fd, dirstream);
-+		close(fd);
+ 		goto out;
+@@ -489,6 +489,12 @@ static int du_add_file(const char *filename, int dirfd,
+ 	} else if (S_ISDIR(st.st_mode)) {
+ 		struct rb_root *root = shared_extents;
  
- 	return ret;
- }
++		dirstream = fdopendir(fd);
++		if (!dirstream) {
++			ret = -errno;
++			goto out_close;
++		}
++
+ 		/*
+ 		 * We collect shared extents in an rb_root, the top
+ 		 * level caller will not pass a root down, so use the
+@@ -542,7 +548,15 @@ static int du_add_file(const char *filename, int dirfd,
+ 		*ret_shared = file_shared;
+ 
+ out_close:
+-	close_file_or_dir(fd, dirstream);
++	/*
++	 * if dirstream is not NULL, it is derived by fd, so it is enough
++	 * to close the former
++	 */
++	if (dirstream)
++		closedir(dirstream);
++	else
++		close(fd);
++
+ out:
+ 	/* reset path to just before this element */
+ 	pathp = pathtmp;
 -- 
 2.43.0
 

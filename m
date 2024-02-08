@@ -1,22 +1,21 @@
 Received: from smtp.tiscali.it (santino.mail.tiscali.it [213.205.33.245])
-	by smtp.subspace.kernel.org (Postfix) with ESMTP id 489723F9F8
+	by smtp.subspace.kernel.org (Postfix) with ESMTP id 487883F9F1
 	for <linux-btrfs@vger.kernel.org>; Thu,  8 Feb 2024 20:30:49 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=213.205.33.245
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1707424253; cv=none; b=jfsTTeV9SKkAqrGidWNPwRLwo4vpoX3lFVPgY1IzNreBNv0luU3Gy2HlbgqPyxAfCaYMBxojvUf/zHowTlWqbDd8hPiHnDfJV4Tnxmi9rDPUyYYvB0a9ok0yHs3Qle/1VUvVzlzpT7447+lD5Lo6nfxZDJKOVXh6GMHmAZqX8HM=
+	t=1707424253; cv=none; b=e26kdbS1+abZxBbeFGRQIqO/zw9EJ2So48pDeNOiR46XB+EdMH/pIsXAcETp1rfRDpDlUjmqPLqTTGFYimLJh6/9k18SOj+HK9iWUutqvjcrbA75b/jaV/XxFlwkRhb9gHxPkjDS3eS2hy1TVmJY50iWCYjyTauyB2vsS6mc4WY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
 	s=arc-20240116; t=1707424253; c=relaxed/simple;
-	bh=WkFAp1r3lf4xQYVqTfXRD7KJ1BNDbZWPodt4pZKcXWY=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=qtFT5sddhdoC/st1EdxFtcg0WUZkRbn5p94mJpg8Gv05ZfcHOgUIaXfneUmpsIqB7VaEgsconh1jGoRrejPEMfQC/AJLI0PdWNJp+c15a2s+zr/zWUMSfJQQBYq0uNG3SpoJDPl4lcAROsUSY5tGX3CaojSXap3PbUXYgLPWay8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=tiscali.it; spf=pass smtp.mailfrom=tiscali.it; dkim=pass (1024-bit key) header.d=tiscali.it header.i=@tiscali.it header.b=30v20QSF; arc=none smtp.client-ip=213.205.33.245
+	bh=NACO1wwfigAoo4Onw8bI35u6RyEta5lEwMmbM7fYpvY=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=V+GUuRoABzk62d1qyMFzXZA2yDJlin+snRwdEuUFWFahuHjfH7SEZVB7fbeLEjHuBcX55tlN0ypIIGGFsXe/FtYORbY81HovxRqqXbO8hzamEFwny8rdCWQQPptU0q6VHuRIiEOic55RqDHGnEbbdb6Wvw0n5VL36btyANd+AeU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=tiscali.it; spf=pass smtp.mailfrom=tiscali.it; dkim=pass (1024-bit key) header.d=tiscali.it header.i=@tiscali.it header.b=XHnv2FGo; arc=none smtp.client-ip=213.205.33.245
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=tiscali.it
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=tiscali.it
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=tiscali.it header.i=@tiscali.it header.b="30v20QSF"
+	dkim=pass (1024-bit key) header.d=tiscali.it header.i=@tiscali.it header.b="XHnv2FGo"
 Received: from venice.bhome ([84.220.171.3])
 	by santino.mail.tiscali.it with 
-	id kkVe2B00g04l9eU01kVfoG; Thu, 08 Feb 2024 20:29:39 +0000
+	id kkVe2B00g04l9eU01kVenq; Thu, 08 Feb 2024 20:29:38 +0000
 X-Spam-Final-Verdict: clean
 X-Spam-State: 0
 X-Spam-Score: 0
@@ -25,12 +24,10 @@ x-auth-user: kreijack@tiscali.it
 From: Goffredo Baroncelli <kreijack@tiscali.it>
 To: linux-btrfs@vger.kernel.org
 Cc: Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 3/9] Killing dirstream: replace btrfs_open_dir with btrfs_open_dir_fd
-Date: Thu,  8 Feb 2024 21:19:21 +0100
-Message-ID: <9d7800b5c4b57f30333c0a93ff9d28dc8b387831.1707423567.git.kreijack@inwind.it>
+Subject: [PATCH 0/9][V2][btrfs-progs] Remove unused dirstream variable
+Date: Thu,  8 Feb 2024 21:19:18 +0100
+Message-ID: <cover.1707423567.git.kreijack@inwind.it>
 X-Mailer: git-send-email 2.43.0
-In-Reply-To: <cover.1707423567.git.kreijack@inwind.it>
-References: <cover.1707423567.git.kreijack@inwind.it>
 Reply-To: Goffredo Baroncelli <kreijack@libero.it>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
@@ -40,151 +37,104 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=tiscali.it; s=smtp;
-	t=1707424179; bh=9Dcrhgyjxj5tFURKk2brlZMKyCkFPhdrsrIBqgE4aY0=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:Reply-To;
-	b=30v20QSFQB74u7l0wgXoa9ny/+9rpMOo0Tj9MnF+Ft1Je2UrJBlZaXPjkrIy+Gr+G
-	 3RaAO5QDSDz9MAA1+WO/i9NLqOTAk5PyHBAsl1noj661vRUIrjUwJ0KneR3YEMnSvm
-	 AmRcU3ja87YrnCO0yd9QP/AcmYyTLa44VjfUKqLs=
+	t=1707424178; bh=X++1sQmg16u9btua5oIetdYLRvLlOGxGU9iP0iG2tVY=;
+	h=From:To:Cc:Subject:Date:Reply-To;
+	b=XHnv2FGoIBeVmSFFjmuKYoYw3GKI7rWyx+CtoWoi9Cc+vUiNntL1jSEBI23WfQnt7
+	 OM5rBUSG5RxfonldoevJpJYyF8hp/7/Oi7h9RUk8Ea9KNfDdiaPQOi/O5YcTWLELOX
+	 iR53ODqxU8ZGHcNNibGbxh169pi3w3cTqgslxflg=
 
 From: Goffredo Baroncelli <kreijack@inwind.it>
 
-For historical reason the helpers [btrfs_]open_dir... return also
-the 'DIR *dirstream' value when a dir is opened.
+For historical reason, the helpers [btrfs_]open_[file_or_]dir() work with
+directory returning the 'fd' and a 'dirstream' variable returned by
+opendir(3).
 
-However this is never used. So avoid calling diropen() and return
-only the fd.
+If the path is a file, the 'fd' is computed from open(2) and dirstream is 
+set to NULL. If the path is a directory, first the directory is opened by 
+opendir(3), then the 'fd' is computed using dirfd(3).
+However the 'dirstream' returned by opendir(3) is left open until 'fd'
+is not needed anymore.
 
-This patch replaces the last btrfs_open_dir() call with btrfs_open_dir_fd()
-removing any reference to the unused/useless dirstream variables.
+In near every case the 'dirstream' variable is not used. Only 'fd' is used.
 
-At the same time this patch updates the add_seen_fsid() function removing
-any reference to dir stream (again this is never used).
+A call to close_file_or_dir() freed both 'fd' and 'dirstream'.
 
-Signed-off-by: Goffredo Baroncelli <kreijack@libero.it>
----
- cmds/filesystem.c    | 4 ++--
- cmds/subvolume.c     | 8 +++-----
- common/device-scan.c | 6 ++----
- common/device-scan.h | 4 +---
- 4 files changed, 8 insertions(+), 14 deletions(-)
+Aim of this patch set is to getrid of this complexity; when the path of
+a directory is passed, the fd is get directly using open(path, O_RDONLY):
+so we don't need to use readdir(3) and to maintain the not used variable
+'dirstream'.
 
-diff --git a/cmds/filesystem.c b/cmds/filesystem.c
-index 9867403f..d37b52a3 100644
---- a/cmds/filesystem.c
-+++ b/cmds/filesystem.c
-@@ -307,7 +307,7 @@ static void print_one_uuid(struct btrfs_fs_devices *fs_devices,
- 	u64 devs_found = 0;
- 	u64 total;
- 
--	if (add_seen_fsid(fs_devices->fsid, seen_fsid_hash, -1, NULL))
-+	if (add_seen_fsid(fs_devices->fsid, seen_fsid_hash, -1))
- 		return;
- 
- 	uuid_unparse(fs_devices->fsid, uuidbuf);
-@@ -352,7 +352,7 @@ static int print_one_fs(struct btrfs_ioctl_fs_info_args *fs_info,
- 	struct btrfs_ioctl_dev_info_args *tmp_dev_info;
- 	int ret;
- 
--	ret = add_seen_fsid(fs_info->fsid, seen_fsid_hash, -1, NULL);
-+	ret = add_seen_fsid(fs_info->fsid, seen_fsid_hash, -1);
- 	if (ret == -EEXIST)
- 		return 0;
- 	else if (ret)
-diff --git a/cmds/subvolume.c b/cmds/subvolume.c
-index cca73379..65582f67 100644
---- a/cmds/subvolume.c
-+++ b/cmds/subvolume.c
-@@ -374,7 +374,6 @@ static int cmd_subvolume_delete(const struct cmd_struct *cmd, int argc, char **a
- 	char	*dupdname = NULL;
- 	char	*dupvname = NULL;
- 	char	*path = NULL;
--	DIR	*dirstream = NULL;
- 	int commit_mode = 0;
- 	bool subvol_path_not_found = false;
- 	u8 fsid[BTRFS_FSID_SIZE];
-@@ -498,7 +497,7 @@ again:
- 	if (subvolid > 0)
- 		dname = dupvname;
- 
--	fd = btrfs_open_dir(dname, &dirstream, 1);
-+	fd = btrfs_open_dir_fd(dname);
- 	if (fd < 0) {
- 		ret = 1;
- 		goto out;
-@@ -592,7 +591,7 @@ again:
- 			goto out;
- 		}
- 
--		if (add_seen_fsid(fsid, seen_fsid_hash, fd, dirstream) == 0) {
-+		if (add_seen_fsid(fsid, seen_fsid_hash, fd) == 0) {
- 			uuid_unparse(fsid, uuidbuf);
- 			pr_verbose(LOG_INFO, "  new fs is found for '%s', fsid: %s\n",
- 				   path, uuidbuf);
-@@ -606,10 +605,9 @@ again:
- 	}
- 
- out:
--	close_file_or_dir(fd, dirstream);
-+	close(fd);
- keep_fd:
- 	fd = -1;
--	dirstream = NULL;
- 	free(dupdname);
- 	free(dupvname);
- 	dupdname = NULL;
-diff --git a/common/device-scan.c b/common/device-scan.c
-index c1cd7266..c04c2388 100644
---- a/common/device-scan.c
-+++ b/common/device-scan.c
-@@ -313,8 +313,7 @@ int is_seen_fsid(u8 *fsid, struct seen_fsid *seen_fsid_hash[])
- 	return 0;
- }
- 
--int add_seen_fsid(u8 *fsid, struct seen_fsid *seen_fsid_hash[],
--		int fd, DIR *dirstream)
-+int add_seen_fsid(u8 *fsid, struct seen_fsid *seen_fsid_hash[], int fd)
- {
- 	u8 hash = fsid[0];
- 	int slot = hash % SEEN_FSID_HASH_SIZE;
-@@ -342,7 +341,6 @@ insert:
- 	alloc->next = NULL;
- 	memcpy(alloc->fsid, fsid, BTRFS_FSID_SIZE);
- 	alloc->fd = fd;
--	alloc->dirstream = dirstream;
- 
- 	if (seen)
- 		seen->next = alloc;
-@@ -362,7 +360,7 @@ void free_seen_fsid(struct seen_fsid *seen_fsid_hash[])
- 		seen = seen_fsid_hash[slot];
- 		while (seen) {
- 			next = seen->next;
--			close_file_or_dir(seen->fd, seen->dirstream);
-+			close(seen->fd);
- 			free(seen);
- 			seen = next;
- 		}
-diff --git a/common/device-scan.h b/common/device-scan.h
-index 8a875832..90ec766d 100644
---- a/common/device-scan.h
-+++ b/common/device-scan.h
-@@ -41,7 +41,6 @@ struct btrfs_trans_handle;
- struct seen_fsid {
- 	u8 fsid[BTRFS_FSID_SIZE];
- 	struct seen_fsid *next;
--	DIR *dirstream;
- 	int fd;
- };
- 
-@@ -56,8 +55,7 @@ int btrfs_add_to_fsid(struct btrfs_trans_handle *trans,
- int btrfs_device_already_in_root(struct btrfs_root *root, int fd,
- 				 int super_offset);
- int is_seen_fsid(u8 *fsid, struct seen_fsid *seen_fsid_hash[]);
--int add_seen_fsid(u8 *fsid, struct seen_fsid *seen_fsid_hash[],
--		int fd, DIR *dirstream);
-+int add_seen_fsid(u8 *fsid, struct seen_fsid *seen_fsid_hash[], int fd);
- void free_seen_fsid(struct seen_fsid *seen_fsid_hash[]);
- int test_uuid_unique(const char *uuid_str);
- 
+So each call of a legacy [btrfs_]open_[file_or_]dir() helper is
+replaced by a call to the new btrfs_open_[file_or_]dir_fd() functions.
+These functions return only the file descriptor.
+
+Also close_file_or_dir() is not needed anymore.
+
+The first patch, introduces the new helpers; the last patch removed the
+unused older helpers. The intermediate patches updated the code.
+
+The 3rd patch updated also the add_seen_fsid() function. Before it
+stored the dirstream variable. But now it is not needed anymore.
+So we removed a parameter of the functions and a field in the structure.
+
+In the 8th patch, the only occurrences where 'dirstream' is used was
+corrected: the dirstream is computed using fdopendir(3), and the cleanup
+is updated according.
+
+The results is:
+- removed 7 functions
+- add 4 new functions
+- removed ~100 lines
+- removed 44 occurrences of an unused 'dirstream' variable.
+
+
+Changelog:
+
+09/dec/2023: V1: first issue
+08/feb/2024: V2
+	- rebased over 6.7
+	- swapped the tests order inside the btrfs_open_fd2() function
+	  to prevent the failure of the test 003-fi-resize-args
+	- removed two new occurences of open_file_or_dir() inside
+	  cmd_scrub_limit() (introduced after V1 pateches set)
+
+
+BR
+G.Baroncelli
+
+
+Goffredo Baroncelli (9):
+  Killing dirstream: add helpers
+  Killing dirstream: replace btrfs_open_dir with btrfs_open_dir_fd
+  Killing dirstream: replace btrfs_open_dir with btrfs_open_dir_fd
+  Killing dirstream: replace open_path_or_dev_mnt with btrfs_open_mnt_fd
+  Killing dirstream: replace open_file_or_dir3 with btrfs_open_fd2
+  Killing dirstream: replace btrfs_open_file_or_dir with
+    btrfs_open_file_or_dir_fd
+  Killing dirstream: replace open_file_or_dir with btrfs_open_fd2
+  Killing dirstream: remove open_file_or_dir3 from du_add_file
+  Killing dirstream: remove unused functions
+
+ cmds/balance.c          |  27 ++++-----
+ cmds/device.c           |  26 ++++-----
+ cmds/filesystem-du.c    |  18 +++++-
+ cmds/filesystem-usage.c |   5 +-
+ cmds/filesystem.c       |  26 ++++-----
+ cmds/inspect.c          |  35 +++++-------
+ cmds/property.c         |   5 +-
+ cmds/qgroup.c           |  29 ++++------
+ cmds/quota.c            |  16 +++---
+ cmds/replace.c          |  17 +++---
+ cmds/scrub.c            |  20 +++----
+ cmds/subvolume-list.c   |   5 +-
+ cmds/subvolume.c        |  44 ++++++---------
+ common/device-scan.c    |   6 +-
+ common/device-scan.h    |   4 +-
+ common/open-utils.c     | 118 +++++++++++-----------------------------
+ common/open-utils.h     |  13 ++---
+ common/utils.c          |   5 +-
+ 18 files changed, 162 insertions(+), 257 deletions(-)
+
 -- 
 2.43.0
 

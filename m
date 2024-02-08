@@ -1,22 +1,22 @@
 Received: from smtp.tiscali.it (santino.mail.tiscali.it [213.205.33.245])
-	by smtp.subspace.kernel.org (Postfix) with ESMTP id 4881D3F9F3
+	by smtp.subspace.kernel.org (Postfix) with ESMTP id 488A73F9F5
 	for <linux-btrfs@vger.kernel.org>; Thu,  8 Feb 2024 20:30:49 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=213.205.33.245
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1707424254; cv=none; b=pkDpO8tID+SE98kR2V+Ah1osxZRjU8ItwjC//YE8TIR+tSXrNBb4LGPhusksJ9fBZ6GggXHFDwIVFiL8AdnUJ69iKr/A4+neiC7u4dge5cOeehsPR6fjEETfehMxRrCrNYlB5qgNA87TYsir3Msm8IH82a5b2mBKYghtJQ2aJMw=
+	t=1707424254; cv=none; b=UhQCm+d+v7dpb//D242PKm1AFORL9FBD7ZPLZqghN4wzG7xDbvCV9mp/l178yh6/o5vjjEDcSATPVjKJa70VtZr8tRNVd0AKqfdXnenPlJPfPsacmNynYcNWmoEMw237ZJP5qrSKrUJpM1Z538WpeErZeGtijVsoAjpbZWIHxA4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
 	s=arc-20240116; t=1707424254; c=relaxed/simple;
-	bh=TQfY7qt1Vl+M966WJtPE5UwPkaC4To6rSeDlNXn6xWI=;
+	bh=WgtJuWzhi4zxVkayVTRKYLEv3rCbLQWRpVK6lkZ8eGE=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=pP2FFzHOslGH4RQldUlfQaugtb25aBERJtnjouyTjr/MTceEopVgkNbe/P31Bt7ZRZq7iMJDoVtuHGkHSlpEiZ8bDHp/dtsdwFWi74fZycdUHkKr09qd6QuJz3mzRKeymdE6zE/0yQEtr9RSp4h/1RbrFJ4N9cA869RD/9udokM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=tiscali.it; spf=pass smtp.mailfrom=tiscali.it; dkim=pass (1024-bit key) header.d=tiscali.it header.i=@tiscali.it header.b=uXbnq3kx; arc=none smtp.client-ip=213.205.33.245
+	 MIME-Version; b=nYuPNAtrmUpVh2S+rRpDuOFiY2VWJusykdx7zPgy7hOX/Tve3Sbm2oBM+2musWvzOIwkeFR08bo/vazgsQlMzwC1LTJuyuG5haGWNiGpHEY/8GZwmb8TF7buU/BgiA6CDHOQfu92OrKgTB45Pfi/35IwV19diHe+rPeryGJpnZI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=tiscali.it; spf=pass smtp.mailfrom=tiscali.it; dkim=pass (1024-bit key) header.d=tiscali.it header.i=@tiscali.it header.b=lYBdQlm5; arc=none smtp.client-ip=213.205.33.245
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=tiscali.it
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=tiscali.it
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=tiscali.it header.i=@tiscali.it header.b="uXbnq3kx"
+	dkim=pass (1024-bit key) header.d=tiscali.it header.i=@tiscali.it header.b="lYBdQlm5"
 Received: from venice.bhome ([84.220.171.3])
 	by santino.mail.tiscali.it with 
-	id kkVe2B00g04l9eU01kVgoz; Thu, 08 Feb 2024 20:29:40 +0000
+	id kkVe2B00g04l9eU01kVfoM; Thu, 08 Feb 2024 20:29:39 +0000
 X-Spam-Final-Verdict: clean
 X-Spam-State: 0
 X-Spam-Score: 0
@@ -25,9 +25,9 @@ x-auth-user: kreijack@tiscali.it
 From: Goffredo Baroncelli <kreijack@tiscali.it>
 To: linux-btrfs@vger.kernel.org
 Cc: Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 9/9] Killing dirstream: remove unused functions
-Date: Thu,  8 Feb 2024 21:19:27 +0100
-Message-ID: <ce355406e95eb53fbb8b63170a7251986b49fdf7.1707423567.git.kreijack@inwind.it>
+Subject: [PATCH 4/9] Killing dirstream: replace open_path_or_dev_mnt with btrfs_open_mnt_fd
+Date: Thu,  8 Feb 2024 21:19:22 +0100
+Message-ID: <cf201cdf204712200a3c852b8c9a760e5df27556.1707423567.git.kreijack@inwind.it>
 X-Mailer: git-send-email 2.43.0
 In-Reply-To: <cover.1707423567.git.kreijack@inwind.it>
 References: <cover.1707423567.git.kreijack@inwind.it>
@@ -40,196 +40,181 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=tiscali.it; s=smtp;
-	t=1707424180; bh=IXLQqVApg0RwqEpNSgABEr0PZm1Uir4mp3VRUP47pa4=;
+	t=1707424179; bh=AYJQe+1TJUuxiFNhf39k7fVVrH++mHgY9oIWRvfe/e4=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:Reply-To;
-	b=uXbnq3kxExiAwlwR7TJZD/h/0cj9Tafy8uGJHibM4NPubLoHFqk4O9fA6L8NRQpu/
-	 MYWFagJjx/xsBBFykXGd7UCrfp+O2se6rrSp58xWQBUe3jsNNUknSHlOfmmIXhXShr
-	 3waMa6DH550oZ3jWsajBSplg7Azxl/JG9cuYzn1o=
+	b=lYBdQlm5JQH7QxyoRwAuRSk5sljZjZS/eMNI4StXvN8uHzgJ0RbM6RYSLsUqus5Xw
+	 Fxg+vnlIYjXz64Ms+Vj7+21fV8VJro/Zv6CxUzaq9j4CCiVyXXAxYzemMTNqjBksxE
+	 LcJ+d9UlS/gCBmQp7GQI9F5YvjntuOze6jM1MMkQ=
 
 From: Goffredo Baroncelli <kreijack@inwind.it>
 
-Remove the following unused functions:
-- btrfs_open_dir()
-- open_file_or_dir()
-- btrfs_open_file_or_dir()
-- btrfs_open()
-- open_path_or_dev_mnt()
-- open_file_or_dir3()
-- close_file_or_dir()
+For historical reason the helpers [btrfs_]open_dir... return also
+the 'DIR *dirstream' value when a dir is opened.
+
+However this is never used. So avoid calling diropen() and return
+only the fd.
+
+This patch replace open_path_or_dev_mnt() with btrfs_open_mnt_fd() removing
+any reference to the unused/useless dirstream variables.
 
 Signed-off-by: Goffredo Baroncelli <kreijack@libero.it>
 ---
- common/open-utils.c | 135 --------------------------------------------
- common/open-utils.h |  10 ----
- 2 files changed, 145 deletions(-)
+ cmds/device.c  |  5 ++---
+ cmds/replace.c |  7 +++----
+ cmds/scrub.c   | 15 ++++++---------
+ 3 files changed, 11 insertions(+), 16 deletions(-)
 
-diff --git a/common/open-utils.c b/common/open-utils.c
-index 87f71196..cac89bc3 100644
---- a/common/open-utils.c
-+++ b/common/open-utils.c
-@@ -183,141 +183,6 @@ out:
+diff --git a/cmds/device.c b/cmds/device.c
+index cc201ff9..5be76595 100644
+--- a/cmds/device.c
++++ b/cmds/device.c
+@@ -717,7 +717,6 @@ static int cmd_device_stats(const struct cmd_struct *cmd, int argc, char **argv)
+ 	bool free_table = false;
+ 	bool tabular = false;
+ 	__u64 flags = 0;
+-	DIR *dirstream = NULL;
+ 	struct format_ctx fctx;
+ 
+ 	optind = 0;
+@@ -753,7 +752,7 @@ static int cmd_device_stats(const struct cmd_struct *cmd, int argc, char **argv)
+ 
+ 	dev_path = argv[optind];
+ 
+-	fdmnt = open_path_or_dev_mnt(dev_path, &dirstream, 1);
++	fdmnt = btrfs_open_mnt_fd(dev_path, true);
+ 	if (fdmnt < 0)
+ 		return 1;
+ 
+@@ -839,7 +838,7 @@ static int cmd_device_stats(const struct cmd_struct *cmd, int argc, char **argv)
+ 
+ out:
+ 	free(di_args);
+-	close_file_or_dir(fdmnt, dirstream);
++	close(fdmnt);
+ 	if (free_table)
+ 		table_free(table);
+ 
+diff --git a/cmds/replace.c b/cmds/replace.c
+index 171a72b4..f1db9477 100644
+--- a/cmds/replace.c
++++ b/cmds/replace.c
+@@ -136,7 +136,6 @@ static int cmd_replace_start(const struct cmd_struct *cmd,
+ 	bool force_using_targetdev = false;
+ 	u64 dstdev_block_count;
+ 	bool do_not_background = false;
+-	DIR *dirstream = NULL;
+ 	u64 srcdev_size;
+ 	u64 dstdev_size;
+ 	bool enqueue = false;
+@@ -184,7 +183,7 @@ static int cmd_replace_start(const struct cmd_struct *cmd,
+ 		return 1;
+ 	path = argv[optind + 2];
+ 
+-	fdmnt = open_path_or_dev_mnt(path, &dirstream, 1);
++	fdmnt = btrfs_open_mnt_fd(path, true);
+ 	if (fdmnt < 0)
+ 		goto leave_with_error;
+ 
+@@ -200,7 +199,7 @@ static int cmd_replace_start(const struct cmd_struct *cmd,
+ 	if (ret != 0) {
+ 		if (ret < 0)
+ 			error("unable to check status of exclusive operation: %m");
+-		close_file_or_dir(fdmnt, dirstream);
++		close(fdmnt);
+ 		goto leave_with_error;
+ 	}
+ 
+@@ -348,7 +347,7 @@ static int cmd_replace_start(const struct cmd_struct *cmd,
+ 			goto leave_with_error;
+ 		}
+ 	}
+-	close_file_or_dir(fdmnt, dirstream);
++	close(fdmnt);
+ 	return 0;
+ 
+ leave_with_error:
+diff --git a/cmds/scrub.c b/cmds/scrub.c
+index e105ecb2..039a67d1 100644
+--- a/cmds/scrub.c
++++ b/cmds/scrub.c
+@@ -1269,7 +1269,6 @@ static int scrub_start(const struct cmd_struct *cmd, int argc, char **argv,
+ 	pthread_mutex_t spc_write_mutex = PTHREAD_MUTEX_INITIALIZER;
+ 	void *terr;
+ 	u64 devid;
+-	DIR *dirstream = NULL;
+ 	bool force = false;
+ 	bool nothing_to_resume = false;
+ 
+@@ -1326,7 +1325,7 @@ static int scrub_start(const struct cmd_struct *cmd, int argc, char **argv,
+ 
+ 	path = argv[optind];
+ 
+-	fdmnt = open_path_or_dev_mnt(path, &dirstream, !do_quiet);
++	fdmnt = btrfs_open_mnt_fd(path, !do_quiet);
+ 	if (fdmnt < 0)
+ 		return 1;
+ 
+@@ -1698,7 +1697,7 @@ out:
+ 		if (sock_path[0])
+ 			unlink(sock_path);
+ 	}
+-	close_file_or_dir(fdmnt, dirstream);
++	close(fdmnt);
+ 
+ 	if (err)
+ 		return 1;
+@@ -1751,7 +1750,6 @@ static int cmd_scrub_cancel(const struct cmd_struct *cmd, int argc, char **argv)
+ 	char *path;
+ 	int ret;
+ 	int fdmnt = -1;
+-	DIR *dirstream = NULL;
+ 
+ 	clean_args_no_options(cmd, argc, argv);
+ 
+@@ -1760,7 +1758,7 @@ static int cmd_scrub_cancel(const struct cmd_struct *cmd, int argc, char **argv)
+ 
+ 	path = argv[optind];
+ 
+-	fdmnt = open_path_or_dev_mnt(path, &dirstream, 1);
++	fdmnt = btrfs_open_mnt_fd(path, true);
+ 	if (fdmnt < 0) {
+ 		ret = 1;
+ 		goto out;
+@@ -1782,7 +1780,7 @@ static int cmd_scrub_cancel(const struct cmd_struct *cmd, int argc, char **argv)
+ 	pr_verbose(LOG_DEFAULT, "scrub cancelled\n");
+ 
+ out:
+-	close_file_or_dir(fdmnt, dirstream);
++	close(fdmnt);
  	return ret;
  }
+ static DEFINE_SIMPLE_COMMAND(scrub_cancel, "cancel");
+@@ -1841,7 +1839,6 @@ static int cmd_scrub_status(const struct cmd_struct *cmd, int argc, char **argv)
+ 	char fsid[BTRFS_UUID_UNPARSED_SIZE];
+ 	int fdres = -1;
+ 	int err = 0;
+-	DIR *dirstream = NULL;
  
--/*
-- * Given a pathname, return a filehandle to:
-- * 	the original pathname or,
-- * 	if the pathname is a mounted btrfs device, to its mountpoint.
-- *
-- * On error, return -1, errno should be set.
-- */
--int open_path_or_dev_mnt(const char *path, DIR **dirstream, int verbose)
--{
--	char mp[PATH_MAX];
--	int ret;
--
--	if (path_is_block_device(path)) {
--		ret = get_btrfs_mount(path, mp, sizeof(mp));
--		if (ret < 0) {
--			/* not a mounted btrfs dev */
--			error_on(verbose, "'%s' is not a mounted btrfs device",
--				 path);
--			errno = EINVAL;
--			return -1;
--		}
--		ret = open_file_or_dir(mp, dirstream);
--		error_on(verbose && ret < 0, "can't access '%s': %m",
--			 path);
--	} else {
--		ret = btrfs_open_dir(path, dirstream, 1);
--	}
--
--	return ret;
--}
--
--/*
-- * Do the following checks before calling open_file_or_dir():
-- * 1: path is in a btrfs filesystem
-- * 2: path is a directory if dir_only is 1
-- */
--int btrfs_open(const char *path, DIR **dirstream, int verbose, int dir_only)
--{
--	struct statfs stfs;
--	struct stat st;
--	int ret;
--
--	if (stat(path, &st) != 0) {
--		error_on(verbose, "cannot access '%s': %m", path);
--		return -1;
--	}
--
--	if (dir_only && !S_ISDIR(st.st_mode)) {
--		error_on(verbose, "not a directory: %s", path);
--		return -3;
--	}
--
--	if (statfs(path, &stfs) != 0) {
--		error_on(verbose, "cannot access '%s': %m", path);
--		return -1;
--	}
--
--	if (stfs.f_type != BTRFS_SUPER_MAGIC) {
--		error_on(verbose, "not a btrfs filesystem: %s", path);
--		return -2;
--	}
--
--	ret = open_file_or_dir(path, dirstream);
--	if (ret < 0) {
--		error_on(verbose, "cannot access '%s': %m", path);
--	}
--
--	return ret;
--}
--
--int btrfs_open_dir(const char *path, DIR **dirstream, int verbose)
--{
--	return btrfs_open(path, dirstream, verbose, 1);
--}
--
--int btrfs_open_file_or_dir(const char *path, DIR **dirstream, int verbose)
--{
--	return btrfs_open(path, dirstream, verbose, 0);
--}
--
--int open_file_or_dir3(const char *fname, DIR **dirstream, int open_flags)
--{
--	int ret;
--	struct stat st;
--	int fd;
--
--	ret = stat(fname, &st);
--	if (ret < 0) {
--		return -1;
--	}
--	if (S_ISDIR(st.st_mode)) {
--		*dirstream = opendir(fname);
--		if (!*dirstream)
--			return -1;
--		fd = dirfd(*dirstream);
--	} else if (S_ISREG(st.st_mode) || S_ISLNK(st.st_mode)) {
--		fd = open(fname, open_flags);
--	} else {
--		/*
--		 * we set this on purpose, in case the caller output
--		 * strerror(errno) as success
--		 */
--		errno = EINVAL;
--		return -1;
--	}
--	if (fd < 0) {
--		fd = -1;
--		if (*dirstream) {
--			closedir(*dirstream);
--			*dirstream = NULL;
--		}
--	}
--	return fd;
--}
--
--int open_file_or_dir(const char *fname, DIR **dirstream)
--{
--	return open_file_or_dir3(fname, dirstream, O_RDWR);
--}
--
--void close_file_or_dir(int fd, DIR *dirstream)
--{
--	int old_errno;
--
--	old_errno = errno;
--	if (dirstream) {
--		closedir(dirstream);
--	} else if (fd >= 0) {
--		close(fd);
--	}
--
--	errno = old_errno;
--}
--
--
- /*
-  * Do the following checks before calling open:
-  * 1: path is in a btrfs filesystem
-diff --git a/common/open-utils.h b/common/open-utils.h
-index 96d99f5d..5642b951 100644
---- a/common/open-utils.h
-+++ b/common/open-utils.h
-@@ -28,16 +28,6 @@ int check_mounted_where(int fd, const char *file, char *where, int size,
- 			bool noscan);
- int check_mounted(const char* file);
- int get_btrfs_mount(const char *dev, char *mp, size_t mp_size);
--int open_path_or_dev_mnt(const char *path, DIR **dirstream, int verbose);
--
--int open_file_or_dir3(const char *fname, DIR **dirstream, int open_flags);
--int open_file_or_dir(const char *fname, DIR **dirstream);
--
--int btrfs_open(const char *path, DIR **dirstream, int verbose, int dir_only);
--int btrfs_open_dir(const char *path, DIR **dirstream, int verbose);
--int btrfs_open_file_or_dir(const char *path, DIR **dirstream, int verbose);
--
--void close_file_or_dir(int fd, DIR *dirstream);
+ 	unit_mode = get_unit_mode_from_arg(&argc, argv, 0);
  
- int btrfs_open_fd2(const char *path, bool verbose, bool read_write, bool dir_only);
- int btrfs_open_file_or_dir_fd(const char *path);
+@@ -1864,7 +1861,7 @@ static int cmd_scrub_status(const struct cmd_struct *cmd, int argc, char **argv)
+ 
+ 	path = argv[optind];
+ 
+-	fdmnt = open_path_or_dev_mnt(path, &dirstream, 1);
++	fdmnt = btrfs_open_mnt_fd(path, true);
+ 	if (fdmnt < 0)
+ 		return 1;
+ 
+@@ -1978,7 +1975,7 @@ out:
+ 	free(si_args);
+ 	if (fdres > -1)
+ 		close(fdres);
+-	close_file_or_dir(fdmnt, dirstream);
++	close(fdmnt);
+ 
+ 	return !!err;
+ }
 -- 
 2.43.0
 

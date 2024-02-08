@@ -1,21 +1,22 @@
 Received: from smtp.tiscali.it (santino.mail.tiscali.it [213.205.33.245])
-	by smtp.subspace.kernel.org (Postfix) with ESMTP id 487883F9F1
+	by smtp.subspace.kernel.org (Postfix) with ESMTP id 487333F9EB
 	for <linux-btrfs@vger.kernel.org>; Thu,  8 Feb 2024 20:30:49 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=213.205.33.245
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1707424253; cv=none; b=e26kdbS1+abZxBbeFGRQIqO/zw9EJ2So48pDeNOiR46XB+EdMH/pIsXAcETp1rfRDpDlUjmqPLqTTGFYimLJh6/9k18SOj+HK9iWUutqvjcrbA75b/jaV/XxFlwkRhb9gHxPkjDS3eS2hy1TVmJY50iWCYjyTauyB2vsS6mc4WY=
+	t=1707424254; cv=none; b=U+VX+65h30BF8U7bKEJI+lHuMlPk0EAS12iohICurzhDhVL/ocFlooUMs36I1Pr3iKevf9Zez0OguRQCB+Q1hCsz0W17VoBUcs3+1NWPjK4dr7QXcTUmIdQl/3zL3ncNzpFAMYmzSgHffBCi+sUXKTc6Ktn9GvBkp1NLONjcgTw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1707424253; c=relaxed/simple;
-	bh=NACO1wwfigAoo4Onw8bI35u6RyEta5lEwMmbM7fYpvY=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=V+GUuRoABzk62d1qyMFzXZA2yDJlin+snRwdEuUFWFahuHjfH7SEZVB7fbeLEjHuBcX55tlN0ypIIGGFsXe/FtYORbY81HovxRqqXbO8hzamEFwny8rdCWQQPptU0q6VHuRIiEOic55RqDHGnEbbdb6Wvw0n5VL36btyANd+AeU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=tiscali.it; spf=pass smtp.mailfrom=tiscali.it; dkim=pass (1024-bit key) header.d=tiscali.it header.i=@tiscali.it header.b=XHnv2FGo; arc=none smtp.client-ip=213.205.33.245
+	s=arc-20240116; t=1707424254; c=relaxed/simple;
+	bh=iOuGM5eP03WUspaTbuvlLp2oWEjYHeoEOXRTO5n5bF4=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=WjB5jrSgXn3Q53zmLfcVGpX74cur8xjAEUPYsIzGjEG7PeQYg5zzHaVTTlHQgy+DaT/uVfRBtfsL2FtaeqIXiYwq69L1Mak3A8Y9ZjTK2wa+B6pvot0iKG4WAgcsCm3NxsqijRBJ464dIhKm0aDoHUabi1Gcv94UdN4r3aY7Gzg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=tiscali.it; spf=pass smtp.mailfrom=tiscali.it; dkim=pass (1024-bit key) header.d=tiscali.it header.i=@tiscali.it header.b=yLRqFdoa; arc=none smtp.client-ip=213.205.33.245
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=tiscali.it
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=tiscali.it
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=tiscali.it header.i=@tiscali.it header.b="XHnv2FGo"
+	dkim=pass (1024-bit key) header.d=tiscali.it header.i=@tiscali.it header.b="yLRqFdoa"
 Received: from venice.bhome ([84.220.171.3])
 	by santino.mail.tiscali.it with 
-	id kkVe2B00g04l9eU01kVenq; Thu, 08 Feb 2024 20:29:38 +0000
+	id kkVe2B00g04l9eU01kVfog; Thu, 08 Feb 2024 20:29:40 +0000
 X-Spam-Final-Verdict: clean
 X-Spam-State: 0
 X-Spam-Score: 0
@@ -24,10 +25,12 @@ x-auth-user: kreijack@tiscali.it
 From: Goffredo Baroncelli <kreijack@tiscali.it>
 To: linux-btrfs@vger.kernel.org
 Cc: Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 0/9][V2][btrfs-progs] Remove unused dirstream variable
-Date: Thu,  8 Feb 2024 21:19:18 +0100
-Message-ID: <cover.1707423567.git.kreijack@inwind.it>
+Subject: [PATCH 7/9] Killing dirstream: replace open_file_or_dir with btrfs_open_fd2
+Date: Thu,  8 Feb 2024 21:19:25 +0100
+Message-ID: <6e9ed797da5f24ac25356aedf16c9dbc3af190c6.1707423567.git.kreijack@inwind.it>
 X-Mailer: git-send-email 2.43.0
+In-Reply-To: <cover.1707423567.git.kreijack@inwind.it>
+References: <cover.1707423567.git.kreijack@inwind.it>
 Reply-To: Goffredo Baroncelli <kreijack@libero.it>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
@@ -37,104 +40,152 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=tiscali.it; s=smtp;
-	t=1707424178; bh=X++1sQmg16u9btua5oIetdYLRvLlOGxGU9iP0iG2tVY=;
-	h=From:To:Cc:Subject:Date:Reply-To;
-	b=XHnv2FGoIBeVmSFFjmuKYoYw3GKI7rWyx+CtoWoi9Cc+vUiNntL1jSEBI23WfQnt7
-	 OM5rBUSG5RxfonldoevJpJYyF8hp/7/Oi7h9RUk8Ea9KNfDdiaPQOi/O5YcTWLELOX
-	 iR53ODqxU8ZGHcNNibGbxh169pi3w3cTqgslxflg=
+	t=1707424180; bh=AS24lxN/1pW38pls7Jz4PiKtKYBdmEAQzdJOVM/ZySU=;
+	h=From:To:Cc:Subject:Date:In-Reply-To:References:Reply-To;
+	b=yLRqFdoacFd0o4g/SwfqVGdogErILkxsI2xry0p0ygUw0vfdGZwqF8LQmKdpuUd5z
+	 MGNODfaWrVbXC0AjVa9X1Ili0UPWS0+LW40PqvZrh4vom3WAHqPIijBDwrtwsB5zKl
+	 TyvsDbeNE2sHPhciuDZi0D5KdrcRcDcrQ0sb5q5g=
 
 From: Goffredo Baroncelli <kreijack@inwind.it>
 
-For historical reason, the helpers [btrfs_]open_[file_or_]dir() work with
-directory returning the 'fd' and a 'dirstream' variable returned by
-opendir(3).
+For historical reason the helpers [btrfs_]open_dir... return also
+the 'DIR *dirstream' value when a dir is opened.
 
-If the path is a file, the 'fd' is computed from open(2) and dirstream is 
-set to NULL. If the path is a directory, first the directory is opened by 
-opendir(3), then the 'fd' is computed using dirfd(3).
-However the 'dirstream' returned by opendir(3) is left open until 'fd'
-is not needed anymore.
+However this is never used. So avoid calling diropen() and return
+only the fd.
 
-In near every case the 'dirstream' variable is not used. Only 'fd' is used.
+This patch replace open_file_or_dir() with btrfs_open_fd2() removing
+any reference to the unused/useless dirstream variables.
+btrfs_open_fd2() is required to avoid spourious error messages.
 
-A call to close_file_or_dir() freed both 'fd' and 'dirstream'.
+Signed-off-by: Goffredo Baroncelli <kreijack@libero.it>
+---
+ cmds/inspect.c   | 5 ++---
+ cmds/scrub.c     | 5 ++---
+ cmds/subvolume.c | 5 ++---
+ common/utils.c   | 5 ++---
+ 4 files changed, 8 insertions(+), 12 deletions(-)
 
-Aim of this patch set is to getrid of this complexity; when the path of
-a directory is passed, the fd is get directly using open(path, O_RDONLY):
-so we don't need to use readdir(3) and to maintain the not used variable
-'dirstream'.
-
-So each call of a legacy [btrfs_]open_[file_or_]dir() helper is
-replaced by a call to the new btrfs_open_[file_or_]dir_fd() functions.
-These functions return only the file descriptor.
-
-Also close_file_or_dir() is not needed anymore.
-
-The first patch, introduces the new helpers; the last patch removed the
-unused older helpers. The intermediate patches updated the code.
-
-The 3rd patch updated also the add_seen_fsid() function. Before it
-stored the dirstream variable. But now it is not needed anymore.
-So we removed a parameter of the functions and a field in the structure.
-
-In the 8th patch, the only occurrences where 'dirstream' is used was
-corrected: the dirstream is computed using fdopendir(3), and the cleanup
-is updated according.
-
-The results is:
-- removed 7 functions
-- add 4 new functions
-- removed ~100 lines
-- removed 44 occurrences of an unused 'dirstream' variable.
-
-
-Changelog:
-
-09/dec/2023: V1: first issue
-08/feb/2024: V2
-	- rebased over 6.7
-	- swapped the tests order inside the btrfs_open_fd2() function
-	  to prevent the failure of the test 003-fi-resize-args
-	- removed two new occurences of open_file_or_dir() inside
-	  cmd_scrub_limit() (introduced after V1 pateches set)
-
-
-BR
-G.Baroncelli
-
-
-Goffredo Baroncelli (9):
-  Killing dirstream: add helpers
-  Killing dirstream: replace btrfs_open_dir with btrfs_open_dir_fd
-  Killing dirstream: replace btrfs_open_dir with btrfs_open_dir_fd
-  Killing dirstream: replace open_path_or_dev_mnt with btrfs_open_mnt_fd
-  Killing dirstream: replace open_file_or_dir3 with btrfs_open_fd2
-  Killing dirstream: replace btrfs_open_file_or_dir with
-    btrfs_open_file_or_dir_fd
-  Killing dirstream: replace open_file_or_dir with btrfs_open_fd2
-  Killing dirstream: remove open_file_or_dir3 from du_add_file
-  Killing dirstream: remove unused functions
-
- cmds/balance.c          |  27 ++++-----
- cmds/device.c           |  26 ++++-----
- cmds/filesystem-du.c    |  18 +++++-
- cmds/filesystem-usage.c |   5 +-
- cmds/filesystem.c       |  26 ++++-----
- cmds/inspect.c          |  35 +++++-------
- cmds/property.c         |   5 +-
- cmds/qgroup.c           |  29 ++++------
- cmds/quota.c            |  16 +++---
- cmds/replace.c          |  17 +++---
- cmds/scrub.c            |  20 +++----
- cmds/subvolume-list.c   |   5 +-
- cmds/subvolume.c        |  44 ++++++---------
- common/device-scan.c    |   6 +-
- common/device-scan.h    |   4 +-
- common/open-utils.c     | 118 +++++++++++-----------------------------
- common/open-utils.h     |  13 ++---
- common/utils.c          |   5 +-
- 18 files changed, 162 insertions(+), 257 deletions(-)
-
+diff --git a/cmds/inspect.c b/cmds/inspect.c
+index 4d4e24d2..268a902a 100644
+--- a/cmds/inspect.c
++++ b/cmds/inspect.c
+@@ -1020,7 +1020,6 @@ static int cmd_inspect_list_chunks(const struct cmd_struct *cmd,
+ 	int ret;
+ 	int fd;
+ 	int i;
+-	DIR *dirstream = NULL;
+ 	unsigned unit_mode;
+ 	char *sortmode = NULL;
+ 	bool with_usage = true;
+@@ -1083,7 +1082,7 @@ static int cmd_inspect_list_chunks(const struct cmd_struct *cmd,
+ 
+ 	path = argv[optind];
+ 
+-	fd = open_file_or_dir(path, &dirstream);
++	fd = btrfs_open_fd2(path, false, true, false);
+ 	if (fd < 0) {
+ 	        error("cannot access '%s': %m", path);
+ 		return 1;
+@@ -1187,7 +1186,7 @@ static int cmd_inspect_list_chunks(const struct cmd_struct *cmd,
+ 	}
+ 
+ 	ret = print_list_chunks(&ctx, sortmode, unit_mode, with_usage, with_empty);
+-	close_file_or_dir(fd, dirstream);
++	close(fd);
+ 
+ out_nomem:
+ 	free(ctx.stats);
+diff --git a/cmds/scrub.c b/cmds/scrub.c
+index 039a67d1..55dacd57 100644
+--- a/cmds/scrub.c
++++ b/cmds/scrub.c
+@@ -1999,7 +1999,6 @@ static int cmd_scrub_limit(const struct cmd_struct *cmd, int argc, char **argv)
+ 	struct string_table *table = NULL;
+ 	int ret;
+ 	int fd = -1;
+-	DIR *dirstream = NULL;
+ 	int cols, idx;
+ 	u64 opt_devid = 0;
+ 	bool devid_set = false;
+@@ -2060,7 +2059,7 @@ static int cmd_scrub_limit(const struct cmd_struct *cmd, int argc, char **argv)
+ 		return 1;
+ 	}
+ 
+-	fd = open_file_or_dir(argv[optind], &dirstream);
++	fd = btrfs_open_fd2(argv[optind], false, true, false);
+ 	if (fd < 0)
+ 		return 1;
+ 
+@@ -2182,7 +2181,7 @@ static int cmd_scrub_limit(const struct cmd_struct *cmd, int argc, char **argv)
+ out:
+ 	if (table)
+ 		table_free(table);
+-	close_file_or_dir(fd, dirstream);
++	close(fd);
+ 
+ 	return !!ret;
+ }
+diff --git a/cmds/subvolume.c b/cmds/subvolume.c
+index 65582f67..a93dd408 100644
+--- a/cmds/subvolume.c
++++ b/cmds/subvolume.c
+@@ -1566,7 +1566,6 @@ static int cmd_subvolume_show(const struct cmd_struct *cmd, int argc, char **arg
+ 	char *fullpath = NULL;
+ 	int fd = -1;
+ 	int ret = 1;
+-	DIR *dirstream1 = NULL;
+ 	int by_rootid = 0;
+ 	int by_uuid = 0;
+ 	u64 rootid_arg = 0;
+@@ -1624,7 +1623,7 @@ static int cmd_subvolume_show(const struct cmd_struct *cmd, int argc, char **arg
+ 		goto out;
+ 	}
+ 
+-	fd = open_file_or_dir(fullpath, &dirstream1);
++	fd = btrfs_open_fd2(fullpath, false, true, false);
+ 	if (fd < 0) {
+ 		error("can't access '%s'", fullpath);
+ 		goto out;
+@@ -1762,7 +1761,7 @@ out2:
+ 
+ out:
+ 	free(subvol_path);
+-	close_file_or_dir(fd, dirstream1);
++	close(fd);
+ 	free(fullpath);
+ 	return !!ret;
+ }
+diff --git a/common/utils.c b/common/utils.c
+index 8d860726..72520641 100644
+--- a/common/utils.c
++++ b/common/utils.c
+@@ -211,7 +211,6 @@ int get_fs_info(const char *path, struct btrfs_ioctl_fs_info_args *fi_args,
+ 	struct btrfs_ioctl_dev_info_args *di_args;
+ 	struct btrfs_ioctl_dev_info_args tmp;
+ 	char mp[PATH_MAX];
+-	DIR *dirstream = NULL;
+ 
+ 	memset(fi_args, 0, sizeof(*fi_args));
+ 
+@@ -251,7 +250,7 @@ int get_fs_info(const char *path, struct btrfs_ioctl_fs_info_args *fi_args,
+ 	}
+ 
+ 	/* at this point path must not be for a block device */
+-	fd = open_file_or_dir(path, &dirstream);
++	fd = btrfs_open_fd2(path, false, true, false);
+ 	if (fd < 0) {
+ 		ret = -errno;
+ 		goto out;
+@@ -317,7 +316,7 @@ int get_fs_info(const char *path, struct btrfs_ioctl_fs_info_args *fi_args,
+ 	}
+ 
+ out:
+-	close_file_or_dir(fd, dirstream);
++	close(fd);
+ 	return ret;
+ }
+ 
 -- 
 2.43.0
 

@@ -1,118 +1,123 @@
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.20])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1670E125A2
-	for <linux-btrfs@vger.kernel.org>; Wed, 14 Feb 2024 08:14:47 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.129.124
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E661A33DD
+	for <linux-btrfs@vger.kernel.org>; Wed, 14 Feb 2024 08:32:20 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.17.20
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1707898489; cv=none; b=CQ4gobHoQfqSVDpho4zmpH2txayhP7EEXqHMSrYiwxBFqeS6IDvVl/o6r8muM/SgwzHnUyXc6Zxzw9sN/0WkjedGkC9GZxIcWvHPSK2TxAFmb+7pAywFSVYZXQPmCAtVZCzXLZA6XJhNuZVcJ0ZQNJlitTeLqg/nTGL0PraAqkk=
+	t=1707899543; cv=none; b=JpUIBI996rxWg0X3CXbJSenFHoL1iFL1gJHk9ByAyEtk2GG6NU+wTgZCcPnuxDh+sBBvfTMueFoM1pyH+0pXAtUJrDnHK36CocHRdfES6jn6ZkRS0Pll2QAKkhcvBE010tRAAwk67WIrKI/SVP15K7LxndXG3oR5TFbaLbQ9EUQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1707898489; c=relaxed/simple;
-	bh=PRDJ+cWbKCtaF3GZyiNLftrYKZkBS718rzMsmoMSq0I=;
-	h=MIME-Version:From:Date:Message-ID:Subject:To:Content-Type; b=OLKq/7QLUC4BdiMtMMDyqP45QZzUtmGV6R8dADMd/9sQdLLgbaRmxgN37tuD9Us0KZQV/NEwx0M7M21rIrYwBn8xSzRQKAD/+1mFTk2okw2VFCkRnADT8ARPUKW3OVyDoWmjlCnMqFir7rgukh1t4ETJMhDvlcNQmgUT4jhXWGo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=InfeG19v; arc=none smtp.client-ip=170.10.129.124
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
+	s=arc-20240116; t=1707899543; c=relaxed/simple;
+	bh=eBozQ+YksG3ivkyMDxvQRWaJPYs/4TVo7mL9HEQi4gw=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=cKCL1PbXLm/nV5Fq5ON+CX63X55yG3ACrM4BGba9Pgex4B6LOKh6o+2YyQ72q/a4YLJVghOF2odiOOzox3/3zwkVevFIkxE/gHV+S7uen4XKHOWgcRnxC7QWcd2msPVbyyI3ibI+MujTixtkR0D4keqIb9INJRcFRtBcLU9w9to=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=ItQxqSkH; arc=none smtp.client-ip=212.227.17.20
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="InfeG19v"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-	s=mimecast20190719; t=1707898486;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:mime-version:mime-version:content-type:content-type;
-	bh=uaq9NTMKNFZU9RvRPgGMtW0L8oW9UmO1CeO5zzMSwww=;
-	b=InfeG19v4yDAfIyN9xT8wklv7fN13/kgLj2siiJ+Mkw5oq0ZWB7NaEbd6eldsw3gSMpTmK
-	Rgb2xSQ8VaiBy4Vfp8cXcJyI0wyELB6colK2XjLOiIFq+AHTkQTSdIU0Epgm5H7uG2aclz
-	PMPGiWrhivWt+o5k13m4HqXg94OxEwQ=
-Received: from mail-oi1-f199.google.com (mail-oi1-f199.google.com
- [209.85.167.199]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
- us-mta-245-fHdC0xBbOMucVVe1zpSNsQ-1; Wed, 14 Feb 2024 03:14:45 -0500
-X-MC-Unique: fHdC0xBbOMucVVe1zpSNsQ-1
-Received: by mail-oi1-f199.google.com with SMTP id 5614622812f47-3c031a2debdso6166867b6e.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Feb 2024 00:14:45 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1707898484; x=1708503284;
-        h=to:subject:message-id:date:from:mime-version:x-gm-message-state
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=uaq9NTMKNFZU9RvRPgGMtW0L8oW9UmO1CeO5zzMSwww=;
-        b=AAORend70SRM7yuA30R9U5PXhIAJevoIDXCaz2lp9K/RoYpvvauH7yqzjM+TXlYr7L
-         JOUz9G29Xkmg50kAAOnLOrHI0z1LQ1c9r1VwECTcq04oM/qofrizQepFI8X2YBRRisEP
-         jOjymOOf8hEyUe7cpcfo6OZliwt2tJ2ViciYhcu2Ko4Q+yjPFa7lh21WEkzVdsdwT9nO
-         d93FMjkdRCKBoJUQ3ZzuzQPJqFQY+7Mj+hru9fVtPnbw68whhemfLZApLSV3W5K455qm
-         4LPnTOpGWX5zu/Wf8g0BeWORub5W5ZwKqY3mPW9V0Dqk+6H503GMwj9pmfZzPqp6++re
-         2S9w==
-X-Gm-Message-State: AOJu0Yw+gPtD9KGRbIMegAeFjTDOtmZ0dpFp5XrT24GmrvHmbSeAsQc3
-	r1USRkAgMMubxqxmeDAKrYRZQsd/I1rKN8dnf3/vvUHkF0RuMzpcUFuselPl8VnUjXH482EWYUn
-	BGEuKRQ5K0MRyjUHPHOp2mYjIYQOBaYDMJplxZzWSk6Hfs4e/xVhISI1hGo3uFL8hIrFVRalkFf
-	Oh8C6+WWRqLN/2dWLq/VZQvhq2pLxXzy/70YHd5A75Io4WTuLz
-X-Received: by 2002:a05:6358:7f0a:b0:17a:d4c0:d59f with SMTP id p10-20020a0563587f0a00b0017ad4c0d59fmr1533510rwn.4.1707898484022;
-        Wed, 14 Feb 2024 00:14:44 -0800 (PST)
-X-Google-Smtp-Source: AGHT+IEpAMOad+9NNLTf0WMMxi7wp4TaPuL87WQwJdHQ528tg21J3YsO4+Scs6j0I8rcRtNvNzl9m4iNY6A5kTfx7Hw=
-X-Received: by 2002:a05:6358:7f0a:b0:17a:d4c0:d59f with SMTP id
- p10-20020a0563587f0a00b0017ad4c0d59fmr1533494rwn.4.1707898483673; Wed, 14 Feb
- 2024 00:14:43 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="ItQxqSkH"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.com;
+	s=s31663417; t=1707899532; x=1708504332; i=quwenruo.btrfs@gmx.com;
+	bh=eBozQ+YksG3ivkyMDxvQRWaJPYs/4TVo7mL9HEQi4gw=;
+	h=X-UI-Sender-Class:Date:Subject:To:Cc:References:From:
+	 In-Reply-To;
+	b=ItQxqSkHuRUUV73Ej29c96wURusNaSxxx9442FJ1QBTXGdYaCL7VIArIwndSdIdO
+	 Sllpy8zTUf4qjZ7eSQSfOzAhTPvSUPG1i65n51kYryOVTmxxGp6/NbCrfTT3i+HwZ
+	 14Fbw8DK0i0kEu7Fo2Yb46DlFqDreBgSCeH4dzqn/rK/dbGmWTID9A/4ltxw/Urny
+	 SbBgBbRLrpucEGpM1ZBMoVMCS4eiNEhdtioHkZqx8+/FuvB5HAl6QD7ecwr6Jh147
+	 OEdpJKJz6BiS0B3Kkx6AA0gLWvU8gxzJ2Wag9LzzZpIG2setifK1cmTRBlrlxQ/SA
+	 +QNPgYWngetV/+S/Ig==
+X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
+Received: from [172.16.0.219] ([159.196.52.54]) by mail.gmx.net (mrgmx104
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MowGU-1rBVBq0KYo-00qUGe; Wed, 14
+ Feb 2024 09:32:12 +0100
+Message-ID: <ff18404f-ca7e-4c48-a3d5-e7fab921ade1@gmx.com>
+Date: Wed, 14 Feb 2024 19:02:08 +1030
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-From: Yi Zhang <yi.zhang@redhat.com>
-Date: Wed, 14 Feb 2024 16:14:32 +0800
-Message-ID: <CAHj4cs_UXGQMwNHgbhw12qDHq_B44bUwiNGkN4unzxc8XqfkdQ@mail.gmail.com>
-Subject: [bug report] kmemleak observed during blktests nbd/009
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH] btrfs: move all btree initialization into
+ btrfs_init_btree_inode
+Content-Language: en-US
+To: dsterba@suse.cz
+Cc: Christoph Hellwig <hch@lst.de>, clm@fb.com, josef@toxicpanda.com,
+ dsterba@suse.com, linux-btrfs@vger.kernel.org
+References: <20230219181022.3499088-1-hch@lst.de>
+ <7fbe36d5-3ebb-4daa-9c92-0761ba49686b@gmx.com>
+ <20240214071240.GK355@twin.jikos.cz>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCY00iVQUJDToH
+ pgAKCRDCPZHzoSX+qNKACACkjDLzCvcFuDlgqCiS4ajHAo6twGra3uGgY2klo3S4JespWifr
+ BLPPak74oOShqNZ8yWzB1Bkz1u93Ifx3c3H0r2vLWrImoP5eQdymVqMWmDAq+sV1Koyt8gXQ
+ XPD2jQCrfR9nUuV1F3Z4Lgo+6I5LjuXBVEayFdz/VYK63+YLEAlSowCF72Lkz06TmaI0XMyj
+ jgRNGM2MRgfxbprCcsgUypaDfmhY2nrhIzPUICURfp9t/65+/PLlV4nYs+DtSwPyNjkPX72+
+ LdyIdY+BqS8cZbPG5spCyJIlZonADojLDYQq4QnufARU51zyVjzTXMg5gAttDZwTH+8LbNI4
+ mm2YzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCY00ibgUJDToHvwAK
+ CRDCPZHzoSX+qK6vB/9yyZlsS+ijtsvwYDjGA2WhVhN07Xa5SBBvGCAycyGGzSMkOJcOtUUf
+ tD+ADyrLbLuVSfRN1ke738UojphwkSFj4t9scG5A+U8GgOZtrlYOsY2+cG3R5vjoXUgXMP37
+ INfWh0KbJodf0G48xouesn08cbfUdlphSMXujCA8y5TcNyRuNv2q5Nizl8sKhUZzh4BascoK
+ DChBuznBsucCTAGrwPgG4/ul6HnWE8DipMKvkV9ob1xJS2W4WJRPp6QdVrBWJ9cCdtpR6GbL
+ iQi22uZXoSPv/0oUrGU+U5X4IvdnvT+8viPzszL5wXswJZfqfy8tmHM85yjObVdIG6AlnrrD
+In-Reply-To: <20240214071240.GK355@twin.jikos.cz>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:L1z3eFwXROBgF73V6iqrlENcW1KqD0fkU6cN8XcRiHGgUUlvWxJ
+ 9ujzndFgsT2DG9tLT5muQMFPoLvVi525/DdOD2YJWIRixg0lC4ucOeQAU5eJUaQzXtxnUN0
+ Q4tHajazLOceXc9eoE8p79VNQwahcI+I9Z1kC/RA6H5Jp6ALPS2OEA2rwG3jyrmfjC7iGLL
+ oA2qzKoMr+1N9Tkhe3skQ==
+X-Spam-Flag: NO
+UI-OutboundReport: notjunk:1;M01:P0:iU2A8p7jgvY=;MVN5lQLSFIWV52KTSRY752wHyL5
+ Ql5nnhFfCpUga4Fbh2pl+MAAwAbbzeEeXWavMEh5OHDPVobwJN9yeItzAdSsvnX5I5KY6iGr3
+ upKxa+5hMfG+L5SFIo01m6VWo2ejFyjLutuOEUtpoRKdFU308yTNfd1AYd9KxNsRuukYJZEQn
+ iypbWDuE1PMHKMRme0KTIPh2KWZrtXMruUsCHGedpOVBTg+ZzJXVrN1WUosVrkce0GUlRtc86
+ idM0itS+66+hZeZsgktiFpro8mEaMyqtSD0KLK66CsoDoCKNk27PkymXpfZbz6nghIPfuk8z8
+ DZpuADTP9zUyIfa8fz3OGg8aEjiPevKpb6XeUHnqsqC07HKrcHctGGcDZxOs+gkjaqaajIkgA
+ 2KGCjCXTxwjO3VTRR6wfXgauuMPeZBEfEEuNqDa/2cmXR0GFjszfQ35a1AE2JxjuXJKmVASdb
+ ABTHZrKV7iqi/s2a5HyncVi4jpxyo2riIhNK89lHpxSGyXCZluBzKnsH3t7Chwo+jICRBGq1c
+ ymZD4ba888V2rDeF91QZEUg8e+9xJYiPjI3c1Q2u+svPwATAcrSOrcxW4u6b2lKbeLyr7qNT7
+ J9KLX/+ntJUOsqtdH+Tfi//xx6gzcn8bpQhTgu65cmdPosA03K1N7Tlw1hc6C3F+fSA2NJlcM
+ VPFb7YZIy+tX7hzoouYXsyUi8B0WB3NMKvDme3YQbIiO0nnqffeTkH6PvN5ckt/Ppsmaql0j5
+ RGGlKnjW0k/F2QYJXMS9GYQ3RatccEPyYclc3laJxBXOBX3UEr2ukjsZpi4My5NcZaRa0Wa3N
+ sIP+BK5cczq0yXJZ3YP9bySdUvdN7mUcXOOghteUbxOK4=
 
-Hi
-
-I found below kmemleak during blktests nbd/009 on 6.8.0-rc3+, please
-help check it and let me know if you need any info/testing for it,
-thanks.
-
-[17763.119952] kmemleak: 12 new suspected memory leaks (see
-/sys/kernel/debug/kmemleak)
-
-# ./check zbd/009
-zbd/009 (test gap zone support with BTRFS)                   [passed]
-    runtime  18.716s  ...  18.763s
-# btrfs --version
-btrfs-progs v6.7
-
-unreferenced object 0xffff8881511c53b0 (size 192):
-  comm "mount", pid 52857, jiffies 4311808306
-  hex dump (first 32 bytes):
-    b0 53 1c 51 81 88 ff ff 00 40 1c 51 81 88 ff ff  .S.Q.....@.Q....
-    00 00 00 00 00 00 00 00 02 00 00 00 01 00 00 00  ................
-  backtrace (crc dcabc4f4):
-    [<0000000097edeb04>] __kmalloc+0x3e7/0x520
-    [<00000000288772fe>] btrfs_alloc_chunk_map.constprop.0+0x20/0xa0
-    [<0000000031efcd2f>] read_one_chunk+0x284/0xb80
-    [<00000000e2b85033>] btrfs_read_sys_array+0x24c/0x3d0
-    [<0000000003714897>] open_ctree+0x1b0b/0x4be0
-    [<000000001f5e8ac7>] btrfs_get_tree+0x101f/0x19d0
-    [<0000000088ba3feb>] vfs_get_tree+0x8d/0x350
-    [<000000001f72c23c>] fc_mount+0x13/0x90
-    [<00000000c75588a6>] btrfs_get_tree+0x91d/0x19d0
-    [<0000000088ba3feb>] vfs_get_tree+0x8d/0x350
-    [<00000000706df581>] vfs_cmd_create+0xe1/0x290
-    [<000000004d6ccd48>] __do_sys_fsconfig+0x607/0xa90
-    [<00000000c1740ec7>] do_syscall_64+0x9e/0x190
-    [<0000000014a2c6d4>] entry_SYSCALL_64_after_hwframe+0x6e/0x76
-
-(gdb) l *(btrfs_create_chunk+0x11b2)
-0xffffffff822bd922 is in btrfs_create_chunk (fs/btrfs/volumes.c:5544).
-5539 u64 type = ctl->type;
-5540 int ret;
-5541 int i;
-5542 int j;
-5543
-5544 map = btrfs_alloc_chunk_map(ctl->num_stripes, GFP_NOFS);
-5545 if (!map)
 
 
+=E5=9C=A8 2024/2/14 17:42, David Sterba =E5=86=99=E9=81=93:
+> On Wed, Feb 14, 2024 at 04:58:55PM +1030, Qu Wenruo wrote:
+>>
+>>
+>> =E5=9C=A8 2023/2/20 04:40, Christoph Hellwig =E5=86=99=E9=81=93:
+>>> Move the remaining code that deals with initializing the btree
+>>> inode into btrfs_init_btree_inode instead of splitting it between
+>>> that helpers and its only caller.
+>>>
+>>> Signed-off-by: Christoph Hellwig <hch@lst.de>
+>>
+>> Reviewed-by: Qu Wenruo <wqu@suse.com>
+>>
+>> Just one small nitpick.
+>
+> The patch is almost one year old, it does not make much sense to send
+> reviews, if there's something to be fixed please send a new patch.
 
--- 
-Best Regards,
-  Yi Zhang
+My bad, I'm re-setting up my mail client, and this one popped up and I
+thought it's new...
 
+Sorry for the noise,
+Qu

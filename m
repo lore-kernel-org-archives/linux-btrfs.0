@@ -1,94 +1,100 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from esa4.hgst.iphmx.com (esa4.hgst.iphmx.com [216.71.154.42])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6534E66B2D;
-	Thu, 15 Feb 2024 11:45:59 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 817CF57872;
+	Thu, 15 Feb 2024 11:47:10 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=216.71.154.42
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1707997559; cv=none; b=T+5efCUixhIDJg9ICrh9N1wYXbX110N70oT4EAHMZR70rOkOvWam+xYk5W7/M6h1E/YymJbxSjiUHbDPi/ivxtJhzKRETFUWtWSccGWTnzLob7dDqsbaYN7Q+VQY/uzQwMnRd9PS05ey8x9dss5Bz6yq1ehVFLUIkAnijla9pP8=
+	t=1707997633; cv=none; b=MIquC905qV1TsHazALfe0T51jyv5Yh5CcG8f7hfTbi6dj8V8tAd95lap80KRgepYSf8bs3Ea6dK0h7GRFe9YAd+UNoNXJjyZY8yPxeZb83OUBoZPj0YJWPtCQvtamAn9y7RvVPxTBL5FnvTI6kHqNUN7p7gJ6NqYLICvMX7vDqM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1707997559; c=relaxed/simple;
-	bh=v0j7C7qJaW7H9bREfMvItEw422Ux9GdVJtiokZEa96k=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=IabvmubNwisgDfyFv85gYIt0A0eR+N/bxr1NNWyt0MoIxsYicR4XV2PIdg/EGbDK0DXK9lEVAizub5QDG0vT6RBJqhH81kRMGx2VOeYtJ/niDn+CpSJeGdoJ8j1IzRGSkIdkUcfSH/Mf33TeAVWdBTT6vbvcKU23U6ZKHHXYHTQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=fRmRxHof; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1707997633; c=relaxed/simple;
+	bh=DHagoA8SxeV0zdtLBbp+ii5HURLfR7Zs9XqY6fKNRik=;
+	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
+	 In-Reply-To:To:Cc; b=K9nYWVQ5uCVQ8omPIG5sOmnypRC3VZURN5WssXYwCXpHcCPkOAcD913DnGF+e7wL0BXZx1aheOZ2PwS1SpP2MM1rzuMLJVpcm0LVqh62BeQjjt+CI1v4C87U416KlMPu36TvXrrSGgcPQsKGFqBWiipOvmVeFospAyIW4RUvwnY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=aQqfS5kK; arc=none smtp.client-ip=216.71.154.42
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="fRmRxHof"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id DFC91C433C7;
-	Thu, 15 Feb 2024 11:45:58 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1707997558;
-	bh=v0j7C7qJaW7H9bREfMvItEw422Ux9GdVJtiokZEa96k=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-	b=fRmRxHofR+Q7XvGiAnJS6wfZQAPIv9ie/DLvFvQ9bR8Osd8ib9fKS2cDuRDXE0d0E
-	 fPBScQ/VwrA7IPz5sfZTiTgVoinsvtVSmnga3QZtlHBEQMSYzN3W4zkcY7e5jmgWsq
-	 f6VDfv8sYDlznmjBIqZwegPXrU/fVp3GlOTiE6VwRF2yT0uiZh0i5HAbU2MOlOtYgb
-	 VPjU675+pLmxZUO9cA4s/XpMEoMODiJkmXtOCMsGJD39l6Y3DpLozGyUllgkLfeogl
-	 8penUK9iUW1CqRgemamCftp0I1tqS0s9O5NTRYN7WpHjqEs5KArDezKKEsAbzYdaBj
-	 8yvW5dLtf6KdA==
-Received: by mail-ed1-f44.google.com with SMTP id 4fb4d7f45d1cf-5610cc8cc1aso853014a12.1;
-        Thu, 15 Feb 2024 03:45:58 -0800 (PST)
-X-Forwarded-Encrypted: i=1; AJvYcCXJZ0/54Rd7eqbGKvfO0vvi9x1U1fOPg6NsWOW1CAu9Xg4slNtnHdeVAyAkb9oNlN3r6LyfHSTU4M3xxMG0McQmkIwCi6aEkju6BLk=
-X-Gm-Message-State: AOJu0Yxq5RUdv7Cuy8JLe3MsYcnvL4ognOQ/2Z8dzQnlpeXaxaIc7Fl8
-	cdZ8qh8vYTG1/o0ekgZAPdRZpgTfP1IH6nOlx0nEHRuz97041ra9fEI33ywJDnoPrnDOsMJ5676
-	PPphFizIMcPhadNMO2naGSVt0NeI=
-X-Google-Smtp-Source: AGHT+IF/Gl9Ef0hZFmTWd8T4GXRuspCDiciSH1h5vjxyef5HNk0bK5pWRqixfDFMTVvTZvWFtcQ4b8Q+EYW2o+UHK+k=
-X-Received: by 2002:a17:906:759:b0:a3d:632e:7ab4 with SMTP id
- z25-20020a170906075900b00a3d632e7ab4mr1142295ejb.42.1707997557344; Thu, 15
- Feb 2024 03:45:57 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="aQqfS5kK"
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1707997631; x=1739533631;
+  h=from:date:subject:mime-version:content-transfer-encoding:
+   message-id:references:in-reply-to:to:cc;
+  bh=DHagoA8SxeV0zdtLBbp+ii5HURLfR7Zs9XqY6fKNRik=;
+  b=aQqfS5kKyi6m7FGQyQ5kYPU9gcTTDR8Z8Y03BvX3ZnwnqZcjKSgJFaSg
+   05mNt9zKdys7FASsDf41kA5ATvoqNIO6vl10beaKA4/z0JrK2h5wuyfMK
+   Ux4e2UA9NofKC8XDUz2y+WIRTiEy5GnO801KTqKArbc6X5epLKk7ogcgb
+   vZWngyLDieDEAq4TfmsRbwC42JtW/EcFoxIaFB4+L5tJ/YCu7JVdVUc1v
+   j30mFxig9ApGKhsHkZg2sWPjq4TWMek47/GdfWl65gOpSgN1abJ9GAR6a
+   KYH/Ie0w+WEQI/+3Ahwi0/7lcTldl9bV2VE9WLqkaBgeTfBiBn9+8zV3s
+   g==;
+X-CSE-ConnectionGUID: 8usngS0wTOGmcJihwIGnRQ==
+X-CSE-MsgGUID: WknTjTS1QiyGhHx5LLMDRg==
+X-IronPort-AV: E=Sophos;i="6.06,161,1705334400"; 
+   d="scan'208";a="8967196"
+Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
+  by ob1.hgst.iphmx.com with ESMTP; 15 Feb 2024 19:47:10 +0800
+IronPort-SDR: oed83op9MxeQp0xlzQOAL9xBWV/fNyP2PsbXx9N1gtKqgFkATz2KsQBcTNWCzurTcZH8AAeZ4r
+ i26sF1rdwYGw==
+Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 15 Feb 2024 02:56:44 -0800
+IronPort-SDR: 51EBZHP2vdY1P9iiEyS46m5CkKlo9g2Se/y7xLOQ9cAqf4nHD9T155R10Pi/eQMUI0NVOEFFB3
+ eE0v3/+9fd2w==
+WDCIronportException: Internal
+Received: from unknown (HELO redsun91.ssa.fujisawa.hgst.com) ([10.149.66.6])
+  by uls-op-cesaip02.wdc.com with ESMTP; 15 Feb 2024 03:47:09 -0800
+From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Date: Thu, 15 Feb 2024 03:47:04 -0800
+Subject: [PATCH v3 1/3] filter.brtfs: add filter for conversion
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <cover.1707969354.git.anand.jain@oracle.com> <578579505765ce6bb5ee8b1cc0e1703221fd9acc.1707969354.git.anand.jain@oracle.com>
-In-Reply-To: <578579505765ce6bb5ee8b1cc0e1703221fd9acc.1707969354.git.anand.jain@oracle.com>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Thu, 15 Feb 2024 11:45:20 +0000
-X-Gmail-Original-Message-ID: <CAL3q7H7BMOc_OYW2yjjJX535QdCxxm0K9JXNtwM+Hi2Pdq-4zg@mail.gmail.com>
-Message-ID: <CAL3q7H7BMOc_OYW2yjjJX535QdCxxm0K9JXNtwM+Hi2Pdq-4zg@mail.gmail.com>
-Subject: Re: [PATCH 01/12] add t_reflink_read_race to .gitignore file
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+Message-Id: <20240215-balance-fix-v3-1-79df5d5a940f@wdc.com>
+References: <20240215-balance-fix-v3-0-79df5d5a940f@wdc.com>
+In-Reply-To: <20240215-balance-fix-v3-0-79df5d5a940f@wdc.com>
 To: Anand Jain <anand.jain@oracle.com>
-Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Cc: Johannes Thumshirn <johannes.thumshirn@wdc.com>, 
+ Zorro Lang <zlang@redhat.com>, linux-btrfs@vger.kernel.org, 
+ fstests@vger.kernel.org, fdmanana@suse.com
+X-Mailer: b4 0.12.3
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1707997627; l=728;
+ i=johannes.thumshirn@wdc.com; s=20230613; h=from:subject:message-id;
+ bh=DHagoA8SxeV0zdtLBbp+ii5HURLfR7Zs9XqY6fKNRik=;
+ b=piMOqiexYFPPqFDJUCeTymh/WVHsZeKJaaIPWNUjauWnQ5zlzgKop7AdaIEj/g2ve55pD2tY2
+ vN2GhHdTBhLAh2dCsQn6tEGyhp7xV1DOsT+abYPVkLvERCpEE0Hl/J5
+X-Developer-Key: i=johannes.thumshirn@wdc.com; a=ed25519;
+ pk=TGmHKs78FdPi+QhrViEvjKIGwReUGCfa+3LEnGoR2KM=
 
-On Thu, Feb 15, 2024 at 6:34=E2=80=AFAM Anand Jain <anand.jain@oracle.com> =
-wrote:
->
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Add a filter for the output of btrfs-balance with a convert argument.
 
-Please always add a changelog...
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+---
+ common/filter.btrfs | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-Also, you need to update your local checkout...
-This was already fixed before:
+diff --git a/common/filter.btrfs b/common/filter.btrfs
+index 8ab76fcb193a..ea76e7291108 100644
+--- a/common/filter.btrfs
++++ b/common/filter.btrfs
+@@ -141,5 +141,11 @@ _filter_stripe_tree()
+ 		-e "s/bytes used [0-9]+/bytes used XXXXXX/"
+ }
+ 
++# filter output of "btrfs balance start -[smd] convert
++_filter_balance_convert()
++{
++	_filter_scratch | \
++	sed -e "s/relocate [0-9]\+ out of [0-9]\+ chunks/relocate X out of X chunks/g"
++}
+ # make sure this script returns success
+ /bin/true
 
-https://git.kernel.org/pub/scm/fs/xfs/xfstests-dev.git/commit/?h=3Dfor-next=
-&id=3Dacff198213e3d874e76f6a133a816c8dee5e128d
+-- 
+2.43.0
 
-It's also odd to include this in a patchset for the tempfsid feature,
-as it's completely unrelated, it should go as a separate patch.
-
-Thanks.
-
-> ---
->  .gitignore | 1 +
->  1 file changed, 1 insertion(+)
->
-> diff --git a/.gitignore b/.gitignore
-> index 5cc3a5e4ae57..d930b9cc8404 100644
-> --- a/.gitignore
-> +++ b/.gitignore
-> @@ -204,6 +204,7 @@ tags
->  /src/vfs/mount-idmapped
->  /src/log-writes/replay-log
->  /src/perf/*.pyc
-> +/src/t_reflink_read_race
->
->  # Symlinked files
->  /tests/generic/035.out
-> --
-> 2.39.3
->
->

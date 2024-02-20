@@ -1,46 +1,46 @@
 Received: from mailgw.kylinos.cn (mailgw.kylinos.cn [124.126.103.232])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BA6145CDC4;
-	Tue, 20 Feb 2024 09:07:13 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 660AE5F480;
+	Tue, 20 Feb 2024 09:07:14 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=124.126.103.232
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1708420036; cv=none; b=b4FBtX6CyQgUxvcE0bT+A2LPNHnVUuD7TpU9RAdx6WMgN0TZT9o2PjT0b4igNKDtU+MP8kaKOzzB7g/yA84f7GWk7BV/tFg75e0R9mooWq7NjLqR4kISgCZyuQiDIAaLKBe2r10F6nsvEUWVbBBv7ltiTNoyyutggKziuZ/UstE=
+	t=1708420037; cv=none; b=uCKUHNnqd2tt33jirugsmBU/Mj+0sL07Hn2vkgftiprmDfBDyxYhnm2a0GAViRzYH9GHQTOsKYO5s+8mn/119/XL7VQd/T7nBZ8T3b/KbMePmwa3ypJn5CRwAwiqwzWmkcvVETvkYqpuz7Ih1nPo3ttyhzZxBy9JhVJPZmxrTJM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1708420036; c=relaxed/simple;
-	bh=jViJ3zJh5S2RCOGgf/S6HMEGoMjD40/QTYwYjRnaFjY=;
+	s=arc-20240116; t=1708420037; c=relaxed/simple;
+	bh=r8SiPrsysAc4HZ7ufEAzyTQeBwlHaR2NNXzXGtCdN6U=;
 	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version; b=uaNRCpEQx8BjaI/REYCMpOIXkeJ++R+Sf1LjpWoP2J+sdlvNP9QPRaEt2BMPQtmGg1tOtZ1sHEmDAtKH7Fdt3g9KonvzvBSwyjZ7+TA/DCCOUkscIPiYS3jDeWJKiO0x/sOp6GIyG9RELv6OIbPIKuw/NqZ/SCxfT2iuKycA6KE=
+	 MIME-Version; b=sD4b92E0jtVBgWAzMld03lV4oLFS8Xt9acis+78RpIk2LAVR5oYmEZ/nb3rrJFVDtrINHnu8efL0Cz+EFjazHyUk0F/Cw/xYDbf0I2wMYgQLPAtcoReInAIXqZlicThQQ9IZdOWkgtq2xGoJA6hYdmHGy0eqi2J26PVITcO8gL4=
 ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=kylinos.cn; spf=pass smtp.mailfrom=kylinos.cn; arc=none smtp.client-ip=124.126.103.232
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=kylinos.cn
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=kylinos.cn
-X-UUID: 723cc28d881e47c1b7ad6ba5c61e9bd4-20240220
+X-UUID: 37072fb0a82f4f7498a6919f677d2ce4-20240220
 X-CID-P-RULE: Release_Ham
-X-CID-O-INFO: VERSION:1.1.35,REQID:990c5bfe-920c-46b6-99b4-291616874d89,IP:10,
+X-CID-O-INFO: VERSION:1.1.35,REQID:d52da3ea-fede-4560-a2c5-d9c17bc3b230,IP:10,
 	URL:0,TC:0,Content:0,EDM:25,RT:0,SF:-15,FILE:0,BULK:0,RULE:Release_Ham,ACT
 	ION:release,TS:20
-X-CID-INFO: VERSION:1.1.35,REQID:990c5bfe-920c-46b6-99b4-291616874d89,IP:10,UR
+X-CID-INFO: VERSION:1.1.35,REQID:d52da3ea-fede-4560-a2c5-d9c17bc3b230,IP:10,UR
 	L:0,TC:0,Content:0,EDM:25,RT:0,SF:-15,FILE:0,BULK:0,RULE:Release_Ham,ACTIO
 	N:release,TS:20
-X-CID-META: VersionHash:5d391d7,CLOUDID:470f808f-e2c0-40b0-a8fe-7c7e47299109,B
-	ulkID:2402201707097JI8SRP9,BulkQuantity:0,Recheck:0,SF:19|44|66|38|24|17|1
+X-CID-META: VersionHash:5d391d7,CLOUDID:0511fefe-c16b-4159-a099-3b9d0558e447,B
+	ulkID:240220170709ULYUHU0O,BulkQuantity:0,Recheck:0,SF:66|38|24|17|19|44|1
 	02,TC:nil,Content:0,EDM:5,IP:-2,URL:0,File:nil,Bulk:nil,QS:nil,BEC:nil,COL
 	:0,OSI:0,OSA:0,AV:0,LES:1,SPR:NO,DKR:0,DKP:0,BRR:0,BRE:0
 X-CID-BVR: 0,NGT
 X-CID-BAS: 0,NGT,0,_
 X-CID-FACTOR: TF_CID_SPAM_FSD,TF_CID_SPAM_FSI,TF_CID_SPAM_SNR,TF_CID_SPAM_FAS
-X-UUID: 723cc28d881e47c1b7ad6ba5c61e9bd4-20240220
+X-UUID: 37072fb0a82f4f7498a6919f677d2ce4-20240220
 Received: from mail.kylinos.cn [(39.156.73.10)] by mailgw
 	(envelope-from <chentao@kylinos.cn>)
 	(Generic MTA)
-	with ESMTP id 177855381; Tue, 20 Feb 2024 17:07:08 +0800
+	with ESMTP id 1929369233; Tue, 20 Feb 2024 17:07:07 +0800
 Received: from mail.kylinos.cn (localhost [127.0.0.1])
-	by mail.kylinos.cn (NSMail) with SMTP id 4C848E000EBC;
-	Tue, 20 Feb 2024 17:07:08 +0800 (CST)
-X-ns-mid: postfix-65D46BBC-112189354
-Received: from kernel.. (unknown [172.20.15.254])
-	by mail.kylinos.cn (NSMail) with ESMTPA id C72F4E000EBD;
+	by mail.kylinos.cn (NSMail) with SMTP id 28BB8E000EBC;
 	Tue, 20 Feb 2024 17:07:07 +0800 (CST)
+X-ns-mid: postfix-65D46BBA-972832352
+Received: from kernel.. (unknown [172.20.15.254])
+	by mail.kylinos.cn (NSMail) with ESMTPA id C0381E000EBC;
+	Tue, 20 Feb 2024 17:07:03 +0800 (CST)
 From: Kunwu Chan <chentao@kylinos.cn>
 To: clm@fb.com,
 	josef@toxicpanda.com,
@@ -48,9 +48,9 @@ To: clm@fb.com,
 Cc: linux-btrfs@vger.kernel.org,
 	linux-kernel@vger.kernel.org,
 	Kunwu Chan <chentao@kylinos.cn>
-Subject: [PATCH 3/6] btrfs: Simplify the allocation of slab caches in btrfs_transaction_init
-Date: Tue, 20 Feb 2024 17:06:42 +0800
-Message-Id: <20240220090645.108625-4-chentao@kylinos.cn>
+Subject: [PATCH 1/6] btrfs: Simplify the allocation of slab caches in btrfs_delayed_inode_init
+Date: Tue, 20 Feb 2024 17:06:40 +0800
+Message-Id: <20240220090645.108625-2-chentao@kylinos.cn>
 X-Mailer: git-send-email 2.39.2
 In-Reply-To: <20240220090645.108625-1-chentao@kylinos.cn>
 References: <20240220090645.108625-1-chentao@kylinos.cn>
@@ -64,27 +64,28 @@ Content-Transfer-Encoding: quoted-printable
 
 Use the new KMEM_CACHE() macro instead of direct kmem_cache_create
 to simplify the creation of SLAB caches.
+Make the code cleaner and more readable.
 
 Signed-off-by: Kunwu Chan <chentao@kylinos.cn>
 ---
- fs/btrfs/transaction.c | 5 ++---
- 1 file changed, 2 insertions(+), 3 deletions(-)
+ fs/btrfs/delayed-inode.c | 6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 5b3333ceef04..0c069d44e77f 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -2720,9 +2720,8 @@ void __cold __btrfs_abort_transaction(struct btrfs_=
-trans_handle *trans,
+diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+index 08102883f560..8c748c6cdf6d 100644
+--- a/fs/btrfs/delayed-inode.c
++++ b/fs/btrfs/delayed-inode.c
+@@ -28,11 +28,7 @@ static struct kmem_cache *delayed_node_cache;
 =20
- int __init btrfs_transaction_init(void)
+ int __init btrfs_delayed_inode_init(void)
  {
--	btrfs_trans_handle_cachep =3D kmem_cache_create("btrfs_trans_handle",
--			sizeof(struct btrfs_trans_handle), 0,
--			SLAB_TEMPORARY | SLAB_MEM_SPREAD, NULL);
-+	btrfs_trans_handle_cachep =3D KMEM_CACHE(btrfs_trans_handle,
-+						 SLAB_TEMPORARY | SLAB_MEM_SPREAD);
- 	if (!btrfs_trans_handle_cachep)
+-	delayed_node_cache =3D kmem_cache_create("btrfs_delayed_node",
+-					sizeof(struct btrfs_delayed_node),
+-					0,
+-					SLAB_MEM_SPREAD,
+-					NULL);
++	delayed_node_cache =3D KMEM_CACHE(btrfs_delayed_node, SLAB_MEM_SPREAD);
+ 	if (!delayed_node_cache)
  		return -ENOMEM;
  	return 0;
 --=20

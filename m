@@ -1,198 +1,181 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3C35B69D2E;
-	Wed, 21 Feb 2024 13:28:04 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AFA6C38398
+	for <linux-btrfs@vger.kernel.org>; Wed, 21 Feb 2024 15:05:07 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1708522084; cv=none; b=rGPBdZsUN6w7UJqYxyvaf9CeswLz0n49p50+0Vr5l0J8NqPas8k33f2c/DFy43nYgATuWVZCsNRfvZAbpzl2goRz/VU6syFSdt+AfBqv+ftwCrmZUsXdadpTxsLhlj+HfkyQ4XnDEcGaHLEoh1jhWsCYa4pmXaolh94nsfi9zyE=
+	t=1708527909; cv=none; b=f5OfYgriKkV1pAzsm1skkIcUy8KQPEPOppY7l9GqSYCyjcHCg+S7X7MruF/Iv4/0JrwoJcUwtWYqD2qaM3DDjL1Yl3+rVdtf+LjSTKx23MJZfx0ObA0brlnAWnju0KQbOkLaJ7Oe8ZgHv3LxhJfL+vy4Geh8eiey8vTCZoLg5GY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1708522084; c=relaxed/simple;
-	bh=tjLQtH4WQ+Nf5I4zn1vDAdjWwY9YhNMDCa+GKPKt6h8=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=tT06X6D3/tZjfyn3Uimwc/WH9HpZy36Uf/8gFu49z/HbKFVe7ER0+pInrcGLiLGhQtlvitWgrd9dLKdr+YMcb5NnVkZnaFMoUeFSf239GsdnG1mP1oQ6+EotHtXHk884TVXnTv0KUCgoXaNulO7vxzJ6jTrCPS+MIuB6GMHtJV0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (1024-bit key) header.d=linuxfoundation.org header.i=@linuxfoundation.org header.b=YUa80MJk; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1708527909; c=relaxed/simple;
+	bh=5/CeKzSJTlWdsRSQFuGFqknrP7KBcxyX8LqQ5ayzeaw=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=XE/G0M41jgbVv5vk+iZpyPDKSbva6v1nZv6a1qYz8bsACGNIhU1WyTYBMzSuU9rSiw26L8i0jdVtT4TeQvvbYWWkDMxMSQo6Cz+jbYSDl/6uauT4HlpQfUJ28uH4l6D3UBRxstHfEp2+EbcPp4szZvoP+kqvx/2J2AgExk10RCg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=Hu+aLqj7; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=ATltFRPy; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=Hu+aLqj7; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=ATltFRPy; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linuxfoundation.org header.i=@linuxfoundation.org header.b="YUa80MJk"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id A226DC433F1;
-	Wed, 21 Feb 2024 13:28:03 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linuxfoundation.org;
-	s=korg; t=1708522084;
-	bh=tjLQtH4WQ+Nf5I4zn1vDAdjWwY9YhNMDCa+GKPKt6h8=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-	b=YUa80MJk5ys7Nhu5oP7+uKe6kmUyVO75KFGe1bt6MxGKoc88HOW9xvxlzVdtfnTwp
-	 sQ6RiSYeJW7lvrvZa7r4DoSYt5278khL8o6kJq+U/8j4u7Q28Qwpq0+AHYYwyATPDa
-	 4p0zdkDYXUWH3vNBNH3Rc7Dw173u/cQ9JObQ0tF0=
-From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-To: stable@vger.kernel.org,
-	linux-btrfs@vger.kernel.org
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-	patches@lists.linux.dev,
-	ken <ken@bllue.org>,
-	syzbot+d13490c82ad5353c779d@syzkaller.appspotmail.com,
-	Filipe Manana <fdmanana@suse.com>,
-	David Sterba <dsterba@suse.com>,
-	Eugeniu Rosca <eugeniu.rosca@bosch.com>
-Subject: [PATCH 5.15 075/476] btrfs: fix race between reading a directory and adding entries to it
-Date: Wed, 21 Feb 2024 14:02:06 +0100
-Message-ID: <20240221130010.744121743@linuxfoundation.org>
-X-Mailer: git-send-email 2.43.2
-In-Reply-To: <20240221130007.738356493@linuxfoundation.org>
-References: <20240221130007.738356493@linuxfoundation.org>
-User-Agent: quilt/0.67
-X-stable: review
-X-Patchwork-Hint: ignore
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="Hu+aLqj7";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="ATltFRPy";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="Hu+aLqj7";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="ATltFRPy"
+Received: from imap2.dmz-prg2.suse.org (imap2.dmz-prg2.suse.org [10.150.64.98])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id C905A1FB61;
+	Wed, 21 Feb 2024 15:05:05 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1708527905;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=zPUatMOfeg+PJ9uvs/GnBBC89V3YwJdKrX0fb6Qfeck=;
+	b=Hu+aLqj7vlv9tEy+nAMoJJUEzP+2z2JPxLQ+f8rsm2SQ+HlUdtOiCJhpQXct2iUkdVlvKs
+	5NEVkq2W+DOKtvF8ViE3NTKhmkzt3hHAGApQRuBIJ5++FTUItWJ2p0f8G2v6Kg37+bk//1
+	6zeXpPauym6xaI9o7QWcN2PZezeZTNw=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1708527905;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=zPUatMOfeg+PJ9uvs/GnBBC89V3YwJdKrX0fb6Qfeck=;
+	b=ATltFRPyzhiZh61O5jcXONtTeTdcDF6wRzj3pwGmo2NSeEpDxasgrK9+PaxmAdIIe+L8aa
+	r7/BPU2xozsplwAQ==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1708527905;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=zPUatMOfeg+PJ9uvs/GnBBC89V3YwJdKrX0fb6Qfeck=;
+	b=Hu+aLqj7vlv9tEy+nAMoJJUEzP+2z2JPxLQ+f8rsm2SQ+HlUdtOiCJhpQXct2iUkdVlvKs
+	5NEVkq2W+DOKtvF8ViE3NTKhmkzt3hHAGApQRuBIJ5++FTUItWJ2p0f8G2v6Kg37+bk//1
+	6zeXpPauym6xaI9o7QWcN2PZezeZTNw=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1708527905;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=zPUatMOfeg+PJ9uvs/GnBBC89V3YwJdKrX0fb6Qfeck=;
+	b=ATltFRPyzhiZh61O5jcXONtTeTdcDF6wRzj3pwGmo2NSeEpDxasgrK9+PaxmAdIIe+L8aa
+	r7/BPU2xozsplwAQ==
+Received: from imap2.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap2.dmz-prg2.suse.org (Postfix) with ESMTPS id AC8CF139D1;
+	Wed, 21 Feb 2024 15:05:05 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([10.150.64.162])
+	by imap2.dmz-prg2.suse.org with ESMTPSA
+	id UmP0KSER1mW9UwAAn2gu4w
+	(envelope-from <dsterba@suse.cz>); Wed, 21 Feb 2024 15:05:05 +0000
+Date: Wed, 21 Feb 2024 16:04:24 +0100
+From: David Sterba <dsterba@suse.cz>
+To: David Sterba <dsterba@suse.cz>
+Cc: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH RFC] btrfs: raid56: extra debug for raid6 syndrome
+ generation
+Message-ID: <20240221150424.GK355@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <ceaa8a9d4a19dbe017012d5cdbd78aafeac31cc9.1706239278.git.wqu@suse.com>
+ <20240214073855.GO355@twin.jikos.cz>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20240214073855.GO355@twin.jikos.cz>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+Authentication-Results: smtp-out2.suse.de;
+	none
+X-Spam-Level: 
+X-Spam-Score: -1.09
+X-Spamd-Result: default: False [-1.09 / 50.00];
+	 ARC_NA(0.00)[];
+	 HAS_REPLYTO(0.30)[dsterba@suse.cz];
+	 RCVD_VIA_SMTP_AUTH(0.00)[];
+	 FROM_HAS_DN(0.00)[];
+	 RCPT_COUNT_THREE(0.00)[3];
+	 TO_DN_SOME(0.00)[];
+	 TO_MATCH_ENVRCPT_ALL(0.00)[];
+	 MIME_GOOD(-0.10)[text/plain];
+	 REPLYTO_ADDR_EQ_FROM(0.00)[];
+	 NEURAL_HAM_LONG(-1.00)[-1.000];
+	 RCVD_COUNT_THREE(0.00)[3];
+	 DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	 NEURAL_HAM_SHORT(-0.20)[-1.000];
+	 DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email];
+	 FUZZY_BLOCKED(0.00)[rspamd.com];
+	 FROM_EQ_ENVFROM(0.00)[];
+	 MIME_TRACE(0.00)[0:+];
+	 RCVD_TLS_ALL(0.00)[];
+	 BAYES_HAM(-0.09)[64.79%]
+X-Spam-Flag: NO
 
-5.15-stable review patch.  If anyone has any objections, please let me know.
+On Wed, Feb 14, 2024 at 08:38:55AM +0100, David Sterba wrote:
+> On Fri, Jan 26, 2024 at 01:51:32PM +1030, Qu Wenruo wrote:
+> > [BUG]
+> > I have got at least two crash report for RAID6 syndrome generation, no
+> > matter if it's AVX2 or SSE2, they all seems to have a similar
+> > calltrace with corrupted RAX:
+> > 
+> >  BUG: kernel NULL pointer dereference, address: 0000000000000000
+> >  #PF: supervisor read access in kernel mode
+> >  #PF: error_code(0x0000) - not-present page
+> >  PGD 0 P4D 0
+> >  Oops: 0000 [#1] PREEMPT SMP PTI
+> >  Workqueue: btrfs-rmw rmw_rbio_work [btrfs]
+> >  RIP: 0010:raid6_sse21_gen_syndrome+0x9e/0x130 [raid6_pq]
+> >  RAX: 0000000000000000 RBX: 0000000000001000 RCX: ffffa0ff4cfa3248
+> >  RDX: 0000000000000000 RSI: ffffa0f74cfa3238 RDI: 0000000000000000
+> >  Call Trace:
+> >   <TASK>
+> >   rmw_rbio+0x5c8/0xa80 [btrfs]
+> >   process_one_work+0x1c7/0x3d0
+> >   worker_thread+0x4d/0x380
+> >   kthread+0xf3/0x120
+> >   ret_from_fork+0x2c/0x50
+> >   </TASK>
+> > 
+> > [CAUSE]
+> > In fact I don't have any clue.
+> > 
+> > Recently I also hit this in AVX512 path, and that's even in v5.15
+> > backport, which doesn't have any of my RAID56 rework.
+> > 
+> > Furthermore according to the registers:
+> > 
+> >  RAX: 0000000000000000 RBX: 0000000000001000 RCX: ffffa0ff4cfa3248
+> > 
+> > The RAX register is showing the number of stripes (including PQ),
+> > which is not correct (0).
+> > But the remaining two registers are all sane.
+> > 
+> > - RBX is the sectorsize
+> >   For x86_64 it should always be 4K and matches the output.
+> > 
+> > - RCX is the pointers array
+> >   Which is from rbio->finish_pointers, and it looks like a sane
+> >   kernel address.
+> > 
+> > [WORKAROUND]
+> > For now, I can only add extra debug ASSERT()s before we call raid6
+> > gen_syndrome() helper and hopes to catch the problem.
+> > 
+> > The debug requires both CONFIG_BTRFS_DEBUG and CONFIG_BTRFS_ASSERT
+> > enabled.
+> > 
+> > My current guess is some use-after-free, but every report is only having
+> > corrupted RAX but seemingly valid pointers doesn't make much sense.
+> > 
+> > Signed-off-by: Qu Wenruo <wqu@suse.com>
+> 
+> Reviewed-by: David Sterba <dsterba@suse.com>
+> 
+> I haven't seen the crash for some time but with this patch I may add
+> some info once it happens again.
 
-------------------
-
-From: Filipe Manana <fdmanana@suse.com>
-
-commit 8e7f82deb0c0386a03b62e30082574347f8b57d5 upstream.
-
-When opening a directory (opendir(3)) or rewinding it (rewinddir(3)), we
-are not holding the directory's inode locked, and this can result in later
-attempting to add two entries to the directory with the same index number,
-resulting in a transaction abort, with -EEXIST (-17), when inserting the
-second delayed dir index. This results in a trace like the following:
-
-  Sep 11 22:34:59 myhostname kernel: BTRFS error (device dm-3): err add delayed dir index item(name: cockroach-stderr.log) into the insertion tree of the delayed node(root id: 5, inode id: 4539217, errno: -17)
-  Sep 11 22:34:59 myhostname kernel: ------------[ cut here ]------------
-  Sep 11 22:34:59 myhostname kernel: kernel BUG at fs/btrfs/delayed-inode.c:1504!
-  Sep 11 22:34:59 myhostname kernel: invalid opcode: 0000 [#1] PREEMPT SMP NOPTI
-  Sep 11 22:34:59 myhostname kernel: CPU: 0 PID: 7159 Comm: cockroach Not tainted 6.4.15-200.fc38.x86_64 #1
-  Sep 11 22:34:59 myhostname kernel: Hardware name: ASUS ESC500 G3/P9D WS, BIOS 2402 06/27/2018
-  Sep 11 22:34:59 myhostname kernel: RIP: 0010:btrfs_insert_delayed_dir_index+0x1da/0x260
-  Sep 11 22:34:59 myhostname kernel: Code: eb dd 48 (...)
-  Sep 11 22:34:59 myhostname kernel: RSP: 0000:ffffa9980e0fbb28 EFLAGS: 00010282
-  Sep 11 22:34:59 myhostname kernel: RAX: 0000000000000000 RBX: ffff8b10b8f4a3c0 RCX: 0000000000000000
-  Sep 11 22:34:59 myhostname kernel: RDX: 0000000000000000 RSI: ffff8b177ec21540 RDI: ffff8b177ec21540
-  Sep 11 22:34:59 myhostname kernel: RBP: ffff8b110cf80888 R08: 0000000000000000 R09: ffffa9980e0fb938
-  Sep 11 22:34:59 myhostname kernel: R10: 0000000000000003 R11: ffffffff86146508 R12: 0000000000000014
-  Sep 11 22:34:59 myhostname kernel: R13: ffff8b1131ae5b40 R14: ffff8b10b8f4a418 R15: 00000000ffffffef
-  Sep 11 22:34:59 myhostname kernel: FS:  00007fb14a7fe6c0(0000) GS:ffff8b177ec00000(0000) knlGS:0000000000000000
-  Sep 11 22:34:59 myhostname kernel: CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-  Sep 11 22:34:59 myhostname kernel: CR2: 000000c00143d000 CR3: 00000001b3b4e002 CR4: 00000000001706f0
-  Sep 11 22:34:59 myhostname kernel: Call Trace:
-  Sep 11 22:34:59 myhostname kernel:  <TASK>
-  Sep 11 22:34:59 myhostname kernel:  ? die+0x36/0x90
-  Sep 11 22:34:59 myhostname kernel:  ? do_trap+0xda/0x100
-  Sep 11 22:34:59 myhostname kernel:  ? btrfs_insert_delayed_dir_index+0x1da/0x260
-  Sep 11 22:34:59 myhostname kernel:  ? do_error_trap+0x6a/0x90
-  Sep 11 22:34:59 myhostname kernel:  ? btrfs_insert_delayed_dir_index+0x1da/0x260
-  Sep 11 22:34:59 myhostname kernel:  ? exc_invalid_op+0x50/0x70
-  Sep 11 22:34:59 myhostname kernel:  ? btrfs_insert_delayed_dir_index+0x1da/0x260
-  Sep 11 22:34:59 myhostname kernel:  ? asm_exc_invalid_op+0x1a/0x20
-  Sep 11 22:34:59 myhostname kernel:  ? btrfs_insert_delayed_dir_index+0x1da/0x260
-  Sep 11 22:34:59 myhostname kernel:  ? btrfs_insert_delayed_dir_index+0x1da/0x260
-  Sep 11 22:34:59 myhostname kernel:  btrfs_insert_dir_item+0x200/0x280
-  Sep 11 22:34:59 myhostname kernel:  btrfs_add_link+0xab/0x4f0
-  Sep 11 22:34:59 myhostname kernel:  ? ktime_get_real_ts64+0x47/0xe0
-  Sep 11 22:34:59 myhostname kernel:  btrfs_create_new_inode+0x7cd/0xa80
-  Sep 11 22:34:59 myhostname kernel:  btrfs_symlink+0x190/0x4d0
-  Sep 11 22:34:59 myhostname kernel:  ? schedule+0x5e/0xd0
-  Sep 11 22:34:59 myhostname kernel:  ? __d_lookup+0x7e/0xc0
-  Sep 11 22:34:59 myhostname kernel:  vfs_symlink+0x148/0x1e0
-  Sep 11 22:34:59 myhostname kernel:  do_symlinkat+0x130/0x140
-  Sep 11 22:34:59 myhostname kernel:  __x64_sys_symlinkat+0x3d/0x50
-  Sep 11 22:34:59 myhostname kernel:  do_syscall_64+0x5d/0x90
-  Sep 11 22:34:59 myhostname kernel:  ? syscall_exit_to_user_mode+0x2b/0x40
-  Sep 11 22:34:59 myhostname kernel:  ? do_syscall_64+0x6c/0x90
-  Sep 11 22:34:59 myhostname kernel:  entry_SYSCALL_64_after_hwframe+0x72/0xdc
-
-The race leading to the problem happens like this:
-
-1) Directory inode X is loaded into memory, its ->index_cnt field is
-   initialized to (u64)-1 (at btrfs_alloc_inode());
-
-2) Task A is adding a new file to directory X, holding its vfs inode lock,
-   and calls btrfs_set_inode_index() to get an index number for the entry.
-
-   Because the inode's index_cnt field is set to (u64)-1 it calls
-   btrfs_inode_delayed_dir_index_count() which fails because no dir index
-   entries were added yet to the delayed inode and then it calls
-   btrfs_set_inode_index_count(). This functions finds the last dir index
-   key and then sets index_cnt to that index value + 1. It found that the
-   last index key has an offset of 100. However before it assigns a value
-   of 101 to index_cnt...
-
-3) Task B calls opendir(3), ending up at btrfs_opendir(), where the VFS
-   lock for inode X is not taken, so it calls btrfs_get_dir_last_index()
-   and sees index_cnt still with a value of (u64)-1. Because of that it
-   calls btrfs_inode_delayed_dir_index_count() which fails since no dir
-   index entries were added to the delayed inode yet, and then it also
-   calls btrfs_set_inode_index_count(). This also finds that the last
-   index key has an offset of 100, and before it assigns the value 101
-   to the index_cnt field of inode X...
-
-4) Task A assigns a value of 101 to index_cnt. And then the code flow
-   goes to btrfs_set_inode_index() where it increments index_cnt from
-   101 to 102. Task A then creates a delayed dir index entry with a
-   sequence number of 101 and adds it to the delayed inode;
-
-5) Task B assigns 101 to the index_cnt field of inode X;
-
-6) At some later point when someone tries to add a new entry to the
-   directory, btrfs_set_inode_index() will return 101 again and shortly
-   after an attempt to add another delayed dir index key with index
-   number 101 will fail with -EEXIST resulting in a transaction abort.
-
-Fix this by locking the inode at btrfs_get_dir_last_index(), which is only
-only used when opening a directory or attempting to lseek on it.
-
-Reported-by: ken <ken@bllue.org>
-Link: https://lore.kernel.org/linux-btrfs/CAE6xmH+Lp=Q=E61bU+v9eWX8gYfLvu6jLYxjxjFpo3zHVPR0EQ@mail.gmail.com/
-Reported-by: syzbot+d13490c82ad5353c779d@syzkaller.appspotmail.com
-Link: https://lore.kernel.org/linux-btrfs/00000000000036e1290603e097e0@google.com/
-Fixes: 9b378f6ad48c ("btrfs: fix infinite directory reads")
-CC: stable@vger.kernel.org # 6.5+
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
-Reviewed-by: David Sterba <dsterba@suse.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
-Reviewed-by: Eugeniu Rosca <eugeniu.rosca@bosch.com>
-Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
----
- fs/btrfs/inode.c |   11 +++++++----
- 1 file changed, 7 insertions(+), 4 deletions(-)
-
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6173,21 +6173,24 @@ out:
- 
- static int btrfs_get_dir_last_index(struct btrfs_inode *dir, u64 *index)
- {
--	if (dir->index_cnt == (u64)-1) {
--		int ret;
-+	int ret = 0;
- 
-+	btrfs_inode_lock(&dir->vfs_inode, 0);
-+	if (dir->index_cnt == (u64)-1) {
- 		ret = btrfs_inode_delayed_dir_index_count(dir);
- 		if (ret) {
- 			ret = btrfs_set_inode_index_count(dir);
- 			if (ret)
--				return ret;
-+				goto out;
- 		}
- 	}
- 
- 	/* index_cnt is the index number of next new entry, so decrement it. */
- 	*index = dir->index_cnt - 1;
-+out:
-+	btrfs_inode_unlock(&dir->vfs_inode, 0);
- 
--	return 0;
-+	return ret;
- }
- 
- /*
-
-
+For the record, I added this patch to for-next.

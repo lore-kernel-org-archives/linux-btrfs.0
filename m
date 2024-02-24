@@ -1,256 +1,223 @@
-Received: from out-182.mta1.migadu.com (out-182.mta1.migadu.com [95.215.58.182])
+Received: from mx0a-00069f02.pphosted.com (mx0a-00069f02.pphosted.com [205.220.165.32])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D5F864502C
-	for <linux-btrfs@vger.kernel.org>; Sat, 24 Feb 2024 13:47:16 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=95.215.58.182
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1708782438; cv=none; b=Gh1ge726CM94N4AGBIUMQkbPIYt65SZYHgo+fAmIAlYAqc1K/Z0smcHJq7iQnvp9KMz5Ds6gP0mPbWbT6K3mH/u7OnAiO4NVeLqz7XBUVBPLlTBx2M0DK2juU9jeWkK/JL8GRGLgkynHYCLo8qVFYkVGplB0+ms4ThPV9hht1f8=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1708782438; c=relaxed/simple;
-	bh=dfkuXdM1TfGRdOTvfYcpzHaUouxLyzj75vujnsQGm8I=;
-	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version; b=gKKHU4FDPkMRTE5Ey0YGAA8cGit3+PSg/Rzt745nGmPR3X2fsHGigQuIT6cIr5kgEM9f61PsVPmwUQMop1IoP7hmw8vis5kfe+iwnsnnv835E+O0erPAkTsMyXLyGPEoXmP/HcGCunRlsvqAv+XmMvb00OnmI+X2Rdv0dZ8yKDc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev; spf=pass smtp.mailfrom=linux.dev; dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b=PRi3Bq1B; arc=none smtp.client-ip=95.215.58.182
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.dev
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 34DC42CA4;
+	Sat, 24 Feb 2024 16:43:43 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=205.220.165.32
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1708793025; cv=fail; b=jHDuwY+/j1WdWm4oxJ+qQjEFtlHFUlQF8549uqdrO1dFhnC33D9v+qX2o3QzmUFz6TsI7KF4rdqebDJV0IzN16jUAAw4QfyOWpXRyFqeBywhGAOKSIRLT8WU9dbvcLlW6oy2yig1Z3cZ5Wxx5bHpfbPzCQP5A5W8S1wQR+OxyS4=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1708793025; c=relaxed/simple;
+	bh=gD9s5fk+dVv5GiZIUv20kynR/5GSTosp1+tfDpgrxZU=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=Cnj3WtRL52wbryfcBUtipGStpRkFeRFMwo0aT6wPGmzHcumeZ5fCgfcyrRwhhbi5k7cdd6WbfEIZ8eW+rk1qzYB+5BBLVowy/gLY4eQDA5LUgAUkA01dPau3SV9nneQeh1INvL+HpMAvtjNTCVFODba4yb/A6uEGgqtgzS3vvI0=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=oracle.com; spf=pass smtp.mailfrom=oracle.com; dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b=fEmTYB1U; dkim=pass (1024-bit key) header.d=oracle.onmicrosoft.com header.i=@oracle.onmicrosoft.com header.b=Z2g3hGPc; arc=fail smtp.client-ip=205.220.165.32
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=oracle.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=oracle.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b="PRi3Bq1B"
-X-Report-Abuse: Please report any abuse attempt to abuse@migadu.com and include these headers.
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linux.dev; s=key1;
-	t=1708782435;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding;
-	bh=yKqN1sI8hqn9RRCulN4vsVyKZb8ToBpRi5CxTQ7ZeiE=;
-	b=PRi3Bq1B9FbPNMB1z9xmo71ykAJIhO4pCqBW3HUot2pZd4HONcMHQWXBYxWeXWhwxcVwSH
-	r2e/VSZ7c18iWnzvkzgIWdzYykX8De67sfvG9USH+HVIepEd0mju8tH4lhEImqkQr+yWo5
-	9DsgdK1Y5tf4ZZfSyc5MfaDTKFG0t2w=
-From: chengming.zhou@linux.dev
-To: clm@fb.com,
-	josef@toxicpanda.com,
-	dsterba@suse.com
-Cc: linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	linux-mm@kvack.org,
-	vbabka@suse.cz,
-	roman.gushchin@linux.dev,
-	Xiongwei.Song@windriver.com,
-	chengming.zhou@linux.dev,
-	Chengming Zhou <zhouchengming@bytedance.com>
-Subject: [PATCH] btrfs: remove SLAB_MEM_SPREAD flag usage
-Date: Sat, 24 Feb 2024 13:47:09 +0000
-Message-Id: <20240224134709.829191-1-chengming.zhou@linux.dev>
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="fEmTYB1U";
+	dkim=pass (1024-bit key) header.d=oracle.onmicrosoft.com header.i=@oracle.onmicrosoft.com header.b="Z2g3hGPc"
+Received: from pps.filterd (m0246629.ppops.net [127.0.0.1])
+	by mx0b-00069f02.pphosted.com (8.17.1.19/8.17.1.19) with ESMTP id 41OFTZiZ031092;
+	Sat, 24 Feb 2024 16:43:41 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
+ subject : date : message-id : in-reply-to : references :
+ content-transfer-encoding : content-type : mime-version;
+ s=corp-2023-11-20; bh=iNi9t4gOB2pDjQ2dR4dl0zo6SBnM7BDbbTl6V4xjhcw=;
+ b=fEmTYB1UFsO/7y95Pshga8HiXbNoNbTJMd5Pd5r/ROhG9RWDfQ3yx82nFJDfPkcGo3Ze
+ AQMXavxvBee0c3P5MDnNGfJs2G103aOAumx8e2uqIZi42RtAFseJeYFPNzEoJAkWpnEK
+ s8nJLygZDQvh95037LRcqF9KupYInvqmihWuStXDFuIEvNQYFL4Xj/oRAFyAW58HP54N
+ DNroogu6ShSQBAW2viDfdXXxztshh5lx71jBhwyuKFOBmlZxJpBXY9RjwgIbhr4LQXkG
+ JHHyrsG8pAvb3vmu8npMdxRsxPZUxFnuVNmARtbTdlMl4Wluj8EbhSOlpxjd+2w3vsFV LA== 
+Received: from iadpaimrmta03.imrmtpd1.prodappiadaev1.oraclevcn.com (iadpaimrmta03.appoci.oracle.com [130.35.103.27])
+	by mx0b-00069f02.pphosted.com (PPS) with ESMTPS id 3wf8bb11je-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+	Sat, 24 Feb 2024 16:43:41 +0000
+Received: from pps.filterd (iadpaimrmta03.imrmtpd1.prodappiadaev1.oraclevcn.com [127.0.0.1])
+	by iadpaimrmta03.imrmtpd1.prodappiadaev1.oraclevcn.com (8.17.1.19/8.17.1.19) with ESMTP id 41OG5F6O011751;
+	Sat, 24 Feb 2024 16:43:39 GMT
+Received: from nam02-sn1-obe.outbound.protection.outlook.com (mail-sn1nam02lp2040.outbound.protection.outlook.com [104.47.57.40])
+	by iadpaimrmta03.imrmtpd1.prodappiadaev1.oraclevcn.com (PPS) with ESMTPS id 3wf6w3sm0d-2
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+	Sat, 24 Feb 2024 16:43:39 +0000
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=SBshfUTbywIyVj/qz07HvM4ty8s22UE4zVZTy84lSSqoz0sBMrL6eOhC3xCGBbCMxpXnmkElevxDjI6H6yHvJk58DlLMSt6QNsVckJh0GuikqcAudzirZazq+tmcq8/67i+pK7ocApeD/JQsGDt/GobBkaY89lNAmIHT/AG3hR2FwJDOBlp/0Qy/MwgUXPTiIHZQzhhTGVhzukfvWZ8Emi1sLRG80LD+BaVb6e+VExvRnnSTugs+q97K5TNSKCWTYaJdeBmrt0tlD83WmwkKtKFp1fqErqmDV+R8/uSXcITrU5uvI1jobgxAqZcb+FQeMWywK7gYWSFNffb2w9rAMQ==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=iNi9t4gOB2pDjQ2dR4dl0zo6SBnM7BDbbTl6V4xjhcw=;
+ b=A2TMhmvypniXyZgPZtLacNAJMDB3OQlpEuHzSGId9ZuipQn0Pewn0t4mfXTM0p1YjTug3mUQz8k/Ap0BqulZ1FX7P6wkyoOc0mAcbLpBlClukmFI2yRI7gfiHS7GdvRsOCP9640Va+N4WE5PHbcbRP7kP59c0S1M41NLJNiTNP/gB0MHGWrfZnogPURh4QM2Hes4SaF911t64J31ecvxmjBvirdpnLrbIzS5dioipsWWkrWCJoDhe5KrjcrMeiV/xHWdRD/FJSEiXI9OEYjhRhZLYo/YmyvoWk/ZcPZkYmEPEZmGJ9YSjiCuM5Ucp2mwVxOOhkr0BCrnjRAuYqqHXA==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=oracle.com; dmarc=pass action=none header.from=oracle.com;
+ dkim=pass header.d=oracle.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=oracle.onmicrosoft.com; s=selector2-oracle-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=iNi9t4gOB2pDjQ2dR4dl0zo6SBnM7BDbbTl6V4xjhcw=;
+ b=Z2g3hGPc7vzu4bVfjM+FoAlNZmEHXUsKdPLWmnUkzHwkAUuf9bKm4YK7w+PgRBxsydO2W0P8P8LIQWfHBO1xuAI6bSmVFih0UhysUDaCeEzMdMYu+3cBTnQp7LSAeL0vONgtGr7hlcoCBl64cXUlLXSn0XKaBc1CpM9b+9U1PeA=
+Received: from PH0PR10MB5706.namprd10.prod.outlook.com (2603:10b6:510:148::10)
+ by MW4PR10MB5750.namprd10.prod.outlook.com (2603:10b6:303:18e::19) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.7316.32; Sat, 24 Feb
+ 2024 16:43:36 +0000
+Received: from PH0PR10MB5706.namprd10.prod.outlook.com
+ ([fe80::9a3e:7f11:fbb:1690]) by PH0PR10MB5706.namprd10.prod.outlook.com
+ ([fe80::9a3e:7f11:fbb:1690%3]) with mapi id 15.20.7292.029; Sat, 24 Feb 2024
+ 16:43:36 +0000
+From: Anand Jain <anand.jain@oracle.com>
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, fdmanana@kernel.org
+Subject: [PATCH v3 01/10] assign SCRATCH_DEV_POOL to an array
+Date: Sat, 24 Feb 2024 22:13:02 +0530
+Message-ID: <e590eac0dc13f8bd335e36086e6d385ab91e4ddd.1708772619.git.anand.jain@oracle.com>
+X-Mailer: git-send-email 2.42.0
+In-Reply-To: <cover.1708772619.git.anand.jain@oracle.com>
+References: <cover.1708772619.git.anand.jain@oracle.com>
+Content-Transfer-Encoding: 8bit
+Content-Type: text/plain
+X-ClientProxiedBy: MA0PR01CA0056.INDPRD01.PROD.OUTLOOK.COM
+ (2603:1096:a01:ac::12) To PH0PR10MB5706.namprd10.prod.outlook.com
+ (2603:10b6:510:148::10)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Migadu-Flow: FLOW_OUT
+X-MS-PublicTrafficType: Email
+X-MS-TrafficTypeDiagnostic: PH0PR10MB5706:EE_|MW4PR10MB5750:EE_
+X-MS-Office365-Filtering-Correlation-Id: 934ea391-969a-4f86-110e-08dc3557bf0b
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam: BCL:0;
+X-Microsoft-Antispam-Message-Info: 
+	dDmYP6uznTsI2l8MRrYB9xz/R8gXwkvLdvBHyI3Pw+U6rW7OmSCBUWSo+xhYc8Cy2lNKSGw0eaJxBD/E6f5cfyDHebcWX0ykrrwQA6G0DiDR19vSxMZhlFw9JmghGfdazwb9RlWLZrimLVLPHQuV5t9Krr25uW6NeVyIJ5OQrJxHmLUqM5blpjWBicbs0yBYt4GMN8i7mRrjDDeRo1kktKJptU/wMxNdaHPA9QeK60ctmyL63J9Hi8OpkmMUlBj1ztMir3g6cd+rBHSdraJZI0AnHbESiu1ufwb1mm3SxdVt5VN9uGh83sOzFt0V1bxVEvigHe4EDxZ/56yShtSKSBC7rV/4UzRuRYmY2t0HvEg7U0bDJLhxqxglZB8AO4Isd1nqaHV+mLQAA1Bsvmf+3evspEDMUTON4/pZy8paBVyenmAPfEM73wJws2ZKVA43JGTM8Hq/h9jk8Qyr/zmffSs2jHxif9hIVFIbq4JBh7fWrr3lZDMYmMbIM2SMTI1ffG/80RA55z62qdlOkhSA6GGwtIVD2zOLN7zZdh5fcxY=
+X-Forefront-Antispam-Report: 
+	CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:PH0PR10MB5706.namprd10.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230031);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-MessageData-0: 
+	=?us-ascii?Q?+FQvpGLbHNr4fL7BW80X6T6Evou2DRvBnRD6ZoFX7u6PO+76DmNaQ+7Ot3KM?=
+ =?us-ascii?Q?wCWu6JjAMUvhYOAiHMtuoojzwFL6ZO9w7xvgQ6NNXZr4dEu9zrOfpF63xk4g?=
+ =?us-ascii?Q?vFPeaDN9huzCyrCJYPNuj836xzN9TfF4nddWMEkkcrRGKNI5z8J/zCTM624U?=
+ =?us-ascii?Q?PUtJosKgPmsE2hbMSNRCNzhMlcOZYLKpvCrbpkgMpwVRgrh4+A1Aa/V0/RAp?=
+ =?us-ascii?Q?RKyKzCYHciVS28TehwZep8Yq/XUI2S8z+5uAbgiFcBHyZjy+Ce1ltX68cfYQ?=
+ =?us-ascii?Q?tjlmgOqFaER8ZffHqv88Ysi6AL9h1lQd4ZVxJXvKcAYGXADhA0u2tky8sDDP?=
+ =?us-ascii?Q?+kozD+W3zx55ULOwNWZJx2dSqWF5Mg0S50DpTFB37WAa6K0OKyXS5rm+vHcR?=
+ =?us-ascii?Q?TWfLm0WXJ6+Vt1DXkAXIGwM62a8W7yOg/MmVnUwARz2PbXCmY1RywMmRhjeT?=
+ =?us-ascii?Q?hHjRtI9NLJ5wdbitBhVo+qrRAz6nbi7a7afwbouoVRF5mOYTTretiltSGFE4?=
+ =?us-ascii?Q?RXMJv0fQzrXbk74SkqFVzLu5ZbD0kAh0yvJJ50hW5yZFNHRuH1F8vQRYMHmc?=
+ =?us-ascii?Q?FETPfXSLi0hAFmwubJthZUS4Tefw+BoaFqkgyZPm4ZcW4oJXLuufG83fX3QD?=
+ =?us-ascii?Q?Ul/yLusrDzkFJi9fkQ0q8T78f30pZAXHonOmAIz2NyeG5pttadgpdAw4TtDK?=
+ =?us-ascii?Q?EJdlKMOzhb3E7lpxtyCH+x0Zj2PoZBb4eD0BK04Fjixatg25XRdqTBABsumc?=
+ =?us-ascii?Q?lEVQf47ogmjWYyH7SvcesiJ5xFsh6BaTbpMIqqvMuAqRRrVie8rPwUwHWrmX?=
+ =?us-ascii?Q?SGZwGQAn8QAYWUvY7BeZV8sgnhpMEjjjcawi7cxICxnPKZSKhJEwv6S6iUdr?=
+ =?us-ascii?Q?VwlN5Be9JXwzVqtIdCbxhogf0cTclOi06hcre9E+Ofj6ad8xF7PSsc/wQcwu?=
+ =?us-ascii?Q?TlRxto96R/9wFqUc5ktmwA821ReFHzvDNwBuaokh+IGf0PYRDUdPgpvi56qq?=
+ =?us-ascii?Q?z3MFvhNUCdfCrnYcpqSHjHRj2KVKYQaiFlmADxRvjna39Q0QRXA1EnYQuFaF?=
+ =?us-ascii?Q?B2kLgVZV6XF+6ybFHYc7Cof80M2yHIG4Vlm0J5syKh1bQQuPyBoqz8wcqWGO?=
+ =?us-ascii?Q?YtuQNBMV83dhw4hEjfxamT2DSNQ/3pK5ckvVHqj9dGP0QBBF8qoo+ajJmlI7?=
+ =?us-ascii?Q?bPGfE/Vw7Kl7SmOONCK67AqbtsOd9N5rA9bJBRpJQ5DzJc+4UMKFZrkdoffI?=
+ =?us-ascii?Q?7yB0EYB8Q6b1TJo+HiYx1BM5mKawBRE2Tz5uTF7x19SVsOgLp5zliale9OJI?=
+ =?us-ascii?Q?E1OEbczUWQTOenOpuCeQPbFiucy4zWUobicgBbtEYNjP6k2pH6BqtxaNmLn7?=
+ =?us-ascii?Q?l2sB866iKC7R7wPiJED47hiJE8VnuEuJf5yPnDRso0SSkYC3SIGgK88peZ3A?=
+ =?us-ascii?Q?odzdTXFa4RtlAJx9jXzFZVQsAIfc4DFzEq10had2HYSriMdDc5iZPRZ6MSQW?=
+ =?us-ascii?Q?JUk2IPxgvcD8spEhJtr82FJsI3dZl7WiMLgLEvTjdG/1/VWi9NEj7PD91rtT?=
+ =?us-ascii?Q?juvqVaXGXEzrjJn8knKEynvEQ114VVqEaEiek+tT?=
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0: 
+	v/wPY7xhzvB3PH4ad4qWPvs4aYgeIyKPdZmL/vYz/tQBC3lDAtta8l7l6QjnjEqRxshUDGCMSRJcHscnhi3esHj7cB3INJmTJuTS2bYgvr4LyE/jcFofaR3CgNdwnQedDnQB16DjW2ir4gy7FGGlPWLvJn0apSPl6RdulDQ+/J+YXFtibuo4tKsBAvSP4RhhlifxL1akfwRWSTWlEzPUlngbNcJqrbRQXK4xFXlxjV5h5YlWRt47Ktm9POpc1W45TZxMT+TREU+lgLq+y1hme7kee3I6uGW3pijr04smQLcQ1P9Qi/mIBxhLE17DEeHD5v4hK1xRO1n9dFSxvcDcGkkjCsudhkUwlQhaqAqc8Ak5nmFRwf2NiMCLlbZM8NLKmiaZRKcYnn/tZCVWoh21WxTHwjPxDXVQ3EN6o95DR1V+FzOiuQeyMe5ZLzJ25k/mxgdBQQ7f5QjpP3FxPXie7CTb9f3d87Pi3p0485E5L2yfYL7fww6PaLmLdpK/hK4umSPZRzjbn+nGnCKv8rFG5C2rp/lChcgfQY/xZ1G+mbTnUTiIAgeIRLKvJpJli4Wa+CvL0dOc4erxQft0Hewzp+Y4DGuL9oqXtRbENTL0nwg=
+X-OriginatorOrg: oracle.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 934ea391-969a-4f86-110e-08dc3557bf0b
+X-MS-Exchange-CrossTenant-AuthSource: PH0PR10MB5706.namprd10.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 24 Feb 2024 16:43:36.6884
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: 4e2c6054-71cb-48f1-bd6c-3a9705aca71b
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: yD5cC/c1KT6QdC7rS2gWGaXyNk0BHih74Zn/qgXjAAZLy7jnJ1YzEwZY1L0DmdlQbjXJObd7PnGN/GL6ARgr8g==
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: MW4PR10MB5750
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.272,Aquarius:18.0.1011,Hydra:6.0.619,FMLib:17.11.176.26
+ definitions=2024-02-24_12,2024-02-23_01,2023-05-22_02
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 spamscore=0 mlxlogscore=999
+ suspectscore=0 bulkscore=0 phishscore=0 mlxscore=0 malwarescore=0
+ adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2311290000 definitions=main-2402240140
+X-Proofpoint-GUID: TCv5NXwFYgi_WgiQ_oY5sjvfey-h6aaG
+X-Proofpoint-ORIG-GUID: TCv5NXwFYgi_WgiQ_oY5sjvfey-h6aaG
 
-From: Chengming Zhou <zhouchengming@bytedance.com>
+Many test cases use local variables to manage the names of each device in
+SCRATCH_DEV_POOL. Let _scratch_dev_pool_get set an array, SCRATCH_DEV_NAME,
+for it.
 
-The SLAB_MEM_SPREAD flag is already a no-op as of 6.8-rc1, remove
-its usage so we can delete it from slab. No functional change.
+Usage:
 
-Signed-off-by: Chengming Zhou <zhouchengming@bytedance.com>
+	_scratch_dev_pool_get <n>
+
+	# device names are in the array SCRATCH_DEV_NAME.
+	${SCRATCH_DEV_NAME[0]} ${SCRATCH_DEV_NAME[1]} ...
+
+	_scratch_dev_pool_put
+
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/backref.c          | 2 +-
- fs/btrfs/ctree.c            | 2 +-
- fs/btrfs/defrag.c           | 2 +-
- fs/btrfs/delayed-inode.c    | 2 +-
- fs/btrfs/delayed-ref.c      | 8 ++++----
- fs/btrfs/extent-io-tree.c   | 2 +-
- fs/btrfs/extent_io.c        | 2 +-
- fs/btrfs/extent_map.c       | 2 +-
- fs/btrfs/free-space-cache.c | 4 ++--
- fs/btrfs/inode.c            | 2 +-
- fs/btrfs/ordered-data.c     | 2 +-
- fs/btrfs/transaction.c      | 2 +-
- 12 files changed, 16 insertions(+), 16 deletions(-)
+v3: add rb
+v2:
+ Fix typo in the commit log.
+ Fix array SCRATCH_DEV_POOL_SAVED handling.
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index 6514cb1d404a..f2abb9afd04a 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -200,7 +200,7 @@ int __init btrfs_prelim_ref_init(void)
- 	btrfs_prelim_ref_cache = kmem_cache_create("btrfs_prelim_ref",
- 					sizeof(struct prelim_ref),
- 					0,
--					SLAB_MEM_SPREAD,
-+					0,
- 					NULL);
- 	if (!btrfs_prelim_ref_cache)
- 		return -ENOMEM;
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index bae17dbe71d6..aaf53fd84358 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -5086,7 +5086,7 @@ int btrfs_previous_extent_item(struct btrfs_root *root,
+ common/rc | 18 ++++++++++++++----
+ 1 file changed, 14 insertions(+), 4 deletions(-)
+
+diff --git a/common/rc b/common/rc
+index e475c890d902..50dde313b851 100644
+--- a/common/rc
++++ b/common/rc
+@@ -835,8 +835,9 @@ _spare_dev_put()
+ # to make sure it has the enough scratch devices including
+ # replace-target and spare device. Now arg1 here is the
+ # required number of scratch devices by a-test-case excluding
+-# the replace-target and spare device. So this function will
+-# set SCRATCH_DEV_POOL to the specified number of devices.
++# the replace-target and spare device. So, this function sets
++# SCRATCH_DEV_POOL to the specified number of devices and also
++# sets a SCRATCH_DEV_NAME array with the names of the devices.
+ #
+ # Usage:
+ #  _scratch_dev_pool_get() <ndevs>
+@@ -867,19 +868,28 @@ _scratch_dev_pool_get()
+ 	export SCRATCH_DEV_POOL_SAVED
+ 	SCRATCH_DEV_POOL=${devs[@]:0:$test_ndevs}
+ 	export SCRATCH_DEV_POOL
++	SCRATCH_DEV_NAME=( $SCRATCH_DEV_POOL )
++	export SCRATCH_DEV_NAME
+ }
  
- int __init btrfs_ctree_init(void)
+ _scratch_dev_pool_put()
  {
--	btrfs_path_cachep = KMEM_CACHE(btrfs_path, SLAB_MEM_SPREAD);
-+	btrfs_path_cachep = KMEM_CACHE(btrfs_path, 0);
- 	if (!btrfs_path_cachep)
- 		return -ENOMEM;
- 	return 0;
-diff --git a/fs/btrfs/defrag.c b/fs/btrfs/defrag.c
-index 6d3abfcf92d4..4f9e78a94a0a 100644
---- a/fs/btrfs/defrag.c
-+++ b/fs/btrfs/defrag.c
-@@ -1516,7 +1516,7 @@ int __init btrfs_auto_defrag_init(void)
- {
- 	btrfs_inode_defrag_cachep = kmem_cache_create("btrfs_inode_defrag",
- 					sizeof(struct inode_defrag), 0,
--					SLAB_MEM_SPREAD,
-+					0,
- 					NULL);
- 	if (!btrfs_inode_defrag_cachep)
- 		return -ENOMEM;
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index 0a7a40d97e91..dd6f566a383f 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -28,7 +28,7 @@ static struct kmem_cache *delayed_node_cache;
++	local ret1
++	local ret2
++
+ 	typeset -p SCRATCH_DEV_POOL_SAVED >/dev/null 2>&1
+-	if [ $? -ne 0 ]; then
++	ret1=$?
++	typeset -p SCRATCH_DEV_NAME >/dev/null 2>&1
++	ret2=$?
++	if [[ $ret1 -ne 0 || $ret2 -ne 0 ]]; then
+ 		_fail "Bug: unset val, must call _scratch_dev_pool_get before _scratch_dev_pool_put"
+ 	fi
  
- int __init btrfs_delayed_inode_init(void)
- {
--	delayed_node_cache = KMEM_CACHE(btrfs_delayed_node, SLAB_MEM_SPREAD);
-+	delayed_node_cache = KMEM_CACHE(btrfs_delayed_node, 0);
- 	if (!delayed_node_cache)
- 		return -ENOMEM;
- 	return 0;
-diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index c90efc20b8b2..7c5377151a1f 100644
---- a/fs/btrfs/delayed-ref.c
-+++ b/fs/btrfs/delayed-ref.c
-@@ -1308,22 +1308,22 @@ void __cold btrfs_delayed_ref_exit(void)
- int __init btrfs_delayed_ref_init(void)
- {
- 	btrfs_delayed_ref_head_cachep = KMEM_CACHE(btrfs_delayed_ref_head,
--						   SLAB_MEM_SPREAD);
-+						   0);
- 	if (!btrfs_delayed_ref_head_cachep)
- 		goto fail;
+-	if [ -z "$SCRATCH_DEV_POOL_SAVED" ]; then
++	if [[ -z "$SCRATCH_DEV_POOL_SAVED" || -z "${SCRATCH_DEV_NAME[@]}" ]]; then
+ 		_fail "Bug: str empty, must call _scratch_dev_pool_get before _scratch_dev_pool_put"
+ 	fi
  
- 	btrfs_delayed_tree_ref_cachep = KMEM_CACHE(btrfs_delayed_tree_ref,
--						   SLAB_MEM_SPREAD);
-+						   0);
- 	if (!btrfs_delayed_tree_ref_cachep)
- 		goto fail;
- 
- 	btrfs_delayed_data_ref_cachep = KMEM_CACHE(btrfs_delayed_data_ref,
--						   SLAB_MEM_SPREAD);
-+						   0);
- 	if (!btrfs_delayed_data_ref_cachep)
- 		goto fail;
- 
- 	btrfs_delayed_extent_op_cachep = KMEM_CACHE(btrfs_delayed_extent_op,
--						    SLAB_MEM_SPREAD);
-+						    0);
- 	if (!btrfs_delayed_extent_op_cachep)
- 		goto fail;
- 
-diff --git a/fs/btrfs/extent-io-tree.c b/fs/btrfs/extent-io-tree.c
-index 6b923c0ef4ea..102572e31636 100644
---- a/fs/btrfs/extent-io-tree.c
-+++ b/fs/btrfs/extent-io-tree.c
-@@ -1884,7 +1884,7 @@ int __init extent_state_init_cachep(void)
- {
- 	extent_state_cache = kmem_cache_create("btrfs_extent_state",
- 			sizeof(struct extent_state), 0,
--			SLAB_MEM_SPREAD, NULL);
-+			0, NULL);
- 	if (!extent_state_cache)
- 		return -ENOMEM;
- 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index bfef67c68221..e779a85e752f 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -147,7 +147,7 @@ int __init extent_buffer_init_cachep(void)
- {
- 	extent_buffer_cache = kmem_cache_create("btrfs_extent_buffer",
- 			sizeof(struct extent_buffer), 0,
--			SLAB_MEM_SPREAD, NULL);
-+			0, NULL);
- 	if (!extent_buffer_cache)
- 		return -ENOMEM;
- 
-diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-index ea08601988de..692d62b2fab2 100644
---- a/fs/btrfs/extent_map.c
-+++ b/fs/btrfs/extent_map.c
-@@ -16,7 +16,7 @@ int __init extent_map_init(void)
- {
- 	extent_map_cache = kmem_cache_create("btrfs_extent_map",
- 			sizeof(struct extent_map), 0,
--			SLAB_MEM_SPREAD, NULL);
-+			0, NULL);
- 	if (!extent_map_cache)
- 		return -ENOMEM;
- 	return 0;
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index d984912dae06..c8a05d5eb9cb 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -4154,13 +4154,13 @@ int btrfs_set_free_space_cache_v1_active(struct btrfs_fs_info *fs_info, bool act
- 
- int __init btrfs_free_space_init(void)
- {
--	btrfs_free_space_cachep = KMEM_CACHE(btrfs_free_space, SLAB_MEM_SPREAD);
-+	btrfs_free_space_cachep = KMEM_CACHE(btrfs_free_space, 0);
- 	if (!btrfs_free_space_cachep)
- 		return -ENOMEM;
- 
- 	btrfs_free_space_bitmap_cachep = kmem_cache_create("btrfs_free_space_bitmap",
- 							PAGE_SIZE, PAGE_SIZE,
--							SLAB_MEM_SPREAD, NULL);
-+							0, NULL);
- 	if (!btrfs_free_space_bitmap_cachep) {
- 		kmem_cache_destroy(btrfs_free_space_cachep);
- 		return -ENOMEM;
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index df55dd891137..6c4d60746af6 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -8717,7 +8717,7 @@ int __init btrfs_init_cachep(void)
- {
- 	btrfs_inode_cachep = kmem_cache_create("btrfs_inode",
- 			sizeof(struct btrfs_inode), 0,
--			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD | SLAB_ACCOUNT,
-+			SLAB_RECLAIM_ACCOUNT | SLAB_ACCOUNT,
- 			init_once);
- 	if (!btrfs_inode_cachep)
- 		goto fail;
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index 1ee2fb8dcd6a..b749ba45da2b 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -1235,7 +1235,7 @@ struct btrfs_ordered_extent *btrfs_split_ordered_extent(
- 
- int __init ordered_data_init(void)
- {
--	btrfs_ordered_extent_cache = KMEM_CACHE(btrfs_ordered_extent, SLAB_MEM_SPREAD);
-+	btrfs_ordered_extent_cache = KMEM_CACHE(btrfs_ordered_extent, 0);
- 	if (!btrfs_ordered_extent_cache)
- 		return -ENOMEM;
- 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index ea080ec2f927..2f151c5367ed 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -2672,7 +2672,7 @@ void __cold __btrfs_abort_transaction(struct btrfs_trans_handle *trans,
- int __init btrfs_transaction_init(void)
- {
- 	btrfs_trans_handle_cachep = KMEM_CACHE(btrfs_trans_handle,
--					       SLAB_TEMPORARY | SLAB_MEM_SPREAD);
-+					       SLAB_TEMPORARY);
- 	if (!btrfs_trans_handle_cachep)
- 		return -ENOMEM;
- 	return 0;
++	export SCRATCH_DEV_NAME=()
+ 	export SCRATCH_DEV_POOL=$SCRATCH_DEV_POOL_SAVED
+ 	export SCRATCH_DEV_POOL_SAVED=""
+ }
 -- 
-2.40.1
+2.39.3
 

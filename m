@@ -1,84 +1,77 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from wout3-smtp.messagingengine.com (wout3-smtp.messagingengine.com [64.147.123.19])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 30810B656
-	for <linux-btrfs@vger.kernel.org>; Thu, 29 Feb 2024 20:30:29 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 87F6C7BAEB
+	for <linux-btrfs@vger.kernel.org>; Thu, 29 Feb 2024 20:32:59 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=64.147.123.19
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1709238632; cv=none; b=n9Hjpsj3TwIWz7mTmRiscqZOirmNirZ1sHstpzSVgxRN6XUGjzP24sGGq3yGH5NkYduZ0mOFCI4bR19ryszGe6tiClIU4hviJePE0SRTYg319yzkK7qq4jC4udRvLw42fS8RHZF1GLUhGihnNvUa3t/OYd5hqpBidAJWRgnsmv4=
+	t=1709238782; cv=none; b=XnPCn8qGmwFHgofQngBOm5vRf3wMOfVghkKnTrWjhSTdl0rd2qZEeJnUR+o2M46BprSi1QAzhzq8+kjZFX2MEX3kKspzzvnRFKU/v1KXuQTFSaXZLdx8/c9Got8dTOnWAIMKzAxl9w6/JVoACtH1ag6y5smIQW/pUyjuX1QW0XU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1709238632; c=relaxed/simple;
-	bh=uTQa8B0cghK+k63WjUf8byV+UDIW2o/DKXlSFXG5s+I=;
+	s=arc-20240116; t=1709238782; c=relaxed/simple;
+	bh=rNb7QAv2ydfHFTdoNAmq+peAlZmgeFvxPF+fDEUhAMY=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=DPvld69F2emSaKo2kvEffWGhxErQ1s0nIiSjhh55GC5/OR/TubzXeXKnoSA1wDCYHoUx/35DkjyRk8XQD39QsyS3B/wVNSPxUeYBSsQZBYWnpjewCdRThRI2+Fo2IRR6L2DQnuvAacqbgwM5RleB3Rdq6ejlr+4PNPqOFVng3gk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=dJQMjD7G; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=VgqZhDds; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=uuH/PlBd; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=7X3F0t43; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	 Content-Type:Content-Disposition:In-Reply-To; b=iBpNabIJvAppSa9z+WIBEeQOj7gGlKTU5eGm3lJ6ivGrSl/tulWpEiZHG01fD0NnffKBrO7uJcPbIxdQbqyTiD2vkvvAqp6j21fYeSim9OZxDwrhlO8c0YTAgNBcgau7pM2234ZJMpDP3tYppc/3EIycT0YRt68/iVOBBBIevvU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=RqWE8bpH; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=ha/CQsGS; arc=none smtp.client-ip=64.147.123.19
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="dJQMjD7G";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="VgqZhDds";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="uuH/PlBd";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="7X3F0t43"
-Received: from imap2.dmz-prg2.suse.org (imap2.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:98])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id E40AF2236C;
-	Thu, 29 Feb 2024 20:30:25 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1709238626;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=QkwkaGuzGxuE+3XllZAfrG3PxRDWSoZy0jrbDs4mMsw=;
-	b=dJQMjD7GxD5IPjEDtTifdqndeflFTxWS1bVwkRsfQWBv4h/PjYF/o5e2fNRCR6C7F+9Uwd
-	7B1OmWfdq/noGxNPIis+bp6gqH8UgviCcKYLezrNe4nBJQQYVdsFKaKlP7GdxVB8edONs2
-	WwexJougipO9vANOgG1qPWk7tfuUUsA=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1709238626;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=QkwkaGuzGxuE+3XllZAfrG3PxRDWSoZy0jrbDs4mMsw=;
-	b=VgqZhDdsbneG8BmIondyJvfDvW6r3XOgYzjTg4i3jsJyu093lbxIKD2Cvz/71uqjbA2E8N
-	VTIwOcBPdHOMxVAg==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1709238625;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=QkwkaGuzGxuE+3XllZAfrG3PxRDWSoZy0jrbDs4mMsw=;
-	b=uuH/PlBday4Rb/LzDOlfexPOxkfh/PvLV3k1yQb5+XQHfAtpVWLkftFrAkdODK93eHDR7d
-	mPkatn91/6OgW349LpgNnVy1Rr7MyLBI47jOAhVSQkVzNff/h9sLprJPb9ahT3lASI55kS
-	QRLhxxoE7hZ5tPAPDwiKSbqaOqSusBk=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1709238625;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=QkwkaGuzGxuE+3XllZAfrG3PxRDWSoZy0jrbDs4mMsw=;
-	b=7X3F0t43j2H4i5/4Rbd6yeHDJ5iEPUFzWALyNJCjuy1uH8or93HHUKfO9lpRqHGKFYA+5X
-	twKgcjh4IgYJ+YBw==
-Received: from imap2.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap2.dmz-prg2.suse.org (Postfix) with ESMTPS id C8FCD1329E;
-	Thu, 29 Feb 2024 20:30:25 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([10.150.64.162])
-	by imap2.dmz-prg2.suse.org with ESMTPSA
-	id NQ/mMGHp4GUrBgAAn2gu4w
-	(envelope-from <dsterba@suse.cz>); Thu, 29 Feb 2024 20:30:25 +0000
-Date: Thu, 29 Feb 2024 21:23:22 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Johannes Thumshirn <jth@kernel.org>
-Cc: linux-btrfs@vger.kernel.org,
-	Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-	WA AM <waautomata@gmail.com>
-Subject: Re: [PATCH] btrfs: zoned: use zone aware sb location for scrub
-Message-ID: <20240229202322.GH2604@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <933562c5bf37ad3e03f1a6b2ab5a9eb741ee0192.1709206779.git.johannes.thumshirn@wdc.com>
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="RqWE8bpH";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="ha/CQsGS"
+Received: from compute3.internal (compute3.nyi.internal [10.202.2.43])
+	by mailout.west.internal (Postfix) with ESMTP id 4A3673200392;
+	Thu, 29 Feb 2024 15:32:58 -0500 (EST)
+Received: from mailfrontend2 ([10.202.2.163])
+  by compute3.internal (MEProxy); Thu, 29 Feb 2024 15:32:58 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
+	:content-type:content-type:date:date:from:from:in-reply-to
+	:in-reply-to:message-id:mime-version:references:reply-to:subject
+	:subject:to:to; s=fm2; t=1709238777; x=1709325177; bh=RgsTh2cDTS
+	QUS6uCF9NwpyaE58OPuaBqdqmsjIMYdto=; b=RqWE8bpHKpCr/pDTtOiNioMd+c
+	XzrfLlWplkrxR5zcB3cjIKveeMIQOPCnfdaUw7EZa+nqtzNe8pl24vf69t7hEpi3
+	6Z2kpOJCSBQAzG8QG91HlwwZnE2S803n+cg9goDHOro4T69CYMEt1p2BTZSi9Rln
+	c4Od6beA5BK+jp4Yb3VI/AR9jOBAegHFW3BpzpE6d46CYsq8RtUIzo5+cz+BEP5X
+	P7d0nJW9dbNnA5AveVrGxIPcbWm3UUibvNapnySnb7lVh1D8Te5r3ny5i1zxqRz/
+	EzutZHRYYPnHF3UM77sGUyVBjSO71PY+18mdbBtMMIhGvvadBlq57sqzDPNQ==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:cc:content-type:content-type:date:date
+	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
+	:message-id:mime-version:references:reply-to:subject:subject:to
+	:to:x-me-proxy:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=
+	fm1; t=1709238777; x=1709325177; bh=RgsTh2cDTSQUS6uCF9NwpyaE58OP
+	uaBqdqmsjIMYdto=; b=ha/CQsGSBaoillvvUJPPztStZpWSgIZm2fP52xsv4InJ
+	Yf5x91XDtkwYoTic7mT3NRgIEP0hc4KrYvKWM/NY+GZ7VsRZSpEy2J8iI0mf2TSR
+	cnLyyVVmLH2ThB/FMXzUeusLZu8aHtLLQ0hMC2PV/lBd3jcToWUQHBi8ZT55b6ib
+	i8D8e7J/LKG2OCOu1UrWHn+KEkz0oiyt9j2o9KLtT+R+GnU0k1Xpc6d3RaUxbTHz
+	IEmZBxGeb9t8Xu1dtU2HJLJCCpr2j/NIIkprvbJTyjVz5cbevMbdj+XfDuD9FBqF
+	uN5AJz0A1Rsvpj9psBrNQG/NMlPHvKReFDXYvNgMKA==
+X-ME-Sender: <xms:-engZUUutLYgWgCpBC1S16_CJAJ-LSgFDlcivmMTIblnNLc1urKfSA>
+    <xme:-engZYnN23G7B-1qZu_dob4WfYSpUEW_40wZK9sIF1gS_aMyVs8RJ2WHw_VbA0ty4
+    TMDsLtwPv8oZAY1fXs>
+X-ME-Received: <xmr:-engZYbx6zRMazNUIUP2YCC7mqUY5JJBR0qHlTRIpd09nKKjH64P9FiHdrbr7y3__xZMDzX_YEew7sAK_9fDEVg5Okc>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvledrgeelgddufeeiucetufdoteggodetrfdotf
+    fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfqfgfvpdfurfetoffkrfgpnffqhgen
+    uceurghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmne
+    cujfgurhepfffhvfevuffkfhggtggujgesthdtredttddtvdenucfhrhhomhepuehorhhi
+    shcuuehurhhkohhvuceosghorhhishessghurhdrihhoqeenucggtffrrghtthgvrhhnpe
+    ekvdekffejleelhfevhedvjeduhfejtdfhvdevieeiiedugfeugfdtjefgfeeljeenucev
+    lhhushhtvghrufhiiigvpedtnecurfgrrhgrmhepmhgrihhlfhhrohhmpegsohhrihhsse
+    gsuhhrrdhioh
+X-ME-Proxy: <xmx:-engZTWm36P_ahh4OXGB9nwnLs5PIHJeV9cTNhX6cpJWmXHPyePe_Q>
+    <xmx:-engZekmrSBbqnW3Tm9sWEMg9pR-teaJh_xY0jMmyZ2xns4AAcU0AQ>
+    <xmx:-engZYeDYegOzbagnFjb-R6jnnHkyrqsI5-bPqNJNK12ZIgre4eHwg>
+    <xmx:-engZStjDxQ90ZNKolJHzZ_731SONBJlVtG6otiyUJqQg9FplJ395w>
+Feedback-ID: i083147f8:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Thu,
+ 29 Feb 2024 15:32:57 -0500 (EST)
+Date: Thu, 29 Feb 2024 12:34:09 -0800
+From: Boris Burkov <boris@bur.io>
+To: David Sterba <dsterba@suse.cz>
+Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: Re: [PATCH 2/2] btrfs-progs: add udev rule to forget removed device
+Message-ID: <20240229203409.GA1754735@zen.localdomain>
+References: <cover.1709231441.git.boris@bur.io>
+ <80545243dec10a48562bf8a9b5d10b8ba6f16983.1709231441.git.boris@bur.io>
+ <20240229195339.GF2604@twin.jikos.cz>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -87,100 +80,67 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <933562c5bf37ad3e03f1a6b2ab5a9eb741ee0192.1709206779.git.johannes.thumshirn@wdc.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b="uuH/PlBd";
-	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=7X3F0t43
-X-Spamd-Result: default: False [-0.01 / 50.00];
-	 ARC_NA(0.00)[];
-	 HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	 R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	 RCVD_VIA_SMTP_AUTH(0.00)[];
-	 FROM_HAS_DN(0.00)[];
-	 RCPT_COUNT_THREE(0.00)[4];
-	 FREEMAIL_ENVRCPT(0.00)[gmail.com];
-	 TO_MATCH_ENVRCPT_ALL(0.00)[];
-	 MIME_GOOD(-0.10)[text/plain];
-	 REPLYTO_ADDR_EQ_FROM(0.00)[];
-	 TO_DN_SOME(0.00)[];
-	 SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:98:from];
-	 RCVD_COUNT_THREE(0.00)[3];
-	 DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	 DKIM_TRACE(0.00)[suse.cz:+];
-	 MX_GOOD(-0.01)[];
-	 DBL_BLOCKED_OPENRESOLVER(0.00)[suse.cz:dkim];
-	 FUZZY_BLOCKED(0.00)[rspamd.com];
-	 FROM_EQ_ENVFROM(0.00)[];
-	 MIME_TRACE(0.00)[0:+];
-	 FREEMAIL_CC(0.00)[vger.kernel.org,wdc.com,gmail.com];
-	 RCVD_TLS_ALL(0.00)[];
-	 BAYES_HAM(-0.00)[19.35%]
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Spam-Score: -0.01
-X-Rspamd-Queue-Id: E40AF2236C
-X-Spam-Level: 
-X-Spam-Flag: NO
-X-Spamd-Bar: /
+In-Reply-To: <20240229195339.GF2604@twin.jikos.cz>
 
-On Thu, Feb 29, 2024 at 12:43:56PM +0100, Johannes Thumshirn wrote:
-> From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+On Thu, Feb 29, 2024 at 08:53:39PM +0100, David Sterba wrote:
+> On Thu, Feb 29, 2024 at 10:36:55AM -0800, Boris Burkov wrote:
+> > Now that btrfs supports forgetting devices that don't exist, we can add
+> > a udev rule to take advantage of that. This avoids bad edge cases
+> > with cached devices in multi-device filesystems without having to rescan
+> > all the devices on every change.
+> > 
+> > Signed-of-by: Boris Burkov <boris@bur.io>
+> > ---
+> >  64-btrfs-rm.rules | 7 +++++++
+> >  Makefile          | 2 +-
+> >  2 files changed, 8 insertions(+), 1 deletion(-)
+> >  create mode 100644 64-btrfs-rm.rules
+> > 
+> > diff --git a/64-btrfs-rm.rules b/64-btrfs-rm.rules
+> > new file mode 100644
+> > index 000000000..852155d28
+> > --- /dev/null
+> > +++ b/64-btrfs-rm.rules
+> > @@ -0,0 +1,7 @@
 > 
-> At the moment scrub_supers() doesn't grab the super block's location via
-> the zoned device aware btrfs_sb_log_location() but via btrfs_sb_offset().
+> Please add a comment that explains when and why this udev rule should be
+> used.
 > 
-> This leads to checksum errors on 'scrub' as we're not accessing the
-> correct location of the super block.
-> 
-> So use btrfs_sb_log_location() for getting the super blocks location on
-> scrub.
-> 
-> Reported-by: WA AM <waautomata@gmail.com>
-> Link: http://lore.kernel.org/linux-btrfs/CANU2Z0EvUzfYxczLgGUiREoMndE9WdQnbaawV5Fv5gNXptPUKw@mail.gmail.com
-> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-> ---
->  fs/btrfs/scrub.c | 12 +++++++++++-
->  1 file changed, 11 insertions(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-> index c4bd0e60db59..3c8fd9c9fa1d 100644
-> --- a/fs/btrfs/scrub.c
-> +++ b/fs/btrfs/scrub.c
-> @@ -2812,7 +2812,10 @@ static noinline_for_stack int scrub_supers(struct scrub_ctx *sctx,
->  		gen = btrfs_get_last_trans_committed(fs_info);
->  
->  	for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
-> -		bytenr = btrfs_sb_offset(i);
-> +		ret = btrfs_sb_log_location(scrub_dev, i, 0, &bytenr);
-> +		if (ret)
-> +			goto out_free_page;
 
-This is scrub and errors can be expected so this should iterate over all
-super blocks.
+Definitely happy to add a comment.
 
-> +
->  		if (bytenr + BTRFS_SUPER_INFO_SIZE >
->  		    scrub_dev->commit_total_bytes)
->  			break;
-> @@ -2828,6 +2831,13 @@ static noinline_for_stack int scrub_supers(struct scrub_ctx *sctx,
->  	}
->  	__free_page(page);
->  	return 0;
-> +
-> +out_free_page:
-> +	spin_lock(&sctx->stat_lock);
-> +	sctx->stat.malloc_errors++;
+This is certainly the discussion I was hoping to have, as well, but I
+thiiink we just always want this? Basically if we don't have it,
+multi-device users are in danger of accidentally making a stale device
+cache between mounts. It's probably not that big of a risk in general,
+but we did hit an easier to hit variant in v5.19 at Meta.
 
-And increase the super_errors instead of malloc_errors, I checked some
-of the return values of btrfs_sb_log_location() and there's ENOENT,
-EUCLEAN and some iherited errors can't say it ENOMEM.
+OTOH, there is also the problem that this is a no-op unless the kernel
+has the patch I sent at the same time:
+btrfs: support device name lookup in forget
 
-> +	spin_unlock(&sctx->stat_lock);
-> +	__free_page(page);
-> +	return ret;
->  }
->  
->  static void scrub_workers_put(struct btrfs_fs_info *fs_info)
-> -- 
-> 2.35.3
+I don't think there is any downside to running this command which will
+simply fail on an older kernel.
+
+If this becomes ubiquitous, then we can also remove the special case for
+single device cache clearing from the btrfs unmount code.
+
+> > +SUBSYSTEM!="block", GOTO="btrfs_rm_end"
+> > +ACTION!="remove", GOTO="btrfs_rm_end"
+> > +ENV{ID_FS_TYPE}!="btrfs", GOTO="btrfs_rm_end"
+> > +
+> > +RUN+="/usr/local/bin/btrfs device scan -u $devnode"
 > 
+> Is the full path mandatory or is 'btrfs' sufficient? I think systemd
+> uses own tool of the same name.
+
+Unfortunately, it did not work for me. I saw logs saying
+/usr/lib/udev/rules.d/btrfs file not found or something like that in
+dmesg.
+
+I also considered the btrfs udev "builtin" but from experimenting and
+checking out the code, it looks like that only does device ready, not
+all device commands.
+
+> 
+> Please use long option name so it's more obvious what it does.

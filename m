@@ -1,83 +1,83 @@
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C56D813F437
-	for <linux-btrfs@vger.kernel.org>; Thu, 29 Feb 2024 20:00:48 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8EA0C7E76F
+	for <linux-btrfs@vger.kernel.org>; Thu, 29 Feb 2024 20:14:10 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1709236850; cv=none; b=FIusvXy/Ux3pYbrFWCijkjQ380ws6cqH4YE5jDsoHt5XPZnaNj0a7+dOVPkWSifIBze+4VMRZqIN7bYCs3lipUKN7n4TYVHZtoAqRyOBrFVkU2rR57cOEK/YcSOPEHyZ7WdjEOyeFBN2CzIzso5X9k4kWfxi6rHizRtu2xWAWcw=
+	t=1709237652; cv=none; b=iVbD5aFzgsYGgB7+6dnbBKfr+KgprtTxGun+ZXGwQE2GFF2gtvIZzkn2JU9Yc/Fv2In01Lak39Pq5cM1AUc82ufyXUg06Qe51xzgefW55Amm3x1gX5qAxKsr91IEh+W25OfWaZlcvlBmeJVnBF53rFVnk4nHfDKQddp97aL3lrs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1709236850; c=relaxed/simple;
-	bh=/S1YsnhyD/A7wWLrvnRTmyjYbdxqsidKYiwpk4QlxXY=;
+	s=arc-20240116; t=1709237652; c=relaxed/simple;
+	bh=9/39jl9MyYDC6+WPyySq+4kZgv2bg2TPcqvBS4PuwF0=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=Dvgf5gaHjY+/QhYdrrvz0GjXdR6kvT6g4k6cY2iEP3etqODqB6w7It30or33ZE5YRM4//CNs8OmpKUi5sjPS4OksVafnS5fzJDVAkHivQzzJIQ3eWmVSrq8Q2UuhOhs933F49ggX8Z1kCghlLkycNdUWz3c/EZjbDkynuuT344w=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=LN1JPu5U; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=QNgPSP5T; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=LN1JPu5U; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=QNgPSP5T; arc=none smtp.client-ip=195.135.223.131
+	 Content-Type:Content-Disposition:In-Reply-To; b=dnErt1n6uiYz+sI/+PafUggYuAVxJ61nzquSOrT/XjFDSn6I36ZOaWPAY2f1nGmas8yX0OJyYcW9ZBY7vqixk4oSyrqqe3lvbcpYIvNoKF+nCtL31AB9MAy8nkTg4Vw1AKIPBfvSgWRBxdwIo3Ry81D/+0FJDuIPOIi9TMoJtdk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=ENxPk2bh; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=dZ++Ahzx; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=ENxPk2bh; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=dZ++Ahzx; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="LN1JPu5U";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="QNgPSP5T";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="LN1JPu5U";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="QNgPSP5T"
-Received: from imap2.dmz-prg2.suse.org (imap2.dmz-prg2.suse.org [10.150.64.98])
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="ENxPk2bh";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="dZ++Ahzx";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="ENxPk2bh";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="dZ++Ahzx"
+Received: from imap2.dmz-prg2.suse.org (imap2.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:98])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id AF3EC1F807;
-	Thu, 29 Feb 2024 20:00:46 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id A7CCB1F807;
+	Thu, 29 Feb 2024 20:14:08 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1709236846;
+	t=1709237648;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=sR3D3UnF6Nm9Kq0n0gzy4p50dU9kLesvB9dW4gpSy9g=;
-	b=LN1JPu5UejwXv78hT+ExNJ1y4NwAeCs8N60p83bGOGx00zUs22WCHgng291Rb0fO5VdPFa
-	ZJUFt1N38Olkru1YN+K+dUzMECZYTyv+M0QI4Nh1ZNa4jTH3l2Pp6TdICuwRMXnFg4MWgN
-	BipsEskW5lWYZ+WwMj4UBDTk4a1aIgA=
+	bh=YVud7Mf0oVDAUcZi71UFTr925eL0yW/kMM5wh4LzUcM=;
+	b=ENxPk2bhtUtMTr1KLccnG9ZYlINfdz9iPJJBBav+AMVAKE9ag01iq1v0VZxV14dBp1X9xn
+	cpoWBCruD4JUzCarR18QEBNEnXEg/JOIsa8vAnRnZNNBsdbUp5tkH9XjWQtMAlAp5KwHYx
+	jZMtgR6wa+cfFxMWeIGxib2v3RrDsiY=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1709236846;
+	s=susede2_ed25519; t=1709237648;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=sR3D3UnF6Nm9Kq0n0gzy4p50dU9kLesvB9dW4gpSy9g=;
-	b=QNgPSP5TiNEXfjxQQ2eHlIHOSsYx8mXqkRT5O0q8CC7JLNNNRlDsJVuLNqZuLCheMWTlIR
-	Pm4ZheQA3nMO0nAw==
+	bh=YVud7Mf0oVDAUcZi71UFTr925eL0yW/kMM5wh4LzUcM=;
+	b=dZ++AhzxRh/JJ/BsEICFRuPKItShw25oBrcvVRVModg38IiP4V+IU3UmVhRRXowVmoMgTv
+	YwV6U/WQ00xVQSBQ==
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1709236846;
+	t=1709237648;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=sR3D3UnF6Nm9Kq0n0gzy4p50dU9kLesvB9dW4gpSy9g=;
-	b=LN1JPu5UejwXv78hT+ExNJ1y4NwAeCs8N60p83bGOGx00zUs22WCHgng291Rb0fO5VdPFa
-	ZJUFt1N38Olkru1YN+K+dUzMECZYTyv+M0QI4Nh1ZNa4jTH3l2Pp6TdICuwRMXnFg4MWgN
-	BipsEskW5lWYZ+WwMj4UBDTk4a1aIgA=
+	bh=YVud7Mf0oVDAUcZi71UFTr925eL0yW/kMM5wh4LzUcM=;
+	b=ENxPk2bhtUtMTr1KLccnG9ZYlINfdz9iPJJBBav+AMVAKE9ag01iq1v0VZxV14dBp1X9xn
+	cpoWBCruD4JUzCarR18QEBNEnXEg/JOIsa8vAnRnZNNBsdbUp5tkH9XjWQtMAlAp5KwHYx
+	jZMtgR6wa+cfFxMWeIGxib2v3RrDsiY=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1709236846;
+	s=susede2_ed25519; t=1709237648;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=sR3D3UnF6Nm9Kq0n0gzy4p50dU9kLesvB9dW4gpSy9g=;
-	b=QNgPSP5TiNEXfjxQQ2eHlIHOSsYx8mXqkRT5O0q8CC7JLNNNRlDsJVuLNqZuLCheMWTlIR
-	Pm4ZheQA3nMO0nAw==
+	bh=YVud7Mf0oVDAUcZi71UFTr925eL0yW/kMM5wh4LzUcM=;
+	b=dZ++AhzxRh/JJ/BsEICFRuPKItShw25oBrcvVRVModg38IiP4V+IU3UmVhRRXowVmoMgTv
+	YwV6U/WQ00xVQSBQ==
 Received: from imap2.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap2.dmz-prg2.suse.org (Postfix) with ESMTPS id 8ABA913451;
-	Thu, 29 Feb 2024 20:00:46 +0000 (UTC)
+	by imap2.dmz-prg2.suse.org (Postfix) with ESMTPS id 96A6513451;
+	Thu, 29 Feb 2024 20:14:08 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([10.150.64.162])
 	by imap2.dmz-prg2.suse.org with ESMTPSA
-	id R32vIW7i4GWEfwAAn2gu4w
-	(envelope-from <dsterba@suse.cz>); Thu, 29 Feb 2024 20:00:46 +0000
-Date: Thu, 29 Feb 2024 20:53:39 +0100
+	id fe6eJJDl4GUuAwAAn2gu4w
+	(envelope-from <dsterba@suse.cz>); Thu, 29 Feb 2024 20:14:08 +0000
+Date: Thu, 29 Feb 2024 21:07:01 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Boris Burkov <boris@bur.io>
-Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH 2/2] btrfs-progs: add udev rule to forget removed device
-Message-ID: <20240229195339.GF2604@twin.jikos.cz>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
+Subject: Re: [PATCH v2] btrfs: qgroup: allow quick inherit if a snapshot if
+ created and added to the same parent
+Message-ID: <20240229200701.GG2604@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <cover.1709231441.git.boris@bur.io>
- <80545243dec10a48562bf8a9b5d10b8ba6f16983.1709231441.git.boris@bur.io>
+References: <77ffdac5a4f20ae19c35142f03f59fb1a086495b.1709177609.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -86,15 +86,15 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <80545243dec10a48562bf8a9b5d10b8ba6f16983.1709231441.git.boris@bur.io>
+In-Reply-To: <77ffdac5a4f20ae19c35142f03f59fb1a086495b.1709177609.git.wqu@suse.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Authentication-Results: smtp-out2.suse.de;
-	none
-X-Spam-Level: 
-X-Spam-Score: -4.00
-X-Spamd-Result: default: False [-4.00 / 50.00];
+	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b=ENxPk2bh;
+	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=dZ++Ahzx
+X-Spamd-Result: default: False [-0.07 / 50.00];
 	 ARC_NA(0.00)[];
 	 HAS_REPLYTO(0.30)[dsterba@suse.cz];
+	 R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
 	 RCVD_VIA_SMTP_AUTH(0.00)[];
 	 FROM_HAS_DN(0.00)[];
 	 RCPT_COUNT_THREE(0.00)[3];
@@ -102,47 +102,58 @@ X-Spamd-Result: default: False [-4.00 / 50.00];
 	 TO_MATCH_ENVRCPT_ALL(0.00)[];
 	 MIME_GOOD(-0.10)[text/plain];
 	 REPLYTO_ADDR_EQ_FROM(0.00)[];
-	 NEURAL_HAM_LONG(-1.00)[-1.000];
+	 SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:98:from];
 	 RCVD_COUNT_THREE(0.00)[3];
 	 DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	 NEURAL_HAM_SHORT(-0.20)[-1.000];
+	 DKIM_TRACE(0.00)[suse.cz:+];
+	 MX_GOOD(-0.01)[];
+	 DBL_BLOCKED_OPENRESOLVER(0.00)[suse.cz:dkim,suse.com:email];
 	 FUZZY_BLOCKED(0.00)[rspamd.com];
 	 FROM_EQ_ENVFROM(0.00)[];
 	 MIME_TRACE(0.00)[0:+];
 	 RCVD_TLS_ALL(0.00)[];
-	 BAYES_HAM(-3.00)[100.00%]
+	 BAYES_HAM(-0.06)[61.69%]
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Spam-Score: -0.07
+X-Rspamd-Queue-Id: A7CCB1F807
+X-Spam-Level: 
 X-Spam-Flag: NO
+X-Spamd-Bar: /
 
-On Thu, Feb 29, 2024 at 10:36:55AM -0800, Boris Burkov wrote:
-> Now that btrfs supports forgetting devices that don't exist, we can add
-> a udev rule to take advantage of that. This avoids bad edge cases
-> with cached devices in multi-device filesystems without having to rescan
-> all the devices on every change.
+On Thu, Feb 29, 2024 at 02:04:44PM +1030, Qu Wenruo wrote:
+> Currently "btrfs subvolume snapshot -i <qgroupid>" would always mark the
+> qgroup inconsistent.
 > 
-> Signed-of-by: Boris Burkov <boris@bur.io>
+> This can be annoying if the fs has a lot of snapshots, and needs qgroup
+> to get the accounting for the amount of bytes it can free for each
+> snapshot.
+> 
+> Although we have the new simple quote as a solution, there is also a
+> case where we can skip the full scan, if all the following conditions
+> are met:
+> 
+> - The source subvolume belongs to a higher level parent qgroup
+> - The parent qgroup already owns all its bytes exclusively
+> - The new snapshot is also added to the same parent qgroup
+> 
+> In that case, we only need to add nodesize to the parent qgroup and
+> avoid a full rescan.
+> 
+> Add the extra quick accounting update for such inherit.
+> 
+> Reviewed-by: David Sterba <dsterba@suse.com>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 > ---
->  64-btrfs-rm.rules | 7 +++++++
->  Makefile          | 2 +-
->  2 files changed, 8 insertions(+), 1 deletion(-)
->  create mode 100644 64-btrfs-rm.rules
+>  fs/btrfs/qgroup.c | 74 ++++++++++++++++++++++++++++++++++++++++++-----
+>  1 file changed, 67 insertions(+), 7 deletions(-)
+> ---
+> Changelog:
+> v2:
+> - Move the case of source subvolume without a parent into
+>   qgroup_snapshot_quick_inherit()
 > 
-> diff --git a/64-btrfs-rm.rules b/64-btrfs-rm.rules
-> new file mode 100644
-> index 000000000..852155d28
-> --- /dev/null
-> +++ b/64-btrfs-rm.rules
-> @@ -0,0 +1,7 @@
+> - Exit early if the source subvolume has too many parents
+> 
+> - Small commit message update on the last sentence
 
-Please add a comment that explains when and why this udev rule should be
-used.
-
-> +SUBSYSTEM!="block", GOTO="btrfs_rm_end"
-> +ACTION!="remove", GOTO="btrfs_rm_end"
-> +ENV{ID_FS_TYPE}!="btrfs", GOTO="btrfs_rm_end"
-> +
-> +RUN+="/usr/local/bin/btrfs device scan -u $devnode"
-
-Is the full path mandatory or is 'btrfs' sufficient? I think systemd
-uses own tool of the same name.
-
-Please use long option name so it's more obvious what it does.
+Reviewed-by: David Sterba <dsterba@suse.com>

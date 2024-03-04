@@ -1,183 +1,189 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0BDF961677;
-	Mon,  4 Mar 2024 17:32:12 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 14D456214E
+	for <linux-btrfs@vger.kernel.org>; Mon,  4 Mar 2024 18:14:43 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1709573536; cv=none; b=XQiS7T7UoULCJ2oKyjYveXgSW149dbCQlFU4lriEd+cGy804bE9HK7su7yZfKAmiv0w7y4H3vLSXlKI5DJ0dk/3eWx4+ypeip/T71bvlwbDZ4B8uGcw0+SML6csPv1ULNaseg4PADXaSy1+va4dZ6N6UIbMIxbppHsyNZoW2Qro=
+	t=1709576086; cv=none; b=SbZk6qv93gKwx6QPe9SOHgZwa8sSihCWZjydRTf/vPJH1yWqJRmWh2dg77n4K7t1oeRn1sd1/bVJrxrpg3jfUh4HAj0gBCbEvX3wYF8brkCSXZESCeKruvz4E+7aJp7oLvn8giZn7YJpodTkdgDEr4wjUoHKgjYLefiBDmwY/qo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1709573536; c=relaxed/simple;
-	bh=mLp0dR6ersKKmliuhWp/ktZUlkkHWwNj7i7viIpAOh4=;
+	s=arc-20240116; t=1709576086; c=relaxed/simple;
+	bh=ohnvgYnX9uN+KKgEIBDxvsteXBrbGQIxhqGs3ep8emE=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=A0LE/KfcQJjqtzZsYKV14T5/J+D/+s+KhdTwWTH2lcaSJrfGDtgkLP7tzV6qpoc2RubnVX06eKnBXGS1s/LeueAQ5x6b7a23dOMkvB3IUhp4iVH5w4VVBSRvLrkKX+kPNNHJg1Ik8vswm/194Ne1Y9RQoDBIuY+rle3Ne2COpwU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=GSo2nkQN; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=jsyLO5wN; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=GSo2nkQN; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=jsyLO5wN; arc=none smtp.client-ip=195.135.223.130
+	 Content-Type:Content-Disposition:In-Reply-To; b=NXeSktTOWfCFu25K110j7t3Qd5qc9AsmQvvi3XQmcCv8+28SoD9cLE8/FTGnHx1LEH0Ev6MmkCVXon6yhAHy3olZpo+ZUnc6jXLV0ABT4B87A2PfwsD7ol1oNqub5xo+DoUihlN74Ci9/RJlnGORszMOaiG3GpRExmsJKIbKhhE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=z38ET0jl; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=kb5TXagP; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=z38ET0jl; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=kb5TXagP; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="GSo2nkQN";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="jsyLO5wN";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="GSo2nkQN";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="jsyLO5wN"
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="z38ET0jl";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="kb5TXagP";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="z38ET0jl";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="kb5TXagP"
 Received: from imap2.dmz-prg2.suse.org (imap2.dmz-prg2.suse.org [10.150.64.98])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 13D8E3393F;
-	Mon,  4 Mar 2024 17:32:11 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 3531E20059;
+	Mon,  4 Mar 2024 18:14:42 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1709573531;
+	t=1709576082;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=+T5l97lx5gDM8mhAfnqC8zMQ315SMtT6LNM2AgQYNqI=;
-	b=GSo2nkQNKLxq9PDwFG9cDBn7dq+dvh1P8olnpzcwhrG4y2Byhq2Zr1cp937SwJ5liQQ7Oh
-	HuwuElhLMomGXn2UzpzmnVjbyXdU5OC3r8SIKWO/zIEgPL9zjZIAIoJNbLGJJ59uU+ojVL
-	zJahxfQqGYu0tBb0+7VTMwCVHb9x31g=
+	bh=Puxnx/Dr6iFysNxSk+tgKIjCdYabVKAmTtBnwqhBEO0=;
+	b=z38ET0jl2cM5LeTiqeM/diEHRHJZNlCnPX5K0/T0y6MmAr9HWL90440+XVVMeGbxIEgki+
+	46WB3r77Po/V56z2CsX7x3vys1h1I6pcYyjWYOf6l+4sBVrANeukZAjzPJx5zldR1k4ps5
+	u5t5DvtULvd4doBSg2hHOC/r5iv1J0M=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1709573531;
+	s=susede2_ed25519; t=1709576082;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=+T5l97lx5gDM8mhAfnqC8zMQ315SMtT6LNM2AgQYNqI=;
-	b=jsyLO5wNF7i9EpkPqF8F5nQMfkG+jZ104auQtxTkoxhkrLQQ/9T/OEpgRi/fzbk1pV+gps
-	sgV5CUdV7c5uMwAg==
+	bh=Puxnx/Dr6iFysNxSk+tgKIjCdYabVKAmTtBnwqhBEO0=;
+	b=kb5TXagPQgrQub1/VK8DYoMg6Ik3Ua7lpbpW4ETQOQ5sJMmtwYAcQ5d3TM97G/8WRLwQ2S
+	fL7C7uMz82vH00BQ==
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1709573531;
+	t=1709576082;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=+T5l97lx5gDM8mhAfnqC8zMQ315SMtT6LNM2AgQYNqI=;
-	b=GSo2nkQNKLxq9PDwFG9cDBn7dq+dvh1P8olnpzcwhrG4y2Byhq2Zr1cp937SwJ5liQQ7Oh
-	HuwuElhLMomGXn2UzpzmnVjbyXdU5OC3r8SIKWO/zIEgPL9zjZIAIoJNbLGJJ59uU+ojVL
-	zJahxfQqGYu0tBb0+7VTMwCVHb9x31g=
+	bh=Puxnx/Dr6iFysNxSk+tgKIjCdYabVKAmTtBnwqhBEO0=;
+	b=z38ET0jl2cM5LeTiqeM/diEHRHJZNlCnPX5K0/T0y6MmAr9HWL90440+XVVMeGbxIEgki+
+	46WB3r77Po/V56z2CsX7x3vys1h1I6pcYyjWYOf6l+4sBVrANeukZAjzPJx5zldR1k4ps5
+	u5t5DvtULvd4doBSg2hHOC/r5iv1J0M=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1709573531;
+	s=susede2_ed25519; t=1709576082;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=+T5l97lx5gDM8mhAfnqC8zMQ315SMtT6LNM2AgQYNqI=;
-	b=jsyLO5wNF7i9EpkPqF8F5nQMfkG+jZ104auQtxTkoxhkrLQQ/9T/OEpgRi/fzbk1pV+gps
-	sgV5CUdV7c5uMwAg==
+	bh=Puxnx/Dr6iFysNxSk+tgKIjCdYabVKAmTtBnwqhBEO0=;
+	b=kb5TXagPQgrQub1/VK8DYoMg6Ik3Ua7lpbpW4ETQOQ5sJMmtwYAcQ5d3TM97G/8WRLwQ2S
+	fL7C7uMz82vH00BQ==
 Received: from imap2.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap2.dmz-prg2.suse.org (Postfix) with ESMTPS id F113913419;
-	Mon,  4 Mar 2024 17:32:10 +0000 (UTC)
+	by imap2.dmz-prg2.suse.org (Postfix) with ESMTPS id 1DC7F139C6;
+	Mon,  4 Mar 2024 18:14:42 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([10.150.64.162])
 	by imap2.dmz-prg2.suse.org with ESMTPSA
-	id GW6nOpoF5mVZEAAAn2gu4w
-	(envelope-from <dsterba@suse.cz>); Mon, 04 Mar 2024 17:32:10 +0000
-Date: Mon, 4 Mar 2024 18:25:05 +0100
+	id NocUB5IP5mVLGgAAn2gu4w
+	(envelope-from <dsterba@suse.cz>); Mon, 04 Mar 2024 18:14:42 +0000
+Date: Mon, 4 Mar 2024 19:07:36 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
-	stable@vger.kernel.org
-Subject: Re: [PATCH] btrfs: qgroup: verify btrfs_qgroup_inherit parameter
-Message-ID: <20240304172505.GL2604@suse.cz>
+To: Boris Burkov <boris@bur.io>
+Cc: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org,
+	kernel-team@fb.com
+Subject: Re: [PATCH 0/2] btrfs-progs: forget removed devices
+Message-ID: <20240304180736.GM2604@suse.cz>
 Reply-To: dsterba@suse.cz
-References: <bde2887da38aaa473ca60801b37ac735b3ab2d6d.1709003728.git.wqu@suse.com>
- <20240301120138.GJ2604@twin.jikos.cz>
- <19762dc9-2834-46fd-91ce-26a542356adb@gmx.com>
+References: <cover.1709231441.git.boris@bur.io>
+ <751eba3d-c72e-475b-8d21-e15c1d085ce0@oracle.com>
+ <20240301115442.GI2604@twin.jikos.cz>
+ <20240301154444.GB1832434@zen.localdomain>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <19762dc9-2834-46fd-91ce-26a542356adb@gmx.com>
+In-Reply-To: <20240301154444.GB1832434@zen.localdomain>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-Authentication-Results: smtp-out1.suse.de;
+Authentication-Results: smtp-out2.suse.de;
 	none
-X-Spam-Level: 
-X-Spam-Score: -3.68
-X-Spamd-Result: default: False [-3.68 / 50.00];
+X-Spamd-Result: default: False [-2.80 / 50.00];
 	 ARC_NA(0.00)[];
 	 HAS_REPLYTO(0.30)[dsterba@suse.cz];
 	 RCVD_VIA_SMTP_AUTH(0.00)[];
 	 FROM_HAS_DN(0.00)[];
 	 RCPT_COUNT_THREE(0.00)[4];
-	 FREEMAIL_ENVRCPT(0.00)[gmx.com];
+	 TO_DN_SOME(0.00)[];
 	 TO_MATCH_ENVRCPT_ALL(0.00)[];
 	 MIME_GOOD(-0.10)[text/plain];
 	 REPLYTO_ADDR_EQ_FROM(0.00)[];
-	 NEURAL_HAM_LONG(-1.00)[-1.000];
-	 TO_DN_SOME(0.00)[];
-	 BAYES_HAM(-2.68)[98.58%];
+	 BAYES_HAM(-3.00)[100.00%];
 	 RCVD_COUNT_THREE(0.00)[3];
 	 DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	 NEURAL_HAM_SHORT(-0.20)[-1.000];
-	 DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email];
-	 FREEMAIL_TO(0.00)[gmx.com];
 	 FUZZY_BLOCKED(0.00)[rspamd.com];
 	 FROM_EQ_ENVFROM(0.00)[];
 	 MIME_TRACE(0.00)[0:+];
 	 RCVD_TLS_ALL(0.00)[];
 	 MID_RHS_MATCH_FROM(0.00)[]
+X-Spam-Level: 
 X-Spam-Flag: NO
+X-Spam-Score: -2.80
 
-On Sat, Mar 02, 2024 at 06:51:58AM +1030, Qu Wenruo wrote:
-> 在 2024/3/1 22:31, David Sterba 写道:
-> > On Tue, Feb 27, 2024 at 01:45:35PM +1030, Qu Wenruo wrote:
-> >> [BUG]
-> >> Currently btrfs can create subvolume with an invalid qgroup inherit
-> >> without triggering any error:
-> >>
-> >>   # mkfs.btrfs -O quota -f $dev
-> >>   # mount $dev $mnt
-> >>   # btrfs subvolume create -i 2/0 $mnt/subv1
-> >>   # btrfs qgroup show -prce --sync $mnt
-> >>   Qgroupid    Referenced    Exclusive   Path
-> >>   --------    ----------    ---------   ----
-> >>   0/5           16.00KiB     16.00KiB   <toplevel>
-> >>   0/256         16.00KiB     16.00KiB   subv1
-> >>
-> >> [CAUSE]
-> >> We only do a very basic size check for btrfs_qgroup_inherit structure,
-> >> but never really verify if the values are correct.
-> >>
-> >> Thus in btrfs_qgroup_inherit() function, we have to skip non-existing
-> >> qgroups, and never return any error.
-> >>
-> >> [FIX]
-> >> Fix the behavior and introduce extra checks:
-> >>
-> >> - Introduce early check for btrfs_qgroup_inherit structure
-> >>    Not only the size, but also all the qgroup ids would be verifyed.
-> >>
-> >>    And the timing is very early, so we can return error early.
-> >>    This early check is very important for snapshot creation, as snapshot
-> >>    is delayed to transaction commit.
-> >>
-> >> - Drop support for btrfs_qgroup_inherit::num_ref_copies and
-> >>    num_excl_copies
-> >>    Those two members are used to specify to copy refr/excl numbers from
-> >>    other qgroups.
-> >>    This would definitely mark qgroup inconsistent, and btrfs-progs has
-> >>    dropped the support for them for a long time.
-> >>    It's time to drop the support for kernel.
-> >>
-> >> - Verify the supported btrfs_qgroup_inherit::flags
-> >>    Just in case we want to add extra flags for btrfs_qgroup_inherit.
-> >>
-> >> Now above subvolume creation would fail with -ENOENT other than silently
-> >> ignore the non-existing qgroup.
-> >>
-> >> CC: stable@vger.kernel.org
-> >> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> >
-> > Reviewed-by: David Sterba <dsterba@suse.com>
-> >
-> Just one thing to notice, this would cause certain test cases to fail,
-> as previously any incorrect qgroup inherit would just be ignored, but
-> now it would error out explicitly.
+On Fri, Mar 01, 2024 at 07:44:44AM -0800, Boris Burkov wrote:
+> On Fri, Mar 01, 2024 at 12:54:42PM +0100, David Sterba wrote:
+> > On Fri, Mar 01, 2024 at 08:01:44AM +0530, Anand Jain wrote:
+> > > On 3/1/24 00:06, Boris Burkov wrote:
+> > > > To fix bugs in multi-dev filesystems not handling a devt changing under
+> > > > them when a device gets destroyed and re-created with a different devt,
+> > > > we need to forget devices as they get removed.
+> > > > 
+> > > > Modify scan -u to take advantage of the kernel taking unvalidated block
+> > > > dev names and modify udev to invoke this scan -u on device remove.
+> > > > 
+> > > 
+> > > Unless we have a specific bug still present after the patch
+> > > "[PATCH] btrfs: validate device maj:min during open," can we
+> > > hold off on using the external udev trigger to clean up stale
+> > > devices in the btrfs kernel?
+> > > 
+> > > IMO, these loopholes have to be fixed in the kernel regardless.
+> > 
+> > Agreed, spreading the solution to user space and depending on async
+> > events would only make things harder to debug in the end.
+> 
+> In my opinion, leaving the incorrect cache around after a device is
+> destroyed is a footgun and a recipe for future error.
 
-Ok, this is expected if we do fixes like that.
+I agree here partially, leaving stale cached entries can lead to bad
+outcome, but including userspace as part of the solution is again making
+it fragile and less reliable. We're not targeting the default and common
+use case, that would work with or without the fixes or udev rules.
+
+The udev event is inherently racy so if something tries to mount before
+the umount udev rule starts, no change other than we now have yet
+another factor to take into account when debugging.
+
+> Patching it up
+> with Anand's kernel-only fix will fix the problem for now,
+
+This is a general stance kernel vs user space, we can't rely on state
+correctnes on userspace, so kernel can get hints (like device scanning)
+but refuse to mount if the devices are not present.
+
+> but I would
+> not be at all surprised if there isn't a different more serious problem
+> waiting for us down the road. We're just looking at exactly devt and
+> temp_fsid, and I'm quite focused on breaking single device filesystems.
+> I spent a week or two hacking on that reproducer. Are we *confident* that
+> I couldn't do it again if I tried with all kinds of raid arrays, error
+> injection, races, etc? What about after we add three more features to
+> volume management and it's been two years?
+
+We can only add more safety checks or enforcing some feature using flags
+or options. Adding features to a layer means we need to revisit how it
+would go with the current state, something that we did with the
+temp-fsid, now we're chasing out the bugs. We did not have a good test
+coverage initially so it's more than what could be expected for a
+post-release validation.
+
+> Getting a notification on device destruction and removing our state for
+> that device is the correct fix. If things like this need to be
+> in-kernel, then why is udev the only mechanism for this kind of
+> communication? Can we get a callback from the block layer?
+
+I don't know, it sounds simple but such things can get tricky to get
+right once it's spanning more layers and state changes. I've heared too
+many horror stories from CPU or memory hotplug, the unexpected changes
+in block devices sound too similar.
+
+The approach we have is to store some state and validate it when needed,
+but we apparently lack enough information sources to make the validation
+100% reliable. I think we gained a lot of knowledge just from debugging
+that and prototyping the counter examples but I'm observing we may not
+have means for fixes.

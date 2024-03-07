@@ -1,65 +1,66 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from mail-lj1-f182.google.com (mail-lj1-f182.google.com [209.85.208.182])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D38B1E555
-	for <linux-btrfs@vger.kernel.org>; Thu,  7 Mar 2024 03:17:03 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 140E4320E
+	for <linux-btrfs@vger.kernel.org>; Thu,  7 Mar 2024 04:04:29 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.208.182
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1709781425; cv=none; b=BhL+Rwxp3gDV4esNOerr0dsdYHIys8NqIf3zbCA65X1geH4GZp6NgO2xZXLdVvVRXEkvkRdBuVDAvrbNWwjnMsRweMFgtMG3+UWVFtIVlTNV/wbhoKd/1YKc1sy+N2yPcb7hn5UCJWtoTpNFJV9oJVgPzxUQxMxRouHQKG4aVsM=
+	t=1709784272; cv=none; b=oG6nJjelfMA8OG88eNQV8Pg2IIIFlAeJVxnZt7ohWyf6gHwj6s4BPNDyKtJo9i9Y1XPKh+bmM/epmToPAcG80L/Sc2CvRrbv3xJzhDWxSv1osUWmRMS7rja5JeC0lR/IKa/NLO2R/JD4dc39fdLPOMRCyHP+zuftX7JK1Azu7tc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1709781425; c=relaxed/simple;
-	bh=5Lwv7mIfXvlXqrVRYvtcI80LGYf3xwA3K7d5HLJAxt4=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=k5Tlv4L6r3kJ9DR1ERKto3ihbrZ8DzIJUgp8XExes0xzUaepduc++fmz15UVFJ/T+ZkwmxwHj36cyGw8nilfVG0RjrHS1aUXv8NiEM4sJg5/aiXhIW3QGUhqRMTNZkBlVHTQ4cBj66mARRshA+efiqOucMOVhz+HJkxVZIyrnfs=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=hskHF/MH; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=hskHF/MH; arc=none smtp.client-ip=195.135.223.130
+	s=arc-20240116; t=1709784272; c=relaxed/simple;
+	bh=TdgXcjZ0gFsx3wo8epCRaxlR6J9zeIhqS4k5/as/6gQ=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=r2JWOaxEJyRYtzsIPVVftrmKexopBnpHzNsQU+hGX9dkuOl8LGLxK3SkOZtH3crw9VBtWxnKRjqJhAiUKbwlNBsQE5kbVFv7BAAkyYHZL80vEtyl0KPpJ/F0PvdFrjeCoM6SXHEefgvaCoiWvVpRsLgHQKPK86s4hQ92zv//Cpc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=DzT+n2sY; arc=none smtp.client-ip=209.85.208.182
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="hskHF/MH";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="hskHF/MH"
-Received: from imap2.dmz-prg2.suse.org (imap2.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:98])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 277238B898
-	for <linux-btrfs@vger.kernel.org>; Thu,  7 Mar 2024 03:17:01 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1709781421; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=eRn0nq1aN5yyOlaiwloEJ4sSHkRdf/opBRe+WS5CEig=;
-	b=hskHF/MHJ5J7MX8QWSy2C5Q6zPnK3qpLfkY23A0ypjgxf5+PXv7O+aNjBKuuzyqQqxlLP7
-	3y6s1R0cI7JKyztDiMRY5Q8suRngHHViaiPq+q3otRtyKZ5hGEndVP3sZflYnh6Sk7RNGu
-	M30uKR9lf5OB+0Pxw/tAWNkROZ7flYM=
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1709781421; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=eRn0nq1aN5yyOlaiwloEJ4sSHkRdf/opBRe+WS5CEig=;
-	b=hskHF/MHJ5J7MX8QWSy2C5Q6zPnK3qpLfkY23A0ypjgxf5+PXv7O+aNjBKuuzyqQqxlLP7
-	3y6s1R0cI7JKyztDiMRY5Q8suRngHHViaiPq+q3otRtyKZ5hGEndVP3sZflYnh6Sk7RNGu
-	M30uKR9lf5OB+0Pxw/tAWNkROZ7flYM=
-Received: from imap2.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap2.dmz-prg2.suse.org (Postfix) with ESMTPS id 1FA2813466
-	for <linux-btrfs@vger.kernel.org>; Thu,  7 Mar 2024 03:16:59 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([10.150.64.162])
-	by imap2.dmz-prg2.suse.org with ESMTPSA
-	id qAfLNKsx6WUqDgAAn2gu4w
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Thu, 07 Mar 2024 03:16:59 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 2/2] btrfs: make extent_write_locked_range() to handle subpage writeback correctly
-Date: Thu,  7 Mar 2024 13:46:39 +1030
-Message-ID: <ba4e639d53514c429aa688edfec58e378be5cf27.1709781158.git.wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="DzT+n2sY"
+Received: by mail-lj1-f182.google.com with SMTP id 38308e7fff4ca-2d3ee1c9ea9so3871821fa.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 Mar 2024 20:04:29 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1709784268; x=1710389068; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:reply-to:message-id:date
+         :subject:cc:to:from:from:to:cc:subject:date:message-id:reply-to;
+        bh=mU0wz6UDyvlpQyHB3jikCpnsOok8fq51PT6jL8U6ySM=;
+        b=DzT+n2sY7futNziYeZNM4GMoMGu0QnXpkJyY82O4xeMrKWxFHj6FE+Yd1Thvk9wRR4
+         4Ba4lewIZn8Rc8UdeUSTXR+1Trx0IW+JJsoXTStio0Ib9eygzoxmnVMPHF7k8yF8SHkS
+         3lg88kLzQaRXeojp7A7dv65aM0C/QxRHowY3/a39fvdIoW7TcABeMRj9nvI2QlUroB1V
+         xD4myKLX1ojq4NezGIqwgDMzxfnpRHb6zcveVdmnAgT7I/ThkQJD9yHGMoC0qrme5D2S
+         IIXSvcs3KLSJ2xWhrGySS5OigeKj06HzCpSrsgS2nMGJNCLBEu7qWhUSeied0hZ4Lah6
+         Xdfg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1709784268; x=1710389068;
+        h=content-transfer-encoding:mime-version:reply-to:message-id:date
+         :subject:cc:to:from:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=mU0wz6UDyvlpQyHB3jikCpnsOok8fq51PT6jL8U6ySM=;
+        b=MB8nVRAUlvH76PCNDMfEf+7APU9vCPK5lZ5nBLzMIwdISCFFFaa7YIHzDJ/5QY6ieL
+         dFOH6mBjWhzAQKjNw/pvh90AfS8gk3a0WwtKj7QsMhSOyry4a2DviYIQOX544hRUZW6V
+         +h+zagT2nDbrblHIuWMhFUVs4jUfU63KNFo4cPMhU8Koi8tbs7byF9TyqNjHeHk4bkqH
+         2y4E0n/jQe895t2ZciuzmdIoqaCxrO09KZbnlJIQnSbIsA01S5zgk3EK0FTlNXQ28Pz9
+         8Hj6EHF9SwwXkzVGJOiEsKW14zf5FeKP/VuOm4QeKTqokvuweF40ar6eL2GcHf9Q5huM
+         nRBg==
+X-Gm-Message-State: AOJu0YxPG0MwWJ9JL5vmSU2WYuUIyr6E/Aan+yjt+ky9oa89lizWADyu
+	0xpeJRYd3Rbr6j5tx6uaOWKpFSgV8I6YaIEIQh6Cjssfbw+Y7yNTNHmwqooF7k4=
+X-Google-Smtp-Source: AGHT+IHIBDqhyTY1gMWyChZCD5IRpqqZwsT9QfLWJM6MA3YdrjkIYse/hTeiLeoRjfmIEImGXX7qeg==
+X-Received: by 2002:a2e:b0c2:0:b0:2d2:92a2:9a84 with SMTP id g2-20020a2eb0c2000000b002d292a29a84mr460839ljl.43.1709784268053;
+        Wed, 06 Mar 2024 20:04:28 -0800 (PST)
+Received: from localhost.localdomain ([23.247.139.60])
+        by smtp.gmail.com with ESMTPSA id r27-20020aa79edb000000b006e60c08cbcasm6847603pfq.50.2024.03.06.20.04.25
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 06 Mar 2024 20:04:27 -0800 (PST)
+From: Su Yue <glass.su@suse.com>
+X-Google-Original-From: Su Yue <l@damenly.org>
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org,
+	Su Yue <glass.su@suse.com>,
+	Filipe Manana <fdmanana@suse.com>,
+	Qu Wenruo <wqu@suse.com>
+Subject: [PATCH v3] btrfs/172,206: call _log_writes_cleanup in _cleanup
+Date: Thu,  7 Mar 2024 12:04:08 +0800
+Message-ID: <20240307040408.15410-1-l@damenly.org>
 X-Mailer: git-send-email 2.44.0
-In-Reply-To: <cover.1709781158.git.wqu@suse.com>
-References: <cover.1709781158.git.wqu@suse.com>
+Reply-To: 20240216102550.46210-1-l@damenly.org
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -67,78 +68,69 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Level: *
-X-Spamd-Bar: +
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b="hskHF/MH"
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Spamd-Result: default: False [1.47 / 50.00];
-	 RCVD_VIA_SMTP_AUTH(0.00)[];
-	 SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:98:from];
-	 R_MISSING_CHARSET(2.50)[];
-	 TO_DN_NONE(0.00)[];
-	 BROKEN_CONTENT_TYPE(1.50)[];
-	 RCVD_COUNT_THREE(0.00)[3];
-	 DKIM_TRACE(0.00)[suse.com:+];
-	 MX_GOOD(-0.01)[];
-	 NEURAL_HAM_SHORT(-0.20)[-1.000];
-	 FROM_EQ_ENVFROM(0.00)[];
-	 MIME_TRACE(0.00)[0:+];
-	 BAYES_HAM(-0.02)[54.64%];
-	 ARC_NA(0.00)[];
-	 R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	 FROM_HAS_DN(0.00)[];
-	 DWL_DNSWL_MED(-2.00)[suse.com:dkim];
-	 TO_MATCH_ENVRCPT_ALL(0.00)[];
-	 NEURAL_HAM_LONG(-1.00)[-1.000];
-	 MIME_GOOD(-0.10)[text/plain];
-	 PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	 RCPT_COUNT_ONE(0.00)[1];
-	 DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	 MID_CONTAINS_FROM(1.00)[];
-	 DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,suse.com:email];
-	 FUZZY_BLOCKED(0.00)[rspamd.com];
-	 RCVD_TLS_ALL(0.00)[]
-X-Spam-Score: 1.47
-X-Rspamd-Queue-Id: 277238B898
-X-Spam-Flag: NO
 
-When extent_write_locked_range() generated an inline extent, it would
-set and finish the writeback for the whole page.
+From: Su Yue <glass.su@suse.com>
 
-Although currently it's safe since subpage disables inline creation,
-for the sake of consistency, let it go with subpage helpers to set and
-clear the writeback flags.
+Because block group tree requires require no-holes feature,
+_log_writes_mkfs "-O ^no-holes" fails when "-O block-group-tree" is
+given in MKFS_OPTION.
+Without explicit _log_writes_cleanup, the two tests fail with
+logwrites-test device left. And all next tests will fail due to
+SCRATCH DEVICE EBUSY.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Fix it by overriding _cleanup to call _log_writes_cleanup.
+
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: Su Yue <glass.su@suse.com>
 ---
- fs/btrfs/extent_io.c | 6 ++++--
- 1 file changed, 4 insertions(+), 2 deletions(-)
+changelog:
+v3:
+    Adjust custom _cleanup().
+v2:
+    Remove unneeded comments for _cleanup.
+    Add rvbs.
+---
+ tests/btrfs/172 | 7 +++++++
+ tests/btrfs/206 | 7 +++++++
+ 2 files changed, 14 insertions(+)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index bdd0e29ba848..0a194dd659e7 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2286,6 +2286,7 @@ void extent_write_locked_range(struct inode *inode, struct page *locked_page,
- 		u64 cur_end = min(round_down(cur, PAGE_SIZE) + PAGE_SIZE - 1, end);
- 		u32 cur_len = cur_end + 1 - cur;
- 		struct page *page;
-+		struct folio *folio;
- 		int nr = 0;
+diff --git a/tests/btrfs/172 b/tests/btrfs/172
+index f5acc6982cd7..f2997c047eff 100755
+--- a/tests/btrfs/172
++++ b/tests/btrfs/172
+@@ -13,6 +13,13 @@
+ . ./common/preamble
+ _begin_fstest auto quick log replay recoveryloop
  
- 		page = find_get_page(mapping, cur >> PAGE_SHIFT);
-@@ -2300,8 +2301,9 @@ void extent_write_locked_range(struct inode *inode, struct page *locked_page,
++_cleanup()
++{
++	cd /
++	_log_writes_cleanup &> /dev/null
++	rm -f $tmp.*
++}
++
+ # Import common functions.
+ . ./common/filter
+ . ./common/dmlogwrites
+diff --git a/tests/btrfs/206 b/tests/btrfs/206
+index f6571649076f..6ac3d27bbde3 100755
+--- a/tests/btrfs/206
++++ b/tests/btrfs/206
+@@ -14,6 +14,13 @@
+ . ./common/preamble
+ _begin_fstest auto quick log replay recoveryloop punch prealloc
  
- 		/* Make sure the mapping tag for page dirty gets cleared. */
- 		if (nr == 0) {
--			set_page_writeback(page);
--			end_page_writeback(page);
-+			folio = page_folio(page);
-+			btrfs_folio_set_writeback(fs_info, folio, cur, cur_len);
-+			btrfs_folio_clear_writeback(fs_info, folio, cur, cur_len);
- 		}
- 		if (ret) {
- 			btrfs_mark_ordered_io_finished(BTRFS_I(inode), page,
++_cleanup()
++{
++	cd /
++	_log_writes_cleanup &> /dev/null
++	rm -f $tmp.*
++}
++
+ # Import common functions.
+ . ./common/filter
+ . ./common/dmlogwrites
 -- 
 2.44.0
 

@@ -1,54 +1,54 @@
-Received: from mail-ed1-f43.google.com (mail-ed1-f43.google.com [209.85.208.43])
+Received: from mail-lj1-f179.google.com (mail-lj1-f179.google.com [209.85.208.179])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B26965D471
-	for <linux-btrfs@vger.kernel.org>; Fri,  8 Mar 2024 21:46:41 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.208.43
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 97FA250A80
+	for <linux-btrfs@vger.kernel.org>; Fri,  8 Mar 2024 21:54:38 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.208.179
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1709934403; cv=none; b=DafxlbtIL0omFcfFeZ/hSu57VKy3LCQrVMqqtq3GsvnlYrMwbygkx8K/tfRvTe3K/R7SVLhi1f6bwfWtQbrQMdI6SHaXsKunsSCnrDxqtSlxGA2Qk6/x+mIgd4IuZBvKuZSzFbWHUEGoq9p16LaVBIBbGk/M2eJi0kJnxZz60Ko=
+	t=1709934880; cv=none; b=K2dYfSdRYn5vsnxUgnH/C7rKgszxMj8hnG2EKz64T75nkTFMLHhPK3XryjZ/wgrm5b+yOGz/SaChTOE+YzFYwapcuHrnjcmcvWuUFhAIlzu7nIR6cs8jHKPoThKksi/eatz9fKmDq2y9yBG5xN7IHaFzsmI/zGFYSIfQ9+7VE7U=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1709934403; c=relaxed/simple;
-	bh=zXTQXzHxnyJpcwa3u17Mqa6kH0jbArdyId7YE1uHggU=;
+	s=arc-20240116; t=1709934880; c=relaxed/simple;
+	bh=xT6y9c11YlwtcZtwKx6r82QxCE8Gox4JXnvszSPyeS4=;
 	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=Nc9uBNBBdPaHZFycBEKckUsWiJ0bfYtXs3lB62EClpgU2dbbQLcazbvqZ4gEoMGexWXdnpH12p3PdezopNPs58fpfE7c39zLBERzYaKEJmaJwqpI0tvE+eAqVZaSDkurqFFsWwcXLTw5SXx8yf+zW0U3eG9kW7uDotPlsLiNrCQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=Q3157iZM; arc=none smtp.client-ip=209.85.208.43
+	 To:Cc:Content-Type; b=Ac6bY0pbxD+zJKxtPagPSfhpirYnn5/2v+SULiVcD4g64VkfYCe1sdDRfooRZCGmd2U7sumQ7a5Eti8ZBXlCWmMSQxCom6iVwHnkG5yvh5KJFNGcqwx+NGzyIvjkE5HNzIqhAlUB6fztsPRVxjO0UcwRhtrY1YncPx/75OrXSBQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=HhtJ97Xd; arc=none smtp.client-ip=209.85.208.179
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="Q3157iZM"
-Received: by mail-ed1-f43.google.com with SMTP id 4fb4d7f45d1cf-5683093ffbbso1588054a12.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 08 Mar 2024 13:46:41 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="HhtJ97Xd"
+Received: by mail-lj1-f179.google.com with SMTP id 38308e7fff4ca-2d269b2ff48so36525741fa.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 08 Mar 2024 13:54:38 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1709934400; x=1710539200; darn=vger.kernel.org;
+        d=gmail.com; s=20230601; t=1709934877; x=1710539677; darn=vger.kernel.org;
         h=content-transfer-encoding:cc:to:subject:message-id:date:from
          :in-reply-to:references:mime-version:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=zXTQXzHxnyJpcwa3u17Mqa6kH0jbArdyId7YE1uHggU=;
-        b=Q3157iZMaW3dNLl14f78lRVUTWWZUSTJY1Q85qMTH+lIfp+0grnEe9zqZK01o20t98
-         9DkVcrF/mBrrK0lKIN0Xrro3wMQz9MjhwUPTEvNuNHDCy24rjGs9hd6yDm8aIZqvutHW
-         omUo3EkP/tgtuAOhOesQjnvr2HufzgScEykAZEJQg1wGwZTP8H8baJ5jH8zjD21nXlRx
-         F12PJ5FtbFTvqI3i5CY8U2aQkememOX2jL2SWqTMI2TSztpSern+4OJCp+O9Fiauhh3j
-         aVjq0oJsgrxfOEbBymvs34iP5TLa8n+GUSX6OJoYERL+WUjE3RZmwT9WXmcRTsw+Hlr6
-         vjnQ==
+        bh=xT6y9c11YlwtcZtwKx6r82QxCE8Gox4JXnvszSPyeS4=;
+        b=HhtJ97XdGTEBW9/79JZUaxh7/XToTdg8H1Pn7JYnbHkr75lzPpvTbenzAE+xZmWwrJ
+         fYVZV6RoFvOGRgBtssXu5yx7u2x10KwXdL6ltDXhEUmwOB1vQVm/gosDc1+uSDO8P1Km
+         wUQMLGnq6oPkfpBGDK63mnO+gI/cgjrUkYpS6woFtEy8zxWB81bCAJvXwZuNcihLffVl
+         gijb2d/SAWGUkHezlSMP6z3Rk4+8dQhbdwO1hxdvK8ovCtIBkSEjNzU1FoF/1prp8pvP
+         G+XehFSdz1/uzAmr+1VGYWmSLHxuT3EE2lq8w0KWJVbiZA7G7c5Gjuem3aopXsjb37h9
+         Gitw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1709934400; x=1710539200;
+        d=1e100.net; s=20230601; t=1709934877; x=1710539677;
         h=content-transfer-encoding:cc:to:subject:message-id:date:from
          :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=zXTQXzHxnyJpcwa3u17Mqa6kH0jbArdyId7YE1uHggU=;
-        b=f8HD6Sf0gQ7by1cfRmQGCThRfuAOl+FCLgqAtsbKdehvz68FyWrof+uJ9LPuZYr0xb
-         BxVr7vVKCL9GR2sdcrIShXjhzLUc6bNnvImfkPZO9YR86L+yf54vMkGzFBNsG/TupyDq
-         vKCGq7F2D6fkDPPDeXGj9YjdJniEI9PqVcomEg7LNHGcb31Sb6zP/WmEG/bW6v77pm2d
-         4pzad1RQgGLtdHW0pe4BBO3oaAwXqNJ6sJai0V4peIebiaZIs0hsNS2MsqyeYHqZfcFQ
-         Gvju3En4BlpA4XQCTo3PHKdPVsy+x86BPkLXx16t9VX58s3sOW25WvM2NHqWPhFonf96
-         iUwA==
-X-Gm-Message-State: AOJu0Yxwwm5gK/657+fiRpNEFp3qDP1h7SODG3qxNlhmo8GbBcV+OvY8
-	jiZDzBnr+rR5CtpLGyscEW4Wi1kp2FYhUHTOlFU+FzpjFFj8Itihkc5CwdZdyxhiNbzq6YsVYpv
-	jBSVVIsWYHkCPH775wVOfRXzZDQA=
-X-Google-Smtp-Source: AGHT+IGquSfkLqkLWP6lXlf1aYlGwCvEI0Z7aczkXO0WOGKvaemN9jRGuRgS2JKVJBbT0uCtWSHUNw77coH3JoRNebo=
-X-Received: by 2002:a50:f61e:0:b0:566:4654:4fac with SMTP id
- c30-20020a50f61e000000b0056646544facmr332284edn.5.1709934399829; Fri, 08 Mar
- 2024 13:46:39 -0800 (PST)
+        bh=xT6y9c11YlwtcZtwKx6r82QxCE8Gox4JXnvszSPyeS4=;
+        b=m20Pye90YYHKUrT/H2pyMkPXi6nzBIrnT+EeddhxoU35ad+Hr+s8tXWYxYqbr/sZdm
+         sEjCbzEpXYUI8GoZqwNKM0iSwqSZerKIqtx4pbVgzaFJHkr/nKx5Wrdfbqw7INIpZBWF
+         wcFce8UURZ3aY5SEoRQ0jFBGuXmawU3bXQSMdvwVPO62BVJdiGqpQkZTzN8TMJUxNWRn
+         mR18lQ8AUXEJMXFqRg8hTEspFCYq5rhZrbDsFjRGvlEObe2gqVVY6tCZRM68u+Ga67bt
+         lyVj7otOOxLe7T+FrMasZZbAdqtjm2PfAIKkZyf7PTU/txfOHYTu/sWDvxY52FK3RlTI
+         /5JA==
+X-Gm-Message-State: AOJu0YwmKp8C1e4ztICHZklCXZxe1oEObhO+zCrfpCQlnVNnuSZUUd7Y
+	Xs9qqTmKM8gBBzSfKBpg84vKSmg5TlaXk6EFDrwcUG2v389i5zxu9W6jMcwsHfVzP5XBDQ/qmch
+	m5vL9vUrSaBtWmg7cwNPYvBrVWlnBu/afGpAM8A==
+X-Google-Smtp-Source: AGHT+IGLxMIxnsDshUIS2E8UO9tZlt9gFDLBJxwfdjdjzPk7kKSOnJ1zFc6CtXm4v4iL7RUKSo9jOq6LzWUavPmTTwk=
+X-Received: by 2002:a2e:9844:0:b0:2d3:13ea:2214 with SMTP id
+ e4-20020a2e9844000000b002d313ea2214mr290553ljj.21.1709934876415; Fri, 08 Mar
+ 2024 13:54:36 -0800 (PST)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -56,33 +56,58 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 References: <CAOLfK3UccL8z7Xf_KSp=foS6hM8Byf5n_21uwO96=9ND=-j84A@mail.gmail.com>
-In-Reply-To: <CAOLfK3UccL8z7Xf_KSp=foS6hM8Byf5n_21uwO96=9ND=-j84A@mail.gmail.com>
+ <CA+H1V9x-pFAM-YQ1ncAqZE4e7j6R2xQXX6Ah9v1tMNf8CrW+yw@mail.gmail.com> <CAOLfK3We92ZBrvyvSDky9jrQwJNONeOE9qoaewbFCr02H8PuTw@mail.gmail.com>
+In-Reply-To: <CAOLfK3We92ZBrvyvSDky9jrQwJNONeOE9qoaewbFCr02H8PuTw@mail.gmail.com>
 From: Matthew Warren <matthewwarren101010@gmail.com>
-Date: Fri, 8 Mar 2024 16:46:28 -0500
-Message-ID: <CA+H1V9x-pFAM-YQ1ncAqZE4e7j6R2xQXX6Ah9v1tMNf8CrW+yw@mail.gmail.com>
+Date: Fri, 8 Mar 2024 16:54:25 -0500
+Message-ID: <CA+H1V9xjufQpsZHeMNmKNrV0BfuUsJ5G=x_-BEcRw7eNFhYPAw@mail.gmail.com>
 Subject: Re: raid1 root device with efi
 To: Matt Zagrabelny <mzagrabe@d.umn.edu>
 Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Fri, Mar 8, 2024 at 3:46=E2=80=AFPM Matt Zagrabelny <mzagrabe@d.umn.edu>=
+On Fri, Mar 8, 2024 at 4:48=E2=80=AFPM Matt Zagrabelny <mzagrabe@d.umn.edu>=
  wrote:
 >
-> Greetings,
+> Hi Qu and Matthew,
 >
-> I've read some conflicting info online about the best way to have a
-> raid1 btrfs root device.
+> On Fri, Mar 8, 2024 at 3:46=E2=80=AFPM Matthew Warren
+> <matthewwarren101010@gmail.com> wrote:
+> >
+> > On Fri, Mar 8, 2024 at 3:46=E2=80=AFPM Matt Zagrabelny <mzagrabe@d.umn.=
+edu> wrote:
+> > >
+> > > Greetings,
+> > >
+> > > I've read some conflicting info online about the best way to have a
+> > > raid1 btrfs root device.
+> > >
+> > > I've got two disks, with identical partitioning and I tried the
+> > > following scenario (call it scenario 1):
+> > >
+> > > partition 1: EFI
+> > > partition 2: btrfs RAID1 (/)
+> > >
+> > > There are some docs that claim that the above is possible...
+> >
+> > This is definitely possible. I use it on both my server and desktop wit=
+h GRUB.
 >
-> I've got two disks, with identical partitioning and I tried the
-> following scenario (call it scenario 1):
+> Are there any docs you follow for this setup?
 >
-> partition 1: EFI
-> partition 2: btrfs RAID1 (/)
+> Thanks for the info!
 >
-> There are some docs that claim that the above is possible...
+> -m
 
-This is definitely possible. I use it on both my server and desktop with GR=
-UB.
+The main important thing is that mdadm has several metadata versions.
+Versions 0.9 and 1.0 store the metadata at the end of the partition
+which allows UEFI to think the filesystem is EFI rather than mdadm
+raid.
+https://raid.wiki.kernel.org/index.php/RAID_superblock_formats#Sub-versions=
+_of_the_version-1_superblock
+
+I followed the arch wiki for setting it up, so here's what I followed.
+https://wiki.archlinux.org/title/EFI_system_partition#ESP_on_software_RAID1
 
 Matthew Warren

@@ -1,65 +1,51 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from mail-ej1-f42.google.com (mail-ej1-f42.google.com [209.85.218.42])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6F6B832C89
-	for <linux-btrfs@vger.kernel.org>; Fri,  8 Mar 2024 06:28:23 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 85E4A219FC
+	for <linux-btrfs@vger.kernel.org>; Fri,  8 Mar 2024 09:29:12 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.42
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1709879306; cv=none; b=EBrZXl0tnmhXPKdD1DdHTMk+SsweOrC0ebGVOnSD2kLPvnmk1BQpd0RP6/C4jYcOYYu9C5C9c15YhmoqIoQg0CLP2BZ24FYYT2eMIIk1lsJX55M5RLI8Oy5D6IgfAmFQwp3Ro6WhXLXfAsJMX3CUN6Y4rZMAh78lukDHU3TH2zE=
+	t=1709890154; cv=none; b=Ww+CM1OAVp6tPiJ8aY+ARewJxkGLRJWdeKxSCuPYXWoEr92T39p1EbBweYLQ49PbwQTdCoOT+IFVeQd+fBixuGqGsTNfPHoEhDqQeDNF5mpwiL4FFTJSoS+ODntxahXX2SseY3vZk7I4BS8RGG+mC6JWE8OR69ApifsVq0waPss=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1709879306; c=relaxed/simple;
-	bh=0mYwC1OzAdEMPdvCCunogEqz97evBKF3eHaKp4clTk8=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=eurhQf5CjCDnFO1XUysXon0FcFQjZXoJJ9byfC34/6u4q2MSMCmzt94K+D9fCAbBbpwe8bBbLWXVJ9pTNfIOzxYm4VZwkPa1VmewGklAr0gAq2P7ShUkhWS1jcqj0cN8TTtq5jaFJ9c8E1cGIjPpqzcImrsILf4UA8yt0EQKyPs=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=dmnEudcY; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=dmnEudcY; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="dmnEudcY";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="dmnEudcY"
-Received: from imap2.dmz-prg2.suse.org (imap2.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:98])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id DC2FE23AA1;
-	Fri,  8 Mar 2024 03:10:52 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1709867452; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=B0X5qbkgJ+5Xs+YLJtN4H9ii7T9pqtu+SDRgXIfQht8=;
-	b=dmnEudcYlmmiuoV3n4u+vvccego9hHSKxt5GVN+WwjhZbMuNpLdqE1+XQOdwE1An2yulk2
-	Fc0dCdI4Y/MVPfhFWC7XDg44cW8C9cAdDRqSeFuFlFPShCGU9VsNkWoDaeAAM8epv6uRZa
-	ZnkMkXeIfz8mLNTSu1fvL+K65X2Gir8=
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1709867452; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=B0X5qbkgJ+5Xs+YLJtN4H9ii7T9pqtu+SDRgXIfQht8=;
-	b=dmnEudcYlmmiuoV3n4u+vvccego9hHSKxt5GVN+WwjhZbMuNpLdqE1+XQOdwE1An2yulk2
-	Fc0dCdI4Y/MVPfhFWC7XDg44cW8C9cAdDRqSeFuFlFPShCGU9VsNkWoDaeAAM8epv6uRZa
-	ZnkMkXeIfz8mLNTSu1fvL+K65X2Gir8=
-Received: from imap2.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap2.dmz-prg2.suse.org (Postfix) with ESMTPS id D09AD1391D;
-	Fri,  8 Mar 2024 03:10:51 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([10.150.64.162])
-	by imap2.dmz-prg2.suse.org with ESMTPSA
-	id ENWCJLuB6mUkcwAAn2gu4w
-	(envelope-from <wqu@suse.com>); Fri, 08 Mar 2024 03:10:51 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org,
-	michel.palleau@gmail.com
-Subject: [PATCH 1/2] btrfs: extract the stripe length calculation into a helper
-Date: Fri,  8 Mar 2024 13:40:30 +1030
-Message-ID: <a811f9535fe4fcac68f1a349dd89e600cc15b691.1709867186.git.wqu@suse.com>
-X-Mailer: git-send-email 2.44.0
-In-Reply-To: <cover.1709867186.git.wqu@suse.com>
-References: <cover.1709867186.git.wqu@suse.com>
+	s=arc-20240116; t=1709890154; c=relaxed/simple;
+	bh=kZ3t/WKGo+LI9GUwUx3iRhjkTH5PN0VNBXzwYLIFtic=;
+	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version; b=KV/n5Y9oKYV26T0Nonv6VuunUiP2QP9uEp2i18CaZsxMo9AeBOYD6cHaYRzt1fThA+t11Spm7v16REdkXH84kVxtFzIYv5TqRF1D+y1aqiNPwnSOemPy46uHNI7yB9vqcmdR6RPsqQXMR0PiFCYv5nNpg2C2Gvwb+rBWAzCzbgY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=kernel.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.218.42
+Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=kernel.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Received: by mail-ej1-f42.google.com with SMTP id a640c23a62f3a-a3fb8b0b7acso70334666b.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 08 Mar 2024 01:29:12 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1709890151; x=1710494951;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=nA+u06lFd9KNH8FZ/gYucFV9eLpZeIs4yRD6O7LypsQ=;
+        b=HhYZRL+tI6cgUpIEdkG1cyZlwtGbFLmapSv3oRFprX+6iJFhjQmKRm10t9+uyv4XaE
+         BdWvdl68bx6ABow9CTk3wXshwzLg9bp6WQ5TGcYFi744iskgSt7CRpuEGvUf5KQinyFQ
+         Id9mfa4FYGoT6md+dVtc/EhZckhyx4Yt7KAge4pNKbgTDDDcL7YxfyNJwNEv72MZ/xec
+         VtVEz6wCHC8NcVStBng8Hg1xXLr57q3MoRgMgMlTF/t9F1tnMGNmhZTRevUCxZegYu9l
+         E6wqlccSDUiFhUiGmZDX20rerSotnePVTHC1kvVurXisKbgHDTiFJG89ZxtKeVQIpeJ3
+         KYxw==
+X-Gm-Message-State: AOJu0YwwM66Mcm+cZrKRayVYVJqYn/Z8l26eq5Hutq9QHMqdTqi3RZA6
+	5rq4tHctOqKBlApHx32rdBCiHyPUotICspauZa6bNQ8aQGMpEt3ZpJfojjfXxFI=
+X-Google-Smtp-Source: AGHT+IEU1LX6du9tCtDJTSxHUoVjSJ1elVE8bWS8xYsfhfiitOkvtuLM/LPpUE5NQNevLEZl31aXdA==
+X-Received: by 2002:a17:906:398f:b0:a45:b91f:2f95 with SMTP id h15-20020a170906398f00b00a45b91f2f95mr5127397eje.72.1709890150649;
+        Fri, 08 Mar 2024 01:29:10 -0800 (PST)
+Received: from nuc.fritz.box (p200300f6f7068b00fa633ffffe02074c.dip0.t-ipconnect.de. [2003:f6:f706:8b00:fa63:3fff:fe02:74c])
+        by smtp.gmail.com with ESMTPSA id ef17-20020a17090697d100b00a446b6d3f80sm8372130ejb.204.2024.03.08.01.29.09
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Fri, 08 Mar 2024 01:29:10 -0800 (PST)
+From: Johannes Thumshirn <jth@kernel.org>
+To: linux-btrfs@vger.kernel.org
+Cc: Johannes Thumshirn <jth@kernel.org>,
+	WA AM <waautomata@gmail.com>,
+	Qu Wenru <wqu@suse.com>,
+	Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Subject: [PATCH v3] btrfs: zoned: use zone aware sb location for scrub
+Date: Fri,  8 Mar 2024 10:28:44 +0100
+Message-Id: <4d3e8c5cd6ba3e178a1e820c318d96317ac12845.1709890038.git.jth@kernel.org>
+X-Mailer: git-send-email 2.35.3
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -67,92 +53,57 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spamd-Bar: +
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=dmnEudcY
-X-Spamd-Result: default: False [1.97 / 50.00];
-	 ARC_NA(0.00)[];
-	 RCVD_VIA_SMTP_AUTH(0.00)[];
-	 R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	 BAYES_HAM(-2.72)[98.77%];
-	 FROM_HAS_DN(0.00)[];
-	 FREEMAIL_ENVRCPT(0.00)[gmail.com];
-	 R_MISSING_CHARSET(2.50)[];
-	 TAGGED_RCPT(0.00)[];
-	 MIME_GOOD(-0.10)[text/plain];
-	 BROKEN_CONTENT_TYPE(1.50)[];
-	 TO_DN_NONE(0.00)[];
-	 RCVD_COUNT_THREE(0.00)[3];
-	 DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	 DKIM_TRACE(0.00)[suse.com:+];
-	 RCPT_COUNT_TWO(0.00)[2];
-	 MID_CONTAINS_FROM(1.00)[];
-	 MX_GOOD(-0.01)[];
-	 TO_MATCH_ENVRCPT_ALL(0.00)[];
-	 FREEMAIL_TO(0.00)[vger.kernel.org,gmail.com];
-	 FUZZY_BLOCKED(0.00)[rspamd.com];
-	 FROM_EQ_ENVFROM(0.00)[];
-	 MIME_TRACE(0.00)[0:+];
-	 RCVD_TLS_ALL(0.00)[];
-	 DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:dkim]
-X-Spam-Score: 1.97
-X-Spam-Level: *
-X-Rspamd-Queue-Id: DC2FE23AA1
-X-Spam-Flag: NO
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-Message-ID: <20240308031030.UXUplerDxJdEZcZdspVP0__TJdoN1nLN5SeEqZnKgcc@z>
 
-Currently there are two location which needs to calculate the real
-length of a stripe (which can be at the end of a chunk, and the chunk
-size may not always be 64K aligned).
+At the moment scrub_supers() doesn't grab the super block's location via
+the zoned device aware btrfs_sb_log_location() but via btrfs_sb_offset().
 
-Extract them into a helper as we're going to have a third user soon.
+This leads to checksum errors on 'scrub' as we're not accessing the
+correct location of the super block.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+So use btrfs_sb_log_location() for getting the super blocks location on
+scrub.
+
+Reported-by: WA AM <waautomata@gmail.com>
+Cc: Qu Wenru <wqu@suse.com>
+Link: http://lore.kernel.org/linux-btrfs/CANU2Z0EvUzfYxczLgGUiREoMndE9WdQnbaawV5Fv5gNXptPUKw@mail.gmail.com
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- fs/btrfs/scrub.c | 17 +++++++++++------
- 1 file changed, 11 insertions(+), 6 deletions(-)
+Changes to v2:
+- Handle -ENOENT return from btrfs_sb_log_location
+Link to v2:
+- https://lore.kernel.org/linux-btrfs/75f3da872a8c1094ef0f6ed93aac9bf774ef895b.1709554485.git.jth@kernel.org
+Changes to v1:
+- Increase super_errors
+- Don't break out after 1st error
+Link to v1:
+- https://lore.kernel.org/linux-btrfs/933562c5bf37ad3e03f1a6b2ab5a9eb741ee0192.1709206779.git.johannes.thumshirn@wdc.com
+---
+ fs/btrfs/scrub.c | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index c4bd0e60db59..8a21214eca35 100644
+index c4bd0e60db59..fa25004ab04e 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -1648,14 +1648,21 @@ static void scrub_reset_stripe(struct scrub_stripe *stripe)
- 	}
- }
+@@ -2812,7 +2812,17 @@ static noinline_for_stack int scrub_supers(struct scrub_ctx *sctx,
+ 		gen = btrfs_get_last_trans_committed(fs_info);
  
-+static u32 stripe_length(struct scrub_stripe *stripe)
-+{
-+	ASSERT(stripe->bg);
+ 	for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
+-		bytenr = btrfs_sb_offset(i);
++		ret = btrfs_sb_log_location(scrub_dev, i, 0, &bytenr);
++		if (ret == -ENOENT)
++			break;
 +
-+	return min(BTRFS_STRIPE_LEN,
-+		   stripe->bg->start + stripe->bg->length - stripe->logical);
++		if (ret) {
++			spin_lock(&sctx->stat_lock);
++			sctx->stat.super_errors++;
++			spin_unlock(&sctx->stat_lock);
++			continue;
++		}
 +
-+}
-+
- static void scrub_submit_extent_sector_read(struct scrub_ctx *sctx,
- 					    struct scrub_stripe *stripe)
- {
- 	struct btrfs_fs_info *fs_info = stripe->bg->fs_info;
- 	struct btrfs_bio *bbio = NULL;
--	unsigned int nr_sectors = min(BTRFS_STRIPE_LEN, stripe->bg->start +
--				      stripe->bg->length - stripe->logical) >>
--				  fs_info->sectorsize_bits;
-+	unsigned int nr_sectors = stripe_length(stripe) >> fs_info->sectorsize_bits;
- 	u64 stripe_len = BTRFS_STRIPE_LEN;
- 	int mirror = stripe->mirror_num;
- 	int i;
-@@ -1725,9 +1732,7 @@ static void scrub_submit_initial_read(struct scrub_ctx *sctx,
- {
- 	struct btrfs_fs_info *fs_info = sctx->fs_info;
- 	struct btrfs_bio *bbio;
--	unsigned int nr_sectors = min(BTRFS_STRIPE_LEN, stripe->bg->start +
--				      stripe->bg->length - stripe->logical) >>
--				  fs_info->sectorsize_bits;
-+	unsigned int nr_sectors = stripe_length(stripe) >> fs_info->sectorsize_bits;
- 	int mirror = stripe->mirror_num;
- 
- 	ASSERT(stripe->bg);
+ 		if (bytenr + BTRFS_SUPER_INFO_SIZE >
+ 		    scrub_dev->commit_total_bytes)
+ 			break;
 -- 
-2.44.0
+2.35.3
 

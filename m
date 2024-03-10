@@ -1,249 +1,387 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-lj1-f177.google.com (mail-lj1-f177.google.com [209.85.208.177])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 53FC734CD5;
-	Sun, 10 Mar 2024 17:17:04 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0BC91383AA;
+	Sun, 10 Mar 2024 18:11:12 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.208.177
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1710091025; cv=none; b=riPtjISybmZ1X9+EN6wMy1qbImGxOn6piVqGvOoJhdLuAe1RuJlUTmOCKvbO7rqiGKyWlYR8iNjhWw+091i7ly9A56BaV5eeqvssj/Mf/tM9dyr+Mv3rFD6ojDREQBBWQuuQC0pQ8D8Ga0HxYTSIOkWuELVhyLzZaXVP83E0pGk=
+	t=1710094275; cv=none; b=n6QYiflvU4flzeg++rCRxnm4X1P/jQawDYEg01uqj7ret8drTtGoCYRc14NYJkgmzOye65Lb5QbFtzmd7O23Xy1XATkSXh1l9QM8HLuppGzLcz4umq4h1OIH8Ke7295hmJUj1iLN4mjPvP3fow5YNBkYlkOmAJADIPUQs8d10ag=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1710091025; c=relaxed/simple;
-	bh=R5st3OtZPxFq6/X1mhigQsYpUvB5OFFyd7hUwnjq4ME=;
+	s=arc-20240116; t=1710094275; c=relaxed/simple;
+	bh=XN1a6+HBLhW5BU/9FsxOQ5YYAtcfzFgEnYY55GqLggs=;
 	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=gICRCPdHIElfPc9Yg4YtDD1OzMri3Oc5qseembznnjKXN44mWPqyH41B05MTwsqIB4HIlt+MScW4/8HaMnXhl0KffZuhWJCWitLFrAzRaPcQXUi5UN5cHF/xwgsZEfGuONoh0JN3IEHN2UoOEqZHePYX9USExc2xSyt2gF7dfRs=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=c8/XCi4B; arc=none smtp.client-ip=10.30.226.201
+	 To:Cc:Content-Type; b=P9r9LXXPbao2I65Bu8k49gpyETZ8bkV7J406utojV9dhBGQ2UZZXX0HJ26bXyB/ewlJTMLw1jpDmqYty6bGJfHTIlFm1G9uZDUAN9WIKh7XG9I3C41v+epIJsLFz6ooYq/s09lz3RkLXsz/SWfx4AhIzL7tjFLNq9GKxTRz/j2A=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=YNFvxQSs; arc=none smtp.client-ip=209.85.208.177
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="c8/XCi4B"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id CA0E7C433C7;
-	Sun, 10 Mar 2024 17:17:04 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1710091024;
-	bh=R5st3OtZPxFq6/X1mhigQsYpUvB5OFFyd7hUwnjq4ME=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-	b=c8/XCi4BmgquN48G4veBMZrCmU+Uc2CwWwNgQqdWVZ494ywFUD6qM2tP2YVCX1c5h
-	 bURdkRyFUyYS4JvZQ4K7Jhb1qVlvxPScvwi2CN08/J0D4OBlux/kRxEwdgGxsf3iZK
-	 f9Bs7DyIKwYEQ2Z85v8WC0B9eLs5OHSDTpd0lhFdQmpSGIkU2pYep0vzpPILXMsVyv
-	 TVeM2RUzdFJ+yZdfJYvvJ2FX7Nrs142Ih59z6fNzVrUurbyqHDhJmsL9Wq/KGxfDOd
-	 IvBbGH9hTTxZSzm4mruNmLqxaVY7F/P9N/WuW7dB97w/vuXHbbwZ4hROWAjLXNrr0u
-	 D1ln9ZfDLhhSQ==
-Received: by mail-ej1-f48.google.com with SMTP id a640c23a62f3a-a461c50deccso54174766b.0;
-        Sun, 10 Mar 2024 10:17:04 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AJvYcCWADhQSNWPyUzaIAtyjtMFv1HecfBVZmh2DF9fQCEUVxdAPY7pQb26hTFVhoH/KJgnosrSwJUIEnXeeZS6f8tnWbAcmskZuIA==
-X-Gm-Message-State: AOJu0YyA+iHK6/VIc5zy7W1H92f4ATc0Vkz7TrTK57cUzDv2kn6/CiR5
-	/WV7CUfQV9pE2v1QRIl9yexBv1g/UqaCzHikojvlcV2epyaqNz2dRvOWlMNV7Q4Ela+RUC8D4k1
-	F/ra7XO66PM7QzYd0QWPmWMSL/6E=
-X-Google-Smtp-Source: AGHT+IGfsIqhCETYcuLnWMEMicOfiaJKPyMkeBi+9a3G86Dq/T4ykuYLXOhKKZKQ2rrBzFk9D+0S6HYJStlBB/Ko98U=
-X-Received: by 2002:a17:906:5947:b0:a45:c931:5703 with SMTP id
- g7-20020a170906594700b00a45c9315703mr2139521ejr.70.1710091023242; Sun, 10 Mar
- 2024 10:17:03 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="YNFvxQSs"
+Received: by mail-lj1-f177.google.com with SMTP id 38308e7fff4ca-2d382a78c38so42982031fa.1;
+        Sun, 10 Mar 2024 11:11:12 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1710094271; x=1710699071; darn=vger.kernel.org;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=Mqrw6Q+LFP8qXMK/DUxJEU5Q3nQYogfywNL5K+4/HXU=;
+        b=YNFvxQSsbPRAt0LWqYfsVQEFLXWVEQ1L4R4Splt3OoODjxh1+nvMF+S2V54W482ME4
+         Udb08emty+gsshtqbI/Yz8imibwvB56bGl3h5raBg/EW+0rnGE1caisEY5HS6kC0Rclh
+         l6HFA8PgS+yYTWWbTzSKTC8nq8tJ3L7Zh09tT6VkZpWN0d6VGmJp7EESZZYefzRJZ90Q
+         hXzXtfhlTR8UOa4KV6BExKpAQT/Dteqd1V3UlKGPSNIpaNqiN4Cc5Q4QjnuWelX2S/+g
+         XotjRNelI433LcqpzorAdGhsfPz0b63CMVjgHSeTYDWw+nZ2sCDHCoOoKjt9baWFY2aj
+         yM7Q==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1710094271; x=1710699071;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=Mqrw6Q+LFP8qXMK/DUxJEU5Q3nQYogfywNL5K+4/HXU=;
+        b=hMgHSaryqtlrXeWoeM00wWdSWW68uzqJZKKGFJy0zTiUBg9ZnkM0QohsS/MeBDTGDq
+         0oUfbA3MN2Hx7XqLZWeDB7FzXqodubuFepXzFsa0wLt465N90uZIm+nGdTRBCrETb2pu
+         Lpo2mvd7mejDTOUCW6QtjpiPQtnla29m/qW8/R7TFtufudKpg2Lmvz8uV0UzGhTL6rJG
+         pWbIpJE1ZnweoX+K4o4ZZv+JBD8AzxseJ9QZSPXZsq5fw+sOZtbNmJjnExdIKrAH47yM
+         gsA2zgWcJxyx1TzJQebRnhF5r6azM2gfzQLOVpYfDAumHXRHt2gCD+rv8NR5Dmxr2d4B
+         cNHg==
+X-Forwarded-Encrypted: i=1; AJvYcCXVW6UHCAscdCUD5bl5UdkLJsS70ObKsNMXMCeLYGTHNHGx2D9RtAZZ1I5B54Vbm6qdQYV2jBjgaT5Eke/sYYw2NPuk6Rd+PrA8muuuykLoGZ1qo7Zo7IIfF2utOPtntl6Cke0TnYgfEIc=
+X-Gm-Message-State: AOJu0YxwsvOloj0nYXkWJRzeTIgMh/Umj6KjOY/qEcUSOk1L++sw8wZR
+	BCTtjKBhFE5Lsg+EcVLP0/ueiYnHRvEkCwWkgoaMKuRD2Cm/CabmqgGwVY9CEerHPpYkWCw32QD
+	gtYvC750myRDXNlKLGflK+el/Wrw=
+X-Google-Smtp-Source: AGHT+IEIV0xUkOPS6tZdzQzmgx8f0OZxJOoFaYY2bCEmdZ32mGDXIZGZwPSEl+WSlQ+yGh5T4SzF7X1yNf/9cUrG7dM=
+X-Received: by 2002:a2e:300b:0:b0:2d3:f866:fdc6 with SMTP id
+ w11-20020a2e300b000000b002d3f866fdc6mr2759565ljw.5.1710094270859; Sun, 10 Mar
+ 2024 11:11:10 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <9dde3b18f00a30cae78197c9069db503f720fe71.1709844612.git.boris@bur.io>
-In-Reply-To: <9dde3b18f00a30cae78197c9069db503f720fe71.1709844612.git.boris@bur.io>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Sun, 10 Mar 2024 17:16:26 +0000
-X-Gmail-Original-Message-ID: <CAL3q7H5FPa8336s3ZXtScvjTnUHjBaFETBa3eUDAtxzb46jBcw@mail.gmail.com>
-Message-ID: <CAL3q7H5FPa8336s3ZXtScvjTnUHjBaFETBa3eUDAtxzb46jBcw@mail.gmail.com>
-Subject: Re: [PATCH v3] btrfs: new test for devt change between mounts
-To: Boris Burkov <boris@bur.io>
-Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com, fstests@vger.kernel.org
+References: <CAOCpoWeNYsMfzh8TSnFqwAG1BhAYnNt_J+AcUNqRLF7zmJGEFA@mail.gmail.com>
+ <672e88f2-8ac3-45fe-a2e9-730800017f53@libero.it> <CAOCpoWexiuYLu0fpPr71+Uzxw_tw3q4HGF9tKgx5FM4xMx9fWA@mail.gmail.com>
+ <a1e30dab-dfde-418e-a0dd-3e294838e839@inwind.it> <CAOCpoWeB=2j+n+5K5ytj2maZxdrV80cxJcM5CL=z1bZKgpXPWQ@mail.gmail.com>
+ <a783e5ed-db56-4100-956a-353170b1b7ed@inwind.it> <ZedaKUge-EBo4CuT@redhat.com>
+ <ZeiS/bjJaRcrerWW@fedora> <CAOCpoWeoQMh_-MxzxGBnK2Kf5EhvTLs=GrGwJ5XcfGVRTp73Eg@mail.gmail.com>
+ <Ze2azGlb1WxVFv7Z@fedora> <Ze3RWqLvG18cQ4dz@redhat.com>
+In-Reply-To: <Ze3RWqLvG18cQ4dz@redhat.com>
+From: Patrick Plenefisch <simonpatp@gmail.com>
+Date: Sun, 10 Mar 2024 14:11:11 -0400
+Message-ID: <CAOCpoWf7C=B1sdeUL46sVVtVUDH8+o_T9LGJNTOYqA317uMdmA@mail.gmail.com>
+Subject: Re: LVM-on-LVM: error while submitting device barriers
+To: Mike Snitzer <snitzer@kernel.org>
+Cc: Ming Lei <ming.lei@redhat.com>, Goffredo Baroncelli <kreijack@inwind.it>, 
+	linux-kernel@vger.kernel.org, Alasdair Kergon <agk@redhat.com>, 
+	Mikulas Patocka <mpatocka@redhat.com>, Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>, 
+	David Sterba <dsterba@suse.com>, regressions@lists.linux.dev, dm-devel@lists.linux.dev, 
+	linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Fri, Mar 8, 2024 at 5:42=E2=80=AFPM Boris Burkov <boris@bur.io> wrote:
+On Sun, Mar 10, 2024 at 11:27=E2=80=AFAM Mike Snitzer <snitzer@kernel.org> =
+wrote:
 >
-> It is possible to confuse the btrfs device cache (fs_devices) by
-> starting with a multi-device filesystem, then removing and re-adding a
-> device in a way which changes its dev_t while the filesystem is
-> unmounted. After this procedure, if we remount, then we are in a funny
-> state where struct btrfs_device's "devt" field does not match the bd_dev
-> of the "bdev" field. I would say this is bad enough, as we have violated
-> a pretty clear invariant.
+> On Sun, Mar 10 2024 at  7:34P -0400,
+> Ming Lei <ming.lei@redhat.com> wrote:
 >
-> But for style points, we can then remove the extra device from the fs,
-> making it a single device fs, which enables the "temp_fsid" feature,
-> which permits multiple separate mounts of different devices with the
-> same fsid. Since btrfs is confused and *thinks* there are different
-> devices (based on device->devt), it allows a second redundant mount of
-> the same device (not a bind mount!). This then allows us to corrupt the
-> original mount by doing stuff to the one that should be a bind mount.
+> > On Sat, Mar 09, 2024 at 03:39:02PM -0500, Patrick Plenefisch wrote:
+> > > On Wed, Mar 6, 2024 at 11:00=E2=80=AFAM Ming Lei <ming.lei@redhat.com=
+> wrote:
+> > > >
+> > > > #!/usr/bin/bpftrace
+> > > >
+> > > > #ifndef BPFTRACE_HAVE_BTF
+> > > > #include <linux/blkdev.h>
+> > > > #endif
+> > > >
+> > > > kprobe:submit_bio_noacct,
+> > > > kprobe:submit_bio
+> > > > / (((struct bio *)arg0)->bi_opf & (1 << __REQ_PREFLUSH)) !=3D 0 /
+> > > > {
+> > > >         $bio =3D (struct bio *)arg0;
+> > > >         @submit_stack[arg0] =3D kstack;
+> > > >         @tracked[arg0] =3D 1;
+> > > > }
+> > > >
+> > > > kprobe:bio_endio
+> > > > /@tracked[arg0] !=3D 0/
+> > > > {
+> > > >         $bio =3D (struct bio *)arg0;
+> > > >
+> > > >         if (($bio->bi_flags & (1 << BIO_CHAIN)) && $bio->__bi_remai=
+ning.counter > 1) {
+> > > >                 return;
+> > > >         }
+> > > >
+> > > >         if ($bio->bi_status !=3D 0) {
+> > > >                 printf("dev %s bio failed %d, submitter %s completi=
+on %s\n",
+> > > >                         $bio->bi_bdev->bd_disk->disk_name,
+> > > >                         $bio->bi_status, @submit_stack[arg0], kstac=
+k);
+> > > >         }
+> > > >         delete(@submit_stack[arg0]);
+> > > >         delete(@tracked[arg0]);
+> > > > }
+> > > >
+> > > > END {
+> > > >         clear(@submit_stack);
+> > > >         clear(@tracked);
+> > > > }
+> > > >
+> > >
+> > > Attaching 4 probes...
+> > > dev dm-77 bio failed 10, submitter
+> > >        submit_bio_noacct+5
+> > >        __send_duplicate_bios+358
+> > >        __send_empty_flush+179
+> > >        dm_submit_bio+857
+> > >        __submit_bio+132
+> > >        submit_bio_noacct_nocheck+345
+> > >        write_all_supers+1718
+> > >        btrfs_commit_transaction+2342
+> > >        transaction_kthread+345
+> > >        kthread+229
+> > >        ret_from_fork+49
+> > >        ret_from_fork_asm+27
+> > > completion
+> > >        bio_endio+5
+> > >        dm_submit_bio+955
+> > >        __submit_bio+132
+> > >        submit_bio_noacct_nocheck+345
+> > >        write_all_supers+1718
+> > >        btrfs_commit_transaction+2342
+> > >        transaction_kthread+345
+> > >        kthread+229
+> > >        ret_from_fork+49
+> > >        ret_from_fork_asm+27
+> > >
+> > > dev dm-86 bio failed 10, submitter
+> > >        submit_bio_noacct+5
+> > >        write_all_supers+1718
+> > >        btrfs_commit_transaction+2342
+> > >        transaction_kthread+345
+> > >        kthread+229
+> > >        ret_from_fork+49
+> > >        ret_from_fork_asm+27
+> > > completion
+> > >        bio_endio+5
+> > >        clone_endio+295
+> > >        clone_endio+295
+> > >        process_one_work+369
+> > >        worker_thread+635
+> > >        kthread+229
+> > >        ret_from_fork+49
+> > >        ret_from_fork_asm+27
+> > >
+> > >
+> > > For context, dm-86 is /dev/lvm/brokenDisk and dm-77 is /dev/lowerVG/l=
+vmPool
+> >
+> > io_status is 10(BLK_STS_IOERR), which is produced in submission code pa=
+th on
+> > /dev/dm-77(/dev/lowerVG/lvmPool) first, so looks it is one device mappe=
+r issue.
+> >
+> > The error should be from the following code only:
+> >
+> > static void __map_bio(struct bio *clone)
+> >
+> >       ...
+> >       if (r =3D=3D DM_MAPIO_KILL)
+> >               dm_io_dec_pending(io, BLK_STS_IOERR);
+> >       else
+> >               dm_io_dec_pending(io, BLK_STS_DM_REQUEUE);
+> >     break;
 >
-> Signed-off-by: Boris Burkov <boris@bur.io>
+> I agree that the above bpf stack traces for dm-77 indicate that
+> dm_submit_bio failed, which would end up in the above branch if the
+> target's ->map() returned DM_MAPIO_KILL or DM_MAPIO_REQUEUE.
+>
+> But such an early failure speaks to the flush bio never being
+> submitted to the underlying storage. No?
+>
+> dm-raid.c:raid_map does return DM_MAPIO_REQUEUE with:
+>
+>         /*
+>          * If we're reshaping to add disk(s)), ti->len and
+>          * mddev->array_sectors will differ during the process
+>          * (ti->len > mddev->array_sectors), so we have to requeue
+>          * bios with addresses > mddev->array_sectors here or
+>          * there will occur accesses past EOD of the component
+>          * data images thus erroring the raid set.
+>          */
+>         if (unlikely(bio_end_sector(bio) > mddev->array_sectors))
+>                 return DM_MAPIO_REQUEUE;
+>
+> But a flush doesn't have an end_sector (it'd be 0 afaik).. so it seems
+> weird relative to a flush.
+>
+> > Patrick, you mentioned lvmPool is raid1, can you explain how lvmPool is
+> > built? It is dm-raid1 target or over plain raid1 device which is
+> > build over /dev/lowerVG?
 
-It fails on for-next (as expected) and it passes with the following
-patch applied:
+LVM raid1:
+lvcreate --type raid1 -m 1 ...
 
-    "btrfs: validate device maj:min during open"
+I had previously added raidintegrity and caching like
+"lowerVG/single", but I had removed them in trying to root cause this
+bug
 
-If the consensus is to use that patch as a fix, we can later add the
-_fixed_by_kernel_commit call to the test.
-Also, the test number 311 has been taken for a week now.
-
-Anyway:
-
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
-
-Thanks.
-
-> ---
-> Changelog:
-> v3:
-> - fstests convention improvements (helpers, output, comments, etc...)
-> v2:
-> - fix numerous fundamental issues, v1 wasn't really ready
 >
->  common/config       |   1 +
->  tests/btrfs/311     | 105 ++++++++++++++++++++++++++++++++++++++++++++
->  tests/btrfs/311.out |   2 +
->  3 files changed, 108 insertions(+)
->  create mode 100755 tests/btrfs/311
->  create mode 100644 tests/btrfs/311.out
+> In my earlier reply I asked Patrick for both:
+> lsblk
+> dmsetup table
+
+Oops, here they are, trimmed for relevance:
+
+
+NAME
+sdb
+=E2=94=94=E2=94=80sdb2
+  =E2=94=9C=E2=94=80lowerVG-single_corig_rmeta_1
+  =E2=94=82 =E2=94=94=E2=94=80lowerVG-single_corig
+  =E2=94=82   =E2=94=94=E2=94=80lowerVG-single
+  =E2=94=9C=E2=94=80lowerVG-single_corig_rimage_1_imeta
+  =E2=94=82 =E2=94=94=E2=94=80lowerVG-single_corig_rimage_1
+  =E2=94=82   =E2=94=94=E2=94=80lowerVG-single_corig
+  =E2=94=82     =E2=94=94=E2=94=80lowerVG-single
+  =E2=94=9C=E2=94=80lowerVG-single_corig_rimage_1_iorig
+  =E2=94=82 =E2=94=94=E2=94=80lowerVG-single_corig_rimage_1
+  =E2=94=82   =E2=94=94=E2=94=80lowerVG-single_corig
+  =E2=94=82     =E2=94=94=E2=94=80lowerVG-single
+  =E2=94=9C=E2=94=80lowerVG-lvmPool_rmeta_0
+  =E2=94=82 =E2=94=94=E2=94=80lowerVG-lvmPool
+  =E2=94=82   =E2=94=9C=E2=94=80lvm-a
+  =E2=94=82   =E2=94=94=E2=94=80lvm-brokenDisk
+  =E2=94=9C=E2=94=80lowerVG-lvmPool_rimage_0
+  =E2=94=82 =E2=94=94=E2=94=80lowerVG-lvmPool
+  =E2=94=82   =E2=94=9C=E2=94=80lvm-a
+  =E2=94=82   =E2=94=94=E2=94=80lvm-brokenDisk
+sdc
+=E2=94=94=E2=94=80sdc3
+  =E2=94=9C=E2=94=80lowerVG-single_corig_rmeta_0
+  =E2=94=82 =E2=94=94=E2=94=80lowerVG-single_corig
+  =E2=94=82   =E2=94=94=E2=94=80lowerVG-single
+  =E2=94=9C=E2=94=80lowerVG-single_corig_rimage_0_imeta
+  =E2=94=82 =E2=94=94=E2=94=80lowerVG-single_corig_rimage_0
+  =E2=94=82   =E2=94=94=E2=94=80lowerVG-single_corig
+  =E2=94=82     =E2=94=94=E2=94=80lowerVG-single
+  =E2=94=9C=E2=94=80lowerVG-single_corig_rimage_0_iorig
+  =E2=94=82 =E2=94=94=E2=94=80lowerVG-single_corig_rimage_0
+  =E2=94=82   =E2=94=94=E2=94=80lowerVG-single_corig
+  =E2=94=82     =E2=94=94=E2=94=80lowerVG-single
+sdd
+=E2=94=94=E2=94=80sdd3
+  =E2=94=9C=E2=94=80lowerVG-lvmPool_rmeta_1
+  =E2=94=82 =E2=94=94=E2=94=80lowerVG-lvmPool
+  =E2=94=82   =E2=94=9C=E2=94=80lvm-a
+  =E2=94=82   =E2=94=94=E2=94=80lvm-brokenDisk
+  =E2=94=94=E2=94=80lowerVG-lvmPool_rimage_1
+    =E2=94=94=E2=94=80lowerVG-lvmPool
+      =E2=94=9C=E2=94=80lvm-a
+      =E2=94=94=E2=94=80lvm-brokenDisk
+sdf
+=E2=94=9C=E2=94=80sdf2
+=E2=94=82 =E2=94=9C=E2=94=80lowerVG-lvmPool_rimage_1
+=E2=94=82 =E2=94=82 =E2=94=94=E2=94=80lowerVG-lvmPool
+=E2=94=82 =E2=94=82   =E2=94=9C=E2=94=80lvm-a
+=E2=94=82 =E2=94=82   =E2=94=94=E2=94=80lvm-brokenDisk
+
+
+
+lowerVG-single: 0 5583462400 cache 254:32 254:31 254:71 128 2
+metadata2 writethrough mq 0
+lowerVG-singleCache_cvol: 0 104857600 linear 259:13 104859648
+lowerVG-singleCache_cvol-cdata: 0 104775680 linear 254:30 81920
+lowerVG-singleCache_cvol-cmeta: 0 81920 linear 254:30 0
+lowerVG-single_corig: 0 5583462400 raid raid1 3 0 region_size 4096 2
+254:33 254:36 254:67 254:70
+lowerVG-single_corig_rimage_0: 0 5583462400 integrity 254:35 0 4 J 8
+meta_device:254:34 recalculate journal_sectors:130944
+interleave_sectors:1 buffer_sectors:128 journal_watermark:50
+commit_time:10000 internal_hash:crc32c
+lowerVG-single_corig_rimage_0_imeta: 0 44802048 linear 8:35 5152466944
+lowerVG-single_corig_rimage_0_iorig: 0 4724465664 linear 8:35 427821056
+lowerVG-single_corig_rimage_0_iorig: 4724465664 431005696 linear 8:35 53620=
+01920
+lowerVG-single_corig_rimage_0_iorig: 5155471360 427819008 linear 8:35 2048
+lowerVG-single_corig_rimage_0_iorig: 5583290368 172032 linear 8:35 51522949=
+12
+lowerVG-single_corig_rimage_1: 0 5583462400 integrity 254:69 0 4 J 8
+meta_device:254:68 recalculate journal_sectors:130944
+interleave_sectors:1 buffer_sectors:128 journal_watermark:50
+commit_time:10000 internal_hash:crc32c
+lowerVG-single_corig_rimage_1_imeta: 0 44802048 linear 8:18 5583472640
+lowerVG-single_corig_rimage_1_iorig: 0 5583462400 linear 8:18 10240
+lowerVG-single_corig_rmeta_0: 0 8192 linear 8:35 5152286720
+lowerVG-single_corig_rmeta_1: 0 8192 linear 8:18 2048
+lowerVG-lvmPool: 0 6442450944 raid raid1 3 0 region_size 4096 2 254:73
+254:74 254:75 254:76
+lowerVG-lvmPool_rimage_0: 0 2967117824 linear 8:18 5628282880
+lowerVG-lvmPool_rimage_0: 2967117824 59875328 linear 8:18 12070733824
+lowerVG-lvmPool_rimage_0: 3026993152 3415457792 linear 8:18 8655276032
+lowerVG-lvmPool_rimage_1: 0 2862260224 linear 8:51 10240
+lowerVG-lvmPool_rimage_1: 2862260224 164732928 linear 8:82 3415459840
+lowerVG-lvmPool_rimage_1: 3026993152 3415457792 linear 8:82 2048
+lowerVG-lvmPool_rmeta_0: 0 8192 linear 8:18 5628274688
+lowerVG-lvmPool_rmeta_1: 0 8192 linear 8:51 2048
+lvm-a: 0 1468006400 linear 254:77 1310722048
+lvm-brokenDisk: 0 1310720000 linear 254:77 2048
+lvm-brokenDisk: 1310720000 83886080 linear 254:77 2778728448
+lvm-brokenDisk: 1394606080 2015404032 linear 254:77 4427040768
+lvm-brokenDisk: 3410010112 884957184 linear 254:77 2883586048
+
+
+
+As a side note, is there a way to make lsblk only show things the
+first time they come up?
+
 >
-> diff --git a/common/config b/common/config
-> index a3b15b96f..43b517fda 100644
-> --- a/common/config
-> +++ b/common/config
-> @@ -235,6 +235,7 @@ export BLKZONE_PROG=3D"$(type -P blkzone)"
->  export GZIP_PROG=3D"$(type -P gzip)"
->  export BTRFS_IMAGE_PROG=3D"$(type -P btrfs-image)"
->  export BTRFS_MAP_LOGICAL_PROG=3D$(type -P btrfs-map-logical)
-> +export PARTED_PROG=3D"$(type -P parted)"
+> Picking over the described IO stacks provided earlier (or Goffredo's
+> interpretation of it, via ascii art) isn't really a great way to see
+> the IO stacks that are in use/question.
 >
->  # use 'udevadm settle' or 'udevsettle' to wait for lv to be settled.
->  # newer systems have udevadm command but older systems like RHEL5 don't.
-> diff --git a/tests/btrfs/311 b/tests/btrfs/311
-> new file mode 100755
-> index 000000000..a7fa541c4
-> --- /dev/null
-> +++ b/tests/btrfs/311
-> @@ -0,0 +1,105 @@
-> +#! /bin/bash
-> +# SPDX-License-Identifier: GPL-2.0
-> +# Copyright (C) 2024 Meta, Inc. All Rights Reserved.
-> +#
-> +# FS QA Test 311
-> +#
-> +# Test an edge case of multi device volume management in btrfs.
-> +# If a device changes devt between mounts of a multi device fs, we can t=
-rick
-> +# btrfs into mounting the same device twice fully (not as a bind mount).=
- From
-> +# there, it is trivial to induce corruption.
-> +#
-> +. ./common/preamble
-> +_begin_fstest auto quick volume scrub
-> +
-> +# real QA test starts here
-> +_supported_fs btrfs
-> +_require_test
-> +_require_command "$PARTED_PROG" parted
-> +_require_batched_discard "$TEST_DIR"
-> +
-> +_cleanup() {
-> +       cd /
-> +       $UMOUNT_PROG $MNT
-> +       $UMOUNT_PROG $BIND
-> +       losetup -d $DEV0
-> +       losetup -d $DEV1
-> +       losetup -d $DEV2
-> +       rm $IMG0
-> +       rm $IMG1
-> +       rm $IMG2
-> +}
-> +
-> +IMG0=3D$TEST_DIR/$$.img0
-> +IMG1=3D$TEST_DIR/$$.img1
-> +IMG2=3D$TEST_DIR/$$.img2
-> +truncate -s 1G $IMG0
-> +truncate -s 1G $IMG1
-> +truncate -s 1G $IMG2
-> +DEV0=3D$(losetup -f $IMG0 --show)
-> +DEV1=3D$(losetup -f $IMG1 --show)
-> +DEV2=3D$(losetup -f $IMG2 --show)
-> +D0P1=3D$DEV0"p1"
-> +D1P1=3D$DEV1"p1"
-> +MNT=3D$TEST_DIR/mnt
-> +BIND=3D$TEST_DIR/bind
-> +
-> +# Setup partition table with one partition on each device.
-> +$PARTED_PROG $DEV0 'mktable gpt' --script
-> +$PARTED_PROG $DEV1 'mktable gpt' --script
-> +$PARTED_PROG $DEV0 'mkpart mypart 1M 100%' --script
-> +$PARTED_PROG $DEV1 'mkpart mypart 1M 100%' --script
-> +
-> +# mkfs with two devices to avoid clearing devices on close
-> +# single raid to allow removing DEV2.
-> +$MKFS_BTRFS_PROG -f -msingle -dsingle $D0P1 $DEV2 >>$seqres.full 2>&1 ||=
- _fail "failed to mkfs.btrfs"
-> +
-> +# Cycle mount the two device fs to populate both devices into the
-> +# stale device cache.
-> +mkdir -p $MNT
-> +_mount $D0P1 $MNT
-> +$UMOUNT_PROG $MNT
-> +
-> +# Swap the partition dev_ts. This leaves the dev_t in the cache out of d=
-ate.
-> +$PARTED_PROG $DEV0 'rm 1' --script
-> +$PARTED_PROG $DEV1 'rm 1' --script
-> +$PARTED_PROG $DEV1 'mkpart mypart 1M 100%' --script
-> +$PARTED_PROG $DEV0 'mkpart mypart 1M 100%' --script
-> +
-> +# Mount with mismatched dev_t!
-> +_mount $D0P1 $MNT || _fail "failed to remount; don't proceed and do dang=
-erous stuff on raw mount point"
-> +
-> +# Remove the extra device to bring temp-fsid back in the fray.
-> +$BTRFS_UTIL_PROG device remove $DEV2 $MNT
-> +
-> +# Create the would be bind mount.
-> +mkdir -p $BIND
-> +_mount $D0P1 $BIND
-> +mount_show=3D$($BTRFS_UTIL_PROG filesystem show $MNT)
-> +bind_show=3D$($BTRFS_UTIL_PROG filesystem show $BIND)
-> +# If they're different, we are in trouble.
-> +[ "$mount_show" =3D "$bind_show" ] || echo "$mount_show !=3D $bind_show"
-> +
-> +# Now really prove it by corrupting the first mount with the second.
-> +for i in $(seq 20); do
-> +       $XFS_IO_PROG -f -c "pwrite 0 50M" $MNT/foo.$i >>$seqres.full 2>&1
-> +done
-> +for i in $(seq 20); do
-> +       $XFS_IO_PROG -f -c "pwrite 0 50M" $BIND/foo.$i >>$seqres.full 2>&=
-1
-> +done
-> +
-> +# sync so that we really write the large file data out to the shared dev=
-ice
-> +sync
-> +
-> +# now delete from one view of the shared device
-> +find $BIND -type f -delete
-> +# sync so that fstrim definitely has deleted data to trim
-> +sync
-> +# This should blow up both mounts, if the writes somehow didn't overlap =
-at all.
-> +$FSTRIM_PROG $BIND
-> +# drop caches to improve the odds we read from the corrupted device whil=
-e scrubbing.
-> +echo 3 > /proc/sys/vm/drop_caches
-> +$BTRFS_UTIL_PROG scrub start -B $MNT | grep "Error summary:"
-> +
-> +status=3D0
-> +exit
-> diff --git a/tests/btrfs/311.out b/tests/btrfs/311.out
-> new file mode 100644
-> index 000000000..70a6db809
-> --- /dev/null
-> +++ b/tests/btrfs/311.out
-> @@ -0,0 +1,2 @@
-> +QA output created by 311
-> +Error summary:    no errors found
-> --
-> 2.43.0
+> > Mike, the logic in the following code doesn't change from v5.18-rc2 to
+> > v5.19, but I still can't understand why STS_IOERR is set in
+> > dm_io_complete() in case of BLK_STS_DM_REQUEUE && !__noflush_suspending=
+(),
+> > since DMF_NOFLUSH_SUSPENDING is only set in __dm_suspend() which
+> > is supposed to not happen in Patrick's case.
+> >
+> > dm_io_complete()
+> >       ...
+> >       if (io->status =3D=3D BLK_STS_DM_REQUEUE) {
+> >               unsigned long flags;
+> >               /*
+> >                * Target requested pushing back the I/O.
+> >                */
+> >               spin_lock_irqsave(&md->deferred_lock, flags);
+> >               if (__noflush_suspending(md) &&
+> >                   !WARN_ON_ONCE(dm_is_zone_write(md, bio))) {
+> >                       /* NOTE early return due to BLK_STS_DM_REQUEUE be=
+low */
+> >                       bio_list_add_head(&md->deferred, bio);
+> >               } else {
+> >                       /*
+> >                        * noflush suspend was interrupted or this is
+> >                        * a write to a zoned target.
+> >                        */
+> >                       io->status =3D BLK_STS_IOERR;
+> >               }
+> >               spin_unlock_irqrestore(&md->deferred_lock, flags);
+> >       }
 >
+> Given the reason from dm-raid.c:raid_map returning DM_MAPIO_REQUEUE
+> I think the DM device could be suspending without flush.
 >
+> But regardless, given you logged BLK_STS_IOERR lets assume it isn't,
+> the assumption that "noflush suspend was interrupted" seems like a
+> stale comment -- especially given that target's like dm-raid are now
+> using DM_MAPIO_REQUEUE without concern for the historic tight-coupling
+> of noflush suspend (which was always the case for the biggest historic
+> reason for this code: dm-multipath, see commit 2e93ccc1933d0 from
+> 2006 -- predates my time with developing DM).
+>
+> So all said, this code seems flawed for dm-raid (and possibly other
+> targets that return DM_MAPIO_REQUEUE).  I'll look closer this week.
+>
+> Mike

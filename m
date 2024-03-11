@@ -1,214 +1,182 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from esa4.hgst.iphmx.com (esa4.hgst.iphmx.com [216.71.154.42])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6F3B0DDB0
-	for <linux-btrfs@vger.kernel.org>; Mon, 11 Mar 2024 06:09:14 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1710137356; cv=none; b=P3qGiwj0ZFlZFzjLFOewD3mxPqKl+mb3YvmcP4/y98IMcb80QYi9W8gICxtmm07HEssSF3jGmTP/LOEktr+0AgW0ou5+DRMiT/t2zRuyo201ZzUw2LZdgPZMpcSB8ljlL3WgGKqJdLgBd1c0idR3UghNXWDCgQk+DCEIdhY0r9w=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1710137356; c=relaxed/simple;
-	bh=GhUVMYO/In4zr62bJ8oB5sMN1CYVGb2JER9L+u+eDYg=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=LkSnGgBcSgPePUX9ujkeMfBHlD0qK0TMzALgnXMCKAc0nM4mYu6cMJ8Otf/SFJpVsvjkPjhCFLqcW4ZxARtZM6JmQWenPbscOCHVkrP+YBsJbsfQmLodsXwzIXh3F703CrrQ8smxfl3ydv8xKjEx0XswMP1byOxizhAGvnBz/KI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=AQRPLqYt; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=hsLR+riY; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 03D2C12B8D;
+	Mon, 11 Mar 2024 08:12:42 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=216.71.154.42
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1710144765; cv=fail; b=jw/eS/UFv1tluY/7dY/OyzIgSfZ5bdYgz7XZXJ5mI1SQTunio/WRlYjNvnky2ATlwUeXVRjCeCz65hPSvnZxypfw9dPKK6nMieSflYWrdxUou08G5mNu8P7WGW+ctzmgI22zIw2sF+L4qgk09euNNu6M8Adi+F1gQl8fEWU8aow=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1710144765; c=relaxed/simple;
+	bh=Pa4mWPM5xGeEb+426mKJO+Tw23sS2KqlELMjyIdxB9I=;
+	h=From:To:CC:Subject:Date:Message-ID:References:In-Reply-To:
+	 Content-Type:MIME-Version; b=LWstkUCJMxf0WW0NAmKXf7MBrCxiVAcKsstMTEwqnav36UyuWmcRLussycPGgdu0/aJc6q51pZKB7iQbBNPKlxe/hBn58mrvxS+ZRQg6ZhqncHb5sOVIt6akD2W1rm7UbfzF7nydyqMOTZk1pjLmF71JAmn6hdZf058ezpPCHRw=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=Nl2U+CFZ; dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b=e7545sbr; arc=fail smtp.client-ip=216.71.154.42
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="AQRPLqYt";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="hsLR+riY"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 75CD3348CA;
-	Mon, 11 Mar 2024 06:09:10 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1710137352; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=3KD6sF/a/mTucl42ApE2TcO68yBj8Q2GvTMC3XOb2+M=;
-	b=AQRPLqYtl+NcwiB1BKZNlhe4eP+0dOVaZz9QJvxa/X3g3qb4mjh8sY53Sdei3dIqOHnOUH
-	tX7GBrzaHS8NanqXj5wFcs285Kw7urtMqWFbcsIKJQbvvs7LgXOYUoH7CKr/AsIZx/XW36
-	H6lLXVsgxvLx3EJV1GzVJD05ZTWc9aQ=
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1710137350; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=3KD6sF/a/mTucl42ApE2TcO68yBj8Q2GvTMC3XOb2+M=;
-	b=hsLR+riYQJ2Xjo5mP2f/6jOKAhHRX6guKBb+7Ln8cWXSkdAz5GzoeUxFucrhS2+bcYXfZy
-	sCYb6Khb81oWADGOE4BaSYPMT0Hf1G6kfjJ7yXwGCjOOT1De8hgGatr0wypeEh7/pDGh7N
-	HgJY1pJ/7Zto9P++cq34+/Y1H+8bhJM=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 5B3B81383D;
-	Mon, 11 Mar 2024 06:09:09 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([10.150.64.162])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id IEm8BwWg7mUdQwAAD6G6ig
-	(envelope-from <wqu@suse.com>); Mon, 11 Mar 2024 06:09:09 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Christoph Anton Mitterer <calestyo@scientia.org>
-Subject: [PATCH v2 1/2] btrfs: defrag: add under utilized extent to defrag target list
-Date: Mon, 11 Mar 2024 16:38:44 +1030
-Message-ID: <91f74ea92aad1cc6c7400768ae4fa71a133873e8.1710137066.git.wqu@suse.com>
-X-Mailer: git-send-email 2.44.0
-In-Reply-To: <cover.1710137066.git.wqu@suse.com>
-References: <cover.1710137066.git.wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="Nl2U+CFZ";
+	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="e7545sbr"
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1710144763; x=1741680763;
+  h=from:to:cc:subject:date:message-id:references:
+   in-reply-to:content-id:content-transfer-encoding:
+   mime-version;
+  bh=Pa4mWPM5xGeEb+426mKJO+Tw23sS2KqlELMjyIdxB9I=;
+  b=Nl2U+CFZF+3qAgG0HgPqJfuOBsM+5Oa/mqtxa0WKLy/LU6D9y7UnRaPQ
+   2AvzptScSWE25QvBI1SfRHU/tmrkbaToCtyMUsvRQRMkwjSKOgbBXK6kr
+   ptOk43S60CHncdsshEHUFNUGcxHiir2FPaKX3l+BAXAzrZpwrLLUwiI0S
+   qZMzqE37zlMJFZyYw5dHdf2Tk80FPR//b4lQ4Mew0JiWoNi7QVKzVByHY
+   f5dPCRmpoDumtdttMM8A9uk8WtfqdLi44B+tb06IZsp/SoT8RvNP1/gPZ
+   X9bnQnFjVpOkZzcpkXF3xK9sq7p1JNpkgVuSpamEFvN7wPdYaw4BSVoO2
+   A==;
+X-CSE-ConnectionGUID: Jn48NFH3SsOpPBxAHfJEQQ==
+X-CSE-MsgGUID: Vxq4j1avTkeieudgT1X9HQ==
+X-IronPort-AV: E=Sophos;i="6.07,116,1708358400"; 
+   d="scan'208";a="10806332"
+Received: from mail-mw2nam10lp2100.outbound.protection.outlook.com (HELO NAM10-MW2-obe.outbound.protection.outlook.com) ([104.47.55.100])
+  by ob1.hgst.iphmx.com with ESMTP; 11 Mar 2024 16:12:35 +0800
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=KvAYmwqQah0vvVnm0VKgZEsA6U6uH5/m0g6SFCaMnsLWsO49Cty5k7aGMPx7HDFJLDLd6gKzR0b9ZvhU5k3z72wsliSP0hkYqBHGeAGc54WbzANt968zndP7UPjJ+8pHM4OS64ZEDWBlWPr4e/dNzTny7LGClXTeWBGk+vcK04O+QY5x/hFKXnj5Pq0ZpT/VoQP1FhuyBIZdNuEwW+TVQMNE5cGnaniN4W8FY3R+MLUDQ7xxoDFv4e6tmd/TRTqKdn8F0f791BkOWLElz2BBLz7DPArndmq21fs2eB+H4BmWlOJ4iUN+QG4iYZFC6Y6GH6c+oxTVxmenVDrLWeLUdw==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=Pa4mWPM5xGeEb+426mKJO+Tw23sS2KqlELMjyIdxB9I=;
+ b=ZqkSaB79s0mi+H7e7/zZUNfnxVssXE6B6a8BSLoSGi/s09vOhDGtjN2rBG7y5LILenasbrWwHvTXwBEQBlgrDl1GQKptPaAHmepCTtVZzDl2+AqxcvNUlMPpFEEL3jvbUigICcJRvIu4dtv6bogxdWV1HT+0+nOMr9YvoYPMO0Qa09nE/aoA/PoPKPMOTsmisHrQoluDH9kBWJnLdIZbOIoRQCT41oa12JL0CdVX3tQwC5UR/KKOYDfYRkoefu5HJDBj6FJ/Znq1OJmE8S5fcEJ5j+Sb1W4PaguMm7o6pRMHWAfAjYPBQAKi9h4Y1RxpcsQnXvbf6B5eSNM5hZyBXw==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
+ header.d=wdc.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=Pa4mWPM5xGeEb+426mKJO+Tw23sS2KqlELMjyIdxB9I=;
+ b=e7545sbrswtRaGBdY3xn56+XYC+Iew+gPmz8Gyx8LTYObWevUAIkKdYgI2a4d0tUv5/5nRvVfOOraNr8d2RYv38KSXOv1j+/Mq0jDycY0O57y0tqt7oS9iq+DcrHPfus9OxlFJ8n9D2RFfdJml3j6weovLBUymxBYQ7z/ZAWv3U=
+Received: from PH0PR04MB7416.namprd04.prod.outlook.com (2603:10b6:510:12::17)
+ by SA0PR04MB7450.namprd04.prod.outlook.com (2603:10b6:806:d9::12) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.7362.35; Mon, 11 Mar
+ 2024 08:12:33 +0000
+Received: from PH0PR04MB7416.namprd04.prod.outlook.com
+ ([fe80::a814:67f1:24ab:508e]) by PH0PR04MB7416.namprd04.prod.outlook.com
+ ([fe80::a814:67f1:24ab:508e%7]) with mapi id 15.20.7362.035; Mon, 11 Mar 2024
+ 08:12:33 +0000
+From: Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
+To: Kent Overstreet <kent.overstreet@linux.dev>
+CC: "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
+	"linux-bcachefs@vger.kernel.org" <linux-bcachefs@vger.kernel.org>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+	"linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Josef Bacik
+	<josef@toxicpanda.com>, Miklos Szeredi <mszeredi@redhat.com>, Christian
+ Brauner <brauner@kernel.org>, David Howells <dhowells@redhat.com>
+Subject: Re: [PATCH v2] statx: stx_subvol
+Thread-Topic: [PATCH v2] statx: stx_subvol
+Thread-Index: AQHacQB7a0OzBoIW0EyYceG+9ps3fLEyNboA
+Date: Mon, 11 Mar 2024 08:12:33 +0000
+Message-ID: <2f598709-fccb-4364-bf15-f9c171b440aa@wdc.com>
+References: <20240308022914.196982-1-kent.overstreet@linux.dev>
+In-Reply-To: <20240308022914.196982-1-kent.overstreet@linux.dev>
+Accept-Language: en-GB, en-US
+Content-Language: en-US
+X-MS-Has-Attach:
+X-MS-TNEF-Correlator:
+user-agent: Mozilla Thunderbird
+authentication-results: dkim=none (message not signed)
+ header.d=none;dmarc=none action=none header.from=wdc.com;
+x-ms-publictraffictype: Email
+x-ms-traffictypediagnostic: PH0PR04MB7416:EE_|SA0PR04MB7450:EE_
+x-ms-office365-filtering-correlation-id: 565d7f92-9763-4950-859e-08dc41a3011c
+wdcipoutbound: EOP-TRUE
+x-ms-exchange-senderadcheck: 1
+x-ms-exchange-antispam-relay: 0
+x-microsoft-antispam: BCL:0;
+x-microsoft-antispam-message-info:
+ lwGexL7GTiTjjyIdljOoQuciJTIonYMfiwnK57OZWo4Wxl1INfMGVB7759gQxhrOl+mxCBGxr1nRHyXC9hqhGsFYFyxP/yNnNYDLqYUEMkxY5vGAiT37vCLBq/VPaPE937d/yxNy+mqSIyacVi9K2CB1otNaHmTcDBIEjUYI6Hwt6LiHaYYJucAUtSCb8ezIARBnpz9gSNCOxs1+97JauRL5B3LXlSY+VJ7UM3f5f/GT11neokG/sj9hQzNV/Tqoz+VitXLMir04JZH+zNbZgCQrm0eHnjHsN02R277JiAhrI4rXe33MJiWv2DV2t+ZX8AHIm1RNJMmTe3S7jt5Bqs25/JB1JyS5eZIjtxRh1l05z14JRFwftApo5Pl4bNMphg/ylBn847IiAU5Y3kAk6q421sGExWF2BIOMsO6llxZe+QBsCvjyMYhFdS7T94O/geAR53dVVYnri9y9KJvRsGjuLC+ZJG6nEEmij3+t106iu2aSEbH9nNtZ0PjUin82QbYzm5PchMfFaVIKHeAjyAE8Iix7P89yT37Uk2Zd0FFPCW60mudhE5SkW+zUeloolXvB+472esOMX12tlozuviVxsS0sv0IwOnUD6QurZZhW6f1UVxDVWd7MYMPKpUv5SujuFB57tu/DETnbEMYP94y7LDnsvaN454L3XYvAonOtOee8SUvLzFhdJv9Y2yjq+XQ0/sqmf9z2jCI+1YctNRF1c5qc8APFedBk191ilmw=
+x-forefront-antispam-report:
+ CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:PH0PR04MB7416.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230031)(1800799015)(376005)(38070700009);DIR:OUT;SFP:1101;
+x-ms-exchange-antispam-messagedata-chunkcount: 1
+x-ms-exchange-antispam-messagedata-0:
+ =?utf-8?B?TWxuVFJCckNtOXR2N3N1SUxRcFFMcEdqa0RqbjN3cGNKTUsyNUR4RTBEcUxi?=
+ =?utf-8?B?SndjSHE4b2E3Q0wybUpBdGx5ZmpqKzlsT09lODlLVXFxbjdjUWJCWHlUNkY2?=
+ =?utf-8?B?SlE3RExVRzNQN25CdUh2MUtaTjhJTmkrUFlHemwzRjg2cVVYRERCYlRtM01D?=
+ =?utf-8?B?bGxnVmE5NFZUUEhMcXpPOUJoUTV5aFBDNnhZSzNvY05MVW9ucFlSVWhUSk91?=
+ =?utf-8?B?cXJDWnprYW9zNU9UL3BWb0JSUktjTkRLNDBjTE55a2JTdmVsSWp5Ky9oWXhG?=
+ =?utf-8?B?Qnp2eUliTWFMN3lGU0w0VExHa0NNUllnNGl5ZWY5bzdRdEFxaVVPSUxzMnQ0?=
+ =?utf-8?B?TjhYSzJNam1mYW5sU0RUNVh4Y1M3UkhSTFBFd3F6KzdtOTZEaHpQenpwN0ph?=
+ =?utf-8?B?d3hIK04yRTFnMXBHMHVXbzhEV2NOeVBVMkRSS05Ba1BNUUNyYjhsMTkyMUhu?=
+ =?utf-8?B?SWQ1aTZKV3RNdGFUTzJLSkozNUtQWU5YRVRubGd2aUZYSDY1M1ViY01YbGVJ?=
+ =?utf-8?B?WWkrdDd5Z0RuOXdVeEsvK1cxazNFVldWNmhpbkNPUi9mR2dMRVkxM3hxSGpG?=
+ =?utf-8?B?V3FxQyttTGZjbTdSQWlveVBKa3pOV09rMWY4MERqNW9rQ0d2ekx5UU5YQ0hL?=
+ =?utf-8?B?NUdSbW9tdldETTQ1MW9pK3huWUh0bjRBckpoTW9aMFlVMUtaNXF4d1ExOTRR?=
+ =?utf-8?B?MTFKOGVKQTA2L2UvOEVDeDF3dU5uWTBCWlF6bG9DbE9pZUlzWkFxK0cwY1B4?=
+ =?utf-8?B?cVF0UmYyam50WHpuY1Y1WlRsMnU1QnMrbmRZSjRzUjhxa3VvYmFzbTRFMmdv?=
+ =?utf-8?B?eWo4ZVZZOFgycFB2WUtlU0VDMFgwUldWN003S2dhUG1jQ082Zm9xZlR6TzRV?=
+ =?utf-8?B?eTdEREdIemlmWUk5S2hkaXQwV21ORm1QZFk1eTQwQ2drSmI2MUIxQXhUQnhx?=
+ =?utf-8?B?Vm1pTjlGd2owSW45dTNKeDFIc3FlYU9GU096QldrZCt3Rzg3V1k3WVBMVVo1?=
+ =?utf-8?B?VWVJWGdVb2tvN0VNSm9GOFBnTnZoQVQ4d3hKS2Z1R3o4QlVFcW1WNkpObllM?=
+ =?utf-8?B?YUZVaER2MW02VmxOU29FVDUxRjlzYkJqa3pKbVpxajkvOHBqN0xoc1lJaUZs?=
+ =?utf-8?B?bDUySnNHWmlqbDBZUUVOakJNdXg2alYrTXQ5RXo5N2l4RHF0NUFaM3FtWThN?=
+ =?utf-8?B?SnhGb0M3ZFoyaysrYUhzZXJWeGlxVm5qOUZjZ1JjN25LazRidUFLU3R4UVA5?=
+ =?utf-8?B?czF4R3N0ZWlUOU9PeGQxVTJNa0xmMzJRTVNnVkZqd1lxakxTSmdxdUJUaDQx?=
+ =?utf-8?B?MW1tS2RTR2tOVEFlQUJRNWw4NmRCTWx0cG5qUVZmemwvNHllZzRWSVMvN2RJ?=
+ =?utf-8?B?WWR1d094WHVjK2JLU2VIS2ovRjJ3cEczWnczYjByQlVENmlab1lPTUFiOUJQ?=
+ =?utf-8?B?Wmx5Vm9MTFd5Z2ZMZGphUkNQUkVwWWFTZ0xkMXd5Y2ErTHBWWW9BOCtOTExS?=
+ =?utf-8?B?Q3oyd2ZZWmcyYXdrOFFWL2d5VVQ5OU1IZ0ZZb3JySC9LMDlUODZqMWx6SVRI?=
+ =?utf-8?B?cWczd2NpeXRiWXh6bG5DeWJYb2hrWSs0Ry9aMUxoK2dxdlBHSDljaHhwSDU2?=
+ =?utf-8?B?K1hNUHphVXBOYVEybnUxSjN4Q0FOeVQ5ZDRWT2sza2RpNkhhN09xV3I0RXIx?=
+ =?utf-8?B?R0s4ZCtseTd5VnUraHBLM1VkQ3E0K3JzQ0ErTm5UMW5TS0VSUWlQZ0wvWXll?=
+ =?utf-8?B?OTd0bEJaYXJRS3Q4c2NSWDZQUUJDRDJTZ3BkNmE1cFl2NGZWWVZRejM1d2x3?=
+ =?utf-8?B?cEhEVTl4N3FkemNPTkVxNy9GN25VL2EzcG1KMkl6UFRnRGNqMnlsMUROWVli?=
+ =?utf-8?B?L3N2UGs4Z0ZON0h0aHZ1YUxYODdLeVNhM1A1WVdtek5PRk5pNlJvSWt3enpr?=
+ =?utf-8?B?c2hVZDFlcEVNZVBjTzdibXI1cXVGY3U0ek93MlJvekR6Rm8zRW1BTFpJcThz?=
+ =?utf-8?B?RGxxeUE4THg2RGlZVHp6S215MHBKZElZQkdCTHlITXNIdno0VWlQUlpPUzBX?=
+ =?utf-8?B?UWdYM0VRYVBSNmoxQVcrY1VDMngveGdOSVRPQjgvRnRiY0d1anBEMmF1NGxy?=
+ =?utf-8?B?SEZXT3JkUnlIclIrNFhzRFNSbXhRM1lxcXZXbndjN0EydUhVNi82eHlLMXdS?=
+ =?utf-8?B?Vnc9PQ==?=
+Content-Type: text/plain; charset="utf-8"
+Content-ID: <FCF1A465172C4A4EB42FD170C7C55BC3@namprd04.prod.outlook.com>
+Content-Transfer-Encoding: base64
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spam-Level: *
-Authentication-Results: smtp-out1.suse.de;
-	none
-X-Spamd-Result: default: False [1.90 / 50.00];
-	 ARC_NA(0.00)[];
-	 RCVD_VIA_SMTP_AUTH(0.00)[];
-	 FROM_HAS_DN(0.00)[];
-	 TO_DN_SOME(0.00)[];
-	 R_MISSING_CHARSET(2.50)[];
-	 TO_MATCH_ENVRCPT_ALL(0.00)[];
-	 MIME_GOOD(-0.10)[text/plain];
-	 BROKEN_CONTENT_TYPE(1.50)[];
-	 RCVD_COUNT_THREE(0.00)[3];
-	 DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	 RCPT_COUNT_TWO(0.00)[2];
-	 MID_CONTAINS_FROM(1.00)[];
-	 DBL_BLOCKED_OPENRESOLVER(0.00)[scientia.org:email,suse.com:email];
-	 FUZZY_BLOCKED(0.00)[rspamd.com];
-	 FROM_EQ_ENVFROM(0.00)[];
-	 MIME_TRACE(0.00)[0:+];
-	 RCVD_TLS_ALL(0.00)[];
-	 BAYES_HAM(-3.00)[100.00%]
-X-Spam-Score: 1.90
-X-Spam-Flag: NO
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0:
+	kRlsrMsusrUZUt/bQdUvslGcR8xQLROK1xcgOO+XVXB1nkxACnPKdZKK0hqtJNLiwKT2potaZJvJBAAkvu0Ccj7wri0jUuB0/A7wfBuP7KXz8YygsRSVh5QTpjKvB7Q32AQS7I5SazeiqIKlEk771dOOabOaW8QRrD1XD2PAnukYAzEQs9jON7XUXOpblm6bVvEw6af6ZS4egp8OFM1JPeEQ7gnCrefvfbpdvo92XtEvYw689lcC/JIvZC4MuM5/MZaUJfxgGjEnlnkNZ1ySrvU043s9FvXU/neHOtfvv5VtAeAidLmWdzgHS7itcNyWiCeYpkvYHVBi+ynz8LHXt3p6t7ThTjFr9WXZKj1udKXOTaMykdkQbL5k3A52nYmAvumE/R57B7blb+TpsAiip3mUcDNit6XNW/EzDxdvi0fm18ChalIEVuHHsr+ds0rxUZWD9+nprtuE/sUOSBz8oJeWCCi6jvc69IUkid2GZ4gGqFZ/xWl5FnVwxwnH/QWwmgwmswHdgLWdurhn3JinqZ+w6DEUAdngjcurz4/XaGrrMCuNFwdCJVptJzi8hMR066hxr7kw/nKpcb5cFMyxkwsBVqZ5yFB1PfZQLRHOmU+kUjapRAG9FG7e2Z9ClxsQ
+X-OriginatorOrg: wdc.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-AuthSource: PH0PR04MB7416.namprd04.prod.outlook.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 565d7f92-9763-4950-859e-08dc41a3011c
+X-MS-Exchange-CrossTenant-originalarrivaltime: 11 Mar 2024 08:12:33.3430
+ (UTC)
+X-MS-Exchange-CrossTenant-fromentityheader: Hosted
+X-MS-Exchange-CrossTenant-id: b61c8803-16f3-4c35-9b17-6f65f441df86
+X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
+X-MS-Exchange-CrossTenant-userprincipalname: wDAg9FLRsIHoOdJbawczmGqClAbJ2bSvfc+a6aSkT7YkdFnjdq/jIYnsPMFxbC1LuLxjSt6rWxGkmtuq2urUtZMyQqAh5GR46+zwORlg9dI=
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: SA0PR04MB7450
 
-[BUG]
-The following script can lead to a very under utilized extent and we
-have no way to use defrag to properly reclaim its wasted space:
-
-  # mkfs.btrfs -f $dev
-  # mount $dev $mnt
-  # xfs_io -f -c "pwrite 0 128M" $mnt/foobar
-  # sync
-  # truncate -s 4k $mnt/foobar
-  # btrfs filesystem defrag $mnt/foobar
-  # sync
-
-After the above operations, the file "foobar" is still utilizing the
-whole 128M:
-
-        item 4 key (257 INODE_ITEM 0) itemoff 15883 itemsize 160
-                generation 7 transid 8 size 4096 nbytes 4096
-                block group 0 mode 100600 links 1 uid 0 gid 0 rdev 0
-                sequence 32770 flags 0x0(none)
-        item 5 key (257 INODE_REF 256) itemoff 15869 itemsize 14
-                index 2 namelen 4 name: file
-        item 6 key (257 EXTENT_DATA 0) itemoff 15816 itemsize 53
-                generation 7 type 1 (regular)
-                extent data disk byte 298844160 nr 134217728 <<<
-                extent data offset 0 nr 4096 ram 134217728
-                extent compression 0 (none)
-
-This is the common btrfs bookend behavior, that 128M extent would only
-be freed if the last referencer of the extent is freed.
-
-The problem is, normally we would go defrag to free that 128M extent,
-but defrag would not touch the extent at all.
-
-[CAUSE]
-The file extent has no adjacent extent at all, thus all existing defrag
-code consider it a perfectly good file extent, even if it's only
-utilizing a very tiny amount of space.
-
-[FIX]
-For a file extent without any adjacent file extent, we should still
-consider to defrag such under utilized extent, base on the following
-conditions:
-
-- utilization ratio
-  If the extent is utilizing less than 1/16 of the on-disk extent size,
-  then it would be a defrag target.
-
-- wasted space
-  If we defrag the extent and can free at least 16MiB, then it would be
-  a defrag target.
-
-Reported-by: Christoph Anton Mitterer <calestyo@scientia.org>
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/defrag.c | 42 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 42 insertions(+)
-
-diff --git a/fs/btrfs/defrag.c b/fs/btrfs/defrag.c
-index f015fa1b6301..42f59d1456f9 100644
---- a/fs/btrfs/defrag.c
-+++ b/fs/btrfs/defrag.c
-@@ -950,6 +950,38 @@ struct defrag_target_range {
- 	u64 len;
- };
- 
-+/*
-+ * Special entry for extents that do not have any adjacent extents.
-+ *
-+ * This is for cases like the only and truncated extent of a file.
-+ * Normally they won't be defraged at all (as they won't be merged with
-+ * any adjacent ones), but we may still want to defrag them, to free up
-+ * some space if possible.
-+ */
-+static bool should_defrag_under_utilized(struct extent_map *em)
-+{
-+	/*
-+	 * Ratio based check.
-+	 *
-+	 * If the current extent is only utilizing 1/16 of its on-disk size,
-+	 * it's definitely under-utilized, and defragging it may free up
-+	 * the whole extent.
-+	 */
-+	if (em->len < em->orig_block_len / 16)
-+		return true;
-+
-+	/*
-+	 * Wasted space based check.
-+	 *
-+	 * If we can free up at least 16MiB, then it may be a good idea
-+	 * to defrag.
-+	 */
-+	if (em->len < em->orig_block_len &&
-+	    em->orig_block_len - em->len > SZ_16M)
-+		return true;
-+	return false;
-+}
-+
- /*
-  * Collect all valid target extents.
-  *
-@@ -1070,6 +1102,16 @@ static int defrag_collect_targets(struct btrfs_inode *inode,
- 		if (!next_mergeable) {
- 			struct defrag_target_range *last;
- 
-+			/*
-+			 * This is a single extent without any chance to merge
-+			 * with any adjacent extent.
-+			 *
-+			 * But if we may free up some space, it is still worth
-+			 * defragging.
-+			 */
-+			if (should_defrag_under_utilized(em))
-+				goto add;
-+
- 			/* Empty target list, no way to merge with last entry */
- 			if (list_empty(target_list))
- 				goto next;
--- 
-2.44.0
-
+T24gMDguMDMuMjQgMDM6MjksIEtlbnQgT3ZlcnN0cmVldCB3cm90ZToNCj4gQWRkIGEgbmV3IHN0
+YXR4IGZpZWxkIGZvciAoc3ViKXZvbHVtZSBpZGVudGlmaWVycywgYXMgaW1wbGVtZW50ZWQgYnkN
+Cj4gYnRyZnMgYW5kIGJjYWNoZWZzLg0KPiANCj4gVGhpcyBpbmNsdWRlcyBiY2FjaGVmcyBzdXBw
+b3J0OyB3ZSdsbCBkZWZpbml0ZWx5IHdhbnQgYnRyZnMgc3VwcG9ydCBhcw0KPiB3ZWxsLg0KDQpG
+b3IgYnRyZnMgeW91IGNhbiBhZGQgdGhlIGZvbGxvd2luZzoNCg0KDQogRnJvbSA4MjM0M2I3Y2Iy
+YTk0N2JjYTQzMjM0YzQ0M2I5YzIyMzM5MzY3ZjY4IE1vbiBTZXAgMTcgMDA6MDA6MDAgMjAwMQ0K
+RnJvbTogSm9oYW5uZXMgVGh1bXNoaXJuIDxqb2hhbm5lcy50aHVtc2hpcm5Ad2RjLmNvbT4NCkRh
+dGU6IE1vbiwgMTEgTWFyIDIwMjQgMDk6MDk6MzYgKzAxMDANClN1YmplY3Q6IFtQQVRDSF0gYnRy
+ZnM6IHByb3ZpZGUgc3Vidm9sdW1lIGlkIGZvciBzdGF0eA0KDQpBZGQgdGhlIGlub2RlJ3Mgc3Vi
+dm9sdW1lIGlkIHRvIHRoZSBuZXdseSBwcm9wb3NlZCBzdGF0eCBzdWJ2b2wgZmllbGQuDQoNClNp
+Z25lZC1vZmYtYnk6IEpvaGFubmVzIFRodW1zaGlybiA8am9oYW5uZXMudGh1bXNoaXJuQHdkYy5j
+b20+DQotLS0NCiAgZnMvYnRyZnMvaW5vZGUuYyB8IDMgKysrDQogIDEgZmlsZSBjaGFuZ2VkLCAz
+IGluc2VydGlvbnMoKykNCg0KZGlmZiAtLWdpdCBhL2ZzL2J0cmZzL2lub2RlLmMgYi9mcy9idHJm
+cy9pbm9kZS5jDQppbmRleCAzNzcwMTUzMWVlYjEuLjhjZjY5MmM3MDhkNyAxMDA2NDQNCi0tLSBh
+L2ZzL2J0cmZzL2lub2RlLmMNCisrKyBiL2ZzL2J0cmZzL2lub2RlLmMNCkBAIC04Nzc5LDYgKzg3
+NzksOSBAQCBzdGF0aWMgaW50IGJ0cmZzX2dldGF0dHIoc3RydWN0IG1udF9pZG1hcCAqaWRtYXAs
+DQogIAlnZW5lcmljX2ZpbGxhdHRyKGlkbWFwLCByZXF1ZXN0X21hc2ssIGlub2RlLCBzdGF0KTsN
+CiAgCXN0YXQtPmRldiA9IEJUUkZTX0koaW5vZGUpLT5yb290LT5hbm9uX2RldjsNCg0KKwlzdGF0
+LT5zdWJ2b2wgPSBCVFJGU19JKGlub2RlKS0+cm9vdC0+cm9vdF9rZXkub2JqZWN0aWQ7DQorCXN0
+YXQtPnJlc3VsdF9tYXNrIHw9IFNUQVRYX1NVQlZPTDsNCisNCiAgCXNwaW5fbG9jaygmQlRSRlNf
+SShpbm9kZSktPmxvY2spOw0KICAJZGVsYWxsb2NfYnl0ZXMgPSBCVFJGU19JKGlub2RlKS0+bmV3
+X2RlbGFsbG9jX2J5dGVzOw0KICAJaW5vZGVfYnl0ZXMgPSBpbm9kZV9nZXRfYnl0ZXMoaW5vZGUp
+Ow0KLS0gDQoyLjM1LjMNCg0KDQo=

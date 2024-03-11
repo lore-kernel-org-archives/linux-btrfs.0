@@ -1,431 +1,200 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from libero.it (smtp-18.italiaonline.it [213.209.10.18])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DBFCA54BFE;
-	Mon, 11 Mar 2024 19:25:58 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E0D8154F83
+	for <linux-btrfs@vger.kernel.org>; Mon, 11 Mar 2024 19:29:12 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=213.209.10.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1710185161; cv=none; b=RzgkTXJsm0TdmiAmVw1+xYwYfB3eUmqw7N5crbNZmGT5R8o3Yb45NwMNHlU4k84i1Vq6oYf71wxNidL7xviweThzRARLQI4FDntfcV6I8jN8rxVrVBxfod3YZvkCXTICBl8DXLxPacGrDyKe5VIj2ZmZJVT/WjAMy3yPMZ3d+mM=
+	t=1710185356; cv=none; b=XdP30TZ1F+7031wOD+WAwl0QsXFGShRh3cQtBcuTv+mOUDzZh7jJz8xRQIcvNr0Wj+upHxSUtSRgq0A6s1DBXWLCXulXqwggiBZBWZmzKOri+24ekvkSjEoESMC61WrI4gd/1jqvC4TcPjbrOp9uwbmkvOgUtSiQTLKbiPuQwfA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1710185161; c=relaxed/simple;
-	bh=RrY96Of+19Qplk+rzqdVAE5FfdpexzxLDgAjo/HRIPk=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=LkRGLYOgd886JbnMkHETYYxsecJI6SOOa2SRQ3OZ/tqmazpqXnOG/bMRSl2xlxcLZEWMKT9Ooq/rOxeVADr4TLxlTnCJ+gFXJSW3dxu9yFToPDnPR/7J93teBPlPKPOPRQlbeCunrN+BZax5Fn+Un/poVuDfFQuf3lFcvRrMBlc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=imRXjqn8; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=PkMS8ScY; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1710185356; c=relaxed/simple;
+	bh=wpGiuyImpzQejV2S0CWam5lu9wbRualfvo3u7LoxIPQ=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=Ai6uP300iFFq4tWDdh0uay4U8K03DpBoir37ZwoVLliiUexO8jIdtHnx3iHkpgs/SHTH2MuNwo1dmGIxJ8YlPVH9d5/69+kIsy6jfZ6s/T+y9i1Olt8U3NMSZs2kmYDvnJ1uxLK3DiwWrnnSI7pZFJ7/lssaq07iQpCIR0gtlz8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=libero.it; spf=pass smtp.mailfrom=libero.it; dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b=TO8cWIMi; arc=none smtp.client-ip=213.209.10.18
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=libero.it
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=libero.it
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="imRXjqn8";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="PkMS8ScY"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id CAF3C34FCD;
-	Mon, 11 Mar 2024 19:25:55 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1710185156; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=LRb+QDVqmSBBfop+NmgzD1v195yCdoVF4ZrnYqydg0A=;
-	b=imRXjqn8Y3gat5grVn6HHxZ0KjbpcBKxMOd2sELqedc07gpk0nFONUp9xQljeik2gBOh5N
-	aeqBqsKysY3/aOtEc0IzdTDFUFC1x/6fY3VK2tVBkXGAZCObbUPlrTYpk13nmCLbEnL85E
-	cay+MECztdWObBl4ahlwhMoNPI0Sidc=
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1710185155; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=LRb+QDVqmSBBfop+NmgzD1v195yCdoVF4ZrnYqydg0A=;
-	b=PkMS8ScYtXNCrOCMZLxLm2S/mjX8DXlQn6LIu9ym/904zFJ8yK17gF2BbVdvlX/PrHlArE
-	gVaEijiZeXvkOiDaVtm+oj/FObNal/5/+mvGzlPzrO7J01bY27inKzdE6KHfSnOuEr/92m
-	ZEWQAaNJ043QkLS4AgJODTkmB2Rv8UQ=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id C41D113695;
-	Mon, 11 Mar 2024 19:25:55 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id hnPbL8Na72UPTQAAD6G6ig
-	(envelope-from <dsterba@suse.com>); Mon, 11 Mar 2024 19:25:55 +0000
-From: David Sterba <dsterba@suse.com>
-To: torvalds@linux-foundation.org
-Cc: David Sterba <dsterba@suse.com>,
-	linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-Subject: [GIT PULL] Btrfs updates for 6.9
-Date: Mon, 11 Mar 2024 20:18:45 +0100
-Message-ID: <cover.1710183792.git.dsterba@suse.com>
-X-Mailer: git-send-email 2.42.1
+	dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b="TO8cWIMi"
+Received: from [192.168.1.27] ([84.220.171.3])
+	by smtp-18.iol.local with ESMTPA
+	id jlI9rdIAawDoyjlIArzr4F; Mon, 11 Mar 2024 20:26:34 +0100
+x-libjamoibt: 1601
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=libero.it; s=s2021;
+	t=1710185194; bh=J29m8Nr8kcQPxHAO+9ir4S8uX0lIDJ1pLW0sKg321sQ=;
+	h=From;
+	b=TO8cWIMiMLknJHtCoaNOYhx8gG5yQUvBIbTq7dee+iPyKSZ8QxjlarX+oUY0UXqY8
+	 TP68BpFPyNDx/eIH4JJCuk166a73KTmm+IyHKMl4SPLA8I+2eD0DMrNsbXYlloYXxF
+	 hTDTDvz4o9E9YTuT83J3xmt7DvsbtfCvcMPdf1FxwtkMSQ7B36ScvtANc1EgI3uE5T
+	 yVauyhnd2vix4p69F/67pUYsBx44OrW/YN9jnbIC+tyNKrQ29Eh6OlZQqQNfAHzrM9
+	 P6fswlKkAYha+SBUheVioV75mpyoS4/mibLsFZOa4sezAblRBMLKqoDMybWDzj4rJ9
+	 /JBxvGifxYPqQ==
+X-CNFS-Analysis: v=2.4 cv=N5qKFH9B c=1 sm=1 tr=0 ts=65ef5aea cx=a_exe
+ a=hciw9o01/L1eIHAASTHaSw==:117 a=hciw9o01/L1eIHAASTHaSw==:17
+ a=IkcTkHD0fZMA:10 a=O-dTtCbMAAAA:8 a=pGLkceISAAAA:8 a=NEAV23lmAAAA:8
+ a=VwQbUJbxAAAA:8 a=Br9LfDWDAAAA:8 a=4FwvDv67h4z814avhCcA:9 a=3ZKOabzyN94A:10
+ a=QEXdDO2ut3YA:10 a=YQZzFssXFEgA:10 a=p5snsyuY6O_wh2DS_HCF:22
+ a=AjGcO6oz07-iQ99wixmX:22 a=gR_RJRYUad_6_ruzA8cR:22
+Message-ID: <4feb955c-cc91-4f0b-8e62-b6a089eea7ae@libero.it>
+Date: Mon, 11 Mar 2024 20:26:33 +0100
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+User-Agent: Mozilla Thunderbird
+Reply-To: kreijack@inwind.it
+Subject: Re: raid1 root device with efi
+Content-Language: en-US
+To: Kai Krakow <hurikhan77+btrfs@gmail.com>, Forza <forza@tnonline.net>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+ Matthew Warren <matthewwarren101010@gmail.com>
+References: <CAOLfK3UccL8z7Xf_KSp=foS6hM8Byf5n_21uwO96=9ND=-j84A@mail.gmail.com>
+ <CA+H1V9x-pFAM-YQ1ncAqZE4e7j6R2xQXX6Ah9v1tMNf8CrW+yw@mail.gmail.com>
+ <CAOLfK3We92ZBrvyvSDky9jrQwJNONeOE9qoaewbFCr02H8PuTw@mail.gmail.com>
+ <CA+H1V9xjufQpsZHeMNmKNrV0BfuUsJ5G=x_-BEcRw7eNFhYPAw@mail.gmail.com>
+ <CAOLfK3UEOMN-O9-u6j22CJ0jpRZUwB7R_x-zEH6-FXdgmqB7Lg@mail.gmail.com>
+ <1eac6d15-4ead-46bc-9b60-02f1d120c885@tnonline.net>
+ <CAMthOuO56J5OhCnedJLxTuFxTPq7ryCGP_TxMrcXS+4jLj0aiA@mail.gmail.com>
+From: Goffredo Baroncelli <kreijack@libero.it>
+In-Reply-To: <CAMthOuO56J5OhCnedJLxTuFxTPq7ryCGP_TxMrcXS+4jLj0aiA@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
-X-Spam-Level: 
-X-Spamd-Bar: /
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=PkMS8ScY
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Spamd-Result: default: False [-0.51 / 50.00];
-	 ARC_NA(0.00)[];
-	 RCVD_VIA_SMTP_AUTH(0.00)[];
-	 R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	 SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	 FROM_HAS_DN(0.00)[];
-	 RCPT_COUNT_THREE(0.00)[4];
-	 R_MISSING_CHARSET(2.50)[];
-	 TO_MATCH_ENVRCPT_ALL(0.00)[];
-	 MIME_GOOD(-0.10)[text/plain];
-	 BROKEN_CONTENT_TYPE(1.50)[];
-	 TO_DN_SOME(0.00)[];
-	 DWL_DNSWL_LOW(-1.00)[suse.com:dkim];
-	 RCVD_COUNT_THREE(0.00)[3];
-	 DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	 DKIM_TRACE(0.00)[suse.com:+];
-	 MX_GOOD(-0.01)[];
-	 MID_CONTAINS_FROM(1.00)[];
-	 DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim];
-	 NEURAL_HAM_LONG(-1.00)[-1.000];
-	 FUZZY_BLOCKED(0.00)[rspamd.com];
-	 FROM_EQ_ENVFROM(0.00)[];
-	 MIME_TRACE(0.00)[0:+];
-	 NEURAL_HAM_SHORT(-0.20)[-1.000];
-	 RCVD_TLS_ALL(0.00)[];
-	 BAYES_HAM(-3.00)[100.00%]
-X-Spam-Score: -0.51
-X-Rspamd-Queue-Id: CAF3C34FCD
-X-Spam-Flag: NO
+X-CMAE-Envelope: MS4xfFYtV+1tHrLo+Y09bD4c6C29+5EftHZANctBkxpxXPqP2usIqfahNGAYSbw/O/5nw/8WH9Wjj5VatOIUGKfqkTK0ohQ2JqZ6omLwyrjbRmXvv+jvJqZY
+ lt7hmNkHRrpsWpDJ/Lceysh+7CK7nFLWFkQsDfo1tjitNFIZCHLne2bJgZclvI4FUdiX++vpDlJg2EtvwSjH7mQ/RBZbZEqWMJJI6HznASzsLuaDEJ0SbdFA
+ kMLV33SpCVoDJLOlSrgFgk/jrdBh3nWXbfQ48sCHvNfNqFBwxebUyvjc3KPNqlNg0Cz8FCi/BKvMd40cxm+A0g==
 
-Hi,
+On 11/03/2024 15.34, Kai Krakow wrote:
+> Hello!
+> 
+> Am So., 10. März 2024 um 19:18 Uhr schrieb Forza <forza@tnonline.net>:
+>>
+>>
+>>
+>> On 2024-03-08 22:58, Matt Zagrabelny wrote:
+>>> On Fri, Mar 8, 2024 at 3:54 PM Matthew Warren
+>>> <matthewwarren101010@gmail.com> wrote:
+>>>>
+>>>> On Fri, Mar 8, 2024 at 4:48 PM Matt Zagrabelny <mzagrabe@d.umn.edu> wrote:
+>>>>>
+>>>>> Hi Qu and Matthew,
+>>>>>
+>>>>> On Fri, Mar 8, 2024 at 3:46 PM Matthew Warren
+>>>>> <matthewwarren101010@gmail.com> wrote:
+>>>>>>
+>>>>>> On Fri, Mar 8, 2024 at 3:46 PM Matt Zagrabelny <mzagrabe@d.umn.edu> wrote:
+>>>>>>>
+>>>>>>> Greetings,
+>>>>>>>
+>>>>>>> I've read some conflicting info online about the best way to have a
+>>>>>>> raid1 btrfs root device.
+> 
+> I think the main issue here that leads to conflicting ideas is:
+> 
+> Grub records the locations (or extent index) of the boot files during
+> re-configuration for non-trivial filesystems. If you later move the
+> files, or need to switch to the mirror, it will no longer be able to
+> read the boot files. Grub doesn't have a full btrfs implementation to
+> read all the metadata, nor does it know or detect the member devices
+> of the pool.
 
-there are mostly stabilization, refactoring and cleanup changes. There rest are
-minor performance optimizations due to caching or lock contention reduction and
-a few notable fixes.
+I don't think that what you describe is really accurate. Grub (in the NON uefi version)
+stores some code in the first 2MB of the disk (this is one of the reason why fdisk by
+default starts the first partition at the 1st MB of the disk). This code is mapped as
+you wrote. And if you mess with this disk area grub gets confused.
 
-Please pull, thanks.
+And the btrfs grub module is stored in this area. After this module is loaded, grub
+has a full access to a btrfs partition.
 
-Performance improvements:
+The fact in some condition grub is not able to access anymore to a btrfs filesystem
+is more related to a not mature btrfs implementation in grub.
 
-- minor speedup in logging when repeatedly allocated structure is preallocated
-  only once, improves latency and decreases lock contention
+I am quite sure that grub access a btrfs filesystem dynamically, without using a
+pre-stored table with the location of a file.
 
-- minor throughput increase (+6%), reduced lock contention after clearing
-  delayed allocation bits, applies to several common workload types
+To verify that, try to access a random file or directory in a btrfs location (e.g.
+ls /bin) that is not related to a 'boot' process.
 
-- skip full quota rescan if a new relation is added in the same transaction
+> So in this context, it supports btrfs raid1 under certain
+> conditions, if, and only if, just two devices are used, and the grub
+> device remains the same. If you add a third device, both raid1 stripes
+> for boot files may end up on devices of the pool that grub doesn't
+> consider. As an example, bees is known to mess up grub boot on btrfs
+> because it relocates the boot files without letting grub know:
+> https://github.com/Zygo/bees/issues/249
+> 
+> I'd argue that grub can only boot reliably from single-device btrfs
+> unless you move boot file extents without re-configuring it. Grub only
+> has very basic support for btrfs.
+> 
+> mdadm for ESP is not supported for very similar reasons (because EFI
+> doesn't open the filesystem read-only): It will break the mirror.
+> 
+> The best way, as outlined in the thread already, is two have two ESP,
+> not put the kernel boot files in btrfs but in ESP instead, and adjust
+> your kernel-install plugins to mirror the boot files to the other ESP
+> partition.
+> 
+> Personally, I've got a USB stick where I keep a copy of my ESP created
+> with major configuration changes (e.g. major kernel update, boot
+> configuration changes), and the ESP is also included in my daily
+> backup. I keep blank reserve partitions on all other devices which I
+> can copy the ESP to in case of disaster. This serves an additional
+> purpose of keeping some part of the devices trimmed for wear-leveling.
+> 
+> 
+>>>>>>>
+>>>>>>> I've got two disks, with identical partitioning and I tried the
+>>>>>>> following scenario (call it scenario 1):
+>>>>>>>
+>>>>>>> partition 1: EFI
+>>>>>>> partition 2: btrfs RAID1 (/)
+>>>>>>>
+>>>>>>> There are some docs that claim that the above is possible...
+>>>>>>
+>>>>>> This is definitely possible. I use it on both my server and desktop with GRUB.
+>>>>>
+>>>>> Are there any docs you follow for this setup?
+>>>>>
+>>>>> Thanks for the info!
+>>>>>
+>>>>> -m
+>>>>
+>>>> The main important thing is that mdadm has several metadata versions.
+>>>> Versions 0.9 and 1.0 store the metadata at the end of the partition
+>>>> which allows UEFI to think the filesystem is EFI rather than mdadm
+>>>> raid.
+>>>> https://raid.wiki.kernel.org/index.php/RAID_superblock_formats#Sub-versions_of_the_version-1_superblock
+>>>>
+>>>> I followed the arch wiki for setting it up, so here's what I followed.
+>>>> https://wiki.archlinux.org/title/EFI_system_partition#ESP_on_software_RAID1
+>>>
+>>> Thanks for the hints. Hopefully there aren't any more unexpected issues.
+>>>
+>>> Cheers!
+>>>
+>>> -m
+>>>
+>>
+>> An alternative to mdadm is to simply have separate ESP partitions on
+>> each device. You can manually copy the contents between the two if you
+>> were to update the EFI bootloader. This way you can keep the 'other' ESP
+>> as backup during GRUB/EFI updates.
+>>
+>> This solution is what I use on one of my servers. GRUB2 supports Btrfs
+>> RAID1 so you do not need to have the kernel and initramfs on the ESP,
+>> though that works very well too.
+>>
+>> Good Luck!
+>>
+>> ~Forza
+> 
+> Regards,
+> Kai
+> 
 
-Fixes:
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
 
-- zstd fix for inline compressed file in subpage mode, updated version from the
-  6.8 time
-
-- proper qgroup inheritance ioctl parameter validation
-
-- more fiemap followup fixes after reduced locking done in 6.8
-  - fix race when detecting delalloc ranges
-
-Core changes:
-
-- more debugging code
-  - added assertions for a very rare crash in raid56 calculation
-  - tree-checker dumps page state to give more insights into possible reference
-    counting issues
-
-- add checksum calculation offloading sysfs knob, for now enabled under DEBUG
-  only to determine a good heuristic for deciding the offload or synchronous,
-  depends on various factors (block group profile, device speed) and is not as
-  clear as initially thought (checksum type)
-
-- error handling improvements, added assertions
-
-- more page to folio conversion (defrag, truncate), cached size and shift
-
-- preparation for more fine grained locking of sectors in subpage mode
-
-- cleanups and refactoring
-  - include cleanups, forward declarations
-  - pointer-to-structure helpers
-  - redundant argument removals
-  - removed unused code
-  - slab cache updates, last use of SLAB_MEM_SPREAD removed
-
-----------------------------------------------------------------
-The following changes since commit 90d35da658da8cff0d4ecbb5113f5fac9d00eb72:
-
-  Linux 6.8-rc7 (2024-03-03 13:02:52 -0800)
-
-are available in the Git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git tags/for-6.9-tag
-
-for you to fetch changes up to 1cab1375ba6d5337a25acb346996106c12bb2dd0:
-
-  btrfs: reuse cloned extent buffer during fiemap to avoid re-allocations (2024-03-05 18:14:19 +0100)
-
-----------------------------------------------------------------
-for-6.9-tag
-
-----------------------------------------------------------------
-Anand Jain (1):
-      btrfs: include device major and minor numbers in the device scan notice
-
-Chengming Zhou (1):
-      btrfs: remove SLAB_MEM_SPREAD flag use
-
-Colin Ian King (1):
-      btrfs: zlib: Fix spelling mistake "infalte" -> "inflate"
-
-David Sterba (62):
-      btrfs: replace sb::s_blocksize by fs_info::sectorsize
-      btrfs: replace i_blocksize by fs_info::sectorsize
-      btrfs: remove unused included headers
-      btrfs: handle errors returned from unpin_extent_cache()
-      btrfs: return errors from unpin_extent_range()
-      btrfs: make btrfs_error_unpin_extent_range() return void
-      btrfs: handle directory and dentry mismatch in btrfs_may_delete()
-      btrfs: handle invalid range and start in merge_extent_mapping()
-      btrfs: handle block group lookup error when it's being removed
-      btrfs: handle root deletion lookup error in btrfs_del_root()
-      btrfs: handle invalid root reference found in btrfs_find_root()
-      btrfs: handle invalid root reference found in btrfs_init_root_free_objectid()
-      btrfs: handle chunk tree lookup error in btrfs_relocate_sys_chunks()
-      btrfs: handle invalid extent item reference found in check_committed_ref()
-      btrfs: export: handle invalid inode or root reference in btrfs_get_parent()
-      btrfs: delayed-inode: drop pointless BUG_ON in __btrfs_remove_delayed_item()
-      btrfs: change BUG_ON to assertion when checking for delayed_node root
-      btrfs: defrag: change BUG_ON to assertion in btrfs_defrag_leaves()
-      btrfs: change BUG_ON to assertion in btrfs_read_roots()
-      btrfs: change BUG_ON to assertion when verifying lockdep class setup
-      btrfs: change BUG_ON to assertion when verifying root in btrfs_alloc_reserved_file_extent()
-      btrfs: change BUG_ON to assertion in reset_balance_state()
-      btrfs: unify handling of return values of btrfs_insert_empty_items()
-      btrfs: move transaction abort to the error site in btrfs_delete_free_space_tree()
-      btrfs: move transaction abort to the error site in btrfs_create_free_space_tree()
-      btrfs: move transaction abort to the error site btrfs_rebuild_free_space_tree()
-      btrfs: tests: allocate dummy fs_info and root in test_find_delalloc()
-      btrfs: add helpers to get inode from page/folio pointers
-      btrfs: add helpers to get fs_info from page/folio pointers
-      btrfs: add helper to get fs_info from struct inode pointer
-      btrfs: hoist fs_info out of loops in end_bbio_data_write and end_bbio_data_read
-      btrfs: add forward declarations and headers, part 1
-      btrfs: add forward declarations and headers, part 2
-      btrfs: add forward declarations and headers, part 3
-      btrfs: push errors up from add_async_extent()
-      btrfs: update comment and drop assertion in extent item lookup in find_parent_nodes()
-      btrfs: handle invalid extent item reference found in extent_from_logical()
-      btrfs: handle invalid extent item reference found in find_first_extent_item()
-      btrfs: handle invalid root reference found in may_destroy_subvol()
-      btrfs: send: handle unexpected data in header buffer in begin_cmd()
-      btrfs: send: handle unexpected inode in header process_recorded_refs()
-      btrfs: send: handle path ref underflow in header iterate_inode_ref()
-      btrfs: change BUG_ON to assertion in tree_move_down()
-      btrfs: change BUG_ONs to assertions in btrfs_qgroup_trace_subtree()
-      btrfs: delete pointless BUG_ON check on quota root in btrfs_qgroup_account_extent()
-      btrfs: delete pointless BUG_ONs on extent item size
-      btrfs: delete BUG_ON in btrfs_init_locked_inode()
-      btrfs: factor out validation of btrfs_ioctl_vol_args::name
-      btrfs: factor out validation of btrfs_ioctl_vol_args_v2::name
-      btrfs: move balance args conversion helpers to volumes.c
-      btrfs: open code btrfs_backref_iter_free()
-      btrfs: open code btrfs_backref_get_eb()
-      btrfs: uninline some static inline helpers from backref.h
-      btrfs: uninline btrfs_init_delayed_root()
-      btrfs: drop static inline specifiers from tree-mod-log.c
-      btrfs: uninline some static inline helpers from tree-log.h
-      btrfs: open code trivial btrfs_lru_cache_size()
-      btrfs: uninline some static inline helpers from delayed-ref.h
-      btrfs: handle transaction commit errors in flush_reservations()
-      btrfs: pass btrfs_device to btrfs_scratch_superblocks()
-      btrfs: merge btrfs_del_delalloc_inode() helpers
-      btrfs: pass a valid extent map cache pointer to __get_extent_map()
-
-Filipe Manana (19):
-      btrfs: remove extent_map_tree forward declaration at extent_io.h
-      btrfs: document what the spinlock unused_bgs_lock protects
-      btrfs: add comment about list_is_singular() use at btrfs_delete_unused_bgs()
-      btrfs: preallocate temporary extent buffer for inode logging when needed
-      btrfs: stop passing root argument to btrfs_add_delalloc_inodes()
-      btrfs: stop passing root argument to __btrfs_del_delalloc_inode()
-      btrfs: assert root delalloc lock is held at __btrfs_del_delalloc_inode()
-      btrfs: rename btrfs_add_delalloc_inodes() to singular form
-      btrfs: reduce inode lock critical section when setting and clearing delalloc
-      btrfs: add lockdep assertion to remaining delalloc callbacks
-      btrfs: use assertion instead of BUG_ON when adding/removing to delalloc list
-      btrfs: remove do_list variable at btrfs_set_delalloc_extent()
-      btrfs: remove do_list variable at btrfs_clear_delalloc_extent()
-      btrfs: remove no longer used btrfs_transaction_in_commit()
-      btrfs: send: avoid duplicated search for last extent when sending hole
-      btrfs: avoid unnecessary ref initialization when freeing log tree block
-      btrfs: fix off-by-one chunk length calculation at contains_pending_extent()
-      btrfs: fix race when detecting delalloc ranges during fiemap
-      btrfs: reuse cloned extent buffer during fiemap to avoid re-allocations
-
-Goldwyn Rodrigues (1):
-      btrfs: page to folio conversion in btrfs_truncate_block()
-
-Johannes Thumshirn (1):
-      btrfs: remove duplicate recording of physical address
-
-Josef Bacik (1):
-      btrfs: WARN_ON_ONCE() in our leak detection code
-
-Kunwu Chan (6):
-      btrfs: use KMEM_CACHE() to create btrfs_delayed_node cache
-      btrfs: use KMEM_CACHE() to create btrfs_ordered_extent cache
-      btrfs: use KMEM_CACHE() to create btrfs_trans_handle cache
-      btrfs: use KMEM_CACHE() to create btrfs_path cache
-      btrfs: use KMEM_CACHE() to create delayed ref caches
-      btrfs: use KMEM_CACHE() to create btrfs_free_space cache
-
-Lijuan Li (2):
-      btrfs: mark __btrfs_add_free_space static
-      btrfs: mark btrfs_put_caching_control() static
-
-Matthew Wilcox (Oracle) (3):
-      btrfs: add set_folio_extent_mapped() helper
-      btrfs: convert defrag_prepare_one_page() to use a folio
-      btrfs: use a folio array throughout the defrag process
-
-Naohiro Aota (2):
-      btrfs: use READ/WRITE_ONCE for fs_devices->read_policy
-      btrfs: introduce offload_csum_mode to tweak checksum offloading behavior
-
-Neal Gompa (1):
-      btrfs: sysfs: drop unnecessary double logical negation in acl_show()
-
-Qu Wenruo (13):
-      btrfs: remove the pg_offset parameter from btrfs_get_extent()
-      btrfs: remove unused variable bio_offset from end_bbio_data_read()
-      btrfs: cache folio size and shift in extent_buffer
-      btrfs: zstd: fix and simplify the inline extent decompression (v2)
-      btrfs: raid56: extra debugging for raid6 syndrome generation
-      btrfs: unexport btrfs_subpage_start_writer() and btrfs_subpage_end_and_test_writer()
-      btrfs: subpage: make reader lock utilize bitmap
-      btrfs: subpage: make writer lock utilize bitmap
-      btrfs: compression: remove dead comments in btrfs_compress_heuristic()
-      btrfs: tree-checker: dump the page status if hit something wrong
-      btrfs: qgroup: always free reserved space for extent records
-      btrfs: qgroup: validate btrfs_qgroup_inherit parameter
-      btrfs: qgroup: allow quick inherit if snapshot is created and added to the same parent
-
- fs/btrfs/accessors.c             |  15 +-
- fs/btrfs/accessors.h             |  50 +----
- fs/btrfs/acl.c                   |   1 -
- fs/btrfs/acl.h                   |  11 ++
- fs/btrfs/async-thread.c          |   1 -
- fs/btrfs/async-thread.h          |   3 +
- fs/btrfs/backref.c               | 119 ++++++++++--
- fs/btrfs/backref.h               | 136 +++-----------
- fs/btrfs/bio.c                   |  17 +-
- fs/btrfs/bio.h                   |   2 +
- fs/btrfs/block-group.c           |  15 +-
- fs/btrfs/block-group.h           |  14 +-
- fs/btrfs/block-rsv.c             |   1 -
- fs/btrfs/block-rsv.h             |   7 +
- fs/btrfs/btrfs_inode.h           |  25 ++-
- fs/btrfs/compression.c           |  18 +-
- fs/btrfs/compression.h           |  12 +-
- fs/btrfs/ctree.c                 |  10 +-
- fs/btrfs/ctree.h                 |  28 ++-
- fs/btrfs/defrag.c                | 104 +++++------
- fs/btrfs/defrag.h                |  10 +
- fs/btrfs/delalloc-space.c        |   2 -
- fs/btrfs/delalloc-space.h        |   4 +
- fs/btrfs/delayed-inode.c         |  21 ++-
- fs/btrfs/delayed-inode.h         |  21 +--
- fs/btrfs/delayed-ref.c           |  85 +++++++--
- fs/btrfs/delayed-ref.h           |  82 ++-------
- fs/btrfs/dev-replace.c           |   5 +-
- fs/btrfs/dev-replace.h           |   4 +
- fs/btrfs/dir-item.h              |   6 +
- fs/btrfs/disk-io.c               |  30 ++-
- fs/btrfs/disk-io.h               |  20 +-
- fs/btrfs/export.c                |  12 +-
- fs/btrfs/export.h                |   4 +
- fs/btrfs/extent-io-tree.c        |   6 +-
- fs/btrfs/extent-io-tree.h        |   7 +
- fs/btrfs/extent-tree.c           |  51 ++++--
- fs/btrfs/extent-tree.h           |  10 +
- fs/btrfs/extent_io.c             | 387 +++++++++++++++++++++++++--------------
- fs/btrfs/extent_io.h             |  44 ++++-
- fs/btrfs/extent_map.c            |  23 ++-
- fs/btrfs/extent_map.h            |   8 +
- fs/btrfs/file-item.c             |   6 -
- fs/btrfs/file-item.h             |  13 ++
- fs/btrfs/file.c                  |  43 +++--
- fs/btrfs/file.h                  |  15 ++
- fs/btrfs/free-space-cache.c      |  12 +-
- fs/btrfs/free-space-cache.h      |  15 +-
- fs/btrfs/free-space-tree.c       |  56 +++---
- fs/btrfs/free-space-tree.h       |   6 +
- fs/btrfs/fs.h                    |  59 +++++-
- fs/btrfs/inode-item.c            |   1 -
- fs/btrfs/inode-item.h            |   5 +-
- fs/btrfs/inode.c                 | 238 +++++++++++++-----------
- fs/btrfs/ioctl.c                 | 120 +++++++-----
- fs/btrfs/ioctl.h                 |   9 +
- fs/btrfs/locking.c               |   3 +-
- fs/btrfs/locking.h               |   8 +-
- fs/btrfs/lru_cache.h             |   7 +-
- fs/btrfs/lzo.c                   |   4 +-
- fs/btrfs/messages.c              |   2 -
- fs/btrfs/misc.h                  |   2 +
- fs/btrfs/ordered-data.c          |   6 +-
- fs/btrfs/ordered-data.h          |  15 ++
- fs/btrfs/orphan.c                |   1 -
- fs/btrfs/orphan.h                |   5 +
- fs/btrfs/print-tree.h            |   3 +
- fs/btrfs/props.c                 |   3 +-
- fs/btrfs/props.h                 |   7 +-
- fs/btrfs/qgroup.c                | 148 +++++++++++++--
- fs/btrfs/qgroup.h                |  20 +-
- fs/btrfs/raid-stripe-tree.c      |   1 -
- fs/btrfs/raid-stripe-tree.h      |   5 +
- fs/btrfs/raid56.c                |  31 +++-
- fs/btrfs/raid56.h                |   9 +
- fs/btrfs/rcu-string.h            |   6 +
- fs/btrfs/ref-verify.h            |   9 +
- fs/btrfs/reflink.c               |  12 +-
- fs/btrfs/reflink.h               |   4 +-
- fs/btrfs/relocation.c            |   5 +-
- fs/btrfs/relocation.h            |   9 +
- fs/btrfs/root-tree.c             |  17 +-
- fs/btrfs/root-tree.h             |  10 +
- fs/btrfs/scrub.c                 |   9 +-
- fs/btrfs/scrub.h                 |   6 +
- fs/btrfs/send.c                  |  64 ++++---
- fs/btrfs/send.h                  |   8 +-
- fs/btrfs/space-info.c            |   1 -
- fs/btrfs/space-info.h            |   9 +
- fs/btrfs/subpage.c               |  74 ++++++--
- fs/btrfs/subpage.h               |  21 ++-
- fs/btrfs/super.c                 |   9 +-
- fs/btrfs/super.h                 |   7 +
- fs/btrfs/sysfs.c                 |  53 +++++-
- fs/btrfs/sysfs.h                 |   9 +
- fs/btrfs/tests/extent-io-tests.c |  28 ++-
- fs/btrfs/tests/inode-tests.c     |  40 ++--
- fs/btrfs/transaction.c           |  19 +-
- fs/btrfs/transaction.h           |  18 +-
- fs/btrfs/tree-checker.c          |   8 +-
- fs/btrfs/tree-checker.h          |   2 +
- fs/btrfs/tree-log.c              | 141 ++++++++++----
- fs/btrfs/tree-log.h              |  49 ++---
- fs/btrfs/tree-mod-log.c          |  13 +-
- fs/btrfs/tree-mod-log.h          |   8 +-
- fs/btrfs/ulist.c                 |   1 -
- fs/btrfs/ulist.h                 |   1 +
- fs/btrfs/uuid-tree.c             |   3 +-
- fs/btrfs/uuid-tree.h             |   5 +
- fs/btrfs/verity.c                |   1 -
- fs/btrfs/verity.h                |   7 +
- fs/btrfs/volumes.c               |  98 +++++++---
- fs/btrfs/volumes.h               |  53 +++++-
- fs/btrfs/xattr.h                 |   6 +-
- fs/btrfs/zlib.c                  |   2 +-
- fs/btrfs/zoned.c                 |   2 -
- fs/btrfs/zoned.h                 |  15 ++
- fs/btrfs/zstd.c                  |  75 +++-----
- include/uapi/linux/btrfs.h       |   1 +
- 119 files changed, 2131 insertions(+), 1116 deletions(-)

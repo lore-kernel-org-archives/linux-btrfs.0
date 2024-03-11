@@ -1,329 +1,239 @@
-Received: from wp530.webpack.hosteurope.de (wp530.webpack.hosteurope.de [80.237.130.52])
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BB67733070;
-	Mon, 11 Mar 2024 09:15:35 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=80.237.130.52
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2DE173C493
+	for <linux-btrfs@vger.kernel.org>; Mon, 11 Mar 2024 13:13:23 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.133.124
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1710148538; cv=none; b=JIf6UaIMQZQr3NsL7iZI+B8HEXrsses38xXThxo+gxOuJ9Apgch1/V+NJfkoxeYsZOTjATYM0eL+e9sNGO8Gkq3ofh+omgbUpNeAHY2+eVSV7LWyEXNMJSrLR29ECmfe59nwJY0zUB4i5m4MyUrh6MS6XSeeOlZWNhGRV7WuPvE=
+	t=1710162805; cv=none; b=uVKKrEpIq4Q5nxbkKFhj333VQNwTBpvvKaOqMNNSV11ng2Yzonvmxhi5kx9Q2kVDJYrxOupLUGQQ5eJxcj6vgJEHAanrwUggfExnMGXUrryuikTLHlmcSEsD8ExXCeSsDlIMtyuu+9XbgIKP4+Dsq+/XwO/rhqpLq4orFKil5Pw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1710148538; c=relaxed/simple;
-	bh=fDcyWtsKLpMUlBDZfvyHMi0/iqNhwLjnewlmBXGhQeg=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=d2gOmZSZUmLkBLA4TqOygCzCbZC59DwGNeTZkxzpehrlrjWs5Al1p8wZoMy5GvZSI6JhtrzLe9LtHof0KfD4VnkpAuc+k6WyC0AoFh4a5pOgLztQSLZR/RDPRbQQiU7J1a4eWzKevfJmypP+5oUP2XR/GNflbp/eVYdWlnJIAoY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=leemhuis.info; spf=pass smtp.mailfrom=leemhuis.info; dkim=pass (2048-bit key) header.d=leemhuis.info header.i=@leemhuis.info header.b=VoylY6yu; arc=none smtp.client-ip=80.237.130.52
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=leemhuis.info
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=leemhuis.info
+	s=arc-20240116; t=1710162805; c=relaxed/simple;
+	bh=oklUwL+uJA6fNtuusqrKD0mu1H8aZpzPS0lrskntuAA=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=YdMTVTky1DPgRBLoZHvc9ZtBJSAEn7QfNiH83jA9r+NCB1R8DwzBnnVZDArWunWJn2oFxx/V4rCdz9EH1onkcPSJBle8nWPJ9qJry2SFCvEu1IP/O4e02MwKIimt8p8rGaf0UC4AXAwK6IK8BkXMFssbvswkGieaZIZbcssZlJk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=RzAF3VmN; arc=none smtp.client-ip=170.10.133.124
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=leemhuis.info header.i=@leemhuis.info header.b="VoylY6yu"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=leemhuis.info; s=he214686; h=Content-Transfer-Encoding:Content-Type:
-	In-Reply-To:From:References:Cc:To:Subject:Reply-To:MIME-Version:Date:
-	Message-ID:From:Sender:Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:
-	Content-Type:Content-Transfer-Encoding:Content-ID:Content-Description:
-	In-Reply-To:References; bh=rm2u1DC2SQLO/GhCuJ2mUooy8fntRke757nFqBbgD2k=;
-	t=1710148535; x=1710580535; b=VoylY6yuRK/0sU0/64QivCQqs7GgA+0GYsaXHS9Y8ujtSUD
-	ECdC4j18kyxN08AF6biBu3ezMk89hwF/TYJjXcYBYPWM9zy4BJJ7jheGQiQsUdoLvOfKfJ7Mlytgf
-	rSDrEg/4Gas0CZUBVx9GLLj2HxOFZ7dmGyuIw7LdIlWLUXcpgHZNUCXZ8i42bvn750pVPZx+gFEt2
-	2O2GmZHc3s73uQB2ovJ9N3LhNqZgBwkIOIFd7QyE4K5tzKlD/rlWaItPU6/ij9kb2FHZfrNktLwvS
-	qXgwD83WYQjibFrnB9pM7SxjZ9LpGg+6/SwWwXLe4kU1rSNsYxQe6Um1w5pjsK3g==;
-Received: from [2a02:8108:8980:2478:8cde:aa2c:f324:937e]; authenticated
-	by wp530.webpack.hosteurope.de running ExIM with esmtpsa (TLS1.3:ECDHE_RSA_AES_128_GCM_SHA256:128)
-	id 1rjbkq-0001Hx-Kh; Mon, 11 Mar 2024 10:15:32 +0100
-Message-ID: <da17e97b-1880-415d-8cdb-07e79808e702@leemhuis.info>
-Date: Mon, 11 Mar 2024 10:15:31 +0100
+	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="RzAF3VmN"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+	s=mimecast20190719; t=1710162803;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=SF+hHbhR6PmZRbNnvRDOIoP+U+GWHfuAJbw7MsIUXN0=;
+	b=RzAF3VmNC8pdD51JRqQpFVROoKWgsgL43TW3xnvLJmXxTN0fBK7Olr/Abhsy2FObXnIZiW
+	JWbMMS+ddX+oU5EJbN7AmxYtGHysfKB0r4RA3HwNCFAFdtlGigjOu1jgNcQ68sW/z7ThL2
+	1VwEz0JZnHQ0h9eik+p0ZOoF6KxL/5A=
+Received: from mimecast-mx02.redhat.com (mx-ext.redhat.com [66.187.233.73])
+ by relay.mimecast.com with ESMTP with STARTTLS (version=TLSv1.3,
+ cipher=TLS_AES_256_GCM_SHA384) id us-mta-182-Udhoi6WwMIqlcHlVxvW-Ng-1; Mon,
+ 11 Mar 2024 09:13:20 -0400
+X-MC-Unique: Udhoi6WwMIqlcHlVxvW-Ng-1
+Received: from smtp.corp.redhat.com (int-mx08.intmail.prod.int.rdu2.redhat.com [10.11.54.8])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
+	(No client certificate requested)
+	by mimecast-mx02.redhat.com (Postfix) with ESMTPS id 5ED1538000B0;
+	Mon, 11 Mar 2024 13:13:19 +0000 (UTC)
+Received: from fedora (unknown [10.72.116.5])
+	by smtp.corp.redhat.com (Postfix) with ESMTPS id 2A3C7C04125;
+	Mon, 11 Mar 2024 13:13:12 +0000 (UTC)
+Date: Mon, 11 Mar 2024 21:13:08 +0800
+From: Ming Lei <ming.lei@redhat.com>
+To: Patrick Plenefisch <simonpatp@gmail.com>
+Cc: Mike Snitzer <snitzer@kernel.org>,
+	Goffredo Baroncelli <kreijack@inwind.it>,
+	linux-kernel@vger.kernel.org, Alasdair Kergon <agk@redhat.com>,
+	Mikulas Patocka <mpatocka@redhat.com>, Chris Mason <clm@fb.com>,
+	Josef Bacik <josef@toxicpanda.com>, David Sterba <dsterba@suse.com>,
+	regressions@lists.linux.dev, dm-devel@lists.linux.dev,
+	linux-btrfs@vger.kernel.org, ming.lei@redhat.com
+Subject: Re: LVM-on-LVM: error while submitting device barriers
+Message-ID: <Ze8DZLBHhCxgzc+r@fedora>
+References: <CAOCpoWexiuYLu0fpPr71+Uzxw_tw3q4HGF9tKgx5FM4xMx9fWA@mail.gmail.com>
+ <a1e30dab-dfde-418e-a0dd-3e294838e839@inwind.it>
+ <CAOCpoWeB=2j+n+5K5ytj2maZxdrV80cxJcM5CL=z1bZKgpXPWQ@mail.gmail.com>
+ <a783e5ed-db56-4100-956a-353170b1b7ed@inwind.it>
+ <ZedaKUge-EBo4CuT@redhat.com>
+ <ZeiS/bjJaRcrerWW@fedora>
+ <CAOCpoWeoQMh_-MxzxGBnK2Kf5EhvTLs=GrGwJ5XcfGVRTp73Eg@mail.gmail.com>
+ <Ze2azGlb1WxVFv7Z@fedora>
+ <Ze3RWqLvG18cQ4dz@redhat.com>
+ <CAOCpoWf7C=B1sdeUL46sVVtVUDH8+o_T9LGJNTOYqA317uMdmA@mail.gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Reply-To: Linux regressions mailing list <regressions@lists.linux.dev>
-Subject: Re: [PATCH 6.7 001/162] btrfs: fix deadlock with fiemap and extent
- locking
-Content-Language: en-US, de-DE
-To: Filipe Manana <fdmanana@suse.com>, David Sterba <dsterba@suse.com>
-Cc: stable@vger.kernel.org, patches@lists.linux.dev,
- Josef Bacik <josef@toxicpanda.com>, Sasha Levin <sashal@kernel.org>,
- Linux kernel regressions list <regressions@lists.linux.dev>,
- Chris Mason <clm@fb.com>, linux-btrfs <linux-btrfs@vger.kernel.org>,
- Linux kernel regressions list <regressions@lists.linux.dev>,
- Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-References: <20240304211551.833500257@linuxfoundation.org>
- <20240304211551.880347593@linuxfoundation.org>
- <CAKisOQGCiJUUc62ptxp08LkR88T5t1swcBPYi84y2fLP6Tag7g@mail.gmail.com>
-From: "Linux regression tracking (Thorsten Leemhuis)"
- <regressions@leemhuis.info>
-In-Reply-To: <CAKisOQGCiJUUc62ptxp08LkR88T5t1swcBPYi84y2fLP6Tag7g@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-X-bounce-key: webpack.hosteurope.de;regressions@leemhuis.info;1710148535;60c88d1c;
-X-HE-SMSGID: 1rjbkq-0001Hx-Kh
+In-Reply-To: <CAOCpoWf7C=B1sdeUL46sVVtVUDH8+o_T9LGJNTOYqA317uMdmA@mail.gmail.com>
+X-Scanned-By: MIMEDefang 3.4.1 on 10.11.54.8
 
-On 06.03.24 13:39, Filipe Manana wrote:
-> On Mon, Mar 4, 2024 at 9:26 PM Greg Kroah-Hartman
-> <gregkh@linuxfoundation.org> wrote:
->>
->> 6.7-stable review patch.  If anyone has any objections, please let me know.
+On Sun, Mar 10, 2024 at 02:11:11PM -0400, Patrick Plenefisch wrote:
+> On Sun, Mar 10, 2024 at 11:27 AM Mike Snitzer <snitzer@kernel.org> wrote:
+> >
+> > On Sun, Mar 10 2024 at  7:34P -0400,
+> > Ming Lei <ming.lei@redhat.com> wrote:
+> >
+> > > On Sat, Mar 09, 2024 at 03:39:02PM -0500, Patrick Plenefisch wrote:
+> > > > On Wed, Mar 6, 2024 at 11:00 AM Ming Lei <ming.lei@redhat.com> wrote:
+> > > > >
+> > > > > #!/usr/bin/bpftrace
+> > > > >
+> > > > > #ifndef BPFTRACE_HAVE_BTF
+> > > > > #include <linux/blkdev.h>
+> > > > > #endif
+> > > > >
+> > > > > kprobe:submit_bio_noacct,
+> > > > > kprobe:submit_bio
+> > > > > / (((struct bio *)arg0)->bi_opf & (1 << __REQ_PREFLUSH)) != 0 /
+> > > > > {
+> > > > >         $bio = (struct bio *)arg0;
+> > > > >         @submit_stack[arg0] = kstack;
+> > > > >         @tracked[arg0] = 1;
+> > > > > }
+> > > > >
+> > > > > kprobe:bio_endio
+> > > > > /@tracked[arg0] != 0/
+> > > > > {
+> > > > >         $bio = (struct bio *)arg0;
+> > > > >
+> > > > >         if (($bio->bi_flags & (1 << BIO_CHAIN)) && $bio->__bi_remaining.counter > 1) {
+> > > > >                 return;
+> > > > >         }
+> > > > >
+> > > > >         if ($bio->bi_status != 0) {
+> > > > >                 printf("dev %s bio failed %d, submitter %s completion %s\n",
+> > > > >                         $bio->bi_bdev->bd_disk->disk_name,
+> > > > >                         $bio->bi_status, @submit_stack[arg0], kstack);
+> > > > >         }
+> > > > >         delete(@submit_stack[arg0]);
+> > > > >         delete(@tracked[arg0]);
+> > > > > }
+> > > > >
+> > > > > END {
+> > > > >         clear(@submit_stack);
+> > > > >         clear(@tracked);
+> > > > > }
+> > > > >
+> > > >
+> > > > Attaching 4 probes...
+> > > > dev dm-77 bio failed 10, submitter
+> > > >        submit_bio_noacct+5
+> > > >        __send_duplicate_bios+358
+> > > >        __send_empty_flush+179
+> > > >        dm_submit_bio+857
+> > > >        __submit_bio+132
+> > > >        submit_bio_noacct_nocheck+345
+> > > >        write_all_supers+1718
+> > > >        btrfs_commit_transaction+2342
+> > > >        transaction_kthread+345
+> > > >        kthread+229
+> > > >        ret_from_fork+49
+> > > >        ret_from_fork_asm+27
+> > > > completion
+> > > >        bio_endio+5
+> > > >        dm_submit_bio+955
+> > > >        __submit_bio+132
+> > > >        submit_bio_noacct_nocheck+345
+> > > >        write_all_supers+1718
+> > > >        btrfs_commit_transaction+2342
+> > > >        transaction_kthread+345
+> > > >        kthread+229
+> > > >        ret_from_fork+49
+> > > >        ret_from_fork_asm+27
+> > > >
+> > > > dev dm-86 bio failed 10, submitter
+> > > >        submit_bio_noacct+5
+> > > >        write_all_supers+1718
+> > > >        btrfs_commit_transaction+2342
+> > > >        transaction_kthread+345
+> > > >        kthread+229
+> > > >        ret_from_fork+49
+> > > >        ret_from_fork_asm+27
+> > > > completion
+> > > >        bio_endio+5
+> > > >        clone_endio+295
+> > > >        clone_endio+295
+> > > >        process_one_work+369
+> > > >        worker_thread+635
+> > > >        kthread+229
+> > > >        ret_from_fork+49
+> > > >        ret_from_fork_asm+27
+> > > >
+> > > >
+> > > > For context, dm-86 is /dev/lvm/brokenDisk and dm-77 is /dev/lowerVG/lvmPool
+> > >
+> > > io_status is 10(BLK_STS_IOERR), which is produced in submission code path on
+> > > /dev/dm-77(/dev/lowerVG/lvmPool) first, so looks it is one device mapper issue.
+> > >
+> > > The error should be from the following code only:
+> > >
+> > > static void __map_bio(struct bio *clone)
+> > >
+> > >       ...
+> > >       if (r == DM_MAPIO_KILL)
+> > >               dm_io_dec_pending(io, BLK_STS_IOERR);
+> > >       else
+> > >               dm_io_dec_pending(io, BLK_STS_DM_REQUEUE);
+> > >     break;
+> >
+> > I agree that the above bpf stack traces for dm-77 indicate that
+> > dm_submit_bio failed, which would end up in the above branch if the
+> > target's ->map() returned DM_MAPIO_KILL or DM_MAPIO_REQUEUE.
+> >
+> > But such an early failure speaks to the flush bio never being
+> > submitted to the underlying storage. No?
+> >
+> > dm-raid.c:raid_map does return DM_MAPIO_REQUEUE with:
+> >
+> >         /*
+> >          * If we're reshaping to add disk(s)), ti->len and
+> >          * mddev->array_sectors will differ during the process
+> >          * (ti->len > mddev->array_sectors), so we have to requeue
+> >          * bios with addresses > mddev->array_sectors here or
+> >          * there will occur accesses past EOD of the component
+> >          * data images thus erroring the raid set.
+> >          */
+> >         if (unlikely(bio_end_sector(bio) > mddev->array_sectors))
+> >                 return DM_MAPIO_REQUEUE;
+> >
+> > But a flush doesn't have an end_sector (it'd be 0 afaik).. so it seems
+> > weird relative to a flush.
+> >
+> > > Patrick, you mentioned lvmPool is raid1, can you explain how lvmPool is
+> > > built? It is dm-raid1 target or over plain raid1 device which is
+> > > build over /dev/lowerVG?
 > 
-> It would be better to delay the backport of this patch (and the
-> followup fix) to any stable release, because it introduced another
-> regression for which there is a reviewed fix but it's not yet in
-> Linus' tree:
-> 
-> https://lore.kernel.org/linux-btrfs/cover.1709202499.git.fdmanana@suse.com/
+> LVM raid1:
+> lvcreate --type raid1 -m 1 ...
 
-Those two missed 6.8 afaics. Will those be heading to mainline any time
-soon? And how fast afterwards will it be wise to backport them to 6.8?
-Will anyone ask Greg for that when the time has come? Same for
-backporting "btrfs: fix deadlock with fiemap and extent locking", the
-followup fix and the two fixed mentioned above for 6.6 and 6.7?
+OK, that is the reason, as Mike mentioned.
 
-Cioa, Thorsten
+dm-raid.c:raid_map returns DM_MAPIO_REQUEUE, which is translated into
+BLK_STS_IOERR in dm_io_complete().
 
->> ------------------
->>
->> From: Josef Bacik <josef@toxicpanda.com>
->>
->> [ Upstream commit b0ad381fa7690244802aed119b478b4bdafc31dd ]
->>
->> While working on the patchset to remove extent locking I got a lockdep
->> splat with fiemap and pagefaulting with my new extent lock replacement
->> lock.
->>
->> This deadlock exists with our normal code, we just don't have lockdep
->> annotations with the extent locking so we've never noticed it.
->>
->> Since we're copying the fiemap extent to user space on every iteration
->> we have the chance of pagefaulting.  Because we hold the extent lock for
->> the entire range we could mkwrite into a range in the file that we have
->> mmap'ed.  This would deadlock with the following stack trace
->>
->> [<0>] lock_extent+0x28d/0x2f0
->> [<0>] btrfs_page_mkwrite+0x273/0x8a0
->> [<0>] do_page_mkwrite+0x50/0xb0
->> [<0>] do_fault+0xc1/0x7b0
->> [<0>] __handle_mm_fault+0x2fa/0x460
->> [<0>] handle_mm_fault+0xa4/0x330
->> [<0>] do_user_addr_fault+0x1f4/0x800
->> [<0>] exc_page_fault+0x7c/0x1e0
->> [<0>] asm_exc_page_fault+0x26/0x30
->> [<0>] rep_movs_alternative+0x33/0x70
->> [<0>] _copy_to_user+0x49/0x70
->> [<0>] fiemap_fill_next_extent+0xc8/0x120
->> [<0>] emit_fiemap_extent+0x4d/0xa0
->> [<0>] extent_fiemap+0x7f8/0xad0
->> [<0>] btrfs_fiemap+0x49/0x80
->> [<0>] __x64_sys_ioctl+0x3e1/0xb50
->> [<0>] do_syscall_64+0x94/0x1a0
->> [<0>] entry_SYSCALL_64_after_hwframe+0x6e/0x76
->>
->> I wrote an fstest to reproduce this deadlock without my replacement lock
->> and verified that the deadlock exists with our existing locking.
->>
->> To fix this simply don't take the extent lock for the entire duration of
->> the fiemap.  This is safe in general because we keep track of where we
->> are when we're searching the tree, so if an ordered extent updates in
->> the middle of our fiemap call we'll still emit the correct extents
->> because we know what offset we were on before.
->>
->> The only place we maintain the lock is searching delalloc.  Since the
->> delalloc stuff can change during writeback we want to lock the extent
->> range so we have a consistent view of delalloc at the time we're
->> checking to see if we need to set the delalloc flag.
->>
->> With this patch applied we no longer deadlock with my testcase.
->>
->> CC: stable@vger.kernel.org # 6.1+
->> Reviewed-by: Filipe Manana <fdmanana@suse.com>
->> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
->> Reviewed-by: David Sterba <dsterba@suse.com>
->> Signed-off-by: David Sterba <dsterba@suse.com>
->> Signed-off-by: Sasha Levin <sashal@kernel.org>
->> ---
->>  fs/btrfs/extent_io.c | 62 ++++++++++++++++++++++++++++++++------------
->>  1 file changed, 45 insertions(+), 17 deletions(-)
->>
->> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
->> index 8f724c54fc8e9..197b41d02735b 100644
->> --- a/fs/btrfs/extent_io.c
->> +++ b/fs/btrfs/extent_io.c
->> @@ -2645,16 +2645,34 @@ static int fiemap_process_hole(struct btrfs_inode *inode,
->>          * it beyond i_size.
->>          */
->>         while (cur_offset < end && cur_offset < i_size) {
->> +               struct extent_state *cached_state = NULL;
->>                 u64 delalloc_start;
->>                 u64 delalloc_end;
->>                 u64 prealloc_start;
->> +               u64 lockstart;
->> +               u64 lockend;
->>                 u64 prealloc_len = 0;
->>                 bool delalloc;
->>
->> +               lockstart = round_down(cur_offset, inode->root->fs_info->sectorsize);
->> +               lockend = round_up(end, inode->root->fs_info->sectorsize);
->> +
->> +               /*
->> +                * We are only locking for the delalloc range because that's the
->> +                * only thing that can change here.  With fiemap we have a lock
->> +                * on the inode, so no buffered or direct writes can happen.
->> +                *
->> +                * However mmaps and normal page writeback will cause this to
->> +                * change arbitrarily.  We have to lock the extent lock here to
->> +                * make sure that nobody messes with the tree while we're doing
->> +                * btrfs_find_delalloc_in_range.
->> +                */
->> +               lock_extent(&inode->io_tree, lockstart, lockend, &cached_state);
->>                 delalloc = btrfs_find_delalloc_in_range(inode, cur_offset, end,
->>                                                         delalloc_cached_state,
->>                                                         &delalloc_start,
->>                                                         &delalloc_end);
->> +               unlock_extent(&inode->io_tree, lockstart, lockend, &cached_state);
->>                 if (!delalloc)
->>                         break;
->>
->> @@ -2822,15 +2840,15 @@ int extent_fiemap(struct btrfs_inode *inode, struct fiemap_extent_info *fieinfo,
->>                   u64 start, u64 len)
->>  {
->>         const u64 ino = btrfs_ino(inode);
->> -       struct extent_state *cached_state = NULL;
->>         struct extent_state *delalloc_cached_state = NULL;
->>         struct btrfs_path *path;
->>         struct fiemap_cache cache = { 0 };
->>         struct btrfs_backref_share_check_ctx *backref_ctx;
->>         u64 last_extent_end;
->>         u64 prev_extent_end;
->> -       u64 lockstart;
->> -       u64 lockend;
->> +       u64 range_start;
->> +       u64 range_end;
->> +       const u64 sectorsize = inode->root->fs_info->sectorsize;
->>         bool stopped = false;
->>         int ret;
->>
->> @@ -2841,12 +2859,11 @@ int extent_fiemap(struct btrfs_inode *inode, struct fiemap_extent_info *fieinfo,
->>                 goto out;
->>         }
->>
->> -       lockstart = round_down(start, inode->root->fs_info->sectorsize);
->> -       lockend = round_up(start + len, inode->root->fs_info->sectorsize);
->> -       prev_extent_end = lockstart;
->> +       range_start = round_down(start, sectorsize);
->> +       range_end = round_up(start + len, sectorsize);
->> +       prev_extent_end = range_start;
->>
->>         btrfs_inode_lock(inode, BTRFS_ILOCK_SHARED);
->> -       lock_extent(&inode->io_tree, lockstart, lockend, &cached_state);
->>
->>         ret = fiemap_find_last_extent_offset(inode, path, &last_extent_end);
->>         if (ret < 0)
->> @@ -2854,7 +2871,7 @@ int extent_fiemap(struct btrfs_inode *inode, struct fiemap_extent_info *fieinfo,
->>         btrfs_release_path(path);
->>
->>         path->reada = READA_FORWARD;
->> -       ret = fiemap_search_slot(inode, path, lockstart);
->> +       ret = fiemap_search_slot(inode, path, range_start);
->>         if (ret < 0) {
->>                 goto out_unlock;
->>         } else if (ret > 0) {
->> @@ -2866,7 +2883,7 @@ int extent_fiemap(struct btrfs_inode *inode, struct fiemap_extent_info *fieinfo,
->>                 goto check_eof_delalloc;
->>         }
->>
->> -       while (prev_extent_end < lockend) {
->> +       while (prev_extent_end < range_end) {
->>                 struct extent_buffer *leaf = path->nodes[0];
->>                 struct btrfs_file_extent_item *ei;
->>                 struct btrfs_key key;
->> @@ -2889,19 +2906,19 @@ int extent_fiemap(struct btrfs_inode *inode, struct fiemap_extent_info *fieinfo,
->>                  * The first iteration can leave us at an extent item that ends
->>                  * before our range's start. Move to the next item.
->>                  */
->> -               if (extent_end <= lockstart)
->> +               if (extent_end <= range_start)
->>                         goto next_item;
->>
->>                 backref_ctx->curr_leaf_bytenr = leaf->start;
->>
->>                 /* We have in implicit hole (NO_HOLES feature enabled). */
->>                 if (prev_extent_end < key.offset) {
->> -                       const u64 range_end = min(key.offset, lockend) - 1;
->> +                       const u64 hole_end = min(key.offset, range_end) - 1;
->>
->>                         ret = fiemap_process_hole(inode, fieinfo, &cache,
->>                                                   &delalloc_cached_state,
->>                                                   backref_ctx, 0, 0, 0,
->> -                                                 prev_extent_end, range_end);
->> +                                                 prev_extent_end, hole_end);
->>                         if (ret < 0) {
->>                                 goto out_unlock;
->>                         } else if (ret > 0) {
->> @@ -2911,7 +2928,7 @@ int extent_fiemap(struct btrfs_inode *inode, struct fiemap_extent_info *fieinfo,
->>                         }
->>
->>                         /* We've reached the end of the fiemap range, stop. */
->> -                       if (key.offset >= lockend) {
->> +                       if (key.offset >= range_end) {
->>                                 stopped = true;
->>                                 break;
->>                         }
->> @@ -3005,29 +3022,41 @@ int extent_fiemap(struct btrfs_inode *inode, struct fiemap_extent_info *fieinfo,
->>         btrfs_free_path(path);
->>         path = NULL;
->>
->> -       if (!stopped && prev_extent_end < lockend) {
->> +       if (!stopped && prev_extent_end < range_end) {
->>                 ret = fiemap_process_hole(inode, fieinfo, &cache,
->>                                           &delalloc_cached_state, backref_ctx,
->> -                                         0, 0, 0, prev_extent_end, lockend - 1);
->> +                                         0, 0, 0, prev_extent_end, range_end - 1);
->>                 if (ret < 0)
->>                         goto out_unlock;
->> -               prev_extent_end = lockend;
->> +               prev_extent_end = range_end;
->>         }
->>
->>         if (cache.cached && cache.offset + cache.len >= last_extent_end) {
->>                 const u64 i_size = i_size_read(&inode->vfs_inode);
->>
->>                 if (prev_extent_end < i_size) {
->> +                       struct extent_state *cached_state = NULL;
->>                         u64 delalloc_start;
->>                         u64 delalloc_end;
->> +                       u64 lockstart;
->> +                       u64 lockend;
->>                         bool delalloc;
->>
->> +                       lockstart = round_down(prev_extent_end, sectorsize);
->> +                       lockend = round_up(i_size, sectorsize);
->> +
->> +                       /*
->> +                        * See the comment in fiemap_process_hole as to why
->> +                        * we're doing the locking here.
->> +                        */
->> +                       lock_extent(&inode->io_tree, lockstart, lockend, &cached_state);
->>                         delalloc = btrfs_find_delalloc_in_range(inode,
->>                                                                 prev_extent_end,
->>                                                                 i_size - 1,
->>                                                                 &delalloc_cached_state,
->>                                                                 &delalloc_start,
->>                                                                 &delalloc_end);
->> +                       unlock_extent(&inode->io_tree, lockstart, lockend, &cached_state);
->>                         if (!delalloc)
->>                                 cache.flags |= FIEMAP_EXTENT_LAST;
->>                 } else {
->> @@ -3038,7 +3067,6 @@ int extent_fiemap(struct btrfs_inode *inode, struct fiemap_extent_info *fieinfo,
->>         ret = emit_last_fiemap_cache(fieinfo, &cache);
->>
->>  out_unlock:
->> -       unlock_extent(&inode->io_tree, lockstart, lockend, &cached_state);
->>         btrfs_inode_unlock(inode, BTRFS_ILOCK_SHARED);
->>  out:
->>         free_extent_state(delalloc_cached_state);
->> --
->> 2.43.0
->>
->>
->>
+Empty flush bio is sent from btrfs, both .bi_size and .bi_sector are set
+as zero, but the top dm is linear, which(linear_map()) maps new
+bio->bi_iter.bi_sector, and the mapped bio is sent to dm-raid(raid_map()),
+then DM_MAPIO_REQUEUE is returned.
+
+The one-line patch I sent in last email should solve this issue.
+
+https://lore.kernel.org/dm-devel/a783e5ed-db56-4100-956a-353170b1b7ed@inwind.it/T/#m8fce3ecb2f98370b7d7ce8db6714bbf644af5459
+
+But DM_MAPIO_REQUEUE misuse needs close look, and I believe Mike is working
+on that bigger problem.
+
+I guess most of dm targets don't deal with empty bio well, at least
+linear & dm-raid, not look into others yet, :-(
+
+
+Thanks,
+Ming
+

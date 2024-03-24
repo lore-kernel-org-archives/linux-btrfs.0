@@ -1,47 +1,47 @@
 Received: from mgamail.intel.com (mgamail.intel.com [198.175.65.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AEC9315ECFE;
-	Sun, 24 Mar 2024 23:18:32 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D3E48236CFA;
+	Sun, 24 Mar 2024 23:18:25 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.175.65.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1711322316; cv=none; b=CUy/TbGsFazrVdeTcUrULrW/1h1tGrXjqUEqlCyHEl/pA5l2GvxZ1WAnM5Sgpi+QYixmkooDYpJkftNV1QiOKdNU4gy5J0RmzljC0oJiGI0dnefcCvCIl5DP2VzaFdelRyWEVsNYiILx/BC5gBPjGl3cQdhoR0tOmjKrXNQYAJQ=
+	t=1711322309; cv=none; b=Bn07Fq1tEqT7SW2r4N+QHcjiCfhi6AOP6QGF4kDC8v+cKr6qfmGJR/95Mc0yI+rA00aFn0D2yRbxB6udxfGK7p9Oh1KP2LoBNovAkeCNS8uu6jz+sSSZ0DTv3ZJl03HGLnf/oOQzq7DoCewOfWqBk8aIcgNEE4qtAZtJSLyhCgQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1711322316; c=relaxed/simple;
-	bh=1FDjkLijZOPxtk8eVYc1f5q/hCjbFQPfEX5BsvtZmb8=;
+	s=arc-20240116; t=1711322309; c=relaxed/simple;
+	bh=EWYEgLHalFugQDxHMuZ1SSZaWkLeAcVsY/Km0kOJIZo=;
 	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
-	 In-Reply-To:To:Cc; b=nByTxaqtPUWlLNn5FhL8Xmn5VOAz6y99WvG8Kue16hh4L6OcC/EjlqGtbxV5Mx/V7Np5rSpmNJ+kyrOK0GnSvfWKXipEU/ZzyAXCJqfrQdTUbz8rNjr/JRqgG/rm7MUcYrYSISzmC7wosju3Eb92f6J6jqtHqy/VzMILnKTD13U=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com; spf=pass smtp.mailfrom=intel.com; dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b=fTZZUjLt; arc=none smtp.client-ip=198.175.65.18
+	 In-Reply-To:To:Cc; b=iWmFsaSbMelA8ieb6c36LEkhV4llN603z37juGBstW7kVqf3owWQ7aR2BuvErt08YNs78/j/GHDuubyriHvAUNIz4bWVZq9/XpSidGiIm2Q5M6OLXjfRJFueWdDzPlfz2zetlTSjXZ+LaAwtrgsWZrUqnsh6Ecvhv1vzK3lMG2I=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com; spf=pass smtp.mailfrom=intel.com; dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b=H5zWWqv8; arc=none smtp.client-ip=198.175.65.18
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=intel.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b="fTZZUjLt"
+	dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b="H5zWWqv8"
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
   d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1711322314; x=1742858314;
+  t=1711322307; x=1742858307;
   h=from:date:subject:mime-version:content-transfer-encoding:
    message-id:references:in-reply-to:to:cc;
-  bh=1FDjkLijZOPxtk8eVYc1f5q/hCjbFQPfEX5BsvtZmb8=;
-  b=fTZZUjLtqceY9nnMZmMjAsZiIhWVStN+jg961SBfuw4MDrUTyuY92gnE
-   PsEOTybXWvXIAItbIhbTXgpDHYb5sOkexweD64edMdzXvc3DDClag8p3B
-   wNfbg/FrixM0fc9l7pYn0RoCGLBk6j63Cd8Oxeo0oxlQ63i7LOyISx7ZF
-   bxiOshm3prHbg06PPE+Y2LuIJxX3wSr1AK3vofvMIbai3aSz/0N6F3Hvb
-   A3Y7bHUWbgITr+c1vY32sVrIE+uQpJxFY4m44YUHW9lKLZ/OPr5YhILX9
-   KrbXUX0etjylquap9tFd16llPRr36w/0dFGg5Aa5Bm0v+TKSQRJH56j6Q
+  bh=EWYEgLHalFugQDxHMuZ1SSZaWkLeAcVsY/Km0kOJIZo=;
+  b=H5zWWqv844hh+z8vBY+AYQKEFqhrGhoLLoGT9XdVaDjhz6YGyvc3J8QM
+   LrwaqJnwyriZa4ZwNb9lNMky38kqf7EXLj80dVROBX9+L2wJbet7qkGzP
+   notcX6rkI9uV7Eci8pkIfhd1NsfQAhKw3o6Yx5V6fREgASIn3R4+oAd9R
+   LqyRqHrvthAc7q+Jv1gvd5lJidQDh+CnHMjFhpilqIC8/jxPxQGY4GFuz
+   RkQ/I7HfzcZKWOR8oOwg/P5KTkTRCMo3LzQ32UmoggyjDAQH0GPxMQ7jS
+   p8P+mEB/YyAZ/5MQIh6Y8xaNa0APaSwnn4m6F1Dqsm2UWFui3vEwnhqhl
    Q==;
-X-IronPort-AV: E=McAfee;i="6600,9927,11023"; a="6431777"
+X-IronPort-AV: E=McAfee;i="6600,9927,11023"; a="6431749"
 X-IronPort-AV: E=Sophos;i="6.07,152,1708416000"; 
-   d="scan'208";a="6431777"
+   d="scan'208";a="6431749"
 Received: from fmviesa009.fm.intel.com ([10.60.135.149])
-  by orvoesa110.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 24 Mar 2024 16:18:25 -0700
+  by orvoesa110.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 24 Mar 2024 16:18:21 -0700
 X-ExtLoop1: 1
 X-IronPort-AV: E=Sophos;i="6.07,152,1708416000"; 
-   d="scan'208";a="15464742"
+   d="scan'208";a="15464715"
 Received: from iweiny-mobl.amr.corp.intel.com (HELO localhost) ([10.213.186.165])
-  by fmviesa009-auth.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 24 Mar 2024 16:18:24 -0700
-From: Ira Weiny <ira.weiny@intel.com>
-Date: Sun, 24 Mar 2024 16:18:28 -0700
-Subject: [PATCH 25/26] tools/testing/cxl: Add DC Regions to mock mem data
+  by fmviesa009-auth.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 24 Mar 2024 16:18:20 -0700
+From: ira.weiny@intel.com
+Date: Sun, 24 Mar 2024 16:18:21 -0700
+Subject: [PATCH 18/26] cxl/mem: Handle DCD add & release capacity events.
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -50,7 +50,7 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-Message-Id: <20240324-dcd-type2-upstream-v1-25-b7b00d623625@intel.com>
+Message-Id: <20240324-dcd-type2-upstream-v1-18-b7b00d623625@intel.com>
 References: <20240324-dcd-type2-upstream-v1-0-b7b00d623625@intel.com>
 In-Reply-To: <20240324-dcd-type2-upstream-v1-0-b7b00d623625@intel.com>
 To: Dave Jiang <dave.jiang@intel.com>, Fan Ni <fan.ni@samsung.com>, 
@@ -63,710 +63,731 @@ Cc: Dan Williams <dan.j.williams@intel.com>,
  linux-btrfs@vger.kernel.org, linux-cxl@vger.kernel.org, 
  linux-kernel@vger.kernel.org
 X-Mailer: b4 0.13-dev-2d940
-X-Developer-Signature: v=1; a=ed25519-sha256; t=1711322284; l=19632;
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1711322284; l=22380;
  i=ira.weiny@intel.com; s=20221211; h=from:subject:message-id;
- bh=1FDjkLijZOPxtk8eVYc1f5q/hCjbFQPfEX5BsvtZmb8=;
- b=XjZXq0GLKAGwzh09XmwBDQAyuRWw6F9nIcFYBHrTcUBKFv8aUT8nSvV5toiXFMs9gv8yzZFIG
- 7fZqoQLIdt1BJNVM1yz4xAdLtbaGflWD5s+TnhfuFVRA+lCQG5pPxQw
+ bh=5b74S/iuWtfp8wKEYv8807A22Msp/uMjamEP83LPS3Q=;
+ b=dV7PiA9aPr9lRSmlAT9NP2mLMgMQZLzjjegLZfJmCONBD4m9cNRYn/0x7k9XFlPqy3iaVMnd9
+ KjuGnMc4MRtCcb4nsXVus5LSNjbBC4pvU0ENX8RUY/mKLAJinMGqNDo
 X-Developer-Key: i=ira.weiny@intel.com; a=ed25519;
  pk=noldbkG+Wp1qXRrrkfY1QJpDf7QsOEthbOT7vm0PqsE=
 
-cxl_test provides a good way to ensure quick smoke and regression
-testing.  The complexity of Dynamic Capacity (DC) devices and the new
-sparse DAX regions required to use them benefits greatly with a series
-of smoke tests.
+From: Navneet Singh <navneet.singh@intel.com>
 
-To test DC regions the mock memory devices will need mock DC information
-and manage fake extent data.
+A dynamic capacity devices (DCD) send events to signal the host about
+changes in the availability of Dynamic Capacity (DC) memory.  These
+events contain extents, the addition or removal of which may occur at
+any time.
 
-Define mock_dc_region information within the mock memory data.  Add
-sysfs entries on the mock device to inject and delete extents.
+Adding memory is straight forward.  If no region exists the extent is
+rejected.  If a region does exist, a region extent is formed and
+surfaced.
 
-The inject format is <start>:<length>:<tag>
-The delete format is <start>:<length>
+Removing memory requires checking if the memory is currently in use.
+Memory use tracking is added in a subsequent patch so here the memory is
+never in use and the removal occurs immediately.
 
-Add DC mailbox commands to the CEL and implement those commands.
+Most often extents will be offered to and accepted by the host in well
+defined chunks.  However, part of an extent may be requested for
+release.  Simplify extent tracking by signaling removal of any extent
+which overlaps the requested release range.
 
+Force removal is intended as a mechanism between the FM and the device
+and intended only when the host is unresponsive or otherwise broken.
+Purposely ignore force removal events.
+
+Process DCD extents.
+
+Recall that all devices of an interleave set must offer a corresponding
+extent for the region extent to be realized.  This patch limits
+interleave to 1.  Thus the 1:1 mapping between device extent and DAX
+region extent allows immediate surfacing.
+
+Signed-off-by: Navneet Singh <navneet.singh@intel.com>
+Co-developed-by: Ira Weiny <ira.weiny@intel.com>
 Signed-off-by: Ira Weiny <ira.weiny@intel.com>
 
 ---
 Changes for v1
-[iweiny: adjust to new events]
-[iweiny: remove most extent checks to allow negative testing]
+[iweiny: remove all xarrays]
+[iweiny: entirely new architecture]
 ---
- tools/testing/cxl/test/mem.c | 575 ++++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 574 insertions(+), 1 deletion(-)
+ drivers/cxl/core/extent.c |   4 ++
+ drivers/cxl/core/mbox.c   | 142 +++++++++++++++++++++++++++++++++++++++++++---
+ drivers/cxl/core/region.c | 139 ++++++++++++++++++++++++++++++++++++++++-----
+ drivers/cxl/cxl.h         |  34 +++++++++++
+ drivers/cxl/cxlmem.h      |  21 +++----
+ drivers/cxl/mem.c         |  45 +++++++++++++++
+ drivers/dax/cxl.c         |  22 +++++++
+ include/linux/cxl-event.h |  31 ++++++++++
+ 8 files changed, 405 insertions(+), 33 deletions(-)
 
-diff --git a/tools/testing/cxl/test/mem.c b/tools/testing/cxl/test/mem.c
-index d8d62e6eeb18..7d1d897d9f2b 100644
---- a/tools/testing/cxl/test/mem.c
-+++ b/tools/testing/cxl/test/mem.c
-@@ -18,6 +18,7 @@
- #define FW_SLOTS 3
- #define DEV_SIZE SZ_2G
- #define EFFECT(x) (1U << x)
-+#define BASE_DYNAMIC_CAP_DPA DEV_SIZE
+diff --git a/drivers/cxl/core/extent.c b/drivers/cxl/core/extent.c
+index 487c220f1c3c..e98acd98ebe2 100644
+--- a/drivers/cxl/core/extent.c
++++ b/drivers/cxl/core/extent.c
+@@ -118,6 +118,10 @@ int dax_region_create_ext(struct cxl_dax_region *cxlr_dax,
+ 	if (rc)
+ 		goto err;
  
- #define MOCK_INJECT_DEV_MAX 8
- #define MOCK_INJECT_TEST_MAX 128
-@@ -95,6 +96,22 @@ static struct cxl_cel_entry mock_cel[] = {
- 				      EFFECT(SECURITY_CHANGE_IMMEDIATE) |
- 				      EFFECT(BACKGROUND_OP)),
- 	},
-+	{
-+		.opcode = cpu_to_le16(CXL_MBOX_OP_GET_DC_CONFIG),
-+		.effect = CXL_CMD_EFFECT_NONE,
-+	},
-+	{
-+		.opcode = cpu_to_le16(CXL_MBOX_OP_GET_DC_EXTENT_LIST),
-+		.effect = CXL_CMD_EFFECT_NONE,
-+	},
-+	{
-+		.opcode = cpu_to_le16(CXL_MBOX_OP_ADD_DC_RESPONSE),
-+		.effect = cpu_to_le16(EFFECT(CONF_CHANGE_IMMEDIATE)),
-+	},
-+	{
-+		.opcode = cpu_to_le16(CXL_MBOX_OP_RELEASE_DC),
-+		.effect = cpu_to_le16(EFFECT(CONF_CHANGE_IMMEDIATE)),
-+	},
- };
- 
- /* See CXL 2.0 Table 181 Get Health Info Output Payload */
-@@ -152,6 +169,7 @@ struct mock_event_store {
- 	u32 ev_status;
- };
- 
-+#define NUM_MOCK_DC_REGIONS 2
- struct cxl_mockmem_data {
- 	void *lsa;
- 	void *fw;
-@@ -168,6 +186,11 @@ struct cxl_mockmem_data {
- 	u8 event_buf[SZ_4K];
- 	u64 timestamp;
- 	unsigned long sanitize_timeout;
-+	struct cxl_dc_region_config dc_regions[NUM_MOCK_DC_REGIONS];
-+	u32 dc_ext_generation;
-+	struct mutex ext_lock;
-+	struct xarray dc_extents;
-+	struct xarray dc_accepted_exts;
- };
- 
- static struct mock_event_log *event_find_log(struct device *dev, int log_type)
-@@ -558,6 +581,200 @@ static void cxl_mock_event_trigger(struct device *dev)
- 	cxl_mem_get_event_records(mdata->mds, mes->ev_status);
- }
- 
-+struct cxl_dc_extent_data {
-+	u64 dpa_start;
-+	u64 length;
-+	u8 tag[CXL_DC_EXTENT_TAG_LEN];
-+};
-+
-+static int __devm_add_extent(struct device *dev, struct xarray *array,
-+			     u64 start, u64 length, const char *tag)
-+{
-+	struct cxl_dc_extent_data *extent;
-+
-+	extent = devm_kzalloc(dev, sizeof(*extent), GFP_KERNEL);
-+	if (!extent)
-+		return -ENOMEM;
-+
-+	extent->dpa_start = start;
-+	extent->length = length;
-+	memcpy(extent->tag, tag, min(sizeof(extent->tag), strlen(tag)));
-+
-+	if (xa_insert(array, start, extent, GFP_KERNEL)) {
-+		devm_kfree(dev, extent);
-+		dev_err(dev, "Failed xarry insert %#llx\n", start);
-+		return -EINVAL;
-+	}
-+
-+	return 0;
-+}
-+
-+static int devm_add_extent(struct device *dev, u64 start, u64 length,
-+			   const char *tag)
-+{
-+	struct cxl_mockmem_data *mdata = dev_get_drvdata(dev);
-+
-+	guard(mutex)(&mdata->ext_lock);
-+	return __devm_add_extent(dev, &mdata->dc_extents, start, length, tag);
-+}
-+
-+/* It is known that ext and the new range are not equal */
-+static struct cxl_dc_extent_data *
-+split_ext(struct device *dev, struct xarray *array,
-+	  struct cxl_dc_extent_data *ext, u64 start, u64 length)
-+{
-+	u64 new_start, new_length;
-+
-+	if (ext->dpa_start == start) {
-+		new_start = start + length;
-+		new_length = (ext->dpa_start + ext->length) - new_start;
-+
-+		if (__devm_add_extent(dev, array, new_start, new_length,
-+				      ext->tag))
-+			return NULL;
-+
-+		ext = xa_erase(array, ext->dpa_start);
-+		if (__devm_add_extent(dev, array, start, length, ext->tag))
-+			return NULL;
-+
-+		return xa_load(array, start);
-+	}
-+
-+	/* ext->dpa_start != start */
-+
-+	if (__devm_add_extent(dev, array, start, length, ext->tag))
-+		return NULL;
-+
-+	new_start = ext->dpa_start;
-+	new_length = start - ext->dpa_start;
-+
-+	ext = xa_erase(array, ext->dpa_start);
-+	if (__devm_add_extent(dev, array, new_start, new_length, ext->tag))
-+		return NULL;
-+
-+	return xa_load(array, start);
-+}
-+
-+/*
-+ * Do not handle extents which are not inside a single extent sent to
-+ * the host.
-+ */
-+static struct cxl_dc_extent_data *
-+find_create_ext(struct device *dev, struct xarray *array, u64 start, u64 length)
-+{
-+	struct cxl_dc_extent_data *ext;
-+	unsigned long index;
-+
-+	xa_for_each(array, index, ext) {
-+		u64 end = start + length;
-+
-+		/* start < [ext) <= start */
-+		if (start < ext->dpa_start ||
-+		    (ext->dpa_start + ext->length) <= start)
-+			continue;
-+
-+		if (end <= ext->dpa_start ||
-+		    (ext->dpa_start + ext->length) < end) {
-+			dev_err(dev, "Invalid range %#llx-%#llx\n", start,
-+				end);
-+			return NULL;
-+		}
-+
-+		break;
-+	}
-+
-+	if (!ext)
-+		return NULL;
-+
-+	if (start == ext->dpa_start && length == ext->length)
-+		return ext;
-+
-+	return split_ext(dev, array, ext, start, length);
-+}
-+
-+static int dc_accept_extent(struct device *dev, u64 start, u64 length)
-+{
-+	struct cxl_mockmem_data *mdata = dev_get_drvdata(dev);
-+	struct cxl_dc_extent_data *ext;
-+
-+	dev_dbg(dev, "Host accepting extent %#llx\n", start);
-+	mdata->dc_ext_generation++;
-+
-+	guard(mutex)(&mdata->ext_lock);
-+	ext = find_create_ext(dev, &mdata->dc_extents, start, length);
-+	if (!ext) {
-+		dev_err(dev, "Extent %#llx-%#llx not found\n",
-+			start, start + length);
-+		return -ENOMEM;
-+	}
-+	ext = xa_erase(&mdata->dc_extents, ext->dpa_start);
-+	return xa_insert(&mdata->dc_accepted_exts, start, ext, GFP_KERNEL);
-+}
-+
-+static void release_dc_ext(void *md)
-+{
-+	struct cxl_mockmem_data *mdata = md;
-+
-+	xa_destroy(&mdata->dc_extents);
-+	xa_destroy(&mdata->dc_accepted_exts);
-+}
-+
-+static int cxl_mock_dc_region_setup(struct device *dev)
-+{
-+#define DUMMY_EXT_OFFSET SZ_256M
-+#define DUMMY_EXT_LENGTH SZ_256M
-+	struct cxl_mockmem_data *mdata = dev_get_drvdata(dev);
-+	u64 base_dpa = BASE_DYNAMIC_CAP_DPA;
-+	u32 dsmad_handle = 0xFADE;
-+	u64 decode_length = SZ_1G;
-+	u64 block_size = SZ_512;
-+	/* For testing make this smaller than decode length */
-+	u64 length = SZ_1G;
-+	int rc;
-+
-+	mutex_init(&mdata->ext_lock);
-+	xa_init(&mdata->dc_extents);
-+	xa_init(&mdata->dc_accepted_exts);
-+
-+	rc = devm_add_action_or_reset(dev, release_dc_ext, mdata);
++	rc = cxl_region_notify_extent(cxled->cxld.region, DCD_ADD_CAPACITY, reg_ext);
 +	if (rc)
-+		return rc;
++		goto err;
 +
-+	for (int i = 0; i < NUM_MOCK_DC_REGIONS; i++) {
-+		struct cxl_dc_region_config *conf = &mdata->dc_regions[i];
+ 	dev_dbg(dev, "DAX region extent HPA %#llx - %#llx\n",
+ 		reg_ext->hpa_range.start, reg_ext->hpa_range.end);
+ 
+diff --git a/drivers/cxl/core/mbox.c b/drivers/cxl/core/mbox.c
+index 6b00e717e42b..7babac2d1c95 100644
+--- a/drivers/cxl/core/mbox.c
++++ b/drivers/cxl/core/mbox.c
+@@ -870,6 +870,37 @@ int cxl_enumerate_cmds(struct cxl_memdev_state *mds)
+ }
+ EXPORT_SYMBOL_NS_GPL(cxl_enumerate_cmds, CXL);
+ 
++static int cxl_notify_dc_extent(struct cxl_memdev_state *mds,
++				enum dc_event event,
++				struct cxl_dc_extent *dc_extent)
++{
++	struct cxl_drv_nd nd = (struct cxl_drv_nd) {
++		.event = event,
++		.dc_extent = dc_extent
++	};
++	struct device *dev;
++	int rc = -ENXIO;
 +
-+		dev_dbg(dev, "Creating DC region DC%d DPA:%#llx LEN:%#llx\n",
-+			i, base_dpa, length);
++	dev = &mds->cxlds.cxlmd->dev;
++	dev_dbg(dev, "Notify: type %d DPA:%#llx LEN:%#llx\n",
++		event, le64_to_cpu(dc_extent->start_dpa),
++		le64_to_cpu(dc_extent->length));
 +
-+		conf->region_base = cpu_to_le64(base_dpa);
-+		conf->region_decode_length = cpu_to_le64(decode_length /
-+						CXL_CAPACITY_MULTIPLIER);
-+		conf->region_length = cpu_to_le64(length);
-+		conf->region_block_size = cpu_to_le64(block_size);
-+		conf->region_dsmad_handle = cpu_to_le32(dsmad_handle);
-+		dsmad_handle++;
++	device_lock(dev);
++	if (dev->driver) {
++		struct cxl_driver *mem_drv = to_cxl_drv(dev->driver);
 +
-+		/* Pretend to have some previous accepted extents */
-+		rc = devm_add_extent(dev, base_dpa + DUMMY_EXT_OFFSET,
-+				     DUMMY_EXT_LENGTH, "CXL-TEST");
-+		if (rc) {
-+			dev_err(dev, "Failed to add extent DC%d DPA:%#llx LEN:%#x; %d\n",
-+				i, base_dpa + DUMMY_EXT_OFFSET,
-+				DUMMY_EXT_LENGTH, rc);
-+			return rc;
++		if (mem_drv->notify) {
++			dev_dbg(dev, "Notify driver type %d DPA:%#llx LEN:%#llx\n",
++				event, le64_to_cpu(dc_extent->start_dpa),
++				le64_to_cpu(dc_extent->length));
++			rc = mem_drv->notify(dev, &nd);
 +		}
-+
-+		rc = dc_accept_extent(dev, base_dpa + DUMMY_EXT_OFFSET,
-+				      DUMMY_EXT_LENGTH);
-+		if (rc)
-+			return rc;
-+
-+		base_dpa += decode_length;
 +	}
-+
-+	return 0;
++	device_unlock(dev);
++	return rc;
 +}
 +
- static int mock_gsl(struct cxl_mbox_cmd *cmd)
+ static int cxl_validate_extent(struct cxl_memdev_state *mds,
+ 			       struct cxl_dc_extent *dc_extent)
  {
- 	if (cmd->size_out < sizeof(mock_gsl_payload))
-@@ -1371,6 +1588,177 @@ static int mock_activate_fw(struct cxl_mockmem_data *mdata,
+@@ -897,8 +928,8 @@ static int cxl_validate_extent(struct cxl_memdev_state *mds,
  	return -EINVAL;
  }
  
-+static int mock_get_dc_config(struct device *dev,
-+			      struct cxl_mbox_cmd *cmd)
-+{
-+	struct cxl_mbox_get_dc_config_in *dc_config = cmd->payload_in;
-+	struct cxl_mockmem_data *mdata = dev_get_drvdata(dev);
-+	u8 region_requested, region_start_idx, region_ret_cnt;
-+	struct cxl_mbox_get_dc_config_out *resp;
-+
-+	region_requested = dc_config->region_count;
-+	if (region_requested > NUM_MOCK_DC_REGIONS)
-+		region_requested = NUM_MOCK_DC_REGIONS;
-+
-+	if (cmd->size_out < struct_size(resp, region, region_requested))
-+		return -EINVAL;
-+
-+	memset(cmd->payload_out, 0, cmd->size_out);
-+	resp = cmd->payload_out;
-+
-+	region_start_idx = dc_config->start_region_index;
-+	region_ret_cnt = 0;
-+	for (int i = 0; i < NUM_MOCK_DC_REGIONS; i++) {
-+		if (i >= region_start_idx) {
-+			memcpy(&resp->region[region_ret_cnt],
-+				&mdata->dc_regions[i],
-+				sizeof(resp->region[region_ret_cnt]));
-+			region_ret_cnt++;
-+		}
-+	}
-+	resp->avail_region_count = region_ret_cnt;
-+
-+	dev_dbg(dev, "Returning %d dc regions\n", region_ret_cnt);
-+	return 0;
-+}
-+
-+static int mock_get_dc_extent_list(struct device *dev,
-+				   struct cxl_mbox_cmd *cmd)
-+{
-+	struct cxl_mockmem_data *mdata = dev_get_drvdata(dev);
-+	struct cxl_mbox_get_dc_extent_in *get = cmd->payload_in;
-+	struct cxl_mbox_get_dc_extent_out *resp = cmd->payload_out;
-+	u32 total_avail = 0, total_ret = 0;
-+	struct cxl_dc_extent_data *ext;
-+	u32 ext_count, start_idx;
-+	unsigned long i;
-+
-+	ext_count = le32_to_cpu(get->extent_cnt);
-+	start_idx = le32_to_cpu(get->start_extent_index);
-+
-+	memset(resp, 0, sizeof(*resp));
-+
-+	guard(mutex)(&mdata->ext_lock);
-+	/*
-+	 * Total available needs to be calculated and returned regardless of
-+	 * how many can actually be returned.
-+	 */
-+	xa_for_each(&mdata->dc_accepted_exts, i, ext)
-+		total_avail++;
-+
-+	if (start_idx > total_avail)
-+		return -EINVAL;
-+
-+	xa_for_each(&mdata->dc_accepted_exts, i, ext) {
-+		if (total_ret >= ext_count)
-+			break;
-+
-+		if (total_ret >= start_idx) {
-+			resp->extent[total_ret].start_dpa =
-+						cpu_to_le64(ext->dpa_start);
-+			resp->extent[total_ret].length =
-+						cpu_to_le64(ext->length);
-+			memcpy(&resp->extent[total_ret].tag, ext->tag,
-+					sizeof(resp->extent[total_ret]));
-+			total_ret++;
-+		}
-+	}
-+
-+	resp->ret_extent_cnt = cpu_to_le32(total_ret);
-+	resp->total_extent_cnt = cpu_to_le32(total_avail);
-+	resp->extent_list_num = cpu_to_le32(mdata->dc_ext_generation);
-+
-+	dev_dbg(dev, "Returning %d extents of %d total\n",
-+		total_ret, total_avail);
-+
-+	return 0;
-+}
-+
-+static int mock_add_dc_response(struct device *dev,
-+				struct cxl_mbox_cmd *cmd)
-+{
-+	struct cxl_mbox_dc_response *req = cmd->payload_in;
-+	u32 list_size = le32_to_cpu(req->extent_list_size);
-+
-+	for (int i = 0; i < list_size; i++) {
-+		u64 start = le64_to_cpu(req->extent_list[i].dpa_start);
-+		u64 length = le64_to_cpu(req->extent_list[i].length);
-+		int rc;
-+
-+		rc = dc_accept_extent(dev, start, length);
-+		if (rc)
-+			return rc;
-+	}
-+
-+	return 0;
-+}
-+
-+static void dc_delete_extent(struct device *dev, unsigned long long start,
-+			     unsigned long long length)
-+{
-+	struct cxl_mockmem_data *mdata = dev_get_drvdata(dev);
-+	unsigned long long end = start + length;
-+	struct cxl_dc_extent_data *ext;
-+	unsigned long index;
-+
-+	dev_dbg(dev, "Deleting extent at %#llx len:%#llx\n", start, length);
-+
-+	guard(mutex)(&mdata->ext_lock);
-+	xa_for_each(&mdata->dc_extents, index, ext) {
-+		u64 extent_end = ext->dpa_start + ext->length;
-+
-+		/*
-+		 * Any extent which 'touches' the released delete range will be
-+		 * removed.
-+		 */
-+		if ((start <= ext->dpa_start && ext->dpa_start < end) ||
-+		    (start <= extent_end && extent_end < end)) {
-+			xa_erase(&mdata->dc_extents, ext->dpa_start);
-+		}
-+	}
-+
-+	/*
-+	 * If the extent was accepted let it be for the host to drop
-+	 * later.
-+	 */
-+}
-+
-+static int release_accepted_extent(struct device *dev,
-+				   unsigned long long start,
-+				   unsigned long long length)
-+{
-+	struct cxl_mockmem_data *mdata = dev_get_drvdata(dev);
-+	struct cxl_dc_extent_data *ext;
-+
-+	guard(mutex)(&mdata->ext_lock);
-+	ext = find_create_ext(dev, &mdata->dc_accepted_exts, start, length);
-+	if (!ext) {
-+		dev_err(dev, "Extent %#llx not in accepted state\n", start);
-+		return -EINVAL;
-+	}
-+	xa_erase(&mdata->dc_accepted_exts, ext->dpa_start);
-+	mdata->dc_ext_generation++;
-+
-+	return 0;
-+}
-+
-+static int mock_dc_release(struct device *dev,
-+			   struct cxl_mbox_cmd *cmd)
-+{
-+	struct cxl_mbox_dc_response *req = cmd->payload_in;
-+	u32 list_size = le32_to_cpu(req->extent_list_size);
-+
-+	for (int i = 0; i < list_size; i++) {
-+		u64 start = le64_to_cpu(req->extent_list[i].dpa_start);
-+		u64 length = le64_to_cpu(req->extent_list[i].length);
-+
-+		dev_dbg(dev, "Extent %#llx released by host\n", start);
-+		release_accepted_extent(dev, start, length);
-+	}
-+
-+	return 0;
-+}
-+
- static int cxl_mock_mbox_send(struct cxl_memdev_state *mds,
- 			      struct cxl_mbox_cmd *cmd)
+-static bool cxl_dc_extent_in_ed(struct cxl_endpoint_decoder *cxled,
+-				struct cxl_dc_extent *extent)
++bool cxl_dc_extent_in_ed(struct cxl_endpoint_decoder *cxled,
++			 struct cxl_dc_extent *extent)
  {
-@@ -1455,6 +1843,18 @@ static int cxl_mock_mbox_send(struct cxl_memdev_state *mds,
- 	case CXL_MBOX_OP_ACTIVATE_FW:
- 		rc = mock_activate_fw(mdata, cmd);
- 		break;
-+	case CXL_MBOX_OP_GET_DC_CONFIG:
-+		rc = mock_get_dc_config(dev, cmd);
-+		break;
-+	case CXL_MBOX_OP_GET_DC_EXTENT_LIST:
-+		rc = mock_get_dc_extent_list(dev, cmd);
-+		break;
-+	case CXL_MBOX_OP_ADD_DC_RESPONSE:
-+		rc = mock_add_dc_response(dev, cmd);
-+		break;
-+	case CXL_MBOX_OP_RELEASE_DC:
-+		rc = mock_dc_release(dev, cmd);
-+		break;
- 	default:
- 		break;
- 	}
-@@ -1499,6 +1899,14 @@ static void init_event_log(struct mock_event_log *log)
- 	log->next_handle = 1;
- }
+ 	uint64_t start = le64_to_cpu(extent->start_dpa);
+ 	uint64_t length = le64_to_cpu(extent->length);
+@@ -916,6 +947,7 @@ static bool cxl_dc_extent_in_ed(struct cxl_endpoint_decoder *cxled,
  
-+static void cxl_mock_mem_remove(struct platform_device *pdev)
+ 	return range_contains(&ed_range, &ext_range);
+ }
++EXPORT_SYMBOL_NS_GPL(cxl_dc_extent_in_ed, CXL);
+ 
+ void cxl_event_trace_record(const struct cxl_memdev *cxlmd,
+ 			    enum cxl_event_log_type type,
+@@ -1027,15 +1059,20 @@ static int cxl_send_dc_cap_response(struct cxl_memdev_state *mds,
+ 	size_t size;
+ 
+ 	struct cxl_mbox_dc_response *dc_res __free(kfree);
+-	size = struct_size(dc_res, extent_list, 1);
++	if (!extent)
++		size = struct_size(dc_res, extent_list, 0);
++	else
++		size = struct_size(dc_res, extent_list, 1);
+ 	dc_res = kzalloc(size, GFP_KERNEL);
+ 	if (!dc_res)
+ 		return -ENOMEM;
+ 
+-	dc_res->extent_list[0].dpa_start = cpu_to_le64(extent->start);
+-	memset(dc_res->extent_list[0].reserved, 0, 8);
+-	dc_res->extent_list[0].length = cpu_to_le64(range_len(extent));
+-	dc_res->extent_list_size = cpu_to_le32(1);
++	if (extent) {
++		dc_res->extent_list[0].dpa_start = cpu_to_le64(extent->start);
++		memset(dc_res->extent_list[0].reserved, 0, 8);
++		dc_res->extent_list[0].length = cpu_to_le64(range_len(extent));
++		dc_res->extent_list_size = cpu_to_le32(1);
++	}
+ 
+ 	mbox_cmd = (struct cxl_mbox_cmd) {
+ 		.opcode = opcode,
+@@ -1072,6 +1109,85 @@ void cxl_release_ed_extent(struct cxl_ed_extent *extent)
+ }
+ EXPORT_SYMBOL_NS_GPL(cxl_release_ed_extent, CXL);
+ 
++static int cxl_handle_dcd_release_event(struct cxl_memdev_state *mds,
++					struct cxl_dc_extent *dc_extent)
 +{
-+	struct cxl_mockmem_data *mdata = dev_get_drvdata(&pdev->dev);
-+	struct cxl_memdev_state *mds = mdata->mds;
-+
-+	dev_dbg(mds->cxlds.dev, "Removing extents\n");
++	return cxl_notify_dc_extent(mds, DCD_RELEASE_CAPACITY, dc_extent);
 +}
 +
- static int cxl_mock_mem_probe(struct platform_device *pdev)
- {
- 	struct device *dev = &pdev->dev;
-@@ -1513,6 +1921,10 @@ static int cxl_mock_mem_probe(struct platform_device *pdev)
- 		return -ENOMEM;
- 	dev_set_drvdata(dev, mdata);
- 
-+	rc = cxl_mock_dc_region_setup(dev);
-+	if (rc)
-+		return rc;
-+
- 	mdata->lsa = vmalloc(LSA_SIZE);
- 	if (!mdata->lsa)
- 		return -ENOMEM;
-@@ -1561,6 +1973,10 @@ static int cxl_mock_mem_probe(struct platform_device *pdev)
- 	if (rc)
- 		return rc;
- 
-+	rc = cxl_dev_dynamic_capacity_identify(mds);
-+	if (rc)
-+		return rc;
-+
- 	rc = cxl_mem_create_range_info(mds);
- 	if (rc)
- 		return rc;
-@@ -1673,14 +2089,170 @@ static ssize_t sanitize_timeout_store(struct device *dev,
- 
- 	return count;
- }
--
- static DEVICE_ATTR_RW(sanitize_timeout);
- 
-+/* Return if the proposed extent would break the test code */
-+static bool new_extent_valid(struct device *dev, size_t new_start,
-+			     size_t new_len)
++static int cxl_handle_dcd_add_event(struct cxl_memdev_state *mds,
++				    struct cxl_dc_extent *dc_extent)
 +{
-+	struct cxl_mockmem_data *mdata = dev_get_drvdata(dev);
-+	struct cxl_dc_extent_data *extent;
-+	size_t new_end, i;
-+
-+	if (!new_len)
-+		return false;
-+
-+	new_end = new_start + new_len;
-+
-+	dev_dbg(dev, "New extent %zx-%zx\n", new_start, new_end);
-+
-+	guard(mutex)(&mdata->ext_lock);
-+	dev_dbg(dev, "Checking extents starts...\n");
-+	xa_for_each(&mdata->dc_extents, i, extent) {
-+		if (extent->dpa_start == new_start)
-+			return false;
-+	}
-+
-+	dev_dbg(dev, "Checking accepted extents starts...\n");
-+	xa_for_each(&mdata->dc_accepted_exts, i, extent) {
-+		if (extent->dpa_start == new_start)
-+			return false;
-+	}
-+
-+	return true;
-+}
-+
-+/*
-+ * Format <start>:<length>:<tag>
-+ *
-+ * start and length must be a multiple of the configured region block size.
-+ * Tag can be any string up to 16 bytes.
-+ *
-+ * Extents must be exclusive of other extents
-+ */
-+static ssize_t dc_inject_extent_store(struct device *dev,
-+				      struct device_attribute *attr,
-+				      const char *buf, size_t count)
-+{
-+	unsigned long long start, length;
-+	char *len_str, *tag_str;
-+	size_t buf_len = count;
++	struct range alloc_range, *resp_range;
++	struct device *dev = mds->cxlds.dev;
 +	int rc;
 +
-+	char *start_str __free(kfree) = kstrdup(buf, GFP_KERNEL);
-+	if (!start_str)
-+		return -ENOMEM;
++	alloc_range = (struct range){
++		.start = le64_to_cpu(dc_extent->start_dpa),
++		.end = le64_to_cpu(dc_extent->start_dpa) +
++			le64_to_cpu(dc_extent->length) - 1,
++	};
++	resp_range = &alloc_range;
 +
-+	len_str = strnchr(start_str, buf_len, ':');
-+	if (!len_str) {
-+		dev_err(dev, "Extent failed to find len_str: %s\n", start_str);
-+		return -EINVAL;
-+	}
-+
-+	*len_str = '\0';
-+	len_str += 1;
-+	buf_len -= strlen(start_str);
-+
-+	tag_str = strnchr(len_str, buf_len, ':');
-+	if (!tag_str) {
-+		dev_err(dev, "Extent failed to find tag_str: %s\n", len_str);
-+		return -EINVAL;
-+	}
-+	*tag_str = '\0';
-+	tag_str += 1;
-+
-+	if (kstrtoull(start_str, 0, &start)) {
-+		dev_err(dev, "Extent failed to parse start: %s\n", start_str);
-+		return -EINVAL;
-+	}
-+
-+	if (kstrtoull(len_str, 0, &length)) {
-+		dev_err(dev, "Extent failed to parse length: %s\n", len_str);
-+		return -EINVAL;
-+	}
-+
-+	if (!new_extent_valid(dev, start, length))
-+		return -EINVAL;
-+
-+	rc = devm_add_extent(dev, start, length, tag_str);
++	rc = cxl_notify_dc_extent(mds, DCD_ADD_CAPACITY, dc_extent);
 +	if (rc) {
-+		dev_err(dev, "Failed to add extent DPA:%#llx LEN:%#llx; %d\n",
-+			start, length, rc);
-+		return rc;
++		dev_dbg(dev, "unconsumed DC extent DPA:%#llx LEN:%#llx\n",
++			le64_to_cpu(dc_extent->start_dpa),
++			le64_to_cpu(dc_extent->length));
++		resp_range = NULL;
 +	}
 +
-+	return count;
++	return cxl_send_dc_cap_response(mds, resp_range,
++					CXL_MBOX_OP_ADD_DC_RESPONSE);
 +}
-+static DEVICE_ATTR_WO(dc_inject_extent);
 +
-+static ssize_t __dc_del_extent_store(struct device *dev,
-+				     struct device_attribute *attr,
-+				     const char *buf, size_t count,
-+				     enum dc_event type)
++static char *cxl_dcd_evt_type_str(u8 type)
 +{
-+	unsigned long long start, length;
-+	char *len_str;
-+
-+	char *start_str __free(kfree) = kstrdup(buf, GFP_KERNEL);
-+	if (!start_str)
-+		return -ENOMEM;
-+
-+	len_str = strnchr(start_str, count, ':');
-+	if (!len_str) {
-+		dev_err(dev, "Failed to find len_str: %s\n", start_str);
-+		return -EINVAL;
-+	}
-+	*len_str = '\0';
-+	len_str += 1;
-+
-+	if (kstrtoull(start_str, 0, &start)) {
-+		dev_err(dev, "Failed to parse start: %s\n", start_str);
-+		return -EINVAL;
++	switch (type) {
++	case DCD_ADD_CAPACITY:
++		return "add";
++	case DCD_RELEASE_CAPACITY:
++		return "release";
++	case DCD_FORCED_CAPACITY_RELEASE:
++		return "force release";
++	default:
++		break;
 +	}
 +
-+	if (kstrtoull(len_str, 0, &length)) {
-+		dev_err(dev, "Failed to parse length: %s\n", len_str);
-+		return -EINVAL;
-+	}
-+
-+	dc_delete_extent(dev, start, length);
-+
-+	if (type == DCD_FORCED_CAPACITY_RELEASE)
-+		dev_dbg(dev, "Forcing delete of extent %#llx len:%#llx\n",
-+			start, length);
-+
-+	return count;
++	return "<unknown>";
 +}
++
++static int cxl_handle_dcd_event_records(struct cxl_memdev_state *mds,
++					struct cxl_event_record_raw *raw_rec)
++{
++	struct cxl_event_dcd *event = &raw_rec->event.dcd;
++	struct cxl_dc_extent *dc_extent = &event->extent;
++	struct device *dev = mds->cxlds.dev;
++	uuid_t *id = &raw_rec->id;
++
++	if (!uuid_equal(id, &CXL_EVENT_DC_EVENT_UUID))
++		return -EINVAL;
++
++	dev_dbg(dev, "DCD event %s : DPA:%#llx LEN:%#llx\n",
++		cxl_dcd_evt_type_str(event->event_type),
++		le64_to_cpu(dc_extent->start_dpa),
++		le64_to_cpu(dc_extent->length));
++
++	switch (event->event_type) {
++	case DCD_ADD_CAPACITY:
++		return cxl_handle_dcd_add_event(mds, dc_extent);
++	case DCD_RELEASE_CAPACITY:
++		return cxl_handle_dcd_release_event(mds, dc_extent);
++	case DCD_FORCED_CAPACITY_RELEASE:
++		dev_err_ratelimited(dev, "Forced release event ignored.\n");
++		return 0;
++	default:
++		return -EINVAL;
++	}
++
++	return 0;
++}
++
+ static void cxl_mem_get_records_log(struct cxl_memdev_state *mds,
+ 				    enum cxl_event_log_type type)
+ {
+@@ -1109,9 +1225,17 @@ static void cxl_mem_get_records_log(struct cxl_memdev_state *mds,
+ 		if (!nr_rec)
+ 			break;
+ 
+-		for (i = 0; i < nr_rec; i++)
++		for (i = 0; i < nr_rec; i++) {
+ 			__cxl_event_trace_record(cxlmd, type,
+ 						 &payload->records[i]);
++			if (type == CXL_EVENT_TYPE_DCD) {
++				rc = cxl_handle_dcd_event_records(mds,
++								  &payload->records[i]);
++				if (rc)
++					dev_err_ratelimited(dev, "dcd event failed: %d\n",
++							    rc);
++			}
++		}
+ 
+ 		if (payload->flags & CXL_GET_EVENT_FLAG_OVERFLOW)
+ 			trace_cxl_overflow(cxlmd, type, payload);
+@@ -1143,6 +1267,8 @@ void cxl_mem_get_event_records(struct cxl_memdev_state *mds, u32 status)
+ {
+ 	dev_dbg(mds->cxlds.dev, "Reading event logs: %x\n", status);
+ 
++	if (cxl_dcd_supported(mds) && (status & CXLDEV_EVENT_STATUS_DCD))
++		cxl_mem_get_records_log(mds, CXL_EVENT_TYPE_DCD);
+ 	if (status & CXLDEV_EVENT_STATUS_FATAL)
+ 		cxl_mem_get_records_log(mds, CXL_EVENT_TYPE_FATAL);
+ 	if (status & CXLDEV_EVENT_STATUS_FAIL)
+diff --git a/drivers/cxl/core/region.c b/drivers/cxl/core/region.c
+index 7635ff109578..a07d95136f0d 100644
+--- a/drivers/cxl/core/region.c
++++ b/drivers/cxl/core/region.c
+@@ -1450,6 +1450,57 @@ static int cxl_region_validate_position(struct cxl_region *cxlr,
+ 	return 0;
+ }
+ 
++int cxl_region_notify_extent(struct cxl_region *cxlr, enum dc_event event,
++			     struct region_extent *reg_ext)
++{
++	struct cxl_dax_region *cxlr_dax;
++	struct device *dev;
++	int rc = -ENXIO;
++
++	cxlr_dax = cxlr->cxlr_dax;
++	dev = &cxlr_dax->dev;
++	dev_dbg(dev, "Trying notify: type %d HPA %#llx - %#llx\n",
++		event, reg_ext->hpa_range.start, reg_ext->hpa_range.end);
++
++	device_lock(dev);
++	if (dev->driver) {
++		struct cxl_driver *reg_drv = to_cxl_drv(dev->driver);
++		struct cxl_drv_nd nd = (struct cxl_drv_nd) {
++			.event = event,
++			.reg_ext = reg_ext,
++		};
++
++		if (reg_drv->notify) {
++			dev_dbg(dev, "Notify: type %d HPA %#llx - %#llx\n",
++				event, reg_ext->hpa_range.start,
++				reg_ext->hpa_range.end);
++			rc = reg_drv->notify(dev, &nd);
++		}
++	}
++	device_unlock(dev);
++	return rc;
++}
++
++static void calc_hpa_range(struct cxl_endpoint_decoder *cxled,
++			   struct cxl_dax_region *cxlr_dax,
++			   struct cxl_dc_extent *dc_extent,
++			   struct range *dpa_range,
++			   struct range *hpa_range)
++{
++	resource_size_t dpa_offset, hpa;
++
++	/*
++	 * Without interleave...
++	 * HPA offset == DPA offset
++	 * ... but do the math anyway
++	 */
++	dpa_offset = dpa_range->start - cxled->dpa_res->start;
++	hpa = cxled->cxld.hpa_range.start + dpa_offset;
++
++	hpa_range->start = hpa - cxlr_dax->hpa_range.start;
++	hpa_range->end = hpa_range->start + range_len(dpa_range) - 1;
++}
++
+ static int extent_check_overlap(struct device *dev, void *arg)
+ {
+ 	struct range *new_range = arg;
+@@ -1480,7 +1531,6 @@ int cxl_ed_add_one_extent(struct cxl_endpoint_decoder *cxled,
+ 	struct cxl_region *cxlr = cxled->cxld.region;
+ 	struct range ext_dpa_range, ext_hpa_range;
+ 	struct device *dev = &cxlr->dev;
+-	resource_size_t dpa_offset, hpa;
+ 
+ 	/*
+ 	 * Interleave ways == 1 means this coresponds to a 1:1 mapping between
+@@ -1502,18 +1552,7 @@ int cxl_ed_add_one_extent(struct cxl_endpoint_decoder *cxled,
+ 	dev_dbg(dev, "Adding DC extent DPA %#llx - %#llx\n",
+ 		ext_dpa_range.start, ext_dpa_range.end);
+ 
+-	/*
+-	 * Without interleave...
+-	 * HPA offset == DPA offset
+-	 * ... but do the math anyway
+-	 */
+-	dpa_offset = ext_dpa_range.start - cxled->dpa_res->start;
+-	hpa = cxled->cxld.hpa_range.start + dpa_offset;
+-
+-	ext_hpa_range = (struct range) {
+-		.start = hpa - cxlr->cxlr_dax->hpa_range.start,
+-		.end = ext_hpa_range.start + range_len(&ext_dpa_range) - 1,
+-	};
++	calc_hpa_range(cxled, cxlr->cxlr_dax, dc_extent, &ext_dpa_range, &ext_hpa_range);
+ 
+ 	if (extent_overlaps(cxlr->cxlr_dax, &ext_hpa_range))
+ 		return -EINVAL;
+@@ -1527,6 +1566,80 @@ int cxl_ed_add_one_extent(struct cxl_endpoint_decoder *cxled,
+ 				     cxled);
+ }
+ 
++static void cxl_ed_rm_region_extent(struct cxl_region *cxlr,
++				    struct region_extent *reg_ext)
++{
++	cxl_region_notify_extent(cxlr, DCD_RELEASE_CAPACITY, reg_ext);
++}
++
++struct rm_data {
++	struct cxl_region *cxlr;
++	struct range *range;
++};
++
++static int cxl_rm_reg_ext_by_range(struct device *dev, void *data)
++{
++	struct rm_data *rm_data = data;
++	struct region_extent *reg_ext;
++
++	if (!is_region_extent(dev))
++		return 0;
++	reg_ext = to_region_extent(dev);
++
++	/*
++	 * Any extent which 'touches' the released range is notified
++	 * for removal.  No partials of the extent are released.
++	 */
++	if (range_overlaps(rm_data->range, &reg_ext->hpa_range)) {
++		struct cxl_region *cxlr = rm_data->cxlr;
++
++		dev_dbg(dev, "Remove DAX region ext HPA %#llx - %#llx\n",
++			reg_ext->hpa_range.start, reg_ext->hpa_range.end);
++		cxl_ed_rm_region_extent(cxlr, reg_ext);
++	}
++	return 0;
++}
++
++static int cxl_ed_rm_extent(struct cxl_endpoint_decoder *cxled,
++			    struct cxl_dc_extent *dc_extent)
++{
++	struct cxl_region *cxlr = cxled->cxld.region;
++	struct range hpa_range;
++
++	struct range rel_dpa_range = {
++		.start = le64_to_cpu(dc_extent->start_dpa),
++		.end = le64_to_cpu(dc_extent->start_dpa) +
++			le64_to_cpu(dc_extent->length) - 1,
++	};
++
++	calc_hpa_range(cxled, cxlr->cxlr_dax, dc_extent, &rel_dpa_range, &hpa_range);
++
++	struct rm_data rm_data = {
++		.cxlr = cxlr,
++		.range = &hpa_range,
++	};
++
++	return device_for_each_child(&cxlr->cxlr_dax->dev, &rm_data,
++				     cxl_rm_reg_ext_by_range);
++}
++
++int cxl_ed_notify_extent(struct cxl_endpoint_decoder *cxled,
++			 struct cxl_drv_nd *nd)
++{
++	switch (nd->event) {
++	case DCD_ADD_CAPACITY:
++		return cxl_ed_add_one_extent(cxled, nd->dc_extent);
++	case DCD_RELEASE_CAPACITY:
++		return cxl_ed_rm_extent(cxled, nd->dc_extent);
++	case DCD_FORCED_CAPACITY_RELEASE:
++	default:
++		dev_err(&cxled->cxld.dev, "Unknown DC event %d\n", nd->event);
++		break;
++	}
++	return -ENXIO;
++}
++EXPORT_SYMBOL_NS_GPL(cxl_ed_notify_extent, CXL);
++
+ static int cxl_region_attach_position(struct cxl_region *cxlr,
+ 				      struct cxl_root_decoder *cxlrd,
+ 				      struct cxl_endpoint_decoder *cxled,
+diff --git a/drivers/cxl/cxl.h b/drivers/cxl/cxl.h
+index 5379ad7f5852..156d7c9a8de5 100644
+--- a/drivers/cxl/cxl.h
++++ b/drivers/cxl/cxl.h
+@@ -10,6 +10,7 @@
+ #include <linux/log2.h>
+ #include <linux/node.h>
+ #include <linux/io.h>
++#include <linux/cxl-event.h>
+ 
+ /**
+  * DOC: cxl objects
+@@ -613,6 +614,14 @@ struct cxl_pmem_region {
+ 	struct cxl_pmem_region_mapping mapping[];
+ };
+ 
++/* See CXL 3.0 8.2.9.2.1.5 */
++enum dc_event {
++	DCD_ADD_CAPACITY,
++	DCD_RELEASE_CAPACITY,
++	DCD_FORCED_CAPACITY_RELEASE,
++	DCD_REGION_CONFIGURATION_UPDATED,
++};
++
+ struct cxl_dax_region {
+ 	struct device dev;
+ 	struct cxl_region *cxlr;
+@@ -891,10 +900,18 @@ bool is_cxl_region(struct device *dev);
+ 
+ extern struct bus_type cxl_bus_type;
+ 
++/* Driver Notifier Data */
++struct cxl_drv_nd {
++	enum dc_event event;
++	struct cxl_dc_extent *dc_extent;
++	struct region_extent *reg_ext;
++};
++
+ struct cxl_driver {
+ 	const char *name;
+ 	int (*probe)(struct device *dev);
+ 	void (*remove)(struct device *dev);
++	int (*notify)(struct device *dev, struct cxl_drv_nd *nd);
+ 	struct device_driver drv;
+ 	int id;
+ };
+@@ -933,6 +950,8 @@ bool is_cxl_nvdimm(struct device *dev);
+ bool is_cxl_nvdimm_bridge(struct device *dev);
+ int devm_cxl_add_nvdimm(struct cxl_memdev *cxlmd);
+ struct cxl_nvdimm_bridge *cxl_find_nvdimm_bridge(struct cxl_memdev *cxlmd);
++bool cxl_dc_extent_in_ed(struct cxl_endpoint_decoder *cxled,
++			 struct cxl_dc_extent *extent);
+ 
+ #ifdef CONFIG_CXL_REGION
+ bool is_cxl_pmem_region(struct device *dev);
+@@ -940,6 +959,10 @@ struct cxl_pmem_region *to_cxl_pmem_region(struct device *dev);
+ int cxl_add_to_region(struct cxl_port *root,
+ 		      struct cxl_endpoint_decoder *cxled);
+ struct cxl_dax_region *to_cxl_dax_region(struct device *dev);
++int cxl_ed_notify_extent(struct cxl_endpoint_decoder *cxled,
++			 struct cxl_drv_nd *nd);
++int cxl_region_notify_extent(struct cxl_region *cxlr, enum dc_event event,
++			     struct region_extent *reg_ext);
+ #else
+ static inline bool is_cxl_pmem_region(struct device *dev)
+ {
+@@ -958,6 +981,17 @@ static inline struct cxl_dax_region *to_cxl_dax_region(struct device *dev)
+ {
+ 	return NULL;
+ }
++static inline int cxl_ed_notify_extent(struct cxl_endpoint_decoder *cxled,
++				       struct cxl_drv_nd *nd)
++{
++	return 0;
++}
++static inline int cxl_region_notify_extent(struct cxl_region *cxlr,
++					   enum dc_event event,
++					   struct region_extent *reg_ext)
++{
++	return 0;
++}
+ #endif
+ 
+ void cxl_endpoint_parse_cdat(struct cxl_port *port);
+diff --git a/drivers/cxl/cxlmem.h b/drivers/cxl/cxlmem.h
+index 8f2d8944d334..eb10cae99ff0 100644
+--- a/drivers/cxl/cxlmem.h
++++ b/drivers/cxl/cxlmem.h
+@@ -619,18 +619,6 @@ struct cxl_mbox_dc_response {
+ 	} __packed extent_list[];
+ } __packed;
+ 
+-/*
+- * CXL rev 3.1 section 8.2.9.2.1.6; Table 8-51
+- */
+-#define CXL_DC_EXTENT_TAG_LEN 0x10
+-struct cxl_dc_extent {
+-	__le64 start_dpa;
+-	__le64 length;
+-	u8 tag[CXL_DC_EXTENT_TAG_LEN];
+-	__le16 shared_extn_seq;
+-	u8 reserved[6];
+-} __packed;
+-
+ /*
+  * Get Dynamic Capacity Extent List; Input Payload
+  * CXL rev 3.1 section 8.2.9.9.9.2; Table 8-166
+@@ -714,6 +702,14 @@ struct cxl_mbox_identify {
+ 	UUID_INIT(0xfe927475, 0xdd59, 0x4339, 0xa5, 0x86, 0x79, 0xba, 0xb1, \
+ 		  0x13, 0xb7, 0x74)
+ 
++/*
++ * Dynamic Capacity Event Record
++ * CXL rev 3.1 section 8.2.9.2.1; Table 8-43
++ */
++#define CXL_EVENT_DC_EVENT_UUID                                             \
++	UUID_INIT(0xca95afa7, 0xf183, 0x4018, 0x8c, 0x2f, 0x95, 0x26, 0x8e, \
++		  0x10, 0x1a, 0x2a)
++
+ /*
+  * Get Event Records output payload
+  * CXL rev 3.0 section 8.2.9.2.2; Table 8-50
+@@ -739,6 +735,7 @@ enum cxl_event_log_type {
+ 	CXL_EVENT_TYPE_WARN,
+ 	CXL_EVENT_TYPE_FAIL,
+ 	CXL_EVENT_TYPE_FATAL,
++	CXL_EVENT_TYPE_DCD,
+ 	CXL_EVENT_TYPE_MAX
+ };
+ 
+diff --git a/drivers/cxl/mem.c b/drivers/cxl/mem.c
+index 0c79d9ce877c..20832f09c40c 100644
+--- a/drivers/cxl/mem.c
++++ b/drivers/cxl/mem.c
+@@ -103,6 +103,50 @@ static int cxl_debugfs_poison_clear(void *data, u64 dpa)
+ DEFINE_DEBUGFS_ATTRIBUTE(cxl_poison_clear_fops, NULL,
+ 			 cxl_debugfs_poison_clear, "%llx\n");
+ 
++static int match_ep_decoder_by_range(struct device *dev, void *data)
++{
++	struct cxl_dc_extent *dc_extent = data;
++	struct cxl_endpoint_decoder *cxled;
++
++	if (!is_endpoint_decoder(dev))
++		return 0;
++
++	cxled = to_cxl_endpoint_decoder(dev);
++	if (!cxled->cxld.region)
++		return 0;
++
++	return cxl_dc_extent_in_ed(cxled, dc_extent);
++}
++
++static int cxl_mem_notify(struct device *dev, struct cxl_drv_nd *nd)
++{
++	struct cxl_memdev *cxlmd = to_cxl_memdev(dev);
++	struct cxl_port *endpoint = cxlmd->endpoint;
++	struct cxl_endpoint_decoder *cxled;
++	struct cxl_dc_extent *dc_extent;
++	struct device *ep_dev;
++	int rc;
++
++	dc_extent = nd->dc_extent;
++	dev_dbg(dev, "notify DC action %d DPA:%#llx LEN:%#llx\n",
++		nd->event, le64_to_cpu(dc_extent->start_dpa),
++		le64_to_cpu(dc_extent->length));
++
++	ep_dev = device_find_child(&endpoint->dev, dc_extent,
++				   match_ep_decoder_by_range);
++	if (!ep_dev) {
++		dev_dbg(dev, "Extent DPA:%#llx LEN:%#llx not mapped; evt %d\n",
++			le64_to_cpu(dc_extent->start_dpa),
++			le64_to_cpu(dc_extent->length), nd->event);
++		return -ENXIO;
++	}
++
++	cxled = to_cxl_endpoint_decoder(ep_dev);
++	rc = cxl_ed_notify_extent(cxled, nd);
++	put_device(ep_dev);
++	return rc;
++}
++
+ static int cxl_mem_probe(struct device *dev)
+ {
+ 	struct cxl_memdev *cxlmd = to_cxl_memdev(dev);
+@@ -244,6 +288,7 @@ __ATTRIBUTE_GROUPS(cxl_mem);
+ static struct cxl_driver cxl_mem_driver = {
+ 	.name = "cxl_mem",
+ 	.probe = cxl_mem_probe,
++	.notify = cxl_mem_notify,
+ 	.id = CXL_DEVICE_MEMORY_EXPANDER,
+ 	.drv = {
+ 		.dev_groups = cxl_mem_groups,
+diff --git a/drivers/dax/cxl.c b/drivers/dax/cxl.c
+index 70bdc7a878ab..83ee45aff69a 100644
+--- a/drivers/dax/cxl.c
++++ b/drivers/dax/cxl.c
+@@ -42,6 +42,27 @@ static void cxl_dax_region_add_extents(struct cxl_dax_region *cxlr_dax,
+ 	device_for_each_child(&cxlr_dax->dev, dax_region, cxl_dax_region_add_extent);
+ }
+ 
++static int cxl_dax_region_notify(struct device *dev,
++				 struct cxl_drv_nd *nd)
++{
++	struct cxl_dax_region *cxlr_dax = to_cxl_dax_region(dev);
++	struct dax_region *dax_region = dev_get_drvdata(dev);
++	struct region_extent *reg_ext = nd->reg_ext;
++
++	switch (nd->event) {
++	case DCD_ADD_CAPACITY:
++		return __cxl_dax_region_add_extent(dax_region, reg_ext);
++	case DCD_RELEASE_CAPACITY:
++		return 0;
++	case DCD_FORCED_CAPACITY_RELEASE:
++	default:
++		dev_err(&cxlr_dax->dev, "Unknown DC event %d\n", nd->event);
++		break;
++	}
++
++	return -ENXIO;
++}
++
+ static int cxl_dax_region_probe(struct device *dev)
+ {
+ 	struct cxl_dax_region *cxlr_dax = to_cxl_dax_region(dev);
+@@ -85,6 +106,7 @@ static int cxl_dax_region_probe(struct device *dev)
+ static struct cxl_driver cxl_dax_region_driver = {
+ 	.name = "cxl_dax_region",
+ 	.probe = cxl_dax_region_probe,
++	.notify = cxl_dax_region_notify,
+ 	.id = CXL_DEVICE_DAX_REGION,
+ 	.drv = {
+ 		.suppress_bind_attrs = true,
+diff --git a/include/linux/cxl-event.h b/include/linux/cxl-event.h
+index 03fa6d50d46f..6b745c913f96 100644
+--- a/include/linux/cxl-event.h
++++ b/include/linux/cxl-event.h
+@@ -91,11 +91,42 @@ struct cxl_event_mem_module {
+ 	u8 reserved[0x3d];
+ } __packed;
+ 
++/*
++ * CXL rev 3.1 section 8.2.9.2.1.6; Table 8-51
++ */
++#define CXL_DC_EXTENT_TAG_LEN 0x10
++struct cxl_dc_extent {
++	__le64 start_dpa;
++	__le64 length;
++	u8 tag[CXL_DC_EXTENT_TAG_LEN];
++	__le16 shared_extn_seq;
++	u8 reserved[0x6];
++} __packed;
 +
 +/*
-+ * Format <start>:<length>
++ * Dynamic Capacity Event Record
++ * CXL rev 3.1 section 8.2.9.2.1.6; Table 8-50
 + */
-+static ssize_t dc_del_extent_store(struct device *dev,
-+				   struct device_attribute *attr,
-+				   const char *buf, size_t count)
-+{
-+	return __dc_del_extent_store(dev, attr, buf, count,
-+				     DCD_RELEASE_CAPACITY);
-+}
-+static DEVICE_ATTR_WO(dc_del_extent);
++struct cxl_event_dcd {
++	struct cxl_event_record_hdr hdr;
++	u8 event_type;
++	u8 validity_flags;
++	__le16 host_id;
++	u8 region_index;
++	u8 flags;
++	u8 reserved1[0x2];
++	struct cxl_dc_extent extent;
++	u8 reserved2[0x18];
++	__le32 num_avail_extents;
++	__le32 num_avail_tags;
++} __packed;
 +
-+static ssize_t dc_force_del_extent_store(struct device *dev,
-+					 struct device_attribute *attr,
-+					 const char *buf, size_t count)
-+{
-+	return __dc_del_extent_store(dev, attr, buf, count,
-+				     DCD_FORCED_CAPACITY_RELEASE);
-+}
-+static DEVICE_ATTR_WO(dc_force_del_extent);
-+
- static struct attribute *cxl_mock_mem_attrs[] = {
- 	&dev_attr_security_lock.attr,
- 	&dev_attr_event_trigger.attr,
- 	&dev_attr_fw_buf_checksum.attr,
- 	&dev_attr_sanitize_timeout.attr,
-+	&dev_attr_dc_inject_extent.attr,
-+	&dev_attr_dc_del_extent.attr,
-+	&dev_attr_dc_force_del_extent.attr,
- 	NULL
- };
- ATTRIBUTE_GROUPS(cxl_mock_mem);
-@@ -1694,6 +2266,7 @@ MODULE_DEVICE_TABLE(platform, cxl_mock_mem_ids);
+ union cxl_event {
+ 	struct cxl_event_generic generic;
+ 	struct cxl_event_gen_media gen_media;
+ 	struct cxl_event_dram dram;
+ 	struct cxl_event_mem_module mem_module;
++	struct cxl_event_dcd dcd;
+ } __packed;
  
- static struct platform_driver cxl_mock_mem_driver = {
- 	.probe = cxl_mock_mem_probe,
-+	.remove_new = cxl_mock_mem_remove,
- 	.id_table = cxl_mock_mem_ids,
- 	.driver = {
- 		.name = KBUILD_MODNAME,
+ /*
 
 -- 
 2.44.0

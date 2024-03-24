@@ -1,47 +1,47 @@
-Received: from mgamail.intel.com (mgamail.intel.com [198.175.65.18])
+Received: from mgamail.intel.com (mgamail.intel.com [192.198.163.13])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 045F615ECF9;
-	Sun, 24 Mar 2024 23:18:31 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.175.65.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 93AEF2002C9;
+	Sun, 24 Mar 2024 23:18:17 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=192.198.163.13
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1711322315; cv=none; b=CLMPzDie1jfCxBlPaLeiftWFY0TzsTHlVZYZBZPbyBy+yOUNsr/TyFDG/Pk/cJa7sbqx/PfHxJcK8lHMVd4F9eF1vumpF1bZLhggEQLpfe16A0IXvkAkgCsVL95rmjmUtGwT0buOOo7C74MijhhAwOavTtRqdrLpWMCSSdDxv4o=
+	t=1711322300; cv=none; b=jNdN6nG9duwo6jW9WpNGeBLdvfpWhItHmiz+9V8Mf438CwwjfVjmVcryS4boZFdN1YWpcTtNLuCMwnTdrps9X4VF8RSKC4IuQAvYofVl8KzMwNUI9l9J9+ls/ltL8XsMmJblX8pB6Kq0Kbo1vWCGdgUBlxnfiDV4sTOhLAgNv9s=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1711322315; c=relaxed/simple;
-	bh=qNDdcDSP8wEaAJJd7uyKmBgAQscJG7aJdkOstM+hti4=;
+	s=arc-20240116; t=1711322300; c=relaxed/simple;
+	bh=h1CNRTltsU7gPeX80g46Nck3+CI4jauWHOLhiBqnfJQ=;
 	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
-	 In-Reply-To:To:Cc; b=i6TApecoIvKd4Tz3xQyqO7NpzgDrRpEWlcDzrDHB5ikGn23hwwJZby57BSJTckCJ6gMSb32MBPVHAc/3UTpxsbH6FFLx7fwxYJVHdPgOfJ9eorc776eS//5B94jdXS+JTe9V2FI47ZPy4Vjpn2+7mkQdpuapjw863RZ6Bl5hS1A=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com; spf=pass smtp.mailfrom=intel.com; dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b=baGJvKbb; arc=none smtp.client-ip=198.175.65.18
+	 In-Reply-To:To:Cc; b=GnT9oXISqS2psTMqcy1/fQFmCb95CsiocXU0JUAlwzdEPMZkqiPenXj43MDZ/g9rW6wwlwssJaisFR5DKlteMoYKtvw//+6dCnqssdF0cm7VkbSp9qnlHP3ZBWwsec9DvPxHWiITGWkyFAsoI4lZeftDIpxb4uAoEWJLu446xT0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com; spf=pass smtp.mailfrom=intel.com; dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b=ONwCAvgp; arc=none smtp.client-ip=192.198.163.13
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=intel.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b="baGJvKbb"
+	dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b="ONwCAvgp"
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
   d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1711322313; x=1742858313;
+  t=1711322298; x=1742858298;
   h=from:date:subject:mime-version:content-transfer-encoding:
    message-id:references:in-reply-to:to:cc;
-  bh=qNDdcDSP8wEaAJJd7uyKmBgAQscJG7aJdkOstM+hti4=;
-  b=baGJvKbbKckOK+FR8mNvCMdMcxR11Koj4VuDaT8zl937AGBbasHturg1
-   eYAALQXTdyQMptZ9U1ehNuAHHs5+95PKHrmktuJ4lniLTB7gTnPrkIxFu
-   dkB8R0dLrKFHeTG8BxXV/ysxGcrALRnbE5GVhxsxnsVr5TomEXJhoA6M+
-   ReUa5QG24EJyr7KbYKd7k9D9NKQEow7q4QssjFkTQsBqsWnydbwzlLg8R
-   msXVj+ivgdaE9V9hJLVLWofFTcthI+p/BvUsSxAXXfHKXgJY26+42bJh+
-   dlRBOW0cpD3yv/wM7yBku3hlFLuax5GArjThqsbs+ldUcsdMGffVdH7FH
+  bh=h1CNRTltsU7gPeX80g46Nck3+CI4jauWHOLhiBqnfJQ=;
+  b=ONwCAvgp7474I+BfCLhGKlBX7P8vCww7mY16sldczbfOQttAZzthK2vj
+   TNnTLN/nH7y64/1PLkCLBXfoirk79GS0IdknLp/SZ+giJBvs5+Nl1T8Sp
+   R+W3X8WddiJ6AqrF9j9riuFF9Z9AnleVma9EcUN2qLl6bOl9RaxI+sgfp
+   FJTDBIEDKA/K2H0K19kUkmnyoMDgRJFCLmmOi2deOOgmBw288LIhFlBR1
+   /GBH5Lmj6VN8WTV8EhBxjMn4aMqqD5tAhQeO/Wu/5O7vWDBeqspwfDc0R
+   DBn2yIaX+HsURGFLDTTKcBCMKfXqY2ifiyMcOkkRkmAXLGnEHtWlT3LJh
    Q==;
-X-IronPort-AV: E=McAfee;i="6600,9927,11023"; a="6431773"
+X-IronPort-AV: E=McAfee;i="6600,9927,11023"; a="9260906"
 X-IronPort-AV: E=Sophos;i="6.07,152,1708416000"; 
-   d="scan'208";a="6431773"
-Received: from fmviesa009.fm.intel.com ([10.60.135.149])
-  by orvoesa110.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 24 Mar 2024 16:18:24 -0700
+   d="scan'208";a="9260906"
+Received: from orviesa007.jf.intel.com ([10.64.159.147])
+  by fmvoesa107.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 24 Mar 2024 16:18:11 -0700
 X-ExtLoop1: 1
 X-IronPort-AV: E=Sophos;i="6.07,152,1708416000"; 
-   d="scan'208";a="15464739"
+   d="scan'208";a="15842195"
 Received: from iweiny-mobl.amr.corp.intel.com (HELO localhost) ([10.213.186.165])
-  by fmviesa009-auth.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 24 Mar 2024 16:18:24 -0700
-From: Ira Weiny <ira.weiny@intel.com>
-Date: Sun, 24 Mar 2024 16:18:27 -0700
-Subject: [PATCH 24/26] tools/testing/cxl: Make event logs dynamic
+  by orviesa007-auth.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 24 Mar 2024 16:18:08 -0700
+From: ira.weiny@intel.com
+Date: Sun, 24 Mar 2024 16:18:05 -0700
+Subject: [PATCH 02/26] cxl/core: Separate region mode from decoder mode
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -50,7 +50,7 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-Message-Id: <20240324-dcd-type2-upstream-v1-24-b7b00d623625@intel.com>
+Message-Id: <20240324-dcd-type2-upstream-v1-2-b7b00d623625@intel.com>
 References: <20240324-dcd-type2-upstream-v1-0-b7b00d623625@intel.com>
 In-Reply-To: <20240324-dcd-type2-upstream-v1-0-b7b00d623625@intel.com>
 To: Dave Jiang <dave.jiang@intel.com>, Fan Ni <fan.ni@samsung.com>, 
@@ -61,464 +61,293 @@ Cc: Dan Williams <dan.j.williams@intel.com>,
  Alison Schofield <alison.schofield@intel.com>, 
  Vishal Verma <vishal.l.verma@intel.com>, Ira Weiny <ira.weiny@intel.com>, 
  linux-btrfs@vger.kernel.org, linux-cxl@vger.kernel.org, 
- linux-kernel@vger.kernel.org
+ linux-kernel@vger.kernel.org, 
+ Jonathan Cameron <Jonathan.Cameron@Huawei.com>
 X-Mailer: b4 0.13-dev-2d940
-X-Developer-Signature: v=1; a=ed25519-sha256; t=1711322284; l=15319;
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1711322284; l=9537;
  i=ira.weiny@intel.com; s=20221211; h=from:subject:message-id;
- bh=qNDdcDSP8wEaAJJd7uyKmBgAQscJG7aJdkOstM+hti4=;
- b=x25M1ktIhLuCYWQpdNm/VSic4+qXTwF6HdG8/iGYkv0AARVpR+KWbfbGl/YkaJdqRPvQAqFux
- BLZzYUBV2I5Au34+EkcPb69duZFWTeGoVHs5kxGGj+oFTKqNbFOpJk2
+ bh=V2iP5Szvwem/AOSd5vyUWK3LbafmZL0V8Ed3fQGBvZo=;
+ b=zbhEvTN2nNzo9o8XT4Yvnq4HvBT7x0cTu1fxa5482N3wiqcoIfkyCZUtSkrlqa1b2IevYieNZ
+ 4QdHBzjJz/FA+Rhov0PzbvXJaSudOgqYfR7gG98v5P+o6JKbMMKOClY
 X-Developer-Key: i=ira.weiny@intel.com; a=ed25519;
  pk=noldbkG+Wp1qXRrrkfY1QJpDf7QsOEthbOT7vm0PqsE=
 
-The test event logs were created as static arrays as an easy way to mock
-events.  Dynamic Capacity Device (DCD) test support requires events be
-generated dynamically when extents are created or destroyed.
+From: Navneet Singh <navneet.singh@intel.com>
 
-Modify the event log storage to be dynamically allocated.  Reuse the
-static event data to create the dynamic events in the new logs without
-inventing complex event injection for the previous tests.  Simplify the
-processing of the logs by using the event log array index as the handle.
-Add a lock to manage concurrency required when user space is allowed to
-control DCD extents
+Until now region modes and decoder modes were equivalent in that they
+were either PMEM or RAM.  With the upcoming addition of Dynamic Capacity
+regions (which will represent an array of device regions [better named
+partitions] the index of which could be different on different
+interleaved devices), the mode of an endpoint decoder and a region will
+no longer be equivalent.
 
+Define a new region mode enumeration and adjust the code for it.
+
+Suggested-by: Jonathan Cameron <Jonathan.Cameron@Huawei.com>
+Signed-off-by: Navneet Singh <navneet.singh@intel.com>
+Co-developed-by: Ira Weiny <ira.weiny@intel.com>
 Signed-off-by: Ira Weiny <ira.weiny@intel.com>
 
 ---
 Changes for v1
-[iweiny: Adjust for new event code]
+<none>
 ---
- tools/testing/cxl/test/mem.c | 281 ++++++++++++++++++++++++++-----------------
- 1 file changed, 172 insertions(+), 109 deletions(-)
+ drivers/cxl/core/region.c | 77 +++++++++++++++++++++++++++++++++++------------
+ drivers/cxl/cxl.h         | 26 ++++++++++++++--
+ 2 files changed, 81 insertions(+), 22 deletions(-)
 
-diff --git a/tools/testing/cxl/test/mem.c b/tools/testing/cxl/test/mem.c
-index 35ee41e435ab..d8d62e6eeb18 100644
---- a/tools/testing/cxl/test/mem.c
-+++ b/tools/testing/cxl/test/mem.c
-@@ -124,18 +124,27 @@ static struct {
- 
- #define PASS_TRY_LIMIT 3
- 
--#define CXL_TEST_EVENT_CNT_MAX 15
-+#define CXL_TEST_EVENT_CNT_MAX 17
- 
- /* Set a number of events to return at a time for simulation.  */
- #define CXL_TEST_EVENT_CNT 3
- 
-+/*
-+ * @next_handle: next handle (index) to be stored to
-+ * @cur_handle: current handle (index) to be returned to the user on get_event
-+ * @nr_events: total events in this log
-+ * @nr_overflow: number of events added past the log size
-+ * @lock: protect these state variables
-+ * @events: array of pending events to be returned.
-+ */
- struct mock_event_log {
--	u16 clear_idx;
--	u16 cur_idx;
-+	u16 next_handle;
-+	u16 cur_handle;
- 	u16 nr_events;
- 	u16 nr_overflow;
--	u16 overflow_reset;
--	struct cxl_event_record_raw *events[CXL_TEST_EVENT_CNT_MAX];
-+	rwlock_t lock;
-+	/* 1 extra slot to accommodate that handles can't be 0 */
-+	struct cxl_event_record_raw *events[CXL_TEST_EVENT_CNT_MAX + 1];
- };
- 
- struct mock_event_store {
-@@ -170,64 +179,76 @@ static struct mock_event_log *event_find_log(struct device *dev, int log_type)
- 	return &mdata->mes.mock_logs[log_type];
- }
- 
--static struct cxl_event_record_raw *event_get_current(struct mock_event_log *log)
--{
--	return log->events[log->cur_idx];
--}
--
--static void event_reset_log(struct mock_event_log *log)
--{
--	log->cur_idx = 0;
--	log->clear_idx = 0;
--	log->nr_overflow = log->overflow_reset;
--}
--
- /* Handle can never be 0 use 1 based indexing for handle */
--static u16 event_get_clear_handle(struct mock_event_log *log)
-+static void event_inc_handle(u16 *handle)
- {
--	return log->clear_idx + 1;
-+	*handle = (*handle + 1) % CXL_TEST_EVENT_CNT_MAX;
-+	if (!*handle)
-+		*handle = *handle + 1;
- }
- 
--/* Handle can never be 0 use 1 based indexing for handle */
--static __le16 event_get_cur_event_handle(struct mock_event_log *log)
--{
--	u16 cur_handle = log->cur_idx + 1;
--
--	return cpu_to_le16(cur_handle);
--}
--
--static bool event_log_empty(struct mock_event_log *log)
--{
--	return log->cur_idx == log->nr_events;
--}
--
--static void mes_add_event(struct mock_event_store *mes,
-+/* Add the event or free it on 'overflow' */
-+static void mes_add_event(struct cxl_mockmem_data *mdata,
- 			  enum cxl_event_log_type log_type,
- 			  struct cxl_event_record_raw *event)
- {
-+	struct device *dev = mdata->mds->cxlds.dev;
- 	struct mock_event_log *log;
-+	u16 handle;
- 
- 	if (WARN_ON(log_type >= CXL_EVENT_TYPE_MAX))
- 		return;
- 
--	log = &mes->mock_logs[log_type];
-+	log = &mdata->mes.mock_logs[log_type];
- 
--	if ((log->nr_events + 1) > CXL_TEST_EVENT_CNT_MAX) {
-+	write_lock(&log->lock);
-+
-+	handle = log->next_handle;
-+	if ((handle + 1) == log->cur_handle) {
- 		log->nr_overflow++;
--		log->overflow_reset = log->nr_overflow;
--		return;
-+		dev_dbg(dev, "Overflowing %d\n", log_type);
-+		devm_kfree(dev, event);
-+		goto unlock;
- 	}
- 
--	log->events[log->nr_events] = event;
-+	dev_dbg(dev, "Log %d; handle %u\n", log_type, handle);
-+	event->event.generic.hdr.handle = cpu_to_le16(handle);
-+	log->events[handle] = event;
-+	event_inc_handle(&log->next_handle);
- 	log->nr_events++;
-+
-+unlock:
-+	write_unlock(&log->lock);
-+}
-+
-+static void mes_del_event(struct device *dev,
-+			  struct mock_event_log *log,
-+			  u16 handle)
-+{
-+	struct cxl_event_record_raw *cur;
-+
-+	lockdep_assert(lockdep_is_held(&log->lock));
-+
-+	dev_dbg(dev, "Clearing event %u; cur %u\n", handle, log->cur_handle);
-+	cur = log->events[handle];
-+	if (!cur) {
-+		dev_err(dev, "Mock event index %u empty? nr_events %u",
-+			handle, log->nr_events);
-+		return;
-+	}
-+	log->events[handle] = NULL;
-+
-+	event_inc_handle(&log->cur_handle);
-+	log->nr_events--;
-+	devm_kfree(dev, cur);
- }
- 
- static int mock_get_event(struct device *dev, struct cxl_mbox_cmd *cmd)
- {
- 	struct cxl_get_event_payload *pl;
- 	struct mock_event_log *log;
--	u16 nr_overflow;
- 	u8 log_type;
-+	u16 handle;
- 	int i;
- 
- 	if (cmd->size_in != sizeof(log_type))
-@@ -240,31 +261,40 @@ static int mock_get_event(struct device *dev, struct cxl_mbox_cmd *cmd)
- 	if (log_type >= CXL_EVENT_TYPE_MAX)
- 		return -EINVAL;
- 
--	memset(cmd->payload_out, 0, cmd->size_out);
--
- 	log = event_find_log(dev, log_type);
--	if (!log || event_log_empty(log))
-+	if (!log)
- 		return 0;
- 
-+	memset(cmd->payload_out, 0, cmd->size_out);
- 	pl = cmd->payload_out;
- 
--	for (i = 0; i < CXL_TEST_EVENT_CNT && !event_log_empty(log); i++) {
--		memcpy(&pl->records[i], event_get_current(log),
--		       sizeof(pl->records[i]));
--		pl->records[i].event.generic.hdr.handle =
--				event_get_cur_event_handle(log);
--		log->cur_idx++;
-+	read_lock(&log->lock);
-+
-+	handle = log->cur_handle;
-+	dev_dbg(dev, "Get log %d handle %u next %u\n",
-+		log_type, handle, log->next_handle);
-+	for (i = 0;
-+	     i < CXL_TEST_EVENT_CNT && handle != log->next_handle;
-+	     i++, event_inc_handle(&handle)) {
-+		struct cxl_event_record_raw *cur;
-+
-+		cur = log->events[handle];
-+		dev_dbg(dev, "Sending event log %d handle %d idx %u\n",
-+			log_type, le16_to_cpu(cur->event.generic.hdr.handle),
-+			handle);
-+		memcpy(&pl->records[i], cur, sizeof(pl->records[i]));
-+		pl->records[i].event.generic.hdr.handle = cpu_to_le16(handle);
- 	}
- 
- 	pl->record_count = cpu_to_le16(i);
--	if (!event_log_empty(log))
-+	if (log->nr_events > i)
- 		pl->flags |= CXL_GET_EVENT_FLAG_MORE_RECORDS;
- 
- 	if (log->nr_overflow) {
- 		u64 ns;
- 
- 		pl->flags |= CXL_GET_EVENT_FLAG_OVERFLOW;
--		pl->overflow_err_count = cpu_to_le16(nr_overflow);
-+		pl->overflow_err_count = cpu_to_le16(log->nr_overflow);
- 		ns = ktime_get_real_ns();
- 		ns -= 5000000000; /* 5s ago */
- 		pl->first_overflow_timestamp = cpu_to_le64(ns);
-@@ -273,16 +303,17 @@ static int mock_get_event(struct device *dev, struct cxl_mbox_cmd *cmd)
- 		pl->last_overflow_timestamp = cpu_to_le64(ns);
- 	}
- 
-+	read_unlock(&log->lock);
- 	return 0;
- }
- 
- static int mock_clear_event(struct device *dev, struct cxl_mbox_cmd *cmd)
- {
- 	struct cxl_mbox_clear_event_payload *pl = cmd->payload_in;
--	struct mock_event_log *log;
- 	u8 log_type = pl->event_log;
-+	struct mock_event_log *log;
-+	int nr, rc = 0;
- 	u16 handle;
--	int nr;
- 
- 	if (log_type >= CXL_EVENT_TYPE_MAX)
- 		return -EINVAL;
-@@ -291,24 +322,23 @@ static int mock_clear_event(struct device *dev, struct cxl_mbox_cmd *cmd)
- 	if (!log)
- 		return 0; /* No mock data in this log */
- 
--	/*
--	 * This check is technically not invalid per the specification AFAICS.
--	 * (The host could 'guess' handles and clear them in order).
--	 * However, this is not good behavior for the host so test it.
--	 */
--	if (log->clear_idx + pl->nr_recs > log->cur_idx) {
--		dev_err(dev,
--			"Attempting to clear more events than returned!\n");
--		return -EINVAL;
--	}
-+	write_lock(&log->lock);
- 
- 	/* Check handle order prior to clearing events */
--	for (nr = 0, handle = event_get_clear_handle(log);
--	     nr < pl->nr_recs;
--	     nr++, handle++) {
-+	handle = log->cur_handle;
-+	for (nr = 0;
-+	     nr < pl->nr_recs && handle != log->next_handle;
-+	     nr++, event_inc_handle(&handle)) {
-+
-+		dev_dbg(dev, "Checking clear of %d handle %u plhandle %u\n",
-+			log_type, handle,
-+			le16_to_cpu(pl->handles[nr]));
-+
- 		if (handle != le16_to_cpu(pl->handles[nr])) {
--			dev_err(dev, "Clearing events out of order\n");
--			return -EINVAL;
-+			dev_err(dev, "Clearing events out of order %u %u\n",
-+				handle, le16_to_cpu(pl->handles[nr]));
-+			rc = -EINVAL;
-+			goto unlock;
- 		}
- 	}
- 
-@@ -316,25 +346,12 @@ static int mock_clear_event(struct device *dev, struct cxl_mbox_cmd *cmd)
- 		log->nr_overflow = 0;
- 
- 	/* Clear events */
--	log->clear_idx += pl->nr_recs;
--	return 0;
--}
-+	for (nr = 0; nr < pl->nr_recs; nr++)
-+		mes_del_event(dev, log, le16_to_cpu(pl->handles[nr]));
- 
--static void cxl_mock_event_trigger(struct device *dev)
--{
--	struct cxl_mockmem_data *mdata = dev_get_drvdata(dev);
--	struct mock_event_store *mes = &mdata->mes;
--	int i;
--
--	for (i = CXL_EVENT_TYPE_INFO; i < CXL_EVENT_TYPE_MAX; i++) {
--		struct mock_event_log *log;
--
--		log = event_find_log(dev, i);
--		if (log)
--			event_reset_log(log);
--	}
--
--	cxl_mem_get_event_records(mdata->mds, mes->ev_status);
-+unlock:
-+	write_unlock(&log->lock);
-+	return rc;
- }
- 
- struct cxl_event_record_raw maint_needed = {
-@@ -459,8 +476,27 @@ static int mock_set_timestamp(struct cxl_dev_state *cxlds,
- 	return 0;
- }
- 
--static void cxl_mock_add_event_logs(struct mock_event_store *mes)
-+/* Create a dynamically allocated event out of a statically defined event. */
-+static void add_event_from_static(struct cxl_mockmem_data *mdata,
-+				  enum cxl_event_log_type log_type,
-+				  struct cxl_event_record_raw *raw)
- {
-+	struct device *dev = mdata->mds->cxlds.dev;
-+	struct cxl_event_record_raw *rec;
-+
-+	rec = devm_kmemdup(dev, raw, sizeof(*rec), GFP_KERNEL);
-+	if (!rec) {
-+		dev_err(dev, "Failed to alloc event for log\n");
-+		return;
-+	}
-+	mes_add_event(mdata, log_type, rec);
-+}
-+
-+static void cxl_mock_add_event_logs(struct cxl_mockmem_data *mdata)
-+{
-+	struct mock_event_store *mes = &mdata->mes;
-+	struct device *dev = mdata->mds->cxlds.dev;
-+
- 	put_unaligned_le16(CXL_GMER_VALID_CHANNEL | CXL_GMER_VALID_RANK,
- 			   &gen_media.rec.validity_flags);
- 
-@@ -468,43 +504,60 @@ static void cxl_mock_add_event_logs(struct mock_event_store *mes)
- 			   CXL_DER_VALID_BANK | CXL_DER_VALID_COLUMN,
- 			   &dram.rec.validity_flags);
- 
--	mes_add_event(mes, CXL_EVENT_TYPE_INFO, &maint_needed);
--	mes_add_event(mes, CXL_EVENT_TYPE_INFO,
-+	dev_dbg(dev, "Generating fake event logs %d\n",
-+		CXL_EVENT_TYPE_INFO);
-+	add_event_from_static(mdata, CXL_EVENT_TYPE_INFO, &maint_needed);
-+	add_event_from_static(mdata, CXL_EVENT_TYPE_INFO,
- 		      (struct cxl_event_record_raw *)&gen_media);
--	mes_add_event(mes, CXL_EVENT_TYPE_INFO,
-+	add_event_from_static(mdata, CXL_EVENT_TYPE_INFO,
- 		      (struct cxl_event_record_raw *)&mem_module);
- 	mes->ev_status |= CXLDEV_EVENT_STATUS_INFO;
- 
--	mes_add_event(mes, CXL_EVENT_TYPE_FAIL, &maint_needed);
--	mes_add_event(mes, CXL_EVENT_TYPE_FAIL, &hardware_replace);
--	mes_add_event(mes, CXL_EVENT_TYPE_FAIL,
-+	dev_dbg(dev, "Generating fake event logs %d\n",
-+		CXL_EVENT_TYPE_FAIL);
-+	add_event_from_static(mdata, CXL_EVENT_TYPE_FAIL, &maint_needed);
-+	add_event_from_static(mdata, CXL_EVENT_TYPE_FAIL,
-+		      (struct cxl_event_record_raw *)&mem_module);
-+	add_event_from_static(mdata, CXL_EVENT_TYPE_FAIL, &hardware_replace);
-+	add_event_from_static(mdata, CXL_EVENT_TYPE_FAIL,
- 		      (struct cxl_event_record_raw *)&dram);
--	mes_add_event(mes, CXL_EVENT_TYPE_FAIL,
-+	add_event_from_static(mdata, CXL_EVENT_TYPE_FAIL,
- 		      (struct cxl_event_record_raw *)&gen_media);
--	mes_add_event(mes, CXL_EVENT_TYPE_FAIL,
-+	add_event_from_static(mdata, CXL_EVENT_TYPE_FAIL,
- 		      (struct cxl_event_record_raw *)&mem_module);
--	mes_add_event(mes, CXL_EVENT_TYPE_FAIL, &hardware_replace);
--	mes_add_event(mes, CXL_EVENT_TYPE_FAIL,
-+	add_event_from_static(mdata, CXL_EVENT_TYPE_FAIL, &hardware_replace);
-+	add_event_from_static(mdata, CXL_EVENT_TYPE_FAIL,
- 		      (struct cxl_event_record_raw *)&dram);
- 	/* Overflow this log */
--	mes_add_event(mes, CXL_EVENT_TYPE_FAIL, &hardware_replace);
--	mes_add_event(mes, CXL_EVENT_TYPE_FAIL, &hardware_replace);
--	mes_add_event(mes, CXL_EVENT_TYPE_FAIL, &hardware_replace);
--	mes_add_event(mes, CXL_EVENT_TYPE_FAIL, &hardware_replace);
--	mes_add_event(mes, CXL_EVENT_TYPE_FAIL, &hardware_replace);
--	mes_add_event(mes, CXL_EVENT_TYPE_FAIL, &hardware_replace);
--	mes_add_event(mes, CXL_EVENT_TYPE_FAIL, &hardware_replace);
--	mes_add_event(mes, CXL_EVENT_TYPE_FAIL, &hardware_replace);
--	mes_add_event(mes, CXL_EVENT_TYPE_FAIL, &hardware_replace);
--	mes_add_event(mes, CXL_EVENT_TYPE_FAIL, &hardware_replace);
-+	add_event_from_static(mdata, CXL_EVENT_TYPE_FAIL, &hardware_replace);
-+	add_event_from_static(mdata, CXL_EVENT_TYPE_FAIL, &hardware_replace);
-+	add_event_from_static(mdata, CXL_EVENT_TYPE_FAIL, &hardware_replace);
-+	add_event_from_static(mdata, CXL_EVENT_TYPE_FAIL, &hardware_replace);
-+	add_event_from_static(mdata, CXL_EVENT_TYPE_FAIL, &hardware_replace);
-+	add_event_from_static(mdata, CXL_EVENT_TYPE_FAIL, &hardware_replace);
-+	add_event_from_static(mdata, CXL_EVENT_TYPE_FAIL, &hardware_replace);
-+	add_event_from_static(mdata, CXL_EVENT_TYPE_FAIL, &hardware_replace);
-+	add_event_from_static(mdata, CXL_EVENT_TYPE_FAIL, &hardware_replace);
-+	add_event_from_static(mdata, CXL_EVENT_TYPE_FAIL, &hardware_replace);
- 	mes->ev_status |= CXLDEV_EVENT_STATUS_FAIL;
- 
--	mes_add_event(mes, CXL_EVENT_TYPE_FATAL, &hardware_replace);
--	mes_add_event(mes, CXL_EVENT_TYPE_FATAL,
-+	dev_dbg(dev, "Generating fake event logs %d\n",
-+		CXL_EVENT_TYPE_FATAL);
-+	add_event_from_static(mdata, CXL_EVENT_TYPE_FATAL, &hardware_replace);
-+	add_event_from_static(mdata, CXL_EVENT_TYPE_FATAL,
- 		      (struct cxl_event_record_raw *)&dram);
- 	mes->ev_status |= CXLDEV_EVENT_STATUS_FATAL;
- }
- 
-+static void cxl_mock_event_trigger(struct device *dev)
-+{
-+	struct cxl_mockmem_data *mdata = dev_get_drvdata(dev);
-+	struct mock_event_store *mes = &mdata->mes;
-+
-+	cxl_mock_add_event_logs(mdata);
-+	cxl_mem_get_event_records(mdata->mds, mes->ev_status);
-+}
-+
- static int mock_gsl(struct cxl_mbox_cmd *cmd)
- {
- 	if (cmd->size_out < sizeof(mock_gsl_payload))
-@@ -1438,6 +1491,14 @@ static ssize_t event_trigger_store(struct device *dev,
- }
- static DEVICE_ATTR_WO(event_trigger);
- 
-+static void init_event_log(struct mock_event_log *log)
-+{
-+	rwlock_init(&log->lock);
-+	/* Handle can never be 0 use 1 based indexing for handle */
-+	log->cur_handle = 1;
-+	log->next_handle = 1;
-+}
-+
- static int cxl_mock_mem_probe(struct platform_device *pdev)
- {
- 	struct device *dev = &pdev->dev;
-@@ -1504,7 +1565,9 @@ static int cxl_mock_mem_probe(struct platform_device *pdev)
+diff --git a/drivers/cxl/core/region.c b/drivers/cxl/core/region.c
+index 4c7fd2d5cccb..1723d17f121e 100644
+--- a/drivers/cxl/core/region.c
++++ b/drivers/cxl/core/region.c
+@@ -40,7 +40,7 @@ static ssize_t uuid_show(struct device *dev, struct device_attribute *attr,
+ 	rc = down_read_interruptible(&cxl_region_rwsem);
  	if (rc)
  		return rc;
+-	if (cxlr->mode != CXL_DECODER_PMEM)
++	if (cxlr->mode != CXL_REGION_PMEM)
+ 		rc = sysfs_emit(buf, "\n");
+ 	else
+ 		rc = sysfs_emit(buf, "%pUb\n", &p->uuid);
+@@ -353,7 +353,7 @@ static umode_t cxl_region_visible(struct kobject *kobj, struct attribute *a,
+ 	 * Support tooling that expects to find a 'uuid' attribute for all
+ 	 * regions regardless of mode.
+ 	 */
+-	if (a == &dev_attr_uuid.attr && cxlr->mode != CXL_DECODER_PMEM)
++	if (a == &dev_attr_uuid.attr && cxlr->mode != CXL_REGION_PMEM)
+ 		return 0444;
+ 	return a->mode;
+ }
+@@ -516,7 +516,7 @@ static ssize_t mode_show(struct device *dev, struct device_attribute *attr,
+ {
+ 	struct cxl_region *cxlr = to_cxl_region(dev);
  
--	cxl_mock_add_event_logs(&mdata->mes);
-+	for (int i = 0; i < CXL_EVENT_TYPE_MAX; i++)
-+		init_event_log(&mdata->mes.mock_logs[i]);
-+	cxl_mock_add_event_logs(mdata);
+-	return sysfs_emit(buf, "%s\n", cxl_decoder_mode_name(cxlr->mode));
++	return sysfs_emit(buf, "%s\n", cxl_region_mode_name(cxlr->mode));
+ }
+ static DEVICE_ATTR_RO(mode);
  
- 	cxlmd = devm_cxl_add_memdev(&pdev->dev, cxlds);
- 	if (IS_ERR(cxlmd))
+@@ -542,7 +542,7 @@ static int alloc_hpa(struct cxl_region *cxlr, resource_size_t size)
+ 
+ 	/* ways, granularity and uuid (if PMEM) need to be set before HPA */
+ 	if (!p->interleave_ways || !p->interleave_granularity ||
+-	    (cxlr->mode == CXL_DECODER_PMEM && uuid_is_null(&p->uuid)))
++	    (cxlr->mode == CXL_REGION_PMEM && uuid_is_null(&p->uuid)))
+ 		return -ENXIO;
+ 
+ 	div64_u64_rem(size, (u64)SZ_256M * p->interleave_ways, &remainder);
+@@ -1683,6 +1683,17 @@ static int cxl_region_sort_targets(struct cxl_region *cxlr)
+ 	return rc;
+ }
+ 
++static bool cxl_modes_compatible(enum cxl_region_mode rmode,
++				 enum cxl_decoder_mode dmode)
++{
++	if (rmode == CXL_REGION_RAM && dmode == CXL_DECODER_RAM)
++		return true;
++	if (rmode == CXL_REGION_PMEM && dmode == CXL_DECODER_PMEM)
++		return true;
++
++	return false;
++}
++
+ static int cxl_region_attach(struct cxl_region *cxlr,
+ 			     struct cxl_endpoint_decoder *cxled, int pos)
+ {
+@@ -1693,9 +1704,11 @@ static int cxl_region_attach(struct cxl_region *cxlr,
+ 	struct cxl_dport *dport;
+ 	int rc = -ENXIO;
+ 
+-	if (cxled->mode != cxlr->mode) {
+-		dev_dbg(&cxlr->dev, "%s region mode: %d mismatch: %d\n",
+-			dev_name(&cxled->cxld.dev), cxlr->mode, cxled->mode);
++	if (!cxl_modes_compatible(cxlr->mode, cxled->mode)) {
++		dev_dbg(&cxlr->dev, "%s region mode: %s mismatch decoder: %s\n",
++			dev_name(&cxled->cxld.dev),
++			cxl_region_mode_name(cxlr->mode),
++			cxl_decoder_mode_name(cxled->mode));
+ 		return -EINVAL;
+ 	}
+ 
+@@ -2168,7 +2181,7 @@ static struct cxl_region *cxl_region_alloc(struct cxl_root_decoder *cxlrd, int i
+  * devm_cxl_add_region - Adds a region to a decoder
+  * @cxlrd: root decoder
+  * @id: memregion id to create, or memregion_free() on failure
+- * @mode: mode for the endpoint decoders of this region
++ * @mode: mode of this region
+  * @type: select whether this is an expander or accelerator (type-2 or type-3)
+  *
+  * This is the second step of region initialization. Regions exist within an
+@@ -2179,7 +2192,7 @@ static struct cxl_region *cxl_region_alloc(struct cxl_root_decoder *cxlrd, int i
+  */
+ static struct cxl_region *devm_cxl_add_region(struct cxl_root_decoder *cxlrd,
+ 					      int id,
+-					      enum cxl_decoder_mode mode,
++					      enum cxl_region_mode mode,
+ 					      enum cxl_decoder_type type)
+ {
+ 	struct cxl_port *port = to_cxl_port(cxlrd->cxlsd.cxld.dev.parent);
+@@ -2188,11 +2201,12 @@ static struct cxl_region *devm_cxl_add_region(struct cxl_root_decoder *cxlrd,
+ 	int rc;
+ 
+ 	switch (mode) {
+-	case CXL_DECODER_RAM:
+-	case CXL_DECODER_PMEM:
++	case CXL_REGION_RAM:
++	case CXL_REGION_PMEM:
+ 		break;
+ 	default:
+-		dev_err(&cxlrd->cxlsd.cxld.dev, "unsupported mode %d\n", mode);
++		dev_err(&cxlrd->cxlsd.cxld.dev, "unsupported mode %s\n",
++			cxl_region_mode_name(mode));
+ 		return ERR_PTR(-EINVAL);
+ 	}
+ 
+@@ -2242,7 +2256,7 @@ static ssize_t create_ram_region_show(struct device *dev,
+ }
+ 
+ static struct cxl_region *__create_region(struct cxl_root_decoder *cxlrd,
+-					  enum cxl_decoder_mode mode, int id)
++					  enum cxl_region_mode mode, int id)
+ {
+ 	int rc;
+ 
+@@ -2270,7 +2284,7 @@ static ssize_t create_pmem_region_store(struct device *dev,
+ 	if (rc != 1)
+ 		return -EINVAL;
+ 
+-	cxlr = __create_region(cxlrd, CXL_DECODER_PMEM, id);
++	cxlr = __create_region(cxlrd, CXL_REGION_PMEM, id);
+ 	if (IS_ERR(cxlr))
+ 		return PTR_ERR(cxlr);
+ 
+@@ -2290,7 +2304,7 @@ static ssize_t create_ram_region_store(struct device *dev,
+ 	if (rc != 1)
+ 		return -EINVAL;
+ 
+-	cxlr = __create_region(cxlrd, CXL_DECODER_RAM, id);
++	cxlr = __create_region(cxlrd, CXL_REGION_RAM, id);
+ 	if (IS_ERR(cxlr))
+ 		return PTR_ERR(cxlr);
+ 
+@@ -2800,6 +2814,24 @@ static int match_region_by_range(struct device *dev, void *data)
+ 	return rc;
+ }
+ 
++static enum cxl_region_mode
++cxl_decoder_to_region_mode(enum cxl_decoder_mode mode)
++{
++	switch (mode) {
++	case CXL_DECODER_NONE:
++		return CXL_REGION_NONE;
++	case CXL_DECODER_RAM:
++		return CXL_REGION_RAM;
++	case CXL_DECODER_PMEM:
++		return CXL_REGION_PMEM;
++	case CXL_DECODER_MIXED:
++	default:
++		return CXL_REGION_MIXED;
++	}
++
++	return CXL_REGION_MIXED;
++}
++
+ /* Establish an empty region covering the given HPA range */
+ static struct cxl_region *construct_region(struct cxl_root_decoder *cxlrd,
+ 					   struct cxl_endpoint_decoder *cxled)
+@@ -2808,12 +2840,17 @@ static struct cxl_region *construct_region(struct cxl_root_decoder *cxlrd,
+ 	struct cxl_port *port = cxlrd_to_port(cxlrd);
+ 	struct range *hpa = &cxled->cxld.hpa_range;
+ 	struct cxl_region_params *p;
++	enum cxl_region_mode mode;
+ 	struct cxl_region *cxlr;
+ 	struct resource *res;
+ 	int rc;
+ 
++	if (cxled->mode == CXL_DECODER_DEAD)
++		return ERR_PTR(-EINVAL);
++
++	mode = cxl_decoder_to_region_mode(cxled->mode);
+ 	do {
+-		cxlr = __create_region(cxlrd, cxled->mode,
++		cxlr = __create_region(cxlrd, mode,
+ 				       atomic_read(&cxlrd->region_id));
+ 	} while (IS_ERR(cxlr) && PTR_ERR(cxlr) == -EBUSY);
+ 
+@@ -2996,9 +3033,9 @@ static int cxl_region_probe(struct device *dev)
+ 		return rc;
+ 
+ 	switch (cxlr->mode) {
+-	case CXL_DECODER_PMEM:
++	case CXL_REGION_PMEM:
+ 		return devm_cxl_add_pmem_region(cxlr);
+-	case CXL_DECODER_RAM:
++	case CXL_REGION_RAM:
+ 		/*
+ 		 * The region can not be manged by CXL if any portion of
+ 		 * it is already online as 'System RAM'
+@@ -3010,8 +3047,8 @@ static int cxl_region_probe(struct device *dev)
+ 			return 0;
+ 		return devm_cxl_add_dax_region(cxlr);
+ 	default:
+-		dev_dbg(&cxlr->dev, "unsupported region mode: %d\n",
+-			cxlr->mode);
++		dev_dbg(&cxlr->dev, "unsupported region mode: %s\n",
++			cxl_region_mode_name(cxlr->mode));
+ 		return -ENXIO;
+ 	}
+ }
+diff --git a/drivers/cxl/cxl.h b/drivers/cxl/cxl.h
+index 003feebab79b..9a0cce1e6fca 100644
+--- a/drivers/cxl/cxl.h
++++ b/drivers/cxl/cxl.h
+@@ -383,6 +383,27 @@ static inline const char *cxl_decoder_mode_name(enum cxl_decoder_mode mode)
+ 	return "mixed";
+ }
+ 
++enum cxl_region_mode {
++	CXL_REGION_NONE,
++	CXL_REGION_RAM,
++	CXL_REGION_PMEM,
++	CXL_REGION_MIXED,
++};
++
++static inline const char *cxl_region_mode_name(enum cxl_region_mode mode)
++{
++	static const char * const names[] = {
++		[CXL_REGION_NONE] = "none",
++		[CXL_REGION_RAM] = "ram",
++		[CXL_REGION_PMEM] = "pmem",
++		[CXL_REGION_MIXED] = "mixed",
++	};
++
++	if (mode >= CXL_REGION_NONE && mode <= CXL_REGION_MIXED)
++		return names[mode];
++	return "mixed";
++}
++
+ /*
+  * Track whether this decoder is reserved for region autodiscovery, or
+  * free for userspace provisioning.
+@@ -511,7 +532,8 @@ struct cxl_region_params {
+  * struct cxl_region - CXL region
+  * @dev: This region's device
+  * @id: This region's id. Id is globally unique across all regions
+- * @mode: Endpoint decoder allocation / access mode
++ * @mode: Region mode which defines which endpoint decoder mode the region is
++ *        compatible with
+  * @type: Endpoint decoder target type
+  * @cxl_nvb: nvdimm bridge for coordinating @cxlr_pmem setup / shutdown
+  * @cxlr_pmem: (for pmem regions) cached copy of the nvdimm bridge
+@@ -521,7 +543,7 @@ struct cxl_region_params {
+ struct cxl_region {
+ 	struct device dev;
+ 	int id;
+-	enum cxl_decoder_mode mode;
++	enum cxl_region_mode mode;
+ 	enum cxl_decoder_type type;
+ 	struct cxl_nvdimm_bridge *cxl_nvb;
+ 	struct cxl_pmem_region *cxlr_pmem;
 
 -- 
 2.44.0

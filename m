@@ -1,229 +1,199 @@
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.21])
+Received: from mx0b-00069f02.pphosted.com (mx0b-00069f02.pphosted.com [205.220.177.32])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 289675674E;
-	Wed,  3 Apr 2024 07:20:10 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.17.21
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1712128814; cv=none; b=Lro+0jsb/UK1o4re20jR+B1nq7Z1n7r4cFmvkz22whEGkOO/8mOiyS53qPFzHtof4/QKubahbSzZ3mROkfpJ6UkM0jZRbuc2gLhrqB57QivARtn/DTpB4KdrqMF6I/ola9ZvOYA+gOBZgXUOlytVDmv0aALRcym9cpvpsvEVFEA=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1712128814; c=relaxed/simple;
-	bh=EFQS2MPmdKlaZCoJDkONRd0nJJkmqhYJ9gH6BBCNkHw=;
-	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=njVSUKmSoB8NwWWUddHc8490GEevxGDw7wnZ+lgwf2ejg/k9QycuA5DNjwHuJjfIYQe5sB/yJWrjDm8lNyj8SfnJhno3SiP1TScdRhSADoPMTzb1WdGzXuMi1bozgrLR5RJ002ok14jKdPR3YWpfKZMXvk9158SBh1cIc3x686E=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=G2towl6C; arc=none smtp.client-ip=212.227.17.21
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3504254909;
+	Wed,  3 Apr 2024 07:24:33 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=205.220.177.32
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1712129076; cv=fail; b=Cv/Cla8UsKgtl8xDFnsW4PGMwpKI3RO4IIPS68+z/d0t/J3AauSM4RIj71PVTgXyCIr3IP2JT+e8LJAUtLaEjyGTaF2opqJWOL3TgNRbGvdvHorH9uJeUMD7yQkYkrtgtCNRk7Ca7XfhFGzpJLCQyBvPIHmpu5YICFanOUJsz5c=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1712129076; c=relaxed/simple;
+	bh=FJMlmydTkJP6g8HJl0xs/phZG7M2fYhdzpJDNW7ceHU=;
+	h=From:To:Cc:Subject:Date:Message-ID:Content-Type:MIME-Version; b=AnOF4yzfFi30GrLIRXmTC9xE2h7PuroaDeCaYC2zMhA6DEM3Fsao6CzZLCmbxE5KfJi5um28MygJZJOUpBTOIH8qPbYd+3EzQwDE1QbjI+0BsBZI142jGcFhqyiZkltlzZpQ3tbJ5v3WnM7NjuFWSMckWrG4Sv4TMA+ZAbyvnoU=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=oracle.com; spf=pass smtp.mailfrom=oracle.com; dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b=HUC6R3g7; dkim=pass (1024-bit key) header.d=oracle.onmicrosoft.com header.i=@oracle.onmicrosoft.com header.b=mBI/nEnk; arc=fail smtp.client-ip=205.220.177.32
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=oracle.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=oracle.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="G2towl6C"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1712128791; x=1712733591; i=quwenruo.btrfs@gmx.com;
-	bh=EFQS2MPmdKlaZCoJDkONRd0nJJkmqhYJ9gH6BBCNkHw=;
-	h=X-UI-Sender-Class:Date:Subject:To:References:From:In-Reply-To;
-	b=G2towl6CkzN+XkTSCmNhWGH+HFsZaq7v8WFyzt0LA4ZLSXnm9xDdDaRNpI/JhqFI
-	 66UVzlQBhyFmBFUR8H5FFyW2v2NiEO4D7M19Puy6/Q0sfrJK5HaH64V3n7hyVAhpz
-	 8BunCS/tEKqlTQNN7wxUemtKrRn0jWhKJ7MWqshA/S061cioBbk6Vx7MXlPZ494pn
-	 p7a41wI47HtsKlvXDkMVqTcC24meaRulhSr7L8cP3DJyuAfa2Q+VGjcHTr6Xig9JG
-	 uWJ3JfYL1QK9EiQcesMxQY2xNrCNMiCbymrKe1CsdTy0osUAqntbXIF0Hz6hCEJ9Q
-	 O12W4S1qn66aiR5FGA==
-X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from [172.16.0.219] ([159.196.52.54]) by mail.gmx.net (mrgmx105
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1N0oBx-1slxw32IuD-00woyE; Wed, 03
- Apr 2024 09:19:51 +0200
-Message-ID: <305008f4-9e17-4435-bb1d-a56b1de63c9b@gmx.com>
-Date: Wed, 3 Apr 2024 17:49:42 +1030
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="HUC6R3g7";
+	dkim=pass (1024-bit key) header.d=oracle.onmicrosoft.com header.i=@oracle.onmicrosoft.com header.b="mBI/nEnk"
+Received: from pps.filterd (m0333520.ppops.net [127.0.0.1])
+	by mx0b-00069f02.pphosted.com (8.17.1.19/8.17.1.19) with ESMTP id 4334nliE027253;
+	Wed, 3 Apr 2024 07:24:33 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
+ subject : date : message-id : content-transfer-encoding : content-type :
+ mime-version; s=corp-2023-11-20;
+ bh=CI3hq3y8UxcXvwEXsIUYAmRqS8q4dhmNbkLxb68/42Y=;
+ b=HUC6R3g7RozMTy+F0/U95cU4q1PCQZuuiGFHC/Ihv5apMJ7/PpmT1HXNj4ZpmnWY46O3
+ bvqjuN7g4HVQ/aa6PoI8zFGW8I4kOGjrbkYecxZ2caAZmpL1T9CVUj42HvQZCMhBeqVB
+ PpAp5pAR+y4Da1GM+s7XKUs32ul00F77UX2nPYsM0vZ5XwD8slvNWoRnJUZb/MwnWp8Y
+ OjmJov+hy3TsqdlnyIAtROPJ/++p5Q0OrUxhPZ7FBgx6hVAmRpMIXi7TD9f7NnixuZIc
+ dKMUBwJ8lOWOwMIQ9Hu62Q5DdSPAn4ktmSz0cPKuAoNF92MwgIGjv1+F/2QnWhbvILYv Kg== 
+Received: from iadpaimrmta02.imrmtpd1.prodappiadaev1.oraclevcn.com (iadpaimrmta02.appoci.oracle.com [147.154.18.20])
+	by mx0b-00069f02.pphosted.com (PPS) with ESMTPS id 3x7tb9vg27-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+	Wed, 03 Apr 2024 07:24:32 +0000
+Received: from pps.filterd (iadpaimrmta02.imrmtpd1.prodappiadaev1.oraclevcn.com [127.0.0.1])
+	by iadpaimrmta02.imrmtpd1.prodappiadaev1.oraclevcn.com (8.17.1.19/8.17.1.19) with ESMTP id 43372ilR008334;
+	Wed, 3 Apr 2024 07:24:32 GMT
+Received: from nam11-bn8-obe.outbound.protection.outlook.com (mail-bn8nam11lp2168.outbound.protection.outlook.com [104.47.58.168])
+	by iadpaimrmta02.imrmtpd1.prodappiadaev1.oraclevcn.com (PPS) with ESMTPS id 3x696eer4w-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+	Wed, 03 Apr 2024 07:24:32 +0000
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=lHTE+HIQY5AOhwuFKf2TFk5jLk3HqRtdsDrWOLISihWRnZREVt9A+4vb8wt+0LUP1jYsvR9UAMD6ZyfBsjjbeeP7BYYM8QSAbLTdmJ9oztbIKb88qQu5QRejG5kylzhaoSYH/91BkExFpJZtfYtzaxPO1OF65UfUsIHCCSFO2DdZKtq9zQfJmxYccX4eCtgpsb/FQ6G3fpdz63fvaqHYAo4doGM2GYN9zrjV0D5DN+X5h4HVrTiyEAqkNRpm6fUCahSvPdDenBlxWzWSbgHAh8gqeUA9CnHVw1Nzsyrq9c9/HjQCfKQiXQvK3kT6VAy2zuro5XOuWavaKBu+tLVuUg==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=CI3hq3y8UxcXvwEXsIUYAmRqS8q4dhmNbkLxb68/42Y=;
+ b=mlSfhkk/hv1Smd4uSBjNwoohX95m0NVHQZBdmFR1psZxUs45WlGY2d6cO8Qizm3cEeYjyKGFvyY1NtnL45cUWvJJoDgp01Bc5Yq85ZBATxL249trY22RJpNOm/CtCKYRUdv2GSp3sHc/nph4TJ3CUqBN8Q745ZpvoT/nKfKLBUUCqIaR2wRyFD8ZGJbC0sSPVicFT1nHoYw5sTPExnuA6Gq7S1taIrCpKnGUeaar/Q1Sy6OZMyeyFKuJ9fOxsJ7fy7aK8dprLIQJcFPLg6ord8SZRbOQD/0VLURmfZtDCFdbXlKp+uCYSCm+S8LCNt+bm4SniSJTQCKGq/koqtD3rA==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=oracle.com; dmarc=pass action=none header.from=oracle.com;
+ dkim=pass header.d=oracle.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=oracle.onmicrosoft.com; s=selector2-oracle-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=CI3hq3y8UxcXvwEXsIUYAmRqS8q4dhmNbkLxb68/42Y=;
+ b=mBI/nEnkAXT6IDgNXygJIVTWVQK6RMEwPwnoC+g21d6rFhz75hBVeBhMpzH0BLvEn2sbyRB8TyD4XnPTyQFdgpO/lGcrdZKnue01I/2K1C8Rho4Jm7IFaOO4nnsvdAifI4f++OBBesNsd4CG6fqIb7IDaI2RChbMppIh2f3vs1c=
+Received: from PH0PR10MB5706.namprd10.prod.outlook.com (2603:10b6:510:148::10)
+ by DS7PR10MB7324.namprd10.prod.outlook.com (2603:10b6:8:ec::22) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.7409.46; Wed, 3 Apr
+ 2024 07:24:30 +0000
+Received: from PH0PR10MB5706.namprd10.prod.outlook.com
+ ([fe80::814:3d5c:443b:17b]) by PH0PR10MB5706.namprd10.prod.outlook.com
+ ([fe80::814:3d5c:443b:17b%7]) with mapi id 15.20.7409.042; Wed, 3 Apr 2024
+ 07:24:30 +0000
+From: Anand Jain <anand.jain@oracle.com>
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org
+Subject: [GIT PULL] fstests: btrfs changes for for-next v2024.04.03
+Date: Wed,  3 Apr 2024 15:24:14 +0800
+Message-ID: <20240403072417.7034-1-anand.jain@oracle.com>
+X-Mailer: git-send-email 2.42.0
+Content-Transfer-Encoding: 8bit
+Content-Type: text/plain
+X-ClientProxiedBy: SG2P153CA0006.APCP153.PROD.OUTLOOK.COM (2603:1096::16) To
+ PH0PR10MB5706.namprd10.prod.outlook.com (2603:10b6:510:148::10)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2 5/5] btrfs: fiemap: return extent physical size
-To: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>, Qu Wenruo <wqu@suse.com>,
- Jonathan Corbet <corbet@lwn.net>, Chris Mason <clm@fb.com>,
- Josef Bacik <josef@toxicpanda.com>, David Sterba <dsterba@suse.com>,
- Alexander Viro <viro@zeniv.linux.org.uk>,
- Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>,
- linux-doc@vger.kernel.org, linux-btrfs@vger.kernel.org,
- linux-fsdevel@vger.kernel.org, kernel-team@meta.com
-References: <cover.1711588701.git.sweettea-kernel@dorminy.me>
- <93686d5c4467befe12f76e4921bfc20a13a74e2d.1711588701.git.sweettea-kernel@dorminy.me>
- <a2d3cdef-ed4e-41f0-b0d9-801c781f9512@suse.com>
- <ff320741-0516-410f-9aba-fc2d9d7a6b01@dorminy.me>
- <d01b4606-38fa-4f27-8fbd-31de505ba3a3@dorminy.me>
-Content-Language: en-US
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCY00iVQUJDToH
- pgAKCRDCPZHzoSX+qNKACACkjDLzCvcFuDlgqCiS4ajHAo6twGra3uGgY2klo3S4JespWifr
- BLPPak74oOShqNZ8yWzB1Bkz1u93Ifx3c3H0r2vLWrImoP5eQdymVqMWmDAq+sV1Koyt8gXQ
- XPD2jQCrfR9nUuV1F3Z4Lgo+6I5LjuXBVEayFdz/VYK63+YLEAlSowCF72Lkz06TmaI0XMyj
- jgRNGM2MRgfxbprCcsgUypaDfmhY2nrhIzPUICURfp9t/65+/PLlV4nYs+DtSwPyNjkPX72+
- LdyIdY+BqS8cZbPG5spCyJIlZonADojLDYQq4QnufARU51zyVjzTXMg5gAttDZwTH+8LbNI4
- mm2YzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCY00ibgUJDToHvwAK
- CRDCPZHzoSX+qK6vB/9yyZlsS+ijtsvwYDjGA2WhVhN07Xa5SBBvGCAycyGGzSMkOJcOtUUf
- tD+ADyrLbLuVSfRN1ke738UojphwkSFj4t9scG5A+U8GgOZtrlYOsY2+cG3R5vjoXUgXMP37
- INfWh0KbJodf0G48xouesn08cbfUdlphSMXujCA8y5TcNyRuNv2q5Nizl8sKhUZzh4BascoK
- DChBuznBsucCTAGrwPgG4/ul6HnWE8DipMKvkV9ob1xJS2W4WJRPp6QdVrBWJ9cCdtpR6GbL
- iQi22uZXoSPv/0oUrGU+U5X4IvdnvT+8viPzszL5wXswJZfqfy8tmHM85yjObVdIG6AlnrrD
-In-Reply-To: <d01b4606-38fa-4f27-8fbd-31de505ba3a3@dorminy.me>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:ROFUlrDE9KuTfg3XnrTVZcAlE+oZ8h4b2aZaGlsGN3ksSnTnX3R
- Xgdozm5F7/5r/G/z2Y9IKAmhClKP/sOcyJrGE9/iwxVuLrN+DgzX8s9FpiwzH6qGIfVdb+/
- X9NA0TUEjxPOk9rbd50waz2wTJ08bpG4zKswvPJPN9qi2ajXcRsOh/WiYqx6q+Pj3rnQk6y
- PtXVoPKm5QMua2vs5Vm/A==
-X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:fFJ6QcTzzmQ=;PEC+EFG24g9kSZWvVL4C3T1WGly
- KeuAco8ruUUJ3c8EIe+N3XVce/YDGejxblVMMpTduskNsTZyimiN9iw+ER6IPsw6tZlBTi507
- YKQubyf/NvCbbcW/6ykkU4JJHp3jYcZVLzZ2398G+PBHgjuFLahYnvd9/jUUmaJBlLNJEeDmI
- O9xmCrlyGW+hdx/ODRVMIyQztNqLWdfhpFmxt8gMYOwqAPQyPjykFLSRdT/lRCLTQ8op3Iick
- LWpEswJ19aZ9cbaus9jY6Gxe82DX+e/74hePLCamGablWkudmbUNVjARisLun1w1Lj8oLKZcw
- ZrH6KrM5geCxtpQHk9ATxOD7gfFeqCOBT6qgeqFtEJd2AjGCHXnEZJ8p6EFWoH3RTY7fHNP9K
- uL2paiLucribzp7tH4KGsO1wxh999e35STQo3mbcXDAT1xcha1jQU2xWhZdXO3j/++BbwHc1G
- KuHuqNG5LawVQUprBAsInBBK2xri0xEtzELN+QQjYzR5+CyTPDj548HZRh3BXRF7hY9fKNihp
- 5is9djHe2nwINeP/3QlTPx9uwJmsB6xCSkfwvzVXCB39HxqxRJ5KYz1Fix5VsO5b9C7N7q5i1
- ICf7W5aUjpK1WoY40hWLm2reBIDyeMOKdrrQ9JkSUgbEaPwxf7WA1/pme8Q6WxXjVeHcaKEqN
- Pcvq2SqyAS2RGFHPgJBHrE4+oj0RGE/LhmxpkFddrEzTYoaBGU/h32Y61gk2VtXyCg4uj+JjX
- ENgEHeCMZ1EsWCRvBmW1gDzm1EUWt3s8tSDvz8QnDJopoEmBUbi8VO0dQUIkz2V3ETxb+cJ7Q
- XAEU3orwSqcQjUXbxUj2muOmLI8D8DJ+CIZCyT/m+oRos=
+X-MS-PublicTrafficType: Email
+X-MS-TrafficTypeDiagnostic: PH0PR10MB5706:EE_|DS7PR10MB7324:EE_
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam: BCL:0;
+X-Microsoft-Antispam-Message-Info: 
+	LOstHPXH93U+gN4wYKXB3kRPTJqT9TUNpS9HQ5AmP4bdwNkHc8GIvTC3JDTwFuq+Argctsag7y9vGcLM5zgKAxnP1+fc3XTrD7/zYGNaOdv8JNZh6rsCOLTmljteZJ2n9B+C0JYGy94HCeJxanF+6yTTcEUgA4zz5TDqOd9MZLsTBVuUR0GC+5lefwEhe/lqbKK8FhIPJgdaQyOse/th0WqTu2bB/5rbo7E3iuNpg1CrJiFR+UDHePol4ygA7jTSUDDaZ8LNm0cBJEdqbRZ1vD2umYOYIuihHQfSvL+bhYw7cXfeYfH3ay+CHtD3cUWgCxZIeaZy94b5SJCu/3wOpB4I0viENbV5sJedtjWmN2BfU1rQMlczmtmHbr5AlrkyEDChL3KAuTVlwswPaWMOplMKKaZljDsY0IPxV5hkGS4k/3aL99cpTh6GdlecO7DobjaadXnkTvWgXD2AyN4+RfmA0G6ScazjEt3jR3OsPD47glHn+LYFK8sVspLl5MSbiVl/Kjpjn/URWJVOn4gs0CplQB+R7d9uACCYIrnJtyd47LTbOVUijrZkxNgDEE3sW1J0Z5LTcTCPM2md3N5KXGt8lUAl92j6N3/xE73aiqw=
+X-Forefront-Antispam-Report: 
+	CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:PH0PR10MB5706.namprd10.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230031)(366007)(1800799015)(376005);DIR:OUT;SFP:1102;
+X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-MessageData-0: 
+	=?us-ascii?Q?gPER7a+hZot7a6OH0RL7f383bt4NosvBFeqsvxdZBV19y+HaKswqbPAHPbKo?=
+ =?us-ascii?Q?tB0LRAsv0AwJL+5bOvhdB/YkY4IIMpkvnVrsc1Vzmh5yp/7ZdAnCIz13tzN4?=
+ =?us-ascii?Q?s3CXCdtCeHCetsBKWcWtcJjSDYLRzEvsmjX3ruOJ4CzXi2C1jX2YoFrfzMiP?=
+ =?us-ascii?Q?P0tWdLtqblHGl1x45Y4x5hdpqIq0SGSwOJcQSmQEbPn1UFrd2QGEUO+gSLKZ?=
+ =?us-ascii?Q?2saQg2cBFS6hAYgJQ23FjYEMOZr7FvdxQ6JLFjMifZRfSLz0UakvJZLj+QfL?=
+ =?us-ascii?Q?iDtLEHjONjrmZRd++e0n4OMT1Y4m8PxtJ/PTWmH5KRWb9gywlqI6kkbTKTat?=
+ =?us-ascii?Q?tFoiQXtgdChz3TodDMgpwdRrhk+Cli3/JAI7RDeP2FBrALpQZBpXznFv2YoG?=
+ =?us-ascii?Q?9PXlbyMBp7MLlRpho0uj/ZvWjbVeGY7rwuV11Uac2iOHIgXAMHvgNFqcg1Yx?=
+ =?us-ascii?Q?7rrphzNNLTaE+yq5PCcyc4yTlvWS+FEaXUQNfLPpOHQtWIxf17TSDedaov9m?=
+ =?us-ascii?Q?xet+gmTiCw82T10nuj/cZEqouBgGGPMtWL2QBgmePtHzl9CivlavuH7t70do?=
+ =?us-ascii?Q?6kuWtLTkC0TC0wlJPFEUlA+D9E6nHbOqfSj3SFz9fBu8E3AQ8lqkCvu6mZzu?=
+ =?us-ascii?Q?b0MmGCWwN55vjZaPLQgSc0yohTy0kaZhlbV4Zlyqqflhkcb8BBaxVaxiMbDD?=
+ =?us-ascii?Q?isns+iDgwLakxEQ/Bb8jEbNiBaSqrR0luQgoFevSNAJHjGDlkrGcsUZFll4F?=
+ =?us-ascii?Q?Jgw78Rf0j/MPfJSkk5lFWAiiepUkrIBnSNtZOtehO+JUWVKAHS86w4zMawue?=
+ =?us-ascii?Q?9w0N1MWiKWXwHvz/5b2Hisr/bLlLAm4ZujLjtzrw8Mnmc95WcPNISv5JFUZE?=
+ =?us-ascii?Q?Utly/hwnXGECRgB3PJSRd/VM1x+aUmqjjKuXMrEs2GtRIMEwVhpxhRx0lEKk?=
+ =?us-ascii?Q?LXpl/htE1DriNOO9OmmGyI7g7N3CF9ZfheUbSdcSTSRQAkmRTDJNef3Y8aZa?=
+ =?us-ascii?Q?o+Fm0td9/y2bapE6okUuYGmCFPGBx6hDWE+jNzsUs6E4DOkKXFylU1ZGxpJj?=
+ =?us-ascii?Q?Hy2v4b3+vuxgNwy8deVNsn7C64ahPu/u4Ig7nPY5/MdyZo+h6uhLrMqhxaRt?=
+ =?us-ascii?Q?lYk9OR/EWtsrzbV85YpUVAo9pop7fSaDxaP6WMGnQGaXciNgcwTeR6ujp4We?=
+ =?us-ascii?Q?ZJpSI++br84yggmPb59itbxT1ybOQItCmdRYpKBNr7gAUVLHRXr1AeCSUzre?=
+ =?us-ascii?Q?IXIyUri4g2iuSGWeak4UPp9ck2nUbtuJ+foGavrkl7dc0hhqg+/XMmFovcwD?=
+ =?us-ascii?Q?mOZXLWjRMm8mwm8np8IAccCfeC9ch3F/F/AgBRD6brCvCYhH7v4l6hmFSTQA?=
+ =?us-ascii?Q?/9x8kF1jVHDmTTtLUF8A4V5fzNmsJaDeRi9NeoKhuZgHrJ7DCCbX5QVokgx8?=
+ =?us-ascii?Q?n4cGFermRdJCbaH5x0Ejaz7ytBrgcrjAXtww+5oxflBaF/fZluL5tgebRtKX?=
+ =?us-ascii?Q?a7Tk+ZFwU3ddgul5/Io0mUWuHLRKOqO2xhe+IaSy+MdOWp/OjuTKdsLksM66?=
+ =?us-ascii?Q?Thb3TJfLEqaVdOf56TBGIOC6uWVZzhyPhO0aHM52?=
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0: 
+	C9MWsAgjGMcX3LfM8sk7DT2BNmAQH58hiVclz1lTZIFczd1HbAwufxAaRPoL7VRNgBdobfyhLOVaEIIkvB7sQctCwV5JMQCLhVn3MIomoyHWeViTbTEucaebJldRVXoYPuWyo+xS3WNpmaCC9Ocj4jIiPZKnoCDPSRdyKLex4yLEwO6iXvuL5qCRTPp7rw22AdPpz1wr0G1Nysj6vz4OrHRIwBG3D+pFUQQfrJnoZjVDy+Vx2T8rOrai5Gl6WyXaTAFmB6oO3q8WigHSK4dJygCxjd9VmpIul9Iu8vfxDF4tKB2QBYnq6U+ybQgyETewa5rW53l/Yx+1oPpRkETN6PrbvKPpa7uDFgUrAll1EogFJqDkBzFJKbW8zN5AOZxXY+4yOAmDZQ3QXm7NvfK5h6AIbs5RlZyGYQqJ764bCbn76DzsYmP2oQgzN6E6agcclXPcOXX8KOmidMEbl3EROiH6HCM+Rx2q3TJe65qItgQCuHpmXT35Vc06DTVfVe9Le2lpFt2hlSCjv9IJXgJjPQ4fSQ+PhCk9+mPbPusObnBqmaFJEDtLD0+r8b8lOj8N0qpLn3pL80x2EOkxw936E5gshWqaIajZymUVmVoRI+E=
+X-OriginatorOrg: oracle.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 684559d0-a790-4123-214b-08dc53af1a2e
+X-MS-Exchange-CrossTenant-AuthSource: PH0PR10MB5706.namprd10.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 03 Apr 2024 07:24:30.6210
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: 4e2c6054-71cb-48f1-bd6c-3a9705aca71b
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: gcMuHkIfSCD0u5bT9K0Xa4SWTdqYrwEaF+ly4+8r5YdrNHX5X1usp2q0IlXVt20rNqloXdJ2aVLEg94cmXS4Yw==
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: DS7PR10MB7324
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.272,Aquarius:18.0.1011,Hydra:6.0.619,FMLib:17.11.176.26
+ definitions=2024-04-03_06,2024-04-01_01,2023-05-22_02
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 malwarescore=0 suspectscore=0
+ phishscore=0 bulkscore=0 spamscore=0 adultscore=0 mlxlogscore=999
+ mlxscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2403210000 definitions=main-2404030049
+X-Proofpoint-GUID: 0rqTkcUSJ15l930xiAHHNUzBfxSaKpxu
+X-Proofpoint-ORIG-GUID: 0rqTkcUSJ15l930xiAHHNUzBfxSaKpxu
 
+Zorro,
 
+Please pull this branch, which includes cleanups for background processes
+initiated by the testcase upon its exit.
 
-=E5=9C=A8 2024/4/3 16:32, Sweet Tea Dorminy =E5=86=99=E9=81=93:
->>> This means, we will emit a entry that uses the end to the physical
->>> extent end.
->>>
->>> Considering a file layout like this:
->>>
->>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0item 6 key (257 EXTENT_DATA 0) itemoff 1=
-5816 itemsize 53
->>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 generation 7 type 1 (=
-regular)
->>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 extent data disk byte=
- 13631488 nr 65536
->>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 extent data offset 0 =
-nr 4096 ram 65536
->>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 extent compression 0 =
-(none)
->>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0item 7 key (257 EXTENT_DATA 4096) itemof=
-f 15763 itemsize 53
->>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 generation 8 type 1 (=
-regular)
->>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 extent data disk byte=
- 13697024 nr 4096
->>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 extent data offset 0 =
-nr 4096 ram 4096
->>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 extent compression 0 =
-(none)
->>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0item 8 key (257 EXTENT_DATA 8192) itemof=
-f 15710 itemsize 53
->>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 generation 7 type 1 (=
-regular)
->>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 extent data disk byte=
- 13631488 nr 65536
->>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 extent data offset 81=
-92 nr 57344 ram 65536
->>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 extent compression 0 =
-(none)
->>>
->>> For fiemap, we would got something like this:
->>>
->>> fileoff 0, logical len 4k, phy 13631488, phy len 64K
->>> fileoff 4k, logical len 4k, phy 13697024, phy len 4k
->>> fileoff 8k, logical len 56k, phy 13631488 + 8k, phylen 56k
->>>
->>> [HOW TO CALCULATE WASTED SPACE IN USER SPACE]
->>> My concern is on the first entry. It indicates that we have wasted
->>> 60K (phy len is 64K, while logical len is only 4K)
->>>
->>> But that information is not correct, as in reality we only wasted 4K,
->>> the remaining 56K is still referred by file range [8K, 64K).
->>>
->>> Do you mean that user space program should maintain a mapping of each
->>> utilized physical range, and when handling the reported file range
->>> [8K, 64K), the user space program should find that the physical range
->>> covers with one existing extent, and do calculation correctly?
->>
->> My goal is to give an unprivileged interface for tools like compsize
->> to figure out how much space is used by a particular set of files.
->> They report the total disk space referenced by the provided list of
->> files, currently by doing a tree search (CAP_SYS_ADMIN) for all the
->> extents pertaining to the requested files and deduplicating extents
->> based on disk_bytenr.
->>
->> It seems simplest to me for userspace for the kernel to emit the
->> entire extent for each part of it referenced in a file, and let
->> userspace deal with deduplicating extents. This is also most similar
->> to the existing tree-search based interface. Reporting whole extents
->> gives more flexibility for userspace to figure out how to report
->> bookend extents, or shared extents, or ...
->>
->> It does seem a little weird where if you request with fiemap only e.g.
->> 4k-16k range in that example file you'll get reported all 68k
->> involved, but I can't figure out a way to fix that without having the
->> kernel keep track of used parts of the extents as part of reporting,
->> which sounds expensive.
->>
->> You're right that I'm being inconsistent, taking off extent_offset
->> from the reported disk size when that isn't what I should be doing, so
->> I fixed that in v3.
->
-> Ah, I think I grasp a point I'd missed before.
-> - Without setting disk_bytenr to the actual start of the data on disk,
-> there's no way to find the location of the actual data on disk within
-> the extent from fiemap alone
+Thank you.
 
-Yes, that's my point.
+The following changes since commit e72e052d56c3f05e533f4b67056f86931f688368:
 
-> - But reporting disk_bytenr + offset, to get actual start of data on
-> disk, means we need to report a physical size to figure out the end of
-> the extent and we can't know the beginning.
+  generic: test MADV_POPULATE_READ with IO errors (2024-03-30 15:48:12 +0800)
 
-disk_bytenr + offset + disk_num_bytes, and with the existing things like
-length (aka, num_bytes), filepos (aka, key.offset) flags
-(compression/hole/preallocated etc), we have everything we need to know
-for regular extents.
+are available in the Git repository at:
 
-For compressed extents, we also need ram_bytes.
+  https://github.com/asj/fstests.git staged-20240403
 
-If you ask me, I'd say put all the extra members into fiemap entry if we
-have the space...
+for you to fetch changes up to 8aab1f1663031cccb326ffbcb087b81bfb629df8:
 
-It would be u64 * 4 if we go 1:1 on the file extent items, otherwise we
-may cheap on offset and ram_bytes (u32 is enough for btrfs at least), in
-that case it would be u64 * 2 + u32 * 2.
+  common/btrfs: lookup running processes using pgrep (2024-04-03 15:09:01 +0800)
 
-But I'm also 100% sure, the extra members would not be welcomed by other
-filesystems either.
+----------------------------------------------------------------
+Anand Jain (1):
+      common/btrfs: lookup running processes using pgrep
 
-Thanks,
-Qu
+Filipe Manana (10):
+      btrfs: add helper to kill background process running _btrfs_stress_balance
+      btrfs/028: use the helper _btrfs_kill_stress_balance_pid
+      btrfs/028: removed redundant sync and scratch filesystem unmount
+      btrfs: add helper to kill background process running _btrfs_stress_scrub
+      btrfs: add helper to kill background process running _btrfs_stress_defrag
+      btrfs: add helper to kill background process running _btrfs_stress_remount_compress
+      btrfs: add helper to kill background process running _btrfs_stress_replace
+      btrfs: add helper to stop background process running _btrfs_stress_subvolume
+      btrfs: remove stop file early at _btrfs_stress_subvolume
+      btrfs/06[0-9]..07[0-4]: kill all background tasks when test is killed/interrupted
 
->
-> We can't convey both actual location, start, and end of the extent in
-> just two pieces of information.
->
-> On the other hand, if someone really needs to know the actual location
-> on disk of their data, they could use the tree_search ioctl as root to
-> do so?
->
-> So I still think we should be reporting entire extents but am less
-> confident that it doesn't break existing users. I am not sure how common
-> it is to take fiemap output on btrfs and use it to try to get to
-> physical data on disk - do you know of a tool that does so?
->
-> Thank you!
->
+ common/btrfs    | 84 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/028 | 16 ++++-------
+ tests/btrfs/060 | 33 ++++++++++++++++-------
+ tests/btrfs/061 | 30 ++++++++++++++-------
+ tests/btrfs/062 | 30 ++++++++++++++-------
+ tests/btrfs/063 | 30 ++++++++++++++-------
+ tests/btrfs/064 | 30 ++++++++++++++-------
+ tests/btrfs/065 | 33 ++++++++++++++++-------
+ tests/btrfs/066 | 33 ++++++++++++++++-------
+ tests/btrfs/067 | 33 ++++++++++++++++-------
+ tests/btrfs/068 | 33 ++++++++++++++++-------
+ tests/btrfs/069 | 31 ++++++++++++++-------
+ tests/btrfs/070 | 31 ++++++++++++++-------
+ tests/btrfs/071 | 31 ++++++++++++++-------
+ tests/btrfs/072 | 31 ++++++++++++++-------
+ tests/btrfs/073 | 30 ++++++++++++++-------
+ tests/btrfs/074 | 30 ++++++++++++++-------
+ tests/btrfs/132 |  2 +-
+ tests/btrfs/255 |  8 ++----
+ 19 files changed, 418 insertions(+), 161 deletions(-)

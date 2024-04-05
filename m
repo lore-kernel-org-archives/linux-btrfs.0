@@ -1,219 +1,187 @@
-Received: from mgamail.intel.com (mgamail.intel.com [198.175.65.12])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-pg1-f177.google.com (mail-pg1-f177.google.com [209.85.215.177])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1D1A31D530;
-	Fri,  5 Apr 2024 18:09:34 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=198.175.65.12
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1712340576; cv=fail; b=e/wDK70S140/lZ5eg81KQtem2uOQ83OGSvH+oX09TReyIk3XPW0DtQgKbJaEMdEB3ZLo7s2AEA8LsTOVdDNvKuofWIbf3Yj25cAjpl7WVJJR3AVKK+pPx+pKHyxbafRDiBLt4gesEWOn2EjCVJZBGnGJeGTy5Yi2HQx2RLVkSik=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1712340576; c=relaxed/simple;
-	bh=G6eZWPGdC5ngoxlCOmVTh4SvlCMUybIODKMgon1wgAQ=;
-	h=Date:From:To:CC:Subject:Message-ID:References:Content-Type:
-	 Content-Disposition:In-Reply-To:MIME-Version; b=Z0ct8wtxrZqv++i6ZVWAvkwL+eRrm4kpoCJHXcoAkH1xyp+EzazyYq9G2EKUdMtt1WW+4QE+hbCYjCjBmD8e/1mLHGy2AsyaJokJfLrx50d2FRCHH7fzfWZGR86k0x/XJzWAZUC09Uauv6x3522+yCQPc8Ak9cIGhXDDkRAEmuA=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com; spf=pass smtp.mailfrom=intel.com; dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b=FMNUUjVu; arc=fail smtp.client-ip=198.175.65.12
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=intel.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 18EF1171E66
+	for <linux-btrfs@vger.kernel.org>; Fri,  5 Apr 2024 18:18:14 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.215.177
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1712341097; cv=none; b=fmMga3lSyqaKC5ABkWaq0TTxTlTvQ0qy0p96Mif/eTomE8FiM16IkeSdKXiuyjxqkD5+Pw010HcEE3UzPxZZOqFx+O2WkdCxWHFhoz0elN9/t6W3+of1fdEBY5YFklIQ7lM17E8vjS82WlKW2wczx7ivwXVsCt1NHlvgAEsc5qc=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1712341097; c=relaxed/simple;
+	bh=wdMJhgg03J9ToLHXaFixR/36utzApFawE0KvfzXoqHs=;
+	h=From:Message-Id:Content-Type:Mime-Version:Subject:Date:
+	 In-Reply-To:Cc:To:References; b=kC/GhFghSl3UXJj9jyCC6OVQ4zkzwO4x5iVMiGi+vsq3zb4dc0P0dZLnm0K3IECJzxhzlWcZDBNalbD8ECXHW7lji9AhOiQFAphdtAH0wG12o6foR83wgAqdsfdlaLEEZyLz3plVa3ZLcqkSjSjjjbuPNZgRRiOZJoPZqtF8XWw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=dilger.ca; spf=pass smtp.mailfrom=dilger.ca; dkim=pass (2048-bit key) header.d=dilger-ca.20230601.gappssmtp.com header.i=@dilger-ca.20230601.gappssmtp.com header.b=pDfz/pHp; arc=none smtp.client-ip=209.85.215.177
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=dilger.ca
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=dilger.ca
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b="FMNUUjVu"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1712340575; x=1743876575;
-  h=date:from:to:cc:subject:message-id:references:
-   content-transfer-encoding:in-reply-to:mime-version;
-  bh=G6eZWPGdC5ngoxlCOmVTh4SvlCMUybIODKMgon1wgAQ=;
-  b=FMNUUjVu4VCZ0KCiGc/Kd65dTFhfBkDVH6X31lWEOpPT9fEYjeJ1Obs0
-   XrqIUpDwnoTKQIaKh6e4fmIfDEhy7Wt64vUmMkpABvyQoUjFArs8LTCTP
-   VXEo1p7GsfhEueDdlYM3SvYnNOstacR8qY2BWssZWg4XrhIY6Ustud+oc
-   hKUNukxvOn5228IcmkO34JDO7aCgIp411Cj8DvSw8ZubrVzgCGM7DeWiz
-   B1fd9RRmBWPWfCnZmgrm54d50sCXRHIrb6k7fhuQrTz1P3qzXwhHUg96n
-   mOeEB6sBj8Y1g+32LcVGLX2Cw4izQsgJDwcQZcS7EWuvmIfZCxbQigTT8
-   Q==;
-X-CSE-ConnectionGUID: /0TREOiKR1eXUvw6wrUtdw==
-X-CSE-MsgGUID: 02TbXa36QfqWh3uvcNSRBA==
-X-IronPort-AV: E=McAfee;i="6600,9927,11035"; a="19116580"
-X-IronPort-AV: E=Sophos;i="6.07,181,1708416000"; 
-   d="scan'208";a="19116580"
-Received: from fmviesa003.fm.intel.com ([10.60.135.143])
-  by orvoesa104.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 05 Apr 2024 11:09:33 -0700
-X-CSE-ConnectionGUID: KDYUzzsZTOicmHEL3UPuDg==
-X-CSE-MsgGUID: OaWr9XNkSL2h9ijNRBu+Yg==
-X-ExtLoop1: 1
-X-IronPort-AV: E=Sophos;i="6.07,181,1708416000"; 
-   d="scan'208";a="23739763"
-Received: from fmsmsx601.amr.corp.intel.com ([10.18.126.81])
-  by fmviesa003.fm.intel.com with ESMTP/TLS/AES256-GCM-SHA384; 05 Apr 2024 11:09:33 -0700
-Received: from fmsmsx610.amr.corp.intel.com (10.18.126.90) by
- fmsmsx601.amr.corp.intel.com (10.18.126.81) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
- 15.1.2507.35; Fri, 5 Apr 2024 11:09:32 -0700
-Received: from FMSEDG603.ED.cps.intel.com (10.1.192.133) by
- fmsmsx610.amr.corp.intel.com (10.18.126.90) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
- 15.1.2507.35 via Frontend Transport; Fri, 5 Apr 2024 11:09:32 -0700
-Received: from NAM12-BN8-obe.outbound.protection.outlook.com (104.47.55.168)
- by edgegateway.intel.com (192.55.55.68) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.1.2507.35; Fri, 5 Apr 2024 11:09:32 -0700
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
- b=YfhLDru1U6+kAbXiiWTT4/krkowmU23/4Zk/3xZi7fxZsSy3QvBvwmNfB4aNtKidMbHnbLzbzTLWzvXOL4Rk601C3BnTkJvMs0YLBh8CJY/1VlM4YDjIJxi7W3TwL3dnqgA2dpIcrMEKMw6L8MyC9JXUpmX5+bWONe8zLl58ZMbsTcgoicn5Btk/LNSo2dHyd7vvWeOz/XAn6uAMqIORc0pXrMSgpBHthYT/Tj5YnYGz3IdThDrcfIS19lG4SdnZoTNxsxbFsLdr7roZsVAYkQL4iU1mefBD77faSIfYaQ/VVsNysO+dJ3BxXAh/UoiBGphvZ45/Xxeu0fL9doOEfw==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector9901;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
- bh=x3IfNraDyGSjmAntnBVBy9F7gPi7K+CIvm1D7mxA9yw=;
- b=YzXNZop3OCvSjvkzl4oDxUgZVnJhuXBhOOMult8MPC+OS1MyPhsYRWRpn9lYjKWDxYltIYyPzTc5fQRS+NTzSDYhB1iunnNOvUfLPLxcTSrxbBCKIW1kxK9PawVEWEl02+GPMFDtFPq8HPui6Unp0DfiVf9JYxyzhotlbDgbPdOR04v5n8GwXo1iXBTxPCyxhpYWBTbNr+gvIUoVsW3/NzETy5XnjUxZlntt49LDP35RfaKniThSKr5yv1N6fnKjTI9ngSf5IwZMtIGG2upfLBDZjoC0hJTTm/fBniFeLMgxde3dLGitEvYJ9ktKkW/rpWnVYGa4JnOrXE2XUEvPXA==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=intel.com; dmarc=pass action=none header.from=intel.com;
- dkim=pass header.d=intel.com; arc=none
-Received: from SA1PR11MB6733.namprd11.prod.outlook.com (2603:10b6:806:25c::17)
- by SJ2PR11MB8537.namprd11.prod.outlook.com (2603:10b6:a03:56f::9) with
- Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.7409.31; Fri, 5 Apr
- 2024 18:09:29 +0000
-Received: from SA1PR11MB6733.namprd11.prod.outlook.com
- ([fe80::5c74:8206:b635:e10e]) by SA1PR11MB6733.namprd11.prod.outlook.com
- ([fe80::5c74:8206:b635:e10e%7]) with mapi id 15.20.7452.019; Fri, 5 Apr 2024
- 18:09:29 +0000
-Date: Fri, 5 Apr 2024 11:09:20 -0700
-From: Ira Weiny <ira.weiny@intel.com>
-To: =?iso-8859-1?Q?J=F8rgen?= Hansen <Jorgen.Hansen@wdc.com>,
-	"ira.weiny@intel.com" <ira.weiny@intel.com>, Dave Jiang
-	<dave.jiang@intel.com>, Fan Ni <fan.ni@samsung.com>, Jonathan Cameron
-	<Jonathan.Cameron@huawei.com>, Navneet Singh <navneet.singh@intel.com>
-CC: Dan Williams <dan.j.williams@intel.com>, Davidlohr Bueso
-	<dave@stgolabs.net>, Alison Schofield <alison.schofield@intel.com>, "Vishal
- Verma" <vishal.l.verma@intel.com>, "linux-btrfs@vger.kernel.org"
-	<linux-btrfs@vger.kernel.org>, "linux-cxl@vger.kernel.org"
-	<linux-cxl@vger.kernel.org>, "linux-kernel@vger.kernel.org"
-	<linux-kernel@vger.kernel.org>
-Subject: Re: [PATCH 03/26] cxl/mem: Read dynamic capacity configuration from
- the device
-Message-ID: <66103e5045e1c_e9f9f2941@iweiny-mobl.notmuch>
-References: <20240324-dcd-type2-upstream-v1-0-b7b00d623625@intel.com>
- <20240324-dcd-type2-upstream-v1-3-b7b00d623625@intel.com>
- <79ebeecc-1650-4fcc-a5c5-db64ac16316d@wdc.com>
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <79ebeecc-1650-4fcc-a5c5-db64ac16316d@wdc.com>
-X-ClientProxiedBy: SJ0PR05CA0090.namprd05.prod.outlook.com
- (2603:10b6:a03:332::35) To SA1PR11MB6733.namprd11.prod.outlook.com
- (2603:10b6:806:25c::17)
+	dkim=pass (2048-bit key) header.d=dilger-ca.20230601.gappssmtp.com header.i=@dilger-ca.20230601.gappssmtp.com header.b="pDfz/pHp"
+Received: by mail-pg1-f177.google.com with SMTP id 41be03b00d2f7-5d8b519e438so2018785a12.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 05 Apr 2024 11:18:14 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=dilger-ca.20230601.gappssmtp.com; s=20230601; t=1712341094; x=1712945894; darn=vger.kernel.org;
+        h=references:to:cc:in-reply-to:date:subject:mime-version:message-id
+         :from:from:to:cc:subject:date:message-id:reply-to;
+        bh=9Yt5fFOUcQfwmred9ry2pM1oK9JKeRbA+BTjVzFtQRM=;
+        b=pDfz/pHpB9sII143/jXXuhAPupP2d7QqElx2yN6GP5mJZLDzlEq2j3+FkgpvDG8R70
+         bByMj5Xf7C/7OBEFOHZJHxMZaAaeKda+7qN4Wqz17N0FoTKvF7NR+2bZhPvLtMV/EOhy
+         sGkxkLM1kj/Dnl5jKKvuGakKCPr3uUo4pKbYZMoRn9IpjWhB1qqqSSRqoOx07X/YaMjY
+         c3AixXB7DPaoEBUwJUZGapwQnmdKMrBJqoTGe6YglQ6eNqP3C6Cp+2GOJU1Vaq3wOAFN
+         ted3ttFSX/T1A1av5p3hdiK9+mzxI4Qd54n3bf7Ybmz3cmSvBuArKYuLL7sZuYgsBIHi
+         HNJA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1712341094; x=1712945894;
+        h=references:to:cc:in-reply-to:date:subject:mime-version:message-id
+         :from:x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=9Yt5fFOUcQfwmred9ry2pM1oK9JKeRbA+BTjVzFtQRM=;
+        b=azu6Cuu/PqHu2csadJRl5AGqtOLUo7EHnlTaLPxVL4RJQaV2CZOumNUkaj6F/L89dn
+         EvwxDg9QVT0qYrYhNlg25jhFE9Xn/rBMHdxA5ZJcaCVIE6mSsVrTazSxTQoCHnvaYLwF
+         Zp48eAKEb/WexDBB7/YOEWa24t9IXGQU7tpdx3gEEdTgpI3gtQL9igGCyiKWCH63/4kG
+         iwhKQakAY3GxcENK3RIwPc+Z2IcaooVTXcs/Rju/Xv6vf3OMPkvLPG2Wy/ytsY8gHw5m
+         ts8XrNcwH+KO1A0YDOg1vIOcLSTYESX74+IYZAXj0d2VBjvWba0qJsmJkzqQq0q6yFp3
+         FI+g==
+X-Forwarded-Encrypted: i=1; AJvYcCWXorFfLK2t8Gkc+SjQkRWxvOyt8EyoY6/gJbj7jwNI/AHGmBbbnG6Rd/SNIYCFNRUKcobVqgkk5iwq2uXk6g7daKFGlY/8287Ow2g=
+X-Gm-Message-State: AOJu0YwSYvAeT/dGrX4lpDw7s9o3nchTK8/y5I4lSop6LZwEd3Mma6wi
+	itCRkf+1z/kGzxzgydX547Xo3ZN/UiyZPB+Ok3rBP8nxujHAP0cPKUKmcYGeOOg=
+X-Google-Smtp-Source: AGHT+IEDn0os+fUgFYATLn+Iq6FZjbfsk3zOmEGVgE/EWJZEoD0wnOYoH0jftB7HpCio2JhiLuD6iA==
+X-Received: by 2002:a17:90a:1648:b0:2a1:f455:c3d7 with SMTP id x8-20020a17090a164800b002a1f455c3d7mr2069740pje.16.1712341094316;
+        Fri, 05 Apr 2024 11:18:14 -0700 (PDT)
+Received: from cabot.adilger.int (S01068c763f81ca4b.cg.shawcable.net. [70.77.200.158])
+        by smtp.gmail.com with ESMTPSA id bb20-20020a17090b009400b002a46d73ebdcsm1525837pjb.46.2024.04.05.11.18.12
+        (version=TLS1_2 cipher=ECDHE-ECDSA-AES128-GCM-SHA256 bits=128/128);
+        Fri, 05 Apr 2024 11:18:13 -0700 (PDT)
+From: Andreas Dilger <adilger@dilger.ca>
+Message-Id: <BF24ACE8-3644-4378-8E7A-AFAF82C0CDD3@dilger.ca>
+Content-Type: multipart/signed;
+ boundary="Apple-Mail=_700566DC-00D7-4239-B730-9CEAF4C860C8";
+ protocol="application/pgp-signature"; micalg=pgp-sha256
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-X-MS-PublicTrafficType: Email
-X-MS-TrafficTypeDiagnostic: SA1PR11MB6733:EE_|SJ2PR11MB8537:EE_
-X-LD-Processed: 46c98d88-e344-4ed4-8496-4ed7712e255d,ExtAddr
-X-MS-Exchange-SenderADCheck: 1
-X-MS-Exchange-AntiSpam-Relay: 0
-X-Microsoft-Antispam: BCL:0;
-X-Microsoft-Antispam-Message-Info: 5Fby75vxprpYEqU+S7YYBjsSsnt7gAOmBWjcFJXxrVmslRgbYdCKVj4iDn8jM6AUKBbWcsqejhvw2Wt1rnh/SN95hLJhmEVsBSFGO0iSQjTAaJ74GH0o4kmddjBrcCSrBLp5hVFet/uwDApCJxEQtCPQzBtbHstH4su3SSbHzdlZSVKv04dwnoVfaGFplNDaE4oNU2Iynap5s05y/iQw+mU8eOr1AiaEx39SufOasy4wyycOh3AyPMxSph4/Qc8eoGZEs2j9I2KeXean9BWq6jRJg1k22Qv/2TKXvGAT/IE5J8WB5ZMWM3gi6f6KtcZorhIMFbN23zGt5Xxl0oH1ExSP0XWx2vVPhLSVHO+Q7tHMWChDZwX3OOm1p+Ec34pEhPfrwEfKVys80oWYkaQEgkmvE6hItcP6nL3WbQt81MY4MceGUkbYxyb7N4t7xCIvczIqAzxVe73JHrV1PXWoveFfzNKrcn0Hb9EDYaAlVQ+sF5WK7dIIFIhyme7gL+ITvShRaaV9xv3N//Oe2vaRXroS+6QtmilAwa7rkY3Yr+8AceqUD0eKp7gFIWj3QI+RikvlRkOpdlm7sEdqJmmy6QXJhz4EyxUmbe9XUXpMxvwLCkPmBXhc3vVSbW7dZ0Z1ZocZBXaZ9ihoqBbTwSPmkAw2LM6XKkTWXWb8hKimeNQ=
-X-Forefront-Antispam-Report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SA1PR11MB6733.namprd11.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230031)(376005)(1800799015)(366007);DIR:OUT;SFP:1102;
-X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
-X-MS-Exchange-AntiSpam-MessageData-0: =?iso-8859-1?Q?rnhZ8J1Uhd2xJJgBKXyBkkD9siLu29bfmBUymUq1CWb4yGcgk7Y4QpE7OO?=
- =?iso-8859-1?Q?olxDT7SChfAO5uRq7qECXBbhjMrteNS8ImdKd88kdGnO2PEI2nlHgkwZne?=
- =?iso-8859-1?Q?tZ3RENMx6eQ8siflYIEnieF5+jp7E1F+5r2O4bp0/NIkOy/tEfVyAKo71/?=
- =?iso-8859-1?Q?ZSPLT1NjUE+w/hYv0JuAuWc7vt3SIKZ1O9duPBfSA7W4edj6oF78NohZ7u?=
- =?iso-8859-1?Q?dYKq1XDrEB71GlMH11su0y1guM+JeFAaxWg1LONOujCb/LMh+yZKuvEmTj?=
- =?iso-8859-1?Q?ws4im7E2OEqKP59hWv602EYU05Q4IT0UO+9dVq3GgDVCtv0N2810lZsmkX?=
- =?iso-8859-1?Q?Ha3btWXi57AGigdjXIQ5TxOtyHJ2Vhr0Tfxq2t06ergjWnb5eN6fO2YMuv?=
- =?iso-8859-1?Q?Ocg9aJHno/E0i70w23xCGVe2Kw/A8IvKdg61g/rLgXcu29bvZqTDcuDQpu?=
- =?iso-8859-1?Q?ScM4LrsCtKK7ym5cgX/T4vIN2frxMKVi8Tir2zj5yvq5CCJ8Xv79ioJRfQ?=
- =?iso-8859-1?Q?5HEZW3Fofz/4t+dHOFQiUcIgG3lc84Zd6rIaGJzl2vQZzSr8v5URWWdP8R?=
- =?iso-8859-1?Q?1D9PQi5TO9s1lCLhbCvJweXIu9ZtQU7UxzAMofZrgGtTI9mNK/JET/jZDv?=
- =?iso-8859-1?Q?0xN3vS1nELE0Au8gnvZMbuHFa9GV+DTiBNzI5c2eHXaC0A3ectcs3zluJW?=
- =?iso-8859-1?Q?dRZLZsH60EsDTZk4y940qeeJ7gZ59Wwjr/cPDfp40Jfph5t1TJeSRJNPiD?=
- =?iso-8859-1?Q?OhY7n5vCByJMQ9YQQTxKhQtI4E8IBGe5JERhdnANGW4/AGIpFBMLVETXVn?=
- =?iso-8859-1?Q?yR056S0aKEm6k1g7V6X6FXH/t2LYfUp/BE6OUiuImq7qEUcHz2JZ7XYoo0?=
- =?iso-8859-1?Q?48SZehQUm94xcPWL7ocuknoSVQ5xpqjUNRUIPLaghVA+BclHKojBFDdsZ+?=
- =?iso-8859-1?Q?6Mo7rkl5jjQjRu6TdaXZvsbV37G1aSHUpgeuerrXe4B/yW9INIRIGVbmQE?=
- =?iso-8859-1?Q?6U82yuSk3iSJC2dMMZ7AV900mWA771FN4Z+77jkF0cJajW+WZtdLs3ngYW?=
- =?iso-8859-1?Q?06TrhzqM5NJnfTzS1VVAzgIc9/+H/5tCy8eKyJThyfdv6II/1983m2qK6H?=
- =?iso-8859-1?Q?RA/ZodP0Irffyu+VzBjK/yXLwtrgdARgfJtghfdyl23ATsO8tLHvIhyLUa?=
- =?iso-8859-1?Q?//oFeiuaP3l0+3+RqouABI/5QEyevxGVlpvaK94sQJc2vAeid8bf/vQSQ6?=
- =?iso-8859-1?Q?DKDJS8NisJCKcSm17HSFCja92QXQ4AM8fAvEbLKG309GNV/X0fbsFzX3+a?=
- =?iso-8859-1?Q?BnjQDtMqoyfocoY2xoA3cbcu0BB04/fwH+/oPzoRzPQrl4n19swu5qVRX2?=
- =?iso-8859-1?Q?hpq1ZNfRQQN70AVNpCCHLQGqy8PMr4TBiM1BT4pgH3vTf6OXN2DX7XKPv3?=
- =?iso-8859-1?Q?GULExCZh6OEVZSubtcznhwi+iRGDde49ZQu9OnAhUn6RMoqhbjffAVvFgK?=
- =?iso-8859-1?Q?cHTj7urD4HteWlCy5IjkuXaou+ff4AHEQTKNTTcRkNam0cVNNRcBUotCwW?=
- =?iso-8859-1?Q?oRMXxmHSA6S6Tvsr1QVxEhIg2qi7ImCtT8JtWjn6PEPIAv3I46zqSyp76u?=
- =?iso-8859-1?Q?KsvP75IGSmGs92WaTKaHsCwpEuOx0pGNu9?=
-X-MS-Exchange-CrossTenant-Network-Message-Id: e496445a-bb31-474e-4f5e-08dc559b892b
-X-MS-Exchange-CrossTenant-AuthSource: SA1PR11MB6733.namprd11.prod.outlook.com
-X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-OriginalArrivalTime: 05 Apr 2024 18:09:29.1536
- (UTC)
-X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
-X-MS-Exchange-CrossTenant-Id: 46c98d88-e344-4ed4-8496-4ed7712e255d
-X-MS-Exchange-CrossTenant-MailboxType: HOSTED
-X-MS-Exchange-CrossTenant-UserPrincipalName: /FwFnN6PpqDql5p37Ea+2tD1/tNB9rKbJ3TyMaequSeePZ5F452pxSHgjjmfTa48+5RvsJbhuJ6Ykd4+vVmqug==
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: SJ2PR11MB8537
-X-OriginatorOrg: intel.com
+Mime-Version: 1.0 (Mac OS X Mail 10.3 \(3273\))
+Subject: Re: [PATCH v3 00/13] fiemap extension for more physical information
+Date: Fri, 5 Apr 2024 12:20:21 -0600
+In-Reply-To: <vf4k3yagvb6vf3vfu7st7uj7asv4zbf5c3b2tef2g2xic5fkvj@olqxfakmkoew>
+Cc: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>,
+ Jonathan Corbet <corbet@lwn.net>,
+ Brian Foster <bfoster@redhat.com>,
+ Chris Mason <clm@fb.com>,
+ Josef Bacik <josef@toxicpanda.com>,
+ David Sterba <dsterba@suse.com>,
+ Jaegeuk Kim <jaegeuk@kernel.org>,
+ Chao Yu <chao@kernel.org>,
+ Alexander Viro <viro@zeniv.linux.org.uk>,
+ Christian Brauner <brauner@kernel.org>,
+ Jan Kara <jack@suse.cz>,
+ =?utf-8?Q?Micka=C3=ABl_Sala=C3=BCn?= <mic@digikod.net>,
+ linux-doc@vger.kernel.org,
+ Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+ linux-bcachefs@vger.kernel.org,
+ linux-btrfs <linux-btrfs@vger.kernel.org>,
+ linux-f2fs-devel@lists.sourceforge.net,
+ linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+ kernel-team@meta.com,
+ djwong@kernel.org
+To: Kent Overstreet <kent.overstreet@linux.dev>
+References: <cover.1712126039.git.sweettea-kernel@dorminy.me>
+ <vf4k3yagvb6vf3vfu7st7uj7asv4zbf5c3b2tef2g2xic5fkvj@olqxfakmkoew>
+X-Mailer: Apple Mail (2.3273)
 
-Jørgen Hansen wrote:
-> On 3/25/24 00:18, ira.weiny@intel.com wrote:
-> 
-> > From: Navneet Singh <navneet.singh@intel.com>
-> > 
 
-[snip]
+--Apple-Mail=_700566DC-00D7-4239-B730-9CEAF4C860C8
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain;
+	charset=us-ascii
 
-> >   /**
-> >    * struct cxl_memdev_state - Generic Type-3 Memory Device Class driver data
-> >    *
-> > @@ -467,6 +482,8 @@ struct cxl_dev_state {
-> >    * @enabled_cmds: Hardware commands found enabled in CEL.
-> >    * @exclusive_cmds: Commands that are kernel-internal only
-> >    * @total_bytes: sum of all possible capacities
-> > + * @static_cap: Sum of static RAM and PMEM capacities
-> > + * @dynamic_cap: Complete DPA range occupied by DC regions
-> 
-> How about naming these total_range, static_cap and dynamic_range to make 
-> it clear that the DPA range occupied by DC regions isn't necessarily 
-> usable capacity (as opposed to the static_cap where the spec defines it 
-> as usable capacity).
+On Apr 3, 2024, at 12:17 PM, Kent Overstreet <kent.overstreet@linux.dev> =
+wrote:
+>=20
+> On Wed, Apr 03, 2024 at 03:22:41AM -0400, Sweet Tea Dorminy wrote:
+>> For many years, various btrfs users have written programs to discover
+>> the actual disk space used by files, using root-only interfaces.
+>> However, this information is a great fit for fiemap: it is inherently
+>> tied to extent information, all filesystems can use it, and the
+>> capabilities required for FIEMAP make sense for this additional
+>> information also.
+>>=20
+>> Hence, this patchset adds various additional information to fiemap,
+>> and extends filesystems (but not iomap) to return it.  This uses some =
+of
+>> the reserved padding in the fiemap extent structure, so programs =
+unaware
+>> of the changes will be unaffected.
+>>=20
+>> This is based on next-20240403. I've tested the btrfs part of this =
+with
+>> the standard btrfs testing matrix locally and manually, and done =
+minimal
+>> testing of the non-btrfs parts.
+>>=20
+>> I'm unsure whether btrfs should be returning the entire physical =
+extent
+>> referenced by a particular logical range, or just the part of the
+>> physical extent referenced by that range. The v2 thread has a =
+discussion
+>> of this.
+>=20
+> I believe there was some talk of using the padding for a device ID, so
+> that fiemap could properly support multi device filesystems. Are we =
+sure
+> this is the best use of those bytes?
 
-I thought this was a good idea but on second thought these are not range
-variables at all.  They really represent the various lengths of the
-resources.
+The current (pre-patch) fiemap_extent struct is:
 
-For total_bytes the documentation already says 'sum of all __possible__
-capacities'.
+struct fiemap_extent {
+        __u64 fe_logical;  /* logical offset in bytes for the start of
+                            * the extent from the beginning of the file =
+*/
+        __u64 fe_physical; /* physical offset in bytes for the start
+                            * of the extent from the beginning of the =
+disk */
+        __u64 fe_length;   /* length in bytes for this extent */
+        __u64 fe_reserved64[2];
+        __u32 fe_flags;    /* FIEMAP_EXTENT_* flags for this extent */
+        __u32 fe_reserved[3];
+};
 
-I think you have a point for the new fields though.  They should all be
-named in some consistent manner and documented as such.
+and this series is only changing fe_reserved64[0] to fe_phys_length.
+There was discussion in the past of using "fe_reserved[0]" for the =
+device
+ID, which is still OK.
 
-So I propose:
+Cheers, Andreas
 
-diff --git a/drivers/cxl/cxlmem.h b/drivers/cxl/cxlmem.h
-index 94531af018f8..9c18b229f69a 100644
---- a/drivers/cxl/cxlmem.h
-+++ b/drivers/cxl/cxlmem.h
-@@ -481,9 +481,9 @@ struct cxl_dc_region_info {
-  * @dcd_cmds: List of DCD commands implemented by memory device
-  * @enabled_cmds: Hardware commands found enabled in CEL.
-  * @exclusive_cmds: Commands that are kernel-internal only
-- * @total_bytes: sum of all possible capacities
-- * @static_cap: Sum of static RAM and PMEM capacities
-- * @dynamic_cap: Complete DPA range occupied by DC regions
-+ * @total_bytes: length of all possible capacities
-+ * @static_bytes: length of possible static RAM and PMEM partitions
-+ * @dynamic_bytes: length of possible DC partitions (DC Regions)
-  * @volatile_only_bytes: hard volatile capacity
-  * @persistent_only_bytes: hard persistent capacity
-  * @partition_align_bytes: alignment size for partition-able capacity
-@@ -515,8 +515,8 @@ struct cxl_memdev_state {
-        DECLARE_BITMAP(exclusive_cmds, CXL_MEM_COMMAND_ID_MAX);
- 
-        u64 total_bytes;
--       u64 static_cap;
--       u64 dynamic_cap;
-+       u64 static_bytes;
-+       u64 dynamic_bytes;
-        u64 volatile_only_bytes;
-        u64 persistent_only_bytes;
-        u64 partition_align_bytes;
+
+
+
+
+
+--Apple-Mail=_700566DC-00D7-4239-B730-9CEAF4C860C8
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment;
+	filename=signature.asc
+Content-Type: application/pgp-signature;
+	name=signature.asc
+Content-Description: Message signed with OpenPGP
+
+-----BEGIN PGP SIGNATURE-----
+Comment: GPGTools - http://gpgtools.org
+
+iQIzBAEBCAAdFiEEDb73u6ZejP5ZMprvcqXauRfMH+AFAmYQQOUACgkQcqXauRfM
+H+CHWg/+ImmZQ6Nzwva0Efg63ioqP0pS3airRAPWj+bfSnsIXaituGulL3hG2Lt5
+IORycBQ5w1uifrkGHdmcpOjoIsPuaQrjAdC700vt5TRhqLojhU6ZnLz/eZMFUSIe
+oS0f9OPJPx3vDKBfMBeVTZbrzka94z5Wl0pUohNFSshNfYOrAKyGiBc0KLzpslFo
+eQODjM5SpgwhN7Te0Wcpklr8JMQXI5e+QXkAnor25ImqCHB7PPL4BEt40/HS6hH/
+MfDLh7WHcatQFHB4prRJrULNDnOSJz+LD2UAu602/s03c2lIEHiVkTb8AATrFE8O
+FZvfEdge3gjEXaK1zO1/eNScUgHH8eESBDbWk2ACkU/p7Ip9MS5FgcWXVBxEUoDl
+46VkGOuqWFwGgY020Q+Tvo7I6r1+MahDttyCKe34bzu0WB/t19del0moZyHhicgS
+oNyZN8rIM5QPmuwi1glNkPi8uL23QLb3frSVmrTflx1GxKBhB+fyN/TQP+42Y1zJ
+eBbSWPgWoWHC7u3ULQYA1Mjbi5DUh8dAjwWIJXsFIJwL4oGb54mX/vE2ef9YAHpI
+x1p+7ds2vdDYqG2o5UXaI9YPg45kDNVm+/Io5+DXNMKGVH6XIyhr/Uy5dzx6tVHK
+CdPBC3K4hWSLU6rlwFhwXJ0d5kc2AuRrcmDi8Q+FzSOHlLyt9zM=
+=UxlY
+-----END PGP SIGNATURE-----
+
+--Apple-Mail=_700566DC-00D7-4239-B730-9CEAF4C860C8--

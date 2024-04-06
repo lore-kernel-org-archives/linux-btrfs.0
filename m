@@ -1,97 +1,117 @@
-Received: from serval.cherry.relay.mailchannels.net (serval.cherry.relay.mailchannels.net [23.83.223.163])
+Received: from mgamail.intel.com (mgamail.intel.com [192.198.163.10])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A9C3B37700
-	for <linux-btrfs@vger.kernel.org>; Fri,  5 Apr 2024 23:16:52 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=23.83.223.163
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1712359016; cv=pass; b=H9fI72ecH++WDT14RqOclxIkLTXxfxGlRbYFYppLmh4puCX8NHNxCccUcSOEXw6HJijqF7uGtP0dalegfzvP5MkmdleWoggnVl8g2lBoWNOgAuBNIoVkFcO2rAjslfM54lzgl7n8oqXLwY7Re+U7ZpCER2ISoT9Z49BschVVsPs=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1712359016; c=relaxed/simple;
-	bh=jDuVH4YcYREDClLmWJGhMc40jIuTGMSJLcaiQZoW5rw=;
-	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=fhtXl1m8jQBNWKhX+JV/nV5+a5A/vmzgzmOoacTuiR9QBR2tDwRX4VpaWWX6JgEJ38OMAg24OeXjz9/UrH/0DyI1PqsKompHHGk4YvnQvLG0+3aGO6gaZ6MYgHBZ8QiQ47JuYf/Ix4koI2SgkpPM0nMurNSew94t1DqTZ41xNes=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=scientia.org; spf=pass smtp.mailfrom=scientia.org; arc=pass smtp.client-ip=23.83.223.163
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=scientia.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=scientia.org
-X-Sender-Id: instrampxe0y3a|x-authuser|calestyo@scientia.org
-Received: from relay.mailchannels.net (localhost [127.0.0.1])
-	by relay.mailchannels.net (Postfix) with ESMTP id 9B9042C2E0E;
-	Fri,  5 Apr 2024 22:41:07 +0000 (UTC)
-Received: from cpanel-007-fra.hostingww.com (unknown [127.0.0.6])
-	(Authenticated sender: instrampxe0y3a)
-	by relay.mailchannels.net (Postfix) with ESMTPA id CE7E42C2EE8;
-	Fri,  5 Apr 2024 22:41:06 +0000 (UTC)
-ARC-Seal: i=1; s=arc-2022; d=mailchannels.net; t=1712356867; a=rsa-sha256;
-	cv=none;
-	b=BESpnhSbhzZ7VkeSHQ6pPDX+auMlhVGPzlQOPSyiadJBXRXmabjt5O0jijcO8l4oEyXMIE
-	kzab+psX5AjxaOryWL7lnDSFe3mbY7/AptmRnb5sLkgUZXqG6jNrOcMoW0rjab/d4bedSh
-	bIM51YMM5vm2phguL1gD+Dp3YvkffVepTXdEvsryCYeXULXGbFRlVyJDpLmKpzc5K1KWSq
-	haoI3O1JwvWJYpDLy5ZT1W+TZIqn82Ls2mxAXyAU77k2zCb8Zlm6CQRtoflriwNDzshNcX
-	98AqfqWAW2fvAgurIB3BZ4IkmoxuTU8FIrk0NRsUNVm0yZzUrZNzbfLxOJ5N2w==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed;
- d=mailchannels.net;
-	s=arc-2022; t=1712356867;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=jDuVH4YcYREDClLmWJGhMc40jIuTGMSJLcaiQZoW5rw=;
-	b=Lfmg0NjxJFB2BydfjWLkh60CxWA2C2ApJD75SkZPwf6gToS17TsRId+wRObyrfTj4sFvtV
-	qg8xAkm/gwju5xqor2UqusWZt5R6uJPOjGCyvHFKWlXSzTIlqJx2n/TdfM5fxDybIQ2ZDB
-	gAQkafT/fAAFvva3naFelZQmLX4qwCkLtQ+sncWxxQKP2TKitze4xrwfIXR9bbE9h+UmD+
-	zi4yLYV4P6AeYKQsI52GVxWJFwpGvdWKccBQ7KyaC8ydfVEb1tsRO+WIjHd6DSm1pnf31F
-	4oAkJumidWHizJiF1jmT9QR8qmg6FcA8yZds7/AbW6j9jtd10nHtkl1W6KeOYg==
-ARC-Authentication-Results: i=1;
-	rspamd-687b9dd446-9778w;
-	auth=pass smtp.auth=instrampxe0y3a smtp.mailfrom=calestyo@scientia.org
-X-Sender-Id: instrampxe0y3a|x-authuser|calestyo@scientia.org
-X-MC-Relay: Neutral
-X-MailChannels-SenderId: instrampxe0y3a|x-authuser|calestyo@scientia.org
-X-MailChannels-Auth-Id: instrampxe0y3a
-X-Daffy-Befitting: 4fa4d1de272ab27f_1712356867491_2189981210
-X-MC-Loop-Signature: 1712356867491:2310122726
-X-MC-Ingress-Time: 1712356867491
-Received: from cpanel-007-fra.hostingww.com (cpanel-007-fra.hostingww.com
- [3.69.87.180])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384)
-	by 100.118.210.220 (trex/6.9.2);
-	Fri, 05 Apr 2024 22:41:07 +0000
-Received: from p5b0eda68.dip0.t-ipconnect.de ([91.14.218.104]:38668 helo=heisenberg.fritz.box)
-	by cpanel-007-fra.hostingww.com with esmtpsa  (TLS1.2) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-	(Exim 4.96)
-	(envelope-from <calestyo@scientia.org>)
-	id 1rssF5-0004Ow-2N;
-	Fri, 05 Apr 2024 22:41:05 +0000
-Message-ID: <0c9f96442083fe6e5ad387adbc496ff2f3370270.camel@scientia.org>
-Subject: Re: exactly shrinking btrfs on a device?
-From: Christoph Anton Mitterer <calestyo@scientia.org>
-To: Roman Mamedov <rm@romanrm.net>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Date: Sat, 06 Apr 2024 00:41:00 +0200
-In-Reply-To: <20240406033700.2c2404c1@nvm>
-References: <896a5d36071a30605c38779dd03103b6429ebcae.camel@scientia.org>
-	 <20240406033700.2c2404c1@nvm>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.50.3-1+b1 
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6B49C32C92;
+	Sat,  6 Apr 2024 00:01:33 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=192.198.163.10
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1712361695; cv=none; b=OMf/b7k61sm+BcoGn83uodVpMVY399pAuyawy+ek8dP3Q7sVZBcgt5veKUpYxPMEJf/aOtfA934WzQuQDHfbjcSpVwAUvmAO7uUkSlnnvU8xjVoT4HfSRZYV1PiSsfYKexmmeOYSvrMZH6LySxD+uH1A90AY/2Fl9jYdxp3l/rE=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1712361695; c=relaxed/simple;
+	bh=dnEl1bSn8VJ78TGNl6mm0353QJWGdbMkyEQ8vUlvqOQ=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=AunQDUcLsvubkGw4emxIwY97Z7D+xs9gu7OJY8HcHU0i1jsWmQFyVcGfm8m4uebkHoSJUKUSX34BR/VlQQkkEQ598wOoI0PSOA8IJmmQ71LT6d3n4hO6jXRqxklc4Yh1QTSkoouOR28opWKpQ4G5G+7bWn6l6QKSBn5FkMCYLCo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com; spf=pass smtp.mailfrom=intel.com; dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b=PIeL2grW; arc=none smtp.client-ip=192.198.163.10
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=intel.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b="PIeL2grW"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
+  t=1712361693; x=1743897693;
+  h=message-id:date:mime-version:subject:to:cc:references:
+   from:in-reply-to:content-transfer-encoding;
+  bh=dnEl1bSn8VJ78TGNl6mm0353QJWGdbMkyEQ8vUlvqOQ=;
+  b=PIeL2grWeeeDXPV5Z8zZSWmXmF9vkKft1681h/bb/vDM5Tc767VqgDB5
+   mBSaBmZGD4xrzJoB8fEdaFTG9aKZ+sm2ea9pqxsPYvb5V6hmvBtJWtoCt
+   ZpfHFu175XrLjEhpEVuA/I/FoHKreFU1msFH1voOFgPd7lpM0+5j1r9jR
+   2pTaAXx0rX5A6h30AjzQD8XZfBkO/c/PuDMnkG5Crc0ZyfD72IGhrI3UR
+   551CcwIDq7GR1voaP7cZ2Ry55CjmmrC4RTODdTb5KstaUibrUJk68N9DA
+   JmgnAbJWINmZWTN9GiS2C3mEtGyrl5ELWIkKPMhZYXERH/TEJ3CJs69Nq
+   Q==;
+X-CSE-ConnectionGUID: EraClYA9Rf2pFJmlCf37kQ==
+X-CSE-MsgGUID: HqxLVUU+Q9y5scj/jWT3Vg==
+X-IronPort-AV: E=McAfee;i="6600,9927,11035"; a="19071058"
+X-IronPort-AV: E=Sophos;i="6.07,182,1708416000"; 
+   d="scan'208";a="19071058"
+Received: from fmviesa007.fm.intel.com ([10.60.135.147])
+  by fmvoesa104.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 05 Apr 2024 17:01:32 -0700
+X-CSE-ConnectionGUID: srenPdH2SkaNTFfAdLd4bA==
+X-CSE-MsgGUID: zkq/j+qcQUKmUocue1es1A==
+X-ExtLoop1: 1
+X-IronPort-AV: E=Sophos;i="6.07,182,1708416000"; 
+   d="scan'208";a="19379967"
+Received: from djiang5-mobl3.amr.corp.intel.com (HELO [10.212.38.118]) ([10.212.38.118])
+  by fmviesa007-auth.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 05 Apr 2024 17:01:33 -0700
+Message-ID: <9593d672-8a01-437c-8a87-7217a38408c1@intel.com>
+Date: Fri, 5 Apr 2024 17:01:31 -0700
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-AuthUser: calestyo@scientia.org
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH 04/26] cxl/region: Add dynamic capacity decoder and region
+ modes
+Content-Language: en-US
+To: Ira Weiny <ira.weiny@intel.com>, Fan Ni <fan.ni@samsung.com>,
+ Jonathan Cameron <Jonathan.Cameron@huawei.com>,
+ Navneet Singh <navneet.singh@intel.com>
+Cc: Dan Williams <dan.j.williams@intel.com>,
+ Davidlohr Bueso <dave@stgolabs.net>,
+ Alison Schofield <alison.schofield@intel.com>,
+ Vishal Verma <vishal.l.verma@intel.com>, linux-btrfs@vger.kernel.org,
+ linux-cxl@vger.kernel.org, linux-kernel@vger.kernel.org
+References: <20240324-dcd-type2-upstream-v1-0-b7b00d623625@intel.com>
+ <20240324-dcd-type2-upstream-v1-4-b7b00d623625@intel.com>
+ <1c7f63c5-1b7a-4f7b-9d48-4dd8b017d7de@intel.com>
+ <661040ab52a14_e9f9f2943c@iweiny-mobl.notmuch>
+From: Dave Jiang <dave.jiang@intel.com>
+In-Reply-To: <661040ab52a14_e9f9f2943c@iweiny-mobl.notmuch>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 
-On Sat, 2024-04-06 at 03:37 +0500, Roman Mamedov wrote:
-> Shrink it with a large headroom left to spare, e.g. by 50-100 GB more
-> than
-> necessary (or say by 10%, if it is small). Then shrink the outer
-> container.
-> Then grow the FS using the "max" keyword, to occupy the entire new
-> size of the
-> container.
 
-Yeah... sure that works... but it's not so suited if one wants to set
-some exact size.
 
+On 4/5/24 11:19 AM, Ira Weiny wrote:
+> Dave Jiang wrote:
+>>
+>>
+>> On 3/24/24 4:18 PM, ira.weiny@intel.com wrote:
+>>> From: Navneet Singh <navneet.singh@intel.com>
+>>>
+>>> Region mode must reflect a general dynamic capacity type which is
+>>> associated with a specific Dynamic Capacity (DC) partitions in each
+>>> device decoder within the region.  DC partitions are also know as DC
+>>> regions per CXL 3.1.
+>>
+>> This section reads somewhat awkward to me. Does this read any better?
+>>
+>> One or more Dynamic Capacity (DC) partitions (and decoders) form a CXL
+>> software region. The region mode reflects composition of that entire software
+>> region. Decoder mode reflects a specific DC partition. DC partitions are also
+>> known as DC regions per CXL specification r3.1 but is not the same entity as
+>> CXL software regions.
+> 
+> Yea that does sound better but I think this builds on your text and is even
+> more clear.
+> 
+> <commit>
+> cxl/region: Add dynamic capacity decoder and region modes
+> 
+> One or more decoders each pointing to a Dynamic Capacity (DC) partition form a
+> CXL software region.  The region mode reflects composition of that entire
+> software region.  Decoder mode reflects a specific DC partition.  DC partitions
+> are also known as DC regions per CXL specification r3.1 but they are not the
+> same entity as CXL software regions.
+> 
+> Define the new modes and helper functions required to make the association
+> between these new modes.
+> 
+> </commit>
+> 
+
+LGTM
+> 
+> Ira

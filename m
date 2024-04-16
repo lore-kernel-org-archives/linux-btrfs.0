@@ -1,139 +1,201 @@
-Received: from naboo.endor.pl (naboo.endor.pl [91.194.229.150])
+Received: from mx.tnonline.net (mx.tnonline.net [65.109.230.99])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5EE6012A15A
-	for <linux-btrfs@vger.kernel.org>; Tue, 16 Apr 2024 15:17:49 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=91.194.229.150
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D317042055
+	for <linux-btrfs@vger.kernel.org>; Tue, 16 Apr 2024 17:00:46 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=65.109.230.99
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1713280673; cv=none; b=AHzSWGFKoQUW+z0wHNVN17VaLrKt9Pe6vlCguuL/xhnrpl9g9Y3355TZXV/OiC4PEQGL6UMVEmDNXmXTTg0ABbEli4thRp10t00bjuRU9/IQzbAIR8wQeiv74hHZC4sUmQsybMQxqWYuk8X//ASqlVgKpuHX5QgBGdkMDVH/AJQ=
+	t=1713286848; cv=none; b=SUbF0FfBPyykB0N5yI7dj2ZCj/nvJZr5hZO1bLl0MtYkD8uLOEnPYqVMhKQLXsfI/J1M6rAVfjsxWrGqwYIpQIez/fkQhVDitPoI3Kh/73SZYpJb4DxdoSs5rn4caB7/3iOar+ExeWGqDXjTzb5iBbav8cM0LPQxvHsDyY8IfP8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1713280673; c=relaxed/simple;
-	bh=/6QvmHCny+Pn1mYZiKvfMiaFQomBQMo2nNwxeBashBI=;
-	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=VfBvbPqu3MffC6plCTb22Ep8AMAtI0oq/IOQkSblutxCVC3QIpkXL8BzuCbycBm6Wsff8PY9UAZyNyBx0b9Kh85FEeE3DiXNNLrU3LC3utjCCP21rLltiQC3fPWPnG/+ODfAcXhoZ29rewfYYOr5SACGdG/84r/tiT6ce/1bHkc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=dubiel.pl; spf=pass smtp.mailfrom=dubiel.pl; arc=none smtp.client-ip=91.194.229.150
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=dubiel.pl
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=dubiel.pl
-Received: from localhost (localhost.localdomain [127.0.0.1])
-	by naboo.endor.pl (Postfix) with ESMTP id 04C7DC08140;
-	Tue, 16 Apr 2024 17:17:47 +0200 (CEST)
-X-Virus-Scanned: Debian amavisd-new at 
-Received: from naboo.endor.pl ([91.194.229.15])
-	by localhost (naboo.endor.pl [127.0.0.1]) (amavisd-new, port 10026)
-	with ESMTP id IiulF9CTimtP; Tue, 16 Apr 2024 17:17:44 +0200 (CEST)
-Received: from [192.168.1.195] (unknown [81.56.116.160])
-	(Authenticated sender: leszek@dubiel.pl)
-	by naboo.endor.pl (Postfix) with ESMTPSA id 69BA5C08007;
-	Tue, 16 Apr 2024 17:17:44 +0200 (CEST)
-Message-ID: <b2806d95-a50c-41a2-b321-cf62c4f28966@dubiel.pl>
-Date: Tue, 16 Apr 2024 17:17:41 +0200
+	s=arc-20240116; t=1713286848; c=relaxed/simple;
+	bh=x6r5o+Y1uVuGcoWsA5eKhPku/gOCM3vSqbcKMRBS2Zs=;
+	h=Date:From:To:Message-ID:In-Reply-To:References:Subject:
+	 MIME-Version:Content-Type; b=D15oy+piu6EAJREDyYt5ofWL1NZh+B+lCN0iQcxPOHM319bneXjlxDo0VgYW+n56fde1ln8vriwWZ52v6pPXhik+UinDZ4FKZJM4gj4akultS1tNTL1lulBOJBF2/NAdtM3pN+KrPHq0Y0PdlHlfOfP8LgIae2KRl+c5f8uinuc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=tnonline.net; spf=pass smtp.mailfrom=tnonline.net; dkim=pass (2048-bit key) header.d=tnonline.net header.i=@tnonline.net header.b=Rvqx8CXr; arc=none smtp.client-ip=65.109.230.99
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=tnonline.net
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=tnonline.net
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=tnonline.net header.i=@tnonline.net header.b="Rvqx8CXr"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=tnonline.net; s=default; h=Content-Transfer-Encoding:Content-Type:
+	MIME-Version:Subject:References:In-Reply-To:Message-ID:To:From:Date:Sender:
+	Reply-To:Cc:Content-ID:Content-Description:Resent-Date:Resent-From:
+	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
+	List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
+	bh=NaJ505wUKlADMx2acrhRWTEiCP9hfkPkdlBmEy3cY48=; t=1713286846; x=1714496446; 
+	b=Rvqx8CXrOg+S+cRgXR7KegHbz5cwS/raipjpylcuBDU+2E0+YQkRQ32K+J+sAbwg5FQuG1tHnVJ
+	O3RVf16sb5C2Ay2SFGUtDJy8B5cQa2hAcyf3Ofgmxgy0ztL98N2Ca7yT1fke8YWfX1tbJuKtWaT+A
+	DbLu0EbNtw0ogIfDvALCyn9zg7S63g/VtVgrQ1iUjdUSprIQS+RF7mIdNpjRrwBz+D0XLUj3ctckC
+	WD3aZJjzXrGWSJ2UcvYMaqsXBaHGsYTeoCKc3XnPaSvKpg7GzIC1xCRtSwDVz6UL2bzlHtHOq1V63
+	DK/B6p8StR3dZoBCqvZW9MZRhVjJmlmjpOnQ==;
+Received: from tnonline.net ([2001:470:28:704::1]:51054)
+	by mx.tnonline.net with esmtpsa  (TLS1.3) tls TLS_AES_256_GCM_SHA384
+	(Exim 4.97.1)
+	(envelope-from <postmaster@tnonline.net>)
+	id 1rwmAV-000000005V1-1xpf;
+	Tue, 16 Apr 2024 17:00:28 +0000
+Received: from [192.168.0.132] (port=53870)
+	by tnonline.net with esmtpsa  (TLS1.3) tls TLS_AES_128_GCM_SHA256
+	(Exim 4.97.1)
+	(envelope-from <forza@tnonline.net>)
+	id 1rwmAR-00000000ETJ-2lFJ;
+	Tue, 16 Apr 2024 19:00:23 +0200
+Date: Tue, 16 Apr 2024 19:00:23 +0200 (GMT+02:00)
+From: Forza <forza@tnonline.net>
+To: Leszek Dubiel <leszek@dubiel.pl>, HAN Yuwei <hrx@bupt.moe>,
+	linux-btrfs@vger.kernel.org
+Message-ID: <3aefeb1.20bf1a80.18ee7da3d40@tnonline.net>
+In-Reply-To: <b2806d95-a50c-41a2-b321-cf62c4f28966@dubiel.pl>
+References: <47e425a3-76b9-4e51-93a0-cde31dd39003@dubiel.pl> <79D2FA23B59927D1+bde927bc-1ccf-4a5d-95fb-9389906d33f6@bupt.moe> <b2806d95-a50c-41a2-b321-cf62c4f28966@dubiel.pl>
+Subject: =?UTF-8?Q?Re:_enospc_errors_during_balanc?=
+ =?UTF-8?Q?e_=E2=80=94_how_to_prevent_out_of_space?=
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: =?UTF-8?Q?Re=3A_enospc_errors_during_balance_=E2=80=94_how_to_preve?=
- =?UTF-8?Q?nt_out_of_space?=
-To: HAN Yuwei <hrx@bupt.moe>, linux-btrfs@vger.kernel.org
-References: <47e425a3-76b9-4e51-93a0-cde31dd39003@dubiel.pl>
- <79D2FA23B59927D1+bde927bc-1ccf-4a5d-95fb-9389906d33f6@bupt.moe>
-Content-Language: pl-PL
-From: Leszek Dubiel <leszek@dubiel.pl>
-In-Reply-To: <79D2FA23B59927D1+bde927bc-1ccf-4a5d-95fb-9389906d33f6@bupt.moe>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+X-Mailer: R2Mail2
+X-Spam-Score: -1.6 (-)
 
 
 
->>
->>
->> I noticed 1Mb for Unallocated space, so
->> I have run multiple times balance (data usage filter):
->>
->>          btrfs balance start -dusage=XX,limit=1 /
->>
->>
->> and it didn't help.
-> You can try add a small device (USB stick) and rebalance.
->> It even got error no space when balancing:
+---- From: Leszek Dubiel <leszek@dubiel.pl> -- Sent: 2024-04-16 - 17:17 ---=
+-
+
+>=20
+>=20
+>>>
+>>>
+>>> I noticed 1Mb for Unallocated space, so
+>>> I have run multiple times balance (data usage filter):
+>>>
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 btrfs balance start -d=
+usage=3DXX,limit=3D1 /
+>>>
+>>>
+>>> and it didn't help.
+>> You can try add a small device (USB stick) and rebalance.
+>>> It even got error no space when balancing:
+>=20
+>=20
+> When it refused to balance i tried musage, dusage, few times and it helpe=
+d.
+> Thanks for tip.
+>=20
+
+It is not wise to balance metadata block groups because it can directly lea=
+d to the situation you ended up with. Btrfs needs unallocated disk space to=
+ be able to allocate new data or metadata chunks If it cannot allocate new =
+data chunks you will see an out of disk space error. However if btrfs canno=
+t allocate new metadata chunks, the filesystem will turn read-only, making =
+it much harder to fix - as you cannot balance or add additional space in an=
+ read-only filesystem.=20
 
 
-When it refused to balance i tried musage, dusage, few times and it helped.
-Thanks for tip.
+>=20
+>=20
+>=20
+>> If you have zabbix or other monitoring mechanism, you can try=20
+>> monitoring "Unallocated" and reserve at least 2 block group (2GiB). Or=
+=20
+>> you can have a weekly timer to rebalance your btrfs volume.
+>> kdave/btrfsmaintenance should helps you.
+>=20
+> I started to run this script from cron every 10 minutes:
+>=20
+>=20
+> #!/usr/bin/bash
+>=20
+> mount | sed -nr 's%^/dev/sd[a-z][0-9] on (/[/_[:alnum:]]+) type btrfs=20
+> .*$%\1%; T; p' |
+> while read mnt; do
+>  =C2=A0=C2=A0 =C2=A0if
+>  =C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0=C2=A0 btrfs dev usage "$mnt" -g |
+>  =C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0=C2=A0 perl -ne '/Unallocated: +([0-9]+\.=
+[0-9]{2})GiB/ and $1 < 64 and=20
+> print $1' |
+>  =C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0=C2=A0 grep -q .
+>  =C2=A0=C2=A0 =C2=A0then
+>  =C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0=C2=A0 echo "porz=C4=85dkowa=C4=87 $mnt"
+>=20
+>  =C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0=C2=A0 for usa in $(seq 0 10 100); do
+>  =C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 # I don't know =
+whether to start with "dusage" or "musage",=20
+> so i shuffle it;
+>  =C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 # 15 april 2024=
+ my serwer was locked, "dusage" returned=20
+> "enospace", and it
+>  =C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 # got unlocked =
+after "musage=3D0"
+>  =C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 {
+>  =C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=
+=A0 echo d $usa
+>  =C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=
+=A0 echo m $usa
+>  =C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 } | shuf
+>  =C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0=C2=A0 done |
+>  =C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0=C2=A0 while read typ usa; do
+>=20
+>  =C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 echo; echo; dat=
+e; echo "balance type=3D$typ, usage=3D$usa"
+>=20
+>  =C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 out=3D"$(btrfs =
+balance start -${typ}usage=3D$usa,limit=3D3 "$mnt"=20
+> 2>&1)"
+>  =C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 echo "$out"
+>=20
+>  =C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 # if nothing wa=
+s done, then try higher usage
+>  =C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 echo "$out" | g=
+rep -q "had to relocate 0 out of" && continue
+>=20
+>  =C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 # otherwise fin=
+ish: on error or on successful relocate
+>  =C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 break
+>  =C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0=C2=A0 done
+>  =C2=A0=C2=A0 =C2=A0fi
+> done
+>=20
+>=20
+>=20
 
+Do you mean you run this continuously on your filesystem? This is normally =
+not required and will increase wear on your disks.=20
+>=20
+>=20
+>=20
+>=20
+>> "Unallocated" and reserve at least If you have zabbix or other=20
+>> monitoring mechanism, you can try monitoring 2 block group (2GiB). Or=20
+>> you can have a weekly timer to rebalance your btrfs volume.
+>> kdave/btrfsmaintenance should helps you.=20
+>=20
+> Thanks for hints :) :)
+>=20
+> This solves my questions:
+>=20
+> 1. i have to rebalance when Unallocated is low
+>=20
+> 2. i have to keep 2Gb at least.
 
+You should keep at least 1GB x profile mode. That is for DUP, 2GB, and for =
+RAID1, at least 1GB on two devices.
 
+It would be better to have more, to be safe.
 
-> If you have zabbix or other monitoring mechanism, you can try 
-> monitoring "Unallocated" and reserve at least 2 block group (2GiB). Or 
-> you can have a weekly timer to rebalance your btrfs volume.
-> kdave/btrfsmaintenance should helps you.
+An option that could be used is 'bg_reclaim_threshold', which is a sysfs kn=
+ob to let the kernel automatically reclaim (balance) block groups that fall=
+ under a specific threshold.
 
-I started to run this script from cron every 10 minutes:
+https://btrfs.readthedocs.io/en/latest/ch-sysfs.html
 
-
-#!/usr/bin/bash
-
-mount | sed -nr 's%^/dev/sd[a-z][0-9] on (/[/_[:alnum:]]+) type btrfs 
-.*$%\1%; T; p' |
-while read mnt; do
-     if
-         btrfs dev usage "$mnt" -g |
-         perl -ne '/Unallocated: +([0-9]+\.[0-9]{2})GiB/ and $1 < 64 and 
-print $1' |
-         grep -q .
-     then
-         echo "porządkować $mnt"
-
-         for usa in $(seq 0 10 100); do
-             # I don't know whether to start with "dusage" or "musage", 
-so i shuffle it;
-             # 15 april 2024 my serwer was locked, "dusage" returned 
-"enospace", and it
-             # got unlocked after "musage=0"
-             {
-                 echo d $usa
-                 echo m $usa
-             } | shuf
-         done |
-         while read typ usa; do
-
-             echo; echo; date; echo "balance type=$typ, usage=$usa"
-
-             out="$(btrfs balance start -${typ}usage=$usa,limit=3 "$mnt" 
-2>&1)"
-             echo "$out"
-
-             # if nothing was done, then try higher usage
-             echo "$out" | grep -q "had to relocate 0 out of" && continue
-
-             # otherwise finish: on error or on successful relocate
-             break
-         done
-     fi
-done
-
-
-
-
-
-
-
-> "Unallocated" and reserve at least If you have zabbix or other 
-> monitoring mechanism, you can try monitoring 2 block group (2GiB). Or 
-> you can have a weekly timer to rebalance your btrfs volume.
-> kdave/btrfsmaintenance should helps you. 
-
-Thanks for hints :) :)
-
-This solves my questions:
-
-1. i have to rebalance when Unallocated is low
-
-2. i have to keep 2Gb at least.
-
-
+>=20
+>=20
+>=20
+>=20
+>=20
 
 

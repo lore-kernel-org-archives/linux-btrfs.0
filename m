@@ -1,87 +1,64 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from mail-vk1-f181.google.com (mail-vk1-f181.google.com [209.85.221.181])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 68AB02EAF9;
-	Tue, 16 Apr 2024 17:04:21 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8F75E1332BC
+	for <linux-btrfs@vger.kernel.org>; Tue, 16 Apr 2024 17:25:57 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.181
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1713287066; cv=none; b=cv7vwNCYNNWrhHryew0M3yqisn8p8UEYjZTFRquP7bBUg3oTeCaU0fNHSTKrsTRfr/pZpY67DYbEFEYcKJpn/pC6MpCS0uA1VwWMdFYO+s9KiOUv1qzDuhSi7dY3tx8RwP/wPEBGS7INad4Kf0oNlPCfmMrXavzBVunSg7Po+Vk=
+	t=1713288360; cv=none; b=q3AWD239Ld+0u/m7GBMb8BPfLkRj8iG+eupZreLbGnzDaDzNu+WYTAsp4+NlbXtZg0t9AKBOxyX8iDzAL+2EACFm9rQrUy2VR1p4WF9QxJFn4DdHstLra2YtnyZNfmuu1sd6Bzq8vvfR7g1IowcHsyLDq4WXYLdrJMcyNPzD384=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1713287066; c=relaxed/simple;
-	bh=smozM9jF1fgEa0jo5wcKDyao5GQFouQ/Furzv3/aqFM=;
+	s=arc-20240116; t=1713288360; c=relaxed/simple;
+	bh=/kWlJSS7zBtJtDgV8EHoeQt3koCkXLMn2okRgHvcohw=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=oZjgcLEiet2FOW6/99SP5RwnzOVhzx9QaupSMID/uS+bfiN+tj1LpNnIOT8Fiyjv4Wdfm+xBJWdgs5BPHAaXFsUn3LvJGuyYewH8ONI0B0TP+M0vEgm4c/R2zVziyFSmab2zUhB3tJ/qazItrkOc7+smTrbX9wYaqV96qUt2o5Y=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=MDYr91ST; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=2joM5M0e; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=ae0gGnxd; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=amWRgvx/; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	 Content-Type:Content-Disposition:In-Reply-To; b=Yf6i7Cf4OOS3G3WwwitK4ZpwWq/L7n39HAzHcHZ0yVFlv49+7a6rebZ5VkbkxzAWy83Emf4ftLq0/q+czxT0Olkn2Wl6iXPAJZf7r4VZvbBrYIEMFwWlSOQVKHZz5cDIdNw/ZHz7U+sxwj2+SFhNxLO5Kx2gbbHXV+nSMn3J81w=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com; spf=none smtp.mailfrom=toxicpanda.com; dkim=pass (2048-bit key) header.d=toxicpanda-com.20230601.gappssmtp.com header.i=@toxicpanda-com.20230601.gappssmtp.com header.b=mV98KsJH; arc=none smtp.client-ip=209.85.221.181
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=toxicpanda.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="MDYr91ST";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="2joM5M0e";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="ae0gGnxd";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="amWRgvx/"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 6CAA81F7C4;
-	Tue, 16 Apr 2024 17:04:18 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1713287059;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=HmF+X66qXKP4uAwVMy4ZKy9VoRjMIrIQQD+AMJy3/rM=;
-	b=MDYr91STVJoNWxZhqSg2uy5Kw/MIdL6pC2WieISYnxY9HMaDRBMHgCBUd2f9BFVZRRJYyJ
-	fCO6/k6uH+2fpTspFFMk6tmRRanOmAvap1oKKgGfmqkRZBfJNeWazjC6V+nSqqcfDp5pMe
-	ILLp977WnrTzxjuEpUO27tmXdkA3u7I=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1713287059;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=HmF+X66qXKP4uAwVMy4ZKy9VoRjMIrIQQD+AMJy3/rM=;
-	b=2joM5M0egcib8sTxUUqc6TrDI43rBAkVjVtCEg1SYgWpB8zoD/efYFIY50vMJbHCIGisMC
-	gdRZGy2264fm6aBQ==
-Authentication-Results: smtp-out2.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1713287058;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=HmF+X66qXKP4uAwVMy4ZKy9VoRjMIrIQQD+AMJy3/rM=;
-	b=ae0gGnxd/wTLaP35Hhq8QbqNn1rtWeL1tBCL1XkgKi+bbABrBWF7NlJvbbhlmCkluKteGl
-	h5PcfVfBOyw2dOttqIjaOLZsCwCSKhRn2OG93UqISqwUS0WbuOiQ1rUeJ7nMwYSMRj9RMd
-	PsuU4WQRIAHTSkluuoViKVoqfoNjcJU=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1713287058;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=HmF+X66qXKP4uAwVMy4ZKy9VoRjMIrIQQD+AMJy3/rM=;
-	b=amWRgvx/OUa0dd0i2x47/zLltJnD+n/BDPibTKM2vgWgECWLwE5xskJZhvpQrhdoL1KzAm
-	QswOoa635H1i4OAg==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 428DF13432;
-	Tue, 16 Apr 2024 17:04:18 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id lXwdEJKvHmYbKQAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Tue, 16 Apr 2024 17:04:18 +0000
-Date: Tue, 16 Apr 2024 18:56:49 +0200
-From: David Sterba <dsterba@suse.cz>
-To: syzbot <syzbot+510a1abbb8116eeb341d@syzkaller.appspotmail.com>
-Cc: clm@fb.com, dsterba@suse.com, josef@toxicpanda.com,
-	linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-	linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
-Subject: Re: [syzbot] [btrfs?] KMSAN: kernel-infoleak in
- btrfs_ioctl_logical_to_ino (2)
-Message-ID: <20240416165648.GS3492@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <000000000000196a39061636840a@google.com>
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20230601.gappssmtp.com header.i=@toxicpanda-com.20230601.gappssmtp.com header.b="mV98KsJH"
+Received: by mail-vk1-f181.google.com with SMTP id 71dfb90a1353d-4dac4791267so1548578e0c.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 16 Apr 2024 10:25:57 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1713288356; x=1713893156; darn=vger.kernel.org;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
+        bh=2mTvmt2RHf+Cx+fN/+61PRl0LJepWHQcF3XxlfhqGDg=;
+        b=mV98KsJHxZsz/xABC12NqQ/tN5EAW+Ots+lqbG+WeCYjfGI3Oy48Nf4ezZgs6bGLSc
+         QODn1PGf2R5/vXCYwTRPit1dDoLq55jEp0BL2l9EBl7uKKcogVpwjDwQRA7AlxAgGqys
+         vBZqQfMYTOmkZTq8Gd22xHBZ2qbtoERc6BypvtIIQP1VWQ/eij4E4r38NoFTDeSQmd2w
+         /9Z3LBG+3s6TOVjyu95HJ5AG/kyFAlpyFE4A7COkHhvjeSOCTtcNY3DBFWKsDnRoKJV/
+         fBfBi6VfMDFEwDJIM8eiDIS/5WSHxIB29rhvAlr5uSW9fRStolJWluEl8P0ezsHtc7jQ
+         7tww==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1713288356; x=1713893156;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=2mTvmt2RHf+Cx+fN/+61PRl0LJepWHQcF3XxlfhqGDg=;
+        b=nBBfvul8EDYXUGEW3R7Z2SSUMJEE5dIvCMXFnC3TH0kSBXoO3mrakLQ5pAREFkOVMI
+         1HXz7Vv26QSqWixw3s0YRrqz11HmdMZU/rM9GSEgMI16+35l+sHmfgKt9NLEwZDHeOqU
+         zTKoDLSuDPHVew2qHNNYCkgEjMoThSEoPNJ2B5zXLif9UlCSfDQOpQ7+K8w+URRmxuFf
+         PKsKabDvhxvTH5+cXQuOodTLNTU/tIT1E+rang1o1JNLfLl68Dh8n4NfWJN/fIGACCm8
+         QsjlRcK+U7th+dFhDJQBPDYKCRexB+A5TtGCQgU1pn1aBYk89IMd27FkvXen3vHgVnd2
+         GpZw==
+X-Gm-Message-State: AOJu0YxVVV79NoBMIJW7INFZHrtRni547pOjI9KIM48s/Z/rETyxkNuq
+	z3mErx/sk3ytmXwW22kF623OaSRJaZVosgTAupGBiIlFYuRt+1KjXJMM4+s7BaEDYl3jEqRfgzh
+	7
+X-Google-Smtp-Source: AGHT+IEPlmhXWe+jXCyjnrZVEfbIIVIMW8v/oZY5AxWYobvJkwvJ09TChlhCDGCIzdrN1QZVtAGlkQ==
+X-Received: by 2002:a05:6122:2009:b0:4da:a82e:95f5 with SMTP id l9-20020a056122200900b004daa82e95f5mr10387710vkd.5.1713288356331;
+        Tue, 16 Apr 2024 10:25:56 -0700 (PDT)
+Received: from localhost ([76.182.20.124])
+        by smtp.gmail.com with ESMTPSA id b12-20020ad4518c000000b0069b27dad8c7sm7519284qvp.101.2024.04.16.10.25.55
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 16 Apr 2024 10:25:55 -0700 (PDT)
+Date: Tue, 16 Apr 2024 13:25:55 -0400
+From: Josef Bacik <josef@toxicpanda.com>
+To: fdmanana@kernel.org
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v3 08/10] btrfs: add a shrinker for extent maps
+Message-ID: <20240416172555.GA2094489@perftesting>
+References: <cover.1713267925.git.fdmanana@suse.com>
+ <4bfde54904b5a91a71eb0d86b9c78367865f93d8.1713267925.git.fdmanana@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -90,109 +67,126 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <000000000000196a39061636840a@google.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Spam-Flag: NO
-X-Spam-Score: -1.50
-X-Spam-Level: 
-X-Spamd-Result: default: False [-1.50 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	SUSPICIOUS_RECIPS(1.50)[];
-	URI_HIDDEN_PATH(1.00)[https://syzkaller.appspot.com/x/.config?x=87a805e655619c64];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	TAGGED_RCPT(0.00)[510a1abbb8116eeb341d];
-	RCVD_TLS_ALL(0.00)[];
-	ARC_NA(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	TO_DN_SOME(0.00)[];
-	RCPT_COUNT_SEVEN(0.00)[8];
-	FUZZY_BLOCKED(0.00)[rspamd.com];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.cz:replyto,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,appspotmail.com:email,syzkaller.appspot.com:url,storage.googleapis.com:url];
-	RCVD_COUNT_TWO(0.00)[2];
-	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	SUBJECT_HAS_QUESTION(0.00)[]
+In-Reply-To: <4bfde54904b5a91a71eb0d86b9c78367865f93d8.1713267925.git.fdmanana@suse.com>
 
-On Tue, Apr 16, 2024 at 06:14:20AM -0700, syzbot wrote:
-> Hello,
+On Tue, Apr 16, 2024 at 02:08:10PM +0100, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
 > 
-> syzbot found the following issue on:
+> Extent maps are used either to represent existing file extent items, or to
+> represent new extents that are going to be written and the respective file
+> extent items are created when the ordered extent completes.
 > 
-> HEAD commit:    cef27048e5c2 Merge tag 'bcachefs-2024-04-15' of https://ev..
-> git tree:       upstream
-> console output: https://syzkaller.appspot.com/x/log.txt?x=11a1fec7180000
-> kernel config:  https://syzkaller.appspot.com/x/.config?x=87a805e655619c64
-> dashboard link: https://syzkaller.appspot.com/bug?extid=510a1abbb8116eeb341d
-> compiler:       Debian clang version 15.0.6, GNU ld (GNU Binutils for Debian) 2.40
+> We currently don't have any limit for how many extent maps we can have,
+> neither per inode nor globally. Most of the time this not too noticeable
+> because extent maps are removed in the following situations:
 > 
-> Unfortunately, I don't have any reproducer for this issue yet.
+> 1) When evicting an inode;
 > 
-> Downloadable assets:
-> disk image: https://storage.googleapis.com/syzbot-assets/fce0439cf562/disk-cef27048.raw.xz
-> vmlinux: https://storage.googleapis.com/syzbot-assets/99540e71cf72/vmlinux-cef27048.xz
-> kernel image: https://storage.googleapis.com/syzbot-assets/65fbfc2c486f/bzImage-cef27048.xz
+> 2) When releasing folios (pages) through the btrfs_release_folio() address
+>    space operation callback.
 > 
-> IMPORTANT: if you fix the issue, please add the following tag to the commit:
-> Reported-by: syzbot+510a1abbb8116eeb341d@syzkaller.appspotmail.com
+>    However we won't release extent maps in the folio range if the folio is
+>    either dirty or under writeback or if the inode's i_size is less than
+>    or equals to 16M (see try_release_extent_mapping(). This 16M i_size
+>    constraint was added back in 2008 with commit 70dec8079d78 ("Btrfs:
+>    extent_io and extent_state optimizations"), but there's no explanation
+>    about why we have it or why the 16M value.
 > 
-> BTRFS info (device loop1): first mount of filesystem c9fe44da-de57-406a-8241-57ec7d4412cf
-> BTRFS info (device loop1): using crc32c (crc32c-generic) checksum algorithm
-> BTRFS info (device loop1): using free-space-tree
-> =====================================================
-> BUG: KMSAN: kernel-infoleak in instrument_copy_to_user include/linux/instrumented.h:114 [inline]
-> BUG: KMSAN: kernel-infoleak in _copy_to_user+0xbc/0x110 lib/usercopy.c:40
->  instrument_copy_to_user include/linux/instrumented.h:114 [inline]
->  _copy_to_user+0xbc/0x110 lib/usercopy.c:40
->  copy_to_user include/linux/uaccess.h:191 [inline]
->  btrfs_ioctl_logical_to_ino+0x440/0x750 fs/btrfs/ioctl.c:3499
->  btrfs_ioctl+0x714/0x1260
->  vfs_ioctl fs/ioctl.c:51 [inline]
->  __do_sys_ioctl fs/ioctl.c:904 [inline]
->  __se_sys_ioctl+0x261/0x450 fs/ioctl.c:890
->  __x64_sys_ioctl+0x96/0xe0 fs/ioctl.c:890
->  x64_sys_call+0x1883/0x3b50 arch/x86/include/generated/asm/syscalls_64.h:17
->  do_syscall_x64 arch/x86/entry/common.c:52 [inline]
->  do_syscall_64+0xcf/0x1e0 arch/x86/entry/common.c:83
->  entry_SYSCALL_64_after_hwframe+0x77/0x7f
+> This means that for buffered IO we can reach an OOM situation due to too
+> many extent maps if either of the following happens:
 > 
-> Uninit was created at:
->  __kmalloc_large_node+0x231/0x370 mm/slub.c:3921
->  __do_kmalloc_node mm/slub.c:3954 [inline]
->  __kmalloc_node+0xb07/0x1060 mm/slub.c:3973
->  kmalloc_node include/linux/slab.h:648 [inline]
->  kvmalloc_node+0xc0/0x2d0 mm/util.c:634
->  kvmalloc include/linux/slab.h:766 [inline]
->  init_data_container+0x49/0x1e0 fs/btrfs/backref.c:2779
+> 1) There's a set of tasks constantly doing IO on many files with a size
+>    not larger than 16M, specially if they keep the files open for very
+>    long periods, therefore preventing inode eviction.
+> 
+>    This requires a really high number of such files, and having many non
+>    mergeable extent maps (due to random 4K writes for example) and a
+>    machine with very little memory;
+> 
+> 2) There's a set tasks constantly doing random write IO (therefore
+>    creating many non mergeable extent maps) on files and keeping them
+>    open for long periods of time, so inode eviction doesn't happen and
+>    there's always a lot of dirty pages or pages under writeback,
+>    preventing btrfs_release_folio() from releasing the respective extent
+>    maps.
+> 
+> This second case was actually reported in the thread pointed by the Link
+> tag below, and it requires a very large file under heavy IO and a machine
+> with very little amount of RAM, which is probably hard to happen in
+> practice in a real world use case.
+> 
+> However when using direct IO this is not so hard to happen, because the
+> page cache is not used, and therefore btrfs_release_folio() is never
+> called. Which means extent maps are dropped only when evicting the inode,
+> and that means that if we have tasks that keep a file descriptor open and
+> keep doing IO on a very large file (or files), we can exhaust memory due
+> to an unbounded amount of extent maps. This is especially easy to happen
+> if we have a huge file with millions of small extents and their extent
+> maps are not mergeable (non contiguous offsets and disk locations).
+> This was reported in that thread with the following fio test:
+> 
+>    $ cat test.sh
+>    #!/bin/bash
+> 
+>    DEV=/dev/sdj
+>    MNT=/mnt/sdj
+>    MOUNT_OPTIONS="-o ssd"
+>    MKFS_OPTIONS=""
+> 
+>    cat <<EOF > /tmp/fio-job.ini
+>    [global]
+>    name=fio-rand-write
+>    filename=$MNT/fio-rand-write
+>    rw=randwrite
+>    bs=4K
+>    direct=1
+>    numjobs=16
+>    fallocate=none
+>    time_based
+>    runtime=90000
+> 
+>    [file1]
+>    size=300G
+>    ioengine=libaio
+>    iodepth=16
+> 
+>    EOF
+> 
+>    umount $MNT &> /dev/null
+>    mkfs.btrfs -f $MKFS_OPTIONS $DEV
+>    mount $MOUNT_OPTIONS $DEV $MNT
+> 
+>    fio /tmp/fio-job.ini
+>    umount $MNT
+> 
+> Monitoring the btrfs_extent_map slab while running the test with:
+> 
+>    $ watch -d -n 1 'cat /sys/kernel/slab/btrfs_extent_map/objects \
+>                         /sys/kernel/slab/btrfs_extent_map/total_objects'
+> 
+> Shows the number of active and total extent maps skyrocketing to tens of
+> millions, and on systems with a short amount of memory it's easy and quick
+> to get into an OOM situation, as reported in that thread.
+> 
+> So to avoid this issue add a shrinker that will remove extents maps, as
+> long as they are not pinned, and takes proper care with any concurrent
+> fsync to avoid missing extents (setting the full sync flag while in the
+> middle of a fast fsync). This shrinker is triggered through the callbacks
+> nr_cached_objects and free_cached_objects of struct super_operations.
+> 
+> The shrinker will iterates over all roots and over all inodes of each
+> root, and keeps track of the last scanned root and inode, so that the
+> next time it runs, it starts from that root and from the next inode.
+> This is similar to what xfs does for its inode reclaim (implements those
+> callbacks, and cycles through inodes by starting from where it ended
+> last time).
+> 
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
-2767 struct btrfs_data_container *init_data_container(u32 total_bytes)
-2768 {
-2769         struct btrfs_data_container *data;
-2770         size_t alloc_bytes;
-2771
-2772         alloc_bytes = max_t(size_t, total_bytes, sizeof(*data));
-2773         data = kvmalloc(alloc_bytes, GFP_KERNEL);
+This is great, thanks Filipe!
 
-and then data is passed around in the ioctl.
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 
->  btrfs_ioctl_logical_to_ino+0x17c/0x750 fs/btrfs/ioctl.c:3480
->  btrfs_ioctl+0x714/0x1260
->  vfs_ioctl fs/ioctl.c:51 [inline]
->  __do_sys_ioctl fs/ioctl.c:904 [inline]
->  __se_sys_ioctl+0x261/0x450 fs/ioctl.c:890
->  __x64_sys_ioctl+0x96/0xe0 fs/ioctl.c:890
->  x64_sys_call+0x1883/0x3b50 arch/x86/include/generated/asm/syscalls_64.h:17
->  do_syscall_x64 arch/x86/entry/common.c:52 [inline]
->  do_syscall_64+0xcf/0x1e0 arch/x86/entry/common.c:83
->  entry_SYSCALL_64_after_hwframe+0x77/0x7f
-> 
-> Bytes 40-65535 of 65536 are uninitialized
+Thanks,
 
-It is possible to let the ioctl allocate a big buffer but return it
-filled only partially. So it should be kvcalloc.
+Josef

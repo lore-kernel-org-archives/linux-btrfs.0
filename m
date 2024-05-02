@@ -1,59 +1,75 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from mail-lf1-f49.google.com (mail-lf1-f49.google.com [209.85.167.49])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 35A77181BAF
-	for <linux-btrfs@vger.kernel.org>; Thu,  2 May 2024 21:18:50 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AE6EC18132E
+	for <linux-btrfs@vger.kernel.org>; Thu,  2 May 2024 21:26:56 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.167.49
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1714684733; cv=none; b=AhG7s/QVrgKJwyNpUebGXgcBkHHB1UB4mq+xgytoFYqezSC3MuFTCjVEwXxhQ0pXk5gu2WeL9o3vlNJDWLuKUrza45G7uqPGotiBdl2pvrBXPlznWMnZaeZyfBsZybfoE3CvzRdwCo1imG4xYqZ2sWPkccqMX0aeAtJ4PMLxl30=
+	t=1714685219; cv=none; b=T4q5ZyyIja+1mxk7wKjEITyIEb8CZdbFpMDJhX8n/FPiEAwqjnO2vxfHMlVti9Gd2f4CgeKmBztberOVsHcIDrIGFnHXn20aDpA+0LQFVTZ59p1qzQA9VEFMtHanKc186RgMRORnWXpC646vMemCk8a5rroomA6yJ0GIZ/coCmw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1714684733; c=relaxed/simple;
-	bh=3y1A2+ZShAiAiEQ6p0EdJmZTeYAh1CFNzHtEfJTFXRM=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=ZpLE2juUbAVczpoNWPkhZsuXQIkfFc+wWWLJ2bSpHRVExVTU9Awku5Jx9REb6FUYmUcs3sCT/oFSXRp5UYXuFG+nvEXIQGIXQc9zOI7FQNCWXXbv2gxLSaRYXJSAkt/4sC50y4p/wJXgVVK1XRRtpJfEkXQAjgVLwCEkDGRHWS4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=myov2r9M; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=myov2r9M; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1714685219; c=relaxed/simple;
+	bh=tVWXNCzdMWLdqo6Ilri79iJRAhyTbQmQeAhLhhvAFyA=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=j1uAVDfXzOe90feFum3LYMLVuQUd3sm6U3KGMNvpA2Hytu+moZO05XOC7BhxV9uC4eNMGvTxzEYuqZpoxX/HenjZW5TlREFakrxoIPguSWpqALPNaIYhk7ErS6UGhs6c+szJhr++UKSwrcyC+yspbvx+3eaQLslP66cKcGZjfic=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=toblux.com; spf=none smtp.mailfrom=toblux.com; dkim=pass (2048-bit key) header.d=toblux-com.20230601.gappssmtp.com header.i=@toblux-com.20230601.gappssmtp.com header.b=o9OoYScd; arc=none smtp.client-ip=209.85.167.49
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=toblux.com
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=toblux.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="myov2r9M";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="myov2r9M"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 6E96621A79;
-	Thu,  2 May 2024 21:18:49 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1714684729; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=QyBXqFLO11vQKi4BOUomJACnTvYjH1siG7/satE/IzU=;
-	b=myov2r9Md92+hFsXOq8nAGpxitMV6fELLki8/eVzAs0q2GwF2NP1VhpKkVIFA0S8akVV0N
-	iwiebQDL2GPDBh5v1iKiaqbNNPOHoONHJk41RHXaYVvl78DQlCuV02nI4OhNxk9MDuZJ7s
-	sVFJXf4syqrD+ZaFVZdptb2yxoFidWc=
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1714684729; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=QyBXqFLO11vQKi4BOUomJACnTvYjH1siG7/satE/IzU=;
-	b=myov2r9Md92+hFsXOq8nAGpxitMV6fELLki8/eVzAs0q2GwF2NP1VhpKkVIFA0S8akVV0N
-	iwiebQDL2GPDBh5v1iKiaqbNNPOHoONHJk41RHXaYVvl78DQlCuV02nI4OhNxk9MDuZJ7s
-	sVFJXf4syqrD+ZaFVZdptb2yxoFidWc=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 5A6711386E;
-	Thu,  2 May 2024 21:18:49 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id OF/MFTkDNGbPYAAAD6G6ig
-	(envelope-from <dsterba@suse.com>); Thu, 02 May 2024 21:18:49 +0000
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH] btrfs: qgroup: do quick checks if quotas are enabled before starting ioctls
-Date: Thu,  2 May 2024 23:11:33 +0200
-Message-ID: <20240502211133.20102-1-dsterba@suse.com>
+	dkim=pass (2048-bit key) header.d=toblux-com.20230601.gappssmtp.com header.i=@toblux-com.20230601.gappssmtp.com header.b="o9OoYScd"
+Received: by mail-lf1-f49.google.com with SMTP id 2adb3069b0e04-5171a529224so10519021e87.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 02 May 2024 14:26:56 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toblux-com.20230601.gappssmtp.com; s=20230601; t=1714685215; x=1715290015; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to;
+        bh=wU/XAKZMmUOs49TIIxrQWM7SSMi6Vt7hgebFMdmZZhA=;
+        b=o9OoYScdHYuuenDc9CZlLY0tcO3eE4/qY+YyFolo9ynupcjYg5OyyaT2EOyyjV9jwD
+         7kM9zFW19qAphPxyyl1kIJ6IVg2n4XBuR72MnhzhHGy5OCp6wP4ytOxPMGLXotIZY6+4
+         BK7m/oHubHYiuEvwsXz25i31yabAPIMoI1bhOKihuJruGQ/FH83chFz/OSfKOXxlbUHj
+         w35MF6vQFHzgdGyqILv6WxhgkS5tkIUr8wO1ZMXB+aeeJtqYKHjFvxhLo8V4dCKskzLD
+         v8y57s+lrQgcUGBUcNMDf4lJEVaZIK0v6xUuF2DR12X6816mKotial+odtuoACnrDGgX
+         p+/A==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1714685215; x=1715290015;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=wU/XAKZMmUOs49TIIxrQWM7SSMi6Vt7hgebFMdmZZhA=;
+        b=KQ/Us/XOGbVxegnB7NsSSid6uX3gLwP9AhQTr3TbH23valPQAPMfeFIrANmWzZGDeb
+         MHevrWkFc9P0VLuDiZXJ5zPPEMgOmeXPPAJCGXxk+jh+9K6DFJnG8IE04bU11wqK6XnS
+         /O5pTrThMBOXQpYy0AYV6IFMrrlc685YKb3Bg/BxDaGQkfizEcSc17K2sR4IoGiNSkJv
+         cmESMRCAuPzETcTF248ddKMwHictVN0Ld13rZC8WSHkW+V+Fvmc/croKMhb7SLgQwU6P
+         rDmIEp9BxmlnZX7QS4RzpbG2h27sZpRwuTc0r/GB13/w2LisIiNdAq4Ma9PVmpguXbuH
+         Aseg==
+X-Gm-Message-State: AOJu0YyqCdFXwkPnGUBBNA2LfpZ8CrB5V3reSymwjmCotRd1IFR4Btpu
+	8Oy1ZBrccDKrPAIz5k/Ydi2cdwxH/RbdHjfTi/FOFCMRKO4+02CgyHhiQ0c4r+k=
+X-Google-Smtp-Source: AGHT+IFdU+CNhHsbaoct4Qy+KcY+OUDNYVYuy7Zm5gtsIUrtGa9LNDfgRLHazZskYH9L85fevDVJpg==
+X-Received: by 2002:a05:6512:3144:b0:51b:e42c:2ec4 with SMTP id s4-20020a056512314400b0051be42c2ec4mr584685lfi.24.1714685214745;
+        Thu, 02 May 2024 14:26:54 -0700 (PDT)
+Received: from fedora.fritz.box (aftr-62-216-208-100.dynamic.mnet-online.de. [62.216.208.100])
+        by smtp.gmail.com with ESMTPSA id my37-20020a1709065a6500b00a5981fbcb31sm354886ejc.6.2024.05.02.14.26.53
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Thu, 02 May 2024 14:26:54 -0700 (PDT)
+From: Thorsten Blum <thorsten.blum@toblux.com>
+To: Chris Mason <clm@fb.com>,
+	Josef Bacik <josef@toxicpanda.com>,
+	David Sterba <dsterba@suse.com>,
+	David Howells <dhowells@redhat.com>,
+	Jeff Layton <jlayton@kernel.org>,
+	Miklos Szeredi <miklos@szeredi.hu>,
+	Amir Goldstein <amir73il@gmail.com>,
+	Baoquan He <bhe@redhat.com>,
+	Vivek Goyal <vgoyal@redhat.com>,
+	Dave Young <dyoung@redhat.com>
+Cc: linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	netfs@lists.linux.dev,
+	linux-fsdevel@vger.kernel.org,
+	linux-unionfs@vger.kernel.org,
+	kexec@lists.infradead.org,
+	Thorsten Blum <thorsten.blum@toblux.com>
+Subject: [PATCH 1/4] btrfs: Remove duplicate included header
+Date: Thu,  2 May 2024 23:26:28 +0200
+Message-ID: <20240502212631.110175-1-thorsten.blum@toblux.com>
 X-Mailer: git-send-email 2.44.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
@@ -62,112 +78,26 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Level: 
-X-Spamd-Result: default: False [-2.80 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	RCPT_COUNT_TWO(0.00)[2];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	ARC_NA(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	FUZZY_BLOCKED(0.00)[rspamd.com];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	TO_DN_SOME(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Score: -2.80
-X-Spam-Flag: NO
 
-The ioctls that add relations, create qgroups or set limits start/join
-transaction. When quotas are not enabled this is not necessary, there
-will be errors reported back anyway but this could be also misleading
-and we should really report that quotas are not enabled. For that use
--ENOTCONN.
+Remove duplicate included header file linux/blkdev.h
 
-The helper is meant to do a quick check before any other standard ioctl
-checks are done. If quota is disabled meanwhile we still rely on proper
-locking inside any active operation changing the qgroup structures.
-
-Signed-off-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Thorsten Blum <thorsten.blum@toblux.com>
 ---
- fs/btrfs/ioctl.c | 28 ++++++++++++++++++++++++++++
- 1 file changed, 28 insertions(+)
+ fs/btrfs/fs.h | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index efd5d6e9589e..28df28e50ad9 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3807,6 +3807,22 @@ static long btrfs_ioctl_quota_ctl(struct file *file, void __user *arg)
- 	return ret;
- }
- 
-+/*
-+ * Quick check for ioctl handlers if quotas are enabled. Proper locking must be
-+ * done before any operations.
-+ */
-+static bool qgroup_enabled(struct btrfs_fs_info *fs_info)
-+{
-+	bool ret = true;
-+
-+	mutex_lock(&fs_info->qgroup_ioctl_lock);
-+	if (!fs_info->quota_root)
-+		ret = false;
-+	mutex_unlock(&fs_info->qgroup_ioctl_lock);
-+
-+	return ret;
-+}
-+
- static long btrfs_ioctl_qgroup_assign(struct file *file, void __user *arg)
- {
- 	struct inode *inode = file_inode(file);
-@@ -3820,6 +3836,9 @@ static long btrfs_ioctl_qgroup_assign(struct file *file, void __user *arg)
- 	if (!capable(CAP_SYS_ADMIN))
- 		return -EPERM;
- 
-+	if (!qgroup_enabled(root->fs_info))
-+		return -ENOTCONN;
-+
- 	ret = mnt_want_write_file(file);
- 	if (ret)
- 		return ret;
-@@ -3872,6 +3891,9 @@ static long btrfs_ioctl_qgroup_create(struct file *file, void __user *arg)
- 	if (!capable(CAP_SYS_ADMIN))
- 		return -EPERM;
- 
-+	if (!qgroup_enabled(root->fs_info))
-+		return -ENOTCONN;
-+
- 	ret = mnt_want_write_file(file);
- 	if (ret)
- 		return ret;
-@@ -3928,6 +3950,9 @@ static long btrfs_ioctl_qgroup_limit(struct file *file, void __user *arg)
- 	if (!capable(CAP_SYS_ADMIN))
- 		return -EPERM;
- 
-+	if (!qgroup_enabled(root->fs_info))
-+		return -ENOTCONN;
-+
- 	ret = mnt_want_write_file(file);
- 	if (ret)
- 		return ret;
-@@ -3973,6 +3998,9 @@ static long btrfs_ioctl_quota_rescan(struct file *file, void __user *arg)
- 	if (!capable(CAP_SYS_ADMIN))
- 		return -EPERM;
- 
-+	if (!qgroup_enabled(fs_info))
-+		return -ENOTCONN;
-+
- 	ret = mnt_want_write_file(file);
- 	if (ret)
- 		return ret;
+diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
+index 93f5c57ea4e3..5f7ad90fd682 100644
+--- a/fs/btrfs/fs.h
++++ b/fs/btrfs/fs.h
+@@ -9,7 +9,6 @@
+ #include <linux/compiler.h>
+ #include <linux/math.h>
+ #include <linux/atomic.h>
+-#include <linux/blkdev.h>
+ #include <linux/percpu_counter.h>
+ #include <linux/completion.h>
+ #include <linux/lockdep.h>
 -- 
 2.44.0
 

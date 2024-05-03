@@ -1,64 +1,64 @@
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8B4E51C6BD
-	for <linux-btrfs@vger.kernel.org>; Fri,  3 May 2024 06:02:18 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 91FF413A263
+	for <linux-btrfs@vger.kernel.org>; Fri,  3 May 2024 06:02:21 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1714716141; cv=none; b=kqDw+2dcilgFeJdfaOLM+h4p4AuQTmdE+Yyj2QsS1d7kIspWTKrKVxH52PT4h6Nyr3gkNIAhFYH09W/VRWNO+uhsaGMlBEtum/eHmBC4P54P0FxDiXN4n07a8RA7gLS9cUoOTfaodI55szuJxswG1j7nSUF4SpzwBQTMAM7y3Sc=
+	t=1714716143; cv=none; b=AOANZSr5XFdvYgxSOmJ9/RfRmQUFX8WckAozuLX7z+r0nfBnIAp4S31Y4HOjCsfJW6pWsBMGMTwczxIexLSGXmkQuYwSgXZ04/Q1oj8M/ZYhH46Yh5s3jK96Vhs0WLU+2qUkh/RFua+hU8A0MVP8hQjC722W9+XLQqbhX+365eE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1714716141; c=relaxed/simple;
-	bh=O7/aBFZaskVZYSwsjuz1KO80w26JFCd5G5/cCm1uCiU=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=L2kytMC3iA2uh+eN7MDOuGtn6chGtLuzC/JcXH42WojiP6vL9EnkEKN8YsKvYP4uhMhKob/X92CcYD4XuiVWXBf89/eaogqGfPHtI3TYs7SR+76xnerdEp6E/A3bp/uXemiI/K1AUSs7ihtPkHCDEJcsKTl6sUGdhTw8Y3JO6d0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=srjwhHO5; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=srjwhHO5; arc=none smtp.client-ip=195.135.223.130
+	s=arc-20240116; t=1714716143; c=relaxed/simple;
+	bh=WkjPy2b4IL2e7yEqb92eIQmZcEfx/JTd8JN7XNGBQQ8=;
+	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=g3tF64u5KFw1kft2R6z59mLuRM2HjZaesgSjOem8+aoptgkSLqvjbB6Kh63FJSBMEFjYFnlOQRsah4aaFlSPGTxbIWOIizrxMI231HXXzOvuncLa6i8IW03FKHj6pMo2lxU9Dcx0lZv6NaiJ+lgfKrKlL71tENOeTZjMqhqpffg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=umsp+Nry; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=umsp+Nry; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="srjwhHO5";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="srjwhHO5"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [10.150.64.97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="umsp+Nry";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="umsp+Nry"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id DD6CC22881;
-	Fri,  3 May 2024 06:02:16 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 0F0DA22886
+	for <linux-btrfs@vger.kernel.org>; Fri,  3 May 2024 06:02:20 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1714716136; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1714716140; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=lsIN2teSgdFppC/sO9rmHc79Xn+CnCT/BRNoDRCXwkg=;
-	b=srjwhHO5WlaFu0uvCEDF16bk01l+Ur7pNPM0aTFP1LKZtDhvbBaS9TSK2Qya6k0wlo/ogf
-	4db+KeNZ+84nXMXrkmTLMxG8C1/r+79R8lxm8MCPWGIJd1zIYrQH+kgYNa2k0JfME45o8r
-	KsA/aM4Bwa0f2awYCvOjeEo4ZDs/rjs=
+	bh=skY3q60dS9xqyQPozgd9erlcpfxOv+vWKRLSlPhB23M=;
+	b=umsp+NrysM7VznGs5/ug7l9IgIrx2mZVcm3BXnQ+95XuBAzwOapvgunkboTdE/WJIrJkNJ
+	8DGFq1Way3q+uniyx8s0iyAfGhQdzAvjWBgrD2j5eCmAmGvB7i1JKVw82AyfzLwsWdVYaC
+	N8YTy+nQw/U6SkM5kJL8v7SB7G6VvR0=
 Authentication-Results: smtp-out1.suse.de;
-	none
+	dkim=pass header.d=suse.com header.s=susede1 header.b=umsp+Nry
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1714716136; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1714716140; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=lsIN2teSgdFppC/sO9rmHc79Xn+CnCT/BRNoDRCXwkg=;
-	b=srjwhHO5WlaFu0uvCEDF16bk01l+Ur7pNPM0aTFP1LKZtDhvbBaS9TSK2Qya6k0wlo/ogf
-	4db+KeNZ+84nXMXrkmTLMxG8C1/r+79R8lxm8MCPWGIJd1zIYrQH+kgYNa2k0JfME45o8r
-	KsA/aM4Bwa0f2awYCvOjeEo4ZDs/rjs=
+	bh=skY3q60dS9xqyQPozgd9erlcpfxOv+vWKRLSlPhB23M=;
+	b=umsp+NrysM7VznGs5/ug7l9IgIrx2mZVcm3BXnQ+95XuBAzwOapvgunkboTdE/WJIrJkNJ
+	8DGFq1Way3q+uniyx8s0iyAfGhQdzAvjWBgrD2j5eCmAmGvB7i1JKVw82AyfzLwsWdVYaC
+	N8YTy+nQw/U6SkM5kJL8v7SB7G6VvR0=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id B22CA13991;
-	Fri,  3 May 2024 06:02:15 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 1AA5813991
+	for <linux-btrfs@vger.kernel.org>; Fri,  3 May 2024 06:02:18 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([10.150.64.162])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id YBRqF+d9NGbgawAAD6G6ig
-	(envelope-from <wqu@suse.com>); Fri, 03 May 2024 06:02:15 +0000
+	id mDvFL+p9NGbgawAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Fri, 03 May 2024 06:02:18 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH v2 06/11] btrfs: remove extent_map::block_len member
-Date: Fri,  3 May 2024 15:31:41 +0930
-Message-ID: <7d7ca65f30edca3d066310a816aac0a46ecb5d53.1714707707.git.wqu@suse.com>
+Subject: [PATCH v2 08/11] btrfs: cleanup duplicated parameters related to can_nocow_file_extent_args
+Date: Fri,  3 May 2024 15:31:43 +0930
+Message-ID: <5f31db841be606ec0bf8693377647f572ac9f4e7.1714707707.git.wqu@suse.com>
 X-Mailer: git-send-email 2.45.0
 In-Reply-To: <cover.1714707707.git.wqu@suse.com>
 References: <cover.1714707707.git.wqu@suse.com>
@@ -69,686 +69,348 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
+X-Spam-Flag: NO
+X-Spam-Score: -4.01
+X-Rspamd-Action: no action
+X-Rspamd-Queue-Id: 0F0DA22886
 X-Spam-Level: 
-X-Spamd-Result: default: False [-2.80 / 50.00];
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Spamd-Result: default: False [-4.01 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
+	DWL_DNSWL_LOW(-1.00)[suse.com:dkim];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
 	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	RCPT_COUNT_TWO(0.00)[2];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
+	MX_GOOD(-0.01)[];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
 	MIME_TRACE(0.00)[0:+];
-	ARC_NA(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
 	FUZZY_BLOCKED(0.00)[rspamd.com];
+	RCPT_COUNT_ONE(0.00)[1];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	ARC_NA(0.00)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	DKIM_TRACE(0.00)[suse.com:+];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
-	TO_DN_SOME(0.00)[];
+	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
 	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Score: -2.80
-X-Spam-Flag: NO
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	TO_DN_NONE(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,suse.com:email]
 
-The extent_map::block_len is either extent_map::len (non-compressed
-extent) or extent_map::disk_num_bytes (compressed extent).
+The following functions and structures can be simplified using the
+btrfs_file_extent structure:
 
-Since we already have sanity checks to do the cross-check between the
-new and old members, we can drop the old extent_map::block_len now.
+- can_nocow_extent()
+  No need to return ram_bytes/orig_block_len through the parameter list,
+  the @file_extent parameter contains all needed info.
 
-For most call sites, they can manually select extent_map::len or
-extent_map::disk_num_bytes, since most if not all of them have checked
-if the extent is compressed.
+- can_nocow_file_extent_args
+  The following members are no longer needed:
+
+  * disk_bytenr
+    This one is confusing as it's not really the
+    btrfs_file_extent_item::disk_bytenr, but where the IO would be,
+    thus it's file_extent::disk_bytenr + file_extent::offset now.
+
+  * num_bytes
+    Now file_extent::num_bytes.
+
+  * extent_offset
+    Now file_extent::offset.
+
+  * disk_num_bytes
+    Now file_extent::disk_num_bytes.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/compression.c            |  2 +-
- fs/btrfs/extent_map.c             | 41 +++++++++++--------------------
- fs/btrfs/extent_map.h             |  9 -------
- fs/btrfs/file-item.c              |  7 ------
- fs/btrfs/file.c                   |  1 -
- fs/btrfs/inode.c                  | 36 +++++++++------------------
- fs/btrfs/relocation.c             |  1 -
- fs/btrfs/tests/extent-map-tests.c | 41 ++++++++++---------------------
- fs/btrfs/tree-log.c               |  4 +--
- include/trace/events/btrfs.h      |  5 +---
- 10 files changed, 42 insertions(+), 105 deletions(-)
+ fs/btrfs/btrfs_inode.h |  3 +-
+ fs/btrfs/file.c        |  2 +-
+ fs/btrfs/inode.c       | 89 +++++++++++++++++++-----------------------
+ 3 files changed, 42 insertions(+), 52 deletions(-)
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index a4cd0e743027..3af87911c83e 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -585,7 +585,7 @@ void btrfs_submit_compressed_read(struct btrfs_bio *bbio)
- 	}
+diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+index f30afce4f6ca..bea343615ad1 100644
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -461,8 +461,7 @@ struct btrfs_file_extent {
+ };
  
- 	ASSERT(extent_map_is_compressed(em));
--	compressed_len = em->block_len;
-+	compressed_len = em->disk_num_bytes;
+ noinline int can_nocow_extent(struct inode *inode, u64 offset, u64 *len,
+-			      u64 *orig_block_len,
+-			      u64 *ram_bytes, struct btrfs_file_extent *file_extent,
++			      struct btrfs_file_extent *file_extent,
+ 			      bool nowait, bool strict);
  
- 	cb = alloc_compressed_bio(inode, file_offset, REQ_OP_READ,
- 				  end_bbio_comprssed_read);
-diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-index dc73b8a81271..dcd191c2c4b3 100644
---- a/fs/btrfs/extent_map.c
-+++ b/fs/btrfs/extent_map.c
-@@ -186,11 +186,18 @@ static struct rb_node *__tree_search(struct rb_root *root, u64 offset,
- 	return NULL;
- }
- 
-+static inline u64 extent_map_block_len(const struct extent_map *em)
-+{
-+	if (extent_map_is_compressed(em))
-+		return em->disk_num_bytes;
-+	return em->len;
-+}
-+
- static inline u64 extent_map_block_end(const struct extent_map *em)
- {
--	if (em->block_start + em->block_len < em->block_start)
-+	if (em->block_start + extent_map_block_len(em) < em->block_start)
- 		return (u64)-1;
--	return em->block_start + em->block_len;
-+	return em->block_start + extent_map_block_len(em);
- }
- 
- static bool can_merge_extent_map(const struct extent_map *em)
-@@ -288,10 +295,10 @@ static void dump_extent_map(const char *prefix, struct extent_map *em)
- {
- 	if (!IS_ENABLED(CONFIG_BTRFS_DEBUG))
- 		return;
--	pr_crit("%s, start=%llu len=%llu disk_bytenr=%llu disk_num_bytes=%llu ram_bytes=%llu offset=%llu block_start=%llu block_len=%llu flags=0x%x\n",
-+	pr_crit("%s, start=%llu len=%llu disk_bytenr=%llu disk_num_bytes=%llu ram_bytes=%llu offset=%llu block_start=%llu flags=0x%x\n",
- 		prefix, em->start, em->len, em->disk_bytenr, em->disk_num_bytes,
- 		em->ram_bytes, em->offset, em->block_start,
--		em->block_len, em->flags);
-+		em->flags);
- 	ASSERT(0);
- }
- 
-@@ -313,9 +320,6 @@ static void validate_extent_map(struct extent_map *em)
- 			if (em->block_start != em->disk_bytenr)
- 				dump_extent_map(
- 				"mismatch block_start/disk_bytenr/offset", em);
--			if (em->disk_num_bytes != em->block_len)
--				dump_extent_map(
--				"mismatch disk_num_bytes/block_len", em);
- 		} else {
- 			if (em->block_start != em->disk_bytenr + em->offset)
- 				dump_extent_map(
-@@ -354,7 +358,6 @@ static void try_merge_map(struct btrfs_inode *inode, struct extent_map *em)
- 		if (rb && can_merge_extent_map(merge) && mergeable_maps(merge, em)) {
- 			em->start = merge->start;
- 			em->len += merge->len;
--			em->block_len += merge->block_len;
- 			em->block_start = merge->block_start;
- 			em->generation = max(em->generation, merge->generation);
- 
-@@ -375,7 +378,6 @@ static void try_merge_map(struct btrfs_inode *inode, struct extent_map *em)
- 		merge = rb_entry(rb, struct extent_map, rb_node);
- 	if (rb && can_merge_extent_map(merge) && mergeable_maps(em, merge)) {
- 		em->len += merge->len;
--		em->block_len += merge->block_len;
- 		if (em->disk_bytenr < EXTENT_MAP_LAST_BYTE)
- 			merge_ondisk_extents(em, merge);
- 		validate_extent_map(em);
-@@ -669,7 +671,6 @@ static noinline int merge_extent_mapping(struct btrfs_inode *inode,
- 	if (em->block_start < EXTENT_MAP_LAST_BYTE &&
- 	    !extent_map_is_compressed(em)) {
- 		em->block_start += start_diff;
--		em->block_len = em->len;
- 		em->offset += start_diff;
- 	}
- 	return add_extent_mapping(inode, em, 0);
-@@ -884,17 +885,11 @@ void btrfs_drop_extent_map_range(struct btrfs_inode *inode, u64 start, u64 end,
- 			if (em->block_start < EXTENT_MAP_LAST_BYTE) {
- 				split->block_start = em->block_start;
- 
--				if (compressed)
--					split->block_len = em->block_len;
--				else
--					split->block_len = split->len;
- 				split->disk_bytenr = em->disk_bytenr;
--				split->disk_num_bytes = max(split->block_len,
--							    em->disk_num_bytes);
-+				split->disk_num_bytes = em->disk_num_bytes;
- 				split->offset = em->offset;
- 				split->ram_bytes = em->ram_bytes;
- 			} else {
--				split->block_len = 0;
- 				split->block_start = em->block_start;
- 				split->disk_bytenr = em->disk_bytenr;
- 				split->disk_num_bytes = 0;
-@@ -924,23 +919,18 @@ void btrfs_drop_extent_map_range(struct btrfs_inode *inode, u64 start, u64 end,
- 			split->generation = gen;
- 
- 			if (em->block_start < EXTENT_MAP_LAST_BYTE) {
--				split->disk_num_bytes = max(em->block_len,
--							    em->disk_num_bytes);
-+				split->disk_num_bytes = em->disk_num_bytes;
- 				split->offset = em->offset + end - em->start;
- 				split->ram_bytes = em->ram_bytes;
--				if (compressed) {
--					split->block_len = em->block_len;
--				} else {
-+				if (!compressed) {
- 					const u64 diff = end - em->start;
- 
--					split->block_len = split->len;
- 					split->block_start += diff;
- 				}
- 			} else {
- 				split->disk_num_bytes = 0;
- 				split->offset = 0;
- 				split->ram_bytes = split->len;
--				split->block_len = 0;
- 			}
- 
- 			if (extent_map_in_tree(em)) {
-@@ -1098,8 +1088,6 @@ int split_extent_map(struct btrfs_inode *inode, u64 start, u64 len, u64 pre,
- 	split_pre->disk_num_bytes = split_pre->len;
- 	split_pre->offset = 0;
- 	split_pre->block_start = new_logical;
--	split_pre->block_len = split_pre->len;
--	split_pre->disk_num_bytes = split_pre->block_len;
- 	split_pre->ram_bytes = split_pre->len;
- 	split_pre->flags = flags;
- 	split_pre->generation = em->generation;
-@@ -1118,7 +1106,6 @@ int split_extent_map(struct btrfs_inode *inode, u64 start, u64 len, u64 pre,
- 	split_mid->disk_num_bytes = split_mid->len;
- 	split_mid->offset = 0;
- 	split_mid->block_start = em->block_start + pre;
--	split_mid->block_len = split_mid->len;
- 	split_mid->ram_bytes = split_mid->len;
- 	split_mid->flags = flags;
- 	split_mid->generation = em->generation;
-diff --git a/fs/btrfs/extent_map.h b/fs/btrfs/extent_map.h
-index 454a4bb08d95..aee721eaa7f3 100644
---- a/fs/btrfs/extent_map.h
-+++ b/fs/btrfs/extent_map.h
-@@ -102,15 +102,6 @@ struct extent_map {
- 	 */
- 	u64 block_start;
- 
--	/*
--	 * The on-disk length for the file extent.
--	 *
--	 * For compressed extents it matches btrfs_file_extent_item::disk_num_bytes.
--	 * For uncompressed extents it matches extent_map::len.
--	 * For holes and inline extents it's -1 and shouldn't be used.
--	 */
--	u64 block_len;
--
- 	/*
- 	 * Generation of the extent map, for merged em it's the highest
- 	 * generation of all merged ems.
-diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index 08d608f0ae5d..95fb7c059a1a 100644
---- a/fs/btrfs/file-item.c
-+++ b/fs/btrfs/file-item.c
-@@ -1306,11 +1306,9 @@ void btrfs_extent_item_to_extent_map(struct btrfs_inode *inode,
- 		if (compress_type != BTRFS_COMPRESS_NONE) {
- 			extent_map_set_compression(em, compress_type);
- 			em->block_start = bytenr;
--			em->block_len = em->disk_num_bytes;
- 		} else {
- 			bytenr += btrfs_file_extent_offset(leaf, fi);
- 			em->block_start = bytenr;
--			em->block_len = em->len;
- 			if (type == BTRFS_FILE_EXTENT_PREALLOC)
- 				em->flags |= EXTENT_FLAG_PREALLOC;
- 		}
-@@ -1323,11 +1321,6 @@ void btrfs_extent_item_to_extent_map(struct btrfs_inode *inode,
- 		em->start = 0;
- 		em->len = fs_info->sectorsize;
- 		em->offset = 0;
--		/*
--		 * Initialize block_len with the same values
--		 * as in inode.c:btrfs_get_extent().
--		 */
--		em->block_len = (u64)-1;
- 		extent_map_set_compression(em, compress_type);
- 	} else {
- 		btrfs_err(fs_info,
+ void btrfs_del_delalloc_inode(struct btrfs_inode *inode);
 diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index be4e6acb08f3..05c7b5429b85 100644
+index 102b5c17ece1..6aaeb9ee048d 100644
 --- a/fs/btrfs/file.c
 +++ b/fs/btrfs/file.c
-@@ -2337,7 +2337,6 @@ static int fill_holes(struct btrfs_trans_handle *trans,
- 
- 		hole_em->block_start = EXTENT_MAP_HOLE;
- 		hole_em->disk_bytenr = EXTENT_MAP_HOLE;
--		hole_em->block_len = 0;
- 		hole_em->disk_num_bytes = 0;
- 		hole_em->generation = trans->transid;
- 
+@@ -1104,7 +1104,7 @@ int btrfs_check_nocow_lock(struct btrfs_inode *inode, loff_t pos,
+ 						   &cached_state);
+ 	}
+ 	ret = can_nocow_extent(&inode->vfs_inode, lockstart, &num_bytes,
+-			NULL, NULL, NULL, nowait, false);
++			       NULL, nowait, false);
+ 	if (ret <= 0)
+ 		btrfs_drew_write_unlock(&root->snapshot_lock);
+ 	else
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index d1c948ea1421..7df295e0046d 100644
+index 8bc1f165193a..89f284ae26a4 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -139,7 +139,7 @@ static noinline int run_delalloc_cow(struct btrfs_inode *inode,
- 				     bool pages_dirty);
- static struct extent_map *create_io_em(struct btrfs_inode *inode, u64 start,
- 				       u64 len, u64 block_start,
--				       u64 block_len, u64 disk_num_bytes,
-+				       u64 disk_num_bytes,
- 				       u64 ram_bytes, int compress_type,
- 				       struct btrfs_file_extent *file_extent,
- 				       int type);
-@@ -1210,7 +1210,6 @@ static void submit_one_async_extent(struct async_chunk *async_chunk,
- 	em = create_io_em(inode, start,
- 			  async_extent->ram_size,	/* len */
- 			  ins.objectid,			/* block_start */
--			  ins.offset,			/* block_len */
- 			  ins.offset,			/* orig_block_len */
- 			  async_extent->ram_size,	/* ram_bytes */
- 			  async_extent->compress_type,
-@@ -1453,7 +1452,6 @@ static noinline int cow_file_range(struct btrfs_inode *inode,
+@@ -1862,16 +1862,10 @@ struct can_nocow_file_extent_args {
+ 	 */
+ 	bool free_path;
  
- 		em = create_io_em(inode, start, ins.offset, /* len */
- 				  ins.objectid, /* block_start */
--				  ins.offset, /* block_len */
- 				  ins.offset, /* orig_block_len */
- 				  ram_size, /* ram_bytes */
- 				  BTRFS_COMPRESS_NONE, /* compress_type */
-@@ -2194,7 +2192,6 @@ static noinline int run_delalloc_nocow(struct btrfs_inode *inode,
+-	/* Output fields. Only set when can_nocow_file_extent() returns 1. */
+-
+-	u64 disk_bytenr;
+-	u64 disk_num_bytes;
+-	u64 extent_offset;
+-
+-	/* Number of bytes that can be written to in NOCOW mode. */
+-	u64 num_bytes;
+-
+-	/* The expected file extent for the NOCOW write. */
++	/*
++	 * Output fields. Only set when can_nocow_file_extent() returns 1.
++	 * The expected file extent for the NOCOW write.
++	 */
+ 	struct btrfs_file_extent file_extent;
+ };
  
- 			em = create_io_em(inode, cur_offset, nocow_args.num_bytes,
- 					  nocow_args.disk_bytenr, /* block_start */
--					  nocow_args.num_bytes, /* block_len */
- 					  nocow_args.disk_num_bytes, /* orig_block_len */
- 					  ram_bytes, BTRFS_COMPRESS_NONE,
+@@ -1894,6 +1888,7 @@ static int can_nocow_file_extent(struct btrfs_path *path,
+ 	struct btrfs_root *root = inode->root;
+ 	struct btrfs_file_extent_item *fi;
+ 	struct btrfs_root *csum_root;
++	u64 io_start;
+ 	u64 extent_end;
+ 	u8 extent_type;
+ 	int can_nocow = 0;
+@@ -1906,11 +1901,6 @@ static int can_nocow_file_extent(struct btrfs_path *path,
+ 	if (extent_type == BTRFS_FILE_EXTENT_INLINE)
+ 		goto out;
+ 
+-	/* Can't access these fields unless we know it's not an inline extent. */
+-	args->disk_bytenr = btrfs_file_extent_disk_bytenr(leaf, fi);
+-	args->disk_num_bytes = btrfs_file_extent_disk_num_bytes(leaf, fi);
+-	args->extent_offset = btrfs_file_extent_offset(leaf, fi);
+-
+ 	if (!(inode->flags & BTRFS_INODE_NODATACOW) &&
+ 	    extent_type == BTRFS_FILE_EXTENT_REG)
+ 		goto out;
+@@ -1926,7 +1916,7 @@ static int can_nocow_file_extent(struct btrfs_path *path,
+ 		goto out;
+ 
+ 	/* An explicit hole, must COW. */
+-	if (args->disk_bytenr == 0)
++	if (btrfs_file_extent_disk_num_bytes(leaf, fi) == 0)
+ 		goto out;
+ 
+ 	/* Compressed/encrypted/encoded extents must be COWed. */
+@@ -1951,8 +1941,8 @@ static int can_nocow_file_extent(struct btrfs_path *path,
+ 	btrfs_release_path(path);
+ 
+ 	ret = btrfs_cross_ref_exist(root, btrfs_ino(inode),
+-				    key->offset - args->extent_offset,
+-				    args->disk_bytenr, args->strict, path);
++				    key->offset - args->file_extent.offset,
++				    args->file_extent.disk_bytenr, args->strict, path);
+ 	WARN_ON_ONCE(ret > 0 && is_freespace_inode);
+ 	if (ret != 0)
+ 		goto out;
+@@ -1973,21 +1963,18 @@ static int can_nocow_file_extent(struct btrfs_path *path,
+ 	    atomic_read(&root->snapshot_force_cow))
+ 		goto out;
+ 
+-	args->disk_bytenr += args->extent_offset;
+-	args->disk_bytenr += args->start - key->offset;
+-	args->num_bytes = min(args->end + 1, extent_end) - args->start;
+-
+-	args->file_extent.num_bytes = args->num_bytes;
++	args->file_extent.num_bytes = min(args->end + 1, extent_end) - args->start;
+ 	args->file_extent.offset += args->start - key->offset;
++	io_start = args->file_extent.disk_bytenr + args->file_extent.offset;
+ 
+ 	/*
+ 	 * Force COW if csums exist in the range. This ensures that csums for a
+ 	 * given extent are either valid or do not exist.
+ 	 */
+ 
+-	csum_root = btrfs_csum_root(root->fs_info, args->disk_bytenr);
+-	ret = btrfs_lookup_csums_list(csum_root, args->disk_bytenr,
+-				      args->disk_bytenr + args->num_bytes - 1,
++	csum_root = btrfs_csum_root(root->fs_info, io_start);
++	ret = btrfs_lookup_csums_list(csum_root, io_start,
++				      io_start + args->file_extent.num_bytes - 1,
+ 				      NULL, nowait);
+ 	WARN_ON_ONCE(ret > 0 && is_freespace_inode);
+ 	if (ret != 0)
+@@ -2046,7 +2033,6 @@ static noinline int run_delalloc_nocow(struct btrfs_inode *inode,
+ 		struct extent_buffer *leaf;
+ 		struct extent_state *cached_state = NULL;
+ 		u64 extent_end;
+-		u64 ram_bytes;
+ 		u64 nocow_end;
+ 		int extent_type;
+ 		bool is_prealloc;
+@@ -2125,7 +2111,6 @@ static noinline int run_delalloc_nocow(struct btrfs_inode *inode,
+ 			ret = -EUCLEAN;
+ 			goto error;
+ 		}
+-		ram_bytes = btrfs_file_extent_ram_bytes(leaf, fi);
+ 		extent_end = btrfs_file_extent_end(path);
+ 
+ 		/*
+@@ -2145,7 +2130,9 @@ static noinline int run_delalloc_nocow(struct btrfs_inode *inode,
+ 			goto must_cow;
+ 
+ 		ret = 0;
+-		nocow_bg = btrfs_inc_nocow_writers(fs_info, nocow_args.disk_bytenr);
++		nocow_bg = btrfs_inc_nocow_writers(fs_info,
++				nocow_args.file_extent.disk_bytenr +
++				nocow_args.file_extent.offset);
+ 		if (!nocow_bg) {
+ must_cow:
+ 			/*
+@@ -2181,16 +2168,18 @@ static noinline int run_delalloc_nocow(struct btrfs_inode *inode,
+ 			}
+ 		}
+ 
+-		nocow_end = cur_offset + nocow_args.num_bytes - 1;
++		nocow_end = cur_offset + nocow_args.file_extent.num_bytes - 1;
+ 		lock_extent(&inode->io_tree, cur_offset, nocow_end, &cached_state);
+ 
+ 		is_prealloc = extent_type == BTRFS_FILE_EXTENT_PREALLOC;
+ 		if (is_prealloc) {
+ 			struct extent_map *em;
+ 
+-			em = create_io_em(inode, cur_offset, nocow_args.num_bytes,
+-					  nocow_args.disk_num_bytes, /* orig_block_len */
+-					  ram_bytes, BTRFS_COMPRESS_NONE,
++			em = create_io_em(inode, cur_offset,
++					  nocow_args.file_extent.num_bytes,
++					  nocow_args.file_extent.disk_num_bytes,
++					  nocow_args.file_extent.ram_bytes,
++					  BTRFS_COMPRESS_NONE,
  					  &nocow_args.file_extent,
-@@ -4998,7 +4995,6 @@ int btrfs_cont_expand(struct btrfs_inode *inode, loff_t oldsize, loff_t size)
+ 					  BTRFS_ORDERED_PREALLOC);
+ 			if (IS_ERR(em)) {
+@@ -2203,9 +2192,16 @@ static noinline int run_delalloc_nocow(struct btrfs_inode *inode,
+ 			free_extent_map(em);
+ 		}
  
- 			hole_em->block_start = EXTENT_MAP_HOLE;
- 			hole_em->disk_bytenr = EXTENT_MAP_HOLE;
--			hole_em->block_len = 0;
- 			hole_em->disk_num_bytes = 0;
- 			hole_em->ram_bytes = hole_size;
- 			hole_em->generation = btrfs_get_fs_generation(fs_info);
-@@ -6859,7 +6855,6 @@ struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
- 	em->start = EXTENT_MAP_HOLE;
- 	em->disk_bytenr = EXTENT_MAP_HOLE;
- 	em->len = (u64)-1;
--	em->block_len = (u64)-1;
++		/*
++		 * Check btrfs_create_dio_extent() for why we intentionally pass
++		 * incorrect value for NOCOW/PREALLOC OEs.
++		 */
+ 		ordered = btrfs_alloc_ordered_extent(inode, cur_offset,
+-				nocow_args.num_bytes, nocow_args.num_bytes,
+-				nocow_args.disk_bytenr, nocow_args.num_bytes, 0,
++				nocow_args.file_extent.num_bytes,
++				nocow_args.file_extent.num_bytes,
++				nocow_args.file_extent.disk_bytenr +
++				nocow_args.file_extent.offset,
++				nocow_args.file_extent.num_bytes, 0,
+ 				is_prealloc
+ 				? (1 << BTRFS_ORDERED_PREALLOC)
+ 				: (1 << BTRFS_ORDERED_NOCOW),
+@@ -7144,8 +7140,7 @@ static bool btrfs_extent_readonly(struct btrfs_fs_info *fs_info, u64 bytenr)
+  *	 any ordered extents.
+  */
+ noinline int can_nocow_extent(struct inode *inode, u64 offset, u64 *len,
+-			      u64 *orig_block_len,
+-			      u64 *ram_bytes, struct btrfs_file_extent *file_extent,
++			      struct btrfs_file_extent *file_extent,
+ 			      bool nowait, bool strict)
+ {
+ 	struct btrfs_fs_info *fs_info = inode_to_fs_info(inode);
+@@ -7196,8 +7191,6 @@ noinline int can_nocow_extent(struct inode *inode, u64 offset, u64 *len,
  
- 	path = btrfs_alloc_path();
- 	if (!path) {
-@@ -7017,7 +7012,6 @@ static struct extent_map *btrfs_create_dio_extent(struct btrfs_inode *inode,
- 						  const u64 start,
- 						  const u64 len,
- 						  const u64 block_start,
--						  const u64 block_len,
- 						  const u64 orig_block_len,
- 						  const u64 ram_bytes,
- 						  const int type,
-@@ -7028,14 +7022,14 @@ static struct extent_map *btrfs_create_dio_extent(struct btrfs_inode *inode,
+ 	fi = btrfs_item_ptr(leaf, path->slots[0], struct btrfs_file_extent_item);
+ 	found_type = btrfs_file_extent_type(leaf, fi);
+-	if (ram_bytes)
+-		*ram_bytes = btrfs_file_extent_ram_bytes(leaf, fi);
  
- 	if (type != BTRFS_ORDERED_NOCOW) {
- 		em = create_io_em(inode, start, len, block_start,
--				  block_len, orig_block_len, ram_bytes,
-+				  orig_block_len, ram_bytes,
- 				  BTRFS_COMPRESS_NONE, /* compress_type */
- 				  file_extent, type);
- 		if (IS_ERR(em))
- 			goto out;
+ 	nocow_args.start = offset;
+ 	nocow_args.end = offset + *len - 1;
+@@ -7215,14 +7208,15 @@ noinline int can_nocow_extent(struct inode *inode, u64 offset, u64 *len,
  	}
- 	ordered = btrfs_alloc_ordered_extent(inode, start, len, len,
--					     block_start, block_len, 0,
-+					     block_start, len, 0,
- 					     (1 << type) |
- 					     (1 << BTRFS_ORDERED_DIRECT),
- 					     BTRFS_COMPRESS_NONE);
-@@ -7087,7 +7081,7 @@ static struct extent_map *btrfs_new_extent_direct(struct btrfs_inode *inode,
- 	file_extent.offset = 0;
- 	file_extent.compression = BTRFS_COMPRESS_NONE;
- 	em = btrfs_create_dio_extent(inode, dio_data, start, ins.offset,
--				     ins.objectid, ins.offset, ins.offset,
-+				     ins.objectid, ins.offset,
- 				     ins.offset, BTRFS_ORDERED_REGULAR,
- 				     &file_extent);
- 	btrfs_dec_block_group_reservations(fs_info, ins.objectid);
-@@ -7328,7 +7322,7 @@ static int lock_extent_direct(struct inode *inode, u64 lockstart, u64 lockend,
- /* The callers of this must take lock_extent() */
- static struct extent_map *create_io_em(struct btrfs_inode *inode, u64 start,
- 				       u64 len, u64 block_start,
--				       u64 block_len, u64 disk_num_bytes,
-+				       u64 disk_num_bytes,
- 				       u64 ram_bytes, int compress_type,
- 				       struct btrfs_file_extent *file_extent,
- 				       int type)
-@@ -7350,16 +7344,10 @@ static struct extent_map *create_io_em(struct btrfs_inode *inode, u64 start,
  
- 	switch (type) {
- 	case BTRFS_ORDERED_PREALLOC:
--		/* Uncompressed extents. */
--		ASSERT(block_len == len);
--
- 		/* We're only referring part of a larger preallocated extent. */
--		ASSERT(block_len <= ram_bytes);
-+		ASSERT(len <= ram_bytes);
- 		break;
- 	case BTRFS_ORDERED_REGULAR:
--		/* Uncompressed extents. */
--		ASSERT(block_len == len);
--
- 		/* COW results a new extent matching our file extent size. */
- 		ASSERT(disk_num_bytes == len);
- 		ASSERT(ram_bytes == len);
-@@ -7385,7 +7373,6 @@ static struct extent_map *create_io_em(struct btrfs_inode *inode, u64 start,
+ 	ret = 0;
+-	if (btrfs_extent_readonly(fs_info, nocow_args.disk_bytenr))
++	if (btrfs_extent_readonly(fs_info,
++				nocow_args.file_extent.disk_bytenr + nocow_args.file_extent.offset))
+ 		goto out;
  
- 	em->start = start;
- 	em->len = len;
--	em->block_len = block_len;
- 	em->block_start = block_start;
- 	em->disk_bytenr = file_extent->disk_bytenr;
- 	em->disk_num_bytes = disk_num_bytes;
-@@ -7474,7 +7461,7 @@ static int btrfs_get_blocks_direct_write(struct extent_map **map,
+ 	if (!(BTRFS_I(inode)->flags & BTRFS_INODE_NODATACOW) &&
+ 	    found_type == BTRFS_FILE_EXTENT_PREALLOC) {
+ 		u64 range_end;
+ 
+-		range_end = round_up(offset + nocow_args.num_bytes,
++		range_end = round_up(offset + nocow_args.file_extent.num_bytes,
+ 				     root->fs_info->sectorsize) - 1;
+ 		ret = test_range_bit_exists(io_tree, offset, range_end, EXTENT_DELALLOC);
+ 		if (ret) {
+@@ -7231,13 +7225,11 @@ noinline int can_nocow_extent(struct inode *inode, u64 offset, u64 *len,
+ 		}
+ 	}
+ 
+-	if (orig_block_len)
+-		*orig_block_len = nocow_args.disk_num_bytes;
+ 	if (file_extent)
+ 		memcpy(file_extent, &nocow_args.file_extent,
+ 		       sizeof(struct btrfs_file_extent));
+ 
+-	*len = nocow_args.num_bytes;
++	*len = nocow_args.file_extent.num_bytes;
+ 	ret = 1;
+ out:
+ 	btrfs_free_path(path);
+@@ -7422,7 +7414,7 @@ static int btrfs_get_blocks_direct_write(struct extent_map **map,
+ 	struct btrfs_file_extent file_extent = { 0 };
+ 	struct extent_map *em = *map;
+ 	int type;
+-	u64 block_start, orig_block_len, ram_bytes;
++	u64 block_start;
+ 	struct btrfs_block_group *bg;
+ 	bool can_nocow = false;
+ 	bool space_reserved = false;
+@@ -7450,7 +7442,6 @@ static int btrfs_get_blocks_direct_write(struct extent_map **map,
+ 		block_start = extent_map_block_start(em) + (start - em->start);
+ 
+ 		if (can_nocow_extent(inode, start, &len,
+-				     &orig_block_len, &ram_bytes,
+ 				     &file_extent, false, false) == 1) {
+ 			bg = btrfs_inc_nocow_writers(fs_info, block_start);
+ 			if (bg)
+@@ -7477,8 +7468,8 @@ static int btrfs_get_blocks_direct_write(struct extent_map **map,
+ 		space_reserved = true;
  
  		em2 = btrfs_create_dio_extent(BTRFS_I(inode), dio_data, start, len,
- 					      block_start,
--					      len, orig_block_len,
-+					      orig_block_len,
- 					      ram_bytes, type,
+-					      orig_block_len,
+-					      ram_bytes, type,
++					      file_extent.disk_num_bytes,
++					      file_extent.ram_bytes, type,
  					      &file_extent);
  		btrfs_dec_nocow_writers(bg);
-@@ -9628,7 +9615,6 @@ static int __btrfs_prealloc_file_range(struct inode *inode, int mode,
- 		em->block_start = ins.objectid;
- 		em->disk_bytenr = ins.objectid;
- 		em->offset = 0;
--		em->block_len = ins.offset;
- 		em->disk_num_bytes = ins.offset;
- 		em->ram_bytes = ins.offset;
- 		em->flags |= EXTENT_FLAG_PREALLOC;
-@@ -10125,12 +10111,12 @@ ssize_t btrfs_encoded_read(struct kiocb *iocb, struct iov_iter *iter,
- 		 * Bail if the buffer isn't large enough to return the whole
- 		 * compressed extent.
- 		 */
--		if (em->block_len > count) {
-+		if (em->disk_num_bytes > count) {
- 			ret = -ENOBUFS;
- 			goto out_em;
- 		}
--		disk_io_size = em->block_len;
--		count = em->block_len;
-+		disk_io_size = em->disk_num_bytes;
-+		count = em->disk_num_bytes;
- 		encoded->unencoded_len = em->ram_bytes;
- 		encoded->unencoded_offset = iocb->ki_pos - em->start + em->offset;
- 		ret = btrfs_encoded_io_compression_from_extent(fs_info,
-@@ -10378,7 +10364,7 @@ ssize_t btrfs_do_encoded_write(struct kiocb *iocb, struct iov_iter *from,
- 	file_extent.compression = compression;
- 	em = create_io_em(inode, start, num_bytes,
- 			  ins.objectid,
--			  ins.offset, ins.offset, ram_bytes, compression,
-+			  ins.offset, ram_bytes, compression,
- 			  &file_extent, BTRFS_ORDERED_COMPRESSED);
- 	if (IS_ERR(em)) {
- 		ret = PTR_ERR(em);
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 33662b3aad38..a66d9b921f84 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -2912,7 +2912,6 @@ static noinline_for_stack int setup_relocation_extent_mapping(struct inode *inod
+ 		if (type == BTRFS_ORDERED_PREALLOC) {
+@@ -10709,7 +10700,7 @@ static int btrfs_swap_activate(struct swap_info_struct *sis, struct file *file,
+ 		free_extent_map(em);
+ 		em = NULL;
  
- 	em->start = start;
- 	em->len = end + 1 - start;
--	em->block_len = em->len;
- 	em->block_start = block_start;
- 	em->disk_bytenr = block_start;
- 	em->disk_num_bytes = em->len;
-diff --git a/fs/btrfs/tests/extent-map-tests.c b/fs/btrfs/tests/extent-map-tests.c
-index bd56efe37f02..ffdaa6a682af 100644
---- a/fs/btrfs/tests/extent-map-tests.c
-+++ b/fs/btrfs/tests/extent-map-tests.c
-@@ -28,9 +28,10 @@ static int free_extent_map_tree(struct btrfs_inode *inode)
- 		if (refcount_read(&em->refs) != 1) {
- 			ret = -EINVAL;
- 			test_err(
--"em leak: em (start %llu len %llu block_start %llu block_len %llu) refs %d",
-+"em leak: em (start %llu len %llu block_start %llu disk_num_bytes %llu offset %llu) refs %d",
- 				 em->start, em->len, em->block_start,
--				 em->block_len, refcount_read(&em->refs));
-+				 em->disk_num_bytes, em->offset,
-+				 refcount_read(&em->refs));
- 
- 			refcount_set(&em->refs, 1);
- 		}
-@@ -77,7 +78,6 @@ static int test_case_1(struct btrfs_fs_info *fs_info, struct btrfs_inode *inode)
- 	em->start = 0;
- 	em->len = SZ_16K;
- 	em->block_start = 0;
--	em->block_len = SZ_16K;
- 	em->disk_bytenr = 0;
- 	em->disk_num_bytes = SZ_16K;
- 	em->ram_bytes = SZ_16K;
-@@ -101,7 +101,6 @@ static int test_case_1(struct btrfs_fs_info *fs_info, struct btrfs_inode *inode)
- 	em->start = SZ_16K;
- 	em->len = SZ_4K;
- 	em->block_start = SZ_32K; /* avoid merging */
--	em->block_len = SZ_4K;
- 	em->disk_bytenr = SZ_32K; /* avoid merging */
- 	em->disk_num_bytes = SZ_4K;
- 	em->ram_bytes = SZ_4K;
-@@ -125,7 +124,6 @@ static int test_case_1(struct btrfs_fs_info *fs_info, struct btrfs_inode *inode)
- 	em->start = start;
- 	em->len = len;
- 	em->block_start = start;
--	em->block_len = len;
- 	em->disk_bytenr = start;
- 	em->disk_num_bytes = len;
- 	em->ram_bytes = len;
-@@ -143,11 +141,11 @@ static int test_case_1(struct btrfs_fs_info *fs_info, struct btrfs_inode *inode)
- 		goto out;
- 	}
- 	if (em->start != 0 || extent_map_end(em) != SZ_16K ||
--	    em->block_start != 0 || em->block_len != SZ_16K) {
-+	    em->block_start != 0 || em->disk_num_bytes != SZ_16K) {
- 		test_err(
--"case1 [%llu %llu]: ret %d return a wrong em (start %llu len %llu block_start %llu block_len %llu",
-+"case1 [%llu %llu]: ret %d return a wrong em (start %llu len %llu block_start %llu disk_num_bytes %llu",
- 			 start, start + len, ret, em->start, em->len,
--			 em->block_start, em->block_len);
-+			 em->block_start, em->disk_num_bytes);
- 		ret = -EINVAL;
- 	}
- 	free_extent_map(em);
-@@ -182,7 +180,6 @@ static int test_case_2(struct btrfs_fs_info *fs_info, struct btrfs_inode *inode)
- 	em->start = 0;
- 	em->len = SZ_1K;
- 	em->block_start = EXTENT_MAP_INLINE;
--	em->block_len = (u64)-1;
- 	em->disk_bytenr = EXTENT_MAP_INLINE;
- 	em->disk_num_bytes = 0;
- 	em->ram_bytes = SZ_1K;
-@@ -206,7 +203,6 @@ static int test_case_2(struct btrfs_fs_info *fs_info, struct btrfs_inode *inode)
- 	em->start = SZ_4K;
- 	em->len = SZ_4K;
- 	em->block_start = SZ_4K;
--	em->block_len = SZ_4K;
- 	em->disk_bytenr = SZ_4K;
- 	em->disk_num_bytes = SZ_4K;
- 	em->ram_bytes = SZ_4K;
-@@ -230,7 +226,6 @@ static int test_case_2(struct btrfs_fs_info *fs_info, struct btrfs_inode *inode)
- 	em->start = 0;
- 	em->len = SZ_1K;
- 	em->block_start = EXTENT_MAP_INLINE;
--	em->block_len = (u64)-1;
- 	em->disk_bytenr = EXTENT_MAP_INLINE;
- 	em->disk_num_bytes = 0;
- 	em->ram_bytes = SZ_1K;
-@@ -247,11 +242,10 @@ static int test_case_2(struct btrfs_fs_info *fs_info, struct btrfs_inode *inode)
- 		goto out;
- 	}
- 	if (em->start != 0 || extent_map_end(em) != SZ_1K ||
--	    em->block_start != EXTENT_MAP_INLINE || em->block_len != (u64)-1) {
-+	    em->block_start != EXTENT_MAP_INLINE) {
- 		test_err(
--"case2 [0 1K]: ret %d return a wrong em (start %llu len %llu block_start %llu block_len %llu",
--			 ret, em->start, em->len, em->block_start,
--			 em->block_len);
-+"case2 [0 1K]: ret %d return a wrong em (start %llu len %llu block_start %llu",
-+			 ret, em->start, em->len, em->block_start);
- 		ret = -EINVAL;
- 	}
- 	free_extent_map(em);
-@@ -282,7 +276,6 @@ static int __test_case_3(struct btrfs_fs_info *fs_info,
- 	em->start = SZ_4K;
- 	em->len = SZ_4K;
- 	em->block_start = SZ_4K;
--	em->block_len = SZ_4K;
- 	em->disk_bytenr = SZ_4K;
- 	em->disk_num_bytes = SZ_4K;
- 	em->ram_bytes = SZ_4K;
-@@ -306,7 +299,6 @@ static int __test_case_3(struct btrfs_fs_info *fs_info,
- 	em->start = 0;
- 	em->len = SZ_16K;
- 	em->block_start = 0;
--	em->block_len = SZ_16K;
- 	em->disk_bytenr = 0;
- 	em->disk_num_bytes = SZ_16K;
- 	em->ram_bytes = SZ_16K;
-@@ -329,11 +321,11 @@ static int __test_case_3(struct btrfs_fs_info *fs_info,
- 	 * em->start.
- 	 */
- 	if (start < em->start || start + len > extent_map_end(em) ||
--	    em->start != em->block_start || em->len != em->block_len) {
-+	    em->start != em->block_start) {
- 		test_err(
- "case3 [%llu %llu): ret %d em (start %llu len %llu block_start %llu block_len %llu)",
- 			 start, start + len, ret, em->start, em->len,
--			 em->block_start, em->block_len);
-+			 em->block_start, em->disk_num_bytes);
- 		ret = -EINVAL;
- 	}
- 	free_extent_map(em);
-@@ -395,7 +387,6 @@ static int __test_case_4(struct btrfs_fs_info *fs_info,
- 	em->start = 0;
- 	em->len = SZ_8K;
- 	em->block_start = 0;
--	em->block_len = SZ_8K;
- 	em->disk_bytenr = 0;
- 	em->disk_num_bytes = SZ_8K;
- 	em->ram_bytes = SZ_8K;
-@@ -419,7 +410,6 @@ static int __test_case_4(struct btrfs_fs_info *fs_info,
- 	em->start = SZ_8K;
- 	em->len = 24 * SZ_1K;
- 	em->block_start = SZ_16K; /* avoid merging */
--	em->block_len = 24 * SZ_1K;
- 	em->disk_bytenr = SZ_16K; /* avoid merging */
- 	em->disk_num_bytes = 24 * SZ_1K;
- 	em->ram_bytes = 24 * SZ_1K;
-@@ -442,7 +432,6 @@ static int __test_case_4(struct btrfs_fs_info *fs_info,
- 	em->start = 0;
- 	em->len = SZ_32K;
- 	em->block_start = 0;
--	em->block_len = SZ_32K;
- 	em->disk_bytenr = 0;
- 	em->disk_num_bytes = SZ_32K;
- 	em->ram_bytes = SZ_32K;
-@@ -462,9 +451,9 @@ static int __test_case_4(struct btrfs_fs_info *fs_info,
- 	}
- 	if (start < em->start || start + len > extent_map_end(em)) {
- 		test_err(
--"case4 [%llu %llu): ret %d, added wrong em (start %llu len %llu block_start %llu block_len %llu)",
-+"case4 [%llu %llu): ret %d, added wrong em (start %llu len %llu block_start %llu disk_num_bytes %llu)",
- 			 start, start + len, ret, em->start, em->len, em->block_start,
--			 em->block_len);
-+			 em->disk_num_bytes);
- 		ret = -EINVAL;
- 	}
- 	free_extent_map(em);
-@@ -529,7 +518,6 @@ static int add_compressed_extent(struct btrfs_inode *inode,
- 	em->start = start;
- 	em->len = len;
- 	em->block_start = block_start;
--	em->block_len = SZ_4K;
- 	em->disk_bytenr = block_start;
- 	em->disk_num_bytes = SZ_4K;
- 	em->ram_bytes = len;
-@@ -753,7 +741,6 @@ static int test_case_6(struct btrfs_fs_info *fs_info, struct btrfs_inode *inode)
- 	em->start = SZ_4K;
- 	em->len = SZ_4K;
- 	em->block_start = SZ_16K;
--	em->block_len = SZ_16K;
- 	em->disk_bytenr = SZ_16K;
- 	em->disk_num_bytes = SZ_16K;
- 	em->ram_bytes = SZ_16K;
-@@ -809,7 +796,6 @@ static int test_case_7(struct btrfs_fs_info *fs_info, struct btrfs_inode *inode)
- 	em->start = 0;
- 	em->len = SZ_16K;
- 	em->block_start = 0;
--	em->block_len = SZ_4K;
- 	em->disk_bytenr = 0;
- 	em->disk_num_bytes = SZ_4K;
- 	em->ram_bytes = SZ_16K;
-@@ -834,7 +820,6 @@ static int test_case_7(struct btrfs_fs_info *fs_info, struct btrfs_inode *inode)
- 	em->start = SZ_32K;
- 	em->len = SZ_16K;
- 	em->block_start = SZ_32K;
--	em->block_len = SZ_16K;
- 	em->disk_bytenr = SZ_32K;
- 	em->disk_num_bytes = SZ_16K;
- 	em->ram_bytes = SZ_16K;
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index c9e8c5f96b1c..13f35180e3a0 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -4648,7 +4648,7 @@ static int log_extent_csums(struct btrfs_trans_handle *trans,
- 	/* If we're compressed we have to save the entire range of csums. */
- 	if (extent_map_is_compressed(em)) {
- 		csum_offset = 0;
--		csum_len = max(em->block_len, em->disk_num_bytes);
-+		csum_len = em->disk_num_bytes;
- 	} else {
- 		csum_offset = mod_start - em->start;
- 		csum_len = mod_len;
-@@ -4698,7 +4698,7 @@ static int log_one_extent(struct btrfs_trans_handle *trans,
- 	else
- 		btrfs_set_stack_file_extent_type(&fi, BTRFS_FILE_EXTENT_REG);
- 
--	block_len = max(em->block_len, em->disk_num_bytes);
-+	block_len = em->disk_num_bytes;
- 	compress_type = extent_map_compression(em);
- 	if (compress_type != BTRFS_COMPRESS_NONE) {
- 		btrfs_set_stack_file_extent_disk_bytenr(&fi, em->block_start);
-diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index 6dacdc1fb63e..3743719d13f2 100644
---- a/include/trace/events/btrfs.h
-+++ b/include/trace/events/btrfs.h
-@@ -292,7 +292,6 @@ TRACE_EVENT_CONDITION(btrfs_get_extent,
- 		__field(	u64,  start		)
- 		__field(	u64,  len		)
- 		__field(	u64,  block_start	)
--		__field(	u64,  block_len		)
- 		__field(	u32,  flags		)
- 		__field(	int,  refs		)
- 	),
-@@ -303,19 +302,17 @@ TRACE_EVENT_CONDITION(btrfs_get_extent,
- 		__entry->start		= map->start;
- 		__entry->len		= map->len;
- 		__entry->block_start	= map->block_start;
--		__entry->block_len	= map->block_len;
- 		__entry->flags		= map->flags;
- 		__entry->refs		= refcount_read(&map->refs);
- 	),
- 
- 	TP_printk_btrfs("root=%llu(%s) ino=%llu start=%llu len=%llu "
--		  "block_start=%llu(%s) block_len=%llu flags=%s refs=%u",
-+		  "block_start=%llu(%s) flags=%s refs=%u",
- 		  show_root_type(__entry->root_objectid),
- 		  __entry->ino,
- 		  __entry->start,
- 		  __entry->len,
- 		  show_map_type(__entry->block_start),
--		  __entry->block_len,
- 		  show_map_flags(__entry->flags),
- 		  __entry->refs)
- );
+-		ret = can_nocow_extent(inode, start, &len, NULL, NULL, NULL, false, true);
++		ret = can_nocow_extent(inode, start, &len, NULL, false, true);
+ 		if (ret < 0) {
+ 			goto out;
+ 		} else if (ret) {
 -- 
 2.45.0
 

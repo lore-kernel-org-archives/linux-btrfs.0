@@ -1,34 +1,34 @@
 Received: from zeniv.linux.org.uk (zeniv.linux.org.uk [62.89.141.173])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D4C301B299;
-	Fri,  3 May 2024 03:23:40 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 06CD51CD3F;
+	Fri,  3 May 2024 03:23:39 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=62.89.141.173
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1714706622; cv=none; b=QxC5lIOimlPryjH9ZSIvuavBgpYYNXYjaZRrkvVCOrt84hJIX6JgWwE4o7hwUH+bLnhlUF3beH6hnBlt6RsyzD3L2x3WISVlobws1wAk/oyrfSeWDwDQoXVazObQLLPqhLdkEtE9+G43NSwxIOsDR0VOwupGcM4nWRZY+FuEPEY=
+	t=1714706622; cv=none; b=C/iWrkciixI9A3HPMe7n6NGpeEunkXvaxkfFNR6gEAptbA5MFmTKNz4NPTBPMTLaEnMm+EFQQe4kpAj4gUj/tMC5ARYn4HCDmX3I7ATJFT+0cDsOmW36z0Z2FEeyCrzosSjLfEc2+qyZHs6z3VGL9aKofutaaf0e+qgS5GsJt4k=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
 	s=arc-20240116; t=1714706622; c=relaxed/simple;
-	bh=T22JrpafRjR0cPiRd37OY+3r5BzgSapXYKLtL7I1f1g=;
+	bh=8ebE4XUh6TIL3U3rsVcYwl6FXdU+e0pvqo+4boUMA0U=;
 	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version; b=N4x+6Oo5Jn9ZBiUIZEI7kJrssqsgJQoXwBOY63L1+8GQJPbltGaMTU8BqFGggXi3C7qCOtvmm45TxLCKnIWqiCiBX3HlcIGLzElc+pr1Ubz6vExeTpFLxwdzGPPGEBL3BvCNoE80R/PMshdDZfsF32gHln0S7Wlob2c1hugoaF8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=zeniv.linux.org.uk; spf=none smtp.mailfrom=ftp.linux.org.uk; dkim=pass (2048-bit key) header.d=linux.org.uk header.i=@linux.org.uk header.b=vQxxp3bQ; arc=none smtp.client-ip=62.89.141.173
+	 MIME-Version; b=EMKIU6K7wUkjR0ymkeslLqVX+gXMC/UMKdaWCLcn7UTV2vIhdHjJez6ltHy2GM9zJBQZ6SGe3FuOe9FEYRJsCjy5X8PEIN9F+GTZTJNPWFcLLH+pDdxxbsgF0u29mK2XeY9CJm0TeOVWneGqm267zHE+Qjy3yI6YppO4xMW6Dpk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=zeniv.linux.org.uk; spf=none smtp.mailfrom=ftp.linux.org.uk; dkim=pass (2048-bit key) header.d=linux.org.uk header.i=@linux.org.uk header.b=muwBl8fJ; arc=none smtp.client-ip=62.89.141.173
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=zeniv.linux.org.uk
 Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=ftp.linux.org.uk
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=linux.org.uk header.i=@linux.org.uk header.b="vQxxp3bQ"
+	dkim=pass (2048-bit key) header.d=linux.org.uk header.i=@linux.org.uk header.b="muwBl8fJ"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
 	d=linux.org.uk; s=zeniv-20220401; h=Sender:Content-Transfer-Encoding:
 	MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:
 	Reply-To:Content-Type:Content-ID:Content-Description;
-	bh=zwCOMy2NEj3BPtx134SFdJYS70Xwr8CQmU8M48tauxc=; b=vQxxp3bQsUGSpNF0seAOsviYP4
-	KJuxYmU9WWHgqbug2UkvbfQuqUqy/3mRFSZDXr5a0kLXlv5/LhgE55N/NK0fg62uO5SlwGrA7lSd5
-	lJ+jLPXj1/Vq0imGW4PcTzoRQud9Zi0OWOtm4tzzO2gCCtxl8nYKM/f5l1oK3FC6cQse6DsuyXHi9
-	aryull+gkzdB9rS32Bfv17kkMLfB49QtBIVAfhXe6hvhvIjG+hNaosAtk4PBjVf+mt9ysL9RVpFF7
-	YOJXqJKJNpN8/bFleTTnAyI65ZaKrPX9QXjJlTuntfduTREeAxh4ubmt2A0H2aEQYMSeQ72s4hzKH
-	Wdhuk4IQ==;
+	bh=Ve7iu3CXoCO+LauZkbPs8hbuR/S5IyZ4gzxOBBwRvaY=; b=muwBl8fJadoWlPuoDDbZv4caNb
+	mvU3noT3VW7Ak7LfsjC7+LIBuOu54+uW9jQc7uyxlkVWHBJCUQMRBPhud1cOvekjZ84moQJUCY4yB
+	yGA6QqY23MvAuqUe8a8jAysOOD7+Z/HL0HuN/mQq7IRhyT9RgcQx7miIi3olySNx3AQqXg56VtPqy
+	8j6ibVKPnkO5wr+d9Lnz6xHGtOXJzDQxezt2tG2mUImVvcOBEcSQLfx/JUyRNnw9mFoyqr6bxF9IA
+	btCRrkA1vTLi2m8/YEOx57hBW0VEJE+74fdOMg2m7IcvtegMqB50Fyg7p4vqR06B5wi7ey/Wrv/B9
+	6nDTnLOA==;
 Received: from viro by zeniv.linux.org.uk with local (Exim 4.96 #2 (Red Hat Linux))
-	id 1s2jWF-00A2W8-08;
-	Fri, 03 May 2024 03:23:31 +0000
+	id 1s2jWE-00A2W3-2E;
+	Fri, 03 May 2024 03:23:30 +0000
 From: Al Viro <viro@zeniv.linux.org.uk>
 To: linux-fsdevel@vger.org
 Cc: Linus Torvalds <torvalds@linux-foundation.org>,
@@ -39,9 +39,9 @@ Cc: Linus Torvalds <torvalds@linux-foundation.org>,
 	linux-btrfs@vger.kernel.org,
 	"Rafael J. Wysocki" <rafael@kernel.org>,
 	Andrew Morton <akpm@linux-foundation.org>
-Subject: [PATCH v2 9/9] make set_blocksize() fail unless block device is opened exclusive
-Date: Fri,  3 May 2024 04:23:29 +0100
-Message-Id: <20240503032329.2392931-9-viro@zeniv.linux.org.uk>
+Subject: [PATCH v2 7/9] btrfs_get_bdev_and_sb(): call set_blocksize() only for exclusive opens
+Date: Fri,  3 May 2024 04:23:27 +0100
+Message-Id: <20240503032329.2392931-7-viro@zeniv.linux.org.uk>
 X-Mailer: git-send-email 2.40.1
 In-Reply-To: <20240503032329.2392931-1-viro@zeniv.linux.org.uk>
 References: <20240503031833.GU2118490@ZenIV>
@@ -55,41 +55,60 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Sender: Al Viro <viro@ftp.linux.org.uk>
 
+btrfs_get_bdev_and_sb() has two callers - btrfs_open_one_device(),
+which asks for open to be exclusive and btrfs_get_dev_args_from_path(),
+which doesn't.  Currently it does set_blocksize() in all cases.
+
+I'm rather dubious about the need to do set_blocksize() anywhere in btrfs,
+to be honest - there's some access to page cache of underlying block
+devices in there, but it's nowhere near the hot paths, AFAICT.
+
+In any case, btrfs_get_dev_args_from_path() only needs to read
+the on-disk superblock and copy several fields out of it; all
+callers are only interested in devices that are already opened
+and brought into per-filesystem set, so setting the block size
+is redundant for those and actively harmful if we are given
+a pathname of unrelated device.
+
+So we only need btrfs_get_bdev_and_sb() to call set_blocksize()
+when it's asked to open exclusive.
+
+Reviewed-by: Christoph Hellwig <hch@lst.de>
+Reviewed-by: Christian Brauner <brauner@kernel.org>
 Signed-off-by: Al Viro <viro@zeniv.linux.org.uk>
 ---
- Documentation/filesystems/porting.rst | 7 +++++++
- block/bdev.c                          | 3 +++
- 2 files changed, 10 insertions(+)
+ fs/btrfs/volumes.c | 11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)
 
-diff --git a/Documentation/filesystems/porting.rst b/Documentation/filesystems/porting.rst
-index 1be76ef117b3..5503d5c614a7 100644
---- a/Documentation/filesystems/porting.rst
-+++ b/Documentation/filesystems/porting.rst
-@@ -1134,3 +1134,10 @@ superblock of the main block device, i.e., the one stored in sb->s_bdev. Block
- device freezing now works for any block device owned by a given superblock, not
- just the main block device. The get_active_super() helper and bd_fsfreeze_sb
- pointer are gone.
-+
-+---
-+
-+**mandatory**
-+
-+set_blocksize() takes opened struct file instead of struct block_device now
-+and it *must* be opened exclusive.
-diff --git a/block/bdev.c b/block/bdev.c
-index a329ff9be11d..a89bce368b64 100644
---- a/block/bdev.c
-+++ b/block/bdev.c
-@@ -157,6 +157,9 @@ int set_blocksize(struct file *file, int size)
- 	if (size < bdev_logical_block_size(bdev))
- 		return -EINVAL;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index f15591f3e54f..43af5a9fb547 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -482,10 +482,12 @@ btrfs_get_bdev_and_sb(const char *device_path, blk_mode_t flags, void *holder,
  
-+	if (!file->private_data)
-+		return -EINVAL;
-+
- 	/* Don't change the size if it is same as current */
- 	if (inode->i_blkbits != blksize_bits(size)) {
+ 	if (flush)
  		sync_blockdev(bdev);
+-	ret = set_blocksize(bdev, BTRFS_BDEV_BLOCKSIZE);
+-	if (ret) {
+-		fput(*bdev_file);
+-		goto error;
++	if (holder) {
++		ret = set_blocksize(bdev, BTRFS_BDEV_BLOCKSIZE);
++		if (ret) {
++			fput(*bdev_file);
++			goto error;
++		}
+ 	}
+ 	invalidate_bdev(bdev);
+ 	*disk_super = btrfs_read_dev_super(bdev);
+@@ -498,6 +500,7 @@ btrfs_get_bdev_and_sb(const char *device_path, blk_mode_t flags, void *holder,
+ 	return 0;
+ 
+ error:
++	*disk_super = NULL;
+ 	*bdev_file = NULL;
+ 	return ret;
+ }
 -- 
 2.39.2
 

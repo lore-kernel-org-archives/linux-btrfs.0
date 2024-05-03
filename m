@@ -1,51 +1,48 @@
-Received: from zeniv.linux.org.uk (zeniv.linux.org.uk [62.89.141.173])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-ej1-f52.google.com (mail-ej1-f52.google.com [209.85.218.52])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EBE6B1BF47;
-	Fri,  3 May 2024 03:23:40 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=62.89.141.173
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7B81F139591
+	for <linux-btrfs@vger.kernel.org>; Fri,  3 May 2024 05:35:09 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.52
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1714706623; cv=none; b=WDc9kHTWVAiW1FqimQafXhx5YSku8Dihx/9i/SB8jvyIXnKB+S4SY8fW4XwPcdKFSQTMooBRwm7ZEex0DGVXRtJoNzYIQUbU11SNBsA3XmkOyK/wM2z5lf+RGgse3rU9IeuXWk+003BAGEYgwCsG4f0OCDtX0b+0+jVQtJjE3T8=
+	t=1714714511; cv=none; b=KSbjJKnWxcLedx7kDrdJ5VzZERlRwlVTyxKzVWYtknLKjDJFLAgBY0mm5M1/5/3O87tpZnC7G3OdNNgEVY2jdhh5HoP6osb2zk4tjA3/4TvkCftwLXqrdf9RpLCY+j4RAJLQvqHr4dFmOA7OiAkWPJxlWOFV7hNRJ/7UOWp5w60=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1714706623; c=relaxed/simple;
-	bh=Ny/piFSeo/b8skljYppcXOeFUcUBl2a+DCCTPN5ciBM=;
-	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version; b=gKGb6pquyVEFDnrkvlj+jdSx1Kl9zJ5FPRNRLDj9urWiLLgyA1iYetEeRXbNfs5x89CVB6KF/QTbfjF81Wjo8GNXdMs08sVLWUhDV5DrHzniR80uuUUBYqfGiZSShEo3zGnHb70gNKFyoNYK1r1qXQ4R146asMXaMlLMIol90yE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=zeniv.linux.org.uk; spf=none smtp.mailfrom=ftp.linux.org.uk; dkim=pass (2048-bit key) header.d=linux.org.uk header.i=@linux.org.uk header.b=Cq8g5eR7; arc=none smtp.client-ip=62.89.141.173
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=zeniv.linux.org.uk
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=ftp.linux.org.uk
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=linux.org.uk header.i=@linux.org.uk header.b="Cq8g5eR7"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=linux.org.uk; s=zeniv-20220401; h=Sender:Content-Transfer-Encoding:
-	MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:
-	Reply-To:Content-Type:Content-ID:Content-Description;
-	bh=93pWwp0Zz5qYrYHUR6o6Sk8WkFP1Q/YOlDatYiLWcaw=; b=Cq8g5eR7johzHILI0qWZufmuF0
-	sfNlpGtOrp8JpgmQjrBpRpi6jTP0aGXQDUkE8OkIBYCUzAG4gPCE7/LaQqr4a5mVRTg78I2xRt4Er
-	4MBYRguwXyobe35JYEfG3zIIru//QRvnh7/g5xXUF+KSoozVarsYbmHDQy3DO1vRf1UPu0TPT3/3P
-	m8k9lyf356v8bOAk21a9B1i+bp+tdLc/P/YsoXxagd7TTwwGvd929rkypmxabv3ZFVqyE5YL7Pnw1
-	u+aTkeroVrquF41Ujo4ktwmF8e67D+wQ+ojacHfhYmqb5lFQSEAYpKIWp6tOfHl0gByVDQycbo6Au
-	q/44jmQA==;
-Received: from viro by zeniv.linux.org.uk with local (Exim 4.96 #2 (Red Hat Linux))
-	id 1s2jWE-00A2Vu-0S;
-	Fri, 03 May 2024 03:23:30 +0000
-From: Al Viro <viro@zeniv.linux.org.uk>
-To: linux-fsdevel@vger.org
-Cc: Linus Torvalds <torvalds@linux-foundation.org>,
-	Christian Brauner <brauner@kernel.org>,
-	Christoph Hellwig <hch@lst.de>,
-	linux-block@vger.kernel.org,
-	Jens Axboe <axboe@kernel.dk>,
-	linux-btrfs@vger.kernel.org,
-	"Rafael J. Wysocki" <rafael@kernel.org>,
-	Andrew Morton <akpm@linux-foundation.org>
-Subject: [PATCH v2 3/9] swapon(2)/swapoff(2): don't bother with block size
-Date: Fri,  3 May 2024 04:23:23 +0100
-Message-Id: <20240503032329.2392931-3-viro@zeniv.linux.org.uk>
-X-Mailer: git-send-email 2.40.1
-In-Reply-To: <20240503032329.2392931-1-viro@zeniv.linux.org.uk>
-References: <20240503031833.GU2118490@ZenIV>
- <20240503032329.2392931-1-viro@zeniv.linux.org.uk>
+	s=arc-20240116; t=1714714511; c=relaxed/simple;
+	bh=IxfLcYEGu2vZhozhLf2zzY2UEHrUL6vCIwQBoRntHZQ=;
+	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version; b=aT8WPqG3Hqqgs4B+6+YfcSQJTloyxYYgl7RKd8+OCRgGzNMJz2fTpQ0LCNf+rFXUs5TMTYN10sWdZqhfEPQBDM5Q2OqNy81++ucRlJa3GRa4Sl5QgQU+TJAcv3RXKe2t1lNNMB/UTi2IrpeK7b8MUSgWPH5ZIQbnIrLWaVzDLSI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=kernel.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.218.52
+Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=kernel.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Received: by mail-ej1-f52.google.com with SMTP id a640c23a62f3a-a55911bff66so1162179666b.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 02 May 2024 22:35:09 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1714714508; x=1715319308;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=CnIzRxAKWsNwqdlccr13lXN81lXKA5W9Ab3dXAmZcTw=;
+        b=Hq4yIouqxztU7axYI2+GkU4BFyvXF+L0FsRv3xa2rSTOtUkSOx6a9eyPACbjweUD0Q
+         p+6bWPKYBILHHexhZQ4sZjmtv1GwjtMP/qLYQcn3I0jS46F9SaJG4AZ+j4mxBJXPjQVO
+         a+RfGbfomQ7ZGqaK5kxgqNd7ES1k8cMkatEw159aL1SNKLu6OjxNUaEbyI3Pf81Akudt
+         B3KXA+UD5QwBjxnhAp4kyN2gl8S0O9ureR3UCT9Oz7lViuEMaFseUNk0e5WjjNpzbLkL
+         4bX8L9hCDQze5XHhxn3LUr7PAFgh9zJN5Tokh55zZrG/6V8pj33od1zqzyJnTQvzn55b
+         itsw==
+X-Gm-Message-State: AOJu0YwiZZV6VkefpOfWGJLbykGanG01ST6+SxaFQCW3+8pBmpKcQVtF
+	ZQ4VcPsTqdx2Cxo+Zp+3ERKx0+AQxrhnAPubhSh9bpBP8Ps5ArwRKqnnba3g
+X-Google-Smtp-Source: AGHT+IFabRDRUU0p/Ht59TX4TojOYBX2YR7LPmfNDvyjHAUKpqjQ5vgfbuIc+eEawglv4uYrnx4fgQ==
+X-Received: by 2002:a17:906:114a:b0:a58:ca91:7855 with SMTP id i10-20020a170906114a00b00a58ca917855mr982310eja.0.1714714507630;
+        Thu, 02 May 2024 22:35:07 -0700 (PDT)
+Received: from nuc.fritz.box (p200300f6f718be00fa633ffffe02074c.dip0.t-ipconnect.de. [2003:f6:f718:be00:fa63:3fff:fe02:74c])
+        by smtp.gmail.com with ESMTPSA id i2-20020a1709061cc200b00a598a32f21bsm534275ejh.102.2024.05.02.22.35.06
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Thu, 02 May 2024 22:35:07 -0700 (PDT)
+From: Johannes Thumshirn <jth@kernel.org>
+To: linux-btrfs@vger.kernel.org
+Cc: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Subject: [PATCH RFC] btrfs: don't hold dev_replace rwsem over whole of btrfs_map_block
+Date: Fri,  3 May 2024 07:34:57 +0200
+Message-Id: <2454cd4eb1694d37056e492af32b23743c63202b.1714663442.git.jth@kernel.org>
+X-Mailer: git-send-email 2.35.3
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -53,93 +50,99 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-Sender: Al Viro <viro@ftp.linux.org.uk>
 
-once upon a time that used to matter; these days we do swap IO for
-swap devices at the level that doesn't give a damn about block size,
-buffer_head or anything of that sort - just attach the page to
-bio, set the location and size (the latter to PAGE_SIZE) and feed
-into queue.
+From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 
-Reviewed-by: Christoph Hellwig <hch@lst.de>
-Reviewed-by: Christian Brauner <brauner@kernel.org>
-Signed-off-by: Al Viro <viro@zeniv.linux.org.uk>
+Don't hold the dev_replace rwsem for the entirety of btrfs_map_block().
+
+It is only needed to protect
+a) calls to find_live_mirror() and
+b) calling into handle_ops_on_dev_replace().
+
+But there is no need to hold the rwsem for any kind of set_io_stripe()
+calls.
+
+So relax taking the dev_replace rwsem to only protect both cases and check
+if the device replace status has changed in the meantime, for which we have
+to re-do the find_live_mirror() calls.
+
+This fixes a deadlock on raid-stripe-tree where device replace performs a
+scrub operation, which in turn calls into btrfs_map_block() to find the
+physical location of the block.
+
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- include/linux/swap.h |  1 -
- mm/swapfile.c        | 12 +-----------
- 2 files changed, 1 insertion(+), 12 deletions(-)
+ fs/btrfs/volumes.c | 30 +++++++++++++++++++-----------
+ 1 file changed, 19 insertions(+), 11 deletions(-)
 
-diff --git a/include/linux/swap.h b/include/linux/swap.h
-index f53d608daa01..a5b640cca459 100644
---- a/include/linux/swap.h
-+++ b/include/linux/swap.h
-@@ -301,7 +301,6 @@ struct swap_info_struct {
- 	struct file *bdev_file;		/* open handle of the bdev */
- 	struct block_device *bdev;	/* swap device or bdev of swap file */
- 	struct file *swap_file;		/* seldom referenced */
--	unsigned int old_block_size;	/* seldom referenced */
- 	struct completion comp;		/* seldom referenced */
- 	spinlock_t lock;		/*
- 					 * protect map scan related fields like
-diff --git a/mm/swapfile.c b/mm/swapfile.c
-index 4919423cce76..304f74d039f3 100644
---- a/mm/swapfile.c
-+++ b/mm/swapfile.c
-@@ -2417,7 +2417,6 @@ SYSCALL_DEFINE1(swapoff, const char __user *, specialfile)
- 	struct inode *inode;
- 	struct filename *pathname;
- 	int err, found = 0;
--	unsigned int old_block_size;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index a3dc88e420d1..3a842b9960b2 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -6649,14 +6649,9 @@ int btrfs_map_block(struct btrfs_fs_info *fs_info, enum btrfs_map_op op,
+ 	max_len = btrfs_max_io_len(map, map_offset, &io_geom);
+ 	*length = min_t(u64, map->chunk_len - map_offset, max_len);
  
- 	if (!capable(CAP_SYS_ADMIN))
- 		return -EPERM;
-@@ -2529,7 +2528,6 @@ SYSCALL_DEFINE1(swapoff, const char __user *, specialfile)
++again:
+ 	down_read(&dev_replace->rwsem);
+ 	dev_replace_is_ongoing = btrfs_dev_replace_is_ongoing(dev_replace);
+-	/*
+-	 * Hold the semaphore for read during the whole operation, write is
+-	 * requested at commit time but must wait.
+-	 */
+-	if (!dev_replace_is_ongoing)
+-		up_read(&dev_replace->rwsem);
+ 
+ 	switch (map->type & BTRFS_BLOCK_GROUP_PROFILE_MASK) {
+ 	case BTRFS_BLOCK_GROUP_RAID0:
+@@ -6689,6 +6684,9 @@ int btrfs_map_block(struct btrfs_fs_info *fs_info, enum btrfs_map_op op,
+ 		map_blocks_single(map, &io_geom);
+ 		break;
+ 	}
++
++	up_read(&dev_replace->rwsem);
++
+ 	if (io_geom.stripe_index >= map->num_stripes) {
+ 		btrfs_crit(fs_info,
+ 			   "stripe index math went horribly wrong, got stripe_index=%u, num_stripes=%u",
+@@ -6784,10 +6782,25 @@ int btrfs_map_block(struct btrfs_fs_info *fs_info, enum btrfs_map_op op,
+ 	if (op != BTRFS_MAP_READ)
+ 		io_geom.max_errors = btrfs_chunk_max_errors(map);
+ 
++	/*
++	 * Check if something changed the dev_replace state since
++	 * we've checked it for the last time and if redo the whole
++	 * mapping operation.
++	 */
++	down_read(&dev_replace->rwsem);
++	if (!dev_replace_is_ongoing &&
++	    btrfs_dev_replace_is_ongoing(dev_replace)) {
++		up_read(&dev_replace->rwsem);
++		goto again;
++	}
++	up_read(&dev_replace->rwsem);
++
+ 	if (dev_replace_is_ongoing && dev_replace->tgtdev != NULL &&
+ 	    op != BTRFS_MAP_READ) {
++		down_read(&dev_replace->rwsem);
+ 		handle_ops_on_dev_replace(op, bioc, dev_replace, logical,
+ 					  &io_geom.num_stripes, &io_geom.max_errors);
++		up_read(&dev_replace->rwsem);
  	}
  
- 	swap_file = p->swap_file;
--	old_block_size = p->old_block_size;
- 	p->swap_file = NULL;
- 	p->max = 0;
- 	swap_map = p->swap_map;
-@@ -2553,7 +2551,6 @@ SYSCALL_DEFINE1(swapoff, const char __user *, specialfile)
+ 	*bioc_ret = bioc;
+@@ -6796,11 +6809,6 @@ int btrfs_map_block(struct btrfs_fs_info *fs_info, enum btrfs_map_op op,
+ 	bioc->mirror_num = io_geom.mirror_num;
  
- 	inode = mapping->host;
- 	if (p->bdev_file) {
--		set_blocksize(p->bdev, old_block_size);
- 		fput(p->bdev_file);
- 		p->bdev_file = NULL;
- 	}
-@@ -2782,21 +2779,15 @@ static struct swap_info_struct *alloc_swap_info(void)
- 
- static int claim_swapfile(struct swap_info_struct *p, struct inode *inode)
- {
--	int error;
--
- 	if (S_ISBLK(inode->i_mode)) {
- 		p->bdev_file = bdev_file_open_by_dev(inode->i_rdev,
- 				BLK_OPEN_READ | BLK_OPEN_WRITE, p, NULL);
- 		if (IS_ERR(p->bdev_file)) {
--			error = PTR_ERR(p->bdev_file);
-+			int error = PTR_ERR(p->bdev_file);
- 			p->bdev_file = NULL;
- 			return error;
- 		}
- 		p->bdev = file_bdev(p->bdev_file);
--		p->old_block_size = block_size(p->bdev);
--		error = set_blocksize(p->bdev, PAGE_SIZE);
--		if (error < 0)
--			return error;
- 		/*
- 		 * Zoned block devices contain zones that have a sequential
- 		 * write only restriction.  Hence zoned block devices are not
-@@ -3235,7 +3226,6 @@ SYSCALL_DEFINE2(swapon, const char __user *, specialfile, int, swap_flags)
- 	free_percpu(p->cluster_next_cpu);
- 	p->cluster_next_cpu = NULL;
- 	if (p->bdev_file) {
--		set_blocksize(p->bdev, p->old_block_size);
- 		fput(p->bdev_file);
- 		p->bdev_file = NULL;
- 	}
+ out:
+-	if (dev_replace_is_ongoing) {
+-		lockdep_assert_held(&dev_replace->rwsem);
+-		/* Unlock and let waiting writers proceed */
+-		up_read(&dev_replace->rwsem);
+-	}
+ 	btrfs_free_chunk_map(map);
+ 	return ret;
+ }
 -- 
-2.39.2
+2.35.3
 

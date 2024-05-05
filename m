@@ -1,41 +1,41 @@
-Received: from mout.gmx.net (mout.gmx.net [212.227.15.18])
+Received: from mout.gmx.net (mout.gmx.net [212.227.15.19])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 075001339A2
-	for <linux-btrfs@vger.kernel.org>; Sun,  5 May 2024 22:26:36 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.15.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 12BEA13B5AA
+	for <linux-btrfs@vger.kernel.org>; Sun,  5 May 2024 22:31:07 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.15.19
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1714947999; cv=none; b=oDC5I6AiC0r9FkEIJhXR/cfVDM6eFYE43SHxuV8u1MRbNMJ0OFViEMlzXteg9YTFoj3Q9/z3/V3tNzESp9YxzJpYYuMWRTK78kymzgLKb9dadzEmSSrR5G8wl8zYQtP0eaqSfAMI4bS+3yRABuobEahMnL1izLdaKiJHfMpA3C0=
+	t=1714948270; cv=none; b=ANQGMNXbtkRkffdqMVux+VvAZp+8opfj4Qm738IrTVlt4pLyVIiYDMJcRHqLU3Y80nFvhwthY9X7WYm8ufgeblDIVtX0Qhy5L6WF0eHdr4J2NoVtLmOf6FxIifh7WOSa7IrNZCmLLl+z8bfVOg0+6p5uTTriP0pbxIwu5deFOU8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1714947999; c=relaxed/simple;
-	bh=+OXx1h0nnZdy7YcNMdNCcPO8uimhtOc9EwORKTugVjQ=;
+	s=arc-20240116; t=1714948270; c=relaxed/simple;
+	bh=j2TfgJT3CTN2XIf9CQ3/CSyS1pV7lUQoXmRmbQBkoIo=;
 	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=URUm9FdQJGUVDmUKVE+nx7Nv4JZ844ESGy+J39g2plAQmUFajiQEbXbg1aJFvuNvI+ukPssOIZYVHXNJcf4xMMtw23jFsYcBLoT8O4wGFwcAIJgyCVZEzDpltmIowrDVPtinsNj2n2jTxnDnVL2fKUg+qA0GIBfExO9H5vJfW44=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=nNdYHwvc; arc=none smtp.client-ip=212.227.15.18
+	 In-Reply-To:Content-Type; b=r1FOD+nnXqc1jw0BpbQEnHk6wlk9Z9oeouihip9zd/3aJ1gWYy+aGEVJqpHZrgd0s4C5Cq1hFiQWaxmolXHU8CaeTX2uvcVbE1kZypnLTe0stJDQyPc6N1rCDY5a1JxOuYDoLYBjfExoq2nU9kJooQSij3d0ratPG3tPSHMszdY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=O+FzB7os; arc=none smtp.client-ip=212.227.15.19
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="nNdYHwvc"
+	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="O+FzB7os"
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1714947987; x=1715552787; i=quwenruo.btrfs@gmx.com;
-	bh=+OXx1h0nnZdy7YcNMdNCcPO8uimhtOc9EwORKTugVjQ=;
+	s=s31663417; t=1714948265; x=1715553065; i=quwenruo.btrfs@gmx.com;
+	bh=j2TfgJT3CTN2XIf9CQ3/CSyS1pV7lUQoXmRmbQBkoIo=;
 	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:
 	 References:From:In-Reply-To:Content-Type:
 	 Content-Transfer-Encoding:cc:content-transfer-encoding:
 	 content-type:date:from:message-id:mime-version:reply-to:subject:
 	 to;
-	b=nNdYHwvcvEHpWu4Ogi96p7M4cWeOHfB7KN9rUfI+y9icsBvDO8kg7yQ7Cskb2HGP
-	 VJEES83Ljvqd28Ve6MCIURzn4zsR7bPC9IbAQMpOY0HUWazb6pkym2dgL9Svej6RD
-	 cK1dW+GsMj2tVJnTR6JzSgmCD4Iv2fpv3wbYnEIXW+8y000xTnTGT7UlZhWSgn5cA
-	 40MZJZ4DdqOHiVEuhhDDqKqpmv9nWXcITv6vDVQAAmCa8yLzkJ8eI4xdsLiqxhxOy
-	 FFw1HE1Rv18H59AEFoiBAft/oqBG/JSfbwwyXWMISNiUhNw0PR7zjzVNmtY8CE3MI
-	 XXurjRm5C18EDO+O0A==
+	b=O+FzB7osy5XVCGvY3iydFT9xZW5XTSdN8DsIB1pzhW6IO8GO3V9ZrTrxymbqbaKp
+	 xUze596P0pYPNjd0avJJEMpxSNisxXkQ2fp0jn1iSWg60aGhflsUr8VegQmkcUwX/
+	 Pn/tnCcL1fZwTYO4P1AJfTL6c+Wstmskru2QrNRr6R8wID9cxMBJamMMG5x+s6JDG
+	 zkS959XByzvAChPWrBxt7+wdeeCXZxH55do96/S20oEt8VcouDSbTq5Jd4G4Yb6rh
+	 dk5epRndnIRd5B/todEbXzg0TDcrwIsmyEbzgWK1OXnjvMuo57nZ6FugbUX5bl71E
+	 KVtwxgSiSMZfLIlMkA==
 X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from [172.16.0.219] ([159.196.52.54]) by mail.gmx.net (mrgmx004
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1MvbBk-1swOMm3930-00r5Ii; Mon, 06
- May 2024 00:26:27 +0200
-Message-ID: <0fe390c1-c6da-491a-88c2-9d419d2486c0@gmx.com>
-Date: Mon, 6 May 2024 07:56:22 +0930
+Received: from [172.16.0.219] ([159.196.52.54]) by mail.gmx.net (mrgmx005
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1MLiCo-1sLPnE394y-00HhVA; Mon, 06
+ May 2024 00:31:05 +0200
+Message-ID: <ac0c71a9-683c-4d0b-a60f-d6cdf975838d@gmx.com>
+Date: Mon, 6 May 2024 08:01:01 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -43,11 +43,9 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: Help with ROFS on Cache Folder Deletion
-To: Eliza May <eliza@riseup.net>, linux-btrfs@vger.kernel.org
-References: <2236adc5-3520-4ceb-ad88-5bcc6afd18d0@riseup.net>
- <3b8eed12-0fb0-4bcd-9b32-1d04d89cc780@gmx.com>
- <7b7cf8e4-90ff-438d-817a-445ce13f5767@riseup.net>
+Subject: Re: btrfs-convert on 24Gb image corrupts files.
+To: Yordan <y16267966@gmail.com>, linux-btrfs@vger.kernel.org
+References: <CAE0VrXL99p1ra6aRyqZgEbHKJ2LBKU0Yn+sPd4WoHxq0pONjGg@mail.gmail.com>
 Content-Language: en-US
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
@@ -74,119 +72,68 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
  INfWh0KbJodf0G48xouesn08cbfUdlphSMXujCA8y5TcNyRuNv2q5Nizl8sKhUZzh4BascoK
  DChBuznBsucCTAGrwPgG4/ul6HnWE8DipMKvkV9ob1xJS2W4WJRPp6QdVrBWJ9cCdtpR6GbL
  iQi22uZXoSPv/0oUrGU+U5X4IvdnvT+8viPzszL5wXswJZfqfy8tmHM85yjObVdIG6AlnrrD
-In-Reply-To: <7b7cf8e4-90ff-438d-817a-445ce13f5767@riseup.net>
+In-Reply-To: <CAE0VrXL99p1ra6aRyqZgEbHKJ2LBKU0Yn+sPd4WoHxq0pONjGg@mail.gmail.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:Ci8NKf0m6z5X+PlbZRp/uw2HYwNjuzpaLJ+yUiT59H/sA4bWSv4
- lB0qrzWx4FLmKYEu3Xpunam0PratG1xc99wa+jz6Qmf497iV/SslmouXW065crNYsfOj1Ml
- KXmQz6zhWx5fyAt2h5ZAfZ+CRgYfzt6oeuYKy6ZOUuCSOUeq2+hjSrmafcPdd1ZZVFjmexF
- K+8u5lJcYYBWC2UlXfoeg==
+X-Provags-ID: V03:K1:GTie2bHT66zD9sQDkDZv5UXPDLYx7pIqHfbqhhZvEMswbP4tKVd
+ 3w3MM+if19l9R6cF223IDmYeZAvu/SLQxiDWm7BdgRR6MJFoHgnbfxfbu47CqXFuWq9sgxn
+ +qro6PEAtIehm9OLlF0Hte9WItvsECjnY/r93KmWkAFK6/pAf314VBMCHdp+NsQrIAaJUnd
+ nZ/RsoRPTscfB/NuvUOOA==
 X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:3bAYUPoMNUM=;mGXOZWrVG4HUgtGvD571eH8B3Ha
- o+U57m1yzXNQIWlTLwRPAT+8qD9+4Y+xS1j+16te8GNqPX+0281UpFvncuKUS7tuLnO/aHQcK
- MeRbEZ8gJMtmfaXotCOcWHbAP0E5mekKLrLVacuKu3XeNI5xZQnZHHHPmkJ3rX8KS8hbHoFtU
- uLcHt1sgeMAZ6zqSU45Qp14QqA5qaCKF06uNpC+iTOD2ytMI/j+S5UHNh1jITAYEYQUXDkupY
- Kyf8Q1IhUOSEQoMymT5TyK0z3DlFs68ZWuC+FAdH3uISRFimvxmcaYDPu/fNsOkxXrj8I2OOu
- Sxq+Wp55aP3rJmDAeEyTZHdvsetLtANK42gKeKIZoBYRmrFprFXuVR1RbxPLztbmZk0jRktCz
- 9miwcgWpBXhR/30KrV0RTBOwnhngGfMoD3xLhc46iAbzVIK1b8UYFJiCBYkpRKBht0vltBTfv
- kPqdbBt1tEk9tE+cTFGlTO2l5JQJx/1FcLlSHfcRDnULb72mD9fD5NTEzd9yKNMRGgBaVm6Sr
- WfqVY3rezc+SUOlskcHY6cWqlJA/9GAk6TAfjOQ+b6duC91oktzhBA0lP0WmVeFEAJGuAULwx
- RWR5fUxpfrhUH6ucuCKzI198v7QKqPPK1JXW9GHJBLoTL0lHF7cTjvWVRvE4ntlhcOHGnr4wh
- 794sYs0+YK1rFAF9YU81UMgB0lF/88U1eg9Y2hTyjy2JzCWpOZWDD+dOXBKuwtFCrBmHoYlrC
- Sfe3Sgs7QzBFbTmz4YEpDeUzJZZV+wbX0ql9xM1JzSh3cNACIAGCu29ApBne/48sh/4C7nWZe
- fKilJVrz0eRc4OB7KvnXtdX9ljFjKJLDSp6Ow0V50KPHM=
+UI-OutboundReport: notjunk:1;M01:P0:DeVO10DGae0=;hXK2sc61YRwcq/oyr16n9XRre4/
+ 8OhyTHwS6Ke2eXpH6j6dXiQ3mjRZouXcAn3qRZTrAJOu8E7zDn+XXjQzBIT9FnPMTz7AImlr7
+ BVnJNq3OkwZ1534JsBHSuB4TtCWKxvySFlJA9F3xQSl6/uTCyRcxWSlWcmJs1cfWsN9N+8P13
+ vRl6YbUae6pIaDF5v67urW7+WFZJU2RgD5b24gr905qjjcXEwkkSoPJON06giy0Shz7n5xz36
+ SGOsgaNIxfduGYYc8Kxvm1vQiAzCJTy2n2nuFjMw5yjeCj9B+5KZ5tzvWlCAGrLVhfcNcl3Fx
+ /mNcA7PcsUyQKsZjvi2QogD1KwLok7/Xy0bXrRJU5ESLACJrrqAPDqiI6J+jxe0xjHDRv9pEI
+ AQpgNlTVvhOVUdNZEwL3Vr2eQRv6gnTOarJVz1vB5K8KYI9LxP001GDAfmtkLdf38VzUbKfI3
+ ogsVwosQOS78qy8Zeb/qvCqXYQbNN7J/n7Ku518nLg5ZBO2tKLIiBZ+FZEUdPZtCQnj1pZjiY
+ Nq6KYVXcgb62b7Qo7BdGpX4oSmgcSmjEQ9E04x/MKbGdYumZgSnUg+07EjmME/yQaaLasNGXd
+ d5KGb7pUD3oHDtV2jAJgWbxtugccaacufwON9enX0EsHFefsfygl1VVR9uCD6wvIp6cpkaksp
+ zcPfuFks7S+TDrZ3H8Lc15Y/+1hl+UqAfMljWsymkJttMBnbO0uNVllBZ1EULymLoWTloN7Mw
+ mXtXVXyTrJwuQxFVVibRZWYw4eYibA6BcIBteCRAEqv+FjLAgRMVpB3OtW0E2dugvXOS3HJlL
+ jd3HMhDVeKPX+k7GV45auoCFicq5OWrKGTccbveJlgWuM=
 
 
 
-=E5=9C=A8 2024/5/6 06:02, Eliza May =E5=86=99=E9=81=93:
-> Hi all,
+=E5=9C=A8 2024/5/6 00:35, Yordan =E5=86=99=E9=81=93:
+> Hi, it's Jordan - the reporter, I'm switching the email server as the
+> first one presumably did dirty things and was rejected by the "mlmmj
+> program managing the mailing list".
 >
-> I have run the tests, removed the failing ram, and the results are here:
+>> Mind to provide the "filefrag -v" output after conversion using Anand's
+> fixes?
 >
-> https://termbin.com/rrsn
+>> Mind to provide the "filefrag -v" output after conversion using Anand's
 >
-> Is this recoverable with a repair?
+> fixes?
+>
+> After applying the 4 patches and compiling:
+>
+[...]
+> (chroot) livecd /k # filefrag -v
+> ./root/.mozilla/firefox/s554srh9.default-release/storage/permanent/chrom=
+e/idb/3561288849sdhlie.sqlite
+> Filesystem type is: 9123683e
+> File size of ./root/.mozilla/firefox/s554srh9.default-release/storage/pe=
+rmanent/chrome/idb/3561288849sdhlie.sqlite
+> is 49152 (12 blocks of 4096 bytes)
+> ext: logical_offset: physical_offset: length: expected: flags:
+> 0: 0.. 1: 2217003.. 2217004: 2: shared
+> 1: 2.. 11: 2217019.. 2217028: 10: 2217005: last,shared,eof
 
-Yes.
+OK, that's the problem, compared to the older values from ext4:
 
-That bitflip introduced backref item is the only corruption, thus "btrfs
-check --repair" should be able to handle it.
+ > 0: 0.. 1: 2217003.. 2217004: 2:
+ > 1: 2.. 10: 2217019.. 2217027: 9: 2217005:
+ > 2: 11.. 11: 2217028.. 2217028: 1: last,unwritten,eof
 
-Thanks,
+The last extent of btrfs still doesn't properly have the preallocated
+flag, thus we read the garbage instead of filling it with 0.
+
+I'll give more comprehensive review on Anand's fix.
+And for the worst case I can change btrfs-convert to create a hole to
+properly fix it.
+
+Thanks for the detailed report!
 Qu
->
-> (My other filesystem returned no errors, and is not included in this.)
->
-> Thank you,
->
-> Eliza
->
->
-> On 5/2/24 12:17 AM, Qu Wenruo wrote:
->>
->>
->> =E5=9C=A8 2024/5/2 15:59, Eliza May =E5=86=99=E9=81=93:
->>> Hi,
->>>
->>>
->>> I am trying to remove the paru .cache folder from my computer, but eve=
-ry
->>> time I do my btrfs filesystem goes read-only. Here is the dmesg output=
-:
->>> https://termbin.com/f4sw
->>>
->>> A scrub found no errors, and I have not yet ran a check -- I will be
->>> doing so and reporting back when I figure out how to do so.
->>>
->>>
->>> My filesystem is a main partition, a separate home subvolume, a var/lo=
-g
->>> subvolume, and a /var/cache/pacman/pkg subfolder, but I am attempting =
-to
->>> delete the paru one; not the pacman one.
->>>
->>>
->>> If there are any other logs or details I should include, let me know.
->>
->> The dump tree shows:
->>
->> [ 1623.783513]=C2=A0=C2=A0=C2=A0=C2=A0 item 97 key (3069062266880 169 0=
-) itemoff 13049
->> itemsize 33
->> [ 1623.783514]=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 extent r=
-efs 1 gen 1396868 flags 2
->> [ 1623.783515]=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 ref#0: t=
-ree block backref root 16391
->> ...
->> [ 1623.783683] BTRFS critical (device nvme0n1p2: state EA): unable to
->> find ref byte nr 3069062266880 parent 0 root 7 owner 0 offset 0 slot 98
->>
->> This means the bytenr 3069062266880 should have a tree backref for
->> root 7.
->> But the dump tree shows it belongs to root 16391.
->>
->> Furthermore this looks like a memory biflip:
->>
->> hex(7)=C2=A0=C2=A0=C2=A0=C2=A0 =3D 0x0007
->> hex(16391) =3D 0x4007
->>
->> So please unmount all your fs and run a memtest first to make sure your
->> hardware memory is working correctly.
->> And do necessary memory replacement (if possible).
->>
->> Then finally run "btrfs check --readonly" for the unmounted fs, to make
->> sure that is the only error (please paste the output).
->>
->> Then we can determine if it's safe to run "btrfs check --repair" or
->> there are too many corruption and can only do a data salvage.
->> (I bet a repair can be done, but still want to be sure)
->>
->> Thanks,
->> Qu
->>>
->>>
->>> Thank you,
->>>
->>> Eliza
->>>
->>>

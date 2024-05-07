@@ -1,60 +1,67 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E3D1078C89
-	for <linux-btrfs@vger.kernel.org>; Tue,  7 May 2024 06:58:32 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3B49D78C8A
+	for <linux-btrfs@vger.kernel.org>; Tue,  7 May 2024 06:58:37 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1715065116; cv=none; b=kyrxmaK1vRusEpchNLAkWAVqI3GvCOMNkzUyEjDsIW87pmXiPXyX6GTV2xUKbOSbSDry+TNzsN/tnPf9MCRup852M2S7p0OOyqek6SQqgj4GJL08zAn3YcGXtJEwpTW869tER5wUWaCBHGvX1HiO4AmNFyYSwQQzo+x/RD/mLsI=
+	t=1715065119; cv=none; b=iIOR63RqMefuYQCzIxJxwH75h48ruIgiVhllRN0Q/1RHdiH6J5XvBPxbZHFAuFaWkMGiWjtqPA3yFnx73wFlX55n9N8DcnC4mS4r+PAqxzDEdLrsPf5gTaFBt8WXMeiw1wTRugyjcfROcSNEebytfPUFni3L+82YuT9YJTbD73g=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1715065116; c=relaxed/simple;
-	bh=NffO1YsQfjsYbqetopO+7BUT4i8ofIduhje/H+1ljog=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=DYTJEO24onSJbVSLJkY8rS3O+XSA7CnFyFGhr+CzqcvsHkRbIO1ubiwTuYzzKECGVsnmvEiiTFcnCQas8KUygsHXnXsUXuytv0wQvmzFAvEk4pK/TIdeBArybzoXofV1YU1S9k8QzxtYl5g9mHFKFvjZFPocWfMd+EkwuyzG9UQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=OhMIK4/2; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=OhMIK4/2; arc=none smtp.client-ip=195.135.223.131
+	s=arc-20240116; t=1715065119; c=relaxed/simple;
+	bh=VmPQCViTBl9+jXM+kgpT441+PxQQey7XqNFzZoPOL2k=;
+	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=hPOVPDHwfzavShuR9Ldzc6oBXJNOhwELSkIfnLnB0qIQaq+5PV4g7jc0UzZSfsJoy2YJgDZPIMAA8LfowwaPqxTyck/3+eFQ6pK+0IxobdYpa7Kl/4D6SEK4nlJ7lB8F3oA9dF2LaY6e2dhl/e/9gyeKJ8PUg6vedXvvtoJn5Xk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=aS9gPml6; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=aS9gPml6; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="OhMIK4/2";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="OhMIK4/2"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="aS9gPml6";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="aS9gPml6"
 Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 68D3C20522
-	for <linux-btrfs@vger.kernel.org>; Tue,  7 May 2024 06:58:30 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 6A65933A81
+	for <linux-btrfs@vger.kernel.org>; Tue,  7 May 2024 06:58:33 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1715065110; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=sPIbxS01ZH2BoiUAHN2b+MPhmSVNIdhDYzSsQtslmgo=;
-	b=OhMIK4/2GCQFDwE+XdR7NvwLQiEIMLDOfTcFgvGttqZn1QRHD6k41JdakRMtPHc3OnGuBj
-	SeiJkegugIEnH4AG8yzkBnTxq64NuCwdlk3ZNnOAewwFWe2EmDI9sumlqzPYpmQGnXxK6d
-	CitEIlRv3vkyhh1gCmrSYmgidbvd+BU=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b="OhMIK4/2"
+	t=1715065113; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=w4rDEY/FPAs42ZhLwFqTq2vBLet3/myxXDT5K28dtdk=;
+	b=aS9gPml641O0DWzxC5E5dVpUzMgqzHuDF/J1ucfHM38Y1AFgyxfKH/yVcWVb/4EYZpbdw7
+	vbbAd90Y9Bs7mMqGziofkt6pVx8PCbm1oBFEYYDBVDxdreP2geYUVs7fl2LrZQaQ0ncWe0
+	t80hMyz1PnPiU/gjF3UcC/tFKMPyZ8c=
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=aS9gPml6
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1715065110; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=sPIbxS01ZH2BoiUAHN2b+MPhmSVNIdhDYzSsQtslmgo=;
-	b=OhMIK4/2GCQFDwE+XdR7NvwLQiEIMLDOfTcFgvGttqZn1QRHD6k41JdakRMtPHc3OnGuBj
-	SeiJkegugIEnH4AG8yzkBnTxq64NuCwdlk3ZNnOAewwFWe2EmDI9sumlqzPYpmQGnXxK6d
-	CitEIlRv3vkyhh1gCmrSYmgidbvd+BU=
+	t=1715065113; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=w4rDEY/FPAs42ZhLwFqTq2vBLet3/myxXDT5K28dtdk=;
+	b=aS9gPml641O0DWzxC5E5dVpUzMgqzHuDF/J1ucfHM38Y1AFgyxfKH/yVcWVb/4EYZpbdw7
+	vbbAd90Y9Bs7mMqGziofkt6pVx8PCbm1oBFEYYDBVDxdreP2geYUVs7fl2LrZQaQ0ncWe0
+	t80hMyz1PnPiU/gjF3UcC/tFKMPyZ8c=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 77ECF139CB
-	for <linux-btrfs@vger.kernel.org>; Tue,  7 May 2024 06:58:29 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 85B7E139CB
+	for <linux-btrfs@vger.kernel.org>; Tue,  7 May 2024 06:58:32 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([10.150.64.162])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id IfpEDBXROWbSGAAAD6G6ig
+	id WEF2DhjROWbSGAAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Tue, 07 May 2024 06:58:29 +0000
+	for <linux-btrfs@vger.kernel.org>; Tue, 07 May 2024 06:58:32 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 0/2] btrfs: qgroup: stale qgroups related impromvents
-Date: Tue,  7 May 2024 16:28:09 +0930
-Message-ID: <cover.1715064550.git.wqu@suse.com>
+Subject: [PATCH v3 2/2] btrfs: automatically remove the subvolume qgroup
+Date: Tue,  7 May 2024 16:28:11 +0930
+Message-ID: <90a4ae6ae4be63ef4df3d020707fb7b1ae004634.1715064550.git.wqu@suse.com>
 X-Mailer: git-send-email 2.45.0
+In-Reply-To: <cover.1715064550.git.wqu@suse.com>
+References: <cover.1715064550.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -62,15 +69,9 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Flag: NO
-X-Spam-Score: -5.01
-X-Rspamd-Action: no action
-X-Rspamd-Queue-Id: 68D3C20522
 X-Spam-Level: 
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Spamd-Result: default: False [-5.01 / 50.00];
+X-Spamd-Result: default: False [-3.01 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
-	DWL_DNSWL_MED(-2.00)[suse.com:dkim];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
@@ -78,96 +79,153 @@ X-Spamd-Result: default: False [-5.01 / 50.00];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
 	MX_GOOD(-0.01)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	RCPT_COUNT_ONE(0.00)[1];
+	ARC_NA(0.00)[];
 	FUZZY_BLOCKED(0.00)[rspamd.com];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
 	MIME_TRACE(0.00)[0:+];
 	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	ARC_NA(0.00)[];
-	TO_DN_NONE(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	RCVD_COUNT_TWO(0.00)[2];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
 	RCVD_TLS_ALL(0.00)[];
 	DKIM_TRACE(0.00)[suse.com:+];
+	RCVD_COUNT_TWO(0.00)[2];
 	FROM_EQ_ENVFROM(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.com:dkim]
+	FROM_HAS_DN(0.00)[];
+	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	TO_DN_NONE(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.com:dkim,suse.com:url,suse.com:email]
+X-Rspamd-Action: no action
+X-Rspamd-Queue-Id: 6A65933A81
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Spam-Flag: NO
+X-Spam-Score: -3.01
 
-[CHANGELOG]
-v3:
-- Do not allow dropping non-zero qgroups for squota
-  Due to the design of squota, a fully dropped subvolume can still have
-  non-zero qgroups, as in the extent tree the delta is still using the
-  original owner (the dropped subvolume).
+Currently if we fully removed a subvolume (not only unlinked, but fully
+dropped its root item), its qgroup would not be removed.
 
-  So we can not drop any non-zero squota qgroups
+Thus we have "btrfs qgroup clear-stale" to handle such 0 level qgroups.
 
-- Slight change on the can_delete_qgroup() condition
-  To co-operate with above change.
+This patch changes the behavior by automatically removing the qgroup of
+a fully dropped subvolume when possible:
 
-v2:
-- Do more sanity checks before deleting a qgroup
+- Full qgroup but still consistent
+  We can and should remove the qgroup.
+  The qgroup numbers should be 0, without any rsv.
 
-- Make squota to handle auto deleted qgroup more gracefully
-  Unfortunately the behavior change would affect btrfs/301, as the
-  fully deleted subvolume would make the test case to cause bash grammar
-  error (since the qgroup is gone with the subvolume).
+- Full qgroup but inconsistent
+  Can happen with drop_subtree_threshold feature (skip accounting
+  and mark qgroup inconsistent).
 
-  Cc Boris for extra comments on squota compatibility and future
-  btrfs/311 updates ideas.
+  We can and should remove the qgroup.
+  Higher level qgroup numbers will be incorrect, but since qgroup
+  is already inconsistent, it should not be a problem.
 
+- Squota mode
+  This is the special case, we can only drop the qgroup if its numbers
+  are all 0.
 
-We have two problems in recent qgroup code:
+  This would be handled by can_delete_qgroup(), so we only need to check
+  the return value and ignore the -EBUSY error.
 
-- One can not delete a fully removed qgroup if the drop hits
-  drop_subtree_threshold
-  As hitting drop_subtree_threshold would mark qgroup inconsistent and
-  skip all accounting, this would leave qgroup number untouched (thus
-  non-zero), and btrfs refuses to delete qgroup with non-zero rfer/excl
-  numbers.
+Link: https://bugzilla.suse.com/show_bug.cgi?id=1222847
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/extent-tree.c |  8 ++++++++
+ fs/btrfs/qgroup.c      | 38 ++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/qgroup.h      |  2 ++
+ 3 files changed, 48 insertions(+)
 
-  This would be addressed by the first patch, allowing qgroup
-  deletion as long as it doesn't have any child nor a corresponding
-  subvolume.
-
-- Deleted snapshot would leave a stale qgroup
-  This is a long existing problem.
-
-  Although previous pushes all failed, just let me try it again.
-
-  The idea is commit current transaction if needed (full accounting mode
-  and qgroup numbers are consistent), then try to remove the subvolume
-  qgroup after it is fully dropped.
-
-  For full qgroup mode, no matter if qgroup is inconsistent, we will
-  auto remove the dropped 0 level qgroup.
-  (If consistent, the qgroup numbers should all be 0, and a safe
-   removal. If inconsistent, we still remove the qgroup, leaving
-   higher level qgroup incorrect, but since it's already inconsistent,
-   we need a rescan anyway).
-
-  For squota mode, we only do the auto reap if the qgroup numbers are
-  already 0.
-  Otherwise the qgroup numbers would be needed for future accounting.
-
-The behavior change would only affect btrfs/301, which still expects the
-dropped subvolume would still leave its qgroup untouched.
-But that can be easily fixed by explicitly echoing "0" for dropped
-subvolume.
-
-Qu Wenruo (2):
-  btrfs: slightly loose the requirement for qgroup removal
-  btrfs: automatically remove the subvolume qgroup
-
- fs/btrfs/extent-tree.c |   8 +++
- fs/btrfs/qgroup.c      | 120 ++++++++++++++++++++++++++++++++++++++---
- fs/btrfs/qgroup.h      |   2 +
- 3 files changed, 123 insertions(+), 7 deletions(-)
-
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 47d48233b592..21e07b698625 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -5833,6 +5833,7 @@ int btrfs_drop_snapshot(struct btrfs_root *root, int update_ref, int for_reloc)
+ 	struct btrfs_root_item *root_item = &root->root_item;
+ 	struct walk_control *wc;
+ 	struct btrfs_key key;
++	const u64 rootid = btrfs_root_id(root);
+ 	int err = 0;
+ 	int ret;
+ 	int level;
+@@ -6063,6 +6064,13 @@ int btrfs_drop_snapshot(struct btrfs_root *root, int update_ref, int for_reloc)
+ 	kfree(wc);
+ 	btrfs_free_path(path);
+ out:
++	if (!err && root_dropped) {
++		ret = btrfs_qgroup_cleanup_dropped_subvolume(fs_info, rootid);
++		if (ret < 0)
++			btrfs_warn_rl(fs_info,
++				      "failed to cleanup qgroup 0/%llu: %d",
++				      rootid, ret);
++	}
+ 	/*
+ 	 * We were an unfinished drop root, check to see if there are any
+ 	 * pending, and if not clear and wake up any waiters.
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index d89f16366a1c..d894a7e2bf30 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -1864,6 +1864,44 @@ int btrfs_remove_qgroup(struct btrfs_trans_handle *trans, u64 qgroupid)
+ 	return ret;
+ }
+ 
++int btrfs_qgroup_cleanup_dropped_subvolume(struct btrfs_fs_info *fs_info,
++					   u64 subvolid)
++{
++	struct btrfs_trans_handle *trans;
++	int ret;
++
++	if (!is_fstree(subvolid) || !btrfs_qgroup_enabled(fs_info) ||
++	    !fs_info->quota_root)
++		return 0;
++
++	/*
++	 * Commit current transaction to make sure all the rfer/excl numbers
++	 * get updated.
++	 */
++	trans = btrfs_start_transaction(fs_info->quota_root, 0);
++	if (IS_ERR(trans))
++		return PTR_ERR(trans);
++
++	ret = btrfs_commit_transaction(trans);
++	if (ret < 0)
++		return ret;
++
++	/* Start new trans to delete the qgroup info and limit items. */
++	trans = btrfs_start_transaction(fs_info->quota_root, 2);
++	if (IS_ERR(trans))
++		return PTR_ERR(trans);
++	ret = btrfs_remove_qgroup(trans, subvolid);
++	btrfs_end_transaction(trans);
++	/*
++	 * It's squota and the subvolume still has numbers needed
++	 * for future accounting, in this case we can not delete.
++	 * Just skip it.
++	 */
++	if (ret == -EBUSY)
++		ret = 0;
++	return ret;
++}
++
+ int btrfs_limit_qgroup(struct btrfs_trans_handle *trans, u64 qgroupid,
+ 		       struct btrfs_qgroup_limit *limit)
+ {
+diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
+index 706640be0ec2..3f93856a02e1 100644
+--- a/fs/btrfs/qgroup.h
++++ b/fs/btrfs/qgroup.h
+@@ -327,6 +327,8 @@ int btrfs_del_qgroup_relation(struct btrfs_trans_handle *trans, u64 src,
+ 			      u64 dst);
+ int btrfs_create_qgroup(struct btrfs_trans_handle *trans, u64 qgroupid);
+ int btrfs_remove_qgroup(struct btrfs_trans_handle *trans, u64 qgroupid);
++int btrfs_qgroup_cleanup_dropped_subvolume(struct btrfs_fs_info *fs_info,
++					   u64 subvolid);
+ int btrfs_limit_qgroup(struct btrfs_trans_handle *trans, u64 qgroupid,
+ 		       struct btrfs_qgroup_limit *limit);
+ int btrfs_read_qgroup_config(struct btrfs_fs_info *fs_info);
 -- 
 2.45.0
 

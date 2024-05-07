@@ -1,63 +1,63 @@
-Received: from mail-yw1-f182.google.com (mail-yw1-f182.google.com [209.85.128.182])
+Received: from mail-yw1-f177.google.com (mail-yw1-f177.google.com [209.85.128.177])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E262216D330
-	for <linux-btrfs@vger.kernel.org>; Tue,  7 May 2024 18:12:30 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.182
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1E65B16D4E6
+	for <linux-btrfs@vger.kernel.org>; Tue,  7 May 2024 18:12:32 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.177
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1715105553; cv=none; b=JRVJ4/q0FiMVMql6QE3gxrkmAciExBZunPNZIs3Ft80WpDQ23Vgw5UUo3Yy17gXjQniNgN0pEUhT/OOWlbXwjY3lroMhSWhBOauSJPzZohX0uzgakd02Hfylsq7agACFEHXxmj7r1t6oKoGNLK2VNNuxy3pIgCBsvJQGUn+jP9k=
+	t=1715105554; cv=none; b=UTsWaE7daYBTUCpCnSieiM3UdtIbvP5041vdo0CODLCeE4icTV3Ryud3wUP/PELdUq4RrN41DLA4G39U4sknw5gYeGTf3EmQna95UA920uQJhjvDAhAOzwAi+nOJ/fXmAgHasFsF2toOxgK9R3KN5tx/V2+l5vwQQswL5JiC4EM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1715105553; c=relaxed/simple;
-	bh=i8RXtZ0smrzDy+1N96mqeYoGyp+Hs01PVjLVlvxxkGk=;
+	s=arc-20240116; t=1715105554; c=relaxed/simple;
+	bh=LQ8r/jHHzE6+gmHFXFiUfQEBkGuWHJ1pVhZ7DHF6m0k=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=JzHCBqqZjTGngpawNYeNHRaHGxG/LxXI08RpZCTwSbaGwNv/Vo72qWhKGj/vu+toL+XMqyIJ9UZsR0GT72o4SwXJZRm4Lrqn9ePOZauw3gR8s5G7hbSRwLw3h+ovp2Rot4CaBuXMkEo5ZWy0UAoCil27l7mgWzrgXTEe4nf/S60=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com; spf=none smtp.mailfrom=toxicpanda.com; dkim=pass (2048-bit key) header.d=toxicpanda-com.20230601.gappssmtp.com header.i=@toxicpanda-com.20230601.gappssmtp.com header.b=BunGXst0; arc=none smtp.client-ip=209.85.128.182
+	 MIME-Version; b=CEn7PHYb+YKhOxfDqfGMIOg5ADL8j+S8JpjyoOcCHcS5i9vsr48UxmfeG4nfw5WCV0z8GzLjezHZrB4dLvur8HIF3wU7wasnePOjxFnc/c+Qx+kYeCe8TDTJEXlLlnPZOLCq9YxBSvdwqTKkyt1U4qL1A5H5G3JcPGZb2nWHS1A=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com; spf=none smtp.mailfrom=toxicpanda.com; dkim=pass (2048-bit key) header.d=toxicpanda-com.20230601.gappssmtp.com header.i=@toxicpanda-com.20230601.gappssmtp.com header.b=dcmz7Mj3; arc=none smtp.client-ip=209.85.128.177
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
 Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=toxicpanda.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20230601.gappssmtp.com header.i=@toxicpanda-com.20230601.gappssmtp.com header.b="BunGXst0"
-Received: by mail-yw1-f182.google.com with SMTP id 00721157ae682-61ab6faf179so36386107b3.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 07 May 2024 11:12:30 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20230601.gappssmtp.com header.i=@toxicpanda-com.20230601.gappssmtp.com header.b="dcmz7Mj3"
+Received: by mail-yw1-f177.google.com with SMTP id 00721157ae682-61df496df01so26841847b3.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 07 May 2024 11:12:32 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1715105550; x=1715710350; darn=vger.kernel.org;
+        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1715105552; x=1715710352; darn=vger.kernel.org;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=7wGp5IYvkDHig0jwh1l9YZvi35B8FpyMMfq8GLRr3wE=;
-        b=BunGXst0OQ9NYuCiXm103wrF7kVqMTnukb8BGxObblxZQA0Q4eQA6z8shjNT2fsT9I
-         /wX9cXH8qlv4ptlSLNUpeGIpxt4BvWOk64lmnEta5n+H5AZuD7RjIogvjnxluxmX0vFM
-         +vPbGB4xK+9N8uUa2QoB2IRCwb6h5EwpN1QuRAxITWZQfXJu+Fu8fio8Tp310GHvvZDw
-         7lNX/rdFpbHJCQHmREaJnIcUbykNRBxtBLedPL7Ev0M4tpykrj8UhCd11P1TvaPSOQBC
-         ZQrzCQ/Ai1wG2CpPUQuvzfA0duZW4AsR79YqeQHL2WRCRU1wnqIP1bllq7nIS2qbSMWr
-         /fHA==
+        bh=Bs0EQg6KDmseCGr1wk4s34jwgnqkOtSw5juHC8avOSY=;
+        b=dcmz7Mj3wBAtSxMTmarqwOkvvNld3TM74KGuSkI85MRNHLfqUpP95Hs8eNyvKYAElg
+         zsMSfPxTqA0ISk/QqVb6NRra30nh3Dp+MBIN+aBSQmyrswGvGur+Sn5iBhjUWGpWmfzm
+         fQefcpNZSZeWS//ilDd6SLsMpcF9Ita7Lf+SnYj4aPKpeUieND7qNh9IX+L3hAayppdQ
+         LF+jVS7LcEvlfCtN+g+V1+eEs1jMux6IZeW5P3zrG1AXc/RG5xJH5Shb/gXHwQtbHTql
+         OrSHj9n/uq9GgQHhLRAkFrDdZyat6zVT8I2ZxqS/xMo9ZVzWLKL94X21oQ6pb3rCcOEB
+         8UPA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1715105550; x=1715710350;
+        d=1e100.net; s=20230601; t=1715105552; x=1715710352;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=7wGp5IYvkDHig0jwh1l9YZvi35B8FpyMMfq8GLRr3wE=;
-        b=C3anLIO/uBUAJ0GJicFCPs9+rbzZv3mZfFTjYMRMVyjyaCBDGpgsJVnzgH1M3ovu9k
-         mh4AYN3fsgHfUQlvDXWSe24XXwcHVFox9aMsqwpyNRpBdlD2CIn7y4UrVfZJFAS3Pg8H
-         mLgMbV/L27ZeVZKOhdm/Vy/F2hXyzWjBhYf02eDn0jC5+p4O8zh6SlWiCq7zWCFgX+dM
-         jVeE1tjtT1+C6CD1jgYIwkvc4Ip/TPegKk3enAHmGUhy05dc4xaM6eM0KebdZknLuRI9
-         u4MyCRKFZLFZUGAlnnY1ZHo61Zkt0XqQ2v3KRU/jnRX6zyrQABjfVN0Lo6TgDsBCKMyL
-         CTaw==
-X-Gm-Message-State: AOJu0YyHvkn2r0z6j1Y18rxeQI/Us3Ovaakpc4jc2tQv1tNRN4AfwaiD
-	LAzHZQ17ytpEOv6y/0alAyMUoy34vsN9nkKa42cNF2xQoUV4DOl7ekaWTXDxygzTcG8OsJS/6qF
-	W
-X-Google-Smtp-Source: AGHT+IF0OZ6sNYn+1gKHUZPc9+6AvnAbEIt8t8umZRVXQfIonNHvobBWqp2P46YPIwTFDMIyzAtpCg==
-X-Received: by 2002:a81:be10:0:b0:61a:ca09:dae3 with SMTP id 00721157ae682-62085da6e92mr5964707b3.26.1715105549610;
-        Tue, 07 May 2024 11:12:29 -0700 (PDT)
+        bh=Bs0EQg6KDmseCGr1wk4s34jwgnqkOtSw5juHC8avOSY=;
+        b=c0DwY+UXvCwRZLC0lCNDV+hza9+aDNGrxhpRtoDSN8QiKHxB51ksjGLChfvg5XfEBd
+         MPZvvBJcGG+wWompJZS20MRwzhp/eZmx9yHRo7UKS8WqHVnVIbRUOo7y6MRNPuqP9X2v
+         edCOghaO+S8+Sh1EJKD6/6J2YvDsoEfX/xENWboJvOvh0jJfxNM4/4i+V3nT7b7aZQ/j
+         FfadBHAKET8Q9aTrfOTD59X7deDckh3XAaUxOgHFC3YSCJi62yDIQf3iklFr4Qo16G4+
+         aU78lu4sb0ou08difA9q0geeJA4RLIecXzHk+vAmXgpsqOtZrP57xJN2PBtFtG/WdOEh
+         6CMw==
+X-Gm-Message-State: AOJu0YzZidncuWQsnTlUBZsn6YOoeha+/E2jmedOEo3xaNZI+uCFBN/P
+	EIdPe/txuMBzL4f+Q3a7It612s4/pGShOND2i1W0+yqUCeHSYHEIES2FxyJV7Aj5QSe6ddhbOH0
+	U
+X-Google-Smtp-Source: AGHT+IGa/fUawzR90FoUsZai9MoPZUkHGhi6kPVRetVzZ1aahRq/yvTihA8wOuQA8Am4YDObkHeUnQ==
+X-Received: by 2002:a0d:ce05:0:b0:61a:d372:8767 with SMTP id 00721157ae682-62085edeeb4mr4829117b3.51.1715105551869;
+        Tue, 07 May 2024 11:12:31 -0700 (PDT)
 Received: from localhost (syn-076-182-020-124.res.spectrum.com. [76.182.20.124])
-        by smtp.gmail.com with ESMTPSA id g23-20020a81ae57000000b0061bed5b2c38sm2856984ywk.0.2024.05.07.11.12.29
+        by smtp.gmail.com with ESMTPSA id y83-20020a81a156000000b0061be65cc0dbsm2839965ywg.120.2024.05.07.11.12.31
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 07 May 2024 11:12:29 -0700 (PDT)
+        Tue, 07 May 2024 11:12:31 -0700 (PDT)
 From: Josef Bacik <josef@toxicpanda.com>
 To: linux-btrfs@vger.kernel.org,
 	kernel-team@fb.com
-Subject: [PATCH v3 05/15] btrfs: move the eb uptodate code into it's own helper
-Date: Tue,  7 May 2024 14:12:06 -0400
-Message-ID: <cf980cc7a4fb06c9937f68d575a19c7b36837fd5.1715105406.git.josef@toxicpanda.com>
+Subject: [PATCH v3 07/15] btrfs: unify logic to decide if we need to walk down into a node
+Date: Tue,  7 May 2024 14:12:08 -0400
+Message-ID: <c4695d12ef488d2da8d73ed4d584d024dd6eb72f.1715105406.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.43.0
 In-Reply-To: <cover.1715105406.git.josef@toxicpanda.com>
 References: <cover.1715105406.git.josef@toxicpanda.com>
@@ -69,116 +69,193 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-do_walk_down() already has a bunch of things going on, and there's a bit
-of code related to reading in the next eb if we decide we need it.  Move
-this code off into it's own helper to clean up do_walk_down() a little
-bit.
+We currently duplicate the logic for walking into a node during snapshot
+delete.  In one case it is during the actual delete, and in the other we
+use it for deciding if we should reada the block or not.
+
+Extract this code into it's own helper and comment fully what we're
+doing, and then update the two users to use the new helper.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/extent-tree.c | 68 +++++++++++++++++++++++++++++-------------
- 1 file changed, 48 insertions(+), 20 deletions(-)
+ fs/btrfs/extent-tree.c | 135 +++++++++++++++++++++++++++--------------
+ 1 file changed, 91 insertions(+), 44 deletions(-)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 1d59764f58b4..8f5cf889e24d 100644
+index ae11a2bd417e..4c6647760aa5 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -5408,6 +5408,51 @@ static int check_ref_exists(struct btrfs_trans_handle *trans,
- 	return 1;
- }
+@@ -5226,6 +5226,81 @@ struct walk_control {
+ #define DROP_REFERENCE	1
+ #define UPDATE_BACKREF	2
  
 +/*
-+ * We may not have an uptodate block, so if we are going to walk down into this
-+ * block we need to drop the lock, read it off of the disk, re-lock it and
-+ * return to continue dropping the snapshot.
++ * Decide if we need to walk down into this node to adjust the references.
++ *
++ * @root	- the root we are currently deleting.
++ * @wc		- the walk control for this deletion.
++ * @eb		- the parent eb that we're currently visiting.
++ * @refs	- the number of refs for wc->level - 1.
++ * @flags	- the flags for wc->level - 1.
++ * @slot	- the slot in the eb that we're currently checking.
++ *
++ * This is meant to be called when we're evaluating if a node we point to at
++ * wc->level should be read and walked into, or if we can simply delete our
++ * reference to it.  We return true if we should walk into the node, false if we
++ * can skip it.
++ *
++ * We have assertions in here to make sure this is called correctly.  We assume
++ * that sanity checking on the blocks read to this point has been done, so any
++ * corrupted file systems must have been caught before calling this function.
 + */
-+static int check_next_block_uptodate(struct btrfs_trans_handle *trans,
-+				     struct btrfs_root *root,
-+				     struct btrfs_path *path,
-+				     struct walk_control *wc,
-+				     struct extent_buffer *next)
++static bool visit_node_for_delete(struct btrfs_root *root,
++				  struct walk_control *wc,
++				  struct extent_buffer *eb,
++				  u64 refs, u64 flags, int slot)
 +{
-+	struct btrfs_tree_parent_check check = { 0 };
++	struct btrfs_key key;
 +	u64 generation;
 +	int level = wc->level;
-+	int ret;
 +
-+	btrfs_assert_tree_write_locked(next);
++	ASSERT(level > 0);
++	ASSERT(wc->refs[level - 1] > 0);
 +
-+	generation = btrfs_node_ptr_generation(path->nodes[level],
-+					       path->slots[level]);
-+
-+	if (btrfs_buffer_uptodate(next, generation, 0))
-+		return 0;
-+
-+	check.level = level - 1;
-+	check.transid = generation;
-+	check.owner_root = btrfs_root_id(root);
-+	check.has_first_key = true;
-+	btrfs_node_key_to_cpu(path->nodes[level], &check.first_key,
-+			      path->slots[level]);
-+
-+	btrfs_tree_unlock(next);
-+	if (level == 1)
-+		reada_walk_down(trans, root, wc, path);
-+	ret = btrfs_read_extent_buffer(next, &check);
-+	if (ret) {
-+		free_extent_buffer(next);
-+		return ret;
++	/*
++	 * The update backref stage we only want to skip if we already have
++	 * FULL_BACKREF set, otherwise we need to read.
++	 */
++	if (wc->stage == UPDATE_BACKREF) {
++		if (level == 1 && flags & BTRFS_BLOCK_FLAG_FULL_BACKREF)
++			return false;
++		return true;
 +	}
-+	btrfs_tree_lock(next);
-+	wc->lookup_info = 1;
-+	return 0;
++
++	/*
++	 * We're the last ref on this block, we must walk into it and process
++	 * any refs it's pointing at.
++	 */
++	if (wc->refs[level - 1] == 1)
++		return true;
++
++	/*
++	 * If we're already FULL_BACKREF then we know we can just drop our
++	 * current reference.
++	 */
++	if (level == 1 && flags & BTRFS_BLOCK_FLAG_FULL_BACKREF)
++		return false;
++
++	/*
++	 * This block is older than our creation generation, we can drop our
++	 * reference to it.
++	 */
++	generation = btrfs_node_ptr_generation(eb, slot);
++	if (!wc->update_ref || generation <= root->root_key.offset)
++		return false;
++
++	/*
++	 * This block was processed from a previous snapshot deletion run, we
++	 * can skip it.
++	 */
++	btrfs_node_key_to_cpu(eb, &key, slot);
++	if (btrfs_comp_cpu_keys(&key, &wc->update_progress) < 0)
++		return false;
++
++	/* All other cases we need to wander into the node. */
++	return true;
 +}
 +
-+
- /*
-  * helper to process tree block pointer.
-  *
-@@ -5430,7 +5475,6 @@ static noinline int do_walk_down(struct btrfs_trans_handle *trans,
+ static noinline void reada_walk_down(struct btrfs_trans_handle *trans,
+ 				     struct btrfs_root *root,
+ 				     struct walk_control *wc,
+@@ -5237,7 +5312,6 @@ static noinline void reada_walk_down(struct btrfs_trans_handle *trans,
+ 	u64 refs;
+ 	u64 flags;
+ 	u32 nritems;
+-	struct btrfs_key key;
+ 	struct extent_buffer *eb;
+ 	int ret;
+ 	int slot;
+@@ -5279,26 +5353,9 @@ static noinline void reada_walk_down(struct btrfs_trans_handle *trans,
+ 			continue;
+ 		BUG_ON(refs == 0);
+ 
+-		if (wc->stage == DROP_REFERENCE) {
+-			if (refs == 1)
+-				goto reada;
+-
+-			if (wc->level == 1 &&
+-			    (flags & BTRFS_BLOCK_FLAG_FULL_BACKREF))
+-				continue;
+-			if (!wc->update_ref ||
+-			    generation <= root->root_key.offset)
+-				continue;
+-			btrfs_node_key_to_cpu(eb, &key, slot);
+-			ret = btrfs_comp_cpu_keys(&key,
+-						  &wc->update_progress);
+-			if (ret < 0)
+-				continue;
+-		} else {
+-			if (wc->level == 1 &&
+-			    (flags & BTRFS_BLOCK_FLAG_FULL_BACKREF))
+-				continue;
+-		}
++		/* If we don't need to visit this node don't reada. */
++		if (!visit_node_for_delete(root, wc, eb, refs, flags, slot))
++			continue;
+ reada:
+ 		btrfs_readahead_node_child(eb, slot);
+ 		nread++;
+@@ -5475,7 +5532,6 @@ static noinline int do_walk_down(struct btrfs_trans_handle *trans,
  	u64 bytenr;
  	u64 generation;
  	u64 owner_root = 0;
--	struct btrfs_tree_parent_check check = { 0 };
- 	struct btrfs_key key;
+-	struct btrfs_key key;
  	struct extent_buffer *next;
  	int level = wc->level;
-@@ -5452,13 +5496,6 @@ static noinline int do_walk_down(struct btrfs_trans_handle *trans,
+ 	int ret = 0;
+@@ -5516,29 +5572,20 @@ static noinline int do_walk_down(struct btrfs_trans_handle *trans,
+ 	}
+ 	wc->lookup_info = 0;
  
- 	bytenr = btrfs_node_blockptr(path->nodes[level], path->slots[level]);
+-	if (wc->stage == DROP_REFERENCE) {
+-		if (wc->refs[level - 1] > 1) {
+-			if (level == 1 &&
+-			    (wc->flags[0] & BTRFS_BLOCK_FLAG_FULL_BACKREF))
+-				goto skip;
++	/* If we don't have to walk into this node skip it. */
++	if (!visit_node_for_delete(root, wc, path->nodes[level],
++				   wc->refs[level - 1], wc->flags[level - 1],
++				   path->slots[level]))
++		goto skip;
  
--	check.level = level - 1;
--	check.transid = generation;
--	check.owner_root = btrfs_root_id(root);
--	check.has_first_key = true;
--	btrfs_node_key_to_cpu(path->nodes[level], &check.first_key,
--			      path->slots[level]);
+-			if (!wc->update_ref ||
+-			    generation <= root->root_key.offset)
+-				goto skip;
 -
- 	next = btrfs_find_create_tree_block(fs_info, bytenr,
- 					    btrfs_root_id(root), level - 1);
- 	if (IS_ERR(next))
-@@ -5506,18 +5543,9 @@ static noinline int do_walk_down(struct btrfs_trans_handle *trans,
- 			goto skip;
+-			btrfs_node_key_to_cpu(path->nodes[level], &key,
+-					      path->slots[level]);
+-			ret = btrfs_comp_cpu_keys(&key, &wc->update_progress);
+-			if (ret < 0)
+-				goto skip;
+-
+-			wc->stage = UPDATE_BACKREF;
+-			wc->shared_level = level - 1;
+-		}
+-	} else {
+-		if (level == 1 &&
+-		    (wc->flags[0] & BTRFS_BLOCK_FLAG_FULL_BACKREF))
+-			goto skip;
++	/*
++	 * We have to walk down into this node, and if we're currently at the
++	 * DROP_REFERNCE stage and this block is shared then we need to switch
++	 * to the UPDATE_BACKREF stage in order to convert to FULL_BACKREF.
++	 */
++	if (wc->stage == DROP_REFERENCE && wc->refs[level - 1] > 1) {
++		wc->stage = UPDATE_BACKREF;
++		wc->shared_level = level - 1;
  	}
  
--	if (!btrfs_buffer_uptodate(next, generation, 0)) {
--		btrfs_tree_unlock(next);
--		if (level == 1)
--			reada_walk_down(trans, root, wc, path);
--		ret = btrfs_read_extent_buffer(next, &check);
--		if (ret) {
--			free_extent_buffer(next);
--			return ret;
--		}
--		btrfs_tree_lock(next);
--		wc->lookup_info = 1;
--	}
-+	ret = check_next_block_uptodate(trans, root, path, wc, next);
-+	if (ret)
-+		return ret;
- 
- 	level--;
- 	ASSERT(level == btrfs_header_level(next));
+ 	ret = check_next_block_uptodate(trans, root, path, wc, next);
 -- 
 2.43.0
 

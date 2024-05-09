@@ -1,64 +1,64 @@
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8470514A4F1
-	for <linux-btrfs@vger.kernel.org>; Thu,  9 May 2024 09:13:00 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 69C3814A4F5
+	for <linux-btrfs@vger.kernel.org>; Thu,  9 May 2024 09:13:01 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1715245982; cv=none; b=q5tD1Rn4saTfnZHlvoGPvcOrIY2x1o95IscsJ29Mb/WTJk5ud7nu9C20OPMstbmTggjdczS32ux6+zzEU9Kzvpnb2eHOBSgcxN8Qb+Tn7/SSTlt1jX3Yrzim3VXjIEVLi7Nu8v4I+TOou9lA0C67RKTQCWt3HQQUJmywimAz240=
+	t=1715245983; cv=none; b=FjiMMhOi7/Hyn15mVnqcS4AI5T1HVPm/mmMAKfPBep6eCA+6of2WHFkhUDp7MlRh3Y+JZ9Hx/L1TD0gG0yFGSklnbVwpBlOBPuwxEL8CXTYvbjlkg8EdmvBE/nPsGW4VtGgkLkKqYRvjrQZbV/6y/Cl+ba6/iHfbYlhWNpc64aA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1715245982; c=relaxed/simple;
-	bh=VfgPbyqmkDJMjON/Fs3VsA4kADkRenLwRXJeL0qNE3U=;
+	s=arc-20240116; t=1715245983; c=relaxed/simple;
+	bh=jPmC8oR1buiRxiLZBGlhmUIpRe7peg8sWHHkQ8LjVQk=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=Bl/7G+cwagpKf6yarRRgShmtmvDCAGa/itLoIjKFNKTkOXAqX1+w5SLEk+0qYtXP43yxkRKluyW/toTJazFMV2E+ncQBVU/txBAlAA0bkaWwkcvT+NYgy2Sn0piJI2WFNlURIX5t7eZFXZN2vxdk/SbcZA7TVtByQ0yZlxIDnJk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=kqbjb+wg; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=kqbjb+wg; arc=none smtp.client-ip=195.135.223.130
+	 MIME-Version; b=qW4Tx/RKgafuFVl7Ao1hby3OGjjYKOfS+9/85bCedIKWch2m/T1I0+f3ktqeiH4C5PBArLG0xgVYmFkOQtj9eDZhMCQIq0VORkSwSXxyx2FzhowI1epmSsS/DqOfjeYiwL+BMmg20JK+2TVF0tHaR5KOCgF3lHrHVRbR/tMV0Xw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=D0Hmuc2b; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=D0Hmuc2b; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="kqbjb+wg";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="kqbjb+wg"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="D0Hmuc2b";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="D0Hmuc2b"
 Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id D0C603816F
-	for <linux-btrfs@vger.kernel.org>; Thu,  9 May 2024 09:12:58 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 614B43816E
+	for <linux-btrfs@vger.kernel.org>; Thu,  9 May 2024 09:12:54 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1715245978; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1715245974; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=BhIwFODyTsP37yjtMgSFWa2/IofebGxy+5BFFE5Bn7U=;
-	b=kqbjb+wgAT6cZNa05y0TFIRewZ/1jHi1YdKEF9DSUXCZMOLC6AxcdPQgYFebJFLEYvB7EB
-	53IaJS8lEJGmVAkfvW2vE8TmbE5YJdCT+BJG30yqYITuwek+DJz5bfxbR+eG6suAMpCfHM
-	78CvHprIXnbYoDEZ6w9ux9+SMQsljyk=
+	bh=oMwLpIs6cELiIfTA/xPCUi1vQIGX2VGbdA9o5p2puzE=;
+	b=D0Hmuc2bSA1qhSeC/vD3FK3/yipEtjDlNEFl7kBV1eG20WiHO0or9qV3ZriLunexUzAnJ0
+	6ssfVcGtPre4NinmF0RvgC3VYhY+Cj3aAXre45gVa6ZYKiGJLl2YRgRCv3aM1BdqZ6c6po
+	YrVoZ6WSrcl52yLqkVSPUz6cmLKAKJM=
 Authentication-Results: smtp-out1.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1715245978; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1715245974; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=BhIwFODyTsP37yjtMgSFWa2/IofebGxy+5BFFE5Bn7U=;
-	b=kqbjb+wgAT6cZNa05y0TFIRewZ/1jHi1YdKEF9DSUXCZMOLC6AxcdPQgYFebJFLEYvB7EB
-	53IaJS8lEJGmVAkfvW2vE8TmbE5YJdCT+BJG30yqYITuwek+DJz5bfxbR+eG6suAMpCfHM
-	78CvHprIXnbYoDEZ6w9ux9+SMQsljyk=
+	bh=oMwLpIs6cELiIfTA/xPCUi1vQIGX2VGbdA9o5p2puzE=;
+	b=D0Hmuc2bSA1qhSeC/vD3FK3/yipEtjDlNEFl7kBV1eG20WiHO0or9qV3ZriLunexUzAnJ0
+	6ssfVcGtPre4NinmF0RvgC3VYhY+Cj3aAXre45gVa6ZYKiGJLl2YRgRCv3aM1BdqZ6c6po
+	YrVoZ6WSrcl52yLqkVSPUz6cmLKAKJM=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id CF2E313A24
-	for <linux-btrfs@vger.kernel.org>; Thu,  9 May 2024 09:12:57 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 7B9D113A24
+	for <linux-btrfs@vger.kernel.org>; Thu,  9 May 2024 09:12:53 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([10.150.64.162])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id WORLIpmTPGZ6KgAAD6G6ig
+	id 0C0FDJWTPGZ6KgAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Thu, 09 May 2024 09:12:57 +0000
+	for <linux-btrfs@vger.kernel.org>; Thu, 09 May 2024 09:12:53 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 4/4] btrfs-progs: cmds/qgroup: add more special status for qgroups
-Date: Thu,  9 May 2024 18:42:33 +0930
-Message-ID: <6b7f2367322a05e6442fd8f5aedac23490b32b1c.1715245781.git.wqu@suse.com>
+Subject: [PATCH 1/4] btrfs-progs: cmds/qgroup: sync the fs before doing qgroup search
+Date: Thu,  9 May 2024 18:42:30 +0930
+Message-ID: <50d13a90a4dd1146fe6d755ec3a7e69ff9fba325.1715245781.git.wqu@suse.com>
 X-Mailer: git-send-email 2.45.0
 In-Reply-To: <cover.1715245781.git.wqu@suse.com>
 References: <cover.1715245781.git.wqu@suse.com>
@@ -69,9 +69,11 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
+X-Spam-Flag: NO
+X-Spam-Score: -1.16
 X-Spam-Level: 
-X-Spamd-Result: default: False [-2.80 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
+X-Spamd-Result: default: False [-1.16 / 50.00];
+	BAYES_HAM(-1.36)[90.58%];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
@@ -91,140 +93,40 @@ X-Spamd-Result: default: False [-2.80 / 50.00];
 	TO_DN_NONE(0.00)[];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
 	RCVD_TLS_ALL(0.00)[]
-X-Spam-Score: -2.80
-X-Spam-Flag: NO
 
-Currently `btrfs qgroup show` command shows any 0 level qgroup withou a
-root backref as `<stale>`, which is not correct.
-
-There are several more cases:
-
-- Under deletion
-  The subvolume is not yet full dropped, but unlinked.
-  In that case we would not have a root backref item, but the qgroup is
-  not stale.
-
-- Squota space holder
-  This is for squota mode, that a fully dropped subvolume still have
-  extents accounting on the already-gone subvolume.
-  In this case it's not stale either, and future accounting relies on
-  it.
-
-This patch would add above special cases, and add an extra `SPECIAL
-PATHS` section to explain all the cases, including `<stale>`.
+Since qgroup numbers are only updated at transaction commit time, it's
+better to do the a sync before reading the quota tree, to reduce the
+chance of uncommitted qgroup changes.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- Documentation/btrfs-qgroup.rst | 24 ++++++++++++++++++++++++
- cmds/qgroup.c                  | 32 ++++++++++++++++++++++++++------
- 2 files changed, 50 insertions(+), 6 deletions(-)
+ cmds/qgroup.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-diff --git a/Documentation/btrfs-qgroup.rst b/Documentation/btrfs-qgroup.rst
-index 343626767eb5..0e47c336619f 100644
---- a/Documentation/btrfs-qgroup.rst
-+++ b/Documentation/btrfs-qgroup.rst
-@@ -153,6 +153,30 @@ show [options] <path>
-                 To retrieve information after updating the state of qgroups,
-                 force sync of the filesystem identified by *path* before getting information.
- 
-+SPECIAL PATHS
-+-------------
-+For `btrfs qgroup show` subcommand, the ``path`` column may has some special
-+strings:
-+
-+`<toplevel>`
-+	The toplevel subvolume
-+
-+`<under deletion>`
-+	The subvolume is unlinked, but not yet fully deleted.
-+
-+`<squota space holder>`
-+	For simple quota mode only.
-+	By its design, a fully deleted subvolume may still have accounting on
-+	it, so even the subvolume is gone, the numbers are still here for future
-+	accounting.
-+
-+`<stale>`
-+	The qgroup has no corresponding subvolume anymore, and the qgroup
-+	can be cleaned up under most cases.
-+	The only exception is that, if the qgroup numbers are inconsistent and
-+	the qgroup numbers are not all zeros, some older kernels may refuse to
-+	delete such qgroups until a full rescan.
-+
- QUOTA RESCAN
- ------------
- 
 diff --git a/cmds/qgroup.c b/cmds/qgroup.c
-index 70a306117ebd..928c432ca432 100644
+index 6e88db5803a5..09eac0d2b36e 100644
 --- a/cmds/qgroup.c
 +++ b/cmds/qgroup.c
-@@ -71,6 +71,8 @@ struct qgroup_lookup {
- };
+@@ -2135,6 +2135,7 @@ static const char * const cmd_qgroup_clear_stale_usage[] = {
  
- struct btrfs_qgroup {
-+	struct qgroup_lookup *lookup;
-+
- 	struct rb_node rb_node;
- 	struct rb_node sort_node;
- 	/*
-@@ -321,6 +323,26 @@ static void print_qgroup_column_add_blank(enum btrfs_qgroup_column_enum column,
- 		printf(" ");
- }
- 
-+static const char *get_qgroup_path(struct btrfs_qgroup *qgroup)
-+{
-+	if (qgroup->path)
-+		return qgroup->path;
-+
-+	/* No path but not stale either, the qgroup is being deleted. */
-+	if (!qgroup->stale)
-+		return "<under deletion>";
-+	/*
-+	 * Squota mode stale qgroup, but not empty.
-+	 * This is fully deleted but still necessary.
-+	 */
-+	if (qgroup->stale &&
-+	    (qgroup->lookup->flags & BTRFS_QGROUP_STATUS_FLAG_SIMPLE_MODE) &&
-+	    !is_qgroup_empty(qgroup))
-+		return "<squota space holder>";
-+
-+	return "<stale>";
-+}
-+
- static void print_path_column(struct btrfs_qgroup *qgroup)
+ static int cmd_qgroup_clear_stale(const struct cmd_struct *cmd, int argc, char **argv)
  {
- 	struct btrfs_qgroup_list *list = NULL;
-@@ -338,11 +360,8 @@ static void print_path_column(struct btrfs_qgroup *qgroup)
- 			if (count)
- 				pr_verbose(LOG_DEFAULT, " ");
- 			if (level == 0) {
--				const char *path = member->path;
--
--				if (!path)
--					path = "<stale>";
--				pr_verbose(LOG_DEFAULT, "%s", path);
-+				pr_verbose(LOG_DEFAULT, "%s",
-+					   get_qgroup_path(qgroup));
- 			} else {
- 				pr_verbose(LOG_DEFAULT, "%llu/%llu", level, sid);
- 			}
-@@ -353,7 +372,7 @@ static void print_path_column(struct btrfs_qgroup *qgroup)
- 	} else if (qgroup->path) {
- 		pr_verbose(LOG_DEFAULT, "%s%s", (*qgroup->path ? "" : "<toplevel>"), qgroup->path);
- 	} else {
--		pr_verbose(LOG_DEFAULT, "<stale>");
-+		pr_verbose(LOG_DEFAULT, "%s", get_qgroup_path(qgroup));
- 	}
- }
++	enum btrfs_util_error err;
+ 	int ret = 0;
+ 	int fd;
+ 	char *path = NULL;
+@@ -2151,6 +2152,11 @@ static int cmd_qgroup_clear_stale(const struct cmd_struct *cmd, int argc, char *
+ 	if (fd < 0)
+ 		return 1;
  
-@@ -805,6 +824,7 @@ static struct btrfs_qgroup *get_or_add_qgroup(int fd,
- 		return ERR_PTR(-ENOMEM);
- 	}
- 
-+	bq->lookup = qgroup_lookup;
- 	bq->qgroupid = qgroupid;
- 	INIT_LIST_HEAD(&bq->qgroups);
- 	INIT_LIST_HEAD(&bq->members);
++	/* Sync the fs so that the qgroup numbers are uptodate. */
++	err = btrfs_util_sync_fd(fd);
++	if (err)
++		warning("sync ioctl failed on '%s': %m", path);
++
+ 	ret = qgroups_search_all(fd, &qgroup_lookup);
+ 	if (ret == -ENOTTY) {
+ 		error("can't list qgroups: quotas not enabled");
 -- 
 2.45.0
 

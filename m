@@ -1,53 +1,56 @@
 Received: from esa5.hgst.iphmx.com (esa5.hgst.iphmx.com [216.71.153.144])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F36C41E487
-	for <linux-btrfs@vger.kernel.org>; Tue, 14 May 2024 18:24:49 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 21AD21802DD
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 May 2024 18:24:52 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=216.71.153.144
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1715711091; cv=none; b=ZRoPkBzz67kNo8btlgRVVELDlQQggNU779SvaMQOfeY/Fk5Urqk4+R9ut2V1BXBOiwcuZuQkELlKZnWEdbprf1Ji4256pIXRYs56FaNfOrVnRQcFFSa0FRq1Y4DowYQzuIQwGxZFwA1m2NgO60aoLcYesIP1jDTdwFPGGBorYMI=
+	t=1715711093; cv=none; b=HEbzk+3cNrSwqer0V2V8EZzL1Bze6kAz+BMBKex3mS2Ibe/410j26F5DKOjUvPEUpGtSdPhNV4108ZFh4UMioXj7EmjraSLCAXojAAC9iCH9t/eJFrYan3l86iXixwHaz7YSZzh8Od6dHM68bnJAeJXdNsrSPlvm57yyyHW5La0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1715711091; c=relaxed/simple;
-	bh=GI//ochLjvTb7HEy61AtIue6QkNn1IFcJSJ8s3MGnHQ=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=C+8r88zdInPjNcDFd8HBt9iTO47gRxnH7G1TkBF6OuwfAiSOKzm+8pLfe8N13vNFPZOrl6w0l/Xgmgi5BpejfglEmGhgqksrcfVeMQY+eCgIi0QxSX+B6FVrYJYEA6IeZQ3cMD4dXBd4/+WBOMYInnSAa2qywXNxQpKHZqExPkw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=AMddw8vP; arc=none smtp.client-ip=216.71.153.144
+	s=arc-20240116; t=1715711093; c=relaxed/simple;
+	bh=TBUYJ3c6BS0lMAzA+zRpFALc0P5qHwaGeFmjh/qbv/o=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=sbLspiC6xrzoarQpnHKEZiqdMGNMlqOsg9s2ZtLZ+FT/LdJ+Eb5fsh1D1jYdYeKZwsaHoPGuC3x350GuaXwgbREIio8jqU/cDZqffp7Rj3F/u3xzz6cG2sGoDcxVQyYd+T2b6I8sV7QV1QcvRujrVgI8MKDOj5C+6pB1dNfcDUw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=TsGBjv3N; arc=none smtp.client-ip=216.71.153.144
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="AMddw8vP"
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="TsGBjv3N"
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1715711090; x=1747247090;
-  h=from:to:cc:subject:date:message-id:mime-version:
-   content-transfer-encoding;
-  bh=GI//ochLjvTb7HEy61AtIue6QkNn1IFcJSJ8s3MGnHQ=;
-  b=AMddw8vPiSTDo3T1JENtX01nmfdeogWre98PPNGbH4aI9KSLDDgYiKxT
-   K0HaNoPMVT1QGKFQ+JGZNhxdBHjiwjRhYbmLZUemWHoV+LXKgz2zW8OVS
-   kvsylT5ZdL0b1F984OF6vsV0ldC3JZBf4baws3d04Z/cUolh/fj/3jQUO
-   wzmjhQjQoXt6eKIGhSiOswfW2usYOd3utYgpsp0XULmOMbsGvuLwncGw0
-   V7RB6sPZlIMhHkcT06hqE1c+FHN9/znAhAy5JVKdCf4MgTGS813T8WaAg
-   +I8CeTiPh+0KLXuc/e/8+DZXjfuJCiekY/4l5eXaQdiyu0PUaFSKyZqyP
+  t=1715711092; x=1747247092;
+  h=from:to:cc:subject:date:message-id:in-reply-to:
+   references:mime-version:content-transfer-encoding;
+  bh=TBUYJ3c6BS0lMAzA+zRpFALc0P5qHwaGeFmjh/qbv/o=;
+  b=TsGBjv3Nv7s6H0DKIog4wN4a0b4PHC8TOo8sZXISMaf3Z0zWhX+R5/xD
+   liTCm2fnJ96R9qMUmubEP1DJCn3CPkZc+venXRaa5WplMqnRWMcCozdkO
+   /8MTFlO4y3he1J1o4N6SnhDarJD5Tts1qyY12Nw0HmhfD4RzslanBDwpA
+   2T1uGl89+3/YpCDKmvIzE2nWaqnzbdd54Fnq540LpiZv0oHpCmQlh6rqD
+   jcKYjF+K2fTbPq6pGlH3WdpIAK2l0eYDh4iV5yOYgoHxPULUWeksMRcYk
+   LC+DQxil1YyD6ENPJ4s58Kv/hApX2uCPSG0OhpUW3t1Xd3hSfD9s5b5fn
    A==;
-X-CSE-ConnectionGUID: Zr4yhHqwSdWsv6HUNun1Xg==
-X-CSE-MsgGUID: xenhZENqSOGNWhc4O7282g==
+X-CSE-ConnectionGUID: 1Ztb+vY/TleaeEz6EPDQ8Q==
+X-CSE-MsgGUID: OUMCUwWeQjG84DvBzCuEBQ==
 X-IronPort-AV: E=Sophos;i="6.08,159,1712592000"; 
-   d="scan'208";a="17162633"
+   d="scan'208";a="17162636"
 Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 15 May 2024 02:24:43 +0800
-IronPort-SDR: 6643a02d_3+daIYIucWvsQk8zrWS6oe5fr3g1UzDFX5MVO/zRVwKCFnG
- 6EjeMtrVXKiYjI+xl/jS+k8ssAU+wAqu0fm9Hpw==
+  by ob1.hgst.iphmx.com with ESMTP; 15 May 2024 02:24:47 +0800
+IronPort-SDR: 6643a030_vbkhKolijDfota61KtO5IZcnXqoddt7g8f6UktERxVuhCt2
+ B0M8kVMUYS+gl9osGHl3elA//n+k91aNvhON2NQ==
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 14 May 2024 10:32:30 -0700
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 14 May 2024 10:32:33 -0700
 WDCIronportException: Internal
 Received: from unknown (HELO naota-x1.wdc.com) ([10.225.163.56])
-  by uls-op-cesaip02.wdc.com with ESMTP; 14 May 2024 11:24:42 -0700
+  by uls-op-cesaip02.wdc.com with ESMTP; 14 May 2024 11:24:45 -0700
 From: Naohiro Aota <naohiro.aota@wdc.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH v2 0/8] btrfs-progs: zoned: proper "mkfs.btrfs -b" support
-Date: Tue, 14 May 2024 12:22:19 -0600
-Message-ID: <20240514182227.1197664-1-naohiro.aota@wdc.com>
+Subject: [PATCH v2 2/8] btrfs-progs: mkfs: remove duplicated device size check
+Date: Tue, 14 May 2024 12:22:21 -0600
+Message-ID: <20240514182227.1197664-3-naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.45.0
+In-Reply-To: <20240514182227.1197664-1-naohiro.aota@wdc.com>
+References: <20240514182227.1197664-1-naohiro.aota@wdc.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -56,58 +59,42 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-mkfs.btrfs -b <byte_count> on a zoned device has several issues listed
-below.
+test_minimum_size() already checks if each device can host the initial
+block groups. There is no need to check if the first device can host the
+initial system chunk again.
 
-- The FS size needs to be larger than minimal size that can host a btrfs,
-  but its calculation does not consider non-SINGLE profile
-- The calculation also does not ensure tree-log BG and data relocation BG
-- It allows creating a FS not aligned to the zone boundary
-- It resets all device zones beyond the specified length
+Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+---
+ mkfs/main.c | 9 ---------
+ 1 file changed, 9 deletions(-)
 
-This series fixes the issues with some cleanups.
-
-This one passed CI workflow here:
-https://github.com/naota/btrfs-progs/actions/runs/9083915553
-
-Patches 1 to 3 are clean up patches, so they should not change the behavior.
-
-Patches 4 to 6 address the issues.
-
-The last two patches handle the test cases. Patch 7 adds a new test for
-zone resetting. And, patch 8 tweaks an existing test to use smaller zone
-size to have enough zones than the new requirement.
-
-Changes:
-- v2
-  - fix function declaration on older distro (non-ZONED setup)
-  - fix mkfs test failure
-
-Naohiro Aota (8):
-  btrfs-progs: rename block_count to byte_count
-  btrfs-progs: mkfs: remove duplicated device size check
-  btrfs-progs: mkfs: unify zoned mode minimum size calc into
-    btrfs_min_dev_size()
-  btrfs-progs: mkfs: fix minimum size calculation for zoned mode
-  btrfs-progs: mkfs: check if byte_count is zone size aligned
-  btrfs-progs: support byte length for zone resetting
-  btrfs-progs: add test for zone resetting
-  btrfs-progs: test: use smaller emulated zone size
-
- .github/workflows/coverage.yml           |  2 +-
- .github/workflows/devel.yml              |  2 +-
- .github/workflows/pull-request.yml       |  2 +-
- common/device-utils.c                    | 45 +++++++------
- kernel-shared/zoned.c                    | 23 ++++++-
- kernel-shared/zoned.h                    |  7 +-
- mkfs/common.c                            | 48 +++++++++++++-
- mkfs/common.h                            |  2 +-
- mkfs/main.c                              | 82 ++++++++++--------------
- tests/mkfs-tests/030-zoned-rst/test.sh   |  7 +-
- tests/mkfs-tests/032-zoned-reset/test.sh | 62 ++++++++++++++++++
- 11 files changed, 202 insertions(+), 80 deletions(-)
- create mode 100755 tests/mkfs-tests/032-zoned-reset/test.sh
-
---
+diff --git a/mkfs/main.c b/mkfs/main.c
+index 950f76101058..f6f67abf3b0e 100644
+--- a/mkfs/main.c
++++ b/mkfs/main.c
+@@ -1189,7 +1189,6 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
+ 	struct prepare_device_progress *prepare_ctx = NULL;
+ 	struct mkfs_allocation allocation = { 0 };
+ 	struct btrfs_mkfs_config mkfs_cfg;
+-	u64 system_group_size;
+ 	/* Options */
+ 	bool force_overwrite = false;
+ 	struct btrfs_mkfs_features features = btrfs_mkfs_default_features;
+@@ -1770,14 +1769,6 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
+ 		goto error;
+ 	}
+ 
+-	/* To create the first block group and chunk 0 in make_btrfs */
+-	system_group_size = (opt_zoned ? zone_size(file) : BTRFS_MKFS_SYSTEM_GROUP_SIZE);
+-	if (dev_byte_count < system_group_size) {
+-		error("device is too small to make filesystem, must be at least %llu",
+-				system_group_size);
+-		goto error;
+-	}
+-
+ 	if (btrfs_bg_type_to_tolerated_failures(metadata_profile) <
+ 	    btrfs_bg_type_to_tolerated_failures(data_profile))
+ 		warning("metadata has lower redundancy than data!\n");
+-- 
 2.45.0
 

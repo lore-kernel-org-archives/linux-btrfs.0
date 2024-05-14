@@ -1,53 +1,53 @@
 Received: from esa6.hgst.iphmx.com (esa6.hgst.iphmx.com [216.71.154.45])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C47E617F7
-	for <linux-btrfs@vger.kernel.org>; Tue, 14 May 2024 00:52:09 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0B4FD17C2
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 May 2024 00:52:11 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=216.71.154.45
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1715647931; cv=none; b=kiM2t62wmCJbFZnVf3puzZRQ/U/rCLFH59LBtRuaSBnFz1YtPMgpYIu5dcQ9FgybLBIr0Ii4Fx4cHuNg+MTSKQ9bY6NqHOnwuiNh9j/JmW+vKW5X+NJKzHlIxMTV6jyvEwQyY+suq4T00zg1U1vQ+k2nz4DCAxxyanbmRl3oiuI=
+	t=1715647932; cv=none; b=V1x5WppEUWKogqiqvXXj9PLu/fSAef7PKLt6nlL7NLJ0ZMSwaZcuxDZLRSsJMq6Iv1xUCe20hRedT9SQvK0MfPRgvJEA3MS4WkLx7O0Sebrb8sBHdbgJTqm6OBQlHQckOCX0QGHu8X4jr8beoTdmig0Dih2cTLE8y03/GpoBBMM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1715647931; c=relaxed/simple;
-	bh=H7MQbFgVBsa/41MrMi9xW8AJFk6zCjEkOzRcEVn0po4=;
+	s=arc-20240116; t=1715647932; c=relaxed/simple;
+	bh=lS/za6YRAtKHJKFODuWu5J4pzptbO4u+AJ15KGasgh4=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=iDYxs8U5PVPYFbczcRV1N1TgN0r4C4dSs4Xk6KkmWoN/MkV2Q52MU6RhsppWtmp6/k17dNSxI8qv8jnLKB6e2GcBmnkAFf478zGLjxQd1p5cubPE/LWGMfwFBqTAx+0CKniCMs+sUJHz0M5LJhArn59pzZwXv1sNtQoG71SmCcE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=GIrBi8ON; arc=none smtp.client-ip=216.71.154.45
+	 MIME-Version; b=PWLIWGGcLCmPnooi3LnFLgc3x4qzcq4AUoDQhE4C2Mc/nGFmuUNWmsEUPdb41pPbBSBJ7JxvpZLG1mko2KiQrpFEjjhNenE358kRPyMi7yYG0QqnVNjv62OTi+xuWZHVl9/2II/5Xkfj8byfwK3njFQqhGxVViDLvMl6URuCIhk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=FrZwbZJG; arc=none smtp.client-ip=216.71.154.45
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="GIrBi8ON"
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="FrZwbZJG"
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1715647929; x=1747183929;
+  t=1715647930; x=1747183930;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=H7MQbFgVBsa/41MrMi9xW8AJFk6zCjEkOzRcEVn0po4=;
-  b=GIrBi8ONtqwUYX8jnnx/V9IMB1WB+T443DsJMeGxnTKeWy/xKuud8LOp
-   eDgj0g2QmbEavhybQxCytCFeM9jnKJxcRoOtUAabZXA/foqBuDlcUUwq1
-   Ys2JTt/NDTzr6qVAPjQZdB5JIIG8Crv97XwMDIQ7UG1GX4NaokFiJecLl
-   qVoY4n0gf0elmvWFd/oPWlaGgwCEiiFMNj76UsEM6GSleE6s+kTy3BjoR
-   lDc9pc8u/amSvnyIqx2gmTLL9QmR0O12MjxGEyNASqKUjLxYCZRhgGy+H
-   pRo5RRmUBCP3uRB1z+tA+IZ4LsiMlJhfpjMwr+hJKFwgyNI02AtvYvKsh
-   w==;
-X-CSE-ConnectionGUID: wwM/fWyuQJGRfsa/trV5Kg==
-X-CSE-MsgGUID: OJ6gJLq2Thqw4l4Z6Yi14w==
+  bh=lS/za6YRAtKHJKFODuWu5J4pzptbO4u+AJ15KGasgh4=;
+  b=FrZwbZJGxYWP+pH37S5gx6+iYOls880FyYfYnjcUPQEsM1wexVZhW9ja
+   pzuuPo+M7j8H5D23nubaFAbkGQggsHXvnF3OxoNlWTFoNfmR6C+q4KhLU
+   Kq8np9nNARcYm/s1UYcImlI7Z4kTrkTSlMhy+ZOpGYMBeiLHI3N9xBQes
+   0JkmSi5kdq5roxALkHywY/SxafapxzLwOmzobaz+pBsOPqZM8UP7fsGlg
+   UJX6DesJ01GSbaPCBqEG8g2qUriygIT8Qg6ky5zi54ilpafeg/68ShJW/
+   7E/9la8i2BG0YpnkR6SW7k180q9s1OMPIiRjvUeV6aoiSWHwmPGuDsjFe
+   g==;
+X-CSE-ConnectionGUID: HSCIEpMzTBqFEyL70KvPCg==
+X-CSE-MsgGUID: QpfbInihSAejf2aSYUZNIA==
 X-IronPort-AV: E=Sophos;i="6.08,159,1712592000"; 
-   d="scan'208";a="16252234"
+   d="scan'208";a="16252239"
 Received: from h199-255-45-15.hgst.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 14 May 2024 08:52:05 +0800
-IronPort-SDR: 6642a823_2/apwzdE8OWJfxVfG5KDZYYlQF381Ch1UDGUYxQkK5vpmCg
- R8vFBzEmmW77seS2dXNfzmh96YcaDbxzD1gOAyg==
+  by ob1.hgst.iphmx.com with ESMTP; 14 May 2024 08:52:08 +0800
+IronPort-SDR: 6642a827_/7XSvVrprHluTNDzWohjJc4ClHN+t39VA2QaR5PDIYASh3X
+ uyv2c2x/oax8EQ1h/2v49MOAPJbyp0gbyFp506w==
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 13 May 2024 16:54:12 -0700
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 13 May 2024 16:54:15 -0700
 WDCIronportException: Internal
 Received: from unknown (HELO naota-x1.wdc.com) ([10.225.163.55])
-  by uls-op-cesaip02.wdc.com with ESMTP; 13 May 2024 17:52:04 -0700
+  by uls-op-cesaip02.wdc.com with ESMTP; 13 May 2024 17:52:07 -0700
 From: Naohiro Aota <naohiro.aota@wdc.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH 4/7] btrfs-progs: mkfs: fix minimum size calculation for zoned
-Date: Mon, 13 May 2024 18:51:30 -0600
-Message-ID: <20240514005133.44786-5-naohiro.aota@wdc.com>
+Subject: [PATCH 6/7] btrfs-progs: support byte length for zone resetting
+Date: Mon, 13 May 2024 18:51:32 -0600
+Message-ID: <20240514005133.44786-7-naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.45.0
 In-Reply-To: <20240514005133.44786-1-naohiro.aota@wdc.com>
 References: <20240514005133.44786-1-naohiro.aota@wdc.com>
@@ -59,84 +59,116 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Currently, we check if a device is larger than 5 zones to determine we can
-create btrfs on the device or not. Actually, we need more zones to create
-DUP block groups, so it fails with "ERROR: not enough free space to
-allocate chunk". Implement proper support for non-SINGLE profile.
+Even with "mkfs.btrfs -b", mkfs.btrfs resets all the zones on the device.
+Limit the reset target within the specified length.
 
-Also, current code does not ensure we can create tree-log BG and data
-relocaiton BG, which are essential for the real usage. Count them as
-requirement too.
+Also, we need to check that there is no active zone outside of the FS
+range. If there is one, btrfs fails to meet the active zone limit properly.
 
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
- mkfs/common.c | 53 +++++++++++++++++++++++++++++++++++++++++++--------
- 1 file changed, 45 insertions(+), 8 deletions(-)
+ common/device-utils.c | 17 ++++++++++++-----
+ kernel-shared/zoned.c | 23 ++++++++++++++++++++++-
+ kernel-shared/zoned.h |  2 +-
+ 3 files changed, 35 insertions(+), 7 deletions(-)
 
-diff --git a/mkfs/common.c b/mkfs/common.c
-index af54089654a0..a5100b296f65 100644
---- a/mkfs/common.c
-+++ b/mkfs/common.c
-@@ -818,14 +818,51 @@ u64 btrfs_min_dev_size(u32 nodesize, bool mixed, u64 zone_size, u64 meta_profile
- 	u64 meta_size;
- 	u64 data_size;
-
--	/*
--	 * 2 zones for the primary superblock
--	 * 1 zone for the system block group
--	 * 1 zone for a metadata block group
--	 * 1 zone for a data block group
--	 */
--	if (zone_size)
--		return 5 * zone_size;
-+	if (zone_size) {
-+		/* 2 zones for the primary superblock. */
-+		reserved += 2 * zone_size;
+diff --git a/common/device-utils.c b/common/device-utils.c
+index 86942e0c7041..7df7d9ce39d8 100644
+--- a/common/device-utils.c
++++ b/common/device-utils.c
+@@ -254,16 +254,23 @@ int btrfs_prepare_device(int fd, const char *file, u64 *byte_count_ret,
+ 
+ 		if (!zinfo->emulated) {
+ 			if (opflags & PREP_DEVICE_VERBOSE)
+-				printf("Resetting device zones %s (%u zones) ...\n",
+-				       file, zinfo->nr_zones);
++				printf("Resetting device zones %s (%llu zones) ...\n",
++				       file, byte_count / zinfo->zone_size);
+ 			/*
+ 			 * We cannot ignore zone reset errors for a zoned block
+ 			 * device as this could result in the inability to write
+ 			 * to non-empty sequential zones of the device.
+ 			 */
+-			if (btrfs_reset_all_zones(fd, zinfo)) {
+-				error("zoned: failed to reset device '%s' zones: %m",
+-				      file);
++			ret = btrfs_reset_zones(fd, zinfo, byte_count);
++			if (ret) {
++				if (ret == EBUSY) {
++					error("zoned: device '%s' contains an active zone outside of the FS range",
++					      file);
++					error("zoned: btrfs needs full control of active zones");
++				} else {
++					error("zoned: failed to reset device '%s' zones: %m",
++					      file);
++				}
+ 				goto err;
+ 			}
+ 		}
+diff --git a/kernel-shared/zoned.c b/kernel-shared/zoned.c
+index fb1e1388804e..b4244966ca36 100644
+--- a/kernel-shared/zoned.c
++++ b/kernel-shared/zoned.c
+@@ -395,16 +395,24 @@ static int report_zones(int fd, const char *file,
+  * Discard blocks in the zones of a zoned block device. Process this with zone
+  * size granularity so that blocks in conventional zones are discarded using
+  * discard_range and blocks in sequential zones are reset though a zone reset.
++ *
++ * We need to ensure that zones outside of the FS is not active, so that
++ * the FS can use all the active zones. Return EBUSY if there is an active
++ * zone.
+  */
+-int btrfs_reset_all_zones(int fd, struct btrfs_zoned_device_info *zinfo)
++int btrfs_reset_zones(int fd, struct btrfs_zoned_device_info *zinfo, u64 byte_count)
+ {
+ 	unsigned int i;
+ 	int ret = 0;
+ 
+ 	ASSERT(zinfo);
++	ASSERT(IS_ALIGNED(byte_count, zinfo->zone_size));
+ 
+ 	/* Zone size granularity */
+ 	for (i = 0; i < zinfo->nr_zones; i++) {
++		if (byte_count == 0)
++			break;
 +
-+		/*
-+		 * 1 zone each for the initial system, metadata, and data block
-+		 * group
-+		 */
-+		reserved += 3 * zone_size;
+ 		if (zinfo->zones[i].type == BLK_ZONE_TYPE_CONVENTIONAL) {
+ 			ret = device_discard_blocks(fd,
+ 					     zinfo->zones[i].start << SECTOR_SHIFT,
+@@ -419,7 +427,20 @@ int btrfs_reset_all_zones(int fd, struct btrfs_zoned_device_info *zinfo)
+ 
+ 		if (ret)
+ 			return ret;
 +
-+		/*
-+		 * non-SINGLE profile needs:
-+		 * 1 zone for system block group
-+		 * 1 zone for normal metadata block group
-+		 * 1 zone for tree-log block group
-+		 *
-+		 * SINGLE profile only need to add tree-log block group
-+		 */
-+		if (meta_profile & BTRFS_BLOCK_GROUP_PROFILE_MASK)
-+			meta_size = 3 * zone_size;
-+		else
-+			meta_size = zone_size;
-+		/* DUP profile needs two zones for each block group. */
-+		if (meta_profile & BTRFS_BLOCK_GROUP_DUP)
-+			meta_size *= 2;
-+		reserved += meta_size;
++		byte_count -= zinfo->zone_size;
+ 	}
++	for (; i < zinfo->nr_zones; i++) {
++		const enum blk_zone_cond cond = zinfo->zones[i].cond;
 +
-+		/*
-+		 * non-SINGLE profile needs:
-+		 * 1 zone for data block group
-+		 * 1 zone for data relocation block group
-+		 *
-+		 * SINGLE profile only need to add data relocationblock group
-+		 */
-+		if (data_profile & BTRFS_BLOCK_GROUP_PROFILE_MASK)
-+			data_size = 2 * zone_size;
-+		else
-+			data_size = zone_size;
-+		/* DUP profile needs two zones for each block group. */
-+		if (data_profile & BTRFS_BLOCK_GROUP_DUP)
-+			data_size *= 2;
-+		reserved += data_size;
-+
-+		return reserved;
++		if (zinfo->zones[i].type == BLK_ZONE_TYPE_CONVENTIONAL)
++			continue;
++		if (cond == BLK_ZONE_COND_IMP_OPEN ||
++		    cond == BLK_ZONE_COND_EXP_OPEN ||
++		    cond == BLK_ZONE_COND_CLOSED)
++			return EBUSY;
 +	}
-
- 	if (mixed)
- 		return 2 * (BTRFS_MKFS_SYSTEM_GROUP_SIZE +
---
++
+ 	return fsync(fd);
+ }
+ 
+diff --git a/kernel-shared/zoned.h b/kernel-shared/zoned.h
+index 6eba86d266bf..104fb7b19490 100644
+--- a/kernel-shared/zoned.h
++++ b/kernel-shared/zoned.h
+@@ -149,7 +149,7 @@ bool btrfs_redirty_extent_buffer_for_zoned(struct btrfs_fs_info *fs_info,
+ 					   u64 start, u64 end);
+ int btrfs_reset_chunk_zones(struct btrfs_fs_info *fs_info, u64 devid,
+ 			    u64 offset, u64 length);
+-int btrfs_reset_all_zones(int fd, struct btrfs_zoned_device_info *zinfo);
++int btrfs_reset_zones(int fd, struct btrfs_zoned_device_info *zinfo, u64 byte_count);
+ int zero_zone_blocks(int fd, struct btrfs_zoned_device_info *zinfo, off_t start,
+ 		     size_t len);
+ int btrfs_wipe_temporary_sb(struct btrfs_fs_devices *fs_devices);
+-- 
 2.45.0
 

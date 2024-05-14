@@ -1,86 +1,88 @@
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6AF8651C42
-	for <linux-btrfs@vger.kernel.org>; Tue, 14 May 2024 17:20:50 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 991AE17F378
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 May 2024 17:29:05 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1715707252; cv=none; b=gSpJyldq8B0h354HDgcLxBldukMvs/vIE01/ZCALyNzjtXnbtOomnXK98EFNvd61Eou7nY9PTiydgKy/V2O+WpBJjHPG0gn3+wpigqSRDoDGlpR+BRlWnLedXp8f08ttVjQsV+VNDoGjNeWttCks1IJ04lmmdY1Hc8CL4k6xx5U=
+	t=1715707747; cv=none; b=QalkXiC7iU7X+3nTho2XOm9GW5G/juI7zB1vQBdGBO9wSg6GoNu6JN/xs0ecixqmuTFEiIvNNfmTgauWSbq4Y0RV8nvR1z35st79OOk7DvOqeGP2mgE0YBnFBACkqJLMZu08Q6b2TxDHovm3afQo9VByI4FqXr4Gtpz3K1zgrAY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1715707252; c=relaxed/simple;
-	bh=D+1RdbpjG9BkWcgrtgL0wnuW5fOiVdGggzB2emVBBAQ=;
+	s=arc-20240116; t=1715707747; c=relaxed/simple;
+	bh=Co3klte+qf7cdqf+5JfvOGSdrvkvMCkDgAE+Fntcclc=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=W3sDbpiIB47lu4SoT3QihM2jzOkGQEDIrmTkrDHp+IgUNwDTfiDk+2+bMZLVMbv5W7tiKLXUxdgMbvDjJ9v4nAdXjZvraeFO36CKsfsH5BosT12oBDEbXe80xQEIg2wu6CIY/pt1K9Ty2dm0dImvptMrjyZWjDEig6vhQQx5SbQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=QC5P8KkW; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=zlK3m1ew; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=QC5P8KkW; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=zlK3m1ew; arc=none smtp.client-ip=195.135.223.130
+	 Content-Type:Content-Disposition:In-Reply-To; b=C5ziqB8/hhYBbHzBbg0XfUlEkZ4uRimjlyFsDX8ntEkHMukHDnux1A6duR3wK4/xg6I7K4NQ910zNWsATAC0mTXtWSX2+Aq6Nsz806Z+8qtUd07WjTYbnKg1HPU4AOnh/CHl0vUdu1rStwollkAlqFPoDX9cP+seX3yqvGXT5wo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=vqAKHvu3; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=WZFK3LzX; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=vqAKHvu3; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=WZFK3LzX; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="QC5P8KkW";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="zlK3m1ew";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="QC5P8KkW";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="zlK3m1ew"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="vqAKHvu3";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="WZFK3LzX";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="vqAKHvu3";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="WZFK3LzX"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 8BEDA33690;
-	Tue, 14 May 2024 17:20:48 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id BF15133690;
+	Tue, 14 May 2024 17:29:03 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1715707248;
+	t=1715707743;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=hQ6ivy5grAIhQ26jRNdbYBWUSiRGzKPsE+YNBFOHQs4=;
-	b=QC5P8KkWotQ/N5Y6sBA0S9l72SSHye7J/8KXa9US7vPza8zGuJFDZLB/IG+gG24YXdXD+K
-	qP+qc7fM40HmpCt8AQ6TsoEj7A4A7OwJXSiNVEs4BXppC76pqs5GAclHT+phlrMizs7d0r
-	TpNXbFP6/VKEecbC1iOk40ozi/e8gtI=
+	bh=BhFxqSph2Kpc8dlFIVs9yDYV0b1uK/DFQ8YJYTOnKik=;
+	b=vqAKHvu3Ql6uZvaCLoCAzy3m0eZF7SWJ50iic37H1BEZi6Q40iVjQakRRUwqnsTTRw0vFg
+	xUpyEBFFaJJGmyzSZ2LasKIdHIJ+sjv+XyHW0WBJkKKhlOG59BA60MCj9Jx0XkurrxqHMh
+	JqplkbWWR8v9+Ib9lFINIeifPb94+a4=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1715707248;
+	s=susede2_ed25519; t=1715707743;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=hQ6ivy5grAIhQ26jRNdbYBWUSiRGzKPsE+YNBFOHQs4=;
-	b=zlK3m1ewRsHerRZYZcUrnsngFxkybtOmqWui3BvTN0cQHkqZ9tTb4fhFM04ysvpGqGtcnw
-	3B2DZj0giJdl8aAg==
+	bh=BhFxqSph2Kpc8dlFIVs9yDYV0b1uK/DFQ8YJYTOnKik=;
+	b=WZFK3LzXuvrFESn0YFCs1M4GR5a+6OO33FcR6v9xfw88p6on1YJHqVnOuL1ig1G82FI37u
+	XGGAOllxHGHrhRBw==
 Authentication-Results: smtp-out1.suse.de;
-	none
+	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b=vqAKHvu3;
+	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=WZFK3LzX
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1715707248;
+	t=1715707743;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=hQ6ivy5grAIhQ26jRNdbYBWUSiRGzKPsE+YNBFOHQs4=;
-	b=QC5P8KkWotQ/N5Y6sBA0S9l72SSHye7J/8KXa9US7vPza8zGuJFDZLB/IG+gG24YXdXD+K
-	qP+qc7fM40HmpCt8AQ6TsoEj7A4A7OwJXSiNVEs4BXppC76pqs5GAclHT+phlrMizs7d0r
-	TpNXbFP6/VKEecbC1iOk40ozi/e8gtI=
+	bh=BhFxqSph2Kpc8dlFIVs9yDYV0b1uK/DFQ8YJYTOnKik=;
+	b=vqAKHvu3Ql6uZvaCLoCAzy3m0eZF7SWJ50iic37H1BEZi6Q40iVjQakRRUwqnsTTRw0vFg
+	xUpyEBFFaJJGmyzSZ2LasKIdHIJ+sjv+XyHW0WBJkKKhlOG59BA60MCj9Jx0XkurrxqHMh
+	JqplkbWWR8v9+Ib9lFINIeifPb94+a4=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1715707248;
+	s=susede2_ed25519; t=1715707743;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=hQ6ivy5grAIhQ26jRNdbYBWUSiRGzKPsE+YNBFOHQs4=;
-	b=zlK3m1ewRsHerRZYZcUrnsngFxkybtOmqWui3BvTN0cQHkqZ9tTb4fhFM04ysvpGqGtcnw
-	3B2DZj0giJdl8aAg==
+	bh=BhFxqSph2Kpc8dlFIVs9yDYV0b1uK/DFQ8YJYTOnKik=;
+	b=WZFK3LzXuvrFESn0YFCs1M4GR5a+6OO33FcR6v9xfw88p6on1YJHqVnOuL1ig1G82FI37u
+	XGGAOllxHGHrhRBw==
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 74A85137C3;
-	Tue, 14 May 2024 17:20:48 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id A5D57137C3;
+	Tue, 14 May 2024 17:29:03 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id OSVTHHCdQ2ZQbwAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Tue, 14 May 2024 17:20:48 +0000
-Date: Tue, 14 May 2024 19:13:31 +0200
+	id tZ9UKF+fQ2Z0cQAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Tue, 14 May 2024 17:29:03 +0000
+Date: Tue, 14 May 2024 19:21:42 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Julian Taylor <julian.taylor@1und1.de>
-Cc: wqu@suse.com, linux-btrfs@vger.kernel.org
-Subject: Re: FAILED: patch "[PATCH] btrfs: do not wait for short bulk
- allocation" failed to apply to 6.6-stable tree
-Message-ID: <20240514171331.GK4449@twin.jikos.cz>
+To: Naohiro Aota <Naohiro.Aota@wdc.com>
+Cc: David Sterba <dsterba@suse.cz>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 0/7] btrfs-progs: zoned: proper "mkfs.btrfs -b" support
+Message-ID: <20240514172142.GL4449@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <2024041951-sports-hula-f2a5@gregkh>
- <bdeef163-e099-4b70-953e-248bf44ee37f@1und1.de>
+References: <20240514005133.44786-1-naohiro.aota@wdc.com>
+ <20240514153938.GE4449@twin.jikos.cz>
+ <xbrkuvkwzzwufyiqgxve67zwhwf2pxqkiiqsorbnfb3jgdug35@cs32x5a5jkv2>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -89,39 +91,76 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <bdeef163-e099-4b70-953e-248bf44ee37f@1und1.de>
+In-Reply-To: <xbrkuvkwzzwufyiqgxve67zwhwf2pxqkiiqsorbnfb3jgdug35@cs32x5a5jkv2>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-Spam-Flag: NO
+X-Spam-Score: -4.21
+X-Rspamd-Action: no action
+X-Rspamd-Queue-Id: BF15133690
 X-Spam-Level: 
-X-Spamd-Result: default: False [-3.99 / 50.00];
-	BAYES_HAM(-3.00)[99.99%];
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Spamd-Result: default: False [-4.21 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	NEURAL_HAM_SHORT(-0.19)[-0.961];
+	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	ARC_NA(0.00)[];
+	MX_GOOD(-0.01)[];
 	TO_DN_SOME(0.00)[];
+	TO_DN_EQ_ADDR_SOME(0.00)[];
+	ARC_NA(0.00)[];
 	MIME_TRACE(0.00)[0:+];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
 	RCVD_TLS_ALL(0.00)[];
 	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	REPLYTO_ADDR_EQ_FROM(0.00)[];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
 	FUZZY_BLOCKED(0.00)[rspamd.com];
-	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.cz:replyto,imap1.dmz-prg2.suse.org:helo];
 	RCVD_COUNT_TWO(0.00)[2];
-	RCPT_COUNT_THREE(0.00)[3]
-X-Spam-Score: -3.99
-X-Spam-Flag: NO
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.cz:dkim,suse.cz:replyto,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns];
+	RCPT_COUNT_THREE(0.00)[3];
+	DKIM_TRACE(0.00)[suse.cz:+]
 
-On Mon, May 06, 2024 at 10:41:14AM +0200, Julian Taylor wrote:
-> Hello,
+On Tue, May 14, 2024 at 05:14:39PM +0000, Naohiro Aota wrote:
+> On Tue, May 14, 2024 at 05:39:38PM +0200, David Sterba wrote:
+> > On Mon, May 13, 2024 at 06:51:26PM -0600, Naohiro Aota wrote:
+> > > mkfs.btrfs -b <byte_count> on a zoned device has several issues listed
+> > > below.
+> > > 
+> > > - The FS size needs to be larger than minimal size that can host a btrfs,
+> > >   but its calculation does not consider non-SINGLE profile
+> > > - The calculation also does not ensure tree-log BG and data relocation BG
+> > > - It allows creating a FS not aligned to the zone boundary
+> > > - It resets all device zones beyond the specified length
+> > > 
+> > > This series fixes the issues with some cleanups.
+> > > 
+> > > Patches 1 to 3 are clean up patches, so they should not change the behavior.
+> > > 
+> > > Patches 4 to 6 address the issues and the last patch adds a test case.
+> > > 
+> > > Naohiro Aota (7):
+> > >   btrfs-progs: rename block_count to byte_count
+> > >   btrfs-progs: mkfs: remove duplicated device size check
+> > >   btrfs-progs: mkfs: unify zoned mode minimum size calc into
+> > >     btrfs_min_dev_size()
+> > >   btrfs-progs: mkfs: fix minimum size calculation for zoned
+> > >   btrfs-progs: mkfs: check if byte_count is zone size aligned
+> > >   btrfs-progs: support byte length for zone resetting
+> > >   btrfs-progs: add test for zone resetting
+> > 
+> > I did a quick CI check, the mkfs tests fails. You can open a pull
+> > request to get your changes tested (it can be just for the testing
+> > purpose, if you note that I'll skip it until the final version).
+> > 
+> > https://github.com/kdave/btrfs-progs/actions/runs/9081685951
 > 
-> thank you for swiftly fixing the issue.
-> 
-> As the problem affects the stable releases 6.1 and 6.6 would it be 
-> possible to backport the fix to these versions so it can make its way 
-> into distributions?
+> Thank you. I just noticed some workflows are running on my btrfs-progs
+> repository too.
 
-6.1 and 6.6 backports sent, thanks.
+Yes, the jobs are matched by the branch names and will start if you have
+Actions enabled in the repository.

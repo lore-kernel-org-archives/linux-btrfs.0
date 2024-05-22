@@ -1,36 +1,36 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DE7AF25753
-	for <linux-btrfs@vger.kernel.org>; Wed, 22 May 2024 14:36:44 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E3D4F2B9B7
+	for <linux-btrfs@vger.kernel.org>; Wed, 22 May 2024 14:36:46 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1716388604; cv=none; b=AiRxzqVKvlM8YBfzlBe/z2p2TSXVLeN7DZBPt0r3mxu8vhSBUnbiQzvy6Oej3mkZRAUFw4xqCEJpTAQzDDDWkRHfF2LxrXUI/fr5aN3SpJW3qgnTCiU8sdWLkOpNQGj92KT4STGZ+VsBIANksfW/4halbdCMwDS6Z0pYrG3VJSc=
+	t=1716388607; cv=none; b=hz42c+GP7My8QgA573ZsQXJfnVbLZ1xD9re1fbrPLO8Di6hahgDeGy7u/jtSs2oFpqYV0Rahg/IxW9/A6WnZ7yoD6xyiQ0q6geNT7rirhrRIigkRNYxv8iOgZeYhmYfLrlD4SQU6vjQs3a9CgZHFAugIxM1lpCJgCYtjByszLyQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1716388604; c=relaxed/simple;
-	bh=Jk2pLpQ4kQ62gRmVrx9XMVZ2M/g3S6QHiJjx6Mmh/B0=;
+	s=arc-20240116; t=1716388607; c=relaxed/simple;
+	bh=jSUaWv3D26Gc994bf/+m3KCGYKcbSM+Rx1fog0KmeIY=;
 	h=From:To:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version; b=i0qOXJ21HXDSjGhhrTcBvVd55E1Etzj657ffqVkL8zRWfn7OkNWF/8UHFol7KcnkPME41dqETNvRa6p8jhGvPXIn7AKA9cQqnxufxqHsyvPGwajvA3ZhTvRFq011Q8juojyvmi27ck2lYIFx3s390S1f9lmc438lGlnWeFO5Xt0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=RIcJrzP9; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version; b=n6ZJdWwWjqRxJFV6VJKq6DLFajMFt+yrM68Gv0qcEieyjVJBboc+CgM6FvTuj/wrHahZSWNX/sAB6yKKaf8T89u6ni45Z0G5OTwrdJF9D4hVWYx8R9SnccLw7pedsz8c17hKz0g09xKFnRP2Pszf4cSoVB4PkLXJeOMrFANQSYE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=h0/Amg1p; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="RIcJrzP9"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 38696C32782
-	for <linux-btrfs@vger.kernel.org>; Wed, 22 May 2024 14:36:44 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="h0/Amg1p"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 401E7C2BBFC
+	for <linux-btrfs@vger.kernel.org>; Wed, 22 May 2024 14:36:46 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1716388604;
-	bh=Jk2pLpQ4kQ62gRmVrx9XMVZ2M/g3S6QHiJjx6Mmh/B0=;
+	s=k20201202; t=1716388606;
+	bh=jSUaWv3D26Gc994bf/+m3KCGYKcbSM+Rx1fog0KmeIY=;
 	h=From:To:Subject:Date:In-Reply-To:References:From;
-	b=RIcJrzP9tq8UcQbVl+drSybzXYKdP9ZqbcSRBFhRoavR5m5e36FiCYYV+f2rMzOsK
-	 GSGNkDHVdEJxvQUIWWd52C6THDsEEt1XJWcUrqpaozX3GORYUnHr/lb93zv8dwsN6T
-	 VGgk8y+bXNZ82QCNZFMsXM8kaVRHCu3faAFXEDHMqYeH6BU1a03mTqQCB1lfjkI2Du
-	 67rC8T86AXr0pEveJ8agx52hfLZGm6Bipv0k+qqYMO3nBAkCPaUwFAxX6GjfzKlfK0
-	 v6E82R2ZnJiuQgm4gISml/94UYSVEM01hQesxPUPciPIeIqTsJmmMRMSxkLKvPn3bw
-	 cRit327FuAlBg==
+	b=h0/Amg1pyy7Z+Makil1hg/z3D68e3+tWzpz4HUtiuJNXjY8lsIT8jmOZihCpjFEYz
+	 1VtkiFZIQR0QvXGMIJlHL8O7huLf5J0PP+iOMXjJYTBm8jZ0FEsETx+q+Mh0BOsLjd
+	 l5fYoIbsEjoM3pINaKwMTZOY9sIC9nZuw5uOP4t2l7i9QhQRuV32cFwrBef7h9m8iX
+	 8bdvaCfaOPnoUl/+h23jPLWPqgZcTUswSsRT9F5WuEuC81SdtSC5UJW/jdh8h1ZkJA
+	 Sy8zwDtrGnh4eecC29NdT0LreN6K94ZPDD7BBPHPGPwe0mzh0PH/0WMJOgTatZ8ZXe
+	 zYInhANq6tUIg==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 5/7] btrfs: scrub: avoid create/commit empty transaction at finish_extent_writes_for_zoned()
-Date: Wed, 22 May 2024 15:36:33 +0100
-Message-Id: <ee253f2941587230ad04dcb5386cfcd04e20066a.1716386100.git.fdmanana@suse.com>
+Subject: [PATCH 7/7] btrfs: send: get rid of the label and gotos at ensure_commit_roots_uptodate()
+Date: Wed, 22 May 2024 15:36:35 +0100
+Message-Id: <11d9f5813524b2b2d1164fe921464f8427c18620.1716386100.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.34.1
 In-Reply-To: <cover.1716386100.git.fdmanana@suse.com>
 References: <cover.1716386100.git.fdmanana@suse.com>
@@ -44,48 +44,46 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-At finish_extent_writes_for_zoned() we use btrfs_join_transaction() to
-catch any running transaction and then commit it. This will however create
-a new and empty transaction in case there's no running transaction anymore
-(got committed by the transaction kthread or other task for example) or
-there's a running transaction finishing its commit and with a state >=
-TRANS_STATE_UNBLOCKED. In the former case we don't need to do anything
-while in the second case we just need to wait for the transaction to
-complete its commit.
-
-So improve this by using btrfs_attach_transaction_barrier() instead, which
-does not create a new transaction if there's none running, and if there's
-a current transaction that is committing, it will wait for it to fully
-commit and not create a new transaction. This helps avoiding creating and
-committing empty transactions, saving IO, time and unnecessary rotation of
-the backup roots in the super block.
+Now that there is a helper to commit the current transaction and we are
+using it, there's no need for the label and goto statements at
+ensure_commit_roots_uptodate(). So replace them with direct return
+statements that call btrfs_commit_current_transaction().
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/scrub.c | 10 +++++++---
- 1 file changed, 7 insertions(+), 3 deletions(-)
+ fs/btrfs/send.c | 12 ++----------
+ 1 file changed, 2 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 376c5c2e9aed..6c7b5d52591e 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -2446,9 +2446,13 @@ static int finish_extent_writes_for_zoned(struct btrfs_root *root,
- 	btrfs_wait_nocow_writers(cache);
- 	btrfs_wait_ordered_roots(fs_info, U64_MAX, cache);
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 7a82132500a8..2099b5f8c022 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -8001,23 +8001,15 @@ static int ensure_commit_roots_uptodate(struct send_ctx *sctx)
+ 	struct btrfs_root *root = sctx->parent_root;
  
--	trans = btrfs_join_transaction(root);
--	if (IS_ERR(trans))
--		return PTR_ERR(trans);
-+	trans = btrfs_attach_transaction_barrier(root);
-+	if (IS_ERR(trans)) {
-+		int ret = PTR_ERR(trans);
-+
-+		return (ret == -ENOENT) ? 0 : ret;
-+	}
-+
- 	return btrfs_commit_transaction(trans);
+ 	if (root && root->node != root->commit_root)
+-		goto commit_trans;
++		return btrfs_commit_current_transaction(root);
+ 
+ 	for (int i = 0; i < sctx->clone_roots_cnt; i++) {
+ 		root = sctx->clone_roots[i].root;
+ 		if (root->node != root->commit_root)
+-			goto commit_trans;
++			return btrfs_commit_current_transaction(root);
+ 	}
+ 
+ 	return 0;
+-
+-commit_trans:
+-	/*
+-	 * Use the first root we found. We could use any but that would cause
+-	 * an unnecessary update of the root's item in the root tree when
+-	 * committing the transaction if that root wasn't changed before.
+-	 */
+-	return btrfs_commit_current_transaction(root);
  }
  
+ /*
 -- 
 2.43.0
 

@@ -1,153 +1,173 @@
-Received: from mail-il1-f208.google.com (mail-il1-f208.google.com [209.85.166.208])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from esa3.hgst.iphmx.com (esa3.hgst.iphmx.com [216.71.153.141])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DDA301DFD0
-	for <linux-btrfs@vger.kernel.org>; Wed, 22 May 2024 02:55:32 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.166.208
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E4C221C6B4
+	for <linux-btrfs@vger.kernel.org>; Wed, 22 May 2024 06:03:44 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=216.71.153.141
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1716346534; cv=none; b=pSvqZf6qJVSi4IICUBoAWH2KSKFrm5cmmG2a34bFgrr0kFNWefsEGE5eyQMFM7zbgd25ZuLKBZCacslU+LwSChSsl6stvwEXaYpXhyEb96UwUqG5L8nlWw7ne2Yd64tYrqVAP7w22pVmLuxkHOV4U9PAIuZMqFRhHbWEOB4S4no=
+	t=1716357826; cv=none; b=XsNTCDXOIh90Mjx4f1ltlRxIIzCYwLLsk59i2C29hwmXud7g6NgPmsswG4yu6uMA/IbxD89s0wrR5HnnxGUPWs8zjaJqhaUM6ReUezDvUlV5HXdUYUlEB0H9kuDTvrK1Z7R2hiorkhfFLwpvd+F+ZvAXe92gOM0gA5IxQaHP9cw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1716346534; c=relaxed/simple;
-	bh=Fmq4cfmTdTx1iUl4iK3aruK2b4BklXedhpLLjn/V3gg=;
-	h=MIME-Version:Date:Message-ID:Subject:From:To:Content-Type; b=ifo9Yfc3fpPq5NSrVfN9ALMY9QUZrE6Cd0yOOuAoyzBvNoChsck25kfgUGqc/fyq0sZvCTxacCcaSHR2uHrwnDomiNrU9Zrzf3X2bTx+eN+VQxQ9hcNbh31UEG5mp0Uzoc2zp0tJldPOKKMwnDjKku0RVf4fkaWbRt4IapTFyg0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com; arc=none smtp.client-ip=209.85.166.208
-Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
-Received: by mail-il1-f208.google.com with SMTP id e9e14a558f8ab-3705289d46fso3018255ab.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 May 2024 19:55:32 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1716346532; x=1716951332;
-        h=to:from:subject:message-id:date:mime-version:x-gm-message-state
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=+Ry/8RZHi+cirGva08ioXvtiJ6dGry8jsjjnUdJmvrA=;
-        b=knOUvlI1v1+kUXo+qGohHRvmRtrDLyFbNWpuRO5oU7fyAiSVrhFFzorBZ+czrNzoTt
-         kqgj/OVBtEphSGo+eMr4ngn+hdGtAYHyVMsFxjuT9uk8e3N+2uPGepwwJsV0W7VOhDTT
-         61apxfPBPf73O6Jdnycx0g5U8iCMsDnFc6rXAI3mY2i90x/qlgyb1Tp16Pd1TuFEeO9k
-         9fzzFxG548ZyJ3M3iaCHnyiOHxo6CxlFgwkdyxPbOSOH2n/Jn19sNYdp9XTDRIBrvlFt
-         e5vc8GcIqYkbD2778unNaBWLJsZdDIyBz0ly/4C+dCIzggNw17ExzzCmkoAJFNYHuN7d
-         +eYQ==
-X-Forwarded-Encrypted: i=1; AJvYcCVGye4Yu6HWy7iuUj6qlC2ZRI5jgGwlzsV8QdjU8vI6Hoz87IHXpJXuLQAY/xgGjtZ6t3/rOkr35itkhIBLO1je9NcPudcHTj5+PAs=
-X-Gm-Message-State: AOJu0Ywsc4Rcb2/ma27vlNSCqyQH7p9UEbrayvv5QZgZDMWJ1+gvseWp
-	Op5cZc6FXmJM69OGUt+U4erZeKeMPmfShdxiJrmSjojB1gOWgVsMxOFJ8S/sqmkdCWqVibPO71D
-	sMPp/0lIDSV0wZqIuQQAVqCjCtNx22HhW2u4Z3iwsIAPFsoL174ZNEDY=
-X-Google-Smtp-Source: AGHT+IE8dA3Y436YSv7w4/IDzm52Ag7PNo4+j3PLSkNAq1wZDNdZDmA0MipCEBB/rcPn+CkVUest9bxdsZlwz9iQbnABinemAg3b
+	s=arc-20240116; t=1716357826; c=relaxed/simple;
+	bh=mqFV2FaVrGXTpH+fUM5qiY8Frwq6H/J1hKtT8VeNFqs=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=TCM0kTeawpEzmeRIXJVI4WLsE+nKGEmYSZn4LOdS1tKfkyUSueMsw/Ql8QNLJb7Xy7v6y7qjsei47ExW10sNjnX9CCCkjZh36xdCmJFV7Qdvmq/u0AWTQN823pKw4nBw600NsBKbBYv9Koc7C2GJGX8HJQFRFGDHtFAqxczGNAU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=F+2SzmEc; arc=none smtp.client-ip=216.71.153.141
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="F+2SzmEc"
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1716357825; x=1747893825;
+  h=from:to:cc:subject:date:message-id:in-reply-to:
+   references:mime-version:content-transfer-encoding;
+  bh=mqFV2FaVrGXTpH+fUM5qiY8Frwq6H/J1hKtT8VeNFqs=;
+  b=F+2SzmEcHgoE8qPzyUtct1VoZSNao3QRtS57aYtjHWrSs8m8ga+cz1RY
+   geco4Z3nn3R07fY4a2yiGSa9WXMQ0RJcEX/PDqNk2wcMOUFbyFMgZC39A
+   9BbNXWJSdYDdrJ4gP9E/D7Qg/BpFL4S6JQ0a56mkNoGet9LDvge1r+Wiu
+   7GtLP0qb7yB9bCMiVHh5pKMDBABn05isyqm+QHzOl4zQeYM+5DcTmXClD
+   nKZ0y6iXPqzuHckb3d6WQKAFNcbgCyYkVSbXL/QBzVOjsGkjZhBPM/jBX
+   udIwS6DwmzR/ZmnomT7lbvVmadPL3pq5U2pEJGAlkaFD8SIqb8aBrETYz
+   A==;
+X-CSE-ConnectionGUID: EvNFiAWYSW+VCzte1eMPug==
+X-CSE-MsgGUID: yC4oRtUGQO+iGfpllsSc4Q==
+X-IronPort-AV: E=Sophos;i="6.08,179,1712592000"; 
+   d="scan'208";a="16664804"
+Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
+  by ob1.hgst.iphmx.com with ESMTP; 22 May 2024 14:03:42 +0800
+IronPort-SDR: 664d7d21_0U7YxcEyt9mVMYvjUgGFuvCu+YsNqDZcqRBeL0lwqfXdpEZ
+ vm6UlRxbSGzaPO+ELDK7HDfkeebQBO4ILAYcr1A==
+Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 21 May 2024 22:05:38 -0700
+WDCIronportException: Internal
+Received: from unknown (HELO naota-xeon.wdc.com) ([10.225.163.60])
+  by uls-op-cesaip02.wdc.com with ESMTP; 21 May 2024 23:03:41 -0700
+From: Naohiro Aota <naohiro.aota@wdc.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Naohiro Aota <naohiro.aota@wdc.com>
+Subject: [PATCH v3 04/10] btrfs-progs: mkfs: fix minimum size calculation for zoned mode
+Date: Wed, 22 May 2024 15:02:26 +0900
+Message-ID: <20240522060232.3569226-5-naohiro.aota@wdc.com>
+X-Mailer: git-send-email 2.45.1
+In-Reply-To: <20240522060232.3569226-1-naohiro.aota@wdc.com>
+References: <20240522060232.3569226-1-naohiro.aota@wdc.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Received: by 2002:a05:6e02:1a26:b0:36c:2ed4:8d4c with SMTP id
- e9e14a558f8ab-371f96ed3aemr617085ab.4.1716346532155; Tue, 21 May 2024
- 19:55:32 -0700 (PDT)
-Date: Tue, 21 May 2024 19:55:32 -0700
-X-Google-Appengine-App-Id: s~syzkaller
-X-Google-Appengine-App-Id-Alias: syzkaller
-Message-ID: <0000000000005c66ec061902110a@google.com>
-Subject: [syzbot] [nilfs?] [btrfs?] WARNING in filemap_unaccount_folio
-From: syzbot <syzbot+026119922c20a8915631@syzkaller.appspotmail.com>
-To: brauner@kernel.org, clm@fb.com, dsterba@suse.com, jack@suse.cz, 
-	josef@toxicpanda.com, konishi.ryusuke@gmail.com, linux-btrfs@vger.kernel.org, 
-	linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org, 
-	linux-nilfs@vger.kernel.org, syzkaller-bugs@googlegroups.com, 
-	viro@zeniv.linux.org.uk
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
 
-Hello,
+Currently, we check if a device is larger than 5 zones to determine we can
+create btrfs on the device or not. Actually, we need more zones to create
+DUP block groups, so it fails with "ERROR: not enough free space to
+allocate chunk". Implement proper support for non-SINGLE profile.
 
-syzbot found the following issue on:
+Also, current code does not ensure we can create tree-log BG and data
+relocation BG, which are essential for the real usage. Count them as
+requirement too.
 
-HEAD commit:    b6394d6f7159 Merge tag 'pull-misc' of git://git.kernel.org..
-git tree:       upstream
-console output: https://syzkaller.appspot.com/x/log.txt?x=142a7cb2980000
-kernel config:  https://syzkaller.appspot.com/x/.config?x=713476114e57eef3
-dashboard link: https://syzkaller.appspot.com/bug?extid=026119922c20a8915631
-compiler:       Debian clang version 15.0.6, GNU ld (GNU Binutils for Debian) 2.40
-syz repro:      https://syzkaller.appspot.com/x/repro.syz?x=14d43f84980000
-C reproducer:   https://syzkaller.appspot.com/x/repro.c?x=11d4fadc980000
+The calculation for a regular btrfs is also adjusted to use dev_stripes
+style.
 
-Downloadable assets:
-disk image: https://storage.googleapis.com/syzbot-assets/e8e1377d4772/disk-b6394d6f.raw.xz
-vmlinux: https://storage.googleapis.com/syzbot-assets/19fbbb3b6dd5/vmlinux-b6394d6f.xz
-kernel image: https://storage.googleapis.com/syzbot-assets/4dcce16af95d/bzImage-b6394d6f.xz
-mounted in repro #1: https://storage.googleapis.com/syzbot-assets/e197bb1019a1/mount_0.gz
-mounted in repro #2: https://storage.googleapis.com/syzbot-assets/1c62d475ecf4/mount_2.gz
-
-IMPORTANT: if you fix the issue, please add the following tag to the commit:
-Reported-by: syzbot+026119922c20a8915631@syzkaller.appspotmail.com
-
-------------[ cut here ]------------
-WARNING: CPU: 1 PID: 5096 at mm/filemap.c:217 filemap_unaccount_folio+0x6be/0xe40 mm/filemap.c:216
-Modules linked in:
-CPU: 1 PID: 5096 Comm: syz-executor306 Not tainted 6.9.0-syzkaller-10729-gb6394d6f7159 #0
-Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/02/2024
-RIP: 0010:filemap_unaccount_folio+0x6be/0xe40 mm/filemap.c:216
-Code: 48 c1 e8 03 48 b9 00 00 00 00 00 fc ff df 0f b6 04 08 84 c0 0f 85 e5 00 00 00 8b 6d 00 ff c5 e9 45 fa ff ff e8 c3 66 ca ff 90 <0f> 0b 90 48 b8 00 00 00 00 00 fc ff df 41 80 3c 06 00 74 0a 48 8b
-RSP: 0018:ffffc9000382f1f8 EFLAGS: 00010093
-RAX: ffffffff81cbd3ad RBX: ffff888079ef0380 RCX: ffff88802d4f5a00
-RDX: 0000000000000000 RSI: 0000000000000001 RDI: 0000000000000000
-RBP: 0000000000000003 R08: ffffffff81cbd2c9 R09: 1ffffd40000c1ec8
-R10: dffffc0000000000 R11: fffff940000c1ec9 R12: 1ffffd40000c1ec8
-R13: ffffea000060f640 R14: 1ffff1100f3de070 R15: ffffea000060f648
-FS:  00007f13ab0c76c0(0000) GS:ffff8880b9500000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 0000000000000000 CR3: 000000002ca92000 CR4: 00000000003506f0
-DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
-Call Trace:
- <TASK>
- delete_from_page_cache_batch+0x173/0xc70 mm/filemap.c:341
- truncate_inode_pages_range+0x364/0xfc0 mm/truncate.c:359
- truncate_inode_pages mm/truncate.c:439 [inline]
- truncate_pagecache mm/truncate.c:732 [inline]
- truncate_setsize+0xcf/0xf0 mm/truncate.c:757
- simple_setattr+0xbe/0x110 fs/libfs.c:886
- notify_change+0xbb4/0xe70 fs/attr.c:499
- do_truncate+0x220/0x310 fs/open.c:65
- handle_truncate fs/namei.c:3308 [inline]
- do_open fs/namei.c:3654 [inline]
- path_openat+0x2a3d/0x3280 fs/namei.c:3807
- do_filp_open+0x235/0x490 fs/namei.c:3834
- do_sys_openat2+0x13e/0x1d0 fs/open.c:1405
- do_sys_open fs/open.c:1420 [inline]
- __do_sys_creat fs/open.c:1496 [inline]
- __se_sys_creat fs/open.c:1490 [inline]
- __x64_sys_creat+0x123/0x170 fs/open.c:1490
- do_syscall_x64 arch/x86/entry/common.c:52 [inline]
- do_syscall_64+0xf5/0x240 arch/x86/entry/common.c:83
- entry_SYSCALL_64_after_hwframe+0x77/0x7f
-RIP: 0033:0x7f13ab131c99
-Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 b1 18 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b0 ff ff ff f7 d8 64 89 01 48
-RSP: 002b:00007f13ab0c7198 EFLAGS: 00000246 ORIG_RAX: 0000000000000055
-RAX: ffffffffffffffda RBX: 00007f13ab1bf6d8 RCX: 00007f13ab131c99
-RDX: 00007f13ab131c99 RSI: 0000000000000000 RDI: 00000000200001c0
-RBP: 00007f13ab1bf6d0 R08: 0000000000000000 R09: 0000000000000000
-R10: 0000000000000000 R11: 0000000000000246 R12: 00007f13ab18c160
-R13: 000000000000006e R14: 0030656c69662f2e R15: 00007f13ab186bc0
- </TASK>
-
-
+Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
-This report is generated by a bot. It may contain errors.
-See https://goo.gl/tpsmEJ for more information about syzbot.
-syzbot engineers can be reached at syzkaller@googlegroups.com.
+ mkfs/common.c | 67 +++++++++++++++++++++++++++++++++++++--------------
+ 1 file changed, 49 insertions(+), 18 deletions(-)
 
-syzbot will keep track of this issue. See:
-https://goo.gl/tpsmEJ#status for how to communicate with syzbot.
+diff --git a/mkfs/common.c b/mkfs/common.c
+index 2550c2219c90..1b09c8b1a673 100644
+--- a/mkfs/common.c
++++ b/mkfs/common.c
+@@ -817,15 +817,50 @@ u64 btrfs_min_dev_size(u32 nodesize, bool mixed, u64 zone_size, u64 meta_profile
+ 	u64 reserved = 0;
+ 	u64 meta_size;
+ 	u64 data_size;
++	u64 dev_stripes;
+ 
+-	/*
+-	 * 2 zones for the primary superblock
+-	 * 1 zone for the system block group
+-	 * 1 zone for a metadata block group
+-	 * 1 zone for a data block group
+-	 */
+-	if (zone_size)
+-		return 5 * zone_size;
++	if (zone_size) {
++		/* 2 zones for the primary superblock. */
++		reserved += 2 * zone_size;
++
++		/*
++		 * 1 zone each for the initial SINGLE system, SINGLE
++		 * metadata, and SINGLE data block group
++		 */
++		reserved += 3 * zone_size;
++
++		/*
++		 * On non-SINGLE profile, we need to add real system and
++		 * metadata block group. And, we also need to add a space
++		 * for a tree-log block group.
++		 *
++		 * SINGLE profile can reuse the initial block groups and
++		 * only need to add a tree-log block group
++		 */
++		dev_stripes = (meta_profile & BTRFS_BLOCK_GROUP_DUP) ? 2 : 1;
++		if (meta_profile & BTRFS_BLOCK_GROUP_PROFILE_MASK)
++			meta_size = 3 * dev_stripes * zone_size;
++		else
++			meta_size = dev_stripes * zone_size;
++		reserved += meta_size;
++
++		/*
++		 * On non-SINGLE profile, we need to add real data block
++		 * group. And, we also need to add a space for a data
++		 * relocation block group.
++		 *
++		 * SINGLE profile can reuse the initial block groups and
++		 * only need to add a data relocation block group.
++		 */
++		dev_stripes = (data_profile & BTRFS_BLOCK_GROUP_DUP) ? 2 : 1;
++		if (data_profile & BTRFS_BLOCK_GROUP_PROFILE_MASK)
++			data_size = 2 * dev_stripes * zone_size;
++		else
++			data_size = dev_stripes * zone_size;
++		reserved += data_size;
++
++		return reserved;
++	}
+ 
+ 	if (mixed)
+ 		return 2 * (BTRFS_MKFS_SYSTEM_GROUP_SIZE +
+@@ -863,22 +898,18 @@ u64 btrfs_min_dev_size(u32 nodesize, bool mixed, u64 zone_size, u64 meta_profile
+ 	 *
+ 	 * And use the stripe size to calculate its physical used space.
+ 	 */
++	dev_stripes = (meta_profile & BTRFS_BLOCK_GROUP_DUP) ? 2 : 1;
+ 	if (meta_profile & BTRFS_BLOCK_GROUP_PROFILE_MASK)
+-		meta_size = SZ_8M + SZ_32M;
++		meta_size = dev_stripes * (SZ_8M + SZ_32M);
+ 	else
+-		meta_size = SZ_8M + SZ_8M;
+-	/* For DUP/metadata,  2 stripes on one disk */
+-	if (meta_profile & BTRFS_BLOCK_GROUP_DUP)
+-		meta_size *= 2;
++		meta_size = dev_stripes * (SZ_8M + SZ_8M);
+ 	reserved += meta_size;
+ 
++	dev_stripes = (data_profile & BTRFS_BLOCK_GROUP_DUP) ? 2 : 1;
+ 	if (data_profile & BTRFS_BLOCK_GROUP_PROFILE_MASK)
+-		data_size = SZ_64M;
++		data_size = dev_stripes * SZ_64M;
+ 	else
+-		data_size = SZ_8M;
+-	/* For DUP/data,  2 stripes on one disk */
+-	if (data_profile & BTRFS_BLOCK_GROUP_DUP)
+-		data_size *= 2;
++		data_size = dev_stripes * SZ_8M;
+ 	reserved += data_size;
+ 
+ 	return reserved;
+-- 
+2.45.1
 
-If the report is already addressed, let syzbot know by replying with:
-#syz fix: exact-commit-title
-
-If you want syzbot to run the reproducer, reply with:
-#syz test: git://repo/address.git branch-or-commit-hash
-If you attach or paste a git patch, syzbot will apply it before testing.
-
-If you want to overwrite report's subsystems, reply with:
-#syz set subsystems: new-subsystem
-(See the list of subsystem names on the web dashboard)
-
-If the report is a duplicate of another one, reply with:
-#syz dup: exact-subject-of-another-report
-
-If you want to undo deduplication, reply with:
-#syz undup

@@ -1,327 +1,293 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mx0a-00069f02.pphosted.com (mx0a-00069f02.pphosted.com [205.220.165.32])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3EAC413C9AD
-	for <linux-btrfs@vger.kernel.org>; Thu, 23 May 2024 07:06:23 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1716447985; cv=none; b=CDiNN5fqU1V4gsPLHddGdrJ0Yj/66EuUwliDJiccIAdsndCs15lCYsmpM1BpDao+FadwcWhvBDooIDfoHo5h781BBfsGncv0KuuNV6KKCi9Sz9/w71yw6woTrpSSp068RPnMtfXyiW8/O3e1PzwgYRC3C7JEqBhC3ixF+41FDwY=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1716447985; c=relaxed/simple;
-	bh=R/4/YeYrLs/yPGHvImvZSMu7LTXDu53uH9Ony4z4Tqk=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=BcfGtkHiJTuIahrm/zJJKV5rNFSpY42dBBy4s1AZf5fRZwcrpaqMyT5X0uZRDcNBiBcr2cw5C42XduzBrghB2WIbme/AbEu8wIo+3+bKMsfZBAyr4UPeoHp5/ZR2juz4v7Pha64Sk0Z6haiFMQP1czD3RtO+DfNXBCFP358XWfM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=I87XDzTK; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=I87XDzTK; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1BD304685
+	for <linux-btrfs@vger.kernel.org>; Thu, 23 May 2024 09:40:43 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=205.220.165.32
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1716457248; cv=fail; b=Y9QK8zvzPRM1WvvViyP25du1gIrLYsBbgOQKAgSftEGSuSTqKJb+NQWSojBZwzpbp9mPPkixaCV4qeR0qijhohqSCnFX2fdzYXsiZ3Wws0aCBl8ZsjeceWQAnI4G7K+VQj8vPpw8NIht57XkvnfvEquzcIFTzjPkDox19X3EOQY=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1716457248; c=relaxed/simple;
+	bh=fSxqed5UWDPtMAbq3Cljr4NYb5RrBPmrn7Yx1Q3FdEw=;
+	h=From:To:Subject:Date:Message-Id:Content-Type:MIME-Version; b=qbaT1Rw9y1pOerW7c0U6uahpLbp+H1anf1Sc5cWsjvAGjwFE3rEtD4hfDzhI/YElOL6M+C4g7drHsJ4XTFFLwgDL2KpRxzjSGp7KP7B4vCakYzGiSr+yUXquuFR3XCEzEgpNjw1MziuAXLmLc/UVNc+VTS4z+mDvVENtZIHoRyY=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=oracle.com; spf=pass smtp.mailfrom=oracle.com; dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b=IqfTaT/A; dkim=pass (1024-bit key) header.d=oracle.onmicrosoft.com header.i=@oracle.onmicrosoft.com header.b=PVW0xqtv; arc=fail smtp.client-ip=205.220.165.32
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=oracle.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=oracle.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="I87XDzTK";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="I87XDzTK"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 1D3EE1FF7B
-	for <linux-btrfs@vger.kernel.org>; Thu, 23 May 2024 07:06:16 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1716447976; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=4lrEdGRguSPR4qShMLKko8CWKzzucT2T64fHN+EuuOI=;
-	b=I87XDzTKP9u7+TuhcfRf0S+j8+OvCeS8Uqf8xU/iDxQyD8jwK9Vvhufp6D2sgcVbE6dkRz
-	DveHm/vJpYbm9no7UfPwA9ivfHHm6dTjyYi1pUsDjfK9pPrMfTkg7PjMy0Pwh4inIWxq/i
-	RTJsaw6anJLuXrBf2ZiZUfaEAB/WEI8=
-Authentication-Results: smtp-out2.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1716447976; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=4lrEdGRguSPR4qShMLKko8CWKzzucT2T64fHN+EuuOI=;
-	b=I87XDzTKP9u7+TuhcfRf0S+j8+OvCeS8Uqf8xU/iDxQyD8jwK9Vvhufp6D2sgcVbE6dkRz
-	DveHm/vJpYbm9no7UfPwA9ivfHHm6dTjyYi1pUsDjfK9pPrMfTkg7PjMy0Pwh4inIWxq/i
-	RTJsaw6anJLuXrBf2ZiZUfaEAB/WEI8=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 2B34513A7D
-	for <linux-btrfs@vger.kernel.org>; Thu, 23 May 2024 07:06:14 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id kDP0M+bqTmb0bwAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Thu, 23 May 2024 07:06:14 +0000
-From: Qu Wenruo <wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="IqfTaT/A";
+	dkim=pass (1024-bit key) header.d=oracle.onmicrosoft.com header.i=@oracle.onmicrosoft.com header.b="PVW0xqtv"
+Received: from pps.filterd (m0246617.ppops.net [127.0.0.1])
+	by mx0b-00069f02.pphosted.com (8.17.1.19/8.17.1.19) with ESMTP id 44N0nVB1015459
+	for <linux-btrfs@vger.kernel.org>; Thu, 23 May 2024 09:40:42 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
+ date : message-id : content-transfer-encoding : content-type :
+ mime-version; s=corp-2023-11-20;
+ bh=BFyixSNkK8MVqyrqH/A8mfKuhHb8vM8hQ8cb5GQ+io0=;
+ b=IqfTaT/AMnTU6rrnW6cPbTVCKWBYqFaWlzmci6S0bbyilo4uilGdzi6ODgjJteG5TMua
+ gVs1PIBmDxR17hpnDobCzY4grAUvEff4auGADfSpIdA78hh8hgVbKRuCwj3kNk4k/BPx
+ ADXFBfxiLHgggNd9zY+wpBoBPhkYQPOeH3/HmIS1dgAbpSMoNEXNM7LvWXXKnhw0T8iu
+ CwwRcyK4rO8hnU+40cd5qNkJ+tqZjbG7hbCYzs7D38+1l+Z90nGRnHkAneMAUM4jVN61
+ AMPtD77uBHH0ZA1qcYkP2S8yIlBT1VqkzqoW7jGmmB2lb3CQNOVj4FU2AWhLgbjx4BpB iA== 
+Received: from phxpaimrmta03.imrmtpd1.prodappphxaev1.oraclevcn.com (phxpaimrmta03.appoci.oracle.com [138.1.37.129])
+	by mx0b-00069f02.pphosted.com (PPS) with ESMTPS id 3y6mvv9npx-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Thu, 23 May 2024 09:40:41 +0000
+Received: from pps.filterd (phxpaimrmta03.imrmtpd1.prodappphxaev1.oraclevcn.com [127.0.0.1])
+	by phxpaimrmta03.imrmtpd1.prodappphxaev1.oraclevcn.com (8.17.1.19/8.17.1.19) with ESMTP id 44N8adqA005006
+	for <linux-btrfs@vger.kernel.org>; Thu, 23 May 2024 09:40:41 GMT
+Received: from nam04-bn8-obe.outbound.protection.outlook.com (mail-bn8nam04lp2040.outbound.protection.outlook.com [104.47.74.40])
+	by phxpaimrmta03.imrmtpd1.prodappphxaev1.oraclevcn.com (PPS) with ESMTPS id 3y6jsap01r-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Thu, 23 May 2024 09:40:40 +0000
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=XUbtf+ojABmyy4I0ePccNbDUrh1se5F2HhNvFjbMDGLNm/wphjT7Iy5F+v4sbiSsAB59SrSESc7BEQlHcBSfgDzgxNtaoB367zCHAjDyibJrVabPrP6r6IPVAI74Ggl8N2eGG8j/MXklnDunXqUsrjJggKIUeYDMzcbGx2zfyb1Xu0590p+SUHF3ABjjFv+MaPqt/5m8WAjcLJ/nrvcbmMYI8pdA7RRDqYUTFMI5/yrn89Ie5hfcWz8JRateojcdlP0D1YDl4HawQGLD2uoJzwxz/9we8JrQAYJXtukvep8AA/jxS/OLRJglBbSBrwSltzgXUOcQVH8KG2iIH6Py4Q==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=BFyixSNkK8MVqyrqH/A8mfKuhHb8vM8hQ8cb5GQ+io0=;
+ b=haQyEjZbxdjiKJniy6mMjxP9CNjV7Q32ubrM6D4c6r9a0zQ3/J20sIGYR0NRMzYWpmrM993LY5CqdgNfJsIUMBceXpSKArgqKTqWjc/7FuQk2oTN10dMj7HrPCrnJizJ3CdXgGo/xX4rUvnQXkq3qdIWA8Exzl3EUVmNJkNDsXx+u73kYIiwAhEX8ZME0QOXHmInHuHBuzduislLj6xuOb2+8/FmNitqeZdRgKWBom+9BYcpnpebeq2dAMW/EHv0vZyeqWXka4sSdzlp5xF863gZsYo2wHOx2PdTnxrDVH8XHVqn+nXvd4QsPTHtztV1Jp/IbYE1I6g2anPXHSgg9A==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=oracle.com; dmarc=pass action=none header.from=oracle.com;
+ dkim=pass header.d=oracle.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=oracle.onmicrosoft.com; s=selector2-oracle-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=BFyixSNkK8MVqyrqH/A8mfKuhHb8vM8hQ8cb5GQ+io0=;
+ b=PVW0xqtvfOP/9acQPbDgUANBpQdKyW+yUgwiw8rrN6iRfbaDZrpanJxZRy/dEX2qBEEvC3utjMTJ8X+PIkyldPN0FLGb7oURKBSp3QJTO7PnnAorbbNOkTUCORUD6fYDW1cM7bnJDgpWGNVU5EZkUA9lADrCPRNhRwdn9SvI8e8=
+Received: from PH0PR10MB5706.namprd10.prod.outlook.com (2603:10b6:510:148::10)
+ by BY5PR10MB4113.namprd10.prod.outlook.com (2603:10b6:a03:20d::20) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.7611.22; Thu, 23 May
+ 2024 09:40:38 +0000
+Received: from PH0PR10MB5706.namprd10.prod.outlook.com
+ ([fe80::fea:df00:2d94:cb65]) by PH0PR10MB5706.namprd10.prod.outlook.com
+ ([fe80::fea:df00:2d94:cb65%6]) with mapi id 15.20.7611.016; Thu, 23 May 2024
+ 09:40:38 +0000
+From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v6 3/5] btrfs: lock subpage ranges in one go for writepage_delalloc()
-Date: Thu, 23 May 2024 16:35:44 +0930
-Message-ID: <ba811149845a3a5ae5110020d400fe6c8841771e.1716445070.git.wqu@suse.com>
-X-Mailer: git-send-email 2.45.1
-In-Reply-To: <cover.1716445070.git.wqu@suse.com>
-References: <cover.1716445070.git.wqu@suse.com>
+Subject: [PATCH] btrfs-progs: doc: btrfs device assembly and verification
+Date: Thu, 23 May 2024 15:10:32 +0530
+Message-Id: <792a9315d9f68d4222aad02a3f245a0f4b63c96b.1716446880.git.anand.jain@oracle.com>
+X-Mailer: git-send-email 2.38.1
+Content-Transfer-Encoding: 8bit
+Content-Type: text/plain
+X-ClientProxiedBy: SG2PR02CA0059.apcprd02.prod.outlook.com
+ (2603:1096:4:54::23) To PH0PR10MB5706.namprd10.prod.outlook.com
+ (2603:10b6:510:148::10)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spam-Level: 
-X-Spamd-Result: default: False [-2.80 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	TO_DN_NONE(0.00)[];
-	FUZZY_BLOCKED(0.00)[rspamd.com];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	ARC_NA(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	FROM_HAS_DN(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	FROM_EQ_ENVFROM(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email]
-X-Spam-Score: -2.80
-X-Spam-Flag: NO
+X-MS-PublicTrafficType: Email
+X-MS-TrafficTypeDiagnostic: PH0PR10MB5706:EE_|BY5PR10MB4113:EE_
+X-MS-Office365-Filtering-Correlation-Id: bf9ab6c7-567a-47f8-9807-08dc7b0c6745
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam: BCL:0;ARA:13230031|1800799015|376005|366007;
+X-Microsoft-Antispam-Message-Info: 
+	=?us-ascii?Q?+tPtevcxp7R68SysL1mbStzcm+pp3+p+nLKUkfmPTzcav40Dof2yKvCZwS1L?=
+ =?us-ascii?Q?H2c2k1ZtU6hGVqiu7Pv8tTk795bjWPJNc1LrhMDj2+FIwuS4Z2Q0Sc74Jfpz?=
+ =?us-ascii?Q?Xh4HKw1JtD4C/mrZh5vVWO1vlgfGzG9C6UKaRFkG9vL0bI72LpxG6UlSj1SK?=
+ =?us-ascii?Q?WjQxgrD0Z7SIxjx4juJdb1wym0wWXMgZiL8uvRx/dfjM6BVCbXceTgOEHgcq?=
+ =?us-ascii?Q?c1AU4yX1uUvIeJoc028Coivg5fIx2tvvcFXbfcfk33YUkb2p6aoLoYLpF0FX?=
+ =?us-ascii?Q?PhlwekbeXFHh8ui5pPaU4jWlXa/++uzyxjC+9yfrY9wzyY2JYE6sAJgDcSih?=
+ =?us-ascii?Q?4VTx0n2LNg5wczpBqmn9atJAzS+wmikYIE+mvjlWTO6gSFinEofQr2CmOJj2?=
+ =?us-ascii?Q?ZZ6gvr3ygmNriMO6aYuJC3kJlOOgw7NzhEeoeUxX0EUu5FY//odrRs3Sipp4?=
+ =?us-ascii?Q?nAYoh4QG0mpMHVouKlMfWZ9Sw3VOLv6x0+OlGFr9zOJk7Z8Fv9tsEiWDhl+3?=
+ =?us-ascii?Q?AzNS4Zd4xpowjWZSfKeEYr3l0aMO9plftiRM4Jy9dhFQVEiPJwwyvYb8PK2W?=
+ =?us-ascii?Q?zI38I9zTKgpUk2V3LxXtb99a8vFkF3bdBYe+xMzAqaradTPGzVvH6wMaEV+i?=
+ =?us-ascii?Q?OrzJl+i8cDP4QlOVge/U4oMXBXKtDO5Vwg2BgF8dITuwJx5QAoFTSC3qimYL?=
+ =?us-ascii?Q?oiPSfwJ32PvMny6sd6xiCiFOCc+Od6TtN4IMOZbqenqCgpofxJVe8s/Q0rm5?=
+ =?us-ascii?Q?1qch7NhPeWXg49G03hFlvrf7sjT/xOqnB8CwDUoTBke2b/NH49db3RzvTXC+?=
+ =?us-ascii?Q?00h0eROVP8BhPDBXEO+G7F5wjlTmf/8vKkEdSHV+Dzb7oMCGWrGdof/k6E/D?=
+ =?us-ascii?Q?y4ed2pSwLKEgCf6kYjBoyX6mojnPhroD8B/rfnnzygOZZzkx7ZENIdfvtTNs?=
+ =?us-ascii?Q?BvgAjep2CkAzDUAaIaX/lTfWwS9jaxUZzUPAuQPhqAm14rhTkqxhxNWUCs5+?=
+ =?us-ascii?Q?AQL3eENfgSaAWp9ddGE3OmOLBqFiROn/r8U6KhiBpAm4ChlU9vngJmPl+NbH?=
+ =?us-ascii?Q?+OMPS2eBb/Ctofqy+lTDjPrY70hW/LP6w5Bk4TbK0cPvV/LdbpBULflsLJ8O?=
+ =?us-ascii?Q?F9j9uQxUFulN++l0W40XFHhQXLvi75p/Ddz1YIYcJQg5PrvVZkd5OLG/EbyY?=
+ =?us-ascii?Q?CEw0kJo0v+cMvvkrLz597kZei9Qaoota0lK0viPOZ11WIVC9nKBYHgtVf6iO?=
+ =?us-ascii?Q?njGwUWgJ8gmNwmfTWqWYSRW3BojGUdmfisw+O0tPdA=3D=3D?=
+X-Forefront-Antispam-Report: 
+	CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:PH0PR10MB5706.namprd10.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230031)(1800799015)(376005)(366007);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-MessageData-0: 
+	=?us-ascii?Q?Y0lxLmJWHIuq53mKtaHqmnP3t/RlQ1N/s6SbhCcFr4QGUEWxU58xxwbxJdoy?=
+ =?us-ascii?Q?6oeyZSH/ZaE4lFA/ztcEYJViV+F4HW/5yQ+jAmML88MqrLergBiINQ+yNSqc?=
+ =?us-ascii?Q?rqpogd2t5i1p/7P1acQQ3qFDCmCeclAPRQezVP4Y71WKhmyzNj74x0HjOVLd?=
+ =?us-ascii?Q?OAmG63ccQ7Jmq+A09/6NwUSXdmeF+GyeXCYkEk5h2UvfGhchNNknYO7FF+ui?=
+ =?us-ascii?Q?QX1MQ80DyCH2OhAK/JTMUxlrVi8RV66QrNpqCeD7xoURgIn7/of3z1xl2vyc?=
+ =?us-ascii?Q?cYy5DNSRIwAPXlTlk9R0iVMNLdXEbLO8/JiZp/DIaqAmm0I9EMa4SXzjY3+r?=
+ =?us-ascii?Q?zeceT9NnnAiGXKjUKHMdhODgp7YkPBqgIMbN2AQlRAV2MpFEFeMzXKX3a34b?=
+ =?us-ascii?Q?9YNJ2Njj7ZQsaAggg3SVbcyV3C9PE47uWtx5bJrrXpCai05rIMPnftsLEgaa?=
+ =?us-ascii?Q?NdeJvtZyLycmPX6UkVBJbldY0dfReQnk6UsAMjq2gDiqFPTorj3QUCJ5OiyA?=
+ =?us-ascii?Q?FYN2KF+e91UC12oSaDOFq1WUKi/u0ebCgY4cPf/Yoml8LL+K7pXSLlKNQNc/?=
+ =?us-ascii?Q?snPHe4bFWBxoiDq5mx70NBA5DPc+ahdBrRH6YwbU6o81X2XS4vMIpavwqYWc?=
+ =?us-ascii?Q?6Mc4Zo+ksDlmk2YHWIuVDnjazM8xq+zoV3pR3uTBgWTOb7RLCvrLbipSwUtw?=
+ =?us-ascii?Q?LSFklioOzG+cUh2RtoLCJ0EYKfs0YWY3zq2GD7i9w6vcx3ApRJZjEAKgqwxY?=
+ =?us-ascii?Q?Y1qvv9TSiWmZUIlJ/7JGRAqkXfChGHZ0FgJ6Lz9JmdMUnogy3ZCxhHx4IlVG?=
+ =?us-ascii?Q?ky11xmV0rFpS9SVLDyYXLJtYyDtceWzmejKbGTTH5SbPYssEYI9/xysanVLB?=
+ =?us-ascii?Q?o1ruy3oll0IyLgywT7N3ddT1IEwsUcVa2hVEZ/MkKPRp8o2Z7xc1WdLxsPwV?=
+ =?us-ascii?Q?h9ofR/m0UIWRwUKfzuoxFVnnTbqGVhHiAc3+Y+tjHkO0CAhY+LQG9rL9xQNy?=
+ =?us-ascii?Q?RhKH6/ZQW4hibLtRzUm75qvD4+WkIPk7yC9BWFZDhF8u5NT+Tmxooji2FFkU?=
+ =?us-ascii?Q?7umZgLbIBxLOP4qxQM/Edcp42p7Fju2Idfu4e1fAZqiB2KG2WZyUGp0i8Xxi?=
+ =?us-ascii?Q?/synvTtyVYQfLDgNlnyYxX+IEPcXzyejLQpp6S37645VQDPkbKWB3wmrAy5o?=
+ =?us-ascii?Q?+NpytpGUUTfBjfECSt4q+VNlTRnpvpfb3VuwFc9qHMJASDB+VmOXcUr7DEmm?=
+ =?us-ascii?Q?3BId56C2Wb0hWGr37IQWGbEAGe2WM5b1tO6IlYBVs26VwthwkdbPd9LOngAb?=
+ =?us-ascii?Q?MoPBEaOnKKIsU/LOGF4c0ew9xurvQpZCFY4/V0h9UzQ+cBCpjdeJEdyADzhj?=
+ =?us-ascii?Q?zEfZnNNNj9cCAPW9ztlyocBKObtUGolugxlsFu/CzzqyeyByFxmMDmIZmx1v?=
+ =?us-ascii?Q?SVoorT8+VLLs/s7MPcu5pEmMjYTlJj4AZLPV+xYV+OLrUpsvz8vK4BFDrnU9?=
+ =?us-ascii?Q?BBiBotSJSn/qrChmSBwaC4CM+azRovMsUhD6OQySffzrfE4QI+do0qHKDVM3?=
+ =?us-ascii?Q?LeH/fohyK/b7COWBCvo08amo179Fi5UbJFSZLhaSq/9dhWNGZUOjmnij/CDM?=
+ =?us-ascii?Q?OQ=3D=3D?=
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0: 
+	NPMlMgK2mKhkWQQvDQ13YUmeNM7483MCr7jwg5N65OGGXacgaOlGz3tNXGzz45UEIMGhNpWvKPGZnzzJ/1NCa0QU5ZCcx2hyOU3bIoeT83Rq/PYzdgsq0HY2LC9pkqcutVJNbTMSoo2n3+9r9ot+Q7h41RQfEhDjq25ygmJ7UmVXLczi1yuRkknqaiFb8daJeehtRWHlKrxfOJcpKhuv13eZYxF175OImI4ZzOln7GN1Wp6EdsYYsz7WsCzVo7egGpN30SLSD2Mc5pksFzXn35bKCUBAbuuVAuDlyJjmlFtVmWi1p9hP0S9vQprzWkDYS7gSUFWamagFYNgvok1RZxMbrNT9OE55WRNYZrVa+QeKUze2wvoZGVsCkDP45WH9ujOlLHOAgIkO9DnCsjrDuThve6P/J5ek58rurSxgaeVDgyVyGFFVucvSX5EZIKdulR0rHVggbKMdPOu6A0u/DRw/XfH9EZrIleAdRdFJeLfsT81InZIpnGxgMMiONs/X2lAgtSyz87g8THzUA+pC7XFRXCQHczOI8WIC7FYN2bnHaFoSqYoUhoiYDvzIG2XiaBdKRIMsRRG8hVLw9Jh2NL1+ZEpnKF1fa0lKJE8zDJE=
+X-OriginatorOrg: oracle.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: bf9ab6c7-567a-47f8-9807-08dc7b0c6745
+X-MS-Exchange-CrossTenant-AuthSource: PH0PR10MB5706.namprd10.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 23 May 2024 09:40:38.4967
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: 4e2c6054-71cb-48f1-bd6c-3a9705aca71b
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: 8+pH2+n6/9eYsWIEV42RxR8v2HmoZ/ZFB7mynRyjz+9BgRxLV6ZJBKsLd6j9DSvtQt88MONYIA4tSTkVmHut1A==
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: BY5PR10MB4113
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.293,Aquarius:18.0.1039,Hydra:6.0.650,FMLib:17.12.28.16
+ definitions=2024-05-23_04,2024-05-23_01,2024-05-17_01
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 malwarescore=0 phishscore=0
+ suspectscore=0 mlxscore=0 adultscore=0 mlxlogscore=999 spamscore=0
+ bulkscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2405010000 definitions=main-2405230064
+X-Proofpoint-ORIG-GUID: Oinn8NGAXnbRamI9iz3nHFdU44gvPLB7
+X-Proofpoint-GUID: Oinn8NGAXnbRamI9iz3nHFdU44gvPLB7
 
-If we have a subpage range like this for a 16K page with 4K sectorsize:
+Create a document on how devices are assembled and their verification
+steps.
 
-    0     4K     8K     12K     16K
-    |/////|      |//////|       |
-
-    |/////| = dirty range
-
-Currently writepage_delalloc() would go through the following steps:
-
-- lock range [0, 4K)
-- run delalloc range for [0, 4K)
-- lock range [8K, 12K)
-- run delalloc range for [8K 12K)
-
-So far it's fine for regular subpage writeback, as
-btrfs_run_delalloc_range() can only go into one of run_delalloc_nocow(),
-cow_file_range() and run_delalloc_compressed().
-
-But there is a special pitfall for zoned subpage, where we will go
-through run_delalloc_cow(), which would create the ordered extent for the
-range and immediately submit the range.
-This would unlock the whole page range, causing all kinds of different
-ASSERT()s related to locked page.
-
-This patch would address the page unlocking problem of run_delalloc_cow(),
-by changing the workflow to the following one:
-
-- lock range [0, 4K)
-- lock range [8K, 12K)
-- run delalloc range for [0, 4K)
-- run delalloc range for [8K, 12K)
-
-So that run_delalloc_cow() can only unlock the full page until the
-last lock user released.
-
-To do that, this patch would:
-
-- Utilizing subpage locked bitmap
-  So for every delalloc range we found, call
-  btrfs_folio_set_writer_lock() to populate the subpage locked bitmap,
-  and later btrfs_folio_end_all_writers() if the page is fully unlocked.
-
-  So we know there is a delalloc range that needs to be run later.
-
-- Save the @delalloc_end as @last_delalloc_end inside
-  writepage_delalloc()
-  Since subpage locked bitmap is only for ranges inside the page,
-  meanwhile we can have delalloc range ends beyond our page boundary,
-  we have to save the @last_delalloc_end just in case it's beyond our
-  page boundary.
-
-Although there is one extra point to notice:
-
-- We need to handle errors in previous iteration
-  Since we can have multiple locked delalloc ranges thus we have to call
-  run_delalloc_ranges() multiple times.
-  If we hit an error half way, we still need to unlock the remaining
-  ranges.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/extent_io.c | 104 ++++++++++++++++++++++++++++++++++++++++---
- fs/btrfs/subpage.c   |   6 +++
- 2 files changed, 103 insertions(+), 7 deletions(-)
+ .../Device-assembly-and-verification.rst      |  4 +
+ .../ch-device-assembly-and-verification.rst   | 83 +++++++++++++++++++
+ Documentation/index.rst                       |  1 +
+ 3 files changed, 88 insertions(+)
+ create mode 100644 Documentation/Device-assembly-and-verification.rst
+ create mode 100644 Documentation/ch-device-assembly-and-verification.rst
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 938061e0ce01..338067ce724a 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -1226,13 +1226,23 @@ static inline void contiguous_readpages(struct page *pages[], int nr_pages,
- static noinline_for_stack int writepage_delalloc(struct btrfs_inode *inode,
- 		struct page *page, struct writeback_control *wbc)
- {
-+	struct btrfs_fs_info *fs_info = inode_to_fs_info(&inode->vfs_inode);
-+	struct folio *folio = page_folio(page);
-+	const bool is_subpage = btrfs_is_subpage(fs_info, page->mapping);
- 	const u64 page_start = page_offset(page);
- 	const u64 page_end = page_start + PAGE_SIZE - 1;
-+	/*
-+	 * Saves the last found delalloc end. As the delalloc end can go beyond
-+	 * page boundary, thus we can not rely on subpage bitmap to locate
-+	 * the last delalloc end.
-+	 */
-+	u64 last_delalloc_end = 0;
- 	u64 delalloc_start = page_start;
- 	u64 delalloc_end = page_end;
- 	u64 delalloc_to_write = 0;
- 	int ret = 0;
- 
-+	/* Lock all (subpage) delalloc ranges inside the page first. */
- 	while (delalloc_start < page_end) {
- 		delalloc_end = page_end;
- 		if (!find_lock_delalloc_range(&inode->vfs_inode, page,
-@@ -1240,15 +1250,94 @@ static noinline_for_stack int writepage_delalloc(struct btrfs_inode *inode,
- 			delalloc_start = delalloc_end + 1;
- 			continue;
- 		}
--
--		ret = btrfs_run_delalloc_range(inode, page, delalloc_start,
--					       delalloc_end, wbc);
--		if (ret < 0)
--			return ret;
--
-+		btrfs_folio_set_writer_lock(fs_info, folio, delalloc_start,
-+					    min(delalloc_end, page_end) + 1 -
-+					    delalloc_start);
-+		last_delalloc_end = delalloc_end;
- 		delalloc_start = delalloc_end + 1;
- 	}
-+	delalloc_start = page_start;
- 
-+	if (!last_delalloc_end)
-+		goto out;
+diff --git a/Documentation/Device-assembly-and-verification.rst b/Documentation/Device-assembly-and-verification.rst
+new file mode 100644
+index 000000000000..411db54a70ce
+--- /dev/null
++++ b/Documentation/Device-assembly-and-verification.rst
+@@ -0,0 +1,4 @@
++Btrfs Device Assembly and Verification
++======================================
 +
-+	/* Run the delalloc ranges for above locked ranges. */
-+	while (delalloc_start < page_end) {
-+		u64 found_start;
-+		u32 found_len;
-+		bool found;
++.. include:: ch-device-assembly-and-verification.rst
+diff --git a/Documentation/ch-device-assembly-and-verification.rst b/Documentation/ch-device-assembly-and-verification.rst
+new file mode 100644
+index 000000000000..65ab9352d59e
+--- /dev/null
++++ b/Documentation/ch-device-assembly-and-verification.rst
+@@ -0,0 +1,83 @@
++.. _Btrfs Device Assembly and Verification:
 +
-+		if (!is_subpage) {
-+			/*
-+			 * For non-subpage case, the found delalloc range must
-+			 * cover this page and there must be only one locked
-+			 * delalloc range.
-+			 */
-+			found_start = page_start;
-+			found_len = last_delalloc_end + 1 - found_start;
-+			found = true;
-+		} else {
-+			found = btrfs_subpage_find_writer_locked(fs_info, folio,
-+					delalloc_start, &found_start, &found_len);
-+		}
-+		if (!found)
-+			break;
-+		/*
-+		 * The subpage range covers the last sector, the delalloc range may
-+		 * end beyonds the page boundary, use the saved delalloc_end
-+		 * instead.
-+		 */
-+		if (found_start + found_len >= page_end)
-+			found_len = last_delalloc_end + 1 - found_start;
++Btrfs supports volume management without any external configuration file. Let's look at the on-disk parameters that help bring independent devices together and how we handle the various ways in which it can confuse the dynamic assembling of devices and how to handle them.
 +
-+		if (likely(ret >= 0)) {
-+			/* No errors hit so far, run the current delalloc range. */
-+			ret = btrfs_run_delalloc_range(inode, page, found_start,
-+						       found_start + found_len - 1, wbc);
-+		} else {
-+			/*
-+			 * We hit error during previous delalloc range, has to cleanup
-+			 * the remaining locked ranges.
-+			 */
-+			unlock_extent(&inode->io_tree, found_start,
-+				      found_start + found_len - 1, NULL);
-+			__unlock_for_delalloc(&inode->vfs_inode, page, found_start,
-+					      found_start + found_len - 1);
-+		}
++To begin, `mkfs.btrfs` creates on-disk super-blocks `struct btrfs_super_block` and some basic root trees, which help the kernel validate the assembled devices at the time of mount. At this stage, these devices are read into the kernel using the `BTRFS_IOC_SCAN_DEV` ioctl at `/dev/btrfs/control`. Additionally, the command `btrfs device scan` can help to read all the Btrfs filesystem devices into the Btrfs kernel as well. The actual identification of the devices and their assembly as a volume happens inside the kernel.
 +
-+		/*
-+		 * We can hit btrfs_run_delalloc_range() with >0 return value.
-+		 *
-+		 * This happens when either the IO is already done and page
-+		 * unlocked (inline) or the IO submission and page unlock would
-+		 * be handled async (compression).
-+		 *
-+		 * Inline is only possible for regular sectorsize for now.
-+		 *
-+		 * Compression is possible for both subpage and regular cases,
-+		 * but even for subpage compression only happens for page aligned
-+		 * range, thus the found delalloc range must go beyond current
-+		 * page.
-+		 */
-+		if (ret > 0)
-+			ASSERT(!is_subpage || found_start + found_len >= page_end);
++The `list_head fs_uuids` in the kernel points to the list of all Btrfs fsids/filesystems in the kernel, with each one pointing to an fsid declared as `struct btrfs_fs_devices` (typically known as `fs_devices`). Furthermore, when all the devices are registered, the volume is formed at the `list btrfs_fs_devices::devlist`, which holds a linked list of `struct btrfs_device` to maintain the information for each device belonging to that filesystem.
 +
-+		/*
-+		 * Above btrfs_run_delalloc_range() may have unlocked the page,
-+		 * Thus for the last range, we can not touch the page anymore.
-+		 */
-+		if (found_start + found_len >= last_delalloc_end + 1)
-+			break;
++Each of the devices in a Btrfs filesystem is distinguished using `btrfs_device::uuid` and `btrfs_device::devid`. The `btrfs_device::uuid` was unique in the kernel until kernel v6.7. The `temp_fsid` feature for single-device filesystems knows how to handle identical single devices.
 +
-+		delalloc_start = found_start + found_len;
-+	}
-+	if (ret < 0)
-+		return ret;
-+out:
-+	if (last_delalloc_end)
-+		delalloc_end = last_delalloc_end;
-+	else
-+		delalloc_end = page_end;
- 	/*
- 	 * delalloc_end is already one less than the total length, so
- 	 * we don't subtract one from PAGE_SIZE
-@@ -1520,7 +1609,8 @@ static int __extent_writepage(struct page *page, struct btrfs_bio_ctrl *bio_ctrl
- 					       PAGE_SIZE, !ret);
- 		mapping_set_error(page->mapping, ret);
- 	}
--	unlock_page(page);
++So, when all the devices are registered, during the mount process, we need just one of the devices to mount the whole volume. However, if you prefer to specify the devices manually instead of using the kernel's automatic assembly, you can do so using the command `btrfs device scan --forget` to clear the kernel's known assembly, and then specify the devices in the mount option, `mount -o device=/dev/<dev1>,device=/dev/<dev2> <mnt>`.
 +
-+	btrfs_folio_end_all_writers(inode_to_fs_info(inode), folio);
- 	ASSERT(ret <= 0);
- 	return ret;
- }
-diff --git a/fs/btrfs/subpage.c b/fs/btrfs/subpage.c
-index 8bf83dd3313d..fe99a8ea94c0 100644
---- a/fs/btrfs/subpage.c
-+++ b/fs/btrfs/subpage.c
-@@ -868,6 +868,7 @@ bool btrfs_subpage_find_writer_locked(const struct btrfs_fs_info *fs_info,
- void btrfs_folio_end_all_writers(const struct btrfs_fs_info *fs_info,
- 				 struct folio *folio)
- {
-+	struct btrfs_subpage *subpage = folio_get_private(folio);
- 	u64 folio_start = folio_pos(folio);
- 	u64 cur = folio_start;
- 
-@@ -877,6 +878,11 @@ void btrfs_folio_end_all_writers(const struct btrfs_fs_info *fs_info,
- 		return;
- 	}
- 
-+	/* The page has no new delalloc range locked on it. Just plain unlock. */
-+	if (atomic_read(&subpage->writers) == 0) {
-+		folio_unlock(folio);
-+		return;
-+	}
- 	while (cur < folio_start + PAGE_SIZE) {
- 		u64 found_start;
- 		u32 found_len;
++Generation Number
++-----------------
++
++With the `struct btrfs_device::generation` number, we select the device that has the most recent transaction commit. Generally, in a healthy volume, all the devices will have the same generation number.
++
++If there are multiple devices with the same matching fsid uuid and devid, the device with the larger generation number is always picked up. This is to avoid older or reappeared devices from being joined as part of the volume.
++
++Once the devices are assembled, a device with the largest generation is picked by the mount thread to read the metadata at the root tree.
++
++So far, we have identified the devices based on what each device declared through its super-block.
++
++Now, let us look at how we verify each of these devices through the mount thread.
++
++sys_chunk_array
++---------------
++
++As part of the struct btrfs_super_block, we also have an array of metadata chunks information defined as below:
++
++.. code-block:: c
++
++    #define BTRFS_SYSTEM_CHUNK_ARRAY_SIZE 2048
++    btrfs_super_block::sys_chunk_array[BTRFS_SYSTEM_CHUNK_ARRAY_SIZE];
++
++Each element of this array is of type CHUNK_ITEM and contains information about the metadata block group profile and the identification of those devices.
++
++.. code-block:: bash
++
++    sys_chunk_array[2048]:
++      item 0 key (FIRST_CHUNK_TREE CHUNK_ITEM 22020096)
++        length 8388608 owner 2 stripe_len 65536 type SYSTEM|DUP
++        io_align 65536 io_width 65536 sector_size 4096
++        num_stripes 2 sub_stripes 1
++            stripe 0 devid 1 offset 22020096
++            dev_uuid e9d99243-2b93-4917-9f5f-ed22507ec806
++            stripe 1 devid 1 offset 30408704
++            dev_uuid e9d99243-2b93-4917-9f5f-ed22507ec806
++
++Additional devices that are required to join with other devices are listed in the system chunk array. The UUID and devid are taken from here and matched with the devices in the btrfs_fs_devices::devlist. Now, the device shall have the state BTRFS_DEV_STATE_IN_FS_METADATA. Only those devices where the metadata is placed are found here.
++
++btrfs_read_chunk_tree
++---------------------
++
++The chunk-tree root is loaded from the btrfs_super_block::chunk_root and finds all the device items. The device items are of type struct btrfs_dev_item, from which the devices in the fs_devices::devlist are checked against devid, uuid, and fsid/metadata_uuid. The devices which fail to match are removed from the list. At this point, we also determine if there is any missing device and if there is a -o degraded option to override and continue with the degraded mount. If there is a missing device, a missing device added entry as a device with the expected devid and uuid as per the dev_item is added, and the rest of the devices get the BTRFS_DEV_STATE_IN_FS_METADATA state.
++
++btrfs_verify_dev_extents
++------------------------
++
++Various device verifications, such as physical sizes, are done at this stage, including verification of dev extent to its chunk mapping.
++
++btrfs_read_block_groups
++-----------------------
++
++To find out the block-group profiles being used, all the block groups are searched in the extent-tree or in a separate block-group-tree (since kernel v6.1). This provides us with a list of block groups that are already created. It can be visualized at:
++
++    /sys/fs/btrfs/<fsid>/allocation/<type>/<bg>
++
++For this reason, the mount time and the size of the extent tree were proportional, and it wasn't scalable on larger filesystems before v6.1. This issue was resolved by using a separate block-group-tree.
++
++Missing device
++--------------
++
++Missing device identification happens at multiple levels. First, in the read_sys_array, where all the metadata-required devices are identified, and then in the chunk tree read, where all the device items are read, providing a complete list of all the devices. However, we don't yet know if we need all these devices to mount the volume in a degraded mode, which means to activate the RAID fault tolerance. This is determined when we read all the chunks in the filesystem chunk tree because these chunks can have different block-group profiles, and the number of devices required to reconstruct the data or to read from the mirror copy varies.
++
++The missing device might reappear later, lacking the latest generation number. The filesystem will continue to work in a degraded state if the redundancy level allows. If it reappears, it shall be scanned; however, it won't join the allocation as of now. A mount recycle will be necessary following the balance so that the missing blocks on the missing device are copied.
++
++Device paths
++------------
++
++During boot, we also allow the user to update the device path without going through the device open and close cycle because systems without the initrd shall use a temporary device path (/dev/root) for the initial bootstrap, which must be updated to the final device path when the system block layer is ready.
++
++Also, at some point, we might mount a subvolume, in which case the device path is scanned again. So, it is essential to let the matched device path scan again and return success.
+diff --git a/Documentation/index.rst b/Documentation/index.rst
+index d65be265a178..723f4a55ce93 100644
+--- a/Documentation/index.rst
++++ b/Documentation/index.rst
+@@ -48,6 +48,7 @@ is in the :doc:`manual pages<man-index>`.
+    Convert
+    Deduplication
+    Defragmentation
++   Device-assembly-and-verification
+    Inline-files
+    Qgroups
+    Reflink
 -- 
-2.45.1
+2.43.0
 

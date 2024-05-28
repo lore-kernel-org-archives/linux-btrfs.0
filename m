@@ -1,113 +1,260 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mout.gmx.net (mout.gmx.net [212.227.15.15])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E7C1717E8FF
-	for <linux-btrfs@vger.kernel.org>; Tue, 28 May 2024 05:34:18 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7CFD961FC3
+	for <linux-btrfs@vger.kernel.org>; Tue, 28 May 2024 05:40:12 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.15.15
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1716874460; cv=none; b=EqJ9D+CRf7ELngH7j9PB+ehnz6VYybZnUsm9lq2/ZvfXsCdphSa/dFu81ClzTtiAFTr6kq8REESNpTYIlBazQL0FLTJ+rrV3ip+cBkBnhNu+rTNHHyCNLivI8RcZdFT+bGdwAKNUGTg5wDafq8expODXoHRZAEPGB0ipAFDR/Kk=
+	t=1716874815; cv=none; b=I0NYqklduR2QhNGOr1gVZ2OTvBJOQhYAcLWTjSZUzEAmIyHe8XUykS0WDjAgWD9L6EBngBnIqTF6R/ukkEDlc08uOfuBpm5H/igxQZRuIqbVqRkw7K8CN4DBOy+xRg4TpRDCDs8bniu1eQkCsI0NMovZ/WmSevTan+i7SqFsjH0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1716874460; c=relaxed/simple;
-	bh=Phral+2mWpODDPchxiPWqfa4IyEGxWoewPKg8jumETY=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=tTCK8aC3Ngt7m8UsPS8gdbvDMgvMNTIJp5gEmXIflE6Poa7pPJTA6qcZ6bdSozWdSouW3FFR9eH4r5u9Zygl5YcHtA+YTyCibHuL837e1S50DLqaQIOW0DZqYjXmnbVEGGyihC+rdlbJ0OOvGHbOqzLgAydX4Tnf/ZHl1VP8WmQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=rXRGd35V; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=rXRGd35V; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1716874815; c=relaxed/simple;
+	bh=8aBqb768FnZyRXRDmU9xd4cKux3WpmWM5FeyNtnJLlA=;
+	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
+	 In-Reply-To:Content-Type; b=dFHKCTWj5p+8pQyxLnjqv0FBnYkHOKWtZ5kk/yQaRumfhOQdR4ZI6ROv2BvgTCrkv9hWXCoxHMPwH085ZHeXjOGlJJIIDnYDkw0lMU/SyjeELvVvD6qiyiIUzxPvdZIb4sAJjToWR/bJjqZaoZjuVp1qPoCLaMyizMXYRSdHXIQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=dvszZ1MU; arc=none smtp.client-ip=212.227.15.15
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="rXRGd35V";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="rXRGd35V"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 95CC520132
-	for <linux-btrfs@vger.kernel.org>; Tue, 28 May 2024 05:34:11 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1716874451; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=gGnAhGcNOMauuc8b9URddU4RwJl9g/FbOqBti5P/Jzw=;
-	b=rXRGd35V5r9nMaILoTuFgjP6WLKJJQ75QNJiwyZqEqtGbKFgux402SbPP+FguXXF9oZHPF
-	YoB5WCxihDy9ruuEyTQD2c7fdpl/ePj2YMyYbyiLqJXsVXO+3CGaxRnXPBfls1rR6rHEsA
-	fIm7T00GheKkyWRtydtYG7wzv3oPhok=
-Authentication-Results: smtp-out2.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1716874451; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=gGnAhGcNOMauuc8b9URddU4RwJl9g/FbOqBti5P/Jzw=;
-	b=rXRGd35V5r9nMaILoTuFgjP6WLKJJQ75QNJiwyZqEqtGbKFgux402SbPP+FguXXF9oZHPF
-	YoB5WCxihDy9ruuEyTQD2c7fdpl/ePj2YMyYbyiLqJXsVXO+3CGaxRnXPBfls1rR6rHEsA
-	fIm7T00GheKkyWRtydtYG7wzv3oPhok=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id A10B313A55
-	for <linux-btrfs@vger.kernel.org>; Tue, 28 May 2024 05:34:10 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id X/XDFtJsVWYpdAAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Tue, 28 May 2024 05:34:10 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/2] btrfs: basic header cleanups
-Date: Tue, 28 May 2024 15:03:46 +0930
-Message-ID: <cover.1716874214.git.wqu@suse.com>
-X-Mailer: git-send-email 2.45.1
+	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="dvszZ1MU"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
+	s=s31663417; t=1716874810; x=1717479610; i=quwenruo.btrfs@gmx.com;
+	bh=kZi+xqNenN3GZAWngMQgP3PfDwxbPcEqg10bg8lqm+U=;
+	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:
+	 References:From:In-Reply-To:Content-Type:
+	 Content-Transfer-Encoding:cc:content-transfer-encoding:
+	 content-type:date:from:message-id:mime-version:reply-to:subject:
+	 to;
+	b=dvszZ1MU3T5XH7vRCql+GLlI4wKtZjiIlzlifTugYyiu8pe9WxWugPifO2nvqlZL
+	 wYJO1Y30aX6KcCNibGVgG8pQ7Mof9YEYi8E95nZyv3zQn3uSK0rDaSnzHMjrxhW7A
+	 9NVR44/LsuopWUF49+xskmrVpjLbtMgLVhikJMdtj4tVkLzVX/b8PrSbxSDuQAqsS
+	 YV1QPAbn4EpFGvemMbReNjTlWJFxAZkUXRrlFACIqHcD4im07pJzujJWwqPQmsaPi
+	 exXJJ6y0DgiRYYuyjauz+opmrWc1i7w0/bIpMgz+Lt0vWkDg6p5PUkjf+0U8BEy39
+	 P2VoAqZ5l5A6qN2bpw==
+X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
+Received: from [172.16.0.219] ([159.196.52.54]) by mail.gmx.net (mrgmx004
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1MEFzr-1sJDY40GWb-00BPRo; Tue, 28
+ May 2024 07:40:09 +0200
+Message-ID: <18218ba3-08a0-49c8-b83c-cfa9483cf746@gmx.com>
+Date: Tue, 28 May 2024 15:10:05 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spam-Level: 
-X-Spamd-Result: default: False [-2.75 / 50.00];
-	BAYES_HAM(-2.95)[99.80%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	MID_CONTAINS_FROM(1.00)[];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	ARC_NA(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	FUZZY_BLOCKED(0.00)[rspamd.com];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Score: -2.75
+User-Agent: Mozilla Thunderbird
+Subject: Re: btrfs check --repair - hangs in infinite loop
+To: wojtasjd <wojtasjd@gmail.com>, linux-btrfs@vger.kernel.org
+References: <e6dc5d0b-1f43-4aad-9189-3ba6e9031a5b@gmail.com>
+Content-Language: en-US
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCY00iVQUJDToH
+ pgAKCRDCPZHzoSX+qNKACACkjDLzCvcFuDlgqCiS4ajHAo6twGra3uGgY2klo3S4JespWifr
+ BLPPak74oOShqNZ8yWzB1Bkz1u93Ifx3c3H0r2vLWrImoP5eQdymVqMWmDAq+sV1Koyt8gXQ
+ XPD2jQCrfR9nUuV1F3Z4Lgo+6I5LjuXBVEayFdz/VYK63+YLEAlSowCF72Lkz06TmaI0XMyj
+ jgRNGM2MRgfxbprCcsgUypaDfmhY2nrhIzPUICURfp9t/65+/PLlV4nYs+DtSwPyNjkPX72+
+ LdyIdY+BqS8cZbPG5spCyJIlZonADojLDYQq4QnufARU51zyVjzTXMg5gAttDZwTH+8LbNI4
+ mm2YzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCY00ibgUJDToHvwAK
+ CRDCPZHzoSX+qK6vB/9yyZlsS+ijtsvwYDjGA2WhVhN07Xa5SBBvGCAycyGGzSMkOJcOtUUf
+ tD+ADyrLbLuVSfRN1ke738UojphwkSFj4t9scG5A+U8GgOZtrlYOsY2+cG3R5vjoXUgXMP37
+ INfWh0KbJodf0G48xouesn08cbfUdlphSMXujCA8y5TcNyRuNv2q5Nizl8sKhUZzh4BascoK
+ DChBuznBsucCTAGrwPgG4/ul6HnWE8DipMKvkV9ob1xJS2W4WJRPp6QdVrBWJ9cCdtpR6GbL
+ iQi22uZXoSPv/0oUrGU+U5X4IvdnvT+8viPzszL5wXswJZfqfy8tmHM85yjObVdIG6AlnrrD
+In-Reply-To: <e6dc5d0b-1f43-4aad-9189-3ba6e9031a5b@gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:5XB5fAwv4E1fvjDKSuRTitVoIV99Y1wLDxPJVD1NXNeCbr0Xus/
+ BSvCH/1M7VIyPWjFUBUh+n09GV2oyc7LgFeH5+349fb/H5tPi7NAxyW64mNR/e1xGerxAk8
+ K+HR2IUSzc1MFER5QFfzRNKaAlYW6SJXq2JusDfWK0+FowVlOvH9HPL6pN3nFdrFzgcYehO
+ auAw8p6+MobYEDsP+w+Bg==
 X-Spam-Flag: NO
+UI-OutboundReport: notjunk:1;M01:P0:vNBSGVqzScs=;ra8Hy0hfUYrGcRKb1j08VMwpsZE
+ kN+ihoiy7L0edr/2o+btX2m2CAlm13ixLmYYAbP1UY1igcOYECcmbLcFsQwQGkKr9WJcihWFS
+ meRGqWbZGs4GrvswPBouo1itvv+bLDA7Odx/Df+Ixm/yjMZJk+S80t6Rr38dCMpYvBejIF1/m
+ RrGjwpwrIpJvuXEfIxTsFE0g2Gf/zLMzZ6EQZhOgHxVAK0EEeco7cKvsGmHahCIxoPfwv68Cs
+ xmHaCNEXo7fuG27/q85LbYHsjs1+WucfrJr2e0SV4vQ+gO2e3mildPnpgdgmk/xO54n8BDCki
+ /JTpzEgLS/2yfxXFKXfeo55ubb2iqRWOGWACg+ZebOZfiarngf6yw16JlLJ3n/hfPjDRbnvw6
+ iU24j7pSw7XUXEONavmbcnPsJTPq2+eMZRCA1yxgP9OWgGD/HW+do8Ul/XPHxAVIk84Xv6zgj
+ h3rQey8dBUvkmMffVb3K5VM4YeD+zvlRhxCQoD17HQCAZSGSTu6iTpAO5Ivc4hpcVkKMblnxU
+ eDWQ9SrkSek/HgwXzI5iIKcBPDyCYg51RjLddlUBD6+YIQLUjSqt2jPEDEcBCb8fspJFzBSYP
+ hvOP80ymWgHxbi6lk9e0ccfz1mj2/D4PtBViP0uKZVB2tiRlskkJv8+5rciFbHFMqDS/FMAgh
+ x3cqfCZs+hMgc0bwUGma93HUVJLCJLFRHBTFTv26dA6EHseO23AWTxb8908bSPiYuyIZi4L7U
+ ZPjbD7KwJWikCEI1bX+tJBGOTOlqihn9ihuYJxyHzew5mlfr8Vq4el/6g1M1S3Noamq0WM/xe
+ A9Eq7QXeYL+oNoDkrygPAOz1QKWCi1fEhaISvy4mfLGvE=
 
-While reading headers, clangd would do a lot of extra checks, from the
-very basic like including the header itself, to missing type definition
-inside the header's include chain.
 
-There are 2 very basic fixes can be done immediately:
 
-- Do not do recursive include
+=E5=9C=A8 2024/5/28 11:12, wojtasjd =E5=86=99=E9=81=93:
+> I have damaged btrfs file system (root partition for GNU/Linux LMDE 4
+> with 4.19.x kernel which boots and mounts "/" read only, some files with
+> 0 size, damaged timestamps and cannot be deleted because of I/O error).
+>
+> "btrfs check ..." (provided with LMDE 4) crashes with SegFault so I've
+> booted to LMDE 6 live session and did some checks:
+>
+> root@mint:~# uname -a
+> Linux mint 6.1.0-12-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.1.52-1
+> (2023-09-07) x86_64 GNU/Linux
+>
+> root@mint:~# btrfs --version
+> btrfs-progs v6.2
+>
+> root@mint:~# mount /dev/sdb2 /mnt
+>
+> root@mint:~# btrfs fi show
+> Label: none=C2=A0 uuid: 3a40ba85-56c2-4d26-a126-70839983f4a2
+>  =C2=A0=C2=A0=C2=A0 Total devices 1 FS bytes used 9.05GiB
+>  =C2=A0=C2=A0=C2=A0 devid=C2=A0=C2=A0=C2=A0 1 size 15.02GiB used 12.57Gi=
+B path /dev/sdb2
+>
+> root@mint:~# btrfs fi df /mnt
+> Data, single: total=3D10.01GiB, used=3D8.62GiB
+> System, DUP: total=3D32.00MiB, used=3D16.00KiB
+> Metadata, DUP: total=3D1.25GiB, used=3D434.23MiB
+> GlobalReserve, single: total=3D512.00MiB, used=3D0.00B
+>
+> root@mint:~# dmesg | tail -n 7
+> [=C2=A0 404.266242] BTRFS info (device sdb2): using crc32c (crc32c-intel=
+)
+> checksum algorithm
+> [=C2=A0 404.266264] BTRFS info (device sdb2): disk space caching is enab=
+led
+> [=C2=A0 404.558136] BTRFS critical (device sdb2): corrupt leaf: root=3D5
+> block=3D29589504 slot=3D30 ino=3D1378764, invalid mode: has 00 expect va=
+lid
+> S_IF* bit(s)
+> [=C2=A0 404.558157] BTRFS error (device sdb2): read time tree block
+> corruption detected on logical 29589504 mirror 1
+> [=C2=A0 404.565225] BTRFS critical (device sdb2): corrupt leaf: root=3D5
+> block=3D29589504 slot=3D30 ino=3D1378764, invalid mode: has 00 expect va=
+lid
+> S_IF* bit(s)
+> [=C2=A0 404.565244] BTRFS error (device sdb2): read time tree block
+> corruption detected on logical 29589504 mirror 2
+> [=C2=A0 404.565328] BTRFS error (device sdb2): could not do orphan clean=
+up -5
+> root@mint:~#
+>
+> root@mint:~# btrfs inspect-internal logical-resolve 29589504 /mnt
+> ERROR: logical ino ioctl: No such file or directory
+>
+> root@mint:~# umount /mnt
+> root@mint:~# btrfs check --repair /dev/sdb2
+> enabling repair mode
+> WARNING:
+>
+>  =C2=A0=C2=A0=C2=A0 Do not use --repair unless you are advised to do so =
+by a developer
+>  =C2=A0=C2=A0=C2=A0 or an experienced user, and then only after having a=
+ccepted that no
+>  =C2=A0=C2=A0=C2=A0 fsck can successfully repair all types of filesystem=
+ corruption. Eg.
+>  =C2=A0=C2=A0=C2=A0 some software or hardware bugs can fatally damage a =
+volume.
+>  =C2=A0=C2=A0=C2=A0 The operation will start in 10 seconds.
+>  =C2=A0=C2=A0=C2=A0 Use Ctrl-C to stop it.
+> 10 9 8 7 6 5 4 3 2 1
+> Starting repair.
+> Opening filesystem to check...
+> Checking filesystem on /dev/sdb2
+> UUID: 3a40ba85-56c2-4d26-a126-70839983f4a2
+> [1/7] checking root items
+> Fixed 0 roots.
+> [2/7] checking extents
+> corrupt leaf: root=3D5 block=3D29589504 slot=3D31, unexpected item end, =
+have
+> 4294979450 expect 12154
 
-- Do not include rwlock_types.h
-  As it already mentioned to include spinlock_types.h instead.
+Please do not do the --repair unless you really know what you're doing.
 
-Qu Wenruo (2):
-  btrfs: cleanup recursive include of the same header
-  btrfs: do not directly rwlock_types.h
+At least you should run "btrfs check --readonly" and share it to the ML
+before doing it.
 
- fs/btrfs/btrfs_inode.h | 1 -
- fs/btrfs/extent_map.h  | 3 +--
- fs/btrfs/fs.h          | 1 -
- fs/btrfs/locking.h     | 1 -
- fs/btrfs/lru_cache.h   | 1 -
- 5 files changed, 1 insertion(+), 6 deletions(-)
+> corrupt leaf: root=3D5 block=3D29589504 slot=3D31, unexpected item end, =
+have
+> 4294979450 expect 12154
 
--- 
-2.45.1
+This shows exactly what's going wrong, your hardware memory.
 
+hex(4294979450) =3D 0x100002f7a
+hex(12154)      =3D 0x000002f7a
+
+One bit flipped inside the item size, causing the problem.
+
+Btrfs-check can not handle such case well, as it doesn't expect such
+insanely wrong values.
+
+I won't risk --repair as such corruption can be very dangerous
+especially you have already run repair once.
+
+Thanks,
+Qu
+
+> corrupt leaf: root=3D5 block=3D29589504 slot=3D31, unexpected item end, =
+have
+> 4294979450 expect 12154
+> corrupt leaf: root=3D5 block=3D29589504 slot=3D31, unexpected item end, =
+have
+> 4294979450 expect 12154
+> corrupt leaf: root=3D5 block=3D32129024 slot=3D31, unexpected item end, =
+have
+> 4294979450 expect 12154
+> corrupt leaf: root=3D5 block=3D29540352 slot=3D31, unexpected item end, =
+have
+> 4294979450 expect 12154
+> corrupt leaf: root=3D5 block=3D32129024 slot=3D31, unexpected item end, =
+have
+> 4294979450 expect 12154
+> corrupt leaf: root=3D5 block=3D29540352 slot=3D31, unexpected item end, =
+have
+> 4294979450 expect 12154
+> corrupt leaf: root=3D5 block=3D32129024 slot=3D31, unexpected item end, =
+have
+> 4294979450 expect 12154
+> corrupt leaf: root=3D5 block=3D29540352 slot=3D31, unexpected item end, =
+have
+> 4294979450 expect 12154
+> corrupt leaf: root=3D5 block=3D32129024 slot=3D31, unexpected item end, =
+have
+> 4294979450 expect 12154
+> corrupt leaf: root=3D5 block=3D29540352 slot=3D31, unexpected item end, =
+have
+> 4294979450 expect 12154
+> corrupt leaf: root=3D5 block=3D32129024 slot=3D31, unexpected item end, =
+have
+> 4294979450 expect 12154
+> corrupt leaf: root=3D5 block=3D29540352 slot=3D31, unexpected item end, =
+have
+> 4294979450 expect 12154
+> corrupt leaf: root=3D5 block=3D32129024 slot=3D31, unexpected item end, =
+have
+> 4294979450 expect 12154
+> corrupt leaf: root=3D5 block=3D29540352 slot=3D31, unexpected item end, =
+have
+> 4294979450 expect 12154
+> corrupt leaf: root=3D5 block=3D32129024 slot=3D31, unexpected item end, =
+have
+> 4294979450 expect 12154
+> ^C
+> root@mint:~#
+>
+> btrfs in repair mode hangs in infinite loop and spits out info about
+> corrupt leaf and two blocks like you can see above.
+>
+> I have image of disk.
+>
+> Can I repair this somehow?
+>
+>

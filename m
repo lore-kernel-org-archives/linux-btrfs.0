@@ -1,53 +1,54 @@
 Received: from esa4.hgst.iphmx.com (esa4.hgst.iphmx.com [216.71.154.42])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 081121667EC
-	for <linux-btrfs@vger.kernel.org>; Wed, 29 May 2024 07:13:40 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F0E76167277
+	for <linux-btrfs@vger.kernel.org>; Wed, 29 May 2024 07:13:41 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=216.71.154.42
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1716966822; cv=none; b=KMMoSXMccjQeQ65zqgP8qhbz6pjiu3FPlJEU7MFYFqxgQNa4lx3a2WwYUXibWmT/eWThd01mEhPO6H5f9lFMN82EDd0ftrtCknAWm2cDRY8A/Yl9ag76u9xj/JuTUHg+fKznX++rvCe8pwekLZp0fxuzgSQGoNyJyq5jbQwgC+U=
+	t=1716966823; cv=none; b=dyEaUD0T8fwDqf88wp3ejWQMD7StPEiAUd1t8tfFguOgKEW5xW3zZ8s+83gt53pwZpmimnZABzzYHiVuKVwF0sfJp9XWUETzTvfFxGZZhXDiWVJRpsRN+7lmQZYo0S36qJc4WHJRsiB2/PgmOeH7xUwxqfI59zY4ehGp84yFw0g=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1716966822; c=relaxed/simple;
-	bh=RRH0i+zs6OwMRK0hsjxAQJYgGLPDQ5LxzfkK8ZxMQQA=;
+	s=arc-20240116; t=1716966823; c=relaxed/simple;
+	bh=R5LFSscyGt2HluMB4dxYPjK2W3lAzmiVBUiX9O/gb1k=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=SG7rMyncJEaNiLUWxXrqwtz/PtJvft7PhPbnP8xNiH7DV1YP4J7FUAJT4FSKjCMyBTINIlUeeeAIh0Xm8k3B+76DZvVu7iYfW79csnVwKAqLlx9qgUo/wI4pke1XSG1bq8OEyGPsCvxkMOK4guZ+h0B+qYqYTy3Lmzt45kqcVHw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=c3l/5+ii; arc=none smtp.client-ip=216.71.154.42
+	 MIME-Version; b=BApbYtmx3YCGD+5GtkhjX0+BAFU60yxnXPUE6vezz/42ulFeAn9wGvnkk24wv164dx6g0jgciiI/csUl902qq6TUgjfFa0wkd5eFL8LqtP6WSHxcp10BcpCUSQ+23kmNnfiJcbHCaCJVDvp2k/8Uz7vVbAm5VwCNc2tuCGF88wQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=d8hE3jeh; arc=none smtp.client-ip=216.71.154.42
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="c3l/5+ii"
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="d8hE3jeh"
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1716966821; x=1748502821;
+  t=1716966822; x=1748502822;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=RRH0i+zs6OwMRK0hsjxAQJYgGLPDQ5LxzfkK8ZxMQQA=;
-  b=c3l/5+iiWXY2CgI6rQCvW5za+9fuLJDvbrJFrDWiH/C7bYIZo0MKS1Eq
-   jpuSNQc37tt7Ggylh+71yXeDKhSQyccWTgeHVCfoGJj9oI9hvHQ1hN2Rm
-   0vAP3MTFjNAi0iYKlCLNX7rinqnSPLp0pVdb+/hP4/Dzfi+Wua2uwZ1w1
-   FTK7KQF26+w8TMNug3YYa0ZwLALQBOxFTNE8oZqIwMeG60ZewGn/dSsUp
-   DpW/pXZ8x+2QLU89laJi7NvJLAqFse/ODkeMSrXqx+nx0HYYczpnbi8tp
-   oA3ayrJVv4eyDV0XyuhTvYdNUNbFDf8LomQ1TIg62k/8ZwbIYMNjreKYX
-   g==;
-X-CSE-ConnectionGUID: H+622OaZRSOCc1e2Hd+EFg==
-X-CSE-MsgGUID: YuILdcp5QpWCQWCWBTd1Ww==
+  bh=R5LFSscyGt2HluMB4dxYPjK2W3lAzmiVBUiX9O/gb1k=;
+  b=d8hE3jehSpANZl6q4fzlPejZhQGbRnb3BbUUGYxIHsuVJZ2wJGFd1MpB
+   yaZYmyN+pif4EXdGc7ApDsB5clwrjj52WYoEEKgkXfTvPDO8vgple9elw
+   m1JYKWf8Xnpi//sse/0dHn1VWxrWgcQf6mKqBRBY+cm/g4c57HrLcbrw1
+   Dx4faQZqTZxGV3YGzLrZvxeTDn1/YzdTeCC2Q9i2Dif91Nna8LfUtasuo
+   02vlpTUA8MJKzMm1dt+ffR0yFX4Ow71BgsdQaSxx/pbgeAhKRD8R4Erj+
+   So/iubWkKr2q2zUPf535sdG4olRXpml30CssNqTvQBU8j5Hfd43eObBxK
+   w==;
+X-CSE-ConnectionGUID: EzTfoKG/Q76b4wROqZBcvg==
+X-CSE-MsgGUID: cMVZnTvkQMaYrXJi55NxOA==
 X-IronPort-AV: E=Sophos;i="6.08,197,1712592000"; 
-   d="scan'208";a="16865345"
+   d="scan'208";a="16865349"
 Received: from h199-255-45-14.hgst.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 29 May 2024 15:13:34 +0800
-IronPort-SDR: 6656c94e_tkek76fSAaUiNgGUJgSPA5MLXTrvvPeWckGxxnDewcR3Zcs
- KK8b3apIA2/W/pIDve7tn5khWxAoQtJ1xFD9APA==
+  by ob1.hgst.iphmx.com with ESMTP; 29 May 2024 15:13:36 +0800
+IronPort-SDR: 6656c950_yGGIEUwQm+CS9uh7IG9xq15MZ7maygSrT1pJ1zJH+4RSoj1
+ /9BovcRjzgeweow2IBqoHFWF6cNEmSwfYOshv4A==
 Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 28 May 2024 23:21:03 -0700
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 28 May 2024 23:21:05 -0700
 WDCIronportException: Internal
 Received: from unknown (HELO naota-xeon.wdc.com) ([10.225.163.62])
-  by uls-op-cesaip01.wdc.com with ESMTP; 29 May 2024 00:13:34 -0700
+  by uls-op-cesaip01.wdc.com with ESMTP; 29 May 2024 00:13:35 -0700
 From: Naohiro Aota <naohiro.aota@wdc.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH v4 05/10] btrfs-progs: mkfs: align byte_count with sectorsize and zone size
-Date: Wed, 29 May 2024 16:13:20 +0900
-Message-ID: <20240529071325.940910-6-naohiro.aota@wdc.com>
+Cc: Naohiro Aota <naohiro.aota@wdc.com>,
+	Qu Wenruo <wqu@suse.com>
+Subject: [PATCH v4 07/10] btrfs-progs: test: add nullb setup functions
+Date: Wed, 29 May 2024 16:13:22 +0900
+Message-ID: <20240529071325.940910-8-naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.45.1
 In-Reply-To: <20240529071325.940910-1-naohiro.aota@wdc.com>
 References: <20240529071325.940910-1-naohiro.aota@wdc.com>
@@ -59,53 +60,88 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-While "byte_count" is eventually rounded down to sectorsize at make_btrfs()
-or btrfs_add_to_fs_id(), it would be better round it down first and do the
-size checks not to confuse the things.
-
-Also, on a zoned device, creating a btrfs whose size is not aligned to the
-zone boundary can be confusing. Round it down further to the zone boundary.
-
-The size calculation with a source directory is also tweaked to be aligned.
-device_get_partition_size_fd_stat() must be aligned down not to exceed the
-device size. And, btrfs_mkfs_size_dir() should have return sectorsize aligned
-size. So, add an UASSERT for it.
+Add functions to setup, create and remove nullb devices.
 
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 ---
- mkfs/main.c | 10 +++++++++-
- 1 file changed, 9 insertions(+), 1 deletion(-)
+ tests/common | 63 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 63 insertions(+)
 
-diff --git a/mkfs/main.c b/mkfs/main.c
-index a437ecc40c7f..3446a5b1222f 100644
---- a/mkfs/main.c
-+++ b/mkfs/main.c
-@@ -1591,6 +1591,12 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
- 	min_dev_size = btrfs_min_dev_size(nodesize, mixed,
- 					  opt_zoned ? zone_size(file) : 0,
- 					  metadata_profile, data_profile);
-+	if (byte_count) {
-+		byte_count = round_down(byte_count, sectorsize);
-+		if (opt_zoned)
-+			byte_count = round_down(byte_count,  zone_size(file));
-+	}
+diff --git a/tests/common b/tests/common
+index 1f880adead6d..ef9fcd32870a 100644
+--- a/tests/common
++++ b/tests/common
+@@ -882,6 +882,69 @@ cond_wait_for_loopdevs() {
+ 	fi
+ }
+ 
++# prepare environment for nullb devices, set up the following variables
++# - nullb_count -- number of desired devices
++# - nullb_size -- size of the devices
++# - nullb_zone_size -- zone size of the devices
++# - nullb_devs  -- array containing paths to all devices (after prepare is called)
++#
++# $1: number of nullb devices to be set up
++# $2: size of the devices
++# $3: zone size of the devices
++setup_nullbdevs()
++{
++	if [ "$#" -lt 3 ]; then
++		_fail "setup_nullbdevs <number of device> <size> <zone size>"
++	fi
 +
- 	/*
- 	 * Enlarge the destination file or create a new one, using the size
- 	 * calculated from source dir.
-@@ -1624,9 +1630,11 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
- 		 * Or we will always use source_dir_size calculated for mkfs.
- 		 */
- 		if (!byte_count)
--			byte_count = device_get_partition_size_fd_stat(fd, &statbuf);
-+			byte_count = round_down(device_get_partition_size_fd_stat(fd, &statbuf),
-+						sectorsize);
- 		source_dir_size = btrfs_mkfs_size_dir(source_dir, sectorsize,
- 				min_dev_size, metadata_profile, data_profile);
-+		UASSERT(IS_ALIGNED(source_dir_size, sectorsize));
- 		if (byte_count < source_dir_size) {
- 			if (S_ISREG(statbuf.st_mode)) {
- 				byte_count = source_dir_size;
++	setup_root_helper
++	local nullb="${TEST_TOP}/nullb"
++
++	run_mayfail $SUDO_HELPER "${nullb}" setup
++	if [ $? != 0 ]; then
++		_not_run "cannot setup nullb environment for zoned devices"
++	fi
++
++	nullb_count="$1"
++	nullb_size="$2"
++	nullb_zone_size="$3"
++	declare -a nullb_devs
++}
++
++# create all nullb devices from a given nullb environment
++prepare_nullbdevs()
++{
++	setup_root_helper
++	local nullb="${TEST_TOP}/nullb"
++
++	# Record any other pre-existing devices in case creation fails
++	run_check $SUDO_HELPER "${nullb}" ls
++
++	for i in `seq ${nullb_count}`; do
++		# Last line has the name of the device node path
++		out=$(run_check_stdout $SUDO_HELPER "${nullb}" create -s "${nullb_size}" -z "${nullb_zone_size}")
++		if [ $? != 0 ]; then
++			_fail "cannot create nullb zoned device $i"
++		fi
++		dev=$(echo "${out}" | tail -n 1)
++		nullb_devs[$i]=${dev}
++	done
++
++	run_check $SUDO_HELPER "${nullb}" ls
++}
++
++# remove nullb devices
++cleanup_nullbdevs()
++{
++	setup_root_helper
++	local nullb="${TEST_TOP}/nullb"
++
++	for dev in ${nullb_devs[@]}; do
++		name=$(basename ${dev})
++		run_check $SUDO_HELPER "${nullb}" rm "${name}"
++	done
++}
++
+ init_env()
+ {
+ 	TEST_MNT="${TEST_MNT:-$TEST_TOP/mnt}"
 -- 
 2.45.1
 

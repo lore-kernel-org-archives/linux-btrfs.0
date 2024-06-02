@@ -1,493 +1,274 @@
-Received: from mail-ed1-f46.google.com (mail-ed1-f46.google.com [209.85.208.46])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mx0a-00069f02.pphosted.com (mx0a-00069f02.pphosted.com [205.220.165.32])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B3782BE47
-	for <linux-btrfs@vger.kernel.org>; Sun,  2 Jun 2024 04:43:11 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.208.46
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1717303393; cv=none; b=bgkkZKpeNNhFGsQzCQPQdzAXnyJYzdNNCD3fqFjKrxBmZ0Y8R1B+F6iFUGtZ6EfFpLn8oPRhtBYwxNXLgA4OS1Pbx0wUqQ/VhJ+iSjwT4ZIWpWP+RpsEwH/PCtf5GDH1uEDY55cmq4StaUUBsanG44pfGrRWnRv/mtCOh2PIzk4=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1717303393; c=relaxed/simple;
-	bh=NJOD7xb3y78hRXn/bZi9IoscM5pEJ0H0NAWrDDU1myk=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=cdHhLXdcAgkGQtcC6I/KjCI3u07IsOvZCnVFS9TuFvI6ihsqLA+4ztx/m/ceKD9N7rBRgl52vPiAFY+23WmT5qdCD8+tcxWRDsZbUxxRezVkdMm8EIuZMGZgTDQOBO66xBRjPj7rEg+3w4T+1Y26y2QKCKmefT0dTV+OsbBPM+8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=Hlt3CIPI; arc=none smtp.client-ip=209.85.208.46
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="Hlt3CIPI"
-Received: by mail-ed1-f46.google.com with SMTP id 4fb4d7f45d1cf-57a2f27090aso3845407a12.0
-        for <linux-btrfs@vger.kernel.org>; Sat, 01 Jun 2024 21:43:11 -0700 (PDT)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9D5E93D387;
+	Sun,  2 Jun 2024 14:10:16 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=205.220.165.32
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1717337418; cv=fail; b=FXMiT1FN/En9ifUqJ8lkA04c4lfVtg1xsFvB8As+l/yQvhWAxiXeYyTI1iI9WMszsTSMOsApfzyRskVz1OOSP+w5H9A0TuvF/9mKOvegT44nkHAUszbuxYRqU8t4aeBUoCuHe2ZF/YC7a+Wtbk5oN7S/VIezfJPQugp2/3EaPZc=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1717337418; c=relaxed/simple;
+	bh=sl1f16rLh6VuBRP96w1uGO1Jce7Sd7atKPgvxNCh4W0=;
+	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=TgbkwbQRD/C0cb0S31DzQjpPkiXbl/aP2L1ZQGltfpqKQvOnEjNYAbBZ+FXPKY+WXIzLDVYrL3ZSk8Nf137Z187EH3lw/sKbr+wZGgSFmfy1Z8zXng33H6jxt5lVF/wBWSYI/Qnu0YXBGSC1Lw+kGzy1DaqoFHmZa9A1cn5WzzE=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=oracle.com; spf=pass smtp.mailfrom=oracle.com; arc=fail smtp.client-ip=205.220.165.32
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=oracle.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=oracle.com
+Received: from pps.filterd (m0246617.ppops.net [127.0.0.1])
+	by mx0b-00069f02.pphosted.com (8.17.1.19/8.17.1.19) with ESMTP id 4526jm3S004327;
+	Sun, 2 Jun 2024 14:09:53 GMT
+DKIM-Signature: =?UTF-8?Q?v=3D1;_a=3Drsa-sha256;_c=3Drelaxed/relaxed;_d=3Doracle.com;_h?=
+ =?UTF-8?Q?=3Dcc:content-transfer-encoding:content-type:date:from:in-reply?=
+ =?UTF-8?Q?-to:message-id:mime-version:references:subject:to;_s=3Dcorp-202?=
+ =?UTF-8?Q?3-11-20;_bh=3DhnwTjXg77Nze6LQe2mD+iyMVp1YWIYX58p+5m2fahrk=3D;_b?=
+ =?UTF-8?Q?=3DDAFVvbN4lMb9k8nIQl0UNIb/9iBhzGaypRqFBHCi1K2H5w27twbbNvn2RTjC?=
+ =?UTF-8?Q?ISYttx0B_jP1kxA882hzcUy8jQV4ZEewJFgAnd+31oFKwM0PxNKdbE5bNyW96LL?=
+ =?UTF-8?Q?2TD7MJ8LrffJlS_zB5OmaPKiU8140sZ9GxMNPnILDJhq0ggKndTQcXwSRK//u3Z?=
+ =?UTF-8?Q?f4aXaiS3b3sIr5UWN7t8_biQYKxBihSlAOEuhbvFppjEPqhO2dzsMvJR9lftQ/A?=
+ =?UTF-8?Q?0QTXL8nc27DBr71iuN8ScuAXPt_mRrQvs6nLgL2MGuscZS6v0UTRKDepBqjtu1c?=
+ =?UTF-8?Q?auSYvhBb/b/VfJW5rbVQ2qmg0FBOIu30_AQ=3D=3D_?=
+Received: from phxpaimrmta02.imrmtpd1.prodappphxaev1.oraclevcn.com (phxpaimrmta02.appoci.oracle.com [147.154.114.232])
+	by mx0b-00069f02.pphosted.com (PPS) with ESMTPS id 3yfv6u1cnc-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+	Sun, 02 Jun 2024 14:09:52 +0000
+Received: from pps.filterd (phxpaimrmta02.imrmtpd1.prodappphxaev1.oraclevcn.com [127.0.0.1])
+	by phxpaimrmta02.imrmtpd1.prodappphxaev1.oraclevcn.com (8.17.1.19/8.17.1.19) with ESMTP id 452CDYtY037809;
+	Sun, 2 Jun 2024 14:09:52 GMT
+Received: from nam10-bn7-obe.outbound.protection.outlook.com (mail-bn7nam10lp2101.outbound.protection.outlook.com [104.47.70.101])
+	by phxpaimrmta02.imrmtpd1.prodappphxaev1.oraclevcn.com (PPS) with ESMTPS id 3ygrja1h81-2
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+	Sun, 02 Jun 2024 14:09:51 +0000
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=hgCyo+NXusTZsIgf6k3dSiRgzBpsLx9LGA+HUnv0QBHR8HTFtUUFwMw5LFKsvegUQKQrQOLTe0UnZs/C+PeoN40sUJAHoh2NgjIV5ZDECW9Ag61uRbhl3Vl6BylSTuq7/DUaK/++rTNsYFoUwkvO0qpjIxlU/JcYHOczdtB/7YEjM6UknbXXs+F+AdeT2tjC/GSsC6xGfW3TYCLFow8rD0shO/gj/EdD7Rw1h03ZBkb0UZ8WW/aBzPx0X3KB9hBya2phyuY648EsHpWIXosMVzWPJrDCPd2hWVVt23hPzqwHfqoz5ESzLq5fbZ0Qb75itUgO6J/bRh79AHAUGDRo5g==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=hnwTjXg77Nze6LQe2mD+iyMVp1YWIYX58p+5m2fahrk=;
+ b=AoVSV+JdqC65ywKEG4AfB9Xd7zPWPh8s58O80LcvS4Hyqj7g5Tl8dp8/5K3G6jTC/tykYR1xhwVdjWg5bKddhjBxxdBmT2itmxnbU6B2FFgnk1+pd5SC+ciBLBYHhZlTFtV/M2/70xqVoF6v7rb1Ji3iOVoCh9pzSPKGrcwZLY/bKFjz0uEedWMimpVVCn/m6xNA4EGGl1WppXYAPgamxQlbOZ6sm5f78sNqJfxvGNRih13A0UyW1t3t+ZQGHbHBNipBmmlFUcYyPHvFxexlxd3/MDPHvCQDT3Z+SZfr7naGuaY9ayrIlgnUQfabf6WvVDg2x0bkVhZE4tuvIySUzg==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=oracle.com; dmarc=pass action=none header.from=oracle.com;
+ dkim=pass header.d=oracle.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1717303390; x=1717908190; darn=vger.kernel.org;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=NlrIlwLcuQIYBoMUicoOAHjc2NlBGPe2UzdnIY+mEzE=;
-        b=Hlt3CIPIzeYIkszFIvVPOZdwEHpyeJapMNCdjkOIyM+7sjA4hXgZZhDXSerWer/nF3
-         4ZsSc7NwcoSupGukHaCVEkk/G3iqILWSIzZakkibdltVjJivPyq8SJ/X+9CIPWXG6lg5
-         34ly3jPj4I8jRei+Ia9+XuQvGhvZFxsuhmegloF/CXUAzUjjhHcyvGNyVidqRgfzSy2U
-         Qtn/fyP72GkAbhURtzIJOauawexROHUk9emktX+wg3Nl/Cf6IZvBXMRVRvWM066eR3H2
-         ZtY2epiRs4AJtHNfGKlhXsF319DefQ3cd6Qbb7iP6Ktuof1ZVnulk2JG2dXn1toJVxJN
-         etnw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1717303390; x=1717908190;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=NlrIlwLcuQIYBoMUicoOAHjc2NlBGPe2UzdnIY+mEzE=;
-        b=logbkDGJFtLSXJIiFfE5iCvAWSjvGSzAO4RMBdjaSNrMR49A7RxyyMQflUnoXQClwl
-         Lg0oiS8dLRa8GvOFyhgn075yNuFAU9b/dFAx3xvAwbo8NF2xa13jTVajMQO3YKAQLXe1
-         lAdxCGV2c+2pr79HHyObb2UWn2ebTVohYTieiY1X0xQ8LLyRp0jJQ28+ddNkv/y3FVE/
-         1YKJeHj2AMSQzcSxQs6iiTf6k22yOdYxpvpz1mRmbZ8oQjkNAwaFLmfwz0PiwF8LsAWa
-         80KX3lbLNeFSzwudJeqZkZxkX49GhTi5VnJkyEo3laIaXTmKPFN4VQGjZG86ojNjKUrS
-         W8kQ==
-X-Gm-Message-State: AOJu0YznAq8J7Dd4WqARzD3KOG8tUaaMOjp36BkekkcGD6GQe7c0BNeY
-	Orm50wY8FnCoP/o5pTT2wa898AaSKg3Dj/T8CU6SCiRH1r2nsRB7b5QRCPGa46rWyu0QRR5L8w7
-	bvJ3pTKQo0fhjgnqgbRU5VlF1Vkc=
-X-Google-Smtp-Source: AGHT+IHxcGVeeRM26s0dTgEkWx2CiTvjp4x7zNqQnJE1IA6tThqdwQ7tj0dyMhYqZMckWwBjE0nJiTNvfQGJ1miUyus=
-X-Received: by 2002:a50:874f:0:b0:578:d846:fc0a with SMTP id
- 4fb4d7f45d1cf-57a3654af64mr4011664a12.20.1717303389541; Sat, 01 Jun 2024
- 21:43:09 -0700 (PDT)
+ d=oracle.onmicrosoft.com; s=selector2-oracle-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=hnwTjXg77Nze6LQe2mD+iyMVp1YWIYX58p+5m2fahrk=;
+ b=KCqSPMrE3UWVljJDRCXh9g2dHAlId7SPIg/OGW1Ahhu4GNtLRP3vekk13xnwGOwxg7ZYy90pcL7EhSgG0pex+C5GTIOTetyjtoW8p6LEFBYO7hES37J9d1eyaaEI989BLixwPBbpgsFZH71jKNKgF9OJXjwmtAOSXMdFar3TpQs=
+Received: from DM6PR10MB4313.namprd10.prod.outlook.com (2603:10b6:5:212::20)
+ by DS0PR10MB8078.namprd10.prod.outlook.com (2603:10b6:8:1fd::7) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.7633.25; Sun, 2 Jun
+ 2024 14:09:49 +0000
+Received: from DM6PR10MB4313.namprd10.prod.outlook.com
+ ([fe80::4f45:f4ab:121:e088]) by DM6PR10MB4313.namprd10.prod.outlook.com
+ ([fe80::4f45:f4ab:121:e088%5]) with mapi id 15.20.7633.018; Sun, 2 Jun 2024
+ 14:09:49 +0000
+From: John Garry <john.g.garry@oracle.com>
+To: axboe@kernel.dk, kbusch@kernel.org, hch@lst.de, sagi@grimberg.me,
+        jejb@linux.ibm.com, martin.petersen@oracle.com, djwong@kernel.org,
+        viro@zeniv.linux.org.uk, brauner@kernel.org, dchinner@redhat.com,
+        jack@suse.cz
+Cc: linux-block@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-nvme@lists.infradead.org, linux-fsdevel@vger.kernel.org,
+        tytso@mit.edu, jbongio@google.com, linux-scsi@vger.kernel.org,
+        ojaswin@linux.ibm.com, linux-aio@kvack.org,
+        linux-btrfs@vger.kernel.org, io-uring@vger.kernel.org,
+        nilay@linux.ibm.com, ritesh.list@gmail.com, willy@infradead.org,
+        John Garry <john.g.garry@oracle.com>
+Subject: [PATCH v7 6/9] block: Add fops atomic write support
+Date: Sun,  2 Jun 2024 14:09:09 +0000
+Message-Id: <20240602140912.970947-7-john.g.garry@oracle.com>
+X-Mailer: git-send-email 2.31.1
+In-Reply-To: <20240602140912.970947-1-john.g.garry@oracle.com>
+References: <20240602140912.970947-1-john.g.garry@oracle.com>
+Content-Transfer-Encoding: 8bit
+Content-Type: text/plain
+X-ClientProxiedBy: MN2PR03CA0022.namprd03.prod.outlook.com
+ (2603:10b6:208:23a::27) To DM6PR10MB4313.namprd10.prod.outlook.com
+ (2603:10b6:5:212::20)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20240601114213.1647115-1-sunjunchao2870@gmail.com> <b1773175-9780-4bdf-a751-4df50a3f19d8@suse.com>
-In-Reply-To: <b1773175-9780-4bdf-a751-4df50a3f19d8@suse.com>
-From: JunChao Sun <sunjunchao2870@gmail.com>
-Date: Sun, 2 Jun 2024 12:42:58 +0800
-Message-ID: <CAHB1NainFNy5HictfgPJ-PH59a=Gm_MMc6u7cuj0giZtTdqgxQ@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: qgroup: use xarray to track dirty extents in transaction.
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org, clm@fb.com, josef@toxicpanda.com, 
-	dsterba@suse.com
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+X-MS-PublicTrafficType: Email
+X-MS-TrafficTypeDiagnostic: DM6PR10MB4313:EE_|DS0PR10MB8078:EE_
+X-MS-Office365-Filtering-Correlation-Id: 3b95f740-2669-4112-7567-08dc830da9ea
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam: 
+	BCL:0;ARA:13230031|366007|7416005|1800799015|376005|921011;
+X-Microsoft-Antispam-Message-Info: 
+	=?us-ascii?Q?zP+SIH+2k9RQY9rmNj/189mleTk25VBRC00geIQSQObgT1KawZagEDAYj6s7?=
+ =?us-ascii?Q?Jm0LZv4S0RjDzENuwvQTNTmHl+Adq5vXiTc3FN4E8Vq+l/XflHvS5dEO3V3H?=
+ =?us-ascii?Q?RCbQCuup4MIxfa6u+Ztd2tDuKZnsc+sd4g44hQlF8CJWkdWy9JC9tq4rpfWB?=
+ =?us-ascii?Q?MYGE/qGcXtB604uFI1BSZV3g4hf0ZP44VWf1z07gcOMBICr5Hj8e9J2Bd6NF?=
+ =?us-ascii?Q?6RcXGcJXmpAM/BuIUhidrBGvsfivjXT5EvpeT9eirYB4USdeRj/rtpvUvNHO?=
+ =?us-ascii?Q?uYhn/I+T74acFbfxAQU3UIntKWzU4Y5wfvYrP/zQsQibBa1KcQEIRI33wqXN?=
+ =?us-ascii?Q?yparXDTCcBpAHOLzH/bHf+IPhfn3unk2Q/yEe3IUnElI2erS3KzaImn7lwYj?=
+ =?us-ascii?Q?Aa2IRxju0HGyYWsbL14cRmSplIw0IKl5rVUm/1LsNLujslGKOV2ZZH2sPKQ7?=
+ =?us-ascii?Q?tnytOO1oabp8h7+Twm7y/BgZaShNB3asCYCgRzDGl/nNM67MV/dfBdij60cn?=
+ =?us-ascii?Q?8uDxRYeI5RnA6VtlS02oBBsEDk/QH0yyJK8O5OVSHBoqwOr47IKZ10RBqhTx?=
+ =?us-ascii?Q?5wXIQnxDa8LZaRjAAvJjNnqGJT85B4/ddemtUWIJ9BsHRPTNyk7Dsjs2zI9d?=
+ =?us-ascii?Q?6LdKFCFb1IZXgeAX/jV/r8dVzMp8trrLfROfQ30QtRuTys+ELG8glK6A1e4L?=
+ =?us-ascii?Q?hMee4S5xnXrRS66ErlQaQsSd6YbPNJKQxluLAPI30K/pdwksrMo4knz+3cS1?=
+ =?us-ascii?Q?+EkX1JhcG9x3JdfXdlZPxVlV03Cq1eOdOUiqLcgbesfPN48F3muXKUFp4Qt3?=
+ =?us-ascii?Q?F9JkwdUbGuQJfcb1u0tWiS2ZKhKOgfQ7DRkqy9Fs2ia1CvxZSR7th6d8Zt0r?=
+ =?us-ascii?Q?ivvZUv2OrVIZGPqoJhzVoQUlAqALu4D7WGqKFUtACSsAdCbEiPdoOjgcBqc4?=
+ =?us-ascii?Q?o+LwPxcH16yubo97Ezz0U2Lqcot+iyHJdARHOGFJ3AV+dwd6qRNbBQjQOOIH?=
+ =?us-ascii?Q?8pLyGjJfj28TLQTfyRSxR08lu8/As62tY9Dnnm71LeWEvx5PsnBQupujBnzU?=
+ =?us-ascii?Q?nHN7rQD8s5CpxSMqxvuD1KAcEtSHX3RqhaejHBnGmjop2xmLraW/4sWSfzLX?=
+ =?us-ascii?Q?5gV4IGQ+r5u0yIfHoSXcB7yUhQP0pzp099w3XapR+rd0XNOCmPjN/5S6c4j8?=
+ =?us-ascii?Q?cmNl9JGC3kmKD7cmKOGbwQFZw3kvjDIKBYPHEZ68M2Zp51SXniXHCK7euML/?=
+ =?us-ascii?Q?4ndtff3Fy16WrOP7XGG1JaHmw9UE6ceKSPrfycgOzIZJkSafkYEjOalJXon0?=
+ =?us-ascii?Q?Gwck1+DRHSbpX7jgNOaw/E9z?=
+X-Forefront-Antispam-Report: 
+	CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:DM6PR10MB4313.namprd10.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230031)(366007)(7416005)(1800799015)(376005)(921011);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-MessageData-0: 
+	=?us-ascii?Q?vlgy8YcnDw3Jq4pi7aC36fec/xiEMpd+dBXkdoYpsbOrEHK/CigK1PgVE89P?=
+ =?us-ascii?Q?BUolUNYk5W+XOHhcWic84D5CfE8NRUgn8Tl0iVlsZr8raKAtf6Lt5DDHirL2?=
+ =?us-ascii?Q?tigEYiE/82vBF7Tyv04BOY4sdJBiudb3Ga44gSAEedOVEbSm9OQyRhjeJdjc?=
+ =?us-ascii?Q?4iOftOLDcLErpuRC4M7owfMHUhWOJTOUW+iS0PyCbNhqCclRrf3xLCmz3jgP?=
+ =?us-ascii?Q?RVdPoGY5ZR/8QVzzKWLnFv7DO0J5WiXuacxqNVeSgoaZmGYbwvbN9W9WvJrR?=
+ =?us-ascii?Q?HT34FZwr9jQEdojlfwN1ff4ni7Uk42Nwmc3Zddw83VB0E7uWvXkLSw/v3egE?=
+ =?us-ascii?Q?HinRR98MC7MqiaQl92rfUDQcMkluZfdj2VT0nR6t1sJEZpC1Mru1ljPzfx/Q?=
+ =?us-ascii?Q?IKWuSPv65DofYnfEqJxdlywJWueLjdqaXOgzn6tSlAwJAmRRSScX/CQsynwI?=
+ =?us-ascii?Q?FkoZ5wFu7nF0z9O08qUyuRpVUT8eBvIuzEtyGJMhDjPZ0dTDcJBJaECR12xS?=
+ =?us-ascii?Q?DZWTdJR59u6s5eeBR1/2PEOoHVBCHk0w3lBVwcWScZHuMZKKe0dtlFZpJ8ky?=
+ =?us-ascii?Q?wGmImHPjApDMLwlVNZi4+RipK8Nl+eMQ2FalSzAeKOpy5/LcWiUIwccLgZge?=
+ =?us-ascii?Q?SUUnTRiQ9pHZ5XEygq0IttkFgd/980uXW4G+G6x1C9No+bRFKbQ8ZSV3zl5+?=
+ =?us-ascii?Q?sJswo9JQbgd3IffgmQguDQ5yToax2Lxu2NJ8LGYkG8U3EEnIP25nFJp6+wP6?=
+ =?us-ascii?Q?R/whcpuE9svGaYYDvo9HSgSBO2e+pEAW/wSDb40XeJv/AwZuH7RKs1wEneVl?=
+ =?us-ascii?Q?nrZEKyOzcPnVrhEtK3b1ho2ex+EqeMv8G+kYSUWwxlCW/yhB9e6PoIevzw02?=
+ =?us-ascii?Q?ZOVc6t2U8G1hP5PuIktmCJht0DRGy7oS+t0tcF157a/hZ+7Wi0f7ktVUMYQc?=
+ =?us-ascii?Q?aQYSXjHQXKPUAAXDVasq23cfLGiv5hnS+g815XH+c69eL3fAjIsoXFzyAgnO?=
+ =?us-ascii?Q?0W9tA6C/IDa12f9J/5FsBaI0UTvO33gXMCfd6GKUkeYtN1aXyx93u2oSOuCr?=
+ =?us-ascii?Q?yYdLZV+5tbOdXzJkOqj4JpFuozPrU6fyy5A+SpJ/uj9qkXo+p68Snp8vfaVe?=
+ =?us-ascii?Q?dv6ypEpQs9QzlgiCHLKS9KNph4QLJMpsFtc6V/EU2LxdIqMm0kRbhBE2MJHR?=
+ =?us-ascii?Q?Sw/k52bAKWigLDeFvXi6d/CRdYfeyPKmEDxw4mNQDlgMz0VVQ9wVuOOUlVGG?=
+ =?us-ascii?Q?mtgGegdo0UnVfcXBoRphcOpR6AIGRkaeLMfJlNP50huhPs8wOJVtanN3+FPr?=
+ =?us-ascii?Q?pNKkQQIWTrxrjQz9cHw1P0QOEg6i6Qyl0QKwl8vbIEGpVh3xsl36DJMINotF?=
+ =?us-ascii?Q?lA7P2qTJEE2H0MlXkEzDQJsPp/RxACZOL2vjyggw0AEwoB+rqM0jsitePae7?=
+ =?us-ascii?Q?AtX9vGWP3da8HQj9DrfMwfrOXhjU4Kv+PEWqLSMzh5RWhgD8lEYqQtsq+r1i?=
+ =?us-ascii?Q?Its8/fbxgOKpkOmdj5NC6Zo560gLdSGtgEKLqFnXmJBAhOZAfryYCyu1h9uS?=
+ =?us-ascii?Q?km5NoheagEbv0O47/lVTOhYd6xbZ3wfzfXGV1ICjWJKtFidY0qN0P6XpruUu?=
+ =?us-ascii?Q?2Q=3D=3D?=
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0: 
+	d80DM8wcZCQy2p0m2bz8keAys0Kp0s5KDXgQ4GHyVJNzv72GvY6/eWyvZo+Ul00SuB+M/6UsgOQEHcRzPLlXOfo4cFgULgNc97SBrF0X3ICITqTtaLamI6coG3ZBgD8/AbY6B6Lr3loPR5alM1aV3SU0DgtshlUB2IkjuJ9CirBWfRkT8pPAkJexckN/05glZc5nLxaGxa7JIfHeAZ97enaBFoM5qL7lsXdOl9+qS/IWLXFB3khwn265AuXenfunkcqNeHbzTxOYTar8emRWmMIyNkBphFLGD1GZLuZCZdpfrRPvVlY+wOKQgyQf32G0vtx6dSuySTxT2Bpq+69BLEL4W/b8NeW/9QF+B0D+QMfYHk7Kik6N8xuaFb4OYsu8k1jbDWrNgn7NbRoiOuYM8WGC4//JNqHMebIWBk7eegWXuuV+OsNA3TyeHDbqGBEKQP3KgQrc9EbnkWXR/XhIwYZ0Zl/V8JUlKCnalYmjHlvCuO9F44mcaHIkrn21n/927ln6MTq1WJIUCu4Ml6XLPUjYhhx/TbvRwG0psSTGlyRSHgdm2wRsr45GlL6T/KARiwUaqKne7rD+0eNQhgsvx7mloDDCVonCVNARe3olgmo=
+X-OriginatorOrg: oracle.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 3b95f740-2669-4112-7567-08dc830da9ea
+X-MS-Exchange-CrossTenant-AuthSource: DM6PR10MB4313.namprd10.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 02 Jun 2024 14:09:48.9724
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: 4e2c6054-71cb-48f1-bd6c-3a9705aca71b
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: OPECkUiAbbBLmXcfyzF4/k1IpnHwGm/0CdQtYzW8m59nRAFaKJFluoDks8QFj8lfCNEWTHDHvYsR3F3aEXCDiw==
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: DS0PR10MB8078
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.293,Aquarius:18.0.1039,Hydra:6.0.650,FMLib:17.12.28.16
+ definitions=2024-06-02_08,2024-05-30_01,2024-05-17_01
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 mlxlogscore=999 phishscore=0
+ adultscore=0 bulkscore=0 spamscore=0 malwarescore=0 mlxscore=0
+ suspectscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2405010000 definitions=main-2406020122
+X-Proofpoint-ORIG-GUID: viF77xZHgbq0Tw0EE2hxol6m48gzbASn
+X-Proofpoint-GUID: viF77xZHgbq0Tw0EE2hxol6m48gzbASn
 
-Qu Wenruo <wqu@suse.com> =E4=BA=8E2024=E5=B9=B46=E6=9C=882=E6=97=A5=E5=91=
-=A8=E6=97=A5 06:47=E5=86=99=E9=81=93=EF=BC=9A
->
->
->
-> =E5=9C=A8 2024/6/1 21:12, Junchao Sun =E5=86=99=E9=81=93:
-> > Using xarray to track dirty extents can reduce the size of the
-> > struct btrfs_qgroup_extent_record from 64 bytes to 40 bytes.
-> > And xarray is more cache line friendly, it also reduces the
-> > complexity of insertion and search code compared to rb tree.
-> >
-> > Another change introduced is about error handling.
-> > Before this patch, the result of btrfs_qgroup_trace_extent_nolock()
-> > is always success. In this patch, because of this function calls
-> > the function xa_store() which has the possibility to fail, so I
-> > refactored some code to handle error correctly. Even though that
-> > we preallocated memory in advance, here should not return an error
-> > theorily. But for the sake of logical completeness, I still
-> > refactored the error handling code. If you have any questions or
-> > concerns about this part, feel free to let me know.
-> >
-> > This patch passed the check -g qgroup tests using xfstests and
-> > checkpatch tests.
->
-> Thanks a lot for the work, but still some problem related to coding
-> style and error handling.
->
-> [...]
-> > @@ -1036,18 +1043,16 @@ int btrfs_add_delayed_tree_ref(struct btrfs_tra=
-ns_handle *trans,
-> >               return -ENOMEM;
-> >
-> >       head_ref =3D kmem_cache_alloc(btrfs_delayed_ref_head_cachep, GFP_=
-NOFS);
-> > -     if (!head_ref) {
-> > -             kmem_cache_free(btrfs_delayed_tree_ref_cachep, ref);
-> > -             return -ENOMEM;
-> > -     }
-> > +     if (!head_ref)
-> > +             goto fail1;
-> >
-> >       if (btrfs_qgroup_full_accounting(fs_info) && !generic_ref->skip_q=
-group) {
-> >               record =3D kzalloc(sizeof(*record), GFP_NOFS);
-> > -             if (!record) {
-> > -                     kmem_cache_free(btrfs_delayed_tree_ref_cachep, re=
-f);
-> > -                     kmem_cache_free(btrfs_delayed_ref_head_cachep, he=
-ad_ref);
-> > -                     return -ENOMEM;
-> > -             }
-> > +             if (!record)
-> > +                     goto fail2;
->
->
-> > I'd prefer the old error handling.
+Support atomic writes by submitting a single BIO with the REQ_ATOMIC set.
 
-Old error handling code would be like this:
-                         record =3D kzalloc(sizeof(*record), GFP_NOFS);
-                         if (!record) {
+It must be ensured that the atomic write adheres to its rules, like
+naturally aligned offset, so call blkdev_dio_invalid() ->
+blkdev_atomic_write_valid() [with renaming blkdev_dio_unaligned() to
+blkdev_dio_invalid()] for this purpose. The BIO submission path currently
+checks for atomic writes which are too large, so no need to check here.
 
-kmem_cache_free(btrfs_delayed_tree_ref_cachep, ref);
+In blkdev_direct_IO(), if the nr_pages exceeds BIO_MAX_VECS, then we cannot
+produce a single BIO, so error in this case.
 
-kmem_cache_free(btrfs_delayed_ref_head_cachep, head_ref);
-                             return -ENOMEM;
-                         }
-                         ret =3D
-xa_reserve(&delayed_refs->dirty_extents, bytenr, GFP_NOFS);
-                         if (ret) {
-                             kfree(qgroup);
+Finally set FMODE_CAN_ATOMIC_WRITE when the bdev can support atomic writes
+and the associated file flag is for O_DIRECT.
 
-kmem_cache_free(btrfs_delayed_tree_ref_cachep, ref);
+Signed-off-by: John Garry <john.g.garry@oracle.com>
+---
+ block/fops.c | 20 +++++++++++++++++---
+ 1 file changed, 17 insertions(+), 3 deletions(-)
 
-kmem_cache_free(btrfs_delayed_ref_head_cachep, head_ref);
-                             return -ENOMEM;
-                        }
-which looks a little bit redundant. So I used goto style to handle errors.
+diff --git a/block/fops.c b/block/fops.c
+index 376265935714..9d6d86ebefb9 100644
+--- a/block/fops.c
++++ b/block/fops.c
+@@ -34,9 +34,12 @@ static blk_opf_t dio_bio_write_op(struct kiocb *iocb)
+ 	return opf;
+ }
+ 
+-static bool blkdev_dio_unaligned(struct block_device *bdev, loff_t pos,
+-			      struct iov_iter *iter)
++static bool blkdev_dio_invalid(struct block_device *bdev, loff_t pos,
++				struct iov_iter *iter, bool is_atomic)
+ {
++	if (is_atomic && !generic_atomic_write_valid(pos, iter))
++		return true;
++
+ 	return pos & (bdev_logical_block_size(bdev) - 1) ||
+ 		!bdev_iter_is_aligned(bdev, iter);
+ }
+@@ -72,6 +75,8 @@ static ssize_t __blkdev_direct_IO_simple(struct kiocb *iocb,
+ 	bio.bi_iter.bi_sector = pos >> SECTOR_SHIFT;
+ 	bio.bi_write_hint = file_inode(iocb->ki_filp)->i_write_hint;
+ 	bio.bi_ioprio = iocb->ki_ioprio;
++	if (iocb->ki_flags & IOCB_ATOMIC)
++		bio.bi_opf |= REQ_ATOMIC;
+ 
+ 	ret = bio_iov_iter_get_pages(&bio, iter);
+ 	if (unlikely(ret))
+@@ -343,6 +348,9 @@ static ssize_t __blkdev_direct_IO_async(struct kiocb *iocb,
+ 		task_io_account_write(bio->bi_iter.bi_size);
+ 	}
+ 
++	if (iocb->ki_flags & IOCB_ATOMIC)
++		bio->bi_opf |= REQ_ATOMIC;
++
+ 	if (iocb->ki_flags & IOCB_NOWAIT)
+ 		bio->bi_opf |= REQ_NOWAIT;
+ 
+@@ -359,12 +367,13 @@ static ssize_t __blkdev_direct_IO_async(struct kiocb *iocb,
+ static ssize_t blkdev_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
+ {
+ 	struct block_device *bdev = I_BDEV(iocb->ki_filp->f_mapping->host);
++	bool is_atomic = iocb->ki_flags & IOCB_ATOMIC;
+ 	unsigned int nr_pages;
+ 
+ 	if (!iov_iter_count(iter))
+ 		return 0;
+ 
+-	if (blkdev_dio_unaligned(bdev, iocb->ki_pos, iter))
++	if (blkdev_dio_invalid(bdev, iocb->ki_pos, iter, is_atomic))
+ 		return -EINVAL;
+ 
+ 	nr_pages = bio_iov_vecs_to_alloc(iter, BIO_MAX_VECS + 1);
+@@ -373,6 +382,8 @@ static ssize_t blkdev_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
+ 			return __blkdev_direct_IO_simple(iocb, iter, bdev,
+ 							nr_pages);
+ 		return __blkdev_direct_IO_async(iocb, iter, bdev, nr_pages);
++	} else if (is_atomic) {
++		return -EINVAL;
+ 	}
+ 	return __blkdev_direct_IO(iocb, iter, bdev, bio_max_segs(nr_pages));
+ }
+@@ -612,6 +623,9 @@ static int blkdev_open(struct inode *inode, struct file *filp)
+ 	if (!bdev)
+ 		return -ENXIO;
+ 
++	if (bdev_can_atomic_write(bdev) && filp->f_flags & O_DIRECT)
++		filp->f_mode |= FMODE_CAN_ATOMIC_WRITE;
++
+ 	ret = bdev_open(bdev, mode, filp->private_data, NULL, filp);
+ 	if (ret)
+ 		blkdev_put_no_open(bdev);
+-- 
+2.31.1
 
->
-> > +             ret =3D xa_reserve(&delayed_refs->dirty_extents, bytenr, =
-GFP_NOFS);
-> > +             if (ret)
-> > +                     goto fail3;
->
->
-> > Qgroup record inserting error is not critical, instead you can just mar=
-k
-> > qgroup inconsistent and do the remaining cleanup.
-
-Thank you for the reminder. I will mark qgroup inconsistent if error
-happened here.
->
-> >       }
-> >
-> >       if (parent)
-> > @@ -1067,7 +1072,6 @@ int btrfs_add_delayed_tree_ref(struct btrfs_trans=
-_handle *trans,
-> >                             false, is_system, generic_ref->owning_root)=
-;
-> >       head_ref->extent_op =3D extent_op;
-> >
-> > -     delayed_refs =3D &trans->transaction->delayed_refs;
-> >       spin_lock(&delayed_refs->lock);
-> >
-> >       /*
-> > @@ -1076,6 +1080,11 @@ int btrfs_add_delayed_tree_ref(struct btrfs_tran=
-s_handle *trans,
-> >        */
-> >       head_ref =3D add_delayed_ref_head(trans, head_ref, record,
-> >                                       action, &qrecord_inserted);
-> > +     if (IS_ERR(head_ref)) {
-> > +             spin_unlock(&delayed_refs->lock);
-> > +             ret =3D PTR_ERR(head_ref);
-> > +             goto fail3;
-> > +     }
->
-> If you keep the error handling inside qgrou part by just marking qgroup
-> inconsistent, add_delayed_ref_head() won't need to return error and no
-> extra error handling.
-> >
-> >       merged =3D insert_delayed_ref(trans, head_ref, &ref->node);
-> >       spin_unlock(&delayed_refs->lock);
-> > @@ -1096,6 +1105,14 @@ int btrfs_add_delayed_tree_ref(struct btrfs_tran=
-s_handle *trans,
-> >               btrfs_qgroup_trace_extent_post(trans, record);
-> >
-> >       return 0;
-> > +
-> > +fail3:
-> > +     kfree(record);
-> > +fail2:
-> > +     kmem_cache_free(btrfs_delayed_ref_head_cachep, head_ref);
-> > +fail1:
-> > +     kmem_cache_free(btrfs_delayed_tree_ref_cachep, ref);
-> > +     return ret;
->
->
-> > Please do no use such naming, go with something to indicate the what's
-> > going to be freed instead.
-
-yeh. It's reasonable. I will rename it.
-
->
-> >   }
-> >
-> >   /*
-> > @@ -1120,6 +1137,7 @@ int btrfs_add_delayed_data_ref(struct btrfs_trans=
-_handle *trans,
-> >       u64 owner =3D generic_ref->data_ref.ino;
-> >       u64 offset =3D generic_ref->data_ref.offset;
-> >       u8 ref_type;
-> > +     int ret =3D -ENOMEM;
-> >
-> >       ASSERT(generic_ref->type =3D=3D BTRFS_REF_DATA && action);
-> >       ref =3D kmem_cache_alloc(btrfs_delayed_data_ref_cachep, GFP_NOFS)=
-;
-> > @@ -1137,28 +1155,24 @@ int btrfs_add_delayed_data_ref(struct btrfs_tra=
-ns_handle *trans,
-> >       ref->objectid =3D owner;
-> >       ref->offset =3D offset;
-> >
-> > -
-> > +     delayed_refs =3D &trans->transaction->delayed_refs;
-> >       head_ref =3D kmem_cache_alloc(btrfs_delayed_ref_head_cachep, GFP_=
-NOFS);
-> > -     if (!head_ref) {
-> > -             kmem_cache_free(btrfs_delayed_data_ref_cachep, ref);
-> > -             return -ENOMEM;
-> > -     }
-> > +     if (!head_ref)
-> > +             goto fail1;
-> >
-> >       if (btrfs_qgroup_full_accounting(fs_info) && !generic_ref->skip_q=
-group) {
-> >               record =3D kzalloc(sizeof(*record), GFP_NOFS);
-> > -             if (!record) {
-> > -                     kmem_cache_free(btrfs_delayed_data_ref_cachep, re=
-f);
-> > -                     kmem_cache_free(btrfs_delayed_ref_head_cachep,
-> > -                                     head_ref);
-> > -                     return -ENOMEM;
-> > -             }
-> > +             if (!record)
-> > +                     goto fail2;
-> > +             ret =3D xa_reserve(&delayed_refs->dirty_extents, bytenr, =
-GFP_NOFS);
-> > +             if (ret)
-> > +                     goto fail3;
->
-> The same.
->
-> >       }
-> >
-> >       init_delayed_ref_head(head_ref, record, bytenr, num_bytes, ref_ro=
-ot,
-> >                             reserved, action, true, false, generic_ref-=
->owning_root);
-> >       head_ref->extent_op =3D NULL;
-> >
-> > -     delayed_refs =3D &trans->transaction->delayed_refs;
-> >       spin_lock(&delayed_refs->lock);
-> >
-> >       /*
-> > @@ -1167,6 +1181,11 @@ int btrfs_add_delayed_data_ref(struct btrfs_tran=
-s_handle *trans,
-> >        */
-> >       head_ref =3D add_delayed_ref_head(trans, head_ref, record,
-> >                                       action, &qrecord_inserted);
-> > +     if (IS_ERR(head_ref)) {
-> > +             ret =3D PTR_ERR(head_ref);
-> > +             spin_unlock(&delayed_refs->lock);
-> > +             goto fail3;
-> > +     }
-> >
-> >       merged =3D insert_delayed_ref(trans, head_ref, &ref->node);
-> >       spin_unlock(&delayed_refs->lock);
-> > @@ -1187,6 +1206,14 @@ int btrfs_add_delayed_data_ref(struct btrfs_tran=
-s_handle *trans,
-> >       if (qrecord_inserted)
-> >               return btrfs_qgroup_trace_extent_post(trans, record);
-> >       return 0;
-> > +
-> > +fail3:
-> > +     kfree(record);
-> > +fail2:
-> > +     kmem_cache_free(btrfs_delayed_ref_head_cachep, head_ref);
-> > +fail1:
-> > +     kmem_cache_free(btrfs_delayed_data_ref_cachep, ref);
-> > +     return ret;
->
-> The same.
->
-> >   }
-> >
-> >   int btrfs_add_delayed_extent_op(struct btrfs_trans_handle *trans,
-> > diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
-> > index 62d679d40f4f..f9b20c0671c7 100644
-> > --- a/fs/btrfs/delayed-ref.h
-> > +++ b/fs/btrfs/delayed-ref.h
-> > @@ -166,7 +166,7 @@ struct btrfs_delayed_ref_root {
-> >       struct rb_root_cached href_root;
-> >
-> >       /* dirty extent records */
-> > -     struct rb_root dirty_extent_root;
-> > +     struct xarray dirty_extents;
-> >
-> >       /* this spin lock protects the rbtree and the entries inside */
-> >       spinlock_t lock;
-> > diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-> > index 5470e1cdf10c..3241d21a7121 100644
-> > --- a/fs/btrfs/qgroup.c
-> > +++ b/fs/btrfs/qgroup.c
-> > @@ -1890,16 +1890,14 @@ int btrfs_limit_qgroup(struct btrfs_trans_handl=
-e *trans, u64 qgroupid,
-> >    *
-> >    * Return 0 for success insert
-> >    * Return >0 for existing record, caller can free @record safely.
-> > - * Error is not possible
-> >    */
-> >   int btrfs_qgroup_trace_extent_nolock(struct btrfs_fs_info *fs_info,
-> >                               struct btrfs_delayed_ref_root *delayed_re=
-fs,
-> >                               struct btrfs_qgroup_extent_record *record=
-)
-> >   {
-> > -     struct rb_node **p =3D &delayed_refs->dirty_extent_root.rb_node;
-> > -     struct rb_node *parent_node =3D NULL;
-> > -     struct btrfs_qgroup_extent_record *entry;
-> > -     u64 bytenr =3D record->bytenr;
-> > +     struct btrfs_qgroup_extent_record *existing;
-> > +     const u64 bytenr =3D record->bytenr;
-> > +     int ret;
-> >
-> >       if (!btrfs_qgroup_full_accounting(fs_info))
-> >               return 1;
-> > @@ -1907,27 +1905,26 @@ int btrfs_qgroup_trace_extent_nolock(struct btr=
-fs_fs_info *fs_info,
-> >       lockdep_assert_held(&delayed_refs->lock);
-> >       trace_btrfs_qgroup_trace_extent(fs_info, record);
-> >
-> > -     while (*p) {
-> > -             parent_node =3D *p;
-> > -             entry =3D rb_entry(parent_node, struct btrfs_qgroup_exten=
-t_record,
-> > -                              node);
-> > -             if (bytenr < entry->bytenr) {
-> > -                     p =3D &(*p)->rb_left;
-> > -             } else if (bytenr > entry->bytenr) {
-> > -                     p =3D &(*p)->rb_right;
-> > -             } else {
-> > -                     if (record->data_rsv && !entry->data_rsv) {
-> > -                             entry->data_rsv =3D record->data_rsv;
-> > -                             entry->data_rsv_refroot =3D
-> > -                                     record->data_rsv_refroot;
-> > -                     }
-> > -                     return 1;
-> > +     existing =3D xa_store(&delayed_refs->dirty_extents, bytenr, recor=
-d, GFP_ATOMIC);
-> > +     if (xa_is_err(existing))
-> > +             goto out;
-> > +     else if (existing) {
-> > +             if (record->data_rsv && !existing->data_rsv) {
-> > +                     existing->data_rsv =3D record->data_rsv;
-> > +                     existing->data_rsv_refroot =3D record->data_rsv_r=
-efroot;
-> >               }
-> > +             existing =3D xa_store(&delayed_refs->dirty_extents, byten=
-r, existing, GFP_ATOMIC);
->
->
-> > Instead of such complex double xa_store to modify the values, why not
-> > take xa_lock() and xa_find() so that you can easily find the existing
-> > entry and modify the members?
-> >
-> > In fact the double xa_store() is just going to make it way harder to
-> > grasp on which pointer is really stored inside the xarrary.
-
-Yeh. The double xa_store() is unnecessary here and it's really harder
-to understand the above code... I will modify it.
->
-> > @@ -4664,15 +4668,14 @@ int btrfs_qgroup_trace_subtree_after_cow(struct=
- btrfs_trans_handle *trans,
-> >   void btrfs_qgroup_destroy_extent_records(struct btrfs_transaction *tr=
-ans)
-> >   {
-> >       struct btrfs_qgroup_extent_record *entry;
-> > -     struct btrfs_qgroup_extent_record *next;
-> > -     struct rb_root *root;
-> > +     unsigned long index;
-> >
-> > -     root =3D &trans->delayed_refs.dirty_extent_root;
-> > -     rbtree_postorder_for_each_entry_safe(entry, next, root, node) {
-> > +     xa_for_each(&trans->delayed_refs.dirty_extents, index, entry) {
-> >               ulist_free(entry->old_roots);
-> >               kfree(entry);
-> >       }
-> > -     *root =3D RB_ROOT;
-> > +     xa_destroy(&trans->delayed_refs.dirty_extents);
-> > +     xa_init(&trans->delayed_refs.dirty_extents);
->
->
-> > Do you really need to call xa_init() after xa_destory()?
-
-Actually I passed tests using check -g qgroup without the xa_init().
-But I noticed the above *root =3D RB_ROOT code, which fixed a bug. So I
-thought xarray would be referenced somewhere after this function and
-then I reinited the xarray. I will review the relevant code to
-determine if it is truly necessary.
-
->
-> >   }
-> >
-> >   void btrfs_free_squota_rsv(struct btrfs_fs_info *fs_info, u64 root, u=
-64 rsv_bytes)
-> > diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-> > index be18c862e64e..f8165a27b885 100644
-> > --- a/fs/btrfs/qgroup.h
-> > +++ b/fs/btrfs/qgroup.h
-> > @@ -116,7 +116,6 @@
-> >    * TODO: Use kmem cache to alloc it.
-> >    */
-> >   struct btrfs_qgroup_extent_record {
-> > -     struct rb_node node;
-> >       u64 bytenr;
-> >       u64 num_bytes;
-> >
-> > diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> > index bf8e64c766b6..006080814ee5 100644
-> > --- a/fs/btrfs/transaction.c
-> > +++ b/fs/btrfs/transaction.c
-> > @@ -145,8 +145,8 @@ void btrfs_put_transaction(struct btrfs_transaction=
- *transaction)
-> >               BUG_ON(!list_empty(&transaction->list));
-> >               WARN_ON(!RB_EMPTY_ROOT(
-> >                               &transaction->delayed_refs.href_root.rb_r=
-oot));
-> > -             WARN_ON(!RB_EMPTY_ROOT(
-> > -                             &transaction->delayed_refs.dirty_extent_r=
-oot));
-> > +             WARN_ON(!xa_empty(
-> > +                             &transaction->delayed_refs.dirty_extents)=
-);
-> >               if (transaction->delayed_refs.pending_csums)
-> >                       btrfs_err(transaction->fs_info,
-> >                                 "pending csums is %llu",
-> > @@ -353,7 +353,7 @@ static noinline int join_transaction(struct btrfs_f=
-s_info *fs_info,
-> >       memset(&cur_trans->delayed_refs, 0, sizeof(cur_trans->delayed_ref=
-s));
-> >
-> >       cur_trans->delayed_refs.href_root =3D RB_ROOT_CACHED;
-> > -     cur_trans->delayed_refs.dirty_extent_root =3D RB_ROOT;
-> > +     xa_init(&cur_trans->delayed_refs.dirty_extents);
-> >       atomic_set(&cur_trans->delayed_refs.num_entries, 0);
-> >
-> >       /*
-> > @@ -690,7 +690,7 @@ start_transaction(struct btrfs_root *root, unsigned=
- int num_items,
-> >        * and then we deadlock with somebody doing a freeze.
-> >        *
-> >        * If we are ATTACH, it means we just want to catch the current
-> > -      * transaction and commit it, so we needn't do sb_start_intwrite(=
-).
-> > +      * transaction and commit it, so we needn't do sb_start_intwrite(=
-).
->
->
-> > Is this something fixed by LSP server automatically?
-> >
-> > This looks exactly like a lot of my patches where whitespace errors are
-> > auto-corrected...
-
-Indeed. I have been using vscode + clangd to view the source code. It
-may be fixed by clangd automatically. It is not appropriate in the
-patch about functional modification, I will remove it.
-Thanks a lot for your thorough review and comments. Thanks for your
-time. I will send patch v2 to fix them.
-
->
-> Thanks,
-> Qu
-> >        */
-> >       if (type & __TRANS_FREEZABLE)
-> >               sb_start_intwrite(fs_info->sb);

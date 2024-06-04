@@ -1,64 +1,64 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CF8C514D703
-	for <linux-btrfs@vger.kernel.org>; Tue,  4 Jun 2024 23:44:12 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1A01014E2C0
+	for <linux-btrfs@vger.kernel.org>; Tue,  4 Jun 2024 23:44:16 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1717544658; cv=none; b=miEsjVoZxd2m1EFMeH0PZP4RI50VXP38kESychVZSDTZ6doeTviiKBmWA9WgdNY7CuvtKuRskfj2nxOef+rJgi2lFhzkNFSo+jd4BbApRoelvgh07SfO3YUL1bK0Yp+BX+SGd3byASUSffmUcu0nLUprhiQwY+F6X52ynfeIttc=
+	t=1717544658; cv=none; b=ZHXgCYU28IFmqVZXWF/qIUTchzXR9ve48xc7OGpIkb/LNhMtqTyiyowNafrxBKOhM3lJUE4QiCHh708dJnVU5dAE7T+M7FArnHGUeSlUldkPgjc+Ys9QrLxk3TQZ6P1Oyu5HpmYNYtI2+612gV/Ekgc8Wg8RzanteZY3X4kwbt8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
 	s=arc-20240116; t=1717544658; c=relaxed/simple;
-	bh=PZ2HDVSZ4VyYwCx3VZhoCHK401SnUK5LxvjLJMs73M4=;
+	bh=AU0U8uXax637DNYZf5JFxjnMc97P0Q24tS0JZg5uh3A=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=VUsGjrPf7Ik2jUhJSKbw+Rp3NlVekTs8i2pkWcWR7JTjanP/T3xZXuSxOh5aHUZopIGppTsx0enbcaVzWrvAUcKGxZqtv7I61SduCct+opsncbZsQfYgheOd8RmqAD4u+HGGasCDEq+o+b9sl3onSNIVQi1rd3lcHiy9n/PZBnY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=NVdi/42f; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=NVdi/42f; arc=none smtp.client-ip=195.135.223.130
+	 MIME-Version; b=T6Pvtw0hxDEms+9tevnz5T3x6C+pk3HXSrnffdWzf466n0huPp2zzDzOu/w4k464cUHiyoUaPOoF/JCtVPs2uRrXhoIgRsLI+gQZimGM6xzY5YTzfihPbJkuOyf5hV+gYx0cBgwaC6PtnCrDHL2jN1rfWlBEt4xUCyjZ3R9xz+A=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=T1oT1Bfc; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=T1oT1Bfc; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="NVdi/42f";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="NVdi/42f"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="T1oT1Bfc";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="T1oT1Bfc"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 0493D219B4
-	for <linux-btrfs@vger.kernel.org>; Tue,  4 Jun 2024 23:44:11 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 616411F45F
+	for <linux-btrfs@vger.kernel.org>; Tue,  4 Jun 2024 23:44:14 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1717544651; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1717544654; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=6kvOLK3RdeCOYkMxQh3BqwinpGm3EViPpx7E5ZPvm9U=;
-	b=NVdi/42f4SgnJ37kQWSkXw3t8u8c/Oi+lklJs14fZwXPKQW1BuB3hHXoNIp7Xmis97jvRW
-	Os3LkrcaECh0H2lxmswoG8V1+Wp7hDvO6OWPCdm6JrPPes2nyxLf+8FIUph/cayTLR24QQ
-	1rC24GuSuBMKdWIlGfEunvL3YrctKZo=
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b="NVdi/42f"
+	bh=G4FFxuYc8HLx9kOGXiZRjId/uKkVlbQY7wVxt9GD5gM=;
+	b=T1oT1BfcYMIPikCh2ehVHTVw4nkaEIiMB5PRewYO4ywuPhHsufIcbO8cvQdUHX6QvXOZLg
+	JW3EQbvwWfBqyYjtu+39bUmrJ1/T4b5t/4PsY7FOf+MYqDjgzPfHfHCB25DRbAZ3+4DYgj
+	ODhKq7+6AXYLkQj60UJQ3hZ01ag3TUA=
+Authentication-Results: smtp-out2.suse.de;
+	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1717544651; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1717544654; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=6kvOLK3RdeCOYkMxQh3BqwinpGm3EViPpx7E5ZPvm9U=;
-	b=NVdi/42f4SgnJ37kQWSkXw3t8u8c/Oi+lklJs14fZwXPKQW1BuB3hHXoNIp7Xmis97jvRW
-	Os3LkrcaECh0H2lxmswoG8V1+Wp7hDvO6OWPCdm6JrPPes2nyxLf+8FIUph/cayTLR24QQ
-	1rC24GuSuBMKdWIlGfEunvL3YrctKZo=
+	bh=G4FFxuYc8HLx9kOGXiZRjId/uKkVlbQY7wVxt9GD5gM=;
+	b=T1oT1BfcYMIPikCh2ehVHTVw4nkaEIiMB5PRewYO4ywuPhHsufIcbO8cvQdUHX6QvXOZLg
+	JW3EQbvwWfBqyYjtu+39bUmrJ1/T4b5t/4PsY7FOf+MYqDjgzPfHfHCB25DRbAZ3+4DYgj
+	ODhKq7+6AXYLkQj60UJQ3hZ01ag3TUA=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 119BC13A93
-	for <linux-btrfs@vger.kernel.org>; Tue,  4 Jun 2024 23:44:09 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 6E97E13A93
+	for <linux-btrfs@vger.kernel.org>; Tue,  4 Jun 2024 23:44:13 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id iIepLcmmX2bcJwAAD6G6ig
+	id SDa/CM2mX2bcJwAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Tue, 04 Jun 2024 23:44:09 +0000
+	for <linux-btrfs@vger.kernel.org>; Tue, 04 Jun 2024 23:44:13 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 2/4] btrfs-progs: print-tree: do sanity checks for dir items
-Date: Wed,  5 Jun 2024 09:13:42 +0930
-Message-ID: <817cdc0c65b00491a78d7f47efddffa1f76ab087.1717544015.git.wqu@suse.com>
+Subject: [PATCH v2 4/4] btrfs-progs: fix misc/038 test cases
+Date: Wed,  5 Jun 2024 09:13:44 +0930
+Message-ID: <909e5e66fdbb40c9afe59175a0ed73741b8e22c8.1717544015.git.wqu@suse.com>
 X-Mailer: git-send-email 2.45.2
 In-Reply-To: <cover.1717544015.git.wqu@suse.com>
 References: <cover.1717544015.git.wqu@suse.com>
@@ -70,73 +70,98 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-Spam-Flag: NO
-X-Spam-Score: -3.01
-X-Rspamd-Action: no action
-X-Rspamd-Queue-Id: 0493D219B4
+X-Spam-Score: -2.80
 X-Spam-Level: 
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Spamd-Result: default: False [-3.01 / 50.00];
+X-Spamd-Result: default: False [-2.80 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	ARC_NA(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_TLS_ALL(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,suse.com:email];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
 	FUZZY_BLOCKED(0.00)[rspamd.com];
-	TO_DN_NONE(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	ARC_NA(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
 	MIME_TRACE(0.00)[0:+];
-	DKIM_TRACE(0.00)[suse.com:+]
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	RCVD_TLS_ALL(0.00)[]
 
-There is a bug report that with UBSAN enabled, fuzz/006 test case would
-crash.
+The test case always fail in my VM, with the following error:
 
-It turns out that the image bko-154021-invalid-drop-level.raw has
-invalid dir items, that the name/data len is beyond the item.
+ $ sudo TEST=038\* make test-misc
+    [TEST]   misc-tests.sh
+    [TEST/misc]   038-backup-root-corruption
+ Backup 2 not overwritten
+ test failed for case 038-backup-root-corruption
 
-And if we try to read beyond the eb boundary, UBSAN got triggered.
+After more debugging, the it turns out that there is nothing wrong
+except the final check:
 
-Normally in kernel tree-checker would reject such metadata in the first
-place, but in btrfs-progs we can not go that strict or we can not do a
-lot of repair.
+ [ "$main_root_ptr" -ne "$backup_new_root_ptr" ] || _fail "Backup 2 not overwritten"
 
-So here just enhance print_dir_item() to do extra sanity checks for
-data/name len before reading the contents.
+The _fail() is only triggered if the previous check returns false, which
+is completely the opposite.
 
-Issue: #805
+Furthermore on the github CI, the kernel would commit 2 instead of 1
+transaction, resulting the next slot never to match the current
+generation/tree root.
+
+The two bugs combined, resulting github CI always pass the test case,
+meanwhile for my VM which does the expected one transaction, it would
+always fail.
+
+Fix it by:
+
+- Use a proper "if [] then; fi" block to check the tree root bytenr
+- Use the generation diff to calculate the expected backup root slot
+- Log the full super block dump for debug usage
+
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- kernel-shared/print-tree.c | 5 +++++
- 1 file changed, 5 insertions(+)
+ .../038-backup-root-corruption/test.sh           | 16 ++++++++++++----
+ 1 file changed, 12 insertions(+), 4 deletions(-)
 
-diff --git a/kernel-shared/print-tree.c b/kernel-shared/print-tree.c
-index 1b9386d87a0a..9a72ba39b426 100644
---- a/kernel-shared/print-tree.c
-+++ b/kernel-shared/print-tree.c
-@@ -78,6 +78,11 @@ static void print_dir_item(struct extent_buffer *eb, u32 size,
- 		printf("\n");
- 		name_len = btrfs_dir_name_len(eb, di);
- 		data_len = btrfs_dir_data_len(eb, di);
-+		if (data_len + name_len + cur > size) {
-+			error("invalid length, cur=%u name_len=%u data_len=%u size=%u\n",
-+				cur, name_len, data_len, size);
-+			break;
-+		}
- 		len = (name_len <= sizeof(namebuf))? name_len: sizeof(namebuf);
- 		printf("\t\ttransid %llu data_len %u name_len %u\n",
- 				btrfs_dir_transid(eb, di),
+diff --git a/tests/misc-tests/038-backup-root-corruption/test.sh b/tests/misc-tests/038-backup-root-corruption/test.sh
+index 9be0cee36239..28aa5baec91e 100755
+--- a/tests/misc-tests/038-backup-root-corruption/test.sh
++++ b/tests/misc-tests/038-backup-root-corruption/test.sh
+@@ -41,6 +41,9 @@ slot_num=$(echo $found | cut -f1 -d:)
+ # To follow the dump-super output, where backup slot starts at 0.
+ slot_num=$(($slot_num - 1))
+ 
++_log "Original superblock:"
++_log "$(dump_super)"
++
+ # Save the backup slot info into the log
+ _log "Backup slot $slot_num will be utilized"
+ dump_super | run_check grep -A9 "backup $slot_num:"
+@@ -56,9 +59,14 @@ run_check_mount_test_dev -o usebackuproot
+ run_check_umount_test_dev
+ 
+ main_root_ptr=$(dump_super | awk '/^root\t/{print $2}')
+-
+-# The next slot should be overwritten
+-slot_num=$(( ($slot_num + 1) % 4 ))
++cur_gen=$(dump_super | grep ^generation | awk '{print $2}')
++# The slot to be used is based on how many transaction committed.
++slot_num=$(( ($slot_num + $cur_gen - $backup_gen) % 4 ))
+ backup_new_root_ptr=$(dump_super | grep -A1 "backup $slot_num" | grep backup_tree_root | awk '{print $2}')
+ 
+-[ "$main_root_ptr" -ne "$backup_new_root_ptr" ] || _fail "Backup 2 not overwritten"
++_log "After the backup usage:"
++_log "$(dump_super)"
++
++if [ "$main_root_ptr" -ne "$backup_new_root_ptr" ]; then
++	_fail "Backup ${slot_num} not overwritten"
++fi
 -- 
 2.45.2
 

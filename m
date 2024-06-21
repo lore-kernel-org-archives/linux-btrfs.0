@@ -1,63 +1,63 @@
-Received: from mail-pg1-f169.google.com (mail-pg1-f169.google.com [209.85.215.169])
+Received: from mail-pg1-f172.google.com (mail-pg1-f172.google.com [209.85.215.172])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 996C117B509
-	for <linux-btrfs@vger.kernel.org>; Fri, 21 Jun 2024 18:53:57 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.215.169
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AEAA917B509
+	for <linux-btrfs@vger.kernel.org>; Fri, 21 Jun 2024 18:54:00 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.215.172
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1718996039; cv=none; b=YvrtUarThSAkwYWn8G6B8OzXsoduJmWyNp6k7barYiOfGVIy5KUM4XAsIipwNKFFtqNBALvtcL7rT4dxqDuMsLwmVVWDc8FcSFlxIrivVMXR/uKCi7fhnOJVGuaE0WxXwe40T4wEOW5QTsrxoow7MasH/TwRWRObjrQYkD1FXqk=
+	t=1718996042; cv=none; b=QHO706tdzapGuJZos/EIhw8ZQpVs44NKPu7v/B2Qcqy0kbkL0XAGNFBUv8EwUFOIBp/l62qg5GWCzjYIvOCU6Jf9J+WhqGR/pb0DWKUNlURvEENqpKu2Qu385RuxpuAQGQ4L8zcKRX6Ol6pMjmeZR73g4+PmV/bKAyrYn53971g=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1718996039; c=relaxed/simple;
-	bh=cp+DFvAt9LG/T1PC3XvpGa1B6RLte7lU49nIv45c0wk=;
+	s=arc-20240116; t=1718996042; c=relaxed/simple;
+	bh=nc4eReYEnK9FxSD8Vr8UZctZG7mrd8qchTZ2vyvEvxU=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=gE5kV4VBylXjoI9QdWKEgJawXMmTRGRPt2up5vzrcN671u6/oPnd7ZEBvsDKkj5gTKirydrzLqm1+ztMIywXv2zyARUph3R4vpKBEpCID3NZ296imiVzN1YMOHLpsRyFjm9OaVpeINZafmNC/T+KclkJBWueMP7W7daBi1hkQfg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=osandov.com; spf=none smtp.mailfrom=osandov.com; dkim=pass (2048-bit key) header.d=osandov-com.20230601.gappssmtp.com header.i=@osandov-com.20230601.gappssmtp.com header.b=R1oSeza9; arc=none smtp.client-ip=209.85.215.169
+	 MIME-Version; b=snHoTGqG7OavBCNxSU0JnLxdhvYKzAwNy1KkoT3sX6cuQhhWMO+GZ1V5t4BDb+W5q11KNFtN0d4e/OL6GwMeFbIlUd2vtip8KCHwtSfNvtOMzkO9Ibj+DpzZP0AZVn/py5+gDY4/M2dXIjVxQgQylJiasb9hjzLtBQoHpCXcNio=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=osandov.com; spf=none smtp.mailfrom=osandov.com; dkim=pass (2048-bit key) header.d=osandov-com.20230601.gappssmtp.com header.i=@osandov-com.20230601.gappssmtp.com header.b=2AJIZM5f; arc=none smtp.client-ip=209.85.215.172
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=osandov.com
 Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=osandov.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=osandov-com.20230601.gappssmtp.com header.i=@osandov-com.20230601.gappssmtp.com header.b="R1oSeza9"
-Received: by mail-pg1-f169.google.com with SMTP id 41be03b00d2f7-70df2135426so1569767a12.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 Jun 2024 11:53:57 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=osandov-com.20230601.gappssmtp.com header.i=@osandov-com.20230601.gappssmtp.com header.b="2AJIZM5f"
+Received: by mail-pg1-f172.google.com with SMTP id 41be03b00d2f7-71816f36d4dso433406a12.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 Jun 2024 11:54:00 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=osandov-com.20230601.gappssmtp.com; s=20230601; t=1718996037; x=1719600837; darn=vger.kernel.org;
+        d=osandov-com.20230601.gappssmtp.com; s=20230601; t=1718996040; x=1719600840; darn=vger.kernel.org;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=yH37T+Xm8DXncxxgiUVB2dta1PR92NXfnOWctIuX5zc=;
-        b=R1oSeza90d2WBoeLcDXfPEp2kkDyeYCMKpXK70a6FGN/DnmYikP0uatADf739mol+y
-         8V2wySGq7Du7DjnrInlNcDFt5GkL+IfhQ8SiZt+LOt1afslkrE0Geoc5nG7IP6KdZ/XI
-         dPitynLShVJWKoKFq9SHbixcZQhcvr6zQZs/I7g0CR42PPribcmYHCdiyIH48IvLSiS8
-         b13WZa3zFk6VIatjdXTryJmuGh00sZStNmPMb896oZJHAkqpn4p9VEhvwla8YqUV1vUH
-         kNF0Csc8WuV8wEqVm16NMiJyppuFp/EUttmDG/niGomATfS5Lh/Xdmfq0luYMHD0DTeY
-         6cGQ==
+        bh=t/V5hL5Wvz5/EkwK3eEVEu+zgQlQLp61GSiylGiYTHo=;
+        b=2AJIZM5fylObGUTUzwK1nEmAOhdlGRe1ZtvUzph/a3rgsx3mgDtJ4WpP2IUqbZ6ow6
+         NLkCxEHr/uIstMOI6MA5T2D5Hv7M4vhnrbj/r8EpL4ZM58Rahsxf//hDwDQsWylyT4qK
+         Hk6Sw8ACuKJGvwKvZ4ju6dN3Nd9Ewgv5WgrE/mTDKJykMSwiLrS/w/k8JpNp60FBf0UI
+         dDaIAeRF+kox5Gavs5BDTlaonEykun+UV4I9SNJMQ5+18jd4uiENTvxFrlw20FPATv7d
+         bXUQws+jOneFPoIJbzn6WI2l1/KzZMDzoAgOF1zZChL++O6dWKvJeHlZKKu/j9zJcJDH
+         9Stg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1718996037; x=1719600837;
+        d=1e100.net; s=20230601; t=1718996040; x=1719600840;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=yH37T+Xm8DXncxxgiUVB2dta1PR92NXfnOWctIuX5zc=;
-        b=iZKB+OuC8iX8nK50K8Eggepia4EFeugJPVVs+nJLfGaMcORqOLcmT6fQnXLhBpMJXf
-         8eIhEMFYBCeiVnLWsaQprkYlY2v+cFiIOcg/fAklACGXJl79ZlZwctyq2AamQZftU0X0
-         Qezzza+tJXa5q8CFyNFMWwJeuCod6Xdwm/i2PF38EMJIEKmBWLL9U1MUVCBg59SLjNei
-         m8joDJqhXKz8t1g9oOgCIWvaRfuaYqkSZGlzgXG0t2D4tCCU7l8eY5PtQxGYgq8Vdy4A
-         DzBSl14xK5NnfV+gM3Q1bsTDBlA5L+zI0BV6FWn7nta9SDjpkVEQkCQb6M9/b/+PHSZm
-         ycYA==
-X-Gm-Message-State: AOJu0YwACgiiQWgX7NKLeNxsEILN7OigWALcUvcjKJaxuMuLlAWb4m//
-	qSbJdFdHVpW7CFR8adFaBvefTNu8/0hQQeOBFMpOlneAGxIHYKI5v9VKxVsvDs88aK7+FkWEddR
-	d
-X-Google-Smtp-Source: AGHT+IGuo7L6RB78V7pjUZyBf6RVmd33PCt5AIxp4LyD1AA5yE1vJqA07JB3nM0S92xx5hF7nnnQ1A==
-X-Received: by 2002:a05:6a20:6da9:b0:1b8:593e:ff1e with SMTP id adf61e73a8af0-1bcbb5cd3e1mr8138657637.34.1718996036749;
-        Fri, 21 Jun 2024 11:53:56 -0700 (PDT)
+        bh=t/V5hL5Wvz5/EkwK3eEVEu+zgQlQLp61GSiylGiYTHo=;
+        b=FMbkUdIUze2xgl3qd/OYvFhH7GWJh4Vjxb9dP0gz32heYhcln9QabxaV6kR8UCM+gs
+         23fFmlB8yvVhYJcHbQEHak7k6D43m6m/S+fwRI92k6kAZA5sZCy22UhvHQcSrFWHWLiB
+         4fbjSa3n09mlE/TTT6JS1wpsaL71uD806OGhq/EbkBNwgdoQVpElk7+cOQNj50CcvRWP
+         h06pPbnv3MMqrjXLyhOBD4KnihsLVp3NIIGcJ62j5sPUTrGRi9OjIX71tRB86Kw+DzyM
+         /omyXNfd7n30K3F3MFbfASxZpaz+LIbCCT4dZ1XfqTJeAz9gsu90clpJKyXy+YREffVo
+         Oeeg==
+X-Gm-Message-State: AOJu0Yxy568rkDeqx0Y8N2ruFoxcFpq+QwwzufLiOgz5AQfXuEP6shKN
+	IG5kcUtuqrdDZnVQhSPCl+fHwzREzvkO26jmXJwGbVmAxwEeUfB7RmqnAgHANrYUTwGKrUDVPeE
+	s
+X-Google-Smtp-Source: AGHT+IE8HMhbihMLkiujCyo6bwns2EzJFrXeKCOdSywQIHmeeKjXwyCjMo22tBY/RBb+uKZT/h5SWA==
+X-Received: by 2002:a17:90a:d905:b0:2c7:a907:b6bd with SMTP id 98e67ed59e1d1-2c7b5dbf636mr8708243a91.49.1718996039731;
+        Fri, 21 Jun 2024 11:53:59 -0700 (PDT)
 Received: from telecaster.thefacebook.com ([2620:10d:c090:500::6:1ec7])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-2c7e53e06e7sm3957366a91.21.2024.06.21.11.53.55
+        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-2c7e53e06e7sm3957366a91.21.2024.06.21.11.53.58
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 21 Jun 2024 11:53:56 -0700 (PDT)
+        Fri, 21 Jun 2024 11:53:59 -0700 (PDT)
 From: Omar Sandoval <osandov@osandov.com>
 To: linux-btrfs@vger.kernel.org
 Cc: kernel-team@fb.com
-Subject: [PATCH 6/8] btrfs-progs: subvol list: document and test actual behavior of paths
-Date: Fri, 21 Jun 2024 11:53:35 -0700
-Message-ID: <c015f1943def5e892b0aac540d1ce5a3d143ed6b.1718995160.git.osandov@fb.com>
+Subject: [PATCH 8/8] btrfs-progs: subvol list: add sane -O and -A options
+Date: Fri, 21 Jun 2024 11:53:37 -0700
+Message-ID: <a7ac630a985c28ae5936a11e6e229a228ecc052a.1718995160.git.osandov@fb.com>
 X-Mailer: git-send-email 2.45.2
 In-Reply-To: <cover.1718995160.git.osandov@fb.com>
 References: <cover.1718995160.git.osandov@fb.com>
@@ -71,219 +71,296 @@ Content-Transfer-Encoding: 8bit
 
 From: Omar Sandoval <osandov@fb.com>
 
-The way btrfs subvol list prints paths and what the -o and -a flags do
-are all nonsense.
+Now that we've documented the current nonsensical behavior, add a couple
+of options that actually make sense: -O lists all subvolumes below a
+path (which is what people think -o does), and -A lists all subvolumes
+with no path munging (which is what people think the default or -a do).
+-O can even be used by unprivileged users.
 
-Apparently, very early versions of Btrfs had a concept of a "top level"
-of subvolumes rather than the root filesystem tree that we have today;
-see commit 4ff9e2af1721 ("Add btrfs-list for listing subvolumes"). The
-original subvol list code tracked the ID of that top level subvolume.
-Eventually, 5 became the only possibility for the top level, and -o, -a,
-and path printing were based on that. Commit 4f5ebb3ef553 ("Btrfs-progs:
-fix to make list specified directory's subvolumes work") broke this and
-changed the top level to be the same as the parent subvolume ID, which
-gave us the illogical behavior we have today.
-
-It has been this way for a decade, so we're probably stuck with it. But
-let's at least document precisely what these all do in preparation for
-adding sensible options. Let's also add tests in preparation for the
-upcoming changes.
+-O and -A also renames the "top level" in the default output to what it
+actually is now: the "parent".
 
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- Documentation/btrfs-subvolume.rst             |  20 ++-
- cmds/subvolume-list.c                         |  13 +-
- .../026-subvolume-list-path-filtering/test.sh | 118 ++++++++++++++++++
- 3 files changed, 143 insertions(+), 8 deletions(-)
- create mode 100755 tests/cli-tests/026-subvolume-list-path-filtering/test.sh
+ Documentation/btrfs-subvolume.rst             | 17 ++++
+ cmds/subvolume-list.c                         | 77 +++++++++++++++----
+ .../026-subvolume-list-path-filtering/test.sh | 38 +++++++++
+ 3 files changed, 117 insertions(+), 15 deletions(-)
 
 diff --git a/Documentation/btrfs-subvolume.rst b/Documentation/btrfs-subvolume.rst
-index d1e89f15..fe84ab1c 100644
+index fe84ab1c..f76c1302 100644
 --- a/Documentation/btrfs-subvolume.rst
 +++ b/Documentation/btrfs-subvolume.rst
-@@ -134,7 +134,8 @@ list [options] [-G [\+|-]<value>] [-C [+|-]<value>] [--sort=rootid,gen,ogen,path
- 
-         where *ID* is subvolume's (root)id, *generation* is an internal counter which is
+@@ -136,6 +136,9 @@ list [options] [-G [\+|-]<value>] [-C [+|-]<value>] [--sort=rootid,gen,ogen,path
          updated every transaction, *parent_ID* is the same as the parent subvolume's id,
--        and *path* is the relative path of the subvolume to the top level subvolume.
-+        and *path* is the path of the subvolume. The exact meaning of *path*
-+        depends on the **Path filtering** option used.
+         and *path* is the path of the subvolume. The exact meaning of *path*
+         depends on the **Path filtering** option used.
++
++        If -O or -A is given, "top level" is replaced by "parent".
++
          The subvolume's ID may be used by the subvolume set-default command,
          or at mount time via the *subvolid=* option.
  
-@@ -143,11 +144,20 @@ list [options] [-G [\+|-]<value>] [-C [+|-]<value>] [--sort=rootid,gen,ogen,path
+@@ -143,6 +146,20 @@ list [options] [-G [\+|-]<value>] [-C [+|-]<value>] [--sort=rootid,gen,ogen,path
+ 
          Path filtering:
  
-         -o
--                Print only subvolumes below specified <path>. Note that this is not a
--                recursive command, and won't show nested subvolumes under <path>.
-+                Print only the immediate children subvolumes of the subvolume
-+                containing <path>. Paths are printed relative to the root of
-+                the filesystem.
-         -a
--                print all the subvolumes in the filesystem and distinguish between
--                absolute and relative path with respect to the given *path*.
-+                Print all subvolumes in the filesystem other than the root
-+                subvolume. Paths are printed relative to the root of the
-+                filesystem, except that subvolumes that are not an immediate
-+                child of the subvolume containing <path> are prefixed with
-+                "<FS_TREE>/".
++        -O
++                Print <path> and all subvolumes below it, recursively. <path>
++                must be a subvolume. Paths are printed relative to <path>.
 +
-+        If none of these are given, print all subvolumes in the filesystem
-+        other than the root subvolume. Paths below the subvolume containing
-+        <path> are printed relative to that subvolume, and other paths are
-+        printed relative to the root of the filesystem.
- 
-         Field selection:
- 
++                This may be used by unprivileged users, in which case this only
++                lists subvolumes that the user has access to.
++        -A
++                Print all subvolumes in the filesystem. Paths are printed
++                relative to the root of the filesystem.
++
++        You likely always want either -O or -A. The -o and -a options and the
++        default if no path filtering options are given have very confusing,
++        accidental behavior that is only kept for backwards compatibility.
++
+         -o
+                 Print only the immediate children subvolumes of the subvolume
+                 containing <path>. Paths are printed relative to the root of
 diff --git a/cmds/subvolume-list.c b/cmds/subvolume-list.c
-index cfe165f9..3b32a5ff 100644
+index fa5082af..4dde9fbe 100644
 --- a/cmds/subvolume-list.c
 +++ b/cmds/subvolume-list.c
-@@ -57,9 +57,16 @@ static const char * const cmd_subvolume_list_usage[] = {
+@@ -59,6 +59,13 @@ static const char * const cmd_subvolume_list_usage[] = {
  	"List subvolumes and snapshots in the filesystem.",
  	"",
  	"Path filtering:",
--	OPTLINE("-o", "print only subvolumes below specified path"),
--	OPTLINE("-a", "print all the subvolumes in the filesystem and "
--		"distinguish absolute and relative path with respect to the given <path>"),
-+	OPTLINE("-o", "print only the immediate children subvolumes of the "
-+		"subvolume containing <path>"),
-+	OPTLINE("-a", "print all subvolumes in the filesystem other than the "
-+		"root subvolume, and prefix subvolumes that are not an "
-+		"immediate child of the subvolume containing <path> with "
-+		"\"<FS_TREE>/\""),
++	OPTLINE("-O", "print all subvolumes below <path> relative to <path>"),
++	OPTLINE("-A", "print all subvolumes in the filesystem relative to the "
++		"root of the filesystem"),
 +	"",
-+	"If none of these are given, print all subvolumes other than the root",
-+	"subvolume relative to the subvolume containing <path> if below it,",
-+	"otherwise relative to the root of the filesystem.",
- 	"",
- 	"Field selection:",
- 	OPTLINE("-p", "print parent ID"),
++	"You likely always want either -O or -A. The -o and -a options and the",
++	"default are confusing and only kept for backwards compatibility.",
++	"",
+ 	OPTLINE("-o", "print only the immediate children subvolumes of the "
+ 		"subvolume containing <path>"),
+ 	OPTLINE("-a", "print all subvolumes in the filesystem other than the "
+@@ -866,9 +873,11 @@ out:
+ 	return subvols;
+ }
+ 
+-static struct subvol_list *btrfs_list_subvols(int fd,
++static struct subvol_list *btrfs_list_subvols(int fd, bool include_top,
++				bool below,
+ 				struct btrfs_list_filter_set *filter_set)
+ {
++	u64 top_id = below ? 0 : BTRFS_FS_TREE_OBJECTID;
+ 	struct subvol_list *subvols;
+ 	size_t capacity = 4;
+ 	struct btrfs_util_subvolume_iterator *iter;
+@@ -883,15 +892,28 @@ static struct subvol_list *btrfs_list_subvols(int fd,
+ 	}
+ 	subvols->num = 0;
+ 
+-	err = btrfs_util_create_subvolume_iterator_fd(fd,
+-						      BTRFS_FS_TREE_OBJECTID, 0,
+-						      &iter);
++	err = btrfs_util_create_subvolume_iterator_fd(fd, top_id, 0, &iter);
+ 	if (err) {
+ 		iter = NULL;
+ 		error_btrfs_util(err);
+ 		goto out;
+ 	}
+ 
++	if (include_top) {
++		err = btrfs_util_subvolume_info_fd(fd, top_id,
++						   &subvols->subvols[0].info);
++		if (err) {
++			error_btrfs_util(err);
++			goto out;
++		}
++		subvols->subvols[0].path = strdup("");
++		if (!subvols->subvols[0].path) {
++			error("out of memory");
++			goto out;
++		}
++		subvols->num++;
++	}
++
+ 	for (;;) {
+ 		struct root_info subvol;
+ 
+@@ -945,14 +967,15 @@ out:
+ 
+ static int btrfs_list_subvols_print(int fd, struct btrfs_list_filter_set *filter_set,
+ 		       struct btrfs_list_comparer_set *comp_set,
+-		       enum btrfs_list_layout layout)
++		       enum btrfs_list_layout layout, bool include_top,
++		       bool below)
+ {
+ 	struct subvol_list *subvols;
+ 
+ 	if (filter_set->only_deleted)
+ 		subvols = btrfs_list_deleted_subvols(fd, filter_set);
+ 	else
+-		subvols = btrfs_list_subvols(fd, filter_set);
++		subvols = btrfs_list_subvols(fd, include_top, below, filter_set);
+ 	if (!subvols)
+ 		return -1;
+ 
+@@ -1097,8 +1120,10 @@ static int cmd_subvolume_list(const struct cmd_struct *cmd, int argc, char **arg
+ 	char *top_path = NULL;
+ 	int ret = -1, uerr = 0;
+ 	char *subvol;
++	bool is_list_below = false;
+ 	bool is_list_all = false;
+-	bool is_only_in_path = false;
++	bool is_old_a_option = false;
++	bool is_old_o_option = false;
+ 	enum btrfs_list_layout layout = BTRFS_LIST_LAYOUT_DEFAULT;
+ 
+ 	filter_set = btrfs_list_alloc_filter_set();
+@@ -1113,7 +1138,7 @@ static int cmd_subvolume_list(const struct cmd_struct *cmd, int argc, char **arg
+ 		};
+ 
+ 		c = getopt_long(argc, argv,
+-				    "acdgopqsurRG:C:t", long_options, NULL);
++				    "acdgopqsurRG:C:tOA", long_options, NULL);
+ 		if (c < 0)
+ 			break;
+ 
+@@ -1122,7 +1147,7 @@ static int cmd_subvolume_list(const struct cmd_struct *cmd, int argc, char **arg
+ 			btrfs_list_setup_print_column(BTRFS_LIST_PARENT);
+ 			break;
+ 		case 'a':
+-			is_list_all = true;
++			is_old_a_option = true;
+ 			break;
+ 		case 'c':
+ 			btrfs_list_setup_print_column(BTRFS_LIST_OGENERATION);
+@@ -1134,7 +1159,7 @@ static int cmd_subvolume_list(const struct cmd_struct *cmd, int argc, char **arg
+ 			btrfs_list_setup_print_column(BTRFS_LIST_GENERATION);
+ 			break;
+ 		case 'o':
+-			is_only_in_path = true;
++			is_old_o_option = true;
+ 			break;
+ 		case 't':
+ 			layout = BTRFS_LIST_LAYOUT_TABLE;
+@@ -1187,6 +1212,12 @@ static int cmd_subvolume_list(const struct cmd_struct *cmd, int argc, char **arg
+ 				goto out;
+ 			}
+ 			break;
++		case 'O':
++			is_list_below = true;
++			break;
++		case 'A':
++			is_list_all = true;
++			break;
+ 
+ 		default:
+ 			uerr = 1;
+@@ -1197,6 +1228,19 @@ static int cmd_subvolume_list(const struct cmd_struct *cmd, int argc, char **arg
+ 	if (check_argc_exact(argc - optind, 1))
+ 		goto out;
+ 
++	/*
++	 * The path filtering options and -d don't make sense together. For -O
++	 * and -A, we're strict about not combining them with each other or with
++	 * -o, -a, or -d. The -o, -a, and -d options are older and have never
++	 * been restricted, so although they produce dubious results when
++	 * combined, we allow it for backwards compatibility.
++	 */
++	if (is_list_below + is_list_all +
++	    (is_old_a_option || is_old_o_option || filter_set->only_deleted) > 1) {
++		error("-O, -A, -o, -a, and -d are mutually exclusive");
++		goto out;
++	}
++
+ 	subvol = argv[optind];
+ 	fd = btrfs_open_dir(subvol);
+ 	if (fd < 0) {
+@@ -1216,15 +1260,15 @@ static int cmd_subvolume_list(const struct cmd_struct *cmd, int argc, char **arg
+ 		goto out;
+ 	}
+ 
+-	if (is_list_all)
++	if (is_old_a_option)
+ 		btrfs_list_setup_filter(&filter_set,
+ 					BTRFS_LIST_FILTER_FULL_PATH,
+ 					top_id);
+-	else if (is_only_in_path)
++	else if (is_old_o_option)
+ 		btrfs_list_setup_filter(&filter_set,
+ 					BTRFS_LIST_FILTER_TOPID_EQUAL,
+ 					top_id);
+-	else if (!filter_set->only_deleted) {
++	else if (!is_list_below && !is_list_all && !filter_set->only_deleted) {
+ 		enum btrfs_util_error err;
+ 
+ 		err = btrfs_util_subvolume_get_path_fd(fd, top_id, &top_path);
+@@ -1241,13 +1285,16 @@ static int cmd_subvolume_list(const struct cmd_struct *cmd, int argc, char **arg
+ 	/* by default we shall print the following columns*/
+ 	btrfs_list_setup_print_column(BTRFS_LIST_OBJECTID);
+ 	btrfs_list_setup_print_column(BTRFS_LIST_GENERATION);
+-	btrfs_list_setup_print_column(BTRFS_LIST_TOP_LEVEL);
++	btrfs_list_setup_print_column(is_list_below || is_list_all ?
++				      BTRFS_LIST_PARENT : BTRFS_LIST_TOP_LEVEL);
+ 	btrfs_list_setup_print_column(BTRFS_LIST_PATH);
+ 
+ 	if (bconf.output_format == CMD_FORMAT_JSON)
+ 		layout = BTRFS_LIST_LAYOUT_JSON;
+ 
+-	ret = btrfs_list_subvols_print(fd, filter_set, comparer_set, layout);
++	ret = btrfs_list_subvols_print(fd, filter_set, comparer_set, layout,
++				       is_list_below || is_list_all,
++				       is_list_below);
+ 
+ out:
+ 	free(top_path);
 diff --git a/tests/cli-tests/026-subvolume-list-path-filtering/test.sh b/tests/cli-tests/026-subvolume-list-path-filtering/test.sh
-new file mode 100755
-index 00000000..1b272ddc
---- /dev/null
+index 1b272ddc..a65ba91f 100755
+--- a/tests/cli-tests/026-subvolume-list-path-filtering/test.sh
 +++ b/tests/cli-tests/026-subvolume-list-path-filtering/test.sh
-@@ -0,0 +1,118 @@
-+#!/bin/bash
-+# Test how btrfs subvolume list prints paths, including all of the weird
-+# accidental behavior.
+@@ -114,5 +114,43 @@ EOF
+ expect_subvol_list_paths -o a/b/c/d << EOF
+ EOF
+ 
++### -A ###
 +
-+source "$TEST_TOP/common" || exit
++# Paths are always relative to the root of the filesystem.
++for path in . a/b a/b/c; do
++	expect_subvol_list_paths -A "$path" << EOF
 +
-+check_prereq btrfs
-+check_prereq mkfs.btrfs
++a
++a/b/c
++a/b/c/d
++a/e
++EOF
++done
 +
-+setup_root_helper
-+prepare_test_dev
++### -O ###
 +
-+run_check_mkfs_test_dev
-+run_check_mount_test_dev
++# Paths are relative to the given path.
++expect_subvol_list_paths -O . << EOF
 +
-+cd "$TEST_MNT"
-+
-+run_check $SUDO_HELPER "$TOP/btrfs" subvolume create "a"
-+run_check $SUDO_HELPER mkdir "a/b"
-+run_check $SUDO_HELPER "$TOP/btrfs" subvolume create "a/b/c"
-+run_check $SUDO_HELPER "$TOP/btrfs" subvolume create "a/b/c/d"
-+run_check $SUDO_HELPER "$TOP/btrfs" subvolume create "a/e"
-+
-+subvol_list_paths() {
-+	run_check_stdout $SUDO_HELPER "$TOP/btrfs" subvolume list "$@" | sed 's/.*path //'
-+}
-+
-+expect_subvol_list_paths() {
-+	diff -u - <(subvol_list_paths "$@") || _fail "wrong output from btrfs subvolume list $*"
-+}
-+
-+### No options ###
-+
-+# Paths are relative to the given subvolume if they are beneath it and relative
-+# to the root of the filesystem otherwise.
-+expect_subvol_list_paths . << EOF
 +a
 +a/b/c
 +a/b/c/d
 +a/e
 +EOF
 +
-+expect_subvol_list_paths a << EOF
-+a
++expect_subvol_list_paths -O a << EOF
++
 +b/c
 +b/c/d
 +e
 +EOF
 +
-+expect_subvol_list_paths a/b/c << EOF
-+a
-+a/b/c
-+d
-+a/e
++expect_subvol_list_paths -O a/e << EOF
++
 +EOF
 +
-+# If passed a directory, it's treated as the containing subvolume.
-+expect_subvol_list_paths a/b << EOF
-+a
-+b/c
-+b/c/d
-+e
-+EOF
++run_mustfail "btrfs subvol list -O allowed non-subvolume" \
++	$SUDO_HELPER "$TOP/btrfs" subvolume list -O a/b
 +
-+### -a ###
-+
-+# Paths are relative to the root of the filesystem. Subvolumes that are not an
-+# immediate child of the passed subvolume are prefixed with <FS_TREE>/.
-+expect_subvol_list_paths -a . << EOF
-+a
-+<FS_TREE>/a/b/c
-+<FS_TREE>/a/b/c/d
-+<FS_TREE>/a/e
-+EOF
-+
-+expect_subvol_list_paths -a a << EOF
-+<FS_TREE>/a
-+a/b/c
-+<FS_TREE>/a/b/c/d
-+a/e
-+EOF
-+
-+# If passed a directory, it's treated as the containing subvolume.
-+expect_subvol_list_paths -a a/b << EOF
-+<FS_TREE>/a
-+a/b/c
-+<FS_TREE>/a/b/c/d
-+a/e
-+EOF
-+
-+### -o ###
-+
-+# Only immediate children of the passed subvolume are printed, and they are
-+# printed relative to the root of the filesystem.
-+expect_subvol_list_paths -o . << EOF
-+a
-+EOF
-+
-+expect_subvol_list_paths -o a << EOF
-+a/b/c
-+a/e
-+EOF
-+
-+# If passed a directory, it's treated as the containing subvolume.
-+expect_subvol_list_paths -o a/b << EOF
-+a/b/c
-+a/e
-+EOF
-+
-+expect_subvol_list_paths -o a/b/c << EOF
-+a/b/c/d
-+EOF
-+
-+expect_subvol_list_paths -o a/b/c/d << EOF
-+EOF
-+
-+cd ..
-+run_check_umount_test_dev
+ cd ..
+ run_check_umount_test_dev
 -- 
 2.45.2
 

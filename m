@@ -1,164 +1,207 @@
-Received: from mout.gmx.net (mout.gmx.net [212.227.15.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2E69E4C6E;
-	Mon, 24 Jun 2024 05:10:38 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.15.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9C0621754B
+	for <linux-btrfs@vger.kernel.org>; Mon, 24 Jun 2024 05:41:19 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1719205841; cv=none; b=cMFK7VMZujQqYTminOdHxrmtfWvaDGwefBsXK8N6IvX1btjvT5WWnPzY6YzH7l+YmwRMaYZuvCDUmw4DhxAFpj1W9okC/WS97b4mDwDp0y7QqNn4UTckZqVDOJpxhCzBV3zio6BnV3bCQQCWubLwlsDqrVO44x9FRJ7M7l4XRMA=
+	t=1719207683; cv=none; b=XYfX4U/yIRk3sVMlQ+sBv2wmUsPK1n/MW4C02Rq5CPm7V42pOLn/2rSk4vFJsVg/0dLDUutmwLq7e1QRHv7HblR/sXp4ziyS8f+SKMqX2lUVyADSTupVTgy0bfZQcPZSmVy6FgQwXA/zz3suI6qvHfvir958InsRaxHk3gwn79c=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1719205841; c=relaxed/simple;
-	bh=R/AQnucWPHVJoUzglXiRflaLiUYHD6oWehzrbAPuae8=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=ZpCSn4k+Aks7WER7s94Ue0EVhU9MmVZ5mJyfEWl0Lje0YQfK5wdTvn1E2XL8rTrfyCNzQO5GMBsOoftilEC/ahOFbeX0+Eb9HxKc5BeEiTxonyhMqHgxa7yUBY3iO8SL/XESIZz5ihkMS2D/FC7V6gNkNgG26b8UVe+fobjfWT8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=D8l868JZ; arc=none smtp.client-ip=212.227.15.18
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
+	s=arc-20240116; t=1719207683; c=relaxed/simple;
+	bh=YiDlZ/dplKUJEEUPfotL3mz4g0MwrOG32HtD3aDWQL8=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=e73DZf4Kj2SuPp6766ROVf+qDEJi0/ocLYH27rxx6+rQXYmy25d+6+8Ke1+fddDtLeuXaz+nqkWpNyUI/GFhuDjfsOwMmurf+zhv3D3IE303DPQpDzfrNTkJU/2LjRgtFIlsWKegY0hY0zbxZ5ybU0z+ZUonc9fAL6I+HBwGNZg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=mGgElqDY; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=mGgElqDY; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="D8l868JZ"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1719205830; x=1719810630; i=quwenruo.btrfs@gmx.com;
-	bh=mvVbTrj0kb8GPXZ6M4qrCoPqT+12BO6Z1jDN0Z1CuqU=;
-	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
-	 References:From:In-Reply-To:Content-Type:
-	 Content-Transfer-Encoding:cc:content-transfer-encoding:
-	 content-type:date:from:message-id:mime-version:reply-to:subject:
-	 to;
-	b=D8l868JZPpPEgEV9U5uQoHgxl3fuMy5lZ7EbbEjKxWp8+OAwfeGnN23ePhLnPm5m
-	 W6Y8ONhkV0NuvkEmQKoU/gAId6AigYwC0zZEUu9MceKZlloHdrSmlFZGyyLswGpcl
-	 9IB1jvHjz/9xXGNZBQLo7JbxhVMBhxKDkPJdLQaLwt1tXqtNRF2/V2HOdhHL8XscP
-	 j9vyyWZiT8HtreRQOcfqf/o0tXg87SGUdKF3xocKIlpg19tP7MY076aqDEHRg4Sdv
-	 gN4dd53bs+HAjMue+R3Ig/vxB8KibMG0JSLu88KmQjnkcVHo3djQOeBsri5I80q6A
-	 NLLdcB7UGy/SRTAyrA==
-X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from [172.16.0.191] ([159.196.52.54]) by mail.gmx.net (mrgmx005
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1MzQkE-1sYaQ93Fi4-012cBU; Mon, 24
- Jun 2024 07:10:30 +0200
-Message-ID: <a0840520-929a-4973-8ce9-91db07d6a9ec@gmx.com>
-Date: Mon, 24 Jun 2024 14:40:23 +0930
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="mGgElqDY";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="mGgElqDY"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 5AF43219FE;
+	Mon, 24 Jun 2024 05:41:17 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1719207677; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=WkkyLinMwOZ4xWAXZJWjqlknop+uxIahexDebrHNg8U=;
+	b=mGgElqDYYCcEfgKhow14H+rE9INzlJ3F4/SLB6ouLUggDIG+AewUWdRkgJKX9I1gu/tlqo
+	8Z4HtVrbWdoyluBvgg17gXtB9IIarehe31nWv4fibSBlR+c2RMuEqANLq44xAzJsiHW1xh
+	WI6H4I3LWKktqM70AnOOJDSaFVbOa84=
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=mGgElqDY
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1719207677; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=WkkyLinMwOZ4xWAXZJWjqlknop+uxIahexDebrHNg8U=;
+	b=mGgElqDYYCcEfgKhow14H+rE9INzlJ3F4/SLB6ouLUggDIG+AewUWdRkgJKX9I1gu/tlqo
+	8Z4HtVrbWdoyluBvgg17gXtB9IIarehe31nWv4fibSBlR+c2RMuEqANLq44xAzJsiHW1xh
+	WI6H4I3LWKktqM70AnOOJDSaFVbOa84=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 2965313ACD;
+	Mon, 24 Jun 2024 05:41:15 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id //8dNPsGeWacVQAAD6G6ig
+	(envelope-from <wqu@suse.com>); Mon, 24 Jun 2024 05:41:15 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: syzbot+a0d1f7e26910be4dc171@syzkaller.appspotmail.com
+Subject: [PATCH] btrfs: always do the basic checks for btrfs_qgroup_inherit structure
+Date: Mon, 24 Jun 2024 15:10:53 +0930
+Message-ID: <47d3dd33f637b70f230fa31f98dbf9ff066b58bb.1719207446.git.wqu@suse.com>
+X-Mailer: git-send-email 2.45.2
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: qgroup: fix slab-out-of-bounds in
- btrfs_qgroup_inherit
-To: Jeongjun Park <aha310510@gmail.com>, clm@fb.com, dsterba@suse.com,
- josef@toxicpanda.com
-Cc: syzbot+a0d1f7e26910be4dc171@syzkaller.appspotmail.com, fdmanana@suse.com,
- linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
- syzkaller-bugs@googlegroups.com
-References: <20240624030720.137753-1-aha310510@gmail.com>
-Content-Language: en-US
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCY00iVQUJDToH
- pgAKCRDCPZHzoSX+qNKACACkjDLzCvcFuDlgqCiS4ajHAo6twGra3uGgY2klo3S4JespWifr
- BLPPak74oOShqNZ8yWzB1Bkz1u93Ifx3c3H0r2vLWrImoP5eQdymVqMWmDAq+sV1Koyt8gXQ
- XPD2jQCrfR9nUuV1F3Z4Lgo+6I5LjuXBVEayFdz/VYK63+YLEAlSowCF72Lkz06TmaI0XMyj
- jgRNGM2MRgfxbprCcsgUypaDfmhY2nrhIzPUICURfp9t/65+/PLlV4nYs+DtSwPyNjkPX72+
- LdyIdY+BqS8cZbPG5spCyJIlZonADojLDYQq4QnufARU51zyVjzTXMg5gAttDZwTH+8LbNI4
- mm2YzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCY00ibgUJDToHvwAK
- CRDCPZHzoSX+qK6vB/9yyZlsS+ijtsvwYDjGA2WhVhN07Xa5SBBvGCAycyGGzSMkOJcOtUUf
- tD+ADyrLbLuVSfRN1ke738UojphwkSFj4t9scG5A+U8GgOZtrlYOsY2+cG3R5vjoXUgXMP37
- INfWh0KbJodf0G48xouesn08cbfUdlphSMXujCA8y5TcNyRuNv2q5Nizl8sKhUZzh4BascoK
- DChBuznBsucCTAGrwPgG4/ul6HnWE8DipMKvkV9ob1xJS2W4WJRPp6QdVrBWJ9cCdtpR6GbL
- iQi22uZXoSPv/0oUrGU+U5X4IvdnvT+8viPzszL5wXswJZfqfy8tmHM85yjObVdIG6AlnrrD
-In-Reply-To: <20240624030720.137753-1-aha310510@gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:vk3cyUEzXclr5/+wgykx2/GwZSt/yFHRUZyiQ3N41DfZHI8Bmyp
- i/C96sA46vuL9GekAMiL0MgFJ3H1U6VuTfsxWRwfQPdEA/kAgmCSBMmT5274BIDqKAug59V
- MkjzZxqs8QMZlyhUI/rn9HYaua3UfhTPRxcINrEGWGoLnmj/v2tBfQibsa4nUgT4x3qfSm6
- GnbfOzfTtGWTjbxqCrWkg==
+Content-Transfer-Encoding: 8bit
+X-Spamd-Result: default: False [-3.01 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	FUZZY_BLOCKED(0.00)[rspamd.com];
+	ARC_NA(0.00)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	RCPT_COUNT_TWO(0.00)[2];
+	RCVD_TLS_ALL(0.00)[];
+	DKIM_TRACE(0.00)[suse.com:+];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_COUNT_TWO(0.00)[2];
+	TAGGED_RCPT(0.00)[a0d1f7e26910be4dc171];
+	TO_DN_NONE(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[appspotmail.com:email,suse.com:email,suse.com:dkim]
+X-Rspamd-Action: no action
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Rspamd-Queue-Id: 5AF43219FE
 X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:oQCF0QkMnD4=;Qyswfi7qKHPnSKiY5kDBxVi06U2
- M9EApZU5tiyffLw5RNjpZyRVR/Wp4ZnMIprOnsBh4RVIFqwoR8qArR1yh2iSaR+x0RLeXnG55
- l5gZ7GJl/V+g2mv+fn8B6XNOqXdwOcZDr0b0Gk9SEJnUc2Pf7LODy7ksWLSvZCO4FDKAVgEJU
- jZgUhM0h8U70sleXUIkMAVmSBfr87TjMUiuHNo/4990p9MGfZJVYlT3pxmYie0J25PQRESrEy
- NbOvD1WZslcRBq7kqjQYgW8P4T2MyauXLMn++8WllrAVG3y1JZQvFwVcPtDiJ0ylRobV4mdf5
- cgqUN1g45h0PHC9Tdoc4sruT27emnXnc0BE1gaS2WcsEnSt+Z0ASlRcj7RjEm0+lRTNMbTjBR
- 7NxhcOpXACfkYGqRMFl44RjaGJ6+pKadO0wnwUkBUBTYV8D+RCnBZk5qdWdBt3dsQnvmrMYHc
- CJBuSexIsWt72FXQToYltyrlhx+AFhfTHGM3byEA1jLz6IJZVasa6JoI/8gRBa1gLbGOJ61dT
- ity7jjAwUlSV50mhgWICxXKT352S/9gW0g0nr8FFXnq/0yNiP0epkG8NKfKzTS3MpZGy64Gci
- V0poM0Hju5srj6CrYeuOgTmeOYMcEudyM15G76Zy1Xksf21un0ERvuSMxCR6Fxawn73SUXpnN
- w112naoVrbCVw5T6mQSwEjeo2Ecq3VdsIKLceiW5+jobXKAQDTpReyWJuYx0W9qVseGEcvE9d
- X89c5y1Ksqr5anOI2KOzIddO1UJ50I+AABZSzdQbEjHkwJYFF3kmjaeNNcxQoZ2DIrJiYtTUW
- qZpI2jx6M+k7fkqgBclNDMEpf4bsyXiQikrX0KoPPJCNk=
+X-Spam-Score: -3.01
+X-Spam-Level: 
 
+[BUG]
+Syzbot reports the following regression detected by KASAN:
 
+==================================================================
+BUG: KASAN: slab-out-of-bounds in btrfs_qgroup_inherit+0x42e/0x2e20 fs/btrfs/qgroup.c:3277
+Read of size 8 at addr ffff88814628ca50 by task syz-executor318/5171
 
-=E5=9C=A8 2024/6/24 12:37, Jeongjun Park =E5=86=99=E9=81=93:
-> If a value exists in inherit->num_ref_copies or inherit->num_excl_copies=
-,
-> an out-of-bounds vulnerability occurs.
->
+CPU: 0 PID: 5171 Comm: syz-executor318 Not tainted 6.10.0-rc2-syzkaller-00010-g2ab795141095 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/02/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:114
+ print_address_description mm/kasan/report.c:377 [inline]
+ print_report+0x169/0x550 mm/kasan/report.c:488
+ kasan_report+0x143/0x180 mm/kasan/report.c:601
+ btrfs_qgroup_inherit+0x42e/0x2e20 fs/btrfs/qgroup.c:3277
+ create_pending_snapshot+0x1359/0x29b0 fs/btrfs/transaction.c:1854
+ create_pending_snapshots+0x195/0x1d0 fs/btrfs/transaction.c:1922
+ btrfs_commit_transaction+0xf20/0x3740 fs/btrfs/transaction.c:2382
+ create_snapshot+0x6a1/0x9e0 fs/btrfs/ioctl.c:875
+ btrfs_mksubvol+0x58f/0x710 fs/btrfs/ioctl.c:1029
+ btrfs_mksnapshot+0xb5/0xf0 fs/btrfs/ioctl.c:1075
+ __btrfs_ioctl_snap_create+0x387/0x4b0 fs/btrfs/ioctl.c:1340
+ btrfs_ioctl_snap_create_v2+0x1f2/0x3a0 fs/btrfs/ioctl.c:1422
+ btrfs_ioctl+0x99e/0xc60
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:907 [inline]
+ __se_sys_ioctl+0xfc/0x170 fs/ioctl.c:893
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fcbf1992509
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 81 18 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b0 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007fcbf1928218 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
+RAX: ffffffffffffffda RBX: 00007fcbf1a1f618 RCX: 00007fcbf1992509
+RDX: 0000000020000280 RSI: 0000000050009417 RDI: 0000000000000003
+RBP: 00007fcbf1a1f610 R08: 00007ffea1298e97 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 00007fcbf19eb660
+R13: 00000000200002b8 R14: 00007fcbf19e60c0 R15: 0030656c69662f2e
+ </TASK>
 
-Thanks for the fix.
+And it also pinned it down to this commit:
 
-Although I'm still not 100% sure what's going wrong.
+commit b5357cb268c41b4e2b7383d2759fc562f5b58c33
+Author: Qu Wenruo <wqu@suse.com>
+Date:   Sat Apr 20 07:50:27 2024 +0000
 
-The original report
-(https://lore.kernel.org/lkml/000000000000bc19ba061a67ca77@google.com/T/)
-is showing a backtrace when creating snapshot.
+    btrfs: qgroup: do not check qgroup inherit if qgroup is disabled
 
-In that case they should all go through __btrfs_ioctl_snap_create(), and
-since it has qgroup_inherit, it can only come from
-btrfs_ioctl_snap_create_v2().
+[CAUSE]
+That offending commit skips the whole qgroup inherit check if qgroup is
+not enabled.
 
-But in that function, we have just called btrfs_qgroup_check_inherit()
-function and it already has the check on num_ref_copies/num_excl_copies.
+But that also skips the very basic checks like
+num_ref_copies/num_excl_copies and the structure size checks.
 
-So in that case it should not even happen.
+Meaning if a qgroup enable/disable race is happening at the background,
+and we pass a btrfs_qgroup_inherit structure when the qgroup is
+disabled, the check would be completely skipped.
 
-I think the root cause is why the existing btrfs_qgroup_check_inherit()
-doesn't catch the problem in the first place.
+Then at the time of transaction commitment, qgroup is re-enabled and
+btrfs_qgroup_inherit() is going to use the incorrect structure and
+causing the above KASAN error.
 
-Thanks,
-Qu
+[FIX]
+Make btrfs_qgroup_check_inherit() only skip the source qgroup checks.
+So that even if invalid btrfs_qgroup_inherit structure is passed in, we
+can still reject invalid ones no matter if qgroup is enabled or not.
 
-> Therefore, you need to add code to check the presence or absence of
-> that value.
->
-> Regards.
-> Jeongjun Park.
->
-> Reported-by: syzbot+a0d1f7e26910be4dc171@syzkaller.appspotmail.com
-> Fixes: 3f5e2d3b3877 ("Btrfs: fix missing check in the btrfs_qgroup_inher=
-it()")
-> Signed-off-by: Jeongjun Park <aha310510@gmail.com>
-> ---
->   fs/btrfs/qgroup.c | 4 ++++
->   1 file changed, 4 insertions(+)
->
-> diff --git a/fs/btrfs/qgroup.c b /fs/btrfs/qgroup.c
-> index fc2a7ea26354..23beac746637 100644
-> --- a/fs/btrfs/qgroup.c
-> +++ b/fs/btrfs/qgroup.c
-> @@ -3270,6 +3270,10 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handl=
-e *trans, u64 srcid,
->   	}
->
->   	if (inherit) {
-> +		if (inherit->num_ref_copies > 0 || inherit->num_excl_copies > 0) {
-> +			ret =3D -EINVAL;
-> +			goto out;
-> +		}
->   		i_qgroups =3D (u64 *)(inherit + 1);
->   		nums =3D inherit->num_qgroups + 2 * inherit->num_ref_copies +
->   		       2 * inherit->num_excl_copies;
-> --
->
+Furthermore we do already have an extra safenet inside
+btrfs_qgroup_inherit(), which would just ignore invalid qgroup sources,
+so even if we only skip the qgroup source check we're still safe.
+
+Reported-by: syzbot+a0d1f7e26910be4dc171@syzkaller.appspotmail.com
+Fixes: b5357cb268c4 ("btrfs: qgroup: do not check qgroup inherit if qgroup is disabled")
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/qgroup.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 3edbe5bb19c6..45f4facc6f96 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -3166,8 +3166,6 @@ int btrfs_qgroup_check_inherit(struct btrfs_fs_info *fs_info,
+ 			       struct btrfs_qgroup_inherit *inherit,
+ 			       size_t size)
+ {
+-	if (!btrfs_qgroup_enabled(fs_info))
+-		return 0;
+ 	if (inherit->flags & ~BTRFS_QGROUP_INHERIT_FLAGS_SUPP)
+ 		return -EOPNOTSUPP;
+ 	if (size < sizeof(*inherit) || size > PAGE_SIZE)
+@@ -3188,6 +3186,14 @@ int btrfs_qgroup_check_inherit(struct btrfs_fs_info *fs_info,
+ 	if (size != struct_size(inherit, qgroups, inherit->num_qgroups))
+ 		return -EINVAL;
+ 
++	/*
++	 * Skip the inherit source qgroups check if qgroup is not enabled.
++	 * Qgroup can still be later enabled causing problems, but in that case
++	 * btrfs_qgroup_inherit() would just ignore those invalid ones.
++	 */
++	if (!btrfs_qgroup_enabled(fs_info))
++		return 0;
++
+ 	/*
+ 	 * Now check all the remaining qgroups, they should all:
+ 	 *
+-- 
+2.45.2
+

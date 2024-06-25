@@ -1,153 +1,147 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BD4D2143890
-	for <linux-btrfs@vger.kernel.org>; Tue, 25 Jun 2024 05:08:05 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C9D36149C61
+	for <linux-btrfs@vger.kernel.org>; Tue, 25 Jun 2024 10:20:06 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1719292087; cv=none; b=FwR3/ojzw3f7nEkvVk9vCTr45yTgYXLp4AeeELvT6/o6uw2qUoz7t3NxjsS3oPWSi5/3wRZHax9pQCL6d8v3kdVsyKdbT0Zv9B+Js/ewDYZzajfBVkgxN/raORi14tW2nYxZq5EyHObnCjxSGrRN9s3c459+rd0VCRQQu3ZZ3bw=
+	t=1719310806; cv=none; b=iWo9UX2gomxpVwdo/jBfLEocyBw7TptvilWRtZBvqAa7cbC0KRk3splb4vhlEtAfCtCThJEKshhUMPIa3OlrDXZYe38zKAnt7jbvgm3B1FoeO0m66k0lX2r4a8U2LlgkMLsHCP766cVx0bCxbRbXGRACqTjebxGclPr7vgSsHds=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1719292087; c=relaxed/simple;
-	bh=MsXfub5zhmU5wQKzQO19fvSw5awOSW9jNG1nd8jscS0=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=gXWrutpc1+70X6+qJsn8SHw1+j9/6mvFwDr4btDNqkzY6vCwpXIV2ZDbTHjk63wgaXP7I0/gbK+61Qw+4DP0aMQC5new5XerG8JbdsjPBPgqDayYeFQNYgw5/+9pCrJtCEXmwgijEdYx7ZBtNG1c9KsNqx2ZyOWaJFnGWQvsg+k=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=jpOmgBrq; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=jpOmgBrq; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1719310806; c=relaxed/simple;
+	bh=jqjRg8i7CNwlhLOnvunvdMKxNwxbTD9Yj/AWvDPSzlQ=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=AnErX61v/HiuLXwk5BfQMuldIxn+OheuO4krf/ih+0F/Ww8S0fd49yOnrsML3qtloM+2Z0tXqfGdDrqkL1sMeC6WjU4C81TRvNHIqWhJ7ZKp9I3+XyUJsuGaRXvMN9LGMQSRvL6/URBEmF9eY3nfBQpHSzJ3B7C/M43XtukN1fc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=m+LvUR5r; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="jpOmgBrq";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="jpOmgBrq"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 26D04219A0
-	for <linux-btrfs@vger.kernel.org>; Tue, 25 Jun 2024 05:07:58 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1719292078; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=8GT6Z73B/0OpuFH1c08BhUqpfsJDHBPKnDQHVFws/m4=;
-	b=jpOmgBrqtBPD3u6cVvGcUHMwPbQXIGczYWUInTOY17g7Ag1suXoxjcZM7TywGQ8wWaPzgH
-	lp69rXqLGMuiPgGbnQyr68YSqDTxBTwzJ9sbEuk5/VvVoBJQ328me9eL+Yr/kgLE3IR2IU
-	MvMdct4yKVrycflJa4xZyrnwKLx63hw=
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=jpOmgBrq
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1719292078; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=8GT6Z73B/0OpuFH1c08BhUqpfsJDHBPKnDQHVFws/m4=;
-	b=jpOmgBrqtBPD3u6cVvGcUHMwPbQXIGczYWUInTOY17g7Ag1suXoxjcZM7TywGQ8wWaPzgH
-	lp69rXqLGMuiPgGbnQyr68YSqDTxBTwzJ9sbEuk5/VvVoBJQ328me9eL+Yr/kgLE3IR2IU
-	MvMdct4yKVrycflJa4xZyrnwKLx63hw=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 4160E1384C
-	for <linux-btrfs@vger.kernel.org>; Tue, 25 Jun 2024 05:07:56 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id qClOOqxQembqdgAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Tue, 25 Jun 2024 05:07:56 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/4] btrfs: fix the ram_bytes assignment for truncated ordered extents
-Date: Tue, 25 Jun 2024 14:37:29 +0930
-Message-ID: <0bd7715ef04abbfca4b97137b5b197333f2eb227.1719291793.git.wqu@suse.com>
-X-Mailer: git-send-email 2.45.2
-In-Reply-To: <cover.1719291793.git.wqu@suse.com>
-References: <cover.1719291793.git.wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="m+LvUR5r"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 4960AC32781
+	for <linux-btrfs@vger.kernel.org>; Tue, 25 Jun 2024 10:20:06 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1719310806;
+	bh=jqjRg8i7CNwlhLOnvunvdMKxNwxbTD9Yj/AWvDPSzlQ=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+	b=m+LvUR5rBwvJodDc5nnMaovhba7agWF87yuvAMXSCbBMmCgkr7YGbrknoy33fVwXE
+	 s5kGSPSu/AlLZYG1IP1nfLTU03zJ1TkHVb6gtkuvg52LmGFkdXANiJ5gPFhoToKFnb
+	 aTebTkCC+CnBsYANY86/eHHct4bttEMsd4QW8BJH0YKCCz0BwqAQYw3w10Fa6gOLJS
+	 9sLynfM74iN5givQzQmn57/SyZZ0HRhjl+GOmMI1ijpFMelHnJTAg/3W6iZDeWKSrW
+	 YkAGhRnJviW4Wfv5wPjQ0v+9r1tUcB75R4Hh86Cy162FXckuWCu/mEjaK5Auw67tNI
+	 Qp4B9knNSuxFA==
+Received: by mail-ej1-f45.google.com with SMTP id a640c23a62f3a-a6fe118805dso301396966b.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 25 Jun 2024 03:20:06 -0700 (PDT)
+X-Gm-Message-State: AOJu0YxyvXpEV4sU572kPuWtBozyBMu0JKOsdZR460pD9LEynrJU5DqQ
+	K4OhgnUiXVug0/MfqcwgoeRtSQxZNmbbXJmoyMdNbdqC+QL7qL7qxyEpYLbdiglIkd9Sq1gwXqZ
+	A82+6jcTihelPXBFhdij8zns90xo=
+X-Google-Smtp-Source: AGHT+IFErqtSPLeTOQ0HzLF40HWNmFDb5l1/nfwERKhJ5V1s5v9Z2RnkU14dfT012yKpm1gMe4s3KQCRmuyoBq6iEbo=
+X-Received: by 2002:a17:906:2454:b0:a6f:b9f3:8dd0 with SMTP id
+ a640c23a62f3a-a7245df5410mr324526866b.73.1719310804865; Tue, 25 Jun 2024
+ 03:20:04 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	FUZZY_BLOCKED(0.00)[rspamd.com];
-	ARC_NA(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCPT_COUNT_ONE(0.00)[1];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:dkim,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RCVD_TLS_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Rspamd-Action: no action
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Rspamd-Queue-Id: 26D04219A0
-X-Spam-Flag: NO
-X-Spam-Score: -3.01
-X-Spam-Level: 
+References: <cover.1719291793.git.wqu@suse.com> <a963c3b347e54bc23b9c0b39e8e864ae309dd148.1719291793.git.wqu@suse.com>
+In-Reply-To: <a963c3b347e54bc23b9c0b39e8e864ae309dd148.1719291793.git.wqu@suse.com>
+From: Filipe Manana <fdmanana@kernel.org>
+Date: Tue, 25 Jun 2024 11:19:27 +0100
+X-Gmail-Original-Message-ID: <CAL3q7H4eayxdogMgJKtPTNZVO-qcsZ9tcQrRGVCoEAzbsa0PEQ@mail.gmail.com>
+Message-ID: <CAL3q7H4eayxdogMgJKtPTNZVO-qcsZ9tcQrRGVCoEAzbsa0PEQ@mail.gmail.com>
+Subject: Re: [PATCH 1/4] btrfs: cleanup the bytenr usage inside btrfs_extent_item_to_extent_map()
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-[BUG]
-After adding extra checks on btrfs_file_extent_item::ram_bytes to
-tree-checker, running fsstress with multiple threads can lead to
-tree-checker warning at write time, as we created file extent items with
-ram_bytes.
+On Tue, Jun 25, 2024 at 6:08=E2=80=AFAM Qu Wenruo <wqu@suse.com> wrote:
+>
+> [PROBLEMS]
 
-All those offending file extents have offset 0, and ram_bytes matching
-num_bytes, and smaller than disk_num_bytes.
+I wouldn't call this "problems", there are no bugs here or anything harmful=
+.
 
-This would also trigger the recently enhanced btrfs-check, which would
-catch such mismatch and report them as minor errors.
+> Before commit 85de2be7129c ("btrfs: remove extent_map::block_start
+> member"), we utilized @bytenr variable inside
+> btrfs_extent_item_to_extent_map() to calculate block_start.
+>
+> But that commit removed block_start completely, we have no need to
+> advance @bytenr at all.
+>
+> Furthermore with recent enhanced btrfs-progs check for ram_bytes
+> mimsatch, it turns out that for truncated ordered extents, their
 
-[CAUSE]
-When a folio/page is invalidated and it is part of a submitted OE, we
-mark the OE truncated just to the beginning of the folio/page.
+mimsatch -> mismatch
 
-And for truncated OE, we insert the file extent item with incorrect
-value for ram_bytes (using num_bytes instead of the usual value).
+> ram_bytes can be smaller than disk_num_bytes.
+>
+> [ENHANCEMENT]
+> Thankfully all above problems are not really going to affect end users,
+> fix them by:
+>
+> - Declare @bytenr only inside the if branch and make it const
+>   So we can remove the unnecessary advance of @bytenr.
+>
+> - Manually override extent_map::ram_bytes using disk_num_bytes
+>   This is for non-compressed regular/preallocated extents.
 
-This is not a big deal for end users, as we do not utilize the ram_bytes
-field for regular non-compressed extents.
-This mismatch is just a small violation against on-disk format.
+I don't see anything in the patch changing ram_bytes.
+Perhaps this is from an early patch version never submitted, or from
+some other patch?
 
-[FIX]
-Fix it by removing the override on btrfs_file_extent_item::ram_bytes.
+The code itself looks good.
+Thanks.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/inode.c | 4 +---
- 1 file changed, 1 insertion(+), 3 deletions(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index d6c43120c5d3..45f77ae8963f 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3018,10 +3018,8 @@ static int insert_ordered_extent_file_extent(struct btrfs_trans_handle *trans,
- 	btrfs_set_stack_file_extent_disk_num_bytes(&stack_fi,
- 						   oe->disk_num_bytes);
- 	btrfs_set_stack_file_extent_offset(&stack_fi, oe->offset);
--	if (test_bit(BTRFS_ORDERED_TRUNCATED, &oe->flags)) {
-+	if (test_bit(BTRFS_ORDERED_TRUNCATED, &oe->flags))
- 		num_bytes = oe->truncated_len;
--		ram_bytes = num_bytes;
--	}
- 	btrfs_set_stack_file_extent_num_bytes(&stack_fi, num_bytes);
- 	btrfs_set_stack_file_extent_ram_bytes(&stack_fi, ram_bytes);
- 	btrfs_set_stack_file_extent_compression(&stack_fi, oe->compress_type);
--- 
-2.45.2
-
+>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  fs/btrfs/file-item.c | 9 ++++-----
+>  1 file changed, 4 insertions(+), 5 deletions(-)
+>
+> diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+> index 55703c833f3d..2cc61c792ee6 100644
+> --- a/fs/btrfs/file-item.c
+> +++ b/fs/btrfs/file-item.c
+> @@ -1281,7 +1281,6 @@ void btrfs_extent_item_to_extent_map(struct btrfs_i=
+node *inode,
+>         const int slot =3D path->slots[0];
+>         struct btrfs_key key;
+>         u64 extent_start;
+> -       u64 bytenr;
+>         u8 type =3D btrfs_file_extent_type(leaf, fi);
+>         int compress_type =3D btrfs_file_extent_compression(leaf, fi);
+>
+> @@ -1291,22 +1290,22 @@ void btrfs_extent_item_to_extent_map(struct btrfs=
+_inode *inode,
+>         em->generation =3D btrfs_file_extent_generation(leaf, fi);
+>         if (type =3D=3D BTRFS_FILE_EXTENT_REG ||
+>             type =3D=3D BTRFS_FILE_EXTENT_PREALLOC) {
+> +               const u64 disk_bytenr =3D btrfs_file_extent_disk_bytenr(l=
+eaf, fi);
+> +
+>                 em->start =3D extent_start;
+>                 em->len =3D btrfs_file_extent_end(path) - extent_start;
+> -               bytenr =3D btrfs_file_extent_disk_bytenr(leaf, fi);
+> -               if (bytenr =3D=3D 0) {
+> +               if (disk_bytenr =3D=3D 0) {
+>                         em->disk_bytenr =3D EXTENT_MAP_HOLE;
+>                         em->disk_num_bytes =3D 0;
+>                         em->offset =3D 0;
+>                         return;
+>                 }
+> -               em->disk_bytenr =3D btrfs_file_extent_disk_bytenr(leaf, f=
+i);
+> +               em->disk_bytenr =3D disk_bytenr;
+>                 em->disk_num_bytes =3D btrfs_file_extent_disk_num_bytes(l=
+eaf, fi);
+>                 em->offset =3D btrfs_file_extent_offset(leaf, fi);
+>                 if (compress_type !=3D BTRFS_COMPRESS_NONE) {
+>                         extent_map_set_compression(em, compress_type);
+>                 } else {
+> -                       bytenr +=3D btrfs_file_extent_offset(leaf, fi);
+>                         if (type =3D=3D BTRFS_FILE_EXTENT_PREALLOC)
+>                                 em->flags |=3D EXTENT_FLAG_PREALLOC;
+>                 }
+> --
+> 2.45.2
+>
+>

@@ -1,63 +1,63 @@
 Received: from mail-yw1-f179.google.com (mail-yw1-f179.google.com [209.85.128.179])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6495D153838
-	for <linux-btrfs@vger.kernel.org>; Fri, 26 Jul 2024 19:37:19 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 97804154456
+	for <linux-btrfs@vger.kernel.org>; Fri, 26 Jul 2024 19:37:21 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.179
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1722022640; cv=none; b=u0ymVWyyA80XaWvl11z2bVcvWj75CJtoRVcV1kbCoQ+D/z82QDVUf/SgvdDxjR+5oWAZvcGHwW6e5Y4qNAkkCBR6oNFXOI1SD6OkpYfu+U7zNA82Qk8U6auTaupLvSu6xaeN/1gyUzKAlLVzWxadXlEbURvDzu+N5M2aQjSW+Xk=
+	t=1722022642; cv=none; b=t1P5kcA6YBce3XniSXriLEWxun/RkOEwVNCEA5lrrmZuhmGnseioPGV5s7EJhYLGTSeLHW2iirU064pbSazvK6C6ZGvUhD9oDY36QrE8dsEzoWJ41r7adfmdJlXtwyYKGGXn8YRxv9hMEBjBBWQ1Lbk1FbRLIGrbgFVqQXVAQhw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1722022640; c=relaxed/simple;
-	bh=k84zTJHIwABe7nGZiPGCQt82uE4pZfm59ER8wNDn2hQ=;
+	s=arc-20240116; t=1722022642; c=relaxed/simple;
+	bh=PLJ29NEO52clYYfJGF9MwzhpdA0r4y0SLpuTLapXZzY=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=qiWyJCCvKDUg4FKXFAcH3r7Og2ksxWXQZwDrgNTQSV6vkqKRgRWbk/udBmDr2uRiXn3K/q+LR5nXggEn3GeSR/2wnl74sq/v+Q4fcrg/2q+ttlzZDI2ScYGeP3+Bsi2KjjmAlsAXGlyUhOCKS61V4H6BMOPQCZot6pxHlipsfec=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com; spf=none smtp.mailfrom=toxicpanda.com; dkim=pass (2048-bit key) header.d=toxicpanda-com.20230601.gappssmtp.com header.i=@toxicpanda-com.20230601.gappssmtp.com header.b=SHXgqMwC; arc=none smtp.client-ip=209.85.128.179
+	 MIME-Version; b=r9PKglynVK8xQ+QaUHbT7ITW330Z7/FHdwWsES7IgP0LV/bwdGWgIfD3kD/kZcrc4Ec9nO1gG+fX+LflwZVh7yt4Y+d1ayog82J3BM3VVFrqhXGzOLL7GhGP3rRtM+ra5DgeJ0HtYOlU2Qghgghg5QCyvKcDLASW8hxYsU8Lvz0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com; spf=none smtp.mailfrom=toxicpanda.com; dkim=pass (2048-bit key) header.d=toxicpanda-com.20230601.gappssmtp.com header.i=@toxicpanda-com.20230601.gappssmtp.com header.b=Z8i5kDqX; arc=none smtp.client-ip=209.85.128.179
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
 Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=toxicpanda.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20230601.gappssmtp.com header.i=@toxicpanda-com.20230601.gappssmtp.com header.b="SHXgqMwC"
-Received: by mail-yw1-f179.google.com with SMTP id 00721157ae682-65cd720cee2so436157b3.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 26 Jul 2024 12:37:19 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20230601.gappssmtp.com header.i=@toxicpanda-com.20230601.gappssmtp.com header.b="Z8i5kDqX"
+Received: by mail-yw1-f179.google.com with SMTP id 00721157ae682-65f8626780aso318567b3.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 26 Jul 2024 12:37:21 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1722022638; x=1722627438; darn=vger.kernel.org;
+        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1722022640; x=1722627440; darn=vger.kernel.org;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=acbllnNOdxbMXw+1G8ypfc7FDsBR+vgEoqqabjqdQ5M=;
-        b=SHXgqMwC5SByVxLVtUci2vAjrvreApnLLMzpbh6DDLv2we3v7ywTDJOBCSKtZS+Nn1
-         YEzOTOmGTFxjOE/lTjdH5N5ZCb5npDfzFo+sAiLjA9ldsERzKoEqrqH/cEfmSseB/l4A
-         eUUM2az2HR3xbzykrQeRUGdIW92ZrFXNjGMRPsjetCegdm6FqFr+apjK4hoHF00z01Mn
-         HvPYOs82LeRdNd+BcCwe8qPtZUEmg/xZX8qCVnh5Lb6UEayTHwVtFz1F04b80noTO9gV
-         G+GamybeJBS1n4aJO3jK5qzoy7V6L+zZyMYf2H6dcprlTPzJP+eJec16TOFhk+FNbVC4
-         H9jA==
+        bh=QPUcVhMZZ/L8ca7G8wdv+jxTBowNruFOYlWCJrDk1kw=;
+        b=Z8i5kDqXL/ySl1cibB8HCHrtHrq1RNe5yfBWKIX56GFcOKeLt2Cq4wqQAxgW6/9xuc
+         G8ATKSjkxcnnx0XOuFJrLePTZEpzsvvIY/eqHxZstmkf/ZPVbIDQD9mc5qlciour0J3b
+         q1ufHAuBKpkkSAfeKnf05OZSWLlBSrBVF/JJAzlQhjrqYzJy8VNyR+NO5vOLH/6jhN1b
+         0eY6V6AbThqQA1oTuQAAYJ+VpVdHDsrrkMdFnSQ8aVmSB8FuIHWCzj4gHDdg5hwg8Ydy
+         WHEP4AOSwQhJVcQv7ukctxZ95r2wqKK/1BGuYTNgKGCS+9IiVY8GEq/5bqJOR+xlBM6K
+         4VmA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1722022638; x=1722627438;
+        d=1e100.net; s=20230601; t=1722022640; x=1722627440;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=acbllnNOdxbMXw+1G8ypfc7FDsBR+vgEoqqabjqdQ5M=;
-        b=R/4g7uYleIwo6FNUx9ECdezzxQJ8VrKQwRbmWL7ferx3ddxbKqArqANY/wmWGlcyAn
-         FQpjhzBs3rvvEFR4GX+VJwRer0h5zJh0SQxnMS087h3h17ukIhXQBwpCP74OiOEdq7yL
-         LCwX1VUmsZ/sfhOQ0Pai43RZvMOcWIxAjLQAK4IAeulc/s9FxtDdh07ObfpHfb+nI8C5
-         S0UzSQgkqVqfHNneyBDNHa/TTX14uQS9CK+qxg3TIdvsiy7DEdNv4hlJZmdzwi8Tgo4q
-         1QNty/MXIKn58ZGW1Ctv8ljBSIsQuYRhMmr8ThwpJtCOVlFFpK3Ta2Ka4Wn862ggPNFB
-         lkIw==
-X-Gm-Message-State: AOJu0Yw9tkJGnrIm45AqHsIaZgQpsS8P8pvefvhYcaDUErMhWgXOJNdd
-	qdXANJjZXdIXOIVK1Lx+V0UUA+OCF/z8M42777I/t90sUgJ/bu+AxM9tBXbhbuXPKtB8Qo/S8+p
-	8
-X-Google-Smtp-Source: AGHT+IHkb9Ad/985KaAuBD3jBj3QoHJCDBKR3ZHrFGZfby/sjzZ//85/WBZl0utt72OGgdxbz+v2pQ==
-X-Received: by 2002:a0d:f386:0:b0:61b:df5:7876 with SMTP id 00721157ae682-67a05c8bb3bmr10149637b3.6.1722022638296;
-        Fri, 26 Jul 2024 12:37:18 -0700 (PDT)
+        bh=QPUcVhMZZ/L8ca7G8wdv+jxTBowNruFOYlWCJrDk1kw=;
+        b=AI8qmLF4yOhQjyEUPjEGPp+cQfrqOT0TOfMpuBCFDFExTF48N1K08wCrlnF/t4SltP
+         cY3DEXWvnEcFg70M2h+J/+rntLcGFjh6x+ySUqm11wZrqk9CLbSt/ts/uEOFgEdTMD+2
+         WnP8C7KLXgRE3X4j4NZmeCM97Sc4j4BHoHlSFn4Hch/OYIS6Sy7XkIMepe+XbKUXtrJL
+         b11ucp8XluEuQBbFJoN7IX+/+PDUG/uq6Ti5GnDyWMvheXWzomBG+p1xp3IK914No1uU
+         0PVTiQLJL5U4TKINQCQh2qwvslWSWpOWyWIiTcf2nnBKleAUL0mpcJ6n4qBmW67URJ4u
+         gszQ==
+X-Gm-Message-State: AOJu0YyOP5BttmPElmk64HQPfmXwYHiRxXpZY2n6QocfnQZvyIG46gf5
+	RYfAkzSghw4dEuVxLIz7Esvb3jaDH41FBZc/QUPjdTTrKFzgZbUsKkCF6HxHaRxSG7/KWK8LQWy
+	W
+X-Google-Smtp-Source: AGHT+IHIyGMP/plNLHjncgsSyWNzJtkEGgRIfJN8bgN8roM5nwJJe6mTqJwZ8mNKnEAX+yj9nKELMg==
+X-Received: by 2002:a81:a24e:0:b0:64a:d5fd:f19f with SMTP id 00721157ae682-67a072baa09mr8264117b3.18.1722022640583;
+        Fri, 26 Jul 2024 12:37:20 -0700 (PDT)
 Received: from localhost (syn-076-182-020-124.res.spectrum.com. [76.182.20.124])
-        by smtp.gmail.com with ESMTPSA id 00721157ae682-6756c44ded1sm9814537b3.145.2024.07.26.12.37.17
+        by smtp.gmail.com with ESMTPSA id 00721157ae682-6756c44c806sm9903617b3.136.2024.07.26.12.37.20
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 26 Jul 2024 12:37:17 -0700 (PDT)
+        Fri, 26 Jul 2024 12:37:20 -0700 (PDT)
 From: Josef Bacik <josef@toxicpanda.com>
 To: linux-btrfs@vger.kernel.org,
 	kernel-team@fb.com
-Subject: [PATCH 39/46] btrfs: convert read_inline_extent to use a folio
-Date: Fri, 26 Jul 2024 15:36:26 -0400
-Message-ID: <4c5e26539f6f1d4f60ced23deb6f8818556de15e.1722022377.git.josef@toxicpanda.com>
+Subject: [PATCH 41/46] btrfs: convert __get_extent_map to take a folio
+Date: Fri, 26 Jul 2024 15:36:28 -0400
+Message-ID: <2564fcf5127417ceb8b441e97da6cfe2cf75783e.1722022377.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.43.0
 In-Reply-To: <cover.1722022376.git.josef@toxicpanda.com>
 References: <cover.1722022376.git.josef@toxicpanda.com>
@@ -69,64 +69,50 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Instead of using a page, use a folio instead, take a folio as an
-argument, and update the callers appropriately.
+Now that btrfs_get_extent takes a folio, update __get_extent_map to
+take a folio as well.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/inode.c | 14 +++++++-------
- 1 file changed, 7 insertions(+), 7 deletions(-)
+ fs/btrfs/extent_io.c | 11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 560575a5de03..45835074aa6f 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6746,30 +6746,30 @@ static noinline int uncompress_inline(struct btrfs_path *path,
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 2a80dfbc8248..4e9f0baba2ca 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -968,8 +968,9 @@ void clear_page_extent_mapped(struct page *page)
+ 	folio_detach_private(folio);
  }
  
- static int read_inline_extent(struct btrfs_inode *inode, struct btrfs_path *path,
--			      struct page *page)
-+			      struct folio *folio)
+-static struct extent_map *__get_extent_map(struct inode *inode, struct page *page,
+-		 u64 start, u64 len, struct extent_map **em_cached)
++static struct extent_map *__get_extent_map(struct inode *inode,
++					   struct folio *folio, u64 start,
++					   u64 len, struct extent_map **em_cached)
  {
- 	struct btrfs_file_extent_item *fi;
- 	void *kaddr;
- 	size_t copy_size;
+ 	struct extent_map *em;
  
--	if (!page || PageUptodate(page))
-+	if (!folio || folio_test_uptodate(folio))
- 		return 0;
+@@ -987,7 +988,7 @@ static struct extent_map *__get_extent_map(struct inode *inode, struct page *pag
+ 		*em_cached = NULL;
+ 	}
  
--	ASSERT(page_offset(page) == 0);
-+	ASSERT(folio_pos(folio) == 0);
- 
- 	fi = btrfs_item_ptr(path->nodes[0], path->slots[0],
- 			    struct btrfs_file_extent_item);
- 	if (btrfs_file_extent_compression(path->nodes[0], fi) != BTRFS_COMPRESS_NONE)
--		return uncompress_inline(path, page_folio(page), fi);
-+		return uncompress_inline(path, folio, fi);
- 
- 	copy_size = min_t(u64, PAGE_SIZE,
- 			  btrfs_file_extent_ram_bytes(path->nodes[0], fi));
--	kaddr = kmap_local_page(page);
-+	kaddr = kmap_local_folio(folio, 0);
- 	read_extent_buffer(path->nodes[0], kaddr,
- 			   btrfs_file_extent_inline_start(fi), copy_size);
- 	kunmap_local(kaddr);
- 	if (copy_size < PAGE_SIZE)
--		memzero_page(page, copy_size, PAGE_SIZE - copy_size);
-+		folio_zero_range(folio, copy_size, PAGE_SIZE - copy_size);
- 	return 0;
- }
- 
-@@ -6944,7 +6944,7 @@ struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
- 		ASSERT(em->disk_bytenr == EXTENT_MAP_INLINE);
- 		ASSERT(em->len == fs_info->sectorsize);
- 
--		ret = read_inline_extent(inode, path, page);
-+		ret = read_inline_extent(inode, path, page_folio(page));
- 		if (ret < 0)
- 			goto out;
- 		goto insert;
+-	em = btrfs_get_extent(BTRFS_I(inode), page_folio(page), start, len);
++	em = btrfs_get_extent(BTRFS_I(inode), folio, start, len);
+ 	if (!IS_ERR(em)) {
+ 		BUG_ON(*em_cached);
+ 		refcount_inc(&em->refs);
+@@ -1050,8 +1051,8 @@ static int btrfs_do_readpage(struct folio *folio, struct extent_map **em_cached,
+ 			end_folio_read(folio, true, cur, iosize);
+ 			break;
+ 		}
+-		em = __get_extent_map(inode, folio_page(folio, 0), cur,
+-				      end - cur + 1, em_cached);
++		em = __get_extent_map(inode, folio, cur, end - cur + 1,
++				      em_cached);
+ 		if (IS_ERR(em)) {
+ 			unlock_extent(tree, cur, end, NULL);
+ 			end_folio_read(folio, false, cur, end + 1 - cur);
 -- 
 2.43.0
 

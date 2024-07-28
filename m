@@ -1,31 +1,31 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E16901A072D;
-	Sun, 28 Jul 2024 00:55:46 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 02DCA1A2578;
+	Sun, 28 Jul 2024 00:56:02 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1722128147; cv=none; b=tyyMiM8rtL8IPZOINabnMGvPkHEruvK/ZGa0MoFX2V3TJf2juuq/z7KYH2lnyfiTE+Vc8ftThcj9SObYJZYF6VSkzGBF4dnLVnDqq596PRSG7yfo/f43NwhU+nMl631FLtJJtWOgVUUamXrfZR5eaPLGUisbux7lZRIDX8F82cg=
+	t=1722128163; cv=none; b=lqFJXa1UOyqngxfeeAmqJJdbTgABjcp+NAaXwlXQrmPK/In4MWpg0w3wQENjiqRQcW2tpblu0LXi9wkSVLYihbZVJJNt7euMySSwskkopmxfM/0RT1XUuHJRdJSuzKCM2eVgppzp7pxp/J6KqJnFRsBsdl5V/RFaDWHHyhyR8fw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1722128147; c=relaxed/simple;
-	bh=oBLUhY3x06WnyDihtPpXhpSwyTQvIY4CYZnqrS3Vrsg=;
+	s=arc-20240116; t=1722128163; c=relaxed/simple;
+	bh=T3kT3aF+NaFwrOaCo+7NVvhnR2d0c2j/hp1l5u4t4WE=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=ik/qTCy1JO2veensOI/u+YBk6qhuNXgpqkytBCmf6RaWFmOBBQXgzG98Db843eJqqyK8yf+m+7UcLex49QGnwmk1mlgckh+7hE+Pa3miqzjljucSLWPerHjnjzRyxJIPCRdwMZpSiHsALD1ccFKI8s7aHBnS7Xz7BJvGa5QU78k=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=FD5xs/7R; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version; b=RV0Zm3GeCNPXyDywqozSK10eFyfkiz2u0BEBSn27ohA1+dk7HEuE1k1CG1BXQR71S8+lObmo0rTjBDqnULtVpBLZt2VNhwaS+94ntf/PZnwc3tdhYxce5R967xB5wd9TPVMuOrLDbFfq+HAv6fLiwpi3ChLShjGxpeImkHWOPzI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=LfKt60Vd; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="FD5xs/7R"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 490DDC32781;
-	Sun, 28 Jul 2024 00:55:45 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="LfKt60Vd"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id B7EE8C32781;
+	Sun, 28 Jul 2024 00:56:01 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1722128146;
-	bh=oBLUhY3x06WnyDihtPpXhpSwyTQvIY4CYZnqrS3Vrsg=;
+	s=k20201202; t=1722128162;
+	bh=T3kT3aF+NaFwrOaCo+7NVvhnR2d0c2j/hp1l5u4t4WE=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-	b=FD5xs/7Ro6AKo/gErGPYv5XGWoE0lN3QCXygP3PXfCMmUMO6u+vGmnYEhOXG99ynt
-	 KJyIl+FBYarYGTOOwxZ4qoWjGY+GXXbCxX62NofFnut2Wv7S0eMiuQ0untuHcgThwz
-	 rROmW2tf4COlQFN0DXTmxhYDjLHyCrZs98PzDhdiBu2W5fDn0SMRKj1p6vs1H1spIL
-	 XzTopURmpMTjXYI+yCBuCnL3746P72j1j8UN1+Fj6ZHHZrBUMr+Gvfqd7CY1m0TPyb
-	 6B/r4Ltgvquy980jHXP1NyR2KanKHgyvTenA4fC9jm+lsWX63Lz0ylp967WM5Mu1ZN
-	 nmLPGxT2Lbfcg==
+	b=LfKt60VdV+bkps7N3TYPxxGn+ZWco16dYikAKwz1tvZq7reqXzUq8Bsi6ENdBroOI
+	 UkvEuleiQLXtnJUXuTErHCw099hBBEbhFjd24l7cvdU3y3vP+kJObYmMXuiJxQY73b
+	 +w3DmpcmtuByguatm1PxDIlulMRIlkkeyKGjW4IL2mAe824cmQwPJwVYlV6Asknaqv
+	 AMC+QXbDkuv/AFY/fLvwYmJZOUABnqe6nDgJlNeKCz9HmD4aKCA/2mlci0es0X2PZI
+	 SmDyaHSP0ryR4hpcUUR+8zvfgOsf3nTvUjt13PavLJxLzZWdyeRr6SI/9hejxBRKJZ
+	 dmT5LHeR/GCOg==
 From: Sasha Levin <sashal@kernel.org>
 To: linux-kernel@vger.kernel.org,
 	stable@vger.kernel.org
@@ -36,12 +36,12 @@ Cc: Filipe Manana <fdmanana@suse.com>,
 	clm@fb.com,
 	josef@toxicpanda.com,
 	linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 6.1 11/11] btrfs: fix bitmap leak when loading free space cache on duplicate entry
-Date: Sat, 27 Jul 2024 20:55:16 -0400
-Message-ID: <20240728005522.1731999-11-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 5.15 6/6] btrfs: fix bitmap leak when loading free space cache on duplicate entry
+Date: Sat, 27 Jul 2024 20:55:47 -0400
+Message-ID: <20240728005549.1734443-6-sashal@kernel.org>
 X-Mailer: git-send-email 2.43.0
-In-Reply-To: <20240728005522.1731999-1-sashal@kernel.org>
-References: <20240728005522.1731999-1-sashal@kernel.org>
+In-Reply-To: <20240728005549.1734443-1-sashal@kernel.org>
+References: <20240728005549.1734443-1-sashal@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -50,7 +50,7 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
-X-stable-base: Linux 6.1.102
+X-stable-base: Linux 5.15.164
 Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
@@ -72,10 +72,10 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  1 file changed, 1 insertion(+)
 
 diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 862a222caab33..c0c413a542395 100644
+index 9161bc4f40649..0004488eeb060 100644
 --- a/fs/btrfs/free-space-cache.c
 +++ b/fs/btrfs/free-space-cache.c
-@@ -865,6 +865,7 @@ static int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
+@@ -829,6 +829,7 @@ static int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
  				spin_unlock(&ctl->tree_lock);
  				btrfs_err(fs_info,
  					"Duplicate entries in free space cache, dumping");

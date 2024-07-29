@@ -1,46 +1,47 @@
-Received: from mail-ej1-f46.google.com (mail-ej1-f46.google.com [209.85.218.46])
+Received: from mail-ej1-f45.google.com (mail-ej1-f45.google.com [209.85.218.45])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 47224146580;
-	Mon, 29 Jul 2024 12:00:13 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.46
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4A179146D63;
+	Mon, 29 Jul 2024 12:00:15 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.45
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1722254414; cv=none; b=ZyTdF06Zc95wFLrmKS7T6MkhbX+Ra7bdp5B7hMbZm21Br+c3a64hPKsapIJzpnrYQxJvIvBtgQOowJvYRSutrNZvU7sYd4G9d2lbiYAxXdQB7f75p2SwC93iGeUMHaBhyDel1P0GbXvcspCIrpn09I2J0ZBustTUgdlLjmdL+GU=
+	t=1722254416; cv=none; b=cYgYKxKxW5sWLhBspIwQlRemGd42khQJnFB4Bt5pPw8APxyoP3b3t2YSFoH+DrXzO2NTWoJcq9QN+HvtA98gLQ0NxX5SpmLIp+dOP0rWTAxNWPxJKGXGKk33nr+2XZDUxaYClvvwjwYmlSZFME3K3aog/Y/vO1s1VmCaKI5yEAU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1722254414; c=relaxed/simple;
-	bh=7z9b6DSEEd3AS7TAf2EEFdpb8JBFUBPJjjKwMcTk1bM=;
+	s=arc-20240116; t=1722254416; c=relaxed/simple;
+	bh=/IcSJYYXJNCnwyGW/xg7CQHiY002W+thsnUAs/eIUL4=;
 	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
-	 In-Reply-To:To:Cc; b=STdMptkS3T0UisBC6r4hxcWB6V9VDkOV/QWC5806idXfIYFEzm+Dn+ArsQdykSjFgldhF4HashMmfu/8CVkrJZB5qSQ4YsnafrwvPlqMap4VshjF/V2NAXnvEsjzo1goNVH0MR1SgzukC5S0wADWCSOdd4T4MRqqU21J3fIOEMw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=kernel.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.218.46
+	 In-Reply-To:To:Cc; b=KrBT1wMyd26/AJIQW4mq2Fk01GW6KDSgibEYGwF4/3bUW+s+Mf2emd7IF8TcKnCu4cGSkAkO1C5qbiqYSzIX7Zut0o8yIeTNVI6jO+ki+IGd/kPKOTRsZg8AsgNgI/U+UOE9ACBojY5CXuVFR2SY8WG+5mR7ybLnkH0ASqgSLsw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=kernel.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.218.45
 Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=kernel.org
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Received: by mail-ej1-f46.google.com with SMTP id a640c23a62f3a-a7d26c2297eso395246066b.2;
-        Mon, 29 Jul 2024 05:00:13 -0700 (PDT)
+Received: by mail-ej1-f45.google.com with SMTP id a640c23a62f3a-a7a9a7af0d0so449912566b.3;
+        Mon, 29 Jul 2024 05:00:15 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1722254411; x=1722859211;
+        d=1e100.net; s=20230601; t=1722254414; x=1722859214;
         h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
          :mime-version:subject:date:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=zGN/kk6WdhdWkkFKRFXP8WuazD2BEVj2C7KF2uk7+UY=;
-        b=ntObzTs08jgwsUBZVCenDWr4isQ8BlY5pQY3tpWMtfBSi0xvgXDZR/c28FQ13i5Pch
-         c552XhhRwP7YPvuQyeWkSeHRdm+nLiC71Bf2/qNr861zkWhAYrPtZAcF0cJQ98eNVKrb
-         UUeqKuMBGKwKkxrxA96/wYlCg7m58OgtkiOiNZoJbxnoc4nejo+vCcm2ZYbXOf2U8tnT
-         bpo8AbdthsXQbYwl9q1PfJNwb11rQIqitU24J2m/gtd4vhu6iy0AsiaaLfJadN2vTXwG
-         ngfbJrnj43edEX6CFfJy39LgiEmbaLDjGnmByfQ8t3S6ppYsEv5WcZtLfySKsYWg7ipW
-         f3Jg==
-X-Forwarded-Encrypted: i=1; AJvYcCVKLWFzWFnzl08m7jMdlJw2vPYhgP9BT/E/Zg1O736RN8rtCb4yv/qUhv6Az0JM5liGLReE+FFvE0Mkz0MomKGJ24IL4qxBQh1BDbuI
-X-Gm-Message-State: AOJu0YybxjY+1foctwvEsszGrvQ/VAXc9iH41cHz5rPKAVRctbELWk5X
-	ZUqLJUxp+2kj1Dg8UFwePOMLv80arL5m6M1UrxWPhMyOu6DHyd94GCT6QQ==
-X-Google-Smtp-Source: AGHT+IE9AxVBSVkSTYFKVJohns5FWVZFoGL3k8kvpXxxgN2d7QBQJpUmdX1VNeyPpLHVIp01Q7opGA==
-X-Received: by 2002:a17:907:2da0:b0:a7a:acae:340c with SMTP id a640c23a62f3a-a7d3ffadb71mr558795266b.13.1722254411418;
-        Mon, 29 Jul 2024 05:00:11 -0700 (PDT)
+        bh=WJWlRDxSJTNdG19sMCqs4ElfI/UMNfe1NBY5LQ2S1jo=;
+        b=MF9kVmj1PFYpz71srRsxcIhbPgr41r93Q8xO5oEpglenIBgzXUoer9boIBX2z5Py6R
+         o+MJ7nx8FjNlzosdtxfwYHDqJT+OpVOwngeibJo1xQ1MxJN6GjBPfeJijzoJPXJAo0B3
+         8g+LfohmIVm6hXekwZSVw7NBMJN6qNSfRLZNySndrOzGXJHA7O8I5/FKvczCvpIkErV1
+         snjS0KMJ0rT2kVCZiOlqpZzbgbhETvA7HMbYD7JISIURiQokwKapf+YPnciTC1TPjQ/9
+         t+DLpGwet8uJE3YuSvqmQ0/FYvM6D4RNP6dUzGSC3lfafyLFlH0XwkI4ARsKE7BGsk2O
+         zGIA==
+X-Forwarded-Encrypted: i=1; AJvYcCUnsdPFtbkkWzzF6BUrjj74naXopgd/UQw/Lyd+EmJUyhW9ihKRX1/Mfpt+RQo3m5BCEdc0+G4Si7tD/V8/o3kKHi+FEVQmbl6/hyV7
+X-Gm-Message-State: AOJu0YzOroHo38KYeLQTuSylNF8rIVSNfoxLEQYmE4KPmouMRmHo3vvJ
+	JpDeKh3+yYd0dcGDzi9Eri/Wl1QH7ohEY8goBHDKALVRqKGRGATO4xmNWg==
+X-Google-Smtp-Source: AGHT+IHQz/cs4BNgOjsZ7NScCJNoUR0po1I68N/2lTCAbnlRYFbs6SDsccisgH2AtWk9x8CcybNVMg==
+X-Received: by 2002:a17:907:608c:b0:a7a:b643:654f with SMTP id a640c23a62f3a-a7d3ffb67cbmr414133466b.15.1722254413467;
+        Mon, 29 Jul 2024 05:00:13 -0700 (PDT)
 Received: from [127.0.0.1] (p200300f6f732f200fa633ffffe02074c.dip0.t-ipconnect.de. [2003:f6:f732:f200:fa63:3fff:fe02:74c])
-        by smtp.gmail.com with ESMTPSA id a640c23a62f3a-a7acab2311asm508136266b.18.2024.07.29.05.00.10
+        by smtp.gmail.com with ESMTPSA id a640c23a62f3a-a7acab2311asm508136266b.18.2024.07.29.05.00.12
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 29 Jul 2024 05:00:11 -0700 (PDT)
+        Mon, 29 Jul 2024 05:00:13 -0700 (PDT)
 From: Johannes Thumshirn <jth@kernel.org>
-Date: Mon, 29 Jul 2024 14:00:02 +0200
-Subject: [PATCH 1/4] btrfs: don't dump stripe-tree on lookup error
+Date: Mon, 29 Jul 2024 14:00:04 +0200
+Subject: [PATCH 3/4] btrfs: set rst_search_commit_root in case of
+ relocation
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -49,7 +50,7 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-Message-Id: <20240729-debug-v1-1-f0b3d78d9438@kernel.org>
+Message-Id: <20240729-debug-v1-3-f0b3d78d9438@kernel.org>
 References: <20240729-debug-v1-0-f0b3d78d9438@kernel.org>
 In-Reply-To: <20240729-debug-v1-0-f0b3d78d9438@kernel.org>
 To: Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>, 
@@ -57,38 +58,39 @@ To: Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
 Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, 
  Johannes Thumshirn <johannes.thumshirn@wdc.com>
 X-Mailer: b4 0.12.4
-X-Developer-Signature: v=1; a=openpgp-sha256; l=859; i=jth@kernel.org;
- h=from:subject:message-id; bh=hwc/5qBk/m03Fn+onMcecnGBzxZqVF2km5Mrm9HY6u4=;
- b=owGbwMvMwCV2ad4npfVdsu8YT6slMaQtb/G41SzC1s9XKcVdo/yf2Vo95tS85j0nZEp6ZaQbj
- npP17jVUcrCIMbFICumyHI81Ha/hOkR9imHXpvBzGFlAhnCwMUpABP5dp2RYd2UXTNSd+0/9do5
- rvhISKJkFt+3umtu7qnpGSKsrkYtagz/6/f90la4IJ30v1Wed1ayoXO9ZaQew1Y2tnKLyYf71gU
- xAAA=
+X-Developer-Signature: v=1; a=openpgp-sha256; l=807; i=jth@kernel.org;
+ h=from:subject:message-id; bh=b0Pb+uSMgNZdT9sxeeZ9pRVHoEwmmPaSc/gj9kZGk3k=;
+ b=owGbwMvMwCV2ad4npfVdsu8YT6slMaQtb/FcYpRSlnGFj+FipserpPULs85GfdeV1jhjI1w9e
+ 3Zm/X31jlIWBjEuBlkxRZbjobb7JUyPsE859NoMZg4rE8gQBi5OAZiI/DaG/8Gm8Q73Dx7l0cle
+ uX6z/uGPUu4b3y8Stfcq3cd3bZFY/3mGf+ZnTlmePf7QiDVYv6fu3uNVlyQm2G95q+OjuMvM9q6
+ FMTMA
 X-Developer-Key: i=jth@kernel.org; a=openpgp;
  fpr=EC389CABC2C4F25D8600D0D00393969D2D760850
 
 From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 
-This just creates unnecessary noise and doesn't provide any insights into
-debugging RAID stripe-tree related issues.
+Set rst_search_commit_root in the btrfs_io_stripe we're passing to
+btrfs_map_block() in case we're doing data relocation.
 
 Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- fs/btrfs/raid-stripe-tree.c | 2 --
- 1 file changed, 2 deletions(-)
+ fs/btrfs/bio.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/raid-stripe-tree.c b/fs/btrfs/raid-stripe-tree.c
-index 684d4744f02d..97430918e923 100644
---- a/fs/btrfs/raid-stripe-tree.c
-+++ b/fs/btrfs/raid-stripe-tree.c
-@@ -284,8 +284,6 @@ int btrfs_get_raid_extent_offset(struct btrfs_fs_info *fs_info,
- 	if (ret > 0)
- 		ret = -ENOENT;
- 	if (ret && ret != -EIO && !stripe->is_scrub) {
--		if (IS_ENABLED(CONFIG_BTRFS_DEBUG))
--			btrfs_print_tree(leaf, 1);
- 		btrfs_err(fs_info,
- 		"cannot find raid-stripe for logical [%llu, %llu] devid %llu, profile %s",
- 			  logical, logical + *length, stripe->dev->devid,
+diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
+index dfb32f7d3fc2..c6563616c813 100644
+--- a/fs/btrfs/bio.c
++++ b/fs/btrfs/bio.c
+@@ -679,7 +679,8 @@ static bool btrfs_submit_chunk(struct btrfs_bio *bbio, int mirror_num)
+ 	blk_status_t ret;
+ 	int error;
+ 
+-	smap.rst_search_commit_root = !bbio->inode;
++	smap.rst_search_commit_root =
++		(!bbio->inode || btrfs_is_data_reloc_root(inode->root));
+ 
+ 	btrfs_bio_counter_inc_blocked(fs_info);
+ 	error = btrfs_map_block(fs_info, btrfs_op(bio), logical, &map_length,
 
 -- 
 2.43.0

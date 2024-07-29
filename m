@@ -1,177 +1,133 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-yw1-f180.google.com (mail-yw1-f180.google.com [209.85.128.180])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B7277156C70;
-	Mon, 29 Jul 2024 14:32:47 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B387814AD19
+	for <linux-btrfs@vger.kernel.org>; Mon, 29 Jul 2024 14:41:52 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.180
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1722263567; cv=none; b=joGbWiXAv2zsDP57+boElPOXmUcIFtDGRJuxkcM9g0A1iId0+KDPR6MYV6fKZPMDlIjbVevjWCHv8h8Jmi9FXih39hsCMn96jJC7J0wgUyQyf+Bd3Ll/Osif6mNB3zmP8jFiomZ8zItcpCKfDI/UpODRNWIdoB2ApaCuWAkAB0I=
+	t=1722264114; cv=none; b=Jrz+umlnhOUHpacyDUbV9GR0EB4bQvhEbDZIa33m5Y4mHnchcJPTmFoyAtV32N+IyVjnifzwITwkqxLZ2lmGmWhRZZT8Wa2T6vmMV+aWKoEhUuaVQmJuBXrhm1pImVL1wIdREVpOlT5tgjWTQcVlWaq0rvx5HdpW/H+zAvFf8Ys=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1722263567; c=relaxed/simple;
-	bh=b5F+YCrcadXXbcjYPd2AIJIQa99ZIrMyu2gUHeNNKOk=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=p1CpgLuWzMeAqbR+MVca5tnWubMLks7+wtajYXN1YpMJd+sGH2nblLxjf2wCciWW+rN/i6bmlY7/Oc141tUKfwf0liOoyrz8lY6Hd8JKaMnHOw4rO/w39fetfZxi56Vtg4WiWWhr0/J4svw8noCDX0k8yxxzOhPtB7EDF7n8Q8Q=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=dM+AGU/m; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1722264114; c=relaxed/simple;
+	bh=EKmWilDzjf4hEYw+RsyjIWEELuGA8bc4iAffwtuDOck=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=g9r2klWEGnjpbtNUED7oZG6/URA03aPU2kRvxCUMzBRF0VA775JYGyTUupHWfIN9oxACark3wfvymM22+1XJkdrnbrTtHEid8pODQd0CFVZDzQmc87I1erocDw620RfX11nMplwToP3RDkVb0b/r7D9AVsfYfbM1ZPdCmschFaY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com; spf=none smtp.mailfrom=toxicpanda.com; dkim=pass (2048-bit key) header.d=toxicpanda-com.20230601.gappssmtp.com header.i=@toxicpanda-com.20230601.gappssmtp.com header.b=jSilv0wX; arc=none smtp.client-ip=209.85.128.180
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=toxicpanda.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="dM+AGU/m"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 4DEEEC4AF0F;
-	Mon, 29 Jul 2024 14:32:47 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1722263567;
-	bh=b5F+YCrcadXXbcjYPd2AIJIQa99ZIrMyu2gUHeNNKOk=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-	b=dM+AGU/m8NZciuW5aUPl47IMjOO6gc/P0J8XTpHDY6xFUDCpnsnoTz22Je/U1SStN
-	 VCzlChH+1zd1qaazHKpKYgdnE//8Uq33pqTA8eE/kSsnlj+wJTKdh1sGRjqWBUMrVG
-	 aQ2/TKVE8lVNdgkrtwSUX+8hB08/Fss+rhDkBhfQnUetqpWSIw0uIfW22r1diD/ZhR
-	 6NRHfAghLhhIHJSt7h3slLq/02E+OnPQlmP/wqROpMtjvJQ5XhHxs/9Q2mWNyYydWF
-	 tcRFaphM7vcQjHoYqZsvpD/ci/mbF32oZtAPDntolFFixv7606eKI9m3/Slsv2MgqE
-	 6v9BGTNVNR5pQ==
-Received: by mail-lf1-f51.google.com with SMTP id 2adb3069b0e04-52efa16aad9so5208788e87.0;
-        Mon, 29 Jul 2024 07:32:47 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AJvYcCUXMWmi3Dcv/SsSCqQeXbU415hLOMBvte6nSq8qdKOTeaCNI7mIeGxDoWx3XT72a0T8tpRD6YLEhwHmIt+3UXnoG4LlO52YdTurdTIRNlr0aw6mfR2tOVnJbbUNLkFrg0VcAK70
-X-Gm-Message-State: AOJu0YyxFS6B7MSBo9dsCXoYeBDuo1rNvuR5lf7lhj3fwz2JeSeldz2x
-	VW2xPbyy615RE7dnSdElDDAyU3EG+woC0fYCGZKwKVXupKD1sCPTbYcGyBsY76NLijBcGxoBseL
-	mmB1kEaZMhR3K11MTDChHVPXJ7n8=
-X-Google-Smtp-Source: AGHT+IEBVaqgiEOjUvwvwPzx0pvsiskjIhU0DCLh4DVYzArH+IJswZWaUTO6AMY+SU2YQ7e67MpW1vBM8/qsz7fXgeg=
-X-Received: by 2002:a05:6512:210f:b0:52e:941d:7039 with SMTP id
- 2adb3069b0e04-5309b2ce6afmr5261071e87.59.1722263565617; Mon, 29 Jul 2024
- 07:32:45 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20230601.gappssmtp.com header.i=@toxicpanda-com.20230601.gappssmtp.com header.b="jSilv0wX"
+Received: by mail-yw1-f180.google.com with SMTP id 00721157ae682-66493332ebfso20249627b3.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 29 Jul 2024 07:41:52 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1722264112; x=1722868912; darn=vger.kernel.org;
+        h=in-reply-to:content-transfer-encoding:content-disposition
+         :mime-version:references:message-id:subject:cc:to:from:date:from:to
+         :cc:subject:date:message-id:reply-to;
+        bh=c3auTI3rvow29Pp1Jd327mEmLXjtywxBKuvkLGD2pj0=;
+        b=jSilv0wXDbIznxlUEYVkVh7bWZvPUjB0j6gsaFWlDGvN9IAhOhoksWO6DK1IfydnML
+         RGJBtvAQc3xIWsfIm4czq/vIlgryud879u8y+hynPNb2B+zAy+1VwgmG/tp+SehjEtdf
+         6kTe01EYoFPTst576qKrTxa648WvcYOm0puhscM7AkI3wP0ABYknsBQxY7Xk2S0srbLA
+         RvWXX1G93qhnZsrvY5We5mns4rplUbr0R0CNbpz4eUcC0RpAITAK385cUtog/fnClyNS
+         NzrF34zaDDeaXGwFT5qJUKaooaySLkW9tDR6vtwdDhVgJsi1s8GzDcha3+yg3JPSiCkU
+         jRZA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1722264112; x=1722868912;
+        h=in-reply-to:content-transfer-encoding:content-disposition
+         :mime-version:references:message-id:subject:cc:to:from:date
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=c3auTI3rvow29Pp1Jd327mEmLXjtywxBKuvkLGD2pj0=;
+        b=V81cQyE932Rn9dI8Tb+YTJ00Ei6p8jcCab4qE+GaY1twDbQ+pEFh0CnGHPm8BJSi+5
+         pE1WMA9L721MprFEcTVGH3axIMXd9Q9n5WabcT1O5I4MXSlGAEk2CzbHQ7hiadw9IOsY
+         uy+v6iwbgzM50N8cqMCiZnVYh2XAOdBQg2fkBvIdSFlCgcw9/E8ruEDh3WQFg+pTvfsm
+         a0T7L1Ov9dESsAQBHk3ODitLuOr698O7WgMcdBhZqVqQaLIBUVsHppPkEWLMBAdOuCyZ
+         VbX8MpXwiF5/sGTth5Epl5cKnEmT1VZW87t5qmgGfmRuYW+7Zf5ThkgeLmor4zkkcxLA
+         HjkA==
+X-Forwarded-Encrypted: i=1; AJvYcCV/iQs84BXXrHCrXxquG3aldwis9MdyBiT3tIs5bR2wpz2VLPWMmYJ3E1AZ29FdPpbHR7oDasA3CcjTlPUinCrlCwGZTQmRarNsaoY=
+X-Gm-Message-State: AOJu0YwQs1unRwUuljziAg7HpCYg9+ysIencxZr3O0kBc+dRWyxeBUJh
+	6Izc/p59pmXWbgZ1PGnwxam5PQkzyBmB6g5qcKfa18d3Dlm6WSKuzwLffGIEdtnC4ndshBb5oqo
+	/
+X-Google-Smtp-Source: AGHT+IEUKw/fe8aC8hdqbO6Q67jsMb8FgAO9CiEgYgU5OCi2hegQK1g0m3Kn4g2oMadPa3bkjOHG/Q==
+X-Received: by 2002:a0d:f746:0:b0:65f:80ed:683e with SMTP id 00721157ae682-67ac8d51744mr87661297b3.2.1722264111586;
+        Mon, 29 Jul 2024 07:41:51 -0700 (PDT)
+Received: from localhost (syn-076-182-020-124.res.spectrum.com. [76.182.20.124])
+        by smtp.gmail.com with ESMTPSA id 00721157ae682-67567a537f8sm20906107b3.56.2024.07.29.07.41.51
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 29 Jul 2024 07:41:51 -0700 (PDT)
+Date: Mon, 29 Jul 2024 10:41:50 -0400
+From: Josef Bacik <josef@toxicpanda.com>
+To: Filipe Manana <fdmanana@kernel.org>
+Cc: Naohiro Aota <naohiro.aota@wdc.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: zoned: properly take lock to read/update BG's
+ zoned variables
+Message-ID: <20240729144150.GA3589837@perftesting>
+References: <9eb249aedabfa6008cbf13706b7f3c03dc59855d.1722241885.git.naohiro.aota@wdc.com>
+ <CAL3q7H6AZOGvYbf=BmEVEE_qWZYk86Li1s=jrfyOoUKAHhtDdw@mail.gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20240720083538.2999155-1-yangerkun@huawei.com>
- <CAL3q7H5AivAMSWk3FmmsrSqbeLfqMw_hr05b_Rdzk7hnnrsWiA@mail.gmail.com>
- <4188b7b5-3576-9e5f-6297-794558d7a01e@huawei.com> <9514fd55-4f83-8e43-bdf7-925396ab5e48@huawei.com>
-In-Reply-To: <9514fd55-4f83-8e43-bdf7-925396ab5e48@huawei.com>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Mon, 29 Jul 2024 15:32:08 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H6bNpDnh=XYKgFOp4xTRHY2EDJ_MaSFx-nHfKnx8gQVkw@mail.gmail.com>
-Message-ID: <CAL3q7H6bNpDnh=XYKgFOp4xTRHY2EDJ_MaSFx-nHfKnx8gQVkw@mail.gmail.com>
-Subject: Re: [PATCH] generic/736: don't run it on tmpfs
-To: yangerkun <yangerkun@huawei.com>
-Cc: Christoph Hellwig <hch@infradead.org>, chuck.lever@oracle.com, zlang@kernel.org, 
-	fstests@vger.kernel.org, linux-mm@kvack.org, hughd@google.com, 
-	akpm@linux-foundation.org, linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <CAL3q7H6AZOGvYbf=BmEVEE_qWZYk86Li1s=jrfyOoUKAHhtDdw@mail.gmail.com>
 
-On Mon, Jul 29, 2024 at 2:54=E2=80=AFPM yangerkun <yangerkun@huawei.com> wr=
-ote:
->
-> Hi,
->
-> =E5=9C=A8 2024/7/24 21:30, yangerkun =E5=86=99=E9=81=93:
-> > Hi, All,
+On Mon, Jul 29, 2024 at 12:46:48PM +0100, Filipe Manana wrote:
+> On Mon, Jul 29, 2024 at 9:33 AM Naohiro Aota <naohiro.aota@wdc.com> wrote:
 > >
-> > Sorry for the delay relay(something happened, and cannot use pc
-> > before...).
+> > __btrfs_add_free_space_zoned() references and modifies BG's alloc_offset,
+> > ro, and zone_unusable, but without taking the lock. It is mostly safe
+> > because they monotonically increase (at least for now) and this function is
+> > mostly called by a transaction commit, which is serialized by itself.
 > >
-> > =E5=9C=A8 2024/7/21 1:26, Filipe Manana =E5=86=99=E9=81=93:
-> >> On Sat, Jul 20, 2024 at 9:38=E2=80=AFAM Yang Erkun <yangerkun@huawei.c=
-om> wrote:
-> >>>
-> >>> We use offset_readdir for tmpfs, and every we call rename, the offset
-> >>> for the parent dir will increase by 1. So for tmpfs we will always
-> >>> fail since the infinite readdir.
-> >>
-> >> Having an infinite readdir sounds like a bug, or at least an
-> >> inconvenience and surprising for users.
-> >> We had that problem in btrfs which affected users/applications, see:
-> >>
-> >> https://lore.kernel.org/linux-btrfs/2c8c55ec-04c6-e0dc-9c5c-8c7924778c=
-35@landley.net/
-> >>
-> >> which was surprising for them since every other filesystem they
-> >> used/tested didn't have that problem.
-> >> Why not fix tmpfs?
+> > Still, taking the lock is a safer and correct option and I'm going to add a
+> > change to reset zone_unusable while a block group is still alive. So, add
+> > locking around the operations.
 > >
-> > Thanks for all your advise, I will give a detail analysis first(maybe
-> > until last week I can do it), and after we give a conclusion about does
-> > this behavior a bug or something expected to occur, I will choose the
-> > next step!
->
-> The case generic/736 do something like below:
->
-> 1. create 5000 files(1 2 3 ...) under one dir(testdir)
-> 2. call readdir(man 3 readdir) once, and get entry
-> 3. rename(entry, "TEMPFILE"), then rename("TMPFILE", entry)
-> 4. loop 2~3, until readdir return nothing of we loop too many times(15000=
-)
->
-> For tmpfs before a2e459555c5f("shmem: stable directory offsets"), every
-> rename called, the new dentry will insert to d_subdirs *head* of parent
-> dentry, and dcache_readdir won't reenter this dentry if we have already
-> enter the dentry, so in step 4 we will break the test since readdir
-> return nothing  (I have try to change __d_move the insert to the "tail"
-> of d_sub_dirs, problem can still happend).
->
-> But after commit a2e459555c5f("shmem: stable directory offsets"),
-> simple_offset_rename will just add the new dentry to the maple tree of
-> &SHMEM_I(inode)->dir_offsets->mt with the key always inc by 1(since
-> simple_offset_add we will find free entry start with octx->newx_offset,
-> so the entry freed in simple_offset_remove won't be found). And the same
-> case upper will be break since we loop too many times(we can fall into
-> infinite readdir without this break).
->
-> I prefer this is really a bug, and for the way to fix it, I think we can
-> just use the same logic what 9b378f6ad48cf("btrfs: fix infinite
-> directory reads") has did, introduce a last_index when we open the dir,
-> and then readdir will not return the entry which index greater than the
-> last index.
-
-Don't forget to reset the index to whatever is the current last index
-when rewind() is called.
-We ended up with that bug in btrfs later, see:
-
-https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?=
-id=3De60aa5da14d01fed8411202dbe4adf6c44bd2a57
-
-Anyway, if the same mistake is made, it would be caught by a test case
-for fstests I submitted after:
-
-https://git.kernel.org/pub/scm/fs/xfs/xfstests-dev.git/commit/?id=3D68b958f=
-5dc4ab13cfd86f7fb82621f9f022b7626
-
-
-
->
-> Looking forward to your comments!
->
-> Thanks,
-> Erkun.
->
->
->
+> > Fixes: 169e0da91a21 ("btrfs: zoned: track unusable bytes for zones")
+> > CC: stable@vger.kernel.org # 5.15+
+> > Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+> > ---
+> >  fs/btrfs/free-space-cache.c | 15 ++++++++-------
+> >  1 file changed, 8 insertions(+), 7 deletions(-)
 > >
-> > Thanks again for all your advise!
+> > diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+> > index f5996a43db24..51263d6dac36 100644
+> > --- a/fs/btrfs/free-space-cache.c
+> > +++ b/fs/btrfs/free-space-cache.c
+> > @@ -2697,15 +2697,16 @@ static int __btrfs_add_free_space_zoned(struct btrfs_block_group *block_group,
+> >         u64 offset = bytenr - block_group->start;
+> >         u64 to_free, to_unusable;
+> >         int bg_reclaim_threshold = 0;
+> > -       bool initial = ((size == block_group->length) && (block_group->alloc_offset == 0));
+> > +       bool initial;
+> >         u64 reclaimable_unusable;
 > >
-> >
-> >>
-> >> Thanks.
-> >>
-> >>>
-> >>> Signed-off-by: Yang Erkun <yangerkun@huawei.com>
-> >>> ---
-> >>>   tests/generic/736 | 2 +-
-> >>>   1 file changed, 1 insertion(+), 1 deletion(-)
-> >>>
-> >>> diff --git a/tests/generic/736 b/tests/generic/736
-> >>> index d2432a82..9fafa8df 100755
-> >>> --- a/tests/generic/736
-> >>> +++ b/tests/generic/736
-> >>> @@ -18,7 +18,7 @@ _cleanup()
-> >>>          rm -fr $target_dir
-> >>>   }
-> >>>
-> >>> -_supported_fs generic
-> >>> +_supported_fs generic ^tmpfs
-> >>>   _require_test
-> >>>   _require_test_program readdir-while-renames
-> >>>
-> >>> --
-> >>> 2.39.2
-> >>>
-> >>>
+> > -       WARN_ON(!initial && offset + size > block_group->zone_capacity);
+> > +       guard(spinlock)(&block_group->lock);
+> 
+> What's this guard thing and why do we use it only here? We don't use
+> it anywhere else in btrfs' code base.
+> A quick search in the Documentation directory of the kernel and I
+> can't find anything there.
+> In the fs/ directory there's only two users of it.
+> 
+
+It's relatively new, it's like the C++ guards.  If you look in the VFS we've
+started using it pretty heavily there.
+
+But it does need to be documented, if you look at include/linux/cleanup.h it has
+documentation about it.
+
+> Why not the usual spin_lock(&block_group->lock) call?
+
+Because this is nice for error handling.  Here it doesn't look as helpful, but
+look at d842379313a2 ("fs: use guard for namespace_sem in statmount()") for an
+example of how much it cleans up the error paths.
+
+FWIW one of the tasks I have for one of our new people is to come through and
+utilize some of this new infrastructure to cleanup our error paths, so while it
+doesn't exist yet inside btrfs, I hope it gets used pretty liberally.  Thanks,
+
+Josef

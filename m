@@ -1,67 +1,60 @@
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 009F51798C
-	for <linux-btrfs@vger.kernel.org>; Tue, 20 Aug 2024 03:46:11 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9855913B592
+	for <linux-btrfs@vger.kernel.org>; Tue, 20 Aug 2024 03:48:18 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1724125574; cv=none; b=mbl99q860I9zXOmDT/0Xy1YNIBqtM6ftMvAy8FiGnGbdPuTKQ1LvnwZ/BrUpefEE2quADA1i6uZ1YZH/MTwmmNIHGBnXqGScjiCLYIhSUqRq9hwDkO8ARB4/+IK+vHarmANb2+mNzxhxreUgIUEJ/7ZBjmrjUuWOTf0UCNHSjGM=
+	t=1724125700; cv=none; b=ibJKARS7i4x3sR0lHUWxhYItsyVZPzjWo8hkEwTSuuKtobCVAiDhKi07AxHX+7vXro66Q04AA4DpEugABOXLUifUxa7jX4WDxR0BLZanx/adOTptWKAfsFzZfq6pn0BvhWR9D5fqcVXOlb7GBAYsiwjuvNfJEO8WoWmEoCLid10=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1724125574; c=relaxed/simple;
-	bh=IyvxPhr9qWBLtTjvuakemo8+TicElcT7vlA75lJfbxo=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=ocQxq65LR5rOO9j4Cu9l9c+8MuJLNjxnrlj9wWxSgSKz6+PEIgf+NJCKhadrt6xJSC3yT7cwHor+dWY0BMac0qhC5/fk4RUpWvNCvZeaPMQGsETEDFpAR6N+Q6WNROnY8HBfBeeGLCwtQTRJ4Mv8SFQCAtp4XNhSjDr6SknJNY4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=lek87GYQ; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=noC+CgoD; arc=none smtp.client-ip=195.135.223.130
+	s=arc-20240116; t=1724125700; c=relaxed/simple;
+	bh=5yn0YHe1rskgUsxo/GqHPYOvoI1kfCHtTR8hCBaj1wU=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=pI/eNeHPBHFDsSS6EuymHvYZUmRyoVxT9MHck0WiGMYshcu7009lbnKU4ppEcCjvJJlxDeIA7JVxBg3flPUoo1TBHXGgbwejPXYlpBxWRKPQgwsfeHe2CxE2wPnV9sJ4oLd7K++Pwqn6OyflgTkZdizeZNasaN4YdwrVD+E/7J4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Ou2lkVEw; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Ou2lkVEw; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="lek87GYQ";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="noC+CgoD"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Ou2lkVEw";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Ou2lkVEw"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 47C73226B6
-	for <linux-btrfs@vger.kernel.org>; Tue, 20 Aug 2024 03:46:03 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id B088E2261B;
+	Tue, 20 Aug 2024 03:48:16 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1724125564; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=0Gxc1wNZmcOYYnpAtmi9UkfQ6t4tbuOieuIYrhCLpaU=;
-	b=lek87GYQ8L5zlIRbEUwKbowKDcoC5g6e2968ZY5oL0uCoX5hgmuH2OzV3LBQX4mQQoLfEy
-	isrE4lfn2RXi9NCetAPSUVL6pGWyycYijp3MgJ+FyKBjjx/L0TI83a43wMBKiZMlWquKrD
-	vVHyhpz+tuVf3i7Xz1VVzDjBZ9VpwmM=
+	t=1724125696; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=Py56XNjToc3FTEy3pD7gp0y+FrylnXfkeyFd1TvFvpY=;
+	b=Ou2lkVEwfTRMczGrZlGVto9h/fbOT4W1Z+Too8IeWjj+Yz2HAbQcjLlszWH73Y++wEunj/
+	kaMbhDuqgjpFWJTcp9XETlGrADsxIM08xNgNkExj5nL1r2KgStprkJ4JnDuGWHDZ+0R7+4
+	C6XUsBeRhPZ/AMYb2dLChvGSIoZnJzY=
 Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=noC+CgoD
+	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1724125563; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=0Gxc1wNZmcOYYnpAtmi9UkfQ6t4tbuOieuIYrhCLpaU=;
-	b=noC+CgoD+3MpeKjHZt2ED9WRRorK2Mgp/ol20WTmpccEvZ0THUNiMw0I6PH0eQTrWHXi1u
-	H0/v557RcerKm95fiRgSrc77TpkqFepHO8+C6MfyrmC5ifwR+p603Z6s7gR26BeR2If+no
-	VkGQ/eSYBm5LBeWJrqJmPwDsijcLCKA=
+	t=1724125696; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=Py56XNjToc3FTEy3pD7gp0y+FrylnXfkeyFd1TvFvpY=;
+	b=Ou2lkVEwfTRMczGrZlGVto9h/fbOT4W1Z+Too8IeWjj+Yz2HAbQcjLlszWH73Y++wEunj/
+	kaMbhDuqgjpFWJTcp9XETlGrADsxIM08xNgNkExj5nL1r2KgStprkJ4JnDuGWHDZ+0R7+4
+	C6XUsBeRhPZ/AMYb2dLChvGSIoZnJzY=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 81FE913A3E
-	for <linux-btrfs@vger.kernel.org>; Tue, 20 Aug 2024 03:46:02 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id B6BDE13A17;
+	Tue, 20 Aug 2024 03:48:15 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id AJZ7EXoRxGYbYAAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Tue, 20 Aug 2024 03:46:02 +0000
+	id 5qdsHv8RxGaUYAAAD6G6ig
+	(envelope-from <wqu@suse.com>); Tue, 20 Aug 2024 03:48:15 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 1/2] btrfs-progs: mkfs/rootdir: add hard link support
-Date: Tue, 20 Aug 2024 13:15:42 +0930
-Message-ID: <6651b9d2f49f8a375121e4b4a5651b7f254c8b6b.1724125282.git.wqu@suse.com>
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH v3] btrfs: fix a use-after-free bug when hitting errors inside btrfs_submit_chunk()
+Date: Tue, 20 Aug 2024 13:17:58 +0930
+Message-ID: <67f96f575ca7a607787a6f5d13798dc192e55624.1724125626.git.wqu@suse.com>
 X-Mailer: git-send-email 2.46.0
-In-Reply-To: <cover.1724125282.git.wqu@suse.com>
-References: <cover.1724125282.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -69,394 +62,217 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Rspamd-Queue-Id: 47C73226B6
 X-Spam-Level: 
-X-Spamd-Result: default: False [-3.01 / 50.00];
+X-Spamd-Result: default: False [-2.80 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	FUZZY_BLOCKED(0.00)[rspamd.com];
+	RCPT_COUNT_TWO(0.00)[2];
+	ARC_NA(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
 	MIME_TRACE(0.00)[0:+];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RCPT_COUNT_ONE(0.00)[1];
-	ARC_NA(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_DN_NONE(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
+	FUZZY_BLOCKED(0.00)[rspamd.com];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	FROM_HAS_DN(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	DWL_DNSWL_BLOCKED(0.00)[suse.com:dkim];
 	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCVD_IN_DNSWL_FAIL(0.00)[2a07:de40:b281:106:10:150:64:167:server fail];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:dkim,suse.com:mid]
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Rspamd-Action: no action
-X-Spam-Score: -3.01
+	FROM_EQ_ENVFROM(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	TO_DN_SOME(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.cz:email,suse.com:email,suse.com:mid,opensuse.org:url,imap1.dmz-prg2.suse.org:helo]
+X-Spam-Score: -2.80
 X-Spam-Flag: NO
 
-The new hard link detection and creation support is done by maintaining
-an rb tree with the following members:
+[BUG]
+There is an internal report that KASAN is reporting use-after-free, with
+the following backtrace:
 
-- st_ino, st_dev
-  This is to record the stat() report from the host fs.
-  With this two, we can detect if it's really a hard link (st_dev
-  determines one filesystem/subvolume, and st_ino determines the inode
-  number inside the fs).
+ ==================================================================
+ BUG: KASAN: slab-use-after-free in btrfs_check_read_bio+0xa68/0xb70 [btrfs]
+ Read of size 4 at addr ffff8881117cec28 by task kworker/u16:2/45
+ CPU: 1 UID: 0 PID: 45 Comm: kworker/u16:2 Not tainted 6.11.0-rc2-next-20240805-default+ #76
+ Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.16.2-3-gd478f380-rebuilt.opensuse.org 04/01/2014
+ Workqueue: btrfs-endio btrfs_end_bio_work [btrfs]
+ Call Trace:
+  <TASK>
+  dump_stack_lvl+0x61/0x80
+  print_address_description.constprop.0+0x5e/0x2f0
+  print_report+0x118/0x216
+  kasan_report+0x11d/0x1f0
+  btrfs_check_read_bio+0xa68/0xb70 [btrfs]
+  process_one_work+0xce0/0x12a0
+  worker_thread+0x717/0x1250
+  kthread+0x2e3/0x3c0
+  ret_from_fork+0x2d/0x70
+  ret_from_fork_asm+0x11/0x20
+  </TASK>
 
-- root
-  This is btrfs root pointer. This a special requirement for the recent
-  introduced "--subvol" option.
+ Allocated by task 20917:
+  kasan_save_stack+0x37/0x60
+  kasan_save_track+0x10/0x30
+  __kasan_slab_alloc+0x7d/0x80
+  kmem_cache_alloc_noprof+0x16e/0x3e0
+  mempool_alloc_noprof+0x12e/0x310
+  bio_alloc_bioset+0x3f0/0x7a0
+  btrfs_bio_alloc+0x2e/0x50 [btrfs]
+  submit_extent_page+0x4d1/0xdb0 [btrfs]
+  btrfs_do_readpage+0x8b4/0x12a0 [btrfs]
+  btrfs_readahead+0x29a/0x430 [btrfs]
+  read_pages+0x1a7/0xc60
+  page_cache_ra_unbounded+0x2ad/0x560
+  filemap_get_pages+0x629/0xa20
+  filemap_read+0x335/0xbf0
+  vfs_read+0x790/0xcb0
+  ksys_read+0xfd/0x1d0
+  do_syscall_64+0x6d/0x140
+  entry_SYSCALL_64_after_hwframe+0x4b/0x53
 
-  As we can have the following corner case:
+ Freed by task 20917:
+  kasan_save_stack+0x37/0x60
+  kasan_save_track+0x10/0x30
+  kasan_save_free_info+0x37/0x50
+  __kasan_slab_free+0x4b/0x60
+  kmem_cache_free+0x214/0x5d0
+  bio_free+0xed/0x180
+  end_bbio_data_read+0x1cc/0x580 [btrfs]
+  btrfs_submit_chunk+0x98d/0x1880 [btrfs]
+  btrfs_submit_bio+0x33/0x70 [btrfs]
+  submit_one_bio+0xd4/0x130 [btrfs]
+  submit_extent_page+0x3ea/0xdb0 [btrfs]
+  btrfs_do_readpage+0x8b4/0x12a0 [btrfs]
+  btrfs_readahead+0x29a/0x430 [btrfs]
+  read_pages+0x1a7/0xc60
+  page_cache_ra_unbounded+0x2ad/0x560
+  filemap_get_pages+0x629/0xa20
+  filemap_read+0x335/0xbf0
+  vfs_read+0x790/0xcb0
+  ksys_read+0xfd/0x1d0
+  do_syscall_64+0x6d/0x140
+  entry_SYSCALL_64_after_hwframe+0x4b/0x53
 
-  rootdir/
-  |- foobar_hardlink1
-  |- foobar_hardlink2
-  |- subv/		<- To be a subvolume inside btrfs
-     |- foobar_hardlink3
+[CAUSE]
+Although I can not reproduce the error, the report itself is good enough
+to pin down the cause.
 
-  In above case, on the host fs, `subv/` directory is just a regular
-  directory, but in the new btrfs it will be a subvolume.
+The call trace is the regular endio workqueue context, but the
+free-by-task trace is showing that during btrfs_submit_chunk() we
+already hit a critical error, and is calling btrfs_bio_end_io() to error
+out.
+And the original endio function called bio_put() to free the whole bio.
 
-  In that case, `foobar_hardlink3` cannot be created as a hard link,
-  but a new inode.
+This means a double freeing thus causing use-after-free, e.g:
 
-- st_nlink and found_nlink
-  Records the original reported number of links, and the nlinks we
-  created inside btrfs.
-  This is recorded in case we created all hard links and can remove
-  the entry early.
+1. Enter btrfs_submit_bio() with a read bio
+   The read bio length is 128K, crossing two 64K stripes.
 
-- btrfs_ino
-  This is the inode number inside btrfs.
+2. The first run of btrfs_submit_chunk()
 
-And since we can handle hard links safely, remove all the related
-warnings, and add a new note for `--subvol` option, warning about the
-case where we need to split hard links due to subvolume boundary.
+2.1 Call btrfs_map_block(), which returns 64K
+2.2 Call btrfs_split_bio()
+    Now there are two bios, one referring to the first 64K, the other
+    referring to the second 64K.
+2.3 The first half is submitted.
 
+3. The second run of btrfs_submit_chunk()
+
+3.1 Call btrfs_map_block(), which by somehow failed
+    Now we call btrfs_bio_end_io() to handle the error
+
+3.2 btrfs_bio_end_io() calls the original endio function
+    Which is end_bbio_data_read(), and it calls bio_put() for the
+    original bio.
+
+    Now the original bio is freed.
+
+4. The submitted first 64K bio finished
+   Now we call into btrfs_check_read_bio() and tries to advance the bio
+   iter.
+   But since the original bio (thus its iter) is already freed, we
+   trigger the above use-after free.
+
+   And even if the memory is not poisoned/corrupted, we will later call
+   the original endio function, causing a double freeing.
+
+[FIX]
+Instead of calling btrfs_bio_end_io(), call btrfs_orig_bbio_end_io(),
+which has the extra check on split bios and do the proper refcounting
+for cloned bios.
+
+Furthermore there is already one extra btrfs_cleanup_bio() call, but
+that is duplicated to btrfs_orig_bbio_end_io() call, so remove that
+tag completely.
+
+Reported-by: David Sterba <dsterba@suse.cz>
+Fixes: 852eee62d31a ("btrfs: allow btrfs_submit_bio to split bios")
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- Documentation/mkfs.btrfs.rst |  13 +++
- mkfs/rootdir.c               | 203 +++++++++++++++++++++++++++++------
- 2 files changed, 185 insertions(+), 31 deletions(-)
+Changelog:
+v2:
+- Remove the unused variable  @orig_bbio
 
-diff --git a/Documentation/mkfs.btrfs.rst b/Documentation/mkfs.btrfs.rst
-index 0e9e84adffc8..18c491da4c94 100644
---- a/Documentation/mkfs.btrfs.rst
-+++ b/Documentation/mkfs.btrfs.rst
-@@ -160,6 +160,19 @@ OPTIONS
-         directory.  The option *--rootdir* must also be specified, and *subdir* must be an
-         existing subdirectory within it.  This option can be specified multiple times.
- 
-+	If there are hard links inside *rootdir* and *subdir* will split the
-+	subvolumes, like the following case::
-+
-+		rootdir/
-+		|- hardlink1
-+		|- hardlink2
-+		|- subdir/  <- will be a subvolume
-+		   |- hardlink3
-+
-+	In that case we cannot create `hardlink3` as hardlinks of
-+	`hardlink1` and `hardlink2` because hardlink3 will be inside a new
-+	subvolume.
-+
- --shrink
-         Shrink the filesystem to its minimal size, only works with *--rootdir* option.
- 
-diff --git a/mkfs/rootdir.c b/mkfs/rootdir.c
-index 3cc94316be4d..e1ca00f57e60 100644
---- a/mkfs/rootdir.c
-+++ b/mkfs/rootdir.c
-@@ -42,6 +42,7 @@
- #include "common/extent-tree-utils.h"
- #include "common/root-tree-utils.h"
- #include "common/path-utils.h"
-+#include "common/rbtree-utils.h"
- #include "mkfs/rootdir.h"
- 
- static u32 fs_block_size;
-@@ -74,6 +75,52 @@ struct inode_entry {
- 	struct list_head list;
- };
- 
-+/*
-+ * Record all the hard links we found for a specific file inside
-+ * rootdir.
-+ *
-+ * The search is based on (root, st_dev, st_ino).
-+ * The reason for @root as a search index is, for hard links separated by
-+ * subvolume boundaries:
-+ *
-+ * rootdir/
-+ * |- foobar_hardlink1
-+ * |- foobar_hardlink2
-+ * |- subv/	<- Will be created as a subvolume
-+ *    |- foobar_hardlink3.
-+ *
-+ * Since all the 3 hard links are inside the same rootdir and the same
-+ * filesystem, on the host fs they are all hard links to the same inode.
-+ *
-+ * But for the btrfs we are building, only hardlink1 and hardlink2 can be
-+ * created as hardlinks. Since we cannot create hardlink across subvolume.
-+ * So we need @root as a search index to handle such case.
-+ */
-+struct hardlink_entry {
-+	struct rb_node node;
-+	/*
-+	 * The following three members are reported from the stat() of the
-+	 * host filesystem.
-+	 *
-+	 * For st_nlink we cannot trust it unconditionally, as
-+	 * some hard links may be out of rootdir.
-+	 * If @found_nlink reached @st_nlink, we know we have created all
-+	 * the hard links and can remove the entry.
-+	 */
-+	dev_t st_dev;
-+	ino_t st_ino;
-+	nlink_t st_nlink;
-+
-+	/* The following two are inside the new btrfs. */
-+	struct btrfs_root *root;
-+	u64 btrfs_ino;
-+
-+	/* How many hard links we have created. */
-+	nlink_t found_nlink;
-+};
-+
-+static struct rb_root hardlink_root = RB_ROOT;
-+
- /*
-  * The path towards the rootdir.
-  *
-@@ -93,9 +140,6 @@ static struct rootdir_path current_path = {
- 	.level = 0,
- };
- 
--/* Track if a hardlink was found and a warning was printed. */
--static bool g_hardlink_warning;
--static u64 g_hardlink_count;
- static struct btrfs_trans_handle *g_trans = NULL;
- static struct list_head *g_subvols;
- static u64 next_subvol_id = BTRFS_FIRST_FREE_OBJECTID;
-@@ -133,6 +177,82 @@ static int rootdir_path_push(struct rootdir_path *path, struct btrfs_root *root,
- 	return 0;
- }
- 
-+static int hardlink_compare_nodes(const struct rb_node *node1,
-+				  const struct rb_node *node2)
-+{
-+	const struct hardlink_entry *entry1;
-+	const struct hardlink_entry *entry2;
-+
-+	entry1 = rb_entry(node1, struct hardlink_entry, node);
-+	entry2 = rb_entry(node2, struct hardlink_entry, node);
-+	UASSERT(entry1->root);
-+	UASSERT(entry2->root);
-+
-+	if (entry1->st_dev < entry2->st_dev)
-+		return -1;
-+	if (entry1->st_dev > entry2->st_dev)
-+		return 1;
-+	if (entry1->st_ino < entry2->st_ino)
-+		return -1;
-+	if (entry1->st_ino > entry2->st_ino)
-+		return 1;
-+	if (entry1->root < entry2->root)
-+		return -1;
-+	if (entry1->root > entry2->root)
-+		return 1;
-+	return 0;
-+}
-+
-+static struct hardlink_entry *find_hard_link(struct btrfs_root *root,
-+					     const struct stat *st)
-+{
-+	struct rb_node *node;
-+	const struct hardlink_entry tmp = {
-+		.st_dev = st->st_dev,
-+		.st_ino = st->st_ino,
-+		.root = root,
-+	};
-+
-+	node = rb_search(&hardlink_root, &tmp,
-+			(rb_compare_keys)hardlink_compare_nodes, NULL);
-+	if (node)
-+		return rb_entry(node, struct hardlink_entry, node);
-+	return NULL;
-+}
-+
-+static int add_hard_link(struct btrfs_root *root, u64 btrfs_ino,
-+			 const struct stat *st)
-+{
-+	struct hardlink_entry *new;
-+	int ret;
-+
-+	UASSERT(st->st_nlink > 1);
-+
-+	new = calloc(1, sizeof(*new));
-+	if (!new)
-+		return -ENOMEM;
-+
-+	new->root = root;
-+	new->btrfs_ino = btrfs_ino;
-+	new->found_nlink = 1;
-+	new->st_dev = st->st_dev;
-+	new->st_ino = st->st_ino;
-+	new->st_nlink = st->st_nlink;
-+	ret = rb_insert(&hardlink_root, &new->node, hardlink_compare_nodes);
-+	if (ret) {
-+		free(new);
-+		return -EEXIST;
-+	}
-+	return 0;
-+}
-+
-+static void free_one_hardlink(struct rb_node *node)
-+{
-+	struct hardlink_entry *entry = rb_entry(node, struct hardlink_entry, node);
-+
-+	free(entry);
-+}
-+
- static void stat_to_inode_item(struct btrfs_inode_item *dst, const struct stat *st)
+v3:
+- Fix a double free if we go into fail_put_bio() tag
+  By removing the tag and the btrfs_cleanup_bio() call completely.
+  As btrfs_orig_bbio_end_io() would do the cleanup already.
+---
+ fs/btrfs/bio.c | 13 +++++--------
+ 1 file changed, 5 insertions(+), 8 deletions(-)
+
+diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
+index 0ef70fce85ff..7d0247f3e12f 100644
+--- a/fs/btrfs/bio.c
++++ b/fs/btrfs/bio.c
+@@ -668,7 +668,6 @@ static bool btrfs_submit_chunk(struct btrfs_bio *bbio, int mirror_num)
  {
- 	/*
-@@ -498,29 +618,10 @@ static int ftw_add_inode(const char *full_path, const struct stat *st,
- 	struct btrfs_inode_item inode_item = { 0 };
- 	struct inode_entry *parent;
- 	struct rootdir_subvol *rds;
-+	const bool have_hard_links = (!S_ISDIR(st->st_mode) && st->st_nlink > 1);
- 	u64 ino;
- 	int ret;
- 
--	/*
--	 * Hard link needs extra detection code, not supported for now, but
--	 * it's not to break anything but splitting the hard links into new
--	 * inodes.  And we do not even know if the hard links are inside the
--	 * rootdir.
--	 *
--	 * So here we only need to do extra warning.
--	 *
--	 * On most filesystems st_nlink of a directory is the number of
--	 * subdirs, including "." and "..", so skip directory inodes.
--	 */
--	if (unlikely(!S_ISDIR(st->st_mode) && st->st_nlink > 1)) {
--		if (!g_hardlink_warning) {
--			warning("'%s' has extra hardlinks, they will be converted into new inodes",
--				full_path);
--			g_hardlink_warning = true;
--		}
--		g_hardlink_count++;
--	}
--
- 	/* The rootdir itself. */
- 	if (unlikely(ftwbuf->level == 0)) {
- 		u64 root_ino;
-@@ -620,6 +721,37 @@ static int ftw_add_inode(const char *full_path, const struct stat *st,
- 	parent = rootdir_path_last(&current_path);
- 	root = parent->root;
- 
-+	/* For non-directory inode, check if there is already any hard link. */
-+	if (have_hard_links) {
-+		struct hardlink_entry *found;
-+
-+		found = find_hard_link(root, st);
-+		/*
-+		 * Can only add the hard link if it doesn't cross subvolume
-+		 * boundary.
-+		 */
-+		if (found && found->root == root) {
-+			ret = btrfs_add_link(g_trans, root, found->btrfs_ino,
-+					     parent->ino, full_path + ftwbuf->base,
-+					     strlen(full_path) - ftwbuf->base,
-+					     ftype_to_btrfs_type(st->st_mode),
-+					     NULL, 1, 0);
-+			if (ret < 0) {
-+				errno = -ret;
-+				error(
-+			"failed to add link for hard link ('%s'): %m", full_path);
-+				return ret;
-+			}
-+			found->found_nlink++;
-+			/* We found all hard links for it. Can remove the entry. */
-+			if (found->found_nlink >= found->st_nlink) {
-+				rb_erase(&found->node, &hardlink_root);
-+				free(found);
-+			}
-+			return 0;
-+		}
-+	}
-+
- 	ret = btrfs_find_free_objectid(g_trans, root,
- 				       BTRFS_FIRST_FREE_OBJECTID, &ino);
- 	if (ret < 0) {
-@@ -635,7 +767,6 @@ static int ftw_add_inode(const char *full_path, const struct stat *st,
- 		error("failed to insert inode item %llu for '%s': %m", ino, full_path);
- 		return ret;
- 	}
--
- 	ret = btrfs_add_link(g_trans, root, ino, parent->ino,
- 			     full_path + ftwbuf->base,
- 			     strlen(full_path) - ftwbuf->base,
-@@ -646,6 +777,22 @@ static int ftw_add_inode(const char *full_path, const struct stat *st,
- 		error("failed to add link for inode %llu ('%s'): %m", ino, full_path);
- 		return ret;
- 	}
-+
-+	/*
-+	 * Found a possible hard link, add it into the hard link rb tree for
-+	 * future detection.
-+	 */
-+	if (have_hard_links) {
-+		ret = add_hard_link(root, ino, st);
-+		if (ret < 0) {
-+			errno = -ret;
-+			error("failed to add hard link record for '%s': %m",
-+			       full_path);
-+			return ret;
-+		}
-+		ret = 0;
-+	}
-+
- 	/*
- 	 * btrfs_add_link() has increased the nlink to 1 in the metadata.
- 	 * Also update the value in case we need to update the inode item
-@@ -714,8 +861,6 @@ int btrfs_mkfs_fill_dir(struct btrfs_trans_handle *trans, const char *source_dir
+ 	struct btrfs_inode *inode = bbio->inode;
+ 	struct btrfs_fs_info *fs_info = bbio->fs_info;
+-	struct btrfs_bio *orig_bbio = bbio;
+ 	struct bio *bio = &bbio->bio;
+ 	u64 logical = bio->bi_iter.bi_sector << SECTOR_SHIFT;
+ 	u64 length = bio->bi_iter.bi_size;
+@@ -709,7 +708,7 @@ static bool btrfs_submit_chunk(struct btrfs_bio *bbio, int mirror_num)
+ 		bbio->saved_iter = bio->bi_iter;
+ 		ret = btrfs_lookup_bio_sums(bbio);
+ 		if (ret)
+-			goto fail_put_bio;
++			goto fail;
  	}
  
- 	g_trans = trans;
--	g_hardlink_warning = false;
--	g_hardlink_count = 0;
- 	g_subvols = subvols;
- 	INIT_LIST_HEAD(&current_path.inode_list);
+ 	if (btrfs_op(bio) == BTRFS_MAP_WRITE) {
+@@ -743,13 +742,13 @@ static bool btrfs_submit_chunk(struct btrfs_bio *bbio, int mirror_num)
  
-@@ -725,13 +870,9 @@ int btrfs_mkfs_fill_dir(struct btrfs_trans_handle *trans, const char *source_dir
- 		return ret;
+ 			ret = btrfs_bio_csum(bbio);
+ 			if (ret)
+-				goto fail_put_bio;
++				goto fail;
+ 		} else if (use_append ||
+ 			   (btrfs_is_zoned(fs_info) && inode &&
+ 			    inode->flags & BTRFS_INODE_NODATASUM)) {
+ 			ret = btrfs_alloc_dummy_sum(bbio);
+ 			if (ret)
+-				goto fail_put_bio;
++				goto fail;
+ 		}
  	}
  
--	if (g_hardlink_warning)
--		warning("%llu hardlinks were detected in %s, all converted to new inodes",
--			g_hardlink_count, source_dir);
--
- 	while (current_path.level > 0)
- 		rootdir_path_pop(&current_path);
--
-+	rb_free_nodes(&hardlink_root, free_one_hardlink);
- 	return 0;
+@@ -757,12 +756,10 @@ static bool btrfs_submit_chunk(struct btrfs_bio *bbio, int mirror_num)
+ done:
+ 	return map_length == length;
+ 
+-fail_put_bio:
+-	if (map_length < length)
+-		btrfs_cleanup_bio(bbio);
+ fail:
+ 	btrfs_bio_counter_dec(fs_info);
+-	btrfs_bio_end_io(orig_bbio, ret);
++	bbio->bio.bi_status = ret;
++	btrfs_orig_bbio_end_io(bbio);
+ 	/* Do not submit another chunk */
+ 	return true;
  }
- 
 -- 
 2.46.0
 

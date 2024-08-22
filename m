@@ -1,37 +1,37 @@
-Received: from szxga02-in.huawei.com (szxga02-in.huawei.com [45.249.212.188])
+Received: from szxga07-in.huawei.com (szxga07-in.huawei.com [45.249.212.35])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E8BBF56766
-	for <linux-btrfs@vger.kernel.org>; Thu, 22 Aug 2024 01:29:46 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=45.249.212.188
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B730936B11
+	for <linux-btrfs@vger.kernel.org>; Thu, 22 Aug 2024 01:29:50 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=45.249.212.35
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1724290188; cv=none; b=Y5fkFaWHbGPhDGwdsxCcTknq0zhRB4buxULeFHeDXltRdJeoz9MulsLIKFMoBJBgtUyHrjKxX2vTCljJky0FHXSoptHyaM0cTq/GkbcHZ87RnJAiaLxgAI1QV3GfxPo/Eh79gJTog4XfLMHIsjMP4WeDVGWdMGOo6lDzAgT59G8=
+	t=1724290192; cv=none; b=mEOcVOAh/CuODK0Trxw3xtYp+PhZDfc+OT4MM96WW+YNpFPm4HfnK+/KMe2y3MZxj0FK74l9KH206veGwwFTfuB1K5Pf1wapa599RGcRWXEg3JHG5n6WOzO9OeI0HEvploo7hOjn7lcASor/stQUaRqfFo4A0bFCSYmuzll6gTk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1724290188; c=relaxed/simple;
-	bh=uDLeiFNv8iQbAb0vm7pscTF80mc3TKjg1EkRm1JDnU4=;
+	s=arc-20240116; t=1724290192; c=relaxed/simple;
+	bh=dcfR+lly5hchEpn5kkI0pOloCg+4qe046RLJ/5zfvE0=;
 	h=From:To:CC:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=GPVsSlcXkK+pD+w3CCYuXwDxgDo7fZNSDnm/QkOK/A6kEqEgcMxqaRlDZ+9fw0GSikgqY5luM6OEMkfkLTBm9uUsQeR9aFSMd6i7y+2V9dGTvNgrsCC/ZKT1Zpf59ISJJLbVA9UzcTNki0tEzdt7876d/kw56/sEoDJpgtS7oC4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=huawei.com; spf=pass smtp.mailfrom=huawei.com; arc=none smtp.client-ip=45.249.212.188
+	 MIME-Version:Content-Type; b=NRrp4dtesu8LDW2q85ceK5uBvnwXeR8EpjZBK8PORsuBTNhCpgI/lkjed3KqzWVSsIXL2jE2Jp//DW484+cNAS8pnzdi5RMRanIR+/ijjNBLQMTIih0RZcqmo/trCahvvwcTEQBB9MTSAq0uxBDFfrrg+pNTv3HgUPVGWENHBAw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=huawei.com; spf=pass smtp.mailfrom=huawei.com; arc=none smtp.client-ip=45.249.212.35
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=huawei.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=huawei.com
-Received: from mail.maildlp.com (unknown [172.19.163.252])
-	by szxga02-in.huawei.com (SkyGuard) with ESMTP id 4Wq5DH5KK5zhY5Y;
-	Thu, 22 Aug 2024 09:27:43 +0800 (CST)
+Received: from mail.maildlp.com (unknown [172.19.163.44])
+	by szxga07-in.huawei.com (SkyGuard) with ESMTP id 4Wq5GV6PHbz1S8V0;
+	Thu, 22 Aug 2024 09:29:38 +0800 (CST)
 Received: from kwepemd500012.china.huawei.com (unknown [7.221.188.25])
-	by mail.maildlp.com (Postfix) with ESMTPS id 942941800D3;
-	Thu, 22 Aug 2024 09:29:44 +0800 (CST)
+	by mail.maildlp.com (Postfix) with ESMTPS id 8DFC11400FD;
+	Thu, 22 Aug 2024 09:29:42 +0800 (CST)
 Received: from huawei.com (10.90.53.73) by kwepemd500012.china.huawei.com
  (7.221.188.25) with Microsoft SMTP Server (version=TLS1_2,
  cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.2.1258.34; Thu, 22 Aug
- 2024 09:29:44 +0800
+ 2024 09:29:42 +0800
 From: Li Zetao <lizetao1@huawei.com>
 To: <clm@fb.com>, <josef@toxicpanda.com>, <dsterba@suse.com>,
 	<terrelln@fb.com>
 CC: <willy@infradead.org>, <lizetao1@huawei.com>,
 	<linux-btrfs@vger.kernel.org>, <linux-f2fs-devel@lists.sourceforge.net>
-Subject: [PATCH 14/14] btrfs: convert copy_inline_to_page() to use folio
-Date: Thu, 22 Aug 2024 09:37:14 +0800
-Message-ID: <20240822013714.3278193-15-lizetao1@huawei.com>
+Subject: [PATCH 09/14] btrfs: convert try_release_extent_mapping() to take a folio
+Date: Thu, 22 Aug 2024 09:37:09 +0800
+Message-ID: <20240822013714.3278193-10-lizetao1@huawei.com>
 X-Mailer: git-send-email 2.34.1
 In-Reply-To: <20240822013714.3278193-1-lizetao1@huawei.com>
 References: <20240822013714.3278193-1-lizetao1@huawei.com>
@@ -48,93 +48,60 @@ X-ClientProxiedBy: dggems705-chm.china.huawei.com (10.3.19.182) To
 
 The old page API is being gradually replaced and converted to use folio
 to improve code readability and avoid repeated conversion between page
-and folio. Moreover find_or_create_page() is compatible API, and it can
-replaced with __filemap_get_folio(). Some interfaces have been converted
-to use folio before, so the conversion operation from page can be
-eliminated here.
+and folio. And page_to_inode() can be replaced with folio_to_inode() now.
 
 Signed-off-by: Li Zetao <lizetao1@huawei.com>
 ---
- fs/btrfs/reflink.c | 35 ++++++++++++++++++-----------------
- 1 file changed, 18 insertions(+), 17 deletions(-)
+ fs/btrfs/extent_io.c | 6 +++---
+ fs/btrfs/extent_io.h | 2 +-
+ fs/btrfs/inode.c     | 2 +-
+ 3 files changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/reflink.c b/fs/btrfs/reflink.c
-index b768e590a44c..1681d63f03dd 100644
---- a/fs/btrfs/reflink.c
-+++ b/fs/btrfs/reflink.c
-@@ -66,7 +66,7 @@ static int copy_inline_to_page(struct btrfs_inode *inode,
- 	const size_t inline_size = size - btrfs_file_extent_calc_inline_size(0);
- 	char *data_start = inline_data + btrfs_file_extent_calc_inline_size(0);
- 	struct extent_changeset *data_reserved = NULL;
--	struct page *page = NULL;
-+	struct folio *folio = NULL;
- 	struct address_space *mapping = inode->vfs_inode.i_mapping;
- 	int ret;
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 27ca7a56d8f5..cfd523b523b3 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2435,11 +2435,11 @@ static bool try_release_extent_state(struct extent_io_tree *tree,
+  * in the range corresponding to the page, both state records and extent
+  * map records are removed
+  */
+-bool try_release_extent_mapping(struct page *page, gfp_t mask)
++bool try_release_extent_mapping(struct folio *folio, gfp_t mask)
+ {
+-	u64 start = page_offset(page);
++	u64 start = folio_pos(folio);
+ 	u64 end = start + PAGE_SIZE - 1;
+-	struct btrfs_inode *inode = page_to_inode(page);
++	struct btrfs_inode *inode = folio_to_inode(folio);
+ 	struct extent_io_tree *io_tree = &inode->io_tree;
  
-@@ -83,14 +83,15 @@ static int copy_inline_to_page(struct btrfs_inode *inode,
- 	if (ret)
- 		goto out;
+ 	while (start <= end) {
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index f4c93ca46bdd..d1c54788d444 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -236,7 +236,7 @@ static inline void extent_changeset_free(struct extent_changeset *changeset)
+ 	kfree(changeset);
+ }
  
--	page = find_or_create_page(mapping, file_offset >> PAGE_SHIFT,
--				   btrfs_alloc_write_mask(mapping));
--	if (!page) {
-+	folio = __filemap_get_folio(mapping, file_offset >> PAGE_SHIFT,
-+					FGP_LOCK | FGP_ACCESSED | FGP_CREAT,
-+					btrfs_alloc_write_mask(mapping));
-+	if (IS_ERR(folio)) {
- 		ret = -ENOMEM;
- 		goto out_unlock;
- 	}
+-bool try_release_extent_mapping(struct page *page, gfp_t mask);
++bool try_release_extent_mapping(struct folio *folio, gfp_t mask);
+ int try_release_extent_buffer(struct folio *folio);
  
--	ret = set_page_extent_mapped(page);
-+	ret = set_folio_extent_mapped(folio);
- 	if (ret < 0)
- 		goto out_unlock;
+ int btrfs_read_folio(struct file *file, struct folio *folio);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 5e3b834cc72b..e844c409c12a 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -7238,7 +7238,7 @@ static int btrfs_launder_folio(struct folio *folio)
  
-@@ -115,15 +116,15 @@ static int copy_inline_to_page(struct btrfs_inode *inode,
- 	set_bit(BTRFS_INODE_NO_DELALLOC_FLUSH, &inode->runtime_flags);
- 
- 	if (comp_type == BTRFS_COMPRESS_NONE) {
--		memcpy_to_page(page, offset_in_page(file_offset), data_start,
--			       datal);
-+		memcpy_to_folio(folio, offset_in_folio(folio, file_offset), data_start,
-+					datal);
- 	} else {
--		ret = btrfs_decompress(comp_type, data_start, page_folio(page),
--				       offset_in_page(file_offset),
-+		ret = btrfs_decompress(comp_type, data_start, folio,
-+				       offset_in_folio(folio, file_offset),
- 				       inline_size, datal);
- 		if (ret)
- 			goto out_unlock;
--		flush_dcache_page(page);
-+		flush_dcache_folio(folio);
- 	}
- 
- 	/*
-@@ -139,15 +140,15 @@ static int copy_inline_to_page(struct btrfs_inode *inode,
- 	 * So what's in the range [500, 4095] corresponds to zeroes.
- 	 */
- 	if (datal < block_size)
--		memzero_page(page, datal, block_size - datal);
-+		folio_zero_range(folio, datal, block_size - datal);
- 
--	btrfs_folio_set_uptodate(fs_info, page_folio(page), file_offset, block_size);
--	btrfs_folio_clear_checked(fs_info, page_folio(page), file_offset, block_size);
--	btrfs_folio_set_dirty(fs_info, page_folio(page), file_offset, block_size);
-+	btrfs_folio_set_uptodate(fs_info, folio, file_offset, block_size);
-+	btrfs_folio_clear_checked(fs_info, folio, file_offset, block_size);
-+	btrfs_folio_set_dirty(fs_info, folio, file_offset, block_size);
- out_unlock:
--	if (page) {
--		unlock_page(page);
--		put_page(page);
-+	if (IS_ERR(folio)) {
-+		folio_unlock(folio);
-+		folio_put(folio);
- 	}
- 	if (ret)
- 		btrfs_delalloc_release_space(inode, data_reserved, file_offset,
+ static bool __btrfs_release_folio(struct folio *folio, gfp_t gfp_flags)
+ {
+-	if (try_release_extent_mapping(&folio->page, gfp_flags)) {
++	if (try_release_extent_mapping(folio, gfp_flags)) {
+ 		wait_subpage_spinlock(folio);
+ 		clear_page_extent_mapped(folio);
+ 		return true;
 -- 
 2.34.1
 

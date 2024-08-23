@@ -1,47 +1,47 @@
-Received: from mx0a-00082601.pphosted.com (mx0b-00082601.pphosted.com [67.231.153.30])
+Received: from mx0a-00082601.pphosted.com (mx0a-00082601.pphosted.com [67.231.145.42])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D1BBC18BC0A
-	for <linux-btrfs@vger.kernel.org>; Fri, 23 Aug 2024 16:28:34 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=67.231.153.30
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A671118E052
+	for <linux-btrfs@vger.kernel.org>; Fri, 23 Aug 2024 16:28:35 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=67.231.145.42
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1724430516; cv=none; b=MZH9efn2EmzMZ4D7PVrcgVBEYBWUIyWgbe3fdeB0RbIibnqu8f4R+aVZyc96eeAD1f9H/yTc3sSiLJIfZo5zs//GDPg4r+BCifHvDCIg9h3lU5K5Df1UsMAmRzOX5pcz+qqcl0OcoC0Yuc0QyBTqAmm1jEjVE4qoAiNngH8CqAk=
+	t=1724430517; cv=none; b=t+mHxnZmOrCkVX/HeL260eYH1fSPF+uStbdUDmcAH6SCsKOJmH9ENXQ9ZoRWwvQSz5uoMoLFmUXg9YkclpQVUa7gCD6H2HNc8v3UcQF61D4pCS5+WYuwILnEj0OH/MtDzcY1+4vR+AxYc77IysPO1bDEbIv+F26hTJZcaxilYCU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1724430516; c=relaxed/simple;
-	bh=Lyc+RLgPEKaV+NIXlSBDwzjphWjNBlW7CTjNDOKuB8c=;
+	s=arc-20240116; t=1724430517; c=relaxed/simple;
+	bh=i58b04qaxPVST6vUqbZGlxk/Pj6JQzbPpV+FhClYSkM=;
 	h=From:To:CC:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=QmQqs79r723luCP9rO2HFawswUA82OO219xLsfcLXHAzKcofEmhCycuVM3UZeCZ8EJE5zS/5mkQwH/xL9KKreZ3RmL0juz/0nd4kEdCibn0Sss46fngAH26k5vpC9q2ie8ixdlqyXtH2U9boDN1O0KBUIBkBjJ0troHkflKUJoc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=fb.com; spf=pass smtp.mailfrom=meta.com; dkim=pass (1024-bit key) header.d=fb.com header.i=@fb.com header.b=JU2JkcdV; arc=none smtp.client-ip=67.231.153.30
+	 MIME-Version:Content-Type; b=aEjeQxG34syk+Y6Q8zUzzigenb/bjN6Fhl+j5V2rmUw2zjYPwCsVS5RPScsUge1FgyoxxqkpU/iv8GgD164jq1rGkucynFJGITGIP1GuWqcVdyFm/dFa8BPCw0/1EN74p/Pu8N+uDYDLEOkjmsvTHCC04hxa/4ADU9QiliLdAWw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=fb.com; spf=pass smtp.mailfrom=meta.com; dkim=pass (1024-bit key) header.d=fb.com header.i=@fb.com header.b=fRoDFgyV; arc=none smtp.client-ip=67.231.145.42
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=fb.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=meta.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=fb.com header.i=@fb.com header.b="JU2JkcdV"
-Received: from pps.filterd (m0001303.ppops.net [127.0.0.1])
-	by m0001303.ppops.net (8.18.1.2/8.18.1.2) with ESMTP id 47NB7bn5019959
-	for <linux-btrfs@vger.kernel.org>; Fri, 23 Aug 2024 09:28:33 -0700
+	dkim=pass (1024-bit key) header.d=fb.com header.i=@fb.com header.b="fRoDFgyV"
+Received: from pps.filterd (m0044010.ppops.net [127.0.0.1])
+	by mx0a-00082601.pphosted.com (8.18.1.2/8.18.1.2) with ESMTP id 47NETb5S003019
+	for <linux-btrfs@vger.kernel.org>; Fri, 23 Aug 2024 09:28:35 -0700
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.com; h=from
 	:to:cc:subject:date:message-id:in-reply-to:references
 	:mime-version:content-transfer-encoding:content-type; s=
-	facebook; bh=fOUw6CdGX1PPumGSGOMj1IYOV4pSLC2cZMw0P2VH6d0=; b=JU2
-	JkcdVFbQ8CJ0J+PthPae3VE+WVz7jaS0/r5eGHoBN1lpNwqvv8NlHdloqWox1Q2o
-	macPcAvdaPTmVu2C/DXxXJHfMvd4b2w83qXnVNFnHi/AVH14tzHUXG59ROtp67e7
-	uCqmDBY7aHM47UQOVemu6M20p6L/V+FudbA0TKUY=
-Received: from mail.thefacebook.com ([163.114.134.16])
-	by m0001303.ppops.net (PPS) with ESMTPS id 416c985qyf-9
+	facebook; bh=56tSw8LAbfe/7f+rOT6P2Pmfo9Da5NoPKXydiAMzV08=; b=fRo
+	DFgyVhfnjSQvHiHS+VsGfkVc+MlNmzFGR7suUeGCDWUAdlcKZ/8/i8FLYkkGLaFY
+	mhcdEhnCBkMFiPBH/bbYzaPxe9zmYwCwShV3hfxqSG5L15wzXmuTxYJ9fKMas4hL
+	HhkixNs80JunvJapIzE0nirkR68Mv9/Q+9OBoi74=
+Received: from maileast.thefacebook.com ([163.114.130.16])
+	by mx0a-00082601.pphosted.com (PPS) with ESMTPS id 416v82gt3g-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Fri, 23 Aug 2024 09:28:33 -0700 (PDT)
-Received: from twshared0326.08.ash9.facebook.com (2620:10d:c085:208::7cb7) by
- mail.thefacebook.com (2620:10d:c08b:78::2ac9) with Microsoft SMTP Server
+	for <linux-btrfs@vger.kernel.org>; Fri, 23 Aug 2024 09:28:34 -0700 (PDT)
+Received: from twshared4354.35.frc1.facebook.com (2620:10d:c0a8:1c::1b) by
+ mail.thefacebook.com (2620:10d:c0a9:6f::8fd4) with Microsoft SMTP Server
  (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
- 15.2.1544.11; Fri, 23 Aug 2024 16:28:25 +0000
+ 15.2.1544.11; Fri, 23 Aug 2024 16:28:19 +0000
 Received: by devbig276.nha1.facebook.com (Postfix, from userid 660015)
-	id 584115CB7F81; Fri, 23 Aug 2024 17:28:13 +0100 (BST)
+	id 385C65CB7F77; Fri, 23 Aug 2024 17:28:13 +0100 (BST)
 From: Mark Harmstone <maharmstone@fb.com>
 To: <io-uring@vger.kernel.org>, <linux-btrfs@vger.kernel.org>
 CC: Mark Harmstone <maharmstone@fb.com>
-Subject: [PATCH 6/6] btrfs: add io_uring interface for encoded reads
-Date: Fri, 23 Aug 2024 17:27:48 +0100
-Message-ID: <20240823162810.1668399-7-maharmstone@fb.com>
+Subject: [PATCH 1/6] btrfs: remove iocb from btrfs_encoded_read
+Date: Fri, 23 Aug 2024 17:27:43 +0100
+Message-ID: <20240823162810.1668399-2-maharmstone@fb.com>
 X-Mailer: git-send-email 2.43.5
 In-Reply-To: <20240823162810.1668399-1-maharmstone@fb.com>
 References: <20240823162810.1668399-1-maharmstone@fb.com>
@@ -54,261 +54,252 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: quoted-printable
 X-FB-Internal: Safe
 Content-Type: text/plain
-X-Proofpoint-ORIG-GUID: lgKic6ne1iNNA1Ip5S5Sx-nd3hkS3qux
-X-Proofpoint-GUID: lgKic6ne1iNNA1Ip5S5Sx-nd3hkS3qux
+X-Proofpoint-GUID: JQeWWJU3s1mGri_hR6jnSQ-cb2hzi3DQ
+X-Proofpoint-ORIG-GUID: JQeWWJU3s1mGri_hR6jnSQ-cb2hzi3DQ
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.293,Aquarius:18.0.1039,Hydra:6.0.680,FMLib:17.12.28.16
  definitions=2024-08-23_13,2024-08-22_01,2024-05-17_01
 
-Adds an io_uring interface for asynchronous encoded reads, using the
-same interface as for the ioctl. To use this you would use an SQE opcode
-of IORING_OP_URING_CMD, the cmd_op would be BTRFS_IOC_ENCODED_READ, and
-addr would point to the userspace address of the
-btrfs_ioctl_encoded_io_args struct. As with the ioctl, you need to have
-CAP_SYS_ADMIN for this to work.
+We initialize a struct kiocb for encoded reads, but this never gets
+passed outside the driver. Simplify things by replacing it with a file,
+offset pair.
 
 Signed-off-by: Mark Harmstone <maharmstone@fb.com>
 ---
- fs/btrfs/btrfs_inode.h |  2 ++
- fs/btrfs/file.c        |  1 +
- fs/btrfs/inode.c       | 57 ++++++++++++++++++++++++++++++++++++----
- fs/btrfs/ioctl.c       | 59 ++++++++++++++++++++++++++++++++++++++++--
- fs/btrfs/ioctl.h       |  3 +++
- 5 files changed, 115 insertions(+), 7 deletions(-)
+ fs/btrfs/btrfs_inode.h |  3 ++-
+ fs/btrfs/inode.c       | 59 ++++++++++++++++++++----------------------
+ fs/btrfs/ioctl.c       |  6 +----
+ 3 files changed, 31 insertions(+), 37 deletions(-)
 
 diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index a5d786c6d7d4..62e5757d3ba2 100644
+index 3056c8aed8ef..affe70929234 100644
 --- a/fs/btrfs/btrfs_inode.h
 +++ b/fs/btrfs/btrfs_inode.h
-@@ -620,6 +620,8 @@ struct btrfs_encoded_read_private {
- 	struct btrfs_ioctl_encoded_io_args args;
- 	struct file *file;
- 	void __user *copy_out;
-+	struct io_uring_cmd *cmd;
-+	unsigned int issue_flags;
- };
-=20
- ssize_t btrfs_encoded_read(struct btrfs_encoded_read_private *priv);
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 9914419f3b7d..2db76422d126 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -3769,6 +3769,7 @@ const struct file_operations btrfs_file_operations =
-=3D {
- 	.compat_ioctl	=3D btrfs_compat_ioctl,
- #endif
- 	.remap_file_range =3D btrfs_remap_file_range,
-+	.uring_cmd	=3D btrfs_uring_cmd,
- 	.fop_flags	=3D FOP_BUFFER_RASYNC | FOP_BUFFER_WASYNC,
- };
-=20
+@@ -605,7 +605,8 @@ int btrfs_encoded_read_regular_fill_pages(struct btrf=
+s_inode *inode,
+ 					  u64 file_offset, u64 disk_bytenr,
+ 					  u64 disk_io_size,
+ 					  struct page **pages);
+-ssize_t btrfs_encoded_read(struct kiocb *iocb, struct iov_iter *iter,
++ssize_t btrfs_encoded_read(struct file *file, loff_t offset,
++			   struct iov_iter *iter,
+ 			   struct btrfs_ioctl_encoded_io_args *encoded);
+ ssize_t btrfs_do_encoded_write(struct kiocb *iocb, struct iov_iter *from=
+,
+ 			       const struct btrfs_ioctl_encoded_io_args *encoded);
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 1bd4c74e8c51..e4458168c340 100644
+index b1b6564ab68f..a0cc029d95ed 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -34,6 +34,7 @@
- #include <linux/iomap.h>
- #include <asm/unaligned.h>
- #include <linux/fsverity.h>
-+#include <linux/io_uring/cmd.h>
- #include "misc.h"
- #include "ctree.h"
- #include "disk-io.h"
-@@ -9078,7 +9079,7 @@ static ssize_t btrfs_encoded_read_inline(
+@@ -8993,7 +8993,7 @@ int btrfs_encoded_io_compression_from_extent(struct=
+ btrfs_fs_info *fs_info,
+ }
+=20
+ static ssize_t btrfs_encoded_read_inline(
+-				struct kiocb *iocb,
++				struct btrfs_inode *inode, loff_t pos,
+ 				struct iov_iter *iter, u64 start,
+ 				u64 lockend,
+ 				struct extent_state **cached_state,
+@@ -9001,7 +9001,6 @@ static ssize_t btrfs_encoded_read_inline(
+ 				struct btrfs_ioctl_encoded_io_args *encoded,
+ 				bool *unlocked)
+ {
+-	struct btrfs_inode *inode =3D BTRFS_I(file_inode(iocb->ki_filp));
+ 	struct btrfs_root *root =3D inode->root;
+ 	struct btrfs_fs_info *fs_info =3D root->fs_info;
+ 	struct extent_io_tree *io_tree =3D &inode->io_tree;
+@@ -9034,7 +9033,7 @@ static ssize_t btrfs_encoded_read_inline(
+ 	ptr =3D btrfs_file_extent_inline_start(item);
+=20
+ 	encoded->len =3D min_t(u64, extent_start + ram_bytes,
+-			     inode->vfs_inode.i_size) - iocb->ki_pos;
++			     inode->vfs_inode.i_size) - pos;
+ 	ret =3D btrfs_encoded_io_compression_from_extent(fs_info,
+ 				 btrfs_file_extent_compression(leaf, item));
+ 	if (ret < 0)
+@@ -9051,12 +9050,12 @@ static ssize_t btrfs_encoded_read_inline(
+ 		}
+ 		count =3D inline_size;
+ 		encoded->unencoded_len =3D ram_bytes;
+-		encoded->unencoded_offset =3D iocb->ki_pos - extent_start;
++		encoded->unencoded_offset =3D pos - extent_start;
+ 	} else {
+ 		count =3D min_t(u64, count, encoded->len);
+ 		encoded->len =3D count;
+ 		encoded->unencoded_len =3D count;
+-		ptr +=3D iocb->ki_pos - extent_start;
++		ptr +=3D pos - extent_start;
+ 	}
+=20
+ 	tmp =3D kmalloc(count, GFP_NOFS);
+@@ -9151,15 +9150,14 @@ int btrfs_encoded_read_regular_fill_pages(struct =
+btrfs_inode *inode,
+ 	return blk_status_to_errno(READ_ONCE(priv.status));
+ }
+=20
+-static ssize_t btrfs_encoded_read_regular(struct kiocb *iocb,
+-					  struct iov_iter *iter,
++static ssize_t btrfs_encoded_read_regular(struct btrfs_inode *inode,
++					  loff_t offset, struct iov_iter *iter,
+ 					  u64 start, u64 lockend,
+ 					  struct extent_state **cached_state,
+ 					  u64 disk_bytenr, u64 disk_io_size,
+ 					  size_t count, bool compressed,
+ 					  bool *unlocked)
+ {
+-	struct btrfs_inode *inode =3D BTRFS_I(file_inode(iocb->ki_filp));
+ 	struct extent_io_tree *io_tree =3D &inode->io_tree;
+ 	struct page **pages;
+ 	unsigned long nr_pages, i;
+@@ -9190,8 +9188,8 @@ static ssize_t btrfs_encoded_read_regular(struct ki=
+ocb *iocb,
+ 		i =3D 0;
+ 		page_offset =3D 0;
+ 	} else {
+-		i =3D (iocb->ki_pos - start) >> PAGE_SHIFT;
+-		page_offset =3D (iocb->ki_pos - start) & (PAGE_SIZE - 1);
++		i =3D (offset - start) >> PAGE_SHIFT;
++		page_offset =3D (offset - start) & (PAGE_SIZE - 1);
+ 	}
+ 	cur =3D 0;
+ 	while (cur < count) {
+@@ -9217,10 +9215,11 @@ static ssize_t btrfs_encoded_read_regular(struct =
+kiocb *iocb,
  	return ret;
  }
 =20
--static void btrfs_encoded_read_endio(struct btrfs_bio *bbio)
-+static void btrfs_encoded_read_ioctl_endio(struct btrfs_bio *bbio)
+-ssize_t btrfs_encoded_read(struct kiocb *iocb, struct iov_iter *iter,
++ssize_t btrfs_encoded_read(struct file *file, loff_t offset,
++			   struct iov_iter *iter,
+ 			   struct btrfs_ioctl_encoded_io_args *encoded)
  {
- 	struct btrfs_encoded_read_private *priv =3D bbio->private;
-=20
-@@ -9098,6 +9099,47 @@ static void btrfs_encoded_read_endio(struct btrfs_=
-bio *bbio)
- 	bio_put(&bbio->bio);
- }
-=20
-+static inline struct btrfs_encoded_read_private *btrfs_uring_encoded_rea=
-d_pdu(
-+		struct io_uring_cmd *cmd)
-+{
-+	return *(struct btrfs_encoded_read_private **)cmd->pdu;
-+}
-+static void btrfs_finish_uring_encoded_read(struct io_uring_cmd *cmd,
-+					    unsigned int issue_flags)
-+{
-+	struct btrfs_encoded_read_private *priv;
-+	ssize_t ret;
-+
-+	priv =3D btrfs_uring_encoded_read_pdu(cmd);
-+	ret =3D btrfs_encoded_read_finish(priv, -EIOCBQUEUED);
-+
-+	io_uring_cmd_done(priv->cmd, ret, 0, priv->issue_flags);
-+
-+	kfree(priv);
-+}
-+
-+static void btrfs_encoded_read_uring_endio(struct btrfs_bio *bbio)
-+{
-+	struct btrfs_encoded_read_private *priv =3D bbio->private;
-+
-+	if (bbio->bio.bi_status) {
-+		/*
-+		 * The memory barrier implied by the atomic_dec_return() here
-+		 * pairs with the memory barrier implied by the
-+		 * atomic_dec_return() or io_wait_event() in
-+		 * btrfs_encoded_read_regular_fill_pages() to ensure that this
-+		 * write is observed before the load of status in
-+		 * btrfs_encoded_read_regular_fill_pages().
-+		 */
-+		WRITE_ONCE(priv->status, bbio->bio.bi_status);
-+	}
-+	if (!atomic_dec_return(&priv->pending)) {
-+		io_uring_cmd_complete_in_task(priv->cmd,
-+					      btrfs_finish_uring_encoded_read);
-+	}
-+	bio_put(&bbio->bio);
-+}
-+
- static void _btrfs_encoded_read_regular_fill_pages(struct btrfs_inode *i=
-node,
- 					u64 file_offset, u64 disk_bytenr,
- 					u64 disk_io_size,
-@@ -9106,11 +9148,16 @@ static void _btrfs_encoded_read_regular_fill_page=
-s(struct btrfs_inode *inode,
+-	struct btrfs_inode *inode =3D BTRFS_I(file_inode(iocb->ki_filp));
++	struct btrfs_inode *inode =3D BTRFS_I(file_inode(file));
  	struct btrfs_fs_info *fs_info =3D inode->root->fs_info;
- 	unsigned long i =3D 0;
- 	struct btrfs_bio *bbio;
-+	btrfs_bio_end_io_t cb;
+ 	struct extent_io_tree *io_tree =3D &inode->io_tree;
+ 	ssize_t ret;
+@@ -9230,17 +9229,17 @@ ssize_t btrfs_encoded_read(struct kiocb *iocb, st=
+ruct iov_iter *iter,
+ 	struct extent_map *em;
+ 	bool unlocked =3D false;
 =20
--	init_waitqueue_head(&priv->wait);
-+	if (priv->cmd) {
-+		cb =3D btrfs_encoded_read_uring_endio;
-+	} else {
-+		init_waitqueue_head(&priv->wait);
-+		cb =3D btrfs_encoded_read_ioctl_endio;
-+	}
+-	file_accessed(iocb->ki_filp);
++	file_accessed(file);
 =20
--	bbio =3D btrfs_bio_alloc(BIO_MAX_VECS, REQ_OP_READ, fs_info,
--			       btrfs_encoded_read_endio, priv);
-+	bbio =3D btrfs_bio_alloc(BIO_MAX_VECS, REQ_OP_READ, fs_info, cb, priv);
- 	bbio->bio.bi_iter.bi_sector =3D disk_bytenr >> SECTOR_SHIFT;
- 	bbio->inode =3D inode;
+ 	btrfs_inode_lock(inode, BTRFS_ILOCK_SHARED);
 =20
-@@ -9122,7 +9169,7 @@ static void _btrfs_encoded_read_regular_fill_pages(=
-struct btrfs_inode *inode,
- 			btrfs_submit_bio(bbio, 0);
+-	if (iocb->ki_pos >=3D inode->vfs_inode.i_size) {
++	if (offset >=3D inode->vfs_inode.i_size) {
+ 		btrfs_inode_unlock(inode, BTRFS_ILOCK_SHARED);
+ 		return 0;
+ 	}
+-	start =3D ALIGN_DOWN(iocb->ki_pos, fs_info->sectorsize);
++	start =3D ALIGN_DOWN(offset, fs_info->sectorsize);
+ 	/*
+-	 * We don't know how long the extent containing iocb->ki_pos is, but if
++	 * We don't know how long the extent containing offset is, but if
+ 	 * it's compressed we know that it won't be longer than this.
+ 	 */
+ 	lockend =3D start + BTRFS_MAX_UNCOMPRESSED - 1;
+@@ -9277,10 +9276,11 @@ ssize_t btrfs_encoded_read(struct kiocb *iocb, st=
+ruct iov_iter *iter,
+ 		 */
+ 		free_extent_map(em);
+ 		em =3D NULL;
+-		ret =3D btrfs_encoded_read_inline(iocb, iter, start, lockend,
+-						&cached_state, extent_start,
+-						count, encoded, &unlocked);
+-		goto out;
++		ret =3D btrfs_encoded_read_inline(inode, offset, iter, start,
++						lockend, &cached_state,
++						extent_start, count, encoded,
++						&unlocked);
++		goto out_em;
+ 	}
 =20
- 			bbio =3D btrfs_bio_alloc(BIO_MAX_VECS, REQ_OP_READ, fs_info,
--					       btrfs_encoded_read_endio, priv);
-+					       cb, priv);
- 			bbio->bio.bi_iter.bi_sector =3D disk_bytenr >> SECTOR_SHIFT;
- 			bbio->inode =3D inode;
- 			continue;
+ 	/*
+@@ -9288,7 +9288,7 @@ ssize_t btrfs_encoded_read(struct kiocb *iocb, stru=
+ct iov_iter *iter,
+ 	 * that.
+ 	 */
+ 	encoded->len =3D min_t(u64, extent_map_end(em),
+-			     inode->vfs_inode.i_size) - iocb->ki_pos;
++			     inode->vfs_inode.i_size) - offset;
+ 	if (em->disk_bytenr =3D=3D EXTENT_MAP_HOLE ||
+ 	    (em->flags & EXTENT_FLAG_PREALLOC)) {
+ 		disk_bytenr =3D EXTENT_MAP_HOLE;
+@@ -9308,7 +9308,7 @@ ssize_t btrfs_encoded_read(struct kiocb *iocb, stru=
+ct iov_iter *iter,
+ 		disk_io_size =3D em->disk_num_bytes;
+ 		count =3D em->disk_num_bytes;
+ 		encoded->unencoded_len =3D em->ram_bytes;
+-		encoded->unencoded_offset =3D iocb->ki_pos - (em->start - em->offset);
++		encoded->unencoded_offset =3D offset - (em->start - em->offset);
+ 		ret =3D btrfs_encoded_io_compression_from_extent(fs_info,
+ 							       extent_map_compression(em));
+ 		if (ret < 0)
+@@ -9322,8 +9322,8 @@ ssize_t btrfs_encoded_read(struct kiocb *iocb, stru=
+ct iov_iter *iter,
+ 		 * Don't read beyond what we locked. This also limits the page
+ 		 * allocations that we'll do.
+ 		 */
+-		disk_io_size =3D min(lockend + 1, iocb->ki_pos + encoded->len) - start=
+;
+-		count =3D start + disk_io_size - iocb->ki_pos;
++		disk_io_size =3D min(lockend + 1, offset + encoded->len) - start;
++		count =3D start + disk_io_size - offset;
+ 		encoded->len =3D count;
+ 		encoded->unencoded_len =3D count;
+ 		disk_io_size =3D ALIGN(disk_io_size, fs_info->sectorsize);
+@@ -9339,16 +9339,13 @@ ssize_t btrfs_encoded_read(struct kiocb *iocb, st=
+ruct iov_iter *iter,
+ 		if (ret !=3D count)
+ 			ret =3D -EFAULT;
+ 	} else {
+-		ret =3D btrfs_encoded_read_regular(iocb, iter, start, lockend,
+-						 &cached_state, disk_bytenr,
+-						 disk_io_size, count,
+-						 encoded->compression,
++		ret =3D btrfs_encoded_read_regular(inode, offset, iter, start,
++						 lockend, &cached_state,
++						 disk_bytenr, disk_io_size,
++						 count, encoded->compression,
+ 						 &unlocked);
+ 	}
+=20
+-out:
+-	if (ret >=3D 0)
+-		iocb->ki_pos +=3D encoded->len;
+ out_em:
+ 	free_extent_map(em);
+ out_unlock_extent:
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index c1886209933a..85a512a9ca64 100644
+index e0a664b8a46a..406ed70814f5 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
-@@ -29,6 +29,7 @@
- #include <linux/fileattr.h>
- #include <linux/fsverity.h>
- #include <linux/sched/xacct.h>
-+#include <linux/io_uring/cmd.h>
- #include "ctree.h"
- #include "disk-io.h"
- #include "export.h"
-@@ -4509,8 +4510,8 @@ static int _btrfs_ioctl_send(struct btrfs_inode *in=
-ode, void __user *argp, bool
- 	return ret;
- }
+@@ -4520,7 +4520,6 @@ static int btrfs_ioctl_encoded_read(struct file *fi=
+le, void __user *argp,
+ 	struct iovec *iov =3D iovstack;
+ 	struct iov_iter iter;
+ 	loff_t pos;
+-	struct kiocb kiocb;
+ 	ssize_t ret;
 =20
--static ssize_t btrfs_encoded_read_finish(struct btrfs_encoded_read_priva=
-te *priv,
--					 ssize_t ret)
-+ssize_t btrfs_encoded_read_finish(struct btrfs_encoded_read_private *pri=
-v,
-+				  ssize_t ret)
- {
- 	size_t copy_end_kernel =3D offsetofend(struct btrfs_ioctl_encoded_io_ar=
-gs,
- 					     flags);
-@@ -4725,6 +4726,60 @@ static int btrfs_ioctl_encoded_write(struct file *=
-file, void __user *argp, bool
- 	return ret;
- }
+ 	if (!capable(CAP_SYS_ADMIN)) {
+@@ -4571,10 +4570,7 @@ static int btrfs_ioctl_encoded_read(struct file *f=
+ile, void __user *argp,
+ 	if (ret < 0)
+ 		goto out_iov;
 =20
-+static void btrfs_uring_encoded_read(struct io_uring_cmd *cmd,
-+				     unsigned int issue_flags)
-+{
-+	ssize_t ret;
-+	void __user *argp =3D (void __user *)(uintptr_t)cmd->sqe->addr;
-+	struct btrfs_encoded_read_private *priv;
-+	bool compat =3D issue_flags & IO_URING_F_COMPAT;
-+
-+	priv =3D kmalloc(sizeof(*priv), GFP_KERNEL);
-+	if (!priv) {
-+		ret =3D -ENOMEM;
-+		goto out_uring;
-+	}
-+
-+	ret =3D btrfs_prepare_encoded_read(priv, cmd->file, compat, argp);
-+	if (ret)
-+		goto out_finish;
-+
-+	if (iov_iter_count(&priv->iter) =3D=3D 0) {
-+		ret =3D 0;
-+		goto out_finish;
-+	}
-+
-+	*(struct btrfs_encoded_read_private **)cmd->pdu =3D priv;
-+	priv->cmd =3D cmd;
-+	priv->issue_flags =3D issue_flags;
-+	ret =3D btrfs_encoded_read(priv);
-+
-+	if (ret =3D=3D -EIOCBQUEUED && atomic_dec_return(&priv->pending))
-+		return;
-+
-+out_finish:
-+	ret =3D btrfs_encoded_read_finish(priv, ret);
-+	kfree(priv);
-+
-+out_uring:
-+	io_uring_cmd_done(cmd, ret, 0, issue_flags);
-+}
-+
-+int btrfs_uring_cmd(struct io_uring_cmd *cmd, unsigned int issue_flags)
-+{
-+	switch (cmd->cmd_op) {
-+	case BTRFS_IOC_ENCODED_READ:
-+#if defined(CONFIG_64BIT) && defined(CONFIG_COMPAT)
-+	case BTRFS_IOC_ENCODED_READ_32:
-+#endif
-+		btrfs_uring_encoded_read(cmd, issue_flags);
-+		return -EIOCBQUEUED;
-+	}
-+
-+	io_uring_cmd_done(cmd, -EINVAL, 0, issue_flags);
-+	return -EIOCBQUEUED;
-+}
-+
- long btrfs_ioctl(struct file *file, unsigned int
- 		cmd, unsigned long arg)
- {
-diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
-index 19cd26b0244a..9d1522de79d3 100644
---- a/fs/btrfs/ioctl.h
-+++ b/fs/btrfs/ioctl.h
-@@ -22,5 +22,8 @@ void btrfs_sync_inode_flags_to_i_flags(struct inode *in=
-ode);
- int __pure btrfs_is_empty_uuid(const u8 *uuid);
- void btrfs_update_ioctl_balance_args(struct btrfs_fs_info *fs_info,
- 				     struct btrfs_ioctl_balance_args *bargs);
-+int btrfs_uring_cmd(struct io_uring_cmd *cmd, unsigned int issue_flags);
-+ssize_t btrfs_encoded_read_finish(struct btrfs_encoded_read_private *pri=
-v,
-+				  ssize_t ret);
-=20
- #endif
+-	init_sync_kiocb(&kiocb, file);
+-	kiocb.ki_pos =3D pos;
+-
+-	ret =3D btrfs_encoded_read(&kiocb, &iter, &args);
++	ret =3D btrfs_encoded_read(file, pos, &iter, &args);
+ 	if (ret >=3D 0) {
+ 		fsnotify_access(file);
+ 		if (copy_to_user(argp + copy_end,
 --=20
 2.44.2
 

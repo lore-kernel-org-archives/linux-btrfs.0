@@ -1,38 +1,41 @@
-Received: from szxga04-in.huawei.com (szxga04-in.huawei.com [45.249.212.190])
+Received: from szxga05-in.huawei.com (szxga05-in.huawei.com [45.249.212.191])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 97E9514D71E;
-	Wed, 28 Aug 2024 18:21:04 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=45.249.212.190
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4424F1A76A7;
+	Wed, 28 Aug 2024 18:21:06 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=45.249.212.191
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1724869269; cv=none; b=DScAsP9CJSSjUTrV7hhmdIvaINah9au3LUKPJLM8+Qz77WZrhaPYPKBpuyMxroWpj3d49MJEPfrws9zixb3KQzi/JOPGSx3+iqT0P6m/wSb5vlbdu8JVJALPV6ZXmLW6QUE3ee7v/Ps7x0+7SGg/lvur79qCu6XC+c+tGlN2ELM=
+	t=1724869269; cv=none; b=qXsY2gXiVWMXN/Qa9o41hz1vfpbKhn1vUMJsyOaizyjDkO2m/kwWwrvbjImuFK6N5hK5yqv+yJrP/+SfaNZljVON3jLQIQgDZx/rk2FyqmpTBhhmlFC0m2hgL3juXSsXtTDGzvgYGvkdPK+6xOUl+MpgJyIUprZvfXlHvPTAIwE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
 	s=arc-20240116; t=1724869269; c=relaxed/simple;
-	bh=IBSHBawgClK9JaPGHklBxDfCk453gFDJElM3fueeQLk=;
-	h=From:To:CC:Subject:Date:Message-ID:MIME-Version:Content-Type; b=FucVvhqjIO0Ya1mBVttGv6SMkmjScbPUgX9YQQpK7scDK+dLOWSybpBTqi+tPVK5Eo9+/TMV9TaLf4Riy3xlllJh32U54mmwDpyo7GCVXn9tnO052ie58azUrT9THlFLsBsj58/ounatwugW2bI9fUa/XLYqR19QqlJJyD9TUCg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=huawei.com; spf=pass smtp.mailfrom=huawei.com; arc=none smtp.client-ip=45.249.212.190
+	bh=fpGLC0tKQK3YV4qT5cEov+87aHdcktUGT8luODxwSQ4=;
+	h=From:To:CC:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version:Content-Type; b=TGO7lUcaRsI7/6j7HL1nfO9QhODYO8JfYqWtaVHw7rGGjEgjbVjKrxg8/jbwlCS1z+7lCLL1L5WZMbqXCSlUGI7Iv5Ju4da86nLAjoZ24mjFbKBiJMS8qwS/NWchDKqFN1Thk5u47w6+5ZhKInEfXsUIeh2zRpav4gCsUc9QHao=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=huawei.com; spf=pass smtp.mailfrom=huawei.com; arc=none smtp.client-ip=45.249.212.191
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=huawei.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=huawei.com
 Received: from mail.maildlp.com (unknown [172.19.163.44])
-	by szxga04-in.huawei.com (SkyGuard) with ESMTP id 4WvCQV0jJVz2DbZl;
-	Thu, 29 Aug 2024 02:20:50 +0800 (CST)
+	by szxga05-in.huawei.com (SkyGuard) with ESMTP id 4WvCLw5qV3z1HHg5;
+	Thu, 29 Aug 2024 02:17:44 +0800 (CST)
 Received: from kwepemd500012.china.huawei.com (unknown [7.221.188.25])
-	by mail.maildlp.com (Postfix) with ESMTPS id CB0941401F2;
-	Thu, 29 Aug 2024 02:21:01 +0800 (CST)
+	by mail.maildlp.com (Postfix) with ESMTPS id E3D491401F2;
+	Thu, 29 Aug 2024 02:21:04 +0800 (CST)
 Received: from huawei.com (10.90.53.73) by kwepemd500012.china.huawei.com
  (7.221.188.25) with Microsoft SMTP Server (version=TLS1_2,
  cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.2.1258.34; Thu, 29 Aug
- 2024 02:21:01 +0800
+ 2024 02:21:04 +0800
 From: Li Zetao <lizetao1@huawei.com>
 To: <clm@fb.com>, <josef@toxicpanda.com>, <dsterba@suse.com>,
 	<terrelln@fb.com>, <quwenruo.btrfs@gmx.com>, <willy@infradead.org>,
 	<dan.carpenter@linaro.org>
 CC: <lizetao1@huawei.com>, <linux-btrfs@vger.kernel.org>,
 	<linux-kernel@vger.kernel.org>
-Subject: [PATCH -next v2 00/14] btrfs: Cleaned up folio->page conversion
-Date: Thu, 29 Aug 2024 02:28:54 +0800
-Message-ID: <20240828182908.3735344-1-lizetao1@huawei.com>
+Subject: [PATCH -next v2 08/14] btrfs: convert try_release_extent_state() to take a folio
+Date: Thu, 29 Aug 2024 02:29:02 +0800
+Message-ID: <20240828182908.3735344-9-lizetao1@huawei.com>
 X-Mailer: git-send-email 2.34.1
+In-Reply-To: <20240828182908.3735344-1-lizetao1@huawei.com>
+References: <20240828182908.3735344-1-lizetao1@huawei.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -44,74 +47,41 @@ Content-Type: text/plain
 X-ClientProxiedBy: dggems701-chm.china.huawei.com (10.3.19.178) To
  kwepemd500012.china.huawei.com (7.221.188.25)
 
-Hi all,
+The old page API is being gradually replaced and converted to use folio
+to improve code readability and avoid repeated conversion between page
+and folio. Moreover, use folio_pos() instend of page_offset(),
+which is more consistent with folio usage.
 
-In btrfs, because there are some interfaces that do not use folio,
-there is page-folio-page mutual conversion. This patch set should
-clean up folio-page conversion as much as possible and use folio
-directly to reduce invalid conversions.
+Signed-off-by: Li Zetao <lizetao1@huawei.com>
+---
+ fs/btrfs/extent_io.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-This patch set starts with the rectification of function parameters,
-using folio as parameters directly. And some of those functions have
-already been converted to folio internally, so this part has little
-impact. 
-
-I have tested with fsstress more than 10 hours, and no problems were
-found. For the convenience of reviewing, I try my best to only modify
-a single interface in each patch.
-
-Josef also worked on converting pages to folios, and this patch set was
-inspired by him[1].
-
-Considering Josef's suggestion[2], this patchset has passed most of the
-xfs/btrfs use cases, include btrfs/060 and btrfs/069.
-
-This patchset is based on commit bcdaf0fe6a52("btrfs: initialize
-last_extent_end to fix -Wmaybe-uninitialized warning in extent_fiemap()")
-
-v1 -> v2:
- * Change clear_page_extent_mapped() to clear_folio_extent_mapped()
- * Fix a bug[3] when folio is valid and it should be unlocked and put
- in copy_inline_to_page().
-
-v1: https://lore.kernel.org/all/20240822013714.3278193-14-lizetao1@huawei.com/
-
-[1]: https://lore.kernel.org/all/cover.1722022376.git.josef@toxicpanda.com/
-[2]: https://lore.kernel.org/all/20240826140818.GA2393039@perftesting/
-[3]: https://lore.kernel.org/all/20240822013714.3278193-15-lizetao1@huawei.com/
-
-Thanks,
-Li Zetao
-
-Li Zetao (14):
-  btrfs: convert clear_page_extent_mapped() to take a folio
-  btrfs: convert get_next_extent_buffer() to take a folio
-  btrfs: convert try_release_subpage_extent_buffer() to take a folio
-  btrfs: convert try_release_extent_buffer() to take a folio
-  btrfs: convert read_key_bytes() to take a folio
-  btrfs: convert submit_eb_subpage() to take a folio
-  btrfs: convert submit_eb_page() to take a folio
-  btrfs: convert try_release_extent_state() to take a folio
-  btrfs: convert try_release_extent_mapping() to take a folio
-  btrfs: convert zlib_decompress() to take a folio
-  btrfs: convert lzo_decompress() to take a folio
-  btrfs: convert zstd_decompress() to take a folio
-  btrfs: convert btrfs_decompress() to take a folio
-  btrfs: convert copy_inline_to_page() to use folio
-
- fs/btrfs/compression.c | 14 +++----
- fs/btrfs/compression.h |  8 ++--
- fs/btrfs/disk-io.c     |  2 +-
- fs/btrfs/extent_io.c   | 92 ++++++++++++++++++++----------------------
- fs/btrfs/extent_io.h   |  6 +--
- fs/btrfs/inode.c       |  8 ++--
- fs/btrfs/lzo.c         | 12 +++---
- fs/btrfs/reflink.c     | 35 ++++++++--------
- fs/btrfs/verity.c      | 14 +++----
- fs/btrfs/zlib.c        | 14 +++----
- fs/btrfs/zstd.c        | 16 ++++----
- 11 files changed, 109 insertions(+), 112 deletions(-)
-
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 111de9b9d537..3016ebe5f31b 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2304,9 +2304,9 @@ int extent_invalidate_folio(struct extent_io_tree *tree,
+  * to drop the page.
+  */
+ static bool try_release_extent_state(struct extent_io_tree *tree,
+-				    struct page *page, gfp_t mask)
++				    struct folio *folio, gfp_t mask)
+ {
+-	u64 start = page_offset(page);
++	u64 start = folio_pos(folio);
+ 	u64 end = start + PAGE_SIZE - 1;
+ 	bool ret;
+ 
+@@ -2415,7 +2415,7 @@ bool try_release_extent_mapping(struct page *page, gfp_t mask)
+ 			cond_resched();
+ 		}
+ 	}
+-	return try_release_extent_state(io_tree, page, mask);
++	return try_release_extent_state(io_tree, folio, mask);
+ }
+ 
+ static void __free_extent_buffer(struct extent_buffer *eb)
 -- 
 2.34.1
 

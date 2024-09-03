@@ -1,186 +1,136 @@
-Received: from mout.gmx.net (mout.gmx.net [212.227.15.19])
+Received: from mailout2.samsung.com (mailout2.samsung.com [203.254.224.25])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 227FC1531C5
-	for <linux-btrfs@vger.kernel.org>; Tue, 17 Sep 2024 21:40:46 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.15.19
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 71BEF23CB
+	for <linux-btrfs@vger.kernel.org>; Wed, 18 Sep 2024 00:16:05 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=203.254.224.25
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1726609249; cv=none; b=o+gfn+w62hKk+8Uc4ikiBfLderJWOVylUL0lSm33qnYKfclhhs+XQr98po9hmLhB/7xuyUYF1NOnWuI/B9g/tGhFTPOoS6so4IqoN/Fd+dAsOrsJbg6ZdSP7fSeKRjQOP/WmRf7QyDfv2Wkolx/lH4hlLtaOCdn8Jv1I2MYFsgA=
+	t=1726618569; cv=none; b=uiKWg5oN2BAo+V60FTPHdwYWb4ANC4smNy24MeMm4AXKtkEAoR2ld9ekFZJJK+6ZBukWotqVZPOgjwyqQpaUpeCPwUE+okTMBHwUgozEnAMp/j4FYxTSB0Sjj0dviCeYKdlPCyUtOETESBDthKVTFacOX3ApHVL429sAIZXWdiE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1726609249; c=relaxed/simple;
-	bh=4bvRIu0nWOd3QEUV+5WKf4JPfcXLKHj+iDnmNEO0U8A=;
-	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=FhFPWdw9IpCYop9kwQI4kfusvOz7t+/oH5v2l6XaQam8imlvfiPz5BebRHChIkueKhnC+sm3fTzm7UZJChoSCr26hmd3k5hSLvVa2x0vJyEXQxOrDWFtPoABPreMJNouA7hOBEsJJiOKtUCse6MCPt0N6TDoFDgmppUi0RcvzeQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=KEW+utMs; arc=none smtp.client-ip=212.227.15.19
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
+	s=arc-20240116; t=1726618569; c=relaxed/simple;
+	bh=WzYzXh/ioGIra89BwHJquRf+y3TrPkDZvjxZb30PCD8=;
+	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version:Content-Type:
+	 References; b=ES1TNHRoM6iXUnk+F85CsS67fokV8tgIlPZURJEuN5lLAqWDxQdaz+7hVO8HyOVHeEUVKmgKVlngLVuS5anozVp4KyaT37dexDP9U3bx63aLsuzaNeUSmFnicpRH+lJt5EKnddnk4j0Px4FpxRz8pEHXr5fMBd0HSeJOy5bzc5w=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=samsung.com; spf=pass smtp.mailfrom=samsung.com; dkim=pass (1024-bit key) header.d=samsung.com header.i=@samsung.com header.b=UglvJjkD; arc=none smtp.client-ip=203.254.224.25
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=samsung.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=samsung.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="KEW+utMs"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1726609242; x=1727214042; i=quwenruo.btrfs@gmx.com;
-	bh=ZGlXF1mOQ4LGGehnKydMaZ9tnIRdx8monlLjfXACkL4=;
-	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:
-	 References:From:In-Reply-To:Content-Type:
-	 Content-Transfer-Encoding:cc:content-transfer-encoding:
-	 content-type:date:from:message-id:mime-version:reply-to:subject:
-	 to;
-	b=KEW+utMsmSastdjX8FVfTVY9dyqNd1xJhuiwQblZKorTRgQvRftsEamNasbg95Iy
-	 Q3BSbDsPZjgiCHEbLgUibJRWq6/mbKpWUTbA9wF5Ejo/PdZyspRSvfntLMhsq2sCc
-	 hw95ZzzJ8hEhWo8z1mSAvpkZnB2CTHqQfCqkrBcqYkvXoRFkk4gDLwRAjGXYA7OSQ
-	 wwiSByYACo1I8OgHRjWUgELbHlKZ26IB/ELwxuuwuwoXZav/o5dEn1yvEJiDfZZMj
-	 5DEpxtXt6x9iH3OIEzARh6+kQ/uv1UIwTg/CTdnnDD9N2oVvvfWJjHIxl/z2d876w
-	 fGQrXQsqqY+tipnSPQ==
-X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from [172.16.0.191] ([159.196.52.54]) by mail.gmx.net (mrgmx005
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1MCsU6-1shqFV42wi-002apE; Tue, 17
- Sep 2024 23:40:42 +0200
-Message-ID: <2ffd987f-f767-4fd2-b684-0c95d418a977@gmx.com>
-Date: Wed, 18 Sep 2024 07:10:39 +0930
+	dkim=pass (1024-bit key) header.d=samsung.com header.i=@samsung.com header.b="UglvJjkD"
+Received: from epcas5p1.samsung.com (unknown [182.195.41.39])
+	by mailout2.samsung.com (KnoxPortal) with ESMTP id 20240918001603epoutp02a3866c1ed143ad06b0a49ac3e1147879~2Lm9pxq1p1426914269epoutp02f
+	for <linux-btrfs@vger.kernel.org>; Wed, 18 Sep 2024 00:16:03 +0000 (GMT)
+DKIM-Filter: OpenDKIM Filter v2.11.0 mailout2.samsung.com 20240918001603epoutp02a3866c1ed143ad06b0a49ac3e1147879~2Lm9pxq1p1426914269epoutp02f
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=samsung.com;
+	s=mail20170921; t=1726618563;
+	bh=xarkktzL2Hamc1ormKEoTUmM/Y8eTsQP6TdBr9+VQEk=;
+	h=From:To:Cc:Subject:Date:References:From;
+	b=UglvJjkDV+QM6j5XqBjqLbmh90J0E5NXpK/6MQv3TvLzrqaIA42j/HiwsmH5OTIv3
+	 MBPIG5eam87pH4CxX8Pbh+wnQCBHl9ogsB3JZ+UXtB0aLQiFlNYSBWQqRkQiyaPxmi
+	 SgMqrQobQURy2aubGOj4dWWsPOWjn1Lclv0Hx9f0=
+Received: from epsnrtp2.localdomain (unknown [182.195.42.163]) by
+	epcas5p4.samsung.com (KnoxPortal) with ESMTP id
+	20240918001602epcas5p47e69e295b27088d9988054f3eb8a38d9~2Lm87ggXM0602906029epcas5p4H;
+	Wed, 18 Sep 2024 00:16:02 +0000 (GMT)
+Received: from epsmges5p2new.samsung.com (unknown [182.195.38.182]) by
+	epsnrtp2.localdomain (Postfix) with ESMTP id 4X7fM51Ws5z4x9Pt; Wed, 18 Sep
+	2024 00:16:01 +0000 (GMT)
+Received: from epcas5p1.samsung.com ( [182.195.41.39]) by
+	epsmges5p2new.samsung.com (Symantec Messaging Gateway) with SMTP id
+	F7.33.09743.1CB1AE66; Wed, 18 Sep 2024 09:16:01 +0900 (KST)
+Received: from epsmtrp2.samsung.com (unknown [182.195.40.14]) by
+	epcas5p4.samsung.com (KnoxPortal) with ESMTPA id
+	20240903054032epcas5p41a43b67314c727e07a049344adbca480~xpXAP7JOo0116501165epcas5p4X;
+	Tue,  3 Sep 2024 05:40:32 +0000 (GMT)
+Received: from epsmgms1p2new.samsung.com (unknown [182.195.42.42]) by
+	epsmtrp2.samsung.com (KnoxPortal) with ESMTP id
+	20240903054032epsmtrp213098798aed55a982891e5261219bb68~xpXAOdmuA2893428934epsmtrp29;
+	Tue,  3 Sep 2024 05:40:32 +0000 (GMT)
+X-AuditID: b6c32a4a-3b1fa7000000260f-0a-66ea1bc1ac8f
+Received: from epsmtip2.samsung.com ( [182.195.34.31]) by
+	epsmgms1p2new.samsung.com (Symantec Messaging Gateway) with SMTP id
+	40.C2.08456.051A6D66; Tue,  3 Sep 2024 14:40:32 +0900 (KST)
+Received: from dpss52-OptiPlex-9020.. (unknown [109.105.118.52]) by
+	epsmtip2.samsung.com (KnoxPortal) with ESMTPA id
+	20240903054031epsmtip2ba33f3dcae49bb2ca5d941963f0c0bfc~xpW_3wd6k1824818248epsmtip2M;
+	Tue,  3 Sep 2024 05:40:31 +0000 (GMT)
+From: "j.xia" <j.xia@samsung.com>
+To: clm@fb.com, josef@toxicpanda.com, dsterba@suse.com
+Cc: linux-btrfs@vger.kernel.org, "j.xia" <j.xia@samsung.com>
+Subject: [PATCH] fs/btrfs: Pass write-hint for buffered IO
+Date: Tue,  3 Sep 2024 13:40:12 +0800
+Message-Id: <20240903054012.1238270-1-j.xia@samsung.com>
+X-Mailer: git-send-email 2.34.1
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: BTRFS critical, corrupt node, unaligned pointer, should be
- aligned to 4096
-To: Chris Murphy <lists@colorremedies.com>,
- Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <47636de6-8270-4a24-b97a-df9c267439c7@app.fastmail.com>
-Content-Language: en-US
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCY00iVQUJDToH
- pgAKCRDCPZHzoSX+qNKACACkjDLzCvcFuDlgqCiS4ajHAo6twGra3uGgY2klo3S4JespWifr
- BLPPak74oOShqNZ8yWzB1Bkz1u93Ifx3c3H0r2vLWrImoP5eQdymVqMWmDAq+sV1Koyt8gXQ
- XPD2jQCrfR9nUuV1F3Z4Lgo+6I5LjuXBVEayFdz/VYK63+YLEAlSowCF72Lkz06TmaI0XMyj
- jgRNGM2MRgfxbprCcsgUypaDfmhY2nrhIzPUICURfp9t/65+/PLlV4nYs+DtSwPyNjkPX72+
- LdyIdY+BqS8cZbPG5spCyJIlZonADojLDYQq4QnufARU51zyVjzTXMg5gAttDZwTH+8LbNI4
- mm2YzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCY00ibgUJDToHvwAK
- CRDCPZHzoSX+qK6vB/9yyZlsS+ijtsvwYDjGA2WhVhN07Xa5SBBvGCAycyGGzSMkOJcOtUUf
- tD+ADyrLbLuVSfRN1ke738UojphwkSFj4t9scG5A+U8GgOZtrlYOsY2+cG3R5vjoXUgXMP37
- INfWh0KbJodf0G48xouesn08cbfUdlphSMXujCA8y5TcNyRuNv2q5Nizl8sKhUZzh4BascoK
- DChBuznBsucCTAGrwPgG4/ul6HnWE8DipMKvkV9ob1xJS2W4WJRPp6QdVrBWJ9cCdtpR6GbL
- iQi22uZXoSPv/0oUrGU+U5X4IvdnvT+8viPzszL5wXswJZfqfy8tmHM85yjObVdIG6AlnrrD
-In-Reply-To: <47636de6-8270-4a24-b97a-df9c267439c7@app.fastmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:7/cHnN/xoV8oES0DO9avfm72cUS/EAiOh7np5qHzEQI5LgiSKbf
- 9YBQql0XJrMe3kOYeaxFII/gT/EV6NOyz8Bvm2SGNFK3WgntsjBYrUW/bVZ/jDBiTw0JFVI
- csn8C47HX/J6dkZiEBRTEzZk00bwzhMgD2soPSlkcQmvbQysOVvTsBvMInFc+OCn5W9OkWq
- SfLEw2YrqKdnqFB4OVkWQ==
-X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:2Ez7KgaUKTs=;PmpsjHcsqqTG72K8bxgZ39+1fIZ
- 88N63EoHT+X2Yg2jITpBo6zwsLQX1pJxlkg1tjwGkBEp4Y1q7EOSQq1ux0bGXcA8eIRrLSftg
- y2whFDhh5dDl2vExgsgrzSBm5xCevWPubAemy/m0fusWVdMI71s4TGijvStx/vyGK1EErRBwm
- MF6D+lZvnoOeAT5ZitKg7mqN/jnNaJ6j9bRK1qBA5P9A31urSAt/+iOwzQvP3QtOsHCnS8qgN
- 5xhIqPsORgEOxxSrec+FgG1jWVVu6A+A4TL550OoUiuJypWn0XrlnRKJv27lj4vSfY7kO/RQk
- XQRgmMBjCVMup6J47tIO4Q6fISs1Y4WxJeC/PJuuxxb4KU8JvSXqccCjDfwyV1qCEj8aQSBlN
- M9W6PePCvbJnb6wV6e3XtDPbmw871s09SuG3CNcOitqF0KrhNYKW4rWsIWzLxkuM0SVSeRaMc
- 1Tmfy4UE77/cNI664uYScAAEOBx0/ze+UKIx4cl2eYF++60ewDGq1MuUuwlAnLvjxRpC2YTut
- WGbD1ykLYW5CuTixI5z935q+eItmFWhNdRR2Wm+oQfEVvwIOxdSiTU7YQ0r0c5F2oHguEgnZj
- ENhBAHA4wXXR2UY6pzYrRjQ7yVhuu3Kd0HHeTMAUX4S3xkUvy/5B4OSjJHzu6CW6UooFqGPG1
- uOG8xX9A7zFoNxeH0gW3Yg/mmgt/bGahgc0iW/0ounkIpBbgZrqR3Q0Q4IFMoi5c0mqE9MYcN
- kf+/QdFORXCHoWpnBv55sbsthC2IRoZASOUnfYKeaG/QlVp21CQW8BR90TxRdlwfX9Mv70C1N
- IkveX9VwYHqBMMegcZ2Ia4y0Xc0JH2Y3kcPgnfZQH3L4w=
+Content-Transfer-Encoding: 8bit
+X-Brightmail-Tracker: H4sIAAAAAAAAA+NgFuphk+LIzCtJLcpLzFFi42LZdlhTXfeg9Ks0g6ePOCwm9c9gt7jwo5HJ
+	4uaBnUwWO5etZbf4uGc1k8Wfh4YWR/+/ZbO49HgFu8XZCR9YHTg9Jja/Y/fo27KK0WP9lqss
+	HhM2b2T1+LxJLoA1KtsmIzUxJbVIITUvOT8lMy/dVsk7ON453tTMwFDX0NLCXEkhLzE31VbJ
+	xSdA1y0zB+geJYWyxJxSoFBAYnGxkr6dTVF+aUmqQkZ+cYmtUmpBSk6BSYFecWJucWleul5e
+	aomVoYGBkSlQYUJ2xsl3B9kLHrJXrL/0mK2B8RBbFyMnh4SAicSbQ6dZuhi5OIQEdjNK7H6z
+	mhkkISTwiVFi4txciMQ3RolbP94zwnQcbZnPCJHYyygx/dJMKOcro8TeEx2sIFVsAooS52b+
+	YQexRQTMJI5N3MwCYjML2EjcXDwZzBYWsJK40PQIbB2LgKrEu+ntYBt4BSwkZq6ZBLVNXmL/
+	wbPMEHFBiZMzn0DNkZdo3jqbGWSxhMA1don9DaehGlwkZixexAxhC0u8Or6FHcKWkvj8bi/U
+	08USzVNfs0A0NzBKNJz+BdVsLbFt/TqmLkYOoA2aEut36UOEZSWmngIJgyzmk+j9/YQJIs4r
+	sWMejC0v8WjtDGaQVgkBUYm/qyQhwh4SPY+nskKCNFbifOsRpgmM8rOQvDMLyTuzEBYvYGRe
+	xSiZWlCcm55abFpglJdaDo/Y5PzcTYzgZKnltYPx4YMPeocYmTgYDzFKcDArifCKf3iZJsSb
+	klhZlVqUH19UmpNafIjRFBjGE5mlRJPzgek6ryTe0MTSwMTMzMzE0tjMUEmc93Xr3BQhgfTE
+	ktTs1NSC1CKYPiYOTqkGpvSTJ/i9bTXDS71mFsfeK8u+3HS9UVTcQffj5dKZ8lPEZSW7DCMy
+	P6xaExmalJ2m1F+4wyjCRV/4v2yzdflWq5lTeRK5gqWWZv5nMZqy5paP2B7diq+TkjND+R/s
+	8LTfdH1lpsUM3uUz/y0xcRJatmH5RKduP8Zvqx5fldw/TTfz0Oxf666vdFp4Wm6R4sctE7p4
+	lf5sqaj+lrs/5/yk1xs6tk112PuSr/blgizfWfP9RM+7B9xc03KuWUkv/vHkVb6cwYp5/+Xe
+	bDCKebtE6PTGPx+3pT/yd3TIiSqb9Ux9etkaJy0Bx796FnMbdDhXVG65nJx++2rThMXLtRy2
+	Tnc9aegn01i7LkglY77UXCWW4oxEQy3mouJEAP8mUmwfBAAA
+X-Brightmail-Tracker: H4sIAAAAAAAAA+NgFtrBLMWRmVeSWpSXmKPExsWy7bCSvG7AwmtpBp3nzSwm9c9gt7jwo5HJ
+	4uaBnUwWO5etZbf4uGc1k8Wfh4YWR/+/ZbO49HgFu8XZCR9YHTg9Jja/Y/fo27KK0WP9lqss
+	HhM2b2T1+LxJLoA1issmJTUnsyy1SN8ugSvj5LuD7AUP2SvWX3rM1sB4iK2LkZNDQsBE4mjL
+	fMYuRi4OIYHdjBJTeiaxQyREJa6cPQxVJCyx8t9zdoiiz4wS3290M4Mk2AQUJc7N/APWICJg
+	JbHn5B0wm1nATuLCzy5WEFsYKH6h6RFYPYuAqsS76e2MIDavgIXEzDWTGCEWyEvsP3iWGSIu
+	KHFy5hMWiDnyEs1bZzNPYOSbhSQ1C0lqASPTKkbJ1ILi3PTcYsMCo7zUcr3ixNzi0rx0veT8
+	3E2M4MDV0trBuGfVB71DjEwcjIcYJTiYlUR4YzdeTRPiTUmsrEotyo8vKs1JLT7EKM3BoiTO
+	++11b4qQQHpiSWp2ampBahFMlomDU6qBKWL6zElh/7g+vX34/LG//72u9gSBo15hU/qVs0p0
+	fycbTL23dfFFnfNdaxwW1wk/T/bRe7vWbPsJ1bUymmHSmczax/9PnrPDx1GQo6Ujq6TT+Ht0
+	uooXR/qmqM8zM/wZf1rbiMzZ21jbLbhI4rWNtvEVw1dZ5rxbpVrEOO2tAgO2PNLe2vrgz8cA
+	hdV3btS6675MWXI940E397Xvx3VqnvWr//y+eLlmRcHLLbUt603vvI+o3MYrznjb8cpvlml+
+	axpu+T5YXsGRUOk5s9HpY4LFrW6+ZT8/tk9cfTFO7HQbZ7f3xdpJz6dHPN6z7m3V/EcZEVa7
+	FkmlLxFVlrG6k8kdUa+6MGNhSArP09YwJZbijERDLeai4kQASKr8hMsCAAA=
+X-CMS-MailID: 20240903054032epcas5p41a43b67314c727e07a049344adbca480
+X-Msg-Generator: CA
+Content-Type: text/plain; charset="utf-8"
+X-Sendblock-Type: REQ_APPROVE
+CMS-TYPE: 105P
+DLP-Filter: Pass
+X-CFilter-Loop: Reflected
+X-CMS-RootMailID: 20240903054032epcas5p41a43b67314c727e07a049344adbca480
+References: <CGME20240903054032epcas5p41a43b67314c727e07a049344adbca480@epcas5p4.samsung.com>
 
+Commit 449813515d3e ("block, fs: Restore the per-bio/request data
+lifetime fields") restored write-hint support in btrfs. But that is
+applicable only for direct IO. This patch supports passing
+write-hint for buffered IO from btrfs file system to block layer
+by filling bi_write_hint of struct bio in alloc_new_bio().
 
+Signed-off-by: j.xia <j.xia@samsung.com>
+---
+ fs/btrfs/extent_io.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-=E5=9C=A8 2024/9/18 03:34, Chris Murphy =E5=86=99=E9=81=93:
-> Happens with 6.10.6-6.10.9, does not happen with 6.9.7.
->
-> Complete kernel messages are attached to the bug report
-> https://bugzilla.redhat.com/show_bug.cgi?id=3D2312886
->
-> kernel message excerpts:
->
-> Sep 17 00:55:42 kernel: page: refcount:4 mapcount:0 mapping:00000000339e=
-ecab index:0xef2f60 pfn:0x1528ae
-> Sep 17 00:55:42 kernel: memcg:ffff9a2180399000
-> Sep 17 00:55:42 kernel: aops:btree_aops ino:1
-> Sep 17 00:55:42 kernel: flags: 0x17ffffd600422e(referenced|uptodate|lru|=
-workingset|private|writeback|node=3D0|zone=3D2|lastcpupid=3D0x1fffff)
-> Sep 17 00:55:42 kernel: raw: 0017ffffd600422e ffffe31e054a2bc8 ffffe31e0=
-54a2b48 ffff9a2180488338
-> Sep 17 00:55:42 kernel: raw: 0000000000ef2f60 ffff9a232a13c1e0 00000004f=
-fffffff ffff9a2180399000
-> Sep 17 00:55:42 kernel: page dumped because: eb page dump
-> Sep 17 00:55:43 kernel: BTRFS critical (device vda3): corrupt node: root=
-=3D2 block=3D64205750272 slot=3D121, unaligned pointer, have 64012238993 s=
-hould be aligned to 4096
-> Sep 17 00:55:43 kernel: BTRFS info (device vda3): node 64205750272 level=
- 1 gen 2593 total ptrs 206 free spc 287 owner 2
-> ...
-> Sep 17 00:55:43 kernel: BTRFS error (device vda3): block=3D64205750272 w=
-rite time tree block corruption detected
-> Sep 17 00:55:43 kernel: page: refcount:4 mapcount:0 mapping:00000000339e=
-ecab index:0xef3a90 pfn:0x1ce336
-> Sep 17 00:55:43 kernel: memcg:ffff9a2180399000
-> Sep 17 00:55:43 kernel: aops:btree_aops ino:1
-> Sep 17 00:55:43 kernel: flags: 0x17ffffd600422e(referenced|uptodate|lru|=
-workingset|private|writeback|node=3D0|zone=3D2|lastcpupid=3D0x1fffff)
-> Sep 17 00:55:43 kernel: raw: 0017ffffd600422e ffffe31e04b94988 ffffe31e0=
-738cdc8 ffff9a2180488338
-> Sep 17 00:55:43 kernel: raw: 0000000000ef3a90 ffff9a2192f701e0 00000004f=
-fffffff ffff9a2180399000
-> Sep 17 00:55:43 kernel: page dumped because: eb page dump
-> Sep 17 00:55:43 kernel: BTRFS critical (device vda3): corrupt leaf: root=
-=3D256 block=3D64217481216 slot=3D3 ino=3D16205860, invalid dir item type,=
- have 33 expect (0, 9)
->
-> ...
-> Sep 17 00:55:43 kernel: BTRFS error (device vda3): block=3D64217481216 w=
-rite time tree block corruption detected
-> Sep 17 00:55:43 kernel: BTRFS: error (device vda3) in btrfs_commit_trans=
-action:2505: errno=3D-5 IO failure (Error while writing out transaction)
-> Sep 17 00:55:43 kernel: BTRFS info (device vda3 state E): forced readonl=
-y
->
->
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index bd1a7b2fc71a..90413ae9c0ac 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -702,6 +702,7 @@ static void alloc_new_bio(struct btrfs_inode *inode,
+ 	bbio = btrfs_bio_alloc(BIO_MAX_VECS, bio_ctrl->opf, fs_info,
+ 			       bio_ctrl->end_io_func, NULL);
+ 	bbio->bio.bi_iter.bi_sector = disk_bytenr >> SECTOR_SHIFT;
++	bbio->bio.bi_write_hint = inode->vfs_inode.i_write_hint;
+ 	bbio->inode = inode;
+ 	bbio->file_offset = file_offset;
+ 	bio_ctrl->bbio = bbio;
+-- 
+2.34.1
 
-[17 Sep]
-It shows everything we need to know:
-
-  kernel: #011key 120 (40535728128 168 4096) block 64012189696 gen 2592
-  kernel: #011key 121 (2774366982960963584 113 5236482350604877970)
-block 64012238993 gen 2592
-  kernel: #011key 122 (40538132480 168 4096) block 64012255232 gen 2592
-
-Obviously the key 121 is corrupted and not continuous with other keys.
-
-Furthermore, the generation looks good, so it looks like a range of
-memory is corrupted.
-The affected range includes the key and block ptr bytenr.
-
-And for the other write time failure, it may be a bit flip (0x01 ->
-0x21), at least there is no other obvious corruption unlike the node
-pointer error.
-
-Considering it's a VM for fedora project, I guess it has ECC memory so
-that we can rule out the memory corruption by hardware.
-
-[9 SEP]
-Is the dmesg truncated? For every EUCLEAN case from
-__btrfs_free_extent() we should have an error message line (that's the
-standard practice to have an error message for each EUCLEAN error).
-
-I can not see the needed error line, thus hard to say.
-
-Thanks,
-Qu
-
-> --
-> Chris Murphy
->

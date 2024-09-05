@@ -1,60 +1,67 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CA49B8F40
-	for <linux-btrfs@vger.kernel.org>; Thu,  5 Sep 2024 01:13:48 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 262338F6E
+	for <linux-btrfs@vger.kernel.org>; Thu,  5 Sep 2024 01:13:50 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1725498833; cv=none; b=svdQqKvaOBLR12Zy3cc66/EW7+fRuvDKsG/D4GpRJ8NN8WAFX1XX9TTaClk8kUelPHgjvoyjz6JKihcFLFugXrKbT73jhZGPUwZjnACgVUJdrttw0xEbA1kPLIGAVYybjE9Jo6ECmsYgFUgpvqLhe9pIC+HOv3RB5Y0QqOu8GLk=
+	t=1725498834; cv=none; b=lPUxwAKlMU9hvRcRUxhbIZ4/cX9XbSPq2Isgakmzfi7tGc80zS+WzqzTYjcr4zHJqxNX79RFLcgGzmtWr6QMacrNprtQXvjcQayukREl1GG/UhZPAk/30tLOhLkou35q97aWPBIrNN94o2+jkJWQ2UinSW+CYju3wsQEUGtNDlI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1725498833; c=relaxed/simple;
-	bh=aQs7B5hDSc9VmdPP0zMfEaki6qhilYRRLTucV0Zv4SQ=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=nT+Cr/UmWKi1yAAAsECNe8GfT4TW3239nWvGW8nZvCI7M6FKGBU2p1nJOsKfIQNgqK2/FPFEbQOpLU+4HGytRepeTqRCYXoqka8cbR0nsM88fvJCXdaoLjW/Wi31MABzKhpXsEldoA3V+DjdOm31108AtYVq6mSDjGLBR63MWY4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=vCcuuQNx; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=vCcuuQNx; arc=none smtp.client-ip=195.135.223.131
+	s=arc-20240116; t=1725498834; c=relaxed/simple;
+	bh=qtJ/u922NqpONB/LtGvgwSV7sEQiNKZVax6VGDIymOg=;
+	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=lHJkM2sqgs44J3dU5btVpW/ygZp9EL2pZB+owDVSensVGQ/wc6HhJmxOCVkWPl5u43M2x/kMuwnPiWeezylxfO5gMLdcn702E9pUlMJUOciuTC2x0cPk+MO2RD/tE32aL4m9lIoZReiybYmcNlRbHciXTACy3BYJM+YvUCJB1T8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=HOMDPfrG; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=HOMDPfrG; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="vCcuuQNx";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="vCcuuQNx"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="HOMDPfrG";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="HOMDPfrG"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 0265E1F7F1
-	for <linux-btrfs@vger.kernel.org>; Thu,  5 Sep 2024 01:13:47 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 5964D219C9
+	for <linux-btrfs@vger.kernel.org>; Thu,  5 Sep 2024 01:13:49 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1725498827; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=up33wp/QV/MwqUlt7aynqDfX3dgJnr/vFyj1vnnx730=;
-	b=vCcuuQNxZlMNYrSmmuJr1Nq9RY/XA4OBqIfE2Rcylh+vZBSITUAWIrUo12EwYSyIGLJfVP
-	bjR5T7l8zG79IA45iFzeBAbMEF8DaEseraCjgDr5BOqQkZGkmGoaBpZ8E+Vak5FW6+4I5O
-	m0s/GaOLfID4hDu8p/xSHgArWPCvPRE=
-Authentication-Results: smtp-out2.suse.de;
+	t=1725498829; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=R2rTnlrTr/V+hvZrCoacc6TtHjuHlRjKvliG4WqKZ+s=;
+	b=HOMDPfrGjDHeanlr8NLISr5h8p8Vfo0fXFTBZs9jKmVY045TqTz7ESTS8SRDIexdxP97G3
+	e8esl23rdSNkFYIAuKRBsEZpX+9s6mm5nw8R1mYKxRY+tEd7ZJyJrs5YVZ3B5PksL59WV2
+	XhEMu5A3G6BgpbOqml+kjDt3o1nMb+M=
+Authentication-Results: smtp-out1.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1725498827; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=up33wp/QV/MwqUlt7aynqDfX3dgJnr/vFyj1vnnx730=;
-	b=vCcuuQNxZlMNYrSmmuJr1Nq9RY/XA4OBqIfE2Rcylh+vZBSITUAWIrUo12EwYSyIGLJfVP
-	bjR5T7l8zG79IA45iFzeBAbMEF8DaEseraCjgDr5BOqQkZGkmGoaBpZ8E+Vak5FW6+4I5O
-	m0s/GaOLfID4hDu8p/xSHgArWPCvPRE=
+	t=1725498829; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=R2rTnlrTr/V+hvZrCoacc6TtHjuHlRjKvliG4WqKZ+s=;
+	b=HOMDPfrGjDHeanlr8NLISr5h8p8Vfo0fXFTBZs9jKmVY045TqTz7ESTS8SRDIexdxP97G3
+	e8esl23rdSNkFYIAuKRBsEZpX+9s6mm5nw8R1mYKxRY+tEd7ZJyJrs5YVZ3B5PksL59WV2
+	XhEMu5A3G6BgpbOqml+kjDt3o1nMb+M=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 3556113508
-	for <linux-btrfs@vger.kernel.org>; Thu,  5 Sep 2024 01:13:45 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 9035E13508
+	for <linux-btrfs@vger.kernel.org>; Thu,  5 Sep 2024 01:13:48 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id v/8nOskF2WbMKQAAD6G6ig
+	id UPEhFcwF2WbMKQAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Thu, 05 Sep 2024 01:13:45 +0000
+	for <linux-btrfs@vger.kernel.org>; Thu, 05 Sep 2024 01:13:48 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 0/4] btrfs-progs: convert: fix the invalid regular extents for symbol links
-Date: Thu,  5 Sep 2024 10:43:20 +0930
-Message-ID: <cover.1725498618.git.wqu@suse.com>
+Subject: [PATCH v2 2/4] btrfs-progs: check/original: detect invalid file extent items for symbolic links
+Date: Thu,  5 Sep 2024 10:43:22 +0930
+Message-ID: <88fb398f778e76297ca27817eb44697392279b53.1725498618.git.wqu@suse.com>
 X-Mailer: git-send-email 2.46.0
+In-Reply-To: <cover.1725498618.git.wqu@suse.com>
+References: <cover.1725498618.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -86,56 +93,49 @@ X-Spamd-Result: default: False [-2.80 / 50.00];
 X-Spam-Score: -2.80
 X-Spam-Flag: NO
 
-[CHANGELOG]
-v2:
-- Fix the words "symbol link" to "symbolic link"
+[BUG]
+There is a recent bug that btrfs/012 fails and kernel rejects to read a
+symbolic link which is backed by a regular extent.
 
-- Split the inline extent size limits into two different ones
-  One for symbolic links, as they are limited by PATH_MAX - 1.
-  The other one for regular data inlined extents.
-  They should be no larger than sectorsize - 1.
+Furthremore in that case, "btrfs check" doesn't detect such problem at
+all.
 
-  Furthremore, both will also be limited by the node size.
+[CAUSE]
+For symbolic links, we only allow inline file extents, and this means we
+should only have a symbolic link target which is smaller than 4K.
 
-Test case btrfs/012 fails randomly after the rework to use fsstress to
-populate the fs.
+But btrfs check doesn't handle symbolic link inodes any differently, thus
+it doesn't check if the file extents are inlined or not, nor reporting
+this problem as an error.
 
-It turns out that, if fsstress creates a symbol link whose target is
-4095 bytes (at the max size limit), btrfs-convert will create a regular
-extent instead of the expected inline one.
+[FIX]
+When processing data extents, if we find the owning inode is a symbolic
+link, and the file extent is regular/preallocated, mark the inode with
+I_ERR_FILE_EXTENT_TOO_LARGE error.
 
-This regular extent for symbol link inodes will be rejected by kernel,
-resulting test case failure.
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ check/main.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
-The reason that btrfs-convert created such regular extent is,
-btrfs-convert accidentally added one byte for the terminating NUL,
-enlarge the should-be inlined file extent to be a regular one.
-
-The first patch will fix the bug.
-Then two patches to enahnce btrfs-check to detect the error (regular and
-lowmem mode)
-Eventually a dedicated test case for btrfs-convert, so in the future we
-won't cause the problem again.
-
-Qu Wenruo (4):
-  btrfs-progs: convert: fix inline extent size for symbol link
-  btrfs-progs: check/original: detect invalid file extent items for
-    symbolic links
-  btrfs-progs: check/lowmem: detect invalid file extents for symbolic
-    links
-  btrfs-progs: convert-tests: add a test case to verify large symbolic
-    link handling
-
- check/main.c                                  |  7 +++
- check/mode-lowmem.c                           | 44 +++++++++++++++++++
- convert/source-ext2.c                         | 29 +++++++++---
- convert/source-reiserfs.c                     | 10 ++++-
- kernel-shared/file-item.c                     |  6 +++
- kernel-shared/file-item.h                     | 18 ++++++++
- .../027-large-symbol-link/test.sh             | 27 ++++++++++++
- 7 files changed, 133 insertions(+), 8 deletions(-)
- create mode 100755 tests/convert-tests/027-large-symbol-link/test.sh
-
---
+diff --git a/check/main.c b/check/main.c
+index 599f22ec36ee..d4108b7315e0 100644
+--- a/check/main.c
++++ b/check/main.c
+@@ -1745,6 +1745,13 @@ static int process_file_extent(struct btrfs_root *root,
+ 			rec->errors |= I_ERR_BAD_FILE_EXTENT;
+ 		if (disk_bytenr > 0)
+ 			rec->found_size += num_bytes;
++		/*
++		 * Symbolic links should only have inlined extents.
++		 * A regular extent means it's already too large to
++		 * be inlined.
++		 */
++		if (S_ISLNK(rec->imode))
++			rec->errors |= I_ERR_FILE_EXTENT_TOO_LARGE;
+ 	} else {
+ 		rec->errors |= I_ERR_BAD_FILE_EXTENT;
+ 	}
+-- 
 2.46.0
 

@@ -1,73 +1,61 @@
-Received: from mail-il1-f199.google.com (mail-il1-f199.google.com [209.85.166.199])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BFB9E1CDA0C
-	for <linux-btrfs@vger.kernel.org>; Sat, 14 Sep 2024 07:03:03 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.166.199
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1C5E343ABD;
+	Sat, 14 Sep 2024 13:29:48 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1726297385; cv=none; b=ERhKjfapNkPzB/+eoc9+MYa8MrGI3OyhrtA7Shu0D9+C8jpW/Gnpw3l1T4oeKK5nijHoD7M5IE3iXZpzKvKobhTTFw81XeDtBSin+5/dqkq9j52Xqr4eJ0/M0AKYnl8o91ZPNBSqp151kwYaeaQVPr1zpiuoNzZXg35pJT1b7ho=
+	t=1726320589; cv=none; b=paIdI5+/mLWSc/t5DA+xxP1qOs7uUJeWKm+RQMotOh+EHHhQHHunHnki6Uh+my7hz0flTsVLdyWeNQp9ijfaQk3JlPTi6kLl1UX2gDnr1++3P//ntzFYdH9V3Y5ArQG0XU58M+WqAsHRfdMX6au55vCEPyt2w4KNXvqgaYkehLo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1726297385; c=relaxed/simple;
-	bh=a+gA+cCmzq3kDhPz9MnS1+QNhN2B8omnsY5KmZNJJ1I=;
-	h=MIME-Version:Date:In-Reply-To:Message-ID:Subject:From:To:
-	 Content-Type; b=D0LtL6HwS8I3QmvrD9uyBG0qBqvkiZSIvzqgVfVVuTdvesDute7f8JrC/BssHsKq/hdphwZV9jk+cuihsGSn57inZ29XMcepNnhRLeUjHqQwaxQCypx3o6nwLTGcW/03XqRlbrj0gCC/0aoBz1YCfZ5PjJK5NZ8Fzyqnm8tdrOo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com; arc=none smtp.client-ip=209.85.166.199
-Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
-Received: by mail-il1-f199.google.com with SMTP id e9e14a558f8ab-3a04bf03b1aso57544875ab.1
-        for <linux-btrfs@vger.kernel.org>; Sat, 14 Sep 2024 00:03:03 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1726297383; x=1726902183;
-        h=to:from:subject:message-id:in-reply-to:date:mime-version
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=0cgYyxj1JymujBuy6kZGBfB6QpXUxYpKiCNt/km+idI=;
-        b=Kt/Gft7afYIDIBh6+Eu+iI47MTwt/RNFif0AB4pjScUuTNIC8hfRv5VdaZsAfudt1w
-         M0MylACnl96pm2zMHDgNjyRdF9zJceGyjCOfp80pLh3kg1UwEfoWeYakkNJYdUNDVhrr
-         pgE9WFhNGwgb0RBQ4gHLf7ke2S1cJksYhuszGhsi08GyXcd908CGIjF0qbrc5K5YvxTo
-         WKXKIp6Dj3Yd+qRYTf9pY4uUb4MaxAeEeRnJxj2Qvn18/Mv3YjACGoNLSyG1LF9T2NQU
-         hYe8/qD2N59HUTkpmKip4zlqmk3JhcbL4Mjw2oSuAfh9dYKc5CtyAYe4ArVEa1vZWIpT
-         jbYg==
-X-Forwarded-Encrypted: i=1; AJvYcCXIwZnx0rKaJ+2Ln/BWoTBphix5m6GncvLF7aG4yn1Z+aO89KnZDMlvH5YFuFexRbRgWmHV0o7GtAZLQw==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yy2EuHsLbFzJJNQiAhJ/JpLWiPxfGwygROOHRYu44Bxh/k7QWLu
-	2Bg2Xsinmdh2uEOxgu6HhF6rD5IwrrpGDbOMjgeaWGPLPqElLpXkkZUz5QxBOpFn7XRD4czbt2V
-	BPeF8Rrgca2PmOSR32tAsaLqHmtESOvT5mPpyDASr9xDrfFUMg7ATwq8=
-X-Google-Smtp-Source: AGHT+IGjxBa1Qe99S0Q75VIuQNI4uVBVunBwYCqjYx8ndy6tN8vrr2EIFSqk3ClCcEARcKcgxh9vdKkdKdTyvopPauPjRg6mGL/G
+	s=arc-20240116; t=1726320589; c=relaxed/simple;
+	bh=ENS4d4cBqvHMS4kIgC6CuenSU8fTI9WWXBs8vM2d6ks=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=HfefLIQ5mrzNABtlrgyKiiMmQuvtyvljcKOotcQSlujIHLEalVjyoC7rJ6BxMmK2TzlsHvXhVSy0ohwk5gkFa6HwKxyIjWH9uab3+RcA2UC/MHI9tkmvrxgg5dcRRWOBw508iNeHzgn/AeNbvnfTNJ+mcFWFB+ESgDXNlnbOwG4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=hzjWpVK1; arc=none smtp.client-ip=10.30.226.201
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="hzjWpVK1"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id C5F4AC4CEC0;
+	Sat, 14 Sep 2024 13:29:41 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1726320588;
+	bh=ENS4d4cBqvHMS4kIgC6CuenSU8fTI9WWXBs8vM2d6ks=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=hzjWpVK1yXxkliKL/M5G51lind0Oepjslbqrkk0BjXrSelRw7+TSziaqII9maQF9l
+	 hHvFMrPYOlXSd2bn4Ky9urZO5ayqTCwUJ9wQc7A+jf6N5jZd7EjviT59+sD+JOHsIx
+	 cisM+srUui55e8ei+XYZhG48/aITB4P0IFJynHw8z9JYJVDnUgufZFYDS0bphb8SZg
+	 yxgO9MfOGBpbV+Zjdq//HgjWHGURnTfGTM+/VFzaR6JLUqiGej+N48guCq2itdejCV
+	 tZAGkgRoxIc3cCfa1mzBrXOlZZ2sgJGHcmmyjTCmHp+88ZkOgF3ehb/NUFxxc6iITN
+	 8MK88dvLNUnHQ==
+Date: Sat, 14 Sep 2024 15:29:38 +0200
+From: Christian Brauner <brauner@kernel.org>
+To: Jeff Layton <jlayton@kernel.org>
+Cc: John Stultz <jstultz@google.com>, Thomas Gleixner <tglx@linutronix.de>, 
+	Stephen Boyd <sboyd@kernel.org>, Alexander Viro <viro@zeniv.linux.org.uk>, 
+	Jan Kara <jack@suse.cz>, Steven Rostedt <rostedt@goodmis.org>, 
+	Masami Hiramatsu <mhiramat@kernel.org>, Mathieu Desnoyers <mathieu.desnoyers@efficios.com>, 
+	Jonathan Corbet <corbet@lwn.net>, Chandan Babu R <chandan.babu@oracle.com>, 
+	"Darrick J. Wong" <djwong@kernel.org>, Theodore Ts'o <tytso@mit.edu>, 
+	Andreas Dilger <adilger.kernel@dilger.ca>, Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>, 
+	David Sterba <dsterba@suse.com>, Hugh Dickins <hughd@google.com>, 
+	Andrew Morton <akpm@linux-foundation.org>, Chuck Lever <chuck.lever@oracle.com>, 
+	Vadim Fedorenko <vadim.fedorenko@linux.dev>, linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
+	linux-trace-kernel@vger.kernel.org, linux-doc@vger.kernel.org, linux-xfs@vger.kernel.org, 
+	linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org, linux-nfs@vger.kernel.org, 
+	linux-mm@kvack.org, Randy Dunlap <rdunlap@infradead.org>
+Subject: Re: [PATCH v7 00/11] fs: multigrain timestamp redux
+Message-ID: <20240914-umfang-kojen-e9bf965393bd@brauner>
+References: <20240913-mgtime-v7-0-92d4020e3b00@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Received: by 2002:a05:6e02:13a2:b0:39f:6180:afca with SMTP id
- e9e14a558f8ab-3a08491196bmr112412095ab.13.1726297382976; Sat, 14 Sep 2024
- 00:03:02 -0700 (PDT)
-Date: Sat, 14 Sep 2024 00:03:02 -0700
-In-Reply-To: <20240914064158.75664-1-lizhi.xu@windriver.com>
-X-Google-Appengine-App-Id: s~syzkaller
-X-Google-Appengine-App-Id-Alias: syzkaller
-Message-ID: <66e53526.050a0220.1f4381.0001.GAE@google.com>
-Subject: Re: [syzbot] [btrfs?] general protection fault in write_all_supers
-From: syzbot <syzbot+56360f93efa90ff15870@syzkaller.appspotmail.com>
-To: clm@fb.com, dsterba@suse.com, josef@toxicpanda.com, 
-	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, 
-	lizhi.xu@windriver.com, syzkaller-bugs@googlegroups.com
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+In-Reply-To: <20240913-mgtime-v7-0-92d4020e3b00@kernel.org>
 
-Hello,
+On Fri, Sep 13, 2024 at 09:54:09AM GMT, Jeff Layton wrote:
+> Once more into the breach, dear friends!
 
-syzbot has tested the proposed patch and the reproducer did not trigger any issue:
-
-Reported-by: syzbot+56360f93efa90ff15870@syzkaller.appspotmail.com
-Tested-by: syzbot+56360f93efa90ff15870@syzkaller.appspotmail.com
-
-Tested on:
-
-commit:         b7718454 Merge tag 'pci-v6.11-fixes-4' of git://git.ke..
-git tree:       upstream
-console output: https://syzkaller.appspot.com/x/log.txt?x=136150a9980000
-kernel config:  https://syzkaller.appspot.com/x/.config?x=61d235cb8d15001c
-dashboard link: https://syzkaller.appspot.com/bug?extid=56360f93efa90ff15870
-compiler:       Debian clang version 15.0.6, GNU ld (GNU Binutils for Debian) 2.40
-patch:          https://syzkaller.appspot.com/x/patch.diff?x=1731349f980000
-
-Note: testing is done by a robot and is best-effort only.
+I think this will have to be the v6.13 breach. :/

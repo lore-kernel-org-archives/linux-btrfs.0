@@ -1,137 +1,182 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from galois.linutronix.de (Galois.linutronix.de [193.142.43.55])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A1FE21465BD
-	for <linux-btrfs@vger.kernel.org>; Mon, 16 Sep 2024 09:05:54 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 542DD14BFB0;
+	Mon, 16 Sep 2024 10:12:58 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=193.142.43.55
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1726477557; cv=none; b=n9xVFMrW7+Z7v6vxfwElRieJUNocHs9jwBm5RjIQYJ2QIuQxlGn/kU2QKEBMQSKwqvTlDfZKvWhpBGw9Bh5GbSOUB60AULwFEZdAj7meqdiNndaUM/FNC67Cq2g7Dy7Xkemo9TLOJxH1oAWeZZHyMDR3grZMjMlwNigeP41xvnc=
+	t=1726481581; cv=none; b=PpixcNevIYC8HE6xL65nbcSMlvo04w3Zh0Ttiq5XmzgmHVsIask1/9Ha8cvrAhbg1N5xgY86WMQZmcHnIHbte+CffDOJNAxEC4KV+Kvsn+TpAxTlsLOAClPXasIJEnYfQ8df7lLa0WAQ8heEFX4GFC8hO4SUWlQ8337TCgr0TY0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1726477557; c=relaxed/simple;
-	bh=GZk/xzCoDzbgKupV2ZvKmIyBboyvzjUneDB4FDtT3mM=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=Uyro3uNVdp4hdKGzCEhyAjpCe7LWpRZADeYJ1uKvqKVDRN+YS8UYH9VFrCbNA6jikLExPPhO3sytpAMEOZW6jGKFYhdV4Zl4BFqw9cmH3m2ihECiAamY3oSu9MWkqk1oXZll9WRhWNnjocVpp+l3AuOWPUBPdLaDkEeUN9uWiNU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=SGf8I4e7; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=SGf8I4e7; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1726481581; c=relaxed/simple;
+	bh=7f22G+6r66QEwau72pU8x4w4ZuPvjQGUXc8asSZd1lI=;
+	h=From:To:Cc:Subject:In-Reply-To:References:Date:Message-ID:
+	 MIME-Version:Content-Type; b=UaOQMJm1JaeMiVU4tSZDBhKKOVC8Npq/iseFUs9P0hqGQnXuAzTS0QaMYDLAm2KtGr8cahzyH8fEGuRkvV0J877xTTfvcJmOHCEpYbxjKRVrqrTLSc5bKKLGBtdVqG9lmJW64aTDVViwW/x3tfl6Gbg58ZjoGEFdwqn5/Lr9qgA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linutronix.de; spf=pass smtp.mailfrom=linutronix.de; dkim=pass (2048-bit key) header.d=linutronix.de header.i=@linutronix.de header.b=v1sVvDod; dkim=permerror (0-bit key) header.d=linutronix.de header.i=@linutronix.de header.b=ft94qdf3; arc=none smtp.client-ip=193.142.43.55
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linutronix.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linutronix.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="SGf8I4e7";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="SGf8I4e7"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id C3FB71FD57
-	for <linux-btrfs@vger.kernel.org>; Mon, 16 Sep 2024 09:05:52 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1726477552; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
+	dkim=pass (2048-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="v1sVvDod";
+	dkim=permerror (0-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="ft94qdf3"
+From: Thomas Gleixner <tglx@linutronix.de>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linutronix.de;
+	s=2020; t=1726481577;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=M4WFSKFCz7HtVZQQUwDs8UzYngAdQ7mjCOlgEsoPEM4=;
-	b=SGf8I4e7+CQV2XFsQ4Pc8M57aEpTXjwHIs2oTDgJT4nu/MaCXh6w+aoy0XskKqFKRn3RW8
-	3p1WO3+3DKeJnIVA/tcBdcVqXbyvdvRd5C4OyOBJDgGSH7DvF/Y8Dwx3vUO1IMd2F40TkR
-	IV2ADFhejC3eihIa7whwQJv7z9Fv1yE=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=SGf8I4e7
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1726477552; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
+	bh=v3ll6KO8H5UrZC6yCuHnxrKwZc40QeoVwfA712SGpCg=;
+	b=v1sVvDodszPQaC6MYGfaSe4O0YiaY1fze0PmCKJ6c2G23tPz7qhE8S1B1sLtwUgWIXMmak
+	lcl5g5XiApkWPI1SCVyw7s9z1iO9KN6mpCWlZuVUdZluKI8O4fUF6eIdjm1NesbAgwTjm9
+	L5r8Exaw6kxoLg3DrFsWi8+mp8bsCM3zkFSSojxJ6whDP0q0k1EnEEodbLafdu9xFs6uaz
+	8eHdofzdFoTnlGmddqeYRaFKXUxsd24x8fzw0LItUenj5KjkqN5heAotraD7Uf01iomULo
+	x3kKNZ67/a7jl0TuyFLafUFm2vFpo2t7LtFrG+RNKJkiP8/m8yTSt9sPqggSzw==
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=linutronix.de;
+	s=2020e; t=1726481577;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=M4WFSKFCz7HtVZQQUwDs8UzYngAdQ7mjCOlgEsoPEM4=;
-	b=SGf8I4e7+CQV2XFsQ4Pc8M57aEpTXjwHIs2oTDgJT4nu/MaCXh6w+aoy0XskKqFKRn3RW8
-	3p1WO3+3DKeJnIVA/tcBdcVqXbyvdvRd5C4OyOBJDgGSH7DvF/Y8Dwx3vUO1IMd2F40TkR
-	IV2ADFhejC3eihIa7whwQJv7z9Fv1yE=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 1092813A91
-	for <linux-btrfs@vger.kernel.org>; Mon, 16 Sep 2024 09:05:51 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id aLF9Me/052bTSgAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Mon, 16 Sep 2024 09:05:51 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/2] btrfs: make assert_rbio() to only check CONFIG_BTRFS_DEBUG
-Date: Mon, 16 Sep 2024 18:35:28 +0930
-Message-ID: <98779174312bea75b3158e8caa555833f10c94e3.1726477365.git.wqu@suse.com>
-X-Mailer: git-send-email 2.46.0
-In-Reply-To: <cover.1726477365.git.wqu@suse.com>
-References: <cover.1726477365.git.wqu@suse.com>
+	bh=v3ll6KO8H5UrZC6yCuHnxrKwZc40QeoVwfA712SGpCg=;
+	b=ft94qdf3mKKez4Fq6giUKHTG2x5ATRcMmRN9N6Lxg1hlqvpyZTzutygIeaN9KywFwHwHHJ
+	c1DaKC+nUT0MDZDQ==
+To: Jeff Layton <jlayton@kernel.org>, John Stultz <jstultz@google.com>,
+ Stephen Boyd <sboyd@kernel.org>, Alexander Viro <viro@zeniv.linux.org.uk>,
+ Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>, Steven
+ Rostedt <rostedt@goodmis.org>, Masami Hiramatsu <mhiramat@kernel.org>,
+ Mathieu Desnoyers <mathieu.desnoyers@efficios.com>, Jonathan Corbet
+ <corbet@lwn.net>, Chandan Babu R <chandan.babu@oracle.com>, "Darrick J.
+ Wong" <djwong@kernel.org>, Theodore Ts'o <tytso@mit.edu>, Andreas Dilger
+ <adilger.kernel@dilger.ca>, Chris Mason <clm@fb.com>, Josef Bacik
+ <josef@toxicpanda.com>, David Sterba <dsterba@suse.com>, Hugh Dickins
+ <hughd@google.com>, Andrew Morton <akpm@linux-foundation.org>, Chuck Lever
+ <chuck.lever@oracle.com>, Vadim Fedorenko <vadim.fedorenko@linux.dev>
+Cc: Randy Dunlap <rdunlap@infradead.org>, linux-kernel@vger.kernel.org,
+ linux-fsdevel@vger.kernel.org, linux-trace-kernel@vger.kernel.org,
+ linux-doc@vger.kernel.org, linux-xfs@vger.kernel.org,
+ linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
+ linux-nfs@vger.kernel.org, linux-mm@kvack.org, Jeff Layton
+ <jlayton@kernel.org>
+Subject: Re: [PATCH v8 01/11] timekeeping: move multigrain timestamp floor
+ handling into timekeeper
+In-Reply-To: <20240914-mgtime-v8-1-5bd872330bed@kernel.org>
+References: <20240914-mgtime-v8-0-5bd872330bed@kernel.org>
+ <20240914-mgtime-v8-1-5bd872330bed@kernel.org>
+Date: Mon, 16 Sep 2024 12:12:55 +0200
+Message-ID: <87a5g79aag.ffs@tglx>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Rspamd-Queue-Id: C3FB71FD57
-X-Spam-Level: 
-X-Spamd-Result: default: False [-5.01 / 50.00];
-	BAYES_HAM(-3.00)[99.99%];
-	DWL_DNSWL_MED(-2.00)[suse.com:dkim];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	MID_CONTAINS_FROM(1.00)[];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	MIME_TRACE(0.00)[0:+];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	FUZZY_BLOCKED(0.00)[rspamd.com];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	ARC_NA(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+];
-	TO_DN_NONE(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.com:email,suse.com:dkim,suse.com:mid]
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Rspamd-Action: no action
-X-Spam-Score: -5.01
-X-Spam-Flag: NO
+Content-Type: text/plain
 
-According to the description, CONFIG_BTRFS_DEBUG is only for extra
-debug info, meanwhile sanity checks should be managed by
-CONFIG_BTRFS_ASSERT.
+On Sat, Sep 14 2024 at 13:07, Jeff Layton wrote:
+> For multigrain timestamps, we must keep track of the latest timestamp
 
-There is no need to check both to enable assert_rbio().
+What is a multgrain timestamp? Can you please describe the concept
+behind it? I'm not going to chase random documentation or whatever
+because change logs have to self contained.
 
-Just remove the check for CONFIG_BTRFS_DEBUG.
+And again 'we' do nothing. Describe the problem in technical terms and
+do not impersonate code.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/raid56.c | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+> To maximize the window of this occurring when multiple tasks are racing
+> to update the floor, ktime_get_coarse_real_ts64_mg returns a cookie
+> value that represents the state of the floor tracking word, and
+> ktime_get_real_ts64_mg accepts a cookie value that it uses as the "old"
+> value when calling cmpxchg().
 
-diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index 39bec672df0c..cdd373c27784 100644
---- a/fs/btrfs/raid56.c
-+++ b/fs/btrfs/raid56.c
-@@ -1272,8 +1272,7 @@ static inline void bio_list_put(struct bio_list *bio_list)
- 
- static void assert_rbio(struct btrfs_raid_bio *rbio)
- {
--	if (!IS_ENABLED(CONFIG_BTRFS_DEBUG) ||
--	    !IS_ENABLED(CONFIG_BTRFS_ASSERT))
-+	if (!IS_ENABLED(CONFIG_BTRFS_ASSERT))
- 		return;
- 
- 	/*
--- 
-2.46.0
+Clearly:
 
+> +void ktime_get_real_ts64_mg(struct timespec64 *ts, u64 cookie)
+
+Can you please get your act together?
+
+> +/**
+> + * ktime_get_coarse_real_ts64_mg - get later of coarse grained time or floor
+> + * @ts: timespec64 to be filled
+> + *
+> + * Adjust floor to realtime and compare it to the coarse time. Fill
+> + * @ts with the latest one.
+
+This explains nothing.
+
+>      Note that this is a filesystem-specific
+> + * interface and should be avoided outside of that context.
+> + */
+> +void ktime_get_coarse_real_ts64_mg(struct timespec64 *ts)
+> +{
+> +	struct timekeeper *tk = &tk_core.timekeeper;
+> +	u64 floor = atomic64_read(&mg_floor);
+> +	ktime_t f_real, offset, coarse;
+> +	unsigned int seq;
+> +
+> +	WARN_ON(timekeeping_suspended);
+> +
+> +	do {
+> +		seq = read_seqcount_begin(&tk_core.seq);
+> +		*ts = tk_xtime(tk);
+> +		offset = *offsets[TK_OFFS_REAL];
+
+Why this indirection? What's wrong with using
+tk_core.timekeeper.offs_real directly?
+
+> +	} while (read_seqcount_retry(&tk_core.seq, seq));
+> +
+> +	coarse = timespec64_to_ktime(*ts);
+> +	f_real = ktime_add(floor, offset);
+
+How is any of this synchronized against concurrent updates of the floor
+value or the offset? I'm failing to see anything which keeps this
+consistent. If this is magically consistent then it wants a big fat
+comment in the code which explains it.
+
+> +void ktime_get_real_ts64_mg(struct timespec64 *ts, u64 cookie)
+
+What is this cookie argument for and how does that match the
+declaration?
+
+> +extern void ktime_get_real_ts64_mg(struct timespec64 *ts);
+
+This does not even build.
+
+> +{
+> +	struct timekeeper *tk = &tk_core.timekeeper;
+> +	ktime_t old = atomic64_read(&mg_floor);
+> +	ktime_t offset, mono;
+> +	unsigned int seq;
+> +	u64 nsecs;
+> +
+> +	WARN_ON(timekeeping_suspended);
+
+WARN_ON_ONCE() if at all.
+
+> +	do {
+> +		seq = read_seqcount_begin(&tk_core.seq);
+> +
+> +		ts->tv_sec = tk->xtime_sec;
+> +		mono = tk->tkr_mono.base;
+> +		nsecs = timekeeping_get_ns(&tk->tkr_mono);
+> +		offset = *offsets[TK_OFFS_REAL];
+> +	} while (read_seqcount_retry(&tk_core.seq, seq));
+> +
+> +	mono = ktime_add_ns(mono, nsecs);
+> +
+> +	if (atomic64_try_cmpxchg(&mg_floor, &old, mono)) {
+> +		ts->tv_nsec = 0;
+> +		timespec64_add_ns(ts, nsecs);
+> +	} else {
+> +		/*
+> +		 * Something has changed mg_floor since "old" was
+> +		 * fetched. "old" has now been updated with the
+> +		 * current value of mg_floor, so use that to return
+> +		 * the current coarse floor value.
+
+'Something has changed' is a truly understandable technical
+explanation.
+
+I'm not going to accept this voodoo which makes everyone scratch his
+head who wasn't involved in this.
+
+Thanks,
+
+        tglx

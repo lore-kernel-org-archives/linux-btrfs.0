@@ -1,41 +1,41 @@
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.21])
+Received: from mout.gmx.net (mout.gmx.net [212.227.15.15])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D834A84E11;
-	Mon, 23 Sep 2024 22:34:33 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.17.21
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1603F38C;
+	Tue, 24 Sep 2024 00:46:31 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.15.15
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1727130876; cv=none; b=gHJi6XiVZhx88HwiyYHhph1UpzGe+baDNQ9SN0dqyFlllZ5uvfPZxAqpX/6fttereCUsnZw7+D46PD1aRGztPorjkXB2xwgtxHhJ96hjroLs9k+qAFFKgVbGI1yErVoYmHjBeJ8L0580rMtJAVozD04QJpLayA4fmjNXhWY11NQ=
+	t=1727138794; cv=none; b=mXiKJTpZCNTmaD5bm4W1U7SCLsL9pvYkUe0o77lF1gEPHvgGbavS3vFT92J5zcBg5JOL4HC+mW8/brTyXcUVIvm5odEtteTH1hGfbXMxCfmMJys8Ex6gREmp8gGw1dRGSHfglvkdqRFtDw54SrLDfFvP9Un0xab2f3OnJkc6Mro=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1727130876; c=relaxed/simple;
-	bh=FHUC8gt4C/Km5NrfVbRsMcFqQOElqrmHuaFrSHX11+w=;
+	s=arc-20240116; t=1727138794; c=relaxed/simple;
+	bh=u5MQJ64TxRY7byNeC+CNZ82eYueW7qffSg0KV3+7mSU=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=cmF8d0qTZMyY/wm5wn6Ptz8wubroErP+pGByad3IUcO+n6MOQ0rnHFgX/0pMXGJ5L8CKoSI1LWhl0MZKLabthrJH1P1f7IvGQsU4A5AGyyX/BNLURJgU2QdTSejoOBD9ZjbcqdBj0z5E/m9K86uqlmBonNV/o3GFIfYTqeTPpog=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=lYn9+LGS; arc=none smtp.client-ip=212.227.17.21
+	 In-Reply-To:Content-Type; b=E7fdWfU3i6zFnufIF0aL+j1Z0cDYDeh+aWaIpjWIhU4V3m82fP76uGheg74dqvPoWDUvsgf91a1siCHoZW0RPEDtG5RBZLWc+0aH7isfDFXVs6MqM1wni0oa5y1iW+My9kpKydPHcpC3DxE8TA8CepWiAAuQF4lXhlVKCTIa+kA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=q0VWf4u4; arc=none smtp.client-ip=212.227.15.15
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="lYn9+LGS"
+	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="q0VWf4u4"
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1727130235; x=1727735035; i=quwenruo.btrfs@gmx.com;
-	bh=FHUC8gt4C/Km5NrfVbRsMcFqQOElqrmHuaFrSHX11+w=;
+	s=s31663417; t=1727138778; x=1727743578; i=quwenruo.btrfs@gmx.com;
+	bh=u5MQJ64TxRY7byNeC+CNZ82eYueW7qffSg0KV3+7mSU=;
 	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
 	 References:From:In-Reply-To:Content-Type:
 	 Content-Transfer-Encoding:cc:content-transfer-encoding:
 	 content-type:date:from:message-id:mime-version:reply-to:subject:
 	 to;
-	b=lYn9+LGS8Hcx9zlOmNLIaYugC/ER3iM4F21O+QOG95DIenEHvMgJUGil+iPJinmM
-	 nIyyS+i8yrBWWP8MUNIBwyyyl4LFAyNISX1f36Kk3Ucc4Npl10XlP59lZC9XRGskv
-	 9kEZRjzIADqn6UmgvX63u70dZL9C3L48hvcpE/dEJAARv5O8k7BiozQRggu6UrnY0
-	 CKWGgZoad43V+vS3zFIaPDiL4+ykrNJPgmaUM+qQl5wXZb8Q+G80Yod3ZwCkFCbcz
-	 qbbdk12M4aWo5pRx6LxfUwOq+h/yDHZnTlt8tLdDbP0hXpTEHjsiIOAQI2XGZqOi1
-	 8ObVMUAo1ZOqcjQs8Q==
+	b=q0VWf4u4YU/uCPXe5VXEzybKmJzW4XXN5z31BpMSLM1Nx4tJ8zkv0Vn3cNUTSinL
+	 u8ZLYI9m+gAad7r1+0B3coleBP0TjqyQOqZ+/gqDckEonWPGBH5yWQ/T7dRY3oDa2
+	 8TXf+LLdUAhcdFS/SNA/GehaLRwqp4skI7mshMHfMQ1rSU+7nAbzuCXqFVRpEm5rJ
+	 BLHwxX9wGUTVxD5tg4e0SzC5jVSnUofhxK4HkSjwa5yos1MdyRhpYIWcvEW05A4xQ
+	 Pipzd8YHTMQTnPEZj+BImlPdmtohi/rY5LhyoDFc6z0jT4BqoKjUK546BPl2hCLdq
+	 HR1V+osNW8dgslQtkw==
 X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from [172.16.0.191] ([159.196.52.54]) by mail.gmx.net (mrgmx104
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1MAfUe-1smDch15Cq-00B6So; Tue, 24
- Sep 2024 00:23:55 +0200
-Message-ID: <f6ae39fd-ee30-4e22-8d0d-6dec5c3bd192@gmx.com>
-Date: Tue, 24 Sep 2024 07:53:50 +0930
+Received: from [172.16.0.191] ([159.196.52.54]) by mail.gmx.net (mrgmx005
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1N6KUd-1rrcjQ28nB-00vNQl; Tue, 24
+ Sep 2024 02:46:18 +0200
+Message-ID: <3f16658c-56f9-4ec5-ba6e-4c56a0b8f5e4@gmx.com>
+Date: Tue, 24 Sep 2024 10:16:13 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -44,19 +44,17 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
 Subject: Re: [PATCH] btrfs: also add stripe entries for NOCOW writes
-To: Johannes Thumshirn <Johannes.Thumshirn@wdc.com>,
- Johannes Thumshirn <jth@kernel.org>, Chris Mason <clm@fb.com>,
- Josef Bacik <josef@toxicpanda.com>, David Sterba <dsterba@suse.com>,
+To: Josef Bacik <josef@toxicpanda.com>
+Cc: Johannes Thumshirn <jth@kernel.org>, Chris Mason <clm@fb.com>,
+ David Sterba <dsterba@suse.com>,
  "open list:BTRFS FILE SYSTEM" <linux-btrfs@vger.kernel.org>,
- open list <linux-kernel@vger.kernel.org>
-Cc: WenRuo Qu <wqu@suse.com>, Naohiro Aota <Naohiro.Aota@wdc.com>
+ open list <linux-kernel@vger.kernel.org>, Qu Wenruo <wqu@suse.com>,
+ Naohiro Aota <naohiro.aota@wdc.com>,
+ Johannes Thumshirn <johannes.thumshirn@wdc.com>
 References: <20240923064549.14224-1-jth@kernel.org>
  <71088008-c105-4eb9-9199-882091eafe07@gmx.com>
- <3c0c8517-a642-4e7b-bbcd-ef0022c49c3f@wdc.com>
- <d42756f6-d5a8-4f44-a6f0-6056f5c1015b@gmx.com>
- <aacb742c-2081-441e-ac52-d9e0f580ab1e@wdc.com>
- <47d0f003-ebc8-4959-a22c-ccf9ea7ef35a@gmx.com>
- <887a09bc-3c98-4bd1-aa31-0732fc633315@wdc.com>
+ <20240923152046.GA159452@perftesting>
+ <d881d399-96fc-4cf5-8a40-96f2e76b7644@gmx.com>
 Content-Language: en-US
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
@@ -83,75 +81,151 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
  INfWh0KbJodf0G48xouesn08cbfUdlphSMXujCA8y5TcNyRuNv2q5Nizl8sKhUZzh4BascoK
  DChBuznBsucCTAGrwPgG4/ul6HnWE8DipMKvkV9ob1xJS2W4WJRPp6QdVrBWJ9cCdtpR6GbL
  iQi22uZXoSPv/0oUrGU+U5X4IvdnvT+8viPzszL5wXswJZfqfy8tmHM85yjObVdIG6AlnrrD
-In-Reply-To: <887a09bc-3c98-4bd1-aa31-0732fc633315@wdc.com>
+In-Reply-To: <d881d399-96fc-4cf5-8a40-96f2e76b7644@gmx.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:TTcF/bjJ8l4vXEfT+qUrttoNpA1+fy6rl+GQrTmV4h5JbFFkjNu
- vDVk+KiGSbeID70EdmknhLCLJQXmERhdsOG5yuilQisLXY+BgmAEXRxOFG1JHF1no0ceOAH
- azDqmpXnrNTd2t3AMBRkOXrlse7eGvWigGbbLpZgSqhTsZ9tOSl9lYG2wrTIHenZkIXW8OZ
- RGt/19Jh/JqoTutyucHBQ==
+X-Provags-ID: V03:K1:TjoOxA5fAWmDm1sQiJaN0KL6gFnDVSI7IMcmR0UaaePkT9rolyY
+ 1dX1zWgqGwruiNl98zZ0+zeBAPMbStsPiTHiJAIjUKVZBUmDchHk0+pP4EhsASJv61IB+YG
+ /3JMwg90l/1q4FBrNifXDmTjQIctEhLxJl0qPeTGN6iWzXy33UNAM96sRpAjKLDDFB0P1ge
+ KYreqo6DrYdPemx4bfong==
 X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:iw8LX7Nst7o=;qGpkp1D15wL38YIq30zBCPUitih
- cTIgz7F4COG+JbsBZza6y5pE7RU8OlEnuKg7SCpGUXSKOUOOhgkRHf/k5xkk9CPUWGeymSryK
- ZJ6gPVHMfk1vHwiP+Yzy4D9Qd6o1y0+e2SJ8LdPDUMSO0t56bn9lVPsiLcmc+udlG9MPmbkxy
- CBNxasnkVLW1l4vyZHk3ItNSfXEIVpf4uyOX4g/hX1KLisYdqwlCzTWNI7H+2TrdJ1Qxr1TLz
- Z7QH8pjJlpWOK4w+ujkYMLe/f3zLlPrbaBc7d94/FP75Mzu8YCvyPPRy0xnrQ6zI+0wp4E/4j
- F2ZCG0D80I6eL7TktTOJ98ER96FS8bCYA8vUi+Nm6Pu2RpXkq8lVQeOuu03vuJYt31eI44gc3
- rvJagJa7pu8IqxV2IsRjTgNPmBWGd7sX1RUQ8WTxK8PwdAGd18fQpZfJBkbkLCN9+owLQls+b
- 1j9F/X4x4llhwF179DP+iLQFunzPvAt+g8ZLQsSO960YTY3CTY1ijhjOfA7SwNcrW2USyZKtK
- WCg7ZUoCx7xQH6y7795KCHZzHgO6V3jdRwi0zwz4WpuB1WeOVWAIN+w3suHsyBeW8ZWd1JKGh
- z/rDtZz1pvZHapxLRFe+RbLeRhw+XiVcY82wcNcBL9+AQ0885vsIf8zvjAu4EN6Q9I01oEv38
- k+a5cuxCcK6Rpj01wgAH70o3MODplpkuCw2zOXWkwvOsG5IMXbpkPTV3LWJgSc3sSGb9/6E1y
- OGRp7c1dFwX8YhovjBxruenFbu5iFSGnCo7Te/XFuxqlalgFvyVXUtLGl8a/Sd0m2f90Q39oD
- 2qsZaWQ0UjxesvQwoD63how+keSAoNSLveHWbCfJkPlTQ=
+UI-OutboundReport: notjunk:1;M01:P0:uWEYTuIKBnA=;/mBpxPIV9cpqkP74pQ2uHUA4sX1
+ fHWtlIm8YlPcVD9nTY5p2yCAHFsdbzEXx0nZmdc/HgJ0/NG3CJQLGtDFIGhPnoFMxy9va829O
+ ZIiOCPjbJmhqO7T7oR9z9jqIr3ot4DaNRFkm9K1GQaRZ+SxkTrcM6/L8cp9sA2xhDIhfiRBYS
+ 6g1QnA0ZVN0djFnmg1uGIG+6PkykX5IPuF9ywFXyoK3Ap037T3whSlvHH3Q/89YqZgBz4nB9F
+ n6dzRuHwi1DYsVZGh1stkLUcCCH1VSLvltZSbuzbGWSmK0EmTl0dkqdeu0gynHf3t7ZXLNmMx
+ mCkS3GtR/c2xmJ1X6woidc7renQUx5kEBDprRwIZOPiPXruvEf19M8hPV+hmeBjOPuBwW5j9n
+ nT+R58if05AUeyUhM3jYE0TWadGJJH1ia7GElZNZ++n83yWAPpdInpcmU/4Pblr64hXWwwdyO
+ /PHLJFfecLUd1q4Cbg0ncYvS9zvVJNXv4Iejmx5hHX1NGQC5mnVWFO2wNdHaWVmK8jvyUonnl
+ 9E39lGDx/bB37PuZtihCP+aMhDeNTNUGOQkuYc39OKWFVAkPC53VOHfWd0EUjZNkcWnFi47xw
+ Z/0YU0I8Lbu7kb0oR7nAo1ngYM3AjStfz5KVzylM404JPu73NCEtEaKYYF2PaRcwbf4+eEHoZ
+ zPVZKU2o5bp0iZlCsIfP70OayhhRTzUqMvEr9cnst+8/XWOD4kXE2NVSTIFeFs9evw29xHbHV
+ hYIR/XvKr7OIN11PAOZ3OxRPZGHbLO2dZpbU1tJIKNbffeKseOiwl5ddT3SRK6qTj3dP7EpXW
+ xwLd1oeHi7swXMhm85iEdxDdWGErcCu7SElDPQTgvJNFY=
 
 
 
-=E5=9C=A8 2024/9/24 00:11, Johannes Thumshirn =E5=86=99=E9=81=93:
-> On 23.09.24 10:54, Qu Wenruo wrote:
->>
->>
-[...]
->> Finally, I do not think it's a good idea to insert RST entries for NOCO=
-W.
->> If a file is set NOCOW, it means we'll doing a lot of overwrite for it.
->> Then why waste our time updating the RST entries again and again?
->>
->> Isn't such behavior going to cause more write amplification? Meanwhile
->> for non-RST cases, NOCOW should cause the least amount of write
->> amplification.
+=E5=9C=A8 2024/9/24 08:02, Qu Wenruo =E5=86=99=E9=81=93:
 >
-> The whole idea behind the RST was to write the RST entries _after_ the
-> data has been persisted to disk. Otherwise we're back at the write hole
-> problem. See for example this imaginary sequence:
 >
-> Preallocate a range. This will then also preallocate the RST entries
-> with the mapping as you describe. Write to it and while you write you
-> have a powerloss. The copy/stripe to disk 1 is correctly written but
-> disk 2 didn't report back before the power loss happened.
-> After we have
-> power again, a read to disk 2 comes in, as we have a RST entry, the read
-> will be directed to the broken entry and garbage is returned. And this
-> is the good case, as we can repair it.
-> If it was an overwrite of a block and the same happens, we have a RST
-> entry pointing to a good and a bad copy.
-
-Nope, that will not happen.
-
-Because our metadata is still COW protected, after such powerloss, the
-file extent is still showing that range is PREALLOCATED, we won't even
-trigger a read.
-
-And this is exactly the same as the non-RST PREALLOCATED write.
-
+> =E5=9C=A8 2024/9/24 00:50, Josef Bacik =E5=86=99=E9=81=93:
+>> On Mon, Sep 23, 2024 at 04:58:34PM +0930, Qu Wenruo wrote:
+>>>
+>>>
+>>> =E5=9C=A8 2024/9/23 16:15, Johannes Thumshirn =E5=86=99=E9=81=93:
+>>>> From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+>>>>
+>>>> NOCOW writes do not generate stripe_extent entries in the RAID stripe
+>>>> tree, as the RAID stripe-tree feature initially was designed with a
+>>>> zoned filesystem in mind and on a zoned filesystem, we do not allow
+>>>> NOCOW
+>>>> writes. But the RAID stripe-tree feature is independent from the zone=
+d
+>>>> feature, so we must also allow NOCOW writes for zoned filesystems.
+>>>>
+>>>> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+>>>
+>>> Sorry I'm going to repeat myself again, I still believe if we insert a=
+n
+>>> RST entry at falloc() time, it will be more consistent with the non-RS=
+T
+>>> code.
+>>>
+>>> Yes, I known preallocated space will not need any read nor search RST
+>>> entry, and we just fill the page cache with zero at read time.
+>>>
+>>> But the point of proper (not just dummy) RST entry for the whole
+>>> preallocated space is, we do not need to touch the RST entry anymore f=
+or
+>>> NOCOW/PREALLOCATED write at all.
+>>>
+>>> This makes the RST NOCOW/PREALLOC writes behavior to align with the
+>>> non-RST code, which doesn't update any extent item, but only modify th=
+e
+>>> file extent for PREALLOC writes.
+>>
+>> I see what you're getting at here, but it creates a huge amount of
+>> problems
+>> later down the line.
+>>
+>> I prealloc an extent, I map that logical extent to a physical extent
+>> and then I
+>> insert a RST entry for that mapping.=C2=A0 Now I rip out one of my disk=
+s,
+>> and now I
+>> have to update RST entries for extents I'm not going to rewrite
+>> because they're
+>> prealloc.
 >
-> Once we're adding the RST entries after both writes succeed the problem
-> isn't there. So for preallocated extents it is even harmful to add a RST
-> entry.
+> Why do we even need to do anything update the RST entries?
+>
+> RST is just an extra layer for logical bytenr mapping, and did you see
+> the non-RST btrfs do relocation just because one device went missing?
+>
+> Can you explain more on the "have to update RST entries" part?
+> That mismatches from my understanding of RST.
+>
+>>
+>> RST is a logical->physical mapping.=C2=A0 We do not need to update or
+>> insert anything
+>> until we create that logical->physical mapping.
+>
+> Just consider the fallocate of non-RST as an example.
+>
+> We DO allocate real data extents, they have real location on the disk.
+>
+> Then add the RST layer. Now preallocated extent suddenly do not have RST
+> mapping, but still have extents allocated for them.
+>
+> I do not think this is any more consistent.
+>
+>> =C2=A0Keeping the rules consistent
+>> across the different layers will make it easier to reason about and
+>> easier to
+>> maintain.
+>
+> I think all data extents should have RST mapping, that's way more
+> consistent than two different handling for different data extents.
+>
+> Just like we do not bother if a data extent is preallocated or not in
+> scrub.
+>
+>
+>> =C2=A0Adding an index at endio time for NOCOW makes sense, we now have
+>> created a thing on disk that we need to have a mapping for.=C2=A0 The s=
+ame
+>> goes for
+>> prealloc, adding an entry at prealloc time doesn't make logical sense
+>> as we
+>> haven't yet instantiated that space on disk.=C2=A0 Thanks,
+>
+> But we allocated data extents. Even if we won't really utilize them for
+> now, we should have RST for it.
+>
+> In fact, I do not even think it's correct to insert/update RST at
+> endio/ordered extent time.
+>
+> It will be way more consistent to update/insert RST entries at data
+> extent allocation time.
 
-You just forgot the metadata part, which prevents the problem from
-happening in the very beginning.
+My bad, this is impossible for zoned devices, and that's why RST is here
+to help the situation.
+
+So this indeed means we have to do the work at endio/finish_ordered_io()
+time.
+
+And in that case, it looks like we really have to handle preallocated
+extents differently (thanks to these zoned devices)
 
 Thanks,
 Qu
+>
+> Thanks,
+> Qu
+>
+>>
+>> Josef
+>>
+>
+>
 

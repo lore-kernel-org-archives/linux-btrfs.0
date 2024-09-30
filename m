@@ -1,60 +1,67 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CF13D17332B
-	for <linux-btrfs@vger.kernel.org>; Mon, 30 Sep 2024 22:47:31 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 21C771836FA
+	for <linux-btrfs@vger.kernel.org>; Mon, 30 Sep 2024 22:47:33 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1727736454; cv=none; b=nFe0crH67PYGuWpBL8+cmUgN2bbAd9rncgp98x85ZaSSitvEDMIUu972gJfsVoyf9QSk6c1uxk6H9Jafp4u2U1GpK8s4NE62S6L7AFlsY3IDL1tAla6dRnh0VjQoqbHnehzEeIxoQqBmpAM3aUeK+MRxT2vhm1RDWcHFKYjTgpc=
+	t=1727736455; cv=none; b=BzTpKD2mauKeh3Ocxw9jjd6spDEJcWIkAVgBKWjf4JF+uhro51Cc4WabBygYSZjakzwasPF/B3ENha7UIj1Unqan8012Kas/VouriLKgA/p4+ntBZCCleKcQu3Cqdzoi23z88bjExTfOAr/1PUnPBO4QDCS5dsqqSLCX0rvmDJo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1727736454; c=relaxed/simple;
-	bh=plJWZx+Bi/t9OoylPpoIOJD5iCJ5EXYtpxmCIsstXpA=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=GrHAFbSXJC32cS9CPv0P4LtYy9HsKi5KutSatRd4Uv1jaW802Ch7g0fqJ30ch7J6oJnLSZWQe9LCJyrgBIsbLqAroIfxm4M4ECgYU/SOaNzPNxxPY7BSw0L1sVkZ9VTaws5ql1RKIqIEcIKu6jyZMAPmMz+tNMImCRh3EHwVHEU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=GcY2A0ca; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=GcY2A0ca; arc=none smtp.client-ip=195.135.223.131
+	s=arc-20240116; t=1727736455; c=relaxed/simple;
+	bh=j5vzTmivkDlnsynnh8FuLMH2lxXw97IksalKopF774w=;
+	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=EesNXJID3c8uWybgTfnXoKhJM48u0sj7IpJZIBTBbuM2+pYQFPAgxFrvcQJ2Dv75oCAneJloEDkVcUrqSSBg0JHgvJyJLQA0Aj33KEFUiFBAJsH5ITVGjj01XXE5sZchhgRVi0OJJpTeShEkhgcDs1m++GVhjILz+jatFvW9KlY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=eehlalbG; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=eehlalbG; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="GcY2A0ca";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="GcY2A0ca"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="eehlalbG";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="eehlalbG"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 98E891F81C
-	for <linux-btrfs@vger.kernel.org>; Mon, 30 Sep 2024 22:47:29 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 4AC2E219C8
+	for <linux-btrfs@vger.kernel.org>; Mon, 30 Sep 2024 22:47:32 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1727736449; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=JzKNb2FIz1Xa8e3C6Dv5vQi7M5joPKQsNi+gXSWVUN4=;
-	b=GcY2A0caIG6xBcr0szIoOL6iGF1XzL//IKzIq0IJSm/6gAfTMgUbg/kqWjBKniYzbVfrI2
-	apV+l1NvgncHk2oESEvogIJXzgKj61UBzYQ6PTDMHVNT7kJWbRe3TpFZ6jKE8xO7dKSnGd
-	rUp/l+n+KIfMmU/IwZ53aMuNpZ3WmSA=
-Authentication-Results: smtp-out2.suse.de;
+	t=1727736452; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=kNkZxtrOc9h8eiMIPL+O3+HzbKUTZ8QYAku6Sc18GTk=;
+	b=eehlalbGoiMzfyC9EL30Kupol77KiWBjoA2OMOq9X6f3uzZlf8PTv4KWT6m02Z9aF6G7tC
+	Xvhk2GZ7yW/MGEZX3LElBdPGLNqGs47D0DKKM7an7BneYivo8v6l0Y9CjcHsjbB/heGSDz
+	o3YJ/TbHajGlPiaHmZKD95ntjsqIRz4=
+Authentication-Results: smtp-out1.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1727736449; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=JzKNb2FIz1Xa8e3C6Dv5vQi7M5joPKQsNi+gXSWVUN4=;
-	b=GcY2A0caIG6xBcr0szIoOL6iGF1XzL//IKzIq0IJSm/6gAfTMgUbg/kqWjBKniYzbVfrI2
-	apV+l1NvgncHk2oESEvogIJXzgKj61UBzYQ6PTDMHVNT7kJWbRe3TpFZ6jKE8xO7dKSnGd
-	rUp/l+n+KIfMmU/IwZ53aMuNpZ3WmSA=
+	t=1727736452; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=kNkZxtrOc9h8eiMIPL+O3+HzbKUTZ8QYAku6Sc18GTk=;
+	b=eehlalbGoiMzfyC9EL30Kupol77KiWBjoA2OMOq9X6f3uzZlf8PTv4KWT6m02Z9aF6G7tC
+	Xvhk2GZ7yW/MGEZX3LElBdPGLNqGs47D0DKKM7an7BneYivo8v6l0Y9CjcHsjbB/heGSDz
+	o3YJ/TbHajGlPiaHmZKD95ntjsqIRz4=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id D532113A8B
-	for <linux-btrfs@vger.kernel.org>; Mon, 30 Sep 2024 22:47:28 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 87E0E13A8B
+	for <linux-btrfs@vger.kernel.org>; Mon, 30 Sep 2024 22:47:31 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id y3qCJYAq+2YsGgAAD6G6ig
+	id SAS1EoMq+2YsGgAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Mon, 30 Sep 2024 22:47:28 +0000
+	for <linux-btrfs@vger.kernel.org>; Mon, 30 Sep 2024 22:47:31 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 0/2] btrfs: small cleanups to buffered write path
-Date: Tue,  1 Oct 2024 08:17:09 +0930
-Message-ID: <cover.1727736323.git.wqu@suse.com>
+Subject: [PATCH v2 2/2] btrfs: simplify the page uptodate preparation for prepare_pages()
+Date: Tue,  1 Oct 2024 08:17:11 +0930
+Message-ID: <51064f30d856c1529d47d70dfb4f3cad46a42187.1727736323.git.wqu@suse.com>
 X-Mailer: git-send-email 2.46.2
+In-Reply-To: <cover.1727736323.git.wqu@suse.com>
+References: <cover.1727736323.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -64,7 +71,7 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-Spam-Score: -2.80
 X-Spamd-Result: default: False [-2.80 / 50.00];
-	BAYES_HAM(-3.00)[99.99%];
+	BAYES_HAM(-3.00)[100.00%];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
@@ -75,7 +82,7 @@ X-Spamd-Result: default: False [-2.80 / 50.00];
 	RCPT_COUNT_ONE(0.00)[1];
 	ARC_NA(0.00)[];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:mid];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:email,imap1.dmz-prg2.suse.org:helo];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
 	MIME_TRACE(0.00)[0:+];
@@ -87,32 +94,117 @@ X-Spamd-Result: default: False [-2.80 / 50.00];
 X-Spam-Flag: NO
 X-Spam-Level: 
 
-[CHANGELOG]
-v2:
-- Utilize folio APIs instead of the old page APIs for the 2nd patch
+Currently inside prepare_pages(), we handle the leading and tailing page
+differently, and skip the middle pages (if any).
 
-These two are small cleanups to the buffered write path, inspired by the
-btrfs test failure of generic/563 with 4K sector size and 64K page size.
+This is to avoid reading pages which is fully covered by the dirty
+range.
 
-The root cause of that failure is, btrfs can't avoid full page read when
-the dirty range covers sectors, but not yet the full page.
+Refactor the code by moving all checks (alignment check, range check,
+force read check) into prepare_uptodate_page().
 
-This is only the preparation part, we can not yet switch to the skip the
-full page read, or it will still lead to incorrect data.
+So that prepare_pages() only need to iterate all the pages
+unconditionally.
 
-The full fix needs extra co-operation between the subpage read and
-write, until then prepare_uptodate_page() still needs to read the full
-page.
+And since we're here, also update prepare_uptodate_page() to use
+folio API other than the old page API.
 
-Qu Wenruo (2):
-  btrfs: remove the dirty_page local variable
-  btrfs: simplify the page uptodate preparation for prepare_pages()
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/file.c | 68 +++++++++++++++++++++++++++----------------------
+ 1 file changed, 37 insertions(+), 31 deletions(-)
 
- fs/btrfs/file.c             | 87 +++++++++++++++++++------------------
- fs/btrfs/file.h             |  2 +-
- fs/btrfs/free-space-cache.c |  2 +-
- 3 files changed, 46 insertions(+), 45 deletions(-)
-
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 9555a3485670..c5d52fcee0be 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -858,36 +858,46 @@ int btrfs_mark_extent_written(struct btrfs_trans_handle *trans,
+  */
+ static int prepare_uptodate_page(struct inode *inode,
+ 				 struct page *page, u64 pos,
+-				 bool force_uptodate)
++				 u64 len, bool force_uptodate)
+ {
+ 	struct folio *folio = page_folio(page);
++	u64 clamp_start = max_t(u64, pos, folio_pos(folio));
++	u64 clamp_end = min_t(u64, pos + len, folio_pos(folio) + folio_size(folio));
+ 	int ret = 0;
+ 
+-	if (((pos & (PAGE_SIZE - 1)) || force_uptodate) &&
+-	    !PageUptodate(page)) {
+-		ret = btrfs_read_folio(NULL, folio);
+-		if (ret)
+-			return ret;
+-		lock_page(page);
+-		if (!PageUptodate(page)) {
+-			unlock_page(page);
+-			return -EIO;
+-		}
++	if (folio_test_uptodate(folio))
++		return 0;
+ 
+-		/*
+-		 * Since btrfs_read_folio() will unlock the folio before it
+-		 * returns, there is a window where btrfs_release_folio() can be
+-		 * called to release the page.  Here we check both inode
+-		 * mapping and PagePrivate() to make sure the page was not
+-		 * released.
+-		 *
+-		 * The private flag check is essential for subpage as we need
+-		 * to store extra bitmap using folio private.
+-		 */
+-		if (page->mapping != inode->i_mapping || !folio_test_private(folio)) {
+-			unlock_page(page);
+-			return -EAGAIN;
+-		}
++	if (force_uptodate)
++		goto read;
++
++	/* The dirty range fully cover the page, no need to read it out. */
++	if (IS_ALIGNED(clamp_start, PAGE_SIZE) &&
++	    IS_ALIGNED(clamp_end, PAGE_SIZE))
++		return 0;
++read:
++	ret = btrfs_read_folio(NULL, folio);
++	if (ret)
++		return ret;
++	folio_lock(folio);
++	if (!folio_test_uptodate(folio)) {
++		folio_unlock(folio);
++		return -EIO;
++	}
++
++	/*
++	 * Since btrfs_read_folio() will unlock the folio before it
++	 * returns, there is a window where btrfs_release_folio() can be
++	 * called to release the page.  Here we check both inode
++	 * mapping and PagePrivate() to make sure the page was not
++	 * released.
++	 *
++	 * The private flag check is essential for subpage as we need
++	 * to store extra bitmap using folio private.
++	 */
++	if (page->mapping != inode->i_mapping || !folio_test_private(folio)) {
++		folio_unlock(folio);
++		return -EAGAIN;
+ 	}
+ 	return 0;
+ }
+@@ -949,12 +959,8 @@ static noinline int prepare_pages(struct inode *inode, struct page **pages,
+ 			goto fail;
+ 		}
+ 
+-		if (i == 0)
+-			ret = prepare_uptodate_page(inode, pages[i], pos,
+-						    force_uptodate);
+-		if (!ret && i == num_pages - 1)
+-			ret = prepare_uptodate_page(inode, pages[i],
+-						    pos + write_bytes, false);
++		ret = prepare_uptodate_page(inode, pages[i], pos, write_bytes,
++					    force_uptodate);
+ 		if (ret) {
+ 			put_page(pages[i]);
+ 			if (!nowait && ret == -EAGAIN) {
 -- 
 2.46.2
 

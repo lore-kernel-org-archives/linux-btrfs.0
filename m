@@ -1,213 +1,198 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D97E9216A33
-	for <linux-btrfs@vger.kernel.org>; Wed,  2 Oct 2024 21:21:30 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E5F76745F4;
+	Wed,  2 Oct 2024 21:27:31 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1727904092; cv=none; b=ofJbZka/XKu+poYx1WbHSLQ7yyFg0C3ZkcSReY8du6peHaDQYr5ZKTqc/GsQq8hCH2sXXmESFa/RnfxO5DFKDZh1SCoj/heDgvkhBBP07B5Eyc8iEoPkbTCA5PO1RdmSZn0oQO+lL0V434KHHCe/pTMxeyMiQ/r8J72+/26sCkE=
+	t=1727904454; cv=none; b=ba4eafgY/GmLHOauxnouM4Vlh28eTm1yXBsRtaw8WO5/dd/Qbq33o4OYC6VQOma8FRa+emJr6GDCTeISJ5s2HKjGvu1DI09WHE0WcKyw4ph13QQSsuIdPiWYq+uz6F49tCb7puIuJkm0vsiJZRCKBAT2y79PRTr7N0ICjL2afks=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1727904092; c=relaxed/simple;
-	bh=oWpbKrfVw8zXx7VLXmUm6GSVHxnCP8fvZq5HCSPItuY=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=nErMBhP6imQPmM9yHWAqWxwSKQ1z5mIZng4WxAYwcuK0V6guHkC5ILSEi1yqn62y2N1/Vo2FPA+Mn1bNrfc/t0x/1yAYKEPd1BWX9iNqX6ThPy2X1dbNB8Oj1SWyFtnW/+ZCJnVky71d4/e4GedX4VaGZ4XGWqzRxul0nzg97e0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=pNQVcf+k; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1727904454; c=relaxed/simple;
+	bh=Y5NHoq1D66E6MhHGAOXPO50U8Tj9wg921VuqUM47n1c=;
+	h=From:Subject:Date:Message-Id:MIME-Version:Content-Type:To:Cc; b=bG0AHyoct8m1fJGHty7Q9UUC8U/MECQ/lwiRW/3dPwu/XCyp91CQtTI9StDJIqzi6Dd24s3GjAUtjyZGQ4IwISFQMpmAG4OjiBLGrRbVe0H9rN8RsSt7icBnOtnrdVmRSDX0LFcgodAZNQyZMwBrC6UAJNezG9cstndzbHdtdRk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=tcXFxU3o; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="pNQVcf+k"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 4B32EC4CED0
-	for <linux-btrfs@vger.kernel.org>; Wed,  2 Oct 2024 21:21:30 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="tcXFxU3o"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id C7406C4CEC2;
+	Wed,  2 Oct 2024 21:27:28 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1727904090;
-	bh=oWpbKrfVw8zXx7VLXmUm6GSVHxnCP8fvZq5HCSPItuY=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-	b=pNQVcf+kyFuN9uolFT2ArFVGUOAGocJ5rgEL1c4QvkJGhBYpOtk0zPa3o8e8kNHFC
-	 PtWVOgdKvTgApcyR6OU+qLBGQgGzldnAfJHqNlYwX+JlJrrojhNzYObUSD/qbeb57w
-	 zhNnC2m1vd+vgHX+ScYiYC4cOHGqQEjPc5IAsSN5bhI7Rbw2a2FBKl00H+KLlu/b1n
-	 H98topFNtwdeYLDnx+pyRkN/9MJsA/68BFcL3BcWD8K4wUBlqsAUUYEDtcSjlHywFm
-	 iIducM5139s8DRrTIjytW9NAKBlFOdgUy75rXU+k0oqsb1bUIkgEBjxCrKnprLFpDt
-	 6aQsCj6amvf0Q==
-Received: by mail-lf1-f50.google.com with SMTP id 2adb3069b0e04-5398e33155fso230126e87.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 02 Oct 2024 14:21:30 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AJvYcCXX2GJPYS/SC92eWC+LVmelvI0yJ0UrVmlckfpbzDqywxfAseCXggNnlE/hkNTL1pg+drVtb+fECGz3DQ==@vger.kernel.org
-X-Gm-Message-State: AOJu0YyY0ZRhkdLBMghvu6fuLZ8mRsHKDIXpX6e6ceCFkTRpXd36HyPb
-	zNpD8z8dQ/Mq4EXRvNylOya9qJZ1takMtsXKV2hEiDzmOg1EMVuPcNmqr+kbj2UIsfDGBZ5ZUM5
-	1rNmGSPjoGCxovqhGl72LnLCaogI=
-X-Google-Smtp-Source: AGHT+IF+60Y6cnkyyIFXFRaPcco7qnGUs5ZnQislwqWOo8KeAev5xo95jV9E7YzHMyGspBwLEwyS2nlMGBvmXLpNy7s=
-X-Received: by 2002:a05:6512:10c9:b0:539:94c4:d9cb with SMTP id
- 2adb3069b0e04-539a06783afmr2941638e87.31.1727904088632; Wed, 02 Oct 2024
- 14:21:28 -0700 (PDT)
+	s=k20201202; t=1727904451;
+	bh=Y5NHoq1D66E6MhHGAOXPO50U8Tj9wg921VuqUM47n1c=;
+	h=From:Subject:Date:To:Cc:From;
+	b=tcXFxU3ofaRyX9PSIuU+dnEpVSM/iumnaLK9a5v7TRdkrtwP0QNqH27GmUbZcI1tG
+	 oYge+zigzJPA1JlMSEgw/KdA581RhzhSY2EXPXC24TcYb/fxHkk2JC3p2pYVf1dhpl
+	 uTFc8CnIho9ca+o5HduPQWYL6McWHSds7sm+jMg4ijNCAepuwpa0wEE1g2kauctk49
+	 DSHzGyfbIwqSARHG+mFXPk12jQQ8+Dr9gm/lQDr2W7vbZjlbkISYQgNfSimTqXm91W
+	 EFckdWyhiqKZgr9kr2ycRGM1jRvMAK9cowQ98S4qExt0fLZE2bvIhe3zvSgP6dO3wS
+	 GGNPr5QZTTZCg==
+From: Jeff Layton <jlayton@kernel.org>
+Subject: [PATCH v10 00/12] timekeeping/fs: multigrain timestamp redux
+Date: Wed, 02 Oct 2024 17:27:15 -0400
+Message-Id: <20241002-mgtime-v10-0-d1c4717f5284@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <cover.1727222308.git.wqu@suse.com> <3b02eabf87e477dd25e21a4c2cf7720e530d7531.1727222308.git.wqu@suse.com>
- <CAL3q7H50O_LA8vje8JSH+xVM07VA55G286bWtUwfCdpzfVavfQ@mail.gmail.com> <421d016b-672e-4eb7-bd0c-3269eb675f66@gmx.com>
-In-Reply-To: <421d016b-672e-4eb7-bd0c-3269eb675f66@gmx.com>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Wed, 2 Oct 2024 22:20:51 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H66XxddXSiOZ3AC1=fbpyJb+Q5TQrw9ZR=ac4e-wR72Nw@mail.gmail.com>
-Message-ID: <CAL3q7H66XxddXSiOZ3AC1=fbpyJb+Q5TQrw9ZR=ac4e-wR72Nw@mail.gmail.com>
-Subject: Re: [PATCH v2 1/2] btrfs: avoid unnecessary device path update for
- the same device
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org, 
-	Filipe Manana <fdmanana@suse.com>, Fabian Vogt <fvogt@suse.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+X-B4-Tracking: v=1; b=H4sIALO6/WYC/2XOSw7CIBCA4asY1mKGRwu48h7GBY+xErU11BCN6
+ d2lNVaNy5nw/cOD9Jgi9mS9eJCEOfaxa8vAYLkg/mDbBmkMZUE4cAmGCXpurvGMlIM32vlgtUZ
+ SHl8S7uNtKm13ZT7E/tql+xTO9bh9JRSr3olcU6BSYxWEdIE7uzliavG06lJDxkZWH/d1OqviD
+ A8SOKBwAH9Oz44BsNnp0YEQUgTDnBd/znw7PjtTnFJYfmhDpaz/ccMwPAGOhG0LRgEAAA==
+X-Change-ID: 20240913-mgtime-20c98bcda88e
+To: John Stultz <jstultz@google.com>, Thomas Gleixner <tglx@linutronix.de>, 
+ Stephen Boyd <sboyd@kernel.org>, Alexander Viro <viro@zeniv.linux.org.uk>, 
+ Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>, 
+ Steven Rostedt <rostedt@goodmis.org>, 
+ Masami Hiramatsu <mhiramat@kernel.org>, 
+ Mathieu Desnoyers <mathieu.desnoyers@efficios.com>, 
+ Jonathan Corbet <corbet@lwn.net>, Randy Dunlap <rdunlap@infradead.org>, 
+ Chandan Babu R <chandan.babu@oracle.com>, 
+ "Darrick J. Wong" <djwong@kernel.org>, Theodore Ts'o <tytso@mit.edu>, 
+ Andreas Dilger <adilger.kernel@dilger.ca>, Chris Mason <clm@fb.com>, 
+ Josef Bacik <josef@toxicpanda.com>, David Sterba <dsterba@suse.com>, 
+ Hugh Dickins <hughd@google.com>, Andrew Morton <akpm@linux-foundation.org>, 
+ Chuck Lever <chuck.lever@oracle.com>, 
+ Vadim Fedorenko <vadim.fedorenko@linux.dev>
+Cc: linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
+ linux-trace-kernel@vger.kernel.org, linux-doc@vger.kernel.org, 
+ linux-xfs@vger.kernel.org, linux-ext4@vger.kernel.org, 
+ linux-btrfs@vger.kernel.org, linux-nfs@vger.kernel.org, linux-mm@kvack.org, 
+ Jeff Layton <jlayton@kernel.org>
+X-Mailer: b4 0.14.2
+X-Developer-Signature: v=1; a=openpgp-sha256; l=5223; i=jlayton@kernel.org;
+ h=from:subject:message-id; bh=Y5NHoq1D66E6MhHGAOXPO50U8Tj9wg921VuqUM47n1c=;
+ b=owEBbQKS/ZANAwAIAQAOaEEZVoIVAcsmYgBm/bq5Ucxpe+2dO/4f2N9Del8gbRSKkXWJ4RxvE
+ m32RFAxn22JAjMEAAEIAB0WIQRLwNeyRHGyoYTq9dMADmhBGVaCFQUCZv26uQAKCRAADmhBGVaC
+ FbJjD/4ich0/NyeGFTRSWS1TM6qXVjXQ8xiLD/NLSZ2ncXBcG3V1hR+AI5b74oW1NMX++R6i4gB
+ T4DeOOvnUvb9hYQzATPVtCEMnTs/zmfiO+2KdNNNMT+l8TLfGQ/lZcLoVOxLDKMz9AFbDkAeSr7
+ c6kjXrU0eBwUVT1gDRxmqojgNY+HGQe2vLNRFERnBRe3NDtNi+MCmot32asaXK/7KvjnrwEjzHz
+ 3x6+s9pu0nlJw7d6H/Lb5KvbeyTDrqckDBjXOC1nJp4C8fKnAxYBYVjP4cUtlkwTWwr20hD+Rwd
+ mnjXCPtQ3ATyHOir3Y3b6y2/YdxjR990iPnP2Xc5w2JgpskMUhEtm5SnjP0BnOzBlpnl0kHALXj
+ Eh85QVu4qubOl+4hGsJ9EL7CKh0CVckteSwd3EVlAM7AkGJhn03xeplu/pt7S/R9QtQbkWQxlct
+ wjg9ADGhboyjclGC6lU1GYHkz1nYOy75cd5gEpOKN/j5Xg4eKN6tuBYJQTi1J+5vtMfhZBeDs3J
+ PTh40/58qSFsYQcSbNKZCoXKa5UPTkcFRQwGEFhU9rEbPH9N6wSthLdJECY/UWrNYW1DtxceroA
+ D8dDhy1XDRaUnAsnroLHI9/TPzjvO5y1al84sZ8El7GNodyr9+ILoihcGqtO8dQm/l7WS7BU4dS
+ x01qjjvjnCAepRQ==
+X-Developer-Key: i=jlayton@kernel.org; a=openpgp;
+ fpr=4BC0D7B24471B2A184EAF5D3000E684119568215
 
-On Wed, Oct 2, 2024 at 10:09=E2=80=AFPM Qu Wenruo <quwenruo.btrfs@gmx.com> =
-wrote:
->
->
->
-> =E5=9C=A8 2024/10/2 23:44, Filipe Manana =E5=86=99=E9=81=93:
-> > On Wed, Sep 25, 2024 at 1:14=E2=80=AFAM Qu Wenruo <wqu@suse.com> wrote:
-> >>
-> >> [PROBLEM]
-> >> It is very common for udev to trigger device scan, and every time a
-> >> mounted btrfs device got re-scan from different soft links, we will ge=
-t
-> >> some of unnecessary device path updates, this is especially common
-> >> for LVM based storage:
-> >>
-> >>   # lvs
-> >>    scratch1 test -wi-ao---- 10.00g
-> >>    scratch2 test -wi-a----- 10.00g
-> >>    scratch3 test -wi-a----- 10.00g
-> >>    scratch4 test -wi-a----- 10.00g
-> >>    scratch5 test -wi-a----- 10.00g
-> >>    test     test -wi-a----- 10.00g
-> >>
-> >>   # mkfs.btrfs -f /dev/test/scratch1
-> >>   # mount /dev/test/scratch1 /mnt/btrfs
-> >>   # dmesg -c
-> >>   [  205.705234] BTRFS: device fsid 7be2602f-9e35-4ecf-a6ff-9e91d2c182=
-c9 devid 1 transid 6 /dev/mapper/test-scratch1 (253:4) scanned by mount (11=
-54)
-> >>   [  205.710864] BTRFS info (device dm-4): first mount of filesystem 7=
-be2602f-9e35-4ecf-a6ff-9e91d2c182c9
-> >>   [  205.711923] BTRFS info (device dm-4): using crc32c (crc32c-intel)=
- checksum algorithm
-> >>   [  205.713856] BTRFS info (device dm-4): using free-space-tree
-> >>   [  205.722324] BTRFS info (device dm-4): checking UUID tree
-> >>
-> >> So far so good, but even if we just touched any soft link of
-> >> "dm-4", we will get quite some unnecessary device path updates.
-> >>
-> >>   # touch /dev/mapper/test-scratch1
-> >>   # dmesg -c
-> >>   [  469.295796] BTRFS info: devid 1 device path /dev/mapper/test-scra=
-tch1 changed to /dev/dm-4 scanned by (udev-worker) (1221)
-> >>   [  469.300494] BTRFS info: devid 1 device path /dev/dm-4 changed to =
-/dev/mapper/test-scratch1 scanned by (udev-worker) (1221)
-> >>
-> >> Such device path rename is unnecessary and can lead to random path
-> >> change due to the udev race.
-> >>
-> >> [CAUSE]
-> >> Inside device_list_add(), we are using a very primitive way checking i=
-f
-> >> the device has changed, strcmp().
-> >>
-> >> Which can never handle links well, no matter if it's hard or soft link=
-s.
-> >>
-> >> So every different link of the same device will be treated as a differ=
-ent
-> >> device, causing the unnecessary device path update.
-> >>
-> >> [FIX]
-> >> Introduce a helper, is_same_device(), and use path_equal() to properly
-> >> detect the same block device.
-> >> So that the different soft links won't trigger the rename race.
-> >>
-> >> Reviewed-by: Filipe Manana <fdmanana@suse.com>
-> >> Link: https://bugzilla.suse.com/show_bug.cgi?id=3D1230641
-> >> Reported-by: Fabian Vogt <fvogt@suse.com>
-> >> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> >> ---
-> >>   fs/btrfs/volumes.c | 28 +++++++++++++++++++++++++++-
-> >>   1 file changed, 27 insertions(+), 1 deletion(-)
-> >>
-> >> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> >> index 995b0647f538..b713e4ebb362 100644
-> >> --- a/fs/btrfs/volumes.c
-> >> +++ b/fs/btrfs/volumes.c
-> >> @@ -732,6 +732,32 @@ const u8 *btrfs_sb_fsid_ptr(const struct btrfs_su=
-per_block *sb)
-> >>          return has_metadata_uuid ? sb->metadata_uuid : sb->fsid;
-> >>   }
-> >>
-> >> +static bool is_same_device(struct btrfs_device *device, const char *n=
-ew_path)
-> >> +{
-> >> +       struct path old =3D { .mnt =3D NULL, .dentry =3D NULL };
-> >> +       struct path new =3D { .mnt =3D NULL, .dentry =3D NULL };
-> >> +       char *old_path;
-> >> +       bool is_same =3D false;
-> >> +       int ret;
-> >> +
-> >> +       if (!device->name)
-> >> +               goto out;
-> >> +
-> >> +       old_path =3D rcu_str_deref(device->name);
-> >
-> > There's a missing rcu_read_lock / unlock btw. It's triggering warnings
-> > in the test vms.
->
-> Thanks a lot, I was also wondering if it's the case, but the zoned code
-> gave me a bad example of not calling rcu_read_lock().
+This is a replacement for the v6 series sitting in Christian's
+vfs.mgtime branch. The main changes here are to the changelogs,
+documentation and comments. I've also moved the timekeeping patches to
+the front of the series, and done some minor cleanups.
 
-It doesn't call rcu_read_lock() explicitly because it uses the
-btrfs_*_in_rcu() log functions, which do the locking.
-Except for one place for which I've sent a patch earlier today.
+The pipe1_threads test shows these averages on my test rig with this
+series:
 
->
-> Shouldn't all btrfs_dev_name() and the usages inside zoned code also be
-> fixed?
+    v6.11:				89233600 (baseline)
+    v6.11 + v9 series:			88460897 (<1% slower)
 
-Except for that single case, there's no other case anywhere else,
-zoned code or non-zoned code.
+Thanks for all of the review so far!
 
->
-> Thanks,
-> Qu
-> >
-> > Thanks.
-> >
-> >> +       ret =3D kern_path(old_path, LOOKUP_FOLLOW, &old);
-> >> +       if (ret)
-> >> +               goto out;
-> >> +       ret =3D kern_path(new_path, LOOKUP_FOLLOW, &new);
-> >> +       if (ret)
-> >> +               goto out;
-> >> +       if (path_equal(&old, &new))
-> >> +               is_same =3D true;
-> >> +out:
-> >> +       path_put(&old);
-> >> +       path_put(&new);
-> >> +       return is_same;
-> >> +}
-> >> +
-> >>   /*
-> >>    * Add new device to list of registered devices
-> >>    *
-> >> @@ -852,7 +878,7 @@ static noinline struct btrfs_device *device_list_a=
-dd(const char *path,
-> >>                                  MAJOR(path_devt), MINOR(path_devt),
-> >>                                  current->comm, task_pid_nr(current));
-> >>
-> >> -       } else if (!device->name || strcmp(device->name->str, path)) {
-> >> +       } else if (!device->name || !is_same_device(device, path)) {
-> >>                  /*
-> >>                   * When FS is already mounted.
-> >>                   * 1. If you are here and if the device->name is NULL=
- that
-> >> --
-> >> 2.46.1
-> >>
-> >>
-> >
->
+Signed-off-by: Jeff Layton <jlayton@kernel.org>
+---
+Changes in v10:
+- Reorder timekeeping patches to front of series
+- Better separate timekeeping and fs changes
+- add data_race annotations to per_cpu fetches
+- get rid of pointless test for unsigned long to go negative
+- better spacing for declarations and definitions in timekeeping_internal.h
+- minor style cleanups
+- Link to v9: https://lore.kernel.org/r/20241002-mgtime-v9-0-77e2baad57ac@kernel.org
+
+Changes in v9:
+- Comment and documentation cleanups.
+- Drop the EXPORT_SYMBOL_GPL() from new timekeeper interfaces
+- Link to v8: https://lore.kernel.org/r/20241001-mgtime-v8-0-903343d91bc3@kernel.org
+
+Changes in v8:
+- split patch that adds percpu counters into fs and timekeeping patches
+- convert percpu counters to unsigned longs
+- directly access the offs_real value in timekeeper instead of going
+  through offsets array
+- drop WARN_ON's in timekeeping patches
+- better changelogs and more comments for the timekeeping bits
+- better document how backward realtime clock jumps affect things
+- Link to v7: https://lore.kernel.org/r/20240913-mgtime-v7-0-92d4020e3b00@kernel.org
+
+Changes in v7:
+- move the floor value handling into timekeeper for better performance
+- Link to v6: https://lore.kernel.org/r/20240715-mgtime-v6-0-48e5d34bd2ba@kernel.org
+
+Changes in v6:
+- Normalize timespec64 in inode_set_ctime_to_ts
+- use DEFINE_PER_CPU counters for better vfs consistency
+- skip ctime cmpxchg if the result means nothing will change
+- add trace_ctime_xchg_skip to track skipped ctime updates
+- use __print_flags in ctime_ns_xchg tracepoint
+- Link to v5: https://lore.kernel.org/r/20240711-mgtime-v5-0-37bb5b465feb@kernel.org
+
+Changes in v5:
+- refetch coarse time in coarse_ctime if not returning floor
+- timestamp_truncate before swapping new ctime value into place
+- track floor value as atomic64_t
+- cleanups to Documentation file
+- Link to v4: https://lore.kernel.org/r/20240708-mgtime-v4-0-a0f3c6fb57f3@kernel.org
+
+Changes in v4:
+- reordered tracepoint fields for better packing
+- rework percpu counters again to also count fine grained timestamps
+- switch to try_cmpxchg for better efficiency
+- Link to v3: https://lore.kernel.org/r/20240705-mgtime-v3-0-85b2daa9b335@kernel.org
+
+Changes in v3:
+- Drop the conversion of i_ctime fields to ktime_t, and use an unused bit
+  of the i_ctime_nsec field as QUERIED flag.
+- Better tracepoints for tracking floor and ctime updates
+- Reworked percpu counters to be more useful
+- Track floor as monotonic value, which eliminates clock-jump problem
+
+Changes in v2:
+- Added Documentation file
+- Link to v1: https://lore.kernel.org/r/20240626-mgtime-v1-0-a189352d0f8f@kernel.org
+
+---
+Jeff Layton (12):
+      timekeeping: add interfaces for handling timestamps with a floor value
+      timekeeping: add percpu counter for tracking floor swap events
+      fs: add infrastructure for multigrain timestamps
+      fs: have setattr_copy handle multigrain timestamps appropriately
+      fs: handle delegated timestamps in setattr_copy_mgtime
+      fs: tracepoints around multigrain timestamp events
+      fs: add percpu counters for significant multigrain timestamp events
+      Documentation: add a new file documenting multigrain timestamps
+      xfs: switch to multigrain timestamps
+      ext4: switch to multigrain timestamps
+      btrfs: convert to multigrain timestamps
+      tmpfs: add support for multigrain timestamps
+
+ Documentation/filesystems/index.rst         |   1 +
+ Documentation/filesystems/multigrain-ts.rst | 125 ++++++++++++
+ fs/attr.c                                   |  60 +++++-
+ fs/btrfs/file.c                             |  25 +--
+ fs/btrfs/super.c                            |   3 +-
+ fs/ext4/super.c                             |   2 +-
+ fs/inode.c                                  | 282 +++++++++++++++++++++++++---
+ fs/stat.c                                   |  46 ++++-
+ fs/xfs/libxfs/xfs_trans_inode.c             |   6 +-
+ fs/xfs/xfs_iops.c                           |  10 +-
+ fs/xfs/xfs_super.c                          |   2 +-
+ include/linux/fs.h                          |  36 +++-
+ include/linux/timekeeping.h                 |   5 +
+ include/trace/events/timestamp.h            | 124 ++++++++++++
+ kernel/time/timekeeping.c                   | 106 +++++++++++
+ kernel/time/timekeeping_debug.c             |  14 ++
+ kernel/time/timekeeping_internal.h          |  15 ++
+ mm/shmem.c                                  |   2 +-
+ 18 files changed, 791 insertions(+), 73 deletions(-)
+---
+base-commit: 98f7e32f20d28ec452afb208f9cffc08448a2652
+change-id: 20240913-mgtime-20c98bcda88e
+
+Best regards,
+-- 
+Jeff Layton <jlayton@kernel.org>
+

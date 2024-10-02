@@ -1,33 +1,33 @@
 Received: from casper.infradead.org (casper.infradead.org [90.155.50.34])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B1970482E4;
-	Wed,  2 Oct 2024 04:01:22 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4C72855C0A;
+	Wed,  2 Oct 2024 04:01:25 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=90.155.50.34
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1727841685; cv=none; b=LmZ1ZSjNgVxwViPrSRhN7Y7+gD8cnRiZin8H7j6Y84XqC1v6yalv265FiAKen85Fl1bbr/AzzdTl6cRwX6W1zbi0oliAKYah2SNM30kiiixjcUzO/dKvWkTweohEtF0RBhtZ8W4wZH9J+9BaA8MbYQE4aLBGRbq153e8UPGkRuc=
+	t=1727841686; cv=none; b=RhyS/WXTZPFblYH4XVlobaoawUqXWZ71zC8LhsfrgUqmmWcebqk3TDVKJa7Vm7DgVwaDGxaXIiW8SHwhGWvr8U2bOyHJK288Gq68beQE4aM+DpgwHJ3elGqP6888fU9wAfgZohRDhezeJ8a5drW6glSrjcUKduUuCfujxXhaHCo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1727841685; c=relaxed/simple;
-	bh=xjltzcWJmsieOqgwDm3VFkcpMNiWEZSPtgnpm74ni68=;
+	s=arc-20240116; t=1727841686; c=relaxed/simple;
+	bh=+IvZr+9MNld7cvhsUD/d19bLAd63YphMOfrOEDroHs4=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=LXPKNsvlWq4ErwFcXv38SS3sak1X+k41Ynw28eMPnFf8lLPwy/EIoutQ0Eu/z48LVbhlggpuMLPXIQCLkOGUy/S+WnpdxelUiHmivqqO17w5mWhMRuAxJCYc1M8UcAiP1HyXjI5EPbe57uaWBC9+Jbi6tjEOXzV7zE2hFecxjXo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=infradead.org; spf=none smtp.mailfrom=infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=u39QsFMw; arc=none smtp.client-ip=90.155.50.34
+	 MIME-Version; b=sCzuZSndQpy3Ex3lXTYm5rFRxkLffnCasS78CKgu1OiThA4DuDaTwBcHv9g++HJ9zP4jfT1obYhNmOZ5JrbYQeRrk/BrsadQkHFV4UT/cSqERHrjs7Rq0AkYQMiQbn+/i3KT0WG1eza+XPDNwS8gN7GX91+RYnvE3gP1Fg8X+Do=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=infradead.org; spf=none smtp.mailfrom=infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=mciO33gZ; arc=none smtp.client-ip=90.155.50.34
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=infradead.org
 Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=infradead.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="u39QsFMw"
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="mciO33gZ"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
 	d=infradead.org; s=casper.20170209; h=Content-Transfer-Encoding:MIME-Version:
 	References:In-Reply-To:Message-ID:Date:Subject:Cc:To:From:Sender:Reply-To:
 	Content-Type:Content-ID:Content-Description;
-	bh=Qu1H+yLukYt9YwYC/7ESpsAw9sOZjKm/rhqgTzGdqoU=; b=u39QsFMwQ6tIwNI7i/W1K+/pl+
-	GvSGrpVMvi9IWupEj7d7hKdghJKrM8TW/XKgZb3bkO1NguUXTBhUJB4Adxa6WXd0ajYBIGzZWnxhW
-	H6BXWSuGXsM65J4L5JDKfv0k8YLxibiMMitHwY03iC2W9MLIjhWBnRauq01lxHeU4qd9vVJI0B1z2
-	asy96gxHMxcFadkiQTWxzRThGNp0i2aIXcGqBT3UxcxELkkZdMroPgTKm4jlnqW1VhLmrZIv1VoQL
-	n+44yDwp5sIhB3WaWM6c4Rg1vTpmuHvSuUmpVzYMZR7W8Jw/e9xFD9YUU3PZANOA6b2Uj9TjSqD3B
-	2GXU3Phg==;
+	bh=IS+o70XI9H6xAbtwLOTIZ3eCVSzAnaR0y6//eiVhID0=; b=mciO33gZCfuz25EaGN6Yu3qDbL
+	/m9SVAj5Ircnf11Vk607Z4G9g5Js9S8IjTN2R7t8FZgM/oR+jMao/T7iU2DyEvno2TcH60m6VyJzU
+	0bkX9v75/BiT15C/N3HU8JmwDW9u9VoZj8cwfbPCFr/zEReWz7/8sIweOFzi6K+XuT4cnNlhNvpdd
+	3dMtYf9wyJNc5D/YmZwM9h0ZduNNRPpB8V5rbKVH0pSAxO8iLf8sYNpZklbGLALAYNZqBnk/NmBEe
+	zkqpZHVfwhfFgtc2+dr0xsg3/YHdczfTERn/MuHIkZHFNftHqgxFN53cpGhUt1rbJ018C6hgqBrHi
+	Znk/b9xw==;
 Received: from willy by casper.infradead.org with local (Exim 4.98 #2 (Red Hat Linux))
-	id 1svqY5-00000004I8Z-3vof;
+	id 1svqY5-00000004I8T-2ivo;
 	Wed, 02 Oct 2024 04:01:13 +0000
 From: "Matthew Wilcox (Oracle)" <willy@infradead.org>
 To: Christian Brauner <brauner@kernel.org>
@@ -37,9 +37,9 @@ Cc: "Matthew Wilcox (Oracle)" <willy@infradead.org>,
 	linux-btrfs@vger.kernel.org,
 	linux-nilfs@vger.kernel.org,
 	linux-mm@kvack.org
-Subject: [PATCH 4/6] btrfs: Switch from using the private_2 flag to owner_2
-Date: Wed,  2 Oct 2024 05:01:06 +0100
-Message-ID: <20241002040111.1023018-5-willy@infradead.org>
+Subject: [PATCH 1/6] fs: Move clearing of mappedtodisk to buffer.c
+Date: Wed,  2 Oct 2024 05:01:03 +0100
+Message-ID: <20241002040111.1023018-2-willy@infradead.org>
 X-Mailer: git-send-email 2.46.0
 In-Reply-To: <20241002040111.1023018-1-willy@infradead.org>
 References: <20241002040111.1023018-1-willy@infradead.org>
@@ -51,99 +51,41 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-We are close to removing the private_2 flag, so switch btrfs to using
-owner_2 for its ordered flag.  This is mostly used by buffer head
-filesystems, so btrfs can use it because it doesn't use buffer heads.
+The mappedtodisk flag is only meaningful for buffer head based
+filesystems.  It should not be cleared for other filesystems.  This allows
+us to reuse the mappedtodisk flag to have other meanings in filesystems
+that do not use buffer heads.
 
 Signed-off-by: Matthew Wilcox (Oracle) <willy@infradead.org>
 ---
- fs/btrfs/ctree.h        | 13 ++++---------
- fs/btrfs/inode.c        |  8 ++++----
- fs/btrfs/ordered-data.c |  4 ++--
- 3 files changed, 10 insertions(+), 15 deletions(-)
+ fs/buffer.c   | 1 +
+ mm/truncate.c | 1 -
+ 2 files changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 317a3712270f..307dedf95c70 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -744,16 +744,11 @@ const char *btrfs_super_csum_driver(u16 csum_type);
- size_t __attribute_const__ btrfs_get_num_csums(void);
- 
- /*
-- * We use page status Private2 to indicate there is an ordered extent with
-+ * We use folio flag owner_2 to indicate there is an ordered extent with
-  * unfinished IO.
-- *
-- * Rename the Private2 accessors to Ordered, to improve readability.
-  */
--#define PageOrdered(page)		PagePrivate2(page)
--#define SetPageOrdered(page)		SetPagePrivate2(page)
--#define ClearPageOrdered(page)		ClearPagePrivate2(page)
--#define folio_test_ordered(folio)	folio_test_private_2(folio)
--#define folio_set_ordered(folio)	folio_set_private_2(folio)
--#define folio_clear_ordered(folio)	folio_clear_private_2(folio)
-+#define folio_test_ordered(folio)	folio_test_owner_2(folio)
-+#define folio_set_ordered(folio)	folio_set_owner_2(folio)
-+#define folio_clear_ordered(folio)	folio_clear_owner_2(folio)
- 
- #endif
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index edac499fd83d..a4055896261d 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1513,7 +1513,7 @@ static noinline int cow_file_range(struct btrfs_inode *inode,
- 		 * (which the caller expects to stay locked), don't clear any
- 		 * dirty bits and don't set any writeback bits
- 		 *
--		 * Do set the Ordered (Private2) bit so we know this page was
-+		 * Do set the Ordered flag so we know this page was
- 		 * properly setup for writepage.
- 		 */
- 		page_ops = (keep_locked ? 0 : PAGE_UNLOCK);
-@@ -7292,7 +7292,7 @@ static void btrfs_invalidate_folio(struct folio *folio, size_t offset,
- 	 *
- 	 * But already submitted bio can still be finished on this folio.
- 	 * Furthermore, endio function won't skip folio which has Ordered
--	 * (Private2) already cleared, so it's possible for endio and
-+	 * already cleared, so it's possible for endio and
- 	 * invalidate_folio to do the same ordered extent accounting twice
- 	 * on one folio.
- 	 *
-@@ -7358,7 +7358,7 @@ static void btrfs_invalidate_folio(struct folio *folio, size_t offset,
- 		range_len = range_end + 1 - cur;
- 		if (!btrfs_folio_test_ordered(fs_info, folio, cur, range_len)) {
- 			/*
--			 * If Ordered (Private2) is cleared, it means endio has
-+			 * If Ordered is cleared, it means endio has
- 			 * already been executed for the range.
- 			 * We can't delete the extent states as
- 			 * btrfs_finish_ordered_io() may still use some of them.
-@@ -7431,7 +7431,7 @@ static void btrfs_invalidate_folio(struct folio *folio, size_t offset,
- 	}
- 	/*
- 	 * We have iterated through all ordered extents of the page, the page
--	 * should not have Ordered (Private2) anymore, or the above iteration
-+	 * should not have Ordered anymore, or the above iteration
- 	 * did something wrong.
+diff --git a/fs/buffer.c b/fs/buffer.c
+index 1fc9a50def0b..35f9af799e0a 100644
+--- a/fs/buffer.c
++++ b/fs/buffer.c
+@@ -1649,6 +1649,7 @@ void block_invalidate_folio(struct folio *folio, size_t offset, size_t length)
+ 	if (length == folio_size(folio))
+ 		filemap_release_folio(folio, 0);
+ out:
++	folio_clear_mappedtodisk(folio);
+ 	return;
+ }
+ EXPORT_SYMBOL(block_invalidate_folio);
+diff --git a/mm/truncate.c b/mm/truncate.c
+index 0668cd340a46..870af79fb446 100644
+--- a/mm/truncate.c
++++ b/mm/truncate.c
+@@ -166,7 +166,6 @@ static void truncate_cleanup_folio(struct folio *folio)
+ 	 * Hence dirty accounting check is placed after invalidation.
  	 */
- 	ASSERT(!folio_test_ordered(folio));
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index 2104d60c2161..95c8499a159a 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -346,10 +346,10 @@ static bool can_finish_ordered_extent(struct btrfs_ordered_extent *ordered,
- 		ASSERT(file_offset + len <= folio_pos(folio) + folio_size(folio));
+ 	folio_cancel_dirty(folio);
+-	folio_clear_mappedtodisk(folio);
+ }
  
- 		/*
--		 * Ordered (Private2) bit indicates whether we still have
-+		 * Ordered flag indicates whether we still have
- 		 * pending io unfinished for the ordered extent.
- 		 *
--		 * If there's no such bit, we need to skip to next range.
-+		 * If it's not set, we need to skip to next range.
- 		 */
- 		if (!btrfs_folio_test_ordered(fs_info, folio, file_offset, len))
- 			return false;
+ int truncate_inode_folio(struct address_space *mapping, struct folio *folio)
 -- 
 2.43.0
 

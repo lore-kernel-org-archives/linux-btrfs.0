@@ -1,180 +1,239 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from galois.linutronix.de (Galois.linutronix.de [193.142.43.55])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 64EFB1D1E94
-	for <linux-btrfs@vger.kernel.org>; Wed,  2 Oct 2024 14:15:15 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0B0691D0DED;
+	Wed,  2 Oct 2024 14:17:02 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=193.142.43.55
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1727878515; cv=none; b=rjjPvw/gbge9aI6CqaFe/Kh8zW3cU3I5cEXp4ezgQTiw0i3w0ZHHWDk5z9lR4HYJ6AOX1Em/Fc5gdvjovfuaHLHoX+RggHIt3LldRboUloNOpX76zL69sNTVRMx2t2rLG1VIuWkbkRpF3k2gfLVkeeonwGPXA/1u1QTBDt2q/Iw=
+	t=1727878626; cv=none; b=PZguxEX7Peidaf3PDcKU3luhaZYvrcvp2kNcU8dpSO5LmEp5IRDGDfxO8zQ0g4BvUBM4nwNr1k/9Pdnj8M2xPt7Cp65asiIu2osQ0vorLy+xhKRnwS85Aken7NZnY4eqLxhGCV6oM/t3tflHMIkmbr40UbAPwmf1b8Ab56tHiiM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1727878515; c=relaxed/simple;
-	bh=m7k0FdDg+PRZqs1bXmFg3J4NVw1RZ7RCtz5SamL5KkU=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=jNOsuQuN5FInVsYJKOFok8m0g/aNsoozalDIH6XRox2zi6lXnZWxBMyxLvq1QhwSSZrY85nh9nMfOa5IoV6wLEGjYCAXmyCAg7139I17dlHSS273GQx6ofYvlI38l0shg+xhB+1MBPjzegM0a2Oso7dbKeO7RJ+jXcdIFkYquiQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=GN9Rtipd; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1727878626; c=relaxed/simple;
+	bh=xpvHwwmdO3eqrkURj8Y+rlVSEXmxn77Ygc+a06eVTRw=;
+	h=From:To:Cc:Subject:In-Reply-To:References:Date:Message-ID:
+	 MIME-Version:Content-Type; b=rP0MRlNVmzTWEWa0iFWIx+ZkILJORMtpR7qBM0BRjo9KKSd+OE3PuVxIcEcNBe0tJRo47wy90MWYRk7SKgjgNAOoUW9i3pydgkcJMrkdJs4MwRcbf2IU2vOn3TVpdR5oLgqWVFC1X2FPWa4ZGjGvuMgdFlaDsoQzqQJEQpK0eTM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linutronix.de; spf=pass smtp.mailfrom=linutronix.de; dkim=pass (2048-bit key) header.d=linutronix.de header.i=@linutronix.de header.b=QjG1JrIy; dkim=permerror (0-bit key) header.d=linutronix.de header.i=@linutronix.de header.b=ylouc4cZ; arc=none smtp.client-ip=193.142.43.55
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linutronix.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linutronix.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="GN9Rtipd"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 05FECC4CEC2
-	for <linux-btrfs@vger.kernel.org>; Wed,  2 Oct 2024 14:15:15 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1727878515;
-	bh=m7k0FdDg+PRZqs1bXmFg3J4NVw1RZ7RCtz5SamL5KkU=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-	b=GN9RtipdD95vyYLAAGDdRNJirtr1NR97rEGUIKjgLGmqfHY0CxlDMf2zEiJWKHAKW
-	 UqerCAWhktpIqKOK09iKvLZ8RFr+/CtSQh29b1RhcfVAMToWvtja/5aHmusdmUK9UJ
-	 UHiftSx+r/ZPalu2tYjkLm9WOp/BIfWfREaKCgvD8pcAQS29+4Pahqqma4n1QQ8RSu
-	 1SOtLmNSAj0r4GItEg3trb/nXRyvgCQVlj4YUsno44fRX7+YW9UFMYWBZDwSCX22KC
-	 5TKM4wfjZ4k2i7ewtPxyqASztQTS3Jyz2aI/IWi2vkdwgRX2kT5mBhcu80l3jrf+Co
-	 M8JTDZU95rP9g==
-Received: by mail-ej1-f43.google.com with SMTP id a640c23a62f3a-a83562f9be9so138129566b.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 02 Oct 2024 07:15:14 -0700 (PDT)
-X-Gm-Message-State: AOJu0YwHkZx081QkB/EVyLt4+RRBYEy7z7GKwYjrQSHtStc95LtnaStH
-	EJOZ5EdLYcbZtp+0fnErWPBLL19fbER8Jvoxi6zf4Ou5mPsVbr+O1VSm8BShkK7JU3sBJKT6g6k
-	jeUcPuHV2DMlS62hmJqQGTNamnlg=
-X-Google-Smtp-Source: AGHT+IEqbcsUzyItvOyQg1PvTaPPCpqMI00oYMYfCyYy72gEB/gcTVPiS6lTFXHzHvxMQ88HxJO1DpbneqDXYiS7Mbw=
-X-Received: by 2002:a17:907:2d88:b0:a86:83f8:f5a2 with SMTP id
- a640c23a62f3a-a98f823cbc9mr292212466b.19.1727878513468; Wed, 02 Oct 2024
- 07:15:13 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="QjG1JrIy";
+	dkim=permerror (0-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="ylouc4cZ"
+From: Thomas Gleixner <tglx@linutronix.de>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linutronix.de;
+	s=2020; t=1727878620;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=7i4rK6W5zJ0/yjJszcGEJbo9yZLPfZxTe1UrEGBeh8s=;
+	b=QjG1JrIylWzjxiXp1whjsFK9TUMeqt2bSYE8DiPOFO5i8RyuIyjUOSk0JeXZrSfJl2K9w+
+	gyOtbGT26MGm9HwukROwgsLGE9R2Z7SzFrx3kAEzPRDeMG7yh9uUp7NVAsRq9snzhqQe77
+	toOLZztyH9NBtNUljdzrNwtOvXUyOrPKK9VkJX7lyXWeWreL2pDUA/q++KS3WnylvxU86o
+	viwUkVCpG9RFAGWnoiNFu7W/TfF7dYDSatgkkceV9sePjhgFZxGd4PtDsuEKfF1av3bD3x
+	trsyUhwbntn3Bx7X5vvWgcD5qhuPK/N0nVYpUif0NAFxMMohpzGGWj2zlxQO5g==
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=linutronix.de;
+	s=2020e; t=1727878620;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=7i4rK6W5zJ0/yjJszcGEJbo9yZLPfZxTe1UrEGBeh8s=;
+	b=ylouc4cZ0hfaX61gauH/9wkiYjDPiyaoj7UxIpSQUmkhbFC3z1xq3zRd95zob83mHdyaj7
+	fIZMz4gyPFqWU/Cw==
+To: Jeff Layton <jlayton@kernel.org>, John Stultz <jstultz@google.com>,
+ Stephen Boyd <sboyd@kernel.org>, Alexander Viro <viro@zeniv.linux.org.uk>,
+ Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>, Steven
+ Rostedt <rostedt@goodmis.org>, Masami Hiramatsu <mhiramat@kernel.org>,
+ Mathieu Desnoyers <mathieu.desnoyers@efficios.com>, Jonathan Corbet
+ <corbet@lwn.net>, Randy Dunlap <rdunlap@infradead.org>, Chandan Babu R
+ <chandan.babu@oracle.com>, "Darrick J. Wong" <djwong@kernel.org>, Theodore
+ Ts'o <tytso@mit.edu>, Andreas Dilger <adilger.kernel@dilger.ca>, Chris
+ Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>, David Sterba
+ <dsterba@suse.com>, Hugh Dickins <hughd@google.com>, Andrew Morton
+ <akpm@linux-foundation.org>, Chuck Lever <chuck.lever@oracle.com>, Vadim
+ Fedorenko <vadim.fedorenko@linux.dev>
+Cc: linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+ linux-trace-kernel@vger.kernel.org, linux-doc@vger.kernel.org,
+ linux-xfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+ linux-btrfs@vger.kernel.org, linux-nfs@vger.kernel.org,
+ linux-mm@kvack.org, Jeff Layton <jlayton@kernel.org>
+Subject: Re: [PATCH v8 01/12] timekeeping: add interfaces for handling
+ timestamps with a floor value
+In-Reply-To: <20241001-mgtime-v8-1-903343d91bc3@kernel.org>
+References: <20241001-mgtime-v8-0-903343d91bc3@kernel.org>
+ <20241001-mgtime-v8-1-903343d91bc3@kernel.org>
+Date: Wed, 02 Oct 2024 16:16:59 +0200
+Message-ID: <87zfnmwpwk.ffs@tglx>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <cover.1727222308.git.wqu@suse.com> <3b02eabf87e477dd25e21a4c2cf7720e530d7531.1727222308.git.wqu@suse.com>
-In-Reply-To: <3b02eabf87e477dd25e21a4c2cf7720e530d7531.1727222308.git.wqu@suse.com>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Wed, 2 Oct 2024 15:14:36 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H50O_LA8vje8JSH+xVM07VA55G286bWtUwfCdpzfVavfQ@mail.gmail.com>
-Message-ID: <CAL3q7H50O_LA8vje8JSH+xVM07VA55G286bWtUwfCdpzfVavfQ@mail.gmail.com>
-Subject: Re: [PATCH v2 1/2] btrfs: avoid unnecessary device path update for
- the same device
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>, 
-	Fabian Vogt <fvogt@suse.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain
 
-On Wed, Sep 25, 2024 at 1:14=E2=80=AFAM Qu Wenruo <wqu@suse.com> wrote:
+On Tue, Oct 01 2024 at 06:58, Jeff Layton wrote:
+
+V8 ? I remember that I reviewed v* already :)
+
+Also the sentence after the susbsystem prefix starts with an uppercase
+letter.
+
+> Multigrain timestamps allow the kernel to use fine-grained timestamps
+> when an inode's attributes is being actively observed via ->getattr().
+> With this support, it's possible for a file to get a fine-grained
+> timestamp, and another modified after it to get a coarse-grained stamp
+> that is earlier than the fine-grained time.  If this happens then the
+> files can appear to have been modified in reverse order, which breaks
+> VFS ordering guarantees.
 >
-> [PROBLEM]
-> It is very common for udev to trigger device scan, and every time a
-> mounted btrfs device got re-scan from different soft links, we will get
-> some of unnecessary device path updates, this is especially common
-> for LVM based storage:
+> To prevent this, maintain a floor value for multigrain timestamps.
+> Whenever a fine-grained timestamp is handed out, record it, and when
+> coarse-grained stamps are handed out, ensure they are not earlier than
+> that value. If the coarse-grained timestamp is earlier than the
+> fine-grained floor, return the floor value instead.
 >
->  # lvs
->   scratch1 test -wi-ao---- 10.00g
->   scratch2 test -wi-a----- 10.00g
->   scratch3 test -wi-a----- 10.00g
->   scratch4 test -wi-a----- 10.00g
->   scratch5 test -wi-a----- 10.00g
->   test     test -wi-a----- 10.00g
+> Add a static singleton atomic64_t into timekeeper.c that we can use to
+
+s/we can use/is used/
+
+> keep track of the latest fine-grained time ever handed out. This is
+> tracked as a monotonic ktime_t value to ensure that it isn't affected by
+> clock jumps. Because it is updated at different times than the rest of
+> the timekeeper object, the floor value is managed independently of the
+> timekeeper via a cmpxchg() operation, and sits on its own cacheline.
 >
->  # mkfs.btrfs -f /dev/test/scratch1
->  # mount /dev/test/scratch1 /mnt/btrfs
->  # dmesg -c
->  [  205.705234] BTRFS: device fsid 7be2602f-9e35-4ecf-a6ff-9e91d2c182c9 d=
-evid 1 transid 6 /dev/mapper/test-scratch1 (253:4) scanned by mount (1154)
->  [  205.710864] BTRFS info (device dm-4): first mount of filesystem 7be26=
-02f-9e35-4ecf-a6ff-9e91d2c182c9
->  [  205.711923] BTRFS info (device dm-4): using crc32c (crc32c-intel) che=
-cksum algorithm
->  [  205.713856] BTRFS info (device dm-4): using free-space-tree
->  [  205.722324] BTRFS info (device dm-4): checking UUID tree
+> This patch also adds two new public interfaces:
+
+git grep 'This patch' Docuementation/process/
+
+> - ktime_get_coarse_real_ts64_mg() fills a timespec64 with the later of the
+>   coarse-grained clock and the floor time
 >
-> So far so good, but even if we just touched any soft link of
-> "dm-4", we will get quite some unnecessary device path updates.
+> - ktime_get_real_ts64_mg() gets the fine-grained clock value, and tries
+>   to swap it into the floor. A timespec64 is filled with the result.
 >
->  # touch /dev/mapper/test-scratch1
->  # dmesg -c
->  [  469.295796] BTRFS info: devid 1 device path /dev/mapper/test-scratch1=
- changed to /dev/dm-4 scanned by (udev-worker) (1221)
->  [  469.300494] BTRFS info: devid 1 device path /dev/dm-4 changed to /dev=
-/mapper/test-scratch1 scanned by (udev-worker) (1221)
->
-> Such device path rename is unnecessary and can lead to random path
-> change due to the udev race.
->
-> [CAUSE]
-> Inside device_list_add(), we are using a very primitive way checking if
-> the device has changed, strcmp().
->
-> Which can never handle links well, no matter if it's hard or soft links.
->
-> So every different link of the same device will be treated as a different
-> device, causing the unnecessary device path update.
->
-> [FIX]
-> Introduce a helper, is_same_device(), and use path_equal() to properly
-> detect the same block device.
-> So that the different soft links won't trigger the rename race.
->
-> Reviewed-by: Filipe Manana <fdmanana@suse.com>
-> Link: https://bugzilla.suse.com/show_bug.cgi?id=3D1230641
-> Reported-by: Fabian Vogt <fvogt@suse.com>
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
->  fs/btrfs/volumes.c | 28 +++++++++++++++++++++++++++-
->  1 file changed, 27 insertions(+), 1 deletion(-)
->
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 995b0647f538..b713e4ebb362 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -732,6 +732,32 @@ const u8 *btrfs_sb_fsid_ptr(const struct btrfs_super=
-_block *sb)
->         return has_metadata_uuid ? sb->metadata_uuid : sb->fsid;
+> Since the floor is global, take care to avoid updating it unless it's
+> absolutely necessary. If we do the cmpxchg and find that the value has
+
+We do nothing. Please describe your changes in passive voice and do not
+impersonate code.
+
+> been updated since we fetched it, then we discard the fine-grained time
+> that was fetched in favor of the recent update.
+
+This still is confusing. Something like this:
+
+  The floor value is global and updated via a single try_cmpxchg(). If
+  that fails then the operation raced with a concurrent update. It does
+  not matter whether the new value is later than the value, which the
+  failed cmpxchg() tried to write, or not. Add sensible technical
+  explanation.
+
+> +/*
+> + * Multigrain timestamps require that we keep track of the latest fine-grained
+> + * timestamp that has been issued, and never return a coarse-grained timestamp
+> + * that is earlier than that value.
+> + *
+> + * mg_floor represents the latest fine-grained time that we have handed out as
+> + * a timestamp on the system. Tracked as a monotonic ktime_t, and converted to
+> + * the realtime clock on an as-needed basis.
+> + *
+> + * This ensures that we never issue a timestamp earlier than one that has
+> + * already been issued, as long as the realtime clock never experiences a
+> + * backward clock jump. If the realtime clock is set to an earlier time, then
+> + * realtime timestamps can appear to go backward.
+> + */
+> +static __cacheline_aligned_in_smp atomic64_t mg_floor;
+> +
+>  static inline void tk_normalize_xtime(struct timekeeper *tk)
+>  {
+>  	while (tk->tkr_mono.xtime_nsec >= ((u64)NSEC_PER_SEC << tk->tkr_mono.shift)) {
+> @@ -2394,6 +2410,86 @@ void ktime_get_coarse_real_ts64(struct timespec64 *ts)
 >  }
->
-> +static bool is_same_device(struct btrfs_device *device, const char *new_=
-path)
+>  EXPORT_SYMBOL(ktime_get_coarse_real_ts64);
+>  
+> +/**
+> + * ktime_get_coarse_real_ts64_mg - return latter of coarse grained time or floor
+> + * @ts: timespec64 to be filled
+> + *
+> + * Fetch the global mg_floor value, convert it to realtime and
+> + * compare it to the current coarse-grained time. Fill @ts with
+> + * whichever is latest. Note that this is a filesystem-specific
+> + * interface and should be avoided outside of that context.
+> + */
+> +void ktime_get_coarse_real_ts64_mg(struct timespec64 *ts)
 > +{
-> +       struct path old =3D { .mnt =3D NULL, .dentry =3D NULL };
-> +       struct path new =3D { .mnt =3D NULL, .dentry =3D NULL };
-> +       char *old_path;
-> +       bool is_same =3D false;
-> +       int ret;
+> +	struct timekeeper *tk = &tk_core.timekeeper;
+> +	u64 floor = atomic64_read(&mg_floor);
+> +	ktime_t f_real, offset, coarse;
+> +	unsigned int seq;
 > +
-> +       if (!device->name)
-> +               goto out;
+> +	do {
+> +		seq = read_seqcount_begin(&tk_core.seq);
+> +		*ts = tk_xtime(tk);
+> +		offset = tk_core.timekeeper.offs_real;
+> +	} while (read_seqcount_retry(&tk_core.seq, seq));
 > +
-> +       old_path =3D rcu_str_deref(device->name);
-
-There's a missing rcu_read_lock / unlock btw. It's triggering warnings
-in the test vms.
-
-Thanks.
-
-> +       ret =3D kern_path(old_path, LOOKUP_FOLLOW, &old);
-> +       if (ret)
-> +               goto out;
-> +       ret =3D kern_path(new_path, LOOKUP_FOLLOW, &new);
-> +       if (ret)
-> +               goto out;
-> +       if (path_equal(&old, &new))
-> +               is_same =3D true;
-> +out:
-> +       path_put(&old);
-> +       path_put(&new);
-> +       return is_same;
+> +	coarse = timespec64_to_ktime(*ts);
+> +	f_real = ktime_add(floor, offset);
+> +	if (ktime_after(f_real, coarse))
+> +		*ts = ktime_to_timespec64(f_real);
 > +}
+> +EXPORT_SYMBOL_GPL(ktime_get_coarse_real_ts64_mg);
 > +
->  /*
->   * Add new device to list of registered devices
->   *
-> @@ -852,7 +878,7 @@ static noinline struct btrfs_device *device_list_add(=
-const char *path,
->                                 MAJOR(path_devt), MINOR(path_devt),
->                                 current->comm, task_pid_nr(current));
->
-> -       } else if (!device->name || strcmp(device->name->str, path)) {
-> +       } else if (!device->name || !is_same_device(device, path)) {
->                 /*
->                  * When FS is already mounted.
->                  * 1. If you are here and if the device->name is NULL tha=
-t
-> --
-> 2.46.1
->
->
+> +/**
+> + * ktime_get_real_ts64_mg - attempt to update floor value and return result
+> + * @ts:		pointer to the timespec to be set
+> + *
+> + * Get a monotonic fine-grained time value and attempt to swap it into the
+> + * floor. If it succeeds then accept the new floor value. If it fails
+> + * then another task raced in during the interim time and updated the floor.
+> + * That value is just as valid, so accept that value in this case.
+
+Why? 'just as valid' does not tell me anything.
+
+> + * @ts will be filled with the resulting floor value, regardless of
+> + * the outcome of the swap. Note that this is a filesystem specific interface
+> + * and should be avoided outside of that context.
+> + */
+> +void ktime_get_real_ts64_mg(struct timespec64 *ts)
+> +{
+> +	struct timekeeper *tk = &tk_core.timekeeper;
+> +	ktime_t old = atomic64_read(&mg_floor);
+> +	ktime_t offset, mono;
+> +	unsigned int seq;
+> +	u64 nsecs;
+> +
+> +	do {
+> +		seq = read_seqcount_begin(&tk_core.seq);
+> +
+> +		ts->tv_sec = tk->xtime_sec;
+> +		mono = tk->tkr_mono.base;
+> +		nsecs = timekeeping_get_ns(&tk->tkr_mono);
+> +		offset = tk_core.timekeeper.offs_real;
+> +	} while (read_seqcount_retry(&tk_core.seq, seq));
+> +
+> +	mono = ktime_add_ns(mono, nsecs);
+> +
+> +	/*
+> +	 * Attempt to update the floor with the new time value. Accept the
+> +	 * resulting floor value regardless of the outcome of the swap.
+> +	 */
+> +	if (atomic64_try_cmpxchg(&mg_floor, &old, mono)) {
+> +		ts->tv_nsec = 0;
+> +		timespec64_add_ns(ts, nsecs);
+> +	} else {
+> +		/*
+> +		 * Something has changed mg_floor since "old" was
+
+I complained about 'something has changed ...' before. Can we please
+have proper technical explanations?
+
+> +		 * fetched. "old" has now been updated with the
+> +		 * current value of mg_floor, so use that to return
+> +		 * the current coarse floor value.
+
+This still does not explain why the new floor value is valid even when
+it is before the value in @mono.
+
+Thanks,
+
+        tglx

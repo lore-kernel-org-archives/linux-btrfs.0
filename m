@@ -1,41 +1,41 @@
 Received: from mout.gmx.net (mout.gmx.net [212.227.17.22])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0FBE41D1E60
-	for <linux-btrfs@vger.kernel.org>; Wed,  2 Oct 2024 21:13:37 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 47E27216A33
+	for <linux-btrfs@vger.kernel.org>; Wed,  2 Oct 2024 21:21:23 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.17.22
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1727903620; cv=none; b=p4yXxq0pbSoXaOn4zaGPzfKUZZHV8pFsh6TOyCwPfRQjFhZtw68G8I34wuqrc6Ac11YbtB6dyUNSnn4burMFwiXsx0bXpSPmA779YH3vm8FnuPfPjNehQADLn4X81zkDc5EPrdAnOoTX3Z6G0CnaLt2b4L8QWfygfPnxG4JBhfA=
+	t=1727904088; cv=none; b=if4sNCGiUdD5WYwvBHVrgxAPA3oCGOqgpJg7A0HUqwkuTtKoDmvsjuZ11fbGt78HxghHLTXZFb77e7qI+xccKwPnAEFZIy9DuIeRNaRwIvHpjr1F1fLzZFmA80vyYRJiHyzIJdGveRCUGdfeaf0i6A6c0AOxmKL9whsS017QnqY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1727903620; c=relaxed/simple;
-	bh=Zd315xcRxxeeT4wodXsztkoV9pKEyFx9FZHYWf72daQ=;
+	s=arc-20240116; t=1727904088; c=relaxed/simple;
+	bh=wJL59/Cf+NPRbItCgkvjDu2EofkqQjKNyr8HsE+AltU=;
 	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=DOnYCcuLgbmqYb38Psw86oEWzJ3mv3AdjeS+c3V/tP0SZW9AtC5qpwS/MpqqK73BTBqzcdi5H+bMjhi6P1fpEp4Gi+g0NeZa1jiIBlulo2MgUV6isbl9PDAuvfGNLYtfZmfyzAuinQ6J1Fej0bU18/D0F9YEnl6oz+XL7dxVzXw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=STRUGHJL; arc=none smtp.client-ip=212.227.17.22
+	 In-Reply-To:Content-Type; b=Gm2kzjDgoRFxvJ5T5fQR3fXLQiEYCWrZcD7nEjDSf0aOV3W3UWjUeldlKRBtmZI0ktHpafgyCHrswvVjtfie3G1D+hrbCJX6wT+pqxgBvdR/EAyvioeiqkjXz3YQ67xnefez2ANItEDDnYdUzxFee3TBx3K9EdsJxHAH9di7uKQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=RBoGXQnB; arc=none smtp.client-ip=212.227.17.22
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="STRUGHJL"
+	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="RBoGXQnB"
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1727903610; x=1728508410; i=quwenruo.btrfs@gmx.com;
-	bh=lFWE4OyEI1t2870C/EmlF6Qq4o+dr9YMBtOCVq2fsIY=;
+	s=s31663417; t=1727904073; x=1728508873; i=quwenruo.btrfs@gmx.com;
+	bh=cQeYDFLqrhIVSK3PEGEXSEgpwBlK7lPqgrtjAGCtRP8=;
 	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:
 	 References:From:In-Reply-To:Content-Type:
 	 Content-Transfer-Encoding:cc:content-transfer-encoding:
 	 content-type:date:from:message-id:mime-version:reply-to:subject:
 	 to;
-	b=STRUGHJLKxHYuCmQvef4+Uo1GG9Be4Dc3ACLbDpft4B5fKpAOEJboEcEioca3dhT
-	 r3hovL/BnbAHQV1ONODI1hbDYQwLF7zHGSoIiU1I/ZdN/d4JnTtmuXBILeKCuASmi
-	 NFN6TPh8aTWADg0Gwh56XW5wNxOHM0LcGt9dNAiqXaxdiC9h8l5HvoAcN0BH/cn+R
-	 9n8Y1T+7cJ3yjM0v/UxZdngcHGCVQdygykDyNfNDHTHAZL6X9xSWPiPJ9jrqHqWVK
-	 zZvLxwy/Y340Qn9GpqYPcsK/+Lv4fa8uDJ//0Ae1Qgdcy3rQm8qN/H2hTfFKO3s+v
-	 ueioElWcy4N4qnSPzg==
+	b=RBoGXQnBLuv7eRLz5mWoRb8HxtVTxfT6WlX7XL09LYli4IodLnNG+8ZwrMhXSFh/
+	 Jh9rdtXxcjXjLGty3jfydGYTPOqfkxY8UdbV3bFbpJtAzL/EMnglw1zjtlr0uhz1s
+	 VL7h4OxDqegoXDX42L1CYTqxmUtLbXIc6x0jdd9y5uG5BmUt2KW0P2zBU8g6M+LNh
+	 fwwdFDaKqRByYijYcnj5a7wG0eiM2qk1qnYqe4z1+5dLqP1Tkc4ROtW6HFXEuU776
+	 Q10PrJ9zk10sfBzaugIYfoaWgnDasOHe47DeQtZIjuC1cmsV9SLVqPOSqwKKSwhlq
+	 8nF8N0c0C2EBUpSBAg==
 X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
 Received: from [172.16.0.191] ([159.196.52.54]) by mail.gmx.net (mrgmx105
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1N1wll-1rtwLQ3yjh-0181Tz; Wed, 02
- Oct 2024 23:13:30 +0200
-Message-ID: <fceb2e3f-9af8-421a-baf8-207054c3184d@gmx.com>
-Date: Thu, 3 Oct 2024 06:43:27 +0930
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MrQEx-1s8hgc1SQ3-00iGWj; Wed, 02
+ Oct 2024 23:21:13 +0200
+Message-ID: <d4445e83-c5a0-4add-b266-2d97bd590efc@gmx.com>
+Date: Thu, 3 Oct 2024 06:51:10 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -43,10 +43,11 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: zoned: fix missing rcu locking in error message
- when loading zone info
-To: fdmanana@kernel.org, linux-btrfs@vger.kernel.org
-References: <446a65bde464d5a19554687ffd1944bfbf9062ae.1727878321.git.fdmanana@suse.com>
+Subject: Re: [PATCH] btrfs: fix comments in definition of struct
+ btrfs_file_extent_item
+To: Mark Harmstone <maharmstone@fb.com>, linux-btrfs@vger.kernel.org,
+ HAN Yuwei <hrx@bupt.moe>
+References: <20241002164500.2775775-1-maharmstone@fb.com>
 Content-Language: en-US
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
@@ -73,69 +74,101 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
  INfWh0KbJodf0G48xouesn08cbfUdlphSMXujCA8y5TcNyRuNv2q5Nizl8sKhUZzh4BascoK
  DChBuznBsucCTAGrwPgG4/ul6HnWE8DipMKvkV9ob1xJS2W4WJRPp6QdVrBWJ9cCdtpR6GbL
  iQi22uZXoSPv/0oUrGU+U5X4IvdnvT+8viPzszL5wXswJZfqfy8tmHM85yjObVdIG6AlnrrD
-In-Reply-To: <446a65bde464d5a19554687ffd1944bfbf9062ae.1727878321.git.fdmanana@suse.com>
+In-Reply-To: <20241002164500.2775775-1-maharmstone@fb.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:rO0VJdZGscTuyPDn6/ZWd5PenbB+bcUUPk7GknzJRma8Oz4q59L
- JQkEApuM1Di6G7Ret3ArypEyAwp5HzIG0TPSxMz1p4I2olSw3maa383bmRb5ZcQfu7ThD76
- aaZvqaJBh9BYb1AvSgJhPoTSdLdND4QlkXDg+oLcTt6IIFdSPohSjVigurxGi9jyMtOg7qz
- r6QdjO1+ADvKZtmkRyhxQ==
+X-Provags-ID: V03:K1:dEl4j1wn1eHStrKAckQL4zFztwbW6pgkTvas7kBh1CUKO1z0RGJ
+ f4kmAAU7hRHLRHzQoeatL4xI12nHpytUhzejFOAz9xcuo2/x+BDcoyXhQlrd6PD5TuF4oMy
+ rNRf7fiDMX/JLvAWYEOqIQjgX/8ctTj8bhzqIMuUf4EavfWTAAFOwbKOjKa+ZqNzAVWfBhN
+ rkxrCoQZKzivsWxRhUfYg==
 X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:bF+QOYevMng=;g1Seqdz4cgJ4IhiM9w3f55r1Kg5
- eFxqsLD6QtIloBRHFiO4GZI1HghRTYGctz5clVdVs0hjuRmVWAZ+cFpuEWZEfcFB34qz8orRp
- 9+EQUgaj1GnPba5VV3hY1jbzvb468aAgIoB8z/5/8nQAWD9btTrtpOwtqHum1SEl6TEU2pQuw
- SW8bp4JRoKroDTg4Fg5wpOYmZhJBGkV+J0gM4mzY57EBN5MR89Vgc5JPAGr0IvEHJMVUpj5qg
- DvNX5NtkWHWnrEZPNy37U6/92TWEZ434Ouv9+s0jaOj6WgQPkamCwYreJ/Y2mFKBqYO6GloQ7
- XexPGlwm0/iEZ4+GWqvFpFyNPjmKb4xJew7XM3dBq3toHbtmwM68DyMtQL8yimVeV7XRltPBx
- yEnj9BqY0RGNJhqG8bdFTOAeHgHMZTIJGBYl4iEQvxJuLYSK3tEfvypx02Soxx5VKio74f5hm
- aP2fCFVBefl89gVLgh3wlDX2UIUehaKqwlwSLcVIyxWAshIshOa132ksOGML1l2wU90IVIuI5
- RXnjnFB1YYH0LCQrjpkiaE2wHDm9DRKCJS5IIyjhlIbg14BLDPpwhYqZr6MECdlG2dHq4diIO
- /gRHgM3naCHsvX4Viqwrapabk9L6NZOdfvSnLCD+TMdfiQiIr4WH/2UmOrJujwiN+18ZGyI1d
- UtHjI+tbw+ZzdcFGUlt3cEt3tv6jTXFONjbc5fUGzttKC+du4UAYisz4DSeDYE+sWJ+JeX5ZG
- tI4UtFlcsDsqMtCdv8UBIZG5Xy5m/pzq975os6Jxmt5Ilr+H1KrV5aSI0mhDblLcxTQqk2JLz
- eJgl06kx7bjNR+W7BRJx0+GRfI2iQI9tQzW9KMMnYimY8=
+UI-OutboundReport: notjunk:1;M01:P0:6tL+9DrjeYE=;BICS0H/k1uw+anaAxjQGlzAWwYa
+ O1qdcdeE+NxOvIlhXyu/aAoDJpbP+TpU1SPi9T0TvplSlbmrk8mT1/cmfO3KcPx1AlUAOcMPH
+ wiwBPCCNmXC/n1C3i6Jl8PSBXO6/ZmUoFoicUQc96XpxmKWw8ULTCjTIEkYL8sG0OkiiVPYMC
+ hCSwLDnBCrH9D3fgZ+4o1XgcTor1xwtzyGMBT5I+tWYfv8Ez79PB69WUXpAvPt40/Mi1MN+gz
+ +PhRx/uMkoqVpaQYkuUO+tazhZQ3v7AIxkscmMIcywn2Y3JMCg0hgmSQ9549oCBLwx/ldy+8g
+ hHrx0Ha9NxqOgQNt0YQvB4ZWkCmzruX5OdvQBTfAEdhZuKGpfGFcBvVCIMzwXj3jD6y5eoip2
+ AanQk5yGPm+bKSljIGITiEJC5pfnD+tVaQVpWWPtXsX8Pwiq7ntW6STMcbxCAhVsgibRARrUk
+ tZ54Solxx4q2ofxftNLkim/8/w/jZ01uHpqfASnjhd6AhrfKGysHlrdgA1dyCHNv0C/SqoSbo
+ 1bwFTjg0cUDDOSiFUI7VoglUG5lZzt1EyHJpsuN+5NagB3piYKeEEIeS+ZrHngPJQDHErUR6z
+ owBDmL2aXeHt0V5HrpQyufMXX2DRiWukBjArAST92zbJkeRnThnjMtEKhrfSyI1dCo2pAdw42
+ oPvNTVL77z6/bUi6/6DZYe6sHANgei6jeQwzEWEENbJXxYQ6vzLN/rSizPSjsVAGxLGt8raXu
+ I4pPGbLyX5gAIUKWwc2qSO1vOnj/vLMeejKBCpOyvh85a3o4Px6rYPIhKIcCrRhILXTBnwQqq
+ V1OyaWrEIacIxOttYf2YsE9g==
 
 
 
-=E5=9C=A8 2024/10/2 23:45, fdmanana@kernel.org =E5=86=99=E9=81=93:
-> From: Filipe Manana <fdmanana@suse.com>
+=E5=9C=A8 2024/10/3 02:14, Mark Harmstone =E5=86=99=E9=81=93:
+> The comments in the definition of struct btrfs_file_extent_item were
+> written while the FS was still in flux, and are no longer accurate.
 >
-> At btrfs_load_zone_info() we have an error path that is dereferecing the
-> name of a device which is a RCU string but we are not holding a RCU read
-> lock, which is incorrect.
+> The range [disk_bytenr, disk_num_bytes) is the same as the extent in the
+> extent tree. There's no difference here between csummed and non-csummed
+> extents, as the comments were implying. And the fields offset and
+> num_bytes are in bytes, not file blocks.
 >
-> Fix this by using btrfs_err_in_rcu() instead of btrfs_err().
+> Signed-off-by: Mark Harmstone <maharmstone@fb.com>
+> ---
+>   include/uapi/linux/btrfs_tree.h | 17 ++++++++---------
+>   1 file changed, 8 insertions(+), 9 deletions(-)
 >
-> The problem is there since commit 08e11a3db098 ("btrfs: zoned: load zone=
-'s
-> allocation offset"), back then at btrfs_load_block_group_zone_info() but
-> then later on that code was factored out into the helper
-> btrfs_load_zone_info() by commit 09a46725cc84 ("btrfs: zoned: factor out
-> per-zone logic from btrfs_load_block_group_zone_info").
+> diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_=
+tree.h
+> index fc29d273845d..5df54a11c74c 100644
+> --- a/include/uapi/linux/btrfs_tree.h
+> +++ b/include/uapi/linux/btrfs_tree.h
+> @@ -1094,24 +1094,23 @@ struct btrfs_file_extent_item {
+>   	__u8 type;
 >
-> Fixes: 08e11a3db098 ("btrfs: zoned: load zone's allocation offset")
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+>   	/*
+> -	 * disk space consumed by the extent, checksum blocks are included
+> -	 * in these numbers
+> +	 * The address and size of the referenced extent.  These should exactl=
+y
+> +	 * match an entry in the extent tree.
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
+Recently I'm also helping Han Yuwei to understand all the ondisk format.
+Maybe he can provide a better advice from a new respective.
+
+And he is definitely not happy with the docs and comments on those
+structures.
+
+>   	 *
+>   	 * At this offset in the structure, the inline extent data start.
+>   	 */
+>   	__le64 disk_bytenr;
+>   	__le64 disk_num_bytes;
+>   	/*
+> -	 * the logical offset in file blocks (no csums)
+> -	 * this extent record is for.  This allows a file extent to point
+> -	 * into the middle of an existing extent on disk, sharing it
+> -	 * between two snapshots (useful if some bytes in the middle of the
+> -	 * extent have changed
+> +	 * The logical offset in bytes this extent record is for.
+> +	 * This allows a file extent to point into the middle of an existing
+> +	 * extent on disk, sharing it between two snapshots (useful if some
+> +	 * bytes in the middle of the extent have changed)
+
+Maybe you want to add the offset is for the uncompressed data.
+
+Another thing is, maybe we want to have a more consistent wording.
+
+The word "extent record" may be a little confusing, I guess you mean
+"file extent".
+Since the structure is called "btrfs_file_extent_item", we may want to
+unify to "file extent" when referring to the file extent, and "data
+extent" to refer to the data extent.
 
 Thanks,
 Qu
-> ---
->   fs/btrfs/zoned.c | 2 +-
->   1 file changed, 1 insertion(+), 1 deletion(-)
+>   	 */
+>   	__le64 offset;
+>   	/*
+> -	 * the logical number of file blocks (no csums included).  This
+> -	 * always reflects the size uncompressed and without encoding.
+> +	 * The logical number of bytes.  This always reflects the size
+> +	 * uncompressed and without encoding.
+>   	 */
+>   	__le64 num_bytes;
 >
-> diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-> index 00a016691d8e..dbcbf754d284 100644
-> --- a/fs/btrfs/zoned.c
-> +++ b/fs/btrfs/zoned.c
-> @@ -1340,7 +1340,7 @@ static int btrfs_load_zone_info(struct btrfs_fs_in=
-fo *fs_info, int zone_idx,
->   	switch (zone.cond) {
->   	case BLK_ZONE_COND_OFFLINE:
->   	case BLK_ZONE_COND_READONLY:
-> -		btrfs_err(fs_info,
-> +		btrfs_err_in_rcu(fs_info,
->   		"zoned: offline/readonly zone %llu on device %s (devid %llu)",
->   			  (info->physical >> device->zone_info->zone_size_shift),
->   			  rcu_str_deref(device->name), device->devid);
 

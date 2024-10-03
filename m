@@ -1,76 +1,123 @@
-Received: from casper.infradead.org (casper.infradead.org [90.155.50.34])
+Received: from mx.treblig.org (mx.treblig.org [46.235.229.95])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 84A36197A65;
-	Thu,  3 Oct 2024 14:19:21 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=90.155.50.34
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4B8A019F100;
+	Thu,  3 Oct 2024 14:27:37 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=46.235.229.95
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1727965162; cv=none; b=IFzjYjQioZWU1srzKoY0AbkxfEsWtkbJT57smcR1JA9oxLzCEa2kruwDBuXcXlbgDBoIu8EOVTN5FNEUrH9EzLPHNXoXYHB7/YgxEjBgoFA5dKJOVUJhL/CGUFCCCOY7vRNAbaDEOC/DxDt46CyiEndXzd6H0rAdyHOaWsDofRY=
+	t=1727965660; cv=none; b=Mns7AZkslx+KWzvQOvmC8WcbALAXaXyDewSQoL31nxx6Fuf4Nu7TWjS6X6OqmohhgjpU3BTcgzyZ9LlV1IgZkdr/knjeFGSdJj0otL+lvEII1h6ZYHqLp1Xb9nuRPU5mIGOmR0DxbkpiAImauNkDF172VqrzSWIQfIiL5tmqOtQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1727965162; c=relaxed/simple;
-	bh=yvV/XCZSBeAgPdM0l8YoGpcgZKpyLl9J2RRsBcI7UM8=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=QJlmhRBHJdTouzK+CeMdNseXZvDqX/wmrymIYwDMWN2bIi+AFXJJnB+xV8XxDW/kgx6wNSsDCpwy4zc8CRxd9POwPL4t7rBYjhk8gMTU/YPmss0Kb/1YvG5ZFHCU/z900orJvFfB6BaltkjQpHPv7r2zZ1o4Gi5NF6nrb7EBUy8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=infradead.org; spf=none smtp.mailfrom=infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=sQOQ31A8; arc=none smtp.client-ip=90.155.50.34
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=infradead.org
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=infradead.org
+	s=arc-20240116; t=1727965660; c=relaxed/simple;
+	bh=TAf22orbtcAXblsY60OwtdehaYrguLKv6cXxhIYrD7Q=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=Bo/RS9Lye9V1zLUd810qMi+T9bdmQt1++3ZcOoxTrHeOz2UnUpJU774nKtQptLK1uSzxJr9r9KDDzXsc6tadsIz9gbu5J+8TJY5PsyN5gBIpg6wdQiDaGY3S7rznjL/WK+0KWiDvY5pyxLnh0KwNmuVPwVcWnQZD1xbl+kgi/tI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=treblig.org; spf=pass smtp.mailfrom=treblig.org; dkim=pass (2048-bit key) header.d=treblig.org header.i=@treblig.org header.b=DhB70LMd; arc=none smtp.client-ip=46.235.229.95
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=treblig.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=treblig.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="sQOQ31A8"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
-	References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-	Content-Transfer-Encoding:Content-ID:Content-Description;
-	bh=zVgRWuybk2Cw8g/RlzCJeQTCunq05g5McEWnZP+Fqjg=; b=sQOQ31A87Eez7nqYo4z6bXXHcY
-	KMIfgDY9QdWpwKMwpj76N4pBHwBawzpnp65CuuYOcIQ74zYbQ579z1WO+BOiuQBGZAg1kX1ytavoO
-	tY+EP7PLiGFyVpjKYqnx1pFY8ZxazOj8/TqmZzblMbtTsvhSZMmwgiGgSAERI/oHV2Db/WoNnC5ns
-	de1+k6AfBrzZRxWuVh3zuRseJ0LJEzzcMpSsGja8d+hjOqjVuifwRHorRY+ZSPlLq7jDXVAQulbqB
-	QCDOf8gZ+r2tHssTkhiiTlK9ZGNf55QAxb48bAGwWiP4BBCNjHpXxgEa7P+qltoYx+hDZr7RfsrhW
-	O3Ov+DKQ==;
-Received: from willy by casper.infradead.org with local (Exim 4.98 #2 (Red Hat Linux))
-	id 1swMfm-000000080GV-3Jt3;
-	Thu, 03 Oct 2024 14:19:18 +0000
-Date: Thu, 3 Oct 2024 15:19:18 +0100
-From: Matthew Wilcox <willy@infradead.org>
-To: Jan Kara <jack@suse.cz>
-Cc: Christian Brauner <brauner@kernel.org>, linux-fsdevel@vger.kernel.org,
-	ceph-devel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	linux-nilfs@vger.kernel.org, linux-mm@kvack.org
-Subject: Re: [PATCH 1/6] fs: Move clearing of mappedtodisk to buffer.c
-Message-ID: <Zv6n5oAy_2lZzrZ2@casper.infradead.org>
-References: <20241002040111.1023018-1-willy@infradead.org>
- <20241002040111.1023018-2-willy@infradead.org>
- <20241003121020.36i4ufbbuf4fbua7@quack3>
+	dkim=pass (2048-bit key) header.d=treblig.org header.i=@treblig.org header.b="DhB70LMd"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=treblig.org
+	; s=bytemarkmx; h=MIME-Version:Message-ID:Date:Subject:From:Content-Type:From
+	:Subject; bh=FNT8zI8vqYsfj2Pfp2Dia09WY4tRJdlU0kAO1LgX9s8=; b=DhB70LMdXBluVnPN
+	vyyrC+LydRW3BslVWLtYsH5ZD/30ZJQL4TjPqiC9OtWTZr+gv5lnN4i0CqLvTPagXT/ZBawq23y/m
+	3leOqKdRxrBY1MVtM2PF020JTnApj7r7o7EnBZuEUyDrwQvEss1Xng5YZbGVfYBSxdBtensGAmYQv
+	w7bQfRxaCgYEx3TlSjPmGWpmnLhwdKZmxkR+Jciqc2XrqYEqZBWAQgpXfamYwm0ycvzDHaAt2lUj2
+	d4EoFuiRCA34znoNtyRHGLyB2fJdE1qztMi+em8pZHsVwZwlnciOC+TaqtPj5No8+iOb2bredllnj
+	lS8oZR4lx5lhxf7ABQ==;
+Received: from localhost ([127.0.0.1] helo=dalek.home.treblig.org)
+	by mx.treblig.org with esmtp (Exim 4.96)
+	(envelope-from <linux@treblig.org>)
+	id 1swMng-008fdF-3B;
+	Thu, 03 Oct 2024 14:27:29 +0000
+From: linux@treblig.org
+To: clm@fb.com,
+	josef@toxicpanda.com,
+	dsterba@suse.com,
+	hch@lst.de
+Cc: rostedt@goodmis.org,
+	mhiramat@kernel.org,
+	mathieu.desnoyers@efficios.com,
+	linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	"Dr. David Alan Gilbert" <linux@treblig.org>
+Subject: [PATCH] btrfs: Remove unused btrfs_try_tree_write_lock
+Date: Thu,  3 Oct 2024 15:27:27 +0100
+Message-ID: <20241003142727.203981-2-linux@treblig.org>
+X-Mailer: git-send-email 2.46.2
+In-Reply-To: <20241003142727.203981-1-linux@treblig.org>
+References: <20241003142727.203981-1-linux@treblig.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20241003121020.36i4ufbbuf4fbua7@quack3>
+Content-Transfer-Encoding: 8bit
 
-On Thu, Oct 03, 2024 at 02:10:20PM +0200, Jan Kara wrote:
-> On Wed 02-10-24 05:01:03, Matthew Wilcox (Oracle) wrote:
-> > The mappedtodisk flag is only meaningful for buffer head based
-> > filesystems.  It should not be cleared for other filesystems.  This allows
-> > us to reuse the mappedtodisk flag to have other meanings in filesystems
-> > that do not use buffer heads.
-> > 
-> > Signed-off-by: Matthew Wilcox (Oracle) <willy@infradead.org>
-> 
-> The patch looks good. But I'm bit confused about the changelog. There's no
-> generic code checking for mappedtodisk. Only nilfs2 actually uses it for
-> anything, all other filesystems just never look at it as far as my grepping
-> shows. So speaking about "filesystems that do not use buffer heads" looks
-> somewhat broad to me. Anyway feel free to add:
+From: "Dr. David Alan Gilbert" <linux@treblig.org>
 
-Hmm.  f2fs also uses it in page_mkwrite().  But it looks odd to me.
-Perhaps we could get rid of mappedtodisk entirely ... I see ext4
-used to use it until someone removed it in 9ea7df534ed2 ;-)
+btrfs_try_tree_write_lock() is unused since commit
+50b21d7a066f ("btrfs: submit a writeback bio per extent_buffer")
 
-Anyway, what the changelog is trying to say is that only
-buffer-head filesystems ever have the mappedtodisk flag set, eg by
-block_read_full_folio() or do_mpage_readpage().  So it doesn't make
-sense to clear it for non-buffer-head filesystems, and may inhibit their
-ability to use it for unrelated purposes.
+Remove it (and it's associated trace).
+
+Signed-off-by: Dr. David Alan Gilbert <linux@treblig.org>
+---
+ fs/btrfs/locking.c           | 15 ---------------
+ fs/btrfs/locking.h           |  1 -
+ include/trace/events/btrfs.h |  1 -
+ 3 files changed, 17 deletions(-)
+
+diff --git a/fs/btrfs/locking.c b/fs/btrfs/locking.c
+index 6a0b7abb5bd9..9a7a7b723305 100644
+--- a/fs/btrfs/locking.c
++++ b/fs/btrfs/locking.c
+@@ -161,21 +161,6 @@ int btrfs_try_tree_read_lock(struct extent_buffer *eb)
+ 	return 0;
+ }
+ 
+-/*
+- * Try-lock for write.
+- *
+- * Return 1 if the rwlock has been taken, 0 otherwise
+- */
+-int btrfs_try_tree_write_lock(struct extent_buffer *eb)
+-{
+-	if (down_write_trylock(&eb->lock)) {
+-		btrfs_set_eb_lock_owner(eb, current->pid);
+-		trace_btrfs_try_tree_write_lock(eb);
+-		return 1;
+-	}
+-	return 0;
+-}
+-
+ /*
+  * Release read lock.
+  */
+diff --git a/fs/btrfs/locking.h b/fs/btrfs/locking.h
+index 3c15c75e0582..46c8be2afab1 100644
+--- a/fs/btrfs/locking.h
++++ b/fs/btrfs/locking.h
+@@ -180,7 +180,6 @@ static inline void btrfs_tree_read_lock(struct extent_buffer *eb)
+ 
+ void btrfs_tree_read_unlock(struct extent_buffer *eb);
+ int btrfs_try_tree_read_lock(struct extent_buffer *eb);
+-int btrfs_try_tree_write_lock(struct extent_buffer *eb);
+ struct extent_buffer *btrfs_lock_root_node(struct btrfs_root *root);
+ struct extent_buffer *btrfs_read_lock_root_node(struct btrfs_root *root);
+ struct extent_buffer *btrfs_try_read_lock_root_node(struct btrfs_root *root);
+diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+index bf60ad50011e..9b8d41a00234 100644
+--- a/include/trace/events/btrfs.h
++++ b/include/trace/events/btrfs.h
+@@ -2341,7 +2341,6 @@ DEFINE_BTRFS_LOCK_EVENT(btrfs_tree_read_unlock_blocking);
+ DEFINE_BTRFS_LOCK_EVENT(btrfs_set_lock_blocking_read);
+ DEFINE_BTRFS_LOCK_EVENT(btrfs_set_lock_blocking_write);
+ DEFINE_BTRFS_LOCK_EVENT(btrfs_try_tree_read_lock);
+-DEFINE_BTRFS_LOCK_EVENT(btrfs_try_tree_write_lock);
+ DEFINE_BTRFS_LOCK_EVENT(btrfs_tree_read_lock_atomic);
+ 
+ DECLARE_EVENT_CLASS(btrfs__space_info_update,
+-- 
+2.46.2
+

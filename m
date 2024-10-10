@@ -1,116 +1,88 @@
-Received: from frasgout.his.huawei.com (frasgout.his.huawei.com [185.176.79.56])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 44C736FE16;
-	Thu, 10 Oct 2024 15:49:25 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=185.176.79.56
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E05E41CCB41;
+	Thu, 10 Oct 2024 15:53:17 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1728575367; cv=none; b=SEXD7r3Gi+np2N+smYlVaiP1mOJaOUXNgY53c45g8yPfbzJ71slSr9HkUvDrYisO59gz6XpHAiO55KOnPW9i8yb7ggizR6eF+LVPwQ0gzD0F2XnrP66c6kBPWxqqoH7C4OVo5jJA1zu2Rzx/V6v1Ws+0cVcnLnvSBMuBp4pT52g=
+	t=1728575598; cv=none; b=AibCiyFyShU1l1iMoPj/fdvuH3/chl9HYm5xq7OCwl553lZBZtOJwt4nG6E3KGQ7R22L4HRCJQ7ZPdu4UOUzO9SfmDKd6Gg5MfZkpx89YqIJV+3aqkRlp9IizB4VVjo9tgR4I4xTQ7zYmpRLkQLSOAIrIrK+g24RnRJBmzcLbVs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1728575367; c=relaxed/simple;
-	bh=4if/+AC5zfdaW9hX01DiAjIH7LjMn6PrGXqZ+pXc1v8=;
-	h=Date:From:To:CC:Subject:Message-ID:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=EmiT/x03zyBQhpn7bA3At5J69vgSH2THUvIHJRKNXUu/GBAZOUzAzl/vUYgSe3y8wGpn2qHAh5LHXObMbaTXAET3E/NyGgVRdztf6QxW5kfCWX6uQ83RUDwfnyGUfhWbLr52h5nCQgYvvmmzLaz1MS1npO98LoyvUrxAkQ1z4Hc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=Huawei.com; spf=pass smtp.mailfrom=huawei.com; arc=none smtp.client-ip=185.176.79.56
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=Huawei.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=huawei.com
-Received: from mail.maildlp.com (unknown [172.18.186.216])
-	by frasgout.his.huawei.com (SkyGuard) with ESMTP id 4XPZ0K5GkZz6J7DR;
-	Thu, 10 Oct 2024 23:48:01 +0800 (CST)
-Received: from frapeml500008.china.huawei.com (unknown [7.182.85.71])
-	by mail.maildlp.com (Postfix) with ESMTPS id 0D3CD140A36;
-	Thu, 10 Oct 2024 23:49:23 +0800 (CST)
-Received: from localhost (10.203.177.66) by frapeml500008.china.huawei.com
- (7.182.85.71) with Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.1.2507.39; Thu, 10 Oct
- 2024 17:49:22 +0200
-Date: Thu, 10 Oct 2024 16:49:20 +0100
-From: Jonathan Cameron <Jonathan.Cameron@Huawei.com>
-To: Ira Weiny <ira.weiny@intel.com>
-CC: Dave Jiang <dave.jiang@intel.com>, Fan Ni <fan.ni@samsung.com>, "Navneet
- Singh" <navneet.singh@intel.com>, Jonathan Corbet <corbet@lwn.net>, "Andrew
- Morton" <akpm@linux-foundation.org>, Dan Williams <dan.j.williams@intel.com>,
-	Davidlohr Bueso <dave@stgolabs.net>, "Alison Schofield"
-	<alison.schofield@intel.com>, Vishal Verma <vishal.l.verma@intel.com>,
-	<linux-btrfs@vger.kernel.org>, <linux-cxl@vger.kernel.org>,
-	<linux-doc@vger.kernel.org>, <nvdimm@lists.linux.dev>,
-	<linux-kernel@vger.kernel.org>
-Subject: Re: [PATCH v4 27/28] tools/testing/cxl: Make event logs dynamic
-Message-ID: <20241010164920.000017d8@Huawei.com>
-In-Reply-To: <20241007-dcd-type2-upstream-v4-27-c261ee6eeded@intel.com>
-References: <20241007-dcd-type2-upstream-v4-0-c261ee6eeded@intel.com>
-	<20241007-dcd-type2-upstream-v4-27-c261ee6eeded@intel.com>
-Organization: Huawei Technologies Research and Development (UK) Ltd.
-X-Mailer: Claws Mail 4.1.0 (GTK 3.24.33; x86_64-w64-mingw32)
+	s=arc-20240116; t=1728575598; c=relaxed/simple;
+	bh=6Xk/hm2b3OcgM8FvDvwtDE3O6L8y5egTkuO+hbgD3PQ=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=ncbw9tqG81lTXg0UDACQWxsBeydwwJumFVX03exMPhL/cVpHDjPfP0MLEqcB+z0Ap3poH+0UKSgvl76Ho/+tlJcz2Hda9PQC9/YWZKHJf33M8Z+ZSrwY8HeJYOBLfuYZ5psZXYpYMF/8E4rCs1c3CxIQQwqjvBq4lqxLujqjlZI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=dK5LbDOt; arc=none smtp.client-ip=10.30.226.201
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="dK5LbDOt"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id C5C5CC4CECE;
+	Thu, 10 Oct 2024 15:53:17 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1728575597;
+	bh=6Xk/hm2b3OcgM8FvDvwtDE3O6L8y5egTkuO+hbgD3PQ=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+	b=dK5LbDOtKSW5h6MQ76eN5Vuk3D1a9R8nBPA2XycT2Py5OoqJS1xDykoVzWS/xkfIT
+	 bXSNXTeA95yiGq1Hwa+EyadJE+Q7fCw8Ygf50nriwWeyuhICM3zwRwhIwnq7Cmd65E
+	 G8ofgipfyl7BgcxPo/Lb+uSq02tEC5N4i3s4tvFaPI0C0ygGSZcDsK7th532dnth7r
+	 k1Hc+zVvr4ER1j4AaiP6HHAYxrXqC1dx9cMJYljU1MZFIIDyM0ayo52jtf2DQuqsks
+	 fzLktPEmEaYySV3Agw5a+0cCZFkSASKPhlIhQ0jLo2xz1HvXcAp9hEt2hrceJ1KexZ
+	 HCYW2m/ZirLww==
+Received: by mail-ej1-f51.google.com with SMTP id a640c23a62f3a-a9952ea05c5so179656366b.2;
+        Thu, 10 Oct 2024 08:53:17 -0700 (PDT)
+X-Forwarded-Encrypted: i=1; AJvYcCVLrXtePPAKtWve55alJJvu8bXno6e3wdqtMNKIsAj35ySgo7Y+NCQ+AZRkr6OavxRCNWBrSaluLEDfmQ==@vger.kernel.org
+X-Gm-Message-State: AOJu0YzDQ+o3ZV5PmCT6X2QTri/+wRGhHXv4gTXi12CCln7jS4H3dLM3
+	P9d4ubfrkvn/49r2AAsq5s0RPgY2JP8E+EtPQo4v8X7dNBpbgkmDdqHTx7CgGVU6zcfYoQA0THZ
+	Iv1aIzVeJt8yFcRQwFUsdSt3dxsI=
+X-Google-Smtp-Source: AGHT+IFf/nqyi+Om+lNXUSNPkl701Xi2GlZ3y/GPTfuobO43nxzsfmXZ2r/YuqCIh5Tu82pRA79CbIN7vyLr5Mhk1k0=
+X-Received: by 2002:a17:907:970e:b0:a99:4ccc:9018 with SMTP id
+ a640c23a62f3a-a998d334ac8mr683440366b.59.1728575596399; Thu, 10 Oct 2024
+ 08:53:16 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="US-ASCII"
-Content-Transfer-Encoding: 7bit
-X-ClientProxiedBy: lhrpeml500002.china.huawei.com (7.191.160.78) To
- frapeml500008.china.huawei.com (7.182.85.71)
+References: <20241010153630.1225162-1-maharmstone@fb.com>
+In-Reply-To: <20241010153630.1225162-1-maharmstone@fb.com>
+From: Filipe Manana <fdmanana@kernel.org>
+Date: Thu, 10 Oct 2024 16:52:39 +0100
+X-Gmail-Original-Message-ID: <CAL3q7H5f=EfNXryU37zxNHe8=wp6z2rXD5CTwMB9vszbLnVU5A@mail.gmail.com>
+Message-ID: <CAL3q7H5f=EfNXryU37zxNHe8=wp6z2rXD5CTwMB9vszbLnVU5A@mail.gmail.com>
+Subject: Re: [PATCH] btrfs/318: add _require_loop
+To: Mark Harmstone <maharmstone@fb.com>
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On Mon, 07 Oct 2024 18:16:33 -0500
-Ira Weiny <ira.weiny@intel.com> wrote:
+On Thu, Oct 10, 2024 at 4:46=E2=80=AFPM Mark Harmstone <maharmstone@fb.com>=
+ wrote:
+>
+> btrfs/318 uses loopback devices, but was missing a call to _require_loop
+> to print the correct message if CONFIG_LOOP is not set.
+>
+> Signed-off-by: Mark Harmstone <maharmstone@fb.com>
 
-> The event logs test was created as static arrays as an easy way to mock
-> events.  Dynamic Capacity Device (DCD) test support requires events be
-> generated dynamically when extents are created or destroyed.
-> 
-> The current event log test has specific checks for the number of events
-> seen including log overflow.
-> 
-> Modify mock event logs to be dynamically allocated.  Adjust array size
-> and mock event entry data to match the output expected by the existing
-> event test.
-> 
-> Use the static event data to create the dynamic events in the new logs
-> without inventing complex event injection for the previous tests.
-> 
-> Simplify log processing by using the event log array index as the
-> handle.  Add a lock to manage concurrency required when user space is
-> allowed to control DCD extents
-> 
-> Signed-off-by: Ira Weiny <ira.weiny@intel.com>
-Might be worth breaking up into refactor (the static cases) and
-then new stuff.
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
 
-Otherwise one trivial comment inline.
+Looks good, thanks.
 
-Reviewed-by: Jonathan Cameron <Jonathan.Cameron@huawei.com>
-
-> 
 > ---
-> Changes:
-> [iweiny: rebase to 6.12]
-> ---
->  tools/testing/cxl/test/mem.c | 268 ++++++++++++++++++++++++++-----------------
->  1 file changed, 162 insertions(+), 106 deletions(-)
-> 
-> diff --git a/tools/testing/cxl/test/mem.c b/tools/testing/cxl/test/mem.c
-> index ccdd6a504222..5e453aa2819b 100644
-> --- a/tools/testing/cxl/test/mem.c
-> +++ b/tools/testing/cxl/test/mem.c
-> @@ -126,18 +126,26 @@ static struct {
-
->  /* Handle can never be 0 use 1 based indexing for handle */
-> -static u16 event_get_clear_handle(struct mock_event_log *log)
-> +static u16 event_inc_handle(u16 handle)
->  {
-> -	return log->clear_idx + 1;
-> +	handle = (handle + 1) % CXL_TEST_EVENT_ARRAY_SIZE;
-> +	if (!handle)
-> +		handle = handle + 1;
-
-That's a little confusing for me
-
-	if (handle == 0)
-		handle = 1;
-
-> +	return handle;
->  }
-
-
+>  tests/btrfs/318 | 1 +
+>  1 file changed, 1 insertion(+)
+>
+> diff --git a/tests/btrfs/318 b/tests/btrfs/318
+> index 79977276..df5a4a07 100755
+> --- a/tests/btrfs/318
+> +++ b/tests/btrfs/318
+> @@ -18,6 +18,7 @@ _fixed_by_kernel_commit 9f7eb8405dcb \
+>  _require_test
+>  _require_command "$PARTED_PROG" parted
+>  _require_batched_discard "$TEST_DIR"
+> +_require_loop
+>
+>  _cleanup() {
+>         cd /
+> --
+> 2.44.2
+>
+>

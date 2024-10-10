@@ -1,295 +1,132 @@
-Received: from esa2.hgst.iphmx.com (esa2.hgst.iphmx.com [68.232.143.124])
+Received: from frasgout.his.huawei.com (frasgout.his.huawei.com [185.176.79.56])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5A1401C7B68
-	for <linux-btrfs@vger.kernel.org>; Thu, 10 Oct 2024 15:57:31 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=68.232.143.124
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C8A621C7B68;
+	Thu, 10 Oct 2024 15:58:08 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=185.176.79.56
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1728575853; cv=none; b=fnxDgA2rSZ45LrsheKoHni7CR4eDMlUEB+IOWwYV0BqHR8mhIk39m85Fy65ZGPAYebuj+8vbLCKGpvJVpoLt/asaJy4FozkIQO6s7iT2PfgaBnDB4V+W0uyMYatQya/724a54BkAIbAeCfRp6R6wWbVz0XI8rO9G7TOBfLsecjE=
+	t=1728575892; cv=none; b=Rxkevm7xpa3/JLoYrgM5r75DVj/CENOsiJ4GtDRLIc1SAy30C5zaJ7fU0AhsM2DGSdTmh0bkOfCsm65oicC+4bqCiUkZ64LcacbNPj1Aw6ZZPF01g7aCpLDi3v3A5SNHT8MnYPfZ2fDLDPLI0aIdaTDjCG1alvCYMR70usGK/kM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1728575853; c=relaxed/simple;
-	bh=INWKrsvdI7sfsuyoIcZnSSyV0zDdf4GazZM9+ehLAyY=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=qTFDxfD0WyRFAmXLJbL8dkyY+JTz8R1VDKkpbydznnA8nrxc7osCMLzXO0tCjJ3vtmgTKxuF2/aVPG871/6m1R4DVJ9jbLwmLQg5i9Get9V2zE3BeSSYtUzWvGOwmvhBqz+TKYsY//ofpSZND3DJs9krqLWMIZaLb/bc7V2ty+Y=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=C1g8z8fj; arc=none smtp.client-ip=68.232.143.124
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="C1g8z8fj"
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1728575851; x=1760111851;
-  h=from:to:cc:subject:date:message-id:mime-version:
-   content-transfer-encoding;
-  bh=INWKrsvdI7sfsuyoIcZnSSyV0zDdf4GazZM9+ehLAyY=;
-  b=C1g8z8fjT4Q9A62AnEmX5HG0IPZcsnj1L5gSREmYM76fQcH2vHlbnhLG
-   SWUSRQVoI6tiOJxp2t/vgAjgrdzhA0S5J2sl8zsCwxvHvM82R1IdHuswS
-   3saihFwN+Yl+toEgvT/BtbBNWNWok0p7j1MjNkZZF2MlhNgVug9o9Rwos
-   xdDlMCNeUTcvuyyw+zO1pwySvJb8q1Xp3yNu1iVk0lgtpzdkGJgWc+MSC
-   ++JuTdaDq2qUW2U0awx4ZUQbpd8MjwcKXGa92kq4s0YwSp/+aAik0CPkk
-   9eBLBToj8fTc39IxTUW7CBtB6HmqobaI4DaT9u+zrOls7SSVoni8ETf9y
-   g==;
-X-CSE-ConnectionGUID: R2UHYkefRaWz3dnyzslb4Q==
-X-CSE-MsgGUID: q4RSScPmTMCQlw0B4aqqvA==
-X-IronPort-AV: E=Sophos;i="6.11,193,1725292800"; 
-   d="scan'208";a="29129992"
-Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 10 Oct 2024 23:57:30 +0800
-IronPort-SDR: 6707eb21_7cPAF8fpOQ28o/2A/BDZ1ODbqo1XRhO4h0ekqLLOAr6+QEN
- TYaph+Y8Y8ArJUv1OipAf43M2cKLduj+tSf7ZBg==
-Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 10 Oct 2024 07:56:33 -0700
-WDCIronportException: Internal
-Received: from unknown (HELO naota-xeon.wdc.com) ([10.225.163.14])
-  by uls-op-cesaip01.wdc.com with ESMTP; 10 Oct 2024 08:57:30 -0700
-From: Naohiro Aota <naohiro.aota@wdc.com>
-To: linux-btrfs@vger.kernel.org
-Cc: wqu@suse.com,
-	hch@lst.de,
-	Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH v2] btrfs: fix error propagation of split bios
-Date: Fri, 11 Oct 2024 00:57:24 +0900
-Message-ID: <1d4f72f7fee285b2ddf4bf62b0ac0fd89def5417.1728575379.git.naohiro.aota@wdc.com>
-X-Mailer: git-send-email 2.46.2
+	s=arc-20240116; t=1728575892; c=relaxed/simple;
+	bh=linrfMuZIcX2ctx+ttIzMvMROoVAvMRa7N7PgX7xi6w=;
+	h=Date:From:To:CC:Subject:Message-ID:In-Reply-To:References:
+	 MIME-Version:Content-Type; b=tIRMMzUKgI8GPmP98ic0r58C2l9m84yVQfVqNsI0ocyFePIsvAR3uQ24FW5n4norDaay++zTVXkoUK66xcyRBNRVLYFD/jLdi1oFOr2B4B/Yoc9ttqLqm7TSXdN7ljHwmWMkHIWa2T+JCm7HzmQ1udLO5H3dptFdeFG5aUO7hyE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=Huawei.com; spf=pass smtp.mailfrom=huawei.com; arc=none smtp.client-ip=185.176.79.56
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=Huawei.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=huawei.com
+Received: from mail.maildlp.com (unknown [172.18.186.231])
+	by frasgout.his.huawei.com (SkyGuard) with ESMTP id 4XPZ6x6qC5z67n0t;
+	Thu, 10 Oct 2024 23:53:45 +0800 (CST)
+Received: from frapeml500008.china.huawei.com (unknown [7.182.85.71])
+	by mail.maildlp.com (Postfix) with ESMTPS id E4F93140B3C;
+	Thu, 10 Oct 2024 23:58:06 +0800 (CST)
+Received: from localhost (10.203.177.66) by frapeml500008.china.huawei.com
+ (7.182.85.71) with Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.1.2507.39; Thu, 10 Oct
+ 2024 17:58:06 +0200
+Date: Thu, 10 Oct 2024 16:58:04 +0100
+From: Jonathan Cameron <Jonathan.Cameron@Huawei.com>
+To: Ira Weiny <ira.weiny@intel.com>
+CC: Dave Jiang <dave.jiang@intel.com>, Fan Ni <fan.ni@samsung.com>, "Navneet
+ Singh" <navneet.singh@intel.com>, Jonathan Corbet <corbet@lwn.net>, "Andrew
+ Morton" <akpm@linux-foundation.org>, Dan Williams <dan.j.williams@intel.com>,
+	Davidlohr Bueso <dave@stgolabs.net>, "Alison Schofield"
+	<alison.schofield@intel.com>, Vishal Verma <vishal.l.verma@intel.com>,
+	<linux-btrfs@vger.kernel.org>, <linux-cxl@vger.kernel.org>,
+	<linux-doc@vger.kernel.org>, <nvdimm@lists.linux.dev>,
+	<linux-kernel@vger.kernel.org>
+Subject: Re: [PATCH v4 28/28] tools/testing/cxl: Add DC Regions to mock mem
+ data
+Message-ID: <20241010165804.00005391@Huawei.com>
+In-Reply-To: <20241007-dcd-type2-upstream-v4-28-c261ee6eeded@intel.com>
+References: <20241007-dcd-type2-upstream-v4-0-c261ee6eeded@intel.com>
+	<20241007-dcd-type2-upstream-v4-28-c261ee6eeded@intel.com>
+Organization: Huawei Technologies Research and Development (UK) Ltd.
+X-Mailer: Claws Mail 4.1.0 (GTK 3.24.33; x86_64-w64-mingw32)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="US-ASCII"
+Content-Transfer-Encoding: 7bit
+X-ClientProxiedBy: lhrpeml500002.china.huawei.com (7.191.160.78) To
+ frapeml500008.china.huawei.com (7.182.85.71)
 
-The purpose of btrfs_bbio_propagate_error() shall be propagating an error
-of split bio to its original btrfs_bio, and tell the error to the upper
-layer. However, it's not working well on some cases.
+On Mon, 07 Oct 2024 18:16:34 -0500
+Ira Weiny <ira.weiny@intel.com> wrote:
 
-* Case 1. Immediate (or quick) end_bio with an error
+> cxl_test provides a good way to ensure quick smoke and regression
+> testing.  The complexity of Dynamic Capacity (DC) extent processing as
+> well as the complexity of the new sparse DAX regions can mostly be
+> tested through cxl_test.  This includes management of sparse regions and
+> DAX devices on those regions; the management of extent device lifetimes;
+> and the processing of DCD events.
+> 
+> The only missing functionality from this test is actual interrupt
+> processing.
+> 
+> Mock memory devices can easily mock DC information and manage fake
+> extent data.
+> 
+> Define mock_dc_region information within the mock memory data.  Add
+> sysfs entries on the mock device to inject and delete extents.
+> 
+> The inject format is <start>:<length>:<tag>:<more_flag>
+> The delete format is <start>:<length>
+> 
+> Directly call the event irq callback to simulate irqs to process the
+> test extents.
+> 
+> Add DC mailbox commands to the CEL and implement those commands.
+> 
+> Signed-off-by: Ira Weiny <ira.weiny@intel.com>
 
-When btrfs sends btrfs_bio to mirrored devices, btrfs calls
-btrfs_bio_end_io() when all the mirroring bios are completed. If that
-btrfs_bio was split, it is from btrfs_clone_bioset and its end_io function
-is btrfs_orig_write_end_io. For this case, btrfs_bbio_propagate_error()
-accesses the orig_bbio's bio context to increase the error count.
+Superficial review only.
 
-That works well in most cases. However, if the end_io is called enough
-fast, orig_bbio's (remaining part after split) bio context may not be
-properly set at that time. Since the bio context is set when the orig_bbio
-(the last btrfs_bio) is sent to devices, that might be too late for earlier
-split btrfs_bio's completion.  That will result in NULL pointer
-dereference.
+Looks fine to me but I've been reviewing too long today to be at all sure
+I'd spot if it was wrong in a subtle way.  So no tag for now.
 
-That bug is easily reproducible by running btrfs/146 on zoned devices [1]
-and it shows the following trace.
+> +static void dc_delete_extent(struct device *dev, unsigned long long start,
+> +			     unsigned long long length)
+> +{
+> +	struct cxl_mockmem_data *mdata = dev_get_drvdata(dev);
+> +	unsigned long long end = start + length;
+> +	struct cxl_extent_data *ext;
+> +	unsigned long index;
+> +
+> +	dev_dbg(dev, "Deleting extent at %#llx len:%#llx\n", start, length);
+> +
+> +	guard(mutex)(&mdata->ext_lock);
+> +	xa_for_each(&mdata->dc_extents, index, ext) {
+> +		u64 extent_end = ext->dpa_start + ext->length;
+> +
+> +		/*
+> +		 * Any extent which 'touches' the released delete range will be
+> +		 * removed.
+> +		 */
+> +		if ((start <= ext->dpa_start && ext->dpa_start < end) ||
+> +		    (start <= extent_end && extent_end < end)) {
+Really trivial but no {} for single line statement
 
-[1] You need raid-stripe-tree feature as it create "-d raid0 -m raid1" FS.
+> +			xa_erase(&mdata->dc_extents, ext->dpa_start);
+> +		}
+> +	}
+> +
+> +	/*
+> +	 * If the extent was accepted let it be for the host to drop
+> +	 * later.
+> +	 */
+> +}
 
-    [   20.923980][   T13] BUG: kernel NULL pointer dereference, address: 0000000000000020
-    [   20.925234][   T13] #PF: supervisor read access in kernel mode
-    [   20.926122][   T13] #PF: error_code(0x0000) - not-present page
-    [   20.927118][   T13] PGD 0 P4D 0
-    [   20.927607][   T13] Oops: Oops: 0000 [#1] PREEMPT SMP PTI
-    [   20.928424][   T13] CPU: 1 UID: 0 PID: 13 Comm: kworker/u32:1 Not tainted 6.11.0-rc7-BTRFS-ZNS+ #474
-    [   20.929740][   T13] Hardware name: Bochs Bochs, BIOS Bochs 01/01/2011
-    [   20.930697][   T13] Workqueue: writeback wb_workfn (flush-btrfs-5)
-    [   20.931643][   T13] RIP: 0010:btrfs_bio_end_io+0xae/0xc0 [btrfs]
-    [   20.932573][ T1415] BTRFS error (device dm-0): bdev /dev/mapper/error-test errs: wr 2, rd 0, flush 0, corrupt 0, gen 0
-    [   20.932871][   T13] Code: ba e1 48 8b 7b 10 e8 f1 f5 f6 ff eb da 48 81 bf 10 01 00 00 40 0c 33 a0 74 09 40 88 b5 f1 00 00 00 eb b8 48 8b 85 18 01 00 00 <48> 8b 40 20 0f b7 50 24 f0 01 50 20 eb a3 0f 1f 40 00 90 90 90 90
-    [   20.936623][   T13] RSP: 0018:ffffc9000006f248 EFLAGS: 00010246
-    [   20.937543][   T13] RAX: 0000000000000000 RBX: ffff888005a7f080 RCX: ffffc9000006f1dc
-    [   20.938788][   T13] RDX: 0000000000000000 RSI: 000000000000000a RDI: ffff888005a7f080
-    [   20.940016][   T13] RBP: ffff888011dfc540 R08: 0000000000000000 R09: 0000000000000001
-    [   20.941227][   T13] R10: ffffffff82e508e0 R11: 0000000000000005 R12: ffff88800ddfbe58
-    [   20.942375][   T13] R13: ffff888005a7f080 R14: ffff888005a7f158 R15: ffff888005a7f158
-    [   20.943531][   T13] FS:  0000000000000000(0000) GS:ffff88803ea80000(0000) knlGS:0000000000000000
-    [   20.944838][   T13] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-    [   20.945811][   T13] CR2: 0000000000000020 CR3: 0000000002e22006 CR4: 0000000000370ef0
-    [   20.946984][   T13] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-    [   20.948150][   T13] DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
-    [   20.949327][   T13] Call Trace:
-    [   20.949949][   T13]  <TASK>
-    [   20.950374][   T13]  ? __die_body.cold+0x19/0x26
-    [   20.951066][   T13]  ? page_fault_oops+0x13e/0x2b0
-    [   20.951766][   T13]  ? _printk+0x58/0x73
-    [   20.952358][   T13]  ? do_user_addr_fault+0x5f/0x750
-    [   20.953120][   T13]  ? exc_page_fault+0x76/0x240
-    [   20.953827][   T13]  ? asm_exc_page_fault+0x22/0x30
-    [   20.954606][   T13]  ? btrfs_bio_end_io+0xae/0xc0 [btrfs]
-    [   20.955616][   T13]  ? btrfs_log_dev_io_error+0x7f/0x90 [btrfs]
-    [   20.956682][   T13]  btrfs_orig_write_end_io+0x51/0x90 [btrfs]
-    [   20.957769][   T13]  dm_submit_bio+0x5c2/0xa50 [dm_mod]
-    [   20.958623][   T13]  ? find_held_lock+0x2b/0x80
-    [   20.959339][   T13]  ? blk_try_enter_queue+0x90/0x1e0
-    [   20.960228][   T13]  __submit_bio+0xe0/0x130
-    [   20.960879][   T13]  ? ktime_get+0x10a/0x160
-    [   20.961546][   T13]  ? lockdep_hardirqs_on+0x74/0x100
-    [   20.962310][   T13]  submit_bio_noacct_nocheck+0x199/0x410
-    [   20.963140][   T13]  btrfs_submit_bio+0x7d/0x150 [btrfs]
-    [   20.964089][   T13]  btrfs_submit_chunk+0x1a1/0x6d0 [btrfs]
-    [   20.965066][   T13]  ? lockdep_hardirqs_on+0x74/0x100
-    [   20.965824][   T13]  ? __folio_start_writeback+0x10/0x2c0
-    [   20.966659][   T13]  btrfs_submit_bbio+0x1c/0x40 [btrfs]
-    [   20.967617][   T13]  submit_one_bio+0x44/0x60 [btrfs]
-    [   20.968536][   T13]  submit_extent_folio+0x13f/0x330 [btrfs]
-    [   20.969552][   T13]  ? btrfs_set_range_writeback+0xa3/0xd0 [btrfs]
-    [   20.970625][   T13]  extent_writepage_io+0x18b/0x360 [btrfs]
-    [   20.971632][   T13]  extent_write_locked_range+0x17c/0x340 [btrfs]
-    [   20.972702][   T13]  ? __pfx_end_bbio_data_write+0x10/0x10 [btrfs]
-    [   20.973857][   T13]  run_delalloc_cow+0x71/0xd0 [btrfs]
-    [   20.974841][   T13]  btrfs_run_delalloc_range+0x176/0x500 [btrfs]
-    [   20.975870][   T13]  ? find_lock_delalloc_range+0x119/0x260 [btrfs]
-    [   20.976911][   T13]  writepage_delalloc+0x2ab/0x480 [btrfs]
-    [   20.977792][   T13]  extent_write_cache_pages+0x236/0x7d0 [btrfs]
-    [   20.978728][   T13]  btrfs_writepages+0x72/0x130 [btrfs]
-    [   20.979531][   T13]  do_writepages+0xd4/0x240
-    [   20.980111][   T13]  ? find_held_lock+0x2b/0x80
-    [   20.980695][   T13]  ? wbc_attach_and_unlock_inode+0x12c/0x290
-    [   20.981461][   T13]  ? wbc_attach_and_unlock_inode+0x12c/0x290
-    [   20.982213][   T13]  __writeback_single_inode+0x5c/0x4c0
-    [   20.982859][   T13]  ? do_raw_spin_unlock+0x49/0xb0
-    [   20.983439][   T13]  writeback_sb_inodes+0x22c/0x560
-    [   20.984079][   T13]  __writeback_inodes_wb+0x4c/0xe0
-    [   20.984886][   T13]  wb_writeback+0x1d6/0x3f0
-    [   20.985536][   T13]  wb_workfn+0x334/0x520
-    [   20.986044][   T13]  process_one_work+0x1ee/0x570
-    [   20.986580][   T13]  ? lock_is_held_type+0xc6/0x130
-    [   20.987142][   T13]  worker_thread+0x1d1/0x3b0
-    [   20.987918][   T13]  ? __pfx_worker_thread+0x10/0x10
-    [   20.988690][   T13]  kthread+0xee/0x120
-    [   20.989180][   T13]  ? __pfx_kthread+0x10/0x10
-    [   20.989915][   T13]  ret_from_fork+0x30/0x50
-    [   20.990615][   T13]  ? __pfx_kthread+0x10/0x10
-    [   20.991336][   T13]  ret_from_fork_asm+0x1a/0x30
-    [   20.992106][   T13]  </TASK>
-    [   20.992482][   T13] Modules linked in: dm_mod btrfs blake2b_generic xor raid6_pq rapl
-    [   20.993406][   T13] CR2: 0000000000000020
-    [   20.993884][   T13] ---[ end trace 0000000000000000 ]---
-    [   20.993954][ T1415] BUG: kernel NULL pointer dereference, address: 0000000000000020
+> @@ -1703,14 +2146,261 @@ static ssize_t sanitize_timeout_store(struct device *dev,
+>  
+>  	return count;
+>  }
+> -
+Noise.
 
-* Case 2. Earlier completion of orig_bbio for mirrored btrfs_bios
-
-btrfs_bbio_propagate_error() assumes the end_io function for orig_bbio is
-called last among split bios. In that case, btrfs_orig_write_end_io() sets
-the bio->bi_status to BLK_STS_IOERR by seeing the bioc->error [2].
-Otherwise, the increased orig_bio's bioc->error is not checked by anyone
-and return BLK_STS_OK to the upper layer.
-
-[2] Actually, this is not true. Because we only increases orig_bioc->errors
-by max_errors, the condition "atomic_read(&bioc->error) > bioc->max_errors"
-is still not met if only one split btrfs_bio fails.
-
-* Case 3. Later completion of orig_bbio for un-mirrored btrfs_bios
-
-In contrast to the above case, btrfs_bbio_propagate_error() is not working
-well if un-mirrored orig_bbio is completed last. It sets
-orig_bbio->bio.bi_status to the btrfs_bio's error. But, that is easily
-over-written by orig_bbio's completion status. If the status is BLK_STS_OK,
-the upper layer would not know the failure.
-
-* Solution
-
-Considering the above cases, we can only save the error status in the
-orig_bbio (remaining part after split) itself as it is always
-available. Also, the saved error status should be propagated when all the
-split btrfs_bios are finished (i.e, bbio->pending_ios == 0).
-
-This commit introduces "status" to btrfs_bbio and saves the first error of
-split bios to original btrfs_bio's "status" variable. When all the split
-bios are finished, the saved status is loaded into original btrfs_bio's
-status.
-
-With this commit, btrfs/146 on zoned devices does not hit the NULL pointer
-dereference.
-
-Fixes: 852eee62d31a ("btrfs: allow btrfs_submit_bio to split bios")
-CC: stable@vger.kernel.org # 6.6+
-Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
----
-- v1: https://lore.kernel.org/linux-btrfs/db5c272fc27c59ddded5c691373c26458698cb1a.1728489285.git.naohiro.aota@wdc.com/
-- v2
-  - Replace atomic_t usage to blk_status_t and cmpxchg()
----
- fs/btrfs/bio.c | 36 ++++++++++++------------------------
- fs/btrfs/bio.h |  3 +++
- 2 files changed, 15 insertions(+), 24 deletions(-)
-
-diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
-index 056f8a171bba..af12b23c8531 100644
---- a/fs/btrfs/bio.c
-+++ b/fs/btrfs/bio.c
-@@ -49,6 +49,7 @@ void btrfs_bio_init(struct btrfs_bio *bbio, struct btrfs_fs_info *fs_info,
- 	bbio->end_io = end_io;
- 	bbio->private = private;
- 	atomic_set(&bbio->pending_ios, 1);
-+	WRITE_ONCE(bbio->status, BLK_STS_OK);
- }
- 
- /*
-@@ -120,41 +121,28 @@ static void __btrfs_bio_end_io(struct btrfs_bio *bbio)
- 	}
- }
- 
--static void btrfs_orig_write_end_io(struct bio *bio);
--
--static void btrfs_bbio_propagate_error(struct btrfs_bio *bbio,
--				       struct btrfs_bio *orig_bbio)
--{
--	/*
--	 * For writes we tolerate nr_mirrors - 1 write failures, so we can't
--	 * just blindly propagate a write failure here.  Instead increment the
--	 * error count in the original I/O context so that it is guaranteed to
--	 * be larger than the error tolerance.
--	 */
--	if (bbio->bio.bi_end_io == &btrfs_orig_write_end_io) {
--		struct btrfs_io_stripe *orig_stripe = orig_bbio->bio.bi_private;
--		struct btrfs_io_context *orig_bioc = orig_stripe->bioc;
--
--		atomic_add(orig_bioc->max_errors, &orig_bioc->error);
--	} else {
--		orig_bbio->bio.bi_status = bbio->bio.bi_status;
--	}
--}
--
- void btrfs_bio_end_io(struct btrfs_bio *bbio, blk_status_t status)
- {
- 	bbio->bio.bi_status = status;
- 	if (bbio->bio.bi_pool == &btrfs_clone_bioset) {
- 		struct btrfs_bio *orig_bbio = bbio->private;
- 
--		if (bbio->bio.bi_status)
--			btrfs_bbio_propagate_error(bbio, orig_bbio);
- 		btrfs_cleanup_bio(bbio);
- 		bbio = orig_bbio;
- 	}
- 
--	if (atomic_dec_and_test(&bbio->pending_ios))
-+	/* At this point, bbio always points to the original btrfs_bio. Save the
-+	 * first error in it.
-+	 */
-+	if (status != BLK_STS_OK)
-+		cmpxchg(&bbio->status, BLK_STS_OK, status);
-+
-+	if (atomic_dec_and_test(&bbio->pending_ios)) {
-+		/* Load split bio's error which might be set above. */
-+		if (status == BLK_STS_OK)
-+			bbio->bio.bi_status = READ_ONCE(bbio->status);
- 		__btrfs_bio_end_io(bbio);
-+	}
- }
- 
- static int next_repair_mirror(struct btrfs_failed_bio *fbio, int cur_mirror)
-diff --git a/fs/btrfs/bio.h b/fs/btrfs/bio.h
-index e48612340745..566c3e1d077b 100644
---- a/fs/btrfs/bio.h
-+++ b/fs/btrfs/bio.h
-@@ -79,6 +79,9 @@ struct btrfs_bio {
- 	/* File system that this I/O operates on. */
- 	struct btrfs_fs_info *fs_info;
- 
-+	/* Set the error status of split bio. */
-+	blk_status_t status;
-+
- 	/*
- 	 * This member must come last, bio_alloc_bioset will allocate enough
- 	 * bytes for entire btrfs_bio but relies on bio being last.
--- 
-2.46.2
+>  static DEVICE_ATTR_RW(sanitize_timeout);
+>  
 

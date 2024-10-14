@@ -1,139 +1,98 @@
-Received: from fhigh-a3-smtp.messagingengine.com (fhigh-a3-smtp.messagingengine.com [103.168.172.154])
+Received: from mx0a-00082601.pphosted.com (mx0a-00082601.pphosted.com [67.231.145.42])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8E0A91ABEC6
-	for <linux-btrfs@vger.kernel.org>; Mon, 14 Oct 2024 17:03:21 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.154
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 25C4F1B85C2
+	for <linux-btrfs@vger.kernel.org>; Mon, 14 Oct 2024 17:18:45 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=67.231.145.42
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1728925403; cv=none; b=N8iRIzqVFvINSE4CD8odX8m/aqzSoTBdEJy69R+CIr74GT0FktzhNsSyaTrfCOIDvnVn9jjWWpr17Vz+kRYyVIJDqXdZi5Yc2vdCSUN0LG25Jv5Pt+aPpKvKPoQCntyTXKJrmSU7kicu4tom0nVEGN3OEhoGKOoRlynh5dNst4A=
+	t=1728926327; cv=none; b=JkWgmxSutziGfpr0Pq29+sg0G3WaXLA/gOTPsYO9y3D+sKgJBtdLGRE/4y0CHiqtkNXfFsWdEliLBr6HqqCNWfSKP6Zyf1xGbVBSar+vn3Ks3IJEpjkmte4YmSwgS0WpOtyaG4WzbB5VRAbTAGZo3DT8w9lye839aaZCHTXn6A8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1728925403; c=relaxed/simple;
-	bh=7w07Kp4YAjiEIedPOiFgq6I6GJEc7NXtAAdV/Di3kTk=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=o17sel9v5W5skXH+MEmaJMrRvaldrZFU8fV8DkYIev+k0l4RGPfQ5xneSRYxSYUFWwTXcors50ck+Oz/gPjLUALRco866QKu+417ncH7bdp2GJAWbu+hYx4vCD5+SRfpsmkwvOI2M085mC8Ff5J8O2r2lrtFbU5M0gU7dtC3BKU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=ThTJ0fEX; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=C2W6HYqV; arc=none smtp.client-ip=103.168.172.154
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
+	s=arc-20240116; t=1728926327; c=relaxed/simple;
+	bh=/9jnXkipEwHnJUja/lmHyvciFO49j2jUVw6pc4xQM+k=;
+	h=From:To:CC:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version:Content-Type; b=SrOLEe9adlJfuCfj3xs7i+yS2LCJsyfxW3b+M6fd4SIba+FEI7E40HvTDfftfZBMaeH+Yn5VCyIky3YYrM1qt1oobQKuYYv5QjIzcaqCFCkYztxHnCgX0P0mwVCsJPdhDCXqElfRr8E/C/t5uD/cQdbuv/G/+JXgTWJ5QOnDqew=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=fb.com; spf=pass smtp.mailfrom=meta.com; dkim=pass (1024-bit key) header.d=fb.com header.i=@fb.com header.b=b1Ib3pUZ; arc=none smtp.client-ip=67.231.145.42
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=fb.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=meta.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="ThTJ0fEX";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="C2W6HYqV"
-Received: from phl-compute-09.internal (phl-compute-09.phl.internal [10.202.2.49])
-	by mailfhigh.phl.internal (Postfix) with ESMTP id A9DA71140150;
-	Mon, 14 Oct 2024 13:03:20 -0400 (EDT)
-Received: from phl-mailfrontend-02 ([10.202.2.163])
-  by phl-compute-09.internal (MEProxy); Mon, 14 Oct 2024 13:03:20 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
-	:content-type:content-type:date:date:from:from:in-reply-to
-	:in-reply-to:message-id:mime-version:references:reply-to:subject
-	:subject:to:to; s=fm3; t=1728925400; x=1729011800; bh=8fUTk3Xq/C
-	OGNIDaWj/CA2cpfz/85RmjRoxYUZVKPd0=; b=ThTJ0fEXmVlERqcPfNH+3If4/J
-	PHcsadVgDd7OrdRee0tAlBHfd+M2HkfUmbgDwABNfI5Vf/zQrlws+ZXfxn20tK4L
-	jvx+4+BXHWHjzuWt/i+xsUX+qrufqgYHiNoYicAvelaewbnt8bCKLd6QH3CiWTKu
-	Oat1WT+8m986QgosOMxoSiBwHF93kcgA7gVq9eOd9aXlgYOIjn5HuJZnKQuUGSlB
-	k5M1PSi4vAwereVn9u0zV4uBU0vEyHIcRvmQAUMAgXTe5qVUS9myqfHY1b02wHTk
-	9SSe/eSuR14CJkYyr+R9MsLvCuENc52NaDvM2hWWpSBU3B3R8qR3l432M1HA==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:cc:content-type:content-type:date:date
-	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
-	:message-id:mime-version:references:reply-to:subject:subject:to
-	:to:x-me-proxy:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=
-	fm2; t=1728925400; x=1729011800; bh=8fUTk3Xq/COGNIDaWj/CA2cpfz/8
-	5RmjRoxYUZVKPd0=; b=C2W6HYqVYQtJzxwRklKG0/tt7IWGQo/MY9fEu3ie3XQB
-	QoBO93tDOcWJ3eNVIFs1+S73AkbWXk3KcSgRbLDjtCqxZPuXjb0r9lk1Xm2oDXxw
-	TufNz4iTk/IDH0Z385H272oY01iaERdaIgtTriDAJW2Ln7fkbdljRyXw/IntOgPp
-	apem4OL/vUWpwsU3K/GOQqTU/r1SmDKtYa4cZ3DU8lUpsFwy1OWnHmpMyEnkMmu+
-	+Vz00nipzHy/OTDgMV1+wzdWdc9LqOxhBa0CQxBP4FxhGSCL7Z2cod9ud68P5h3G
-	gU7g7wupAOz88Ud37E4yUhD7pq1BCf3un7ecovbh0w==
-X-ME-Sender: <xms:2E4NZ7mIygJZ6CI9am4JbT2_RNIbHcXL6pa2fvm4CuGOP3hXukJQEg>
-    <xme:2E4NZ-2IlOc0donQcgS4bOzsmzitDfncbnT2TnBhDghQ4MlOMz9fT3HvNPdNpJ-lN
-    YH8_Mbr67ElnBENTlk>
-X-ME-Received: <xmr:2E4NZxqTH8Wf0M4VSiQYtNQTMM3PD2q6KwPUsTAruN8K1nWdM0eJ2hZEFUp2oF-Eifd3uLS5GqTrGmjvO6L6MGfpPHE>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeeftddrvdeghedguddtlecutefuodetggdotefrod
-    ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpggftfghnshhusghstghrihgsvgdp
-    uffrtefokffrpgfnqfghnecuuegrihhlohhuthemuceftddtnecusecvtfgvtghiphhivg
-    hnthhsucdlqddutddtmdenucfjughrpeffhffvvefukfhfgggtuggjsehttdertddttddv
-    necuhfhrohhmpeeuohhrihhsuceuuhhrkhhovhcuoegsohhrihhssegsuhhrrdhioheqne
-    cuggftrfgrthhtvghrnhepkedvkeffjeellefhveehvdejudfhjedthfdvveeiieeiudfg
-    uefgtdejgfefleejnecuvehluhhsthgvrhfuihiivgeptdenucfrrghrrghmpehmrghilh
-    hfrhhomhepsghorhhishessghurhdrihhopdhnsggprhgtphhtthhopeefpdhmohguvgep
-    shhmthhpohhuthdprhgtphhtthhopegushhtvghrsggrsehsuhhsvgdrtgiipdhrtghpth
-    htoheplhhinhhugidqsghtrhhfshesvhhgvghrrdhkvghrnhgvlhdrohhrghdprhgtphht
-    thhopehkvghrnhgvlhdqthgvrghmsehfsgdrtghomh
-X-ME-Proxy: <xmx:2E4NZzlqdrk1kya20ko0lCzWWqkgg9L1YNsWR2IwOu8VsqydoPZpzw>
-    <xmx:2E4NZ500qvHYsYbA651sD89xoROK_itm6Z9FjHBn0flAe4cjWkrBcg>
-    <xmx:2E4NZysRYPhiMOKX7nKuLRN5Y2YR_wLB0vpydpsceZl94NYD908lqQ>
-    <xmx:2E4NZ9WClaB61_T-EqcmYWMqtWMvdpK0adJRH_VzBY-9IqAetwWK4w>
-    <xmx:2E4NZyxR68Std3Cw7MuordDdz8qSYy0SSefl8GaRvBy2Txv06syFCk3m>
-Feedback-ID: i083147f8:Fastmail
-Received: by mail.messagingengine.com (Postfix) with ESMTPA; Mon,
- 14 Oct 2024 13:03:20 -0400 (EDT)
-Date: Mon, 14 Oct 2024 10:02:59 -0700
-From: Boris Burkov <boris@bur.io>
-To: David Sterba <dsterba@suse.cz>
-Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH v2] btrfs: try to search for data csums in commit root
-Message-ID: <20241014170259.GB845260@zen.localdomain>
-References: <0a59693a70f542120a0302e9864e7f9b86e1cb4c.1728415983.git.boris@bur.io>
- <20241011174603.GA1609@twin.jikos.cz>
- <20241011194831.GA2832667@zen.localdomain>
- <20241014151603.GC1609@suse.cz>
+	dkim=pass (1024-bit key) header.d=fb.com header.i=@fb.com header.b="b1Ib3pUZ"
+Received: from pps.filterd (m0044012.ppops.net [127.0.0.1])
+	by mx0a-00082601.pphosted.com (8.18.1.2/8.18.1.2) with ESMTP id 49EFq0uU016802
+	for <linux-btrfs@vger.kernel.org>; Mon, 14 Oct 2024 10:18:45 -0700
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.com; h=cc
+	:content-transfer-encoding:content-type:date:from:in-reply-to
+	:message-id:mime-version:references:subject:to; s=facebook; bh=5
+	GUqpnZKhj1jMR5QISWrdlkk0+/xKkKtZ15yLU1WySU=; b=b1Ib3pUZ8MmKnrxC3
+	BstYyt4GTOCzdcr2XjI7XqVV/aSM34WkB//p+M0KY1Dkxm6wXx5fIpUYY6TLlRB5
+	QhMelA6o9tF2eLXghqVokcYqUj1VSpWb2VAcCHFFO93wUlEJBjq3ouDUzs6OjmZN
+	ZT03ekKY9SPQVdn8tKuddE8+Xw=
+Received: from mail.thefacebook.com ([163.114.134.16])
+	by mx0a-00082601.pphosted.com (PPS) with ESMTPS id 4291qjtmxc-9
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128 verify=NOT)
+	for <linux-btrfs@vger.kernel.org>; Mon, 14 Oct 2024 10:18:45 -0700 (PDT)
+Received: from twshared60308.03.ash8.facebook.com (2620:10d:c085:208::f) by
+ mail.thefacebook.com (2620:10d:c08b:78::c78f) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
+ 15.2.1544.11; Mon, 14 Oct 2024 17:18:43 +0000
+Received: by devbig276.nha1.facebook.com (Postfix, from userid 660015)
+	id 4E9657C37EF5; Mon, 14 Oct 2024 18:18:41 +0100 (BST)
+From: Mark Harmstone <maharmstone@fb.com>
+To: <linux-btrfs@vger.kernel.org>, <io-uring@vger.kernel.org>
+CC: Mark Harmstone <maharmstone@fb.com>
+Subject: [PATCH 1/5] btrfs: remove pointless addition in btrfs_encoded_read
+Date: Mon, 14 Oct 2024 18:18:23 +0100
+Message-ID: <20241014171838.304953-2-maharmstone@fb.com>
+X-Mailer: git-send-email 2.43.5
+In-Reply-To: <20241014171838.304953-1-maharmstone@fb.com>
+References: <20241014171838.304953-1-maharmstone@fb.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20241014151603.GC1609@suse.cz>
+Content-Transfer-Encoding: quoted-printable
+X-FB-Internal: Safe
+Content-Type: text/plain
+X-Proofpoint-ORIG-GUID: Bz8RmJnghhEXmyJEA9pZ4iyaVzaTITOj
+X-Proofpoint-GUID: Bz8RmJnghhEXmyJEA9pZ4iyaVzaTITOj
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.293,Aquarius:18.0.1051,Hydra:6.0.680,FMLib:17.12.62.30
+ definitions=2024-10-05_02,2024-10-04_01,2024-09-30_01
 
-On Mon, Oct 14, 2024 at 05:16:03PM +0200, David Sterba wrote:
-> On Fri, Oct 11, 2024 at 12:48:31PM -0700, Boris Burkov wrote:
-> > > Can you please find another way how to store this? Maybe the bio flags
-> > > have some bits free. Otherwise this adds 8 bytes to btrfs_bio, while
-> > > this structure should be optimized for size.  It's ok to use bool for
-> > > simplicity in the first versions when you're testing the locking.
-> > 
-> > Ooh, good point!
-> > 
-> > I started looking into it some more and it's tricky but I have a few
-> > ideas, curious what you think:
-> > 
-> > 1. Export the btrfs_bio_ctrl and optionally wire it through the
-> >    callstack. For data reads it is still live on the stack, we just can't
-> >    be sure that containerof will work in general. Or just wire the bool
-> >    through the calls. This is pretty "trivial" but also ugly.
-> > 2. We already allocate an io context in multi-device scenarios. we could
-> >    allocate a smaller one for single. That doesn't seem that different
-> >    than adding a flags to btrfs_bio.
-> > 3. Figure out how to stuff it into struct btrfs_bio. For example, I
-> >    think we aren't using btrfs_bio->private until later, so we could put
-> >    a to-be-overwritten submit control struct in there.
-> 
-> Maybe this could work but seems fragile as the private pointer is used
-> for other strucutres and purposes. All in a void pointer. We need to
-> store only a single bit of information, so this can work with some stub
-> pointer type that can be at least recognized when mistakenly
-> dereference.
-> 
+iocb->ki_pos isn't used after this function, so there's no point in
+changing its value.
 
-Agreed, I tried this approach first and it was very ugly/fragile.
+Signed-off-by: Mark Harmstone <maharmstone@fb.com>
+---
+ fs/btrfs/inode.c | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
 
-> > 4. Figure out how to stuff it into struct bio. This would be your
-> >    bi_flags idea. However, I'm confused how to do that safely. Doesn't
-> >    the block layer own those bits? It seems aggressive for me to try
-> >    to use them. bio has a bi_private as well, which might be unset in
-> >    the context we care about.
-> 
-> #define BTRFS_BIO_FLAG_SEARCH_COMMIT_ROOT	(1U << (BIO_FLAG_LAST + 1)
-> 
-> I don't see any code in block/* that would verify the bio bits. Also the
-> REQ_ bits could be used, we already do that with REQ_BTRFS_CGROUP_PUNT
-> and at some point the REQ_DRV was used (removed in a39da514eba81e687db).
-> 
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index b1b6564ab68f..b024ebc3dcd6 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -9280,7 +9280,7 @@ ssize_t btrfs_encoded_read(struct kiocb *iocb, stru=
+ct iov_iter *iter,
+ 		ret =3D btrfs_encoded_read_inline(iocb, iter, start, lockend,
+ 						&cached_state, extent_start,
+ 						count, encoded, &unlocked);
+-		goto out;
++		goto out_em;
+ 	}
+=20
+ 	/*
+@@ -9346,9 +9346,6 @@ ssize_t btrfs_encoded_read(struct kiocb *iocb, stru=
+ct iov_iter *iter,
+ 						 &unlocked);
+ 	}
+=20
+-out:
+-	if (ret >=3D 0)
+-		iocb->ki_pos +=3D encoded->len;
+ out_em:
+ 	free_extent_map(em);
+ out_unlock_extent:
+--=20
+2.44.2
 
-Oh duh, this isn't persisted. Thanks for the extra explanation, that was
-helpful. Trying something along these lines now and it looks decent.
-
-> > I'm leaning towards option 3: taking advantage of the yet unset
-> > btrfs_bio->private

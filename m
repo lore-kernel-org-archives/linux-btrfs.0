@@ -1,235 +1,169 @@
-Received: from mail-wr1-f53.google.com (mail-wr1-f53.google.com [209.85.221.53])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 690DB1D88A4
-	for <linux-btrfs@vger.kernel.org>; Thu, 17 Oct 2024 09:04:26 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.53
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 58B1639FE5
+	for <linux-btrfs@vger.kernel.org>; Thu, 17 Oct 2024 14:01:20 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1729155869; cv=none; b=Wd0DaeahMfzmrEW/MakkgEm0VLhZ+dWy/NT16XqNzEVQyWrXSIwrlW3Xz2PmJn3RCAxI7tCfSUXN+IkG2bZJgEGJ3MUfcQeExjVaeR8yEpyd0bQeiVCEBcA60eA2cXZnhhQbAO5FSPxpzhAz0MvYwyYfytX6nsf8ymbwTDbzU3I=
+	t=1729173685; cv=none; b=JupKoh725UdFpwDTvHMmOPsvBMAKvZjRajdgGGfM3qZbeix5qKHIm3WCA3BgPCOaYi1mFAX/Byn4fBQI/CJdtN1jgdc+OM+QHRx8H4EMEy79VgGkU+GG0/TRU8ohrCCYjLQXY0DG9YBKX5xjCxpaCUFEQb6MJRLuFHPbLfvu3SE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1729155869; c=relaxed/simple;
-	bh=UbFN251aIqsI+ArgL5vxr4xQqjV2r/jBVhUT/EHZqfA=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=OvgE+FdKmL56sHm4o0n4gWHrPEqXmoqQldz7SC34476Z2k53oor7dBDLD8JSr7xNLilwDJqgUSmxOucy6Jtz7ywuG34Km3XJZzwLG0UAMb8xsmXm6lpYKlvM5Xho02N/53J3IhAa7uTSuQTTvVfaKDj8TjIyzDrJ0nm6cDsmxXI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=quarantine dis=none) header.from=kernel.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.221.53
-Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=quarantine dis=none) header.from=kernel.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Received: by mail-wr1-f53.google.com with SMTP id ffacd0b85a97d-37d4d1b48f3so505872f8f.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 17 Oct 2024 02:04:26 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1729155864; x=1729760664;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=ta4yLfokfKjcxUBVwUJ5T2AqG9n+LaN4CApBi7u8OxI=;
-        b=nF+uDH1aATozXwR9k7vEjBdm5v9O1Udcok3Q+ISfLoQbLQHfB1d5ALn1Qv8PTMWNPD
-         kZejxPTSD/Cdvgi4ZoHq+Bh2AfFLxYellyg86N0GDZrAXIdlWpgSIigX9DP6biODcAVg
-         I+QlzxbnMgH9HQoWicoToBujRxnPJNC7r6g8jriaQJjs6XG7LZtC1Uasvanau9iiVgRg
-         2qjVTJAByhBjivZUz6xbPdIBlw2EpG4MqeHKAEvwOJcRPUF5555Y3SLYD8gJbZUmp+d4
-         TGfj5rf9M3Bm0GrCtAJBz9FpPDng+iB1OBd+eX9EjUkcX9LebKc1g79eezOQ9yqW+kVa
-         UVxw==
-X-Gm-Message-State: AOJu0YzBcjahFeCASvwaN973CD2EG8W3ZKqRVK/psz7ZFGlib45fHSg6
-	IlDBBoF1Xh3BZUF95hQ/Y4zTfbcdF7GVbEIUQ02ED6DgGftF31WQZ7EowtPp
-X-Google-Smtp-Source: AGHT+IESi5mr0vlaGJtVma/UdCdKZ5aSkd9xQipARtCvcF/BWU1cFoFbBGwejx2nt/rP65BL4JmQPw==
-X-Received: by 2002:a05:6000:111:b0:37c:d537:9dc0 with SMTP id ffacd0b85a97d-37d551847cfmr14195828f8f.12.1729155864195;
-        Thu, 17 Oct 2024 02:04:24 -0700 (PDT)
-Received: from nuc.fritz.box (p200300f6f71fdb00fa633ffffe02074c.dip0.t-ipconnect.de. [2003:f6:f71f:db00:fa63:3fff:fe02:74c])
-        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-43158c37fbesm19700495e9.8.2024.10.17.02.04.23
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 17 Oct 2024 02:04:23 -0700 (PDT)
-From: Johannes Thumshirn <jth@kernel.org>
-To: linux-btrfs@vger.kernel.org
-Cc: Josef Bacik <josef@toxicpanda.com>,
-	David Sterba <dsterba@suse.com>,
-	Filipe Manana <fdmanana@suse.com>,
-	Naohiro Aota <naohiro.aota@wdc.com>,
-	Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH v4 1/2] btrfs: implement partial deletion of RAID stripe extents
-Date: Thu, 17 Oct 2024 11:04:10 +0200
-Message-ID: <20241017090411.25336-2-jth@kernel.org>
-X-Mailer: git-send-email 2.43.0
-In-Reply-To: <20241017090411.25336-1-jth@kernel.org>
-References: <20241017090411.25336-1-jth@kernel.org>
+	s=arc-20240116; t=1729173685; c=relaxed/simple;
+	bh=TKDbQ3MvDhz/+i6vorpyQpvN2J1kT5Z3Pg2u+hIgFPI=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=adBeq7xBv6DSJ/ih+JtbZpW8gzbS1IoYnxl24K14ZIVtbClxkZ1mRnaycLq7zu2TZoezk/IJUqN0cUikUtjNw09g/h24pXxaS/3UNiQFF1gR14MCeUZs3InUHoXlOcnHbrzrv3vRFp7LNjHDUqM8qKFliOyG5J4PwzHupcwBE4M=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=CD3xYR56; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=350tkQPC; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=CD3xYR56; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=350tkQPC; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="CD3xYR56";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="350tkQPC";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="CD3xYR56";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="350tkQPC"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 6C0241FD34;
+	Thu, 17 Oct 2024 14:01:18 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1729173678;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=Ai+x30Eo3ts0wAGW5wTlDiFMgVtQbp4XeqIGLX1F5Yo=;
+	b=CD3xYR56ONdiyMpVI2Mc/ufXbfGE4otEeJe+6RZH5B8Y2XlSDTnQJrI87IKc4AUDNMVkzi
+	z5OmM4kY6xTdx3FxGvU0h8XyIMkMftZ4xVuip9u4Psa50o6oSH+omMLDvzF+wqBb3yog7r
+	LMFv49Pg03pLXVzDJ6dkePehxh6vIHQ=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1729173678;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=Ai+x30Eo3ts0wAGW5wTlDiFMgVtQbp4XeqIGLX1F5Yo=;
+	b=350tkQPCD8YOYXo83RqNS4BywRKz3L76B5sZtwIIFBiUJd/jJAtBsz4kqK1m7WTgYSFRtH
+	5ErSQIvk+KxjvCDg==
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b=CD3xYR56;
+	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=350tkQPC
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1729173678;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=Ai+x30Eo3ts0wAGW5wTlDiFMgVtQbp4XeqIGLX1F5Yo=;
+	b=CD3xYR56ONdiyMpVI2Mc/ufXbfGE4otEeJe+6RZH5B8Y2XlSDTnQJrI87IKc4AUDNMVkzi
+	z5OmM4kY6xTdx3FxGvU0h8XyIMkMftZ4xVuip9u4Psa50o6oSH+omMLDvzF+wqBb3yog7r
+	LMFv49Pg03pLXVzDJ6dkePehxh6vIHQ=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1729173678;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=Ai+x30Eo3ts0wAGW5wTlDiFMgVtQbp4XeqIGLX1F5Yo=;
+	b=350tkQPCD8YOYXo83RqNS4BywRKz3L76B5sZtwIIFBiUJd/jJAtBsz4kqK1m7WTgYSFRtH
+	5ErSQIvk+KxjvCDg==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 4B96613A53;
+	Thu, 17 Oct 2024 14:01:18 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id Vvw8Eq4YEWfVHwAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Thu, 17 Oct 2024 14:01:18 +0000
+Date: Thu, 17 Oct 2024 16:01:12 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Boris Burkov <boris@bur.io>
+Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: Re: [PATCH] btrfs: do not clear read-only when adding sprout device
+Message-ID: <20241017140112.GT1609@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <a9aa42f6bc2739ab46ce015f749e15177f8730d6.1729028033.git.boris@bur.io>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <a9aa42f6bc2739ab46ce015f749e15177f8730d6.1729028033.git.boris@bur.io>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-Rspamd-Queue-Id: 6C0241FD34
+X-Spam-Score: -4.21
+X-Rspamd-Action: no action
+X-Spamd-Result: default: False [-4.21 / 50.00];
+	BAYES_HAM(-3.00)[99.99%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	HAS_REPLYTO(0.30)[dsterba@suse.cz];
+	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	NEURAL_HAM_SHORT(-0.20)[-0.998];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	FUZZY_BLOCKED(0.00)[rspamd.com];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	MIME_TRACE(0.00)[0:+];
+	ARC_NA(0.00)[];
+	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	TO_DN_SOME(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	DKIM_TRACE(0.00)[suse.cz:+];
+	RCVD_COUNT_TWO(0.00)[2];
+	REPLYTO_ADDR_EQ_FROM(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	RCPT_COUNT_THREE(0.00)[3];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	REPLYTO_DOM_NEQ_TO_DOM(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo]
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Spam-Flag: NO
+X-Spam-Level: 
 
-From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+On Tue, Oct 15, 2024 at 02:38:34PM -0700, Boris Burkov wrote:
+> If you follow the seed/sprout wiki, it suggests the following workflow:
+> 
+> btrfstune -S 1 seed_dev
+> mount seed_dev mnt
+> btrfs device add sprout_dev
+> mount -o remount,rw mnt
+> 
+> The first mount mounts the FS readonly, which results in not setting
+> BTRFS_FS_OPEN, and setting the readonly bit on the sb. The device add
+> somewhat surprisingly clears the readonly bit on the sb (though the
+> mount is still practically readonly, from the users perspective...).
+> Finally, the remount checks the readonly bit on the sb against the flag
+> and sees no change, so it does not run the code intended to run on
+> ro->rw transitions, leaving BTRFS_FS_OPEN unset.
+> 
+> As a result, when the cleaner_kthread runs, it sees no BTRFS_FS_OPEN and
+> does no work. This results in leaking deleted snapshots until we run out
+> of space.
+> 
+> I propose fixing it at the first departure from what feels reasonable:
+> when we clear the readonly bit on the sb during device add.
+> 
+> A new fstest I have written reproduces the bug and confirms the fix.
+> 
+> Signed-off-by: Boris Burkov <boris@bur.io>
+> ---
+> Note that this is a resend of an old unmerged fix:
+> https://lore.kernel.org/linux-btrfs/16c05d39566858bb8bc1e03bd19947cf2b601b98.1647906815.git.boris@bur.io/T/#u
+> Some other ideas for fixing it by modifying how we set BTRFS_FS_OPEN
+> were also explored but not merged around that time:
+> https://lore.kernel.org/linux-btrfs/cover.1654216941.git.anand.jain@oracle.com/
+> 
+> I don't have a strong preference, but I would really like to see this
+> trivial bug fixed. For what it is worth, we have been carrying this
+> patch internally at Meta since I first sent it with no incident.
 
-In our CI system, the RAID stripe tree configuration sometimes fails with
-the following ASSERT():
-
- assertion failed: found_start >= start && found_end <= end, in fs/btrfs/raid-stripe-tree.c:64
-
-This ASSERT()ion triggers, because for the initial design of RAID
-stripe-tree, I had the "one ordered-extent equals one bio" rule of zoned
-btrfs in mind.
-
-But for a RAID stripe-tree based system, that is not hosted on a zoned
-storage device, but on a regular device this rule doesn't apply.
-
-So in case the range we want to delete starts in the middle of the
-previous item, grab the item and "truncate" it's length. That is, clone
-the item, subtract the deleted portion from the key's offset, delete the
-old item and insert the new one.
-
-In case the range to delete ends in the middle of an item, we have to
-adjust both the item's key as well as the stripe extents and then
-re-insert the modified clone into the tree after deleting the old stripe
-extent.
-
-Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
----
- fs/btrfs/ctree.c            |  1 +
- fs/btrfs/raid-stripe-tree.c | 94 ++++++++++++++++++++++++++++++++++---
- 2 files changed, 88 insertions(+), 7 deletions(-)
-
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index b11ec86102e3..3f320f6e7767 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -3863,6 +3863,7 @@ static noinline int setup_leaf_for_split(struct btrfs_trans_handle *trans,
- 	btrfs_item_key_to_cpu(leaf, &key, path->slots[0]);
- 
- 	BUG_ON(key.type != BTRFS_EXTENT_DATA_KEY &&
-+	       key.type != BTRFS_RAID_STRIPE_KEY &&
- 	       key.type != BTRFS_EXTENT_CSUM_KEY);
- 
- 	if (btrfs_leaf_free_space(leaf) >= ins_len)
-diff --git a/fs/btrfs/raid-stripe-tree.c b/fs/btrfs/raid-stripe-tree.c
-index 41970bbdb05f..569273e42d85 100644
---- a/fs/btrfs/raid-stripe-tree.c
-+++ b/fs/btrfs/raid-stripe-tree.c
-@@ -13,6 +13,50 @@
- #include "volumes.h"
- #include "print-tree.h"
- 
-+static int btrfs_partially_delete_raid_extent(struct btrfs_trans_handle *trans,
-+					      struct btrfs_path *path,
-+					      struct btrfs_key *oldkey,
-+					      u64 newlen, u64 frontpad)
-+{
-+	struct btrfs_root *stripe_root = trans->fs_info->stripe_root;
-+	struct btrfs_stripe_extent *extent;
-+	struct extent_buffer *leaf;
-+	int slot;
-+	size_t item_size;
-+	int ret;
-+	struct btrfs_key newkey = {
-+		.objectid = oldkey->objectid + frontpad,
-+		.type = BTRFS_RAID_STRIPE_KEY,
-+		.offset = newlen,
-+	};
-+
-+	ASSERT(oldkey->type == BTRFS_RAID_STRIPE_KEY);
-+	ret = btrfs_duplicate_item(trans, stripe_root, path, &newkey);
-+	if (ret)
-+		return ret;
-+
-+	leaf = path->nodes[0];
-+	slot = path->slots[0];
-+	item_size = btrfs_item_size(leaf, slot);
-+	extent = btrfs_item_ptr(leaf, slot, struct btrfs_stripe_extent);
-+
-+	for (int i = 0; i < btrfs_num_raid_stripes(item_size); i++) {
-+		struct btrfs_raid_stride *stride = &extent->strides[i];
-+		u64 phys;
-+
-+		phys = btrfs_raid_stride_physical(leaf, stride);
-+		btrfs_set_raid_stride_physical(leaf, stride, phys + frontpad);
-+	}
-+
-+	btrfs_mark_buffer_dirty(trans, leaf);
-+
-+	/* delete the old item, after we've inserted a new one. */
-+	path->slots[0]--;
-+	ret = btrfs_del_item(trans, stripe_root, path);
-+
-+	return ret;
-+}
-+
- int btrfs_delete_raid_extent(struct btrfs_trans_handle *trans, u64 start, u64 length)
- {
- 	struct btrfs_fs_info *fs_info = trans->fs_info;
-@@ -36,23 +80,24 @@ int btrfs_delete_raid_extent(struct btrfs_trans_handle *trans, u64 start, u64 le
- 	while (1) {
- 		key.objectid = start;
- 		key.type = BTRFS_RAID_STRIPE_KEY;
--		key.offset = length;
-+		key.offset = 0;
- 
- 		ret = btrfs_search_slot(trans, stripe_root, &key, path, -1, 1);
- 		if (ret < 0)
- 			break;
--		if (ret > 0) {
--			ret = 0;
--			if (path->slots[0] == 0)
--				break;
-+
-+		if (path->slots[0] == btrfs_header_nritems(path->nodes[0]))
- 			path->slots[0]--;
--		}
- 
- 		leaf = path->nodes[0];
- 		slot = path->slots[0];
- 		btrfs_item_key_to_cpu(leaf, &key, slot);
- 		found_start = key.objectid;
- 		found_end = found_start + key.offset;
-+		ret = 0;
-+
-+		if (key.type != BTRFS_RAID_STRIPE_KEY)
-+			break;
- 
- 		/* That stripe ends before we start, we're done. */
- 		if (found_end <= start)
-@@ -61,7 +106,42 @@ int btrfs_delete_raid_extent(struct btrfs_trans_handle *trans, u64 start, u64 le
- 		trace_btrfs_raid_extent_delete(fs_info, start, end,
- 					       found_start, found_end);
- 
--		ASSERT(found_start >= start && found_end <= end);
-+		/*
-+		 * The stripe extent starts before the range we want to delete:
-+		 *
-+		 * |--- RAID Stripe Extent ---|
-+		 * |--- keep  ---|--- drop ---|
-+		 *
-+		 * This means we have to duplicate the tree item, truncate the
-+		 * length to the new size and then re-insert the item.
-+		 */
-+		if (found_start < start) {
-+			u64 diff = start - found_start;
-+
-+			ret = btrfs_partially_delete_raid_extent(trans, path,
-+								 &key,
-+								 diff, 0);
-+			break;
-+		}
-+
-+		/*
-+		 * The stripe extent ends after the range we want to delete:
-+		 *
-+		 * |--- RAID Stripe Extent ---|
-+		 * |--- drop  ---|--- keep ---|
-+		 *
-+		 * This means we have to duplicate the tree item, truncate the
-+		 * length to the new size and then re-insert the item.
-+		 */
-+		if (found_end > end) {
-+			u64 diff = found_end - end;
-+
-+			ret = btrfs_partially_delete_raid_extent(trans, path,
-+								 &key,
-+								 diff, diff);
-+			break;
-+		}
-+
- 		ret = btrfs_del_item(trans, stripe_root, path);
- 		if (ret)
- 			break;
--- 
-2.43.0
-
+We have an unresolved dispute about the fix and now the patch got to
+for-next within a few days because it got two reviews but not mine.
+The way you use it in Meta works for you but the fix is changing
+behaviour so we can either ignore everybody else relying on the old
+way or say that seeding is so niche that we don't care and see what we
+can do once we get some report.

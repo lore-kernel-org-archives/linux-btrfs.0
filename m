@@ -1,207 +1,123 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from dggsgout12.his.huawei.com (dggsgout12.his.huawei.com [45.249.212.56])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 96B651E633C;
-	Mon, 21 Oct 2024 13:21:55 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1B1E7323D;
+	Mon, 21 Oct 2024 13:48:01 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=45.249.212.56
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1729516918; cv=none; b=ccvEEiWidm90hvQFHqnWQVIM5a842aJOPMtTCrt3F/9DSiSW7r1AUTCF2f8zizuWaTjg+M2Y5dZ7B9bUnElDdvsQX3gKKTmNRwGPDYlPWldRkcLiiGd7xSM7Ec5RDaPP8UlFLbZG7niwr13Bc5/7NwUFp+1iaohVGtejm/0t+Tg=
+	t=1729518484; cv=none; b=aANC4gmABpzZ73WzXgEkAR3DB6/x0F1hs54Lx374qXRnGszo5iZM8TD5FHJUxF9ICm6GJoWewErYlulYCX08/hxpVR6kZRngC5P65UK0tTtHHh0E+g5Z7qtlzIib1lHzcesNK8BUS+hDOc+y/+wU8Dch3S3MOvrrwj5SqMRycmE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1729516918; c=relaxed/simple;
-	bh=gHhDRNgJERw3V8HbyPTL9Af3Go1cL2efjlFfTYMYAUs=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=qCXaEvmIN3BOj+QfgNA5DJ139mVY6PaGBxYYwzqUKrdXR5aQNa6yR8SMyVgKbFGLKv5gK9tl0iqf4172qhU6xIruKmiS1weXCplhKgjufgBgYCmV1XElfrQRSjP2ZqBm27i2ukGjBZkt+xI/YmbbaqYOcPHEpt3ny8wcWgIZIs4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=k/a3Mo/S; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=8DsxXsRh; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=k/a3Mo/S; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=8DsxXsRh; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="k/a3Mo/S";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="8DsxXsRh";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="k/a3Mo/S";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="8DsxXsRh"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id B1A9721B41;
-	Mon, 21 Oct 2024 13:21:53 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1729516913;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=PSJ3Whu7Jk2t7AN+/YOgPa0LEaNzM/iLyUsh2X00ZDw=;
-	b=k/a3Mo/SE+viDPBqqhvo8Biz6iR4CNO1ofNUQd7JeNraCuFqWow2y625kYeZ9x8VQnZfX0
-	VCYDhNhQHhc1fMenLC8fe5KSWJNlCAOH4nSI5mbIxKXn6+Nh8aMpCqjYyYaUOEsyadHePg
-	Gwx95TAWf4SQszVbhf1x4LVF+UainCk=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1729516913;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=PSJ3Whu7Jk2t7AN+/YOgPa0LEaNzM/iLyUsh2X00ZDw=;
-	b=8DsxXsRhvQhdq6g3cx52NJ8d4jFbazqneQ/u32x0owAggSIcuby2tSahnBq+2C7w7u51J+
-	g0yYzaYfX03IrvDw==
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b="k/a3Mo/S";
-	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=8DsxXsRh
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1729516913;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=PSJ3Whu7Jk2t7AN+/YOgPa0LEaNzM/iLyUsh2X00ZDw=;
-	b=k/a3Mo/SE+viDPBqqhvo8Biz6iR4CNO1ofNUQd7JeNraCuFqWow2y625kYeZ9x8VQnZfX0
-	VCYDhNhQHhc1fMenLC8fe5KSWJNlCAOH4nSI5mbIxKXn6+Nh8aMpCqjYyYaUOEsyadHePg
-	Gwx95TAWf4SQszVbhf1x4LVF+UainCk=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1729516913;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=PSJ3Whu7Jk2t7AN+/YOgPa0LEaNzM/iLyUsh2X00ZDw=;
-	b=8DsxXsRhvQhdq6g3cx52NJ8d4jFbazqneQ/u32x0owAggSIcuby2tSahnBq+2C7w7u51J+
-	g0yYzaYfX03IrvDw==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 9D5F8136DC;
-	Mon, 21 Oct 2024 13:21:53 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 3j8xJnFVFmfhPwAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Mon, 21 Oct 2024 13:21:53 +0000
-Date: Mon, 21 Oct 2024 15:21:48 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Mark Harmstone <maharmstone@fb.com>
-Cc: linux-btrfs@vger.kernel.org, io-uring@vger.kernel.org
-Subject: Re: [PATCH 2/5] btrfs: change btrfs_encoded_read_regular_fill_pages
- to take a callback
-Message-ID: <20241021132148.GB17835@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20241014171838.304953-1-maharmstone@fb.com>
- <20241014171838.304953-3-maharmstone@fb.com>
+	s=arc-20240116; t=1729518484; c=relaxed/simple;
+	bh=wbvPfx4k4ND3GZ/p2WA4lION7rS+/T/Lg3SpvWUr0rk=;
+	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version:Content-Type; b=SFHFMmG69QSLvdvXYq1OXHVxFEwaktVFONmDfSga4Fc5ckDhYLA0j+mY3RDlKND9ibI3UTEgzdkVZbjUaQBcEJCGvcCdzqxCn1KQlsq10V0ucgGWc51wPlJlnHuky8cEnu4/FfmqWwa9vSca7RoTvHLKX1eqiDGnhAuJvXioqZs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=huaweicloud.com; spf=none smtp.mailfrom=huaweicloud.com; arc=none smtp.client-ip=45.249.212.56
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=huaweicloud.com
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=huaweicloud.com
+Received: from mail.maildlp.com (unknown [172.19.163.216])
+	by dggsgout12.his.huawei.com (SkyGuard) with ESMTP id 4XXGpP0Vl0z4f3jXr;
+	Mon, 21 Oct 2024 21:47:41 +0800 (CST)
+Received: from mail02.huawei.com (unknown [10.116.40.128])
+	by mail.maildlp.com (Postfix) with ESMTP id 6885C1A092F;
+	Mon, 21 Oct 2024 21:47:58 +0800 (CST)
+Received: from huaweicloud.com (unknown [10.175.127.227])
+	by APP4 (Coremail) with SMTP id gCh0CgCn28eIWxZnwijhEg--.13131S4;
+	Mon, 21 Oct 2024 21:47:56 +0800 (CST)
+From: Zhihao Cheng <chengzhihao@huaweicloud.com>
+To: clm@fb.com,
+	josef@toxicpanda.com,
+	dsterba@suse.com,
+	Anand.Jain@oracle.com
+Cc: linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	chengzhihao1@huawei.com
+Subject: [PATCH] btrfs: Fix UAF in __btrfs_free_extra_devids()
+Date: Mon, 21 Oct 2024 22:02:15 +0800
+Message-Id: <20241021140215.2948551-1-chengzhihao@huaweicloud.com>
+X-Mailer: git-send-email 2.31.1
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20241014171838.304953-3-maharmstone@fb.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Rspamd-Queue-Id: B1A9721B41
-X-Spam-Level: 
-X-Spamd-Result: default: False [-4.21 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	TO_DN_SOME(0.00)[];
-	ASN(0.00)[asn:25478, ipnet:::/0, country:RU];
-	ARC_NA(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_TLS_ALL(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	REPLYTO_DOM_NEQ_TO_DOM(0.00)[];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	FUZZY_BLOCKED(0.00)[rspamd.com];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.cz:dkim,suse.cz:replyto];
-	RCPT_COUNT_THREE(0.00)[3];
-	DKIM_TRACE(0.00)[suse.cz:+]
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Rspamd-Action: no action
-X-Spam-Score: -4.21
-X-Spam-Flag: NO
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+X-CM-TRANSID:gCh0CgCn28eIWxZnwijhEg--.13131S4
+X-Coremail-Antispam: 1UD129KBjvJXoW7AF4kWw18Xw1xWF18ZFyUGFg_yoW8uw4xpr
+	n8GFy5trykWw1DCrW7W3y8C3Z3Xw4qyayrWrn8urWrK3yUAFyYvF93Cw1jg340y3ykJF1D
+	Xry3W34vqrnxCaUanT9S1TB71UUUUU7qnTZGkaVYY2UrUUUUjbIjqfuFe4nvWSU5nxnvy2
+	9KBjDU0xBIdaVrnRJUUUyCb4IE77IF4wAFF20E14v26r4j6ryUM7CY07I20VC2zVCF04k2
+	6cxKx2IYs7xG6rWj6s0DM7CIcVAFz4kK6r1j6r18M28lY4IEw2IIxxk0rwA2F7IY1VAKz4
+	vEj48ve4kI8wA2z4x0Y4vE2Ix0cI8IcVAFwI0_Xr0_Ar1l84ACjcxK6xIIjxv20xvEc7Cj
+	xVAFwI0_Cr0_Gr1UM28EF7xvwVC2z280aVAFwI0_GcCE3s1l84ACjcxK6I8E87Iv6xkF7I
+	0E14v26rxl6s0DM2AIxVAIcxkEcVAq07x20xvEncxIr21l5I8CrVACY4xI64kE6c02F40E
+	x7xfMcIj6xIIjxv20xvE14v26r1Y6r17McIj6I8E87Iv67AKxVWUJVW8JwAm72CE4IkC6x
+	0Yz7v_Jr0_Gr1lF7xvr2IYc2Ij64vIr41lc7CjxVAaw2AFwI0_JF0_Jw1l42xK82IYc2Ij
+	64vIr41l4I8I3I0E4IkC6x0Yz7v_Jr0_Gr1lx2IqxVAqx4xG67AKxVWUJVWUGwC20s026x
+	8GjcxK67AKxVWUGVWUWwC2zVAF1VAY17CE14v26r126r1DMIIYrxkI7VAKI48JMIIF0xvE
+	2Ix0cI8IcVAFwI0_Jr0_JF4lIxAIcVC0I7IYx2IY6xkF7I0E14v26r1j6r4UMIIF0xvE42
+	xK8VAvwI8IcIk0rVWUJVWUCwCI42IY6I8E87Iv67AKxVWUJVW8JwCI42IY6I8E87Iv6xkF
+	7I0E14v26r1j6r4UYxBIdaVFxhVjvjDU0xZFpf9x07UZSdgUUUUU=
+X-CM-SenderInfo: xfkh0wx2klxt3r6k3tpzhluzxrxghudrp/
 
-On Mon, Oct 14, 2024 at 06:18:24PM +0100, Mark Harmstone wrote:
-> Change btrfs_encoded_read_regular_fill_pages so that it takes a callback
-> rather than waiting, and add new helper function btrfs_encoded_read_wait_cb
-> to match the existing behaviour.
-> 
-> Signed-off-by: Mark Harmstone <maharmstone@fb.com>
-> ---
->  fs/btrfs/btrfs_inode.h | 13 +++++++-
->  fs/btrfs/inode.c       | 70 ++++++++++++++++++++++++++++++++----------
->  fs/btrfs/send.c        | 15 ++++++++-
->  3 files changed, 79 insertions(+), 19 deletions(-)
-> 
-> diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-> index 3056c8aed8ef..6aea5bedc968 100644
-> --- a/fs/btrfs/btrfs_inode.h
-> +++ b/fs/btrfs/btrfs_inode.h
-> @@ -601,10 +601,21 @@ int btrfs_run_delalloc_range(struct btrfs_inode *inode, struct page *locked_page
->  int btrfs_writepage_cow_fixup(struct page *page);
->  int btrfs_encoded_io_compression_from_extent(struct btrfs_fs_info *fs_info,
->  					     int compress_type);
-> +typedef void (btrfs_encoded_read_cb_t)(void *, int);
-> +
-> +struct btrfs_encoded_read_wait_ctx {
-> +	wait_queue_head_t wait;
-> +	bool done;
-> +	int err;
+From: Zhihao Cheng <chengzhihao1@huawei.com>
 
-Please reorder that so it does not waste the bytes after 'done' to align
-'err'
+Mounting btrfs from two images(which have the same one fsid and two
+different dev_uuids) in certain executing order may trigger an UAF
+for variable 'device->bdev_file' in __btrfs_free_extra_devids(). And
+following are the details:
+1. Attach image_1 to loop0, attach image_2 to loop1, and scan btrfs
+   devices by ioctl(BTRFS_IOC_SCAN_DEV):
+             /  btrfs_device_1 → loop0
+   fs_device
+             \  btrfs_device_2 → loop1
+2. mount /dev/loop0 /mnt
+   btrfs_open_devices
+    btrfs_device_1->bdev_file = btrfs_get_bdev_and_sb(loop0)
+    btrfs_device_2->bdev_file = btrfs_get_bdev_and_sb(loop1)
+   btrfs_fill_super
+    open_ctree
+     fail: btrfs_close_devices // -ENOMEM
+	    btrfs_close_bdev(btrfs_device_1)
+             fput(btrfs_device_1->bdev_file)
+	      // btrfs_device_1->bdev_file is freed
+	    btrfs_close_bdev(btrfs_device_2)
+             fput(btrfs_device_2->bdev_file)
+2. mount /dev/loop1 /mnt
+   btrfs_open_devices
+    btrfs_get_bdev_and_sb(&bdev_file)
+     // EIO, btrfs_device_1->bdev_file is not assigned,
+     // which points to a freed memory area
+    btrfs_device_2->bdev_file = btrfs_get_bdev_and_sb(loop1)
+   btrfs_fill_super
+    open_ctree
+     btrfs_free_extra_devids
+      if (btrfs_device_1->bdev_file)
+       fput(btrfs_device_1->bdev_file) // UAF !
 
-> +};
-> +
-> +void btrfs_encoded_read_wait_cb(void *ctx, int err);
->  int btrfs_encoded_read_regular_fill_pages(struct btrfs_inode *inode,
->  					  u64 file_offset, u64 disk_bytenr,
->  					  u64 disk_io_size,
-> -					  struct page **pages);
-> +					  struct page **pages,
-> +					  btrfs_encoded_read_cb_t cb,
-> +					  void *cb_ctx);
->  ssize_t btrfs_encoded_read(struct kiocb *iocb, struct iov_iter *iter,
->  			   struct btrfs_ioctl_encoded_io_args *encoded);
->  ssize_t btrfs_do_encoded_write(struct kiocb *iocb, struct iov_iter *from,
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index b024ebc3dcd6..b5abe98f3af4 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -9080,9 +9080,10 @@ static ssize_t btrfs_encoded_read_inline(
->  }
->  
->  struct btrfs_encoded_read_private {
-> -	wait_queue_head_t wait;
->  	atomic_t pending;
->  	blk_status_t status;
-> +	btrfs_encoded_read_cb_t *cb;
-> +	void *cb_ctx;
+Fix it by setting 'device->bdev_file' as 'NULL' after closing the
+btrfs_device in btrfs_close_one_device().
 
-Final version of this structure could be also reordered so it does not
-leave unnecessary holes, I think status is u8 so it now fills the hole
-after pending but I'm not sure now if other patches make more changes.
+Fixes: 142388194191 ("btrfs: do not background blkdev_put()")
+CC: stable@vger.kernel.org
+Link: https://bugzilla.kernel.org/show_bug.cgi?id=219408
+Signed-off-by: Zhihao Cheng <chengzhihao1@huawei.com>
+---
+ fs/btrfs/volumes.c | 1 +
+ 1 file changed, 1 insertion(+)
 
->  };
->  
->  static void btrfs_encoded_read_endio(struct btrfs_bio *bbio)
-> @@ -9100,26 +9101,33 @@ static void btrfs_encoded_read_endio(struct btrfs_bio *bbio)
->  		 */
->  		WRITE_ONCE(priv->status, bbio->bio.bi_status);
->  	}
-> -	if (!atomic_dec_return(&priv->pending))
-> -		wake_up(&priv->wait);
-> +	if (!atomic_dec_return(&priv->pending)) {
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 8f340ad1d938..eb51b609190f 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1105,6 +1105,7 @@ static void btrfs_close_one_device(struct btrfs_device *device)
+ 	if (device->bdev) {
+ 		fs_devices->open_devices--;
+ 		device->bdev = NULL;
++		device->bdev_file = NULL;
+ 	}
+ 	clear_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state);
+ 	btrfs_destroy_dev_zone_info(device);
+-- 
+2.39.2
 
-Though it's in the original code, please rewrite the condition so it
-reads as an arithmetic condition, "== 0".
-
-> +		priv->cb(priv->cb_ctx,
-> +			 blk_status_to_errno(READ_ONCE(priv->status)));
-> +		kfree(priv);
-> +	}
->  	bio_put(&bbio->bio);
->  }

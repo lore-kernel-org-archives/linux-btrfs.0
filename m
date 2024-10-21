@@ -1,502 +1,372 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mgamail.intel.com (mgamail.intel.com [198.175.65.10])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E419D1F893A;
-	Mon, 21 Oct 2024 13:50:08 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1729518611; cv=none; b=piyWALTjy3J+Iwl5RuA5uehVgvj2TzE0AJaJxBnA1l2GqdaZxx94A8Nl6ULNvB/5e8RUPkk8wmmQ8Eo0nMlAQH1+9c+GR7vDe8sUN5c3D5Z0pkbUl/rDo0vrGZdS5TpOiHZqfvBE7wssSrHK24J1tTX0UfBGX8WZ5dBWvozBXM4=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1729518611; c=relaxed/simple;
-	bh=Mk4WP6CpZUAGBdxTK3XDp41r9HAu4WggClc7ImgtTmg=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=ozRJ71PA19zDl/WJKrEv+zdG0FLbGi0Embd0jHiY3usa2PK2oaYGTRNvcgyo29gGC+liLezwkdw+KfZRoeso4P3sDi1dmyhJ2hsURDKBXPYi6m2WCfHPgL7vjoaNI9Tc+0b0ff0v2DEVzuMQku6NezU25xOB7qlFUGX8pHrZT5A=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=O0HgLyh6; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=kLQvQjNG; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=bBEbosy/; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=nfjM1NrQ; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 223FE1F9A8F;
+	Mon, 21 Oct 2024 14:05:14 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=198.175.65.10
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1729519517; cv=fail; b=imBbbcZcAOSAFUoo/r6SMI83RZuNqLF2d0g5Zf4sAQjZIGnTCQGsUQWjtKaQKfxHuIa+5N/fR2Ubqm4oYroB+sMqTRMjVrkTkgwVOl2h+JeBXyoooKQc0q186K/Yus14suEqKUfRdOSTIVzftIZrJ51hjfBE/YI2rTmBISKmbg4=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1729519517; c=relaxed/simple;
+	bh=o3uEcmrUhndbyBrTfWB/276eCnehUHTySx5OlXFGNOU=;
+	h=Date:From:To:CC:Subject:Message-ID:References:Content-Type:
+	 Content-Disposition:In-Reply-To:MIME-Version; b=JsS7gGPwtbIQnen2Z15BWVMEogOykLm94ugk+OdOXduUlMNsLMwv4Z6mawvUme+7ZUtPZscUD3i5lPu+tYSkqSOrjpTg/9Z+88sJctYTcTpcwIBoIGAg5aLstJNA2f32Pyf5VtRwU8jlC0dJ+pBkaXv03mrp1mIWR1earZJ4S4o=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com; spf=pass smtp.mailfrom=intel.com; dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b=iu8ALFKA; arc=fail smtp.client-ip=198.175.65.10
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=intel.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="O0HgLyh6";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="kLQvQjNG";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="bBEbosy/";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="nfjM1NrQ"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id D93221FC30;
-	Mon, 21 Oct 2024 13:50:06 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1729518607;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=j32sOaTX8Z5KiUM7kADyk2rsoZ2zkdVwYZam0ikQ/OQ=;
-	b=O0HgLyh6YxgsuoGlgdD2WQpVs+KEi5Zw2v8IYcpjgjYZWnsnOARfXVxIbuxqKZjfFVMcNL
-	x/zeL2CxYz2SClMNzHNRKOt++c0d0OrLWyjQMcDBni3PEEeCbvhesHYLJt+v8nBeMKO7gW
-	La1zucr6jKahnVKBkL8/ImL4tNasfQI=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1729518607;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=j32sOaTX8Z5KiUM7kADyk2rsoZ2zkdVwYZam0ikQ/OQ=;
-	b=kLQvQjNG8bKZSNhugjV0BAhwa9ruNrQpQZfY/bp1IqEuzSwNmIYclhhsKI6iiES2j7xXVM
-	7OQbDuQhVlpdI9CQ==
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b="bBEbosy/";
-	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=nfjM1NrQ
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1729518606;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=j32sOaTX8Z5KiUM7kADyk2rsoZ2zkdVwYZam0ikQ/OQ=;
-	b=bBEbosy/Z0eOAbsbdcUulY237+ovbxRxyauJGaVW0rbm92aEDsEi0p7HS8V2qZBWU04AYV
-	LbcgQeD4huf85iJ7tFZYBeMSBYE6ITUGp+Xu6V25utOrFoL5HY8lFoSCjvJwhIYs/w6r9d
-	TvqJ99Z0X6j+b0mO67GTwxMK4k7Shh8=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1729518606;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=j32sOaTX8Z5KiUM7kADyk2rsoZ2zkdVwYZam0ikQ/OQ=;
-	b=nfjM1NrQCAA5Q8sKaX36KZH+O/Tap6ljteRhx8M4uapBvefetNPTMOV1bBPrWLhNWqPRs4
-	Z+wLIBi+MsCVJCDQ==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id B4FC9139E0;
-	Mon, 21 Oct 2024 13:50:06 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id bQD+Kw5cFmfsSAAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Mon, 21 Oct 2024 13:50:06 +0000
-Date: Mon, 21 Oct 2024 15:50:05 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Mark Harmstone <maharmstone@fb.com>
-Cc: linux-btrfs@vger.kernel.org, io-uring@vger.kernel.org
-Subject: Re: [PATCH 5/5] btrfs: add io_uring command for encoded reads
-Message-ID: <20241021135005.GC17835@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20241014171838.304953-1-maharmstone@fb.com>
- <20241014171838.304953-6-maharmstone@fb.com>
+	dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b="iu8ALFKA"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
+  t=1729519516; x=1761055516;
+  h=date:from:to:cc:subject:message-id:references:
+   in-reply-to:mime-version;
+  bh=o3uEcmrUhndbyBrTfWB/276eCnehUHTySx5OlXFGNOU=;
+  b=iu8ALFKAi6Tdk9/PbhOS393FUZBST7oWSw7xbxB50wGQYopSCQaS34wk
+   hYXlXi1NdDhHN/nSTHGey7twk7hKek1foBSg9HZLs97Xs7pwl7W4E13bL
+   xiwe6D9yo+75YSY5i/wQmgRgcC9jwuDNzJzheqlp/k+MDcxJgcOakX01I
+   yJnnajPHufJT+FeFob0cw62ORdgGu+ITUL9wQxtsJJ1wpq+1896/ESpRo
+   w0xyTuuYkOQpPMNmXvPDoT/XmKkkNpAl/UIJ+rqZWJ/CriBq/WILBkp+x
+   N/yQJPwVSMekzLGnTa3Gzd9L8GkvahmJgjbHfjafWAKZc93RGLLADaXTR
+   A==;
+X-CSE-ConnectionGUID: oZHFE0WEQ921U/ICCpUsPQ==
+X-CSE-MsgGUID: ZLTOZJsqQmSH7xKFcEYPTA==
+X-IronPort-AV: E=McAfee;i="6700,10204,11222"; a="46469245"
+X-IronPort-AV: E=Sophos;i="6.11,199,1725346800"; 
+   d="scan'208";a="46469245"
+Received: from orviesa005.jf.intel.com ([10.64.159.145])
+  by orvoesa102.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 21 Oct 2024 07:04:50 -0700
+X-CSE-ConnectionGUID: GEueAy7rRCW7cp2tLE1xbg==
+X-CSE-MsgGUID: KC7MElVEQZmjXs8vQbCHYQ==
+X-ExtLoop1: 1
+X-IronPort-AV: E=Sophos;i="6.11,221,1725346800"; 
+   d="scan'208";a="84326996"
+Received: from orsmsx602.amr.corp.intel.com ([10.22.229.15])
+  by orviesa005.jf.intel.com with ESMTP/TLS/AES256-GCM-SHA384; 21 Oct 2024 07:04:50 -0700
+Received: from orsmsx601.amr.corp.intel.com (10.22.229.14) by
+ ORSMSX602.amr.corp.intel.com (10.22.229.15) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
+ 15.1.2507.39; Mon, 21 Oct 2024 07:04:49 -0700
+Received: from ORSEDG602.ED.cps.intel.com (10.7.248.7) by
+ orsmsx601.amr.corp.intel.com (10.22.229.14) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
+ 15.1.2507.39 via Frontend Transport; Mon, 21 Oct 2024 07:04:49 -0700
+Received: from NAM10-DM6-obe.outbound.protection.outlook.com (104.47.58.45) by
+ edgegateway.intel.com (134.134.137.103) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.1.2507.39; Mon, 21 Oct 2024 07:04:49 -0700
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
+ b=HZxPrGsjDeGLXNsWlDxXuwZIISSbEf9bvlZhu9csytQSwUlpyCcU+1DOuVFIct5JDKmdJJIMrmwpssSjhlBiipxDChvSHzHlQqj967CFQa5Z0MZke6wS27MtopVTPyMOJQwMMPvDyOZ+L4M5VNj9qsfPBJDsv7Ft27+LDPxscv0ZmjAu5gytyYbL/+Vs5su7iHH/n8ZdL2WslQ6erVtjGhBJgEXVrLqyn8bFjLH/XCmV7+mu8QG4SS21l83yNm833xGBlrA8DaGEs1qAXNGGURRbY6wXPbLNgFYGV2wQLnUoEBzbTcWgY+XvqNy9QQyAiswa+r0fah8mf6O2DFvTxA==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector10001;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=QGVqqoYTCXZwUFWdpB9g6VvlDgkp9dZynb6xH58jP7s=;
+ b=IFcfx8vCA7wVC7OU3/H+N3lkFZ9i3QYzn87v/yfX6r4GvR3eG5ubrRluPfdotI+eUSZAvvGMtBcMVpl6+gtI/yz7gc7z60lUJfdauv0/nlP6C4srXrBgXpzoyVjw8hbI/rasSPk87c6T8//KuIZ1B1wmpqNXehVoLLRpHgi5G6LSE+L+fV4L+OVWY9uZDVq+J4Yz9ly0ic19lbQ6uFIvXxq7VuTWAYBozzffebytj7di/RutzfKUN10DTfnqmr7ScWk/uMp+tjrGZ3cXzvzTY3A/SA/pDZifKh6X+AWO7n6T7vPJ1wvnQ4WJkrGoIhxjg5v/Jd1MeZiOzEDZM7t3LA==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=intel.com; dmarc=pass action=none header.from=intel.com;
+ dkim=pass header.d=intel.com; arc=none
+Authentication-Results: dkim=none (message not signed)
+ header.d=none;dmarc=none action=none header.from=intel.com;
+Received: from SA1PR11MB6733.namprd11.prod.outlook.com (2603:10b6:806:25c::17)
+ by SA1PR11MB5924.namprd11.prod.outlook.com (2603:10b6:806:23b::14) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.8069.28; Mon, 21 Oct
+ 2024 14:04:44 +0000
+Received: from SA1PR11MB6733.namprd11.prod.outlook.com
+ ([fe80::cf7d:9363:38f4:8c57]) by SA1PR11MB6733.namprd11.prod.outlook.com
+ ([fe80::cf7d:9363:38f4:8c57%3]) with mapi id 15.20.8069.027; Mon, 21 Oct 2024
+ 14:04:44 +0000
+Date: Mon, 21 Oct 2024 09:04:36 -0500
+From: Ira Weiny <ira.weiny@intel.com>
+To: Jonathan Cameron <Jonathan.Cameron@huawei.com>, Ira Weiny
+	<ira.weiny@intel.com>
+CC: "Li, Ming4" <ming4.li@intel.com>, Dave Jiang <dave.jiang@intel.com>, "Fan
+ Ni" <fan.ni@samsung.com>, Navneet Singh <navneet.singh@intel.com>, "Jonathan
+ Corbet" <corbet@lwn.net>, Andrew Morton <akpm@linux-foundation.org>, "Dan
+ Williams" <dan.j.williams@intel.com>, Davidlohr Bueso <dave@stgolabs.net>,
+	Alison Schofield <alison.schofield@intel.com>, Vishal Verma
+	<vishal.l.verma@intel.com>, <linux-btrfs@vger.kernel.org>,
+	<linux-cxl@vger.kernel.org>, <linux-doc@vger.kernel.org>,
+	<nvdimm@lists.linux.dev>, <linux-kernel@vger.kernel.org>
+Subject: Re: [PATCH v4 21/28] cxl/extent: Process DCD events and realize
+ region extents
+Message-ID: <67165f7447c77_8cb17294f0@iweiny-mobl.notmuch>
+References: <20241007-dcd-type2-upstream-v4-0-c261ee6eeded@intel.com>
+ <20241007-dcd-type2-upstream-v4-21-c261ee6eeded@intel.com>
+ <4337ddd9-312b-4fb7-9597-81e8b00d57cb@intel.com>
+ <6706de3530f5c_40429294b8@iweiny-mobl.notmuch>
+ <20241010155014.00004bdd@Huawei.com>
+ <67117e57479b3_2cee2942d@iweiny-mobl.notmuch>
+ <20241018100307.000008a9@Huawei.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Disposition: inline
+In-Reply-To: <20241018100307.000008a9@Huawei.com>
+X-ClientProxiedBy: MW4PR03CA0307.namprd03.prod.outlook.com
+ (2603:10b6:303:dd::12) To SA1PR11MB6733.namprd11.prod.outlook.com
+ (2603:10b6:806:25c::17)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20241014171838.304953-6-maharmstone@fb.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Rspamd-Queue-Id: D93221FC30
-X-Spam-Level: 
-X-Spamd-Result: default: False [-4.21 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	FUZZY_BLOCKED(0.00)[rspamd.com];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	MIME_TRACE(0.00)[0:+];
-	ARC_NA(0.00)[];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	TO_DN_SOME(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	DKIM_TRACE(0.00)[suse.cz:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	RCPT_COUNT_THREE(0.00)[3];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	REPLYTO_DOM_NEQ_TO_DOM(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.cz:dkim,suse.cz:replyto]
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Rspamd-Action: no action
-X-Spam-Score: -4.21
-X-Spam-Flag: NO
+X-MS-PublicTrafficType: Email
+X-MS-TrafficTypeDiagnostic: SA1PR11MB6733:EE_|SA1PR11MB5924:EE_
+X-MS-Office365-Filtering-Correlation-Id: 4a52e199-6c77-42bf-ee1b-08dcf1d95095
+X-LD-Processed: 46c98d88-e344-4ed4-8496-4ed7712e255d,ExtAddr
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam: BCL:0;ARA:13230040|376014|366016|7416014|1800799024;
+X-Microsoft-Antispam-Message-Info: =?us-ascii?Q?9Rmv7GU1UdmoNM80QfqEhJOBJiUiZy8ANKQgTwVTNfJUDkIPe/eGLuZD/ka9?=
+ =?us-ascii?Q?nT8s7Pcm7S992Bp9+FlQztep/pltdZAvAo4dGvZuDaFPdKn1ilFGO7jswwYr?=
+ =?us-ascii?Q?Yar/eFHT8mSJslnzDLHXTVD4NRrNKIdu6e0HebgHXdG6EvF9BQdjXMiTxowD?=
+ =?us-ascii?Q?R05YfQMfI/LgO/OmgWLqBeQ0Cz8sHvhJ2POB+o6MEE+sT1BaKuOtCcgbJAa7?=
+ =?us-ascii?Q?b+peVrI2kJGn+p4/l0PqbICh6bIISp0VYEz9dlwPJyuhHVQApcs0LZVz6i92?=
+ =?us-ascii?Q?QfOacazS/3vaqjmNojhwe8qTcLF3esnicKEVDww1H1KkemI3Dtzvv9PnrI3A?=
+ =?us-ascii?Q?ueymIkeg59PijbAIAVBOI7Bo+4Kamdkw+W8bLreYTcB7+r5/J5/9OGHOWhdS?=
+ =?us-ascii?Q?yrGm+Q5KpTCKFuGNxrBpDTha3feJsBuakZ4F59R19KiXdDK9f7wJEkWQhu12?=
+ =?us-ascii?Q?Mr5Zv0d6tGsVepUm0f3FhOlgh/ABbWAPfIoWM7y289SYQrZZkHUNlRnUYWCa?=
+ =?us-ascii?Q?cE4MwsyRFjOrTbzZKLdfPPuv9SelbNzOItDiYmnWmvgNyy2BSbUnAXaouGlI?=
+ =?us-ascii?Q?WEx1XVusKAdZzKYpDRcqZgKsjwcjGDiZP/nSrf88FgZryf1gHDeXWDZkdQJ+?=
+ =?us-ascii?Q?dHlOJbc6pUO8HjusyxAnj1zFGmy8k/IF/nrdbOSH7Rt3RDwZz+4WS2UkQcaN?=
+ =?us-ascii?Q?LIWinu/kUhHJHbMkM3k0mB4ptADpb3Az2oXkdYo2iqAk5fM4H0Jc/dBWC+1K?=
+ =?us-ascii?Q?iU9q3P6Zivy0rr0vl3dbJIpCprtoGhibkJ4M8yJtEuPyEPsRmKCRFDg0NadD?=
+ =?us-ascii?Q?+wOOumdpcp8e8PAsq8P68ViCN4fH9KCJwuwb+qwtBaoh2uXD3E0VWDHTmwES?=
+ =?us-ascii?Q?pS0Cf2u2zYJQb7rbqkijnG1cspbrHQ4gAaJDwapuBWX7D/Y+OB+qvl3Y9J6o?=
+ =?us-ascii?Q?zwL4jGdImCiM8TGMHBdHCViHXmgZDYYzX5+oH8EyLwVHf0dOTxO2mZNlEtxd?=
+ =?us-ascii?Q?9np9pZVvfmf7tNaiR/LbsI+cWCAWkqzmgy3jb7kT0r5LsmbyCTPygcaWLwLE?=
+ =?us-ascii?Q?nsWztgu3bFbh/2iJ6Fe9otSHhGUioNdPICpeBDJBNy+p99QPCx0tQ/TQsMlY?=
+ =?us-ascii?Q?XeVIxyZZ8n6VSHgO2zShFPoHbnuCMeSgV3XDeCqqPvolMRezDgtGLMLRbjhK?=
+ =?us-ascii?Q?EDhW2sh6pQyDQFL5UWfbSIHT6o1imn0bo8lxghnKGJyoUp7/RPn2UnvDOvS6?=
+ =?us-ascii?Q?KCd7VvxjOsC9ZNR41CndDiJ19qb4whGd5AfjeJ+dgQYjfBAzVO/4/rm/4N3d?=
+ =?us-ascii?Q?kDpAseMFFYJ/gAFmzxyl8bi3?=
+X-Forefront-Antispam-Report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SA1PR11MB6733.namprd11.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(376014)(366016)(7416014)(1800799024);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-MessageData-0: =?us-ascii?Q?7Zh6beXqdh3xyqh8TzpLXRxY6d9GwwqoIR7EWDCrvfNOXPAnDYxK3OKA1TJ8?=
+ =?us-ascii?Q?o3euwWhf2fN2Kqf/w2arCFqRFA0JbBHoGIIG9Q7v8DV226/wWxORWbJ75ehD?=
+ =?us-ascii?Q?bA4f9Y17Zy0/wtLI7VPHyIijdRxO1G0nU+NnKoo2/ijcwrlNghH2ZaYbeafV?=
+ =?us-ascii?Q?sBgb9fKmwsYqGzF3QjTq+G9nN0HhTK4D5OO2ZS6F7XfGDjmuIC9SvXVJYlnw?=
+ =?us-ascii?Q?kEbrItJBg9xhtx2WeYyZRxGSwOBZTDrrrKLckIWpkszB2h8zJEVFgcjZc1n8?=
+ =?us-ascii?Q?mrlEWmbsyaF8KmE/PiE2WORjaCIBi7bNO7hNLf6fgEmXgOMX/Wqc5IY7A9+T?=
+ =?us-ascii?Q?Ui3gVfOp0yYa29n9g1KGaZg28YfrGai+r3ZmcLzhB3h0Zi0KJnQxsLv4AmM8?=
+ =?us-ascii?Q?qdC6iKIgnSflJqueJYXs+y0giepkc977AiJdPbCYRcUvCenJ+3nrgt+hCK8A?=
+ =?us-ascii?Q?JQOjYKhVXm28mS2fp3zliGYywLcLnz3/iUKe6GqXpNRJPyyxeuCV71hGVgWx?=
+ =?us-ascii?Q?tF98trb+1efkSp5Xpeh0qcuoWlIdfcHhLAHRV6VGxDL3M5XVzw8Zm0EGiOiT?=
+ =?us-ascii?Q?SBY2dGRt5bzyUlySNnu4neucMBO9wOkwh2gAypd3cbpSF6VjJ7ZS7Y10xY74?=
+ =?us-ascii?Q?Lfw6Jzs8wfkHNwW/F6vIGb1TotLxVI6cCjN21c0RW1i+E4I47XaXcNnI7iNB?=
+ =?us-ascii?Q?8Vk7LWcmE7LZzSbzBZZGN0AQ5smjsnVb1dpt6fS5Px4NFBmtBCTzs69d+9aT?=
+ =?us-ascii?Q?9R2z1UoAsRzQArCgvp0sz2x8qfHyHgsOmhst2wui/8b8rmAKBN6qwpLIrbNJ?=
+ =?us-ascii?Q?1lo/iwRA2ef8gbQT3xVtfGlBgbgzAF5O8CV5LY/+PBSnVFiHPJbe0rnrUzcW?=
+ =?us-ascii?Q?g0OymDEhHbYrFYtmOO56k+Po7LXCGtIvZvlD8JFtwA3tap5cn7Z6xdFe1iCs?=
+ =?us-ascii?Q?mA3U4ygd9L6WTPelU2R7fiuB0rNSX2RObPkvgVevSFJpI220LbIJP7pf/rZI?=
+ =?us-ascii?Q?aOHXtbm+nLYc0mN7ZJ3ZDCq6lARx0LF5asFE7hVtziqO0KcbrmhMt9IOQC1B?=
+ =?us-ascii?Q?oZAcoLT7MKCQLpGoECaD1+vTg+f81pGs4JRAaqqt/J4aH7aPLa1pR7y7bgjE?=
+ =?us-ascii?Q?fgMlZ1367NQ/Ii4ufvQKOpSG3tOxsceqpclV41OcKiJJtHnus3ryK3MlwIc7?=
+ =?us-ascii?Q?Nbo5zz1X0QYpYFOPkCZzhTggEcSr16yhCIlaocmHYVaQ2l/Bn+bVhUEQQLL1?=
+ =?us-ascii?Q?xzP6lqmunKrhm7LHnaUxLSFB+JM1O2x5L/A5FTw+fuL8kM7KvZK3ptr+ru8K?=
+ =?us-ascii?Q?5r+s12B9YCvC51MEXoTAu42O3SqBPUGA6SsoEbsp9dtLdbkIqR4f+xBcbkZ1?=
+ =?us-ascii?Q?7E00aqMDMN6gPx7/HkdI/X4QIn72bLY0K7lvhZX7nyNWuxuwsP1zdtUds71K?=
+ =?us-ascii?Q?2aftEHGTee0h9doGr33e2nJ7ZrP285kzfrBme2/OKVYGiYreGzIWFPa5Bn5r?=
+ =?us-ascii?Q?R7VdA75GkLUzfzdhXufdGN/Urw+m2dlNAGtAdDO+jThwcdRq+c41cnrcOKhA?=
+ =?us-ascii?Q?9pZaEz4S2QjeAp2UP0XhMzI++6Un336PWpcYhtJP?=
+X-MS-Exchange-CrossTenant-Network-Message-Id: 4a52e199-6c77-42bf-ee1b-08dcf1d95095
+X-MS-Exchange-CrossTenant-AuthSource: SA1PR11MB6733.namprd11.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 21 Oct 2024 14:04:44.5046
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: 46c98d88-e344-4ed4-8496-4ed7712e255d
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: VIa/nJxg+ES1147eeIxb+NngAymS7nFtnmfPVSSnwTeOKvs68PwVIJRRoSzhCPKVukV3gDhkofvD+SKk71vPtQ==
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: SA1PR11MB5924
+X-OriginatorOrg: intel.com
 
-On Mon, Oct 14, 2024 at 06:18:27PM +0100, Mark Harmstone wrote:
-> Adds an io_uring command for encoded reads, using the same interface as
-
-Add ...
-
-> the existing BTRFS_IOC_ENCODED_READ ioctl.
-
-This is probably a good summary in a changelog but the patch is quite
-long so it feels like this should be described in a more detail how it's
-done. Connecting two interfaces can be done in various ways, so at least
-mention that it's a simple pass through, or if there are any
-complications regardign locking, object lifetime and such.
-
-> Signed-off-by: Mark Harmstone <maharmstone@fb.com>
-> ---
->  fs/btrfs/file.c  |   1 +
->  fs/btrfs/ioctl.c | 283 +++++++++++++++++++++++++++++++++++++++++++++++
->  fs/btrfs/ioctl.h |   1 +
->  3 files changed, 285 insertions(+)
+Jonathan Cameron wrote:
+> On Thu, 17 Oct 2024 16:15:03 -0500
+> Ira Weiny <ira.weiny@intel.com> wrote:
 > 
-> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> index 2aeb8116549c..e33ca73fef8c 100644
-> --- a/fs/btrfs/file.c
-> +++ b/fs/btrfs/file.c
-> @@ -3774,6 +3774,7 @@ const struct file_operations btrfs_file_operations = {
->  	.compat_ioctl	= btrfs_compat_ioctl,
->  #endif
->  	.remap_file_range = btrfs_remap_file_range,
-> +	.uring_cmd	= btrfs_uring_cmd,
->  	.fop_flags	= FOP_BUFFER_RASYNC | FOP_BUFFER_WASYNC,
->  };
->  
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 8c9ff4898ab0..c0393575cf5e 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -29,6 +29,7 @@
->  #include <linux/fileattr.h>
->  #include <linux/fsverity.h>
->  #include <linux/sched/xacct.h>
-> +#include <linux/io_uring/cmd.h>
->  #include "ctree.h"
->  #include "disk-io.h"
->  #include "export.h"
-> @@ -4723,6 +4724,288 @@ static int btrfs_ioctl_encoded_write(struct file *file, void __user *argp, bool
->  	return ret;
->  }
->  
-> +struct btrfs_uring_priv {
-> +	struct io_uring_cmd *cmd;
-> +	struct page **pages;
-> +	unsigned long nr_pages;
-> +	struct kiocb iocb;
-> +	struct iovec *iov;
-> +	struct iov_iter iter;
-> +	struct extent_state *cached_state;
-> +	u64 count;
-> +	bool compressed;
+> > Jonathan Cameron wrote:
+> > > On Wed, 9 Oct 2024 14:49:09 -0500
+> > > Ira Weiny <ira.weiny@intel.com> wrote:
+> > >   
+> > > > Li, Ming4 wrote:  
+> > > > > On 10/8/2024 7:16 AM, ira.weiny@intel.com wrote:    
+> > > > > > From: Navneet Singh <navneet.singh@intel.com>
+> > > > > >    
+> > 
+> > [snip]
+> > 
 
-This leaves a 7 byte hole.
+[snip]
 
-> +	u64 start;
-> +	u64 lockend;
-> +};
+> > 
+> > So...  for clarity among all of us here is the new function.  I'm not thrilled
+> > with the use of a goto but I think it is ok here.
+> 
+> Easy enough to avoid and I don't think it hurts readability much to do so.
 
-The whole structure should be documented and the members too if it's not
-obvious what they are used for.
+I disagree...  See below.
 
-> +
-> +static void btrfs_uring_read_finished(struct io_uring_cmd *cmd,
-> +				      unsigned int issue_flags)
-> +{
-> +	struct btrfs_uring_priv *priv = (struct btrfs_uring_priv *)*(uintptr_t*)cmd->pdu;
-> +	struct btrfs_inode *inode = BTRFS_I(file_inode(priv->iocb.ki_filp));
-> +	struct extent_io_tree *io_tree = &inode->io_tree;
-> +	unsigned long i;
+> 
+> Your code should work though.
+> 
+> > 
+> > Ira
+> > 
+> > static int cxl_send_dc_response(struct cxl_memdev_state *mds, int opcode,      
+> >                                struct xarray *extent_array, int cnt)           
+> > {                                                                              
+> >        struct cxl_mailbox *cxl_mbox = &mds->cxlds.cxl_mbox;                    
+> >        struct cxl_mbox_dc_response *p;                                         
+> >        struct cxl_mbox_cmd mbox_cmd;                                           
+> >        struct cxl_extent *extent;                                              
+> >        unsigned long index;                                                    
+> >        u32 pl_index;                                                           
+> >        int rc;                                                                 
+> >                                                                                
+> >        size_t pl_size = struct_size(p, extent_list, cnt);                      
+> >        u32 max_extents = cnt;                                              
+> >                                                                                
+> >        /* May have to use more bit on response. */                             
+> >        if (pl_size > cxl_mbox->payload_size) {                                 
+> >                max_extents = (cxl_mbox->payload_size - sizeof(*p)) /           
+> >                              sizeof(struct updated_extent_list);               
+> >                pl_size = struct_size(p, extent_list, max_extents);
+>              
+> >        }                                                                       
+> >                                                                                
+> >        struct cxl_mbox_dc_response *response __free(kfree) =                   
+> >                                                kzalloc(pl_size, GFP_KERNEL);   
+> >        if (!response)                                                          
+> >                return -ENOMEM;                                                 
+> >                                                                                
+> >        pl_index = 0;                                                           
+> >        if (cnt == 0)                                                           
+> >                goto send_zero_accepted;
+> >        xa_for_each(extent_array, index, extent) {                              
+> >                response->extent_list[pl_index].dpa_start = extent->start_dpa;  
+> >                response->extent_list[pl_index].length = extent->length;        
+> >                pl_index++;                                                     
+> >                response->extent_list_size = cpu_to_le32(pl_index);    
+> 
+> Why set this here - to me makes more sense to set it only once but I can
+> see the logic either way.
 
-Why is this long?
+I put it here to group it with the changing of pl_index.  It is extra work.
 
-> +	u64 cur;
-> +	size_t page_offset;
-> +	ssize_t ret;
-> +
-> +	if (priv->compressed) {
-> +		i = 0;
-> +		page_offset = 0;
-> +	} else {
-> +		i = (priv->iocb.ki_pos - priv->start) >> PAGE_SHIFT;
-> +		page_offset = (priv->iocb.ki_pos - priv->start) & (PAGE_SIZE - 1);
+Since I'm resending I'll make the quick change.
 
-Please don't open code page_offset()
+>          
+> >   
+> >                if (pl_index == max_extents) {                                  
+> >                        mbox_cmd = (struct cxl_mbox_cmd) {                      
+> >                                .opcode = opcode,                               
+> >                                .size_in = struct_size(response, extent_list,   
+> >                                                       pl_index),               
+> >                                .payload_in = response,                         
+> >                        };                                                      
+> >                                                                                
+> >                        response->flags = 0;                                    
+> >                        if (pl_index < cnt)                                     
+> >                                response->flags &= CXL_DCD_EVENT_MORE;          
+> >                                                                                
+> >                        rc = cxl_internal_send_cmd(cxl_mbox, &mbox_cmd);        
+> >                        if (rc)                                                 
+> >                                return rc;                                      
+> >                        cnt -= pl_index;                                        
+> >                        pl_index = 0;                                          
+> >                }                                                               
+> >        }                                                                       
+> >                                                                                
+> >        if (!pl_index)                                                          
+> >                return 0;                                                       
+> >                                                                                
+> > send_zero_accepted:                                                            
+> >        mbox_cmd = (struct cxl_mbox_cmd) {                                      
+> >                .opcode = opcode,                                               
+> >                .size_in = struct_size(response, extent_list,                   
+> >                                       pl_index),                               
+> >                .payload_in = response,                                         
+> >        };                                                                      
+> >                                                                                
+> >        response->flags = 0;                                                    
+> >        return cxl_internal_send_cmd(cxl_mbox, &mbox_cmd);                      
+> > }                
+> 
+> 
+> Alternative form for what you have...
 
-> +	}
-> +	cur = 0;
-> +	while (cur < priv->count) {
-> +		size_t bytes = min_t(size_t, priv->count - cur,
-> +				     PAGE_SIZE - page_offset);
-> +
-> +		if (copy_page_to_iter(priv->pages[i], page_offset, bytes,
-> +				      &priv->iter) != bytes) {
-> +			ret = -EFAULT;
-> +			goto out;
-> +		}
-> +
-> +		i++;
-> +		cur += bytes;
-> +		page_offset = 0;
-> +	}
-> +	ret = priv->count;
-> +
-> +out:
-> +	unlock_extent(io_tree, priv->start, priv->lockend, &priv->cached_state);
-> +	btrfs_inode_unlock(inode, BTRFS_ILOCK_SHARED);
-> +
-> +	io_uring_cmd_done(cmd, ret, 0, issue_flags);
-> +	add_rchar(current, ret);
-> +
-> +	for (unsigned long i = 0; i < priv->nr_pages; i++) {
+Sure but lots of indentation on the common path which I have grown
+to avoid...  :-/
 
-Shadowing 'i' of the same type as is declared in the function. Maybe
-don't call it just 'i' but index as it's used outside of a loop.
+Looking at this fresh...  A helper function works best.
 
-> +		__free_page(priv->pages[i]);
-> +	}
 
-Please drop the outer { } for a single statement block.
 
-> +
-> +	kfree(priv->pages);
-> +	kfree(priv->iov);
-> +	kfree(priv);
-> +}
-> +
-> +static void btrfs_uring_read_extent_cb(void *ctx, int err)
-> +{
-> +	struct btrfs_uring_priv *priv = ctx;
-> +
-> +	*(uintptr_t*)priv->cmd->pdu = (uintptr_t)priv;
+static int send_one_response(struct cxl_mailbox *cxl_mbox,
+                             struct cxl_mbox_dc_response *response,
+                             int opcode, u32 extent_list_size, u8 flags)
+{
+        struct cxl_mbox_cmd mbox_cmd = (struct cxl_mbox_cmd) {
+                .opcode = opcode,
+                .size_in = struct_size(response, extent_list, extent_list_size),
+                .payload_in = response,
+        };
 
-Isn't there a helper for that? Type casting should be done in justified
-cases and as an exception.
+        response->extent_list_size = cpu_to_le32(extent_list_size);
+        response->flags = flags;
+        return cxl_internal_send_cmd(cxl_mbox, &mbox_cmd);
+}
 
-> +	io_uring_cmd_complete_in_task(priv->cmd, btrfs_uring_read_finished);
-> +}
-> +
-> +static int btrfs_uring_read_extent(struct kiocb *iocb, struct iov_iter *iter,
-> +				   u64 start, u64 lockend,
-> +				   struct extent_state *cached_state,
-> +				   u64 disk_bytenr, u64 disk_io_size,
-> +				   size_t count, bool compressed,
-> +				   struct iovec *iov,
-> +				   struct io_uring_cmd *cmd)
-> +{
-> +	struct btrfs_inode *inode = BTRFS_I(file_inode(iocb->ki_filp));
-> +	struct extent_io_tree *io_tree = &inode->io_tree;
-> +	struct page **pages;
-> +	struct btrfs_uring_priv *priv = NULL;
-> +	unsigned long nr_pages;
-> +	int ret;
-> +
-> +	nr_pages = DIV_ROUND_UP(disk_io_size, PAGE_SIZE);
-> +	pages = kcalloc(nr_pages, sizeof(struct page *), GFP_NOFS);
-> +	if (!pages)
-> +		return -ENOMEM;
-> +	ret = btrfs_alloc_page_array(nr_pages, pages, 0);
+static int cxl_send_dc_response(struct cxl_memdev_state *mds, int opcode,
+                                struct xarray *extent_array, int cnt)
+{
+        struct cxl_mailbox *cxl_mbox = &mds->cxlds.cxl_mbox;
+        struct cxl_mbox_dc_response *p;
+        struct cxl_extent *extent;
+        unsigned long index;
+        u32 pl_index;
 
-The allocation sizes are derived from disk_io_size that comes from the
-outside, potentially making large allocatoins. Or is there some inherent
-limit on the maximu size?
+        size_t pl_size = struct_size(p, extent_list, cnt);
+        u32 max_extents = cnt;
 
-> +	if (ret) {
-> +		ret = -ENOMEM;
-> +		goto fail;
-> +	}
-> +
-> +	priv = kmalloc(sizeof(*priv), GFP_NOFS);
-> +	if (!priv) {
-> +		ret = -ENOMEM;
-> +		goto fail;
-> +	}
-> +
-> +	priv->iocb = *iocb;
-> +	priv->iov = iov;
-> +	priv->iter = *iter;
-> +	priv->count = count;
-> +	priv->cmd = cmd;
-> +	priv->cached_state = cached_state;
-> +	priv->compressed = compressed;
-> +	priv->nr_pages = nr_pages;
-> +	priv->pages = pages;
-> +	priv->start = start;
-> +	priv->lockend = lockend;
-> +
-> +	ret = btrfs_encoded_read_regular_fill_pages(inode, start, disk_bytenr,
-> +						    disk_io_size, pages,
-> +						    btrfs_uring_read_extent_cb,
-> +						    priv);
-> +	if (ret)
-> +		goto fail;
-> +
-> +	return -EIOCBQUEUED;
-> +
-> +fail:
-> +	unlock_extent(io_tree, start, lockend, &cached_state);
-> +	btrfs_inode_unlock(inode, BTRFS_ILOCK_SHARED);
-> +	kfree(priv);
+        /* May have to use more bit on response. */
+        if (pl_size > cxl_mbox->payload_size) {
+                max_extents = (cxl_mbox->payload_size - sizeof(*p)) /
+                              sizeof(struct updated_extent_list);
+                pl_size = struct_size(p, extent_list, max_extents);
+        }
 
-Does this leak pages and priv->pages?
+        struct cxl_mbox_dc_response *response __free(kfree) =
+                                                kzalloc(pl_size, GFP_KERNEL);
+        if (!response)
+                return -ENOMEM;
 
-> +	return ret;
-> +}
-> +
-> +static int btrfs_uring_encoded_read(struct io_uring_cmd *cmd,
-> +				    unsigned int issue_flags)
-> +{
-> +	size_t copy_end_kernel = offsetofend(struct btrfs_ioctl_encoded_io_args,
-> +					     flags);
-> +	size_t copy_end;
-> +	struct btrfs_ioctl_encoded_io_args args = {0};
-                                                = { 0 }
-> +	int ret;
-> +	u64 disk_bytenr, disk_io_size;
-> +	struct file *file = cmd->file;
-> +	struct btrfs_inode *inode = BTRFS_I(file->f_inode);
-> +	struct btrfs_fs_info *fs_info = inode->root->fs_info;
-> +	struct extent_io_tree *io_tree = &inode->io_tree;
-> +	struct iovec iovstack[UIO_FASTIOV];
-> +	struct iovec *iov = iovstack;
-> +	struct iov_iter iter;
-> +	loff_t pos;
-> +	struct kiocb kiocb;
-> +	struct extent_state *cached_state = NULL;
-> +	u64 start, lockend;
+        if (cnt == 0)
+                return send_one_response(cxl_mbox, response, opcode, 0, 0);
 
-The stack consumption looks quite high.
+        pl_index = 0;
+        xa_for_each(extent_array, index, extent) {
+                response->extent_list[pl_index].dpa_start = extent->start_dpa;
+                response->extent_list[pl_index].length = extent->length;
+                pl_index++;
 
-> +
-> +	if (!capable(CAP_SYS_ADMIN)) {
-> +		ret = -EPERM;
-> +		goto out_acct;
-> +	}
-> +
-> +	if (issue_flags & IO_URING_F_COMPAT) {
-> +#if defined(CONFIG_64BIT) && defined(CONFIG_COMPAT)
-> +		struct btrfs_ioctl_encoded_io_args_32 args32;
-> +
-> +		copy_end = offsetofend(struct btrfs_ioctl_encoded_io_args_32,
-> +				       flags);
-> +		if (copy_from_user(&args32, (const void *)cmd->sqe->addr,
-> +				   copy_end)) {
-> +			ret = -EFAULT;
-> +			goto out_acct;
-> +		}
-> +		args.iov = compat_ptr(args32.iov);
-> +		args.iovcnt = args32.iovcnt;
-> +		args.offset = args32.offset;
-> +		args.flags = args32.flags;
-> +#else
-> +		return -ENOTTY;
-> +#endif
-> +	} else {
-> +		copy_end = copy_end_kernel;
-> +		if (copy_from_user(&args, (const void *)cmd->sqe->addr,
-> +				   copy_end)) {
-> +			ret = -EFAULT;
-> +			goto out_acct;
-> +		}
-> +	}
-> +
-> +	if (args.flags != 0)
-> +		return -EINVAL;
-> +
-> +	ret = import_iovec(ITER_DEST, args.iov, args.iovcnt, ARRAY_SIZE(iovstack),
-> +			   &iov, &iter);
-> +	if (ret < 0)
-> +		goto out_acct;
-> +
-> +	if (iov_iter_count(&iter) == 0) {
-> +		ret = 0;
-> +		goto out_free;
-> +	}
-> +
-> +	pos = args.offset;
-> +	ret = rw_verify_area(READ, file, &pos, args.len);
-> +	if (ret < 0)
-> +		goto out_free;
-> +
-> +	init_sync_kiocb(&kiocb, file);
-> +	kiocb.ki_pos = pos;
-> +
-> +	start = ALIGN_DOWN(pos, fs_info->sectorsize);
-> +	lockend = start + BTRFS_MAX_UNCOMPRESSED - 1;
-> +
-> +	ret = btrfs_encoded_read(&kiocb, &iter, &args,
-> +				 issue_flags & IO_URING_F_NONBLOCK,
-> +				 &cached_state, &disk_bytenr, &disk_io_size);
-> +	if (ret < 0 && ret != -EIOCBQUEUED)
-> +		goto out_free;
-> +
-> +	file_accessed(file);
-> +
-> +	if (copy_to_user((void*)(uintptr_t)cmd->sqe->addr + copy_end,
-> +			 (char *)&args + copy_end_kernel,
+                if (pl_index == max_extents) {
+                        u8 flags = 0;
+                        int rc;
 
-So many type casts again
+                        if (pl_index < cnt)
+                                flags &= CXL_DCD_EVENT_MORE;
+                        rc = send_one_response(cxl_mbox, response, opcode,
+                                               pl_index, flags);
+                        if (rc) 
+                                return rc;
+                        cnt -= pl_index;
+                        pl_index = 0;
+                }
+        }
 
-> +			 sizeof(args) - copy_end_kernel)) {
-> +		if (ret == -EIOCBQUEUED) {
-> +			unlock_extent(io_tree, start, lockend, &cached_state);
-> +			btrfs_inode_unlock(inode, BTRFS_ILOCK_SHARED);
-> +		}
-> +		ret = -EFAULT;
-> +		goto out_free;
-> +	}
-> +
-> +	if (ret == -EIOCBQUEUED) {
-> +		u64 count;
-> +
-> +		/* If we've optimized things by storing the iovecs on the stack,
-> +		 * undo this.  */
-
-This is not proper comment formatting.
-
-> +		if (!iov) {
-> +			iov = kmalloc(sizeof(struct iovec) * args.iovcnt,
-> +				      GFP_NOFS);
-> +			if (!iov) {
-> +				unlock_extent(io_tree, start, lockend,
-> +					      &cached_state);
-> +				btrfs_inode_unlock(inode, BTRFS_ILOCK_SHARED);
-> +				ret = -ENOMEM;
-> +				goto out_acct;
-> +			}
-> +
-> +			memcpy(iov, iovstack,
-> +			       sizeof(struct iovec) * args.iovcnt);
-> +		}
-> +
-> +		count = min_t(u64, iov_iter_count(&iter), disk_io_size);
-> +
-> +		ret = btrfs_uring_read_extent(&kiocb, &iter, start, lockend,
-> +					      cached_state, disk_bytenr,
-> +					      disk_io_size, count,
-> +					      args.compression, iov, cmd);
-> +
-> +		goto out_acct;
-> +	}
-> +
-> +out_free:
-> +	kfree(iov);
-> +
-> +out_acct:
-> +	if (ret > 0)
-> +		add_rchar(current, ret);
-> +	inc_syscr(current);
-> +
-> +	return ret;
-> +}
-> +
-> +int btrfs_uring_cmd(struct io_uring_cmd *cmd, unsigned int issue_flags)
-> +{
-> +	switch (cmd->cmd_op) {
-> +	case BTRFS_IOC_ENCODED_READ:
-> +#if defined(CONFIG_64BIT) && defined(CONFIG_COMPAT)
-> +	case BTRFS_IOC_ENCODED_READ_32:
-> +#endif
-> +		return btrfs_uring_encoded_read(cmd, issue_flags);
-> +	}
-> +
-> +	return -EINVAL;
-> +}
-> +
->  long btrfs_ioctl(struct file *file, unsigned int
->  		cmd, unsigned long arg)
->  {
+        if (!pl_index) /* nothing more to do */
+                return 0;
+        return send_one_response(cxl_mbox, response, opcode, pl_index, 0);
+}

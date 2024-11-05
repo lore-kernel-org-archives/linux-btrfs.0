@@ -1,186 +1,386 @@
-Received: from esa4.hgst.iphmx.com (esa4.hgst.iphmx.com [216.71.154.42])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D7894383;
-	Tue,  5 Nov 2024 06:09:31 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=216.71.154.42
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1730786973; cv=fail; b=KJm2Z4yt3VRySRu2ChAlm/+2E+GyON2w0M3oPkwmEd1oZsa9vaEiIWMjsA/LxuOFASuo6W0fw7GQ2squQqacmjCbag9wI2iSUWxSsx09FJCzSPl2sqUxZBZKdD1CqJ+6PbQ9joLVKlx+edyjAJXz1BbZwfogQsFMtNYfj2odGLg=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1730786973; c=relaxed/simple;
-	bh=XVMIgLIJE/aYWrm/0UlzHMni1jmR78wiw87AApTanhA=;
-	h=From:To:CC:Subject:Date:Message-ID:References:In-Reply-To:
-	 Content-Type:MIME-Version; b=hWxcZ2Lsh7t/TXi9mdTbChNgjqrLrdjaAiD0FG8026+FehTaMoctNzA+wIW98szhpcVpRQBvl+s8QKg5Sx8nEemsmysqBxFpgKS87ba5z2+CmqGlPxHW/tW6lCUhcN5W9DT0bjCU9u4EFU+jnZwJrnHNZ6zKPo1PxA2GxpvS/2I=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=hd3R3+3j; dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b=myyoOC0W; arc=fail smtp.client-ip=216.71.154.42
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 96D121714A0
+	for <linux-btrfs@vger.kernel.org>; Tue,  5 Nov 2024 06:48:39 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1730789322; cv=none; b=gDUfL9yNywf7sw+iiykH4S2J5CIwj8SfFiWEdeCsEpOivWk4x3ZkqaO1JiWd3AsRk4zvmE7AoT0lC2USw1nfke4DFuaAfVjDEtJRaAC0NqWjkasFFLfN0eJmDmonmjcjcO72LjU+fcNOfLOk7T3lComLYZPe5NAS0Q2lSYK2zwQ=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1730789322; c=relaxed/simple;
+	bh=v0QeLkMeQIGiWqLMX28s6BLEgndE0d0qz+JPEkFO6+E=;
+	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=jHmOkteP7/89rlYe6xAip/3kLM65A0VJO6obp4NeOn+dxP9w5L1eBvvZ3WEZNssI4dg1IVoESW7ggxanycaaSKNyQsRgg+P7NKcrIEIn3UtN/wcKauAYWgTr3yJ7FilyIPHCgO3BDYLpYrRGWzZ8FCDDq7vvZTMlrl0sFl63h9s=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=MPONSHuO; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=MPONSHuO; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="hd3R3+3j";
-	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="myyoOC0W"
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1730786972; x=1762322972;
-  h=from:to:cc:subject:date:message-id:references:
-   in-reply-to:content-id:content-transfer-encoding:
-   mime-version;
-  bh=XVMIgLIJE/aYWrm/0UlzHMni1jmR78wiw87AApTanhA=;
-  b=hd3R3+3j1bEtXJDAJd0RHa7YfKxA4vVVy8nM0Xv/UdMDp9rqjMCrqMrm
-   m3lXpFbrxkLbhW5BwY2xIq9C7UbCnfN2aTvGuU9SYTvwRCjwVviQlopu5
-   zWJB1pIWp70gLS4SYi3nq3CGBOxCKG/H/aG2wkyaf3VEF95Y50BDcevy7
-   m/qIvYJss7BwgVID5N6tnj6BsddRS62vMoQ/cfWR0bfwZf9sgk722u6iX
-   eOOvuCV8yD11oUpLZWTRHtiAv//VEhcFr/KWRv12ek0c1t2+afq3gEvB7
-   vWVxR3OrrfEt9fKERJMoeCq3MTFMn8yRsQ7+6gYLpjixWg2E4ylSaYqOE
-   w==;
-X-CSE-ConnectionGUID: Okejn3ZkTRKy/tLUSROI3A==
-X-CSE-MsgGUID: ZUeKGMJ8SM+ep1gN5dKrdA==
-X-IronPort-AV: E=Sophos;i="6.11,259,1725292800"; 
-   d="scan'208";a="30046304"
-Received: from mail-westusazlp17012038.outbound.protection.outlook.com (HELO SJ2PR03CU001.outbound.protection.outlook.com) ([40.93.1.38])
-  by ob1.hgst.iphmx.com with ESMTP; 05 Nov 2024 14:09:30 +0800
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
- b=WKG4flV5pAanucpnzmGKvWyJwU2njvjkXS82Hny04b2pVucOsKOa5TytVX2wU3DR+bldPyydTYChleOSMTx3ztWP+CDKlO6QiEML29WlKts6/mTG3m6eAWtXwF7gFLmKgxH0L5vtyYBj7TF/KrcYEjMIjgfyazlJwa1zoLYoJGpPbICMrtarVg1id8mdWdJFjQQssBUIccrQjDyY4pmHfRrLUMTBNMNwjO4Y+UT3olTT1H8YyoOA0gxjKk/PGtboxaIdyIP1Vn8q33xPNL0zp7iubbFAzVIlxxBdQlyk2kpm/JMaGMK1YBQBG0iWs6M7juKmtxur4iKcRu4eGBj/7Q==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector10001;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
- bh=etPIcyLmlpb6oWECHI51VR/3JMR+ThmIXUh4zWpQIJk=;
- b=CPcKTOB2P+AuIccdVW+/QgKyfjcz/ZWMuXBVHQmCaW+MIw2Js7bZ2YR5NlRPB08Ix5TCimS2bCc1le6FoVbSYL8Rwt799QFYgXxbafrucwb7RWtUBdVJey88xof0IooScjIYTsHW+6IO5u3fxbbZU8NXUj/ZkECSESzm9Q9TkPKHbuNbojb53qpsM9vTccBZVu5tiNXkaf+vvsQIYPnjLgcgzkMXbuduCIyz/OY8tpu25mT9Js/jAGozw2Sv4neekKRAk+pxz/Iy/RModcFD1OL7AMUdYDj/VGPDvyoGfnrLXeOgo5bWgIuG/QwyNGrFbZ1WIkFQGuGZNUiDx7OoBw==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
- header.d=wdc.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=etPIcyLmlpb6oWECHI51VR/3JMR+ThmIXUh4zWpQIJk=;
- b=myyoOC0WYOkyII9R93VuvLrxVmU1glkmYN2tRlab5IpWzLa/8L80Bf5/RL5TPu6we+E4EA+/ZpSyq/ErlKlm83U0hR+CyBd+iE95h2hOOXG94VIvKrHVgRaamYsz7+wltKTOPv/XA6GHLiF5PWNP34vQFJRl+0EL0zTSlRLnCn8=
-Received: from SJ0PR04MB7776.namprd04.prod.outlook.com (2603:10b6:a03:300::11)
- by PH0PR04MB7173.namprd04.prod.outlook.com (2603:10b6:510:16::18) with
- Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.8114.30; Tue, 5 Nov
- 2024 06:09:28 +0000
-Received: from SJ0PR04MB7776.namprd04.prod.outlook.com
- ([fe80::5266:472:a4e5:a9c2]) by SJ0PR04MB7776.namprd04.prod.outlook.com
- ([fe80::5266:472:a4e5:a9c2%5]) with mapi id 15.20.8114.015; Tue, 5 Nov 2024
- 06:09:28 +0000
-From: Naohiro Aota <Naohiro.Aota@wdc.com>
-To: hch <hch@lst.de>
-CC: Jens Axboe <axboe@kernel.dk>, Chris Mason <clm@fb.com>, Josef Bacik
-	<josef@toxicpanda.com>, David Sterba <dsterba@suse.com>, Damien Le Moal
-	<Damien.LeMoal@wdc.com>, "linux-block@vger.kernel.org"
-	<linux-block@vger.kernel.org>, "linux-btrfs@vger.kernel.org"
-	<linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 3/4] btrfs: use bio_is_zone_append in the completion
- handler
-Thread-Topic: [PATCH 3/4] btrfs: use bio_is_zone_append in the completion
- handler
-Thread-Index: AQHbLB4W1pj/Sl9DOkO09PmDigzILbKoOk2A
-Date: Tue, 5 Nov 2024 06:09:28 +0000
-Message-ID: <3whvw5lwr4zrajppxgwwqzlvwoismrmom54m63ozcom2kaiaxk@yotli2pvckfv>
-References: <20241101052206.437530-1-hch@lst.de>
- <20241101052206.437530-4-hch@lst.de>
-In-Reply-To: <20241101052206.437530-4-hch@lst.de>
-Accept-Language: ja-JP, en-US
-Content-Language: en-US
-X-MS-Has-Attach:
-X-MS-TNEF-Correlator:
-authentication-results: dkim=none (message not signed)
- header.d=none;dmarc=none action=none header.from=wdc.com;
-x-ms-publictraffictype: Email
-x-ms-traffictypediagnostic: SJ0PR04MB7776:EE_|PH0PR04MB7173:EE_
-x-ms-office365-filtering-correlation-id: c608c608-a710-4b30-55ac-08dcfd606842
-x-ld-processed: b61c8803-16f3-4c35-9b17-6f65f441df86,ExtAddr
-wdcipoutbound: EOP-TRUE
-x-ms-exchange-senderadcheck: 1
-x-ms-exchange-antispam-relay: 0
-x-microsoft-antispam: BCL:0;ARA:13230040|376014|1800799024|366016|38070700018;
-x-microsoft-antispam-message-info:
- =?us-ascii?Q?2nOzbGE79zfZU4Gaq8CD5jy4oYhfOuWoKSIqf7mKCFXxTQJVqBgYO7Dv16oo?=
- =?us-ascii?Q?9+oyaWWVeioCujstVuBCGdf26cyibxwd0mFFK4sV6lTBLmDF+k7mH5cn+YCg?=
- =?us-ascii?Q?AId119Jj6PfEMur8QttVycLHoFKHhSV2sR6V/5mLy9CDvEf1+ygfSIzl3BuE?=
- =?us-ascii?Q?L3A+Yvr/WXNMDRnqJ8MukLxM56UvOES54BYyTsE98fncOYv4ptehssZOKNkB?=
- =?us-ascii?Q?tcHk/v9crU/bolNwv0e0ir38ThUr4cRpezVSwO1KkziR9lTzXzM31t1m0wjH?=
- =?us-ascii?Q?Q71yV1oUCbB3zZ3zvNpdOPzAtZT99S49r2xJNughyyPC14rBJ86NEeeR1ADH?=
- =?us-ascii?Q?NBVnUWuWkZ7HHeLJ3xFRUAy3IrWBwMYjtY3x5WebVTdWq9ex7JGjwEzpxZpV?=
- =?us-ascii?Q?C698a+rYTWN4T+h8lWMrp4XF6khQeZ4hABh7DFQhjtWBqutrrZKIeCewyXqn?=
- =?us-ascii?Q?VjfHX8BnUFp1Sgfrb7VAu8+bIq8kyBh2bSJJJn+3cDxPGyTlofz0tBgbXZf/?=
- =?us-ascii?Q?a/WptSCq/idwN2sHwrr4LvRr8qpgCSC9v0fnOFnFn0AblaIpOsh3MTPobJCl?=
- =?us-ascii?Q?Wip7lg4U31kWJMbfydLyXAN1FHlTKW1L/Ag0VqOVQA57hzJ2ewEqWv6JUIZk?=
- =?us-ascii?Q?5G9I5Ayit9wcvLT/3810ViXP5ufzeFEEb0/Z27KMkVvtvz5wZ2mjEttCB90h?=
- =?us-ascii?Q?GSE7V8TPr1od5dAYrFDADGJtrxULY9OrY8XdoV3bu4ekw3eDAB6e/qcLMiwi?=
- =?us-ascii?Q?fUa4Vrmo/NkoTIRQEJ/aGgzSa7zlVjgBM6cnYu2SQh5I8zMj2a2VbPOXfSaL?=
- =?us-ascii?Q?78cP5vmpTAapPrEy5V6fK6XCfBkv17/ar0Jg24MduL3DTcuvDAM3tkXstZTr?=
- =?us-ascii?Q?Lql7QG402RUizal8wfPH7kTM0cRFxGxg3YZ4c/hQLFpYIc7l2SYXYCz6cDwi?=
- =?us-ascii?Q?hCItr6QR0hOohOrvxS6whJMECm8tiUo/84Xi4dq/E3zon1/gvzg89jAtZpkk?=
- =?us-ascii?Q?th9MOfsteez7jjmiKZvAaGN9/B6hApk0FBCDMjmRZf8Rp1WDBmZKbAqQ7CaU?=
- =?us-ascii?Q?Li/kC8dYaoXxI+38nLVEZQm0EfdGDDDwEl7GD1AulSQXOR6ygU2A8pxjXcbI?=
- =?us-ascii?Q?fCrueeS6Bpic0ySoUHZ7WHnGJr6T1Eu4VpYL+fXycRFYqcxOuPyBx1FcSiww?=
- =?us-ascii?Q?RLFQGswEweU4EVqCvAPKpa7eVhVrCpHpYlLfOJ5I6oFJF6H7vbDx5SFOPbbv?=
- =?us-ascii?Q?qTJn5Mf3kxbxpelW77MPhVJB5ZNWtdrxIoGaDM1idPQ/mJj3cl8qBEK6iraQ?=
- =?us-ascii?Q?A/AlvU2KNlIvS+tI/rk7VnVe3oSr9bbNihyFWBzdoUBmHlZ3NQ19ms+1yIMk?=
- =?us-ascii?Q?sOq9OBE=3D?=
-x-forefront-antispam-report:
- CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SJ0PR04MB7776.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(376014)(1800799024)(366016)(38070700018);DIR:OUT;SFP:1101;
-x-ms-exchange-antispam-messagedata-chunkcount: 1
-x-ms-exchange-antispam-messagedata-0:
- =?us-ascii?Q?3KTtKK7tQY+xmWqFTV5jtWbHCt9s3JSWy+MgEjYN7R9Py1UTUeoK6yfCrrS3?=
- =?us-ascii?Q?lp5Clkqw9cgu08IBrkEs+ECanP5n8jrJlkT9qHq3MxSphJAteHV6scG3bhqg?=
- =?us-ascii?Q?sKMMD9laAtoO6+QkerafyZCDBOTtMIL+cJvte/WTTL+AaTjJzMh3o8uqJJOF?=
- =?us-ascii?Q?Qy93yiWi9U+BldHOgiC0JwEvUrXghtED2zwVmRI8jvbYEWIra1CqI/LpxZwF?=
- =?us-ascii?Q?+sEHaPsG07AIq8LLwrLyJ+/xP/yQY6EIo3qaQac2h8QFycIVblajtrZMLQP1?=
- =?us-ascii?Q?uebDHi6dDCtk4cEQDd/qjNAs3DnvjmHHy57FHzw9qWX8DyyD/8KYhtC5YjKc?=
- =?us-ascii?Q?CgbYVzz8Orqo6NVYLUbcLVdLOGB1x4D4cqP5PzFSFPeBULAsKqVqVn22KNDW?=
- =?us-ascii?Q?vefijgTdkTxk84t9hm30BZdW8Y8W39lEpe495yzuYNzGA1+HrIR5vtAaKfgF?=
- =?us-ascii?Q?UahDErxyPI/IqcbNw//lVN7/QT/Ig3ugS8CGlzBDpjtkRKmibqK+wpRPEhFP?=
- =?us-ascii?Q?zAiZo7weMySNjHhGLEqAJ/EciusTNxLcYpXTW+rT7jmQl+s8Gzfld9PICs5r?=
- =?us-ascii?Q?Bgli43yV0K17hePhEz5KQsbeUuQb8fjdTlH+ErofiVRaN34RjtZNgRSqPNW0?=
- =?us-ascii?Q?+U/jdMZIRKiXjKN0dyRqg4XyA07Rrwbof9EIFK/uxeEG56eUwMoBwDRS9h8f?=
- =?us-ascii?Q?0DeHmKiMlRbJt5A8BOnYCRZWQcS40RVdDDiQ8VcXlUhwvj7mWchNi+xyiC8D?=
- =?us-ascii?Q?HgQ+6+6rh0sKcNP5xeDj9U+EbzWhjIcyWoiT3nlzYvCNR7runLhFPy9Vvpfe?=
- =?us-ascii?Q?ZfScnefZVIsdPi12KxqEX2ob67veOIcFtmiueNlnWjmUYaVL1pK5YTvgvuI0?=
- =?us-ascii?Q?EERN4nx5HnnQRCt9xIAbU5Bz7fgdY/nQxnqCfFwcA1ajr1C3/nPUJCq+e5xJ?=
- =?us-ascii?Q?6JoIOL/HULmjgQ+0eXJcf5DWmk9OmoW2V8IXUsocjgGmtc2oF7bb9mmoXUQj?=
- =?us-ascii?Q?Ch4OKEF9hwNr3Eoau1htjpfr4CQrFbNAd+2e2ZWj/Hw7admvUdJ4MDH8WIWJ?=
- =?us-ascii?Q?VGHJtXsxgyNOhfMXa+10vJIv6HDwWZ9rLCnZjflO3Sw50mHFAfsowHcl6VaM?=
- =?us-ascii?Q?3j5IbYOPE08ToI++Lfya2ga4gFV8DxziHHtoN9QyPGgwqtZT5eNNux1kLejX?=
- =?us-ascii?Q?dW/zk2fB+Bf1vYnZYQkKqLf/mt0cJBBcUjVLsqRj0u1IkdkjskxnrwjThxsu?=
- =?us-ascii?Q?hk7RyU8d+UUDJhoLVBQMei5UjLUFb62KqCW+klZx9FbZ4b7uqEmdpoMYJpMO?=
- =?us-ascii?Q?qFEaeA/XXhCAlN+hIVM4fcgxt++7WAczpucHvMDuqc/sk3NsCWHWTnP/x+4b?=
- =?us-ascii?Q?RrODqV/revzXsMWm3PL1sb9FHIJ2d6/MEOkBOTc5UbX5JSN1azptJEjvov5g?=
- =?us-ascii?Q?GV0T4+XclwZuNUwXAcyDEGTFwdrqLMrNkNabqfjxFH/dAEMrrBaX9JT66vi1?=
- =?us-ascii?Q?VtM2c4MfBrxnMesRHgyhGuHDSKprX8zDt3m/27QFk+GLWdBc81hOEEbXEcxS?=
- =?us-ascii?Q?uMj+5JasDeA77Z/BU3KQhRWUW2ZVuGDSiyfr0JzmGg+V70vBzG6SFvfH2hzF?=
- =?us-ascii?Q?rA=3D=3D?=
-Content-Type: text/plain; charset="us-ascii"
-Content-ID: <10A9265E51C1AB40839E005E140DE726@namprd04.prod.outlook.com>
-Content-Transfer-Encoding: quoted-printable
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="MPONSHuO";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="MPONSHuO"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 948581FE5F
+	for <linux-btrfs@vger.kernel.org>; Tue,  5 Nov 2024 06:48:35 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1730789315; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=jfyF0LR1RZGtgdekeaMI1YLSbGk4CaNMatapyvShFBQ=;
+	b=MPONSHuOB7b43jiq4kddpDPc2o+CWB32S0NFVGcUVfyR9PUP1UzCMk0AS/+SGMvkA3DBYP
+	Fd+vCC5L1V3szdcl2e/nwy0JjTzLhSuNh3FdH4InPSEXulGEI4JvOvwkuIl94m1FZjQMXP
+	KCUs+53eUkY7lwxHnVMu+WGq9YplBzI=
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=MPONSHuO
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1730789315; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=jfyF0LR1RZGtgdekeaMI1YLSbGk4CaNMatapyvShFBQ=;
+	b=MPONSHuOB7b43jiq4kddpDPc2o+CWB32S0NFVGcUVfyR9PUP1UzCMk0AS/+SGMvkA3DBYP
+	Fd+vCC5L1V3szdcl2e/nwy0JjTzLhSuNh3FdH4InPSEXulGEI4JvOvwkuIl94m1FZjQMXP
+	KCUs+53eUkY7lwxHnVMu+WGq9YplBzI=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id D2EB713964
+	for <linux-btrfs@vger.kernel.org>; Tue,  5 Nov 2024 06:48:34 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id wCclJcK/KWeUDgAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Tue, 05 Nov 2024 06:48:34 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 2/2] btrfs-progs: make btrfs_insert_file_extent() to accept an on-stack file extent item
+Date: Tue,  5 Nov 2024 17:18:14 +1030
+Message-ID: <4d5c932e1a1625e6c314e1d67758953047423978.1730788965.git.wqu@suse.com>
+X-Mailer: git-send-email 2.47.0
+In-Reply-To: <cover.1730788965.git.wqu@suse.com>
+References: <cover.1730788965.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount: 1
-X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0:
-	C/hbdF5UlQYTG9s3rdQxymS1jw/vuVdr8iHdOMKHDUCM73VEw6W7AT0Eie+ZuqyH1GwRusmO0ccuO7B1iOME3Jy/xLXvL/nh/Dfw7+9YQiZ9wDG1ilNgSSARfVqmm+MSPYEGUf9yfj1rVQZy0vBt+SZHOycZG/WNNOVc+1UFW/fXkjW81L4sKR026NnYlyu66Qk1xffFjC9Z+2+jdHNlDeLFDRKOgft9HjYXW9KtIY7PEiYHFqYOCyRG309a9vIuQLRsCyMAn6VNKMgKHjLfLuhHZuPQU0iYWZrzg+WQh4BfGmkrMUy5eKQbZP7/dQ4A7OmIage/wMiJkCYFyBeDFcF4eDTUN7Ait4eXwbaYBjUHiaP4O5GFQ6GXgKIFbHsOfFV84o8yhzLAscByxebYGJf9/Ws7wHTR9kupSpjOCMLD/WCsfT7+ZIxLtl88ylyxarHMIHPKgyiojsn1AQdF8xrv1+C9iBLuw24zWvXf8bdaTXKUsEv1UvT4iM4B6Z/jUl/esHh0xwv98lzY3geN5yFaKDwI2LcuDmxIaVAuDuGNClfVrHYK5I8YVFri3Hf/wxTE3zzIZkiLmGTtAXqDPaZhqA2I0SisaDV0tN/930bVyIbc385aCLH4WNf8Jhlm
-X-OriginatorOrg: wdc.com
-X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-AuthSource: SJ0PR04MB7776.namprd04.prod.outlook.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: c608c608-a710-4b30-55ac-08dcfd606842
-X-MS-Exchange-CrossTenant-originalarrivaltime: 05 Nov 2024 06:09:28.7171
- (UTC)
-X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: b61c8803-16f3-4c35-9b17-6f65f441df86
-X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
-X-MS-Exchange-CrossTenant-userprincipalname: hdxvkRq6CgCiTJ8bvom9HoApyNzMq05tEJ5J/iHZjwvzFkfacUMX9Ic0omR407iKSLd4/SVr801/kVZ45ITUBQ==
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: PH0PR04MB7173
+Content-Transfer-Encoding: 8bit
+X-Rspamd-Queue-Id: 948581FE5F
+X-Spam-Score: -3.01
+X-Rspamd-Action: no action
+X-Spamd-Result: default: False [-3.01 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	RCPT_COUNT_ONE(0.00)[1];
+	ARC_NA(0.00)[];
+	FUZZY_BLOCKED(0.00)[rspamd.com];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DKIM_TRACE(0.00)[suse.com:+];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_COUNT_TWO(0.00)[2];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	ASN(0.00)[asn:25478, ipnet:::/0, country:RU];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,suse.com:mid,suse.com:email]
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Spam-Flag: NO
+X-Spam-Level: 
 
-On Fri, Nov 01, 2024 at 06:21:46AM GMT, Christoph Hellwig wrote:
-> Otherwise it won't catch bios turned into regular writes by the
-> block level zone write plugging.
->=20
-> Fixes: 9b1ce7f0c6f8 ("block: Implement zone append emulation")
-> Signed-off-by: Christoph Hellwig <hch@lst.de>
-> ---
->  fs/btrfs/bio.c | 6 +++---
->  1 file changed, 3 insertions(+), 3 deletions(-)
+Just like insert_reserved_file_extent() from the kernel, we can make
+btrfs_insert_file_extent() to accept an on-stack file extent item
+directly.
 
-Reviewed-by: Naohiro Aota <naohiro.aota@wdc.com>=
+This makes btrfs_insert_file_extent() more flex, and it can now handle
+the converted file extent where it has an non-zero offset.
+
+And this makes it much easier to expand for future compressed file
+extent generation.
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ convert/common.c          | 33 +++++++++++++----------------
+ kernel-shared/file-item.c | 44 +++++++++------------------------------
+ kernel-shared/file-item.h |  4 ++--
+ kernel-shared/file.c      |  6 +++++-
+ mkfs/rootdir.c            | 33 +++++++++++++++++------------
+ 5 files changed, 51 insertions(+), 69 deletions(-)
+
+diff --git a/convert/common.c b/convert/common.c
+index 0ec9f2ec193f..802b809ca837 100644
+--- a/convert/common.c
++++ b/convert/common.c
+@@ -987,8 +987,7 @@ static int __btrfs_convert_file_extent(struct btrfs_trans_handle *trans,
+ 	int ret;
+ 	struct btrfs_fs_info *info = root->fs_info;
+ 	struct btrfs_root *extent_root = btrfs_extent_root(info, disk_bytenr);
+-	struct extent_buffer *leaf;
+-	struct btrfs_file_extent_item *fi;
++	struct btrfs_file_extent_item stack_fi = { 0 };
+ 	struct btrfs_key ins_key;
+ 	struct btrfs_path *path;
+ 	struct btrfs_extent_item *ei;
+@@ -1009,9 +1008,11 @@ static int __btrfs_convert_file_extent(struct btrfs_trans_handle *trans,
+ 	 * hole.  And hole extent has no size limit, no need to loop.
+ 	 */
+ 	if (disk_bytenr == 0) {
++		btrfs_set_stack_file_extent_type(&stack_fi, BTRFS_FILE_EXTENT_REG);
++		btrfs_set_stack_file_extent_num_bytes(&stack_fi, num_bytes);
++		btrfs_set_stack_file_extent_ram_bytes(&stack_fi, num_bytes);
+ 		ret = btrfs_insert_file_extent(trans, root, objectid,
+-					       file_pos, disk_bytenr,
+-					       num_bytes, num_bytes);
++					       file_pos, &stack_fi);
+ 		return ret;
+ 	}
+ 	num_bytes = min_t(u64, num_bytes, BTRFS_MAX_EXTENT_SIZE);
+@@ -1052,6 +1053,8 @@ static int __btrfs_convert_file_extent(struct btrfs_trans_handle *trans,
+ 		ret = btrfs_insert_empty_item(trans, extent_root, path,
+ 					      &ins_key, sizeof(*ei));
+ 		if (ret == 0) {
++			struct extent_buffer *leaf;
++
+ 			leaf = path->nodes[0];
+ 			ei = btrfs_item_ptr(leaf, path->slots[0],
+ 					    struct btrfs_extent_item);
+@@ -1083,26 +1086,18 @@ static int __btrfs_convert_file_extent(struct btrfs_trans_handle *trans,
+ 	ins_key.objectid = objectid;
+ 	ins_key.type = BTRFS_EXTENT_DATA_KEY;
+ 	ins_key.offset = file_pos;
+-	ret = btrfs_insert_empty_item(trans, root, path, &ins_key, sizeof(*fi));
++	btrfs_set_stack_file_extent_type(&stack_fi, BTRFS_FILE_EXTENT_REG);
++	btrfs_set_stack_file_extent_disk_bytenr(&stack_fi, extent_bytenr);
++	btrfs_set_stack_file_extent_disk_num_bytes(&stack_fi, extent_num_bytes);
++	btrfs_set_stack_file_extent_offset(&stack_fi, extent_offset);
++	btrfs_set_stack_file_extent_num_bytes(&stack_fi, num_bytes);
++	btrfs_set_stack_file_extent_ram_bytes(&stack_fi, extent_num_bytes);
++	ret = btrfs_insert_file_extent(trans, root, objectid, file_pos, &stack_fi);
+ 	if (ret)
+ 		goto fail;
+-	leaf = path->nodes[0];
+-	fi = btrfs_item_ptr(leaf, path->slots[0], struct btrfs_file_extent_item);
+-	btrfs_set_file_extent_generation(leaf, fi, trans->transid);
+-	btrfs_set_file_extent_type(leaf, fi, BTRFS_FILE_EXTENT_REG);
+-	btrfs_set_file_extent_disk_bytenr(leaf, fi, extent_bytenr);
+-	btrfs_set_file_extent_disk_num_bytes(leaf, fi, extent_num_bytes);
+-	btrfs_set_file_extent_offset(leaf, fi, extent_offset);
+-	btrfs_set_file_extent_num_bytes(leaf, fi, num_bytes);
+-	btrfs_set_file_extent_ram_bytes(leaf, fi, extent_num_bytes);
+-	btrfs_set_file_extent_compression(leaf, fi, 0);
+-	btrfs_set_file_extent_encryption(leaf, fi, 0);
+-	btrfs_set_file_extent_other_encoding(leaf, fi, 0);
+-	btrfs_mark_buffer_dirty(leaf);
+ 
+ 	nbytes = btrfs_stack_inode_nbytes(inode) + num_bytes;
+ 	btrfs_set_stack_inode_nbytes(inode, nbytes);
+-	btrfs_release_path(path);
+ 
+ 	ret = btrfs_inc_extent_ref(trans, extent_bytenr, extent_num_bytes,
+ 				   0, root->root_key.objectid, objectid,
+diff --git a/kernel-shared/file-item.c b/kernel-shared/file-item.c
+index eb9024022d9f..0de2a216c54d 100644
+--- a/kernel-shared/file-item.c
++++ b/kernel-shared/file-item.c
+@@ -33,55 +33,31 @@
+ 			       size) - 1))
+ int btrfs_insert_file_extent(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_root *root,
+-			     u64 objectid, u64 pos, u64 offset,
+-			     u64 disk_num_bytes, u64 num_bytes)
++			     u64 ino, u64 file_pos,
++			     struct btrfs_file_extent_item *stack_fi)
+ {
+ 	int ret = 0;
+ 	int is_hole = 0;
+-	struct btrfs_file_extent_item *item;
+ 	struct btrfs_key file_key;
+-	struct btrfs_path *path;
+-	struct extent_buffer *leaf;
+ 
+-	if (offset == 0)
++	if (btrfs_stack_file_extent_disk_bytenr(stack_fi) == 0)
+ 		is_hole = 1;
++
+ 	/* For NO_HOLES, we don't insert hole file extent */
+ 	if (btrfs_fs_incompat(root->fs_info, NO_HOLES) && is_hole)
+ 		return 0;
+ 
+ 	/* For hole, its disk_bytenr and disk_num_bytes must be 0 */
+ 	if (is_hole)
+-		disk_num_bytes = 0;
++		btrfs_set_stack_file_extent_disk_num_bytes(stack_fi, 0);
+ 
+-	path = btrfs_alloc_path();
+-	if (!path)
+-		return -ENOMEM;
+-
+-	file_key.objectid = objectid;
++	file_key.objectid = ino;
+ 	file_key.type = BTRFS_EXTENT_DATA_KEY;
+-	file_key.offset = pos;
++	file_key.offset = file_pos;
+ 
+-	ret = btrfs_insert_empty_item(trans, root, path, &file_key,
+-				      sizeof(*item));
+-	if (ret < 0)
+-		goto out;
+-	BUG_ON(ret);
+-	leaf = path->nodes[0];
+-	item = btrfs_item_ptr(leaf, path->slots[0],
+-			      struct btrfs_file_extent_item);
+-	btrfs_set_file_extent_disk_bytenr(leaf, item, offset);
+-	btrfs_set_file_extent_disk_num_bytes(leaf, item, disk_num_bytes);
+-	btrfs_set_file_extent_offset(leaf, item, 0);
+-	btrfs_set_file_extent_num_bytes(leaf, item, num_bytes);
+-	btrfs_set_file_extent_ram_bytes(leaf, item, num_bytes);
+-	btrfs_set_file_extent_generation(leaf, item, trans->transid);
+-	btrfs_set_file_extent_type(leaf, item, BTRFS_FILE_EXTENT_REG);
+-	btrfs_set_file_extent_compression(leaf, item, 0);
+-	btrfs_set_file_extent_encryption(leaf, item, 0);
+-	btrfs_set_file_extent_other_encoding(leaf, item, 0);
+-	btrfs_mark_buffer_dirty(leaf);
+-out:
+-	btrfs_free_path(path);
++	btrfs_set_stack_file_extent_generation(stack_fi, trans->transid);
++	ret = btrfs_insert_item(trans, root, &file_key, stack_fi,
++				sizeof(struct btrfs_file_extent_item));
+ 	return ret;
+ }
+ 
+diff --git a/kernel-shared/file-item.h b/kernel-shared/file-item.h
+index 2c1e17c990dc..cb38a1fc0296 100644
+--- a/kernel-shared/file-item.h
++++ b/kernel-shared/file-item.h
+@@ -85,8 +85,8 @@ u64 btrfs_file_extent_end(const struct btrfs_path *path);
+  */
+ int btrfs_insert_file_extent(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_root *root,
+-			     u64 objectid, u64 pos, u64 offset,
+-			     u64 disk_num_bytes, u64 num_bytes);
++			     u64 ino, u64 file_pos,
++			     struct btrfs_file_extent_item *stack_fi);
+ int btrfs_csum_file_block(struct btrfs_trans_handle *trans, u64 logical,
+ 			  u64 csum_objectid, u32 csum_type, const char *data);
+ int btrfs_insert_inline_extent(struct btrfs_trans_handle *trans,
+diff --git a/kernel-shared/file.c b/kernel-shared/file.c
+index 414a01b3ec4b..7ed1b6891795 100644
+--- a/kernel-shared/file.c
++++ b/kernel-shared/file.c
+@@ -152,6 +152,7 @@ int btrfs_punch_hole(struct btrfs_trans_handle *trans,
+ 		     u64 ino, u64 offset, u64 len)
+ {
+ 	struct btrfs_path *path;
++	struct btrfs_file_extent_item stack_fi = { 0 };
+ 	int ret = 0;
+ 
+ 	path = btrfs_alloc_path();
+@@ -166,7 +167,10 @@ int btrfs_punch_hole(struct btrfs_trans_handle *trans,
+ 		goto out;
+ 	}
+ 
+-	ret = btrfs_insert_file_extent(trans, root, ino, offset, 0, 0, len);
++	btrfs_set_stack_file_extent_type(&stack_fi, BTRFS_FILE_EXTENT_REG);
++	btrfs_set_stack_file_extent_num_bytes(&stack_fi, len);
++	btrfs_set_stack_file_extent_ram_bytes(&stack_fi, len);
++	ret = btrfs_insert_file_extent(trans, root, ino, offset, &stack_fi);
+ out:
+ 	btrfs_free_path(path);
+ 	return ret;
+diff --git a/mkfs/rootdir.c b/mkfs/rootdir.c
+index 526fa255306f..5fa480886139 100644
+--- a/mkfs/rootdir.c
++++ b/mkfs/rootdir.c
+@@ -366,17 +366,21 @@ fail:
+ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
+ 				       struct btrfs_root *root, u64 ino,
+ 				       struct btrfs_inode_item *inode,
+-				       u64 file_pos, u64 disk_bytenr,
+-				       u64 num_bytes)
++				       u64 file_pos,
++				       struct btrfs_file_extent_item *stack_fi)
+ {
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+-	struct btrfs_root *extent_root = btrfs_extent_root(fs_info, disk_bytenr);
++	struct btrfs_root *extent_root;
+ 	struct extent_buffer *leaf;
+ 	struct btrfs_key ins_key;
+ 	struct btrfs_path *path;
+ 	struct btrfs_extent_item *ei;
++	u64 disk_bytenr = btrfs_stack_file_extent_disk_bytenr(stack_fi);
++	u64 disk_num_bytes = btrfs_stack_file_extent_disk_num_bytes(stack_fi);
++	u64 num_bytes = btrfs_stack_file_extent_num_bytes(stack_fi);
+ 	int ret;
+ 
++	extent_root = btrfs_extent_root(fs_info, disk_bytenr);
+ 	/*
+ 	 * @ino should be an inode number, thus it must not be smaller
+ 	 * than BTRFS_FIRST_FREE_OBJECTID.
+@@ -384,18 +388,15 @@ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
+ 	UASSERT(ino >= BTRFS_FIRST_FREE_OBJECTID);
+ 
+ 	/* The reserved data extent should never exceed the upper limit. */
+-	UASSERT(num_bytes <= BTRFS_MAX_EXTENT_SIZE);
++	UASSERT(disk_num_bytes <= BTRFS_MAX_EXTENT_SIZE);
+ 
+ 	/*
+ 	 * All supported file system should not use its 0 extent.  As it's for
+ 	 * hole.  And hole extent has no size limit, no need to loop.
+ 	 */
+-	if (disk_bytenr == 0) {
+-		ret = btrfs_insert_file_extent(trans, root, ino,
+-					       file_pos, disk_bytenr,
+-					       num_bytes, num_bytes);
+-		return ret;
+-	}
++	if (disk_bytenr == 0)
++		return btrfs_insert_file_extent(trans, root, ino,
++					       file_pos, stack_fi);
+ 
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+@@ -437,8 +438,7 @@ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
+ 	ins_key.objectid = ino;
+ 	ins_key.type = BTRFS_EXTENT_DATA_KEY;
+ 	ins_key.offset = file_pos;
+-	ret = btrfs_insert_file_extent(trans, root, ino, file_pos, disk_bytenr,
+-				       num_bytes, num_bytes);
++	ret = btrfs_insert_file_extent(trans, root, ino, file_pos, stack_fi);
+ 	if (ret)
+ 		goto fail;
+ 	btrfs_set_stack_inode_nbytes(inode,
+@@ -564,8 +564,15 @@ again:
+ 	}
+ 
+ 	if (bytes_read) {
++		struct btrfs_file_extent_item stack_fi = { 0 };
++
++		btrfs_set_stack_file_extent_type(&stack_fi, BTRFS_FILE_EXTENT_REG);
++		btrfs_set_stack_file_extent_disk_bytenr(&stack_fi, first_block);
++		btrfs_set_stack_file_extent_disk_num_bytes(&stack_fi, cur_bytes);
++		btrfs_set_stack_file_extent_num_bytes(&stack_fi, cur_bytes);
++		btrfs_set_stack_file_extent_ram_bytes(&stack_fi, cur_bytes);
+ 		ret = insert_reserved_file_extent(trans, root, objectid,
+-				btrfs_inode, file_pos, first_block, cur_bytes);
++				btrfs_inode, file_pos, &stack_fi);
+ 		if (ret)
+ 			goto end;
+ 
+-- 
+2.47.0
+

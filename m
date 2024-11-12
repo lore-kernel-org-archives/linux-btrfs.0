@@ -1,119 +1,193 @@
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-oi1-f178.google.com (mail-oi1-f178.google.com [209.85.167.178])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 32A3B215032
-	for <linux-btrfs@vger.kernel.org>; Tue, 12 Nov 2024 18:14:32 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.129.124
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8195B21621F
+	for <linux-btrfs@vger.kernel.org>; Tue, 12 Nov 2024 18:48:00 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.167.178
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1731435274; cv=none; b=Vz7/kduLJyESZ3Pf/56MtaAcTgW8KQVMoIxwlo8OUgkld1AECZgTJp59DicXE5S6I21tlm1+PpW9ebTRuypui+Alj1PJpd2qIvovSFJwUYBscBKMD60o/Nd5N/B5zjTrZvfZkbx3iC38eVpqYAqyi899JtfkkK9CexnHOr2UfeY=
+	t=1731437284; cv=none; b=NwSVE1aiGBqwlJcwOLJsH7dbc5Zxg3taUQV0bXUeaXe9ULNWkT0XKPIa36pbN7Zy1KM3Z/z9ChQp/dOrggG2bV4L+zw3npGLL4zhnQByFK9VkUORR0yR2bJhRa0xe2+sWjP5+kc7onXL7cY+DBb+rzJ7n9BKWBcUEatudG6t1CA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1731435274; c=relaxed/simple;
-	bh=cTA/3qBaVbffUGaQQs3FfHcFcnnvR+nC1eIweZ0ALvc=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=Er5qSQGuZFdjLyIdKkGPHTOe5dGvnS/lE615BqOwkd7kPDlacpAtQAFv0ookRxssiJG5tpkIf2T4IOvh6orrfbTOERGXABYJs/OwpEGVJpd67fBZ6SDmXayIsMxj7j8U6zA7Vs/1WWwc3ApUs9P4iJAT2ieIhpMuljjAwC5P6fk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=G2QRstQb; arc=none smtp.client-ip=170.10.129.124
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
+	s=arc-20240116; t=1731437284; c=relaxed/simple;
+	bh=AYu6tM5ynIawKqMjM+E4hN+OaSd/oaQv1ZLr8hqDLcw=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=q7aH1S2OREbXa2DdXCAnQhIe/ZgYGweNmONc619GM4WE90pb532wF4rCiWr/E3tRhdZLr8/OkzzgN6LeDzqnESEeOfqhikQv7oWrQp+/MVh80hLjFzBqV/jE3C6q2Ei6uHH5vU1mvauUir5yglLkI7f7lrJQFN4PdIqJlWB/+Lc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=kernel.dk; spf=pass smtp.mailfrom=kernel.dk; dkim=pass (2048-bit key) header.d=kernel-dk.20230601.gappssmtp.com header.i=@kernel-dk.20230601.gappssmtp.com header.b=caSx4oKt; arc=none smtp.client-ip=209.85.167.178
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=kernel.dk
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=kernel.dk
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="G2QRstQb"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-	s=mimecast20190719; t=1731435272;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=NmxhVs+P1hJWoZYSTyfdVSHjqXEZNLNo4iVdoO1zihw=;
-	b=G2QRstQbkKmfZI5SzmDs22aIIfRJB1+YNX7W1oJn7WircDEChDUlXxDsG7vQrsS5eULwys
-	BbkiM93TdnyFPrnoopRFUKwbG+PVpWkfuR4yeWw/C7CECv+ZibG1Z+bAJOls5KMl70b+67
-	U3NnKVtRz9FEsx0W3RxjtU4mvNftNJY=
-Received: from mx-prod-mc-03.mail-002.prod.us-west-2.aws.redhat.com
- (ec2-54-186-198-63.us-west-2.compute.amazonaws.com [54.186.198.63]) by
- relay.mimecast.com with ESMTP with STARTTLS (version=TLSv1.3,
- cipher=TLS_AES_256_GCM_SHA384) id us-mta-441-542WbpeqPuywkE7leFyq5g-1; Tue,
- 12 Nov 2024 13:14:26 -0500
-X-MC-Unique: 542WbpeqPuywkE7leFyq5g-1
-X-Mimecast-MFC-AGG-ID: 542WbpeqPuywkE7leFyq5g
-Received: from mx-prod-int-02.mail-002.prod.us-west-2.aws.redhat.com (mx-prod-int-02.mail-002.prod.us-west-2.aws.redhat.com [10.30.177.15])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
-	(No client certificate requested)
-	by mx-prod-mc-03.mail-002.prod.us-west-2.aws.redhat.com (Postfix) with ESMTPS id 5F77419560B1;
-	Tue, 12 Nov 2024 18:14:17 +0000 (UTC)
-Received: from bfoster (unknown [10.22.80.120])
-	by mx-prod-int-02.mail-002.prod.us-west-2.aws.redhat.com (Postfix) with ESMTPS id 238491956086;
-	Tue, 12 Nov 2024 18:14:14 +0000 (UTC)
-Date: Tue, 12 Nov 2024 13:15:47 -0500
-From: Brian Foster <bfoster@redhat.com>
-To: Jens Axboe <axboe@kernel.dk>
-Cc: linux-mm@kvack.org, linux-fsdevel@vger.kernel.org, hannes@cmpxchg.org,
-	clm@meta.com, linux-kernel@vger.kernel.org, willy@infradead.org,
-	kirill@shutemov.name, linux-btrfs@vger.kernel.org,
-	linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org
-Subject: Re: [PATCH 13/16] iomap: make buffered writes work with RWF_UNCACHED
-Message-ID: <ZzObU9CkhKEcRgc5@bfoster>
-References: <20241111234842.2024180-1-axboe@kernel.dk>
- <20241111234842.2024180-14-axboe@kernel.dk>
- <ZzOEVwWpGEaq6wE7@bfoster>
- <aeb58f3d-67b2-4df3-abc7-49a2e9bb8270@kernel.dk>
+	dkim=pass (2048-bit key) header.d=kernel-dk.20230601.gappssmtp.com header.i=@kernel-dk.20230601.gappssmtp.com header.b="caSx4oKt"
+Received: by mail-oi1-f178.google.com with SMTP id 5614622812f47-3e60fca5350so3470372b6e.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Nov 2024 10:48:00 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=kernel-dk.20230601.gappssmtp.com; s=20230601; t=1731437279; x=1732042079; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:from:content-language
+         :references:cc:to:subject:user-agent:mime-version:date:message-id
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=NEKWtbV5azCN1LS/TrOFInpSTESMK9RCRhSvphgR+zE=;
+        b=caSx4oKtmrQnPiyw17x0o0KCIcSdXPDLG5uPL1f0G2zGbUKsz71wdhVPXAf+DwOG/4
+         AVfqb6MtbcIxM3YRR/u2DvQ+fbR+FgOLuOh2h9ZibBLeB8r8couIsGtWpqE67aTJrWZ0
+         cuwuKPW/Ks+iiSNBp9P82kI10kVc8uVYTfKLPck84BBte2nT+Yq6L5I6mF8zraChgP/N
+         HiZnHX/bp3rqReJBJg16vs+0XDEiKjoYIIBo0g1gaqO9UW1a8YkIZZhbg8Td+fq9+cHA
+         WhkyNBYK0UyxntaaQ+feaGPvIXlX1zDLuU6AFPh1aXkbt7lwQdUL4YzNhhqPkwDQYu9X
+         vhmQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1731437279; x=1732042079;
+        h=content-transfer-encoding:in-reply-to:from:content-language
+         :references:cc:to:subject:user-agent:mime-version:date:message-id
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=NEKWtbV5azCN1LS/TrOFInpSTESMK9RCRhSvphgR+zE=;
+        b=YYKmKwD9Z0E3cXXfonzb6soG/YncxEHXnj1iUOVsG+cQmJbMwcln3nhbzKt178knuR
+         WOuzf9u7B46EC1Gx04RQxzMQcCjCPGK318JH/I0MreSYkPohNndKVhhz38TAVqFxFDx3
+         rfqMublQ1SWpRD4E90ENgaWfaaSe7CUgXwRCL3GHkAEBulv8J+kAbQNmbc5S1rR1Zz7Y
+         RYK0ZHqhULwsh8ZOHqW2ju/sfSzwYB4eA43tzaiotYbkvfhFkkIc53wmTGRu2SCKo4BK
+         43wBGgx4O/dLx1RSou/JSM7OO5vtL162X2GuvtEzt/ecN1wAQhqTw6uLsprlZMrhRe4v
+         aluw==
+X-Forwarded-Encrypted: i=1; AJvYcCWHKsS8aud5OleY5nH3IOlXlB0IYiAIuKsZUQl23ym7V1G+gM++BAdMnmtdrRb8/bpp5gledeOjk/FLHA==@vger.kernel.org
+X-Gm-Message-State: AOJu0YxpvnUZUqRMFydH+/69gQOKaFU+M/tb3UTXidWXrKCg2QTaZVVx
+	N5Eo2olEubLyai6HzhsF8QkSO1b8i0fUKUe8H+CDMMX0h3prgU0EpZzSPYgKZU4=
+X-Google-Smtp-Source: AGHT+IEbUQIAv8rwvNy1b5k48spMrO6qHPjvfMhK8WTkm9KlJBHwjMMwhaZ9S+HNwCgrodi6AerXxg==
+X-Received: by 2002:a05:6870:20a:b0:25a:eca3:6b5e with SMTP id 586e51a60fabf-2956004793fmr13932152fac.9.1731437279605;
+        Tue, 12 Nov 2024 10:47:59 -0800 (PST)
+Received: from [192.168.1.116] ([96.43.243.2])
+        by smtp.gmail.com with ESMTPSA id 586e51a60fabf-295e8eb8c53sm14182fac.8.2024.11.12.10.47.58
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 12 Nov 2024 10:47:59 -0800 (PST)
+Message-ID: <58ebc5a8-941b-4c3d-a3b2-3985d7eeea30@kernel.dk>
+Date: Tue, 12 Nov 2024 11:47:57 -0700
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <aeb58f3d-67b2-4df3-abc7-49a2e9bb8270@kernel.dk>
-X-Scanned-By: MIMEDefang 3.0 on 10.30.177.15
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH 12/16] ext4: add RWF_UNCACHED write support
+To: Brian Foster <bfoster@redhat.com>
+Cc: linux-mm@kvack.org, linux-fsdevel@vger.kernel.org, hannes@cmpxchg.org,
+ clm@meta.com, linux-kernel@vger.kernel.org, willy@infradead.org,
+ kirill@shutemov.name, linux-btrfs@vger.kernel.org,
+ linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org
+References: <20241111234842.2024180-1-axboe@kernel.dk>
+ <20241111234842.2024180-13-axboe@kernel.dk> <ZzOD_qV5tpv9nbw7@bfoster>
+ <df2b9a81-3ebd-48fe-a205-2d4007fe73d1@kernel.dk> <ZzOaaInUHOmlAL-o@bfoster>
+Content-Language: en-US
+From: Jens Axboe <axboe@kernel.dk>
+In-Reply-To: <ZzOaaInUHOmlAL-o@bfoster>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 
-On Tue, Nov 12, 2024 at 10:16:10AM -0700, Jens Axboe wrote:
-> On 11/12/24 9:37 AM, Brian Foster wrote:
-> > On Mon, Nov 11, 2024 at 04:37:40PM -0700, Jens Axboe wrote:
-> >> Add iomap buffered write support for RWF_UNCACHED. If RWF_UNCACHED is
-> >> set for a write, mark the folios being written with drop_writeback. Then
-> > 
-> > s/drop_writeback/uncached/ ?
+On 11/12/24 11:11 AM, Brian Foster wrote:
+> On Tue, Nov 12, 2024 at 10:13:12AM -0700, Jens Axboe wrote:
+>> On 11/12/24 9:36 AM, Brian Foster wrote:
+>>> On Mon, Nov 11, 2024 at 04:37:39PM -0700, Jens Axboe wrote:
+>>>> IOCB_UNCACHED IO needs to prune writeback regions on IO completion,
+>>>> and hence need the worker punt that ext4 also does for unwritten
+>>>> extents. Add an io_end flag to manage that.
+>>>>
+>>>> If foliop is set to foliop_uncached in ext4_write_begin(), then set
+>>>> FGP_UNCACHED so that __filemap_get_folio() will mark newly created
+>>>> folios as uncached. That in turn will make writeback completion drop
+>>>> these ranges from the page cache.
+>>>>
+>>>> Now that ext4 supports both uncached reads and writes, add the fop_flag
+>>>> FOP_UNCACHED to enable it.
+>>>>
+>>>> Signed-off-by: Jens Axboe <axboe@kernel.dk>
+>>>> ---
+>>>>  fs/ext4/ext4.h    |  1 +
+>>>>  fs/ext4/file.c    |  2 +-
+>>>>  fs/ext4/inline.c  |  7 ++++++-
+>>>>  fs/ext4/inode.c   | 18 ++++++++++++++++--
+>>>>  fs/ext4/page-io.c | 28 ++++++++++++++++------------
+>>>>  5 files changed, 40 insertions(+), 16 deletions(-)
+>>>>
+>>> ...
+>>>> diff --git a/fs/ext4/inode.c b/fs/ext4/inode.c
+>>>> index 54bdd4884fe6..afae3ab64c9e 100644
+>>>> --- a/fs/ext4/inode.c
+>>>> +++ b/fs/ext4/inode.c
+>>>> @@ -1138,6 +1138,7 @@ static int ext4_write_begin(struct file *file, struct address_space *mapping,
+>>>>  	int ret, needed_blocks;
+>>>>  	handle_t *handle;
+>>>>  	int retries = 0;
+>>>> +	fgf_t fgp_flags;
+>>>>  	struct folio *folio;
+>>>>  	pgoff_t index;
+>>>>  	unsigned from, to;
+>>>> @@ -1164,6 +1165,15 @@ static int ext4_write_begin(struct file *file, struct address_space *mapping,
+>>>>  			return 0;
+>>>>  	}
+>>>>  
+>>>> +	/*
+>>>> +	 * Set FGP_WRITEBEGIN, and FGP_UNCACHED if foliop contains
+>>>> +	 * foliop_uncached. That's how generic_perform_write() informs us
+>>>> +	 * that this is an uncached write.
+>>>> +	 */
+>>>> +	fgp_flags = FGP_WRITEBEGIN;
+>>>> +	if (*foliop == foliop_uncached)
+>>>> +		fgp_flags |= FGP_UNCACHED;
+>>>> +
+>>>>  	/*
+>>>>  	 * __filemap_get_folio() can take a long time if the
+>>>>  	 * system is thrashing due to memory pressure, or if the folio
+>>>> @@ -1172,7 +1182,7 @@ static int ext4_write_begin(struct file *file, struct address_space *mapping,
+>>>>  	 * the folio (if needed) without using GFP_NOFS.
+>>>>  	 */
+>>>>  retry_grab:
+>>>> -	folio = __filemap_get_folio(mapping, index, FGP_WRITEBEGIN,
+>>>> +	folio = __filemap_get_folio(mapping, index, fgp_flags,
+>>>>  					mapping_gfp_mask(mapping));
+>>>>  	if (IS_ERR(folio))
+>>>>  		return PTR_ERR(folio);
+>>>
+>>> JFYI, I notice that ext4 cycles the folio lock here in this path and
+>>> thus follows up with a couple checks presumably to accommodate that. One
+>>> is whether i_mapping has changed, which I assume means uncached state
+>>> would have been handled/cleared externally somewhere..? I.e., if an
+>>> uncached folio is somehow truncated/freed without ever having been
+>>> written back?
+>>>
+>>> The next is a folio_wait_stable() call "in case writeback began ..."
+>>> It's not immediately clear to me if that is possible here, but taking
+>>> that at face value, is it an issue if we were to create an uncached
+>>> folio, drop the folio lock, then have some other task dirty and
+>>> writeback the folio (due to a sync write or something), then have
+>>> writeback completion invalidate the folio before we relock it here?
+>>
+>> I don't either of those are an issue. The UNCACHED flag will only be set
+>> on a newly created folio, it does not get inherited for folios that
+>> already exist.
+>>
 > 
-> Ah indeed, guess that never got changed. Thanks, will fix that in the
-> commit message.
+> Right.. but what I was wondering for that latter case is if the folio is
+> created here by ext4, so uncached is set before it is unlocked.
 > 
-> > BTW, this might be getting into wonky "don't care that much" territory,
-> > but something else to be aware of is that certain writes can potentially
-> > change pagecache state as a side effect outside of the actual buffered
-> > write itself.
-> > 
-> > For example, xfs calls iomap_zero_range() on write extension (i.e. pos >
-> > isize), which uses buffered writes and thus could populate a pagecache
-> > folio without setting it uncached, even if done on behalf of an uncached
-> > write.
-> > 
-> > I've only made a first pass and could be missing some details, but IIUC
-> > I _think_ this means something like writing out a stream of small,
-> > sparse and file extending uncached writes could actually end up behaving
-> > more like sync I/O. Again, not saying that's something we really care
-> > about, just raising it in case it's worth considering or documenting..
+> On second look I guess the uncached completion invalidation should clear
+> mapping and thus trigger the retry logic here. That seems reasonable
+> enough, but is it still possible to race with writeback?
 > 
-> No that's useful info, I'm not really surprised that there would still
-> be cases where UNCACHED goes unnoticed. In other words, I'd be surprised
-> if the current patches for eg xfs/ext4 cover all the cases where new
-> folios are created and should be marked as UNCACHED of IOCB_UNCACHED is
-> set in the iocb.
+> Maybe this is a better way to ask.. what happens if a write completes to
+> an uncached folio that is already under writeback? For example, uncached
+> write 1 completes, submits for writeback and returns to userspace. Then
+> write 2 begins and redirties the same folio before the uncached
+> writeback completes.
 > 
-> I think those can be sorted out or documented as we move forward.
-> UNCACHED is really just a hint - the kernel should do its best to not
-> have permanent folios for this IO, but there are certainly cases where
-> it won't be honored if you're racing with regular buffered IO or mmap.
-> For the case above, sounds like we could cover that, however, and
-> probably should.
+> If I follow correctly, if write 2 is also uncached, it eventually blocks
+> in writeback submission (folio_prepare_writeback() ->
+> folio_wait_writeback()). It looks like folio lock is held there, so
+> presumably that would bypass the completion time invalidation in
+> folio_end_uncached(). But what if write 2 was not uncached or perhaps
+> writeback completion won the race for folio lock vs. the write side
+> (between locking the folio for dirtying and later for writeback
+> submission)? Does anything prevent invalidation of the folio before the
+> second write is submitted for writeback?
 > 
+> IOW, I'm wondering if the uncached completion time invalidation also
+> needs a folio dirty check..?
 
-Ok. I suppose you could plumb the iocb state through the zero range call
-as well, but given the description/semantics I wouldn't blame you if you
-wanted to leave that for a followon improvement. Thanks for the
-explanation.
+Ah ok, I see what you mean. If the folio is dirty, the unmapping will
+fail. But I guess with the recent change, we'll actually unmap it first.
+I'll add the folio dirty check, thanks!
 
-Brian
-
-> -- 
-> Jens Axboe
-> 
-
+-- 
+Jens Axboe

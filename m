@@ -1,82 +1,128 @@
-Received: from mail-oi1-f182.google.com (mail-oi1-f182.google.com [209.85.167.182])
+Received: from mail-qt1-f173.google.com (mail-qt1-f173.google.com [209.85.160.173])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1A1E514C59C
-	for <linux-btrfs@vger.kernel.org>; Tue, 12 Nov 2024 21:19:31 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.167.182
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id ABC1721745E;
+	Tue, 12 Nov 2024 22:37:35 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.160.173
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1731446373; cv=none; b=G1DAtcOP1fx4YcVCcfvzK+AZB4Ha/R0Tsxi15nr44bLlUDYQp7ErZvT82pigVan4D3eRgXfE2YJbC+XWaq5PTMuMFF2Uu6EtCFXp18z+c6Hx1s2MxXsGCyPkSL8FvWdTWcoe6ZbITJzQZyCgcUtE50fSVxJ6WBjO+jOZQeZMp1w=
+	t=1731451057; cv=none; b=WcLf241bycYHHyFZDdZ+zuo6LDALOR1Dl5Wn7ODUTAkf55lwi2OoeQyL0iKWVV/bKXen7oEDxTFSR3bF/sI7E/jjDy3MF8dVj64ch/mJmnYttZTyRJjywA6P+rB3AbD3j4ozgNUnezZ0Rqwjy/jgbDBbz+W33Yd+MKDv6DDg05Y=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1731446373; c=relaxed/simple;
-	bh=SEL6X6hdUxF6ym4A9NUSeFNUTCyHas6dfssLeN1VhQo=;
-	h=Message-ID:Date:MIME-Version:Subject:From:To:References:
-	 In-Reply-To:Content-Type; b=qdsaBq1Z+ZOvRVGq4QEtI060yG9MPFK1B8yDDBVs7f1rPvEkrQiqKf3smLZW84+RboAqe1e9889qhOjv4JPZLwhd5tuio7SMN9BblmHZOVWhxn0iLClVnYEgJEA2TMnJZvpeYYcdC2ncYDvOTeNmSheIVvg5inUh/XTYNgDXUc0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=kernel.dk; spf=pass smtp.mailfrom=kernel.dk; dkim=pass (2048-bit key) header.d=kernel-dk.20230601.gappssmtp.com header.i=@kernel-dk.20230601.gappssmtp.com header.b=W9yGcKdm; arc=none smtp.client-ip=209.85.167.182
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=kernel.dk
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=kernel.dk
+	s=arc-20240116; t=1731451057; c=relaxed/simple;
+	bh=2Xgye9kLSVVbThxJiOuv4J9XrHzW3k7ZdKbuDsZUfQs=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=sPl2MeoBlXuQfg9jljcTgE9F/uWohrLsbNLxERkhBUHccHnaFf7UUcd7DlX/asn0y9BPqZev1F09PSiHjILgXzYIjzTySYf0FwY2Nb734TvdA9jjMAQVC/2FoK8PhxPhjlP56XfjITuVI775yb66CFGede9FMu/iNvgaGK+a6hk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=Y3/S7KMm; arc=none smtp.client-ip=209.85.160.173
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel-dk.20230601.gappssmtp.com header.i=@kernel-dk.20230601.gappssmtp.com header.b="W9yGcKdm"
-Received: by mail-oi1-f182.google.com with SMTP id 5614622812f47-3e604425aa0so3583830b6e.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 12 Nov 2024 13:19:31 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="Y3/S7KMm"
+Received: by mail-qt1-f173.google.com with SMTP id d75a77b69052e-460ab1bc2aeso41740581cf.3;
+        Tue, 12 Nov 2024 14:37:35 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=kernel-dk.20230601.gappssmtp.com; s=20230601; t=1731446371; x=1732051171; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:content-language:references
-         :to:from:subject:user-agent:mime-version:date:message-id:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=g0LGAAhnzSPN+1d55yonk1/GMChB/jRmj1V/dRhQ/hk=;
-        b=W9yGcKdm9K8ak393hUNH6YNvpU7+rVuMK+LhHjG9X5mUJQ3I4xbZMgY605A+2HgtwW
-         0ybjcxib3ozswqOJL7yaznh51ZtEcS/9Uy6t15KTrhZtZSD9w6pK1rYczs2SzGKQXLSQ
-         K8zDwGDMJfq4ToU9TOhQhGyGjTeEpjcllk4R7NHme08rV5hqJkmwK3+n8DiIzfb2O4sn
-         l94nnyZ48ErGGT4J7C85e1OxFbV+9yBgxHm7YfveVIAnki1MDQTt6Vi6DxTAPXaEKceS
-         4pWI/VqPMs0ZSdd/OaTxMLeXgXH9Y1I6C/8Bgp8qly+d8gLUZfd7Oz1kn/zmvwikkNLu
-         MipQ==
+        d=gmail.com; s=20230601; t=1731451054; x=1732055854; darn=vger.kernel.org;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=JsJ4qi0tKyd0z6dgveSDFEC/C40H7WEHG7mL/4zFsfM=;
+        b=Y3/S7KMmcXifxWWFnm6pb4z91esJ78yDboGLiFHhkNaw1EyvP7PcKjmru5Bl+FPXWT
+         /muGP73W25PQQnar+CIZUz69poDWzfIvkCpe6EmIWw990djrFdOEiXM9unaGxKzRaXjD
+         i02Z+uSNgfk2oJQ/I2mm7rDannqPci00QTkSZlhFFdZyr72hSjcfNibYCYQ+Sa73ISZG
+         x6Ii0Ku/e8ZhFSqvXiz83Lwr/IV9r7rd48b85wyjpRersB0hyvSJ7CcNfv6Sk6Ny8IUh
+         Sb1JC6IPDyF/g6cJlhAfUrNBzLQD+HUatUC905R7w44JwZT2dtuAv34tgwcZwZEHxDJ6
+         SngA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1731446371; x=1732051171;
-        h=content-transfer-encoding:in-reply-to:content-language:references
-         :to:from:subject:user-agent:mime-version:date:message-id
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=g0LGAAhnzSPN+1d55yonk1/GMChB/jRmj1V/dRhQ/hk=;
-        b=G7hk67FSoYANAdlJuBZALfP5NHnGo2yQUNKYu6VtSd88uLnRDqzp5SDBauClpuXrFK
-         PQoNcnEOvhAbEweLq7yknuaq6SyL2q3gDQRX75E5W892Lgv++pGiyZuMrrlsOLcji1Gn
-         ozStQQjd5O49szg5DWj+7wDNii4PTAlOOL5NKuNliOxeCDCnuHa/9NKZAnkFIqjCDTEp
-         PbkeJTDn0jM8+AtDUC7AXPwBQxTtRdTJDQc1GDAwZAV6zJXxWJob+a8fRZIy0ASJCGI1
-         KR0Ty4zz2u2PvbthNKV0vBFg9YqtUc0DwOf0VJ/Vze9EJ1lRrv1/xWRjUBhM5mDiA8m2
-         wGAg==
-X-Forwarded-Encrypted: i=1; AJvYcCX0BRxzryXJZIlLb0eEuzq3WgZFXFsYooS1c6M/G+xtqwEHXmKFlPu/cVu5JOGDPqdOXr+HLwOBRq3ddg==@vger.kernel.org
-X-Gm-Message-State: AOJu0YzU5PlWOaWYpVdH7hgElPxpSr8R4ulPsH/xzTu3wUasv1zp1LgU
-	k2jYZVnlUaKeyz9fw4kEya3RZtn3CM/FbL8vVThpJ6+bmKSQ2f6VsnuKCry/mfUwxw/t5ZvLeVC
-	5EAw=
-X-Google-Smtp-Source: AGHT+IHRWQzNVJxVEAh22puDycpcVGRjweG7PJYNurtD1CyzmW7C4IptCPtXOB2QuJi+mTvvENQ8tw==
-X-Received: by 2002:a05:6808:138c:b0:3e6:2f8c:317a with SMTP id 5614622812f47-3e79469a506mr14762715b6e.2.1731446371234;
-        Tue, 12 Nov 2024 13:19:31 -0800 (PST)
-Received: from [192.168.1.116] ([96.43.243.2])
-        by smtp.gmail.com with ESMTPSA id 5614622812f47-3e7b0969cddsm74292b6e.17.2024.11.12.13.19.30
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 12 Nov 2024 13:19:30 -0800 (PST)
-Message-ID: <4c59f6ff-c766-4820-9b7d-c5bd453ed3bc@kernel.dk>
-Date: Tue, 12 Nov 2024 14:19:29 -0700
+        d=1e100.net; s=20230601; t=1731451054; x=1732055854;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=JsJ4qi0tKyd0z6dgveSDFEC/C40H7WEHG7mL/4zFsfM=;
+        b=o9L4Bu1zD1C8sbgBAoONgDosWmJxsn6r7DABPY3g/zzyuUGloZc/KgCcRoZzKG0y15
+         00U/1ddXY5Ka4vzwtnEYYFhzJ+6BXElP//TnIR0D79VodOND8Vbplxy5hZqNJP+3Y3Wn
+         r1Y7iBw9tCWGnW1sHoycUG4ERadJ6+7EXZo5bkjAUqyqWyZ7i3YdHHDDBh02UCL/8gmE
+         oaUoJ3z/PpiuCO71Erz1KOOPPxMphsIpvBkjCBDM1nmNE8viV1aLDpbpH0DLoEz7IsMp
+         ScvNsAixlwdSf/I+nyw16KqZ2mRFi+yYSOaD2Uyq6wS+zFIE+b3JAD5QR2sMjB8qT+NV
+         ROag==
+X-Forwarded-Encrypted: i=1; AJvYcCU9Kd5q6aRIgGG78AsfbXpJRyKkkQV9l6uHiM9iRX8xj1h1w2kGkod4XWEb2Cz087SyDekiS8tm7jBL/Q==@vger.kernel.org, AJvYcCVEoGhCm6uzrwupYQ0IZ0U7l4/CSL9KHK4z6j7V6jCcHLapWbeoOZ5UZjTP6+IDbKhvI6CalUPHTqC0cIwB3w==@vger.kernel.org, AJvYcCWA6Lf8YLuGLXe3X5FIh6WkqUDnvc0gAIU4O76CfJ4ZXc+RThmq48NDwTDQt0J2SBiFrqy2WGH5o6kY@vger.kernel.org, AJvYcCX5mV5xrbfSXGgxmPvVUi6jbHKYXutTedothY/YPB50OphDFlKfHY7HckNvlEo5oEWHwG9+Hp1Y9NVpRA==@vger.kernel.org
+X-Gm-Message-State: AOJu0YwPVO2SlzO4MJ5rNUBy8R+FsZXVJIx+zxQjHulK9XekClQaJMcF
+	4ljbT0qL+KMBWv+n3OYiFUfwMCKxTdfVc1I0Ov+kVnpAGtKM2OVMqi348EwZIiclXVlTOBJGy86
+	OSRfwAK/yvAxROp2yKMrFqickFh2EjCt+NUU=
+X-Google-Smtp-Source: AGHT+IET/tFAIWy1NMuNPLTnj95HbAr/sGehV2uRf9hScSchtuK/dDofnhh+PiANipLY45hJp1UT5T5IJchyMZUuD0U=
+X-Received: by 2002:a05:622a:4c08:b0:45f:3b3:49e6 with SMTP id
+ d75a77b69052e-463093ef010mr274250321cf.41.1731451054504; Tue, 12 Nov 2024
+ 14:37:34 -0800 (PST)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: add io_uring interface for encoded writes
-From: Jens Axboe <axboe@kernel.dk>
-To: Mark Harmstone <maharmstone@fb.com>, linux-btrfs@vger.kernel.org,
- io-uring@vger.kernel.org
-References: <20241112163021.1948119-1-maharmstone@fb.com>
- <5ecbdce7-d143-4cee-b771-bf94a08f801a@kernel.dk>
-Content-Language: en-US
-In-Reply-To: <5ecbdce7-d143-4cee-b771-bf94a08f801a@kernel.dk>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+References: <cover.1731433903.git.josef@toxicpanda.com> <8c8e9452d153a1918470cbe52a8eb6505c675911.1731433903.git.josef@toxicpanda.com>
+ <CAHk-=wjFKgs-to95Op3p19Shy+EqW2ttSOwk2OadVN-e=eV73g@mail.gmail.com>
+In-Reply-To: <CAHk-=wjFKgs-to95Op3p19Shy+EqW2ttSOwk2OadVN-e=eV73g@mail.gmail.com>
+From: Amir Goldstein <amir73il@gmail.com>
+Date: Tue, 12 Nov 2024 23:37:23 +0100
+Message-ID: <CAOQ4uxjHXmYGH3wUO=w+tM+CiFWBjWvZEZZkSXA5FO8T+VP4mA@mail.gmail.com>
+Subject: Re: [PATCH v7 01/18] fsnotify: opt-in for permission events at
+ file_open_perm() time
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: Josef Bacik <josef@toxicpanda.com>, kernel-team@fb.com, linux-fsdevel@vger.kernel.org, 
+	jack@suse.cz, brauner@kernel.org, linux-xfs@vger.kernel.org, 
+	linux-btrfs@vger.kernel.org, linux-mm@kvack.org, linux-ext4@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On 11/12/24 2:01 PM, Jens Axboe wrote:
-> I'm also pondering if the encoded read side suffers from the same issue?
+On Tue, Nov 12, 2024 at 8:46=E2=80=AFPM Linus Torvalds
+<torvalds@linux-foundation.org> wrote:
+>
+> On Tue, 12 Nov 2024 at 09:56, Josef Bacik <josef@toxicpanda.com> wrote:
+> >
+> > @@ -119,14 +118,37 @@ static inline int fsnotify_file(struct file *file=
+, __u32 mask)
+> >          * handle creation / destruction events and not "real" file eve=
+nts.
+> >          */
+> >         if (file->f_mode & (FMODE_NONOTIFY | FMODE_PATH))
+> > +               return false;
+> > +
+> > +       /* Permission events require that watches are set before FS_OPE=
+N_PERM */
+> > +       if (mask & ALL_FSNOTIFY_PERM_EVENTS & ~FS_OPEN_PERM &&
+> > +           !(file->f_mode & FMODE_NOTIFY_PERM))
+> > +               return false;
+>
+> This still all looks very strange.
+>
+> As far as I can tell, there is exactly one user of FS_OPEN_PERM in
+> 'mask', and that's fsnotify_open_perm(). Which is called in exactly
+> one place: security_file_open(), which is the wrong place to call it
+> anyway and is the only place where fsnotify is called from the
+> security layer.
+>
+> In fact, that looks like an active bug: if you enable FSNOTIFY, but
+> you *don't* enable CONFIG_SECURITY, the whole fsnotify_open_perm()
+> will never be called at all.
+>
+> And I just verified that yes, you can very much generate such a config.
+>
 
-It does, it needs the same fixup.
+See: 1cda52f1b461 fsnotify, lsm: Decouple fsnotify from lsm
+in linux-next. This patch set is based on the fs-next branch.
 
--- 
-Jens Axboe
+> So the whole FS_OPEN_PERM thing looks like a special case, called from
+> a (broken) special place, and now polluting this "fsnotify_file()"
+> logic for no actual reason and making it all look unnecessarily messy.
+>
+> I'd suggest that the whole fsnotify_open_perm() simply be moved to
+> where it *should* be - in the open path - and not make a bad and
+> broken attempt at hiding inside the security layer, and not use this
+> "fsnotify_file()" logic at all.
+>
+> The open-time logic is different. It shouldn't even attempt - badly -
+> to look like it's the same thing as some regular file access.
+>
+
+OK, we can move setting the FMODE_NOTIFY_PERM to the open path.
+I have considered that it may be better to unhide it, but wasn't sure.
+
+Thanks,
+Amir.

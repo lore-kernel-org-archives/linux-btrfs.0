@@ -1,206 +1,205 @@
-Received: from mail-oo1-f41.google.com (mail-oo1-f41.google.com [209.85.161.41])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9AB481B393A
-	for <linux-btrfs@vger.kernel.org>; Thu, 14 Nov 2024 15:28:27 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.161.41
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BBF7717B505
+	for <linux-btrfs@vger.kernel.org>; Thu, 14 Nov 2024 15:51:05 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1731598109; cv=none; b=aIMgYtgO+fqbVThwQoWnu48SjbMsgkovNPgQEDAy2quAvLaTn0BUgdoX2cp8PTxEQHJaW/+XPtLSZ5gXZMm/3MPThiHUpTq/WX4Dju8Np91bF0ivcBRoqsYaioDmK5BypODpOtrbVqSEfl0Lc3HFAWvBt4cYt0UqOMs6Pu/UywQ=
+	t=1731599465; cv=none; b=R1HMpXgCN3oaAe63IOgCE1ayBthqN3zMyWZ8iUzhSmffwXcGpvmoSJESYfp4n9uuyKzvP/yp3fzULkzj6AqQMjLUXVwud0f9f4vICWtdTYB1HpnZcc4E3Ln4CMVX4dy3QA+0DIzk+/LqLEIF9uh2gzxES4MCQLxokspWUc1rRdI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1731598109; c=relaxed/simple;
-	bh=KvrrsZd4o42w6FFEWFQ1mvoiCpBhCV2tMq6FGu3bD6I=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=ZSqokaDkCNLdEjx9bpwy/581be/NUzosVQAfWe5LubyFrP+sc+Xj/V5S5I+ZAFkaoMIxf+dJ1dO9C1dEzc6vDPenSr6VEO78jL9iZTocoumBphRyv72MdaWVQXT57SYbOy2VAka4z0Sdal8+CUJ12nfWLOlG03vxNPvj3Ji/wME=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=kernel.dk; spf=pass smtp.mailfrom=kernel.dk; dkim=pass (2048-bit key) header.d=kernel-dk.20230601.gappssmtp.com header.i=@kernel-dk.20230601.gappssmtp.com header.b=ryPp7Zo/; arc=none smtp.client-ip=209.85.161.41
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=kernel.dk
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=kernel.dk
+	s=arc-20240116; t=1731599465; c=relaxed/simple;
+	bh=ERUv8htP2E1T0KFseNjR/kjzTAoijs0Lto5jfW9WvpQ=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=goDlHK7MJ/9UEZoKMP9jp0GEKk7ZdgXvmZO21ZWiafbhgNqdCXwTqMQuGwI7jFlzF/0c31Qeys7UvQ4XdWOgaErnkF9slUJSKWkRTFafMeXDOWaIU7MAfxB7iGh9uoKApLFoAVj1JEFMHPMywiN5jas4ReobWVOnTSHYAH5GnhQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=hUddkm0B; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel-dk.20230601.gappssmtp.com header.i=@kernel-dk.20230601.gappssmtp.com header.b="ryPp7Zo/"
-Received: by mail-oo1-f41.google.com with SMTP id 006d021491bc7-5ee9e209bb6so360337eaf.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Nov 2024 07:28:27 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=kernel-dk.20230601.gappssmtp.com; s=20230601; t=1731598107; x=1732202907; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=jsUz6pEpY+ox9az2F5q2xnny+koVz5fK77xTMpol5Tk=;
-        b=ryPp7Zo/FFxNM8nzscrCmwbmpbBbx3HBf2MkZTBwejmXhORSfWY2POIJp/oJbCIr82
-         XZcbAoorLW7+awt8LjNlVcKUFt3jjTlIhgnXQ1d9LrNPTFv7v6j34vob3JjxyObeceUx
-         jB7EjJE0ChVaIsXdSotebhjSYyNyCxhcHhlU9e3bgaBw0bzfjZ/AHs0aSRIcvsI31WV6
-         laM6ovcE4vCNzNS+kLK4+HI8UnYZN55+tSd085le9TNnKfZKjVgVuUJ7iLZyt89BvmXd
-         4SwEMBpWo0POPcqWo/OjRLDn9rCM4YU3NZHJBj/zjYbUHsKDAgZqw1NmyHyPPpBbgaZp
-         x8jg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1731598107; x=1732202907;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=jsUz6pEpY+ox9az2F5q2xnny+koVz5fK77xTMpol5Tk=;
-        b=pKaJdqla4qAf6aFU1wm5cKpi4PIp455t7qbZwASSeGwReXFgaf5AN7CCwrWz10agZo
-         1zDLKF30HZNLRZNyQvvHMOlCsX+AKGj543NjcivoR342KcQB9phW6BVxG7Fa8BzqJFp4
-         U3XdbcUCMStbHa7+KfHgWGopK3AdesM/Hz2ehPEa8kdyyrW4hkRotO6XWfzbO4zl3N9D
-         L+ABYIWcwyH0B/fhl1vjVcWBMqrUeYHcnvbwlqYr+vMaji7Uhz1l4v+rB335ILNCArkC
-         K8C/HQpFkDSvFWTSR17p1QiP6rsRnqjE6VOuwbAab77Bl+MMVJO/643HCBMjgY7IptQR
-         qPXw==
-X-Forwarded-Encrypted: i=1; AJvYcCVwRMN3k0vQAy9BHMWagBLr34ofla62y0FINR6/heTPC946XTSd+uq2fExJrL3QNrDHvZ+/EPgJlz9SDQ==@vger.kernel.org
-X-Gm-Message-State: AOJu0Ywis5lPk1jqKh6khzuDg+U2p/WStAcZgmXvdXRLMMqBemoe9i7y
-	K9jUkLH6ISDQl83faTzKjy/bEc3B2GK6K6lu0+hxZuXzS2aP4hANWp35KtW2PJw=
-X-Google-Smtp-Source: AGHT+IFc1nzkbPZXQe4aKtw+LtP2VNQBWJFtVjU1qLyGyhTsHecVf/ilzi9Wv0164LJAdz5N+SGBoQ==
-X-Received: by 2002:a05:6820:1b08:b0:5ee:a5b:d172 with SMTP id 006d021491bc7-5ee57c530cdmr17735794eaf.5.1731598106027;
-        Thu, 14 Nov 2024 07:28:26 -0800 (PST)
-Received: from localhost.localdomain ([96.43.243.2])
-        by smtp.gmail.com with ESMTPSA id 006d021491bc7-5eea026eb41sm368250eaf.39.2024.11.14.07.28.24
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 14 Nov 2024 07:28:25 -0800 (PST)
-From: Jens Axboe <axboe@kernel.dk>
-To: linux-mm@kvack.org,
-	linux-fsdevel@vger.kernel.org
-Cc: hannes@cmpxchg.org,
-	clm@meta.com,
-	linux-kernel@vger.kernel.org,
-	willy@infradead.org,
-	kirill@shutemov.name,
-	linux-btrfs@vger.kernel.org,
-	linux-ext4@vger.kernel.org,
-	linux-xfs@vger.kernel.org,
-	bfoster@redhat.com,
-	Jens Axboe <axboe@kernel.dk>
-Subject: [PATCH 17/17] btrfs: add support for uncached writes
-Date: Thu, 14 Nov 2024 08:25:21 -0700
-Message-ID: <20241114152743.2381672-19-axboe@kernel.dk>
-X-Mailer: git-send-email 2.45.2
-In-Reply-To: <20241114152743.2381672-2-axboe@kernel.dk>
-References: <20241114152743.2381672-2-axboe@kernel.dk>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="hUddkm0B"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 29EF9C4CECD
+	for <linux-btrfs@vger.kernel.org>; Thu, 14 Nov 2024 15:51:05 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1731599465;
+	bh=ERUv8htP2E1T0KFseNjR/kjzTAoijs0Lto5jfW9WvpQ=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+	b=hUddkm0BR0dStUV7P3VKgUoi4b67TJ07VPRwkBfN+gGD0VnqnL3YcDMn/r9tx3jle
+	 GA79mFvluv2ac5bgOc7mFQ5Xj+E/HWbsvlgS8bESwVtFeRcTJD93nNMEXuHTlphC0Z
+	 qQLm5XH4l8wOGheD8hpgSmLjvQDK7OlDcnXXLi7e4dhEoHKdpqY8+Cal3vk9SE14Id
+	 0rr9b5X+q3o1cwqoKSpdMT4OQ4QY4HhNgkZp+eD56JsBj8b5JVff7FBQelF+Ux2SoQ
+	 VYsER+23Go3oqeeGZ/ejNqd60gio5Y26xImOzQEa4PphZVXw6kxPJoN0dx2B0eC+1f
+	 mr4rMholmoQkQ==
+Received: by mail-ej1-f43.google.com with SMTP id a640c23a62f3a-a9a6acac4c3so135270866b.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 Nov 2024 07:51:05 -0800 (PST)
+X-Gm-Message-State: AOJu0YwEyqNeC/Dq8VfFI9Mu8YjOoNWpr7pc2f0rlWlTlrtao32F24u7
+	GqY0rnQ3Fs2dtW7U0Tb4URs60epVzA9MhIfEEM62FK1LxoSEV0Q0jXw3w0bkvqCMacH3rx3l+B5
+	CXGl72Y9fcPbyXIpd1NeMMWYe3EE=
+X-Google-Smtp-Source: AGHT+IG6DlPUIAOU+X5waaORVkGF/aSri0xkc5Mu8nVLDEISXxAospmRkaf5jjk36A+rYXxk5HMTpxvahbtfTIFjBKY=
+X-Received: by 2002:a17:907:3e1a:b0:a9e:b08e:f766 with SMTP id
+ a640c23a62f3a-a9eefe9bbf7mr2369686366b.10.1731599463684; Thu, 14 Nov 2024
+ 07:51:03 -0800 (PST)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+References: <f3f2a9cdd08162a0acf0a02a7ea23cc0977d2dad.1731597571.git.josef@toxicpanda.com>
+In-Reply-To: <f3f2a9cdd08162a0acf0a02a7ea23cc0977d2dad.1731597571.git.josef@toxicpanda.com>
+From: Filipe Manana <fdmanana@kernel.org>
+Date: Thu, 14 Nov 2024 15:50:27 +0000
+X-Gmail-Original-Message-ID: <CAL3q7H40r7oBTYGd66nYuy1CbXS1Gvn9kn4DXL3_=bk46+Suog@mail.gmail.com>
+Message-ID: <CAL3q7H40r7oBTYGd66nYuy1CbXS1Gvn9kn4DXL3_=bk46+Suog@mail.gmail.com>
+Subject: Re: [PATCH v2] btrfs: fix improper generation check in snapshot delete
+To: Josef Bacik <josef@toxicpanda.com>
+Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-The read side is already covered as btrfs uses the generic filemap
-helpers. For writes, just pass in FGP_UNCACHED if uncached IO is being
-done, then the folios created should be marked appropriately.
+On Thu, Nov 14, 2024 at 3:48=E2=80=AFPM Josef Bacik <josef@toxicpanda.com> =
+wrote:
+>
+> We have been using the following check
+>
+> if (generation <=3D root->root_key.offset)
+>
+> to make decisions about whether or not to visit a node during snapshot
+> delete.  This is because for normal subvolumes this is set to 0, and for
+> snapshots it's set to the creation generation.  The idea being that if
+> the generation of the node is less than or equal to our creation
+> generation then we don't need to visit that node, because it doesn't
+> belong to us, we can simply drop our reference and move on.
+>
+> However reloc roots don't have their generation stored in
+> root->root_key.offset, instead that is the objectid of their
+> corresponding fs root.  This means we can incorrectly not walk into
+> nodes that need to be dropped when deleting a reloc root.
+>
+> There are a variety of consequences to making the wrong choice in two
+> distinct areas.
+>
+> visit_node_for_delete()
+>
+> 1. False positive.  We think we are newer than the block when we really
+>    aren't.  We don't visit the node and drop our reference to the node
+>    and carry on.  This would result in leaked space.
+> 2. False negative.  We do decide to walk down into a block that we
+>    should have just dropped our reference to.  However this means that
+>    the child node will have refs > 1, so we will switch to
+>    UPDATE_BACKREF, and then the subsequent walk_down_proc will notice
+>    that btrfs_header_owner(node) !=3D root->root_key.objectid and it'll
+>    break out of the loop, and then walk_up_proc will drop our reference,
+>    so this appears to be ok.
+>
+> do_walk_down()
+>
+> 1. False positive.  We are in UPDATE_BACKREF and incorrectly decide that
+>    we are done and don't need to update the backref for our lower nodes.
+>    This is another case that simply won't happen with relocation, as we
+>    only have to do UPDATE_BACKREF if the node below us was shared and
+>    didn't have FULL_BACKREF set, and since we don't own that node
+>    because we're a reloc root we actually won't end up in this case.
+> 2. False negative.  Again this is tricky because as described above, we
+>    simply wouldn't be here from relocation, because we don't own any of
+>    the nodes because we never set btrfs_header_owner() to the reloc root
+>    objectid, and we always use FULL_BACKREF, we never actually need to
+>    set FULL_BACKREF on any children.
+>
+> Having spent a lot of time stressing relocation/snapshot delete recently
+> I've not seen this pop in practice.  But this is objectively incorrect,
+> so fix this to get the correct starting generation based on the root
+> we're dropping to keep me from thinking there's a problem here.
+>
+> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 
-For IO completion, ensure that writing back folios that are uncached
-gets punted to one of the btrfs workers, as task context is needed for
-that. Add an 'uncached_io' member to struct btrfs_bio to manage that.
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
 
-With that, add FOP_UNCACHED to the btrfs file_operations fop_flags
-structure, enabling use of RWF_UNCACHED.
+Looks good, thanks.
 
-Signed-off-by: Jens Axboe <axboe@kernel.dk>
----
- fs/btrfs/bio.c       | 4 ++--
- fs/btrfs/bio.h       | 2 ++
- fs/btrfs/extent_io.c | 8 +++++++-
- fs/btrfs/file.c      | 9 ++++++---
- 4 files changed, 17 insertions(+), 6 deletions(-)
-
-diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
-index 7e0f9600b80c..253e1a656934 100644
---- a/fs/btrfs/bio.c
-+++ b/fs/btrfs/bio.c
-@@ -334,7 +334,7 @@ static void btrfs_end_bio_work(struct work_struct *work)
- 	struct btrfs_bio *bbio = container_of(work, struct btrfs_bio, end_io_work);
- 
- 	/* Metadata reads are checked and repaired by the submitter. */
--	if (is_data_bbio(bbio))
-+	if (bio_op(&bbio->bio) == REQ_OP_READ && is_data_bbio(bbio))
- 		btrfs_check_read_bio(bbio, bbio->bio.bi_private);
- 	else
- 		btrfs_bio_end_io(bbio, bbio->bio.bi_status);
-@@ -351,7 +351,7 @@ static void btrfs_simple_end_io(struct bio *bio)
- 	if (bio->bi_status)
- 		btrfs_log_dev_io_error(bio, dev);
- 
--	if (bio_op(bio) == REQ_OP_READ) {
-+	if (bio_op(bio) == REQ_OP_READ || bbio->uncached_io) {
- 		INIT_WORK(&bbio->end_io_work, btrfs_end_bio_work);
- 		queue_work(btrfs_end_io_wq(fs_info, bio), &bbio->end_io_work);
- 	} else {
-diff --git a/fs/btrfs/bio.h b/fs/btrfs/bio.h
-index e2fe16074ad6..39b98326c98f 100644
---- a/fs/btrfs/bio.h
-+++ b/fs/btrfs/bio.h
-@@ -82,6 +82,8 @@ struct btrfs_bio {
- 	/* Save the first error status of split bio. */
- 	blk_status_t status;
- 
-+	bool uncached_io;
-+
- 	/*
- 	 * This member must come last, bio_alloc_bioset will allocate enough
- 	 * bytes for entire btrfs_bio but relies on bio being last.
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 872cca54cc6c..b97b21178ed7 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -760,8 +760,11 @@ static void submit_extent_folio(struct btrfs_bio_ctrl *bio_ctrl,
- 	ASSERT(bio_ctrl->end_io_func);
- 
- 	if (bio_ctrl->bbio &&
--	    !btrfs_bio_is_contig(bio_ctrl, folio, disk_bytenr, pg_offset))
-+	    !btrfs_bio_is_contig(bio_ctrl, folio, disk_bytenr, pg_offset)) {
-+		if (folio_test_uncached(folio))
-+			bio_ctrl->bbio->uncached_io = true;
- 		submit_one_bio(bio_ctrl);
-+	}
- 
- 	do {
- 		u32 len = size;
-@@ -779,6 +782,9 @@ static void submit_extent_folio(struct btrfs_bio_ctrl *bio_ctrl,
- 			len = bio_ctrl->len_to_oe_boundary;
- 		}
- 
-+		if (folio_test_uncached(folio))
-+			bio_ctrl->bbio->uncached_io = true;
-+
- 		if (!bio_add_folio(&bio_ctrl->bbio->bio, folio, len, pg_offset)) {
- 			/* bio full: move on to a new one */
- 			submit_one_bio(bio_ctrl);
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 4fb521d91b06..cfee783f4c4d 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -919,7 +919,7 @@ static gfp_t get_prepare_gfp_flags(struct inode *inode, bool nowait)
- static noinline int prepare_pages(struct inode *inode, struct page **pages,
- 				  size_t num_pages, loff_t pos,
- 				  size_t write_bytes, bool force_uptodate,
--				  bool nowait)
-+				  bool nowait, bool uncached)
- {
- 	int i;
- 	unsigned long index = pos >> PAGE_SHIFT;
-@@ -928,6 +928,8 @@ static noinline int prepare_pages(struct inode *inode, struct page **pages,
- 	int ret = 0;
- 	int faili;
- 
-+	if (uncached)
-+		fgp_flags |= FGP_UNCACHED;
- 	for (i = 0; i < num_pages; i++) {
- again:
- 		pages[i] = pagecache_get_page(inode->i_mapping, index + i,
-@@ -1323,7 +1325,8 @@ ssize_t btrfs_buffered_write(struct kiocb *iocb, struct iov_iter *i)
- 		 * contents of pages from loop to loop
- 		 */
- 		ret = prepare_pages(inode, pages, num_pages,
--				    pos, write_bytes, force_page_uptodate, false);
-+				    pos, write_bytes, force_page_uptodate,
-+				    false, iocb->ki_flags & IOCB_UNCACHED);
- 		if (ret) {
- 			btrfs_delalloc_release_extents(BTRFS_I(inode),
- 						       reserve_bytes);
-@@ -3802,7 +3805,7 @@ const struct file_operations btrfs_file_operations = {
- 	.compat_ioctl	= btrfs_compat_ioctl,
- #endif
- 	.remap_file_range = btrfs_remap_file_range,
--	.fop_flags	= FOP_BUFFER_RASYNC | FOP_BUFFER_WASYNC,
-+	.fop_flags	= FOP_BUFFER_RASYNC | FOP_BUFFER_WASYNC | FOP_UNCACHED,
- };
- 
- int btrfs_fdatawrite_range(struct btrfs_inode *inode, loff_t start, loff_t end)
--- 
-2.45.2
-
+> ---
+> v1->v2:
+> - Took Filipe's advice and moved the helper to ctree.h with the other roo=
+t
+>   helpers.
+>
+>  fs/btrfs/ctree.h       | 20 ++++++++++++++++++++
+>  fs/btrfs/extent-tree.c |  6 +++---
+>  2 files changed, 23 insertions(+), 3 deletions(-)
+>
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index 317a3712270f..1f4f5df4345d 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -370,6 +370,26 @@ static inline void btrfs_set_root_last_trans(struct =
+btrfs_root *root, u64 transi
+>         WRITE_ONCE(root->last_trans, transid);
+>  }
+>
+> +/*
+> + * btrfs_root_start_generation - return the generation this root started=
+ with.
+> + * @root - the root we're chcking
+> + *
+> + * Every normal root that is created with root->root_key.offset set to i=
+t's
+> + * originating generation.  If it is a snapshot it is the generation whe=
+n the
+> + * snapshot was created.
+> + *
+> + * However for TREE_RELOC roots root_key.offset is the objectid of the o=
+wning
+> + * tree root.  Thankfully we copy the root item of the owning tree root,=
+ which
+> + * has it's last_snapshot set to what we would have root_key.offset set =
+to, so
+> + * return that if we are a TREE_RELOC root.
+> + */
+> +static inline u64 btrfs_root_origin_generation(const struct btrfs_root *=
+root)
+> +{
+> +       if (btrfs_root_id(root) =3D=3D BTRFS_TREE_RELOC_OBJECTID)
+> +               return btrfs_root_last_snapshot(&root->root_item);
+> +       return root->root_key.offset;
+> +}
+> +
+>  /*
+>   * Structure that conveys information about an extent that is going to r=
+eplace
+>   * all the extents in a file range.
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 412e318e4a22..43a771f7bd7a 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -5285,7 +5285,7 @@ static bool visit_node_for_delete(struct btrfs_root=
+ *root, struct walk_control *
+>          * reference to it.
+>          */
+>         generation =3D btrfs_node_ptr_generation(eb, slot);
+> -       if (!wc->update_ref || generation <=3D root->root_key.offset)
+> +       if (!wc->update_ref || generation <=3D btrfs_root_origin_generati=
+on(root))
+>                 return false;
+>
+>         /*
+> @@ -5340,7 +5340,7 @@ static noinline void reada_walk_down(struct btrfs_t=
+rans_handle *trans,
+>                         goto reada;
+>
+>                 if (wc->stage =3D=3D UPDATE_BACKREF &&
+> -                   generation <=3D root->root_key.offset)
+> +                   generation <=3D btrfs_root_origin_generation(root))
+>                         continue;
+>
+>                 /* We don't lock the tree block, it's OK to be racy here =
+*/
+> @@ -5683,7 +5683,7 @@ static noinline int do_walk_down(struct btrfs_trans=
+_handle *trans,
+>          * for the subtree
+>          */
+>         if (wc->stage =3D=3D UPDATE_BACKREF &&
+> -           generation <=3D root->root_key.offset) {
+> +           generation <=3D btrfs_root_origin_generation(root)) {
+>                 wc->lookup_info =3D 1;
+>                 return 1;
+>         }
+> --
+> 2.43.0
+>
+>

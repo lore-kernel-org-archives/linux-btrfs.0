@@ -1,57 +1,58 @@
-Received: from mail-oo1-f42.google.com (mail-oo1-f42.google.com [209.85.161.42])
+Received: from mail-oo1-f44.google.com (mail-oo1-f44.google.com [209.85.161.44])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6096A18BB9F
-	for <linux-btrfs@vger.kernel.org>; Thu, 14 Nov 2024 15:28:12 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.161.42
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EE4D219340F
+	for <linux-btrfs@vger.kernel.org>; Thu, 14 Nov 2024 15:28:13 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.161.44
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1731598094; cv=none; b=h/kU9Zh/2PMn1AvIeQ4SAq+fAL1ID2CrS7m34F6h+Eew4bAZEPeRKfzK5IKH34el9ZdLL0R3ZzjXkt+Iq1aBlkweXdtXZt765rynVLHtRdDD0AGJqK7eFlOaSgzpC36Ci3OEETdityGinsP8nyo3Dq9j3Wf8FoXwcI+lleJZruc=
+	t=1731598097; cv=none; b=h4T85RBQv21zx0FAp83Dw2cWlksO4J1pZ5AfgBEgCm43JEmUSX+tPL9vS3wzHNwftWh+Dzjsny8yaqC1ZQTffh/XBOdF231yQ7LsUjggXc19AwKMwuCft4Rc62EIwEQdUMn5u48rdglL1bLw19hcQ62li0a4xG/3utBHqPWkh6c=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1731598094; c=relaxed/simple;
-	bh=gGKnnveMfZPAg4SgJ2FOiR86boymhVofVZdPadUM3k0=;
+	s=arc-20240116; t=1731598097; c=relaxed/simple;
+	bh=+LBI8Q/JaILudpg11KeqvJRORHez4jw0F0mptlAAtjg=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=THKASm2H00E3G0Og/BKvhtY6oskRX4nPTZiCyC0vTt6lNMZ2AqzvNtWaFh4dfIbLF5w/7MDZoeKLvdF1ls9Y+fXscNxarA9l51hgWceOCiSSXefxTptcG5N1UZ3lqc0QUZ4tConxxaL4dBZelGEQ7PmyMSZc096b6tz0R+ufj8c=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=kernel.dk; spf=pass smtp.mailfrom=kernel.dk; dkim=pass (2048-bit key) header.d=kernel-dk.20230601.gappssmtp.com header.i=@kernel-dk.20230601.gappssmtp.com header.b=z2HqEI9Q; arc=none smtp.client-ip=209.85.161.42
+	 MIME-Version; b=me/HwHneHJ4J+Pl2kgWhePLBwip17hgYwhgMiZ7B0kAedUIN/UgfyVJ45kNYqvOM9UhbaS5YazB/kRhN1y0DdiFcmfxDD5KkmSei9HbvGjcMNDCIjZcbShhMRXiY1aPwLabX2ZL2FcCAOrgEVvMANSrVtkieWfALvl4lxeGOq54=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=kernel.dk; spf=pass smtp.mailfrom=kernel.dk; dkim=pass (2048-bit key) header.d=kernel-dk.20230601.gappssmtp.com header.i=@kernel-dk.20230601.gappssmtp.com header.b=qqHMLA/+; arc=none smtp.client-ip=209.85.161.44
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=kernel.dk
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=kernel.dk
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel-dk.20230601.gappssmtp.com header.i=@kernel-dk.20230601.gappssmtp.com header.b="z2HqEI9Q"
-Received: by mail-oo1-f42.google.com with SMTP id 006d021491bc7-5ebc0c05e25so344616eaf.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Nov 2024 07:28:12 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=kernel-dk.20230601.gappssmtp.com header.i=@kernel-dk.20230601.gappssmtp.com header.b="qqHMLA/+"
+Received: by mail-oo1-f44.google.com with SMTP id 006d021491bc7-5ebc9bda8c8so358731eaf.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 Nov 2024 07:28:13 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=kernel-dk.20230601.gappssmtp.com; s=20230601; t=1731598091; x=1732202891; darn=vger.kernel.org;
+        d=kernel-dk.20230601.gappssmtp.com; s=20230601; t=1731598093; x=1732202893; darn=vger.kernel.org;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=LyRvRhMBG1NsG1pjAu7RsorwHLATahyjt2W9R5OMw+k=;
-        b=z2HqEI9QexiHndBsoUg/10+CpOQf0QjWppiL2AbY+qCvjAF2sEkPM+BxOECc8uUJYP
-         ITB5KEBOakM51jI3hhi+wgtuKCBLO8unSpeLemgdjYbeP9omGt4OXmThSfGFTNzmff+m
-         ySlzVp+v6Cuo65VBbCrNUN7HtWHIZlKpXuHVlrVuSfxmCIZNlztbNMklhaKpOBb49BcK
-         gN8LuzXTsLq82DfHYF3q9nj7SKsBIWYEQk69vqjf1l3tF1khWXVCeNPHEOa6PYU+zwDD
-         uUxT8igok79gqdh0Cjd3rwD8PzXyWGy8D0KOBKjUrMW7GQcn79aTvGRPJBZ+JJ2pxQn5
-         plhg==
+        bh=7749KjgMy6eatM2VSy2jowDIab8tvoATfJQmYOPl1pc=;
+        b=qqHMLA/+W3MXqoe3ZgYdwBG52pjmWMZyuV8lwyc+PPBVuO95iwCtFK8QcXnHEAD7G4
+         BPOHvQNQDiuYxHHrey6bptacw0CysLM+9YltKZlw9rN/Q7sL1l7tzZqcaDOycr9ad9IG
+         x+s7RUoPvXpmfRMUATWTgDCiqbxsUys1HKePsVFn02vGwPkXLT618oEbdgxmGKY8ERY7
+         e6uFsqBx49ueZZ58a1PftC3GzO0H2ld794uhYdjV3rnEWqQQIJ93GjnjY825XTESeCGS
+         VAFJ4zW9XPoHevGcTpqJHI4AVF0PnV71G59h57bbIyd2pLA4ySu46pBP64POBRTYzHkd
+         wD1Q==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1731598091; x=1732202891;
+        d=1e100.net; s=20230601; t=1731598093; x=1732202893;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=LyRvRhMBG1NsG1pjAu7RsorwHLATahyjt2W9R5OMw+k=;
-        b=t9s/olDaD+gUiRPXghNzT4K9GIX+v3tH3j8mTmNwX9nCDqLDeydvmRTGpOuW3FJGze
-         yuM+dLHZSX7GKraZ0Cgqxrs0VkbIpnfkWN+xHINUA7JW/szWLvOiNakJCegNveYUgbsR
-         Pul8itNn3ooA540muwuUcpaGKH5odLIvLln5zl62ABvT8AkWK0KyH22yHLCLDhjVvDMz
-         bCyxh4s+LL8+Y7Dl16ax+mYq2glL+mr8VEgyfElkAa2ewq0FVX+pc1EausakZBZsoARF
-         ojXiHVVPPFkZ4HjbijDgc39tf6/9sgSEu+iBU/4h9Tp8+XYdZXS+GtFgVVDtphWKJjr9
-         trdA==
-X-Forwarded-Encrypted: i=1; AJvYcCXKHuFasdy6I7GDwCDeQlXiAKX5RryIK9opSo3FLRU0sdm69xC3MSgNiIHnur/UkatymPIGXtsczBHrsQ==@vger.kernel.org
-X-Gm-Message-State: AOJu0YxnyY4XD03D1XVzpo64tmRXlSNCAhTHbQNgvHbRfpSFL/T8H+JY
-	1o0IOGNsU8p0dVIzmkTIA+XselENo0mHBcnn8Z4d965XTsIyC12KnrgoynNkGpk=
-X-Google-Smtp-Source: AGHT+IHQ/GenKedH6rwQd+su0Ph/MRWIuzytWarVEOsqT+imV9hIASvSe13ZVKnr0H0iVbl20zcXwQ==
-X-Received: by 2002:a05:6820:4d06:b0:5ba:ec8b:44b5 with SMTP id 006d021491bc7-5ee57c4397bmr19027877eaf.3.1731598091501;
-        Thu, 14 Nov 2024 07:28:11 -0800 (PST)
+        bh=7749KjgMy6eatM2VSy2jowDIab8tvoATfJQmYOPl1pc=;
+        b=ZnhjwFMF3HZBInNqQYDCh0kRGSkvfxXsbAsDyysSrFg4ABtYDEvD8+4DpFmZTjaJoS
+         5zdiCFQOIcFeHT2AQ9IYb7ZbVDSlKL1vDODMXFQP3oScx3WeJSSvJba/KTOsaMeZm2tD
+         8cqWvMbCoeydgUQsqRW56zRmJoit0mTNqCdBW7lbI7Y1SRpMjhFdxo6DKrv+A3mm00wB
+         DhtG2BS9rsZgNgvW5OrJl7KVNyDGE5qGfqS2yDNy45t8ViW2R64ntyoU8a3KW2pJZAJF
+         TfC5odDoUdgWgBldD+kVVRleKxyTi07yHgotzlSJb/zHqUZ0Z5enMrGt8kdJEop3gG7U
+         aSfQ==
+X-Forwarded-Encrypted: i=1; AJvYcCVpaI59VzpzDePqpiSkSOaKDnnWb/A2aaIAATbbbJq+3ZUgd9RWaZ2J6imsbY+kONhwFfnsAxwvCUZ6tA==@vger.kernel.org
+X-Gm-Message-State: AOJu0YwGzBpR6Znf14dAKVNb/geV0cdmFtKXtSv0AKTd+5dXw8Z9C8SM
+	86U6Ls8SF8HocFBxSCDPoS1cDpPZHSTkiBDGxeTLdQ6RvUZU5SfUzr+dv2UlG1BaRnOO99Do/X+
+	wfEg=
+X-Google-Smtp-Source: AGHT+IHV4oSrYqhQg8SNV67NfRcdIlRE7mzCITp5FLKpYfj2Lpw4MvYi01EsizY0Kl5ORLV8Nbza+Q==
+X-Received: by 2002:a05:6820:8cc:b0:5eb:6a67:6255 with SMTP id 006d021491bc7-5ee9ec3bae1mr2681521eaf.1.1731598092948;
+        Thu, 14 Nov 2024 07:28:12 -0800 (PST)
 Received: from localhost.localdomain ([96.43.243.2])
-        by smtp.gmail.com with ESMTPSA id 006d021491bc7-5eea026eb41sm368250eaf.39.2024.11.14.07.28.10
+        by smtp.gmail.com with ESMTPSA id 006d021491bc7-5eea026eb41sm368250eaf.39.2024.11.14.07.28.11
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 14 Nov 2024 07:28:10 -0800 (PST)
+        Thu, 14 Nov 2024 07:28:12 -0800 (PST)
 From: Jens Axboe <axboe@kernel.dk>
 To: linux-mm@kvack.org,
 	linux-fsdevel@vger.kernel.org
@@ -65,9 +66,9 @@ Cc: hannes@cmpxchg.org,
 	linux-xfs@vger.kernel.org,
 	bfoster@redhat.com,
 	Jens Axboe <axboe@kernel.dk>
-Subject: [PATCH 07/17] fs: add RWF_UNCACHED iocb and FOP_UNCACHED file_operations flag
-Date: Thu, 14 Nov 2024 08:25:11 -0700
-Message-ID: <20241114152743.2381672-9-axboe@kernel.dk>
+Subject: [PATCH 08/17] mm/filemap: add read support for RWF_UNCACHED
+Date: Thu, 14 Nov 2024 08:25:12 -0700
+Message-ID: <20241114152743.2381672-10-axboe@kernel.dk>
 X-Mailer: git-send-email 2.45.2
 In-Reply-To: <20241114152743.2381672-2-axboe@kernel.dk>
 References: <20241114152743.2381672-2-axboe@kernel.dk>
@@ -79,81 +80,189 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-If a file system supports uncached buffered IO, it may set FOP_UNCACHED
-and enable RWF_UNCACHED. If RWF_UNCACHED is attempted without the file
-system supporting it, it'll get errored with -EOPNOTSUPP.
+Add RWF_UNCACHED as a read operation flag, which means that any data
+read wil be removed from the page cache upon completion. Uses the page
+cache to synchronize, and simply prunes folios that were instantiated
+when the operation completes. While it would be possible to use private
+pages for this, using the page cache as synchronization is handy for a
+variety of reasons:
+
+1) No special truncate magic is needed
+2) Async buffered reads need some place to serialize, using the page
+   cache is a lot easier than writing extra code for this
+3) The pruning cost is pretty reasonable
+
+and the code to support this is much simpler as a result.
+
+You can think of uncached buffered IO as being the much more attractive
+cousin of O_DIRECT - it has none of the restrictions of O_DIRECT. Yes,
+it will copy the data, but unlike regular buffered IO, it doesn't run
+into the unpredictability of the page cache in terms of reclaim. As an
+example, on a test box with 32 drives, reading them with buffered IO
+looks as follows:
+
+Reading bs 65536, uncached 0
+  1s: 145945MB/sec
+  2s: 158067MB/sec
+  3s: 157007MB/sec
+  4s: 148622MB/sec
+  5s: 118824MB/sec
+  6s: 70494MB/sec
+  7s: 41754MB/sec
+  8s: 90811MB/sec
+  9s: 92204MB/sec
+ 10s: 95178MB/sec
+ 11s: 95488MB/sec
+ 12s: 95552MB/sec
+ 13s: 96275MB/sec
+
+where it's quite easy to see where the page cache filled up, and
+performance went from good to erratic, and finally settles at a much
+lower rate. Looking at top while this is ongoing, we see:
+
+ PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+7535 root      20   0  267004      0      0 S  3199   0.0   8:40.65 uncached
+3326 root      20   0       0      0      0 R 100.0   0.0   0:16.40 kswapd4
+3327 root      20   0       0      0      0 R 100.0   0.0   0:17.22 kswapd5
+3328 root      20   0       0      0      0 R 100.0   0.0   0:13.29 kswapd6
+3332 root      20   0       0      0      0 R 100.0   0.0   0:11.11 kswapd10
+3339 root      20   0       0      0      0 R 100.0   0.0   0:16.25 kswapd17
+3348 root      20   0       0      0      0 R 100.0   0.0   0:16.40 kswapd26
+3343 root      20   0       0      0      0 R 100.0   0.0   0:16.30 kswapd21
+3344 root      20   0       0      0      0 R 100.0   0.0   0:11.92 kswapd22
+3349 root      20   0       0      0      0 R 100.0   0.0   0:16.28 kswapd27
+3352 root      20   0       0      0      0 R  99.7   0.0   0:11.89 kswapd30
+3353 root      20   0       0      0      0 R  96.7   0.0   0:16.04 kswapd31
+3329 root      20   0       0      0      0 R  96.4   0.0   0:11.41 kswapd7
+3345 root      20   0       0      0      0 R  96.4   0.0   0:13.40 kswapd23
+3330 root      20   0       0      0      0 S  91.1   0.0   0:08.28 kswapd8
+3350 root      20   0       0      0      0 S  86.8   0.0   0:11.13 kswapd28
+3325 root      20   0       0      0      0 S  76.3   0.0   0:07.43 kswapd3
+3341 root      20   0       0      0      0 S  74.7   0.0   0:08.85 kswapd19
+3334 root      20   0       0      0      0 S  71.7   0.0   0:10.04 kswapd12
+3351 root      20   0       0      0      0 R  60.5   0.0   0:09.59 kswapd29
+3323 root      20   0       0      0      0 R  57.6   0.0   0:11.50 kswapd1
+[...]
+
+which is just showing a partial list of the 32 kswapd threads that are
+running mostly full tilt, burning ~28 full CPU cores.
+
+If the same test case is run with RWF_UNCACHED set for the buffered read,
+the output looks as follows:
+
+Reading bs 65536, uncached 0
+  1s: 153144MB/sec
+  2s: 156760MB/sec
+  3s: 158110MB/sec
+  4s: 158009MB/sec
+  5s: 158043MB/sec
+  6s: 157638MB/sec
+  7s: 157999MB/sec
+  8s: 158024MB/sec
+  9s: 157764MB/sec
+ 10s: 157477MB/sec
+ 11s: 157417MB/sec
+ 12s: 157455MB/sec
+ 13s: 157233MB/sec
+ 14s: 156692MB/sec
+
+which is just chugging along at ~155GB/sec of read performance. Looking
+at top, we see:
+
+ PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+7961 root      20   0  267004      0      0 S  3180   0.0   5:37.95 uncached
+8024 axboe     20   0   14292   4096      0 R   1.0   0.0   0:00.13 top
+
+where just the test app is using CPU, no reclaim is taking place outside
+of the main thread. Not only is performance 65% better, it's also using
+half the CPU to do it.
 
 Signed-off-by: Jens Axboe <axboe@kernel.dk>
 ---
- include/linux/fs.h      | 14 +++++++++++++-
- include/uapi/linux/fs.h |  6 +++++-
- 2 files changed, 18 insertions(+), 2 deletions(-)
+ mm/filemap.c | 28 ++++++++++++++++++++++++++--
+ mm/swap.c    |  2 ++
+ 2 files changed, 28 insertions(+), 2 deletions(-)
 
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 3559446279c1..45510d0b8de0 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -320,6 +320,7 @@ struct readahead_control;
- #define IOCB_NOWAIT		(__force int) RWF_NOWAIT
- #define IOCB_APPEND		(__force int) RWF_APPEND
- #define IOCB_ATOMIC		(__force int) RWF_ATOMIC
-+#define IOCB_UNCACHED		(__force int) RWF_UNCACHED
+diff --git a/mm/filemap.c b/mm/filemap.c
+index 02d9cb585195..3d0614ea5f59 100644
+--- a/mm/filemap.c
++++ b/mm/filemap.c
+@@ -2474,6 +2474,8 @@ static int filemap_create_folio(struct kiocb *iocb,
+ 	folio = filemap_alloc_folio(mapping_gfp_mask(mapping), min_order);
+ 	if (!folio)
+ 		return -ENOMEM;
++	if (iocb->ki_flags & IOCB_UNCACHED)
++		__folio_set_uncached(folio);
  
- /* non-RWF related bits - start at 16 */
- #define IOCB_EVENTFD		(1 << 16)
-@@ -354,7 +355,8 @@ struct readahead_control;
- 	{ IOCB_SYNC,		"SYNC" }, \
- 	{ IOCB_NOWAIT,		"NOWAIT" }, \
- 	{ IOCB_APPEND,		"APPEND" }, \
--	{ IOCB_ATOMIC,		"ATOMIC"}, \
-+	{ IOCB_ATOMIC,		"ATOMIC" }, \
-+	{ IOCB_UNCACHED,	"UNCACHED" }, \
- 	{ IOCB_EVENTFD,		"EVENTFD"}, \
- 	{ IOCB_DIRECT,		"DIRECT" }, \
- 	{ IOCB_WRITE,		"WRITE" }, \
-@@ -2116,6 +2118,8 @@ struct file_operations {
- #define FOP_HUGE_PAGES		((__force fop_flags_t)(1 << 4))
- /* Treat loff_t as unsigned (e.g., /dev/mem) */
- #define FOP_UNSIGNED_OFFSET	((__force fop_flags_t)(1 << 5))
-+/* File system supports uncached read/write buffered IO */
-+#define FOP_UNCACHED		((__force fop_flags_t)(1 << 6))
+ 	/*
+ 	 * Protect against truncate / hole punch. Grabbing invalidate_lock
+@@ -2519,6 +2521,8 @@ static int filemap_readahead(struct kiocb *iocb, struct file *file,
  
- /* Wrap a directory iterator that needs exclusive inode access */
- int wrap_directory_iterator(struct file *, struct dir_context *,
-@@ -3532,6 +3536,14 @@ static inline int kiocb_set_rw_flags(struct kiocb *ki, rwf_t flags,
- 		if (!(ki->ki_filp->f_mode & FMODE_CAN_ATOMIC_WRITE))
- 			return -EOPNOTSUPP;
- 	}
-+	if (flags & RWF_UNCACHED) {
-+		/* file system must support it */
-+		if (!(ki->ki_filp->f_op->fop_flags & FOP_UNCACHED))
-+			return -EOPNOTSUPP;
-+		/* DAX mappings not supported */
-+		if (IS_DAX(ki->ki_filp->f_mapping->host))
-+			return -EOPNOTSUPP;
+ 	if (iocb->ki_flags & IOCB_NOIO)
+ 		return -EAGAIN;
++	if (iocb->ki_flags & IOCB_UNCACHED)
++		ractl.uncached = 1;
+ 	page_cache_async_ra(&ractl, folio, last_index - folio->index);
+ 	return 0;
+ }
+@@ -2548,6 +2552,8 @@ static int filemap_get_pages(struct kiocb *iocb, size_t count,
+ 			return -EAGAIN;
+ 		if (iocb->ki_flags & IOCB_NOWAIT)
+ 			flags = memalloc_noio_save();
++		if (iocb->ki_flags & IOCB_UNCACHED)
++			ractl.uncached = 1;
+ 		page_cache_sync_ra(&ractl, last_index - index);
+ 		if (iocb->ki_flags & IOCB_NOWAIT)
+ 			memalloc_noio_restore(flags);
+@@ -2595,6 +2601,20 @@ static inline bool pos_same_folio(loff_t pos1, loff_t pos2, struct folio *folio)
+ 	return (pos1 >> shift == pos2 >> shift);
+ }
+ 
++static void filemap_uncached_read(struct address_space *mapping,
++				  struct folio *folio)
++{
++	if (!folio_test_uncached(folio))
++		return;
++	if (folio_test_writeback(folio))
++		return;
++	if (folio_test_clear_uncached(folio)) {
++		folio_lock(folio);
++		folio_unmap_invalidate(mapping, folio, 0);
++		folio_unlock(folio);
 +	}
- 	kiocb_flags |= (__force int) (flags & RWF_SUPPORTED);
- 	if (flags & RWF_SYNC)
- 		kiocb_flags |= IOCB_DSYNC;
-diff --git a/include/uapi/linux/fs.h b/include/uapi/linux/fs.h
-index 753971770733..dc77cd8ae1a3 100644
---- a/include/uapi/linux/fs.h
-+++ b/include/uapi/linux/fs.h
-@@ -332,9 +332,13 @@ typedef int __bitwise __kernel_rwf_t;
- /* Atomic Write */
- #define RWF_ATOMIC	((__force __kernel_rwf_t)0x00000040)
- 
-+/* buffered IO that drops the cache after reading or writing data */
-+#define RWF_UNCACHED	((__force __kernel_rwf_t)0x00000080)
++}
 +
- /* mask of flags supported by the kernel */
- #define RWF_SUPPORTED	(RWF_HIPRI | RWF_DSYNC | RWF_SYNC | RWF_NOWAIT |\
--			 RWF_APPEND | RWF_NOAPPEND | RWF_ATOMIC)
-+			 RWF_APPEND | RWF_NOAPPEND | RWF_ATOMIC |\
-+			 RWF_UNCACHED)
+ /**
+  * filemap_read - Read data from the page cache.
+  * @iocb: The iocb to read.
+@@ -2706,8 +2726,12 @@ ssize_t filemap_read(struct kiocb *iocb, struct iov_iter *iter,
+ 			}
+ 		}
+ put_folios:
+-		for (i = 0; i < folio_batch_count(&fbatch); i++)
+-			folio_put(fbatch.folios[i]);
++		for (i = 0; i < folio_batch_count(&fbatch); i++) {
++			struct folio *folio = fbatch.folios[i];
++
++			filemap_uncached_read(mapping, folio);
++			folio_put(folio);
++		}
+ 		folio_batch_init(&fbatch);
+ 	} while (iov_iter_count(iter) && iocb->ki_pos < isize && !error);
  
- #define PROCFS_IOCTL_MAGIC 'f'
- 
+diff --git a/mm/swap.c b/mm/swap.c
+index b8e3259ea2c4..542f298d3dcd 100644
+--- a/mm/swap.c
++++ b/mm/swap.c
+@@ -472,6 +472,8 @@ static void folio_inc_refs(struct folio *folio)
+  */
+ void folio_mark_accessed(struct folio *folio)
+ {
++	if (folio_test_uncached(folio))
++		return;
+ 	if (lru_gen_enabled()) {
+ 		folio_inc_refs(folio);
+ 		return;
 -- 
 2.45.2
 

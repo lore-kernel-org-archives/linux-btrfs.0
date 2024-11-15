@@ -1,58 +1,57 @@
-Received: from mail-oo1-f49.google.com (mail-oo1-f49.google.com [209.85.161.49])
+Received: from mail-oo1-f41.google.com (mail-oo1-f41.google.com [209.85.161.41])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 049671E9060
-	for <linux-btrfs@vger.kernel.org>; Fri, 15 Nov 2024 15:31:49 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.161.49
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C49081F12E8
+	for <linux-btrfs@vger.kernel.org>; Fri, 15 Nov 2024 15:31:53 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.161.41
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1731684711; cv=none; b=cZhif6IbHoTbFs35SVzsxK9KWims03VkOUCTmrUBQ1+TuWuH8F88/4erPeUf9OEC3dp/GDvYfswr/DYQDnzG4unvCAEDAD7hXj/l2GjcHwjQGEu5rBTR+40+FJoWPncuPhem5MFTnY5wM1u1vlNjaX2N2WUczxm/hwzxxk14c1U=
+	t=1731684715; cv=none; b=VTvg2vSqlo2qirVRwKy46eNbnzckZJbhsqJAUfEQ2nXbUB13vvopeXiZlvhbquRXvVH6TfpJ8js1niagLUyzUMKv0flXCbAfOBc1qk+YE1Gny0o/aRKocF2HNEtwZ+7S99cKG/L8Icfoo59LCZ9+zZBwafxcHe+PAqHV3Fz7AKQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1731684711; c=relaxed/simple;
-	bh=mmiCP5FXX4dhY4TFju9684uZ4Gwy+6bghcevodVCHbw=;
+	s=arc-20240116; t=1731684715; c=relaxed/simple;
+	bh=PPbePcs2WGvhpmWcX89Tq9aMCCGa8+t1geWVk1JQ/rg=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=VL4kqD8ee78QRo5selH8PM/LweRkcjwHzmlcS3TSHnEKh9r+1xtS3pnBrmSmyzkbxgVn8o9gq3pOcnnFKcBYR7d7cQa/nIAzQxqkkBeGHRj4YSIJwp+JaXXdDXHHfWP0DJnGIprB/01cE2qdjuuvy67qdvgBNsmsTOBfmjDavCo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com; spf=none smtp.mailfrom=toxicpanda.com; dkim=pass (2048-bit key) header.d=toxicpanda-com.20230601.gappssmtp.com header.i=@toxicpanda-com.20230601.gappssmtp.com header.b=vG9Dbh4h; arc=none smtp.client-ip=209.85.161.49
+	 MIME-Version; b=TbM9RP8vwHTHFuua75Yco/ptY9POmi84lGPlN1jbCqP1LXSAdvYEDe1I6UrXnr89rxR9X1yrqs3WIV645IG4Sh5YsHF2Emt22346QTXJXE8CQYGQ7ZmB47LMWz0T5bB/e5BNw5YanfWi+zVrT9uWdL9Qt5/e/pm9E+0LzW9ARVA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com; spf=none smtp.mailfrom=toxicpanda.com; dkim=pass (2048-bit key) header.d=toxicpanda-com.20230601.gappssmtp.com header.i=@toxicpanda-com.20230601.gappssmtp.com header.b=oBe0EtWQ; arc=none smtp.client-ip=209.85.161.41
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
 Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=toxicpanda.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20230601.gappssmtp.com header.i=@toxicpanda-com.20230601.gappssmtp.com header.b="vG9Dbh4h"
-Received: by mail-oo1-f49.google.com with SMTP id 006d021491bc7-5ebc0dbc65dso871543eaf.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 15 Nov 2024 07:31:49 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20230601.gappssmtp.com header.i=@toxicpanda-com.20230601.gappssmtp.com header.b="oBe0EtWQ"
+Received: by mail-oo1-f41.google.com with SMTP id 006d021491bc7-5ee354637b4so1105259eaf.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Nov 2024 07:31:53 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1731684709; x=1732289509; darn=vger.kernel.org;
+        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1731684713; x=1732289513; darn=vger.kernel.org;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=Ma7Y5+BFpcWgfxwOepr2mPEvJR7BrAPr6ViHq4rzmZc=;
-        b=vG9Dbh4hkIQfqca7EvwxfPFIZCt60TC/Ewg9iQU77A/DPY2/S3TWxgZOyqVOYUiSAo
-         mc5BcHzeBQ+k4/NYBKHHD9CX0JGZOiwuZcs7C+pvzs0UW5/Fd1Wd0sPGPRfyD66TUP/n
-         FjAK/x5PxNgk0z58InPogGt4h3gb6F/iIXrDhRrX3ikPs3i1tlfL7jgC1fpJC97jMGuj
-         DWFW12H5caNE1FAo2ZgPhk5MirYlmKzykziWPSZ5izpTFqmZgWxsS9IsknYAAjCkH4TM
-         CMD6vu9nRlGkhNHo6Wn3c32VtAm4p5ZQL5auZbI+p1QhBlmcQiwO5pfptbAZRw/PDzwK
-         jxVA==
+        bh=UmMh2R9TaZZeTO+3Pa04+NECyzvSza2nfFK0oCoLtcs=;
+        b=oBe0EtWQuwl88cCU5pTvTDkB/94N5XzWzaD3zlA6XpaCdsxhM9FEYAhy7NFj6hJ/5e
+         fPoANvxD874ilkta+gRbLOycSq8Rdaoivm4Hy50CyqpEtUUESWkaxNykV8O8dToXo8d0
+         YDe8QLamWU2B7rEIrcz+HMJwOKXUBmdWCXEk5Gr/qhWRRGUjKjI2yaE7TfzhVSR/w8tN
+         Nij/ncSEtuB0ENvFeh1P7Y3CT23ad9PRgF2yoiy8KUUOukcSCpU5/CN1CQDXWjJJnaJf
+         iOxKK3OyEOObXKi1CRQotq77wT9aYZfj/Z6zi5UZxrK9AmCH21ivYJknNi7HPbd4NdsA
+         ycZg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1731684709; x=1732289509;
+        d=1e100.net; s=20230601; t=1731684713; x=1732289513;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=Ma7Y5+BFpcWgfxwOepr2mPEvJR7BrAPr6ViHq4rzmZc=;
-        b=vHCZT4kfHSxOlNOzknaGwoohXVPPaQwj74u8GjelXFl1PeKRRHdLNEdZ22cIZv/YWE
-         T6clN7KJeUWIAUw7zz8NN+N+w5m6dGYM3/xOPQ73ybz82Mdjae2gsvjgze2bx53xJOnq
-         +TlNk6CdHIROW+Na3+nJLTIJF2QuG2bcg6k9wwWl17kLtnFumtDt5mODQkzqx9yxbzR7
-         ghDl83DvDLBI6kHIBFe1q4gsqAJ+yo03+OrTyYJuVCU4R7P0uymzUNiU8KitXtL/4Jdz
-         FFxb7XcqHICDMEAgtQQ8EtZ3RqUcSzJJdJTepGE7WHcl/V2SOf0kNSgpMQjJvQwabian
-         +OAA==
-X-Forwarded-Encrypted: i=1; AJvYcCVo1Q/E09RqVq+Kud5Umgqwhs9PLPiRRvGuXOC5cQeyDCPFHlKatbWhhU/BlBbAOqLzePwA6ieUhUHWig==@vger.kernel.org
-X-Gm-Message-State: AOJu0YxGyP9gspfcASfTThSSvGI84rsFSsThx3mllhSHVNvpok5+F5Ye
-	0lP9ZGjPrkNwsMydeQ5ftpo//tgImahdzuZy2O0q3vH2CLCuJkrgp85dSoATOKmoEc77zl7rKTm
-	K
-X-Google-Smtp-Source: AGHT+IH4KF4O/0TeALgb4lQDmEiPTFLtEsIEnnQGgceAZNppg9oa7TyTq0ub2EblRWNTki1B2uNPXQ==
-X-Received: by 2002:a05:6902:18ce:b0:e30:e1f3:2a9c with SMTP id 3f1490d57ef6-e3825bdd1fbmr2969338276.0.1731684697839;
-        Fri, 15 Nov 2024 07:31:37 -0800 (PST)
+        bh=UmMh2R9TaZZeTO+3Pa04+NECyzvSza2nfFK0oCoLtcs=;
+        b=VTPrKs5rgvjFCVP5i2XWe6sgPyYmb17kfZNzJuNM22S3gyQ0rZjFHp7jSuVQxAxCLK
+         nhUiI8nTf/d93s673xfgrVhDcUXFzvaqYk0B/iMlYZ9gnoZDl1Cbf5uAO2ibqmG9dYrY
+         raxjja86WGPLcsUIeitb9kz8qD72Y+QQ9lJ+SKTTgNqnOMliKBw9YQkzYjIgQgCYeyLY
+         OmSsTsCKCRy62gvPfat9A35UMr4tsX5+kxMYPyVtvJGiaGK3VIAkcc2cXZK4O6xG8FBN
+         8zQVJc+3mTo927cNC4t6tTptBgowLiGmkTYqCgM73zirB30q2sDhUxazx7uHkGXOEsrT
+         XyGQ==
+X-Forwarded-Encrypted: i=1; AJvYcCXM9v/RxCyHKvS6o5poD0pT+yCdDGzjulP/XpsKrc2e+ynd0T7/yrVQjaw7YvfB8skoLHH/MwR+srRqCw==@vger.kernel.org
+X-Gm-Message-State: AOJu0Yx2cdklzSFDY9bYxlP/0xaRPGva4kblICquvjcellgcJclx/n3a
+	HsHANe2wjFxDZNipSg9THY5cG71wFXx9QS6cPV+mbg5MgwdhWA8fl2u7e6/jtyA=
+X-Google-Smtp-Source: AGHT+IHtKZ3WiG2a6Yh90R7O7Da3Go40IEKMQxser6w6wpGF8sO84iqOBIyuVxo5A9VSaCx3/txhnw==
+X-Received: by 2002:a05:6830:d8c:b0:718:9df:997f with SMTP id 46e09a7af769-71a779b2c25mr3850260a34.14.1731684712917;
+        Fri, 15 Nov 2024 07:31:52 -0800 (PST)
 Received: from localhost (syn-076-182-020-124.res.spectrum.com. [76.182.20.124])
-        by smtp.gmail.com with ESMTPSA id 3f1490d57ef6-e38152ab555sm1006714276.12.2024.11.15.07.31.36
+        by smtp.gmail.com with ESMTPSA id 00721157ae682-6ee4400c6e6sm7807317b3.9.2024.11.15.07.31.52
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 15 Nov 2024 07:31:37 -0800 (PST)
+        Fri, 15 Nov 2024 07:31:52 -0800 (PST)
 From: Josef Bacik <josef@toxicpanda.com>
 To: kernel-team@fb.com,
 	linux-fsdevel@vger.kernel.org,
@@ -65,9 +64,9 @@ To: kernel-team@fb.com,
 	linux-btrfs@vger.kernel.org,
 	linux-mm@kvack.org,
 	linux-ext4@vger.kernel.org
-Subject: [PATCH v8 10/19] fanotify: introduce FAN_PRE_ACCESS permission event
-Date: Fri, 15 Nov 2024 10:30:23 -0500
-Message-ID: <b80986f8d5b860acea2c9a73c0acd93587be5fe4.1731684329.git.josef@toxicpanda.com>
+Subject: [PATCH v8 15/19] mm: don't allow huge faults for files with pre content watches
+Date: Fri, 15 Nov 2024 10:30:28 -0500
+Message-ID: <9035b82cff08a3801cef3d06bbf2778b2e5a4dba.1731684329.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.43.0
 In-Reply-To: <cover.1731684329.git.josef@toxicpanda.com>
 References: <cover.1731684329.git.josef@toxicpanda.com>
@@ -79,139 +78,96 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-From: Amir Goldstein <amir73il@gmail.com>
+There's nothing stopping us from supporting this, we could simply pass
+the order into the helper and emit the proper length.  However currently
+there's no tests to validate this works properly, so disable it until
+there's a desire to support this along with the appropriate tests.
 
-Similar to FAN_ACCESS_PERM permission event, but it is only allowed with
-class FAN_CLASS_PRE_CONTENT and only allowed on regular files and dirs.
-
-Unlike FAN_ACCESS_PERM, it is safe to write to the file being accessed
-in the context of the event handler.
-
-This pre-content event is meant to be used by hierarchical storage
-managers that want to fill the content of files on first read access.
-
-Signed-off-by: Amir Goldstein <amir73il@gmail.com>
+Reviewed-by: Christian Brauner <brauner@kernel.org>
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/notify/fanotify/fanotify.c      |  3 ++-
- fs/notify/fanotify/fanotify_user.c | 22 +++++++++++++++++++---
- include/linux/fanotify.h           | 14 ++++++++++----
- include/uapi/linux/fanotify.h      |  2 ++
- 4 files changed, 33 insertions(+), 8 deletions(-)
+ mm/memory.c | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
 
-diff --git a/fs/notify/fanotify/fanotify.c b/fs/notify/fanotify/fanotify.c
-index 2e6ba94ec405..da6c3c1c7edf 100644
---- a/fs/notify/fanotify/fanotify.c
-+++ b/fs/notify/fanotify/fanotify.c
-@@ -916,8 +916,9 @@ static int fanotify_handle_event(struct fsnotify_group *group, u32 mask,
- 	BUILD_BUG_ON(FAN_OPEN_EXEC_PERM != FS_OPEN_EXEC_PERM);
- 	BUILD_BUG_ON(FAN_FS_ERROR != FS_ERROR);
- 	BUILD_BUG_ON(FAN_RENAME != FS_RENAME);
-+	BUILD_BUG_ON(FAN_PRE_ACCESS != FS_PRE_ACCESS);
+diff --git a/mm/memory.c b/mm/memory.c
+index bdf77a3ec47b..843ad75a4148 100644
+--- a/mm/memory.c
++++ b/mm/memory.c
+@@ -78,6 +78,7 @@
+ #include <linux/ptrace.h>
+ #include <linux/vmalloc.h>
+ #include <linux/sched/sysctl.h>
++#include <linux/fsnotify.h>
  
--	BUILD_BUG_ON(HWEIGHT32(ALL_FANOTIFY_EVENT_BITS) != 21);
-+	BUILD_BUG_ON(HWEIGHT32(ALL_FANOTIFY_EVENT_BITS) != 22);
+ #include <trace/events/kmem.h>
  
- 	mask = fanotify_group_event_mask(group, iter_info, &match_mask,
- 					 mask, data, data_type, dir);
-diff --git a/fs/notify/fanotify/fanotify_user.c b/fs/notify/fanotify/fanotify_user.c
-index 456cc3e92c88..5ea447e9e5a8 100644
---- a/fs/notify/fanotify/fanotify_user.c
-+++ b/fs/notify/fanotify/fanotify_user.c
-@@ -1640,11 +1640,23 @@ static int fanotify_events_supported(struct fsnotify_group *group,
- 				     unsigned int flags)
+@@ -5637,8 +5638,17 @@ static vm_fault_t do_numa_page(struct vm_fault *vmf)
+ static inline vm_fault_t create_huge_pmd(struct vm_fault *vmf)
  {
- 	unsigned int mark_type = flags & FANOTIFY_MARK_TYPE_BITS;
-+	bool is_dir = d_is_dir(path->dentry);
- 	/* Strict validation of events in non-dir inode mask with v5.17+ APIs */
- 	bool strict_dir_events = FAN_GROUP_FLAG(group, FAN_REPORT_TARGET_FID) ||
- 				 (mask & FAN_RENAME) ||
- 				 (flags & FAN_MARK_IGNORE);
- 
+ 	struct vm_area_struct *vma = vmf->vma;
++	struct file *file = vma->vm_file;
+ 	if (vma_is_anonymous(vma))
+ 		return do_huge_pmd_anonymous_page(vmf);
 +	/*
-+	 * Filesystems need to opt-into pre-content evnets (a.k.a HSM)
-+	 * and they are only supported on regular files and directories.
++	 * Currently we just emit PAGE_SIZE for our fault events, so don't allow
++	 * a huge fault if we have a pre content watch on this file.  This would
++	 * be trivial to support, but there would need to be tests to ensure
++	 * this works properly and those don't exist currently.
 +	 */
-+	if (mask & FANOTIFY_PRE_CONTENT_EVENTS) {
-+		if (!(path->mnt->mnt_sb->s_iflags & SB_I_ALLOW_HSM))
-+			return -EINVAL;
-+		if (!is_dir && !d_is_reg(path->dentry))
-+			return -EINVAL;
-+	}
-+
- 	/*
- 	 * Some filesystems such as 'proc' acquire unusual locks when opening
- 	 * files. For them fanotify permission events have high chances of
-@@ -1677,7 +1689,7 @@ static int fanotify_events_supported(struct fsnotify_group *group,
- 	 * but because we always allowed it, error only when using new APIs.
- 	 */
- 	if (strict_dir_events && mark_type == FAN_MARK_INODE &&
--	    !d_is_dir(path->dentry) && (mask & FANOTIFY_DIRONLY_EVENT_BITS))
-+	    !is_dir && (mask & FANOTIFY_DIRONLY_EVENT_BITS))
- 		return -ENOTDIR;
++	if (fsnotify_file_has_pre_content_watches(file))
++		return VM_FAULT_FALLBACK;
+ 	if (vma->vm_ops->huge_fault)
+ 		return vma->vm_ops->huge_fault(vmf, PMD_ORDER);
+ 	return VM_FAULT_FALLBACK;
+@@ -5648,6 +5658,7 @@ static inline vm_fault_t create_huge_pmd(struct vm_fault *vmf)
+ static inline vm_fault_t wp_huge_pmd(struct vm_fault *vmf)
+ {
+ 	struct vm_area_struct *vma = vmf->vma;
++	struct file *file = vma->vm_file;
+ 	const bool unshare = vmf->flags & FAULT_FLAG_UNSHARE;
+ 	vm_fault_t ret;
  
- 	return 0;
-@@ -1778,10 +1790,14 @@ static int do_fanotify_mark(int fanotify_fd, unsigned int flags, __u64 mask,
- 		return -EPERM;
+@@ -5662,6 +5673,9 @@ static inline vm_fault_t wp_huge_pmd(struct vm_fault *vmf)
+ 	}
  
- 	/*
--	 * Permission events require minimum priority FAN_CLASS_CONTENT.
-+	 * Permission events are not allowed for FAN_CLASS_NOTIF.
-+	 * Pre-content permission events are not allowed for FAN_CLASS_CONTENT.
- 	 */
- 	if (mask & FANOTIFY_PERM_EVENTS &&
--	    group->priority < FSNOTIFY_PRIO_CONTENT)
-+	    group->priority == FSNOTIFY_PRIO_NORMAL)
-+		return -EINVAL;
-+	else if (mask & FANOTIFY_PRE_CONTENT_EVENTS &&
-+		 group->priority == FSNOTIFY_PRIO_CONTENT)
- 		return -EINVAL;
+ 	if (vma->vm_flags & (VM_SHARED | VM_MAYSHARE)) {
++		/* See comment in create_huge_pmd. */
++		if (fsnotify_file_has_pre_content_watches(file))
++			goto split;
+ 		if (vma->vm_ops->huge_fault) {
+ 			ret = vma->vm_ops->huge_fault(vmf, PMD_ORDER);
+ 			if (!(ret & VM_FAULT_FALLBACK))
+@@ -5681,9 +5695,13 @@ static vm_fault_t create_huge_pud(struct vm_fault *vmf)
+ #if defined(CONFIG_TRANSPARENT_HUGEPAGE) &&			\
+ 	defined(CONFIG_HAVE_ARCH_TRANSPARENT_HUGEPAGE_PUD)
+ 	struct vm_area_struct *vma = vmf->vma;
++	struct file *file = vma->vm_file;
+ 	/* No support for anonymous transparent PUD pages yet */
+ 	if (vma_is_anonymous(vma))
+ 		return VM_FAULT_FALLBACK;
++	/* See comment in create_huge_pmd. */
++	if (fsnotify_file_has_pre_content_watches(file))
++		return VM_FAULT_FALLBACK;
+ 	if (vma->vm_ops->huge_fault)
+ 		return vma->vm_ops->huge_fault(vmf, PUD_ORDER);
+ #endif /* CONFIG_TRANSPARENT_HUGEPAGE */
+@@ -5695,12 +5713,16 @@ static vm_fault_t wp_huge_pud(struct vm_fault *vmf, pud_t orig_pud)
+ #if defined(CONFIG_TRANSPARENT_HUGEPAGE) &&			\
+ 	defined(CONFIG_HAVE_ARCH_TRANSPARENT_HUGEPAGE_PUD)
+ 	struct vm_area_struct *vma = vmf->vma;
++	struct file *file = vma->vm_file;
+ 	vm_fault_t ret;
  
- 	if (mask & FAN_FS_ERROR &&
-diff --git a/include/linux/fanotify.h b/include/linux/fanotify.h
-index 89ff45bd6f01..c747af064d2c 100644
---- a/include/linux/fanotify.h
-+++ b/include/linux/fanotify.h
-@@ -89,6 +89,16 @@
- #define FANOTIFY_DIRENT_EVENTS	(FAN_MOVE | FAN_CREATE | FAN_DELETE | \
- 				 FAN_RENAME)
- 
-+/* Content events can be used to inspect file content */
-+#define FANOTIFY_CONTENT_PERM_EVENTS (FAN_OPEN_PERM | FAN_OPEN_EXEC_PERM | \
-+				      FAN_ACCESS_PERM)
-+/* Pre-content events can be used to fill file content */
-+#define FANOTIFY_PRE_CONTENT_EVENTS  (FAN_PRE_ACCESS)
-+
-+/* Events that require a permission response from user */
-+#define FANOTIFY_PERM_EVENTS	(FANOTIFY_CONTENT_PERM_EVENTS | \
-+				 FANOTIFY_PRE_CONTENT_EVENTS)
-+
- /* Events that can be reported with event->fd */
- #define FANOTIFY_FD_EVENTS (FANOTIFY_PATH_EVENTS | FANOTIFY_PERM_EVENTS)
- 
-@@ -104,10 +114,6 @@
- 				 FANOTIFY_INODE_EVENTS | \
- 				 FANOTIFY_ERROR_EVENTS)
- 
--/* Events that require a permission response from user */
--#define FANOTIFY_PERM_EVENTS	(FAN_OPEN_PERM | FAN_ACCESS_PERM | \
--				 FAN_OPEN_EXEC_PERM)
--
- /* Extra flags that may be reported with event or control handling of events */
- #define FANOTIFY_EVENT_FLAGS	(FAN_EVENT_ON_CHILD | FAN_ONDIR)
- 
-diff --git a/include/uapi/linux/fanotify.h b/include/uapi/linux/fanotify.h
-index 79072b6894f2..7596168c80eb 100644
---- a/include/uapi/linux/fanotify.h
-+++ b/include/uapi/linux/fanotify.h
-@@ -27,6 +27,8 @@
- #define FAN_OPEN_EXEC_PERM	0x00040000	/* File open/exec in perm check */
- /* #define FAN_DIR_MODIFY	0x00080000 */	/* Deprecated (reserved) */
- 
-+#define FAN_PRE_ACCESS		0x00100000	/* Pre-content access hook */
-+
- #define FAN_EVENT_ON_CHILD	0x08000000	/* Interested in child events */
- 
- #define FAN_RENAME		0x10000000	/* File was renamed */
+ 	/* No support for anonymous transparent PUD pages yet */
+ 	if (vma_is_anonymous(vma))
+ 		goto split;
+ 	if (vma->vm_flags & (VM_SHARED | VM_MAYSHARE)) {
++		/* See comment in create_huge_pmd. */
++		if (fsnotify_file_has_pre_content_watches(file))
++			goto split;
+ 		if (vma->vm_ops->huge_fault) {
+ 			ret = vma->vm_ops->huge_fault(vmf, PUD_ORDER);
+ 			if (!(ret & VM_FAULT_FALLBACK))
 -- 
 2.43.0
 

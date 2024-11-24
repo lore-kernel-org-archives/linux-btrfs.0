@@ -1,31 +1,31 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9DEEE1E00B1;
-	Sun, 24 Nov 2024 12:42:28 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 42CA41E0B6E;
+	Sun, 24 Nov 2024 12:42:35 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1732452148; cv=none; b=XDfG7e4Z8Q6aL55ilQHaqXurSmqQ9Q0apE3XgYkdv4eUFraLopv+PfF1W82uiMbscVsifmSG+AkB3YOB3Hne+HnrG0Biak9Y1mHYmT5kUCT0toR5MDgsxRX/0Y7IEBXKDOAgX3BZYRM6X1jEpGW95LYSVDataaaa/Mns1NWxfEQ=
+	t=1732452156; cv=none; b=eoBcSc0DMdfbX2tF6xqkYK84ERqSL21rJb9TTbc5Il+lOwLRiHKbYgL1TZiJfboJXiZcWeAKw1uvSKalylwIKFgGfWv2FPsgG1aQUdcykjNVIr7HyRRQwKpPxJQ33Ed9GMbYpnCqouVStKgASOzsQJEt6MNdmEpICpZ9cHR3RIE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1732452148; c=relaxed/simple;
-	bh=/l6mhQhX9t/HGmElU6gDa5zC79V9Pz8SJDT1b04P/nM=;
+	s=arc-20240116; t=1732452156; c=relaxed/simple;
+	bh=U5cJMnmzukYGPKOjl6IplW7PNAjyX2EZNYMB/z1fB5U=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=GwVLg+ckE50zKlZXydPqIlHqG/dKcPUqRPGkN970rmTPhy0Ak0iDa1PR+oJ6vf+4EhuOMZnicf6wbdVU5pEhVoXPhxCNRiWfb6ybgqZ4TRsSt1NNawtirWGZR6TxJWGBjp9q/O/DREsHo4H+m0Sl68T7wuvHdud/acOEbyaAVms=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=tJdUuOMU; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version; b=bClRrman0THI0lxuSKhWIzoWf0kmrY5gIOL7GIS19ZzFKK3GZV8B2xdnUoek+4e+v1SaY1zFpW6J2bHA+mQdvTyqXN9+QmYrUZ8RSqiONFqVuRZzlJuvWU/thL0R6qmESe6bUHUbaTYc5Ab3E94pViQ1PTb3Y+iroiHzPuUYFZs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=bX1LEq27; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="tJdUuOMU"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8337EC4CECC;
-	Sun, 24 Nov 2024 12:42:27 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="bX1LEq27"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 89E46C4CECC;
+	Sun, 24 Nov 2024 12:42:34 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1732452148;
-	bh=/l6mhQhX9t/HGmElU6gDa5zC79V9Pz8SJDT1b04P/nM=;
+	s=k20201202; t=1732452155;
+	bh=U5cJMnmzukYGPKOjl6IplW7PNAjyX2EZNYMB/z1fB5U=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-	b=tJdUuOMUyJUPhshRe131ZijV9qiUyWolGbmmk7IC9gq9/y3bdZradxBd2jKwsfupA
-	 aDjkvs79Sk+RInqY3G9OropkYe2abbrUx8odnQgxnCfbCzvz4W8FwFq/d57YtBEmeo
-	 0JdDjQlFc4P2YPZPrnBptOS2HgH1xGIB0KlX4N/j6y+6rIOcri73rc4TMBuB9+bzh0
-	 6AimilDXgYoSmHa1Dga97UsZXmAr5e8U6W644fuXiFXgPng7PtqWmER6wMiUDvI7P/
-	 R3WDMDFx9YsvgWKFXrN8lRXC8ywMsEmiAWT3DnEsqSCRFMylCNil6Smv9BNt5W6LKo
-	 xrAUsyJvhjcRw==
+	b=bX1LEq27R68zGVd39ywGNFfFQGQO7GJRanaCtuyB7xke2jzrEHBp7V5s1pIAjWMWb
+	 c8h/EogpRgPZO3lMTAjflOqrHbtlkHhskgOjjpG3bLq2fgl8DzdBIFtcV1Z494Dicq
+	 XdVFw2ktDhWm+yQNws8/qW6dqMKNrJCwW21GkBvEqtKpnJos6D1L9Tj/cbZapAOtzI
+	 D+iIGuHwS2Tgbs7AEHDF758f9vfZ0P/hAtzxImbF57MTLR+LIodaHBxdbEhTsyCO3a
+	 A2IgRyNm/4fSe4QKGnypfoFfQGgv6VMq8KQUen4NFs9Qrv/hEWAiZmRYhRYQFryzZI
+	 N6JPYTR/AQzxg==
 From: Sasha Levin <sashal@kernel.org>
 To: linux-kernel@vger.kernel.org,
 	stable@vger.kernel.org
@@ -36,12 +36,12 @@ Cc: Filipe Manana <fdmanana@suse.com>,
 	clm@fb.com,
 	josef@toxicpanda.com,
 	linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.4 2/2] btrfs: fix warning on PTR_ERR() against NULL device at btrfs_control_ioctl()
-Date: Sun, 24 Nov 2024 07:42:21 -0500
-Message-ID: <20241124124224.3337144-2-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 4.19 2/2] btrfs: fix warning on PTR_ERR() against NULL device at btrfs_control_ioctl()
+Date: Sun, 24 Nov 2024 07:42:28 -0500
+Message-ID: <20241124124231.3337202-2-sashal@kernel.org>
 X-Mailer: git-send-email 2.43.0
-In-Reply-To: <20241124124224.3337144-1-sashal@kernel.org>
-References: <20241124124224.3337144-1-sashal@kernel.org>
+In-Reply-To: <20241124124231.3337202-1-sashal@kernel.org>
+References: <20241124124231.3337202-1-sashal@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -50,7 +50,7 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
-X-stable-base: Linux 5.4.286
+X-stable-base: Linux 4.19.324
 Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
@@ -74,10 +74,10 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  1 file changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index ea8b5b2d859d7..c80bc69ad6a82 100644
+index a595439518519..086d6d397f0be 100644
 --- a/fs/btrfs/super.c
 +++ b/fs/btrfs/super.c
-@@ -2227,7 +2227,10 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
+@@ -2283,7 +2283,10 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
  					       &btrfs_root_fs_type);
  		if (IS_ERR(device)) {
  			mutex_unlock(&uuid_mutex);

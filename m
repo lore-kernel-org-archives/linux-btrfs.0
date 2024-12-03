@@ -1,274 +1,238 @@
-Received: from mout.gmx.net (mout.gmx.net [212.227.15.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-il1-f205.google.com (mail-il1-f205.google.com [209.85.166.205])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C11B213D890
-	for <linux-btrfs@vger.kernel.org>; Tue,  3 Dec 2024 10:04:12 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.15.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E185513D890
+	for <linux-btrfs@vger.kernel.org>; Tue,  3 Dec 2024 10:05:28 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.166.205
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1733220255; cv=none; b=CqirxPvxpJ697tP+MrzyyhFzYx6n/b0MSLup+6CkBfg2KLP0YoZqYyOYqIiLYHC09o2X5Vke9OjFOK40gYQ6ICG4HxoXrQK7RS06mwewZNPjdxw2r0E5Em1Nk/4tEKM06kD0qO74FIdaB2N8KWWVIyncNT4dmNRhpTz0Zs8Krmo=
+	t=1733220330; cv=none; b=O1psCmRvF1fPEcPRkKgKjJuH/KrcPp/NF5+G/z/ypD0xd15B6kulYSB4TLqXVmvBCZgtuHQpMFEoIQFu7HxZXU/sPBrggzOTH24kWqClirhCN0oy5Q/mHd6Xbz3XqL2WmgaC3vKl6gRKQpIpZQCTNzLxyxhaqH7fJa0gSYOPm4o=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1733220255; c=relaxed/simple;
-	bh=yuUMJ5E4yVdpwo9x6EnOJB/tmuyllSJ0/q59I9UJsxQ=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=sr+opdPVZPQVypWPMmkf2HVD3/Nw9eswCKr47qRKKmzs4oEcnXQXS+Ox0FC4uyiELAL2sTSe7O8bmhjPCC+e9HcBlPF1QBXkLkLVNDa3uLIoc66Mo+q64vL1DMKgy0ToND3F7cfYmWj+sNcB8C17PpbeI4O58laOFKZv1Jk/8dI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=Aj/bziej; arc=none smtp.client-ip=212.227.15.18
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="Aj/bziej"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1733220250; x=1733825050; i=quwenruo.btrfs@gmx.com;
-	bh=KU2QIzFC6n6elEKFmDiWms2mTClmmwAe+DL7cFVKHMo=;
-	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
-	 References:From:In-Reply-To:Content-Type:
-	 Content-Transfer-Encoding:cc:content-transfer-encoding:
-	 content-type:date:from:message-id:mime-version:reply-to:subject:
-	 to;
-	b=Aj/bziejIM9urP2zy6O6LwLFaj3mxAJ72v7hS+gVIlBJdecWQvvueZCpDlvr8Jxb
-	 vc/R4Tj8ygNVcKvF6id54laMSb/rGtntL1iykHl44GVbEFgM36MAQ/ed/k7EigVIU
-	 D63Mqk8J+tb3XXr6MhTHpwx/blWBFSBQB5h3fn7C9VTKZamY0DGWkt7coXnGA6Eh+
-	 f2nid9aJQdz2Iw5hQtXiqinbzzs3EezIg2nFDv85u3RaeO4itarzK1XecF7ohvcjQ
-	 DLKtWbhcSa7QhpUFCH0APXv9Pf7xL6nd1KkE5CTBYdsOC1uRdLOt7/NgyST1zcWVz
-	 VGGd/iOOVSuMmN9YAQ==
-X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from [172.16.0.191] ([159.196.52.54]) by mail.gmx.net (mrgmx004
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1MNbp3-1t2ezS2cWJ-00Z0D1; Tue, 03
- Dec 2024 11:04:10 +0100
-Message-ID: <a2f8b6d2-7f11-4827-a061-ff2f822a5f08@gmx.com>
-Date: Tue, 3 Dec 2024 20:34:06 +1030
+	s=arc-20240116; t=1733220330; c=relaxed/simple;
+	bh=eGLCsoU5UhPayHYJyQH3fZBUXUGqw78JsWtb370OmIs=;
+	h=MIME-Version:Date:In-Reply-To:Message-ID:Subject:From:To:
+	 Content-Type; b=GlXHaSNVQchOm3HDIJEBZSsY5IrpLAaoQ0umRQARQOlRTM3q4hx9OEtankk74O6TtdfILbSe+arNEMD0mJmERWixn0qfvhqmH2fRATAg2sF1wW1HVRE6qkxNkB6laxpihouESugSj5iktR15b8HBi35Thv1YhvugpPnd4RXf6RQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com; arc=none smtp.client-ip=209.85.166.205
+Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
+Received: by mail-il1-f205.google.com with SMTP id e9e14a558f8ab-3a7e1527971so45282195ab.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 03 Dec 2024 02:05:28 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1733220328; x=1733825128;
+        h=to:from:subject:message-id:in-reply-to:date:mime-version
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=LMMZQhF3ZH/YIe95dgi57cUCdWtzNg5zbvtUk78lXHc=;
+        b=HuYIfmSzp9lW2Ns6bqIGhQJ8v3NnvHXXZUD1tb4CnofC2xNF9Q/BnuEFeMZZVIWaDp
+         Slci93+DvXUavcnr5ZIpcnzfzXU/E86G1WkF4L5sE6gy9R0dIB1sxpeKlg5ARDjcgU8M
+         Z7kKyyFDAB3Mxa1QMVhnVt4aru8gb9vegpKNMa7Qmfql1ZLwBOQv+25vYIUv7qvhr/co
+         JMvQJNU5jIu1u2RDlRzHBrMlnwmE/ao0VLmh59E2FRashRDyroGHbddsoDw1N4+u6ui3
+         IAPzSOJctSGflH2WU1J1Omnmpx/wAITdIjzia3f2FFYBRIUlDiewyw90BGWB1YnItBFL
+         o06A==
+X-Forwarded-Encrypted: i=1; AJvYcCVbkmW2/J7KgaVdnGYm3UXDPeem7sS5/NPLLKT59YkpBZRXwhg7i+u22F/sUMetNZ8x4rP2JQsBGDEdOg==@vger.kernel.org
+X-Gm-Message-State: AOJu0YxrPWcw9iURjabaX7gFWq6hi6o6ByaOzfeTbMDrOokXipKld7Fj
+	Q5IicNCchDPh6P78A/wbutAwlu7NZftKmfOXq1CvsogEGbeuFbUm35fpVKRc5Zk6arUDjPmdc4Z
+	2La7vey6jBojdr+Cedp5xPoYr4kjijoeoP7qARwSF8aHZS8e5EDGrSHk=
+X-Google-Smtp-Source: AGHT+IFykq5RbW+qOR9z1bnYfFVE4hMxZqSrj6KCqL2c9r3GmC1xiwHvf4gTEkvbc5e49InrsBc9OPr8+lTIiuLVAytGDwZAWiWu
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: Balance failed with tree block error
-To: Neil Parton <njparton@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-References: <CAAYHqBbMeLYXdhNondp8JwQCsp-n1cCvnAubS3f2FxD6PBOEsQ@mail.gmail.com>
- <8276d833-d4f2-42dd-8190-c98265896ee3@gmx.com>
- <CAAYHqBZMBmD2yT2C95KrGXNqYjkecEO3jQQ74X5iT+MKxWhpMA@mail.gmail.com>
- <ba4f665d-f7fe-438f-a7ba-dc92d16b9f68@gmx.com>
- <CAAYHqBZmXtW_Z1KBNzOODNHgC=hMVXUrS3HGvKsBy3cd=jW-mQ@mail.gmail.com>
-Content-Language: en-US
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1YAUJEP5a
- sQAKCRDCPZHzoSX+qF+mB/9gXu9C3BV0omDZBDWevJHxpWpOwQ8DxZEbk9b9LcrQlWdhFhyn
- xi+l5lRziV9ZGyYXp7N35a9t7GQJndMCFUWYoEa+1NCuxDs6bslfrCaGEGG/+wd6oIPb85xo
- naxnQ+SQtYLUFbU77WkUPaaIU8hH2BAfn9ZSDX9lIxheQE8ZYGGmo4wYpnN7/hSXALD7+oun
- tZljjGNT1o+/B8WVZtw/YZuCuHgZeaFdhcV2jsz7+iGb+LsqzHuznrXqbyUQgQT9kn8ZYFNW
- 7tf+LNxXuwedzRag4fxtR+5GVvJ41Oh/eygp8VqiMAtnFYaSlb9sjia1Mh+m+OBFeuXjgGlG
- VvQFzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1gQUJEP5a0gAK
- CRDCPZHzoSX+qHGpB/kB8A7M7KGL5qzat+jBRoLwB0Y3Zax0QWuANVdZM3eJDlKJKJ4HKzjo
- B2Pcn4JXL2apSan2uJftaMbNQbwotvabLXkE7cPpnppnBq7iovmBw++/d8zQjLQLWInQ5kNq
- Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
- +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
- HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
-In-Reply-To: <CAAYHqBZmXtW_Z1KBNzOODNHgC=hMVXUrS3HGvKsBy3cd=jW-mQ@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:2albJ8w7Racqe7HdzTxv+XZ72iWuB8kziAm6IrjI4JGCk5URLiC
- yBzHGMw9IejCQgcV413ozd5k+apIkmEOzB8O4D2Lgt4+9X56r4MQ/uCM/P67Z2GxWLKfHfg
- gmb5sWUF21VOSysbhK31ILQKUY8GK4VX8bASAihmdSs2b/4rctAEQ7Zch/8ujq0Ai/gKm5k
- KU5Qtl/X57FqMr5iF6jCQ==
-X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:2Vko0lfjiqk=;GUGthsIQaqKLdt+3CXqPlyzq2jI
- 5mh9Y5e18bhRxoaVTPXoxTVpZMVOW4U5L7ZbYLDvh0sOB3E1wSQ8+EVukCEDrPoQDvhHWSaGk
- 6OXQsq3g606S6NRaYR1VaMe+L3YCYx+mqCcWHWouB5Yx/43q9X0ASNLVyRDLUlT1Bj9ZEu2pH
- hms9y2lBvP8c3zQNQcXAkB5o55ZOIk6UcTdN0VxfbBxtk5oPEQRXSH1PzLQ24W6wEwV8mvGRS
- suk4C5/KQyQtakbJZ5js3Ey1rdODP3JcZI8C+Z+GHEFVMNjAJMZD/JdnBn/jSOxMdbEcbkf6I
- Q4Mjk6b8BwmoetEpnFrwv+C9oS1BT+pXQYaaDmsb4A1FHYSft67/cZ5c/N1vAiol3vkelt9W3
- Wm2Ou4oHLCMx7oOOxH9I6dwz9K5G8KdZIISI2wb+re1QKwQLXJ01AsuI2TvvMOB//w6Kz5gG5
- nHyimChgaF58Bzc73qdjCODztitq428p1oDu4wP38/DUoXxR7lRz3xLTrvUX6nFqBlWd0FGIu
- qYWVVZ1pDV0H26VxRRJgh/nkXP0gNbVPoxDOuRJQ/GjVyq5SnjiTsufV0ZAyJ/jQ7geTyDuPi
- 6Bwr4dpR7KvsYEQotwZq7Gf+7whDiuntd9RY750lQswdORIoVtTyU7aGBChxZEQk7zKU6x2eS
- WycwO40Uqo0VbuNmgxBI7RpQtMWF61+rry6SYrR58U63lbZaImNFxtvZC1TQ4vtF7GSVCB0PC
- gXVJaYIsdUP0Q64cTk6OKdAZDuFsxxPAbWMFc0fE6bVKsWE1N/K4RebJxdr8F8QNKelhkU2Ah
- pT/jyJfZkoLibhbc5YNRXG72NWmiyqdwMhSaJG4s6pjpXhsKj43TyZzR+xUkcdsKHqWNKXJoM
- 3G7ccC6RK1d04+sOF/Gt7ucm26B02+VQF9/Yub5fJvPqoi4T0JM2R9cYtSqcm7qrDR9AWd7TF
- GldqvXX97S+vWpdDxFIwPYZ+5mGPNWOor2SYJBr5NV6coseqLGoVSsfH06w/Uzu+fXuHcWm9M
- 5VkAfOjM9cjWQRVyWapAFb8ba3J9BQMl5ipDikenWYAJQ81Ot9oef8WwWWVhc0mKQHsyS3vpu
- Z459eJG6GcdpDDiiM4zvXOFxMBb6MB
+X-Received: by 2002:a05:6e02:1568:b0:3a7:e701:bd0f with SMTP id
+ e9e14a558f8ab-3a7f9aa4e27mr19568675ab.21.1733220328063; Tue, 03 Dec 2024
+ 02:05:28 -0800 (PST)
+Date: Tue, 03 Dec 2024 02:05:28 -0800
+In-Reply-To: <67455483.050a0220.1286eb.000f.GAE@google.com>
+X-Google-Appengine-App-Id: s~syzkaller
+X-Google-Appengine-App-Id-Alias: syzkaller
+Message-ID: <674ed7e8.050a0220.48a03.0031.GAE@google.com>
+Subject: Re: [syzbot] [btrfs?] BUG: unable to handle kernel paging request in
+ try_to_wake_up (2)
+From: syzbot <syzbot+b7cf50a0c173770dcb14@syzkaller.appspotmail.com>
+To: axboe@kernel.dk, clm@fb.com, dsterba@suse.com, josef@toxicpanda.com, 
+	linux-block@vger.kernel.org, linux-btrfs@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
+Content-Type: text/plain; charset="UTF-8"
+
+syzbot has found a reproducer for the following issue on:
+
+HEAD commit:    cdd30ebb1b9f module: Convert symbol namespace to string li..
+git tree:       upstream
+console+strace: https://syzkaller.appspot.com/x/log.txt?x=17f78330580000
+kernel config:  https://syzkaller.appspot.com/x/.config?x=91c852e3d1d7c1a6
+dashboard link: https://syzkaller.appspot.com/bug?extid=b7cf50a0c173770dcb14
+compiler:       Debian clang version 15.0.6, GNU ld (GNU Binutils for Debian) 2.40
+syz repro:      https://syzkaller.appspot.com/x/repro.syz?x=140e75e8580000
+C reproducer:   https://syzkaller.appspot.com/x/repro.c?x=14b1e80f980000
+
+Downloadable assets:
+disk image: https://storage.googleapis.com/syzbot-assets/e7e1e116ea6e/disk-cdd30ebb.raw.xz
+vmlinux: https://storage.googleapis.com/syzbot-assets/76410fd02a13/vmlinux-cdd30ebb.xz
+kernel image: https://storage.googleapis.com/syzbot-assets/60bcdb55dd9c/bzImage-cdd30ebb.xz
+mounted in repro: https://storage.googleapis.com/syzbot-assets/e76e3f28b6bd/mount_0.gz
+
+IMPORTANT: if you fix the issue, please add the following tag to the commit:
+Reported-by: syzbot+b7cf50a0c173770dcb14@syzkaller.appspotmail.com
+
+==================================================================
+BUG: KASAN: slab-use-after-free in __lock_acquire+0x78/0x2100 kernel/locking/lockdep.c:5089
+Read of size 8 at addr ffff8880259d2818 by task kworker/u8:3/52
+
+CPU: 1 UID: 0 PID: 52 Comm: kworker/u8:3 Not tainted 6.13.0-rc1-syzkaller-00002-gcdd30ebb1b9f #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+Workqueue: btrfs-delalloc btrfs_work_helper
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120
+ print_address_description mm/kasan/report.c:378 [inline]
+ print_report+0x169/0x550 mm/kasan/report.c:489
+ kasan_report+0x143/0x180 mm/kasan/report.c:602
+ __lock_acquire+0x78/0x2100 kernel/locking/lockdep.c:5089
+ lock_acquire+0x1ed/0x550 kernel/locking/lockdep.c:5849
+ __raw_spin_lock_irqsave include/linux/spinlock_api_smp.h:110 [inline]
+ _raw_spin_lock_irqsave+0xd5/0x120 kernel/locking/spinlock.c:162
+ class_raw_spinlock_irqsave_constructor include/linux/spinlock.h:551 [inline]
+ try_to_wake_up+0xc2/0x1470 kernel/sched/core.c:4205
+ submit_compressed_extents+0xdf/0x16e0 fs/btrfs/inode.c:1615
+ run_ordered_work fs/btrfs/async-thread.c:288 [inline]
+ btrfs_work_helper+0x96f/0xc40 fs/btrfs/async-thread.c:324
+ process_one_work kernel/workqueue.c:3229 [inline]
+ process_scheduled_works+0xa66/0x1840 kernel/workqueue.c:3310
+ worker_thread+0x870/0xd30 kernel/workqueue.c:3391
+ kthread+0x2f0/0x390 kernel/kthread.c:389
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>
+
+Allocated by task 2:
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3f/0x80 mm/kasan/common.c:68
+ unpoison_slab_object mm/kasan/common.c:319 [inline]
+ __kasan_slab_alloc+0x66/0x80 mm/kasan/common.c:345
+ kasan_slab_alloc include/linux/kasan.h:250 [inline]
+ slab_post_alloc_hook mm/slub.c:4104 [inline]
+ slab_alloc_node mm/slub.c:4153 [inline]
+ kmem_cache_alloc_node_noprof+0x1d9/0x380 mm/slub.c:4205
+ alloc_task_struct_node kernel/fork.c:180 [inline]
+ dup_task_struct+0x57/0x8c0 kernel/fork.c:1113
+ copy_process+0x5d1/0x3d50 kernel/fork.c:2225
+ kernel_clone+0x223/0x870 kernel/fork.c:2807
+ kernel_thread+0x1bc/0x240 kernel/fork.c:2869
+ create_kthread kernel/kthread.c:412 [inline]
+ kthreadd+0x60d/0x810 kernel/kthread.c:767
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+Freed by task 24:
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3f/0x80 mm/kasan/common.c:68
+ kasan_save_free_info+0x40/0x50 mm/kasan/generic.c:582
+ poison_slab_object mm/kasan/common.c:247 [inline]
+ __kasan_slab_free+0x59/0x70 mm/kasan/common.c:264
+ kasan_slab_free include/linux/kasan.h:233 [inline]
+ slab_free_hook mm/slub.c:2338 [inline]
+ slab_free mm/slub.c:4598 [inline]
+ kmem_cache_free+0x195/0x410 mm/slub.c:4700
+ put_task_struct include/linux/sched/task.h:144 [inline]
+ delayed_put_task_struct+0x125/0x300 kernel/exit.c:227
+ rcu_do_batch kernel/rcu/tree.c:2567 [inline]
+ rcu_core+0xaaa/0x17a0 kernel/rcu/tree.c:2823
+ handle_softirqs+0x2d4/0x9b0 kernel/softirq.c:554
+ run_ksoftirqd+0xca/0x130 kernel/softirq.c:943
+ smpboot_thread_fn+0x544/0xa30 kernel/smpboot.c:164
+ kthread+0x2f0/0x390 kernel/kthread.c:389
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+Last potentially related work creation:
+ kasan_save_stack+0x3f/0x60 mm/kasan/common.c:47
+ __kasan_record_aux_stack+0xac/0xc0 mm/kasan/generic.c:544
+ __call_rcu_common kernel/rcu/tree.c:3086 [inline]
+ call_rcu+0x167/0xa70 kernel/rcu/tree.c:3190
+ context_switch kernel/sched/core.c:5372 [inline]
+ __schedule+0x1803/0x4be0 kernel/sched/core.c:6756
+ __schedule_loop kernel/sched/core.c:6833 [inline]
+ schedule+0x14b/0x320 kernel/sched/core.c:6848
+ schedule_timeout+0xb0/0x290 kernel/time/sleep_timeout.c:75
+ do_wait_for_common kernel/sched/completion.c:95 [inline]
+ __wait_for_common kernel/sched/completion.c:116 [inline]
+ wait_for_common kernel/sched/completion.c:127 [inline]
+ wait_for_completion+0x355/0x620 kernel/sched/completion.c:148
+ kthread_stop+0x19e/0x640 kernel/kthread.c:712
+ close_ctree+0x524/0xd60 fs/btrfs/disk-io.c:4328
+ generic_shutdown_super+0x139/0x2d0 fs/super.c:642
+ kill_anon_super+0x3b/0x70 fs/super.c:1237
+ btrfs_kill_super+0x41/0x50 fs/btrfs/super.c:2112
+ deactivate_locked_super+0xc4/0x130 fs/super.c:473
+ cleanup_mnt+0x41f/0x4b0 fs/namespace.c:1373
+ task_work_run+0x24f/0x310 kernel/task_work.c:239
+ ptrace_notify+0x2d2/0x380 kernel/signal.c:2503
+ ptrace_report_syscall include/linux/ptrace.h:415 [inline]
+ ptrace_report_syscall_exit include/linux/ptrace.h:477 [inline]
+ syscall_exit_work+0xc7/0x1d0 kernel/entry/common.c:173
+ syscall_exit_to_user_mode_prepare kernel/entry/common.c:200 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:205 [inline]
+ syscall_exit_to_user_mode+0x24a/0x340 kernel/entry/common.c:218
+ do_syscall_64+0x100/0x230 arch/x86/entry/common.c:89
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+The buggy address belongs to the object at ffff8880259d1e00
+ which belongs to the cache task_struct of size 7424
+The buggy address is located 2584 bytes inside of
+ freed 7424-byte region [ffff8880259d1e00, ffff8880259d3b00)
+
+The buggy address belongs to the physical page:
+page: refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x259d0
+head: order:3 mapcount:0 entire_mapcount:0 nr_pages_mapped:0 pincount:0
+memcg:ffff88802f4b56c1
+flags: 0xfff00000000040(head|node=0|zone=1|lastcpupid=0x7ff)
+page_type: f5(slab)
+raw: 00fff00000000040 ffff88801bafe500 dead000000000100 dead000000000122
+raw: 0000000000000000 0000000000040004 00000001f5000000 ffff88802f4b56c1
+head: 00fff00000000040 ffff88801bafe500 dead000000000100 dead000000000122
+head: 0000000000000000 0000000000040004 00000001f5000000 ffff88802f4b56c1
+head: 00fff00000000003 ffffea0000967401 ffffffffffffffff 0000000000000000
+head: 0000000000000008 0000000000000000 00000000ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 3, migratetype Unmovable, gfp_mask 0xd20c0(__GFP_IO|__GFP_FS|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP|__GFP_NOMEMALLOC), pid 12, tgid 12 (kworker/u8:1), ts 7328037942, free_ts 0
+ set_page_owner include/linux/page_owner.h:32 [inline]
+ post_alloc_hook+0x1f3/0x230 mm/page_alloc.c:1556
+ prep_new_page mm/page_alloc.c:1564 [inline]
+ get_page_from_freelist+0x3651/0x37a0 mm/page_alloc.c:3474
+ __alloc_pages_noprof+0x292/0x710 mm/page_alloc.c:4751
+ alloc_pages_mpol_noprof+0x3e8/0x680 mm/mempolicy.c:2265
+ alloc_slab_page+0x6a/0x140 mm/slub.c:2408
+ allocate_slab+0x5a/0x2f0 mm/slub.c:2574
+ new_slab mm/slub.c:2627 [inline]
+ ___slab_alloc+0xcd1/0x14b0 mm/slub.c:3815
+ __slab_alloc+0x58/0xa0 mm/slub.c:3905
+ __slab_alloc_node mm/slub.c:3980 [inline]
+ slab_alloc_node mm/slub.c:4141 [inline]
+ kmem_cache_alloc_node_noprof+0x269/0x380 mm/slub.c:4205
+ alloc_task_struct_node kernel/fork.c:180 [inline]
+ dup_task_struct+0x57/0x8c0 kernel/fork.c:1113
+ copy_process+0x5d1/0x3d50 kernel/fork.c:2225
+ kernel_clone+0x223/0x870 kernel/fork.c:2807
+ user_mode_thread+0x132/0x1a0 kernel/fork.c:2885
+ call_usermodehelper_exec_work+0x5c/0x230 kernel/umh.c:171
+ process_one_work kernel/workqueue.c:3229 [inline]
+ process_scheduled_works+0xa66/0x1840 kernel/workqueue.c:3310
+ worker_thread+0x870/0xd30 kernel/workqueue.c:3391
+page_owner free stack trace missing
+
+Memory state around the buggy address:
+ ffff8880259d2700: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff8880259d2780: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+>ffff8880259d2800: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+                            ^
+ ffff8880259d2880: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff8880259d2900: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+==================================================================
 
 
-
-=E5=9C=A8 2024/12/3 20:15, Neil Parton =E5=86=99=E9=81=93:
-> OK I unmounted the filesystem and ran sudo btrfs check --readonly
-> /dev/sdd 1> stdout.txt 2> stderr.txt > check.txt (sdd appeared to be
-> the drive with issues from the dmesg logs).
->
-> stderr and check outputs attached, stdout was blank
-
-It looks like the problem is more like a bitflip now.
-
-All the involved back tree backrefs have the same parent
-332886134538240, which matches the dmesg bytenr.
-
-If the fs is an old one, it may be some older corruption.
-
-Anyway, you should still be able to backup all the data (no special
-mount option needed even), after making sure your hardware memory is all
-fine.
-
-Then I'd recommend to reformat the fs after backing up needed data.
-
-Thanks,
-Qu
->
-> Thanks
->
-> Neil
->
-> On Tue, 3 Dec 2024 at 08:38, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
->>
->>
->>
->> =E5=9C=A8 2024/12/3 18:50, Neil Parton =E5=86=99=E9=81=93:
->>> OK I've output dmesg to a text file attached, glad you remembered my
->>> previous experience as I forgot to mention that!
->>
->> The tree block backref btrfs is searching for is 332886134538240.
->>
->> But there are only two tree block backref near that number:
->>
->> [16181.904739]  item 63 key (332886134521856 168 16384) itemoff 13019
->> itemsize 51
->> [16181.904740]          extent refs 1 gen 12802640 flags 2
->> [16181.904741]          tree block key (18446744073709551606 128
->> 334290896531456) level 0
->> [16181.904741]          ref#0: tree block backref root 7
->> [16181.904742]  item 64 key (332886134554624 168 16384) itemoff 12968
->> itemsize 51
->> [16181.904743]          extent refs 1 gen 12802640 flags 2
->> [16181.904744]          tree block key (18446744073709551606 128
->> 334290913148928) level 0
->> [16181.904745]          ref#0: tree block backref root 7
->>
->> So far it's very hard to judge if it's a memory bitflip.
->>
->> The bytenr 332886134538240 is 0x0x12ec217cc8000, meanwhile the target i=
-s
->> 0x12ec217ccc000.
->>
->> The diff is 0x4000, so it may be a bit flip.
->>
->> On the other hand, it may also be a case where it's really an extent
->> tree corruption that cause some backref missing for that 0x12ec217ccc00=
-0
->> bytenr.
->>
->> I do not have a good call just based on the dmesg.
->>
->> A full "btrfs check --readonly" output (including both stderr and
->> stdout) could help a lot.
->> And if your memtest exposed some error, then it's also very likely it's
->> a bitflip at runtime, and since such bitflip brings no obvious
->> corruption btrfs is unable to catch it and wrote it back to disk.
->>
->> Thanks,
->> Qu
->>
->>>
->>> Thanks
->>>
->>> Neil
->>>
->>> On Tue, 3 Dec 2024 at 08:16, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
->>>>
->>>>
->>>>
->>>> =E5=9C=A8 2024/12/3 18:41, Neil Parton =E5=86=99=E9=81=93:
->>>>> Arch Linux kernel 6.6.63-1-lts, btrfs-progs 6.12-1
->>>>>
->>>>> Yesterday I added a 5th drive to an existing raid 1 array (raid1c3
->>>>> metadata) and overnight it failed after a few percent complete.  btr=
-fs
->>>>> stats are all zero and there are no SMART errors on any of the 5
->>>>> drives.
->>>>>
->>>>> dmesg shows the following:
->>>>>
->>>>> $ sudo dmesg | grep btrfs
->>>>> [16181.905236] WARNING: CPU: 0 PID: 23336 at
->>>>> fs/btrfs/relocation.c:3286 add_data_references+0x4f8/0x550 [btrfs]
->>>>> [16181.905347]  spi_intel xhci_pci_renesas drm_display_helper video
->>>>> cec wmi btrfs blake2b_generic libcrc32c crc32c_generic crc32c_intel
->>>>> xor raid6_pq
->>>>> [16181.905354] CPU: 0 PID: 23336 Comm: btrfs Tainted: G     U
->>>>>       6.6.63-1-lts #1 1935f30fe99b63e43ea69e5a59d364f11de63a00
->>>>> [16181.905358] RIP: 0010:add_data_references+0x4f8/0x550 [btrfs]
->>>>> [16181.905431]  ? add_data_references+0x4f8/0x550 [btrfs
->>>>> 4407e530e6d61f5f220d43222ab0d6fd9f22e635]
->>>>> [16181.905488]  ? add_data_references+0x4f8/0x550 [btrfs
->>>>> 4407e530e6d61f5f220d43222ab0d6fd9f22e635]
->>>>> [16181.905551]  ? add_data_references+0x4f8/0x550 [btrfs
->>>>> 4407e530e6d61f5f220d43222ab0d6fd9f22e635]
->>>>> [16181.905601]  ? add_data_references+0x4f8/0x550 [btrfs
->>>>> 4407e530e6d61f5f220d43222ab0d6fd9f22e635]
->>>>> [16181.905654]  relocate_block_group+0x336/0x500 [btrfs
->>>>> 4407e530e6d61f5f220d43222ab0d6fd9f22e635]
->>>>> [16181.905705]  btrfs_relocate_block_group+0x27c/0x440 [btrfs
->>>>> 4407e530e6d61f5f220d43222ab0d6fd9f22e635]
->>>>> [16181.905755]  btrfs_relocate_chunk+0x3f/0x170 [btrfs
->>>>> 4407e530e6d61f5f220d43222ab0d6fd9f22e635]
->>>>> [16181.905811]  btrfs_balance+0x942/0x1340 [btrfs
->>>>> 4407e530e6d61f5f220d43222ab0d6fd9f22e635]
->>>>> [16181.905866]  btrfs_ioctl+0x2388/0x2640 [btrfs
->>>>> 4407e530e6d61f5f220d43222ab0d6fd9f22e635]
->>>>>
->>>>> and
->>>>>
->>>>> $ sudo dmesg | grep BTRFS
->>>>> <deleted lots of repetitive lines for brevity>
->>>>> [16162.080878] BTRFS info (device sdd): relocating block group
->>>>> 338737521229824 flags data|raid1
->>>>> [16175.051355] BTRFS info (device sdd): found 5 extents, stage: move
->>>>> data extents
->>>>> [16180.023748] BTRFS info (device sdd): found 5 extents, stage: upda=
-te
->>>>> data pointers
->>>>> [16181.904523] BTRFS info (device sdd): leaf 328610877177856 gen
->>>>> 12982316 total ptrs 206 free space 627 owner 2
->>>>> [16181.905206] BTRFS error (device sdd): tree block extent item
->>>>> (332886134538240) is not found in extent tree
->>>>
->>>> There is a leaf dump, please paste the full dmesg, or we can not be s=
-ure
->>>> what the cause is.
->>>>
->>>> Although I guess it may be a memory bitflip, considering all the past
->>>> experience.
->>>>
->>>> So after pasting the full dmesg, you may also want to do a full memte=
-st
->>>> just in case.
->>>>
->>>> Thanks,
->>>> Qu
->>>>
->>>>> [16183.091659] BTRFS info (device sdd): balance: ended with status: =
--22
->>>>>
->>>>> What course of action should I take so that the balance completes ne=
-xt time?
->>>>>
->>>>> Many thanks
->>>>>
->>>>> Neil
->>>>>
->>>>
->>
-
+---
+If you want syzbot to run the reproducer, reply with:
+#syz test: git://repo/address.git branch-or-commit-hash
+If you attach or paste a git patch, syzbot will apply it before testing.

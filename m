@@ -1,39 +1,41 @@
-Received: from libero.it (smtp-16.italiaonline.it [213.209.10.16])
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.20])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 85E51259491
-	for <linux-btrfs@vger.kernel.org>; Wed, 11 Dec 2024 19:41:44 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=213.209.10.16
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4FACEC148;
+	Wed, 11 Dec 2024 19:47:47 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.17.20
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1733946109; cv=none; b=eq8PmWU5FMX1mBVl0yYbCtHSyfp4SvP62yH63vAZsOd96bkV9t2obUgzBV3RNT07rk5excTdJVPf6ogSx35vB0+v/df/tbrPvRgAqZOC3zYWWHRO8PwFQEGCDRWK1XBqebREKeI/XgSZpsQzdPeYNata82ZLrC9KC5wqqPseSjY=
+	t=1733946470; cv=none; b=L/5jYu+oKNC51QQ0lsnwsgfqR9RBNY5t+gTjmkd+ausn9mJ8o67Wzvsoa5/jrfpBO4MI5z74N2zDypqEpC/gs+IWseDQy7w5+l1IOWCPm1aD2unNFclbrvntFhOXF7R1BXIPoyiqTGFZvNc67XV9WENQZ/lCTH7Afe0F6WihJ4Y=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1733946109; c=relaxed/simple;
-	bh=ic2AdQ65yM53C9pC5q9kdUNv+egk1dE/gLDnTiGAgJI=;
+	s=arc-20240116; t=1733946470; c=relaxed/simple;
+	bh=O87OApdluPfit8r/CJr1WPF4/bZoMzP/ml/FN4G03Z0=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=oLomTgWKdNGLpYy7a3EWSuQ/PPTTTrS05wJC4H9/8xoMawfK8D0Y7n0gWd1a+IbAAB57N4ZAcL9jMfhIo4B8o7MccJeEcbkgws4Zk4h/D2mDNos5mH7aS39j8M7d+8sBKFkmq75T7RS3iXDZBg1nzLDn8n3SaH2kEpRsaZcuRHY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=inwind.it; spf=pass smtp.mailfrom=inwind.it; dkim=pass (2048-bit key) header.d=inwind.it header.i=@inwind.it header.b=fwDbCcsP; arc=none smtp.client-ip=213.209.10.16
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=inwind.it
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=inwind.it
+	 In-Reply-To:Content-Type; b=ErLgS1ps69HPqa9SqP0Zc3brtNKqQp2YVVFUiIanZAUJNNOdTP6ezeEkTWorua6Ly/7SA73yOzPqj1ai6Vb6HyImIpbphppbAhTmyxSQZivo/Hfa6qLYN5tSU/myPrvqCgDAGAZNmU+y3G3ARKMh1LJeCB/FOUC2EVxIIW55xZQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=tuSfg0xq; arc=none smtp.client-ip=212.227.17.20
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=inwind.it header.i=@inwind.it header.b="fwDbCcsP"
-Received: from [192.168.1.27] ([84.220.171.3])
-	by smtp-16.iol.local with ESMTPSA
-	id LSY5tj4YnyzhsLSY5tkG5F; Wed, 11 Dec 2024 20:39:05 +0100
-x-libjamoibt: 1601
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=inwind.it; s=s2014;
-	t=1733945945; bh=x+Z2YP2lEXwLE6zu0SNGrOqX7cgNbWCEEC+I8Bo9cCk=;
-	h=From;
-	b=fwDbCcsPtt8S3UW68hm9SYm/Tc8o4thfnarYqTsHZqNlIVrlho9JCFH8W5CuDx9WU
-	 kxS27gWoUWWWfQnvwxvQrg4upR/bispNSGnoPDYhLNITlVAkw77DHfHbiOe3j3Tu6G
-	 LWiV0j8Haju4Z2rCxmyp2L3xRQoIw4os2zpTlwp1G3XEjOAONnBt3Gj9UAlb4LJXAL
-	 tzqx9OjhnKHJWsixanAezziBb1L1Nw7wLVeHBD89pc6or4liqtewZuJueXO9s5w1TY
-	 2lSH9dXBXmjJSeTX4FouGmvaLcxg4mAn1r8pCtCDJGSoZkNfxFG0W2R0M/KdbthItX
-	 phjmmsFeG6jRA==
-X-CNFS-Analysis: v=2.4 cv=XJb7ShhE c=1 sm=1 tr=0 ts=6759ea59 cx=a_exe
- a=hciw9o01/L1eIHAASTHaSw==:117 a=hciw9o01/L1eIHAASTHaSw==:17
- a=IkcTkHD0fZMA:10 a=UHn8HBmbSe9w8Yf75cMA:9 a=3ZKOabzyN94A:10 a=QEXdDO2ut3YA:10
-Message-ID: <014edba0-5edc-4c71-9a6b-35a0227adb30@inwind.it>
-Date: Wed, 11 Dec 2024 20:39:04 +0100
+	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="tuSfg0xq"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
+	s=s31663417; t=1733946462; x=1734551262; i=quwenruo.btrfs@gmx.com;
+	bh=EYqCeMOXsv9Y/tMm5/9JHlRgVKtJXXu+vaSzJwPZ/co=;
+	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
+	 References:From:In-Reply-To:Content-Type:
+	 Content-Transfer-Encoding:cc:content-transfer-encoding:
+	 content-type:date:from:message-id:mime-version:reply-to:subject:
+	 to;
+	b=tuSfg0xqmGapNW7mTumOpZqfohdFjTzzGjNtbFAK14Ih2sFDqsWtCfvOLDucBXj8
+	 xJr4ZiKgE9BfbP0382FNG3QtuV2tUFLaaC6TzKEcuFyptN38BpkRhHLxO0fgU+bR6
+	 Y8nC8IiZZE6L5Zy4wwcTgLtp4WWVbpKuRnIJ256qTGiF5uzfCoqL6H3JGztlVQR2k
+	 nWO4a2RPMcNIK9vPlYWc3SrWWzEvCAT5yIH3IxplovF1/jlChsnWT8TcFiOJ/Vq0H
+	 Mfq4W32ip+Hd/Ap2c7xqPzWJJo8YloCqIYH84edMSmbziU9FntnW2ve0vAyTaBXH3
+	 qdWRx7lehoiDdyPqNA==
+X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
+Received: from [172.16.0.191] ([159.196.52.54]) by mail.gmx.net (mrgmx104
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MvsJ5-1teEDh0U5P-011qpF; Wed, 11
+ Dec 2024 20:47:42 +0100
+Message-ID: <2e8ec0ba-aaa8-4107-9fbe-b3288a45f5a6@gmx.com>
+Date: Thu, 12 Dec 2024 06:17:37 +1030
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -41,265 +43,260 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Reply-To: kreijack@inwind.it
-Subject: Re: Using btrfs raid5/6
-To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-Cc: Qu Wenruo <quwenruo.btrfs@gmx.com>, Andrei Borzenkov
- <arvidjaar@gmail.com>, Qu Wenruo <wqu@suse.com>,
- Scoopta <mlist@scoopta.email>, linux-btrfs@vger.kernel.org
-References: <24abfa4c-e56b-4364-a210-f5bfb7c0f40e@gmail.com>
- <a5982710-0e14-4559-82f0-7914a11d1306@gmx.com>
- <d906fbb8-e268-4dbd-a33a-8ed583942580@gmail.com>
- <48fa5494-33f0-4f2a-882d-ad4fd12c4a63@gmx.com>
- <93a52b5f-9a87-420e-b52e-81c6d441bcd7@gmail.com>
- <b5f70481-34a1-4d65-a607-a3151009964d@suse.com>
- <9ae3c85e-6f0b-4e33-85eb-665b3292638e@gmail.com>
- <cfa74363-b310-49f0-b4bf-07a98c1be972@gmx.com>
- <Z1eonzLzseG2_vny@hungrycats.org>
- <08082848-9633-4b3c-9d9d-6135efab8e2d@libero.it>
- <Z1k-rlpwCqdynfWe@hungrycats.org>
+Subject: Re: [PATCH] btrfs: enhance ordered extent double freeing detection
+To: kernel test robot <lkp@intel.com>, Qu Wenruo <wqu@suse.com>,
+ linux-btrfs@vger.kernel.org
+Cc: llvm@lists.linux.dev, oe-kbuild-all@lists.linux.dev
+References: <53b793f2e7a7788f89cda97de565cfc1577cbf75.1733890357.git.wqu@suse.com>
+ <202412120136.6OwbbtZf-lkp@intel.com>
 Content-Language: en-US
-From: Goffredo Baroncelli <kreijack@inwind.it>
-In-Reply-To: <Z1k-rlpwCqdynfWe@hungrycats.org>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1YAUJEP5a
+ sQAKCRDCPZHzoSX+qF+mB/9gXu9C3BV0omDZBDWevJHxpWpOwQ8DxZEbk9b9LcrQlWdhFhyn
+ xi+l5lRziV9ZGyYXp7N35a9t7GQJndMCFUWYoEa+1NCuxDs6bslfrCaGEGG/+wd6oIPb85xo
+ naxnQ+SQtYLUFbU77WkUPaaIU8hH2BAfn9ZSDX9lIxheQE8ZYGGmo4wYpnN7/hSXALD7+oun
+ tZljjGNT1o+/B8WVZtw/YZuCuHgZeaFdhcV2jsz7+iGb+LsqzHuznrXqbyUQgQT9kn8ZYFNW
+ 7tf+LNxXuwedzRag4fxtR+5GVvJ41Oh/eygp8VqiMAtnFYaSlb9sjia1Mh+m+OBFeuXjgGlG
+ VvQFzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1gQUJEP5a0gAK
+ CRDCPZHzoSX+qHGpB/kB8A7M7KGL5qzat+jBRoLwB0Y3Zax0QWuANVdZM3eJDlKJKJ4HKzjo
+ B2Pcn4JXL2apSan2uJftaMbNQbwotvabLXkE7cPpnppnBq7iovmBw++/d8zQjLQLWInQ5kNq
+ Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
+ +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
+ HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
+In-Reply-To: <202412120136.6OwbbtZf-lkp@intel.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
-X-CMAE-Envelope: MS4xfGhktX3CVmC0YrwSM9WeTOk7LoaVs3iEPH5MmcVKq3UF6CWmCu+Sz+xhNVG0HHZS7FVSdpFAiCXBfYyzdrf8dxhdNhOAdcbpf9mwjmMWdfg4HxQgL3JC
- oyOY8O+CJII8oZyr/OuXQF0U1ZKEODpxwtZF2xGB1pofIep9R1Nzx4Q13jlQgNn4X6IuBdkN4Dl5R8aPSWpIabjnyNEti7FigK96O+PhOxd+UQXMLApNGM79
- LKY+DRmXoFqCT7hTU4aW5kY2/4NNFXIG6Gfce/qSscFYTuGxbqABtdi1hwPJVQcDIfvh/quOK+BmUuZpcdXW+YoGEkK71MZCtyZy5CDRIJHJNu/tEG8yjx9y
- HMsZMCzc
-
-On 11/12/2024 08.26, Zygo Blaxell wrote:
-> On Tue, Dec 10, 2024 at 08:36:05PM +0100, Goffredo Baroncelli wrote:
->> On 10/12/2024 03.34, Zygo Blaxell wrote:
->>> On Sun, Dec 08, 2024 at 06:56:00AM +1030, Qu Wenruo wrote:
->>
->>
->> Hi Zygo,
->>
->>
->> thank for this excellent analisys
->>
->> [...]
->>
->>
->>> There's several options to fix the write hole:
->>>
->>> 1.  Modify btrfs so it behaves the way Qu thinks it does:  no allocations
->>> within a partially filled raid56 stripe, unless the stripe was empty
->>> at the beginning of the current transaction (i.e. multiple RMW writes
->>> are OK, as long as they all disappear in the same crash event).  This
->>> ensures a stripe is never written from two separate btrfs transactions,
->>> eliminating the write hole.  This option requires an allocator change,
->>> and some rework/optimization of how ordered extents are written out.
->>> It also requires more balances--space within partially filled stripes
->>> isn't usable until every data block within the stripe is freed, and
->>> balances do exactly that.
->>
->> My impression  is that this solution would degenerate in a lot of
->> waste space, in case of small/frequent/sync writes.
-> 
-> "A lot" is relative.
-> 
-> If we first coalesce small writes, e.g. put a hook in delalloc or ordered
-> extent handling that defers small writes until there are enough to fill a
-> stripe, and only get to partial stripe writes during a commit or a fsync,
-> then there far fewer of these then there are now.  This would be a big
-> performance gain for btrfs raid5, without even considering the gains
-> in robustness.
-
-Are you considered the "write in the middle of a file case" ? In this case
-the old data will be an hole in the stripe that will not filled until
-a re - balance. My impression is that this approach for some workload will
-degenerate badly with an high number of half empty stripe (more below)
-
-[..]
-> 
-> In the real world this may not be a problem.  On my RAID5 arrays, all
-> extents smaller than a RAID stripe combined represent only 1-3% percent
-> of the total space.  Part of this is self-selection: if I have a workload
-> that hammers the filesystem with 4K fsyncs, I'm not going to run it on
-> top of raid5 in the stack because the random write performance will suck.
-> I'll move that thing to a raid1 filesystem, and use raid5 for bulk data
-> storage.  On my raid1 filesystems, small extents are 10-15% of the space.
-
-1-3% ? In effect I expected a lot more. Do you perform regular balances ?
-
-> There are probably half a dozen ways to fix this problem, if it is
-> a problem.  Other filesystems degenerate to raid1 in this case, so they
-> can lose a lot of space this way.  The existing btrfs allocator doesn't
-> completely fill block groups even without raid5, and requires balance to
-> get the space back (unless you're willing to burn CPU all day running
-> the allocator's search algorithm).  Nobody is currently running OLTP
-> workloads on btrfs raid5 because of the risk they'll explode from the
-> write hole.
-
-The hard part of a filesystem is to not suck for *any workload* even at the
-cost to not be the best for *all workloads*.
-
-> 
-> Off the top of my head.
-> 
-> We only ever need one partially filled stripe, so we can keep it in
-> memory and add blocks to it as we get more data to write.  For the first
-> short fsync in a transaction, write a new partially filled stripe to a
-> new location (this is a full write, no RMW, but some of the data blocks
-> are empty so they'll be zero-filled) and save the data's location in
-> the log tree (except for the full write, this is what btrfs does now).
-> 
-> For the next short fsync, write a stripe which contains the first
-> and second fsync's data, and save the new location of both blocks in
-> the log tree (since there are only a few of these, they can also be
-> kept in kernel memory).
-> 
-> For the third short fsync, write a stripe which contains first, second,
-> and third fsync's data, and save the new location of all 3 blocks in the
-> log tree.  During transaction commit, write out only the last stripe's
-> location in the metadata (the first two stripes remain free space).
-> During log replay after a crash, replay all the add/delete operations up
-> to the last completed fsync.  There's never a RMW write here, so nothing
-> ever gets lost in a write hole.  There's never an overwrite of data in
-> any form, which is better than most journalling writeback schemes where
-> overwrites are mandatory.
-
-If I understood correctly, to write 3 short data+fsync, you write 1+2+3=6
-fsync data: 2 times the data and 3 fsync. This is the same cost of a journal.
-
-> 
-> I think we can also hack up balance so that it only relocates extents
-> that begin or end in partially filled/partially empty raid56 stripes,
-> with some additional heuristics like "don't move a 60M extent to get 4K
-> free space."  That would be much faster than moving around all data that
-> already occupies full stripes.
-> 
->>> 2.  Add a stripe journal.  Requires on-disk format change to add the
->>> journal, and recovery code at startup to replay it.  It's the industry
->>> standard way to fix the write hole in a traditional raid5 implementation,
->>> so it's the first idea everyone proposes.  It's also quite slow if you
->>> don't have dedicated purpose-built hardware for the journal.  It's the
->>> only option for closing the write hole on nodatacow files.
->>
->> I am not sure about the "quite slow" part.
-> 
-> "Journal" means writing the same data to two different locations.
-> That's always slower than writing once to a single location, after all
-> other optimizations have been done.
-
-Why you say write only once ? In the example above, you write the data
-two times.
-
-> 
-> bcachefs (grossly oversimplified) writes a raid1 journal, then batches
-> up and replays the writes as raid5 in the background.  That's great if
-> you have long periods of idle IO bandwidth, but it can suck a lot if
-> the background thread doesn't keep up.  It's functionally the same as
-> using balance to reclaim space on btrfs.
-> 
-
-My understanding is that, more or less all the proposed solution try to
-reduce the number of RMW cycles putting the data in a journal/log/raid1 bg.
-
-Then the data is move in a raid5/6 bg. The main difference is how big is this
-journal. Depending by this size, a "balance" is required more or less frequently.
-
-The current btrfs design, is based on the fact that the raid profile is managed at
-the block-group level, and it is completely independent by the btree/extents
-managements. This scaled very well with the different raid model until the raid
-parity based. This because the COW model (needed to maintain the sync between the
-checksum and the data) is not enough to maintain the sync between the parity and the data.
-
-Time to time I thought a variable stripe length, where the parity is stored
-inside the extent at fixed offset, where this offset depend by the number
-of disk and the height of the stripe.
-
-Having the parity inside the extents would solve this part of the problem, until you need
-to update in the middle a file. In this case the thing became very complex until
-the point that it is easier to write a full stripe.
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:mt8qBO4LpHgNWd55sWnGsk/ujCTW9PCwaLsp/jlRPnowevLQWQk
+ w5zEjNcgWZgWZW4ji6l+NL9iVWEL15TnIg6QaZ4uXJhVauO9u8lqSGS46cE9gFhohSyCcx/
+ Fj+zX2D9PQ1EwViqoEk5rYMcfZdlBbqRczQDwTSDwoe/H+zT1WUiBCwB+CJWxVWElyOVFvd
+ pslRPClYBD8i3r4IrRtZg==
+X-Spam-Flag: NO
+UI-OutboundReport: notjunk:1;M01:P0:nCcuJwAlm5w=;eWWwPMIsKjxwgRfhM5sO+2J0HZU
+ kfPe5LAYxwnVYHuol3HiAIyqton9W0efB/T33y7InCdqCmtxNpgrUTEtC+MBKDd+aFA2V8dfM
+ CONuOqHKzyhBHKE5SlyqJOdE2KIIbBv9kavGpBUOiZZjXl7GGDCq/Wk3HfK2em8UWmTHy7/YU
+ hOSjpX6+FpFeenqZBGJ7jU4e6OwGh7XRoWfHL0SzVnnVV6taN0h1aHR7VAdwIAhIzqJcYzMZs
+ 6quGNQFHbkbfg8g6Y9boBWhMAuuWv8SK0EeNR2TJr82EEfCSAv3+h2mElj0gwj9AytYlGgjHQ
+ unJLA+b2Pqx9Zvj50ucZqHNBCcfhfSrjxynDmhOhr4ZC+2QdZdqn1V6TYLSUYcHa6mjkJ9TMj
+ qo/6/Uq3KD3dqu4wBHgfkM1nGZDpPbzX1lOsubeQBy8bYJnCSYv7kzHQ9yt3AUVhDeSdKk11P
+ Vj0+kyduTT10pypfUv61pYPD72ftB3MjlGprgiLR09nyQsu4XEywjdhn1kW/In6VNrvhEcA/+
+ 9s8CbyUI2BmI5EC8mLb72hJ/zPhgz1vtAM/uW5aYl/uMr8ZoQC5xR/up4SWFGj48SoLOlOTiw
+ kb/EsA8d797AVwIxXA06en4EalUriTltP3v3gVp0E13iA/7OoDoYRImgz04/TYVP9/UoUVEsb
+ J5C9vY7WDRA3hF+STlg5zmA7qrJ6VTlKpxRdGcWBIqc8cbqZSpBzIf/ums5H5VB7VpDgZCaam
+ 4aBEGHg1HyBfbNewwySixfuiwYXzifjs/Q0+1DQ2I9Vn/69CpN/58V/mYMYvm++wnikJdjui1
+ a7iZhtgZyIljgVbM22dODk6DEe7HSjSTSUGYE5RA/9Qxq8HnEvp/rkiSDFHgnIYYwJLDIoo51
+ MfXHyKUcV8DwO0lekCXXtLnBQaIRN1RINSHsjFEqxf3FHA/OlFIf1ycO/QRaCEpLTNiFpMPAX
+ wT4s8DMGbmoVVYItSkJ2GURjVbqVWOViFtvFrrmIOUU87Ckuhm7s13BDGOe1cewCMH/B+hjm7
+ 9NsKLQEFCfJUi5iNgd86As56wJmgYZwYCJZUAr/iMOQnrIKA8h2365OJmvSeozJlPVDGcPwEl
+ VThHG2H48h0QCo8dUOk3YB0RCDctGjAA76V/fWl6hDH7dH9Tr7fEDuLqsppIL420PgwQ3ayb4
+ =
 
 
->> In the journal only the "small" write should go. The "bigger" write
->> should go directly in the "fully empty" stripe (where it is not needed
->> a RMW cycle).
-> 
-> Yes, the best first step is to remove as many RMW operations as possible
-> in the upper layers of the filesystem.  If we don't have RMW, we don't
-> need to journal or do anything else with it.  We also don't have the
-> severe performance hit that unnecessary RMW does, either.
-> 
->> So a typical transaction  would be composed by:
->>
->> - update the "partial empty" stripes with a RMW cycle with the data
->> that were stored in the journal in the *previous* transaction
->>
->> - updated the journal with the new "small" write
-> 
-> A naive design of the journal implementation would store PPL blocks
-> in metadata, as this is more efficient than storing entire stripes or
-> copies of data.  Metadata is necessarily non-parity raid, both to avoid
-> the write hole and for performance reasons, so it can redundantly store
-> PPL information.
-> 
-> Error handling with PPL might be challenging:  what happens if we need
-> to correct a corrupt stripe while updating it?
 
-I think the same thing that happens when you do a standard RMW cycle with a corruption:
-pause the transaction: read the full stripe and the data checksum, try all the
-possible combination between data and parity until you get good data, rewrite the stripe
-(passing by a journal !); resume the transaction.
-> 
-> But maybe journalling full stripe writes is a better match for btrfs.
-> To do a PPL update, the PPL has to be committed first, which would mean it
-> has to be written out _before_ the transaction that modifies the target
-> raid5 stripe.  That would mean the updated stripe has to be written
-> during a later transaction than the one that updated it, so it needs to
-> be stored somewhere until that can happen.  Given those requirements,
-> it might be better to simply write out the whole new stripe to a free
-> stripe in a raid5 data block group, and write a log tree item to copy
-> that stripe to the destination location.  That starts to sound a lot
-> like option 1 with the fix above...why overwrite, when you can put data
-> in the log tree and commit it from there without moving it?
-> 
-> In mdadm-land, PPL burns 30-40% of write performance.  We can assume that
-> will be higher on btrfs.
+=E5=9C=A8 2024/12/12 04:41, kernel test robot =E5=86=99=E9=81=93:
+> Hi Qu,
+>
+> kernel test robot noticed the following build errors:
+>
+> [auto build test ERROR on kdave/for-next]
+> [also build test ERROR on linus/master v6.13-rc2 next-20241211]
+> [If your patch is applied to the wrong git tree, kindly drop us a note.
+> And when submitting patch, we suggest to use '--base' as documented in
+> https://git-scm.com/docs/git-format-patch#_base_tree_information]
+>
+> url:    https://github.com/intel-lab-lkp/linux/commits/Qu-Wenruo/btrfs-e=
+nhance-ordered-extent-double-freeing-detection/20241211-121647
+> base:   https://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git =
+for-next
+> patch link:    https://lore.kernel.org/r/53b793f2e7a7788f89cda97de565cfc=
+1577cbf75.1733890357.git.wqu%40suse.com
+> patch subject: [PATCH] btrfs: enhance ordered extent double freeing dete=
+ction
+> config: i386-buildonly-randconfig-003-20241211 (https://download.01.org/=
+0day-ci/archive/20241212/202412120136.6OwbbtZf-lkp@intel.com/config)
+> compiler: clang version 19.1.3 (https://github.com/llvm/llvm-project ab5=
+1eccf88f5321e7c60591c5546b254b6afab99)
+> reproduce (this is a W=3D1 build): (https://download.01.org/0day-ci/arch=
+ive/20241212/202412120136.6OwbbtZf-lkp@intel.com/reproduce)
+>
+> If you fix the issue in a separate patch/commit (i.e. not just a new ver=
+sion of
+> the same patch/commit), kindly add following tags
+> | Reported-by: kernel test robot <lkp@intel.com>
+> | Closes: https://lore.kernel.org/oe-kbuild-all/202412120136.6OwbbtZf-lk=
+p@intel.com/
+>
+> All errors (new ones prefixed by >>):
+>
+>     In file included from fs/btrfs/ordered-data.c:7:
+>     In file included from include/linux/blkdev.h:9:
+>     In file included from include/linux/blk_types.h:10:
+>     In file included from include/linux/bvec.h:10:
+>     In file included from include/linux/highmem.h:8:
+>     In file included from include/linux/cacheflush.h:5:
+>     In file included from arch/x86/include/asm/cacheflush.h:5:
+>     In file included from include/linux/mm.h:2223:
+>     include/linux/vmstat.h:518:36: warning: arithmetic between different=
+ enumeration types ('enum node_stat_item' and 'enum lru_list') [-Wenum-enu=
+m-conversion]
+>       518 |         return node_stat_name(NR_LRU_BASE + lru) + 3; // ski=
+p "nr_"
+>           |                               ~~~~~~~~~~~ ^ ~~~
+>>> fs/btrfs/ordered-data.c:200:10: error: no member named 'finished_bitma=
+p' in 'struct btrfs_ordered_extent'
+>       200 |                 entry->finished_bitmap =3D bitmap_zalloc(
+>           |                 ~~~~~  ^
 
-My suspects is that this happens because md is not in the position to relocate
-data to fill a stripe. BTRFS can join different writes and put together in a
-stripe. And if this happens BTRFS can bypass the journal because no RMW cycle is
-needed. So I expected BTRFS would performs better.
+I don't know why but it looks like IS_ENABLED() is not exactly doing the
+#ifdef #endif, thus those checks are not fully skipped in this case.
 
-> For me, if the tradeoff is losing 1.5% of a 100 TB filesystem for
-> unreclaimed free space vs. a 30% performance hit on all writes with
-> journalling, I'll just delete one day's worth of snapshots to make that
-> space available, and never consider journalling again.
-> 
-> Journalling isn't so great for nodatacow either:  the whole point of
-> nodatacow is to reduce overhead comparable to plain xfs/ext4 on mdadm,
-> and journalling puts that overhead back in.  I'd expect to see users in
-> both camps, those who want btrfs to emulate ext4 on mdadm raid5 without
-> PPL, and those who want btrfs to emulate ext4 on mdadm raid5 with PPL.
-> So that would add two more options to either mount flags or inode flags.
-> 
->> - pass-through the "big write" directly to the "fully empty" stripes
->>
->> - commit the transaction (w/journal)
->>
->>
->> The key point is that the allocator should know if a stripe is fully
->> empty or is partially empty. A classic block-based raid doesn't have
->> this information. BTRFS has this information.
->>
->>
->>
->> BR
->>
->> G.Baroncelli
->>
->> -- 
->> gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
->> Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
->>
->>
+Anyway I'll change it to the more traditional #ifdef #endif instead.
 
+Thanks for the report.
+Qu
 
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+>     fs/btrfs/ordered-data.c:202:15: error: no member named 'finished_bit=
+map' in 'struct btrfs_ordered_extent'
+>       202 |                 if (!entry->finished_bitmap) {
+>           |                      ~~~~~  ^
+>     fs/btrfs/ordered-data.c:380:38: error: no member named 'finished_bit=
+map' in 'struct btrfs_ordered_extent'
+>       380 |                 nr_set =3D bitmap_count_set(ordered->finishe=
+d_bitmap, start_bit, nbits);
+>           |                                           ~~~~~~~  ^
+>     fs/btrfs/ordered-data.c:388:17: error: no member named 'finished_bit=
+map' in 'struct btrfs_ordered_extent'
+>       388 |                                    ordered->finished_bitmap)=
+;
+>           |                                    ~~~~~~~  ^
+>     fs/btrfs/messages.h:44:41: note: expanded from macro 'btrfs_crit'
+>        44 |         btrfs_printk(fs_info, KERN_CRIT fmt, ##args)
+>           |                                                ^~~~
+>     fs/btrfs/messages.h:27:32: note: expanded from macro 'btrfs_printk'
+>        27 |         _btrfs_printk(fs_info, fmt, ##args)
+>           |                                       ^~~~
+>     fs/btrfs/ordered-data.c:390:23: error: no member named 'finished_bit=
+map' in 'struct btrfs_ordered_extent'
+>       390 |                 bitmap_set(ordered->finished_bitmap, start_b=
+it, nbits);
+>           |                            ~~~~~~~  ^
+>     fs/btrfs/ordered-data.c:418:37: error: no member named 'finished_bit=
+map' in 'struct btrfs_ordered_extent'
+>       418 |                 if (WARN_ON(!bitmap_full(ordered->finished_b=
+itmap,
+>           |                                          ~~~~~~~  ^
+>     include/asm-generic/bug.h:123:25: note: expanded from macro 'WARN_ON=
+'
+>       123 |         int __ret_warn_on =3D !!(condition);                =
+              \
+>           |                                ^~~~~~~~~
+>     fs/btrfs/ordered-data.c:426:14: error: no member named 'finished_bit=
+map' in 'struct btrfs_ordered_extent'
+>       426 |                                 ordered->finished_bitmap);
+>           |                                 ~~~~~~~  ^
+>     fs/btrfs/messages.h:44:41: note: expanded from macro 'btrfs_crit'
+>        44 |         btrfs_printk(fs_info, KERN_CRIT fmt, ##args)
+>           |                                                ^~~~
+>     fs/btrfs/messages.h:27:32: note: expanded from macro 'btrfs_printk'
+>        27 |         _btrfs_printk(fs_info, fmt, ##args)
+>           |                                       ^~~~
+>     fs/btrfs/ordered-data.c:675:23: error: no member named 'finished_bit=
+map' in 'struct btrfs_ordered_extent'
+>       675 |                         bitmap_free(entry->finished_bitmap);
+>           |                                     ~~~~~  ^
+>     1 warning and 8 errors generated.
+>
+>
+> vim +200 fs/btrfs/ordered-data.c
+>
+>     147
+>     148	static struct btrfs_ordered_extent *alloc_ordered_extent(
+>     149				struct btrfs_inode *inode, u64 file_offset, u64 num_bytes,
+>     150				u64 ram_bytes, u64 disk_bytenr, u64 disk_num_bytes,
+>     151				u64 offset, unsigned long flags, int compress_type)
+>     152	{
+>     153		struct btrfs_ordered_extent *entry;
+>     154		int ret;
+>     155		u64 qgroup_rsv =3D 0;
+>     156
+>     157		if (flags &
+>     158		    ((1 << BTRFS_ORDERED_NOCOW) | (1 << BTRFS_ORDERED_PREALLOC)=
+)) {
+>     159			/* For nocow write, we can release the qgroup rsv right now */
+>     160			ret =3D btrfs_qgroup_free_data(inode, NULL, file_offset, num_b=
+ytes, &qgroup_rsv);
+>     161			if (ret < 0)
+>     162				return ERR_PTR(ret);
+>     163		} else {
+>     164			/*
+>     165			 * The ordered extent has reserved qgroup space, release now
+>     166			 * and pass the reserved number for qgroup_record to free.
+>     167			 */
+>     168			ret =3D btrfs_qgroup_release_data(inode, file_offset, num_byte=
+s, &qgroup_rsv);
+>     169			if (ret < 0)
+>     170				return ERR_PTR(ret);
+>     171		}
+>     172		entry =3D kmem_cache_zalloc(btrfs_ordered_extent_cache, GFP_NOF=
+S);
+>     173		if (!entry)
+>     174			return ERR_PTR(-ENOMEM);
+>     175
+>     176		entry->file_offset =3D file_offset;
+>     177		entry->num_bytes =3D num_bytes;
+>     178		entry->ram_bytes =3D ram_bytes;
+>     179		entry->disk_bytenr =3D disk_bytenr;
+>     180		entry->disk_num_bytes =3D disk_num_bytes;
+>     181		entry->offset =3D offset;
+>     182		entry->bytes_left =3D num_bytes;
+>     183		entry->inode =3D BTRFS_I(igrab(&inode->vfs_inode));
+>     184		entry->compress_type =3D compress_type;
+>     185		entry->truncated_len =3D (u64)-1;
+>     186		entry->qgroup_rsv =3D qgroup_rsv;
+>     187		entry->flags =3D flags;
+>     188		refcount_set(&entry->refs, 1);
+>     189		init_waitqueue_head(&entry->wait);
+>     190		INIT_LIST_HEAD(&entry->list);
+>     191		INIT_LIST_HEAD(&entry->log_list);
+>     192		INIT_LIST_HEAD(&entry->root_extent_list);
+>     193		INIT_LIST_HEAD(&entry->work_list);
+>     194		INIT_LIST_HEAD(&entry->bioc_list);
+>     195		init_completion(&entry->completion);
+>     196
+>     197		if (IS_ENABLED(CONFIG_BTRFS_DEBUG)) {
+>     198			struct btrfs_fs_info *fs_info =3D inode->root->fs_info;
+>     199
+>   > 200			entry->finished_bitmap =3D bitmap_zalloc(
+>     201				num_bytes >> fs_info->sectorsize_bits, GFP_NOFS);
+>     202			if (!entry->finished_bitmap) {
+>     203				kmem_cache_free(btrfs_ordered_extent_cache, entry);
+>     204				return ERR_PTR(-ENOMEM);
+>     205			}
+>     206		}
+>     207		/*
+>     208		 * We don't need the count_max_extents here, we can assume that=
+ all of
+>     209		 * that work has been done at higher layers, so this is truly t=
+he
+>     210		 * smallest the extent is going to get.
+>     211		 */
+>     212		spin_lock(&inode->lock);
+>     213		btrfs_mod_outstanding_extents(inode, 1);
+>     214		spin_unlock(&inode->lock);
+>     215
+>     216		return entry;
+>     217	}
+>     218
+>
+

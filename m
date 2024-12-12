@@ -1,78 +1,205 @@
-Received: from bombadil.infradead.org (bombadil.infradead.org [198.137.202.133])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0297629A9;
-	Thu, 12 Dec 2024 05:50:20 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.137.202.133
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B544F5684
+	for <linux-btrfs@vger.kernel.org>; Thu, 12 Dec 2024 06:14:28 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1733982622; cv=none; b=d6o2bs7qnyaWPiLaLUi1OoHC+pJ44cJyTB5/3LZg60f+BRXotxYiG9rd6VypgXh4FGK6PjEzZbNpiZfbS/lSN/uxCib88JET0MtohLGlA/s9ZP/fVI212H0f9XMhxKYW9remVIoLFQUlBsWmPvofB8lcNUe2dZysZt7nXKaLtJg=
+	t=1733984071; cv=none; b=jzH6uqdpm3lFQgJoVJrqhcLk6uAreAReRXddi7lUQv+hngCywevE6IGLRLKxmqVVsQVGiZYE7H0QUYHK10r0y+/yPoC2+UntXOaZMHZJ8s3ey9cwmmnOS46JayIJ2XIuDLKSx43H1E+hpdKnbuF0m+wK1lqMqa2KVe3F0XqKT/8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1733982622; c=relaxed/simple;
-	bh=XPA+8hGnezDK/cAW5N+82NcAeOzLbG7VN/Ex6ABGO4g=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=Rf1rY/7sj/Wu6sowhswh/l7RBBknUJf2PhmpfLDwiowbESPKWoecO4mwITBu2kzACLdgqjxtLtS8GK95NEZqfTiLAlEg9EnfKn+Yr8QWDisWTamfeM3bfStGqSL+h+4GTYrD9jxNx5g/DmXU6d5gP9gQyKZyhdeaMXaeSgUsl6s=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=infradead.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=LxJPtnMV; arc=none smtp.client-ip=198.137.202.133
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=infradead.org
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org
+	s=arc-20240116; t=1733984071; c=relaxed/simple;
+	bh=LuIBMfEvU47WC8k6xsm1hPraIHVCASC46sp17mWs7GY=;
+	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=epTbKahaNw85Hk++kt8BYQ9rOFL6N38ya9QqG0CDt2XF8jTroD5ZuM8rPf1MJkza5bwpKwaTVdk+m0iShAH4TPrTk8Nu63v1FjwxclPKsS8OK3gY68nYCqDa0/K6ZWOZG1bw50VD1ITAvD+E52fnOHtTuJhfFEDq4b955XZq7yk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=KZfYbyOc; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=KZfYbyOc; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="LxJPtnMV"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
-	:References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-	Content-Transfer-Encoding:Content-ID:Content-Description;
-	bh=pcELzZSVcZp1+kgY3EddYDKju3cmFn5oocwvVGhpALw=; b=LxJPtnMVMgJ3H+5TJzZZ9z7wS+
-	RbHDYNbA8oyTIKQ8dXz8E9KQalQccSW/uJ+CD8jGmMTb6F+Iogje1GseuTRVuYxOnfDobUHnmbOOh
-	IYmuv96LZdVwrSIPEtv2LaUZsDgxxlTEvQfDaNj8p+u16ORUWAukW9oTg2vxO5Jp2YDRrBcqqR6YG
-	P0c22F1xHFrYZQFBk6vc3WU0+9BZzuNOgEJOsO5aLddQPTNfbtkSQK4EQGXn4iWPuPb0X8eC0seZa
-	L1KrbEKSTzpk1z4voFKA8PoR34ldMVgEwmc2/5IFgED+8BX+xvshdrHZ5VqcmmqIRYeTVLXzimy5o
-	Lk9hXYpA==;
-Received: from hch by bombadil.infradead.org with local (Exim 4.98 #2 (Red Hat Linux))
-	id 1tLc5b-0000000Gyq7-47gi;
-	Thu, 12 Dec 2024 05:50:19 +0000
-Date: Wed, 11 Dec 2024 21:50:19 -0800
-From: Christoph Hellwig <hch@infradead.org>
-To: Jens Axboe <axboe@kernel.dk>
-Cc: linux-mm@kvack.org, linux-fsdevel@vger.kernel.org, hannes@cmpxchg.org,
-	clm@meta.com, linux-kernel@vger.kernel.org, willy@infradead.org,
-	kirill@shutemov.name, linux-btrfs@vger.kernel.org,
-	linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org,
-	bfoster@redhat.com
-Subject: Re: [PATCH 14/17] iomap: make buffered writes work with RWF_UNCACHED
-Message-ID: <Z1p5my4wynAW_Vc3@infradead.org>
-References: <20241114152743.2381672-2-axboe@kernel.dk>
- <20241114152743.2381672-16-axboe@kernel.dk>
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="KZfYbyOc";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="KZfYbyOc"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id C0BFE1F38E
+	for <linux-btrfs@vger.kernel.org>; Thu, 12 Dec 2024 06:14:26 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1733984066; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=F7H//qGzMoVVPRc2isp85MFL+N/xJizuwZZ+gIB3wEY=;
+	b=KZfYbyOcyLEZsNK1R84hOpy+i+WWjpnDwQUVlbMGjUmQvwSz7F+JbI1SL0SxVacP2wATX/
+	iYx7hWm9H0p9pAkirEBuEdYoW4QBFKnje4yIyx5gTB5Azr7UHKzBzHPIkRG2GkXYoczDWl
+	NPP9avtNw/pzV13/lJ+l/7YVPxxk9J0=
+Authentication-Results: smtp-out2.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1733984066; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=F7H//qGzMoVVPRc2isp85MFL+N/xJizuwZZ+gIB3wEY=;
+	b=KZfYbyOcyLEZsNK1R84hOpy+i+WWjpnDwQUVlbMGjUmQvwSz7F+JbI1SL0SxVacP2wATX/
+	iYx7hWm9H0p9pAkirEBuEdYoW4QBFKnje4yIyx5gTB5Azr7UHKzBzHPIkRG2GkXYoczDWl
+	NPP9avtNw/pzV13/lJ+l/7YVPxxk9J0=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id EEF6413508
+	for <linux-btrfs@vger.kernel.org>; Thu, 12 Dec 2024 06:14:25 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id uC6KKkF/Wme5VQAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Thu, 12 Dec 2024 06:14:25 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2 3/9] btrfs: fix the error handling of submit_uncompressed_range()
+Date: Thu, 12 Dec 2024 16:43:57 +1030
+Message-ID: <d1a4d05c0559c7fc1f2b97326ce8b7e4cd43dd29.1733983488.git.wqu@suse.com>
+X-Mailer: git-send-email 2.47.1
+In-Reply-To: <cover.1733983488.git.wqu@suse.com>
+References: <cover.1733983488.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20241114152743.2381672-16-axboe@kernel.dk>
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
+Content-Transfer-Encoding: 8bit
+X-Spam-Score: -2.80
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	FUZZY_BLOCKED(0.00)[rspamd.com];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	ARC_NA(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:mid,suse.com:email];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	RCVD_TLS_ALL(0.00)[]
+X-Spam-Flag: NO
+X-Spam-Level: 
 
-On Thu, Nov 14, 2024 at 08:25:18AM -0700, Jens Axboe wrote:
-> +	if (iocb->ki_flags & IOCB_UNCACHED)
-> +		iter.flags |= IOMAP_UNCACHED;
->  
-> -	while ((ret = iomap_iter(&iter, ops)) > 0)
-> +	while ((ret = iomap_iter(&iter, ops)) > 0) {
-> +		if (iocb->ki_flags & IOCB_UNCACHED)
-> +			iter.iomap.flags |= IOMAP_F_UNCACHED;
+[BUG]
+If btrfs failed to compress the range, or can not reserve a large enough
+data extent (e.g. too fragmented free space), btrfs will fall back to
+submit_uncompressed_range().
 
-iomap.flags and the IOMAP_F_* namespace is used to communicate flags
-from the file system to the iomap core, so this looks wrong.
+But inside submit_uncompressed_range(), run_dealloc_cow() can also fail
+due to -ENOSPC or whatever other errors.
 
->  	size_t poff = offset_in_folio(folio, pos);
->  	int error;
->  
-> +	if (folio_test_uncached(folio))
-> +		wpc->iomap.flags |= IOMAP_F_UNCACHED;
+In that case there are 3 bugs in the error handling:
 
-I guess this is what actually makes it work.  Note that with the iomap
-zoned series I posted yesteday things change a bit here in that the flags
-in the wpc are decouple from the iomap flags, and this would now become
-a wpc only flag as it isn't really a fs to iomap cummunication, but
-based on iomap / page cache state.
+1) Double freeing for the same ordered extent
+   Which can lead to crash due to ordered extent double accounting
+
+2) Start/end writeback without updating the subpage writeback bitmap
+
+3) Unlock the folio without clear the subpage lock bitmap
+
+Both bug 2) and 3) will crash the kernel if the btrfs block size is
+smaller than folio size, as the next time the folio get writeback/lock
+updates, subpage will find the bitmap already have the range set,
+triggering an ASSERT().
+
+[CAUSE]
+Bug 1) happens in the following call chain:
+
+  submit_uncompressed_range()
+  |- run_dealloc_cow()
+  |  |- cow_file_range()
+  |     |- btrfs_reserve_extent()
+  |        Failed with -ENOSPC or whatever error
+  |
+  |- btrfs_clean_up_ordered_extents()
+  |  |- btrfs_mark_ordered_io_finished()
+  |     Which cleans all the ordered extents in the async_extent range.
+  |
+  |- btrfs_mark_ordered_io_finished()
+     Which cleans the folio range.
+
+The finished ordered extents may not be immediately removed from the
+ordered io tree, as they are removed inside a work queue.
+
+So the second btrfs_mark_ordered_io_finished() may find the finished but
+not-yet-removed ordered extents, and double free them.
+
+Furthermore, the second btrfs_mark_ordered_io_finished() is not subpage
+compatible, as it uses fixed folio_pos() with PAGE_SIZE, which can cover
+other ordered extents.
+
+Bug 2) and 3) are more straight forward, btrfs just calls folio_unlock(),
+folio_start_writeback() and folio_end_writeback(), other than the helpers
+which handle subpage cases.
+
+[FIX]
+For bug 1) since the first btrfs_cleanup_ordered_extents() call is
+handling the whole range, we should not do the second
+btrfs_mark_ordered_io_finished() call.
+
+And for the first btrfs_cleanup_ordered_extents(), we no longer need to
+pass the @locked_page parameter, as we are already in the async extent
+context, thus will never rely on the error handling inside
+btrfs_run_delalloc_range().
+
+So just let the btrfs_clean_up_ordered_extents() to handle every folio
+equally.
+
+For bug 2) we should not even call
+folio_start_writeback()/folio_end_writeback() anymore.
+As the error handling protocol, cow_file_range() should clear
+dirty flag and start/finish the writeback for the whole range passed in.
+
+For bug 3) just change the folio_unlock() to btrfs_folio_end_lock()
+helper.
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/inode.c | 16 ++++------------
+ 1 file changed, 4 insertions(+), 12 deletions(-)
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index d41bb47d59fb..5ba8d044757b 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1129,19 +1129,11 @@ static void submit_uncompressed_range(struct btrfs_inode *inode,
+ 			       &wbc, false);
+ 	wbc_detach_inode(&wbc);
+ 	if (ret < 0) {
+-		btrfs_cleanup_ordered_extents(inode, locked_folio,
++		btrfs_cleanup_ordered_extents(inode, NULL,
+ 					      start, end - start + 1);
+-		if (locked_folio) {
+-			const u64 page_start = folio_pos(locked_folio);
+-
+-			folio_start_writeback(locked_folio);
+-			folio_end_writeback(locked_folio);
+-			btrfs_mark_ordered_io_finished(inode, locked_folio,
+-						       page_start, PAGE_SIZE,
+-						       !ret);
+-			mapping_set_error(locked_folio->mapping, ret);
+-			folio_unlock(locked_folio);
+-		}
++		if (locked_folio)
++			btrfs_folio_end_lock(inode->root->fs_info, locked_folio,
++					     start, async_extent->ram_size);
+ 	}
+ }
+ 
+-- 
+2.47.1
 

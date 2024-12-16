@@ -1,60 +1,67 @@
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 868191119A
-	for <linux-btrfs@vger.kernel.org>; Mon, 16 Dec 2024 04:51:32 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A600D1B6D1B
+	for <linux-btrfs@vger.kernel.org>; Mon, 16 Dec 2024 04:51:35 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1734324694; cv=none; b=cbUsIs9t9Bwmxfxw+OOgr8eXyCDpRFuHmTpX/j7j3SWxCs8dzN65T289XBXl4iXuF3osSS0SIdEZ80qbI2kYqyKqO7plSyVyEA4IoBOUl82vRgP5zL97YvGQBpXNZWQ+ZGXZ0WWvpnqd2IvKZ43aOOmeoUtxOGcDJFkAtCvHG+U=
+	t=1734324697; cv=none; b=UlvawyhTiQ/P6ZJIDlTJCGs/dfo8uwQJBEyO2e0gb3FfZ+PdetBdiuV+FI/6VpP0Qbvnj8uA7x+nAcoMcMP8N5VkOm+zJZei+2aqnDf6znrGcyxjNQWzQC+n3WDMriQ1F4b7HwLHbKJ32E9GO4N+LJrCchW/fOV/nTVW6f4PsWY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1734324694; c=relaxed/simple;
-	bh=YrvoiYjrwp/trmqNOXxkJnfWi199ulwlFY6VfWXflcE=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=YDEAKVrr3sP1zoQBXAuoI7tkkstJZX1EBFZL8bnG38u+ToYQG+QSCHFi72eFyBJRWZjSryX9XqPYhjbWWJ1p8XOIaGqYYDJgJwRW86fk8WjnF6z0cs6TVvwDwev67UHyYH1LoUOi73ALaVuP4Oe4BEO7msFTj9jSbvtpzU2Fc3M=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=cj+mEVOk; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=cj+mEVOk; arc=none smtp.client-ip=195.135.223.130
+	s=arc-20240116; t=1734324697; c=relaxed/simple;
+	bh=DK2HWAQDpuF/pswsLdwmvvs0J5FWcNmhhXwMwtGJyF8=;
+	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=a/mWvfL6DnoK7D8cFNIYIqYXS3DxPHluQetPt2ECoy1Cz6nilya43ml3fSaxOo32e80xBM/nw+XbukLuGFmYGNR28T+zdJrNgL+S4VD9Jnyu+3CIn+JnPn/ymb2zWG+22mPCA2iTodo9C1WV6ckRv0X7Jb6SClG5Lhc3gGd5O8w=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=uyXDs5dz; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=uyXDs5dz; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="cj+mEVOk";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="cj+mEVOk"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="uyXDs5dz";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="uyXDs5dz"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 8310B211E9
-	for <linux-btrfs@vger.kernel.org>; Mon, 16 Dec 2024 04:51:30 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 008BF211EB
+	for <linux-btrfs@vger.kernel.org>; Mon, 16 Dec 2024 04:51:34 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1734324690; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=yj1z9yTAkM+uLqkRsWg0JGzI0bdf+RPVzGz8KFAI/ms=;
-	b=cj+mEVOkveqnCaqjN7WF83DWHNl2tPX/h5yBeuV9fV/1Jigr9HbpvQgIxjpy63HfNqkrvN
-	sE8bIySFgtnZ24TcXaIsoAcEvDWtz86+JzDhlVuKOpBH1NltSS9g/judYHB/3k1XlgF2pR
-	uwPMqrbB7id/3YFt2dH9OB/e7cETwmA=
+	t=1734324694; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=s01i7gA6369n5CM+g2rBJSkILZ8VKCrLQ0Ak+VU1+q4=;
+	b=uyXDs5dzI/7SLXHWqcS6hYqVSfPFiajRr6I10ZdvA1l+7C+wWAEMeGMZPxn7D95BV2jhfa
+	q3xREzvCUvDPRJkbhDaO4Le8l3eU2tmYwc7D1I+peHIKXDbvCPh0DDs0XKCSLuv5C9DVQm
+	OWIts1EAVlI7F19IBqnx4871TVNM5dY=
 Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=cj+mEVOk
+	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1734324690; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=yj1z9yTAkM+uLqkRsWg0JGzI0bdf+RPVzGz8KFAI/ms=;
-	b=cj+mEVOkveqnCaqjN7WF83DWHNl2tPX/h5yBeuV9fV/1Jigr9HbpvQgIxjpy63HfNqkrvN
-	sE8bIySFgtnZ24TcXaIsoAcEvDWtz86+JzDhlVuKOpBH1NltSS9g/judYHB/3k1XlgF2pR
-	uwPMqrbB7id/3YFt2dH9OB/e7cETwmA=
+	t=1734324694; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=s01i7gA6369n5CM+g2rBJSkILZ8VKCrLQ0Ak+VU1+q4=;
+	b=uyXDs5dzI/7SLXHWqcS6hYqVSfPFiajRr6I10ZdvA1l+7C+wWAEMeGMZPxn7D95BV2jhfa
+	q3xREzvCUvDPRJkbhDaO4Le8l3eU2tmYwc7D1I+peHIKXDbvCPh0DDs0XKCSLuv5C9DVQm
+	OWIts1EAVlI7F19IBqnx4871TVNM5dY=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 9A82E137CF
-	for <linux-btrfs@vger.kernel.org>; Mon, 16 Dec 2024 04:51:29 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 1CB1F137CF
+	for <linux-btrfs@vger.kernel.org>; Mon, 16 Dec 2024 04:51:32 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id KtYUFNGxX2ciNwAAD6G6ig
+	id IAVyMdSxX2ciNwAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Mon, 16 Dec 2024 04:51:29 +0000
+	for <linux-btrfs@vger.kernel.org>; Mon, 16 Dec 2024 04:51:32 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/4] btrfs-progs: rename "sector size" to "block size"
-Date: Mon, 16 Dec 2024 15:21:03 +1030
-Message-ID: <cover.1734324435.git.wqu@suse.com>
+Subject: [PATCH 2/4] btrfs-progs: mkfs: add "--blocksize" option as an alias for "--sectorsize"
+Date: Mon, 16 Dec 2024 15:21:05 +1030
+Message-ID: <1542ae393d18844ed4edc5442d0ab46e8b14d74d.1734324435.git.wqu@suse.com>
 X-Mailer: git-send-email 2.47.1
+In-Reply-To: <cover.1734324435.git.wqu@suse.com>
+References: <cover.1734324435.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -62,112 +69,119 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Rspamd-Queue-Id: 8310B211E9
 X-Spam-Level: 
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[99.99%];
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	MIME_TRACE(0.00)[0:+];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	FUZZY_BLOCKED(0.00)[rspamd.com];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
 	RCPT_COUNT_ONE(0.00)[1];
 	ARC_NA(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+];
-	RCVD_COUNT_TWO(0.00)[2];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:mid];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	TO_DN_NONE(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.com:dkim,suse.com:mid]
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Rspamd-Action: no action
-X-Spam-Score: -3.01
+	RCVD_TLS_ALL(0.00)[]
+X-Spam-Score: -2.80
 X-Spam-Flag: NO
 
-Since day 1 of btrfs, we use the name "sector size" to indicate the
-minimum data unit size (from btrfs_super_block::sectorsize).
+Btrfs uses the terminology "sectorsize" for the minimum data allocation
+size, which is very different from other filesystems, and can be a
+little confusing with the kernel block io sector size (which is the
+minimum block io size, and is fixed to 512 bytes).
 
-But all other file systems use "block size" to indicate the minimum data
-unit size, and inside kernel, a sector is used to describe the minimal
-IO block size for a block device.
-Furthermore kernel sector size is fixed to 512, and different block
-devices have different sector sizes, from the older 512 sector sized
-HDDs, to modern day flash devices that are even pushing for 16K sector
-size.
+Let's start migrating mkfs.btrfs and its documentation to use the more
+common terminology instead.
 
-This has brought quite some confusiong when we need to co-operate with
-other fs/mm people.
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ Documentation/mkfs.btrfs.rst | 20 +++++++++++++-------
+ mkfs/main.c                  |  3 ++-
+ 2 files changed, 15 insertions(+), 8 deletions(-)
 
-I believe it's time to do the migration for btrfs-progs first, then do
-it inside the kernel, before we're pushing for iomap support.
-
-Qu Wenruo (4):
-  btrfs-progs: convert btrfs_fs_info::sectorsize to blocksize
-  btrfs-progs: mkfs: add "--blocksize" option as an alias for
-    "--sectorsize"
-  btrfs-progs: docs: change the terminology from "sectorsize" to
-    "blocksize"
-  btrfs-progs: rename btrfs_super_block::sectorsize to blocksize
-
- Documentation/Status.rst             |  8 +--
- Documentation/Subpage.rst            | 11 ++--
- Documentation/btrfs-convert.rst      |  4 +-
- Documentation/btrfs-man5.rst         |  4 +-
- Documentation/ch-balance-filters.rst |  4 +-
- Documentation/ch-mount-options.rst   |  6 +-
- Documentation/ch-sysfs.rst           |  2 +-
- Documentation/mkfs.btrfs.rst         | 20 ++++--
- btrfs-corrupt-block.c                | 24 +++----
- check/main.c                         | 44 ++++++-------
- check/mode-common.c                  | 18 ++---
- check/mode-lowmem.c                  | 24 +++----
- check/repair.c                       |  4 +-
- cmds/inspect-dump-tree.c             |  8 +--
- cmds/rescue-chunk-recover.c          | 24 +++----
- cmds/restore.c                       |  6 +-
- common/clear-cache.c                 |  2 +-
- common/fsfeatures.c                  | 52 +++++++--------
- common/fsfeatures.h                  |  4 +-
- convert/common.c                     | 16 ++---
- convert/main.c                       | 24 +++----
- convert/source-ext2.c                | 18 ++---
- convert/source-fs.c                  | 16 ++---
- convert/source-reiserfs.c            | 12 ++--
- image/image-restore.c                |  8 +--
- kernel-shared/accessors.h            |  4 +-
- kernel-shared/ctree.h                |  5 +-
- kernel-shared/disk-io.c              | 28 ++++----
- kernel-shared/disk-io.h              |  2 +-
- kernel-shared/extent-tree.c          | 10 +--
- kernel-shared/file-item.c            | 18 ++---
- kernel-shared/file-item.h            |  4 +-
- kernel-shared/file.c                 | 18 ++---
- kernel-shared/free-space-cache.c     | 40 ++++++------
- kernel-shared/free-space-cache.h     |  4 +-
- kernel-shared/free-space-tree.c      | 28 ++++----
- kernel-shared/print-tree.c           | 12 ++--
- kernel-shared/tree-checker.c         | 98 ++++++++++++++--------------
- kernel-shared/uapi/btrfs_tree.h      |  4 +-
- kernel-shared/volumes.c              | 20 +++---
- mkfs/common.c                        | 22 +++----
- mkfs/common.h                        |  2 +-
- mkfs/main.c                          | 43 ++++++------
- mkfs/rootdir.c                       | 78 +++++++++++-----------
- tune/change-csum.c                   | 26 ++++----
- 45 files changed, 419 insertions(+), 410 deletions(-)
-
---
+diff --git a/Documentation/mkfs.btrfs.rst b/Documentation/mkfs.btrfs.rst
+index b830f8c5be07..2102fab11fe2 100644
+--- a/Documentation/mkfs.btrfs.rst
++++ b/Documentation/mkfs.btrfs.rst
+@@ -94,7 +94,7 @@ OPTIONS
+         mode may lead to degraded performance on larger filesystems, but is otherwise
+         usable, even on multiple devices.
+ 
+-        The *nodesize* and *sectorsize* must be equal, and the block group types must
++        The *nodesize* and *blocksize* must be equal, and the block group types must
+         match.
+ 
+         .. note::
+@@ -108,7 +108,7 @@ OPTIONS
+ -n|--nodesize <size>
+         Specify the nodesize, the tree block size in which btrfs stores metadata. The
+         default value is 16KiB (16384) or the page size, whichever is bigger. Must be a
+-        multiple of the sectorsize and a power of 2, but not larger than 64KiB (65536).
++        multiple of the blocksize and a power of 2, but not larger than 64KiB (65536).
+         Leafsize always equals nodesize and the options are aliases.
+ 
+         Smaller node size increases fragmentation but leads to taller b-trees which in
+@@ -119,11 +119,17 @@ OPTIONS
+         .. note::
+                 Versions up to 3.11 set the nodesize to 4KiB.
+ 
+--s|--sectorsize <size>
+-        Specify the sectorsize, the minimum data block allocation unit.
++-s|--sectorsize|--blocksize <size>
++        Specify the block size, the minimum data block allocation unit.
+ 
+-        .. note::
+-                Versions prior to 6.7 set the sectorsize matching the host CPU
++	.. note::
++		Btrfs-progs versions prior to 6.14 uses the name "sectorsize" to
++		describe the minimum data block allocation unit, which is not
++		following other filesystems' terminology.
++		From version 6.14, documentation and source code will convert
++		to use the name "blocksize" instead.
++
++                Versions prior to 6.7 set the blocksize matching the host CPU
+                 page size, starting in 6.7 this is 4KiB for cross-architecture
+                 compatibility. Please read more about the :doc:`subpage block size support<Subpage>`
+                 and :ref:`its status<status-subpage-block-size>`.
+@@ -618,7 +624,7 @@ The combination of small filesystem size and large nodesize is not recommended
+ in general and can lead to various ENOSPC-related issues during mount time or runtime.
+ 
+ Since mixed block group creation is optional, we allow small
+-filesystem instances with differing values for *sectorsize* and *nodesize*
++filesystem instances with differing values for *blocksize* and *nodesize*
+ to be created and could end up in the following situation:
+ 
+ .. code-block:: none
+diff --git a/mkfs/main.c b/mkfs/main.c
+index 2faabc550887..87c08f3ff9a2 100644
+--- a/mkfs/main.c
++++ b/mkfs/main.c
+@@ -432,7 +432,7 @@ static const char * const mkfs_usage[] = {
+ 	OPTLINE("--csum TYPE", ""),
+ 	OPTLINE("--checksum TYPE", "checksum algorithm to use, crc32c (default), xxhash, sha256, blake2"),
+ 	OPTLINE("-n|--nodesize SIZE", "size of btree nodes"),
+-	OPTLINE("-s|--sectorsize SIZE", "data block size (may not be mountable by current kernel)"),
++	OPTLINE("-s|--sectorsize|--blocksize SIZE", "data block size (may not be mountable by current kernel)"),
+ 	OPTLINE("-O|--features LIST", "comma separated list of filesystem features (use '-O list-all' to list features)"),
+ 	OPTLINE("-L|--label LABEL", "set the filesystem label"),
+ 	OPTLINE("-U|--uuid UUID", "specify the filesystem UUID (must be unique for a filesystem with multiple devices)"),
+@@ -1105,6 +1105,7 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
+ 			{ "shrink", no_argument, NULL, GETOPT_VAL_SHRINK },
+ 			{ "compress", required_argument, NULL,
+ 				GETOPT_VAL_COMPRESS },
++			{ "blocksize", required_argument, NULL, 's' },
+ #if EXPERIMENTAL
+ 			{ "param", required_argument, NULL, GETOPT_VAL_PARAM },
+ 			{ "num-global-roots", required_argument, NULL, GETOPT_VAL_GLOBAL_ROOTS },
+-- 
 2.47.1
 

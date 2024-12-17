@@ -1,50 +1,47 @@
-Received: from mx0a-00082601.pphosted.com (mx0a-00082601.pphosted.com [67.231.145.42])
+Received: from mx0b-00082601.pphosted.com (mx0b-00082601.pphosted.com [67.231.153.30])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BB6901F7570
-	for <linux-btrfs@vger.kernel.org>; Tue, 17 Dec 2024 18:02:17 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=67.231.145.42
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0814D1F8923
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Dec 2024 18:02:19 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=67.231.153.30
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1734458539; cv=none; b=hFdwguSaSuToOvaXH5twnSPl/ipbhRxIDOJz28MVtONVjUUaZKt0l6kSHciKvzjJviOu/gN5LS9zbZqxNCBxF5Wqfnu2f4NrVTK9UDkPkOKI4K+LjCvUgatHDJ7BfIc5EGwAuoxCuLibQb6JlkXi/fYXzym6MTNGXggZ1OQXYnU=
+	t=1734458541; cv=none; b=Vg+Gw/o9KxB9/v8MJuQR81ibXgFb2IdUgUuBYhShKEsU0gGOZAZVsFIY5HMu2eYb+gT8/9qIzLoLHMcRagtIQ0MQk3/1Y8xYTqd7KJYE2p5ZTTNdaHEWFACon0ErD0xpcc0LHNxk7NXrV7IWwFXnIzEDuOGQ0epDGrE+eLb9q3k=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1734458539; c=relaxed/simple;
-	bh=5yqhbwARB2dfOC2OxL9NeLiIhrPSsYRRj4S+/+XGylE=;
-	h=From:To:CC:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=V0mbUnRHjiJZw6Wrx3bf67csjZet1fLCd9qUQWZlNnA1/wE4K/eGxF6QMrW0LE6DViI+S9VFdRsnZFgNciWQORtBz1yBFrbtq4yPP7FvJmbaxYXC2gqpdQGJ6qQJSzx/b/VB4cNWsrpzDgG9A3xfeNE/sG8UwF9f0eyU6Kacv+g=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=fb.com; spf=pass smtp.mailfrom=meta.com; dkim=pass (1024-bit key) header.d=fb.com header.i=@fb.com header.b=Fp0/9Kn5; arc=none smtp.client-ip=67.231.145.42
+	s=arc-20240116; t=1734458541; c=relaxed/simple;
+	bh=5RiSR2jHkULy/C3STs8HBELX2lmfMW1FrSgnU1R1SZA=;
+	h=From:To:CC:Subject:Date:Message-ID:MIME-Version:Content-Type; b=bj85TGy4Qik5ikkeWt3XuQL9WhjadNJRzf03ujrrz7wW4rjQj0FYAV65DlewaEh5t5JpcnIMI9K3IeJZ/akK8NomuEU7ZJY6gTqlR0jGDPcLEd11UMYVfiJtnMcot9xOBswVvEVxawqvIvBNxLhj0cwrZA9JxBq7np4rYehxIhY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=fb.com; spf=pass smtp.mailfrom=meta.com; dkim=pass (1024-bit key) header.d=fb.com header.i=@fb.com header.b=aMTXKNeB; arc=none smtp.client-ip=67.231.153.30
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=fb.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=meta.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=fb.com header.i=@fb.com header.b="Fp0/9Kn5"
-Received: from pps.filterd (m0109334.ppops.net [127.0.0.1])
-	by mx0a-00082601.pphosted.com (8.18.1.2/8.18.1.2) with ESMTP id 4BHI1CDq010924
-	for <linux-btrfs@vger.kernel.org>; Tue, 17 Dec 2024 10:02:17 -0800
+	dkim=pass (1024-bit key) header.d=fb.com header.i=@fb.com header.b="aMTXKNeB"
+Received: from pps.filterd (m0148460.ppops.net [127.0.0.1])
+	by mx0a-00082601.pphosted.com (8.18.1.2/8.18.1.2) with ESMTP id 4BHGsL3j002666
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Dec 2024 10:02:18 -0800
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.com; h=cc
-	:content-transfer-encoding:content-type:date:from:in-reply-to
-	:message-id:mime-version:references:subject:to; s=facebook; bh=1
-	YMYRxo9wVOGVZereeoruzokqxg0JBG4GmlvMe9HwW8=; b=Fp0/9Kn5oqdNSRw2o
-	Yj8r0oExDPuDGv+inWcoij4RzJHebRyhZnl+ycQHBqqX2ZufJrNLCbYdFNpM/SxR
-	v0BWzy28FUyg1spLNW6z1U6DCwatUVt7POGnVm9PNpF5aRhAg67USJceyfmV1rli
-	K90KNn8REQSxVmocQC2QbN4yRk=
+	:content-transfer-encoding:content-type:date:from:message-id
+	:mime-version:subject:to; s=facebook; bh=was9xGBUPcfpW0SgGblPpfG
+	xfTN/fhXSAAyToKVn42k=; b=aMTXKNeBqZh+fs9SCLXnn0WWN8lnfvkouym9skr
+	6oNQpxVMjs9mPZq2AeDH9FWQ2Q6pneo5bb+tG9KPJkd1EjxIuUERTobGIA/6UK64
+	nDTNJiGtNKIYNItKk/EZWiaxNyRxHBGDUfHG+xRfPc0bO3A+cok+vCxJUU6bUKSx
+	ouCE=
 Received: from maileast.thefacebook.com ([163.114.135.16])
-	by mx0a-00082601.pphosted.com (PPS) with ESMTPS id 43ke7480dq-3
+	by mx0a-00082601.pphosted.com (PPS) with ESMTPS id 43kaym1sdm-2
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Tue, 17 Dec 2024 10:02:16 -0800 (PST)
-Received: from twshared18153.09.ash9.facebook.com (2620:10d:c0a8:1b::30) by
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Dec 2024 10:02:18 -0800 (PST)
+Received: from twshared53813.03.ash8.facebook.com (2620:10d:c0a8:1b::8e35) by
  mail.thefacebook.com (2620:10d:c0a9:6f::237c) with Microsoft SMTP Server
  (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
- 15.2.1544.11; Tue, 17 Dec 2024 18:02:14 +0000
+ 15.2.1544.11; Tue, 17 Dec 2024 18:02:17 +0000
 Received: by devbig276.nha1.facebook.com (Postfix, from userid 660015)
-	id 5B5A89A41152; Tue, 17 Dec 2024 18:02:12 +0000 (GMT)
+	id 471B79A4114C; Tue, 17 Dec 2024 18:02:12 +0000 (GMT)
 From: Mark Harmstone <maharmstone@fb.com>
 To: <linux-btrfs@vger.kernel.org>, <io-uring@vger.kernel.org>
-CC: Mark Harmstone <maharmstone@fb.com>, Jens Axboe <axboe@kernel.dk>
-Subject: [PATCH v3 4/4] btrfs: don't read from userspace twice in btrfs_uring_encoded_read()
-Date: Tue, 17 Dec 2024 18:02:02 +0000
-Message-ID: <20241217180210.4044318-4-maharmstone@fb.com>
+CC: Jens Axboe <axboe@kernel.dk>
+Subject: [PATCH v3 1/4] io_uring/cmd: rename struct uring_cache to io_uring_cmd_data
+Date: Tue, 17 Dec 2024 18:01:59 +0000
+Message-ID: <20241217180210.4044318-1-maharmstone@fb.com>
 X-Mailer: git-send-email 2.43.5
-In-Reply-To: <20241217180210.4044318-1-maharmstone@fb.com>
-References: <20241217180210.4044318-1-maharmstone@fb.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -54,184 +51,144 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: quoted-printable
 X-FB-Internal: Safe
 Content-Type: text/plain
-X-Proofpoint-GUID: vcYgKu3b4r32PmcifIMV2wfzlA8wvgXh
-X-Proofpoint-ORIG-GUID: vcYgKu3b4r32PmcifIMV2wfzlA8wvgXh
+X-Proofpoint-ORIG-GUID: NAjwOlS_rEjfdQWc_hAvEWB6ayv2gMYQ
+X-Proofpoint-GUID: NAjwOlS_rEjfdQWc_hAvEWB6ayv2gMYQ
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.293,Aquarius:18.0.1051,Hydra:6.0.680,FMLib:17.12.62.30
- definitions=2024-10-05_02,2024-10-04_01,2024-09-30_01
+ definitions=2024-10-05_03,2024-10-04_01,2024-09-30_01
 
-If we return -EAGAIN the first time because we need to block,
-btrfs_uring_encoded_read() will get called twice. Take a copy of args
-the first time, to prevent userspace from messing around with it.
+From: Jens Axboe <axboe@kernel.dk>
 
-Signed-off-by: Mark Harmstone <maharmstone@fb.com>
-Reported-by: Jens Axboe <axboe@kernel.dk>
-Fixes: 34310c442e17 ("btrfs: add io_uring command for encoded reads (ENCO=
-DED_READ ioctl)")
+In preparation for making this more generically available for
+->uring_cmd() usage that needs stable command data, rename it and move
+it to io_uring/cmd.h instead.
+
+Signed-off-by: Jens Axboe <axboe@kernel.dk>
 ---
- fs/btrfs/ioctl.c | 74 +++++++++++++++++++++++++++++++-----------------
- 1 file changed, 48 insertions(+), 26 deletions(-)
+ include/linux/io_uring/cmd.h |  4 ++++
+ io_uring/io_uring.c          |  2 +-
+ io_uring/opdef.c             |  3 ++-
+ io_uring/uring_cmd.c         | 10 +++++-----
+ io_uring/uring_cmd.h         |  4 ----
+ 5 files changed, 12 insertions(+), 11 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 7872de140489..da91cdb88324 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -4791,7 +4791,7 @@ static int btrfs_uring_encoded_read(struct io_uring=
-_cmd *cmd, unsigned int issue
+diff --git a/include/linux/io_uring/cmd.h b/include/linux/io_uring/cmd.h
+index 0d5448c0b86c..61f97a398e9d 100644
+--- a/include/linux/io_uring/cmd.h
++++ b/include/linux/io_uring/cmd.h
+@@ -18,6 +18,10 @@ struct io_uring_cmd {
+ 	u8		pdu[32]; /* available inline for free use */
+ };
+=20
++struct io_uring_cmd_data {
++	struct io_uring_sqe	sqes[2];
++};
++
+ static inline const void *io_uring_sqe_cmd(const struct io_uring_sqe *sq=
+e)
  {
- 	size_t copy_end_kernel =3D offsetofend(struct btrfs_ioctl_encoded_io_ar=
-gs, flags);
- 	size_t copy_end;
--	struct btrfs_ioctl_encoded_io_args args =3D { 0 };
-+	struct btrfs_ioctl_encoded_io_args *args;
- 	int ret;
- 	u64 disk_bytenr, disk_io_size;
- 	struct file *file;
-@@ -4806,6 +4806,7 @@ static int btrfs_uring_encoded_read(struct io_uring=
-_cmd *cmd, unsigned int issue
- 	struct extent_state *cached_state =3D NULL;
- 	u64 start, lockend;
- 	void __user *sqe_addr;
-+	struct io_uring_cmd_data *data =3D io_uring_cmd_get_async_data(cmd);
+ 	return sqe->cmd;
+diff --git a/io_uring/io_uring.c b/io_uring/io_uring.c
+index 06ff41484e29..8bac014ed631 100644
+--- a/io_uring/io_uring.c
++++ b/io_uring/io_uring.c
+@@ -320,7 +320,7 @@ static __cold struct io_ring_ctx *io_ring_ctx_alloc(s=
+truct io_uring_params *p)
+ 	ret |=3D io_alloc_cache_init(&ctx->rw_cache, IO_ALLOC_CACHE_MAX,
+ 			    sizeof(struct io_async_rw));
+ 	ret |=3D io_alloc_cache_init(&ctx->uring_cache, IO_ALLOC_CACHE_MAX,
+-			    sizeof(struct uring_cache));
++			    sizeof(struct io_uring_cmd_data));
+ 	spin_lock_init(&ctx->msg_lock);
+ 	ret |=3D io_alloc_cache_init(&ctx->msg_cache, IO_ALLOC_CACHE_MAX,
+ 			    sizeof(struct io_kiocb));
+diff --git a/io_uring/opdef.c b/io_uring/opdef.c
+index 3de75eca1c92..e8baef4e5146 100644
+--- a/io_uring/opdef.c
++++ b/io_uring/opdef.c
+@@ -7,6 +7,7 @@
+ #include <linux/fs.h>
+ #include <linux/file.h>
+ #include <linux/io_uring.h>
++#include <linux/io_uring/cmd.h>
 =20
- 	if (!capable(CAP_SYS_ADMIN)) {
- 		ret =3D -EPERM;
-@@ -4819,32 +4820,53 @@ static int btrfs_uring_encoded_read(struct io_uri=
-ng_cmd *cmd, unsigned int issue
+ #include "io_uring.h"
+ #include "opdef.h"
+@@ -414,7 +415,7 @@ const struct io_issue_def io_issue_defs[] =3D {
+ 		.plug			=3D 1,
+ 		.iopoll			=3D 1,
+ 		.iopoll_queue		=3D 1,
+-		.async_size		=3D 2 * sizeof(struct io_uring_sqe),
++		.async_size		=3D sizeof(struct io_uring_cmd_data),
+ 		.prep			=3D io_uring_cmd_prep,
+ 		.issue			=3D io_uring_cmd,
+ 	},
+diff --git a/io_uring/uring_cmd.c b/io_uring/uring_cmd.c
+index af842e9b4eb9..629cb4266da6 100644
+--- a/io_uring/uring_cmd.c
++++ b/io_uring/uring_cmd.c
+@@ -16,10 +16,10 @@
+ #include "rsrc.h"
+ #include "uring_cmd.h"
 =20
- 	if (issue_flags & IO_URING_F_COMPAT) {
- #if defined(CONFIG_64BIT) && defined(CONFIG_COMPAT)
--		struct btrfs_ioctl_encoded_io_args_32 args32;
+-static struct uring_cache *io_uring_async_get(struct io_kiocb *req)
++static struct io_uring_cmd_data *io_uring_async_get(struct io_kiocb *req=
+)
+ {
+ 	struct io_ring_ctx *ctx =3D req->ctx;
+-	struct uring_cache *cache;
++	struct io_uring_cmd_data *cache;
+=20
+ 	cache =3D io_alloc_cache_get(&ctx->uring_cache);
+ 	if (cache) {
+@@ -35,7 +35,7 @@ static struct uring_cache *io_uring_async_get(struct io=
+_kiocb *req)
+ static void io_req_uring_cleanup(struct io_kiocb *req, unsigned int issu=
+e_flags)
+ {
+ 	struct io_uring_cmd *ioucmd =3D io_kiocb_to_cmd(req, struct io_uring_cm=
+d);
+-	struct uring_cache *cache =3D req->async_data;
++	struct io_uring_cmd_data *cache =3D req->async_data;
+=20
+ 	if (issue_flags & IO_URING_F_UNLOCKED)
+ 		return;
+@@ -183,7 +183,7 @@ static int io_uring_cmd_prep_setup(struct io_kiocb *r=
+eq,
+ 				   const struct io_uring_sqe *sqe)
+ {
+ 	struct io_uring_cmd *ioucmd =3D io_kiocb_to_cmd(req, struct io_uring_cm=
+d);
+-	struct uring_cache *cache;
++	struct io_uring_cmd_data *cache;
+=20
+ 	cache =3D io_uring_async_get(req);
+ 	if (unlikely(!cache))
+@@ -260,7 +260,7 @@ int io_uring_cmd(struct io_kiocb *req, unsigned int i=
+ssue_flags)
+=20
+ 	ret =3D file->f_op->uring_cmd(ioucmd, issue_flags);
+ 	if (ret =3D=3D -EAGAIN) {
+-		struct uring_cache *cache =3D req->async_data;
++		struct io_uring_cmd_data *cache =3D req->async_data;
+=20
+ 		if (ioucmd->sqe !=3D (void *) cache)
+ 			memcpy(cache, ioucmd->sqe, uring_sqe_size(req->ctx));
+diff --git a/io_uring/uring_cmd.h b/io_uring/uring_cmd.h
+index 7dba0f1efc58..f6837ee0955b 100644
+--- a/io_uring/uring_cmd.h
++++ b/io_uring/uring_cmd.h
+@@ -1,9 +1,5 @@
+ // SPDX-License-Identifier: GPL-2.0
+=20
+-struct uring_cache {
+-	struct io_uring_sqe sqes[2];
+-};
 -
- 		copy_end =3D offsetofend(struct btrfs_ioctl_encoded_io_args_32, flags)=
-;
--		if (copy_from_user(&args32, sqe_addr, copy_end)) {
--			ret =3D -EFAULT;
--			goto out_acct;
--		}
--		args.iov =3D compat_ptr(args32.iov);
--		args.iovcnt =3D args32.iovcnt;
--		args.offset =3D args32.offset;
--		args.flags =3D args32.flags;
- #else
- 		return -ENOTTY;
- #endif
- 	} else {
- 		copy_end =3D copy_end_kernel;
--		if (copy_from_user(&args, sqe_addr, copy_end)) {
--			ret =3D -EFAULT;
-+	}
-+
-+	args =3D data->op_data;
-+
-+	if (!args) {
-+		args =3D kzalloc(sizeof(*args), GFP_NOFS);
-+		if (!args) {
-+			ret =3D -ENOMEM;
- 			goto out_acct;
- 		}
--	}
+ int io_uring_cmd(struct io_kiocb *req, unsigned int issue_flags);
+ int io_uring_cmd_prep(struct io_kiocb *req, const struct io_uring_sqe *s=
+qe);
 =20
--	if (args.flags !=3D 0)
--		return -EINVAL;
-+		data->op_data =3D args;
-=20
--	ret =3D import_iovec(ITER_DEST, args.iov, args.iovcnt, ARRAY_SIZE(iovst=
-ack),
-+		if (issue_flags & IO_URING_F_COMPAT) {
-+#if defined(CONFIG_64BIT) && defined(CONFIG_COMPAT)
-+			struct btrfs_ioctl_encoded_io_args_32 args32;
-+
-+			if (copy_from_user(&args32, sqe_addr, copy_end)) {
-+				ret =3D -EFAULT;
-+				goto out_acct;
-+			}
-+
-+			args->iov =3D compat_ptr(args32.iov);
-+			args->iovcnt =3D args32.iovcnt;
-+			args->offset =3D args32.offset;
-+			args->flags =3D args32.flags;
-+#endif
-+		} else {
-+			if (copy_from_user(args, sqe_addr, copy_end)) {
-+				ret =3D -EFAULT;
-+				goto out_acct;
-+			}
-+		}
-+
-+		if (args->flags !=3D 0) {
-+			ret =3D -EINVAL;
-+			goto out_acct;
-+		}
-+	}
-+
-+	ret =3D import_iovec(ITER_DEST, args->iov, args->iovcnt, ARRAY_SIZE(iov=
-stack),
- 			   &iov, &iter);
- 	if (ret < 0)
- 		goto out_acct;
-@@ -4854,8 +4876,8 @@ static int btrfs_uring_encoded_read(struct io_uring=
-_cmd *cmd, unsigned int issue
- 		goto out_free;
- 	}
-=20
--	pos =3D args.offset;
--	ret =3D rw_verify_area(READ, file, &pos, args.len);
-+	pos =3D args->offset;
-+	ret =3D rw_verify_area(READ, file, &pos, args->len);
- 	if (ret < 0)
- 		goto out_free;
-=20
-@@ -4868,15 +4890,15 @@ static int btrfs_uring_encoded_read(struct io_uri=
-ng_cmd *cmd, unsigned int issue
- 	start =3D ALIGN_DOWN(pos, fs_info->sectorsize);
- 	lockend =3D start + BTRFS_MAX_UNCOMPRESSED - 1;
-=20
--	ret =3D btrfs_encoded_read(&kiocb, &iter, &args, &cached_state,
-+	ret =3D btrfs_encoded_read(&kiocb, &iter, args, &cached_state,
- 				 &disk_bytenr, &disk_io_size);
- 	if (ret < 0 && ret !=3D -EIOCBQUEUED)
- 		goto out_free;
-=20
- 	file_accessed(file);
-=20
--	if (copy_to_user(sqe_addr + copy_end, (const char *)&args + copy_end_ke=
-rnel,
--			 sizeof(args) - copy_end_kernel)) {
-+	if (copy_to_user(sqe_addr + copy_end, (const char *)args + copy_end_ker=
-nel,
-+			 sizeof(*args) - copy_end_kernel)) {
- 		if (ret =3D=3D -EIOCBQUEUED) {
- 			unlock_extent(io_tree, start, lockend, &cached_state);
- 			btrfs_inode_unlock(inode, BTRFS_ILOCK_SHARED);
-@@ -4893,7 +4915,7 @@ static int btrfs_uring_encoded_read(struct io_uring=
-_cmd *cmd, unsigned int issue
- 		 * undo this.
- 		 */
- 		if (!iov) {
--			iov =3D kmemdup(iovstack, sizeof(struct iovec) * args.iovcnt,
-+			iov =3D kmemdup(iovstack, sizeof(struct iovec) * args->iovcnt,
- 				      GFP_NOFS);
- 			if (!iov) {
- 				unlock_extent(io_tree, start, lockend, &cached_state);
-@@ -4906,13 +4928,13 @@ static int btrfs_uring_encoded_read(struct io_uri=
-ng_cmd *cmd, unsigned int issue
- 		count =3D min_t(u64, iov_iter_count(&iter), disk_io_size);
-=20
- 		/* Match ioctl by not returning past EOF if uncompressed. */
--		if (!args.compression)
--			count =3D min_t(u64, count, args.len);
-+		if (!args->compression)
-+			count =3D min_t(u64, count, args->len);
-=20
- 		ret =3D btrfs_uring_read_extent(&kiocb, &iter, start, lockend,
- 					      cached_state, disk_bytenr,
- 					      disk_io_size, count,
--					      args.compression, iov, cmd);
-+					      args->compression, iov, cmd);
-=20
- 		goto out_acct;
- 	}
 --=20
 2.45.2
 

@@ -1,64 +1,64 @@
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4501A1FA179
-	for <linux-btrfs@vger.kernel.org>; Tue, 17 Dec 2024 21:59:31 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4CB081F9F5D
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Dec 2024 21:59:33 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1734472773; cv=none; b=mPzYVUPjj5GQB+SgBlSBYXDwkhNrOAIPO5HP12yNmBm8y4UIeTKpZjwCHyuaI/+DqGPLfnLSwKrN3/I/jfMjtIL8RLgPNIg1iShGsreG3mVd/h7TZIu3mM7/Tgghxu//hCgp0CdaFAvOJjoTjODummuuIF+4arugUbZ41wWieMY=
+	t=1734472775; cv=none; b=Rti7+jpqzjvII/RaetvYzar8jNjtcfDzA18K8cev8gxzMLOqz621SHfYh/Yw4Hbt3ySQEM92f6YFN4BTxFHATfDNlF2hqg/OdCbCm4b+YNtzqMDisOj33OESohucuyp499zfMlatmhQnga3mh6QiTDiSQXstNalstmpRcL/2Flg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1734472773; c=relaxed/simple;
-	bh=BKv2OEUcTZefMoKn1HneEYiIgzvF7jR4tj+dwy4m2IM=;
+	s=arc-20240116; t=1734472775; c=relaxed/simple;
+	bh=PGf4iA/1f/AuiLfW7p5srIhURo/hurXLtym3qyYtCxw=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=IQRjrdywBjAfL1z54viMD8G4Amvo+Ej6obv/PvYfpFbOaeBW/QaLw8NjbOFoT9FX4/tXsHQsIyJv7AOYuGZ3puPLWCEoY41G6kqu4GEG2Q2hT+f7qnwB5I3lzTglgheiJ7bWwP9586ijmwHCBknNUYuiMlz5LqtymEKh+VZVNm8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=EsCWJSmj; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=EsCWJSmj; arc=none smtp.client-ip=195.135.223.131
+	 MIME-Version; b=LerKv119GLoRpGhv5pIzDRe7cTrb32Ygisdi7d3etXqPyhMKSGbEEidf6Cpow9dAuYc+aN9E5afOPLwcbDipj7hI32iJCyjkH23TzOUC+F1KnGTTxzWwcyU+cc49XR8ZAiK1I5qmCODnyy94yCNDWMhShvy9CZVKpXXlSM2lpX4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=G4K2V+nP; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=G4K2V+nP; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="EsCWJSmj";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="EsCWJSmj"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="G4K2V+nP";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="G4K2V+nP"
 Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 8424C1F397;
-	Tue, 17 Dec 2024 21:59:23 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 8AA221F399;
+	Tue, 17 Dec 2024 21:59:26 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1734472763; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1734472766; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=Rh/UVTKsIv867nz5/WR05EGq4ypthIr4CtwavvPEhEU=;
-	b=EsCWJSmjGUJumWU6OAvWDugwytU5cBBuydfbkWI7ZqxQ25+6ASoiORG7tlYOyWBYBDAwYj
-	R6GzRbGynw+ILQp/rgRBbkIDibsNpxd+nuMYseRvx621gaexjydn5CX/wYn3G+EGstXuME
-	07GCUyKp4OXhbRu8MoL6runH0bba5pY=
+	bh=TCf58F0ZzIIkHV21UoldPMzI9oA/MNUebolxIF8qWws=;
+	b=G4K2V+nPnXK3Tdyh5NVOpu1U91FnVFsFGgHWtqsQcxdBUAdgj4n1GaJIPtadvPJemCO28K
+	cLICSE/WnLoI5+zZtbnH3vLjKNYihMlz/0TeqTwq30DE56U2Gon9oW0kZo52I58C/ID+9n
+	EhzfS9phygIOV06S4l8o2MIfkjqEtdk=
 Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=EsCWJSmj
+	dkim=pass header.d=suse.com header.s=susede1 header.b=G4K2V+nP
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1734472763; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1734472766; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=Rh/UVTKsIv867nz5/WR05EGq4ypthIr4CtwavvPEhEU=;
-	b=EsCWJSmjGUJumWU6OAvWDugwytU5cBBuydfbkWI7ZqxQ25+6ASoiORG7tlYOyWBYBDAwYj
-	R6GzRbGynw+ILQp/rgRBbkIDibsNpxd+nuMYseRvx621gaexjydn5CX/wYn3G+EGstXuME
-	07GCUyKp4OXhbRu8MoL6runH0bba5pY=
+	bh=TCf58F0ZzIIkHV21UoldPMzI9oA/MNUebolxIF8qWws=;
+	b=G4K2V+nPnXK3Tdyh5NVOpu1U91FnVFsFGgHWtqsQcxdBUAdgj4n1GaJIPtadvPJemCO28K
+	cLICSE/WnLoI5+zZtbnH3vLjKNYihMlz/0TeqTwq30DE56U2Gon9oW0kZo52I58C/ID+9n
+	EhzfS9phygIOV06S4l8o2MIfkjqEtdk=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 7C23613A3C;
-	Tue, 17 Dec 2024 21:59:22 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 832B813A3C;
+	Tue, 17 Dec 2024 21:59:25 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id IPhaDzr0YWfFEwAAD6G6ig
-	(envelope-from <wqu@suse.com>); Tue, 17 Dec 2024 21:59:22 +0000
+	id sJ3xED30YWfFEwAAD6G6ig
+	(envelope-from <wqu@suse.com>); Tue, 17 Dec 2024 21:59:25 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: "Roger L. Beckermeyer III" <beckerlee3@gmail.com>
-Subject: [PATCH v3 3/6] btrfs: update prelim_ref_insert() to use rb helpers
-Date: Wed, 18 Dec 2024 08:28:52 +1030
-Message-ID: <4d26bf1052ec09502e9c41d2575b6ecbc564da9c.1734472236.git.wqu@suse.com>
+Subject: [PATCH v3 5/6] btrfs: update btrfs_add_chunk_map() to use rb helpers
+Date: Wed, 18 Dec 2024 08:28:54 +1030
+Message-ID: <45b2ef8879fe598ea0fd207c52c0ddd87980afac.1734472236.git.wqu@suse.com>
 X-Mailer: git-send-email 2.47.1
 In-Reply-To: <cover.1734472236.git.wqu@suse.com>
 References: <cover.1734472236.git.wqu@suse.com>
@@ -69,8 +69,9 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Rspamd-Queue-Id: 8424C1F397
-X-Spam-Level: 
+X-Rspamd-Queue-Id: 8AA221F399
+X-Spam-Score: -3.01
+X-Rspamd-Action: no action
 X-Spamd-Result: default: False [-3.01 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
 	MID_CONTAINS_FROM(1.00)[];
@@ -80,152 +81,97 @@ X-Spamd-Result: default: False [-3.01 / 50.00];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
 	MX_GOOD(-0.01)[];
-	ARC_NA(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	ASN(0.00)[asn:25478, ipnet:::/0, country:RU];
-	MIME_TRACE(0.00)[0:+];
-	FUZZY_BLOCKED(0.00)[rspamd.com];
-	TO_DN_SOME(0.00)[];
-	FREEMAIL_ENVRCPT(0.00)[gmail.com];
 	RCVD_TLS_ALL(0.00)[];
-	FREEMAIL_CC(0.00)[gmail.com];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:dkim,suse.com:mid];
-	FROM_EQ_ENVFROM(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
+	ASN(0.00)[asn:25478, ipnet:::/0, country:RU];
+	ARC_NA(0.00)[];
+	FUZZY_BLOCKED(0.00)[rspamd.com];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,suse.com:mid,suse.com:email];
 	RCPT_COUNT_TWO(0.00)[2];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	FROM_HAS_DN(0.00)[];
+	FREEMAIL_CC(0.00)[gmail.com];
+	TO_DN_SOME(0.00)[];
+	FREEMAIL_ENVRCPT(0.00)[gmail.com];
+	FROM_EQ_ENVFROM(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	DKIM_TRACE(0.00)[suse.com:+]
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Rspamd-Action: no action
-X-Spam-Score: -3.01
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
 X-Spam-Flag: NO
+X-Spam-Level: 
 
 From: "Roger L. Beckermeyer III" <beckerlee3@gmail.com>
 
-Update prelim_ref_insert() to use rb_find_add_cached().
-
-There is a special change that the existing prelim_ref_compare() is
-called with the first parameter as the existing ref in the rbtree.
-
-But the newer rb_find_add_cached() expects the cmp() function to have
-the first parameter as the to-be-added node, thus the new helper
-prelim_ref_rb_add_cmp() need to adapt this new order.
+Update btrfs_add_chunk_map() to use rb_find_add_cached().
 
 Signed-off-by: Roger L. Beckermeyer III <beckerlee3@gmail.com>
 Reviewed-by: Qu Wenruo <wqu@suse.com>
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/backref.c | 79 +++++++++++++++++++++++-----------------------
- 1 file changed, 39 insertions(+), 40 deletions(-)
+ fs/btrfs/volumes.c | 41 +++++++++++++++++++++--------------------
+ 1 file changed, 21 insertions(+), 20 deletions(-)
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index 6d9f39c1d89c..3d3923cfc357 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -250,6 +250,21 @@ static int prelim_ref_compare(const struct prelim_ref *ref1,
- 	return 0;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index d32913c51d69..c8b079ad1dfa 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -5514,33 +5514,34 @@ void btrfs_remove_chunk_map(struct btrfs_fs_info *fs_info, struct btrfs_chunk_ma
+ 	btrfs_free_chunk_map(map);
  }
  
-+static int prelim_ref_rb_add_cmp(const struct rb_node *new,
-+				 const struct rb_node *exist)
++static int btrfs_chunk_map_cmp(const struct rb_node *new,
++			       const struct rb_node *exist)
 +{
-+	const struct prelim_ref *ref_new =
-+		rb_entry(new, struct prelim_ref, rbnode);
-+	const struct prelim_ref *ref_exist =
-+		rb_entry(exist, struct prelim_ref, rbnode);
++	const struct btrfs_chunk_map *new_map =
++		rb_entry(new, struct btrfs_chunk_map, rb_node);
++	const struct btrfs_chunk_map *exist_map =
++		rb_entry(exist, struct btrfs_chunk_map, rb_node);
 +
-+	/*
-+	 * prelim_ref_compare() expects the first parameter as the existing one,
-+	 * different from the rb_find_add_cached() order.
-+	 */
-+	return prelim_ref_compare(ref_exist, ref_new);
++	if (new_map->start == exist_map->start)
++		return 0;
++	if (new_map->start < exist_map->start)
++		return -1;
++	return 1;
 +}
 +
- static void update_share_count(struct share_check *sc, int oldcount,
- 			       int newcount, const struct prelim_ref *newref)
+ EXPORT_FOR_TESTS
+ int btrfs_add_chunk_map(struct btrfs_fs_info *fs_info, struct btrfs_chunk_map *map)
  {
-@@ -278,55 +293,39 @@ static void prelim_ref_insert(const struct btrfs_fs_info *fs_info,
- 			      struct share_check *sc)
- {
- 	struct rb_root_cached *root;
 -	struct rb_node **p;
 -	struct rb_node *parent = NULL;
--	struct prelim_ref *ref;
--	int result;
 -	bool leftmost = true;
 +	struct rb_node *exist;
  
- 	root = &preftree->root;
--	p = &root->rb_root.rb_node;
-+	exist = rb_find_add_cached(&newref->rbnode, root, prelim_ref_rb_add_cmp);
-+	if (exist) {
-+		struct prelim_ref *ref = rb_entry(exist, struct prelim_ref, rbnode);
-+		/* Identical refs, merge them and free @newref */
-+		struct extent_inode_elem *eie = ref->inode_list;
- 
+ 	write_lock(&fs_info->mapping_tree_lock);
+-	p = &fs_info->mapping_tree.rb_root.rb_node;
 -	while (*p) {
+-		struct btrfs_chunk_map *entry;
++	exist = rb_find_add_cached(&map->rb_node, &fs_info->mapping_tree,
++				   btrfs_chunk_map_cmp);
+ 
 -		parent = *p;
--		ref = rb_entry(parent, struct prelim_ref, rbnode);
--		result = prelim_ref_compare(ref, newref);
--		if (result < 0) {
+-		entry = rb_entry(parent, struct btrfs_chunk_map, rb_node);
+-
+-		if (map->start < entry->start) {
 -			p = &(*p)->rb_left;
--		} else if (result > 0) {
+-		} else if (map->start > entry->start) {
 -			p = &(*p)->rb_right;
 -			leftmost = false;
 -		} else {
--			/* Identical refs, merge them and free @newref */
--			struct extent_inode_elem *eie = ref->inode_list;
-+		while (eie && eie->next)
-+			eie = eie->next;
- 
--			while (eie && eie->next)
--				eie = eie->next;
--
--			if (!eie)
--				ref->inode_list = newref->inode_list;
--			else
--				eie->next = newref->inode_list;
--			trace_btrfs_prelim_ref_merge(fs_info, ref, newref,
--						     preftree->count);
--			/*
--			 * A delayed ref can have newref->count < 0.
--			 * The ref->count is updated to follow any
--			 * BTRFS_[ADD|DROP]_DELAYED_REF actions.
--			 */
--			update_share_count(sc, ref->count,
--					   ref->count + newref->count, newref);
--			ref->count += newref->count;
--			free_pref(newref);
--			return;
+-			write_unlock(&fs_info->mapping_tree_lock);
+-			return -EEXIST;
 -		}
-+		if (!eie)
-+			ref->inode_list = newref->inode_list;
-+		else
-+			eie->next = newref->inode_list;
-+		trace_btrfs_prelim_ref_merge(fs_info, ref, newref,
-+							preftree->count);
-+		/*
-+		 * A delayed ref can have newref->count < 0.
-+		 * The ref->count is updated to follow any
-+		 * BTRFS_[ADD|DROP]_DELAYED_REF actions.
-+		 */
-+		update_share_count(sc, ref->count,
-+					ref->count + newref->count, newref);
-+		ref->count += newref->count;
-+		free_pref(newref);
-+		return;
++	if (exist) {
++		write_unlock(&fs_info->mapping_tree_lock);
++		return -EEXIST;
  	}
- 
- 	update_share_count(sc, 0, newref->count, newref);
- 	preftree->count++;
- 	trace_btrfs_prelim_ref_insert(fs_info, newref, NULL, preftree->count);
--	rb_link_node(&newref->rbnode, parent, p);
--	rb_insert_color_cached(&newref->rbnode, root, leftmost);
- }
- 
- /*
+-	rb_link_node(&map->rb_node, parent, p);
+-	rb_insert_color_cached(&map->rb_node, &fs_info->mapping_tree, leftmost);
+ 	chunk_map_device_set_bits(map, CHUNK_ALLOCATED);
+ 	chunk_map_device_clear_bits(map, CHUNK_TRIMMED);
+ 	write_unlock(&fs_info->mapping_tree_lock);
 -- 
 2.47.1
 

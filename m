@@ -1,194 +1,405 @@
-Received: from esa2.hgst.iphmx.com (esa2.hgst.iphmx.com [68.232.143.124])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A237214D439
-	for <linux-btrfs@vger.kernel.org>; Wed, 18 Dec 2024 06:58:51 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=68.232.143.124
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1734505133; cv=fail; b=g/FEXI48Vt3+XNjRv/FmzEFWAwbAz2EiXe0ylwPgHr7OeVcsdxwL59U+zSTW3/klvKgAG/kLBGLEcxhD43deuJ1afKVT5G/+7EqCMMd3xMNnnkFc8XWDGSfAxhl3YWWt+aOTiO+QbTdDdMXtiq5ZhraoedCOaq7cOOaNEwQMCds=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1734505133; c=relaxed/simple;
-	bh=rwNc1Sh7xuKBZXo368OQe12ShUibR5yOi1y/L3H1Juk=;
-	h=From:To:CC:Subject:Date:Message-ID:References:In-Reply-To:
-	 Content-Type:MIME-Version; b=uVZ3bP13o+OaMzZtP+k2OU4bBDXPDAo5XxMh/K+uEPEOR3cakx0i6ko9lhW9Xx5ojW115BKXclp/QUopHG4pafzgwlTgA8P3S0AGPMZFqKjAheOG4cDlQ0Q/mQPi2YqNy0ms7I+pAzzo1lrZUhsixBSMwFbLznNVnxsGebjpqrU=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=PokvuUUV; dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b=Ky60fmso; arc=fail smtp.client-ip=68.232.143.124
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6919D1917D9
+	for <linux-btrfs@vger.kernel.org>; Wed, 18 Dec 2024 09:41:56 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1734514919; cv=none; b=ckImjukyj7vpe+dLv88L6hNWqUwenNKATAzhLq2ebtp7imasByzE5qJmiGMawuM+TaM/w9WTmD8WSlYBifcfkC5wQhscdkNsHJq+jbTxVHJvEQp8sSGSg4Cqoq3XqgISTQroZoCUF7E8irXL3zspQLMJhRd9//2FJE8YeUk3hr4=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1734514919; c=relaxed/simple;
+	bh=vkG0nn1CstCwXRZgpm4Z9EHe2TPCY3iUnJKsDSg8hPg=;
+	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=LaTLvz3fxGzqUe615ciacbm8RvnhtOrIQv/iP1xhMO3L4KQjF2GbxjvgstDReEGYMKBBniyeV7FBV/NQhlbYaxYrCkItsX67gaD15DJcV2/G3mNrCLN6ydXE6gAZ9A5D1rynVtZuXpBuplNO2q/ubp7YLOwsu2qdUg8NZayXOOs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=kgUYSfA/; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=kgUYSfA/; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="PokvuUUV";
-	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="Ky60fmso"
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1734505131; x=1766041131;
-  h=from:to:cc:subject:date:message-id:references:
-   in-reply-to:content-id:content-transfer-encoding:
-   mime-version;
-  bh=rwNc1Sh7xuKBZXo368OQe12ShUibR5yOi1y/L3H1Juk=;
-  b=PokvuUUVe5QrkS+E9J/bCr5vY75pN0NUmEGPYysHa0Z1GZGpNUkY1kIn
-   TLBZ3otruqOitondtwJgu7uiTktQ5RaqK19Ih7DLfEJiGcnSyDbrfTpwu
-   M8TL0LH3PsKm5AUFZ3Hil2R6ZN+eRFegkJEsoDjK4YL3yUufCGbaHP0+6
-   14RWnkdwqSqh5sJ+/gifl/9cK/HYbm/WQIKys3aDvIv9LQp8r0bgFtpJO
-   hhRnW4LzUbQPk6142DDjG5nAnjHo+DmL2Ql8reIMfbBCv2y6uqgUeWLrt
-   mKfM07ihBc9fXncuALGzrIRNnHuk24V3fdmpB4kJa/i2u01yrARcsCSRx
-   Q==;
-X-CSE-ConnectionGUID: pm6tXB9sQMWcrV2UFS7u/w==
-X-CSE-MsgGUID: kVrIlweQQRiS6xiLp/j/mg==
-X-IronPort-AV: E=Sophos;i="6.12,244,1728921600"; 
-   d="scan'208";a="34641206"
-Received: from mail-westcentralusazlp17010000.outbound.protection.outlook.com (HELO CY4PR05CU001.outbound.protection.outlook.com) ([40.93.6.0])
-  by ob1.hgst.iphmx.com with ESMTP; 18 Dec 2024 14:58:50 +0800
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
- b=NyfmQG3h4qKTGhAum0REa5/qj0MQqSKrp5P/YhDyvjXi3F9t3KlOwku0jor18bgTb3k/93HUWoJXPI69UUWjyPNC13WaUjMzsR/mNj8hupvrLSZ9b3uJtxYPI+usTdojq+8qiF1rnds5h5UmYHf3KeJlOvjRste9W965Od8A3gxa3qLUTUGQmxj7fgiVxoylenK4weY3a4TeTCXZwMWNcqYMcl46ncqqKl+igOroaxdSuWNUtQMDCdfBPwl4YDjmoINRB0vDN6pUQWpKOt5SUxMLe58/Vwou0zaQiD97xVjHFQlDDR/Op1DOJSMr+UBQb5hJvdaXjm/Wp6A8N+DUMQ==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector10001;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
- bh=J1/NxbkhMtkBeKmXbIizgK3DGib2nE+gFz1EuX9u8RM=;
- b=qMH9neCKhVd54Y0c+HUjdaCmKTgN4/480/FaqS/D6i/8/XiB6KpqWRRbtfr1y4oDSgVbFQ8GTcpLKlK4ytmIWrYUAwGHJ6107ZCKozENKfuC19pZslHW6YQhwicTd/U7JZduHe/7H47/5SoYJMtwWIZH109KS+mAqZt9Bgt4QEZ0wfhVDXBJMrEccR1cDtbr9/ofiiIG1lErSVs/iwGa42g+yKUHT2XxNhGmCibZl6s4TBesRBEGiOQZygYHnHF06CIPS69pyauJle1qE+s9SQOnkpwRCL8qmHDh33ZS1jVHHd/r1jz/qS0menBjVQUYXkekp4HdMfpHKsF4mou2MA==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
- header.d=wdc.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=J1/NxbkhMtkBeKmXbIizgK3DGib2nE+gFz1EuX9u8RM=;
- b=Ky60fmsoMjomG/z5jMMiniE/Z2zTHIaVps5/V8yCAPX89qqUKw+ATWwGSGHcBNmSegQ2Qvb3h6hJxlRKBZCGvnJ1vyEQEFSfoiH3Z7Pb7e0xRfh08/FXu5z6XQsmlS8xhjKem3SUjtbvXgHJYPuaL9ZvA+NnzaXXBJ51WFSU/L8=
-Received: from SJ0PR04MB7776.namprd04.prod.outlook.com (2603:10b6:a03:300::11)
- by MW6PR04MB8872.namprd04.prod.outlook.com (2603:10b6:303:245::11) with
- Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.8272.13; Wed, 18 Dec
- 2024 06:58:49 +0000
-Received: from SJ0PR04MB7776.namprd04.prod.outlook.com
- ([fe80::5266:472:a4e5:a9c2]) by SJ0PR04MB7776.namprd04.prod.outlook.com
- ([fe80::5266:472:a4e5:a9c2%7]) with mapi id 15.20.8251.015; Wed, 18 Dec 2024
- 06:58:48 +0000
-From: Naohiro Aota <Naohiro.Aota@wdc.com>
-To: WenRuo Qu <wqu@suse.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs: sysfs: fix direct super block member read
-Thread-Topic: [PATCH] btrfs: sysfs: fix direct super block member read
-Thread-Index: AQHbURZ6UC0V1eUROEuoSvUIzx0fWLLrkmUA
-Date: Wed, 18 Dec 2024 06:58:48 +0000
-Message-ID: <fdohuhi3litxdv27zy5jbq475igics2xxlxjmbfxxp2rywzsdi@muzz3iejhvzk>
-References:
- <67a25027c7d05f33c71015b60fcfb75d89ac0ab9.1734503454.git.wqu@suse.com>
-In-Reply-To:
- <67a25027c7d05f33c71015b60fcfb75d89ac0ab9.1734503454.git.wqu@suse.com>
-Accept-Language: ja-JP, en-US
-Content-Language: en-US
-X-MS-Has-Attach:
-X-MS-TNEF-Correlator:
-authentication-results: dkim=none (message not signed)
- header.d=none;dmarc=none action=none header.from=wdc.com;
-x-ms-publictraffictype: Email
-x-ms-traffictypediagnostic: SJ0PR04MB7776:EE_|MW6PR04MB8872:EE_
-x-ms-office365-filtering-correlation-id: 915345a1-748c-4eb7-7c0c-08dd1f316c5d
-x-ld-processed: b61c8803-16f3-4c35-9b17-6f65f441df86,ExtAddr
-wdcipoutbound: EOP-TRUE
-x-ms-exchange-senderadcheck: 1
-x-ms-exchange-antispam-relay: 0
-x-microsoft-antispam: BCL:0;ARA:13230040|1800799024|376014|366016|38070700018;
-x-microsoft-antispam-message-info:
- =?us-ascii?Q?Erh9rAvYNE/mxFpIGd+lZXMZur/if0j1QHZv4B2hM7KiD9p3OrV/eVS2rchp?=
- =?us-ascii?Q?XQPPi7TCHrr5ksO4wY2q11XYrRI1SDehQD0ah4MPrcTS+Z/U9b16x+A7+T97?=
- =?us-ascii?Q?24xXTWtCWabHT/WyWkotQAOQFu3enx+S/5mGiwCwlCLe+hsBbJlXQ9d2xWxz?=
- =?us-ascii?Q?trazDUUmSpQx8yRBpTZ/gttFwCwtJ09o2yQPjYP1gQLizcBpxkYuCGm1p+2Z?=
- =?us-ascii?Q?X4gGDJqIOb8ZWi+d/e4Koedi5NMI0la3eryVZ4vHl6sjISyNxtPo+d+n3rbz?=
- =?us-ascii?Q?ElpWtO5TCFyDg+JkYCGe8mL36tnxPOrnKvDbcokfW90HkITsyfc2gPfJFUsD?=
- =?us-ascii?Q?1zF8PZXRJgrri1fGW0qSKWROQsOoE98QSzLthMANHYegxJSWkMGw30HNoaKs?=
- =?us-ascii?Q?GpxnJouDvRkdqZ8zHYRtt2LD7efwjXB0Rl2GDNw58HZ7PVjAJfWNwvJq6GMJ?=
- =?us-ascii?Q?1n43ltReZJnfneKkvBOktmIQnlrQBNWcruwP3fDKC3U32B+bXr6kkRobecoZ?=
- =?us-ascii?Q?R5HfB1fFLXX0Zpux4NZNCYDdmtpx6ZZoHysHwEaZS+rRjOS4KQLstzqx1Jx1?=
- =?us-ascii?Q?x/QU5zZnlGrH8vfjP4gY8kJi2VC/ZLm9P8AJnjCOuYgv8ivcjiGah6CAmM4c?=
- =?us-ascii?Q?ocLBBNf+VjedC7gSuE/lMLb7FeaqUW2G7+GcdSGzbexkPUpDD3Zf/IdlEW7c?=
- =?us-ascii?Q?H8gsF4xyNEG3Ty/W7C7ded8Wvg0pn9Rm7e268DpGGfndXS3Mcs6ZRg6jP9hu?=
- =?us-ascii?Q?teex6bGjgB8DLjfz5BSueipltab6H7JW5I7RJ5SiBFB5OHzgk3h5cuzPcn0B?=
- =?us-ascii?Q?00xKg0UO8/0ayMv0YnIV/jlpdGoAHA51+eis4rp4e+J9yk/zFB4WtHqb3U+h?=
- =?us-ascii?Q?UrnRjs9hUyn+9rmQmsZKy9JmVzolElDjk5M3twQoxlsK7NPyF3hDnG22UECR?=
- =?us-ascii?Q?xDZ5tF5JA9I8gjgodNZ0YaK0KIR1LsGgNWlujPxschF63Y30R+k4iZKFu1HJ?=
- =?us-ascii?Q?AgLdJoggP0SbJdnXwpCkRDgyzlCKEnJCZNngeyem1W09fuRFTaD5pbrAkacF?=
- =?us-ascii?Q?McL8tjth3QsXQlcQlV7Ee3IB11DtM7hOp6fPzrwH6LfcRoNbMbWxjrRbRSdP?=
- =?us-ascii?Q?UU8yCkOILPVAX8XmAG2NgkP62QcR4uXkg3XQhfGgVw6Fb/HIFteRN8Me8yxA?=
- =?us-ascii?Q?++vRx43r+NYi+jcgp/FoOFHSYNkvJVi2btJdHPIIKzVmCGLUZ74/eLSF+0Zm?=
- =?us-ascii?Q?ddnvNnTR5s+TCNu3lHkNPt3tc5T9l2bQF5Ws4KViu5apOzXDB1cZF1l8Pjde?=
- =?us-ascii?Q?blvV+9RGxKazQ+i0WugyXAD8cYjPeKPxo4guEzNGPH9P6IXnveM9aKwNVd1v?=
- =?us-ascii?Q?nvf3YylaDWgM52wPen29jGe9BmSc1Bx4BRm8J5QT9NyhL+tU36qsON+I0Cj+?=
- =?us-ascii?Q?0KjZaInuDXZNArRgw7E6RsAFSWaD4wIY?=
-x-forefront-antispam-report:
- CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SJ0PR04MB7776.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(1800799024)(376014)(366016)(38070700018);DIR:OUT;SFP:1101;
-x-ms-exchange-antispam-messagedata-chunkcount: 1
-x-ms-exchange-antispam-messagedata-0:
- =?us-ascii?Q?70kcr5qpElFyknK61FSmpBY8TpBmEXYbVHxl0RuhnN6ACXmXCq2WMsg0Z7NS?=
- =?us-ascii?Q?vZT1t2gpSZzUA96DePR3jcFWL5kT06KyZaAHQ5KQ4eS4BC2e9ICBZD+EvFB2?=
- =?us-ascii?Q?gDptJnKOUJffbdhHvXv3b24jVNdOIypRZkYXA1tCSDuUmNg0zm9y/UYj1WN4?=
- =?us-ascii?Q?0XWkvAdz9RRhajaT4amoA9ox8C7WytfSSgZ7AUX570Y8U8/8hhbruz8TIFe9?=
- =?us-ascii?Q?TxmpV7aneCcrh85Lp40o6w3Hg0Lc9ahC8Vo2YJCwpM/6yiI6U5JV82+bhk4b?=
- =?us-ascii?Q?ItEIcWm1MhocqSgJQuB8bzX094p4jOfSaZ5h7NIa38F2TUZbDo9G7/+5Lbpu?=
- =?us-ascii?Q?2ILtd04AXtQXbKkxTm2licL3mLjCrAvlXx0eD3Hc80kkpukSU86L11tdN8qz?=
- =?us-ascii?Q?HW4YI5Jw45qlEK2Gv6g1rxBdJetYSMbVpMs/41VblOZM10pjVhDpJaLruybu?=
- =?us-ascii?Q?g9G3uMJk/rE/NVsRNTt3Xp9uTxu9JECy6K7gO5uZC7re9TzTbLJJibnADCyd?=
- =?us-ascii?Q?JWVi1OoFWrVGP9zsQxNk/yyHE900VKwmV0AZVhBJUOPdBVPq/xKbsxCnQQJA?=
- =?us-ascii?Q?292JVNyrBEV8xm0m8EKyr+c0RhtUWzGkVcroC4aYzPVIipchwZ2npWipOzWN?=
- =?us-ascii?Q?0Y2ZtXge3YLD2ug/6cAR0H+WgHOQGf2fZzD2P96ngEM9mNeDL0E7rxmrPw0P?=
- =?us-ascii?Q?YXtBQjNfbnyoK00JBBff3gYbtXWihIAN2QmGPsOmDl7UUimL9yplue23NwFL?=
- =?us-ascii?Q?e/rQ2ojkIdC9Va2b60OP/AAnwesiMLTCgVatxi2ga3y4JOPrQaW0rPQ8TUyV?=
- =?us-ascii?Q?4CmK7XbX5j6H77fqsHpg5LkU20cAlJSyIt/hWvQSAQtybdaL4pn7lVDPyIdD?=
- =?us-ascii?Q?QJMFL5JtNA8rBsKlggsJDMnq9ALhOwoBvieGVpYUewcV1lfT3MRqhZAAo3sB?=
- =?us-ascii?Q?ZYOamaytbxGw/sTnkrCVf49qmHc7jABtcuBKCbmeNzPxjig2SEIeT8BhqxPP?=
- =?us-ascii?Q?fTJJTXXgI0iprbtg9qbaTwrRnLE4UbL2J03FCWc13l4ULjiwow2mgakFG+cy?=
- =?us-ascii?Q?wnoiB5WcVkWrY6Jf1vVy5O6vfTFvYMZHQkbJvMd37U65k7z6P6ou9esq/RAJ?=
- =?us-ascii?Q?UrwtD4aAdT3alsxN3qXccaFZDIqk9niaPYGLv/WbD6ZpemqDAr0wyvgZwbZw?=
- =?us-ascii?Q?VQ1ovd6YVBAc9Qz3/L9T0DiBP3rdj4ZPMERM90oZp7U0tTMar6wN5XEaeyM2?=
- =?us-ascii?Q?uu7qK5Xu/FuzgRqLmvHNwWFRELD28QBDx72JafF21P4uCtHEaM3N4k+X4VsE?=
- =?us-ascii?Q?7KKsGErb6YUu57NLzLcuavPuX+B+u2jj/hULp2flhMx7+Aao5nEJkvBGmmvA?=
- =?us-ascii?Q?VJk8Vh+vORybl7HcJIpfHRbymRjcPhWEkw8/IReKnKnV6xsF1Sa4LCNLO2qd?=
- =?us-ascii?Q?ygmX9tWU6ebb6hj62+Dq+C8yVUZ2xn2YUHsUrlZMYx6WG+Td1ucAKMuEzmFo?=
- =?us-ascii?Q?N4NNGo/9bVEn9QIGnyTDB2IKHI9nhMI8H4u6J4kc1GYRzV4fMv7NEgj54EAW?=
- =?us-ascii?Q?pLahwE89+WOSN0nuhIhOtrhfT6M+Fhw5cQ7f9ofLXYpQ9s2enCYr1a1ugNr3?=
- =?us-ascii?Q?hA=3D=3D?=
-Content-Type: text/plain; charset="us-ascii"
-Content-ID: <59C7C0D14A5C0848B77699FE80D53F42@namprd04.prod.outlook.com>
-Content-Transfer-Encoding: quoted-printable
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="kgUYSfA/";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="kgUYSfA/"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 8F09E1F399
+	for <linux-btrfs@vger.kernel.org>; Wed, 18 Dec 2024 09:41:54 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1734514914; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=bRpvH1sIcMBlT22vtr7fNqIp36ztQVUa4efCdaxTmio=;
+	b=kgUYSfA/BsXpW41XJt18w/0wtE5CuaFdEeqZ3RYdNgO4Bss61b9xi7itbBUJTpMRnuQVHJ
+	oBttLBzbF9oqGAtdyNiFyPNCW+3aC48nyMxgCx01ZiGKs1BCvT+NAQr+Skcr8l4x36uiZk
+	lDZ3DOaaRgDLVJQOTOfALWw3rImUdLI=
+Authentication-Results: smtp-out2.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1734514914; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=bRpvH1sIcMBlT22vtr7fNqIp36ztQVUa4efCdaxTmio=;
+	b=kgUYSfA/BsXpW41XJt18w/0wtE5CuaFdEeqZ3RYdNgO4Bss61b9xi7itbBUJTpMRnuQVHJ
+	oBttLBzbF9oqGAtdyNiFyPNCW+3aC48nyMxgCx01ZiGKs1BCvT+NAQr+Skcr8l4x36uiZk
+	lDZ3DOaaRgDLVJQOTOfALWw3rImUdLI=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id B196E132EA
+	for <linux-btrfs@vger.kernel.org>; Wed, 18 Dec 2024 09:41:53 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id SICUG+GYYmdmSwAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Wed, 18 Dec 2024 09:41:53 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 01/18] btrfs: rename btrfs_fs_info::sectorsize to blocksize for disk-io.c
+Date: Wed, 18 Dec 2024 20:11:17 +1030
+Message-ID: <7d28eec4349d9b4ec5d7097e5194418a9cb16883.1734514696.git.wqu@suse.com>
+X-Mailer: git-send-email 2.47.1
+In-Reply-To: <cover.1734514696.git.wqu@suse.com>
+References: <cover.1734514696.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount: 1
-X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0:
-	gNxfkKUuCgviyLjtXnignOTSFiaSvlWyWnknu8mJk9Q3yJiRCh6IoeISB+uYesgydV0F+MwAiwTi6ygz49E9v37Q+bUhRhzQ2mo7YM7C5y0KD8W4rnJ4YDXeKg2t5UAKmZN3100GTOnOMLaob9uIG3nCL01X3pgcIAzhXl9n0ge2AxSjWpNFQA4lfWDA6DALaOt+GAAjtIg/3nhVp6Wd7QqHOpjOl7uctLteWzJd2AOH/XF0M3bzxTkVX5ScCqj3/O5vvhcN9WwiDU1rbJjho2TZTnuDpXcXYJEQ95lm+gI6ylRlFroyDkgtcGXyjtyNoHMdeJcQ2Zx8gm2sCbS1CTCdqcJTtNOBl6ieG12qwCi403l+bZ85uZfIVQt8KDXEn/x1lYxT8XdOhw125+OfeQ9+olA1hXAN1utEyidflvPI1G71ViYFg/+0OywN1LTtrxnvkaUZFjAgn8KS5BE1sHTZvaPmIoPFfwcBKTyjfPd1EHOn7ye2SfXlC+c3okIM2sHAj7E1pBYvfITOru757dIGD1iKnGb/eJycTz3L49JSSe7Hz1026gy19Abg51A2H2S5KJR3SXe9mDr9OT7le9I07zg6nsTTCymLEi6aiex5sPt+F/F+cklZ6cCw88Gc
-X-OriginatorOrg: wdc.com
-X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-AuthSource: SJ0PR04MB7776.namprd04.prod.outlook.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: 915345a1-748c-4eb7-7c0c-08dd1f316c5d
-X-MS-Exchange-CrossTenant-originalarrivaltime: 18 Dec 2024 06:58:48.8259
- (UTC)
-X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: b61c8803-16f3-4c35-9b17-6f65f441df86
-X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
-X-MS-Exchange-CrossTenant-userprincipalname: Up5Jjfa2pO7BtkRWrR/eLw5kX8Kzx/LSqUIwFIBTws2uiueOx6qhfCuPq8VUGpR0UdbxnZq2JTqm8HOftwVUqw==
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: MW6PR04MB8872
+Content-Transfer-Encoding: 8bit
+X-Spam-Level: 
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	FUZZY_BLOCKED(0.00)[rspamd.com];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	ARC_NA(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:mid,imap1.dmz-prg2.suse.org:helo];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	RCVD_TLS_ALL(0.00)[]
+X-Spam-Score: -2.80
+X-Spam-Flag: NO
 
-On Wed, Dec 18, 2024 at 05:00:56PM +1030, Qu Wenruo wrote:
-> The following sysfs entries are reading super block member directly,
-> which can have a different endian and cause wrong values:
->=20
-> - sys/fs/btrfs/<uuid>/nodesize
-> - sys/fs/btrfs/<uuid>/sectorsize
-> - sys/fs/btrfs/<uuid>/clone_alignment
->=20
-> Thankfully those values (nodesize and sectorsize) are always aligned
-> inside the btrfs_super_block, so it won't trigger unaligned read errors,
-> just endian problems.
->=20
-> Fix them by using the native cached members instead.
->=20
-> Fixes: df93589a1737 ("btrfs: export more from FS_INFO to sysfs")
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
->  fs/btrfs/sysfs.c | 6 +++---
->  1 file changed, 3 insertions(+), 3 deletions(-)
+All other file systems use the terminology "block size" for the minimum
+data block size, but due to historical reasons we use "sector size" for
+btrfs from day 1.
 
-Looks good to me.
+Furthermore the kernel has its own sector size, fixed to 512 as the
+minimal supported block IO size.
 
-Reviewed-by: Naohiro Aota <naohiro.aota@wdc.com>=
+This can cause confusion when talking with other MM/FS people.
+
+So here we rename btrfs_fs_info::sectorsize to blocksize.
+But there are over 800 such usages across btrfs already, to make the
+transaction more smooth, for now @sectorsize and @blocksize are inside
+an anonymous union, so that both name can be utilized until we finish
+the full transaction.
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/disk-io.c | 82 +++++++++++++++++++++++-----------------------
+ fs/btrfs/fs.h      | 25 +++++++++-----
+ 2 files changed, 58 insertions(+), 49 deletions(-)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index eff0dd1ae62f..d3d2c9e2356a 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -555,7 +555,7 @@ static bool btree_dirty_folio(struct address_space *mapping,
+ 	int cur_bit = 0;
+ 	u64 page_start = folio_pos(folio);
+ 
+-	if (fs_info->sectorsize == PAGE_SIZE) {
++	if (fs_info->blocksize == PAGE_SIZE) {
+ 		eb = folio_get_private(folio);
+ 		BUG_ON(!eb);
+ 		BUG_ON(!test_bit(EXTENT_BUFFER_DIRTY, &eb->bflags));
+@@ -579,7 +579,7 @@ static bool btree_dirty_folio(struct address_space *mapping,
+ 			continue;
+ 		}
+ 		spin_unlock_irqrestore(&subpage->lock, flags);
+-		cur = page_start + cur_bit * fs_info->sectorsize;
++		cur = page_start + cur_bit * fs_info->blocksize;
+ 
+ 		eb = find_extent_buffer(fs_info, cur);
+ 		ASSERT(eb);
+@@ -588,7 +588,7 @@ static bool btree_dirty_folio(struct address_space *mapping,
+ 		btrfs_assert_tree_write_locked(eb);
+ 		free_extent_buffer(eb);
+ 
+-		cur_bit += (fs_info->nodesize >> fs_info->sectorsize_bits) - 1;
++		cur_bit += (fs_info->nodesize >> fs_info->blocksize_bits) - 1;
+ 	}
+ 	return filemap_dirty_folio(mapping, folio);
+ }
+@@ -738,7 +738,7 @@ struct btrfs_root *btrfs_alloc_dummy_root(struct btrfs_fs_info *fs_info)
+ 	if (!root)
+ 		return ERR_PTR(-ENOMEM);
+ 
+-	/* We don't use the stripesize in selftest, set it as sectorsize */
++	/* We don't use the stripesize in selftest, set it as blocksize */
+ 	root->alloc_bytenr = 0;
+ 
+ 	return root;
+@@ -2341,7 +2341,7 @@ int btrfs_validate_super(const struct btrfs_fs_info *fs_info,
+ 			 const struct btrfs_super_block *sb, int mirror_num)
+ {
+ 	u64 nodesize = btrfs_super_nodesize(sb);
+-	u64 sectorsize = btrfs_super_sectorsize(sb);
++	u64 blocksize = btrfs_super_sectorsize(sb);
+ 	int ret = 0;
+ 	const bool ignore_flags = btrfs_test_opt(fs_info, IGNORESUPERFLAGS);
+ 
+@@ -2378,31 +2378,31 @@ int btrfs_validate_super(const struct btrfs_fs_info *fs_info,
+ 	}
+ 
+ 	/*
+-	 * Check sectorsize and nodesize first, other check will need it.
+-	 * Check all possible sectorsize(4K, 8K, 16K, 32K, 64K) here.
++	 * Check blocksize and nodesize first, other check will need it.
++	 * Check all possible blocksize(4K, 8K, 16K, 32K, 64K) here.
+ 	 */
+-	if (!is_power_of_2(sectorsize) || sectorsize < 4096 ||
+-	    sectorsize > BTRFS_MAX_METADATA_BLOCKSIZE) {
+-		btrfs_err(fs_info, "invalid sectorsize %llu", sectorsize);
++	if (!is_power_of_2(blocksize) || blocksize < 4096 ||
++	    blocksize > BTRFS_MAX_METADATA_BLOCKSIZE) {
++		btrfs_err(fs_info, "invalid blocksize %llu", blocksize);
+ 		ret = -EINVAL;
+ 	}
+ 
+ 	/*
+-	 * We only support at most two sectorsizes: 4K and PAGE_SIZE.
++	 * We only support at most two blocksizes: 4K and PAGE_SIZE.
+ 	 *
+-	 * We can support 16K sectorsize with 64K page size without problem,
+-	 * but such sectorsize/pagesize combination doesn't make much sense.
++	 * We can support 16K blocksize with 64K page size without problem,
++	 * but such blocksize/pagesize combination doesn't make much sense.
+ 	 * 4K will be our future standard, PAGE_SIZE is supported from the very
+ 	 * beginning.
+ 	 */
+-	if (sectorsize > PAGE_SIZE || (sectorsize != SZ_4K && sectorsize != PAGE_SIZE)) {
++	if (blocksize > PAGE_SIZE || (blocksize != SZ_4K && blocksize != PAGE_SIZE)) {
+ 		btrfs_err(fs_info,
+-			"sectorsize %llu not yet supported for page size %lu",
+-			sectorsize, PAGE_SIZE);
++			"blocksize %llu not yet supported for page size %lu",
++			blocksize, PAGE_SIZE);
+ 		ret = -EINVAL;
+ 	}
+ 
+-	if (!is_power_of_2(nodesize) || nodesize < sectorsize ||
++	if (!is_power_of_2(nodesize) || nodesize < blocksize ||
+ 	    nodesize > BTRFS_MAX_METADATA_BLOCKSIZE) {
+ 		btrfs_err(fs_info, "invalid nodesize %llu", nodesize);
+ 		ret = -EINVAL;
+@@ -2414,17 +2414,17 @@ int btrfs_validate_super(const struct btrfs_fs_info *fs_info,
+ 	}
+ 
+ 	/* Root alignment check */
+-	if (!IS_ALIGNED(btrfs_super_root(sb), sectorsize)) {
++	if (!IS_ALIGNED(btrfs_super_root(sb), blocksize)) {
+ 		btrfs_warn(fs_info, "tree_root block unaligned: %llu",
+ 			   btrfs_super_root(sb));
+ 		ret = -EINVAL;
+ 	}
+-	if (!IS_ALIGNED(btrfs_super_chunk_root(sb), sectorsize)) {
++	if (!IS_ALIGNED(btrfs_super_chunk_root(sb), blocksize)) {
+ 		btrfs_warn(fs_info, "chunk_root block unaligned: %llu",
+ 			   btrfs_super_chunk_root(sb));
+ 		ret = -EINVAL;
+ 	}
+-	if (!IS_ALIGNED(btrfs_super_log_root(sb), sectorsize)) {
++	if (!IS_ALIGNED(btrfs_super_log_root(sb), blocksize)) {
+ 		btrfs_warn(fs_info, "log_root block unaligned: %llu",
+ 			   btrfs_super_log_root(sb));
+ 		ret = -EINVAL;
+@@ -2819,8 +2819,8 @@ void btrfs_init_fs_info(struct btrfs_fs_info *fs_info)
+ 
+ 	/* Usable values until the real ones are cached from the superblock */
+ 	fs_info->nodesize = 4096;
+-	fs_info->sectorsize = 4096;
+-	fs_info->sectorsize_bits = ilog2(4096);
++	fs_info->blocksize = 4096;
++	fs_info->blocksize_bits = ilog2(4096);
+ 	fs_info->stripesize = 4096;
+ 
+ 	/* Default compress algorithm when user does -o compress */
+@@ -3123,10 +3123,10 @@ int btrfs_check_features(struct btrfs_fs_info *fs_info, bool is_rw_mount)
+ 
+ 	/* Runtime limitation for mixed block groups. */
+ 	if ((incompat & BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS) &&
+-	    (fs_info->sectorsize != fs_info->nodesize)) {
++	    (fs_info->blocksize != fs_info->nodesize)) {
+ 		btrfs_err(fs_info,
+-"unequal nodesize/sectorsize (%u != %u) are not allowed for mixed block groups",
+-			fs_info->nodesize, fs_info->sectorsize);
++"unequal nodesize/blocksize (%u != %u) are not allowed for mixed block groups",
++			fs_info->nodesize, fs_info->blocksize);
+ 		return -EINVAL;
+ 	}
+ 
+@@ -3185,10 +3185,10 @@ int btrfs_check_features(struct btrfs_fs_info *fs_info, bool is_rw_mount)
+ 	 * we're already defaulting to v2 cache, no need to bother v1 as it's
+ 	 * going to be deprecated anyway.
+ 	 */
+-	if (fs_info->sectorsize < PAGE_SIZE && btrfs_test_opt(fs_info, SPACE_CACHE)) {
++	if (fs_info->blocksize < PAGE_SIZE && btrfs_test_opt(fs_info, SPACE_CACHE)) {
+ 		btrfs_warn(fs_info,
+-	"v1 space cache is not supported for page size %lu with sectorsize %u",
+-			   PAGE_SIZE, fs_info->sectorsize);
++	"v1 space cache is not supported for page size %lu with blocksize %u",
++			   PAGE_SIZE, fs_info->blocksize);
+ 		return -EINVAL;
+ 	}
+ 
+@@ -3202,7 +3202,7 @@ int btrfs_check_features(struct btrfs_fs_info *fs_info, bool is_rw_mount)
+ 
+ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_devices)
+ {
+-	u32 sectorsize;
++	u32 blocksize;
+ 	u32 nodesize;
+ 	u32 stripesize;
+ 	u64 generation;
+@@ -3310,15 +3310,15 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
+ 
+ 	/* Set up fs_info before parsing mount options */
+ 	nodesize = btrfs_super_nodesize(disk_super);
+-	sectorsize = btrfs_super_sectorsize(disk_super);
+-	stripesize = sectorsize;
++	blocksize = btrfs_super_sectorsize(disk_super);
++	stripesize = blocksize;
+ 	fs_info->dirty_metadata_batch = nodesize * (1 + ilog2(nr_cpu_ids));
+-	fs_info->delalloc_batch = sectorsize * 512 * (1 + ilog2(nr_cpu_ids));
++	fs_info->delalloc_batch = blocksize * 512 * (1 + ilog2(nr_cpu_ids));
+ 
+ 	fs_info->nodesize = nodesize;
+-	fs_info->sectorsize = sectorsize;
+-	fs_info->sectorsize_bits = ilog2(sectorsize);
+-	fs_info->sectors_per_page = (PAGE_SIZE >> fs_info->sectorsize_bits);
++	fs_info->blocksize = blocksize;
++	fs_info->blocksize_bits = ilog2(blocksize);
++	fs_info->blocks_per_page = (PAGE_SIZE >> fs_info->blocksize_bits);
+ 	fs_info->csums_per_leaf = BTRFS_MAX_ITEM_SIZE(fs_info) / fs_info->csum_size;
+ 	fs_info->stripesize = stripesize;
+ 
+@@ -3339,14 +3339,14 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
+ 
+ 	/*
+ 	 * At this point our mount options are validated, if we set ->max_inline
+-	 * to something non-standard make sure we truncate it to sectorsize.
++	 * to something non-standard make sure we truncate it to blocksize.
+ 	 */
+-	fs_info->max_inline = min_t(u64, fs_info->max_inline, fs_info->sectorsize);
++	fs_info->max_inline = min_t(u64, fs_info->max_inline, fs_info->blocksize);
+ 
+-	if (sectorsize < PAGE_SIZE)
++	if (blocksize < PAGE_SIZE)
+ 		btrfs_warn(fs_info,
+ 		"read-write for sector size %u with page size %lu is experimental",
+-			   sectorsize, PAGE_SIZE);
++			   blocksize, PAGE_SIZE);
+ 
+ 	ret = btrfs_init_workqueues(fs_info);
+ 	if (ret)
+@@ -3356,8 +3356,8 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
+ 	sb->s_bdi->ra_pages = max(sb->s_bdi->ra_pages, SZ_4M / PAGE_SIZE);
+ 
+ 	/* Update the values for the current filesystem. */
+-	sb->s_blocksize = sectorsize;
+-	sb->s_blocksize_bits = blksize_bits(sectorsize);
++	sb->s_blocksize = blocksize;
++	sb->s_blocksize_bits = blksize_bits(blocksize);
+ 	memcpy(&sb->s_uuid, fs_info->fs_devices->fsid, BTRFS_FSID_SIZE);
+ 
+ 	mutex_lock(&fs_info->chunk_mutex);
+diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
+index 58e6b4b953f1..9f8324ae3800 100644
+--- a/fs/btrfs/fs.h
++++ b/fs/btrfs/fs.h
+@@ -179,7 +179,7 @@ enum {
+ 
+ 	/*
+ 	 * Indicate that we have found a tree block which is only aligned to
+-	 * sectorsize, but not to nodesize.  This should be rare nowadays.
++	 * blocksize, but not to nodesize.  This should be rare nowadays.
+ 	 */
+ 	BTRFS_FS_UNALIGNED_TREE_BLOCK,
+ 
+@@ -707,7 +707,10 @@ struct btrfs_fs_info {
+ 	 * running.
+ 	 */
+ 	refcount_t scrub_workers_refcnt;
+-	u32 sectors_per_page;
++	union {
++		u32 sectors_per_page;
++		u32 blocks_per_page;
++	};
+ 	struct workqueue_struct *scrub_workers;
+ 
+ 	struct btrfs_discard_ctl discard_ctl;
+@@ -762,7 +765,7 @@ struct btrfs_fs_info {
+ 
+ 	/* Extent buffer radix tree */
+ 	spinlock_t buffer_lock;
+-	/* Entries are eb->start / sectorsize */
++	/* Entries are eb->start / blocksize */
+ 	struct radix_tree_root buffer_radix;
+ 
+ 	/* Next backup root to be overwritten */
+@@ -794,9 +797,15 @@ struct btrfs_fs_info {
+ 
+ 	/* Cached block sizes */
+ 	u32 nodesize;
+-	u32 sectorsize;
+-	/* ilog2 of sectorsize, use to avoid 64bit division */
+-	u32 sectorsize_bits;
++	union {
++		u32 sectorsize;
++		u32 blocksize;
++	};
++	/* ilog2 of blocksize, use to avoid 64bit division */
++	union {
++		u32 sectorsize_bits;
++		u32 blocksize_bits;
++	};
+ 	u32 csum_size;
+ 	u32 csums_per_leaf;
+ 	u32 stripesize;
+@@ -931,7 +940,7 @@ static inline u64 btrfs_get_last_root_drop_gen(const struct btrfs_fs_info *fs_in
+ static inline u64 btrfs_csum_bytes_to_leaves(
+ 			const struct btrfs_fs_info *fs_info, u64 csum_bytes)
+ {
+-	const u64 num_csums = csum_bytes >> fs_info->sectorsize_bits;
++	const u64 num_csums = csum_bytes >> fs_info->blocksize_bits;
+ 
+ 	return DIV_ROUND_UP_ULL(num_csums, fs_info->csums_per_leaf);
+ }
+@@ -959,7 +968,7 @@ static inline u64 btrfs_calc_metadata_size(const struct btrfs_fs_info *fs_info,
+ #define BTRFS_MAX_EXTENT_ITEM_SIZE(r) ((BTRFS_LEAF_DATA_SIZE(r->fs_info) >> 4) - \
+ 					sizeof(struct btrfs_item))
+ 
+-#define BTRFS_BYTES_TO_BLKS(fs_info, bytes) ((bytes) >> (fs_info)->sectorsize_bits)
++#define BTRFS_BYTES_TO_BLKS(fs_info, bytes) ((bytes) >> (fs_info)->blocksize_bits)
+ 
+ static inline bool btrfs_is_zoned(const struct btrfs_fs_info *fs_info)
+ {
+-- 
+2.47.1
+

@@ -1,372 +1,192 @@
-Received: from mx0a-00082601.pphosted.com (mx0a-00082601.pphosted.com [67.231.145.42])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 01FB51DD871
-	for <linux-btrfs@vger.kernel.org>; Mon,  6 Jan 2025 14:02:31 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=67.231.145.42
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B7ABF469D
+	for <linux-btrfs@vger.kernel.org>; Mon,  6 Jan 2025 14:19:27 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1736172154; cv=none; b=NnHxmC2SGkvAvP8IpB5b6/T5NNemgrD7TzOrL+A9TCPZAwbjixp59wKVZ6exQwgZMXbD9fXCnFuLuHhXmpijKjBS2GoACwzJKKwntJc5Ju03ZNG21lvQhnP2opxXw7pBEZqKaxZFJodmKBSJDAovM1fG5g0enYQvgF2od+OUvXk=
+	t=1736173169; cv=none; b=RoflXUoquoKXbB8rytb5zS0uEsCxd4HuI7ZgqTQ6F0v8KcdFIxcrk9eTyy/gEFw5LR3aDXP080ykc6Q0YlfbPB2+L/xWQIx6i7b0rxN05zHlBg3PNiVmJ0eoWwDMxTxZLL/l0GpLy6wGAJmYxjkheFGBEfFz+qC3wNKOEGtPuvE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1736172154; c=relaxed/simple;
-	bh=LWP7iLfT8RuyrARmEOaEzCV99VvySMpnzoA/ana2naM=;
-	h=From:To:CC:Subject:Date:Message-ID:MIME-Version:Content-Type; b=ZAIJX4VDj83Rm1h3JywPzwoKWsy5aRPGCTc4fv7Yb6M0NCC/unAUkedsGdcI1sx6tJLz6uZjKFBW9U7q/GFifdTrWvtL6QYjSnJcOvbNoUUafAFv/W5R+3Ksw2K+rOW2iH5K3d7Zo3tmmTKqIES07HLJcVAALrLZfPtM8p9R5cY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=fb.com; spf=pass smtp.mailfrom=meta.com; dkim=pass (1024-bit key) header.d=fb.com header.i=@fb.com header.b=NJLRugqH; arc=none smtp.client-ip=67.231.145.42
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=fb.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=meta.com
+	s=arc-20240116; t=1736173169; c=relaxed/simple;
+	bh=NcTkDFZKmQry5rX5xyC9ST0yfGDlfgGlKeTmjbqnLNc=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=epu/dlfDMQDjornrrVexhcW3VtpN179jNX7/Rep8k8cfZOLi1M7do5mvKgeXSg8SfFoS5dJWE0srGnss+pZKLeLIQboh+1Ckb2z22dqpd8TJ5qMx5lwKgThdaOx2iJ1kdTqXbyhloteNLZx3j6ZG3ckMByBL2n5PVqhN77TJVaA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=X+TJnFgD; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=uVf3x993; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=X+TJnFgD; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=uVf3x993; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=fb.com header.i=@fb.com header.b="NJLRugqH"
-Received: from pps.filterd (m0148461.ppops.net [127.0.0.1])
-	by mx0a-00082601.pphosted.com (8.18.1.2/8.18.1.2) with ESMTP id 506DuvaF030469
-	for <linux-btrfs@vger.kernel.org>; Mon, 6 Jan 2025 06:02:31 -0800
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.com; h=cc
-	:content-transfer-encoding:content-type:date:from:message-id
-	:mime-version:subject:to; s=facebook; bh=WcEioH8MgXtfzDPmK/owyU6
-	cHq8/upPP7e6vdMXim/c=; b=NJLRugqHxXu0aLvd6bN2J/mlLqEMyHR7gRTsNaH
-	8Ir8lsxwa5BG1Nan9IH0C0JCuVpSKCZP+QalR2Hc2oTKd0ZcZPbaRsyPZ7sZgC8L
-	UHC7MEdM5dZCPIebzo6L+phYbSz2z4gw+qqga6tbdivzYxZeR9hkLVUVmv+voDNf
-	ME+E=
-Received: from mail.thefacebook.com ([163.114.134.16])
-	by mx0a-00082601.pphosted.com (PPS) with ESMTPS id 440ggr00yq-5
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Mon, 06 Jan 2025 06:02:30 -0800 (PST)
-Received: from twshared55211.03.ash8.facebook.com (2620:10d:c085:108::4) by
- mail.thefacebook.com (2620:10d:c08b:78::c78f) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
- 15.2.1544.14; Mon, 6 Jan 2025 14:01:55 +0000
-Received: by devbig276.nha1.facebook.com (Postfix, from userid 660015)
-	id 01889A39F43B; Mon,  6 Jan 2025 14:01:45 +0000 (GMT)
-From: Mark Harmstone <maharmstone@fb.com>
-To: <fstests@vger.kernel.org>, <linux-btrfs@vger.kernel.org>
-CC: <neelx@suse.com>, <Johannes.Thumschirn@wdc.com>,
-        Mark Harmstone
-	<maharmstone@fb.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        Anand Jain
-	<anand.jain@oracle.com>
-Subject: [PATCH v4 1/2] configure: use pkg-config to find liburing
-Date: Mon, 6 Jan 2025 14:01:33 +0000
-Message-ID: <20250106140142.3140103-1-maharmstone@fb.com>
-X-Mailer: git-send-email 2.43.5
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="X+TJnFgD";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="uVf3x993";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="X+TJnFgD";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="uVf3x993"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id C2E5F2115D;
+	Mon,  6 Jan 2025 14:19:25 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1736173165;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=Cq2Yk83rlFmZ2SFqBmYUKAgKuyF/rmkRAkuyUZXtvbA=;
+	b=X+TJnFgDFriVb9bTIvlKw9+y4eWR1gjAj5fkZOrm/1N18cuEdGwL3XFT8xlT5RYiJO9uVA
+	0lIXwmFYEFSx0lntsSIPUSreq+e5EwF6nmRFoyphJE7smXXUrIO7TCOqKMMp3fhMRSV2Kp
+	4VfQUsuhAY6a6gfzsWGyjbY91hoQSK8=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1736173165;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=Cq2Yk83rlFmZ2SFqBmYUKAgKuyF/rmkRAkuyUZXtvbA=;
+	b=uVf3x993LLOabaeWM389WfM1kHTXgWTwQCdIRf/Fe03N7r8H3NNhpv+V3IeQET3l5721Vw
+	rvHdNnEv1gZQX0CA==
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1736173165;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=Cq2Yk83rlFmZ2SFqBmYUKAgKuyF/rmkRAkuyUZXtvbA=;
+	b=X+TJnFgDFriVb9bTIvlKw9+y4eWR1gjAj5fkZOrm/1N18cuEdGwL3XFT8xlT5RYiJO9uVA
+	0lIXwmFYEFSx0lntsSIPUSreq+e5EwF6nmRFoyphJE7smXXUrIO7TCOqKMMp3fhMRSV2Kp
+	4VfQUsuhAY6a6gfzsWGyjbY91hoQSK8=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1736173165;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=Cq2Yk83rlFmZ2SFqBmYUKAgKuyF/rmkRAkuyUZXtvbA=;
+	b=uVf3x993LLOabaeWM389WfM1kHTXgWTwQCdIRf/Fe03N7r8H3NNhpv+V3IeQET3l5721Vw
+	rvHdNnEv1gZQX0CA==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 95198137DA;
+	Mon,  6 Jan 2025 14:19:25 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id jrXrI23me2cOOAAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Mon, 06 Jan 2025 14:19:25 +0000
+Date: Mon, 6 Jan 2025 15:19:24 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Filipe Manana <fdmanana@kernel.org>
+Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 00/20] btrfs: remove plenty of redundant
+ btrfs_mark_buffer_dirty() calls
+Message-ID: <20250106141924.GW31418@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <cover.1734527445.git.fdmanana@suse.com>
+ <20241223200859.GN31418@twin.jikos.cz>
+ <CAL3q7H4vqj-u+NdkiRgc+PNjFbhkRgm_ECHGyGD=CjRgTLKOdw@mail.gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: quoted-printable
-X-FB-Internal: Safe
-Content-Type: text/plain
-X-Proofpoint-GUID: _JB7kMP3YWPA6-kMdWiHm-lfC2EEyguV
-X-Proofpoint-ORIG-GUID: _JB7kMP3YWPA6-kMdWiHm-lfC2EEyguV
-X-Proofpoint-Virus-Version: vendor=baseguard
- engine=ICAP:2.0.293,Aquarius:18.0.1051,Hydra:6.0.680,FMLib:17.12.62.30
- definitions=2024-10-05_03,2024-10-04_01,2024-09-30_01
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <CAL3q7H4vqj-u+NdkiRgc+PNjFbhkRgm_ECHGyGD=CjRgTLKOdw@mail.gmail.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-Spam-Level: 
+X-Spamd-Result: default: False [-4.00 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	HAS_REPLYTO(0.30)[dsterba@suse.cz];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	RCVD_TLS_ALL(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	ARC_NA(0.00)[];
+	TO_DN_SOME(0.00)[];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	FUZZY_BLOCKED(0.00)[rspamd.com];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCPT_COUNT_THREE(0.00)[3];
+	REPLYTO_ADDR_EQ_FROM(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email];
+	RCVD_COUNT_TWO(0.00)[2];
+	REPLYTO_DOM_NEQ_TO_DOM(0.00)[]
+X-Spam-Score: -4.00
+X-Spam-Flag: NO
 
-Change our autoconf macros so that instead of checking for the presence
-of liburing.h, we use pkg-config.
+On Mon, Jan 06, 2025 at 10:54:05AM +0000, Filipe Manana wrote:
+> On Mon, Dec 23, 2024 at 8:09 PM David Sterba <dsterba@suse.cz> wrote:
+> >
+> > On Wed, Dec 18, 2024 at 05:06:27PM +0000, fdmanana@kernel.org wrote:
+> > > From: Filipe Manana <fdmanana@suse.com>
+> > >
+> > > There's quite a lot of places calling btrfs_mark_buffer_dirty() when it
+> > > is not necessary because we already have a path setup for writing, due
+> > > to calls to btrfs_search_slot() with a 'cow' argument having a value of 1
+> > > or anything that calls btrfs_search_slot() that way (and it's obvious
+> > > from the context). These make the code more verbose, add some overhead
+> > > and increase the module's text size unnecessarily. This patchset removes
+> > > such unnecessary calls. Often people keep adding them because they copy
+> > > the approach done from such places.
+> >
+> > I've read the explict calls to btrfs_mark_buffer_dirty() as source-level
+> > marker of the section pairing btrfs_search_slot(). There are also some
+> > assertions and eb state checks that were done in set_extent_buffer_dirty(),
+> > now we're losing them.
+> 
+> No, we aren't losing the assertions.
+> We've done them inside ctree.c, where we have already called
+> btrfs_mark_buffer_dirty() (which calls set_extent_buffer_dirty()).
 
-The benefit of this is that we can then check the version of liburing,
-and do conditional compilation based on this. There's a macro
-IO_URING_CHECK_VERSION already, but it's only in relatively recent
-versions of liburing.h.
+What I mean that we would be doing the assertions again, after some
+lines of code since the last call to btrfs_mark_buffer_dirty() from
+ctree.c.
 
-This replaces HAVE_URING_H, defined by AC_CHECK_HEADERS, with
-HAVE_URING. I also had to rename PKG_{MAJOR,MINOR,REVISION,BUILD} to
-start with PACKAGE_, to avoid "possibly undefined macro" errors; it
-looks like pkg-config assumes that anything called PKG_* is for its own
-use.
+> > While the code gets reduced and the calls may be redundant for some
+> > reasons I think we should keep something at least to do the assertions,
+> > or eventually optimize btrfs_mark_buffer_dirty() to be faster if the
+> > path is set up by the search slot with cow=1.
+> 
+> This isn't just about optimization.
+> It's about simplifying usage of btree modification calls to users
+> outside ctree.c and having cleaner APIs.
+> 
+> In some places outside ctree.c we (unnecessarily) call
+> btrfs_mark_buffer_dirty(), while for others we don't.
+> Probably in the very early days it was needed for some reason, but
+> that's not the case anymore and we call btrfs_mark_buffer_dirty()
+> every time we COW or allocate a new block as part of a node/leaf split
+> in ctree.c.
+> 
+> Keeping these redundant calls is like saying we don't trust what
+> ctree.c does. Marking a new extent buffer dirty is a clear
+> responsibility of ctree.c.
 
-Signed-off-by: Mark Harmstone <maharmstone@fb.com>
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
-Reviewed-by: Anand Jain <anand.jain@oracle.com>
----
-(This patch is unchanged from version 3.)
+I would not interpret is as distrust in the ctree.c code but rather as
+an additional verification like we do elsewhere. Schematically
 
- VERSION                         | 8 ++++----
- m4/package_globals.m4           | 4 ++--
- m4/package_liburing.m4          | 6 +++++-
- release.sh                      | 2 +-
- src/feature.c                   | 4 ++--
- src/vfs/idmapped-mounts.c       | 6 +++---
- src/vfs/idmapped-mounts.h       | 2 +-
- src/vfs/tmpfs-idmapped-mounts.c | 6 +++---
- src/vfs/utils.c                 | 4 ++--
- src/vfs/utils.h                 | 6 +++---
- src/vfs/vfstest.c               | 6 +++---
- 11 files changed, 29 insertions(+), 25 deletions(-)
+caller - start a new change in eb, call the API
+ctree.c - create new eb
+ctree.c - call btrfs_mark_buffer_dirty()
+caller - do more changes, anything until the path is released etc
+caller - (removed in the series) call btrfs_mark_buffer_dirty(), now
+         performing transid assertion checks,
+	 in set_extent_buffer_dirty():
+	 - check_buffer_tree_ref()
+	 - a few WARN_ONs checking state bits
+	 - folio dirty bit checks
 
-diff --git a/VERSION b/VERSION
-index 7294a002..afcab53e 100644
---- a/VERSION
-+++ b/VERSION
-@@ -1,7 +1,7 @@
- #
- # This file is used by configure to get version information
- #
--PKG_MAJOR=3D1
--PKG_MINOR=3D1
--PKG_REVISION=3D1
--PKG_BUILD=3D1
-+PACKAGE_MAJOR=3D1
-+PACKAGE_MINOR=3D1
-+PACKAGE_REVISION=3D1
-+PACKAGE_BUILD=3D1
-diff --git a/m4/package_globals.m4 b/m4/package_globals.m4
-index ce7a8c51..c8d5d124 100644
---- a/m4/package_globals.m4
-+++ b/m4/package_globals.m4
-@@ -9,9 +9,9 @@ AC_DEFUN([AC_PACKAGE_GLOBALS],
-     AC_SUBST(pkg_name)
-=20
-     . ./VERSION
--    pkg_version=3D${PKG_MAJOR}.${PKG_MINOR}.${PKG_REVISION}
-+    pkg_version=3D${PACKAGE_MAJOR}.${PACKAGE_MINOR}.${PACKAGE_REVISION}
-     AC_SUBST(pkg_version)
--    pkg_release=3D$PKG_BUILD
-+    pkg_release=3D$PACKAGE_BUILD
-     test -z "$BUILD_VERSION" || pkg_release=3D"$BUILD_VERSION"
-     AC_SUBST(pkg_release)
-=20
-diff --git a/m4/package_liburing.m4 b/m4/package_liburing.m4
-index c92cc02a..0553966d 100644
---- a/m4/package_liburing.m4
-+++ b/m4/package_liburing.m4
-@@ -1,4 +1,8 @@
- AC_DEFUN([AC_PACKAGE_WANT_URING],
--  [ AC_CHECK_HEADERS(liburing.h, [ have_uring=3Dtrue ], [ have_uring=3Df=
-alse ])
-+  [ PKG_CHECK_MODULES([LIBURING], [liburing],
-+    [ AC_DEFINE([HAVE_LIBURING], [1], [Use liburing])
-+      have_uring=3Dtrue
-+    ],
-+    [ have_uring=3Dfalse ])
-     AC_SUBST(have_uring)
-   ])
-diff --git a/release.sh b/release.sh
-index 5b78ec79..70fbf47e 100644
---- a/release.sh
-+++ b/release.sh
-@@ -5,7 +5,7 @@
-=20
- . ./VERSION
-=20
--version=3D${PKG_MAJOR}.${PKG_MINOR}.${PKG_REVISION}
-+version=3D${PACKAGE_MAJOR}.${PACKAGE_MINOR}.${PACKAGE_REVISION}
- date=3D`date +"%-d %B %Y"`
-=20
- echo "Cleaning up"
-diff --git a/src/feature.c b/src/feature.c
-index 7e474ce5..7df36acf 100644
---- a/src/feature.c
-+++ b/src/feature.c
-@@ -42,7 +42,7 @@
- #include <libaio.h>
- #endif
-=20
--#ifdef HAVE_LIBURING_H
-+#ifdef HAVE_LIBURING
- #include <liburing.h>
- #endif
-=20
-@@ -227,7 +227,7 @@ check_aio_support(void)
- static int
- check_uring_support(void)
- {
--#ifdef HAVE_LIBURING_H
-+#ifdef HAVE_LIBURING
- 	struct io_uring ring;
- 	int err;
-=20
-diff --git a/src/vfs/idmapped-mounts.c b/src/vfs/idmapped-mounts.c
-index f4dfc3f3..ed9992f9 100644
---- a/src/vfs/idmapped-mounts.c
-+++ b/src/vfs/idmapped-mounts.c
-@@ -2206,7 +2206,7 @@ out:
- }
-=20
-=20
--#ifdef HAVE_LIBURING_H
-+#ifdef HAVE_LIBURING
- int tcore_io_uring_idmapped(const struct vfstest_info *info)
- {
- 	int fret =3D -1;
-@@ -2743,7 +2743,7 @@ out_unmap:
-=20
- 	return fret;
- }
--#endif /* HAVE_LIBURING_H */
-+#endif /* HAVE_LIBURING */
-=20
- /* Validate that protected symlinks work correctly on idmapped mounts. *=
-/
- int tcore_protected_symlinks_idmapped_mounts(const struct vfstest_info *=
-info)
-@@ -8859,7 +8859,7 @@ static const struct test_struct t_idmapped_mounts[]=
- =3D {
- 	{ tcore_hardlink_crossing_idmapped_mounts,				true,	"cross idmapped mou=
-nt hardlink",								},
- 	{ tcore_hardlink_from_idmapped_mount,					true,	"hardlinks from idmappe=
-d mounts",								},
- 	{ tcore_hardlink_from_idmapped_mount_in_userns,			true,	"hardlinks from=
- idmapped mounts in user namespace",						},
--#ifdef HAVE_LIBURING_H
-+#ifdef HAVE_LIBURING
- 	{ tcore_io_uring_idmapped,						true,	"io_uring from idmapped mounts",	=
-							},
- 	{ tcore_io_uring_idmapped_userns,					true,	"io_uring from idmapped mou=
-nts in user namespace",						},
- 	{ tcore_io_uring_idmapped_unmapped,					true,	"io_uring from idmapped m=
-ounts with unmapped ids",						},
-diff --git a/src/vfs/idmapped-mounts.h b/src/vfs/idmapped-mounts.h
-index 4a2c7b39..688394c8 100644
---- a/src/vfs/idmapped-mounts.h
-+++ b/src/vfs/idmapped-mounts.h
-@@ -30,7 +30,7 @@ int tcore_fscaps_idmapped_mounts_in_userns_separate_use=
-rns(const struct vfstest_
- int tcore_hardlink_crossing_idmapped_mounts(const struct vfstest_info *i=
-nfo);
- int tcore_hardlink_from_idmapped_mount(const struct vfstest_info *info);
- int tcore_hardlink_from_idmapped_mount_in_userns(const struct vfstest_in=
-fo *info);
--#ifdef HAVE_LIBURING_H
-+#ifdef HAVE_LIBURING
- int tcore_io_uring_idmapped(const struct vfstest_info *info);
- int tcore_io_uring_idmapped_userns(const struct vfstest_info *info);
- int tcore_io_uring_idmapped_unmapped(const struct vfstest_info *info);
-diff --git a/src/vfs/tmpfs-idmapped-mounts.c b/src/vfs/tmpfs-idmapped-mou=
-nts.c
-index 0899aed9..d8212bce 100644
---- a/src/vfs/tmpfs-idmapped-mounts.c
-+++ b/src/vfs/tmpfs-idmapped-mounts.c
-@@ -167,7 +167,7 @@ static int tmpfs_hardlink_from_idmapped_mount_in_user=
-ns(const struct vfstest_inf
- 	return tmpfs_nested_mount_setup(info, tcore_hardlink_from_idmapped_moun=
-t_in_userns);
- }
-=20
--#ifdef HAVE_LIBURING_H
-+#ifdef HAVE_LIBURING
- static int tmpfs_io_uring_idmapped(const struct vfstest_info *info)
- {
- 	return tmpfs_nested_mount_setup(info, tcore_io_uring_idmapped);
-@@ -184,7 +184,7 @@ static int tmpfs_io_uring_idmapped_unmapped_userns(co=
-nst struct vfstest_info *in
- {
- 	return tmpfs_nested_mount_setup(info, tcore_io_uring_idmapped_unmapped_=
-userns);
- }
--#endif /* HAVE_LIBURING_H */
-+#endif /* HAVE_LIBURING */
-=20
- static int tmpfs_protected_symlinks_idmapped_mounts(const struct vfstest=
-_info *info)
- {
-@@ -272,7 +272,7 @@ static const struct test_struct t_tmpfs[] =3D {
- 	{ tmpfs_hardlink_crossing_idmapped_mounts,				T_REQUIRE_USERNS | T_REQU=
-IRE_IDMAPPED_MOUNTS,	"tmpfs cross idmapped mount hardlink",								},
- 	{ tmpfs_hardlink_from_idmapped_mount,					T_REQUIRE_USERNS | T_REQUIRE_=
-IDMAPPED_MOUNTS,	"tmpfs hardlinks from idmapped mounts",								},
- 	{ tmpfs_hardlink_from_idmapped_mount_in_userns,				T_REQUIRE_USERNS | T=
-_REQUIRE_IDMAPPED_MOUNTS,	"tmpfs hardlinks from idmapped mounts in user n=
-amespace",						},
--#ifdef HAVE_LIBURING_H
-+#ifdef HAVE_LIBURING
- 	{ tmpfs_io_uring_idmapped,						T_REQUIRE_USERNS | T_REQUIRE_IDMAPPED_M=
-OUNTS,	"tmpfs io_uring from idmapped mounts",								      },
- 	{ tmpfs_io_uring_idmapped_userns,					T_REQUIRE_USERNS | T_REQUIRE_IDMA=
-PPED_MOUNTS,	"tmpfs io_uring from idmapped mounts in user namespace",				=
-	      },
- 	{ tmpfs_io_uring_idmapped_unmapped,					T_REQUIRE_USERNS | T_REQUIRE_ID=
-MAPPED_MOUNTS,	"tmpfs io_uring from idmapped mounts with unmapped ids",		=
-			      },
-diff --git a/src/vfs/utils.c b/src/vfs/utils.c
-index 0ab5de15..c1c7951c 100644
---- a/src/vfs/utils.c
-+++ b/src/vfs/utils.c
-@@ -502,7 +502,7 @@ out:
- 	return fret;
- }
-=20
--#ifdef HAVE_LIBURING_H
-+#ifdef HAVE_LIBURING
- int io_uring_openat_with_creds(struct io_uring *ring, int dfd, const cha=
-r *path,
- 			       int cred_id, bool with_link, int *ret_cqe)
- {
-@@ -555,7 +555,7 @@ int io_uring_openat_with_creds(struct io_uring *ring,=
- int dfd, const char *path,
- out:
- 	return ret;
- }
--#endif /* HAVE_LIBURING_H */
-+#endif /* HAVE_LIBURING */
-=20
- /* caps_up - raise all permitted caps */
- int caps_up(void)
-diff --git a/src/vfs/utils.h b/src/vfs/utils.h
-index 872fd96f..c086885a 100644
---- a/src/vfs/utils.h
-+++ b/src/vfs/utils.h
-@@ -25,7 +25,7 @@
- #include <sys/capability.h>
- #endif
-=20
--#ifdef HAVE_LIBURING_H
-+#ifdef HAVE_LIBURING
- #include <liburing.h>
- #endif
-=20
-@@ -349,11 +349,11 @@ static inline bool switch_fsids(uid_t fsuid, gid_t =
-fsgid)
- 	return true;
- }
-=20
--#ifdef HAVE_LIBURING_H
-+#ifdef HAVE_LIBURING
- extern int io_uring_openat_with_creds(struct io_uring *ring, int dfd,
- 				      const char *path, int cred_id,
- 				      bool with_link, int *ret_cqe);
--#endif /* HAVE_LIBURING_H */
-+#endif /* HAVE_LIBURING */
-=20
- extern int chown_r(int fd, const char *path, uid_t uid, gid_t gid);
- extern int rm_r(int fd, const char *path);
-diff --git a/src/vfs/vfstest.c b/src/vfs/vfstest.c
-index f842117d..e0c897bb 100644
---- a/src/vfs/vfstest.c
-+++ b/src/vfs/vfstest.c
-@@ -1222,7 +1222,7 @@ out:
- 	return fret;
- }
-=20
--#ifdef HAVE_LIBURING_H
-+#ifdef HAVE_LIBURING
- static int io_uring(const struct vfstest_info *info)
- {
- 	int fret =3D -1;
-@@ -1495,7 +1495,7 @@ out_unmap:
-=20
- 	return fret;
- }
--#endif /* HAVE_LIBURING_H */
-+#endif /* HAVE_LIBURING */
-=20
- /* The following tests are concerned with setgid inheritance. These can =
-be
-  * filesystem type specific. For xfs, if a new file or directory or node=
- is
-@@ -2349,7 +2349,7 @@ static const struct option longopts[] =3D {
- static const struct test_struct t_basic[] =3D {
- 	{ fscaps,							T_REQUIRE_USERNS,	"fscaps on regular mounts",									}=
-,
- 	{ hardlink_crossing_mounts,					0,			"cross mount hardlink",										}=
-,
--#ifdef HAVE_LIBURING_H
-+#ifdef HAVE_LIBURING
- 	{ io_uring,							0,			"io_uring",											},
- 	{ io_uring_userns,						T_REQUIRE_USERNS,	"io_uring in user namespace",=
-									},
- #endif
---=20
-2.45.2
-
+From functional POV removing btrfs_mark_buffer_dirty() is ok, but we may
+still want to add a simple helper that verifies similar things as
+before. With assertions it happens that the checks are redundant.
+But feel free to add the series to for-next. The additional verification
+would need a separate pass, examine the code locations and pick the
+right checks.

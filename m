@@ -1,101 +1,105 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-ej1-f53.google.com (mail-ej1-f53.google.com [209.85.218.53])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1857B21C194;
-	Thu,  9 Jan 2025 15:15:01 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C1F8721CA17;
+	Thu,  9 Jan 2025 15:15:21 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.53
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1736435702; cv=none; b=pNbXp9XIDomhDDWmP+VZjJBQqSEcRBcHmDE0A+smeHjOb1ks+W+E3J+D1pkYrRoE2W5cGx3QuUWwQwItSfr8HAKRNQh45J5cfOnCIvfnNMugXbWgfu78oiMAJDHeFvhA2Kex1UasGihXo/zCCSdZN9oTF+e50BrhJROE6IsvhCw=
+	t=1736435723; cv=none; b=fw61xq93LPKnkNlzLooHF4hh5lYRBjXHcM+xbjCIE/xAxLHC8kBoLbX0tpLJVgVc5gOogNE+SnxrQ7yZhGiXl/sEUx+OyWkdHi2l176eGW9uTt/noYGqfr4HCnve4AxI/3OOVa84gW6I2GKAII0exjhmKoeoID3zYMC1iUhYmQw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1736435702; c=relaxed/simple;
-	bh=G6cjQeUE0PVWGP6gyLK7N231grCngMFrB0NXMiraNyI=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=EhQqsJhY35K1S1LAwDqtyT/5T9bAUjHy5hMfP8A1emMJr0FzLMLvIA3T0LgqMgJzeA13QQTCp5TjHtCFKBIYedLilYNDc4WckvmxB+IBi6DAHS+3pECvaj8SaSXurvGIlWqPEFz6xfh6muWJ6NiinQAMI8GCZc4UQfKUFdU5EQE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=FfCI4TNW; arc=none smtp.client-ip=10.30.226.201
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="FfCI4TNW"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 958C4C4CED2;
-	Thu,  9 Jan 2025 15:15:01 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1736435701;
-	bh=G6cjQeUE0PVWGP6gyLK7N231grCngMFrB0NXMiraNyI=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-	b=FfCI4TNWNczB5uaBti9rkbT0XehqgZ/BR/zvwC7NpryIc809YN7+9IRZ/6OVl4auF
-	 GhFNi3a05GpIxeg9oqQkuKj/pqApy8desyThTFXnUmxiruH0OmWIoExWRr2nnvpRjE
-	 6xokvNExOyclOwklPm/YRcr5QniFGUHS8MTNOAMP7jk3bNN6daViTnYpRQ5IhrBV31
-	 rAEqEOjtGV8+YSKM6IL5G1ftCV/v1Pod1YHWYMpLPD7Y2qhu0khSoGM2rZ8zMfVKnG
-	 VQQGgkofDfOVE2S//Otl1/iLvfv3EI43i/NNXyqBGJF1qDN6+ptWlmbqljxODu20LT
-	 qL8RVKzfD2hPA==
-Received: by mail-ej1-f44.google.com with SMTP id a640c23a62f3a-aa6c0d1833eso231178566b.1;
-        Thu, 09 Jan 2025 07:15:01 -0800 (PST)
-X-Forwarded-Encrypted: i=1; AJvYcCV5gcsyEfQEG0eFpi7MP65QOnJ8zEYWPfkHDAa14GasuB5OeGdB7c7rjCDuCne4RrQGogAitfq2L9kayw==@vger.kernel.org, AJvYcCVB0UwpBQJhoxgSGIvrvl2dV8D3yNmAo5WwlV7515EkSibYzGYIbliG9tc8eWUsN/V01jhfoHLA6I0mHoCI@vger.kernel.org
-X-Gm-Message-State: AOJu0Ywuc1BVCZnAn7RydKl8lEowiRRGUqjCbjntfnBvYdLE+wrAN4JO
-	FkpL6G9espb3CjAkJ3AOI5VgvHcnz4dtCyDie5a5Db5I6srhSNEAQ+SY+8VPFo/dzFXbQChTMmT
-	zdAKZiaC3dqRhLfXbDo3a7j/qiGI=
-X-Google-Smtp-Source: AGHT+IFnFOhff2BPQCGBc/RWzLJ0rY3bB+prRdRbF8PEHHhDhP8vExpCxTMZzgD0S0jMfd+aJGkhr/Wq1kXr/eXqStU=
-X-Received: by 2002:a17:907:d1b:b0:aa6:ac9b:681f with SMTP id
- a640c23a62f3a-ab2abcab4c1mr776033466b.43.1736435700172; Thu, 09 Jan 2025
- 07:15:00 -0800 (PST)
+	s=arc-20240116; t=1736435723; c=relaxed/simple;
+	bh=7m1P2WMNKMiLMgmu1jXxFcDWxTXkJUpg1PzMqMBDVEs=;
+	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
+	 In-Reply-To:To:Cc; b=p6Q2dnNs73fXYYhNtuAkw46raNUURyYtpv+bbzca5T/I2USE6GTs1mTruoIK640XtjFd2bk7i3/wJjKXQwvHRjVipnJQHXkE/p6f4RP5DpLLrktx4MsnJbAX7hSTR7WyNmw5zW1F4ej+2sVLLpbVTYs9qKyVvWyi9neqH8hwQm8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=quarantine dis=none) header.from=kernel.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.218.53
+Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=quarantine dis=none) header.from=kernel.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Received: by mail-ej1-f53.google.com with SMTP id a640c23a62f3a-aaf900cc7fbso211569466b.3;
+        Thu, 09 Jan 2025 07:15:21 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1736435720; x=1737040520;
+        h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
+         :mime-version:subject:date:from:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=nZsPMEezMKhEZXtJ3m4i/eKlU2y6sEdgUqz8mk4+cE8=;
+        b=O5xf/p7X64jnWUWsdorRQD2Vkbthj7M2qkaYTk28EHO7HBXYspuJIBMW1byldhbNuR
+         8X3mna4h5hACpm9ahCtlqvq7IiBVgNuH7B8/kj7jDx8ZfirlsL91uXXo9cx+eCAeJWnI
+         TPyc+XpLPBYvxK6lDtYwo5c+UKMsbgqlJmVCDkv+uM2xHWopz5hm/VYtEw/RVqewzCHe
+         9GKf8S8U3hQ4tr6uttfSwklx3EV9sfcK6KyHg2DYoqfyYzG0egWSB7S4mlV8RiyA0fDx
+         Ta0WApUc1xbFoCrAIeYqfNf7UIA8XU+IwFxl5BUDNRAh9FU7IpHjqhNr1LB+xeFKa/EL
+         rgTw==
+X-Forwarded-Encrypted: i=1; AJvYcCURWWMxiz5eIaJXDfnynDiCOU7AMVUy149dfCRdurF2OgdIvMrJWZfGzFX9BshtisrA/+HcNitC39eifcbI@vger.kernel.org, AJvYcCX0uV24ELkwtzrpQf6zMWa1sR4B1tVb55d/LzMj7YQMsWSwq/tMYosYzYH7jxXmAqn+driuRKJBHifsYg==@vger.kernel.org
+X-Gm-Message-State: AOJu0YxUpupAWXFA5J84q127i4vGHyWSejsvctoDBwZwP07QKAV6HQOV
+	lneAFMneOB1G44HBAij2/fINmrkLi092NhtqP5+1RIg01AiEdJt3
+X-Gm-Gg: ASbGncuFDXgiawT6r+v9rHZFRAvc8Njq0hbxNZ1MSAc6xtjJmF/QG+r+jfK/IExfSbk
+	s+W78Y3Ydq2Bd0IAgTpc5Zq8a8eS7nj3+7W/cVCDQjhUX1mlGuV+uRRU7h/398M6xfsyyfWtZvB
+	+7pVRc/BPBK6bF5So2ApA0gip6jYpMbPeIFFv1wmuoXxFXc8iZxBuo5L4y1y2JbR8UpucA0GsQm
+	+oCcvUCgPhrRXLmVYxF32gmJ+mOSNG+N+zDoijwkiBXEAEX+hcbW2Njl5rDPFl+3vBZmYK1Dp9W
+	+eD6iv/ckyfzqoY2WaIAVXNcPrht9P9UOdi1
+X-Google-Smtp-Source: AGHT+IFLIS04qqyGqzlRZ5P0W194aznwzcHcQbxiQS3JxGmT2PGbdCWZ6vCUfMt+OWVG2KHiq8wlVQ==
+X-Received: by 2002:a17:906:c14c:b0:aa5:2575:e75d with SMTP id a640c23a62f3a-ab2ab6bfe61mr656555466b.2.1736435719534;
+        Thu, 09 Jan 2025 07:15:19 -0800 (PST)
+Received: from [127.0.0.1] (p200300f6f7218600fa633ffffe02074c.dip0.t-ipconnect.de. [2003:f6:f721:8600:fa63:3fff:fe02:74c])
+        by smtp.gmail.com with ESMTPSA id a640c23a62f3a-ab2c95615a6sm81539366b.94.2025.01.09.07.15.18
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Thu, 09 Jan 2025 07:15:19 -0800 (PST)
+From: Johannes Thumshirn <jth@kernel.org>
+Date: Thu, 09 Jan 2025 16:15:02 +0100
+Subject: [PATCH v3 01/14] btrfs: selftests: correct RAID stripe-tree
+ feature flag setting
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20250107-rst-delete-fixes-v2-0-0c7b14c0aac2@kernel.org>
- <20250107-rst-delete-fixes-v2-1-0c7b14c0aac2@kernel.org> <CAL3q7H58qoA1MjDG4aFbaGE5ddAJRgyNZ0rAyb+XhEqP20xKcA@mail.gmail.com>
- <ca324436-f214-468d-a769-fd4f236313c0@wdc.com>
-In-Reply-To: <ca324436-f214-468d-a769-fd4f236313c0@wdc.com>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Thu, 9 Jan 2025 15:14:23 +0000
-X-Gmail-Original-Message-ID: <CAL3q7H6cMsTn2ZksQTKuZYKW-g668i=o564sGMKGb1h2i06ohA@mail.gmail.com>
-X-Gm-Features: AbW1kvabPDjQtbfEp-MjEntxEnl59eaKwkyxzT7C5hOj_va-Y82SARC8cO1YGao
-Message-ID: <CAL3q7H6cMsTn2ZksQTKuZYKW-g668i=o564sGMKGb1h2i06ohA@mail.gmail.com>
-Subject: Re: [PATCH v2 01/14] btrfs: don't try to delete RAID stripe-extents
- if we don't need to
-To: Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
-Cc: Johannes Thumshirn <jth@kernel.org>, Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>, 
-	David Sterba <dsterba@suse.com>, 
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>, 
-	"linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Filipe Manana <fdmanana@suse.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+Message-Id: <20250109-rst-delete-fixes-v3-1-b5c73a4b2a80@kernel.org>
+References: <20250109-rst-delete-fixes-v3-0-b5c73a4b2a80@kernel.org>
+In-Reply-To: <20250109-rst-delete-fixes-v3-0-b5c73a4b2a80@kernel.org>
+To: Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>, 
+ David Sterba <dsterba@suse.com>
+Cc: Filipe Manana <fdmanana@suse.com>, linux-btrfs@vger.kernel.org, 
+ linux-kernel@vger.kernel.org, 
+ Johannes Thumshirn <johannes.thumshirn@wdc.com>
+X-Mailer: b4 0.14.2
+X-Developer-Signature: v=1; a=openpgp-sha256; l=1114; i=jth@kernel.org;
+ h=from:subject:message-id; bh=602kjni+87ScGLTTRcJreyPkEJNwSWrWWrRwoSU1jmQ=;
+ b=owGbwMvMwCV2ad4npfVdsu8YT6slMaTXv2B+7379917fqToaP9y88gS2BTJ7n5ReNeVOpoTmk
+ 5PGdzMXdZSyMIhxMciKKbIcD7XdL2F6hH3KoddmMHNYmUCGMHBxCsBEAlYzMtw8u2UK25VpJb/+
+ qaRocJz84nM72v3HRd/HPXc0+qe384sw/Hdqk1XYtuDwL3ZRHpuuB5tU2Kzba6ev0vmoVvFsEkf
+ HSnYA
+X-Developer-Key: i=jth@kernel.org; a=openpgp;
+ fpr=EC389CABC2C4F25D8600D0D00393969D2D760850
 
-On Thu, Jan 9, 2025 at 2:39=E2=80=AFPM Johannes Thumshirn
-<Johannes.Thumshirn@wdc.com> wrote:
->
-> On 09.01.25 13:35, Filipe Manana wrote:
-> >> diff --git a/fs/btrfs/tests/raid-stripe-tree-tests.c b/fs/btrfs/tests/=
-raid-stripe-tree-tests.c
-> >> index 30f17eb7b6a8a1dfa9f66ed5508da42a70db1fa3..f060c04c7f76357e6d2c6b=
-a78a8ba981e35645bd 100644
-> >> --- a/fs/btrfs/tests/raid-stripe-tree-tests.c
-> >> +++ b/fs/btrfs/tests/raid-stripe-tree-tests.c
-> >> @@ -478,8 +478,9 @@ static int run_test(test_func_t test, u32 sectorsi=
-ze, u32 nodesize)
-> >>                  ret =3D PTR_ERR(root);
-> >>                  goto out;
-> >>          }
-> >> -       btrfs_set_super_compat_ro_flags(root->fs_info->super_copy,
-> >> +       btrfs_set_super_incompat_flags(root->fs_info->super_copy,
-> >>                                          BTRFS_FEATURE_INCOMPAT_RAID_S=
-TRIPE_TREE);
-> > This hunk seems unrelated to the rest of the patch, could be fixed in
-> > a different patch in case it actually solves any problem (probably
-> > not, but it's an incompat feature so it should be changed anyway).
->
-> I'll make it a separate patch. RST is an incompat feature not a compat on=
-e.
->
-> With this patch btrfs_delete_raid_extent() starts checking the incompat
-> bit so it is fixing a 'problem'.
+From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 
-Yes, but for that all that's needed is this call:
+RAID stripe-tree is an incompatible feature not a read-only compatible, so
+set the incompat flag not a compat_ro one in the selftest code.
 
-btrfs_set_fs_incompat(root->fs_info, RAID_STRIPE_TREE);
+Subsequent changes in btrfs_delete_raid_extent() will start checking for
+this flag.
 
-Right?
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+---
+ fs/btrfs/tests/raid-stripe-tree-tests.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Replacing the btrfs_set_super_compat_ro_flags() call with a call to
-btrfs_set_super_incompat_flags() shouldn't be needed for this patch.
-That's what I was referring to.
+diff --git a/fs/btrfs/tests/raid-stripe-tree-tests.c b/fs/btrfs/tests/raid-stripe-tree-tests.c
+index 30f17eb7b6a8a1dfa9f66ed5508da42a70db1fa3..2e8083f1d0d184a23317facbb566ef949639a8a7 100644
+--- a/fs/btrfs/tests/raid-stripe-tree-tests.c
++++ b/fs/btrfs/tests/raid-stripe-tree-tests.c
+@@ -478,7 +478,7 @@ static int run_test(test_func_t test, u32 sectorsize, u32 nodesize)
+ 		ret = PTR_ERR(root);
+ 		goto out;
+ 	}
+-	btrfs_set_super_compat_ro_flags(root->fs_info->super_copy,
++	btrfs_set_super_incompat_flags(root->fs_info->super_copy,
+ 					BTRFS_FEATURE_INCOMPAT_RAID_STRIPE_TREE);
+ 	root->root_key.objectid = BTRFS_RAID_STRIPE_TREE_OBJECTID;
+ 	root->root_key.type = BTRFS_ROOT_ITEM_KEY;
+
+-- 
+2.43.0
+

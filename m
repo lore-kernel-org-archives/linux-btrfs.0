@@ -1,52 +1,52 @@
-Received: from mail-ej1-f47.google.com (mail-ej1-f47.google.com [209.85.218.47])
+Received: from mail-ej1-f46.google.com (mail-ej1-f46.google.com [209.85.218.46])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 486BF2236E9;
-	Thu,  9 Jan 2025 15:15:31 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.47
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3AEF621D5BE;
+	Thu,  9 Jan 2025 15:15:27 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.46
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1736435733; cv=none; b=RZbhYJlv0CZ7Wrv60To1IR8Ef+v2mA3oBT+JrLV4nPeyT8NScyQcLAygUvN7Izk54YZ8YW+F3iXfqgTg3zonyuDeHq+SUz3zodcaH2bm6JrQaetOtvzr9wqL9b6AyAdE8tbkRH90EvsF3EOdFI+exNzdl2tSNSK8zH4fjOdVtYw=
+	t=1736435733; cv=none; b=au2YunWryrArJ9rbroLD6pTrnYHPaMdlg++IZRcYV78IJgJUaEhWqfWc1p8V1aDqilN660Ma4JCpvCCC+WdFT4Jwc6KkWJDca0wuGeqvpZQpIAWmuRJPwa6y6vuPoR7FyF50SqyZwLvgXkQUPv7XpBvdmi4Ma6ZVjawUUzaztU8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
 	s=arc-20240116; t=1736435733; c=relaxed/simple;
-	bh=Y61cv6XONm5aSh6hqCsDgZWpAA78IkIVPAV2P/Gdd4Y=;
+	bh=iOUBr9vnm9rlrsY3YOAvgr1queRyQczGA5qSRr33m9s=;
 	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
-	 In-Reply-To:To:Cc; b=DdFs7bOCzk2roErCrqGmbF0+eFhz0sBkbbX6CtBFNUEHbHKSaWKxY62uWK2HJTITccgEvLVSPbJGeUMK8cGdL5ph/vOsi9leRL1L53sJPLlGhmMbwHz7gLy/9ftUBFPcTNgDLPfGlQXyY8FLOFoDKb01mbpTRF9hP+iwb/MIbRQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=quarantine dis=none) header.from=kernel.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.218.47
+	 In-Reply-To:To:Cc; b=OnuM0W4pIex9DSbZaKimxRbk9QueNtolVdcZZ0vY1ewAc4LTjFFyc0ZMdjfACXu7LCSCZK2cqYLBCxsFUZQ9ey2gNbEpb5k68zNhCEuYUckhp98tIjHsZPwvmFsEoeF3YORrpAINaXpi8+ZLjMBHEbMCdhwob9mKO+AHKEIa55I=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=quarantine dis=none) header.from=kernel.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.218.46
 Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=quarantine dis=none) header.from=kernel.org
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Received: by mail-ej1-f47.google.com with SMTP id a640c23a62f3a-aae81f4fdc4so223173166b.0;
-        Thu, 09 Jan 2025 07:15:31 -0800 (PST)
+Received: by mail-ej1-f46.google.com with SMTP id a640c23a62f3a-aa692211331so199017366b.1;
+        Thu, 09 Jan 2025 07:15:27 -0800 (PST)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1736435730; x=1737040530;
+        d=1e100.net; s=20230601; t=1736435726; x=1737040526;
         h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
          :mime-version:subject:date:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=Wo94xRQW7tw3npwzxFYun+vVy3ZCNUGiTzgM9DSsIwc=;
-        b=FJ13hmUNvfK5a4okH9p1MiBogwnOOkf6Yp4euXa/+DsW9YUosA8rUj8XXjAehPK5ie
-         6KWNZHvEDWBWOkJlJG8Yl2ycnBBhPBgyXhQF0otvoNlHoE3+J+VDNG07GYv039TPRYsp
-         HmTYxCp+M/oaE3XWM/QJ5Hjp7RjrI1jD6iSjwNw8pTLg3fWmzEOwqIxV1jzEqyvsMuPr
-         QUerpgt4WEoXTs6AhFWTnneOvSZnnmttW+Tt7gmFu31SPLD85+CPAXDR16lL9m9ZPZgg
-         GpCPWpHPfgA7RL2P9LB3Id7ikdfdBqVwHmloR8cO9juU1QLsWeBKuDD0vJvWrYKk80VZ
-         K4Vw==
-X-Forwarded-Encrypted: i=1; AJvYcCVhrCZzBwWpSWXuILfdQqmUjw5OJVALK4KZGHZNPZZy2+dWRSKGqSYYX9TNa5PhUsg+SmsCuXTo3uvYC6ZM@vger.kernel.org, AJvYcCXqxXDMzBwLi0nR4M/gFAH60yI9gJkVd3J4kZhRXxTvW1eGUsX3q/f7WsMmNOADX4NaahIjp0Vsa1CCCg==@vger.kernel.org
-X-Gm-Message-State: AOJu0YyRtZj47UqsjvHrsnbbm/6aGPFaoMb1dKtpivaX0xwuw5RDtptA
-	OwRYicBW2ZKk8BX8FSpExgnbrnkzLXlLwpjZVxlu0LoRX1CMhx5z+IKFTg==
-X-Gm-Gg: ASbGncsXKctS7CbAe4uDd3Rbf2KCRqpCTBHsGpXM+7gBzOab2Y8oqIUCvow406vG9EF
-	yM1moSYp4T2lklf2e2p4P9Kq0Aqmtu9jLWbejVzXTYmq/B7MoaxnU9REGTHdw7n5nzrvwPhH4MN
-	qZ3xRTjk64xFgxldnAngIbDNYpgjJ+2chBSG0mNfeRnTVIOcbX3HxUd80sfpXflwkD7pfehndww
-	wdT0Xkvz+fYn8SDjat5PhUXa5/F1Pz4rlfatdOXOWpuGTlzSpuJLNuUdAX0meyENyZ28ooMiRSx
-	gmE90GbEcsKMZ8hxhgpFy+MB3JRBb48BUPMJ
-X-Google-Smtp-Source: AGHT+IEcVa8XSVCe0QzRkAVY9XKYyYLE2XeFL1KBk6OoVV6Uw+zDcCV8N3Pas9Ppodlw0mk/5De94g==
-X-Received: by 2002:a17:907:2da4:b0:aaf:1183:e9be with SMTP id a640c23a62f3a-ab2ab6a8b31mr575455166b.2.1736435727973;
-        Thu, 09 Jan 2025 07:15:27 -0800 (PST)
+        bh=pljSv7QY3Pirg6lfdP8PEgMpw5IukrzApLqHT3bx72M=;
+        b=hs5+S4KhuSlrutytP+N9RX1kENSyPgtd1MrYWtO9rGSHyjaSQetV9759RFdu+r8Zc8
+         2PXVpTuV9XNcnc1FmI+fGe7K6m/X47elsORJbAbpt2WD8JoguWgMzIvsvWAVKLL+BIkm
+         vs7gZ7g/RlD1lRrgj51GBE/7C69az0XSblTcM4GUWI8p9+Ht2+/QfSBu3DHSdyYQNKO+
+         uxyS6+mq/jhhGpABg1/CgSeceUYtY2T1fsy1H/z9n+N7CFsYYS+Ag5jI+FaEUPuF7xnp
+         282prb+fKBzx0cGrpgWL9UDd9i20Q1rmFe4sN73G4FuOniKztvzTo5bkXTgl9pq1/H9m
+         hHXQ==
+X-Forwarded-Encrypted: i=1; AJvYcCWoGX6rX92mmlisWdljDDFZfSMmKxPEM4Qc+GPiOl2mFKjAcONi+J72T4H8iUX+Fx/ta0qIbzjLpAQZoQ==@vger.kernel.org, AJvYcCXB8a7V6HgplKszlebvGKPzMSbTgCgFjzNMd8kT7hUtoIidHwC6AgUXM1nXzzKO0mSJs9fvBmaTXuNFptwq@vger.kernel.org
+X-Gm-Message-State: AOJu0YxobkSQJEbZhKgq9zVVwjmwU3Wm5wLSw2/hwquY+oOaY5SaZUSa
+	VNbo+lKo99nBGpTt2kIxYI7nggByDGgMYQTNadWHjdJDP7wuB1hP
+X-Gm-Gg: ASbGncuG+mfZpElYGmpRidyrvEq4hA9sNMp+5fdEi0P6EBFcKvOvNsfEi0wpjRn+LKz
+	AX0nlIObJoaugtsA8rFEezQeRWG+J4jX+WWU4jFw4yKdqAnOjxq+tdngfDnC1ukjVRU+khJBGyF
+	6S4pjtr1E0LYxo8U1UYu95F+6lZS4u9imiZMsLH5yf+/6IfWmbHbDp0m6BpJ0Ol2M1ygYSbQ5qw
+	+dub754BZovtqEqjGS1UN2Wizyu74JoDIljyeGIa9V2InUfiQy72Y0jolkGbaDs3qqSBWqHtzmA
+	9trzGrxOqbB71CVlEcmqmpYoeadfb7SSg5C/
+X-Google-Smtp-Source: AGHT+IEnsw+hDxcoSXj6T3wnTBcrwuatmJ/U3ynXMmNHmu4TpSUeH6lBUfT/aBdIYJfOfgo0cPY6RQ==
+X-Received: by 2002:a17:907:12cd:b0:aa6:7c36:3428 with SMTP id a640c23a62f3a-ab2c3acf112mr270311666b.0.1736435726135;
+        Thu, 09 Jan 2025 07:15:26 -0800 (PST)
 Received: from [127.0.0.1] (p200300f6f7218600fa633ffffe02074c.dip0.t-ipconnect.de. [2003:f6:f721:8600:fa63:3fff:fe02:74c])
-        by smtp.gmail.com with ESMTPSA id a640c23a62f3a-ab2c95615a6sm81539366b.94.2025.01.09.07.15.27
+        by smtp.gmail.com with ESMTPSA id a640c23a62f3a-ab2c95615a6sm81539366b.94.2025.01.09.07.15.25
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 09 Jan 2025 07:15:27 -0800 (PST)
+        Thu, 09 Jan 2025 07:15:25 -0800 (PST)
 From: Johannes Thumshirn <jth@kernel.org>
-Date: Thu, 09 Jan 2025 16:15:11 +0100
-Subject: [PATCH v3 10/14] btrfs: selftests: don't split RAID extents in
- half
+Date: Thu, 09 Jan 2025 16:15:09 +0100
+Subject: [PATCH v3 08/14] btrfs: don't use btrfs_set_item_key_safe on RAID
+ stripe-extents
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -55,7 +55,7 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-Message-Id: <20250109-rst-delete-fixes-v3-10-b5c73a4b2a80@kernel.org>
+Message-Id: <20250109-rst-delete-fixes-v3-8-b5c73a4b2a80@kernel.org>
 References: <20250109-rst-delete-fixes-v3-0-b5c73a4b2a80@kernel.org>
 In-Reply-To: <20250109-rst-delete-fixes-v3-0-b5c73a4b2a80@kernel.org>
 To: Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>, 
@@ -64,139 +64,155 @@ Cc: Filipe Manana <fdmanana@suse.com>, linux-btrfs@vger.kernel.org,
  linux-kernel@vger.kernel.org, 
  Johannes Thumshirn <johannes.thumshirn@wdc.com>
 X-Mailer: b4 0.14.2
-X-Developer-Signature: v=1; a=openpgp-sha256; l=4127; i=jth@kernel.org;
- h=from:subject:message-id; bh=BKJ9UtZqMumOGnIO3fSUYTuxPI6H2ODSwOVX3gFSNx4=;
- b=owGbwMvMwCV2ad4npfVdsu8YT6slMaTXv2A9aCnwtb/0Rc3Ktz6NMnePng+InN7mtSDlrvapW
- ber9uaYdpSyMIhxMciKKbIcD7XdL2F6hH3KoddmMHNYmUCGMHBxCsBEpDcwMsztyfVeaXPh4t+0
- HXPyzk6qadt3uzVUS6CIs7ThBcPt3n+MDDv3vD2qcOQZ3+e3d7uDzwQqq6TuTfijJyBXFe2+5Zb
- +OQYA
+X-Developer-Signature: v=1; a=openpgp-sha256; l=5674; i=jth@kernel.org;
+ h=from:subject:message-id; bh=z3Xi2x6xfSi2w+ggmz2oPWTKmTsszHxlh33hmMOG3kM=;
+ b=owGbwMvMwCV2ad4npfVdsu8YT6slMaTXv2DJOhlzopxtYS6Tzb1S7ornHZxhQUJ/Fi5guHS58
+ N2e96VSHaUsDGJcDLJiiizHQ233S5geYZ9y6LUZzBxWJpAhDFycAjARjwsM/6MSfHo8O2RTZkme
+ eZvq8un1o++OXsaWAsZazxYX2ZbGBjH8d/3I+8LfbM1Ltw1WL8pfHZ7x/LRHYsfuu7/uv+beb/a
+ xlAkA
 X-Developer-Key: i=jth@kernel.org; a=openpgp;
  fpr=EC389CABC2C4F25D8600D0D00393969D2D760850
 
 From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 
-The selftests for partially deleting the start or tail of RAID
-stripe-extents split these extents in half.
+Don't use btrfs_set_item_key_safe() to modify the keys in the RAID
+stripe-tree as this can lead to corruption of the tree, which is caught by
+the checks in btrfs_set_item_key_safe():
 
-This can hide errors in the calculation, so don't split the RAID
-stripe-extents in half but delete the first or last 16K of the 64K
-extents.
+ BTRFS info (device nvme1n1): leaf 49168384 gen 15 total ptrs 194 free space 8329 owner 12
+ BTRFS info (device nvme1n1): refs 2 lock_owner 1030 current 1030
+  [ snip ]
+  item 105 key (354549760 230 20480) itemoff 14587 itemsize 16
+                  stride 0 devid 5 physical 67502080
+  item 106 key (354631680 230 4096) itemoff 14571 itemsize 16
+                  stride 0 devid 1 physical 88559616
+  item 107 key (354631680 230 32768) itemoff 14555 itemsize 16
+                  stride 0 devid 1 physical 88555520
+  item 108 key (354717696 230 28672) itemoff 14539 itemsize 16
+                  stride 0 devid 2 physical 67604480
+  [ snip ]
+ BTRFS critical (device nvme1n1): slot 106 key (354631680 230 32768) new key (354635776 230 4096)
+ ------------[ cut here ]------------
+ kernel BUG at fs/btrfs/ctree.c:2602!
+ Oops: invalid opcode: 0000 [#1] PREEMPT SMP PTI
+ CPU: 1 UID: 0 PID: 1055 Comm: fsstress Not tainted 6.13.0-rc1+ #1464
+ Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.16.2-3-gd478f380-rebuilt.opensuse.org 04/01/2014
+ RIP: 0010:btrfs_set_item_key_safe+0xf7/0x270
+ Code: <snip>
+ RSP: 0018:ffffc90001337ab0 EFLAGS: 00010287
+ RAX: 0000000000000000 RBX: ffff8881115fd000 RCX: 0000000000000000
+ RDX: 0000000000000001 RSI: 0000000000000001 RDI: 00000000ffffffff
+ RBP: ffff888110ed6f50 R08: 00000000ffffefff R09: ffffffff8244c500
+ R10: 00000000ffffefff R11: 00000000ffffffff R12: ffff888100586000
+ R13: 00000000000000c9 R14: ffffc90001337b1f R15: ffff888110f23b58
+ FS:  00007f7d75c72740(0000) GS:ffff88813bd00000(0000) knlGS:0000000000000000
+ CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+ CR2: 00007fa811652c60 CR3: 0000000111398001 CR4: 0000000000370eb0
+ Call Trace:
+  <TASK>
+  ? __die_body.cold+0x14/0x1a
+  ? die+0x2e/0x50
+  ? do_trap+0xca/0x110
+  ? do_error_trap+0x65/0x80
+  ? btrfs_set_item_key_safe+0xf7/0x270
+  ? exc_invalid_op+0x50/0x70
+  ? btrfs_set_item_key_safe+0xf7/0x270
+  ? asm_exc_invalid_op+0x1a/0x20
+  ? btrfs_set_item_key_safe+0xf7/0x270
+  btrfs_partially_delete_raid_extent+0xc4/0xe0
+  btrfs_delete_raid_extent+0x227/0x240
+  __btrfs_free_extent.isra.0+0x57f/0x9c0
+  ? exc_coproc_segment_overrun+0x40/0x40
+  __btrfs_run_delayed_refs+0x2fa/0xe80
+  btrfs_run_delayed_refs+0x81/0xe0
+  btrfs_commit_transaction+0x2dd/0xbe0
+  ? preempt_count_add+0x52/0xb0
+  btrfs_sync_file+0x375/0x4c0
+  do_fsync+0x39/0x70
+  __x64_sys_fsync+0x13/0x20
+  do_syscall_64+0x54/0x110
+  entry_SYSCALL_64_after_hwframe+0x76/0x7e
+ RIP: 0033:0x7f7d7550ef90
+ Code: <snip>
+ RSP: 002b:00007ffd70237248 EFLAGS: 00000202 ORIG_RAX: 000000000000004a
+ RAX: ffffffffffffffda RBX: 0000000000000004 RCX: 00007f7d7550ef90
+ RDX: 000000000000013a RSI: 000000000040eb28 RDI: 0000000000000004
+ RBP: 000000000000001b R08: 0000000000000078 R09: 00007ffd7023725c
+ R10: 00007f7d75400390 R11: 0000000000000202 R12: 028f5c28f5c28f5c
+ R13: 8f5c28f5c28f5c29 R14: 000000000040b520 R15: 00007f7d75c726c8
+  </TASK>
+
+Instead copy the item, adjust the key and per-device physical addresses
+and re-insert it into the tree.
 
 Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/tests/raid-stripe-tree-tests.c | 44 +++++++++++++++++++++------------
- 1 file changed, 28 insertions(+), 16 deletions(-)
+ fs/btrfs/raid-stripe-tree.c | 26 +++++++++++++++++++++-----
+ 1 file changed, 21 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/tests/raid-stripe-tree-tests.c b/fs/btrfs/tests/raid-stripe-tree-tests.c
-index 19f6147a38a54f6fe581264a971542840bc61180..12f3dbb23a6423c4d224c5b087b35862b8d643db 100644
---- a/fs/btrfs/tests/raid-stripe-tree-tests.c
-+++ b/fs/btrfs/tests/raid-stripe-tree-tests.c
-@@ -14,6 +14,8 @@
- #define RST_TEST_NUM_DEVICES	(2)
- #define RST_TEST_RAID1_TYPE	(BTRFS_BLOCK_GROUP_DATA | BTRFS_BLOCK_GROUP_RAID1)
+diff --git a/fs/btrfs/raid-stripe-tree.c b/fs/btrfs/raid-stripe-tree.c
+index e0bb95304dd51eb8e4bcf11281e65092e4551645..f07d898694c2f27a4ca59e4932556de7edf77a10 100644
+--- a/fs/btrfs/raid-stripe-tree.c
++++ b/fs/btrfs/raid-stripe-tree.c
+@@ -13,12 +13,13 @@
+ #include "volumes.h"
+ #include "print-tree.h"
  
-+#define SZ_48K (SZ_32K + SZ_16K)
+-static void btrfs_partially_delete_raid_extent(struct btrfs_trans_handle *trans,
++static int btrfs_partially_delete_raid_extent(struct btrfs_trans_handle *trans,
+ 					       struct btrfs_path *path,
+ 					       const struct btrfs_key *oldkey,
+ 					       u64 newlen, u64 frontpad)
+ {
+-	struct btrfs_stripe_extent *extent;
++	struct btrfs_root *stripe_root = trans->fs_info->stripe_root;
++	struct btrfs_stripe_extent *extent, *newitem;
+ 	struct extent_buffer *leaf;
+ 	int slot;
+ 	size_t item_size;
+@@ -27,6 +28,7 @@ static void btrfs_partially_delete_raid_extent(struct btrfs_trans_handle *trans,
+ 		.type = BTRFS_RAID_STRIPE_KEY,
+ 		.offset = newlen,
+ 	};
++	int ret;
+ 
+ 	ASSERT(newlen > 0);
+ 	ASSERT(oldkey->type == BTRFS_RAID_STRIPE_KEY);
+@@ -34,17 +36,31 @@ static void btrfs_partially_delete_raid_extent(struct btrfs_trans_handle *trans,
+ 	leaf = path->nodes[0];
+ 	slot = path->slots[0];
+ 	item_size = btrfs_item_size(leaf, slot);
 +
- typedef int (*test_func_t)(struct btrfs_trans_handle *trans);
++	newitem = kzalloc(item_size, GFP_NOFS);
++	if (!newitem)
++		return -ENOMEM;
++
+ 	extent = btrfs_item_ptr(leaf, slot, struct btrfs_stripe_extent);
  
- static struct btrfs_device *btrfs_device_by_devid(struct btrfs_fs_devices *fs_devices,
-@@ -94,32 +96,32 @@ static int test_front_delete(struct btrfs_trans_handle *trans)
- 		goto out;
+ 	for (int i = 0; i < btrfs_num_raid_stripes(item_size); i++) {
+ 		struct btrfs_raid_stride *stride = &extent->strides[i];
+ 		u64 phys;
+ 
+-		phys = btrfs_raid_stride_physical(leaf, stride);
+-		btrfs_set_raid_stride_physical(leaf, stride, phys + frontpad);
++		phys = btrfs_raid_stride_physical(leaf, stride) + frontpad;
++		btrfs_set_stack_raid_stride_physical(&newitem->strides[i], phys);
  	}
  
--	ret = btrfs_delete_raid_extent(trans, logical, SZ_32K);
-+	ret = btrfs_delete_raid_extent(trans, logical, SZ_16K);
- 	if (ret) {
- 		test_err("deleting RAID extent [%llu, %llu] failed", logical,
--			 logical + SZ_32K);
-+			 logical + SZ_16K);
- 		goto out;
- 	}
- 
--	len = SZ_32K;
--	ret = btrfs_get_raid_extent_offset(fs_info, logical + SZ_32K, &len,
-+	len -= SZ_16K;
-+	ret = btrfs_get_raid_extent_offset(fs_info, logical + SZ_16K, &len,
- 					   map_type, 0, &io_stripe);
- 	if (ret) {
- 		test_err("lookup of RAID extent [%llu, %llu] failed",
--			 logical + SZ_32K, logical + SZ_32K + len);
-+			 logical + SZ_16K, logical + SZ_64K);
- 		goto out;
- 	}
- 
--	if (io_stripe.physical != logical + SZ_32K) {
-+	if (io_stripe.physical != logical + SZ_16K) {
- 		test_err("invalid physical address, expected %llu, got %llu",
--			 logical + SZ_32K, io_stripe.physical);
-+			 logical + SZ_16K, io_stripe.physical);
- 		ret = -EINVAL;
- 		goto out;
- 	}
- 
--	if (len != SZ_32K) {
-+	if (len != SZ_48K) {
- 		test_err("invalid stripe length, expected %llu, got %llu",
--			 (u64)SZ_32K, len);
-+			 (u64)SZ_48K, len);
- 		ret = -EINVAL;
- 		goto out;
- 	}
-@@ -128,11 +130,11 @@ static int test_front_delete(struct btrfs_trans_handle *trans)
- 	if (ret != -ENODATA) {
- 		ret = -EINVAL;
- 		test_err("lookup of RAID extent [%llu, %llu] succeeded, should fail",
--			 logical, logical + SZ_32K);
-+			 logical, logical + SZ_16K);
- 		goto out;
- 	}
- 
--	ret = btrfs_delete_raid_extent(trans, logical + SZ_32K, SZ_32K);
-+	ret = btrfs_delete_raid_extent(trans, logical + SZ_16K, SZ_48K);
- out:
- 	btrfs_put_bioc(bioc);
- 	return ret;
-@@ -209,14 +211,14 @@ static int test_tail_delete(struct btrfs_trans_handle *trans)
- 		goto out;
- 	}
- 
--	ret = btrfs_delete_raid_extent(trans, logical + SZ_32K, SZ_32K);
-+	ret = btrfs_delete_raid_extent(trans, logical + SZ_48K, SZ_16K);
- 	if (ret) {
- 		test_err("deleting RAID extent [%llu, %llu] failed",
--			 logical + SZ_32K, logical + SZ_64K);
-+			 logical + SZ_48K, logical + SZ_64K);
- 		goto out;
- 	}
- 
--	len = SZ_32K;
-+	len = SZ_48K;
- 	ret = btrfs_get_raid_extent_offset(fs_info, logical, &len, map_type, 0, &io_stripe);
- 	if (ret) {
- 		test_err("lookup of RAID extent [%llu, %llu] failed", logical,
-@@ -231,9 +233,19 @@ static int test_tail_delete(struct btrfs_trans_handle *trans)
- 		goto out;
- 	}
- 
--	if (len != SZ_32K) {
-+	if (len != SZ_48K) {
- 		test_err("invalid stripe length, expected %llu, got %llu",
--			 (u64)SZ_32K, len);
-+			 (u64)SZ_48K, len);
-+		ret = -EINVAL;
+-	btrfs_set_item_key_safe(trans, path, &newkey);
++	ret = btrfs_del_item(trans, stripe_root, path);
++	if (ret)
 +		goto out;
-+	}
 +
-+	len = SZ_16K;
-+	ret = btrfs_get_raid_extent_offset(fs_info, logical + SZ_48K, &len,
-+					   map_type, 0, &io_stripe);
-+	if (ret != -ENODATA) {
-+		test_err("lookup of RAID extent [%llu, %llu] succeeded should fail",
-+			 logical + SZ_48K, logical + SZ_64K);
- 		ret = -EINVAL;
- 		goto out;
- 	}
++	btrfs_release_path(path);
++	ret = btrfs_insert_item(trans, stripe_root, &newkey, newitem, item_size);
++
++out:
++	kfree(newitem);
++	return ret;
+ }
+ 
+ int btrfs_delete_raid_extent(struct btrfs_trans_handle *trans, u64 start, u64 length)
 
 -- 
 2.43.0

@@ -1,52 +1,52 @@
-Received: from mail-ej1-f51.google.com (mail-ej1-f51.google.com [209.85.218.51])
+Received: from mail-ej1-f50.google.com (mail-ej1-f50.google.com [209.85.218.50])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1DBB3222563;
-	Thu,  9 Jan 2025 15:15:26 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.51
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EECA022259F;
+	Thu,  9 Jan 2025 15:15:28 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.50
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1736435728; cv=none; b=lIurE3wQPvaRLi9+mj6be1a0XtYc5pOH5d6DnQ4nfJ/klHqEBW+k7jftF2zL5Qk9LpcxJyH1WelVqi3BRplX1Fcn2cdAUArklN6tiqFvlwcVAuebu0jRQ8W1xX3YufCx6W+4T6ldcX3a9qMD/Vy1GxZY3vK4m0BgipMI+Vu9La4=
+	t=1736435730; cv=none; b=pxKVlUski+uo+xeN+Ii2oPB94LWUs8vLdjUnC4YYEDrhbRZ3ek9DCcfZY7lvuo0NOYJsMOYY02elbkBk8PBhJGfQE0UqXPlQ9KIiAbD02EYRsv69B+dZFG7Sc98Sq4EPTBg71OoCmLr424Ca1wAHchnc4qCy09J4y3tOwjm827s=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1736435728; c=relaxed/simple;
-	bh=41y7RZ7gEYvLkAxEzpK1EqpSSlg8rGbhKlFDY0WUQvk=;
+	s=arc-20240116; t=1736435730; c=relaxed/simple;
+	bh=kxPheXsGcgr7C7bmW2sFDIN+8yZhU6P18+xwCuVRn3o=;
 	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
-	 In-Reply-To:To:Cc; b=BHpBvaDZrTTBs9BRHvV1czvPf2RPXGpXCE8j5ZaHoBEQCmdC+qS9aZxUTe2zaZkdiW2DIRgqqEmI2Vn/U2i9xQhG8KYG2vsehEcPb0pKeXv7ZHUTpIMLPYW85lheqTR0N6UX0bIsdUGvV9rbgLi+Mo0wOajna3l0AW9U4kqKCBU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=quarantine dis=none) header.from=kernel.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.218.51
+	 In-Reply-To:To:Cc; b=j6SLaTfvSZiOFbR95tnuH6sN6vwAQcFBoRFGDgARBooLrJejeQarPqjJlEDdden8FCg2wXA02wJb83H35yFvZbFpJWD/TCXYG+kkmMETSkCpm8n+bbaEWPBvmSn6NoAas3DqMrFBIGQccDNHXjne7sJMT9lbfifw6OVAc2UUPa0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=quarantine dis=none) header.from=kernel.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.218.50
 Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=quarantine dis=none) header.from=kernel.org
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Received: by mail-ej1-f51.google.com with SMTP id a640c23a62f3a-aaeecbb7309so211219766b.0;
-        Thu, 09 Jan 2025 07:15:26 -0800 (PST)
+Received: by mail-ej1-f50.google.com with SMTP id a640c23a62f3a-aaf900cc7fbso211592866b.3;
+        Thu, 09 Jan 2025 07:15:28 -0800 (PST)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1736435725; x=1737040525;
+        d=1e100.net; s=20230601; t=1736435727; x=1737040527;
         h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
          :mime-version:subject:date:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=dbj3XbmfCs1NqrWpUNZLnYWPO6zpl4oL3yPP5bqydJ0=;
-        b=cOFiK43raP8EK/1h7VezrbpLD6ul9WFWfsZhbT+P8ETcqZkIO6FTyYOdPviVwNsvXO
-         zWM9sq7o0jLJ4sXxQJx3xaH0/xA+tgyXhxlAcVJ3wA15i5x1qEETDcjMQOJfRJD4/ToU
-         KDJWqEqM+iTsxKITUTflJ1gVzMsTSXwQPoXIMD4XutpROm5DZ04EUwouXdJh6Bo6pcL8
-         jMqlH+1gV+/PEUBuBtMh4goyyMybjV9ecClDJ67PANQAOEQvI8RLJ2c2VAVEM114u5QR
-         6+xjQAI/zo/nEX0EMA53Jv23fyKSK38ZZaKk1Sk0icfho1jrxkjlMPnzUzfdEjZxsVRS
-         7H/w==
-X-Forwarded-Encrypted: i=1; AJvYcCVUB83bIvf9qIWbp7Mg/rk/YvYSFQO6dCXgW1Y2PNyT4wMR/8gSOt87k7bnRrE5fjf4um2JsNx6/sgshQ==@vger.kernel.org, AJvYcCVqGJxBqmaIdTR/Yd/2X/E028TJajyY/hv0krQzLKbKTjQNh/6/L5+3jmvvG+u1Ck2W6Wruag14N/KS0R3L@vger.kernel.org
-X-Gm-Message-State: AOJu0YxWOWC2BGv+Aw4ExbG20vFSrSNwLFjbFNvBdv0Qxrs9clrDm1hA
-	NLkkXGayfXcHN08NcIPPmTZW7m3aC6maNkToY442gZ9V6lm9jcH7
-X-Gm-Gg: ASbGncuGK3Zq8RQM6CbiLI45hjf0MnbNUenDPO3hnkimHGXBFxeXj+bB3OZ8KX4I7/a
-	iAWhY9dNSBp29mQYlapIaaduqbsr86UZmL04H+lSBplQq+mpD5VWTsDfqmu14bGRMiSlLnTh7TE
-	/VOE/ov6Ybq548LgEzSCs/K1b5pb8Yj5p95Ha+hTvw1Jm9NWGvJnjOL7CZlSP/dZOqunpyCu8rJ
-	NCNL/JX8v/AD1SivW0f5AUsVC2Htn8AJKRD1eFBL8JeAP/w58yhgsICFgMBqAiKzNwQur6MY+jS
-	fT9yMG9htBRGhdwF4eHhJTCOPp6LVzJ8OsYU
-X-Google-Smtp-Source: AGHT+IG3vrh6023ytXDJw93ekDuO2rlP63qmfezgFi8yNraYUiHG3+Ckk1u+HcA9aEONKN/bV4GzTA==
-X-Received: by 2002:a17:907:3da8:b0:aae:ce4c:ca40 with SMTP id a640c23a62f3a-ab2ab740698mr563703966b.32.1736435725206;
-        Thu, 09 Jan 2025 07:15:25 -0800 (PST)
+        bh=s4qxRvmfu7+JXk512bdqWeZXj/ZLfnbrQ2mO7uJqnjk=;
+        b=Qr7uDvfgSwFI+HcqhZRBzzrNzx0VbK4Xc0mr+Gk+w78qiERWxJj39QfYdPH9O/62N9
+         4wHN+QTCeQAIoFu5738Un3ai8SNUIcRhbSrO1l8KtfNTjr5N6GbsF2zrYXMQoqqFXZ1W
+         3LJKOaIcaS1zWvRnLWe+cPw9kWi8OK+n9WB7xlSNaoy13nA8Gp0hRNUTqm5Ix2IFJfzf
+         +jIl90EHl510D5GU8Dle7FzZIvSVVY/+GO9HoTuPNICPZyatK7rPfBCMZ82uawJFfnpl
+         306CzT1FxIx1Nx+UT90STAmKBPiGW9q5KZYCsWguuC4yfU94bFMca3W7MPOGzjDGfZH7
+         V+bw==
+X-Forwarded-Encrypted: i=1; AJvYcCX5kmg9HZgT+5YKpcbbj5RgaI56Anm29IhoOP2FaBj0o8IGkg8cRdkw6ldCxzi//dyvzx10ux1zuy/pfw==@vger.kernel.org, AJvYcCXGIfhPcV5tZl4vWvTkyo2n77Xp/oV6fzCapLILWoVqE7lcQvTo9gRA8/hQ0pCIiUJTwzRQ2QDuHu0MuDql@vger.kernel.org
+X-Gm-Message-State: AOJu0Yx+TIBCamcXe1Cunv+UAFU2a/64xf3x9X8s2M5KJ84nYDoyE7LR
+	LqrJxqx0wQGZJ3u3gmjJMaZNNU0gjFbOI7zKDeTNuvvwhnuB9Rr8
+X-Gm-Gg: ASbGnctr7fyqq8GB9Teib4ikq3rQ8pqvq5K5fmPY/eHz/LWyDgKKer8BjSsv3W+nzkS
+	t6UchuCWsnCy93+UuP+c+anj/1m43CglGsB3DYAXJDrEq7xV93k84vXUd3Q5/eo37pEHxeqW07/
+	GSAlRsJixxjn6Aw4f4JgJQg/7MVQcsRtRRBVob8NR8ZK2V9lQTzNN9xCd1U/kxzoeLxddK2AWy7
+	necF+thT07sapdHGSDF9MPk/PGZnb8CildVlQdo9h/nNHt4WxxVRxIO+wzSbR3NoWWJs3Fr+tGn
+	S4VSNqpp+hV/Ld+mLqtwHbxO8QWsEEtyleZM
+X-Google-Smtp-Source: AGHT+IHDDZceAa1sKL8dn6/9yMfzEjIDZXcupVZ2tXxTfyaRTVq5pZ7nCEdRdnyajz9BCzCdqPSSFQ==
+X-Received: by 2002:a17:907:6090:b0:aab:d4f0:c598 with SMTP id a640c23a62f3a-ab2ab7415b9mr632374966b.27.1736435727071;
+        Thu, 09 Jan 2025 07:15:27 -0800 (PST)
 Received: from [127.0.0.1] (p200300f6f7218600fa633ffffe02074c.dip0.t-ipconnect.de. [2003:f6:f721:8600:fa63:3fff:fe02:74c])
-        by smtp.gmail.com with ESMTPSA id a640c23a62f3a-ab2c95615a6sm81539366b.94.2025.01.09.07.15.24
+        by smtp.gmail.com with ESMTPSA id a640c23a62f3a-ab2c95615a6sm81539366b.94.2025.01.09.07.15.26
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 09 Jan 2025 07:15:24 -0800 (PST)
+        Thu, 09 Jan 2025 07:15:26 -0800 (PST)
 From: Johannes Thumshirn <jth@kernel.org>
-Date: Thu, 09 Jan 2025 16:15:08 +0100
-Subject: [PATCH v3 07/14] btrfs: implement hole punching for RAID stripe
- extents
+Date: Thu, 09 Jan 2025 16:15:10 +0100
+Subject: [PATCH v3 09/14] btrfs: selftests: check for correct return value
+ of failed lookup
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -55,7 +55,7 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-Message-Id: <20250109-rst-delete-fixes-v3-7-b5c73a4b2a80@kernel.org>
+Message-Id: <20250109-rst-delete-fixes-v3-9-b5c73a4b2a80@kernel.org>
 References: <20250109-rst-delete-fixes-v3-0-b5c73a4b2a80@kernel.org>
 In-Reply-To: <20250109-rst-delete-fixes-v3-0-b5c73a4b2a80@kernel.org>
 To: Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>, 
@@ -64,105 +64,43 @@ Cc: Filipe Manana <fdmanana@suse.com>, linux-btrfs@vger.kernel.org,
  linux-kernel@vger.kernel.org, 
  Johannes Thumshirn <johannes.thumshirn@wdc.com>
 X-Mailer: b4 0.14.2
-X-Developer-Signature: v=1; a=openpgp-sha256; l=3166; i=jth@kernel.org;
- h=from:subject:message-id; bh=R9uOQGw9UkR9TkHDlN99eELkUGXAOXliXrIBwVbzV9o=;
- b=owGbwMvMwCV2ad4npfVdsu8YT6slMaTXv2CZsTRS5kns56KQ1l0d8yV2z3yt/GuLY9C9u4d8j
- qzfd3/prY5SFgYxLgZZMUWW46G2+yVMj7BPOfTaDGYOKxPIEAYuTgGYSHkaI8OJDXUXNu78Fvx5
- Z4ShhcDR5IVrio1aPjEyH5766LDd48RpDP+zTjE3rva9EbGvw9PtlvThfTWJiiefuySe1dMNYpF
- 85sELAA==
+X-Developer-Signature: v=1; a=openpgp-sha256; l=1169; i=jth@kernel.org;
+ h=from:subject:message-id; bh=Hai+FH+wlQA9jUF34rKWHq12Hes2Et4vpJtRh4PDbc4=;
+ b=owGbwMvMwCV2ad4npfVdsu8YT6slMaTXv2A5tI5/wvrLHYyPik+ZPb2ubcgS0zynvP70p4+bJ
+ VcuzWSU7yhlYRDjYpAVU2Q5Hmq7X8L0CPuUQ6/NYOawMoEMYeDiFICJrE9lZGgIEfq1WYTJWC0r
+ V70izD78wVWzs6/fi360F33JZh2eqMnwT9mhU0rxe2z98zIN1z/PmxzLJeqilKW7m2zms/4SbL7
+ JBQA=
 X-Developer-Key: i=jth@kernel.org; a=openpgp;
  fpr=EC389CABC2C4F25D8600D0D00393969D2D760850
 
 From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 
-If the stripe extent we want to delete starts before the range we want to
-delete and ends after the range we want to delete we're punching a
-hole in the stripe extent:
+Commit 5e72aabc1fff ("btrfs: return ENODATA in case RST lookup fails")
+changed btrfs_get_raid_extent_offset()'s return value to ENODATA in case
+the RAID stripe-tree lookup failed.
 
-  |--- RAID Stripe Extent ---|
-  | keep |--- drop ---| keep |
-
-This means we need to a) truncate the existing item and b)
-create a second item for the remaining range.
+Adjust the test cases which check for absence of a given range to check
+for ENODATA as return value in this case.
 
 Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/ctree.c            |  1 +
- fs/btrfs/raid-stripe-tree.c | 49 +++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 50 insertions(+)
+ fs/btrfs/tests/raid-stripe-tree-tests.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index c93f52a30a16028470594de1d1256dbec5c7899c..92071ca0655f0f1920eb841e77d3444a0e0d8834 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -3833,6 +3833,7 @@ static noinline int setup_leaf_for_split(struct btrfs_trans_handle *trans,
- 	btrfs_item_key_to_cpu(leaf, &key, path->slots[0]);
+diff --git a/fs/btrfs/tests/raid-stripe-tree-tests.c b/fs/btrfs/tests/raid-stripe-tree-tests.c
+index f060c04c7f76357e6d2c6ba78a8ba981e35645bd..19f6147a38a54f6fe581264a971542840bc61180 100644
+--- a/fs/btrfs/tests/raid-stripe-tree-tests.c
++++ b/fs/btrfs/tests/raid-stripe-tree-tests.c
+@@ -125,7 +125,7 @@ static int test_front_delete(struct btrfs_trans_handle *trans)
+ 	}
  
- 	BUG_ON(key.type != BTRFS_EXTENT_DATA_KEY &&
-+	       key.type != BTRFS_RAID_STRIPE_KEY &&
- 	       key.type != BTRFS_EXTENT_CSUM_KEY);
- 
- 	if (btrfs_leaf_free_space(leaf) >= ins_len)
-diff --git a/fs/btrfs/raid-stripe-tree.c b/fs/btrfs/raid-stripe-tree.c
-index 7ddc139ae1cf2d4844b1955ed3ecfe1b91f40049..e0bb95304dd51eb8e4bcf11281e65092e4551645 100644
---- a/fs/btrfs/raid-stripe-tree.c
-+++ b/fs/btrfs/raid-stripe-tree.c
-@@ -134,6 +134,55 @@ int btrfs_delete_raid_extent(struct btrfs_trans_handle *trans, u64 start, u64 le
- 		trace_btrfs_raid_extent_delete(fs_info, start, end,
- 					       found_start, found_end);
- 
-+		/*
-+		 * The stripe extent starts before the range we want to delete
-+		 * and ends after the range we want to delete, i.e. we're
-+		 * punching a hole in the stripe extent:
-+		 *
-+		 *  |--- RAID Stripe Extent ---|
-+		 *  | keep |--- drop ---| keep |
-+		 *
-+		 * This means we need to a) truncate the existing item and b)
-+		 * create a second item for the remaining range.
-+		 */
-+		if (found_start < start && found_end > end) {
-+			size_t item_size;
-+			u64 diff_start = start - found_start;
-+			u64 diff_end = found_end - end;
-+			struct btrfs_stripe_extent *extent;
-+			struct btrfs_key newkey = {
-+				.objectid = end,
-+				.type = BTRFS_RAID_STRIPE_KEY,
-+				.offset = diff_end,
-+			};
-+
-+			/* "right" item */
-+			ret = btrfs_duplicate_item(trans, stripe_root, path,
-+						   &newkey);
-+			if (ret)
-+				break;
-+
-+			item_size = btrfs_item_size(leaf, path->slots[0]);
-+			extent = btrfs_item_ptr(leaf, path->slots[0],
-+						struct btrfs_stripe_extent);
-+
-+			for (int i = 0; i < btrfs_num_raid_stripes(item_size); i++) {
-+				struct btrfs_raid_stride *stride = &extent->strides[i];
-+				u64 phys;
-+
-+				phys = btrfs_raid_stride_physical(leaf, stride);
-+				phys += diff_start + length;
-+				btrfs_set_raid_stride_physical(leaf, stride, phys);
-+			}
-+
-+			/* "left" item */
-+			path->slots[0]--;
-+			btrfs_item_key_to_cpu(leaf, &key, path->slots[0]);
-+			btrfs_partially_delete_raid_extent(trans, path, &key,
-+							   diff_start, 0);
-+			break;
-+		}
-+
- 		/*
- 		 * The stripe extent starts before the range we want to delete:
- 		 *
+ 	ret = btrfs_get_raid_extent_offset(fs_info, logical, &len, map_type, 0, &io_stripe);
+-	if (!ret) {
++	if (ret != -ENODATA) {
+ 		ret = -EINVAL;
+ 		test_err("lookup of RAID extent [%llu, %llu] succeeded, should fail",
+ 			 logical, logical + SZ_32K);
 
 -- 
 2.43.0

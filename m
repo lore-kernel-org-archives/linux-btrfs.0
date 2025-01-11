@@ -1,64 +1,64 @@
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B991819340B
-	for <linux-btrfs@vger.kernel.org>; Sat, 11 Jan 2025 10:44:20 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 95A3B192B77
+	for <linux-btrfs@vger.kernel.org>; Sat, 11 Jan 2025 10:44:22 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1736592264; cv=none; b=htO5w6gYQ811tcOnh64eRK+UbsgQBNmWN8WgRW8jeYx7VstNU3+akR2tcaneC/wCYv5ijL2AWxMasGgsyuv4LSy/88tk8sJ/Wp/npuOPTtfnAHl80kHr9GEXWRBxC3f4QKh/MS6GZ7J7QnAFRHUHYs4EBoXDJZATElavNasYGWQ=
+	t=1736592265; cv=none; b=pGPPA4i2oql2/nVd9Xo6w1d/RDwuDb8t/L08IoAThDh8xvPN3nnwIhr9s17G0OJEc3ieDfu/WIB1iYejrybK6n7rjXQJoU+AYr6NJ5nFV3EgEif+UAKSnPRepzwiuMgidGcjMrYWG94Igk/nhzc2w6h4e0ogcu8Qj9zqpfSO3fM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1736592264; c=relaxed/simple;
-	bh=UdWI/rMCEcPMxUIgej1KT0YujFEjKLbOQ6M5fz5L0Ic=;
+	s=arc-20240116; t=1736592265; c=relaxed/simple;
+	bh=A9DfuzjkOfaGZkonaVxyGFrsKz61eIALfh/j3ekIjnI=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=LDuVNFXn6XCshb7tIakopKDr91+O+cwnwD/th8uDfOcEQZ6yojZauAqkz71UrHd1Tdkim3v573UpF2ycRSIRffiMLh0t8I9FBYGH/1B0ClUK3+keuusEbboRZ/4YUaPs5FyAfnqt6p3TVbjN+hTvD4yHhsG2cnKD7J1/7bgvpA4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=emWT4Qke; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=XVWH6c5O; arc=none smtp.client-ip=195.135.223.130
+	 MIME-Version; b=uekELoU8CT6xGS38Sn9lCqJ8+kQHjLC36wUDNSQXUjCUUI5EIqvExphXP/v+AyvpwabqGW1kR1tnYtc/M2FObFaqDs7fh5GfIYumLaOJBL0PfzPyhIYRtCxqJcsUlr+S8awaprdcyOQo80RNVkKqzCc9Vn7IJ8TTUEpdMbj2A5c=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=ttf5FV/F; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=ttf5FV/F; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="emWT4Qke";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="XVWH6c5O"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="ttf5FV/F";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="ttf5FV/F"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id C2FF32117D;
-	Sat, 11 Jan 2025 10:44:17 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id B24AC2117E;
+	Sat, 11 Jan 2025 10:44:20 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1736592258; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1736592260; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=6F6nEtctdaqv085ax2s2nLEJ8frIJNHXJtS678YC8Bo=;
-	b=emWT4QkeOlK/OaFzLleCW1CwvIX9Xb1byhVt1xY7ptiitqGdX2vrcwRmoVW2yq5+N1dtik
-	3wHCHxzxbAPZaxNy8tJEez1OQjstlgHIoyHMvCTgwwNPBAfuv55RiM27YUBpjcc2USFHhy
-	CU1HkgeviLJ3buI/VZN4/WM2nZi2C+A=
+	bh=Ufj0K5wP3oBSW0O1kLa1dVVrcbydwZ4YHvGpMNMGgxI=;
+	b=ttf5FV/FfhTTSr690XDaj4SFAvK/xlYNQc68IlO4e83I8doVu+Ii8UH8juoR/UDUM12aTg
+	n6yJfx/FFaHv9VC9UzsR0ro7f22SaP3C0/gLip4DuRGOEmPBiGsYC5U3AMZLwWp/Rs9cLN
+	GhT0WS+bUIFV31Dd0kXu48P6ECT0sWk=
 Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=XVWH6c5O
+	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1736592257; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1736592260; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=6F6nEtctdaqv085ax2s2nLEJ8frIJNHXJtS678YC8Bo=;
-	b=XVWH6c5OmpL4OmE5SbV6aQtUf0QkxkD18IPg67KGUMex4wl9WA8SSs7LuRYvy9McNL4Lcz
-	uKtBDgNrUdTb45B0dBvoS9RZX5nPowBBuD5LzCtjHNDPFGTgNgwvEbnQVWG5hLGQ+ojkRC
-	m6vd+rAbZzl7E3fjGezBeG8SeChKK70=
+	bh=Ufj0K5wP3oBSW0O1kLa1dVVrcbydwZ4YHvGpMNMGgxI=;
+	b=ttf5FV/FfhTTSr690XDaj4SFAvK/xlYNQc68IlO4e83I8doVu+Ii8UH8juoR/UDUM12aTg
+	n6yJfx/FFaHv9VC9UzsR0ro7f22SaP3C0/gLip4DuRGOEmPBiGsYC5U3AMZLwWp/Rs9cLN
+	GhT0WS+bUIFV31Dd0kXu48P6ECT0sWk=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id BE58713A8A;
-	Sat, 11 Jan 2025 10:44:16 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id B1CD5139AB;
+	Sat, 11 Jan 2025 10:44:19 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id aEHSH4BLgmdCLgAAD6G6ig
-	(envelope-from <wqu@suse.com>); Sat, 11 Jan 2025 10:44:16 +0000
+	id ANDWHINLgmdCLgAAD6G6ig
+	(envelope-from <wqu@suse.com>); Sat, 11 Jan 2025 10:44:19 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Boris Burkov <boris@bur.io>
-Subject: [PATCH v4 07/10] btrfs: subpage: dump the involved bitmap when ASSERT() failed
-Date: Sat, 11 Jan 2025 21:13:41 +1030
-Message-ID: <f2b80afb62f3fc2ab19e5315cc2b4277cc1f26bc.1736591758.git.wqu@suse.com>
+Subject: [PATCH v4 09/10] btrfs: remove the unused @locked_folio parameter from btrfs_cleanup_ordered_extents()
+Date: Sat, 11 Jan 2025 21:13:43 +1030
+Message-ID: <e6a77e22aa3760314b67b96c8f3d79658a5746e3.1736591758.git.wqu@suse.com>
 X-Mailer: git-send-email 2.47.1
 In-Reply-To: <cover.1736591758.git.wqu@suse.com>
 References: <cover.1736591758.git.wqu@suse.com>
@@ -69,126 +69,125 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Rspamd-Queue-Id: C2FF32117D
-X-Spam-Score: -3.01
-X-Rspamd-Action: no action
-X-Spamd-Result: default: False [-3.01 / 50.00];
+X-Spam-Level: 
+X-Spamd-Result: default: False [-2.80 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	ASN(0.00)[asn:25478, ipnet:::/0, country:RU];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	FUZZY_BLOCKED(0.00)[rspamd.com];
-	ARC_NA(0.00)[];
 	RCPT_COUNT_TWO(0.00)[2];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	ARC_NA(0.00)[];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	FUZZY_BLOCKED(0.00)[rspamd.com];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
 	TO_DN_SOME(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:dkim,suse.com:mid,suse.com:email];
 	RCVD_COUNT_TWO(0.00)[2];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:mid];
+	RCVD_TLS_ALL(0.00)[]
+X-Spam-Score: -2.80
 X-Spam-Flag: NO
-X-Spam-Level: 
 
-For btrfs_folio_assert_not_dirty() and btrfs_folio_set_lock(), we call
-bitmap_test_range_all_zero() to ensure the involved range has no
-dirty/lock bit already set.
+The function btrfs_cleanup_ordered_extents() is only called in error
+handling path, and the last caller with a @locked_folio parameter is
+removed to fix a bug in the btrfs_run_delalloc_range() error handling.
 
-However with my recent enhanced delalloc range error handling, I was
-hitting the ASSERT() inside btrfs_folio_set_lock(), and it turns out
-that some error handling path is not properly update the folio flags.
-
-So add some extra dumpping for the ASSERTs to dump the involved bitmap
-to help debug.
+There is no need to pass @locked_folio parameter anymore.
 
 Reviewed-by: Boris Burkov <boris@bur.io>
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/subpage.c | 41 ++++++++++++++++++++++++++++++-----------
- 1 file changed, 30 insertions(+), 11 deletions(-)
+ fs/btrfs/inode.c | 44 ++------------------------------------------
+ 1 file changed, 2 insertions(+), 42 deletions(-)
 
-diff --git a/fs/btrfs/subpage.c b/fs/btrfs/subpage.c
-index 03d7bfc042e2..5d088f7d6184 100644
---- a/fs/btrfs/subpage.c
-+++ b/fs/btrfs/subpage.c
-@@ -635,6 +635,28 @@ IMPLEMENT_BTRFS_PAGE_OPS(ordered, folio_set_ordered, folio_clear_ordered,
- IMPLEMENT_BTRFS_PAGE_OPS(checked, folio_set_checked, folio_clear_checked,
- 			 folio_test_checked);
- 
-+#define GET_SUBPAGE_BITMAP(subpage, fs_info, name, dst)			\
-+{									\
-+	const int sectors_per_page = fs_info->sectors_per_page;		\
-+									\
-+	ASSERT(sectors_per_page < BITS_PER_LONG);			\
-+	*dst = bitmap_read(subpage->bitmaps,				\
-+			   sectors_per_page * btrfs_bitmap_nr_##name,	\
-+			   sectors_per_page);				\
-+}
-+
-+#define subpage_dump_bitmap(fs_info, folio, name, start, len)		\
-+{									\
-+	struct btrfs_subpage *subpage = folio_get_private(folio);	\
-+	unsigned long bitmap;						\
-+									\
-+	GET_SUBPAGE_BITMAP(subpage, fs_info, name, &bitmap);		\
-+	btrfs_warn(fs_info,						\
-+	"dumpping bitmap start=%llu len=%u folio=%llu " #name "_bitmap=%*pbl", \
-+		   start, len, folio_pos(folio),			\
-+		   fs_info->sectors_per_page, &bitmap);			\
-+}
-+
- /*
-  * Make sure not only the page dirty bit is cleared, but also subpage dirty bit
-  * is cleared.
-@@ -660,6 +682,10 @@ void btrfs_folio_assert_not_dirty(const struct btrfs_fs_info *fs_info,
- 	subpage = folio_get_private(folio);
- 	ASSERT(subpage);
- 	spin_lock_irqsave(&subpage->lock, flags);
-+	if (unlikely(!bitmap_test_range_all_zero(subpage->bitmaps, start_bit, nbits))) {
-+		subpage_dump_bitmap(fs_info, folio, dirty, start, len);
-+		ASSERT(bitmap_test_range_all_zero(subpage->bitmaps, start_bit, nbits));
-+	}
- 	ASSERT(bitmap_test_range_all_zero(subpage->bitmaps, start_bit, nbits));
- 	spin_unlock_irqrestore(&subpage->lock, flags);
- }
-@@ -689,23 +715,16 @@ void btrfs_folio_set_lock(const struct btrfs_fs_info *fs_info,
- 	nbits = len >> fs_info->sectorsize_bits;
- 	spin_lock_irqsave(&subpage->lock, flags);
- 	/* Target range should not yet be locked. */
--	ASSERT(bitmap_test_range_all_zero(subpage->bitmaps, start_bit, nbits));
-+	if (unlikely(!bitmap_test_range_all_zero(subpage->bitmaps, start_bit, nbits))) {
-+		subpage_dump_bitmap(fs_info, folio, locked, start, len);
-+		ASSERT(bitmap_test_range_all_zero(subpage->bitmaps, start_bit, nbits));
-+	}
- 	bitmap_set(subpage->bitmaps, start_bit, nbits);
- 	ret = atomic_add_return(nbits, &subpage->nr_locked);
- 	ASSERT(ret <= fs_info->sectors_per_page);
- 	spin_unlock_irqrestore(&subpage->lock, flags);
- }
- 
--#define GET_SUBPAGE_BITMAP(subpage, fs_info, name, dst)			\
--{									\
--	const int sectors_per_page = fs_info->sectors_per_page;		\
--									\
--	ASSERT(sectors_per_page < BITS_PER_LONG);			\
--	*dst = bitmap_read(subpage->bitmaps,				\
--			   sectors_per_page * btrfs_bitmap_nr_##name,	\
--			   sectors_per_page);				\
--}
--
- void __cold btrfs_subpage_dump_bitmap(const struct btrfs_fs_info *fs_info,
- 				      struct folio *folio, u64 start, u32 len)
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 3409f1e02de0..130f0490b14f 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -393,34 +393,13 @@ void btrfs_inode_unlock(struct btrfs_inode *inode, unsigned int ilock_flags)
+  * extent (btrfs_finish_ordered_io()).
+  */
+ static inline void btrfs_cleanup_ordered_extents(struct btrfs_inode *inode,
+-						 struct folio *locked_folio,
+ 						 u64 offset, u64 bytes)
  {
+ 	unsigned long index = offset >> PAGE_SHIFT;
+ 	unsigned long end_index = (offset + bytes - 1) >> PAGE_SHIFT;
+-	u64 page_start = 0, page_end = 0;
+ 	struct folio *folio;
+ 
+-	if (locked_folio) {
+-		page_start = folio_pos(locked_folio);
+-		page_end = page_start + folio_size(locked_folio) - 1;
+-	}
+-
+ 	while (index <= end_index) {
+-		/*
+-		 * For locked page, we will call btrfs_mark_ordered_io_finished
+-		 * through btrfs_mark_ordered_io_finished() on it
+-		 * in run_delalloc_range() for the error handling, which will
+-		 * clear page Ordered and run the ordered extent accounting.
+-		 *
+-		 * Here we can't just clear the Ordered bit, or
+-		 * btrfs_mark_ordered_io_finished() would skip the accounting
+-		 * for the page range, and the ordered extent will never finish.
+-		 */
+-		if (locked_folio && index == (page_start >> PAGE_SHIFT)) {
+-			index++;
+-			continue;
+-		}
+ 		folio = filemap_get_folio(inode->vfs_inode.i_mapping, index);
+ 		index++;
+ 		if (IS_ERR(folio))
+@@ -436,23 +415,6 @@ static inline void btrfs_cleanup_ordered_extents(struct btrfs_inode *inode,
+ 		folio_put(folio);
+ 	}
+ 
+-	if (locked_folio) {
+-		/* The locked page covers the full range, nothing needs to be done */
+-		if (bytes + offset <= page_start + folio_size(locked_folio))
+-			return;
+-		/*
+-		 * In case this page belongs to the delalloc range being
+-		 * instantiated then skip it, since the first page of a range is
+-		 * going to be properly cleaned up by the caller of
+-		 * run_delalloc_range
+-		 */
+-		if (page_start >= offset && page_end <= (offset + bytes - 1)) {
+-			bytes = offset + bytes - folio_pos(locked_folio) -
+-				folio_size(locked_folio);
+-			offset = folio_pos(locked_folio) + folio_size(locked_folio);
+-		}
+-	}
+-
+ 	return btrfs_mark_ordered_io_finished(inode, NULL, offset, bytes, false);
+ }
+ 
+@@ -1128,8 +1090,7 @@ static void submit_uncompressed_range(struct btrfs_inode *inode,
+ 			       &wbc, false);
+ 	wbc_detach_inode(&wbc);
+ 	if (ret < 0) {
+-		btrfs_cleanup_ordered_extents(inode, NULL,
+-					      start, end - start + 1);
++		btrfs_cleanup_ordered_extents(inode, start, end - start + 1);
+ 		if (locked_folio)
+ 			btrfs_folio_end_lock(inode->root->fs_info, locked_folio,
+ 					     start, async_extent->ram_size);
+@@ -2388,8 +2349,7 @@ int btrfs_run_delalloc_range(struct btrfs_inode *inode, struct folio *locked_fol
+ 
+ out:
+ 	if (ret < 0)
+-		btrfs_cleanup_ordered_extents(inode, NULL, start,
+-					      end - start + 1);
++		btrfs_cleanup_ordered_extents(inode, start, end - start + 1);
+ 	return ret;
+ }
+ 
 -- 
 2.47.1
 

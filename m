@@ -1,68 +1,69 @@
 Received: from mailout1.samsung.com (mailout1.samsung.com [203.254.224.24])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B3583DF49
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B35EE13D503
 	for <linux-btrfs@vger.kernel.org>; Wed, 29 Jan 2025 14:10:49 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=203.254.224.24
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1738159852; cv=none; b=fyfhg5CUI+dfaBfr4UXVEVxb81mzZfBR+MHH//wl93+kJQN4U9B6FNXuKpXgzwURKrnHTbcGZWKzCZgG19DdfetyvTAkjb5F4DGDnk0TFqBdnsQXN4T92V//30kFyG888umvqvkKu0JbAyojebZgr87FxVgEeU9ntlJa1XlulCQ=
+	t=1738159853; cv=none; b=cj6vDxtfh1Z20Ucq20Tylwk9YiT9NBUAHRq8sFMC66pkJndA/krp4/YvcdcSXTXsmLHELR3hOO+blTYErhpOuvIX39UTEnPrA0ipY3EqG0PN7Ol2Gyp6FEV7hMsOmZJLuuNRsrE1nRJ7LfZOv/saTDLUYWEuE0MXYqL0ZjzPbR0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1738159852; c=relaxed/simple;
-	bh=nk7HlaQ39w2smmz1MUilBses7fiRw4o6XdjYI/1VFSk=;
-	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version:Content-Type:
-	 References; b=KGf+5ZuTInzq0VXYbboeFwfM4RZz/mLNITunHrFCORf1E8fu5xejS5P6sNM9DYBAWPPkSKj6hZYMHbWderRqpFRfTD3No8BGQP3RrLWQZpOv0eA9NbqN3dpQ46pjMSNXZ5gpxZI1Z4MwXrKjzpvFtVrpBPq7n5Q/8LOJRmqSBj0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=samsung.com; spf=pass smtp.mailfrom=samsung.com; dkim=pass (1024-bit key) header.d=samsung.com header.i=@samsung.com header.b=gdixv8ut; arc=none smtp.client-ip=203.254.224.24
+	s=arc-20240116; t=1738159853; c=relaxed/simple;
+	bh=AdkfWA6lJaUIlOkpVnTFbRzROWLDA1Mk/RYZC8J2drY=;
+	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:MIME-Version:
+	 Content-Type:References; b=sxuRW3ORU4mpq8JxUx0VMoGWzGK3YnT1g1geggfH214BVmxlqQ9JebSNPjlTsM19exZiuCCS9R1y7b+NwT6r8xDxb/xY7GbvwmnCCUkCEP8QmoJliIhalo0E1X5akL14or3fshXZKH6v7rlEP9uiwvFOfh5xS8S3YZJca5r2MB8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=samsung.com; spf=pass smtp.mailfrom=samsung.com; dkim=pass (1024-bit key) header.d=samsung.com header.i=@samsung.com header.b=sGEQobN0; arc=none smtp.client-ip=203.254.224.24
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=samsung.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=samsung.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=samsung.com header.i=@samsung.com header.b="gdixv8ut"
-Received: from epcas5p1.samsung.com (unknown [182.195.41.39])
-	by mailout1.samsung.com (KnoxPortal) with ESMTP id 20250129141042epoutp0156c0aa4d961af970d71461bb6e3dd328~fLyraFB8s0645706457epoutp01S
-	for <linux-btrfs@vger.kernel.org>; Wed, 29 Jan 2025 14:10:42 +0000 (GMT)
-DKIM-Filter: OpenDKIM Filter v2.11.0 mailout1.samsung.com 20250129141042epoutp0156c0aa4d961af970d71461bb6e3dd328~fLyraFB8s0645706457epoutp01S
+	dkim=pass (1024-bit key) header.d=samsung.com header.i=@samsung.com header.b="sGEQobN0"
+Received: from epcas5p2.samsung.com (unknown [182.195.41.40])
+	by mailout1.samsung.com (KnoxPortal) with ESMTP id 20250129141047epoutp012f0564925d3d5d2406f811f0e3958e99~fLywek-Qk0306003060epoutp01J
+	for <linux-btrfs@vger.kernel.org>; Wed, 29 Jan 2025 14:10:47 +0000 (GMT)
+DKIM-Filter: OpenDKIM Filter v2.11.0 mailout1.samsung.com 20250129141047epoutp012f0564925d3d5d2406f811f0e3958e99~fLywek-Qk0306003060epoutp01J
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=samsung.com;
-	s=mail20170921; t=1738159842;
-	bh=n+G4o6rVeXBcVofvBNDuQajmyl0s0yopkCGKarmoKc8=;
-	h=From:To:Cc:Subject:Date:References:From;
-	b=gdixv8ut6/gbBPbkTGzci46R3DiS1UZK9U0mbi8cuer6nnvSBPO5ZH398lJW4RzAt
-	 j5kBZWIEqPNnJ/y8eOBdjK66k8D92a/MA+IGLYGAQY0PL/jO5pThYTDpeXWiOFNO5s
-	 T2yNRDXFmY+vinxBUkS8mI6M2/O6BXf9rzQRWKMo=
-Received: from epsnrtp1.localdomain (unknown [182.195.42.162]) by
-	epcas5p1.samsung.com (KnoxPortal) with ESMTP id
-	20250129141041epcas5p1140553f7a28f18b989c6f4d243e44409~fLyrAG5RP1215112151epcas5p1i;
-	Wed, 29 Jan 2025 14:10:41 +0000 (GMT)
-Received: from epsmges5p1new.samsung.com (unknown [182.195.38.181]) by
-	epsnrtp1.localdomain (Postfix) with ESMTP id 4YjkZm4WKJz4x9Pp; Wed, 29 Jan
-	2025 14:10:40 +0000 (GMT)
-Received: from epcas5p3.samsung.com ( [182.195.41.41]) by
-	epsmges5p1new.samsung.com (Symantec Messaging Gateway) with SMTP id
-	D2.F3.20052.0E63A976; Wed, 29 Jan 2025 23:10:40 +0900 (KST)
-Received: from epsmtrp2.samsung.com (unknown [182.195.40.14]) by
-	epcas5p1.samsung.com (KnoxPortal) with ESMTPA id
-	20250129141039epcas5p11feb1be4124c0db3c5223325924183a3~fLyovrPph1215112151epcas5p1h;
-	Wed, 29 Jan 2025 14:10:39 +0000 (GMT)
-Received: from epsmgms1p1new.samsung.com (unknown [182.195.42.41]) by
-	epsmtrp2.samsung.com (KnoxPortal) with ESMTP id
-	20250129141039epsmtrp220454c49dfda7c403ca9ce986c1a76ec~fLyou6V4C1194111941epsmtrp2h;
-	Wed, 29 Jan 2025 14:10:39 +0000 (GMT)
-X-AuditID: b6c32a49-3fffd70000004e54-47-679a36e07115
+	s=mail20170921; t=1738159847;
+	bh=ST7TI/y+PLKSL5LRzxWbv6tzS6BXzdbRGX2mF/YjYwg=;
+	h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+	b=sGEQobN0AF2XCIM9GZZwNH3d70TGLDWzdaOoplRnKiRs7rzPEHqQCxns2nq4tsi30
+	 z25p4SHy1zFyZ67e1xTdH4CPYbNpkzD0sZ3sFSyDcBXSMkYxyj1m1bEhHbTE2pE2xM
+	 mW5u8ZesysBNr8wdpkt0Y8ueyj0zp7xjS9Jm60Ck=
+Received: from epsnrtp3.localdomain (unknown [182.195.42.164]) by
+	epcas5p3.samsung.com (KnoxPortal) with ESMTP id
+	20250129141046epcas5p35eaafd908a19ad7c36fcdc9a75542852~fLyvdQ5lh2837028370epcas5p3U;
+	Wed, 29 Jan 2025 14:10:46 +0000 (GMT)
+Received: from epsmgec5p1-new.samsung.com (unknown [182.195.38.180]) by
+	epsnrtp3.localdomain (Postfix) with ESMTP id 4YjkZs31rfz4x9Pp; Wed, 29 Jan
+	2025 14:10:45 +0000 (GMT)
+Received: from epcas5p4.samsung.com ( [182.195.41.42]) by
+	epsmgec5p1-new.samsung.com (Symantec Messaging Gateway) with SMTP id
+	30.9F.29212.5E63A976; Wed, 29 Jan 2025 23:10:45 +0900 (KST)
+Received: from epsmtrp1.samsung.com (unknown [182.195.40.13]) by
+	epcas5p4.samsung.com (KnoxPortal) with ESMTPA id
+	20250129141044epcas5p422461bd3630814884c91fc0f4207edde~fLyt7beoy1416814168epcas5p4m;
+	Wed, 29 Jan 2025 14:10:44 +0000 (GMT)
+Received: from epsmgms1p2new.samsung.com (unknown [182.195.42.42]) by
+	epsmtrp1.samsung.com (KnoxPortal) with ESMTP id
+	20250129141044epsmtrp1ab9dd28959447241d4bccf0273e947d4~fLyt6hsYP0553305533epsmtrp18;
+	Wed, 29 Jan 2025 14:10:44 +0000 (GMT)
+X-AuditID: b6c32a50-7ebff7000000721c-8a-679a36e51763
 Received: from epsmtip2.samsung.com ( [182.195.34.31]) by
-	epsmgms1p1new.samsung.com (Symantec Messaging Gateway) with SMTP id
-	FC.0C.18729.FD63A976; Wed, 29 Jan 2025 23:10:39 +0900 (KST)
+	epsmgms1p2new.samsung.com (Symantec Messaging Gateway) with SMTP id
+	E2.F5.18949.4E63A976; Wed, 29 Jan 2025 23:10:44 +0900 (KST)
 Received: from localhost.localdomain (unknown [107.99.41.245]) by
 	epsmtip2.samsung.com (KnoxPortal) with ESMTPA id
-	20250129141037epsmtip2e52337325cc88a52855a4461e513471c~fLynIrUax2391023910epsmtip2U;
-	Wed, 29 Jan 2025 14:10:37 +0000 (GMT)
+	20250129141043epsmtip2f7ed1e3bfa59072eb1baeff6ac801a89~fLysVmGYX2314623146epsmtip2R;
+	Wed, 29 Jan 2025 14:10:43 +0000 (GMT)
 From: Kanchan Joshi <joshi.k@samsung.com>
 To: josef@toxicpanda.com, dsterba@suse.com, clm@fb.com, axboe@kernel.dk,
 	kbusch@kernel.org, hch@lst.de
 Cc: linux-btrfs@vger.kernel.org, linux-nvme@lists.infradead.org,
 	linux-block@vger.kernel.org, gost.dev@samsung.com, Kanchan Joshi
 	<joshi.k@samsung.com>
-Subject: [RFC 0/3] Btrfs checksum offload
-Date: Wed, 29 Jan 2025 19:32:04 +0530
-Message-Id: <20250129140207.22718-1-joshi.k@samsung.com>
+Subject: [RFC 3/3] btrfs: add checksum offload
+Date: Wed, 29 Jan 2025 19:32:07 +0530
+Message-Id: <20250129140207.22718-4-joshi.k@samsung.com>
 X-Mailer: git-send-email 2.25.1
+In-Reply-To: <20250129140207.22718-1-joshi.k@samsung.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -70,136 +71,161 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Brightmail-Tracker: H4sIAAAAAAAAA+NgFprBJsWRmVeSWpSXmKPExsWy7bCmpu4Ds1npBq+/KFisvtvPZjGpfwa7
+X-Brightmail-Tracker: H4sIAAAAAAAAA+NgFlrBJsWRmVeSWpSXmKPExsWy7bCmlu5Ts1npBh/+CVqsvtvPZjGpfwa7
 	xYUfjUwWNw/sZLJYufook8Wfh4YWR/+/BUoeusZosfeWtsWlxyvYLeYve8ruwO0xsfkdu8fl
 	s6Uem1Z1snlsXlLvsftmA5tH35ZVjB7rt1xl8ZiweSOrx+dNcgGcUdk2GamJKalFCql5yfkp
 	mXnptkrewfHO8aZmBoa6hpYW5koKeYm5qbZKLj4Bum6ZOUCnKimUJeaUAoUCEouLlfTtbIry
-	S0tSFTLyi0tslVILUnIKTAr0ihNzi0vz0vXyUkusDA0MjEyBChOyM86fOslWMFG6omkNewPj
-	S9EuRk4OCQETiQXHr7N1MXJxCAnsZpQ4NeUVO0hCSOATo0Tbv1qIxDdGiaY5e9hgOhZePsIE
-	kdjLKLHx339GCOczo8TVCWeAHA4ONgFNiQuTS0EaRAQyJI6fnsUMUsMsMJtRYl3rf2aQhDBQ
-	zbqbsxhBbBYBVYmWDafBNvAKWEicvvacCWKbvMTMS9/ZIeKCEidnPmEBsZmB4s1bZ4MNlRBo
-	5ZDoPveIBWSxhICLRNddZoheYYlXx7ewQ9hSEp/f7YX6IFviwaMHLBB2jcSOzX2sELa9RMOf
-	G6wgY5iBblu/Sx9iFZ9E7+8nTBDTeSU62oQgqhUl7k16CtUpLvFwxhIo20PixYRjbJBAjJU4
-	dPc48wRGuVlIHpiF5IFZCMsWMDKvYpRMLSjOTU8tNi0wzEsth8dkcn7uJkZwEtXy3MF498EH
-	vUOMTByMhxglOJiVRHhjz81IF+JNSaysSi3Kjy8qzUktPsRoCgzVicxSosn5wDSeVxJvaGJp
-	YGJmZmZiaWxmqCTO27yzJV1IID2xJDU7NbUgtQimj4mDU6qBaePCHVMDH57oir0ee+TW2il3
-	LiTftDyU4e641tN33dc6seWFe5R/p/2QTappq9oVnuezmG+he+rG/5vPCJ36Uhp72GhB+46i
-	61vnTbjTl60mxWnu17zzYq3V8bvW0y7NvZ+i6a75lVdmqcx3L2O5zB0hSQ2PXnBpPXryRtVU
-	76EfM+vep92+m02ivi+//+62vZt6/ltmvUcHlipdiebdU3xw20MBlyLOj93nYuTPzJj5MPTe
-	u7XrP71J27vxXoLXZw+5j7f+y8YemPPCWqgpZOWxFRvv8Di+Srp4osQlL+H7rY2LRO27E5hU
-	W3eIPnscYeI9W/lba9fHKQtCmN81bUypfNJ1zf/xHqF1LRLhM0SVWIozEg21mIuKEwF+xQBT
-	KwQAAA==
-X-Brightmail-Tracker: H4sIAAAAAAAAA+NgFrrILMWRmVeSWpSXmKPExsWy7bCSvO59s1npBmeOCFmsvtvPZjGpfwa7
+	S0tSFTLyi0tslVILUnIKTAr0ihNzi0vz0vXyUkusDA0MjEyBChOyM/qnHWEpuCNf0bJjJ3sD
+	4xmpLkZODgkBE4lzzYfYuhi5OIQE9jBKvN54nxHC+cQo8WX5OTaQKiGBb4wSf3ZxwHQsPHuA
+	BaJoL6PEtb75UO2fGSWm3twDlOHgYBPQlLgwuRSkQUQgQ+L46VnMIDXMArMZJda1/mcGSQgL
+	6En0zmhkArFZBFQlGi6+B9vGK2Ah8WvSEyaIbfISMy99ZwexOQUsJXa/m8sEUSMocXLmExYQ
+	mxmopnnrbLAFEgJzOSRutn1gh2h2kZh0fz0zhC0s8er4Fqi4lMTL/jYoO1viwaMHLBB2jcSO
+	zX2sELa9RMOfG6wgzzADPbN+lz7ELj6J3t8gt3EAlfBKdLQJQVQrStyb9BSqU1zi4YwlULaH
+	xOM/DayQ8OlhlDi9uYttAqP8LCQvzELywiyEbQsYmVcxSqUWFOempyabFhjq5qWWw2M2OT93
+	EyM4yWoF7GBcveGv3iFGJg7GQ4wSHMxKIryx52akC/GmJFZWpRblxxeV5qQWH2I0BQbyRGYp
+	0eR8YJrPK4k3NLE0MDEzMzOxNDYzVBLnbd7Zki4kkJ5YkpqdmlqQWgTTx8TBKdXAlOFT8n/Z
+	y6X8wmItK73umop+NDsy3/C1ouje6as4DlSqr1jDOy9n4rrAhCjBNt+PN5s3MRn+bio2YzxY
+	b+N2+2Pu0ezCAIZ+EY1C91P8+/iDd5m8s8zhYHeNqInLYE7xn5L38OJj5+3cP56d2nclbpXB
+	hP/by/o3vtteeZvXdkPTYYUj3FObAqw1XTvCbjV3q6zdJWm1Lsmx6v4UVqHdc9/lX69lfO1X
+	HPA1o6z754sHcgvirGbvWCzAzcU8s1at+4t61psF8UH8K+QUtzqwrr/d8/W4i+Az51PL9znb
+	37R484Fxv1HClPONh1N8bnH1q3n5t2w1uGixcqL95a/Lc7zdWZV4r4hNZHy0QOO9EktxRqKh
+	FnNRcSIABOScPTsEAAA=
+X-Brightmail-Tracker: H4sIAAAAAAAAA+NgFnrFLMWRmVeSWpSXmKPExsWy7bCSvO4Ts1npBk+Pm1msvtvPZjGpfwa7
 	xYUfjUwWNw/sZLJYufook8Wfh4YWR/+/BUoeusZosfeWtsWlxyvYLeYve8ruwO0xsfkdu8fl
 	s6Uem1Z1snlsXlLvsftmA5tH35ZVjB7rt1xl8ZiweSOrx+dNcgGcUVw2Kak5mWWpRfp2CVwZ
-	50+dZCuYKF3RtIa9gfGlaBcjJ4eEgInEwstHmLoYuTiEBHYzSmw60cMMkRCXaL72gx3CFpZY
-	+e85mC0k8JFR4vBdhy5GDg42AU2JC5NLQcIiAgUSE/c/YQGZwywwn1Hi+IZdLCAJYaCadTdn
-	MYLYLAKqEi0bTrOB2LwCFhKnrz1ngpgvLzHz0nd2iLigxMmZT8B6mYHizVtnM09g5JuFJDUL
-	SWoBI9MqRsnUguLc9NxiwwLDvNRyveLE3OLSvHS95PzcTYzgUNfS3MG4fdUHvUOMTByMhxgl
-	OJiVRHhjz81IF+JNSaysSi3Kjy8qzUktPsQozcGiJM4r/qI3RUggPbEkNTs1tSC1CCbLxMEp
-	1cAUGh+ouHV2wX2WmGc7Ht7Ojp1qV21uz7Xh4f6+4vhpW5X+nXVuSzn/OZzB11XtZ+/bC4fW
-	NE9MZG1mnHI+gvs2t8tLHv2OWHGDrj1i88zv25kc+vHf8WPDi4RZzkte/f3+9/g7M+vysDVr
-	5Sc2PtWXZI1pcd/of/TSiplxGW4nmF5fcZi458Bp4y1rtH7M7pRc+//Zl43Bxxv+Ozl/i9dM
-	kYl4HFIzh+/NwiUx5jtf+TYmaPPuPWX/d0/HhdWXfFJMj67aqbpHaP+XoMK+j9JiDVq75ou+
-	7GyTOPTabse8ZdUm7Pf+z9neySEvWHWd71vi3F7f/q7zdd8LzWts0kvvt7ntn/RlyZ5j73oT
-	c29WK7EUZyQaajEXFScCAJn67YfkAgAA
-X-CMS-MailID: 20250129141039epcas5p11feb1be4124c0db3c5223325924183a3
+	/dOOsBTcka9o2bGTvYHxjFQXIyeHhICJxMKzB1i6GLk4hAR2M0rsfPicFSIhLtF87Qc7hC0s
+	sfLfc3aIoo+MEvPm7AVyODjYBDQlLkwuBakRESiQmLj/CdggZoH5jBLHN+xiAUkIC+hJ9M5o
+	ZAKxWQRUJRouvmcDsXkFLCR+TXrCBLFAXmLmpe9gyzgFLCV2v5vLBDJfCKhmw5QkiHJBiZMz
+	n4CNZAYqb946m3kCo8AsJKlZSFILGJlWMUqmFhTnpucWGxYY5aWW6xUn5haX5qXrJefnbmIE
+	R4eW1g7GPas+6B1iZOJgPMQowcGsJMIbe25GuhBvSmJlVWpRfnxRaU5q8SFGaQ4WJXHeb697
+	U4QE0hNLUrNTUwtSi2CyTBycUg1Mwn6M7zQPie1OerCqzidX6an866Y87ddtMr7vW+YFxxn+
+	jjDgWXf67dFXc+f8UTmkV8gprq1/4uPy+c/LYhLOWnke9QnaErjG80d735rJBSG+ExWmNn52
+	PxEjuPXpqXdbL2VciywO03h7R7frRb50+UnjXn6zhG2VIQcXZfwLiStIUdZxYQn6lGXZfuWF
+	orLVxJPqSZZ56lUbnrUpKBy0ed58lfPnrSUTJQ5Nby5MXT2NK+L7eiX2ZZ8/l/GtF5xzQ0px
+	33mTxf6vJL+k3rz24NG6iIfRrft0nj9aXbR8dpX8tlcmG4ur9Wc8ik9/e/botvPnGdmuHzG8
+	uWUGR/CUOGs74+8av0QK561asb3TX4mlOCPRUIu5qDgRACWg5cX9AgAA
+X-CMS-MailID: 20250129141044epcas5p422461bd3630814884c91fc0f4207edde
 X-Msg-Generator: CA
 Content-Type: text/plain; charset="utf-8"
 CMS-TYPE: 105P
 DLP-Filter: Pass
 X-CFilter-Loop: Reflected
-X-CMS-RootMailID: 20250129141039epcas5p11feb1be4124c0db3c5223325924183a3
-References: <CGME20250129141039epcas5p11feb1be4124c0db3c5223325924183a3@epcas5p1.samsung.com>
+X-CMS-RootMailID: 20250129141044epcas5p422461bd3630814884c91fc0f4207edde
+References: <20250129140207.22718-1-joshi.k@samsung.com>
+	<CGME20250129141044epcas5p422461bd3630814884c91fc0f4207edde@epcas5p4.samsung.com>
 
-TL;DR first: this makes Btrfs chuck its checksum tree and leverage NVMe
-SSD for data checksumming.
+Add new mount option 'datsum_offload'.
 
-Now, the longer version for why/how.
+When passed
+- Data checksumming at the FS level is disabled.
+- Data checksumming at the device level is enabled. This is done by
+setting REQ_INTEGRITY_OFFLOAD flag for data I/O if the underlying device is
+capable.
 
-End-to-end data protection (E2EDP)-capable drives require the transfer
-of integrity metadata (PI).
-This is currently handled by the block layer, without filesystem
-involvement/awareness.
-The block layer attaches the metadata buffer, generates the checksum
-(and reftag) for write I/O, and verifies it during read I/O.
+Signed-off-by: Kanchan Joshi <joshi.k@samsung.com>
+---
+ fs/btrfs/bio.c   | 12 ++++++++++++
+ fs/btrfs/fs.h    |  1 +
+ fs/btrfs/super.c |  9 +++++++++
+ 3 files changed, 22 insertions(+)
 
-Btrfs has its own data and metadata checksumming, which is currently
-disconnected from the above.
-It maintains a separate on-device 'checksum tree' for data checksums,
-while the block layer will also be checksumming each Btrfs I/O.
-
-There is value in avoiding Copy-on-write (COW) checksum tree on
-a device that can anyway store checksums inline (as part of PI).
-This would eliminate extra checksum writes/reads, making I/O
-more CPU-efficient.
-Additionally, usable space would increase, and write
-amplification, both in Btrfs and eventually at the device level, would
-be reduced [*].
-
-NVMe drives can also automatically insert and strip the PI/checksum
-and provide a per-I/O control knob (the PRACT bit) for this.
-Block layer currently makes no attempt to know/advertise this offload.
-
-This patch series: (a) adds checksum offload awareness to the
-block layer (patch #1),
-(b) enables the NVMe driver to register and support the offload
-(patch #2), and
-(c) introduces an opt-in (datasum_offload mount option) in Btrfs to
-apply checksum offload for data (patch #3).
-
-[*] Here are some perf/write-amplification numbers from randwrite test [1]
-on 3 configs (same device):
-Config 1: No meta format (4K) + Btrfs (base)
-Config 2: Meta format (4K + 8b) + Btrfs (base)
-Config 3: Meta format (4K + 8b) + Btrfs (datasum_offload)
-
-In config 1 and 2, Btrfs will operate with a checksum tree.
-Only in config 2, block-layer will attach integrity buffer with each I/O and
-do checksum/reftag verification.
-Only in config 3, offload will take place and device will generate/verify
-the checksum.
-
-AppW: writes issued by app, 120G (4 Jobs, each writing 30G)
-FsW: writes issued to device (from iostat)
-ExtraW: extra writes compared to AppW
-
-Direct I/O
----------------------------------------------------------
-Config		IOPS(K)		FsW(G)		ExtraW(G)
-1		144		186		66
-2		141		181		61
-3		172		129		9
-
-Buffered I/O
----------------------------------------------------------
-Config		IOPS(K)		FsW(G)		ExtraW(G)
-1		82		255		135
-2		80		181		132
-3		100		199		79
-
-Write amplification is generally high (and that's understandable given
-B-trees) but not sure why buffered I/O shows that much.
-
-[1] fio --name=btrfswrite --ioengine=io_uring --directory=/mnt --blocksize=4k --readwrite=randwrite --filesize=30G --numjobs=4 --iodepth=32 --randseed=0 --direct=1 -output=out --group_reporting
-
-
-Kanchan Joshi (3):
-  block: add integrity offload
-  nvme: support integrity offload
-  btrfs: add checksum offload
-
- block/bio-integrity.c     | 42 ++++++++++++++++++++++++++++++++++++++-
- block/t10-pi.c            |  7 +++++++
- drivers/nvme/host/core.c  | 24 ++++++++++++++++++++++
- drivers/nvme/host/nvme.h  |  1 +
- fs/btrfs/bio.c            | 12 +++++++++++
- fs/btrfs/fs.h             |  1 +
- fs/btrfs/super.c          |  9 +++++++++
- include/linux/blk_types.h |  3 +++
- include/linux/blkdev.h    |  7 +++++++
- 9 files changed, 105 insertions(+), 1 deletion(-)
-
+diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
+index 7ea6f0b43b95..811d89c64991 100644
+--- a/fs/btrfs/bio.c
++++ b/fs/btrfs/bio.c
+@@ -5,6 +5,7 @@
+  */
+ 
+ #include <linux/bio.h>
++#include <linux/blk-integrity.h>
+ #include "bio.h"
+ #include "ctree.h"
+ #include "volumes.h"
+@@ -424,6 +425,15 @@ static void btrfs_clone_write_end_io(struct bio *bio)
+ 	bio_put(bio);
+ }
+ 
++static void btrfs_prep_csum_offload_hw(struct btrfs_device *dev, struct bio *bio)
++{
++	struct blk_integrity *bi = blk_get_integrity(bio->bi_bdev->bd_disk);
++
++	if (btrfs_test_opt(dev->fs_info, DATASUM_OFFLOAD) &&
++	    bi && bi->offload_type != BLK_INTEGRITY_OFFLOAD_NONE)
++		bio->bi_opf |= REQ_INTEGRITY_OFFLOAD;
++}
++
+ static void btrfs_submit_dev_bio(struct btrfs_device *dev, struct bio *bio)
+ {
+ 	if (!dev || !dev->bdev ||
+@@ -435,6 +445,8 @@ static void btrfs_submit_dev_bio(struct btrfs_device *dev, struct bio *bio)
+ 	}
+ 
+ 	bio_set_dev(bio, dev->bdev);
++	if (!(bio->bi_opf & REQ_META))
++		btrfs_prep_csum_offload_hw(dev, bio);
+ 
+ 	/*
+ 	 * For zone append writing, bi_sector must point the beginning of the
+diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
+index 79a1a3d6f04d..88e493967100 100644
+--- a/fs/btrfs/fs.h
++++ b/fs/btrfs/fs.h
+@@ -228,6 +228,7 @@ enum {
+ 	BTRFS_MOUNT_NOSPACECACHE		= (1ULL << 30),
+ 	BTRFS_MOUNT_IGNOREMETACSUMS		= (1ULL << 31),
+ 	BTRFS_MOUNT_IGNORESUPERFLAGS		= (1ULL << 32),
++	BTRFS_MOUNT_DATASUM_OFFLOAD		= (1ULL << 33),
+ };
+ 
+ /*
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 7dfe5005129a..d0d5b35c2df9 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -121,6 +121,7 @@ enum {
+ 	Opt_treelog,
+ 	Opt_user_subvol_rm_allowed,
+ 	Opt_norecovery,
++	Opt_datasum_offload,
+ 
+ 	/* Rescue options */
+ 	Opt_rescue,
+@@ -223,6 +224,7 @@ static const struct fs_parameter_spec btrfs_fs_parameters[] = {
+ 	fsparam_string("compress-force", Opt_compress_force_type),
+ 	fsparam_flag_no("datacow", Opt_datacow),
+ 	fsparam_flag_no("datasum", Opt_datasum),
++	fsparam_flag_no("datasum_offload", Opt_datasum_offload),
+ 	fsparam_flag("degraded", Opt_degraded),
+ 	fsparam_string("device", Opt_device),
+ 	fsparam_flag_no("discard", Opt_discard),
+@@ -323,6 +325,10 @@ static int btrfs_parse_param(struct fs_context *fc, struct fs_parameter *param)
+ 			btrfs_clear_opt(ctx->mount_opt, NODATASUM);
+ 		}
+ 		break;
++	case Opt_datasum_offload:
++		btrfs_set_opt(ctx->mount_opt, NODATASUM);
++		btrfs_set_opt(ctx->mount_opt, DATASUM_OFFLOAD);
++		break;
+ 	case Opt_datacow:
+ 		if (result.negated) {
+ 			btrfs_clear_opt(ctx->mount_opt, COMPRESS);
+@@ -1057,6 +1063,8 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
+ 		seq_puts(seq, ",degraded");
+ 	if (btrfs_test_opt(info, NODATASUM))
+ 		seq_puts(seq, ",nodatasum");
++	if (btrfs_test_opt(info, DATASUM_OFFLOAD))
++		seq_puts(seq, ",datasum_offload");
+ 	if (btrfs_test_opt(info, NODATACOW))
+ 		seq_puts(seq, ",nodatacow");
+ 	if (btrfs_test_opt(info, NOBARRIER))
+@@ -1434,6 +1442,7 @@ static void btrfs_emit_options(struct btrfs_fs_info *info,
+ 	btrfs_info_if_set(info, old, NODATASUM, "setting nodatasum");
+ 	btrfs_info_if_set(info, old, DEGRADED, "allowing degraded mounts");
+ 	btrfs_info_if_set(info, old, NODATASUM, "setting nodatasum");
++	btrfs_info_if_set(info, old, DATASUM_OFFLOAD, "setting datasum offload to the device");
+ 	btrfs_info_if_set(info, old, SSD, "enabling ssd optimizations");
+ 	btrfs_info_if_set(info, old, SSD_SPREAD, "using spread ssd allocation scheme");
+ 	btrfs_info_if_set(info, old, NOBARRIER, "turning off barriers");
 -- 
 2.25.1
 

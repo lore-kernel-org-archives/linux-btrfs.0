@@ -1,38 +1,39 @@
-Received: from casper.infradead.org (casper.infradead.org [90.155.50.34])
+Received: from bombadil.infradead.org (bombadil.infradead.org [198.137.202.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F074F1FA859;
-	Mon,  3 Feb 2025 08:26:43 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=90.155.50.34
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0C0C12BD10;
+	Mon,  3 Feb 2025 08:30:16 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.137.202.133
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1738571206; cv=none; b=KNK++JUcgbn9rkrGW0L3Gfw+cnlXguVKQzjZqBP05RA+EbCx4LpeH5250L9/p46eHfQW9NVPz4o1GFg4fFcHafD2kCWXwGXHsZd9WCumRoVj6jd3Zw7e7c9POjaT6aUK8Gh7z+EHAjJ3PmVbij1wxlG+u321KntrDtkZ2+gZxQc=
+	t=1738571418; cv=none; b=cOmIB98TVEgS6xEGj+xA4iDxaCrU1FT0DTrI6qN7U7masucf2+3lEkMWhsfZaErv//+3qE0XRtDeXdE5fhE3PDCto29PFMSt/2GogfC9U2baEAiONH2Y/cMpXtm39Oknj5mRo4WQuqROt+ejqIwRpkRz/9o+xRIBS7tPJag43L0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1738571206; c=relaxed/simple;
-	bh=ElcnKc7ggHQtZj/dI//f+DvKZfFtsRk990tvXDo3yfA=;
+	s=arc-20240116; t=1738571418; c=relaxed/simple;
+	bh=3cO4qyclNc033Cj6ZmMnLChbflbiN24MN5QRcDeuegQ=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=NglKW2xTnTsGp7eyTykznMlORZZBVqbbg8gDCzGPfOkLJlgkctIpDf0+FbzSz/DxvA0imjrfA06Hnpjii1QWMPJ7yohzt5auFhOCRAsaViC33+SFYxxY5x/QICJJKZ/ZP4h99NUtesf7CSs8jDc1b/1hvaDWo0/WjJXfJbhAzs8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=infradead.org; spf=none smtp.mailfrom=infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=TH4aMWR4; arc=none smtp.client-ip=90.155.50.34
+	 Content-Type:Content-Disposition:In-Reply-To; b=aqrzQA6DCzdqhjNtvtXlyyiZaOD60lha76RZESXtUCndewQKOkIEjN6vudPzeFwMlSM7EIQwCqOfXjyS2ZJvDq24dASzzJyN6IvCE47IdoZmARh2yGccxACPXFrtuG2WcmWWngJfaoiqpv8e8iCxBBoq8YbnsMq+3Ta4HqX+xbs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=infradead.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=XrHj1Q1e; arc=none smtp.client-ip=198.137.202.133
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=infradead.org
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=infradead.org
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="TH4aMWR4"
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="XrHj1Q1e"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
-	References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+	d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
+	:References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
 	Content-Transfer-Encoding:Content-ID:Content-Description;
-	bh=+DPlPVTXHHQ+Xo8ld/N2ryqVQ9X+N2CpviGEAb9r8W0=; b=TH4aMWR4o0Nimu5uYbLVMk9zbh
-	h4NljevwIyFt5pXq0ZJVv/TwBqZJgOIxTWt6ZEAMRd4wX8K8MCiTLFhuMqrSq6TtvqOUYrUpbesZO
-	3J72/g/E4haIeEtqpKeNgnxeNyCFg5ZeQblfFBfzZ71kypSy+BWWL6d4BHh7X3N5VB0fp/B9aFVhW
-	vwdpIfWdpsWKhULtZOJzq2bP6d5lnZGniQQ37QrGrTQ0Y3sUVv2Rnqi4m2CiOcrgZN6530pgEVY4f
-	T5NuzBqUfdk/HbXB5byAWa73/V1oVrXt5kF2tkt4yPfq4fDxI25G3MNCYpCDQ4K4+Cr7moDgCyUyT
-	Ws26Vj4g==;
-Received: from willy by casper.infradead.org with local (Exim 4.98 #2 (Red Hat Linux))
-	id 1termr-00000000iiC-1obY;
-	Mon, 03 Feb 2025 08:26:33 +0000
-Date: Mon, 3 Feb 2025 08:26:33 +0000
-From: Matthew Wilcox <willy@infradead.org>
-To: Qu Wenruo <wqu@suse.com>
-Cc: Johannes Thumshirn <Johannes.Thumshirn@wdc.com>,
+	bh=GEeRARndOURU601MNaUwqkzgOLPL0RKLmzvNkf3CvH8=; b=XrHj1Q1eHOUdOfUOVDAHT0Q+1d
+	QBl8BI1PJ9841YOZjOxYpvq5BaS6vsN2/94VlcjmiVRLDfWKYArcYxscCdLix7kecyROoHpgRdIEJ
+	2EpKbYV0YqZP4gk5HwXpWVMSjlRayadY0WswozBUqAtmDHfr2ySZN3OimPJxuAGE9EkGE+iUpTmUv
+	gbAIaIHaOpRe/6/LO4ZHVeB19myKg673K2JCzuu9ZMeaSSjnqCMA9rYUHOiGO1ka2yaI7Kl4KpCYY
+	Dj+2ShximPp3CRnGgpECevEnrObzSjcB+Oj6zJHZpqX0aQaD/DhB6v8V9n9GJyZc18hb9vOlxcGgg
+	Tx5nfBww==;
+Received: from hch by bombadil.infradead.org with local (Exim 4.98 #2 (Red Hat Linux))
+	id 1terqQ-0000000EqEQ-1Jdo;
+	Mon, 03 Feb 2025 08:30:14 +0000
+Date: Mon, 3 Feb 2025 00:30:14 -0800
+From: "hch@infradead.org" <hch@infradead.org>
+To: Matthew Wilcox <willy@infradead.org>
+Cc: Qu Wenruo <wqu@suse.com>,
+	Johannes Thumshirn <Johannes.Thumshirn@wdc.com>,
 	"hch@infradead.org" <hch@infradead.org>,
 	Kanchan Joshi <joshi.k@samsung.com>, Theodore Ts'o <tytso@mit.edu>,
 	"lsf-pc@lists.linux-foundation.org" <lsf-pc@lists.linux-foundation.org>,
@@ -42,7 +43,7 @@ Cc: Johannes Thumshirn <Johannes.Thumshirn@wdc.com>,
 	"linux-block@vger.kernel.org" <linux-block@vger.kernel.org>,
 	"josef@toxicpanda.com" <josef@toxicpanda.com>
 Subject: Re: [LSF/MM/BPF TOPIC] File system checksum offload
-Message-ID: <Z6B9uSTQK8s-i9TM@casper.infradead.org>
+Message-ID: <Z6B-luT-CzxyDGft@infradead.org>
 References: <CGME20250130092400epcas5p1a3a9d899583e9502ed45fe500ae8a824@epcas5p1.samsung.com>
  <20250130091545.66573-1-joshi.k@samsung.com>
  <20250130142857.GB401886@mit.edu>
@@ -51,6 +52,7 @@ References: <CGME20250130092400epcas5p1a3a9d899583e9502ed45fe500ae8a824@epcas5p1
  <Z6B2oq_aAaeL9rBE@infradead.org>
  <bb516f19-a6b3-4c6b-89f9-928d46b66e2a@wdc.com>
  <eaec853d-eda6-4ee9-abb6-e2fa32f54f5c@suse.com>
+ <Z6B9uSTQK8s-i9TM@casper.infradead.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -59,30 +61,18 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <eaec853d-eda6-4ee9-abb6-e2fa32f54f5c@suse.com>
+In-Reply-To: <Z6B9uSTQK8s-i9TM@casper.infradead.org>
+X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 
-On Mon, Feb 03, 2025 at 06:46:49PM +1030, Qu Wenruo wrote:
-> It's pretty common to reproduce, just start a VM with an image on btrfs, set
-> the VM cache mode to none (aka, using direct IO), and run XFS/EXT4 inside
-> the VM, run some fsstress it should cause btrfs to hit data csum mismatch
-> false alerts.
-> 
-> The root cause is the content change during direct IO, and XFS/EXT4 doesn't
-> wait for folio writeback before dirtying the folio (if no AS_STABLE_WRITES
-> set).
-> That's a valid optimization, but that will cause contents change.
+On Mon, Feb 03, 2025 at 08:26:33AM +0000, Matthew Wilcox wrote:
+> so this is a block layer issue if it's not set.
 
-XFS honours the bdev flag:
+And even if the flag is set direct I/O ignores it.  So while passing
+through such a flag through virtio might be useful we need to eventually
+sort out the fact that direct I/O doesn't respect it.
 
-static inline void xfs_update_stable_writes(struct xfs_inode *ip)
-{
-        if (bdev_stable_writes(xfs_inode_buftarg(ip)->bt_bdev))
-                mapping_set_stable_writes(VFS_I(ip)->i_mapping);
-        else
-                mapping_clear_stable_writes(VFS_I(ip)->i_mapping);
-}
+Locking up any thread touching memory under direct I/O might be quite
+heavy handed, so this means bounce buffering on page fault.  We had
+plenty of discussion of this before, but I don't think anyone actually
+looked into implementing it.
 
-so this is a block layer issue if it's not set.
-
-> (I know there is the AS_STABLE_WRITES, but I'm not sure if qemu will pass
-> that flag to virtio block devices inside the VM)

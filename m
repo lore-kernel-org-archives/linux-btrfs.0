@@ -1,53 +1,53 @@
 Received: from esa4.hgst.iphmx.com (esa4.hgst.iphmx.com [216.71.154.42])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2F2EF1A315E
-	for <linux-btrfs@vger.kernel.org>; Wed, 19 Feb 2025 07:58:11 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2231A1C4A13
+	for <linux-btrfs@vger.kernel.org>; Wed, 19 Feb 2025 07:58:16 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=216.71.154.42
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1739951897; cv=none; b=ubwah9yPUQkhSbxX5IUXECEEyWZxWzK+PRjpOct/CjUubFX2hFiUN6k8UKjd7bIpzx6A7fMOXmY/RREmOHoboZSujO7lwc8l55QNrrumLYNM8EpIGjRLouZVMU3LPw8USOAex/Uru+mA1huSc++XC0oot63CPIwq935xPH+avZs=
+	t=1739951897; cv=none; b=jtd2dUaih2BLy00zyqhBbN2zTEGUsYt5SS+A8KhBWK0FSev+TUyKAvA141/d6g9/URE6828494+abMSVaJTIYf3/Ld6t/rhGCsdhzIjbywdTXk9UwNzNzf8QJJqXaijX82HOaQuAiUk07oC7kNw+u9hFTWkIlR6M+gWd8RTwo44=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
 	s=arc-20240116; t=1739951897; c=relaxed/simple;
-	bh=MppZ9PrHLju78y/W9D+X52JUgf00fP8+kOtxv7KfvY4=;
+	bh=l0MELxl+UYSrAkXECBypm34bdJVZBkjGfRlCTd1xIeI=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=R+5hD+TjOm8J59rIfL+iH3xAU9JSirSK1omU2gDQn3j9rRag8IH/oTIeOunqbdILHoe0zFUePZ9NnKyScZdVuM3m//X4Il/V3u8x7+crkRXctT6zGv5AwfMugpfQxEwNPbZWBM5WtJRvtDvhdJiKV5G8ZSb4S2MY9fRSk9dDsOc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=rrveHa9/; arc=none smtp.client-ip=216.71.154.42
+	 MIME-Version; b=o88Ez1j/UJfui35g2UNa5Ti+oXeRu2wNfecNCG6sZwBN0DvLZLK920rJrY80Xb8XS1/GEYtenU9KaIVpUSB5Qzh/LnDvRimSKJ2EBPq1fM2z1E/J3wc2SBGYRcWOKPpjdD5qOvJNMb6ZZLPh2weuzOppLvtLnBN/ZZyZnUeMfjk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=eNU03J2N; arc=none smtp.client-ip=216.71.154.42
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="rrveHa9/"
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="eNU03J2N"
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1739951892; x=1771487892;
+  t=1739951896; x=1771487896;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=MppZ9PrHLju78y/W9D+X52JUgf00fP8+kOtxv7KfvY4=;
-  b=rrveHa9/uofHTq7VBssmjxrcDTuk/oKEY+sV/GbdALirHLRaVMdF8sDk
-   FRmeQWo1/McbSLd5fquxX8IuUjsxeqRNFk/2EzydyNpleSZeX/Rzt0dD6
-   81ejBJc9Y0EQeOrbZpm9+HRoUHjQ2TQe6b0OPgbwy8zRvdynBumfUzEL+
-   guP9yvvcDjMOIKH5dcvFsjhr5rUjVVSn0VdYaTVtEGhY2dZyx4E5tG8Gd
-   6iFtW877EZgjnioAfjfjCCt4y02olWGOfcFbGeP8bJ0c8vUMDXe+r20go
-   gt9phHoMGfsBUqRNpdr2lTsC6LkEoMT4yHT8973DYPuElM/56rwDPKPHV
-   A==;
-X-CSE-ConnectionGUID: sgxxQi6YQZes4wI7cGHoqQ==
-X-CSE-MsgGUID: /dA8dMXXQRSL9H0/Oi3Jig==
+  bh=l0MELxl+UYSrAkXECBypm34bdJVZBkjGfRlCTd1xIeI=;
+  b=eNU03J2N2oN984ivLaoyeMs4FoxQj48ecI5dkbJnDu90iWignzn0Ie8g
+   HnqiLfck7FaaSqAKKIoXPOWf3C4y1bawm7LmR9slDCdELV5USAC9LJ6a2
+   yS/HH1dIGg6AJ+aLwPewHfXiY+MHYzj7qJwCSbrQGrZwrPsZ/9Xm8v06v
+   VbChPkwKqZvCCraJFsWA+/EYaCS4n6CEB4eYkrsIyK/QyYBkXZTfmb4op
+   cz/3QmoeP4Scto+/S/dV5pvqet34c3zID00q5mAyD3ee35NfVZWajLVH0
+   Q30xzWBVXflxdv3MnAD6gb/4YZZ8JbSEpZW4cQIJou4zinoTlQ8CM/GcD
+   Q==;
+X-CSE-ConnectionGUID: I0GhGNyyRTuj/uHViR/jxA==
+X-CSE-MsgGUID: aJ38rfM2QQWS3EnyqR3fGA==
 X-IronPort-AV: E=Sophos;i="6.13,298,1732550400"; 
-   d="scan'208";a="38310802"
+   d="scan'208";a="38310806"
 Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 19 Feb 2025 15:58:05 +0800
-IronPort-SDR: 67b58152_HaDpThY8jhuCG63a+kNYtwS2wZEauYo5ZTohB0wAhlwLf4v
- 10P1EEj0upapj11P15n3p1kDzHK5grdUpPDsWzQ==
+  by ob1.hgst.iphmx.com with ESMTP; 19 Feb 2025 15:58:06 +0800
+IronPort-SDR: 67b58154_vZCyP20u+NYTsCXBOpttyRNwM9EBDfQxEZOQUE/E5T8hW5q
+ 9K40aaGMkuAodTlP6u4IJazg8X87fNBhBdMjB8Q==
 Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 18 Feb 2025 22:59:30 -0800
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 18 Feb 2025 22:59:32 -0800
 WDCIronportException: Internal
 Received: from 5cg20343qs.ad.shared (HELO naota-xeon..) ([10.224.109.7])
-  by uls-op-cesaip01.wdc.com with ESMTP; 18 Feb 2025 23:58:04 -0800
+  by uls-op-cesaip01.wdc.com with ESMTP; 18 Feb 2025 23:58:06 -0800
 From: Naohiro Aota <naohiro.aota@wdc.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH v2 02/12] btrfs-progs: zoned: introduce a zone_info struct in btrfs_load_block_group_zone_info
-Date: Wed, 19 Feb 2025 16:57:46 +0900
-Message-ID: <48e5d55e3d4e773cb7952ac14978466dcf93a32a.1739951758.git.naohiro.aota@wdc.com>
+Subject: [PATCH v2 04/12] btrfs-progs: zoned: load zone activeness
+Date: Wed, 19 Feb 2025 16:57:48 +0900
+Message-ID: <58ad7ad0db8a17c2e27a54314869c3e94f7ab048.1739951758.git.naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.48.1
 In-Reply-To: <cover.1739951758.git.naohiro.aota@wdc.com>
 References: <cover.1739951758.git.naohiro.aota@wdc.com>
@@ -59,139 +59,194 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-This is an userland side update to follow kernel-side commit 15c12fcc50a1
-("btrfs: zoned: introduce a zone_info struct in
-btrfs_load_block_group_zone_info"). This will make the code unification easier.
-
-This commit introduces zone_info structure to hold per-zone information in
-btrfs_load_block_group_zone_info.
+Properly load the zone activeness on the userland tool. Also, check if a device
+has enough active zone limit to run btrfs.
 
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
- kernel-shared/zoned.c | 46 ++++++++++++++++++++++---------------------
- 1 file changed, 24 insertions(+), 22 deletions(-)
+ kernel-shared/ctree.h |  1 +
+ kernel-shared/zoned.c | 77 +++++++++++++++++++++++++++++++++++++++----
+ kernel-shared/zoned.h |  3 ++
+ 3 files changed, 75 insertions(+), 6 deletions(-)
 
+diff --git a/kernel-shared/ctree.h b/kernel-shared/ctree.h
+index a6aa10a690bb..f10142df80eb 100644
+--- a/kernel-shared/ctree.h
++++ b/kernel-shared/ctree.h
+@@ -368,6 +368,7 @@ struct btrfs_fs_info {
+ 	unsigned int allow_transid_mismatch:1;
+ 	unsigned int skip_leaf_item_checks:1;
+ 	unsigned int rebuilding_extent_tree:1;
++	unsigned int active_zone_tracking:1;
+ 
+ 	int transaction_aborted;
+ 
 diff --git a/kernel-shared/zoned.c b/kernel-shared/zoned.c
-index fd8a776dc471..b06774482cfd 100644
+index 319ee88d5b06..a97466635ecb 100644
 --- a/kernel-shared/zoned.c
 +++ b/kernel-shared/zoned.c
-@@ -828,6 +828,11 @@ bool zoned_profile_supported(u64 map_type, bool rst)
- 	return false;
- }
+@@ -23,6 +23,7 @@
+ #include <stdlib.h>
+ #include <string.h>
+ #include "kernel-lib/list.h"
++#include "kernel-lib/bitmap.h"
+ #include "kernel-shared/volumes.h"
+ #include "kernel-shared/zoned.h"
+ #include "kernel-shared/accessors.h"
+@@ -57,6 +58,16 @@ static u64 emulated_zone_size = DEFAULT_EMULATED_ZONE_SIZE;
+ #define BTRFS_MAX_ZONE_SIZE		(8ULL * SZ_1G)
+ #define BTRFS_MIN_ZONE_SIZE		(SZ_4M)
  
-+struct zone_info {
-+	u64 physical;
-+	u64 alloc_offset;
-+};
++/*
++ * Minimum of active zones we need:
++ *
++ * - BTRFS_SUPER_MIRROR_MAX zones for superblock mirrors
++ * - 3 zones to ensure at least one zone per SYSTEM, META and DATA block group
++ * - 1 zone for tree-log dedicated block group
++ * - 1 zone for relocation
++ */
++#define BTRFS_MIN_ACTIVE_ZONES		(BTRFS_SUPER_MIRROR_MAX + 5)
 +
- int btrfs_load_block_group_zone_info(struct btrfs_fs_info *fs_info,
- 				     struct btrfs_block_group *cache)
- {
-@@ -837,10 +842,9 @@ int btrfs_load_block_group_zone_info(struct btrfs_fs_info *fs_info,
- 	struct map_lookup *map;
- 	u64 logical = cache->start;
- 	u64 length = cache->length;
--	u64 physical = 0;
-+	struct zone_info *zone_info = NULL;
- 	int ret = 0;
- 	int i;
--	u64 *alloc_offsets = NULL;
- 	u64 last_alloc = 0;
- 	u32 num_conventional = 0;
+ static int btrfs_get_dev_zone_info(struct btrfs_device *device);
  
-@@ -867,30 +871,29 @@ int btrfs_load_block_group_zone_info(struct btrfs_fs_info *fs_info,
- 	}
- 	map = container_of(ce, struct map_lookup, ce);
- 
--	alloc_offsets = calloc(map->num_stripes, sizeof(*alloc_offsets));
--	if (!alloc_offsets) {
--		error_msg(ERROR_MSG_MEMORY, "zone offsets");
-+	zone_info = calloc(map->num_stripes, sizeof(*zone_info));
-+	if (!zone_info) {
-+		error_msg(ERROR_MSG_MEMORY, "zone info");
- 		return -ENOMEM;
- 	}
- 
- 	for (i = 0; i < map->num_stripes; i++) {
-+		struct zone_info *info = &zone_info[i];
- 		bool is_sequential;
- 		struct blk_zone zone;
- 
- 		device = map->stripes[i].dev;
--		physical = map->stripes[i].physical;
-+		info->physical = map->stripes[i].physical;
- 
- 		if (device->fd == -1) {
--			alloc_offsets[i] = WP_MISSING_DEV;
-+			info->alloc_offset = WP_MISSING_DEV;
- 			continue;
- 		}
- 
--		is_sequential = btrfs_dev_is_sequential(device, physical);
--		if (!is_sequential)
--			num_conventional++;
--
-+		is_sequential = btrfs_dev_is_sequential(device, info->physical);
- 		if (!is_sequential) {
--			alloc_offsets[i] = WP_CONVENTIONAL;
-+			num_conventional++;
-+			info->alloc_offset = WP_CONVENTIONAL;
- 			continue;
- 		}
- 
-@@ -898,28 +901,27 @@ int btrfs_load_block_group_zone_info(struct btrfs_fs_info *fs_info,
- 		 * The group is mapped to a sequential zone. Get the zone write
- 		 * pointer to determine the allocation offset within the zone.
- 		 */
--		WARN_ON(!IS_ALIGNED(physical, fs_info->zone_size));
--		zone = device->zone_info->zones[physical / fs_info->zone_size];
-+		WARN_ON(!IS_ALIGNED(info->physical, fs_info->zone_size));
-+		zone = device->zone_info->zones[info->physical / fs_info->zone_size];
- 
- 		switch (zone.cond) {
- 		case BLK_ZONE_COND_OFFLINE:
- 		case BLK_ZONE_COND_READONLY:
- 			error(
- 		"zoned: offline/readonly zone %llu on device %s (devid %llu)",
--			      physical / fs_info->zone_size, device->name,
-+			      info->physical / fs_info->zone_size, device->name,
- 			      device->devid);
--			alloc_offsets[i] = WP_MISSING_DEV;
-+			info->alloc_offset = WP_MISSING_DEV;
- 			break;
- 		case BLK_ZONE_COND_EMPTY:
--			alloc_offsets[i] = 0;
-+			info->alloc_offset = 0;
- 			break;
- 		case BLK_ZONE_COND_FULL:
--			alloc_offsets[i] = fs_info->zone_size;
-+			info->alloc_offset = fs_info->zone_size;
- 			break;
- 		default:
- 			/* Partially used zone */
--			alloc_offsets[i] =
--					((zone.wp - zone.start) << SECTOR_SHIFT);
-+			info->alloc_offset = ((zone.wp - zone.start) << SECTOR_SHIFT);
- 			break;
- 		}
- 	}
-@@ -943,7 +945,7 @@ int btrfs_load_block_group_zone_info(struct btrfs_fs_info *fs_info,
- 		ret = -EINVAL;
- 		goto out;
- 	}
--	cache->alloc_offset = alloc_offsets[0];
-+	cache->alloc_offset = zone_info[0].alloc_offset;
- 
- out:
- 	/* An extent is allocated after the write pointer */
-@@ -957,7 +959,7 @@ out:
- 	if (!ret)
- 		cache->write_offset = cache->alloc_offset;
- 
--	kfree(alloc_offsets);
-+	kfree(zone_info);
- 	return ret;
+ enum btrfs_zoned_model zoned_model(const char *file)
+@@ -132,6 +143,18 @@ static u64 max_zone_append_size(const char *file)
+ 	return strtoull((const char *)chunk, NULL, 10);
  }
+ 
++static unsigned int max_active_zone_count(const char *file)
++{
++	char buf[32];
++	int ret;
++
++	ret = device_get_queue_param(file, "max_active_zones", buf, sizeof(buf));
++	if (ret <= 0)
++		return 0;
++
++	return strtoul((const char *)buf, NULL, 10);
++}
++
+ #ifdef BTRFS_ZONED
+ /*
+  * Emulate blkdev_report_zones() for a non-zoned device. It slices up the block
+@@ -273,7 +296,8 @@ static int report_zones(int fd, const char *file,
+ 	struct stat st;
+ 	struct blk_zone_report *rep;
+ 	struct blk_zone *zone;
+-	unsigned int i, n = 0;
++	unsigned int i, nreported = 0, nactive = 0;
++	unsigned int max_active_zones;
+ 	int ret;
+ 
+ 	/*
+@@ -336,6 +360,20 @@ static int report_zones(int fd, const char *file,
+ 		exit(1);
+ 	}
+ 
++	zinfo->active_zones = bitmap_zalloc(zinfo->nr_zones);
++	if (!zinfo->active_zones) {
++		error_msg(ERROR_MSG_MEMORY, "active zone bitmap");
++		exit(1);
++	}
++
++	max_active_zones = max_active_zone_count(file);
++	if (max_active_zones && max_active_zones < BTRFS_MIN_ACTIVE_ZONES) {
++		error("zoned: %s: max active zones %u is too small, need at least %u active zones",
++		      file, max_active_zones, BTRFS_MIN_ACTIVE_ZONES);
++		exit(1);
++	}
++	zinfo->max_active_zones = max_active_zones;
++
+ 	/* Allocate a zone report */
+ 	rep_size = sizeof(struct blk_zone_report) +
+ 		   sizeof(struct blk_zone) * BTRFS_REPORT_NR_ZONES;
+@@ -347,7 +385,7 @@ static int report_zones(int fd, const char *file,
+ 
+ 	/* Get zone information */
+ 	zone = (struct blk_zone *)(rep + 1);
+-	while (n < zinfo->nr_zones) {
++	while (nreported < zinfo->nr_zones) {
+ 		memset(rep, 0, rep_size);
+ 		rep->sector = sector;
+ 		rep->nr_zones = BTRFS_REPORT_NR_ZONES;
+@@ -374,17 +412,36 @@ static int report_zones(int fd, const char *file,
+ 			break;
+ 
+ 		for (i = 0; i < rep->nr_zones; i++) {
+-			if (n >= zinfo->nr_zones)
++			if (nreported >= zinfo->nr_zones)
+ 				break;
+-			memcpy(&zinfo->zones[n], &zone[i],
++			memcpy(&zinfo->zones[nreported], &zone[i],
+ 			       sizeof(struct blk_zone));
+-			n++;
++			switch (zone[i].cond) {
++			case BLK_ZONE_COND_EMPTY:
++				break;
++			case BLK_ZONE_COND_IMP_OPEN:
++			case BLK_ZONE_COND_EXP_OPEN:
++			case BLK_ZONE_COND_CLOSED:
++				set_bit(nreported, zinfo->active_zones);
++				nactive++;
++				break;
++			}
++			nreported++;
+ 		}
+ 
+ 		sector = zone[rep->nr_zones - 1].start +
+ 			 zone[rep->nr_zones - 1].len;
+ 	}
+ 
++	if (max_active_zones) {
++		if (nactive > max_active_zones) {
++			error("zoned: %u active zones on %s exceeds max_active_zones %u",
++			      nactive, file, max_active_zones);
++			exit(1);
++		}
++		zinfo->active_zones_left = max_active_zones - nactive;
++	}
++
+ 	kfree(rep);
+ 
+ 	return 0;
+@@ -1080,6 +1137,7 @@ int btrfs_get_dev_zone_info_all_devices(struct btrfs_fs_info *fs_info)
+ static int btrfs_get_dev_zone_info(struct btrfs_device *device)
+ {
+ 	struct btrfs_fs_info *fs_info = device->fs_info;
++	int ret;
+ 
+ 	/*
+ 	 * Cannot use btrfs_is_zoned here, since fs_info::zone_size might not
+@@ -1091,7 +1149,14 @@ static int btrfs_get_dev_zone_info(struct btrfs_device *device)
+ 	if (device->zone_info)
+ 		return 0;
+ 
+-	return btrfs_get_zone_info(device->fd, device->name, &device->zone_info);
++	ret = btrfs_get_zone_info(device->fd, device->name, &device->zone_info);
++	if (ret)
++		return ret;
++
++	if (device->zone_info->max_active_zones)
++		fs_info->active_zone_tracking = 1;
++
++	return 0;
+ }
+ 
+ int btrfs_get_zone_info(int fd, const char *file,
+diff --git a/kernel-shared/zoned.h b/kernel-shared/zoned.h
+index c593571c4b69..d004ff16f198 100644
+--- a/kernel-shared/zoned.h
++++ b/kernel-shared/zoned.h
+@@ -72,7 +72,10 @@ struct btrfs_zoned_device_info {
+ 	enum btrfs_zoned_model	model;
+ 	u64			zone_size;
+ 	u32			nr_zones;
++	unsigned int            max_active_zones;
+ 	struct blk_zone		*zones;
++	atomic_t                active_zones_left;
++	unsigned long           *active_zones;
+ 	bool			emulated;
+ };
  
 -- 
 2.48.1

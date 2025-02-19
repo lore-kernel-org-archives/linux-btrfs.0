@@ -1,53 +1,53 @@
 Received: from esa4.hgst.iphmx.com (esa4.hgst.iphmx.com [216.71.154.42])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 085B41C54A5
-	for <linux-btrfs@vger.kernel.org>; Wed, 19 Feb 2025 07:58:17 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 98E861C5D6F
+	for <linux-btrfs@vger.kernel.org>; Wed, 19 Feb 2025 07:58:23 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=216.71.154.42
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1739951903; cv=none; b=Xsjtw969NADjTGS/CGv9c+iJsiY2ZgExqRJecZVBehq5a+Wzj9vu7BBZI68007TUNYd41CJ5cVIryMGzbZpQXVMmQm6jseH8WKrwq5ziNy4WgKP1OqI7mPR9KpKonIAui8Smr4Qc1J4b7A5qDPWmlx1mnqSifUZCGhYcXkV4c/k=
+	t=1739951905; cv=none; b=u9K9c+6VznuBwcShqqqZjLwjVxHrZftoexB2niZhxJEc+35eg0q/+4UPbJclBxc7uhDP5aT2b5EPWqwr7RgJdyaHa7KkZE6V1O4GY4A8qDba3vNf45Dd02ObJcEAS1a9ntKUa2hnBWJwelC/1Fx3txe/dgbv7bFKjJltisVBAJk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1739951903; c=relaxed/simple;
-	bh=yXhAD6P03SJMemKKQjfkaDbiWr7LwH2+E5dAXD+GlNY=;
+	s=arc-20240116; t=1739951905; c=relaxed/simple;
+	bh=7upQIkgKUuxpYyu2GxV6ghyvxI+5dqpWALw7zr7sWOg=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=eRU8pjDrHb7zYkcHyn8uI9laVbwFTVTTw/MPpCgIhHXufzagArtGfPypLJ+6udHygmIQ7izPBc7JsyZvl3ISMc+zxAss+aIBN0vStLZM/0Zd21Y6V/WBe3UYTjq9vJlZHMTJUqJFejqhkXCJ5iT3QMUE9J2SKrBz6WLnIYz+3c0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=ArUlFp0r; arc=none smtp.client-ip=216.71.154.42
+	 MIME-Version; b=WUz3Lnd58dEKu+8uiu6xY5Bid94UeyYwyvrFfqd/YvX7Kn/wZHT+oBPeE3YrbibnJAexynANm8grPaaDZF/6BLOHRdU8HlrTRkKHkljl7cooSO+ESJ2/YkQbuSoLVuu75eEf7NcehE1fZVKmTobXNy14drIFmSMT+bQBg9EtuMs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=mPk9/wFE; arc=none smtp.client-ip=216.71.154.42
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="ArUlFp0r"
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="mPk9/wFE"
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1739951898; x=1771487898;
+  t=1739951903; x=1771487903;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=yXhAD6P03SJMemKKQjfkaDbiWr7LwH2+E5dAXD+GlNY=;
-  b=ArUlFp0r9wnKu0Simqz4eBICQ2M9l9TGtrWsW2VfQezxPaARvEBXvGC0
-   qgyNMWY+3jNECMs2N1hjjFOFvkadc85X9a0KmzAqq+v25OsSq65Gn36Cw
-   enzrnBU4GJ3/ZnsHTyhYSmn785woHGhaszUjhoHTFlQQyXMZuM/r3Q9r/
-   2ciYXqRTl8+ii8GYdcBTon0d4Z8IE0Q8mjzkAogjZrua9AEnFaqrAgBb4
-   8/ASF/4W0K9feyL9y+nHcPyxaLYjgfdgGYkD4Ej/frxNGDLQENBDw0+Ca
-   noeAaCZntSRqlYFaX6K8Zb7iaNGwD0jNsxnAegKwG8txWC3qXfEIqrGJw
-   Q==;
-X-CSE-ConnectionGUID: fzb8jNdnQdGYmRcV5qBCnA==
-X-CSE-MsgGUID: 4JXpAGynR6+8F6Ro9JfkzA==
+  bh=7upQIkgKUuxpYyu2GxV6ghyvxI+5dqpWALw7zr7sWOg=;
+  b=mPk9/wFEUgeZILJwS2IBF6gHqAmxVj3O0jBqMdZbslmo5ghfokO+99CP
+   +CPDTQdLfwOuZKStQkQ8EgLKO6BVViSSofljPWZ89/YwS94bZg7MC9+JB
+   HQy6yfy1EOVHKeWPdapf5sJZie7rcYSJ7fE43JOQTKCynvHsEo2lfDWeV
+   92eNMsmGkr4geUlxuA9prPK0cCbgoTIQqSnpPpwZrgzbt0HR63DSfN0V2
+   yKuYkE99BFkLYxBAbl1Q19ydC5m94sGwo+LFLxTw8szwUDK311pqb5FL6
+   ERF4moLLNJ4XRtzVPJpBi8rtYVQFYdtDXyM9edCA1EAFvc4pK2sH7ZmmY
+   w==;
+X-CSE-ConnectionGUID: 6P3CgM4bT+a7ZsUT/kKcMA==
+X-CSE-MsgGUID: C5KB7Q4vTN+HvsbyF/YxpA==
 X-IronPort-AV: E=Sophos;i="6.13,298,1732550400"; 
-   d="scan'208";a="38310809"
+   d="scan'208";a="38310816"
 Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 19 Feb 2025 15:58:08 +0800
-IronPort-SDR: 67b58155_XKLoxNdEOSjL8KEOSV5CXCLkALCq7hD80eSzZ7Ju0Pru8fq
- 4lQPEK7NcaNaQk2nIEvd4Zvm5Q1Sqiom7BBHjVQ==
+  by ob1.hgst.iphmx.com with ESMTP; 19 Feb 2025 15:58:11 +0800
+IronPort-SDR: 67b58158_NpU+86LiAo7inLwKkkhE0SaKplaId7hDGc17oGAjQ5mapxk
+ uKWBmLIEwlyqc6CFhhgLp82sK8du8aktYmDuxog==
 Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 18 Feb 2025 22:59:33 -0800
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 18 Feb 2025 22:59:36 -0800
 WDCIronportException: Internal
 Received: from 5cg20343qs.ad.shared (HELO naota-xeon..) ([10.224.109.7])
-  by uls-op-cesaip01.wdc.com with ESMTP; 18 Feb 2025 23:58:07 -0800
+  by uls-op-cesaip01.wdc.com with ESMTP; 18 Feb 2025 23:58:10 -0800
 From: Naohiro Aota <naohiro.aota@wdc.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH v2 06/12] btrfs-progs: factor out btrfs_load_zone_info()
-Date: Wed, 19 Feb 2025 16:57:50 +0900
-Message-ID: <13b005c387446c5bb3e0212ba31423e1458688de.1739951758.git.naohiro.aota@wdc.com>
+Subject: [PATCH v2 10/12] btrfs-progs: zoned: implement RAID0 zone info loading
+Date: Wed, 19 Feb 2025 16:57:54 +0900
+Message-ID: <851b1454917770a0a9aed84564d0ecc2596c85a8.1739951758.git.naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.48.1
 In-Reply-To: <cover.1739951758.git.naohiro.aota@wdc.com>
 References: <cover.1739951758.git.naohiro.aota@wdc.com>
@@ -59,84 +59,46 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Now that, we have zone capacity and (basic) zone activeness support. It's time
-to factor out btrfs_load_zone_info() as same as the kernel side.
+Implement it just like the kernel side.
 
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
- kernel-shared/zoned.c | 124 ++++++++++++++++++++++++------------------
- 1 file changed, 71 insertions(+), 53 deletions(-)
+ kernel-shared/zoned.c | 32 ++++++++++++++++++++++++++++++++
+ 1 file changed, 32 insertions(+)
 
 diff --git a/kernel-shared/zoned.c b/kernel-shared/zoned.c
-index ee6c4ee61e4a..4045cf0d2b98 100644
+index e3ee1dc941dc..10e59b837efd 100644
 --- a/kernel-shared/zoned.c
 +++ b/kernel-shared/zoned.c
-@@ -891,10 +891,76 @@ struct zone_info {
- 	u64 alloc_offset;
- };
+@@ -1062,6 +1062,36 @@ static int btrfs_load_block_group_raid1(struct btrfs_fs_info *fs_info,
+ 	return 0;
+ }
  
-+static int btrfs_load_zone_info(struct btrfs_fs_info *fs_info, int zone_idx,
-+				struct zone_info *info, unsigned long *active,
-+				struct map_lookup *map)
++static int btrfs_load_block_group_raid0(struct btrfs_fs_info *fs_info,
++					struct btrfs_block_group *bg,
++					struct map_lookup *map,
++					struct zone_info *zone_info,
++					unsigned long *active)
 +{
-+	struct btrfs_device *device;
-+	struct blk_zone zone;
-+
-+	info->physical = map->stripes[zone_idx].physical;
-+
-+	device = map->stripes[zone_idx].dev;
-+
-+	if (device->fd == -1) {
-+		info->alloc_offset = WP_MISSING_DEV;
-+		return 0;
++	if ((map->type & BTRFS_BLOCK_GROUP_DATA) && !fs_info->stripe_root) {
++		btrfs_err(fs_info, "zoned: data %s needs raid-stripe-tree",
++			  btrfs_bg_type_to_raid_name(map->type));
++		return -EINVAL;
 +	}
 +
-+	/* Consider a zone as active if we can allow any number of active zones. */
-+	if (!device->zone_info->max_active_zones)
-+		set_bit(zone_idx, active);
++	for (int i = 0; i < map->num_stripes; i++) {
++		if (zone_info[i].alloc_offset == WP_MISSING_DEV ||
++		    zone_info[i].alloc_offset == WP_CONVENTIONAL)
++			continue;
 +
-+	if (!btrfs_dev_is_sequential(device, info->physical)) {
-+		info->alloc_offset = WP_CONVENTIONAL;
-+		info->capacity = device->zone_info->zone_size;
-+		return 0;
-+	}
-+
-+	/*
-+	 * The group is mapped to a sequential zone. Get the zone write
-+	 * pointer to determine the allocation offset within the zone.
-+	 */
-+	WARN_ON(!IS_ALIGNED(info->physical, fs_info->zone_size));
-+	zone = device->zone_info->zones[info->physical / fs_info->zone_size];
-+
-+	if (zone.type == BLK_ZONE_TYPE_CONVENTIONAL) {
-+		error("zoned: unexpected conventional zone %llu on device %s (devid %llu)",
-+		      zone.start << SECTOR_SHIFT, device->name,
-+		      device->devid);
-+		return -EIO;
-+	}
-+
-+	info->capacity = (zone.capacity << SECTOR_SHIFT);
-+
-+	switch (zone.cond) {
-+	case BLK_ZONE_COND_OFFLINE:
-+	case BLK_ZONE_COND_READONLY:
-+		error(
-+	"zoned: offline/readonly zone %llu on device %s (devid %llu)",
-+		      info->physical / fs_info->zone_size, device->name,
-+		      device->devid);
-+		info->alloc_offset = WP_MISSING_DEV;
-+		break;
-+	case BLK_ZONE_COND_EMPTY:
-+		info->alloc_offset = 0;
-+		break;
-+	case BLK_ZONE_COND_FULL:
-+		info->alloc_offset = fs_info->zone_size;
-+		break;
-+	default:
-+		/* Partially used zone */
-+		info->alloc_offset = ((zone.wp - zone.start) << SECTOR_SHIFT);
-+		set_bit(zone_idx, active);
-+		break;
++		if (test_bit(0, active) != test_bit(i, active)) {
++			return -EIO;
++		} else {
++			if (test_bit(0, active))
++				bg->zone_is_active = 1;
++		}
++		bg->zone_capacity += zone_info[i].capacity;
++		bg->alloc_offset += zone_info[i].alloc_offset;
 +	}
 +
 +	return 0;
@@ -145,75 +107,15 @@ index ee6c4ee61e4a..4045cf0d2b98 100644
  int btrfs_load_block_group_zone_info(struct btrfs_fs_info *fs_info,
  				     struct btrfs_block_group *cache)
  {
--	struct btrfs_device *device;
- 	struct btrfs_mapping_tree *map_tree = &fs_info->mapping_tree;
- 	struct cache_extent *ce;
- 	struct map_lookup *map;
-@@ -944,60 +1010,12 @@ int btrfs_load_block_group_zone_info(struct btrfs_fs_info *fs_info,
- 	}
- 
- 	for (i = 0; i < map->num_stripes; i++) {
--		struct zone_info *info = &zone_info[i];
--		bool is_sequential;
--		struct blk_zone zone;
--
--		device = map->stripes[i].dev;
--		info->physical = map->stripes[i].physical;
--
--		if (device->fd == -1) {
--			info->alloc_offset = WP_MISSING_DEV;
--			continue;
--		}
--
--		/* Consider a zone as active if we can allow any number of active zones. */
--		if (!device->zone_info->max_active_zones)
--			set_bit(i, active);
-+		ret = btrfs_load_zone_info(fs_info, i, &zone_info[i], active, map);
-+		if (ret)
-+			goto out;
- 
--		is_sequential = btrfs_dev_is_sequential(device, info->physical);
--		if (!is_sequential) {
-+		if (zone_info[i].alloc_offset == WP_CONVENTIONAL)
- 			num_conventional++;
--			info->alloc_offset = WP_CONVENTIONAL;
--			info->capacity = device->zone_info->zone_size;
--			continue;
--		}
--
--		/*
--		 * The group is mapped to a sequential zone. Get the zone write
--		 * pointer to determine the allocation offset within the zone.
--		 */
--		WARN_ON(!IS_ALIGNED(info->physical, fs_info->zone_size));
--		zone = device->zone_info->zones[info->physical / fs_info->zone_size];
--
--		info->capacity = (zone.capacity << SECTOR_SHIFT);
--
--		switch (zone.cond) {
--		case BLK_ZONE_COND_OFFLINE:
--		case BLK_ZONE_COND_READONLY:
--			error(
--		"zoned: offline/readonly zone %llu on device %s (devid %llu)",
--			      info->physical / fs_info->zone_size, device->name,
--			      device->devid);
--			info->alloc_offset = WP_MISSING_DEV;
--			break;
--		case BLK_ZONE_COND_EMPTY:
--			info->alloc_offset = 0;
--			break;
--		case BLK_ZONE_COND_FULL:
--			info->alloc_offset = fs_info->zone_size;
--			break;
--		default:
--			/* Partially used zone */
--			info->alloc_offset = ((zone.wp - zone.start) << SECTOR_SHIFT);
--			set_bit(i, active);
--			break;
--		}
- 	}
- 
- 	if (num_conventional > 0) {
+@@ -1159,6 +1189,8 @@ int btrfs_load_block_group_zone_info(struct btrfs_fs_info *fs_info,
+ 		ret = btrfs_load_block_group_raid1(fs_info, cache, map, zone_info, active);
+ 		break;
+ 	case BTRFS_BLOCK_GROUP_RAID0:
++		ret = btrfs_load_block_group_raid0(fs_info, cache, map, zone_info, active);
++		break;
+ 	case BTRFS_BLOCK_GROUP_RAID10:
+ 		/* Temporarily fails these case, until following commits. */
+ 		fallthrough;
 -- 
 2.48.1
 

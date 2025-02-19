@@ -1,53 +1,53 @@
 Received: from esa4.hgst.iphmx.com (esa4.hgst.iphmx.com [216.71.154.42])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5C8A61C5D44
-	for <linux-btrfs@vger.kernel.org>; Wed, 19 Feb 2025 07:58:18 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A1B091C54A7
+	for <linux-btrfs@vger.kernel.org>; Wed, 19 Feb 2025 07:58:17 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=216.71.154.42
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1739951900; cv=none; b=fYhrZZZSdobVi4IUKqsFCQn7vKG5TDUu+aN483E5F2z3Khw5CnoCqiYAi3A2k/OVJlR1LoZVbj0XhiRcmza7kOczGTkTjYDOR589nP485ay0Qv56B2Mz1cF+Ut4gb2Z4Px521IFJvc+71ggwdqlLHqmV9GwfmkvoMHTIBaUt1fY=
+	t=1739951902; cv=none; b=gCzDdxqrOrq1gqrfLdsK091BBpxu3BgGhlEgnEaEqoZjJmjhnZbI/9YT8ULd9fUyNik90Kia72WzkXcMJWwBNTXZme4YwER6ZSFjTxsLhnf6sd10tSgBkrj1tHnCgMny52Z/eXuaRL95+GplPAyvzdv6TupZDzqnNphqg5oS8kE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1739951900; c=relaxed/simple;
-	bh=sUmSo10U0500bOerBdfktQaQwZHt39MTwCzMtKDfq1Y=;
+	s=arc-20240116; t=1739951902; c=relaxed/simple;
+	bh=wrHS5cUCM5L5AttiYjQt+RQCbR4CsmRd5QhN57OxLzc=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=p9YWnQ/r41vXT7j7ZCVl5Ow0X5p7g/9GS54hu0wNIUkQhfiFdtRKp6V5rBwsmEANCQvWxzP3/CQb/RB6LEwfj3isyPuNTiQOkH849UHUSnQ5nI86pFPSJf0fr3gsZD34G3Pcm+CUq2WYGG+l1BhIvRkhDnl0g3/0MW8fervSB1A=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=oLubzzP8; arc=none smtp.client-ip=216.71.154.42
+	 MIME-Version; b=avuNZoTjJGY+XDHDUaBTn3k3KfovU1D/KcKSeaW5zfdrCmszNXyiKPsDvRv/WnHZZlSrhU/mze55ioXDsP75R9Mw6ASIs90IWazoe3cmDpFsiePPyN4ZSKDuz6jxVR7eZZ6babS9weqrltfZm+QgEmcHqyz+agiIaL8n+OrXU/k=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=lI9FVlPk; arc=none smtp.client-ip=216.71.154.42
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="oLubzzP8"
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="lI9FVlPk"
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1739951898; x=1771487898;
+  t=1739951897; x=1771487897;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=sUmSo10U0500bOerBdfktQaQwZHt39MTwCzMtKDfq1Y=;
-  b=oLubzzP8lgSpeF1RYnFGSDlCLBlpivgvPyDFjdXeVW1F81HFppNQZgwe
-   aTmbqguERYX+Xm0zlotyvHs/TxJg+2QhYuGK80GP27bwFuw2+vchsn1OP
-   rBB/R6wcw/5QhZri3OEG9y3nFCdGYNbL7Dp9+emonlx0xlBx8zB3rbDxr
-   EJGNcFs/mXCDye93JKuJRsspUva6wla9/qt5MoeWQUiDUH+efI4g597TW
-   rKaOjv5Q7CYDAJY+IkVccdFuTDz4PZlQVx9jGgXJOG4qMKqKBNehW6Y9D
-   RFCirg6XJeiYDTLb5DL5X25zLGPvZlQC5WUMCQkc1HMPDV6bm+tpucWmu
-   w==;
-X-CSE-ConnectionGUID: I5GA30mpQue46+/Imq+Hng==
-X-CSE-MsgGUID: WJ7RSro6Tze1hDIVCdSsKQ==
+  bh=wrHS5cUCM5L5AttiYjQt+RQCbR4CsmRd5QhN57OxLzc=;
+  b=lI9FVlPkFpS7N4wIpUngu1+i296E4+FQ0wTef7l0IcFqr2Ud2ypqS1vH
+   VnlblW4A36ctN2BMQQuuL//+uy4E806gtBjmCmpKmA0u4loyzPap+uuH1
+   OxqVFWJIPAMOKxWjLRXH4rqMjsGU5INCtx+2j25KnOj2GMDlwcfpeMrox
+   vD/aEvUAkLWN7B0I0AnMW1WMnv62dezK7JItxCLF3KKFmgJCaZsGazOsV
+   hyX4qWbeFSWyxwawdbQdtXTrDQ9a7+sdE4Q5mTfTM+ftG5oLD7mbhpltU
+   pKveUUX6sN/h0yglq7roePXOgYNryWNEC2OlHoCMisKen+drHMJ7QhAGs
+   Q==;
+X-CSE-ConnectionGUID: zNkK7FJjR6+8e7E5wIj3nA==
+X-CSE-MsgGUID: Q5/vM9gmQWqhJEB1SBG9tw==
 X-IronPort-AV: E=Sophos;i="6.13,298,1732550400"; 
-   d="scan'208";a="38310812"
+   d="scan'208";a="38310808"
 Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 19 Feb 2025 15:58:09 +0800
-IronPort-SDR: 67b58156_vGAhKgt1DbsYXPlMOY+0UCattNvvLw+0o8w1dBTe0FCbHI1
- FMlf7bLLH8kSdbLXEREJiy6j8wYi+emJW03W74A==
+  by ob1.hgst.iphmx.com with ESMTP; 19 Feb 2025 15:58:07 +0800
+IronPort-SDR: 67b58154_6mGAanfhtTAyA7QONGh9JlDl+BWiJyB3aHzGcqpuV0WVeHs
+ ho0K+Va8J6sVrlOG9nzXqzqNo/Lzrywpv1riSHg==
 Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 18 Feb 2025 22:59:34 -0800
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 18 Feb 2025 22:59:33 -0800
 WDCIronportException: Internal
 Received: from 5cg20343qs.ad.shared (HELO naota-xeon..) ([10.224.109.7])
-  by uls-op-cesaip01.wdc.com with ESMTP; 18 Feb 2025 23:58:08 -0800
+  by uls-op-cesaip01.wdc.com with ESMTP; 18 Feb 2025 23:58:06 -0800
 From: Naohiro Aota <naohiro.aota@wdc.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH v2 07/12] btrfs-progs: zoned: factor out SINGLE zone info loading
-Date: Wed, 19 Feb 2025 16:57:51 +0900
-Message-ID: <d74539740f97e9538e919f9f4a60e3101597a706.1739951758.git.naohiro.aota@wdc.com>
+Subject: [PATCH v2 05/12] btrfs-progs: zoned: activate block group on loading
+Date: Wed, 19 Feb 2025 16:57:49 +0900
+Message-ID: <0a272ad61dca26d4ee7f1e7ba474685b21825a05.1739951758.git.naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.48.1
 In-Reply-To: <cover.1739951758.git.naohiro.aota@wdc.com>
 References: <cover.1739951758.git.naohiro.aota@wdc.com>
@@ -59,87 +59,86 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Currently, the userland tool only considers the SINGLE profile, which make it
-fail when a DUP block group is created over one conventional zone and one
-sequential required zone.
+Introduce "zone_is_active" member to struct btrfs_block_group and activate it
+on loading a block group.
 
-Before adding the other profiles support, let's factor out per-profile code
-(actually, SINGLE only) into functions just like as the kernel side.
+Note that activeness check for the extent allocation is currently not
+implemented. The activeness checking requires to activate a non-active block
+group on the extent allocation, which also require finishing a zone in the case
+of hitting the active zone limit. Since mkfs should not hit the limit,
+implementing the zone finishing code would not be necessary at the moment.
 
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
- kernel-shared/zoned.c | 47 +++++++++++++++++++++++++++++++++++++++----
- 1 file changed, 43 insertions(+), 4 deletions(-)
+ kernel-shared/ctree.h |  1 +
+ kernel-shared/zoned.c | 15 +++++++++++++++
+ 2 files changed, 16 insertions(+)
 
+diff --git a/kernel-shared/ctree.h b/kernel-shared/ctree.h
+index f10142df80eb..da0635d567dc 100644
+--- a/kernel-shared/ctree.h
++++ b/kernel-shared/ctree.h
+@@ -286,6 +286,7 @@ struct btrfs_block_group {
+ 	u64 alloc_offset;
+ 	u64 write_offset;
+ 	u64 zone_capacity;
++	bool zone_is_active;
+ 
+ 	u64 global_root_id;
+ };
 diff --git a/kernel-shared/zoned.c b/kernel-shared/zoned.c
-index 4045cf0d2b98..e3240714b415 100644
+index a97466635ecb..ee6c4ee61e4a 100644
 --- a/kernel-shared/zoned.c
 +++ b/kernel-shared/zoned.c
-@@ -958,6 +958,26 @@ static int btrfs_load_zone_info(struct btrfs_fs_info *fs_info, int zone_idx,
- 	return 0;
- }
- 
-+static int btrfs_load_block_group_single(struct btrfs_fs_info *fs_info,
-+					 struct btrfs_block_group *bg,
-+					 struct zone_info *info,
-+					 unsigned long *active)
-+{
-+	if (info->alloc_offset == WP_MISSING_DEV) {
-+		btrfs_err(fs_info,
-+			"zoned: cannot recover write pointer for zone %llu",
-+			info->physical);
-+		return -EIO;
-+	}
-+
-+	bg->alloc_offset = info->alloc_offset;
-+	bg->zone_capacity = info->capacity;
-+	if (test_bit(0, active))
-+		bg->zone_is_active = 1;
-+	return 0;
-+}
-+
-+
- int btrfs_load_block_group_zone_info(struct btrfs_fs_info *fs_info,
- 				     struct btrfs_block_group *cache)
- {
-@@ -972,6 +992,7 @@ int btrfs_load_block_group_zone_info(struct btrfs_fs_info *fs_info,
+@@ -901,6 +901,7 @@ int btrfs_load_block_group_zone_info(struct btrfs_fs_info *fs_info,
+ 	u64 logical = cache->start;
+ 	u64 length = cache->length;
+ 	struct zone_info *zone_info = NULL;
++	unsigned long *active = NULL;
+ 	int ret = 0;
  	int i;
  	u64 last_alloc = 0;
- 	u32 num_conventional = 0;
-+	u64 profile;
+@@ -935,6 +936,13 @@ int btrfs_load_block_group_zone_info(struct btrfs_fs_info *fs_info,
+ 		return -ENOMEM;
+ 	}
  
- 	if (!btrfs_is_zoned(fs_info))
- 		return 0;
-@@ -1039,10 +1060,28 @@ int btrfs_load_block_group_zone_info(struct btrfs_fs_info *fs_info,
++	active = bitmap_zalloc(map->num_stripes);
++	if (!active) {
++		free(zone_info);
++		error_msg(ERROR_MSG_MEMORY, "active bitmap");
++		return -ENOMEM;
++	}
++
+ 	for (i = 0; i < map->num_stripes; i++) {
+ 		struct zone_info *info = &zone_info[i];
+ 		bool is_sequential;
+@@ -948,6 +956,10 @@ int btrfs_load_block_group_zone_info(struct btrfs_fs_info *fs_info,
+ 			continue;
+ 		}
+ 
++		/* Consider a zone as active if we can allow any number of active zones. */
++		if (!device->zone_info->max_active_zones)
++			set_bit(i, active);
++
+ 		is_sequential = btrfs_dev_is_sequential(device, info->physical);
+ 		if (!is_sequential) {
+ 			num_conventional++;
+@@ -983,6 +995,7 @@ int btrfs_load_block_group_zone_info(struct btrfs_fs_info *fs_info,
+ 		default:
+ 			/* Partially used zone */
+ 			info->alloc_offset = ((zone.wp - zone.start) << SECTOR_SHIFT);
++			set_bit(i, active);
+ 			break;
+ 		}
+ 	}
+@@ -1008,8 +1021,10 @@ int btrfs_load_block_group_zone_info(struct btrfs_fs_info *fs_info,
  		ret = -EINVAL;
  		goto out;
  	}
--	/* SINGLE profile case. */
--	cache->alloc_offset = zone_info[0].alloc_offset;
--	cache->zone_capacity = zone_info[0].capacity;
--	cache->zone_is_active = test_bit(0, active);
-+
-+	profile = map->type & BTRFS_BLOCK_GROUP_PROFILE_MASK;
-+	switch (profile) {
-+	case 0: /* single */
-+		ret = btrfs_load_block_group_single(fs_info, cache, &zone_info[0], active);
-+		break;
-+	case BTRFS_BLOCK_GROUP_DUP:
-+	case BTRFS_BLOCK_GROUP_RAID1:
-+	case BTRFS_BLOCK_GROUP_RAID1C3:
-+	case BTRFS_BLOCK_GROUP_RAID1C4:
-+	case BTRFS_BLOCK_GROUP_RAID0:
-+	case BTRFS_BLOCK_GROUP_RAID10:
-+		/* Temporarily fails these case, until following commits. */
-+		fallthrough;
-+	case BTRFS_BLOCK_GROUP_RAID5:
-+	case BTRFS_BLOCK_GROUP_RAID6:
-+	default:
-+		error("zoned: profile %s not yet supported",
-+		      btrfs_bg_type_to_raid_name(map->type));
-+		ret = -EINVAL;
-+		goto out;
-+	}
++	/* SINGLE profile case. */
+ 	cache->alloc_offset = zone_info[0].alloc_offset;
+ 	cache->zone_capacity = zone_info[0].capacity;
++	cache->zone_is_active = test_bit(0, active);
  
  out:
  	/* An extent is allocated after the write pointer */

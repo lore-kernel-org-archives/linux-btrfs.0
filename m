@@ -1,36 +1,36 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 50B5E1F2369
-	for <linux-btrfs@vger.kernel.org>; Thu, 20 Feb 2025 11:04:53 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E20311F2382
+	for <linux-btrfs@vger.kernel.org>; Thu, 20 Feb 2025 11:04:54 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1740049494; cv=none; b=YTItT1SWLyMHCgTWdLBt+6wx5Zn0aPbtKWLMV3jbVeLEQAEKNEeqeEwa6O+BXQbXWJ+ZoNN7Iozq9aaTUYwcKY6zFS0ocxG5U+5GVSevwVkb+aH7KjsOLe1xXbQVRLsflhp0hr4ALdtg1E1vsAxuav0XzfqQrwC3jfVmDT2icoY=
+	t=1740049495; cv=none; b=t2MHD0U1A3mdPKqWalsYt/ZiV1ytMLRNWzeAS/piPJLCrUX2layBPOmvI6UspBn9JNrsxhMCZ/pwRnq1zZmOVIhCr35ifjtL1HOcm/bJfbBpH76UQMqVu5n9enN+RtpXyq1RdCTUhOIsa1VIegR/IhcD7aGiTd66ZSRCdZL8+vY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1740049494; c=relaxed/simple;
-	bh=XxZo2AnDSw5lV1zznAhDaeSUgPufzogr8jT0/2qq8Mo=;
+	s=arc-20240116; t=1740049495; c=relaxed/simple;
+	bh=TU4XK2ZNfLY7/Ncb2aX2uSF786rE++vnCm1jmieZQ44=;
 	h=From:To:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version; b=qnuZ/Of9uYWCBuFY2BBso4LslMsLQWIbGz7/PSynUmzWpdcghuQ/BpDVR43CXGyU2IPRlpVbfENUiA6fKLe25Dco4iEZdsCaWc7u9v6sJmU+K/OdI7gcEOI1kCNSjmvMwqO52o2zIMBtRy/S/aQJyxqDpYgabINafjnvAsQCM0M=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=QbLYiSfr; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version; b=Yj/OlCH2wTtfsZS4dWnFsPLAQ9I72A2QZZteJRyyclb+mghJntlc4yuMQCg1N8CBsX1723Ej7RgnIP6+5gR0IKH7mB9veCghirDIY31UShiBZlmneiLeCYFhoq6XC7n0i9cDjIRdwlBy8ol2Qq+Qjabxau5se5FXWmrFdFkahwA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=adFM72Qk; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="QbLYiSfr"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 37781C4CEE3
-	for <linux-btrfs@vger.kernel.org>; Thu, 20 Feb 2025 11:04:53 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="adFM72Qk"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 3D3E0C4CEDD
+	for <linux-btrfs@vger.kernel.org>; Thu, 20 Feb 2025 11:04:54 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1740049493;
-	bh=XxZo2AnDSw5lV1zznAhDaeSUgPufzogr8jT0/2qq8Mo=;
+	s=k20201202; t=1740049494;
+	bh=TU4XK2ZNfLY7/Ncb2aX2uSF786rE++vnCm1jmieZQ44=;
 	h=From:To:Subject:Date:In-Reply-To:References:From;
-	b=QbLYiSfr2qfZnmpmT9ooMQrrNbrbDCBeWFra1H06DAltLuGy4O7Qn35c62FWQY4lP
-	 Alr5yOEavKDfQmLk8BnHfQBJzRavHMclDqIRDYwkiIqTOvdZB0MM66YXbTXa7GMXF3
-	 /PbBsqa4UmVwcB2Pdtsp1reJXK+2AQbFtlfe+elMy8z0HQNp7wXl+0DEdZhUP389pq
-	 jVtMvasjdnfdwi50KUDH9bjN4VmkxR1UrHNIs0bQvfhA95n4XrEMgT04QNkhRQVFJF
-	 bb/GerPz7p71I/B4A6OpA1YQHNIv2XyJ3pd3g8/1Ji1fcTvY25kxRiq/8x4NUWce/h
-	 8B+0YltISCj1Q==
+	b=adFM72Qk1BR9hyN+RB8OOrpj77dztniRZeXif5HewcX6VzGJkjKRn9siSPSblbB7o
+	 66Lj0V25GoADUd8kvZ7TlYtJPaA3vB8kspQg3lJNI7HYxTacGVfUEEiAuUD+n6bEaq
+	 4TGbWpXboAp7r/MWUvrzu7OQpFmnOQ6vEDNptxwd6i6nLzIW62FpX5jv7iFvZl+X05
+	 TF7AQIa+n4SWJsef4UCkgKWYZftrmQuzhk0VPGDADDXsyCqX4xhlj0I/6OaTNeT9El
+	 vEn6QVJ/WY8C/mYksSE6Vc7Fns7nTXpXCO0u0tmRdD/pxAVodqEoYntYrFifgadKcY
+	 mdTPSoBzNzSNw==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 06/30] btrfs: send: implement fs_path_add_path() using fs_path_add()
-Date: Thu, 20 Feb 2025 11:04:19 +0000
-Message-Id: <ff39cbb59348ce36b4fe6fe32d3696f17f0e0920.1740049233.git.fdmanana@suse.com>
+Subject: [PATCH v2 07/30] btrfs: send: simplify return logic from fs_path_add_from_extent_buffer()
+Date: Thu, 20 Feb 2025 11:04:20 +0000
+Message-Id: <5138a07e83870cb29bb09a340f7ec7abe7eb7d78.1740049233.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.34.1
 In-Reply-To: <cover.1740049233.git.fdmanana@suse.com>
 References: <cover.1740049233.git.fdmanana@suse.com>
@@ -44,41 +44,35 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-The helper fs_path_add_path() is basically a copy of fs_path_add() and it
-can be made a wrapper around fs_path_add(). So do that and also make it
-inline and constify its second argument.
+There is no need to have an 'out' label and jump into it since there are
+no resource cleanups to perform (release locks, free memory, etc), so
+make this simpler by removing the label and goto and instead return
+directly.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/send.c | 14 ++------------
- 1 file changed, 2 insertions(+), 12 deletions(-)
+ fs/btrfs/send.c | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
 
 diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 2203745569e0..7a75f1d963f9 100644
+index 7a75f1d963f9..b9de1ab94367 100644
 --- a/fs/btrfs/send.c
 +++ b/fs/btrfs/send.c
-@@ -566,19 +566,9 @@ static int fs_path_add(struct fs_path *p, const char *name, int name_len)
- 	return 0;
- }
+@@ -580,12 +580,11 @@ static int fs_path_add_from_extent_buffer(struct fs_path *p,
  
--static int fs_path_add_path(struct fs_path *p, struct fs_path *p2)
-+static inline int fs_path_add_path(struct fs_path *p, const struct fs_path *p2)
- {
--	int ret;
--	const int p2_len = fs_path_len(p2);
--	char *prepared;
--
--	ret = fs_path_prepare_for_add(p, p2_len, &prepared);
--	if (ret < 0)
+ 	ret = fs_path_prepare_for_add(p, len, &prepared);
+ 	if (ret < 0)
 -		goto out;
--	memcpy(prepared, p2->start, p2_len);
--
++		return ret;
+ 
+ 	read_extent_buffer(eb, prepared, off, len);
+ 
 -out:
 -	return ret;
-+	return fs_path_add(p, p2->start, fs_path_len(p2));
++	return 0;
  }
  
- static int fs_path_add_from_extent_buffer(struct fs_path *p,
+ static int fs_path_copy(struct fs_path *p, struct fs_path *from)
 -- 
 2.45.2
 

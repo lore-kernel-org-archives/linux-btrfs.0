@@ -1,64 +1,64 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 202411F462D
-	for <linux-btrfs@vger.kernel.org>; Thu, 20 Feb 2025 10:01:54 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5696F1EC016
+	for <linux-btrfs@vger.kernel.org>; Thu, 20 Feb 2025 10:01:57 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1740045717; cv=none; b=NCkbiXWQzBgBUHKMRFXJAHTl1HiQZc2UZ1TybkWORzd0UbGtGk7yN1vfB0kk2edkjHd7G82UPL2VPnA3qoyIPptQyt9lfANoJLlLYP1GylW+VOXaPAiRF/ucOP9xK7mXoB8pjBlcWSvHbAa6QBfKx43tURhtyCxg3FCQSOHc2xM=
+	t=1740045719; cv=none; b=VDYVYUJOi7LWXqtcOmukEyccDzqGs93G4zwcfNghVqs7iCB87it+YA7/DsplpzZJOi8MnX6LDdyERiSrJSmWszq+Ww0xfwED15++WdWlV/06TdhqiVTpKm8ef3WYL9EkjTaP95F22UxaeeDlhS5SmKglmMLsuo6Z3vtHGQLwxXE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1740045717; c=relaxed/simple;
-	bh=lTl2Utm/WMfPNG7Ks5L1CtDYUa8gg1tg8W2ZA7mmTkM=;
+	s=arc-20240116; t=1740045719; c=relaxed/simple;
+	bh=kha56TYQ2MQn7UWa88c2/V1VKAMdurh5rPG5fICkdzk=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=XBdnytkdR4khqARjDOoPFINsZw7QhoBMQxnQfjq680UKoMzNi4DCWU+oQzG7l6TiDvKlPrrqz644kTDnGMt6Og1BQ6VJzqcL4xZ9lANEoDwRRWOgzcgHxE/yS+JL7mVAqpIUiXgi9hu5C549eUAvl4heAQlEC8I7FbHyKXK6e/Q=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=SxX4GSh9; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=TgNkRw49; arc=none smtp.client-ip=195.135.223.131
+	 MIME-Version; b=GWz4M0jtaUCAtOoZQNUe6xW0e8QPZsmkkbjTiWU3WCXP1WBWpY/2LvEUgHuXwkdB2jkHRG2VLtsh+xUourPifBBwF3zrSJuyJjczU0T8v5x5PlLnyVYeH4uI7JYBIIq3BGyJys2YKqxn1zhFTH+X0Ojv2k2kWV17OlCyNRUqQ0Q=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=od13hxuM; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=od13hxuM; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="SxX4GSh9";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="TgNkRw49"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="od13hxuM";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="od13hxuM"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id F286B1F387;
-	Thu, 20 Feb 2025 10:01:50 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id C11F72117C;
+	Thu, 20 Feb 2025 10:01:55 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1740045711; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1740045715; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=3h+h9Cfdtb3UuLisXzq7Em57C/hbkq+7BwibWkpa/5k=;
-	b=SxX4GSh9PcrYCwIt8QU8OScOkEwsHImXY5qITfvQ5YHp8VeoYd/ltZqGkqKXmMFGCplVW+
-	nhMZqmZwLvab5RbD7OOH3RZJ036hbV+cObFZq6wS1HZn+wnGGxrI31G7B8RTa03/hb2d7P
-	DJ+1KwULGpJcELTroXhlxWMLsLnfgTY=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=TgNkRw49
+	bh=yGOKkkaFLRx5ms1zmf5thw50uJpnrYFUtGC8UMLwH0M=;
+	b=od13hxuMPsLd3X25cvfk3YrKRcsEK0qCU5nQoQEKIvPNAlP8W7TyIBoZ9d6IFqFR/PzUSi
+	cUyYkRYZQeJVmxrGPPp0vIsm8fB8NIOo2bGD/f97bxJToeXqbQe2UZXQ6oRe2coNckMEI8
+	x9b/nSJaw7e2TRCkQXgPq6mvQ0A8MUY=
+Authentication-Results: smtp-out1.suse.de;
+	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1740045710; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1740045715; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=3h+h9Cfdtb3UuLisXzq7Em57C/hbkq+7BwibWkpa/5k=;
-	b=TgNkRw49L3JKu14hfcci0XE8cd8dHM8c0iGMnXAyPmRGkpSJl3dod7PMrDmbl4exaTuLTv
-	gJrn57wHdFc0UoVXcYRc4jprSZixl6Ixw26ppDWCQlw8u9y+zX57B/LRv0Z/vtEG4NqJVV
-	bOANAWzoxxtUlJw1i4I2/ODOpRYfTIU=
+	bh=yGOKkkaFLRx5ms1zmf5thw50uJpnrYFUtGC8UMLwH0M=;
+	b=od13hxuMPsLd3X25cvfk3YrKRcsEK0qCU5nQoQEKIvPNAlP8W7TyIBoZ9d6IFqFR/PzUSi
+	cUyYkRYZQeJVmxrGPPp0vIsm8fB8NIOo2bGD/f97bxJToeXqbQe2UZXQ6oRe2coNckMEI8
+	x9b/nSJaw7e2TRCkQXgPq6mvQ0A8MUY=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id EB7D013301;
-	Thu, 20 Feb 2025 10:01:50 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id BB45013301;
+	Thu, 20 Feb 2025 10:01:55 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id Kyl7OY79tme0fwAAD6G6ig
-	(envelope-from <dsterba@suse.com>); Thu, 20 Feb 2025 10:01:50 +0000
+	id 1ha2LZP9tmfCfwAAD6G6ig
+	(envelope-from <dsterba@suse.com>); Thu, 20 Feb 2025 10:01:55 +0000
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 18/22] btrfs: pass struct btrfs_inode to btrfs_extent_same_range()
-Date: Thu, 20 Feb 2025 11:01:46 +0100
-Message-ID: <5f3dbd41c0a59916b88980a40f059618a561afef.1740045551.git.dsterba@suse.com>
+Subject: [PATCH 20/22] btrfs: use struct btrfs_inode inside btrfs_remap_file_range_prep()
+Date: Thu, 20 Feb 2025 11:01:55 +0100
+Message-ID: <6265dcbb7ae31382c6c2c3b043f53f1c4dee35ac.1740045551.git.dsterba@suse.com>
 X-Mailer: git-send-email 2.47.1
 In-Reply-To: <cover.1740045551.git.dsterba@suse.com>
 References: <cover.1740045551.git.dsterba@suse.com>
@@ -69,102 +69,103 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Rspamd-Queue-Id: F286B1F387
-X-Spam-Level: 
-X-Spamd-Result: default: False [-3.01 / 50.00];
+X-Spam-Score: -2.80
+X-Spamd-Result: default: False [-2.80 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	TO_DN_SOME(0.00)[];
 	RCPT_COUNT_TWO(0.00)[2];
-	MIME_TRACE(0.00)[0:+];
-	FUZZY_BLOCKED(0.00)[rspamd.com];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
 	ARC_NA(0.00)[];
 	RCVD_COUNT_TWO(0.00)[2];
+	MIME_TRACE(0.00)[0:+];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	FUZZY_BLOCKED(0.00)[rspamd.com];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	FROM_EQ_ENVFROM(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+];
 	FROM_HAS_DN(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
 	RCVD_TLS_ALL(0.00)[];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.com:email,suse.com:dkim,suse.com:mid]
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Rspamd-Action: no action
-X-Spam-Score: -3.01
+	TO_DN_SOME(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:mid,suse.com:email]
 X-Spam-Flag: NO
+X-Spam-Level: 
 
-Pass a struct btrfs_inode to btrfs_extent_same_range() as it's an
-internal interface, allowing to remove some use of BTRFS_I.
+Use a struct btrfs_inode in btrfs_remap_file_range_prep() as it's an
+internal helper, allowing to remove some use of BTRFS_I.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/reflink.c | 20 +++++++++++---------
- 1 file changed, 11 insertions(+), 9 deletions(-)
+ fs/btrfs/reflink.c | 24 +++++++++++-------------
+ 1 file changed, 11 insertions(+), 13 deletions(-)
 
 diff --git a/fs/btrfs/reflink.c b/fs/btrfs/reflink.c
-index f3aa3f4e9684..63d4a4d22801 100644
+index f63f92e176c8..15c296cb4dac 100644
 --- a/fs/btrfs/reflink.c
 +++ b/fs/btrfs/reflink.c
-@@ -631,12 +631,12 @@ static void btrfs_double_mmap_unlock(struct btrfs_inode *inode1, struct btrfs_in
- 	up_write(&inode2->i_mmap_lock);
- }
- 
--static int btrfs_extent_same_range(struct inode *src, u64 loff, u64 len,
--				   struct inode *dst, u64 dst_loff)
-+static int btrfs_extent_same_range(struct btrfs_inode *src, u64 loff, u64 len,
-+				   struct btrfs_inode *dst, u64 dst_loff)
+@@ -777,24 +777,24 @@ static int btrfs_remap_file_range_prep(struct file *file_in, loff_t pos_in,
+ 				       struct file *file_out, loff_t pos_out,
+ 				       loff_t *len, unsigned int remap_flags)
  {
- 	const u64 end = dst_loff + len - 1;
- 	struct extent_state *cached_state = NULL;
--	struct btrfs_fs_info *fs_info = BTRFS_I(src)->root->fs_info;
-+	struct btrfs_fs_info *fs_info = src->root->fs_info;
- 	const u64 bs = fs_info->sectorsize;
+-	struct inode *inode_in = file_inode(file_in);
+-	struct inode *inode_out = file_inode(file_out);
+-	u64 bs = BTRFS_I(inode_out)->root->fs_info->sectorsize;
++	struct btrfs_inode *inode_in = BTRFS_I(file_inode(file_in));
++	struct btrfs_inode *inode_out = BTRFS_I(file_inode(file_out));
++	u64 bs = inode_out->root->fs_info->sectorsize;
+ 	u64 wb_len;
  	int ret;
  
-@@ -646,9 +646,10 @@ static int btrfs_extent_same_range(struct inode *src, u64 loff, u64 len,
- 	 * because we have already locked the inode's i_mmap_lock in exclusive
- 	 * mode.
- 	 */
--	lock_extent(&BTRFS_I(dst)->io_tree, dst_loff, end, &cached_state);
--	ret = btrfs_clone(src, dst, loff, len, ALIGN(len, bs), dst_loff, 1);
--	unlock_extent(&BTRFS_I(dst)->io_tree, dst_loff, end, &cached_state);
-+	lock_extent(&dst->io_tree, dst_loff, end, &cached_state);
-+	ret = btrfs_clone(&src->vfs_inode, &dst->vfs_inode, loff, len,
-+			  ALIGN(len, bs), dst_loff, 1);
-+	unlock_extent(&dst->io_tree, dst_loff, end, &cached_state);
+ 	if (!(remap_flags & REMAP_FILE_DEDUP)) {
+-		struct btrfs_root *root_out = BTRFS_I(inode_out)->root;
++		struct btrfs_root *root_out = inode_out->root;
  
- 	btrfs_btree_balance_dirty(fs_info);
+ 		if (btrfs_root_readonly(root_out))
+ 			return -EROFS;
  
-@@ -678,8 +679,8 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
- 	chunk_count = div_u64(olen, BTRFS_MAX_DEDUPE_LEN);
- 
- 	for (i = 0; i < chunk_count; i++) {
--		ret = btrfs_extent_same_range(src, loff, BTRFS_MAX_DEDUPE_LEN,
--					      dst, dst_loff);
-+		ret = btrfs_extent_same_range(BTRFS_I(src), loff, BTRFS_MAX_DEDUPE_LEN,
-+					      BTRFS_I(dst), dst_loff);
- 		if (ret)
- 			goto out;
- 
-@@ -688,7 +689,8 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
+-		ASSERT(inode_in->i_sb == inode_out->i_sb);
++		ASSERT(inode_in->vfs_inode.i_sb == inode_out->vfs_inode.i_sb);
  	}
  
- 	if (tail_len > 0)
--		ret = btrfs_extent_same_range(src, loff, tail_len, dst, dst_loff);
-+		ret = btrfs_extent_same_range(BTRFS_I(src), loff, tail_len,
-+					      BTRFS_I(dst), dst_loff);
- out:
- 	spin_lock(&root_dst->root_item_lock);
- 	root_dst->dedupe_in_progress--;
+ 	/* Don't make the dst file partly checksummed */
+-	if ((BTRFS_I(inode_in)->flags & BTRFS_INODE_NODATASUM) !=
+-	    (BTRFS_I(inode_out)->flags & BTRFS_INODE_NODATASUM)) {
++	if ((inode_in->flags & BTRFS_INODE_NODATASUM) !=
++	    (inode_out->flags & BTRFS_INODE_NODATASUM)) {
+ 		return -EINVAL;
+ 	}
+ 
+@@ -813,7 +813,7 @@ static int btrfs_remap_file_range_prep(struct file *file_in, loff_t pos_in,
+ 	 *    to complete so that new file extent items are in the fs tree.
+ 	 */
+ 	if (*len == 0 && !(remap_flags & REMAP_FILE_DEDUP))
+-		wb_len = ALIGN(inode_in->i_size, bs) - ALIGN_DOWN(pos_in, bs);
++		wb_len = ALIGN(inode_in->vfs_inode.i_size, bs) - ALIGN_DOWN(pos_in, bs);
+ 	else
+ 		wb_len = ALIGN(*len, bs);
+ 
+@@ -834,16 +834,14 @@ static int btrfs_remap_file_range_prep(struct file *file_in, loff_t pos_in,
+ 	 * Also we don't need to check ASYNC_EXTENT, as async extent will be
+ 	 * CoWed anyway, not affecting nocow part.
+ 	 */
+-	ret = filemap_flush(inode_in->i_mapping);
++	ret = filemap_flush(inode_in->vfs_inode.i_mapping);
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	ret = btrfs_wait_ordered_range(BTRFS_I(inode_in), ALIGN_DOWN(pos_in, bs),
+-				       wb_len);
++	ret = btrfs_wait_ordered_range(inode_in, ALIGN_DOWN(pos_in, bs), wb_len);
+ 	if (ret < 0)
+ 		return ret;
+-	ret = btrfs_wait_ordered_range(BTRFS_I(inode_out), ALIGN_DOWN(pos_out, bs),
+-				       wb_len);
++	ret = btrfs_wait_ordered_range(inode_out, ALIGN_DOWN(pos_out, bs), wb_len);
+ 	if (ret < 0)
+ 		return ret;
+ 
 -- 
 2.47.1
 

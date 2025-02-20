@@ -1,64 +1,64 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1E0DD1F0E38
-	for <linux-btrfs@vger.kernel.org>; Thu, 20 Feb 2025 10:01:28 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 787901F3D59
+	for <linux-btrfs@vger.kernel.org>; Thu, 20 Feb 2025 10:01:30 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1740045689; cv=none; b=P0VQjuj/GcxfZvBeyGBx0y3QOEHtV7KdrmuBkEyZrfQfBNX1bqTuhuMnF9lAi4tartXPDNQtOl9mvvQgBbNKc6e63yayudqCeP2yvdsUFISNiqanHCoDihnBT19640vdHQdB5M+bvVuJySi+RDSmYVh6k/s/VaMw3QgEHCgfnr0=
+	t=1740045692; cv=none; b=QbCUGMmXnSM+9BWPy8zI+Pbjjnm0mwULQAJgUwx7U240LhJQIjRi2a0JFpd+duyTwgerqoZDf5MXid6jwnjQUHjSP7nEllVWvolA+lFDV51rrzorjunXFzYI9ievXhkK0eNsGHdZRaENLxnOQeYOPSGi4yD7AuX8BIdLCweyLJU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1740045689; c=relaxed/simple;
-	bh=cpbEOqesFs/Itv2dqrj0x78fYQFkirpc1A+f2mjDerY=;
+	s=arc-20240116; t=1740045692; c=relaxed/simple;
+	bh=Mb7PWOHePadHQiIAyQWaimzmHX/yvlOHxri3YkK8q1c=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=WvuTCUDROuQk64Zz6DDmatewqVSbfZ1S1zRONgEEenJ6P9kuPBkWyX4nVAXlQrFHPhzmtay5YqKvEsVhKpidVpWUhOsT7TsFha9ijHpUAH2NPoqJi0KkUvpbhaXA0fKB60fqGzjir2P0skqr/gvcu/GKb42WbgPjgRdhdGAwH3Y=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=NwT/NrWI; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=t+o73we/; arc=none smtp.client-ip=195.135.223.131
+	 MIME-Version; b=P2K0+iRaDBKhla6X4/a7LfiuoeuKeyhP8g8fRilb40caWk0t2LZsyYGJz5EtOg5+KeZWZnUOupQZFtHBkxCCZwj7phGUfTZbylJRSaD6rOjNfijxQWhsxk1fJy1iftaDHhDeSpfyEt/vLbIJKvduL/Zb/n2GLo6XlHTTQGH6Ygg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=ZlxQItG5; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=ZlxQItG5; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="NwT/NrWI";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="t+o73we/"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="ZlxQItG5";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="ZlxQItG5"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id EF14C1F38D;
-	Thu, 20 Feb 2025 10:01:19 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id A9B172117C;
+	Thu, 20 Feb 2025 10:01:28 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1740045680; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1740045688; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=u7xBHBXz9PjJyS98hHHVIHTcskY3AxNFaBXUU73epLw=;
-	b=NwT/NrWIjoB3fklK0ZViMsORpYl8jr0Pt9/OhXXjLn1EUS/2rP/baGTluTlzHPf6uYqPd5
-	gVkjBMbGTDetOW3O1TO0Ses1fw/Hk1D1tyaduTr9lZesTFr62rzE9tRD9SAupLyDB0YhKd
-	SRgp5ommh/XoG+E51alFegZJf7ML/Wo=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b="t+o73we/"
+	bh=VSZDS6ucxl8xTcoR2TkRABqO/DtZ25lRHio2pn3jOAQ=;
+	b=ZlxQItG5f1vPQdwS0oMKMebU4w+L88a8vh+viGa3jDmCWAIYayqQO7OdnyWfhJMDgSJbxi
+	Sd3wtOF/xpoxsMcfu/ZauVgMEoGVAkfC0lkhjOe02khtTuLZfZ41eFhO4sOMIt0vj+wLPl
+	n7BZoVKVHbBCu5Bj6v1aUsy1efvQy+U=
+Authentication-Results: smtp-out1.suse.de;
+	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1740045679; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1740045688; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=u7xBHBXz9PjJyS98hHHVIHTcskY3AxNFaBXUU73epLw=;
-	b=t+o73we/u2P5mQS4lnQMnQrDM7ev3mXuSvkPVQMgfBSdVJEwm7q1wY2XP1hihuC3eQHfIX
-	3WgQ2cNfBDSwJZnQMtV+PQ6m4WURgXCn52kMbp1xokPJccgvOSPxAndZZoumkJ3K/lrnsm
-	ocbS/w7KADQe1hZ8xdejcuPglbl9arA=
+	bh=VSZDS6ucxl8xTcoR2TkRABqO/DtZ25lRHio2pn3jOAQ=;
+	b=ZlxQItG5f1vPQdwS0oMKMebU4w+L88a8vh+viGa3jDmCWAIYayqQO7OdnyWfhJMDgSJbxi
+	Sd3wtOF/xpoxsMcfu/ZauVgMEoGVAkfC0lkhjOe02khtTuLZfZ41eFhO4sOMIt0vj+wLPl
+	n7BZoVKVHbBCu5Bj6v1aUsy1efvQy+U=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id DC4C113301;
-	Thu, 20 Feb 2025 10:01:19 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id A252C13301;
+	Thu, 20 Feb 2025 10:01:28 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id LijHNW/9tmd9fwAAD6G6ig
-	(envelope-from <dsterba@suse.com>); Thu, 20 Feb 2025 10:01:19 +0000
+	id bxyfJ3j9tmeJfwAAD6G6ig
+	(envelope-from <dsterba@suse.com>); Thu, 20 Feb 2025 10:01:28 +0000
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 10/22] btrfs: pass struct btrfs_inode to btrfs_fill_inode()
-Date: Thu, 20 Feb 2025 11:01:15 +0100
-Message-ID: <1fa9fcdb29ad9f32578570d3248fe2ac6c3045a0.1740045551.git.dsterba@suse.com>
+Subject: [PATCH 12/22] btrfs: pass struct btrfs_inode to btrfs_inode_inherit_props()
+Date: Thu, 20 Feb 2025 11:01:24 +0100
+Message-ID: <539e9071bdc7c268eeddf0c9d3ed21a7cb8ec185.1740045551.git.dsterba@suse.com>
 X-Mailer: git-send-email 2.47.1
 In-Reply-To: <cover.1740045551.git.dsterba@suse.com>
 References: <cover.1740045551.git.dsterba@suse.com>
@@ -69,158 +69,150 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Rspamd-Queue-Id: EF14C1F38D
-X-Spam-Level: 
-X-Spamd-Result: default: False [-3.01 / 50.00];
+X-Spam-Score: -2.80
+X-Spamd-Result: default: False [-2.80 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
 	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	ARC_NA(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	FUZZY_BLOCKED(0.00)[rspamd.com];
-	TO_DN_SOME(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	FROM_HAS_DN(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.com:email,suse.com:dkim,suse.com:mid];
-	RCVD_TLS_ALL(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
 	RCPT_COUNT_TWO(0.00)[2];
+	ARC_NA(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	MIME_TRACE(0.00)[0:+];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Rspamd-Action: no action
-X-Spam-Score: -3.01
+	FUZZY_BLOCKED(0.00)[rspamd.com];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	TO_DN_SOME(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:mid,suse.com:email]
 X-Spam-Flag: NO
+X-Spam-Level: 
 
-Pass a struct btrfs_inode to btrfs_fill_inode() as it's an internal
+Pass a struct btrfs_inode to btrfs_inherit_props() as it's an internal
 interface, allowing to remove some use of BTRFS_I.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/delayed-inode.c | 49 ++++++++++++++++++++--------------------
- fs/btrfs/delayed-inode.h |  2 +-
- fs/btrfs/inode.c         |  2 +-
- 3 files changed, 27 insertions(+), 26 deletions(-)
+ fs/btrfs/inode.c |  6 ++++--
+ fs/btrfs/props.c | 23 +++++++++++------------
+ fs/btrfs/props.h |  5 ++---
+ 3 files changed, 17 insertions(+), 17 deletions(-)
 
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index bcafbb5ba61d..b18052213a5d 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -1856,13 +1856,14 @@ static void fill_stack_inode_item(struct btrfs_trans_handle *trans,
- 	btrfs_set_stack_timespec_nsec(&inode_item->otime, inode->i_otime_nsec);
- }
- 
--int btrfs_fill_inode(struct inode *inode, u32 *rdev)
-+int btrfs_fill_inode(struct btrfs_inode *inode, u32 *rdev)
- {
--	struct btrfs_fs_info *fs_info = BTRFS_I(inode)->root->fs_info;
-+	struct btrfs_fs_info *fs_info = inode->root->fs_info;
- 	struct btrfs_delayed_node *delayed_node;
- 	struct btrfs_inode_item *inode_item;
-+	struct inode *vfs_inode = &inode->vfs_inode;
- 
--	delayed_node = btrfs_get_delayed_node(BTRFS_I(inode));
-+	delayed_node = btrfs_get_delayed_node(inode);
- 	if (!delayed_node)
- 		return -ENOENT;
- 
-@@ -1875,39 +1876,39 @@ int btrfs_fill_inode(struct inode *inode, u32 *rdev)
- 
- 	inode_item = &delayed_node->inode_item;
- 
--	i_uid_write(inode, btrfs_stack_inode_uid(inode_item));
--	i_gid_write(inode, btrfs_stack_inode_gid(inode_item));
--	btrfs_i_size_write(BTRFS_I(inode), btrfs_stack_inode_size(inode_item));
--	btrfs_inode_set_file_extent_range(BTRFS_I(inode), 0,
--			round_up(i_size_read(inode), fs_info->sectorsize));
--	inode->i_mode = btrfs_stack_inode_mode(inode_item);
--	set_nlink(inode, btrfs_stack_inode_nlink(inode_item));
--	inode_set_bytes(inode, btrfs_stack_inode_nbytes(inode_item));
--	BTRFS_I(inode)->generation = btrfs_stack_inode_generation(inode_item);
--        BTRFS_I(inode)->last_trans = btrfs_stack_inode_transid(inode_item);
-+	i_uid_write(vfs_inode, btrfs_stack_inode_uid(inode_item));
-+	i_gid_write(vfs_inode, btrfs_stack_inode_gid(inode_item));
-+	btrfs_i_size_write(inode, btrfs_stack_inode_size(inode_item));
-+	btrfs_inode_set_file_extent_range(inode, 0,
-+			round_up(i_size_read(vfs_inode), fs_info->sectorsize));
-+	vfs_inode->i_mode = btrfs_stack_inode_mode(inode_item);
-+	set_nlink(vfs_inode, btrfs_stack_inode_nlink(inode_item));
-+	inode_set_bytes(vfs_inode, btrfs_stack_inode_nbytes(inode_item));
-+	inode->generation = btrfs_stack_inode_generation(inode_item);
-+        inode->last_trans = btrfs_stack_inode_transid(inode_item);
- 
--	inode_set_iversion_queried(inode,
-+	inode_set_iversion_queried(vfs_inode,
- 				   btrfs_stack_inode_sequence(inode_item));
--	inode->i_rdev = 0;
-+	vfs_inode->i_rdev = 0;
- 	*rdev = btrfs_stack_inode_rdev(inode_item);
- 	btrfs_inode_split_flags(btrfs_stack_inode_flags(inode_item),
--				&BTRFS_I(inode)->flags, &BTRFS_I(inode)->ro_flags);
-+				&inode->flags, &inode->ro_flags);
- 
--	inode_set_atime(inode, btrfs_stack_timespec_sec(&inode_item->atime),
-+	inode_set_atime(vfs_inode, btrfs_stack_timespec_sec(&inode_item->atime),
- 			btrfs_stack_timespec_nsec(&inode_item->atime));
- 
--	inode_set_mtime(inode, btrfs_stack_timespec_sec(&inode_item->mtime),
-+	inode_set_mtime(vfs_inode, btrfs_stack_timespec_sec(&inode_item->mtime),
- 			btrfs_stack_timespec_nsec(&inode_item->mtime));
- 
--	inode_set_ctime(inode, btrfs_stack_timespec_sec(&inode_item->ctime),
-+	inode_set_ctime(vfs_inode, btrfs_stack_timespec_sec(&inode_item->ctime),
- 			btrfs_stack_timespec_nsec(&inode_item->ctime));
- 
--	BTRFS_I(inode)->i_otime_sec = btrfs_stack_timespec_sec(&inode_item->otime);
--	BTRFS_I(inode)->i_otime_nsec = btrfs_stack_timespec_nsec(&inode_item->otime);
-+	inode->i_otime_sec = btrfs_stack_timespec_sec(&inode_item->otime);
-+	inode->i_otime_nsec = btrfs_stack_timespec_nsec(&inode_item->otime);
- 
--	inode->i_generation = BTRFS_I(inode)->generation;
--	if (S_ISDIR(inode->i_mode))
--		BTRFS_I(inode)->index_cnt = (u64)-1;
-+	vfs_inode->i_generation = inode->generation;
-+	if (S_ISDIR(vfs_inode->i_mode))
-+		inode->index_cnt = (u64)-1;
- 
- 	mutex_unlock(&delayed_node->mutex);
- 	btrfs_release_delayed_node(delayed_node);
-diff --git a/fs/btrfs/delayed-inode.h b/fs/btrfs/delayed-inode.h
-index f4d9feac0d0e..c4b4ba122beb 100644
---- a/fs/btrfs/delayed-inode.h
-+++ b/fs/btrfs/delayed-inode.h
-@@ -133,7 +133,7 @@ int btrfs_commit_inode_delayed_inode(struct btrfs_inode *inode);
- 
- int btrfs_delayed_update_inode(struct btrfs_trans_handle *trans,
- 			       struct btrfs_inode *inode);
--int btrfs_fill_inode(struct inode *inode, u32 *rdev);
-+int btrfs_fill_inode(struct btrfs_inode *inode, u32 *rdev);
- int btrfs_delayed_delete_inode_ref(struct btrfs_inode *inode);
- 
- /* Used for drop dead root */
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index ef02ba48522a..c21d60de936d 100644
+index 8be41aec8dc6..a1ea93bad80e 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -3865,7 +3865,7 @@ static int btrfs_read_locked_inode(struct btrfs_inode *inode, struct btrfs_path
- 	if (ret)
- 		goto out;
+@@ -6451,11 +6451,13 @@ int btrfs_create_new_inode(struct btrfs_trans_handle *trans,
+ 		if (IS_ERR(parent)) {
+ 			ret = PTR_ERR(parent);
+ 		} else {
+-			ret = btrfs_inode_inherit_props(trans, inode, parent);
++			ret = btrfs_inode_inherit_props(trans, BTRFS_I(inode),
++							BTRFS_I(parent));
+ 			iput(parent);
+ 		}
+ 	} else {
+-		ret = btrfs_inode_inherit_props(trans, inode, dir);
++		ret = btrfs_inode_inherit_props(trans, BTRFS_I(inode),
++						BTRFS_I(dir));
+ 	}
+ 	if (ret) {
+ 		btrfs_err(fs_info,
+diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
+index 74d3217fc686..16e84a2e24f4 100644
+--- a/fs/btrfs/props.c
++++ b/fs/btrfs/props.c
+@@ -386,16 +386,16 @@ static struct prop_handler prop_handlers[] = {
+ };
  
--	ret = btrfs_fill_inode(vfs_inode, &rdev);
-+	ret = btrfs_fill_inode(inode, &rdev);
- 	if (!ret)
- 		filled = true;
+ int btrfs_inode_inherit_props(struct btrfs_trans_handle *trans,
+-			      struct inode *inode, const struct inode *parent)
++			      struct btrfs_inode *inode,
++			      const struct btrfs_inode *parent)
+ {
+-	struct btrfs_root *root = BTRFS_I(inode)->root;
++	struct btrfs_root *root = inode->root;
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+ 	int ret;
+ 	int i;
+ 	bool need_reserve = false;
  
+-	if (!test_bit(BTRFS_INODE_HAS_PROPS,
+-		      &BTRFS_I(parent)->runtime_flags))
++	if (!test_bit(BTRFS_INODE_HAS_PROPS, &parent->runtime_flags))
+ 		return 0;
+ 
+ 	for (i = 0; i < ARRAY_SIZE(prop_handlers); i++) {
+@@ -406,10 +406,10 @@ int btrfs_inode_inherit_props(struct btrfs_trans_handle *trans,
+ 		if (!h->inheritable)
+ 			continue;
+ 
+-		if (h->ignore(BTRFS_I(inode)))
++		if (h->ignore(inode))
+ 			continue;
+ 
+-		value = h->extract(parent);
++		value = h->extract(&parent->vfs_inode);
+ 		if (!value)
+ 			continue;
+ 
+@@ -417,7 +417,7 @@ int btrfs_inode_inherit_props(struct btrfs_trans_handle *trans,
+ 		 * This is not strictly necessary as the property should be
+ 		 * valid, but in case it isn't, don't propagate it further.
+ 		 */
+-		ret = h->validate(BTRFS_I(inode), value, strlen(value));
++		ret = h->validate(inode, value, strlen(value));
+ 		if (ret)
+ 			continue;
+ 
+@@ -437,16 +437,15 @@ int btrfs_inode_inherit_props(struct btrfs_trans_handle *trans,
+ 				return ret;
+ 		}
+ 
+-		ret = btrfs_setxattr(trans, inode, h->xattr_name, value,
++		ret = btrfs_setxattr(trans, &inode->vfs_inode, h->xattr_name, value,
+ 				     strlen(value), 0);
+ 		if (!ret) {
+-			ret = h->apply(inode, value, strlen(value));
++			ret = h->apply(&inode->vfs_inode, value, strlen(value));
+ 			if (ret)
+-				btrfs_setxattr(trans, inode, h->xattr_name,
++				btrfs_setxattr(trans, &inode->vfs_inode, h->xattr_name,
+ 					       NULL, 0, 0);
+ 			else
+-				set_bit(BTRFS_INODE_HAS_PROPS,
+-					&BTRFS_I(inode)->runtime_flags);
++				set_bit(BTRFS_INODE_HAS_PROPS, &inode->runtime_flags);
+ 		}
+ 
+ 		if (need_reserve) {
+diff --git a/fs/btrfs/props.h b/fs/btrfs/props.h
+index a0cc2a7a1e2e..15d9a025c923 100644
+--- a/fs/btrfs/props.h
++++ b/fs/btrfs/props.h
+@@ -9,7 +9,6 @@
+ #include <linux/types.h>
+ #include <linux/compiler_types.h>
+ 
+-struct inode;
+ struct btrfs_inode;
+ struct btrfs_path;
+ struct btrfs_trans_handle;
+@@ -26,7 +25,7 @@ bool btrfs_ignore_prop(const struct btrfs_inode *inode, const char *name);
+ int btrfs_load_inode_props(struct btrfs_inode *inode, struct btrfs_path *path);
+ 
+ int btrfs_inode_inherit_props(struct btrfs_trans_handle *trans,
+-			      struct inode *inode,
+-			      const struct inode *dir);
++			      struct btrfs_inode *inode,
++			      const struct btrfs_inode *dir);
+ 
+ #endif
 -- 
 2.47.1
 

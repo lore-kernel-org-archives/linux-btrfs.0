@@ -1,64 +1,64 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E493720013A
-	for <linux-btrfs@vger.kernel.org>; Sun, 23 Feb 2025 23:46:55 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1FEC210E4
+	for <linux-btrfs@vger.kernel.org>; Sun, 23 Feb 2025 23:46:59 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1740354417; cv=none; b=BBeaEJ+JPQ4fTg2D+6ac1fm2OkQqWS2Rkdi0qOuOe+jTQiLQuiBql/wBdpJ4s4rVgoFYxAxvqccZh7Y1CS/Fwb8p5Mbd5BxXnozAjb04I4UvCneB/Q8ixF0Rl7wFWz8WQ3VQPMCBTpN/MDEj2oXSeNBYuOtZGIcqyLL8n/pW8Ws=
+	t=1740354422; cv=none; b=ZZiQptWgFeD/aIwnWRiay6nARPAXtjIctFJHRDoLydMHSN4z+/F95Tg47YZ/P97k4VtQitX7LQ+DUaeu28hejpmDV2fPxSu2YP+jn/r1WhrPXx00XadZtaND5tZslGC72xRGZrfTB8zO4TQ7txdLka4dUQFxEsfYvvnCUicxUK4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1740354417; c=relaxed/simple;
-	bh=i1NREQEOqwedTH9zvqm/iJi62HhGcl4DAz/l318TYsM=;
+	s=arc-20240116; t=1740354422; c=relaxed/simple;
+	bh=C3Q4LIZ5p8LgRDFY+3r4jIw7TaXtuJQo0L0jntRv5O0=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=JKyoQarr3fjnPIU3M0jY1JP1VuskoL61Gn128ASGz2mHjUeASoKosbPsw/hBZkRBh0swB7jPfQzX26nDbUvEBGsTkmbs4g3HBz6j9JVkl/ufS82QQvitlmHcoG6KT2AOYnMa1XosQiQZhz4goOYyHEpPKHhdXE5VufOP+kA8E40=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=SM+oztBN; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=SM+oztBN; arc=none smtp.client-ip=195.135.223.130
+	 MIME-Version; b=R1dwjGpWJK0TQFN1lBXC6FB9jM3BVTt48EwIcgIlSShjdqafdhIUh2Adk+TdMIDRToO3T0e2dOVAv+/oaA51Dv3tklX9tnnh0iRlK7HK8lUs3D+nZNZKRbqLJ171D/RApxsjhFoVtZEmZTHhyTaA7EJ81msc7xjngXGY4dNhsMY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=GfVOgcnv; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=GfVOgcnv; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="SM+oztBN";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="SM+oztBN"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="GfVOgcnv";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="GfVOgcnv"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id D6B9021172
-	for <linux-btrfs@vger.kernel.org>; Sun, 23 Feb 2025 23:46:43 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 6CCEB1F38C
+	for <linux-btrfs@vger.kernel.org>; Sun, 23 Feb 2025 23:46:46 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1740354403; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1740354406; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=mfgUKCIFdC4eL72syVHy8yBytO3KZFhikalpDq23VXY=;
-	b=SM+oztBNJq+K4gQA9KXMF65gWPfE2uD4zNpnQVnpJWTRLUfhOftnWMC2LoLkgDyFhioLws
-	5HIay4YHndvuVvpOuu41z9MsyTRpr3n+JeWKs1nbTesittNahqLev2x++RY6YoWFUDtE0g
-	IeQ5O5n/mmwY6j7ZbUoZQUpF0zkwkMo=
-Authentication-Results: smtp-out1.suse.de;
+	bh=bnVOflwM3CrUfaIuDhMzsup2J16GmkpU4GQYiJNBsDo=;
+	b=GfVOgcnvLoaoWjyhNMOE0ZXWu9rA9tXwwj2BZ6R92K3TNNIYV6tB23QYRm5JbYInah8jcb
+	t2Td6LY72ZG/bZfbQRvWI72+NZHYacmJkQ37XQIg9LcwWppvrqHU0YSS5in38H6kP3bc/S
+	51PT40fG4dI10oMYHTqmTCZwTzAAyHI=
+Authentication-Results: smtp-out2.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1740354403; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1740354406; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=mfgUKCIFdC4eL72syVHy8yBytO3KZFhikalpDq23VXY=;
-	b=SM+oztBNJq+K4gQA9KXMF65gWPfE2uD4zNpnQVnpJWTRLUfhOftnWMC2LoLkgDyFhioLws
-	5HIay4YHndvuVvpOuu41z9MsyTRpr3n+JeWKs1nbTesittNahqLev2x++RY6YoWFUDtE0g
-	IeQ5O5n/mmwY6j7ZbUoZQUpF0zkwkMo=
+	bh=bnVOflwM3CrUfaIuDhMzsup2J16GmkpU4GQYiJNBsDo=;
+	b=GfVOgcnvLoaoWjyhNMOE0ZXWu9rA9tXwwj2BZ6R92K3TNNIYV6tB23QYRm5JbYInah8jcb
+	t2Td6LY72ZG/bZfbQRvWI72+NZHYacmJkQ37XQIg9LcwWppvrqHU0YSS5in38H6kP3bc/S
+	51PT40fG4dI10oMYHTqmTCZwTzAAyHI=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 11AD713A42
-	for <linux-btrfs@vger.kernel.org>; Sun, 23 Feb 2025 23:46:42 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id A091B13A42
+	for <linux-btrfs@vger.kernel.org>; Sun, 23 Feb 2025 23:46:45 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id GHq/MGKzu2euTgAAD6G6ig
+	id oM33F2Wzu2euTgAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Sun, 23 Feb 2025 23:46:42 +0000
+	for <linux-btrfs@vger.kernel.org>; Sun, 23 Feb 2025 23:46:45 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/7] btrfs: fix the qgroup data free range for inline data extents
-Date: Mon, 24 Feb 2025 10:16:17 +1030
-Message-ID: <ee3f2825c85a104f23fb3703052383340fb676ce.1740354271.git.wqu@suse.com>
+Subject: [PATCH 4/7] btrfs: make btrfs_do_readpage() to do block-by-block read
+Date: Mon, 24 Feb 2025 10:16:19 +1030
+Message-ID: <115f1044e9d341b8507cae894a7e2dece5f41445.1740354271.git.wqu@suse.com>
 X-Mailer: git-send-email 2.48.1
 In-Reply-To: <cover.1740354271.git.wqu@suse.com>
 References: <cover.1740354271.git.wqu@suse.com>
@@ -94,46 +94,137 @@ X-Spamd-Result: default: False [-2.80 / 50.00];
 X-Spam-Flag: NO
 X-Spam-Level: 
 
-Inside function __cow_file_range_inline() since the inlined data no
-longer takes any data space, we need to free up the reserved space.
+Currently if a btrfs has its block size (the older sector size) smaller
+than the page size, btrfs_do_readpage() will handle the range extent by
+extent, this is good for performance as it doesn't need to re-lookup the
+same extent map again and again.
+(Although __get_extent_map() already does extra cached em check, thus
+the optimization is not that obvious)
 
-However the code is still using the old page size == sector size
-assumption, and will not handle subpage case well.
+This is totally fine and is a valid optimization, but it has an
+assumption that, there is no partial uptodate range in the page.
 
-Thankfully it is not going to cause any problems because we have two extra
-safe nets:
+Meanwhile there is an incoming feature, requiring btrfs to skip the full
+page read if a buffered write range covers a full block but not a full
+page.
 
-- Inline data extents creation is disable for sector size < page size
-  cases for now
-  But it won't stay that for long.
+In that case, we can have a page that is partially uptodate, and the
+current per-extent lookup can not handle such case.
 
-- btrfs_qgroup_free_data() will only clear ranges which are already
-  reserved
-  So even if we pass a range larger than what we need, it should still
-  be fine, especially there is only reserved space for a single block at
-  file offset 0 for an inline data extent.
+So here we change btrfs_do_readpage() to do block-by-block read, this
+simplifies the following things:
 
-But just for the sake of consistentcy, fix the call site to use
-sectorsize instead of page size.
+- Remove the need for @iosize variable
+  Because we just use sectorsize as our increment.
+
+- Remove @pg_offset, and calculate it inside the loop when needed
+  It's just offset_in_folio().
+
+- Use a for() loop instead of a while() loop
+
+This will slightly reduce the read performance for subpage cases, but for
+the future where we need to skip already uptodate blocks, it should still
+be worthy.
+
+For block size == page size, this brings no performance change.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/inode.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/btrfs/extent_io.c | 37 ++++++++++++-------------------------
+ 1 file changed, 12 insertions(+), 25 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index fe2c6038064a..0efe9f005149 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -672,7 +672,7 @@ static noinline int __cow_file_range_inline(struct btrfs_inode *inode,
- 	 * And at reserve time, it's always aligned to page size, so
- 	 * just free one page here.
- 	 */
--	btrfs_qgroup_free_data(inode, NULL, 0, PAGE_SIZE, NULL);
-+	btrfs_qgroup_free_data(inode, NULL, 0, fs_info->sectorsize, NULL);
- 	btrfs_free_path(path);
- 	btrfs_end_transaction(trans);
- 	return ret;
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index a6ffee6f6fd9..b3a4a94212c9 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -947,9 +947,7 @@ static int btrfs_do_readpage(struct folio *folio, struct extent_map **em_cached,
+ 	u64 last_byte = i_size_read(inode);
+ 	struct extent_map *em;
+ 	int ret = 0;
+-	size_t pg_offset = 0;
+-	size_t iosize;
+-	size_t blocksize = fs_info->sectorsize;
++	const size_t blocksize = fs_info->sectorsize;
+ 
+ 	ret = set_folio_extent_mapped(folio);
+ 	if (ret < 0) {
+@@ -960,24 +958,23 @@ static int btrfs_do_readpage(struct folio *folio, struct extent_map **em_cached,
+ 	if (folio_contains(folio, last_byte >> PAGE_SHIFT)) {
+ 		size_t zero_offset = offset_in_folio(folio, last_byte);
+ 
+-		if (zero_offset) {
+-			iosize = folio_size(folio) - zero_offset;
+-			folio_zero_range(folio, zero_offset, iosize);
+-		}
++		if (zero_offset)
++			folio_zero_range(folio, zero_offset,
++					 folio_size(folio) - zero_offset);
+ 	}
+ 	bio_ctrl->end_io_func = end_bbio_data_read;
+ 	begin_folio_read(fs_info, folio);
+-	while (cur <= end) {
++	for (cur = start; cur <= end; cur += blocksize) {
+ 		enum btrfs_compression_type compress_type = BTRFS_COMPRESS_NONE;
++		unsigned long pg_offset = offset_in_folio(folio, cur);
+ 		bool force_bio_submit = false;
+ 		u64 disk_bytenr;
+ 		u64 block_start;
+ 
+ 		ASSERT(IS_ALIGNED(cur, fs_info->sectorsize));
+ 		if (cur >= last_byte) {
+-			iosize = folio_size(folio) - pg_offset;
+-			folio_zero_range(folio, pg_offset, iosize);
+-			end_folio_read(folio, true, cur, iosize);
++			folio_zero_range(folio, pg_offset, end - cur + 1);
++			end_folio_read(folio, true, cur, end - cur + 1);
+ 			break;
+ 		}
+ 		em = get_extent_map(BTRFS_I(inode), folio, cur, end - cur + 1, em_cached);
+@@ -991,8 +988,6 @@ static int btrfs_do_readpage(struct folio *folio, struct extent_map **em_cached,
+ 
+ 		compress_type = extent_map_compression(em);
+ 
+-		iosize = min(extent_map_end(em) - cur, end - cur + 1);
+-		iosize = ALIGN(iosize, blocksize);
+ 		if (compress_type != BTRFS_COMPRESS_NONE)
+ 			disk_bytenr = em->disk_bytenr;
+ 		else
+@@ -1050,18 +1045,13 @@ static int btrfs_do_readpage(struct folio *folio, struct extent_map **em_cached,
+ 
+ 		/* we've found a hole, just zero and go on */
+ 		if (block_start == EXTENT_MAP_HOLE) {
+-			folio_zero_range(folio, pg_offset, iosize);
+-
+-			end_folio_read(folio, true, cur, iosize);
+-			cur = cur + iosize;
+-			pg_offset += iosize;
++			folio_zero_range(folio, pg_offset, blocksize);
++			end_folio_read(folio, true, cur, blocksize);
+ 			continue;
+ 		}
+ 		/* the get_extent function already copied into the folio */
+ 		if (block_start == EXTENT_MAP_INLINE) {
+-			end_folio_read(folio, true, cur, iosize);
+-			cur = cur + iosize;
+-			pg_offset += iosize;
++			end_folio_read(folio, true, cur, blocksize);
+ 			continue;
+ 		}
+ 
+@@ -1072,12 +1062,9 @@ static int btrfs_do_readpage(struct folio *folio, struct extent_map **em_cached,
+ 
+ 		if (force_bio_submit)
+ 			submit_one_bio(bio_ctrl);
+-		submit_extent_folio(bio_ctrl, disk_bytenr, folio, iosize,
++		submit_extent_folio(bio_ctrl, disk_bytenr, folio, blocksize,
+ 				    pg_offset);
+-		cur = cur + iosize;
+-		pg_offset += iosize;
+ 	}
+-
+ 	return 0;
+ }
+ 
 -- 
 2.48.1
 

@@ -1,158 +1,191 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from mail-ej1-f52.google.com (mail-ej1-f52.google.com [209.85.218.52])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3C92E10E4
-	for <linux-btrfs@vger.kernel.org>; Sun, 23 Feb 2025 23:47:12 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3DDCB1AB531
+	for <linux-btrfs@vger.kernel.org>; Mon, 24 Feb 2025 06:31:00 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.52
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1740354434; cv=none; b=HIw/0qmSmol6q738+lPgWQOo572YqEZn0cWW4gafK5AeGamnhoV/Mw8OrIAVRLnJi8Pja3H32AsVB19FNUJiPFW9NdDvBES0hoEuOOHfiEuqFc2wY/MZ95Y09Qn9Piy4QRawtfV0ftK2SAIDN+69zFUksamkI/2qEj3gQ1QdrWo=
+	t=1740378667; cv=none; b=mVEVibRIJJXDqhIH9eAul55zTOwQouD+Uh/lPLLMQwtnFZEorn0oUuWaj4Wk9dqgAYhUAROrj0yLSy7WJPDlqO6Hww7bcR+yaQcbHk04W/Y6tV6gWzYsy3+3tZ0gOrdSnan9AiymHPrGpwsBkZ64IQ8HBEbDCGY+J/yQ6mJ2yNY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1740354434; c=relaxed/simple;
-	bh=Guqkvc0ESluSBC6XHg/Vypb72x6G6eY2rRdOHx4MzLo=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=S/uFAkKjL5/mxn/e7cPeKopfyIgy6anNurQwtTbxtWVuKN0X60S6x1jwB9vRvNDOnwHnpTZr+eoFyR9BOnKTsT308MWwPlo8e5xmNJmYoGoH0Ht3fJyekMKGA7Enmw++wJS25kojTFuddF+yPKEm9nOCmwa8fN4RcxnKCfyMmdc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=GTcjMilh; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=GTcjMilh; arc=none smtp.client-ip=195.135.223.131
+	s=arc-20240116; t=1740378667; c=relaxed/simple;
+	bh=E1dIoHlKR/agJWLj3cGql40S1z8U1XpRW7oPQEEghfE=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=YkmcFU+fno7+/7yt5IyjJ8dUG07SuwrjLKWxgfP1SYDWQqhVxnFpkeUdsfXWRJSTyvEC5Bui0YPku7kgQpBhhOchMauRHdLzxYHw5WK4RsMrmhrY2NTHIJ4v9LkFb77VYFd9Q1m0DmfYt0aNEGNYzjtlHcTdoUuJBKrsizE4Bxs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=bNYLekPp; arc=none smtp.client-ip=209.85.218.52
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="GTcjMilh";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="GTcjMilh"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id F3B201F38E
-	for <linux-btrfs@vger.kernel.org>; Sun, 23 Feb 2025 23:46:48 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1740354409; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=qCpJdceAISRtIdzBsAPLFMOeTR3iK36LOdioueDrdZI=;
-	b=GTcjMilhLoZnLsYNZMbLC01TYGlNR/jCTeCY9rk15E4xVcpmvMG42If023APqcfeTw+9sb
-	3Ve4pDT3UK6Tzl0EoAWxh+eBPC1YIy4AHMpXY5WpaPFRA7QEYIRmnLgHEen4JIr+g8xy91
-	ZNp+uti+FTdLCqssqjXKRYAFk1SPMew=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=GTcjMilh
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1740354409; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=qCpJdceAISRtIdzBsAPLFMOeTR3iK36LOdioueDrdZI=;
-	b=GTcjMilhLoZnLsYNZMbLC01TYGlNR/jCTeCY9rk15E4xVcpmvMG42If023APqcfeTw+9sb
-	3Ve4pDT3UK6Tzl0EoAWxh+eBPC1YIy4AHMpXY5WpaPFRA7QEYIRmnLgHEen4JIr+g8xy91
-	ZNp+uti+FTdLCqssqjXKRYAFk1SPMew=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 332E213A42
-	for <linux-btrfs@vger.kernel.org>; Sun, 23 Feb 2025 23:46:47 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id SLvrOGezu2euTgAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Sun, 23 Feb 2025 23:46:47 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 6/7] btrfs: allow inline data extents creation if block size < page size
-Date: Mon, 24 Feb 2025 10:16:21 +1030
-Message-ID: <592f1b35af2c203e4bb6dd6431b6bb0c880e81aa.1740354271.git.wqu@suse.com>
-X-Mailer: git-send-email 2.48.1
-In-Reply-To: <cover.1740354271.git.wqu@suse.com>
-References: <cover.1740354271.git.wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="bNYLekPp"
+Received: by mail-ej1-f52.google.com with SMTP id a640c23a62f3a-abb90f68f8cso765483066b.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 23 Feb 2025 22:31:00 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1740378659; x=1740983459; darn=vger.kernel.org;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:from:to:cc:subject:date:message-id:reply-to;
+        bh=Aq+wki+MqXy/nndMCRwVQpc+5nJChRMlyfSHUzsL4QQ=;
+        b=bNYLekPp3ysF/pkSf8RxamAoXTSobHaZR1rqeG/3h/ZUITEBjqo+Gb5mNlqb8Y3VCI
+         fH0OSvrf05jkEoywUgJMbzR5Xh90xkZAyhpXFrn51jkjvW0W6mNyvgk5AGNz9f6J3HwG
+         oAABiNXHpsc+HEU98aYFe61vcJcW497BeRQxGfFMZujzvMyCwchnxBtYV3vj3EA+b2Pu
+         tHhIxKPWO7N5wI56wdwT0eDSYWUf4rz7idI80uOa0Jzb/yt0zY+lTqS8795HoXZKV01n
+         Gp7QFPVbnW+b6jfuiCclNQlyD4CXvIHl9kG8JzXGcxPxXt8G/6KPBxafPPSakt3MVXZo
+         wCxw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1740378659; x=1740983459;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=Aq+wki+MqXy/nndMCRwVQpc+5nJChRMlyfSHUzsL4QQ=;
+        b=irkzQ+9/d5Erul4S2ha6H6o4KcsRZ1EyMx9lyXSJWT+/yoDKkL5VbcKmYuGjurd1x3
+         jIfuaE+9dklCB6I39HF5Y2kFErhT3MTrO2Igtn52IB3LwTPQnMTaP/dEDN1w+Q/6m31O
+         LHd5WWpnvXw59HMJxPHdvGiyqOp4jPSsCeYAU0oIobyhn84H+DzlleaNXTCsbt8dV7uD
+         keMQS3BwW5jVEwlSjak7H+XT79e4wpx4EvUBKdZ1QxDEt6y92q6hSDe3hMN07pPKazvf
+         uowO8zv1kO6ot2d6AE5ewRez/fND7KljoBQ3Uo5qx7x/olUfRc86P3r29E67q9DeKHCk
+         DE8Q==
+X-Forwarded-Encrypted: i=1; AJvYcCUn+gXCe98rYBOrP7k+inQ8U6IH+IwT0ASXfgLwaW2V/EltI6x5qq1jL7NYVBLYpj7E/BZsnz0Qi1UtQw==@vger.kernel.org
+X-Gm-Message-State: AOJu0Ywe2pk/8wKlrWpKG9YJqT89dl/vZ3bRDB28Bpzkm8CDxM6rwb+K
+	8EsN8V8DdgODQhLNInFp9BfvOKxZOJoZ4PZJyqz0hzjVAYaJyUy90Uaq7upn3CfZDRYpU2plIUu
+	vRGrxqM3B8XoRkLHITvMEiDIGnwe7ntxO82ZsrQ==
+X-Gm-Gg: ASbGncsQbQqk9/OA+vJmS9rfUkvaP9kAHg7PU65f2wBQQTDtN8rV+nfS/YCb1vforxz
+	hnY0PDZvDYROkCkatCs1MW+OfOWZUsZQTOX3J14SvQDNQzuUgOICXxuecqJz8uhAHWFz128+5qc
+	efjTqF9g==
+X-Google-Smtp-Source: AGHT+IFANUpl9PA24M96TCMpL3ASx4z9pMNb8ptEXkRZZYKabRXkwYX/5xYx9bv/y9Bn91SAl7DaCt3y+JqPPxhv1FQ=
+X-Received: by 2002:a17:907:970f:b0:ab3:2b85:5d5 with SMTP id
+ a640c23a62f3a-abc09d2dcc1mr1280389266b.49.1740378659424; Sun, 23 Feb 2025
+ 22:30:59 -0800 (PST)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Rspamd-Queue-Id: F3B201F38E
-X-Spam-Score: -3.01
-X-Rspamd-Action: no action
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	MID_CONTAINS_FROM(1.00)[];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	ARC_NA(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_TLS_ALL(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,suse.com:mid,suse.com:email];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	FUZZY_BLOCKED(0.00)[rspamd.com];
-	TO_DN_NONE(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	MIME_TRACE(0.00)[0:+];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Spam-Flag: NO
-X-Spam-Level: 
+References: <20250220145723.1526907-1-neelx@suse.com> <20250222083753.wvdw2quokicxdqoz@dell-per750-06-vm-08.rhts.eng.pek2.redhat.com>
+In-Reply-To: <20250222083753.wvdw2quokicxdqoz@dell-per750-06-vm-08.rhts.eng.pek2.redhat.com>
+From: Daniel Vacek <neelx@suse.com>
+Date: Mon, 24 Feb 2025 07:30:48 +0100
+X-Gm-Features: AWEUYZkpzLQ7FCiwksIzEvMHAdiGua0Ki_0J-oKEt5dRO4_DBgZicOeGKk6Bah8
+Message-ID: <CAPjX3FdRuUzq7L_ZoWMt3WctLBAZbGPhSjio+bXpYM7KF+T3mQ@mail.gmail.com>
+Subject: Re: [PATCH] fstests: btrfs/314: fix the failure when SELinux is enabled
+To: Zorro Lang <zlang@redhat.com>
+Cc: Qu Wenruo <quwenruo.btrfs@gmx.com>, fstests@vger.kernel.org, 
+	linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 
-Previously inline data extents creation is disable if the block size
-(previously called sector size) is smaller than the page size, for the
-following reasons:
+On Sat, 22 Feb 2025 at 09:38, Zorro Lang <zlang@redhat.com> wrote:
+>
+> On Thu, Feb 20, 2025 at 03:57:23PM +0100, Daniel Vacek wrote:
+> > When SELinux is enabled this test fails unable to receive a file with
+> > security label attribute:
+> >
+> >     --- tests/btrfs/314.out
+> >     +++ results//btrfs/314.out.bad
+> >     @@ -17,5 +17,6 @@
+> >      At subvol TEST_DIR/314/tempfsid_mnt/snap1
+> >      Receive SCRATCH_MNT
+> >      At subvol snap1
+> >     +ERROR: lsetxattr foo security.selinux=unconfined_u:object_r:unlabeled_t:s0 failed: Operation not supported
+> >      Send:    42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/314/tempfsid_mnt/foo
+> >     -Recv:    42d69d1a6d333a7ebdf64792a555e392  SCRATCH_MNT/snap1/foo
+> >     +Recv:    d41d8cd98f00b204e9800998ecf8427e  SCRATCH_MNT/snap1/foo
+> >     ...
+> >
+> > Setting the security label file attribute fails due to the default mount
+> > option implied by fstests:
+> >
+> > MOUNT_OPTIONS -- -o context=system_u:object_r:root_t:s0 /dev/sdb /mnt/scratch
+> >
+> > See commit 3839d299 ("xfstests: mount xfs with a context when selinux is on")
+> >
+> > fstests by default mount test and scratch devices with forced SELinux
+> > context to get rid of the additional file attributes when SELinux is
+> > enabled. When a test mounts additional devices from the pool, it may need
+> > to honor this option to keep on par. Otherwise failures may be expected.
+> >
+> > Moreover this test is perfectly fine labeling the files so let's just
+> > disable the forced context for this one.
+> >
+> > Signed-off-by: Daniel Vacek <neelx@suse.com>
+> > ---
+>
+> Take it easy, Thanks for both of you would like to help fstests to get
+> better :)
+>
+> Firstly, SELINUX_MOUNT_OPTIONS isn't a parameter to enable or disable
+> SELinux test. We just use it to avoid tons of ondisk selinux lables to
+> mess up the testing. So mount with a specified SELINUX_MOUNT_OPTIONS
+> to avoid new ondisk selinux labels always be created in each file's
+> extended attributes field.
 
-- Possible mixed inline and regular data extents
-  However this is also the same if the block size matches the page size,
-  thus we do not treat mixed inline and regular extents as an error.
+Well put. I was trying to explain that.
 
-  And the chance to cause mixed inline and regular data extents are not
-  even increased, it has the same requirement (compressed inline data
-  extent covering the whole first block, followed by regular extents).
+In fact it does not mess with this test and that's why originally I
+kept it and I did not remove it after coming up with the other way to
+address the bug. I thought a bit of diversity could be useful with the
+testing after all.
 
-- Unable to handle async/inline delalloc range for block size < page
-  size cases
-  This is already fixed since commit 1d2fbb7f1f9e ("btrfs: allow
-  compression even if the range is not page aligned").
+> Secondly, I don't want to attend the argument :) Just for this patch review,
+> I prefer just doing:
+>
+>           _scratch_mount
+>   -       _mount ${SCRATCH_DEV_NAME[1]} ${tempfsid_mnt}
+>   +       _mount $SELINUX_MOUNT_OPTIONS ${SCRATCH_DEV_NAME[1]} ${tempfsid_mnt}
 
-  This was the major technical blockage, but it's no longer a blockage
-  anymore.
+I already agreed with dropping the other hunk before.
 
-With the major technical blockage already removed, we can enable inline
-data extents creation no matter the block size nor the page size,
-allowing the btrfs to have the same capacity for all block sizes.
+> or if you concern MOUNT_OPTIONS and SELINUX_MOUNT_OPTIONS both, maybe:
+>
+>           _scratch_mount
+>   -       _mount ${SCRATCH_DEV_NAME[1]} ${tempfsid_mnt}
+>   +       _mount $(_common_dev_mount_options) ${SCRATCH_DEV_NAME[1]} ${tempfsid_mnt}
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/inode.c | 13 -------------
- 1 file changed, 13 deletions(-)
+That's even better. I'll send a v2 with this change.
+Thanks for the hint.
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index e99cb5109967..a1ea93bad80e 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -566,19 +566,6 @@ static bool can_cow_file_range_inline(struct btrfs_inode *inode,
- 	if (offset != 0)
- 		return false;
- 
--	/*
--	 * Due to the page size limit, for subpage we can only trigger the
--	 * writeback for the dirty sectors of page, that means data writeback
--	 * is doing more writeback than what we want.
--	 *
--	 * This is especially unexpected for some call sites like fallocate,
--	 * where we only increase i_size after everything is done.
--	 * This means we can trigger inline extent even if we didn't want to.
--	 * So here we skip inline extent creation completely.
--	 */
--	if (fs_info->sectorsize != PAGE_SIZE)
--		return false;
--
- 	/* Inline extents are limited to sectorsize. */
- 	if (size > fs_info->sectorsize)
- 		return false;
--- 
-2.48.1
+> That's enough to help "_scratch_mount" and later "_mount" use same
+> SELINUX_MOUNT_OPTIONS, and fix the test failure you hit.
+>
+> About resetting "SELINUX_MOUNT_OPTIONS", I think btrfs/314 isn't a test case
+> cares about SELinux labels on-disk or not. So how about don't touch it.
 
+Yup, as I said, I already agreed with that in the previous conversation.
+
+> If you'd like to talk about if xfstests cases should test with a specified
+> SELINUX_MOUNT_OPTIONS mount option or not, you can send another patch to talk
+> about 3839d299 ("xfstests: mount xfs with a context when selinux is on").
+>
+> Now let's fix this failure at first :)
+>
+> Thanks,
+> Zorro
+>
+> >  tests/btrfs/314 | 6 +++++-
+> >  1 file changed, 5 insertions(+), 1 deletion(-)
+> >
+> > diff --git a/tests/btrfs/314 b/tests/btrfs/314
+> > index 76dccc41..cc1a2264 100755
+> > --- a/tests/btrfs/314
+> > +++ b/tests/btrfs/314
+> > @@ -21,6 +21,10 @@ _cleanup()
+> >
+> >  . ./common/filter.btrfs
+> >
+> > +# Disable the forced SELinux context. We are fine testing the
+> > +# security labels with this test when SELinux is enabled.
+> > +SELINUX_MOUNT_OPTIONS=
+> > +
+> >  _require_scratch_dev_pool 2
+> >  _require_btrfs_fs_feature temp_fsid
+> >
+> > @@ -38,7 +42,7 @@ send_receive_tempfsid()
+> >       # Use first 2 devices from the SCRATCH_DEV_POOL
+> >       mkfs_clone ${SCRATCH_DEV} ${SCRATCH_DEV_NAME[1]}
+> >       _scratch_mount
+> > -     _mount ${SCRATCH_DEV_NAME[1]} ${tempfsid_mnt}
+> > +     _mount ${SELINUX_MOUNT_OPTIONS} ${SCRATCH_DEV_NAME[1]} ${tempfsid_mnt}
+> >
+> >       $XFS_IO_PROG -fc 'pwrite -S 0x61 0 9000' ${src}/foo | _filter_xfs_io
+> >       _btrfs subvolume snapshot -r ${src} ${src}/snap1
+> > --
+> > 2.48.1
+> >
+> >
+>

@@ -1,90 +1,111 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 02E7A1990A2;
-	Tue, 25 Feb 2025 19:44:26 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+Received: from linux.microsoft.com (linux.microsoft.com [13.77.154.182])
+	by smtp.subspace.kernel.org (Postfix) with ESMTP id 721E920FA9E;
+	Tue, 25 Feb 2025 20:17:20 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=13.77.154.182
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1740512667; cv=none; b=Mvjul9qlFIFSVVWwuksYtmUFKZ9vI7HJjhhOjDMyxk7TPX5rmM9D6fLxYXYa4FYg40LqZjcphBjQukxnkCe0LxJQkc7O5iyzddQDvruqwCNoDT1iNzjdIB4z4Q18MAsObNhbxGodAN5whKRFN8zkH/49F5QEkDFxve6gLvjIDMU=
+	t=1740514642; cv=none; b=HfN5ACIIQ4aTXMkuXPurzGkWaRdF6ZKet0Vuu0XmfEacWndGdqZBFwaCIhhqOY10MXEj9cTHxi4e9FF4fDcfcdduWlw421LG+Nr+bFW8HjIPVYIu7yJLFx6eqijsLY1NcFCoE2STLPaiJn0kay1V6OzPg07LSNHf9Fu0TnvGchg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1740512667; c=relaxed/simple;
-	bh=j5yUuEoh109WA1aqshRDntEFnbJeNvWnm5FJnWd9Zog=;
-	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version; b=GzJX4hyHRHW6ZWt9VHjiM5JYe3cmK4gjjnnAXYbXQ6iWmXjlyuhX6tPKHEgRc15vZ45ddOWVaeB+L+CN4ceOkRcJqBSpVRqcvTwD5H1GDyEUBoX2ImVKnJu9mKt85AF++LXum/f9+BFXaawbsRfnJLTSllFg/sBOfphwP66fdYM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=M5x/B3td; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1740514642; c=relaxed/simple;
+	bh=KhNEyo7WFu+pfBKWpwr7dBCkfYqG9oS0AfyoC6gzP2I=;
+	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
+	 In-Reply-To:To:Cc; b=b3CDrWiJDIGshR/XpN3pqHS/BsSmvt33nMebk7jMiVa7MQsOzCdU5JwlkeKMsjXF2SgBjJX0S0IFvZttUS1Cg/Ay15em5GbA0wrNRkGzARh34kc8iImSxqoVBwVqB32R2EEn990KaRwXWQ9mjwVAh4sGwKKX8chWalSsBUqtNPs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.microsoft.com; spf=pass smtp.mailfrom=linux.microsoft.com; dkim=pass (1024-bit key) header.d=linux.microsoft.com header.i=@linux.microsoft.com header.b=OP63wp67; arc=none smtp.client-ip=13.77.154.182
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.microsoft.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.microsoft.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="M5x/B3td"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 50B40C4CEE8;
-	Tue, 25 Feb 2025 19:44:24 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1740512666;
-	bh=j5yUuEoh109WA1aqshRDntEFnbJeNvWnm5FJnWd9Zog=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-	b=M5x/B3tdFbd/hFnohm5SCxIa/2W/QuPBRD1k08fxv2xLij0yHMyGY9Adgd5mf9u+B
-	 xHQYWC9l5G41dD0KLLvpu7rY00ddYSY1N+ARtepf+LvetfqCzBSC0LIJG+b86Ui3kE
-	 +egegMElQWU1RBJ/2T7FPzxeht+tx7Y7Ku6rpaSdc9IG/htdy65tx3oRShls1UDIvv
-	 P+cgKs6s1mDmRObfyEcbquh0TLNjKSSaVuM457NEun5JvKz24V/eLiO5mDuBnZBlPS
-	 HU33CoHeO+fOvXYREZSiPtmMc9IyTpwbIbDF/bvdrNN2fKAffwhEFbHpxNeWwPZmB1
-	 8JTO6KN35YmQg==
-From: Arnd Bergmann <arnd@kernel.org>
-To: Chris Mason <clm@fb.com>,
-	Josef Bacik <josef@toxicpanda.com>,
-	David Sterba <dsterba@suse.com>,
-	Qu Wenruo <wqu@suse.com>
-Cc: Arnd Bergmann <arnd@arndb.de>,
-	Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-	Anand Jain <anand.jain@oracle.com>,
-	Filipe Manana <fdmanana@suse.com>,
-	Li Zetao <lizetao1@huawei.com>,
-	linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-Subject: [PATCH 2/2] btrfs: replace 64-bit division with a shift
-Date: Tue, 25 Feb 2025 20:44:11 +0100
-Message-Id: <20250225194416.3076650-2-arnd@kernel.org>
-X-Mailer: git-send-email 2.39.5
-In-Reply-To: <20250225194416.3076650-1-arnd@kernel.org>
-References: <20250225194416.3076650-1-arnd@kernel.org>
+	dkim=pass (1024-bit key) header.d=linux.microsoft.com header.i=@linux.microsoft.com header.b="OP63wp67"
+Received: from eahariha-devbox.internal.cloudapp.net (unknown [40.91.112.99])
+	by linux.microsoft.com (Postfix) with ESMTPSA id BF51B203CDFD;
+	Tue, 25 Feb 2025 12:17:19 -0800 (PST)
+DKIM-Filter: OpenDKIM Filter v2.11.0 linux.microsoft.com BF51B203CDFD
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linux.microsoft.com;
+	s=default; t=1740514639;
+	bh=iYMbK5A793RDdkoEPga+PoRyWET+ntXiAELhCjFiDKo=;
+	h=From:Date:Subject:References:In-Reply-To:To:Cc:From;
+	b=OP63wp67iKSqHjNTjMNd+sihLCyoASTZi2GNLl0ELqRwvrBXcEngcH+yXafC8Yprq
+	 nAvYY5Wrea0EY1UvsDuANN22sm/ZDZFvEyjRA+KLA6UssBgo0/5UVPQNqQpxTLUDBc
+	 wEQUX4uMwl08WGSAzFvomPPI3q3DYIQICkks+WHI=
+From: Easwar Hariharan <eahariha@linux.microsoft.com>
+Date: Tue, 25 Feb 2025 20:17:15 +0000
+Subject: [PATCH v3 01/16] coccinelle: misc: secs_to_jiffies: Patch
+ expressions too
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+Message-Id: <20250225-converge-secs-to-jiffies-part-two-v3-1-a43967e36c88@linux.microsoft.com>
+References: <20250225-converge-secs-to-jiffies-part-two-v3-0-a43967e36c88@linux.microsoft.com>
+In-Reply-To: <20250225-converge-secs-to-jiffies-part-two-v3-0-a43967e36c88@linux.microsoft.com>
+To: Andrew Morton <akpm@linux-foundation.org>, 
+ Yaron Avizrat <yaron.avizrat@intel.com>, Oded Gabbay <ogabbay@kernel.org>, 
+ Julia Lawall <Julia.Lawall@inria.fr>, Nicolas Palix <nicolas.palix@imag.fr>, 
+ James Smart <james.smart@broadcom.com>, 
+ Dick Kennedy <dick.kennedy@broadcom.com>, 
+ "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, 
+ "Martin K. Petersen" <martin.petersen@oracle.com>, 
+ Jaroslav Kysela <perex@perex.cz>, Takashi Iwai <tiwai@suse.com>, 
+ Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>, 
+ David Sterba <dsterba@suse.com>, Ilya Dryomov <idryomov@gmail.com>, 
+ Dongsheng Yang <dongsheng.yang@easystack.cn>, Jens Axboe <axboe@kernel.dk>, 
+ Xiubo Li <xiubli@redhat.com>, Damien Le Moal <dlemoal@kernel.org>, 
+ Niklas Cassel <cassel@kernel.org>, Carlos Maiolino <cem@kernel.org>, 
+ "Darrick J. Wong" <djwong@kernel.org>, Sebastian Reichel <sre@kernel.org>, 
+ Keith Busch <kbusch@kernel.org>, Christoph Hellwig <hch@lst.de>, 
+ Sagi Grimberg <sagi@grimberg.me>, Frank Li <Frank.Li@nxp.com>, 
+ Mark Brown <broonie@kernel.org>, Shawn Guo <shawnguo@kernel.org>, 
+ Sascha Hauer <s.hauer@pengutronix.de>, 
+ Pengutronix Kernel Team <kernel@pengutronix.de>, 
+ Fabio Estevam <festevam@gmail.com>, 
+ Shyam Sundar S K <Shyam-sundar.S-k@amd.com>, 
+ Hans de Goede <hdegoede@redhat.com>, 
+ =?utf-8?q?Ilpo_J=C3=A4rvinen?= <ilpo.jarvinen@linux.intel.com>, 
+ Henrique de Moraes Holschuh <hmh@hmh.eng.br>, 
+ Selvin Xavier <selvin.xavier@broadcom.com>, 
+ Kalesh AP <kalesh-anakkur.purayil@broadcom.com>, 
+ Jason Gunthorpe <jgg@ziepe.ca>, Leon Romanovsky <leon@kernel.org>
+Cc: cocci@inria.fr, linux-kernel@vger.kernel.org, 
+ linux-scsi@vger.kernel.org, dri-devel@lists.freedesktop.org, 
+ linux-sound@vger.kernel.org, linux-btrfs@vger.kernel.org, 
+ ceph-devel@vger.kernel.org, linux-block@vger.kernel.org, 
+ linux-ide@vger.kernel.org, linux-xfs@vger.kernel.org, 
+ linux-pm@vger.kernel.org, linux-nvme@lists.infradead.org, 
+ linux-spi@vger.kernel.org, imx@lists.linux.dev, 
+ linux-arm-kernel@lists.infradead.org, platform-driver-x86@vger.kernel.org, 
+ ibm-acpi-devel@lists.sourceforge.net, linux-rdma@vger.kernel.org, 
+ Easwar Hariharan <eahariha@linux.microsoft.com>
+X-Mailer: b4 0.14.2
 
-From: Arnd Bergmann <arnd@arndb.de>
+Teach the script to suggest conversions for timeout patterns where the
+arguments to msecs_to_jiffies() are expressions as well.
 
-folio_size() is not a compile-time constant, so in some configurations,
-the DIV_ROUND_UP() turns into a 64-bit division that is not allowed
-on 32-bit architectures.
-
-x86_64-linux-ld: fs/btrfs/extent_io.o: in function `writepage_delalloc':
-extent_io.c:(.text+0x2b6e): undefined reference to `__udivdi3'
-
-This is probably not the correct solution, but it should illustrate
-the issue. A trivial fix would be DIV64_U64_ROUND_UP(), which of course
-is very expensive.  Maybe there should be a DIV_ROUND_UP_FOLIO macro?
-
-Fixes: aba063bf9336 ("btrfs: prepare extent_io.c for future larger folio support")
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Easwar Hariharan <eahariha@linux.microsoft.com>
 ---
- fs/btrfs/extent_io.c | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+ scripts/coccinelle/misc/secs_to_jiffies.cocci | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 7dc996e7e249..e4ba4fa3f48c 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -1505,8 +1505,7 @@ static noinline_for_stack int writepage_delalloc(struct btrfs_inode *inode,
- 	 * delalloc_end is already one less than the total length, so
- 	 * we don't subtract one from folio_size().
- 	 */
--	delalloc_to_write +=
--		DIV_ROUND_UP(delalloc_end + 1 - page_start, folio_size(folio));
-+	delalloc_to_write += (delalloc_end + 1 - page_start + folio_size(folio) - 1) >> folio_order(folio);
+diff --git a/scripts/coccinelle/misc/secs_to_jiffies.cocci b/scripts/coccinelle/misc/secs_to_jiffies.cocci
+index 8bbb2884ea5db939c63fd4513cf5ca8c977aa8cb..416f348174ca659b544441f5f68f04a41d1ad4a3 100644
+--- a/scripts/coccinelle/misc/secs_to_jiffies.cocci
++++ b/scripts/coccinelle/misc/secs_to_jiffies.cocci
+@@ -20,3 +20,13 @@ virtual patch
  
- 	/*
- 	 * If all ranges are submitted asynchronously, we just need to account
+ - msecs_to_jiffies(C * MSEC_PER_SEC)
+ + secs_to_jiffies(C)
++
++@depends on patch@ expression E; @@
++
++- msecs_to_jiffies(E * 1000)
+++ secs_to_jiffies(E)
++
++@depends on patch@ expression E; @@
++
++- msecs_to_jiffies(E * MSEC_PER_SEC)
+++ secs_to_jiffies(E)
+
 -- 
-2.39.5
+2.43.0
 

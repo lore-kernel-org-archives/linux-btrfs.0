@@ -1,34 +1,33 @@
 Received: from linux.microsoft.com (linux.microsoft.com [13.77.154.182])
-	by smtp.subspace.kernel.org (Postfix) with ESMTP id 2C1A9223716;
-	Tue, 25 Feb 2025 20:17:26 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTP id 6C32322256B;
+	Tue, 25 Feb 2025 20:17:25 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=13.77.154.182
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1740514648; cv=none; b=PiGvwmXjdFw/PgsXAyM61AtZdfoC/qTj3h4IYfFF1RfjLX36VQrN0x/iL2u3FZHv/uT5R85fsH8luyB9EWEboJgBYp1QsucMS0HvJXN0jAJxXg1L8VD7+qDwvQsDmPd8QFksUYPqTmzeSSVQfiM9AUd6WZ8uwwFJWL8rKHcnBAI=
+	t=1740514649; cv=none; b=kDK0T91+4Q3dO4cz+TyF5/SJSuuHLQxlh1BIizZEHqiPVraQLNUEnDucFUR2aC7/kGmVjHDRsZjXgQ4f4Z6HQPTgyMDpzs2qkQc1L1oECkmDLcs8AiJVAcxv5W7XhX8927FVideBeOn33Hq6j1kpzGjZ2zCUEmyh8M6ymMTYcaU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1740514648; c=relaxed/simple;
-	bh=rCDCOg2KNXwvsp/qbfvcxtGeT0PosRuQ5bCsiIGFCC4=;
+	s=arc-20240116; t=1740514649; c=relaxed/simple;
+	bh=b17XZAvzaTH046mwhaHNwAtpVlTJZaGNfVU9xuXcyTM=;
 	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
-	 In-Reply-To:To:Cc; b=ulu4OzDn9qt15VpHtCwIIF1+mOLRGNcN9MkBeYyIPU5qQK9J5JM8HdFBHAY0gQGc/IccNfLNCwmB/dK0ryBqIaQaAaJT5VcHu205qzR+hgzymhHIsVGDPCgJOnLK45pEp5bqAokzs6Yl5BLqt2LtR5CZactwlk90Y59oTwnBByU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.microsoft.com; spf=pass smtp.mailfrom=linux.microsoft.com; dkim=pass (1024-bit key) header.d=linux.microsoft.com header.i=@linux.microsoft.com header.b=XJ2yFpBk; arc=none smtp.client-ip=13.77.154.182
+	 In-Reply-To:To:Cc; b=NxitxL0deb3o2vt7Ia4yqOUQP8ExlM2zOLAvrYfwsMYnae9elB7LdMAoaDjdhzMUZRFftCx0Wv9PjWWMHL2bHEwDMT4YI6qB5CYCehk+iJxuiY3L7Bn0PMCLDV4861T8u45TOl+HVsmdRqncSujnqh9g/mclyXZUxrRlyzXgYcw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.microsoft.com; spf=pass smtp.mailfrom=linux.microsoft.com; dkim=pass (1024-bit key) header.d=linux.microsoft.com header.i=@linux.microsoft.com header.b=rY57gui/; arc=none smtp.client-ip=13.77.154.182
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.microsoft.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.microsoft.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linux.microsoft.com header.i=@linux.microsoft.com header.b="XJ2yFpBk"
+	dkim=pass (1024-bit key) header.d=linux.microsoft.com header.i=@linux.microsoft.com header.b="rY57gui/"
 Received: from eahariha-devbox.internal.cloudapp.net (unknown [40.91.112.99])
-	by linux.microsoft.com (Postfix) with ESMTPSA id CAF7C206AB9B;
+	by linux.microsoft.com (Postfix) with ESMTPSA id 75931206AB6C;
 	Tue, 25 Feb 2025 12:17:21 -0800 (PST)
-DKIM-Filter: OpenDKIM Filter v2.11.0 linux.microsoft.com CAF7C206AB9B
+DKIM-Filter: OpenDKIM Filter v2.11.0 linux.microsoft.com 75931206AB6C
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linux.microsoft.com;
 	s=default; t=1740514641;
-	bh=ZH8umU91mi0wAcmYNb/gkPuUZx7SURsrk1GkGJenkwI=;
+	bh=/rdlqcTwv5mN/sc7m2KrDg4m+dKAQX2yY+t0CXok2oY=;
 	h=From:Date:Subject:References:In-Reply-To:To:Cc:From;
-	b=XJ2yFpBk3qCLV4nsMZVlvUSB6SJoAMrG/lilaGrXcFN0Lc7s5NOy3uhepXpsayAcq
-	 x07K8FkHjDySQIgscKrqdj6VScj0K5xWaPtsAkir9VsMrBs2e09ZnaVPpKQCXsFOuq
-	 vOHcRdnBLLKCxEgEkL55Xz0ft8yD2027HMK/8AS8=
+	b=rY57gui/I5s3opnKpMkUiVz2c8KEinkfrPoI4a0X58a/iSSS8lb6zsgJqkOKu7xOq
+	 seorPBf8U1Bj+VcZjFfcO6jdNkWNML7i48hryZFC0g73WPEObXszX5QqDSiVWRpKsR
+	 xhTzpQnxfRVcu8e8QVi+FGZLfxmNCa9p9IBg3p6A=
 From: Easwar Hariharan <eahariha@linux.microsoft.com>
-Date: Tue, 25 Feb 2025 20:17:27 +0000
-Subject: [PATCH v3 13/16] spi: spi-imx: convert timeouts to
- secs_to_jiffies()
+Date: Tue, 25 Feb 2025 20:17:25 +0000
+Subject: [PATCH v3 11/16] nvme: convert timeouts to secs_to_jiffies()
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -37,7 +36,7 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-Message-Id: <20250225-converge-secs-to-jiffies-part-two-v3-13-a43967e36c88@linux.microsoft.com>
+Message-Id: <20250225-converge-secs-to-jiffies-part-two-v3-11-a43967e36c88@linux.microsoft.com>
 References: <20250225-converge-secs-to-jiffies-part-two-v3-0-a43967e36c88@linux.microsoft.com>
 In-Reply-To: <20250225-converge-secs-to-jiffies-part-two-v3-0-a43967e36c88@linux.microsoft.com>
 To: Andrew Morton <akpm@linux-foundation.org>, 
@@ -96,25 +95,30 @@ expression E;
 - * \( 1000 \| MSEC_PER_SEC \)
 )
 
-Acked-by: Mark Brown <broonie@kernel.org>
+Acked-by: Keith Busch <kbusch@kernel.org>
 Signed-off-by: Easwar Hariharan <eahariha@linux.microsoft.com>
 ---
- drivers/spi/spi-imx.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/nvme/host/core.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/spi/spi-imx.c b/drivers/spi/spi-imx.c
-index eeb7d082c2472f954001045295b349bc2eb53197..832d6e9009ebe741779acd58c3a9450c231151bb 100644
---- a/drivers/spi/spi-imx.c
-+++ b/drivers/spi/spi-imx.c
-@@ -1449,7 +1449,7 @@ static int spi_imx_calculate_timeout(struct spi_imx_data *spi_imx, int size)
- 	timeout += 1;
+diff --git a/drivers/nvme/host/core.c b/drivers/nvme/host/core.c
+index f028913e2e622ee348e88879c6e6b7e8f8a1cc82..24c3e1765d491daf8fd600f96788bf5765946f54 100644
+--- a/drivers/nvme/host/core.c
++++ b/drivers/nvme/host/core.c
+@@ -4466,11 +4466,9 @@ static void nvme_fw_act_work(struct work_struct *work)
+ 	nvme_auth_stop(ctrl);
  
- 	/* Double calculated timeout */
--	return msecs_to_jiffies(2 * timeout * MSEC_PER_SEC);
-+	return secs_to_jiffies(2 * timeout);
- }
+ 	if (ctrl->mtfa)
+-		fw_act_timeout = jiffies +
+-				msecs_to_jiffies(ctrl->mtfa * 100);
++		fw_act_timeout = jiffies + msecs_to_jiffies(ctrl->mtfa * 100);
+ 	else
+-		fw_act_timeout = jiffies +
+-				msecs_to_jiffies(admin_timeout * 1000);
++		fw_act_timeout = jiffies + secs_to_jiffies(admin_timeout);
  
- static int spi_imx_dma_transfer(struct spi_imx_data *spi_imx,
+ 	nvme_quiesce_io_queues(ctrl);
+ 	while (nvme_ctrl_pp_status(ctrl)) {
 
 -- 
 2.43.0

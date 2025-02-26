@@ -1,64 +1,64 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D8790253F05
-	for <linux-btrfs@vger.kernel.org>; Wed, 26 Feb 2025 03:59:43 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0E70425E45B
+	for <linux-btrfs@vger.kernel.org>; Wed, 26 Feb 2025 03:59:50 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1740542387; cv=none; b=udigmaeb60ZMJ21RovZzUgcubpmdO08oVs8aLgp2zJUJmj6GUUzWnktIvL3Q+goLaClsPVhQRfIdmgnQ93xggyfIWoPwkjK2tXWN3oXL42HUSLn267QPJBWSkShGEkSRGSI1G0yebWUR+gyZ7Szm6rcl5q/SUzgtReDVh0ajQo8=
+	t=1740542392; cv=none; b=ZMAQJU/fYNJrT+NUf0DtsZC01o7LcVDjsaC0uh/P4AVmf7DFXoCl80jh45CDJ7U/UUyNBJPEvMALz9VVqrL6hJ7NtrQMuxKpDREgSb5gMPZRhmJ/G2yMUntqkus2QBfm2sd4IJBj/FtFFkEMFSV/uLl/CEeVz5gqUufTJbUq9dI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1740542387; c=relaxed/simple;
-	bh=rn8jBTTYsc1FQYmTxsywM4B48711DaE6Y2+r5qFEI/I=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=evPsZd2/nZ7bBut/0BKrlhHUB7XiawzZF3uzM/yfOdBjlGsa70LD6MB1ICEElx6kRawUh5xM5KeEcCatkzzPl9txCy1q9p3H/Q8/bmBrWMaWC22/Lp4TIGiiBs//5omzirO4WgLzj/Z1BawE+pA/V0LAAQubNK2eDMDa/jbsmS0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=vM9TuH0J; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=n1RUoIow; arc=none smtp.client-ip=195.135.223.131
+	s=arc-20240116; t=1740542392; c=relaxed/simple;
+	bh=VYLMsW4P6QZFhOjBFaAmfZQYkZFX2ETKP+T8peQpTec=;
+	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=QJiUeyD9vMTkXycdF6g6/e84pOek2Y3LuaseQvvOYkF8OkMFFPxRohFw3JVYuu0Y6TfvT/ImU8upUEzoINW+DnaDICoF0o8Fx6pIffX8dKGCzzx1S74zdzKHTUeNUwynDn8bdW0uT79p1T+vldzxB5XsZ42oCP/5S0ku5zuJXF4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=PoIHLQnz; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=PoIHLQnz; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="vM9TuH0J";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="n1RUoIow"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="PoIHLQnz";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="PoIHLQnz"
 Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id D50351F387;
-	Wed, 26 Feb 2025 03:59:41 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 6615B2118D
+	for <linux-btrfs@vger.kernel.org>; Wed, 26 Feb 2025 03:59:44 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1740542382; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1740542384; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=fCIZshGrfhifrQzH3knExD2XMtBzrpwWTGikL/qxEyc=;
-	b=vM9TuH0Ji4sjtilbvlGDYGz8D4rBp6ipzJRwn2Umy1L+zousNsiLYIFiZqQesP3rNvCaDE
-	Ua4aA9Hjw+HIxYMjNDVgxX9RP5Y6hRM+2JwcxB/X9011F5gonwHdenrjC4SYBF4QqBrjSP
-	TUEO0Omndy9yJr5i/M9DFRtEsSg5D+c=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=n1RUoIow
+	bh=WIWqjBAMNLIPH+IE1eUTGigYxJhJOm3Y9DLpS3NMzt4=;
+	b=PoIHLQnzlaVCIMc4BrL4poUTBmxPQNi/lygQBr/Brr/22igXfj9t+y4KTkqXxuhuU+wTEe
+	11mwfzTg+YcApBppItwYjNrKfb2yg84849TpQRMJkz1uzEhczqNVadY8tEBbiwGInev2i9
+	QnlSSYO3NB06Za8GLmJWzltkBDrFTe0=
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=PoIHLQnz
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1740542381; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1740542384; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=fCIZshGrfhifrQzH3knExD2XMtBzrpwWTGikL/qxEyc=;
-	b=n1RUoIowSWIFGCnO3i0HcySjS0Lvn+9bOWQufT9yVabgPbWQuFtbewb+Mi98vG80G16llV
-	ehPsXS/JSzWstqK0TIOMeetNe//zLS5RUAIjOnBkwC04zTJ89HzhMTEHVausI/OwBWEkG1
-	Y5OkG1ayCozmlTdGnCt4DfbVjNNwkYk=
+	bh=WIWqjBAMNLIPH+IE1eUTGigYxJhJOm3Y9DLpS3NMzt4=;
+	b=PoIHLQnzlaVCIMc4BrL4poUTBmxPQNi/lygQBr/Brr/22igXfj9t+y4KTkqXxuhuU+wTEe
+	11mwfzTg+YcApBppItwYjNrKfb2yg84849TpQRMJkz1uzEhczqNVadY8tEBbiwGInev2i9
+	QnlSSYO3NB06Za8GLmJWzltkBDrFTe0=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id CA90113404;
-	Wed, 26 Feb 2025 03:59:40 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 9B76713404
+	for <linux-btrfs@vger.kernel.org>; Wed, 26 Feb 2025 03:59:43 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id MFZIIqyRvmdOegAAD6G6ig
-	(envelope-from <wqu@suse.com>); Wed, 26 Feb 2025 03:59:40 +0000
+	id wNbKFq+RvmdOegAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Wed, 26 Feb 2025 03:59:43 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH] btrfs-progs: docs: add an extra note to btrfs data checksum and directIO
-Date: Wed, 26 Feb 2025 14:29:14 +1030
-Message-ID: <3ec3396e9b4c02031a5a050763557c82a8852c75.1739780705.git.wqu@suse.com>
+Subject: [PATCH 2/3] btrfs-progs: support 2k block size
+Date: Wed, 26 Feb 2025 14:29:16 +1030
+Message-ID: <31a6625633a3a64b855d69ce5ade1466e516d0a4.1740542229.git.wqu@suse.com>
 X-Mailer: git-send-email 2.48.1
 In-Reply-To: <cover.1740542229.git.wqu@suse.com>
 References: <cover.1740542229.git.wqu@suse.com>
@@ -69,7 +69,7 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Rspamd-Queue-Id: D50351F387
+X-Rspamd-Queue-Id: 6615B2118D
 X-Spam-Score: -3.01
 X-Rspamd-Action: no action
 X-Spamd-Result: default: False [-3.01 / 50.00];
@@ -81,68 +81,135 @@ X-Spamd-Result: default: False [-3.01 / 50.00];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
 	MX_GOOD(-0.01)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	ARC_NA(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	FROM_HAS_DN(0.00)[];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FUZZY_BLOCKED(0.00)[rspamd.com];
-	RCPT_COUNT_TWO(0.00)[2];
-	RCVD_TLS_ALL(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	TO_DN_SOME(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+]
+	ARC_NA(0.00)[];
+	FUZZY_BLOCKED(0.00)[rspamd.com];
+	RCVD_TLS_ALL(0.00)[];
+	DKIM_TRACE(0.00)[suse.com:+];
+	RCVD_COUNT_TWO(0.00)[2];
+	FROM_EQ_ENVFROM(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	TO_DN_NONE(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	FROM_HAS_DN(0.00)[]
 X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
 X-Spam-Flag: NO
 X-Spam-Level: 
 
-In v6.14 kernel release, btrfs will force a direct IO to fall back to
-a buffered one if the inode requires a data checksum.
+Since btrfs only supports block size 4K and PAGE_SIZE, on x86_64 it
+means we can not test subpage block size easily.
 
-This will cause a small performance drop, to solve the false data
-checksum mismatch problem caused by direct IOs.
+With the recent kernel change to support 2K block size for debug builds,
+also add 2K block size support for btrfs-progs, so that we can do proper
+subpage block size testing on x86_64, without acquiring an aarch64
+machine.
 
-Although such a change is small to most end users, for those requiring
-such a zero-copy direct IO this will be a behavior change, and this
-requires a proper documentation update.
+There is a limit:
 
-Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+- No support for 2K node size
+  The limit is from the initial mkfs tree root, which can only have
+  a single leaf to contain all root items.
+  But 2K leaf can not handle all the root items, thus we have to disable
+  it.
+
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- Documentation/ch-checksumming.rst | 18 ++++++++++++++++++
- 1 file changed, 18 insertions(+)
+ common/fsfeatures.c     | 11 ++++++++---
+ kernel-shared/ctree.h   |  6 ++++++
+ kernel-shared/disk-io.c | 11 ++++-------
+ mkfs/main.c             |  7 -------
+ 4 files changed, 18 insertions(+), 17 deletions(-)
 
-diff --git a/Documentation/ch-checksumming.rst b/Documentation/ch-checksumming.rst
-index 5e47a6bfb492..b7fde46fe902 100644
---- a/Documentation/ch-checksumming.rst
-+++ b/Documentation/ch-checksumming.rst
-@@ -3,6 +3,24 @@ writing and verified after reading the blocks from devices. The whole metadata
- block has an inline checksum stored in the b-tree node header. Each data block
- has a detached checksum stored in the checksum tree.
+diff --git a/common/fsfeatures.c b/common/fsfeatures.c
+index 7aaddab6a192..398065dbea86 100644
+--- a/common/fsfeatures.c
++++ b/common/fsfeatures.c
+@@ -628,7 +628,8 @@ int btrfs_check_sectorsize(u32 sectorsize)
+ 		error("invalid sectorsize %u, must be power of 2", sectorsize);
+ 		return -EINVAL;
+ 	}
+-	if (sectorsize < SZ_4K || sectorsize > SZ_64K) {
++	if (sectorsize < BTRFS_MIN_BLOCKSIZE ||
++	    sectorsize > BTRFS_MAX_METADATA_BLOCKSIZE) {
+ 		error("invalid sectorsize %u, expected range is [4K, 64K]",
+ 		      sectorsize);
+ 		return -EINVAL;
+@@ -650,9 +651,13 @@ int btrfs_check_sectorsize(u32 sectorsize)
+ int btrfs_check_nodesize(u32 nodesize, u32 sectorsize,
+ 			 struct btrfs_mkfs_features *features)
+ {
+-	if (nodesize < sectorsize) {
++	if (nodesize < sectorsize || nodesize < SZ_4K) {
++		/*
++		 * Although we support 2K block size, we can not support 2K
++		 * nodesize, as it's too small to contain all the needed root items.
++		 */
+ 		error("illegal nodesize %u (smaller than %u)",
+-				nodesize, sectorsize);
++		      nodesize, max_t(u32, sectorsize, SZ_4K));
+ 		return -1;
+ 	} else if (nodesize > BTRFS_MAX_METADATA_BLOCKSIZE) {
+ 		error("illegal nodesize %u (larger than %u)",
+diff --git a/kernel-shared/ctree.h b/kernel-shared/ctree.h
+index 8c923be96705..c3d66c99c78d 100644
+--- a/kernel-shared/ctree.h
++++ b/kernel-shared/ctree.h
+@@ -63,6 +63,12 @@ static inline u32 __BTRFS_LEAF_DATA_SIZE(u32 nodesize)
+ 	return nodesize - sizeof(struct btrfs_header);
+ }
  
-+.. note::
-+   Since a data checksum is calculated just before submitting to the block
-+   device, btrfs has a strong requirement that the coresponding data block must
-+   not be modified until the writeback is finished.
++#if EXPERIMENTAL
++#define BTRFS_MIN_BLOCKSIZE	(SZ_2K)
++#else
++#define BTRFS_MIN_BLOCKSIZE	(SZ_4K)
++#endif
 +
-+   This requirement is met for a buffered write as btrfs has the full control on
-+   its page caches, but a direct write (``O_DIRECT``) bypasses page caches, and
-+   btrfs can not control the direct IO buffer (as it can be in user space memory),
-+   thus it's possible that a user space program modifies its direct write buffer
-+   before the buffer is fully written back, and this can lead to a data checksum mismatch.
-+
-+   To avoid such a checksum mismatch, since v6.14 btrfs will force a direct
-+   write to fall back to a buffered one, if the inode requires a data checksum.
-+   This will bring a small performance penalty, and if the end user requires true
-+   zero-copy direct writes, they should set the ``NODATASUM`` flag for the inode
-+   and make sure the direct IO buffer is fully aligned to btrfs block size.
-+
-+
- There are several checksum algorithms supported. The default and backward
- compatible algorithm is *crc32c*. Since kernel 5.5 there are three more with different
- characteristics and trade-offs regarding speed and strength. The following list
+ #define BTRFS_LEAF_DATA_SIZE(fs_info) (fs_info->leaf_data_size)
+ 
+ #define BTRFS_SUPER_INFO_OFFSET			(65536)
+diff --git a/kernel-shared/disk-io.c b/kernel-shared/disk-io.c
+index a4f91d10fa4e..b7d478007ae8 100644
+--- a/kernel-shared/disk-io.c
++++ b/kernel-shared/disk-io.c
+@@ -1816,13 +1816,10 @@ int btrfs_check_super(struct btrfs_super_block *sb, unsigned sbflags)
+ 		error("nodesize unaligned: %u", btrfs_super_nodesize(sb));
+ 		goto error_out;
+ 	}
+-	if (btrfs_super_sectorsize(sb) < 4096) {
+-		error("sectorsize too small: %u < 4096",
+-			btrfs_super_sectorsize(sb));
+-		goto error_out;
+-	}
+-	if (!IS_ALIGNED(btrfs_super_sectorsize(sb), 4096)) {
+-		error("sectorsize unaligned: %u", btrfs_super_sectorsize(sb));
++	if (!is_power_of_2(btrfs_super_sectorsize(sb)) ||
++	    btrfs_super_sectorsize(sb) < BTRFS_MIN_BLOCKSIZE ||
++	    btrfs_super_sectorsize(sb) > BTRFS_MAX_METADATA_BLOCKSIZE) {
++		error("invalid sectorsize: %u", btrfs_super_sectorsize(sb));
+ 		goto error_out;
+ 	}
+ 	if (btrfs_super_total_bytes(sb) == 0) {
+diff --git a/mkfs/main.c b/mkfs/main.c
+index dc73de47a710..c7968540e8af 100644
+--- a/mkfs/main.c
++++ b/mkfs/main.c
+@@ -1669,13 +1669,6 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
+ 	if (nodesize > sysconf(_SC_PAGE_SIZE))
+ 		features.incompat_flags |= BTRFS_FEATURE_INCOMPAT_BIG_METADATA;
+ 
+-	if (sectorsize < sizeof(struct btrfs_super_block)) {
+-		error("sectorsize smaller than superblock: %u < %zu",
+-				sectorsize, sizeof(struct btrfs_super_block));
+-		ret = 1;
+-		goto error;
+-	}
+-
+ 	min_dev_size = btrfs_min_dev_size(nodesize, mixed,
+ 					  opt_zoned ? zone_size(file) : 0,
+ 					  metadata_profile, data_profile);
 -- 
 2.48.1
 

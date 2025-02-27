@@ -1,60 +1,67 @@
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D93F81EB5E2
-	for <linux-btrfs@vger.kernel.org>; Thu, 27 Feb 2025 05:55:08 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EC8381EB5F2
+	for <linux-btrfs@vger.kernel.org>; Thu, 27 Feb 2025 05:55:15 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1740635711; cv=none; b=RY9h4D1VaRWwePYiwF6T3NvbzadHbDqeKogp//Pf4xiFbdN5hv4jEeZGlPF7BtynlMSGUG8pqq6wef+i+SOZUjSfUGaBt99q73wfNjS9NqaLBJL3A2KH7oY6nMmty/1mjERJlYT11dRq6xm6mD7C+xVty66qCpY2MYKefwWHjI8=
+	t=1740635717; cv=none; b=axx5GD6b7h+i4LaOe5aEC0T3p0OTEYd/zVXt5EIadU8BPHsI4bmmm1Hy6ZQO4U0n4mc9wJLKWLWCfJlfcW50KsbrBTPFq3mMSUVgWfQfuhaS+5yF2JwX6Ga3Tj48UaAcrd9bSB1t8GDWNsWo1tzU7L8WAnFcyEdEHmV0bkNPzQE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1740635711; c=relaxed/simple;
-	bh=zAw60nD1vhSzj/NsCiFumZK97me2Jtg4WzELn6d2ou0=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=UamVBIFWzsnAw6Cm1nD/Rx0/pGDmfjFpqLqtbJHjLYfrX5vqys8GJ4ncxtUqEsDaJ+MXhS9rQSiNJbHRUR1Dai0sHcoPczKsR2+t7VLsmMZS6Tyjt1pzSwLpEvv2Autkqljy1corm8DR/0AzpZO8aPHB6AStEk1cn6vNsCrxMP0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=M1pBuqih; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=M1pBuqih; arc=none smtp.client-ip=195.135.223.131
+	s=arc-20240116; t=1740635717; c=relaxed/simple;
+	bh=fVjyhviJxkdrJBzCSmMukavoH5zEdmQUKdWMAER1LZo=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=TJiWf5Xs8yklpWTdKjz0fxQykorkVn0FXkRdcOEur7HtaoHNvZrNYo6J/FMLpGezsQO/8T3vPkaq7eqMHV2a6ggapp+r+dO0qDtyKtuhDS2UKvDGpRkeNIKCrLxBacsV2f41gAmIgNpDEkQqMJSpE2Jkf+K3MMhNgeHzfDTOC8I=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=NCDI+h+X; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=NCDI+h+X; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="M1pBuqih";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="M1pBuqih"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="NCDI+h+X";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="NCDI+h+X"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 5AA041F394
-	for <linux-btrfs@vger.kernel.org>; Thu, 27 Feb 2025 05:55:05 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 54EDF1F38F;
+	Thu, 27 Feb 2025 05:55:08 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1740635705; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=qlUmmLBgLHGB9iuGPJjPiHkSl+ELooNYhh566Z7QQ68=;
-	b=M1pBuqihQmpWnl0H9xGlt5c6W7BJPB0teIpv5xrZ5HSACbr/12MNjorkxTqFKVDPOIE/SS
-	eqiG80lUW8XBTCcw2tHhn1teYoX5oybPY2Gwyt74MdeNbCg1Kt8urjiKwJU7pZf/6T71DQ
-	Px3TyxnP8qaH7zDtjcTMnt5a0Em1woE=
+	t=1740635708; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=F9QIe7BBpCfyu3f39k3PTijSvbPVGTjj30e9JDFZYsY=;
+	b=NCDI+h+X3SO41+jjYgiGTVdvkoTY7HY1I125nUNHB1rdAyxYm9MGN5sEb8MN53wf4A8xLY
+	cJYk5J/WMWrdEYtwuB6w1XdfSGHfjsbe6PX2uNjuCLovDENcd4f0kPCFSKek02awHPGMp/
+	Lgyp39voIxrlFtb14C6lXHtl9fd78+c=
 Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=M1pBuqih
+	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1740635705; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=qlUmmLBgLHGB9iuGPJjPiHkSl+ELooNYhh566Z7QQ68=;
-	b=M1pBuqihQmpWnl0H9xGlt5c6W7BJPB0teIpv5xrZ5HSACbr/12MNjorkxTqFKVDPOIE/SS
-	eqiG80lUW8XBTCcw2tHhn1teYoX5oybPY2Gwyt74MdeNbCg1Kt8urjiKwJU7pZf/6T71DQ
-	Px3TyxnP8qaH7zDtjcTMnt5a0Em1woE=
+	t=1740635708; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=F9QIe7BBpCfyu3f39k3PTijSvbPVGTjj30e9JDFZYsY=;
+	b=NCDI+h+X3SO41+jjYgiGTVdvkoTY7HY1I125nUNHB1rdAyxYm9MGN5sEb8MN53wf4A8xLY
+	cJYk5J/WMWrdEYtwuB6w1XdfSGHfjsbe6PX2uNjuCLovDENcd4f0kPCFSKek02awHPGMp/
+	Lgyp39voIxrlFtb14C6lXHtl9fd78+c=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 919D81376A
-	for <linux-btrfs@vger.kernel.org>; Thu, 27 Feb 2025 05:55:04 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 4963E1376A;
+	Thu, 27 Feb 2025 05:55:07 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id QORPFDj+v2ebUgAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Thu, 27 Feb 2025 05:55:04 +0000
+	id kLRJAzv+v2ebUgAAD6G6ig
+	(envelope-from <wqu@suse.com>); Thu, 27 Feb 2025 05:55:07 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 0/8] btrfs: make subpage handling be feature full
-Date: Thu, 27 Feb 2025 16:24:38 +1030
-Message-ID: <cover.1740635497.git.wqu@suse.com>
+Cc: stable@vger.kernel.org
+Subject: [PATCH v2 2/8] btrfs: subpage: do not hold subpage spin lock when clearing folio writeback
+Date: Thu, 27 Feb 2025 16:24:40 +1030
+Message-ID: <5d724635289a10a39164b767bdbee81e9e82e7d7.1740635497.git.wqu@suse.com>
 X-Mailer: git-send-email 2.48.1
+In-Reply-To: <cover.1740635497.git.wqu@suse.com>
+References: <cover.1740635497.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -62,109 +69,114 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Rspamd-Queue-Id: 5AA041F394
-X-Spam-Score: -3.01
-X-Rspamd-Action: no action
-X-Spamd-Result: default: False [-3.01 / 50.00];
+X-Spam-Score: -2.80
+X-Spamd-Result: default: False [-2.80 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
 	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	ARC_NA(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_TLS_ALL(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:dkim];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	RCPT_COUNT_TWO(0.00)[2];
 	FUZZY_BLOCKED(0.00)[rspamd.com];
-	TO_DN_NONE(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
+	ARC_NA(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:email];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
 	MIME_TRACE(0.00)[0:+];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	RCVD_TLS_ALL(0.00)[]
 X-Spam-Flag: NO
 X-Spam-Level: 
 
-[CHANGLOG]
-v2:
-- Add a new bug fix which is exposed by recent 2K block size tests on
-  x86_64
-  It's a self deadlock where the folio_end_writeback() is called with
-  subpage lock hold, and folio_end_writeback() will eventually call
-  btrfs_release_folio() and try to lock the same spin lock.
+[BUG]
+When testing subpage block size btrfs (block size < page size), I hit
+the following spin lock hang on x86_64, with the experimental 2K block
+size support:
 
-- Various grammar fixes and commit message/comments updates
+  <TASK>
+  _raw_spin_lock_irq+0x2f/0x40
+  wait_subpage_spinlock+0x69/0x80 [btrfs]
+  btrfs_release_folio+0x46/0x70 [btrfs]
+  folio_unmap_invalidate+0xcb/0x250
+  folio_end_writeback+0x127/0x1b0
+  btrfs_subpage_clear_writeback+0xef/0x140 [btrfs]
+  end_bbio_data_write+0x13a/0x3c0 [btrfs]
+  btrfs_bio_end_io+0x6f/0xc0 [btrfs]
+  process_one_work+0x156/0x310
+  worker_thread+0x252/0x390
+  ? __pfx_worker_thread+0x10/0x10
+  kthread+0xef/0x250
+  ? finish_task_switch.isra.0+0x8a/0x250
+  ? __pfx_kthread+0x10/0x10
+  ret_from_fork+0x34/0x50
+  ? __pfx_kthread+0x10/0x10
+  ret_from_fork_asm+0x1a/0x30
+  </TASK>
 
-- Address comments from Filipe and adds his tags
+[CAUSE]
+It's a self deadlock with the following sequence:
 
-v1:
-- Merge previous two patches into one
-- Re-order the patches so preparation/fixes are always before feature
-  enablement
-- Update the commit message of the first patch
-  So that we do not focus on the out-of-tree part, but explain why it's
-  not ideal in the first place (double page zeroing), and just mention
-  the behavior change in the future.
+ btrfs_subpage_clear_writeback()
+ |- spin_lock_irqsave(&subpage->lock);
+ |- folio_end_writeback()
+    |- folio_end_dropbehind_write()
+       |- folio_unmap_invalidate()
+          |- btrfs_release_folio()
+             |- wait_subpage_spinlock()
+                |- spin_lock_irq(&subpage->lock);
+                   !! DEADLOCK !!
 
-Since the introduction of btrfs subapge support in v5.15, there are
-quite some limitations:
+We're trying to acquire the same spin lock already held by ourselves.
 
-- No RAID56 support
-  Added in v5.19.
+[FIX]
+Move the folio_end_writeback() call out of the spin lock critical
+section.
 
-- No memory efficient scrub support
-  Added in v6.4.
+And since we no longer have all the bitmap operation and the writeback
+flag clearing happening inside the critical section, we must do extra
+checks to make sure only the last one clearing the writeback bitmap can
+clear the folio writeback flag.
 
-- No block perfect compressed write support
-  Previously btrfs requires the dirty range to be fully page aligned, or
-  it will skip compression completely.
+Fixes: 3470da3b7d87 ("btrfs: subpage: introduce helpers for writeback status")
+Cc: stable@vger.kernel.org # 5.15+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/subpage.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
 
-  Added in v6.13.
-
-- Various subpage related error handling fixes
-  Added in v6.14.
-
-- No support to create inline data extent
-- No partial uptodate page support
-  This is a long existing optimization supported by EXT4/XFS and
-  is required to pass generic/563 with subpage block size.
-
-The last two are addressed in this patchset.
-
-And since all features are implemented for subpage cases, the long
-existing experimental warning message can be dropped, as it is already
-causing a lot of concerns for users who checks the dmesg carefully.
-
-Qu Wenruo (8):
-  btrfs: prevent inline data extents read from touching blocks beyond
-    its range
-  btrfs: subpage: do not hold subpage spin lock when clearing folio
-    writeback
-  btrfs: fix the qgroup data free range for inline data extents
-  btrfs: introduce a read path dedicated extent lock helper
-  btrfs: make btrfs_do_readpage() to do block-by-block read
-  btrfs: allow buffered write to avoid full page read if it's block
-    aligned
-  btrfs: allow inline data extents creation if block size < page size
-  btrfs: remove the subpage related warning message
-
- fs/btrfs/disk-io.c      |   5 -
- fs/btrfs/extent_io.c    | 229 +++++++++++++++++++++++++++++++++++-----
- fs/btrfs/file.c         |   5 +-
- fs/btrfs/inode.c        |  29 ++---
- fs/btrfs/ordered-data.c |  23 +++-
- fs/btrfs/ordered-data.h |   8 +-
- fs/btrfs/subpage.c      |  10 +-
- 7 files changed, 246 insertions(+), 63 deletions(-)
-
+diff --git a/fs/btrfs/subpage.c b/fs/btrfs/subpage.c
+index ebb40f506921..bedb5fac579b 100644
+--- a/fs/btrfs/subpage.c
++++ b/fs/btrfs/subpage.c
+@@ -466,15 +466,21 @@ void btrfs_subpage_clear_writeback(const struct btrfs_fs_info *fs_info,
+ 	struct btrfs_subpage *subpage = folio_get_private(folio);
+ 	unsigned int start_bit = subpage_calc_start_bit(fs_info, folio,
+ 							writeback, start, len);
++	bool was_writeback;
++	bool last = false;
+ 	unsigned long flags;
+ 
+ 	spin_lock_irqsave(&subpage->lock, flags);
++	was_writeback = !subpage_test_bitmap_all_zero(fs_info, folio, writeback);
+ 	bitmap_clear(subpage->bitmaps, start_bit, len >> fs_info->sectorsize_bits);
+-	if (subpage_test_bitmap_all_zero(fs_info, folio, writeback)) {
++	if (subpage_test_bitmap_all_zero(fs_info, folio, writeback) &&
++	    was_writeback) {
+ 		ASSERT(folio_test_writeback(folio));
+-		folio_end_writeback(folio);
++		last = true;
+ 	}
+ 	spin_unlock_irqrestore(&subpage->lock, flags);
++	if (last)
++		folio_end_writeback(folio);
+ }
+ 
+ void btrfs_subpage_set_ordered(const struct btrfs_fs_info *fs_info,
 -- 
 2.48.1
 

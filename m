@@ -1,157 +1,210 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 60B2F25CC80;
-	Wed, 26 Feb 2025 22:27:00 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BAD151C5D6E
+	for <linux-btrfs@vger.kernel.org>; Thu, 27 Feb 2025 05:55:08 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1740608820; cv=none; b=POV7BqsHltpNjnKUrPjztvHFEcZ+6WK3ydlheME3M4koO1aiqck8q7NT25G405El5rtfgRuB3QEwKf9RJJyYHXvHlUtZhmyly0gHR7LsnR9oRhSCfzvpWlvw6VCClD5Z8bOUkvP/JXKoscYGJaJ2vy5lErpyxHSQkNCDLz6xf/0=
+	t=1740635711; cv=none; b=OgTOt90aT56JJeTLdh1pFH67ZzyMyNLFSvwlp114+y7K+eIpUiDm4/iHdFDbaraWk5ZDXC5kY/gGKLcs15fVoRlFfZIs9NQ5L1z4DuLwEdbU6ffBVS+aSqKY3rDIhE7GzrA1Va03zgjAuUyCZaHENNXShOY3DeeUTUGsNjjBmzc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1740608820; c=relaxed/simple;
-	bh=O5zZ7g63I+0ZeYH00JZerlvbNik71qO0CgwvkTnWcIs=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=B3PfCFO5hiCvcw4q9HDa7O6w1BcxdYyvtboUer8VaVjxnn/e+ZoolJsLiRIbGay97ZQtUsYOjEzMOr7VY1p+umFvz0OMlOvg2ZwM6UAP/drhv8KyxVLzlcvlp3L1hhaU+OvDLXbJxsvPqX8FyP+yA7mTntWmpXd1Tj4wcbQBGQY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=aqYqpdVV; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1740635711; c=relaxed/simple;
+	bh=/04BNbArBbapAXCCktBtlwQ4Kh5BK7ZEGHU5cKZhsqc=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=lwdukFDS5Bg+FLtlbQ4jsU7S5p7KFs8Irm9YpQlu+nuxqQqH9MiRNzghNBIwsj6XaklgAb8uRwN8mKJSpTEx+mBGEseC9yUFSzpfBF4DC2zKMId4ZOvrChwkFuaaEUO6vs8kBbpwy3qNE+uaqxC1BNcdOD4MBtXYEN9mDgJBHS0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=scAg6+cq; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=scAg6+cq; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="aqYqpdVV"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8D179C4CED6;
-	Wed, 26 Feb 2025 22:26:49 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1740608820;
-	bh=O5zZ7g63I+0ZeYH00JZerlvbNik71qO0CgwvkTnWcIs=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=aqYqpdVVpkD5NJn6jpo0cdClxOspwzsi8RCKpRnA88J5OPdmx1mMru31LZxBFgp96
-	 SZb3oRy0Fxzg1qr18ZQYO7NtEHrnW1kSYRo35qghO1/ESXhb4R4oAXKE6PoHpaKtQk
-	 rw/ltpwe8XfbrUtfiq6lveoAbVX0jopaapPwU3slyk58T6gzgfoVr9fY71ajwj3kUT
-	 xvbk1I9lC3b2larN7+jztDKNXSrFhP0QhpXpDklrqd7y0o0NsfVUuwegc/GYneM1Nf
-	 LoD2swB/LWax0rd/I8YAe0yQ9kMiS9zB3fdg0qmIVaFo3k/1cDqwlB1rT1yn4zBMcR
-	 ST+zf0908vWAA==
-Date: Wed, 26 Feb 2025 22:26:46 +0000
-From: Mark Brown <broonie@kernel.org>
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Easwar Hariharan <eahariha@linux.microsoft.com>,
-	Yaron Avizrat <yaron.avizrat@intel.com>,
-	Oded Gabbay <ogabbay@kernel.org>,
-	Julia Lawall <Julia.Lawall@inria.fr>,
-	Nicolas Palix <nicolas.palix@imag.fr>,
-	James Smart <james.smart@broadcom.com>,
-	Dick Kennedy <dick.kennedy@broadcom.com>,
-	"James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>,
-	"Martin K. Petersen" <martin.petersen@oracle.com>,
-	Jaroslav Kysela <perex@perex.cz>, Takashi Iwai <tiwai@suse.com>,
-	Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-	David Sterba <dsterba@suse.com>, Ilya Dryomov <idryomov@gmail.com>,
-	Dongsheng Yang <dongsheng.yang@easystack.cn>,
-	Jens Axboe <axboe@kernel.dk>, Xiubo Li <xiubli@redhat.com>,
-	Damien Le Moal <dlemoal@kernel.org>,
-	Niklas Cassel <cassel@kernel.org>, Carlos Maiolino <cem@kernel.org>,
-	"Darrick J. Wong" <djwong@kernel.org>,
-	Sebastian Reichel <sre@kernel.org>, Keith Busch <kbusch@kernel.org>,
-	Christoph Hellwig <hch@lst.de>, Sagi Grimberg <sagi@grimberg.me>,
-	Frank Li <Frank.Li@nxp.com>, Shawn Guo <shawnguo@kernel.org>,
-	Sascha Hauer <s.hauer@pengutronix.de>,
-	Pengutronix Kernel Team <kernel@pengutronix.de>,
-	Fabio Estevam <festevam@gmail.com>,
-	Shyam Sundar S K <Shyam-sundar.S-k@amd.com>,
-	Hans de Goede <hdegoede@redhat.com>,
-	Ilpo =?iso-8859-1?Q?J=E4rvinen?= <ilpo.jarvinen@linux.intel.com>,
-	Henrique de Moraes Holschuh <hmh@hmh.eng.br>,
-	Selvin Xavier <selvin.xavier@broadcom.com>,
-	Kalesh AP <kalesh-anakkur.purayil@broadcom.com>,
-	Jason Gunthorpe <jgg@ziepe.ca>, Leon Romanovsky <leon@kernel.org>,
-	cocci@inria.fr, linux-kernel@vger.kernel.org,
-	linux-scsi@vger.kernel.org, dri-devel@lists.freedesktop.org,
-	linux-sound@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	ceph-devel@vger.kernel.org, linux-block@vger.kernel.org,
-	linux-ide@vger.kernel.org, linux-xfs@vger.kernel.org,
-	linux-pm@vger.kernel.org, linux-nvme@lists.infradead.org,
-	linux-spi@vger.kernel.org, imx@lists.linux.dev,
-	linux-arm-kernel@lists.infradead.org,
-	platform-driver-x86@vger.kernel.org,
-	ibm-acpi-devel@lists.sourceforge.net, linux-rdma@vger.kernel.org,
-	Takashi Iwai <tiwai@suse.de>,
-	Carlos Maiolino <cmaiolino@redhat.com>
-Subject: Re: [PATCH v3 00/16] Converge on using secs_to_jiffies() part two
-Message-ID: <594169fd-5ba6-42d5-ad35-bb8c7720904b@sirena.org.uk>
-References: <20250225-converge-secs-to-jiffies-part-two-v3-0-a43967e36c88@linux.microsoft.com>
- <79b24031-5776-4eb3-960b-32b0530647fb@sirena.org.uk>
- <20250226123851.a50e727d0a1bfe639ece4a72@linux-foundation.org>
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="scAg6+cq";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="scAg6+cq"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id C9E7F211A1;
+	Thu, 27 Feb 2025 05:55:06 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1740635706; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=e9VXx+8Z0Gr4C5gvS+pAsmKOliEMdagUu53c2fSkmO4=;
+	b=scAg6+cqFCfj9gIz43IohoiYNCQ+gqi2hEP5nOA9RWX1bu3PWoGHcqTmYWs49Rz+U8og2Y
+	kERCatRIhQt2sNZX8MGDwGxX5nDdQ4RHOvaH6ppbJ7du3I4u8+ieasfuccFoTObhetiZFG
+	+p4vWd3z2X9QmJgTuWh+HYRtDR3u9fA=
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=scAg6+cq
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1740635706; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=e9VXx+8Z0Gr4C5gvS+pAsmKOliEMdagUu53c2fSkmO4=;
+	b=scAg6+cqFCfj9gIz43IohoiYNCQ+gqi2hEP5nOA9RWX1bu3PWoGHcqTmYWs49Rz+U8og2Y
+	kERCatRIhQt2sNZX8MGDwGxX5nDdQ4RHOvaH6ppbJ7du3I4u8+ieasfuccFoTObhetiZFG
+	+p4vWd3z2X9QmJgTuWh+HYRtDR3u9fA=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id C9BC81376A;
+	Thu, 27 Feb 2025 05:55:05 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id 8FuqIjn+v2ebUgAAD6G6ig
+	(envelope-from <wqu@suse.com>); Thu, 27 Feb 2025 05:55:05 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH v2 1/8] btrfs: prevent inline data extents read from touching blocks beyond its range
+Date: Thu, 27 Feb 2025 16:24:39 +1030
+Message-ID: <da8a69b82144d6de4ca8c1ee99c33d2290480b78.1740635497.git.wqu@suse.com>
+X-Mailer: git-send-email 2.48.1
+In-Reply-To: <cover.1740635497.git.wqu@suse.com>
+References: <cover.1740635497.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha512;
-	protocol="application/pgp-signature"; boundary="ktE/+HW2BMMja6u3"
-Content-Disposition: inline
-In-Reply-To: <20250226123851.a50e727d0a1bfe639ece4a72@linux-foundation.org>
-X-Cookie: I've been there.
+Content-Transfer-Encoding: 8bit
+X-Rspamd-Queue-Id: C9E7F211A1
+X-Spam-Level: 
+X-Spamd-Result: default: False [-3.01 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
+	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:dkim,suse.com:mid];
+	ARC_NA(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	FROM_HAS_DN(0.00)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FUZZY_BLOCKED(0.00)[rspamd.com];
+	RCVD_TLS_ALL(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	FROM_EQ_ENVFROM(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	RCPT_COUNT_TWO(0.00)[2];
+	TO_DN_SOME(0.00)[];
+	DKIM_TRACE(0.00)[suse.com:+]
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Rspamd-Action: no action
+X-Spam-Score: -3.01
+X-Spam-Flag: NO
 
+Currently reading an inline data extent will zero out all the remaining
+range in the page.
 
---ktE/+HW2BMMja6u3
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+This is not yet causing problems even for block size < page size
+(subpage) cases because:
 
-On Wed, Feb 26, 2025 at 12:38:51PM -0800, Andrew Morton wrote:
-> On Wed, 26 Feb 2025 11:29:53 +0000 Mark Brown <broonie@kernel.org> wrote:
+1) An inline data extent always starts at file offset 0
+   Meaning at page read, we always read the inline extent first, before
+   any other blocks in the page. Then later blocks are properly read out
+   and re-fill the zeroed out ranges.
 
-> > Please don't combine patches for multiple subsystems into a single
-> > series if there's no dependencies between them, it just creates
-> > confusion about how things get merged, problems for tooling and makes
-> > everything more noisy.  It's best to split things up per subsystem in
-> > that case.
+2) Currently btrfs will read out the whole page if a buffered write is
+   not page aligned
+   So a page is either fully uptodate at buffered write time (covers the
+   whole page), or we will read out the whole page first.
+   Meaning there is nothing to lose for such an inline extent read.
 
-> I asked for this.  I'll merge everything, spend a few weeks gathering
-> up maintainer acks.  Anything which a subsystem maintainer merges will
-> be reported by Stephen and I'll drop that particular patch.
+But it's still not ideal:
 
-> This way, nothing gets lost.  I take this approach often and it works.
+- We're zeroing out the page twice
+  One done by read_inline_extent()/uncompress_inline(), one done by
+  btrfs_do_readpage() for ranges beyond i_size.
 
-I've only started seeing these in the past few weeks, but we do have a
-bunch of people routinely doing cross tree stuff who split things up and
-it seems to work OK there.
+- We're touching blocks that doesn't belong to the inline extent
+  In the incoming patches, we can have a partial uptodate folio, that
+  some dirty blocks can exist while the page is not fully uptodate:
 
-> If these were sent as a bunch of individual patches then it would be up
-> to the sender to keep track of what has been merged and what hasn't.=20
-> That person will be resending some stragglers many times.  Until they
-> give up and some patches get permanently lost.
+  The page size is 16K and block size is 4K:
 
-Surely the sender can just CC you on each individual thing just as well?
-Ensuring things get picked up is great, but it's not clear to me that
-copying everyone on a cross tree series is helping with that.
+  0         4K        8K        12K        16K
+  |         |         |/////////|          |
 
-> Scale all that across many senders and the whole process becomes costly
-> and unreliable.  Whereas centralizing it on akpm is more efficient,
-> more reliable, more scalable, lower latency and less frustrating for
-> senders.
+  And range [8K, 12K) is dirtied by a buffered write, the remaining
+  blocks are not uptodate.
 
-Whereas copying everyone means all the maintainers see something that
-looks terribly complicated in their inboxes and have to figure out if
-there are actually any dependencies in the series and how it's supposed
-to be handed, and then every reply goes to a huge CC list.  That's not
-good for either getting people to look at things or general noise
-avoidance, especially for people who are expecting to get cross tree
-serieses which do have dependencies that need to be managed.
+  If range [0, 4K) contains an inline data extent, and we try to read
+  the whole page, the current behavior will overwrite range [8K, 12K)
+  with zero and cause data loss.
 
-There's also some bad failure modes as soon as anyone has any sort of
-comment on the series, suddenly everyone's got a coding style debate or
-whatever in their inboxes they can pile into.
+So to make the behavior more consistent and in preparation for future
+changes, limit the inline data extents read to only zero out the range
+inside the first block, not the whole page.
 
---ktE/+HW2BMMja6u3
-Content-Type: application/pgp-signature; name="signature.asc"
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/inode.c | 14 ++++++++------
+ 1 file changed, 8 insertions(+), 6 deletions(-)
 
------BEGIN PGP SIGNATURE-----
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index c432ccfba56e..f06b1c78c399 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -6788,6 +6788,7 @@ static noinline int uncompress_inline(struct btrfs_path *path,
+ {
+ 	int ret;
+ 	struct extent_buffer *leaf = path->nodes[0];
++	const u32 sectorsize = leaf->fs_info->sectorsize;
+ 	char *tmp;
+ 	size_t max_size;
+ 	unsigned long inline_size;
+@@ -6804,7 +6805,7 @@ static noinline int uncompress_inline(struct btrfs_path *path,
+ 
+ 	read_extent_buffer(leaf, tmp, ptr, inline_size);
+ 
+-	max_size = min_t(unsigned long, PAGE_SIZE, max_size);
++	max_size = min_t(unsigned long, sectorsize, max_size);
+ 	ret = btrfs_decompress(compress_type, tmp, folio, 0, inline_size,
+ 			       max_size);
+ 
+@@ -6816,14 +6817,15 @@ static noinline int uncompress_inline(struct btrfs_path *path,
+ 	 * cover that region here.
+ 	 */
+ 
+-	if (max_size < PAGE_SIZE)
+-		folio_zero_range(folio, max_size, PAGE_SIZE - max_size);
++	if (max_size < sectorsize)
++		folio_zero_range(folio, max_size, sectorsize - max_size);
+ 	kfree(tmp);
+ 	return ret;
+ }
+ 
+ static int read_inline_extent(struct btrfs_path *path, struct folio *folio)
+ {
++	const u32 sectorsize = path->nodes[0]->fs_info->sectorsize;
+ 	struct btrfs_file_extent_item *fi;
+ 	void *kaddr;
+ 	size_t copy_size;
+@@ -6838,14 +6840,14 @@ static int read_inline_extent(struct btrfs_path *path, struct folio *folio)
+ 	if (btrfs_file_extent_compression(path->nodes[0], fi) != BTRFS_COMPRESS_NONE)
+ 		return uncompress_inline(path, folio, fi);
+ 
+-	copy_size = min_t(u64, PAGE_SIZE,
++	copy_size = min_t(u64, sectorsize,
+ 			  btrfs_file_extent_ram_bytes(path->nodes[0], fi));
+ 	kaddr = kmap_local_folio(folio, 0);
+ 	read_extent_buffer(path->nodes[0], kaddr,
+ 			   btrfs_file_extent_inline_start(fi), copy_size);
+ 	kunmap_local(kaddr);
+-	if (copy_size < PAGE_SIZE)
+-		folio_zero_range(folio, copy_size, PAGE_SIZE - copy_size);
++	if (copy_size < sectorsize)
++		folio_zero_range(folio, copy_size, sectorsize - copy_size);
+ 	return 0;
+ }
+ 
+-- 
+2.48.1
 
-iQEzBAABCgAdFiEEreZoqmdXGLWf4p/qJNaLcl1Uh9AFAme/lSYACgkQJNaLcl1U
-h9DO/Qf/a9HWwKcXS5+hFxQJSm6QW0NLy2NbqHre8UKfa7aKUVgjHmVnb1gIAdSh
-gY+WUz9p7S+67TovmO+FlVs/KDBaHyw8J0auw2I/uFK7bDhNHXtiUi32jBCyuQD4
-w+yhOC50NrB6ZXh/FpBk8EXI4DSUoaL5z6KMVYItTTfl0lCtBbTGJSAPXswWc3u1
-5ZXriY5GR9Q2MwY4Fs6QN6pbKucqtpxnhiL26E8ic/kdpVh6ZGEoFhFWweV6nD/+
-ttggFNcFA98M8YYEySK/p9ls4PyRF4dXL+oQWEXWvylpGogCDAcCj7Igb8CuyJRn
-G2+ftlgr6xEk4hOBnRKBY7Ts/BcKqg==
-=3AEq
------END PGP SIGNATURE-----
-
---ktE/+HW2BMMja6u3--

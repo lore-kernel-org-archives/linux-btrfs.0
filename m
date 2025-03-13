@@ -1,67 +1,66 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from mail-pj1-f68.google.com (mail-pj1-f68.google.com [209.85.216.68])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 706247DA6A
-	for <linux-btrfs@vger.kernel.org>; Thu, 13 Mar 2025 04:21:37 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 80D922E3395
+	for <linux-btrfs@vger.kernel.org>; Thu, 13 Mar 2025 05:35:24 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.216.68
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1741839699; cv=none; b=j26PLaHsS241W24s7gDULcMWY5nHfI0L3mBT8tHJBNeg5TZ97sPB+nEcw8we+YUSdr92WuMj7QbnSGTteSMm0yMQIrhWt3AVBFwokjv+OGTntBnB7P43OCOCkWU3gIFH0vIBqcqil0/qNlPHcCbfjIKvGkle/lhlXTJLMNKnb2I=
+	t=1741844126; cv=none; b=gKNC54L+ILZ+SRTAjHgibXT2qpDya1zgHIjTMUKO3kIrWNw0w5/Zm0LdRfhHZCIKxsrB/iBlEklgVFRWwrQErAaMUf0gF4Xy6gZLpsp+Ko6AKcjsKgcAGmf8Z0hWPm+Xo0Dx9Yjz/NmCPtaEUVewtj0fiCu2P3WXfQbGaiO3Qgg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1741839699; c=relaxed/simple;
-	bh=/xzmG5K76lfmL5ajvWSgzrrRon+QcYkuwFUJpQk94xk=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=PdT9i2Wi4bHx42XWdsfbtP64C+SUsX1ilkm6v/M85HZWQOs2Awm9CTjihAUk8xLS4c3ywigb9mhkHCsaIX19G86mad+GVqiAKoqwybubI4TnM3iK0rnpmpLJr51y4JNFmYMW5VVJb43DsHnyTdZl5f+D583pl/rpgrS2k2sGxR4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=jW3RnX1j; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=jW3RnX1j; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1741844126; c=relaxed/simple;
+	bh=sLHSI/jpCnCB4kAqzkZaev8zI+KHdSEcRk0krqKu6gs=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=O0bxwa8K5NVnIfnaFJdvV5Y92isibyuVNGpiifrUG9KdB9eV9RYb2LX7MfVueaFIb9O2YhIkVhPQjGMExmxVuipFsxuMd+HqrPTJUZA+rtM40L65U0WlcsXyVm0LK5eAvwVske9JUtn6c5oroOQFOo1rprsMLpLsxRgTAeTp7Hs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=iARlf5tw; arc=none smtp.client-ip=209.85.216.68
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="jW3RnX1j";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="jW3RnX1j"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id C8A1D2118D
-	for <linux-btrfs@vger.kernel.org>; Thu, 13 Mar 2025 04:21:12 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1741839672; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=5uLHrKI2W0qNotF19LaH0Esuj3bfTzC1d82Ak37dtTg=;
-	b=jW3RnX1jpVmxI+OGZU/4uRQY7hcQJNrmBxqgo+5JO0nRaxDm0P/AjIEo/xwcbR4+CLTuVH
-	LvRpfkixCMCbxuEAC7Z0J1Ya4HyBBWqP8uLUWkzEf8x1VipKsiL1VPYUsBgWe44BTxjHkT
-	7dRLUqM79qZOKR2D34RGDW+JMxZ1kEc=
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=jW3RnX1j
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1741839672; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=5uLHrKI2W0qNotF19LaH0Esuj3bfTzC1d82Ak37dtTg=;
-	b=jW3RnX1jpVmxI+OGZU/4uRQY7hcQJNrmBxqgo+5JO0nRaxDm0P/AjIEo/xwcbR4+CLTuVH
-	LvRpfkixCMCbxuEAC7Z0J1Ya4HyBBWqP8uLUWkzEf8x1VipKsiL1VPYUsBgWe44BTxjHkT
-	7dRLUqM79qZOKR2D34RGDW+JMxZ1kEc=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id F277413797
-	for <linux-btrfs@vger.kernel.org>; Thu, 13 Mar 2025 04:21:11 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id sNwALDdd0mcrYQAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Thu, 13 Mar 2025 04:21:11 +0000
-From: Qu Wenruo <wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="iARlf5tw"
+Received: by mail-pj1-f68.google.com with SMTP id 98e67ed59e1d1-2ff7cf59a8fso154333a91.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Mar 2025 22:35:24 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1741844123; x=1742448923; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to;
+        bh=28+pHXvyG/HkanotYHqhMMpJsQZ+d0B6C/3Dn6hJjYo=;
+        b=iARlf5twywdLXvtFVLWW0Ke/bPwTaRZqp+N410R8dCMfXCf59oWtWxc4zf/z18Hvih
+         wduC1rn8lG7lf3T3II8I7fHh8SaEPyRyxl0mm+x3AwaBF3XruoUED6RGSubtjNRLrPi2
+         e8dGyb2ZaoWiICl1NvHzXHkBSXEDN+LQkNjEJ1Y+hnFSMc6z2sVLTzGFSi1pj+SpQQ+a
+         v+sz4iBJ5dfqf+PPj2TBJ44+mou62bz1GxcXHTBVcUB/nJe/4+gjFu+kHivfIBNTWhya
+         YG04qJnHz1GY0u2vvaI8VJQf0FvvjCUYO/wsNUlOXkJ9T6EwD3NrGQmmP5+O7FGak3vn
+         PH6A==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1741844123; x=1742448923;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=28+pHXvyG/HkanotYHqhMMpJsQZ+d0B6C/3Dn6hJjYo=;
+        b=mic1l0Sn5CiZ1vB0PZn7uTBFatCt0lQQ0N6L0F5AnoEpyMIlQd0eExWxn/uL//c/jT
+         1f+Ub2DUfd8ouu5hUbEaQz1zukASIr9eDzVk+Fd77r1DPufJbmkI+KhhbBxGH57wUKOi
+         f9MFJ3PH9OGvd1tjwud75zoJJogP4o3Mp4SZUIPRDaYUhZ8OMSAMpGKXeudX7DW2UtFn
+         Ge8/due0shiLh9cSkiQDIrIlVuYryWtL2toflaYIR8kXPXhIT3ludUzG1a905O7HlXAO
+         26IjqMrWFIv0F8AXNkliwlzsmaAYXYB+1WK4fjPwxpVZZsixKG7DZ1LfrAEOH/oOyRVp
+         zBdQ==
+X-Gm-Message-State: AOJu0YxyVnR/Hg7gdFiYjQFBQIuhKdUPbHY6DC5R2ahVfGuQ2ZXyEgC/
+	QMnWG8q5M7cOswVSqjLOeZn+3LraRd6WTo5+ZD1NDMyIneILtsuEdlwVcD4/0N87PA==
+X-Gm-Gg: ASbGncuJVHfs+xoDrIlbOhg2PIOKvfE0GVhnED6Yap9HnA843rdgnmiLHRDH4/p00wm
+	LMXBPakCZB6RsqN5EB6Rr4YHCg9EG5DV0MGQJSStf/uLf8R1ETWpWMsB2D4sh9qyOikh47Lj4Hd
+	pNVuxP9/V/6WYA8N8YXj4AgJcA4BJJxWnJQzAN8xWIoPxP5aFppZCrSbqZojwdkmr7HDHd9lN6L
+	7e/BDx8zs526qlfzd4VCv0NG7rYaOFA3LDw7bP3kMH812syC2f4kLgCDuG2ZT4ustQ5yjvM+opY
+	xhMWIqQQ6fZHfb39mVCZdvvbH7ur++IjSgMU2D071VRaqGo=
+X-Google-Smtp-Source: AGHT+IE18/pqMR2jDguHWyUytg9UJOSTGCJmF8CZ2GiiHCrdg9HUjK5I/u3XHt0nhSk+8WTTDK5BMw==
+X-Received: by 2002:a05:6a20:2d23:b0:1f3:3112:d201 with SMTP id adf61e73a8af0-1f58cad32f7mr5844800637.1.1741844123560;
+        Wed, 12 Mar 2025 22:35:23 -0700 (PDT)
+Received: from SaltyKitkat.. ([198.176.54.118])
+        by smtp.gmail.com with ESMTPSA id 41be03b00d2f7-af56e9ddb52sm478126a12.19.2025.03.12.22.35.22
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 12 Mar 2025 22:35:23 -0700 (PDT)
+From: Sun YangKai <sunk67188@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 4/7] btrfs: prepare prepare_one_folio() for larger data folios
-Date: Thu, 13 Mar 2025 14:50:46 +1030
-Message-ID: <20cf962e9d343e2549d43fa95f3169b088370efb.1741839616.git.wqu@suse.com>
+Cc: Sun YangKai <sunk67188@gmail.com>
+Subject: [PATCH] btrfs: fix nonzero lowest level handling in btrfs_search_forward()
+Date: Thu, 13 Mar 2025 13:34:14 +0800
+Message-ID: <20250313053509.31946-1-sunk67188@gmail.com>
 X-Mailer: git-send-email 2.48.1
-In-Reply-To: <cover.1741839616.git.wqu@suse.com>
-References: <cover.1741839616.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -69,58 +68,112 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Rspamd-Queue-Id: C8A1D2118D
-X-Spam-Score: -3.01
-X-Rspamd-Action: no action
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	MID_CONTAINS_FROM(1.00)[];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	ARC_NA(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_TLS_ALL(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	FUZZY_BLOCKED(0.00)[rspamd.com];
-	TO_DN_NONE(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	MIME_TRACE(0.00)[0:+];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Spam-Flag: NO
-X-Spam-Level: 
 
-The only blockage is the ASSERT() rejecting larger folios, just remove
-it.
+Commit 323ac95bce44 ("Btrfs: don't read leaf blocks containing only
+checksums during truncate") changed the condition from `level == 0` to
+`level == path->lowest_level`, while its origional purpose is just to do
+some leaf nodes handling (calling btrfs_item_key_to_cpu()) and skip some
+code that doesn't fit leaf nodes.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+After changing the condition, the code path
+1. also handle the non-leaf nodes when path->lowest_level is nonzero,
+   which is wrong. However, it seems that btrfs_search_forward() is never
+   called with a nonzero path->lowest_level, which makes this bug not
+   found before.
+2. makes the later if block with the same condition, which is origionally
+   used to handle non-leaf node (calling btrfs_node_key_to_cpu()) when
+   lowest_level is not zero, dead code.
+
+So Use if conditions to skip the non-leaf handling code instead of using
+goto to make it more clear, and handle both leaf and non-leaf node in the
+lowest_level loop exit logic.
+
+This changes the behavior when btrfs_search_forward() is called with
+nonzero path->lowest_level. But this never happens in the current code
+base, and the previous behavior is wrong. So the change of behavior will
+not be a problem.
+
+Fix: commit 323ac95bce44 ("Btrfs: don't read leaf blocks containing only checksums during truncate")
+Signed-off-by: Sun YangKai <sunk67188@gmail.com>
 ---
- fs/btrfs/file.c | 2 --
- 1 file changed, 2 deletions(-)
+ fs/btrfs/ctree.c | 44 +++++++++++++++++++-------------------------
+ 1 file changed, 19 insertions(+), 25 deletions(-)
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 4213807982d6..c2648858772a 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -875,8 +875,6 @@ static noinline int prepare_one_folio(struct inode *inode, struct folio **folio_
- 			ret = PTR_ERR(folio);
- 		return ret;
- 	}
--	/* Only support page sized folio yet. */
--	ASSERT(folio_order(folio) == 0);
- 	ret = set_folio_extent_mapped(folio);
- 	if (ret < 0) {
- 		folio_unlock(folio);
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index c982960d8a91..77e33120c3f7 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -4637,38 +4637,28 @@ int btrfs_search_forward(struct btrfs_root *root, struct btrfs_key *min_key,
+ 			goto out;
+ 		}
+ 
+-		/* at the lowest level, we're done, setup the path and exit */
+-		if (level == path->lowest_level) {
+-			if (slot >= nritems)
+-				goto find_next_key;
+-			ret = 0;
+-			path->slots[level] = slot;
+-			/* Save our key for returning back. */
+-			btrfs_item_key_to_cpu(cur, min_key, slot);
+-			goto out;
+-		}
+-		if (sret && slot > 0)
++		/*
++		 * Not at the lowest level and not a perfect match,
++		 * go back a slot if possible to search lower level.
++		 */
++		if (sret && slot > 0 && level > path->lowest_level)
+ 			slot--;
+ 		/*
+-		 * check this node pointer against the min_trans parameters.
++		 * Check this node pointer against the min_trans parameters.
+ 		 * If it is too old, skip to the next one.
+ 		 */
+-		while (slot < nritems) {
+-			u64 gen;
+-
+-			gen = btrfs_node_ptr_generation(cur, slot);
+-			if (gen < min_trans) {
++		if (level > 0) {
++			while (slot < nritems) {
++				if (btrfs_node_ptr_generation(cur, slot) >= min_trans)
++					break;
+ 				slot++;
+-				continue;
+ 			}
+-			break;
+ 		}
+-find_next_key:
++		path->slots[level] = slot;
+ 		/*
+-		 * we didn't find a candidate key in this node, walk forward
+-		 * and find another one
++		 * We didn't find a candidate key in this node, walk forward
++		 * and find another one.
+ 		 */
+-		path->slots[level] = slot;
+ 		if (slot >= nritems) {
+ 			sret = btrfs_find_next_key(root, path, min_key, level,
+ 						  min_trans);
+@@ -4679,12 +4669,16 @@ int btrfs_search_forward(struct btrfs_root *root, struct btrfs_key *min_key,
+ 				goto out;
+ 			}
+ 		}
++		/* At the lowest level, we're done. Set the key and exit. */
+ 		if (level == path->lowest_level) {
+ 			ret = 0;
+-			/* Save our key for returning back. */
+-			btrfs_node_key_to_cpu(cur, min_key, slot);
++			if (level == 0)
++				btrfs_item_key_to_cpu(cur, min_key, slot);
++			else
++				btrfs_node_key_to_cpu(cur, min_key, slot);
+ 			goto out;
+ 		}
++		/* Search down to a lower level. */
+ 		cur = btrfs_read_node_slot(cur, slot);
+ 		if (IS_ERR(cur)) {
+ 			ret = PTR_ERR(cur);
 -- 
 2.48.1
 

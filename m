@@ -1,64 +1,64 @@
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AB99321ADA9
-	for <linux-btrfs@vger.kernel.org>; Mon, 17 Mar 2025 07:11:49 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5269A18A6B5
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Mar 2025 07:11:56 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1742195511; cv=none; b=j835E2Gp+TCO3GJKnRJuLsR5Kl9/Y5aJGZojCBukQIndMrxqQSspndgIdhga8V2AZFbYciWpeRGP5C/LRsYMcu0YWOIvXympM6EojaT3yTjvyEP8bi5czHk++ScLK/lPACIaHAo/PPDMY5l5aMOP1RP1vFvpb8eQpCToP3AMjrg=
+	t=1742195518; cv=none; b=VWq0sR8zDbQLscy7h0hfwnxsAN1IMAoMEMF/Dq+BIY5Rhs4u4JTdfC/uZNZHjJHMOkEY3wHxRst9ExgO6lAui/4Y3D3Wmp/mB082otkQtkKIleBX7vLNmk1+k8b/fmxiCjQwe3975qG2ALzurr8SoU4uV79CtqNc9o4lCPuVdfY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1742195511; c=relaxed/simple;
-	bh=/xzmG5K76lfmL5ajvWSgzrrRon+QcYkuwFUJpQk94xk=;
+	s=arc-20240116; t=1742195518; c=relaxed/simple;
+	bh=fV39FIZBHcLoysOcEHA/fNtbn1s1mlpDtFc3Eo+jfyo=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=sEQYF1EZPiQ3nQItx8s74SYUa9eqfScXkjc/VfdvkCQIUPR2jjdSu+g20piHoLcK3HTOjxWC83I7B3D00gsdArFAIEgoFuWtruL68dfLiEPi0rYDHl2906ZKk7/0pWCtFbNV+h5ybexaQQfulX0ToVSGmqHgO9/s8rz5/UFask8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=IVy+bld0; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=IVy+bld0; arc=none smtp.client-ip=195.135.223.130
+	 MIME-Version; b=F6ja4/0ObOVmgGxQd6j0xUn0QVn+ftLM+S3IvUvwCZ4LS4Ebd9VkhCYU1DpwMOx1sNhwg8QFF2FC33f+zTQNp8pc67IbrIpmwrBiIwR6K/X3hBh7u+h7gq8PvLrUp1YrwjkDYDYzOHU1E3EndvIi2skXXTgPj5aeIkCok+065Ew=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=u4nz0C/p; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=u4nz0C/p; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="IVy+bld0";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="IVy+bld0"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="u4nz0C/p";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="u4nz0C/p"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id C899922114
-	for <linux-btrfs@vger.kernel.org>; Mon, 17 Mar 2025 07:11:25 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 4DF712212C
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Mar 2025 07:11:28 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1742195485; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1742195488; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=5uLHrKI2W0qNotF19LaH0Esuj3bfTzC1d82Ak37dtTg=;
-	b=IVy+bld03iBug88OMs9MB1VTNUUDRFSdSFOIJZ0+LtaGUUQNQ2MaaDyQXxaZpNacQS4CG+
-	/dltl31FCx7akPJciGU8X6Kksur44a+pyRzoTDuZreEUe+Cq7pbu7srWvYxxguffKvqk/Q
-	TrTVPwomzd3jczsqbufztXwtz99EnpI=
+	bh=JC3ZrLumjXEUxKYQAcQV/R5RberFyv50JmwDwX9aZy8=;
+	b=u4nz0C/ptWSmFQHTo9tYfHBtbaEzsZpyBr/49dhWA15Ck8NTTLOdzvT+vW5CsIoNO1oQWc
+	dmMwJy9RG+l4onDFFk4Eeod13K2tZWR0D161pTqLzSjdQNHBw5hp1ryOdkIsHLRQB/lZE0
+	IImHWa2a5FegIEAJm4YoufqW4G7HcTI=
 Authentication-Results: smtp-out1.suse.de;
-	none
+	dkim=pass header.d=suse.com header.s=susede1 header.b="u4nz0C/p"
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1742195485; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1742195488; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=5uLHrKI2W0qNotF19LaH0Esuj3bfTzC1d82Ak37dtTg=;
-	b=IVy+bld03iBug88OMs9MB1VTNUUDRFSdSFOIJZ0+LtaGUUQNQ2MaaDyQXxaZpNacQS4CG+
-	/dltl31FCx7akPJciGU8X6Kksur44a+pyRzoTDuZreEUe+Cq7pbu7srWvYxxguffKvqk/Q
-	TrTVPwomzd3jczsqbufztXwtz99EnpI=
+	bh=JC3ZrLumjXEUxKYQAcQV/R5RberFyv50JmwDwX9aZy8=;
+	b=u4nz0C/ptWSmFQHTo9tYfHBtbaEzsZpyBr/49dhWA15Ck8NTTLOdzvT+vW5CsIoNO1oQWc
+	dmMwJy9RG+l4onDFFk4Eeod13K2tZWR0D161pTqLzSjdQNHBw5hp1ryOdkIsHLRQB/lZE0
+	IImHWa2a5FegIEAJm4YoufqW4G7HcTI=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 065B9139D2
-	for <linux-btrfs@vger.kernel.org>; Mon, 17 Mar 2025 07:11:24 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 8913C139D2
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Mar 2025 07:11:27 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id SP2fLhzL12e1YwAAD6G6ig
+	id kPDfEh/L12e1YwAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Mon, 17 Mar 2025 07:11:24 +0000
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Mar 2025 07:11:27 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 4/9] btrfs: prepare prepare_one_folio() for larger data folios
-Date: Mon, 17 Mar 2025 17:40:49 +1030
-Message-ID: <a7e018735545d46b1eb689b927b96a2ded26fd3e.1742195085.git.wqu@suse.com>
+Subject: [PATCH v3 6/9] btrfs: subpage: prepare for larger data folios
+Date: Mon, 17 Mar 2025 17:40:51 +1030
+Message-ID: <a2b3545fb1e81fc4ebe488d638621191fd5f1a69.1742195085.git.wqu@suse.com>
 X-Mailer: git-send-email 2.48.1
 In-Reply-To: <cover.1742195085.git.wqu@suse.com>
 References: <cover.1742195085.git.wqu@suse.com>
@@ -69,52 +69,82 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Level: 
-X-Spamd-Result: default: False [-2.80 / 50.00];
+X-Rspamd-Queue-Id: 4DF712212C
+X-Spam-Score: -3.01
+X-Rspamd-Action: no action
+X-Spamd-Result: default: False [-3.01 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	MIME_TRACE(0.00)[0:+];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	FUZZY_BLOCKED(0.00)[rspamd.com];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
 	RCPT_COUNT_ONE(0.00)[1];
 	ARC_NA(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:mid];
+	RCVD_TLS_ALL(0.00)[];
+	DKIM_TRACE(0.00)[suse.com:+];
+	RCVD_COUNT_TWO(0.00)[2];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
 	TO_DN_NONE(0.00)[];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Score: -2.80
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:dkim,suse.com:mid,suse.com:email]
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
 X-Spam-Flag: NO
+X-Spam-Level: 
 
-The only blockage is the ASSERT() rejecting larger folios, just remove
-it.
+The subpage handling code has two locations not supporting larger
+folios:
+
+- btrfs_attach_subpage()
+  Which is doing a metadata specific ASSERT() check.
+
+  But for the future larger data folios support, that check is too
+  generic.
+  Since it's metadata specific, only check the ASSERT() for metadata.
+
+- btrfs_subpage_assert()
+  Just remove the "ASSERT(folio_order(folio) == 0)" check.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/file.c | 2 --
- 1 file changed, 2 deletions(-)
+ fs/btrfs/subpage.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 4213807982d6..c2648858772a 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -875,8 +875,6 @@ static noinline int prepare_one_folio(struct inode *inode, struct folio **folio_
- 			ret = PTR_ERR(folio);
- 		return ret;
- 	}
--	/* Only support page sized folio yet. */
+diff --git a/fs/btrfs/subpage.c b/fs/btrfs/subpage.c
+index 834161f35a00..bf7fd50ab9ec 100644
+--- a/fs/btrfs/subpage.c
++++ b/fs/btrfs/subpage.c
+@@ -69,7 +69,8 @@ int btrfs_attach_subpage(const struct btrfs_fs_info *fs_info,
+ 	struct btrfs_subpage *subpage;
+ 
+ 	/* For metadata we don't support larger folio yet. */
+-	ASSERT(!folio_test_large(folio));
++	if (type == BTRFS_SUBPAGE_METADATA)
++		ASSERT(!folio_test_large(folio));
+ 
+ 	/*
+ 	 * We have cases like a dummy extent buffer page, which is not mapped
+@@ -181,9 +182,6 @@ void btrfs_folio_dec_eb_refs(const struct btrfs_fs_info *fs_info, struct folio *
+ static void btrfs_subpage_assert(const struct btrfs_fs_info *fs_info,
+ 				 struct folio *folio, u64 start, u32 len)
+ {
+-	/* For subpage support, the folio must be single page. */
 -	ASSERT(folio_order(folio) == 0);
- 	ret = set_folio_extent_mapped(folio);
- 	if (ret < 0) {
- 		folio_unlock(folio);
+-
+ 	/* Basic checks */
+ 	ASSERT(folio_test_private(folio) && folio_get_private(folio));
+ 	ASSERT(IS_ALIGNED(start, fs_info->sectorsize) &&
 -- 
 2.48.1
 

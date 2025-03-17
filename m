@@ -1,67 +1,60 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6F3141C6FF3
-	for <linux-btrfs@vger.kernel.org>; Mon, 17 Mar 2025 07:11:25 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A814A1C6FF3
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Mar 2025 07:11:29 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1742195487; cv=none; b=t/Jr0mog+esFQ0CHrb6oXCjoWbP7neHqbDpE5qSroLQ3fO//fKreVGmNBHzEeBC7s56vlNcw4PV1rHIwINvc7UDGNuI2mkQXwcCnfTFLPPu/GgtW/gvVAQagjnq5NyKjujffjqZyEAFkf3ciEyBlIhSazVBv25y0/PB7g8Ho050=
+	t=1742195491; cv=none; b=rpXad+e+JYY8UyeXnW6u9svcf50xF5A/VoquWB4OCxTJ9dNd0K7ErBeB0swqZsw7Rpg9ckaFrcyAglsacBwem+6mvRAVT9lWn91lmugUpu3eK1RkHOONlEMpd1z3yn7PUGBnLbN1usV0yPXQtixisCL2dl9Mf/TTn4c/gNZ3OuA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1742195487; c=relaxed/simple;
-	bh=KwAeuuDDeURhc1uduX+W4X6LwLA+hS0JrfZDqW/I6BE=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=I9K+EAi0agNTm8erod+VmW9vCjPK54OxrZx8jaxbhWzQBVsyCkUhs/oHx572rssU3RnQvJw1EJM4O59WS5Rg8S5ksVlxUvGG1gm49mA+IqVKmw1mglvPPh1C2h15ePIcd7HSGCouquH5k+lUJ6EuZuzxoMClDR3KmkMnD5V0Nyk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=S1Z1O9Er; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=S1Z1O9Er; arc=none smtp.client-ip=195.135.223.131
+	s=arc-20240116; t=1742195491; c=relaxed/simple;
+	bh=knWpqEPtXG5jfVPA+bKo7YhlOZw3WyzJf1OaTga/0Io=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=ItlrrclwcUjRozQiNHdoI6TJ72r03KlU2Sw7C5aaaNbt6hyc734OiHcom/RMYbZz+1IwZDKHX5+hY+1BS2hzxJEC0ocSncv5LzeFyEiclTPM72JGn2cKijBu2L9ihckFn7hHVKOghWb6bPlPV/YQICJu+pBTQjqADIF/514gxEo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=XqnOzTU7; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=lkpKBRHw; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="S1Z1O9Er";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="S1Z1O9Er"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="XqnOzTU7";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="lkpKBRHw"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 51BE72018C
-	for <linux-btrfs@vger.kernel.org>; Mon, 17 Mar 2025 07:11:23 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id DA6BB220D1
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Mar 2025 07:11:20 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1742195483; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=mE9jrU/uLZfaGt8hL7BPeV+adQSNsYm65uG0ApJgfQM=;
-	b=S1Z1O9ErKflm0Dpt3Bf7S1Udbk246PGrEGhimFYXYSiuzxbuV/y6WlaNpkbrq8tH5hcoJY
-	IAWq1Z+UQzH016A9uP3mKpZwnlkzXaOn0mhDHlMLNi+TBm6lQ6/gaXmmLwS/Ag/tu6gL/5
-	Ws9cfvHowVyRg1J7Ax5Y/dOfUUqQZdU=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=S1Z1O9Er
+	t=1742195482; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=WYWkj7HexIF9OlUtrHGN6C8Nl0VLLEuGicFQv8+Puug=;
+	b=XqnOzTU7Hd+mU+qoMreYNZn8pA1aK3hNzqz+Bznk+BQ+Ybfj4Xn2wwbRqUOjdzZJMRQOor
+	U2MZ49pXFDeZ9yDfPBYcsRlZ2tT4ELoQ4GUDctmsD16XDWpuKSMoxeGVbTcs9cKFwHlOdy
+	EmJVp8+55U4ui3+sJ+cJ5NQyMws7WJI=
+Authentication-Results: smtp-out1.suse.de;
+	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1742195483; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=mE9jrU/uLZfaGt8hL7BPeV+adQSNsYm65uG0ApJgfQM=;
-	b=S1Z1O9ErKflm0Dpt3Bf7S1Udbk246PGrEGhimFYXYSiuzxbuV/y6WlaNpkbrq8tH5hcoJY
-	IAWq1Z+UQzH016A9uP3mKpZwnlkzXaOn0mhDHlMLNi+TBm6lQ6/gaXmmLwS/Ag/tu6gL/5
-	Ws9cfvHowVyRg1J7Ax5Y/dOfUUqQZdU=
+	t=1742195480; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=WYWkj7HexIF9OlUtrHGN6C8Nl0VLLEuGicFQv8+Puug=;
+	b=lkpKBRHwIwQpQNkWW01XTm+NIqMwpLK33DzkPPmFOdZxZhGhp4x99BxaDIYqnQexA+T+KE
+	2APceo4lNH912Zwf1QnQ18W14e1J2BY/QZEA0QB1lNnvUYNr+hMahnA5VG0rnENiPoMn3r
+	zuLHrRU7RsAXbgXwtktS7ww6D3rJyVQ=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 8C16E139D2
-	for <linux-btrfs@vger.kernel.org>; Mon, 17 Mar 2025 07:11:22 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 1D849139D2
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Mar 2025 07:11:19 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id CJimExrL12e1YwAAD6G6ig
+	id +DykMxfL12e1YwAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Mon, 17 Mar 2025 07:11:22 +0000
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Mar 2025 07:11:19 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 2/9] btrfs: send: prepare put_file_data() for larger data folios
-Date: Mon, 17 Mar 2025 17:40:47 +1030
-Message-ID: <3df45ec45510c3e37af0b494c944d786a3bdd54f.1742195085.git.wqu@suse.com>
+Subject: [PATCH v3 0/9] btrfs: remove ASSERT()s for folio_order() and folio_test_large()
+Date: Mon, 17 Mar 2025 17:40:45 +1030
+Message-ID: <cover.1742195085.git.wqu@suse.com>
 X-Mailer: git-send-email 2.48.1
-In-Reply-To: <cover.1742195085.git.wqu@suse.com>
-References: <cover.1742195085.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -69,116 +62,106 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Rspamd-Queue-Id: 51BE72018C
-X-Spam-Score: -3.01
-X-Rspamd-Action: no action
-X-Spamd-Result: default: False [-3.01 / 50.00];
+X-Spam-Score: -2.80
+X-Spamd-Result: default: False [-2.80 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	MIME_TRACE(0.00)[0:+];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	FUZZY_BLOCKED(0.00)[rspamd.com];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
 	RCPT_COUNT_ONE(0.00)[1];
 	ARC_NA(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+];
-	RCVD_COUNT_TWO(0.00)[2];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,imap1.dmz-prg2.suse.org:helo];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	TO_DN_NONE(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:dkim,suse.com:mid,suse.com:email]
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+	RCVD_TLS_ALL(0.00)[]
 X-Spam-Flag: NO
 X-Spam-Level: 
 
-Currently the function put_file_data() can only accept page sized folio.
+[CHANGELOG]
+v3:
+- Prepare btrfs_end_repair_bio() to support larger folios
+  Unfortunately folio_iter structure is way too large compared to
+  bvec_iter, thus it's not a good idea to convert bbio::saved_iter to
+  folio_iter.
 
-However the function itself is not that complex, it's just copying data
-from filemap folio into send buffer.
+  Thankfully it's not that complex to grab the folio from a bio_vec.
 
-So make it support larger data folios by:
+- Add a new patch to prepare defrag for larger data folios
 
-- Change the loop to use file offset instead of page index
+v2:
+- Update the commit message for the first patch
 
-- Calculate @pg_offset and @cur_len after getting the folio
+There are quite some ASSERT()s checking folio_order() or
+folio_test_large() on data folios.
 
-- Remove the "WARN_ON(folio_order(folio));" line
+They are the blockage for the incoming larger data folios.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/send.c | 26 ++++++++++++--------------
- 1 file changed, 12 insertions(+), 14 deletions(-)
+This series will remove most of them, with the following exceptions
+which are not a blockage for larger data folios.
 
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 43c29295f477..4df07dfe326f 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -5263,10 +5263,9 @@ static int put_file_data(struct send_ctx *sctx, u64 offset, u32 len)
- {
- 	struct btrfs_root *root = sctx->send_root;
- 	struct btrfs_fs_info *fs_info = root->fs_info;
--	struct folio *folio;
--	pgoff_t index = offset >> PAGE_SHIFT;
--	pgoff_t last_index;
--	unsigned pg_offset = offset_in_page(offset);
-+	u64 cur = offset;
-+	const u64 end = offset + len;
-+	const pgoff_t last_index = (end - 1) >> PAGE_SHIFT;
- 	struct address_space *mapping = sctx->cur_inode->i_mapping;
- 	int ret;
- 
-@@ -5274,11 +5273,11 @@ static int put_file_data(struct send_ctx *sctx, u64 offset, u32 len)
- 	if (ret)
- 		return ret;
- 
--	last_index = (offset + len - 1) >> PAGE_SHIFT;
--
--	while (index <= last_index) {
--		unsigned cur_len = min_t(unsigned, len,
--					 PAGE_SIZE - pg_offset);
-+	while (cur < end) {
-+		pgoff_t index = cur >> PAGE_SHIFT;
-+		unsigned int cur_len;
-+		unsigned int pg_offset;
-+		struct folio *folio;
- 
- 		folio = filemap_lock_folio(mapping, index);
- 		if (IS_ERR(folio)) {
-@@ -5292,8 +5291,9 @@ static int put_file_data(struct send_ctx *sctx, u64 offset, u32 len)
- 				break;
- 			}
- 		}
--
--		WARN_ON(folio_order(folio));
-+		pg_offset = offset_in_folio(folio, cur);
-+		cur_len = min_t(unsigned int, end - cur,
-+				folio_size(folio) - pg_offset);
- 
- 		if (folio_test_readahead(folio))
- 			page_cache_async_readahead(mapping, &sctx->ra, NULL, folio,
-@@ -5323,9 +5323,7 @@ static int put_file_data(struct send_ctx *sctx, u64 offset, u32 len)
- 				  pg_offset, cur_len);
- 		folio_unlock(folio);
- 		folio_put(folio);
--		index++;
--		pg_offset = 0;
--		len -= cur_len;
-+		cur += cur_len;
- 		sctx->send_size += cur_len;
- 	}
- 
+- wait_dev_supers() and write_dev_supers()
+  They are folios from block device cache, will not be affected by our
+  larger data folios support.
+
+- relocation_one_folio()
+  It's about data relocation inode, and we can disable larger data folios
+  for such special inode easily.
+
+- btrfs_attach_subpage()
+  The folio_test_large() is only for metadata, just change it to be a
+  metadata specific check.
+
+The first patch is just a small cleanup for send, exposed during the
+removal of ASSERT()s.
+
+The conversion for defrag is only tested to not break the existing
+subpage and regular cases.
+The full tests can only be done with larger data folios support enabled.
+
+Although there is one real blockage before enabling larger data folios:
+
+- btrfs_buffered_write()
+  Currnetly we always reserved space first, then grab the folio.
+  This makes it impossible to support variable sized folios.
+
+  We have to align the behavior to iomap, which grab the folio first
+  then determine the reserved space according to the folio size.
+
+  This will touch the core function of btrfs and can not be hidden
+  behind experimental flags.
+  Thus that change will be a dedicated one and needs a lot of
+  reviews/tests.
+
+Qu Wenruo (9):
+  btrfs: send: remove the again label inside put_file_data()
+  btrfs: send: prepare put_file_data() for larger data folios
+  btrfs: prepare btrfs_page_mkwrite() for larger data folios
+  btrfs: prepare prepare_one_folio() for larger data folios
+  btrfs: prepare end_bbio_data_write() for larger data folios
+  btrfs: subpage: prepare for larger data folios
+  btrfs: zlib: prepare copy_data_into_buffer() for larger data folios
+  btrfs: prepare btrfs_end_repair_bio() for larger data folios
+  btrfs: enable larger data folios support for defrag
+
+ fs/btrfs/bio.c       | 28 ++++++++++++-----
+ fs/btrfs/defrag.c    | 72 ++++++++++++++++++++++++++------------------
+ fs/btrfs/extent_io.c |  3 --
+ fs/btrfs/file.c      |  6 +---
+ fs/btrfs/send.c      | 29 ++++++++----------
+ fs/btrfs/subpage.c   |  6 ++--
+ fs/btrfs/zlib.c      |  2 --
+ 7 files changed, 79 insertions(+), 67 deletions(-)
+
 -- 
 2.48.1
 

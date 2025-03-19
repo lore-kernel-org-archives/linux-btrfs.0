@@ -1,53 +1,53 @@
 Received: from esa6.hgst.iphmx.com (esa6.hgst.iphmx.com [216.71.154.45])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D7E082505BD
-	for <linux-btrfs@vger.kernel.org>; Wed, 19 Mar 2025 06:15:10 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 393052505AD
+	for <linux-btrfs@vger.kernel.org>; Wed, 19 Mar 2025 06:15:12 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=216.71.154.45
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1742364913; cv=none; b=tyyos1Gi7slIgSWAv36AgNAptMT0c7n6cacqtIumKOadw95gZT4/GNCP0w+QW9vJrp4Xqc15jZkrk/FfmZPfsquE5V1tW8G/NnDm2EtLrUB1bld3yxZWttdkjaush00L8F/5M5IjUNw45gz4sxzDqhTxSyRQ1z2iHINxJYaozbA=
+	t=1742364913; cv=none; b=XKchGppnrC9xPUga4kPJEN6lXwuhX22hjRIARmkAlr5P5XJZjSvgzkMTaQBN/ynZZfFmK6BWx22aTgtBcPm8MdwTzQgt+ml0BVEVHxLSQ9ux7JSUXlNz+B/UVDYxrtfLdBZCRvpTFpv3RYnSk+9kfQBnrtiHvFAUktmK8887DT8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
 	s=arc-20240116; t=1742364913; c=relaxed/simple;
-	bh=PP20KYXQuXdEGmKx31+7Ec6b51hIATsjKSFw2oysyx4=;
+	bh=NPEdKFR4ehVmYWSr4OrNJ2mvYC7ZLsfWsbvT9Pj2PXY=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=Wbh17t1RwRcFE2i0WgFvhoZw8IGE1b6DxEfo5cJpbbEdeLcoIYMCm0dl4rs6qYrddWkfFt6tDWT68rNdafmJYeQ+poqLZQKDgdUuI0J/tkvPdwIue7c2rkzKUoKg4K2dNB9dFo3tVLm5pY2C9z6mbPCCybAunxL8CfGcfz8gyuo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=Wb2ESHEB; arc=none smtp.client-ip=216.71.154.45
+	 MIME-Version; b=hWO7ftorwxu85CdO4mHYUnST5OUIW1IBZm49DyVWhLA7q2kpUpWZ0Yb/X8QQ2SvG50Az+BMe4hEQamoBk3Eg+ARYNWXwfbFzMrW07UpnTnwyW/219WfiYLzTac8rKdfRMzfDsu421KJlE02cfB6MEDooqoQMyH+PT0k4u9sWkpQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=EBCaX5rM; arc=none smtp.client-ip=216.71.154.45
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="Wb2ESHEB"
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="EBCaX5rM"
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1742364911; x=1773900911;
+  t=1742364912; x=1773900912;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=PP20KYXQuXdEGmKx31+7Ec6b51hIATsjKSFw2oysyx4=;
-  b=Wb2ESHEBXn2cUMX7noJSgYhDLVbrXxBhtNoFFjiame374ZFI1RrXhYmK
-   WD1UhPZ80ka1ENnAXUBJzmUcR0TnBTFbt896j/ChBASEQJnHKCpjKecG1
-   PhrhCH7YLmtotHKXniuQWaOBcTbS5lmktjqwZ3H9On2iUX2hhTwyMeJKv
-   voXai68VJj9ikGOak699LJYjbsmqE4ThOAviRotFd9qI+pcSlYp0nH5mT
-   9E+puVjrhMWS4D6LTicjmdcFRYn35crSVJ7VItTtemukR1MyRJrb22WAW
-   wKL8S6QWUjRJpE1B7fDkrhIM591atDrWkNrum+/VQEsmAgFDdX5sBT46m
+  bh=NPEdKFR4ehVmYWSr4OrNJ2mvYC7ZLsfWsbvT9Pj2PXY=;
+  b=EBCaX5rM8PUg4obuKhGLnyNjxJbCUCBOdu/Wce3q8dy4qp3YhK1uxH9c
+   MmlsKfiKWc6P8T0yTNClnYTGhpqW4TD/o24v7iKIcReNCieUMJ8syitJx
+   0F0JUiQ2sntH8Wy6s+2AGHqO6eFCwJdAFAp7AfBMFCqro/pO5Z0kF2sUo
+   0tY9qiQXFUEZNqjmry/tpKTJTYCT2rifNrIqbgnhN7H3NubH3KMFXrVYL
+   m7eV7h0WOsy/BP69F25/n/it8tkvDl087IqGvi++jeXX6HAY43ICvWY+3
+   xf/pbrRqBg0SPK4c2ucOfvDQ7HlvNlQyXwtDsD0PQxL2cqfhnrBSiDh2A
    Q==;
-X-CSE-ConnectionGUID: 1VZrDFV+RzaK07Vnk9+EZA==
-X-CSE-MsgGUID: 0FGEJmHwQMuSYl3yuKSaaA==
+X-CSE-ConnectionGUID: 3u/298NHQz+Vj8ftdu4DUQ==
+X-CSE-MsgGUID: XiMNZXA8Tb6wwv/nbs2UVA==
 X-IronPort-AV: E=Sophos;i="6.14,258,1736784000"; 
-   d="scan'208";a="55227262"
+   d="scan'208";a="55227294"
 Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 19 Mar 2025 14:15:08 +0800
-IronPort-SDR: 67da530c_9iPX9lnVrBo01kKfrNJ0WEk9V2y3QLxR+sGW/PZTk676hKK
- QYZdxRbNSpO3TGlIXFg98mY4KQXbppGbtqpfFBQ==
+  by ob1.hgst.iphmx.com with ESMTP; 19 Mar 2025 14:15:10 +0800
+IronPort-SDR: 67da530e_TwgB6988F0PwJ/RzjCqPPBKaQCXWRUEIHDh5SfyALcmr9Ky
+ R3h8FlL4QPugCxOel5R9UFY5VLLF5NIEABdiqBQ==
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 18 Mar 2025 22:15:57 -0700
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 18 Mar 2025 22:15:59 -0700
 WDCIronportException: Internal
 Received: from gbdn3z2.ad.shared (HELO naota-xeon..) ([10.224.109.136])
-  by uls-op-cesaip02.wdc.com with ESMTP; 18 Mar 2025 23:15:07 -0700
+  by uls-op-cesaip02.wdc.com with ESMTP; 18 Mar 2025 23:15:09 -0700
 From: Naohiro Aota <naohiro.aota@wdc.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH v2 11/13] btrfs: use proper data space_info
-Date: Wed, 19 Mar 2025 15:14:42 +0900
-Message-ID: <54c32cd875f589527ee25f9b0e9ff82a90c66d7b.1742364593.git.naohiro.aota@wdc.com>
+Subject: [PATCH v2 13/13] btrfs: reclaim from sub-space space_info
+Date: Wed, 19 Mar 2025 15:14:44 +0900
+Message-ID: <5c116a0feffc7f87845a00fd840fb4f7be52f906.1742364593.git.naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.49.0
 In-Reply-To: <cover.1742364593.git.naohiro.aota@wdc.com>
 References: <cover.1742364593.git.naohiro.aota@wdc.com>
@@ -59,68 +59,38 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Now that, we have data sub-space for the zoned mode. This commit tweaks
-some space_info functions to use proper space_info for a file.
+Modify btrfs_async_{data,metadata}_reclaim() to run the reclaim process on
+the sub-spaces as well.
 
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
- fs/btrfs/delalloc-space.c | 19 ++++++++++++++-----
- 1 file changed, 14 insertions(+), 5 deletions(-)
+ fs/btrfs/space-info.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-diff --git a/fs/btrfs/delalloc-space.c b/fs/btrfs/delalloc-space.c
-index 918ba2ab1d5f..4cffac85ff54 100644
---- a/fs/btrfs/delalloc-space.c
-+++ b/fs/btrfs/delalloc-space.c
-@@ -111,6 +111,17 @@
-  *  making error handling and cleanup easier.
-  */
- 
-+static inline struct btrfs_space_info *data_sinfo_for_inode(const struct btrfs_inode *inode)
-+{
-+	struct btrfs_fs_info *fs_info = inode->root->fs_info;
-+
-+	if (!btrfs_is_zoned(fs_info))
-+		return fs_info->data_sinfo;
-+	if (btrfs_is_data_reloc_root(inode->root))
-+		return fs_info->data_sinfo->sub_group[SUB_GROUP_DATA_RELOC];
-+	return fs_info->data_sinfo;
-+}
-+
- int btrfs_alloc_data_chunk_ondemand(const struct btrfs_inode *inode, u64 bytes)
- {
- 	struct btrfs_root *root = inode->root;
-@@ -123,7 +134,7 @@ int btrfs_alloc_data_chunk_ondemand(const struct btrfs_inode *inode, u64 bytes)
- 	if (btrfs_is_free_space_inode(inode))
- 		flush = BTRFS_RESERVE_FLUSH_FREE_SPACE_INODE;
- 
--	return btrfs_reserve_data_bytes(fs_info->data_sinfo, bytes, flush);
-+	return btrfs_reserve_data_bytes(data_sinfo_for_inode(inode), bytes, flush);
- }
- 
- int btrfs_check_data_free_space(struct btrfs_inode *inode,
-@@ -144,7 +155,7 @@ int btrfs_check_data_free_space(struct btrfs_inode *inode,
- 	else if (btrfs_is_free_space_inode(inode))
- 		flush = BTRFS_RESERVE_FLUSH_FREE_SPACE_INODE;
- 
--	ret = btrfs_reserve_data_bytes(fs_info->data_sinfo, len, flush);
-+	ret = btrfs_reserve_data_bytes(data_sinfo_for_inode(inode), len, flush);
- 	if (ret < 0)
- 		return ret;
- 
-@@ -172,12 +183,10 @@ void btrfs_free_reserved_data_space_noquota(struct btrfs_inode *inode,
- 					    u64 len)
- {
- 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
--	struct btrfs_space_info *data_sinfo;
- 
- 	ASSERT(IS_ALIGNED(len, fs_info->sectorsize));
- 
--	data_sinfo = fs_info->data_sinfo;
--	btrfs_space_info_free_bytes_may_use(data_sinfo, len);
-+	btrfs_space_info_free_bytes_may_use(data_sinfo_for_inode(inode), len);
+diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
+index 730763be4276..951d3984ea5a 100644
+--- a/fs/btrfs/space-info.c
++++ b/fs/btrfs/space-info.c
+@@ -1215,6 +1215,9 @@ static void btrfs_async_reclaim_metadata_space(struct work_struct *work)
+ 	fs_info = container_of(work, struct btrfs_fs_info, async_reclaim_work);
+ 	space_info = btrfs_find_space_info(fs_info, BTRFS_BLOCK_GROUP_METADATA);
+ 	do_async_reclaim_metadata_space(space_info);
++	for (int i = 0; i < BTRFS_SPACE_INFO_SUB_GROUP_MAX; i++)
++		if (space_info->sub_group[i])
++			do_async_reclaim_metadata_space(space_info->sub_group[i]);
  }
  
  /*
+@@ -1443,6 +1446,9 @@ static void btrfs_async_reclaim_data_space(struct work_struct *work)
+ 	fs_info = container_of(work, struct btrfs_fs_info, async_data_reclaim_work);
+ 	space_info = fs_info->data_sinfo;
+ 	do_async_reclaim_data_space(space_info);
++	for (int i = 0; i < BTRFS_SPACE_INFO_SUB_GROUP_MAX; i++)
++		if (space_info->sub_group[i])
++			do_async_reclaim_data_space(space_info->sub_group[i]);
+ }
+ 
+ void btrfs_init_async_reclaim_work(struct btrfs_fs_info *fs_info)
 -- 
 2.49.0
 

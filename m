@@ -1,171 +1,154 @@
-Received: from mailout4.samsung.com (mailout4.samsung.com [203.254.224.34])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 40EE91C1F02
-	for <linux-btrfs@vger.kernel.org>; Wed, 19 Mar 2025 18:06:36 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=203.254.224.34
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 271EF14AD29
+	for <linux-btrfs@vger.kernel.org>; Wed, 19 Mar 2025 21:49:19 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1742407599; cv=none; b=aH2A9RGmLMCDkXAoOyRbFvTECxvpnm7WpSadi1wqqMagdyfHu/mWNMK/2Niw3ZLVM75irAHi6T1SCiEkaZulzll4r5n8s1hgi8s7CR0sPm7SaZQ7r1ktCBst5QvVSwF8LyRblf2BFCL5xx/l6EwSYMt7K14W13/9p8PJOyHmRuM=
+	t=1742420962; cv=none; b=jU4q/OWziwjjKgsn5ZS9L9omhcRtRIMSkWgjfUj6h3DvG2kCwCkS3fEZ8LitRvFwr72+DEg6p/4TQNz/rlJFzNMrO4WryXxc2eEe8Awi8PpACcX5hAJyDlEXzDgXYCwnMjdbo/IgAeJKSIjVNgd0rUGhh9rgatURnO2D54gXk04=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1742407599; c=relaxed/simple;
-	bh=G6iHZgQIholcAW90us3ob4KynXMLkF5xSbRKYF29/C0=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:From:In-Reply-To:
-	 Content-Type:References; b=A+MsgbDZkT23WNmMUi7jtSjr6+dxWKQUcD+OQPmTuKMPi5Zt4A8RgfPuXQ6rf7L33QllhCN0WnBMjk4GLYc5Amud5kBazHxP0B8cljEdjsgPvDh6jDYGsTGJTTezx9WfQozDLdSGI6QpBn+5JJtOedlKhrToVHzT9Ev6bRghE3A=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=samsung.com; spf=pass smtp.mailfrom=samsung.com; dkim=pass (1024-bit key) header.d=samsung.com header.i=@samsung.com header.b=Mt8saeKe; arc=none smtp.client-ip=203.254.224.34
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=samsung.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=samsung.com
+	s=arc-20240116; t=1742420962; c=relaxed/simple;
+	bh=5jk5wdSGunPmQnl1gjRQ0m196/L0P9mEV41/lqk7uXY=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=fxzID4HxWx5itt3SRpSYynOdoR4Rrzc8rLL8ip6kZJKy4VQ1XAONZiyqhzUDflOZBOE0Gbh2bY6v5ygcCD9ZIiAfcRn42Q/H45pLBnEABJBTi0vbmJI9/O5FEJfMk/l7bbZWfuWlvK9H6CKJNta44b8UMgu9T4EdKq0VnoQWDyY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=1+JbIi5T; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=6XdUYujh; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=1+JbIi5T; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=6XdUYujh; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=samsung.com header.i=@samsung.com header.b="Mt8saeKe"
-Received: from epcas5p3.samsung.com (unknown [182.195.41.41])
-	by mailout4.samsung.com (KnoxPortal) with ESMTP id 20250319180634epoutp047b4b05d7079711deed20f4a523a7a44f~uRnmjCisl1215912159epoutp04d
-	for <linux-btrfs@vger.kernel.org>; Wed, 19 Mar 2025 18:06:34 +0000 (GMT)
-DKIM-Filter: OpenDKIM Filter v2.11.0 mailout4.samsung.com 20250319180634epoutp047b4b05d7079711deed20f4a523a7a44f~uRnmjCisl1215912159epoutp04d
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=samsung.com;
-	s=mail20170921; t=1742407594;
-	bh=r+OZ0dZjRdagPeJioXzbnIj1AKfJy9OpWi/BR3HcRpc=;
-	h=Date:Subject:To:Cc:From:In-Reply-To:References:From;
-	b=Mt8saeKeErG5R1xYmueL6B2f16sgH+Q2vcAjLX/Rllbf+0RbnX+QuV9YPwy3JBzq4
-	 1+haMKLx7WCIlnLOvVlwyEt1w/MQ9b7n8/soLReOZ67Ww+XXHddpfUKeJbuy0GwwOa
-	 JJDNCXh0qBA09dPuPsag8tMuKCoU2Ngd77ZKvFOg=
-Received: from epsnrtp4.localdomain (unknown [182.195.42.165]) by
-	epcas5p3.samsung.com (KnoxPortal) with ESMTP id
-	20250319180633epcas5p37fdb720f28677dc579821d1b4f820966~uRnmEC2MM1969719697epcas5p32;
-	Wed, 19 Mar 2025 18:06:33 +0000 (GMT)
-Received: from epsmges5p3new.samsung.com (unknown [182.195.38.178]) by
-	epsnrtp4.localdomain (Postfix) with ESMTP id 4ZHxVH4ZWnz4x9Pv; Wed, 19 Mar
-	2025 18:06:31 +0000 (GMT)
-Received: from epcas5p2.samsung.com ( [182.195.41.40]) by
-	epsmges5p3new.samsung.com (Symantec Messaging Gateway) with SMTP id
-	50.5D.19956.7A70BD76; Thu, 20 Mar 2025 03:06:31 +0900 (KST)
-Received: from epsmtrp1.samsung.com (unknown [182.195.40.13]) by
-	epcas5p4.samsung.com (KnoxPortal) with ESMTPA id
-	20250319180631epcas5p47dbbc86eb8982b6cb230ab33dfd43aa0~uRnj33X9u1744817448epcas5p4N;
-	Wed, 19 Mar 2025 18:06:31 +0000 (GMT)
-Received: from epsmgms1p1new.samsung.com (unknown [182.195.42.41]) by
-	epsmtrp1.samsung.com (KnoxPortal) with ESMTP id
-	20250319180631epsmtrp176ea9c1c70e9a2b5756a793717c5e402~uRnj3F3l21334513345epsmtrp1G;
-	Wed, 19 Mar 2025 18:06:31 +0000 (GMT)
-X-AuditID: b6c32a4b-fe9f470000004df4-d5-67db07a78a2b
-Received: from epsmtip2.samsung.com ( [182.195.34.31]) by
-	epsmgms1p1new.samsung.com (Symantec Messaging Gateway) with SMTP id
-	4F.EC.18729.6A70BD76; Thu, 20 Mar 2025 03:06:31 +0900 (KST)
-Received: from [107.122.11.51] (unknown [107.122.11.51]) by
-	epsmtip2.samsung.com (KnoxPortal) with ESMTPA id
-	20250319180629epsmtip27f2b0f464fbd09d8727b5ef0ca773742~uRniVqTrs2457824578epsmtip25;
-	Wed, 19 Mar 2025 18:06:29 +0000 (GMT)
-Message-ID: <435cf6be-98e7-4b8b-ae42-e074091de991@samsung.com>
-Date: Wed, 19 Mar 2025 23:36:28 +0530
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="1+JbIi5T";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="6XdUYujh";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="1+JbIi5T";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="6XdUYujh"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 329EC1FB9B;
+	Wed, 19 Mar 2025 21:49:18 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1742420958;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=QdSj7BW+nZvoMs6vS1k0QnBNe5fhyOufkCihVfOBURY=;
+	b=1+JbIi5T5+8XI4eHvCFF47gGB8N4j+bomKDVajuz5Dnp5yT7V4F1T+i3yek3eUU0OmK09r
+	XLnhiYBHXW2E74xOC1mv4h2e19r55yYxZGj1/FfegJOZniQzzkbVaBxXVhI4yQOz9YyYRk
+	BH4apLe34PW0t3GgOCffzH/hkw1u27s=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1742420958;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=QdSj7BW+nZvoMs6vS1k0QnBNe5fhyOufkCihVfOBURY=;
+	b=6XdUYujhSNhIOmYykop45gqh3/DyiWibI1sXTcZvkMgOAcJOiAv7is5MtxYRDa5xxOEHXX
+	t09LCb/bXSFVl1Bw==
+Authentication-Results: smtp-out2.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1742420958;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=QdSj7BW+nZvoMs6vS1k0QnBNe5fhyOufkCihVfOBURY=;
+	b=1+JbIi5T5+8XI4eHvCFF47gGB8N4j+bomKDVajuz5Dnp5yT7V4F1T+i3yek3eUU0OmK09r
+	XLnhiYBHXW2E74xOC1mv4h2e19r55yYxZGj1/FfegJOZniQzzkbVaBxXVhI4yQOz9YyYRk
+	BH4apLe34PW0t3GgOCffzH/hkw1u27s=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1742420958;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=QdSj7BW+nZvoMs6vS1k0QnBNe5fhyOufkCihVfOBURY=;
+	b=6XdUYujhSNhIOmYykop45gqh3/DyiWibI1sXTcZvkMgOAcJOiAv7is5MtxYRDa5xxOEHXX
+	t09LCb/bXSFVl1Bw==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 0E0CF13726;
+	Wed, 19 Mar 2025 21:49:18 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id JEPwAt4722cjOwAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Wed, 19 Mar 2025 21:49:18 +0000
+Date: Wed, 19 Mar 2025 22:49:12 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 0/2] btrfs-progs: allowing 2K block size for experimental
+ builds
+Message-ID: <20250319214912.GM32661@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <cover.1740542229.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [LSF/MM/BPF TOPIC] File system checksum offload
-To: "hch@infradead.org" <hch@infradead.org>
-Cc: Qu Wenruo <wqu@suse.com>, Johannes Thumshirn
-	<Johannes.Thumshirn@wdc.com>, Theodore Ts'o <tytso@mit.edu>,
-	"lsf-pc@lists.linux-foundation.org" <lsf-pc@lists.linux-foundation.org>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-	"linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
-	"linux-nvme@lists.infradead.org" <linux-nvme@lists.infradead.org>,
-	"linux-block@vger.kernel.org" <linux-block@vger.kernel.org>,
-	"josef@toxicpanda.com" <josef@toxicpanda.com>
-Content-Language: en-US
-From: Kanchan Joshi <joshi.k@samsung.com>
-In-Reply-To: <Z9kpyh_8RH5irL96@infradead.org>
-Content-Transfer-Encoding: 7bit
-X-Brightmail-Tracker: H4sIAAAAAAAAA+NgFtrCJsWRmVeSWpSXmKPExsWy7bCmhu5y9tvpBn9uy1qcnrCIyeJv1z0m
-	iz8PDS323tK2uPR4BbvFnr0nWSzmL3vKbrHv9V5mi9aen+wWa9Z9ZHfg8ti8Qstj85J6j8k3
-	ljN6NJ05yuyxfstVFo8JmzeyenzeJOfRfqCbKYAjKtsmIzUxJbVIITUvOT8lMy/dVsk7ON45
-	3tTMwFDX0NLCXEkhLzE31VbJxSdA1y0zB+hAJYWyxJxSoFBAYnGxkr6dTVF+aUmqQkZ+cYmt
-	UmpBSk6BSYFecWJucWleul5eaomVoYGBkSlQYUJ2xtSbfxkLtvNWrG69z9zA+I2ri5GTQ0LA
-	RGLuy6UsXYxcHEICuxklVvw+yASSEBL4xCix9akpROIbo8Tn59dZYTqmrtoO1bGXUaLtxQUm
-	COctUEfDZbAqXgE7iZ27zoLZLAKqEk+WLGKGiAtKnJz5hAXEFhWQl7h/awY7iC0sYCPRvesQ
-	WxcjB4eIgLbE4sd1IDOZBT4wS7Q92wx2ErOAuMStJ/OZQGrYBDQlLkwuBQlzCuhKbHl+kBGi
-	RF5i+9s5zCC9EgI7OCQm3twBdbWLxK+P19ggbGGJV8e3sEPYUhIv+9ug7GyJB48esEDYNRI7
-	NvdB9dpLNPy5wQqylxlo7/pd+hC7+CR6fz8BO0dCgFeio00IolpR4t6kp1Cd4hIPZyyBsj0k
-	9k94ywgJqjMsEpvfnWSbwKgwCylUZiH5chaSd2YhbF7AyLKKUTK1oDg3PbXYtMA4L7UcHt/J
-	+bmbGMHJV8t7B+OjBx/0DjEycTAeYpTgYFYS4XV/cj1diDclsbIqtSg/vqg0J7X4EKMpMHom
-	MkuJJucD039eSbyhiaWBiZmZmYmlsZmhkjhv886WdCGB9MSS1OzU1ILUIpg+Jg5OqQYmg+2L
-	6pxbDzC/3Sd5Nn6N7EX+a2alxpud3Mp/SdpZ5V59Ne2ql+APiZ93vyc1LrNwj57NyxTwbOvN
-	2L1NdSvyP8uZviw6u5BXMeLE9/31Ux5e/fj6zWTLLRpsG1dM+iDovtp6aVjzypCUKzXybKdt
-	/+fq1vyWDPooIi5woN/kkUy97enOaxqcKoail740cPn6HXg3cf/85xUzz4Q3fXBivi/H+ePd
-	Nu6/CTEvDs9pNNNlnPM36aTMg3mbAzZ8zAmb+H/rLpdGXtFvdpYZm36Ef2bkn85/7/W+A7u5
-	PaV8fB7JHZnDfPvIqvymxozsc7Z2UiXzrkZnPVdsCDEUl2dP5/NJtW/+yGl1+GjGxJ6JSizF
-	GYmGWsxFxYkATfiznkcEAAA=
-X-Brightmail-Tracker: H4sIAAAAAAAAA+NgFprIIsWRmVeSWpSXmKPExsWy7bCSvO5y9tvpBs3HmCxOT1jEZPG36x6T
-	xZ+HhhZ7b2lbXHq8gt1iz96TLBbzlz1lt9j3ei+zRWvPT3aLNes+sjtweWxeoeWxeUm9x+Qb
-	yxk9ms4cZfZYv+Uqi8eEzRtZPT5vkvNoP9DNFMARxWWTkpqTWZZapG+XwJUx9eZfxoLtvBWr
-	W+8zNzB+4+pi5OSQEDCRmLpqO0sXIxeHkMBuRolDv68xQSTEJZqv/WCHsIUlVv57zg5R9JpR
-	4uDabSwgCV4BO4mdu86ygtgsAqoST5YsYoaIC0qcnPkErEZUQF7i/q0ZYIOEBWwkuncdYuti
-	5OAQEdCWWPy4DmQms8AHZomlW18wQyw4wyKxvG8aG0gDM9AVt57MZwJpYBPQlLgwuRQkzCmg
-	K7Hl+UFGiBIzia6tXVC2vMT2t3OYJzAKzUJyxiwkk2YhaZmFpGUBI8sqRsnUguLc9NxiwwLD
-	vNRyveLE3OLSvHS95PzcTYzgWNPS3MG4fdUHvUOMTByMhxglOJiVRHjdn1xPF+JNSaysSi3K
-	jy8qzUktPsQozcGiJM4r/qI3RUggPbEkNTs1tSC1CCbLxMEp1cC0rt3H9EagrTpb1ofsx3cf
-	3eiYsTL+ZPXiFyH8Uiny8avzXn/czVTxfYdEi4H/6o/zP3yZvH3qn1/BJ05xpb1ZN1/rYbK9
-	cYiB7SONJXXHNtWvvv/s6DvOmp/N3auOKXtv99zatyXs5LaG7afyPs0qz7hbdSE4bcaS+oK2
-	yP0HfvOY6fEoLl4z/5qD/vGbjE/frLVavubv8ljT7reGG5z/dJr//jVHcxVP6Czx5uoph47z
-	7/lodHbCLLmO3wskt60KSdznwrpRdKqv+t6n75sNaxtlwy6xNTsZnGHKWSzRqq9icTno5fo3
-	ee4PRVuMn67z+WY6ufSRh7rPq0ui+7YduLi81ovflbn/ubaph504hxJLcUaioRZzUXEiAOXN
-	lTYkAwAA
-X-CMS-MailID: 20250319180631epcas5p47dbbc86eb8982b6cb230ab33dfd43aa0
-X-Msg-Generator: CA
-Content-Type: text/plain; charset="utf-8"
-CMS-TYPE: 105P
-DLP-Filter: Pass
-X-CFilter-Loop: Reflected
-X-CMS-RootMailID: 20250318080742epcas5p31b31b3024d6f7d9d150c8a7c2db4dffd
-References: <20250130091545.66573-1-joshi.k@samsung.com>
-	<20250130142857.GB401886@mit.edu>
-	<97f402bc-4029-48d4-bd03-80af5b799d04@samsung.com>
-	<b8790a76-fd4e-49b6-bc08-44e5c3bf348a@wdc.com>
-	<Z6B2oq_aAaeL9rBE@infradead.org>
-	<bb516f19-a6b3-4c6b-89f9-928d46b66e2a@wdc.com>
-	<eaec853d-eda6-4ee9-abb6-e2fa32f54f5c@suse.com>
-	<cfe11af2-44c5-43a7-9114-72471a615de7@samsung.com>
-	<Z6GivxxFWFZhN7jD@infradead.org>
-	<edde46e9-403b-4ddf-bd73-abe95446590c@samsung.com>
-	<CGME20250318080742epcas5p31b31b3024d6f7d9d150c8a7c2db4dffd@epcas5p3.samsung.com>
-	<Z9kpyh_8RH5irL96@infradead.org>
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <cover.1740542229.git.wqu@suse.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-Spam-Score: -4.00
+X-Spamd-Result: default: False [-4.00 / 50.00];
+	BAYES_HAM(-3.00)[99.99%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	HAS_REPLYTO(0.30)[dsterba@suse.cz];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MIME_TRACE(0.00)[0:+];
+	RCPT_COUNT_TWO(0.00)[2];
+	TO_DN_SOME(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	ARC_NA(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	FUZZY_BLOCKED(0.00)[rspamd.com];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	REPLYTO_ADDR_EQ_FROM(0.00)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	REPLYTO_DOM_NEQ_TO_DOM(0.00)[]
+X-Spam-Flag: NO
+X-Spam-Level: 
 
-On 3/18/2025 1:37 PM, hch@infradead.org wrote:
-> On Tue, Mar 18, 2025 at 12:36:44PM +0530, Kanchan Joshi wrote:
->> Right, I'm not saying that protection is getting better. Just that any
->> offload is about trusting someone else with the job. We have other
->> instances like atomic-writes, copy, write-zeroes, write-same etc.
+On Wed, Feb 26, 2025 at 02:29:13PM +1030, Qu Wenruo wrote:
+> Btrfs always has its minimal block size as 4K, but that means on the
+> most common architecture, x86_64, we can not utilize the subpage block
+> size routine at all.
 > 
-> So wahst is the use case for it? 
-
-I tried to describe that in the cover letter of the PoC:
-https://lore.kernel.org/linux-btrfs/20250129140207.22718-1-joshi.k@samsung.com/
-
-
-  What is the "thread" model you are
-> trying to protect against (where thread here is borrowed from the
-> security world and implies data corruption caught by checksums).
-
-Seems you meant threat model. That was not on my mind for this series, 
-but sure, we don't boost integrity with offload.
-
->>
->>> IFF using PRACT is an acceptable level of protection just running
->>> NODATASUM and disabling PI generation/verification in the block
->>> layer using the current sysfs attributes (or an in-kernel interface
->>> for that) to force the driver to set PRACT will do exactly the same
->>> thing.
->>
->> I had considered but that can't work because:
->>
->> - the sysfs attributes operate at block-device level for all read or all
->> write operations. That's not flexible for policies such "do something
->> for some writes/reads but not for others" which can translate to "do
->> checksum offload for FS data, but keep things as is for FS meta" or
->> other combinations.
+> Although the future larger folios support will allow us to utilize
+> subpage routines, the support is still not yet there.
 > 
-> Well, we can easily do the using a per-I/O flag
+> On the other hand, lowering the block size for experimental/debug builds is
+> much easier, there is only one major bug (fixed by the first patch) in
+> btrfs-progs at least.
+> 
+> Kernel sides enablement is not huge either, but it has dependency on
+> the subpage related backlog patches to pass most fstests, which is not small.
+> 
+> However since we're not pushing this 2K block size for end users, we can
+> accept some limitations on the 2K block size support:
+> 
+> - No 2K node size mkfs support
+>   This is mostly caused by how we create the initial temporaray fs.
+>   The initial temporaray fs contains at least 6 root items.
+>   But one root item is 439 bytes, we need a level 1 root tree for the
+>   initial temporaray fs.
+> 
+>   But we do not support multi-level trees for the initial fs, thus no
+>   such support for now.
+> 
+> - No mixed block groups mkfs support
+>   Caused by the missing 2K node size support
+> 
+> Qu Wenruo (3):
+>   btrfs-progs: fix the incorrect buffer size for super block
+>   btrfs-progs: support 2k block size
+>   btrfs-progs: convert: check the sectorsize against BTRFS_MIN_BLOCKSIZE
 
-Right, a per-I/O flag (named REQ_INTEGRITY_OFFLOAD) is what I did in the 
-patch:
-https://lore.kernel.org/linux-btrfs/20250129140207.22718-2-joshi.k@samsung.com/
+Thanks, added to devel. I've enabled the 2k case for convert but it
+fails, I haven't analyzed it as it does not seem to be important right
+now.

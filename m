@@ -1,53 +1,53 @@
 Received: from esa6.hgst.iphmx.com (esa6.hgst.iphmx.com [216.71.154.45])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 907A224EF91
-	for <linux-btrfs@vger.kernel.org>; Wed, 19 Mar 2025 06:15:08 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9BC252500BA
+	for <linux-btrfs@vger.kernel.org>; Wed, 19 Mar 2025 06:15:10 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=216.71.154.45
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1742364910; cv=none; b=aokC5eMg0izI2YQiYM6hJeS0QGf6UAUppMTcdOY6RzE6hi9YkvmxZrgO2k0XoJjljnrZ78i0hAY18PsJ1wqTHpZgvMWNmJmA/z1qD+SYKUcw2mNU0gxCg3AfVf0kKgSoTYLOrQI6WUx1jW9po+ZaoqzvRXJJpOTiKCbsJx8e4F4=
+	t=1742364912; cv=none; b=sJjVaY1QelGzpKxqx0+kr1hNAaSiAo2j20sensIPhgi92ZL6F6T+2wrepY2wFxxY72XXFw58T3+LryxLe1VLahXb6CLX8vKO5md2gifv7skKYhZq6JRAqtd1HKlAwbFQTplou96WwfdZYeem5j/FfyrVafnhb2E5A3s+b7g/UG8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1742364910; c=relaxed/simple;
-	bh=ND+aV7bzkhxk5FWFs3EFXqoVXMiEtCxYhlDG6Rf/QTo=;
+	s=arc-20240116; t=1742364912; c=relaxed/simple;
+	bh=LKFnztNMIkuZx7GqSHh072tyo+d3HXkaVRG0AqrvyVU=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=ESYPEDefiJUwxy5xyE5NJXbSWfRiDwC8/8O1sb/1XLl5a5iNJUXLBfGYlgj83jHu7FOwZ3330OWYwQZyynPWPukQ6qRKtp4LkNDdcQ16I5MwqhPrvjtXt2gQyDQRJFnOQn98PkVFGCZRdl4gYn2YdZ557SNTBDGwc09SjPLo6oc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=IwcCUTr7; arc=none smtp.client-ip=216.71.154.45
+	 MIME-Version; b=oEdV7XqAIDoZkwb7Jhmw5DoaLW4v6foQkDyuEHDVSce+ACZTcTfXq0JXZPdwXDXhKMCCVonQuyi59EAKbTyN6Ex49vqqGhh4crAjtagUScQfGWhSzCZDG83X3ssaa2bvtwvsp/sKJrm6cW76bvFKkHFqiv+YokDVv7qc7tpa15k=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=HpQVREOU; arc=none smtp.client-ip=216.71.154.45
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="IwcCUTr7"
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="HpQVREOU"
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1742364908; x=1773900908;
+  t=1742364910; x=1773900910;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=ND+aV7bzkhxk5FWFs3EFXqoVXMiEtCxYhlDG6Rf/QTo=;
-  b=IwcCUTr7wngaFnWECQNbjB9FxiSYW82lc+MnB00wW/9M1x5pcazzQzxX
-   03o3FyJbBzuq3umoxovfZhNe2sOjYKDkxdmgnL6M6yckVf1sW3hWwtqC1
-   +a8j+HuIL2K/s2uJW2qGhsZUq4Qdpdfx5yJP9Ng0KYqN91xf5aVpJWsjW
-   9dhJndMEYHr7uPabGo7bS0fiNcKY9hzAnXat1wzuNcdQV/3OjzK3HelEm
-   T6gOVcmnB8jLSBTDe0jypArBa4uHS+NH5WWHsWDiygdKxbDg7DBNQ0urp
-   fA0apZUqZ4bs6Cix2voCNZxo1ZC5XFKW3mahX19v5sWGyFD6FGAa95ltI
-   A==;
-X-CSE-ConnectionGUID: /JB0JgB6Q+2rBfYKD/g2Wg==
-X-CSE-MsgGUID: Vi9+2n8oQJ6KyrffeqymjA==
+  bh=LKFnztNMIkuZx7GqSHh072tyo+d3HXkaVRG0AqrvyVU=;
+  b=HpQVREOUmMW/uDrc1j6+eE1+XfFAawUePZsqTk+lKcCitApTOB/exRsm
+   ftWbSK7KWjgX/ypdlgpMy+Ni1SyqJyWqnMLTiLRitAZGfIdK8Jm5rHnsf
+   M0BBRG25ZTIGMqt+nSpwbWSVVY5DQR6NwKEWcjVh2To6zjXgGHtmkZ6Lp
+   NPk1b0t6oBCn7I/Ae0jvMJzEXWpWjcedg6ZrHKER53H0pCsPPTOLp9vg5
+   JSVmiKjtxveqjl0PW5zHHPY5hkWvdMWOioP1wb6r2MOMatLICJSHoJ2Pw
+   S6jZGBiIIFd/veNoRfN2Xs4DaRf3qVIsz2zJDT4MNYeonCwfoiFr/GIIE
+   g==;
+X-CSE-ConnectionGUID: dKbDhUFeSgekUsXkAneLZA==
+X-CSE-MsgGUID: qEK0u/mwTDq++UMQ60sexQ==
 X-IronPort-AV: E=Sophos;i="6.14,258,1736784000"; 
-   d="scan'208";a="55227260"
+   d="scan'208";a="55227280"
 Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 19 Mar 2025 14:15:07 +0800
-IronPort-SDR: 67da530b_Xv/cx7DgtHFxhWStgP2cl5+4pDqgY7hx9GrOGUgjborpM/H
- cf9SSTr9rsA9eHEI0iHD6zNOAeoGICjBNEQGKsg==
+  by ob1.hgst.iphmx.com with ESMTP; 19 Mar 2025 14:15:09 +0800
+IronPort-SDR: 67da530d_V90RFpjQyK77jbBHawqIOTCw9yafJeg4NgeOzhOkUo1z7YG
+ 5CfmP2I6qSbhfdq/64s7ZXkBv2OG+JMRiqcmBYw==
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 18 Mar 2025 22:15:56 -0700
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 18 Mar 2025 22:15:58 -0700
 WDCIronportException: Internal
 Received: from gbdn3z2.ad.shared (HELO naota-xeon..) ([10.224.109.136])
-  by uls-op-cesaip02.wdc.com with ESMTP; 18 Mar 2025 23:15:06 -0700
+  by uls-op-cesaip02.wdc.com with ESMTP; 18 Mar 2025 23:15:08 -0700
 From: Naohiro Aota <naohiro.aota@wdc.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH v2 10/13] btrfs: tweak extent/chunk allocation for space_info sub-space
-Date: Wed, 19 Mar 2025 15:14:41 +0900
-Message-ID: <a56b3607591af4c7ad9cd2f289e22c56ed7df8bf.1742364593.git.naohiro.aota@wdc.com>
+Subject: [PATCH v2 12/13] btrfs: add block_rsv for treelog
+Date: Wed, 19 Mar 2025 15:14:43 +0900
+Message-ID: <cbb972d4719e45833b59f6c28765a290af466a02.1742364593.git.naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.49.0
 In-Reply-To: <cover.1742364593.git.naohiro.aota@wdc.com>
 References: <cover.1742364593.git.naohiro.aota@wdc.com>
@@ -59,79 +59,90 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Make the extent allocator and the chunk allocator aware of the sub-space.
-It now uses SUB_GROUP_DATA_RELOC sub-space for data relocation block group,
-and uses SUB_GROUP_METADATA_TREELOG for metadata tree-log block group.
+We need to add a dedicated block_rsv for tree-log, because the block_rsv
+serves for a tree node allocation in btrfs_alloc_tree_block(). Currently,
+tree-log tree uses fs_info->empty_block_rsv, which is shared across trees
+and points to the normal metadata space_info. Instead, we add a dedicated
+block_rsv and that block_rsv can use the dedicated sub-space_info.
 
-And, it needs to check the space_info is the right one when a block group
-candidate is given. Also, new block group should now belong to the
-specified one.
+Currently, we use the dedicated block_rsv only for the zoned mode, but it
+might be somewhat useful for the regular btrfs too.
 
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
- fs/btrfs/extent-tree.c | 18 ++++++++++++++----
- fs/btrfs/space-info.c  |  4 +++-
- 2 files changed, 17 insertions(+), 5 deletions(-)
+ fs/btrfs/block-rsv.c | 12 ++++++++++++
+ fs/btrfs/block-rsv.h |  1 +
+ fs/btrfs/disk-io.c   |  1 +
+ fs/btrfs/fs.h        |  2 ++
+ 4 files changed, 16 insertions(+)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 062f860ec379..5767a9ef39c7 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4353,7 +4353,7 @@ static noinline int find_free_extent(struct btrfs_root *root,
- 	int ret = 0;
- 	int cache_block_group_error = 0;
- 	struct btrfs_block_group *block_group = NULL;
--	struct btrfs_space_info *space_info;
-+	struct btrfs_space_info *space_info = NULL;
- 	bool full_search = false;
+diff --git a/fs/btrfs/block-rsv.c b/fs/btrfs/block-rsv.c
+index 3f3608299c0b..680b395b32ad 100644
+--- a/fs/btrfs/block-rsv.c
++++ b/fs/btrfs/block-rsv.c
+@@ -418,6 +418,12 @@ void btrfs_init_root_block_rsv(struct btrfs_root *root)
+ 	case BTRFS_CHUNK_TREE_OBJECTID:
+ 		root->block_rsv = &fs_info->chunk_block_rsv;
+ 		break;
++	case BTRFS_TREE_LOG_OBJECTID:
++		if (btrfs_is_zoned(fs_info))
++			root->block_rsv = &fs_info->treelog_rsv;
++		else
++			root->block_rsv = NULL;
++		break;
+ 	default:
+ 		root->block_rsv = NULL;
+ 		break;
+@@ -438,6 +444,12 @@ void btrfs_init_global_block_rsv(struct btrfs_fs_info *fs_info)
+ 	fs_info->delayed_block_rsv.space_info = space_info;
+ 	fs_info->delayed_refs_rsv.space_info = space_info;
  
- 	WARN_ON(ffe_ctl->num_bytes < fs_info->sectorsize);
-@@ -4384,10 +4384,19 @@ static noinline int find_free_extent(struct btrfs_root *root,
++	/* The treelog_rsv uses a dedicated space_info on the zoned mode. */
++	if (!btrfs_is_zoned(fs_info))
++		fs_info->treelog_rsv.space_info = space_info;
++	else
++		fs_info->treelog_rsv.space_info = space_info->sub_group[SUB_GROUP_METADATA_TREELOG];
++
+ 	btrfs_update_global_block_rsv(fs_info);
+ }
  
- 	trace_find_free_extent(root, ffe_ctl);
+diff --git a/fs/btrfs/block-rsv.h b/fs/btrfs/block-rsv.h
+index d12b1fac5c74..79ae9d05cd91 100644
+--- a/fs/btrfs/block-rsv.h
++++ b/fs/btrfs/block-rsv.h
+@@ -24,6 +24,7 @@ enum btrfs_rsv_type {
+ 	BTRFS_BLOCK_RSV_CHUNK,
+ 	BTRFS_BLOCK_RSV_DELOPS,
+ 	BTRFS_BLOCK_RSV_DELREFS,
++	BTRFS_BLOCK_RSV_TREELOG,
+ 	BTRFS_BLOCK_RSV_EMPTY,
+ 	BTRFS_BLOCK_RSV_TEMP,
+ };
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 1a916716cefe..0fb114619b0e 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2829,6 +2829,7 @@ void btrfs_init_fs_info(struct btrfs_fs_info *fs_info)
+ 			     BTRFS_BLOCK_RSV_GLOBAL);
+ 	btrfs_init_block_rsv(&fs_info->trans_block_rsv, BTRFS_BLOCK_RSV_TRANS);
+ 	btrfs_init_block_rsv(&fs_info->chunk_block_rsv, BTRFS_BLOCK_RSV_CHUNK);
++	btrfs_init_block_rsv(&fs_info->treelog_rsv, BTRFS_BLOCK_RSV_TREELOG);
+ 	btrfs_init_block_rsv(&fs_info->empty_block_rsv, BTRFS_BLOCK_RSV_EMPTY);
+ 	btrfs_init_block_rsv(&fs_info->delayed_block_rsv,
+ 			     BTRFS_BLOCK_RSV_DELOPS);
+diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
+index 5a346d4a4b91..2deb0394115d 100644
+--- a/fs/btrfs/fs.h
++++ b/fs/btrfs/fs.h
+@@ -471,6 +471,8 @@ struct btrfs_fs_info {
+ 	struct btrfs_block_rsv delayed_block_rsv;
+ 	/* Block reservation for delayed refs */
+ 	struct btrfs_block_rsv delayed_refs_rsv;
++	/* Block reservation for treelog tree */
++	struct btrfs_block_rsv treelog_rsv;
  
--	space_info = btrfs_find_space_info(fs_info, ffe_ctl->flags);
-+	if (btrfs_is_zoned(fs_info)) {
-+		/* Use dedicated sub-space_info for dedicated block group users. */
-+		if (ffe_ctl->for_data_reloc)
-+			space_info = space_info->sub_group[SUB_GROUP_DATA_RELOC];
-+		else if (ffe_ctl->for_treelog)
-+			space_info = space_info->sub_group[SUB_GROUP_METADATA_TREELOG];
-+	}
- 	if (!space_info) {
--		btrfs_err(fs_info, "No space info for %llu", ffe_ctl->flags);
--		return -ENOSPC;
-+		space_info = btrfs_find_space_info(fs_info, ffe_ctl->flags);
-+		if (!space_info) {
-+			btrfs_err(fs_info, "No space info for %llu", ffe_ctl->flags);
-+			return -ENOSPC;
-+		}
- 	}
+ 	struct btrfs_block_rsv empty_block_rsv;
  
- 	ret = prepare_allocation(fs_info, ffe_ctl, space_info, ins);
-@@ -4408,6 +4417,7 @@ static noinline int find_free_extent(struct btrfs_root *root,
- 		 * picked out then we don't care that the block group is cached.
- 		 */
- 		if (block_group && block_group_bits(block_group, ffe_ctl->flags) &&
-+		    block_group->space_info == space_info &&
- 		    block_group->cached != BTRFS_CACHE_NO) {
- 			down_read(&space_info->groups_sem);
- 			if (list_empty(&block_group->list) ||
-diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index 3c775c76e2af..730763be4276 100644
---- a/fs/btrfs/space-info.c
-+++ b/fs/btrfs/space-info.c
-@@ -351,7 +351,9 @@ void btrfs_add_bg_to_space_info(struct btrfs_fs_info *info,
- 
- 	factor = btrfs_bg_type_to_factor(block_group->flags);
- 
--	found = btrfs_find_space_info(info, block_group->flags);
-+	found = block_group->space_info;
-+	if (!found)
-+		found = btrfs_find_space_info(info, block_group->flags);
- 	ASSERT(found);
- 	spin_lock(&found->lock);
- 	found->total_bytes += block_group->length;
 -- 
 2.49.0
 

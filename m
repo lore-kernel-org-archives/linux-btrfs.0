@@ -1,60 +1,67 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9E17C2AEE2
-	for <linux-btrfs@vger.kernel.org>; Thu, 20 Mar 2025 05:34:33 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 89CAD155753
+	for <linux-btrfs@vger.kernel.org>; Thu, 20 Mar 2025 05:34:38 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1742448875; cv=none; b=NZtvqa3j0F7GGhXPN6UKjjx59O6DwiEBbmJQOsGLRmiZJtvlHDwDh6dcVotQfQS6UhNrayGeM9Kl/pLVvzO4COSCMP9HKv51YlU9dELlzLfH9naJIElePxIoMJSxQ8eM+3Pub1OAIjHDYKhWjbZuz/s657luqbhfpveDEtTpBTM=
+	t=1742448880; cv=none; b=h/yxZIeoyr8MqnIIPVzXE5VWFoprVzpKoLYAEEdH8fX7Vy/Oq4itbg3S8ZvDKDGyMXOdXEXRZ01HFFda4cfhe7zH/Z5iIhspF7BkwfjVSzeYJ3xURTq/1fil6rzxjKWHx7sAcYKK5w5i2xJ0utQ6x44tpiBd4ynY3f2pmsPz9Lw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1742448875; c=relaxed/simple;
-	bh=Vc/YDexfUk/16hUOctLQJ7SBr2DwZuEGS/sgKA+MeCA=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=ab0FRfOT5PaYM9hrec2qiasQKh/A04Wxqz4jSUEpi0V9V/pEVd+bckmzgGkoAWOHdndVkYE/FeBs61KkjPXng+hdWbkuj7FGmr3WndyZBgEAPPUPsxMWXqP0v6Lb4hzQCG05WDkO+h/V8Tp0W9lMOgf+nzK5GesD0BFRsRxcnPg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=p1qAnvVG; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=p1qAnvVG; arc=none smtp.client-ip=195.135.223.130
+	s=arc-20240116; t=1742448880; c=relaxed/simple;
+	bh=FV5gvgPNKj7DXmV+iMabSXscV/E/uWadaYGSKvytIPA=;
+	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=cqIZt7+IBoS6wyNfTkeEuaAJFHiGw49dV/jy+0KXvC19LqawVqONVqm0+8qanE5C8adU3HRL3DMB1N0c5lCoyWvzfAw4ds/czcdMjvyC8rS5WK66Xi1RftDbWmQPJX4c8Sgp5mAB/XnMMl/tTu2UkTq+7c26DoWiBL3F9dA5I+I=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Tvh0nkA0; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Tvh0nkA0; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="p1qAnvVG";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="p1qAnvVG"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Tvh0nkA0";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Tvh0nkA0"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id A123521A70
-	for <linux-btrfs@vger.kernel.org>; Thu, 20 Mar 2025 05:34:31 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 965861F7C3
+	for <linux-btrfs@vger.kernel.org>; Thu, 20 Mar 2025 05:34:36 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1742448871; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=bMamcRWjFel5az5kn1zFGOp/mQtecTfJh0PZLv6Bupg=;
-	b=p1qAnvVG3P7NLMXHa5cTLk3OBZooIxY872X5+8iYZ781oPlPz6vV6S5h+xJICEYib4o8XO
-	/zgCpfxc/nIngX2G9hYOjp87hK/j/92dQeIta4kn16j0KNc4kwubdYhxFjfTOuFkLUzuvE
-	IkDbBKP/mGKOGB8LgHw33/uoWWyn9BM=
-Authentication-Results: smtp-out1.suse.de;
+	t=1742448876; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=W0bKQqV+MkkHPe7DZIpBz0LFXLdD07HsBuq459cApq8=;
+	b=Tvh0nkA0bG+ZHxtdmUbO9xpF7Xscwavom+HMjP+p0X/c3Mww5FfSsiGjzl/OjO9Ym86DeS
+	YOmsy+DbwV/o5uD5XDa2K1Ej/tatYGk+AfqBdISmro1szcU0YeuRjovKxY3t6gVkTbzQsJ
+	hCzhn4kg17STgFrnsudfONyIMmb9X6w=
+Authentication-Results: smtp-out2.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1742448871; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=bMamcRWjFel5az5kn1zFGOp/mQtecTfJh0PZLv6Bupg=;
-	b=p1qAnvVG3P7NLMXHa5cTLk3OBZooIxY872X5+8iYZ781oPlPz6vV6S5h+xJICEYib4o8XO
-	/zgCpfxc/nIngX2G9hYOjp87hK/j/92dQeIta4kn16j0KNc4kwubdYhxFjfTOuFkLUzuvE
-	IkDbBKP/mGKOGB8LgHw33/uoWWyn9BM=
+	t=1742448876; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=W0bKQqV+MkkHPe7DZIpBz0LFXLdD07HsBuq459cApq8=;
+	b=Tvh0nkA0bG+ZHxtdmUbO9xpF7Xscwavom+HMjP+p0X/c3Mww5FfSsiGjzl/OjO9Ym86DeS
+	YOmsy+DbwV/o5uD5XDa2K1Ej/tatYGk+AfqBdISmro1szcU0YeuRjovKxY3t6gVkTbzQsJ
+	hCzhn4kg17STgFrnsudfONyIMmb9X6w=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 9BF88138A5
-	for <linux-btrfs@vger.kernel.org>; Thu, 20 Mar 2025 05:34:30 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 90DB7138A5
+	for <linux-btrfs@vger.kernel.org>; Thu, 20 Mar 2025 05:34:35 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id gBX3Eeao22fcMQAAD6G6ig
+	id qLSnD+uo22fcMQAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Thu, 20 Mar 2025 05:34:30 +0000
+	for <linux-btrfs@vger.kernel.org>; Thu, 20 Mar 2025 05:34:35 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/4] btrfs: refactor btrfs_buffered_write() for the incoming large data folios
-Date: Thu, 20 Mar 2025 16:04:07 +1030
-Message-ID: <cover.1742443383.git.wqu@suse.com>
+Subject: [PATCH 3/4] btrfs: extract the space reservation code from btrfs_buffered_write()
+Date: Thu, 20 Mar 2025 16:04:10 +1030
+Message-ID: <522bfb923444f08b2c68c51a05cb5ca8b3ac7a77.1742443383.git.wqu@suse.com>
 X-Mailer: git-send-email 2.49.0
+In-Reply-To: <cover.1742443383.git.wqu@suse.com>
+References: <cover.1742443383.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -62,9 +69,9 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Level: 
+X-Spam-Score: -2.80
 X-Spamd-Result: default: False [-2.80 / 50.00];
-	BAYES_HAM(-3.00)[99.99%];
+	BAYES_HAM(-3.00)[100.00%];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
@@ -75,7 +82,7 @@ X-Spamd-Result: default: False [-2.80 / 50.00];
 	RCPT_COUNT_ONE(0.00)[1];
 	ARC_NA(0.00)[];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:email];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
 	MIME_TRACE(0.00)[0:+];
@@ -84,39 +91,149 @@ X-Spamd-Result: default: False [-2.80 / 50.00];
 	TO_DN_NONE(0.00)[];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
 	RCVD_TLS_ALL(0.00)[]
-X-Spam-Score: -2.80
 X-Spam-Flag: NO
+X-Spam-Level: 
 
-The function btrfs_buffered_write() is implementing all the complex
-heavy-lifting work inside a huge while () loop, which makes later large
-data folios work much harder.
+Inside the main loop of btrfs_buffered_write(), we have a complex data
+and metadata space reservation code, which tries to reserve space for
+a COW write, if failed then fallback to check if we can do a NOCOW
+write.
 
-The first patch is a patch that already submitted to the mailing list
-recently, but all later reworks depends on that patch, thus it is
-included in the series.
+Extract that part of code into a dedicated helper, reserve_space(), to
+make the main loop a little easier to read.
 
-The core of the whole series is to introduce a helper function,
-copy_one_range() to do the buffer copy into one single folio.
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/file.c | 108 ++++++++++++++++++++++++++++--------------------
+ 1 file changed, 63 insertions(+), 45 deletions(-)
 
-Patch 2 is a preparation that moves the error cleanup into the main loop,
-so we do not have dedicated out-of-loop cleanup.
-
-Patch 3 is another preparation that extract the space reservation code
-into a helper, make the final refactor patch a little more smaller.
-
-And patch 4 is the main dish, with all the refactoring happening inside
-it.
-
-Qu Wenruo (4):
-  btrfs: remove force_page_uptodate variable from btrfs_buffered_write()
-  btrfs: cleanup the reserved space inside the loop of
-    btrfs_buffered_write()
-  btrfs: extract the space reservation code from btrfs_buffered_write()
-  btrfs: extract the main loop of btrfs_buffered_write() into a helper
-
- fs/btrfs/file.c | 434 ++++++++++++++++++++++++++----------------------
- 1 file changed, 231 insertions(+), 203 deletions(-)
-
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index f68846c14ed5..99580ef906a6 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1095,6 +1095,64 @@ static void release_space(struct btrfs_inode *inode,
+ 	}
+ }
+ 
++/*
++ * Reserve data and metadata space for the this buffered write range.
++ *
++ * Return >0 for the number of bytes reserved, which is always block aligned.
++ * Return <0 for error.
++ */
++static ssize_t reserve_space(struct btrfs_inode *inode,
++			 struct extent_changeset **data_reserved,
++			 u64 start, size_t *len, bool nowait,
++			 bool *only_release_metadata)
++{
++	const struct btrfs_fs_info *fs_info = inode->root->fs_info;
++	unsigned int block_offset = start & (fs_info->sectorsize - 1);
++	size_t reserve_bytes;
++	int ret;
++
++	ret = btrfs_check_data_free_space(inode, data_reserved, start, *len,
++					  nowait);
++	if (ret < 0) {
++		int can_nocow;
++
++		if (nowait && (ret == -ENOSPC || ret == -EAGAIN))
++			return -EAGAIN;
++
++		/*
++		 * If we don't have to COW at the offset, reserve
++		 * metadata only. write_bytes may get smaller than
++		 * requested here.
++		 */
++		can_nocow = btrfs_check_nocow_lock(inode, start, len, nowait);
++		if (can_nocow < 0)
++			ret = can_nocow;
++		if (can_nocow > 0)
++			ret = 0;
++		if (ret)
++			return ret;
++		*only_release_metadata = true;
++	}
++
++	reserve_bytes = round_up(*len + block_offset,
++				 fs_info->sectorsize);
++	WARN_ON(reserve_bytes == 0);
++	ret = btrfs_delalloc_reserve_metadata(inode, reserve_bytes,
++					      reserve_bytes, nowait);
++	if (ret) {
++		if (!*only_release_metadata)
++			btrfs_free_reserved_data_space(inode,
++					*data_reserved, start, *len);
++		else
++			btrfs_check_nocow_unlock(inode);
++
++		if (nowait && ret == -ENOSPC)
++			ret = -EAGAIN;
++		return ret;
++	}
++	return reserve_bytes;
++}
++
+ ssize_t btrfs_buffered_write(struct kiocb *iocb, struct iov_iter *i)
+ {
+ 	struct file *file = iocb->ki_filp;
+@@ -1160,52 +1218,12 @@ ssize_t btrfs_buffered_write(struct kiocb *iocb, struct iov_iter *i)
+ 		sector_offset = pos & (fs_info->sectorsize - 1);
+ 
+ 		extent_changeset_release(data_reserved);
+-		ret = btrfs_check_data_free_space(BTRFS_I(inode),
+-						  &data_reserved, pos,
+-						  write_bytes, nowait);
+-		if (ret < 0) {
+-			int can_nocow;
+-
+-			if (nowait && (ret == -ENOSPC || ret == -EAGAIN)) {
+-				ret = -EAGAIN;
+-				break;
+-			}
+-
+-			/*
+-			 * If we don't have to COW at the offset, reserve
+-			 * metadata only. write_bytes may get smaller than
+-			 * requested here.
+-			 */
+-			can_nocow = btrfs_check_nocow_lock(BTRFS_I(inode), pos,
+-							   &write_bytes, nowait);
+-			if (can_nocow < 0)
+-				ret = can_nocow;
+-			if (can_nocow > 0)
+-				ret = 0;
+-			if (ret)
+-				break;
+-			only_release_metadata = true;
+-		}
+-
+-		reserve_bytes = round_up(write_bytes + sector_offset,
+-					 fs_info->sectorsize);
+-		WARN_ON(reserve_bytes == 0);
+-		ret = btrfs_delalloc_reserve_metadata(BTRFS_I(inode),
+-						      reserve_bytes,
+-						      reserve_bytes, nowait);
+-		if (ret) {
+-			if (!only_release_metadata)
+-				btrfs_free_reserved_data_space(BTRFS_I(inode),
+-						data_reserved, pos,
+-						write_bytes);
+-			else
+-				btrfs_check_nocow_unlock(BTRFS_I(inode));
+-
+-			if (nowait && ret == -ENOSPC)
+-				ret = -EAGAIN;
++		ret = reserve_space(BTRFS_I(inode), &data_reserved, pos,
++				    &write_bytes, nowait,
++				    &only_release_metadata);
++		if (ret < 0)
+ 			break;
+-		}
+-
++		reserve_bytes = ret;
+ 		release_bytes = reserve_bytes;
+ again:
+ 		ret = balance_dirty_pages_ratelimited_flags(inode->i_mapping, bdp_flags);
 -- 
 2.49.0
 

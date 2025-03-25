@@ -1,110 +1,38 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DF0F72571D1;
-	Tue, 25 Mar 2025 12:24:39 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9DBE92594B7;
+	Tue, 25 Mar 2025 12:24:50 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1742905480; cv=none; b=dwjwB+P9TxzatwpxIBvFq4OCDzWmebzS7P3Yj0b55SsW4aPs0agXPmmNH/G/iVTaUcdlvR+K8Myz7Kxv2sRNgOt1gQ7ypNvCcYO3xzxZO38YkFCSP1Jv2yuWonK/wtjla0K3f502sjAtB+RRGnEZmwBrvbWu8XHjfg+qghoypso=
+	t=1742905490; cv=none; b=g6CkpZuBUyc9LB5LUZLPtZvngtnufiu5BontLgYustoduz717TaZ+muKqQsz/gq+M3SL+GG6mPjjGP32r/O9dqGt5ygiZ3g39BPbXKRVfwoCMhA2E9rB/Cw9w31DgMXUIv/obApuDqm4KW+rb+2itQcgmW9ENgL092WsWtnd7+8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1742905480; c=relaxed/simple;
-	bh=+rpm/N8/UHXP5n3hRK8c2vpAMzIx7Ul4qNvFlNw8mss=;
-	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version; b=HagG87bgnClocGxdlKM7dnFgKl7Qpnr1tQhnoUvR3jGCvirCyt742Glw2jC04Ne8sHJr45OmGN5tjDcaYndfDcJ3cAut/RYHgM0LTG8V9DSjN93A5bbACva01tIgw1a9b6Q5bWClFcbKxIEVD71EfbT1S2LGLg+0B5fLWZ+LlAE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=fJ61zsFN; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1742905490; c=relaxed/simple;
+	bh=IfdcHatEmipxRsn5wUmDJUnnTto6PmTIwLIFvNib0NQ=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=eJjwAkWlHi/repWFlJdbd4aIhkxMo4t0i/xCXNrIRb/HmDaQ9sRmXN4gnQwfbz9RU1z8DcfZqCIRwt5O+RxQlMqhTIwaBy8J0TCuMJzvbeKPCR8mG2neAxUx69MVYgp8gMPXEiejX8XgeaXdsjov42GQRbYlFacr/ohgYdRCh/U=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=mt8ILXaQ; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="fJ61zsFN"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id E2D02C4CEED;
-	Tue, 25 Mar 2025 12:24:24 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="mt8ILXaQ"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 23541C4CEEE;
+	Tue, 25 Mar 2025 12:24:48 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1742905479;
-	bh=+rpm/N8/UHXP5n3hRK8c2vpAMzIx7Ul4qNvFlNw8mss=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-	b=fJ61zsFNPv0tVZchhiONptI9S+phpKdkaxrIZlJXfqP8ZFhX5npdPIZKutJs7jnqd
-	 cCfXzR1Lhw26JF6STGdUIKZRIQjVQ3FNgrDHdOvq/LtsFHWE3zxFE/GTBVb31ANpi6
-	 beEwlo8W1sTeTn0cFAZJSTH8Xx2n6hy1MZKcm5ZKAENN6VnIKjbEvFrXx/UwseWpbr
-	 aofW9gTlCfs1lWzyuR3LRO5UKXtkNqYmP8M+/YlMc+6Le8QBFSTCqH374JFrd1SAX6
-	 1sinYuNojS4RMnq31N3OYBaEEMx5tdvpoFDLmiGmnn4c78h2enMsQS6DDCJxF83lgY
-	 sgAsBfhlY0xYg==
-From: guoren@kernel.org
-To: arnd@arndb.de,
-	gregkh@linuxfoundation.org,
-	torvalds@linux-foundation.org,
-	paul.walmsley@sifive.com,
-	palmer@dabbelt.com,
-	anup@brainfault.org,
-	atishp@atishpatra.org,
-	oleg@redhat.com,
-	kees@kernel.org,
-	tglx@linutronix.de,
-	will@kernel.org,
-	mark.rutland@arm.com,
-	brauner@kernel.org,
-	akpm@linux-foundation.org,
-	rostedt@goodmis.org,
-	edumazet@google.com,
-	unicorn_wang@outlook.com,
-	inochiama@outlook.com,
-	gaohan@iscas.ac.cn,
-	shihua@iscas.ac.cn,
-	jiawei@iscas.ac.cn,
-	wuwei2016@iscas.ac.cn,
-	drew@pdp7.com,
-	prabhakar.mahadev-lad.rj@bp.renesas.com,
-	ctsai390@andestech.com,
-	wefu@redhat.com,
-	kuba@kernel.org,
-	pabeni@redhat.com,
-	josef@toxicpanda.com,
-	dsterba@suse.com,
-	mingo@redhat.com,
-	peterz@infradead.org,
-	boqun.feng@gmail.com,
-	guoren@kernel.org,
-	xiao.w.wang@intel.com,
-	qingfang.deng@siflower.com.cn,
-	leobras@redhat.com,
-	jszhang@kernel.org,
-	conor.dooley@microchip.com,
-	samuel.holland@sifive.com,
-	yongxuan.wang@sifive.com,
-	luxu.kernel@bytedance.com,
-	david@redhat.com,
-	ruanjinjie@huawei.com,
-	cuiyunhui@bytedance.com,
-	wangkefeng.wang@huawei.com,
-	qiaozhe@iscas.ac.cn
-Cc: ardb@kernel.org,
-	ast@kernel.org,
-	linux-kernel@vger.kernel.org,
-	linux-riscv@lists.infradead.org,
-	kvm@vger.kernel.org,
-	kvm-riscv@lists.infradead.org,
-	linux-mm@kvack.org,
-	linux-crypto@vger.kernel.org,
-	bpf@vger.kernel.org,
-	linux-input@vger.kernel.org,
-	linux-perf-users@vger.kernel.org,
-	linux-serial@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org,
-	linux-arch@vger.kernel.org,
-	maple-tree@lists.infradead.org,
-	linux-trace-kernel@vger.kernel.org,
-	netdev@vger.kernel.org,
-	linux-atm-general@lists.sourceforge.net,
-	linux-btrfs@vger.kernel.org,
-	netfilter-devel@vger.kernel.org,
-	coreteam@netfilter.org,
-	linux-nfs@vger.kernel.org,
-	linux-sctp@vger.kernel.org,
-	linux-usb@vger.kernel.org,
-	linux-media@vger.kernel.org
-Subject: [RFC PATCH V3 33/43] rv64ilp32_abi: mm/auxvec: Adapt mm->saved_auxv[] to Elf64
-Date: Tue, 25 Mar 2025 08:16:14 -0400
-Message-Id: <20250325121624.523258-34-guoren@kernel.org>
-X-Mailer: git-send-email 2.40.1
-In-Reply-To: <20250325121624.523258-1-guoren@kernel.org>
-References: <20250325121624.523258-1-guoren@kernel.org>
+	s=k20201202; t=1742905490;
+	bh=IfdcHatEmipxRsn5wUmDJUnnTto6PmTIwLIFvNib0NQ=;
+	h=From:To:Cc:Subject:Date:From;
+	b=mt8ILXaQRQaxpCWOIYZU0uzqdXjQsAU1MCgsQuGpEIQPZpEpu9GkVfTQYIUAkETeP
+	 KVxTTHoap7Fnwf0Lq7QW3wiGSS4td7tyWJfZLnDNc5N+7z4yR6jPxrywOe396e8154
+	 q1N+GTn6T3b5xZsu04cn9fxYJusDMyMQ8YK8WynEyebDuQeK4NZVFIMjJQ+Xdz3UTK
+	 gBG60XvaMqzLo6TRVgxcGqiB8z/kmHd8K0wNhkKlKL2tUTuyQ0ZZNt9s7d9BHBrvn4
+	 DmKHCt8Ru4CGgohaPzMy2FXtncYnhxsE0lINTpQAghCnHrHsWW134e1G0+/fWoJjzR
+	 lpszIUsMC2Arg==
+From: fdmanana@kernel.org
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org,
+	Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH v2] generic: test fsync of file with no more hard links
+Date: Tue, 25 Mar 2025 12:24:40 +0000
+Message-ID: <9a9c54e662293fb01591c256dd32243b1a149fe2.1742905343.git.fdmanana@suse.com>
+X-Mailer: git-send-email 2.45.2
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -113,85 +41,164 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-From: "Guo Ren (Alibaba DAMO Academy)" <guoren@kernel.org>
+From: Filipe Manana <fdmanana@suse.com>
 
-Unable to handle kernel paging request at virtual address 60723de0
-Oops [#1]
-Modules linked in:
-CPU: 0 UID: 0 PID: 1 Comm: init Not tainted 6.13.0-rc4-00031-g01dc3ca797b3-dirty #161
-Hardware name: riscv-virtio,qemu (DT)
-epc : percpu_counter_add_batch+0x38/0xc4
- ra : filemap_map_pages+0x3ec/0x54c
-epc : ffffffffbc4ea02e ra : ffffffffbc1722e4 sp : ffffffffc1c4fc60
- gp : ffffffffbd6d3918 tp : ffffffffc1c50000 t0 : 0000000000000000
- t1 : 000000003fffefff t2 : 0000000000000000 s0 : ffffffffc1c4fca0
- s1 : 0000000000000022 a0 : ffffffffc25c8250 a1 : 0000000000000003
- a2 : 0000000000000020 a3 : 000000003fffefff a4 : 000000000b1c2000
- a5 : 0000000060723de0 a6 : ffffffffbffff000 a7 : 000000003fffffff
- s2 : ffffffffc25c8250 s3 : ffffffffc246e240 s4 : ffffffffc2138240
- s5 : ffffffffbd70c4d0 s6 : 0000000000000003 s7 : 0000000000000000
- s8 : ffffffff9a02d780 s9 : 0000000000000100 s10: ffffffffc1c4fda8
- s11: 0000000000000003 t3 : 0000000000000000 t4 : 00000000000004f7
- t5 : 0000000000000000 t6 : 0000000000000001
-status: 0000000200000100 badaddr: 0000000060723de0 cause: 000000000000000d
-[<bc4ea02e>] percpu_counter_add_batch+0x38/0xc4
-[<bc1722e4>] filemap_map_pages+0x3ec/0x54c
-[<bc1adc86>] handle_mm_fault+0xb6c/0xe9c
-[<bc01bb3e>] handle_page_fault+0xd0/0x418
-[<bca3e264>] do_page_fault+0x20/0x3a
-[<bca4882c>] _new_vmalloc_restore_context_a0+0xb0/0xbc
-Code: 8a93 4baa 511c 171b 0027 873b 00ea 4318 2481 9fb9 (aa03) 0007
+Test that if we fsync a file that has no more hard links, power fail and
+then mount the filesystem, after the journal/log is replayed, the file
+doesn't exists anymore.
 
-Signed-off-by: Guo Ren (Alibaba DAMO Academy) <guoren@kernel.org>
+This exercises a bug recently found and fixed by the following patch for
+the linux kernel:
+
+   btrfs: fix fsync of files with no hard links not persisting deletion
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- include/linux/mm_types.h | 4 ++++
- kernel/sys.c             | 8 ++++++++
- 2 files changed, 12 insertions(+)
 
-diff --git a/include/linux/mm_types.h b/include/linux/mm_types.h
-index da3ba1a79ad5..0d436b0217fd 100644
---- a/include/linux/mm_types.h
-+++ b/include/linux/mm_types.h
-@@ -962,7 +962,11 @@ struct mm_struct {
- 		unsigned long start_brk, brk, start_stack;
- 		unsigned long arg_start, arg_end, env_start, env_end;
- 
-+#ifdef CONFIG_64BIT
-+		unsigned long long saved_auxv[AT_VECTOR_SIZE]; /* for /proc/PID/auxv */
-+#else
- 		unsigned long saved_auxv[AT_VECTOR_SIZE]; /* for /proc/PID/auxv */
-+#endif
- 
- 		struct percpu_counter rss_stat[NR_MM_COUNTERS];
- 
-diff --git a/kernel/sys.c b/kernel/sys.c
-index cb366ff8703a..81c0d94ff50d 100644
---- a/kernel/sys.c
-+++ b/kernel/sys.c
-@@ -2008,7 +2008,11 @@ static int validate_prctl_map_addr(struct prctl_mm_map *prctl_map)
- static int prctl_set_mm_map(int opt, const void __user *addr, unsigned long data_size)
+V2: Use the src/multi_open_unlink.c program with added options to sync
+    filesystem after creating files and fsync files after the unlink.
+
+ src/multi_open_unlink.c | 24 ++++++++++++++++++--
+ tests/generic/764       | 50 +++++++++++++++++++++++++++++++++++++++++
+ tests/generic/764.out   |  2 ++
+ 3 files changed, 74 insertions(+), 2 deletions(-)
+ create mode 100755 tests/generic/764
+ create mode 100644 tests/generic/764.out
+
+diff --git a/src/multi_open_unlink.c b/src/multi_open_unlink.c
+index c221d39e..fb054e87 100644
+--- a/src/multi_open_unlink.c
++++ b/src/multi_open_unlink.c
+@@ -28,7 +28,7 @@
+ void
+ usage(char *prog)
  {
- 	struct prctl_mm_map prctl_map = { .exe_fd = (u32)-1, };
-+#ifdef CONFIG_64BIT
-+	unsigned long long user_auxv[AT_VECTOR_SIZE];
-+#else
- 	unsigned long user_auxv[AT_VECTOR_SIZE];
-+#endif
- 	struct mm_struct *mm = current->mm;
- 	int error;
+-	fprintf(stderr, "Usage: %s [-e num-eas] [-f path_prefix] [-n num_files] [-s sleep_time] [-v ea-valuesize] \n", prog);
++	fprintf(stderr, "Usage: %s [-e num-eas] [-f path_prefix] [-F] [-n num_files] [-s sleep_time] [-S] [-v ea-valuesize] \n", prog);
+ 	exit(1);
+ }
  
-@@ -2122,7 +2126,11 @@ static int prctl_set_auxv(struct mm_struct *mm, unsigned long addr,
- 	 * up to the caller to provide sane values here, otherwise userspace
- 	 * tools which use this vector might be unhappy.
- 	 */
-+#ifdef CONFIG_64BIT
-+	unsigned long long user_auxv[AT_VECTOR_SIZE] = {};
-+#else
- 	unsigned long user_auxv[AT_VECTOR_SIZE] = {};
-+#endif
+@@ -44,8 +44,10 @@ main(int argc, char *argv[])
+ 	int value_size = MAX_VALUELEN;
+ 	int fd = -1;
+ 	int i,j,c;
++	int fsync_files = 0;
++	int sync_fs = 0;
  
- 	if (len > sizeof(user_auxv))
- 		return -EINVAL;
+-	while ((c = getopt(argc, argv, "e:f:n:s:v:")) != EOF) {
++	while ((c = getopt(argc, argv, "e:f:Fn:s:Sv:")) != EOF) {
+ 		switch (c) {
+ 			case 'e':   /* create eas */
+ 				num_eas = atoi(optarg);
+@@ -53,12 +55,18 @@ main(int argc, char *argv[])
+ 			case 'f':   /* file prefix */
+ 				given_path = optarg;
+ 				break;
++			case 'F':   /* fsync files after unlink */
++				fsync_files = 1;
++				break;
+ 			case 'n':   /* number of files */
+ 				num_files = atoi(optarg);
+ 				break;
+ 			case 's':   /* sleep time */
+ 				sleep_time = atoi(optarg);
+ 				break;
++			case 'S':   /* sync fs after creating files */
++				sync_fs = 1;
++				break;
+ 			case 'v':  /* value size on eas */
+ 				value_size = atoi(optarg);
+ 				break;
+@@ -83,6 +91,12 @@ main(int argc, char *argv[])
+ 			return 1;
+ 		}
+ 
++		if (sync_fs && syncfs(fd) == -1) {
++			fprintf(stderr, "%s: failed to sync filesystem: %s\n",
++				prog, strerror(errno));
++			return 1;
++		}
++
+ 		/* set the EAs */
+ 		for (j = 0; j < num_eas; j++) {
+ 			int sts;
+@@ -111,6 +125,12 @@ main(int argc, char *argv[])
+ 				prog, path, strerror(errno));
+ 			return 1;
+ 		}
++
++		if (fsync_files && fsync(fd) == -1) {
++			fprintf(stderr, "%s: failed to fsync \"%s\": %s\n",
++				prog, path, strerror(errno));
++			return 1;
++		}
+ 	}
+ 
+ 	sleep(sleep_time);
+diff --git a/tests/generic/764 b/tests/generic/764
+new file mode 100755
+index 00000000..1b21bc02
+--- /dev/null
++++ b/tests/generic/764
+@@ -0,0 +1,50 @@
++#! /bin/bash
++# SPDX-License-Identifier: GPL-2.0
++# Copyright (c) 2025 SUSE Linux Products GmbH.  All Rights Reserved.
++#
++# FS QA Test 764
++#
++# Test that if we fsync a file that has no more hard links, power fail and then
++# mount the filesystem, after the journal/log is replayed, the file doesn't
++# exists anymore.
++#
++. ./common/preamble
++_begin_fstest auto quick log
++
++_cleanup()
++{
++	_cleanup_flakey
++	cd /
++	rm -r -f $tmp.*
++}
++
++. ./common/dmflakey
++
++[ "$FSTYP" = "btrfs" ] && _fixed_by_kernel_commit xxxxxxxxxxxx \
++	"btrfs: fix fsync of files with no hard links not persisting deletion"
++
++_require_scratch
++_require_dm_target flakey
++_require_test_program "multi_open_unlink"
++
++_scratch_mkfs >>$seqres.full 2>&1 || _fail "mkfs failed"
++_require_metadata_journaling $SCRATCH_DEV
++_init_flakey
++_mount_flakey
++
++mkdir $SCRATCH_MNT/testdir
++$here/src/multi_open_unlink -f $SCRATCH_MNT/testdir/foo -F -S -n 1 -s 0
++
++# Simulate a power failure and then mount again the filesystem to replay the
++# journal/log.
++_flakey_drop_and_remount
++
++# We don't expect the file to exist anymore, since it was fsynced when it had no
++# more hard links.
++ls $SCRATCH_MNT/testdir
++
++_unmount_flakey
++
++echo "Silence is golden"
++status=0
++exit
+diff --git a/tests/generic/764.out b/tests/generic/764.out
+new file mode 100644
+index 00000000..bb58e5b8
+--- /dev/null
++++ b/tests/generic/764.out
+@@ -0,0 +1,2 @@
++QA output created by 764
++Silence is golden
 -- 
-2.40.1
+2.45.2
 

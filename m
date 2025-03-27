@@ -1,64 +1,64 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 589611DDA0E
-	for <linux-btrfs@vger.kernel.org>; Thu, 27 Mar 2025 22:31:37 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E14611E1DF0
+	for <linux-btrfs@vger.kernel.org>; Thu, 27 Mar 2025 22:31:40 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1743114699; cv=none; b=qrOR2/RocneIN/eD/fBFdRKF/2uZFmDYxN0qicxTd8HRvwtRjcRJ/WWxMAKI/DSf9bzLhjTpwqb1Ht4ao2dKqiEfIilvP5Ii4Y48mFhmRMCi/MtkiNKBczYCezIRNJJ9Whh/ThVEQQBzj6Oj3UnBBOcr6C9GEmcqSgihooiDiAU=
+	t=1743114703; cv=none; b=AvnF4+o+NN/3t8LCFtI/QIztvwuM/aN+4ss7KUqL8Gu5AWqT3z72VkGseOWjqTkCgxuF1T00IaOhDsyDHDD1CmcoDXz34suLvINLXHwi8QHU1kajwT/ZacGTXLJ/OcCn80gvBfyyEr9/WXPxQruTEnpReaRxSfInimJHX+w1kiE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1743114699; c=relaxed/simple;
-	bh=gj/r7fzl4OxNxnURl9/HDbo0Y7XhebwKBS+AVKTbY/A=;
+	s=arc-20240116; t=1743114703; c=relaxed/simple;
+	bh=OOumOEtqbyDY1x5ve6jMQ2ZT2Z9us/EhxXN05B8jo1Y=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=DeGNYFH70eT3SIqBcXkrGsNP15mSY6dOIBdUSTKTj3WSRqZJ7q+EhDB6+eyOJp6ROJjU9lejLbz9fJmhSNPin4hVqy7oiPqwrmhn8qJ64QCntmY8dOOqAxSDZGkTcfyAGNt6y2IQyt2Ki6YXWGjIjZCnrZX67u+FaQFZMX4fPCg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=NInpTuA8; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=NInpTuA8; arc=none smtp.client-ip=195.135.223.131
+	 MIME-Version; b=CLsA6pLxxgzBLhQVnLws7JAB89LLw77L26WTb6I10femfVMga+M8WeQ2JegUW2fMPNB9wdrW3DZM79M2YR5eWoDyCLYccDeD3fsm5TcoisLXWKkisxS2LBcO2wpMhFZ55uSxljR8f1HvO0uu5p7k7EG4QH4lV1OwmX/ihiqukJo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=JWC4ZiZf; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=fnv2c+Oh; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="NInpTuA8";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="NInpTuA8"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="JWC4ZiZf";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="fnv2c+Oh"
 Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 7AF5F1F38A
-	for <linux-btrfs@vger.kernel.org>; Thu, 27 Mar 2025 22:31:29 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id EE215211B3
+	for <linux-btrfs@vger.kernel.org>; Thu, 27 Mar 2025 22:31:31 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1743114689; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1743114692; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=84YbaJCSLoFSiw8NY4WN16+six+y+O/qvtMGiMpsQxg=;
-	b=NInpTuA8khVtymX5IsR+5shaFVtbn1pHt0LzBreAOkEazR4h2uqXPtXa95xx8Qf5bcjApw
-	QluMYj4R/28jZJMvf/+iFobXxoQbnw886t9W8N9ygmAQIkq+heSmqkhMIt7mllwMXDtdvI
-	CNlj3gKPtJuN9aiLW687eKqXzbrW8bM=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=NInpTuA8
+	bh=69ig23rLRSNBK/hZgGaBbumMNHNjQuT5Fi2zW0FmmL4=;
+	b=JWC4ZiZfa/fyWZnHDvDbwLDlAFRK3l69QVWQfd5uTBfP1xfQgrQNYFJ/i5Y2BNxEacFO86
+	z08EClfEYOLtPklltUjGwRuEprpJrpf78bR2lTbfWCrEAwVyMrTuNgxqRZy8012QNAEgc1
+	Qrza0qrEp2ogAcNA/UlD2ndDAYdGwGQ=
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=fnv2c+Oh
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1743114689; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1743114691; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=84YbaJCSLoFSiw8NY4WN16+six+y+O/qvtMGiMpsQxg=;
-	b=NInpTuA8khVtymX5IsR+5shaFVtbn1pHt0LzBreAOkEazR4h2uqXPtXa95xx8Qf5bcjApw
-	QluMYj4R/28jZJMvf/+iFobXxoQbnw886t9W8N9ygmAQIkq+heSmqkhMIt7mllwMXDtdvI
-	CNlj3gKPtJuN9aiLW687eKqXzbrW8bM=
+	bh=69ig23rLRSNBK/hZgGaBbumMNHNjQuT5Fi2zW0FmmL4=;
+	b=fnv2c+OhQO5CWhKLLZMardkZdOVMQgzaogFzo0suMkqFo8cBDE5SBQBKkFvhQYUpI2Is7m
+	Skbfqhd13VcPd+07bVv0qdsRLiU1hNa+8gmNywIqK6Qo4XDiVee4n392+6d8CkESdX/nD3
+	rEtDnS/bVYH4DUpSuOFit1F03PDVkMU=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id B5F95139D4
-	for <linux-btrfs@vger.kernel.org>; Thu, 27 Mar 2025 22:31:28 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 31735139D4
+	for <linux-btrfs@vger.kernel.org>; Thu, 27 Mar 2025 22:31:30 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id GNHkHcDR5WfMagAAD6G6ig
+	id OBsUOcLR5WfMagAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Thu, 27 Mar 2025 22:31:28 +0000
+	for <linux-btrfs@vger.kernel.org>; Thu, 27 Mar 2025 22:31:30 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/4] btrfs: subpage: fix a bug that blocks large folios
-Date: Fri, 28 Mar 2025 09:01:02 +1030
-Message-ID: <428b3c09f6df2820865640e2cf91a7cc0c1b4119.1743113694.git.wqu@suse.com>
+Subject: [PATCH 3/4] btrfs: prepare btrfs_buffered_write() for large data folios
+Date: Fri, 28 Mar 2025 09:01:04 +1030
+Message-ID: <285fe66e1d13bd9b1aa9b316da12cbaa8cb12c95.1743113694.git.wqu@suse.com>
 X-Mailer: git-send-email 2.49.0
 In-Reply-To: <cover.1743113694.git.wqu@suse.com>
 References: <cover.1743113694.git.wqu@suse.com>
@@ -69,11 +69,11 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Rspamd-Queue-Id: 7AF5F1F38A
+X-Rspamd-Queue-Id: EE215211B3
 X-Spam-Score: -3.01
 X-Rspamd-Action: no action
 X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[99.99%];
+	BAYES_HAM(-3.00)[100.00%];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
@@ -103,33 +103,92 @@ X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
 X-Spam-Flag: NO
 X-Spam-Level: 
 
-Inside the macro, subpage_calc_start_bit(), we needs to calculate the
-offset to the beginning of the folio.
+This involves the following modifications:
 
-But we're using offset_in_page(), on systems with 4K page size and 4K fs
-block size, this means we will always return offset 0 for a large folio,
-causing all kinds of errors.
+- Set the order flags for __filemap_get_folio() inside
+  prepare_one_folio()
 
-Fix it by using offset_in_folio() instead.
+  This will allow __filemap_get_folio() to create a large folio if the
+  address space supports it.
+
+- Limit the initial @write_bytes inside copy_one_range()
+  If the largest folio boundary splits the initial write range, there is
+  no way we can write beyond the largest folio boundary.
+
+  This is done by a simple helper function, calc_write_bytes().
+
+- Release exceeding reserved space if the folio is smaller than expected
+  Which is doing the same handling when short copy happened.
+
+All these preparation should not change the behavior when the largest
+folio order is 0.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/subpage.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/btrfs/file.c | 29 +++++++++++++++++++++++++++--
+ 1 file changed, 27 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/subpage.c b/fs/btrfs/subpage.c
-index 5b69c447fec9..5fbdd977121e 100644
---- a/fs/btrfs/subpage.c
-+++ b/fs/btrfs/subpage.c
-@@ -202,7 +202,7 @@ static void btrfs_subpage_assert(const struct btrfs_fs_info *fs_info,
- 			   btrfs_blocks_per_folio(fs_info, folio);	\
- 									\
- 	btrfs_subpage_assert(fs_info, folio, start, len);		\
--	__start_bit = offset_in_page(start) >> fs_info->sectorsize_bits; \
-+	__start_bit = offset_in_folio(folio, start) >> fs_info->sectorsize_bits; \
- 	__start_bit += blocks_per_folio * btrfs_bitmap_nr_##name;	\
- 	__start_bit;							\
- })
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 63c7a3294eb2..5d10ae321687 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -861,7 +861,8 @@ static noinline int prepare_one_folio(struct inode *inode, struct folio **folio_
+ {
+ 	unsigned long index = pos >> PAGE_SHIFT;
+ 	gfp_t mask = get_prepare_gfp_flags(inode, nowait);
+-	fgf_t fgp_flags = (nowait ? FGP_WRITEBEGIN | FGP_NOWAIT : FGP_WRITEBEGIN);
++	fgf_t fgp_flags = (nowait ? FGP_WRITEBEGIN | FGP_NOWAIT : FGP_WRITEBEGIN) |
++			  fgf_set_order(write_bytes);
+ 	struct folio *folio;
+ 	int ret = 0;
+ 
+@@ -1169,6 +1170,16 @@ static void shrink_reserved_space(struct btrfs_inode *inode,
+ 				diff, true);
+ }
+ 
++/* Calculate the maximum amount of bytes we can write into one folio. */
++static size_t calc_write_bytes(const struct btrfs_inode *inode,
++			       const struct iov_iter *i, u64 start)
++{
++	size_t max_folio_size = mapping_max_folio_size(inode->vfs_inode.i_mapping);
++
++	return min(max_folio_size - (start & (max_folio_size - 1)),
++		   iov_iter_count(i));
++}
++
+ /*
+  * Do the heavy-lifting work to copy one range into one folio of the page cache.
+  *
+@@ -1182,7 +1193,7 @@ static int copy_one_range(struct btrfs_inode *inode, struct iov_iter *i,
+ {
+ 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+ 	struct extent_state *cached_state = NULL;
+-	size_t write_bytes = min(iov_iter_count(i), PAGE_SIZE - offset_in_page(start));
++	size_t write_bytes = calc_write_bytes(inode, i, start);
+ 	size_t copied;
+ 	const u64 reserved_start = round_down(start, fs_info->sectorsize);
+ 	u64 reserved_len;
+@@ -1227,6 +1238,20 @@ static int copy_one_range(struct btrfs_inode *inode, struct iov_iter *i,
+ 			      only_release_metadata);
+ 		return ret;
+ 	}
++	/*
++	 * The reserved range goes beyond the current folio, shrink the reserved
++	 * space to the folio boundary.
++	 */
++	if (reserved_start + reserved_len > folio_pos(folio) + folio_size(folio)) {
++		const u64 last_block = folio_pos(folio) + folio_size(folio);
++
++		shrink_reserved_space(inode, *data_reserved, reserved_start,
++				      reserved_len, last_block - reserved_start,
++				      only_release_metadata);
++		write_bytes = folio_pos(folio) + folio_size(folio) - start;
++		reserved_len = last_block - reserved_start;
++	}
++
+ 	extents_locked = lock_and_cleanup_extent_if_need(inode,
+ 					folio, start, write_bytes, &lockstart,
+ 					&lockend, nowait, &cached_state);
 -- 
 2.49.0
 

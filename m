@@ -1,64 +1,64 @@
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7A5A31624C0
-	for <linux-btrfs@vger.kernel.org>; Sat, 29 Mar 2025 09:20:19 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8987E18CC1D
+	for <linux-btrfs@vger.kernel.org>; Sat, 29 Mar 2025 09:20:26 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1743240021; cv=none; b=IlzKr9nLvGzp/jJ2UO4xiSZDO4ggeKAvgkB/v5RmWTZlg4zYZG8SAEXW0eCgZYKE5gA+6B8MFFP2QXuaVTUgO+fhDTPCPYatjzITWLclwN2g5w6LnnWIZj7TGDL5upguQ/2Vu54hvbwx+KAkeTz2ynITWZGwdXSlNYLr2iXcuzY=
+	t=1743240028; cv=none; b=EQy8w1Zq5aWCEH30DuKdR/Q0/5ZKEUjo3vXdY0Q3hyV5wN/lsyeOdkRKxNU3zuiPogY9sh22BWRPO1+yJ/rBPk8gzPDQsm/VOh1EwxcpmKLMhXD4zbS/+5GV7n6biejtsUNKr1o1nSpT2cZYI8ZMtkXTEavsVyNrXqG2nA7T9cY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1743240021; c=relaxed/simple;
-	bh=9J6vn5Fkh3AsAy1ive6p43J+ZUoO1aoq3Cv5Crjc2/0=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=Y3uG7EBxTLc+mPoVtu3NJgWp9KA3OMXQSg3SU3W5tsU3KLmsHZe5xYo+VooIEf7RnrVtc7EV+LJ/HbndLgpn0yM/ZsRVWXGYL2IfqersLMOFCsO5bJ4p7SvMSp4AYMnYaqGfhTiV9ZL9KVx2iFb9CTuqqn/xJk/lf56PnO5sLWw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=RJ+f3D3r; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=RJ+f3D3r; arc=none smtp.client-ip=195.135.223.130
+	s=arc-20240116; t=1743240028; c=relaxed/simple;
+	bh=Drr5ardnu6hbLTAQmtcq+ncPIjVrBwbE9xiUcAHK5bQ=;
+	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=HUh7PZOloPr2btGqH3Y8tg1Ur8I2MNsBSVeDIfgTKMcehyusZKB1HEndoMCmWxl1SzmZoEE6qGpu6he2tzuXkMzqzjPjpiCspMZWR1ogttXg9IGyDGr8Q7/c8Fi0JFJyCyURauoQgAUI9L2BnJq2c+QMoYoILs0Y98DNNjTT9Xs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=bJM41r5M; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=bJM41r5M; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="RJ+f3D3r";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="RJ+f3D3r"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="bJM41r5M";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="bJM41r5M"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 20BDB2120F;
-	Sat, 29 Mar 2025 09:20:07 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id D0B5121210
+	for <linux-btrfs@vger.kernel.org>; Sat, 29 Mar 2025 09:20:09 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1743240007; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1743240009; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=I8+Rlr03acQM+MQe0FjXIy8wqh/ugRH3ztNsgAuSe74=;
-	b=RJ+f3D3rRQovky8jZ6v2pxbzmRvllOkdR3CcT+6HvExc1DkrxZ3XFfiyKfa+iihROFVXwp
-	oALj2HG6vz0ZAissDoCznrsD/ul979aKormXzOl4B7WHuSe3YKsxM2lQr6S58E9aI16Wuw
-	EJgVJdvZ5EYJl9dJrWuqlNzaX3wrGBY=
+	bh=0Zp0xLTG8zm1YmgSnBtk6UBdGyTY0kj8y1qJYyz7qBk=;
+	b=bJM41r5MlxMyhjkyE1QNC/52zD3Nf84CUji/mmtb0trVLaZfPP3WF1aorXrOZKI7geWV6z
+	6t+HyAiSPzoIAkio2xJYUxSqbSmHJANd9/tdCmH32kvtA8cBen3gmrJhl85XRclK401hTY
+	2jT5bJyhpv/7kY6vUp+K9p03haKYZU0=
 Authentication-Results: smtp-out1.suse.de;
-	none
+	dkim=pass header.d=suse.com header.s=susede1 header.b=bJM41r5M
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1743240007; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1743240009; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=I8+Rlr03acQM+MQe0FjXIy8wqh/ugRH3ztNsgAuSe74=;
-	b=RJ+f3D3rRQovky8jZ6v2pxbzmRvllOkdR3CcT+6HvExc1DkrxZ3XFfiyKfa+iihROFVXwp
-	oALj2HG6vz0ZAissDoCznrsD/ul979aKormXzOl4B7WHuSe3YKsxM2lQr6S58E9aI16Wuw
-	EJgVJdvZ5EYJl9dJrWuqlNzaX3wrGBY=
+	bh=0Zp0xLTG8zm1YmgSnBtk6UBdGyTY0kj8y1qJYyz7qBk=;
+	b=bJM41r5MlxMyhjkyE1QNC/52zD3Nf84CUji/mmtb0trVLaZfPP3WF1aorXrOZKI7geWV6z
+	6t+HyAiSPzoIAkio2xJYUxSqbSmHJANd9/tdCmH32kvtA8cBen3gmrJhl85XRclK401hTY
+	2jT5bJyhpv/7kY6vUp+K9p03haKYZU0=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 1EBAE13A41;
-	Sat, 29 Mar 2025 09:20:05 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 15F1C13A41
+	for <linux-btrfs@vger.kernel.org>; Sat, 29 Mar 2025 09:20:08 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id UNRRNEW752cCEQAAD6G6ig
-	(envelope-from <wqu@suse.com>); Sat, 29 Mar 2025 09:20:05 +0000
+	id 2LhQMki752cCEQAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Sat, 29 Mar 2025 09:20:08 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v2 3/5] btrfs: refactor how we handle reserved space inside copy_one_range()
-Date: Sat, 29 Mar 2025 19:49:38 +1030
-Message-ID: <d48a2e731328e41a9d041472a92564925f51d32a.1743239672.git.wqu@suse.com>
+Subject: [PATCH v2 5/5] btrfs: prepare btrfs_punch_hole_lock_range() for large data folios
+Date: Sat, 29 Mar 2025 19:49:40 +1030
+Message-ID: <86cc5b6bd21e489ea6838b01bb0948c0a19b2cb5.1743239672.git.wqu@suse.com>
 X-Mailer: git-send-email 2.49.0
 In-Reply-To: <cover.1743239672.git.wqu@suse.com>
 References: <cover.1743239672.git.wqu@suse.com>
@@ -69,297 +69,185 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Score: -2.80
-X-Spamd-Result: default: False [-2.80 / 50.00];
+X-Rspamd-Queue-Id: D0B5121210
+X-Spam-Score: -3.01
+X-Rspamd-Action: no action
+X-Spamd-Result: default: False [-3.01 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	RCPT_COUNT_TWO(0.00)[2];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
+	MX_GOOD(-0.01)[];
 	MIME_TRACE(0.00)[0:+];
-	ARC_NA(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	FUZZY_BLOCKED(0.00)[rspamd.com];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	RCPT_COUNT_ONE(0.00)[1];
+	ARC_NA(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	DKIM_TRACE(0.00)[suse.com:+];
+	RCVD_COUNT_TWO(0.00)[2];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
-	TO_DN_SOME(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:mid,suse.com:email];
-	RCVD_TLS_ALL(0.00)[]
+	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	TO_DN_NONE(0.00)[];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,suse.com:mid,suse.com:email,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo]
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
 X-Spam-Flag: NO
 X-Spam-Level: 
 
-There are several things not ideal inside copy_one_range():
+The function btrfs_punch_hole_lock_range() needs to make sure there is
+no other folio in the range, thus it goes with filemap_range_has_page(),
+which works pretty fine.
 
-- Unnecessary temporary variables
-  * block_offset
-  * reserve_bytes
-  * dirty_blocks
-  * num_blocks
-  * release_bytes
-  These are utilized to handle short-copy cases.
+But if we have large folios, under the following case
+filemap_range_has_page() will always return true, forcing
+btrfs_punch_hole_lock_range() to do a very time consuming busy loop:
 
-- Inconsistent handling of btrfs_delalloc_release_extents()
-  There is a hidden behavior that, after reserving metadata for X bytes
-  of data write, we have to call btrfs_delalloc_release_extents() with X
-  once and only once.
+        start                            end
+        |                                |
+  |//|//|//|//|  |  |  |  |  |  |  |  |//|//|
+   \         /                         \   /
+    Folio A                            Folio B
 
-  Calling btrfs_delalloc_release_extents(X - 4K) and
-  btrfs_delalloc_release_extents(4K) will cause outstanding extents
-  accounting to go wrong.
+In above case, folio A and B contain our start/end indexes, and there
+are no other folios in the range.
+Thus we do not need to retry inside btrfs_punch_hole_lock_range().
 
-  This is because the outstanding extents mechanism is not designed to
-  handle shrink of reserved space.
+To prepare for large data folios, introduce a helper,
+check_range_has_page(), which will:
 
-Improve above situations by:
+- Shrink the search range towards page boundaries
+  If the rounded down end (exclusive, otherwise it can underflow when @end
+  is inside the folio at file offset 0) is no larger than the rounded up
+  start, it means the range contains no other pages other than the ones
+  covering @start and @end.
 
-- Use a single @reserved_start and @reserved_len pair
-  Now we reserved space for the initial range, and if a short copy
-  happened and we need to shrink the reserved space, we can easily
-  calculate the new length, and update @reserved_len.
+  Can return false directly in that case.
 
-- Introduce helpers to shrink reserved data and metadata space
-  This is done by two new helper, shrink_reserved_space() and
-  btrfs_delalloc_shrink_extents().
+- Grab all the folios inside the range
 
-  The later will do a better calculation on if we need to modify the
-  outstanding extents, and the first one will be utilized inside
-  copy_one_range().
+- Skip any large folios that cover the start and end indexes
 
-- Manually unlock, release reserved space and return if no byte is
-  copied
+- If any other folios are found return true
 
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
+- Otherwise return false
+
+This new helper is going to handle both large folios and regular ones.
+
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/delalloc-space.c |  24 +++++++++
- fs/btrfs/delalloc-space.h |   3 +-
- fs/btrfs/file.c           | 102 ++++++++++++++++++++++----------------
- 3 files changed, 86 insertions(+), 43 deletions(-)
+ fs/btrfs/file.c | 69 +++++++++++++++++++++++++++++++++++++++++--------
+ 1 file changed, 58 insertions(+), 11 deletions(-)
 
-diff --git a/fs/btrfs/delalloc-space.c b/fs/btrfs/delalloc-space.c
-index 88e900e5a43d..82289c860476 100644
---- a/fs/btrfs/delalloc-space.c
-+++ b/fs/btrfs/delalloc-space.c
-@@ -439,6 +439,30 @@ void btrfs_delalloc_release_extents(struct btrfs_inode *inode, u64 num_bytes)
- 	btrfs_inode_rsv_release(inode, true);
- }
- 
-+/* Shrink a previously reserved extent to a new length. */
-+void btrfs_delalloc_shrink_extents(struct btrfs_inode *inode, u64 reserved_len,
-+				   u64 new_len)
-+{
-+	struct btrfs_fs_info *fs_info = inode->root->fs_info;
-+	const u32 reserved_num_extents = count_max_extents(fs_info, reserved_len);
-+	const u32 new_num_extents = count_max_extents(fs_info, new_len);
-+	const int diff_num_extents = new_num_extents - reserved_num_extents;
-+
-+	ASSERT(new_len <= reserved_len);
-+	if (new_num_extents == reserved_num_extents)
-+		return;
-+
-+	spin_lock(&inode->lock);
-+	btrfs_mod_outstanding_extents(inode, diff_num_extents);
-+	btrfs_calculate_inode_block_rsv_size(fs_info, inode);
-+	spin_unlock(&inode->lock);
-+
-+	if (btrfs_is_testing(fs_info))
-+		return;
-+
-+	btrfs_inode_rsv_release(inode, true);
-+}
-+
- /*
-  * Reserve data and metadata space for delalloc
-  *
-diff --git a/fs/btrfs/delalloc-space.h b/fs/btrfs/delalloc-space.h
-index 3f32953c0a80..c61580c63caf 100644
---- a/fs/btrfs/delalloc-space.h
-+++ b/fs/btrfs/delalloc-space.h
-@@ -27,5 +27,6 @@ int btrfs_delalloc_reserve_space(struct btrfs_inode *inode,
- int btrfs_delalloc_reserve_metadata(struct btrfs_inode *inode, u64 num_bytes,
- 				    u64 disk_num_bytes, bool noflush);
- void btrfs_delalloc_release_extents(struct btrfs_inode *inode, u64 num_bytes);
--
-+void btrfs_delalloc_shrink_extents(struct btrfs_inode *inode, u64 reserved_len,
-+				   u64 new_len);
- #endif /* BTRFS_DELALLOC_SPACE_H */
 diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 7c147ef9368d..e421b64f7038 100644
+index a7afc55bab2a..bd0bb7aea99d 100644
 --- a/fs/btrfs/file.c
 +++ b/fs/btrfs/file.c
-@@ -1151,6 +1151,23 @@ static ssize_t reserve_space(struct btrfs_inode *inode,
- 	return reserve_bytes;
+@@ -2159,11 +2159,29 @@ static int find_first_non_hole(struct btrfs_inode *inode, u64 *start, u64 *len)
+ 	return ret;
  }
  
-+/* Shrink the reserved data and metadata space from @reserved_len to @new_len. */
-+static void shrink_reserved_space(struct btrfs_inode *inode,
-+				  struct extent_changeset *data_reserved,
-+				  u64 reserved_start, u64 reserved_len,
-+				  u64 new_len, bool only_release_metadata)
-+{
-+	const u64 diff = reserved_len - new_len;
+-static void btrfs_punch_hole_lock_range(struct inode *inode,
+-					const u64 lockstart,
+-					const u64 lockend,
+-					struct extent_state **cached_state)
++/*
++ * The helper to check if there is no folio in the range.
++ *
++ * We can not utilized filemap_range_has_page() in a filemap with large folios
++ * as we can hit the following false positive:
++ *
++ *        start                            end
++ *        |                                |
++ *  |//|//|//|//|  |  |  |  |  |  |  |  |//|//|
++ *   \         /                         \   /
++ *    Folio A                            Folio B
++ *
++ * That large folio A and B cover the start and end indexes.
++ * In that case filemap_range_has_page() will always return true, but the above
++ * case is fine for btrfs_punch_hole_lock_range() usage.
++ *
++ * So here we only ensure that no other folios is in the range, excluding the
++ * head/tail large folio.
++ */
++static bool check_range_has_page(struct inode *inode, u64 start, u64 end)
+ {
++	struct folio_batch fbatch;
++	bool ret = false;
+ 	/*
+ 	 * For subpage case, if the range is not at page boundary, we could
+ 	 * have pages at the leading/tailing part of the range.
+@@ -2174,17 +2192,47 @@ static void btrfs_punch_hole_lock_range(struct inode *inode,
+ 	 *
+ 	 * And do not decrease page_lockend right now, as it can be 0.
+ 	 */
+-	const u64 page_lockstart = round_up(lockstart, PAGE_SIZE);
+-	const u64 page_lockend = round_down(lockend + 1, PAGE_SIZE);
++	const u64 page_lockstart = round_up(start, PAGE_SIZE);
++	const u64 page_lockend = round_down(end+ 1, PAGE_SIZE);
++	const pgoff_t start_index = page_lockstart >> PAGE_SHIFT;
++	const pgoff_t end_index = (page_lockend - 1) >> PAGE_SHIFT;
++	pgoff_t tmp = start_index;
++	int found_folios;
+ 
++	/* The same page or adjacent pages. */
++	if (page_lockend <= page_lockstart)
++		return false;
 +
-+	ASSERT(new_len <= reserved_len);
-+	btrfs_delalloc_shrink_extents(inode, reserved_len, new_len);
-+	if (only_release_metadata)
-+		btrfs_delalloc_release_metadata(inode, diff, true);
-+	else
-+		btrfs_delalloc_release_space(inode, data_reserved,
-+					     reserved_start + new_len, diff, true);
++	folio_batch_init(&fbatch);
++	found_folios = filemap_get_folios(inode->i_mapping, &tmp, end_index,
++					  &fbatch);
++	for (int i = 0; i < found_folios; i++) {
++		struct folio *folio = fbatch.folios[i];
++
++		/* A large folio begins before the start. Not a target. */
++		if (folio->index < start_index)
++			continue;
++		/* A large folio extends beyond the end. Not a target. */
++		if (folio->index + folio_nr_pages(folio) > end_index)
++			continue;
++		/* A folio doesn't cover the head/tail index. Found a target. */
++		ret = true;
++		break;
++	}
++	folio_batch_release(&fbatch);
++	return ret;
 +}
 +
- /*
-  * Do the heavy-lifting work to copy one range into one folio of the page cache.
-  *
-@@ -1164,14 +1181,11 @@ static int copy_one_range(struct btrfs_inode *inode, struct iov_iter *iter,
- {
- 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
- 	struct extent_state *cached_state = NULL;
--	const size_t block_offset = (start & (fs_info->sectorsize - 1));
- 	size_t write_bytes = min(iov_iter_count(iter), PAGE_SIZE - offset_in_page(start));
--	size_t reserve_bytes;
- 	size_t copied;
--	size_t dirty_blocks;
--	size_t num_blocks;
-+	const u64 reserved_start = round_down(start, fs_info->sectorsize);
-+	u64 reserved_len;
- 	struct folio *folio = NULL;
--	u64 release_bytes;
- 	int extents_locked;
- 	u64 lockstart;
- 	u64 lockend;
-@@ -1190,23 +1204,25 @@ static int copy_one_range(struct btrfs_inode *inode, struct iov_iter *iter,
- 			    &only_release_metadata);
- 	if (ret < 0)
- 		return ret;
--	reserve_bytes = ret;
--	release_bytes = reserve_bytes;
-+	reserved_len = ret;
-+	/* Write range must be inside the reserved range. */
-+	ASSERT(reserved_start <= start);
-+	ASSERT(start + write_bytes <= reserved_start + reserved_len);
++static void btrfs_punch_hole_lock_range(struct inode *inode,
++					const u64 lockstart,
++					const u64 lockend,
++					struct extent_state **cached_state)
++{
+ 	while (1) {
+ 		truncate_pagecache_range(inode, lockstart, lockend);
  
- again:
- 	ret = balance_dirty_pages_ratelimited_flags(inode->vfs_inode.i_mapping,
- 						    bdp_flags);
- 	if (ret) {
--		btrfs_delalloc_release_extents(inode, reserve_bytes);
--		release_space(inode, *data_reserved, start, release_bytes,
-+		btrfs_delalloc_release_extents(inode, reserved_len);
-+		release_space(inode, *data_reserved, reserved_start, reserved_len,
- 			      only_release_metadata);
- 		return ret;
- 	}
+ 		lock_extent(&BTRFS_I(inode)->io_tree, lockstart, lockend,
+ 			    cached_state);
+-		/* The same page or adjacent pages. */
+-		if (page_lockend <= page_lockstart)
+-			break;
+ 		/*
+ 		 * We can't have ordered extents in the range, nor dirty/writeback
+ 		 * pages, because we have locked the inode's VFS lock in exclusive
+@@ -2195,8 +2243,7 @@ static void btrfs_punch_hole_lock_range(struct inode *inode,
+ 		 * locking the range check if we have pages in the range, and if
+ 		 * we do, unlock the range and retry.
+ 		 */
+-		if (!filemap_range_has_page(inode->i_mapping, page_lockstart,
+-					    page_lockend - 1))
++		if (!check_range_has_page(inode, lockstart, lockend))
+ 			break;
  
- 	ret = prepare_one_folio(&inode->vfs_inode, &folio, start, write_bytes, false);
- 	if (ret) {
--		btrfs_delalloc_release_extents(inode, reserve_bytes);
--		release_space(inode, *data_reserved, start, release_bytes,
-+		btrfs_delalloc_release_extents(inode, reserved_len);
-+		release_space(inode, *data_reserved, reserved_start, reserved_len,
- 			      only_release_metadata);
- 		return ret;
- 	}
-@@ -1217,8 +1233,8 @@ static int copy_one_range(struct btrfs_inode *inode, struct iov_iter *iter,
- 		if (!nowait && extents_locked == -EAGAIN)
- 			goto again;
- 
--		btrfs_delalloc_release_extents(inode, reserve_bytes);
--		release_space(inode, *data_reserved, start, release_bytes,
-+		btrfs_delalloc_release_extents(inode, reserved_len);
-+		release_space(inode, *data_reserved, reserved_start, reserved_len,
- 			      only_release_metadata);
- 		ret = extents_locked;
- 		return ret;
-@@ -1228,41 +1244,43 @@ static int copy_one_range(struct btrfs_inode *inode, struct iov_iter *iter,
- 					     write_bytes, iter);
- 	flush_dcache_folio(folio);
- 
--	/*
--	 * If we get a partial write, we can end up with partially uptodate
--	 * page. Although if sector size < page size we can handle it, but if
--	 * it's not sector aligned it can cause a lot of complexity, so make
--	 * sure they don't happen by forcing retry this copy.
--	 */
- 	if (unlikely(copied < write_bytes)) {
-+		u64 last_block;
-+
-+		/*
-+		 * The original write range doesn't need an uptodate folio as
-+		 * the range is block aligned. But now a short copy happened.
-+		 * We can not handle it without an uptodate folio.
-+		 *
-+		 * So just revert the range and we will retry.
-+		 */
- 		if (!folio_test_uptodate(folio)) {
- 			iov_iter_revert(iter, copied);
- 			copied = 0;
- 		}
--	}
- 
--	num_blocks = BTRFS_BYTES_TO_BLKS(fs_info, reserve_bytes);
--	dirty_blocks = round_up(copied + block_offset, fs_info->sectorsize);
--	dirty_blocks = BTRFS_BYTES_TO_BLKS(fs_info, dirty_blocks);
--
--	if (copied == 0)
--		dirty_blocks = 0;
--
--	if (num_blocks > dirty_blocks) {
--		/* Release everything except the sectors we dirtied. */
--		release_bytes -= dirty_blocks << fs_info->sectorsize_bits;
--		if (only_release_metadata) {
--			btrfs_delalloc_release_metadata(inode, release_bytes, true);
--		} else {
--			const u64 release_start = round_up(start + copied,
--							   fs_info->sectorsize);
--
--			btrfs_delalloc_release_space(inode, *data_reserved,
--						     release_start, release_bytes,
--						     true);
-+		/* No copied byte, unlock, release reserved space and exit. */
-+		if (copied == 0) {
-+			if (extents_locked)
-+				unlock_extent(&inode->io_tree, lockstart, lockend,
-+					      &cached_state);
-+			else
-+				free_extent_state(cached_state);
-+			btrfs_delalloc_release_extents(inode, reserved_len);
-+			release_space(inode, *data_reserved, reserved_start, reserved_len,
-+				      only_release_metadata);
-+			btrfs_drop_folio(fs_info, folio, start, copied);
-+			return 0;
- 		}
-+
-+		/* Release the reserved space beyond the last block. */
-+		last_block = round_up(start + copied, fs_info->sectorsize);
-+
-+		shrink_reserved_space(inode, *data_reserved, reserved_start,
-+				      reserved_len, last_block - reserved_start,
-+				      only_release_metadata);
-+		reserved_len = last_block - reserved_start;
- 	}
--	release_bytes = round_up(copied + block_offset, fs_info->sectorsize);
- 
- 	ret = btrfs_dirty_folio(inode, folio, start, copied, &cached_state,
- 				only_release_metadata);
-@@ -1278,10 +1296,10 @@ static int copy_one_range(struct btrfs_inode *inode, struct iov_iter *iter,
- 	else
- 		free_extent_state(cached_state);
- 
--	btrfs_delalloc_release_extents(inode, reserve_bytes);
-+	btrfs_delalloc_release_extents(inode, reserved_len);
- 	if (ret) {
- 		btrfs_drop_folio(fs_info, folio, start, copied);
--		release_space(inode, *data_reserved, start, release_bytes,
-+		release_space(inode, *data_reserved, reserved_start, reserved_len,
- 			      only_release_metadata);
- 		return ret;
- 	}
+ 		unlock_extent(&BTRFS_I(inode)->io_tree, lockstart, lockend,
 -- 
 2.49.0
 

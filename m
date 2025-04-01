@@ -1,39 +1,39 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A604520AF93
-	for <linux-btrfs@vger.kernel.org>; Tue,  1 Apr 2025 15:29:59 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F09EB2054E1
+	for <linux-btrfs@vger.kernel.org>; Tue,  1 Apr 2025 15:29:57 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1743521399; cv=none; b=V1RtygX+1CSmr4M42BPEaI4ULpIeCrmWZfmiyv5vwxUHkKcTvBbN/KYdRXSa1XZ+SCHXa5zk7rLxz2pTt3Mrc2Z6NJ/ibmfKUJ1RlJ6qW4kuwA1ufn0FefKwzeBWlIf2iL3ZTeI+yWJ6LtPC/VfVrhImR4+ukM2BSgD1No/JU3M=
+	t=1743521400; cv=none; b=CCFxQDD4VdeK2sy73ebGAd8OaVVfgF/Zyu6BGKC4Ax/mzJCUCNF/cm134ACI11nQCWxXoe+74X3/+29gGrFdGoAEt3+yEIWB3udELlcMqYeaAA19QWcHHWF1Ub7+QDt34T0x+SuX+ucJGGosbdvoglIV30SWNJudFSsD25iQuLA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1743521399; c=relaxed/simple;
-	bh=7wbYbugg6ZYVpEkA4oDYqRdd9oPIjzp6f2iMz/klY+A=;
+	s=arc-20240116; t=1743521400; c=relaxed/simple;
+	bh=uH/if8Gd8u2A40Tv7xGNRPVrQtFrDpn87RD0HAcLoMY=;
 	h=From:To:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version; b=TwFJHzu2T9xAYWGLzFKxxq5fUhLVdmkgsR6AY65MbTO9yww+kEVBRTPBV1v9oanmiRE9MPBWc/bB1gWyiNVAd2fU3v1M0yNe5XkJiOtpJl0BaVvEPbOme/6DfkoeLb8R3T/La44N5hLQ+51ZPYKp56jZH8BrKCznJ8PA2fv/Bw4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=LVG1dbET; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version; b=psHEOwaWhn7cSlFfVq8+VJMJeEngw0WhsKYMhZpxjxX5rMLh7zFMt6mFivm1KGTikGY0+Kd0Cbh4oO7+J6KZ6tgkhaeGGd8iHkmnDWfrHubI2QtmqQWWiSZ1+bt57AlGDwPwxyrNo7eUzNIWjF9TyWxO8ImZAo2xsjDXB5e7V9Y=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=UeFJIS2v; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="LVG1dbET"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 02D49C4CEE8
-	for <linux-btrfs@vger.kernel.org>; Tue,  1 Apr 2025 15:29:58 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="UeFJIS2v"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id E3DD0C4CEE4
+	for <linux-btrfs@vger.kernel.org>; Tue,  1 Apr 2025 15:29:56 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1743521399;
-	bh=7wbYbugg6ZYVpEkA4oDYqRdd9oPIjzp6f2iMz/klY+A=;
+	s=k20201202; t=1743521397;
+	bh=uH/if8Gd8u2A40Tv7xGNRPVrQtFrDpn87RD0HAcLoMY=;
 	h=From:To:Subject:Date:In-Reply-To:References:From;
-	b=LVG1dbETp9ihcSTWbixiS3AD4wtDq4cnLruMZa33PbP3nkYQKaLllIDToMBBHdaOe
-	 9Kfbo3bO8YsWbyu4/EU657w1VC7obzkZuu8pwG8lcrU2T7fezS+rd+ILs/rNHQ1ilo
-	 BHenAJOehEin/lFMExW7xMe9jBfcMi8tK+8lrf6/jd6EZ5Z4tmRVCoYu2G0zFmQi+1
-	 E1MG6H2DCbXHGVtq0+Yr2JICtwWAmmAVJCyJTV6zKp0NtZrGbxbKlXGmka8XButYsA
-	 FXn/zXPNonmftkPmiKDpSzyzEBd/dQQCw5dOB+86aRCzAuLcXKO0DbwN3bg/tAZ/2f
-	 GPmqtFe0mMWWA==
+	b=UeFJIS2vtZjNbtuo9r0oMHnKozJuW3ceMW2de2JP0ZQ8oWxie0KJRNBJgLvqyic0E
+	 PIn7L7jkaHyiWw/1hLEDNR3YANavLbMBlDrxFtRupSKdb6wGnGsT60CWs9VJSk3YZO
+	 F1Yx39E9rhlswQFSHE5TrS76a8we500xi9LixO7X7JbhVZ7BOXqpdR40qj6gQB6q83
+	 2IxXM9F6zRUMXrXHlY/rc7Pw1lQe+qK2rzaF/FI/op+0LWDKA6aW5zmLi65x517wCU
+	 a8f+T8fyZ1RJRxIZR6+wRPmI/SqNdGpdV1DIhRVvOHm8kiw1/Tz95llDi/fpPBR3HU
+	 nN7zZxl4RpxsA==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 2/4] btrfs: use clear_extent_bits() at chunk_map_device_clear_bits()
-Date: Tue,  1 Apr 2025 16:29:52 +0100
-Message-Id: <f220d4520f6eef59436eed674af6b8327062842c.1743521098.git.fdmanana@suse.com>
+Subject: [PATCH v2 0/4] btrfs: some trivial cleanups related to io trees
+Date: Tue,  1 Apr 2025 16:29:50 +0100
+Message-Id: <cover.1743521098.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.34.1
-In-Reply-To: <cover.1743521098.git.fdmanana@suse.com>
-References: <cover.1743521098.git.fdmanana@suse.com>
+In-Reply-To: <cover.1743508707.git.fdmanana@suse.com>
+References: <cover.1743508707.git.fdmanana@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -44,32 +44,25 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-Instead of using __clear_extent_bit() we can use clear_extent_bits() since
-we pass a NULL value for the cached and changeset arguments.
+Some simple cleanups related to io trees that are very trivial and were
+initally part of a larger patchset. Details in the change logs.
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/volumes.c | 7 +++----
- 1 file changed, 3 insertions(+), 4 deletions(-)
+V2: Added patch 3/4.
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index c8c21c55be53..784d5a15ef29 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -5508,10 +5508,9 @@ static void chunk_map_device_clear_bits(struct btrfs_chunk_map *map, unsigned in
- 		struct btrfs_io_stripe *stripe = &map->stripes[i];
- 		struct btrfs_device *device = stripe->dev;
- 
--		__clear_extent_bit(&device->alloc_state, stripe->physical,
--				   stripe->physical + map->stripe_size - 1,
--				   bits | EXTENT_NOWAIT,
--				   NULL, NULL);
-+		clear_extent_bits(&device->alloc_state, stripe->physical,
-+				  stripe->physical + map->stripe_size - 1,
-+				  bits | EXTENT_NOWAIT);
- 	}
- }
- 
+Filipe Manana (4):
+  btrfs: use clear_extent_bit() at try_release_extent_state()
+  btrfs: use clear_extent_bits() at chunk_map_device_clear_bits()
+  btrfs: use clear_extent_bits() instead of clear_extent_bit() where possible
+  btrfs: simplify last record detection at test_range_bit_exists()
+
+ fs/btrfs/extent-io-tree.c    |  8 +++-----
+ fs/btrfs/extent_io.c         |  2 +-
+ fs/btrfs/inode.c             |  3 +--
+ fs/btrfs/reflink.c           |  5 ++---
+ fs/btrfs/tests/inode-tests.c | 24 ++++++++++++------------
+ fs/btrfs/volumes.c           |  7 +++----
+ 6 files changed, 22 insertions(+), 27 deletions(-)
+
 -- 
 2.45.2
 

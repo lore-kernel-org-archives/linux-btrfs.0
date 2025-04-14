@@ -1,205 +1,151 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from mail-yw1-f182.google.com (mail-yw1-f182.google.com [209.85.128.182])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8EC232820BB
-	for <linux-btrfs@vger.kernel.org>; Mon, 14 Apr 2025 19:03:30 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 71AD87E9
+	for <linux-btrfs@vger.kernel.org>; Mon, 14 Apr 2025 19:08:25 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.182
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1744657412; cv=none; b=DebpyW2S2K7SiJINzpGdVF7j55yrOsIUXlUB/XVBcmWb7MX2kTUraqCp4jyYB+cg8Ljs1q//jAWd5BOdGxqMxDTO+QUAqmPlDPxISJmw6fHkJ1rMQs7qWl6o0nD6FMNIbBrgEJgr/Qfh9YLGlBvdW/H+exagStynPlWcEX/2eQc=
+	t=1744657707; cv=none; b=PYgUjLuPmdR0O798A2cnqSPuBkVvTDyMSGRkqYNn46Ohn1ADNfS8ImouPVfpNGMshB66mgICHIZO4hyAR9bIV/Kxhv2FLvZjpbamyc4w1nljMrrxy342RmJwM84DiH5EevAvOBdKBz/vBD8+mWUdn520EAZ+bnbWyn+5RAXSg+o=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1744657412; c=relaxed/simple;
-	bh=zq+Ja4QSGlRpVAaQiNMkrU7ZKwvVSWJgWhPdSB222zo=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=rphEsa2duHmeI+teOXUfivsl0wKdmeHFqCKXvi4YQcXKtEbguHCA4+POpm3wATjwlfFWeGvFEHy1mz+jxsEl9zgvHEofa9ttuLP+0Z6wjZVDaX/Mq4GBM2xWsmgW9EbMvMOpolMrirKcrnLC/qCn59jCOn+RRdJFg74gQ5JIJ1Y=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=Z46D+z74; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=iyReO/R8; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=Z46D+z74; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=iyReO/R8; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	s=arc-20240116; t=1744657707; c=relaxed/simple;
+	bh=3aagCQrXhl/MNZAH77UCJOuTXZmHO9aKEGMGwqxQF4g=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=FNdgTgM3cCYD4Eqk0jcTVPmof47JA4HEaWn0CMg57RYpRJ2kQbheVxsH+9sgBGHE1S9qPfb6ky98G/tULzOBjacAFXc6u5myKUGundmkeuR80rhxb9+vpO/Ynh8X1NhEYisxtXNS91+8PFxh8hqDreqaErzn22v+4x+f9VNj4qQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com; spf=none smtp.mailfrom=toxicpanda.com; dkim=pass (2048-bit key) header.d=toxicpanda-com.20230601.gappssmtp.com header.i=@toxicpanda-com.20230601.gappssmtp.com header.b=PdVdeXP2; arc=none smtp.client-ip=209.85.128.182
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=toxicpanda.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="Z46D+z74";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="iyReO/R8";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="Z46D+z74";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="iyReO/R8"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 52D7A1F74D;
-	Mon, 14 Apr 2025 19:03:23 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1744657403;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=5WhyLp5Z/xL9J2ArNZxj+5ArhmYPFvUg0sB0dunk0Ck=;
-	b=Z46D+z74SZP4jRLEaDQl73iIS/ter4DcrURR27rVowmB62lSTuAtkes50KFEi737qu+6nN
-	0VaR6+HxOw4R4qMaXu8mXYeYMMm+ZxJ9yRBfEDMrf2+VxLeZV59DBbnyLym0lewrYV7yO6
-	FRC9SHIPh/3usfzdY3N0r56lN25mNPM=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1744657403;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=5WhyLp5Z/xL9J2ArNZxj+5ArhmYPFvUg0sB0dunk0Ck=;
-	b=iyReO/R8FvqA7jGMmxx9HRKUJYlZyPlLR1Z43owEq/4qt7+jfcfQRZXqJ3LTLprfzuyRDe
-	j0sjA0ptHbf6PNDw==
-Authentication-Results: smtp-out2.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1744657403;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=5WhyLp5Z/xL9J2ArNZxj+5ArhmYPFvUg0sB0dunk0Ck=;
-	b=Z46D+z74SZP4jRLEaDQl73iIS/ter4DcrURR27rVowmB62lSTuAtkes50KFEi737qu+6nN
-	0VaR6+HxOw4R4qMaXu8mXYeYMMm+ZxJ9yRBfEDMrf2+VxLeZV59DBbnyLym0lewrYV7yO6
-	FRC9SHIPh/3usfzdY3N0r56lN25mNPM=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1744657403;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=5WhyLp5Z/xL9J2ArNZxj+5ArhmYPFvUg0sB0dunk0Ck=;
-	b=iyReO/R8FvqA7jGMmxx9HRKUJYlZyPlLR1Z43owEq/4qt7+jfcfQRZXqJ3LTLprfzuyRDe
-	j0sjA0ptHbf6PNDw==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 2BBB71336F;
-	Mon, 14 Apr 2025 19:03:23 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 5zh6Cvtb/WetXQAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Mon, 14 Apr 2025 19:03:23 +0000
-Date: Mon, 14 Apr 2025 21:03:21 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Yangtao Li <frank.li@vivo.com>
-Cc: clm@fb.com, josef@toxicpanda.com, dsterba@suse.com,
-	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] btrfs: reuse exit helper in btrfs_bioset_init()
-Message-ID: <20250414190321.GF16750@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <20250414124401.739723-1-frank.li@vivo.com>
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20230601.gappssmtp.com header.i=@toxicpanda-com.20230601.gappssmtp.com header.b="PdVdeXP2"
+Received: by mail-yw1-f182.google.com with SMTP id 00721157ae682-6ff1e375a47so43055617b3.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 Apr 2025 12:08:25 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20230601.gappssmtp.com; s=20230601; t=1744657704; x=1745262504; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:to
+         :from:from:to:cc:subject:date:message-id:reply-to;
+        bh=BrOaiCPjh32k0UW8/1LJ7UGycuyuFYRgZQnj8W95tZ4=;
+        b=PdVdeXP2pu6+8wLAS7O4NYg+54PdnMIsIb/pSpyWEc4iAUyZW0gAJOvOKjHUyWG0TP
+         jvQplYFoHuXHgAM2svdYIKUaA0U00Mlj6J9wgFuHbx+uFab0GYs3NVxduxwDY0sgybZP
+         KYM0cBSgDo0vCzJEdCwyi7Tp3Gleo9tfRySC7KwCaHKRhxYKq8ed8+Q0/l69jOQSDN+M
+         jV/2q3PC5jxtcQKBCUyfkyTd9WrQY6r1tTz8bhae3Ffams1IrJS0iw/Uws7MJlaEFp3Z
+         1un+runbw6AHnpLGNzX+/w4I7QXIpczelasw/0hJLDE9izhvXdVicpTgwxqm33IEhv5q
+         F6WQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1744657704; x=1745262504;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:to
+         :from:x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=BrOaiCPjh32k0UW8/1LJ7UGycuyuFYRgZQnj8W95tZ4=;
+        b=QFGt2h9qlQ9q2sgzYooZoCPpUtx6IadLSAi8y2wGA2QZ8etcnikf6lX+bUBiilgXN3
+         a6IAUB5X8DOGbr7cFgNQbJXXMpwwoekfBN3v65pxyeZYkC9l8AC+qX575vJnOTyAH7YQ
+         hofqiZtnDkJRRee5OxJgOCAgi7uNFcyR4HlrDUxSsM1k3QNdtR6qD8QzvjMnuwEun3sK
+         Y1ANN5BIS8tq67ActIWgr+xH3xR+KFQCK+16CnQ3vLRPOEz1a4nZIFjsUe5FWj5adyWp
+         WznuYeONrmkb7P48tYRH9p455nEqHRvCvXuObkb/k6ISuFSdq4D3WkBkh1cquIBp5So8
+         sdoQ==
+X-Gm-Message-State: AOJu0YwHiQFnGXe31a65zTGu7ej8aAEuaye6tLKOMPRpVDjFi/sCYqK6
+	kCGHYSIxMdV81TR9U4frFQtSwjXaJ/I7dX/EeWLxpPNkIulYBxmZ+IxoQESmTaz54nW9NoXDh1L
+	c
+X-Gm-Gg: ASbGncs/k6MR28Atd0xUHcsxzIBalcI+8F5yhmZlzKfs7dGoGXfD6004TpUCDEoTaZY
+	CbjpfpvY/ByRcpkBkws/Rvgkt86pQqwsuOxhlOBf5Ijiy/wkbdQqDKSlZGbFiNas3QlkmtCEu1y
+	xtN848Qj7mX1Dx2s3JUHCVRerXLKjIa9/ahazWgF20UcnHtaUXmV6zE9+y8mYS3rspch2xsNPzR
+	xjhwqx+QcQgwPqR6IDuBgYIB+RUg9D9VEb75LQYH0QDwVa0IEfI73D0RHrVKBWJriwjmzTnMLcJ
+	FPYVXD5J1BZNp8kzmN9PmQ6VaLTWCM2HlwawTje2WaUSwqlpQ2cTFy48EZw8oFYeJbTSoI16XNo
+	AIWpMjhUM2LTp
+X-Google-Smtp-Source: AGHT+IEcNp4mK8rmKue21TWPtApbpSfF5vFBrcVgXQsw4KJrHJ2ScACa5Yhlfr4NBtBqI6RUKNcRzQ==
+X-Received: by 2002:a05:690c:660a:b0:703:b278:db3b with SMTP id 00721157ae682-70559aab9f4mr219935357b3.30.1744657703553;
+        Mon, 14 Apr 2025 12:08:23 -0700 (PDT)
+Received: from localhost (syn-076-182-020-124.res.spectrum.com. [76.182.20.124])
+        by smtp.gmail.com with ESMTPSA id 00721157ae682-7053e130ba6sm32977327b3.49.2025.04.14.12.08.22
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 14 Apr 2025 12:08:22 -0700 (PDT)
+From: Josef Bacik <josef@toxicpanda.com>
+To: linux-btrfs@vger.kernel.org,
+	kernel-team@fb.com
+Subject: [PATCH] btrfs: adjust subpage bit start based on sectorsize
+Date: Mon, 14 Apr 2025 15:08:16 -0400
+Message-ID: <0914bad6138d2cfafc9cfe762bd06c1883ceb9d2.1744657692.git.josef@toxicpanda.com>
+X-Mailer: git-send-email 2.48.1
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20250414124401.739723-1-frank.li@vivo.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Spam-Score: -4.00
-X-Spamd-Result: default: False [-4.00 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MIME_TRACE(0.00)[0:+];
-	MID_RHS_MATCH_FROM(0.00)[];
-	ARC_NA(0.00)[];
-	TO_DN_SOME(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	RCPT_COUNT_FIVE(0.00)[6];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	FUZZY_BLOCKED(0.00)[rspamd.com];
-	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	REPLYTO_DOM_NEQ_TO_DOM(0.00)[]
-X-Spam-Flag: NO
-X-Spam-Level: 
+Content-Transfer-Encoding: 8bit
 
-On Mon, Apr 14, 2025 at 06:44:01AM -0600, Yangtao Li wrote:
-> As David Sterba said before:
-> 
->   This is partially duplicating btrfs_delayed_ref_exit(), I'd rather reuse
->   the exit helper.
-> 
->   I've checked if this can be done elsewhere, seems that there's only one
->   other case btrfs_bioset_init(), which is partially duplicating
->   btrfs_bioset_exit(). All other init/exit functions are trivial and
->   allocate one structure. So if you want to do that cleanup, please update
->   btrfs_bioset_init() to the preferred pattern. Thanks.
+When running machines with 64k page size and a 16k nodesize we started
+seeing tree log corruption in production.  This turned out to be because
+we were not writing out dirty blocks sometimes, so this in fact affects
+all metadata writes.
 
-Please write the changelogs as standalone text without the references or
-copied text from some suggestions.
+When writing out a subpage EB we scan the subpage bitmap for a dirty
+range.  If the range isn't dirty we do
 
-Mentions, credits or Suggested-by make most sense if there's some
-groundbreaking idea implemented and not mentioning the author would be
-percieved as stealing it. Otherwise, suggestions are part of the
-review process and should be transformed into useful text in the
-changelog.
+bit_start++;
 
-> So let's convert it.
-> 
-> Signed-off-by: Yangtao Li <frank.li@vivo.com>
-> ---
->  fs/btrfs/bio.c | 30 +++++++++++++-----------------
->  1 file changed, 13 insertions(+), 17 deletions(-)
-> 
-> diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
-> index 8c2eee1f1878..f6f84837d62b 100644
-> --- a/fs/btrfs/bio.c
-> +++ b/fs/btrfs/bio.c
-> @@ -892,6 +892,14 @@ void btrfs_submit_repair_write(struct btrfs_bio *bbio, int mirror_num, bool dev_
->  	btrfs_bio_end_io(bbio, errno_to_blk_status(ret));
->  }
->  
-> +void __cold btrfs_bioset_exit(void)
-> +{
-> +	mempool_exit(&btrfs_failed_bio_pool);
-> +	bioset_exit(&btrfs_repair_bioset);
-> +	bioset_exit(&btrfs_clone_bioset);
-> +	bioset_exit(&btrfs_bioset);
-> +}
+to move onto the next bit.  The problem is the bitmap is based on the
+number of sectors that an EB has.  So in this case, we have a 64k
+pagesize, 16k nodesize, but a 4k sectorsize.  This means our bitmap is 4
+bits for every node.  With a 64k page size we end up with 4 nodes per
+page.
 
-This function is public and you don't need to move it.
+To make this easier this is how everything looks
 
-> +
->  int __init btrfs_bioset_init(void)
->  {
->  	if (bioset_init(&btrfs_bioset, BIO_POOL_SIZE,
-> @@ -900,29 +908,17 @@ int __init btrfs_bioset_init(void)
->  		return -ENOMEM;
->  	if (bioset_init(&btrfs_clone_bioset, BIO_POOL_SIZE,
->  			offsetof(struct btrfs_bio, bio), 0))
-> -		goto out_free_bioset;
-> +		goto out;
->  	if (bioset_init(&btrfs_repair_bioset, BIO_POOL_SIZE,
->  			offsetof(struct btrfs_bio, bio),
->  			BIOSET_NEED_BVECS))
-> -		goto out_free_clone_bioset;
-> +		goto out;
->  	if (mempool_init_kmalloc_pool(&btrfs_failed_bio_pool, BIO_POOL_SIZE,
->  				      sizeof(struct btrfs_failed_bio)))
-> -		goto out_free_repair_bioset;
-> +		goto out;
->  	return 0;
->  
-> -out_free_repair_bioset:
-> -	bioset_exit(&btrfs_repair_bioset);
-> -out_free_clone_bioset:
-> -	bioset_exit(&btrfs_clone_bioset);
-> -out_free_bioset:
-> -	bioset_exit(&btrfs_bioset);
-> +out:
-> +	btrfs_bioset_exit();
->  	return -ENOMEM;
->  }
-> -
-> -void __cold btrfs_bioset_exit(void)
-> -{
-> -	mempool_exit(&btrfs_failed_bio_pool);
-> -	bioset_exit(&btrfs_repair_bioset);
-> -	bioset_exit(&btrfs_clone_bioset);
-> -	bioset_exit(&btrfs_bioset);
-> -}
-> -- 
-> 2.39.0
-> 
+[0         16k       32k       48k     ] logical address
+[0         4         8         12      ] radix tree offset
+[               64k page               ] folio
+[ 16k eb ][ 16k eb ][ 16k eb ][ 16k eb ] extent buffers
+[ | | | |  | | | |   | | | |   | | | | ] bitmap
+
+Now we use all of our addressing based on fs_info->sectorsize_bits, so
+as you can see the above our 16k eb->start turns into radix entry 4.
+
+When we find a dirty range for our eb, we correctly do bit_start +=
+sectors_per_node, because if we start at bit 0, the next bit for the
+next eb is 4, to correspond to eb->start 16k.
+
+However if our range is clean, we will do bit_start++, which will now
+put us offset from our radix tree entries.
+
+In our case, assume that the first time we check the bitmap the block is
+not dirty, we increment bit_start so now it == 1, and then we loop
+around and check again.  This time it is dirty, and we go to find that
+start using the following equation
+
+start = folio_start + bit_start * fs_info->sectorsize;
+
+so in the case above, eb->start 0 is now dirty, and we calculate start
+as
+
+0 + 1 * fs_info->sectorsize = 4096
+4096 >> 12 = 1
+
+Now we're looking up the radix tree for 1, and we won't find an eb.
+What's worse is now we're using bit_start == 1, so we do bit_start +=
+sectors_per_node, which is now 5.  If that eb is dirty we will run into
+the same thing, we will look at an offset that is not populated in the
+radix tree, and now we're skipping the writeout of dirty extent buffers.
+
+The best fix for this is to not use sectorsize_bits to address nodes,
+but that's a larger change.  Since this is a fs corruption problem fix
+it simply by always using sectors_per_node to increment the start bit.
+
+Fixes: c4aec299fa8f ("btrfs: introduce submit_eb_subpage() to submit a subpage metadata page")
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+---
+ fs/btrfs/extent_io.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 5f08615b334f..6cfd286b8bbc 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2034,7 +2034,7 @@ static int submit_eb_subpage(struct folio *folio, struct writeback_control *wbc)
+ 			      subpage->bitmaps)) {
+ 			spin_unlock_irqrestore(&subpage->lock, flags);
+ 			spin_unlock(&folio->mapping->i_private_lock);
+-			bit_start++;
++			bit_start += sectors_per_node;
+ 			continue;
+ 		}
+ 
+-- 
+2.48.1
+

@@ -1,139 +1,176 @@
-Received: from libero.it (smtp-16.italiaonline.it [213.209.10.16])
+Received: from server.interlinx.bc.ca (mail.interlinx.bc.ca [69.165.217.196])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3103A1990C7
-	for <linux-btrfs@vger.kernel.org>; Mon, 14 Apr 2025 19:09:36 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=213.209.10.16
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A51711990C7
+	for <linux-btrfs@vger.kernel.org>; Mon, 14 Apr 2025 19:11:25 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=69.165.217.196
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1744657780; cv=none; b=t2b/tXHnEszxGuoUjAIm+/b9e5VMRgZDlZMR7ufUmca8sajNePcacUnBSw/xX4pSIWL0Fhvs4fOvUJ4g1OQLa0FCJslZiib4FANJz6M5M4cqAXzMdamnp9TxMwVHPuuImqe2uWFebHCjzoIg1eI58G4k0D2ESlGBMeXtiwTkzV0=
+	t=1744657887; cv=none; b=kQ/mstVoIG5VqKTAt+uV+oxjfPj27kqiduqfIUpfqJm5iEUm+5gCMIcVWDrcDiWM72iBVVvGz3eGPVC14ZFiBkYal3RA1s1cTwu5lqkGKz5pRdeuQHQBnivBGMrghQ072BwdmC+Fw29ZbSghOQm0dd9YuN9o4Cebicadlmf3Dec=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1744657780; c=relaxed/simple;
-	bh=Blx4GhHhEs9ZCMWxGuyOEQxQNl0Arj4Ursl9vMsC/CM=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=ieTdWPe68HCwI5GsRvvaOCxphesyNZdMDV+m+nqGP/R2Px2RQYlRuo+gBu45/cPm388NbcJedZdKcEdflSX/gjZmxMqss97SpuLtW5zg8COKj4z44o079dUOICbzQ9ExYB3ewU+fAcKLk8oJ02TSdeNxeJX5qoJfib1ptZemEkw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=inwind.it; spf=pass smtp.mailfrom=inwind.it; dkim=pass (2048-bit key) header.d=inwind.it header.i=@inwind.it header.b=a/pnzI+4; arc=none smtp.client-ip=213.209.10.16
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=inwind.it
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=inwind.it
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=inwind.it header.i=@inwind.it header.b="a/pnzI+4"
-Received: from [192.168.1.27] ([84.220.171.3])
-	by smtp-16.iol.local with ESMTPSA
-	id 4P8yuAHElrFho4P8zuhE7s; Mon, 14 Apr 2025 21:06:58 +0200
-x-libjamoibt: 1601
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=inwind.it; s=s2014;
-	t=1744657618; bh=Xxd1RustZcMlrjWV1SE1/FaNA6/yjvPoGvd9nAcXaqM=;
-	h=From;
-	b=a/pnzI+4YdLNx7+4kCAai38X8/bWMGYD66wEDzDmlTNdCCMDSEPjlraVdfBho1Bol
-	 jMGJ3e/p6VQeeIhUYDQULR3tJA19O6lQVe9dYJIv802MASbZGQCttPuzPyJmNEohTB
-	 SnqfbfGYhPH7mfXF3XEGlmfHTih6EQRzYVBCFnJ6+hz6Lcp4SxRVqArskwQVh8XPuo
-	 F+QHI4S0P0C0aH3FRi9cltNOgo72mKgODoracQY8XQ38UXizQOXJlXgNK0dYajydhz
-	 pBrtSrZYRqXyjbyA7Fz53EQz2qYvMZBQr2gYa7vtaXJueIgs+PPCXLp0qvjgeanH2C
-	 +KCNys2lqdpag==
-X-CNFS-Analysis: v=2.4 cv=UPIWHzfy c=1 sm=1 tr=0 ts=67fd5cd2 cx=a_exe
- a=hciw9o01/L1eIHAASTHaSw==:117 a=hciw9o01/L1eIHAASTHaSw==:17
- a=IkcTkHD0fZMA:10 a=2Le3lMjJWC0ys_BYqFoA:9 a=QEXdDO2ut3YA:10
-Message-ID: <93a7fd2e-d667-4b9c-b2b9-dc4f05e7055d@inwind.it>
-Date: Mon, 14 Apr 2025 21:06:56 +0200
+	s=arc-20240116; t=1744657887; c=relaxed/simple;
+	bh=Gf4td/H3PqvgiVrfGJrQGUXuNNd8ECdkKcLIlvK/Ot8=;
+	h=Message-ID:Subject:From:To:Date:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=dxZNTNyFzWeD7c/zb8ltAsW1EIO5Xm+MMYIEVuYOPASfVodZWQ3Tvvsiz/2pzhNHmu6TfV8WKT42DEzpXc3Ly9DwMkDdqcJ6sxqLVIyPMaWC1euRDYYj9vOUmtHHirGT6aqjT8wzTwZK8VbpAC6SKqLfNxfkt6ecFw7vSPZYKQY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=interlinx.bc.ca; spf=fail smtp.mailfrom=interlinx.bc.ca; arc=none smtp.client-ip=69.165.217.196
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=interlinx.bc.ca
+Authentication-Results: smtp.subspace.kernel.org; spf=fail smtp.mailfrom=interlinx.bc.ca
+Received: from brian-laptop.interlinx.bc.ca (brian-laptop.interlinx.bc.ca [IPv6:fd31:aeb1:48df:0:2374:a2d1:e1b7:89a3])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
+	(No client certificate requested)
+	by server.interlinx.bc.ca (Postfix) with ESMTPSA id B1D29302CC
+	for <linux-btrfs@vger.kernel.org>; Mon, 14 Apr 2025 15:11:23 -0400 (EDT)
+Message-ID: <a902c883738239f3b303a6a5879bc4671081dcfa.camel@interlinx.bc.ca>
+Subject: Re: Odd snapshot subvolume
+From: "Brian J. Murrell" <brian@interlinx.bc.ca>
+To: linux-btrfs@vger.kernel.org
+Date: Mon, 14 Apr 2025 15:11:23 -0400
+In-Reply-To: <5e154a2d-819f-4efb-b29b-b57a63371a18@gmail.com>
+References: <dea3861ab4b85f2dffc5bbc9864b290f03c430f4.camel@interlinx.bc.ca>
+	 <5e154a2d-819f-4efb-b29b-b57a63371a18@gmail.com>
+Autocrypt: addr=brian@interlinx.bc.ca; prefer-encrypt=mutual;
+ keydata=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
+ Dc1uQeNIcmTaawmvwmnhoNZYwBfdrEi8mWJtwQ9rxRpbkrz8OFCbNGc1AGeRx464OkJ3EHy+/x0Xn
+ 9qDxL7OLAZ6tChCcmlhbiBKLiBNdXJyZWxsIDxicmlhbkBpbnRlcmxpbnguYmMuY2E+iHYEMBECAD
+ YFAkFRkTovHQBUaGlzIGlzIGFuIG9sZCBrZXkuICBQbGVhc2UgdXNlIDYyRjJCOTcwIG5vdy4ACgk
+ QWkUtrHIQJiJp2wCeMuwXHszwNxBY8nR9o9Rv9mrrWjoAn14m48ueXrhGJsJOwj12CqynCKwdmI4E
+ U55NCQEEAOhiOhVQNRL+2mctVQUjsOFHftZvNXeNM6w7UC7+zoWFhpuQomK5Wy8E1s1qt68amxbvG
+ fJe7BRln3aDaErtxzv1RIJbtxOpcmyk5pg8ofdza9/kBX1PtwhR0RpeFHJ+uE15CcAvzNkOM4snWl
+ keneYNASKQ76ih2Q/pep/kdF1BACDCJ25riQE3BCABAgChBQJXsqABmh0CVGhpcyBrZXkgd2FzIGd
+ lbmVyYXRlZCBhcyBwYXJ0IG9mIHRoZSBFdmlsMzIgcHJvamVjdC4KSXQgaXMgbm90IG93bmVkIGJ5
+ IHRoZSB1c2VyIGRlc2NyaWJlZCBpbiB0aGUgVUlELgpTZWUgaHR0cHM6Ly9ldmlsMzIuY29tL3Jld
+ m9rZWQgZm9yIG1vcmUgZGV0YWlscy4ACgkQDpHnaGLyuXADagP+O8Xu3d/cauZx84xmjGxTL7OBMi
+ x/4Lr6cUeh5ahcptaJEQHMgYxWg+SbNLq5iXyyUL7zn+FlVT804PHpOvpdd2zETqow4yteuz1Olyv
+ 04dJWCGaqUY1XpSEyaeFhPZPWQ7libV+vDtb75VNPm88JhsBZXoZ8kSUactp+RqjZDye0KEJyaWFu
+ IEouIE11cnJlbGwgPGJyaWFuQGludGVybGlueC5iYy5jYT6IuAQTAQIAIgUCU+BJ4AIbLwYLCQgHA
+ wIGFQgCCQoLBBYCAwECHgECF4AACgkQDpHnaGLyuXDzRQQAhiAYEko0qilFSVu9TKEHzUGdSw9jFW
+ O4rAlocPSXf0j0e2Uw1z1v4hvqtW3tMRNK7f+eifvvxfRM9SrM0+DuSQA60/kwP6X6NuJ1SQQ//ck
+ klmTr1/rJPC+ZnuIbtE01augCZYLw2TQIU4U2cakLUGJqV8SZsNkmNG+c04lLCsCZAaIENOfAUxEE
+ AMbyzutLDHcwOMVUvS6GFjPZ2KfgU/I9n1OzT3/O3UX7b6CU4PZ2xo/1C0dVsL2pGZx8Apm+bEMoA
+ /eGRWdkC2G26R7rAXnXLPsTaddrAc1j17NVbIWZe1dUP5ju/3coYrrkBgIYRhGom4jxVqiwnEchGp
+ GLQWuY3BP1juen3+eTAKD/2AdHKjAWRlOj8fyCow2cHgbe4wP/Q/nnagGdqyMIWIjkAR4/zvWJ28S
+ 6ERnx4hdvlzvLMeryaSNzEi8/MUfWI+r20G0SSYP6BpOeguneDHHle9v+PPBooE6FcwmMEVBf7wVz
+ WUFhAeUYGwbXJw+M7wpWP1v6IPK8JexMnip7Ke6gMO5Xy9ad9kmYN3VrYytG3UHaPyYD/R26wKk+Z
+ M2abDpIuqvJR2Blc5QvnM0iCnmZVHonm9Y9AEehZsON2hAt02+y/yzZ98yhCN9AbLFE2Gm/N9Q0M0
+ b7FVm7yCpIeTxtn2zrflfof7ln3GaGtbiEASoQpsevlcTppt8NSp49ZRtCKBturoXLXuXn59aNAx3
+ 1XWCgMHybtChCcmlhbiBKLiBNdXJyZWxsIDxicmlhbkBpbnRlcmxpbnguYmMuY2E+iFMEEBECAAsF
+ AjTnwFMECwMBAgASCRCXcRCUYvK5cAdlR1BHAAEBRe8AoMrjwQhhp40fTxJ4jq7usVx6eXjIAKD6s
+ xVTia/AeRc6ukrODwvqng9hJLQgQnJpYW4gSi4gTXVycmVsbCA8YnJpYW5Ac3VuLmNvbT6ISQQwEQ
+ IACQUCUoKgWQIdIAAKCRCXcRCUYvK5cOwGAKDJO2OHMNaFyC5WbVwpvKp6EkaYEwCg9ETMisiO9K5
+ KevxXj1exCPMvylm0I0JyaWFuIEouIE11cnJlbGwgPGJyaWFuQGJlb25peC5jb20+iEkEMBECAAkF
+ AlKCoFkCHSAACgkQl3EQlGLyuXBgpwCfRHsJWNscLl9DaVKVI83VN0hUvXYAoLzLmbZ4IPIcKGtQX
+ ipcK+XgYQfctChCcmlhbiBKLiBNdXJyZWxsIDxCcmlhbi5NdXJyZWxsQFN1bi5DT00+iEkEMBECAA
+ kFAlKCoFkCHSAACgkQl3EQlGLyuXCxygCg10BJ1RJ0B8MLJqaEPwjImxO6Xj0AoMQsthNoXCwy7XO
+ hUiUt+XjGDKKGtClCcmlhbiBKLiBNdXJyZWxsIDxicmlhbkBicmlhbi5tdXJyZWxsLmNhPohfBBMR
+ AgAXBQI8t9eKBQsHCgMEAxUDAgMWAgECF4AAEgkQl3EQlGLyuXAHZUdQRwABAQbaAKCwKGGFFlRor
+ ED/FnKXTHtor2eWtACeN2TsVMsCPshjtaVuLs+fH5LO6P20KUJyaWFuIEouIE11cnJlbGwgPGNvb2
+ tlckBpbnRlcmxpbnguYmMuY2E+iGQEExECABwFAj5dJ68CGwMECwcDAgMVAgMDFgIBAh4BAheAABI
+ JEJdxEJRi8rlwB2VHUEcAAQFC6gCg1K4t13XDc52IO3uIR1aVM8MqPgcAoIIIILSGhMFEaLY34bSo
+ cNNYtJ79tCxCcmlhbiBKLiBNdXJyZWxsIDxuZXRmaWx0ZXJAaW50ZXJsaW54LmJjLmNhPohkBBMRA
+ gAcBQI9yTdUAhsDBAsHAwIDFQIDAxYCAQIeAQIXgAASCRCXcRCUYvK5cAdlR1BHAAEB1zwAn0iSmK
+ YuPu2zv6B2hiJtKnGJsVLeAJ96FtWl9Uo92jc1RMRHFxFLvTdI4LQyQnJpYW4gSi4gTXVycmVsbCA
+ oS0xVRyBhY2NvdW50KSA8YnJpYW5Aa2x1Zy5vbi5jYT6IZAQTEQIAHAUCPcUi2gIbAwQLBwMCAxUC
+ AwMWAgECHgECF4AAEgkQl3EQlGLyuXAHZUdQRwABARkxAJ4+2OV7b7jfDAbQ8L4bhIPJVREXhACg1
+ QL4VtqlUUwJ7PLEVZ6V7wll2am0NUJyaWFuIEouIE11cnJlbGwgKD5jbGlja2V0eSBjbGljazwpID
+ xib2ZoQGtsdWcub24uY2E+iGQEExECABwFAj3FIwoCGwMECwcDAgMVAgMDFgIBAh4BAheAABIJEJd
+ xEJRi8rlwB2VHUEcAAQFrGgCfdZWKmCszRrsU+8mBYDli97WVYecAoLegVz3WuxWsxBVpnWUN+vPQ
+ Cs24tDdCcmlhbiBKLiBNdXJyZWxsICg+Y2xpY2tldHkgY2xpY2s8KSA8Ym9maEBraW5nc3Rvbi5uZ
+ XQ+iF8EExECABcFAjy1qR4FCwcKAwQDFQMCAxYCAQIXgAASCRCXcRCUYvK5cAdlR1BHAAEBLyUAn1
+ E7eftZqeduGBJ33sfO6hW8Xc48AKDHF83gZHpjZoUb/E9Imh4NPkXvx7Q4QnJpYW4gSi4gTXVycmV
+ sbCAoV2hhbWNsb3VkLCBJbmMuKSA8YnJpYW5Ad2hhbWNsb3VkLmNvbT6IYgQTEQIAIgUCTWP03AIb
+ AwYLCQgHAwIGFQgCCQoLBBYCAwECHgECF4AACgkQl3EQlGLyuXDOMwCfVNMqn4k02agHN6W/ZclR+
+ e8S9FkAmwZLhPqFa/X2M7xmW5R/bTMznMmltEJCcmlhbiBKLiBNdXJyZWxsIChDbHVzdGVyIEZpbG
+ VzeXN0ZW1zLCBJbmMuKSA8YnJpYW5AY2x1c3RlcmZzLmNvbT6ISQQwEQIACQUCUoKgWAIdIAAKCRC
+ XcRCUYvK5cFJJAJ9otGn0eLsltoMCBKFlyK6v4pJDXQCg1cFhVOBfAxeLNHdcZdkdQe+xKxy0TkJy
+ aWFuIEouIE11cnJlbGwgKEkgZG9uJ3QgdXN1YWxseSByZWFkIHRoaXMgYWNjb3VudCkgPGJyaWFua
+ m11cnJlbGxAZ21haWwuY29tPohgBBMRAgAgBQJLzKsDAhsDBgsJCAcDAgQVAggDBBYCAwECHgECF4
+ AACgkQl3EQlGLyuXCP+QCfbEHvWzrLhaJ8noFNlPJi9F3o9S0AoPn+fZ/a/qkAoPt+Rfm7sTUWu/R
+ jtE5CcmlhbiBKLiBNdXJyZWxsIChKYWJiZXIgYWNjb3VudCBvbiB0aGUgS0xVRyBzZXJ2ZXIpIDxi
+ cmlhbkBqYWJiZXIua2x1Zy5vbi5jYT6IZgQTEQIAHgUCPvoDQQIbAwYLCQgHAwIDFQIDAxYCAQIeA
+ QIXgAASCRCXcRCUYvK5cAdlR1BHAAEBVjEAn3Rcfi8zD+Lyad+pLPZ1O+WW0vvGAKDe6fDd4LxROz
+ yTgyr7+EcxAU/z8bRRQnJpYW4gSi4gTXVycmVsbCAoTXkgU291cmNlRm9yZ2UgYWNjb3VudCkgPGJ
+ yaWFuX2pfbXVycmVsbEB1c2Vycy5zb3VyY2Vmb3JnZS5uZXQ+iF8EExECABcFAjys16sFCwcKAwQD
+ FQMCAxYCAQIXgAASCRCXcRCUYvK5cAdlR1BHAAEBD3oAoMJDSIFPzWsRv3W2RNdxBqfbMxHaAJ45G
+ MtFqAjf4R0lVueUBW1OrUPz2LRbQnJpYW4gSi4gTXVycmVsbCAoVmlhIFlhaG9vISwgdXNlIGFzIG
+ EgbGFzdCByZXNvcnQgdG8gcmVhY2ggbWUpIDxicmlhbl9qX211cnJlbGxAeWFob28uY29tPohfBBM
+ RAgAXBQI8jisYBQsHCgMEAxUDAgMWAgECF4AAEgkQl3EQlGLyuXAHZUdQRwABASQYAKCC0c9ICbiw
+ NqDcob3h63nyueajbgCfdwBSiG5eeRAx9UBgPvPtwOhppCq0LEJyaWFuIEouIE11cnJlbGwgPGJya
+ WFuX2pfbXVycmVsbEBjb2dlY28uY2E+iGEEExECACEFAleaVzcCGwMFCwkIBwIGFQgJCgsCBBYCAw
+ ECHgECF4AACgkQl3EQlGLyuXCtdwCdG850C123WLJQvNaq+kJbgXebm6gAnAqjBxoorSW5fssdU36
+ ALpu5mnmE
+Content-Type: text/plain; charset="ISO-8859-15"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.54.3 (3.54.3-1.fc41) 
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Reply-To: kreijack@inwind.it
-Subject: Re: P.S. Re: Odd snapshot subvolume
-To: Nicholas D Steeves <sten@debian.org>
-Cc: "Brian J. Murrell" <brian@interlinx.bc.ca>, linux-btrfs@vger.kernel.org
-References: <dea3861ab4b85f2dffc5bbc9864b290f03c430f4.camel@interlinx.bc.ca>
- <87friais1a.fsf@navis.mail-host-address-is-not-set>
- <87cydeirkl.fsf@navis.mail-host-address-is-not-set>
- <72d7150b-4e0b-4e15-bd3f-ab410be4a767@libero.it>
- <87tt6q1tn3.fsf@navis.mail-host-address-is-not-set>
-Content-Language: en-US
-From: Goffredo Baroncelli <kreijack@inwind.it>
-In-Reply-To: <87tt6q1tn3.fsf@navis.mail-host-address-is-not-set>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
-X-CMAE-Envelope: MS4xfCw/k7K2EMYPNxaKUkSt0GQ8KwSyTNgqwSR/blLrn4tCkLk9DnqCKQ6SGDl6J9CDNFh+tTDIOEgNdzle/cPhQSmbD0VpPdNMKTEqswtX1RKQuKl42xrh
- 5GacQ40ZjlGMaa5KQsRsu4k9gi9turPjdOd/a1ugcQZbCXpDRVj01NdemizA/I3xDFxkQMh2e+R9BzgkbgczvQ2y32bGib0Msv4yLYgCOfA7hpyF5hM6b3+t
- 0N+Qi+UTlUyo+7xJTBAfdA==
 
-On 14/04/2025 20.32, Nicholas D Steeves wrote:
-> Of course 'subvolume show' gets subvolume UUID, 'filesystem show' gets
-> filesystem UUID, and this is too complicated.  Yes, it's logical, once
-> one understands btrfs, but multiple of my colleagues have looked at
-> stuff like this, thrown up their arms, and exclaimed things to the
-> effect of "I have more important things to think about".
+On Mon, 2025-04-14 at 20:04 +0300, Andrei Borzenkov wrote:
+>=20
+>=20
+> mount -o subvol=3D/ /dev/whatever /mnt
+> ls /mnt/previous-releases
 
-:-)
+Ahhh.  Nice.
 
-> To encourage btrfs adoption I think we need to do better.  After
-> considering alternatives, I wonder if there is anything simpler/better
-> than
-> 
->    # findmnt -n -o SOURCE /foo | cut -d[ -f1
-> 
-> to get the device suitable for mounting -o subvolid=5 | subvol=/ ?  Ie:
-> "Just let me see everything with as little fuss as possible. Make it
-> simple!", without relying on fstab.
+# mount -o subvol=3D/ /dev/mapper/rootvol--tmp-rootvol--0 /mnt/tmp
 
-Below a bit simpler command options set
+did the trick, thanks!
 
-     # findmnt -n -v -o SOURCE /foo
+No clue what I did in the first place to get things in to such a mess,
+but it's cleaned up now.  Thanks!
 
-However I have to point out that this is not a specific BTRFS problem. See below
-
-	ghigo@venice:/tmp/test$ mkdir t
-	ghigo@venice:/tmp/test$ mkdir t2
-	ghigo@venice:/tmp/test$ truncate -s 1G disk.img
-	ghigo@venice:/tmp/test$ sudo losetup -f disk.img
-	ghigo@venice:/tmp/test$ sudo mkfs.ext4 /dev/loop0
-	ghigo@venice:/tmp/test$ sudo mount /dev/loop0 t/
-	ghigo@venice:/tmp/test$ sudo touch t/a
-	ghigo@venice:/tmp/test$ sudo mkdir t/b
-	ghigo@venice:/tmp/test$ sudo touch t/b/c
-	ghigo@venice:/tmp/test$ sudo mount -o X-mount.subdir=b /dev/loop0 t2
-
-	ghigo@venice:/tmp/test$ ls t2/
-	c
-
-	ghigo@venice:/tmp/test$ findmnt t2/
-	TARGET       SOURCE         FSTYPE OPTIONS
-	/tmp/test/t2 /dev/loop0[/b] ext4   rw,relatime
-
-	ghigo@venice:/tmp/test$ findmnt -n -o FSTYPE,SOURCE t2/
-	ext4 /dev/loop0[/b]
-
-For *any* filesystem, it is possible to mount a subdir of a filesystem as root.
-BTRFS subvolume has some special properties (e.g. it is a "barrier" for the snapshot).
-However the possibility to be mounted is not one of these BTRFS special properties.
-
-If you want to know which subvolume is mounted, you have to look to the "subvol"
-option in the mount command. However even a sub directory of a subvole can be mounted
+Cheers,
+b.
 
 
-	ghigo@venice:/tmp/test$ sudo mount -o X-mount.subdir=b,subvol=/subb /dev/loop1 t5
-	ghigo@venice:/tmp/test$ findmnt t5
-	TARGET       SOURCE              FSTYPE OPTIONS
-	/tmp/test/t5 /dev/loop1[/subb/b] btrfs  rw,relatime,ssd,discard=async,space_cache=v2,subvolid=256,subvol=/subb
-
-This to say that event for the common case "findmnt -n -v -o SOURCE <path>" may be
-overkilling, there are some corner case where it is needed. To understand the situation I suggest to use
-
-	ghigo@venice:/tmp/test$ findmnt -o FSTYPE,FSROOT,SOURCE -v t5
-	FSTYPE FSROOT  SOURCE
-	btrfs  /subb/b /dev/loop
-
-
-> 
-> Cheers,
-> Nicholas
-> 
-
-Ciao
-Goffredo
-
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

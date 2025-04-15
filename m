@@ -1,146 +1,178 @@
-Received: from mail-wr1-f41.google.com (mail-wr1-f41.google.com [209.85.221.41])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mx0a-0064b401.pphosted.com (mx0a-0064b401.pphosted.com [205.220.166.238])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4DBDE1EE7BD
-	for <linux-btrfs@vger.kernel.org>; Tue, 15 Apr 2025 03:50:23 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.41
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 06D6D2DFA3B;
+	Tue, 15 Apr 2025 05:51:38 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=205.220.166.238
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1744689025; cv=none; b=HPuOjnZacuXSNtJ2XUSdhVW5OFz+qFsRJFUAeDA/TD7IR8p3dbF8ADQpFpBs+viT94n7v9noWAeaKYD6/U2b2jj3InMelnUnwZCCuI9bGqqpCNqlne3Ao7Y40AWPT3+/IriKnX3wk5el+RATeQHqwZCkRut0/YxNP8cFYDDHhbY=
+	t=1744696300; cv=none; b=QXewIDYgo/BSZ4OiibWx6cnh1mqmxinnABTJSU2V5/RApBhE6x7ArU+QA5aJ+aDulH1A+O45M1l21ExAKMEX7E8PrUHv1JeTbojhO9vzQRbwlH7PiytAYtlIgpuKvASB5x51LTb071v3ZiHn2YMmzHKQ54+Co/DL/1s0FrHaVh4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1744689025; c=relaxed/simple;
-	bh=SdUj5+/nzv0F39Wj5DTjTZXfwhQjLyFRM2hjitzawqg=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=aMGde8tI8iVu0Pyp+/Uj9sD7B9Hzo5lnL8ZZGYufJoH9MoplZO1U2w+XWZD0oZ2WbL+vk8niG/YhM6hqJ6q34sg3i8i3zhRwU1z7du83FEpINtIoU9w9ccquQExYhb0Y1j2eEu6/o7gMcPcRlPIq8/HrIwN/9g7oRn8l75ElhO0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=GIOS62wk; arc=none smtp.client-ip=209.85.221.41
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="GIOS62wk"
-Received: by mail-wr1-f41.google.com with SMTP id ffacd0b85a97d-391342fc1f6so4225955f8f.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Apr 2025 20:50:22 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1744689021; x=1745293821; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to;
-        bh=WIAWlJCsgWYXdrGXvRPyrX6FxfdZq+/T8PflCz4FGfk=;
-        b=GIOS62wkpzirSMFP53+HZsYpTQZQZUruB/zzaZNGS+7hbMhLJSt6pzO3FjrN5jQ4UV
-         oUNmXWD69tH3pzq5RbpmOPdSh8gZ1q9Mv938l/kgqwQWNj+q3THXRVLO0nfvO+kVNGzm
-         2K4In3y+n4dDA4TJpi9OlGuJSGBC49OijYkGFm56HZ+/W9YGCYrATmh5LZikDrHblsqf
-         QUr472dF9IjrIH8+lkXl1AnKnBhhQ0FofpNdZhUvIQ+OYm1YDk1P4vQ2nyHrxjIaZVJ+
-         DmeUHBYX8rRu3aYzXFB3dvEOIApDLJq0gAxAKDuuLkW6oUh0QKTdtjg0MLjZson+SWqr
-         r08Q==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1744689021; x=1745293821;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=WIAWlJCsgWYXdrGXvRPyrX6FxfdZq+/T8PflCz4FGfk=;
-        b=iVBUd5WYgt9wjlPcxEWCzed4p/F9+KZT3qQGCoKEVinsE/5lcQdbeA2mUDNziAkwBF
-         HS1NRxtOhpFk41Zl2iVUAy+Fh72+DMrd1p10DX/0zoqTws/RRL9+Rh47vZCAkYe+mbLF
-         hXjM+6cPlz24p15YqyoiI38c3j8i9d2yKoeKZpdR9BHKKOfj8fsVmDlw2KiUpZB98G2u
-         Dwri3pnDGvAAG5Ond62MAK5ZzbB7dHxNhJEVSPuqKwzhksW/gPOhIabKJq09Hrl9l+qX
-         geR67VF4Q3ASYM0BAUIPFBuXT//HSGcUymjReC7zqbXZ7N51hMe5C/gRWPvDXVsr7pV/
-         mz3g==
-X-Forwarded-Encrypted: i=1; AJvYcCWs0GjlvXpCFdWko/zno8Ui+906ZNY3CS2bbXiDDwkvg7J9PFaSzASE+WUqjYQ2wf6j4w2/4lzewZDmMA==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yz62+0fqEs7YcvyJL60LyntNCx3yA3AvFiizWwIhEqGCz8FTARu
-	NDaOm6QpiYVTh3FBllNomScCje0OR7MNRDC/qaCfiOeGAYPECkHSC+wa7nt57U8=
-X-Gm-Gg: ASbGnctFn32/qeR2jy8RGbwbZ1mXFFP7eVBa3yhru/LqraY+bB9+cuLFE3aNIEE4+2O
-	fGzlS63hzc3WSADPUHKPL3pk7q6g1+xKOyHehmKxjzXogyXLHAdxeh04nK2QmO3RpEjwZyGKCeJ
-	ROSAb6v5C2lC1sgWMPm4fq1CAo01mFCjwIpkSo7b4nzr8xd3WRQ9L2YcRkRf3U7jN3ShqONmoLB
-	XS/1ZnLEvJAMNyJOKPjfCkQi6TDdjCKjoucVrUQr9dFjpyhNHv47TkWLHx0urMud/kDQbDqHebl
-	WwJmnsBKe8zBc+Us0jYIcZAZXK0PmoC7ToZKqSJ7qxfkx84/AybEpYKha5gcKBzAIVwnk9K+zxI
-	e82g=
-X-Google-Smtp-Source: AGHT+IFVa25BdX79BCFwclDmac3DYoFDzPGkDa1AUqdU62w+U2g5gFhFtlXnA29XLAKIuZE8k6ba9A==
-X-Received: by 2002:a05:6000:144f:b0:39c:cc7:3c62 with SMTP id ffacd0b85a97d-39eaaecaddamr12746322f8f.51.1744689021420;
-        Mon, 14 Apr 2025 20:50:21 -0700 (PDT)
-Received: from ?IPV6:2403:580d:fda1::299? (2403-580d-fda1--299.ip6.aussiebb.net. [2403:580d:fda1::299])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-306dd12b4bdsm12134263a91.27.2025.04.14.20.50.17
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 14 Apr 2025 20:50:20 -0700 (PDT)
-Message-ID: <f6b92c77-d702-465b-a36a-93c42ecf59a8@suse.com>
-Date: Tue, 15 Apr 2025 13:20:15 +0930
+	s=arc-20240116; t=1744696300; c=relaxed/simple;
+	bh=AJ999c1D441C8UFFblcx+0Neha6Iw51QzretZKKKXIM=;
+	h=From:To:CC:Subject:Date:Message-ID:MIME-Version:Content-Type; b=MR9WhoCBiNz2PhcE6zhAt0tBMFJHj3a/4yLhicZTe0CHqHg19GMABJnldhHAgP2nnQZSY0wPEt4iPCT4ICjGJwgq5a/eGm7O+iGGI3kFv5W2sUPAC1UC7xbv+fCKnyUuoLwThASYbQZ0XuDvy4BM1hGacYsSrKwOreSxTjijAkU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=windriver.com; spf=pass smtp.mailfrom=windriver.com; arc=none smtp.client-ip=205.220.166.238
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=windriver.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=windriver.com
+Received: from pps.filterd (m0250810.ppops.net [127.0.0.1])
+	by mx0a-0064b401.pphosted.com (8.18.1.2/8.18.1.2) with ESMTP id 53F3RuFo029893;
+	Mon, 14 Apr 2025 22:51:28 -0700
+Received: from ala-exchng02.corp.ad.wrs.com (ala-exchng02.wrs.com [147.11.82.254])
+	by mx0a-0064b401.pphosted.com (PPS) with ESMTPS id 45ykf3jrfv-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128 verify=NOT);
+	Mon, 14 Apr 2025 22:51:28 -0700 (PDT)
+Received: from ala-exchng01.corp.ad.wrs.com (147.11.82.252) by
+ ALA-EXCHNG02.corp.ad.wrs.com (147.11.82.254) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
+ 15.1.2507.43; Mon, 14 Apr 2025 22:51:27 -0700
+Received: from pek-lpg-core1.wrs.com (147.11.136.210) by
+ ala-exchng01.corp.ad.wrs.com (147.11.82.252) with Microsoft SMTP Server id
+ 15.1.2507.43 via Frontend Transport; Mon, 14 Apr 2025 22:51:24 -0700
+From: <jianqi.ren.cn@windriver.com>
+To: <stable@vger.kernel.org>
+CC: <patches@lists.linux.dev>, <gregkh@linuxfoundation.org>,
+        <linux-kernel@vger.kernel.org>, <jianqi.ren.cn@windriver.com>,
+        <clm@fb.com>, <josef@toxicpanda.com>, <dsterba@suse.com>,
+        <terrelln@fb.com>, <linux-btrfs@vger.kernel.org>, <wqu@suse.com>,
+        <boris@bur.io>
+Subject: [PATCH 6.6.y] btrfs: fix qgroup reserve leaks in cow_file_range
+Date: Tue, 15 Apr 2025 13:51:23 +0800
+Message-ID: <20250415055123.3683832-1-jianqi.ren.cn@windriver.com>
+X-Mailer: git-send-email 2.34.1
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: zstd: add `zstd-fast` alias mount option for fast
- modes
-To: Daniel Vacek <neelx@suse.com>, dsterba@suse.cz
-Cc: Qu Wenruo <quwenruo.btrfs@gmx.com>, Chris Mason <clm@fb.com>,
- Josef Bacik <josef@toxicpanda.com>, David Sterba <dsterba@suse.com>,
- Nick Terrell <terrelln@fb.com>, linux-btrfs@vger.kernel.org,
- linux-kernel@vger.kernel.org
-References: <20250331082347.1407151-1-neelx@suse.com>
- <2a759601-aebf-4d28-8649-ca4b1b3e755c@suse.com>
- <CAPjX3Fdru3v6vezwzgSgkBcQ28uYvjsEquWHBHPFGNFOE8arjQ@mail.gmail.com>
- <b1437d32-8c85-4e5d-9c68-76938dcf6573@gmx.com>
- <20250331225705.GN32661@twin.jikos.cz>
- <CAPjX3FfVgmmqbT2O0mg9YyMnNf3z7mN5ShnXiN1cL9P=4iUrTg@mail.gmail.com>
- <CAPjX3FfOJMFC8cXCqLa2yS1qSYmhu5cjV__+7xVRFGuKu=RqiA@mail.gmail.com>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <CAPjX3FfOJMFC8cXCqLa2yS1qSYmhu5cjV__+7xVRFGuKu=RqiA@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
+Content-Type: text/plain
+X-Proofpoint-ORIG-GUID: quG9Gffnetfmx-6X2hzqefuMn5H3DPvw
+X-Authority-Analysis: v=2.4 cv=Wd0Ma1hX c=1 sm=1 tr=0 ts=67fdf3e0 cx=c_pps a=K4BcnWQioVPsTJd46EJO2w==:117 a=K4BcnWQioVPsTJd46EJO2w==:17 a=XR8D0OoHHMoA:10 a=iox4zFpeAAAA:8 a=t7CeM3EgAAAA:8 a=oSb3yfUiBPKWAvThIHwA:9 a=WzC6qhA0u3u7Ye7llzcV:22
+ a=FdTzh2GWekK77mhwV6Dw:22
+X-Proofpoint-GUID: quG9Gffnetfmx-6X2hzqefuMn5H3DPvw
+X-Sensitive_Customer_Information: Yes
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.293,Aquarius:18.0.1095,Hydra:6.0.680,FMLib:17.12.68.34
+ definitions=2025-04-15_01,2025-04-10_01,2024-11-22_01
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 bulkscore=0
+ lowpriorityscore=0 priorityscore=1501 spamscore=0 clxscore=1011
+ impostorscore=0 suspectscore=0 malwarescore=0 adultscore=0 phishscore=0
+ mlxlogscore=775 mlxscore=0 classifier=spam authscore=0 authtc=n/a authcc=
+ route=outbound adjust=0 reason=mlx scancount=1 engine=8.21.0-2502280000
+ definitions=main-2504150038
 
+From: Boris Burkov <boris@bur.io>
 
+[ Upstream commit 30479f31d44d47ed00ae0c7453d9b253537005b2 ]
 
-在 2025/4/14 16:23, Daniel Vacek 写道:
-> On Wed, 2 Apr 2025 at 16:31, Daniel Vacek <neelx@suse.com> wrote:
-[...]
->> I'd still opt for keeping full range and functionality including
->> negative levels using the plain `zstd:N` option and having the other
->> just as an additional alias (for maybe being a bit nicer to some
->> humans, but not a big deal really and a matter of preference).
->> Checking the official documentation, it still mentions "negative
->> compression levels" being the fast option.
->>
->> https://facebook.github.io/zstd/
->> https://facebook.github.io/zstd/zstd_manual.html
->>
->> The deprecation part looks like just some gossip. It looks more about
->> the cli tool api and we are defining a kernel mount api - perfectly
->> unrelated.
-> 
-> Any feedback, Dave? I tend to drop this ida of `zstd-fast` alias.
+In the buffered write path, the dirty page owns the qgroup reserve until
+it creates an ordered_extent.
 
-Not Dave here, but if the future of "zstd-fast" is not that clear, we 
-can definitely wait for a while.
+Therefore, any errors that occur before the ordered_extent is created
+must free that reservation, or else the space is leaked. The fstest
+generic/475 exercises various IO error paths, and is able to trigger
+errors in cow_file_range where we fail to get to allocating the ordered
+extent. Note that because we *do* clear delalloc, we are likely to
+remove the inode from the delalloc list, so the inodes/pages to not have
+invalidate/launder called on them in the commit abort path.
 
-It's always safer to adapt when the terminology is mature enough.
+This results in failures at the unmount stage of the test that look like:
 
-Thanks,
-Qu
+  BTRFS: error (device dm-8 state EA) in cleanup_transaction:2018: errno=-5 IO failure
+  BTRFS: error (device dm-8 state EA) in btrfs_replace_file_extents:2416: errno=-5 IO failure
+  BTRFS warning (device dm-8 state EA): qgroup 0/5 has unreleased space, type 0 rsv 28672
+  ------------[ cut here ]------------
+  WARNING: CPU: 3 PID: 22588 at fs/btrfs/disk-io.c:4333 close_ctree+0x222/0x4d0 [btrfs]
+  Modules linked in: btrfs blake2b_generic libcrc32c xor zstd_compress raid6_pq
+  CPU: 3 PID: 22588 Comm: umount Kdump: loaded Tainted: G W          6.10.0-rc7-gab56fde445b8 #21
+  Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS Arch Linux 1.16.3-1-1 04/01/2014
+  RIP: 0010:close_ctree+0x222/0x4d0 [btrfs]
+  RSP: 0018:ffffb4465283be00 EFLAGS: 00010202
+  RAX: 0000000000000001 RBX: ffffa1a1818e1000 RCX: 0000000000000001
+  RDX: 0000000000000000 RSI: ffffb4465283bbe0 RDI: ffffa1a19374fcb8
+  RBP: ffffa1a1818e13c0 R08: 0000000100028b16 R09: 0000000000000000
+  R10: 0000000000000003 R11: 0000000000000003 R12: ffffa1a18ad7972c
+  R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000000
+  FS:  00007f9168312b80(0000) GS:ffffa1a4afcc0000(0000) knlGS:0000000000000000
+  CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+  CR2: 00007f91683c9140 CR3: 000000010acaa000 CR4: 00000000000006f0
+  Call Trace:
+   <TASK>
+   ? close_ctree+0x222/0x4d0 [btrfs]
+   ? __warn.cold+0x8e/0xea
+   ? close_ctree+0x222/0x4d0 [btrfs]
+   ? report_bug+0xff/0x140
+   ? handle_bug+0x3b/0x70
+   ? exc_invalid_op+0x17/0x70
+   ? asm_exc_invalid_op+0x1a/0x20
+   ? close_ctree+0x222/0x4d0 [btrfs]
+   generic_shutdown_super+0x70/0x160
+   kill_anon_super+0x11/0x40
+   btrfs_kill_super+0x11/0x20 [btrfs]
+   deactivate_locked_super+0x2e/0xa0
+   cleanup_mnt+0xb5/0x150
+   task_work_run+0x57/0x80
+   syscall_exit_to_user_mode+0x121/0x130
+   do_syscall_64+0xab/0x1a0
+   entry_SYSCALL_64_after_hwframe+0x77/0x7f
+  RIP: 0033:0x7f916847a887
+  ---[ end trace 0000000000000000 ]---
+  BTRFS error (device dm-8 state EA): qgroup reserved space leaked
 
-> 
->>> We can make this change before 6.15 final so it's not in any released
->>> kernel and we don't have to deal with compatibility.
+Cases 2 and 3 in the out_reserve path both pertain to this type of leak
+and must free the reserved qgroup data. Because it is already an error
+path, I opted not to handle the possible errors in
+btrfs_free_qgroup_data.
+
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: Boris Burkov <boris@bur.io>
+Signed-off-by: David Sterba <dsterba@suse.com>
+[Minor conflict resolved due to code context change.]
+Signed-off-by: Jianqi Ren <jianqi.ren.cn@windriver.com>
+Signed-off-by: He Zhe <zhe.he@windriver.com>
+---
+Verified the build test
+---
+ fs/btrfs/inode.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index cedffa567a75..fc127182067b 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1546,6 +1546,7 @@ static noinline int cow_file_range(struct btrfs_inode *inode,
+ 					     locked_page,
+ 					     clear_bits,
+ 					     page_ops);
++		btrfs_qgroup_free_data(inode, NULL, start, cur_alloc_size, NULL);
+ 		start += cur_alloc_size;
+ 	}
+ 
+@@ -1559,6 +1560,7 @@ static noinline int cow_file_range(struct btrfs_inode *inode,
+ 		clear_bits |= EXTENT_CLEAR_DATA_RESV;
+ 		extent_clear_unlock_delalloc(inode, start, end, locked_page,
+ 					     clear_bits, page_ops);
++		btrfs_qgroup_free_data(inode, NULL, start, cur_alloc_size, NULL);
+ 	}
+ 	return ret;
+ }
+@@ -2222,13 +2224,15 @@ static noinline int run_delalloc_nocow(struct btrfs_inode *inode,
+ 	 */
+ 	if (cow_start != (u64)-1)
+ 		cur_offset = cow_start;
+-	if (cur_offset < end)
++	if (cur_offset < end) {
+ 		extent_clear_unlock_delalloc(inode, cur_offset, end,
+ 					     locked_page, EXTENT_LOCKED |
+ 					     EXTENT_DELALLOC | EXTENT_DEFRAG |
+ 					     EXTENT_DO_ACCOUNTING, PAGE_UNLOCK |
+ 					     PAGE_START_WRITEBACK |
+ 					     PAGE_END_WRITEBACK);
++		btrfs_qgroup_free_data(inode, NULL, cur_offset, end - cur_offset + 1, NULL);
++	}
+ 	btrfs_free_path(path);
+ 	return ret;
+ }
+-- 
+2.34.1
+

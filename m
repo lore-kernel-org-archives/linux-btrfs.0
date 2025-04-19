@@ -1,60 +1,68 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DACD92AE66
-	for <linux-btrfs@vger.kernel.org>; Sat, 19 Apr 2025 07:17:39 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 43B3935893
+	for <linux-btrfs@vger.kernel.org>; Sat, 19 Apr 2025 07:17:43 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1745047063; cv=none; b=R8gPR0dJ9xyTTm2wXM/OF7QHi7DAyqNMWSvQDs653Se8d56I44oIRvntLmTDiPmwfFIxBHucY4Fd1JlO/zj1uEdZEsCuXlRemja0VTc2tHpGQW2vrdhyCwC/XS1gAKU4ixCg6bQlGLO+hf5V1bYWwmkOnDXrywuQ/5D4BW0GfTo=
+	t=1745047065; cv=none; b=ref8pE+VfYImogp15cm/mjiEAlOkweSZatkrSgupC8mvYrpWvw847VpJpe9z3+wPpkbHylznkZTFBZrVfiWO8hr3H7MwyJbBwvhYWS0AUxbmfqt/iK6UfLyMilOk8KaTrzh9KoeJtykSycdKGYrGLIAdlhnJKPjM0zdLNZSPI8Y=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1745047063; c=relaxed/simple;
-	bh=GJ5pliwkOmg1SCliifv4NJ1an5j9+mIx8W+uOawrpMo=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=kXCFfTMhOJjVynt/vIeKkhz7qzgvsnRz/rv8kVuuAP9bIPRbwnvaZ6EvHIprvcfH8FguWAyDlhUrMOO3jvKWrXZxZjYQoNC3uB8FLOVNpC+AwK3pzVBjVbeaGaJdTZP28pT277ghjmPD7XaA6GTg0uaK+478F4FQKazsE0rExf8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Mo/uY/M8; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Mo/uY/M8; arc=none smtp.client-ip=195.135.223.130
+	s=arc-20240116; t=1745047065; c=relaxed/simple;
+	bh=gqE6iJ6Eq/TLWL/inO2zdu8EaOu2oSePhe0tKOd7jqc=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=onjT/TsNY7dBviBT4uT/k4s9hXh6KtbZy/RUOANJPQYOFiHEmwLlgFkecxVT858vr8DMLrCjul60aO9UOuaCFWMsWkf2O1zTAqEOqQxa7luZcGSF88Nm8VaZxHYgs+m3TkZDOJizXygxKVrV7wsM5sCeof9wg5A9SBXlTR6FkCM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=ts57SjFi; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=ts57SjFi; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Mo/uY/M8";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Mo/uY/M8"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="ts57SjFi";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="ts57SjFi"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 1A08F2120A;
-	Sat, 19 Apr 2025 07:17:38 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 682B61F443;
+	Sat, 19 Apr 2025 07:17:41 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1745047058; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=2dWi2PXZ2zzCaKXdqaHQTeizWZiqgOQPpyIDxul5gLs=;
-	b=Mo/uY/M8YkEo8veyq5yjMZyPWZlf3uh0MoTfqv/XsN+XGoCQA/LyBX/XLG/9ROuUxGFzAw
-	Eq4quExzRZD9cY4DP4TLJZvCfh9wXWoeGsELUvDF18/gjJfNSpgGvItHIlX2mGxMYrFhOO
-	tfz6c30Fwzo2ji/bM/qWvyyBo4ssUS0=
-Authentication-Results: smtp-out1.suse.de;
+	t=1745047061; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=aOd+q0OQ0JOr9tre22d0wgrYIxQ+9Sod0ojjUzN0xb4=;
+	b=ts57SjFits2F3VTJvOn2HfV0XeNnTSjHQsd1J6eTtmKChL/48q7DOCeXvv7uKQoZaTe2B/
+	VoH87V/kQ6ADyF08sKgwTBI6aVS9hxvmwE0P5YLN6QYZwEd6e9uf3jNJrZxDuRGsZrX1mc
+	wnk4zbUrlZz2d3RjtbYWMTK5GT1Dtvk=
+Authentication-Results: smtp-out2.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1745047058; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=2dWi2PXZ2zzCaKXdqaHQTeizWZiqgOQPpyIDxul5gLs=;
-	b=Mo/uY/M8YkEo8veyq5yjMZyPWZlf3uh0MoTfqv/XsN+XGoCQA/LyBX/XLG/9ROuUxGFzAw
-	Eq4quExzRZD9cY4DP4TLJZvCfh9wXWoeGsELUvDF18/gjJfNSpgGvItHIlX2mGxMYrFhOO
-	tfz6c30Fwzo2ji/bM/qWvyyBo4ssUS0=
+	t=1745047061; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=aOd+q0OQ0JOr9tre22d0wgrYIxQ+9Sod0ojjUzN0xb4=;
+	b=ts57SjFits2F3VTJvOn2HfV0XeNnTSjHQsd1J6eTtmKChL/48q7DOCeXvv7uKQoZaTe2B/
+	VoH87V/kQ6ADyF08sKgwTBI6aVS9hxvmwE0P5YLN6QYZwEd6e9uf3jNJrZxDuRGsZrX1mc
+	wnk4zbUrlZz2d3RjtbYWMTK5GT1Dtvk=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 1D0FB13942;
-	Sat, 19 Apr 2025 07:17:36 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 35A3113A79;
+	Sat, 19 Apr 2025 07:17:39 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 8lwbNBBOA2jSSQAAD6G6ig
-	(envelope-from <wqu@suse.com>); Sat, 19 Apr 2025 07:17:36 +0000
+	id uBGXOhNOA2jSSQAAD6G6ig
+	(envelope-from <wqu@suse.com>); Sat, 19 Apr 2025 07:17:39 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org,
 	fstests@vger.kernel.org
-Subject: [PATCH v2 0/8] btrfs: do not poking into the implementation details of bio_vec
-Date: Sat, 19 Apr 2025 16:47:07 +0930
-Message-ID: <cover.1745024799.git.wqu@suse.com>
+Cc: Christoph Hellwig <hch@lst.de>
+Subject: [PATCH v2 2/8] btrfs: track the next file offset in struct btrfs_bio_ctrl
+Date: Sat, 19 Apr 2025 16:47:09 +0930
+Message-ID: <a5af84f935d4d9cc2a929cb823ef761629ad793d.1745024799.git.wqu@suse.com>
 X-Mailer: git-send-email 2.49.0
+In-Reply-To: <cover.1745024799.git.wqu@suse.com>
+References: <cover.1745024799.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -68,79 +76,139 @@ X-Spamd-Result: default: False [-2.80 / 50.00];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.999];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	RCPT_COUNT_TWO(0.00)[2];
-	FUZZY_BLOCKED(0.00)[rspamd.com];
-	ARC_NA(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	TO_DN_SOME(0.00)[];
 	RCVD_VIA_SMTP_AUTH(0.00)[];
+	ARC_NA(0.00)[];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid];
+	FUZZY_BLOCKED(0.00)[rspamd.com];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
+	RCPT_COUNT_THREE(0.00)[3];
 	RCVD_COUNT_TWO(0.00)[2];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:mid];
 	RCVD_TLS_ALL(0.00)[]
 X-Spam-Score: -2.80
 X-Spam-Flag: NO
 
-- Fix a crash caused by incorrectly index sector_ptrs
-  The 5th patch, caused by missing increasement of the @offset variable.
+From: Christoph Hellwig <hch@lst.de>
 
-- Use physical addresses instead of virtual addresses to handle HIGHMEM
-  The 6th patch, as we can still get sector_ptr from bio_sectors[] which
-  is using pages from the bio, and that can be highmem.
+The bio implementation is not something we should really mess around,
+and we shouldn't recalculate the pos from the folio over and over.
+Instead just track then end of the current bio in logical file offsets
+in the btrfs_bio_ctrl, which is much simpler and easier to read.
 
-  However I can not do a proper test on this, as the latest kernel has
-  already rejected HIGHMEM64G option, thus even if my VM has extra 3GB
-  for HIGHMEM (total 6GB), I'm not sure if the kernel can really utilize
-  those high memories.
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/extent_io.c | 33 +++++++++++++--------------------
+ 1 file changed, 13 insertions(+), 20 deletions(-)
 
-  Furthermore there seems to be other bugs in mm layer related to
-  HIGHMEM + PAGE, resulting zswap crash when try compressing a page to
-  be swapped out.
-  But at least several scrub/balance related test cases passed on x86
-  32bit with HIGHMEM and PAGE.
-
-  I have tested with x86_64 (64 bit, no HIGHMEM), aarch64 (64bit, 64K
-  page size, no HIGHMEM) with no regression.
-
-- Fix a incorrect __bio_add_page() usage in scrub_bio_add_sector()
-  The 6th patch, as bio_add_page() do extra bvec merging before
-  allocating a new bvec, but __bio_add_page() does not.
-
-  This triggers WARN_ON_ONCE() in __bio_add_page() checking if the bio
-  is full.
-
-  Fixing it by do the old bio_add_page() and ASSERT(), with extra
-  comment on we can not use __bio_add_page().
-
-- Various minor commit message update
-  And full proper test runs.
-
-Christoph Hellwig (8):
-  btrfs: remove the alignment checks in end_bbio_data_read
-  btrfs: track the next file offset in struct btrfs_bio_ctrl
-  btrfs: pass a physical address to btrfs_repair_io_failure
-  btrfs: move kmapping out of btrfs_check_sector_csum
-  btrfs: simplify bvec iteration in index_one_bio
-  btrfs: raid56: store a physical address in structure sector_ptr
-  btrfs: scrub: use virtual addresses directly
-  btrfs: use bvec_kmap_local in btrfs_decompress_buf2page
-
- fs/btrfs/bio.c         |   9 +-
- fs/btrfs/bio.h         |   3 +-
- fs/btrfs/btrfs_inode.h |   4 +-
- fs/btrfs/compression.c |   9 +-
- fs/btrfs/disk-io.c     |   7 +-
- fs/btrfs/extent_io.c   |  60 ++++---------
- fs/btrfs/inode.c       |  20 ++---
- fs/btrfs/raid56.c      | 189 ++++++++++++++++++++++-------------------
- fs/btrfs/scrub.c       |  93 +++++++++-----------
- 9 files changed, 184 insertions(+), 210 deletions(-)
-
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index f2fafad1add0..51b6f25e94aa 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -96,6 +96,7 @@ void btrfs_extent_buffer_leak_debug_check(struct btrfs_fs_info *fs_info)
+  */
+ struct btrfs_bio_ctrl {
+ 	struct btrfs_bio *bbio;
++	loff_t next_file_offset; /* last byte contained in bbio + 1 */
+ 	enum btrfs_compression_type compress_type;
+ 	u32 len_to_oe_boundary;
+ 	blk_opf_t opf;
+@@ -630,13 +631,10 @@ static int alloc_eb_folio_array(struct extent_buffer *eb, bool nofail)
+ }
+ 
+ static bool btrfs_bio_is_contig(struct btrfs_bio_ctrl *bio_ctrl,
+-				struct folio *folio, u64 disk_bytenr,
+-				unsigned int pg_offset)
++				u64 disk_bytenr, loff_t file_offset)
+ {
+ 	struct bio *bio = &bio_ctrl->bbio->bio;
+-	struct bio_vec *bvec = bio_last_bvec_all(bio);
+ 	const sector_t sector = disk_bytenr >> SECTOR_SHIFT;
+-	struct folio *bv_folio = page_folio(bvec->bv_page);
+ 
+ 	if (bio_ctrl->compress_type != BTRFS_COMPRESS_NONE) {
+ 		/*
+@@ -647,19 +645,11 @@ static bool btrfs_bio_is_contig(struct btrfs_bio_ctrl *bio_ctrl,
+ 	}
+ 
+ 	/*
+-	 * The contig check requires the following conditions to be met:
+-	 *
+-	 * 1) The folios are belonging to the same inode
+-	 *    This is implied by the call chain.
+-	 *
+-	 * 2) The range has adjacent logical bytenr
+-	 *
+-	 * 3) The range has adjacent file offset
+-	 *    This is required for the usage of btrfs_bio->file_offset.
++	 * To merge into a bio both the disk sector and the logical offset in
++	 * the file need to be contiguous.
+ 	 */
+-	return bio_end_sector(bio) == sector &&
+-		folio_pos(bv_folio) + bvec->bv_offset + bvec->bv_len ==
+-		folio_pos(folio) + pg_offset;
++	return bio_ctrl->next_file_offset == file_offset &&
++		bio_end_sector(bio) == sector;
+ }
+ 
+ static void alloc_new_bio(struct btrfs_inode *inode,
+@@ -677,6 +667,7 @@ static void alloc_new_bio(struct btrfs_inode *inode,
+ 	bbio->file_offset = file_offset;
+ 	bio_ctrl->bbio = bbio;
+ 	bio_ctrl->len_to_oe_boundary = U32_MAX;
++	bio_ctrl->next_file_offset = file_offset;
+ 
+ 	/* Limit data write bios to the ordered boundary. */
+ 	if (bio_ctrl->wbc) {
+@@ -718,12 +709,13 @@ static void submit_extent_folio(struct btrfs_bio_ctrl *bio_ctrl,
+ 			       size_t size, unsigned long pg_offset)
+ {
+ 	struct btrfs_inode *inode = folio_to_inode(folio);
++	loff_t file_offset = folio_pos(folio) + pg_offset;
+ 
+ 	ASSERT(pg_offset + size <= folio_size(folio));
+ 	ASSERT(bio_ctrl->end_io_func);
+ 
+ 	if (bio_ctrl->bbio &&
+-	    !btrfs_bio_is_contig(bio_ctrl, folio, disk_bytenr, pg_offset))
++	    !btrfs_bio_is_contig(bio_ctrl, disk_bytenr, file_offset))
+ 		submit_one_bio(bio_ctrl);
+ 
+ 	do {
+@@ -732,7 +724,7 @@ static void submit_extent_folio(struct btrfs_bio_ctrl *bio_ctrl,
+ 		/* Allocate new bio if needed */
+ 		if (!bio_ctrl->bbio) {
+ 			alloc_new_bio(inode, bio_ctrl, disk_bytenr,
+-				      folio_pos(folio) + pg_offset);
++				      file_offset);
+ 		}
+ 
+ 		/* Cap to the current ordered extent boundary if there is one. */
+@@ -747,14 +739,15 @@ static void submit_extent_folio(struct btrfs_bio_ctrl *bio_ctrl,
+ 			submit_one_bio(bio_ctrl);
+ 			continue;
+ 		}
++		bio_ctrl->next_file_offset += len;
+ 
+ 		if (bio_ctrl->wbc)
+-			wbc_account_cgroup_owner(bio_ctrl->wbc, folio,
+-						 len);
++			wbc_account_cgroup_owner(bio_ctrl->wbc, folio, len);
+ 
+ 		size -= len;
+ 		pg_offset += len;
+ 		disk_bytenr += len;
++		file_offset += len;
+ 
+ 		/*
+ 		 * len_to_oe_boundary defaults to U32_MAX, which isn't folio or
 -- 
 2.49.0
 

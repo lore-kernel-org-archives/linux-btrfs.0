@@ -1,148 +1,220 @@
-Received: from mail-ed1-f49.google.com (mail-ed1-f49.google.com [209.85.208.49])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from HK3PR03CU002.outbound.protection.outlook.com (mail-eastasiaazon11011053.outbound.protection.outlook.com [52.101.129.53])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9E29F194124
-	for <linux-btrfs@vger.kernel.org>; Tue, 22 Apr 2025 04:09:12 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.208.49
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1745294954; cv=none; b=m+nURG+DH72h48jk3YJeyeOVQP6K0mJ8ZSvxEWKGrDgn72BnqBsieCUZu/Sq7y8gVAoQOBhesxh3cmJ79iWIQuXRPcfOIsDvxXlTdwLcgJxAB4qixgumuugYHdZ7o4wre5eS0VSQ/KJiIfuAHS8kMvgoOYffqMbLOCKSRhBVZew=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1745294954; c=relaxed/simple;
-	bh=qooPPh7Sc4jDHmLmciL2D/TBKbArEcvN1N6OKR0BkSc=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=Qn/2e53RlT7tk3kNbZE54Hc6sc4RF+Q061MKUvuMUfsaFEOyJBcLJrYJ7H9pyWnMb9RvHiVD5dbYeeM6QHF4we3PZ90xsuYS0s/BKsDuGqGKF4AqqR5n8lZ/QIrdAUrHFV9AK3YwdMpzfO697cJpxIm2ZeIzZNwKoApbEcfRhqU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=GULxeQfJ; arc=none smtp.client-ip=209.85.208.49
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 753C2F510;
+	Tue, 22 Apr 2025 07:55:25 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=52.101.129.53
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1745308527; cv=fail; b=PjF1MyEeMqoguyQBhI8Qg/FdX7C0Lpq5a9hRrAmkt1nbB5nc/sz/JcwTNkDJ0jxlshBPf0ikRuhilZBvJBdy9XhcGaBAEb6dtKg/GtA/sgz6ktt+3bUG2QB6fLquL3zomw3Zami7NIdKYYJijbsGJk8/clz783VU7OjfFPgSxcs=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1745308527; c=relaxed/simple;
+	bh=Jl/P6twpDZ5SGyQ4QEaAR3D+p771rFmsQ+Fax2xZWEE=;
+	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=axDSIo5DxAehL6qrGpTl9bsjQSMJn8wT0EVptiMwDJ13X9Qv5OASUWHpQwbkqaEZ5THrB11tcVmfZlAHIZe+faWRJiYtYI1+RY92MBlAX7ic3IWMXcTUPTdlf6DxE5uDtWJlNeem4jFx4Jrn/lwCgGgq5tuOXqaj/7QEMENjn7k=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=vivo.com; spf=pass smtp.mailfrom=vivo.com; dkim=pass (2048-bit key) header.d=vivo.com header.i=@vivo.com header.b=W+8/fnMe; arc=fail smtp.client-ip=52.101.129.53
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=vivo.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=vivo.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="GULxeQfJ"
-Received: by mail-ed1-f49.google.com with SMTP id 4fb4d7f45d1cf-5ec9d24acfbso9981470a12.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 21 Apr 2025 21:09:12 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1745294951; x=1745899751; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to;
-        bh=7UyT32oNdvI0B7CJmPYL80eqMQ3ZYwskCys7aLnpU8o=;
-        b=GULxeQfJzytvUxAApg2DyGMnjp+IvcvYz1UizmWEAjpixnvz6EDEanBecToO4URAHK
-         s4XbR67/ZxpGLOVyU1CZElEA6VV6EsaQqiB6AeyCT6yBM6tY5Fyv9OOkU/h6BLFo1lhu
-         bE6s21CFo5uhbn8sAliwoI21y/k1uPRPqyNIPsrcP7/jUQN3zlwCABOCzdYNNQgGAkHO
-         6jYcT9hvDUMTapdNzLLQua17ICruHm740JT0T5hkVDowUNpIdpe1LUcJcNmFi0kalKWP
-         mE5gBGk7h5u8UW1BKrCdkmrYJTSJeJtILuoCfhNhDiD6UW/GXm2imDs97zNOu7x/PhXc
-         P/JA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1745294951; x=1745899751;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=7UyT32oNdvI0B7CJmPYL80eqMQ3ZYwskCys7aLnpU8o=;
-        b=fVYnTxlIfD7HCYNCf//dmDICLEBoV9NtmliRxTPTmefQwuZ58y1nC/cPODr//A1Bgn
-         sWq8fDWh74PhhrYf8JTyAIaiBGQ/vqr0KqAtpWwWRtZubYhnMtA6I2/emiX31hi6RgNH
-         t5pp/l3eG7SpK4Mi7e/e9aDwaHeAA6/YGO6MUw9QL5ZFqPhwfSddRrl41r1VIfs6nstq
-         e42Evi0k6ild4tf/1xq5vjTZGZsN2Z+w+3xzgAhjn42hFoh+amyCK6A6pjwgOzOb0AEk
-         7+9vMUjorD0op+0AI03nOZkJ/onDgvRAGno9crGSag+ORtaae0nfODH4vhfclZUe2xUA
-         VjRg==
-X-Forwarded-Encrypted: i=1; AJvYcCVWUONasoSxAs1w/FCwf/KlPzyhXf5LZQgyWBT3rUE2DL6j6S7Hmtn0hRX44T7l08IjdL//aYJmRL/+Vg==@vger.kernel.org
-X-Gm-Message-State: AOJu0Ywr5Mj4+avw3auClLJwJBuZ25JjAMHbvmXaEwiZ70N2VpFQIRbj
-	15uWE3wE0wFC/qmMJk5OfoGXU6vqpg+69S/LtU+Xy1g0/z5kytRb4FstgopBYZA=
-X-Gm-Gg: ASbGncum0ZsuW3CJwUuLkxKL3bcqj2pXbZWc1JMsg+pYOiQvR4W3dTf97ZwVK4jp8Wl
-	JlEL88Qmre77RSVUKfNNHRTTDCyATvaX9KtmP2LU7c0odSvbptm+8EG+9TiwWmmxJHenr92ahf4
-	zkWX2c8fS9pDh137JSK19tvUXa/FhyGzJRSFLeKC1tlXxGpYc5g+7UQs56tNLCZt7IqkLI5B8AD
-	hnE+JLwu6as3l6eqUXc4Y6fouKytlMIJbzPgVSiCPpkPweOZqvgG9fHYfgdmlR8KFYzzRrJRoNw
-	bzMMrXyr3MmYJ7DQjknKIDd5Lnq9MBbCEue71QXhpxgyK+bXTyk3k567ts8ZSAu6IzsI
-X-Google-Smtp-Source: AGHT+IHW+g0qw3gBtPQ/2pE0/fL0ihaAK6vaQaOak5PgSUwLDfg0R/nPaOQqt4C7h1YtIBSkKRbolw==
-X-Received: by 2002:a17:907:3d9f:b0:aca:c67d:eac0 with SMTP id a640c23a62f3a-acb6e91e47fmr1536497866b.0.1745294950805;
-        Mon, 21 Apr 2025 21:09:10 -0700 (PDT)
-Received: from ?IPV6:2403:580d:fda1::299? (2403-580d-fda1--299.ip6.aussiebb.net. [2403:580d:fda1::299])
-        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-73dbfa58754sm7806905b3a.107.2025.04.21.21.09.08
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 21 Apr 2025 21:09:10 -0700 (PDT)
-Message-ID: <9f4851b9-b226-4639-abf3-a7fb650214d3@suse.com>
-Date: Tue, 22 Apr 2025 13:39:05 +0930
+	dkim=pass (2048-bit key) header.d=vivo.com header.i=@vivo.com header.b="W+8/fnMe"
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
+ b=A2RUsDIV+ytIi2WiXXxXmuXvUAi53fvzYIp34KgRxx2R+9QIgeoshIUgr239jcyMdw+Tc8gZxgNpU1kg5dvp2Ytqnte1d00VHBIjopaHwPdRbcE3BNpGFaTi5Co/g7e1SaJfnR5J2Mv2VDJHw2YyOrES4CPJar9BaLq/s4SlxtUMTLXFDXV5XahuDVpOftYOvTcUSbvJSVqW7F0FsA0ycFalMItBk+OmtXgxAoD/tYVxBcS+E3dTLH0iAFSheHFvXlazGvvG/J9+RxuT+JOITFodmy9GN3dqSdmHPjr4/6Z6SasEoOqz2zB9fMlPTSrl2VzHRkFabM1Whhho98njRg==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector10001;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=6Jt3inCbd7avVP3W2ASuqT5YnS626Ew0QteZ2FjErPA=;
+ b=nCJBjMaCn82ylE/MwqMlf6PiWeb6OkjT8VIJ/pzDOATelgVjuU2sKKQylXRdlYldPMAF56DJ4/8MduLCI3QD8LEiggEzHb3GYdvY9w/9w2eAfT+b0JVgubJI7e0OUXY40yFJH11OWcbpTwHFWWLAa1DrZanlFOwVWPVWJ9XJboFlcn2OmiiHvP9O5UOjrD5kKb4AFuiw/XO7Ln4lu77PDqK6gkvNY7BiqaE6t09SIyw9GcIs2Ro31PWx3CabcSbv5HqXfNTnQ7YIiOpfiX7eWxoD7HGnX9pNFCIePJUvh9FMiFO40BeCG+rvqIHKCkhOeA9+Se/hGA6UOoZ3a4qgcg==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=vivo.com; dmarc=pass action=none header.from=vivo.com;
+ dkim=pass header.d=vivo.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=vivo.com; s=selector2;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=6Jt3inCbd7avVP3W2ASuqT5YnS626Ew0QteZ2FjErPA=;
+ b=W+8/fnMeZiZYIVhJBfcpTYUUm6Rs+OQa+zycR8vV2up7+Pb7L7FkcNMQWQIlrMyL1joRS7aArvvdUU5SHvxdkjkHa3W8OZvK00lrzlJhbhEln2EpLJ8ucsw3/WYXCnPsGIYCw3bM21r3kDDzA/E1CP2y2wX+dXK8o8KEtzCiwMJ/GTaX4ZvPECvZxc5S8aml6XFXE8nnH/rimfuQAUz8yBdDaw8Jh0m8NJpk0xvGxqhln/YkQGLxdvH8zGRSFZvW4o/uxqNT5TAWLqRWJftCrLfEVPKA6okI0KokeAftIJw2Arqsh5DumxOW6ZiL3+SMXA04nw2Q1df+fT+SacQhhA==
+Authentication-Results: dkim=none (message not signed)
+ header.d=none;dmarc=none action=none header.from=vivo.com;
+Received: from SEZPR06MB5269.apcprd06.prod.outlook.com (2603:1096:101:78::6)
+ by TY0PR06MB5684.apcprd06.prod.outlook.com (2603:1096:400:272::10) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.8655.35; Tue, 22 Apr
+ 2025 07:55:20 +0000
+Received: from SEZPR06MB5269.apcprd06.prod.outlook.com
+ ([fe80::8c74:6703:81f7:9535]) by SEZPR06MB5269.apcprd06.prod.outlook.com
+ ([fe80::8c74:6703:81f7:9535%6]) with mapi id 15.20.8655.031; Tue, 22 Apr 2025
+ 07:55:20 +0000
+From: Yangtao Li <frank.li@vivo.com>
+To: clm@fb.com,
+	josef@toxicpanda.com,
+	dsterba@suse.com
+Cc: linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	Yangtao Li <frank.li@vivo.com>
+Subject: [PATCH 02/13] btrfs: update __btrfs_lookup_delayed_item to to use rb helper
+Date: Tue, 22 Apr 2025 02:14:53 -0600
+Message-Id: <20250422081504.1998809-2-frank.li@vivo.com>
+X-Mailer: git-send-email 2.34.1
+In-Reply-To: <20250422081504.1998809-1-frank.li@vivo.com>
+References: <20250422081504.1998809-1-frank.li@vivo.com>
+Content-Transfer-Encoding: 8bit
+Content-Type: text/plain
+X-ClientProxiedBy: SI2P153CA0029.APCP153.PROD.OUTLOOK.COM
+ (2603:1096:4:190::16) To SEZPR06MB5269.apcprd06.prod.outlook.com
+ (2603:1096:101:78::6)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2] btrfs: fix the resource leak issue in btrfs_iget()
-To: Penglei Jiang <superman.xpt@gmail.com>
-Cc: clm@fb.com, dsterba@suse.com, josef@toxicpanda.com,
- linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-References: <9e7babf0-310f-40cd-9935-36ef2cebb63f@gmx.com>
- <20250421154029.2399-1-superman.xpt@gmail.com>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <20250421154029.2399-1-superman.xpt@gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+X-MS-PublicTrafficType: Email
+X-MS-TrafficTypeDiagnostic: SEZPR06MB5269:EE_|TY0PR06MB5684:EE_
+X-MS-Office365-Filtering-Correlation-Id: 15fa4446-2ba7-4e74-ed09-08dd81730756
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam:
+	BCL:0;ARA:13230040|376014|52116014|366016|1800799024|38350700014;
+X-Microsoft-Antispam-Message-Info:
+	=?us-ascii?Q?y77M0rYjFFzynONShnnaRCo5z9jBJMSnszD3/c+3WYOMqC8LncmuL+qajgbb?=
+ =?us-ascii?Q?XgKCPkQcmMzRPk6XEWfeU5uasm4LBBs1VI11b1mlA1glOTedbml1wY0twSE5?=
+ =?us-ascii?Q?2BPYNXxrZ5SH07m4ZLNhE/FjxoUsjiSnjLiFnUhwzXu+X6/4F1kVT5YrSLSA?=
+ =?us-ascii?Q?73iJuLHSpszkvDR30OunAq+RpZ+8KKbzVyYb7+bzIKK59U33lhi0pUcBEymU?=
+ =?us-ascii?Q?2UQQmnAHxi4/clCWVQm5PrzlmXYZbdp31MpNyr2ZOveCDxzHzSesxMfLPPXt?=
+ =?us-ascii?Q?BzYbUIH213YckmCnA8kreNNccxjTnWkzvgJkwNDQuowFKA2e/g8xUBWZrpXX?=
+ =?us-ascii?Q?CgHtYQDMc5sgL9erdNGLIo8skIRKgqPh1lhZ5oEclfH61/f2cvmhc75ifkrl?=
+ =?us-ascii?Q?LmbAPFa5OW5BsRVm2h53yV2+Vh2cXy4Vb3soenpyIyn1a4P04cQo0h26qIyx?=
+ =?us-ascii?Q?822KJL8VxVvmpx21shHR3Zc/PRWQOPRGtCjDWSEQBLd18UM5YtfD6lV3zLCn?=
+ =?us-ascii?Q?AI9WISQHax1BfLEmiCYTLlsXFYpgDq8EcIl5f1fMlmICXzO4/MSTr1CtJoM0?=
+ =?us-ascii?Q?y1IYA1ZnOFXaXV/lYRGfP8JlAV4p5CcS9GZpopQr3lS8ba338f1oDwsnM7Lr?=
+ =?us-ascii?Q?rJ34PO7ll9ghA4RtwCFRfmN+cDZprt6zFm3/EKVLkev0sbbOSGKh/u2GrWMF?=
+ =?us-ascii?Q?r1qlRdfOYFtDZA79QTrGqHMXHbPoYy6z2idKITxa+5SC55CO3g6mq++UvA2m?=
+ =?us-ascii?Q?41GTkTNeljma88y9QMzQw0Bhzifn4Nw5uUu2dvSXyhROSkv0mfLhLh40d2wA?=
+ =?us-ascii?Q?z3xaKQXT2D37N0TtC3BHDLEToqytpyIMWRb1o2jCjzEnGukTX4DFTKoSRkuo?=
+ =?us-ascii?Q?U01angsOneeYgV94CoLQXCVXT8a8m9rtUjWvzb8BzE21VoVu+cv05rwJFDJG?=
+ =?us-ascii?Q?wPdhriYcfw5SUocgQ6zLe+Fdrzp3v317a7PP5MCfj9c0accOcI8IXReOXLxL?=
+ =?us-ascii?Q?O0qfVxMfyGgqCwngiEUmiR0s8WG0xWhwGmRq31aCa+ITsa2Zh2IQ6kb7bGeO?=
+ =?us-ascii?Q?fTrWUNaxppUCpZurkT7tJVW+qbbGBEUGg+gQ9R+1rKjsDi5gyxma3ldfxoze?=
+ =?us-ascii?Q?5ejMf7vlPCrYZxxxUTSgXmKtHwaSJvijG0N2uifV6qEkcDBSmGsM1AiLblKc?=
+ =?us-ascii?Q?u2w8dREamgU5tF+8kBLyhrp+WYb80ZS9ZFWeOVRmHScL7lIOQE3rTnKYP3bU?=
+ =?us-ascii?Q?lag3bP38eWbuE52jv9st+WsrizTZtnTyDFX9fET10b78owggeXU00nSNUX04?=
+ =?us-ascii?Q?eSm2J7safAZQF0PvD2ZtVJ2f6fbZpFA0u8Ro4AJMJo1rMXdx8QcxHCjuKudd?=
+ =?us-ascii?Q?ZZ56angw6Mv3gltcgtvsSKZ/M4h3fWGkg1N8MSyPfl2B/7KqmK6QgiIHdYd4?=
+ =?us-ascii?Q?cX9u6nmjTNg70dwU0QyXKuxFzDtZDTIJV9w/3dM/O9k1nMsefBZyHg=3D=3D?=
+X-Forefront-Antispam-Report:
+	CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SEZPR06MB5269.apcprd06.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(376014)(52116014)(366016)(1800799024)(38350700014);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-MessageData-0:
+	=?us-ascii?Q?oox4OcW8R5GAV5WQHZo5t3B/8ve0N41ZXl1ShzopjwWG2nYtaxWld5a8Bg1R?=
+ =?us-ascii?Q?p4uRIBDTMCH8kPFXsRXmOzzIRkEZ/gal3gFb0HwnL/nHICbPyanLtcBPFa4G?=
+ =?us-ascii?Q?VgGj98AzYa2MVBfZqd/Hl+f5OSvBLpV0j2hgAduSoI7wVXcUoT6za+MVsMDX?=
+ =?us-ascii?Q?oHtGss2jp9lwSrathR4aFRCvHQZn/xxfZQ0xGvelgn7m929aezmvrv+bTsBs?=
+ =?us-ascii?Q?cFUjtSeTzMW4BC+YE7N41aN/dBdC2X0zxX0B1Q3ndxagrBgSA21d7Vhty47l?=
+ =?us-ascii?Q?wWpoT3yoHJhd4PvB0ZggW+a3iopxfp1UXJ5vYBAG4VXGOpMtl2xVT7qcTaU9?=
+ =?us-ascii?Q?dNa6IzpT4PgDa8U9B4w6yD5S7VIqg7umkMFGy3BnM/a6x0ueTKCw/G6Gj02m?=
+ =?us-ascii?Q?bER+Ib2nbCLWDqFeE8pmFkH+PzwGkLE3UtbxTOYTSEOpYRS2lfbwQIgO7AF/?=
+ =?us-ascii?Q?t9+U3z3rLXhx2Gt95y5qef5WZ1r8iuuZJfOmXXW1NF1R0QwZFCkUX88I56gg?=
+ =?us-ascii?Q?dwmTf+beFuzAl+C5L8IDgeUdtDtSz886REQMRm/QQkA7M684ME+UCV4aTmMC?=
+ =?us-ascii?Q?O1Kqnox5z9JIj1DkdX7ZYsK7XfyBpKALpH9Bb485NbuCBbwSK/hAS3LjK9NY?=
+ =?us-ascii?Q?sw1KCbx0xZofMnA6EuRTJRG4k5QEPlxrZOMkNJi31mbsmBrQCYS7fvx4Whbj?=
+ =?us-ascii?Q?23QCFP7FkOfAwvDC8lgMhFLE8SFUF92WeoQvJbzGKaYYL3qj/vqPvevz950j?=
+ =?us-ascii?Q?nJVI4kKtJYUbH9z7hT2MJgLSGwO13NVDIKjqqR/rO+dY4jNdzxIiJ7RYi28w?=
+ =?us-ascii?Q?F7y7/PNX3X/h65RzeXLIJKI/+Sjm9Zl9oO3yKkqcntkX2/uasFWPn6x5RIJU?=
+ =?us-ascii?Q?WmSTlbydNnINekGChQINRt8zN1xbbhM+v74Sy1bCbvGkh6RyveVU2V7tF8uB?=
+ =?us-ascii?Q?TUBGO4lEF6siKLB3Kjyi9Jn7YiynqtTjXsjHVHnqz4vsDq8NQ8OCFmYuZwde?=
+ =?us-ascii?Q?quFyzV7SLcKcwWuvlgvbH6EayK2b+M3+WEqufTtt+jEGXPkawQTDMDuy8VOg?=
+ =?us-ascii?Q?TOLCfdEHW46jrJDS0SHUJ8HEzrV++udvM9fS7O+SbQ8zXy20Q1IJEAqrh/UX?=
+ =?us-ascii?Q?y8tXYAnDnFBqQQxU3TfCPYKjOa0ZsKpCVeiruIxx94tZj41QSbDkhVcJ/014?=
+ =?us-ascii?Q?xDp2xmxTebi4aG4BHRjyxAIEoKSUPEooh8R+8fTQAJdsPJMhj+v9QZFtBsa+?=
+ =?us-ascii?Q?q6keM+g5PUC6rDFT1h2GIXqU4bpiQ1yYyt5D/yxyOPj9FJSbe9NRgfvN7Yt1?=
+ =?us-ascii?Q?yOun78xUMPNpYPQCkEhHptNGsfCvDEHCJzpdKlksA8940jlb/l14CFR05AE6?=
+ =?us-ascii?Q?yZ/987JIsCNZA/UQl+uhhWojNZ9NdZSqZrdpLN4mqbqsgU2nv5HNXrogv8Zk?=
+ =?us-ascii?Q?A5bvg/LCsTEqXw1k0mocp9noGzOuDKX6eYZ9S4ozzKZ11z/VXA1LRhWGiba7?=
+ =?us-ascii?Q?CMBm1Uw9FwC972ywq9WRhI/Xbxl/Z1kYZZNkSxfyQloqDcxSqxULNxv/PwKY?=
+ =?us-ascii?Q?ckGOIa52ePlqRS5V7u9accMRwGjSLrrJRSMMjRDC?=
+X-OriginatorOrg: vivo.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 15fa4446-2ba7-4e74-ed09-08dd81730756
+X-MS-Exchange-CrossTenant-AuthSource: SEZPR06MB5269.apcprd06.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 22 Apr 2025 07:55:20.2876
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: 923e42dc-48d5-4cbe-b582-1a797a6412ed
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: HCiNxpbrJMmch/5jZwxQE0mHjvLeSZBOqNTWNbWracF8eazp28OxMN/GSW+BOlGjB9Y5hENBTe1yKeGoACTR1w==
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: TY0PR06MB5684
 
+Update __btrfs_lookup_delayed_item() to use rb_find().
 
+Suggested-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Yangtao Li <frank.li@vivo.com>
+---
+ fs/btrfs/delayed-inode.c | 39 ++++++++++++++++++---------------------
+ 1 file changed, 18 insertions(+), 21 deletions(-)
 
-在 2025/4/22 01:10, Penglei Jiang 写道:
-> When btrfs_iget() returns an error, it does not use iget_failed() to mark
-> and release the inode. Now, we add the missing iget_failed() call.
-> 
-> Fixes: 7c855e16ab72 ("btrfs: remove conditional path allocation in btrfs_read_locked_inode()")
-> Reported-by: Penglei Jiang <superman.xpt@gmail.com>
-> Signed-off-by: Penglei Jiang <superman.xpt@gmail.com>
-
-Now pushed to for-next branch, with some updates on the commit message.
-
-https://github.com/btrfs/linux/commit/cfcd9ed0108925c8071e27e6d5a300adb74c1839
-
-Appreciate your bug report and fix. It would be even better if plan to 
-continue your contribution to btrfs.
-
-Thanks,
-Qu
-
-> ---
-> V1 -> V2: Fixed the issue with multiple calls to btrfs_iget()
-> 
->   fs/btrfs/inode.c | 4 +++-
->   1 file changed, 3 insertions(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index cc67d1a2d611..1cbf92ca748d 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -5681,8 +5681,10 @@ struct btrfs_inode *btrfs_iget(u64 ino, struct btrfs_root *root)
->   		return inode;
->   
->   	path = btrfs_alloc_path();
-> -	if (!path)
-> +	if (!path) {
-> +		iget_failed(&inode->vfs_inode);
->   		return ERR_PTR(-ENOMEM);
-> +	}
->   
->   	ret = btrfs_read_locked_inode(inode, path);
->   	btrfs_free_path(path);
+diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+index 3f1551d8a5c6..dbc1bc1cdf20 100644
+--- a/fs/btrfs/delayed-inode.c
++++ b/fs/btrfs/delayed-inode.c
+@@ -336,6 +336,20 @@ static struct btrfs_delayed_item *btrfs_alloc_delayed_item(u16 data_len,
+ 	return item;
+ }
+ 
++static int btrfs_delayed_item_key_cmp(const void *k, const struct rb_node *node)
++{
++	const u64 *index = k;
++	const struct btrfs_delayed_item *delayed_item =
++		rb_entry(node, struct btrfs_delayed_item, rb_node);
++
++	if (delayed_item->index < *index)
++		return 1;
++	else if (delayed_item->index > *index)
++		return -1;
++
++	return 0;
++}
++
+ /*
+  * Look up the delayed item by key.
+  *
+@@ -349,21 +363,10 @@ static struct btrfs_delayed_item *__btrfs_lookup_delayed_item(
+ 				struct rb_root *root,
+ 				u64 index)
+ {
+-	struct rb_node *node = root->rb_node;
+-	struct btrfs_delayed_item *delayed_item = NULL;
+-
+-	while (node) {
+-		delayed_item = rb_entry(node, struct btrfs_delayed_item,
+-					rb_node);
+-		if (delayed_item->index < index)
+-			node = node->rb_right;
+-		else if (delayed_item->index > index)
+-			node = node->rb_left;
+-		else
+-			return delayed_item;
+-	}
++	struct rb_node *node;
+ 
+-	return NULL;
++	node = rb_find(&index, root, btrfs_delayed_item_key_cmp);
++	return rb_entry_safe(node, struct btrfs_delayed_item, rb_node);
+ }
+ 
+ static int btrfs_delayed_item_cmp(const struct rb_node *new,
+@@ -371,14 +374,8 @@ static int btrfs_delayed_item_cmp(const struct rb_node *new,
+ {
+ 	const struct btrfs_delayed_item *new_item =
+ 		rb_entry(new, struct btrfs_delayed_item, rb_node);
+-	const struct btrfs_delayed_item *exist_item =
+-		rb_entry(exist, struct btrfs_delayed_item, rb_node);
+ 
+-	if (new_item->index < exist_item->index)
+-		return -1;
+-	if (new_item->index > exist_item->index)
+-		return 1;
+-	return 0;
++	return btrfs_delayed_item_key_cmp(&new_item->index, exist);
+ }
+ 
+ static int __btrfs_add_delayed_item(struct btrfs_delayed_node *delayed_node,
+-- 
+2.39.0
 

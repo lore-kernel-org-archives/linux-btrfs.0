@@ -1,54 +1,54 @@
 Received: from esa2.hgst.iphmx.com (esa2.hgst.iphmx.com [68.232.143.124])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8B5C11F4CB6
-	for <linux-btrfs@vger.kernel.org>; Wed, 23 Apr 2025 02:44:24 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7FB8D263F24
+	for <linux-btrfs@vger.kernel.org>; Wed, 23 Apr 2025 02:44:23 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=68.232.143.124
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1745376266; cv=none; b=i8d6tS8oLRfAAfYjdSgcw47DWk9WvuoHGhcLttLV18J0QK8/fqHIvnTIAcGHeuE5fvpzegfCzDKy3FPoiUOoyMyZ1tJisljOWkr4fMSdEKV92frgOf/LqB3WvqnHDyuSDjF8x3DV/iKRSBulgyT2JHFBVoCNCvw+zeomC7aHbWI=
+	t=1745376266; cv=none; b=YKPPTmE0XiD9fC9eU9nqPoPCxICkI6zUXp+HQIIBV8ha1soPSjhRvxHUP2vcHsijC4rcyHun1dn+gjbAw/eGII1sBveRLeU/ReOoGblo77Ak1PM6Z848Tbv/YdwO5QBv6PRMdZLOsiDUso4T1bu7VtSSTQxQJ7FOiZV6ShyjUzk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
 	s=arc-20240116; t=1745376266; c=relaxed/simple;
-	bh=1WOFkZFChn4tMIum2aOJxBG3IglU3PprRyVo+8t3a+c=;
+	bh=RY4vfOPTNVfbmI3l95hf4OGAn04SDLaaMCUSWBDN7Ac=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=PPkqFrx2/qDQSzqsjm1EJcMRDY5j3znt8M0ShsVaKKXQzCVDRzopjDTvHMyOlGD9SXZMM3BkqSY0bJ8vBwVVZk8JbNF1DnHd0snvMPqnWyiDHDgZHHCkrxez/0s5+g0mVHUMMRRnWrpecv+aLjVxaiYBtNUagfR9c7Z5GNdBei8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=hGvSHN+T; arc=none smtp.client-ip=68.232.143.124
+	 MIME-Version; b=G0k7SgjxVjDFPyA8p4Z1DWRhaHiqOi6xxI5yOQ+nimF7l+vtETec4u2AemumzMnRWnf0TL+mClURpmzXcsTgC7LCvt7Dd9yywrMT67yVkG09ZccBk70qyzy6ZIzAO+FNtaulBrF8VHPZUVNCWNY5CgTijSik2JRRgg3P19S8MW4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=P6zYRicp; arc=none smtp.client-ip=68.232.143.124
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="hGvSHN+T"
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="P6zYRicp"
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1745376264; x=1776912264;
+  t=1745376263; x=1776912263;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=1WOFkZFChn4tMIum2aOJxBG3IglU3PprRyVo+8t3a+c=;
-  b=hGvSHN+T3z0Jxauu+9QJN0ZSEkSS5roaR1giMTUeeTpuyHUCZnhkhTKG
-   aH9zzmoy9PyZuWoStYBsgEFAlaJJ42RWmqQTX84N8hHwr7S4qABukRoTk
-   4YBV0hnc8d6SVIhsFQz1VWXn2eqNfD/fXcC6LVPtAXWmbdIhLE+EZGUT2
-   kxgEepjJ236KKkShUqJQlmLQ+AZ4uqC41lxkX5aCcl0qxfJ4mFcKKTu2a
-   QHW+5j/5JUb7Og8i5AJkYiITYXuBmVyY0KfcXxHyiDt+PKgjydnZqJLoB
-   u672c0BADRSmM64JcR+W/H59HY1WDzIW4oIEkDARdUgrzEEQGaXaT4DFd
-   w==;
-X-CSE-ConnectionGUID: eWlsYqWuT4elorisOFvY/g==
-X-CSE-MsgGUID: Jo7w/cSyTPWbnTRrn9mcdA==
+  bh=RY4vfOPTNVfbmI3l95hf4OGAn04SDLaaMCUSWBDN7Ac=;
+  b=P6zYRicpZyq7PZ4Cg33DwP9XRk6KpVnyS/32zMD0/fEXmIkqiDb7lYGr
+   LiIZPTQXMTpWMsHX2w6aPVr6StDa2zARPdvu0ug5W2VTtD7ztJ7+YOuPS
+   sH/2uMEvW//FR1pipsMbuPhJn2iz6BJ8EfW7f+vFRBuzDpUS1Dn5hVZkQ
+   TM5rrgXNVTyoWKu1lhU03pfG/44KeSslCWbAD2COBTvRbG98m/G/4Vre5
+   f4fAObNumFe/qZFQZH/sNNyh2GB94yvdXP5W0LAnWmqoiJZDYZ5ydyXUd
+   RC90wSpfsSdYtLqZqWWCU3eP49kYRokp8T8LHx/QpoTJ2DY9CKRhknjzM
+   A==;
+X-CSE-ConnectionGUID: guMIksBOQBWdt5j1cKe55g==
+X-CSE-MsgGUID: BE57ZNquT1yF9aHWl8SiLw==
 X-IronPort-AV: E=Sophos;i="6.15,232,1739808000"; 
-   d="scan'208";a="83011837"
+   d="scan'208";a="83011835"
 Received: from h199-255-45-14.hgst.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 23 Apr 2025 10:44:19 +0800
-IronPort-SDR: 680845ea_+CvrhrK03CqdCmfw838qdBLUIqMmSEUhyEDHTJqi3e+2049
- gG847UVvCQ/43l+oORuw/ai28SdB7z0wc8BtOSQ==
+  by ob1.hgst.iphmx.com with ESMTP; 23 Apr 2025 10:44:16 +0800
+IronPort-SDR: 680845e8_saOXFIorntwOu69LyPEWROZxA/rEy5HklYwAnsV/cUEbnuO
+ fkJuIrMpI+Xeci/dcvSyBN7dSqQ9oh9GPh2GCmA==
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 22 Apr 2025 18:44:10 -0700
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 22 Apr 2025 18:44:08 -0700
 WDCIronportException: Internal
 Received: from unknown (HELO naota-xeon..) ([10.224.173.39])
-  by uls-op-cesaip02.wdc.com with ESMTP; 22 Apr 2025 19:44:18 -0700
+  by uls-op-cesaip02.wdc.com with ESMTP; 22 Apr 2025 19:44:16 -0700
 From: Naohiro Aota <naohiro.aota@wdc.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Naohiro Aota <naohiro.aota@wdc.com>,
 	Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH v4 04/13] btrfs: spin out do_async_reclaim_{data,metadata}_space()
-Date: Wed, 23 Apr 2025 11:43:44 +0900
-Message-ID: <5d6b43e907a8ae133eddda7cd7457ce85474c6d7.1745375070.git.naohiro.aota@wdc.com>
+Subject: [PATCH v4 02/13] btrfs: take struct btrfs_inode in btrfs_free_reserved_data_space_noquota
+Date: Wed, 23 Apr 2025 11:43:42 +0900
+Message-ID: <bdb1b80701e3b7bb2cff9d7f6916f7ffe7b34bbc.1745375070.git.naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.49.0
 In-Reply-To: <cover.1745375070.git.naohiro.aota@wdc.com>
 References: <cover.1745375070.git.naohiro.aota@wdc.com>
@@ -60,104 +60,103 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Factor out the main part of btrfs_async_reclaim_data_space() to
-do_async_reclaim_data_space(), so it can take data space_info parameter it
-is working on. Do the same for metadata. There is no functional change.
+As well as the last patch, take struct btrfs_inode in the function and let
+it distinguish which data space it is working on in a later patch. There is
+no functional change with this commit.
 
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- fs/btrfs/space-info.c | 45 ++++++++++++++++++++++++++++---------------
- 1 file changed, 29 insertions(+), 16 deletions(-)
+ fs/btrfs/delalloc-space.c | 7 ++++---
+ fs/btrfs/delalloc-space.h | 3 +--
+ fs/btrfs/inode.c          | 4 ++--
+ fs/btrfs/relocation.c     | 3 +--
+ 4 files changed, 8 insertions(+), 9 deletions(-)
 
-diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index 7334ffa67a86..d6d33ab754ba 100644
---- a/fs/btrfs/space-info.c
-+++ b/fs/btrfs/space-info.c
-@@ -1088,23 +1088,15 @@ static bool maybe_fail_all_tickets(struct btrfs_fs_info *fs_info,
- 	return (tickets_id != space_info->tickets_id);
+diff --git a/fs/btrfs/delalloc-space.c b/fs/btrfs/delalloc-space.c
+index c7181779b013..a18895255af9 100644
+--- a/fs/btrfs/delalloc-space.c
++++ b/fs/btrfs/delalloc-space.c
+@@ -151,7 +151,7 @@ int btrfs_check_data_free_space(struct btrfs_inode *inode,
+ 	/* Use new btrfs_qgroup_reserve_data to reserve precious data space. */
+ 	ret = btrfs_qgroup_reserve_data(inode, reserved, start, len);
+ 	if (ret < 0) {
+-		btrfs_free_reserved_data_space_noquota(fs_info, len);
++		btrfs_free_reserved_data_space_noquota(inode, len);
+ 		extent_changeset_free(*reserved);
+ 		*reserved = NULL;
+ 	} else {
+@@ -168,9 +168,10 @@ int btrfs_check_data_free_space(struct btrfs_inode *inode,
+  * which we can't sleep and is sure it won't affect qgroup reserved space.
+  * Like clear_bit_hook().
+  */
+-void btrfs_free_reserved_data_space_noquota(struct btrfs_fs_info *fs_info,
++void btrfs_free_reserved_data_space_noquota(struct btrfs_inode *inode,
+ 					    u64 len)
+ {
++	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+ 	struct btrfs_space_info *data_sinfo;
+ 
+ 	ASSERT(IS_ALIGNED(len, fs_info->sectorsize));
+@@ -196,7 +197,7 @@ void btrfs_free_reserved_data_space(struct btrfs_inode *inode,
+ 	      round_down(start, fs_info->sectorsize);
+ 	start = round_down(start, fs_info->sectorsize);
+ 
+-	btrfs_free_reserved_data_space_noquota(fs_info, len);
++	btrfs_free_reserved_data_space_noquota(inode, len);
+ 	btrfs_qgroup_free_data(inode, reserved, start, len, NULL);
  }
  
--/*
-- * This is for normal flushers, we can wait all goddamned day if we want to.  We
-- * will loop and continuously try to flush as long as we are making progress.
-- * We count progress as clearing off tickets each time we have to loop.
-- */
--static void btrfs_async_reclaim_metadata_space(struct work_struct *work)
-+static void do_async_reclaim_metadata_space(struct btrfs_space_info *space_info)
- {
--	struct btrfs_fs_info *fs_info;
--	struct btrfs_space_info *space_info;
-+	struct btrfs_fs_info *fs_info = space_info->fs_info;
- 	u64 to_reclaim;
- 	enum btrfs_flush_state flush_state;
- 	int commit_cycles = 0;
- 	u64 last_tickets_id;
- 	enum btrfs_flush_state final_state;
+diff --git a/fs/btrfs/delalloc-space.h b/fs/btrfs/delalloc-space.h
+index 069005959479..6119c0d3f883 100644
+--- a/fs/btrfs/delalloc-space.h
++++ b/fs/btrfs/delalloc-space.h
+@@ -18,8 +18,7 @@ void btrfs_free_reserved_data_space(struct btrfs_inode *inode,
+ void btrfs_delalloc_release_space(struct btrfs_inode *inode,
+ 				  struct extent_changeset *reserved,
+ 				  u64 start, u64 len, bool qgroup_free);
+-void btrfs_free_reserved_data_space_noquota(struct btrfs_fs_info *fs_info,
+-					    u64 len);
++void btrfs_free_reserved_data_space_noquota(struct btrfs_inode *inode, u64 len);
+ void btrfs_delalloc_release_metadata(struct btrfs_inode *inode, u64 num_bytes,
+ 				     bool qgroup_free);
+ int btrfs_delalloc_reserve_space(struct btrfs_inode *inode,
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index a88aa23cdbb6..e68c0b4a3410 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2589,7 +2589,7 @@ void btrfs_clear_delalloc_extent(struct btrfs_inode *inode,
+ 		    !btrfs_is_free_space_inode(inode) &&
+ 		    !(state->state & EXTENT_NORESERVE) &&
+ 		    (bits & EXTENT_CLEAR_DATA_RESV))
+-			btrfs_free_reserved_data_space_noquota(fs_info, len);
++			btrfs_free_reserved_data_space_noquota(inode, len);
  
--	fs_info = container_of(work, struct btrfs_fs_info, async_reclaim_work);
--	space_info = btrfs_find_space_info(fs_info, BTRFS_BLOCK_GROUP_METADATA);
- 	if (btrfs_is_zoned(fs_info))
- 		final_state = RESET_ZONES;
- 	else
-@@ -1178,6 +1170,21 @@ static void btrfs_async_reclaim_metadata_space(struct work_struct *work)
- 	} while (flush_state <= final_state);
+ 		percpu_counter_add_batch(&fs_info->delalloc_bytes, -len,
+ 					 fs_info->delalloc_batch);
+@@ -9718,7 +9718,7 @@ ssize_t btrfs_do_encoded_write(struct kiocb *iocb, struct iov_iter *from,
+ 	 * bytes_may_use.
+ 	 */
+ 	if (!extent_reserved)
+-		btrfs_free_reserved_data_space_noquota(fs_info, disk_num_bytes);
++		btrfs_free_reserved_data_space_noquota(inode, disk_num_bytes);
+ out_unlock:
+ 	btrfs_unlock_extent(io_tree, start, end, &cached_state);
+ out_folios:
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 97c223aa90b6..e0fbfd56fbba 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -2749,8 +2749,7 @@ static noinline_for_stack int prealloc_file_extent_cluster(struct reloc_control
+ 	btrfs_inode_unlock(inode, 0);
+ 
+ 	if (cur_offset < prealloc_end)
+-		btrfs_free_reserved_data_space_noquota(inode->root->fs_info,
+-					       prealloc_end + 1 - cur_offset);
++		btrfs_free_reserved_data_space_noquota(inode, prealloc_end + 1 - cur_offset);
+ 	return ret;
  }
  
-+/*
-+ * This is for normal flushers, we can wait all goddamned day if we want to.  We
-+ * will loop and continuously try to flush as long as we are making progress.
-+ * We count progress as clearing off tickets each time we have to loop.
-+ */
-+static void btrfs_async_reclaim_metadata_space(struct work_struct *work)
-+{
-+	struct btrfs_fs_info *fs_info;
-+	struct btrfs_space_info *space_info;
-+
-+	fs_info = container_of(work, struct btrfs_fs_info, async_reclaim_work);
-+	space_info = btrfs_find_space_info(fs_info, BTRFS_BLOCK_GROUP_METADATA);
-+	do_async_reclaim_metadata_space(space_info);
-+}
-+
- /*
-  * This handles pre-flushing of metadata space before we get to the point that
-  * we need to start blocking threads on tickets.  The logic here is different
-@@ -1323,16 +1330,12 @@ static const enum btrfs_flush_state data_flush_states[] = {
- 	ALLOC_CHUNK_FORCE,
- };
- 
--static void btrfs_async_reclaim_data_space(struct work_struct *work)
-+static void do_async_reclaim_data_space(struct btrfs_space_info *space_info)
- {
--	struct btrfs_fs_info *fs_info;
--	struct btrfs_space_info *space_info;
-+	struct btrfs_fs_info *fs_info = space_info->fs_info;
- 	u64 last_tickets_id;
- 	enum btrfs_flush_state flush_state = 0;
- 
--	fs_info = container_of(work, struct btrfs_fs_info, async_data_reclaim_work);
--	space_info = fs_info->data_sinfo;
--
- 	spin_lock(&space_info->lock);
- 	if (list_empty(&space_info->tickets)) {
- 		space_info->flush = 0;
-@@ -1400,6 +1403,16 @@ static void btrfs_async_reclaim_data_space(struct work_struct *work)
- 	spin_unlock(&space_info->lock);
- }
- 
-+static void btrfs_async_reclaim_data_space(struct work_struct *work)
-+{
-+	struct btrfs_fs_info *fs_info;
-+	struct btrfs_space_info *space_info;
-+
-+	fs_info = container_of(work, struct btrfs_fs_info, async_data_reclaim_work);
-+	space_info = fs_info->data_sinfo;
-+	do_async_reclaim_data_space(space_info);
-+}
-+
- void btrfs_init_async_reclaim_work(struct btrfs_fs_info *fs_info)
- {
- 	INIT_WORK(&fs_info->async_reclaim_work, btrfs_async_reclaim_metadata_space);
 -- 
 2.49.0
 

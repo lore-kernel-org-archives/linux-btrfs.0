@@ -1,36 +1,36 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C58A927CB33
-	for <linux-btrfs@vger.kernel.org>; Wed, 23 Apr 2025 14:20:09 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D193427E1C3
+	for <linux-btrfs@vger.kernel.org>; Wed, 23 Apr 2025 14:20:11 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1745418010; cv=none; b=f8Yn1Xtrqx3VOKCSfMdDvu07kLtM5V1oahIKuKaxgaTAedmGkgdTks4kuE8IEonvq/LhOZlPEKb85pc9KZuo0pNYsvAD2wXNZ6ml4gkfnfIzzp6DtPiW4QN+ikUP+ziJSQ2U7pXRehuZ1A9k1RQow1nPX+rcRoIoNakh3kMNcI0=
+	t=1745418011; cv=none; b=VNjb7z+DT2Xrruy8Kk3CNdo8Cx5CztGLm23HcuOGzuuQlYFA8aZIS4uIZ8inJ8F14cYj9jx1bXoDFSPWNh5bxODJtha/g1Ns1VyL5XAcTy2JlbTWJlXvxYZ+YAusolM/b8sj4CjgBHX51oa81AghyIih5eQN1Ix2Lg80j7dBuy4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1745418010; c=relaxed/simple;
-	bh=/8Rj5n2o39kkjsvLcLtjgVd6WclkjED4bY5NAYxn/Ps=;
+	s=arc-20240116; t=1745418011; c=relaxed/simple;
+	bh=Jux4z7MAXYj8Sn6aXlZJV8kXlnHmQKed7943NU+dl3U=;
 	h=From:To:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version; b=Dnfj1nqXBaetfCmjN+uoMxXdGHbq7IVIluwZ0grKhuOLGpf3q2pKykoq88+34OGHh90rrM0lINP0YmxzUiBHNIhLELOFyTkvYsBzbvXNTvB+sgv1x/xsKAc1uPEvud2RcOOTtUQaFp3Y7NaVGmCm1f9O30bNYqlpemQireWxf5s=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=n1f0Zv5E; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version; b=gmICcwVF3kU4jKRd93N8qgjZ6vVCHuucG7ZNmZgKwXhx0Ts3U8caJYK4RCfXLq5RXfbAzvrRpWPjw28TmGH/G+yj/JOnevG/suIGvak9mAWqy3BWrc5jrw5RjVrdWJygXRg8WePSwlX0dyqPaZS3n+TbI+KR0Zqmb3uRynkSPjw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=RicmNx3e; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="n1f0Zv5E"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id BA40FC4CEE8
-	for <linux-btrfs@vger.kernel.org>; Wed, 23 Apr 2025 14:20:08 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="RicmNx3e"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id C311DC4CEEB
+	for <linux-btrfs@vger.kernel.org>; Wed, 23 Apr 2025 14:20:10 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1745418009;
-	bh=/8Rj5n2o39kkjsvLcLtjgVd6WclkjED4bY5NAYxn/Ps=;
+	s=k20201202; t=1745418011;
+	bh=Jux4z7MAXYj8Sn6aXlZJV8kXlnHmQKed7943NU+dl3U=;
 	h=From:To:Subject:Date:In-Reply-To:References:From;
-	b=n1f0Zv5EQ3epjqvM3kQG16THvlyM/E/5+UXEeqaR4Il2WUQNzuJWXodudcbWcm6cx
-	 /beImHAgJhTNZSfWfbUVlHUb7UcVC4TB8vm0oHBl5PtpV7MKuO03zre41e0aoaEfuQ
-	 UcgRriSV8QmUwctGJYjbnQLqT/mGi0devqYHMGNay8GOkZxgHq8MBnDID13FsfgHAx
-	 8xG4rXIP49NNcQdvUAWW1SNgKqPbMqQ5Rfx7EJb7j0i8V4444RXl/2jp+YA2hA/Li9
-	 M2mIZJHrDhM4gP5n8Tw0yH9y+gjQUQeuo43SpD2/dBjK8VY9422DA1u67XYk7SwapK
-	 JzW1K+9EF+LrQ==
+	b=RicmNx3eYvQZcr8XCj6jedYuVgdLkAs7P2NNhGKKJFGuADX/yWPww4mEfJpfpjTZ9
+	 R2cFgoch1lyLZJhQdz60skVkiZ5PNHUI6Kch8ERVF3doQar4d1wHKlyXghzG/5ZxOi
+	 rj8kKxvGIznXshU4NI/X8ibxzE92vsBbTi4g2EUoDg7m4zkxVeNFkGpHqMTcbtnlL9
+	 ErVKoWbfLytiq9GuYVdKDFurta3Q2n9mAlNupA1eJlLQfkU5456uGV8rU33sVgl6xG
+	 pawfvyl8wQgHWHW/ULtNLNA4jDmEUv0/eiovdX9AYuYPN9iaiV6xJgrPHfKPGkdy6h
+	 b4gf3NKSddymw==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 03/22] btrfs: add missing error return to btrfs_clear_extent_bit_changeset()
-Date: Wed, 23 Apr 2025 15:19:43 +0100
-Message-Id: <936623cfcdec988a0244ac39de3cf3ac14572c13.1745401627.git.fdmanana@suse.com>
+Subject: [PATCH 05/22] btrfs: avoid extra tree search at btrfs_clear_extent_bit_changeset()
+Date: Wed, 23 Apr 2025 15:19:45 +0100
+Message-Id: <40288b424af8cb2a0d779e56e02eab57e1a1cf9a.1745401628.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.34.1
 In-Reply-To: <cover.1745401627.git.fdmanana@suse.com>
 References: <cover.1745401627.git.fdmanana@suse.com>
@@ -44,70 +44,51 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-We have a couple error branches where we have an error stored in the 'err'
-variable and then jump to the 'out' label, however we don't return that
-error, we just return 0. Normally this is not a problem since those error
-branches call extent_io_tree_panic() which triggers a BUG() call, however
-it's possible to have rather exotic kernel config with CONFIG_BUG disabled
-in which case the BUG() call does nothing and we fallthrough. So make sure
-to return the error, not just to fix that exotic case but also to make the
-code less confusing. While at it also rename the 'err' variable to 'ret'
-since this is the style we prefer and use more widely.
+When we find an extent state that starts before our range's start we
+split it and jump into the 'search_again' label with our start offset
+remaining the same, making us then go to the 'again' label and search
+again for an extent state that contains the 'start' offset, and this
+time it finds the same extent state but with its start offset set to
+our range's start offset (due to the split). This is because we have
+consumed the preallocated extent state record and we may need to split
+again, and by jumping to 'again' we release the spinlock, allocate a new
+prealloc state and restart the search.
+
+However we may not need to restart and allocate a new extent state in
+case we don't find extent states that cross our end offset, therefore
+no need for further extent state splits, or we may be able to do an
+atomic allocation (which is quick even if it fails). In these cases
+it's a waste to restart the search.
+
+So change the behaviour to do the restart only if we need to reschedule,
+otherwise fall through - if we need to allocate an extent state for split
+operations, we will try an atomic allocation and if that fails we will do
+the restart as before.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/extent-io-tree.c | 16 ++++++++--------
- 1 file changed, 8 insertions(+), 8 deletions(-)
+ fs/btrfs/extent-io-tree.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/extent-io-tree.c b/fs/btrfs/extent-io-tree.c
-index b3811bbbd53b..35c8824add34 100644
+index b56046c55097..590682490763 100644
 --- a/fs/btrfs/extent-io-tree.c
 +++ b/fs/btrfs/extent-io-tree.c
-@@ -604,7 +604,7 @@ int btrfs_clear_extent_bit_changeset(struct extent_io_tree *tree, u64 start, u64
- 	struct extent_state *cached;
- 	struct extent_state *prealloc = NULL;
- 	u64 last_end;
--	int err;
-+	int ret = 0;
- 	int clear = 0;
- 	int wake;
- 	int delete = (bits & EXTENT_CLEAR_ALL_BITS);
-@@ -690,10 +690,10 @@ int btrfs_clear_extent_bit_changeset(struct extent_io_tree *tree, u64 start, u64
- 		prealloc = alloc_extent_state_atomic(prealloc);
- 		if (!prealloc)
- 			goto search_again;
--		err = split_state(tree, state, prealloc, start);
-+		ret = split_state(tree, state, prealloc, start);
- 		prealloc = NULL;
--		if (err) {
--			extent_io_tree_panic(tree, state, "split", err);
-+		if (ret) {
-+			extent_io_tree_panic(tree, state, "split", ret);
- 			goto out;
+@@ -699,7 +699,13 @@ int btrfs_clear_extent_bit_changeset(struct extent_io_tree *tree, u64 start, u64
+ 			state = clear_state_bit(tree, state, bits, wake, changeset);
+ 			goto next;
  		}
- 		if (state->end <= end) {
-@@ -711,9 +711,9 @@ int btrfs_clear_extent_bit_changeset(struct extent_io_tree *tree, u64 start, u64
- 		prealloc = alloc_extent_state_atomic(prealloc);
- 		if (!prealloc)
- 			goto search_again;
--		err = split_state(tree, state, prealloc, end + 1);
--		if (err) {
--			extent_io_tree_panic(tree, state, "split", err);
-+		ret = split_state(tree, state, prealloc, end + 1);
-+		if (ret) {
-+			extent_io_tree_panic(tree, state, "split", ret);
- 			prealloc = NULL;
- 			goto out;
- 		}
-@@ -748,7 +748,7 @@ int btrfs_clear_extent_bit_changeset(struct extent_io_tree *tree, u64 start, u64
- 	if (prealloc)
- 		btrfs_free_extent_state(prealloc);
- 
--	return 0;
-+	return ret;
- 
- }
- 
+-		goto search_again;
++		if (need_resched())
++			goto search_again;
++		/*
++		 * Fallthrough and try atomic extent state allocation if needed.
++		 * If it fails we'll jump to 'search_again' retry the allocation
++		 * in non-atomic mode and research.
++		 */
+ 	}
+ 	/*
+ 	 * | ---- desired range ---- |
 -- 
 2.47.2
 

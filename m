@@ -1,128 +1,67 @@
-Received: from mail-pf1-f182.google.com (mail-pf1-f182.google.com [209.85.210.182])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from verein.lst.de (verein.lst.de [213.95.11.211])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 98AFD2D1F63;
-	Tue, 29 Apr 2025 11:50:27 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.182
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5B7A029DB74;
+	Tue, 29 Apr 2025 12:28:19 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=213.95.11.211
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1745927429; cv=none; b=ZUDkZegK6ZVjg6NbWWEhcSySXEzu8p6na42SCpvhsH6fpayamG3zVVsbTIq+fDZG6euxrlWcdmqmA09LdUb4hB/dmVfk1qsyeBFVGelGQwuJDsittjfH+VKb49B/hcnamvAKr/FBbxNDdfAZ+9aXvSO/18wNBK0elEJjlmYtb4I=
+	t=1745929701; cv=none; b=sBUbxlxwzyzfaw3glFYLAJBYbd5x0GSAyeYejU4btChn1QfL7TZO2R/j3ncf7I4C2gKdbjKisgj2/8l4ERiczMWKzCBnuzryiLHDSaDnHXtKGcTpfNC2fQjpEn1EaqXVQdg5524x2X6LQGtc5e7NjyIhSBF3lKqwBL57lMioGE4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1745927429; c=relaxed/simple;
-	bh=bjClv6BryTyDpGkWdfsiI+95q6D8k7MY583X7jPAQJk=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=ppG3fu1fv+iUKzGIoRCRXi8wZHNXkr2+ai11gB9M/ZJLV68gCY1u+47CQEDJIJ10vwdvNhW64GgCJif6g/FAcy7ZBdMURQ9LhVl3eaR+CuI3buubCxSnj4LamDIeq4QsyJ4Z5cg/XQZoJcrpgyscI2UB07UengiWdEnVjCX2RZI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=S7ok08LE; arc=none smtp.client-ip=209.85.210.182
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="S7ok08LE"
-Received: by mail-pf1-f182.google.com with SMTP id d2e1a72fcca58-736a72220edso5843642b3a.3;
-        Tue, 29 Apr 2025 04:50:27 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1745927427; x=1746532227; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:reply-to:references
-         :in-reply-to:message-id:date:subject:cc:to:from:from:to:cc:subject
-         :date:message-id:reply-to;
-        bh=tq3nEj4DUSPSU3dXBHWbYOiByd1+bRHGbfykzSesdrc=;
-        b=S7ok08LE4iJdi1CuDPQfT/F30XCLMLEO6NkEyeHaE0XC+RISQE9lZ4T3vOX0TPwCxF
-         +sNOXeGNAzRLjEVhP3WMj0qvXFSStyl1uOXExpXqngcekrzV2FMLPRzwd+RPafVDo862
-         g0AvBWIN8kGnbg6yAZ0aneD+hqthXoxb/2qPuUBXCK9TGruTs9AFPh+zKQbv1l4gUG7M
-         O1eMlquhpGwpAM2zFujEBiIRGVynQ5iCQCKx8PMQnk5iRI3DUv6CzgLNIKsTkYgL0i8C
-         Qh6UFznzr7qNRt4Kgvd8E2RJBzw4rF5gPUWNyhoJCSZ4O+Ib22OYcaIJQuv2OS732YR2
-         zB1A==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1745927427; x=1746532227;
-        h=content-transfer-encoding:mime-version:reply-to:references
-         :in-reply-to:message-id:date:subject:cc:to:from:x-gm-message-state
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=tq3nEj4DUSPSU3dXBHWbYOiByd1+bRHGbfykzSesdrc=;
-        b=EGVaYYUNAq3dCAkvPwao3F8GGNX0zkFSUgRgKT/QJvFakUyMc2XgR789cR+jQySY7S
-         TaALhX2zMDPuN7CyCRmY5IWandptxJZRLzvl7SBSwICXhqFE4zd/1WIKfR5oftP53erw
-         K3PdYMk+T5EFhXg1QO8QcNlzLtPb/0Sbq1/Z6Qohp1CG/Lw1Au/3Nm332+vdmJQ5OopW
-         6AVoqZYaUnWyrAXnWDqOXUEQclDgb8T/SeAMU9oKQQJbBJ/RYBfzXebS8jY59V9Z96ZM
-         z2d9lYCGNagWllIGJA0+K9U0J7TiNZd/yveJpCZijgkV3IeO6ClMWJJ7GZK3F1NGIGwp
-         eqZQ==
-X-Forwarded-Encrypted: i=1; AJvYcCXFVEMz0FYG6mIVLuIi7+rRTvonVe45wGC3v0E7TBtANQSRk7XBX+LhdDOmAxxKHZ/4YzW1/4gJ6Dc4PFq8@vger.kernel.org, AJvYcCXdRUtgti/K8BCWG91jwpUXk0nzYDernf66JqkMWMt4PYiroHt21Xgn+ccIkyZcA8NtqW/EPH4kej3Pog==@vger.kernel.org
-X-Gm-Message-State: AOJu0YyD04p8Dfi7cqKWg5LCvCLoZvw3WcTL8Aw0EMc+Jc1ZCgaYTF9E
-	23lmgwb0T2PvfkfpQXB1xdjAJ0TqNivRcr5Mfmaf6k0P+OJEphSPKeyPtdr3
-X-Gm-Gg: ASbGnctx2RjuNkf/v6VBsVPNmXb0oWljqjTkYBllMqvcqt8EOfB8X0iH/8eP8oqwpZ/
-	d7v67LnARWuMs56lppsOSiYrKyseeuO1RaGygqcmkW5zoz9gBkSiOxCIB0v6HOjks5275p1rtal
-	p+XPRefkbLv8fBtHxVElzVL0rKEzRDt8v59COOmQOEozq50Wle9RRU8dFZcZWzknr1Q2Le/RdFk
-	EpaJxClsja48sm6NNzH6ZJsHe46/VhI2ZBfwhubj2YjKYucz32l2pW0BBpZ4kHFubDOFaBG51Wx
-	eU8i1XcNZ/2KFFSHOG9Ps4DcWo0pmm6wc/Ur5kkNFL6wzh0QVaDijhKK2K3OEX9mtwLgsO4=
-X-Google-Smtp-Source: AGHT+IFceGviU6cyFKzyG4aWjdQDKx3Cfc2HEqFWBXzPaKs+4WEXEA1l8P+G5QoBnkrWzjUrg/mxQA==
-X-Received: by 2002:a05:6a21:3a44:b0:1f5:6e71:e55 with SMTP id adf61e73a8af0-2095907d1bamr3893991637.6.1745927426869;
-        Tue, 29 Apr 2025 04:50:26 -0700 (PDT)
-Received: from KASONG-MC4.tencent.com ([43.132.141.24])
-        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-73e25aca62csm9661644b3a.167.2025.04.29.04.50.22
-        (version=TLS1_3 cipher=TLS_CHACHA20_POLY1305_SHA256 bits=256/256);
-        Tue, 29 Apr 2025 04:50:26 -0700 (PDT)
-From: Kairui Song <ryncsn@gmail.com>
-To: linux-mm@kvack.org
-Cc: Andrew Morton <akpm@linux-foundation.org>,
-	Matthew Wilcox <willy@infradead.org>,
-	Hugh Dickins <hughd@google.com>,
-	Chris Li <chrisl@kernel.org>,
-	David Hildenbrand <david@redhat.com>,
-	Yosry Ahmed <yosryahmed@google.com>,
-	"Huang, Ying" <ying.huang@linux.alibaba.com>,
-	Nhat Pham <nphamcs@gmail.com>,
-	Johannes Weiner <hannes@cmpxchg.org>,
-	linux-kernel@vger.kernel.org,
-	Kairui Song <kasong@tencent.com>,
-	Chris Mason <clm@fb.com>,
-	Josef Bacik <josef@toxicpanda.com>,
-	David Sterba <dsterba@suse.com>,
-	linux-btrfs@vger.kernel.org,
-	Qu Wenruo <wqu@suse.com>
-Subject: [PATCH v2 2/6] btrfs: drop usage of folio_index
-Date: Tue, 29 Apr 2025 19:49:45 +0800
-Message-ID: <20250429114949.41124-3-ryncsn@gmail.com>
-X-Mailer: git-send-email 2.49.0
-In-Reply-To: <20250429114949.41124-1-ryncsn@gmail.com>
-References: <20250429114949.41124-1-ryncsn@gmail.com>
-Reply-To: Kairui Song <kasong@tencent.com>
+	s=arc-20240116; t=1745929701; c=relaxed/simple;
+	bh=1CAfX43axeyXhHAA2pWyW1DzJI+aoNNB9mI8PIkd6lY=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=B7OiJLg52kne6QthL9zMWcwRIP218WZNwJH1WSEc2gXMLRLyhpn0YxKYPQLKgqmP/jrvMEwsjAu01pjZBpI4U2T4/IvgfmUyXVSRcpmzf4ezVq+MsTKVuh4sVEUL25rVN7JxzDUb8C/uR2Fgn6UlA7PLMIqwUtdM4W2KUP72bzA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lst.de; spf=pass smtp.mailfrom=lst.de; arc=none smtp.client-ip=213.95.11.211
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lst.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=lst.de
+Received: by verein.lst.de (Postfix, from userid 2407)
+	id D4A3E68AA6; Tue, 29 Apr 2025 14:28:13 +0200 (CEST)
+Date: Tue, 29 Apr 2025 14:28:13 +0200
+From: hch <hch@lst.de>
+To: Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
+Cc: Hannes Reinecke <hare@suse.de>, hch <hch@lst.de>,
+	Jens Axboe <axboe@kernel.dk>,
+	"linux-block@vger.kernel.org" <linux-block@vger.kernel.org>,
+	"Md. Haris Iqbal" <haris.iqbal@ionos.com>,
+	Jack Wang <jinpu.wang@ionos.com>, Coly Li <colyli@kernel.org>,
+	Kent Overstreet <kent.overstreet@linux.dev>,
+	Mike Snitzer <snitzer@kernel.org>,
+	Mikulas Patocka <mpatocka@redhat.com>, Chris Mason <clm@fb.com>,
+	Josef Bacik <josef@toxicpanda.com>, David Sterba <dsterba@suse.com>,
+	Andreas Gruenbacher <agruenba@redhat.com>,
+	Carlos Maiolino <cem@kernel.org>,
+	Damien Le Moal <dlemoal@kernel.org>,
+	Naohiro Aota <Naohiro.Aota@wdc.com>,
+	Johannes Thumshirn <jth@kernel.org>,
+	"Rafael J. Wysocki" <rafael@kernel.org>,
+	Pavel Machek <pavel@kernel.org>,
+	"linux-bcache@vger.kernel.org" <linux-bcache@vger.kernel.org>,
+	"dm-devel@lists.linux.dev" <dm-devel@lists.linux.dev>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+	"gfs2@lists.linux.dev" <gfs2@lists.linux.dev>,
+	"linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
+	"linux-xfs@vger.kernel.org" <linux-xfs@vger.kernel.org>,
+	"linux-pm@vger.kernel.org" <linux-pm@vger.kernel.org>
+Subject: Re: [PATCH 04/17] block: remove the q argument from blk_rq_map_kern
+Message-ID: <20250429122813.GA12807@lst.de>
+References: <20250422142628.1553523-1-hch@lst.de> <20250422142628.1553523-5-hch@lst.de> <76ba8f63-b5d3-4e43-beb4-97dae085c5f2@suse.de> <df1fa243-a824-4607-8393-90dedecbe772@wdc.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <df1fa243-a824-4607-8393-90dedecbe772@wdc.com>
+User-Agent: Mutt/1.5.17 (2007-11-01)
 
-From: Kairui Song <kasong@tencent.com>
+On Tue, Apr 29, 2025 at 11:24:55AM +0000, Johannes Thumshirn wrote:
+> > Good cleanup. I always wondered why we need to have it.
+> 
+> Because we used to call 'bio_add_pc_page()' in e.g. bio_map_kern()' 
+> which took a request_queue. But that got changed in 6aeb4f8364806 
+> ("block: remove bio_add_pc_page") to a simple 'bio_add_page()'.
 
-folio_index is only needed for mixed usage of page cache and swap
-cache, for pure page cache usage, the caller can just use
-folio->index instead.
-
-It can't be a swap cache folio here.  Swap mapping may only call into fs
-through `swap_rw` but btrfs does not use that method for swap.
-
-Signed-off-by: Kairui Song <kasong@tencent.com>
-Cc: Chris Mason <clm@fb.com> (maintainer:BTRFS FILE SYSTEM)
-Cc: Josef Bacik <josef@toxicpanda.com> (maintainer:BTRFS FILE SYSTEM)
-Cc: David Sterba <dsterba@suse.com> (maintainer:BTRFS FILE SYSTEM)
-Cc: linux-btrfs@vger.kernel.org (open list:BTRFS FILE SYSTEM)
-Reviewed-by: Matthew Wilcox (Oracle) <willy@infradead.org>
-Reviewed-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/extent_io.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 197f5e51c474..e08b50504d13 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3509,7 +3509,7 @@ static void btree_clear_folio_dirty_tag(struct folio *folio)
- 	xa_lock_irq(&folio->mapping->i_pages);
- 	if (!folio_test_dirty(folio))
- 		__xa_clear_mark(&folio->mapping->i_pages,
--				folio_index(folio), PAGECACHE_TAG_DIRTY);
-+				folio->index, PAGECACHE_TAG_DIRTY);
- 	xa_unlock_irq(&folio->mapping->i_pages);
- }
- 
--- 
-2.49.0
-
+Even back then you could have easily derived it from the struct
+request, through.

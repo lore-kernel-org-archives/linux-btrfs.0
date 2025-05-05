@@ -1,31 +1,31 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6942E3984DF;
-	Mon,  5 May 2025 23:07:34 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3A39E38CEA2;
+	Mon,  5 May 2025 23:14:16 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1746486456; cv=none; b=sRjfhkGs3Ne6PowUZvPkpQhZ6JqLZ8C21EIFP7d9UmZq2dcLnm5KZPtEkBrmLXWA0G1+sSp2EXBUW7pwIT+ZPT0BCulawioHNeyx03vhViLC1RY3uB6TsUHT+UE0LsSK+5SB0nd5rEfJrlUMe3HZlmaM/AY9N0Iy15aW1/LQefU=
+	t=1746486856; cv=none; b=eqpoYu1WXw3r0iEVReFH6s6HulECtlUhi9TUCv/Bzkbd+3utdAmlhvZPeGw1X2+qUIecbanHbea7iu2bu2frR6Vlg/0ZiF5xRPhyN5cEeYb9kQttDCbifA/0h8qvj/6kep4uTx9fZCjcOmEmS2+U6r5hsY59QtZ7zS8DwIXX57c=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1746486456; c=relaxed/simple;
-	bh=idPMsXuAaURvKKk6NK1CLrejhMsIsGmNPtLU7OMiKrg=;
+	s=arc-20240116; t=1746486856; c=relaxed/simple;
+	bh=iDwZBmRUijuu02xhBE00GufwrHvCF4PQRV+QDblSfrU=;
 	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version; b=OoRvvcQtwc58PS1Anf9n3USU9eenzl2XrCs8JIAxJ6CJnjE/R89m12902uDCuCneKavzBrcB7rFXunrc4NGSkzECzPhejQni/8Wwc+IwfDNMIeV6uw8CgdwmK1lDqsEftflrFT6REdjdcWG33pvkfiecXd9S6vj24ELPyXXwFEs=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=FL+oWcAa; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version; b=CL58ZJIjmL/EoUzWdciNiMj3wkXduN424T9/ctRrlPYK1vi6EZc1U7qFeghFs4kX1Gq2yKOcXKtBLa4UibrU0XBDbszXeDb8J4n16QxnLhjWWcgwHkHCJNmCTKwbqAdaZJ6U/JlkowjHp6hcnQ/2XeuxtdTV1dNGh7UZDqiw3KU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=FObGaSly; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="FL+oWcAa"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id F2D52C4CEEF;
-	Mon,  5 May 2025 23:07:33 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="FObGaSly"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2B4F9C4CEEF;
+	Mon,  5 May 2025 23:14:15 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1746486454;
-	bh=idPMsXuAaURvKKk6NK1CLrejhMsIsGmNPtLU7OMiKrg=;
+	s=k20201202; t=1746486856;
+	bh=iDwZBmRUijuu02xhBE00GufwrHvCF4PQRV+QDblSfrU=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-	b=FL+oWcAaASCk5j/JHn2NU6LrwXv5UO29A5Vkr7gODgyzWr7f7qd0teBaZ2PqODbwl
-	 iJijLKkBtOuIVd98SxtakIDZbUdVXvSnza8cf21WqXIIVM0CPL5fxQxAuxxvLaJVUs
-	 nKfpJOwtc/t0jSN8P2AHZqVdxcn/DiO03EBC7kwGBNAAuWvvwwy8S8UDRUMCgWoBwA
-	 It55SFG1qZXQr/cGJE1yEFc06vdmNwi7OKppuzaproDHhwgsS/8P9paBRQMSQ2EPjo
-	 QGJEKAriGjXQf/dWmCDTjhu77bXIfoAP1i40dZaxHQsF0062ONg+Qb2J5Hv1Lys+WX
-	 gVQfXA/AhfHpg==
+	b=FObGaSlyfSwmld9ppuboJIVrE5DRLZ9o495RZIKxXTn9bTmZOlBTYS5w5hVhSrl3m
+	 oulopy/OnwhocPo3boD5kfXI3O+Ht7d1fSzE4WZWHbhTzwY8VpSY8sxIiU3ZM/vk5u
+	 Q97RZhSsSOHMML7uu6peyVV3WIJmHTa1FcY8KTRgC+Z7c0foySW4e4fv+T19NyNGiW
+	 DDROEM4QFKxyc+Aoh/z68AkNGT68utM9ADsQ/LkZ+oHUej9qhp9S/u8YJGpQfWXQQa
+	 +vstnj0ZZxP5p/Ui/C7WtuAZo1O33IOqC4cA7empvFLhbP3vLC7g7XZt09lQvtN8hD
+	 B4pFZpvjhv9hA==
 From: Sasha Levin <sashal@kernel.org>
 To: linux-kernel@vger.kernel.org,
 	stable@vger.kernel.org
@@ -35,12 +35,12 @@ Cc: Filipe Manana <fdmanana@suse.com>,
 	clm@fb.com,
 	josef@toxicpanda.com,
 	linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 6.1 039/212] btrfs: send: return -ENAMETOOLONG when attempting a path that is too long
-Date: Mon,  5 May 2025 19:03:31 -0400
-Message-Id: <20250505230624.2692522-39-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 5.15 027/153] btrfs: send: return -ENAMETOOLONG when attempting a path that is too long
+Date: Mon,  5 May 2025 19:11:14 -0400
+Message-Id: <20250505231320.2695319-27-sashal@kernel.org>
 X-Mailer: git-send-email 2.39.5
-In-Reply-To: <20250505230624.2692522-1-sashal@kernel.org>
-References: <20250505230624.2692522-1-sashal@kernel.org>
+In-Reply-To: <20250505231320.2695319-1-sashal@kernel.org>
+References: <20250505231320.2695319-1-sashal@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -49,7 +49,7 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
-X-stable-base: Linux 6.1.136
+X-stable-base: Linux 5.15.181
 Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
@@ -73,10 +73,10 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  1 file changed, 2 insertions(+), 4 deletions(-)
 
 diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index a2b95ccb4cf5c..0735decec99b1 100644
+index 577980b33aeb7..a46076788bd7e 100644
 --- a/fs/btrfs/send.c
 +++ b/fs/btrfs/send.c
-@@ -431,10 +431,8 @@ static int fs_path_ensure_buf(struct fs_path *p, int len)
+@@ -400,10 +400,8 @@ static int fs_path_ensure_buf(struct fs_path *p, int len)
  	if (p->buf_len >= len)
  		return 0;
  

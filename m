@@ -1,43 +1,44 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 03ED02989B1;
-	Mon,  5 May 2025 22:42:00 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6985B2989B9;
+	Mon,  5 May 2025 22:42:05 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1746484920; cv=none; b=ZC7ywJrK9+nH6eRF56ocNOzsqW811bL2J8kIYdK4xMjZ/WG6dUl8aXkcidDC5B84yyMNitnke1d7l6/R09UOkd0XEpsLcJxIbtVhJhcPpuZLxFv+kEqXd5y1JWtmh3Oynij8gihSS36gkKoOhSXg939SDqCtq2FACdi6y88vaQg=
+	t=1746484925; cv=none; b=hgxtxONA8qHQ2X8yewfv9RTBKSKi1V3jLmRjVPd+1iFbTlXyiPecMmYm0uVhJ4ArmQHpS+mq/NnRamV9d9H97GWWXLWgmj2CD63BZDkWAiBwhZC4WpAKUF4gFLm0REKV0fN9L9fmm3/1JJb9ZRNrFFWel0ZCmT0S7qcihvIX2bc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1746484920; c=relaxed/simple;
-	bh=M0oI3I3DwFGvDJA4AGHL1f/DEmF7TFgyH2YpOnvFnjk=;
+	s=arc-20240116; t=1746484925; c=relaxed/simple;
+	bh=vwyJJuUHQHIUu8CW2ekQWNLRuX3fK4CBnipe7jy1lc4=;
 	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version; b=iyfOD2qtBEcI9C7AqdlamuOTeHSnro27o9MpsZ/GDDGdfjFUfRh097+GwBFg8DHh49TK0l6P4AGbitUMl0HYpz/rc0AuOT57nqnGIPkOLYOwBsezAxQJ4y3EN836kQNMcz24NsVx221qpj7uMLHLObOcu4A4OjNV/wrGNSpdwLY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=ZRnjqzyy; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version; b=C1VRPloR/Yslx2/lB5e70MW3HU4KER4/bv+lkTLaeDUF8/b+jKsxc1xy9B2fJSNf/yGzXn4AIyU8p+rglJA++lmUI71K2li+MttH5suatiuCQMixvnfwCd7SpxomoWsYCBBZqSLydW4J3xx06bZnL17MhoQIS1w/sWQ8yb4aMLY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=YoDW5HGJ; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="ZRnjqzyy"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 000FDC4CEEE;
-	Mon,  5 May 2025 22:41:58 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="YoDW5HGJ"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 4D0C5C4CEEE;
+	Mon,  5 May 2025 22:42:04 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1746484919;
-	bh=M0oI3I3DwFGvDJA4AGHL1f/DEmF7TFgyH2YpOnvFnjk=;
+	s=k20201202; t=1746484925;
+	bh=vwyJJuUHQHIUu8CW2ekQWNLRuX3fK4CBnipe7jy1lc4=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-	b=ZRnjqzyy8x2wXOM1U97SH1ZDTUjbza5fPGuSikmoipOKTcjYbuKGZCJpnTiTEjwT1
-	 vI4Lhzk993IyNVTTt3fMD71O5A4QyjHaiy6xtGmBdjAXGAEBxoqOrnXiFMPrhZZhOe
-	 Hz1eX/b0hJqeCFvsFGWoaqUYJy7owPZnKwguTAw/v58obIvIN31fsdbBdqJ8xWvW6A
-	 O5W1JR2GpzASUDyHSuqMaR9C9bEvQeqRcK1zT2OjMg7fZav35kYr8GePoGiSFPBJai
-	 g5sJPW1YECqxorT7WZ9EGNPsnzeKbStFIOp87o++UOuZ5ZPotNSJ+28mUPi9SMqSDw
-	 aIKK0tp5gEq9Q==
+	b=YoDW5HGJHhWz9EXSbayOxWdFmnCe5ShXFaQBpq2cnvUpD9YMZYsxUCmuF7aFuyawy
+	 ZbfIHjWwGwTRFvJdulceGOKKXszoGzbSZfrVxjI3B9H0jKRH085ycm9ickbgW/4M+H
+	 hov4S2BpTNsT80RGpC1pdpLi1STvlPre23r3FU8lsDLxDBFJGJI8leQUWLJX+JE4XX
+	 doJTxWY7dknsK3vQCfbqS6+7qjY5i8emo2lIqFdzeIRIsn/IEHGsYm/WBMEwHUvxfz
+	 BeoRcLmnLAuPniRUei8c461TdsubrzLzB1uGi6suov0EI77WscwernPusaBWRiqj43
+	 sHFUl8gFqlSsQ==
 From: Sasha Levin <sashal@kernel.org>
 To: linux-kernel@vger.kernel.org,
 	stable@vger.kernel.org
-Cc: Qu Wenruo <wqu@suse.com>,
+Cc: Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+	Naohiro Aota <naohiro.aota@wdc.com>,
 	David Sterba <dsterba@suse.com>,
 	Sasha Levin <sashal@kernel.org>,
 	clm@fb.com,
 	josef@toxicpanda.com,
 	linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 6.12 076/486] btrfs: properly limit inline data extent according to block size
-Date: Mon,  5 May 2025 18:32:32 -0400
-Message-Id: <20250505223922.2682012-76-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 6.12 080/486] btrfs: zoned: exit btrfs_can_activate_zone if BTRFS_FS_NEED_ZONE_FINISH is set
+Date: Mon,  5 May 2025 18:32:36 -0400
+Message-Id: <20250505223922.2682012-80-sashal@kernel.org>
 X-Mailer: git-send-email 2.39.5
 In-Reply-To: <20250505223922.2682012-1-sashal@kernel.org>
 References: <20250505223922.2682012-1-sashal@kernel.org>
@@ -52,70 +53,37 @@ X-Patchwork-Hint: Ignore
 X-stable-base: Linux 6.12.26
 Content-Transfer-Encoding: 8bit
 
-From: Qu Wenruo <wqu@suse.com>
+From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 
-[ Upstream commit 23019d3e6617a8ec99a8d2f5947aa3dd8a74a1b8 ]
+[ Upstream commit 26b38e28162ef4ceb1e0482299820fbbd7dbcd92 ]
 
-Btrfs utilizes inline data extent for the following cases:
+If BTRFS_FS_NEED_ZONE_FINISH is already set for the whole filesystem, exit
+early in btrfs_can_activate_zone(). There's no need to check if
+BTRFS_FS_NEED_ZONE_FINISH needs to be set if it is already set.
 
-- Regular small files
-- Symlinks
-
-And "btrfs check" detects any file extents that are too large as an
-error.
-
-It's not a problem for 4K block size, but for the incoming smaller
-block sizes (2K), it can cause problems due to bad limits:
-
-- Non-compressed inline data extents
-  We do not allow a non-compressed inline data extent to be as large as
-  block size.
-
-- Symlinks
-  Currently the only real limit on symlinks are 4K, which can be larger
-  than 2K block size.
-
-These will result btrfs-check to report too large file extents.
-
-Fix it by adding proper size checks for the above cases.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Reviewed-by: Naohiro Aota <naohiro.aota@wdc.com>
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 Reviewed-by: David Sterba <dsterba@suse.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/btrfs/inode.c | 11 ++++++++++-
- 1 file changed, 10 insertions(+), 1 deletion(-)
+ fs/btrfs/zoned.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 5b842276573e8..3dee0565ad21a 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -623,6 +623,10 @@ static bool can_cow_file_range_inline(struct btrfs_inode *inode,
- 	if (size > fs_info->sectorsize)
- 		return false;
+diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
+index 2603c9d60fd21..d1167aeb07354 100644
+--- a/fs/btrfs/zoned.c
++++ b/fs/btrfs/zoned.c
+@@ -2326,6 +2326,9 @@ bool btrfs_can_activate_zone(struct btrfs_fs_devices *fs_devices, u64 flags)
+ 	if (!btrfs_is_zoned(fs_info))
+ 		return true;
  
-+	/* We do not allow a non-compressed extent to be as large as block size. */
-+	if (data_len >= fs_info->sectorsize)
++	if (test_bit(BTRFS_FS_NEED_ZONE_FINISH, &fs_info->flags))
 +		return false;
 +
- 	/* We cannot exceed the maximum inline data size. */
- 	if (data_len > BTRFS_MAX_INLINE_DATA_SIZE(fs_info))
- 		return false;
-@@ -8683,7 +8687,12 @@ static int btrfs_symlink(struct mnt_idmap *idmap, struct inode *dir,
- 	struct extent_buffer *leaf;
- 
- 	name_len = strlen(symname);
--	if (name_len > BTRFS_MAX_INLINE_DATA_SIZE(fs_info))
-+	/*
-+	 * Symlinks utilize uncompressed inline extent data, which should not
-+	 * reach block size.
-+	 */
-+	if (name_len > BTRFS_MAX_INLINE_DATA_SIZE(fs_info) ||
-+	    name_len >= fs_info->sectorsize)
- 		return -ENAMETOOLONG;
- 
- 	inode = new_inode(dir->i_sb);
+ 	/* Check if there is a device with active zones left */
+ 	mutex_lock(&fs_info->chunk_mutex);
+ 	spin_lock(&fs_info->zone_active_bgs_lock);
 -- 
 2.39.5
 

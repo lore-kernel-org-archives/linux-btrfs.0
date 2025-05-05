@@ -1,44 +1,44 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6985B2989B9;
-	Mon,  5 May 2025 22:42:05 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1DA7C27D786;
+	Mon,  5 May 2025 22:42:02 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1746484925; cv=none; b=hgxtxONA8qHQ2X8yewfv9RTBKSKi1V3jLmRjVPd+1iFbTlXyiPecMmYm0uVhJ4ArmQHpS+mq/NnRamV9d9H97GWWXLWgmj2CD63BZDkWAiBwhZC4WpAKUF4gFLm0REKV0fN9L9fmm3/1JJb9ZRNrFFWel0ZCmT0S7qcihvIX2bc=
+	t=1746484923; cv=none; b=MvXKPTlXt5uubiaW9X+wFc/L3o/u37tcqmf9RZlbitJ2if8uucDH1T5akHxXekFwP7i3Xg4ybM3WZsbjhRuOtfytM+J+9POIH/09NEDNiSJRtZxSqlaHAYK8OLW+NBLD+FoF0YHS2PwPCDcyxyKCwctIpRpCKJdhfeM9U63xGBo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1746484925; c=relaxed/simple;
-	bh=vwyJJuUHQHIUu8CW2ekQWNLRuX3fK4CBnipe7jy1lc4=;
+	s=arc-20240116; t=1746484923; c=relaxed/simple;
+	bh=ikB6SErqWkThOyImGk4WEEG5UGvxZgZ7KBXa1b1k3CQ=;
 	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version; b=C1VRPloR/Yslx2/lB5e70MW3HU4KER4/bv+lkTLaeDUF8/b+jKsxc1xy9B2fJSNf/yGzXn4AIyU8p+rglJA++lmUI71K2li+MttH5suatiuCQMixvnfwCd7SpxomoWsYCBBZqSLydW4J3xx06bZnL17MhoQIS1w/sWQ8yb4aMLY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=YoDW5HGJ; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version; b=Es7fEjdNIC6ffjI1KgW6Ot7zRAPzIQM2B2bOub764vBDB1yKgLE18+BIStCu38/GJaZA0AkGMFaQGmcDBN2npNvlhu2e8uGPFvxbTivy8cIL9Xa/zYZRykzrKxnympK40W7Y1AtZy6Zb2ah0pMBBb2BRbKr+vWkClzUcmTi0J2o=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=l3vLWOBV; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="YoDW5HGJ"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 4D0C5C4CEEE;
-	Mon,  5 May 2025 22:42:04 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="l3vLWOBV"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id A23CEC4CEEE;
+	Mon,  5 May 2025 22:42:01 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1746484925;
-	bh=vwyJJuUHQHIUu8CW2ekQWNLRuX3fK4CBnipe7jy1lc4=;
+	s=k20201202; t=1746484922;
+	bh=ikB6SErqWkThOyImGk4WEEG5UGvxZgZ7KBXa1b1k3CQ=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-	b=YoDW5HGJHhWz9EXSbayOxWdFmnCe5ShXFaQBpq2cnvUpD9YMZYsxUCmuF7aFuyawy
-	 ZbfIHjWwGwTRFvJdulceGOKKXszoGzbSZfrVxjI3B9H0jKRH085ycm9ickbgW/4M+H
-	 hov4S2BpTNsT80RGpC1pdpLi1STvlPre23r3FU8lsDLxDBFJGJI8leQUWLJX+JE4XX
-	 doJTxWY7dknsK3vQCfbqS6+7qjY5i8emo2lIqFdzeIRIsn/IEHGsYm/WBMEwHUvxfz
-	 BeoRcLmnLAuPniRUei8c461TdsubrzLzB1uGi6suov0EI77WscwernPusaBWRiqj43
-	 sHFUl8gFqlSsQ==
+	b=l3vLWOBV+H7T4RmjrE6aQ/NsgNe/RF01rcJ6X3OO8Ln42INXR7RduN5nQ1Z0HKxBj
+	 YUNrxf8BqOIQiXAbVKdkCnikHnzC6yU+Hq+bl882olrK55/7tD/9KYWOgC+L/m6X/4
+	 dqrax+HcPBoXzm1Wli6XRUExZpMPwVxxqh185JVSibFgbEnOhwyD6Yuv0MJHyA1HhY
+	 qbttgfYQp9Z4pLUKed+sfEN2BSRyPIS/HBf+4MQscLVQnbtVhnJ8mnyT8wp2aArdGY
+	 rHVKjcb4+iVd2OugQfEaDXevZm4UMn4dG90PFG65g7Zf2BE/cakVUd4xJ1FVz/snZB
+	 OBMMqlebwgT/Q==
 From: Sasha Levin <sashal@kernel.org>
 To: linux-kernel@vger.kernel.org,
 	stable@vger.kernel.org
-Cc: Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-	Naohiro Aota <naohiro.aota@wdc.com>,
+Cc: Filipe Manana <fdmanana@suse.com>,
+	Johannes Thumshirn <johannes.thumshirn@wdc.com>,
 	David Sterba <dsterba@suse.com>,
 	Sasha Levin <sashal@kernel.org>,
 	clm@fb.com,
 	josef@toxicpanda.com,
 	linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 6.12 080/486] btrfs: zoned: exit btrfs_can_activate_zone if BTRFS_FS_NEED_ZONE_FINISH is set
-Date: Mon,  5 May 2025 18:32:36 -0400
-Message-Id: <20250505223922.2682012-80-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 6.12 078/486] btrfs: get zone unusable bytes while holding lock at btrfs_reclaim_bgs_work()
+Date: Mon,  5 May 2025 18:32:34 -0400
+Message-Id: <20250505223922.2682012-78-sashal@kernel.org>
 X-Mailer: git-send-email 2.39.5
 In-Reply-To: <20250505223922.2682012-1-sashal@kernel.org>
 References: <20250505223922.2682012-1-sashal@kernel.org>
@@ -53,37 +53,65 @@ X-Patchwork-Hint: Ignore
 X-stable-base: Linux 6.12.26
 Content-Transfer-Encoding: 8bit
 
-From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+From: Filipe Manana <fdmanana@suse.com>
 
-[ Upstream commit 26b38e28162ef4ceb1e0482299820fbbd7dbcd92 ]
+[ Upstream commit 1283b8c125a83bf7a7dbe90c33d3472b6d7bf612 ]
 
-If BTRFS_FS_NEED_ZONE_FINISH is already set for the whole filesystem, exit
-early in btrfs_can_activate_zone(). There's no need to check if
-BTRFS_FS_NEED_ZONE_FINISH needs to be set if it is already set.
+At btrfs_reclaim_bgs_work(), we are grabbing a block group's zone unusable
+bytes while not under the protection of the block group's spinlock, so
+this can trigger race reports from KCSAN (or similar tools) since that
+field is typically updated while holding the lock, such as at
+__btrfs_add_free_space_zoned() for example.
 
-Reviewed-by: Naohiro Aota <naohiro.aota@wdc.com>
-Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Fix this by grabbing the zone unusable bytes while we are still in the
+critical section holding the block group's spinlock, which is right above
+where we are currently grabbing it.
+
+Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 Reviewed-by: David Sterba <dsterba@suse.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/btrfs/zoned.c | 3 +++
- 1 file changed, 3 insertions(+)
+ fs/btrfs/block-group.c | 18 +++++++++++-------
+ 1 file changed, 11 insertions(+), 7 deletions(-)
 
-diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-index 2603c9d60fd21..d1167aeb07354 100644
---- a/fs/btrfs/zoned.c
-+++ b/fs/btrfs/zoned.c
-@@ -2326,6 +2326,9 @@ bool btrfs_can_activate_zone(struct btrfs_fs_devices *fs_devices, u64 flags)
- 	if (!btrfs_is_zoned(fs_info))
- 		return true;
- 
-+	if (test_bit(BTRFS_FS_NEED_ZONE_FINISH, &fs_info->flags))
-+		return false;
+diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+index 4423d8b716a58..aa8656c8b7e7e 100644
+--- a/fs/btrfs/block-group.c
++++ b/fs/btrfs/block-group.c
+@@ -1891,6 +1891,17 @@ void btrfs_reclaim_bgs_work(struct work_struct *work)
+ 			up_write(&space_info->groups_sem);
+ 			goto next;
+ 		}
 +
- 	/* Check if there is a device with active zones left */
- 	mutex_lock(&fs_info->chunk_mutex);
- 	spin_lock(&fs_info->zone_active_bgs_lock);
++		/*
++		 * Cache the zone_unusable value before turning the block group
++		 * to read only. As soon as the block group is read only it's
++		 * zone_unusable value gets moved to the block group's read-only
++		 * bytes and isn't available for calculations anymore. We also
++		 * cache it before unlocking the block group, to prevent races
++		 * (reports from KCSAN and such tools) with tasks updating it.
++		 */
++		zone_unusable = bg->zone_unusable;
++
+ 		spin_unlock(&bg->lock);
+ 		spin_unlock(&space_info->lock);
+ 
+@@ -1907,13 +1918,6 @@ void btrfs_reclaim_bgs_work(struct work_struct *work)
+ 			goto next;
+ 		}
+ 
+-		/*
+-		 * Cache the zone_unusable value before turning the block group
+-		 * to read only. As soon as the blog group is read only it's
+-		 * zone_unusable value gets moved to the block group's read-only
+-		 * bytes and isn't available for calculations anymore.
+-		 */
+-		zone_unusable = bg->zone_unusable;
+ 		ret = inc_block_group_ro(bg, 0);
+ 		up_write(&space_info->groups_sem);
+ 		if (ret < 0)
 -- 
 2.39.5
 

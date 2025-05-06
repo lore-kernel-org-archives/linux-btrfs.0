@@ -1,94 +1,159 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wr1-f53.google.com (mail-wr1-f53.google.com [209.85.221.53])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 125CA28B7ED;
-	Mon,  5 May 2025 23:22:18 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0F6CE1C831A
+	for <linux-btrfs@vger.kernel.org>; Tue,  6 May 2025 00:05:38 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.53
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1746487339; cv=none; b=azj5CWt9C1k/j0sS4Q6UZ/2MfBvVH86DAILfNx8tFKObmefWDgsMKqQ3nGhBLRn1Xv8WzcG7pVtYEb0dxQsRg8ZIQRGXF5SOk/ll5Lb5p2rU/VXOxAuYXRwOIXljv1AdNuIQigwYneB0Lu0mWQ3UiO+eEeJNFVVvzSKdxv0pU34=
+	t=1746489941; cv=none; b=PxKNKLxiOXrWz/4Pz2IUN5u7TGDntg2lNmYbbeDiccA1GM2+ZOW5hByTby9nr31ge+TM0ES0n/wDw46pkVIg4ilppUh2T25K/uJYxWAI1mcv5rKOVjiWANuOiVB3ZBpF5IPI46/O+ENS022yraYS6tK8YVsWn3l4mtTf+2ZoVrM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1746487339; c=relaxed/simple;
-	bh=UUwk0fwNUMK4vYKeCf76foxPIDzIqqMebaWL0aejZsI=;
-	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version; b=fb/IULQtkaphyYQCqZ7BMUvLcxkDO6sFeHUOBEunZ1h15p4Q0JZjvSMqFVpNJ8H940zmbh40eAG9ht25hQN9lukm8q5udY8+sUKlsFMOBkI2c50pJJi7T+3ZTCbi+MVab0D3+1cFuWyyzrBWo4i9txsPh200OxwE97xfLobWrmA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=GJGYPYmY; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1746489941; c=relaxed/simple;
+	bh=k43Z4raYtXrMI2PlJmH0rNoCHbFzSJoTIQ6dBGB3rZY=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=uPoVNUEf7LuibxaUTALcEuNPi/Pk/03yJeD9s3qhs80wqPd/z8JBywWe8+4WWCykaHz24mE0vt35VvJF4lANxddEFgJmgt56rTLDj/9UjoxVRhYdfih9hYcvZy4wR2wzWgLjvs6R3lVsExRMgY0AszKgwemC5L++oXTUr0yI/Pg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=CgD2u6Wk; arc=none smtp.client-ip=209.85.221.53
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="GJGYPYmY"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 0CDB2C4CEEE;
-	Mon,  5 May 2025 23:22:16 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1746487337;
-	bh=UUwk0fwNUMK4vYKeCf76foxPIDzIqqMebaWL0aejZsI=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-	b=GJGYPYmYZpKfK/aWgjk5HmibFxEz/+VXnz85uwZxm2VTVZj/seZdt1gDMI5+dIpEm
-	 CZ7Umyrit/JVWD5RR442zoDX/uHEaJp/2fDWSw41YUEdaU+pOV5UZQTL2QF731ywW8
-	 /Y2yy+0Zyr6B1qSbIRd1VwV5bVY2ZnxT79/0+KsVbqqvGR6FJd1kfNCFUhSbQo5Is/
-	 AEvHZEFp07iyBfxJuuW1WOtKf4dtFw7fi0HE2m+AU8Ux8u6zNqjTHlStf0NUS0X/yC
-	 ycBNjRyVaJIjSANhvedTrrKx4MWRajEZJCF7k7iOw02Zt+5p7J1zqdbM8S1W0AzPlG
-	 HtYtPbEgF2Wxg==
-From: Sasha Levin <sashal@kernel.org>
-To: linux-kernel@vger.kernel.org,
-	stable@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>,
-	David Sterba <dsterba@suse.com>,
-	Sasha Levin <sashal@kernel.org>,
-	clm@fb.com,
-	josef@toxicpanda.com,
-	linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.4 15/79] btrfs: send: return -ENAMETOOLONG when attempting a path that is too long
-Date: Mon,  5 May 2025 19:20:47 -0400
-Message-Id: <20250505232151.2698893-15-sashal@kernel.org>
-X-Mailer: git-send-email 2.39.5
-In-Reply-To: <20250505232151.2698893-1-sashal@kernel.org>
-References: <20250505232151.2698893-1-sashal@kernel.org>
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="CgD2u6Wk"
+Received: by mail-wr1-f53.google.com with SMTP id ffacd0b85a97d-39ac56756f6so5451503f8f.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 05 May 2025 17:05:38 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1746489937; x=1747094737; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to;
+        bh=0EQqQrpuO0nAoG1qjQarD71vyO13kG1r2yTsCjiRT5s=;
+        b=CgD2u6WkpxEMdkrcC8uE1Hjx9md2w5gAXUzFQybgr7yRgaCvz9D4VAOSSruvn3Z/4z
+         +bdS0maRWqNx03yB/RGhRO4g3Va31WmimisJQTw0FbGZ5UK2EEhH+damVeiXPSMWjuMC
+         rOeRSsJXEWQp1lDE6PvdRT9g7iFZyDlVGB1CgYuU5HYNUzSVCL88UBRN/KvC2d5KnJf7
+         SoEBjfnKoY/BLsSoyz31e1YqZfa0bzJEPh0eSQmICqZk97Bko8zo7ezFKwomlx4plc8k
+         NYcjS2gK/MoivIX9VymmmJN5/ahMxhfj0ZtIcuFpC+G7TFfMWr5IKyi5T3LS2f/KjsD4
+         82gg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1746489937; x=1747094737;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=0EQqQrpuO0nAoG1qjQarD71vyO13kG1r2yTsCjiRT5s=;
+        b=vi2cvVMHp1AuOsNOmLWrIMj60M26Xg1Pqf9MVTcmDBLpVgsL/FzN240obaDSfwms51
+         1Dt+M5/n83OV5sEYSJX8BA/nfW9YP3zZ4+0jIls3L/gkjpjTkTFcSqrtHcKknWmejnKv
+         /UHAmEyt9D1gNImYGdXlxmyeer0heGWcR9BGT2E3gye6Uhx75qHllohO63OMTlEuDl6K
+         ZZRU9Lpiy2XPcTBZUrXzBNgUu6AWfZG3LN0Zj7vCtOEvEi7QbF7qEaJgJAPBD1Ig6w86
+         xYN31RFOTPOusbFXdLyOyTIbdZj2nsMz8+KU8SCcJwS4ANvt9rn665RbmFZ3fBgL+u0I
+         hjdg==
+X-Gm-Message-State: AOJu0YzcQL+TGB7SX9EwvGlYZZJHO3kwkmyop2XDscG2WGxtM5EMSg5l
+	EGu+a5BsKu3KphBeOpkPrOtj/7JwOCWVTUl3PsT+mO4vp0WiNbDcf8jIyMvubmvwaCKvIyRHUgo
+	9
+X-Gm-Gg: ASbGnctiV8G1yyyDRBRqNuh5srtCSq1WLEJ1cCPPdakGyzI1DFA6ZyrMRcakiEjknrs
+	5DshCA1ziRKMTf4hYer17ja95QzVP+j/eSQXf76KAxwrED8mqvDRBCM5pl2tPp9XFv8XoM7tAp4
+	ELnXuNOTGUYwyrgEjkGHfJde2keZjBtIq+NwDi2jbJRWUHTSAuI2cRDwYgdsyeng1X7eQNVXd4A
+	KrMkhrLPcmulNIrNSNhsfMebQjObx7LPY/pRvciXb1whdtUp92UEoFeyCCGfLARiNtANzzylDD9
+	dBTUGodzfGYSlW08v1cn/0qW7QgEC+KWbXFheSdGwcwpK+UARkQfB8EMLULh9He9EVBI
+X-Google-Smtp-Source: AGHT+IGOcpcop9UytZLUW8ZMKA+OxWBovlRC7UbykWbvfWvLXKITkFrPLI2r1Y6SAQmnlMLUmjoWvA==
+X-Received: by 2002:a5d:6ac3:0:b0:3a0:ac3f:cdb3 with SMTP id ffacd0b85a97d-3a0ac3fce01mr399553f8f.22.1746489937024;
+        Mon, 05 May 2025 17:05:37 -0700 (PDT)
+Received: from ?IPV6:2403:580d:fda1::299? (2403-580d-fda1--299.ip6.aussiebb.net. [2403:580d:fda1::299])
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-22e1521fb6esm61454175ad.158.2025.05.05.17.05.35
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 05 May 2025 17:05:36 -0700 (PDT)
+Message-ID: <daa36106-0667-4c45-a1a2-74c2f04725ed@suse.com>
+Date: Tue, 6 May 2025 09:35:32 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-stable: review
-X-Patchwork-Hint: Ignore
-X-stable-base: Linux 5.4.293
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v5 0/2] btrfs: fix beyond EOF truncation for subpage
+ generic/363 failures
+To: dsterba@suse.cz
+Cc: linux-btrfs@vger.kernel.org
+References: <cover.1745619801.git.wqu@suse.com>
+ <20250505153347.GY9140@twin.jikos.cz>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <20250505153347.GY9140@twin.jikos.cz>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
-From: Filipe Manana <fdmanana@suse.com>
 
-[ Upstream commit a77749b3e21813566cea050bbb3414ae74562eba ]
 
-When attempting to build a too long path we are currently returning
--ENOMEM, which is very odd and misleading. So update fs_path_ensure_buf()
-to return -ENAMETOOLONG instead. Also, while at it, move the WARN_ON()
-into the if statement's expression, as it makes it clear what is being
-tested and also has the effect of adding 'unlikely' to the statement,
-which allows the compiler to generate better code as this condition is
-never expected to happen.
+在 2025/5/6 01:03, David Sterba 写道:
+> On Sat, Apr 26, 2025 at 08:06:48AM +0930, Qu Wenruo wrote:
+>> [CHANGELOG]
+>> v5:
+>> - Shrink the parameter list for btrfs_truncate_block()
+>>    Remove the @front and @len, instead passing a new pair of @start/@end,
+>>    so that we can determine if @from is in the head or tail block,
+>>    thus no need for @front.
+>>
+>>    This will give callers more freedom (a little too much),
+>>    e.g. for the following zero range/hole punch case:
+>>
+>>      Page size is 64K, fs block size is 4K.
+>>      Truncation range is [6K, 58K).
+>>
+>>      0        8K                32K                  56K      64K
+>>      |      |/|//////////////////////////////////////|/|      |
+>>             6K                                         58K
+>>
+>>      To truncate the first block to zero out range [6K, 8K),
+>>      caller can pass @from = 6K, @start = 6K, @end = 58K - 1.
+>>      In fact, any @from inside range [6K, 8K) will work.
+>>
+>>      To truncate the last block to zero out range [56K, 58K),
+>>      caller can pass @from=58K - 1, @start = 6K, @end = 58K -1.
+>>      Any @from inside range [56K, 58K) will also work.
+>>
+>>      Furthermore, if aligned @from is passed in, e.g. 8K,
+>>      btrfs_truncate_block() will detect that there is nothing to do,
+>>      and exit properly.
+>>
+>> - Only do the extra zeroing if we're truncating beyond EOF
+>>    Especially for the recent large folios support, we can do a lot of
+>>    unnecessary zeroing for a very large folio.
+>>
+>> - Remove the lock-wait-retry loop if we're doing aligned truncation
+>>    beyond EOF
+>>    Since it's already EOF, there is no need to wait for the OE anyway.
+> 
+> The patches have been in linux-next but I don't think they got coverage
+> on the 64k/4k setups. If you don't have further updates please add the
+> series to for-next. Thanks.
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
-Reviewed-by: David Sterba <dsterba@suse.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
-Signed-off-by: Sasha Levin <sashal@kernel.org>
----
- fs/btrfs/send.c | 6 ++----
- 1 file changed, 2 insertions(+), 4 deletions(-)
+I'd prefer Boris to give it a final glance.
 
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index e1063ef3dece5..b0933d9525939 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -397,10 +397,8 @@ static int fs_path_ensure_buf(struct fs_path *p, int len)
- 	if (p->buf_len >= len)
- 		return 0;
- 
--	if (len > PATH_MAX) {
--		WARN_ON(1);
--		return -ENOMEM;
--	}
-+	if (WARN_ON(len > PATH_MAX))
-+		return -ENAMETOOLONG;
- 
- 	path_len = p->end - p->start;
- 	old_buf_len = p->buf_len;
--- 
-2.39.5
+This v5 changes the parameter list, thus it is different from previous 
+versions.
 
+Although tests wise it's pretty boring on x86_64 and aarch64.
+
+Thanks,
+Qu

@@ -1,46 +1,84 @@
-Received: from zeniv.linux.org.uk (zeniv.linux.org.uk [62.89.141.173])
+Received: from fout-a6-smtp.messagingengine.com (fout-a6-smtp.messagingengine.com [103.168.172.149])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 782B619343B;
-	Wed,  7 May 2025 21:18:53 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=62.89.141.173
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 71524230272
+	for <linux-btrfs@vger.kernel.org>; Wed,  7 May 2025 21:52:46 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.149
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1746652735; cv=none; b=slRGEByMrJVp3gAzRham8Tk2DAn0f4CN7xljHgSKOBoWzO91Yq3AV17z+7XNaSW9/dPxhHVgNFg0qxgzGx6s9beRPD+XCfBozCW0XouhDK/G1MMJzWNjIIo87/ZLqmijxDwXgGk9ZV76FHErXyF+EfyiuHRZ0MPUt18KSCIq6Os=
+	t=1746654769; cv=none; b=oypz0w51zoeZ0698Y5gqbI7HgAk9L/av+Jx1gAB073RmzR/P1xVRlPCiup0+7W8Dg+tJlfNJavW/LHJUPAg0iWt1+45rlF0nzHy4V7OrYM7DnHFUQDs4DrEFLixOpKi7Habm/jq1wkwngofiGjtFCKQb0ICtLavKCpZy+SgVFgY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1746652735; c=relaxed/simple;
-	bh=Rzoa//+suWP+65hhHc1KbF30oGorhKVv9nvFCeLfsU4=;
+	s=arc-20240116; t=1746654769; c=relaxed/simple;
+	bh=OhbyAZCu7qhDmcxFGgdq27Rkv4A+rt0vOaHQ2f5KJJY=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=d6XXp3PQZWKutzmXURAJYl4k58Q9R+lqDJyYXi4l9zaFW6zxcbPrkFUGrmDS4ahBxwRbWf5XCWhllj8MqpNIMYCdfinZ1fu+vhFsl4hhQjocBk2tJa0jyRbmggt1VELhw5qDnL0dB8h3GpGfRxpQb3N/OCB8pS1sWVxxX8VY3kE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=zeniv.linux.org.uk; spf=none smtp.mailfrom=ftp.linux.org.uk; dkim=pass (2048-bit key) header.d=linux.org.uk header.i=@linux.org.uk header.b=RinESwQd; arc=none smtp.client-ip=62.89.141.173
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=zeniv.linux.org.uk
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=ftp.linux.org.uk
+	 Content-Type:Content-Disposition:In-Reply-To; b=eh0+Dr90B8xtmizLHLrOpRyVkNpIBBcwxG0sKpq9ZlMrkA1FowLn+LfPueuoAbO4scM9TuYN6RQPzujKOeEkxYgBixr74dkt8K3Nn1c4WUqKW/8WVkRNFkm+Xb9yY5h0GtKROrB0i1+kPR6SUy+50UJTwFHeoLDLrYI5CmolgnM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=Rpbzth6m; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=Fz6yhZ3W; arc=none smtp.client-ip=103.168.172.149
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=linux.org.uk header.i=@linux.org.uk header.b="RinESwQd"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=linux.org.uk; s=zeniv-20220401; h=Sender:In-Reply-To:Content-Type:
-	MIME-Version:References:Message-ID:Subject:Cc:To:From:Date:Reply-To:
-	Content-Transfer-Encoding:Content-ID:Content-Description;
-	bh=QTihWgIiBkpZ0So2wXnOWa/xllZkmD8mBa818vmY+ag=; b=RinESwQd87yy5BJVrPytdkF/yT
-	IHjOC3NetkE10Z9yLZXv4sdSE7fogbOjzKNyH8BCZqA7WfHOO3E/T/T/Vmpy1fYDR0qeP6f1yhXmd
-	uPJYfsTR/0YgzqKr+HFRLHRXMVq5x7Rt/5fsGrzA5amxGKaULOZKgsSSNaFVMlKKCU92IEdfpfr58
-	Q0GpF8M+Scl8JAKbsaIbWTRnpMyA94Z5UeCzkR4wTuzLSu88lNSVm6YPf8tHx5/vnFRFgWoFV07cM
-	lNvLhHEURJgrnNF89r59Np+yyzHnuFATVhTeicAUXlyixzBqGtK3ZsBJWzC9SO9bVd3XyBXQJK8z8
-	gvYIhSmQ==;
-Received: from viro by zeniv.linux.org.uk with local (Exim 4.98.2 #2 (Red Hat Linux))
-	id 1uCmAF-00000001d1n-0KRR;
-	Wed, 07 May 2025 21:18:51 +0000
-Date: Wed, 7 May 2025 22:18:51 +0100
-From: Al Viro <viro@zeniv.linux.org.uk>
-To: Venkat Rao Bagalkote <venkat88@linux.ibm.com>
-Cc: LKML <linux-kernel@vger.kernel.org>,
-	linuxppc-dev <linuxppc-dev@lists.ozlabs.org>,
-	linux-btrfs@vger.kernel.org, riteshh@linux.ibm.com,
-	Qu Wenruo <quwenruo.btrfs@gmx.com>, disgoel@linux.vnet.ibm.com,
-	dsterba@suse.com
-Subject: Re: [next-20250506][btrfs] Kernel OOPS while btrfs/001 TC
-Message-ID: <20250507211851.GX2023217@ZenIV>
-References: <75b94ef2-752b-4018-9b2a-148ecda5e8f4@linux.ibm.com>
- <2a17b9b1-c490-4571-8f6a-fa567ed0b57e@linux.ibm.com>
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="Rpbzth6m";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="Fz6yhZ3W"
+Received: from phl-compute-03.internal (phl-compute-03.phl.internal [10.202.2.43])
+	by mailfout.phl.internal (Postfix) with ESMTP id 3F773138019E;
+	Wed,  7 May 2025 17:52:45 -0400 (EDT)
+Received: from phl-mailfrontend-01 ([10.202.2.162])
+  by phl-compute-03.internal (MEProxy); Wed, 07 May 2025 17:52:45 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
+	:content-type:content-type:date:date:from:from:in-reply-to
+	:in-reply-to:message-id:mime-version:references:reply-to:subject
+	:subject:to:to; s=fm1; t=1746654765; x=1746741165; bh=OF88DyVSQn
+	rtDQvMOrbixt2tsMGzRdxDTAof7/NCjd4=; b=Rpbzth6mVwKOo7zNH3JSt8qVru
+	yiSPYKPjHI0aDqXsDOk412Ps2eVNNBtPUeRhgkSut5/M+6yOR3stHTKmLfk2vUmS
+	RtuMe7xbc2kzF8ov8mtKFiIjgeygqq5X8ijBFzCuh+/muY4+9UTUhJKR11d+/us0
+	c7YnhGc6oAlqgQSxbm2febjpssZ/oMjfQQAUER7haHJ1i9efpkOx02C/CfUkFSPw
+	JXfSUeDxv0O4Oi0iqyDj3icwlVciBse8T2vFoAHXVbFviTOawJhlTZ4DeaTZXEKW
+	CFVTViuuF6hAg7Q7Jz6pUvxZZYBPF9AQ7dS1Ncf865ZX1saAibVqUZdf4H3A==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:cc:content-type:content-type:date:date
+	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
+	:message-id:mime-version:references:reply-to:subject:subject:to
+	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm3; t=
+	1746654765; x=1746741165; bh=OF88DyVSQnrtDQvMOrbixt2tsMGzRdxDTAo
+	f7/NCjd4=; b=Fz6yhZ3WQNHEbL7R5TfTmX7NwwoaMoN3xponK4Upd0R4CdOKxvp
+	sddJgHV8569eelYZ4yWL45j/ghGFdGxf0yQhmMsSARVt4PPY4EAFC6VW8rgl/u/4
+	iuTQBjsseae/Ox+lekEGxDXnLtZmrnsLuuxk8Y6Zu6FrrQP5yunRQwzFWum3mCX1
+	WonfyhojNuOqQAMrMgjYOUhKF7QucnHbCJfpamIhxMyWv494T82AH/OGt2e+oMOI
+	HNbXHL+SCmqojWHoZC/MiWyXVAya3LZu91KU8AkPEaJg5mmZDa1zjwi727Qmn/Ub
+	8PqOSeTuPCXa+OpvYrPoVtImT6hiqFz9khQ==
+X-ME-Sender: <xms:LNYbaFhD-nu1KzvKidCzDeOwqhDby2Ww8t2i5sesOr4eMy6srfzrIw>
+    <xme:LNYbaKDYJU9OVdlmLqBKT1XPs8o0__SC7zy1bjNw4h815NETE-yHQO112gmaXLKkN
+    -evp-JOJ43jitKnUzc>
+X-ME-Received: <xmr:LNYbaFFUnR4ZERjMSCe72JaOj0T152FVS26DoqkdwK_7rgK-aW5xQGBdJ6M93doH_D2hxTbfBClyQoPAHZvWIuRUp1E>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefvddrtddtgddvkeejleelucetufdoteggodetrf
+    dotffvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdggtfgfnhhsuhgsshgtrhhisggv
+    pdfurfetoffkrfgpnffqhgenuceurghilhhouhhtmecufedttdenucesvcftvggtihhpih
+    gvnhhtshculddquddttddmnecujfgurhepfffhvfevuffkfhggtggujgesthdtredttddt
+    vdenucfhrhhomhepuehorhhishcuuehurhhkohhvuceosghorhhishessghurhdrihhoqe
+    enucggtffrrghtthgvrhhnpeekvdekffejleelhfevhedvjeduhfejtdfhvdevieeiiedu
+    gfeugfdtjefgfeeljeenucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmhepmhgrih
+    hlfhhrohhmpegsohhrihhssegsuhhrrdhiohdpnhgspghrtghpthhtohepgedpmhhouggv
+    pehsmhhtphhouhhtpdhrtghpthhtohepughsthgvrhgsrgesshhushgvrdgtiidprhgtph
+    htthhopehnvggvlhigsehsuhhsvgdrtghomhdprhgtphhtthhopegushhtvghrsggrsehs
+    uhhsvgdrtghomhdprhgtphhtthhopehlihhnuhigqdgsthhrfhhssehvghgvrhdrkhgvrh
+    hnvghlrdhorhhg
+X-ME-Proxy: <xmx:LNYbaKQYTaBBFthzCDSeOBWlCKFlgNZFbI2eyK-fy501twALWG67Nw>
+    <xmx:LNYbaCyaarDn7zYTskOkl_Nohermwer2VNN8z9YfSnfOeJLmp3x9NA>
+    <xmx:LNYbaA7JXa3Kx27xZGYDdoGQ89lhdZznTAQYvPbJoPL5YpO-3DQkzg>
+    <xmx:LNYbaHzAFgOBFRrIWMsrUVjVJSDSc6nEgv5vSZSBmaDqdBKC7yBXZg>
+    <xmx:LdYbaL9_aHd5F1P5C0GLV0hBKNcAN9_fs2i-eVJSIvVl5lYOkhRuYrrN>
+Feedback-ID: i083147f8:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Wed,
+ 7 May 2025 17:52:44 -0400 (EDT)
+Date: Wed, 7 May 2025 14:53:27 -0700
+From: Boris Burkov <boris@bur.io>
+To: David Sterba <dsterba@suse.cz>
+Cc: Daniel Vacek <neelx@suse.com>, David Sterba <dsterba@suse.com>,
+	linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: use unsigned types for constants defined as bit
+ shifts
+Message-ID: <20250507215327.GA332956@zen.localdomain>
+References: <20250422155541.296808-1-dsterba@suse.com>
+ <CAPjX3FcGAUqheUg0TQHG_yvuQExjT3N3SUGRYtk1S3b3aDVZZQ@mail.gmail.com>
+ <20250507174328.GK9140@twin.jikos.cz>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -49,20 +87,108 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <2a17b9b1-c490-4571-8f6a-fa567ed0b57e@linux.ibm.com>
-Sender: Al Viro <viro@ftp.linux.org.uk>
+In-Reply-To: <20250507174328.GK9140@twin.jikos.cz>
 
-On Wed, May 07, 2025 at 09:05:42PM +0530, Venkat Rao Bagalkote wrote:
-
-> > I am observing kernel OOPS, while running btrfs/001 TC, from xfstests
-> > suite.
+On Wed, May 07, 2025 at 07:43:28PM +0200, David Sterba wrote:
+> On Wed, May 07, 2025 at 03:50:51PM +0200, Daniel Vacek wrote:
+> > > --- a/fs/btrfs/raid56.c
+> > > +++ b/fs/btrfs/raid56.c
+> > > @@ -203,8 +203,7 @@ int btrfs_alloc_stripe_hash_table(struct btrfs_fs_info *info)
+> > >         struct btrfs_stripe_hash_table *x;
+> > >         struct btrfs_stripe_hash *cur;
+> > >         struct btrfs_stripe_hash *h;
+> > > -       int num_entries = 1 << BTRFS_STRIPE_HASH_TABLE_BITS;
+> > > -       int i;
+> > > +       unsigned int num_entries = 1U << BTRFS_STRIPE_HASH_TABLE_BITS;
 > > 
+> > This one does not really make much sense. It is an isolated local thing.
 > > 
-> > This issue is introduced in next-20250506. This issue is not seen on
-> > next-20250505 kernel.
+> > >         if (info->stripe_hash_table)
+> > >                 return 0;
+> > > @@ -225,7 +224,7 @@ int btrfs_alloc_stripe_hash_table(struct btrfs_fs_info *info)
+> > >
+> > >         h = table->table;
+> > >
+> > > -       for (i = 0; i < num_entries; i++) {
+> > > +       for (unsigned int i = 0; i < num_entries; i++) {
+> > 
+> > I'd just do:
+> > 
+> > for (int i = 0; i < 1 << BTRFS_STRIPE_HASH_TABLE_BITS; i++) {
+> > 
+> > The compiler will resolve the shift and the loop will compare to the
+> > immediate constant value.
+> 
+> Yes, it's a compile time constant. It's in num_entries because it's used
+> twice in the function, for that we usually have a local variable so we
+> don't have to open code the value everywhere.
+> 
+> > ---
+> > 
+> > Quite honestly the whole patch is questionable. The recommendations
+> > are about right shifts. Left shifts are not prone to any sinedness
+> > issues.
+> > 
+> > What is more important is where the constants are being used. They
+> > should honor the type they are compared with or assigned to. Like for
+> > example 0x80ULL for flags as these are usually declared unsigned long
+> > long, and so on...
+> 
+> Agreed, flags and masks should be unsigned.
+> 
+> > For example the LINK_LOWER is converted to int when used as
+> > btrfs_backref_link_edge(..., LINK_LOWER) parameter and then another
+> > LINK_LOWER is and-ed to that int argument. I know, the logical
+> > operations are not really influenced by the signedness, but still.
+> 
+> Well, it's more a matter of consistency and coding style. We did have a
+> real bug with signed bit defined on 32bit int that got promoted to u64
+> not as a single bit but 0xffffffff80000000 and this even got propagated
+> to on-disk data. We were lucky it never had any real impact but since
+> then I'm on the side of making bit shifts unconditionally on unsigned
+> types. 77eea05e7851d910b7992c8c237a6b5d462050da
+> 
 
-Braino in fs/btrfs/super.c patch - in a couple of places 'fc' should be
-replaced with 'dup_fc'.
+For what it's worth, my support for moving to unsigned types for all
+shifts is based on that same investigation.
 
-See https://lore.kernel.org/all/?q=20250506195826.GU2023217@ZenIV
-for replacement patch...
+I think a sign extension on s32->u64 is way more surprising and hard to
+debug than a "whoops I thought -1 was less than 1 but actually it's
+bigger", which is the first thing you would think of for weird
+arithmetic errors.
+
+> > 
+> > And btw, the LINK_UPPER is not used at all anywhere in the code, if I
+> > see correctly.
+> 
+> $ git grep LINK_UPPER
+> backref.c:      if (link_which & LINK_UPPER)
+> backref.h:#define               LINK_UPPER      (1U << 1)
+> 
+> > ---
+> > 
+> > In theory the situation could be even worse at some places as
+> > incorrectly using an unsigned constant may force a signed variable to
+> > get promoted to unsigned one to match. This may result in an int
+> > variable with the value of -1 ending up as UINT_MAX instead. And now
+> > imagine if(i < (1U << 4)) where int i = -1;
+> > 
+> > I did not check all the places where the constants you are changing
+> > are being used, but it looks scary.
+> 
+> This is touching the core problem, mixing the signed and unsigned types
+> in the wrong and very unobvious way. But we maybe disagree that it
+> should be int, while I'd rather unify that to unsigned.
+> 
+> If you find a scary and potentially wrong use please send a RFC patch so
+> we can see how much we can avoid that by changing that to a safer
+> pattern.
+
+I suppose the MOST convincing form of this patch would thoroughly audit
+all the users/arithmetic involved to make sure they aren't doing
+anything silly. I immediately noticed that LINK_UPPER/LINK_LOWER do get
+passed as ints to btrfs_backref_link_edge() in a way that is fine to my
+eye, but it wouldn't hurt to change that unsigned int too, the way you
+did in a few other places?
+
+I am still comfortable with this as-is.

@@ -1,69 +1,100 @@
-Received: from jablonecka.jablonka.cz (jablonecka.jablonka.cz [91.219.244.36])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4B66B1E9B2F
-	for <linux-btrfs@vger.kernel.org>; Fri, 16 May 2025 18:28:36 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=91.219.244.36
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A141F27F731
+	for <linux-btrfs@vger.kernel.org>; Fri, 16 May 2025 18:41:14 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1747420118; cv=none; b=YOQQkxl2FBuR3XgK5ESfEi09repW6MjiHXBJsuvPszP1NDxS5pq01MMEY/sfbbLEWQKfvLXGNgD5zLr/F1a2+qAhQT6UNx4iqLJkdeHisJQCxMMnaUcTGk3PvHUDo3MXkB6/QbWQbr6Fw9+3f7MwdJ9HXWGQpmRdfOmoege+Q7s=
+	t=1747420874; cv=none; b=el2WeV6wM1CAec0ET3AJg8doJAWAGGwe2/oQxrp3m/f9NPN+ro8oFRa3tD2cbhEFsmWugnPcSVsXm+m6oM2wUJ6kZSns+WyGMspnv59cBmh41xH200EfjjBldCi27Z2X9ZIAQd+8xu4vDzB7+k6xFo38ZS0O9/xmOwdkluI5RCs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1747420118; c=relaxed/simple;
-	bh=Iy7KKuyAV9UNpkTBeim9yi0hu+mNMz4gzuZzsSACxEE=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=l4Y3T8dYV7PXnyKuwnLi+SYj6OfNIndPVUeUM6JHHyNw5VjjpGKPYlM8ItC/ANYNn/T2LxrzthcQsNSCdGLYE+AWjZd1RwONkKJsV9C4SleDlK4ss7rjAHDcNyAmNwKYr2/667bN8UOkKyEnLILgAQTPQ9zwaP6K2mwbJcSvbFA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=jikos.cz; spf=none smtp.mailfrom=twin.jikos.cz; dkim=pass (1024-bit key) header.d=jikos.cz header.i=@jikos.cz header.b=oSmi9faO; arc=none smtp.client-ip=91.219.244.36
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=jikos.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=twin.jikos.cz
+	s=arc-20240116; t=1747420874; c=relaxed/simple;
+	bh=DlwIZk3+0T8WvUPJPMWApppXsGzWNhH6oR08e5L5194=;
+	h=From:To:Subject:Date:Message-Id:MIME-Version; b=aPfPF3kbUxOfOnBXKo0NuzvxaOTnt3v6tmgs1pMlw1xNv3i+jjjDAT9mc5asQEUwXbH44+RjMFv+XAFIy2cjo6iRCp0itQAw71y0MdN7X/ZxSWMb7RmlLdl+Y26jIhOoEfe6KgttSWv/VSuqfVv8EcR/slccCb8Ogy+8869pUS4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=M2Doq0Du; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=jikos.cz header.i=@jikos.cz header.b="oSmi9faO"
-Received: from twin.jikos.cz (twin.jikos.hovorcovice.czf [10.33.87.18])
-	by jablonecka.jablonka.cz (Postfix mail delivery) with ESMTPS id 090E16035ABC;
-	Fri, 16 May 2025 20:22:47 +0200 (CEST)
-Received: from twin.jikos.cz (dave@localhost [127.0.0.1])
-	by twin.jikos.cz (8.13.6/8.13.6) with ESMTP id 54GIMjQg015578
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO);
-	Fri, 16 May 2025 20:22:45 +0200
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=jikos.cz; s=twin;
-	t=1747419766; bh=miYnEih+xdItO0CnrJpwfLfH4KOgewJ6Oy40aZmTuAw=;
-	h=Received:Date:From:To:Cc:Subject:Message-ID:Reply-To:
-	 Mail-Followup-To:References:MIME-Version:Content-Type:
-	 Content-Disposition:In-Reply-To:User-Agent; b=oSmi9faOO+WMK0a74Nuh
-	pfx8YC6vYVay5AVNOJwGaY0d/LFU8MGGFunm3q1bKrLmrK0aqt57DLuiTL+Joohn4ww
-	XiXZgKW8w9Pod9KL/1SAXZy6gKX7S6TD7vafHmctA5/fhiyjzXyOgZqyIbeyHATZwqJ
-	Z+8h45VIAVak28rPI=
-Received: (from dave@localhost)
-	by twin.jikos.cz (8.13.6/8.13.6/Submit) id 54GIMj4R015577;
-	Fri, 16 May 2025 20:22:45 +0200
-Date: Fri, 16 May 2025 20:22:44 +0200
-From: David Sterba <dave@jikos.cz>
-To: fdmanana@kernel.org
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: unfold transaction aborts at
- btrfs_create_new_inode()
-Message-ID: <20250516182244.ion2oo46yahdilco@twin.jikos.cz>
-Reply-To: dave@jikos.cz
-Mail-Followup-To: fdmanana@kernel.org, linux-btrfs@vger.kernel.org
-References: <32127d7f66702d0b80132bea776e214077b42872.1747412285.git.fdmanana@suse.com>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="M2Doq0Du"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8FFF3C4CEED
+	for <linux-btrfs@vger.kernel.org>; Fri, 16 May 2025 18:41:13 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1747420874;
+	bh=DlwIZk3+0T8WvUPJPMWApppXsGzWNhH6oR08e5L5194=;
+	h=From:To:Subject:Date:From;
+	b=M2Doq0DubhMn+1WH9lWvLi3LURQ3QHRDHcvSr0MbHDWLKrbhfKsQjBZZXvopkQtYw
+	 0FGOT7G+pksOGypnucL7epXvijXE69b/AP3cpcJ6Fk27SylYnXUrifYr1pGS8iNrBh
+	 JM72l/HBZveOOb6+3I4InU0v+QdDOYh/cEqcr9QBH1OEJGBn8rO7VObacTGV4Fl9SP
+	 bc59sGiZBJi3wo+KoCDmF7J2SUPI40dBuyt67rekN8l83kVlwQs3uqEn3w4yOKV20Z
+	 Bd9Pv8HgjLuR8M83VVmzaB/To2zpgqfsAom6Cm0Xxp0pH3aAkO4KrdCcnXWnAK1Pk4
+	 DtoCDT7FDkBHw==
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: unfold transaction abort at clone_copy_inline_extent()
+Date: Fri, 16 May 2025 19:41:10 +0100
+Message-Id: <390968e8253cb5624145c3e2e84b784fe25cf522.1747420784.git.fdmanana@suse.com>
+X-Mailer: git-send-email 2.34.1
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <32127d7f66702d0b80132bea776e214077b42872.1747412285.git.fdmanana@suse.com>
-User-Agent: NeoMutt/20161028 (1.7.1)
+Content-Transfer-Encoding: 8bit
 
-On Fri, May 16, 2025 at 05:19:15PM +0100, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> Instead of having a common btrfs_transaction_abort() call for when either
-> btrfs_orphan_add() failed or when btrfs_add_link() failed, move the
-> btrfs_transaction_abort() to happen immediately after each one of those
-> calls, so that when analysing a stack trace with a transaction abort we
-> know which call failed.
-> 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+From: Filipe Manana <fdmanana@suse.com>
 
-Reviewed-by: David Sterba <dsterba@suse.cz>
+We have a common error path where we abort the transaction, but like this
+in case we get a transaction abort stack trace we don't know exactly which
+previous function call failed. Instead abort the transaction after any
+function call that returns an error, so that we can easily indentify which
+function failed.
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/reflink.c | 14 +++++++++-----
+ 1 file changed, 9 insertions(+), 5 deletions(-)
+
+diff --git a/fs/btrfs/reflink.c b/fs/btrfs/reflink.c
+index 5eacd3584a8d..0197bd9160a7 100644
+--- a/fs/btrfs/reflink.c
++++ b/fs/btrfs/reflink.c
+@@ -268,11 +268,15 @@ static int clone_copy_inline_extent(struct btrfs_inode *inode,
+ 	drop_args.end = aligned_end;
+ 	drop_args.drop_cache = true;
+ 	ret = btrfs_drop_extents(trans, root, inode, &drop_args);
+-	if (ret)
++	if (ret) {
++		btrfs_abort_transaction(trans, ret);
+ 		goto out;
++	}
+ 	ret = btrfs_insert_empty_item(trans, root, path, new_key, size);
+-	if (ret)
++	if (ret) {
++		btrfs_abort_transaction(trans, ret);
+ 		goto out;
++	}
+ 
+ 	write_extent_buffer(path->nodes[0], inline_data,
+ 			    btrfs_item_ptr_offset(path->nodes[0],
+@@ -281,6 +285,8 @@ static int clone_copy_inline_extent(struct btrfs_inode *inode,
+ 	btrfs_update_inode_bytes(inode, datal, drop_args.bytes_found);
+ 	btrfs_set_inode_full_sync(inode);
+ 	ret = btrfs_inode_set_file_extent_range(inode, 0, aligned_end);
++	if (ret)
++		btrfs_abort_transaction(trans, ret);
+ out:
+ 	if (!ret && !trans) {
+ 		/*
+@@ -295,10 +301,8 @@ static int clone_copy_inline_extent(struct btrfs_inode *inode,
+ 			trans = NULL;
+ 		}
+ 	}
+-	if (ret && trans) {
+-		btrfs_abort_transaction(trans, ret);
++	if (ret && trans)
+ 		btrfs_end_transaction(trans);
+-	}
+ 	if (!ret)
+ 		*trans_out = trans;
+ 
+-- 
+2.47.2
+

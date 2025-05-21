@@ -1,60 +1,67 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7267020ADF8
-	for <linux-btrfs@vger.kernel.org>; Wed, 21 May 2025 09:51:31 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F192A20ADF8
+	for <linux-btrfs@vger.kernel.org>; Wed, 21 May 2025 09:51:35 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1747821093; cv=none; b=WfVCptVspY1+rzRZQpPVkRcIN7ix9KhEDp5XDFMtRHlrrRwQUAMQQ4DU9kZ8IHMKoGWGTHLKRfOAqQNiE5dYUSzQ3SsO3LURkNukrCkXncsB2FYUhHLHU/FRvpbRVUEJoa+XH6/V0V+Ym0E4js2R0VBx5KZQsbK2S95rnIJdIDQ=
+	t=1747821097; cv=none; b=QcZkmPrqcedH3BbnJxjN1+BpsrtNNcDd++Btk6xGJ4S2L8Ww4X14nFN1mOqSuMwv4qK36jZ/2Sxfl14yL1XWFkEMYkoZyszBAzC+26Bf0sh6ary2McRPvKZ6k91rwhcVdo1pNYVq/UHBFJjhJncw1EzsuHhYiad7NEghRDbOAF8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1747821093; c=relaxed/simple;
-	bh=6dFHFGsiucksmuHAiavAe6U4ht7pH1xY90/6H0zM8iY=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=d3cJzuWny9zxWvCTejql4b84bsLYrlxFnnf/Ma4cgLWwceU398g0ELGF3AjeRLj57OeTb7l9/fat9kIcQlz3HQQ9kSZBksc2lPIyNY4g5ugT45RDk3KKCE5d5aW38ionF6QECuXRQ+CClmcBZZjr8lwRpHfmxAh71nFoUQSC6Rg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=pnC/7/mn; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=pnC/7/mn; arc=none smtp.client-ip=195.135.223.131
+	s=arc-20240116; t=1747821097; c=relaxed/simple;
+	bh=j87XQj55R90lW/Akjq9KKSuiIimp2f/8ZjqEdBYYXuI=;
+	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=bI8+rzqHfVLm8R3XuBQuuTgR8p6NvcaYjY5RGeVOIv/us72eOKE+Peymi3IRV9diBHeM2J90Zg5ePyYQUFga9OI8DAU55endidfib5CZAQdnvcvtsV3gxnOP+Vl8hsaJOUSGMDuhUrFDiM7yFRm45fAUqXnnixSexsjs1EXXSPc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=pEzykgsg; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=pEzykgsg; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="pnC/7/mn";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="pnC/7/mn"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="pEzykgsg";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="pEzykgsg"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 6153D208EE
-	for <linux-btrfs@vger.kernel.org>; Wed, 21 May 2025 09:51:29 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 247DC2262C
+	for <linux-btrfs@vger.kernel.org>; Wed, 21 May 2025 09:51:34 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1747821089; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=GUc6vITucAup6m81DDQTPvFyopMrEeYW6q2rBlOJUac=;
-	b=pnC/7/mn2Fgm1Ny3kJo/xa6NLY8N33UA3cV2GWCw6DVWz+n/Uw2ZEEV5JlagsG3k+j3lFR
-	XLQgWH8seqejT6YdWIgfKWvBru73ELPNrOHpMQDlekVe4YjQTgAimeIoGvXKKxwHLKMRhQ
-	6Ey/GTUVBYkIFKn9FqVXNshmKK1QCY8=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b="pnC/7/mn"
+	t=1747821094; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=kxHN4cvBUF3IK6ta9dWr4CsBrrENgkPXlm0VoxDe3mM=;
+	b=pEzykgsgfqKOgKQOB+KlBk3JhxeUdzPmzhSO8j3RKkBJeSj0Lkq+p2iEtFUWopTE+JzPM4
+	in4d7jRDee7Hu+aWKOj6RdhHgbW+3GAjdspWuePP0VzDoMhvIYn9ayq41ByVdu1izAW8pJ
+	0qiyhSj8FtYWdYymOCFeMQuGNJZXIl0=
+Authentication-Results: smtp-out1.suse.de;
+	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1747821089; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=GUc6vITucAup6m81DDQTPvFyopMrEeYW6q2rBlOJUac=;
-	b=pnC/7/mn2Fgm1Ny3kJo/xa6NLY8N33UA3cV2GWCw6DVWz+n/Uw2ZEEV5JlagsG3k+j3lFR
-	XLQgWH8seqejT6YdWIgfKWvBru73ELPNrOHpMQDlekVe4YjQTgAimeIoGvXKKxwHLKMRhQ
-	6Ey/GTUVBYkIFKn9FqVXNshmKK1QCY8=
+	t=1747821094; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=kxHN4cvBUF3IK6ta9dWr4CsBrrENgkPXlm0VoxDe3mM=;
+	b=pEzykgsgfqKOgKQOB+KlBk3JhxeUdzPmzhSO8j3RKkBJeSj0Lkq+p2iEtFUWopTE+JzPM4
+	in4d7jRDee7Hu+aWKOj6RdhHgbW+3GAjdspWuePP0VzDoMhvIYn9ayq41ByVdu1izAW8pJ
+	0qiyhSj8FtYWdYymOCFeMQuGNJZXIl0=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id A2ADC13888
-	for <linux-btrfs@vger.kernel.org>; Wed, 21 May 2025 09:51:28 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 65ED813888
+	for <linux-btrfs@vger.kernel.org>; Wed, 21 May 2025 09:51:33 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id q9WVGSCiLWgBRgAAD6G6ig
+	id OLvACiWiLWgBRgAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Wed, 21 May 2025 09:51:28 +0000
+	for <linux-btrfs@vger.kernel.org>; Wed, 21 May 2025 09:51:33 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/4] btrfs-progs: new --inode-flags option
-Date: Wed, 21 May 2025 19:21:06 +0930
-Message-ID: <cover.1747820747.git.wqu@suse.com>
+Subject: [PATCH 4/4] btrfs-progs: mkfs-tests: a new test case for --inode-flags
+Date: Wed, 21 May 2025 19:21:10 +0930
+Message-ID: <bb1a79f933e08838e491d93ff58e16d8de68c4dc.1747820747.git.wqu@suse.com>
 X-Mailer: git-send-email 2.49.0
+In-Reply-To: <cover.1747820747.git.wqu@suse.com>
+References: <cover.1747820747.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -62,77 +69,116 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-3.01 / 50.00];
+X-Spamd-Result: default: False [-2.80 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FUZZY_BLOCKED(0.00)[rspamd.com];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
 	RCPT_COUNT_ONE(0.00)[1];
 	ARC_NA(0.00)[];
-	FUZZY_BLOCKED(0.00)[rspamd.com];
-	MIME_TRACE(0.00)[0:+];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DKIM_TRACE(0.00)[suse.com:+];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_DN_NONE(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:mid];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received,2a07:de40:b281:104:10:150:64:97:from];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	ASN(0.00)[asn:25478, ipnet:::/0, country:RU];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:mid,suse.com:dkim]
-X-Rspamd-Action: no action
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Spam-Score: -3.01
-X-Rspamd-Queue-Id: 6153D208EE
-X-Spam-Level: 
+	RCVD_TLS_ALL(0.00)[]
 X-Spam-Flag: NO
+X-Spam-Score: -2.80
+X-Spam-Level: 
 
-The new --inode-flags option allows us to specify certain btrfs specific
-flags to each inode.
+The simple test will create a layout like the following:
 
-Currently we only support *nodatacow* and *nodatasum*.
+rootdir
+|- file1
+|- file2
+|- subv/		<< Regular subvolume
+|  |- file3
+|- nocow_subv/		<< NODATACOW subvolume
+|  |- file4
+|- nocow_dir/		<< NODATACOW directory
+|  |- dir2
+|  |  |- file5
+|  |- file6
+|- nocow_file1		<< NODATACOW file
 
-But in the future compression flag can also be added, allowing more
-accurate per-file compression.
+Any files under NODATACOW subvolume/directory should also be NODATACOW.
+The explicitly specified single file should also be NODATACOW.
 
-Furthermore child inodes will inherit the flag from their parents,
-meaning one only needs to specify the flag to the parent directory, then
-all children files/directories will have the flag.
-
-This new option also works well with --subvol, although one has to
-note that, the inode flag inheritance does not cross subvolume boundary
-(the same as the kernel).
-
-Finally, nodatacow and nodatasum will disable compression, just like the
-kernel.
-
-Qu Wenruo (4):
-  btrfs-progs: allow new inodes to inherit flags from their parents
-  btrfs-progs: do not generate checksum nor compress if the inode has
-    NODATACOW or NODATASUM
-  btrfs-progs: mkfs: add --inode-flags option
-  btrfs-progs: mkfs-tests: a new test case for --inode-flags
-
- Documentation/mkfs.btrfs.rst             |  35 +++++++
- kernel-shared/inode.c                    |  64 ++++++++++++
- mkfs/main.c                              | 120 ++++++++++++++++++++++-
- mkfs/rootdir.c                           |  95 ++++++++++++++++--
- mkfs/rootdir.h                           |  15 +++
- tests/mkfs-tests/038-inode-flags/test.sh |  55 +++++++++++
- 6 files changed, 375 insertions(+), 9 deletions(-)
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ tests/mkfs-tests/038-inode-flags/test.sh | 55 ++++++++++++++++++++++++
+ 1 file changed, 55 insertions(+)
  create mode 100755 tests/mkfs-tests/038-inode-flags/test.sh
 
---
+diff --git a/tests/mkfs-tests/038-inode-flags/test.sh b/tests/mkfs-tests/038-inode-flags/test.sh
+new file mode 100755
+index 000000000000..bb2f61c55605
+--- /dev/null
++++ b/tests/mkfs-tests/038-inode-flags/test.sh
+@@ -0,0 +1,55 @@
++#!/bin/bash
++# Basic test for mkfs.btrfs --inode-flags --rootdir. Create a dataset and use it as
++# rootdir, then various inode-flags and verify the flag is properly set.
++
++source "$TEST_TOP/common" || exit
++
++check_prereq mkfs.btrfs
++check_prereq btrfs
++check_global_prereq lsattr
++
++setup_root_helper
++prepare_test_dev
++
++tmp=$(_mktemp_dir mkfs-rootdir)
++
++write_file()
++{
++	local path="$1"
++	local size="$2"
++
++	run_check dd if=/dev/zero of="$path" bs="$size" count=1 status=noxfer > /dev/null 2>&1
++}
++
++check_nodatacow()
++{
++	local path="$1"
++
++	lsattr "$TEST_MNT"/"$path" | grep -q C || _fail "missing NODATACOW flag for $path"
++}
++
++write_file "$tmp/file1" 64K
++write_file "$tmp/file2" 64K
++run_check mkdir -p "$tmp/subv" "$tmp/nocow_subv" "$tmp/nocow_dir/dir2"
++write_file "$tmp/subv/file3" 64K
++write_file "$tmp/nocow_subv/file4" 64K
++write_file "$tmp/nocow_dir/dir2/file5" 64K
++write_file "$tmp/nocow_dir/file6" 64K
++write_file "$tmp/nocow_file1" 64K
++
++run_check_mkfs_test_dev --rootdir "$tmp" --inode-flags nodatacow:nocow_subv \
++	--subvol nocow_subv --inode-flags nodatacow:nocow_dir \
++	--inode-flags nodatacow:nocow_file1
++
++run_check $SUDO_HELPER "$TOP/btrfs" check "$TEST_DEV"
++
++run_check_mount_test_dev
++check_nodatacow "nocow_subv"
++check_nodatacow "nocow_subv/file4"
++check_nodatacow "nocow_dir"
++check_nodatacow "nocow_dir/file6"
++check_nodatacow "nocow_dir/dir2/file5"
++check_nodatacow "nocow_file1"
++run_check lsattr -R "$TEST_MNT"
++run_check_umount_test_dev
++run_check rm -rf -- "$tmp"
+-- 
 2.49.0
 

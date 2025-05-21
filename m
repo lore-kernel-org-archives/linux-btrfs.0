@@ -1,64 +1,64 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 475802356A0
-	for <linux-btrfs@vger.kernel.org>; Wed, 21 May 2025 09:58:50 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1BB6D25A2DD
+	for <linux-btrfs@vger.kernel.org>; Wed, 21 May 2025 09:58:52 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1747821532; cv=none; b=NH43BR4Kh/pPhkKjCONQzMGFC1cR1Xhr7uIBZSntV3zcCUZ726AL8fCNfwEjFoPbA/wUucVcbNozYDkmKmygIYtfmk4pghV1TsX6IeFKZkaJw77MJUmnWSJQijEjNiQofj5aPStY33gUaRnoyyPC0Xque3fnHqJbeqGL6HVc3XM=
+	t=1747821534; cv=none; b=dmK2UdkM3COSEDlCRF9XjyxVaLNNCHdrP2bqrqPDCKn506XNCfzO9pBkB8SPNB3o6qWDVhTLMO/+YahlU9lxLHbfcxnO1C03WBNumyUvEqHAyDncB+Sv6TFKYOhRMKRr2gkMwKOSEEK8aw0kich7tIxSw0o32iz31LWk+bhN+40=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1747821532; c=relaxed/simple;
-	bh=QtjTexzCHr4KciWb3BzdOgQca9OahL5WGU7DQeKZklo=;
+	s=arc-20240116; t=1747821534; c=relaxed/simple;
+	bh=j87XQj55R90lW/Akjq9KKSuiIimp2f/8ZjqEdBYYXuI=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=spNMm3lmwzPIJnZT2cyB9WCujGT1/uiYgRiCJ22C2j9lmfzg8DOvG+gei5sRk9lWq4bYT1wi1S7tD7AebxFUsk7f6TQad2+lnO8LqfmVQGAHIPccszgFJVrMFWAF2QF9xqmamtF48v2k5d/KFEYDe7h0KMA8HWI9nby+Vu038kc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=qFi4THxV; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=qFi4THxV; arc=none smtp.client-ip=195.135.223.131
+	 MIME-Version; b=tcLxv2svy360U21OuGAA0l92slYglojRJXoifj2FFXQAIbwEtDwENJOfLoTr3KH8KSbdBZ6ZgWwz27ule3WZ16x0dJamk4BX2p4a1fNSHlzXzyUIYbMUTE0cgT3TvEnnkZX6QnML3NKdGqEBP5ad+ER1ruo1vdLu4Uma3Tv//Co=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=G7+Zl4Lg; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=G7+Zl4Lg; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="qFi4THxV";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="qFi4THxV"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="G7+Zl4Lg";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="G7+Zl4Lg"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 6E65C20907
-	for <linux-btrfs@vger.kernel.org>; Wed, 21 May 2025 09:58:41 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 5685E21215
+	for <linux-btrfs@vger.kernel.org>; Wed, 21 May 2025 09:58:45 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1747821521; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1747821525; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=6PnkKBYNdcBLTkRLmyadjKofax0guQxm63e7pK0LFH8=;
-	b=qFi4THxV2WW27gYFLLQwyexoOf1W85sC8I7Tij4hSr8Ppt97t/358YFJ98/NkYNFIfA4WP
-	3yHVnUs9zdbeyKQ+Tc90cuo+oBNSwo4XhLVZMgzs6F/vswMxPzvZp3RwJT9fXDYIPYoKDi
-	uwZbnyxVN5piomci3nXd9Nsj73gSEmg=
-Authentication-Results: smtp-out2.suse.de;
-	none
+	bh=kxHN4cvBUF3IK6ta9dWr4CsBrrENgkPXlm0VoxDe3mM=;
+	b=G7+Zl4LgJ+IKFPX1SVNcOIBigD+bKvmK/ts3CLF+hA3i8UmqGR+kJhqPP+XxkLuUpja0+W
+	Irljg8nC5rFf6dWO60tz0mUceTAauI93NhUmmpjTAX2OhAp971DoEkqG221/bEElYmAR+V
+	cEziEDdqVupxE765iTIKxypktnGuVwo=
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=G7+Zl4Lg
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1747821521; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1747821525; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=6PnkKBYNdcBLTkRLmyadjKofax0guQxm63e7pK0LFH8=;
-	b=qFi4THxV2WW27gYFLLQwyexoOf1W85sC8I7Tij4hSr8Ppt97t/358YFJ98/NkYNFIfA4WP
-	3yHVnUs9zdbeyKQ+Tc90cuo+oBNSwo4XhLVZMgzs6F/vswMxPzvZp3RwJT9fXDYIPYoKDi
-	uwZbnyxVN5piomci3nXd9Nsj73gSEmg=
+	bh=kxHN4cvBUF3IK6ta9dWr4CsBrrENgkPXlm0VoxDe3mM=;
+	b=G7+Zl4LgJ+IKFPX1SVNcOIBigD+bKvmK/ts3CLF+hA3i8UmqGR+kJhqPP+XxkLuUpja0+W
+	Irljg8nC5rFf6dWO60tz0mUceTAauI93NhUmmpjTAX2OhAp971DoEkqG221/bEElYmAR+V
+	cEziEDdqVupxE765iTIKxypktnGuVwo=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id A0B6913888
-	for <linux-btrfs@vger.kernel.org>; Wed, 21 May 2025 09:58:40 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 8778513888
+	for <linux-btrfs@vger.kernel.org>; Wed, 21 May 2025 09:58:44 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id eLLMF9CjLWj6RwAAD6G6ig
+	id 4KWVEdSjLWj6RwAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Wed, 21 May 2025 09:58:40 +0000
+	for <linux-btrfs@vger.kernel.org>; Wed, 21 May 2025 09:58:44 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 1/4] btrfs-progs: allow new inodes to inherit flags from their parents
-Date: Wed, 21 May 2025 19:28:18 +0930
-Message-ID: <dcc413250e3b95dc7a010bf459c410026b9aaf4a.1747821454.git.wqu@suse.com>
+Subject: [PATCH v2 4/4] btrfs-progs: mkfs-tests: a new test case for --inode-flags
+Date: Wed, 21 May 2025 19:28:21 +0930
+Message-ID: <d47581ab6c7c3f4b8acb61db40deee551c28ae3d.1747821454.git.wqu@suse.com>
 X-Mailer: git-send-email 2.49.0
 In-Reply-To: <cover.1747821454.git.wqu@suse.com>
 References: <cover.1747821454.git.wqu@suse.com>
@@ -70,145 +70,126 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-Spam-Level: 
+X-Spamd-Bar: /
 X-Spam-Flag: NO
-X-Spam-Score: 0.20
-X-Spamd-Result: default: False [0.20 / 50.00];
+X-Spam-Score: -0.01
+X-Rspamd-Action: no action
+X-Rspamd-Queue-Id: 5685E21215
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Spamd-Result: default: False [-0.01 / 50.00];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	FUZZY_BLOCKED(0.00)[rspamd.com];
-	ARC_NA(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
+	MX_GOOD(-0.01)[];
+	URIBL_BLOCKED(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:mid,suse.com:dkim];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:mid,imap1.dmz-prg2.suse.org:helo];
-	URIBL_BLOCKED(0.00)[suse.com:email,suse.com:mid,imap1.dmz-prg2.suse.org:helo];
+	MIME_TRACE(0.00)[0:+];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	ARC_NA(0.00)[];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	FUZZY_BLOCKED(0.00)[rspamd.com];
+	RCVD_TLS_ALL(0.00)[];
+	DKIM_TRACE(0.00)[suse.com:+];
+	RCVD_COUNT_TWO(0.00)[2];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
 	TO_DN_NONE(0.00)[];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_TLS_ALL(0.00)[]
+	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received,2a07:de40:b281:104:10:150:64:97:from];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:mid,suse.com:dkim]
 
-Inside btrfs-progs (mostly 'mkfs/rootdir.c') new inodes are created in a
-different way than the kernel:
+The simple test will create a layout like the following:
 
-- A new orphan inode item is created
-  Without knowing the parent inode, thus it will always have the default
-  flags (0).
+rootdir
+|- file1
+|- file2
+|- subv/		<< Regular subvolume
+|  |- file3
+|- nocow_subv/		<< NODATACOW subvolume
+|  |- file4
+|- nocow_dir/		<< NODATACOW directory
+|  |- dir2
+|  |  |- file5
+|  |- file6
+|- nocow_file1		<< NODATACOW file
 
-- Link the new inode to a parent
-
-Meanwhile inside the kernel, we know exactly the parent inode at new
-inode creation time, and can inherit the inode flags
-(NODATACOW/NODATASUM/COMPRESS/etc).
-
-Address the missing ability by:
-
-- Inherit the parent inode flags when linking an orphan inode
-  The function btrfs_add_link() is called when linking an inode.
-
-  It can be called to creating the initial link if it's a new and orphan
-  inode.
-  It can also be called to creating extra hard links.
-
-  If the inode is already orphan, we know it's newly created and should
-  inherit the inode flag from the parent.
-
-With this new ability, it will be much easier to implement new per-inode
-flags (like NODATACOW/NODATASUM) and get them properly passed down.
+Any files under NODATACOW subvolume/directory should also be NODATACOW.
+The explicitly specified single file should also be NODATACOW.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- kernel-shared/inode.c | 64 +++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 64 insertions(+)
+ tests/mkfs-tests/038-inode-flags/test.sh | 55 ++++++++++++++++++++++++
+ 1 file changed, 55 insertions(+)
+ create mode 100755 tests/mkfs-tests/038-inode-flags/test.sh
 
-diff --git a/kernel-shared/inode.c b/kernel-shared/inode.c
-index 97bcbf82225c..f77157a2df14 100644
---- a/kernel-shared/inode.c
-+++ b/kernel-shared/inode.c
-@@ -158,6 +158,59 @@ out:
- 	return ret;
- }
- 
-+/* Similar to btrfs_inherit_iflags(), but different interfaces. */
-+static int inherit_inode_flags(struct btrfs_trans_handle *trans,
-+			       struct btrfs_root *root, u64 ino, u64 parent_ino)
+diff --git a/tests/mkfs-tests/038-inode-flags/test.sh b/tests/mkfs-tests/038-inode-flags/test.sh
+new file mode 100755
+index 000000000000..bb2f61c55605
+--- /dev/null
++++ b/tests/mkfs-tests/038-inode-flags/test.sh
+@@ -0,0 +1,55 @@
++#!/bin/bash
++# Basic test for mkfs.btrfs --inode-flags --rootdir. Create a dataset and use it as
++# rootdir, then various inode-flags and verify the flag is properly set.
++
++source "$TEST_TOP/common" || exit
++
++check_prereq mkfs.btrfs
++check_prereq btrfs
++check_global_prereq lsattr
++
++setup_root_helper
++prepare_test_dev
++
++tmp=$(_mktemp_dir mkfs-rootdir)
++
++write_file()
 +{
-+	struct btrfs_path path = { 0 };
-+	struct btrfs_key key;
-+	struct btrfs_inode_item *iitem;
-+	u64 parent_inode_flags;
-+	u64 child_inode_flags;
-+	int ret;
++	local path="$1"
++	local size="$2"
 +
-+	key.objectid = parent_ino;
-+	key.type = BTRFS_INODE_ITEM_KEY;
-+	key.offset = 0;
-+
-+	ret = btrfs_search_slot(NULL, root, &key, &path, 0, 0);
-+	if (ret > 0)
-+		ret = -ENOENT;
-+	if (ret < 0)
-+		goto out;
-+
-+	iitem = btrfs_item_ptr(path.nodes[0], path.slots[0], struct btrfs_inode_item);
-+	parent_inode_flags = btrfs_inode_flags(path.nodes[0], iitem);
-+	btrfs_release_path(&path);
-+
-+	key.objectid = ino;
-+
-+	ret = btrfs_search_slot(trans, root, &key, &path, 0, 1);
-+	if (ret > 0)
-+		ret = -ENOENT;
-+	if (ret < 0)
-+		goto out;
-+	iitem = btrfs_item_ptr(path.nodes[0], path.slots[0], struct btrfs_inode_item);
-+	child_inode_flags = btrfs_inode_flags(path.nodes[0], iitem);
-+
-+	if (parent_inode_flags & BTRFS_INODE_NOCOMPRESS) {
-+		child_inode_flags &= ~BTRFS_INODE_COMPRESS;
-+		child_inode_flags |= BTRFS_INODE_NOCOMPRESS;
-+	} else if (parent_inode_flags & BTRFS_INODE_COMPRESS){
-+		child_inode_flags &= ~BTRFS_INODE_NOCOMPRESS;
-+		child_inode_flags |= BTRFS_INODE_COMPRESS;
-+	}
-+	if (parent_inode_flags & BTRFS_INODE_NODATACOW) {
-+		child_inode_flags |= BTRFS_INODE_NODATACOW;
-+		if (S_ISREG(btrfs_inode_mode(path.nodes[0], iitem)))
-+			child_inode_flags |= BTRFS_INODE_NODATASUM;
-+	}
-+	btrfs_set_inode_flags(path.nodes[0], iitem, child_inode_flags);
-+out:
-+	btrfs_release_path(&path);
-+	return ret;
++	run_check dd if=/dev/zero of="$path" bs="$size" count=1 status=noxfer > /dev/null 2>&1
 +}
 +
- /*
-  * Add dir_item/index for 'parent_ino' if add_backref is true, also insert a
-  * backref from the ino to parent dir and update the nlink(Kernel version does
-@@ -220,6 +273,17 @@ int btrfs_add_link(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 					      nlink);
- 			btrfs_mark_buffer_dirty(path->nodes[0]);
- 			btrfs_release_path(path);
-+			/*
-+			 * If this is the first nlink of the inode, meaning the
-+			 * inode is newly created under the parent inode, this
-+			 * new child inode should inherit the inode flags from
-+			 * the parent.
-+			 */
-+			if (nlink == 1) {
-+				ret = inherit_inode_flags(trans, root, ino, parent_ino);
-+				if (ret < 0)
-+					goto out;
-+			}
- 		}
- 	}
- 
++check_nodatacow()
++{
++	local path="$1"
++
++	lsattr "$TEST_MNT"/"$path" | grep -q C || _fail "missing NODATACOW flag for $path"
++}
++
++write_file "$tmp/file1" 64K
++write_file "$tmp/file2" 64K
++run_check mkdir -p "$tmp/subv" "$tmp/nocow_subv" "$tmp/nocow_dir/dir2"
++write_file "$tmp/subv/file3" 64K
++write_file "$tmp/nocow_subv/file4" 64K
++write_file "$tmp/nocow_dir/dir2/file5" 64K
++write_file "$tmp/nocow_dir/file6" 64K
++write_file "$tmp/nocow_file1" 64K
++
++run_check_mkfs_test_dev --rootdir "$tmp" --inode-flags nodatacow:nocow_subv \
++	--subvol nocow_subv --inode-flags nodatacow:nocow_dir \
++	--inode-flags nodatacow:nocow_file1
++
++run_check $SUDO_HELPER "$TOP/btrfs" check "$TEST_DEV"
++
++run_check_mount_test_dev
++check_nodatacow "nocow_subv"
++check_nodatacow "nocow_subv/file4"
++check_nodatacow "nocow_dir"
++check_nodatacow "nocow_dir/file6"
++check_nodatacow "nocow_dir/dir2/file5"
++check_nodatacow "nocow_file1"
++run_check lsattr -R "$TEST_MNT"
++run_check_umount_test_dev
++run_check rm -rf -- "$tmp"
 -- 
 2.49.0
 

@@ -1,386 +1,169 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from mail-wm1-f54.google.com (mail-wm1-f54.google.com [209.85.128.54])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A231118F2FC
-	for <linux-btrfs@vger.kernel.org>; Sat, 24 May 2025 02:09:14 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D6E447E9
+	for <linux-btrfs@vger.kernel.org>; Sat, 24 May 2025 02:10:09 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.54
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1748052557; cv=none; b=rjq6rDtWQMNeWfSI0hH7RDidrC4YFtYSNM446C071yPv6aOVWFSerNMWso1uHm5b6TnDbF2eA/5C3tift9OrQUCySQ60QXxjAp75HcZdmRSxY/8H51MT+KhEQUmwqiAJFD4B7lssASkQtQrTbsQNVOz6er9fKju1ClqpuSkQK2U=
+	t=1748052613; cv=none; b=sAyIRWC9zWCBQHDlMuBbq+FmF1+eNpkSBJvc172+igULFmlnvll+2UdrM7H4JFqhWGH4+zRHeDceLAh6T8jTwVn9DZQcCPJ1FskGuVun+3edGUwfice8kUsD9p1ocFoex3I+uy3YCuRhRo/ETJfkUvvLSXqdnUJBjiS/oYM0DzM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1748052557; c=relaxed/simple;
-	bh=7R5Ej/u/Z3mi+xviiXh9OGAGs27rduMj4iS6VXF8qXM=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=CTG6oEUHNE7dhubRVZjDeu95sq5AbIW7JTLEsvoCX+J0+xD5aR2NzVfi8eCYTWGK5ZwIUb9v6Y9sqM74SN+xo9JMKsg5ggXK2/mdDX1Ybnyg1Iau3d+d72f+ASfi+qx7QEAUBRn/0xKLlcV3650ruZ51lfeOpX6W1FJNU5289u8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=drgvksSD; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=drgvksSD; arc=none smtp.client-ip=195.135.223.131
+	s=arc-20240116; t=1748052613; c=relaxed/simple;
+	bh=oB2u2yYRU3jFltpuEOl87ULk9xu7nhIy5gfp067zxN8=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=nWggSnka3GRoeBgqWOJNJQxnqILK3CoYoUn0zDsrc03cjG89AEU4iwAim3hf2FJcffvzby7qZGkjK6DW8n2HbBvAtFM7jdJovGKUs0bnk4VJlIUfn7dczXpXNo6AN2qm29/vbncgpVQJYniXjvm7rL2vF0ealt6MyVpXpyi8Bwg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=c7RSnaJU; arc=none smtp.client-ip=209.85.128.54
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="drgvksSD";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="drgvksSD"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id A13991FCEB
-	for <linux-btrfs@vger.kernel.org>; Sat, 24 May 2025 02:08:44 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1748052524; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=2PV+IF1au1cN2t7Yzee4llP3G+e5Xg6VVwQgHKk6qo8=;
-	b=drgvksSDIfyoMUZ5z8YcIMDOGpkfEE56oOfu+QMxNfE1jaZKyIfiX+69t4chISg+BFkKub
-	uGkEaLAZBoM/BATRhN1R0BHzx4+1GudVWTC1hWxAHGQqvR/LEaewvOFWDtPLi6Exyjm3Ss
-	Oy9Ox37JrUVHtUm3SEDlU2ub8Yn1BhY=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=drgvksSD
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1748052524; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=2PV+IF1au1cN2t7Yzee4llP3G+e5Xg6VVwQgHKk6qo8=;
-	b=drgvksSDIfyoMUZ5z8YcIMDOGpkfEE56oOfu+QMxNfE1jaZKyIfiX+69t4chISg+BFkKub
-	uGkEaLAZBoM/BATRhN1R0BHzx4+1GudVWTC1hWxAHGQqvR/LEaewvOFWDtPLi6Exyjm3Ss
-	Oy9Ox37JrUVHtUm3SEDlU2ub8Yn1BhY=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id E2C151373E
-	for <linux-btrfs@vger.kernel.org>; Sat, 24 May 2025 02:08:43 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id EFQ7KSsqMWjYXQAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Sat, 24 May 2025 02:08:43 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 8/9] btrfs-progs: convert: implement the block group tree support properly
-Date: Sat, 24 May 2025 11:38:14 +0930
-Message-ID: <92d9f0c8f845b1f664c95392065604e0bdd928f0.1748049973.git.wqu@suse.com>
-X-Mailer: git-send-email 2.49.0
-In-Reply-To: <cover.1748049973.git.wqu@suse.com>
-References: <cover.1748049973.git.wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="c7RSnaJU"
+Received: by mail-wm1-f54.google.com with SMTP id 5b1f17b1804b1-440685d6afcso4371755e9.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 23 May 2025 19:10:09 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1748052608; x=1748657408; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to;
+        bh=uhF8UEpMpWWihv+wMVbwmtYXxu1PYkZtbu92IGohw48=;
+        b=c7RSnaJUIfb8u9WVf8X/YzAlG1LAUBtTBkqOuoIoEfY8iXVlO6x6SmDtIKBJK4aHvV
+         L4c4Gt2sM4URp2TN8tlncb94uWMP4J3edJky1MqBi+QlaGgeLEk+sNASfH58QxuMSrh5
+         4OY+ID2sbOdHI7yCodvL2LU0h7sj58Fmj7T2weZwQa8ThwG8aljKW4AoLPuGVlLRWSZi
+         EIvf7E3xqCjsIp5lrOoHKcT6IJhSMJp5ZrLSvYEGJI+rRJfSY62m9TcnEZUdS/+ctEtd
+         1EdETmq/c5ZJDALh+vofjLSm4cwqziNhovcs1ecRLKbFUfHMT5ULOTKbZNFper07lBSj
+         l2Ag==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1748052608; x=1748657408;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=uhF8UEpMpWWihv+wMVbwmtYXxu1PYkZtbu92IGohw48=;
+        b=rFtuUdBju6LhuaprLKj1QgnsjesD2ISdMDa/xeYBaKKFjyPiHY85/YqLNM9Sgj9+DH
+         MJcHQcKRg1VBEWzq5VhrSlqkP3DHBsEy7hfhWkC0HInTpppOyB7vAjfyPpzum9YuhkWY
+         ajCulSeFxrG+dKKlrswVbvmbvCoF2KPJ2t5GW7TGfMD/MlwwQNHviGjkgWxtvVLL5IoO
+         kRDCJbfsw5mFnQ74mZ/6uHwAvpXKSYrVRBW0abdW9mVMhMKW8VLTQJv1qCusN3376+IC
+         8ssDWSU7k5Ghy4Fc4c3IVz7vCKUiHpq17MTsyYL6ZpHCF9oy5CC2UBzgd6LVlDGgvjKZ
+         kyRQ==
+X-Forwarded-Encrypted: i=1; AJvYcCU8x9vg3X7xQtogC1n6IpWrNulNVeacowSqPgVrDF2cYKb0l44vIwqWII83gr9QwkAblxXHs1z3AXpa4Q==@vger.kernel.org
+X-Gm-Message-State: AOJu0YyKFeHx+v9Kqt7GCStHG6MHw3Yh5sr1gwPqFatyvpUm7NvjYPGD
+	0DPhDv4RWTXgmFEtAPcPhxN5qxITUu0qKM5QbDFIpGaGrLq829J41wxRS/n7uVM+zxU=
+X-Gm-Gg: ASbGncvM2a97r7/JnfP5YXNwqyuDBbC1d3ti4wML7mNxBCOSZQuTSFBCvdOuwiHYn6Q
+	LcoKPSK2bB2JFwoQInhha0toSKtqFiP4xJeYetdPwopTmB+v4B0hPKxMpV5EV7D5vfpxOb8FKEt
+	zpo2PHV4PonyzolCovD44IpbfGiLVOHDdZmtzFxL6RrEv2j0vNQykYEqHhJlLA6mZjoppyb+yc1
+	iNWZdkRzBS158cKGl7hJBKLOvvZpm5MOTyg/td+lpcLaj8Xms0saAsAym/YNmSmTiO6xXa2zc6z
+	V4PNVI2OsN7rM89tbLkfGHilMmO8x4c2QrhjVNESo69uQAXqkVyJSiAE/VGIQp113ynFFFtBmPe
+	cyMs=
+X-Google-Smtp-Source: AGHT+IGWgXR3eXHbBipI5jVH+Dl0W+31kd6huMgDjpv8hCQpDh7qhjZWVdyAI1yfIH0Sv7lFo5b+Pg==
+X-Received: by 2002:a05:6000:430e:b0:3a3:69a6:c367 with SMTP id ffacd0b85a97d-3a4cb4ad6ffmr915244f8f.59.1748052607889;
+        Fri, 23 May 2025 19:10:07 -0700 (PDT)
+Received: from ?IPV6:2403:580d:fda1::299? (2403-580d-fda1--299.ip6.aussiebb.net. [2403:580d:fda1::299])
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-231d4eba4bcsm130183415ad.182.2025.05.23.19.09.54
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Fri, 23 May 2025 19:10:07 -0700 (PDT)
+Message-ID: <d873210f-baa9-4f75-902b-e61158e78333@suse.com>
+Date: Sat, 24 May 2025 11:39:51 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH 2/2] btrfs: Fix incorrect log message related barrier
+To: Kyoji Ogasawara <sawara04.o@gmail.com>, Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: clm@fb.com, josef@toxicpanda.com, dsterba@suse.com,
+ linux-btrfs@vger.kernel.org
+References: <20250521032713.7552-1-sawara04.o@gmail.com>
+ <20250521032713.7552-3-sawara04.o@gmail.com>
+ <e508301e-4474-4490-93ad-bbea3e6ed04d@gmx.com>
+ <CAKNDObAZHiqromZUimS_V3mfDT5CJaBN91rhOYr7b4nLTh-__w@mail.gmail.com>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <CAKNDObAZHiqromZUimS_V3mfDT5CJaBN91rhOYr7b4nLTh-__w@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
-X-Spam-Level: 
-X-Spamd-Bar: /
-X-Spam-Flag: NO
-X-Spam-Score: -0.01
-X-Rspamd-Action: no action
-X-Rspamd-Queue-Id: A13991FCEB
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Spamd-Result: default: False [-0.01 / 50.00];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	FROM_EQ_ENVFROM(0.00)[];
-	ARC_NA(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	ASN(0.00)[asn:25478, ipnet:::/0, country:RU];
-	MIME_TRACE(0.00)[0:+];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FUZZY_BLOCKED(0.00)[rspamd.com];
-	RCVD_TLS_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	URIBL_BLOCKED(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:mid,suse.com:dkim];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RCPT_COUNT_ONE(0.00)[1];
-	RCVD_COUNT_TWO(0.00)[2];
-	DKIM_TRACE(0.00)[suse.com:+]
 
-Previously there are some problems related to btrfs-convert bgt support,
-that it doesn't work at all, caused by the following reasons:
 
-- We never update the super block with extra compat ro flags
-  Even if we set "-O bgt" flags, it will not set the compat ro flags,
-  and everything just go non-bgt routine.
 
-  Meanwhile other compat ro flags are for free-space-tree, and
-  free-space-tree is rebuilt after the full convert is done.
-  Thus this bug won't cause any problem for fst features, but only
-  affecting bgt so far.
+在 2025/5/24 11:30, Kyoji Ogasawara 写道:
+> Thanks for the review.
+> 
+> Regarding the Fixes tag, would you prefer I resubmit the patch with
+> Fixes: eddb1a433f26 ("btrfs: add reconfigure callback for fs_context")?
 
-- No extra handling to create block group tree
+We will handle the tag when merging the patches into for-next branch.
 
-Fix above problems by:
+So you don't need to do anything.
 
-- Set the proper compat RO flag for the temporary super block
-  We should only set the compat RO flags except the two FST related
-  bits.
-  As FST is handled after conversion, we should not set the flag at that
-  timing.
+Thanks,
+Qu
 
-- Add block group tree root item and its backrefs
-  So the initial temporary fs will have a proper block group tree.
-
-  The only tricky part is for the extent tree population, where we have
-  to put all block group items into the block group tree other than the
-  extent tree.
-
-With these two points addressed, now block group tree can be properly
-enabled for btrfs-convert.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- convert/common.c | 108 +++++++++++++++++++++++++++++++++++++----------
- 1 file changed, 85 insertions(+), 23 deletions(-)
-
-diff --git a/convert/common.c b/convert/common.c
-index b00d69cedd68..c2210f2686b3 100644
---- a/convert/common.c
-+++ b/convert/common.c
-@@ -150,6 +150,13 @@ static int setup_temp_super(int fd, struct btrfs_mkfs_config *cfg,
- 	btrfs_set_super_chunk_root(&super, chunk_bytenr);
- 	btrfs_set_super_cache_generation(&super, -1);
- 	btrfs_set_super_incompat_flags(&super, cfg->features.incompat_flags);
-+	/*
-+	 * Do not set fst related flags yet, it will be handled after
-+	 * the fs is converted.
-+	 */
-+	btrfs_set_super_compat_ro_flags(&super, cfg->features.compat_ro_flags &
-+			~(BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE |
-+			  BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE_VALID));
- 	if (cfg->label)
- 		strncpy_null(super.label, cfg->label, BTRFS_LABEL_SIZE);
- 
-@@ -200,6 +207,12 @@ static u32 get_item_offset(const struct extent_buffer *eb,
- 		return cfg->leaf_data_size;
- }
- 
-+static bool btrfs_is_bgt(const struct btrfs_mkfs_config *cfg)
-+{
-+	return cfg->features.compat_ro_flags &
-+	       BTRFS_FEATURE_COMPAT_RO_BLOCK_GROUP_TREE;
-+}
-+
- static void insert_temp_root_item(struct extent_buffer *buf,
- 				  struct btrfs_mkfs_config *cfg,
- 				  u64 objectid, u64 bytenr)
-@@ -260,7 +273,8 @@ static inline int write_temp_extent_buffer(int fd, struct extent_buffer *buf,
- 
- static int setup_temp_root_tree(int fd, struct btrfs_mkfs_config *cfg,
- 				u64 root_bytenr, u64 extent_bytenr,
--				u64 dev_bytenr, u64 fs_bytenr, u64 csum_bytenr)
-+				u64 dev_bytenr, u64 fs_bytenr, u64 csum_bytenr,
-+				u64 bgt_bytenr)
- {
- 	struct extent_buffer *buf = NULL;
- 	int ret;
-@@ -270,7 +284,8 @@ static int setup_temp_root_tree(int fd, struct btrfs_mkfs_config *cfg,
- 	 * bad key order.
- 	 */
- 	UASSERT(root_bytenr < extent_bytenr && extent_bytenr < dev_bytenr &&
--	        dev_bytenr < fs_bytenr && fs_bytenr < csum_bytenr);
-+	        dev_bytenr < fs_bytenr && fs_bytenr < csum_bytenr &&
-+		csum_bytenr < bgt_bytenr);
- 	buf = malloc(sizeof(*buf) + cfg->nodesize);
- 	if (!buf)
- 		return -ENOMEM;
-@@ -284,6 +299,9 @@ static int setup_temp_root_tree(int fd, struct btrfs_mkfs_config *cfg,
- 	insert_temp_root_item(buf, cfg, BTRFS_DEV_TREE_OBJECTID, dev_bytenr);
- 	insert_temp_root_item(buf, cfg, BTRFS_FS_TREE_OBJECTID, fs_bytenr);
- 	insert_temp_root_item(buf, cfg, BTRFS_CSUM_TREE_OBJECTID, csum_bytenr);
-+	if (btrfs_is_bgt(cfg))
-+		insert_temp_root_item(buf, cfg, BTRFS_BLOCK_GROUP_TREE_OBJECTID,
-+				      bgt_bytenr);
- 
- 	ret = write_temp_extent_buffer(fd, buf, root_bytenr, cfg);
- out:
-@@ -658,9 +676,12 @@ static void insert_temp_block_group(struct extent_buffer *buf,
- static int setup_temp_extent_tree(int fd, struct btrfs_mkfs_config *cfg,
- 				  u64 chunk_bytenr, u64 root_bytenr,
- 				  u64 extent_bytenr, u64 dev_bytenr,
--				  u64 fs_bytenr, u64 csum_bytenr)
-+				  u64 fs_bytenr, u64 csum_bytenr,
-+				  u64 bgt_bytenr)
- {
--	struct extent_buffer *buf = NULL;
-+	struct extent_buffer *extent_buf = NULL;
-+	struct extent_buffer *bg_buf = NULL;
-+	const bool is_bgt = btrfs_is_bgt(cfg);
- 	int ret;
- 
- 	/*
-@@ -669,55 +690,85 @@ static int setup_temp_extent_tree(int fd, struct btrfs_mkfs_config *cfg,
- 	 */
- 	UASSERT(chunk_bytenr < root_bytenr && root_bytenr < extent_bytenr &&
- 		extent_bytenr < dev_bytenr && dev_bytenr < fs_bytenr &&
--		fs_bytenr < csum_bytenr);
--	buf = malloc(sizeof(*buf) + cfg->nodesize);
--	if (!buf)
--		return -ENOMEM;
-+		fs_bytenr < csum_bytenr && csum_bytenr < bgt_bytenr);
-+	extent_buf = malloc(sizeof(*extent_buf) + cfg->nodesize);
-+	if (!extent_buf) {
-+		ret = -ENOMEM;
-+		goto out;
-+	}
- 
--	ret = setup_temp_extent_buffer(buf, cfg, extent_bytenr,
-+	ret = setup_temp_extent_buffer(extent_buf, cfg, extent_bytenr,
- 				       BTRFS_EXTENT_TREE_OBJECTID);
- 	if (ret < 0)
- 		goto out;
- 
--	ret = insert_temp_extent_item(fd, buf, cfg,  chunk_bytenr,
-+	if (is_bgt) {
-+		bg_buf = malloc(sizeof(*bg_buf) + cfg->nodesize);
-+		if (!bg_buf) {
-+			ret = -ENOMEM;
-+			goto out;
-+		}
-+		ret = setup_temp_extent_buffer(bg_buf, cfg, bgt_bytenr,
-+					       BTRFS_BLOCK_GROUP_TREE_OBJECTID);
-+		if (ret < 0)
-+			goto out;
-+	}
-+
-+	ret = insert_temp_extent_item(fd, extent_buf, cfg,  chunk_bytenr,
- 				      BTRFS_CHUNK_TREE_OBJECTID);
- 	if (ret < 0)
- 		goto out;
- 
--	insert_temp_block_group(buf, cfg, chunk_bytenr,
-+	insert_temp_block_group(is_bgt ? bg_buf : extent_buf, cfg, chunk_bytenr,
- 				BTRFS_MKFS_SYSTEM_GROUP_SIZE, cfg->nodesize,
- 				BTRFS_BLOCK_GROUP_SYSTEM);
- 
--	ret = insert_temp_extent_item(fd, buf, cfg, root_bytenr,
-+	ret = insert_temp_extent_item(fd, extent_buf, cfg, root_bytenr,
- 				      BTRFS_ROOT_TREE_OBJECTID);
- 	if (ret < 0)
- 		goto out;
- 
--	/* 5 tree block used, root, extent, dev, fs and csum*/
--	insert_temp_block_group(buf, cfg, root_bytenr,
--				BTRFS_CONVERT_META_GROUP_SIZE, cfg->nodesize * 5,
-+	/*
-+	 * 5 tree block used, root, extent, dev, fs and csum.
-+	 * Plus bg tree if specified.
-+	 */
-+	insert_temp_block_group(is_bgt ? bg_buf : extent_buf, cfg, root_bytenr,
-+				BTRFS_CONVERT_META_GROUP_SIZE,
-+				is_bgt ? cfg->nodesize * 6 : cfg->nodesize * 5,
- 				BTRFS_BLOCK_GROUP_METADATA);
- 
--	ret = insert_temp_extent_item(fd, buf, cfg, extent_bytenr,
-+	ret = insert_temp_extent_item(fd, extent_buf, cfg, extent_bytenr,
- 				      BTRFS_EXTENT_TREE_OBJECTID);
- 	if (ret < 0)
- 		goto out;
--	ret = insert_temp_extent_item(fd, buf, cfg, dev_bytenr,
-+	ret = insert_temp_extent_item(fd, extent_buf, cfg, dev_bytenr,
- 				      BTRFS_DEV_TREE_OBJECTID);
- 	if (ret < 0)
- 		goto out;
--	ret = insert_temp_extent_item(fd, buf, cfg, fs_bytenr,
-+	ret = insert_temp_extent_item(fd, extent_buf, cfg, fs_bytenr,
- 				      BTRFS_FS_TREE_OBJECTID);
- 	if (ret < 0)
- 		goto out;
--	ret = insert_temp_extent_item(fd, buf, cfg, csum_bytenr,
-+	ret = insert_temp_extent_item(fd, extent_buf, cfg, csum_bytenr,
- 				      BTRFS_CSUM_TREE_OBJECTID);
- 	if (ret < 0)
- 		goto out;
-+	if (btrfs_is_bgt(cfg)) {
-+		ret = insert_temp_extent_item(fd, extent_buf, cfg, bgt_bytenr,
-+				      BTRFS_BLOCK_GROUP_TREE_OBJECTID);
-+		if (ret < 0)
-+			goto out;
-+	}
-+
-+	ret = write_temp_extent_buffer(fd, extent_buf, extent_bytenr, cfg);
-+	if (ret < 0)
-+		goto out;
-+	if (is_bgt)
-+		ret = write_temp_extent_buffer(fd, bg_buf, bgt_bytenr, cfg);
- 
--	ret = write_temp_extent_buffer(fd, buf, extent_bytenr, cfg);
- out:
--	free(buf);
-+	free(extent_buf);
-+	free(bg_buf);
- 	return ret;
- }
- 
-@@ -751,6 +802,7 @@ int make_convert_btrfs(int fd, struct btrfs_mkfs_config *cfg,
- {
- 	struct cache_tree *free_space = &cctx->free_space;
- 	struct cache_tree *used_space = &cctx->used_space;
-+	const bool is_bgt = btrfs_is_bgt(cfg);
- 	u64 sys_chunk_start;
- 	u64 meta_chunk_start;
- 	/* chunk tree bytenr, in system chunk */
-@@ -761,6 +813,7 @@ int make_convert_btrfs(int fd, struct btrfs_mkfs_config *cfg,
- 	u64 dev_bytenr;
- 	u64 fs_bytenr;
- 	u64 csum_bytenr;
-+	u64 bgt_bytenr = (u64)-1;
- 	int ret;
- 
- 	/* Source filesystem must be opened, checked and analyzed in advance */
-@@ -814,6 +867,7 @@ int make_convert_btrfs(int fd, struct btrfs_mkfs_config *cfg,
- 	 *  | +nodesize * 2	| device root	|
- 	 *  | +nodesize * 3	| fs tree	|
- 	 *  | +nodesize * 4	| csum tree	|
-+	 *  | +nodesize * 5	| bg tree	| (Optional)
- 	 *  -------------------------------------
- 	 * Inside the allocated system chunk, the layout will be:
- 	 *  | offset		| contents	|
-@@ -827,13 +881,15 @@ int make_convert_btrfs(int fd, struct btrfs_mkfs_config *cfg,
- 	dev_bytenr = meta_chunk_start + cfg->nodesize * 2;
- 	fs_bytenr = meta_chunk_start + cfg->nodesize * 3;
- 	csum_bytenr = meta_chunk_start + cfg->nodesize * 4;
-+	if (is_bgt)
-+		bgt_bytenr = meta_chunk_start + cfg->nodesize * 5;
- 
- 	ret = setup_temp_super(fd, cfg, root_bytenr, chunk_bytenr);
- 	if (ret < 0)
- 		goto out;
- 
- 	ret = setup_temp_root_tree(fd, cfg, root_bytenr, extent_bytenr,
--				   dev_bytenr, fs_bytenr, csum_bytenr);
-+				   dev_bytenr, fs_bytenr, csum_bytenr, bgt_bytenr);
- 	if (ret < 0)
- 		goto out;
- 	ret = setup_temp_chunk_tree(fd, cfg, sys_chunk_start, meta_chunk_start,
-@@ -850,13 +906,19 @@ int make_convert_btrfs(int fd, struct btrfs_mkfs_config *cfg,
- 	ret = setup_temp_empty_tree(fd, cfg, csum_bytenr, BTRFS_CSUM_TREE_OBJECTID);
- 	if (ret < 0)
- 		goto out;
-+	if (is_bgt) {
-+		ret = setup_temp_empty_tree(fd, cfg, bgt_bytenr,
-+					    BTRFS_BLOCK_GROUP_TREE_OBJECTID);
-+		if (ret < 0)
-+			goto out;
-+	}
- 	/*
- 	 * Setup extent tree last, since it may need to read tree block key
- 	 * for non-skinny metadata case.
- 	 */
- 	ret = setup_temp_extent_tree(fd, cfg, chunk_bytenr, root_bytenr,
- 				     extent_bytenr, dev_bytenr, fs_bytenr,
--				     csum_bytenr);
-+				     csum_bytenr, bgt_bytenr);
- out:
- 	return ret;
- }
--- 
-2.49.0
+> 
+> 2025年5月21日(水) 13:15 Qu Wenruo <quwenruo.btrfs@gmx.com>:
+>>
+>>
+>>
+>> 在 2025/5/21 12:57, sawara04.o@gmail.com 写道:
+>>> From: Kyoji Ogasawara <sawara04.o@gmail.com>
+>>>
+>>> Fix a wrong log message that appears when the "nobarrier" mount
+>>> option is unset.
+>>> When "nobarrier" is unset, barrier is actually enabled. However,
+>>> the log incorrectly stated "turning off barriers".
+>>>
+>>> Signed-off-by: Kyoji Ogasawara <sawara04.o@gmail.com>
+>>
+>> Reviewed-by: Qu Wenruo <wqu@suse.com>
+>>
+>> This is definitely a copy-paste-error.
+>>
+>> And we can add a fixes tag when merging:
+>>
+>> Fixes: eddb1a433f26 ("btrfs: add reconfigure callback for fs_context")
+>>
+>> Thanks,
+>> Qu
+>>
+>>> ---
+>>>    fs/btrfs/super.c | 2 +-
+>>>    1 file changed, 1 insertion(+), 1 deletion(-)
+>>>
+>>> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+>>> index 012b63a07ab1..0e8e978519d8 100644
+>>> --- a/fs/btrfs/super.c
+>>> +++ b/fs/btrfs/super.c
+>>> @@ -1462,7 +1462,7 @@ static void btrfs_emit_options(struct btrfs_fs_info *info,
+>>>        btrfs_info_if_unset(info, old, NODATACOW, "setting datacow");
+>>>        btrfs_info_if_unset(info, old, SSD, "not using ssd optimizations");
+>>>        btrfs_info_if_unset(info, old, SSD_SPREAD, "not using spread ssd allocation scheme");
+>>> -     btrfs_info_if_unset(info, old, NOBARRIER, "turning off barriers");
+>>> +     btrfs_info_if_unset(info, old, NOBARRIER, "turning on barriers");
+>>>        btrfs_info_if_unset(info, old, NOTREELOG, "enabling tree log");
+>>>        btrfs_info_if_unset(info, old, SPACE_CACHE, "disabling disk space caching");
+>>>        btrfs_info_if_unset(info, old, FREE_SPACE_TREE, "disabling free space tree");
+>>
+> 
 

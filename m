@@ -1,67 +1,67 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 510E914885B
-	for <linux-btrfs@vger.kernel.org>; Sat, 24 May 2025 02:09:02 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3B83516A956
+	for <linux-btrfs@vger.kernel.org>; Sat, 24 May 2025 02:09:03 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1748052544; cv=none; b=WRbzYlAztfkXkbBU0rKTJXFp1en+/frdnqT6ru1FC9hqWQ5WOOX80gUZiK9EAV5u92WJkQiyToUPUTRYD7hpWvihaY/8EMlN5OhEn5KKAMgxyEQrSOh5WZr+fJkSybmc9WZMoJ+5pcE15p7XIDJflz3W85QpfVe73RbSa+ZVYZk=
+	t=1748052545; cv=none; b=IiYAdFqG2SkCD18Jt2QfiDPFy+iBuWUcaBFSLAZjq3p39kEPqNu6a4lE9W8VI0G4HDytACUsCyn4awhsMXcZLxpZ+fU8LHM8FszhjiEG6mTsgyxJxzFNYBh2uVVSslcMgR9TcajehSCgREZqbaiVx5RbtF04Af4PyQxURnL0oHA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1748052544; c=relaxed/simple;
-	bh=i1nEaL1QEZ/xibP1oWDutfDFqw8fe6Lmmlzf0oFcVEQ=;
+	s=arc-20240116; t=1748052545; c=relaxed/simple;
+	bh=VkkxUpp7LQkKme6lg0P4lVFBEiepJd5o/unzI/AL3cg=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=qgbr+nwaYLAakGSXuSDV33RxFzyIYB2KpWlAlaGqbibt0jo2AGTTwPKhCKo3LWuDf2Px1CpvNBXfYa1VONAG4O+rzNniwWVOuR62ptGRcfCBfFBftYtOkFvIxSsx1q83KupYjfEWERIpHxwdpvo+v1ESmB84cIhs4V9dQrWz3AA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=c94vqsUf; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=c94vqsUf; arc=none smtp.client-ip=195.135.223.131
+	 MIME-Version; b=srmN5YMXeIuHpYvIsTNxKQm4peT+ZwK9J1SEmPuo3jX2NtdWHLY1pysSpsYd/kX4viKUSRkWAzjEmePuHKZetIYB4jvKyzbLKiZV5TmbrS1A/UnfScgZeqrgKMh+py1KpW9b91KLwvj4jv5jZ62CNAd0pF3zlaXdV4nBujjOook=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=p836m6eg; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=p836m6eg; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="c94vqsUf";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="c94vqsUf"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="p836m6eg";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="p836m6eg"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 4FF6F1FCEA
-	for <linux-btrfs@vger.kernel.org>; Sat, 24 May 2025 02:08:42 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id CE36E211A1
+	for <linux-btrfs@vger.kernel.org>; Sat, 24 May 2025 02:08:45 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1748052522; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1748052525; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=DtRwwsKn1MnUb9/dt/zSLih+Q38ogNioSROPGQ3pLB4=;
-	b=c94vqsUfg+Iq3FCjSQKsfcsG+SplaUjT7fcQDWkmeh7s2KMkR7GuTshRAwZTR5zDbcMkgP
-	dc3Hvh+hvN3FEdbdiw3pF2i8VFc5p8Rtsf7B/SylPV45QYRz2DNYjwnQH5TmVDter9k0rS
-	NF0ZZoOLkRgrmv5NgBm05Cx1V/O0R/8=
-Authentication-Results: smtp-out2.suse.de;
+	bh=p+297L+TNXjxU0/VtfqN2YoYUi8PUpb8Ngg9GQbfGuQ=;
+	b=p836m6eg7zKdnszLz/UolWpjyeIgUBeDGgNI2TtNrylz+XZ/ewLze49wYCNLnSieuvSZiY
+	mdigLDASQ/1p2z78wy2E3tZL6LpHHfdXPyKP7eJCYa9sr7b0zJmM0s6d4ctwGeZ3PqzV3f
+	RLsThzN3z0BuvalnrclTKlHHr+jaKT8=
+Authentication-Results: smtp-out1.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1748052522; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1748052525; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=DtRwwsKn1MnUb9/dt/zSLih+Q38ogNioSROPGQ3pLB4=;
-	b=c94vqsUfg+Iq3FCjSQKsfcsG+SplaUjT7fcQDWkmeh7s2KMkR7GuTshRAwZTR5zDbcMkgP
-	dc3Hvh+hvN3FEdbdiw3pF2i8VFc5p8Rtsf7B/SylPV45QYRz2DNYjwnQH5TmVDter9k0rS
-	NF0ZZoOLkRgrmv5NgBm05Cx1V/O0R/8=
+	bh=p+297L+TNXjxU0/VtfqN2YoYUi8PUpb8Ngg9GQbfGuQ=;
+	b=p836m6eg7zKdnszLz/UolWpjyeIgUBeDGgNI2TtNrylz+XZ/ewLze49wYCNLnSieuvSZiY
+	mdigLDASQ/1p2z78wy2E3tZL6LpHHfdXPyKP7eJCYa9sr7b0zJmM0s6d4ctwGeZ3PqzV3f
+	RLsThzN3z0BuvalnrclTKlHHr+jaKT8=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 868101373E
-	for <linux-btrfs@vger.kernel.org>; Sat, 24 May 2025 02:08:41 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 1BCD11373E
+	for <linux-btrfs@vger.kernel.org>; Sat, 24 May 2025 02:08:44 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id UJe/EikqMWjYXQAAD6G6ig
+	id mJ9DNCwqMWjYXQAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Sat, 24 May 2025 02:08:41 +0000
+	for <linux-btrfs@vger.kernel.org>; Sat, 24 May 2025 02:08:44 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 7/8] btrfs-progs: convert: merge setup_temp_fs_tree() and setup_temp_csum_tree()
-Date: Sat, 24 May 2025 11:38:12 +0930
-Message-ID: <3c8e4d9e240e440f02b701c053e34117a502f8fe.1748047388.git.wqu@suse.com>
+Subject: [PATCH 9/9] btrfs-progs: convert-tests: add a test case for bgt feature
+Date: Sat, 24 May 2025 11:38:15 +0930
+Message-ID: <3998a6cb74eb0d578ab19690fa4bf6e8a380acb3.1748049973.git.wqu@suse.com>
 X-Mailer: git-send-email 2.49.0
-In-Reply-To: <cover.1748047388.git.wqu@suse.com>
-References: <cover.1748047388.git.wqu@suse.com>
+In-Reply-To: <cover.1748049973.git.wqu@suse.com>
+References: <cover.1748049973.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -94,83 +94,50 @@ X-Spamd-Result: default: False [0.20 / 50.00];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
 	RCVD_TLS_ALL(0.00)[]
 
-Both fs and csum trees are empty at make_convert_btrfs(), no need to use
-two different functions to do that.
+Previously "btrfs-convert -O bgt" will not cause any error, but the
+results fs has no block-group-tree feature at all, making it no
+different than "btrfs-convert -O ^bgt".
 
-Merge them into a common setup_temp_empty_tree() instead.
+This is a big bug that never caught by our existing convert runs.
+001-ext2-basic and 003-ext4-basic all tested bgt feature, but doesn't
+really check if the resulted fs really have bgt flags set.
+
+To patch the hole, add a new test case, which will do the regular bgt
+convert, but at the end also do a super block dump and verify the
+BLOCK_GROUP_TREE flag is properly set.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- convert/common.c | 35 ++++++-----------------------------
- 1 file changed, 6 insertions(+), 29 deletions(-)
+ .../028-block-group-tree/test.sh              | 20 +++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+ create mode 100755 tests/convert-tests/028-block-group-tree/test.sh
 
-diff --git a/convert/common.c b/convert/common.c
-index d062a1306c9e..b00d69cedd68 100644
---- a/convert/common.c
-+++ b/convert/common.c
-@@ -514,8 +514,8 @@ out:
- 	return ret;
- }
- 
--static int setup_temp_fs_tree(int fd, struct btrfs_mkfs_config *cfg,
--			      u64 fs_bytenr)
-+static int setup_temp_empty_tree(int fd, struct btrfs_mkfs_config *cfg,
-+				 u64 root_bytenr, u64 owner)
- {
- 	struct extent_buffer *buf = NULL;
- 	int ret;
-@@ -523,36 +523,13 @@ static int setup_temp_fs_tree(int fd, struct btrfs_mkfs_config *cfg,
- 	buf = malloc(sizeof(*buf) + cfg->nodesize);
- 	if (!buf)
- 		return -ENOMEM;
--	ret = setup_temp_extent_buffer(buf, cfg, fs_bytenr,
--				       BTRFS_FS_TREE_OBJECTID);
-+	ret = setup_temp_extent_buffer(buf, cfg, root_bytenr, owner);
- 	if (ret < 0)
- 		goto out;
- 	/*
- 	 * Temporary fs tree is completely empty.
- 	 */
--	ret = write_temp_extent_buffer(fd, buf, fs_bytenr, cfg);
--out:
--	free(buf);
--	return ret;
--}
--
--static int setup_temp_csum_tree(int fd, struct btrfs_mkfs_config *cfg,
--				u64 csum_bytenr)
--{
--	struct extent_buffer *buf = NULL;
--	int ret;
--
--	buf = malloc(sizeof(*buf) + cfg->nodesize);
--	if (!buf)
--		return -ENOMEM;
--	ret = setup_temp_extent_buffer(buf, cfg, csum_bytenr,
--				       BTRFS_CSUM_TREE_OBJECTID);
--	if (ret < 0)
--		goto out;
--	/*
--	 * Temporary csum tree is completely empty.
--	 */
--	ret = write_temp_extent_buffer(fd, buf, csum_bytenr, cfg);
-+	ret = write_temp_extent_buffer(fd, buf, root_bytenr, cfg);
- out:
- 	free(buf);
- 	return ret;
-@@ -867,10 +844,10 @@ int make_convert_btrfs(int fd, struct btrfs_mkfs_config *cfg,
- 				  dev_bytenr);
- 	if (ret < 0)
- 		goto out;
--	ret = setup_temp_fs_tree(fd, cfg, fs_bytenr);
-+	ret = setup_temp_empty_tree(fd, cfg, fs_bytenr, BTRFS_FS_TREE_OBJECTID);
- 	if (ret < 0)
- 		goto out;
--	ret = setup_temp_csum_tree(fd, cfg, csum_bytenr);
-+	ret = setup_temp_empty_tree(fd, cfg, csum_bytenr, BTRFS_CSUM_TREE_OBJECTID);
- 	if (ret < 0)
- 		goto out;
- 	/*
+diff --git a/tests/convert-tests/028-block-group-tree/test.sh b/tests/convert-tests/028-block-group-tree/test.sh
+new file mode 100755
+index 000000000000..7b30ac7de7ae
+--- /dev/null
++++ b/tests/convert-tests/028-block-group-tree/test.sh
+@@ -0,0 +1,20 @@
++#!/bin/bash
++# Make sure btrfs-convert can create a fs with bgt feature.
++
++source "$TEST_TOP/common" || exit
++source "$TEST_TOP/common.convert" || exit
++
++setup_root_helper
++prepare_test_dev
++
++check_global_prereq mkfs.ext4
++check_prereq btrfs-convert
++check_prereq btrfs
++
++convert_test_prep_fs ext4 mke2fs -t ext4 -b 4096
++run_check_umount_test_dev
++convert_test_do_convert bgt 16384
++
++# Manually check the super block to make sure it has BGT flag.
++run_check_stdout "$TOP/btrfs" inspect-internal dump-super "$TEST_DEV" |\
++	grep -q "BLOCK_GROUP_TREE" || _fail "No block-group-tree feature enabled"
 -- 
 2.49.0
 

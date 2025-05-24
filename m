@@ -1,67 +1,67 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D48B214885B
-	for <linux-btrfs@vger.kernel.org>; Sat, 24 May 2025 02:08:56 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 510E914885B
+	for <linux-btrfs@vger.kernel.org>; Sat, 24 May 2025 02:09:02 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1748052538; cv=none; b=L28YF7l4U3Kz9Y/+CrlskVzZctcwVNLf2MpZcgLAomk49v95Po45sHW3AW9+kj27FxG+n9KKF2IpRx1iqScbzl/FgNfXLYGMiBc0jumW4pRRe0SyFNjqGOb9T6LjZnYMt9NF5IiO21Jg7kuaGbXe0iOPnqEC8Ty9SFkq6eNzZIc=
+	t=1748052544; cv=none; b=WRbzYlAztfkXkbBU0rKTJXFp1en+/frdnqT6ru1FC9hqWQ5WOOX80gUZiK9EAV5u92WJkQiyToUPUTRYD7hpWvihaY/8EMlN5OhEn5KKAMgxyEQrSOh5WZr+fJkSybmc9WZMoJ+5pcE15p7XIDJflz3W85QpfVe73RbSa+ZVYZk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1748052538; c=relaxed/simple;
-	bh=GxPC20Lm7lcB3VxTZXjnUdXZSV8+G8KiDtT/BFUQ6JQ=;
+	s=arc-20240116; t=1748052544; c=relaxed/simple;
+	bh=i1nEaL1QEZ/xibP1oWDutfDFqw8fe6Lmmlzf0oFcVEQ=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=Rwzkn0qFUcq9DQRJBAX332Xof3DYmJ+Jm5z8mLkuaA1fh/VILY6U6JfxzRLijVRW/qBuI0B7WwbC20hhmguYRoXho1LKf7b2Lq8N/5rAKtK6fJoRcPp5aYEccuF3iBL5Ps9WPje4S/1CdFcanTVUHBPZ7M8i6iHe2hxO2HzFr7c=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=BfTHegpR; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=BfTHegpR; arc=none smtp.client-ip=195.135.223.130
+	 MIME-Version; b=qgbr+nwaYLAakGSXuSDV33RxFzyIYB2KpWlAlaGqbibt0jo2AGTTwPKhCKo3LWuDf2Px1CpvNBXfYa1VONAG4O+rzNniwWVOuR62ptGRcfCBfFBftYtOkFvIxSsx1q83KupYjfEWERIpHxwdpvo+v1ESmB84cIhs4V9dQrWz3AA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=c94vqsUf; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=c94vqsUf; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="BfTHegpR";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="BfTHegpR"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="c94vqsUf";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="c94vqsUf"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 60FD521CC4
-	for <linux-btrfs@vger.kernel.org>; Sat, 24 May 2025 02:08:37 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 4FF6F1FCEA
+	for <linux-btrfs@vger.kernel.org>; Sat, 24 May 2025 02:08:42 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1748052517; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1748052522; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=P0iEqyBERT3GiB9G/uJVcrkbYLxml1dsl1yY5WOFKC0=;
-	b=BfTHegpRprReYWJC3wGr1e/88MGhk6/UaqQuoXOk8JM5YaWKDwzEt+YezXcH9lDjDhY4Fs
-	MCggoune23kuc36g2RsraARLXzvWWUQmDhUr6qtN6DSTDidDnzphWXzCwM1aNfetsHp/sB
-	pGAHAbWOAT8akLvWjupvlyUzdnqvjVo=
-Authentication-Results: smtp-out1.suse.de;
+	bh=DtRwwsKn1MnUb9/dt/zSLih+Q38ogNioSROPGQ3pLB4=;
+	b=c94vqsUfg+Iq3FCjSQKsfcsG+SplaUjT7fcQDWkmeh7s2KMkR7GuTshRAwZTR5zDbcMkgP
+	dc3Hvh+hvN3FEdbdiw3pF2i8VFc5p8Rtsf7B/SylPV45QYRz2DNYjwnQH5TmVDter9k0rS
+	NF0ZZoOLkRgrmv5NgBm05Cx1V/O0R/8=
+Authentication-Results: smtp-out2.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1748052517; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1748052522; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=P0iEqyBERT3GiB9G/uJVcrkbYLxml1dsl1yY5WOFKC0=;
-	b=BfTHegpRprReYWJC3wGr1e/88MGhk6/UaqQuoXOk8JM5YaWKDwzEt+YezXcH9lDjDhY4Fs
-	MCggoune23kuc36g2RsraARLXzvWWUQmDhUr6qtN6DSTDidDnzphWXzCwM1aNfetsHp/sB
-	pGAHAbWOAT8akLvWjupvlyUzdnqvjVo=
+	bh=DtRwwsKn1MnUb9/dt/zSLih+Q38ogNioSROPGQ3pLB4=;
+	b=c94vqsUfg+Iq3FCjSQKsfcsG+SplaUjT7fcQDWkmeh7s2KMkR7GuTshRAwZTR5zDbcMkgP
+	dc3Hvh+hvN3FEdbdiw3pF2i8VFc5p8Rtsf7B/SylPV45QYRz2DNYjwnQH5TmVDter9k0rS
+	NF0ZZoOLkRgrmv5NgBm05Cx1V/O0R/8=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id A31C41373E
-	for <linux-btrfs@vger.kernel.org>; Sat, 24 May 2025 02:08:36 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 868101373E
+	for <linux-btrfs@vger.kernel.org>; Sat, 24 May 2025 02:08:41 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id ULm5GSQqMWjYXQAAD6G6ig
+	id UJe/EikqMWjYXQAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Sat, 24 May 2025 02:08:36 +0000
+	for <linux-btrfs@vger.kernel.org>; Sat, 24 May 2025 02:08:41 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/9] btrfs-progs: convert: simplify insert_temp_root_item()
-Date: Sat, 24 May 2025 11:38:08 +0930
-Message-ID: <a9bf712930ea59e070d15407a40540bd250d2763.1748049973.git.wqu@suse.com>
+Subject: [PATCH 7/8] btrfs-progs: convert: merge setup_temp_fs_tree() and setup_temp_csum_tree()
+Date: Sat, 24 May 2025 11:38:12 +0930
+Message-ID: <3c8e4d9e240e440f02b701c053e34117a502f8fe.1748047388.git.wqu@suse.com>
 X-Mailer: git-send-email 2.49.0
-In-Reply-To: <cover.1748049973.git.wqu@suse.com>
-References: <cover.1748049973.git.wqu@suse.com>
+In-Reply-To: <cover.1748047388.git.wqu@suse.com>
+References: <cover.1748047388.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -69,132 +69,108 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-2.80 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
+X-Spam-Level: 
+X-Spam-Flag: NO
+X-Spam-Score: 0.20
+X-Spamd-Result: default: False [0.20 / 50.00];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
 	FUZZY_BLOCKED(0.00)[rspamd.com];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
 	ARC_NA(0.00)[];
-	MIME_TRACE(0.00)[0:+];
+	RCPT_COUNT_ONE(0.00)[1];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	URIBL_BLOCKED(0.00)[suse.com:email,suse.com:mid,imap1.dmz-prg2.suse.org:helo];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo];
+	URIBL_BLOCKED(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:mid];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo];
+	MIME_TRACE(0.00)[0:+];
 	RCVD_COUNT_TWO(0.00)[2];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	TO_DN_NONE(0.00)[];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
 	RCVD_TLS_ALL(0.00)[]
-X-Spam-Flag: NO
-X-Spam-Score: -2.80
-X-Spam-Level: 
 
-The function requires parameters @slot and @itemoff to record where the
-next item should land.
+Both fs and csum trees are empty at make_convert_btrfs(), no need to use
+two different functions to do that.
 
-But this is overkilled, as after inserting an item, the temporary extent
-buffer will have its header nritems and the item pointer updated.
-
-We can use that header nritems and item pointer to get where the next
-item should land.
-
-This removes the external counter to record @slot and @itemoff.
+Merge them into a common setup_temp_empty_tree() instead.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- convert/common.c | 43 ++++++++++++++++++++++++-------------------
- 1 file changed, 24 insertions(+), 19 deletions(-)
+ convert/common.c | 35 ++++++-----------------------------
+ 1 file changed, 6 insertions(+), 29 deletions(-)
 
 diff --git a/convert/common.c b/convert/common.c
-index 0b567da2312e..df68b696f8f5 100644
+index d062a1306c9e..b00d69cedd68 100644
 --- a/convert/common.c
 +++ b/convert/common.c
-@@ -189,17 +189,29 @@ static int setup_temp_extent_buffer(struct extent_buffer *buf,
- 	return 0;
+@@ -514,8 +514,8 @@ out:
+ 	return ret;
  }
  
-+static u32 get_item_offset(const struct extent_buffer *eb,
-+			   const struct btrfs_mkfs_config *cfg)
-+{
-+	u32 slot = btrfs_header_nritems(eb);
-+
-+	if (slot)
-+		return btrfs_item_offset(eb, slot - 1);
-+	else
-+		return cfg->leaf_data_size;
-+}
-+
- static void insert_temp_root_item(struct extent_buffer *buf,
- 				  struct btrfs_mkfs_config *cfg,
--				  int *slot, u32 *itemoff, u64 objectid,
--				  u64 bytenr)
-+				  u64 objectid, u64 bytenr)
- {
- 	struct btrfs_root_item root_item;
- 	struct btrfs_inode_item *inode_item;
- 	struct btrfs_disk_key disk_key;
-+	u32 slot = btrfs_header_nritems(buf);
-+	u32 itemoff = get_item_offset(buf, cfg);
- 
--	btrfs_set_header_nritems(buf, *slot + 1);
--	(*itemoff) -= sizeof(root_item);
-+	btrfs_set_header_nritems(buf, slot + 1);
-+	itemoff -= sizeof(root_item);
- 	memset(&root_item, 0, sizeof(root_item));
- 	inode_item = &root_item.inode;
- 	btrfs_set_stack_inode_generation(inode_item, 1);
-@@ -217,13 +229,12 @@ static void insert_temp_root_item(struct extent_buffer *buf,
- 	btrfs_set_disk_key_objectid(&disk_key, objectid);
- 	btrfs_set_disk_key_offset(&disk_key, 0);
- 
--	btrfs_set_item_key(buf, &disk_key, *slot);
--	btrfs_set_item_offset(buf, *slot, *itemoff);
--	btrfs_set_item_size(buf, *slot, sizeof(root_item));
-+	btrfs_set_item_key(buf, &disk_key, slot);
-+	btrfs_set_item_offset(buf, slot, itemoff);
-+	btrfs_set_item_size(buf, slot, sizeof(root_item));
- 	write_extent_buffer(buf, &root_item,
--			    btrfs_item_ptr_offset(buf, *slot),
-+			    btrfs_item_ptr_offset(buf, slot),
- 			    sizeof(root_item));
--	(*slot)++;
- }
- 
- /*
-@@ -252,8 +263,6 @@ static int setup_temp_root_tree(int fd, struct btrfs_mkfs_config *cfg,
- 				u64 dev_bytenr, u64 fs_bytenr, u64 csum_bytenr)
+-static int setup_temp_fs_tree(int fd, struct btrfs_mkfs_config *cfg,
+-			      u64 fs_bytenr)
++static int setup_temp_empty_tree(int fd, struct btrfs_mkfs_config *cfg,
++				 u64 root_bytenr, u64 owner)
  {
  	struct extent_buffer *buf = NULL;
--	u32 itemoff = cfg->leaf_data_size;
--	int slot = 0;
  	int ret;
- 
- 	/*
-@@ -271,14 +280,10 @@ static int setup_temp_root_tree(int fd, struct btrfs_mkfs_config *cfg,
+@@ -523,36 +523,13 @@ static int setup_temp_fs_tree(int fd, struct btrfs_mkfs_config *cfg,
+ 	buf = malloc(sizeof(*buf) + cfg->nodesize);
+ 	if (!buf)
+ 		return -ENOMEM;
+-	ret = setup_temp_extent_buffer(buf, cfg, fs_bytenr,
+-				       BTRFS_FS_TREE_OBJECTID);
++	ret = setup_temp_extent_buffer(buf, cfg, root_bytenr, owner);
  	if (ret < 0)
  		goto out;
- 
--	insert_temp_root_item(buf, cfg, &slot, &itemoff,
--			      BTRFS_EXTENT_TREE_OBJECTID, extent_bytenr);
--	insert_temp_root_item(buf, cfg, &slot, &itemoff,
--			      BTRFS_DEV_TREE_OBJECTID, dev_bytenr);
--	insert_temp_root_item(buf, cfg, &slot, &itemoff,
--			      BTRFS_FS_TREE_OBJECTID, fs_bytenr);
--	insert_temp_root_item(buf, cfg, &slot, &itemoff,
--			      BTRFS_CSUM_TREE_OBJECTID, csum_bytenr);
-+	insert_temp_root_item(buf, cfg, BTRFS_EXTENT_TREE_OBJECTID, extent_bytenr);
-+	insert_temp_root_item(buf, cfg, BTRFS_DEV_TREE_OBJECTID, dev_bytenr);
-+	insert_temp_root_item(buf, cfg, BTRFS_FS_TREE_OBJECTID, fs_bytenr);
-+	insert_temp_root_item(buf, cfg, BTRFS_CSUM_TREE_OBJECTID, csum_bytenr);
- 
- 	ret = write_temp_extent_buffer(fd, buf, root_bytenr, cfg);
+ 	/*
+ 	 * Temporary fs tree is completely empty.
+ 	 */
+-	ret = write_temp_extent_buffer(fd, buf, fs_bytenr, cfg);
+-out:
+-	free(buf);
+-	return ret;
+-}
+-
+-static int setup_temp_csum_tree(int fd, struct btrfs_mkfs_config *cfg,
+-				u64 csum_bytenr)
+-{
+-	struct extent_buffer *buf = NULL;
+-	int ret;
+-
+-	buf = malloc(sizeof(*buf) + cfg->nodesize);
+-	if (!buf)
+-		return -ENOMEM;
+-	ret = setup_temp_extent_buffer(buf, cfg, csum_bytenr,
+-				       BTRFS_CSUM_TREE_OBJECTID);
+-	if (ret < 0)
+-		goto out;
+-	/*
+-	 * Temporary csum tree is completely empty.
+-	 */
+-	ret = write_temp_extent_buffer(fd, buf, csum_bytenr, cfg);
++	ret = write_temp_extent_buffer(fd, buf, root_bytenr, cfg);
  out:
+ 	free(buf);
+ 	return ret;
+@@ -867,10 +844,10 @@ int make_convert_btrfs(int fd, struct btrfs_mkfs_config *cfg,
+ 				  dev_bytenr);
+ 	if (ret < 0)
+ 		goto out;
+-	ret = setup_temp_fs_tree(fd, cfg, fs_bytenr);
++	ret = setup_temp_empty_tree(fd, cfg, fs_bytenr, BTRFS_FS_TREE_OBJECTID);
+ 	if (ret < 0)
+ 		goto out;
+-	ret = setup_temp_csum_tree(fd, cfg, csum_bytenr);
++	ret = setup_temp_empty_tree(fd, cfg, csum_bytenr, BTRFS_CSUM_TREE_OBJECTID);
+ 	if (ret < 0)
+ 		goto out;
+ 	/*
 -- 
 2.49.0
 

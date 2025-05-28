@@ -1,65 +1,72 @@
-Received: from mail-oo1-f65.google.com (mail-oo1-f65.google.com [209.85.161.65])
+Received: from mail-ot1-f67.google.com (mail-ot1-f67.google.com [209.85.210.67])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B08AD1FAA
-	for <linux-btrfs@vger.kernel.org>; Wed, 28 May 2025 00:04:28 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.161.65
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EC62ED299
+	for <linux-btrfs@vger.kernel.org>; Wed, 28 May 2025 00:04:31 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.67
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1748390670; cv=none; b=haEJhZJJamG5SZx/MdKxeg/4M26V0UgIZPMUUEfrz1rgZQBvO29/RfyI2US2x0MaD1TDQmvgU0Uy9tVLz5ZgwrGL78P+42NMjdMyX/2ERtvFM2ThS60ks2pMjCMdtOiIS+lMkIEWHn/TTS4sCnSkicAzlKki5CbjcYLYL/3Emfk=
+	t=1748390673; cv=none; b=eIb5ucBMYJ0gJLyrNjs5GBCfGRywmDOly0dD81kwl3/wFOmZqe/nZy+IPwG/esjS0yOn+WyDahM61NfO2wQXHjs+Ghl3Q49pBYPDU9WI1o4c46v8iz+ltFYNYY6rcVohd28F7Ug7ytPoEny2ZODhs2wF1ok27WXrbbEoour9qWQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1748390670; c=relaxed/simple;
-	bh=G91thx3zGM72ZGpZui/phD13Y5henKzqt5A/HnXxPyY=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=eJVa3y0jLHDfO9zwHD1+e0S7o6Lqxr9pxI1Nyg3BPGTrWGHwF1Q13uRvTvOavBjfJlQ8fbhlx2YbNlClucG2KaxbtnTmHIo5a5V9O7vqAH/Mf3AJ40eMSIF5QcnyKtg4lSvWNs+U7VIbjR/fuRGmW2bAkjFP+/FX9pah0mu6bGc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=NwLWYoBG; arc=none smtp.client-ip=209.85.161.65
+	s=arc-20240116; t=1748390673; c=relaxed/simple;
+	bh=ZcZlBQwCX9EiF+/4RA40zvfXJXVr734gt/ry/UJfYyA=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=YWMfBfdk1sAIyo6ytbH4sZaC+uoU9ke11XoeDiNQj4CVBc5uk5+LjIptsV4Ge98Squj38YlCe8OwHxZ8k1uCpM/+zNQ480TwUaXti2JtvThnaTOa3A7W4udL4MTgTwAeWh/IkI+mA1sN7Gw7kqdKQzzdeuiArKjRrvImWsoZLbQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=gT7AYDPr; arc=none smtp.client-ip=209.85.210.67
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="NwLWYoBG"
-Received: by mail-oo1-f65.google.com with SMTP id 006d021491bc7-603f54a6cb5so1536860eaf.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 May 2025 17:04:28 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="gT7AYDPr"
+Received: by mail-ot1-f67.google.com with SMTP id 46e09a7af769-72c09f8369cso1156920a34.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 May 2025 17:04:31 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1748390667; x=1748995467; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:to
-         :from:from:to:cc:subject:date:message-id:reply-to;
-        bh=uc8dn1cPAkUaje8IQG49j5snS6r43HwfmlEI2xWgeOQ=;
-        b=NwLWYoBGKynDYvRSzGGuo9js1aHBDs/suE3t47rEmDd3xcuv9ylTr6xXkTm2GGsU7G
-         rKslIlY0p+ZpmLQHmSPdEJUh+2YxswvtGFLgzKLkFIdROkrZ/iIK2rTkRKNb9yRuDyYv
-         qNldpdVbNJw5GoJSAHkLVKk4G+3y/e7D2668fC+KMxC+u5r3YgZM79iW1cz3W+6V38GC
-         FXKQhr0IEHTXuMZRxWWXmyEPkvvpKWP975iBDuiV56O8m6GPwNh9gMVTWVtdeCJ0YU0L
-         ak0HSrxKM0z6+zp9PvUJ8iSCO9l4LTrSXlv8Wvbiy4RaXpOljVtSuUi6ddpL/Hu45XQx
-         t1Vw==
+        d=gmail.com; s=20230601; t=1748390670; x=1748995470; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=7zBgl+3plMzHj/d6bI6FCsSi8gzhnxhuua6t2MBv69Y=;
+        b=gT7AYDPr1YMCPMuSwQIC7QinPYROmgJNihtp7qF8Yfp8tgNQCDGYzEBqGm3EKZRnVC
+         EOq1unkCfu7tZ4cl7edNuXxOIHk11wf/1mb4HHu9lyCEeDkAzEV+BlIHkReyCM+O9Buo
+         kjkjd2CWLLjYT0gVXuYN1pKQF1RjRkBM9p/YXPbDZ3msp9VG/iwf9AZQxdPXDSUIpFqE
+         2dPmCs8sD6T+/CXaQ+R63kDdNvPlHMFg6mGJXWN6OI/K6u109YV8bWAekP/bCmu+FmAz
+         qsYBPC9chZi9LZyqQm/k0oW6X4K+ZRpLQK9lmEW9jfdM7aMYOeHM6xGvyaojANIK2Fka
+         EPBw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1748390667; x=1748995467;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:to
-         :from:x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=uc8dn1cPAkUaje8IQG49j5snS6r43HwfmlEI2xWgeOQ=;
-        b=w7TtcI+pZ+7Hp4fAlhWat7a4gdvwR/q4psyrfUCt3DrVbEBR15ruNB0XfaB617kk31
-         ezrCGFKCG6EGEOwSJLPnRg+KcgS96pJINAIk7NiW1TguYYEoe5SfKr1wcyM7t6FFVnKX
-         /3tmOHZSGc8GDQ4iy/GCfNE/Sp/LX17ItLmDzN33+a/PPCbaudqkezEs9Ft6cJrtvUky
-         4PY4cOSx3QW2fQy4Gh46G9EW2cNJDx1zVJWLlBq4vvI8XEpvaE6CejTaHLeyD9z25ijm
-         y94+aWFPjf22xbjy5u1JMCeL6P8tI4f8E44Iq+6qW/MlE/RZFpz6Low0R4r6MZSWt+1A
-         nOzw==
-X-Gm-Message-State: AOJu0YxSPh1CoWJDl8eKaciE9L1aXyKcsJBX/E5AohGVVtMrtJOS94iD
-	FJTRYPshzjXYIpZy6kp5UUHe17/67okLqEenwR0JJmD9bRDuM+7RFfUKe+aZ57RU
-X-Gm-Gg: ASbGnctMUEtGTOCCbkVgI453Qn4I+ZtCan8i7YgqTPs3dnF6OtW/wYRCaSGjq0naiN7
-	xiRC8VFCMQtEzMR32i7n8beZ5Fkzm7MWOCQLMr+IGf9fJ3WCzw8EUKyNF+nqHH8iDHgPgIoRxlj
-	9wc9uMgZtitCed7ww7jOJLilEtas+hIJovzlEgrmQvwHPUajdGtrmdtEmlqi+WUtO1bPTrTQmP4
-	wjtXLo0jvfFWGb6VTDZDiK13VdGY7/0ff988Y4pD1mahAm7xHfIjqP2mBIzH1Pxo0Hg5kQ9nSAa
-	LR+gpax9FrnGZKo8K+FCCA85DybiVi1sCEpmO0xIZughWQ==
-X-Google-Smtp-Source: AGHT+IFxyVydEdCpcMrfOtSV86rVZIo2cm+yf9tJf4iSQO6AJ2GvAYajwQX0ngeyEInNNN5Amnwcuw==
-X-Received: by 2002:a05:6820:179b:b0:60b:9d5b:e94c with SMTP id 006d021491bc7-60bd9b5ddc0mr154582eaf.6.1748390667289;
-        Tue, 27 May 2025 17:04:27 -0700 (PDT)
-Received: from localhost ([2a03:2880:11ff:7::])
-        by smtp.gmail.com with ESMTPSA id 006d021491bc7-60bd9d1135fsm17076eaf.26.2025.05.27.17.04.25
+        d=1e100.net; s=20230601; t=1748390670; x=1748995470;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=7zBgl+3plMzHj/d6bI6FCsSi8gzhnxhuua6t2MBv69Y=;
+        b=Zfr3jV5rZ4uLl1a4XSFkFIlFzQnCQ8fnlc8uGJQHs4bxPyAnAsM6SD+wkb8xzXd8oU
+         UzAjTQY92mBw1l0Kh86i4QgliLHUvKLbejEhvwqZiJgbuxV00BN3KnRKtnkNn4XY2Yag
+         0M5ye/VvPkLSOgUCVV9Qw/VdzifDAGf9ZqcKLgzy+V+xph9JmfzKnCSh00Gq8BOLMGcw
+         k3g4h9uM3xRV5PF0oJKywPXyQ0BmpLb6MdJg0Gbt155qnQgscFwOGA1XE+spaF80d2iI
+         P8XS6y0R1hW7pd2maAgPeJIkC9KNNaK1n612o4zGPgH4SWmbuuP7cXNKyPHHiRE3NpDo
+         bm4Q==
+X-Gm-Message-State: AOJu0YxJFTrtEWoQm60yH/EJ0T+IXDKpIO7oGv7qA6dS8FP26pxnxaIX
+	pPsWV2tSZpv3E/OjczPLghxxrHdeoZQa//o37rKXYrgihLmbHFgbs4d2cy6u+WUy
+X-Gm-Gg: ASbGncs7T+2E9GWocINrxcorNFJYd1V+5omP1Mo3hUhQr0dPlcmQK/Mcg5oDPCFGirF
+	1jTFINmhe433nJEtJQWGvckpZdIWLyMua0xE1Do4d+8Il9SCWVyO3ZoTAkMFdG2XW+sncwWMwsf
+	MvUB6WnS0d8uqOTV/bxswvYPJtb/pigXsVzQTjGP4Gexi9c7aM8SJFe3rCf23+eE2FuTZWg8XYe
+	vCNNlarCx5vDtdX+YsMnwd9p/qMuY9SjvTBFmm5wnxImzO7eooaBdx+zPdgAK50PQNb/oEh2fhy
+	zyTSFOutS5pprN+EGrCk+5tTUe+2xVMjxsD7xICoH6b7kMU=
+X-Google-Smtp-Source: AGHT+IGz1Uy1pWCV99pCOSJEShVRAOhCntchvqzq/Yzi688WTsIzpzwkZYAlCHhsMhgZ3WpexLaFwg==
+X-Received: by 2002:a05:6830:2a17:b0:72a:1625:ef11 with SMTP id 46e09a7af769-7355d141407mr9620005a34.27.1748390670583;
+        Tue, 27 May 2025 17:04:30 -0700 (PDT)
+Received: from localhost ([2a03:2880:11ff:41::])
+        by smtp.gmail.com with ESMTPSA id 46e09a7af769-735a1bb8734sm9060a34.32.2025.05.27.17.04.30
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 27 May 2025 17:04:26 -0700 (PDT)
+        Tue, 27 May 2025 17:04:30 -0700 (PDT)
 From: Leo Martins <loemra.dev@gmail.com>
 To: linux-btrfs@vger.kernel.org,
 	kernel-team@fb.com
-Subject: [PATCH v2 0/2] delayed_node leak bug
-Date: Tue, 27 May 2025 17:04:20 -0700
-Message-ID: <cover.1748390110.git.loemra.dev@gmail.com>
+Cc: Filipe Manana <fdmanana@suse.com>,
+	Qu Wenruo <wqu@suse.com>
+Subject: [PATCH v2 2/2] btrfs: warn if leaking delayed_nodes
+Date: Tue, 27 May 2025 17:04:22 -0700
+Message-ID: <0e2f87577ae683c7771b82c14eb14b2a7772a75c.1748390110.git.loemra.dev@gmail.com>
 X-Mailer: git-send-email 2.47.1
+In-Reply-To: <cover.1748390110.git.loemra.dev@gmail.com>
+References: <cover.1748390110.git.loemra.dev@gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -68,31 +75,32 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Currently investigating a bug I believe is caused by leaked
-delayed_nodes. The following patches fix a potential delayed_node leak
-in an assert function (I don't believe this is the cause of the bug) and
-add a warning if a root still contains delayed_nodes when it is freed.
-
-A little more on the bug I'm investigating in case anyone has seen
-something similar...
-
-Started seeing soft lockups in btrfs_kill_all_delayed_nodes due to an
-infinte loop. Further investigation showed that there was a
-delayed_node that was not being erased from the root->delayed_nodes xarray.
-The delayed_node had a reference count of one meaning that it is failing
-to be released somewhere.
+Add a warning for leaked delayed_nodes when putting a root. We currently do this
+for inodes, but not delayed_nodes.
 
 V2 CHANGES:
-- combine warn and if statement
+- no changes
 
-Leo Martins (2):
-  btrfs: fix refcount leak in debug assertion
-  btrfs: warn if leaking delayed_nodes
+Signed-off-by: Leo Martins <loemra.dev@gmail.com>
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/disk-io.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
- fs/btrfs/delayed-inode.c | 5 ++++-
- fs/btrfs/disk-io.c       | 2 ++
- 2 files changed, 6 insertions(+), 1 deletion(-)
-
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 1beb9458f622..3def93016963 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1835,6 +1835,8 @@ void btrfs_put_root(struct btrfs_root *root)
+ 	if (refcount_dec_and_test(&root->refs)) {
+ 		if (WARN_ON(!xa_empty(&root->inodes)))
+ 			xa_destroy(&root->inodes);
++		if (WARN_ON(!xa_empty(&root->delayed_nodes)))
++			xa_destroy(&root->delayed_nodes);
+ 		WARN_ON(test_bit(BTRFS_ROOT_DEAD_RELOC_TREE, &root->state));
+ 		if (root->anon_dev)
+ 			free_anon_bdev(root->anon_dev);
 -- 
 2.47.1
 

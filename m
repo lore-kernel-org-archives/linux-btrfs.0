@@ -1,64 +1,43 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 794061494A8
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 May 2025 16:18:55 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1FC681494A8
+	for <linux-btrfs@vger.kernel.org>; Fri, 30 May 2025 16:19:03 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1748621940; cv=none; b=D5mMQv1bMSTDRpQIJAEccsjvpDP5Y06YKXjR5HJDgOZnr/WLvvuk8Ub2V+Y7CA9Rh12UJFBIQmz6/91VAX0/HAYKMXUKu3elD+SSt9RFmL/DpBYlnbTzs4oe3xTNx7T1ggOHQXSEa5IPpIMc1yNLPXN1SwpTa8b/OnYaAcxBLV8=
+	t=1748621946; cv=none; b=br4GrCIYVxoKzHsy9x2HZWhKqJg8c2Z6ORTyOktN/bFPnvs/MLb8DWSAEN/2RcmYAn6QsBser4qL7mDGvYyw6KNa0RB8+qSXIpIvAeTZ09Khyr+UD6H/c5pSWn9MmI8YgJeDI9zq5WQxxJMeJllkTsHXgkFiXyexZ1rXDmLVKA8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1748621940; c=relaxed/simple;
-	bh=BfaisxVW5jyMz1utzPxg6shKgKJFmMpS6bhKAo2sWmc=;
+	s=arc-20240116; t=1748621946; c=relaxed/simple;
+	bh=JQ7/dIqRa+avh3u+tutB+IPyg782CGRxRQ2xUQxcvVQ=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=U2Zz9K3dlZ730uNJVFk2RlUBaXuTmmoGwBdgDGl/3qap1cwzO1eOZYt5DNa0QTHDfi4s2CxtJ6X4AsO3aWIZ4L4SwhkV5aAcnK7LQtvDt5xgPwzh1kWL4WKB06VRJDVuBRKFuLfh8oTdOZ66Lzz2Le9N6pvb2rELmv3B3onsHEk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=pfD/aP9h; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=pfD/aP9h; arc=none smtp.client-ip=195.135.223.130
+	 MIME-Version; b=JBWQFzeCH0H6wkTyWTqsWIPEPozdvfMiGOwP1w/qa/fLe516D2VtrlhY6uizh+F9E9El/J30g09Gq1SbnYlEM0fx+4hyzfMcEF/YK3Id2WQQ4Svy7B1fcpHVktgTODLz7Ze27R507nw2GCwKtV1qppRmKGWMukJ5bFb/zXPhMTc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="pfD/aP9h";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="pfD/aP9h"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 6D77221AF3;
-	Fri, 30 May 2025 16:18:44 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1748621924; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=mDQpfQiU5VUyHWZJOfs+niB7Vvq0Q9Z1d7uZAVc4Vac=;
-	b=pfD/aP9hbkqXZ7U0BLjAHnAJ0MwiPHK0JPpqd2lu2qn9KQftImeCzyBdltciUrT9G3BEWl
-	9SbsbHPT9BNizZf3WG6OQnQ9Cjr8uOfHl5bcuoDyI3jz+c6UoqXD6x/454zdv5PWi6u02D
-	Q0ysnJc/CiOA5+VsEiUrVmL0Tmpf0K4=
-Authentication-Results: smtp-out1.suse.de;
+	by smtp-out2.suse.de (Postfix) with ESMTPS id DDEDA1F7F2;
+	Fri, 30 May 2025 16:19:01 +0000 (UTC)
+Authentication-Results: smtp-out2.suse.de;
 	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1748621924; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=mDQpfQiU5VUyHWZJOfs+niB7Vvq0Q9Z1d7uZAVc4Vac=;
-	b=pfD/aP9hbkqXZ7U0BLjAHnAJ0MwiPHK0JPpqd2lu2qn9KQftImeCzyBdltciUrT9G3BEWl
-	9SbsbHPT9BNizZf3WG6OQnQ9Cjr8uOfHl5bcuoDyI3jz+c6UoqXD6x/454zdv5PWi6u02D
-	Q0ysnJc/CiOA5+VsEiUrVmL0Tmpf0K4=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 6006013889;
-	Fri, 30 May 2025 16:18:44 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id D7F0D13889;
+	Fri, 30 May 2025 16:19:01 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 6ctvF2TaOWj5ZwAAD6G6ig
-	(envelope-from <dsterba@suse.com>); Fri, 30 May 2025 16:18:44 +0000
+	id fiW2NHXaOWgYaAAAD6G6ig
+	(envelope-from <dsterba@suse.com>); Fri, 30 May 2025 16:19:01 +0000
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 16/22] btrfs: rename err to ret in calc_pct_ratio()
-Date: Fri, 30 May 2025 18:18:40 +0200
-Message-ID: <906aad7a5dfd73ce071cbf2d57ca75b34b4c4849.1748621715.git.dsterba@suse.com>
+Subject: [PATCH 20/22] btrfs: rename err to ret in btrfs_wait_tree_log_extents()
+Date: Fri, 30 May 2025 18:18:57 +0200
+Message-ID: <aa715ccf2bea8151eb627276af4ab6e97099ec91.1748621715.git.dsterba@suse.com>
 X-Mailer: git-send-email 2.47.1
 In-Reply-To: <cover.1748621715.git.dsterba@suse.com>
 References: <cover.1748621715.git.dsterba@suse.com>
@@ -69,58 +48,59 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Flag: NO
-X-Spam-Score: -6.80
-X-Spamd-Result: default: False [-6.80 / 50.00];
-	REPLY(-4.00)[];
-	BAYES_HAM(-3.00)[99.99%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	TO_DN_SOME(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	ARC_NA(0.00)[];
-	RCPT_COUNT_TWO(0.00)[2];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	FUZZY_BLOCKED(0.00)[rspamd.com];
-	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	FROM_EQ_ENVFROM(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RCVD_TLS_ALL(0.00)[]
+X-Rspamd-Pre-Result: action=no action;
+	module=replies;
+	Message is reply to one we originated
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
 X-Spam-Level: 
+X-Spamd-Result: default: False [-4.00 / 50.00];
+	REPLY(-4.00)[]
+X-Spam-Flag: NO
+X-Rspamd-Queue-Id: DDEDA1F7F2
+X-Rspamd-Pre-Result: action=no action;
+	module=replies;
+	Message is reply to one we originated
+X-Rspamd-Action: no action
+X-Spam-Score: -4.00
 
 Unify naming of return value to the preferred way.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/space-info.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ fs/btrfs/transaction.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index 23685d6e8cbc..517916004f21 100644
---- a/fs/btrfs/space-info.c
-+++ b/fs/btrfs/space-info.c
-@@ -1973,13 +1973,13 @@ u64 btrfs_account_ro_block_groups_free_space(struct btrfs_space_info *sinfo)
- 
- static u64 calc_pct_ratio(u64 x, u64 y)
- {
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 3ca57bb8dc64..825d135ef6c7 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1227,11 +1227,11 @@ int btrfs_wait_tree_log_extents(struct btrfs_root *log_root, int mark)
+ 	struct btrfs_fs_info *fs_info = log_root->fs_info;
+ 	struct extent_io_tree *dirty_pages = &log_root->dirty_log_pages;
+ 	bool errors = false;
 -	int err;
 +	int ret;
  
- 	if (!y)
- 		return 0;
- again:
--	err = check_mul_overflow(100, x, &x);
--	if (err)
-+	ret = check_mul_overflow(100, x, &x);
-+	if (ret)
- 		goto lose_precision;
- 	return div64_u64(x, y);
- lose_precision:
+ 	ASSERT(btrfs_root_id(log_root) == BTRFS_TREE_LOG_OBJECTID);
+ 
+-	err = __btrfs_wait_marked_extents(fs_info, dirty_pages);
++	ret = __btrfs_wait_marked_extents(fs_info, dirty_pages);
+ 	if ((mark & EXTENT_DIRTY) &&
+ 	    test_and_clear_bit(BTRFS_FS_LOG1_ERR, &fs_info->flags))
+ 		errors = true;
+@@ -1240,9 +1240,9 @@ int btrfs_wait_tree_log_extents(struct btrfs_root *log_root, int mark)
+ 	    test_and_clear_bit(BTRFS_FS_LOG2_ERR, &fs_info->flags))
+ 		errors = true;
+ 
+-	if (errors && !err)
+-		err = -EIO;
+-	return err;
++	if (errors && !ret)
++		ret = -EIO;
++	return ret;
+ }
+ 
+ /*
 -- 
 2.47.1
 

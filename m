@@ -1,146 +1,136 @@
-Received: from libero.it (smtp-16.italiaonline.it [213.209.10.16])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 164F1226D1D
-	for <linux-btrfs@vger.kernel.org>; Mon,  2 Jun 2025 17:30:58 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=213.209.10.16
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D014CC2C9
+	for <linux-btrfs@vger.kernel.org>; Mon,  2 Jun 2025 18:15:54 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1748885462; cv=none; b=Zp68pDvnuGQk/SOA0tcsFW0jp9hVnGb7bo7Qup9NqrMqWyD37D3X23jD7e1ZW7K3d/KYK13v4VUgHa8pBC3ZX54yAZAObaarofa8c13qoaXhe1uuqjwqWt6YkInfOaQh1GwpBk1tvMB3fnPHN/6tMEAOuI8lkkQ9Jf4n+fLDK5o=
+	t=1748888156; cv=none; b=VPRfN0R5xZo74Uv5h178LXcR+iVLWG0KKHZ6SFyi0J1nuPA8Ay2EEPOzzqS1ISgq/EIprgUGFSoQrYmniuQhRPlR8kY6oWzWznsrCCw03plIZ5yHte30AeEbue/WlL6jOrZ20ikMLEgXnjTQpjGo0i/1CEq5bnLQJQe0SIM1XnA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1748885462; c=relaxed/simple;
-	bh=7ggU5dRcnapo8j/GCsHtC+nvcGfKMptMWrP/mwmLka8=;
-	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=kvFc3ZxnkNu9RRPZjfEXyxIAyQ7Y1egs5Kmy6qfvrY5HGkvFZP+fA2BH3BrS6/43YILRxEbJVa0bdgaR5JV4OoEtqc4awVkUX3DKDpbLJp8ZJvmYDsXgXX/hzxkVbgD/m4uKQtgQnh6PD0c9KHABCAfdJe3OTgp+ErJmD4aDBlg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=inwind.it; spf=pass smtp.mailfrom=inwind.it; dkim=pass (2048-bit key) header.d=inwind.it header.i=@inwind.it header.b=ZGhsEZfm; arc=none smtp.client-ip=213.209.10.16
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=inwind.it
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=inwind.it
+	s=arc-20240116; t=1748888156; c=relaxed/simple;
+	bh=Rnc6uaIpQfJ+4YTfJ7ILQZrfkmeIkKBdBJDI6hadhOM=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=cJizDrFRZEIl1gQ/G7O/tA2VvFJlDftWplaG8bZ/XTY+NIyWjgSeHsnAeYD0XGtBYwPNSmxcfirKtVjhwLYBKdUjIUOuyVdVXTKqIt87LnWEYl4KYK9rq+OmUqty1hudfPlJCmmfpxqSNxcFGK2yw6CyvH/1Ng1a2Hqbup3Go7E=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=pemwS8j5; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=8IyGryka; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=2OzHrfCt; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=ygnxQLcz; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=inwind.it header.i=@inwind.it header.b="ZGhsEZfm"
-Received: from [192.168.1.27] ([84.220.171.3])
-	by smtp-16.iol.local with ESMTPSA
-	id M8xQuqEGaL8lyM8xQufFFg; Mon, 02 Jun 2025 19:28:20 +0200
-x-libjamoibt: 1601
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=inwind.it; s=s2014;
-	t=1748885300; bh=73gY52CxXyJFkCBJ3pgQx1FnC4hx0Yuih8QRX5FZn30=;
-	h=From;
-	b=ZGhsEZfmpqG9tcb0Et/M1Gw6I+fIhk3CU2nF8TT7CM60JvEIZrLXAwfjdYmMljmyJ
-	 pStML02X3Vimr2BXcXVc/RL1GtCfpUPU2gO2aJRWh5s35B0NmcEjAsy8ue6SQ8TWP3
-	 clk13oXivWSIBeBgoPPsLhd9grijQrYtrpomNCbFHRbf4OrEo3zftnSqZ60Hl+r1Ux
-	 8bCsqIlrQUY02eu0u8ZN08VMHhwLGT1dRc9hQk9ftCuQei8kt1DunL+I+kN72XQKbh
-	 gOgfXsdV9JQxVdCmm0hBkZpDfkNcP53riJP0DmUXokFWHN2dyqgmHkgvPOo6k24Zgd
-	 J3BLl+cPgf4JA==
-X-CNFS-Analysis: v=2.4 cv=Hu52G1TS c=1 sm=1 tr=0 ts=683ddf34 cx=a_exe
- a=hciw9o01/L1eIHAASTHaSw==:117 a=hciw9o01/L1eIHAASTHaSw==:17
- a=IkcTkHD0fZMA:10 a=se02cz2NG2M5r8EZTucA:9 a=3ZKOabzyN94A:10 a=QEXdDO2ut3YA:10
-Message-ID: <b2eee8fc-ef11-431f-81b2-46f48e087a0d@inwind.it>
-Date: Mon, 2 Jun 2025 19:28:20 +0200
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="pemwS8j5";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="8IyGryka";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="2OzHrfCt";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="ygnxQLcz"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id D33422119E;
+	Mon,  2 Jun 2025 18:15:52 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1748888153;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=8+BlVLP8bljGfFO5M9oIC6EJCl0wyBQLVQB9j598AZg=;
+	b=pemwS8j5yEkN5gRjHKDEOHTvhYVRyQfgyNlaf2ji1hNOvPThNbjkSso+j+pU59Cwbm+mZB
+	mgnNTttXCAFebkLk7SGq/0lNa9MCZDEmDHMXNBUTiOINX7hjckzoPx+4SURt8jNdNZPcOJ
+	T6JdaNq12sQ3tvz7JKr4N7l6HG7+Ftw=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1748888153;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=8+BlVLP8bljGfFO5M9oIC6EJCl0wyBQLVQB9j598AZg=;
+	b=8IyGrykafASV/B8kXSR17o3cdpYma4XS9TkKz7jK4YBymlXOkYh3WK1Daqb2hPPjB5Evc+
+	YnR0NzIhuhj3AvBQ==
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b=2OzHrfCt;
+	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=ygnxQLcz
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1748888152;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=8+BlVLP8bljGfFO5M9oIC6EJCl0wyBQLVQB9j598AZg=;
+	b=2OzHrfCtsrNqZcMJ8U64yTYOBdFCkP7vx5uDawpD0DLaW0on+U94pL1ib3HkGa89gxJsY6
+	BAN2TDtMqtOREa+DTvihSKZMAowEJwS3y2t0vMzSqGu8IvpcwZHEvswDjTt2NRF05lFtYC
+	wf2ThPRoroy1kS9uaOG1ueVEkQv7gfM=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1748888152;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=8+BlVLP8bljGfFO5M9oIC6EJCl0wyBQLVQB9j598AZg=;
+	b=ygnxQLczBI4Kdp954yynQeMrhdGmn1KYx77vj9HN2a3bwte70Pu6qAFLzNk1KVd2TpgQrN
+	2CUu8gnTGDhkbmCw==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id C2FD6136C7;
+	Mon,  2 Jun 2025 18:15:52 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id fOBaL1jqPWgUMwAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Mon, 02 Jun 2025 18:15:52 +0000
+Date: Mon, 2 Jun 2025 20:15:51 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 0/2] btrfs: rename btrfs_subpage to btrfs_folio_state
+Message-ID: <20250602181551.GF4037@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <cover.1748824641.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Reply-To: kreijack@inwind.it
-Subject: Re: [PATCH v2 0/6] btrfs-progs: introduce "btrfs rescue
- fix-data-checksum"
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Qu Wenruo <wqu@suse.com>,
- linux-btrfs@vger.kernel.org
-References: <cover.1747295965.git.wqu@suse.com>
- <828702dd-33e8-48c0-85f8-455763e34ed2@libero.it>
- <e156fb78-928b-4fea-b29d-c06f70744fdf@gmx.com>
-Content-Language: en-US
-From: Goffredo Baroncelli <kreijack@inwind.it>
-In-Reply-To: <e156fb78-928b-4fea-b29d-c06f70744fdf@gmx.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
-X-CMAE-Envelope: MS4xfD6/yiPsr8uE5DtvF6v/pK7v9UeGoSrYYpGvre7bISuoTxjEYROsDDInWWkid+oDASULcX09okmYFa8E0K+a5KApBKlJDSMkFJXKhPlPv5VBHxO0R3Q9
- +9OxKvC1afjI049ox6DLMlFGIyjV4fX5iTkEXes9fPBFC3fv5s4/2M2VsKuaHP1N5ugpm7zC+U+Pa59tPnsB3FHpiioQJMHCUlMFOjQM5g4LkS3fKIie6/cV
- BLyspG2/bga+LnlQd7Ovnw==
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <cover.1748824641.git.wqu@suse.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Rspamd-Queue-Id: D33422119E
+X-Rspamd-Action: no action
+X-Spam-Flag: NO
+X-Spamd-Result: default: False [-4.21 / 50.00];
+	BAYES_HAM(-3.00)[99.99%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	HAS_REPLYTO(0.30)[dsterba@suse.cz];
+	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	RCPT_COUNT_TWO(0.00)[2];
+	TO_DN_SOME(0.00)[];
+	FUZZY_BLOCKED(0.00)[rspamd.com];
+	MIME_TRACE(0.00)[0:+];
+	ARC_NA(0.00)[];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	FROM_HAS_DN(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	REPLYTO_DOM_NEQ_TO_DOM(0.00)[];
+	REPLYTO_ADDR_EQ_FROM(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received,2a07:de40:b281:104:10:150:64:97:from];
+	DKIM_TRACE(0.00)[suse.cz:+];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:email]
+X-Spam-Score: -4.21
+X-Spam-Level: 
 
-On 01/06/2025 00.07, Qu Wenruo wrote:
+On Mon, Jun 02, 2025 at 10:08:51AM +0930, Qu Wenruo wrote:
+> This migration is mostly to align the naming to iomap, so btrfs_subpage
+> is renamed to btrfs_folio_state.
 > 
+> But before the rename, explain why btrfs needs the following extra
+> sub-bitmaps in the first patch.
 > 
-> 在 2025/6/1 02:28, Goffredo Baroncelli 写道:
->> On 15/05/2025 10.00, Qu Wenruo wrote:
-[...]
->>> We have a long history of data csum mismatch, caused by direct IO and
->>> buffered being modified during writeback.
->>>
->> What about having an ioctl (on a mounted fs) which allow us to read data from a file even
->> if the csum doesn't match ?
-> 
-> The problem is again with mirrors.
-> 
-> Unless you ask the end user to provide a mirror number, for a with multiple mirrors, and the mirrors doesn't match each other, the behavior will be a mess.
-> 
-> That's why I'm planning to add something like a mirror priority, with a new mirror "best" to try use the mirror with the most matches.
-> 
-> 
-> Despite the mirror number problem (we need to ask the end user for mirror number), I think it's possible to implement the feature (mostly) in user space.
-> 
-> E.g. combine fiemap result with btrfs-map-logical, then read from the disk directly.
-> 
-This would expose to the user space the complexity of the filesystem; this means having two code path doing the same thing in two subtle different ways. Pay attention to consider also a raid5/6 case with a missing disks.
+> Qu Wenruo (2):
+>   btrfs: add comments on the extra btrfs specific subpage bitmaps
+>   btrfs: rename btrfs_subpage structure
 
-I don't know how important is select a valid mirror. Or at least, I don't see a realistic case where a mirror may be better than another one.
-
-After your consideration, I would like to suggest the following:
-1) read the data from a mirror, the csum matches, return data
-2) read the data from a mirror, the csum DOES NOT match:
-    2.1) read the data from another mirror(s), the csum matches,
-	- rebuild the csum
-	- return the data
-    2.2) read the data from another mirror(s), the csum still doesn't match, return error
-    2.3) (NEW, alternatively to 2.2) read the data from another mirror(s), the csum still doesn't match:
-	- take the latest read attempt as valid
-         - rebuild the csum
-         - return the last read attempt
-
-2.3) mode should be a enabled by an IOCTL on a specific fd. The assumption here is that if the csum doesn't match any mirror may be equally bad/good. But in the IOCTL we could add a parameter to specify the order of the mirrors (still we need a way to specify the order of the mirror in the raid5 case).
-
->> I asked that because the problem usually happen on a specific file
->> and not to an entire filesystem. In this case I think that it would be more practical to read the block
->> using the IOCTL, and then rewrite the block, at the specific offset (to update the checksum).
-> 
-> I'm fine with the idea of reading from raw data idea (although prefer to implement it in user space), but not a huge fan to simply re-write with COW.
-> 
-> E.g. the bad csum is still there, can still be exposed by scrub, even it's not referred by any file anymore.
-> 
-
-If I understood correctly, you are saying that due to the fact that even if an extent is partially referred, all data in the extent is tracked and has his checksum. A rewriting in the middle would generate a new extent with a new checksum, but the old data still exists in the extent with his dedicated (and un-matching ) csum. (I repeated this because it seems to me a technical detail not so obvious but very important)
-
->>
->> Of course there are several tradeoff: the "unmounted" version, doesn't duplicate a shared block,
->> where my approach (read the data using an ioctl to avoid the CSUM mismatch and rewrite it) make
->> a fork if the block is shared. However, as told before, the problem is related to specifics file and it seems
->> a waste of resource reading an entire filesystem to correct few files. No to mention that the IOCTL
->> can be done on a "live" filesystem.
-> 
-> I do not think we should treat the csum error so easily, it's still a big problem.
-> 
-> Even it's known that direct IO with buffer modified halfway can lead to corruption, the csum mismatch is still a huge problem.
-> The end user should check if their problem is properly written, or use the latest kernel with proper backport.
-> 
-> If it's really caused by hardware (memory or disk or whatever), it's a huge deal and definitely needs proper inspection and verification.
-> 
-> So overall, if one hits a csum mismatch, especially after the direct IO fix, then it should not be treated as "something that can be easily fixed online", it should be something huge, at least needs some tool to handle it offline.
-> 
-
-Even tough I agree about the severity (e.g. the corruption happened due to an hw error), I less agree about the fact that this is a justification to not have a simpler interface (form an user interface POV) that don't requires an un-mount/mount of the filesystem.
-
-Un-mounting a root filesystem is a not so easy operation, so we should provide a different way to access the data.
-
-However I agree that we should allow the user to select a different "mirror", considering that a "mirror" may be any valid combination of disk to rebuild the data (e.g. when we will define the interface, we should consider raid 6).
-
-> Thanks,
-> Qu
-> 
->>
-
-BR
-Goffredo
-
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+Reviewed-by: David Sterba <dsterba@suse.com>

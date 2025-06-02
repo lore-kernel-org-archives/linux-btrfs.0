@@ -1,87 +1,87 @@
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0191E225771
-	for <linux-btrfs@vger.kernel.org>; Mon,  2 Jun 2025 17:28:28 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2F2752040B6
+	for <linux-btrfs@vger.kernel.org>; Mon,  2 Jun 2025 17:29:15 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1748885311; cv=none; b=i1pT3lBtjfV0AdRMQ0v1JXlIO896xfydslZNMN/RWcL4C8eA8Z+lRLoGfMo6cYyEO8EIEx8DZg0hyfcB60LOBCXa/j9Ol2FjZmnWCf11ABt454FJq12DJBE6qMg9MhOTaDWf+S4/NKIQadpy0VgPuAD8Gr2rqt8RcuuIf+rtT8g=
+	t=1748885357; cv=none; b=o2IkhzPMuN3BWCyas4tHipnDAQVWvN78K/T+hkdu9hS2m1o/rEawDGeoJjMBMmGxP9rXMIgSVjbGGMs+tH9Z7PHY2QT3skebJfxUSxxEvBGUZJCN51XU4CgWr+tHzWH3POAa9/WdkQk9JOKqABMeOUocARXJNDt4qPXFCIA1SHc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1748885311; c=relaxed/simple;
-	bh=bQJ0msGNgnqDo/BlVtZlOJpEqyI501Hl/B35SDrDhb8=;
+	s=arc-20240116; t=1748885357; c=relaxed/simple;
+	bh=FKFlwrJNLYJNbR9xOd+jEN+7mU3uyr96CGqmdMYOkMA=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=AWktxwxqb57a1mixVKqcAQw+hPx7DBPuh2e+IPvQPjzpXwW3HLIUvQfnsLC/+lVcoPszVgme5zb2CXzT4kva+kuoH4wdon5j1BnHSInrKE1NWuyyNfzK+w9hqZkTELoS/x8AaQrvc7T9+3Iy8wsnoCPBhOGjVlSTLd2oc4nEnkk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=yya1Hb9+; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=cUwaIDg7; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=yya1Hb9+; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=cUwaIDg7; arc=none smtp.client-ip=195.135.223.131
+	 Content-Type:Content-Disposition:In-Reply-To; b=U0LlUlj25Brix6F1cF6ZCdqN+eaC8uWdINmkHhnJTeba6eaYjFiF45+tGkWedc4/Kqfj5jUv2BmREiqvLI/RhaBtuPd0c48w0Lz/1zAFw5GfrzWiKycD6LBmiKHg2LtZfIXLWL81Jgg+BNF/fs20KahQjCyPH62WBFqeuTmv0dk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=gN81xpb0; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=2TjV+jnZ; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=gN81xpb0; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=2TjV+jnZ; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="yya1Hb9+";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="cUwaIDg7";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="yya1Hb9+";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="cUwaIDg7"
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="gN81xpb0";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="2TjV+jnZ";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="gN81xpb0";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="2TjV+jnZ"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 037AA1F7A1;
-	Mon,  2 Jun 2025 17:28:27 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 369E61F7A1;
+	Mon,  2 Jun 2025 17:29:14 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1748885307;
+	t=1748885354;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=m1oQwTTW6zDX8MqL6C0dST4QNqB3klozzJmt2BYi1tM=;
-	b=yya1Hb9+BWaRDJMo3iqDWicPpvT6LmY1JdCJU7lCyxNXxfQfac5FHGndHfmwcWNE9HjX4j
-	ONjkovNxosknGcUQJg+LcLW0T0b2rbGgR5g1Epr0tr/GGQTgidlQfNfhTklH/xvvI1QDu0
-	Wh6bzBfAMOSEnryBX98MJ5Y1NJm3ibI=
+	bh=eKLnzTdOkhMLFCfT23o9Ej7XsaarRx0KJVjUOcEaxJ8=;
+	b=gN81xpb0Hl5fZQja1yGecCabx9lpAzo6VvxKUlm/FD7ND/gLlPCInJEzE/z6iNRBpC5Yik
+	PgyPx0t9MbxT48Dnb+iSULU0A8lEehUT5Qf4sgo/y+bfa32xE0iPL/7stvd67wYrDfhP7G
+	Btr2igT0RYGHJ6waBrD5nDsJ6w4q/HY=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1748885307;
+	s=susede2_ed25519; t=1748885354;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=m1oQwTTW6zDX8MqL6C0dST4QNqB3klozzJmt2BYi1tM=;
-	b=cUwaIDg7DCHoIwlaMwmvZIqeMoj6pU6AypVchmuCSURSfgTMuFiI8nApNKG6bW8Mge9aK/
-	G7EzuIaajBYag6BA==
+	bh=eKLnzTdOkhMLFCfT23o9Ej7XsaarRx0KJVjUOcEaxJ8=;
+	b=2TjV+jnZr+LAeYFjU28zN6RkWyDxytgCTNI/W/t8pe41IhlSmvyAz8eUPkfAuU2/qwh4ZX
+	RLzirUXrUor4EKCQ==
 Authentication-Results: smtp-out2.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1748885307;
+	t=1748885354;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=m1oQwTTW6zDX8MqL6C0dST4QNqB3klozzJmt2BYi1tM=;
-	b=yya1Hb9+BWaRDJMo3iqDWicPpvT6LmY1JdCJU7lCyxNXxfQfac5FHGndHfmwcWNE9HjX4j
-	ONjkovNxosknGcUQJg+LcLW0T0b2rbGgR5g1Epr0tr/GGQTgidlQfNfhTklH/xvvI1QDu0
-	Wh6bzBfAMOSEnryBX98MJ5Y1NJm3ibI=
+	bh=eKLnzTdOkhMLFCfT23o9Ej7XsaarRx0KJVjUOcEaxJ8=;
+	b=gN81xpb0Hl5fZQja1yGecCabx9lpAzo6VvxKUlm/FD7ND/gLlPCInJEzE/z6iNRBpC5Yik
+	PgyPx0t9MbxT48Dnb+iSULU0A8lEehUT5Qf4sgo/y+bfa32xE0iPL/7stvd67wYrDfhP7G
+	Btr2igT0RYGHJ6waBrD5nDsJ6w4q/HY=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1748885307;
+	s=susede2_ed25519; t=1748885354;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=m1oQwTTW6zDX8MqL6C0dST4QNqB3klozzJmt2BYi1tM=;
-	b=cUwaIDg7DCHoIwlaMwmvZIqeMoj6pU6AypVchmuCSURSfgTMuFiI8nApNKG6bW8Mge9aK/
-	G7EzuIaajBYag6BA==
+	bh=eKLnzTdOkhMLFCfT23o9Ej7XsaarRx0KJVjUOcEaxJ8=;
+	b=2TjV+jnZr+LAeYFjU28zN6RkWyDxytgCTNI/W/t8pe41IhlSmvyAz8eUPkfAuU2/qwh4ZX
+	RLzirUXrUor4EKCQ==
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id D177B13A63;
-	Mon,  2 Jun 2025 17:28:26 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 12E4F13A63;
+	Mon,  2 Jun 2025 17:29:14 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id XIXgMjrfPWi+JAAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Mon, 02 Jun 2025 17:28:26 +0000
-Date: Mon, 2 Jun 2025 19:28:17 +0200
+	id LvBpBGrfPWj1JAAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Mon, 02 Jun 2025 17:29:14 +0000
+Date: Mon, 2 Jun 2025 19:29:04 +0200
 From: David Sterba <dsterba@suse.cz>
 To: Daniel Vacek <neelx@suse.com>
 Cc: Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
 	David Sterba <dsterba@suse.com>, Nick Terrell <terrelln@fb.com>,
 	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH v3 1/2] btrfs: factor out compress mount options parsing
-Message-ID: <20250602172817.GD4037@twin.jikos.cz>
+Subject: Re: [PATCH v3 2/2] btrfs: harden parsing of compress mount options
+Message-ID: <20250602172904.GE4037@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <20250602155320.1854888-1-neelx@suse.com>
- <20250602155320.1854888-2-neelx@suse.com>
+ <20250602155320.1854888-3-neelx@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -90,7 +90,7 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20250602155320.1854888-2-neelx@suse.com>
+In-Reply-To: <20250602155320.1854888-3-neelx@suse.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 X-Spam-Flag: NO
 X-Spam-Score: -8.00
@@ -113,146 +113,53 @@ X-Spamd-Result: default: False [-8.00 / 50.00];
 	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
 	REPLYTO_ADDR_EQ_FROM(0.00)[];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.cz:replyto];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.cz:replyto,imap1.dmz-prg2.suse.org:helo];
 	RCVD_COUNT_TWO(0.00)[2];
 	REPLYTO_DOM_NEQ_TO_DOM(0.00)[]
 X-Spam-Level: 
 
-On Mon, Jun 02, 2025 at 05:53:18PM +0200, Daniel Vacek wrote:
-> There are many options making the parsing a bit lenghty.
-> Factor the compress options out into a helper function.
-> The next patch is going to harden this function.
+On Mon, Jun 02, 2025 at 05:53:19PM +0200, Daniel Vacek wrote:
+> Btrfs happily but incorrectly accepts the `-o compress=zlib+foo` and similar
+> options with any random suffix.
+> 
+> Fix that by explicitly checking the end of the strings.
 > 
 > Signed-off-by: Daniel Vacek <neelx@suse.com>
 > ---
 > v3 changes: Split into two patches to ease backporting,
 >             no functional changes.
 > 
->  fs/btrfs/super.c | 100 +++++++++++++++++++++++++----------------------
->  1 file changed, 54 insertions(+), 46 deletions(-)
+>  fs/btrfs/super.c | 26 +++++++++++++++++++-------
+>  1 file changed, 19 insertions(+), 7 deletions(-)
 > 
 > diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-> index 40709e2a44fce..6291ab45ab2a5 100644
+> index 6291ab45ab2a5..4510c5f7a785e 100644
 > --- a/fs/btrfs/super.c
 > +++ b/fs/btrfs/super.c
-> @@ -270,6 +270,59 @@ static inline blk_mode_t btrfs_open_mode(struct fs_context *fc)
+> @@ -270,9 +270,20 @@ static inline blk_mode_t btrfs_open_mode(struct fs_context *fc)
 >  	return sb_open_mode(fc->sb_flags) & ~BLK_OPEN_RESTRICT_WRITES;
 >  }
 >  
-> +static int btrfs_parse_compress(struct btrfs_fs_context *ctx,
-> +				struct fs_parameter *param, int opt)
+> +static bool btrfs_match_compress_type(char *string, char *type, bool may_have_level)
 
-parame can be const
+const also here, string, type
 
 > +{
-> +	/*
-> +	 * Provide the same semantics as older kernels that don't use fs
-> +	 * context, specifying the "compress" option clears
-> +	 * "force-compress" without the need to pass
-> +	 * "compress-force=[no|none]" before specifying "compress".
-> +	 */
-> +	if (opt != Opt_compress_force && opt != Opt_compress_force_type)
-> +		btrfs_clear_opt(ctx->mount_opt, FORCE_COMPRESS);
+> +	int len = strlen(type);
 > +
-> +	if (opt == Opt_compress || opt == Opt_compress_force) {
-> +		ctx->compress_type = BTRFS_COMPRESS_ZLIB;
-> +		ctx->compress_level = BTRFS_ZLIB_DEFAULT_LEVEL;
-> +		btrfs_set_opt(ctx->mount_opt, COMPRESS);
-> +		btrfs_clear_opt(ctx->mount_opt, NODATACOW);
-> +		btrfs_clear_opt(ctx->mount_opt, NODATASUM);
-> +	} else if (strncmp(param->string, "zlib", 4) == 0) {
-> +		ctx->compress_type = BTRFS_COMPRESS_ZLIB;
-> +		ctx->compress_level =
-> +			btrfs_compress_str2level(BTRFS_COMPRESS_ZLIB,
-> +						 param->string + 4);
-> +		btrfs_set_opt(ctx->mount_opt, COMPRESS);
-> +		btrfs_clear_opt(ctx->mount_opt, NODATACOW);
-> +		btrfs_clear_opt(ctx->mount_opt, NODATASUM);
-> +	} else if (strncmp(param->string, "lzo", 3) == 0) {
-> +		ctx->compress_type = BTRFS_COMPRESS_LZO;
-> +		ctx->compress_level = 0;
-> +		btrfs_set_opt(ctx->mount_opt, COMPRESS);
-> +		btrfs_clear_opt(ctx->mount_opt, NODATACOW);
-> +		btrfs_clear_opt(ctx->mount_opt, NODATASUM);
-> +	} else if (strncmp(param->string, "zstd", 4) == 0) {
-> +		ctx->compress_type = BTRFS_COMPRESS_ZSTD;
-> +		ctx->compress_level =
-> +			btrfs_compress_str2level(BTRFS_COMPRESS_ZSTD,
-> +						 param->string + 4);
-> +		btrfs_set_opt(ctx->mount_opt, COMPRESS);
-> +		btrfs_clear_opt(ctx->mount_opt, NODATACOW);
-> +		btrfs_clear_opt(ctx->mount_opt, NODATASUM);
-> +	} else if (strncmp(param->string, "no", 2) == 0) {
-> +		ctx->compress_level = 0;
-> +		ctx->compress_type = 0;
-> +		btrfs_clear_opt(ctx->mount_opt, COMPRESS);
-> +		btrfs_clear_opt(ctx->mount_opt, FORCE_COMPRESS);
-> +	} else {
-> +		btrfs_err(NULL, "unrecognized compression value %s",
-> +			  param->string);
-> +		return -EINVAL;
-> +	}
-> +	return 0;
+> +	return strncmp(string, type, len) == 0 &&
+> +		((may_have_level && string[len] == ':') ||
+> +				    string[len] == '\0');
 > +}
 > +
->  static int btrfs_parse_param(struct fs_context *fc, struct fs_parameter *param)
+>  static int btrfs_parse_compress(struct btrfs_fs_context *ctx,
+>  				struct fs_parameter *param, int opt)
 >  {
->  	struct btrfs_fs_context *ctx = fc->fs_private;
-> @@ -339,53 +392,8 @@ static int btrfs_parse_param(struct fs_context *fc, struct fs_parameter *param)
->  		fallthrough;
->  	case Opt_compress:
->  	case Opt_compress_type:
-> -		/*
-> -		 * Provide the same semantics as older kernels that don't use fs
-> -		 * context, specifying the "compress" option clears
-> -		 * "force-compress" without the need to pass
-> -		 * "compress-force=[no|none]" before specifying "compress".
-> -		 */
-> -		if (opt != Opt_compress_force && opt != Opt_compress_force_type)
-> -			btrfs_clear_opt(ctx->mount_opt, FORCE_COMPRESS);
-> -
-> -		if (opt == Opt_compress || opt == Opt_compress_force) {
-> -			ctx->compress_type = BTRFS_COMPRESS_ZLIB;
-> -			ctx->compress_level = BTRFS_ZLIB_DEFAULT_LEVEL;
-> -			btrfs_set_opt(ctx->mount_opt, COMPRESS);
-> -			btrfs_clear_opt(ctx->mount_opt, NODATACOW);
-> -			btrfs_clear_opt(ctx->mount_opt, NODATASUM);
-> -		} else if (strncmp(param->string, "zlib", 4) == 0) {
-> -			ctx->compress_type = BTRFS_COMPRESS_ZLIB;
-> -			ctx->compress_level =
-> -				btrfs_compress_str2level(BTRFS_COMPRESS_ZLIB,
-> -							 param->string + 4);
-> -			btrfs_set_opt(ctx->mount_opt, COMPRESS);
-> -			btrfs_clear_opt(ctx->mount_opt, NODATACOW);
-> -			btrfs_clear_opt(ctx->mount_opt, NODATASUM);
-> -		} else if (strncmp(param->string, "lzo", 3) == 0) {
-> -			ctx->compress_type = BTRFS_COMPRESS_LZO;
-> -			ctx->compress_level = 0;
-> -			btrfs_set_opt(ctx->mount_opt, COMPRESS);
-> -			btrfs_clear_opt(ctx->mount_opt, NODATACOW);
-> -			btrfs_clear_opt(ctx->mount_opt, NODATASUM);
-> -		} else if (strncmp(param->string, "zstd", 4) == 0) {
-> -			ctx->compress_type = BTRFS_COMPRESS_ZSTD;
-> -			ctx->compress_level =
-> -				btrfs_compress_str2level(BTRFS_COMPRESS_ZSTD,
-> -							 param->string + 4);
-> -			btrfs_set_opt(ctx->mount_opt, COMPRESS);
-> -			btrfs_clear_opt(ctx->mount_opt, NODATACOW);
-> -			btrfs_clear_opt(ctx->mount_opt, NODATASUM);
-> -		} else if (strncmp(param->string, "no", 2) == 0) {
-> -			ctx->compress_level = 0;
-> -			ctx->compress_type = 0;
-> -			btrfs_clear_opt(ctx->mount_opt, COMPRESS);
-> -			btrfs_clear_opt(ctx->mount_opt, FORCE_COMPRESS);
-> -		} else {
-> -			btrfs_err(NULL, "unrecognized compression value %s",
-> -				  param->string);
-> +		if (btrfs_parse_compress(ctx, param, opt))
->  			return -EINVAL;
-> -		}
->  		break;
->  	case Opt_ssd:
->  		if (result.negated) {
-> -- 
-> 2.47.2
-> 
+> +	char *string = param->string;
+
+and here
+
+> +
+>  	/*
+>  	 * Provide the same semantics as older kernels that don't use fs
+>  	 * context, specifying the "compress" option clears

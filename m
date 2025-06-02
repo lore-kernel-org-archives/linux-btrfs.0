@@ -1,36 +1,39 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 62E7D7E0FF
-	for <linux-btrfs@vger.kernel.org>; Mon,  2 Jun 2025 10:33:14 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D04C61DDC2C
+	for <linux-btrfs@vger.kernel.org>; Mon,  2 Jun 2025 10:33:16 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1748860396; cv=none; b=P9bKZFpYM5DiLb1DJCeBuQCjDzwpuaqEMfReZgaitOn1ArJ8LcZlnc0vQFdpVNrv4enP+d8ps4uPB6Vkn1yZg9lX5QUAT18ghMe673kOs/TZ8d/TJGbu6CB1gR2rlUgNghCwhB6ks4b+5UtntNW9NhYu5jM6BSQXYp27Ldz/9RU=
+	t=1748860396; cv=none; b=CDYcf/6fxBGCWgaAAiKb8baejx3/BCt3n76H0YhK+t+5rv16Rhlly/iHooisT+6+S0pkRhLfYnCSlz+zZqzA4YvgL0L0vls9cKKGGWfPectYflkXbYRL6gdd97/Zu46WG+tH/mqmEDRL5R11xtBs5A+vy3Cv2kF6xRSTwDk/AO4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
 	s=arc-20240116; t=1748860396; c=relaxed/simple;
-	bh=1vepuFqC4LBk98xk4tz7TfzHT76tH95SrLzUXVjuUjk=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=PsKI1+c/sGZGOFxuuiWBYEqQ9BApPLDGVnkBOn3netiZQZraZ+rD6bCG/ueao5Auz1m4I/QARdvehcYHeZZLlK7c59ZhHA+YscDa7DLlUulyLXdN/grM+qy3E+W/xs+h3Ge7oqpf4nT/kYFa6A20Wj0BFsMSnV22ON5qK2LbjrI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=fnCyqaxu; arc=none smtp.client-ip=10.30.226.201
+	bh=RgFfX135AUeaJggJFNQSn68kX8iC+AB+ysX62OiKEJs=;
+	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=li9gPPI5xMldTuyfLEwVP0LONXlE2r2UhL8T0/+8hiEHrM5Vkpe5OKyxzA895aKXQU/3T+8n/1zFDP32hKlhqhzsc20fUICEXd83IN6Knav1gTBP9RHMIUI+6FhjRi+kmY5m3AKwDPvVvMwEEsaP3/pf/M/Knjnd9KCUIMWfZxg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=k9moE5Uo; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="fnCyqaxu"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 3E091C4CEEB
-	for <linux-btrfs@vger.kernel.org>; Mon,  2 Jun 2025 10:33:14 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="k9moE5Uo"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 30087C4CEF1
+	for <linux-btrfs@vger.kernel.org>; Mon,  2 Jun 2025 10:33:16 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1748860394;
-	bh=1vepuFqC4LBk98xk4tz7TfzHT76tH95SrLzUXVjuUjk=;
-	h=From:To:Subject:Date:From;
-	b=fnCyqaxuezRE8mjpO8NM+57//XlyarLg8ymlBsnfsqmmG+dZ2+elMDNDeOMpc5XKa
-	 lQnNzbUH2+AaO8Qrb/UgFZiTmmW0m48M31Kxq1Wx2tWSMzF1kg0bWbg9lH1Y6j38V6
-	 5XpTixMqe9anbbW5eb25oQonY6oyi5QslEruhz3b+UOI8mxneNzBIWQFxUV4AlRBOo
-	 HqdxU5xxYD3PBI7LS0lPeCIurPJ0JIacmu7wFXN9GQM7hj+M2ADrkLGPRgmjS+w1Fm
-	 Ogl+rX1UqVMn3SPOrqAyK5t1FOSr9CW9GSlfOepqLHLuWOoVDJPmI90iCPzjEtXiDb
-	 HHat4rTAeaIUg==
+	s=k20201202; t=1748860396;
+	bh=RgFfX135AUeaJggJFNQSn68kX8iC+AB+ysX62OiKEJs=;
+	h=From:To:Subject:Date:In-Reply-To:References:From;
+	b=k9moE5UoC6bFwVLnFI2oi3kdbPCIqtwTM20Jr+gGiuqDHB5CVRu11XoLLFBUa7b3Z
+	 H9lZ0H2lehfHRkI3hS48KyrK9Ax26GWcSSKJx34z8D4N4mOZZGWQCVr2OizjRw8aWN
+	 XES8m96sFvZlBaOXxGwcT307oneBs6SHRkiVY9KPu7LVCFPnfLfL/iIgZ6Lmi4a3yG
+	 C8KxT4Fyfr/I7YB3ZmQ9d3Da0e8BaZqUeJ8aUd2tWDVHzfoBHhcpAX58CDHYmgwL2Q
+	 UI+AiA73cQSqHXzCC2H3mIrOmFBgqe49N2krUkIMde2uCdr4RFP9qsnlNu7I6CKCI6
+	 84jn7UuzNgQWg==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 00/14] btrfs: directory logging bug fix and several updates
-Date: Mon,  2 Jun 2025 11:32:53 +0100
-Message-ID: <cover.1748789125.git.fdmanana@suse.com>
+Subject: [PATCH 02/14] btrfs: assert we join log transaction at btrfs_del_inode_ref_in_log()
+Date: Mon,  2 Jun 2025 11:32:55 +0100
+Message-ID: <00aa3872102734e58f370d74c0b6a4d90894d759.1748789125.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.47.2
+In-Reply-To: <cover.1748789125.git.fdmanana@suse.com>
+References: <cover.1748789125.git.fdmanana@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -41,31 +44,32 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-These fix a race between renames and directory logging and several cleanups
-and small optimizations. Details in the change logs.
+We are supposed to be able to join a log transaction at that point, since
+we have determined that the inode was logged in the current transaction
+with the call to inode_logged(). So ASSERT() we joined a log transaction
+and also warn if we didn't in case assertions are disabled (the kernel
+config doesn't have CONFIG_BTRFS_ASSERT=y), so that the issue gets noticed
+and reported if it ever happens.
 
-Filipe Manana (14):
-  btrfs: fix a race between renames and directory logging
-  btrfs: assert we join log transaction at btrfs_del_inode_ref_in_log()
-  btrfs: free path sooner at __btrfs_unlink_inode()
-  btrfs: use btrfs_del_item() at del_logged_dentry()
-  btrfs: assert we join log transaction at btrfs_del_dir_entries_in_log()
-  btrfs: allocate path earlier at btrfs_del_dir_entries_in_log()
-  btrfs: allocate path earlier at btrfs_log_new_name()
-  btrfs: allocate scratch eb earlier at btrfs_log_new_name()
-  btrfs: pass NULL index to btrfs_del_inode_ref() where not needed
-  btrfs: switch del_all argument of replay_dir_deletes() from int to bool
-  btrfs: make btrfs_delete_delayed_insertion_item() return a boolean
-  btrfs: add details to error messages at btrfs_delete_delayed_dir_index()
-  btrfs: make btrfs_should_delete_dir_index() return a bool instead
-  btrfs: make btrfs_readdir_delayed_dir_index() return a bool instead
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/tree-log.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
- fs/btrfs/delayed-inode.c |  42 +++++++-------
- fs/btrfs/delayed-inode.h |   7 +--
- fs/btrfs/inode.c         | 119 ++++++++++++++++++++++++++-------------
- fs/btrfs/tree-log.c      |  72 ++++++++++++-----------
- 4 files changed, 144 insertions(+), 96 deletions(-)
-
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 0d5b79402312..5af0e2d0634e 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -3513,7 +3513,8 @@ void btrfs_del_inode_ref_in_log(struct btrfs_trans_handle *trans,
+ 	}
+ 
+ 	ret = join_running_log_trans(root);
+-	if (ret)
++	ASSERT(ret == 0, "join_running_log_trans() ret=%d", ret);
++	if (WARN_ON(ret))
+ 		return;
+ 	log = root->log_root;
+ 	mutex_lock(&inode->log_mutex);
 -- 
 2.47.2
 

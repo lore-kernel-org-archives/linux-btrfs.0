@@ -1,36 +1,36 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BB0D6202984
-	for <linux-btrfs@vger.kernel.org>; Mon,  2 Jun 2025 10:33:18 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 130031624E1
+	for <linux-btrfs@vger.kernel.org>; Mon,  2 Jun 2025 10:33:20 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1748860398; cv=none; b=EU8sb48bRyFF8cfvrbBFu4Y8EFU+U1ul8+5SZRPLNbBpxr7amFSr8eu8Skqo00UmDsHn5SccMCm1ZiXbm2ACL+FINgcD9InOz6Npen1bIv39qrP+vLDZdcCClGBdePUqrp3f2PkC9m+Vj6VNtAmfjVWkFqNH10XUvV92kt1r6ss=
+	t=1748860401; cv=none; b=FmtYw8JMhhAVfzyyH6MPaTlqcOoHGef9K6RWeycPZw37ylNcKUyJDAjofT1SWkoIQjKH8wTRhBoxYqpzDJVgL8RTplTV1voBxhzMRbFHuEA1NEBFYLhMzopAzMY1aABSBPRTZBMGMdYrdfl312fXF86kDvMwDSoKiPJHo/sx3Cs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1748860398; c=relaxed/simple;
-	bh=7BAYAHfltR9XrHTsLE8gghe8hlW7m241RX0+BQiHmPs=;
+	s=arc-20240116; t=1748860401; c=relaxed/simple;
+	bh=Z7FN7niSPqh3gCb/ZX/EM/4azuHBTRopDhTw1VImpiI=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=e8Xhco5Eek/iceeXny8MduMSZboA8tb5qGpUHciDUz5d1i2fXQ5VjMOz27UdxltxMGMj3Yog4wfamSUW8+3EQywb3ojA67DeyjlvInmKiAqkVNgfdZ2QJIPFtOZI28hQIk2w6KQ5HoXh5u3N8tGlaqj016RXttrYNMX2cSORuTQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Ogactl5b; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version; b=jjb/SRzY/9mzolwVBrbM3ZCblUMDY5gOWB4mt+sfdZxUpKurKv0OACOm/DT0ilz25hX9tlawAivBlJ9TLCmNEKFcZWekPzNXCXyxqLrLiTLmXjjTRXsJbwMJ3U8J25qhm0UEl/gJ3a9n/Tw4NHX1QSd50op1IpeeyYq8IMLTsFI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=ReDEX5e3; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Ogactl5b"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 204E0C4CEF1
-	for <linux-btrfs@vger.kernel.org>; Mon,  2 Jun 2025 10:33:17 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="ReDEX5e3"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 11F8FC4CEED
+	for <linux-btrfs@vger.kernel.org>; Mon,  2 Jun 2025 10:33:19 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1748860398;
-	bh=7BAYAHfltR9XrHTsLE8gghe8hlW7m241RX0+BQiHmPs=;
+	s=k20201202; t=1748860400;
+	bh=Z7FN7niSPqh3gCb/ZX/EM/4azuHBTRopDhTw1VImpiI=;
 	h=From:To:Subject:Date:In-Reply-To:References:From;
-	b=Ogactl5bIzsv/FFvbuXgzmqB0fe90q5t+yOTBi+tsWbENEnFmkw+r4x/+oPvvORPL
-	 UuVUIdS5SmEk1BqLZIN6O6F+DtXfR3NWitTbDNDgH/6o33U0a+OxfbgY2/NhIJWqsF
-	 ADI5ID86mO3uTjNuIuevAL5Vka7vi0x6TQaW8/FJbtSxlN+LWsnZHijQIfLlUUIwwS
-	 uYV3aU/rKmEYc/scVdK+WY40et7ULuDcs9D4c2Jglm+P9L3a3v2okCtYS9btg40X7D
-	 q3qkFu9KJzBjn5GMO8I5cY2KIZwLxHjd+Iw77lBZi8WHj8C4DWRHFYj3V3S0mbDZmK
-	 QRdcKtVfWp3rA==
+	b=ReDEX5e3anbZCdO4+jpXVtql6ZwAk+2gkjlBzIsqSVRN1FdDdfotaaYKwAPqTvbbk
+	 fBQFzvHZkf+ythXBeFVvGLQ7r2IKsEJ7OOkgYuV4RLYAM8tZtbcGB65nMl7R1nq2Hf
+	 OAGn86VC1JUqQuWynzcXWfb8UBfKcvObdwm1ptb7JDjFhfCMhEevM5nHsnT/ZeQuLp
+	 XHaqNPqimhE1oZp5vDHJZVtTNQylszSXjOZFZiUgdsyG/1zfR4GST4FsxlbVQqIXmP
+	 v6+LfAcL3b/jTgh0TCu4qVCgAydxSXuG/s2wJFPzq/0NzdapFKa/dAV4GX1ZEg9+3v
+	 KoRrAawW4NO6Q==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 04/14] btrfs: use btrfs_del_item() at del_logged_dentry()
-Date: Mon,  2 Jun 2025 11:32:57 +0100
-Message-ID: <0a85b12031aa2a181bae8204123a9ec92de6d74e.1748789125.git.fdmanana@suse.com>
+Subject: [PATCH 06/14] btrfs: allocate path earlier at btrfs_del_dir_entries_in_log()
+Date: Mon,  2 Jun 2025 11:32:59 +0100
+Message-ID: <e3f8146b07006070d70b1879fa09440a2d7ae5a8.1748789125.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.47.2
 In-Reply-To: <cover.1748789125.git.fdmanana@suse.com>
 References: <cover.1748789125.git.fdmanana@suse.com>
@@ -44,33 +44,57 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-There's no need to use btrfs_delete_one_dir_name() at del_logged_dentry()
-because we are processing a dir index key which can contain only a single
-name, unlike dir item keys which can encode multiple names in case of name
-hash collisions. We have explicitly looked up for a dir index key by
-calling btrfs_lookup_dir_index_item() and we don't log dir item keys
-anymore (since commit 339d03542484 ("btrfs: only copy dir index keys when
-logging a directory")). So simplify and use btrfs_del_item() directly
-instead of btrfs_delete_one_dir_name().
+Instead of allocating the path after joining the log transaction, allocate
+it before so that we're not delaying log commits for the rare cases where
+the allocation takes a significant time (under memory pressure and all
+slabs are full, there's the need to allocate a new page, etc).
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/tree-log.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/btrfs/tree-log.c | 18 +++++++++---------
+ 1 file changed, 9 insertions(+), 9 deletions(-)
 
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 5af0e2d0634e..4f0a86805dc2 100644
+index 14506a09f28e..cbdf9791ec5d 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
-@@ -3432,7 +3432,7 @@ static int del_logged_dentry(struct btrfs_trans_handle *trans,
- 	 * inode item because on log replay we update the field to reflect
- 	 * all existing entries in the directory (see overwrite_item()).
- 	 */
--	return btrfs_delete_one_dir_name(trans, log, path, di);
-+	return btrfs_del_item(trans, log, path);
+@@ -3472,27 +3472,27 @@ void btrfs_del_dir_entries_in_log(struct btrfs_trans_handle *trans,
+ 		return;
+ 	}
+ 
++	path = btrfs_alloc_path();
++	if (!path) {
++		btrfs_set_log_full_commit(trans);
++		return;
++	}
++
+ 	ret = join_running_log_trans(root);
+ 	ASSERT(ret == 0, "join_running_log_trans() ret=%d", ret);
+ 	if (WARN_ON(ret))
+-		return;
++		goto out;
+ 
+ 	mutex_lock(&dir->log_mutex);
+ 
+-	path = btrfs_alloc_path();
+-	if (!path) {
+-		ret = -ENOMEM;
+-		goto out_unlock;
+-	}
+-
+ 	ret = del_logged_dentry(trans, root->log_root, path, btrfs_ino(dir),
+ 				name, index);
+-	btrfs_free_path(path);
+-out_unlock:
+ 	mutex_unlock(&dir->log_mutex);
+ 	if (ret < 0)
+ 		btrfs_set_log_full_commit(trans);
+ 	btrfs_end_log_trans(root);
++out:
++	btrfs_free_path(path);
  }
  
- /*
+ /* see comments for btrfs_del_dir_entries_in_log */
 -- 
 2.47.2
 

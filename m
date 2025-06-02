@@ -1,36 +1,36 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1308F202984
-	for <linux-btrfs@vger.kernel.org>; Mon,  2 Jun 2025 10:33:19 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1E1D42054E4
+	for <linux-btrfs@vger.kernel.org>; Mon,  2 Jun 2025 10:33:21 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1748860401; cv=none; b=BRvwjK7bMA/UWunw1ZGHFbuJOtDn9Duw4qRQgjl/FGwfVuKLDDcVqS32n1UzNCTxZlytvUieJeaylyST0ARw+Ng1tlnSUMYwrk9Pxr9EKqhNiA4MCFP7LN+g38wdBmfAOvCoZPaXCJs2IrkcY5DaKawVtWU41zRViP9tVAgOIrE=
+	t=1748860402; cv=none; b=AUhKMZ8cW9lgrxFejpXqY1BQ38KY0LvasDUtmeIAGYay9YkhaNfWp3pyN5C75lVsCHj2EafD+VL4F5ztCTrpxJ0QFiqI/F7BVmx+oqOxiJeKOhuymVDkjusMg9PPf+9gXH6dkhrF8LixFv2rQypkru86bbk4IrM9j+9acBm4QJI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1748860401; c=relaxed/simple;
-	bh=NO88n1tVWSvZDXLzMhlH5xq7AsQDEgCow+JnJohUOcs=;
+	s=arc-20240116; t=1748860402; c=relaxed/simple;
+	bh=uE0L06kmG2yZhrsNCM+HZCMOWcrdXH2f1Ow1Rm7UOyg=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=cDGGYgz/8dHoefxNzLUeRl30ZyIhVb4ZqouiaRw0kDtW4nDrhy7hN7KXDY7Pox6R5fL8lWhvLRweS3vsaT43Sshz/1QPUCcieHFWep3cvvcQZCUl4fq21phqwv1YgKUC2EH5y1TNMX1LInl7Nufq1zzcRYQcLoS1Dv9rt789ODE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=oZhEiufA; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version; b=t5KJn9bBHKcbm+fBjWTKvrkoNiIY/+5y4Ir+SMnAKrXX6DadNP6NvCx1zlGSgIDn+tyGmYnJo7DnrCxycV96MJ7hVKGoqLCz5L1OKeJZlec0pz5nplY/Fixc+ShdwyD9L1IBsJCMOrm3XuF7R9H7oTBcBmgsGI9zrSrcJwnqqD0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=q1fRfrwi; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="oZhEiufA"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 1911DC4CEEB
-	for <linux-btrfs@vger.kernel.org>; Mon,  2 Jun 2025 10:33:18 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="q1fRfrwi"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 0A610C4CEF2
+	for <linux-btrfs@vger.kernel.org>; Mon,  2 Jun 2025 10:33:20 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1748860399;
-	bh=NO88n1tVWSvZDXLzMhlH5xq7AsQDEgCow+JnJohUOcs=;
+	s=k20201202; t=1748860401;
+	bh=uE0L06kmG2yZhrsNCM+HZCMOWcrdXH2f1Ow1Rm7UOyg=;
 	h=From:To:Subject:Date:In-Reply-To:References:From;
-	b=oZhEiufACGqOQs7GHH+FwV8b20iVPXbTWfUvLu21GyyvmKEp1trDBeTG4HUFlJ/N0
-	 OR+A/uljvBKLfQF/bCwZ6gciAJ07Uoxea7pJVhhG9rXa3PwfSoWCdqn1ozrKre5Xnf
-	 KZ/uNFkSS3rCsVywfA6B7rQWebtcZ6a493G1Pd3hC5CU/1xXPLSOmI5eb0aXL88vd9
-	 GGq47y7kSF7A23vVKfqzwwHVdSRPQ0VSloKsWYtALEe7YQwXe28keZRJm/gQRg3gr2
-	 nqErtherJx5qgySsDhafFEZREWdXA5AtPvNLtSRYJafLWsHoqNPD25LH3uUcYvNgxr
-	 8JzVQZJOStJww==
+	b=q1fRfrwiO0yNxv83Cb32tb248nNvv4m+nQV8L5jPgAQ9CLRf04EKArZKlF1mmtXcD
+	 pZVMoPT5sh0ge5Jr98Ts9M7hLrDGNdO90D9UWGnXk2pANnXdoh1jJgyoT8aTrYhSkd
+	 v+Wj5mICBzfwfmixJ+rDJn8ZCVW4lXp29nYacOtpHOaLah7AQVBk0NBslZ4kwGX8R6
+	 JuLUdS491PfUiBqzsli4NRjl6tOf3DdjnHHa6I3sti46dX6c33YDm3adybiVIkJm0h
+	 NeCQ8Lq1GxCSTo93E+MzczS6bjk0wYkIvT8AFmciASVRBV9LG1qKAN3ugLN7Q3Ds/z
+	 S+AFNV5XxLF1Q==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 05/14] btrfs: assert we join log transaction at btrfs_del_dir_entries_in_log()
-Date: Mon,  2 Jun 2025 11:32:58 +0100
-Message-ID: <938300615359149f88d9738f53792183ad7e9ebe.1748789125.git.fdmanana@suse.com>
+Subject: [PATCH 07/14] btrfs: allocate path earlier at btrfs_log_new_name()
+Date: Mon,  2 Jun 2025 11:33:00 +0100
+Message-ID: <3132c6b52f0f5a6a84c0c01480375cee49cab8ed.1748789125.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.47.2
 In-Reply-To: <cover.1748789125.git.fdmanana@suse.com>
 References: <cover.1748789125.git.fdmanana@suse.com>
@@ -44,32 +44,56 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-We are supposed to be able to join a log transaction at that point, since
-we have determined that the inode was logged in the current transaction
-with the call to inode_logged(). So ASSERT() we joined a log transaction
-and also warn if we didn't in case assertions are disabled (the kernel
-config doesn't have CONFIG_BTRFS_ASSERT=y), so that the issue gets noticed
-and reported if it ever happens.
+Instead of allocating the path after joining the log transaction, allocate
+it before so that we're not delaying log commits for the rare cases where
+the allocation takes a significant time (under memory pressure and all
+slabs are full, there's the need to allocate a new page, etc).
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/tree-log.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ fs/btrfs/tree-log.c | 16 +++++++++-------
+ 1 file changed, 9 insertions(+), 7 deletions(-)
 
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 4f0a86805dc2..14506a09f28e 100644
+index cbdf9791ec5d..37da27acef95 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
-@@ -3473,7 +3473,8 @@ void btrfs_del_dir_entries_in_log(struct btrfs_trans_handle *trans,
- 	}
+@@ -7543,6 +7543,14 @@ void btrfs_log_new_name(struct btrfs_trans_handle *trans,
+ 					     &old_dentry->d_name, 0, &fname);
+ 		if (ret)
+ 			goto out;
++
++		path = btrfs_alloc_path();
++		if (!path) {
++			ret = -ENOMEM;
++			fscrypt_free_filename(&fname);
++			goto out;
++		}
++
+ 		/*
+ 		 * We have two inodes to update in the log, the old directory and
+ 		 * the inode that got renamed, so we must pin the log to prevent
+@@ -7556,19 +7564,13 @@ void btrfs_log_new_name(struct btrfs_trans_handle *trans,
+ 		 * mark the log for a full commit.
+ 		 */
+ 		if (WARN_ON_ONCE(ret < 0)) {
++			btrfs_free_path(path);
+ 			fscrypt_free_filename(&fname);
+ 			goto out;
+ 		}
  
- 	ret = join_running_log_trans(root);
--	if (ret)
-+	ASSERT(ret == 0, "join_running_log_trans() ret=%d", ret);
-+	if (WARN_ON(ret))
- 		return;
+ 		log_pinned = true;
  
- 	mutex_lock(&dir->log_mutex);
+-		path = btrfs_alloc_path();
+-		if (!path) {
+-			ret = -ENOMEM;
+-			fscrypt_free_filename(&fname);
+-			goto out;
+-		}
+-
+ 		/*
+ 		 * Other concurrent task might be logging the old directory,
+ 		 * as it can be triggered when logging other inode that had or
 -- 
 2.47.2
 

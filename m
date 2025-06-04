@@ -1,43 +1,64 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 03DEF28CF6F
-	for <linux-btrfs@vger.kernel.org>; Wed,  4 Jun 2025 09:29:29 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3721D82864
+	for <linux-btrfs@vger.kernel.org>; Wed,  4 Jun 2025 09:35:32 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1749029371; cv=none; b=ccvsrh/01ucGwjpvy9tOJ8JuEvATHjo37q7rBvBFggODT/MVLf20oBWR9khWNGAm+od1E1/pGq/QZi0U5FT0k+NCcM0XdJZWckClTOM9jva8t6urinMY17l3IUVMX1uuwKuVsRE1oT4WRgnGEM3ep8xCpl8RK0STFBRagti7pNw=
+	t=1749029735; cv=none; b=TU932Di41gs++XK38lHpFSM2OjYfMKvfzq0Grdn81ejhCEyewaUtVk7KJFaZhIiwGrSxjNeqv+thBOAForUwESBYA+pnZ9c/mAy0T5PDfCRqwxn9qkUjVZbVlDFgn1CmEHxhixlJUZOfiyyrjjqBfO02LcA7gZbJSiondiUIe9M=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1749029371; c=relaxed/simple;
-	bh=MGvKQ10wA4Adc3EnD5mTeFSu5/yHLHNqf9JHeVcBdb4=;
+	s=arc-20240116; t=1749029735; c=relaxed/simple;
+	bh=pKGVFxdNtBxVxKFS7DxyIZUuV/GlOEV9lbTEwv74Gkw=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=dfJJUT+JXWAveCFmo1MEDKh1KtwAWgq1Usw8Anp9fMdvGc16kw7Z4oG3Bple9p0Dn6Cu9JLzkBSRP8Wlu9qEIs40S1xM/0jhtAgDFF8WOwOWWw1LhORa9vzFUP57li6BU6FcxrV90+KdiOabDHZzF0Lj9fv0wXHQsFLAS8IVY6o=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; arc=none smtp.client-ip=195.135.223.131
+	 MIME-Version; b=TvGiHqcl1M/qkbqgKywje+193xz3QbLZul8FBMalRnJuSa+MT8SxBoCnXBiIDRgNmPSgAHRfZ0uwzmKW6WINIRU8vXpu0mQATFjhpFmzMleg+5BQQSZRRV0BBzPhZH6Y/DmlAZqvO2zzuJRyl0exq+qVnC6SzhjhQrrkgFVyAgc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=fnu/KHbp; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=fnu/KHbp; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="fnu/KHbp";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="fnu/KHbp"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 8554E5CBBA;
-	Wed,  4 Jun 2025 09:29:23 +0000 (UTC)
-Authentication-Results: smtp-out2.suse.de;
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 3F5023758A;
+	Wed,  4 Jun 2025 09:29:28 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1749029368; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=H4bZyrz7/Nzd/UYjl5j7qkoR3plQrGPPskgwecVj128=;
+	b=fnu/KHbpCKX93QaNAV6N0YVjgL3zkln4gYtxTqWhz6LUxXYshEbSxYzcsuHD7NTpFO7waE
+	No/qE8CeWdAZLXfB1smHEZbCBNmG5r+RETcO6lUf5MT5bDN7VpKutXfGOeDAj1f7muXuM1
+	YSWahgctT7iOFxL52g4N7kGs7hB6EWk=
+Authentication-Results: smtp-out1.suse.de;
 	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1749029368; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=H4bZyrz7/Nzd/UYjl5j7qkoR3plQrGPPskgwecVj128=;
+	b=fnu/KHbpCKX93QaNAV6N0YVjgL3zkln4gYtxTqWhz6LUxXYshEbSxYzcsuHD7NTpFO7waE
+	No/qE8CeWdAZLXfB1smHEZbCBNmG5r+RETcO6lUf5MT5bDN7VpKutXfGOeDAj1f7muXuM1
+	YSWahgctT7iOFxL52g4N7kGs7hB6EWk=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 7B71E13AD9;
-	Wed,  4 Jun 2025 09:29:23 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 37CFE1369A;
+	Wed,  4 Jun 2025 09:29:28 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id M50iHvMRQGijEwAAD6G6ig
-	(envelope-from <dsterba@suse.com>); Wed, 04 Jun 2025 09:29:23 +0000
+	id e4GdDfgRQGivEwAAD6G6ig
+	(envelope-from <dsterba@suse.com>); Wed, 04 Jun 2025 09:29:28 +0000
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 1/3] btrfs: use on-stack variable for block reserve in btrfs_evict_inode()
-Date: Wed,  4 Jun 2025 11:29:23 +0200
-Message-ID: <c78be5be3cd43a383aeca69add0c259c812275d7.1749029179.git.dsterba@suse.com>
+Subject: [PATCH 3/3] btrfs: use on-stack variable for block reserve in btrfs_replace_file_extents()
+Date: Wed,  4 Jun 2025 11:29:27 +0200
+Message-ID: <cb8af6c3e3f2851aade7ed6bbc7acd0969415bd8.1749029179.git.dsterba@suse.com>
 X-Mailer: git-send-email 2.47.1
 In-Reply-To: <cover.1749029179.git.dsterba@suse.com>
 References: <cover.1749029179.git.dsterba@suse.com>
@@ -48,104 +69,121 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Rspamd-Pre-Result: action=no action;
-	module=replies;
-	Message is reply to one we originated
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Spam-Level: 
-X-Spamd-Result: default: False [-4.00 / 50.00];
+X-Spamd-Result: default: False [-6.80 / 50.00];
 	REPLY(-4.00)[];
-	ASN(0.00)[asn:25478, ipnet:::/0, country:RU]
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-0.994];
+	MIME_GOOD(-0.10)[text/plain];
+	RCPT_COUNT_TWO(0.00)[2];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	ARC_NA(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	FUZZY_BLOCKED(0.00)[rspamd.com];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	TO_DN_SOME(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:mid];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	RCVD_TLS_ALL(0.00)[]
+X-Spam-Level: 
 X-Spam-Flag: NO
-X-Rspamd-Queue-Id: 8554E5CBBA
-X-Rspamd-Pre-Result: action=no action;
-	module=replies;
-	Message is reply to one we originated
-X-Rspamd-Action: no action
-X-Spam-Score: -4.00
+X-Spam-Score: -6.80
 
-We can avoid potential memory allocation failure in btrfs_evict_inode()
-as the block reserve lifetime is limited to the scope of the function.
-This requires +48 bytes on stack.
+We can avoid potential memory allocation failure in
+btrfs_replace_file_extents() as the block reserve lifetime is limited to
+the scope of the function. This requires +48 bytes on stack.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/inode.c | 25 ++++++++++++-------------
- 1 file changed, 12 insertions(+), 13 deletions(-)
+ fs/btrfs/file.c | 29 ++++++++++++-----------------
+ 1 file changed, 12 insertions(+), 17 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index c297963f56bd..496194832166 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -5434,7 +5434,7 @@ void btrfs_evict_inode(struct inode *inode)
- 	struct btrfs_fs_info *fs_info;
- 	struct btrfs_trans_handle *trans;
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
--	struct btrfs_block_rsv *rsv = NULL;
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 8ce6f45f45e0..2902de88dd1b 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2341,7 +2341,7 @@ int btrfs_replace_file_extents(struct btrfs_inode *inode,
+ 	u64 min_size = btrfs_calc_insert_metadata_size(fs_info, 1);
+ 	u64 ino_size = round_up(inode->vfs_inode.i_size, fs_info->sectorsize);
+ 	struct btrfs_trans_handle *trans = NULL;
+-	struct btrfs_block_rsv *rsv;
 +	struct btrfs_block_rsv rsv;
- 	int ret;
- 
- 	trace_btrfs_inode_evict(inode);
-@@ -5482,11 +5482,9 @@ void btrfs_evict_inode(struct inode *inode)
- 	 */
- 	btrfs_kill_delayed_inode_items(BTRFS_I(inode));
+ 	unsigned int rsv_count;
+ 	u64 cur_offset;
+ 	u64 len = end - start;
+@@ -2350,13 +2350,9 @@ int btrfs_replace_file_extents(struct btrfs_inode *inode,
+ 	if (end <= start)
+ 		return -EINVAL;
  
 -	rsv = btrfs_alloc_block_rsv(fs_info, BTRFS_BLOCK_RSV_TEMP);
--	if (!rsv)
+-	if (!rsv) {
+-		ret = -ENOMEM;
 -		goto out;
--	rsv->size = btrfs_calc_metadata_size(fs_info, 1);
+-	}
+-	rsv->size = btrfs_calc_insert_metadata_size(fs_info, 1);
 -	rsv->failfast = true;
 +	btrfs_init_metadata_block_rsv(fs_info, &rsv, BTRFS_BLOCK_RSV_TEMP);
-+	rsv.size = btrfs_calc_metadata_size(fs_info, 1);
++	rsv.size = btrfs_calc_insert_metadata_size(fs_info, 1);
 +	rsv.failfast = true;
  
- 	btrfs_i_size_write(BTRFS_I(inode), 0);
+ 	/*
+ 	 * 1 - update the inode
+@@ -2373,14 +2369,14 @@ int btrfs_replace_file_extents(struct btrfs_inode *inode,
+ 	if (IS_ERR(trans)) {
+ 		ret = PTR_ERR(trans);
+ 		trans = NULL;
+-		goto out_free;
++		goto out_release;
+ 	}
  
-@@ -5498,11 +5496,11 @@ void btrfs_evict_inode(struct inode *inode)
- 			.min_type = 0,
- 		};
+-	ret = btrfs_block_rsv_migrate(&fs_info->trans_block_rsv, rsv,
++	ret = btrfs_block_rsv_migrate(&fs_info->trans_block_rsv, &rsv,
+ 				      min_size, false);
+ 	if (WARN_ON(ret))
+ 		goto out_trans;
+-	trans->block_rsv = rsv;
++	trans->block_rsv = &rsv;
  
--		trans = evict_refill_and_join(root, rsv);
-+		trans = evict_refill_and_join(root, &rsv);
- 		if (IS_ERR(trans))
--			goto out;
-+			goto out_release;
+ 	cur_offset = start;
+ 	drop_args.path = path;
+@@ -2496,10 +2492,10 @@ int btrfs_replace_file_extents(struct btrfs_inode *inode,
+ 		}
  
--		trans->block_rsv = rsv;
-+		trans->block_rsv = &rsv;
- 
- 		ret = btrfs_truncate_inode_items(trans, root, &control);
- 		trans->block_rsv = &fs_info->trans_block_rsv;
-@@ -5514,7 +5512,7 @@ void btrfs_evict_inode(struct inode *inode)
- 		 */
- 		btrfs_btree_balance_dirty_nodelay(fs_info);
- 		if (ret && ret != -ENOSPC && ret != -EAGAIN)
--			goto out;
-+			goto out_release;
- 		else if (!ret)
+ 		ret = btrfs_block_rsv_migrate(&fs_info->trans_block_rsv,
+-					      rsv, min_size, false);
++					      &rsv, min_size, false);
+ 		if (WARN_ON(ret))
  			break;
- 	}
-@@ -5528,16 +5526,17 @@ void btrfs_evict_inode(struct inode *inode)
- 	 * If it turns out that we are dropping too many of these, we might want
- 	 * to add a mechanism for retrying these after a commit.
- 	 */
--	trans = evict_refill_and_join(root, rsv);
-+	trans = evict_refill_and_join(root, &rsv);
- 	if (!IS_ERR(trans)) {
 -		trans->block_rsv = rsv;
 +		trans->block_rsv = &rsv;
- 		btrfs_orphan_del(trans, BTRFS_I(inode));
- 		trans->block_rsv = &fs_info->trans_block_rsv;
- 		btrfs_end_transaction(trans);
- 	}
  
+ 		cur_offset = drop_args.drop_end;
+ 		len = end - cur_offset;
+@@ -2576,16 +2572,15 @@ int btrfs_replace_file_extents(struct btrfs_inode *inode,
+ 
+ out_trans:
+ 	if (!trans)
+-		goto out_free;
++		goto out_release;
+ 
+ 	trans->block_rsv = &fs_info->trans_block_rsv;
+ 	if (ret)
+ 		btrfs_end_transaction(trans);
+ 	else
+ 		*trans_out = trans;
+-out_free:
+-	btrfs_free_block_rsv(fs_info, rsv);
+-out:
 +out_release:
 +	btrfs_block_rsv_release(fs_info, &rsv, (u64)-1, NULL);
- out:
--	btrfs_free_block_rsv(fs_info, rsv);
- 	/*
- 	 * If we didn't successfully delete, the orphan item will still be in
- 	 * the tree and we'll retry on the next mount. Again, we might also want
+ 	return ret;
+ }
+ 
 -- 
 2.47.1
 

@@ -1,272 +1,167 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DF3451F12F8
-	for <linux-btrfs@vger.kernel.org>; Thu,  5 Jun 2025 19:31:25 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 413747260C;
+	Thu,  5 Jun 2025 19:38:16 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1749151886; cv=none; b=EhM/e9ijLvCwKO8q8BK6tH08dCUo/FVV0qVZvDOxhLR/egQpaHYR+0G3Rj4bbs3mF+NKzlJfldf1EzaV3LKSGMzZR8LYkXsoGxs1JSLHuENfrL4q16aZ9r7Nt2ZzaCGQ0Qiu2mYiADCXXUmzmwsW+gClXP+Z6DWlD6KoOqlMyOo=
+	t=1749152302; cv=none; b=YBr6JLpw5inwUmZprn99sm799nTMfvhOley3QBANWLhFzLba9JyBBJrXAwUvHGC3zs929VwzdFygtMBilKF50lTppnKcCQPKoQljb9Yd5r6bxwecqNTfynM2wGbJMS7kUz03JZJ/O8bDDu2CZe8d41gx53/iqaX+s6cqA8JelDY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1749151886; c=relaxed/simple;
-	bh=Vb3zDqy3p/iaFhvOuPBB5LWLkHWCJy+QDCVcxpPZxI4=;
+	s=arc-20240116; t=1749152302; c=relaxed/simple;
+	bh=dyH6RiFTISsak2E9X/cen0d7peVWpHE1EyY0UXYk804=;
 	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=ClEiuaNvGcV3H9fBK0pGh9AM7VAGxRFJwN5rzcbhBjFgNXt/ExlC6f4GK3J5XdfRwEX9VIf+cMIIikAsA2sAZ7l2PVmvSqsrCY6u4detckO8HBthn/18RuMBm9X7wB1qGK30ah6wb9XgG95nfqCg38AVgjhOoUWutWsojbisgNo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=LRuS6SRQ; arc=none smtp.client-ip=10.30.226.201
+	 To:Cc:Content-Type; b=YtUlueILSczaqQh7csIoOvB6EpNf59l9Cn/PQ87uZ42QxKPn1RJULcX61s0OUudwsKdpAj0Oe6FYoVHXVqdju64cbI3yop3wOCCebvBrNgrFC1BuXSxbCIalDo0TRRYi2aNq815Os6byNhlMcxRaEqFXy5A0WdRRFtYf3n+vjj4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Cph2m9ul; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="LRuS6SRQ"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 5D0CFC4CEF0
-	for <linux-btrfs@vger.kernel.org>; Thu,  5 Jun 2025 19:31:25 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Cph2m9ul"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 81FF2C4CEE7;
+	Thu,  5 Jun 2025 19:38:15 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1749151885;
-	bh=Vb3zDqy3p/iaFhvOuPBB5LWLkHWCJy+QDCVcxpPZxI4=;
+	s=k20201202; t=1749152296;
+	bh=dyH6RiFTISsak2E9X/cen0d7peVWpHE1EyY0UXYk804=;
 	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-	b=LRuS6SRQFbTYhMdCuuypMUcAOQut6jdZpjrOQLPH5PA2nZEyFy8528Y+V4ZwcgMvR
-	 ooyzT1RKMMcFvjD2PvbzydG+aXL6H+uha6YEON2NBqJCpWzKGKXjEM1/QvCuuu7Ikl
-	 xUdSQuG2+jId5h6AqF5wKu1bDu0EmFKTPa2ysBCFdBt7Yf2MfdlSlK9KihdKoigyhP
-	 ODu3cDM7TkRLbv1m04tWwcG2ZcmynHMEr5HWUqrDZLEX4Momg35xWenXbD5ikgRkZc
-	 taIH5J07UNIMc4iwl6fslBpvg9w9HLIBZg5XfDu6H1LTfxF/vIBbgFFJOzZHQ025SY
-	 diPe/jCBEKusw==
-Received: by mail-wr1-f43.google.com with SMTP id ffacd0b85a97d-3a503d9ef59so1071664f8f.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 05 Jun 2025 12:31:25 -0700 (PDT)
-X-Gm-Message-State: AOJu0Ywux4rMqEit9IIpINOHfqJjhQoi5Ix3S7BzAjJWubEIX1uGbuqI
-	3y+ON1tSXKTe0oWvj4VP914tYlPM2tfmdJ3HvrS4gxN2TI+IspM6hoTtW6Q4ImaINbmGeQFlC+A
-	A8SKsvPEyw3koNjBnek1f3FCTfcGum9Y=
-X-Google-Smtp-Source: AGHT+IFYFtNKa8ze2eogogkqQX7kcRT4Nlq2ZrUOuQnMnxeqos7nMIDP4lJPsEifWR36aZUk6RWVbINeKws09fq9gy0=
-X-Received: by 2002:a17:907:2d8e:b0:ad8:a329:b488 with SMTP id
- a640c23a62f3a-ade1a932e7fmr45958366b.13.1749151872706; Thu, 05 Jun 2025
- 12:31:12 -0700 (PDT)
+	b=Cph2m9ulOiJJJK6IHrF2i+w/mKgzQpa0NLjxKN2ohAV7W//qoHwOGSIfpEYtc0UAx
+	 OYmcbyxPa4uyhdL8NNFfu8SxjC98Bf4cSnVW13O5CgSm7nTC/G5V87Ge1c6mK85rM8
+	 KBmRdLQMG41jPZFckQYkpwzNVQRFXo9WM5lY/fiBvLbQnS+0KHLQd0hdVnmSILIb+B
+	 yTyGouTQwciejA9S8B7/4V6ff6WZhYsoEjeltNkrJz2T4PKkLN+6RUQK18zhcS+IlK
+	 6j25xKIWScG0mgQz2Z8uB5XmAMCjo2c3MzakFXbV43QFRTEc9W3K6DDf3PWKkiGIUy
+	 NU7de+msQtozg==
+Received: by mail-ed1-f46.google.com with SMTP id 4fb4d7f45d1cf-606b6dbe316so2443673a12.3;
+        Thu, 05 Jun 2025 12:38:15 -0700 (PDT)
+X-Forwarded-Encrypted: i=1; AJvYcCVDmkm7ipGr7OVP4tV1W4jI7PgNZw5J5Mg92YJpYLxrstCVF69rdc+WQGoiYfYmhW7vptOhPUgscLgeoUA=@vger.kernel.org, AJvYcCXWHQPqbvaB9fm4cLjjIqizilTOc3e90zRT+ZkaRMqctUha3L0EBS12V+mnmVP6waRt3lyu3734@vger.kernel.org
+X-Gm-Message-State: AOJu0Yyq5O7D6E75Z1yWeRVyz7nMF8nrNo3G0U8x7CY2ffAmovEeDyxs
+	aKgR7K9bQuHkA6JqDm62RCGz83hI29jpozG/2BqPAKwKd4Kvm2/6FISeDWzaW0VX1k6fhj0xTRP
+	+JtkXd8smfOjtB/40ZMgaEs0YvZLinKE=
+X-Google-Smtp-Source: AGHT+IG6/xm9d5UyC4RIT+5onNDev/TCUhEa55Ztsy5StOW+h9VIHr8wTzUHbeJUCoF0wHReX+ctT+4efCEdWeHdSSE=
+X-Received: by 2002:a17:907:2d92:b0:ad2:4b0c:ee8c with SMTP id
+ a640c23a62f3a-ade1a92d206mr44347666b.35.1749152294126; Thu, 05 Jun 2025
+ 12:38:14 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <59c8f858b893a9d37b76d4b3bdf985c904b4c8fe.1749052938.git.fdmanana@suse.com>
- <20250605174957.GB3475402@zen.localdomain>
-In-Reply-To: <20250605174957.GB3475402@zen.localdomain>
+References: <ad779afaef849e0febdce26cbcb5503beed87341.1748432418.git.fdmanana@suse.com>
+ <20250605165225.fajg7aj3btuejhnp@dell-per750-06-vm-08.rhts.eng.pek2.redhat.com>
+In-Reply-To: <20250605165225.fajg7aj3btuejhnp@dell-per750-06-vm-08.rhts.eng.pek2.redhat.com>
 From: Filipe Manana <fdmanana@kernel.org>
-Date: Thu, 5 Jun 2025 20:30:34 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H4_Rr+NgsJX+m2we3JPp7cZsyrykEKLhvLvR3iT9bFP9A@mail.gmail.com>
-X-Gm-Features: AX0GCFsgpXYXEde-wYu5PMxYuk9nWsvyxggIxnmlEfcDPpePuDcpuq11XtEtHN8
-Message-ID: <CAL3q7H4_Rr+NgsJX+m2we3JPp7cZsyrykEKLhvLvR3iT9bFP9A@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: fix race between async reclaim worker and close_ctree()
-To: Boris Burkov <boris@bur.io>
-Cc: linux-btrfs@vger.kernel.org
+Date: Thu, 5 Jun 2025 20:37:35 +0100
+X-Gmail-Original-Message-ID: <CAL3q7H6h98w--8=-TUridEaOt03v70J3gvLA_g=72iL9hFYL1w@mail.gmail.com>
+X-Gm-Features: AX0GCFsHwAZnzu7_gBOLqBTog1Rg0DmMLMiwJ4KSqyVeHJe55r0lBNo6_Ac2WAU
+Message-ID: <CAL3q7H6h98w--8=-TUridEaOt03v70J3gvLA_g=72iL9hFYL1w@mail.gmail.com>
+Subject: Re: [PATCH] generic/032: fix failure due to attempt to wait for
+ non-child process
+To: Zorro Lang <zlang@redhat.com>
+Cc: "Darrick J. Wong" <djwong@kernel.org>, fstests@vger.kernel.org, linux-btrfs@vger.kernel.org, 
+	Filipe Manana <fdmanana@suse.com>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Thu, Jun 5, 2025 at 6:50=E2=80=AFPM Boris Burkov <boris@bur.io> wrote:
+On Thu, Jun 5, 2025 at 5:52=E2=80=AFPM Zorro Lang <zlang@redhat.com> wrote:
 >
-> On Wed, Jun 04, 2025 at 05:18:11PM +0100, fdmanana@kernel.org wrote:
+> On Wed, May 28, 2025 at 12:42:20PM +0100, fdmanana@kernel.org wrote:
 > > From: Filipe Manana <fdmanana@suse.com>
 > >
-> > Syzbot reported an assertion failure due to an attempt to add a delayed
-> > iput after we have set BTRFS_FS_STATE_NO_DELAYED_IPUT in the fs_info
-> > state:
+> > Running generic/032 can sporadically fail like this:
 > >
-> >    WARNING: CPU: 0 PID: 65 at fs/btrfs/inode.c:3420 btrfs_add_delayed_i=
-put+0x2f8/0x370 fs/btrfs/inode.c:3420
-> >    Modules linked in:
-> >    CPU: 0 UID: 0 PID: 65 Comm: kworker/u8:4 Not tainted 6.15.0-next-202=
-50530-syzkaller #0 PREEMPT(full)
-> >    Hardware name: Google Google Compute Engine/Google Compute Engine, B=
-IOS Google 05/07/2025
-> >    Workqueue: btrfs-endio-write btrfs_work_helper
-> >    RIP: 0010:btrfs_add_delayed_iput+0x2f8/0x370 fs/btrfs/inode.c:3420
-> >    Code: 4e ad 5d (...)
-> >    RSP: 0018:ffffc9000213f780 EFLAGS: 00010293
-> >    RAX: ffffffff83c635b7 RBX: ffff888058920000 RCX: ffff88801c769e00
-> >    RDX: 0000000000000000 RSI: 0000000000000100 RDI: 0000000000000000
-> >    RBP: 0000000000000001 R08: ffff888058921b67 R09: 1ffff1100b12436c
-> >    R10: dffffc0000000000 R11: ffffed100b12436d R12: 0000000000000001
-> >    R13: dffffc0000000000 R14: ffff88807d748000 R15: 0000000000000100
-> >    FS:  0000000000000000(0000) GS:ffff888125c53000(0000) knlGS:00000000=
-00000000
-> >    CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-> >    CR2: 00002000000bd038 CR3: 000000006a142000 CR4: 00000000003526f0
-> >    DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-> >    DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
-> >    Call Trace:
-> >     <TASK>
-> >     btrfs_put_ordered_extent+0x19f/0x470 fs/btrfs/ordered-data.c:635
-> >     btrfs_finish_one_ordered+0x11d8/0x1b10 fs/btrfs/inode.c:3312
-> >     btrfs_work_helper+0x399/0xc20 fs/btrfs/async-thread.c:312
-> >     process_one_work kernel/workqueue.c:3238 [inline]
-> >     process_scheduled_works+0xae1/0x17b0 kernel/workqueue.c:3321
-> >     worker_thread+0x8a0/0xda0 kernel/workqueue.c:3402
-> >     kthread+0x70e/0x8a0 kernel/kthread.c:464
-> >     ret_from_fork+0x3fc/0x770 arch/x86/kernel/process.c:148
-> >     ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
-> >     </TASK>
+> >   generic/032 11s ... - output mismatch (see /home/fdmanana/git/hub/xfs=
+tests/results//generic/032.out.bad)
+> >       --- tests/generic/032.out   2023-03-02 21:47:53.884609618 +0000
+> >       +++ /home/fdmanana/git/hub/xfstests/results//generic/032.out.bad =
+   2025-05-28 10:39:34.549499493 +0100
+> >       @@ -1,5 +1,6 @@
+> >        QA output created by 032
+> >        100 iterations
+> >       +/home/fdmanana/git/hub/xfstests/tests/generic/032: line 90: wait=
+: pid 3708239 is not a child of this shell
+> >        000000 cd cd cd cd cd cd cd cd cd cd cd cd cd cd cd cd  >.......=
+.........<
+> >        *
+> >        100000
+> >       ...
+> >       (Run 'diff -u /home/fdmanana/git/hub/xfstests/tests/generic/032.o=
+ut /home/fdmanana/git/h
 > >
-> > This can happen due to a race with the async reclaim worker like this:
+> > This is because we are attempting to wait for a process that is not a
+> > child process of the test process and it's instead a child of a process
+> > spawned by the test.
 > >
-> > 1) The async metadata reclaim worker enters shrink_delalloc(), which ca=
-lls
-> >    btrfs_start_delalloc_roots() with an nr_pages argument that has a va=
-lue
-> >    less than LONG_MAX, and that in turn enters start_delalloc_inodes(),
-> >    which sets the local variable 'full_flush' to false because
-> >    wbc->nr_to_write is less than LONG_MAX;
+> > To make sure that after we kill the process running _syncloop() there
+> > isn't any xfs_io process still running syncfs, add instead a trap to
+> > to _syncloop() that waits for xfs_io to finish before the process runni=
+ng
+> > that function exits.
 > >
-> > 2) There it finds inode X in a root's delalloc list, grabs a reference =
-for
-> >    inode X (with igrab()), and triggers writeback for it with
-> >    filemap_fdatawrite_wbc(), which creates an ordered extent for inode =
-X;
-> >
-> > 3) The unmount sequence starts from another task, we enter close_ctree(=
-)
-> >    and we flush the workqueue fs_info->endio_write_workers, which waits
-> >    for the ordered extent for inode X to complete and when dropping the
-> >    last reference of the ordered extent, with btrfs_put_ordered_extent(=
-),
-> >    when we call btrfs_add_delayed_iput() we don't add the inode to the
-> >    list of delayed iputs because it has a refcount of 2, so we decremen=
-t
-> >    it to 1 and return;
-> >
-> > 4) Shortly after at close_ctree() we call btrfs_run_delayed_iputs() whi=
-ch
-> >    runs all delayed iputs, and then we set BTRFS_FS_STATE_NO_DELAYED_IP=
-UT
-> >    in the fs_info state;
-> >
-> > 5) The async reclaim worker, after calling filemap_fdatawrite_wbc(), no=
-w
-> >    calls btrfs_add_delayed_iput() for inode X and there we trigger an
-> >    assertion failure since the fs_info state has the flag
-> >    BTRFS_FS_STATE_NO_DELAYED_IPUT set.
-> >
-> > Fix this by setting BTRFS_FS_STATE_NO_DELAYED_IPUT only after we wait f=
-or
-> > the async reclaim workers to finish, after we call cancel_work_sync() f=
-or
-> > them at close_ctree(), and by running delayed iputs after wait for the
-> > reclaim workers to finish and before setting the bit.
-> >
-> > This race was recently introduced by commit 19e60b2a95f5 ("btrfs: add
-> > extra warning if delayed iput is added when it's not allowed") and we
-> > didn't have any assertion failure, crash or inode leak in this describe=
-d
-> > scenario because before that commit since btrfs_commit_super(), called
-> > later at close_ctree(), runs delayed iputs again, and there was no such
-> > assertion about BTRFS_FS_STATE_NO_DELAYED_IPUT at btrfs_add_delayed_ipu=
-t()
-> > of course.
->
-> I found this paragraph really hard to read and confusing. Could you try
-> to reword it into a few simpler sentences? Maybe something like:
->
-> "This race was recently introduced by commit XXX. Without the new
-> validation at btrfs_add_delayed_iput(), this described scenario was safe
-> because close_ctree() later calls btrfs_commit_super(). That will run any
-> final delayed iputs added by reclaim workers in the window between the
-> btrfs_run_delayed_iputs() and the the reclaim workers being shut down."
->
-> I think just breaking up the sentences helps a bit.
-
-Sure, I'll replace it with that in v2.
-
->
-> >
-> > Reported-by: syzbot+0ed30ad435bf6f5b7a42@syzkaller.appspotmail.com
-> > Link: https://lore.kernel.org/linux-btrfs/6840481c.a00a0220.d4325.000c.=
-GAE@google.com/T/#u
-> > Fixes: 19e60b2a95f5 ("btrfs: add extra warning if delayed iput is added=
- when it's not allowed")
 > > Signed-off-by: Filipe Manana <fdmanana@suse.com>
->
-> A few small notes/questions, but LGTM, thanks.
-> Reviewed-by: Boris Burkov <boris@bur.io>
->
 > > ---
-> >  fs/btrfs/disk-io.c | 18 ++++++++++++++++--
-> >  1 file changed, 16 insertions(+), 2 deletions(-)
-> >
-> > diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> > index 3def93016963..84c8f9f19649 100644
-> > --- a/fs/btrfs/disk-io.c
-> > +++ b/fs/btrfs/disk-io.c
-> > @@ -4324,15 +4324,29 @@ void __cold close_ctree(struct btrfs_fs_info *f=
-s_info)
-> >       btrfs_flush_workqueue(fs_info->endio_write_workers);
-> >       /* Ordered extents for free space inodes. */
-> >       btrfs_flush_workqueue(fs_info->endio_freespace_worker);
-> > +     /*
-> > +      * Run delayed iputs in case an async reclaim worker is waiting f=
-or them
-> > +      * to be run as mentioned above.
-> > +      */
 >
-> This comment was quite helpful as I initially wondered why keep both
-> calls. But it made me think and read the above comment as well. So thanks
-> for including it.
+> Oh... I didn't remove the _pgrep when I reverted those "setsid" things.
 >
-> However, the comment you are referring to also says:
+> CC Darrick, what do you think if I remove the _pgrep from common/rc
+> and generic/032 :) On the other words, revert the:
 >
-> "This works because once we reach this point no one
-> can either create new ordered extents nor create delayed iputs
-> through some other means."
+>   commit 1bb15a27573eea1df493d4b7223ada2e6c04a07a
+>   Author: Darrick J. Wong <djwong@kernel.org>
+>   Date:   Mon Feb 3 14:00:29 2025 -0800
+>
+>       generic/032: fix pinned mount failure
 
-Ah yes, that's stale now and when I wrote that comment (not that long
-ago), I missed that the reclaim workers can create delayed iputs too.
-I'll update that part in v2.
-
->
-> Which I think you have shown to be not true in this analysis/fix, as the
-> reclaim workers themselves are adding more delayed iputs after this
-> point.
->
-> >       btrfs_run_delayed_iputs(fs_info);
-> > -     /* There should be no more workload to generate new delayed iputs=
-. */
-> > -     set_bit(BTRFS_FS_STATE_NO_DELAYED_IPUT, &fs_info->fs_state);
-> >
-> >       cancel_work_sync(&fs_info->async_reclaim_work);
-> >       cancel_work_sync(&fs_info->async_data_reclaim_work);
-> >       cancel_work_sync(&fs_info->preempt_reclaim_work);
-> >       cancel_work_sync(&fs_info->em_shrinker_work);
-> >
-> > +     /*
-> > +      * Run delayed iputs again because an async reclaim worker may ha=
-ve
-> > +      * added new ones if it was flushing delalloc:
-> > +      *
-> > +      * shrink_delalloc() -> btrfs_start_delalloc_roots() ->
-> > +      *    start_delalloc_inodes() -> btrfs_add_delayed_iput()
-> > +      */
-> > +     btrfs_run_delayed_iputs(fs_info);
->
-> If btrfs_commit_super() will cleanup any stragglers as before, do we
-> actually need this btrfs_run_delayed_iputs()?
->  I suppose it makes the
-> semantics of the BTRFS_FS_STATE_NO_DELAYED_IPUT bit more clear. OTOH,
-> all the bit really does (and is documented as doing) is block new
-> delayed iputs, which is valid at this point whether or not any
-> already exist.
-
-I added this final run of delayed iputs not just to make it more clear
-but to be safer as well,
-because btrfs_commit_super() is run only if we're not in RO mode.
-
-Even on a RO fs, things like log replay can be run and create delayed
-iputs in the future.
-We currently don't do that for log replay, but there's no strong
-reason not to do it one day either.
-Just a safe net.
+Reverting that commit won't fix anything. One still needs a mechanism
+to ensure that we don't attempt to unmount the scratch device while
+xfs_io from sync_pid is still running. The mechanism implemented in
+that commit is buggy and the trap based one from this patch should
+always work (and we do this trap based approach on several other tests
+to solve this same problem).
 
 Thanks.
 
+
 >
-> > +
-> > +     /* There should be no more workload to generate new delayed iputs=
-. */
-> > +     set_bit(BTRFS_FS_STATE_NO_DELAYED_IPUT, &fs_info->fs_state);
-> > +
-> >       /* Cancel or finish ongoing discard work */
-> >       btrfs_discard_cleanup(fs_info);
+> Thanks,
+> Zorro
+>
+> >  tests/generic/032 | 13 ++++---------
+> >  1 file changed, 4 insertions(+), 9 deletions(-)
 > >
+> > diff --git a/tests/generic/032 b/tests/generic/032
+> > index 48d594fe..b04b84de 100755
+> > --- a/tests/generic/032
+> > +++ b/tests/generic/032
+> > @@ -28,6 +28,10 @@ _cleanup()
+> >
+> >  _syncloop()
+> >  {
+> > +     # Wait for any running xfs_io command running syncfs before we ex=
+it so
+> > +     # that unmount will not fail due to the mount being pinned by xfs=
+_io.
+> > +     trap "wait; exit" SIGTERM
+> > +
+> >       while [ true ]; do
+> >               _scratch_sync
+> >       done
+> > @@ -81,15 +85,6 @@ echo $iters iterations
+> >  kill $syncpid
+> >  wait
+> >
+> > -# The xfs_io instance started by _scratch_sync could be stuck in D sta=
+te when
+> > -# the subshell running _syncloop & is killed.  That xfs_io process pin=
+s the
+> > -# mount so we must kill it and wait for it to die before cycling the m=
+ount.
+> > -dead_syncfs_pid=3D$(_pgrep xfs_io)
+> > -if [ -n "$dead_syncfs_pid" ]; then
+> > -     _pkill xfs_io
+> > -     wait $dead_syncfs_pid
+> > -fi
+> > -
+> >  # clear page cache and dump the file
+> >  _scratch_cycle_mount
+> >  _hexdump $SCRATCH_MNT/file
 > > --
 > > 2.47.2
 > >
+> >
+>

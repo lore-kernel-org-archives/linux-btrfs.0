@@ -1,148 +1,185 @@
-Received: from mail-qt1-f207.google.com (mail-qt1-f207.google.com [209.85.160.207])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2B753274FE1
-	for <linux-btrfs@vger.kernel.org>; Thu,  5 Jun 2025 18:06:43 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.160.207
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2262027EC7D
+	for <linux-btrfs@vger.kernel.org>; Thu,  5 Jun 2025 19:30:47 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1749146806; cv=none; b=VtH4tgJNyCi679zj7o8Ld1nyBdtY7xp31wmzLPT4HafcYeJcsKOd3oULd6ch1JxIAUYcRR4fFIBYSC9sAPPMnCbAzeAjhynMbJcX9bvJeua7KOd1xOdW7AobEpNyci6cumJmMMm6jZR645gTsrLnTWP5fu/m6sxfjo5TZlU08h4=
+	t=1749151848; cv=none; b=Vv3H9qOJx3kllbxXtLrHVMIgG374XrxI7IjJxZudiMCr2jAQ4gh28s8P9Ex+QLqfO1jh10B9gcqAvZmDfJOkvv9Tl3tbF1PJRCVO/NoXJ0fy4rwVbwt0vL2B4b0yrdbFxHlyqnbofJSB4XkGO6lcRDAhjfYBpjEOvJthRbf61Og=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1749146806; c=relaxed/simple;
-	bh=p2h8bVXfAqrdK2pNUNt8dqwNGWIHa63N9oNTqy83JI4=;
-	h=MIME-Version:Date:Message-ID:Subject:From:To:Content-Type; b=kT6GiVGWPc8mVtcT1F2vfDJwqdKbk/eHXXa8JphmN+U4tpUpzoH01cESez5F0OGE+6XF0HbDetTLuJ4vpspqTz8jj8npqP7X1fgtUs6G26ZNNbIzzIrINPekEO0Bd/aeoNkVV9tPFvyrmag7VB/qdX8qtaggOKqXr3RxEOgwbZM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com; arc=none smtp.client-ip=209.85.160.207
-Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
-Received: by mail-qt1-f207.google.com with SMTP id d75a77b69052e-4a57fea76beso23342811cf.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 05 Jun 2025 11:06:43 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1749146803; x=1749751603;
-        h=to:from:subject:message-id:date:mime-version:x-gm-message-state
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=dImjQym7d7b9YjCAVqcDiJr2iidHUk/UARmDlM+j+6E=;
-        b=nCfPTbwT4zS/ACUF5XsJTpikaBa89piEjCn87MFJRmuHC0At67k3YQ61yLCJ/VC4H4
-         WJI3UPESykAsngWObQEpd6fE5sLnjwlAJ4GKB2B26WbMgjQZa+b0ytUg6tFVIB8V1FV+
-         RAN33dVofwXCughc+p8lebCtHFrSrvmMb8pvR1Q1lYqSPkM4pUlZfC+hx8C+Ir3I27DE
-         Odug9RZtQ0+Tt4Ax4tSTP4IrTrzQfA8UEtiqfi8HTN/UuV4esAvmbzK9VrhqwSIb70+e
-         8sZ0OHuO7+mRqK+Eq23Wx7PEeTcluzfMOYJ8fkDYw7WKrjiMuTuBdTwzRmCL+9JUt6DL
-         6ZuQ==
-X-Forwarded-Encrypted: i=1; AJvYcCUWkpaH2UPJRbmFsN8VvS7WEefwfo15TDPEpvFZbZlEDTcVm6mqYTX+ZcyJvWXvvmB2eeLfGgkoRIcZSA==@vger.kernel.org
-X-Gm-Message-State: AOJu0YyZN7RaK7NrgXf/RA/0bgXaiApUHA+nQ/cCEkbYZqG0+lFnlUO7
-	TBmkMcvZGglgHHmtbAKiZqqU9nfNLb18rhBU5rzgofHjrw/hgENviVGQVy0J+bhNTD1vwF/42EK
-	ErXHU2Y5EtJDSCMcaCK/AvOlvjoO/FjtjzeNwjxqiv5hurTb/OY7UvDdEPAg=
-X-Google-Smtp-Source: AGHT+IF69b7I0bjd5WI/y0hsTfFsRbtkLRNY1fVQJOY3MtlEGrSTCs31itW1/CjOU9TD9Ta27HsfG+f4NcqrUQuSb1J3SCdJOd2q
+	s=arc-20240116; t=1749151848; c=relaxed/simple;
+	bh=UI7TJ+Gqv5HTr1WK+6+mXdwhnuobmwFBMW+Qi+Ijyk0=;
+	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=X9dRbygkfXnys4pauS4V4DPN0LD6E7WU7+6+0GlWatReawwkrSMw8NQbOHZWRX9JNtTRNvjUct+RUG8o2JokF0Suax/f9Mbje+M3pOQQf8RhUT8SwzxHvvHEBuicTit9Xkcn4vnuJ+/mkZ2GMvzcQ60bKSBZ0J3L2GFRywH94Qg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=MlHeGzzM; arc=none smtp.client-ip=10.30.226.201
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="MlHeGzzM"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 22CF8C4CEF1
+	for <linux-btrfs@vger.kernel.org>; Thu,  5 Jun 2025 19:30:46 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1749151847;
+	bh=UI7TJ+Gqv5HTr1WK+6+mXdwhnuobmwFBMW+Qi+Ijyk0=;
+	h=From:To:Subject:Date:In-Reply-To:References:From;
+	b=MlHeGzzMq7eKroGKtNcVBlwGXpLo5Dvq7+fKxbXqCGWZDIJuycPSQRU/KmOHtOrxZ
+	 rTjrLXmAsJr0vnvYlXLAM7gwzKGHYxjEQveRc1cCzp1WK2TnV+rppyi+cXJ+lrAogz
+	 hMIYxA0jIbkjvLRw9Fr8OlWky+0FGCeTmB6ezBtHBuGQoMOdbCPpQXCCweRjlj+9yQ
+	 6y26QeojuougnWFYxvl7WylauKHuX9rlmMTCdnE1j00CB20TZsnOBD7oZBHFWO/G0l
+	 ZHoo56zx//qt7PEp1if/DZZYK6ow64U5Ase/8eEsKm1EQxtgaDpS/gcw1zSIp950y8
+	 jzfZvP+fnxslA==
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2] btrfs: fix race between async reclaim worker and close_ctree()
+Date: Thu,  5 Jun 2025 20:30:43 +0100
+Message-ID: <382977e88a4b43286d11c9ec96e9d9b5bda9e3c9.1749151642.git.fdmanana@suse.com>
+X-Mailer: git-send-email 2.47.2
+In-Reply-To: <59c8f858b893a9d37b76d4b3bdf985c904b4c8fe.1749052938.git.fdmanana@suse.com>
+References: <59c8f858b893a9d37b76d4b3bdf985c904b4c8fe.1749052938.git.fdmanana@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Received: by 2002:a05:6e02:1c0f:b0:3dd:c04e:49af with SMTP id
- e9e14a558f8ab-3ddce461a0emr5658455ab.3.1749146792542; Thu, 05 Jun 2025
- 11:06:32 -0700 (PDT)
-Date: Thu, 05 Jun 2025 11:06:32 -0700
-X-Google-Appengine-App-Id: s~syzkaller
-X-Google-Appengine-App-Id-Alias: syzkaller
-Message-ID: <6841dca8.a00a0220.d4325.0020.GAE@google.com>
-Subject: [syzbot] [btrfs?] kernel BUG in populate_free_space_tree
-From: syzbot <syzbot+36fae25c35159a763a2a@syzkaller.appspotmail.com>
-To: clm@fb.com, dsterba@suse.com, josef@toxicpanda.com, 
-	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, 
-	syzkaller-bugs@googlegroups.com
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
 
-Hello,
+From: Filipe Manana <fdmanana@suse.com>
 
-syzbot found the following issue on:
+Syzbot reported an assertion failure due to an attempt to add a delayed
+iput after we have set BTRFS_FS_STATE_NO_DELAYED_IPUT in the fs_info
+state:
 
-HEAD commit:    d7fa1af5b33e Merge branch 'for-next/core' into for-kernelci
-git tree:       git://git.kernel.org/pub/scm/linux/kernel/git/arm64/linux.git for-kernelci
-console output: https://syzkaller.appspot.com/x/log.txt?x=17ab4c0c580000
-kernel config:  https://syzkaller.appspot.com/x/.config?x=89c13de706fbf07a
-dashboard link: https://syzkaller.appspot.com/bug?extid=36fae25c35159a763a2a
-compiler:       Debian clang version 20.1.6 (++20250514063057+1e4d39e07757-1~exp1~20250514183223.118), Debian LLD 20.1.6
-userspace arch: arm64
-syz repro:      https://syzkaller.appspot.com/x/repro.syz?x=12b79282580000
-C reproducer:   https://syzkaller.appspot.com/x/repro.c?x=106b4c0c580000
+   WARNING: CPU: 0 PID: 65 at fs/btrfs/inode.c:3420 btrfs_add_delayed_iput+0x2f8/0x370 fs/btrfs/inode.c:3420
+   Modules linked in:
+   CPU: 0 UID: 0 PID: 65 Comm: kworker/u8:4 Not tainted 6.15.0-next-20250530-syzkaller #0 PREEMPT(full)
+   Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+   Workqueue: btrfs-endio-write btrfs_work_helper
+   RIP: 0010:btrfs_add_delayed_iput+0x2f8/0x370 fs/btrfs/inode.c:3420
+   Code: 4e ad 5d (...)
+   RSP: 0018:ffffc9000213f780 EFLAGS: 00010293
+   RAX: ffffffff83c635b7 RBX: ffff888058920000 RCX: ffff88801c769e00
+   RDX: 0000000000000000 RSI: 0000000000000100 RDI: 0000000000000000
+   RBP: 0000000000000001 R08: ffff888058921b67 R09: 1ffff1100b12436c
+   R10: dffffc0000000000 R11: ffffed100b12436d R12: 0000000000000001
+   R13: dffffc0000000000 R14: ffff88807d748000 R15: 0000000000000100
+   FS:  0000000000000000(0000) GS:ffff888125c53000(0000) knlGS:0000000000000000
+   CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+   CR2: 00002000000bd038 CR3: 000000006a142000 CR4: 00000000003526f0
+   DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+   DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+   Call Trace:
+    <TASK>
+    btrfs_put_ordered_extent+0x19f/0x470 fs/btrfs/ordered-data.c:635
+    btrfs_finish_one_ordered+0x11d8/0x1b10 fs/btrfs/inode.c:3312
+    btrfs_work_helper+0x399/0xc20 fs/btrfs/async-thread.c:312
+    process_one_work kernel/workqueue.c:3238 [inline]
+    process_scheduled_works+0xae1/0x17b0 kernel/workqueue.c:3321
+    worker_thread+0x8a0/0xda0 kernel/workqueue.c:3402
+    kthread+0x70e/0x8a0 kernel/kthread.c:464
+    ret_from_fork+0x3fc/0x770 arch/x86/kernel/process.c:148
+    ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+    </TASK>
 
-Downloadable assets:
-disk image: https://storage.googleapis.com/syzbot-assets/da97ad659b2c/disk-d7fa1af5.raw.xz
-vmlinux: https://storage.googleapis.com/syzbot-assets/659e123552a8/vmlinux-d7fa1af5.xz
-kernel image: https://storage.googleapis.com/syzbot-assets/6ec5dbf4643e/Image-d7fa1af5.gz.xz
-mounted in repro: https://storage.googleapis.com/syzbot-assets/643a65f1a5eb/mount_0.gz
-  fsck result: OK (log: https://syzkaller.appspot.com/x/fsck.log?x=11f86570580000)
+This can happen due to a race with the async reclaim worker like this:
 
-IMPORTANT: if you fix the issue, please add the following tag to the commit:
-Reported-by: syzbot+36fae25c35159a763a2a@syzkaller.appspotmail.com
+1) The async metadata reclaim worker enters shrink_delalloc(), which calls
+   btrfs_start_delalloc_roots() with an nr_pages argument that has a value
+   less than LONG_MAX, and that in turn enters start_delalloc_inodes(),
+   which sets the local variable 'full_flush' to false because
+   wbc->nr_to_write is less than LONG_MAX;
 
-BTRFS warning: 'usebackuproot' is deprecated, use 'rescue=usebackuproot' instead
-BTRFS info (device loop0 state M): rebuilding free space tree
-assertion failed: ret == 0, in fs/btrfs/free-space-tree.c:1102
-------------[ cut here ]------------
-kernel BUG at fs/btrfs/free-space-tree.c:1102!
-Internal error: Oops - BUG: 00000000f2000800 [#1]  SMP
-Modules linked in:
-CPU: 1 UID: 0 PID: 6592 Comm: syz-executor322 Not tainted 6.15.0-rc7-syzkaller-gd7fa1af5b33e #0 PREEMPT 
-Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
-pstate: 60400005 (nZCv daif +PAN -UAO -TCO -DIT -SSBS BTYPE=--)
-pc : populate_free_space_tree+0x514/0x518 fs/btrfs/free-space-tree.c:1102
-lr : populate_free_space_tree+0x514/0x518 fs/btrfs/free-space-tree.c:1102
-sp : ffff8000a4ce7600
-x29: ffff8000a4ce76e0 x28: ffff0000c9bc6000 x27: ffff0000ddfff3d8
-x26: ffff0000ddfff378 x25: dfff800000000000 x24: 0000000000000001
-x23: ffff8000a4ce7660 x22: ffff70001499cecc x21: ffff0000e1d8c160
-x20: ffff0000e1cb7800 x19: ffff0000e1d8c0b0 x18: 00000000ffffffff
-x17: ffff800092f39000 x16: ffff80008ad27e48 x15: ffff700011e740c0
-x14: 1ffff00011e740c0 x13: 0000000000000004 x12: ffffffffffffffff
-x11: ffff700011e740c0 x10: 0000000000ff0100 x9 : 94ef24f55d2dbc00
-x8 : 94ef24f55d2dbc00 x7 : 0000000000000001 x6 : 0000000000000001
-x5 : ffff8000a4ce6f98 x4 : ffff80008f415ba0 x3 : ffff800080548ef0
-x2 : 0000000000000000 x1 : 0000000100000000 x0 : 000000000000003e
-Call trace:
- populate_free_space_tree+0x514/0x518 fs/btrfs/free-space-tree.c:1102 (P)
- btrfs_rebuild_free_space_tree+0x14c/0x54c fs/btrfs/free-space-tree.c:1337
- btrfs_start_pre_rw_mount+0xa78/0xe10 fs/btrfs/disk-io.c:3074
- btrfs_remount_rw fs/btrfs/super.c:1319 [inline]
- btrfs_reconfigure+0x828/0x2418 fs/btrfs/super.c:1543
- reconfigure_super+0x1d4/0x6f0 fs/super.c:1083
- do_remount fs/namespace.c:3365 [inline]
- path_mount+0xb34/0xde0 fs/namespace.c:4200
- do_mount fs/namespace.c:4221 [inline]
- __do_sys_mount fs/namespace.c:4432 [inline]
- __se_sys_mount fs/namespace.c:4409 [inline]
- __arm64_sys_mount+0x3e8/0x468 fs/namespace.c:4409
- __invoke_syscall arch/arm64/kernel/syscall.c:35 [inline]
- invoke_syscall+0x98/0x2b8 arch/arm64/kernel/syscall.c:49
- el0_svc_common+0x130/0x23c arch/arm64/kernel/syscall.c:132
- do_el0_svc+0x48/0x58 arch/arm64/kernel/syscall.c:151
- el0_svc+0x58/0x17c arch/arm64/kernel/entry-common.c:767
- el0t_64_sync_handler+0x78/0x108 arch/arm64/kernel/entry-common.c:786
- el0t_64_sync+0x198/0x19c arch/arm64/kernel/entry.S:600
-Code: f0047182 91178042 528089c3 9771d47b (d4210000) 
----[ end trace 0000000000000000 ]---
+2) There it finds inode X in a root's delalloc list, grabs a reference for
+   inode X (with igrab()), and triggers writeback for it with
+   filemap_fdatawrite_wbc(), which creates an ordered extent for inode X;
 
+3) The unmount sequence starts from another task, we enter close_ctree()
+   and we flush the workqueue fs_info->endio_write_workers, which waits
+   for the ordered extent for inode X to complete and when dropping the
+   last reference of the ordered extent, with btrfs_put_ordered_extent(),
+   when we call btrfs_add_delayed_iput() we don't add the inode to the
+   list of delayed iputs because it has a refcount of 2, so we decrement
+   it to 1 and return;
 
+4) Shortly after at close_ctree() we call btrfs_run_delayed_iputs() which
+   runs all delayed iputs, and then we set BTRFS_FS_STATE_NO_DELAYED_IPUT
+   in the fs_info state;
+
+5) The async reclaim worker, after calling filemap_fdatawrite_wbc(), now
+   calls btrfs_add_delayed_iput() for inode X and there we trigger an
+   assertion failure since the fs_info state has the flag
+   BTRFS_FS_STATE_NO_DELAYED_IPUT set.
+
+Fix this by setting BTRFS_FS_STATE_NO_DELAYED_IPUT only after we wait for
+the async reclaim workers to finish, after we call cancel_work_sync() for
+them at close_ctree(), and by running delayed iputs after wait for the
+reclaim workers to finish and before setting the bit.
+
+This race was recently introduced by commit 19e60b2a95f5 ("btrfs: add
+extra warning if delayed iput is added when it's not allowed"). Without
+the new validation at btrfs_add_delayed_iput(), this described scenario
+was safe because close_ctree() later calls btrfs_commit_super(). That
+will run any final delayed iputs added by reclaim workers in the window
+between the btrfs_run_delayed_iputs() and the the reclaim workers being
+shut down.
+
+Reported-by: syzbot+0ed30ad435bf6f5b7a42@syzkaller.appspotmail.com
+Link: https://lore.kernel.org/linux-btrfs/6840481c.a00a0220.d4325.000c.GAE@google.com/T/#u
+Fixes: 19e60b2a95f5 ("btrfs: add extra warning if delayed iput is added when it's not allowed")
+Reviewed-by: Boris Burkov <boris@bur.io>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
-This report is generated by a bot. It may contain errors.
-See https://goo.gl/tpsmEJ for more information about syzbot.
-syzbot engineers can be reached at syzkaller@googlegroups.com.
 
-syzbot will keep track of this issue. See:
-https://goo.gl/tpsmEJ#status for how to communicate with syzbot.
+V2: Updated a comment and rephrased a paragraph of the change log.
 
-If the report is already addressed, let syzbot know by replying with:
-#syz fix: exact-commit-title
+ fs/btrfs/disk-io.c | 22 ++++++++++++++++++----
+ 1 file changed, 18 insertions(+), 4 deletions(-)
 
-If you want syzbot to run the reproducer, reply with:
-#syz test: git://repo/address.git branch-or-commit-hash
-If you attach or paste a git patch, syzbot will apply it before testing.
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 3def93016963..f48f9d924a62 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -4312,8 +4312,8 @@ void __cold close_ctree(struct btrfs_fs_info *fs_info)
+ 	 *
+ 	 * So wait for all ongoing ordered extents to complete and then run
+ 	 * delayed iputs. This works because once we reach this point no one
+-	 * can either create new ordered extents nor create delayed iputs
+-	 * through some other means.
++	 * can create new ordered extents, but delayed iputs can still be added
++	 * by a reclaim worker (see comments further below).
+ 	 *
+ 	 * Also note that btrfs_wait_ordered_roots() is not safe here, because
+ 	 * it waits for BTRFS_ORDERED_COMPLETE to be set on an ordered extent,
+@@ -4324,15 +4324,29 @@ void __cold close_ctree(struct btrfs_fs_info *fs_info)
+ 	btrfs_flush_workqueue(fs_info->endio_write_workers);
+ 	/* Ordered extents for free space inodes. */
+ 	btrfs_flush_workqueue(fs_info->endio_freespace_worker);
++	/*
++	 * Run delayed iputs in case an async reclaim worker is waiting for them
++	 * to be run as mentioned above.
++	 */
+ 	btrfs_run_delayed_iputs(fs_info);
+-	/* There should be no more workload to generate new delayed iputs. */
+-	set_bit(BTRFS_FS_STATE_NO_DELAYED_IPUT, &fs_info->fs_state);
+ 
+ 	cancel_work_sync(&fs_info->async_reclaim_work);
+ 	cancel_work_sync(&fs_info->async_data_reclaim_work);
+ 	cancel_work_sync(&fs_info->preempt_reclaim_work);
+ 	cancel_work_sync(&fs_info->em_shrinker_work);
+ 
++	/*
++	 * Run delayed iputs again because an async reclaim worker may have
++	 * added new ones if it was flushing delalloc:
++	 *
++	 * shrink_delalloc() -> btrfs_start_delalloc_roots() ->
++	 *    start_delalloc_inodes() -> btrfs_add_delayed_iput()
++	 */
++	btrfs_run_delayed_iputs(fs_info);
++
++	/* There should be no more workload to generate new delayed iputs. */
++	set_bit(BTRFS_FS_STATE_NO_DELAYED_IPUT, &fs_info->fs_state);
++
+ 	/* Cancel or finish ongoing discard work */
+ 	btrfs_discard_cleanup(fs_info);
+ 
+-- 
+2.47.2
 
-If you want to overwrite report's subsystems, reply with:
-#syz set subsystems: new-subsystem
-(See the list of subsystem names on the web dashboard)
-
-If the report is a duplicate of another one, reply with:
-#syz dup: exact-subject-of-another-report
-
-If you want to undo deduplication, reply with:
-#syz undup

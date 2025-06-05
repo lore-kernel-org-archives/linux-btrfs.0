@@ -1,210 +1,176 @@
-Received: from mx0b-00082601.pphosted.com (mx0b-00082601.pphosted.com [67.231.153.30])
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 78B1F1F2BAB
-	for <linux-btrfs@vger.kernel.org>; Thu,  5 Jun 2025 16:24:22 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=67.231.153.30
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 25FBD4315A
+	for <linux-btrfs@vger.kernel.org>; Thu,  5 Jun 2025 16:30:40 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.129.124
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1749140664; cv=none; b=i0fXSfL8EtcngNLodrvP744V7obTqYFrFL4cXEF2iYEfgGD7H4i5TNVNOSSA/+Yr/GP56w50hn1N+c3RYHIRjEezyZUEhq6I5on0PNHszymD72lW5Hxz1WhOr+oDDQa6kCs3Ix+2dLfWLLPzCBZAOESxHy2Plr6ajMJoSKIL5r0=
+	t=1749141042; cv=none; b=qDytCYBDbb8ZR5ZuvYxHE9K4erbEQZvQ486HR4bp66jdUACIpPH+khsOpvRAuMHN5g6DeOVEDgvdGMH/tOpH1mHcAEz9MaDU7sSRA3ArIdV9eNIvexGSgxaX+d4sbGLmi5RUeAIkX3LZ/7wapj9WcbA+k0GgqaNuZ+P81fqgMYc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1749140664; c=relaxed/simple;
-	bh=P0asvX+LrwpUPfg8zfuzrz7exVzKtoGLeC3V+xdGBH8=;
-	h=From:To:CC:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=Eo/pKzlc8gWZwPqZyNzg95MKqyWIw093OkPoaeWiuYGxFkhT3xO+BeigyBcWl2eIDLiDAY2W4VgvHPESPPE3/1CPsN9H0aCpSLiBKDb9rqJO08zg/fXX8mODhH0U/jmRzUMBN65ICJrzA4ueIFfYv74bBpVDqHZNe2vWhJecvLo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=fb.com; spf=pass smtp.mailfrom=meta.com; dkim=pass (1024-bit key) header.d=fb.com header.i=@fb.com header.b=WXwwuBTa; arc=none smtp.client-ip=67.231.153.30
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=fb.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=meta.com
+	s=arc-20240116; t=1749141042; c=relaxed/simple;
+	bh=oXYYDzTPGNs+ypmcj1eS5D+KOVWsyqBy1Q0BqMjYayk=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=ZR99ROGLb6x0aLhxiuyPwNyiSJKlllPiEMVGG/kupN6syJw8vlnHrNZkbYUjXfnqLlT+p490pSelmjHaRggVYN+qacyX60atu+u00c28+K70L4ngdFuwCKhV1XAS2odYcf3l/K17361c6rJ6ADoA2ONTXhv2pf9BEdLyCSSk44o=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=cXXJhsU+; arc=none smtp.client-ip=170.10.129.124
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=fb.com header.i=@fb.com header.b="WXwwuBTa"
-Received: from pps.filterd (m0109332.ppops.net [127.0.0.1])
-	by mx0a-00082601.pphosted.com (8.18.1.2/8.18.1.2) with ESMTP id 555Dw78q018125
-	for <linux-btrfs@vger.kernel.org>; Thu, 5 Jun 2025 09:24:20 -0700
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.com; h=cc
-	:content-transfer-encoding:content-type:date:from:in-reply-to
-	:message-id:mime-version:references:subject:to; s=facebook; bh=y
-	uEfC+bF4G4xtcnMPBaDiy2d7mCOMeQQH20qolfRSdg=; b=WXwwuBTa0HOI3yZz1
-	rpjmtvje/zjHhgBupGtFHeDOPuQKTZaYqUJgzsj6JIhFpgAQM3FDgumjG7ZLRrPi
-	u29aAAJbaZNjq8IcbiQ6zVBluaZ529A88jd0LzNILXMEZNMX1oCobfRgKosu7AC4
-	DU6uqHOG7d8j4GZfpPOtH45/YE=
-Received: from mail.thefacebook.com ([163.114.134.16])
-	by mx0a-00082601.pphosted.com (PPS) with ESMTPS id 4739svabq7-9
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Thu, 05 Jun 2025 09:24:20 -0700 (PDT)
-Received: from twshared29376.33.frc3.facebook.com (2620:10d:c085:108::150d) by
- mail.thefacebook.com (2620:10d:c08b:78::c78f) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
- 15.2.1748.24; Thu, 5 Jun 2025 16:24:01 +0000
-Received: by devbig276.nha1.facebook.com (Postfix, from userid 660015)
-	id 36E2AFEC2E60; Thu,  5 Jun 2025 17:23:48 +0100 (BST)
-From: Mark Harmstone <maharmstone@fb.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Mark Harmstone <maharmstone@fb.com>
-Subject: [PATCH 01/12] btrfs: add definitions and constants for remap-tree
-Date: Thu, 5 Jun 2025 17:23:31 +0100
-Message-ID: <20250605162345.2561026-2-maharmstone@fb.com>
-X-Mailer: git-send-email 2.47.1
-In-Reply-To: <20250605162345.2561026-1-maharmstone@fb.com>
-References: <20250605162345.2561026-1-maharmstone@fb.com>
+	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="cXXJhsU+"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+	s=mimecast20190719; t=1749141040;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=L12XX5ma/UkaofRsTldbekTX43EjtYhEhxzfoIm0/dw=;
+	b=cXXJhsU+0pDK+1FCwZEf8mZzf2rgi5kyXEKy+iiGq0AjwumvbuwavfI4qOMv6cUyDqwscw
+	nFTRclnZ1WJDm+Q7nRSaD2ppbIzdXxsMrz/J9bTFJ6mExRTT9RWOJNjVhxf1KJiR+ITI5f
+	WkQONXffEmmOCN/Yb8L3b1db7+zriWU=
+Received: from mail-pl1-f199.google.com (mail-pl1-f199.google.com
+ [209.85.214.199]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
+ us-mta-651-YBzG1vkiMqanCxJJ6T017Q-1; Thu, 05 Jun 2025 12:30:38 -0400
+X-MC-Unique: YBzG1vkiMqanCxJJ6T017Q-1
+X-Mimecast-MFC-AGG-ID: YBzG1vkiMqanCxJJ6T017Q_1749141037
+Received: by mail-pl1-f199.google.com with SMTP id d9443c01a7336-235eefe6a8fso8499255ad.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 05 Jun 2025 09:30:38 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1749141037; x=1749745837;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=L12XX5ma/UkaofRsTldbekTX43EjtYhEhxzfoIm0/dw=;
+        b=gMnS7QtlgEZQnmRRh13JhcLzFLkXX92jvAtB9tecj1xQxQHk2je4DV3BF5ERtUldPj
+         PS85Z+eW2m6DYuLpqYfAVhzd2uhtxm85/pEgD7PVsaCGV5ofLTHZ5VhLQ45G8+sqp6sy
+         9EDD/yPkoPZpaC+3+EjEjC9mSlAj/DkFYSIurvjOEeqBRBCxYQ+o8pSUuucYBI3/BsyN
+         3TOR6sJ6JMZYwocNBnt20qdsIpGTVYApcLhPEw60ZJzZxiCJyQXMiSQ3ygexHdzsF8qJ
+         RpQyZLWzZ9l9BWOW8L37Mmuy2Y/htO8YcSR08ymw5OrJt2PF5l84eHg8yMxG1/ASmSUb
+         5A5Q==
+X-Forwarded-Encrypted: i=1; AJvYcCW1FwaKQuyyIR66K3zd4keP2yjQFu/Cahz1oVdrfZ3/W/udJ60OEySSA1K8CzgFhgWob50wgaaG3YSxdA==@vger.kernel.org
+X-Gm-Message-State: AOJu0YwJFgbn4eTH0PUpwuLV7c5LfLlMgL6tY3mBSe+07oeHflxSLchi
+	gyyVY/dzIBA93GyDLxEEO6bDC2iu9fVVTPIsRM5hWwRWCMShXpoSlwdUpg0HhAqplG//rjZ5O4Z
+	NKsKLxsrtRKtqxo7nRN8BioWE5T5EwCwHu98DHz85oDOjpbg5kaqvrabAcByda7kuFdvFO638
+X-Gm-Gg: ASbGncs9JUIjG22MggBz2nC0bAMdH+e+ocXqlZCJu/KrVQo27lERiNLqEogsLvrh2DD
+	ZDfq7jKOEvhIm03TFdCJYfQ+fmH/kNxsZMh6l5uMTQEA5H80A1nriB3sUgaANxBsavqPHPTipnN
+	v4HP0cbF7NYb8pL2QyDv/6EWDNKLPXPDt0MPezZQ21HFrd8RUPOBrgWflN6BU6pPTUw7ph5Ps75
+	Sus6xWxapbta20shEGXZC/MyGWdgFbJkJXfgeejKIt4jwYfDRzwGtgXNJxxlTiOaHzMHp3BbO/E
+	VF9fBs4i1XA4NjHFafWNFIgfUzs89TT6RuMGy/JDwCmSpEViHesWxNZSy4e9YI8=
+X-Received: by 2002:a17:902:f602:b0:234:d7c5:a0f6 with SMTP id d9443c01a7336-23601d4ed01mr216215ad.31.1749141036975;
+        Thu, 05 Jun 2025 09:30:36 -0700 (PDT)
+X-Google-Smtp-Source: AGHT+IGnt68u95749X80LDtx+XH9djrLQpxwmELcFErgZKaQ0qOXdRdzUH8UJYVv5Idd6yTk5GqTHg==
+X-Received: by 2002:a17:902:f602:b0:234:d7c5:a0f6 with SMTP id d9443c01a7336-23601d4ed01mr215185ad.31.1749141036266;
+        Thu, 05 Jun 2025 09:30:36 -0700 (PDT)
+Received: from dell-per750-06-vm-08.rhts.eng.pek2.redhat.com ([209.132.188.88])
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-23506bd949bsm121673255ad.91.2025.06.05.09.30.34
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Thu, 05 Jun 2025 09:30:35 -0700 (PDT)
+Date: Fri, 6 Jun 2025 00:30:32 +0800
+From: Zorro Lang <zlang@redhat.com>
+To: fdmanana@kernel.org
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	Filipe Manana <fdmanana@suse.com>
+Subject: Re: [PATCH] generic/094: fix test ignoring failures
+Message-ID: <20250605163032.kroyvzlhwjcdfgir@dell-per750-06-vm-08.rhts.eng.pek2.redhat.com>
+References: <7425c940548e19ab996b8458717dd3c3c3c55630.1748518250.git.fdmanana@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: quoted-printable
-X-FB-Internal: Safe
-Content-Type: text/plain
-X-Proofpoint-Spam-Details-Enc: AW1haW4tMjUwNjA1MDE0NCBTYWx0ZWRfX0bubSSgYAYMP X3gdAOWdnMSDiDa0J8C2HbVEQN/GHez5MeX75R3WegwvAc6ALUfKwABC49Y149rNkil8L48nzcm /40+eS/fnf6nGe7HbRLfJZoepcdDClzuabHO3iLmxr07C0DNqv0QYtXkYs6jZoI6OFeDl1XR+c6
- uHjTehFEVtoMLAS4YR1Y2ZA2nDIsBGXsY3knD8AWd1teXts3qlyAgOAJdQfdczZG3aPRcdl2FZX 7+c6JXXQrjENhvY/6LstmVUfw/KJ1TRlCia1p5bpdumy65PqdhNpnfTLE5zg74ArMcPNUsF8EJY 97T4TmnX+Bc2s7BmDdbd93B13eQjDKcEWlN7CyIlitr+fWH+2lI0s35LgBG3/dpdM5bZS/9L8b0
- lx0zMnGVzPKoTFrz1Ds/qtlyMBv3qdbpeK899oH03yTiZON+JIbsUeBqvs9Ing0wCL0vzOjq
-X-Proofpoint-ORIG-GUID: IzOLyUUE6Ti1t-mX9pT4VsMmV72T3AP9
-X-Authority-Analysis: v=2.4 cv=EIwG00ZC c=1 sm=1 tr=0 ts=6841c4b4 cx=c_pps a=CB4LiSf2rd0gKozIdrpkBw==:117 a=CB4LiSf2rd0gKozIdrpkBw==:17 a=6IFa9wvqVegA:10 a=FOH2dFAWAAAA:8 a=KFvQRHhEJ8czjn08fOUA:9
-X-Proofpoint-GUID: IzOLyUUE6Ti1t-mX9pT4VsMmV72T3AP9
-X-Proofpoint-Virus-Version: vendor=baseguard
- engine=ICAP:2.0.293,Aquarius:18.0.1099,Hydra:6.0.736,FMLib:17.12.80.40
- definitions=2025-06-05_04,2025-06-05_01,2025-03-28_01
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <7425c940548e19ab996b8458717dd3c3c3c55630.1748518250.git.fdmanana@suse.com>
 
-Add an incompat flag for the new remap-tree feature, and the constants
-and definitions needed to support it.
+On Thu, May 29, 2025 at 12:33:13PM +0100, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> The test is ignoring failures completely:
+> 
+> 1) If mounting the scratch device fails it redirects both stdout and
+>    stderr to /dev/null, so it gets unnoticed and the test runs against
+>    a different fs than expected (in my test environment $SCRATCH_MNT
+>    points to a directory in an ext4 fs for example but I want to test
+>    btrfs);
 
-Signed-off-by: Mark Harmstone <maharmstone@fb.com>
----
- fs/btrfs/accessors.h            |  3 +++
- fs/btrfs/sysfs.c                |  2 ++
- fs/btrfs/tree-checker.c         |  6 ++++--
- fs/btrfs/volumes.c              |  1 +
- include/uapi/linux/btrfs.h      |  1 +
- include/uapi/linux/btrfs_tree.h | 12 ++++++++++++
- 6 files changed, 23 insertions(+), 2 deletions(-)
+Yeah, I really don't recommend redirecting all outputs of _scratch_mkfs
+to /dev/null. Some old cases might still do that.
 
-diff --git a/fs/btrfs/accessors.h b/fs/btrfs/accessors.h
-index 15ea6348800b..5f5eda8d6f9e 100644
---- a/fs/btrfs/accessors.h
-+++ b/fs/btrfs/accessors.h
-@@ -1046,6 +1046,9 @@ BTRFS_SETGET_STACK_FUNCS(stack_verity_descriptor_en=
-cryption,
- BTRFS_SETGET_STACK_FUNCS(stack_verity_descriptor_size,
- 			 struct btrfs_verity_descriptor_item, size, 64);
-=20
-+BTRFS_SETGET_FUNCS(remap_address, struct btrfs_remap, address, 64);
-+BTRFS_SETGET_STACK_FUNCS(stack_remap_address, struct btrfs_remap, addres=
-s, 64);
-+
- /* Cast into the data area of the leaf. */
- #define btrfs_item_ptr(leaf, slot, type)				\
- 	((type *)(btrfs_item_nr_offset(leaf, 0) + btrfs_item_offset(leaf, slot)=
-))
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index f186c8082eff..831c25c2fb25 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -292,6 +292,7 @@ BTRFS_FEAT_ATTR_COMPAT_RO(free_space_tree, FREE_SPACE=
-_TREE);
- BTRFS_FEAT_ATTR_COMPAT_RO(block_group_tree, BLOCK_GROUP_TREE);
- BTRFS_FEAT_ATTR_INCOMPAT(raid1c34, RAID1C34);
- BTRFS_FEAT_ATTR_INCOMPAT(simple_quota, SIMPLE_QUOTA);
-+BTRFS_FEAT_ATTR_INCOMPAT(remap_tree, REMAP_TREE);
- #ifdef CONFIG_BLK_DEV_ZONED
- BTRFS_FEAT_ATTR_INCOMPAT(zoned, ZONED);
- #endif
-@@ -326,6 +327,7 @@ static struct attribute *btrfs_supported_feature_attr=
-s[] =3D {
- 	BTRFS_FEAT_ATTR_PTR(raid1c34),
- 	BTRFS_FEAT_ATTR_PTR(block_group_tree),
- 	BTRFS_FEAT_ATTR_PTR(simple_quota),
-+	BTRFS_FEAT_ATTR_PTR(remap_tree),
- #ifdef CONFIG_BLK_DEV_ZONED
- 	BTRFS_FEAT_ATTR_PTR(zoned),
- #endif
-diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-index 8f4703b488b7..a83fb828723a 100644
---- a/fs/btrfs/tree-checker.c
-+++ b/fs/btrfs/tree-checker.c
-@@ -913,11 +913,13 @@ int btrfs_check_chunk_valid(const struct btrfs_fs_i=
-nfo *fs_info,
- 		return -EUCLEAN;
- 	}
- 	if (unlikely(type & ~(BTRFS_BLOCK_GROUP_TYPE_MASK |
--			      BTRFS_BLOCK_GROUP_PROFILE_MASK))) {
-+			      BTRFS_BLOCK_GROUP_PROFILE_MASK |
-+			      BTRFS_BLOCK_GROUP_REMAPPED))) {
- 		chunk_err(fs_info, leaf, chunk, logical,
- 			  "unrecognized chunk type: 0x%llx",
- 			  ~(BTRFS_BLOCK_GROUP_TYPE_MASK |
--			    BTRFS_BLOCK_GROUP_PROFILE_MASK) & type);
-+			    BTRFS_BLOCK_GROUP_PROFILE_MASK |
-+			    BTRFS_BLOCK_GROUP_REMAPPED) & type);
- 		return -EUCLEAN;
- 	}
-=20
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 1535a425e8f9..3e53bde0e605 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -234,6 +234,7 @@ void btrfs_describe_block_groups(u64 bg_flags, char *=
-buf, u32 size_buf)
- 	DESCRIBE_FLAG(BTRFS_BLOCK_GROUP_DATA, "data");
- 	DESCRIBE_FLAG(BTRFS_BLOCK_GROUP_SYSTEM, "system");
- 	DESCRIBE_FLAG(BTRFS_BLOCK_GROUP_METADATA, "metadata");
-+	DESCRIBE_FLAG(BTRFS_BLOCK_GROUP_REMAPPED, "remapped");
-=20
- 	DESCRIBE_FLAG(BTRFS_AVAIL_ALLOC_BIT_SINGLE, "single");
- 	for (i =3D 0; i < BTRFS_NR_RAID_TYPES; i++)
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index dd02160015b2..d857cdc7694a 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -336,6 +336,7 @@ struct btrfs_ioctl_fs_info_args {
- #define BTRFS_FEATURE_INCOMPAT_EXTENT_TREE_V2	(1ULL << 13)
- #define BTRFS_FEATURE_INCOMPAT_RAID_STRIPE_TREE	(1ULL << 14)
- #define BTRFS_FEATURE_INCOMPAT_SIMPLE_QUOTA	(1ULL << 16)
-+#define BTRFS_FEATURE_INCOMPAT_REMAP_TREE	(1ULL << 17)
-=20
- struct btrfs_ioctl_feature_flags {
- 	__u64 compat_flags;
-diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_t=
-ree.h
-index fc29d273845d..4439d77a7252 100644
---- a/include/uapi/linux/btrfs_tree.h
-+++ b/include/uapi/linux/btrfs_tree.h
-@@ -76,6 +76,9 @@
- /* Tracks RAID stripes in block groups. */
- #define BTRFS_RAID_STRIPE_TREE_OBJECTID 12ULL
-=20
-+/* Holds details of remapped addresses after relocation. */
-+#define BTRFS_REMAP_TREE_OBJECTID 13ULL
-+
- /* device stats in the device tree */
- #define BTRFS_DEV_STATS_OBJECTID 0ULL
-=20
-@@ -282,6 +285,10 @@
-=20
- #define BTRFS_RAID_STRIPE_KEY	230
-=20
-+#define BTRFS_IDENTITY_REMAP_KEY 	234
-+#define BTRFS_REMAP_KEY		 	235
-+#define BTRFS_REMAP_BACKREF_KEY	 	236
-+
- /*
-  * Records the overall state of the qgroups.
-  * There's only one instance of this key present,
-@@ -1161,6 +1168,7 @@ struct btrfs_dev_replace_item {
- #define BTRFS_BLOCK_GROUP_RAID6         (1ULL << 8)
- #define BTRFS_BLOCK_GROUP_RAID1C3       (1ULL << 9)
- #define BTRFS_BLOCK_GROUP_RAID1C4       (1ULL << 10)
-+#define BTRFS_BLOCK_GROUP_REMAPPED      (1ULL << 11)
- #define BTRFS_BLOCK_GROUP_RESERVED	(BTRFS_AVAIL_ALLOC_BIT_SINGLE | \
- 					 BTRFS_SPACE_INFO_GLOBAL_RSV)
-=20
-@@ -1323,4 +1331,8 @@ struct btrfs_verity_descriptor_item {
- 	__u8 encryption;
- } __attribute__ ((__packed__));
-=20
-+struct btrfs_remap {
-+	__le64 address;
-+} __attribute__ ((__packed__));
-+
- #endif /* _BTRFS_CTREE_H_ */
---=20
-2.49.0
+> 
+> 2) We are redirecting the stdout and stderr of fiemap-tester to the
+>    $seqres.full file, so if it fails it gets completely unnoticed and
+>    the test succeeds.
+
+I'm surprised that this test case neither check the test output nor
+check the return value of src/fiemap-tester.
+
+> 
+> For the first issue fix this by not even using the scratch filesystem and
+> use instead the test filesystem, since the test creates a 2M file which
+> is small enough.
+> 
+> For the second issue simply don't redirect the stdout and stderr, so that
+> if the test program fails it causes a mismatch with the golden output,
+> making the test fail.
+> 
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
+
+This change makes sense to me,
+
+Reviewed-by: Zorro Lang <zlang@redhat.com>
+
+>  tests/generic/094 | 20 +++++++++++---------
+>  1 file changed, 11 insertions(+), 9 deletions(-)
+> 
+> diff --git a/tests/generic/094 b/tests/generic/094
+> index c82efced..6ae417c3 100755
+> --- a/tests/generic/094
+> +++ b/tests/generic/094
+> @@ -9,18 +9,22 @@
+>  . ./common/preamble
+>  _begin_fstest auto quick prealloc fiemap
+>  
+> +_cleanup()
+> +{
+> +	cd /
+> +	rm -fr $tmp.*
+> +	rm -f $fiemapfile
+> +}
+> +
+>  # Import common functions.
+>  . ./common/filter
+>  
+> -_require_scratch
+> +_require_test
+>  _require_odirect
+>  _require_xfs_io_command "fiemap"
+>  _require_xfs_io_command "falloc"
+>  
+> -_scratch_mkfs > /dev/null 2>&1
+> -_scratch_mount > /dev/null 2>&1
+> -
+> -fiemapfile=$SCRATCH_MNT/$seq.fiemap
+> +fiemapfile=$TEST_DIR/$seq.fiemap
+>  
+>  _require_test_program "fiemap-tester"
+>  
+> @@ -29,12 +33,10 @@ seed=`date +%s`
+>  echo "using seed $seed" >> $seqres.full
+>  
+>  echo "fiemap run with sync"
+> -$here/src/fiemap-tester -q -S -s $seed -r 200 $fiemapfile 2>&1 | \
+> -	tee -a $seqres.full
+> +$here/src/fiemap-tester -q -S -s $seed -r 200 $fiemapfile
+>  
+>  echo "fiemap run without sync"
+> -$here/src/fiemap-tester -q -s $seed -r 200 $fiemapfile 2>&1 | \
+> -	tee -a $seqres.full
+> +$here/src/fiemap-tester -q -s $seed -r 200 $fiemapfile
+>  
+>  status=0
+>  exit
+> -- 
+> 2.47.2
+> 
+> 
 

@@ -1,64 +1,64 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5771821C189
-	for <linux-btrfs@vger.kernel.org>; Mon,  9 Jun 2025 17:09:59 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7E16F21C9ED
+	for <linux-btrfs@vger.kernel.org>; Mon,  9 Jun 2025 17:10:00 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1749489001; cv=none; b=XAqdWWDCpma5JLIgg5enrlmG8qlTKznBHM5PHUL6W+1urb4cAJgFp+SJOA+zW1ZH2tZkPC1/ZSD6SmDVYn52myQn8kHAyIo1/LGLAtDMoavjBxPu3bBPd3TPRQoYMaXlz2hQ+FxqDhYyzUpSyd2UpRriGga+tW9heWzpI0maH54=
+	t=1749489002; cv=none; b=iM4ZEPlVb1l0rU4qb47mhaNh5Noz+PG3uoTgdczBTbXag9t0OoL+7RfK0tztU94K3yPtqMVS/yv6Tt5gkQoAP/j1JApvW/EDSsP/oq7gA/yo0XzmTCWWyTGHFurRIJu/tZvjOM3xWlABqBGiwJ+bswIPdwImVJq1vgmpUyNXWIE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1749489001; c=relaxed/simple;
-	bh=zLbm1mRHgjbTfvc0qaZFbIhxYhp0i1gq4JxKXN3eTwA=;
+	s=arc-20240116; t=1749489002; c=relaxed/simple;
+	bh=ZbiR3Wi2mtflKMi6Gv+lD0gLwLFVLeFcjjZyEMq9JwU=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=Opf8+weWpFxGxJYRGeauupHeQ1+ImnERiVAYANwOUldcsr5aYGUDA3uOdupRibFx4JM113kJP2BCoTGYKg3jOo6XyrMkmsT/rSxz58nkHHN+AaiSNZY+7q82kJ5mDHgxmTJ0S48ODu31mYPFRdHGSGw3Lsc902RLF2P0zAEctc0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=ZPDOtYU0; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=ZPDOtYU0; arc=none smtp.client-ip=195.135.223.131
+	 MIME-Version; b=pGFkY3iwfzvL0eyb0KZ7jGepniClcS6R3fsc6kP1KG/yMeXaCqR8R625a9doGL66jwNdYuAhnFbdLcESdvDqMKXOZJDZ1vaD0oqqU4zwZCKqwsPG+/+U/eZFtFj7cftoajFTTHrdbmwuaBN45E15UdjmXOXHD/wvajph8J8+9pY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=q8R+tH7M; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=q8R+tH7M; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="ZPDOtYU0";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="ZPDOtYU0"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="q8R+tH7M";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="q8R+tH7M"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 8F5AF1F78B;
-	Mon,  9 Jun 2025 17:09:45 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 2343D21195;
+	Mon,  9 Jun 2025 17:09:54 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1749488985; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1749488994; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=rBrl3J74PEVN/OqZVou6no9Ah8GUW70wqCaj4bamVLE=;
-	b=ZPDOtYU0BFOutjwtRT7bE9qUzSbLu9Q+7KdWWbR4SidTdrq0Rx6kgMyE2g7maCnJ6X//41
-	8hr17Z1zlQnyZ0KG6azovLwNcg84lEol1i+Ge7zgPeJQ9tUNbVvE5DBfrFU0MhEWXD1VpO
-	jK3qtee23lMXOvbDnLXsSdD7F2EpCys=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=ZPDOtYU0
+	bh=XXWASSh7hqy37JMGr6UO8Y4NC0NT41bELiYlQouDFZc=;
+	b=q8R+tH7MY8lmy7DNmsPvT+GE2M/2fny/ovXF0JmtqBZIN4yVDiPAJjaGPkF/s9/bRNzIzO
+	T3MK1GT0geV4gkWAzNByFrgFuLuv7Th+xNmYxeYbMifjjAOtbhmMdqxxEeuJO+j9Cs5iVg
+	ZD1egT7iRyki7UCJMGqazHsXcTihCHQ=
+Authentication-Results: smtp-out1.suse.de;
+	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1749488985; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1749488994; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=rBrl3J74PEVN/OqZVou6no9Ah8GUW70wqCaj4bamVLE=;
-	b=ZPDOtYU0BFOutjwtRT7bE9qUzSbLu9Q+7KdWWbR4SidTdrq0Rx6kgMyE2g7maCnJ6X//41
-	8hr17Z1zlQnyZ0KG6azovLwNcg84lEol1i+Ge7zgPeJQ9tUNbVvE5DBfrFU0MhEWXD1VpO
-	jK3qtee23lMXOvbDnLXsSdD7F2EpCys=
+	bh=XXWASSh7hqy37JMGr6UO8Y4NC0NT41bELiYlQouDFZc=;
+	b=q8R+tH7MY8lmy7DNmsPvT+GE2M/2fny/ovXF0JmtqBZIN4yVDiPAJjaGPkF/s9/bRNzIzO
+	T3MK1GT0geV4gkWAzNByFrgFuLuv7Th+xNmYxeYbMifjjAOtbhmMdqxxEeuJO+j9Cs5iVg
+	ZD1egT7iRyki7UCJMGqazHsXcTihCHQ=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 87F4D137FE;
-	Mon,  9 Jun 2025 17:09:45 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 10586137FE;
+	Mon,  9 Jun 2025 17:09:54 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id vPwuIVkVR2iSHAAAD6G6ig
-	(envelope-from <dsterba@suse.com>); Mon, 09 Jun 2025 17:09:45 +0000
+	id cs36A2IVR2ieHAAAD6G6ig
+	(envelope-from <dsterba@suse.com>); Mon, 09 Jun 2025 17:09:54 +0000
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 05/11] btrfs: switch RCU helper versions to btrfs_err()
-Date: Mon,  9 Jun 2025 19:09:25 +0200
-Message-ID: <1afa8ec8e5e9aabff273b5901f38c27206675c89.1749488829.git.dsterba@suse.com>
+Subject: [PATCH 07/11] btrfs: switch RCU helper versions to btrfs_info()
+Date: Mon,  9 Jun 2025 19:09:27 +0200
+Message-ID: <e3cb2c14bb7753bc946c8b0b3d141b1ed9ad54ab.1749488829.git.dsterba@suse.com>
 X-Mailer: git-send-email 2.49.0
 In-Reply-To: <cover.1749488829.git.dsterba@suse.com>
 References: <cover.1749488829.git.dsterba@suse.com>
@@ -69,38 +69,28 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Rspamd-Queue-Id: 8F5AF1F78B
-X-Rspamd-Action: no action
 X-Spam-Flag: NO
-X-Spamd-Result: default: False [-3.01 / 50.00];
+X-Spam-Score: -2.80
+X-Spamd-Result: default: False [-2.80 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	ARC_NA(0.00)[];
 	RCPT_COUNT_TWO(0.00)[2];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
 	MIME_TRACE(0.00)[0:+];
+	ARC_NA(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
 	FUZZY_BLOCKED(0.00)[rspamd.com];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
 	TO_DN_SOME(0.00)[];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
 	RCVD_COUNT_TWO(0.00)[2];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	FROM_EQ_ENVFROM(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo]
-X-Spam-Score: -3.01
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo];
+	RCVD_TLS_ALL(0.00)[]
 X-Spam-Level: 
 
 The RCU protection is now done in the plain helpers, we can remove the
@@ -108,206 +98,145 @@ The RCU protection is now done in the plain helpers, we can remove the
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/dev-replace.c |  2 +-
+ fs/btrfs/bio.c         |  2 +-
+ fs/btrfs/dev-replace.c | 10 +++++-----
+ fs/btrfs/ioctl.c       |  2 +-
  fs/btrfs/messages.h    |  4 ----
- fs/btrfs/scrub.c       | 10 +++++-----
- fs/btrfs/volumes.c     |  2 +-
- fs/btrfs/zoned.c       | 22 +++++++++++-----------
- 5 files changed, 18 insertions(+), 22 deletions(-)
+ fs/btrfs/volumes.c     |  4 ++--
+ fs/btrfs/zoned.c       |  2 +-
+ 6 files changed, 10 insertions(+), 14 deletions(-)
 
+diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
+index 00d274ed2b1fa2..aa970fd41c4b78 100644
+--- a/fs/btrfs/bio.c
++++ b/fs/btrfs/bio.c
+@@ -839,7 +839,7 @@ int btrfs_repair_io_failure(struct btrfs_fs_info *fs_info, u64 ino, u64 start,
+ 		goto out_bio_uninit;
+ 	}
+ 
+-	btrfs_info_rl_in_rcu(fs_info,
++	btrfs_info_rl(fs_info,
+ 		"read error corrected: ino %llu off %llu (dev %s sector %llu)",
+ 			     ino, start, btrfs_dev_name(smap.dev),
+ 			     smap.physical >> SECTOR_SHIFT);
 diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 2decb9fff44519..0e9acedd7bb467 100644
+index f7f024a956cdda..bd276179918172 100644
 --- a/fs/btrfs/dev-replace.c
 +++ b/fs/btrfs/dev-replace.c
-@@ -943,7 +943,7 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
- 								tgt_device);
- 	} else {
- 		if (scrub_ret != -ECANCELED)
--			btrfs_err_in_rcu(fs_info,
-+			btrfs_err(fs_info,
- 				 "btrfs_scrub_dev(%s, %llu, %s) failed %d",
- 				 btrfs_dev_name(src_device),
- 				 src_device->devid,
+@@ -647,7 +647,7 @@ static int btrfs_dev_replace_start(struct btrfs_fs_info *fs_info,
+ 	dev_replace->srcdev = src_device;
+ 	dev_replace->tgtdev = tgt_device;
+ 
+-	btrfs_info_in_rcu(fs_info,
++	btrfs_info(fs_info,
+ 		      "dev_replace from %s (devid %llu) to %s started",
+ 		      btrfs_dev_name(src_device),
+ 		      src_device->devid,
+@@ -961,7 +961,7 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
+ 		return scrub_ret;
+ 	}
+ 
+-	btrfs_info_in_rcu(fs_info,
++	btrfs_info(fs_info,
+ 			  "dev_replace from %s (devid %llu) to %s finished",
+ 			  btrfs_dev_name(src_device),
+ 			  src_device->devid,
+@@ -1109,7 +1109,7 @@ int btrfs_dev_replace_cancel(struct btrfs_fs_info *fs_info)
+ 			 * btrfs_dev_replace_finishing() will handle the
+ 			 * cleanup part
+ 			 */
+-			btrfs_info_in_rcu(fs_info,
++			btrfs_info(fs_info,
+ 				"dev_replace from %s (devid %llu) to %s canceled",
+ 				btrfs_dev_name(src_device), src_device->devid,
+ 				btrfs_dev_name(tgt_device));
+@@ -1143,7 +1143,7 @@ int btrfs_dev_replace_cancel(struct btrfs_fs_info *fs_info)
+ 		ret = btrfs_commit_transaction(trans);
+ 		WARN_ON(ret);
+ 
+-		btrfs_info_in_rcu(fs_info,
++		btrfs_info(fs_info,
+ 		"suspended dev_replace from %s (devid %llu) to %s canceled",
+ 			btrfs_dev_name(src_device), src_device->devid,
+ 			btrfs_dev_name(tgt_device));
+@@ -1247,7 +1247,7 @@ static int btrfs_dev_replace_kthread(void *data)
+ 
+ 	progress = btrfs_dev_replace_progress(fs_info);
+ 	progress = div_u64(progress, 10);
+-	btrfs_info_in_rcu(fs_info,
++	btrfs_info(fs_info,
+ 		"continuing dev_replace from %s (devid %llu) to target %s @%u%%",
+ 		btrfs_dev_name(dev_replace->srcdev),
+ 		dev_replace->srcdev->devid,
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 7cc89f6f37ae2d..00047367655968 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1169,7 +1169,7 @@ static noinline int btrfs_ioctl_resize(struct file *file,
+ 	} /* equal, nothing need to do */
+ 
+ 	if (ret == 0 && new_size != old_size)
+-		btrfs_info_in_rcu(fs_info,
++		btrfs_info(fs_info,
+ 			"resize device %s (devid %llu) from %llu to %llu",
+ 			btrfs_dev_name(device), device->devid,
+ 			old_size, new_size);
 diff --git a/fs/btrfs/messages.h b/fs/btrfs/messages.h
-index fe9a92da6b1439..f9f68a2a769792 100644
+index 0520081a66f0f6..9d5330ba02534f 100644
 --- a/fs/btrfs/messages.h
 +++ b/fs/btrfs/messages.h
-@@ -54,8 +54,6 @@ void _btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...);
+@@ -54,16 +54,12 @@ void _btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...);
   */
  #define btrfs_crit_in_rcu(fs_info, fmt, args...) \
  	btrfs_printk_in_rcu(fs_info, KERN_CRIT fmt, ##args)
--#define btrfs_err_in_rcu(fs_info, fmt, args...) \
--	btrfs_printk_in_rcu(fs_info, KERN_ERR fmt, ##args)
- #define btrfs_warn_in_rcu(fs_info, fmt, args...) \
- 	btrfs_printk_in_rcu(fs_info, KERN_WARNING fmt, ##args)
- #define btrfs_info_in_rcu(fs_info, fmt, args...) \
-@@ -66,8 +64,6 @@ void _btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...);
+-#define btrfs_info_in_rcu(fs_info, fmt, args...) \
+-	btrfs_printk_in_rcu(fs_info, KERN_INFO fmt, ##args)
+ 
+ /*
+  * Wrappers that use a ratelimited printk in RCU
   */
  #define btrfs_crit_rl_in_rcu(fs_info, fmt, args...) \
  	btrfs_printk_rl_in_rcu(fs_info, KERN_CRIT fmt, ##args)
--#define btrfs_err_rl_in_rcu(fs_info, fmt, args...) \
--	btrfs_printk_rl_in_rcu(fs_info, KERN_ERR fmt, ##args)
- #define btrfs_warn_rl_in_rcu(fs_info, fmt, args...) \
- 	btrfs_printk_rl_in_rcu(fs_info, KERN_WARNING fmt, ##args)
- #define btrfs_info_rl_in_rcu(fs_info, fmt, args...) \
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index e8fa2775456376..04c43f05afc9fa 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -1045,12 +1045,12 @@ static void scrub_stripe_report_errors(struct scrub_ctx *sctx,
- 		 */
- 		if (repaired) {
- 			if (dev) {
--				btrfs_err_rl_in_rcu(fs_info,
-+				btrfs_err_rl(fs_info,
- 		"scrub: fixed up error at logical %llu on dev %s physical %llu",
- 					    stripe->logical, btrfs_dev_name(dev),
- 					    physical);
- 			} else {
--				btrfs_err_rl_in_rcu(fs_info,
-+				btrfs_err_rl(fs_info,
- 			   "scrub: fixed up error at logical %llu on mirror %u",
- 					    stripe->logical, stripe->mirror_num);
- 			}
-@@ -1059,12 +1059,12 @@ static void scrub_stripe_report_errors(struct scrub_ctx *sctx,
+-#define btrfs_info_rl_in_rcu(fs_info, fmt, args...) \
+-	btrfs_printk_rl_in_rcu(fs_info, KERN_INFO fmt, ##args)
  
- 		/* The remaining are all for unrepaired. */
- 		if (dev) {
--			btrfs_err_rl_in_rcu(fs_info,
-+			btrfs_err_rl(fs_info,
- "scrub: unable to fixup (regular) error at logical %llu on dev %s physical %llu",
- 					    stripe->logical, btrfs_dev_name(dev),
- 					    physical);
- 		} else {
--			btrfs_err_rl_in_rcu(fs_info,
-+			btrfs_err_rl(fs_info,
- 	  "scrub: unable to fixup (regular) error at logical %llu on mirror %u",
- 					    stripe->logical, stripe->mirror_num);
- 		}
-@@ -3057,7 +3057,7 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
- 	if (!is_dev_replace && !readonly &&
- 	    !test_bit(BTRFS_DEV_STATE_WRITEABLE, &dev->dev_state)) {
- 		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
--		btrfs_err_in_rcu(fs_info,
-+		btrfs_err(fs_info,
- 			"scrub: devid %llu: filesystem on %s is not writable",
- 				 devid, btrfs_dev_name(dev));
- 		ret = -EROFS;
+ /*
+  * Wrappers that use a ratelimited printk
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 70821a46bfb358..9c5625a06e0b12 100644
+index 002f4505ef2e7e..134b7754347ef3 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -7796,7 +7796,7 @@ void btrfs_dev_stat_inc_and_print(struct btrfs_device *dev, int index)
+@@ -951,7 +951,7 @@ static noinline struct btrfs_device *device_list_add(const char *path,
+ 						  task_pid_nr(current));
+ 				return ERR_PTR(-EEXIST);
+ 			}
+-			btrfs_info_in_rcu(NULL,
++			btrfs_info(NULL,
+ 	"devid %llu device path %s changed to %s scanned by %s (%d)",
+ 					  devid, btrfs_dev_name(device),
+ 					  path, current->comm,
+@@ -7816,7 +7816,7 @@ static void btrfs_dev_stat_print_on_load(struct btrfs_device *dev)
+ 	if (i == BTRFS_DEV_STAT_VALUES_MAX)
+ 		return; /* all values == 0, suppress message */
  
- 	if (!dev->dev_stats_valid)
- 		return;
--	btrfs_err_rl_in_rcu(dev->fs_info,
-+	btrfs_err_rl(dev->fs_info,
+-	btrfs_info_in_rcu(dev->fs_info,
++	btrfs_info(dev->fs_info,
  		"bdev %s errs: wr %u, rd %u, flush %u, corrupt %u, gen %u",
- 			   btrfs_dev_name(dev),
- 			   btrfs_dev_stat_read(dev, BTRFS_DEV_STAT_WRITE_ERRS),
+ 	       btrfs_dev_name(dev),
+ 	       btrfs_dev_stat_read(dev, BTRFS_DEV_STAT_WRITE_ERRS),
 diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-index d416df1e0d2c92..18848a9756d142 100644
+index 9bacc8c32b40de..82ccd78745a3db 100644
 --- a/fs/btrfs/zoned.c
 +++ b/fs/btrfs/zoned.c
-@@ -263,7 +263,7 @@ static int btrfs_get_dev_zones(struct btrfs_device *device, u64 pos,
- 	ret = blkdev_report_zones(device->bdev, pos >> SECTOR_SHIFT, *nr_zones,
- 				  copy_zone_info_cb, zones);
- 	if (ret < 0) {
--		btrfs_err_in_rcu(device->fs_info,
-+		btrfs_err(device->fs_info,
- 				 "zoned: failed to read zone %llu on %s (devid %llu)",
- 				 pos, rcu_str_deref(device->name),
- 				 device->devid);
-@@ -395,14 +395,14 @@ int btrfs_get_dev_zone_info(struct btrfs_device *device, bool populate_cache)
- 
- 	/* We reject devices with a zone size larger than 8GB */
- 	if (zone_info->zone_size > BTRFS_MAX_ZONE_SIZE) {
--		btrfs_err_in_rcu(fs_info,
-+		btrfs_err(fs_info,
- 		"zoned: %s: zone size %llu larger than supported maximum %llu",
- 				 rcu_str_deref(device->name),
- 				 zone_info->zone_size, BTRFS_MAX_ZONE_SIZE);
- 		ret = -EINVAL;
- 		goto out;
- 	} else if (zone_info->zone_size < BTRFS_MIN_ZONE_SIZE) {
--		btrfs_err_in_rcu(fs_info,
-+		btrfs_err(fs_info,
- 		"zoned: %s: zone size %llu smaller than supported minimum %u",
- 				 rcu_str_deref(device->name),
- 				 zone_info->zone_size, BTRFS_MIN_ZONE_SIZE);
-@@ -418,7 +418,7 @@ int btrfs_get_dev_zone_info(struct btrfs_device *device, bool populate_cache)
- 
- 	max_active_zones = bdev_max_active_zones(bdev);
- 	if (max_active_zones && max_active_zones < BTRFS_MIN_ACTIVE_ZONES) {
--		btrfs_err_in_rcu(fs_info,
-+		btrfs_err(fs_info,
- "zoned: %s: max active zones %u is too small, need at least %u active zones",
- 				 rcu_str_deref(device->name), max_active_zones,
- 				 BTRFS_MIN_ACTIVE_ZONES);
-@@ -460,7 +460,7 @@ int btrfs_get_dev_zone_info(struct btrfs_device *device, bool populate_cache)
- 		zone_info->zone_cache = vcalloc(zone_info->nr_zones,
- 						sizeof(struct blk_zone));
- 		if (!zone_info->zone_cache) {
--			btrfs_err_in_rcu(device->fs_info,
-+			btrfs_err(device->fs_info,
- 				"zoned: failed to allocate zone cache for %s",
- 				rcu_str_deref(device->name));
- 			ret = -ENOMEM;
-@@ -497,7 +497,7 @@ int btrfs_get_dev_zone_info(struct btrfs_device *device, bool populate_cache)
+@@ -575,7 +575,7 @@ int btrfs_get_dev_zone_info(struct btrfs_device *device, bool populate_cache)
+ 		emulated = "emulated ";
  	}
  
- 	if (nreported != zone_info->nr_zones) {
--		btrfs_err_in_rcu(device->fs_info,
-+		btrfs_err(device->fs_info,
- 				 "inconsistent number of zones on %s (%u/%u)",
- 				 rcu_str_deref(device->name), nreported,
- 				 zone_info->nr_zones);
-@@ -507,7 +507,7 @@ int btrfs_get_dev_zone_info(struct btrfs_device *device, bool populate_cache)
- 
- 	if (max_active_zones) {
- 		if (nactive > max_active_zones) {
--			btrfs_err_in_rcu(device->fs_info,
-+			btrfs_err(device->fs_info,
- 			"zoned: %u active zones on %s exceeds max_active_zones %u",
- 					 nactive, rcu_str_deref(device->name),
- 					 max_active_zones);
-@@ -538,7 +538,7 @@ int btrfs_get_dev_zone_info(struct btrfs_device *device, bool populate_cache)
- 			goto out;
- 
- 		if (nr_zones != BTRFS_NR_SB_LOG_ZONES) {
--			btrfs_err_in_rcu(device->fs_info,
-+			btrfs_err(device->fs_info,
- 	"zoned: failed to read super block log zone info at devid %llu zone %u",
- 					 device->devid, sb_zone);
- 			ret = -EUCLEAN;
-@@ -556,7 +556,7 @@ int btrfs_get_dev_zone_info(struct btrfs_device *device, bool populate_cache)
- 		ret = sb_write_pointer(device->bdev,
- 				       &zone_info->sb_zones[sb_pos], &sb_wp);
- 		if (ret != -ENOENT && ret) {
--			btrfs_err_in_rcu(device->fs_info,
-+			btrfs_err(device->fs_info,
- 			"zoned: super block log zone corrupted devid %llu zone %u",
- 					 device->devid, sb_zone);
- 			ret = -EUCLEAN;
-@@ -1345,7 +1345,7 @@ static int btrfs_load_zone_info(struct btrfs_fs_info *fs_info, int zone_idx,
- 	}
- 
- 	if (zone.type == BLK_ZONE_TYPE_CONVENTIONAL) {
--		btrfs_err_in_rcu(fs_info,
-+		btrfs_err(fs_info,
- 		"zoned: unexpected conventional zone %llu on device %s (devid %llu)",
- 			zone.start << SECTOR_SHIFT, rcu_str_deref(device->name),
- 			device->devid);
-@@ -1358,7 +1358,7 @@ static int btrfs_load_zone_info(struct btrfs_fs_info *fs_info, int zone_idx,
- 	switch (zone.cond) {
- 	case BLK_ZONE_COND_OFFLINE:
- 	case BLK_ZONE_COND_READONLY:
--		btrfs_err_in_rcu(fs_info,
-+		btrfs_err(fs_info,
- 		"zoned: offline/readonly zone %llu on device %s (devid %llu)",
- 			  (info->physical >> device->zone_info->zone_size_shift),
- 			  rcu_str_deref(device->name), device->devid);
+-	btrfs_info_in_rcu(fs_info,
++	btrfs_info(fs_info,
+ 		"%s block device %s, %u %szones of %llu bytes",
+ 		model, rcu_str_deref(device->name), zone_info->nr_zones,
+ 		emulated, zone_info->zone_size);
 -- 
 2.49.0
 

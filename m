@@ -1,64 +1,64 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6D0CD21B9F2
-	for <linux-btrfs@vger.kernel.org>; Mon,  9 Jun 2025 17:09:51 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CEF1A21C160
+	for <linux-btrfs@vger.kernel.org>; Mon,  9 Jun 2025 17:09:53 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1749488994; cv=none; b=Y8YLUBlOtZRmrSFkugHMSBXuWi8Jj4gfzUHt0LsGOoDITliFde//AUG6gt4d4hnilF102XYRIkOqg9bOug/+LF3hbvDeOUAcE69+XbyHTcLTfVVr3DzGMbic5cXRvLT1ijUsdRTqgaYjSUNA3olYV6SLzkPYDAXep/7jg9MyiNI=
+	t=1749488995; cv=none; b=bRFeEjNb2tU0NORAzJcmhaX7jsy45snWV9DDPOHhuFBM0eQTLcQIWK7KOcKUEqrITO5EkezadkSnFoOsl0i+diMXlb6LAVDs9zApduEdgs8+n8lQtOJ6ZNWnXmXtcFR8Gss0qyDAmnDottldaLgZ3FmhheO6KgDFY/PakOXjQ9U=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1749488994; c=relaxed/simple;
-	bh=JwKqNXVmr0wdpwDfUof6EL9dUUpmHESzrps/O7CtYlg=;
+	s=arc-20240116; t=1749488995; c=relaxed/simple;
+	bh=hXDca40U2YKyYtZYyCNFzcFtNqo82bNw3fPe8WPXGYQ=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=tYxlcHPwLKvxahuSZM46J3AEQpjKz+Mh7E8OFXWBlRRaKp4sMIEJk5r1VsVRuve54PTsFeddOL4WTOkjgv36Ee8+GIeQG12/lCRrHN0/mdnXG6q+T9AtZqOw7gfEThHWYyZJrjNYhrgQdzAWJB6LnA50iDwW78bU1cSJrOhyyPQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=cd/Fp/KQ; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=cd/Fp/KQ; arc=none smtp.client-ip=195.135.223.131
+	 MIME-Version; b=Z8V/dGsnY6i81RnrEcL9VOd7U9ZLs9+dSYmcwQ9+Cb1VUXb4C6k57b/pgt+p2bO78jgLppHY9p7PCcEfplv9NZCVcuC78lZTf1Nee5p485ehqgsDmS2olFjqHVKzyEztBDgpZduaxl5anF6zyLAyLFZYFBVNJbAZkxtlNCBde/s=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=hZmJebev; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=hZmJebev; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="cd/Fp/KQ";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="cd/Fp/KQ"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="hZmJebev";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="hZmJebev"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 1AA2B1F766;
-	Mon,  9 Jun 2025 17:09:41 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id C6B8A211C9;
+	Mon,  9 Jun 2025 17:09:47 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1749488981; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1749488987; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=/A+eriHLf4CKsKOlLn+PNgX0q1dQbbN3KfWHfXD73Ic=;
-	b=cd/Fp/KQq0p71+4GQ68lAOTcZnBq8dBbMoLV+3sVK55kCTfglkOx0tKILG7fPQy2N71999
-	79VoqenvDtO/K02aCmOpIZNV0Mdt+x4msiIlsXW/QUK7O6j/F7MSJhFauO7XsGtfZXBV73
-	XkQFC2lO1OAEGw/VH9Lj9KY6Kz5WmFY=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b="cd/Fp/KQ"
+	bh=x6jwkEG1E2EahuV4ZMurCsAZwrPcP9Qrq1Hvj3kreJ8=;
+	b=hZmJebevsYdDgYxtz6MPIT9YF0py7HX27jDOijEo46NyfzxsKgYetffjGtApinL8RnQhn3
+	IKph5A8kePHGBruFpq26vuZwYPHP9LeCmklquyEXbYkumWv/H3CPWVwiGBaT7otebkxV8X
+	8zrSDgO6zv9AtZkRsFkzHa1YfoKFe44=
+Authentication-Results: smtp-out1.suse.de;
+	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1749488981; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1749488987; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=/A+eriHLf4CKsKOlLn+PNgX0q1dQbbN3KfWHfXD73Ic=;
-	b=cd/Fp/KQq0p71+4GQ68lAOTcZnBq8dBbMoLV+3sVK55kCTfglkOx0tKILG7fPQy2N71999
-	79VoqenvDtO/K02aCmOpIZNV0Mdt+x4msiIlsXW/QUK7O6j/F7MSJhFauO7XsGtfZXBV73
-	XkQFC2lO1OAEGw/VH9Lj9KY6Kz5WmFY=
+	bh=x6jwkEG1E2EahuV4ZMurCsAZwrPcP9Qrq1Hvj3kreJ8=;
+	b=hZmJebevsYdDgYxtz6MPIT9YF0py7HX27jDOijEo46NyfzxsKgYetffjGtApinL8RnQhn3
+	IKph5A8kePHGBruFpq26vuZwYPHP9LeCmklquyEXbYkumWv/H3CPWVwiGBaT7otebkxV8X
+	8zrSDgO6zv9AtZkRsFkzHa1YfoKFe44=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 12A01137FE;
-	Mon,  9 Jun 2025 17:09:41 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id BF707137FE;
+	Mon,  9 Jun 2025 17:09:47 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id TjSKBFUVR2iOHAAAD6G6ig
-	(envelope-from <dsterba@suse.com>); Mon, 09 Jun 2025 17:09:41 +0000
+	id EHy7LlsVR2iWHAAAD6G6ig
+	(envelope-from <dsterba@suse.com>); Mon, 09 Jun 2025 17:09:47 +0000
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 03/11] btrfs: remove unused levels of message helpers
-Date: Mon,  9 Jun 2025 19:09:23 +0200
-Message-ID: <94ecc86cb13913270b96163ef77362064e9a2b3b.1749488829.git.dsterba@suse.com>
+Subject: [PATCH 06/11] btrfs: switch RCU helper versions to btrfs_warn()
+Date: Mon,  9 Jun 2025 19:09:26 +0200
+Message-ID: <b8d2e12361b950b11533ba0e675ac0417a07b480.1749488829.git.dsterba@suse.com>
 X-Mailer: git-send-email 2.49.0
 In-Reply-To: <cover.1749488829.git.dsterba@suse.com>
 References: <cover.1749488829.git.dsterba@suse.com>
@@ -69,126 +69,207 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-3.01 / 50.00];
+X-Spam-Flag: NO
+X-Spam-Score: -2.80
+X-Spamd-Result: default: False [-2.80 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	ARC_NA(0.00)[];
 	RCPT_COUNT_TWO(0.00)[2];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
 	MIME_TRACE(0.00)[0:+];
+	ARC_NA(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
 	FUZZY_BLOCKED(0.00)[rspamd.com];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
 	TO_DN_SOME(0.00)[];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
 	RCVD_COUNT_TWO(0.00)[2];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	FROM_EQ_ENVFROM(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns]
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo];
+	RCVD_TLS_ALL(0.00)[]
 X-Spam-Level: 
-X-Spam-Flag: NO
-X-Rspamd-Queue-Id: 1AA2B1F766
-X-Rspamd-Action: no action
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Spam-Score: -3.01
 
-We're using the following levels: crit, err, warn, info, debug. This
-covers our needs and further specializations is not needed, so let's
-remove emerg, alert and notice.
+The RCU protection is now done in the plain helpers, we can remove the
+"_in_rcu" and "_rl_in_rcu".
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/messages.h | 24 ------------------------
- 1 file changed, 24 deletions(-)
+ fs/btrfs/dev-replace.c |  2 +-
+ fs/btrfs/disk-io.c     |  2 +-
+ fs/btrfs/extent-tree.c |  2 +-
+ fs/btrfs/messages.h    |  4 ----
+ fs/btrfs/scrub.c       |  8 ++++----
+ fs/btrfs/volumes.c     | 10 +++++-----
+ fs/btrfs/zoned.c       |  2 +-
+ 7 files changed, 13 insertions(+), 17 deletions(-)
 
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index 0e9acedd7bb467..f7f024a956cdda 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -600,7 +600,7 @@ static int btrfs_dev_replace_start(struct btrfs_fs_info *fs_info,
+ 		return PTR_ERR(src_device);
+ 
+ 	if (btrfs_pinned_by_swapfile(fs_info, src_device)) {
+-		btrfs_warn_in_rcu(fs_info,
++		btrfs_warn(fs_info,
+ 	  "cannot replace device %s (devid %llu) due to active swapfile",
+ 			btrfs_dev_name(src_device), src_device->devid);
+ 		return -ETXTBSY;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index f48f9d924a6216..2b5ec6d349356c 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3695,7 +3695,7 @@ static void btrfs_end_super_write(struct bio *bio)
+ 
+ 	bio_for_each_folio_all(fi, bio) {
+ 		if (bio->bi_status) {
+-			btrfs_warn_rl_in_rcu(device->fs_info,
++			btrfs_warn_rl(device->fs_info,
+ 				"lost super block write due to IO error on %s (%d)",
+ 				btrfs_dev_name(device),
+ 				blk_status_to_errno(bio->bi_status));
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 1c3bfb9ff025ef..013a095290bd65 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -6479,7 +6479,7 @@ static int btrfs_trim_free_extents(struct btrfs_device *device, u64 *trimmed,
+ 		/* Check if there are any CHUNK_* bits left */
+ 		if (start > device->total_bytes) {
+ 			DEBUG_WARN();
+-			btrfs_warn_in_rcu(fs_info,
++			btrfs_warn(fs_info,
+ "ignoring attempt to trim beyond device size: offset %llu length %llu device %s device size %llu",
+ 					  start, end - start + 1,
+ 					  btrfs_dev_name(device),
 diff --git a/fs/btrfs/messages.h b/fs/btrfs/messages.h
-index 12d798802a010f..f6b3989939b56f 100644
+index f9f68a2a769792..0520081a66f0f6 100644
 --- a/fs/btrfs/messages.h
 +++ b/fs/btrfs/messages.h
-@@ -37,72 +37,48 @@ void _btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...);
- 	btrfs_no_printk(fs_info, fmt, ##args)
- #endif
- 
--#define btrfs_emerg(fs_info, fmt, args...) \
--	btrfs_printk(fs_info, KERN_EMERG fmt, ##args)
--#define btrfs_alert(fs_info, fmt, args...) \
--	btrfs_printk(fs_info, KERN_ALERT fmt, ##args)
- #define btrfs_crit(fs_info, fmt, args...) \
- 	btrfs_printk(fs_info, KERN_CRIT fmt, ##args)
- #define btrfs_err(fs_info, fmt, args...) \
- 	btrfs_printk(fs_info, KERN_ERR fmt, ##args)
- #define btrfs_warn(fs_info, fmt, args...) \
- 	btrfs_printk(fs_info, KERN_WARNING fmt, ##args)
--#define btrfs_notice(fs_info, fmt, args...) \
--	btrfs_printk(fs_info, KERN_NOTICE fmt, ##args)
- #define btrfs_info(fs_info, fmt, args...) \
- 	btrfs_printk(fs_info, KERN_INFO fmt, ##args)
- 
- /*
-  * Wrappers that use printk in RCU
+@@ -54,8 +54,6 @@ void _btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...);
   */
--#define btrfs_emerg_in_rcu(fs_info, fmt, args...) \
--	btrfs_printk_in_rcu(fs_info, KERN_EMERG fmt, ##args)
--#define btrfs_alert_in_rcu(fs_info, fmt, args...) \
--	btrfs_printk_in_rcu(fs_info, KERN_ALERT fmt, ##args)
  #define btrfs_crit_in_rcu(fs_info, fmt, args...) \
  	btrfs_printk_in_rcu(fs_info, KERN_CRIT fmt, ##args)
- #define btrfs_err_in_rcu(fs_info, fmt, args...) \
- 	btrfs_printk_in_rcu(fs_info, KERN_ERR fmt, ##args)
- #define btrfs_warn_in_rcu(fs_info, fmt, args...) \
- 	btrfs_printk_in_rcu(fs_info, KERN_WARNING fmt, ##args)
--#define btrfs_notice_in_rcu(fs_info, fmt, args...) \
--	btrfs_printk_in_rcu(fs_info, KERN_NOTICE fmt, ##args)
+-#define btrfs_warn_in_rcu(fs_info, fmt, args...) \
+-	btrfs_printk_in_rcu(fs_info, KERN_WARNING fmt, ##args)
  #define btrfs_info_in_rcu(fs_info, fmt, args...) \
  	btrfs_printk_in_rcu(fs_info, KERN_INFO fmt, ##args)
  
- /*
-  * Wrappers that use a ratelimited printk in RCU
+@@ -64,8 +62,6 @@ void _btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...);
   */
--#define btrfs_emerg_rl_in_rcu(fs_info, fmt, args...) \
--	btrfs_printk_rl_in_rcu(fs_info, KERN_EMERG fmt, ##args)
--#define btrfs_alert_rl_in_rcu(fs_info, fmt, args...) \
--	btrfs_printk_rl_in_rcu(fs_info, KERN_ALERT fmt, ##args)
  #define btrfs_crit_rl_in_rcu(fs_info, fmt, args...) \
  	btrfs_printk_rl_in_rcu(fs_info, KERN_CRIT fmt, ##args)
- #define btrfs_err_rl_in_rcu(fs_info, fmt, args...) \
- 	btrfs_printk_rl_in_rcu(fs_info, KERN_ERR fmt, ##args)
- #define btrfs_warn_rl_in_rcu(fs_info, fmt, args...) \
- 	btrfs_printk_rl_in_rcu(fs_info, KERN_WARNING fmt, ##args)
--#define btrfs_notice_rl_in_rcu(fs_info, fmt, args...) \
--	btrfs_printk_rl_in_rcu(fs_info, KERN_NOTICE fmt, ##args)
+-#define btrfs_warn_rl_in_rcu(fs_info, fmt, args...) \
+-	btrfs_printk_rl_in_rcu(fs_info, KERN_WARNING fmt, ##args)
  #define btrfs_info_rl_in_rcu(fs_info, fmt, args...) \
  	btrfs_printk_rl_in_rcu(fs_info, KERN_INFO fmt, ##args)
  
- /*
-  * Wrappers that use a ratelimited printk
-  */
--#define btrfs_emerg_rl(fs_info, fmt, args...) \
--	btrfs_printk_ratelimited(fs_info, KERN_EMERG fmt, ##args)
--#define btrfs_alert_rl(fs_info, fmt, args...) \
--	btrfs_printk_ratelimited(fs_info, KERN_ALERT fmt, ##args)
- #define btrfs_crit_rl(fs_info, fmt, args...) \
- 	btrfs_printk_ratelimited(fs_info, KERN_CRIT fmt, ##args)
- #define btrfs_err_rl(fs_info, fmt, args...) \
- 	btrfs_printk_ratelimited(fs_info, KERN_ERR fmt, ##args)
- #define btrfs_warn_rl(fs_info, fmt, args...) \
- 	btrfs_printk_ratelimited(fs_info, KERN_WARNING fmt, ##args)
--#define btrfs_notice_rl(fs_info, fmt, args...) \
--	btrfs_printk_ratelimited(fs_info, KERN_NOTICE fmt, ##args)
- #define btrfs_info_rl(fs_info, fmt, args...) \
- 	btrfs_printk_ratelimited(fs_info, KERN_INFO fmt, ##args)
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 04c43f05afc9fa..6776e6ab8d1080 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -556,7 +556,7 @@ static int scrub_print_warning_inode(u64 inum, u64 offset, u64 num_bytes,
+ 	 * hold all of the paths here
+ 	 */
+ 	for (i = 0; i < ipath->fspath->elem_cnt; ++i)
+-		btrfs_warn_in_rcu(fs_info,
++		btrfs_warn(fs_info,
+ "scrub: %s at logical %llu on dev %s, physical %llu root %llu inode %llu offset %llu length %u links %u (path: %s)",
+ 				  swarn->errstr, swarn->logical,
+ 				  btrfs_dev_name(swarn->dev),
+@@ -570,7 +570,7 @@ static int scrub_print_warning_inode(u64 inum, u64 offset, u64 num_bytes,
+ 	return 0;
  
+ err:
+-	btrfs_warn_in_rcu(fs_info,
++	btrfs_warn(fs_info,
+ 			  "scrub: %s at logical %llu on dev %s, physical %llu root %llu inode %llu offset %llu: path resolving failed with ret=%d",
+ 			  swarn->errstr, swarn->logical,
+ 			  btrfs_dev_name(swarn->dev),
+@@ -596,7 +596,7 @@ static void scrub_print_common_warning(const char *errstr, struct btrfs_device *
+ 
+ 	/* Super block error, no need to search extent tree. */
+ 	if (is_super) {
+-		btrfs_warn_in_rcu(fs_info, "scrub: %s on device %s, physical %llu",
++		btrfs_warn(fs_info, "scrub: %s on device %s, physical %llu",
+ 				  errstr, btrfs_dev_name(dev), physical);
+ 		return;
+ 	}
+@@ -637,7 +637,7 @@ static void scrub_print_common_warning(const char *errstr, struct btrfs_device *
+ 			}
+ 			if (ret > 0)
+ 				break;
+-			btrfs_warn_in_rcu(fs_info,
++			btrfs_warn(fs_info,
+ "scrub: %s at logical %llu on dev %s, physical %llu: metadata %s (level %d) in tree %llu",
+ 				errstr, swarn.logical, btrfs_dev_name(dev),
+ 				swarn.physical, (ref_level ? "node" : "leaf"),
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 9c5625a06e0b12..002f4505ef2e7e 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -944,7 +944,7 @@ static noinline struct btrfs_device *device_list_add(const char *path,
+ 		if (device->bdev) {
+ 			if (device->devt != path_devt) {
+ 				mutex_unlock(&fs_devices->device_list_mutex);
+-				btrfs_warn_in_rcu(NULL,
++				btrfs_warn(NULL,
+ 	"duplicate device %s devid %llu generation %llu scanned by %s (%d)",
+ 						  path, devid, found_transid,
+ 						  current->comm,
+@@ -2205,7 +2205,7 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info,
+ 	}
+ 
+ 	if (btrfs_pinned_by_swapfile(fs_info, device)) {
+-		btrfs_warn_in_rcu(fs_info,
++		btrfs_warn(fs_info,
+ 		  "cannot remove device %s (devid %llu) due to active swapfile",
+ 				  btrfs_dev_name(device), device->devid);
+ 		return -ETXTBSY;
+@@ -7708,7 +7708,7 @@ static int update_dev_stat_item(struct btrfs_trans_handle *trans,
+ 		return -ENOMEM;
+ 	ret = btrfs_search_slot(trans, dev_root, &key, path, -1, 1);
+ 	if (ret < 0) {
+-		btrfs_warn_in_rcu(fs_info,
++		btrfs_warn(fs_info,
+ 			"error %d while searching for dev_stats item for device %s",
+ 				  ret, btrfs_dev_name(device));
+ 		goto out;
+@@ -7719,7 +7719,7 @@ static int update_dev_stat_item(struct btrfs_trans_handle *trans,
+ 		/* need to delete old one and insert a new one */
+ 		ret = btrfs_del_item(trans, dev_root, path);
+ 		if (ret != 0) {
+-			btrfs_warn_in_rcu(fs_info,
++			btrfs_warn(fs_info,
+ 				"delete too small dev_stats item for device %s failed %d",
+ 					  btrfs_dev_name(device), ret);
+ 			goto out;
+@@ -7733,7 +7733,7 @@ static int update_dev_stat_item(struct btrfs_trans_handle *trans,
+ 		ret = btrfs_insert_empty_item(trans, dev_root, path,
+ 					      &key, sizeof(*ptr));
+ 		if (ret < 0) {
+-			btrfs_warn_in_rcu(fs_info,
++			btrfs_warn(fs_info,
+ 				"insert dev_stats item for device %s failed %d",
+ 				btrfs_dev_name(device), ret);
+ 			goto out;
+diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
+index 18848a9756d142..9bacc8c32b40de 100644
+--- a/fs/btrfs/zoned.c
++++ b/fs/btrfs/zoned.c
+@@ -1182,7 +1182,7 @@ int btrfs_ensure_empty_zones(struct btrfs_device *device, u64 start, u64 size)
+ 			continue;
+ 
+ 		/* Free regions should be empty */
+-		btrfs_warn_in_rcu(
++		btrfs_warn(
+ 			device->fs_info,
+ 		"zoned: resetting device %s (devid %llu) zone %llu for allocation",
+ 			rcu_str_deref(device->name), device->devid, pos >> shift);
 -- 
 2.49.0
 

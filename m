@@ -1,101 +1,122 @@
-Received: from mail.burntcomma.com (unknown [62.3.69.246])
+Received: from mail-ot1-f97.google.com (mail-ot1-f97.google.com [209.85.210.97])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2B81F2ED15D;
-	Thu, 19 Jun 2025 18:03:29 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=62.3.69.246
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3BB7521FF3B
+	for <linux-btrfs@vger.kernel.org>; Thu, 19 Jun 2025 19:27:58 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.97
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1750356215; cv=none; b=U4TtIHFf9kUqh8FqQPeParfIxjh9icXOMYq7qDahRZNxtPHXBUnODhO/JsZHYXXcESwgUPJSy12qFDVFao73rAyICf2G//ofOr8b2RGWL2sjbH4reU/lTP/B3KdRFLB0UALo9LjmRfpW7pqMbpMlOluC9gSWv5JLCS7FwaTaVbk=
+	t=1750361279; cv=none; b=DkuW7TlfCCj3TsLerE/UOA8qX4c7Shke+qWco5QB9oOfFFjr6QRayPNrWMFV0Ih3pfrLqKXXGYEG4bMFlvNWG73X0ZjDNLCeTyI+mwga2e9MDrxXzz5qsA5Zkxd3yUZNqJyPWL2aMKR3YQNeKSezdS8vY75BdEV7qBN2ZOOqUoc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1750356215; c=relaxed/simple;
-	bh=mHAMYuIGEsFqdsF3yX/wqLMTXEHswZHPRaMvZ11doms=;
-	h=Message-ID:Date:Mime-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=ElBgO9y1tGWaIAD9y0rxSVJeswGJ+aPRTdczZEMa5YFVlP0+Dd9QRcM0fmMThmzEbuoTzXw3yIHo8brRfWNx6mtwpYAmfciVwF6B1qy5/bgcejkEJ/Zpr7pegw6zzgzcaPe7NR/Ln5lOJ+qEs7JOKK+ivrH9EUnPw7iZ9jfEWzc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com; spf=pass smtp.mailfrom=harmstone.com; dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b=t8bvAQ56; arc=none smtp.client-ip=62.3.69.246
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=harmstone.com
+	s=arc-20240116; t=1750361279; c=relaxed/simple;
+	bh=K4VZVi3xDLWT0DEl3LNGUBjrD17+mi5NFECXhkIiWrY=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=DrlHit4PU2r8j5KtxnD3HmHqT8l3ZQRdtxU5uJzP3A4f5uMMzFm6n3ox21Px0DfC8yuCCzCKkkiazHXGKhHX8jaSoDofK3qG9CEpMv5U4xEqXExDvh7TMyh4VFogB0XtsxMxzkiECkoVutqZweAIjkjxCSnTOWDRUDITkTKl66E=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=purestorage.com; spf=fail smtp.mailfrom=purestorage.com; dkim=pass (2048-bit key) header.d=purestorage.com header.i=@purestorage.com header.b=N0R2zRDu; arc=none smtp.client-ip=209.85.210.97
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=purestorage.com
+Authentication-Results: smtp.subspace.kernel.org; spf=fail smtp.mailfrom=purestorage.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b="t8bvAQ56"
-Received: from [IPV6:2a02:8012:8cf0:0:ce28:aaff:fe0d:6db2] (beren.burntcomma.com [IPv6:2a02:8012:8cf0:0:ce28:aaff:fe0d:6db2])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
-	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256
-	 client-signature RSA-PSS (2048 bits) client-digest SHA256)
-	(Client CN "hellas", Issuer "burntcomma.com" (verified OK))
-	by mail.burntcomma.com (Postfix) with ESMTPS id E356428978C;
-	Thu, 19 Jun 2025 19:03:27 +0100 (BST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=harmstone.com;
-	s=mail; t=1750356208;
-	bh=tspvUCiguj3Wm3D+7sYAUwox/ingERnQvBTjDZbBptE=;
-	h=Date:Subject:To:Cc:References:From:In-Reply-To;
-	b=t8bvAQ562dcHIUDPtyM7scI11vnx0aLskD+4QOHQg4HN+c7YXxVTD81a7ukUWfqHO
-	 kBGx3GCgE8p9ZXb96k85zfwwBBMuB22fA7gsgxbBJ68D/nGSbC5DLWqgy7Zz6Qmcq8
-	 696ed9DqULoa6gkGmniB4LpfRrj2r4tACWKK4Itc=
-Message-ID: <fcb1bd45-f703-4df7-a3dd-f5cdae9c3983@harmstone.com>
-Date: Thu, 19 Jun 2025 19:03:27 +0100
+	dkim=pass (2048-bit key) header.d=purestorage.com header.i=@purestorage.com header.b="N0R2zRDu"
+Received: by mail-ot1-f97.google.com with SMTP id 46e09a7af769-72c02e22d96so155091a34.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jun 2025 12:27:58 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=purestorage.com; s=google2022; t=1750361277; x=1750966077; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=Pd50J9nYsG0TeiIeJPqTSZq8OKqwb6u/EH2G1EHnbLs=;
+        b=N0R2zRDuoRfzgfUiO1AcWFzICfQ3al3GoC94JDFHhiABvJd5154MlbhJm9MDthWHGU
+         WiSAJGST5UQXcWz+uDSOquTk3dscvMlcMsMrgsMj/MS1xmir6HPpvlE0eoarK4ALIt66
+         jUQV8oDZkm2ThMXGcQJTY6EIw5rrZcLP0wVu1kDOku1p4miBTc41fbHQLI3XzMUhxG7J
+         lvHoM0S4QjRz8CjJ9xxnDuLdu+3eNtczDXBMkSGNKsQDY1W/hLLLgX9fg3l7tM4QDyyW
+         UXkPVeevwhCItJZNCfxPX/Y7zZOVH3WgczUz7MORJJKvxEqy7Jy6S4ynv76c53SBqYeF
+         6rsg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1750361277; x=1750966077;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=Pd50J9nYsG0TeiIeJPqTSZq8OKqwb6u/EH2G1EHnbLs=;
+        b=pSVgNS2UegHNQWgqqCOT5c8Ph+17fkhQyAkYoeCMOoRr7vj5Z87HoJKnXqgO364cB3
+         qva7L9JzB4p5A33izbp9h2Ded/azeAY8rx+oluyAo1c0E2VqVR46KKSlozJ7PZl45mQe
+         GclC8mAYbExTywCNaQRz5fLE7gRZnCtjkG+Mrq81mRrEGsjpgzDi5j6X95tDR4vKsDQr
+         4SxQ0Nm7tGWRy19+NhkHvLUhdo3mZlezaHswHs2zAwCtqKAA/orVDmsfYaJx5m2sehVG
+         DQV5tv5mg466G1SDL9RHYIckliLwvt1bBclIZJz2H4Vg7alvqyVviuMC/O8NUFFS0CsM
+         YKDQ==
+X-Forwarded-Encrypted: i=1; AJvYcCUMMLedN3oMpgbBl33ay/xLtCHJB09XwF+HTGDkxNWdpwPOwzFEfKp8POTQ4ZO9QBPwL6P2BeAH0m+fIw==@vger.kernel.org
+X-Gm-Message-State: AOJu0YwWpqETo0aP4Vm7Xjs14DaTkiu4FVMz4ShYLb9BCjorgeIcr/AL
+	mIHszZzWcJGQZFVLxEMwguQBFbuGfWHjIr5yt71OASYw/gtmkfntFRbYVSRqpqH33bAmyQayvhC
+	LJ7jUKWceC49EQYLOR0iuFDs39HI4mAXWqYKM
+X-Gm-Gg: ASbGncsn42LfqlzpVGrWQVuudn8JckVeedicgpy97zcDJAV05uALGKgyGQKE9G4m6O0
+	CPim0twVaKZ2H0yRtd0mFqmil3ciOUqX/whFVEH1n6377xrPpCrW/imAaU1tcPGefuxtj0a0vHH
+	t3pWiIAyHp8Xz4wHUmOVnlswOwepGmacMHpT/VCBFxhUnS9LR/hKsOhMnkornWscEzPr7m9Ta6m
+	Bj2J1N+DXWZfHPzdFdJnkw1FuD+LOaXr3nzsG/Jo2nw4sh5ZdzjERgf91jY1RA5pF8+Euta2PVu
+	Qka1NcQFbX0Ei8SOMgFkeHCQpJ0s/7p8car1d4eGUymvNGkfhYhpXQE=
+X-Google-Smtp-Source: AGHT+IFJTkxUOsR6hHqwhzCVU/31oTbq4J6u3JvNzvDfBfkf4G2km3lw6QOOl6Hu+u0klImFrFzJNZ4BngML
+X-Received: by 2002:a05:6871:205:b0:2ea:9842:68e2 with SMTP id 586e51a60fabf-2eeee56f4e5mr63594fac.10.1750361277182;
+        Thu, 19 Jun 2025 12:27:57 -0700 (PDT)
+Received: from c7-smtp-2023.dev.purestorage.com ([208.88.159.129])
+        by smtp-relay.gmail.com with ESMTPS id 586e51a60fabf-2ee8a78e987sm17874fac.32.2025.06.19.12.27.56
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Thu, 19 Jun 2025 12:27:57 -0700 (PDT)
+X-Relaying-Domain: purestorage.com
+Received: from dev-csander.dev.purestorage.com (dev-csander.dev.purestorage.com [10.7.70.37])
+	by c7-smtp-2023.dev.purestorage.com (Postfix) with ESMTP id 34E5034031F;
+	Thu, 19 Jun 2025 13:27:56 -0600 (MDT)
+Received: by dev-csander.dev.purestorage.com (Postfix, from userid 1557716354)
+	id 32ED7E4410B; Thu, 19 Jun 2025 13:27:56 -0600 (MDT)
+From: Caleb Sander Mateos <csander@purestorage.com>
+To: Chris Mason <clm@fb.com>,
+	Josef Bacik <josef@toxicpanda.com>,
+	David Sterba <dsterba@suse.com>,
+	Jens Axboe <axboe@kernel.dk>
+Cc: Mark Harmstone <maharmstone@fb.com>,
+	linux-btrfs@vger.kernel.org,
+	io-uring@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	Caleb Sander Mateos <csander@purestorage.com>
+Subject: [PATCH 1/4] btrfs/ioctl: don't skip accounting in early ENOTTY return
+Date: Thu, 19 Jun 2025 13:27:45 -0600
+Message-ID: <20250619192748.3602122-2-csander@purestorage.com>
+X-Mailer: git-send-email 2.45.2
+In-Reply-To: <20250619192748.3602122-1-csander@purestorage.com>
+References: <20250619192748.3602122-1-csander@purestorage.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-Mime-Version: 1.0
-Subject: Re: [PATCH v2] btrfs: replace deprecated strcpy with strscpy
-To: Brahmajit Das <listout@listout.xyz>
-Cc: linux-hardening@vger.kernel.org, linux-kernel@vger.kernel.org,
- linux-btrfs@vger.kernel.org, clm@fb.com, josef@toxicpanda.com,
- dsterba@suse.com, kees@kernel.org, ailiop@suse.com
-References: <20250619140623.3139-1-listout@listout.xyz>
- <20250619153904.25889-1-listout@listout.xyz>
- <b8945d37-3eb9-4ad6-b3eb-2725dbb008ad@harmstone.com>
- <rbjjfbhrwh4qjfj4pjhb5zzrvyddjlekfed6kfcrtuurj2ovgg@dm6xesb7nuzm>
-Content-Language: en-US
-From: Mark Harmstone <mark@harmstone.com>
-Autocrypt: addr=mark@harmstone.com; keydata=
- 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
-In-Reply-To: <rbjjfbhrwh4qjfj4pjhb5zzrvyddjlekfed6kfcrtuurj2ovgg@dm6xesb7nuzm>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
 
-On 19/06/2025 6.59 pm, Brahmajit Das wrote:
-> On 19.06.2025 18:06, Mark Harmstone wrote:
->> On 19/06/2025 4.39 pm, Brahmajit Das wrote:
-> ...
->>
->> Surely this doesn't compile... strscpy takes three parameters.
->>
-> It does, the third parameter is optional. From include/linux/string.h
-> 
-> #define strscpy(dst, src, ...) \
-> 	CONCATENATE(__strscpy, COUNT_ARGS(__VA_ARGS__))(dst, src, __VA_ARGS__)
-> 
-> But I'm more than happy to add the third parameter.
+btrfs_uring_encoded_read() returns early with -ENOTTY if the uring_cmd
+is issued with IO_URING_F_COMPAT but the kernel doesn't support compat
+syscalls. However, this early return bypasses the syscall accounting.
+goto out_acct instead to ensure the syscall is counted.
 
-Okay. It looks like this was added by e6584c3964f2ff76a9fb5a701e4a59997b35e547 in
-2023 - the docs don't seem to have caught up yet.
+Signed-off-by: Caleb Sander Mateos <csander@purestorage.com>
+Fixes: 34310c442e17 ("btrfs: add io_uring command for encoded reads (ENCODED_READ ioctl)")
+---
+ fs/btrfs/ioctl.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 913acef3f0a9..ff15160e2581 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -4827,11 +4827,12 @@ static int btrfs_uring_encoded_read(struct io_uring_cmd *cmd, unsigned int issue
+ 
+ 	if (issue_flags & IO_URING_F_COMPAT) {
+ #if defined(CONFIG_64BIT) && defined(CONFIG_COMPAT)
+ 		copy_end = offsetofend(struct btrfs_ioctl_encoded_io_args_32, flags);
+ #else
+-		return -ENOTTY;
++		ret = -ENOTTY;
++		goto out_acct;
+ #endif
+ 	} else {
+ 		copy_end = copy_end_kernel;
+ 	}
+ 
+-- 
+2.45.2
+

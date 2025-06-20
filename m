@@ -1,67 +1,67 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3BC21218ADC
-	for <linux-btrfs@vger.kernel.org>; Fri, 20 Jun 2025 05:48:06 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D4A1A21ABC2
+	for <linux-btrfs@vger.kernel.org>; Fri, 20 Jun 2025 05:48:07 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1750398487; cv=none; b=X0kEXle7h+ky71dtZ5NttRBazSw249MpPhayngStX7KZZrw3f1zPBvIh/zgXcy4UkDVBIpyUbFt8wrNW60ZfK90VvUoESZGku6BP7tEvUyELge9c6g6PkUjNKDo1dGPSi4+5OIHX1PmmCH4nIUtHnA8iPYu0f/jti8Dn2rZWALk=
+	t=1750398489; cv=none; b=fcCdQ5LGFGvPK7KSrlC60jwQIujT5n5D99/jQwDYrN93youMbiB9O4kyrw4iKWs1ohDbcPX7SjtHAjT9NztebmUQmO1O+lOeVJAbsAqoFMxC0VLH77plkvxH/adlULbzUVXRiFdc1TmelRYopDFy9yVX1q/nm/2VaLo7AV2breA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1750398487; c=relaxed/simple;
-	bh=gLxpWopeGzX5i2c+c3DPuEGiBnbwYJ4+Px6kccsfpZE=;
+	s=arc-20240116; t=1750398489; c=relaxed/simple;
+	bh=BGFEqfR1sJtbR8E9RXeVkYezKfIf81HhZUBl/ZzULDw=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=kkZJNbWqNsTAesEY38CyHw4puxC39hUTxeIU0Axcnnfsxeb944ToXirxij1HgsYQZW83cQ0AjfzHa0Mt22KtqH3H+4kLwugxYRfTYM9s4fnWaeOMLaGd4xPJKprlKTTHlV3cvwwvLBYXGaDv3V1bCw5BeB/8Ly4T6yVINosi7Ps=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=N3694PPD; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=N3694PPD; arc=none smtp.client-ip=195.135.223.130
+	 MIME-Version; b=d6ZxCygTnXPdjPOMK3R7B42AluLSlzyYAwMUNY8E7RfcMvbnIoOpEhdL1KLN9STZ2z5LQg8dGXzNypezxnTHuFdE+6A1pcyml8N8bUMOTl+6dza5k5ubBWAT3e6tXEXOibEyzBgyjBEaM3ECZZzlqWPxr+Gd9XdIyzk7E6hJSEg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=fMH/Cr9z; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=fMH/Cr9z; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="N3694PPD";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="N3694PPD"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="fMH/Cr9z";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="fMH/Cr9z"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id A0F3421216;
-	Fri, 20 Jun 2025 05:47:55 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 0CCBA1F390;
+	Fri, 20 Jun 2025 05:48:00 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1750398475; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1750398480; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=10jRyq8kb8qkCxgdr4H/KvoetlZdaOiijZU9unxTtzY=;
-	b=N3694PPDNXRgdpW8vUI1adeUPStZgw/yPcsPsmd6hFk77Iugr4olXDR9h/YktYr9F36TLN
-	9LDIPkLnKvAKOgCrOAW6cce4hxllI4zSsCsUrxMophPv1pBnyZcJvc+HWv4XGkSIvqSeCO
-	GoHKZkAVF+4QFmU3mB0taBqwOmddc40=
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=N3694PPD
+	bh=yjLnzYyn0667lurX7QbAUHMfzOSrJ4ZFxXfwwPe0Wfc=;
+	b=fMH/Cr9zxxo9oRZKk+nSewtESFuZkXGXgX/fZ3J17SsXMXCQHo8007OnYuoEdpeTibXDFe
+	qiXlcvnYF3fmqGBmApffCP0a4/EQNuzb/irPkNbW0+mH5yx/FfA1YXl8kP2x7wVzWECzKl
+	LItqq+ZwOo37p8ltvmpBCX2UZc1Yuf4=
+Authentication-Results: smtp-out2.suse.de;
+	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1750398475; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1750398480; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=10jRyq8kb8qkCxgdr4H/KvoetlZdaOiijZU9unxTtzY=;
-	b=N3694PPDNXRgdpW8vUI1adeUPStZgw/yPcsPsmd6hFk77Iugr4olXDR9h/YktYr9F36TLN
-	9LDIPkLnKvAKOgCrOAW6cce4hxllI4zSsCsUrxMophPv1pBnyZcJvc+HWv4XGkSIvqSeCO
-	GoHKZkAVF+4QFmU3mB0taBqwOmddc40=
+	bh=yjLnzYyn0667lurX7QbAUHMfzOSrJ4ZFxXfwwPe0Wfc=;
+	b=fMH/Cr9zxxo9oRZKk+nSewtESFuZkXGXgX/fZ3J17SsXMXCQHo8007OnYuoEdpeTibXDFe
+	qiXlcvnYF3fmqGBmApffCP0a4/EQNuzb/irPkNbW0+mH5yx/FfA1YXl8kP2x7wVzWECzKl
+	LItqq+ZwOo37p8ltvmpBCX2UZc1Yuf4=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id E1D1013A99;
-	Fri, 20 Jun 2025 05:47:53 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 4F41A13318;
+	Fri, 20 Jun 2025 05:47:58 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id aFOZKAn2VGi2NAAAD6G6ig
-	(envelope-from <wqu@suse.com>); Fri, 20 Jun 2025 05:47:53 +0000
+	id MHDOBA72VGi2NAAAD6G6ig
+	(envelope-from <wqu@suse.com>); Fri, 20 Jun 2025 05:47:58 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org,
 	linux-fsdevel@vger.kernel.org
 Cc: viro@zeniv.linux.org.uk,
 	brauner@kernel.org,
 	jack@suse.cz
-Subject: [PATCH RFC 3/6] btrfs: reject delalloc ranges if the fs is shutdown
-Date: Fri, 20 Jun 2025 15:17:26 +0930
-Message-ID: <3d17c28e603cf001aea2566e6ebc909a165a034e.1750397889.git.wqu@suse.com>
+Subject: [PATCH RFC 5/6] fs: introduce a shutdown_bdev super block operation
+Date: Fri, 20 Jun 2025 15:17:28 +0930
+Message-ID: <ef624790b57b76be25720e4a8021d7f5f03166cb.1750397889.git.wqu@suse.com>
 X-Mailer: git-send-email 2.49.0
 In-Reply-To: <cover.1750397889.git.wqu@suse.com>
 References: <cover.1750397889.git.wqu@suse.com>
@@ -72,99 +72,90 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Rspamd-Queue-Id: A0F3421216
-X-Rspamd-Action: no action
-X-Spam-Flag: NO
-X-Spamd-Result: default: False [-3.01 / 50.00];
+X-Spamd-Result: default: False [-2.80 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
 	FUZZY_BLOCKED(0.00)[rspamd.com];
-	TO_DN_NONE(0.00)[];
-	ARC_NA(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
 	MIME_TRACE(0.00)[0:+];
-	FROM_HAS_DN(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	FROM_EQ_ENVFROM(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:dkim,suse.com:email];
+	ARC_NA(0.00)[];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:mid];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
 	RCPT_COUNT_FIVE(0.00)[5];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Spam-Score: -3.01
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	RCVD_TLS_ALL(0.00)[]
 X-Spam-Level: 
+X-Spam-Flag: NO
+X-Spam-Score: -2.80
 
-If the filesystem has dirty pages before the fs is shutdown, we should
-no longer write them back, instead should treat them as writeback error.
+Currently we already have the super_operations::shutdown() callback,
+which is called when the block device of a filesystem is marked dead.
 
-Handle such situation by marking all those delalloc range as error and
-let error handling path to clean them up.
+However this is mostly for single(ish) block device filesystems.
 
-For ranges that already have ordered extent created, let them continue
-the writeback, and at ordered io finish time the file extent item update
-will be rejected as the fs is already marked error.
+For multi-device filesystems, they may afford a missing device, thus may
+continue work without fully shutdown the filesystem.
+
+So add a new super_operation::shutdown_bdev() callback, for mutli-device
+filesystems like btrfs and bcachefs.
+
+For now the only user is fs_holder_ops::mark_dead(), which will call
+shutdown_bdev() if supported.
+If not supported then fallback to the original shutdown() callback.
+
+Btrfs is going to add the usage of shutdown_bdev() soon.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/inode.c | 14 +++++++++++++-
- 1 file changed, 13 insertions(+), 1 deletion(-)
+ fs/super.c         |  4 +++-
+ include/linux/fs.h | 10 ++++++++++
+ 2 files changed, 13 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 31feb470fe33..b8eb3153f5e0 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -862,6 +862,9 @@ static void compress_file_range(struct btrfs_work *work)
- 	int compress_type = fs_info->compress_type;
- 	int compress_level = fs_info->compress_level;
+diff --git a/fs/super.c b/fs/super.c
+index 21799e213fd7..8242a03bd5ce 100644
+--- a/fs/super.c
++++ b/fs/super.c
+@@ -1461,7 +1461,9 @@ static void fs_bdev_mark_dead(struct block_device *bdev, bool surprise)
+ 		sync_filesystem(sb);
+ 	shrink_dcache_sb(sb);
+ 	evict_inodes(sb);
+-	if (sb->s_op->shutdown)
++	if (sb->s_op->shutdown_bdev)
++		sb->s_op->shutdown_bdev(sb, bdev);
++	else if (sb->s_op->shutdown)
+ 		sb->s_op->shutdown(sb);
  
-+	if (unlikely(btrfs_is_shutdown(fs_info)))
-+		goto cleanup_and_bail_uncompressed;
+ 	super_unlock_shared(sb);
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 96c7925a6551..4f6b4b3cbe22 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -2363,7 +2363,17 @@ struct super_operations {
+ 				  struct shrink_control *);
+ 	long (*free_cached_objects)(struct super_block *,
+ 				    struct shrink_control *);
++	/*
++	 * For single-device filesystems. Called when the only block device is
++	 * marked dead.
++	 */
+ 	void (*shutdown)(struct super_block *sb);
 +
- 	inode_should_defrag(inode, start, end, end - start + 1, SZ_16K);
++	/*
++	 * For multi-device filesystems. Called when any of its block device is
++	 * marked dead.
++	 */
++	void (*shutdown_bdev)(struct super_block *sb, struct block_device *bdev);
+ };
  
- 	/*
-@@ -1277,6 +1280,11 @@ static noinline int cow_file_range(struct btrfs_inode *inode,
- 	unsigned long page_ops;
- 	int ret = 0;
- 
-+	if (unlikely(btrfs_is_shutdown(fs_info))) {
-+		ret = -EIO;
-+		goto out_unlock;
-+	}
-+
- 	if (btrfs_is_free_space_inode(inode)) {
- 		ret = -EINVAL;
- 		goto out_unlock;
-@@ -2027,7 +2035,7 @@ static noinline int run_delalloc_nocow(struct btrfs_inode *inode,
- {
- 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
- 	struct btrfs_root *root = inode->root;
--	struct btrfs_path *path;
-+	struct btrfs_path *path = NULL;
- 	u64 cow_start = (u64)-1;
- 	/*
- 	 * If not 0, represents the inclusive end of the last fallback_to_cow()
-@@ -2047,6 +2055,10 @@ static noinline int run_delalloc_nocow(struct btrfs_inode *inode,
- 	 */
- 	ASSERT(!btrfs_is_zoned(fs_info) || btrfs_is_data_reloc_root(root));
- 
-+	if (unlikely(btrfs_is_shutdown(fs_info))) {
-+		ret = -EIO;
-+		goto error;
-+	}
- 	path = btrfs_alloc_path();
- 	if (!path) {
- 		ret = -ENOMEM;
+ /*
 -- 
 2.49.0
 

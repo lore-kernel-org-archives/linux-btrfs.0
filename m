@@ -1,64 +1,64 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 213BA238C21
-	for <linux-btrfs@vger.kernel.org>; Mon, 23 Jun 2025 10:47:11 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 53B7619C54E
+	for <linux-btrfs@vger.kernel.org>; Mon, 23 Jun 2025 10:47:16 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1750675633; cv=none; b=YR/ZlgkdKiTmTkNvmdoOSlPZxkFMWlDSlsZWE9O/1F/TadRG1JjhgfOQphcXBMfwupSDPI+eTmEpkiaJWbn1FcueVN2nljeBnkaKr7fTWgg37QO7V19xl43QlKxjgeqcoDi14n2XMiDY5KfOo/ZkpH6X9SdFZPEq7DbF/a7l/dg=
+	t=1750675638; cv=none; b=dKRXNxKsGh7UGcfd8mTJmAXznCUyw05UUB0X/QqG/j5UCIzm/kElan9+MovkDBjDzML9VYOdTNgpLUTDaJyiIrVLL9ZSxqeYd6CO7xyJ4Vfm8MQz+mzA1Hh6eCHXRVUxApniOdh81zwPTVI0z3HuIT/KK3eAFD35tQ/zHeQ/RTw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1750675633; c=relaxed/simple;
-	bh=C94Th9dLITXI0kFYowMRRY7mJa7SzqIpSB+XOfUqTPw=;
+	s=arc-20240116; t=1750675638; c=relaxed/simple;
+	bh=hVXffosSWVA4AQKX1TkVVdoxPWEtPJRGS+o9RhviptY=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=mu7d3x+dKXoX22LrEAw6JYgehyuNeqKtAOAlWTAWZjGdQYRz/pzOG2A/++TC3YTk4awvNX+qYI0cO324K5gduV6Q0KLxukwsmEOMVxEijXCCdG4CoVJ1pIbhg3H10D/3w0cutvwAn2OxsUTHyIITuKn2dnDgTbgyTjCxwBqai80=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Mzj++Gob; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Mzj++Gob; arc=none smtp.client-ip=195.135.223.130
+	 MIME-Version; b=OQPNP7JosZGES69fe70TMKzN5G2oYJwEeEur6cf+k0WO8si6BXljjcE4exr4IuN5EjeUM7j4uG8cqfH5CfQpf0o+sLNqRGAqrBwecbJPo9lFPMlWWL/BB5GahCI1A7cVvN2xZNzYzTg5orq4L3TJWayouPpjBTNpTJm31ffuBcU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=bywFB4M0; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=bywFB4M0; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Mzj++Gob";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Mzj++Gob"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="bywFB4M0";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="bywFB4M0"
 Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 51D2521174
-	for <linux-btrfs@vger.kernel.org>; Mon, 23 Jun 2025 10:46:59 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 8FF5A1F391
+	for <linux-btrfs@vger.kernel.org>; Mon, 23 Jun 2025 10:47:04 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1750675619; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1750675624; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=rZqIvBkoUJkM1InBB85wtA0ohUcS9q+8maaGA8Sdx3A=;
-	b=Mzj++GobXjfkHHifU5J8qaKO1fhnKoaubi2f5CFfl2TjJhWEVxq4vb0VERfmdmhUvs0TdE
-	8ICwK++D5WHIJW5jOysUGggEgwDs6FX+TlY/IFmB0D9Ahy2S/CT1rw1ilhPUP7BtvwBoyc
-	r5KRLg+qqHURaRMSPynpYL6SYRCQCE0=
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=Mzj++Gob
+	bh=9XvCPUoZK3zR/2uaizL8s2XAkQyk+RZ9wiCPOxxWv0A=;
+	b=bywFB4M08IzgUtfxOvfPTM0ipfh8IBH2LElEuFcUbYipwv5ESixc+jHAktw3/I/uitNmeh
+	F+kTA9Nzd50Wp/XBs8HtVWIbT+PivsfAScLt1fcutXIWMOqJd1m/j0BSo2U5sZ7LHnY3/s
+	QrimbhFbJgoaUMulYmZTwJmt6sN/0Ig=
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=bywFB4M0
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1750675619; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1750675624; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=rZqIvBkoUJkM1InBB85wtA0ohUcS9q+8maaGA8Sdx3A=;
-	b=Mzj++GobXjfkHHifU5J8qaKO1fhnKoaubi2f5CFfl2TjJhWEVxq4vb0VERfmdmhUvs0TdE
-	8ICwK++D5WHIJW5jOysUGggEgwDs6FX+TlY/IFmB0D9Ahy2S/CT1rw1ilhPUP7BtvwBoyc
-	r5KRLg+qqHURaRMSPynpYL6SYRCQCE0=
+	bh=9XvCPUoZK3zR/2uaizL8s2XAkQyk+RZ9wiCPOxxWv0A=;
+	b=bywFB4M08IzgUtfxOvfPTM0ipfh8IBH2LElEuFcUbYipwv5ESixc+jHAktw3/I/uitNmeh
+	F+kTA9Nzd50Wp/XBs8HtVWIbT+PivsfAScLt1fcutXIWMOqJd1m/j0BSo2U5sZ7LHnY3/s
+	QrimbhFbJgoaUMulYmZTwJmt6sN/0Ig=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 9087A13485
-	for <linux-btrfs@vger.kernel.org>; Mon, 23 Jun 2025 10:46:58 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id D02CA13485
+	for <linux-btrfs@vger.kernel.org>; Mon, 23 Jun 2025 10:47:03 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 6HkVFaIwWWgeJAAAD6G6ig
+	id wA+sJKcwWWgeJAAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Mon, 23 Jun 2025 10:46:58 +0000
+	for <linux-btrfs@vger.kernel.org>; Mon, 23 Jun 2025 10:47:03 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v4 2/8] btrfs: get rid of the re-entry of btrfs_get_tree()
-Date: Mon, 23 Jun 2025 20:16:46 +0930
-Message-ID: <9e075fdf15f6c918d9a07056fd6cd26d1b8904bb.1750674924.git.wqu@suse.com>
+Subject: [PATCH v4 6/8] btrfs: delay btrfs_open_devices() until super block is created
+Date: Mon, 23 Jun 2025 20:16:50 +0930
+Message-ID: <1c96eef7e58475eed7a0cad0a6463696919c173e.1750674924.git.wqu@suse.com>
 X-Mailer: git-send-email 2.49.0
 In-Reply-To: <cover.1750674924.git.wqu@suse.com>
 References: <cover.1750674924.git.wqu@suse.com>
@@ -69,138 +69,266 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Rspamd-Queue-Id: 51D2521174
-X-Rspamd-Action: no action
-X-Spam-Flag: NO
 X-Spamd-Result: default: False [-3.01 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	MIME_GOOD(-0.10)[text/plain];
 	MX_GOOD(-0.01)[];
-	MIME_TRACE(0.00)[0:+];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FUZZY_BLOCKED(0.00)[rspamd.com];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	FUZZY_BLOCKED(0.00)[rspamd.com];
+	RCVD_COUNT_TWO(0.00)[2];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
 	RCPT_COUNT_ONE(0.00)[1];
 	ARC_NA(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	FROM_EQ_ENVFROM(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	URIBL_BLOCKED(0.00)[suse.com:dkim,suse.com:mid,suse.com:email,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	FROM_HAS_DN(0.00)[];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	TO_DN_NONE(0.00)[];
 	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	TO_DN_NONE(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
 	RCVD_VIA_SMTP_AUTH(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:mid,suse.com:dkim,suse.com:email]
-X-Spam-Score: -3.01
+	RCVD_TLS_ALL(0.00)[];
+	DKIM_TRACE(0.00)[suse.com:+];
+	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,suse.com:mid,suse.com:email,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns]
 X-Spam-Level: 
+X-Spam-Flag: NO
+X-Rspamd-Queue-Id: 8FF5A1F391
+X-Rspamd-Action: no action
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Spam-Score: -3.01
 
-[EXISTING PROBLEM]
-Currently btrfs mount is split into two parts:
+Currently btrfs always call btrfs_open_devices() before creating the
+super block.
 
-- btrfs_get_tree_subvol()
-  Which setups the very basic fs_info, and eventually call
-  mount_subvol() to mount the target subvolume.
+It's fine for now because:
 
-- btrfs_get_tree_super()
-  This is the part doing super block allocation and if there is no
-  existing super block, do the real open_ctree() to open the fs.
+- No blk_holder_ops is provided
+- btrfs_fs_type is used as a holder
 
-However currently we're doing this in a complex re-entry fashion:
+This means no matter who wins the device opening race, the holder will be
+the same thus not affecting the later sget_fc() race.
 
-vfs_get_tree()
-|- btrfs_get_tree()
-   |- btrfs_get_tree_subvol()
-      |- vfs_get_tree()
-      |  |- btrfs_get_tree()
-      |     |- btrfs_get_tree_super()
-      |- mount_subvol()
+And since no blk_holder_ops is provided, no bdev operation is depending on
+the holder.
 
-This is definitely not that easy to grasp.
+But this will no longer be true if we want to (we indeed want) implement
+a proper blk_holder_ops using fs_holder_ops.
 
-[ENHANCEMENT]
-The function vfs_get_tree() is only doing the following works:
+This means we will need a proper super block as the bdev holder.
 
-- Call get_tree() call back
-- Call super_wake()
-- Call security_sb_set_mnt_opts()
+To prepare for such change:
 
-In our case, super_wake() can be skipped, as after
-btrfs_get_tree_subvol() finished, vfs_get_tree() will call super_wake()
-on the super block we got anyway.
+- Add btrfs_fs_devices::holding member
+  This will prevent btrfs_free_stale_devices() and btrfS_close_device()
+  from deleting the fs_devices when there is another process trying to
+  mount the fs.
 
-The same applies to security_sb_set_mnt_opts(), as long as we do not
-free the security from our original fc in btrfs_get_tree_subvol(), the
-first vfs_get_tree() call will handle the security correctly.
+  Along with the new member, here comes two helpers,
+  btrfs_fs_devices_inc_holding() and btrfs_fs_devices_dec_holding().
 
-So here we only need to:
+  This will allow us to hold an fs_devices without opening it.
 
-- Replace vfs_get_tree() call with btrfs_get_tree_super()
+  We can not hold uuid_mutex while calling sget_fc(), this will reverse
+  the lock sequence with s_umount, causing a lockdep warning.
 
-- Keep the existing fc->security for vfs_get_tree() to handle the
-  security
+- Delay btrfs_open_devices() until a super block is returned
+  This means we have to hold the initial fs_devices first, then unlock
+  uuid_mutex, call sget_fc(), then re-lock uuid_mutex, and decrease the
+  holding number.
 
-This will remove the re-entry behavior and make thing much easier to
-follow.
+  For new super block case, we continue to btrfs_open_devices() with
+  uuid_mutex hold.
+  For existing super block case, we can unlock uuid_mutex and continue.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/super.c | 27 +++------------------------
- 1 file changed, 3 insertions(+), 24 deletions(-)
+ fs/btrfs/super.c   | 55 ++++++++++++++++++++++++++++++++--------------
+ fs/btrfs/volumes.c |  5 +++--
+ fs/btrfs/volumes.h | 25 +++++++++++++++++++++
+ 3 files changed, 67 insertions(+), 18 deletions(-)
 
 diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index b9e08a59da4e..d977d2da985e 100644
+index 41c824d216fc..b430631da647 100644
 --- a/fs/btrfs/super.c
 +++ b/fs/btrfs/super.c
-@@ -2046,15 +2046,7 @@ static int btrfs_get_tree_subvol(struct fs_context *fc)
- 	 */
- 	dup_fc->s_fs_info = fs_info;
- 
--	/*
--	 * We'll do the security settings in our btrfs_get_tree_super() mount
--	 * loop, they were duplicated into dup_fc, we can drop the originals
--	 * here.
--	 */
--	security_free_mnt_opts(&fc->security);
--	fc->security = NULL;
+@@ -1841,7 +1841,6 @@ static int btrfs_get_tree_super(struct fs_context *fc)
+ 	struct btrfs_fs_info *fs_info = fc->s_fs_info;
+ 	struct btrfs_fs_context *ctx = fc->fs_private;
+ 	struct btrfs_fs_devices *fs_devices = NULL;
+-	struct block_device *bdev;
+ 	struct btrfs_device *device;
+ 	struct super_block *sb;
+ 	blk_mode_t mode = btrfs_open_mode(fc);
+@@ -1860,23 +1859,26 @@ static int btrfs_get_tree_super(struct fs_context *fc)
+ 		mutex_unlock(&uuid_mutex);
+ 		return PTR_ERR(device);
+ 	}
 -
--	ret = vfs_get_tree(dup_fc);
-+	ret = btrfs_get_tree_super(dup_fc);
- 	if (ret)
- 		goto error;
- 
-@@ -2086,21 +2078,8 @@ static int btrfs_get_tree_subvol(struct fs_context *fc)
- 
- static int btrfs_get_tree(struct fs_context *fc)
- {
--	/*
--	 * Since we use mount_subtree to mount the default/specified subvol, we
--	 * have to do mounts in two steps.
--	 *
--	 * First pass through we call btrfs_get_tree_subvol(), this is just a
--	 * wrapper around fc_mount() to call back into here again, and this time
--	 * we'll call btrfs_get_tree_super().  This will do the open_ctree() and
--	 * everything to open the devices and file system.  Then we return back
--	 * with a fully constructed vfsmount in btrfs_get_tree_subvol(), and
--	 * from there we can do our mount_subvol() call, which will lookup
--	 * whichever subvol we're mounting and setup this fc with the
--	 * appropriate dentry for the subvol.
--	 */
--	if (fc->s_fs_info)
--		return btrfs_get_tree_super(fc);
-+	ASSERT(fc->s_fs_info == NULL);
+ 	fs_devices = device->fs_devices;
++	/*
++	 * We can not hold uuid_mutex calling sget_fc(), it will lead to a
++	 * locking order reversal with s_umount.
++	 *
++	 * So here we increase the holding number of fs_devices, this will ensure
++	 * the fs_devices itself won't be freed.
++	 */
++	btrfs_fs_devices_inc_holding(fs_devices);
++	mutex_unlock(&uuid_mutex);
 +
- 	return btrfs_get_tree_subvol(fc);
+ 	fs_info->fs_devices = fs_devices;
+ 
+-	ret = btrfs_open_devices(fs_devices, mode, &btrfs_fs_type);
+-	mutex_unlock(&uuid_mutex);
+-	if (ret)
+-		return ret;
+-
+-	if (!(fc->sb_flags & SB_RDONLY) && fs_devices->rw_devices == 0)
+-		return -EACCES;
+-
+-	bdev = fs_devices->latest_dev->bdev;
+-
+ 	sb = sget_fc(fc, btrfs_fc_test_super, set_anon_super_fc);
+-	if (IS_ERR(sb))
++	if (IS_ERR(sb)) {
++		mutex_lock(&uuid_mutex);
++		btrfs_fs_devices_dec_holding(fs_devices);
++		mutex_unlock(&uuid_mutex);
+ 		return PTR_ERR(sb);
++	}
+ 
+ 	set_device_specific_options(fs_info);
+ 
+@@ -1888,12 +1890,18 @@ static int btrfs_get_tree_super(struct fs_context *fc)
+ 		 *
+ 		 * fc->s_fs_info is not touched and will be later freed by
+ 		 * put_fs_context() through btrfs_free_fs_context().
+-		 * 
+-		 * And the fs_info->fs_devices will also be closed by
+-		 * btrfs_free_fs_context().
+ 		 */
+ 		ASSERT(fc->s_fs_info == fs_info);
+ 
++		mutex_lock(&uuid_mutex);
++		btrfs_fs_devices_dec_holding(fs_devices);
++		mutex_unlock(&uuid_mutex);
++		/*
++		 * But the fs_info->fs_devices is not opened, we should not let
++		 * btrfs_free_fs_context() to close them.
++		 */
++		fs_info->fs_devices = NULL;
++
+ 		/*
+ 		 * At this stage we may have RO flag mismatch between
+ 		 * fc->sb_flags and sb->s_flags.  Caller should detect such
+@@ -1901,6 +1909,8 @@ static int btrfs_get_tree_super(struct fs_context *fc)
+ 		 * needed.
+ 		 */
+ 	} else {
++		struct block_device *bdev;
++
+ 		/*
+ 		 * The first mount of the fs thus a new superblock, fc->s_fs_info
+ 		 * should be NULL, and the owner ship of our fs_info and fs_devices is
+@@ -1908,6 +1918,19 @@ static int btrfs_get_tree_super(struct fs_context *fc)
+ 		 */
+ 		ASSERT(fc->s_fs_info == NULL);
+ 
++		mutex_lock(&uuid_mutex);
++		btrfs_fs_devices_dec_holding(fs_devices);
++		ret = btrfs_open_devices(fs_devices, mode, &btrfs_fs_type);
++		mutex_unlock(&uuid_mutex);
++		if (ret < 0) {
++			deactivate_locked_super(sb);
++			return ret;
++		}
++		if (!(fc->sb_flags & SB_RDONLY) && fs_devices->rw_devices == 0) {
++			deactivate_locked_super(sb);
++			return -EACCES;
++		}
++		bdev = fs_devices->latest_dev->bdev;
+ 		snprintf(sb->s_id, sizeof(sb->s_id), "%pg", bdev);
+ 		shrinker_debugfs_rename(sb->s_shrink, "sb-btrfs:%s", sb->s_id);
+ 		btrfs_sb(sb)->bdev_holder = &btrfs_fs_type;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 3e701790dde9..f02551f65366 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -414,6 +414,7 @@ static void free_fs_devices(struct btrfs_fs_devices *fs_devices)
+ 	struct btrfs_device *device;
+ 
+ 	WARN_ON(fs_devices->opened);
++	WARN_ON(fs_devices->holding);
+ 	while (!list_empty(&fs_devices->devices)) {
+ 		device = list_first_entry(&fs_devices->devices,
+ 					  struct btrfs_device, dev_list);
+@@ -541,7 +542,7 @@ static int btrfs_free_stale_devices(dev_t devt, struct btrfs_device *skip_device
+ 				continue;
+ 			if (devt && devt != device->devt)
+ 				continue;
+-			if (fs_devices->opened) {
++			if (fs_devices->opened || fs_devices->holding) {
+ 				if (devt)
+ 					ret = -EBUSY;
+ 				break;
+@@ -1197,7 +1198,7 @@ void btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
+ 
+ 	mutex_lock(&uuid_mutex);
+ 	close_fs_devices(fs_devices);
+-	if (!fs_devices->opened) {
++	if (!fs_devices->opened && !fs_devices->holding) {
+ 		list_splice_init(&fs_devices->seed_list, &list);
+ 
+ 		/*
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index afa71d315c46..6acb154ccf87 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -422,6 +422,17 @@ struct btrfs_fs_devices {
+ 	/* Count fs-devices opened. */
+ 	int opened;
+ 
++	/*
++	 * Counter of the processes that are holding this fs_devices but not
++	 * yet opened.
++	 * This is for mounting handling, as we can only open the fs_devices
++	 * after a super block is created.
++	 * But we can not hold uuid_mutex during sget_fc(), thus we have to
++	 * hold the fs_devices (meaning it can not be released) until a super
++	 * block is returned.
++	 */
++	int holding;
++
+ 	/* Set when we find or add a device that doesn't have the nonrot flag set. */
+ 	bool rotating;
+ 	/* Devices support TRIM/discard commands. */
+@@ -854,6 +865,20 @@ static inline void btrfs_warn_unknown_chunk_allocation(enum btrfs_chunk_allocati
+ 	WARN_ONCE(1, "unknown allocation policy %d, fallback to regular", pol);
  }
  
++static inline void btrfs_fs_devices_inc_holding(struct btrfs_fs_devices *fs_devices)
++{
++	lockdep_assert_held(&uuid_mutex);
++	ASSERT(fs_devices->holding >= 0);
++	fs_devices->holding++;
++}
++
++static inline void btrfs_fs_devices_dec_holding(struct btrfs_fs_devices *fs_devices)
++{
++	lockdep_assert_held(&uuid_mutex);
++	ASSERT(fs_devices->holding > 0);
++	fs_devices->holding--;
++}
++
+ void btrfs_commit_device_sizes(struct btrfs_transaction *trans);
+ 
+ struct list_head * __attribute_const__ btrfs_get_fs_uuids(void);
 -- 
 2.49.0
 

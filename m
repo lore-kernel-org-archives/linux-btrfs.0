@@ -1,184 +1,94 @@
-Received: from h1.out4.mxs.au (h1.out4.mxs.au [110.232.143.238])
+Received: from smtp153-141.sina.com.cn (smtp153-141.sina.com.cn [61.135.153.141])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6C5902F431D
-	for <linux-btrfs@vger.kernel.org>; Wed, 25 Jun 2025 23:21:21 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=110.232.143.238
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D22FA2F1FC1
+	for <linux-btrfs@vger.kernel.org>; Wed, 25 Jun 2025 23:44:40 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=61.135.153.141
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1750893686; cv=none; b=PrjpUUjZH8vwqNCr00pvrnbQXIU0owd/FKafcIe7eOTDDjlEWWkukc8lIJKhxhFhw9Gxvyy+UM+6D+i1OfHdT9Vw+lP0BXKo7HXwUuiys+DRZGTWMScCMQJPGE0i9nqhb6zLDyQ4mhNv6SBWvJnvI5TcoB5hRaCcJe3gXJtEr6A=
+	t=1750895088; cv=none; b=WGtQgef4ngsHpi8cC+XtaDZ9SdbeHFPbo4G4oOn5+B7F0hxjfiotWVVXeMu9wlpuTspuzkVBKXABRTnnaf5/wbeZ5HKlZbSnD8GirNEjvv62jdjxfnm8OrS4wjkMVuojmqkiIaXBXMmURPmZulzt8bFg9qHYNrM4Xanulfn0hc0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1750893686; c=relaxed/simple;
-	bh=l6gdjSsI1lcWWZhcDIAU8bL+EfcU0PB7fITZHJtO4Rs=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=FM1REcsT0MX+u3YO2OerHEa2hHuDhKWH2LUPcksalZz3/D8elcOGBIJo7q6U2PvyWEfrzD0Voqz1Oj9yD7DnOutQseB3TiFxgMXzgz0B6JGUZkBdtAPZqLEW+7o0i6pWZ/umCFnw/MoxHTvwuMYL05APOKif0Ee6qPNXl3lIIrc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=edcint.co.nz; spf=fail smtp.mailfrom=edcint.co.nz; dkim=pass (2048-bit key) header.d=edcint.co.nz header.i=@edcint.co.nz header.b=h0ZA4aR8; arc=none smtp.client-ip=110.232.143.238
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=edcint.co.nz
-Authentication-Results: smtp.subspace.kernel.org; spf=fail smtp.mailfrom=edcint.co.nz
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=edcint.co.nz header.i=@edcint.co.nz header.b="h0ZA4aR8"
-Received: from s02bd.syd2.hostingplatform.net.au (s02bd.syd2.hostingplatform.net.au [103.27.32.42])
-	by out4.mxs.au (Halon) with ESMTPS (TLSv1.2) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-	id eeb0a731-521a-11f0-8a1a-00163c87da3f
-	for <linux-btrfs@vger.kernel.org>;
-	Thu, 26 Jun 2025 09:20:07 +1000 (AEST)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=edcint.co.nz; s=default; h=Content-Transfer-Encoding:Content-Type:
-	In-Reply-To:From:References:Cc:To:Subject:MIME-Version:Date:Message-ID:Sender
-	:Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:
-	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
-	List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-	bh=p/oneADWuVh9vHgobC/+U1JzGh9gN+eDZUrdKGWcYE4=; b=h0ZA4aR8SRgQHDgh0I6P4cfS2z
-	8s7MNiSveDBZukXwTFr8EZ0hh1QTOSnoJ4AuthDvwAYQaa2ocDjpSG1GrvbXPDj3MhHgFvHMbcUDo
-	k2dSENiHC1GyxeZbfKjrKwV/8xG2LtkoXVfv8dVc1OTe+EQ+ZbpcHY+9LE6m8V8KaRYgksDRrBcaI
-	EdHlPyvkJbXnU8y3GE4jGU7NllFMzfcBedZGPWTkUGMeRwVWB7yYVjlJNin5ZRXKZalJ5+rh0rzRX
-	EHrj5EHuUPbce5Cd+MmL/4BUpeNf1xrXrv7mFAa56w4S3mQw/cjUbL/VMa2WLWMDHp0a9S+CZHMSC
-	9xJiNgAw==;
-Received: from [159.196.20.165] (port=43543 helo=[192.168.2.80])
-	by s02bd.syd2.hostingplatform.net.au with esmtpsa  (TLS1.2) tls TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
-	(Exim 4.98.1)
-	(envelope-from <btrfs@edcint.co.nz>)
-	id 1uUZPT-000000018t2-1x0W;
-	Thu, 26 Jun 2025 09:20:07 +1000
-Message-ID: <a1494d1c-7f6f-4bc8-9f42-553e79e4335e@edcint.co.nz>
-Date: Thu, 26 Jun 2025 09:20:07 +1000
+	s=arc-20240116; t=1750895088; c=relaxed/simple;
+	bh=mtrQNGlliUdKWWwwYHLIr198wqZ13tkZb3P4BHGPIJE=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=nFgOUjJ/O8CvBE39JE0PnyCY1IJUxCI72w8fG+TPqtE5vrxeft+KALqvHvCi+4FXnjmhC6GGnJXzuWnKpu8ukoI11ojBq5cvkx72VMyBCuXwxR46QsJE1kOQPn60YdRxsGE3RsBwzuYmGWOMrDG5kHFIXeaB7N0coBfPqwaspYA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=sina.com; spf=pass smtp.mailfrom=sina.com; arc=none smtp.client-ip=61.135.153.141
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=sina.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=sina.com
+X-SMAIL-HELO: localhost.localdomain
+Received: from unknown (HELO localhost.localdomain)([114.249.58.236])
+	by sina.com (10.54.253.31) with ESMTP
+	id 685C89DE000026EA; Wed, 26 Jun 2025 07:44:31 +0800 (CST)
+X-Sender: hdanton@sina.com
+X-Auth-ID: hdanton@sina.com
+Authentication-Results: sina.com;
+	 spf=none smtp.mailfrom=hdanton@sina.com;
+	 dkim=none header.i=none;
+	 dmarc=none action=none header.from=hdanton@sina.com
+X-SMAIL-MID: 9282516816285
+X-SMAIL-UIID: 559E04F1492845D58A02B8FF3EE710FE-20250626-074431-1
+From: Hillf Danton <hdanton@sina.com>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: Edward Adam Davis <eadavis@qq.com>,
+	syzbot+fa90fcaa28f5cd4b1fc1@syzkaller.appspotmail.com,
+	clm@fb.com,
+	josef@toxicpanda.com,
+	linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	syzkaller-bugs@googlegroups.com
+Subject: Re: [PATCH next] btrfs: fix deadlock in btrfs_read_chunk_tree
+Date: Thu, 26 Jun 2025 07:44:18 +0800
+Message-ID: <20250625234420.1798-1-hdanton@sina.com>
+In-Reply-To: <1d765fc0-e971-4c8b-95ab-4cdfcea183c8@gmx.com>
+References: <685aa401.050a0220.2303ee.0009.GAE@google.com> <tencent_C857B761776286CB137A836B096C03A34405@qq.com> <20250624235635.1661-1-hdanton@sina.com> <20250625124052.1778-1-hdanton@sina.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: Portable HDD Keeps Going Read Only
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Daniel Vacek <neelx@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-References: <83a43be7-7058-4099-80d9-07749cf77a8d@edcint.co.nz>
- <CAPjX3FcqJ-cNMjVia_gYmBZwDhQVxPEOhYYQUzL31m7momByEQ@mail.gmail.com>
- <5de3840d-70c5-48cb-a7c0-7db17e789e95@edcint.co.nz>
- <ffbd0c96-313d-4524-9b6e-b24437fc0347@gmx.com>
- <b2dbfdb5-4cce-459c-8d30-01ac6124d9ad@edcint.co.nz>
- <bdfe67ea-8668-4768-8102-42d78e9537f9@edcint.co.nz>
- <08d37392-a7a5-4c43-87ce-86146e58323f@gmx.com>
-Content-Language: en-US
-From: Matthew Jurgens <btrfs@edcint.co.nz>
-In-Reply-To: <08d37392-a7a5-4c43-87ce-86146e58323f@gmx.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
-X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
-X-AntiAbuse: Primary Hostname - s02bd.syd2.hostingplatform.net.au
-X-AntiAbuse: Original Domain - vger.kernel.org
-X-AntiAbuse: Originator/Caller UID/GID - [47 12] / [47 12]
-X-AntiAbuse: Sender Address Domain - edcint.co.nz
-X-Get-Message-Sender-Via: s02bd.syd2.hostingplatform.net.au: authenticated_id: default@edcint.co.nz
-X-Authenticated-Sender: s02bd.syd2.hostingplatform.net.au: default@edcint.co.nz
-X-Source: 
-X-Source-Args: 
-X-Source-Dir: 
 
-Further to this.
-
-I reformatted the drive, rewrote a backup to it and umounted it 
-(software only, did not physically disconnect it). When I tried to 
-remount it about 30 minutes later, it failed.
-
-3 new files (dmesg, btrfs check and smartctl output) for 20250626 are 
-available at https://edcint.co.nz/tmp/btrfs_portable_hdd/
-
-I'll paste the check output below but adding the others will make this 
-message too long
-
-In another test I did, I reformatted the drive with xfs, but when 
-writing the backup to it, the rsync hung. I reproduced this 2 or 3 times 
-and gave up. Soon, I'll try ext4 on this drive.
-
-Maybe the controller on this drive has a problem. The smartctl output 
-does not show any clear signs of problems.
-
-[1/8] checking log skipped (none written)
-[2/8] checking root items
-[3/8] checking extents
-ERROR: extent[32702464 16384] backref lost (owner: 1, level: 0) root 1
-ERROR: extent [603471872 16384] referencer bytenr mismatch, wanted: 
-603471872, have: 32505856
-ERROR: extent [876150784 16384] referencer bytenr mismatch, wanted: 
-876150784, have: 32686080
-ERROR: extent [565322235904 16384] referencer bytenr mismatch, wanted: 
-565322235904, have: 32636928
-ERROR: extent [1577378103296 16384] referencer bytenr mismatch, wanted: 
-1577378103296, have: 32620544
-ERROR: extent [1577378168832 16384] referencer bytenr mismatch, wanted: 
-1577378168832, have: 32538624
-ERROR: extent [1577493069824 16384] referencer bytenr mismatch, wanted: 
-1577493069824, have: 32587776
-ERROR: extent [2602211950592 16384] referencer bytenr mismatch, wanted: 
-2602211950592, have: 32686080
-ERROR: extent [2602616307712 16384] referencer bytenr mismatch, wanted: 
-2602616307712, have: 32686080
-ERROR: extent [3426921840640 16384] referencer bytenr mismatch, wanted: 
-3426921840640, have: 32571392
-ERROR: extent [3426922545152 16384] referencer bytenr mismatch, wanted: 
-3426922545152, have: 32571392
-ERROR: extent [3426922840064 16384] referencer bytenr mismatch, wanted: 
-3426922840064, have: 32653312
-ERROR: extent [3426922905600 16384] referencer bytenr mismatch, wanted: 
-3426922905600, have: 32669696
-ERROR: extent [3426923708416 16384] referencer bytenr mismatch, wanted: 
-3426923708416, have: 32686080
-ERROR: extent [3426924969984 16384] referencer bytenr mismatch, wanted: 
-3426924969984, have: 32686080
-ERROR: extent [3427015163904 16384] referencer bytenr mismatch, wanted: 
-3427015163904, have: 32587776
-ERROR: extent [3427101868032 16384] referencer bytenr mismatch, wanted: 
-3427101868032, have: 32686080
-ERROR: extent [3427101884416 16384] referencer bytenr mismatch, wanted: 
-3427101884416, have: 32686080
-ERROR: extent [3427102064640 16384] referencer bytenr mismatch, wanted: 
-3427102064640, have: 32686080
-ERROR: extent [3427120365568 16384] referencer bytenr mismatch, wanted: 
-3427120365568, have: 32473088
-ERROR: extent [3427120906240 16384] referencer bytenr mismatch, wanted: 
-3427120906240, have: 31506432
-ERROR: extent [3427124035584 16384] referencer bytenr mismatch, wanted: 
-3427124035584, have: 32522240
-ERROR: extent [3427125624832 16384] referencer bytenr mismatch, wanted: 
-3427125624832, have: 32686080
-ERROR: extent [3427126951936 16384] referencer bytenr mismatch, wanted: 
-3427126951936, have: 32686080
-ERROR: extent [3427127394304 16384] referencer bytenr mismatch, wanted: 
-3427127394304, have: 32686080
-ERROR: extent [3427128082432 16384] referencer bytenr mismatch, wanted: 
-3427128082432, have: 32686080
-ERROR: extent [3427128164352 16384] referencer bytenr mismatch, wanted: 
-3427128164352, have: 32702464
-ERROR: extent[32473088 16384] backref lost (owner: 4, level: 1) root 4
-ERROR: extent[32505856 16384] backref lost (owner: 4, level: 0) root 4
-ERROR: extent[32522240 16384] backref lost (owner: 10, level: 1) root 10
-ERROR: extent[31506432 16384] backref lost (owner: 10, level: 0) root 10
-ERROR: extent[32571392 16384] backref lost (owner: 10, level: 0) root 10
-ERROR: extent[32538624 16384] backref lost (owner: 10, level: 0) root 10
-ERROR: extent[32587776 16384] backref lost (owner: 10, level: 0) root 10
-ERROR: extent[32620544 16384] backref lost (owner: 10, level: 0) root 10
-ERROR: extent[32636928 16384] backref lost (owner: 10, level: 0) root 10
-ERROR: extent[32653312 16384] backref lost (owner: 10, level: 0) root 10
-ERROR: extent[32669696 16384] backref lost (owner: 10, level: 0) root 10
-ERROR: extent[32686080 16384] backref lost (owner: 10, level: 0) root 10
-ERROR: errors found in extent allocation tree or chunk allocation
-[4/8] checking free space tree
-could not load free space tree: No such file or directory
-************ SAME LINE REPEATED 1914 OTHER TIMES *************
-could not load free space tree: No such file or directory
-[5/8] checking fs roots
-[6/8] checking only csums items (without verifying data)
-[7/8] checking root refs done with fs roots in lowmem mode, skipping
-[8/8] checking quota groups skipped (not enabled on this FS)
-Opening filesystem to check...
-Checking filesystem on /dev/sdh
-UUID: 8746a931-ff21-4a57-8bd5-4793e436629f
-found 3889350197248 bytes used, error(s) found
-total csum bytes: 3793435968
-total tree bytes: 4871340032
-total fs tree bytes: 751026176
-total extent tree bytes: 155582464
-btree space waste bytes: 249038677
-file data blocks allocated: 3884478431232
-  referenced 3928014991360
-
+On Thu, 26 Jun 2025 06:59:14 +0930 Qu Wenruo wrote:
+> =E5=9C=A8 2025/6/25 22:10, Hillf Danton =E5=86=99=E9=81=93:
+> > On Wed, 25 Jun 2025 20:19:06 +0930 Qu Wenruo wrote:
+> >> =3DE5=3D9C=3DA8 2025/6/25 09:26, Hillf Danton =3DE5=3D86=3D99=3DE9=3D81=
+> =3D93:
+> >>> On Wed, 25 Jun 2025 06:00:09 +0930 Qu Wenruo wrote:
+> >>>> =3D3DE5=3D3D9C=3D3DA8 2025/6/25 00:00, Edward Adam Davis =3D3DE5=3D3D=
+> 86=3D3D99=3D3DE9=3D
+> >> =3D3D81=3D3D93:
+> >>>>> Remove the lock uuid_mutex outside of sget_fc() to avoid the deadloc=
+> k
+> >>>>> reported by [1].
+> >>>>> =3D3D20
+> >>>>> [1]
+> >>>>> -> #1 (&type->s_umount_key#41/1){+.+.}-{4:4}:
+> >>>>>           lock_acquire+0x120/0x360 kernel/locking/lockdep.c:5871
+> >>>>>           down_write_nested+0x9d/0x200 kernel/locking/rwsem.c:1693
+> >>>>>           alloc_super+0x204/0x970 fs/super.c:345
+> >>> =3D20
+> >>> Given kzalloc [3], the syzbot report is false positive (a known lockde=
+> p
+> >>> issue) as nobody else should acquire s->s_umount lock.
+> >>> =3D20
+> >>> [3] https://web.git.kernel.org/pub/scm/linux/kernel/git/next/linux-nex=
+> t.=3D
+> >> git/tree/fs/super.c?id=3D3D7aacdf6feed1#n319
+> >>
+> >> Not a false alert either.
+> >>
+> >> sget_fc() can return an existing super block, we can race between a=3D2=
+> 0
+> >> mount and an unmount on the same super block.
+> >>
+> >> In that case it's going to cause problem.
+> >>
+> >> This is already fixed in the v4 (and later v5) patchset:
+> >>
+> >> https://lore.kernel.org/linux-btrfs/cover.1750724841.git.wqu@suse.com/
+> >>
+> > Can v5 survive the syzbot test?
+> 
+> Yes, I enabled lockdep during v5 tests.
+> 
+Fine, feel free to show us the Tested-by syzbot gave you.

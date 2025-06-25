@@ -1,67 +1,67 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 294812F1FEA
-	for <linux-btrfs@vger.kernel.org>; Wed, 25 Jun 2025 23:54:22 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C350928727A
+	for <linux-btrfs@vger.kernel.org>; Wed, 25 Jun 2025 23:54:23 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1750895663; cv=none; b=oJRS0fuX5a4wMx9makNEmOvOD2ewqzBKEaxoGX2cjnA0LJZWuAXMK6bJ8F8VBQDBmH9sDtgtKTpHibOktS79F5AYc94srYlKONXS3cvnJQ1InfmQtYT7/gTpCev18S01BQ4XgyoVPeqk2voMXjoyuftSpGPshy0Sg2b3K1bR89w=
+	t=1750895665; cv=none; b=ehI6XKwVzZkKu0uqcYaapTV0+D+AZFLtt8ead7wgTVwDrYXfAxqno7T+/7PUodx1Qg4KQVCgVujp6CVW/kOalQKiLYgTbCq9PwmazLjH//xFkRuf0wrTLRnmoB1us82j2b7LzKkyb5mh9Bas67qYyAqhzvbnOCqPUcoldHrCtIM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1750895663; c=relaxed/simple;
-	bh=BygwJfpvGoUy+lhyOy7jqv542/iO4qcAP32NU+IL6MM=;
+	s=arc-20240116; t=1750895665; c=relaxed/simple;
+	bh=oMMb8PcVnBfBSoZRHR0KJZ06gpHJuTTDjYYMBRACZsc=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=GTNow3SEu3jl34yx3gakCJxEJLRxezl9HXZ/mlwVSU6p1/NAXu74kOs//mqv3wvBwPEHAf9jQnrLn2Up+FCtryySWjChTaEnKotfLkjgPioaxYXqShHoXFMwFlxqfc5dnfiBr9RoTcPFgwUT32hcKOpTk9t2wIn4AXgLiG3FE8w=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=bFmxY5oW; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=bFmxY5oW; arc=none smtp.client-ip=195.135.223.130
+	 MIME-Version; b=RWOav2rf6+0IaMnPOXRfmrnLvJ+uD8gR0ZtIURWzrt7pv9HjT9esMGCaofG+Oad46UWJ2/m/wvLkHQV9TSrZQQonx4w9MvAPRRZ2qj9qZ9lkeXPZMMqpOmFA8KdY2Wjne0HJWY3WD7w9xrrcfh0NhZQor79AULxBL9vfue55KxA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=uf6xrGwN; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=uf6xrGwN; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="bFmxY5oW";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="bFmxY5oW"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="uf6xrGwN";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="uf6xrGwN"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 078C02119A;
-	Wed, 25 Jun 2025 23:54:14 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 68B131F74A;
+	Wed, 25 Jun 2025 23:54:18 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1750895654; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1750895658; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=XwKt/KH87Qik7WezNqufFvkwUREX3NWATxBqkGJh9uU=;
-	b=bFmxY5oW7Aj4gzezQkzzVITx4KebIeHaDGHUfTogJ/pVGvM8zbINFx2GZCZYR100Mf+QPs
-	DdVKHy71bEbSmSwB04E/pMBLeYu997pS4nrNsYUP93IcXIXK3kLEfFeuZDaa/qGQ1O8Hlb
-	39ojwXe+hE593j/v3K8+bV+O4iuHE+w=
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=bFmxY5oW
+	bh=NMa7Vh5dZ6JQiuCkVgEGme0g8flJ6daw9u2lOoHs2j4=;
+	b=uf6xrGwNMpfD0fg4wIJxTzN1eklDztGWY3EsO71vrPD9CW05Rm/8OseoMZucQ7LRO/IyCA
+	eE3VNIQIXPnmF5JFCjhMF2UXzaRtDl1HdkBZtJnx53N9HR/MMTxUo6fATb9LbhjXtXS++H
+	HkA9D4AbXkgZPTV9m05+Rom5doyTdEM=
+Authentication-Results: smtp-out2.suse.de;
+	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1750895654; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1750895658; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=XwKt/KH87Qik7WezNqufFvkwUREX3NWATxBqkGJh9uU=;
-	b=bFmxY5oW7Aj4gzezQkzzVITx4KebIeHaDGHUfTogJ/pVGvM8zbINFx2GZCZYR100Mf+QPs
-	DdVKHy71bEbSmSwB04E/pMBLeYu997pS4nrNsYUP93IcXIXK3kLEfFeuZDaa/qGQ1O8Hlb
-	39ojwXe+hE593j/v3K8+bV+O4iuHE+w=
+	bh=NMa7Vh5dZ6JQiuCkVgEGme0g8flJ6daw9u2lOoHs2j4=;
+	b=uf6xrGwNMpfD0fg4wIJxTzN1eklDztGWY3EsO71vrPD9CW05Rm/8OseoMZucQ7LRO/IyCA
+	eE3VNIQIXPnmF5JFCjhMF2UXzaRtDl1HdkBZtJnx53N9HR/MMTxUo6fATb9LbhjXtXS++H
+	HkA9D4AbXkgZPTV9m05+Rom5doyTdEM=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 4B46113301;
-	Wed, 25 Jun 2025 23:54:12 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id AA8F913301;
+	Wed, 25 Jun 2025 23:54:16 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id eIHkAySMXGjQMAAAD6G6ig
-	(envelope-from <wqu@suse.com>); Wed, 25 Jun 2025 23:54:12 +0000
+	id cPwdGyiMXGjQMAAAD6G6ig
+	(envelope-from <wqu@suse.com>); Wed, 25 Jun 2025 23:54:16 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org,
 	linux-fsdevel@vger.kernel.org
 Cc: viro@zeniv.linux.org.uk,
 	brauner@kernel.org,
 	jack@suse.cz
-Subject: [PATCH 3/6] btrfs: reject file operations if in shutdown state
-Date: Thu, 26 Jun 2025 09:23:44 +0930
-Message-ID: <b318ef9d2c725728d7cb6848f1e19f1b01cfc25b.1750895337.git.wqu@suse.com>
+Subject: [PATCH 5/6] btrfs: implement shutdown ioctl
+Date: Thu, 26 Jun 2025 09:23:46 +0930
+Message-ID: <700cfb62789c44fb922712a9fe62a53890840163.1750895337.git.wqu@suse.com>
 X-Mailer: git-send-email 2.49.0
 In-Reply-To: <cover.1750895337.git.wqu@suse.com>
 References: <cover.1750895337.git.wqu@suse.com>
@@ -72,164 +72,143 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Rspamd-Queue-Id: 078C02119A
-X-Rspamd-Action: no action
-X-Spam-Flag: NO
-X-Spamd-Result: default: False [-3.01 / 50.00];
+X-Spamd-Result: default: False [-2.80 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	ARC_NA(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:dkim,suse.com:email];
 	FUZZY_BLOCKED(0.00)[rspamd.com];
 	RCVD_VIA_SMTP_AUTH(0.00)[];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from,2a07:de40:b281:106:10:150:64:167:received];
+	MIME_TRACE(0.00)[0:+];
+	ARC_NA(0.00)[];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:mid];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
 	RCPT_COUNT_FIVE(0.00)[5];
-	RCVD_TLS_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
 	RCVD_COUNT_TWO(0.00)[2];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Spam-Score: -3.01
+	TO_DN_NONE(0.00)[];
+	RCVD_TLS_ALL(0.00)[]
 X-Spam-Level: 
+X-Spam-Flag: NO
+X-Spam-Score: -2.80
 
-This includes the following callbacks of file_operations:
+The shutdown interface should all follow the XFS one, which use magic
+'X', and ioctl number 125, with a u32 as flags.
 
-- read_iter()
-- write_iter()
-- mmap()
-- open()
-- remap_file_range()
-- uring_cmd()
-- splice_read()
-  This requires a small wrapper to do the extra shutdown check, then call
-  the regular filemap_splice_read() function
+For now btrfs don't distinguish DEFAULT and LOGFLUSH flags, both will
+freeze the fs first (implies committing the current transaction),
+setting the SHUTDOWN flag (along with fs error flag), thaw the fs.
 
-This should reject most of the file operations on a shutdown btrfs.
+For NOLOGFLUSH flag, the freeze/thaw part is skipped thus the current
+transaction is aborted.
 
-The callback ioctl() is intentionally skipped, as ext4 doesn't do the
-shutdown check on ioctl() either, thus I believe there is some special
-require for ioctl() callback even if the fs is fully shutdown.
+The new shutdown ioctl is hidden behind experimental features, as there
+are still some minor test failures exposed during the shutdown group
+run.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/file.c    | 25 ++++++++++++++++++++++++-
- fs/btrfs/ioctl.c   |  3 +++
- fs/btrfs/reflink.c |  3 +++
- 3 files changed, 30 insertions(+), 1 deletion(-)
+ fs/btrfs/ioctl.c           | 40 ++++++++++++++++++++++++++++++++++++++
+ include/uapi/linux/btrfs.h |  9 +++++++++
+ 2 files changed, 49 insertions(+)
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 247676f34f2e..918c39a5ed39 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1419,6 +1419,8 @@ ssize_t btrfs_do_write_iter(struct kiocb *iocb, struct iov_iter *from,
- 	struct btrfs_inode *inode = BTRFS_I(file_inode(file));
- 	ssize_t num_written, num_sync;
- 
-+	if (unlikely(btrfs_is_shutdown(inode->root->fs_info)))
-+		return -EIO;
- 	/*
- 	 * If the fs flips readonly due to some impossible error, although we
- 	 * have opened a file as writable, we have to stop this write operation
-@@ -1981,6 +1983,8 @@ static int btrfs_file_mmap(struct file	*filp, struct vm_area_struct *vma)
- {
- 	struct address_space *mapping = filp->f_mapping;
- 
-+	if (unlikely(btrfs_is_shutdown(inode_to_fs_info(file_inode(filp)))))
-+		return -EIO;
- 	if (!mapping->a_ops->read_folio)
- 		return -ENOEXEC;
- 
-@@ -3040,6 +3044,9 @@ static long btrfs_fallocate(struct file *file, int mode,
- 	int blocksize = BTRFS_I(inode)->root->fs_info->sectorsize;
- 	int ret;
- 
-+	if (unlikely(btrfs_is_shutdown(inode_to_fs_info(inode))))
-+		return -EIO;
-+
- 	/* Do not allow fallocate in ZONED mode */
- 	if (btrfs_is_zoned(inode_to_fs_info(inode)))
- 		return -EOPNOTSUPP;
-@@ -3731,6 +3738,9 @@ static int btrfs_file_open(struct inode *inode, struct file *filp)
- {
- 	int ret;
- 
-+	if (unlikely(btrfs_is_shutdown(inode_to_fs_info(inode))))
-+		return -EIO;
-+
- 	filp->f_mode |= FMODE_NOWAIT | FMODE_CAN_ODIRECT;
- 
- 	ret = fsverity_file_open(inode, filp);
-@@ -3743,6 +3753,9 @@ static ssize_t btrfs_file_read_iter(struct kiocb *iocb, struct iov_iter *to)
- {
- 	ssize_t ret = 0;
- 
-+	if (unlikely(btrfs_is_shutdown(inode_to_fs_info(file_inode(iocb->ki_filp)))))
-+		return -EIO;
-+
- 	if (iocb->ki_flags & IOCB_DIRECT) {
- 		ret = btrfs_direct_read(iocb, to);
- 		if (ret < 0 || !iov_iter_count(to) ||
-@@ -3753,10 +3766,20 @@ static ssize_t btrfs_file_read_iter(struct kiocb *iocb, struct iov_iter *to)
- 	return filemap_read(iocb, to, ret);
- }
- 
-+static ssize_t btrfs_file_splice_read(struct file *in, loff_t *ppos,
-+				      struct pipe_inode_info *pipe,
-+				      size_t len, unsigned int flags)
-+{
-+	if (unlikely(btrfs_is_shutdown(inode_to_fs_info(file_inode(in)))))
-+		return -EIO;
-+
-+	return filemap_splice_read(in, ppos, pipe, len, flags);
-+}
-+
- const struct file_operations btrfs_file_operations = {
- 	.llseek		= btrfs_file_llseek,
- 	.read_iter      = btrfs_file_read_iter,
--	.splice_read	= filemap_splice_read,
-+	.splice_read	= btrfs_file_splice_read,
- 	.write_iter	= btrfs_file_write_iter,
- 	.splice_write	= iter_file_splice_write,
- 	.mmap		= btrfs_file_mmap,
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 65763bc6a0f6..d86967bd3c9c 100644
+index d86967bd3c9c..1550fe7887fa 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
-@@ -5066,6 +5066,9 @@ static int btrfs_uring_encoded_write(struct io_uring_cmd *cmd, unsigned int issu
+@@ -5212,6 +5212,36 @@ static int btrfs_ioctl_subvol_sync(struct btrfs_fs_info *fs_info, void __user *a
+ 	return 0;
+ }
  
- int btrfs_uring_cmd(struct io_uring_cmd *cmd, unsigned int issue_flags)
++#ifdef CONFIG_BTRFS_EXPERIMENTAL
++static int btrfs_emergency_shutdown(struct btrfs_fs_info *fs_info, u32 flags)
++{
++	int ret = 0;
++
++	if (flags >= BTRFS_SHUTDOWN_FLAGS_LAST)
++		return -EINVAL;
++
++	if (btrfs_is_shutdown(fs_info))
++		return 0;
++
++	switch (flags) {
++	case BTRFS_SHUTDOWN_FLAGS_LOGFLUSH:
++	case BTRFS_SHUTDOWN_FLAGS_DEFAULT:
++		ret = freeze_super(fs_info->sb, FREEZE_HOLDER_KERNEL, NULL);
++		if (ret)
++			return ret;
++		btrfs_force_shutdown(fs_info);
++		ret = thaw_super(fs_info->sb, FREEZE_HOLDER_KERNEL, NULL);
++		if (ret)
++			return ret;
++		break;
++	case BTRFS_SHUTDOWN_FLAGS_NOLOGFLUSH:
++		btrfs_force_shutdown(fs_info);
++		break;
++	}
++	return ret;
++}
++#endif
++
+ long btrfs_ioctl(struct file *file, unsigned int
+ 		cmd, unsigned long arg)
  {
-+	if (unlikely(btrfs_is_shutdown(inode_to_fs_info(file_inode(cmd->file)))))
-+		return -EIO;
-+
- 	switch (cmd->cmd_op) {
- 	case BTRFS_IOC_ENCODED_READ:
- #if defined(CONFIG_64BIT) && defined(CONFIG_COMPAT)
-diff --git a/fs/btrfs/reflink.c b/fs/btrfs/reflink.c
-index 0197bd9160a7..123a5682514b 100644
---- a/fs/btrfs/reflink.c
-+++ b/fs/btrfs/reflink.c
-@@ -869,6 +869,9 @@ loff_t btrfs_remap_file_range(struct file *src_file, loff_t off,
- 	bool same_inode = dst_inode == src_inode;
- 	int ret;
+@@ -5219,6 +5249,8 @@ long btrfs_ioctl(struct file *file, unsigned int
+ 	struct btrfs_fs_info *fs_info = inode_to_fs_info(inode);
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	void __user *argp = (void __user *)arg;
++	/* If @arg is just an unsigned long value. */
++	unsigned long flags;
  
-+	if (unlikely(btrfs_is_shutdown(inode_to_fs_info(file_inode(src_file)))))
-+		return -EIO;
-+
- 	if (remap_flags & ~(REMAP_FILE_DEDUP | REMAP_FILE_ADVISORY))
- 		return -EINVAL;
+ 	switch (cmd) {
+ 	case FS_IOC_GETVERSION:
+@@ -5367,7 +5399,15 @@ long btrfs_ioctl(struct file *file, unsigned int
+ #endif
+ 	case BTRFS_IOC_SUBVOL_SYNC_WAIT:
+ 		return btrfs_ioctl_subvol_sync(fs_info, argp);
++#ifdef CONFIG_BTRFS_EXPERIMENTAL
++	case BTRFS_IOC_SHUTDOWN:
++		if (!capable(CAP_SYS_ADMIN))
++			return -EPERM;
++		if (get_user(flags, (__u32 __user *)arg))
++			return -EFAULT;
++		return btrfs_emergency_shutdown(fs_info, flags);
+ 	}
++#endif
  
+ 	return -ENOTTY;
+ }
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index dd02160015b2..8f6324cf15d9 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -1096,6 +1096,12 @@ enum btrfs_err_code {
+ 	BTRFS_ERROR_DEV_RAID1C4_MIN_NOT_MET,
+ };
+ 
++/* Flags for IOC_SHUTDOWN, should match XFS' flags. */
++#define BTRFS_SHUTDOWN_FLAGS_DEFAULT	0x0
++#define BTRFS_SHUTDOWN_FLAGS_LOGFLUSH	0x1
++#define BTRFS_SHUTDOWN_FLAGS_NOLOGFLUSH	0x2
++#define BTRFS_SHUTDOWN_FLAGS_LAST	0x3
++
+ #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
+ 				   struct btrfs_ioctl_vol_args)
+ #define BTRFS_IOC_DEFRAG _IOW(BTRFS_IOCTL_MAGIC, 2, \
+@@ -1217,6 +1223,9 @@ enum btrfs_err_code {
+ #define BTRFS_IOC_SUBVOL_SYNC_WAIT _IOW(BTRFS_IOCTL_MAGIC, 65, \
+ 					struct btrfs_ioctl_subvol_wait)
+ 
++/* Shutdown ioctl should follow XFS's interfaces, thus not using btrfs magic. */
++#define BTRFS_IOC_SHUTDOWN	_IOR('X', 125, __u32)
++
+ #ifdef __cplusplus
+ }
+ #endif
 -- 
 2.49.0
 

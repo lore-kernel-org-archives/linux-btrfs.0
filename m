@@ -1,64 +1,64 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B95202EA484
-	for <linux-btrfs@vger.kernel.org>; Thu, 26 Jun 2025 14:30:24 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F2BBC2EA493
+	for <linux-btrfs@vger.kernel.org>; Thu, 26 Jun 2025 14:30:25 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1750948226; cv=none; b=Pbj26lMY/sIbOiidP6yVYEHO7tqBvTR0o648yKHQlnddwyFp6Pn2mx+L6bO/dAcdqr/A6PNFV9uhRQeK23smuXagU/UjLLcUfi7PxO/W1YmW4NwaTwUfnUD+DiJJwSDRAUQZxQ9mjVuPaaHkCorNxeUsL4Tal0GI5QLHjjdlvyM=
+	t=1750948227; cv=none; b=QDf7II95ya6JN0Bh9fAQXBbEwWkOEtdz8U24XJzxYKLLKzr5PkvO5jF28a+VtRcByCD+wkJWwBj1A9/bV56e8EyOTJcN5w6znKsruc1oEJ+mJX3jgRgBUXyHCNRoFR9s52goGQicA8BheeiieoGVm2tpAGxNC1xkYz6ecROv69Y=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1750948226; c=relaxed/simple;
-	bh=8EnR1BLQeeWm4c8S1lrLEgTLK98DNwXVPYINGJF378w=;
+	s=arc-20240116; t=1750948227; c=relaxed/simple;
+	bh=l6uWFuaKSaJXdz4QN52z1d74Ah35y6b8QnJrlLdHRqA=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=WWSv9TmohC9JRmoEnRcoa40lmEsB5GYxc0xuuYuJj9yHt/eYa1gMRFPgb0xCZg/HxCbfqdabr6c202Q/hCmgfzeizFWA4fYVKEuVStMxHRQIcYYFUeNMBiTQl/Ot+BXTvQ9nbPx3lXuEs/BTw64wq9txWg44quDqv2HnOOYlgho=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=tJ2btaH6; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=tJ2btaH6; arc=none smtp.client-ip=195.135.223.130
+	 MIME-Version; b=d3Me7nY1YxSuALHdrK7P/qA8231LuNYvcBuU1cb233/8l3bcemsxxs4BnL4Eg1AlZY3oiKv4lMmZFMvDFDzcJBLsJmoNoC+Qn26ia/hF8/7+FZABZDso8E7pWmBwhHUgTstbrWmt8fVmfkUPNRiVn/kMH4A2fUUnVD+kL7NsSD4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=vJ5gLPuA; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=vJ5gLPuA; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="tJ2btaH6";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="tJ2btaH6"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="vJ5gLPuA";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="vJ5gLPuA"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id BC0A621172;
-	Thu, 26 Jun 2025 14:30:19 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 39CDB1F395;
+	Thu, 26 Jun 2025 14:30:24 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1750948219; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1750948224; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=H1D9zvHShvzZE71uCOH/yz4kBYRrKUAeRAwu7ZC17lU=;
-	b=tJ2btaH6NWGKuaj4INxCDiMSZwV1z8kY9MVDBe8TyYw/QP8VkaqeAx4gFzFGZsBkVe+RQF
-	ngrOnrKRhrnHze79pBIRco62FI4/3K4CXvV7Y4S/lCLT8aUL4VKVs7ZfMrRPF7HUcviRlJ
-	YjHsAPYmyHC6u31qzWzkHPP0TqR6pMQ=
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=tJ2btaH6
+	bh=XzdQr7nblnm9zimIAV8iJQD6tt/Vy8EG/KcNb+Wiad0=;
+	b=vJ5gLPuAwAUFKWZAfREKFfWx46KAFnKqn+TI1C1HOUAOyaIMykJq9tIbMuMXXs1MdRAmW7
+	tnjVY46wxGZzLDpPxosNf+MqnuQ5xzNnbjU02fhwzr8HVJWO2VaF5ecUVJshviP8pSA2FW
+	MXPVtIDMOo8c2RXI08qb+SW1fRyY6ck=
+Authentication-Results: smtp-out2.suse.de;
+	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1750948219; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1750948224; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=H1D9zvHShvzZE71uCOH/yz4kBYRrKUAeRAwu7ZC17lU=;
-	b=tJ2btaH6NWGKuaj4INxCDiMSZwV1z8kY9MVDBe8TyYw/QP8VkaqeAx4gFzFGZsBkVe+RQF
-	ngrOnrKRhrnHze79pBIRco62FI4/3K4CXvV7Y4S/lCLT8aUL4VKVs7ZfMrRPF7HUcviRlJ
-	YjHsAPYmyHC6u31qzWzkHPP0TqR6pMQ=
+	bh=XzdQr7nblnm9zimIAV8iJQD6tt/Vy8EG/KcNb+Wiad0=;
+	b=vJ5gLPuAwAUFKWZAfREKFfWx46KAFnKqn+TI1C1HOUAOyaIMykJq9tIbMuMXXs1MdRAmW7
+	tnjVY46wxGZzLDpPxosNf+MqnuQ5xzNnbjU02fhwzr8HVJWO2VaF5ecUVJshviP8pSA2FW
+	MXPVtIDMOo8c2RXI08qb+SW1fRyY6ck=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id B508F138A7;
-	Thu, 26 Jun 2025 14:30:19 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 32753138A7;
+	Thu, 26 Jun 2025 14:30:24 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 6S0vLHtZXWgYLgAAD6G6ig
-	(envelope-from <dsterba@suse.com>); Thu, 26 Jun 2025 14:30:19 +0000
+	id 9XpNDIBZXWgiLgAAD6G6ig
+	(envelope-from <dsterba@suse.com>); Thu, 26 Jun 2025 14:30:24 +0000
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 2/4] btrfs: pass dentry to btrfs_mksubvol() and btrfs_mksnapshot()
-Date: Thu, 26 Jun 2025 16:30:10 +0200
-Message-ID: <e4a6cbdce516a0e9fb32c3a1b2c9d8a943373841.1750948128.git.dsterba@suse.com>
+Subject: [PATCH 4/4] btrfs: rename inode number parameter passed to btrfs_check_dir_item_collision()
+Date: Thu, 26 Jun 2025 16:30:12 +0200
+Message-ID: <e2238a75fe08e6d51761f88f4f8072b3f47dc20a.1750948128.git.dsterba@suse.com>
 X-Mailer: git-send-email 2.49.0
 In-Reply-To: <cover.1750948128.git.dsterba@suse.com>
 References: <cover.1750948128.git.dsterba@suse.com>
@@ -69,105 +69,74 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Rspamd-Queue-Id: BC0A621172
-X-Rspamd-Action: no action
 X-Spam-Flag: NO
-X-Spamd-Result: default: False [-3.01 / 50.00];
+X-Spam-Score: -2.80
+X-Spamd-Result: default: False [-2.80 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
 	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	ARC_NA(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	TO_DN_SOME(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	FUZZY_BLOCKED(0.00)[rspamd.com];
-	FROM_HAS_DN(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:mid,suse.com:dkim,suse.com:email];
-	RCVD_TLS_ALL(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
 	RCPT_COUNT_TWO(0.00)[2];
+	ARC_NA(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	MIME_TRACE(0.00)[0:+];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Spam-Score: -3.01
+	FUZZY_BLOCKED(0.00)[rspamd.com];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	TO_DN_SOME(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:email,imap1.dmz-prg2.suse.org:helo]
 X-Spam-Level: 
 
-There's no reason to pass 'struct path' to btrfs_mksubvol(), though it's
-been like the since the first commit 76dda93c6ae2c1 ("Btrfs: add
-snapshot/subvolume destroy ioctl").  We only use the dentry so we should
-pass it directly.
+The name 'dir' is misleading as it's the inode number of the directory,
+so rename it accordingly.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/ioctl.c | 12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
+ fs/btrfs/dir-item.c | 4 ++--
+ fs/btrfs/dir-item.h | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 092320cb467ef6..225fc00311a4c4 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -892,13 +892,13 @@ static inline int btrfs_may_create(struct mnt_idmap *idmap,
-  * sys_mkdirat and vfs_mkdir, but we only do a single component lookup
-  * inside this filesystem so it's quite a bit simpler.
-  */
--static noinline int btrfs_mksubvol(const struct path *parent,
-+static noinline int btrfs_mksubvol(struct dentry *parent,
- 				   struct mnt_idmap *idmap,
- 				   struct qstr *qname, struct btrfs_root *snap_src,
- 				   bool readonly,
- 				   struct btrfs_qgroup_inherit *inherit)
- {
--	struct inode *dir = d_inode(parent->dentry);
-+	struct inode *dir = d_inode(parent);
- 	struct btrfs_fs_info *fs_info = inode_to_fs_info(dir);
- 	struct dentry *dentry;
- 	struct fscrypt_str name_str = FSTR_INIT((char *)qname->name, qname->len);
-@@ -908,7 +908,7 @@ static noinline int btrfs_mksubvol(const struct path *parent,
- 	if (ret == -EINTR)
- 		return ret;
- 
--	dentry = lookup_one(idmap, qname, parent->dentry);
-+	dentry = lookup_one(idmap, qname, parent);
- 	ret = PTR_ERR(dentry);
- 	if (IS_ERR(dentry))
- 		goto out_unlock;
-@@ -946,7 +946,7 @@ static noinline int btrfs_mksubvol(const struct path *parent,
- 	return ret;
+diff --git a/fs/btrfs/dir-item.c b/fs/btrfs/dir-item.c
+index b29cc31a7c4a9d..69863e398e223f 100644
+--- a/fs/btrfs/dir-item.c
++++ b/fs/btrfs/dir-item.c
+@@ -227,7 +227,7 @@ struct btrfs_dir_item *btrfs_lookup_dir_item(struct btrfs_trans_handle *trans,
+ 	return di;
  }
  
--static noinline int btrfs_mksnapshot(const struct path *parent,
-+static noinline int btrfs_mksnapshot(struct dentry *parent,
- 				   struct mnt_idmap *idmap,
- 				   struct qstr *qname,
- 				   struct btrfs_root *root,
-@@ -1208,7 +1208,7 @@ static noinline int __btrfs_ioctl_snap_create(struct file *file,
- 	}
+-int btrfs_check_dir_item_collision(struct btrfs_root *root, u64 dir,
++int btrfs_check_dir_item_collision(struct btrfs_root *root, u64 dir_ino,
+ 				   const struct fscrypt_str *name)
+ {
+ 	int ret;
+@@ -242,7 +242,7 @@ int btrfs_check_dir_item_collision(struct btrfs_root *root, u64 dir,
+ 	if (!path)
+ 		return -ENOMEM;
  
- 	if (subvol) {
--		ret = btrfs_mksubvol(&file->f_path, idmap, &qname, NULL,
-+		ret = btrfs_mksubvol(file_dentry(file), idmap, &qname, NULL,
- 				     readonly, inherit);
- 	} else {
- 		CLASS(fd, src)(fd);
-@@ -1239,7 +1239,7 @@ static noinline int __btrfs_ioctl_snap_create(struct file *file,
- 			 */
- 			ret = -EINVAL;
- 		} else {
--			ret = btrfs_mksnapshot(&file->f_path, idmap, &qname,
-+			ret = btrfs_mksnapshot(file_dentry(file), idmap, &qname,
- 					       BTRFS_I(src_inode)->root,
- 					       readonly, inherit);
- 		}
+-	key.objectid = dir;
++	key.objectid = dir_ino;
+ 	key.type = BTRFS_DIR_ITEM_KEY;
+ 	key.offset = btrfs_name_hash(name->name, name->len);
+ 
+diff --git a/fs/btrfs/dir-item.h b/fs/btrfs/dir-item.h
+index 8462579a95f404..e52174a8baf92c 100644
+--- a/fs/btrfs/dir-item.h
++++ b/fs/btrfs/dir-item.h
+@@ -14,7 +14,7 @@ struct btrfs_inode;
+ struct btrfs_root;
+ struct btrfs_trans_handle;
+ 
+-int btrfs_check_dir_item_collision(struct btrfs_root *root, u64 dir,
++int btrfs_check_dir_item_collision(struct btrfs_root *root, u64 dir_ino,
+ 			  const struct fscrypt_str *name);
+ int btrfs_insert_dir_item(struct btrfs_trans_handle *trans,
+ 			  const struct fscrypt_str *name, struct btrfs_inode *dir,
 -- 
 2.49.0
 

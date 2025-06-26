@@ -1,125 +1,105 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from mail-ej1-f43.google.com (mail-ej1-f43.google.com [209.85.218.43])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 692562EAB81
-	for <linux-btrfs@vger.kernel.org>; Thu, 26 Jun 2025 14:30:31 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 21A312EACE3
+	for <linux-btrfs@vger.kernel.org>; Thu, 26 Jun 2025 14:46:36 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.43
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1750948233; cv=none; b=ZPHwz0ziqtCe0I0hXj5KBx/9h3XtI99WvVNanvAcA463JnbyoFMVbOIdnslC1jJGr2JEpY5jAK7rY7zU3hqgCW1yJVGXSdre86l05S7Hs/RuEl9TLfGGne4cg/GW1zlm03UihaFXjWCGgrvP36I8Qhx0e6heza3Qz2R5GKMOEe4=
+	t=1750949199; cv=none; b=CkTRqLaLdBlx+J86rUXJ6lgVC5mnAx3jeAwSU1FvOzAjpy9hEwyQD86dM2aaQ8Tkyo87aUrB1sElc7N5Fbg5Ra6Dx03bYlZUULcP2jB/0h4ZtsF47jjj4tKGnUohkg47OnZxFhk3P09kqJD8L3f9kvQydmQq3e+uORHBW8R7bkU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1750948233; c=relaxed/simple;
-	bh=/hqSlktrqOVwbYJ0EA7kyutJRlnekr7zHacy0puxf5U=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=jcSY9WKvGLY9zKXb4jyqxqqseShIulmfR/xDgDWWuVj8r5S1wtlYA/2mrR0WTFF8aJ1kNnfpTouXGRv83y1j9wiQWWpEWvrGf12gXd0XafoZ5BibtMo+kUdK76ytwbENL3gIWqHwFfLRAv0Zjg8MtewfPQEri41DRIryoulpuus=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=c1s2hIy4; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=uN793+eO; arc=none smtp.client-ip=195.135.223.130
+	s=arc-20240116; t=1750949199; c=relaxed/simple;
+	bh=noOikzxRJUl14Ub0sClioFuEstMIhfUeZLMzieYlkBo=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=VfIf9+THixbUHVOGyNtjpJNXd3NDqpDo1oRoAmO2rN6F4QszWtfMGoaM5LB4NdjahIaRo1WytUXa5jzY9TtnDfRiTTjKB/pNHlLURP/1/hzN+MzR5lWiNjmh5hUOqS6+66PAScJmAQ/4hUgtmBC6KMFPU9vTNL+6WbMIbSpLxkw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=KXWOOvhn; arc=none smtp.client-ip=209.85.218.43
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="c1s2hIy4";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="uN793+eO"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id EF9862116E;
-	Thu, 26 Jun 2025 14:30:21 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1750948222; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=t/Yjhqik1AKEtkySeFHR7k7W9JXiiCPV4Hx7LOkdPuc=;
-	b=c1s2hIy4gCqTEw0vUtjC0pH1RLmyO2/z8GgljPhFM0FEqqfoMGZqkuA7J6oboM+t4heIVb
-	hCHjykKkvgbuP82mtP3yrjxh9ofuRAbQhAsbltJCfPlKL7MxLmHMCuswOK4sZsYCxEoYI1
-	nVWazC5hwhY5iy4klXRY0PVctHVWw78=
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1750948221; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=t/Yjhqik1AKEtkySeFHR7k7W9JXiiCPV4Hx7LOkdPuc=;
-	b=uN793+eOD/en+BDQT5v/uLBZQFXj3WIiiSJlH4hh8b1ujZ/fspjM9l6qsJxpATXmZFL8sF
-	E7v9JYJ7Q6OPShzvNesypL4c6jUkIzX35Vf4TSmKfoEjHjJLaxUpGgvQ+HWvy+ARLE8juY
-	FCceVlvvfyfUu/AKyEmpnmqQs0nr/kI=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id E87FC138A7;
-	Thu, 26 Jun 2025 14:30:21 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id zle0OH1ZXWgfLgAAD6G6ig
-	(envelope-from <dsterba@suse.com>); Thu, 26 Jun 2025 14:30:21 +0000
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 3/4] btrfs: pass bool to indicate subvolume/snapshot creation type
-Date: Thu, 26 Jun 2025 16:30:11 +0200
-Message-ID: <f2afbd58ab13c3393fb59df405e955ccfc911ea6.1750948128.git.dsterba@suse.com>
-X-Mailer: git-send-email 2.49.0
-In-Reply-To: <cover.1750948128.git.dsterba@suse.com>
-References: <cover.1750948128.git.dsterba@suse.com>
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="KXWOOvhn"
+Received: by mail-ej1-f43.google.com with SMTP id a640c23a62f3a-ae0de0c03e9so96613966b.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 26 Jun 2025 07:46:36 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1750949195; x=1751553995; darn=vger.kernel.org;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:from:to:cc:subject:date:message-id:reply-to;
+        bh=LzQA/XwUwP5a0XPEORRBVwjJdl63AtKA/a2VZ1wcXmU=;
+        b=KXWOOvhnQCXi/3+pERW2P32hWtYBcyMrVFnbx23bMhazO77kKjoV9qF7eICdhR2X5h
+         83Zv7ZZj3yZZsLy2sVROxaNazmOYkrZ4WinvVo9fme+igWuKIu8Gn/lroITydHt09109
+         bWWTiZPZ5SpAHp9KOuf6xhFW8qBJTlOl+FdCH1zwaaISIsnsGXirhaTwCfBGLQZIBq8R
+         wrYWvWe0kfq2IBZAyoviKRXys7TNiwWRzHooCmfidus5k1HuNF/7Fj9XmDc+aIUN69u7
+         tSl54NdSv7AZyk38RGoO4jrdLNH4ImiytBmyjy0AA0MoAcMsZUp6skB0kVf0qsD6s3Vv
+         mV2w==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1750949195; x=1751553995;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=LzQA/XwUwP5a0XPEORRBVwjJdl63AtKA/a2VZ1wcXmU=;
+        b=lbwqhtsG8X37LVuQK009gTD5bwfANeeVftk9UL7azXpuE4xTTsPiZMSpl7EOCFAcX8
+         yCpSZl8sAJoAuT/lh+9mo+VkxTHcjg2TZxmfjmOTUmXR65/hwOrS72WRgIdV1yo6bmir
+         AbxueUBo1cJ6MwnvslYsUrhSHucvPZuPLlu1MdcbmOH7jXGH+HDvS5o2Tm/rY0k8PthP
+         Oej5FKd25+MM3B5U8pNdLr5nLUBzKkYUmwXt98DtL2PmX83o2FDzos+3c3czFhyNvmHG
+         upLSs+hu1StVAhqmZTQma5/D6w5l/e8lhTpCxvjSbWlUh/hNe0rfYnvNmvYFcuniPWO0
+         CPvA==
+X-Gm-Message-State: AOJu0Ywf9p/BpjHPLAzO339io+f1PKsJJlfwGjxJLawVt//Jfa4c4qNK
+	ArH7rbI2sxxhIvRShO1XYQ/bc+wmrCI9oHBUvD2CIkB176L00WQRyeCOjiC1BXad4TcHVrWXCdR
+	IyfyqlCgNqMqCfuid7r4UP2Hu9R/X2SCt11pZAXfQ0en/8ACsay9ji5g=
+X-Gm-Gg: ASbGncsWPdwTAp1pNXMzBFOKJXu8A6vCSkgB//ciUvDZFpE1xoqSc0z/4hs79g++wJY
+	zQScxFvh1601EMWhtUdhrN4EwrAt9S1rIZfti9tJS1TBxLQq5VZGIMQw98iJPd4A1ahFk36ctM/
+	QmHy4go0+GDIz0Hw5pdpnb2CBlJS7nFukyADK/tOptAw==
+X-Google-Smtp-Source: AGHT+IHZwBLHyH93XS3cCn+9LC1aOiC2tJd3EjGjUxzQln3Has2srf3+2oodNE76JW4RX0vDtDkvvOn1UKB8pfu2iik=
+X-Received: by 2002:a17:906:f10c:b0:ae0:afad:2031 with SMTP id
+ a640c23a62f3a-ae0bef3a0abmr638774166b.49.1750949195281; Thu, 26 Jun 2025
+ 07:46:35 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-2.80 / 50.00];
-	BAYES_HAM(-3.00)[99.99%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	RCPT_COUNT_TWO(0.00)[2];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	ARC_NA(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	FUZZY_BLOCKED(0.00)[rspamd.com];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	TO_DN_SOME(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:mid];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Level: 
-X-Spam-Flag: NO
-X-Spam-Score: -2.80
+References: <cover.1750858539.git.dsterba@suse.com>
+In-Reply-To: <cover.1750858539.git.dsterba@suse.com>
+From: Daniel Vacek <neelx@suse.com>
+Date: Thu, 26 Jun 2025 16:46:24 +0200
+X-Gm-Features: Ac12FXxmN5SVMzS8YnZJUrTX4e05Rgpf71kb3avVH2dFaRJvBa5EwAVHRnp46zo
+Message-ID: <CAPjX3FcZSo7GBMED3p3CnTbnjPEZLvSjKWQisGDTSzuLnqvogw@mail.gmail.com>
+Subject: Re: [PATCH v2 0/2] Device name and RCU string
+To: David Sterba <dsterba@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/ioctl.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+On Wed, 25 Jun 2025 at 15:37, David Sterba <dsterba@suse.com> wrote:
+>
+> v2:
+> - drop patch adding RCU protection around update_dev_time(), there's a
+>   sleeping allocation inside; after revisiting the RCU requirements, I
+>   don't think it's needed and we can access the raw string (the same way
+>   it was done with rcu_string), the time update is called from scratch
+>   superblocks and after the ->dev_list hook is removed, so there's no
+>   chance it can be reached from device_list_add
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 225fc00311a4c4..8e90d4c9035e9c 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1182,7 +1182,7 @@ static noinline int btrfs_ioctl_resize(struct file *file,
- 
- static noinline int __btrfs_ioctl_snap_create(struct file *file,
- 				struct mnt_idmap *idmap,
--				const char *name, unsigned long fd, int subvol,
-+				const char *name, unsigned long fd, bool subvol,
- 				bool readonly,
- 				struct btrfs_qgroup_inherit *inherit)
- {
-@@ -1276,7 +1276,7 @@ static noinline int btrfs_ioctl_snap_create(struct file *file,
- }
- 
- static noinline int btrfs_ioctl_snap_create_v2(struct file *file,
--					       void __user *arg, int subvol)
-+					       void __user *arg, bool subvol)
- {
- 	struct btrfs_ioctl_vol_args_v2 *vol_args;
- 	int ret;
--- 
-2.49.0
+Right, I missed that.
 
+> After recent simplifications of the RCU usage in messages, this patchset
+> implements the RCU protection directly without the RCU string so this
+> API can be removed completely as we don't have nor plan anything else to
+> use it for.
+>
+> David Sterba (2):
+>   btrfs: open code RCU for device name
+>   btrfs: remove struct rcu_string
+
+The rest still looks good.
+Reviewed-by: Daniel Vacek <neelx@suse.com>
+
+>  fs/btrfs/rcu-string.h | 40 ----------------------------------------
+>  fs/btrfs/volumes.c    | 29 +++++++++++++++++------------
+>  fs/btrfs/volumes.h    |  6 +++---
+>  fs/btrfs/zoned.c      | 23 +++++++++++------------
+>  4 files changed, 31 insertions(+), 67 deletions(-)
+>  delete mode 100644 fs/btrfs/rcu-string.h
+>
+> --
+> 2.49.0
+>
+>

@@ -1,239 +1,436 @@
-Received: from mout.gmx.net (mout.gmx.net [212.227.15.15])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9793B202F8F;
-	Wed,  9 Jul 2025 20:40:13 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.15.15
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EC97A41C71
+	for <linux-btrfs@vger.kernel.org>; Wed,  9 Jul 2025 21:54:24 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1752093616; cv=none; b=Uv+g7AyPfk79iybiA4XIz3a5anMqJXMA6JD86P6nSjvVcvfTAEPMBlrXVWy1XbpMUrNkAWOynxNHi2kEXKCNBgHdxMJMFUSSr8PdK9TgHK09GMLBe/7FRrVaBkCfhtOWcMYr9tzZZsHaUTT7nBXkWxlrH06/yklMFYs8Xdj53Bw=
+	t=1752098067; cv=none; b=KbX6SoROLfjq746SPHK0LR/gmY4bSqBRtXZpn2abYv06P6K8+8kcjBt7WT2vAo7N/HTlmojUgASm1E7fV2hwSOWTa+xIeQq7nMNR+i2q8x9fvpIfbj67UPk2WRSVpGWbno2AFRnlE6UBRTwMqit69rpkvT0PDGkBTOMxdZ7XyW0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1752093616; c=relaxed/simple;
-	bh=6bCNaAgvFnAoxUXkG51sXFPAF2A8790czG/Stio24hM=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=p5AQJFGa9r0YWXG/KJ0M2IhEytQYIPIJSIu6Dl5NhuLBgi3j10FeX+M/DIYOA25oq40OTRk757CkCiUU4GWC3blKo+1iltFeHqXPVBjWKMdT6e/jJVqQKTHaFH4xnoOKlaw2i3K5dNEd4+Sw6lj8EH4NKEKJj/1CdPQduTzR9Wc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=QfxLRjgb; arc=none smtp.client-ip=212.227.15.15
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
+	s=arc-20240116; t=1752098067; c=relaxed/simple;
+	bh=Tzf3FQd91lGgIE8iRAp/59IfXQ8qVpcv2WB/in8hg1k=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=H/FOR6Yo8oEtSV0SpSCFvjAD/xPAXr1kZ43KT+XI04PRijSWfTny8gEv+u1b8H9lOOHDIVwealcERHQX4uVHW71tM7bNATW6NNAq3vlVHEaBvWsNJmtoS7FzI8Za9/1A4lZWnkA56ZtHV2382AB+88C3o+gehT1ViGAZ4Pm4Imo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=TxztaHe/; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=TxztaHe/; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="QfxLRjgb"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1752093611; x=1752698411; i=quwenruo.btrfs@gmx.com;
-	bh=7u2SCYDTY11+D5/U+Iljw8ciYu2Uiz0x7huvA6oXWLk=;
-	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
-	 References:From:In-Reply-To:Content-Type:
-	 Content-Transfer-Encoding:cc:content-transfer-encoding:
-	 content-type:date:from:message-id:mime-version:reply-to:subject:
-	 to;
-	b=QfxLRjgbeW9fw+ryxzK3IEmk+g/btYHPl5UyumVoUAs5upPG53DzeE/wjjwiSKGb
-	 0nUtKC14xBELfzjutFkcFTktfDlF/0/bpjuIcIFH9Tdxs0FAMdKJYGx7pg2XrLnSr
-	 TnurZ4S6L/MDVLMoqMFmyu3sjRXSvurVymXBaxNi42DKNuZ4p3I2tcTsw8jqEXrJO
-	 gBcsAGkLBKaYTEFXsq8RcOWRlU9m6sWOcc7xGNc/7D/aHTKPeqDmkrQBIQoiIZFfq
-	 W1i/GRWJ7td7D0ZrWQNt0pzjLi4AQGcLyyGdligArZ1e6VdO3d6jI2PKWJSSzmXd2
-	 bP+aArDPexNtpGyOvQ==
-X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from [172.16.0.229] ([159.196.52.54]) by mail.gmx.net (mrgmx004
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1MulqD-1uqifC06F9-00tCD2; Wed, 09
- Jul 2025 22:40:09 +0200
-Message-ID: <02bf24f8-c7f1-4f70-8af0-73b9656c00b6@gmx.com>
-Date: Thu, 10 Jul 2025 06:10:04 +0930
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="TxztaHe/";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="TxztaHe/"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 03B451F443;
+	Wed,  9 Jul 2025 21:54:23 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1752098063; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=QX/qXBKc61TO9sZcpwGo0z8GL4fijpvU69vhW9aAQnA=;
+	b=TxztaHe/bM2m3Nu9bKD5Az5JExckAquJYgARVq+nz+k7ogkHLCwNXbH5hGE2oz02KKTCy1
+	8KfLTMCjw/hAK/sabQS5Dtz89fjDvP46oiUrHxxHzF+DKsg/Q1xRbJM5OUPsP9nO2aKuCl
+	To+4SO/Njp6gUs9KZKxlcLVXQOzyxLU=
+Authentication-Results: smtp-out2.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1752098063; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=QX/qXBKc61TO9sZcpwGo0z8GL4fijpvU69vhW9aAQnA=;
+	b=TxztaHe/bM2m3Nu9bKD5Az5JExckAquJYgARVq+nz+k7ogkHLCwNXbH5hGE2oz02KKTCy1
+	8KfLTMCjw/hAK/sabQS5Dtz89fjDvP46oiUrHxxHzF+DKsg/Q1xRbJM5OUPsP9nO2aKuCl
+	To+4SO/Njp6gUs9KZKxlcLVXQOzyxLU=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 05B3513998;
+	Wed,  9 Jul 2025 21:54:21 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id YMqSLg3lbmhVbQAAD6G6ig
+	(envelope-from <wqu@suse.com>); Wed, 09 Jul 2025 21:54:21 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Subject: [PATCH v2 1/2] btrfs: use bdev_rw_virt() to read and scratch the disk super block
+Date: Thu, 10 Jul 2025 07:24:02 +0930
+Message-ID: <19de3999ad3df0988d1674eecefaf7e6a5f5b36d.1752097916.git.wqu@suse.com>
+X-Mailer: git-send-email 2.50.0
+In-Reply-To: <cover.1752097916.git.wqu@suse.com>
+References: <cover.1752097916.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: Why a lot of fses are using bdev's page cache to do super block
- read/write?
-To: "Darrick J. Wong" <djwong@kernel.org>
-Cc: "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
- linux-btrfs <linux-btrfs@vger.kernel.org>,
- Matthew Wilcox <willy@infradead.org>,
- "linux-block@vger.kernel.org" <linux-block@vger.kernel.org>,
- Catherine Hoang <catherine.hoang@oracle.com>
-References: <5459cd6d-3fdb-4a4e-b5c7-00ef74f17f7d@gmx.com>
- <20250709150436.GG2672029@frogsfrogsfrogs>
-Content-Language: en-US
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1YAUJEP5a
- sQAKCRDCPZHzoSX+qF+mB/9gXu9C3BV0omDZBDWevJHxpWpOwQ8DxZEbk9b9LcrQlWdhFhyn
- xi+l5lRziV9ZGyYXp7N35a9t7GQJndMCFUWYoEa+1NCuxDs6bslfrCaGEGG/+wd6oIPb85xo
- naxnQ+SQtYLUFbU77WkUPaaIU8hH2BAfn9ZSDX9lIxheQE8ZYGGmo4wYpnN7/hSXALD7+oun
- tZljjGNT1o+/B8WVZtw/YZuCuHgZeaFdhcV2jsz7+iGb+LsqzHuznrXqbyUQgQT9kn8ZYFNW
- 7tf+LNxXuwedzRag4fxtR+5GVvJ41Oh/eygp8VqiMAtnFYaSlb9sjia1Mh+m+OBFeuXjgGlG
- VvQFzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1gQUJEP5a0gAK
- CRDCPZHzoSX+qHGpB/kB8A7M7KGL5qzat+jBRoLwB0Y3Zax0QWuANVdZM3eJDlKJKJ4HKzjo
- B2Pcn4JXL2apSan2uJftaMbNQbwotvabLXkE7cPpnppnBq7iovmBw++/d8zQjLQLWInQ5kNq
- Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
- +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
- HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
-In-Reply-To: <20250709150436.GG2672029@frogsfrogsfrogs>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:Q9rIlRXjKpYAgjC74tvIkGsQsrpvVxzXlsF1wqz+4UcDpQihmRo
- 3oauzGxaDGcMb1L7KHASr2KCg70fAjRVit8Pg3eDZS26/XONjQ4QrLg9L3Ecfbv5eIzlZ/Y
- 1zS0x0s10ipZQPY9u7DfzBaJBqnYNQTXLkbiR5oX9veY1ZHlqrF61kssNJspFap2qGPBKqz
- JfBnHWGUVbglNJIKyI/jg==
+Content-Transfer-Encoding: 8bit
+X-Spam-Level: 
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-0.999];
+	MIME_GOOD(-0.10)[text/plain];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	ARC_NA(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RCPT_COUNT_TWO(0.00)[2];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	TO_DN_SOME(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	RCVD_TLS_ALL(0.00)[]
 X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:Xx+WpaXSmis=;f6jgJDkIMFVbz687wCPHdDzgSxy
- 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
- uemXQZNk5j8qoM8cf80FNx4=
+X-Spam-Score: -2.80
 
+Currently we're using the block device page cache to read and scratch
+the super block.
 
+But that means we're reading the whole folio to grab just the super
+block, this can be unnecessary especially nowadays bdev's page cache
+supports large folio, not to mention systems with page size larger than
+4K.
 
-=E5=9C=A8 2025/7/10 00:34, Darrick J. Wong =E5=86=99=E9=81=93:
-> On Wed, Jul 09, 2025 at 06:35:00PM +0930, Qu Wenruo wrote:
->> Hi,
->>
->> Recently I'm trying to remove direct bdev's page cache usage from btrfs
->> super block IOs.
->>
->> And replace it with common bio interface (mostly with bdev_rw_virt()).
->>
->> However I'm hitting random generic/492 failure where sometimes blkid fa=
-iled
->> to detect any useful super block signature of btrfs.
->=20
-> Yes, you need to invalidate_bdev() after writing the superblock directly
-> to disk via submit_bio.
+Modify the following routines by:
 
-Since invalidate_bdev() is invaliding the whole page cache of the bdev,=20
-it may increase the latency of super block writeback, which may bring=20
-unexpected performance change.
+- Use kmalloc() + bdev_rw_virt() for btrfs_read_disk_super()
+  This means we can easily replace btrfs_release_disk_super() with a
+  simple kfree().
 
-All we want is only to ensure the content of folio where our sb is,
-so it looks like we're better sticking with the existing bdev page cache=
-=20
-usage.
-Although the btrfs' super block writeback is still doing something out=20
-of normal, and will be properly addressed.
+  This also means there will no longer be any cached read for
+  btrfs_read_disk_super(), thus we can drop the @drop_cache parameter.
 
-Thanks Matthew and Darrick for this detailed explanation,
-Qu
+  However this change brings a slightly behavior change for
+  btrfs_scan_one_device(), now every time the device is scanned, btrfs
+  will submit a read request, no more cached scan.
 
->=20
->> This leads more digging, and to my surprise using bdev's page cache to =
-do
->> superblock IOs is not an exception, in fact f2fs is doing exactly the s=
-ame
->> thing.
->>
->>
->> This makes me wonder:
->>
->> - Should a fs use bdev's page cache directly?
->>    I thought a fs shouldn't do this, and bio interface should be
->>    enough for most if not all cases.
->>
->>    Or am I wrong in the first place?
->=20
-> As willy said, most filesystems use the bdev pagecache because then they
-> don't have to implement their own (metadata) buffer cache.  The downside
-> is that any filesystem that does so must be prepared to handle the
-> buffer_head contents changing any time they cycle the bh lock because
-> anyone can write to the block device of a mounted fs ala tune2fs.
->=20
-> Effectively this means that you have to (a) revalidate the entire buffer
-> contents every time you lock_buffer(); and (b) you can't make decisions
-> based on superblock feature bits in the superblock bh directly.
->=20
-> I made that mistake when adding metadata_csum support to ext4 -- we'd
-> only connect to the crc32c "crypto" module if checksums were enabled in
-> the ondisk super at mount time, but then there were a couple of places
-> that looked at the ondisk super bits at runtime, so you could flip the
-> bit on and crash the kernel almost immediately.
->=20
-> Nowadays you could protect against malicious writes with the
-> BLK_DEV_WRITE_MOUNTED=3Dn so at least that's mitigated a little bit.
-> Note (a) implies that the use of BH_Verified is a giant footgun.
->=20
-> Catherine Hoang [now cc'd] has prototyped a generic buffer cache so that
-> we can fix these vulnerabilities in ext2:
-> https://lore.kernel.org/linux-ext4/20250326014928.61507-1-catherine.hoan=
-g@oracle.com/
->=20
->> - What is keeping fs super block update from racing with user space
->>    device scan?
->>
->>    I guess it's the regular page/folio locking of the bdev page cache.
->>    But that also means, pure bio based IO will always race with buffere=
-d
->>    read of a block device.
->=20
-> Right.  In theory you could take the posix advisory lock (aka flock)
-> from inside the kernel for the duration of the sb write, and that would
-> prevent libblkid/udev from seeing torn/stale contents because they take
-> LOCK_SH.
->=20
->> - If so, is there any special bio flag to prevent such race?
->>    So far I am unable to find out such flag.
->=20
-> No.
->=20
-> --D
->=20
->> Thanks,
->> Qu
->>
->=20
+- Use bdev_rw_virt() for btrfs_scratch_superblock()
+  Just use the memory returned by btrfs_read_disk_super() and reset the
+  magic number.
+  Then use bdev_rw_virt() to do the write.
+
+  And since we're using bio to submit writes directly to the device, not
+  using page cache anymore, after scratching the super block we also
+  have to invalidate the cache to avoid user space seeing the
+  out-of-date cached super block.
+
+- Use kmalloc() and bdev_rw_virt() for sb_writer_pointer()
+  In zoned mode we have a corner case that both super block zones are
+  full, and we need to determine which zone to reuse.
+
+  In that case we need to read the last super block of both zones and
+  compare their generations.
+
+  Here we just use regular kmalloc() + bdev_rw_virt() to do the read.
+
+  And since we're here, simplify the error handling path by always
+  calling kfree() on both super blocks.
+  Since both super block pointers are initialized to NULL, we're safe to
+  call kfree() on them.
+
+Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/disk-io.c | 10 +++----
+ fs/btrfs/super.c   |  4 +--
+ fs/btrfs/volumes.c | 72 +++++++++++++++++++---------------------------
+ fs/btrfs/volumes.h |  4 +--
+ fs/btrfs/zoned.c   | 26 ++++++++++-------
+ 5 files changed, 52 insertions(+), 64 deletions(-)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 44e7ae4a2e0b..c4b020187249 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3320,7 +3320,7 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
+ 	/*
+ 	 * Read super block and check the signature bytes only
+ 	 */
+-	disk_super = btrfs_read_disk_super(fs_devices->latest_dev->bdev, 0, false);
++	disk_super = btrfs_read_disk_super(fs_devices->latest_dev->bdev, 0);
+ 	if (IS_ERR(disk_super)) {
+ 		ret = PTR_ERR(disk_super);
+ 		goto fail_alloc;
+@@ -3336,7 +3336,7 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
+ 		btrfs_err(fs_info, "unsupported checksum algorithm: %u",
+ 			  csum_type);
+ 		ret = -EINVAL;
+-		btrfs_release_disk_super(disk_super);
++		kfree(disk_super);
+ 		goto fail_alloc;
+ 	}
+ 
+@@ -3344,7 +3344,7 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
+ 
+ 	ret = btrfs_init_csum_hash(fs_info, csum_type);
+ 	if (ret) {
+-		btrfs_release_disk_super(disk_super);
++		kfree(disk_super);
+ 		goto fail_alloc;
+ 	}
+ 
+@@ -3355,7 +3355,7 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
+ 	if (btrfs_check_super_csum(fs_info, disk_super)) {
+ 		btrfs_err(fs_info, "superblock checksum mismatch");
+ 		ret = -EINVAL;
+-		btrfs_release_disk_super(disk_super);
++		kfree(disk_super);
+ 		goto fail_alloc;
+ 	}
+ 
+@@ -3365,7 +3365,7 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
+ 	 * the whole block of INFO_SIZE
+ 	 */
+ 	memcpy(fs_info->super_copy, disk_super, sizeof(*fs_info->super_copy));
+-	btrfs_release_disk_super(disk_super);
++	kfree(disk_super);
+ 
+ 	disk_super = fs_info->super_copy;
+ 
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index e4ce2754cfde..b6feddcf4510 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -2309,7 +2309,7 @@ static int check_dev_super(struct btrfs_device *dev)
+ 		return 0;
+ 
+ 	/* Only need to check the primary super block. */
+-	sb = btrfs_read_disk_super(dev->bdev, 0, true);
++	sb = btrfs_read_disk_super(dev->bdev, 0);
+ 	if (IS_ERR(sb))
+ 		return PTR_ERR(sb);
+ 
+@@ -2341,7 +2341,7 @@ static int check_dev_super(struct btrfs_device *dev)
+ 		goto out;
+ 	}
+ out:
+-	btrfs_release_disk_super(sb);
++	kfree(sb);
+ 	return ret;
+ }
+ 
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 31aecd291d6c..5e5b18524d1f 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -495,7 +495,7 @@ btrfs_get_bdev_and_sb(const char *device_path, blk_mode_t flags, void *holder,
+ 		}
+ 	}
+ 	invalidate_bdev(bdev);
+-	*disk_super = btrfs_read_disk_super(bdev, 0, false);
++	*disk_super = btrfs_read_disk_super(bdev, 0);
+ 	if (IS_ERR(*disk_super)) {
+ 		ret = PTR_ERR(*disk_super);
+ 		bdev_fput(*bdev_file);
+@@ -716,12 +716,12 @@ static int btrfs_open_one_device(struct btrfs_fs_devices *fs_devices,
+ 		fs_devices->rw_devices++;
+ 		list_add_tail(&device->dev_alloc_list, &fs_devices->alloc_list);
+ 	}
+-	btrfs_release_disk_super(disk_super);
++	kfree(disk_super);
+ 
+ 	return 0;
+ 
+ error_free_page:
+-	btrfs_release_disk_super(disk_super);
++	kfree(disk_super);
+ 	bdev_fput(bdev_file);
+ 
+ 	return -EINVAL;
+@@ -1326,20 +1326,11 @@ int btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
+ 	return ret;
+ }
+ 
+-void btrfs_release_disk_super(struct btrfs_super_block *super)
+-{
+-	struct page *page = virt_to_page(super);
+-
+-	put_page(page);
+-}
+-
+ struct btrfs_super_block *btrfs_read_disk_super(struct block_device *bdev,
+-						int copy_num, bool drop_cache)
++						int copy_num)
+ {
+ 	struct btrfs_super_block *super;
+-	struct page *page;
+ 	u64 bytenr, bytenr_orig;
+-	struct address_space *mapping = bdev->bd_mapping;
+ 	int ret;
+ 
+ 	bytenr_orig = btrfs_sb_offset(copy_num);
+@@ -1353,26 +1344,19 @@ struct btrfs_super_block *btrfs_read_disk_super(struct block_device *bdev,
+ 	if (bytenr + BTRFS_SUPER_INFO_SIZE >= bdev_nr_bytes(bdev))
+ 		return ERR_PTR(-EINVAL);
+ 
+-	if (drop_cache) {
+-		/* This should only be called with the primary sb. */
+-		ASSERT(copy_num == 0);
+-
+-		/*
+-		 * Drop the page of the primary superblock, so later read will
+-		 * always read from the device.
+-		 */
+-		invalidate_inode_pages2_range(mapping, bytenr >> PAGE_SHIFT,
+-				      (bytenr + BTRFS_SUPER_INFO_SIZE) >> PAGE_SHIFT);
++	super = kmalloc(BTRFS_SUPER_INFO_SIZE, GFP_NOFS);
++	if (!super)
++		return ERR_PTR(-ENOMEM);
++	ret = bdev_rw_virt(bdev, bytenr >> SECTOR_SHIFT, super, BTRFS_SUPER_INFO_SIZE,
++			   REQ_OP_READ);
++	if (ret < 0) {
++		kfree(super);
++		return ERR_PTR(ret);
+ 	}
+ 
+-	page = read_cache_page_gfp(mapping, bytenr >> PAGE_SHIFT, GFP_NOFS);
+-	if (IS_ERR(page))
+-		return ERR_CAST(page);
+-
+-	super = page_address(page);
+ 	if (btrfs_super_magic(super) != BTRFS_MAGIC ||
+ 	    btrfs_super_bytenr(super) != bytenr_orig) {
+-		btrfs_release_disk_super(super);
++		kfree(super);
+ 		return ERR_PTR(-EINVAL);
+ 	}
+ 
+@@ -1473,7 +1457,7 @@ struct btrfs_device *btrfs_scan_one_device(const char *path,
+ 	if (IS_ERR(bdev_file))
+ 		return ERR_CAST(bdev_file);
+ 
+-	disk_super = btrfs_read_disk_super(file_bdev(bdev_file), 0, false);
++	disk_super = btrfs_read_disk_super(file_bdev(bdev_file), 0);
+ 	if (IS_ERR(disk_super)) {
+ 		device = ERR_CAST(disk_super);
+ 		goto error_bdev_put;
+@@ -1495,7 +1479,7 @@ struct btrfs_device *btrfs_scan_one_device(const char *path,
+ 		btrfs_free_stale_devices(device->devt, device);
+ 
+ free_disk_super:
+-	btrfs_release_disk_super(disk_super);
++	kfree(disk_super);
+ 
+ error_bdev_put:
+ 	bdev_fput(bdev_file);
+@@ -2135,20 +2119,22 @@ static void btrfs_scratch_superblock(struct btrfs_fs_info *fs_info,
+ 				     struct block_device *bdev, int copy_num)
+ {
+ 	struct btrfs_super_block *disk_super;
+-	const size_t len = sizeof(disk_super->magic);
+ 	const u64 bytenr = btrfs_sb_offset(copy_num);
+ 	int ret;
+ 
+-	disk_super = btrfs_read_disk_super(bdev, copy_num, false);
+-	if (IS_ERR(disk_super))
+-		return;
+-
+-	memset(&disk_super->magic, 0, len);
+-	folio_mark_dirty(virt_to_folio(disk_super));
+-	btrfs_release_disk_super(disk_super);
+-
+-	ret = sync_blockdev_range(bdev, bytenr, bytenr + len - 1);
+-	if (ret)
++	disk_super = btrfs_read_disk_super(bdev, copy_num);
++	if (IS_ERR(disk_super)) {
++		ret = PTR_ERR(disk_super);
++		goto out;
++	}
++	btrfs_set_super_magic(disk_super, 0);
++	ret = bdev_rw_virt(bdev, bytenr >> SECTOR_SHIFT, disk_super,
++			   BTRFS_SUPER_INFO_SIZE, REQ_OP_WRITE);
++	kfree(disk_super);
++out:
++	/* Make sure userspace won't see some out-of-date cached super block. */
++	invalidate_bdev(bdev);
++	if (ret < 0)
+ 		btrfs_warn(fs_info, "error clearing superblock number %d (%d)",
+ 			copy_num, ret);
+ }
+@@ -2480,7 +2466,7 @@ int btrfs_get_dev_args_from_path(struct btrfs_fs_info *fs_info,
+ 		memcpy(args->fsid, disk_super->metadata_uuid, BTRFS_FSID_SIZE);
+ 	else
+ 		memcpy(args->fsid, disk_super->fsid, BTRFS_FSID_SIZE);
+-	btrfs_release_disk_super(disk_super);
++	kfree(disk_super);
+ 	bdev_fput(bdev_file);
+ 	return 0;
+ }
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 7395cb5e1238..bf2e9a5a63ea 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -798,9 +798,7 @@ struct btrfs_chunk_map *btrfs_get_chunk_map(struct btrfs_fs_info *fs_info,
+ 					    u64 logical, u64 length);
+ void btrfs_remove_chunk_map(struct btrfs_fs_info *fs_info, struct btrfs_chunk_map *map);
+ struct btrfs_super_block *btrfs_read_disk_super(struct block_device *bdev,
+-						int copy_num, bool drop_cache);
+-void btrfs_release_disk_super(struct btrfs_super_block *super);
+-
++						int copy_num);
+ static inline void btrfs_dev_stat_inc(struct btrfs_device *dev,
+ 				      int index)
+ {
+diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
+index 245e813ecd78..e89ff61fccaa 100644
+--- a/fs/btrfs/zoned.c
++++ b/fs/btrfs/zoned.c
+@@ -117,23 +117,27 @@ static int sb_write_pointer(struct block_device *bdev, struct blk_zone *zones,
+ 		return -ENOENT;
+ 	} else if (full[0] && full[1]) {
+ 		/* Compare two super blocks */
+-		struct address_space *mapping = bdev->bd_mapping;
+-		struct page *page[BTRFS_NR_SB_LOG_ZONES];
+-		struct btrfs_super_block *super[BTRFS_NR_SB_LOG_ZONES];
++		struct btrfs_super_block *super[BTRFS_NR_SB_LOG_ZONES] = { 0 };
+ 
+ 		for (int i = 0; i < BTRFS_NR_SB_LOG_ZONES; i++) {
+ 			u64 zone_end = (zones[i].start + zones[i].capacity) << SECTOR_SHIFT;
+ 			u64 bytenr = ALIGN_DOWN(zone_end, BTRFS_SUPER_INFO_SIZE) -
+ 						BTRFS_SUPER_INFO_SIZE;
++			int ret;
+ 
+-			page[i] = read_cache_page_gfp(mapping,
+-					bytenr >> PAGE_SHIFT, GFP_NOFS);
+-			if (IS_ERR(page[i])) {
+-				if (i == 1)
+-					btrfs_release_disk_super(super[0]);
+-				return PTR_ERR(page[i]);
++			super[i] = kmalloc(BTRFS_SUPER_INFO_SIZE, GFP_NOFS);
++			if (!super[i]) {
++				kfree(super[0]);
++				kfree(super[1]);
++				return -ENOMEM;
++			}
++			ret = bdev_rw_virt(bdev, bytenr >> SECTOR_SHIFT, super[i],
++					   BTRFS_SUPER_INFO_SIZE, REQ_OP_READ);
++			if (ret < 0) {
++				kfree(super[0]);
++				kfree(super[1]);
++				return ret;
+ 			}
+-			super[i] = page_address(page[i]);
+ 		}
+ 
+ 		if (btrfs_super_generation(super[0]) >
+@@ -143,7 +147,7 @@ static int sb_write_pointer(struct block_device *bdev, struct blk_zone *zones,
+ 			sector = zones[0].start;
+ 
+ 		for (int i = 0; i < BTRFS_NR_SB_LOG_ZONES; i++)
+-			btrfs_release_disk_super(super[i]);
++			kfree(super[i]);
+ 	} else if (!full[0] && (empty[1] || full[1])) {
+ 		sector = zones[0].wp;
+ 	} else if (full[0]) {
+-- 
+2.50.0
 

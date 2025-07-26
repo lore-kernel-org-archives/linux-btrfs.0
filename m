@@ -1,60 +1,67 @@
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DEDBA262BE
-	for <linux-btrfs@vger.kernel.org>; Sat, 26 Jul 2025 22:33:32 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A735F262BE
+	for <linux-btrfs@vger.kernel.org>; Sat, 26 Jul 2025 22:33:39 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1753569215; cv=none; b=IjHvKdX2BRYFGexIR1/pdts3U/YUB2KuEMw1XTFKY9/AB8rwARgTezOnO3tCJ4mL/UBX7myxSRbUAnEab8lFucVuoLR2OQDtf51INhnTfRLOnQxeBrGMb+PwH7RTPGJ7dQgs6VvUHOIxM00dmgEZvMWXD7bIxuN2GVwbQhTU23w=
+	t=1753569221; cv=none; b=TOY9OQq6AD3VcQwESBmrwH7bZohNW03mPonHneUYs3nVhqMctqY1+N3yK/kHpQfAlaD1ejiMDnF4CZiU+nRHkQuO+Lg+ExBasn8SNkd0I2VxBy9yMcojKRyiIG6hTkwcKixmqNVU1QBQ1mebqufrq2dca25qpcZ+wwNfBS5h5CQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1753569215; c=relaxed/simple;
-	bh=s9BYf72jpmFKKWpd7LKPL7ed9FZ6nEg4bXOwv737pnU=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=fD+IU5tOaMi0wOo3H1ic5jpQyrsQVuApJvQtkGv/z94f2eTRgB5qHIab54LjBXBC8p8JhZir5ZIS2ROqO8/KOPwl6nqy+KTjRVgtxlcD/wJqsmdILdyJXorcKoddAK/7dOXJLh94dgEMqdDkxohXzQGmxQe309Bl1TR7rMXMn0s=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Vx24f48K; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=WjMhynjg; arc=none smtp.client-ip=195.135.223.131
+	s=arc-20240116; t=1753569221; c=relaxed/simple;
+	bh=mYOPzPr41nwiYn1ZcrK9nrzlunfeTCzXZHOCxoZXNQc=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=CoUADaU+AgZIKNLPXgLPoWOT63vwVu7QoZmE4uN3Z8OflmsWW8QYDJG8EreVNlOwf+iTx0MhydHFQnSu7B4HvV+pVwDyvYUaZNBjx1tX+mGS/ftndyWfO66QApp7xGcRBImEmiBIvPQhQhGR/HlzGCww7rrd+9TJapbw3s3jKdc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=CpPflj2x; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=CpPflj2x; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Vx24f48K";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="WjMhynjg"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="CpPflj2x";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="CpPflj2x"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id DD8A01F38D
-	for <linux-btrfs@vger.kernel.org>; Sat, 26 Jul 2025 22:33:24 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 9FEFA1F44F;
+	Sat, 26 Jul 2025 22:33:27 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1753569205; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=laiBiiTpy9M3zhW3hGVIjQfksJmbid1l1f485tvHyLs=;
-	b=Vx24f48KWpmX5nvWUhEcM2YsSXmhsB724c3l/hlaY5Xw1KNbMtEFnAlU1hwya15MX8AIZV
-	0stF2WY7AhP+L1/xCuBTA9vnuQGW1i5BNr1loQnd7kyxrJK0XbOD1HJy+3SsacjWXEZvea
-	lZZgeCXadS9I/4usOU46fo5ekfSvcag=
+	t=1753569207; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=fXccSAdb0LhQRg0BThgdhssAEXMeLHtCk5sQug0zWKA=;
+	b=CpPflj2xtnGA+Nrc5gOuxxYpVYxydEYR+fC3pmPMAyx3pIDN1KRZiyjUikI4WdaczYqw4v
+	maKnbmJGpTlKwbU1Y4/qdVadVCZJijko6XyUe6u38CpALvRG4haAyV+xjLhnrR5FF409eR
+	oSmS1em3AF8LcZYxzYMbKrFxEEGJMFI=
 Authentication-Results: smtp-out2.suse.de;
-	none
+	dkim=pass header.d=suse.com header.s=susede1 header.b=CpPflj2x
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1753569204; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=laiBiiTpy9M3zhW3hGVIjQfksJmbid1l1f485tvHyLs=;
-	b=WjMhynjgriMvfxJ4OA1ypkOnxDJFLwOzHrnRk2BscMqsJDAkZYdlR/yINHglaStWTDu4tA
-	Yd8kzXlo+Zs4x1D8D14Au7jPnyAOM0PNeQ32NzRhfalSpGWqDFVYvF17nbd6lvLDBEh3vC
-	hxGA/47sImklve+ArCnK0ZI72dSRt8A=
+	t=1753569207; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=fXccSAdb0LhQRg0BThgdhssAEXMeLHtCk5sQug0zWKA=;
+	b=CpPflj2xtnGA+Nrc5gOuxxYpVYxydEYR+fC3pmPMAyx3pIDN1KRZiyjUikI4WdaczYqw4v
+	maKnbmJGpTlKwbU1Y4/qdVadVCZJijko6XyUe6u38CpALvRG4haAyV+xjLhnrR5FF409eR
+	oSmS1em3AF8LcZYxzYMbKrFxEEGJMFI=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 195E51388B
-	for <linux-btrfs@vger.kernel.org>; Sat, 26 Jul 2025 22:33:23 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 97E0F1388B;
+	Sat, 26 Jul 2025 22:33:26 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id SXpwMrNXhWjWLAAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Sat, 26 Jul 2025 22:33:23 +0000
+	id OOkdFrZXhWjWLAAAD6G6ig
+	(envelope-from <wqu@suse.com>); Sat, 26 Jul 2025 22:33:26 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 0/3] btrfs-progs: check: add detection for missing root orphan items
-Date: Sun, 27 Jul 2025 08:02:59 +0930
-Message-ID: <cover.1753569082.git.wqu@suse.com>
+Cc: Boris Burkov <boris@bur.io>
+Subject: [PATCH v2 2/3] btrfs-progs: check/lowmem: detect missing orphan items correctly
+Date: Sun, 27 Jul 2025 08:03:01 +0930
+Message-ID: <6f5fcc446d67c01954caddc3362665800ac8a699.1753569083.git.wqu@suse.com>
 X-Mailer: git-send-email 2.50.1
+In-Reply-To: <cover.1753569082.git.wqu@suse.com>
+References: <cover.1753569082.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -62,75 +69,136 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-2.80 / 50.00];
+X-Spamd-Result: default: False [-3.01 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	TO_DN_NONE(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	ARC_NA(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	FROM_HAS_DN(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	FROM_EQ_ENVFROM(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
+	MX_GOOD(-0.01)[];
 	MIME_TRACE(0.00)[0:+];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid]
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	ARC_NA(0.00)[];
+	RCPT_COUNT_TWO(0.00)[2];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from,2a07:de40:b281:106:10:150:64:167:received];
+	FROM_EQ_ENVFROM(0.00)[];
+	DKIM_TRACE(0.00)[suse.com:+];
+	TO_DN_SOME(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:dkim,suse.com:email]
 X-Spam-Flag: NO
 X-Spam-Level: 
-X-Spam-Score: -2.80
+X-Rspamd-Queue-Id: 9FEFA1F44F
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Rspamd-Action: no action
+X-Spam-Score: -3.01
 
-[CHANGELOG]
-v2:
-- Enhance the original mode to detect any refs mismatch
-  Thus even if the root item has 0 refs but we find some unexpected
-  backref, then it will also report it as an error.
+[BUG]
+If we have a filesystem with a subvolume that has 0 refs but without an
+orphan item, btrfs check won't report any error on it.
 
-  Thanks Boris for point this out.
+  $ btrfs ins dump-tree -t root /dev/test/scratch1
+  btrfs-progs v6.15
+  root tree
+  node 5242880 level 1 items 2 free space 119 generation 11 owner ROOT_TREE
+  node 5242880 flags 0x1(WRITTEN) backref revision 1
+  fs uuid ff32309e-4e90-4402-b1ef-0a1f9f28bfff
+  chunk uuid 6c373b6d-c866-4c8c-81fa-608bf5ef25e3
+  	key (EXTENT_TREE ROOT_ITEM 0) block 5267456 gen 11
+  	key (ROOT_TREE_DIR DIR_ITEM 2378154706) block 5246976 gen 11
+  leaf 5267456 items 6 free space 2339 generation 11 owner ROOT_TREE
+  leaf 5267456 flags 0x1(WRITTEN) backref revision 1
+  fs uuid ff32309e-4e90-4402-b1ef-0a1f9f28bfff
+  	[...]
+  leaf 5246976 items 6 free space 1613 generation 11 owner ROOT_TREE
+  leaf 5246976 flags 0x1(WRITTEN) backref revision 1
+  checksum stored 47620783
+  checksum calced 47620783
+  fs uuid ff32309e-4e90-4402-b1ef-0a1f9f28bfff
+  chunk uuid 6c373b6d-c866-4c8c-81fa-608bf5ef25e3
+  	[...]
+  	item 4 key (256 ROOT_ITEM 0) itemoff 2202 itemsize 439
+  		generation 9 root_dirid 256 bytenr 5898240 byte_limit 0 bytes_used 581632
+  		last_snapshot 0 flags 0x1000000000000(none) refs 0 <<<
+  		drop_progress key (0 UNKNOWN.0 0) drop_level 0
+  		level 2 generation_v2 9
+  	item 5 key (DATA_RELOC_TREE ROOT_ITEM 0) itemoff 1763 itemsize 439
+  		generation 5 root_dirid 256 bytenr 5287936 byte_limit 0 bytes_used 4096
+  		last_snapshot 0 flags 0x0(none) refs 1
+  		drop_progress key (0 UNKNOWN.0 0) drop_level 0
+  		level 0 generation_v2 5
+  	^^^ No orphan item for subvolume 256.
 
-There is an internal bug report that some half-dropped subvolume makes
-balance to fail.
+Then "btrfs check --mode=lowmem" will not report anything wrong with it:
 
-It turns out that, the involved subvolume doesn't have an orphan item,
-this means the half-dropped subvolume is never going to be cleaned up.
+  Opening filesystem to check...
+  Checking filesystem on /dev/test/scratch1
+  UUID: ff32309e-4e90-4402-b1ef-0a1f9f28bfff
+  [1/8] checking log skipped (none written)
+  [2/8] checking root items
+  [3/8] checking extents
+  [4/8] checking free space tree
+  [5/8] checking fs roots
+  [6/8] checking only csums items (without verifying data)
+  [7/8] checking root refs done with fs roots in lowmem mode, skipping
+  [8/8] checking quota groups skipped (not enabled on this FS)
+  found 638976 bytes used, no error found <<
+  total csum bytes: 0
+  total tree bytes: 638976
+  total fs tree bytes: 589824
+  total extent tree bytes: 16384
+  btree space waste bytes: 289501
+  file data blocks allocated: 0
+   referenced 0
 
-Then at balance time, a reloc tree is created for that half-dropped
-subvolume, and since balance doesn't expect to get a half-dropped
-subvolume, it doesn't check the drop_process_key and increased ref on
-already dropped nodes.
+[CAUSE]
+In lowmem's check_btrfs_root() we have no special handling for refs 0,
+as long as there is no ROOT_BACKREF for the orphan root, everything will
+be reported as OK.
 
-The problem for progs is that, neither original mode nor lowmem detects
-this kind of problem.
+But we should expect an orphan item for an orphan subvolume, this means
+lowmem doesn't do any checks against the orphan item for a subvolume.
 
-Original mode has a bad logic which prevents us from calling the proper
-orphan item check.
-Lowmem mode doesn't even take orphan item into consideration.
+[FIX]
+For subvolume trees, if its refs is 0, also check if we have an orphan
+item for it.
+If not, report this as an error.
 
-This series will add the detection part for btrfs-check, for both
-original and lowmem mode, with a hand crafted image for test.
+Reviewed-by: Boris Burkov <boris@bur.io>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ check/mode-lowmem.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-
-Qu Wenruo (3):
-  btrfs-progs: check/original: detect missing orphan items correctly
-  btrfs-progs: check/lowmem: detect missing orphan items correctly
-  btrfs-progs: fsck-tests: a new test case for missing root orphan item
-
- check/main.c                                  |  39 +++++++++++-------
- check/mode-lowmem.c                           |  11 +++++
- check/mode-original.h                         |   3 ++
- .../default.img.xz                            | Bin 0 -> 13468 bytes
- .../066-missing-root-orphan-item/test.sh      |  14 +++++++
- 5 files changed, 51 insertions(+), 16 deletions(-)
- create mode 100644 tests/fsck-tests/066-missing-root-orphan-item/default.img.xz
- create mode 100755 tests/fsck-tests/066-missing-root-orphan-item/test.sh
-
---
+diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
+index 5291070df025..e05bb0da1709 100644
+--- a/check/mode-lowmem.c
++++ b/check/mode-lowmem.c
+@@ -5502,6 +5502,17 @@ static int check_btrfs_root(struct btrfs_root *root, int check_all)
+ 			}
+ 		}
+ 	}
++	/*
++	 * If this tree is a subvolume (not a reloc tree) and has no refs, there
++	 * should be an orphan item for it, or this subvolume will never be deleted.
++	 */
++	if (btrfs_root_refs(root_item) == 0 && is_fstree(btrfs_root_id(root))) {
++		if (!has_orphan_item(root->fs_info->tree_root,
++				     btrfs_root_id(root))) {
++			error("missing orphan item for root %lld", btrfs_root_id(root));
++			err |= REFERENCER_MISSING;
++		}
++	}
+ 	if (btrfs_root_refs(root_item) > 0 ||
+ 	    btrfs_disk_key_objectid(&root_item->drop_progress) == 0) {
+ 		path.nodes[level] = root->node;
+-- 
 2.50.1
 

@@ -1,60 +1,67 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EBD6586359
-	for <linux-btrfs@vger.kernel.org>; Sun,  3 Aug 2025 23:52:58 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AF7B72153EA
+	for <linux-btrfs@vger.kernel.org>; Sun,  3 Aug 2025 23:53:01 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1754265181; cv=none; b=CnqER4B82/cBA9e9p48cb1as3P37i5m8rjo/15qIokCGzEKanvJhii8Ae3wMYO/TpkYGEn6pZWKT6pgtJ6mk10GhD+fKuA/FkGR9z4DHraGFIpXHjX1qS5OYoAQPtLwAn17tAs8yDRPz//KmbVUjIvFzxumppjAAZmvS4bdRr/A=
+	t=1754265184; cv=none; b=fTXmAIXXmztfJsQ75jbIDbD35i/8XHsCVHJcQdmE18hJtq9r8dJrIIWju25pZk7DemnnV2+2/Kxz72jDPGtRjDkwn0G/Ns+mL+kWO+Y4KQpJOF2+XCOx3lZ2EA0eLLRpgtCUFL9VpANi5v7DRgKpAw+C8I9qSqkPWVCfzX1KGJY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1754265181; c=relaxed/simple;
-	bh=ns6EQuCKOYGXqNZgWa+ZgSSV4Au3hJp1Suo1bINJ74A=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=eiTqAcJ+stdFYpUPTW80cW6F2mVnWiZByirmgq5Jo98y/Z9ozT2D8QYKKX1uhvlOFmDREYO1Uk02ilGgRPPmlLFr0P9E+JKKZ+Yhez4hjl+TBhsmU5P+LEmNTOjlltNUsRglIpuC8NCVsbzzSN7c4eQh3iC1XmclCVU03hMABpE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=BqX/nXZ/; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=RsV9/qWu; arc=none smtp.client-ip=195.135.223.131
+	s=arc-20240116; t=1754265184; c=relaxed/simple;
+	bh=8O6nP9fLgXG3yqhCZh2y1+RxAbl9AEUIU74Ar6py2uo=;
+	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=p/FKF5E6rYR+8SSuZXShsw8ruKIHco3KA0HzVwXKCLvvPfHoAn4b49LqthYmopx2fHverq0O3ZUkuTP/HjxlflXTviA+xYnb4cEmFW0iSmBZ5ji0waN4C5NTCeWY0ewgJLeMMoQjXPzdWOrBDLq0nIq0vUqHvII/+0Ihgl8ooLY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=DidVsKje; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=DidVsKje; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="BqX/nXZ/";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="RsV9/qWu"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="DidVsKje";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="DidVsKje"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id DA3971F387
-	for <linux-btrfs@vger.kernel.org>; Sun,  3 Aug 2025 23:52:56 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 57467218A0
+	for <linux-btrfs@vger.kernel.org>; Sun,  3 Aug 2025 23:52:59 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1754265177; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=IPwdbz+xYR+c0xKujLKopnCBV5cHS6HUy9Tubw9B6UQ=;
-	b=BqX/nXZ/miqLC0wQTltGIlIfpO3Lhdu0RJCnjFUNQz6vbVBUB4LTm771MCUweBOVEVG+tF
-	kvsJj/yjvXIxNrZFPQWrRWFVmSxCqRP9L0qxksh/pcZyBObKlAMYLSteLmPKy3iYOWax/w
-	eqKw3bYF7ea37+G0MuOGIg0KpI27mPo=
-Authentication-Results: smtp-out2.suse.de;
-	none
+	t=1754265179; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=Ak+bhZ4XJIyMyEieGDzZtwIBp//4HyypVS79gFIlm1U=;
+	b=DidVsKjeyUgjPsJWsyHzZSqORnoRs60yJL7DbmyuG86KtbmVEMc7L2oV0WVgm/ip8BrAdT
+	bp920no0q1EXlIZGf0czp6l/RRyYp9WBCQ/4Zt4BhxbdPt3DOaf7zWZHBLEsamB9KgFpzm
+	5kx8Tw4gYlc3LmR2O86VhfCkoHwHAMo=
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=DidVsKje
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1754265176; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=IPwdbz+xYR+c0xKujLKopnCBV5cHS6HUy9Tubw9B6UQ=;
-	b=RsV9/qWun5y/KF1nGvOjW3LaY/vDB1OQV4xR//bJxRB/JeKA37g1335Rva7JHyHAeg2NNU
-	OWKaljDzqJt4B1LUCHcsB6s2LK3N9bDEM7SM98vU93WqGOzhO1EWugQ5c8RkYjzccdagCf
-	4blq0i80byiL/NZSZUwEcxXYC61WA4Q=
+	t=1754265179; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=Ak+bhZ4XJIyMyEieGDzZtwIBp//4HyypVS79gFIlm1U=;
+	b=DidVsKjeyUgjPsJWsyHzZSqORnoRs60yJL7DbmyuG86KtbmVEMc7L2oV0WVgm/ip8BrAdT
+	bp920no0q1EXlIZGf0czp6l/RRyYp9WBCQ/4Zt4BhxbdPt3DOaf7zWZHBLEsamB9KgFpzm
+	5kx8Tw4gYlc3LmR2O86VhfCkoHwHAMo=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 0CEC713974
-	for <linux-btrfs@vger.kernel.org>; Sun,  3 Aug 2025 23:52:55 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 8D6B113974
+	for <linux-btrfs@vger.kernel.org>; Sun,  3 Aug 2025 23:52:58 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id RiJaL1f2j2hPZAAAD6G6ig
+	id WLCEE1r2j2hPZAAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Sun, 03 Aug 2025 23:52:55 +0000
+	for <linux-btrfs@vger.kernel.org>; Sun, 03 Aug 2025 23:52:58 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/3] btrfs-progs: updates related to seed device and v6.17 kernel
-Date: Mon,  4 Aug 2025 09:22:35 +0930
-Message-ID: <cover.1754265134.git.wqu@suse.com>
+Subject: [PATCH 2/3] btrfs-progs: docs/seed: add extra notes for v6.17 and newer kernels
+Date: Mon,  4 Aug 2025 09:22:37 +0930
+Message-ID: <995e85d0a82bba0e2665654d64260feea2f2398d.1754265134.git.wqu@suse.com>
 X-Mailer: git-send-email 2.50.1
+In-Reply-To: <cover.1754265134.git.wqu@suse.com>
+References: <cover.1754265134.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -62,64 +69,117 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-2.80 / 50.00];
-	BAYES_HAM(-3.00)[99.99%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
+X-Spamd-Result: default: False [-3.01 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
 	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
+	MX_GOOD(-0.01)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	RCPT_COUNT_ONE(0.00)[1];
 	ARC_NA(0.00)[];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	MIME_TRACE(0.00)[0:+];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid];
+	RCVD_TLS_ALL(0.00)[];
+	DKIM_TRACE(0.00)[suse.com:+];
+	RCVD_COUNT_TWO(0.00)[2];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
 	TO_DN_NONE(0.00)[];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_TLS_ALL(0.00)[]
+	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from,2a07:de40:b281:106:10:150:64:167:received];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:dkim,suse.com:email]
 X-Spam-Flag: NO
 X-Spam-Level: 
-X-Spam-Score: -2.80
+X-Rspamd-Queue-Id: 57467218A0
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Rspamd-Action: no action
+X-Spam-Score: -3.01
 
-Kernel commit 40426dd147ff ("btrfs: use the super_block as holder when
-mounting file systems") changed the block device holder so that each
-device of a mounted btrfs can only belong to a single fs.
+[BEHAVIOR CHANGE]
+In the incoming v6.17 kernel release, due to the changes in commit
+40426dd147ff ("btrfs: use the super_block as holder when mounting file
+systems"), we can no longer mount a seed device through both sprouted
+fs and the seed device.
 
-This is fine for most users, but for a corner case of seed devices, it
-can be problematic.
+E.g.
 
-As previously we allow the same seed device to be mounted through both
-the seed device and the sprouted fs, as at that time all btrfs devices
-share the same holder.
+ # mkfs.btrfs -f /dev/test/scratch1
+ # mount /dev/test/scratch1 /mnt/btrfs
+ # xfs_io -f -c "pwrite 0 16m" /mnt/btrfs/foobar
+ # umount /mnt/btrfs
+ # btrfstune -S1 /dev/test/scratch1
+ # mount /dev/test/scratch1 /mnt/btrfs
+ # btrfs device add /dev/test/scratch2 /mnt/btrfs
 
-But now since each block device can only belong to a single mounted fs,
-it means the seed device can only be mounted through either the seed
-device itself or a sprouted fs, not both at the same time.
+ Now the sprouted fs is mount, but if one wants to mount the seed
+ device, it will fail:
 
-This series will update the docs to be more explicit about the seed
-device mounting behavior, and updated the test case misc/046 to follow
-the new kernel behavior.
+ # mount /dev/test/scratch1  /mnt/btrfs/
+ mount: /mnt/btrfs: /dev/mapper/test-scratch1 already mounted or mount point busy.
+        dmesg(1) may have more information after failed mount system call.
 
-And since we're here, also update a note where newer kernel fix a bug in
-orphan roots cleanup.
+ The only new dmesg is:
 
+ BTRFS error: failed to open device for path /dev/mapper/test-scratch1 with flags 0x23: -16
 
-Qu Wenruo (3):
-  btrfs-progs: docs/seed: update a note related to orphan roots cleanup
-  btrfs-progs: docs/seed: add extra notes for v6.17 and newer kernels
-  btrfs-progs: misc-tests: do not try to mount a block device into
-    different filesystems
+[CAUSE]
+After that kernel commit, each block device will have its own unique
+holder (super block).
 
- Documentation/ch-seeding-device.rst           | 14 +++++++++++++-
- tests/misc-tests/046-seed-multi-mount/test.sh | 17 ++++++++---------
- 2 files changed, 21 insertions(+), 10 deletions(-)
+This super block block device holder is critical to pass device events
+like freeze/thaw/missing to each filesystem.
 
---
+And after the seed device is sprouted, the holder for the seed device is
+the super block of the sprouted fs.
+
+But if some one else tries to mount the seed device again, it will be a
+new super block as the holder passed into bdev_file_open_by_path().
+
+Since the seed device already has a different holder, this new
+bdev_file_open_by_path() will fail with -EBUSY.
+
+[ENHANCEMENT]
+This is a kernel behavior change, but considering the benefit (proper
+bdev events passing into the fs) I'd say the old behavior is more like a
+hack or a coincidence, other than a properly designed behavior.
+
+So update the documentation to make it more explicit.
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ Documentation/ch-seeding-device.rst | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/Documentation/ch-seeding-device.rst b/Documentation/ch-seeding-device.rst
+index 8ca55dacd6a5..7ff35c3a3f8d 100644
+--- a/Documentation/ch-seeding-device.rst
++++ b/Documentation/ch-seeding-device.rst
+@@ -19,6 +19,16 @@ read-only, it can be used to seed multiple filesystems from one device at the
+ same time. The UUID that is normally attached to a device is automatically
+ changed to a random UUID on each mount.
+ 
++.. note::
++
++	Before v6.17 kernel, a seed device can be mounted independently along
++	with sprouted filesystems.
++	But since v6.17 kernel, a seed device can only be mounted either through
++	a sprouted filesystem, or the seed device itself, not both at the same time.
++
++	This is to ensure a block device to have only a single filesystem bounded
++	to it, so that runtime device missing events can be properly handled.
++
+ Once the seeding device is mounted, it needs the writable device. After adding
+ it, unmounting and mounting with :command:`umount /path; mount /dev/writable
+ /path` or remounting read-write with :command:`remount -o remount,rw` makes the
+-- 
 2.50.1
 

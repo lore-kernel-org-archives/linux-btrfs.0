@@ -1,49 +1,50 @@
-Received: from outgoing.mit.edu (outgoing-auth-1.mit.edu [18.9.28.11])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9E4E51E7C34
-	for <linux-btrfs@vger.kernel.org>; Fri,  8 Aug 2025 12:17:06 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=18.9.28.11
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9C4A727E05F;
+	Fri,  8 Aug 2025 14:15:00 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1754655428; cv=none; b=ShJkJNjDcVW0wcDFPqhQaCLPEzb7VFjQilYlbfwb/eEGou5Tz8fOxvJazeTfjtAwKuMtPpzo7kC6OTTt1TbYmzJPuVt9veSZ2eyM+0CAFrN93rZV7LKPYJW43+eFoAhdDvymQ3ekv11NhKpRcSvtMM4CGU2mj+YyLoz8RuggO74=
+	t=1754662501; cv=none; b=TIhz3YWb0rj7EuHqWDDP3tX+exbWrpBE5BX8v3xgudU2eR4v1pOot7iXll2qHUuq5sjp0TaH3KNLy5hRYHXmo2jk/C5sezQhT7k8QlRMQUeSpZ27gCju1xDIjptV4Ya31/08PTWleZt8QNPJdsck+v0fLFIYRGAXr+0UMbrS/2A=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1754655428; c=relaxed/simple;
-	bh=Y92+IMvICiJ1r42tR7WNIvGO3deeW5e46rKqzrXjKfU=;
+	s=arc-20240116; t=1754662501; c=relaxed/simple;
+	bh=HKIkgDzMLDwzvzKcSbUoDlFcm9sGFZMnObzsmCeGRbk=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=mGAMoipjtC4adqv9XAEYQEdO+6uG6rU/okaQx7ZnQ8BGL+BafWT2QlZ8fW8xm+jW9f2rthfCe1aJJNAg1Ii5lJtrFYhft/T2mX/0KwiICjeeIzYRiEzXMsv39pkqaLmMbr/G9cQ9tTW29xOmwPZ4Goz4R8gEOJdUhPk8PjDDdYo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=mit.edu; spf=pass smtp.mailfrom=mit.edu; dkim=pass (2048-bit key) header.d=mit.edu header.i=@mit.edu header.b=M92IArc3; arc=none smtp.client-ip=18.9.28.11
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=mit.edu
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=mit.edu
+	 Content-Type:Content-Disposition:In-Reply-To; b=ZlT4fTAwL6H7AgzjxXNbzsEXVguQX5lnl6GEy4rUVB1QTedi8kV+TpArLczJzc5cNDv49lU6NaOfvGP7nLmWa3TKO+gg604KDBXoO6fyrynWQt0AcVWbcnkCtZ9kMcg+xA/o35UfkdEbt0nJ4u5yjXYbc6W34BNBPukhH93HBhQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Ul4RDosv; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=mit.edu header.i=@mit.edu header.b="M92IArc3"
-Received: from trampoline.thunk.org (pool-173-48-113-76.bstnma.fios.verizon.net [173.48.113.76])
-	(authenticated bits=0)
-        (User authenticated as tytso@ATHENA.MIT.EDU)
-	by outgoing.mit.edu (8.14.7/8.12.4) with ESMTP id 578CGxnl001376
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Fri, 8 Aug 2025 08:17:00 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=mit.edu; s=outgoing;
-	t=1754655421; bh=yCCpjIqmVHoeUa/8t+Ug37kq7ZMxL4KNoxaQysxunz0=;
-	h=Date:From:Subject:Message-ID:MIME-Version:Content-Type;
-	b=M92IArc3xqIILSkxfRZBpLVcShAPVcKNuyAYV2Vd7Y81cmoAZ2klRSg6MgqrG1+Sa
-	 cSv8Np5c4mzHwOBAAkdUZ+DdRyoWi1k8gu6ZlNnwHt38V1mOTROilxbgytbjKGrkEn
-	 odDbaLykat79IKtdZGdSMWc+63g468tyxpTaMulPEaJrYuD9Mm5znwEVa3RLy7CQDs
-	 EaH1dEtsMioM9r3icbQn2pKquX5lxabCMIk6OIWpEH0hv2mJ2DGkI9XizuD4qKXJ2X
-	 AWUDeyFwgXKHGrFyh+SVkDez/zU52QDk2ujXB/g+8wYpKwdROwljwDB0f9PA1swzCb
-	 e5FEtTuTHcQzQ==
-Received: by trampoline.thunk.org (Postfix, from userid 15806)
-	id 5B2BE2E00D6; Fri, 08 Aug 2025 08:16:59 -0400 (EDT)
-Date: Fri, 8 Aug 2025 08:16:59 -0400
-From: "Theodore Ts'o" <tytso@mit.edu>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: linux-ext4 <linux-ext4@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>
-Subject: Re: Ext4 iomap warning during btrfs/136 (yes, it's from btrfs test
- cases)
-Message-ID: <20250808121659.GC778805@mit.edu>
-References: <9b650a52-9672-4604-a765-bb6be55d1e4a@gmx.com>
- <4ef2476f-50c3-424d-927d-100e305e1f8e@gmx.com>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Ul4RDosv"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 22B1DC4CEED;
+	Fri,  8 Aug 2025 14:14:57 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1754662500;
+	bh=HKIkgDzMLDwzvzKcSbUoDlFcm9sGFZMnObzsmCeGRbk=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=Ul4RDosvdyO3wvUFC9dpG5zZP+OhqJpvY6w4eDfUSuYA2AQLSHCJlkKZCkOY2LLjP
+	 Qtkd4Vee/lax31JRFeEYVYLYAylGeMvoEM45Bvn1W6/hoyuXNUB2/UR4QvXrDaIDLW
+	 s6+0+Kp9hpeneR2Ru2Xa7EmtJH4PHg33ncPjZNQy9oz4BM/qLDzYXYnp4i6QBASt6z
+	 nsGc/7PSDMwEbjKZqKUqlhHJ1GgNYEiX+fP05VZAubvlVEe0BrW3LoGJKPPO6DOOtq
+	 kLdTiZtv3XGb8h8qDBmd6m2xFNPU8KcOyrz6kF/6PTiyiNTm7Y5zOmKdVfj+0gOslK
+	 FaXmVQPl4LrDQ==
+Date: Fri, 8 Aug 2025 16:14:55 +0200
+From: Christian Brauner <brauner@kernel.org>
+To: Qu Wenruo <wqu@suse.com>
+Cc: Anand Jain <anand.jain@oracle.com>, Josef Bacik <josef@toxicpanda.com>, 
+	Qu Wenruo <quwenruo.btrfs@gmx.com>, Qu Wenruo <wqu@suse.de>, 
+	linux-btrfs <linux-btrfs@vger.kernel.org>, David Sterba <dsterba@suse.com>, 
+	"linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>
+Subject: Re: Should seed device be allowed to be mounted multiple times?
+Message-ID: <20250808-liest-allumfassend-2fb553ad1fb3@brauner>
+References: <aef03da8-853a-4c9f-b77b-30cf050ec1a5@suse.de>
+ <4cdf6f5c-41e8-4943-9c8b-794e04aa47c5@suse.de>
+ <8daff5f7-c8e8-4e74-a56c-3d161d3bda1f@oracle.com>
+ <bddc796f-a0e0-4ab5-ab90-8cd10e20db23@suse.de>
+ <184c750a-ce86-4e08-9722-7aa35163c940@oracle.com>
+ <bc8ecf02-b1a1-4bc0-80e3-162e334db94a@gmx.com>
+ <a3db2131-37a8-469f-a20d-dc83b2b14475@oracle.com>
+ <510675a5-7cb2-4838-87e0-9fb0e9f114f0@suse.com>
+ <20250805-tragweite-keule-31547b419bc3@brauner>
+ <6a85c9c0-36ac-4a69-a0d5-4bc5846cd5c7@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -53,41 +54,84 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <4ef2476f-50c3-424d-927d-100e305e1f8e@gmx.com>
+In-Reply-To: <6a85c9c0-36ac-4a69-a0d5-4bc5846cd5c7@suse.com>
 
-On Fri, Aug 08, 2025 at 06:20:56PM +0930, Qu Wenruo wrote:
+On Wed, Aug 06, 2025 at 07:50:06AM +0930, Qu Wenruo wrote:
 > 
-> 在 2025/8/8 17:22, Qu Wenruo 写道:
-> > Hi,
+> 
+> 在 2025/8/5 22:13, Christian Brauner 写道:
+> > On Tue, Aug 05, 2025 at 10:22:49AM +0930, Qu Wenruo wrote:
+> > > 
+> > > 
+> > > 在 2025/8/5 10:06, Anand Jain 写道:
+> > > > 
+> > > > 
+> > > > > > Thanks for the comments.
+> > > > > > Our seed block device use-case doesn’t fall under the kind of risk that
+> > > > > > BLK_OPEN_RESTRICT_WRITES is meant to guard against—it’s not a typical
+> > > > > > multi-FS RW setup. Seed devices are readonly, so it might be reasonable
+> > > > > > to handle this at the block layer—or maybe it’s not feasible.
+> > > > 
+> > > > 
+> > > > > Read-only doesn't prevent the device from being removed suddenly.
+> > > > 
+> > > > I don't see how this is related to the BLK_OPEN_RESTRICT_WRITES flag.
+> > > > Can you clarify?
+> > > 
+> > > It's not related to that flag, I'm talking about the fs_bdev_mark_dead(),
+> > > and the remaining 3 callbacks.
+> > > 
+> > > Those call backs are all depending on the bdev holder to grab a super block.
+> > > 
+> > > Thus a block device should and can not have multiple super blocks.
 > > 
-> > [BACKGROUND]
-> > Recently I'm testing btrfs with 16KiB block size.
+> > I'm pretty sure you can't just break the seed device sharing use-case
+> > without causing a lot of regressions...
+> 
+> It's not that widely affecting, we can still share the same seed device for
+> all different sprout fses, just only one of them can be mounted at the same
+> time.
+> 
+> And even with that limitation, it won't affect most (or any) real world use
+> cases.
+> 
+> Even the most complex case like using seed devices as rootfs, and we want to
+> sprout the rootfs again, just remove the seed device from the current
+> rootfs, then one can mount the seed device again.
+> 
 > > 
-> > Currently btrfs is artificially limiting subpage block size to 4K.
-> > But there is a simple patch to change it to support all block sizes <=
-> > page size in my branch:
+> > If you know what the seed devices are than you can change the code to
+> > simply use the btrfs filesystem type as the holder without any holder
+> > operations but just for seed devices. Then seed devices can be opened
+> > by/shared with any btrfs filesystem.
+> 
+> But we will lose all the bdev related events.
+> 
+> We still want to sync/freeze/thaw the real sprouted fs in the end.
+> 
 > > 
-> > https://github.com/adam900710/linux/tree/larger_bs_support
+> > The only restriction is that you cannot use a device as a seed device
+> > that another btrfs filesystem uses as a non-seed device because then it
+> > will be fully owned by the other btrfs filesystem. But Josef tells me
+> > you can only use it as a seed device anyway.
 > > 
-> > [IOMAP WARNING]
-> > And I'm running into a very weird kernel warning at btrfs/136, with 16K
-> > block size and 64K page size.
-> > 
-> > The problem is, the problem happens with ext3 (using ext4 modeule) with
-> > 16K block size, and no btrfs is involved yet.
+> > IOW, if you have a concept of shareable devices between different btrfs
+> > filesystems then it's fine to reflect that in the code. If really needed
+> > you can later add custom block holder ops for seed devices so you can
+> > e.g., iterate through all filesystems that share the device.
+> 
+> Sure it's possible, with a lot of extra code looking up where the seed
+> device belongs, and all the extra bdev event proxy.
+> 
+> 
+> But I'd say, the seed device specification is not well specified in the very
+> beginning, thus it results a lot of "creative" but not practical use cases.
+> 
+> Yes, this will result some regression, but I'd prefer a more sounding and
+> simpler logic for the whole seed device, with minimal impact to the most
+> common existing use cases.
 
-
-Thanks for the bug report!  This looks like it's an issue with using
-indirect block-mapped file with a 16k block size.  I tried your
-reproducer using a 1k block size on an x86_64 system, which is how I
-test problem caused by the block size < page size.  It didn't
-reproduce there, so it looks like it really needs a 16k block size.
-
-Can you say something about what system were you running your testing
-on --- was it an arm64 system, or a powerpc 64 system (the two most
-common systems with page size > 4k)?  (I assume you're not trying to
-do this on an Itanic.  :-)   And was the page size 16k or 64k?
-
-Thanks,
-
-					- Ted
+Ok, I'm not in a position to argue this effectively. If you think you an
+reasonably get away with this regression so be it. But if this ends up
+in a total revert of the conversion even though we'd have alternative
+solution I'm not going to be happy...

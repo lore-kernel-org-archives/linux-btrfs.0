@@ -1,64 +1,64 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4A45F22759B
-	for <linux-btrfs@vger.kernel.org>; Thu, 14 Aug 2025 05:34:01 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 59835223339
+	for <linux-btrfs@vger.kernel.org>; Thu, 14 Aug 2025 05:34:04 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1755149643; cv=none; b=W7OjzdSmzsGnb2f0A8Wv+ss0sfqig3CyCQVS3c/fpJWXpA2GADMHY7Xkk6fNxTSnHqU8JejrLL2YynFVY3M9kZta4gBTyLxDYcotgUTzacovnkXT4krNfIDMn3IEeWOtQ/D57Z+CCsCfHNh5+eoRD5xHqSOBuW6DdM8AIyDFlcY=
+	t=1755149646; cv=none; b=KKcrGGfd9Wr87N2qgeUsq1w/TFQhsRQhP6CG1YpB9f7qsJJQ68mRP8xK24oQ5QTqh/jRwYSzBTm308hO6hJhZgkUFIoliyxaq8FnZqJTtYQAbC5xhp7rj7XwxiMp4krbQON0Tlf9Axl7lvhV5XDhgJ0++Ryfy96xxN/MOLG7nS0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1755149643; c=relaxed/simple;
-	bh=fN7EX4bRBa5uhE21Qnnd7EN9BBnr3BI7v5V7GGjU4Xs=;
+	s=arc-20240116; t=1755149646; c=relaxed/simple;
+	bh=uURMgh6JpN9vdwjA8ofv4MYH6lf79jdZTmsKa7kfmN8=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=QCksRDwe+voohEJkbHoPmwZ5OCubTGTVryA4r4hroWN+8DsY0siOZhohjvf8i7OsOz6vICE6J7eplvLWyy4gITd2BXcl+1/CfWNm7Vjh9H6CDctVGpr0lx0W+EpaJCONW37V6AX52rKS5wpqtqQabXJ1O60c81slQiqkYLAoWTI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=nNRS0tdI; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=rIdDcLNN; arc=none smtp.client-ip=195.135.223.130
+	 MIME-Version; b=n/ESlAnuew6EkwV9Z5uh7XZTz7eZVrCViRrUv81af9ueorzq0d+9ohk3Vd75ZoHTjb/sGuUvEON0XlRdbitMyhz8wi8TGkY4tK4cobJIT7mMBBvDD0fQ8e5YzinsrTc3fhPO0fZna2ib4E/SVag8DKNpAlmqMerj5Onyo48gbMY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=gyNXUi/w; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=gyNXUi/w; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="nNRS0tdI";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="rIdDcLNN"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="gyNXUi/w";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="gyNXUi/w"
 Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id E779921B46
-	for <linux-btrfs@vger.kernel.org>; Thu, 14 Aug 2025 05:33:50 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id AE3DE1F7CD
+	for <linux-btrfs@vger.kernel.org>; Thu, 14 Aug 2025 05:33:53 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1755149631; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1755149633; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=DBmPGa5umoW3Yj15Wysd+NNtgwE8fIp8Mwe1zFqDTVI=;
-	b=nNRS0tdIh22qCwuq+lKIyt/J6hm+ajmuBOhmuFu97UMj5pGjGQYhl78eHdYL3NC+gFYVTN
-	a2syJ1pAsWg7AetipRKkWP+LcM4rNhnDykvUuRPwZF8LaoUdG4/VO8FewUBCYKBBEJN797
-	6bsT2nSZXcrECjqn97+kSW/bH47VC5Q=
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=rIdDcLNN
+	bh=GbMwBIwzV6p5MSn41PnXPoNqOxq/93eQO+VH6Ud8NBE=;
+	b=gyNXUi/wquguuQs4CaTVXaPU3MmysqO8ReE4xnHKAT/OGQiVtZwGyTuyqP5nTOQdpj3sel
+	pfS+2OlIpV/EqPw2x0cXKuqfY2Dk6kigtyOvZm5ULlolT7ZwFkWGpoAlvke7BLW31+R6yf
+	L3kTT8mpAuUkuMze67syHwi0ZQ+XyOI=
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b="gyNXUi/w"
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1755149630; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1755149633; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=DBmPGa5umoW3Yj15Wysd+NNtgwE8fIp8Mwe1zFqDTVI=;
-	b=rIdDcLNNXgz08zZTVdQ/xKBKpyjYregOujtPEyurV/YBLwvJdhHETy6Y7Wkq68gNWRmnfU
-	fhTARqCCiPjYDuo9lFTPS44dkrg6Ac3VlHJXsnlDUkcYgJ0NakjX6e8dQPjR5belL1ZGBG
-	W03LW4x00OCqxEHFZYZikxMbFatB/uw=
+	bh=GbMwBIwzV6p5MSn41PnXPoNqOxq/93eQO+VH6Ud8NBE=;
+	b=gyNXUi/wquguuQs4CaTVXaPU3MmysqO8ReE4xnHKAT/OGQiVtZwGyTuyqP5nTOQdpj3sel
+	pfS+2OlIpV/EqPw2x0cXKuqfY2Dk6kigtyOvZm5ULlolT7ZwFkWGpoAlvke7BLW31+R6yf
+	L3kTT8mpAuUkuMze67syHwi0ZQ+XyOI=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 08EDD13479
-	for <linux-btrfs@vger.kernel.org>; Thu, 14 Aug 2025 05:33:49 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id D01AA13479
+	for <linux-btrfs@vger.kernel.org>; Thu, 14 Aug 2025 05:33:52 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id oHkELT11nWjYXQAAD6G6ig
+	id 8CcMIkB1nWjYXQAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Thu, 14 Aug 2025 05:33:49 +0000
+	for <linux-btrfs@vger.kernel.org>; Thu, 14 Aug 2025 05:33:52 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 4/7] btrfs: migrate to use per-fs workspace manager
-Date: Thu, 14 Aug 2025 15:03:23 +0930
-Message-ID: <fdd226e695d85ca1f940ee51f90b48f7d1d37df3.1755148754.git.wqu@suse.com>
+Subject: [PATCH 6/7] btrfs: rename btrfs_compress_op to btrfs_compress_levels
+Date: Thu, 14 Aug 2025 15:03:25 +0930
+Message-ID: <d5482f6331c39e85d742bcc1cef28c8e705af1bc.1755148754.git.wqu@suse.com>
 X-Mailer: git-send-email 2.50.1
 In-Reply-To: <cover.1755148754.git.wqu@suse.com>
 References: <cover.1755148754.git.wqu@suse.com>
@@ -69,11 +69,6 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Level: 
-X-Spam-Flag: NO
-X-Rspamd-Queue-Id: E779921B46
-X-Rspamd-Action: no action
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
 X-Spamd-Result: default: False [-3.01 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
@@ -91,270 +86,170 @@ X-Spamd-Result: default: False [-3.01 / 50.00];
 	RCPT_COUNT_ONE(0.00)[1];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
 	FROM_EQ_ENVFROM(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,suse.com:mid,suse.com:email];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:dkim,suse.com:email];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
 	RCVD_TLS_ALL(0.00)[];
 	TO_DN_NONE(0.00)[];
 	RCVD_COUNT_TWO(0.00)[2];
 	MIME_TRACE(0.00)[0:+];
 	DKIM_TRACE(0.00)[suse.com:+]
+X-Spam-Flag: NO
+X-Spam-Level: 
+X-Rspamd-Queue-Id: AE3DE1F7CD
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Rspamd-Action: no action
 X-Spam-Score: -3.01
 
-There are several interfaces involved for each algorithm:
+Since all workspace managers are per-fs, there is no need nor no way to
+store them inside btrfs_compress_op::wsm anymore.
 
-- alloc workspace
-  All algorithms allocate a workspace without the need for workspace
-  manager.
-  So no change needs to be done.
+With that said, we can do the following modifications:
 
-- get workspace
-  This involves checking the workspace manager to find a free one, and
-  if not, allocate a new one.
+- Remove zstd_workspace_mananger::ops
+  Zstd always grab the global btrfs_compress_op[].
+- Remove btrfs_compress_op::wsm member
+- Rename btrfs_compress_op to btrfs_compress_levels
 
-  For none and lzo, they share the same generic btrfs_get_workspace()
-  helper, only needs to update that function to use the per-fs manager.
-
-  For zlib it uses a wrapper around btrfs_get_workspace(), so no special
-  work needed.
-
-  For zstd, update zstd_find_workspace() and zstd_get_workspace() to
-  utilize the per-fs manager.
-
-- put workspace
-  For none/zlib/lzo they share the same btrfs_put_workspace(), update
-  that function to use the per-fs manager.
-
-  For zstd, it's zstd_put_workspace(), the same update.
-
-- zstd specific timer
-  This is the timer to reclaim workspace, change it to grab the per-fs
-  workspace manager instead.
-
-Now all workspace are managed by the per-fs manager.
+This should make it more clear that btrfs_*_compress structures are only
+to indicate the levels of each compress algorithm.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/compression.c | 18 +++++------
- fs/btrfs/zstd.c        | 71 +++++++++++++++++++++++-------------------
- 2 files changed, 48 insertions(+), 41 deletions(-)
+ fs/btrfs/compression.c | 14 +++++++-------
+ fs/btrfs/compression.h | 11 +++++------
+ fs/btrfs/lzo.c         |  2 +-
+ fs/btrfs/zlib.c        |  2 +-
+ fs/btrfs/zstd.c        |  4 +---
+ 5 files changed, 15 insertions(+), 18 deletions(-)
 
 diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index 8a7b2b802ddd..4c5a9d6c22ef 100644
+index 12b851218598..d515c4d8b8ea 100644
 --- a/fs/btrfs/compression.c
 +++ b/fs/btrfs/compression.c
-@@ -875,7 +875,7 @@ static void btrfs_cleanup_workspace_manager(int type)
+@@ -727,9 +727,9 @@ static struct list_head *alloc_heuristic_ws(struct btrfs_fs_info *fs_info)
+ 	return ERR_PTR(-ENOMEM);
+ }
+ 
+-const struct btrfs_compress_op btrfs_heuristic_compress = { 0 };
++const struct btrfs_compress_levels btrfs_heuristic_compress = { 0 };
+ 
+-static const struct btrfs_compress_op * const btrfs_compress_op[] = {
++static const struct btrfs_compress_levels * const btrfs_compress_levels[] = {
+ 	/* The heuristic is represented as compression type 0 */
+ 	&btrfs_heuristic_compress,
+ 	&btrfs_zlib_compress,
+@@ -981,12 +981,12 @@ static void put_workspace(struct btrfs_fs_info *fs_info, int type, struct list_h
   */
- struct list_head *btrfs_get_workspace(struct btrfs_fs_info *fs_info, int type, int level)
+ static int btrfs_compress_set_level(unsigned int type, int level)
  {
--	struct workspace_manager *wsm;
-+	struct workspace_manager *wsm = fs_info->compr_wsm[type];
- 	struct list_head *workspace;
- 	int cpus = num_online_cpus();
- 	unsigned nofs_flag;
-@@ -885,7 +885,7 @@ struct list_head *btrfs_get_workspace(struct btrfs_fs_info *fs_info, int type, i
- 	wait_queue_head_t *ws_wait;
- 	int *free_ws;
+-	const struct btrfs_compress_op *ops = btrfs_compress_op[type];
++	const struct btrfs_compress_levels *levels = btrfs_compress_levels[type];
  
--	wsm = btrfs_compress_op[type]->workspace_manager;
-+	ASSERT(wsm);
- 	idle_ws	 = &wsm->idle_ws;
- 	ws_lock	 = &wsm->ws_lock;
- 	total_ws = &wsm->total_ws;
-@@ -974,19 +974,19 @@ static struct list_head *get_workspace(struct btrfs_fs_info *fs_info, int type,
+ 	if (level == 0)
+-		level = ops->default_level;
++		level = levels->default_level;
+ 	else
+-		level = clamp(level, ops->min_level, ops->max_level);
++		level = clamp(level, levels->min_level, levels->max_level);
+ 
+ 	return level;
+ }
+@@ -996,9 +996,9 @@ static int btrfs_compress_set_level(unsigned int type, int level)
   */
- void btrfs_put_workspace(struct btrfs_fs_info *fs_info, int type, struct list_head *ws)
+ bool btrfs_compress_level_valid(unsigned int type, int level)
  {
--	struct workspace_manager *wsm;
-+	struct workspace_manager *gwsm = fs_info->compr_wsm[type];
- 	struct list_head *idle_ws;
- 	spinlock_t *ws_lock;
- 	atomic_t *total_ws;
- 	wait_queue_head_t *ws_wait;
- 	int *free_ws;
+-	const struct btrfs_compress_op *ops = btrfs_compress_op[type];
++	const struct btrfs_compress_levels *levels = btrfs_compress_levels[type];
  
--	wsm = btrfs_compress_op[type]->workspace_manager;
--	idle_ws	 = &wsm->idle_ws;
--	ws_lock	 = &wsm->ws_lock;
--	total_ws = &wsm->total_ws;
--	ws_wait	 = &wsm->ws_wait;
--	free_ws	 = &wsm->free_ws;
-+	ASSERT(gwsm);
-+	idle_ws	 = &gwsm->idle_ws;
-+	ws_lock	 = &gwsm->ws_lock;
-+	total_ws = &gwsm->total_ws;
-+	ws_wait	 = &gwsm->ws_wait;
-+	free_ws	 = &gwsm->free_ws;
+-	return ops->min_level <= level && level <= ops->max_level;
++	return levels->min_level <= level && level <= levels->max_level;
+ }
  
- 	spin_lock(ws_lock);
- 	if (*free_ws <= num_online_cpus()) {
+ /* Wrapper around find_get_page(), with extra error message. */
+diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
+index e9f5f821cf53..760d4aac74e6 100644
+--- a/fs/btrfs/compression.h
++++ b/fs/btrfs/compression.h
+@@ -129,8 +129,7 @@ struct workspace_manager {
+ struct list_head *btrfs_get_workspace(struct btrfs_fs_info *fs_info, int type, int level);
+ void btrfs_put_workspace(struct btrfs_fs_info *fs_info, int type, struct list_head *ws);
+ 
+-struct btrfs_compress_op {
+-	struct workspace_manager *workspace_manager;
++struct btrfs_compress_levels {
+ 	/* Maximum level supported by the compression algorithm */
+ 	int min_level;
+ 	int max_level;
+@@ -140,10 +139,10 @@ struct btrfs_compress_op {
+ /* The heuristic workspaces are managed via the 0th workspace manager */
+ #define BTRFS_NR_WORKSPACE_MANAGERS	BTRFS_NR_COMPRESS_TYPES
+ 
+-extern const struct btrfs_compress_op btrfs_heuristic_compress;
+-extern const struct btrfs_compress_op btrfs_zlib_compress;
+-extern const struct btrfs_compress_op btrfs_lzo_compress;
+-extern const struct btrfs_compress_op btrfs_zstd_compress;
++extern const struct btrfs_compress_levels btrfs_heuristic_compress;
++extern const struct btrfs_compress_levels btrfs_zlib_compress;
++extern const struct btrfs_compress_levels btrfs_lzo_compress;
++extern const struct btrfs_compress_levels btrfs_zstd_compress;
+ 
+ const char* btrfs_compress_type2str(enum btrfs_compression_type type);
+ bool btrfs_compress_is_valid_type(const char *str, size_t len);
+diff --git a/fs/btrfs/lzo.c b/fs/btrfs/lzo.c
+index 3456a1dcd420..2983214643da 100644
+--- a/fs/btrfs/lzo.c
++++ b/fs/btrfs/lzo.c
+@@ -486,7 +486,7 @@ int lzo_decompress(struct list_head *ws, const u8 *data_in,
+ 	return ret;
+ }
+ 
+-const struct btrfs_compress_op btrfs_lzo_compress = {
++const struct btrfs_compress_levels  btrfs_lzo_compress = {
+ 	.max_level		= 1,
+ 	.default_level		= 1,
+ };
+diff --git a/fs/btrfs/zlib.c b/fs/btrfs/zlib.c
+index aecc58054045..8e0bf34e0998 100644
+--- a/fs/btrfs/zlib.c
++++ b/fs/btrfs/zlib.c
+@@ -480,7 +480,7 @@ int zlib_decompress(struct list_head *ws, const u8 *data_in,
+ 	return ret;
+ }
+ 
+-const struct btrfs_compress_op btrfs_zlib_compress = {
++const struct btrfs_compress_levels btrfs_zlib_compress = {
+ 	.min_level		= 1,
+ 	.max_level		= 9,
+ 	.default_level		= BTRFS_ZLIB_DEFAULT_LEVEL,
 diff --git a/fs/btrfs/zstd.c b/fs/btrfs/zstd.c
-index 24898aee3ee0..41019fcebc13 100644
+index d514a73a4015..63faeb3ed9ac 100644
 --- a/fs/btrfs/zstd.c
 +++ b/fs/btrfs/zstd.c
-@@ -112,19 +112,19 @@ static inline int clip_level(int level)
+@@ -77,7 +77,6 @@ struct workspace {
   */
- static void zstd_reclaim_timer_fn(struct timer_list *timer)
- {
-+	struct zstd_workspace_manager *zwsm =
-+		container_of(timer, struct zstd_workspace_manager, timer);
- 	unsigned long reclaim_threshold = jiffies - ZSTD_BTRFS_RECLAIM_JIFFIES;
- 	struct list_head *pos, *next;
  
--	ASSERT(timer == &wsm.timer);
-+	spin_lock(&zwsm->lock);
- 
--	spin_lock(&wsm.lock);
--
--	if (list_empty(&wsm.lru_list)) {
--		spin_unlock(&wsm.lock);
-+	if (list_empty(&zwsm->lru_list)) {
-+		spin_unlock(&zwsm->lock);
- 		return;
- 	}
- 
--	list_for_each_prev_safe(pos, next, &wsm.lru_list) {
-+	list_for_each_prev_safe(pos, next, &zwsm->lru_list) {
- 		struct workspace *victim = container_of(pos, struct workspace,
- 							lru_list);
- 		int level;
-@@ -141,15 +141,15 @@ static void zstd_reclaim_timer_fn(struct timer_list *timer)
- 		list_del(&victim->list);
- 		zstd_free_workspace(&victim->list);
- 
--		if (list_empty(&wsm.idle_ws[level]))
--			clear_bit(level, &wsm.active_map);
-+		if (list_empty(&zwsm->idle_ws[level]))
-+			clear_bit(level, &zwsm->active_map);
- 
- 	}
- 
--	if (!list_empty(&wsm.lru_list))
--		mod_timer(&wsm.timer, jiffies + ZSTD_BTRFS_RECLAIM_JIFFIES);
-+	if (!list_empty(&zwsm->lru_list))
-+		mod_timer(&zwsm->timer, jiffies + ZSTD_BTRFS_RECLAIM_JIFFIES);
- 
--	spin_unlock(&wsm.lock);
-+	spin_unlock(&zwsm->lock);
+ struct zstd_workspace_manager {
+-	const struct btrfs_compress_op *ops;
+ 	spinlock_t lock;
+ 	struct list_head lru_list;
+ 	struct list_head idle_ws[ZSTD_BTRFS_MAX_LEVEL];
+@@ -190,7 +189,6 @@ int zstd_alloc_workspace_manager(struct btrfs_fs_info *fs_info)
+ 	if (!zwsm)
+ 		return -ENOMEM;
+ 	zstd_calc_ws_mem_sizes();
+-	zwsm->ops = &btrfs_zstd_compress;
+ 	spin_lock_init(&zwsm->lock);
+ 	init_waitqueue_head(&zwsm->wait);
+ 	timer_setup(&zwsm->timer, zstd_reclaim_timer_fn, 0);
+@@ -727,7 +725,7 @@ int zstd_decompress(struct list_head *ws, const u8 *data_in,
+ 	return ret;
  }
  
- /*
-@@ -292,29 +292,31 @@ void zstd_cleanup_workspace_manager(void)
-  * offer the opportunity to reclaim the workspace in favor of allocating an
-  * appropriately sized one in the future.
-  */
--static struct list_head *zstd_find_workspace(int level)
-+static struct list_head *zstd_find_workspace(struct btrfs_fs_info *fs_info, int level)
- {
-+	struct zstd_workspace_manager *zwsm = fs_info->compr_wsm[BTRFS_COMPRESS_ZSTD];
- 	struct list_head *ws;
- 	struct workspace *workspace;
- 	int i = clip_level(level);
- 
--	spin_lock_bh(&wsm.lock);
--	for_each_set_bit_from(i, &wsm.active_map, ZSTD_BTRFS_MAX_LEVEL) {
--		if (!list_empty(&wsm.idle_ws[i])) {
--			ws = wsm.idle_ws[i].next;
-+	ASSERT(zwsm);
-+	spin_lock_bh(&zwsm->lock);
-+	for_each_set_bit_from(i, &zwsm->active_map, ZSTD_BTRFS_MAX_LEVEL) {
-+		if (!list_empty(&zwsm->idle_ws[i])) {
-+			ws = zwsm->idle_ws[i].next;
- 			workspace = list_to_workspace(ws);
- 			list_del_init(ws);
- 			/* keep its place if it's a lower level using this */
- 			workspace->req_level = level;
- 			if (clip_level(level) == workspace->level)
- 				list_del(&workspace->lru_list);
--			if (list_empty(&wsm.idle_ws[i]))
--				clear_bit(i, &wsm.active_map);
--			spin_unlock_bh(&wsm.lock);
-+			if (list_empty(&zwsm->idle_ws[i]))
-+				clear_bit(i, &zwsm->active_map);
-+			spin_unlock_bh(&zwsm->lock);
- 			return ws;
- 		}
- 	}
--	spin_unlock_bh(&wsm.lock);
-+	spin_unlock_bh(&zwsm->lock);
- 
- 	return NULL;
- }
-@@ -331,15 +333,18 @@ static struct list_head *zstd_find_workspace(int level)
-  */
- struct list_head *zstd_get_workspace(struct btrfs_fs_info *fs_info, int level)
- {
-+	struct zstd_workspace_manager *zwsm = fs_info->compr_wsm[BTRFS_COMPRESS_ZSTD];
- 	struct list_head *ws;
- 	unsigned int nofs_flag;
- 
-+	ASSERT(zwsm);
-+
- 	/* level == 0 means we can use any workspace */
- 	if (!level)
- 		level = 1;
- 
- again:
--	ws = zstd_find_workspace(level);
-+	ws = zstd_find_workspace(fs_info, level);
- 	if (ws)
- 		return ws;
- 
-@@ -350,9 +355,9 @@ struct list_head *zstd_get_workspace(struct btrfs_fs_info *fs_info, int level)
- 	if (IS_ERR(ws)) {
- 		DEFINE_WAIT(wait);
- 
--		prepare_to_wait(&wsm.wait, &wait, TASK_UNINTERRUPTIBLE);
-+		prepare_to_wait(&zwsm->wait, &wait, TASK_UNINTERRUPTIBLE);
- 		schedule();
--		finish_wait(&wsm.wait, &wait);
-+		finish_wait(&zwsm->wait, &wait);
- 
- 		goto again;
- 	}
-@@ -373,32 +378,34 @@ struct list_head *zstd_get_workspace(struct btrfs_fs_info *fs_info, int level)
-  */
- void zstd_put_workspace(struct btrfs_fs_info *fs_info, struct list_head *ws)
- {
-+	struct zstd_workspace_manager *zwsm = fs_info->compr_wsm[BTRFS_COMPRESS_ZSTD];
- 	struct workspace *workspace = list_to_workspace(ws);
- 
--	spin_lock_bh(&wsm.lock);
-+	ASSERT(zwsm);
-+	spin_lock_bh(&zwsm->lock);
- 
- 	/* A node is only taken off the lru if we are the corresponding level */
- 	if (clip_level(workspace->req_level) == workspace->level) {
- 		/* Hide a max level workspace from reclaim */
--		if (list_empty(&wsm.idle_ws[ZSTD_BTRFS_MAX_LEVEL - 1])) {
-+		if (list_empty(&zwsm->idle_ws[ZSTD_BTRFS_MAX_LEVEL - 1])) {
- 			INIT_LIST_HEAD(&workspace->lru_list);
- 		} else {
- 			workspace->last_used = jiffies;
--			list_add(&workspace->lru_list, &wsm.lru_list);
--			if (!timer_pending(&wsm.timer))
--				mod_timer(&wsm.timer,
-+			list_add(&workspace->lru_list, &zwsm->lru_list);
-+			if (!timer_pending(&zwsm->timer))
-+				mod_timer(&zwsm->timer,
- 					  jiffies + ZSTD_BTRFS_RECLAIM_JIFFIES);
- 		}
- 	}
- 
--	set_bit(workspace->level, &wsm.active_map);
--	list_add(&workspace->list, &wsm.idle_ws[workspace->level]);
-+	set_bit(workspace->level, &zwsm->active_map);
-+	list_add(&workspace->list, &zwsm->idle_ws[workspace->level]);
- 	workspace->req_level = 0;
- 
--	spin_unlock_bh(&wsm.lock);
-+	spin_unlock_bh(&zwsm->lock);
- 
- 	if (workspace->level == clip_level(ZSTD_BTRFS_MAX_LEVEL))
--		cond_wake_up(&wsm.wait);
-+		cond_wake_up(&zwsm->wait);
- }
- 
- void zstd_free_workspace(struct list_head *ws)
+-const struct btrfs_compress_op btrfs_zstd_compress = {
++const struct btrfs_compress_levels btrfs_zstd_compress = {
+ 	.min_level	= ZSTD_BTRFS_MIN_LEVEL,
+ 	.max_level	= ZSTD_BTRFS_MAX_LEVEL,
+ 	.default_level	= ZSTD_BTRFS_DEFAULT_LEVEL,
 -- 
 2.50.1
 

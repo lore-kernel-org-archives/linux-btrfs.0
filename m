@@ -1,64 +1,64 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C541531771A
-	for <linux-btrfs@vger.kernel.org>; Mon, 18 Aug 2025 00:32:25 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4932820B80A
+	for <linux-btrfs@vger.kernel.org>; Mon, 18 Aug 2025 00:32:28 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1755477147; cv=none; b=EGlqJslbc3kO5obs8+Ib8etqnq7pb2oHpLFFf3soqjy5C0ZVItYXJOaYSXlTHAdz7mpJ6lNmTdySCpMqo7HhN6vUJRHLlINHHh95gbG+rCqFKhUuXUo0InYDuB/bCxc4xnut64W2I9tHt3t8utpDRKeCgqubZOg1DAYVpdiIe4I=
+	t=1755477150; cv=none; b=sYxTKdVq/zF4MPYwgUJb/jbynwTN9J4qzz08kKBQHotlYzzc/I31S3O3l69xNkq2xMjFE0jCtzhQ3WLJjIU63JHwQgsB3OHeV7yU08S5Vs8BiCZARUUwexc/U4HRbAWKpz1RLqIcSz618lgnuHHgH+TFaTW0DtmWCUq4sTZhT8w=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1755477147; c=relaxed/simple;
-	bh=96NqLDNfLKjUPRPjEhe0CHN8U9sLQFZQ8j7MQDgXlOE=;
+	s=arc-20240116; t=1755477150; c=relaxed/simple;
+	bh=WJjAzg/6UyFkbR7zxrNtUdarGhiuf4VhYgGd+0jy/B0=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=DF7uCIt1DNBb7echgtbEoSXqWh3IVgTQVeIlq+2VbCTnxf+3OKFIFBWdTCnNqUOxmRLbsdT8PLXLGiNluJbjjxn1Sp1jir8xC+UsKa9y5u0vq11DL0tJtML1TkrGxshreskrr1gjhuGFbXaVwFH23oHz1FRXTokOWVAwF01yXBA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=jVXsimy5; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=jVXsimy5; arc=none smtp.client-ip=195.135.223.131
+	 MIME-Version; b=pF1USqI9g/6rcbCZqcHr/nVPLMRCZ6levyKQGIhlf2ml0K0K7N2TiFadMXW4fCk97qhkgN8lQZ+ViMz6v4OuaqQquRDy4onDdh+DSjbBOv8yOgFQIpEOwJAPM5As+zlYH5hMRoFtU2u0gzkrWAYawqw1tVWKekWpN41RAxBKYXA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=IIaTyf9M; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=IIaTyf9M; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="jVXsimy5";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="jVXsimy5"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="IIaTyf9M";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="IIaTyf9M"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 3CDA41F46E
-	for <linux-btrfs@vger.kernel.org>; Mon, 18 Aug 2025 00:32:12 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 8605C218FC
+	for <linux-btrfs@vger.kernel.org>; Mon, 18 Aug 2025 00:32:08 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1755477132; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1755477128; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=pnuvHRhKQKuMkIRvK3I/uVb3oDSl82CGiZAZ0SrZYUI=;
-	b=jVXsimy5BMY4QzWTULEvc81lWEob7hOoehMdvrnOgkdzYtO4ak1PE8CLlbII9FHgyjK5FO
-	Ai9sSFcC97jJWcpuGTcNvYdCqYCcE4owxdsZuYJ4K1+Rbvpxip+onhoer7D8nD+jCBpvIt
-	jMQ0WQfuTYh2B4VyDJjG2NAUb1Qk5UM=
-Authentication-Results: smtp-out2.suse.de;
-	none
+	bh=+TxHKIOJsoYulkRLcpue6WvWX0fFvom9hXJeXw7H/ZU=;
+	b=IIaTyf9MqBWjR0c5YdVP4gtL+nSQywopp/icerUn2TpLhyUGEybaYh/1NaU2GxTDJOrtjT
+	76ndVflQ3UgvGrFYBCfFPAMeZqha2n1Ntv9Vxl/F9OxCVuXXafAFJZWNl+iJN6lJNQCdLD
+	/KhF3SpiobGehlgfnheRgYVCL7o6VYA=
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=IIaTyf9M
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1755477132; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1755477128; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=pnuvHRhKQKuMkIRvK3I/uVb3oDSl82CGiZAZ0SrZYUI=;
-	b=jVXsimy5BMY4QzWTULEvc81lWEob7hOoehMdvrnOgkdzYtO4ak1PE8CLlbII9FHgyjK5FO
-	Ai9sSFcC97jJWcpuGTcNvYdCqYCcE4owxdsZuYJ4K1+Rbvpxip+onhoer7D8nD+jCBpvIt
-	jMQ0WQfuTYh2B4VyDJjG2NAUb1Qk5UM=
+	bh=+TxHKIOJsoYulkRLcpue6WvWX0fFvom9hXJeXw7H/ZU=;
+	b=IIaTyf9MqBWjR0c5YdVP4gtL+nSQywopp/icerUn2TpLhyUGEybaYh/1NaU2GxTDJOrtjT
+	76ndVflQ3UgvGrFYBCfFPAMeZqha2n1Ntv9Vxl/F9OxCVuXXafAFJZWNl+iJN6lJNQCdLD
+	/KhF3SpiobGehlgfnheRgYVCL7o6VYA=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 7885D13686
-	for <linux-btrfs@vger.kernel.org>; Mon, 18 Aug 2025 00:32:11 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id C273713686
+	for <linux-btrfs@vger.kernel.org>; Mon, 18 Aug 2025 00:32:07 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id WKfiDot0omhWKgAAD6G6ig
+	id SPf0IId0omhWKgAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Mon, 18 Aug 2025 00:32:11 +0000
+	for <linux-btrfs@vger.kernel.org>; Mon, 18 Aug 2025 00:32:07 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 5/5] btrfs-progs: doc/mkfs: remove the note about memory usage
-Date: Mon, 18 Aug 2025 10:01:47 +0930
-Message-ID: <c5d36303c357e3782016094e8c223accfcc35e95.1755474438.git.wqu@suse.com>
+Subject: [PATCH 2/5] btrfs-progs: mkfs/rootdir: extract inode flags validation code into a helper
+Date: Mon, 18 Aug 2025 10:01:44 +0930
+Message-ID: <a3f2a149cc9b1ae1c6b43c5aecc52af92c83e691.1755474438.git.wqu@suse.com>
 X-Mailer: git-send-email 2.50.1
 In-Reply-To: <cover.1755474438.git.wqu@suse.com>
 References: <cover.1755474438.git.wqu@suse.com>
@@ -69,65 +69,165 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Level: 
-X-Spamd-Result: default: False [-2.80 / 50.00];
-	BAYES_HAM(-3.00)[99.99%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
+X-Spamd-Result: default: False [-3.01 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
 	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
+	MX_GOOD(-0.01)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	RCPT_COUNT_ONE(0.00)[1];
 	ARC_NA(0.00)[];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	MIME_TRACE(0.00)[0:+];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:mid];
+	RCVD_TLS_ALL(0.00)[];
+	DKIM_TRACE(0.00)[suse.com:+];
+	RCVD_COUNT_TWO(0.00)[2];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
 	TO_DN_NONE(0.00)[];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_TLS_ALL(0.00)[]
+	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received,2a07:de40:b281:104:10:150:64:97:from];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:dkim,suse.com:email,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns]
 X-Spam-Flag: NO
-X-Spam-Score: -2.80
+X-Spam-Level: 
+X-Rspamd-Queue-Id: 8605C218FC
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Rspamd-Action: no action
+X-Spam-Score: -3.01
 
-With the recent enhancements to --subvol and --inode-flags options, the
-memory usage for them are just 4K+, and even for the older 8K+ memory
-usage, it's really hard to consider them as heavy memory usage.
+Currently we do the validation of inode flag parameters inside
+mkfs/main.c, but considering all things like structure
+rootdir_inode_flags_entry are all inside rootdir.[ch], it's better to
+move the validation part into rootdir.[ch].
 
-E.g. even if the end user specified over 1000 entries of
---subvol/--inode-flags, it only takes a little over 8MiB for the older
-code or over 4MiB for the newer code.
-
-Since we're in the user space and the year is 2025 not 1995, such memory
-usage is far from heavy.
-
-Just remove the paranoid note from the man page.
+Extract the validation part into a helper,
+btrfs_mkfs_validate_inode_flags(), into rootdir.[ch].
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- Documentation/mkfs.btrfs.rst | 5 -----
- 1 file changed, 5 deletions(-)
+ mkfs/main.c    | 37 +++----------------------------------
+ mkfs/rootdir.c | 39 +++++++++++++++++++++++++++++++++++++++
+ mkfs/rootdir.h |  1 +
+ 3 files changed, 43 insertions(+), 34 deletions(-)
 
-diff --git a/Documentation/mkfs.btrfs.rst b/Documentation/mkfs.btrfs.rst
-index 82837e429778..940bf3a09b6e 100644
---- a/Documentation/mkfs.btrfs.rst
-+++ b/Documentation/mkfs.btrfs.rst
-@@ -243,11 +243,6 @@ OPTIONS
- 	each subvolume is independent and will not inherit from the parent directory.
- 	(The same as the kernel behavior.)
+diff --git a/mkfs/main.c b/mkfs/main.c
+index bde897afd029..f0d2e42421e6 100644
+--- a/mkfs/main.c
++++ b/mkfs/main.c
+@@ -1531,40 +1531,9 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
+ 	if (ret < 0)
+ 		goto error;
  
--        .. note::
--                Both *--inode-flags* and *--subvol* options are memory hungry,
--                will consume at least 8KiB for each option.  Please keep the
--                usage of both options to minimum.
+-	list_for_each_entry(rif, &inode_flags_list, list) {
+-		char path[PATH_MAX];
+-		struct rootdir_inode_flags_entry *rif2;
 -
- --shrink
-         Shrink the filesystem to its minimal size, only works with *--rootdir* option.
+-		if (path_cat_out(path, source_dir, rif->inode_path)) {
+-			ret = -EINVAL;
+-			error("path invalid: %s", path);
+-			goto error;
+-		}
+-		if (!realpath(path, rif->full_path)) {
+-			ret = -errno;
+-			error("could not get canonical path: %s: %m", path);
+-			goto error;
+-		}
+-		if (!path_exists(rif->full_path)) {
+-			ret = -ENOENT;
+-			error("inode path does not exist: %s", rif->full_path);
+-			goto error;
+-		}
+-		list_for_each_entry(rif2, &inode_flags_list, list) {
+-			/*
+-			 * Only compare entries before us. So we won't compare
+-			 * the same pair twice.
+-			 */
+-			if (rif2 == rif)
+-				break;
+-			if (strcmp(rif2->full_path, rif->full_path) == 0) {
+-				error("duplicated inode flag entries for %s",
+-					rif->full_path);
+-				ret = -EEXIST;
+-				goto error;
+-			}
+-		}
+-	}
++	ret = btrfs_mkfs_validate_inode_flags(source_dir, &inode_flags_list);
++	if (ret < 0)
++		goto error;
  
+ 	if (*fs_uuid) {
+ 		uuid_t dummy_uuid;
+diff --git a/mkfs/rootdir.c b/mkfs/rootdir.c
+index e9d5c6bed0c4..1fc050f3ab1b 100644
+--- a/mkfs/rootdir.c
++++ b/mkfs/rootdir.c
+@@ -1123,6 +1123,45 @@ int btrfs_mkfs_validate_subvols(const char *source_dir, struct list_head *subvol
+ 	return 0;
+ }
+ 
++int btrfs_mkfs_validate_inode_flags(const char *source_dir, struct list_head *inode_flags)
++{
++	struct rootdir_inode_flags_entry *rif;
++
++	list_for_each_entry(rif, inode_flags, list) {
++		char path[PATH_MAX];
++		struct rootdir_inode_flags_entry *rif2;
++		int ret;
++
++		if (path_cat_out(path, source_dir, rif->inode_path)) {
++			error("path invalid: %s", path);
++			return -EINTR;
++		}
++		if (!realpath(path, rif->full_path)) {
++			ret = -errno;
++			error("could not get canonical path: %s: %m", path);
++			return ret;
++		}
++		if (!path_exists(rif->full_path)) {
++			error("inode path does not exist: %s", rif->full_path);
++			return -ENOENT;
++		}
++		list_for_each_entry(rif2, inode_flags, list) {
++			/*
++			 * Only compare entries before us. So we won't compare
++			 * the same pair twice.
++			 */
++			if (rif2 == rif)
++				break;
++			if (strcmp(rif2->full_path, rif->full_path) == 0) {
++				error("duplicated inode flag entries for %s",
++					rif->full_path);
++				return -EEXIST;
++			}
++		}
++	}
++	return 0;
++}
++
+ static int add_file_items(struct btrfs_trans_handle *trans,
+ 			  struct btrfs_root *root,
+ 			  struct btrfs_inode_item *btrfs_inode, u64 objectid,
+diff --git a/mkfs/rootdir.h b/mkfs/rootdir.h
+index c9761e090984..cbb83355ee9b 100644
+--- a/mkfs/rootdir.h
++++ b/mkfs/rootdir.h
+@@ -61,6 +61,7 @@ struct rootdir_inode_flags_entry {
+ };
+ 
+ int btrfs_mkfs_validate_subvols(const char *source_dir, struct list_head *subvols);
++int btrfs_mkfs_validate_inode_flags(const char *source_dir, struct list_head *inode_flags);
+ int btrfs_mkfs_fill_dir(struct btrfs_trans_handle *trans, const char *source_dir,
+ 			struct btrfs_root *root, struct list_head *subvols,
+ 			struct list_head *inode_flags_list,
 -- 
 2.50.1
 

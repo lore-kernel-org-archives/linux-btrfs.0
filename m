@@ -1,64 +1,64 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 98513209F5A
-	for <linux-btrfs@vger.kernel.org>; Thu, 28 Aug 2025 04:17:01 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 01C6320C00B
+	for <linux-btrfs@vger.kernel.org>; Thu, 28 Aug 2025 04:17:03 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1756354623; cv=none; b=AH56maPXNbzEcsr9qZ4wjIx59IBQogwoEo8Fj6pDY7jHoUDzjH4alBTlJ3ZtttUw3CojWK/7K69cvJILVj8t85Kd7AFc9xno+PV8er+7WNTyKDcstewF+Kx6s5LI/jnTk64+J3iFV84kjHU+kBqutyNK7hWhoaGr8iITzX+lHAc=
+	t=1756354626; cv=none; b=G122Y2kBmB+grfkatdyaDtFJzLyqONX0POvCgKqE/5o1uWw6DocMa21VQI+HWMfNlPxIPVpn+CmIBtUrxXPNxCx675UM27n/dx11SXa0Lm1hi+zsOGYVrmXYKFkCoWUoSX32IxGDYH+hRPjBOc8NyYZrK6FpFqzTVFTQDv89mr4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1756354623; c=relaxed/simple;
-	bh=rPKiw9pv+ggTO34iwhf/5+fxCSibFyMyAbxGHJO4IXk=;
+	s=arc-20240116; t=1756354626; c=relaxed/simple;
+	bh=b+6eA1OvHhaaBVHoFL9oVEc3d+GhAfUBL2PhEfmSmXM=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=vFcu/rpevLxCi3Ez29QjPU2vuEw6xEJuOG9iXiDQsku5GUR3b3UvZ4KK/ueoHqn4L/FUAXOVwg7P/frxOEZLGqXo5203QsgbdTnM73St+g+oAHFxR+qHH/EhoPX6DRMV1uMZVb5IP8cl1otmyGh1uqRwQtcZRWUAhscse5ZQSMQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=rokXmnbo; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=rokXmnbo; arc=none smtp.client-ip=195.135.223.130
+	 MIME-Version; b=YCweXP1+G+5a0Y8VKIiKO6+aJOcP/GIYNRGtyGT9/JpxsMd/fmPuNp3iaBI9KFuzx2nP1NxAqSxDS/QqQ30zGcK2m1YEOcqK1JkFL2KXhvBUWlJpy4W6ez333eCqlp9MQvEvhsCCnWbMKD1jVGPoLSIZwsfHQ0gwZl2sUD4wQ4I=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=PYEDGzOp; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=PYEDGzOp; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="rokXmnbo";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="rokXmnbo"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="PYEDGzOp";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="PYEDGzOp"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id D8627336E7
-	for <linux-btrfs@vger.kernel.org>; Thu, 28 Aug 2025 04:16:52 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 7757B20938
+	for <linux-btrfs@vger.kernel.org>; Thu, 28 Aug 2025 04:16:50 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1756354612; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1756354610; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=xRxMk28xVrg9hSwbD6ZEi4jPliIOkyXhJqPMhvBXrHA=;
-	b=rokXmnboBmdPSU/LvKhlsGFovyVS2kE90aNDlkUoB8mJNPMnv+HCaFNQDFixg64EBkXRie
-	LO03YOhHxMFckXJyPUpfO/h2SsI4Wio5ypJ/Z6ZoW7oMQLX95DzqMdmZis5hUhshIHyRrQ
-	7Zr0Dq60ajNkYlcbvV7Nr8oczHDDppA=
-Authentication-Results: smtp-out1.suse.de;
+	bh=S1nsTPrxKhsv7Y87R+X5yCGLKU26ArrwaOcityHavI0=;
+	b=PYEDGzOpGAVyrElBoJG+lYlVheOZKBvhTmrUjwqsHLCCuPF8wW1QIgoOUQhGhcQ5hP0ru8
+	+HgKnFRgewDYl4TdJDpsESvbsJNV6+nAgtRSIGn+1H7iHgF0Gcwx6j9FcYw3EEGdzmGvKt
+	L/Jlf4UMo9AbEc0YnMTg89E+jX3Cixs=
+Authentication-Results: smtp-out2.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1756354612; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1756354610; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=xRxMk28xVrg9hSwbD6ZEi4jPliIOkyXhJqPMhvBXrHA=;
-	b=rokXmnboBmdPSU/LvKhlsGFovyVS2kE90aNDlkUoB8mJNPMnv+HCaFNQDFixg64EBkXRie
-	LO03YOhHxMFckXJyPUpfO/h2SsI4Wio5ypJ/Z6ZoW7oMQLX95DzqMdmZis5hUhshIHyRrQ
-	7Zr0Dq60ajNkYlcbvV7Nr8oczHDDppA=
+	bh=S1nsTPrxKhsv7Y87R+X5yCGLKU26ArrwaOcityHavI0=;
+	b=PYEDGzOpGAVyrElBoJG+lYlVheOZKBvhTmrUjwqsHLCCuPF8wW1QIgoOUQhGhcQ5hP0ru8
+	+HgKnFRgewDYl4TdJDpsESvbsJNV6+nAgtRSIGn+1H7iHgF0Gcwx6j9FcYw3EEGdzmGvKt
+	L/Jlf4UMo9AbEc0YnMTg89E+jX3Cixs=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 20F8213680
-	for <linux-btrfs@vger.kernel.org>; Thu, 28 Aug 2025 04:16:51 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id AA89013680
+	for <linux-btrfs@vger.kernel.org>; Thu, 28 Aug 2025 04:16:49 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id QA4nNTPYr2hhYQAAD6G6ig
+	id sG06GzHYr2hhYQAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Thu, 28 Aug 2025 04:16:51 +0000
+	for <linux-btrfs@vger.kernel.org>; Thu, 28 Aug 2025 04:16:49 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 4/4] btrfs: add extra error handling for btrfs_init_new_device()
-Date: Thu, 28 Aug 2025 13:46:25 +0930
-Message-ID: <2298cb0507e8a30f4bc31c79e54f7af900315702.1756353444.git.wqu@suse.com>
+Subject: [PATCH 2/4] btrfs: return error if the primary super block write to a new device failed
+Date: Thu, 28 Aug 2025 13:46:23 +0930
+Message-ID: <1221cb8d5c463f08eb5f576a68c88dd3eef137d6.1756353444.git.wqu@suse.com>
 X-Mailer: git-send-email 2.50.1
 In-Reply-To: <cover.1756353444.git.wqu@suse.com>
 References: <cover.1756353444.git.wqu@suse.com>
@@ -94,78 +94,150 @@ X-Spam-Flag: NO
 X-Spam-Level: 
 X-Spam-Score: -2.80
 
-With all the new error handling for super block writebacks, now a tiny
-device add will fail as expected:
+When adding a new device to btrfs, btrfs adds the device and relying on
+the regular transaction commit to put a new super block to that device.
 
- # lsblk  /dev/loop0
- NAME  MAJ:MIN RM SIZE RO TYPE MOUNTPOINTS
- loop0   7:0    0  64K  0 loop
- # mount /dev/test/scratch1  /mnt/btrfs/
- # btrfs device add -f /dev/loop0 /mnt/btrfs/
- Performing full device TRIM /dev/loop0 (64.00KiB) ...
- ERROR: error adding device '/dev/loop0': Input/output error
+However during that transaction commit, if the primary super block write
+back failed for that device, the fs will not be able to be mounted
+unless degraded.
 
-And the on-disk super block is still pointing to the older chunk tree:
+This is because the primary super block failed to be written to that new
+device, thus btrfs is unable to locate that new device thus it will be
+treated as missing.
 
- # btrfs ins dump-tree -t chunk /dev/test/scratch1
- ...
-         item 0 key (DEV_ITEMS DEV_ITEM 1) itemoff 16185 itemsize 98
-                devid 1 total_bytes 10737418240 bytes_used 562036736
-                io_align 4096 io_width 4096 sector_size 4096 type 0
-                generation 0 start_offset 0 dev_group 0
-                seek_speed 0 bandwidth 0
-                uuid 87358ef3-2cd2-4a4c-b607-4cba0cc80a3b
-                fsid 26f7058c-2604-4293-a580-6efc653b849d
-        item 1 key (FIRST_CHUNK_TREE CHUNK_ITEM 13631488) itemoff 16105 itemsize 80
+This means for the initial transaction commit on that new device, it is
+more critical than other devices.
 
-But after the above error, we still can not properly mount the original
-fs again:
+Treat primary super block write back to a new device as a critical error,
+so that if that error happened, we will abort the transaction.
 
- # umount /mnt/btrfs
- # mount /dev/test/scratch1 /mnt/btrfs
- mount: /mnt/btrfs: can't read superblock on /dev/mapper/test-scratch1.
-       dmesg(1) may have more information after failed mount system call.
- # dmesg -t | tail -n 3
- BTRFS info (device dm-2): using crc32c (crc32c-lib) checksum algorithm
- BTRFS error (device dm-2): failed to read devices
- BTRFS error (device dm-2): open_ctree failed: -5
-
-The mount failure is caused by the missing error handling of the
-btrfs_commit_transaction() inside btrfs_init_new_device().
-
-If that call failed, we should remove the new device, or it will pollute
-the fs_devices, causing newer mounts to fail until the device is
-forgotten manually.
+Although transaction abort is annoying, it keeps the fs to be mountable.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/volumes.c | 8 +++++---
- 1 file changed, 5 insertions(+), 3 deletions(-)
+ fs/btrfs/disk-io.c | 41 +++++++++++++++++++++++++++++++++++++----
+ fs/btrfs/volumes.c |  3 ++-
+ fs/btrfs/volumes.h |  1 +
+ 3 files changed, 40 insertions(+), 5 deletions(-)
 
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 90577fc73b3b..9a8c07a0986d 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3999,6 +3999,21 @@ int btrfs_get_num_tolerated_disk_barrier_failures(u64 flags)
+ 	return min_tolerated;
+ }
+ 
++static bool is_critical_device(struct btrfs_device *dev)
++{
++	/*
++	 * New device primary super block writeback is not tolerated.
++	 *
++	 * As if a power loss after the current transaction, the new device
++	 * has no primary super block, and btrfs will refuse to mount.
++	 * Although it's still possible to mount the fs degraded since
++	 * there is no bgs on that device, it's better to error out now.
++	 */
++	if (test_bit(BTRFS_DEV_STATE_NEW, &dev->dev_state))
++		return true;
++	return false;
++}
++
+ int write_all_supers(struct btrfs_fs_info *fs_info, int max_mirrors)
+ {
+ 	struct list_head *head;
+@@ -4009,6 +4024,7 @@ int write_all_supers(struct btrfs_fs_info *fs_info, int max_mirrors)
+ 	int do_barriers;
+ 	int max_errors;
+ 	int total_errors = 0;
++	bool critical_error = false;
+ 	u64 flags;
+ 
+ 	do_barriers = !btrfs_test_opt(fs_info, NOBARRIER);
+@@ -4039,6 +4055,7 @@ int write_all_supers(struct btrfs_fs_info *fs_info, int max_mirrors)
+ 		}
+ 	}
+ 
++	/* Start from newly added device, to detect problems of them early. */
+ 	list_for_each_entry(dev, head, dev_list) {
+ 		if (!dev->bdev) {
+ 			total_errors++;
+@@ -4074,10 +4091,18 @@ int write_all_supers(struct btrfs_fs_info *fs_info, int max_mirrors)
+ 		}
+ 
+ 		ret = write_dev_supers(dev, sb, max_mirrors);
+-		if (ret)
++		if (ret) {
+ 			total_errors++;
++			if (is_critical_device(dev)) {
++				btrfs_crit(fs_info,
++					   "failed to write super blocks for device %llu",
++					   dev->devid);
++				critical_error = true;
++				break;
++			}
++		}
+ 	}
+-	if (total_errors > max_errors) {
++	if (total_errors > max_errors || critical_error) {
+ 		btrfs_err(fs_info, "%d errors while writing supers",
+ 			  total_errors);
+ 		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
+@@ -4098,11 +4123,19 @@ int write_all_supers(struct btrfs_fs_info *fs_info, int max_mirrors)
+ 			continue;
+ 
+ 		ret = wait_dev_supers(dev, max_mirrors);
+-		if (ret)
++		if (ret) {
+ 			total_errors++;
++			if (is_critical_device(dev)) {
++				btrfs_crit(fs_info,
++					   "failed to wait super blocks for device %llu",
++					   dev->devid);
++				critical_error = true;
++				break;
++			}
++		}
+ 	}
+ 	mutex_unlock(&fs_info->fs_devices->device_list_mutex);
+-	if (total_errors > max_errors) {
++	if (total_errors > max_errors || critical_error) {
+ 		btrfs_handle_fs_error(fs_info, -EIO,
+ 				      "%d errors while writing supers",
+ 				      total_errors);
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 2106190e972b..0f2a93824db1 100644
+index a031aafe253f..2106190e972b 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -2867,14 +2867,16 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
+@@ -2766,6 +2766,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
+ 	}
+ 
+ 	set_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state);
++	set_bit(BTRFS_DEV_STATE_NEW, &device->dev_state);
+ 	device->generation = trans->transid;
+ 	device->io_width = fs_info->sectorsize;
+ 	device->io_align = fs_info->sectorsize;
+@@ -2865,7 +2866,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
+ 	}
  
  	ret = btrfs_commit_transaction(trans);
- 	clear_bit(BTRFS_DEV_STATE_NEW, &device->dev_state);
-+	if (ret < 0) {
-+		trans = NULL;
-+		goto error_sysfs;
-+	}
-+
+-
++	clear_bit(BTRFS_DEV_STATE_NEW, &device->dev_state);
  	if (seeding_dev) {
  		mutex_unlock(&uuid_mutex);
  		up_write(&sb->s_umount);
- 		locked = false;
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index f69bc72680fb..8c571f66acff 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -101,6 +101,7 @@ enum btrfs_raid_types {
+ #define BTRFS_DEV_STATE_FLUSH_SENT	(4)
+ #define BTRFS_DEV_STATE_NO_READA	(5)
+ #define BTRFS_DEV_STATE_SB_WRITE_ERROR	(6)
++#define BTRFS_DEV_STATE_NEW		(7)
  
--		if (ret) /* transaction commit */
--			return ret;
--
- 		ret = btrfs_relocate_sys_chunks(fs_info);
- 		if (ret < 0)
- 			btrfs_handle_fs_error(fs_info, ret,
+ /* Special value encoding failure to write primary super block. */
+ #define BTRFS_SUPER_PRIMARY_WRITE_ERROR		(INT_MAX / 2)
 -- 
 2.50.1
 

@@ -1,64 +1,64 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B295323BD1D
-	for <linux-btrfs@vger.kernel.org>; Mon,  1 Sep 2025 05:24:38 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B9C8C24168D
+	for <linux-btrfs@vger.kernel.org>; Mon,  1 Sep 2025 05:24:42 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1756704280; cv=none; b=US1D2zl4ht8P/5W2n6/TUsWMBQAVCoF8tYUuepKZetiRp5zoih6nUycFY6wGfb5dJOniKu3789o8ndJvI8ccoggBtwOEFvMe3B6NsP5VCXe3HVaof8E4gzL93H/MtZmMY0s5v1yZxIjnERZJa3S6/Olhxih1HbXC5QuUrbXr9NE=
+	t=1756704284; cv=none; b=V3hJihHmXDh84RVYF8BwPn40bhhwHqvw/gDve47mYMHycXywEHIjoJNNTbE1qWVrXZAYyW5TYss05v5xTIQDQ8sh9emApceZrUW/qJHzW2TQKJorDTMkkmrbbICZZoU8Jo8XL4BOMMZY5OvUVdFlni6KxOctXXNGsnr1PiNnEuo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1756704280; c=relaxed/simple;
-	bh=dZ8lejRFEkUuU2lxgcyqqzsY3TURazY5mYqGYUVSmS8=;
+	s=arc-20240116; t=1756704284; c=relaxed/simple;
+	bh=jaoldoaGQxCnxPhO01iLdXxQeAdBzfI2FH8XLcIlS5A=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=rmL+r8cLM25PhVagKrG0uaoVPOFl65rU5g/Jr7pbI8hnb773skxwInPI424bWDgnxPtq5by4BP1AgFFBB+BPPT+DFDFisYjXoeQ0N+pnJu0wrfQKHGrrInDm+wGkEd6g8sLdOj/KcT3JhMDLIQhkvTEYFu1OLkygvibAW/mQ374=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=dG0eCgyx; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=dG0eCgyx; arc=none smtp.client-ip=195.135.223.131
+	 MIME-Version; b=kMintapft7wyNF8RvIaqRpE3TGmN8xU07iLqsqXsyY5pzpcKzEIBAs3RvFbJqfp+WwGrCB2TyexiyA1emhYb03Hj0qlsVNLzgMSyXkL369Aj1j3Qenen17p0AkQE8rh3ub1lVarwmRl2NcVJPg0yWmc5xv0at5dik3Lnb5MHo7U=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=QxxntPJO; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=QxxntPJO; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="dG0eCgyx";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="dG0eCgyx"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="QxxntPJO";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="QxxntPJO"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 6700F1F38D;
-	Mon,  1 Sep 2025 05:24:26 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id C66DC336C1;
+	Mon,  1 Sep 2025 05:24:30 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1756704266; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1756704270; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=SU6m0NaGtwnpTmLCDUhHf/bJJmH4J0l4dKDrFK5j/To=;
-	b=dG0eCgyxYnwklL+JkA//pW6+9EWzNSTjdAVKm3crIa69nMlGv8XgZlFg8Cwrr++nfrd3cn
-	wF1djmjTKxalwY6dErAt55UTwzJxYhTK/9aNPLKXBOawKQB5GDN75nizG9KoW4NSZDohsd
-	wsRuDvoiJ/rJLWbu8Y9+mVYS76Tl4G4=
-Authentication-Results: smtp-out2.suse.de;
+	bh=k6rfdIx5FzJiNL3A9ZqIrdGabPJiQqTbU3RX3329EPw=;
+	b=QxxntPJOGX3SPCLT45gySb9PpKgyVrbPuLlsT2PKy+X7DbVbvpRRNNqclRA6STJeXo0rYh
+	lDkP/c1rjM+hO14LmVIUnXbyaEWQ9NnTOjc5/iUeYWkiOB75nbZfvV0EQuNcpV9UCZWuiq
+	o3pQg4Hq9FhINhLWJpRB8hwRH+hGbsQ=
+Authentication-Results: smtp-out1.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1756704266; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1756704270; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=SU6m0NaGtwnpTmLCDUhHf/bJJmH4J0l4dKDrFK5j/To=;
-	b=dG0eCgyxYnwklL+JkA//pW6+9EWzNSTjdAVKm3crIa69nMlGv8XgZlFg8Cwrr++nfrd3cn
-	wF1djmjTKxalwY6dErAt55UTwzJxYhTK/9aNPLKXBOawKQB5GDN75nizG9KoW4NSZDohsd
-	wsRuDvoiJ/rJLWbu8Y9+mVYS76Tl4G4=
+	bh=k6rfdIx5FzJiNL3A9ZqIrdGabPJiQqTbU3RX3329EPw=;
+	b=QxxntPJOGX3SPCLT45gySb9PpKgyVrbPuLlsT2PKy+X7DbVbvpRRNNqclRA6STJeXo0rYh
+	lDkP/c1rjM+hO14LmVIUnXbyaEWQ9NnTOjc5/iUeYWkiOB75nbZfvV0EQuNcpV9UCZWuiq
+	o3pQg4Hq9FhINhLWJpRB8hwRH+hGbsQ=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 6924F13981;
-	Mon,  1 Sep 2025 05:24:25 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id C7E5813981;
+	Mon,  1 Sep 2025 05:24:29 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id aOQgCwkutWhBJgAAD6G6ig
-	(envelope-from <wqu@suse.com>); Mon, 01 Sep 2025 05:24:25 +0000
+	id qINSIg0utWhBJgAAD6G6ig
+	(envelope-from <wqu@suse.com>); Mon, 01 Sep 2025 05:24:29 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: linux-fsdevel@vger.kernel.org
-Subject: [PATCH 1/4] btrfs: support all block sizes which is no larger than page size
-Date: Mon,  1 Sep 2025 14:54:03 +0930
-Message-ID: <aac1886b134fbe1d8663695e3ee214ed8dd957b6.1756703958.git.wqu@suse.com>
+Subject: [PATCH 4/4] btrfs: replace bio_for_each_segment usage
+Date: Mon,  1 Sep 2025 14:54:06 +0930
+Message-ID: <80ada25b72261dcaedc2ccc6d801de19c56f3ece.1756703958.git.wqu@suse.com>
 X-Mailer: git-send-email 2.50.1
 In-Reply-To: <cover.1756703958.git.wqu@suse.com>
 References: <cover.1756703958.git.wqu@suse.com>
@@ -93,42 +93,108 @@ X-Spam-Flag: NO
 X-Spam-Level: 
 X-Spam-Score: -2.80
 
-Currently if block size < page size, btrfs only supports one single
-config, 4K.
+Inside btrfs we have some call sites using bio_for_each_segment() and
+bio_for_each_segment_all().
 
-This is mostly to reduce the test configurations, as 4K is going to be
-the default block size for all architectures.
+They are fine for now, as we only support bs <= ps, thus the returned
+bv_len is no larger than block size.
 
-However all other major filesystems have no artificial limits on the
-support block size, and some are already supporting block size > page
-sizes.
+However for the incoming bs > ps support, a block can cross several
+pages (although they are still physical contiguous, as such block is
+backed by large folio), in that case the single page iterator is not
+going to handle such blocks.
 
-Since the btrfs subpage block support has been there for a long time,
-it's time for us to enable all block size <= page size support.
+Replace the followinng call sites with bio_for_each_bvec*() helpers:
 
-So here enable all block sizes support as long as it's no larger than
-page size for experimental builds.
+- btrfs_csum_one_bio()
+  This one is critical for basic uncompressed writes for bs > ps case.
+  Or it will use the content of the page to calculate the checksum
+  instead of the correct block (which crosses multiple pages).
+
+- set_bio_pages_uptodate()
+- verify_bio_data_sectors()
+  They are mostly fine even with the old single-page interface, as they
+  won't bother bv_len at all.
+  But it's still helpful to replace them, as the new multi-page helper
+  will save some bytes from the stack memory.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/fs.c | 4 ++++
- 1 file changed, 4 insertions(+)
+ fs/btrfs/file-item.c | 13 +++++++------
+ fs/btrfs/raid56.c    |  8 ++++----
+ 2 files changed, 11 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/fs.c b/fs/btrfs/fs.c
-index 335209fe3734..014fb8b12f96 100644
---- a/fs/btrfs/fs.c
-+++ b/fs/btrfs/fs.c
-@@ -78,6 +78,10 @@ bool __attribute_const__ btrfs_supported_blocksize(u32 blocksize)
+diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+index 4dd3d8a02519..bb08b27983a7 100644
+--- a/fs/btrfs/file-item.c
++++ b/fs/btrfs/file-item.c
+@@ -775,6 +775,7 @@ int btrfs_csum_one_bio(struct btrfs_bio *bbio)
+ 	SHASH_DESC_ON_STACK(shash, fs_info->csum_shash);
+ 	struct bio *bio = &bbio->bio;
+ 	struct btrfs_ordered_sum *sums;
++	const u32 blocksize = fs_info->sectorsize;
+ 	char *data;
+ 	struct bvec_iter iter;
+ 	struct bio_vec bvec;
+@@ -799,16 +800,16 @@ int btrfs_csum_one_bio(struct btrfs_bio *bbio)
  
- 	if (blocksize == PAGE_SIZE || blocksize == SZ_4K || blocksize == BTRFS_MIN_BLOCKSIZE)
- 		return true;
-+#ifdef CONFIG_BTRFS_EXPERIMENTAL
-+	if (blocksize <= PAGE_SIZE)
-+		return true;
-+#endif
- 	return false;
- }
+ 	shash->tfm = fs_info->csum_shash;
  
+-	bio_for_each_segment(bvec, bio, iter) {
+-		blockcount = BTRFS_BYTES_TO_BLKS(fs_info,
+-						 bvec.bv_len + fs_info->sectorsize
+-						 - 1);
++	bio_for_each_bvec(bvec, bio, iter) {
++		ASSERT(bvec.bv_len >= blocksize);
++		ASSERT(IS_ALIGNED(bvec.bv_len, blocksize));
++		blockcount = BTRFS_BYTES_TO_BLKS(fs_info, bvec.bv_len);
+ 
+ 		for (i = 0; i < blockcount; i++) {
+ 			data = bvec_kmap_local(&bvec);
+ 			crypto_shash_digest(shash,
+-					    data + (i * fs_info->sectorsize),
+-					    fs_info->sectorsize,
++					    data + (i << fs_info->sectorsize_bits),
++					    blocksize,
+ 					    sums->sums + index);
+ 			kunmap_local(data);
+ 			index += fs_info->csum_size;
+diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+index df48dd6c3f54..2c810fe96bdf 100644
+--- a/fs/btrfs/raid56.c
++++ b/fs/btrfs/raid56.c
+@@ -1513,11 +1513,11 @@ static void set_bio_pages_uptodate(struct btrfs_raid_bio *rbio, struct bio *bio)
+ {
+ 	const u32 sectorsize = rbio->bioc->fs_info->sectorsize;
+ 	struct bio_vec *bvec;
+-	struct bvec_iter_all iter_all;
++	int i;
+ 
+ 	ASSERT(!bio_flagged(bio, BIO_CLONED));
+ 
+-	bio_for_each_segment_all(bvec, bio, iter_all) {
++	bio_for_each_bvec_all(bvec, bio, i) {
+ 		struct sector_ptr *sector;
+ 		phys_addr_t paddr = bvec_phys(bvec);
+ 
+@@ -1574,7 +1574,7 @@ static void verify_bio_data_sectors(struct btrfs_raid_bio *rbio,
+ 	struct btrfs_fs_info *fs_info = rbio->bioc->fs_info;
+ 	int total_sector_nr = get_bio_sector_nr(rbio, bio);
+ 	struct bio_vec *bvec;
+-	struct bvec_iter_all iter_all;
++	int i;
+ 
+ 	/* No data csum for the whole stripe, no need to verify. */
+ 	if (!rbio->csum_bitmap || !rbio->csum_buf)
+@@ -1584,7 +1584,7 @@ static void verify_bio_data_sectors(struct btrfs_raid_bio *rbio,
+ 	if (total_sector_nr >= rbio->nr_data * rbio->stripe_nsectors)
+ 		return;
+ 
+-	bio_for_each_segment_all(bvec, bio, iter_all) {
++	bio_for_each_bvec_all(bvec, bio, i) {
+ 		void *kaddr;
+ 
+ 		kaddr = bvec_kmap_local(bvec);
 -- 
 2.50.1
 

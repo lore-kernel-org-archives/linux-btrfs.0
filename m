@@ -1,39 +1,41 @@
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.21])
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.20])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7BACE1DE3C7;
-	Mon,  1 Sep 2025 03:07:16 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.17.21
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 78D04153BE9;
+	Mon,  1 Sep 2025 03:59:49 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.17.20
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1756696038; cv=none; b=jLoMe5x2JYc5z8Y1pPA5R+UYS/9YZNpbq7fBKWWu29QIGTjzqsVB0kEP8QYZX/E6rxxxyeJWdK5+/wpQpBjgED49KBpjAmy9qMQ4av8LuSQc+jpl2T4IgzqfrXj6ZUC3ShTuQ7CVQCKBHeSx7xKiE0RcVqiH11tvJV5djxDcLs4=
+	t=1756699191; cv=none; b=ryqW5Fa2YawupcycoEQQFiTRAec+I7JCBHj6FnL25mStkS+a8GNcscAvnOXBSSYrjaiLNyAcdUOS7415pOmMt1ct64566ywuM8JirzNKmkrlMYznBfv7Fo1DQDncf0hKtEEIcm9dHngRjaDmX7nzJlzv9PE8xjjwSwysbB7YrGQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1756696038; c=relaxed/simple;
-	bh=15M/MiCOx5p5VN2v1DaLJnEXL/n3TAl5pfMVLULr9qY=;
-	h=Message-ID:Date:MIME-Version:To:From:Subject:Content-Type; b=cDJfHPUpp6c0q8t1P1Ayfj2XTSCbQ233FBLsZJ1jfykv7fcGg/fqL9hc+Z6MIDOzG4MH8K1FicmeGKLfEjTvT0KM1d/eNBC38CAAzLgWbDeMFFbp5g5789XFrz/fhBKe5ioE99qztJwBQvvSk6+P+j8Y6s6OunL/eS3KF/VGxvc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=TzMWXPxk; arc=none smtp.client-ip=212.227.17.21
+	s=arc-20240116; t=1756699191; c=relaxed/simple;
+	bh=EkJ9fGsyfck66TR4y8BR5h4E2eqiXcOaXu0XRgkdkSU=;
+	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
+	 In-Reply-To:Content-Type; b=AZ5PbsAhABbO4L6nX5IbAIMjIhzh4V32oTP1Ve0CJxXaEAQ+y/gS+d25J5JnJp2UGt18VTtk/kXiqj4KQVAlS9xQ0ysFUPe2MiZ/8DxB83t4PrxOBaCDxVJepyuvpDrV5rwzWsLi1h7oPurN+Aj/jSv23piPR2LDk1QcYezA5S8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=GUTgCGk2; arc=none smtp.client-ip=212.227.17.20
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="TzMWXPxk"
+	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="GUTgCGk2"
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1756696034; x=1757300834; i=quwenruo.btrfs@gmx.com;
-	bh=fszt6sGaqYJVG2B8tEnocz97bwP27lPgmdYENUwPWrk=;
-	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:To:From:Subject:
-	 Content-Type:Content-Transfer-Encoding:cc:
-	 content-transfer-encoding:content-type:date:from:message-id:
-	 mime-version:reply-to:subject:to;
-	b=TzMWXPxk2sxJX/Wq5cwPN6RkSjebBKWl34jcg9YfpjcDV1OEAbVMBKksIu4zAFmn
-	 Ur0KMkLry4qfGk9MIBGjQmyT24+DIYZWUDvuoe0IypycAletTUyokD1sKteYD60bC
-	 8UoWQRL64IrUH+V91xL53TReyUIohdO6j0lQuKbkH9EzObo5LMjz2wMiAWWiNei3j
-	 iTlRpwVJOFdEyuRwcCgffOiDLvURDZxY/8fzDM9QDHybeYrQAyX17mFv0vOxnAjT5
-	 G0KBFBUUEntlsfLOrBr+JBxvqdA5RGRYUXfSvujbyPTXDcnZIZMSbaHdSShqMUerK
-	 I9LM0CRPtmJPLbm8kw==
+	s=s31663417; t=1756699185; x=1757303985; i=quwenruo.btrfs@gmx.com;
+	bh=FgzqdPjeEsnbzYFgcWySlkS61dC13rcrGJNrAoQqxRU=;
+	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:
+	 References:From:In-Reply-To:Content-Type:
+	 Content-Transfer-Encoding:cc:content-transfer-encoding:
+	 content-type:date:from:message-id:mime-version:reply-to:subject:
+	 to;
+	b=GUTgCGk2HJujLT7o4c71aOjgUrY0z0ohhTC+YxMayegN9PQoC3Q/sS+en346GeKV
+	 Qph2Ptkk0Ae5zxVJad5FL+CcRjO9PG7RIDmx6sk4bEXxrvg3mBVMlFpQUbXPkBxF/
+	 C/k/bEGDPl9LFcA4TNqvT+gu2CdvV+AmiJ5XLIsrB5T78dSbAni2ELzv4dCHnVRTc
+	 rAMCseHSYLzuOlBbjCqLCBDBz8E+bNNqOIPSidqY3nJnvOmYNOjLWko4LuSdIXbwq
+	 jV262Q08pNMZKxFsvGXD8i9RlovW4Z0roHw+QL0QqhoDvZ1KQMM8RroikYBOarO2Z
+	 AEilQZNyXFaSq/ebQQ==
 X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
 Received: from [172.16.0.229] ([159.196.52.54]) by mail.gmx.net (mrgmx104
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1MUGiJ-1v25w23ydP-00KCCU; Mon, 01
- Sep 2025 05:07:14 +0200
-Message-ID: <db593e62-1d57-4d11-84b0-18d0f49cf0e4@gmx.com>
-Date: Mon, 1 Sep 2025 12:37:11 +0930
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MSKu0-1v41X61bei-00IHFK; Mon, 01
+ Sep 2025 05:59:44 +0200
+Message-ID: <469e3880-c9b2-4ad3-94d3-2afeaf6d03ad@gmx.com>
+Date: Mon, 1 Sep 2025 13:29:41 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -41,12 +43,15 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Content-Language: en-US
-To: "fstests@vger.kernel.org" <fstests@vger.kernel.org>,
+Subject: Re: generic/563 failure caused by losetup no longer handles block
+ device anymore
+To: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>,
+ "fstests@vger.kernel.org" <fstests@vger.kernel.org>,
  linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <db593e62-1d57-4d11-84b0-18d0f49cf0e4@gmx.com>
+ <fc1e2106-2974-474a-aa5c-89178383f4be@dorminy.me>
+Content-Language: en-US
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Subject: generic/563 failure caused by losetup no longer handles block device
- anymore
 Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
  xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
  8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
@@ -71,108 +76,129 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
  Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
  +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
  HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
+In-Reply-To: <fc1e2106-2974-474a-aa5c-89178383f4be@dorminy.me>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:UW5jfl/tyTxuat1bS9GYcyHBlCB932k6XQK3WHJw1rZnmNGH2Wu
- OAnXDphaTjf8dNlL14Jzn+V9Euvi/TlD6uxN1xoWiZljfNH6BI5VR/ltB+6TpzRaxxsVeaZ
- p76U9gvDO5VJ4842pm+OU4yoZJQmMm0G+gU3KiOhTNqkr9Sg4xnXEnk8LF5I76itcuZpBo7
- ycJK7wxem/HsJweGsjDcA==
+X-Provags-ID: V03:K1:tXeQKDecccIE5UaAqlhyu1QY3ugUwmP+fIZCzl0nT4/P95ag5cu
+ 15Jf75pgCqC7dVnPdnS72nCuURldNyojauly7HP8Wbia4T45D5D6Th+NtyEJVimr+6xwZw4
+ qTD+/W5lGsuFGyKtepDN2yZ/Yp9ZCQawgAUdcoQZHScTqQgoSU1jR+9/1UT0BKl+VKHew78
+ bDlk/u7vvwxBqyplUZRBQ==
 X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:rOtvuMlm1MU=;zKKpmlJgiKCUYQfaIiBvX5n3pmB
- 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
-
-Hi,
-
-Recently generic/563 is failing on btrfs and ext4, and it turns out the=20
-losetup inside _create_loop_device_like_bdev() is not properly creating=20
-a valid loopback device if a block device file is passed in:
-
-E.g:
-
-# lsblk  /dev/test/scratch1
-NAME          MAJ:MIN RM SIZE RO TYPE MOUNTPOINTS
-test-scratch1 253:2    0  10G  0 lvm
-
-# losetup -f --show /dev/test/scratch1
-/dev/loop0
-
-# lsblk /dev/loop0
-NAME  MAJ:MIN RM SIZE RO TYPE MOUNTPOINTS
-loop0   7:0    0   0B  0 loop
-
-Thus all filesystems, not only btrfs is affected.
-This looks like a regression in loopback device size handling.
+UI-OutboundReport: notjunk:1;M01:P0:8yWIwI8YS3Y=;CamuvrRhSuV5U6qOPXLkq/0pIiy
+ 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
 
 
-What should we as the next step? Waiting for loopback fix or start using=
-=20
-files inside TEST_MNT as a workaround?
+
+=E5=9C=A8 2025/9/1 13:24, Sweet Tea Dorminy =E5=86=99=E9=81=93:
+>=20
+>=20
+> On 8/31/25 8:07 PM, Qu Wenruo wrote:
+>> Hi,
+>>
+>> Recently generic/563 is failing on btrfs and ext4, and it turns out=20
+>> the losetup inside _create_loop_device_like_bdev() is not properly=20
+>> creating a valid loopback device if a block device file is passed in:
+>>
+>> E.g:
+>>
+>> # lsblk=C2=A0 /dev/test/scratch1
+>> NAME=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 MAJ:MIN RM S=
+IZE RO TYPE MOUNTPOINTS
+>> test-scratch1 253:2=C2=A0=C2=A0=C2=A0 0=C2=A0 10G=C2=A0 0 lvm
+>>
+>> # losetup -f --show /dev/test/scratch1
+>> /dev/loop0
+>>
+>> # lsblk /dev/loop0
+>> NAME=C2=A0 MAJ:MIN RM SIZE RO TYPE MOUNTPOINTS
+>> loop0=C2=A0=C2=A0 7:0=C2=A0=C2=A0=C2=A0 0=C2=A0=C2=A0 0B=C2=A0 0 loop
+>>
+>> Thus all filesystems, not only btrfs is affected.
+>> This looks like a regression in loopback device size handling.
+>>
+>>
+>> What should we as the next step? Waiting for loopback fix or start=20
+>> using files inside TEST_MNT as a workaround?
+>>
+> This looks like it might be the same thing that Lennart references here:
+> https://lore.kernel.org/linux-block/1182267c-=20
+> d291-47bc-8e5f-2e11aa93421b@kernel.dk/
+>=20
+> Which should be fixed in -rc4 according to that email.
+>=20
+> Hope this helps;
+
+Thanks a lot.  With that fix applied, now the test passes again.
 
 Thanks,
 Qu
+
+>=20
+> Sweet Tea
+

@@ -1,64 +1,64 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B9C8C24168D
-	for <linux-btrfs@vger.kernel.org>; Mon,  1 Sep 2025 05:24:42 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9E4F0239E67
+	for <linux-btrfs@vger.kernel.org>; Mon,  1 Sep 2025 05:24:44 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1756704284; cv=none; b=V3hJihHmXDh84RVYF8BwPn40bhhwHqvw/gDve47mYMHycXywEHIjoJNNTbE1qWVrXZAYyW5TYss05v5xTIQDQ8sh9emApceZrUW/qJHzW2TQKJorDTMkkmrbbICZZoU8Jo8XL4BOMMZY5OvUVdFlni6KxOctXXNGsnr1PiNnEuo=
+	t=1756704286; cv=none; b=FpoS1GHfRPffKYqbRuL/8nL9qIXj0s3Xa30Q29K19enAAWvuVUvDQ1jxUSM0LQgp2pItmHAC/5bFVXoodvdRz8JErqUShJwZa6vcaoTRC5vJyoq7QbVmlLc+jQwLNxETviUqi/v8aYZ1bC43fbPj+SV6CLJxZHuv7WI4/qQarxw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1756704284; c=relaxed/simple;
-	bh=jaoldoaGQxCnxPhO01iLdXxQeAdBzfI2FH8XLcIlS5A=;
+	s=arc-20240116; t=1756704286; c=relaxed/simple;
+	bh=5ch/VXFpuHtl0240W7QoHxNeg2iPyigm7BaRmWkEXUc=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=kMintapft7wyNF8RvIaqRpE3TGmN8xU07iLqsqXsyY5pzpcKzEIBAs3RvFbJqfp+WwGrCB2TyexiyA1emhYb03Hj0qlsVNLzgMSyXkL369Aj1j3Qenen17p0AkQE8rh3ub1lVarwmRl2NcVJPg0yWmc5xv0at5dik3Lnb5MHo7U=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=QxxntPJO; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=QxxntPJO; arc=none smtp.client-ip=195.135.223.130
+	 MIME-Version; b=TsMhEc9kKqv7TMs8afYeF28LULCsUFBTGCd9fuLEmf2YVb/5YrEP00/lH8UxCfKbUHdC0tn2EIuwdTanCVSflOwtdhaxVDWPWCW7DPfLnzV16ZDCeVA9ulkxWObrkQhGXRD5uAaMNuaQ/PDGg0x4xxm3MeTy7L80NQy/R16axkA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=WsOHJP96; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=WsOHJP96; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="QxxntPJO";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="QxxntPJO"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="WsOHJP96";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="WsOHJP96"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id C66DC336C1;
-	Mon,  1 Sep 2025 05:24:30 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id D8E9D1F393;
+	Mon,  1 Sep 2025 05:24:27 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1756704270; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1756704267; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=k6rfdIx5FzJiNL3A9ZqIrdGabPJiQqTbU3RX3329EPw=;
-	b=QxxntPJOGX3SPCLT45gySb9PpKgyVrbPuLlsT2PKy+X7DbVbvpRRNNqclRA6STJeXo0rYh
-	lDkP/c1rjM+hO14LmVIUnXbyaEWQ9NnTOjc5/iUeYWkiOB75nbZfvV0EQuNcpV9UCZWuiq
-	o3pQg4Hq9FhINhLWJpRB8hwRH+hGbsQ=
-Authentication-Results: smtp-out1.suse.de;
+	bh=rGnTRPwkqSHWRMEpULRGp2c2UJfsVxdTPKjJXakPyhU=;
+	b=WsOHJP965EidMPLRTUhz5P6wAXfz6t2SSVGUdL0ISVvDq6ecIurkOZIalqP4Mkc64qGKuE
+	Om+UUbgwO9C9hjB8GCkMUNRQDuDxZXW+ufP+e0uHNjOFQ0kqx/0YdLBNjKM9wrGc5xTi5i
+	Uo95zN6jwGgjwH949EP9ODUTNdajSZw=
+Authentication-Results: smtp-out2.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1756704270; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1756704267; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=k6rfdIx5FzJiNL3A9ZqIrdGabPJiQqTbU3RX3329EPw=;
-	b=QxxntPJOGX3SPCLT45gySb9PpKgyVrbPuLlsT2PKy+X7DbVbvpRRNNqclRA6STJeXo0rYh
-	lDkP/c1rjM+hO14LmVIUnXbyaEWQ9NnTOjc5/iUeYWkiOB75nbZfvV0EQuNcpV9UCZWuiq
-	o3pQg4Hq9FhINhLWJpRB8hwRH+hGbsQ=
+	bh=rGnTRPwkqSHWRMEpULRGp2c2UJfsVxdTPKjJXakPyhU=;
+	b=WsOHJP965EidMPLRTUhz5P6wAXfz6t2SSVGUdL0ISVvDq6ecIurkOZIalqP4Mkc64qGKuE
+	Om+UUbgwO9C9hjB8GCkMUNRQDuDxZXW+ufP+e0uHNjOFQ0kqx/0YdLBNjKM9wrGc5xTi5i
+	Uo95zN6jwGgjwH949EP9ODUTNdajSZw=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id C7E5813981;
-	Mon,  1 Sep 2025 05:24:29 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id DA04613981;
+	Mon,  1 Sep 2025 05:24:26 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id qINSIg0utWhBJgAAD6G6ig
-	(envelope-from <wqu@suse.com>); Mon, 01 Sep 2025 05:24:29 +0000
+	id WGGxJgoutWhBJgAAD6G6ig
+	(envelope-from <wqu@suse.com>); Mon, 01 Sep 2025 05:24:26 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: linux-fsdevel@vger.kernel.org
-Subject: [PATCH 4/4] btrfs: replace bio_for_each_segment usage
-Date: Mon,  1 Sep 2025 14:54:06 +0930
-Message-ID: <80ada25b72261dcaedc2ccc6d801de19c56f3ece.1756703958.git.wqu@suse.com>
+Subject: [PATCH 2/4] btrfs: cache max and min order inside btrfs_fs_info
+Date: Mon,  1 Sep 2025 14:54:04 +0930
+Message-ID: <d1a3793b551f0a6ccaf8907cc5aa06d8f5b3d5c2.1756703958.git.wqu@suse.com>
 X-Mailer: git-send-email 2.50.1
 In-Reply-To: <cover.1756703958.git.wqu@suse.com>
 References: <cover.1756703958.git.wqu@suse.com>
@@ -81,7 +81,7 @@ X-Spamd-Result: default: False [-2.80 / 50.00];
 	ARC_NA(0.00)[];
 	RCVD_VIA_SMTP_AUTH(0.00)[];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:email,imap1.dmz-prg2.suse.org:helo];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:mid,suse.com:email];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
 	MIME_TRACE(0.00)[0:+];
@@ -93,108 +93,85 @@ X-Spam-Flag: NO
 X-Spam-Level: 
 X-Spam-Score: -2.80
 
-Inside btrfs we have some call sites using bio_for_each_segment() and
-bio_for_each_segment_all().
+Inside btrfs_fs_info we cache several bits shift like sectorsize_bits.
 
-They are fine for now, as we only support bs <= ps, thus the returned
-bv_len is no larger than block size.
+Apply this to max and min folio orders so that every time mapping order
+needs to be applied we can skip the calculation.
 
-However for the incoming bs > ps support, a block can cross several
-pages (although they are still physical contiguous, as such block is
-backed by large folio), in that case the single page iterator is not
-going to handle such blocks.
+Furthermore all those sectorsize/nodesize shifts, along with the new
+min/max folio orders have a very limited value range by their natures.
 
-Replace the followinng call sites with bio_for_each_bvec*() helpers:
+E.g. blocksize bits can be at most ilog2(64K) which is 16, and for 4K
+page size and 64K block size (bs > ps) the minimal folio order is only
+4.
+Neither those number can even exceed U8_MAX, thus there is no need to
+use u32 for those bits.
 
-- btrfs_csum_one_bio()
-  This one is critical for basic uncompressed writes for bs > ps case.
-  Or it will use the content of the page to calculate the checksum
-  instead of the correct block (which crosses multiple pages).
-
-- set_bio_pages_uptodate()
-- verify_bio_data_sectors()
-  They are mostly fine even with the old single-page interface, as they
-  won't bother bv_len at all.
-  But it's still helpful to replace them, as the new multi-page helper
-  will save some bytes from the stack memory.
+Use u8 for those members to save memory.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/file-item.c | 13 +++++++------
- fs/btrfs/raid56.c    |  8 ++++----
- 2 files changed, 11 insertions(+), 10 deletions(-)
+ fs/btrfs/btrfs_inode.h | 6 +++---
+ fs/btrfs/disk-io.c     | 2 ++
+ fs/btrfs/fs.h          | 8 +++++---
+ 3 files changed, 10 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index 4dd3d8a02519..bb08b27983a7 100644
---- a/fs/btrfs/file-item.c
-+++ b/fs/btrfs/file-item.c
-@@ -775,6 +775,7 @@ int btrfs_csum_one_bio(struct btrfs_bio *bbio)
- 	SHASH_DESC_ON_STACK(shash, fs_info->csum_shash);
- 	struct bio *bio = &bbio->bio;
- 	struct btrfs_ordered_sum *sums;
-+	const u32 blocksize = fs_info->sectorsize;
- 	char *data;
- 	struct bvec_iter iter;
- 	struct bio_vec bvec;
-@@ -799,16 +800,16 @@ int btrfs_csum_one_bio(struct btrfs_bio *bbio)
+diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+index df3445448b7d..a9d6e1bfebae 100644
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -527,14 +527,14 @@ static inline void btrfs_update_inode_mapping_flags(struct btrfs_inode *inode)
  
- 	shash->tfm = fs_info->csum_shash;
- 
--	bio_for_each_segment(bvec, bio, iter) {
--		blockcount = BTRFS_BYTES_TO_BLKS(fs_info,
--						 bvec.bv_len + fs_info->sectorsize
--						 - 1);
-+	bio_for_each_bvec(bvec, bio, iter) {
-+		ASSERT(bvec.bv_len >= blocksize);
-+		ASSERT(IS_ALIGNED(bvec.bv_len, blocksize));
-+		blockcount = BTRFS_BYTES_TO_BLKS(fs_info, bvec.bv_len);
- 
- 		for (i = 0; i < blockcount; i++) {
- 			data = bvec_kmap_local(&bvec);
- 			crypto_shash_digest(shash,
--					    data + (i * fs_info->sectorsize),
--					    fs_info->sectorsize,
-+					    data + (i << fs_info->sectorsize_bits),
-+					    blocksize,
- 					    sums->sums + index);
- 			kunmap_local(data);
- 			index += fs_info->csum_size;
-diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index df48dd6c3f54..2c810fe96bdf 100644
---- a/fs/btrfs/raid56.c
-+++ b/fs/btrfs/raid56.c
-@@ -1513,11 +1513,11 @@ static void set_bio_pages_uptodate(struct btrfs_raid_bio *rbio, struct bio *bio)
+ static inline void btrfs_set_inode_mapping_order(struct btrfs_inode *inode)
  {
- 	const u32 sectorsize = rbio->bioc->fs_info->sectorsize;
- 	struct bio_vec *bvec;
--	struct bvec_iter_all iter_all;
-+	int i;
++	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+ 	/* Metadata inode should not reach here. */
+ 	ASSERT(is_data_inode(inode));
  
- 	ASSERT(!bio_flagged(bio, BIO_CLONED));
+ 	/* We only allow BITS_PER_LONGS blocks for each bitmap. */
+ #ifdef CONFIG_BTRFS_EXPERIMENTAL
+-	mapping_set_folio_order_range(inode->vfs_inode.i_mapping, 0,
+-			ilog2(((BITS_PER_LONG << inode->root->fs_info->sectorsize_bits)
+-				>> PAGE_SHIFT)));
++	mapping_set_folio_order_range(inode->vfs_inode.i_mapping, fs_info->block_min_order,
++				      fs_info->block_max_order);
+ #endif
+ }
  
--	bio_for_each_segment_all(bvec, bio, iter_all) {
-+	bio_for_each_bvec_all(bvec, bio, i) {
- 		struct sector_ptr *sector;
- 		phys_addr_t paddr = bvec_phys(bvec);
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 7b06bbc40898..a2eba8bc4336 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3383,6 +3383,8 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
+ 	fs_info->nodesize_bits = ilog2(nodesize);
+ 	fs_info->sectorsize = sectorsize;
+ 	fs_info->sectorsize_bits = ilog2(sectorsize);
++	fs_info->block_min_order = ilog2(round_up(sectorsize, PAGE_SIZE) >> PAGE_SHIFT);
++	fs_info->block_max_order = ilog2((BITS_PER_LONG << fs_info->sectorsize_bits) >> PAGE_SHIFT);
+ 	fs_info->csums_per_leaf = BTRFS_MAX_ITEM_SIZE(fs_info) / fs_info->csum_size;
+ 	fs_info->stripesize = stripesize;
+ 	fs_info->fs_devices->fs_info = fs_info;
+diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
+index 5f0b185a7f21..412d3eb30b73 100644
+--- a/fs/btrfs/fs.h
++++ b/fs/btrfs/fs.h
+@@ -820,11 +820,13 @@ struct btrfs_fs_info {
+ 	struct mutex reclaim_bgs_lock;
  
-@@ -1574,7 +1574,7 @@ static void verify_bio_data_sectors(struct btrfs_raid_bio *rbio,
- 	struct btrfs_fs_info *fs_info = rbio->bioc->fs_info;
- 	int total_sector_nr = get_bio_sector_nr(rbio, bio);
- 	struct bio_vec *bvec;
--	struct bvec_iter_all iter_all;
-+	int i;
- 
- 	/* No data csum for the whole stripe, no need to verify. */
- 	if (!rbio->csum_bitmap || !rbio->csum_buf)
-@@ -1584,7 +1584,7 @@ static void verify_bio_data_sectors(struct btrfs_raid_bio *rbio,
- 	if (total_sector_nr >= rbio->nr_data * rbio->stripe_nsectors)
- 		return;
- 
--	bio_for_each_segment_all(bvec, bio, iter_all) {
-+	bio_for_each_bvec_all(bvec, bio, i) {
- 		void *kaddr;
- 
- 		kaddr = bvec_kmap_local(bvec);
+ 	/* Cached block sizes */
+-	u32 nodesize;
+-	u32 nodesize_bits;
+ 	u32 sectorsize;
++	u32 nodesize;
+ 	/* ilog2 of sectorsize, use to avoid 64bit division */
+-	u32 sectorsize_bits;
++	u8 sectorsize_bits;
++	u8 nodesize_bits;
++	u8 block_min_order;
++	u8 block_max_order;
+ 	u32 csum_size;
+ 	u32 csums_per_leaf;
+ 	u32 stripesize;
 -- 
 2.50.1
 

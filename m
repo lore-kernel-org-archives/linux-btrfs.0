@@ -1,416 +1,146 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from mail-wm1-f52.google.com (mail-wm1-f52.google.com [209.85.128.52])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8B2A12EA752
-	for <linux-btrfs@vger.kernel.org>; Tue,  2 Sep 2025 09:02:57 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 76FF92E9EC2
+	for <linux-btrfs@vger.kernel.org>; Tue,  2 Sep 2025 09:11:31 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.52
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1756803779; cv=none; b=ZPEsTh/mnVEtMJFr8AUeAmIXYKvk4iPsN5wCKOIwR39CdatYBFHW1fS1IAQ4NEopndYuY+bjBsx6jW/0TM9r/sGkMdjt1MKiFMAKQuy+jEJBG7G9KFCA1XOLmO26sO6Z2ur2Rr792yRh9pRGaQn25VgwhoUx/dnVqoiuHEKmev8=
+	t=1756804293; cv=none; b=QtcGIAupo9focAxU/1Hm0N4ntZxXcMvGbvV6yeo7EBx5fxG6NYzMP+02nKSs1QHXLWNFmNPymoIo4Ytr9zxBEziDpvOJu5cmI1mqcEZmtXi+88hAxRqambSCHWkvISvvNnH34IBFHD1saDySuItrKy8HlDfeYGhbP3PXATzutyE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1756803779; c=relaxed/simple;
-	bh=S+B/ghfghin3vnl0R7Olpg864fFUG1CALXDnCxvaTSc=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=UWUMntVvzmbo1DfcT3Uva84EHM/OUv9U4s6c0F9M1hs7lorUVA2HQdqae7uIFtEFpf8cHXHiA1/rjxSzJpaESsjBlkzJMsNoeZbmnhDtB08RSmVnagjBbZaESzIUcKib3ULYh4tLd26iXpTUQ4Elws1wTJRSR93mj9sOQ7t+snk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=uwdxjfP6; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=uwdxjfP6; arc=none smtp.client-ip=195.135.223.130
+	s=arc-20240116; t=1756804293; c=relaxed/simple;
+	bh=dJMPQ/btDwhLkRjTOS2+EK+QU2eHSCuZvXsBDjhySxk=;
+	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
+	 In-Reply-To:Content-Type; b=Jm46Uq4pcmV6AOXj2zZQHhoW9cVfki8hFzaaSA63eObEUQpRMAipjWNIENG97NiHZP+GQkesgnHQKSfMH6elLdx2tf+3nSBNTnw45GFDSLcuYIzKlVJ2/NueLi3nPCTL4dFrOUauKDg9KOv1Z3+df1F7dZCEQ1LnHkxAN+uEwWw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=cRWadraE; arc=none smtp.client-ip=209.85.128.52
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="uwdxjfP6";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="uwdxjfP6"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 680D3211DF
-	for <linux-btrfs@vger.kernel.org>; Tue,  2 Sep 2025 09:02:38 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1756803758; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=DQr9aukjMOFQT2HBCJZn5hLdM6sJzplAIV7cH5J4UNM=;
-	b=uwdxjfP6KxXDJcNtw3esVze+r4nokVLGBaAFyOWFHpiit3EehZEpBp4aX0vDUxWWuuprGN
-	3ddbNknv5icYSrv1MXb6CCiSORyWQKJVjgT2o0OyNpmdGsCcvTlv5gZc2bvFJSMrirlal/
-	hYyEqYriIvt2nogbWEjwPEcsgGq6684=
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=uwdxjfP6
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1756803758; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=DQr9aukjMOFQT2HBCJZn5hLdM6sJzplAIV7cH5J4UNM=;
-	b=uwdxjfP6KxXDJcNtw3esVze+r4nokVLGBaAFyOWFHpiit3EehZEpBp4aX0vDUxWWuuprGN
-	3ddbNknv5icYSrv1MXb6CCiSORyWQKJVjgT2o0OyNpmdGsCcvTlv5gZc2bvFJSMrirlal/
-	hYyEqYriIvt2nogbWEjwPEcsgGq6684=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 9E98D13888
-	for <linux-btrfs@vger.kernel.org>; Tue,  2 Sep 2025 09:02:37 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id GGqxF62ytmgMBAAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Tue, 02 Sep 2025 09:02:37 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 3/5] btrfs: introduce btrfs_bio_for_each_block() helper
-Date: Tue,  2 Sep 2025 18:32:14 +0930
-Message-ID: <9d6f34b2127aee8c1bb0191e204b728b8adbed6f.1756803640.git.wqu@suse.com>
-X-Mailer: git-send-email 2.50.1
-In-Reply-To: <cover.1756803640.git.wqu@suse.com>
-References: <cover.1756803640.git.wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="cRWadraE"
+Received: by mail-wm1-f52.google.com with SMTP id 5b1f17b1804b1-45b8e28b3c5so10202995e9.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 02 Sep 2025 02:11:31 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1756804290; x=1757409090; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:to:subject:user-agent:mime-version:date
+         :message-id:from:to:cc:subject:date:message-id:reply-to;
+        bh=iTITLUVwW4pLkIR4XfdabjVC7S9fKoKTHa/gB4o2Y/0=;
+        b=cRWadraEfiq88XaFpIZvMsWnmJLsQUzbEk4dnAoApvtT6DRzSaETvDc0u9neyNgHSF
+         jzKC+YuXwyJ1VOGDT+yTw9OC84G6LZV6Pfy9upNp8QawobW9i9Pwa2o1LBUaN53/jg1A
+         RZvpu0yoRWGur99UiJBP7digb/F444dUXmT9ZtEpc6qiOQFwq7mDjhDxm1tsjJKbwxHY
+         4jULhBDmB8szkLeFrl5nm9geML0PoRtpMZVhSnLFzGn3hW/tJ2T/pdyUBXPHBgoMAb6h
+         6ThCCx1mn5o9qd5SVjU5aosdqPBaA2nDyXEShmCn0tEn7wi5X5eClxcXeHrW4OZmcPEG
+         kJGQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1756804290; x=1757409090;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:to:subject:user-agent:mime-version:date
+         :message-id:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=iTITLUVwW4pLkIR4XfdabjVC7S9fKoKTHa/gB4o2Y/0=;
+        b=LO1ltukR0BKYNlpmVkr1Kci8aZdnLhcWoBWTlMGRWci4oKNKIxEAV3pJ9oQpAtXzbC
+         tWcCGMfVpY1UdAoyZBWgXJxydPoajvHZKThjWd1HweILy00pQPp9UOSt9lKxegvY3qk5
+         li3E1NUDLdZGRFD/+7+cW+ngBn0Ba5AtgMOTPwLPgUKNQPleDBdxpczI7OQTAOKomyQ9
+         77aCSAWnK2OUi93HL3MknV63avnmLi6eQRMv3YOvZRevBLckEpGAQOeV7vT76X4qGhis
+         Cy2XbtsQSANeiPlaE5kqWhSQ/EUUqEsu0BxNhgfCo8wuyuFsDAIosECRpiqyCa6D7HeT
+         FVug==
+X-Forwarded-Encrypted: i=1; AJvYcCVL9iuLQIxrQJ2Qa3Vkf/gimTC4BEyxunS1gV8zjuv/5MPT3dKnpgfcgilPXAvdGbWpjuMEYlvXC5HMUg==@vger.kernel.org
+X-Gm-Message-State: AOJu0YwhJDW8SyLszPANh2al2FtcEMuiaT17IQ0l94WLlZHOpPOgPCa2
+	/YEuCTjNzHJzBZICtAmlorMDE3EXawf1WSPnBSqvdYtTECsjGWIaMWa5nOi+ro76Wk5p63UO3bY
+	j7UEJ
+X-Gm-Gg: ASbGncsXtm3XvcNLFrV7Hz+9dnCod3qDALTjE7HcNKeB6/w3KonbINDwWopN/M64DEN
+	D96cMA7e1f/DdXqgKjInh2Omckpf0KB1gToO+TB0+9fG6V3IpqXKaZ/vRNVa0JgSRd1UEIjnFVP
+	8HskEXviNdCaxRJBB5oFkwmLJPsVgGD7fR9D+g5yQiM7WCBQleQ8vilSuDTRbGvrqsEa/44AvzJ
+	4HPoUrD7Pqr4T8FXOlmhZa5eqo14eKzi08PRf0ohJG81Ne6kYmj0OpxK3DG64UHkLtIxny7iqo4
+	EvAreBRGwSLjgIb7pwbRlPDaOEa8s4Xw5DuNIrjy1Bg0MLrGrODx4RmR1nSLul1vaieO3TOWllR
+	LJ0+ueig9X21kDoO8ac5zVYO3oXp0mmzE850G5sJcFImNiSu5okN5MBC4jQWXwg==
+X-Google-Smtp-Source: AGHT+IHcYnLA+pv6hvDKa1Nh+PKMk+Ttw51ndm9oof6GqEHb65u+kibcdq3GYLY45+rqK48D6FL9Cg==
+X-Received: by 2002:a05:6000:2407:b0:3d8:3560:59f4 with SMTP id ffacd0b85a97d-3d835605e2dmr2886725f8f.15.1756804289565;
+        Tue, 02 Sep 2025 02:11:29 -0700 (PDT)
+Received: from ?IPV6:2403:580d:fda1::299? (2403-580d-fda1--299.ip6.aussiebb.net. [2403:580d:fda1::299])
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2490f755ebdsm122336465ad.26.2025.09.02.02.11.27
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 02 Sep 2025 02:11:29 -0700 (PDT)
+Message-ID: <ace116f9-3395-4d40-a8a0-d22ad6756191@suse.com>
+Date: Tue, 2 Sep 2025 18:41:25 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH 1/3] btrfs-progs: tests: check nullb index for the error
+ case
+To: Naohiro Aota <naohiro.aota@wdc.com>, linux-btrfs@vger.kernel.org
+References: <20250902042920.4039355-1-naohiro.aota@wdc.com>
+ <20250902042920.4039355-2-naohiro.aota@wdc.com>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <20250902042920.4039355-2-naohiro.aota@wdc.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
-X-Spam-Level: 
-X-Spam-Flag: NO
-X-Rspamd-Queue-Id: 680D3211DF
-X-Rspamd-Action: no action
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	ARC_NA(0.00)[];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	MIME_TRACE(0.00)[0:+];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RCVD_TLS_ALL(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	TO_DN_NONE(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,suse.com:mid,suse.com:email,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo]
-X-Spam-Score: -3.01
 
-Currently if we want to iterate a bio in block unit, we do something
-like this:
 
-	while (iter->bi_size) {
-		struct bio_vec bv = bio_iter_iovec();
 
-		/* Do something with using the bv */
+在 2025/9/2 13:59, Naohiro Aota 写道:
+> "_find_free_index" can return "ERROR: ...". Check the return value for the
+> case and fail the test.
+> 
+> Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+> ---
+>   tests/nullb | 3 +++
+>   1 file changed, 3 insertions(+)
+> 
+> diff --git a/tests/nullb b/tests/nullb
+> index 457ae0d8354a..bfc5640c4470 100755
+> --- a/tests/nullb
+> +++ b/tests/nullb
+> @@ -146,6 +146,9 @@ fi
+>   if [ "$CMD" = 'create' ]; then
+>   	_check_setup
+>   	index=$(_find_free_index)
+> +	if [[ "$index" = ERROR* ]]; then
+> +		_error "$index"
+> +	fi
 
-		bio_advance_iter_single(&bbio->bio, iter, sectorsize);
-	}
+I think the bigger problem is that:
 
-That's fine for now, but it will not handle future bs > ps, as
-bio_iter_iovec() returns a single-page bvec, meaning the bv_len will not
-exceed page size.
+- _error() output into stdout instead of stderr
 
-This means the code using that bv can only handle a block if bs <= ps.
+- the "exit 1" doesn't help in this case
+   It will only kill the child bash, not the calling one.
 
-To address this problem and handle future bs > ps cases better:
+So I'd prefer to make _error() to output the warning to stderr, so that 
+index will be empty on error.
 
-- Introduce a helper btrfs_bio_for_each_block()
-  Instead of bio_vec, which has single and multiple page version and
-  multiple page version has quite some limits, use my favorite way to
-  represent a block, phys_addr_t.
+Thanks,
+Qu
 
-  For bs <= ps cases, nothing is changed, except we will do a very
-  small overhead to convert phys_addr_t to a folio, then use the proper
-  folio helpers to handle the possible highmem cases.
-
-  For bs > ps cases, all blocks will be backed by large folios, meaning
-  every folio will cover at least one block. And still use proper folio
-  helpers to handle highmem cases.
-
-  With phys_addr_t, we will handle both large folio and highmem
-  properly. So there is no better single variable to present a btrfs
-  block than phys_addr_t.
-
-- Extract the data block csum calculation into a helper
-  The new helper, btrfs_calculate_block_csum() will be utilzed by
-  btrfs_csum_one_bio().
-
-- Use btrfs_bio_for_each_block() to replace existing call sites
-  Including:
-
-  * index_one_bio() from raid56.c
-    Very straight-forward.
-
-  * btrfs_check_read_bio()
-    Also update repair_one_sector() to grab the folio using phys_addr_t,
-    and do extra checks to make sure the folio covers at least one
-    block.
-    We do not need to bother bv_len at all now.
-
-  * btrfs_csum_one_bio()
-    Now we can move the highmem handling into a dedicated helper,
-    calculate_block_csum(), and use btrfs_bio_for_each_block() helper.
-
-There is one exception in btrfs_decompress_buf2page(), which is copying
-decompressed data into the original bio, which is not iterating using
-block size thus we don't need to bother.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/bio.c         | 20 +++++++++-----------
- fs/btrfs/btrfs_inode.h |  2 ++
- fs/btrfs/file-item.c   | 26 ++++++--------------------
- fs/btrfs/inode.c       | 26 +++++++++++++++-----------
- fs/btrfs/misc.h        | 25 +++++++++++++++++++++++++
- fs/btrfs/raid56.c      |  7 +++----
- 6 files changed, 60 insertions(+), 46 deletions(-)
-
-diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
-index 493135bfa518..909b208f9ef3 100644
---- a/fs/btrfs/bio.c
-+++ b/fs/btrfs/bio.c
-@@ -204,18 +204,21 @@ static void btrfs_end_repair_bio(struct btrfs_bio *repair_bbio,
-  */
- static struct btrfs_failed_bio *repair_one_sector(struct btrfs_bio *failed_bbio,
- 						  u32 bio_offset,
--						  struct bio_vec *bv,
-+						  phys_addr_t paddr,
- 						  struct btrfs_failed_bio *fbio)
- {
- 	struct btrfs_inode *inode = failed_bbio->inode;
- 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
-+	struct folio *folio = page_folio(phys_to_page(paddr));
- 	const u32 sectorsize = fs_info->sectorsize;
-+	const u32 foff = offset_in_folio(folio, paddr);
- 	const u64 logical = (failed_bbio->saved_iter.bi_sector << SECTOR_SHIFT);
- 	struct btrfs_bio *repair_bbio;
- 	struct bio *repair_bio;
- 	int num_copies;
- 	int mirror;
- 
-+	ASSERT(foff + sectorsize <= folio_size(folio));
- 	btrfs_debug(fs_info, "repair read error: read error at %llu",
- 		    failed_bbio->file_offset + bio_offset);
- 
-@@ -238,7 +241,7 @@ static struct btrfs_failed_bio *repair_one_sector(struct btrfs_bio *failed_bbio,
- 	repair_bio = bio_alloc_bioset(NULL, 1, REQ_OP_READ, GFP_NOFS,
- 				      &btrfs_repair_bioset);
- 	repair_bio->bi_iter.bi_sector = failed_bbio->saved_iter.bi_sector;
--	__bio_add_page(repair_bio, bv->bv_page, bv->bv_len, bv->bv_offset);
-+	bio_add_folio_nofail(repair_bio, folio, sectorsize, foff);
- 
- 	repair_bbio = btrfs_bio(repair_bio);
- 	btrfs_bio_init(repair_bbio, fs_info, NULL, fbio);
-@@ -259,6 +262,7 @@ static void btrfs_check_read_bio(struct btrfs_bio *bbio, struct btrfs_device *de
- 	struct bvec_iter *iter = &bbio->saved_iter;
- 	blk_status_t status = bbio->bio.bi_status;
- 	struct btrfs_failed_bio *fbio = NULL;
-+	phys_addr_t paddr;
- 	u32 offset = 0;
- 
- 	/* Read-repair requires the inode field to be set by the submitter. */
-@@ -276,17 +280,11 @@ static void btrfs_check_read_bio(struct btrfs_bio *bbio, struct btrfs_device *de
- 	/* Clear the I/O error. A failed repair will reset it. */
- 	bbio->bio.bi_status = BLK_STS_OK;
- 
--	while (iter->bi_size) {
--		struct bio_vec bv = bio_iter_iovec(&bbio->bio, *iter);
--
--		bv.bv_len = min(bv.bv_len, sectorsize);
--		if (status || !btrfs_data_csum_ok(bbio, dev, offset, bvec_phys(&bv)))
--			fbio = repair_one_sector(bbio, offset, &bv, fbio);
--
--		bio_advance_iter_single(&bbio->bio, iter, sectorsize);
-+	btrfs_bio_for_each_block(paddr, &bbio->bio, iter, fs_info->sectorsize) {
-+		if (status || !btrfs_data_csum_ok(bbio, dev, offset, paddr))
-+			fbio = repair_one_sector(bbio, offset, paddr, fbio);
- 		offset += sectorsize;
- 	}
--
- 	if (bbio->csum != bbio->csum_inline)
- 		kfree(bbio->csum);
- 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 077b2f178816..c40e99ec13bf 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -542,6 +542,8 @@ static inline void btrfs_set_inode_mapping_order(struct btrfs_inode *inode)
- #define CSUM_FMT				"0x%*phN"
- #define CSUM_FMT_VALUE(size, bytes)		size, bytes
- 
-+void btrfs_calculate_block_csum(struct btrfs_fs_info *fs_info, phys_addr_t paddr,
-+				u8 *dest);
- int btrfs_check_block_csum(struct btrfs_fs_info *fs_info, phys_addr_t paddr, u8 *csum,
- 			   const u8 * const csum_expected);
- bool btrfs_data_csum_ok(struct btrfs_bio *bbio, struct btrfs_device *dev,
-diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index 4dd3d8a02519..7906aea75ee4 100644
---- a/fs/btrfs/file-item.c
-+++ b/fs/btrfs/file-item.c
-@@ -775,12 +775,10 @@ int btrfs_csum_one_bio(struct btrfs_bio *bbio)
- 	SHASH_DESC_ON_STACK(shash, fs_info->csum_shash);
- 	struct bio *bio = &bbio->bio;
- 	struct btrfs_ordered_sum *sums;
--	char *data;
--	struct bvec_iter iter;
--	struct bio_vec bvec;
-+	struct bvec_iter iter = bio->bi_iter;
-+	phys_addr_t paddr;
-+	const u32 blocksize = fs_info->sectorsize;
- 	int index;
--	unsigned int blockcount;
--	int i;
- 	unsigned nofs_flag;
- 
- 	nofs_flag = memalloc_nofs_save();
-@@ -799,21 +797,9 @@ int btrfs_csum_one_bio(struct btrfs_bio *bbio)
- 
- 	shash->tfm = fs_info->csum_shash;
- 
--	bio_for_each_segment(bvec, bio, iter) {
--		blockcount = BTRFS_BYTES_TO_BLKS(fs_info,
--						 bvec.bv_len + fs_info->sectorsize
--						 - 1);
--
--		for (i = 0; i < blockcount; i++) {
--			data = bvec_kmap_local(&bvec);
--			crypto_shash_digest(shash,
--					    data + (i * fs_info->sectorsize),
--					    fs_info->sectorsize,
--					    sums->sums + index);
--			kunmap_local(data);
--			index += fs_info->csum_size;
--		}
--
-+	btrfs_bio_for_each_block(paddr, bio, &iter, blocksize) {
-+		btrfs_calculate_block_csum(fs_info, paddr, sums->sums + index);
-+		index += fs_info->csum_size;
- 	}
- 
- 	bbio->sums = sums;
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 33bc1f51a8eb..ad876779289e 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3328,14 +3328,8 @@ int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered)
- 	return btrfs_finish_one_ordered(ordered);
- }
- 
--/*
-- * Verify the checksum for a single sector without any extra action that depend
-- * on the type of I/O.
-- *
-- * @kaddr must be a properly kmapped address.
-- */
--int btrfs_check_block_csum(struct btrfs_fs_info *fs_info, phys_addr_t paddr, u8 *csum,
--			   const u8 * const csum_expected)
-+void btrfs_calculate_block_csum(struct btrfs_fs_info *fs_info, phys_addr_t paddr,
-+				u8 *dest)
- {
- 	struct folio *folio = page_folio(phys_to_page(paddr));
- 	const u32 blocksize = fs_info->sectorsize;
-@@ -3359,11 +3353,21 @@ int btrfs_check_block_csum(struct btrfs_fs_info *fs_info, phys_addr_t paddr, u8
- 			kunmap_local(kaddr);
- 			cur += len;
- 		}
--		crypto_shash_final(shash, csum);
-+		crypto_shash_final(shash, dest);
- 	} else {
--		crypto_shash_digest(shash, phys_to_virt(paddr), blocksize, csum);
-+		crypto_shash_digest(shash, phys_to_virt(paddr), blocksize, dest);
- 	}
--
-+}
-+/*
-+ * Verify the checksum for a single sector without any extra action that depend
-+ * on the type of I/O.
-+ *
-+ * @kaddr must be a properly kmapped address.
-+ */
-+int btrfs_check_block_csum(struct btrfs_fs_info *fs_info, phys_addr_t paddr, u8 *csum,
-+			   const u8 * const csum_expected)
-+{
-+	btrfs_calculate_block_csum(fs_info, paddr, csum);
- 	if (memcmp(csum, csum_expected, fs_info->csum_size))
- 		return -EIO;
- 	return 0;
-diff --git a/fs/btrfs/misc.h b/fs/btrfs/misc.h
-index ff5eac84d819..f210f808311f 100644
---- a/fs/btrfs/misc.h
-+++ b/fs/btrfs/misc.h
-@@ -11,6 +11,7 @@
- #include <linux/pagemap.h>
- #include <linux/math64.h>
- #include <linux/rbtree.h>
-+#include <linux/bio.h>
- 
- /*
-  * Enumerate bits using enum autoincrement. Define the @name as the n-th bit.
-@@ -20,6 +21,30 @@
- 	name = (1U << __ ## name ## _BIT),              \
- 	__ ## name ## _SEQ = __ ## name ## _BIT
- 
-+static inline phys_addr_t bio_iter_phys(struct bio *bio, struct bvec_iter *iter)
-+{
-+	struct bio_vec bv = bio_iter_iovec(bio, *iter);
-+
-+	return bvec_phys(&bv);
-+}
-+
-+/*
-+ * Helper to iterate bio using btrfs block size.
-+ *
-+ * This will handle large folio and highmem.
-+ *
-+ * @paddr:	Physical memory address of each iteration
-+ * @bio:	The bio to iterate
-+ * @iter:	The bvec_iter (pointer) to use.
-+ * @blocksize:	The blocksize to iterate.
-+ *
-+ * This requires all folios in the bio to cover at least one block.
-+ */
-+#define btrfs_bio_for_each_block(paddr, bio, iter, blocksize)		\
-+	for (; (iter)->bi_size &&					\
-+	     (paddr = bio_iter_phys((bio), (iter)), 1);			\
-+	     bio_advance_iter_single((bio), (iter), (blocksize)))
-+
- static inline void cond_wake_up(struct wait_queue_head *wq)
- {
- 	/*
-diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index e88699460dda..389f1b617fe7 100644
---- a/fs/btrfs/raid56.c
-+++ b/fs/btrfs/raid56.c
-@@ -1208,17 +1208,16 @@ static void index_one_bio(struct btrfs_raid_bio *rbio, struct bio *bio)
- 	const u32 sectorsize = rbio->bioc->fs_info->sectorsize;
- 	const u32 sectorsize_bits = rbio->bioc->fs_info->sectorsize_bits;
- 	struct bvec_iter iter = bio->bi_iter;
-+	phys_addr_t paddr;
- 	u32 offset = (bio->bi_iter.bi_sector << SECTOR_SHIFT) -
- 		     rbio->bioc->full_stripe_logical;
- 
--	while (iter.bi_size) {
-+	btrfs_bio_for_each_block(paddr, bio, &iter, sectorsize) {
- 		unsigned int index = (offset >> sectorsize_bits);
- 		struct sector_ptr *sector = &rbio->bio_sectors[index];
--		struct bio_vec bv = bio_iter_iovec(bio, iter);
- 
- 		sector->has_paddr = true;
--		sector->paddr = bvec_phys(&bv);
--		bio_advance_iter_single(bio, &iter, sectorsize);
-+		sector->paddr = paddr;
- 		offset += sectorsize;
- 	}
- }
--- 
-2.50.1
+>   	name="nullb$index"
+>   	# size in MB
+>   	size=$(_parse_device_size "$@")
 

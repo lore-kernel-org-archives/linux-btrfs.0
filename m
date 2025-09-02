@@ -1,85 +1,105 @@
-Received: from mail.burntcomma.com (unknown [62.3.69.246])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from outgoing.mit.edu (outgoing-auth-1.mit.edu [18.9.28.11])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5F6B12F363A
-	for <linux-btrfs@vger.kernel.org>; Tue,  2 Sep 2025 10:40:59 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=62.3.69.246
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4ED993081A2
+	for <linux-btrfs@vger.kernel.org>; Tue,  2 Sep 2025 12:09:46 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=18.9.28.11
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1756809666; cv=none; b=mWN/Ujd/WTkJRUQ8f3pzYk3TqE514ispIQwoElIOtIpo5e6Qo509JH1j/YQsTETfA4YsTCx21w468utitRMJtPuQHtXhx3y3+L0I6+99NYGHwGSLgkPAzaeZMYcaTb5SdXgvSTzh6kaFBO0BTukndzoM062L0Or09HysR4hEIc0=
+	t=1756814988; cv=none; b=E1KBSq0/EHiaA5F4MCRGQ/YqntYxhcdtSl5Wq7OUVAAFEQaYkC223c5jCm6dj7upNZJEPLsI++GpNOdlvwcbT2f4A0PnzzKGvClnx1M/ArtJpLC3LSTAHNOJBtVK40pju3tpOw1GuveE+xI40mvOsmYWWqZyPvCLdbcxA77siMI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1756809666; c=relaxed/simple;
-	bh=EwhIxgPHKKwQJWF9as8lZ/9D+CBLP+wKp4uu/DNs490=;
-	h=From:To:Cc:Subject:Date:Message-ID:Mime-Version; b=mDSLCO6Mec/JYtOUumGVSMty+kwsPpuKCEUqYEl0PK7SNKT33jAzz4i2FhA5un+9tsNi8T2QkZAO2vT3QLLOpHSKNOZJlZ9oG3BezeYvOH48o+mF+s7BHIVGiBb4+A1qXsALfqMI2jJqlLDdgmC2DHpXtaK9KiGegOd8TgGoPcU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com; spf=fail smtp.mailfrom=harmstone.com; dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b=jDPXcYAD; arc=none smtp.client-ip=62.3.69.246
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com
-Authentication-Results: smtp.subspace.kernel.org; spf=fail smtp.mailfrom=harmstone.com
+	s=arc-20240116; t=1756814988; c=relaxed/simple;
+	bh=umubb5ja5btA3FbvGDpT5snjrja/6XWb0oS/xFx1UIs=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=tU/X0cw0yHVk6UgRuMkjk/MXu27pAZz8tsaDAk2aIVAdxCoy6upZMsohWn3mfoPJ2XgQHyLzwaE+vE4GrNxiXJcemeyUk62Ja4vBbsK5+Brk6dO5B4rbdIzf15FjZ9NZawviI72/EuuCptCzqcKkEn+gr42CPhspVBL66gSBKEY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=mit.edu; spf=pass smtp.mailfrom=mit.edu; dkim=pass (2048-bit key) header.d=mit.edu header.i=@mit.edu header.b=PPkL9AVq; arc=none smtp.client-ip=18.9.28.11
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=mit.edu
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=mit.edu
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b="jDPXcYAD"
-Received: from localhost.localdomain (beren.burntcomma.com [IPv6:2a02:8012:8cf0:0:ce28:aaff:fe0d:6db2])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
-	(Client did not present a certificate)
-	by mail.burntcomma.com (Postfix) with ESMTPSA id 76BFB2B0FA8;
-	Tue,  2 Sep 2025 11:34:23 +0100 (BST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=harmstone.com;
-	s=mail; t=1756809263;
-	bh=74wM9m13BWc88sNmI5obLpAo4Xl8/w7swe1oi67aTiM=;
-	h=From:To:Cc:Subject:Date;
-	b=jDPXcYADWFqeEwJAuMkF7+r9rlr2zjayaXrYEXz07x1VU9HVw2eOaU5r5v/VtVlnX
-	 KQ3+hxquC6gu0zv4NwtO3cepVb/Ayib8HETd+tRmD6PFt/lWYmhoOlw0y7Co8+369U
-	 SUjuOUIlskSQfdwVpgW0C9l+JuzM6uZeEEo1lPyc=
-From: Mark Harmstone <mark@harmstone.com>
-To: linux-btrfs@vger.kernel.org,
-	wqu@suse.com
-Cc: Mark Harmstone <mark@harmstone.com>
-Subject: [PATCH v2] btrfs: don't allow adding block device of less than 1 MB
-Date: Tue,  2 Sep 2025 11:34:10 +0100
-Message-ID: <20250902103421.19479-1-mark@harmstone.com>
+	dkim=pass (2048-bit key) header.d=mit.edu header.i=@mit.edu header.b="PPkL9AVq"
+Received: from trampoline.thunk.org (pool-173-48-82-217.bstnma.fios.verizon.net [173.48.82.217])
+	(authenticated bits=0)
+        (User authenticated as tytso@ATHENA.MIT.EDU)
+	by outgoing.mit.edu (8.14.7/8.12.4) with ESMTP id 582C9W11030330
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Tue, 2 Sep 2025 08:09:33 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=mit.edu; s=outgoing;
+	t=1756814974; bh=3hW8MI6wgp2erDa+pJ+0tZiB1LWGKb5iv9yqhJYhwrw=;
+	h=Date:From:Subject:Message-ID:MIME-Version:Content-Type;
+	b=PPkL9AVqYZIPNZypDXFeUkzC+MEPjbfdo6d2hcFndA6O3PzjFhRcyhsh0WOczMSAw
+	 /zw7509uJjhGPQnqh1PeFQUOcB6L7DbwHwfa1pAjkP+uSYa65up6193429f4oYNn5o
+	 z9nVWOamCfN8JyylBpGwdPSKHbhb8pNhjYavHiTdxwWpm0Mcxp3JMNrBywFghuChJf
+	 jHmIM3jysoBx1OIiZXPFIy9/34mKqAZlwSXgNfZ9+VT90+awOqpMnMslx+p4imkhj6
+	 HUrM4ZDZGGdP7aEUc7ncNLwu+nv4eESo6XKkU2OdmJaTXjnqgpcmx5KAHps2rSNpvq
+	 oP8epkAWd5z2g==
+Received: by trampoline.thunk.org (Postfix, from userid 15806)
+	id 82E452E00D6; Tue, 02 Sep 2025 08:09:32 -0400 (EDT)
+Date: Tue, 2 Sep 2025 08:09:32 -0400
+From: "Theodore Ts'o" <tytso@mit.edu>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: "fstests@vger.kernel.org" <fstests@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>, linux-xfs@vger.kernel.org
+Subject: Re: Golden output mismatch from generic/228, fs independent
+Message-ID: <20250902120932.GA2564374@mit.edu>
+References: <60b73970-9cb6-49b1-ad5f-51ab02ef2c98@gmx.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 8bit
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <60b73970-9cb6-49b1-ad5f-51ab02ef2c98@gmx.com>
 
-Commit 15ae0410 in btrfs-progs inadvertently changed it so that if the
-BLKGETSIZE64 ioctl on a block device returned a size of 0, this was no
-longer seen as an error condition.
+On Tue, Sep 02, 2025 at 08:00:32PM +0930, Qu Wenruo wrote:
+> Hi,
+> 
+> Recently I updated my arm64 VM, and now several test cases are failing due
+> to golden output mismatch.
+> 
+> This time it's fs independent, and I haven't yet updated fstests itself, so
+> it looks like some updates in my environment is breaking the test.
+> 
+> E.g, generic/228 on ext4 (the same on btrfs)
+> 
+> I checked my log, bash/xfsprogs and a lot of other packages are all updated,
+> and unfortunately my distro doesn't provide older packages for me to
+> bisect...
 
-Unfortunately this is how disconnected NBD devices behave, meaning that
-with btrfs-progs 6.16 it's now possible to add a device you can't
-remove:
+I don't know if this helps, but here's a kvm-xfstests using Debian
+Trixie and certain updated critical packages (fio, quota, xfsprogs,
+util-linux, etc.) overriden.  How does that differ from your distro
+package versions?
 
-~ # btrfs device add /dev/nbd0 /root/temp
-~ # btrfs device remove /dev/nbd0 /root/temp
-ERROR: error removing device '/dev/nbd0': Invalid argument
+I haven't updated my arm64 image in a bit (this was from dated July 20th).
+I can try doing an arm64 rebuild and see if a newer version still
+works on arm64, but here's a data point....
 
-This check should always have been done kernel-side anyway, so add a
-check in btrfs_init_new_device() that the new device doesn't have a size
-less than BTRFS_DEVICE_RANGE_RESERVED (i.e. 1 MB).
+						- TEd
 
-Signed-off-by: Mark Harmstone <mark@harmstone.com>
----
- fs/btrfs/volumes.c | 5 +++++
- 1 file changed, 5 insertions(+)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 63b65f70a2b3..77a371f92ec0 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2726,6 +2726,11 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
- 		goto error;
- 	}
- 
-+	if (bdev_nr_bytes(file_bdev(bdev_file)) <= BTRFS_DEVICE_RANGE_RESERVED) {
-+		ret = -EINVAL;
-+		goto error;
-+	}
-+
- 	if (fs_devices->seeding) {
- 		seeding_dev = true;
- 		down_write(&sb->s_umount);
--- 
-2.49.1
+KERNEL:    kernel       6.17.0-rc3-xfstests #1 SMP Tue Sep  2 07:57:28 EDT 2025 aarch64
+CMDLINE:   --arm64 -c ext4/4k generic/228
+CPUS:      2
+MEM:       1977.09
 
+ext4/4k: 1 tests, 5 seconds
+  generic/228  Pass     2s
+Totals: 1 tests, 0 skipped, 0 failures, 0 errors, 2s
+
+FSTESTVER: blktests     401420a (Fri, 6 Jun 2025 22:12:43 +0900)
+FSTESTVER: fio          fio-3.40 (Tue, 20 May 2025 12:23:01 -0600)
+FSTESTVER: fsverity     v1.6-2-gee7d74d (Mon, 17 Feb 2025 11:41:58 -0800)
+FSTESTVER: ima-evm-utils        v1.5 (Mon, 6 Mar 2023 07:40:07 -0500)
+FSTESTVER: libaio       libaio-0.3.108-82-gb8eadc9 (Thu, 2 Jun 2022 13:33:11 +0200)
+FSTESTVER: ltp          20250130-280-g60656cbbb (Wed, 28 May 2025 15:04:44 +0200)
+FSTESTVER: quota                v4.05-71-g4cd93fc (Sun, 27 Apr 2025 08:24:24 -0400)
+FSTESTVER: util-linux   v2.41-40-g22b91501d (Mon, 26 May 2025 11:27:31 +0200)
+FSTESTVER: xfsprogs     v6.15.0 (Mon, 23 Jun 2025 13:56:41 +0200)
+FSTESTVER: xfstests     v2025.07.13-12-gef63d1368 (Sat, 19 Jul 2025 18:14:29 -0400)
+FSTESTVER: xfstests-bld gce-xfstests-202504292206-20-g905451c1 (Sun, 20 Jul 2025 03:04:27 +0000)
+FSTESTVER: zz_build-distro      trixie
+FSTESTCFG: ext4/4k
+FSTESTSET: generic/228
+FSTESTOPT: aex
+Truncating test artifacts in /results to 31k

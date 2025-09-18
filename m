@@ -1,64 +1,64 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 995122D7DD3
-	for <linux-btrfs@vger.kernel.org>; Thu, 18 Sep 2025 22:34:14 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 583042DF124
+	for <linux-btrfs@vger.kernel.org>; Thu, 18 Sep 2025 22:34:18 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1758234856; cv=none; b=dOqmLRopyD4nutiGwLqHldnl3OmHOKuyScpqC7b+S9JE7bgZcxwxfGtxrF6JosvnqF4ITCyZynu35qHg7ySCozLuZeO3OK6+cEQQNHnwMHG5jdOrQ1j4benfbF//MabvBcJbt2kLUHHkzsQY+BTbbE+V4tnBfUGFLhAxqs46CGU=
+	t=1758234860; cv=none; b=bj0yhRiDbfqImoWvVnSE4232ZErlU3caIYFdicgnoDIz9RM9OI21daL7pFAnwr4N2lpJJOq4xMwPnLJ1htsGtYfkAzMEwaIRZl4Z5wSDue/d0epeofKcukGXhjAqg+9cZgw9OF7h6Pk6+aqqa7261z6b7Chr98ZHNw8bc+deJug=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1758234856; c=relaxed/simple;
-	bh=+VRc+PXiVcZtWssiHv9Si6LAtL/v9Q+LMtLwW67DI5g=;
+	s=arc-20240116; t=1758234860; c=relaxed/simple;
+	bh=Qx1dwysmCO+0HvnIjAlYgDoh7f+VWLt/ChhB+0WDd7g=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=sWFMON2NVNNSto16aXFe65h14+/q1n93K5Mn68YAWm4264mog2Z3AKgPK2DDEYNFDiuU9YmNlIntnT4NoCwfHUUOb/Zm+bwLSjIoprU0+m4ej49qLgnXlijo21ruSd1lhTBWipz9VTzI//kWwS8Tko/Oiu9xLzQHoDmfYvJ9NQs=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=ZxFjoGAr; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=ZxFjoGAr; arc=none smtp.client-ip=195.135.223.131
+	 MIME-Version; b=HCTuqZQDo7FqAxzeXbkH/YxmsMgoZGHorsyMSlOmWIifaLXLUxtPFqakazK5Q7XaWVmzTkarlBlWjn0z833nM/BZRg2ecRQZBpwa0d002xqKQEkl9SIM+zTxdEG11LocXvQBHU1egMBOA69eptQpeJLvmcTkCXVSwGpbNCJeILg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=nIWtA9Wa; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=nIWtA9Wa; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="ZxFjoGAr";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="ZxFjoGAr"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="nIWtA9Wa";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="nIWtA9Wa"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id A5AF31F38A;
-	Thu, 18 Sep 2025 22:34:07 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id B29C42212B;
+	Thu, 18 Sep 2025 22:34:10 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1758234847; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1758234850; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=olqhF6sZOV3bfIQt4DsyoEFZk8gKKlynwxc7naHjumA=;
-	b=ZxFjoGAr28e/Wf9b2tkul+PRyM1P8ax2Zv3vUPi7N0A/hDYU4frfbheM6h2Vn3nvYaZvDG
-	xW+iptcCnOTGQsUWv5Xo8HK2RO2XXequ1u0UAuuTCt0to0kosDWgT8asXHsuwobvNPT+/f
-	wDp1wsqPJX9RUqyiYmNATsrq6MKKzlI=
-Authentication-Results: smtp-out2.suse.de;
+	bh=w4JaQd1P/9sreHkhXSTPEZ3iqIzQCZtZ7hxUjV5INrY=;
+	b=nIWtA9WauFEQb1m9L6p2+dM8hv9KGVlusXUuNR9p13twwjCtcVEgx+aursM1UmCB8lmZaf
+	cGjB8eYr3E5ybAfSeqfdWeDblnyblbBOQk5KrtwpbdhCPSqC8GY1cMEy2pnwSyGD8dtfn4
+	7FXsA3a7/vyr2o5s0MhVyxGaz6+jxE8=
+Authentication-Results: smtp-out1.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1758234847; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1758234850; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=olqhF6sZOV3bfIQt4DsyoEFZk8gKKlynwxc7naHjumA=;
-	b=ZxFjoGAr28e/Wf9b2tkul+PRyM1P8ax2Zv3vUPi7N0A/hDYU4frfbheM6h2Vn3nvYaZvDG
-	xW+iptcCnOTGQsUWv5Xo8HK2RO2XXequ1u0UAuuTCt0to0kosDWgT8asXHsuwobvNPT+/f
-	wDp1wsqPJX9RUqyiYmNATsrq6MKKzlI=
+	bh=w4JaQd1P/9sreHkhXSTPEZ3iqIzQCZtZ7hxUjV5INrY=;
+	b=nIWtA9WauFEQb1m9L6p2+dM8hv9KGVlusXUuNR9p13twwjCtcVEgx+aursM1UmCB8lmZaf
+	cGjB8eYr3E5ybAfSeqfdWeDblnyblbBOQk5KrtwpbdhCPSqC8GY1cMEy2pnwSyGD8dtfn4
+	7FXsA3a7/vyr2o5s0MhVyxGaz6+jxE8=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 9D06013A39;
-	Thu, 18 Sep 2025 22:34:06 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id A8B4113A39;
+	Thu, 18 Sep 2025 22:34:09 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id IBpPF96IzGh5WgAAD6G6ig
-	(envelope-from <wqu@suse.com>); Thu, 18 Sep 2025 22:34:06 +0000
+	id 6HINGuGIzGh5WgAAD6G6ig
+	(envelope-from <wqu@suse.com>); Thu, 18 Sep 2025 22:34:09 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org,
 	fstests@vger.kernel.org
-Subject: [PATCH 1/3] btrfs/012 btrfs/136: skip the test if ext* doesn't support the block size
-Date: Fri, 19 Sep 2025 08:03:45 +0930
-Message-ID: <20250918223347.10390-2-wqu@suse.com>
+Subject: [PATCH 3/3] btrfs/26[67]: update the stale comments
+Date: Fri, 19 Sep 2025 08:03:47 +0930
+Message-ID: <20250918223347.10390-4-wqu@suse.com>
 X-Mailer: git-send-email 2.50.1
 In-Reply-To: <20250918223347.10390-1-wqu@suse.com>
 References: <20250918223347.10390-1-wqu@suse.com>
@@ -93,95 +93,48 @@ X-Spamd-Result: default: False [-2.80 / 50.00];
 X-Spam-Flag: NO
 X-Spam-Score: -2.80
 
-[FALSE ALERT]
-When testing btrfs bs > ps support, the test cases btrfs/012 and
-btrfs/136 fail like the following:
+Test case btrfs/266 is verifying the buffered read repair on RAID1C3,
+and btrfs/267 is verifying the direct IO read repair on RAID1C3.
 
- FSTYP         -- btrfs
- PLATFORM      -- Linux/x86_64 btrfs-vm 6.17.0-rc4-custom+ #285 SMP PREEMPT_DYNAMIC Mon Sep 15 14:40:01 ACST 2025
- MKFS_OPTIONS  -- -s 8k /dev/mapper/test-scratch1
- MOUNT_OPTIONS -- /dev/mapper/test-scratch1 /mnt/scratch
+However btrfs/267 is using incorrect comments, it says the test case is
+verify buffered read repair, but it's not the case.
 
- btrfs/012       [failed, exit status 1]- output mismatch (see /home/adam/xfstests/results//btrfs/012.out.bad)
-     --- tests/btrfs/012.out	2024-07-17 16:27:18.790000343 +0930
-     +++ /home/adam/xfstests/results//btrfs/012.out.bad	2025-09-15 16:32:55.185922173 +0930
-     @@ -1,7 +1,11 @@
-      QA output created by 012
-     +mount: /mnt/scratch: wrong fs type, bad option, bad superblock on /dev/mapper/test-scratch1, missing codepage or helper program, or other error.
-     +       dmesg(1) may have more information after failed mount system call.
-     +mkdir: cannot create directory '/mnt/scratch/stressdir': File exists
-     +umount: /mnt/scratch: not mounted.
-      Checking converted btrfs against the original one:
-     -OK
-     ...
-     (Run 'diff -u /home/adam/xfstests/tests/btrfs/012.out /home/adam/xfstests/results//btrfs/012.out.bad'  to see the entire diff)
-
- btrfs/136 3s ... - output mismatch (see /home/adam/xfstests/results//btrfs/136.out.bad)
-     --- tests/btrfs/136.out	2022-05-11 11:25:30.743333331 +0930
-     +++ /home/adam/xfstests/results//btrfs/136.out.bad	2025-09-19 07:00:00.395280850 +0930
-     @@ -1,2 +1,10 @@
-      QA output created by 136
-     +mount: /mnt/scratch: wrong fs type, bad option, bad superblock on /dev/mapper/test-scratch1, missing codepage or helper program, or other error.
-     +       dmesg(1) may have more information after failed mount system call.
-     +umount: /mnt/scratch: not mounted.
-     +mount: /mnt/scratch: wrong fs type, bad option, bad superblock on /dev/mapper/test-scratch1, missing codepage or helper program, or other error.
-     +       dmesg(1) may have more information after failed mount system call.
-     +umount: /mnt/scratch: not mounted.
-     ...
-     (Run 'diff -u /home/adam/xfstests/tests/btrfs/136.out /home/adam/xfstests/results//btrfs/136.out.bad'  to see the entire diff)
-
-[CAUSE]
-Currently ext* doesn't support block size larger than page size, thus
-at mkfs time it will output the following warning:
-
- Warning: blocksize 8192 not usable on most systems.
- mke2fs 1.47.3 (8-Jul-2025)
- Warning: 8192-byte blocks too big for system (max 4096), forced to continue
-
-Furthermore at ext* mount time it will fail with the following dmesg:
-
- EXT4-fs (loop0): bad block size 8192
-
-[FIX]
-Check if the mount of the newly created ext* succeeded.
-
-If not, since the only extra parameter for mkfs is the block size, we
-know it's some block size ext* not yet supported, and skip the test
-case.
+Fix those stale comments by explicitly mention buffered/direct IO for
+each test case. (btrfs/266 for buffered, btrfs/267 for direct)
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- tests/btrfs/012 | 3 +++
- tests/btrfs/136 | 3 +++
- 2 files changed, 6 insertions(+)
+ tests/btrfs/266 | 4 ++--
+ tests/btrfs/267 | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/tests/btrfs/012 b/tests/btrfs/012
-index f41d7e4e..665831b9 100755
---- a/tests/btrfs/012
-+++ b/tests/btrfs/012
-@@ -42,6 +42,9 @@ $MKFS_EXT4_PROG -F -b $BLOCK_SIZE $SCRATCH_DEV > $seqres.full 2>&1 || \
- 	_notrun "Could not create ext4 filesystem"
- # Manual mount so we don't use -t btrfs or selinux context
- mount -t ext4 $SCRATCH_DEV $SCRATCH_MNT
-+if [ $? -ne 0 ]; then
-+	_notrun "block size $BLOCK_SIZE is not supported by ext4"
-+fi
+diff --git a/tests/btrfs/266 b/tests/btrfs/266
+index 3490ecce..f8407c98 100755
+--- a/tests/btrfs/266
++++ b/tests/btrfs/266
+@@ -5,8 +5,8 @@
+ #
+ # FS QA Test 266
+ #
+-# Test that btrfs raid repair on a raid1c3 profile can repair interleaving
+-# errors on all mirrors.
++# Test that btrfs buffered read repair on a raid1c3 profile can repair
++# interleaving errors on all mirrors.
+ #
  
- echo "populating the initial ext fs:" >> $seqres.full
- mkdir "$SCRATCH_MNT/$BASENAME"
-diff --git a/tests/btrfs/136 b/tests/btrfs/136
-index 65bbcf51..6b4b52e4 100755
---- a/tests/btrfs/136
-+++ b/tests/btrfs/136
-@@ -45,6 +45,9 @@ $MKFS_EXT4_PROG -F -t ext3 -b $BLOCK_SIZE $SCRATCH_DEV > $seqres.full 2>&1 || \
- 
- # mount and populate non-extent file
- mount -t ext3 $SCRATCH_DEV $SCRATCH_MNT
-+if [ $? -ne 0 ]; then
-+	_notrun "block size $BLOCK_SIZE is not supported by ext3"
-+fi
- populate_data "$SCRATCH_MNT/ext3_ext4_data/ext3"
- _scratch_unmount
+ . ./common/preamble
+diff --git a/tests/btrfs/267 b/tests/btrfs/267
+index 66e08d18..22c4aeaa 100755
+--- a/tests/btrfs/267
++++ b/tests/btrfs/267
+@@ -5,7 +5,7 @@
+ #
+ # FS QA Test 267
+ #
+-# Test that btrfs buffered read repair on a raid1c3 profile can repair
++# Test that btrfs direct IO read repair on a raid1c3 profile can repair
+ # interleaving errors on all mirrors.
+ #
  
 -- 
 2.51.0

@@ -1,63 +1,63 @@
-Received: from mail-wm1-f51.google.com (mail-wm1-f51.google.com [209.85.128.51])
+Received: from mail-wr1-f45.google.com (mail-wr1-f45.google.com [209.85.221.45])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0C58F31E89A
-	for <linux-btrfs@vger.kernel.org>; Fri, 19 Sep 2025 15:49:16 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.51
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 449DA320CA8
+	for <linux-btrfs@vger.kernel.org>; Fri, 19 Sep 2025 15:49:26 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.45
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1758296959; cv=none; b=DfAEXFzYmPlEOhjsO5buOYUpokcHPOLD2kCz9wmkTjsmYAL858uo/yFnjd7am+3XPbP7Pi4MIvtLPtizWoUrNZCIilBaU/5rnv/ykSfclYhBgkWiunUNCpgbFW3pGKm8bSyrSPDam1YpuvBiSvdf9bwdIzmPJTLUgGbZoy76c6c=
+	t=1758296969; cv=none; b=o/kPdwhN4pP3DfBIgtdLX1uTZ3qWn2z2A9DmFewgzU1lxzHlJD+RxFt8EmWgo9VEV4UP7Yr1SV5SavQTfridhVWIp+ORKWGkADXo8kKcKa/ysGzoy7ATxJdjtSluVk3rWeNBMu4WxdE5F8J6V5h7FKqrG3143dpUkJW2FQ1g4IA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1758296959; c=relaxed/simple;
-	bh=4iwo/4hETyrGGvwl7DvWSV1pIW8nOTgSDeRa6KhBnMA=;
+	s=arc-20240116; t=1758296969; c=relaxed/simple;
+	bh=mwvxOTrWUws8OMACY4TrEt0dK3mhZILNulqgYpZhPQ4=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=FqTXMV/1sEeRWbwirV4tGIU3uTTQHMzKX1sDN2zX+ZC/PB0K2aGbkDDlOFnb49nci1GhaNCRwM+TN89hFKq0kKBAA2mQKVO2yeW+mrhE+0/qfd4WF0K2nvQYEKNyg3cWYH1l5Ww3fpCDc5J3i6SzjB6y48QK6V+DJoehhaG7O7A=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=DfEdrCTF; arc=none smtp.client-ip=209.85.128.51
+	 MIME-Version; b=IURK88x5Df6dlPIPZOgcfS2iNxoMsVnpgmq/KjKDTt8b8Ls3lMNhxmcEemQuOnbesrBm31gIMvTE1Jw3fxeHkK6xPDvwLSMU2Lrbc2OH4IIntFJQe3zoWeerOB+fye/kW5NcHNge5yrd9hTqkzXEmGxUJ51w9qKTjmrtlY28RxI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=gJBQjcPj; arc=none smtp.client-ip=209.85.221.45
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="DfEdrCTF"
-Received: by mail-wm1-f51.google.com with SMTP id 5b1f17b1804b1-45f2c5ef00fso18230925e9.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 19 Sep 2025 08:49:16 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="gJBQjcPj"
+Received: by mail-wr1-f45.google.com with SMTP id ffacd0b85a97d-3df15fdf0caso2034859f8f.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 19 Sep 2025 08:49:26 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1758296955; x=1758901755; darn=vger.kernel.org;
+        d=gmail.com; s=20230601; t=1758296964; x=1758901764; darn=vger.kernel.org;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=K6Nz4rZ6SPAY+5NRu1bbLzqkYF61IrDASgyLTr6XAmg=;
-        b=DfEdrCTFo6rdzFYhld/JgF+qNufolUKLhbGDNtTgYPHDlacnV21osF/hPH9BqVco5A
-         u/5u4Hbmx0xc4EcCChq8CAsPF8ecogqsmc6iaUBgL4tAtBjeqwoEGgmxGdou+gxqgL05
-         nIAHEFYmokCTym8WnaPjHyGpKKlpxHw+2xKrezfoYo+yO7H9iXRToVdJIrnEwm3D1XR3
-         LAJnYPnere9sfucV1mHf5UOYtTa7rJTLka3HATCQNY+2O7xu6QnPMRlcRFExIMulsXu+
-         uejrcrNBwLoL3TBm5OaeM1hCaOlnvddNEb7j0U9ugsmxZNQhkFpZaevx2pNJwPBg64nW
-         pz1A==
+        bh=61d6oBaZHfUlKu+4j2QssmtpKiSdVI4e5z02o4UC0u8=;
+        b=gJBQjcPjlAVeXIpKpiWI3+YDxneMBgccZS+2jAHDPUzhYn10d5TKf6h1KrweDA6RhW
+         UCyXNyqTdbV4ksXQ9Hruor1pS/Nrh0aKOWopUOnOLvo7Aq3XzjCX3LMYkZyP+MTEWuIZ
+         72MMwgTJ/+c7MZ4Yk9cvfcRUK+fmxNUgxfLs5AMa7zLy2HBlNaVVA+q8s610ZmJ1gu2k
+         uwr/jtN9VkhflldfMdHezQ2g2lSOU/JuwjzMQanXUhgcSpaL35sdvGfyrhiig6ZoNtZ4
+         bJ6SB0Fjvjy8yyMOIrOpIQWSXTsKkWc0APM6pQvyG1/onArV5YwjQI2bwtEVYlMijfCp
+         3MWw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1758296955; x=1758901755;
+        d=1e100.net; s=20230601; t=1758296964; x=1758901764;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=K6Nz4rZ6SPAY+5NRu1bbLzqkYF61IrDASgyLTr6XAmg=;
-        b=hEYtyvv/W9bpBxkV3jFQoBOH3jH8EVfdmejMJ9E8pUiSpmvG4BMebmk0QUgadVISrU
-         YxwuoER2ZspU2gO1okf2ukCMPxga2kiKEXTd8PAlSURaDz2O6KUuDkvJQwBZrtzAEAdS
-         q6oOyghCKr3lAb2Kom+6t0a3y4iVT0Az9qINiVIMl3uOyttD9M5jFr+RR1+znkeS3q9J
-         kk2HOeWLcoSg4yaM3Yhe5zxfO4VDh35yUn9as6stO70BYzTZ5tXF9zvo1Spptx7j6Itz
-         Vf7GbkAIrVq5ZjQdVxoVqrThdrJlMM9Fw6Kbam0EOPvIMXga725SL6zQjAFkvh1Tche+
-         zBXg==
-X-Forwarded-Encrypted: i=1; AJvYcCUetfU5Ih57ICgkVOYbXXBPk+sufRNu+54ghZJhwaRf8vAawVZ3nEVFwgdw7iHlHqm2f/dTBQN5BKPM2g==@vger.kernel.org
-X-Gm-Message-State: AOJu0YzB/+H//iA7YlRoSSRrz1FAdYdx3nG04YnvL68DLmM+4tdZRppG
-	I+yyvcGrdhJJuRc190aQN4vXK8XJ3imk+LXg+1J9ebAm1r56sC+jeNl4
-X-Gm-Gg: ASbGncsdeTgSaiwvVj7qQ0T6tOoaEgjXdtgyveUrA1Om1Jj3FrjAf5Knu0BoFL8Z4/Y
-	01+S6uO1SqfTGVXv3GKSyCr+UbiPr187lm13QqF0vmETmkx6SuOTpv3s7vj5BM3nvIg7j3TxBqj
-	q6dKlw4WCdqA3HQdC98vhvUX4Ae0/zsm+/Q6cJnYSD9RlVql19sPrs0i7Iwum3q4LkI2cnrqGEk
-	7ZAgxT7cv5eHHDEyBCvnqmFUtoS0ghbHo08IVVnjr0+IKBZmgSUGBUnnRMm2/vTCY3l1td8s38J
-	ecgdY7vK4mFdKcTX0rEMGXKaqR20wAdCPoJ+EZJMij12Nkn2jTpZSFnG+j6q+1v93kfXp5OL++k
-	xM+yRcyPeRguY2scPD+Fw1jOJajXmezG4w7AHU+P16JkEwxM9Q++UNfm9WYWbph/RzNRospdI
-X-Google-Smtp-Source: AGHT+IFi3Qiw2JmDbZ5JtfHacDK+pNgJNUdMyHN8bx8JLqrebQREXbPs43I+kD+9QA6IwdllVAvzbw==
-X-Received: by 2002:a05:600c:1d12:b0:45d:cff6:733f with SMTP id 5b1f17b1804b1-467ebacab73mr28722625e9.11.1758296954944;
-        Fri, 19 Sep 2025 08:49:14 -0700 (PDT)
+        bh=61d6oBaZHfUlKu+4j2QssmtpKiSdVI4e5z02o4UC0u8=;
+        b=uZxAyVKN2lJ7+A8Pm+/UKNIsfT3fHMUnt3R0P5vMNGszNLvUCSISogWNYxcPhDeNVI
+         mva29v/neI8QIweapq3m2huENwnLNGdQ9No2e09dKnJDc2mRwgqTr/LBo0a9e2Fgg3RW
+         h5FAuaL0fRMLpxDAYbYuv2quELsG3s8CnDqi5VaGdK/yt7wQKJHKszuDczgYFriBHC79
+         o7bY3s+7uQXW7X/xFb5IkUnLbFReT270vl1vGGP+3bBLbbdeFYjJJXxlYdKWvV9xeZmn
+         y7ogaKwVPBq+FQAaYAFH7KiCetYZ/9sPAJ0EVIICcLFavDMbYyuo7jHCLMUWK8uJNFGl
+         TFRQ==
+X-Forwarded-Encrypted: i=1; AJvYcCVhhPjEE0VRw7SGR7LD70ZSxNf7ZRS3/eEGrViUThOoHhBAy2g2LYP/Y7sSwCtrdJpCtcMCsjaI3ZWllw==@vger.kernel.org
+X-Gm-Message-State: AOJu0YyIEC8ZzFBQtsVZlDXiwycD9SLgMtdOBKeagvWZqWztqj+5lix2
+	KfXjEwf2Zzh7gnCSe8fas7mz4g46ptZEqiDqTfCq0GpBNeGr9MNozhg4
+X-Gm-Gg: ASbGncu1+hyhn18vE7ne/spGZ85eNQxSIjWgBWMqwYoWHBC88b1TsauLCKjC5TXR8jy
+	H3Qz4ZA5mpnOCrDXq1sxsMyaP4KAehXxkoRFoyQeZIXxXWyq3F+YIx7E6cougWjLij1gW02eJ79
+	jYLiMGJLK+AXLtDvxrbn4ZIXXcWuyIJ60RyCnR0m57dJK/77/voNa+8c79anSQrvWnd3UOGMHfz
+	dpaou3dE0ZQFI9kkpqFJ2/cokfkWxmimtocBeNyLcFwuz2OEWEp/gXvXK8aOjzKfKn0ITo3EyeQ
+	x0CZcLYoFTdeHKZaYGhY2eHJ7BOa5+cnO6sz3bmKzbuvlSz1ugdjsoP0Y60fdaQajL8Bf04Ybxd
+	zsqw0/aivA1WBxkRM/eyDP0vss0UHxW7p+RttYQzaBRScsvFBXwz/TRO0nwpNH1z7mm/QXmM8
+X-Google-Smtp-Source: AGHT+IElu5efTxqeZRn/Q7DGHQ7xzDh6VVQxmvzWa6J1DdvqizNuOI3aGe/Bc0G2MqWrzLvaODXXhw==
+X-Received: by 2002:a05:6000:250c:b0:3e7:5f26:f1d6 with SMTP id ffacd0b85a97d-3ee7bad15f0mr3165724f8f.13.1758296964249;
+        Fri, 19 Sep 2025 08:49:24 -0700 (PDT)
 Received: from f.. (cst-prg-88-146.cust.vodafone.cz. [46.135.88.146])
-        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-3ee073f53c4sm8446746f8f.3.2025.09.19.08.49.12
+        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-3ee073f53c4sm8446746f8f.3.2025.09.19.08.49.22
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 19 Sep 2025 08:49:14 -0700 (PDT)
+        Fri, 19 Sep 2025 08:49:23 -0700 (PDT)
 From: Mateusz Guzik <mjguzik@gmail.com>
 To: brauner@kernel.org
 Cc: viro@zeniv.linux.org.uk,
@@ -73,9 +73,9 @@ Cc: viro@zeniv.linux.org.uk,
 	ceph-devel@vger.kernel.org,
 	linux-unionfs@vger.kernel.org,
 	Mateusz Guzik <mjguzik@gmail.com>
-Subject: [PATCH v5 1/4] fs: provide accessors for ->i_state
-Date: Fri, 19 Sep 2025 17:49:01 +0200
-Message-ID: <20250919154905.2592318-2-mjguzik@gmail.com>
+Subject: [PATCH v5 4/4] fs: make plain ->i_state access fail to compile
+Date: Fri, 19 Sep 2025 17:49:04 +0200
+Message-ID: <20250919154905.2592318-5-mjguzik@gmail.com>
 X-Mailer: git-send-email 2.43.0
 In-Reply-To: <20250919154905.2592318-1-mjguzik@gmail.com>
 References: <20250919154905.2592318-1-mjguzik@gmail.com>
@@ -87,89 +87,85 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Open-coded accesses prevent asserting they are done correctly. One
-obvious aspect is locking, but significantly more can checked. For
-example it can be detected when the code is clearing flags which are
-already missing, or is setting flags when it is illegal (e.g., I_FREEING
-when ->i_count > 0).
+... to make sure all accesses are properly validated.
 
-Given the late stage of the release cycle this patchset only aims to
-hide access, it does not provide any of the checks.
+Merely renaming the var to __i_state still lets the compiler make the
+following suggestion:
+error: 'struct inode' has no member named 'i_state'; did you mean '__i_state'?
 
-Consumers can be trivially converted. Suppose flags I_A and I_B are to
-be handled, then:
+Unfortunately some people will add the __'s and call it a day.
 
-state = inode->i_state  	=> state = inode_state_read(inode)
-inode->i_state |= (I_A | I_B) 	=> inode_state_add(inode, I_A | I_B)
-inode->i_state &= ~(I_A | I_B) 	=> inode_state_del(inode, I_A | I_B)
-inode->i_state = I_A | I_B	=> inode_state_set(inode, I_A | I_B)
+In order to make it harder to mess up in this way, hide it behind a
+struct. The resulting error message should be convincing in terms of
+checking what to do:
+error: invalid operands to binary & (have 'struct inode_state_flags' and 'int')
 
-Note open-coded access compiles just fine until the last patch in the
-series.
+Of course people determined to do a plain access can still do it, but
+nothing can be done for that case.
 
 Signed-off-by: Mateusz Guzik <mjguzik@gmail.com>
 ---
- include/linux/fs.h | 33 +++++++++++++++++++++++++++++++--
- 1 file changed, 31 insertions(+), 2 deletions(-)
+ include/linux/fs.h | 17 ++++++++++++-----
+ 1 file changed, 12 insertions(+), 5 deletions(-)
 
 diff --git a/include/linux/fs.h b/include/linux/fs.h
-index c4fd010cf5bf..a4e93fcd4b44 100644
+index 4ba2b274588a..3d678cd02fea 100644
 --- a/include/linux/fs.h
 +++ b/include/linux/fs.h
-@@ -756,7 +756,7 @@ enum inode_state_bits {
- 	/* reserved wait address bit 3 */
- };
+@@ -782,6 +782,13 @@ enum inode_state_flags_enum {
+ #define I_DIRTY (I_DIRTY_INODE | I_DIRTY_PAGES)
+ #define I_DIRTY_ALL (I_DIRTY | I_DIRTY_TIME)
  
--enum inode_state_flags_t {
-+enum inode_state_flags_enum {
- 	I_NEW			= (1U << __I_NEW),
- 	I_SYNC			= (1U << __I_SYNC),
- 	I_LRU_ISOLATING         = (1U << __I_LRU_ISOLATING),
-@@ -840,7 +840,7 @@ struct inode {
++/*
++ * Use inode_state_read() & friends to access.
++ */
++struct inode_state_flags {
++	enum inode_state_flags_enum __state;
++};
++
+ /*
+  * Keep mostly read-only and often accessed (especially for
+  * the RCU path lookup and 'stat' data) fields at the beginning
+@@ -840,7 +847,7 @@ struct inode {
  #endif
  
  	/* Misc */
--	enum inode_state_flags_t	i_state;
-+	enum inode_state_flags_enum i_state;
+-	enum inode_state_flags_enum i_state;
++	struct inode_state_flags i_state;
  	/* 32-bit hole */
  	struct rw_semaphore	i_rwsem;
  
-@@ -899,6 +899,35 @@ struct inode {
- 	void			*i_private; /* fs or device private pointer */
- } __randomize_layout;
- 
-+/*
-+ * i_state handling
-+ *
-+ * We hide all of it behind helpers so that we can validate consumers.
-+ */
-+static inline enum inode_state_flags_enum inode_state_read(struct inode *inode)
-+{
-+	return READ_ONCE(inode->i_state);
-+}
-+
-+static inline void inode_state_add(struct inode *inode,
-+				   enum inode_state_flags_enum addflags)
-+{
-+	WRITE_ONCE(inode->i_state, inode->i_state | addflags);
-+}
-+
-+static inline void inode_state_del(struct inode *inode,
-+				   enum inode_state_flags_enum delflags)
-+{
-+	WRITE_ONCE(inode->i_state, inode->i_state & ~delflags);
-+
-+}
-+
-+static inline void inode_state_set(struct inode *inode,
-+				   enum inode_state_flags_enum setflags)
-+{
-+	WRITE_ONCE(inode->i_state, setflags);
-+}
-+
- static inline void inode_set_cached_link(struct inode *inode, char *link, int linklen)
+@@ -906,26 +913,26 @@ struct inode {
+  */
+ static inline enum inode_state_flags_enum inode_state_read(struct inode *inode)
  {
- 	VFS_WARN_ON_INODE(strlen(link) != linklen, inode);
+-	return READ_ONCE(inode->i_state);
++	return READ_ONCE(inode->i_state.__state);
+ }
+ 
+ static inline void inode_state_add(struct inode *inode,
+ 				   enum inode_state_flags_enum addflags)
+ {
+-	WRITE_ONCE(inode->i_state, inode->i_state | addflags);
++	WRITE_ONCE(inode->i_state.__state, inode->i_state.__state | addflags);
+ }
+ 
+ static inline void inode_state_del(struct inode *inode,
+ 				   enum inode_state_flags_enum delflags)
+ {
+-	WRITE_ONCE(inode->i_state, inode->i_state & ~delflags);
++	WRITE_ONCE(inode->i_state.__state, inode->i_state.__state & ~delflags);
+ 
+ }
+ 
+ static inline void inode_state_set(struct inode *inode,
+ 				   enum inode_state_flags_enum setflags)
+ {
+-	WRITE_ONCE(inode->i_state, setflags);
++	WRITE_ONCE(inode->i_state.__state, setflags);
+ }
+ 
+ static inline void inode_set_cached_link(struct inode *inode, char *link, int linklen)
 -- 
 2.43.0
 

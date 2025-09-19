@@ -1,67 +1,36 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 51E612FE051
-	for <linux-btrfs@vger.kernel.org>; Thu, 18 Sep 2025 22:59:34 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6B4F12F4A1F
+	for <linux-btrfs@vger.kernel.org>; Fri, 19 Sep 2025 10:11:46 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1758236376; cv=none; b=HeSjGNs7ARlU5D1C/VkWiUWcXtuwvVg7POGJnlAt713RsVYEzDTE+xrpdob6zNjKhHo9KkI3QkIinNluC2rgbdNpsy5KdPB2IG3YOYZGilwIso8i19FaccL8/WIQiMiBV01A3e/9D7vR/m4Prey1aiZ1Zshr169NfXFv+j8RX/A=
+	t=1758276706; cv=none; b=YTvx/cTQsN/g+1om8FZTQ7HY617Xk0Vt9Bgsk4Nn+vZ9+ON97KVRpxKaKrm/IN4dR6j+2xLkLcdeS+TzK4Bo3MjyeRqDXmvODewgpD8FjYHkaFriBJ8Kd6Rvfmmv4L2RzYulInxW4P/49AESxs8jM1xNQT6JaBRV5kW8aJpJ5MM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1758236376; c=relaxed/simple;
-	bh=Oq3iMi6/JCMEL+JsxqJddpd01mPy1mjTbUgGJEoP5Sk=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=HC+oQ3nR2nONM9cS01GFdUgYR1mw/LZ6ZTB0H2sJFjA7LefsIOALkX/RL+tpm5ywAT16OTHAmnVfRLm24ighe2tzV9zRTBQUnjKAf0+ItFqgahlXDY75+OZOXJYhucNSKJTkMXhnalJd09XwhC84hulOvqCYO1SGI9KKmQdX+E0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=blE4dK6Z; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=blE4dK6Z; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1758276706; c=relaxed/simple;
+	bh=harBXWIwtnGJGQDgA0ON08XxcaqpKr3K/ZiJMJ/4G2k=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=jy66o0/pl7Y0zsEHa6kvN3hS6qeM1yDr4joblTFGD5LOPOtO2n+TQIsEZoUtUV8HVxbBgjgdXuw3XIRrcIGsKq+RZ/nY0yz5JH49DiTlVOx5JWbI4sFZiP/li8mOz6vqFhTZm09nzqVz8oabMtyFCd/RGT++WpMfzSN5qLC7DiU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Zp5mqJUm; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="blE4dK6Z";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="blE4dK6Z"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 1C942336DB
-	for <linux-btrfs@vger.kernel.org>; Thu, 18 Sep 2025 22:59:06 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1758236346; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=5smTf8QxquUNmVU6Z06bfG6PkzgcdeOWHbOBoMDy56M=;
-	b=blE4dK6ZZ0pJOtasM85xts5qy6AQQRdTlLofAXfCMSFqeaq4+O0YtBfmwYF8Amw3QXowa6
-	mnWv9Z9Yt964IL98l+V3Tk5J3q7kfkw8MIYwDLNhBQVbnR0K10V8ETfFlvUh5VYHeAcUun
-	s1tV39Og8we2hpue3fMtm34BYPSuQi8=
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1758236346; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=5smTf8QxquUNmVU6Z06bfG6PkzgcdeOWHbOBoMDy56M=;
-	b=blE4dK6ZZ0pJOtasM85xts5qy6AQQRdTlLofAXfCMSFqeaq4+O0YtBfmwYF8Amw3QXowa6
-	mnWv9Z9Yt964IL98l+V3Tk5J3q7kfkw8MIYwDLNhBQVbnR0K10V8ETfFlvUh5VYHeAcUun
-	s1tV39Og8we2hpue3fMtm34BYPSuQi8=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 5843B13A39
-	for <linux-btrfs@vger.kernel.org>; Thu, 18 Sep 2025 22:59:05 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id +JrtBrmOzGjiYAAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Thu, 18 Sep 2025 22:59:05 +0000
-From: Qu Wenruo <wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Zp5mqJUm"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 6C6B0C4CEF0
+	for <linux-btrfs@vger.kernel.org>; Fri, 19 Sep 2025 10:11:45 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1758276705;
+	bh=harBXWIwtnGJGQDgA0ON08XxcaqpKr3K/ZiJMJ/4G2k=;
+	h=From:To:Subject:Date:From;
+	b=Zp5mqJUmjPMpWXtONJjj3Kfj/yyBxOQkcxuIld9U3sYEEEAQv5mKfdHvdZTShfVpa
+	 9Ehnh9jQxgEvGCvHwvfnmPp8EBaa/eC3sGbUlRC/a9GyRYanXEttIzZvWO0du1cyDP
+	 Zn7lbGHIxsOE8Q+xCfIbOhGVE/TFZJPheDEJavoQxuKpQM5oLwevT56kwBz9e532o2
+	 e2jV50Hhs2peI8tFP06Z3hVLoZ/PXRY9X3cI/i/ProivIiUUmZ0SXyDR24BjfdePA5
+	 mD5DrxrowUj1ced+TtRkRwAwc4HLgAvAPwZtou1k2s2RQmgmkWPKCrjetNm8uXq1bh
+	 ZXSrJpETy2HBQ==
+From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 7/8] btrfs: add extra ASSERT()s to catch unaligned bios
-Date: Fri, 19 Sep 2025 08:28:37 +0930
-Message-ID: <a8dce80dc074b6e4324938fdbb7e4395e0250970.1758236028.git.wqu@suse.com>
-X-Mailer: git-send-email 2.50.1
-In-Reply-To: <cover.1758236028.git.wqu@suse.com>
-References: <cover.1758236028.git.wqu@suse.com>
+Subject: [PATCH] btrfs: make the rule checking more readable for should_cow_block()
+Date: Fri, 19 Sep 2025 11:11:37 +0100
+Message-ID: <430201af947578096cabe79fc4a1eaea731e8ef4.1758272660.git.fdmanana@suse.com>
+X-Mailer: git-send-email 2.47.2
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -69,102 +38,95 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Level: 
-X-Spamd-Result: default: False [-2.80 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	MID_CONTAINS_FROM(1.00)[];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	ARC_NA(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Flag: NO
-X-Spam-Score: -2.80
 
-Btrfs uses btrfs_bio to handle read/write of logical address, for the
-incoming bs > ps support, btrfs has extra requirements:
+From: Filipe Manana <fdmanana@suse.com>
 
-- One folio must contain at least one fs block
-- No fs block can cross folio boundaries
+It's quite hard and unreadable the way the rule checks are organized in
+should_cow_block(). We have a single if statement that returns 0 (false)
+and it checks several conditions, with one them being a negated compound
+condition which is particularly hard to reason immediately.
 
-This requirement is not hard to maintain, thanks to the address space's
-minimal folio order.
+Improve on this by using multiple if statements, each checking a single
+condition and returning immediately. Also change the return type from an
+integer to a boolean, since all we need is to return true or false.
 
-But not all btrfs bios are generated through address space, e.g.
-compression and scrub.
+At least on x86_64 with Debian's gcc 14.2.0-19, this also reduces the
+object code size by 64 bytes.
 
-To catch possible unaligned bios, introduce a helper,
-assert_bbio_alginment(), for each btrfs_bio in btrfs_submit_bbio().
+Before this change:
 
-This will check the following things:
+   $ size fs/btrfs/btrfs.ko
+      text	   data	    bss	    dec	    hex	filename
+   1913327	 161567	  15592	2090486	 1fe5f6	fs/btrfs/btrfs.ko
 
-- bv_offset is aligned to block size
-- bv_len is aligned to block size
+After this change:
 
-With a btrfs bio passing above checks, unless it's empty it will ensure
-the requirements for bs > ps support.
+   $ size fs/btrfs/btrfs.ko
+      text	   data	    bss	    dec	    hex	filename
+   1913263	 161567	  15592	2090422	 1fe5b6	fs/btrfs/btrfs.ko
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/bio.c | 27 +++++++++++++++++++++++++++
- 1 file changed, 27 insertions(+)
+ fs/btrfs/ctree.c | 37 +++++++++++++++++++++++--------------
+ 1 file changed, 23 insertions(+), 14 deletions(-)
 
-diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
-index 909b208f9ef3..db2deaa4aad4 100644
---- a/fs/btrfs/bio.c
-+++ b/fs/btrfs/bio.c
-@@ -779,11 +779,38 @@ static bool btrfs_submit_chunk(struct btrfs_bio *bbio, int mirror_num)
- 	return true;
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index dc185322362b..13dc44e90762 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -613,15 +613,12 @@ int btrfs_force_cow_block(struct btrfs_trans_handle *trans,
+ 	return ret;
  }
  
-+static void assert_bbio_alignment(struct btrfs_bio *bbio)
-+{
-+#ifdef CONFIG_BTRFS_ASSERT
-+	struct btrfs_fs_info *fs_info = bbio->fs_info;
-+	struct bio_vec bvec;
-+	struct bvec_iter iter;
-+	const u32 blocksize = fs_info->sectorsize;
-+
-+	/* Metadata has no extra bs > ps alignment requirement. */
-+	if (!is_data_bbio(bbio))
-+		return;
-+
-+	bio_for_each_bvec(bvec, &bbio->bio, iter)
-+		ASSERT(IS_ALIGNED(bvec.bv_offset, blocksize) &&
-+		       IS_ALIGNED(bvec.bv_len, blocksize),
-+		"root=%llu inode=%llu logical=%llu length=%u index=%u bv_offset=%u bv_len=%u",
-+		btrfs_root_id(bbio->inode->root),
-+		btrfs_ino(bbio->inode),
-+		bbio->bio.bi_iter.bi_sector << SECTOR_SHIFT,
-+		bbio->bio.bi_iter.bi_size, iter.bi_idx,
-+		bvec.bv_offset,
-+		bvec.bv_len);
-+#endif
-+}
-+
- void btrfs_submit_bbio(struct btrfs_bio *bbio, int mirror_num)
+-static inline int should_cow_block(const struct btrfs_trans_handle *trans,
+-				   const struct btrfs_root *root,
+-				   const struct extent_buffer *buf)
++static inline bool should_cow_block(const struct btrfs_trans_handle *trans,
++				    const struct btrfs_root *root,
++				    const struct extent_buffer *buf)
  {
- 	/* If bbio->inode is not populated, its file_offset must be 0. */
- 	ASSERT(bbio->inode || bbio->file_offset == 0);
+ 	if (btrfs_is_testing(root->fs_info))
+-		return 0;
+-
+-	/* Ensure we can see the FORCE_COW bit */
+-	smp_mb__before_atomic();
++		return false;
  
-+	assert_bbio_alignment(bbio);
+ 	/*
+ 	 * We do not need to cow a block if
+@@ -634,13 +631,25 @@ static inline int should_cow_block(const struct btrfs_trans_handle *trans,
+ 	 *    after we've finished copying src root, we must COW the shared
+ 	 *    block to ensure the metadata consistency.
+ 	 */
+-	if (btrfs_header_generation(buf) == trans->transid &&
+-	    !btrfs_header_flag(buf, BTRFS_HEADER_FLAG_WRITTEN) &&
+-	    !(btrfs_root_id(root) != BTRFS_TREE_RELOC_OBJECTID &&
+-	      btrfs_header_flag(buf, BTRFS_HEADER_FLAG_RELOC)) &&
+-	    !test_bit(BTRFS_ROOT_FORCE_COW, &root->state))
+-		return 0;
+-	return 1;
 +
- 	while (!btrfs_submit_chunk(bbio, mirror_num))
- 		;
++	if (btrfs_header_generation(buf) != trans->transid)
++		return true;
++
++	if (btrfs_header_flag(buf, BTRFS_HEADER_FLAG_WRITTEN))
++		return true;
++
++	/* Ensure we can see the FORCE_COW bit. */
++	smp_mb__before_atomic();
++	if (test_bit(BTRFS_ROOT_FORCE_COW, &root->state))
++		return true;
++
++	if (btrfs_root_id(root) == BTRFS_TREE_RELOC_OBJECTID)
++		return false;
++
++	if (btrfs_header_flag(buf, BTRFS_HEADER_FLAG_RELOC))
++		return true;
++
++	return false;
  }
+ 
+ /*
 -- 
-2.50.1
+2.47.2
 

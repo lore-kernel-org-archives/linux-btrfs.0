@@ -1,64 +1,64 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 96B8D19CC02
-	for <linux-btrfs@vger.kernel.org>; Sun, 21 Sep 2025 22:41:22 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BF98424BBE4
+	for <linux-btrfs@vger.kernel.org>; Sun, 21 Sep 2025 22:41:24 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1758494484; cv=none; b=MXTffPQ1AFLh84+T9ct8hsfcW+EcS95w/gQpJCSepaellJSdOSQaJv2eHeZwxQI+f9+zVlf9g17Ph+GI3gy1uXghAHp5LjMmpSCnRjmbAGsdydLI1HVDSPGs9uOxyS0EVJj4KVkC3+4DOqHXnAcvdok8GHyzVYqWBEFewqKeWTQ=
+	t=1758494486; cv=none; b=KwBgGuQWB3OKoZ1Ueg1HpvCsWQejLkgp9pvsrMsErkiGlHwvezjTLIJxLYAc3SAKXfW3d5bg2eczUXg7IW5llLG/abNyCxHcGMxzNjvuuBzVAL9OJofSuDGPhwIVCLqx5e5SGViB3/bH1l5f198gbpC5VxoF6Cn5BgqJkERaBXg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1758494484; c=relaxed/simple;
-	bh=wbYul/CauuhGCtntOc8clcF5qvEQLNAoSnIefIJxF0M=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=lcDkd++jXAMC2jyBRvxVuz0NdWu22lFkWnKffF8l5sdamwMsOdu3iL47DPDesgx4YwE96QtEEnUFsRSScO7HhaIjoiJJn04B8PT9pWJGtGbqHnu49suMGGiGrfAozc4gA248aMmeLOgLBI6F7HykntD/zMSvTzD4tSlRDff5KCU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=cIPA9wjf; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=cIPA9wjf; arc=none smtp.client-ip=195.135.223.130
+	s=arc-20240116; t=1758494486; c=relaxed/simple;
+	bh=FCm8MY4B1zDZSBw0AQMYXqjJYx9jSc4wTcda1TXgJR8=;
+	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=u5cyNX+yVd6eNWHt0haR8IaNLbVV3NvMw2ITGlWzwxP4/6KEHRAr5HixjaywWW53cDUI5WifXGG7yVSa0lK1VPLTQQiBTY95rhKd2Zfc85Bb4PXn3tEqLWr5OeXnHLeHLpdQdo00M7DD0n71WqQ27eT36jkbcENXohDk7duk1bw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=UUTYaCGp; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=UUTYaCGp; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="cIPA9wjf";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="cIPA9wjf"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="UUTYaCGp";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="UUTYaCGp"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 61CE122274;
-	Sun, 21 Sep 2025 22:41:11 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 57FC01F78F
+	for <linux-btrfs@vger.kernel.org>; Sun, 21 Sep 2025 22:41:17 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1758494471; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1758494477; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=irw1cxmdVnCYzU5LBO4zADP1QmuXxt9dn2RxqZcWxUw=;
-	b=cIPA9wjfFjIMLd1u2v2mqQgcflciMyH8yIoiC8uDRZjuFgYD+eqpdU+c2rnMQNrjaes5XO
-	ThJALpNrVJgvgKWGbHn22yzwREjB1Cos6DypCPOOFxzsVgSHms5+brb4Zs7zIQbsM+orHJ
-	BjisRVYK/qcNOOnXf/dSKAgdCVcEffo=
-Authentication-Results: smtp-out1.suse.de;
-	none
+	bh=0wgEx9qOMyB7KcBMMXg1uOUy3kq5lmfrsp5Qu9oWWaI=;
+	b=UUTYaCGpUhwIVCvqgZHdmenmUaF6Ox1tMM05NTZK6N6+OwRxkiBu7rDOtbgjk/tINyI+I6
+	YK/rj0T/Q61PfYezL7SSnRC/7CeUOWINQu3d1vSLgVBg3DSAb8Qz2vHa0rQgKJvdWczjzQ
+	FolnHwDP2TvA5hdtnB0prQAw/49R5DQ=
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=UUTYaCGp
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1758494471; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1758494477; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=irw1cxmdVnCYzU5LBO4zADP1QmuXxt9dn2RxqZcWxUw=;
-	b=cIPA9wjfFjIMLd1u2v2mqQgcflciMyH8yIoiC8uDRZjuFgYD+eqpdU+c2rnMQNrjaes5XO
-	ThJALpNrVJgvgKWGbHn22yzwREjB1Cos6DypCPOOFxzsVgSHms5+brb4Zs7zIQbsM+orHJ
-	BjisRVYK/qcNOOnXf/dSKAgdCVcEffo=
+	bh=0wgEx9qOMyB7KcBMMXg1uOUy3kq5lmfrsp5Qu9oWWaI=;
+	b=UUTYaCGpUhwIVCvqgZHdmenmUaF6Ox1tMM05NTZK6N6+OwRxkiBu7rDOtbgjk/tINyI+I6
+	YK/rj0T/Q61PfYezL7SSnRC/7CeUOWINQu3d1vSLgVBg3DSAb8Qz2vHa0rQgKJvdWczjzQ
+	FolnHwDP2TvA5hdtnB0prQAw/49R5DQ=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 693FD13ACD;
-	Sun, 21 Sep 2025 22:41:10 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 9889113ACD
+	for <linux-btrfs@vger.kernel.org>; Sun, 21 Sep 2025 22:41:16 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id yCiQCwZ/0GisdwAAD6G6ig
-	(envelope-from <wqu@suse.com>); Sun, 21 Sep 2025 22:41:10 +0000
+	id 4BQhFwx/0GisdwAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Sun, 21 Sep 2025 22:41:16 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: stable@vger.kernel.org
-Subject: [PATCH v2 1/9] btrfs: fix the incorrect @max_bytes value for find_lock_delalloc_range()
-Date: Mon, 22 Sep 2025 08:10:43 +0930
-Message-ID: <8e713e74d2a2515727f5438e9f86f68ad2f4cceb.1758494327.git.wqu@suse.com>
+Subject: [PATCH v2 6/9] btrfs: prepare scrub to support bs > ps cases
+Date: Mon, 22 Sep 2025 08:10:48 +0930
+Message-ID: <c4d94d8c8fc229b6750d75c1f0029e4e10f753f9.1758494327.git.wqu@suse.com>
 X-Mailer: git-send-email 2.50.1
 In-Reply-To: <cover.1758494326.git.wqu@suse.com>
 References: <cover.1758494326.git.wqu@suse.com>
@@ -69,163 +69,279 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-2.80 / 50.00];
+X-Spamd-Result: default: False [-3.01 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
 	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.999];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	RCPT_COUNT_TWO(0.00)[2];
+	MX_GOOD(-0.01)[];
 	FUZZY_RATELIMITED(0.00)[rspamd.com];
 	ARC_NA(0.00)[];
 	RCVD_VIA_SMTP_AUTH(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:email,imap1.dmz-prg2.suse.org:helo];
+	MIME_TRACE(0.00)[0:+];
+	RCPT_COUNT_ONE(0.00)[1];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.com:mid,suse.com:dkim,suse.com:email];
+	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received,2a07:de40:b281:104:10:150:64:97:from];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	RCVD_TLS_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
 	RCVD_COUNT_TWO(0.00)[2];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	RCVD_TLS_ALL(0.00)[]
+	DKIM_TRACE(0.00)[suse.com:+]
 X-Spam-Flag: NO
 X-Spam-Level: 
-X-Spam-Score: -2.80
+X-Rspamd-Queue-Id: 57FC01F78F
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Rspamd-Action: no action
+X-Spam-Score: -3.01
 
-[BUG]
-With my local branch to enable bs > ps support for btrfs, sometimes I
-hit the following ASSERT() inside submit_one_sector():
+This involves:
 
-	ASSERT(block_start != EXTENT_MAP_HOLE);
+- Migrate scrub_stripe::pages[] to folios[]
 
-Please note that it's not yet possible to hit this ASSERT() in the wild
-yet, as it requires btrfs bs > ps support, which is not even in the
-development branch.
+- Use btrfs_alloc_folio_array() and folio_put() to alloc above array.
 
-But on the other hand, there is also a very low chance to hit above
-ASSERT() with bs < ps cases, so this is an existing bug affect not only
-the incoming bs > ps support but also the existing bs < ps support.
+- Migrate scrub_stripe_get_kaddr() and scrub_stripe_get_paddr() to use
+  folio interfaces
 
-[CAUSE]
-Firstly that ASSERT() means we're trying to submit a dirty block but
-without a real extent map nor ordered extent map backing it.
+- Migrate raid56_parity_cache_data_pages() to
+  raid56_parity_cache_data_folios()
+  Since scrub is the only caller still using pages.
 
-Furthermore with extra debugging, the folio triggering such ASSERT() is
-always larger than the fs block size in my bs > ps case.
-(8K block size, 4K page size)
+  This helper will copy the folio array contents into rbio::stripe_pages,
+  with sector uptodate flags updated.
 
-After some more debugging, the ASSERT() is trigger by the following
-sequence:
+  And a new ASSERT() to make sure bs > ps cases will not hit this path.
 
- extent_writepage()
- |  We got a 32K folio (4 fs blocks) at file offset 0, and the fs block
- |  size is 8K, page size is 4K.
- |  And there is another 8K folio at file offset 32K, which is also
- |  dirty.
- |  So the filemap layout looks like the following:
- |
- |  "||" is the filio boundary in the filemap.
- |  "//| is the dirty range.
- |
- |  0        8K       16K        24K         32K       40K
- |  |////////|        |//////////////////////||////////|
- |
- |- writepage_delalloc()
- |  |- find_lock_delalloc_range() for [0, 8K)
- |  |  Now range [0, 8K) is properly locked.
- |  |
- |  |- find_lock_delalloc_range() for [16K, 40K)
- |  |  |- btrfs_find_delalloc_range() returned range [0, 8K)
- |  |  |- lock_delalloc_folios() succeeded.
- |  |  |
- |  |  |  The filemap range [32K, 40K) got dropped from filemap.
- |  |  |
- |  |  |- lock_delalloc_folios() failed with -EAGAIN.
- |  |  |  As it failed to lock the folio at [32K, 40K).
- |  |  |
- |  |  |- loops = 1;
- |  |  |- max_bytes = PAGE_SIZE;
- |  |  |- goto again;
- |  |  |  This will re-do the lookup for dirty delalloc ranges.
- |  |  |
- |  |  |- btrfs_find_delalloc_range() called with @max_bytes == 4K
- |  |  |  This is smaller than block size, so
- |  |  |  btrfs_find_delalloc_range() is unable to return any range.
- |  |  \- return false;
- |  |
- |  \- Now only range [0, 8K) has an OE for it, but for dirty range
- |     [16K, 32K) it's dirty without an OE.
- |     This breaks the assumption that writepage_delalloc() will find
- |     and lock all dirty ranges inside the folio.
- |
- |- extent_writepage_io()
-    |- submit_one_sector() for [0, 8K)
-    |  Succeeded
-    |
-    |- submit_one_sector() for [16K, 24K)
-       Triggering the ASSERT(), as there is no OE, and the original
-       extent map is a hole.
+Since most scrub code is based on kaddr/paddr, the migration itself is
+pretty straightforward.
 
-Please note that, this also exposed the same problem for bs < ps
-support. E.g. with 64K page size and 4K block size.
+And since we're here, also move the loop to set the
+stripe_sectors[].uptodate out of the copy loop.
+As we always mark all the sectors as update for the data stripe, it's
+easier to do in one go, other than doing it inside the copy loop.
 
-If we failed to lock a folio, and falls back into the "loops = 1;"
-branch, we will re-do the search using 64K as max_bytes.
-Which may fail again to lock the next folio, and exit early without
-handling all dirty blocks inside the folio.
-
-[FIX]
-Instead of using the fixed size PAGE_SIZE as @max_bytes, use
-@sectorsize, so that we are ensured to find and lock any remaining
-blocks inside the folio.
-
-And since we're here, add an extra ASSERT() to
-before calling btrfs_find_delalloc_range() to make sure the @max_bytes is
-at least no smaller than a block to avoid false negative.
-
-Cc: stable@vger.kernel.org #5.15+
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/extent_io.c | 14 +++++++++++---
- 1 file changed, 11 insertions(+), 3 deletions(-)
+ fs/btrfs/raid56.c | 42 +++++++++++++++++++++++++-------------
+ fs/btrfs/raid56.h |  4 ++--
+ fs/btrfs/scrub.c  | 51 +++++++++++++++++++++++++++--------------------
+ 3 files changed, 59 insertions(+), 38 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index ca7174fa0240..2fd82055a779 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -393,6 +393,13 @@ noinline_for_stack bool find_lock_delalloc_range(struct inode *inode,
- 	/* step one, find a bunch of delalloc bytes starting at start */
- 	delalloc_start = *start;
- 	delalloc_end = 0;
+diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+index 2b4f577dcf39..c90612f6cc1b 100644
+--- a/fs/btrfs/raid56.c
++++ b/fs/btrfs/raid56.c
+@@ -2844,19 +2844,22 @@ void raid56_parity_submit_scrub_rbio(struct btrfs_raid_bio *rbio)
+  * This is for scrub call sites where we already have correct data contents.
+  * This allows us to avoid reading data stripes again.
+  *
+- * Unfortunately here we have to do page copy, other than reusing the pages.
++ * Unfortunately here we have to do folio copy, other than reusing the pages.
+  * This is due to the fact rbio has its own page management for its cache.
+  */
+-void raid56_parity_cache_data_pages(struct btrfs_raid_bio *rbio,
+-				    struct page **data_pages, u64 data_logical)
++void raid56_parity_cache_data_folios(struct btrfs_raid_bio *rbio,
++				     struct folio **data_folios, u64 data_logical)
+ {
++	struct btrfs_fs_info *fs_info = rbio->bioc->fs_info;
+ 	const u64 offset_in_full_stripe = data_logical -
+ 					  rbio->bioc->full_stripe_logical;
+-	const int page_index = offset_in_full_stripe >> PAGE_SHIFT;
+-	const u32 sectorsize = rbio->bioc->fs_info->sectorsize;
+-	const u32 sectors_per_page = PAGE_SIZE / sectorsize;
++	unsigned int findex = 0;
++	unsigned int foffset = 0;
+ 	int ret;
+ 
++	/* We shouldn't hit RAID56 for bs > ps cases for now. */
++	ASSERT(fs_info->sectorsize <= PAGE_SIZE);
 +
-+	/*
-+	 * If @max_bytes is smaller than a block, btrfs_find_delalloc_range() can
-+	 * return early without handling any dirty ranges.
-+	 */
-+	ASSERT(max_bytes >= fs_info->sectorsize);
+ 	/*
+ 	 * If we hit ENOMEM temporarily, but later at
+ 	 * raid56_parity_submit_scrub_rbio() time it succeeded, we just do
+@@ -2873,14 +2876,25 @@ void raid56_parity_cache_data_pages(struct btrfs_raid_bio *rbio,
+ 	ASSERT(IS_ALIGNED(offset_in_full_stripe, BTRFS_STRIPE_LEN));
+ 	ASSERT(offset_in_full_stripe < (rbio->nr_data << BTRFS_STRIPE_LEN_SHIFT));
+ 
+-	for (int page_nr = 0; page_nr < (BTRFS_STRIPE_LEN >> PAGE_SHIFT); page_nr++) {
+-		struct page *dst = rbio->stripe_pages[page_nr + page_index];
+-		struct page *src = data_pages[page_nr];
++	for (unsigned int cur_off = offset_in_full_stripe;
++	     cur_off < offset_in_full_stripe + BTRFS_STRIPE_LEN;
++	     cur_off += PAGE_SIZE) {
++		const unsigned int pindex = cur_off >> PAGE_SHIFT;
++		void *kaddr;
+ 
+-		memcpy_page(dst, 0, src, 0, PAGE_SIZE);
+-		for (int sector_nr = sectors_per_page * page_index;
+-		     sector_nr < sectors_per_page * (page_index + 1);
+-		     sector_nr++)
+-			rbio->stripe_sectors[sector_nr].uptodate = true;
++		kaddr = kmap_local_page(rbio->stripe_pages[pindex]);
++		memcpy_from_folio(kaddr, data_folios[findex], foffset, PAGE_SIZE);
++		kunmap_local(kaddr);
 +
- 	found = btrfs_find_delalloc_range(tree, &delalloc_start, &delalloc_end,
- 					  max_bytes, &cached_state);
- 	if (!found || delalloc_end <= *start || delalloc_start > orig_end) {
-@@ -423,13 +430,14 @@ noinline_for_stack bool find_lock_delalloc_range(struct inode *inode,
- 				   delalloc_end);
- 	ASSERT(!ret || ret == -EAGAIN);
- 	if (ret == -EAGAIN) {
--		/* some of the folios are gone, lets avoid looping by
--		 * shortening the size of the delalloc range we're searching
-+		/*
-+		 * Some of the folios are gone, lets avoid looping by
-+		 * shortening the size of the delalloc range we're searching.
- 		 */
- 		btrfs_free_extent_state(cached_state);
- 		cached_state = NULL;
- 		if (!loops) {
--			max_bytes = PAGE_SIZE;
-+			max_bytes = fs_info->sectorsize;
- 			loops = 1;
- 			goto again;
- 		} else {
++		foffset += PAGE_SIZE;
++		ASSERT(foffset <= folio_size(data_folios[findex]));
++		if (foffset == folio_size(data_folios[findex])) {
++			findex++;
++			foffset = 0;
++		}
+ 	}
++	for (unsigned int sector_nr = offset_in_full_stripe >> fs_info->sectorsize_bits;
++	     sector_nr < (offset_in_full_stripe + BTRFS_STRIPE_LEN) >> fs_info->sectorsize_bits;
++	     sector_nr++)
++		rbio->stripe_sectors[sector_nr].uptodate = true;
+ }
+diff --git a/fs/btrfs/raid56.h b/fs/btrfs/raid56.h
+index 0d7b4c2fb6ae..84c4d1d29c7a 100644
+--- a/fs/btrfs/raid56.h
++++ b/fs/btrfs/raid56.h
+@@ -201,8 +201,8 @@ struct btrfs_raid_bio *raid56_parity_alloc_scrub_rbio(struct bio *bio,
+ 				unsigned long *dbitmap, int stripe_nsectors);
+ void raid56_parity_submit_scrub_rbio(struct btrfs_raid_bio *rbio);
+ 
+-void raid56_parity_cache_data_pages(struct btrfs_raid_bio *rbio,
+-				    struct page **data_pages, u64 data_logical);
++void raid56_parity_cache_data_folios(struct btrfs_raid_bio *rbio,
++				     struct folio **data_folios, u64 data_logical);
+ 
+ int btrfs_alloc_stripe_hash_table(struct btrfs_fs_info *info);
+ void btrfs_free_stripe_hash_table(struct btrfs_fs_info *info);
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 979d33d8c193..bf50556f186e 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -130,7 +130,7 @@ enum {
+ 	scrub_bitmap_nr_last,
+ };
+ 
+-#define SCRUB_STRIPE_PAGES		(BTRFS_STRIPE_LEN / PAGE_SIZE)
++#define SCRUB_STRIPE_MAX_FOLIOS		(BTRFS_STRIPE_LEN / PAGE_SIZE)
+ 
+ /*
+  * Represent one contiguous range with a length of BTRFS_STRIPE_LEN.
+@@ -139,7 +139,7 @@ struct scrub_stripe {
+ 	struct scrub_ctx *sctx;
+ 	struct btrfs_block_group *bg;
+ 
+-	struct page *pages[SCRUB_STRIPE_PAGES];
++	struct folio *folios[SCRUB_STRIPE_MAX_FOLIOS];
+ 	struct scrub_sector_verification *sectors;
+ 
+ 	struct btrfs_device *dev;
+@@ -339,10 +339,10 @@ static void release_scrub_stripe(struct scrub_stripe *stripe)
+ 	if (!stripe)
+ 		return;
+ 
+-	for (int i = 0; i < SCRUB_STRIPE_PAGES; i++) {
+-		if (stripe->pages[i])
+-			__free_page(stripe->pages[i]);
+-		stripe->pages[i] = NULL;
++	for (int i = 0; i < SCRUB_STRIPE_MAX_FOLIOS; i++) {
++		if (stripe->folios[i])
++			folio_put(stripe->folios[i]);
++		stripe->folios[i] = NULL;
+ 	}
+ 	kfree(stripe->sectors);
+ 	kfree(stripe->csums);
+@@ -355,6 +355,7 @@ static void release_scrub_stripe(struct scrub_stripe *stripe)
+ static int init_scrub_stripe(struct btrfs_fs_info *fs_info,
+ 			     struct scrub_stripe *stripe)
+ {
++	const u32 min_folio_shift = PAGE_SHIFT + fs_info->block_min_order;
+ 	int ret;
+ 
+ 	memset(stripe, 0, sizeof(*stripe));
+@@ -367,7 +368,9 @@ static int init_scrub_stripe(struct btrfs_fs_info *fs_info,
+ 	atomic_set(&stripe->pending_io, 0);
+ 	spin_lock_init(&stripe->write_error_lock);
+ 
+-	ret = btrfs_alloc_page_array(SCRUB_STRIPE_PAGES, stripe->pages, false);
++	ASSERT(BTRFS_STRIPE_LEN >> min_folio_shift <= SCRUB_STRIPE_MAX_FOLIOS);
++	ret = btrfs_alloc_folio_array(BTRFS_STRIPE_LEN >> min_folio_shift,
++				      fs_info->block_min_order, stripe->folios);
+ 	if (ret < 0)
+ 		goto error;
+ 
+@@ -687,27 +690,30 @@ static int fill_writer_pointer_gap(struct scrub_ctx *sctx, u64 physical)
+ 
+ static void *scrub_stripe_get_kaddr(struct scrub_stripe *stripe, int sector_nr)
+ {
+-	u32 offset = (sector_nr << stripe->bg->fs_info->sectorsize_bits);
+-	const struct page *page = stripe->pages[offset >> PAGE_SHIFT];
++	struct btrfs_fs_info *fs_info = stripe->bg->fs_info;
++	const u32 min_folio_shift = PAGE_SHIFT + fs_info->block_min_order;
++	u32 offset = (sector_nr << fs_info->sectorsize_bits);
++	const struct folio *folio = stripe->folios[offset >> min_folio_shift];
+ 
+-	/* stripe->pages[] is allocated by us and no highmem is allowed. */
+-	ASSERT(page);
+-	ASSERT(!PageHighMem(page));
+-	return page_address(page) + offset_in_page(offset);
++	/* stripe->folios[] is allocated by us and no highmem is allowed. */
++	ASSERT(folio);
++	ASSERT(!folio_test_partial_kmap(folio));
++	return folio_address(folio) + offset_in_folio(folio, offset);
+ }
+ 
+ static phys_addr_t scrub_stripe_get_paddr(struct scrub_stripe *stripe, int sector_nr)
+ {
+ 	struct btrfs_fs_info *fs_info = stripe->bg->fs_info;
++	const u32 min_folio_shift = PAGE_SHIFT + fs_info->block_min_order;
+ 	u32 offset = (sector_nr << fs_info->sectorsize_bits);
+-	const struct page *page = stripe->pages[offset >> PAGE_SHIFT];
++	const struct folio *folio = stripe->folios[offset >> min_folio_shift];
+ 
+-	/* stripe->pages[] is allocated by us and no highmem is allowed. */
+-	ASSERT(page);
+-	ASSERT(!PageHighMem(page));
+-	/* And the range must be contained inside the page. */
+-	ASSERT(offset_in_page(offset) + fs_info->sectorsize <= PAGE_SIZE);
+-	return page_to_phys(page) + offset_in_page(offset);
++	/* stripe->folios[] is allocated by us and no highmem is allowed. */
++	ASSERT(folio);
++	ASSERT(!folio_test_partial_kmap(folio));
++	/* And the range must be contained inside the folio. */
++	ASSERT(offset_in_folio(folio, offset) + fs_info->sectorsize <= folio_size(folio));
++	return page_to_phys(folio_page(folio, 0)) + offset_in_folio(folio, offset);
+ }
+ 
+ static void scrub_verify_one_metadata(struct scrub_stripe *stripe, int sector_nr)
+@@ -1872,6 +1878,7 @@ static void scrub_submit_initial_read(struct scrub_ctx *sctx,
+ {
+ 	struct btrfs_fs_info *fs_info = sctx->fs_info;
+ 	struct btrfs_bio *bbio;
++	const u32 min_folio_shift = PAGE_SHIFT + fs_info->block_min_order;
+ 	unsigned int nr_sectors = stripe_length(stripe) >> fs_info->sectorsize_bits;
+ 	int mirror = stripe->mirror_num;
+ 
+@@ -1884,7 +1891,7 @@ static void scrub_submit_initial_read(struct scrub_ctx *sctx,
+ 		return;
+ 	}
+ 
+-	bbio = btrfs_bio_alloc(SCRUB_STRIPE_PAGES, REQ_OP_READ, fs_info,
++	bbio = btrfs_bio_alloc(BTRFS_STRIPE_LEN >> min_folio_shift, REQ_OP_READ, fs_info,
+ 			       scrub_read_endio, stripe);
+ 
+ 	bbio->bio.bi_iter.bi_sector = stripe->logical >> SECTOR_SHIFT;
+@@ -2215,7 +2222,7 @@ static int scrub_raid56_parity_stripe(struct scrub_ctx *sctx,
+ 	for (int i = 0; i < data_stripes; i++) {
+ 		stripe = &sctx->raid56_data_stripes[i];
+ 
+-		raid56_parity_cache_data_pages(rbio, stripe->pages,
++		raid56_parity_cache_data_folios(rbio, stripe->folios,
+ 				full_stripe_start + (i << BTRFS_STRIPE_LEN_SHIFT));
+ 	}
+ 	raid56_parity_submit_scrub_rbio(rbio);
 -- 
 2.50.1
 

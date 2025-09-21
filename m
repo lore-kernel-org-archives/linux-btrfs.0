@@ -1,64 +1,64 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BF98424BBE4
-	for <linux-btrfs@vger.kernel.org>; Sun, 21 Sep 2025 22:41:24 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DAD0324BBE4
+	for <linux-btrfs@vger.kernel.org>; Sun, 21 Sep 2025 22:41:29 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1758494486; cv=none; b=KwBgGuQWB3OKoZ1Ueg1HpvCsWQejLkgp9pvsrMsErkiGlHwvezjTLIJxLYAc3SAKXfW3d5bg2eczUXg7IW5llLG/abNyCxHcGMxzNjvuuBzVAL9OJofSuDGPhwIVCLqx5e5SGViB3/bH1l5f198gbpC5VxoF6Cn5BgqJkERaBXg=
+	t=1758494492; cv=none; b=Q5WvFrN0Q2q38Q4T068t0Am4KKtbBRLb1da4q8EY8bgiKe5ASPC7n4eeIzkfLEU+gQNSI3Vil00qobpUSvvv+r7bifxjUpUr7i7nyr4IcV4oWLr8J58I2dMcqbZH9CLoM3UnBzrVVY9S0bguOy2ffOmI0wuIbOe5rzQh9pv+0Eo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1758494486; c=relaxed/simple;
-	bh=FCm8MY4B1zDZSBw0AQMYXqjJYx9jSc4wTcda1TXgJR8=;
+	s=arc-20240116; t=1758494492; c=relaxed/simple;
+	bh=yNx/YyuH3R3mmedILbe3unOFZIv9MtxK0lhe/L+BbOg=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=u5cyNX+yVd6eNWHt0haR8IaNLbVV3NvMw2ITGlWzwxP4/6KEHRAr5HixjaywWW53cDUI5WifXGG7yVSa0lK1VPLTQQiBTY95rhKd2Zfc85Bb4PXn3tEqLWr5OeXnHLeHLpdQdo00M7DD0n71WqQ27eT36jkbcENXohDk7duk1bw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=UUTYaCGp; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=UUTYaCGp; arc=none smtp.client-ip=195.135.223.131
+	 MIME-Version; b=NTvvxHJ8DM5pFA1w2XVzmFAVHHxByqdwKH7LCO8SBwsBKBPAad/cqJuLe9GVXXpdLw1bcp/tbNb59HVnj+/xqdaXVF098t5N4GpCgUWQ1aKCU1iYLdUgFjWbrZadijcGpGLxSO8ZNPJzG5/4Q6viGbdHAa/CJDY1l2ocIG3MSG0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=YAbuS7kp; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=YAbuS7kp; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="UUTYaCGp";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="UUTYaCGp"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="YAbuS7kp";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="YAbuS7kp"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 57FC01F78F
-	for <linux-btrfs@vger.kernel.org>; Sun, 21 Sep 2025 22:41:17 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 92B0E223F6
+	for <linux-btrfs@vger.kernel.org>; Sun, 21 Sep 2025 22:41:12 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1758494477; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1758494472; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=0wgEx9qOMyB7KcBMMXg1uOUy3kq5lmfrsp5Qu9oWWaI=;
-	b=UUTYaCGpUhwIVCvqgZHdmenmUaF6Ox1tMM05NTZK6N6+OwRxkiBu7rDOtbgjk/tINyI+I6
-	YK/rj0T/Q61PfYezL7SSnRC/7CeUOWINQu3d1vSLgVBg3DSAb8Qz2vHa0rQgKJvdWczjzQ
-	FolnHwDP2TvA5hdtnB0prQAw/49R5DQ=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=UUTYaCGp
+	bh=Do+gWdAH5LYKUqq0ptt/7PJhoCu1sZNT5/fgby5yAJI=;
+	b=YAbuS7kpI10gUQIXvaflRynSX3KXaoZWFnjl9u2aWMMQcfrK9v9F5iG/MNM3Z2jdvxcjdn
+	VE87x6aksTOZOtL20NOlVpaUD9IgfoHkR7+GIkvaBncBv/GY1aS9g28r2weKiZYc9Eg4Yh
+	3ARtjM8rDqspa5/X2SUABE/Y9+wIGeU=
+Authentication-Results: smtp-out1.suse.de;
+	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1758494477; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1758494472; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=0wgEx9qOMyB7KcBMMXg1uOUy3kq5lmfrsp5Qu9oWWaI=;
-	b=UUTYaCGpUhwIVCvqgZHdmenmUaF6Ox1tMM05NTZK6N6+OwRxkiBu7rDOtbgjk/tINyI+I6
-	YK/rj0T/Q61PfYezL7SSnRC/7CeUOWINQu3d1vSLgVBg3DSAb8Qz2vHa0rQgKJvdWczjzQ
-	FolnHwDP2TvA5hdtnB0prQAw/49R5DQ=
+	bh=Do+gWdAH5LYKUqq0ptt/7PJhoCu1sZNT5/fgby5yAJI=;
+	b=YAbuS7kpI10gUQIXvaflRynSX3KXaoZWFnjl9u2aWMMQcfrK9v9F5iG/MNM3Z2jdvxcjdn
+	VE87x6aksTOZOtL20NOlVpaUD9IgfoHkR7+GIkvaBncBv/GY1aS9g28r2weKiZYc9Eg4Yh
+	3ARtjM8rDqspa5/X2SUABE/Y9+wIGeU=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 9889113ACD
-	for <linux-btrfs@vger.kernel.org>; Sun, 21 Sep 2025 22:41:16 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id D216113ACD
+	for <linux-btrfs@vger.kernel.org>; Sun, 21 Sep 2025 22:41:11 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 4BQhFwx/0GisdwAAD6G6ig
+	id KGQmJQd/0GisdwAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Sun, 21 Sep 2025 22:41:16 +0000
+	for <linux-btrfs@vger.kernel.org>; Sun, 21 Sep 2025 22:41:11 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 6/9] btrfs: prepare scrub to support bs > ps cases
-Date: Mon, 22 Sep 2025 08:10:48 +0930
-Message-ID: <c4d94d8c8fc229b6750d75c1f0029e4e10f753f9.1758494327.git.wqu@suse.com>
+Subject: [PATCH v2 2/9] btrfs: prepare compression folio alloc/free for bs > ps cases
+Date: Mon, 22 Sep 2025 08:10:44 +0930
+Message-ID: <b88041485952f72ba5c5063cf717d169cbc779a4.1758494327.git.wqu@suse.com>
 X-Mailer: git-send-email 2.50.1
 In-Reply-To: <cover.1758494326.git.wqu@suse.com>
 References: <cover.1758494326.git.wqu@suse.com>
@@ -69,279 +69,543 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-3.01 / 50.00];
+X-Spamd-Result: default: False [-2.80 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
 	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
 	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	ARC_NA(0.00)[];
 	RCVD_VIA_SMTP_AUTH(0.00)[];
-	MIME_TRACE(0.00)[0:+];
 	RCPT_COUNT_ONE(0.00)[1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.com:mid,suse.com:dkim,suse.com:email];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received,2a07:de40:b281:104:10:150:64:97:from];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	ARC_NA(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:mid,suse.com:email];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RCVD_TLS_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
+	MIME_TRACE(0.00)[0:+];
 	RCVD_COUNT_TWO(0.00)[2];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+]
+	TO_DN_NONE(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	RCVD_TLS_ALL(0.00)[]
 X-Spam-Flag: NO
 X-Spam-Level: 
-X-Rspamd-Queue-Id: 57FC01F78F
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Rspamd-Action: no action
-X-Spam-Score: -3.01
+X-Spam-Score: -2.80
 
-This involves:
+This includes the following preparation for bs > ps cases:
 
-- Migrate scrub_stripe::pages[] to folios[]
+- Always alloc/free the folio directly if bs > ps
+  This adds a new @fs_info parameter for btrfs_alloc_compr_folio(), thus
+  affecting all compression algorithms.
 
-- Use btrfs_alloc_folio_array() and folio_put() to alloc above array.
+  For btrfs_free_compr_folio() it needs no parameter for now, as we can
+  use the folio size to skip the caching part.
 
-- Migrate scrub_stripe_get_kaddr() and scrub_stripe_get_paddr() to use
-  folio interfaces
+  For now the change is just to passing a @fs_info into the function,
+  all the folio size assumption is still based on page size.
 
-- Migrate raid56_parity_cache_data_pages() to
-  raid56_parity_cache_data_folios()
-  Since scrub is the only caller still using pages.
+- Properly zero the last folio in compress_file_range()
+  Since the compressed folios can be larger than a page, we need to
+  properly zero the whole folio.
 
-  This helper will copy the folio array contents into rbio::stripe_pages,
-  with sector uptodate flags updated.
+- Use correct folio size for btrfs_add_compressed_bio_folios()
+  Instead of page size, use the correct folio size.
 
-  And a new ASSERT() to make sure bs > ps cases will not hit this path.
+- Use correct folio size/shift for btrfs_compress_filemap_get_folio()
+  As we are not only using simple page sized folios anymore.
 
-Since most scrub code is based on kaddr/paddr, the migration itself is
-pretty straightforward.
+- Use correct folio size for btrfs_decompress()
+  There is an ASSERT() making sure the decompressed range is no larger
+  than a page, which will be triggered for bs > ps cases.
 
-And since we're here, also move the loop to set the
-stripe_sectors[].uptodate out of the copy loop.
-As we always mark all the sectors as update for the data stripe, it's
-easier to do in one go, other than doing it inside the copy loop.
+- Skip readahead for compressed pages
+  Similar to subpage cases.
+
+- Make btrfs_alloc_folio_array() to accept a new @order parameter
+
+- Add a helper to calculate the minimal folio size
+
+All those changes should not affect the existing bs <= ps handling.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/raid56.c | 42 +++++++++++++++++++++++++-------------
- fs/btrfs/raid56.h |  4 ++--
- fs/btrfs/scrub.c  | 51 +++++++++++++++++++++++++++--------------------
- 3 files changed, 59 insertions(+), 38 deletions(-)
+ fs/btrfs/compression.c | 42 ++++++++++++++++++++++++++++++------------
+ fs/btrfs/compression.h |  2 +-
+ fs/btrfs/extent_io.c   |  7 +++++--
+ fs/btrfs/extent_io.h   |  3 ++-
+ fs/btrfs/fs.h          |  6 ++++++
+ fs/btrfs/inode.c       | 16 +++++++++-------
+ fs/btrfs/lzo.c         | 18 ++++++++++--------
+ fs/btrfs/zlib.c        | 13 +++++++------
+ fs/btrfs/zstd.c        | 15 ++++++++-------
+ 9 files changed, 78 insertions(+), 44 deletions(-)
 
-diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index 2b4f577dcf39..c90612f6cc1b 100644
---- a/fs/btrfs/raid56.c
-+++ b/fs/btrfs/raid56.c
-@@ -2844,19 +2844,22 @@ void raid56_parity_submit_scrub_rbio(struct btrfs_raid_bio *rbio)
-  * This is for scrub call sites where we already have correct data contents.
-  * This allows us to avoid reading data stripes again.
-  *
-- * Unfortunately here we have to do page copy, other than reusing the pages.
-+ * Unfortunately here we have to do folio copy, other than reusing the pages.
-  * This is due to the fact rbio has its own page management for its cache.
-  */
--void raid56_parity_cache_data_pages(struct btrfs_raid_bio *rbio,
--				    struct page **data_pages, u64 data_logical)
-+void raid56_parity_cache_data_folios(struct btrfs_raid_bio *rbio,
-+				     struct folio **data_folios, u64 data_logical)
- {
-+	struct btrfs_fs_info *fs_info = rbio->bioc->fs_info;
- 	const u64 offset_in_full_stripe = data_logical -
- 					  rbio->bioc->full_stripe_logical;
--	const int page_index = offset_in_full_stripe >> PAGE_SHIFT;
--	const u32 sectorsize = rbio->bioc->fs_info->sectorsize;
--	const u32 sectors_per_page = PAGE_SIZE / sectorsize;
-+	unsigned int findex = 0;
-+	unsigned int foffset = 0;
- 	int ret;
- 
-+	/* We shouldn't hit RAID56 for bs > ps cases for now. */
-+	ASSERT(fs_info->sectorsize <= PAGE_SIZE);
-+
- 	/*
- 	 * If we hit ENOMEM temporarily, but later at
- 	 * raid56_parity_submit_scrub_rbio() time it succeeded, we just do
-@@ -2873,14 +2876,25 @@ void raid56_parity_cache_data_pages(struct btrfs_raid_bio *rbio,
- 	ASSERT(IS_ALIGNED(offset_in_full_stripe, BTRFS_STRIPE_LEN));
- 	ASSERT(offset_in_full_stripe < (rbio->nr_data << BTRFS_STRIPE_LEN_SHIFT));
- 
--	for (int page_nr = 0; page_nr < (BTRFS_STRIPE_LEN >> PAGE_SHIFT); page_nr++) {
--		struct page *dst = rbio->stripe_pages[page_nr + page_index];
--		struct page *src = data_pages[page_nr];
-+	for (unsigned int cur_off = offset_in_full_stripe;
-+	     cur_off < offset_in_full_stripe + BTRFS_STRIPE_LEN;
-+	     cur_off += PAGE_SIZE) {
-+		const unsigned int pindex = cur_off >> PAGE_SHIFT;
-+		void *kaddr;
- 
--		memcpy_page(dst, 0, src, 0, PAGE_SIZE);
--		for (int sector_nr = sectors_per_page * page_index;
--		     sector_nr < sectors_per_page * (page_index + 1);
--		     sector_nr++)
--			rbio->stripe_sectors[sector_nr].uptodate = true;
-+		kaddr = kmap_local_page(rbio->stripe_pages[pindex]);
-+		memcpy_from_folio(kaddr, data_folios[findex], foffset, PAGE_SIZE);
-+		kunmap_local(kaddr);
-+
-+		foffset += PAGE_SIZE;
-+		ASSERT(foffset <= folio_size(data_folios[findex]));
-+		if (foffset == folio_size(data_folios[findex])) {
-+			findex++;
-+			foffset = 0;
-+		}
- 	}
-+	for (unsigned int sector_nr = offset_in_full_stripe >> fs_info->sectorsize_bits;
-+	     sector_nr < (offset_in_full_stripe + BTRFS_STRIPE_LEN) >> fs_info->sectorsize_bits;
-+	     sector_nr++)
-+		rbio->stripe_sectors[sector_nr].uptodate = true;
- }
-diff --git a/fs/btrfs/raid56.h b/fs/btrfs/raid56.h
-index 0d7b4c2fb6ae..84c4d1d29c7a 100644
---- a/fs/btrfs/raid56.h
-+++ b/fs/btrfs/raid56.h
-@@ -201,8 +201,8 @@ struct btrfs_raid_bio *raid56_parity_alloc_scrub_rbio(struct bio *bio,
- 				unsigned long *dbitmap, int stripe_nsectors);
- void raid56_parity_submit_scrub_rbio(struct btrfs_raid_bio *rbio);
- 
--void raid56_parity_cache_data_pages(struct btrfs_raid_bio *rbio,
--				    struct page **data_pages, u64 data_logical);
-+void raid56_parity_cache_data_folios(struct btrfs_raid_bio *rbio,
-+				     struct folio **data_folios, u64 data_logical);
- 
- int btrfs_alloc_stripe_hash_table(struct btrfs_fs_info *info);
- void btrfs_free_stripe_hash_table(struct btrfs_fs_info *info);
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 979d33d8c193..bf50556f186e 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -130,7 +130,7 @@ enum {
- 	scrub_bitmap_nr_last,
- };
- 
--#define SCRUB_STRIPE_PAGES		(BTRFS_STRIPE_LEN / PAGE_SIZE)
-+#define SCRUB_STRIPE_MAX_FOLIOS		(BTRFS_STRIPE_LEN / PAGE_SIZE)
- 
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index 068339e86123..f653c237bdfc 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -223,10 +223,14 @@ static unsigned long btrfs_compr_pool_scan(struct shrinker *sh, struct shrink_co
  /*
-  * Represent one contiguous range with a length of BTRFS_STRIPE_LEN.
-@@ -139,7 +139,7 @@ struct scrub_stripe {
- 	struct scrub_ctx *sctx;
- 	struct btrfs_block_group *bg;
+  * Common wrappers for page allocation from compression wrappers
+  */
+-struct folio *btrfs_alloc_compr_folio(void)
++struct folio *btrfs_alloc_compr_folio(struct btrfs_fs_info *fs_info)
+ {
+ 	struct folio *folio = NULL;
  
--	struct page *pages[SCRUB_STRIPE_PAGES];
-+	struct folio *folios[SCRUB_STRIPE_MAX_FOLIOS];
- 	struct scrub_sector_verification *sectors;
++	/* For bs > ps cases, no cached folio pool for now. */
++	if (fs_info->block_min_order)
++		goto alloc;
++
+ 	spin_lock(&compr_pool.lock);
+ 	if (compr_pool.count > 0) {
+ 		folio = list_first_entry(&compr_pool.list, struct folio, lru);
+@@ -238,13 +242,18 @@ struct folio *btrfs_alloc_compr_folio(void)
+ 	if (folio)
+ 		return folio;
  
- 	struct btrfs_device *dev;
-@@ -339,10 +339,10 @@ static void release_scrub_stripe(struct scrub_stripe *stripe)
- 	if (!stripe)
+-	return folio_alloc(GFP_NOFS, 0);
++alloc:
++	return folio_alloc(GFP_NOFS, fs_info->block_min_order);
+ }
+ 
+ void btrfs_free_compr_folio(struct folio *folio)
+ {
+ 	bool do_free = false;
+ 
++	/* The folio is from bs > ps fs, no cached pool for now. */
++	if (folio_order(folio))
++		goto free;
++
+ 	spin_lock(&compr_pool.lock);
+ 	if (compr_pool.count > compr_pool.thresh) {
+ 		do_free = true;
+@@ -257,6 +266,7 @@ void btrfs_free_compr_folio(struct folio *folio)
+ 	if (!do_free)
  		return;
  
--	for (int i = 0; i < SCRUB_STRIPE_PAGES; i++) {
--		if (stripe->pages[i])
--			__free_page(stripe->pages[i]);
--		stripe->pages[i] = NULL;
-+	for (int i = 0; i < SCRUB_STRIPE_MAX_FOLIOS; i++) {
-+		if (stripe->folios[i])
-+			folio_put(stripe->folios[i]);
-+		stripe->folios[i] = NULL;
- 	}
- 	kfree(stripe->sectors);
- 	kfree(stripe->csums);
-@@ -355,6 +355,7 @@ static void release_scrub_stripe(struct scrub_stripe *stripe)
- static int init_scrub_stripe(struct btrfs_fs_info *fs_info,
- 			     struct scrub_stripe *stripe)
++free:
+ 	ASSERT(folio_ref_count(folio) == 1);
+ 	folio_put(folio);
+ }
+@@ -344,16 +354,19 @@ static void end_bbio_compressed_write(struct btrfs_bio *bbio)
+ 
+ static void btrfs_add_compressed_bio_folios(struct compressed_bio *cb)
  {
-+	const u32 min_folio_shift = PAGE_SHIFT + fs_info->block_min_order;
++	struct btrfs_fs_info *fs_info = cb->bbio.fs_info;
+ 	struct bio *bio = &cb->bbio.bio;
+ 	u32 offset = 0;
+ 
+ 	while (offset < cb->compressed_len) {
++		struct folio *folio;
+ 		int ret;
+-		u32 len = min_t(u32, cb->compressed_len - offset, PAGE_SIZE);
++		u32 len = min_t(u32, cb->compressed_len - offset,
++				btrfs_min_folio_size(fs_info));
+ 
++		folio = cb->compressed_folios[offset >> (PAGE_SHIFT + fs_info->block_min_order)];
+ 		/* Maximum compressed extent is smaller than bio size limit. */
+-		ret = bio_add_folio(bio, cb->compressed_folios[offset >> PAGE_SHIFT],
+-				    len, 0);
++		ret = bio_add_folio(bio, folio, len, 0);
+ 		ASSERT(ret);
+ 		offset += len;
+ 	}
+@@ -443,6 +456,10 @@ static noinline int add_ra_bio_pages(struct inode *inode,
+ 	if (fs_info->sectorsize < PAGE_SIZE)
+ 		return 0;
+ 
++	/* For bs > ps cases, we don't support readahead for compressed folios for now. */
++	if (fs_info->block_min_order)
++		return 0;
++
+ 	end_index = (i_size_read(inode) - 1) >> PAGE_SHIFT;
+ 
+ 	while (cur < compressed_end) {
+@@ -606,14 +623,15 @@ void btrfs_submit_compressed_read(struct btrfs_bio *bbio)
+ 
+ 	btrfs_free_extent_map(em);
+ 
+-	cb->nr_folios = DIV_ROUND_UP(compressed_len, PAGE_SIZE);
++	cb->nr_folios = DIV_ROUND_UP(compressed_len, btrfs_min_folio_size(fs_info));
+ 	cb->compressed_folios = kcalloc(cb->nr_folios, sizeof(struct folio *), GFP_NOFS);
+ 	if (!cb->compressed_folios) {
+ 		status = BLK_STS_RESOURCE;
+ 		goto out_free_bio;
+ 	}
+ 
+-	ret = btrfs_alloc_folio_array(cb->nr_folios, cb->compressed_folios);
++	ret = btrfs_alloc_folio_array(cb->nr_folios, fs_info->block_min_order,
++				      cb->compressed_folios);
+ 	if (ret) {
+ 		status = BLK_STS_RESOURCE;
+ 		goto out_free_compressed_pages;
+@@ -1033,12 +1051,12 @@ int btrfs_compress_filemap_get_folio(struct address_space *mapping, u64 start,
+  * - compression algo are 0-3
+  * - the level are bits 4-7
+  *
+- * @out_pages is an in/out parameter, holds maximum number of pages to allocate
+- * and returns number of actually allocated pages
++ * @out_folios is an in/out parameter, holds maximum number of folios to allocate
++ * and returns number of actually allocated folios
+  *
+  * @total_in is used to return the number of bytes actually read.  It
+  * may be smaller than the input length if we had to exit early because we
+- * ran out of room in the pages array or because we cross the
++ * ran out of room in the folios array or because we cross the
+  * max_out threshold.
+  *
+  * @total_out is an in/out parameter, must be set to the input length and will
+@@ -1093,11 +1111,11 @@ int btrfs_decompress(int type, const u8 *data_in, struct folio *dest_folio,
  	int ret;
  
- 	memset(stripe, 0, sizeof(*stripe));
-@@ -367,7 +368,9 @@ static int init_scrub_stripe(struct btrfs_fs_info *fs_info,
- 	atomic_set(&stripe->pending_io, 0);
- 	spin_lock_init(&stripe->write_error_lock);
+ 	/*
+-	 * The full destination page range should not exceed the page size.
++	 * The full destination folio range should not exceed the folio size.
+ 	 * And the @destlen should not exceed sectorsize, as this is only called for
+ 	 * inline file extents, which should not exceed sectorsize.
+ 	 */
+-	ASSERT(dest_pgoff + destlen <= PAGE_SIZE && destlen <= sectorsize);
++	ASSERT(dest_pgoff + destlen <= folio_size(dest_folio) && destlen <= sectorsize);
  
--	ret = btrfs_alloc_page_array(SCRUB_STRIPE_PAGES, stripe->pages, false);
-+	ASSERT(BTRFS_STRIPE_LEN >> min_folio_shift <= SCRUB_STRIPE_MAX_FOLIOS);
-+	ret = btrfs_alloc_folio_array(BTRFS_STRIPE_LEN >> min_folio_shift,
-+				      fs_info->block_min_order, stripe->folios);
- 	if (ret < 0)
- 		goto error;
+ 	workspace = get_workspace(fs_info, type, 0);
+ 	ret = compression_decompress(type, workspace, data_in, dest_folio,
+diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
+index 760d4aac74e6..41d93a977d69 100644
+--- a/fs/btrfs/compression.h
++++ b/fs/btrfs/compression.h
+@@ -112,7 +112,7 @@ void btrfs_submit_compressed_read(struct btrfs_bio *bbio);
  
-@@ -687,27 +690,30 @@ static int fill_writer_pointer_gap(struct scrub_ctx *sctx, u64 physical)
+ int btrfs_compress_str2level(unsigned int type, const char *str);
  
- static void *scrub_stripe_get_kaddr(struct scrub_stripe *stripe, int sector_nr)
+-struct folio *btrfs_alloc_compr_folio(void);
++struct folio *btrfs_alloc_compr_folio(struct btrfs_fs_info *fs_info);
+ void btrfs_free_compr_folio(struct folio *folio);
+ 
+ struct workspace_manager {
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 2fd82055a779..826fe184094e 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -626,6 +626,7 @@ static void end_bbio_data_read(struct btrfs_bio *bbio)
+  * Populate every free slot in a provided array with folios using GFP_NOFS.
+  *
+  * @nr_folios:   number of folios to allocate
++ * @order:	 the order of the folios to be allocated
+  * @folio_array: the array to fill with folios; any existing non-NULL entries in
+  *		 the array will be skipped
+  *
+@@ -633,12 +634,13 @@ static void end_bbio_data_read(struct btrfs_bio *bbio)
+  *         -ENOMEM  otherwise, the partially allocated folios would be freed and
+  *                  the array slots zeroed
+  */
+-int btrfs_alloc_folio_array(unsigned int nr_folios, struct folio **folio_array)
++int btrfs_alloc_folio_array(unsigned int nr_folios, unsigned int order,
++			    struct folio **folio_array)
  {
--	u32 offset = (sector_nr << stripe->bg->fs_info->sectorsize_bits);
--	const struct page *page = stripe->pages[offset >> PAGE_SHIFT];
-+	struct btrfs_fs_info *fs_info = stripe->bg->fs_info;
-+	const u32 min_folio_shift = PAGE_SHIFT + fs_info->block_min_order;
-+	u32 offset = (sector_nr << fs_info->sectorsize_bits);
-+	const struct folio *folio = stripe->folios[offset >> min_folio_shift];
+ 	for (int i = 0; i < nr_folios; i++) {
+ 		if (folio_array[i])
+ 			continue;
+-		folio_array[i] = folio_alloc(GFP_NOFS, 0);
++		folio_array[i] = folio_alloc(GFP_NOFS, order);
+ 		if (!folio_array[i])
+ 			goto error;
+ 	}
+@@ -647,6 +649,7 @@ int btrfs_alloc_folio_array(unsigned int nr_folios, struct folio **folio_array)
+ 	for (int i = 0; i < nr_folios; i++) {
+ 		if (folio_array[i])
+ 			folio_put(folio_array[i]);
++		folio_array[i] = NULL;
+ 	}
+ 	return -ENOMEM;
+ }
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index 61130786b9a3..5fcbfe44218c 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -366,7 +366,8 @@ void btrfs_clear_buffer_dirty(struct btrfs_trans_handle *trans,
  
--	/* stripe->pages[] is allocated by us and no highmem is allowed. */
--	ASSERT(page);
--	ASSERT(!PageHighMem(page));
--	return page_address(page) + offset_in_page(offset);
-+	/* stripe->folios[] is allocated by us and no highmem is allowed. */
-+	ASSERT(folio);
-+	ASSERT(!folio_test_partial_kmap(folio));
-+	return folio_address(folio) + offset_in_folio(folio, offset);
+ int btrfs_alloc_page_array(unsigned int nr_pages, struct page **page_array,
+ 			   bool nofail);
+-int btrfs_alloc_folio_array(unsigned int nr_folios, struct folio **folio_array);
++int btrfs_alloc_folio_array(unsigned int nr_folios, unsigned int order,
++			    struct folio **folio_array);
+ 
+ #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+ bool find_lock_delalloc_range(struct inode *inode,
+diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
+index bf4a1b75b0cf..4a48b19ea863 100644
+--- a/fs/btrfs/fs.h
++++ b/fs/btrfs/fs.h
+@@ -921,6 +921,12 @@ static inline gfp_t btrfs_alloc_write_mask(struct address_space *mapping)
+ 	return mapping_gfp_constraint(mapping, ~__GFP_FS);
  }
  
- static phys_addr_t scrub_stripe_get_paddr(struct scrub_stripe *stripe, int sector_nr)
++/* Return the minimal folio size of the fs. */
++static inline unsigned int btrfs_min_folio_size(struct btrfs_fs_info *fs_info)
++{
++	return 1 << (PAGE_SHIFT + fs_info->block_min_order);
++}
++
+ static inline u64 btrfs_get_fs_generation(const struct btrfs_fs_info *fs_info)
  {
- 	struct btrfs_fs_info *fs_info = stripe->bg->fs_info;
+ 	return READ_ONCE(fs_info->generation);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index ad876779289e..6b52ab164f45 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -854,6 +854,8 @@ static void compress_file_range(struct btrfs_work *work)
+ 	struct btrfs_inode *inode = async_chunk->inode;
+ 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+ 	struct address_space *mapping = inode->vfs_inode.i_mapping;
 +	const u32 min_folio_shift = PAGE_SHIFT + fs_info->block_min_order;
- 	u32 offset = (sector_nr << fs_info->sectorsize_bits);
--	const struct page *page = stripe->pages[offset >> PAGE_SHIFT];
-+	const struct folio *folio = stripe->folios[offset >> min_folio_shift];
++	const u32 min_folio_size = btrfs_min_folio_size(fs_info);
+ 	u64 blocksize = fs_info->sectorsize;
+ 	u64 start = async_chunk->start;
+ 	u64 end = async_chunk->end;
+@@ -864,7 +866,7 @@ static void compress_file_range(struct btrfs_work *work)
+ 	unsigned long nr_folios;
+ 	unsigned long total_compressed = 0;
+ 	unsigned long total_in = 0;
+-	unsigned int poff;
++	unsigned int loff;
+ 	int i;
+ 	int compress_type = fs_info->compress_type;
+ 	int compress_level = fs_info->compress_level;
+@@ -902,8 +904,8 @@ static void compress_file_range(struct btrfs_work *work)
+ 	actual_end = min_t(u64, i_size, end + 1);
+ again:
+ 	folios = NULL;
+-	nr_folios = (end >> PAGE_SHIFT) - (start >> PAGE_SHIFT) + 1;
+-	nr_folios = min_t(unsigned long, nr_folios, BTRFS_MAX_COMPRESSED_PAGES);
++	nr_folios = (end >> min_folio_shift) - (start >> min_folio_shift) + 1;
++	nr_folios = min_t(unsigned long, nr_folios, BTRFS_MAX_COMPRESSED >> min_folio_shift);
  
--	/* stripe->pages[] is allocated by us and no highmem is allowed. */
--	ASSERT(page);
--	ASSERT(!PageHighMem(page));
--	/* And the range must be contained inside the page. */
--	ASSERT(offset_in_page(offset) + fs_info->sectorsize <= PAGE_SIZE);
--	return page_to_phys(page) + offset_in_page(offset);
-+	/* stripe->folios[] is allocated by us and no highmem is allowed. */
-+	ASSERT(folio);
-+	ASSERT(!folio_test_partial_kmap(folio));
-+	/* And the range must be contained inside the folio. */
-+	ASSERT(offset_in_folio(folio, offset) + fs_info->sectorsize <= folio_size(folio));
-+	return page_to_phys(folio_page(folio, 0)) + offset_in_folio(folio, offset);
- }
+ 	/*
+ 	 * we don't want to send crud past the end of i_size through
+@@ -965,12 +967,12 @@ static void compress_file_range(struct btrfs_work *work)
+ 		goto mark_incompressible;
  
- static void scrub_verify_one_metadata(struct scrub_stripe *stripe, int sector_nr)
-@@ -1872,6 +1878,7 @@ static void scrub_submit_initial_read(struct scrub_ctx *sctx,
+ 	/*
+-	 * Zero the tail end of the last page, as we might be sending it down
++	 * Zero the tail end of the last folio, as we might be sending it down
+ 	 * to disk.
+ 	 */
+-	poff = offset_in_page(total_compressed);
+-	if (poff)
+-		folio_zero_range(folios[nr_folios - 1], poff, PAGE_SIZE - poff);
++	loff = total_compressed & (min_folio_size - 1);
++	if (loff)
++		folio_zero_range(folios[nr_folios - 1], loff, min_folio_size - loff);
+ 
+ 	/*
+ 	 * Try to create an inline extent.
+diff --git a/fs/btrfs/lzo.c b/fs/btrfs/lzo.c
+index 047d90e216f6..c5a25fd872bd 100644
+--- a/fs/btrfs/lzo.c
++++ b/fs/btrfs/lzo.c
+@@ -132,13 +132,14 @@ static inline size_t read_compress_length(const char *buf)
+  *
+  * Will allocate new pages when needed.
+  */
+-static int copy_compressed_data_to_page(char *compressed_data,
++static int copy_compressed_data_to_page(struct btrfs_fs_info *fs_info,
++					char *compressed_data,
+ 					size_t compressed_size,
+ 					struct folio **out_folios,
+ 					unsigned long max_nr_folio,
+-					u32 *cur_out,
+-					const u32 sectorsize)
++					u32 *cur_out)
  {
- 	struct btrfs_fs_info *fs_info = sctx->fs_info;
- 	struct btrfs_bio *bbio;
-+	const u32 min_folio_shift = PAGE_SHIFT + fs_info->block_min_order;
- 	unsigned int nr_sectors = stripe_length(stripe) >> fs_info->sectorsize_bits;
- 	int mirror = stripe->mirror_num;
++	const u32 sectorsize = fs_info->sectorsize;
+ 	u32 sector_bytes_left;
+ 	u32 orig_out;
+ 	struct folio *cur_folio;
+@@ -156,7 +157,7 @@ static int copy_compressed_data_to_page(char *compressed_data,
+ 	cur_folio = out_folios[*cur_out / PAGE_SIZE];
+ 	/* Allocate a new page */
+ 	if (!cur_folio) {
+-		cur_folio = btrfs_alloc_compr_folio();
++		cur_folio = btrfs_alloc_compr_folio(fs_info);
+ 		if (!cur_folio)
+ 			return -ENOMEM;
+ 		out_folios[*cur_out / PAGE_SIZE] = cur_folio;
+@@ -182,7 +183,7 @@ static int copy_compressed_data_to_page(char *compressed_data,
+ 		cur_folio = out_folios[*cur_out / PAGE_SIZE];
+ 		/* Allocate a new page */
+ 		if (!cur_folio) {
+-			cur_folio = btrfs_alloc_compr_folio();
++			cur_folio = btrfs_alloc_compr_folio(fs_info);
+ 			if (!cur_folio)
+ 				return -ENOMEM;
+ 			out_folios[*cur_out / PAGE_SIZE] = cur_folio;
+@@ -217,8 +218,9 @@ int lzo_compress_folios(struct list_head *ws, struct btrfs_inode *inode,
+ 			u64 start, struct folio **folios, unsigned long *out_folios,
+ 			unsigned long *total_in, unsigned long *total_out)
+ {
++	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+ 	struct workspace *workspace = list_entry(ws, struct workspace, list);
+-	const u32 sectorsize = inode->root->fs_info->sectorsize;
++	const u32 sectorsize = fs_info->sectorsize;
+ 	struct address_space *mapping = inode->vfs_inode.i_mapping;
+ 	struct folio *folio_in = NULL;
+ 	char *sizes_ptr;
+@@ -268,9 +270,9 @@ int lzo_compress_folios(struct list_head *ws, struct btrfs_inode *inode,
+ 			goto out;
+ 		}
  
-@@ -1884,7 +1891,7 @@ static void scrub_submit_initial_read(struct scrub_ctx *sctx,
- 		return;
- 	}
+-		ret = copy_compressed_data_to_page(workspace->cbuf, out_len,
++		ret = copy_compressed_data_to_page(fs_info, workspace->cbuf, out_len,
+ 						   folios, max_nr_folio,
+-						   &cur_out, sectorsize);
++						   &cur_out);
+ 		if (ret < 0)
+ 			goto out;
  
--	bbio = btrfs_bio_alloc(SCRUB_STRIPE_PAGES, REQ_OP_READ, fs_info,
-+	bbio = btrfs_bio_alloc(BTRFS_STRIPE_LEN >> min_folio_shift, REQ_OP_READ, fs_info,
- 			       scrub_read_endio, stripe);
+diff --git a/fs/btrfs/zlib.c b/fs/btrfs/zlib.c
+index d72566a87afa..ccf77a0fa96c 100644
+--- a/fs/btrfs/zlib.c
++++ b/fs/btrfs/zlib.c
+@@ -136,6 +136,7 @@ int zlib_compress_folios(struct list_head *ws, struct btrfs_inode *inode,
+ 			 u64 start, struct folio **folios, unsigned long *out_folios,
+ 			 unsigned long *total_in, unsigned long *total_out)
+ {
++	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+ 	struct workspace *workspace = list_entry(ws, struct workspace, list);
+ 	struct address_space *mapping = inode->vfs_inode.i_mapping;
+ 	int ret;
+@@ -147,7 +148,7 @@ int zlib_compress_folios(struct list_head *ws, struct btrfs_inode *inode,
+ 	unsigned long len = *total_out;
+ 	unsigned long nr_dest_folios = *out_folios;
+ 	const unsigned long max_out = nr_dest_folios * PAGE_SIZE;
+-	const u32 blocksize = inode->root->fs_info->sectorsize;
++	const u32 blocksize = fs_info->sectorsize;
+ 	const u64 orig_end = start + len;
  
- 	bbio->bio.bi_iter.bi_sector = stripe->logical >> SECTOR_SHIFT;
-@@ -2215,7 +2222,7 @@ static int scrub_raid56_parity_stripe(struct scrub_ctx *sctx,
- 	for (int i = 0; i < data_stripes; i++) {
- 		stripe = &sctx->raid56_data_stripes[i];
+ 	*out_folios = 0;
+@@ -156,7 +157,7 @@ int zlib_compress_folios(struct list_head *ws, struct btrfs_inode *inode,
  
--		raid56_parity_cache_data_pages(rbio, stripe->pages,
-+		raid56_parity_cache_data_folios(rbio, stripe->folios,
- 				full_stripe_start + (i << BTRFS_STRIPE_LEN_SHIFT));
- 	}
- 	raid56_parity_submit_scrub_rbio(rbio);
+ 	ret = zlib_deflateInit(&workspace->strm, workspace->level);
+ 	if (unlikely(ret != Z_OK)) {
+-		btrfs_err(inode->root->fs_info,
++		btrfs_err(fs_info,
+ 	"zlib compression init failed, error %d root %llu inode %llu offset %llu",
+ 			  ret, btrfs_root_id(inode->root), btrfs_ino(inode), start);
+ 		ret = -EIO;
+@@ -166,7 +167,7 @@ int zlib_compress_folios(struct list_head *ws, struct btrfs_inode *inode,
+ 	workspace->strm.total_in = 0;
+ 	workspace->strm.total_out = 0;
+ 
+-	out_folio = btrfs_alloc_compr_folio();
++	out_folio = btrfs_alloc_compr_folio(fs_info);
+ 	if (out_folio == NULL) {
+ 		ret = -ENOMEM;
+ 		goto out;
+@@ -224,7 +225,7 @@ int zlib_compress_folios(struct list_head *ws, struct btrfs_inode *inode,
+ 
+ 		ret = zlib_deflate(&workspace->strm, Z_SYNC_FLUSH);
+ 		if (unlikely(ret != Z_OK)) {
+-			btrfs_warn(inode->root->fs_info,
++			btrfs_warn(fs_info,
+ 		"zlib compression failed, error %d root %llu inode %llu offset %llu",
+ 				   ret, btrfs_root_id(inode->root), btrfs_ino(inode),
+ 				   start);
+@@ -249,7 +250,7 @@ int zlib_compress_folios(struct list_head *ws, struct btrfs_inode *inode,
+ 				ret = -E2BIG;
+ 				goto out;
+ 			}
+-			out_folio = btrfs_alloc_compr_folio();
++			out_folio = btrfs_alloc_compr_folio(fs_info);
+ 			if (out_folio == NULL) {
+ 				ret = -ENOMEM;
+ 				goto out;
+@@ -285,7 +286,7 @@ int zlib_compress_folios(struct list_head *ws, struct btrfs_inode *inode,
+ 				ret = -E2BIG;
+ 				goto out;
+ 			}
+-			out_folio = btrfs_alloc_compr_folio();
++			out_folio = btrfs_alloc_compr_folio(fs_info);
+ 			if (out_folio == NULL) {
+ 				ret = -ENOMEM;
+ 				goto out;
+diff --git a/fs/btrfs/zstd.c b/fs/btrfs/zstd.c
+index b11a87842cda..28e2e99a2463 100644
+--- a/fs/btrfs/zstd.c
++++ b/fs/btrfs/zstd.c
+@@ -400,6 +400,7 @@ int zstd_compress_folios(struct list_head *ws, struct btrfs_inode *inode,
+ 			 u64 start, struct folio **folios, unsigned long *out_folios,
+ 			 unsigned long *total_in, unsigned long *total_out)
+ {
++	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+ 	struct workspace *workspace = list_entry(ws, struct workspace, list);
+ 	struct address_space *mapping = inode->vfs_inode.i_mapping;
+ 	zstd_cstream *stream;
+@@ -412,7 +413,7 @@ int zstd_compress_folios(struct list_head *ws, struct btrfs_inode *inode,
+ 	unsigned long len = *total_out;
+ 	const unsigned long nr_dest_folios = *out_folios;
+ 	const u64 orig_end = start + len;
+-	const u32 blocksize = inode->root->fs_info->sectorsize;
++	const u32 blocksize = fs_info->sectorsize;
+ 	unsigned long max_out = nr_dest_folios * PAGE_SIZE;
+ 	unsigned int cur_len;
+ 
+@@ -425,7 +426,7 @@ int zstd_compress_folios(struct list_head *ws, struct btrfs_inode *inode,
+ 	stream = zstd_init_cstream(&workspace->params, len, workspace->mem,
+ 			workspace->size);
+ 	if (unlikely(!stream)) {
+-		btrfs_err(inode->root->fs_info,
++		btrfs_err(fs_info,
+ 	"zstd compression init level %d failed, root %llu inode %llu offset %llu",
+ 			  workspace->req_level, btrfs_root_id(inode->root),
+ 			  btrfs_ino(inode), start);
+@@ -443,7 +444,7 @@ int zstd_compress_folios(struct list_head *ws, struct btrfs_inode *inode,
+ 	workspace->in_buf.size = cur_len;
+ 
+ 	/* Allocate and map in the output buffer */
+-	out_folio = btrfs_alloc_compr_folio();
++	out_folio = btrfs_alloc_compr_folio(fs_info);
+ 	if (out_folio == NULL) {
+ 		ret = -ENOMEM;
+ 		goto out;
+@@ -459,7 +460,7 @@ int zstd_compress_folios(struct list_head *ws, struct btrfs_inode *inode,
+ 		ret2 = zstd_compress_stream(stream, &workspace->out_buf,
+ 				&workspace->in_buf);
+ 		if (unlikely(zstd_is_error(ret2))) {
+-			btrfs_warn(inode->root->fs_info,
++			btrfs_warn(fs_info,
+ "zstd compression level %d failed, error %d root %llu inode %llu offset %llu",
+ 				   workspace->req_level, zstd_get_error_code(ret2),
+ 				   btrfs_root_id(inode->root), btrfs_ino(inode),
+@@ -491,7 +492,7 @@ int zstd_compress_folios(struct list_head *ws, struct btrfs_inode *inode,
+ 				ret = -E2BIG;
+ 				goto out;
+ 			}
+-			out_folio = btrfs_alloc_compr_folio();
++			out_folio = btrfs_alloc_compr_folio(fs_info);
+ 			if (out_folio == NULL) {
+ 				ret = -ENOMEM;
+ 				goto out;
+@@ -532,7 +533,7 @@ int zstd_compress_folios(struct list_head *ws, struct btrfs_inode *inode,
+ 
+ 		ret2 = zstd_end_stream(stream, &workspace->out_buf);
+ 		if (unlikely(zstd_is_error(ret2))) {
+-			btrfs_err(inode->root->fs_info,
++			btrfs_err(fs_info,
+ "zstd compression end level %d failed, error %d root %llu inode %llu offset %llu",
+ 				  workspace->req_level, zstd_get_error_code(ret2),
+ 				  btrfs_root_id(inode->root), btrfs_ino(inode),
+@@ -556,7 +557,7 @@ int zstd_compress_folios(struct list_head *ws, struct btrfs_inode *inode,
+ 			ret = -E2BIG;
+ 			goto out;
+ 		}
+-		out_folio = btrfs_alloc_compr_folio();
++		out_folio = btrfs_alloc_compr_folio(fs_info);
+ 		if (out_folio == NULL) {
+ 			ret = -ENOMEM;
+ 			goto out;
 -- 
 2.50.1
 

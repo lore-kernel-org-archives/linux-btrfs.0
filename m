@@ -1,192 +1,132 @@
-Received: from fra-out-013.esa.eu-central-1.outbound.mail-perimeter.amazon.com (fra-out-013.esa.eu-central-1.outbound.mail-perimeter.amazon.com [63.178.132.221])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wm1-f54.google.com (mail-wm1-f54.google.com [209.85.128.54])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1CD072FBE12;
-	Mon, 22 Sep 2025 10:41:08 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=63.178.132.221
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 73EE1296BA2
+	for <linux-btrfs@vger.kernel.org>; Mon, 22 Sep 2025 10:41:41 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.54
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1758537673; cv=none; b=cOxCdqKJx0S6vPN0ab4ZKFq+RMkJdLPE3k+fVdtpfwWUljR4MFdRs2EjDEU8IVVkPdvsl20KvekZiFaX2Aj8c8GAaCk/Ahdz8vzmtWtCQDFhOtm6ktG9fUAGv70eJJkF+2ArTaR5NQkwb3e1+l9te0uOiU85e4oKY5r8v09UCoA=
+	t=1758537703; cv=none; b=SqNnt4977WFzgEu0VNv9afDKOxn0DVx6eVGg0ZsCsxqmP0cwGvvEl3ONtBG21F6GQ1imBQnl9QwkzrHaSNlF3IgzLaMbQHWjwE9S7wZN/C4xahYKHtVghpIXUSOLiz2BRZqAmBvx3Edh1JHR62ajkwkFS2rIFE1S6YTFGrdmHbg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1758537673; c=relaxed/simple;
-	bh=V2L3IilwofpV6SrsfVTvut5ipDXkokIOm+dTBT4i7eQ=;
-	h=From:To:CC:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=o6Gms3nHLrKrk4eis2FDbt6IeSCCYLS/2m/BBf9Opd00zN65LBKUaF8ZuqeY+b+K8OH2tWp+QrM2K4tA5IF017ilb+YV1hrgqGirS4aWvl92t8G7n4mRkGEN6cZ1xmcSwtJdukq8yeAxjjctbhgA62Sd5b2TjEmWd0Sbaw5pxPc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=amazon.com; spf=pass smtp.mailfrom=amazon.com; dkim=pass (2048-bit key) header.d=amazon.com header.i=@amazon.com header.b=Qo6O8a8a; arc=none smtp.client-ip=63.178.132.221
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=amazon.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=amazon.com
+	s=arc-20240116; t=1758537703; c=relaxed/simple;
+	bh=neN6cCRc1fymNdkkr+3X5LP4L5KjTJO1yydYMI0jGC4=;
+	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
+	 In-Reply-To:Content-Type; b=o2sezU9ykBAwajM5CD3dF7nFIhYSLrp0o+EW0TJU5RsZt1v8ytnB/8J6Z55Gu7tF287AYFc+CBA0NVaIBoqRf4wV1K2u7Ntl/sDQI5frFwFuDAQtLkUsXQSZzrElFKFiWQubgp4t+pJyar1cF2zZpNraW3VkYvsAHJWsko6icHA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=aL9aX9bT; arc=none smtp.client-ip=209.85.128.54
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=amazon.com header.i=@amazon.com header.b="Qo6O8a8a"
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="aL9aX9bT"
+Received: by mail-wm1-f54.google.com with SMTP id 5b1f17b1804b1-46b303f7469so11548225e9.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 Sep 2025 03:41:41 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-  d=amazon.com; i=@amazon.com; q=dns/txt; s=amazoncorp2;
-  t=1758537671; x=1790073671;
-  h=from:to:cc:subject:date:message-id:in-reply-to:
-   references:mime-version:content-transfer-encoding;
-  bh=k0dUe76w+6n5/NfsPbyefGVCom+xh3GGcFcV3Olhmks=;
-  b=Qo6O8a8a963sLPcVEqwurfFk9sEryrbPl+aCDwVFoRTSyNMY2/lzItad
-   nqjBypr/4OLtzDcc93q7Cp0J14yV5DD6cwNzHAWQOLbUpEn+I3aLmLxtK
-   XWpNHl/jsoabgK/EJoYo5Y5Mc1/d38r3v4oxtLjAEaoSiTYOZTEDtuPIf
-   PaSI9Zk9eBtD8IwUKelTTS+xcHtROEO4gRbbJUwwHL6T91oE7WgWYljGz
-   PBmKmtMMueDkDDvTexaOwT31Ne5JgGNID6EskuGE9HKc75QBsecRE7B7s
-   dWcxx7ln1MJq2KZ/hkKvWdPVeWivDDpmbAIEZgoynuo5D+Nd+MGXxWSVC
-   A==;
-X-CSE-ConnectionGUID: nGdSMg2KRJqwFKGugNMByw==
-X-CSE-MsgGUID: 1oNLGvSNSbarq0bxcHDlmw==
-X-IronPort-AV: E=Sophos;i="6.18,284,1751241600"; 
-   d="scan'208";a="2372418"
-Received: from ip-10-6-6-97.eu-central-1.compute.internal (HELO smtpout.naws.eu-central-1.prod.farcaster.email.amazon.dev) ([10.6.6.97])
-  by internal-fra-out-013.esa.eu-central-1.outbound.mail-perimeter.amazon.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 22 Sep 2025 10:41:07 +0000
-Received: from EX19MTAEUC002.ant.amazon.com [54.240.197.228:9689]
- by smtpin.naws.eu-central-1.prod.farcaster.email.amazon.dev [10.0.1.3:2525] with esmtp (Farcaster)
- id 549405e1-3e62-41e8-bf89-796f0cf76dce; Mon, 22 Sep 2025 10:41:06 +0000 (UTC)
-X-Farcaster-Flow-ID: 549405e1-3e62-41e8-bf89-796f0cf76dce
-Received: from EX19D018EUA004.ant.amazon.com (10.252.50.85) by
- EX19MTAEUC002.ant.amazon.com (10.252.51.245) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA) id 15.2.2562.20;
- Mon, 22 Sep 2025 10:41:01 +0000
-Received: from dev-dsk-farbere-1a-46ecabed.eu-west-1.amazon.com
- (172.19.116.181) by EX19D018EUA004.ant.amazon.com (10.252.50.85) with
- Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA) id 15.2.2562.20; Mon, 22 Sep 2025
- 10:40:34 +0000
-From: Eliav Farber <farbere@amazon.com>
-To: <richard@nod.at>, <anton.ivanov@cambridgegreys.com>,
-	<johannes@sipsolutions.net>, <dave.hansen@linux.intel.com>,
-	<luto@kernel.org>, <peterz@infradead.org>, <tglx@linutronix.de>,
-	<mingo@redhat.com>, <bp@alien8.de>, <x86@kernel.org>, <hpa@zytor.com>,
-	<tony.luck@intel.com>, <qiuxu.zhuo@intel.com>, <james.morse@arm.com>,
-	<mchehab@kernel.org>, <rric@kernel.org>, <harry.wentland@amd.com>,
-	<sunpeng.li@amd.com>, <Rodrigo.Siqueira@amd.com>,
-	<alexander.deucher@amd.com>, <christian.koenig@amd.com>,
-	<Xinhui.Pan@amd.com>, <airlied@gmail.com>, <daniel@ffwll.ch>,
-	<evan.quan@amd.com>, <maarten.lankhorst@linux.intel.com>,
-	<mripard@kernel.org>, <tzimmermann@suse.de>, <jdelvare@suse.com>,
-	<linux@roeck-us.net>, <linus.walleij@linaro.org>,
-	<dmitry.torokhov@gmail.com>, <wens@csie.org>, <jernej.skrabec@gmail.com>,
-	<samuel@sholland.org>, <agk@redhat.com>, <snitzer@kernel.org>,
-	<dm-devel@lists.linux.dev>, <mailhol.vincent@wanadoo.fr>,
-	<wg@grandegger.com>, <mkl@pengutronix.de>, <davem@davemloft.net>,
-	<edumazet@google.com>, <kuba@kernel.org>, <pabeni@redhat.com>,
-	<alexandre.torgue@foss.st.com>, <joabreu@synopsys.com>,
-	<mcoquelin.stm32@gmail.com>, <krzysztof.kozlowski@linaro.org>,
-	<malattia@linux.it>, <hdegoede@redhat.com>, <ilpo.jarvinen@linux.intel.com>,
-	<markgross@kernel.org>, <artur.paszkiewicz@intel.com>, <jejb@linux.ibm.com>,
-	<martin.petersen@oracle.com>, <sakari.ailus@linux.intel.com>,
-	<gregkh@linuxfoundation.org>, <clm@fb.com>, <josef@toxicpanda.com>,
-	<dsterba@suse.com>, <luc.vanoostenryck@gmail.com>, <rostedt@goodmis.org>,
-	<mhiramat@kernel.org>, <pmladek@suse.com>,
-	<andriy.shevchenko@linux.intel.com>, <linux@rasmusvillemoes.dk>,
-	<senozhatsky@chromium.org>, <minchan@kernel.org>,
-	<akpm@linux-foundation.org>, <dsahern@kernel.org>, <shuah@kernel.org>,
-	<keescook@chromium.org>, <wad@chromium.org>, <farbere@amazon.com>,
-	<David.Laight@ACULAB.COM>, <arnd@kernel.org>, <linux-um@lists.infradead.org>,
-	<linux-kernel@vger.kernel.org>, <linux-edac@vger.kernel.org>,
-	<amd-gfx@lists.freedesktop.org>, <dri-devel@lists.freedesktop.org>,
-	<linux-hwmon@vger.kernel.org>, <linux-input@vger.kernel.org>,
-	<linux-arm-kernel@lists.infradead.org>, <linux-sunxi@lists.linux.dev>,
-	<linux-media@vger.kernel.org>, <linux-can@vger.kernel.org>,
-	<netdev@vger.kernel.org>, <linux-stm32@st-md-mailman.stormreply.com>,
-	<platform-driver-x86@vger.kernel.org>, <linux-scsi@vger.kernel.org>,
-	<linux-staging@lists.linux.dev>, <linux-btrfs@vger.kernel.org>,
-	<linux-sparse@vger.kernel.org>, <linux-trace-kernel@vger.kernel.org>,
-	<linux-mm@kvack.org>, <linux-kselftest@vger.kernel.org>,
-	<bpf@vger.kernel.org>, <stable@vger.kernel.org>
-CC: Christoph Hellwig <hch@infradead.org>, Dan Carpenter
-	<dan.carpenter@linaro.org>, "Jason A. Donenfeld" <Jason@zx2c4.com>, "Jens
- Axboe" <axboe@kernel.dk>, Lorenzo Stoakes <lorenzo.stoakes@oracle.com>,
-	Mateusz Guzik <mjguzik@gmail.com>, Matthew Wilcox <willy@infradead.org>,
-	Pedro Falcato <pedro.falcato@gmail.com>
-Subject: [PATCH 15/15 6.6.y] minmax.h: remove some #defines that are only expanded once
-Date: Mon, 22 Sep 2025 10:32:41 +0000
-Message-ID: <20250922103241.16213-16-farbere@amazon.com>
-X-Mailer: git-send-email 2.47.3
-In-Reply-To: <20250922103241.16213-1-farbere@amazon.com>
-References: <20250922103241.16213-1-farbere@amazon.com>
+        d=suse.com; s=google; t=1758537700; x=1759142500; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:to:subject:user-agent:mime-version:date
+         :message-id:from:to:cc:subject:date:message-id:reply-to;
+        bh=/ekgGJOZXJQVlLOzbK7sUWqRJRHJzWmXH+8SPyJQgrY=;
+        b=aL9aX9bTCgL4ZxYGUi8Dc2w6wANJffLmzWGecgx5BgaEmxngxDfo2Cwwef/4w2Kvcx
+         Ny8KP9OdwvVP53tMBE7qCCrPfe+qoj8iuVY15Frbu9j40tj5CXK84rYmWdrZ5b4ypJw3
+         JLsisa/XjRQubSzCk32lApM/pYXAFr8fRi7bSj/OiYMMohN/YFtj8HQ9MlLZzBFhoOzC
+         PPv1+s5qLBm8byG1tCnVfV1tCVWnCN+/T0ElEPhpV/ZeJGyynwOozqm9Csc0dJ9EQQNL
+         u3si8jvIC3ZQF0twyVeHU9VsDK/WJRNUMQvc0a2wMdA52JmRSOZAetYCOrElpPy96UA5
+         DiMg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1758537700; x=1759142500;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:to:subject:user-agent:mime-version:date
+         :message-id:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=/ekgGJOZXJQVlLOzbK7sUWqRJRHJzWmXH+8SPyJQgrY=;
+        b=vfnkJ10g3FNNUmcA74IrPdKTxmdDF6BgxmB2/PGRb54DPdXnk8/5ciXpKdozuGYV7+
+         f+jfdqiofR3Htsz86ZA+QMQnPBOAnns8rES4rOXbE7BG5wzlp1eGw3/CcA+7FtpiNsvP
+         RAevrv5PfUtsO6V3aPa2ypjihdsYKBkLYJq/5Q1+2uswYFgwdNCcw8QwTVKOf/cssv8k
+         CoYeOirhMgsHO/9aaoDl1lZxR27Ena0tGva6soHqLLQMGgiKSGvv/sz31JAiG+IHR3jT
+         +WV2AFz8pJ3meQsP2tJ+g02kAaaOVRFxuKLgSLlB2foxN75mMYChqRZIvvkl+Vbl9+ZR
+         IpUg==
+X-Gm-Message-State: AOJu0Yzf9xfgeNGEQ8xokv7SzR6py5v6BFrtRSYpEFhwIGB4DiLKdnml
+	I0CIROXiapPbHWolDdO61/iPtATz8qOJBjCT7z6+ynF8NPSSxFc78mVDnBDupoU3begL8fhJSFI
+	xKF5Z
+X-Gm-Gg: ASbGncsesi3IiXSVrnqplrDxbYbzf6jXkolVTJHTeI20d4vhN/IaDOXTE8IEm02DJZ7
+	MR1xGsr96ykK7ZIGRxBmUlne8MTodr3JOhTTtuIDHT07zfDOWZL3jv+fsvG0NRATBSvZB9gnz3m
+	e9zSdVf0f7FzSa31JToR06Amfk3tkEwAmK4jIK1bO7pK+kpFEGsBlbPPfbiTCL7MhOSTaaZKXir
+	p5RT8sgtPBgvM+Xt4AA6xC+HVeSeGRtnh6VVceQlETBSpd974rDQMMa2zGLAIKKv8t7g+UHjcrQ
+	il4mAo23GJSQkg3ucRVyqQeVGcnHlCiprVCfhX191Ze2DVMVgbr50+AXD4SjnEViDDN/uRb81lU
+	gopDVCBPJqIqZEVRPNxwfnlhhLS10/ROvEy9DXvqTyLxBN4JkMic=
+X-Google-Smtp-Source: AGHT+IFlbHjSP8V//bhDb6H5VZYo2RDrr9fd6XfTVGoUP6dBXxdh42DxpI/10vbnn72TsPqvR4ErlQ==
+X-Received: by 2002:a05:6000:2911:b0:3ea:b91f:8f4a with SMTP id ffacd0b85a97d-3ee7e106ae9mr9790718f8f.21.1758537699669;
+        Mon, 22 Sep 2025 03:41:39 -0700 (PDT)
+Received: from ?IPV6:2403:580d:fda1::299? (2403-580d-fda1--299.ip6.aussiebb.net. [2403:580d:fda1::299])
+        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-32ed26a9993sm15919871a91.11.2025.09.22.03.41.38
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 22 Sep 2025 03:41:39 -0700 (PDT)
+Message-ID: <d4608ad8-c847-46bb-a4e7-b4b4b395c1d3@suse.com>
+Date: Mon, 22 Sep 2025 20:11:35 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+User-Agent: Mozilla Thunderbird
+Subject: Re: btrfs RAID5 or btrfs on md RAID5?
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <20250922070956.GA2624931@tik.uni-stuttgart.de>
+ <d3a5e463-d00e-4428-ad7b-35f87f9a6550@gmx.com>
+ <20250922094304.GB2634184@tik.uni-stuttgart.de>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <20250922094304.GB2634184@tik.uni-stuttgart.de>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
-Content-Type: text/plain
-X-ClientProxiedBy: EX19D040UWB004.ant.amazon.com (10.13.138.91) To
- EX19D018EUA004.ant.amazon.com (10.252.50.85)
 
-From: David Laight <David.Laight@ACULAB.COM>
 
-[ Upstream commit 2b97aaf74ed534fb838d09867d09a3ca5d795208 ]
 
-The bodies of __signed_type_use() and __unsigned_type_use() are much the
-same size as their names - so put the bodies in the only line that expands
-them.
+在 2025/9/22 19:13, Ulli Horlacher 写道:
+> On Mon 2025-09-22 (17:11), Qu Wenruo wrote:
+> 
+>> Btrfs RAID56 has no journal to protect against write hole. But has the
+>> ability to properly detect and rebuild corrupted data using data checksum.
+> 
+> As I wrote before, I could use btrfs RAID1 (only) for the / filesystem (64
+> GB), the other partitions without any RAID level, just simple btrfs
+> filesytems. No md RAID volumes at all.
+> 
+> btrfs RAID1 is not prone to write holes, but is able to rebuild corrupted
+> data using data checksum?
 
-Similarly __signed_type() is defined separately for 64bit and then used
-exactly once just below.
+Yes.
 
-Change the test for __signed_type from CONFIG_64BIT to one based on gcc
-defined macros so that the code is valid if it gets used outside of a
-kernel build.
+Write-hole is only possible for RAID56 profiles which needs RMW.
 
-Link: https://lkml.kernel.org/r/9386d1ebb8974fbabbed2635160c3975@AcuMS.aculab.com
-Signed-off-by: David Laight <david.laight@aculab.com>
-Cc: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
-Cc: Arnd Bergmann <arnd@kernel.org>
-Cc: Christoph Hellwig <hch@infradead.org>
-Cc: Dan Carpenter <dan.carpenter@linaro.org>
-Cc: Jason A. Donenfeld <Jason@zx2c4.com>
-Cc: Jens Axboe <axboe@kernel.dk>
-Cc: Lorenzo Stoakes <lorenzo.stoakes@oracle.com>
-Cc: Mateusz Guzik <mjguzik@gmail.com>
-Cc: Matthew Wilcox <willy@infradead.org>
-Cc: Pedro Falcato <pedro.falcato@gmail.com>
-Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
-Signed-off-by: Eliav Farber <farbere@amazon.com>
----
- include/linux/minmax.h | 14 ++++++--------
- 1 file changed, 6 insertions(+), 8 deletions(-)
+RAID0/1/10 do not need RWM at all, thus they are completely safe.
 
-diff --git a/include/linux/minmax.h b/include/linux/minmax.h
-index 2bbdd5b5e07e..eaaf5c008e4d 100644
---- a/include/linux/minmax.h
-+++ b/include/linux/minmax.h
-@@ -46,10 +46,8 @@
-  * comparison, and these expressions only need to be careful to not cause
-  * warnings for pointer use.
-  */
--#define __signed_type_use(ux) (2 + __is_nonneg(ux))
--#define __unsigned_type_use(ux) (1 + 2 * (sizeof(ux) < 4))
- #define __sign_use(ux) (is_signed_type(typeof(ux)) ? \
--	__signed_type_use(ux) : __unsigned_type_use(ux))
-+	(2 + __is_nonneg(ux)) : (1 + 2 * (sizeof(ux) < 4)))
- 
- /*
-  * Check whether a signed value is always non-negative.
-@@ -57,7 +55,7 @@
-  * A cast is needed to avoid any warnings from values that aren't signed
-  * integer types (in which case the result doesn't matter).
-  *
-- * On 64-bit any integer or pointer type can safely be cast to 'long'.
-+ * On 64-bit any integer or pointer type can safely be cast to 'long long'.
-  * But on 32-bit we need to avoid warnings about casting pointers to integers
-  * of different sizes without truncating 64-bit values so 'long' or 'long long'
-  * must be used depending on the size of the value.
-@@ -66,12 +64,12 @@
-  * them, but we do not use s128 types in the kernel (we do use 'u128',
-  * but they are handled by the !is_signed_type() case).
-  */
--#ifdef CONFIG_64BIT
--  #define __signed_type(ux) long
-+#if __SIZEOF_POINTER__ == __SIZEOF_LONG_LONG__
-+#define __is_nonneg(ux) statically_true((long long)(ux) >= 0)
- #else
--  #define __signed_type(ux) typeof(__builtin_choose_expr(sizeof(ux) > 4, 1LL, 1L))
-+#define __is_nonneg(ux) statically_true( \
-+	(typeof(__builtin_choose_expr(sizeof(ux) > 4, 1LL, 1L)))(ux) >= 0)
- #endif
--#define __is_nonneg(ux) statically_true((__signed_type(ux))(ux) >= 0)
- 
- #define __types_ok(ux, uy) \
- 	(__sign_use(ux) & __sign_use(uy))
--- 
-2.47.3
+> 
+> Then this is could be the most robust solution for me.
+> In case of a disk failure I have to recover from backup.
+> 
 

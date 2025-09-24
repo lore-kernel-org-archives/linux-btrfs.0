@@ -1,121 +1,76 @@
-Received: from fra-out-005.esa.eu-central-1.outbound.mail-perimeter.amazon.com (fra-out-005.esa.eu-central-1.outbound.mail-perimeter.amazon.com [63.176.194.123])
+Received: from fhigh-b1-smtp.messagingengine.com (fhigh-b1-smtp.messagingengine.com [202.12.124.152])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 64FFA32896F;
-	Wed, 24 Sep 2025 20:36:44 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=63.176.194.123
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F07B226B971
+	for <linux-btrfs@vger.kernel.org>; Wed, 24 Sep 2025 22:24:36 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.152
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1758746210; cv=none; b=gWXLRby7JOjdOQS8G+PWU+MpMxgLqlJV9NTxqqSKfQVGKmKQOKp85HMDk9VE7807/+ji795zzvwNX0WCcDTB2ah8uBE5xuRmgbHzPFtKmqc0oYtss+9bSYV7WL2ZQ2KFb0hT3qQRjb8a0NUkhEC00yKjW7GNS6/SlRrlUVZp61E=
+	t=1758752679; cv=none; b=ElinSO/2RIeCjhzrY5gY/pLzvYt8Qm1AYl/0PxkyYZOKkHKM8zvMjzmITJ4B3sL2ZvBPRyycaqFbKvvdtqnmxESJn9+FQ+y9mGypVTLH4F+vzmnKpDCeak5pkr/XmYxgxtK+bnUs9rDioSjSXfa1MGYgy80pP/sJf5plKi7Nbwg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1758746210; c=relaxed/simple;
-	bh=V2L3IilwofpV6SrsfVTvut5ipDXkokIOm+dTBT4i7eQ=;
-	h=From:To:CC:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=S2sOVUoiLJYSTwbwfrQ76fA/7nThFUsX1cA7OfOvJ4AW1Sl25cddmbVmG187xbnk1XQRh1JuUcjkc3w7NA2H0Uk0NuZV1TkKhAu3hrt+svGK0wn+Z1inCNhdrk55l+Gce6akCD6chfk1bcJIQmiXO0qgXCB5w8vnGh1SnkNdAic=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=amazon.com; spf=pass smtp.mailfrom=amazon.com; dkim=pass (2048-bit key) header.d=amazon.com header.i=@amazon.com header.b=e9gZP9CD; arc=none smtp.client-ip=63.176.194.123
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=amazon.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=amazon.com
+	s=arc-20240116; t=1758752679; c=relaxed/simple;
+	bh=bF/yG6ReFuL21xklqyBjomhR9qwuUivXti/hkRcVxNk=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=qPVrYyRnVmc5JN37CUMMeh+Tuyy8Kj1rghdt/7YRRZOhVmCCnXk7kDXQ1ErwC+F+GpZ8jzT0KecvaA4kSp4B5Fw9zs/2ftkzjxAPepG598BhOUAlsZjw5hlPIoP5EV3lA4maEPaIt4WhBUaxAjPSgAXQBzeFMHBH8HSztgUAli4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=QfoCnwrH; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=INjK7KHl; arc=none smtp.client-ip=202.12.124.152
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=amazon.com header.i=@amazon.com header.b="e9gZP9CD"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-  d=amazon.com; i=@amazon.com; q=dns/txt; s=amazoncorp2;
-  t=1758746207; x=1790282207;
-  h=from:to:cc:subject:date:message-id:in-reply-to:
-   references:mime-version:content-transfer-encoding;
-  bh=k0dUe76w+6n5/NfsPbyefGVCom+xh3GGcFcV3Olhmks=;
-  b=e9gZP9CDwsoEks7TYDCOpHUpv9sfzKmhj35LTgsctRBQ72DKFtMnw2Ye
-   rncBz1/VxacJSyh3c+WnJNx3xCZ6WUMPDekfQHi/VkiImf40Ym9Mgzqot
-   gbHi1K/Yr5f8Z06j2imjL9GXkyKoBzwsxnHta+FgeyFH6lEF+N2v3t/hr
-   G0+XLf4aRWRfCzr7LA5R8344kE3LpQ1/XLOiVjbtk04Ks8KOjtU8PnfMg
-   fjSUcgJcr0AjewhUIbTjShznpIxAEGKh8iwfarCp6jxPvr5mzRFtirtT4
-   3smfQXLbIBEqEFIARc3S1otLPYCYJw370Vi7i2aYth61tuGO1uH/okY6+
-   Q==;
-X-CSE-ConnectionGUID: kb0ojWBxQquIo7b+A20p7Q==
-X-CSE-MsgGUID: 3HJY1uZTRPStEEbVVudamg==
-X-IronPort-AV: E=Sophos;i="6.18,291,1751241600"; 
-   d="scan'208";a="2631102"
-Received: from ip-10-6-6-97.eu-central-1.compute.internal (HELO smtpout.naws.eu-central-1.prod.farcaster.email.amazon.dev) ([10.6.6.97])
-  by internal-fra-out-005.esa.eu-central-1.outbound.mail-perimeter.amazon.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 24 Sep 2025 20:36:42 +0000
-Received: from EX19MTAEUB001.ant.amazon.com [54.240.197.226:12645]
- by smtpin.naws.eu-central-1.prod.farcaster.email.amazon.dev [10.0.10.226:2525] with esmtp (Farcaster)
- id b27aa07b-d914-4c3d-9271-6483e848842d; Wed, 24 Sep 2025 20:36:42 +0000 (UTC)
-X-Farcaster-Flow-ID: b27aa07b-d914-4c3d-9271-6483e848842d
-Received: from EX19D018EUA004.ant.amazon.com (10.252.50.85) by
- EX19MTAEUB001.ant.amazon.com (10.252.51.26) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA) id 15.2.2562.20;
- Wed, 24 Sep 2025 20:36:29 +0000
-Received: from dev-dsk-farbere-1a-46ecabed.eu-west-1.amazon.com
- (172.19.116.181) by EX19D018EUA004.ant.amazon.com (10.252.50.85) with
- Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA) id 15.2.2562.20; Wed, 24 Sep 2025
- 20:35:53 +0000
-From: Eliav Farber <farbere@amazon.com>
-To: <linux@armlinux.org.uk>, <richard@nod.at>,
-	<anton.ivanov@cambridgegreys.com>, <johannes@sipsolutions.net>,
-	<dave.hansen@linux.intel.com>, <luto@kernel.org>, <peterz@infradead.org>,
-	<tglx@linutronix.de>, <mingo@redhat.com>, <bp@alien8.de>, <x86@kernel.org>,
-	<hpa@zytor.com>, <tony.luck@intel.com>, <qiuxu.zhuo@intel.com>,
-	<mchehab@kernel.org>, <james.morse@arm.com>, <rric@kernel.org>,
-	<harry.wentland@amd.com>, <sunpeng.li@amd.com>, <Rodrigo.Siqueira@amd.com>,
-	<alexander.deucher@amd.com>, <christian.koenig@amd.com>,
-	<Xinhui.Pan@amd.com>, <airlied@gmail.com>, <daniel@ffwll.ch>,
-	<evan.quan@amd.com>, <james.qian.wang@arm.com>, <liviu.dudau@arm.com>,
-	<mihail.atanassov@arm.com>, <brian.starkey@arm.com>,
-	<maarten.lankhorst@linux.intel.com>, <mripard@kernel.org>,
-	<tzimmermann@suse.de>, <robdclark@gmail.com>, <quic_abhinavk@quicinc.com>,
-	<dmitry.baryshkov@linaro.org>, <sean@poorly.run>, <jdelvare@suse.com>,
-	<linux@roeck-us.net>, <linus.walleij@linaro.org>,
-	<dmitry.torokhov@gmail.com>, <maz@kernel.org>, <wens@csie.org>,
-	<jernej.skrabec@gmail.com>, <samuel@sholland.org>, <agk@redhat.com>,
-	<snitzer@kernel.org>, <dm-devel@redhat.com>, <rajur@chelsio.com>,
-	<davem@davemloft.net>, <edumazet@google.com>, <kuba@kernel.org>,
-	<pabeni@redhat.com>, <peppe.cavallaro@st.com>,
-	<alexandre.torgue@foss.st.com>, <joabreu@synopsys.com>,
-	<mcoquelin.stm32@gmail.com>, <krzysztof.kozlowski@linaro.org>,
-	<malattia@linux.it>, <hdegoede@redhat.com>, <markgross@kernel.org>,
-	<artur.paszkiewicz@intel.com>, <jejb@linux.ibm.com>,
-	<martin.petersen@oracle.com>, <sakari.ailus@linux.intel.com>,
-	<gregkh@linuxfoundation.org>, <fei1.li@intel.com>, <clm@fb.com>,
-	<josef@toxicpanda.com>, <dsterba@suse.com>, <jack@suse.com>, <tytso@mit.edu>,
-	<adilger.kernel@dilger.ca>, <dushistov@mail.ru>,
-	<luc.vanoostenryck@gmail.com>, <rostedt@goodmis.org>, <mhiramat@kernel.org>,
-	<pmladek@suse.com>, <senozhatsky@chromium.org>,
-	<andriy.shevchenko@linux.intel.com>, <linux@rasmusvillemoes.dk>,
-	<minchan@kernel.org>, <ngupta@vflare.org>, <akpm@linux-foundation.org>,
-	<yoshfuji@linux-ipv6.org>, <dsahern@kernel.org>, <pablo@netfilter.org>,
-	<kadlec@netfilter.org>, <fw@strlen.de>, <jmaloy@redhat.com>,
-	<ying.xue@windriver.com>, <andrii@kernel.org>, <mykolal@fb.com>,
-	<ast@kernel.org>, <daniel@iogearbox.net>, <martin.lau@linux.dev>,
-	<song@kernel.org>, <yhs@fb.com>, <john.fastabend@gmail.com>,
-	<kpsingh@kernel.org>, <sdf@google.com>, <haoluo@google.com>,
-	<jolsa@kernel.org>, <shuah@kernel.org>, <keescook@chromium.org>,
-	<wad@chromium.org>, <willy@infradead.org>, <farbere@amazon.com>,
-	<sashal@kernel.org>, <ruanjinjie@huawei.com>, <quic_akhilpo@quicinc.com>,
-	<David.Laight@ACULAB.COM>, <herve.codina@bootlin.com>,
-	<linux-arm-kernel@lists.infradead.org>, <linux-kernel@vger.kernel.org>,
-	<linux-um@lists.infradead.org>, <linux-edac@vger.kernel.org>,
-	<amd-gfx@lists.freedesktop.org>, <dri-devel@lists.freedesktop.org>,
-	<linux-arm-msm@vger.kernel.org>, <freedreno@lists.freedesktop.org>,
-	<linux-hwmon@vger.kernel.org>, <linux-input@vger.kernel.org>,
-	<linux-sunxi@lists.linux.dev>, <linux-media@vger.kernel.org>,
-	<netdev@vger.kernel.org>, <linux-stm32@st-md-mailman.stormreply.com>,
-	<platform-driver-x86@vger.kernel.org>, <linux-scsi@vger.kernel.org>,
-	<linux-staging@lists.linux.dev>, <linux-btrfs@vger.kernel.org>,
-	<linux-ext4@vger.kernel.org>, <linux-sparse@vger.kernel.org>,
-	<linux-mm@kvack.org>, <netfilter-devel@vger.kernel.org>,
-	<coreteam@netfilter.org>, <tipc-discussion@lists.sourceforge.net>,
-	<bpf@vger.kernel.org>, <linux-kselftest@vger.kernel.org>,
-	<stable@vger.kernel.org>
-CC: Arnd Bergmann <arnd@kernel.org>, Christoph Hellwig <hch@infradead.org>,
-	Dan Carpenter <dan.carpenter@linaro.org>, "Jason A. Donenfeld"
-	<Jason@zx2c4.com>, Jens Axboe <axboe@kernel.dk>, Lorenzo Stoakes
-	<lorenzo.stoakes@oracle.com>, Mateusz Guzik <mjguzik@gmail.com>, "Pedro
- Falcato" <pedro.falcato@gmail.com>
-Subject: [PATCH 19/19 v6.1.y] minmax.h: remove some #defines that are only expanded once
-Date: Wed, 24 Sep 2025 20:23:20 +0000
-Message-ID: <20250924202320.32333-20-farbere@amazon.com>
-X-Mailer: git-send-email 2.47.3
-In-Reply-To: <20250924202320.32333-1-farbere@amazon.com>
-References: <20250924202320.32333-1-farbere@amazon.com>
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="QfoCnwrH";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="INjK7KHl"
+Received: from phl-compute-09.internal (phl-compute-09.internal [10.202.2.49])
+	by mailfhigh.stl.internal (Postfix) with ESMTP id 14A937A01A5;
+	Wed, 24 Sep 2025 18:24:36 -0400 (EDT)
+Received: from phl-mailfrontend-01 ([10.202.2.162])
+  by phl-compute-09.internal (MEProxy); Wed, 24 Sep 2025 18:24:36 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc
+	:content-transfer-encoding:content-type:date:date:from:from
+	:in-reply-to:message-id:mime-version:reply-to:subject:subject:to
+	:to; s=fm2; t=1758752675; x=1758839075; bh=CnKGaACX02DaO5HwPsEMI
+	N5V3u6yfKzEMBJc/Sco1H0=; b=QfoCnwrHVfgRPwWq8qQguu/ued8LyLFkCWY3f
+	Bx6OjqEyIS5Irr4TLFFu8JtyHrqpKa6uZP6847IJ/Cv64UuQLnoVAepQv1AUCXWB
+	r3eJWXcijPyVmHKEVwY52QYTSmOOB2M4FUrScIOU5iYv1dvgUd4wPJPXmjCzF5nU
+	m7psbhgDmJaz9YBtpqiiW+D0TBvEGj6e/nk/MrnftBm1mAvCBiU9BdxwiWXtbwx/
+	tvK6w/DdsEtSTc2ElwfiuJEjxk/1XThGIwnilFdQYWsWlf/amc0bSu0Wnr4unUvE
+	rjC/chA0WjSV9/3aPvWgid0E5WfOfGZrLlYhYMZ1NwzgVUDaw==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:content-transfer-encoding:content-type
+	:date:date:feedback-id:feedback-id:from:from:in-reply-to
+	:message-id:mime-version:reply-to:subject:subject:to:to
+	:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm1; t=
+	1758752675; x=1758839075; bh=CnKGaACX02DaO5HwPsEMIN5V3u6yfKzEMBJ
+	c/Sco1H0=; b=INjK7KHlgcqzVUZUK0TQZe5RzEvkcssnxRsfUitSEtKly4NKgUE
+	h67VMQ5QqbZ2gNwul1wngVJzdytOuK8GE9sVPS0eoMoJXgryckG71Yqozw0eok96
+	JG972LXO/epapD4dk/n4ML13NSobcFz0lgAb8n7B1/cWA2XEDla2u5Ol+kuxATLq
+	AQnY/IRZnfFehA46epMP8n8f0JSdU41J1n6+iB1HLe+q0dT5tBJmYJ3nxKL56R/s
+	C+byABXvR3+ivUo72pvDIrgH/azy9YccOZnFQcjnQ98f4jFzU1A3OpAw4RdKqhld
+	nBVZeOztGfbxMRVvDUFGL0QSTAdMGq3hs9Q==
+X-ME-Sender: <xms:o2_UaM8hDee8fl_AT0mB7oK7hExAbJg1pnIcjS70xU2deA9-HPmmaA>
+    <xme:o2_UaKv-XrIdih2IzUwHYGcyMIOx1pT75PJHqplBtLu-Lb0MBbJZIWnaEoQjRV54J
+    eMNRJx1rWDWBZ2eqTbNWXx45rf8XhwnRSdB8Yo1RQLVBXW5eNFnGg>
+X-ME-Received: <xmr:o2_UaPoGLY9dOdnJtiCVhSAfackLHatCL1BTV0D5aweROMa7ILwKpy1kA3EIgPn7IOc3rVPNAq3GbtyLKjnz5Fvpiek>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeeffedrtdeggdeigeektdcutefuodetggdotefrod
+    ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpuffrtefokffrpgfnqfghnecuuegr
+    ihhlohhuthemuceftddtnecunecujfgurhephffvufffkffoggfgsedtkeertdertddtne
+    cuhfhrohhmpeeuohhrihhsuceuuhhrkhhovhcuoegsohhrihhssegsuhhrrdhioheqnecu
+    ggftrfgrthhtvghrnhepudeitdelueeijeefleffveelieefgfejjeeigeekudduteefke
+    fffeethfdvjeevnecuvehluhhsthgvrhfuihiivgeptdenucfrrghrrghmpehmrghilhhf
+    rhhomhepsghorhhishessghurhdrihhopdhnsggprhgtphhtthhopedvpdhmohguvgepsh
+    hmthhpohhuthdprhgtphhtthhopehlihhnuhigqdgsthhrfhhssehvghgvrhdrkhgvrhhn
+    vghlrdhorhhgpdhrtghpthhtohepkhgvrhhnvghlqdhtvggrmhesfhgsrdgtohhm
+X-ME-Proxy: <xmx:o2_UaHndwszquBFuSlpjH1VQU-lfPMuSQFCt4prlDLpjmwW7UcpBQA>
+    <xmx:o2_UaDyARUUf7Nn44u9GMrWZngRD4wGuv-1Efvy-yHWBHuMtrhJjig>
+    <xmx:o2_UaPlstczPDjyG26kudKdrPbckhFIevsVzR4kjnLRTx6TMF_Llvw>
+    <xmx:o2_UaMfOR2gIOgp-toWLXyY9OzQlrr4nayXhEqt-TaH9p9CM7-DCOA>
+    <xmx:o2_UaIiWrIbFdhe8ZJh6iQdB2LoS_46osZYWZWJjy0QiUnoczSLt3K4W>
+Feedback-ID: i083147f8:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Wed,
+ 24 Sep 2025 18:24:35 -0400 (EDT)
+From: Boris Burkov <boris@bur.io>
+To: linux-btrfs@vger.kernel.org,
+	kernel-team@fb.com
+Subject: [PATCH] btrfs: don't ignore ENOMEM in btrfs_add_chunk_map()
+Date: Wed, 24 Sep 2025 15:24:25 -0700
+Message-ID: <0d537ef90213e54835f7aaa090498787db27b33a.1758752652.git.boris@bur.io>
+X-Mailer: git-send-email 2.50.1
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -123,85 +78,164 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-Content-Type: text/plain
-X-ClientProxiedBy: EX19D046UWA002.ant.amazon.com (10.13.139.39) To
- EX19D018EUA004.ant.amazon.com (10.252.50.85)
 
-From: David Laight <David.Laight@ACULAB.COM>
+btrfs_set_extent_bit() can return ENOMEM, which
+chunk_map_device_(set|clear)_bits() was ignoring, so
+btrfs_add_chunk_map() was silently failing in those cases. This led to
+double allocating dev extents, ultimately resulting in an EEXIST in
+add_dev_extent_item(): (ignore the btrfs_force_chunk_alloc_store thing,
+we are using a DEBUG feature that isn't widely used here)
 
-[ Upstream commit 2b97aaf74ed534fb838d09867d09a3ca5d795208 ]
+  ------------[ cut here ]------------
+  BTRFS: Transaction aborted (error -17)
+  WARNING: CPU: 5 PID: 3586339 at fs/btrfs/block-group.c:2764 btrfs_create_pending_block_groups+0x5fc/0x620
+  RIP: 0010:btrfs_create_pending_block_groups+0x5fc/0x620
+  Code: 9c fd ff ff 48 c7 c7 e8 69 64 82 44 89 ee e8 4b 87 e6 ff 0f 0b e9 99 fe ff ff 48 c7 c7 e8 69 64 82 48 8b 34 24 e8 34 87 e6 ff <0f> 0b eb a0 48 c7 c7 e8 69 64 82 44 89 e6 e8 21 87 e6 ff 0f 0b e9
+  RSP: 0018:ffffc90060693d38 EFLAGS: 00010286
+  RAX: 0000000000000026 RBX: ffff8882be92fed8 RCX: 0000000000000027
+  RDX: ffff88bf42f6e040 RSI: ffff88bf42f60c48 RDI: ffff88bf42f60c48
+  RBP: ffff888282585d18 R08: 0000000000000000 R09: 0000000000000000
+  R10: 4000000000000000 R11: 000000000000691d R12: ffff88c0471a3300
+  R13: 0000001dc6500000 R14: ffff8882829d9000 R15: ffff8882be92ff40
+  FS:  00007f7ccbc2c740(0000) GS:ffff88bf42f40000(0000) knlGS:0000000000000000
+  CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+  CR2: 0000000004e421c8 CR3: 0000000cd6384001 CR4: 0000000000770ef0
+  PKRU: 55555554
+  Call Trace:
+   <TASK>
+   ? __warn+0xa0/0x130
+   ? btrfs_create_pending_block_groups+0x5fc/0x620
+   ? report_bug+0xf2/0x150
+   ? handle_bug+0x3d/0x70
+   ? exc_invalid_op+0x16/0x40
+   ? asm_exc_invalid_op+0x16/0x20
+   ? btrfs_create_pending_block_groups+0x5fc/0x620
+   ? btrfs_create_pending_block_groups+0x5fc/0x620
+   __btrfs_end_transaction.llvm.3999538623537568469+0x3d/0x1c0
+   btrfs_force_chunk_alloc_store+0xaf/0x100
+   ? sysfs_kf_read+0x90/0x90
+   kernfs_fop_write_iter.llvm.10031329899921036925+0xd0/0x180
+   __x64_sys_write+0x279/0x5a0
+   do_syscall_64+0x63/0x130
+   ? exc_page_fault+0x63/0x130
+   entry_SYSCALL_64_after_hwframe+0x4b/0x53
+  RIP: 0033:0x7f7ccb4ff28f
+  Code: 89 54 24 18 48 89 74 24 10 89 7c 24 08 e8 a9 89 f8 ff 48 8b 54 24 18 48 8b 74 24 10 41 89 c0 8b 7c 24 08 b8 01 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 31 44 89 c7 48 89 44 24 08 e8 fc 89 f8 ff 48
+  RSP: 002b:00007ffda7138f20 EFLAGS: 00000293 ORIG_RAX: 0000000000000001
+  RAX: ffffffffffffffda RBX: 0000000009c13140 RCX: 00007f7ccb4ff28f
+  RDX: 0000000000000001 RSI: 0000000004e401b0 RDI: 00000000000000c8
+  RBP: 0000000000000001 R08: 0000000000000000 R09: 0000000000000000
+  R10: 0000000000008000 R11: 0000000000000293 R12: 0000000000000000
+  R13: 0000000000408820 R14: 0000000000407f00 R15: 00007ffda7138fc0
+   </TASK>
+  ---[ end trace 0000000000000000 ]---
+  BTRFS: error (device nvme0n1p2 state A) in btrfs_create_pending_block_groups:2764: errno=-17 Object already exists
+  BTRFS warning (device nvme0n1p2 state EA): Skipping commit of aborted transaction.
+  BTRFS: error (device nvme0n1p2 state EA) in cleanup_transaction:2018: errno=-17 Object already exists
 
-The bodies of __signed_type_use() and __unsigned_type_use() are much the
-same size as their names - so put the bodies in the only line that expands
-them.
+This was pretty confusing to debug and I think it would be helpful to
+get the proper ENOMEM error sent up to the appropriate transaction when
+it happens.
 
-Similarly __signed_type() is defined separately for 64bit and then used
-exactly once just below.
+Note:
+Most callsites of btrfs_set_extent_bit() are not checked, however, which
+does give me pause. Either we have a lot more inaccuracies like this out
+there, or I have misanalyzed this scenario. I was able to reproduce the
+above calltrace by injecting enomem errors in to the set_extent_bits
+path here, for what it's worth.
 
-Change the test for __signed_type from CONFIG_64BIT to one based on gcc
-defined macros so that the code is valid if it gets used outside of a
-kernel build.
-
-Link: https://lkml.kernel.org/r/9386d1ebb8974fbabbed2635160c3975@AcuMS.aculab.com
-Signed-off-by: David Laight <david.laight@aculab.com>
-Cc: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
-Cc: Arnd Bergmann <arnd@kernel.org>
-Cc: Christoph Hellwig <hch@infradead.org>
-Cc: Dan Carpenter <dan.carpenter@linaro.org>
-Cc: Jason A. Donenfeld <Jason@zx2c4.com>
-Cc: Jens Axboe <axboe@kernel.dk>
-Cc: Lorenzo Stoakes <lorenzo.stoakes@oracle.com>
-Cc: Mateusz Guzik <mjguzik@gmail.com>
-Cc: Matthew Wilcox <willy@infradead.org>
-Cc: Pedro Falcato <pedro.falcato@gmail.com>
-Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
-Signed-off-by: Eliav Farber <farbere@amazon.com>
+Signed-off-by: Boris Burkov <boris@bur.io>
 ---
- include/linux/minmax.h | 14 ++++++--------
- 1 file changed, 6 insertions(+), 8 deletions(-)
+ fs/btrfs/volumes.c | 47 ++++++++++++++++++++++++++++++++++------------
+ 1 file changed, 35 insertions(+), 12 deletions(-)
 
-diff --git a/include/linux/minmax.h b/include/linux/minmax.h
-index 2bbdd5b5e07e..eaaf5c008e4d 100644
---- a/include/linux/minmax.h
-+++ b/include/linux/minmax.h
-@@ -46,10 +46,8 @@
-  * comparison, and these expressions only need to be careful to not cause
-  * warnings for pointer use.
-  */
--#define __signed_type_use(ux) (2 + __is_nonneg(ux))
--#define __unsigned_type_use(ux) (1 + 2 * (sizeof(ux) < 4))
- #define __sign_use(ux) (is_signed_type(typeof(ux)) ? \
--	__signed_type_use(ux) : __unsigned_type_use(ux))
-+	(2 + __is_nonneg(ux)) : (1 + 2 * (sizeof(ux) < 4)))
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 2bec544d8ba3..eda5b6b907d9 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -5434,28 +5434,42 @@ static int decide_stripe_size(struct btrfs_fs_devices *fs_devices,
+ 	}
+ }
  
- /*
-  * Check whether a signed value is always non-negative.
-@@ -57,7 +55,7 @@
-  * A cast is needed to avoid any warnings from values that aren't signed
-  * integer types (in which case the result doesn't matter).
-  *
-- * On 64-bit any integer or pointer type can safely be cast to 'long'.
-+ * On 64-bit any integer or pointer type can safely be cast to 'long long'.
-  * But on 32-bit we need to avoid warnings about casting pointers to integers
-  * of different sizes without truncating 64-bit values so 'long' or 'long long'
-  * must be used depending on the size of the value.
-@@ -66,12 +64,12 @@
-  * them, but we do not use s128 types in the kernel (we do use 'u128',
-  * but they are handled by the !is_signed_type() case).
-  */
--#ifdef CONFIG_64BIT
--  #define __signed_type(ux) long
-+#if __SIZEOF_POINTER__ == __SIZEOF_LONG_LONG__
-+#define __is_nonneg(ux) statically_true((long long)(ux) >= 0)
- #else
--  #define __signed_type(ux) typeof(__builtin_choose_expr(sizeof(ux) > 4, 1LL, 1L))
-+#define __is_nonneg(ux) statically_true( \
-+	(typeof(__builtin_choose_expr(sizeof(ux) > 4, 1LL, 1L)))(ux) >= 0)
- #endif
--#define __is_nonneg(ux) statically_true((__signed_type(ux))(ux) >= 0)
+-static void chunk_map_device_set_bits(struct btrfs_chunk_map *map, unsigned int bits)
++static int chunk_map_device_set_bits(struct btrfs_chunk_map *map, unsigned int bits)
+ {
++	int ret;
++
+ 	for (int i = 0; i < map->num_stripes; i++) {
+ 		struct btrfs_io_stripe *stripe = &map->stripes[i];
+ 		struct btrfs_device *device = stripe->dev;
  
- #define __types_ok(ux, uy) \
- 	(__sign_use(ux) & __sign_use(uy))
+-		btrfs_set_extent_bit(&device->alloc_state, stripe->physical,
+-				     stripe->physical + map->stripe_size - 1,
+-				     bits | EXTENT_NOWAIT, NULL);
++		ret = btrfs_set_extent_bit(
++			&device->alloc_state, stripe->physical,
++			stripe->physical + map->stripe_size - 1,
++			bits | EXTENT_NOWAIT, NULL);
++		if (ret)
++			return ret;
+ 	}
++	ret = 0;
++	return ret;
+ }
+ 
+-static void chunk_map_device_clear_bits(struct btrfs_chunk_map *map, unsigned int bits)
++static int chunk_map_device_clear_bits(struct btrfs_chunk_map *map, unsigned int bits)
+ {
++	int ret;
++
+ 	for (int i = 0; i < map->num_stripes; i++) {
+ 		struct btrfs_io_stripe *stripe = &map->stripes[i];
+ 		struct btrfs_device *device = stripe->dev;
+ 
+-		btrfs_clear_extent_bit(&device->alloc_state, stripe->physical,
+-				       stripe->physical + map->stripe_size - 1,
+-				       bits | EXTENT_NOWAIT, NULL);
++		ret = btrfs_clear_extent_bit(
++			&device->alloc_state, stripe->physical,
++			stripe->physical + map->stripe_size - 1,
++			bits | EXTENT_NOWAIT, NULL);
++		if (ret)
++			return ret;
+ 	}
++	ret = 0;
++	return ret;
+ }
+ 
+ void btrfs_remove_chunk_map(struct btrfs_fs_info *fs_info, struct btrfs_chunk_map *map)
+@@ -5488,6 +5502,7 @@ static int btrfs_chunk_map_cmp(const struct rb_node *new,
+ EXPORT_FOR_TESTS
+ int btrfs_add_chunk_map(struct btrfs_fs_info *fs_info, struct btrfs_chunk_map *map)
+ {
++	int ret;
+ 	struct rb_node *exist;
+ 
+ 	write_lock(&fs_info->mapping_tree_lock);
+@@ -5498,11 +5513,19 @@ int btrfs_add_chunk_map(struct btrfs_fs_info *fs_info, struct btrfs_chunk_map *m
+ 		write_unlock(&fs_info->mapping_tree_lock);
+ 		return -EEXIST;
+ 	}
+-	chunk_map_device_set_bits(map, CHUNK_ALLOCATED);
+-	chunk_map_device_clear_bits(map, CHUNK_TRIMMED);
+-	write_unlock(&fs_info->mapping_tree_lock);
+ 
+-	return 0;
++	ret = chunk_map_device_set_bits(map, CHUNK_ALLOCATED);
++	if (ret)
++		goto out;
++	ret = chunk_map_device_clear_bits(map, CHUNK_TRIMMED);
++
++out:
++	if (ret) {
++		rb_erase_cached(&map->rb_node, &fs_info->mapping_tree);
++		RB_CLEAR_NODE(&map->rb_node);
++	}
++	write_unlock(&fs_info->mapping_tree_lock);
++	return ret;
+ }
+ 
+ EXPORT_FOR_TESTS
 -- 
-2.47.3
+2.50.1
 

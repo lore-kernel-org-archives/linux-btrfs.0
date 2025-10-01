@@ -1,64 +1,64 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B5B48238D42
-	for <linux-btrfs@vger.kernel.org>; Wed,  1 Oct 2025 09:50:31 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 32A72238D42
+	for <linux-btrfs@vger.kernel.org>; Wed,  1 Oct 2025 09:50:35 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1759312234; cv=none; b=VUDlkQpKi9mn6e6V2B2d/fvbVs5kyFLYvW7Z0wfJY4nb45zfQwkxSdHycL1HW3vIkgSDdpmWXC/WWkPeVUrHkxI7IzpBuMJFJXDN77edTkFeOJjlDzPejgyg6a9wI/JKI5uQk7v9z2Tzs5AkJc8PgGinVh3f6ewEk6eMl5F2b4U=
+	t=1759312238; cv=none; b=FHid7nvI8M+9rmMKbEO/QS77GSfUc6ru+y1favG2Cy+WsMwxqlLldqIFqOHR2LhHszoViHpv4wVUGyCn2Lgzi9KY20vVoF/FLd5z8U/OkVGmj096XGWxQ++BllAMzvlq1QMIHTN6M7TkOKZlyUjsYbEKpUEHqSO3flNzeibXbDM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1759312234; c=relaxed/simple;
-	bh=MrFseLp6hhzz9lFcCkgjbQkFvVpPr7qlj6HcPSgtLA0=;
+	s=arc-20240116; t=1759312238; c=relaxed/simple;
+	bh=samKGaXk3EWPXLpt/UKVbbW+jahcOIy1kkaxtXomut0=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=FozeyfjLYgkola/Aj0jXSxZroJRkxQUt0M8pCAie0guZHpfe5RpjzCjsjrTHXgTtNZdlh+DIRZqVhdvleU1xm0Uve6mUSUqlgwgs8se9R/sV63XbGxYKiT1MqZkYvQ2cvFF5/zeIdOLVHqs1dhHedJBaJwVVkPT1RTZTMRLTA/g=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=M4rBgdRB; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Ultvugfn; arc=none smtp.client-ip=195.135.223.130
+	 MIME-Version; b=kxxuwdkbj8dGWYn8KGwCqAsudRqdmmv0nwfssMCTh5kVQjZJTYw3jcaAy4Ut1rc/awHsSuAyDeTqDwr+w4LDwNxdMLCHji8Ytg9uWIGnbc3kuBENPTB1dAX4CrFePjzgOen5hI/sxYKC9NjeflyStBazbqmqzgLkqQa9zyTfbao=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=bmLmKrag; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=WhRu4u5d; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="M4rBgdRB";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Ultvugfn"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="bmLmKrag";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="WhRu4u5d"
 Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 5605133749
-	for <linux-btrfs@vger.kernel.org>; Wed,  1 Oct 2025 09:50:28 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id EBBE01F456
+	for <linux-btrfs@vger.kernel.org>; Wed,  1 Oct 2025 09:50:31 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1759312229; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1759312232; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=Uya5LCQg6ab7WA2zSSNExlLKSGjWeUZnM0bZWOgG030=;
-	b=M4rBgdRBRANVDmTthANyj0e/hZckj3wOtyh1JUeDB2MlzTaLvwYzmRSWAcW8s823bDchYi
-	OZk6sEf0+Q13kCMCabisQWW/uwQraJj34maiDUhXH+QMaTvnNVs2UFC+9RwVJ12J7vlPi9
-	Tcvabgk7XjuT4dWo5vXdU6at4Mq73Bc=
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=Ultvugfn
+	bh=eOgAGwNG40pIdf+eJx3ah8iBvNd019BwFISmbm3lPm4=;
+	b=bmLmKragIdEYZnpTbXJ37eY9O9kSPVDUCff0i246iwps7ZVJ/ymk+VveeB5YvRCuzXhYM3
+	eB60hIJnGammRTRyyoA7IP10JgJUiDDzoXIri4EYyv+sGui7SfJ/gA3COJvoOrAe+JS/H9
+	vRhTHsTL+HDq7dyIjj7Dr08MZfsBgpg=
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=WhRu4u5d
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1759312228; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1759312231; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=Uya5LCQg6ab7WA2zSSNExlLKSGjWeUZnM0bZWOgG030=;
-	b=Ultvugfnk0UEvufiCsGS2NUoGow/DETFXmrZKro+N+LLHHOZt4qkGfPhIa8GapbtnYEiE9
-	TyHpFSLPkYLnoyI9e9CkPLc/Le0UuPy9N+g3mrbdYmrJwND0wBeQyLNsIXiO634BnNJhRW
-	hhZAy1Gt3THJ+MQ601qpm94sLfglytY=
+	bh=eOgAGwNG40pIdf+eJx3ah8iBvNd019BwFISmbm3lPm4=;
+	b=WhRu4u5dbi2RqtvLn767fRWyg9T8oJHyqWFi99Aw3h1So79QH52cmwrcEOOgAansmqRIe1
+	j2jUytSaXPvaaxwL9E+ZScBgB0mGitB47tzOt8Fts9HqGU5im2KcLVpTtNGBTo0+otkSos
+	dvR/2IikOawDbyzTXN+twotwGrQMPm0=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 88B0713A3F
-	for <linux-btrfs@vger.kernel.org>; Wed,  1 Oct 2025 09:50:27 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 351A513A3F
+	for <linux-btrfs@vger.kernel.org>; Wed,  1 Oct 2025 09:50:30 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id wB3sEmP53GikSwAAD6G6ig
+	id WKsDOmb53GikSwAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Wed, 01 Oct 2025 09:50:27 +0000
+	for <linux-btrfs@vger.kernel.org>; Wed, 01 Oct 2025 09:50:30 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/4] btrfs: make btrfs_csum_one_bio() handle bs > ps without large folios
-Date: Wed,  1 Oct 2025 19:20:05 +0930
-Message-ID: <c713102fa54228f1066d233486b56bfc73c966f7.1759311101.git.wqu@suse.com>
+Subject: [PATCH 4/4] btrfs: enable encoded read/write/send for bs > ps cases
+Date: Wed,  1 Oct 2025 19:20:08 +0930
+Message-ID: <a65187d492cd65649b28d7a3e84090ba11c8d8c3.1759311101.git.wqu@suse.com>
 X-Mailer: git-send-email 2.50.1
 In-Reply-To: <cover.1759311100.git.wqu@suse.com>
 References: <cover.1759311100.git.wqu@suse.com>
@@ -71,7 +71,7 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-Spam-Level: 
 X-Spam-Flag: NO
-X-Rspamd-Queue-Id: 5605133749
+X-Rspamd-Queue-Id: EBBE01F456
 X-Rspamd-Action: no action
 X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
 X-Spamd-Result: default: False [-3.01 / 50.00];
@@ -85,8 +85,8 @@ X-Spamd-Result: default: False [-3.01 / 50.00];
 	MX_GOOD(-0.01)[];
 	MIME_TRACE(0.00)[0:+];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
 	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
 	RCPT_COUNT_ONE(0.00)[1];
 	ARC_NA(0.00)[];
@@ -103,194 +103,146 @@ X-Spamd-Result: default: False [-3.01 / 50.00];
 	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,suse.com:mid,suse.com:email]
 X-Spam-Score: -3.01
 
-For bs > ps cases, all folios passed into btrfs_csum_one_bio() is
-ensured to be backed by large folios.
+Since the read verification and read repair are all supporting bs > ps
+without large folios now, we can enable encoded read/write/send.
 
-But that requirement excludes features like direct IO and encoded
-writes.
-
-To support bs > ps without large folios, enhance btrfs_csum_one_bio()
-by:
-
-- Split btrfs_calculate_block_csum() into two versions
-  * btrfs_calculate_block_csum_folio()
-    For call sites that a fs block is always backed by a large folio.
-
-    This will do extra checks on the folio size, build a paddrs[] array,
-    and pass it into the newer btrfs_calculate_block_csum_pages()
-    helper.
-
-    For now btrfs_check_block_csum() is still using this version.
-
-  * btrfs_calculate_block_csum_pages()
-    For call sites that may hit a fs block backed by incontiguous pages.
-    The pages are represented by paddrs[] array, which includes the
-    offset inside the page.
-
-    This function will do the proper sub-block handling.
-
-- Make btrfs_csum_one_bio() to use btrfs_calculate_block_csum_pages()
-  This means we will need to build a local paddrs[] array, and after
-  filling a fs block, do the checksum calculation.
+Now we can relax the alignment in assert_bbio_alignment() to
+min(blocksize, PAGE_SIZE).
+But also add the extra blocksize based alignment check for the logical
+and length of the bbio.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/btrfs_inode.h |  6 ++--
- fs/btrfs/file-item.c   | 15 +++++++--
- fs/btrfs/inode.c       | 73 ++++++++++++++++++++++++++++++------------
- 3 files changed, 68 insertions(+), 26 deletions(-)
+ fs/btrfs/bio.c   | 22 ++++++++++++----------
+ fs/btrfs/ioctl.c | 21 ---------------------
+ fs/btrfs/send.c  |  9 +--------
+ 3 files changed, 13 insertions(+), 39 deletions(-)
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index f45dcdde0efc..03c107ab391b 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -542,8 +542,10 @@ static inline void btrfs_set_inode_mapping_order(struct btrfs_inode *inode)
- #define CSUM_FMT				"0x%*phN"
- #define CSUM_FMT_VALUE(size, bytes)		size, bytes
- 
--void btrfs_calculate_block_csum(struct btrfs_fs_info *fs_info, phys_addr_t paddr,
--				u8 *dest);
-+void btrfs_calculate_block_csum_folio(struct btrfs_fs_info *fs_info,
-+				      const phys_addr_t paddr, u8 *dest);
-+void btrfs_calculate_block_csum_pages(struct btrfs_fs_info *fs_info,
-+				      const phys_addr_t paddrs[], u8 *dest);
- int btrfs_check_block_csum(struct btrfs_fs_info *fs_info, phys_addr_t paddr, u8 *csum,
- 			   const u8 * const csum_expected);
- bool btrfs_data_csum_ok(struct btrfs_bio *bbio, struct btrfs_device *dev,
-diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index a42e6d54e7cd..5b3c5489ee48 100644
---- a/fs/btrfs/file-item.c
-+++ b/fs/btrfs/file-item.c
-@@ -778,6 +778,10 @@ int btrfs_csum_one_bio(struct btrfs_bio *bbio)
- 	struct bvec_iter iter = bio->bi_iter;
- 	phys_addr_t paddr;
+diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
+index a29812d3d2c9..35c154aff95e 100644
+--- a/fs/btrfs/bio.c
++++ b/fs/btrfs/bio.c
+@@ -825,21 +825,23 @@ static void assert_bbio_alignment(struct btrfs_bio *bbio)
+ 	struct bio_vec bvec;
+ 	struct bvec_iter iter;
  	const u32 blocksize = fs_info->sectorsize;
-+	const u32 step = min(blocksize, PAGE_SIZE);
-+	const u32 nr_steps = blocksize / step;
-+	phys_addr_t paddrs[BTRFS_MAX_BLOCKSIZE / PAGE_SIZE];
-+	u32 offset = 0;
- 	int index;
- 	unsigned nofs_flag;
++	const u32 alignment = min(blocksize, PAGE_SIZE);
++	const u64 logical = bbio->bio.bi_iter.bi_sector << SECTOR_SHIFT;
++	const u32 length = bbio->bio.bi_iter.bi_size;
  
-@@ -797,9 +801,14 @@ int btrfs_csum_one_bio(struct btrfs_bio *bbio)
+-	/* Metadata has no extra bs > ps alignment requirement. */
+-	if (!is_data_bbio(bbio))
+-		return;
++	/* The logical and length should still be aligned to blocksize. */
++	ASSERT(IS_ALIGNED(logical, blocksize) && IS_ALIGNED(length, blocksize) &&
++	       length != 0, "root=%llu inode=%llu logical=%llu length=%u",
++	       btrfs_root_id(bbio->inode->root),
++	       btrfs_ino(bbio->inode), logical, length);
  
- 	shash->tfm = fs_info->csum_shash;
- 
--	btrfs_bio_for_each_block(paddr, bio, &iter, blocksize) {
--		btrfs_calculate_block_csum(fs_info, paddr, sums->sums + index);
--		index += fs_info->csum_size;
-+	btrfs_bio_for_each_block(paddr, bio, &iter, step) {
-+		paddrs[(offset / step) % nr_steps] = paddr;
-+		offset += step;
-+
-+		if (IS_ALIGNED(offset, blocksize)) {
-+			btrfs_calculate_block_csum_pages(fs_info, paddrs, sums->sums + index);
-+			index += fs_info->csum_size;
-+		}
- 	}
- 
- 	bbio->sums = sums;
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index ac2fd589697d..287c67296a7d 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3330,36 +3330,67 @@ int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered)
- 	return btrfs_finish_one_ordered(ordered);
+ 	bio_for_each_bvec(bvec, &bbio->bio, iter)
+-		ASSERT(IS_ALIGNED(bvec.bv_offset, blocksize) &&
+-		       IS_ALIGNED(bvec.bv_len, blocksize),
++		ASSERT(IS_ALIGNED(bvec.bv_offset, alignment) &&
++		       IS_ALIGNED(bvec.bv_len, alignment),
+ 		"root=%llu inode=%llu logical=%llu length=%u index=%u bv_offset=%u bv_len=%u",
+ 		btrfs_root_id(bbio->inode->root),
+-		btrfs_ino(bbio->inode),
+-		bbio->bio.bi_iter.bi_sector << SECTOR_SHIFT,
+-		bbio->bio.bi_iter.bi_size, iter.bi_idx,
+-		bvec.bv_offset,
+-		bvec.bv_len);
++		btrfs_ino(bbio->inode), logical, length, iter.bi_idx,
++		bvec.bv_offset, bvec.bv_len);
+ #endif
  }
  
--void btrfs_calculate_block_csum(struct btrfs_fs_info *fs_info, phys_addr_t paddr,
--				u8 *dest)
-+/*
-+ * Calculate the checksum of a fs block at physical memory address @paddr,
-+ * and save the result to @dest.
-+ *
-+ * The folio containing @paddr must be large enough to contain a full fs block.
-+ */
-+void btrfs_calculate_block_csum_folio(struct btrfs_fs_info *fs_info,
-+				      const phys_addr_t paddr, u8 *dest)
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 938286bee6a8..552ad99e89fc 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -4418,10 +4418,6 @@ static int btrfs_ioctl_encoded_read(struct file *file, void __user *argp,
+ 		goto out_acct;
+ 	}
+ 
+-	if (fs_info->sectorsize > PAGE_SIZE) {
+-		ret = -ENOTTY;
+-		goto out_acct;
+-	}
+ 	if (compat) {
+ #if defined(CONFIG_64BIT) && defined(CONFIG_COMPAT)
+ 		struct btrfs_ioctl_encoded_io_args_32 args32;
+@@ -4513,7 +4509,6 @@ static int btrfs_ioctl_encoded_read(struct file *file, void __user *argp,
+ 
+ static int btrfs_ioctl_encoded_write(struct file *file, void __user *argp, bool compat)
  {
- 	struct folio *folio = page_folio(phys_to_page(paddr));
- 	const u32 blocksize = fs_info->sectorsize;
--	SHASH_DESC_ON_STACK(shash, fs_info->csum_shash);
-+	const u32 step = min(blocksize, PAGE_SIZE);
-+	const u32 nr_steps = blocksize / step;
-+	phys_addr_t paddrs[BTRFS_MAX_BLOCKSIZE / PAGE_SIZE];
+-	struct btrfs_fs_info *fs_info = inode_to_fs_info(file->f_inode);
+ 	struct btrfs_ioctl_encoded_io_args args;
+ 	struct iovec iovstack[UIO_FASTIOV];
+ 	struct iovec *iov = iovstack;
+@@ -4527,11 +4522,6 @@ static int btrfs_ioctl_encoded_write(struct file *file, void __user *argp, bool
+ 		goto out_acct;
+ 	}
  
--	shash->tfm = fs_info->csum_shash;
- 	/* The full block must be inside the folio. */
- 	ASSERT(offset_in_folio(folio, paddr) + blocksize <= folio_size(folio));
- 
--	if (folio_test_partial_kmap(folio)) {
--		size_t cur = paddr;
-+	for (int i = 0; i < nr_steps; i++) {
-+		u32 pindex = offset_in_folio(folio, paddr + i * step) >> PAGE_SHIFT;
- 
--		crypto_shash_init(shash);
--		while (cur < paddr + blocksize) {
--			void *kaddr;
--			size_t len = min(paddr + blocksize - cur,
--					 PAGE_SIZE - offset_in_page(cur));
+-	if (fs_info->sectorsize > PAGE_SIZE) {
+-		ret = -ENOTTY;
+-		goto out_acct;
+-	}
 -
--			kaddr = kmap_local_folio(folio, offset_in_folio(folio, cur));
--			crypto_shash_update(shash, kaddr, len);
--			kunmap_local(kaddr);
--			cur += len;
--		}
--		crypto_shash_final(shash, dest);
--	} else {
--		crypto_shash_digest(shash, phys_to_virt(paddr), blocksize, dest);
-+		/*
-+		 * For bs <= ps cases, we will only run the loop once, so the offset
-+		 * inside the page will only added to paddrs[0].
-+		 *
-+		 * For bs > ps cases, the block must be page aligned, thus offset
-+		 * inside the page will always be 0.
-+		 */
-+		paddrs[i] = page_to_phys(folio_page(folio, pindex)) + offset_in_page(paddr);
+ 	if (!(file->f_mode & FMODE_WRITE)) {
+ 		ret = -EBADF;
+ 		goto out_acct;
+@@ -4813,11 +4803,6 @@ static int btrfs_uring_encoded_read(struct io_uring_cmd *cmd, unsigned int issue
+ 		ret = -EPERM;
+ 		goto out_acct;
  	}
-+	return btrfs_calculate_block_csum_pages(fs_info, paddrs, dest);
- }
-+
-+/*
-+ * Calculate the checksum of a fs block backed by multiple incontiguous pages at @paddrs[]
-+ * and save the result to @dest.
-+ *
-+ * The folio containing @paddr must be large enough to contain a full fs block.
-+ */
-+void btrfs_calculate_block_csum_pages(struct btrfs_fs_info *fs_info,
-+				      const phys_addr_t paddrs[], u8 *dest)
-+{
-+	const u32 blocksize = fs_info->sectorsize;
-+	const u32 step = min(blocksize, PAGE_SIZE);
-+	const u32 nr_steps = blocksize / step;
-+	SHASH_DESC_ON_STACK(shash, fs_info->csum_shash);
-+
-+	shash->tfm = fs_info->csum_shash;
-+	crypto_shash_init(shash);
-+	for (int i = 0; i < nr_steps; i++) {
-+		const phys_addr_t paddr = paddrs[i];
-+		void *kaddr;
-+
-+		ASSERT(offset_in_page(paddr) + step <= PAGE_SIZE);
-+		kaddr = kmap_local_page(phys_to_page(paddr)) + offset_in_page(paddr);
-+		crypto_shash_update(shash, kaddr, step);
-+		kunmap_local(kaddr);
-+	}
-+	crypto_shash_final(shash, dest);
-+}
-+
- /*
-  * Verify the checksum for a single sector without any extra action that depend
-  * on the type of I/O.
-@@ -3369,7 +3400,7 @@ void btrfs_calculate_block_csum(struct btrfs_fs_info *fs_info, phys_addr_t paddr
- int btrfs_check_block_csum(struct btrfs_fs_info *fs_info, phys_addr_t paddr, u8 *csum,
- 			   const u8 * const csum_expected)
+-	if (fs_info->sectorsize > PAGE_SIZE) {
+-		ret = -ENOTTY;
+-		goto out_acct;
+-	}
+-
+ 	sqe_addr = u64_to_user_ptr(READ_ONCE(cmd->sqe->addr));
+ 
+ 	if (issue_flags & IO_URING_F_COMPAT) {
+@@ -4945,7 +4930,6 @@ static int btrfs_uring_encoded_read(struct io_uring_cmd *cmd, unsigned int issue
+ static int btrfs_uring_encoded_write(struct io_uring_cmd *cmd, unsigned int issue_flags)
  {
--	btrfs_calculate_block_csum(fs_info, paddr, csum);
-+	btrfs_calculate_block_csum_folio(fs_info, paddr, csum);
- 	if (unlikely(memcmp(csum, csum_expected, fs_info->csum_size) != 0))
- 		return -EIO;
- 	return 0;
+ 	struct file *file = cmd->file;
+-	struct btrfs_fs_info *fs_info = inode_to_fs_info(file->f_inode);
+ 	loff_t pos;
+ 	struct kiocb kiocb;
+ 	ssize_t ret;
+@@ -4960,11 +4944,6 @@ static int btrfs_uring_encoded_write(struct io_uring_cmd *cmd, unsigned int issu
+ 		ret = -EPERM;
+ 		goto out_acct;
+ 	}
+-	if (fs_info->sectorsize > PAGE_SIZE) {
+-		ret = -ENOTTY;
+-		goto out_acct;
+-	}
+-
+ 	sqe_addr = u64_to_user_ptr(READ_ONCE(cmd->sqe->addr));
+ 
+ 	if (!(file->f_mode & FMODE_WRITE)) {
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 9230e5066fc6..1fcc820f6baf 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -5601,14 +5601,7 @@ static int send_extent_data(struct send_ctx *sctx, struct btrfs_path *path,
+ 
+ 	ei = btrfs_item_ptr(leaf, path->slots[0],
+ 			    struct btrfs_file_extent_item);
+-	/*
+-	 * Do not go through encoded read for bs > ps cases.
+-	 *
+-	 * Encoded send is using vmallocated pages as buffer, which we can
+-	 * not ensure every folio is large enough to contain a block.
+-	 */
+-	if (sctx->send_root->fs_info->sectorsize <= PAGE_SIZE &&
+-	    (sctx->flags & BTRFS_SEND_FLAG_COMPRESSED) &&
++	if ((sctx->flags & BTRFS_SEND_FLAG_COMPRESSED) &&
+ 	    btrfs_file_extent_compression(leaf, ei) != BTRFS_COMPRESS_NONE) {
+ 		bool is_inline = (btrfs_file_extent_type(leaf, ei) ==
+ 				  BTRFS_FILE_EXTENT_INLINE);
 -- 
 2.50.1
 

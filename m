@@ -1,64 +1,64 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2A7C7187332
-	for <linux-btrfs@vger.kernel.org>; Sun,  5 Oct 2025 22:41:46 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4E6E7187332
+	for <linux-btrfs@vger.kernel.org>; Sun,  5 Oct 2025 22:41:56 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1759704111; cv=none; b=NM7TTBnFll6pJr/qCS6KD9xJRTbm6/By37x1l2QmbZb2dNZ5pOiidgoKAJz74eVrmdf7h8PQvjJIihZKcJLmWkjUzpHs3hPiFK2myyoEe/ekVIz+9u6pONqFJzS0opQLrL7Zf5t92oJezmHbXd2bEF7JNsyGxXUG4RTjQHDXVMc=
+	t=1759704118; cv=none; b=ARed5m2hybvYAUkfMFxI8y/F6vnrQN97y24PJBoLABElJATPJWyPuvCHIFOdYg0H15PJtMpGIhbAWhhvB34goIGZ8MwD54rLeZU6rsJdC4/VWqFg1HpKIT2CJXc7qNiEqlkMUVj2/Ea+8EV8A4SXdOuFIAxoc077yWWTJ4SCqts=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1759704111; c=relaxed/simple;
-	bh=cooyZDxiVQSvdEVRMtShGfYuU/3zm9ELvXFSRGH2Tqo=;
+	s=arc-20240116; t=1759704118; c=relaxed/simple;
+	bh=MrFseLp6hhzz9lFcCkgjbQkFvVpPr7qlj6HcPSgtLA0=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=BhDg3hMRj5oI0b/Fam3ZZAdR8Jo+PZMT5bUrHdIk5I1qsbQo46QbyAapcZCQmzHRk3TMV2vdrkvUbtjrTMxlK6Gim7ThdXsbiDuSqz/UOEtN9WuzxdVPf/P7ihmj8mhAZsHVytyEPQdwBilj7ULcgVhYDJFCpJLKsuWdfiCXqPw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=m9EzlDbj; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=m9EzlDbj; arc=none smtp.client-ip=195.135.223.131
+	 MIME-Version; b=t7sHjc1h8Nmk+TYSMPl6U6tN1DXoL5dMtfju6IZTsINzMMglhPsqArpWUaV5Z4W15j/I9KXWV+JIhtvkjagHRF8/CL5Xwk96rlocCFQVR1D1M5/kBoBtbRKUYyIucVOjsqhd9HjcoJ29muRg1Yc/9jkR74Vd5enZVh/WCG65IC0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=ApSmglGc; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=ApSmglGc; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="m9EzlDbj";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="m9EzlDbj"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="ApSmglGc";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="ApSmglGc"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 39F5F1F451
-	for <linux-btrfs@vger.kernel.org>; Sun,  5 Oct 2025 22:41:45 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id BE998336AB
+	for <linux-btrfs@vger.kernel.org>; Sun,  5 Oct 2025 22:41:42 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1759704105; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1759704102; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=myvNQgyB/CF0t4jaIntmZNiIsL76JPZbWlCjg/zQ/lg=;
-	b=m9EzlDbjvEu7zIC56FJZ/A7IphHjGJE4AF3NsXUm0qBl5u1hAojqe1/eUoch4ql6rqRJaY
-	tsHWUy/gHdSSHI6KM8MtTzjE1Vp+QV4v3MXL65m/pSAl1fNCNlPED9snlpFAUrnLDRLCHN
-	XfP4Lpa01xvVHFWdyuz/Kke/y7S3Ti8=
-Authentication-Results: smtp-out2.suse.de;
+	bh=Uya5LCQg6ab7WA2zSSNExlLKSGjWeUZnM0bZWOgG030=;
+	b=ApSmglGcGGxhg6CcLmEU9BmgZ+u55hr9EBQQxvcbK/s1wn1PFgiYUujG7I8dVCR7xK+4d8
+	XOInu6cjjolaRC6xBw65FO0QUvDGlFOt8KqXNpMrUb2yZKKFTRsGiqRS9doO4ZifAS3w1R
+	yavNxU7z6gPw5iF56kFuc0JyNjAALQc=
+Authentication-Results: smtp-out1.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1759704105; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1759704102; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=myvNQgyB/CF0t4jaIntmZNiIsL76JPZbWlCjg/zQ/lg=;
-	b=m9EzlDbjvEu7zIC56FJZ/A7IphHjGJE4AF3NsXUm0qBl5u1hAojqe1/eUoch4ql6rqRJaY
-	tsHWUy/gHdSSHI6KM8MtTzjE1Vp+QV4v3MXL65m/pSAl1fNCNlPED9snlpFAUrnLDRLCHN
-	XfP4Lpa01xvVHFWdyuz/Kke/y7S3Ti8=
+	bh=Uya5LCQg6ab7WA2zSSNExlLKSGjWeUZnM0bZWOgG030=;
+	b=ApSmglGcGGxhg6CcLmEU9BmgZ+u55hr9EBQQxvcbK/s1wn1PFgiYUujG7I8dVCR7xK+4d8
+	XOInu6cjjolaRC6xBw65FO0QUvDGlFOt8KqXNpMrUb2yZKKFTRsGiqRS9doO4ZifAS3w1R
+	yavNxU7z6gPw5iF56kFuc0JyNjAALQc=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 74CED13995
-	for <linux-btrfs@vger.kernel.org>; Sun,  5 Oct 2025 22:41:44 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 06DCB13995
+	for <linux-btrfs@vger.kernel.org>; Sun,  5 Oct 2025 22:41:41 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id eLPzDSj04miFJQAAD6G6ig
+	id 0JfILiX04miFJQAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Sun, 05 Oct 2025 22:41:44 +0000
+	for <linux-btrfs@vger.kernel.org>; Sun, 05 Oct 2025 22:41:41 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 3/4] btrfs: make read verification handle bs > ps cases without large folios
-Date: Mon,  6 Oct 2025 09:11:22 +1030
-Message-ID: <c8265dae88dabf133ada66109ea981a6f77fa41c.1759703432.git.wqu@suse.com>
+Subject: [PATCH v2 1/4] btrfs: make btrfs_csum_one_bio() handle bs > ps without large folios
+Date: Mon,  6 Oct 2025 09:11:20 +1030
+Message-ID: <c713102fa54228f1066d233486b56bfc73c966f7.1759703432.git.wqu@suse.com>
 X-Mailer: git-send-email 2.50.1
 In-Reply-To: <cover.1759703432.git.wqu@suse.com>
 References: <cover.1759703432.git.wqu@suse.com>
@@ -69,7 +69,6 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Level: 
 X-Spamd-Result: default: False [-2.80 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
@@ -82,7 +81,7 @@ X-Spamd-Result: default: False [-2.80 / 50.00];
 	RCPT_COUNT_ONE(0.00)[1];
 	ARC_NA(0.00)[];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:mid,imap1.dmz-prg2.suse.org:helo];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:mid,suse.com:email];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
 	MIME_TRACE(0.00)[0:+];
@@ -92,244 +91,197 @@ X-Spamd-Result: default: False [-2.80 / 50.00];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
 	RCVD_TLS_ALL(0.00)[]
 X-Spam-Flag: NO
+X-Spam-Level: 
 X-Spam-Score: -2.80
 
-The current read verification is also relying on large folios to support
-bs > ps cases, but that introduced quite some limits.
+For bs > ps cases, all folios passed into btrfs_csum_one_bio() is
+ensured to be backed by large folios.
 
-To enhance read-repair to support bs > ps without large folios:
+But that requirement excludes features like direct IO and encoded
+writes.
 
-- Make btrfs_data_csum_ok() to accept an array of paddrs
-  Which can pass the paddrs[] direct into
-  btrfs_calculate_block_csum_pages().
+To support bs > ps without large folios, enhance btrfs_csum_one_bio()
+by:
 
-- Make repair_one_sector() to accept an array of paddrs
-  So that it can submit a repair bio backed by regular pages, not only
-  large folios.
-  This requires us to allocate more slots at bio allocation time though.
+- Split btrfs_calculate_block_csum() into two versions
+  * btrfs_calculate_block_csum_folio()
+    For call sites that a fs block is always backed by a large folio.
 
-  Also since the caller may have only partially advanced the saved_iter
-  for bs > ps cases, we can not directly trust the logical bytenr from
-  saved_iter (can be unaligned), thus a manual round down is necessary
-  for the logical bytenr.
+    This will do extra checks on the folio size, build a paddrs[] array,
+    and pass it into the newer btrfs_calculate_block_csum_pages()
+    helper.
 
-- Make btrfs_check_read_bio() to build an array of paddrs
-  The tricky part is that we can only call btrfs_data_csum_ok() after
-  all involved pages are assembled.
+    For now btrfs_check_block_csum() is still using this version.
 
-  This means at the call time of btrfs_check_read_bio(), our offset
-  inside the bio is already at the end of the fs block.
-  Thus we must re-calculate @bio_offset for btrfs_data_csum_ok() and
-  repair_one_sector().
+  * btrfs_calculate_block_csum_pages()
+    For call sites that may hit a fs block backed by incontiguous pages.
+    The pages are represented by paddrs[] array, which includes the
+    offset inside the page.
+
+    This function will do the proper sub-block handling.
+
+- Make btrfs_csum_one_bio() to use btrfs_calculate_block_csum_pages()
+  This means we will need to build a local paddrs[] array, and after
+  filling a fs block, do the checksum calculation.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/bio.c         | 62 ++++++++++++++++++++++++++++--------------
- fs/btrfs/btrfs_inode.h |  2 +-
- fs/btrfs/inode.c       | 18 ++++++------
- 3 files changed, 52 insertions(+), 30 deletions(-)
+ fs/btrfs/btrfs_inode.h |  6 ++--
+ fs/btrfs/file-item.c   | 15 +++++++--
+ fs/btrfs/inode.c       | 73 ++++++++++++++++++++++++++++++------------
+ 3 files changed, 68 insertions(+), 26 deletions(-)
 
-diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
-index 5034a9eaf2f0..6642318320eb 100644
---- a/fs/btrfs/bio.c
-+++ b/fs/btrfs/bio.c
-@@ -163,7 +163,6 @@ static void btrfs_end_repair_bio(struct btrfs_bio *repair_bbio,
- 	struct btrfs_failed_bio *fbio = repair_bbio->private;
- 	struct btrfs_inode *inode = repair_bbio->inode;
- 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
--	struct bio_vec *bv = bio_first_bvec_all(&repair_bbio->bio);
- 	/*
- 	 * We can not move forward the saved_iter, as it will be later
- 	 * utilized by repair_bbio again.
-@@ -180,8 +179,14 @@ static void btrfs_end_repair_bio(struct btrfs_bio *repair_bbio,
- 	/* Repair bbio should be eaxctly one block sized. */
- 	ASSERT(repair_bbio->saved_iter.bi_size == fs_info->sectorsize);
- 
-+	btrfs_bio_for_each_block(paddr, &repair_bbio->bio, &saved_iter, step) {
-+		ASSERT(slot < nr_steps);
-+		paddrs[slot] = paddr;
-+		slot++;
-+	}
-+
- 	if (repair_bbio->bio.bi_status ||
--	    !btrfs_data_csum_ok(repair_bbio, dev, 0, bvec_phys(bv))) {
-+	    !btrfs_data_csum_ok(repair_bbio, dev, 0, paddrs)) {
- 		bio_reset(&repair_bbio->bio, NULL, REQ_OP_READ);
- 		repair_bbio->bio.bi_iter = repair_bbio->saved_iter;
- 
-@@ -196,12 +201,6 @@ static void btrfs_end_repair_bio(struct btrfs_bio *repair_bbio,
- 		return;
- 	}
- 
--	btrfs_bio_for_each_block(paddr, &repair_bbio->bio, &saved_iter, step) {
--		ASSERT(slot < nr_steps);
--		paddrs[slot] = paddr;
--		slot++;
--	}
--
- 	do {
- 		mirror = prev_repair_mirror(fbio, mirror);
- 		btrfs_repair_io_failure(fs_info, btrfs_ino(inode),
-@@ -223,21 +222,25 @@ static void btrfs_end_repair_bio(struct btrfs_bio *repair_bbio,
-  */
- static struct btrfs_failed_bio *repair_one_sector(struct btrfs_bio *failed_bbio,
- 						  u32 bio_offset,
--						  phys_addr_t paddr,
-+						  phys_addr_t paddrs[],
- 						  struct btrfs_failed_bio *fbio)
- {
- 	struct btrfs_inode *inode = failed_bbio->inode;
- 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
--	struct folio *folio = page_folio(phys_to_page(paddr));
- 	const u32 sectorsize = fs_info->sectorsize;
--	const u32 foff = offset_in_folio(folio, paddr);
--	const u64 logical = (failed_bbio->saved_iter.bi_sector << SECTOR_SHIFT);
-+	const u32 step = min(fs_info->sectorsize, PAGE_SIZE);
-+	const u32 nr_steps = sectorsize / step;
-+	/*
-+	 * For bs > ps cases, the saved_iter can be partially moved forward.
-+	 * In that case we should round it down to the block boundary.
-+	 */
-+	const u64 logical = round_down(failed_bbio->saved_iter.bi_sector << SECTOR_SHIFT,
-+				       sectorsize);
- 	struct btrfs_bio *repair_bbio;
- 	struct bio *repair_bio;
- 	int num_copies;
- 	int mirror;
- 
--	ASSERT(foff + sectorsize <= folio_size(folio));
- 	btrfs_debug(fs_info, "repair read error: read error at %llu",
- 		    failed_bbio->file_offset + bio_offset);
- 
-@@ -257,10 +260,18 @@ static struct btrfs_failed_bio *repair_one_sector(struct btrfs_bio *failed_bbio,
- 
- 	atomic_inc(&fbio->repair_count);
- 
--	repair_bio = bio_alloc_bioset(NULL, 1, REQ_OP_READ, GFP_NOFS,
-+	repair_bio = bio_alloc_bioset(NULL, nr_steps, REQ_OP_READ, GFP_NOFS,
- 				      &btrfs_repair_bioset);
--	repair_bio->bi_iter.bi_sector = failed_bbio->saved_iter.bi_sector;
--	bio_add_folio_nofail(repair_bio, folio, sectorsize, foff);
-+	repair_bio->bi_iter.bi_sector = logical >> SECTOR_SHIFT;
-+	for (int i = 0; i < nr_steps; i++) {
-+		int ret;
-+
-+		ASSERT(offset_in_page(paddrs[i]) + step <= PAGE_SIZE);
-+
-+		ret = bio_add_page(repair_bio, phys_to_page(paddrs[i]), step,
-+				   offset_in_page(paddrs[i]));
-+		ASSERT(ret == step);
-+	}
- 
- 	repair_bbio = btrfs_bio(repair_bio);
- 	btrfs_bio_init(repair_bbio, fs_info, NULL, fbio);
-@@ -277,10 +288,13 @@ static void btrfs_check_read_bio(struct btrfs_bio *bbio, struct btrfs_device *de
- {
- 	struct btrfs_inode *inode = bbio->inode;
- 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
--	u32 sectorsize = fs_info->sectorsize;
-+	const u32 sectorsize = fs_info->sectorsize;
-+	const u32 step = min(sectorsize, PAGE_SIZE);
-+	const u32 nr_steps = sectorsize / step;
- 	struct bvec_iter *iter = &bbio->saved_iter;
- 	blk_status_t status = bbio->bio.bi_status;
- 	struct btrfs_failed_bio *fbio = NULL;
-+	phys_addr_t paddrs[BTRFS_MAX_BLOCKSIZE / PAGE_SIZE];
- 	phys_addr_t paddr;
- 	u32 offset = 0;
- 
-@@ -299,10 +313,16 @@ static void btrfs_check_read_bio(struct btrfs_bio *bbio, struct btrfs_device *de
- 	/* Clear the I/O error. A failed repair will reset it. */
- 	bbio->bio.bi_status = BLK_STS_OK;
- 
--	btrfs_bio_for_each_block(paddr, &bbio->bio, iter, fs_info->sectorsize) {
--		if (status || !btrfs_data_csum_ok(bbio, dev, offset, paddr))
--			fbio = repair_one_sector(bbio, offset, paddr, fbio);
--		offset += sectorsize;
-+	btrfs_bio_for_each_block(paddr, &bbio->bio, iter, step) {
-+		paddrs[(offset / step) % nr_steps] = paddr;
-+		offset += step;
-+
-+		if (IS_ALIGNED(offset, sectorsize)) {
-+			if (status ||
-+			    !btrfs_data_csum_ok(bbio, dev, offset - sectorsize, paddrs))
-+				fbio = repair_one_sector(bbio, offset - sectorsize,
-+							 paddrs, fbio);
-+		}
- 	}
- 	if (bbio->csum != bbio->csum_inline)
- 		kfree(bbio->csum);
 diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 03c107ab391b..ef3f2c1f7a77 100644
+index f45dcdde0efc..03c107ab391b 100644
 --- a/fs/btrfs/btrfs_inode.h
 +++ b/fs/btrfs/btrfs_inode.h
-@@ -549,7 +549,7 @@ void btrfs_calculate_block_csum_pages(struct btrfs_fs_info *fs_info,
+@@ -542,8 +542,10 @@ static inline void btrfs_set_inode_mapping_order(struct btrfs_inode *inode)
+ #define CSUM_FMT				"0x%*phN"
+ #define CSUM_FMT_VALUE(size, bytes)		size, bytes
+ 
+-void btrfs_calculate_block_csum(struct btrfs_fs_info *fs_info, phys_addr_t paddr,
+-				u8 *dest);
++void btrfs_calculate_block_csum_folio(struct btrfs_fs_info *fs_info,
++				      const phys_addr_t paddr, u8 *dest);
++void btrfs_calculate_block_csum_pages(struct btrfs_fs_info *fs_info,
++				      const phys_addr_t paddrs[], u8 *dest);
  int btrfs_check_block_csum(struct btrfs_fs_info *fs_info, phys_addr_t paddr, u8 *csum,
  			   const u8 * const csum_expected);
  bool btrfs_data_csum_ok(struct btrfs_bio *bbio, struct btrfs_device *dev,
--			u32 bio_offset, phys_addr_t paddr);
-+			u32 bio_offset, const phys_addr_t paddrs[]);
- noinline int can_nocow_extent(struct btrfs_inode *inode, u64 offset, u64 *len,
- 			      struct btrfs_file_extent *file_extent,
- 			      bool nowait);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 287c67296a7d..dbc5fad7b9a1 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3407,12 +3407,13 @@ int btrfs_check_block_csum(struct btrfs_fs_info *fs_info, phys_addr_t paddr, u8
- }
- 
- /*
-- * Verify the checksum of a single data sector.
-+ * Verify the checksum of a single data sector, which can be scattered at
-+ * different incontiguous pages.
-  *
-  * @bbio:	btrfs_io_bio which contains the csum
-  * @dev:	device the sector is on
-  * @bio_offset:	offset to the beginning of the bio (in bytes)
-- * @bv:		bio_vec to check
-+ * @paddrs:	physical addresses which back the fs block
-  *
-  * Check if the checksum on a data block is valid.  When a checksum mismatch is
-  * detected, report the error and fill the corrupted range with zero.
-@@ -3420,12 +3421,13 @@ int btrfs_check_block_csum(struct btrfs_fs_info *fs_info, phys_addr_t paddr, u8
-  * Return %true if the sector is ok or had no checksum to start with, else %false.
-  */
- bool btrfs_data_csum_ok(struct btrfs_bio *bbio, struct btrfs_device *dev,
--			u32 bio_offset, phys_addr_t paddr)
-+			u32 bio_offset, const phys_addr_t paddrs[])
- {
- 	struct btrfs_inode *inode = bbio->inode;
- 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+index a42e6d54e7cd..5b3c5489ee48 100644
+--- a/fs/btrfs/file-item.c
++++ b/fs/btrfs/file-item.c
+@@ -778,6 +778,10 @@ int btrfs_csum_one_bio(struct btrfs_bio *bbio)
+ 	struct bvec_iter iter = bio->bi_iter;
+ 	phys_addr_t paddr;
  	const u32 blocksize = fs_info->sectorsize;
--	struct folio *folio;
 +	const u32 step = min(blocksize, PAGE_SIZE);
 +	const u32 nr_steps = blocksize / step;
- 	u64 file_offset = bbio->file_offset + bio_offset;
- 	u64 end = file_offset + blocksize - 1;
- 	u8 *csum_expected;
-@@ -3445,7 +3447,8 @@ bool btrfs_data_csum_ok(struct btrfs_bio *bbio, struct btrfs_device *dev,
++	phys_addr_t paddrs[BTRFS_MAX_BLOCKSIZE / PAGE_SIZE];
++	u32 offset = 0;
+ 	int index;
+ 	unsigned nofs_flag;
  
- 	csum_expected = bbio->csum + (bio_offset >> fs_info->sectorsize_bits) *
- 				fs_info->csum_size;
--	if (btrfs_check_block_csum(fs_info, paddr, csum, csum_expected))
-+	btrfs_calculate_block_csum_pages(fs_info, paddrs, csum);
-+	if (unlikely(memcmp(csum, csum_expected, fs_info->csum_size) != 0))
- 		goto zeroit;
- 	return true;
+@@ -797,9 +801,14 @@ int btrfs_csum_one_bio(struct btrfs_bio *bbio)
  
-@@ -3454,9 +3457,8 @@ bool btrfs_data_csum_ok(struct btrfs_bio *bbio, struct btrfs_device *dev,
- 				    bbio->mirror_num);
- 	if (dev)
- 		btrfs_dev_stat_inc_and_print(dev, BTRFS_DEV_STAT_CORRUPTION_ERRS);
--	folio = page_folio(phys_to_page(paddr));
--	ASSERT(offset_in_folio(folio, paddr) + blocksize <= folio_size(folio));
--	folio_zero_range(folio, offset_in_folio(folio, paddr), blocksize);
-+	for (int i = 0; i < nr_steps; i++)
-+		memzero_page(phys_to_page(paddrs[i]), offset_in_page(paddrs[i]), step);
- 	return false;
+ 	shash->tfm = fs_info->csum_shash;
+ 
+-	btrfs_bio_for_each_block(paddr, bio, &iter, blocksize) {
+-		btrfs_calculate_block_csum(fs_info, paddr, sums->sums + index);
+-		index += fs_info->csum_size;
++	btrfs_bio_for_each_block(paddr, bio, &iter, step) {
++		paddrs[(offset / step) % nr_steps] = paddr;
++		offset += step;
++
++		if (IS_ALIGNED(offset, blocksize)) {
++			btrfs_calculate_block_csum_pages(fs_info, paddrs, sums->sums + index);
++			index += fs_info->csum_size;
++		}
+ 	}
+ 
+ 	bbio->sums = sums;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index ac2fd589697d..287c67296a7d 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3330,36 +3330,67 @@ int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered)
+ 	return btrfs_finish_one_ordered(ordered);
  }
  
+-void btrfs_calculate_block_csum(struct btrfs_fs_info *fs_info, phys_addr_t paddr,
+-				u8 *dest)
++/*
++ * Calculate the checksum of a fs block at physical memory address @paddr,
++ * and save the result to @dest.
++ *
++ * The folio containing @paddr must be large enough to contain a full fs block.
++ */
++void btrfs_calculate_block_csum_folio(struct btrfs_fs_info *fs_info,
++				      const phys_addr_t paddr, u8 *dest)
+ {
+ 	struct folio *folio = page_folio(phys_to_page(paddr));
+ 	const u32 blocksize = fs_info->sectorsize;
+-	SHASH_DESC_ON_STACK(shash, fs_info->csum_shash);
++	const u32 step = min(blocksize, PAGE_SIZE);
++	const u32 nr_steps = blocksize / step;
++	phys_addr_t paddrs[BTRFS_MAX_BLOCKSIZE / PAGE_SIZE];
+ 
+-	shash->tfm = fs_info->csum_shash;
+ 	/* The full block must be inside the folio. */
+ 	ASSERT(offset_in_folio(folio, paddr) + blocksize <= folio_size(folio));
+ 
+-	if (folio_test_partial_kmap(folio)) {
+-		size_t cur = paddr;
++	for (int i = 0; i < nr_steps; i++) {
++		u32 pindex = offset_in_folio(folio, paddr + i * step) >> PAGE_SHIFT;
+ 
+-		crypto_shash_init(shash);
+-		while (cur < paddr + blocksize) {
+-			void *kaddr;
+-			size_t len = min(paddr + blocksize - cur,
+-					 PAGE_SIZE - offset_in_page(cur));
+-
+-			kaddr = kmap_local_folio(folio, offset_in_folio(folio, cur));
+-			crypto_shash_update(shash, kaddr, len);
+-			kunmap_local(kaddr);
+-			cur += len;
+-		}
+-		crypto_shash_final(shash, dest);
+-	} else {
+-		crypto_shash_digest(shash, phys_to_virt(paddr), blocksize, dest);
++		/*
++		 * For bs <= ps cases, we will only run the loop once, so the offset
++		 * inside the page will only added to paddrs[0].
++		 *
++		 * For bs > ps cases, the block must be page aligned, thus offset
++		 * inside the page will always be 0.
++		 */
++		paddrs[i] = page_to_phys(folio_page(folio, pindex)) + offset_in_page(paddr);
+ 	}
++	return btrfs_calculate_block_csum_pages(fs_info, paddrs, dest);
+ }
++
++/*
++ * Calculate the checksum of a fs block backed by multiple incontiguous pages at @paddrs[]
++ * and save the result to @dest.
++ *
++ * The folio containing @paddr must be large enough to contain a full fs block.
++ */
++void btrfs_calculate_block_csum_pages(struct btrfs_fs_info *fs_info,
++				      const phys_addr_t paddrs[], u8 *dest)
++{
++	const u32 blocksize = fs_info->sectorsize;
++	const u32 step = min(blocksize, PAGE_SIZE);
++	const u32 nr_steps = blocksize / step;
++	SHASH_DESC_ON_STACK(shash, fs_info->csum_shash);
++
++	shash->tfm = fs_info->csum_shash;
++	crypto_shash_init(shash);
++	for (int i = 0; i < nr_steps; i++) {
++		const phys_addr_t paddr = paddrs[i];
++		void *kaddr;
++
++		ASSERT(offset_in_page(paddr) + step <= PAGE_SIZE);
++		kaddr = kmap_local_page(phys_to_page(paddr)) + offset_in_page(paddr);
++		crypto_shash_update(shash, kaddr, step);
++		kunmap_local(kaddr);
++	}
++	crypto_shash_final(shash, dest);
++}
++
+ /*
+  * Verify the checksum for a single sector without any extra action that depend
+  * on the type of I/O.
+@@ -3369,7 +3400,7 @@ void btrfs_calculate_block_csum(struct btrfs_fs_info *fs_info, phys_addr_t paddr
+ int btrfs_check_block_csum(struct btrfs_fs_info *fs_info, phys_addr_t paddr, u8 *csum,
+ 			   const u8 * const csum_expected)
+ {
+-	btrfs_calculate_block_csum(fs_info, paddr, csum);
++	btrfs_calculate_block_csum_folio(fs_info, paddr, csum);
+ 	if (unlikely(memcmp(csum, csum_expected, fs_info->csum_size) != 0))
+ 		return -EIO;
+ 	return 0;
 -- 
 2.50.1
 

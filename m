@@ -1,41 +1,40 @@
 Received: from mail.burntcomma.com (unknown [62.3.69.246])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6022E2E093F
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 600B52E092E
 	for <linux-btrfs@vger.kernel.org>; Thu,  9 Oct 2025 11:28:16 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=62.3.69.246
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1760009302; cv=none; b=BqWWm6jzM3vOYosWiQb36DbBlH1X+E57HJpXYHfLA5FTCh+dCep3iduurU13kubvjQ6mLANjhgx7LL0FACxtQvwhtiofG0gfwt7oANbR/DKr42E14CGVcMIxVag12kRbgT25eebXMB8k3y/ik7YMohuK+jW+f7yknbdgFD/tmtM=
+	t=1760009302; cv=none; b=qyykTJh7mdvUjkQArDGLKI6H5Joc8aCTVwb4gKBY8UcFFNJTsdoZz2m1XOzzk/QYVRXcyIE6AT//wRNtMPtsQf5AzWYY7XimoRGWvCOhGda0oAW3HMYfQNHNNsf5tqq5Va6mrT5Tdn8c9MoKSIj8htNAwlN1BbqgJ+9U3Rw/640=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
 	s=arc-20240116; t=1760009302; c=relaxed/simple;
-	bh=OcUpJbroky0iEct1c/syfEfgFm8cI4Kd/0NjvuPRzxw=;
+	bh=15bfPM7ZH6zhGX+TRIeWs9+8YcXtUoNaA0u2O71Cujc=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 Mime-Version; b=q8kGvc/iovKMR4JbCjr+mbNQdVcbrlW9Lq6gITMorkWYBDlfkaNtCyTsWNmBzzu8UmvGWE6bSMH8DBhce90LPNTgjO4rW+iSp3EamtuqFvcq1KUaTk7Xj9vLr6rbhKUn5Du8uk+SNGfcq/tKjZabqXlw1hH1Tr+9L4NKDPgnweI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com; spf=fail smtp.mailfrom=harmstone.com; dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b=gfhogzh2; arc=none smtp.client-ip=62.3.69.246
+	 Mime-Version; b=a+kXCwTxCk9HL0Dj6Ui7fGHgjgbYsLGHB4jnz4WM9Z+cZH1nFnLii0DiSK39M87W+Am17aV5Y2BqZfP9PhWqOMsJlA5DM1laBFG64PupsFM8KIDd/21wCvx2szLK+p4naKTgfrVCIcaWziYAvbOo8yslP417R7UyDxB8+XerSf0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com; spf=fail smtp.mailfrom=harmstone.com; dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b=ff/yhwvr; arc=none smtp.client-ip=62.3.69.246
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com
 Authentication-Results: smtp.subspace.kernel.org; spf=fail smtp.mailfrom=harmstone.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b="gfhogzh2"
+	dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b="ff/yhwvr"
 Received: from localhost.localdomain (beren.burntcomma.com [IPv6:2a02:8012:8cf0:0:ce28:aaff:fe0d:6db2])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
 	(Client did not present a certificate)
-	by mail.burntcomma.com (Postfix) with ESMTPSA id 8138E2C5653;
+	by mail.burntcomma.com (Postfix) with ESMTPSA id A8D352C5657;
 	Thu,  9 Oct 2025 12:28:08 +0100 (BST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=harmstone.com;
 	s=mail; t=1760009288;
-	bh=ak7L9nxI4vhPLs6nWJvpzNPoywt1JvfQu46Zhd4mV/M=;
+	bh=zRTh8DJcuuyO8nZlEYDoJiL/TDH8bNMWe4rtl8TXuqs=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References;
-	b=gfhogzh255Piyx6q7dO4zEhoDvP7Y21ywl0wckxNxCtOTrX0bM+u+xm7O4c9otuDO
-	 PJNT3l9Xca+jlT55CTHiPQ9s+fCBdEbPyISwXQpLjCmBGiGMLmIsNnxuQiOf6qGjgm
-	 nGv6SN+hQFwR/bYRiTfJ/5944SNFK2J/8dUghdRI=
+	b=ff/yhwvrQYCn9ehySlHwj691T6O+NRiACg9P8JR6fWOJXXlhnVpvsC/fwL5rH7di6
+	 ZQhqzBHwrv6wCDbYrskrAnRL01ESfg1dPhYWvYro451pJaLRnGmXo1ij9qpJ3yVX6O
+	 dYzbAegac+pWcuaPlAZguGjTar0+z/UiEc3hUlaQ=
 From: Mark Harmstone <mark@harmstone.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Mark Harmstone <mark@harmstone.com>,
-	Boris Burkov <boris@bur.io>
-Subject: [PATCH v3 06/17] btrfs: add extended version of struct block_group_item
-Date: Thu,  9 Oct 2025 12:28:01 +0100
-Message-ID: <20251009112814.13942-7-mark@harmstone.com>
+Cc: Mark Harmstone <mark@harmstone.com>
+Subject: [PATCH v3 10/17] btrfs: handle deletions from remapped block group
+Date: Thu,  9 Oct 2025 12:28:05 +0100
+Message-ID: <20251009112814.13942-11-mark@harmstone.com>
 In-Reply-To: <20251009112814.13942-1-mark@harmstone.com>
 References: <20251009112814.13942-1-mark@harmstone.com>
 Precedence: bulk
@@ -46,378 +45,1147 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Add a struct btrfs_block_group_item_v2, which is used in the block group
-tree if the remap-tree incompat flag is set.
+Handle the case where we free an extent from a block group that has the
+REMAPPED flag set. Because the remap tree is orthogonal to the extent
+tree, for data this may be within any number of identity remaps or
+actual remaps. If we're freeing a metadata node, this will be wholly
+inside one or the other.
 
-This adds two new fields to the block group item: `remap_bytes` and
-`identity_remap_count`.
+btrfs_remove_extent_from_remap_tree() searches the remap tree for the
+remaps that cover the range in question, then calls
+remove_range_from_remap_tree() for each one, to punch a hole in the
+remap and adjust the free-space tree.
 
-`remap_bytes` records the amount of data that's physically within this
-block group, but nominally in another, remapped block group. This is
-necessary because this data will need to be moved first if this block
-group is itself relocated. If `remap_bytes` > 0, this is an indicator to
-the relocation thread that it will need to search the remap-tree for
-backrefs. A block group must also have `remap_bytes` == 0 before it can
-be dropped.
+For an identity remap, remove_range_from_remap_tree() will adjust the
+block group's `identity_remap_count` if this changes. If it reaches
+zero we call last_identity_remap_gone(), which removes the chunk's
+stripes and device extents - it is now fully remapped.
 
-`identity_remap_count` records how many identity remap items are located
-in the remap tree for this block group. When relocation is begun for
-this block group, this is set to the number of holes in the free-space
-tree for this range. As identity remaps are converted into actual remaps
-by the relocation process, this number is decreased. Once it reaches 0,
-either because of relocation or because extents have been deleted, the
-block group has been fully remapped and its chunk's device extents are
-removed.
+The changes which involve the block group's ro flag are because the
+REMAPPED flag itself prevents a block group from having any new
+allocations within it, and so we don't need to account for this
+separately.
 
 Signed-off-by: Mark Harmstone <mark@harmstone.com>
-Reviewed-by: Boris Burkov <boris@bur.io>
 ---
- fs/btrfs/accessors.h            |  20 +++++++
- fs/btrfs/block-group.c          | 101 ++++++++++++++++++++++++--------
- fs/btrfs/block-group.h          |  14 ++++-
- fs/btrfs/discard.c              |   2 +-
- fs/btrfs/tree-checker.c         |  10 +++-
- include/uapi/linux/btrfs_tree.h |   8 +++
- 6 files changed, 127 insertions(+), 28 deletions(-)
+ fs/btrfs/block-group.c | 108 ++++++---
+ fs/btrfs/block-group.h |   3 +
+ fs/btrfs/disk-io.c     |   2 +
+ fs/btrfs/extent-tree.c |  77 ++++++-
+ fs/btrfs/extent-tree.h |   1 +
+ fs/btrfs/fs.h          |   4 +-
+ fs/btrfs/relocation.c  | 495 +++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/relocation.h  |   6 +
+ fs/btrfs/transaction.c |   4 +
+ fs/btrfs/volumes.c     |  56 +++--
+ fs/btrfs/volumes.h     |   6 +
+ 11 files changed, 703 insertions(+), 59 deletions(-)
 
-diff --git a/fs/btrfs/accessors.h b/fs/btrfs/accessors.h
-index 95a1ca8c099b..0dd161ee6863 100644
---- a/fs/btrfs/accessors.h
-+++ b/fs/btrfs/accessors.h
-@@ -239,6 +239,26 @@ BTRFS_SETGET_FUNCS(block_group_flags, struct btrfs_block_group_item, flags, 64);
- BTRFS_SETGET_STACK_FUNCS(stack_block_group_flags,
- 			struct btrfs_block_group_item, flags, 64);
- 
-+/* struct btrfs_block_group_item_v2 */
-+BTRFS_SETGET_STACK_FUNCS(stack_block_group_v2_used, struct btrfs_block_group_item_v2,
-+			 used, 64);
-+BTRFS_SETGET_FUNCS(block_group_v2_used, struct btrfs_block_group_item_v2, used, 64);
-+BTRFS_SETGET_STACK_FUNCS(stack_block_group_v2_chunk_objectid,
-+			 struct btrfs_block_group_item_v2, chunk_objectid, 64);
-+BTRFS_SETGET_FUNCS(block_group_v2_chunk_objectid,
-+		   struct btrfs_block_group_item_v2, chunk_objectid, 64);
-+BTRFS_SETGET_STACK_FUNCS(stack_block_group_v2_flags,
-+			 struct btrfs_block_group_item_v2, flags, 64);
-+BTRFS_SETGET_FUNCS(block_group_v2_flags, struct btrfs_block_group_item_v2, flags, 64);
-+BTRFS_SETGET_STACK_FUNCS(stack_block_group_v2_remap_bytes,
-+			 struct btrfs_block_group_item_v2, remap_bytes, 64);
-+BTRFS_SETGET_FUNCS(block_group_v2_remap_bytes, struct btrfs_block_group_item_v2,
-+		   remap_bytes, 64);
-+BTRFS_SETGET_STACK_FUNCS(stack_block_group_v2_identity_remap_count,
-+			 struct btrfs_block_group_item_v2, identity_remap_count, 32);
-+BTRFS_SETGET_FUNCS(block_group_v2_identity_remap_count, struct btrfs_block_group_item_v2,
-+		   identity_remap_count, 32);
-+
- /* struct btrfs_free_space_info */
- BTRFS_SETGET_FUNCS(free_space_extent_count, struct btrfs_free_space_info,
- 		   extent_count, 32);
 diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index 19a129c54200..d3433a5b169f 100644
+index a3c984f905fc..bfb4b8a840c8 100644
 --- a/fs/btrfs/block-group.c
 +++ b/fs/btrfs/block-group.c
-@@ -2375,7 +2375,7 @@ static int check_chunk_block_group_mappings(struct btrfs_fs_info *fs_info)
+@@ -1068,6 +1068,32 @@ static int remove_block_group_item(struct btrfs_trans_handle *trans,
+ 	return ret;
  }
  
- static int read_one_block_group(struct btrfs_fs_info *info,
--				struct btrfs_block_group_item *bgi,
-+				struct btrfs_block_group_item_v2 *bgi,
- 				const struct btrfs_key *key,
- 				int need_clear)
++void btrfs_remove_bg_from_sinfo(struct btrfs_block_group *block_group)
++{
++	int factor = btrfs_bg_type_to_factor(block_group->flags);
++
++	spin_lock(&block_group->space_info->lock);
++
++	if (btrfs_test_opt(block_group->fs_info, ENOSPC_DEBUG)) {
++		WARN_ON(block_group->space_info->total_bytes
++			< block_group->length);
++		WARN_ON(block_group->space_info->bytes_readonly
++			< block_group->length - block_group->zone_unusable);
++		WARN_ON(block_group->space_info->bytes_zone_unusable
++			< block_group->zone_unusable);
++		WARN_ON(block_group->space_info->disk_total
++			< block_group->length * factor);
++	}
++	block_group->space_info->total_bytes -= block_group->length;
++	block_group->space_info->bytes_readonly -=
++		(block_group->length - block_group->zone_unusable);
++	btrfs_space_info_update_bytes_zone_unusable(block_group->space_info,
++						    -block_group->zone_unusable);
++	block_group->space_info->disk_total -= block_group->length * factor;
++
++	spin_unlock(&block_group->space_info->lock);
++}
++
+ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_chunk_map *map)
  {
-@@ -2390,11 +2390,16 @@ static int read_one_block_group(struct btrfs_fs_info *info,
- 		return -ENOMEM;
+@@ -1079,7 +1105,6 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
+ 	struct kobject *kobj = NULL;
+ 	int ret;
+ 	int index;
+-	int factor;
+ 	struct btrfs_caching_control *caching_ctl = NULL;
+ 	bool remove_map;
+ 	bool remove_rsv = false;
+@@ -1088,7 +1113,7 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
+ 	if (!block_group)
+ 		return -ENOENT;
  
- 	cache->length = key->offset;
--	cache->used = btrfs_stack_block_group_used(bgi);
-+	cache->used = btrfs_stack_block_group_v2_used(bgi);
- 	cache->commit_used = cache->used;
--	cache->flags = btrfs_stack_block_group_flags(bgi);
--	cache->global_root_id = btrfs_stack_block_group_chunk_objectid(bgi);
-+	cache->flags = btrfs_stack_block_group_v2_flags(bgi);
-+	cache->global_root_id = btrfs_stack_block_group_v2_chunk_objectid(bgi);
- 	cache->space_info = btrfs_find_space_info(info, cache->flags);
-+	cache->remap_bytes = btrfs_stack_block_group_v2_remap_bytes(bgi);
-+	cache->commit_remap_bytes = cache->remap_bytes;
-+	cache->identity_remap_count =
-+		btrfs_stack_block_group_v2_identity_remap_count(bgi);
-+	cache->commit_identity_remap_count = cache->identity_remap_count;
+-	BUG_ON(!block_group->ro);
++	BUG_ON(!block_group->ro && !(block_group->flags & BTRFS_BLOCK_GROUP_REMAPPED));
  
- 	btrfs_set_free_space_tree_thresholds(cache);
+ 	trace_btrfs_remove_block_group(block_group);
+ 	/*
+@@ -1100,7 +1125,6 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
+ 				  block_group->length);
  
-@@ -2459,7 +2464,7 @@ static int read_one_block_group(struct btrfs_fs_info *info,
- 	} else if (cache->length == cache->used) {
- 		cache->cached = BTRFS_CACHE_FINISHED;
- 		btrfs_free_excluded_extents(cache);
--	} else if (cache->used == 0) {
-+	} else if (cache->used == 0 && cache->remap_bytes == 0) {
- 		cache->cached = BTRFS_CACHE_FINISHED;
- 		ret = btrfs_add_new_free_space(cache, cache->start,
- 					       cache->start + cache->length, NULL);
-@@ -2479,7 +2484,8 @@ static int read_one_block_group(struct btrfs_fs_info *info,
+ 	index = btrfs_bg_flags_to_raid_index(block_group->flags);
+-	factor = btrfs_bg_type_to_factor(block_group->flags);
  
- 	set_avail_alloc_bits(info, cache->flags);
- 	if (btrfs_chunk_writeable(info, cache->start)) {
--		if (cache->used == 0) {
-+		if (cache->used == 0 && cache->identity_remap_count == 0 &&
-+		    cache->remap_bytes == 0) {
- 			ASSERT(list_empty(&cache->bg_list));
- 			if (btrfs_test_opt(info, DISCARD_ASYNC) &&
- 			    !(cache->flags & BTRFS_BLOCK_GROUP_REMAPPED)) {
-@@ -2585,9 +2591,10 @@ int btrfs_read_block_groups(struct btrfs_fs_info *info)
- 		need_clear = 1;
+ 	/* make sure this block group isn't part of an allocation cluster */
+ 	cluster = &fs_info->data_alloc_cluster;
+@@ -1224,26 +1248,11 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
  
- 	while (1) {
--		struct btrfs_block_group_item bgi;
-+		struct btrfs_block_group_item_v2 bgi;
- 		struct extent_buffer *leaf;
- 		int slot;
-+		size_t size;
+ 	spin_lock(&block_group->space_info->lock);
+ 	list_del_init(&block_group->ro_list);
+-
+-	if (btrfs_test_opt(fs_info, ENOSPC_DEBUG)) {
+-		WARN_ON(block_group->space_info->total_bytes
+-			< block_group->length);
+-		WARN_ON(block_group->space_info->bytes_readonly
+-			< block_group->length - block_group->zone_unusable);
+-		WARN_ON(block_group->space_info->bytes_zone_unusable
+-			< block_group->zone_unusable);
+-		WARN_ON(block_group->space_info->disk_total
+-			< block_group->length * factor);
+-	}
+-	block_group->space_info->total_bytes -= block_group->length;
+-	block_group->space_info->bytes_readonly -=
+-		(block_group->length - block_group->zone_unusable);
+-	btrfs_space_info_update_bytes_zone_unusable(block_group->space_info,
+-						    -block_group->zone_unusable);
+-	block_group->space_info->disk_total -= block_group->length * factor;
+-
+ 	spin_unlock(&block_group->space_info->lock);
  
- 		ret = find_first_block_group(info, path, &key);
- 		if (ret > 0)
-@@ -2598,8 +2605,16 @@ int btrfs_read_block_groups(struct btrfs_fs_info *info)
- 		leaf = path->nodes[0];
- 		slot = path->slots[0];
++	if (!(block_group->flags & BTRFS_BLOCK_GROUP_REMAPPED))
++		btrfs_remove_bg_from_sinfo(block_group);
++
+ 	/*
+ 	 * Remove the free space for the block group from the free space tree
+ 	 * and the block group's item from the extent tree before marking the
+@@ -1539,6 +1548,7 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
+ 	while (!list_empty(&fs_info->unused_bgs)) {
+ 		u64 used;
+ 		int trimming;
++		bool made_ro = false;
  
-+		if (btrfs_fs_incompat(info, REMAP_TREE)) {
-+			size = sizeof(struct btrfs_block_group_item_v2);
+ 		block_group = list_first_entry(&fs_info->unused_bgs,
+ 					       struct btrfs_block_group,
+@@ -1575,7 +1585,8 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
+ 
+ 		spin_lock(&space_info->lock);
+ 		spin_lock(&block_group->lock);
+-		if (btrfs_is_block_group_used(block_group) || block_group->ro ||
++		if (btrfs_is_block_group_used(block_group) ||
++		    (block_group->ro && !(block_group->flags & BTRFS_BLOCK_GROUP_REMAPPED)) ||
+ 		    list_is_singular(&block_group->list)) {
+ 			/*
+ 			 * We want to bail if we made new allocations or have
+@@ -1617,9 +1628,10 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
+ 		 * needing to allocate extents from the block group.
+ 		 */
+ 		used = btrfs_space_info_used(space_info, true);
+-		if ((space_info->total_bytes - block_group->length < used &&
++		if (((space_info->total_bytes - block_group->length < used &&
+ 		     block_group->zone_unusable < block_group->length) ||
+-		    has_unwritten_metadata(block_group)) {
++		    has_unwritten_metadata(block_group)) &&
++			!(block_group->flags & BTRFS_BLOCK_GROUP_REMAPPED)) {
+ 			spin_unlock(&block_group->lock);
+ 
+ 			/*
+@@ -1638,8 +1650,14 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
+ 		spin_unlock(&block_group->lock);
+ 		spin_unlock(&space_info->lock);
+ 
+-		/* We don't want to force the issue, only flip if it's ok. */
+-		ret = inc_block_group_ro(block_group, 0);
++		if (!(block_group->flags & BTRFS_BLOCK_GROUP_REMAPPED)) {
++			/* We don't want to force the issue, only flip if it's ok. */
++			ret = inc_block_group_ro(block_group, 0);
++			made_ro = true;
 +		} else {
-+			size = sizeof(struct btrfs_block_group_item);
-+			btrfs_set_stack_block_group_v2_remap_bytes(&bgi, 0);
-+			btrfs_set_stack_block_group_v2_identity_remap_count(&bgi, 0);
++			ret = 0;
 +		}
 +
- 		read_extent_buffer(leaf, &bgi, btrfs_item_ptr_offset(leaf, slot),
--				   sizeof(bgi));
-+				   size);
+ 		up_write(&space_info->groups_sem);
+ 		if (ret < 0) {
+ 			ret = 0;
+@@ -1648,7 +1666,8 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
  
- 		btrfs_item_key_to_cpu(leaf, &key, slot);
- 		btrfs_release_path(path);
-@@ -2669,25 +2684,38 @@ static int insert_block_group_item(struct btrfs_trans_handle *trans,
- 				   struct btrfs_block_group *block_group)
- {
- 	struct btrfs_fs_info *fs_info = trans->fs_info;
--	struct btrfs_block_group_item bgi;
-+	struct btrfs_block_group_item_v2 bgi;
- 	struct btrfs_root *root = btrfs_block_group_root(fs_info);
- 	struct btrfs_key key;
- 	u64 old_commit_used;
-+	size_t size;
- 	int ret;
+ 		ret = btrfs_zone_finish(block_group);
+ 		if (ret < 0) {
+-			btrfs_dec_block_group_ro(block_group);
++			if (made_ro)
++				btrfs_dec_block_group_ro(block_group);
+ 			if (ret == -EAGAIN) {
+ 				btrfs_link_bg_list(block_group, &retry_list);
+ 				ret = 0;
+@@ -1663,7 +1682,8 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
+ 		trans = btrfs_start_trans_remove_block_group(fs_info,
+ 						     block_group->start);
+ 		if (IS_ERR(trans)) {
+-			btrfs_dec_block_group_ro(block_group);
++			if (made_ro)
++				btrfs_dec_block_group_ro(block_group);
+ 			ret = PTR_ERR(trans);
+ 			goto next;
+ 		}
+@@ -1673,7 +1693,8 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
+ 		 * just delete them, we don't care about them anymore.
+ 		 */
+ 		if (!clean_pinned_extents(trans, block_group)) {
+-			btrfs_dec_block_group_ro(block_group);
++			if (made_ro)
++				btrfs_dec_block_group_ro(block_group);
+ 			goto end_trans;
+ 		}
  
- 	spin_lock(&block_group->lock);
--	btrfs_set_stack_block_group_used(&bgi, block_group->used);
--	btrfs_set_stack_block_group_chunk_objectid(&bgi,
--						   block_group->global_root_id);
--	btrfs_set_stack_block_group_flags(&bgi, block_group->flags);
-+	btrfs_set_stack_block_group_v2_used(&bgi, block_group->used);
-+	btrfs_set_stack_block_group_v2_chunk_objectid(&bgi,
-+						      block_group->global_root_id);
-+	btrfs_set_stack_block_group_v2_flags(&bgi, block_group->flags);
-+	btrfs_set_stack_block_group_v2_remap_bytes(&bgi,
-+						   block_group->remap_bytes);
-+	btrfs_set_stack_block_group_v2_identity_remap_count(&bgi,
-+					block_group->identity_remap_count);
- 	old_commit_used = block_group->commit_used;
- 	block_group->commit_used = block_group->used;
-+	block_group->commit_remap_bytes = block_group->remap_bytes;
-+	block_group->commit_identity_remap_count =
-+		block_group->identity_remap_count;
- 	key.objectid = block_group->start;
- 	key.type = BTRFS_BLOCK_GROUP_ITEM_KEY;
- 	key.offset = block_group->length;
- 	spin_unlock(&block_group->lock);
+@@ -1687,7 +1708,8 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
+ 		spin_lock(&fs_info->discard_ctl.lock);
+ 		if (!list_empty(&block_group->discard_list)) {
+ 			spin_unlock(&fs_info->discard_ctl.lock);
+-			btrfs_dec_block_group_ro(block_group);
++			if (made_ro)
++				btrfs_dec_block_group_ro(block_group);
+ 			btrfs_discard_queue_work(&fs_info->discard_ctl,
+ 						 block_group);
+ 			goto end_trans;
+@@ -1781,6 +1803,14 @@ void btrfs_mark_bg_unused(struct btrfs_block_group *bg)
+ 	struct btrfs_fs_info *fs_info = bg->fs_info;
  
--	ret = btrfs_insert_item(trans, root, &key, &bgi, sizeof(bgi));
-+	if (btrfs_fs_incompat(fs_info, REMAP_TREE))
-+		size = sizeof(struct btrfs_block_group_item_v2);
-+	else
-+		size = sizeof(struct btrfs_block_group_item);
+ 	spin_lock(&fs_info->unused_bgs_lock);
 +
-+	ret = btrfs_insert_item(trans, root, &key, &bgi, size);
- 	if (ret < 0) {
- 		spin_lock(&block_group->lock);
- 		block_group->commit_used = old_commit_used;
-@@ -3142,10 +3170,12 @@ static int update_block_group_item(struct btrfs_trans_handle *trans,
- 	struct btrfs_root *root = btrfs_block_group_root(fs_info);
- 	unsigned long bi;
- 	struct extent_buffer *leaf;
--	struct btrfs_block_group_item bgi;
-+	struct btrfs_block_group_item_v2 bgi;
- 	struct btrfs_key key;
--	u64 old_commit_used;
--	u64 used;
-+	u64 old_commit_used, old_commit_remap_bytes;
-+	u32 old_commit_identity_remap_count;
-+	u64 used, remap_bytes;
-+	u32 identity_remap_count;
- 
- 	/*
- 	 * Block group items update can be triggered out of commit transaction
-@@ -3155,13 +3185,21 @@ static int update_block_group_item(struct btrfs_trans_handle *trans,
- 	 */
- 	spin_lock(&cache->lock);
- 	old_commit_used = cache->commit_used;
-+	old_commit_remap_bytes = cache->commit_remap_bytes;
-+	old_commit_identity_remap_count = cache->commit_identity_remap_count;
- 	used = cache->used;
--	/* No change in used bytes, can safely skip it. */
--	if (cache->commit_used == used) {
-+	remap_bytes = cache->remap_bytes;
-+	identity_remap_count = cache->identity_remap_count;
-+	/* No change in values, can safely skip it. */
-+	if (cache->commit_used == used &&
-+	    cache->commit_remap_bytes == remap_bytes &&
-+	    cache->commit_identity_remap_count == identity_remap_count) {
- 		spin_unlock(&cache->lock);
- 		return 0;
- 	}
- 	cache->commit_used = used;
-+	cache->commit_remap_bytes = remap_bytes;
-+	cache->commit_identity_remap_count = identity_remap_count;
- 	spin_unlock(&cache->lock);
- 
- 	key.objectid = cache->start;
-@@ -3177,11 +3215,23 @@ static int update_block_group_item(struct btrfs_trans_handle *trans,
- 
- 	leaf = path->nodes[0];
- 	bi = btrfs_item_ptr_offset(leaf, path->slots[0]);
--	btrfs_set_stack_block_group_used(&bgi, used);
--	btrfs_set_stack_block_group_chunk_objectid(&bgi,
--						   cache->global_root_id);
--	btrfs_set_stack_block_group_flags(&bgi, cache->flags);
--	write_extent_buffer(leaf, &bgi, bi, sizeof(bgi));
-+	btrfs_set_stack_block_group_v2_used(&bgi, used);
-+	btrfs_set_stack_block_group_v2_chunk_objectid(&bgi,
-+						      cache->global_root_id);
-+	btrfs_set_stack_block_group_v2_flags(&bgi, cache->flags);
-+
-+	if (btrfs_fs_incompat(fs_info, REMAP_TREE)) {
-+		btrfs_set_stack_block_group_v2_remap_bytes(&bgi,
-+							   cache->remap_bytes);
-+		btrfs_set_stack_block_group_v2_identity_remap_count(&bgi,
-+						cache->identity_remap_count);
-+		write_extent_buffer(leaf, &bgi, bi,
-+				    sizeof(struct btrfs_block_group_item_v2));
-+	} else {
-+		write_extent_buffer(leaf, &bgi, bi,
-+				    sizeof(struct btrfs_block_group_item));
++	/* Leave fully remapped block groups on the fully_remapped_bgs list. */
++	if (bg->flags & BTRFS_BLOCK_GROUP_REMAPPED &&
++	    bg->identity_remap_count == 0) {
++		spin_unlock(&fs_info->unused_bgs_lock);
++		return;
 +	}
 +
- fail:
- 	btrfs_release_path(path);
- 	/*
-@@ -3196,6 +3246,9 @@ static int update_block_group_item(struct btrfs_trans_handle *trans,
- 	if (ret < 0 && ret != -ENOENT) {
- 		spin_lock(&cache->lock);
- 		cache->commit_used = old_commit_used;
-+		cache->commit_remap_bytes = old_commit_remap_bytes;
-+		cache->commit_identity_remap_count =
-+			old_commit_identity_remap_count;
- 		spin_unlock(&cache->lock);
- 	}
- 	return ret;
+ 	if (list_empty(&bg->bg_list)) {
+ 		btrfs_get_block_group(bg);
+ 		trace_btrfs_add_unused_block_group(bg);
+@@ -4777,3 +4807,21 @@ bool btrfs_block_group_should_use_size_class(const struct btrfs_block_group *bg)
+ 		return false;
+ 	return true;
+ }
++
++void btrfs_mark_bg_fully_remapped(struct btrfs_block_group *bg,
++				  struct btrfs_trans_handle *trans)
++{
++	struct btrfs_fs_info *fs_info = trans->fs_info;
++
++	spin_lock(&fs_info->unused_bgs_lock);
++
++	if (!list_empty(&bg->bg_list))
++		list_del(&bg->bg_list);
++	else
++		btrfs_get_block_group(bg);
++
++	list_add_tail(&bg->bg_list, &fs_info->fully_remapped_bgs);
++
++	spin_unlock(&fs_info->unused_bgs_lock);
++
++}
 diff --git a/fs/btrfs/block-group.h b/fs/btrfs/block-group.h
-index 9172104a5889..af23fdb3cf4d 100644
+index af23fdb3cf4d..f0a1462f1d31 100644
 --- a/fs/btrfs/block-group.h
 +++ b/fs/btrfs/block-group.h
-@@ -129,6 +129,8 @@ struct btrfs_block_group {
- 	u64 flags;
- 	u64 cache_generation;
- 	u64 global_root_id;
-+	u64 remap_bytes;
-+	u32 identity_remap_count;
+@@ -336,6 +336,7 @@ int btrfs_add_new_free_space(struct btrfs_block_group *block_group,
+ struct btrfs_trans_handle *btrfs_start_trans_remove_block_group(
+ 				struct btrfs_fs_info *fs_info,
+ 				const u64 chunk_offset);
++void btrfs_remove_bg_from_sinfo(struct btrfs_block_group *block_group);
+ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_chunk_map *map);
+ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info);
+@@ -407,5 +408,7 @@ int btrfs_use_block_group_size_class(struct btrfs_block_group *bg,
+ 				     enum btrfs_block_group_size_class size_class,
+ 				     bool force_wrong_size_class);
+ bool btrfs_block_group_should_use_size_class(const struct btrfs_block_group *bg);
++void btrfs_mark_bg_fully_remapped(struct btrfs_block_group *bg,
++				  struct btrfs_trans_handle *trans);
  
- 	/*
- 	 * The last committed used bytes of this block group, if the above @used
-@@ -136,6 +138,15 @@ struct btrfs_block_group {
- 	 * group item of this block group.
- 	 */
- 	u64 commit_used;
-+	/*
-+	 * The last committed remap_bytes value of this block group.
-+	 */
-+	u64 commit_remap_bytes;
-+	/*
-+	 * The last commited identity_remap_count value of this block group.
-+	 */
-+	u32 commit_identity_remap_count;
-+
- 	/*
- 	 * If the free space extent count exceeds this number, convert the block
- 	 * group to bitmaps.
-@@ -282,7 +293,8 @@ static inline bool btrfs_is_block_group_used(const struct btrfs_block_group *bg)
- {
- 	lockdep_assert_held(&bg->lock);
+ #endif /* BTRFS_BLOCK_GROUP_H */
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 60507e971aad..4b136addf902 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2869,6 +2869,7 @@ void btrfs_init_fs_info(struct btrfs_fs_info *fs_info)
+ 	INIT_LIST_HEAD(&fs_info->tree_mod_seq_list);
+ 	INIT_LIST_HEAD(&fs_info->unused_bgs);
+ 	INIT_LIST_HEAD(&fs_info->reclaim_bgs);
++	INIT_LIST_HEAD(&fs_info->fully_remapped_bgs);
+ 	INIT_LIST_HEAD(&fs_info->zone_active_bgs);
+ #ifdef CONFIG_BTRFS_DEBUG
+ 	INIT_LIST_HEAD(&fs_info->allocated_roots);
+@@ -2924,6 +2925,7 @@ void btrfs_init_fs_info(struct btrfs_fs_info *fs_info)
+ 	mutex_init(&fs_info->chunk_mutex);
+ 	mutex_init(&fs_info->transaction_kthread_mutex);
+ 	mutex_init(&fs_info->cleaner_mutex);
++	mutex_init(&fs_info->remap_mutex);
+ 	mutex_init(&fs_info->ro_block_group_mutex);
+ 	init_rwsem(&fs_info->commit_root_sem);
+ 	init_rwsem(&fs_info->cleanup_work_sem);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 7805a148bbd8..60287aca283d 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -40,6 +40,7 @@
+ #include "orphan.h"
+ #include "tree-checker.h"
+ #include "raid-stripe-tree.h"
++#include "relocation.h"
  
--	return (bg->used > 0 || bg->reserved > 0 || bg->pinned > 0);
-+	return (bg->used > 0 || bg->reserved > 0 || bg->pinned > 0 ||
-+		bg->remap_bytes > 0);
+ #undef SCRAMBLE_DELAYED_REFS
+ 
+@@ -2847,6 +2848,52 @@ static int unpin_extent_range(struct btrfs_fs_info *fs_info,
+ 	return ret;
  }
  
- static inline bool btrfs_is_block_group_data_only(const struct btrfs_block_group *block_group)
-diff --git a/fs/btrfs/discard.c b/fs/btrfs/discard.c
-index 1015a4d37fb2..2b7b1e440bc8 100644
---- a/fs/btrfs/discard.c
-+++ b/fs/btrfs/discard.c
-@@ -373,7 +373,7 @@ void btrfs_discard_queue_work(struct btrfs_discard_ctl *discard_ctl,
- 	if (!block_group || !btrfs_test_opt(block_group->fs_info, DISCARD_ASYNC))
- 		return;
++int btrfs_handle_fully_remapped_bgs(struct btrfs_trans_handle *trans)
++{
++	struct btrfs_fs_info *fs_info = trans->fs_info;
++	struct btrfs_block_group *block_group, *tmp;
++	struct list_head *fully_remapped_bgs;
++	int ret;
++
++	fully_remapped_bgs = &fs_info->fully_remapped_bgs;
++	list_for_each_entry_safe(block_group, tmp, fully_remapped_bgs, bg_list) {
++		struct btrfs_chunk_map *map;
++
++		map = btrfs_get_chunk_map(fs_info, block_group->start, 1);
++		if (IS_ERR(map))
++			return PTR_ERR(map);
++
++		ret = btrfs_last_identity_remap_gone(trans, map, block_group);
++		if (ret) {
++			btrfs_free_chunk_map(map);
++			return ret;
++		}
++
++		/*
++		 * Set num_stripes to 0, so that btrfs_remove_dev_extents()
++		 * won't run a second time.
++		 */
++		map->num_stripes = 0;
++
++		btrfs_free_chunk_map(map);
++
++		if (block_group->used == 0 && block_group->remap_bytes == 0) {
++			spin_lock(&fs_info->unused_bgs_lock);
++			list_move_tail(&block_group->bg_list,
++				       &fs_info->unused_bgs);
++			spin_unlock(&fs_info->unused_bgs_lock);
++		} else {
++			spin_lock(&fs_info->unused_bgs_lock);
++			list_del_init(&block_group->bg_list);
++			spin_unlock(&fs_info->unused_bgs_lock);
++
++			btrfs_put_block_group(block_group);
++		}
++	}
++
++	return 0;
++}
++
+ int btrfs_finish_extent_commit(struct btrfs_trans_handle *trans)
+ {
+ 	struct btrfs_fs_info *fs_info = trans->fs_info;
+@@ -2999,11 +3046,23 @@ u64 btrfs_get_extent_owner_root(struct btrfs_fs_info *fs_info,
+ }
  
--	if (block_group->used == 0)
-+	if (block_group->used == 0 && block_group->remap_bytes == 0)
- 		add_to_discard_unused_list(discard_ctl, block_group);
- 	else
- 		add_to_discard_list(discard_ctl, block_group);
-diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-index 59b1393e5018..60b554450e91 100644
---- a/fs/btrfs/tree-checker.c
-+++ b/fs/btrfs/tree-checker.c
-@@ -688,6 +688,7 @@ static int check_block_group_item(struct extent_buffer *leaf,
- 	u64 chunk_objectid;
- 	u64 flags;
- 	u64 type;
-+	size_t exp_size;
+ static int do_free_extent_accounting(struct btrfs_trans_handle *trans,
+-				     u64 bytenr, struct btrfs_squota_delta *delta)
++				     u64 bytenr, struct btrfs_squota_delta *delta,
++				     struct btrfs_path *path)
+ {
+ 	int ret;
++	bool remapped = false;
+ 	u64 num_bytes = delta->num_bytes;
+ 
++	/* returns 1 on success and 0 on no-op */
++	ret = btrfs_remove_extent_from_remap_tree(trans, path, bytenr,
++						  num_bytes);
++	if (ret < 0) {
++		btrfs_abort_transaction(trans, ret);
++		return ret;
++	} else if (ret == 1) {
++		remapped = true;
++	}
++
+ 	if (delta->is_data) {
+ 		struct btrfs_root *csum_root;
+ 
+@@ -3027,10 +3086,16 @@ static int do_free_extent_accounting(struct btrfs_trans_handle *trans,
+ 		return ret;
+ 	}
+ 
+-	ret = btrfs_add_to_free_space_tree(trans, bytenr, num_bytes);
+-	if (unlikely(ret)) {
+-		btrfs_abort_transaction(trans, ret);
+-		return ret;
++	/*
++	 * If remapped, FST has already been taken care of in
++	 * remove_range_from_remap_tree().
++	 */
++	if (!remapped) {
++		ret = btrfs_add_to_free_space_tree(trans, bytenr, num_bytes);
++		if (unlikely(ret)) {
++			btrfs_abort_transaction(trans, ret);
++			return ret;
++		}
+ 	}
+ 
+ 	ret = btrfs_update_block_group(trans, bytenr, num_bytes, false);
+@@ -3396,7 +3461,7 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 		}
+ 		btrfs_release_path(path);
+ 
+-		ret = do_free_extent_accounting(trans, bytenr, &delta);
++		ret = do_free_extent_accounting(trans, bytenr, &delta, path);
+ 	}
+ 	btrfs_release_path(path);
+ 
+diff --git a/fs/btrfs/extent-tree.h b/fs/btrfs/extent-tree.h
+index e970ac42a871..6b67a4e528da 100644
+--- a/fs/btrfs/extent-tree.h
++++ b/fs/btrfs/extent-tree.h
+@@ -164,5 +164,6 @@ void btrfs_error_unpin_extent_range(struct btrfs_fs_info *fs_info, u64 start, u6
+ int btrfs_discard_extent(struct btrfs_fs_info *fs_info, u64 bytenr,
+ 			 u64 num_bytes, u64 *actual_bytes);
+ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range);
++int btrfs_handle_fully_remapped_bgs(struct btrfs_trans_handle *trans);
+ 
+ #endif
+diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
+index c76f4c2701f9..e60fd1841996 100644
+--- a/fs/btrfs/fs.h
++++ b/fs/btrfs/fs.h
+@@ -563,6 +563,7 @@ struct btrfs_fs_info {
+ 	struct mutex transaction_kthread_mutex;
+ 	struct mutex cleaner_mutex;
+ 	struct mutex chunk_mutex;
++	struct mutex remap_mutex;
  
  	/*
- 	 * Here we don't really care about alignment since extent allocator can
-@@ -699,10 +700,15 @@ static int check_block_group_item(struct extent_buffer *leaf,
- 		return -EUCLEAN;
- 	}
+ 	 * This is taken to make sure we don't set block groups ro after the
+@@ -817,10 +818,11 @@ struct btrfs_fs_info {
+ 	struct list_head reclaim_bgs;
+ 	int bg_reclaim_threshold;
  
--	if (unlikely(item_size != sizeof(bgi))) {
-+	if (btrfs_fs_incompat(fs_info, REMAP_TREE))
-+		exp_size = sizeof(struct btrfs_block_group_item_v2);
-+	else
-+		exp_size = sizeof(struct btrfs_block_group_item);
+-	/* Protects the lists unused_bgs and reclaim_bgs. */
++	/* Protects the lists unused_bgs, reclaim_bgs, and fully_remapped_bgs. */
+ 	spinlock_t unused_bgs_lock;
+ 	/* Protected by unused_bgs_lock. */
+ 	struct list_head unused_bgs;
++	struct list_head fully_remapped_bgs;
+ 	struct mutex unused_bg_unpin_mutex;
+ 	/* Protect block groups that are going to be deleted */
+ 	struct mutex reclaim_bgs_lock;
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 4f5d3aaf0f65..d0c1e0533c6e 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -37,6 +37,7 @@
+ #include "super.h"
+ #include "tree-checker.h"
+ #include "raid-stripe-tree.h"
++#include "free-space-tree.h"
+ 
+ /*
+  * Relocation overview
+@@ -3870,6 +3871,137 @@ static const char *stage_to_string(enum reloc_stage stage)
+ 	return "unknown";
+ }
+ 
++static void adjust_block_group_remap_bytes(struct btrfs_trans_handle *trans,
++					   struct btrfs_block_group *bg,
++					   s64 diff)
++{
++	struct btrfs_fs_info *fs_info = trans->fs_info;
++	bool bg_already_dirty = true;
 +
-+	if (unlikely(item_size != exp_size)) {
- 		block_group_err(leaf, slot,
- 			"invalid item size, have %u expect %zu",
--				item_size, sizeof(bgi));
-+				item_size, exp_size);
- 		return -EUCLEAN;
- 	}
- 
-diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
-index 9a36f0206d90..500e3a7df90b 100644
---- a/include/uapi/linux/btrfs_tree.h
-+++ b/include/uapi/linux/btrfs_tree.h
-@@ -1229,6 +1229,14 @@ struct btrfs_block_group_item {
- 	__le64 flags;
- } __attribute__ ((__packed__));
- 
-+struct btrfs_block_group_item_v2 {
-+	__le64 used;
-+	__le64 chunk_objectid;
-+	__le64 flags;
-+	__le64 remap_bytes;
-+	__le32 identity_remap_count;
-+} __attribute__ ((__packed__));
++	bg->remap_bytes += diff;
 +
- struct btrfs_free_space_info {
- 	__le32 extent_count;
- 	__le32 flags;
++	if (bg->used == 0 && bg->remap_bytes == 0)
++		btrfs_mark_bg_unused(bg);
++
++	spin_lock(&trans->transaction->dirty_bgs_lock);
++	if (list_empty(&bg->dirty_list)) {
++		list_add_tail(&bg->dirty_list, &trans->transaction->dirty_bgs);
++		bg_already_dirty = false;
++		btrfs_get_block_group(bg);
++	}
++	spin_unlock(&trans->transaction->dirty_bgs_lock);
++
++	/* Modified block groups are accounted for in the delayed_refs_rsv. */
++	if (!bg_already_dirty)
++		btrfs_inc_delayed_refs_rsv_bg_updates(fs_info);
++}
++
++static int remove_chunk_stripes(struct btrfs_trans_handle *trans,
++				struct btrfs_chunk_map *chunk,
++				struct btrfs_path *path)
++{
++	struct btrfs_fs_info *fs_info = trans->fs_info;
++	struct btrfs_key key;
++	struct extent_buffer *leaf;
++	struct btrfs_chunk *c;
++	int ret;
++
++	key.objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
++	key.type = BTRFS_CHUNK_ITEM_KEY;
++	key.offset = chunk->start;
++
++	ret = btrfs_search_slot(trans, fs_info->chunk_root, &key, path,
++				0, 1);
++	if (ret) {
++		if (ret == 1) {
++			btrfs_release_path(path);
++			ret = -ENOENT;
++		}
++		return ret;
++	}
++
++	leaf = path->nodes[0];
++
++	c = btrfs_item_ptr(leaf, path->slots[0], struct btrfs_chunk);
++	btrfs_set_chunk_num_stripes(leaf, c, 0);
++	btrfs_set_chunk_sub_stripes(leaf, c, 0);
++
++	btrfs_truncate_item(trans, path, offsetof(struct btrfs_chunk, stripe),
++			    1);
++
++	btrfs_mark_buffer_dirty(trans, leaf);
++
++	btrfs_release_path(path);
++
++	return 0;
++}
++
++int btrfs_last_identity_remap_gone(struct btrfs_trans_handle *trans,
++				   struct btrfs_chunk_map *chunk,
++				   struct btrfs_block_group *bg)
++{
++	int ret;
++	BTRFS_PATH_AUTO_FREE(path);
++
++	ret = btrfs_remove_dev_extents(trans, chunk);
++	if (ret)
++		return ret;
++
++	mutex_lock(&trans->fs_info->chunk_mutex);
++
++	for (unsigned int i = 0; i < chunk->num_stripes; i++) {
++		ret = btrfs_update_device(trans, chunk->stripes[i].dev);
++		if (ret) {
++			mutex_unlock(&trans->fs_info->chunk_mutex);
++			return ret;
++		}
++	}
++
++	mutex_unlock(&trans->fs_info->chunk_mutex);
++
++	write_lock(&trans->fs_info->mapping_tree_lock);
++	btrfs_chunk_map_device_clear_bits(chunk, CHUNK_ALLOCATED);
++	write_unlock(&trans->fs_info->mapping_tree_lock);
++
++	btrfs_remove_bg_from_sinfo(bg);
++
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
++
++	ret = remove_chunk_stripes(trans, chunk, path);
++	if (ret)
++		return ret;
++
++	return 0;
++}
++
++static void adjust_identity_remap_count(struct btrfs_trans_handle *trans,
++				        struct btrfs_block_group *bg, int delta)
++{
++	struct btrfs_fs_info *fs_info = trans->fs_info;
++	bool bg_already_dirty = true;
++
++	WARN_ON(delta < 0 && -delta > bg->identity_remap_count);
++
++	bg->identity_remap_count += delta;
++
++	spin_lock(&trans->transaction->dirty_bgs_lock);
++	if (list_empty(&bg->dirty_list)) {
++		list_add_tail(&bg->dirty_list, &trans->transaction->dirty_bgs);
++		bg_already_dirty = false;
++		btrfs_get_block_group(bg);
++	}
++	spin_unlock(&trans->transaction->dirty_bgs_lock);
++
++	/* Modified block groups are accounted for in the delayed_refs_rsv. */
++	if (!bg_already_dirty)
++		btrfs_inc_delayed_refs_rsv_bg_updates(fs_info);
++
++	if (bg->identity_remap_count == 0)
++		btrfs_mark_bg_fully_remapped(bg, trans);
++}
++
+ int btrfs_translate_remap(struct btrfs_fs_info *fs_info, u64 *logical,
+ 			  u64 *length, bool nolock)
+ {
+@@ -4483,3 +4615,366 @@ u64 btrfs_get_reloc_bg_bytenr(const struct btrfs_fs_info *fs_info)
+ 		logical = fs_info->reloc_ctl->block_group->start;
+ 	return logical;
+ }
++
++static int remove_range_from_remap_tree(struct btrfs_trans_handle *trans,
++					struct btrfs_path *path,
++					struct btrfs_block_group *bg,
++					u64 bytenr, u64 num_bytes)
++{
++	int ret;
++	struct btrfs_fs_info *fs_info = trans->fs_info;
++	struct extent_buffer *leaf = path->nodes[0];
++	struct btrfs_key key, new_key;
++	struct btrfs_remap *remap_ptr = NULL, remap;
++	struct btrfs_block_group *dest_bg = NULL;
++	u64 end, new_addr = 0, remap_start, remap_length, overlap_length;
++	bool is_identity_remap;
++
++	end = bytenr + num_bytes;
++
++	btrfs_item_key_to_cpu(leaf, &key, path->slots[0]);
++
++	is_identity_remap = key.type == BTRFS_IDENTITY_REMAP_KEY;
++
++	remap_start = key.objectid;
++	remap_length = key.offset;
++
++	if (!is_identity_remap) {
++		remap_ptr = btrfs_item_ptr(leaf, path->slots[0],
++					   struct btrfs_remap);
++		new_addr = btrfs_remap_address(leaf, remap_ptr);
++
++		dest_bg = btrfs_lookup_block_group(fs_info, new_addr);
++	}
++
++	if (bytenr == remap_start && num_bytes >= remap_length) {
++		/* Remove entirely. */
++
++		ret = btrfs_del_item(trans, fs_info->remap_root, path);
++		if (ret)
++			goto end;
++
++		btrfs_release_path(path);
++
++		overlap_length = remap_length;
++
++		if (!is_identity_remap) {
++			/* Remove backref. */
++
++			key.objectid = new_addr;
++			key.type = BTRFS_REMAP_BACKREF_KEY;
++			key.offset = remap_length;
++
++			ret = btrfs_search_slot(trans, fs_info->remap_root,
++						&key, path, -1, 1);
++			if (ret) {
++				if (ret == 1) {
++					btrfs_release_path(path);
++					ret = -ENOENT;
++				}
++				goto end;
++			}
++
++			ret = btrfs_del_item(trans, fs_info->remap_root, path);
++
++			btrfs_release_path(path);
++
++			if (ret)
++				goto end;
++
++			adjust_block_group_remap_bytes(trans, dest_bg,
++						       -remap_length);
++		} else {
++			adjust_identity_remap_count(trans, bg, -1);
++		}
++	} else if (bytenr == remap_start) {
++		/* Remove beginning. */
++
++		new_key.objectid = end;
++		new_key.type = key.type;
++		new_key.offset = remap_length + remap_start - end;
++
++		btrfs_set_item_key_safe(trans, path, &new_key);
++		btrfs_mark_buffer_dirty(trans, leaf);
++
++		overlap_length = num_bytes;
++
++		if (!is_identity_remap) {
++			btrfs_set_remap_address(leaf, remap_ptr,
++						new_addr + end - remap_start);
++			btrfs_release_path(path);
++
++			/* Adjust backref. */
++
++			key.objectid = new_addr;
++			key.type = BTRFS_REMAP_BACKREF_KEY;
++			key.offset = remap_length;
++
++			ret = btrfs_search_slot(trans, fs_info->remap_root,
++						&key, path, -1, 1);
++			if (ret) {
++				if (ret == 1) {
++					btrfs_release_path(path);
++					ret = -ENOENT;
++				}
++				goto end;
++			}
++
++			leaf = path->nodes[0];
++
++			new_key.objectid = new_addr + end - remap_start;
++			new_key.type = BTRFS_REMAP_BACKREF_KEY;
++			new_key.offset = remap_length + remap_start - end;
++
++			btrfs_set_item_key_safe(trans, path, &new_key);
++
++			remap_ptr = btrfs_item_ptr(leaf, path->slots[0],
++						   struct btrfs_remap);
++			btrfs_set_remap_address(leaf, remap_ptr, end);
++
++			btrfs_mark_buffer_dirty(trans, path->nodes[0]);
++
++			btrfs_release_path(path);
++
++			adjust_block_group_remap_bytes(trans, dest_bg,
++						       -num_bytes);
++		}
++	} else if (bytenr + num_bytes < remap_start + remap_length) {
++		/* Remove middle. */
++
++		new_key.objectid = remap_start;
++		new_key.type = key.type;
++		new_key.offset = bytenr - remap_start;
++
++		btrfs_set_item_key_safe(trans, path, &new_key);
++		btrfs_mark_buffer_dirty(trans, leaf);
++
++		new_key.objectid = end;
++		new_key.offset = remap_start + remap_length - end;
++
++		btrfs_release_path(path);
++
++		overlap_length = num_bytes;
++
++		if (!is_identity_remap) {
++			/* Add second remap entry. */
++
++			ret = btrfs_insert_empty_item(trans, fs_info->remap_root,
++						path, &new_key,
++						sizeof(struct btrfs_remap));
++			if (ret)
++				goto end;
++
++			btrfs_set_stack_remap_address(&remap,
++						new_addr + end - remap_start);
++
++			write_extent_buffer(path->nodes[0], &remap,
++				btrfs_item_ptr_offset(path->nodes[0], path->slots[0]),
++				sizeof(struct btrfs_remap));
++
++			btrfs_release_path(path);
++
++			/* Shorten backref entry. */
++
++			key.objectid = new_addr;
++			key.type = BTRFS_REMAP_BACKREF_KEY;
++			key.offset = remap_length;
++
++			ret = btrfs_search_slot(trans, fs_info->remap_root,
++						&key, path, -1, 1);
++			if (ret) {
++				if (ret == 1) {
++					btrfs_release_path(path);
++					ret = -ENOENT;
++				}
++				goto end;
++			}
++
++			new_key.objectid = new_addr;
++			new_key.type = BTRFS_REMAP_BACKREF_KEY;
++			new_key.offset = bytenr - remap_start;
++
++			btrfs_set_item_key_safe(trans, path, &new_key);
++			btrfs_mark_buffer_dirty(trans, path->nodes[0]);
++
++			btrfs_release_path(path);
++
++			/* Add second backref entry. */
++
++			new_key.objectid = new_addr + end - remap_start;
++			new_key.type = BTRFS_REMAP_BACKREF_KEY;
++			new_key.offset = remap_start + remap_length - end;
++
++			ret = btrfs_insert_empty_item(trans, fs_info->remap_root,
++						path, &new_key,
++						sizeof(struct btrfs_remap));
++			if (ret)
++				goto end;
++
++			btrfs_set_stack_remap_address(&remap, end);
++
++			write_extent_buffer(path->nodes[0], &remap,
++				btrfs_item_ptr_offset(path->nodes[0], path->slots[0]),
++				sizeof(struct btrfs_remap));
++
++			btrfs_release_path(path);
++
++			adjust_block_group_remap_bytes(trans, dest_bg,
++						       -num_bytes);
++		} else {
++			/* Add second identity remap entry. */
++
++			ret = btrfs_insert_empty_item(trans, fs_info->remap_root,
++						      path, &new_key, 0);
++			if (ret)
++				goto end;
++
++			btrfs_release_path(path);
++
++			adjust_identity_remap_count(trans, bg, 1);
++		}
++	} else {
++		/* Remove end. */
++
++		new_key.objectid = remap_start;
++		new_key.type = key.type;
++		new_key.offset = bytenr - remap_start;
++
++		btrfs_set_item_key_safe(trans, path, &new_key);
++		btrfs_mark_buffer_dirty(trans, leaf);
++
++		btrfs_release_path(path);
++
++		overlap_length = remap_start + remap_length - bytenr;
++
++		if (!is_identity_remap) {
++			/* Shorten backref entry. */
++
++			key.objectid = new_addr;
++			key.type = BTRFS_REMAP_BACKREF_KEY;
++			key.offset = remap_length;
++
++			ret = btrfs_search_slot(trans, fs_info->remap_root,
++						&key, path, -1, 1);
++			if (ret) {
++				if (ret == 1) {
++					btrfs_release_path(path);
++					ret = -ENOENT;
++				}
++				goto end;
++			}
++
++			new_key.objectid = new_addr;
++			new_key.type = BTRFS_REMAP_BACKREF_KEY;
++			new_key.offset = bytenr - remap_start;
++
++			btrfs_set_item_key_safe(trans, path, &new_key);
++			btrfs_mark_buffer_dirty(trans, path->nodes[0]);
++
++			btrfs_release_path(path);
++
++			adjust_block_group_remap_bytes(trans, dest_bg,
++					bytenr - remap_start - remap_length);
++		}
++	}
++
++	if (!is_identity_remap) {
++		ret = btrfs_add_to_free_space_tree(trans,
++					     bytenr - remap_start + new_addr,
++					     overlap_length);
++		if (ret)
++			goto end;
++	}
++
++	ret = overlap_length;
++
++end:
++	if (dest_bg)
++		btrfs_put_block_group(dest_bg);
++
++	return ret;
++}
++
++/*
++ * Returns 1 if remove_range_from_remap_tree() has been called successfully,
++ * 0 if block group wasn't remapped, and a negative number on error.
++ */
++int btrfs_remove_extent_from_remap_tree(struct btrfs_trans_handle *trans,
++					struct btrfs_path *path,
++					u64 bytenr, u64 num_bytes)
++{
++	struct btrfs_fs_info *fs_info = trans->fs_info;
++	struct btrfs_key key, found_key;
++	struct extent_buffer *leaf;
++	struct btrfs_block_group *bg;
++	int ret, length;
++
++	if (!(btrfs_super_incompat_flags(fs_info->super_copy) &
++	      BTRFS_FEATURE_INCOMPAT_REMAP_TREE))
++		return 0;
++
++	bg = btrfs_lookup_block_group(fs_info, bytenr);
++	if (!bg)
++		return 0;
++
++	mutex_lock(&fs_info->remap_mutex);
++
++	if (!(bg->flags & BTRFS_BLOCK_GROUP_REMAPPED)) {
++		mutex_unlock(&fs_info->remap_mutex);
++		btrfs_put_block_group(bg);
++		return 0;
++	}
++
++	do {
++		key.objectid = bytenr;
++		key.type = (u8)-1;
++		key.offset = (u64)-1;
++
++		ret = btrfs_search_slot(trans, fs_info->remap_root, &key, path,
++					-1, 1);
++		if (ret < 0)
++			goto end;
++
++		leaf = path->nodes[0];
++
++		if (path->slots[0] == 0) {
++			ret = -ENOENT;
++			goto end;
++		}
++
++		path->slots[0]--;
++
++		btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
++
++		if (found_key.type != BTRFS_IDENTITY_REMAP_KEY &&
++		    found_key.type != BTRFS_REMAP_KEY) {
++			ret = -ENOENT;
++			goto end;
++		}
++
++		if (bytenr < found_key.objectid ||
++		    bytenr >= found_key.objectid + found_key.offset) {
++			ret = -ENOENT;
++			goto end;
++		}
++
++		length = remove_range_from_remap_tree(trans, path, bg, bytenr,
++						      num_bytes);
++		if (length < 0) {
++			ret = length;
++			goto end;
++		}
++
++		bytenr += length;
++		num_bytes -= length;
++	} while (num_bytes > 0);
++
++	ret = 1;
++
++end:
++	mutex_unlock(&fs_info->remap_mutex);
++
++	btrfs_put_block_group(bg);
++	btrfs_release_path(path);
++	return ret;
++}
+diff --git a/fs/btrfs/relocation.h b/fs/btrfs/relocation.h
+index a653c42a25a3..a272ebaa621f 100644
+--- a/fs/btrfs/relocation.h
++++ b/fs/btrfs/relocation.h
+@@ -33,5 +33,11 @@ bool btrfs_should_ignore_reloc_root(const struct btrfs_root *root);
+ u64 btrfs_get_reloc_bg_bytenr(const struct btrfs_fs_info *fs_info);
+ int btrfs_translate_remap(struct btrfs_fs_info *fs_info, u64 *logical,
+ 			  u64 *length, bool nolock);
++int btrfs_remove_extent_from_remap_tree(struct btrfs_trans_handle *trans,
++					struct btrfs_path *path,
++					u64 bytenr, u64 num_bytes);
++int btrfs_last_identity_remap_gone(struct btrfs_trans_handle *trans,
++				   struct btrfs_chunk_map *chunk,
++				   struct btrfs_block_group *bg);
+ 
+ #endif
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index b1c41982e7b2..6ce91397afe6 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -2438,6 +2438,10 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
+ 	if (ret)
+ 		goto unlock_reloc;
+ 
++	ret = btrfs_handle_fully_remapped_bgs(trans);
++	if (ret)
++		goto unlock_reloc;
++
+ 	/*
+ 	 * make sure none of the code above managed to slip in a
+ 	 * delayed item
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index f2d1203778aa..8078d2fa4df6 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2946,8 +2946,8 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
+ 	return ret;
+ }
+ 
+-static noinline int btrfs_update_device(struct btrfs_trans_handle *trans,
+-					struct btrfs_device *device)
++int btrfs_update_device(struct btrfs_trans_handle *trans,
++			struct btrfs_device *device)
+ {
+ 	int ret;
+ 	struct btrfs_path *path;
+@@ -3251,25 +3251,13 @@ static int remove_chunk_item(struct btrfs_trans_handle *trans,
+ 	return btrfs_free_chunk(trans, chunk_offset);
+ }
+ 
+-int btrfs_remove_chunk(struct btrfs_trans_handle *trans, u64 chunk_offset)
++int btrfs_remove_dev_extents(struct btrfs_trans_handle *trans,
++			     struct btrfs_chunk_map *map)
+ {
+ 	struct btrfs_fs_info *fs_info = trans->fs_info;
+-	struct btrfs_chunk_map *map;
++	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
+ 	u64 dev_extent_len = 0;
+ 	int i, ret = 0;
+-	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
+-
+-	map = btrfs_get_chunk_map(fs_info, chunk_offset, 1);
+-	if (IS_ERR(map)) {
+-		/*
+-		 * This is a logic error, but we don't want to just rely on the
+-		 * user having built with ASSERT enabled, so if ASSERT doesn't
+-		 * do anything we still error out.
+-		 */
+-		DEBUG_WARN("errr %ld reading chunk map at offset %llu",
+-			   PTR_ERR(map), chunk_offset);
+-		return PTR_ERR(map);
+-	}
+ 
+ 	/*
+ 	 * First delete the device extent items from the devices btree.
+@@ -3290,7 +3278,7 @@ int btrfs_remove_chunk(struct btrfs_trans_handle *trans, u64 chunk_offset)
+ 		if (unlikely(ret)) {
+ 			mutex_unlock(&fs_devices->device_list_mutex);
+ 			btrfs_abort_transaction(trans, ret);
+-			goto out;
++			return ret;
+ 		}
+ 
+ 		if (device->bytes_used > 0) {
+@@ -3310,6 +3298,30 @@ int btrfs_remove_chunk(struct btrfs_trans_handle *trans, u64 chunk_offset)
+ 	}
+ 	mutex_unlock(&fs_devices->device_list_mutex);
+ 
++	return 0;
++}
++
++int btrfs_remove_chunk(struct btrfs_trans_handle *trans, u64 chunk_offset)
++{
++	struct btrfs_fs_info *fs_info = trans->fs_info;
++	struct btrfs_chunk_map *map;
++	int ret;
++
++	map = btrfs_get_chunk_map(fs_info, chunk_offset, 1);
++	if (IS_ERR(map)) {
++		/*
++		 * This is a logic error, but we don't want to just rely on the
++		 * user having built with ASSERT enabled, so if ASSERT doesn't
++		 * do anything we still error out.
++		 */
++		ASSERT(0);
++		return PTR_ERR(map);
++	}
++
++	ret = btrfs_remove_dev_extents(trans, map);
++	if (ret)
++		goto out;
++
+ 	/*
+ 	 * We acquire fs_info->chunk_mutex for 2 reasons:
+ 	 *
+@@ -5453,7 +5465,7 @@ static void chunk_map_device_set_bits(struct btrfs_chunk_map *map, unsigned int
+ 	}
+ }
+ 
+-static void chunk_map_device_clear_bits(struct btrfs_chunk_map *map, unsigned int bits)
++void btrfs_chunk_map_device_clear_bits(struct btrfs_chunk_map *map, unsigned int bits)
+ {
+ 	for (int i = 0; i < map->num_stripes; i++) {
+ 		struct btrfs_io_stripe *stripe = &map->stripes[i];
+@@ -5470,7 +5482,7 @@ void btrfs_remove_chunk_map(struct btrfs_fs_info *fs_info, struct btrfs_chunk_ma
+ 	write_lock(&fs_info->mapping_tree_lock);
+ 	rb_erase_cached(&map->rb_node, &fs_info->mapping_tree);
+ 	RB_CLEAR_NODE(&map->rb_node);
+-	chunk_map_device_clear_bits(map, CHUNK_ALLOCATED);
++	btrfs_chunk_map_device_clear_bits(map, CHUNK_ALLOCATED);
+ 	write_unlock(&fs_info->mapping_tree_lock);
+ 
+ 	/* Once for the tree reference. */
+@@ -5506,7 +5518,7 @@ int btrfs_add_chunk_map(struct btrfs_fs_info *fs_info, struct btrfs_chunk_map *m
+ 		return -EEXIST;
+ 	}
+ 	chunk_map_device_set_bits(map, CHUNK_ALLOCATED);
+-	chunk_map_device_clear_bits(map, CHUNK_TRIMMED);
++	btrfs_chunk_map_device_clear_bits(map, CHUNK_TRIMMED);
+ 	write_unlock(&fs_info->mapping_tree_lock);
+ 
+ 	return 0;
+@@ -5871,7 +5883,7 @@ void btrfs_mapping_tree_free(struct btrfs_fs_info *fs_info)
+ 		map = rb_entry(node, struct btrfs_chunk_map, rb_node);
+ 		rb_erase_cached(&map->rb_node, &fs_info->mapping_tree);
+ 		RB_CLEAR_NODE(&map->rb_node);
+-		chunk_map_device_clear_bits(map, CHUNK_ALLOCATED);
++		btrfs_chunk_map_device_clear_bits(map, CHUNK_ALLOCATED);
+ 		/* Once for the tree ref. */
+ 		btrfs_free_chunk_map(map);
+ 		cond_resched_rwlock_write(&fs_info->mapping_tree_lock);
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index b0fa8eb38060..05a3e6922f78 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -789,6 +789,8 @@ u64 btrfs_calc_stripe_length(const struct btrfs_chunk_map *map);
+ int btrfs_nr_parity_stripes(u64 type);
+ int btrfs_chunk_alloc_add_chunk_item(struct btrfs_trans_handle *trans,
+ 				     struct btrfs_block_group *bg);
++int btrfs_remove_dev_extents(struct btrfs_trans_handle *trans,
++			     struct btrfs_chunk_map *map);
+ int btrfs_remove_chunk(struct btrfs_trans_handle *trans, u64 chunk_offset);
+ 
+ #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+@@ -900,6 +902,10 @@ bool btrfs_repair_one_zone(struct btrfs_fs_info *fs_info, u64 logical);
+ 
+ bool btrfs_pinned_by_swapfile(struct btrfs_fs_info *fs_info, void *ptr);
+ const u8 *btrfs_sb_fsid_ptr(const struct btrfs_super_block *sb);
++int btrfs_update_device(struct btrfs_trans_handle *trans,
++			struct btrfs_device *device);
++void btrfs_chunk_map_device_clear_bits(struct btrfs_chunk_map *map,
++				       unsigned int bits);
+ 
+ #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+ struct btrfs_io_context *alloc_btrfs_io_context(struct btrfs_fs_info *fs_info,
 -- 
 2.49.1
 

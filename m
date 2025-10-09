@@ -1,40 +1,40 @@
 Received: from mail.burntcomma.com (unknown [62.3.69.246])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 993981F3FE2
-	for <linux-btrfs@vger.kernel.org>; Thu,  9 Oct 2025 11:28:23 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 991861F3FE2
+	for <linux-btrfs@vger.kernel.org>; Thu,  9 Oct 2025 11:34:05 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=62.3.69.246
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1760009307; cv=none; b=t+HEfapQyMGYLooBVBU9bR9Mgjph0gIlzK5WH8/I9nMLNNx2eYT0MZ53LoryYycnzI0IvWG2BUoRUi2iSdadNiwzd8ELMnVIFdcK/Bp4LOkFUFcvTmR63ECT4GVPrZDln3f70efT1gSxiBges+Q+k1ds+xSs3F//F5xe7KEfL4A=
+	t=1760009647; cv=none; b=lTanmFVzbuRD9kdbH5qXwcaTmW6w4SaONkRYKSDpE7hGOxbv95u1to/0oX/VX4uS/916OMaxCdEam2hYtejzaiIzPiWu+frIsSOLZMu1jxAhDjt6/z3ypay5j8ueDs8g4gksfEwo7TZvW9+cIC8PXfAJDleAqz7nN9iAVigxv9A=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1760009307; c=relaxed/simple;
-	bh=AEOkizD88eRoAckfu12EyKZwLvIpVVfKL+szAbmtCbg=;
+	s=arc-20240116; t=1760009647; c=relaxed/simple;
+	bh=hH3rXcUc15/4bbE8V5NLF4JQQqOVWYA8/9C9lYMvKZA=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 Mime-Version; b=IZpVUuE3kUXLdH8s4WZass8ZOnZGejqyo2todbnHf+va6d6/0s7cuga4NGumWkA0ZPG1ugV0ioJu1lpfvRJeZtnoSRkp0ju6WdgqWP6PryImAEEgYhNozCsfXdsESZXlHtQPOPVF2ZQ+lyA3DQCHmGWTWT3432TUiHdhVuMCnc4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com; spf=fail smtp.mailfrom=harmstone.com; dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b=ZKq27DmB; arc=none smtp.client-ip=62.3.69.246
+	 Mime-Version; b=YYWQOhrSsCJLCFr8OOWR92OOdsbSRp5/+4AFm6LU0E/ToYp+M+/9qpkQee1biHfP9IjEnFH7JAljuM+gwIJglxSxDau4FizQE9aXPQvQgq8sEd7dIPeNVoTnXtV3ijeRnqG2oNmjkKgVg2x1igPA4ahFxBsugpz8i5R+k6TwXMs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com; spf=fail smtp.mailfrom=harmstone.com; dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b=oH/GaxJb; arc=none smtp.client-ip=62.3.69.246
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com
 Authentication-Results: smtp.subspace.kernel.org; spf=fail smtp.mailfrom=harmstone.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b="ZKq27DmB"
+	dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b="oH/GaxJb"
 Received: from localhost.localdomain (beren.burntcomma.com [IPv6:2a02:8012:8cf0:0:ce28:aaff:fe0d:6db2])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
 	(Client did not present a certificate)
-	by mail.burntcomma.com (Postfix) with ESMTPSA id E936F2C565E;
+	by mail.burntcomma.com (Postfix) with ESMTPSA id 6B1302C5651;
 	Thu,  9 Oct 2025 12:28:08 +0100 (BST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=harmstone.com;
 	s=mail; t=1760009288;
-	bh=KYXr58rCdPSmKAVlWU1xyLajRIdHeGJXQDauSkPTcMo=;
+	bh=8px3gnevfYETj9bqjXMmGShYx8bSq8vGmab5rhmEnSQ=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References;
-	b=ZKq27DmBb+StL+hyGizK7EO4zoFSp/dtgimOhhhwBgsA4toYUyu2ZCum3sZ8ZGPao
-	 fZxjtfm/hq6hVnwWSvSkzVMNlN/JpF3ft0A9DaKcd3UlWRC8SdpvCe0/sn3JsYXSFr
-	 NqXujasJ8klW5r6r2h4h23s07eqCvIdKv85UNVtE=
+	b=oH/GaxJbeKjUMWLKQPGJriTOMEVZZ3/uMZriO6b+3JjCp6QSjAtraYmjVTaUdn6fF
+	 0RvqchaEbddZtieiB3s12uYET3GlZALpc7zAdpzWjMNQL2YjhmCSwEqXbfMXM0reXf
+	 DtdILjdH287CvglNNU0XkPpZwLW6oFvV0yZwjE5A=
 From: Mark Harmstone <mark@harmstone.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Mark Harmstone <mark@harmstone.com>
-Subject: [PATCH v3 17/17] btrfs: add stripe removal pending flag
-Date: Thu,  9 Oct 2025 12:28:12 +0100
-Message-ID: <20251009112814.13942-18-mark@harmstone.com>
+Subject: [PATCH v3 04/17] btrfs: remove remapped block groups from the free-space tree
+Date: Thu,  9 Oct 2025 12:27:59 +0100
+Message-ID: <20251009112814.13942-5-mark@harmstone.com>
 In-Reply-To: <20251009112814.13942-1-mark@harmstone.com>
 References: <20251009112814.13942-1-mark@harmstone.com>
 Precedence: bulk
@@ -45,153 +45,87 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-If the filesystem is unmounted while the async discard of a fully remapped
-block group is in progress, its unused device extents will never be freed.
+No new allocations can be done from block groups that have the REMAPPED flag
+set, so there's no value in their having entries in the free-space tree.
 
-To counter this, add a new flag BTRFS_BLOCK_GROUP_STRIPE_REMOVAL_PENDING
-to say that this has been interrupted. Set it in the transaction in which
-the last identity remap has been removed, clear it when we remove the
-device extents, and if we encounter it on mount queue that block group
-up for discard.
+Prevent a search through the free-space tree being scheduled for such a
+block group, and prevent discard being run for a fully-remapped block
+group.
 
 Signed-off-by: Mark Harmstone <mark@harmstone.com>
 ---
- fs/btrfs/block-group.c          | 35 ++++++++++++++++++++++++++++++++-
- fs/btrfs/free-space-cache.c     |  5 +++++
- fs/btrfs/relocation.c           | 18 +++++++++++++++++
- include/uapi/linux/btrfs_tree.h |  1 +
- 4 files changed, 58 insertions(+), 1 deletion(-)
+ fs/btrfs/block-group.c | 21 ++++++++++++++++-----
+ fs/btrfs/discard.c     |  9 +++++++++
+ 2 files changed, 25 insertions(+), 5 deletions(-)
 
 diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index a7dfa6c95223..851d76ce8ec9 100644
+index cd51f50a7c8b..19a129c54200 100644
 --- a/fs/btrfs/block-group.c
 +++ b/fs/btrfs/block-group.c
-@@ -2530,6 +2530,16 @@ static int read_one_block_group(struct btrfs_fs_info *info,
- 		inc_block_group_ro(cache, 1);
- 	}
+@@ -933,6 +933,13 @@ int btrfs_cache_block_group(struct btrfs_block_group *cache, bool wait)
+ 	if (btrfs_is_zoned(fs_info))
+ 		return 0;
  
-+	if (cache->flags & BTRFS_BLOCK_GROUP_STRIPE_REMOVAL_PENDING) {
-+		btrfs_get_block_group(cache);
-+		spin_lock(&info->unused_bgs_lock);
-+		list_add_tail(&cache->bg_list, &info->fully_remapped_bgs);
-+		spin_unlock(&info->unused_bgs_lock);
++	/*
++	 * No allocations can be done from remapped block groups, so they have
++	 * no entries in the free-space tree.
++	 */
++	if (cache->flags & BTRFS_BLOCK_GROUP_REMAPPED)
++		return 0;
 +
-+		if (btrfs_test_opt(info, DISCARD_ASYNC))
-+			btrfs_discard_queue_work(&info->discard_ctl, cache);
-+	}
-+
- 	return 0;
- error:
- 	btrfs_put_block_group(cache);
-@@ -4828,6 +4838,29 @@ void btrfs_mark_bg_fully_remapped(struct btrfs_block_group *bg,
- 
- 	spin_unlock(&fs_info->unused_bgs_lock);
- 
--	if (btrfs_test_opt(fs_info, DISCARD_ASYNC))
-+	if (btrfs_test_opt(fs_info, DISCARD_ASYNC)) {
-+		bool bg_already_dirty = true;
-+
-+		spin_lock(&bg->lock);
-+		bg->flags |= BTRFS_BLOCK_GROUP_STRIPE_REMOVAL_PENDING;
-+		spin_unlock(&bg->lock);
-+
-+		spin_lock(&trans->transaction->dirty_bgs_lock);
-+		if (list_empty(&bg->dirty_list)) {
-+			list_add_tail(&bg->dirty_list,
-+				      &trans->transaction->dirty_bgs);
-+			bg_already_dirty = false;
-+			btrfs_get_block_group(bg);
-+		}
-+		spin_unlock(&trans->transaction->dirty_bgs_lock);
-+
-+		/*
-+		 * Modified block groups are accounted for in
-+		 * the delayed_refs_rsv.
-+		 */
-+		if (!bg_already_dirty)
-+			btrfs_inc_delayed_refs_rsv_bg_updates(trans->fs_info);
-+
- 		btrfs_discard_queue_work(&fs_info->discard_ctl, bg);
-+	}
- }
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 56f27487b632..813b82294341 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -3065,6 +3065,7 @@ bool btrfs_is_free_space_trimmed(struct btrfs_block_group *block_group)
- 	bool ret = true;
- 
- 	if (block_group->flags & BTRFS_BLOCK_GROUP_REMAPPED &&
-+	    !(block_group->flags & BTRFS_BLOCK_GROUP_STRIPE_REMOVAL_PENDING) &&
- 	    block_group->remap_bytes == 0 &&
- 	    block_group->identity_remap_count == 0) {
- 		return true;
-@@ -3845,6 +3846,9 @@ void btrfs_trim_fully_remapped_block_group(struct btrfs_block_group *bg)
- 	struct btrfs_trans_handle *trans;
- 	struct btrfs_chunk_map *map;
- 
-+	if (!(bg->flags & BTRFS_BLOCK_GROUP_STRIPE_REMOVAL_PENDING))
-+		goto skip_discard;
-+
- 	while (bg->discard_cursor < end) {
- 		u64 trimmed;
- 
-@@ -3897,6 +3901,7 @@ void btrfs_trim_fully_remapped_block_group(struct btrfs_block_group *bg)
- 
- 	btrfs_free_chunk_map(map);
- 
-+skip_discard:
- 	if (bg->used == 0) {
- 		spin_lock(&fs_info->unused_bgs_lock);
- 		list_move_tail(&bg->bg_list, &fs_info->unused_bgs);
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 7bad8d65d145..a179e4a8e960 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -4733,6 +4733,7 @@ int btrfs_last_identity_remap_gone(struct btrfs_trans_handle *trans,
- 				   struct btrfs_block_group *bg)
- {
- 	int ret;
-+	bool bg_already_dirty = true;
- 	BTRFS_PATH_AUTO_FREE(path);
- 
- 	ret = btrfs_remove_dev_extents(trans, chunk);
-@@ -4757,6 +4758,23 @@ int btrfs_last_identity_remap_gone(struct btrfs_trans_handle *trans,
- 
- 	btrfs_remove_bg_from_sinfo(bg);
- 
-+	spin_lock(&bg->lock);
-+	bg->flags &= ~BTRFS_BLOCK_GROUP_STRIPE_REMOVAL_PENDING;
-+	spin_unlock(&bg->lock);
-+
-+	spin_lock(&trans->transaction->dirty_bgs_lock);
-+	if (list_empty(&bg->dirty_list)) {
-+		list_add_tail(&bg->dirty_list,
-+			      &trans->transaction->dirty_bgs);
-+		bg_already_dirty = false;
-+		btrfs_get_block_group(bg);
-+	}
-+	spin_unlock(&trans->transaction->dirty_bgs_lock);
-+
-+	/* Modified block groups are accounted for in the delayed_refs_rsv. */
-+	if (!bg_already_dirty)
-+		btrfs_inc_delayed_refs_rsv_bg_updates(trans->fs_info);
-+
- 	path = btrfs_alloc_path();
- 	if (!path)
+ 	caching_ctl = kzalloc(sizeof(*caching_ctl), GFP_NOFS);
+ 	if (!caching_ctl)
  		return -ENOMEM;
-diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
-index 89bcb80081a6..36a7d1a3cbe3 100644
---- a/include/uapi/linux/btrfs_tree.h
-+++ b/include/uapi/linux/btrfs_tree.h
-@@ -1173,6 +1173,7 @@ struct btrfs_dev_replace_item {
- #define BTRFS_BLOCK_GROUP_RAID1C4       (1ULL << 10)
- #define BTRFS_BLOCK_GROUP_REMAPPED      (1ULL << 11)
- #define BTRFS_BLOCK_GROUP_REMAP         (1ULL << 12)
-+#define BTRFS_BLOCK_GROUP_STRIPE_REMOVAL_PENDING	(1ULL << 13)
- #define BTRFS_BLOCK_GROUP_RESERVED	(BTRFS_AVAIL_ALLOC_BIT_SINGLE | \
- 					 BTRFS_SPACE_INFO_GLOBAL_RSV)
+@@ -1248,9 +1255,11 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
+ 	 * another task to attempt to create another block group with the same
+ 	 * item key (and failing with -EEXIST and a transaction abort).
+ 	 */
+-	ret = btrfs_remove_block_group_free_space(trans, block_group);
+-	if (ret)
+-		goto out;
++	if (!(block_group->flags & BTRFS_BLOCK_GROUP_REMAPPED)) {
++		ret = btrfs_remove_block_group_free_space(trans, block_group);
++		if (ret)
++			goto out;
++	}
  
+ 	ret = remove_block_group_item(trans, path, block_group);
+ 	if (ret < 0)
+@@ -2472,10 +2481,12 @@ static int read_one_block_group(struct btrfs_fs_info *info,
+ 	if (btrfs_chunk_writeable(info, cache->start)) {
+ 		if (cache->used == 0) {
+ 			ASSERT(list_empty(&cache->bg_list));
+-			if (btrfs_test_opt(info, DISCARD_ASYNC))
++			if (btrfs_test_opt(info, DISCARD_ASYNC) &&
++			    !(cache->flags & BTRFS_BLOCK_GROUP_REMAPPED)) {
+ 				btrfs_discard_queue_work(&info->discard_ctl, cache);
+-			else
++			} else {
+ 				btrfs_mark_bg_unused(cache);
++			}
+ 		}
+ 	} else {
+ 		inc_block_group_ro(cache, 1);
+diff --git a/fs/btrfs/discard.c b/fs/btrfs/discard.c
+index 89fe85778115..1015a4d37fb2 100644
+--- a/fs/btrfs/discard.c
++++ b/fs/btrfs/discard.c
+@@ -698,6 +698,15 @@ void btrfs_discard_punt_unused_bgs_list(struct btrfs_fs_info *fs_info)
+ 	/* We enabled async discard, so punt all to the queue */
+ 	list_for_each_entry_safe(block_group, next, &fs_info->unused_bgs,
+ 				 bg_list) {
++		/* Fully remapped BGs have nothing to discard */
++		spin_lock(&block_group->lock);
++		if (block_group->flags & BTRFS_BLOCK_GROUP_REMAPPED &&
++		    !btrfs_is_block_group_used(block_group)) {
++			spin_unlock(&block_group->lock);
++			continue;
++		}
++		spin_unlock(&block_group->lock);
++
+ 		list_del_init(&block_group->bg_list);
+ 		btrfs_discard_queue_work(&fs_info->discard_ctl, block_group);
+ 		/*
 -- 
 2.49.1
 

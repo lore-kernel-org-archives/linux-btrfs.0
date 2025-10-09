@@ -1,143 +1,288 @@
-Received: from mail-wr1-f53.google.com (mail-wr1-f53.google.com [209.85.221.53])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BABA22C0267
-	for <linux-btrfs@vger.kernel.org>; Wed,  8 Oct 2025 21:28:03 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.53
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D0855154BE2
+	for <linux-btrfs@vger.kernel.org>; Thu,  9 Oct 2025 04:40:26 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1759958885; cv=none; b=e5nw1vc86qbZf6MTvcfV5Jyr+Mnx57V0+cdaqrwsapCmahaQA5dX7GQOLNdvhniz3bF9Fvdh+Rgu87Dc29JKm8lbzLQjw9adY7v281h5yFsgGtJvCbcRVpbCqFhlQdn9EJ+viDFKZEjzfABBfbUVDHVXP9nK3/DPNcDjhlMtLgQ=
+	t=1759984829; cv=none; b=lOU/8y5P8JgdPph0JMOicwxBZofdcznQPyOrvKcNEboS6gldcNyDpQ0FfBeZxXyLPzOrluR/1gvdKNvvFMlzwfJiBLY/Nx/ALD4TJjMOZUKXHE3aMkIpsJr9qBkTUHoJdrFHDfyZ5PRNcig4CzUAu+387eTHodVWv0hJAUa049A=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1759958885; c=relaxed/simple;
-	bh=E5N2Fgy9mJ0mvj1n6CWlymPq/Ag30DuQ861RwNTamHQ=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=shcDf/P55rJUx3d5jfECkpTpWJRJWeEa7BMdRvgSkh0qHm7iLlbLMSEqigZWY5bFpFXz/E1IXaiYWdeu4tmKi0oY7TLG6d4FAlFa7ov6XBvAMvSKKUBxY9Lky7zftVKMsJl4mzcEy7i4OFqeSuHSXCkDD/Jac46XYJkfS/Vn1C4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=ccvz4eac; arc=none smtp.client-ip=209.85.221.53
+	s=arc-20240116; t=1759984829; c=relaxed/simple;
+	bh=kftGuJheY6qk37XagAVVj5Vk4MEn0LSJlL5pKO1EOKc=;
+	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=b8Ahvyn8YanO8r0BLw4eCPlfRn22te2sOwfaXmUWbpVN9/AmN0luu0cIHrV6l4MfYTY9BPX3DB+1IQ8GyK93QfImt82GUGQsZ3Za1RMitkml2RRwmyayO3fYpF2/sFZs4ooZrrCtKgNHw2M9D1gKO/mH15kSFFmC6C7dccJ4XpE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Z0p0ud35; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Z0p0ud35; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="ccvz4eac"
-Received: by mail-wr1-f53.google.com with SMTP id ffacd0b85a97d-3ee1221ceaaso262461f8f.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 08 Oct 2025 14:28:03 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1759958882; x=1760563682; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to;
-        bh=6D3EUCRhmhoMUd045LVIlT60xGnWKT3phek8gUNMDC4=;
-        b=ccvz4eacBoXB5hmIFxrybCA+MYrhv1C6RrbKlKEBgy1SxB8Wj42EXCInZYK0MZWZBv
-         GYt60iIqxKRFoAr1LBx0M8rxlYreHJkjq20eKALxXBY1AP5/eEFdxBJ50KU5UI9mzqHF
-         ACu9Kq5vE7o/9IN8XUlZdJJvYU0OsbGOCTC0FDakQTz/1wo87h4yLuRqgInKQQVR9Fw+
-         zOYtF4tZ8pXZmigi+X5jo1nvOUMS5NPWiqXGH33BviAZiRMU1skRiJGsa3KESiM5vxNn
-         eK2MDBkSs6KupaXJg3Jb9cNEZs0Td4BP6aa2ocYxKmEaBSe0Il0S5ZZcO2zSf7mD9YDA
-         PSWA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1759958882; x=1760563682;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=6D3EUCRhmhoMUd045LVIlT60xGnWKT3phek8gUNMDC4=;
-        b=Fr+xD4708SLGaxxm1NAMTZxnRU7g5cjJvefKYttmMEnZZkrTSEdiMx+sQkQsaLRVMN
-         s/KrDV1bTVKsUQ8n4QkxSVpzGEspmyIqKbh4JzeP6D3wt21CX7yKU9xh9MhfrO6qafIZ
-         JF7zU5MGM4fkdqSTnQdYHggXya7Z5sKxZx3tnIF2fAWgwn0hFSfvYgpt8RCgLvlEyn9r
-         ZXgJjdA9a1XEwq1V0nqI0R+W5WhoCiESfgm9H+/Gwq7rPXLObJBedQ+uPRTK2/qwevgf
-         O0pn4K3jNewY3KDfzFW0BjLUMBxZCI7iP8lS298Z1c/5XyaGTJsZNEyNOsD5iitnErJY
-         5VXw==
-X-Forwarded-Encrypted: i=1; AJvYcCXIjR3w0ockIhVPpClPR7VFkVCOamvT+XcRw+VrLqe88OpVIKie8VW0v4NV+KtTeYBO8mn/pqUNzRCtlQ==@vger.kernel.org
-X-Gm-Message-State: AOJu0YxyGjF8gGf8gV3zcK5B3vV7qnBFRSv9+jfoVXJWOHv7weais6DF
-	5LPbA2N0K/19y7baRcvFOg9x1lB3l7vTorN1Y5q0TcTpFxFuE3zvoZo7bDikY7b+np4=
-X-Gm-Gg: ASbGncvBL1LV2v6gyh6/3/pXoyEE51bRCaPDHAZxaAqNom8h+J2vN6i1hHNBJQt5i1f
-	In0OL2hIfSfTOqf0LloUwZwSllrsY5Ai//GThwIpoeqq8euT7aGCCqJW5MPVfLJFBNY90itHpCc
-	vdnSBnAA7uskzqW18eC4MUZtRtbg3W2PCKDksCz9UVexmcmhAErlzkQXnAcliuXMh3hMyUxLEVF
-	BwWlp9/Zcih2ZTrvSrQmrQu5OiSKIMJN4pSCzr98YQDv9VSQs9YVxM1t6xKmqOEcVPMXenHrsbT
-	krtYegosafOQjrkkpuE71D53rU1CR1DZFDQEdN7+nD/ULnPgTKXgXe1PNQDpSwoxISDMsn20jSV
-	EGnVom9b+aME8O5BjTOph8pbAcNhJNDIeSh9l7xxOW1FanbUYyIy+3tdDa2Z7wATsg2cmIvLedB
-	s=
-X-Google-Smtp-Source: AGHT+IFeqI/ZwivgLiNFVO4l3oOVEHmh6kuhLEznUX/5OJiNg1nVk/Ecd7EB2BNW+Jn42ULb498vFg==
-X-Received: by 2002:a05:6000:2087:b0:3ee:1563:a78b with SMTP id ffacd0b85a97d-42667177dc7mr3205640f8f.20.1759958882005;
-        Wed, 08 Oct 2025 14:28:02 -0700 (PDT)
-Received: from ?IPV6:2403:580d:fda1::299? (2403-580d-fda1--299.ip6.aussiebb.net. [2403:580d:fda1::299])
-        by smtp.gmail.com with ESMTPSA id 41be03b00d2f7-b63201d6996sm5644011a12.2.2025.10.08.14.27.58
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 08 Oct 2025 14:28:01 -0700 (PDT)
-Message-ID: <34156b7a-b8b4-4f0a-8379-f212951b8d57@suse.com>
-Date: Thu, 9 Oct 2025 07:57:56 +1030
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Z0p0ud35";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Z0p0ud35"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id C68161F791
+	for <linux-btrfs@vger.kernel.org>; Thu,  9 Oct 2025 04:40:24 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1759984824; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=+Q0EwRoeqBVkHR0PfjN5bOMsdoM3jVp0LH85IZkCaxw=;
+	b=Z0p0ud35Fb98nwfm2glN4g5uBU63SpNRiugKjx5wDNdkPXkdhc22r2NLojTO/C2a637eES
+	Xn6Beb4pk1luDUHnAlG2IKQTs7fDC9sCDLiC6364DnSxPB/5Zwpc/dOBHLipD65Ix7St2Z
+	vMOdJesaey7tqAlzSPRaImxNNhyvRHc=
+Authentication-Results: smtp-out2.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1759984824; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=+Q0EwRoeqBVkHR0PfjN5bOMsdoM3jVp0LH85IZkCaxw=;
+	b=Z0p0ud35Fb98nwfm2glN4g5uBU63SpNRiugKjx5wDNdkPXkdhc22r2NLojTO/C2a637eES
+	Xn6Beb4pk1luDUHnAlG2IKQTs7fDC9sCDLiC6364DnSxPB/5Zwpc/dOBHLipD65Ix7St2Z
+	vMOdJesaey7tqAlzSPRaImxNNhyvRHc=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 0AA2413AAC
+	for <linux-btrfs@vger.kernel.org>; Thu,  9 Oct 2025 04:40:23 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id wDGOL7c852geVAAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Thu, 09 Oct 2025 04:40:23 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/3] btrfs: raid56: remove sector_ptr::has_paddr member
+Date: Thu,  9 Oct 2025 15:09:59 +1030
+Message-ID: <a7a93c47958119a270bb929eadf2128568b47d06.1759984060.git.wqu@suse.com>
+X-Mailer: git-send-email 2.50.1
+In-Reply-To: <cover.1759984060.git.wqu@suse.com>
+References: <cover.1759984060.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: tree-checker: Fix bounds check in
- check_inode_extref()
-To: Dan Carpenter <dan.carpenter@linaro.org>
-Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
- Filipe Manana <fdmanana@suse.com>, linux-btrfs@vger.kernel.org,
- linux-kernel@vger.kernel.org, kernel-janitors@vger.kernel.org
-References: <aOZ-inc8o7T63QHT@stanley.mountain>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <aOZ-inc8o7T63QHT@stanley.mountain>
-Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	ARC_NA(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:email,imap1.dmz-prg2.suse.org:helo];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	RCVD_TLS_ALL(0.00)[]
+X-Spam-Flag: NO
+X-Spam-Level: 
+X-Spam-Score: -2.80
 
+We can use paddr -1 as an indicator for unset/uninitialized paddr.
 
+We can not use 0 paddr, unlike virtual address 0 which is never mapped
+thus will always trigger a page fault, physical address 0 may be a valid
+page.
 
-在 2025/10/9 01:38, Dan Carpenter 写道:
-> The parentheses for the unlikely() annotation were put in the wrong
-> place so it means that the condition is basically never true and the
-> bounds checking is skipped.
-> 
-> Fixes: aab9458b9f00 ("btrfs: tree-checker: add inode extref checks")
-> Signed-off-by: Dan Carpenter <dan.carpenter@linaro.org>
+So here we follow swiotlb to use (paddr)-1 as a special indicator for
+invalid/unset physical address.
 
-Nice catch.
+Even if the PFN may still be valid, our usage of the physical address
+should always be aligned to fs block size (or page size for bs > ps
+cases), thus such -1 paddr should never be a valid one.
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
+With this special -1 paddr, we can get rid of has_paddr member and save
+1 byte for sector_ptr structure.
 
-Thanks,
-Qu
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/raid56.c | 46 ++++++++++++++++++++++++++--------------------
+ 1 file changed, 26 insertions(+), 20 deletions(-)
 
-> ---
->   fs/btrfs/tree-checker.c | 2 +-
->   1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-> index ca30b15ea452..c10b4c242acf 100644
-> --- a/fs/btrfs/tree-checker.c
-> +++ b/fs/btrfs/tree-checker.c
-> @@ -1797,7 +1797,7 @@ static int check_inode_extref(struct extent_buffer *leaf,
->   		struct btrfs_inode_extref *extref = (struct btrfs_inode_extref *)ptr;
->   		u16 namelen;
->   
-> -		if (unlikely(ptr + sizeof(*extref)) > end) {
-> +		if (unlikely(ptr + sizeof(*extref) > end)) {
->   			inode_ref_err(leaf, slot,
->   			"inode extref overflow, ptr %lu end %lu inode_extref size %zu",
->   				      ptr, end, sizeof(*extref));
+diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+index 0135dceb7baa..60e81b79f939 100644
+--- a/fs/btrfs/raid56.c
++++ b/fs/btrfs/raid56.c
+@@ -133,6 +133,12 @@ struct btrfs_stripe_hash_table {
+ 	struct btrfs_stripe_hash table[];
+ };
+ 
++/*
++ * The PFN may still be valid, but our paddrs should always be block size
++ * aligned, thus such -1 paddr is definitely not a valid one.
++ */
++#define INVALID_PADDR	(~(phys_addr_t)0)
++
+ /*
+  * A structure to present a sector inside a page, the length is fixed to
+  * sectorsize;
+@@ -141,9 +147,10 @@ struct sector_ptr {
+ 	/*
+ 	 * Blocks from the bio list can still be highmem.
+ 	 * So here we use physical address to present a page and the offset inside it.
++	 *
++	 * If it's INVALID_PADDR then it's not set.
+ 	 */
+ 	phys_addr_t paddr;
+-	bool has_paddr;
+ 	bool uptodate;
+ };
+ 
+@@ -263,7 +270,7 @@ static void cache_rbio_pages(struct btrfs_raid_bio *rbio)
+ 
+ 	for (i = 0; i < rbio->nr_sectors; i++) {
+ 		/* Some range not covered by bio (partial write), skip it */
+-		if (!rbio->bio_sectors[i].has_paddr) {
++		if (rbio->bio_sectors[i].paddr == INVALID_PADDR) {
+ 			/*
+ 			 * Even if the sector is not covered by bio, if it is
+ 			 * a data sector it should still be uptodate as it is
+@@ -335,7 +342,6 @@ static void index_stripe_sectors(struct btrfs_raid_bio *rbio)
+ 		if (!rbio->stripe_pages[page_index])
+ 			continue;
+ 
+-		rbio->stripe_sectors[i].has_paddr = true;
+ 		rbio->stripe_sectors[i].paddr =
+ 			page_to_phys(rbio->stripe_pages[page_index]) +
+ 			offset_in_page(offset);
+@@ -972,9 +978,9 @@ static struct sector_ptr *sector_in_rbio(struct btrfs_raid_bio *rbio,
+ 
+ 	spin_lock(&rbio->bio_list_lock);
+ 	sector = &rbio->bio_sectors[index];
+-	if (sector->has_paddr || bio_list_only) {
++	if (sector->paddr != INVALID_PADDR || bio_list_only) {
+ 		/* Don't return sector without a valid page pointer */
+-		if (!sector->has_paddr)
++		if (sector->paddr == INVALID_PADDR)
+ 			sector = NULL;
+ 		spin_unlock(&rbio->bio_list_lock);
+ 		return sector;
+@@ -1032,6 +1038,10 @@ static struct btrfs_raid_bio *alloc_rbio(struct btrfs_fs_info *fs_info,
+ 		kfree(rbio);
+ 		return ERR_PTR(-ENOMEM);
+ 	}
++	for (int i = 0; i < num_sectors; i++) {
++		rbio->stripe_sectors[i].paddr = INVALID_PADDR;
++		rbio->bio_sectors[i].paddr = INVALID_PADDR;
++	}
+ 
+ 	bio_list_init(&rbio->bio_list);
+ 	init_waitqueue_head(&rbio->io_wait);
+@@ -1152,7 +1162,7 @@ static int rbio_add_io_sector(struct btrfs_raid_bio *rbio,
+ 			   rbio, stripe_nr);
+ 	ASSERT_RBIO_SECTOR(sector_nr >= 0 && sector_nr < rbio->stripe_nsectors,
+ 			   rbio, sector_nr);
+-	ASSERT(sector->has_paddr);
++	ASSERT(sector->paddr != INVALID_PADDR);
+ 
+ 	stripe = &rbio->bioc->stripes[stripe_nr];
+ 	disk_start = stripe->physical + sector_nr * sectorsize;
+@@ -1216,7 +1226,6 @@ static void index_one_bio(struct btrfs_raid_bio *rbio, struct bio *bio)
+ 		unsigned int index = (offset >> sectorsize_bits);
+ 		struct sector_ptr *sector = &rbio->bio_sectors[index];
+ 
+-		sector->has_paddr = true;
+ 		sector->paddr = paddr;
+ 		offset += sectorsize;
+ 	}
+@@ -1299,7 +1308,7 @@ static void assert_rbio(struct btrfs_raid_bio *rbio)
+ static inline void *kmap_local_sector(const struct sector_ptr *sector)
+ {
+ 	/* The sector pointer must have a page mapped to it. */
+-	ASSERT(sector->has_paddr);
++	ASSERT(sector->paddr != INVALID_PADDR);
+ 
+ 	return kmap_local_page(phys_to_page(sector->paddr)) +
+ 	       offset_in_page(sector->paddr);
+@@ -1498,7 +1507,7 @@ static struct sector_ptr *find_stripe_sector(struct btrfs_raid_bio *rbio,
+ 	for (i = 0; i < rbio->nr_sectors; i++) {
+ 		struct sector_ptr *sector = &rbio->stripe_sectors[i];
+ 
+-		if (sector->has_paddr && sector->paddr == paddr)
++		if (sector->paddr == paddr)
+ 			return sector;
+ 	}
+ 	return NULL;
+@@ -1532,8 +1541,7 @@ static int get_bio_sector_nr(struct btrfs_raid_bio *rbio, struct bio *bio)
+ 	for (i = 0; i < rbio->nr_sectors; i++) {
+ 		if (rbio->stripe_sectors[i].paddr == bvec_paddr)
+ 			break;
+-		if (rbio->bio_sectors[i].has_paddr &&
+-		    rbio->bio_sectors[i].paddr == bvec_paddr)
++		if (rbio->bio_sectors[i].paddr == bvec_paddr)
+ 			break;
+ 	}
+ 	ASSERT(i < rbio->nr_sectors);
+@@ -2317,7 +2325,7 @@ static bool need_read_stripe_sectors(struct btrfs_raid_bio *rbio)
+ 		 * thus this rbio can not be cached one, as cached one must
+ 		 * have all its data sectors present and uptodate.
+ 		 */
+-		if (!sector->has_paddr || !sector->uptodate)
++		if (sector->paddr == INVALID_PADDR || !sector->uptodate)
+ 			return true;
+ 	}
+ 	return false;
+@@ -2508,8 +2516,8 @@ static int finish_parity_scrub(struct btrfs_raid_bio *rbio)
+ 	int sectornr;
+ 	bool has_qstripe;
+ 	struct page *page;
+-	struct sector_ptr p_sector = { 0 };
+-	struct sector_ptr q_sector = { 0 };
++	struct sector_ptr p_sector = { .paddr = INVALID_PADDR };
++	struct sector_ptr q_sector = { .paddr = INVALID_PADDR };
+ 	struct bio_list bio_list;
+ 	int is_replace = 0;
+ 	int ret;
+@@ -2542,7 +2550,6 @@ static int finish_parity_scrub(struct btrfs_raid_bio *rbio)
+ 	page = alloc_page(GFP_NOFS);
+ 	if (!page)
+ 		return -ENOMEM;
+-	p_sector.has_paddr = true;
+ 	p_sector.paddr = page_to_phys(page);
+ 	p_sector.uptodate = 1;
+ 	page = NULL;
+@@ -2552,10 +2559,9 @@ static int finish_parity_scrub(struct btrfs_raid_bio *rbio)
+ 		page = alloc_page(GFP_NOFS);
+ 		if (!page) {
+ 			__free_page(phys_to_page(p_sector.paddr));
+-			p_sector.has_paddr = false;
++			p_sector.paddr = INVALID_PADDR;
+ 			return -ENOMEM;
+ 		}
+-		q_sector.has_paddr = true;
+ 		q_sector.paddr = page_to_phys(page);
+ 		q_sector.uptodate = 1;
+ 		page = NULL;
+@@ -2604,10 +2610,10 @@ static int finish_parity_scrub(struct btrfs_raid_bio *rbio)
+ 
+ 	kunmap_local(pointers[nr_data]);
+ 	__free_page(phys_to_page(p_sector.paddr));
+-	p_sector.has_paddr = false;
+-	if (q_sector.has_paddr) {
++	p_sector.paddr = INVALID_PADDR;
++	if (q_sector.paddr != INVALID_PADDR) {
+ 		__free_page(phys_to_page(q_sector.paddr));
+-		q_sector.has_paddr = false;
++		q_sector.paddr = INVALID_PADDR;
+ 	}
+ 
+ 	/*
+-- 
+2.50.1
 

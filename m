@@ -1,41 +1,40 @@
 Received: from mail.burntcomma.com (unknown [62.3.69.246])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 98E492A1CA
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9964D246BA8
 	for <linux-btrfs@vger.kernel.org>; Thu,  9 Oct 2025 11:34:05 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=62.3.69.246
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1760009647; cv=none; b=g/r7ORhdsSy8gjDWWHgRFu/yFtKzLVzm21ePNwc31Rf3ou5l98KCcHnEKp70giC+2BKqfgtYdzz2zG4t+wRQmduS7e6y6A5Wsuk4+X3zCCHzF4rkG3dEriZRSWijb/Prz0lATZ1wjfWNnft+kBAwurphgacDTmD78bWPfXh5aDE=
+	t=1760009647; cv=none; b=EqfAPZ7zsFu9F9sjQDEF9aimNA7/EUGBng037jKCSKNqRqH3gQS0RyhYCXrNX07p1x9ovA+0io9YNPpIJR9aw06zKieljGJbn3UHDWtMstCevM7HAaKrL9wuI1ACBpSbhp+Sz+k9cuLHgK6CCeM0fLUULeM8JMjz5U/jqD636wE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
 	s=arc-20240116; t=1760009647; c=relaxed/simple;
-	bh=pNTq+ft4hvG5tpyFL8zBAXY3m6y5kPYoV5800T2le90=;
+	bh=jeUCgbKVGeRmia/eRwWkDdcuF5C4jfiafNWKpYkTkGM=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 Mime-Version; b=VBUsYs19f8kyoqJmbxjHgfmvV1e10sM/m8dpwAWYBt+I+BO+yDgA+nx5dFVUJ9bbzTeyIIcLDuVbk3bVIgZw0te15E3USvekiSHx+OQrN5zYhy8zLHHNyqufC2LHqHvErvjtH97hxkUebQ1f8L+RpD/9Juw707/+IThRYJAgMKU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com; spf=fail smtp.mailfrom=harmstone.com; dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b=Uu4KoRHl; arc=none smtp.client-ip=62.3.69.246
+	 Mime-Version; b=af9Od2zUYKMbxNBn237M0gZtB8epzpPbNbx6DWpRYniEva0qz3ButOUs9KZGkvzAt50H+sXOc63ohvligPwOCduHxK/R4oAjdGNh9Fhm0pXFvHtc6203Pc92gqlh4rJ/R/KYKaLO7Qbip7Tlu4R9PoOBcL0jVw6IHEACQ+n20jo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com; spf=fail smtp.mailfrom=harmstone.com; dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b=DVuZ8Z+s; arc=none smtp.client-ip=62.3.69.246
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com
 Authentication-Results: smtp.subspace.kernel.org; spf=fail smtp.mailfrom=harmstone.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b="Uu4KoRHl"
+	dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b="DVuZ8Z+s"
 Received: from localhost.localdomain (beren.burntcomma.com [IPv6:2a02:8012:8cf0:0:ce28:aaff:fe0d:6db2])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
 	(Client did not present a certificate)
-	by mail.burntcomma.com (Postfix) with ESMTPSA id 3ED122C564E;
+	by mail.burntcomma.com (Postfix) with ESMTPSA id 583792C5650;
 	Thu,  9 Oct 2025 12:28:08 +0100 (BST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=harmstone.com;
 	s=mail; t=1760009288;
-	bh=nAxshwl3+0mHoB8L/3DB6sG/W5ekLm/dK4WoRSjeKpQ=;
+	bh=VVcvxEfGnNkGfuAcwVs3D0j75AGWL8/uR5OJ1RJnsgA=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References;
-	b=Uu4KoRHlBER1tvdMC0Jd/MvStj1KrVJbOKG177IZdU9rsoicmG7s3/qqZD2MACeo3
-	 l2xrqtdJc78023GG10DgpVBItR9k5semz6/Psfea1lmCGsCg8+gK0x/xBYXjcD3f6d
-	 PxV4kR/FhKRYAk4X+wZEIduHGFuEOjDQOG7zGnRw=
+	b=DVuZ8Z+sSzhtqcdkV0C0ab6d/xaUgJgvQSJvDPTkl2AqVgApeNfy9EmGnTrZVnPPd
+	 OmAfOQbtRmRurHzzyipYk+0MNsfRRBYxJtR9rDmqIBNpKb3vzkQbez+4uPt3e4Og95
+	 BtY0SWH7ivtHawjMHRP3sNPsB/DywOOSKZ1SyQP8=
 From: Mark Harmstone <mark@harmstone.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Mark Harmstone <mark@harmstone.com>,
-	Boris Burkov <boris@bur.io>
-Subject: [PATCH v3 01/17] btrfs: add definitions and constants for remap-tree
-Date: Thu,  9 Oct 2025 12:27:56 +0100
-Message-ID: <20251009112814.13942-2-mark@harmstone.com>
+Cc: Mark Harmstone <mark@harmstone.com>
+Subject: [PATCH v3 03/17] btrfs: allow remapped chunks to have zero stripes
+Date: Thu,  9 Oct 2025 12:27:58 +0100
+Message-ID: <20251009112814.13942-4-mark@harmstone.com>
 In-Reply-To: <20251009112814.13942-1-mark@harmstone.com>
 References: <20251009112814.13942-1-mark@harmstone.com>
 Precedence: bulk
@@ -46,169 +45,161 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Add an incompat flag for the new remap-tree feature, and the constants
-and definitions needed to support it.
+When a chunk has been fully remapped, we are going to set its
+num_stripes to 0, as it will no longer represent a physical location on
+disk.
+
+Change tree-checker to allow for this, and fix a couple of
+divide-by-zeroes seen elsewhere.
 
 Signed-off-by: Mark Harmstone <mark@harmstone.com>
-Reviewed-by: Boris Burkov <boris@bur.io>
 ---
- fs/btrfs/accessors.h            |  3 +++
- fs/btrfs/locking.c              |  1 +
- fs/btrfs/sysfs.c                |  2 ++
- fs/btrfs/tree-checker.c         |  6 ++----
- fs/btrfs/tree-checker.h         |  5 +++++
- fs/btrfs/volumes.c              |  1 +
- include/uapi/linux/btrfs.h      |  1 +
- include/uapi/linux/btrfs_tree.h | 12 ++++++++++++
- 8 files changed, 27 insertions(+), 4 deletions(-)
+ fs/btrfs/tree-checker.c | 65 ++++++++++++++++++++++++++++-------------
+ fs/btrfs/volumes.c      | 13 ++++++++-
+ 2 files changed, 57 insertions(+), 21 deletions(-)
 
-diff --git a/fs/btrfs/accessors.h b/fs/btrfs/accessors.h
-index 99b3ced12805..95a1ca8c099b 100644
---- a/fs/btrfs/accessors.h
-+++ b/fs/btrfs/accessors.h
-@@ -1009,6 +1009,9 @@ BTRFS_SETGET_STACK_FUNCS(stack_verity_descriptor_encryption,
- BTRFS_SETGET_STACK_FUNCS(stack_verity_descriptor_size,
- 			 struct btrfs_verity_descriptor_item, size, 64);
- 
-+BTRFS_SETGET_FUNCS(remap_address, struct btrfs_remap, address, 64);
-+BTRFS_SETGET_STACK_FUNCS(stack_remap_address, struct btrfs_remap, address, 64);
-+
- /* Cast into the data area of the leaf. */
- #define btrfs_item_ptr(leaf, slot, type)				\
- 	((type *)(btrfs_item_nr_offset(leaf, 0) + btrfs_item_offset(leaf, slot)))
-diff --git a/fs/btrfs/locking.c b/fs/btrfs/locking.c
-index 0035851d72b0..726e4d70f37c 100644
---- a/fs/btrfs/locking.c
-+++ b/fs/btrfs/locking.c
-@@ -73,6 +73,7 @@ static struct btrfs_lockdep_keyset {
- 	{ .id = BTRFS_FREE_SPACE_TREE_OBJECTID,	DEFINE_NAME("free-space") },
- 	{ .id = BTRFS_BLOCK_GROUP_TREE_OBJECTID, DEFINE_NAME("block-group") },
- 	{ .id = BTRFS_RAID_STRIPE_TREE_OBJECTID, DEFINE_NAME("raid-stripe") },
-+	{ .id = BTRFS_REMAP_TREE_OBJECTID,      DEFINE_NAME("remap-tree") },
- 	{ .id = 0,				DEFINE_NAME("tree")	},
- };
- 
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 81f52c1f55ce..857d2772db1c 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -291,6 +291,7 @@ BTRFS_FEAT_ATTR_COMPAT_RO(free_space_tree, FREE_SPACE_TREE);
- BTRFS_FEAT_ATTR_COMPAT_RO(block_group_tree, BLOCK_GROUP_TREE);
- BTRFS_FEAT_ATTR_INCOMPAT(raid1c34, RAID1C34);
- BTRFS_FEAT_ATTR_INCOMPAT(simple_quota, SIMPLE_QUOTA);
-+BTRFS_FEAT_ATTR_INCOMPAT(remap_tree, REMAP_TREE);
- #ifdef CONFIG_BLK_DEV_ZONED
- BTRFS_FEAT_ATTR_INCOMPAT(zoned, ZONED);
- #endif
-@@ -325,6 +326,7 @@ static struct attribute *btrfs_supported_feature_attrs[] = {
- 	BTRFS_FEAT_ATTR_PTR(raid1c34),
- 	BTRFS_FEAT_ATTR_PTR(block_group_tree),
- 	BTRFS_FEAT_ATTR_PTR(simple_quota),
-+	BTRFS_FEAT_ATTR_PTR(remap_tree),
- #ifdef CONFIG_BLK_DEV_ZONED
- 	BTRFS_FEAT_ATTR_PTR(zoned),
- #endif
 diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-index c10b4c242acf..9c03aeb6f2c7 100644
+index 62f35338a555..59b1393e5018 100644
 --- a/fs/btrfs/tree-checker.c
 +++ b/fs/btrfs/tree-checker.c
-@@ -913,12 +913,10 @@ int btrfs_check_chunk_valid(const struct btrfs_fs_info *fs_info,
- 			  length, btrfs_stripe_nr_to_offset(U32_MAX));
- 		return -EUCLEAN;
- 	}
--	if (unlikely(type & ~(BTRFS_BLOCK_GROUP_TYPE_MASK |
--			      BTRFS_BLOCK_GROUP_PROFILE_MASK))) {
-+	if (unlikely(type & ~BTRFS_BLOCK_GROUP_VALID)) {
- 		chunk_err(fs_info, leaf, chunk, logical,
- 			  "unrecognized chunk type: 0x%llx",
--			  ~(BTRFS_BLOCK_GROUP_TYPE_MASK |
--			    BTRFS_BLOCK_GROUP_PROFILE_MASK) & type);
-+			  type & ~BTRFS_BLOCK_GROUP_VALID);
- 		return -EUCLEAN;
- 	}
+@@ -816,6 +816,41 @@ static void chunk_err(const struct btrfs_fs_info *fs_info,
+ 	va_end(args);
+ }
  
-diff --git a/fs/btrfs/tree-checker.h b/fs/btrfs/tree-checker.h
-index eb201f4ec3c7..833e2fd989eb 100644
---- a/fs/btrfs/tree-checker.h
-+++ b/fs/btrfs/tree-checker.h
-@@ -57,6 +57,11 @@ enum btrfs_tree_block_status {
- 	BTRFS_TREE_BLOCK_WRITTEN_NOT_SET,
- };
- 
-+
-+#define BTRFS_BLOCK_GROUP_VALID	(BTRFS_BLOCK_GROUP_TYPE_MASK | \
-+				 BTRFS_BLOCK_GROUP_PROFILE_MASK | \
-+				 BTRFS_BLOCK_GROUP_REMAPPED)
++static bool valid_stripe_count(u64 profile, u16 num_stripes,
++			       u16 sub_stripes)
++{
++	switch (profile) {
++	case BTRFS_BLOCK_GROUP_RAID0:
++		return true;
++	case BTRFS_BLOCK_GROUP_RAID10:
++		return sub_stripes ==
++			btrfs_raid_array[BTRFS_RAID_RAID10].sub_stripes;
++	case BTRFS_BLOCK_GROUP_RAID1:
++		return num_stripes ==
++			btrfs_raid_array[BTRFS_RAID_RAID1].devs_min;
++	case BTRFS_BLOCK_GROUP_RAID1C3:
++		return num_stripes ==
++			btrfs_raid_array[BTRFS_RAID_RAID1C3].devs_min;
++	case BTRFS_BLOCK_GROUP_RAID1C4:
++		return num_stripes ==
++			btrfs_raid_array[BTRFS_RAID_RAID1C4].devs_min;
++	case BTRFS_BLOCK_GROUP_RAID5:
++		return num_stripes >=
++			btrfs_raid_array[BTRFS_RAID_RAID5].devs_min;
++	case BTRFS_BLOCK_GROUP_RAID6:
++		return num_stripes >=
++			btrfs_raid_array[BTRFS_RAID_RAID6].devs_min;
++	case BTRFS_BLOCK_GROUP_DUP:
++		return num_stripes ==
++			btrfs_raid_array[BTRFS_RAID_DUP].dev_stripes;
++	case 0: /* SINGLE */
++		return num_stripes ==
++			btrfs_raid_array[BTRFS_RAID_SINGLE].dev_stripes;
++	default:
++		BUG();
++	}
++}
 +
  /*
-  * Exported simply for btrfs-progs which wants to have the
-  * btrfs_tree_block_status return codes.
+  * The common chunk check which could also work on super block sys chunk array.
+  *
+@@ -839,6 +874,7 @@ int btrfs_check_chunk_valid(const struct btrfs_fs_info *fs_info,
+ 	u64 features;
+ 	u32 chunk_sector_size;
+ 	bool mixed = false;
++	bool remapped;
+ 	int raid_index;
+ 	int nparity;
+ 	int ncopies;
+@@ -862,12 +898,14 @@ int btrfs_check_chunk_valid(const struct btrfs_fs_info *fs_info,
+ 	ncopies = btrfs_raid_array[raid_index].ncopies;
+ 	nparity = btrfs_raid_array[raid_index].nparity;
+ 
+-	if (unlikely(!num_stripes)) {
++	remapped = type & BTRFS_BLOCK_GROUP_REMAPPED;
++
++	if (unlikely(!remapped && !num_stripes)) {
+ 		chunk_err(fs_info, leaf, chunk, logical,
+ 			  "invalid chunk num_stripes, have %u", num_stripes);
+ 		return -EUCLEAN;
+ 	}
+-	if (unlikely(num_stripes < ncopies)) {
++	if (unlikely(num_stripes != 0 && num_stripes < ncopies)) {
+ 		chunk_err(fs_info, leaf, chunk, logical,
+ 			  "invalid chunk num_stripes < ncopies, have %u < %d",
+ 			  num_stripes, ncopies);
+@@ -965,22 +1003,9 @@ int btrfs_check_chunk_valid(const struct btrfs_fs_info *fs_info,
+ 		}
+ 	}
+ 
+-	if (unlikely((type & BTRFS_BLOCK_GROUP_RAID10 &&
+-		      sub_stripes != btrfs_raid_array[BTRFS_RAID_RAID10].sub_stripes) ||
+-		     (type & BTRFS_BLOCK_GROUP_RAID1 &&
+-		      num_stripes != btrfs_raid_array[BTRFS_RAID_RAID1].devs_min) ||
+-		     (type & BTRFS_BLOCK_GROUP_RAID1C3 &&
+-		      num_stripes != btrfs_raid_array[BTRFS_RAID_RAID1C3].devs_min) ||
+-		     (type & BTRFS_BLOCK_GROUP_RAID1C4 &&
+-		      num_stripes != btrfs_raid_array[BTRFS_RAID_RAID1C4].devs_min) ||
+-		     (type & BTRFS_BLOCK_GROUP_RAID5 &&
+-		      num_stripes < btrfs_raid_array[BTRFS_RAID_RAID5].devs_min) ||
+-		     (type & BTRFS_BLOCK_GROUP_RAID6 &&
+-		      num_stripes < btrfs_raid_array[BTRFS_RAID_RAID6].devs_min) ||
+-		     (type & BTRFS_BLOCK_GROUP_DUP &&
+-		      num_stripes != btrfs_raid_array[BTRFS_RAID_DUP].dev_stripes) ||
+-		     ((type & BTRFS_BLOCK_GROUP_PROFILE_MASK) == 0 &&
+-		      num_stripes != btrfs_raid_array[BTRFS_RAID_SINGLE].dev_stripes))) {
++	if (!remapped &&
++	    !valid_stripe_count(type & BTRFS_BLOCK_GROUP_PROFILE_MASK,
++				num_stripes, sub_stripes)) {
+ 		chunk_err(fs_info, leaf, chunk, logical,
+ 			"invalid num_stripes:sub_stripes %u:%u for profile %llu",
+ 			num_stripes, sub_stripes,
+@@ -1004,11 +1029,11 @@ static int check_leaf_chunk_item(struct extent_buffer *leaf,
+ 	struct btrfs_fs_info *fs_info = leaf->fs_info;
+ 	int num_stripes;
+ 
+-	if (unlikely(btrfs_item_size(leaf, slot) < sizeof(struct btrfs_chunk))) {
++	if (unlikely(btrfs_item_size(leaf, slot) < offsetof(struct btrfs_chunk, stripe))) {
+ 		chunk_err(fs_info, leaf, chunk, key->offset,
+ 			"invalid chunk item size: have %u expect [%zu, %u)",
+ 			btrfs_item_size(leaf, slot),
+-			sizeof(struct btrfs_chunk),
++			offsetof(struct btrfs_chunk, stripe),
+ 			BTRFS_LEAF_DATA_SIZE(fs_info));
+ 		return -EUCLEAN;
+ 	}
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 65b02a93db31..2e144ebd56ac 100644
+index e14b86e2996b..6750f6f0af59 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -231,6 +231,7 @@ void btrfs_describe_block_groups(u64 bg_flags, char *buf, u32 size_buf)
- 	DESCRIBE_FLAG(BTRFS_BLOCK_GROUP_DATA, "data");
- 	DESCRIBE_FLAG(BTRFS_BLOCK_GROUP_SYSTEM, "system");
- 	DESCRIBE_FLAG(BTRFS_BLOCK_GROUP_METADATA, "metadata");
-+	DESCRIBE_FLAG(BTRFS_BLOCK_GROUP_REMAPPED, "remapped");
+@@ -6145,6 +6145,12 @@ struct btrfs_discard_stripe *btrfs_map_discard(struct btrfs_fs_info *fs_info,
+ 		goto out_free_map;
+ 	}
  
- 	DESCRIBE_FLAG(BTRFS_AVAIL_ALLOC_BIT_SINGLE, "single");
- 	for (i = 0; i < BTRFS_NR_RAID_TYPES; i++)
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index 8e710bbb688e..fba303ed49e6 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -336,6 +336,7 @@ struct btrfs_ioctl_fs_info_args {
- #define BTRFS_FEATURE_INCOMPAT_EXTENT_TREE_V2	(1ULL << 13)
- #define BTRFS_FEATURE_INCOMPAT_RAID_STRIPE_TREE	(1ULL << 14)
- #define BTRFS_FEATURE_INCOMPAT_SIMPLE_QUOTA	(1ULL << 16)
-+#define BTRFS_FEATURE_INCOMPAT_REMAP_TREE	(1ULL << 17)
- 
- struct btrfs_ioctl_feature_flags {
- 	__u64 compat_flags;
-diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
-index fc29d273845d..4439d77a7252 100644
---- a/include/uapi/linux/btrfs_tree.h
-+++ b/include/uapi/linux/btrfs_tree.h
-@@ -76,6 +76,9 @@
- /* Tracks RAID stripes in block groups. */
- #define BTRFS_RAID_STRIPE_TREE_OBJECTID 12ULL
- 
-+/* Holds details of remapped addresses after relocation. */
-+#define BTRFS_REMAP_TREE_OBJECTID 13ULL
++	/* avoid divide by zero on fully-remapped chunks */
++	if (map->num_stripes == 0) {
++		ret = -EOPNOTSUPP;
++		goto out_free_map;
++	}
 +
- /* device stats in the device tree */
- #define BTRFS_DEV_STATS_OBJECTID 0ULL
- 
-@@ -282,6 +285,10 @@
- 
- #define BTRFS_RAID_STRIPE_KEY	230
- 
-+#define BTRFS_IDENTITY_REMAP_KEY 	234
-+#define BTRFS_REMAP_KEY		 	235
-+#define BTRFS_REMAP_BACKREF_KEY	 	236
+ 	offset = logical - map->start;
+ 	length = min_t(u64, map->start + map->chunk_len - logical, length);
+ 	*length_ret = length;
+@@ -7088,7 +7094,12 @@ static int read_one_chunk(struct btrfs_key *key, struct extent_buffer *leaf,
+ 	 */
+ 	map->sub_stripes = btrfs_raid_array[index].sub_stripes;
+ 	map->verified_stripes = 0;
+-	map->stripe_size = btrfs_calc_stripe_length(map);
 +
- /*
-  * Records the overall state of the qgroups.
-  * There's only one instance of this key present,
-@@ -1161,6 +1168,7 @@ struct btrfs_dev_replace_item {
- #define BTRFS_BLOCK_GROUP_RAID6         (1ULL << 8)
- #define BTRFS_BLOCK_GROUP_RAID1C3       (1ULL << 9)
- #define BTRFS_BLOCK_GROUP_RAID1C4       (1ULL << 10)
-+#define BTRFS_BLOCK_GROUP_REMAPPED      (1ULL << 11)
- #define BTRFS_BLOCK_GROUP_RESERVED	(BTRFS_AVAIL_ALLOC_BIT_SINGLE | \
- 					 BTRFS_SPACE_INFO_GLOBAL_RSV)
- 
-@@ -1323,4 +1331,8 @@ struct btrfs_verity_descriptor_item {
- 	__u8 encryption;
- } __attribute__ ((__packed__));
- 
-+struct btrfs_remap {
-+	__le64 address;
-+} __attribute__ ((__packed__));
++	if (num_stripes > 0)
++		map->stripe_size = btrfs_calc_stripe_length(map);
++	else
++		map->stripe_size = 0;
 +
- #endif /* _BTRFS_CTREE_H_ */
+ 	for (i = 0; i < num_stripes; i++) {
+ 		map->stripes[i].physical =
+ 			btrfs_stripe_offset_nr(leaf, chunk, i);
 -- 
 2.49.1
 

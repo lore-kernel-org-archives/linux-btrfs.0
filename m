@@ -1,64 +1,64 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B5EB722AE5D
-	for <linux-btrfs@vger.kernel.org>; Sun, 12 Oct 2025 23:52:35 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 38CB222AE5D
+	for <linux-btrfs@vger.kernel.org>; Sun, 12 Oct 2025 23:52:38 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1760313158; cv=none; b=bP0vLZwODYUXSZa0QrBrflx/Yzmx9GeRyHu8YDjiTH7V0LkIaT23Otu1qP2uX8fNNgj12mBp2UpDO8aL8930toikBj4Zdv28Lkz6U61TMIUHmvx5nc1efDO3zxCqKYWdMjLSJSs3nzxO2Sa7/0L+Y9rAG8CU6BvG1+mkdm62LA8=
+	t=1760313162; cv=none; b=eCJQ0gN0hN9CoaFDklizj6IGGgK6aAV4OSk8nhRRmdrOKab6SDtWGZD0ciPA0LtiuXC+Hyf6mAEyBLg0G6uLoxETf2SBSKPRV+oufyTZniDk1MTgYvyURvvduPQHFrLdOhNhoWzEabc6qH559s5SFStv55heDWYXCNYd4F6xJNg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1760313158; c=relaxed/simple;
-	bh=DfvvgOQ+7DWUoV+k+qOyX74faq5PvRHFFEoCJH3dPsY=;
+	s=arc-20240116; t=1760313162; c=relaxed/simple;
+	bh=QiQAHVI8yNr6OWTAsAk6AeiqxPQF39IiXdrm+Nlv57E=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=n5sJJVwxtN94s+JCQwKaYdXHd23tjPe/2Y+D3c628wTOMdRDn6AJMPrdKDKR/nJlFfGpVGKLJUUCVIcnxr/aXQJulO+OgdaQ4QnSIkeYkLl6jwcc4osibIUlcv3/rpO91XwFlIpsUWaO3ieqMa1bPwdRJSxryfs6kWivUcJg/pE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=dLjvboFn; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=dLjvboFn; arc=none smtp.client-ip=195.135.223.130
+	 MIME-Version; b=i6+3JTPJD7sGK6Pj0jn84ErnFuqEcQOx95k05tbmgVdA+DoK7tm7Vr1dzs4im7ofCet7EhrD4/syrTcKTimSofgnq26kF8O5X8RuCcEcUTYpStms8yoFdE7PrnEuRZ1vw8sngcQNLWmeE5WE4tung8KmXMPP3BueMw+0tb/6ELM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=evlUJFB6; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=evlUJFB6; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="dLjvboFn";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="dLjvboFn"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="evlUJFB6";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="evlUJFB6"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 5D8A021238
-	for <linux-btrfs@vger.kernel.org>; Sun, 12 Oct 2025 23:52:28 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id AA5C81F387
+	for <linux-btrfs@vger.kernel.org>; Sun, 12 Oct 2025 23:52:25 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1760313148; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1760313145; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=9H7n5w/Hq9ggzTQgj/JBXUQb3cEvLoIuU4pAg82DBfs=;
-	b=dLjvboFnJBb4khDLHjc1v06Y5UqKxoFNCsdR5sDKpn6S8fJ3peD/jt3Dp9B9NkFPovIRQx
-	3cTbeP9nFRZ7Hwx+89g2nEgUez8hSGDJMp4jjhW2ZRDFI/kXKzb6Ld1TXetjzjEy5vcHd+
-	rV6b0hQBZSfd+tW9C9Nx9oTbOeRLL7Q=
-Authentication-Results: smtp-out1.suse.de;
+	bh=OfXUhKBLLWNEUOLjxoGUxyWvA6lbvjOBZ+/JYS8nAL4=;
+	b=evlUJFB6PDagoIefWVBP/nQMgn554CWqaWzWDCE47U6PD8kSSxLbPDt4ZpVrI1O83Zz0KJ
+	uPgtzQEcJftIggEQcXqZBu2AyCI1ElVchK6ogCSAbJibDeLU74VIX+uYdC6QN3yBYja04V
+	nxPqUBC5+zSTE2wayydw1CVYnbP1YJI=
+Authentication-Results: smtp-out2.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1760313148; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1760313145; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=9H7n5w/Hq9ggzTQgj/JBXUQb3cEvLoIuU4pAg82DBfs=;
-	b=dLjvboFnJBb4khDLHjc1v06Y5UqKxoFNCsdR5sDKpn6S8fJ3peD/jt3Dp9B9NkFPovIRQx
-	3cTbeP9nFRZ7Hwx+89g2nEgUez8hSGDJMp4jjhW2ZRDFI/kXKzb6Ld1TXetjzjEy5vcHd+
-	rV6b0hQBZSfd+tW9C9Nx9oTbOeRLL7Q=
+	bh=OfXUhKBLLWNEUOLjxoGUxyWvA6lbvjOBZ+/JYS8nAL4=;
+	b=evlUJFB6PDagoIefWVBP/nQMgn554CWqaWzWDCE47U6PD8kSSxLbPDt4ZpVrI1O83Zz0KJ
+	uPgtzQEcJftIggEQcXqZBu2AyCI1ElVchK6ogCSAbJibDeLU74VIX+uYdC6QN3yBYja04V
+	nxPqUBC5+zSTE2wayydw1CVYnbP1YJI=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 98AC713A59
-	for <linux-btrfs@vger.kernel.org>; Sun, 12 Oct 2025 23:52:27 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id E672C13782
+	for <linux-btrfs@vger.kernel.org>; Sun, 12 Oct 2025 23:52:24 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id mFrEFjs/7Gj8SQAAD6G6ig
+	id GNXFKTg/7Gj8SQAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Sun, 12 Oct 2025 23:52:27 +0000
+	for <linux-btrfs@vger.kernel.org>; Sun, 12 Oct 2025 23:52:24 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v7 3/3] btrfs: implement remove_bdev and shutdown super operation callbacks
-Date: Mon, 13 Oct 2025 10:22:05 +1030
-Message-ID: <ff8b34ef24508e6bed6f7a5b4cbf052c3e33749b.1760312845.git.wqu@suse.com>
+Subject: [PATCH v7 1/3] btrfs: introduce a new shutdown state
+Date: Mon, 13 Oct 2025 10:22:03 +1030
+Message-ID: <5242fe0720756535300cfaa90ddbdadf5e1a85e7.1760312845.git.wqu@suse.com>
 X-Mailer: git-send-email 2.50.1
 In-Reply-To: <cover.1760312845.git.wqu@suse.com>
 References: <cover.1760312845.git.wqu@suse.com>
@@ -93,172 +93,269 @@ X-Spamd-Result: default: False [-2.80 / 50.00];
 X-Spam-Flag: NO
 X-Spam-Score: -2.80
 
-For the ->remove_bdev() callback, btrfs will:
+A new fs state EMERGENCY_SHUTDOWN is introduced, which is btrfs'
+equivalent of XFS_IOC_GOINGDOWN or EXT4_IOC_SHUTDOWN, after entering
+emergency shutdown state, all operations will return errors (-EIO), and
+can not be bring back to normal state until unmouont.
 
-- Mark the target device as missing
+The new state will reject the following file operations:
 
-- Go degraded if the fs can afford it
+- read_iter()
+- write_iter()
+- mmap()
+- open()
+- remap_file_range()
+- uring_cmd()
+- splice_read()
+  This requires a small wrapper to do the extra shutdown check, then call
+  the regular filemap_splice_read() function
 
-- Return error other wise
-  Thus falls back to the shutdown callback
+This should reject most of the file operations on a shutdown btrfs.
 
-For the ->shutdown callback, btrfs will:
+And for the existing dirty folios, extra shutdown checks are introduced
+to the following functions:
 
-- Set the SHUTDOWN flag
-  Which will reject all new incoming operations, and make all writeback
-  to fail.
+- run_delalloc_nocow()
+- run_delalloc_compressed()
+- cow_file_range()
 
-  The behavior is the same as the NOLOGFLUSH behavior.
+So that dirty ranges will still be properly cleaned without being
+submitted.
 
-To support the lookup from bdev to a btrfs_device,
-btrfs_dev_lookup_args is enhanced to have a new @devt member.
-If set, we should be able to use that @devt member to uniquely locating a
-btrfs device.
+Finally the shutdown state will also set the fs error, so that no new
+transaction will be committed, protecting the metadata from any possible
+further corruption.
 
-I know the shutdown can be a little overkilled, if one has a RAID1
-metadata and RAID0 data, in that case one can still read data with 50%
-chance to got some good data.
+And when the fs entered shutdown mode for the first time, a critical
+level kernel message will show up to indicate the incident.
 
-But a filesystem returning -EIO for half of the time is not really
-considered usable.
-Further it can also be as bad as the only device went missing for a single
-device btrfs.
-
-So here we go safe other than sorry when handling missing device.
-
-And the remove_bdev callback will be hidden behind experimental features
-for now, the reasons are:
-
-- There are not enough btrfs specific bdev removal test cases
-  The existing test cases are all removing the only device, thus only
-  exercises the ->shutdown() behavior.
-
-- Not yet determined what's the expected behavior
-  Although the current auto-degrade behavior is no worse than the old
-  behavior, it may not always be what the end users want.
-
-  Before there is a concrete interface, better hide the new feature
-  from end users.
+That message will be important for end users as rejected delalloc ranges
+will output error messages, hopefully that shutdown message and the fact
+that all fs operations are returning error will prevent end users from
+getting too confused about the delalloc error messages.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/super.c   | 66 ++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/volumes.c |  2 ++
- fs/btrfs/volumes.h |  5 ++++
- 3 files changed, 73 insertions(+)
+ fs/btrfs/file.c     | 25 ++++++++++++++++++++++++-
+ fs/btrfs/fs.h       | 28 ++++++++++++++++++++++++++++
+ fs/btrfs/inode.c    | 14 +++++++++++++-
+ fs/btrfs/ioctl.c    |  3 +++
+ fs/btrfs/messages.c |  1 +
+ fs/btrfs/reflink.c  |  3 +++
+ 6 files changed, 72 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index aadc02374b2a..b02ab17077af 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -2424,6 +2424,68 @@ static long btrfs_free_cached_objects(struct super_block *sb, struct shrink_cont
- 	return 0;
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index dcbd038d1ad1..837da30303fd 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1440,6 +1440,8 @@ ssize_t btrfs_do_write_iter(struct kiocb *iocb, struct iov_iter *from,
+ 	struct btrfs_inode *inode = BTRFS_I(file_inode(file));
+ 	ssize_t num_written, num_sync;
+ 
++	if (unlikely(btrfs_is_shutdown(inode->root->fs_info)))
++		return -EIO;
+ 	/*
+ 	 * If the fs flips readonly due to some impossible error, although we
+ 	 * have opened a file as writable, we have to stop this write operation
+@@ -2042,6 +2044,8 @@ static int btrfs_file_mmap_prepare(struct vm_area_desc *desc)
+ 	struct file *filp = desc->file;
+ 	struct address_space *mapping = filp->f_mapping;
+ 
++	if (unlikely(btrfs_is_shutdown(inode_to_fs_info(file_inode(filp)))))
++		return -EIO;
+ 	if (!mapping->a_ops->read_folio)
+ 		return -ENOEXEC;
+ 
+@@ -3101,6 +3105,9 @@ static long btrfs_fallocate(struct file *file, int mode,
+ 	int blocksize = BTRFS_I(inode)->root->fs_info->sectorsize;
+ 	int ret;
+ 
++	if (unlikely(btrfs_is_shutdown(inode_to_fs_info(inode))))
++		return -EIO;
++
+ 	/* Do not allow fallocate in ZONED mode */
+ 	if (btrfs_is_zoned(inode_to_fs_info(inode)))
+ 		return -EOPNOTSUPP;
+@@ -3792,6 +3799,9 @@ static int btrfs_file_open(struct inode *inode, struct file *filp)
+ {
+ 	int ret;
+ 
++	if (unlikely(btrfs_is_shutdown(inode_to_fs_info(inode))))
++		return -EIO;
++
+ 	filp->f_mode |= FMODE_NOWAIT | FMODE_CAN_ODIRECT;
+ 
+ 	ret = fsverity_file_open(inode, filp);
+@@ -3804,6 +3814,9 @@ static ssize_t btrfs_file_read_iter(struct kiocb *iocb, struct iov_iter *to)
+ {
+ 	ssize_t ret = 0;
+ 
++	if (unlikely(btrfs_is_shutdown(inode_to_fs_info(file_inode(iocb->ki_filp)))))
++		return -EIO;
++
+ 	if (iocb->ki_flags & IOCB_DIRECT) {
+ 		ret = btrfs_direct_read(iocb, to);
+ 		if (ret < 0 || !iov_iter_count(to) ||
+@@ -3814,10 +3827,20 @@ static ssize_t btrfs_file_read_iter(struct kiocb *iocb, struct iov_iter *to)
+ 	return filemap_read(iocb, to, ret);
  }
  
-+#ifdef CONFIG_BTRFS_EXPERIMENTAL
-+static int btrfs_remove_bdev(struct super_block *sb, struct block_device *bdev)
++static ssize_t btrfs_file_splice_read(struct file *in, loff_t *ppos,
++				      struct pipe_inode_info *pipe,
++				      size_t len, unsigned int flags)
 +{
-+	struct btrfs_fs_info *fs_info = btrfs_sb(sb);
-+	struct btrfs_device *device;
-+	struct btrfs_dev_lookup_args lookup_args = { .devt = bdev->bd_dev };
-+	bool can_rw;
-+
-+	mutex_lock(&fs_info->fs_devices->device_list_mutex);
-+	device = btrfs_find_device(fs_info->fs_devices, &lookup_args);
-+	if (!device) {
-+		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
-+		/* Device not found, should not affect the running fs, just give a warning. */
-+		btrfs_warn(fs_info, "unable to find btrfs device for block device '%pg'",
-+			   bdev);
-+		return 0;
-+	}
-+	/*
-+	 * The to-be-removed device is already missing?
-+	 *
-+	 * That's weird but no special handling needed and can exit right now.
-+	 */
-+	if (unlikely(test_and_set_bit(BTRFS_DEV_STATE_MISSING, &device->dev_state))) {
-+		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
-+		btrfs_warn(fs_info, "btrfs device id %llu is already missing",
-+			   device->devid);
-+		return 0;
-+	}
-+
-+	device->fs_devices->missing_devices++;
-+	if (test_and_clear_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state)) {
-+		list_del_init(&device->dev_alloc_list);
-+		WARN_ON(device->fs_devices->rw_devices < 1);
-+		device->fs_devices->rw_devices--;
-+	}
-+	can_rw = btrfs_check_rw_degradable(fs_info, device);
-+	mutex_unlock(&fs_info->fs_devices->device_list_mutex);
-+	/*
-+	 * Now device is considered missing, btrfs_device_name() won't give a
-+	 * meaningful result anymore, so only output the devid.
-+	 */
-+	if (!can_rw) {
-+		btrfs_crit(fs_info,
-+		"btrfs device id %llu has gone missing, can not maintain read-write",
-+			   device->devid);
++	if (unlikely(btrfs_is_shutdown(inode_to_fs_info(file_inode(in)))))
 +		return -EIO;
-+	}
-+	btrfs_warn(fs_info,
-+		   "btrfs device id %llu has gone missing, continue as degraded",
-+		   device->devid);
-+	btrfs_set_opt(fs_info->mount_opt, DEGRADED);
-+	return 0;
++
++	return filemap_splice_read(in, ppos, pipe, len, flags);
 +}
 +
-+static void btrfs_shutdown(struct super_block *sb)
-+{
-+	struct btrfs_fs_info *fs_info = btrfs_sb(sb);
+ const struct file_operations btrfs_file_operations = {
+ 	.llseek		= btrfs_file_llseek,
+ 	.read_iter      = btrfs_file_read_iter,
+-	.splice_read	= filemap_splice_read,
++	.splice_read	= btrfs_file_splice_read,
+ 	.write_iter	= btrfs_file_write_iter,
+ 	.splice_write	= iter_file_splice_write,
+ 	.mmap_prepare	= btrfs_file_mmap_prepare,
+diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
+index 814bbc9417d2..0bb0c01d7952 100644
+--- a/fs/btrfs/fs.h
++++ b/fs/btrfs/fs.h
+@@ -29,6 +29,7 @@
+ #include "extent-io-tree.h"
+ #include "async-thread.h"
+ #include "block-rsv.h"
++#include "messages.h"
+ 
+ struct inode;
+ struct super_block;
+@@ -124,6 +125,12 @@ enum {
+ 	/* No more delayed iput can be queued. */
+ 	BTRFS_FS_STATE_NO_DELAYED_IPUT,
+ 
++	/*
++	 * Emergency shutdown, a step further than trans aborted by rejecting
++	 * all operations.
++	 */
++	BTRFS_FS_STATE_EMERGENCY_SHUTDOWN,
 +
-+	btrfs_force_shutdown(fs_info);
-+}
-+#endif
-+
- static const struct super_operations btrfs_super_ops = {
- 	.drop_inode	= btrfs_drop_inode,
- 	.evict_inode	= btrfs_evict_inode,
-@@ -2439,6 +2501,10 @@ static const struct super_operations btrfs_super_ops = {
- 	.unfreeze_fs	= btrfs_unfreeze,
- 	.nr_cached_objects = btrfs_nr_cached_objects,
- 	.free_cached_objects = btrfs_free_cached_objects,
-+#ifdef CONFIG_BTRFS_EXPERIMENTAL
-+	.remove_bdev	= btrfs_remove_bdev,
-+	.shutdown	= btrfs_shutdown,
-+#endif
+ 	BTRFS_FS_STATE_COUNT
  };
  
- static const struct file_operations btrfs_ctl_fops = {
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 65b02a93db31..928fc6a061b6 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -6802,6 +6802,8 @@ static bool dev_args_match_fs_devices(const struct btrfs_dev_lookup_args *args,
- static bool dev_args_match_device(const struct btrfs_dev_lookup_args *args,
- 				  const struct btrfs_device *device)
- {
-+	if (args->devt)
-+		return device->devt == args->devt;
- 	if (args->missing) {
- 		if (test_bit(BTRFS_DEV_STATE_IN_FS_METADATA, &device->dev_state) &&
- 		    !device->bdev)
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 2cbf8080eade..adbd9e6c09ff 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -662,6 +662,11 @@ struct btrfs_dev_lookup_args {
- 	u64 devid;
- 	u8 *uuid;
- 	u8 *fsid;
+@@ -1120,6 +1127,27 @@ static inline void btrfs_wake_unfinished_drop(struct btrfs_fs_info *fs_info)
+ 	(unlikely(test_bit(BTRFS_FS_STATE_LOG_CLEANUP_ERROR,		\
+ 			   &(fs_info)->fs_state)))
+ 
++static inline bool btrfs_is_shutdown(struct btrfs_fs_info *fs_info)
++{
++	return test_bit(BTRFS_FS_STATE_EMERGENCY_SHUTDOWN, &fs_info->fs_state);
++}
++
++static inline void btrfs_force_shutdown(struct btrfs_fs_info *fs_info)
++{
 +	/*
-+	 * If devt is specified, all other members will be ignored as it is
-+	 * enough to uniquely locate a device.
++	 * Here we do not want to use handle_fs_error(), which will mark
++	 * the fs read-only.
++	 * Some call sites like shutdown ioctl will mark the fs shutdown
++	 * when the fs is frozen. But thaw path will handle RO and RW fs
++	 * differently.
++	 *
++	 * So here we only mark the fs error without flipping it RO.
 +	 */
-+	dev_t devt;
- 	bool missing;
++	WRITE_ONCE(fs_info->fs_error, -EIO);
++	if (!test_and_set_bit(BTRFS_FS_STATE_EMERGENCY_SHUTDOWN, &fs_info->fs_state))
++		btrfs_crit(fs_info, "emergency shutdown");
++}
++
+ /*
+  * We use folio flag owner_2 to indicate there is an ordered extent with
+  * unfinished IO.
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index ac2fd589697d..509309edcf5d 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -871,6 +871,9 @@ static void compress_file_range(struct btrfs_work *work)
+ 	int compress_type = fs_info->compress_type;
+ 	int compress_level = fs_info->compress_level;
+ 
++	if (unlikely(btrfs_is_shutdown(fs_info)))
++		goto cleanup_and_bail_uncompressed;
++
+ 	inode_should_defrag(inode, start, end, end - start + 1, SZ_16K);
+ 
+ 	/*
+@@ -1286,6 +1289,11 @@ static noinline int cow_file_range(struct btrfs_inode *inode,
+ 	unsigned long page_ops;
+ 	int ret = 0;
+ 
++	if (unlikely(btrfs_is_shutdown(fs_info))) {
++		ret = -EIO;
++		goto out_unlock;
++	}
++
+ 	if (btrfs_is_free_space_inode(inode)) {
+ 		ret = -EINVAL;
+ 		goto out_unlock;
+@@ -2004,7 +2012,7 @@ static noinline int run_delalloc_nocow(struct btrfs_inode *inode,
+ {
+ 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+ 	struct btrfs_root *root = inode->root;
+-	struct btrfs_path *path;
++	struct btrfs_path *path = NULL;
+ 	u64 cow_start = (u64)-1;
+ 	/*
+ 	 * If not 0, represents the inclusive end of the last fallback_to_cow()
+@@ -2034,6 +2042,10 @@ static noinline int run_delalloc_nocow(struct btrfs_inode *inode,
+ 	 */
+ 	ASSERT(!btrfs_is_zoned(fs_info) || btrfs_is_data_reloc_root(root));
+ 
++	if (unlikely(btrfs_is_shutdown(fs_info))) {
++		ret = -EIO;
++		goto error;
++	}
+ 	path = btrfs_alloc_path();
+ 	if (!path) {
+ 		ret = -ENOMEM;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 938286bee6a8..342c8412c859 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -5077,6 +5077,9 @@ static int btrfs_uring_encoded_write(struct io_uring_cmd *cmd, unsigned int issu
+ 
+ int btrfs_uring_cmd(struct io_uring_cmd *cmd, unsigned int issue_flags)
+ {
++	if (unlikely(btrfs_is_shutdown(inode_to_fs_info(file_inode(cmd->file)))))
++		return -EIO;
++
+ 	switch (cmd->cmd_op) {
+ 	case BTRFS_IOC_ENCODED_READ:
+ #if defined(CONFIG_64BIT) && defined(CONFIG_COMPAT)
+diff --git a/fs/btrfs/messages.c b/fs/btrfs/messages.c
+index a0cf8effe008..2f853de44473 100644
+--- a/fs/btrfs/messages.c
++++ b/fs/btrfs/messages.c
+@@ -24,6 +24,7 @@ static const char fs_state_chars[] = {
+ 	[BTRFS_FS_STATE_NO_DATA_CSUMS]		= 'C',
+ 	[BTRFS_FS_STATE_SKIP_META_CSUMS]	= 'S',
+ 	[BTRFS_FS_STATE_LOG_CLEANUP_ERROR]	= 'L',
++	[BTRFS_FS_STATE_EMERGENCY_SHUTDOWN]	= 'E',
  };
+ 
+ static void btrfs_state_to_string(const struct btrfs_fs_info *info, char *buf)
+diff --git a/fs/btrfs/reflink.c b/fs/btrfs/reflink.c
+index 5465a5eae9b2..1bbe3bb7e1bb 100644
+--- a/fs/btrfs/reflink.c
++++ b/fs/btrfs/reflink.c
+@@ -868,6 +868,9 @@ loff_t btrfs_remap_file_range(struct file *src_file, loff_t off,
+ 	bool same_inode = dst_inode == src_inode;
+ 	int ret;
+ 
++	if (unlikely(btrfs_is_shutdown(inode_to_fs_info(file_inode(src_file)))))
++		return -EIO;
++
+ 	if (remap_flags & ~(REMAP_FILE_DEDUP | REMAP_FILE_ADVISORY))
+ 		return -EINVAL;
  
 -- 
 2.50.1

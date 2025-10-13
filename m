@@ -1,36 +1,36 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C3F0C3093AE
-	for <linux-btrfs@vger.kernel.org>; Mon, 13 Oct 2025 17:38:24 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4E49D308F0F
+	for <linux-btrfs@vger.kernel.org>; Mon, 13 Oct 2025 17:38:26 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1760377104; cv=none; b=H0XPRMlcIu4XEJt8loxC0JTB+OSOM4z5rEY9I1gCgQdPa0RKnfIq8bobc7MZzXAMAb/K3ZVX8ZDGTsU0tzyPOYNoAPXhDTBAHiu7Feg3pBTn7CUCNVKEGFX76GUhP0JwIpjDGYcZeXZRI7hSm669gww7glHNIMaT17VTRCaHZrw=
+	t=1760377106; cv=none; b=Olx1qgynyWbBWyYkD+ijU7TGUhAY1mDDXaC7cxkyxx3xdNUeoTBffM66RRFUgADjLRVrE4ousjIcM01SLr/9GkRsbhA1LSSEKiDlNA4QzpWdzGaUPOS3GObBx8KpQovJqOtEe1wDMgMYkAVGCPdeJxKHuaPWD0biXFiEmjxFARY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1760377104; c=relaxed/simple;
-	bh=UA4nPIkeq419lsILAjdl57EiMrJtCfj5W4SRoSKqAmY=;
+	s=arc-20240116; t=1760377106; c=relaxed/simple;
+	bh=0ASuRuAp/dE21EuBywOcrnwtaW4QGbadRxVscKzAa/U=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=Bl2fq3i0JSzCV6hSVP2XGdoCM5kOcK7G5G5Q3fqAeb69kh1bqJ0m/cYRrdFaUX0Xkbh53VAi1cFBHSMCsFNmKAAl3zlyCPvFQYALx0R4SpnQIZyAdAzQQ1MllUStJm59Eqex00s3UUKu7dQKRBdiaieKwxzEOVBMgHBPxgiU5Xw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Mh2rr6Zy; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version; b=Ju2EV7pP9V/EbopHQI9ZFiJ5fZ5dhYaYbrUNzf+MJwZT/mEJuIe/ZLOcxITHTaSgy6/51KJP3w6kFlrFWty68ir7pB8rBTTw3P72rtuZ1mLFl1kqO55PVKyFSQn++ULN8U+ag8ZOrjwprCt2yf9QatRZA+M7Ppnfg6EQniV/wpc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=hN6Y71vt; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Mh2rr6Zy"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id D81EFC4CEE7
-	for <linux-btrfs@vger.kernel.org>; Mon, 13 Oct 2025 17:38:23 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="hN6Y71vt"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id AEDD3C4CEFE
+	for <linux-btrfs@vger.kernel.org>; Mon, 13 Oct 2025 17:38:25 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1760377104;
-	bh=UA4nPIkeq419lsILAjdl57EiMrJtCfj5W4SRoSKqAmY=;
+	s=k20201202; t=1760377106;
+	bh=0ASuRuAp/dE21EuBywOcrnwtaW4QGbadRxVscKzAa/U=;
 	h=From:To:Subject:Date:In-Reply-To:References:From;
-	b=Mh2rr6ZyCZ3PxZoWcCVIpHbKFQypCWdM51ZbpKU4sKCKvaDM/Rm27vei/63/wyO1X
-	 IFVBSStPWXQLTKJml+QHcA6eILf/d2JDFh+RGsP4MauKQ7SPjNjtBXQkkUF1tS0Pf5
-	 7g8aJcc1xk9FeQA5Zm+Y7jwEHWL7NXfvRH2/0E6G8debKqXgfaLl3XIk+D/wfWN9bJ
-	 30zhxQrgYWk3qoShxaQ5M+bkIG9nRlCuB4mLcHKGYSr1xeXgJI3qKV+7dqnmhtgpYS
-	 RhTkN9mbGc32O909W/k3EOZpNo8ht4F60ySRanS9sItgCAz7Vq+HOPexmri8y0BAp7
-	 bqXDaJ3SR0Erg==
+	b=hN6Y71vt5A9M5zFqdvcmrde62uk4Jl5Usa+AMY0Jd2TZlXsgCMP+Ys8NcGttoT168
+	 Ct35VrJXyBaj0F7Gesrv1Fm4ZYoVy4Ma4jRPzujr4bLESGfnJgum3NvR6RuYPzAZtn
+	 DZiUlmLqNarjtCxgI6L/+O6LF071W4pOiQLRoJGDbv5yEMWiwBQNchaGR1yJZWU/Qg
+	 im4oDYNkF6MyLY70hS8jmVGffbhqu0mNB/jDs7uHwLlnLbNAkso/CWbBUZjR58wwbv
+	 OCoUniVXVdiaG5J/k2FyMlPcWnkQ19Sy6t6HNqP4EthQq9+OAm97tvPjZOPqL3w/+D
+	 XxAs31dSDabTQ==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 10/16] btrfs: remove fs_info argument from need_preemptive_reclaim()
-Date: Mon, 13 Oct 2025 18:38:05 +0100
-Message-ID: <f44e1c190e4774c968729efd730a8a0715dc4ba8.1760376569.git.fdmanana@suse.com>
+Subject: [PATCH 12/16] btrfs: remove fs_info argument from handle_reserve_ticket()
+Date: Mon, 13 Oct 2025 18:38:07 +0100
+Message-ID: <a9f3416b4a991f1b8b5ff6540c24814ad47e86ab.1760376569.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.47.2
 In-Reply-To: <cover.1760376569.git.fdmanana@suse.com>
 References: <cover.1760376569.git.fdmanana@suse.com>
@@ -49,43 +49,52 @@ So remove the fs_info argument.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/space-info.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ fs/btrfs/space-info.c | 11 ++++-------
+ 1 file changed, 4 insertions(+), 7 deletions(-)
 
 diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index 0f619a588eb3..4249faa94116 100644
+index 5c17f5234ef5..778bf239a35f 100644
 --- a/fs/btrfs/space-info.c
 +++ b/fs/btrfs/space-info.c
-@@ -920,9 +920,9 @@ static u64 btrfs_calc_reclaim_metadata_size(const struct btrfs_space_info *space
- 	return to_reclaim;
+@@ -1602,7 +1602,6 @@ static void wait_reserve_ticket(struct btrfs_space_info *space_info,
+ /*
+  * Do the appropriate flushing and waiting for a ticket.
+  *
+- * @fs_info:    the filesystem
+  * @space_info: space info for the reservation
+  * @ticket:     ticket for the reservation
+  * @start_ns:   timestamp when the reservation started
+@@ -1612,8 +1611,7 @@ static void wait_reserve_ticket(struct btrfs_space_info *space_info,
+  * This does the work of figuring out how to flush for the ticket, waiting for
+  * the reservation, and returning the appropriate error if there is one.
+  */
+-static int handle_reserve_ticket(struct btrfs_fs_info *fs_info,
+-				 struct btrfs_space_info *space_info,
++static int handle_reserve_ticket(struct btrfs_space_info *space_info,
+ 				 struct reserve_ticket *ticket,
+ 				 u64 start_ns, u64 orig_bytes,
+ 				 enum btrfs_reserve_flush_enum flush)
+@@ -1653,8 +1651,8 @@ static int handle_reserve_ticket(struct btrfs_fs_info *fs_info,
+ 	 * space wasn't reserved at all).
+ 	 */
+ 	ASSERT(!(ticket->bytes == 0 && ticket->error));
+-	trace_btrfs_reserve_ticket(fs_info, space_info->flags, orig_bytes,
+-				   start_ns, flush, ticket->error);
++	trace_btrfs_reserve_ticket(space_info->fs_info, space_info->flags,
++				   orig_bytes, start_ns, flush, ticket->error);
+ 	return ret;
  }
  
--static bool need_preemptive_reclaim(struct btrfs_fs_info *fs_info,
--				    const struct btrfs_space_info *space_info)
-+static bool need_preemptive_reclaim(const struct btrfs_space_info *space_info)
- {
-+	struct btrfs_fs_info *fs_info = space_info->fs_info;
- 	const u64 global_rsv_size = btrfs_block_rsv_reserved(&fs_info->global_block_rsv);
- 	u64 ordered, delalloc;
- 	u64 thresh;
-@@ -1249,7 +1249,7 @@ static void btrfs_preempt_reclaim_metadata_space(struct work_struct *work)
- 	trans_rsv = &fs_info->trans_block_rsv;
+@@ -1845,8 +1843,7 @@ static int __reserve_bytes(struct btrfs_fs_info *fs_info,
+ 	if (!ret || !can_ticket(flush))
+ 		return ret;
  
- 	spin_lock(&space_info->lock);
--	while (need_preemptive_reclaim(fs_info, space_info)) {
-+	while (need_preemptive_reclaim(space_info)) {
- 		enum btrfs_flush_state flush;
- 		u64 delalloc_size = 0;
- 		u64 to_reclaim, block_rsv_size;
-@@ -1834,7 +1834,7 @@ static int __reserve_bytes(struct btrfs_fs_info *fs_info,
- 		 */
- 		if (!test_bit(BTRFS_FS_LOG_RECOVERING, &fs_info->flags) &&
- 		    !work_busy(&fs_info->preempt_reclaim_work) &&
--		    need_preemptive_reclaim(fs_info, space_info)) {
-+		    need_preemptive_reclaim(space_info)) {
- 			trace_btrfs_trigger_flush(fs_info, space_info->flags,
- 						  orig_bytes, flush, "preempt");
- 			queue_work(system_unbound_wq,
+-	return handle_reserve_ticket(fs_info, space_info, &ticket, start_ns,
+-				     orig_bytes, flush);
++	return handle_reserve_ticket(space_info, &ticket, start_ns, orig_bytes, flush);
+ }
+ 
+ /*
 -- 
 2.47.2
 

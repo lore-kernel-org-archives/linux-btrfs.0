@@ -1,36 +1,52 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B7CCA324B17
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6970029CE1
 	for <linux-btrfs@vger.kernel.org>; Wed, 15 Oct 2025 12:12:04 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1760530327; cv=none; b=K73hgnJ9aIe2WuWfS4jX145K7o16eRuue65QQruW3Gh1xJXDZy6KnlzmX5bL3EOE23PismW7wPMc0BLMj8Uy37MKIsuMyvqlhVVB4J0zE/Mgm7tq9nBuP4XzQWwS75JkopQp0q/XIPG6SlV+vBM7wM4lEQVe6lcO5RcCH7zciMQ=
+	t=1760530327; cv=none; b=pQs9YvZ+uQ5RKisnJk0SN66WKdEGpQB0pyX6RtBAdfJoKNb6o0yMNm2oueCRJbfK2VQI7ad1b1SMhKQ0Lkagl+3NBWj8jIda7borJCU0DM3GmhhOg2nbR2HYlPH+Zn6hHrSCOXzJPev7g4/kUkTQeEFQR8yyYJX1NCgEm0oLYvs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
 	s=arc-20240116; t=1760530327; c=relaxed/simple;
-	bh=oo4GIE4ODGNuRcgY8pIX44vNQbQRdgGb2qtj/Ly+z58=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=UT2XI9XRczJYqkRBmo+I2yc50uXiRd09yI+l1Q6/r5fN6qhhTImmN+1+fLGebwP/3nOJpKLHYSx7APCW3wtthNKhShh6pKNyJRsPzTzy1taaCylm1Q+Ct7lsTR+7Kmxi6DKCKBoBjX9Fdbva+U29cXe6L5g8XqYjwyBaKgi6yKs=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; arc=none smtp.client-ip=195.135.223.131
+	bh=GwKTjGdtH8SyYzBBv2w+INFz3gkafze60sE6ebLVpJg=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=nYvWef8j/G7MMCOQCXWLfIoR6PQ2XFLrU0TOvE9wU+fpPGMXUJ+iNT7zDSmZRvOpDu3mrdQQe8Ltq85FIc1Lv07ihvSHarRe7+rLgA8Skd7vmpGdrQ4m58U+qcyTwztJeAPeSNQGL1TIVfHmJ2wC50sZKvqsjOSAwG4LYJdy9Mg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=ZVWSRhu/; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=ZVWSRhu/; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="ZVWSRhu/";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="ZVWSRhu/"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id DEF541FB88;
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 8DDB533855;
 	Wed, 15 Oct 2025 12:12:02 +0000 (UTC)
-Authentication-Results: smtp-out2.suse.de;
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1760530322; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=OacZZNGxWtrqaDyrPXsR9AmEfSe8DiBBLFkHp1Qodgw=;
+	b=ZVWSRhu/sa3jTV9DYnouUhxxj0zCpiZhVLO4rpAdubWf+ur4ppH4+dvHlqZAs7RLKYIx0R
+	K3/ZBj7BSCFsKsHQuaBo8vdskI1wkWzYmqYg7o95xA+N6w6hnWtX039jNERF2w8Sr41jzH
+	nNwwvaqCKr3py9cmlkDT16txmr9irbc=
+Authentication-Results: smtp-out1.suse.de;
 	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1760530322; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=OacZZNGxWtrqaDyrPXsR9AmEfSe8DiBBLFkHp1Qodgw=;
+	b=ZVWSRhu/sa3jTV9DYnouUhxxj0zCpiZhVLO4rpAdubWf+ur4ppH4+dvHlqZAs7RLKYIx0R
+	K3/ZBj7BSCFsKsHQuaBo8vdskI1wkWzYmqYg7o95xA+N6w6hnWtX039jNERF2w8Sr41jzH
+	nNwwvaqCKr3py9cmlkDT16txmr9irbc=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id CADDD13AE4;
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 7B01813A42;
 	Wed, 15 Oct 2025 12:12:02 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id QAQXMZKP72i2fAAAD6G6ig
+	id z756HZKP72i2fAAAD6G6ig
 	(envelope-from <neelx@suse.com>); Wed, 15 Oct 2025 12:12:02 +0000
 From: Daniel Vacek <neelx@suse.com>
 To: David Sterba <dsterba@suse.com>
@@ -38,12 +54,10 @@ Cc: linux-btrfs@vger.kernel.org,
 	Daniel Vacek <neelx@suse.com>,
 	Josef Bacik <josef@toxicpanda.com>,
 	Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-Subject: [PATCH 4/8] btrfs-progs: add inode encryption contexts
-Date: Wed, 15 Oct 2025 14:11:52 +0200
-Message-ID: <20251015121157.1348124-5-neelx@suse.com>
+Subject: [PATCH 0/8] btrfs-progs: fscrypt updates
+Date: Wed, 15 Oct 2025 14:11:48 +0200
+Message-ID: <20251015121157.1348124-1-neelx@suse.com>
 X-Mailer: git-send-email 2.51.0
-In-Reply-To: <20251015121157.1348124-1-neelx@suse.com>
-References: <20251015121157.1348124-1-neelx@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -51,60 +65,68 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Rspamd-Pre-Result: action=no action;
-	module=replies;
-	Message is reply to one we originated
 X-Spam-Level: 
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Spamd-Result: default: False [-4.00 / 50.00];
-	REPLY(-4.00)[]
-X-Rspamd-Queue-Id: DEF541FB88
-X-Rspamd-Pre-Result: action=no action;
-	module=replies;
-	Message is reply to one we originated
-X-Rspamd-Action: no action
+X-Spamd-Result: default: False [-2.79 / 50.00];
+	BAYES_HAM(-3.00)[99.99%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.19)[-0.942];
+	MIME_GOOD(-0.10)[text/plain];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	ARC_NA(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	TO_DN_SOME(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:mid];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	RCPT_COUNT_FIVE(0.00)[5];
+	RCVD_TLS_ALL(0.00)[]
 X-Spam-Flag: NO
-X-Spam-Score: -4.00
+X-Spam-Score: -2.79
 
-From: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
+This series is a rebase of an older set of fscrypt related changes from
+Sweet Tea Dorminy and Josef Bacik found here:
+https://github.com/josefbacik/btrfs-progs/tree/fscrypt
 
-Recapitulates relevant parts of kernel change 'btrfs: add inode
-encryption contexts'.
+The only difference is dropping of commit 56b7131 ("btrfs-progs: escape
+unprintable characters in names") and a bit of code style changes.
 
-Signed-off-by: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
----
- kernel-shared/uapi/btrfs_tree.h | 4 ++++
- 1 file changed, 4 insertions(+)
+The mentioned commit is no longer needed as a similar change was already
+merged with commit ef7319362 ("btrfs-progs: dump-tree: escape special
+characters in paths or xattrs").
 
-diff --git a/kernel-shared/uapi/btrfs_tree.h b/kernel-shared/uapi/btrfs_tree.h
-index 4b4f45aa..e3a55665 100644
---- a/kernel-shared/uapi/btrfs_tree.h
-+++ b/kernel-shared/uapi/btrfs_tree.h
-@@ -165,6 +165,8 @@
- #define BTRFS_VERITY_DESC_ITEM_KEY	36
- #define BTRFS_VERITY_MERKLE_ITEM_KEY	37
- 
-+#define BTRFS_FSCRYPT_CTXT_ITEM_KEY	41
-+
- #define BTRFS_ORPHAN_ITEM_KEY		48
- /* reserve 2-15 close to the inode for later flexibility */
- 
-@@ -425,6 +427,7 @@ static inline __u8 btrfs_dir_flags_to_ftype(__u8 flags)
- #define BTRFS_INODE_NOATIME		(1U << 9)
- #define BTRFS_INODE_DIRSYNC		(1U << 10)
- #define BTRFS_INODE_COMPRESS		(1U << 11)
-+#define BTRFS_INODE_ENCRYPT		(1U << 12)
- 
- #define BTRFS_INODE_ROOT_ITEM_INIT	(1U << 31)
- 
-@@ -441,6 +444,7 @@ static inline __u8 btrfs_dir_flags_to_ftype(__u8 flags)
- 	 BTRFS_INODE_NOATIME |						\
- 	 BTRFS_INODE_DIRSYNC |						\
- 	 BTRFS_INODE_COMPRESS |						\
-+	 BTRFS_INODE_ENCRYPT |						\
- 	 BTRFS_INODE_ROOT_ITEM_INIT)
- 
- #define BTRFS_INODE_RO_VERITY		(1U << 0)
+I just had to add one trivial fixup so that the fstests could parse the
+output correctly.
+
+Daniel Vacek (1):
+  btrfs-progs: string-utils: do not escape space while printing
+
+Josef Bacik (1):
+  btrfs-progs: check: fix max inline extent size
+
+Sweet Tea Dorminy (6):
+  btrfs-progs: add new FEATURE_INCOMPAT_ENCRYPT flag
+  btrfs-progs: start tracking extent encryption context info
+  btrfs-progs: add inode encryption contexts
+  btrfs-progs: interpret encrypted file extents.
+  btrfs-progs: handle fscrypt context items
+  btrfs-progs: check: update inline extent length checking
+
+ check/main.c                    | 36 ++++++++++--------
+ common/string-utils.c           |  1 -
+ kernel-shared/accessors.h       | 43 ++++++++++++++++++++++
+ kernel-shared/ctree.h           |  3 +-
+ kernel-shared/print-tree.c      | 41 +++++++++++++++++++++
+ kernel-shared/tree-checker.c    | 65 +++++++++++++++++++++++++++------
+ kernel-shared/uapi/btrfs.h      |  1 +
+ kernel-shared/uapi/btrfs_tree.h | 27 +++++++++++++-
+ 8 files changed, 186 insertions(+), 31 deletions(-)
+
 -- 
 2.51.0
 

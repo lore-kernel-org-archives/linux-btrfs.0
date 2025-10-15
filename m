@@ -1,75 +1,49 @@
-Received: from mail-wm1-f44.google.com (mail-wm1-f44.google.com [209.85.128.44])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D058C31CA50
-	for <linux-btrfs@vger.kernel.org>; Wed, 15 Oct 2025 11:12:24 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.44
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B7CCA324B17
+	for <linux-btrfs@vger.kernel.org>; Wed, 15 Oct 2025 12:12:04 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1760526746; cv=none; b=NaxzqVm8ANU0JIKMEmUbXZ+cATDvEZNZDjEmQDd8BBZQvfmBMPpbjSYGwoxvbnrz8jxg9L8QeOUMXggSEkxuGp9on3BeSjXkCdnZYO6U8b2wJyLgFTNb1zXyoXVWjR3eM/yRwitSyRryoy8DUF0ngFMJLvJGC2LuoSxa7mpIIo4=
+	t=1760530327; cv=none; b=K73hgnJ9aIe2WuWfS4jX145K7o16eRuue65QQruW3Gh1xJXDZy6KnlzmX5bL3EOE23PismW7wPMc0BLMj8Uy37MKIsuMyvqlhVVB4J0zE/Mgm7tq9nBuP4XzQWwS75JkopQp0q/XIPG6SlV+vBM7wM4lEQVe6lcO5RcCH7zciMQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1760526746; c=relaxed/simple;
-	bh=VLmWsWGrl1DxKEYncJ9MrJvC8lEhSuvCj2ifK2ALXk8=;
+	s=arc-20240116; t=1760530327; c=relaxed/simple;
+	bh=oo4GIE4ODGNuRcgY8pIX44vNQbQRdgGb2qtj/Ly+z58=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=T298jfAyX1o//h7NtKE4SeJcaVAsLdZFKfgpYnOUKqj+0fnBZpsynSIz9jBysAF9IkA0seIOjzfHG7uGAnfHo4S91vL/2UT9X/kzoJ5aLD/r5b2wHy3vOwk1LXow2yNY3EDU1Pmp0Vx9jCNcomBXatf4LpiwrM67/rgYurl6Rnk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=K46mM6Wk; arc=none smtp.client-ip=209.85.128.44
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="K46mM6Wk"
-Received: by mail-wm1-f44.google.com with SMTP id 5b1f17b1804b1-46e33b260b9so51763485e9.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 15 Oct 2025 04:12:24 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1760526743; x=1761131543; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=egLSNL4PvdhTQzYReM4pfZWKdlDJpPH8aB48GbvKF18=;
-        b=K46mM6Wk7CQL32yC9e/rXc/sW7Vt/sG06U03b1Di4qIQ7WMbjZDmjqkM7UYfSi+SPh
-         dVM1jAFzYqOxQCV1MjUUJbe6iFZ9HpltnOpfJtr4b2IUAOymNpl2q0tPtoXSIeXNWuIZ
-         wjlW45RNPxflBT0itF1HLkakKftoJzKI43y1zBvq65OjDUTKCTQ48ymNiQbTEVqawObh
-         ZksaC73yAYR7wecPjYBci6JPOTeEKyTmbSl4ru09CqBXFAqXVGIglEDi24VuZjs76m7Y
-         p9Ki7u+gh4r1hvZ1333yLEUiQO9dh8UlTxC4UAV47rTP6Nckz5s2e8TdwHmFFTU8YCWZ
-         gTtQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1760526743; x=1761131543;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=egLSNL4PvdhTQzYReM4pfZWKdlDJpPH8aB48GbvKF18=;
-        b=KAa1nqLTmMxb1kMpa/XAuWEEXy+pPKAdpOvvxs1hlPfCHhlL0fREcyS3AI0qexuPH7
-         8d+n7lPqjVj7gh3vfXnRmaE/qnyfwoHHivzUKsFqPLesWLZeOKrfO+1kj0M6wEKTd+lF
-         9S+WUxkZ5TEUX/z1nhcN7bl9ysHwRNuMQPzG+A50nhB9EiK+VIx0IEbZO+qzztAkLrJ6
-         O+QmPJdPpg0cyzN4/3pkHfPUglV4+xlwmxigQKIfjA2LMbX3XzijBRTeB9KgzNyhg+mU
-         V8bt6ISSvpJ10F8Qq9nJTOTk/lxGvltM+dRqNLMqjlV0RC3J66IcQbr1+BfUw3ZiCm+w
-         0DIw==
-X-Forwarded-Encrypted: i=1; AJvYcCWLpI8DQu/DoE1yQXzjZ1yNGm0AXXCqDkDRBnIvyCZy6cJeP/PIRmRmKFl9eGiYEQCMHv9tcKCmiSgWFA==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yzrh01PPgCK6MQPsJ1uw84hxZwNdrdSnlD0BAJUK8dwLq7m62pq
-	GBPJZzuAo7zSeerVZoyOojMhJcH+MDX0Xn9x/UOUxt/5oi3qgdxjVVOX
-X-Gm-Gg: ASbGncuoe7132p1lDfI9OXey7OCepv9lTtvHZBACIO0WPDoliGqTHjRbkK9QppUPigu
-	3hpwg7IiHKXDj6r4+x6PYDslmixh3GjnRp5MMPHKJpPbfoLNysVn9ZLH6Dl0tK6IeWvuqKFb5AN
-	5cLm2mrlGRlzZTKqAGB3frhdGh8QumVGgPkcjEdndDW10vXFomHEFprdBcgBZGeVM8ugiplpdPs
-	myMgD/ydWeqxCXYnnaKmYWdhO5NS8fGikHPNDiGAzxR+4NJFFae/CWIAgjOG22fnE8d63fKVQf2
-	9c/VpBMdbdeu95YKgm4MBrT4lldDebazibcJqHWq4h8+RMpz6Q1jqpKW7aSGVtNVNwX7wH8fXRX
-	BZBs6n1avCtw+VEOJRy09pVjsv09Nm+8HG44T5xspuuQ=
-X-Google-Smtp-Source: AGHT+IHWLJPppaB2GkF2ep+qcrPMm5qJf5y6pSk51HDAkPE/e1FNGciJGIXDoFAqAX+3R0PCfuphcg==
-X-Received: by 2002:a05:600c:3b07:b0:46e:1fb9:5497 with SMTP id 5b1f17b1804b1-46fa9af84fdmr198331535e9.18.1760526742746;
-        Wed, 15 Oct 2025 04:12:22 -0700 (PDT)
-Received: from localhost ([212.73.77.104])
-        by smtp.gmail.com with UTF8SMTPSA id ffacd0b85a97d-426ce583316sm28275784f8f.20.2025.10.15.04.12.21
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 15 Oct 2025 04:12:22 -0700 (PDT)
-From: Askar Safin <safinaskar@gmail.com>
-To: quwenruo.btrfs@gmx.com
-Cc: dsterba@suse.com,
-	linux-btrfs@vger.kernel.org,
-	lists@colorremedies.com,
-	wqu@suse.com
-Subject: Re: [PATCH RFC] btrfs: exit scrub and balance early if the fs is being frozen
-Date: Wed, 15 Oct 2025 14:12:17 +0300
-Message-ID: <20251015111217.5538-1-safinaskar@gmail.com>
-X-Mailer: git-send-email 2.47.3
-In-Reply-To: <8c3628d5-8fce-45a1-b29c-65c2c52f1c06@gmx.com>
-References: <8c3628d5-8fce-45a1-b29c-65c2c52f1c06@gmx.com>
+	 MIME-Version; b=UT2XI9XRczJYqkRBmo+I2yc50uXiRd09yI+l1Q6/r5fN6qhhTImmN+1+fLGebwP/3nOJpKLHYSx7APCW3wtthNKhShh6pKNyJRsPzTzy1taaCylm1Q+Ct7lsTR+7Kmxi6DKCKBoBjX9Fdbva+U29cXe6L5g8XqYjwyBaKgi6yKs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id DEF541FB88;
+	Wed, 15 Oct 2025 12:12:02 +0000 (UTC)
+Authentication-Results: smtp-out2.suse.de;
+	none
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id CADDD13AE4;
+	Wed, 15 Oct 2025 12:12:02 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id QAQXMZKP72i2fAAAD6G6ig
+	(envelope-from <neelx@suse.com>); Wed, 15 Oct 2025 12:12:02 +0000
+From: Daniel Vacek <neelx@suse.com>
+To: David Sterba <dsterba@suse.com>
+Cc: linux-btrfs@vger.kernel.org,
+	Daniel Vacek <neelx@suse.com>,
+	Josef Bacik <josef@toxicpanda.com>,
+	Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
+Subject: [PATCH 4/8] btrfs-progs: add inode encryption contexts
+Date: Wed, 15 Oct 2025 14:11:52 +0200
+Message-ID: <20251015121157.1348124-5-neelx@suse.com>
+X-Mailer: git-send-email 2.51.0
+In-Reply-To: <20251015121157.1348124-1-neelx@suse.com>
+References: <20251015121157.1348124-1-neelx@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -77,58 +51,60 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
+X-Rspamd-Pre-Result: action=no action;
+	module=replies;
+	Message is reply to one we originated
+X-Spam-Level: 
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Spamd-Result: default: False [-4.00 / 50.00];
+	REPLY(-4.00)[]
+X-Rspamd-Queue-Id: DEF541FB88
+X-Rspamd-Pre-Result: action=no action;
+	module=replies;
+	Message is reply to one we originated
+X-Rspamd-Action: no action
+X-Spam-Flag: NO
+X-Spam-Score: -4.00
 
-I just noticed that suspend behavior depends on whether "btrfs scrub" is
-started in terminal window or as a systemd service. I think this is because
-systemd tries to freeze user session when suspending, but doesn't freeze
-services.
+From: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
 
-So I retested everything.
+Recapitulates relevant parts of kernel change 'btrfs: add inode
+encryption contexts'.
 
-All tests were done with my distro's version of btrfs-progs (6.14-1).
-My distro is Debian Trixie.
-I have btrfs raid-1, which spans two actual partitions, 3.5 TiB each.
+Signed-off-by: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
+---
+ kernel-shared/uapi/btrfs_tree.h | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-Let's start with unpatched v6.18-rc1.
-
-- scrub in win, freeze_filesystems=0 - suspend doesn't work
-
-- scrub as a service, freeze_filesystems=0 - suspend doesn't work
-
-- scrub in win, freeze_filesystems=1
-suspend takes 6-10 mins. I. e. the system hangs for 6-10 mins and then
-suspends. I suspect this is time needed to complete scrub
-
-- scrub as a service, freeze_filesystems=1 - the same
-
-Also: on unpatched kernel "btrfs scrub" terminates instantly if it receives
-INT, but doesn't terminate if it receives KILL, TERM or HUP.
-
-Now v6.18-rc1 with your old 7 Jul 2025 patch
-( https://lore.kernel.org/linux-btrfs/9606fae20bff6c1fbe14dc7b067f3b333c2a955b.1751847905.git.wqu@suse.com/ ).
-
-- scrub in win, freeze_filesystems=0 - suspend doesn't work
-
-- scrub as a service, freeze_filesystems=0 - suspend doesn't work
-
-- scrub in win, freeze_filesystems=1
-suspend takes 1 min. I. e. the system hangs for 1 min, then suspends
-
-- scrub as a service, freeze_filesystems=1
-suspend works perfectly. I. e. the system instantly suspends. I don't even
-notice 19s delay you are talking about
-
-Now v6.18-rc1 with your new 15 Oct 2025 patch
-( https://lore.kernel.org/linux-btrfs/8c3628d5-8fce-45a1-b29c-65c2c52f1c06@gmx.com/ ).
-
-- scrub in win, freeze_filesystems=0 - hangs for 60s, then suspends
-
-- scrub as a service, freeze_filesystems=0 - works perfectly, i. e. suspends instantly
-
-- scrub in win, freeze_filesystems=1 - hangs for 60s, then suspends
-here is journalctl: https://zerobin.net/?7b394069a9050b8d#7PrnCDJV2t9inNFS3/EhxHJUS24iSGX7FAmjUstKKr4=
-
-- scrub as a service, freeze_filesystems=1 - works perfectly, i. e. suspends instantly
-
+diff --git a/kernel-shared/uapi/btrfs_tree.h b/kernel-shared/uapi/btrfs_tree.h
+index 4b4f45aa..e3a55665 100644
+--- a/kernel-shared/uapi/btrfs_tree.h
++++ b/kernel-shared/uapi/btrfs_tree.h
+@@ -165,6 +165,8 @@
+ #define BTRFS_VERITY_DESC_ITEM_KEY	36
+ #define BTRFS_VERITY_MERKLE_ITEM_KEY	37
+ 
++#define BTRFS_FSCRYPT_CTXT_ITEM_KEY	41
++
+ #define BTRFS_ORPHAN_ITEM_KEY		48
+ /* reserve 2-15 close to the inode for later flexibility */
+ 
+@@ -425,6 +427,7 @@ static inline __u8 btrfs_dir_flags_to_ftype(__u8 flags)
+ #define BTRFS_INODE_NOATIME		(1U << 9)
+ #define BTRFS_INODE_DIRSYNC		(1U << 10)
+ #define BTRFS_INODE_COMPRESS		(1U << 11)
++#define BTRFS_INODE_ENCRYPT		(1U << 12)
+ 
+ #define BTRFS_INODE_ROOT_ITEM_INIT	(1U << 31)
+ 
+@@ -441,6 +444,7 @@ static inline __u8 btrfs_dir_flags_to_ftype(__u8 flags)
+ 	 BTRFS_INODE_NOATIME |						\
+ 	 BTRFS_INODE_DIRSYNC |						\
+ 	 BTRFS_INODE_COMPRESS |						\
++	 BTRFS_INODE_ENCRYPT |						\
+ 	 BTRFS_INODE_ROOT_ITEM_INIT)
+ 
+ #define BTRFS_INODE_RO_VERITY		(1U << 0)
 -- 
-Askar Safin
+2.51.0
+

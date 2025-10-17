@@ -1,289 +1,88 @@
-Received: from pdx-out-007.esa.us-west-2.outbound.mail-perimeter.amazon.com (pdx-out-007.esa.us-west-2.outbound.mail-perimeter.amazon.com [52.34.181.151])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wm1-f50.google.com (mail-wm1-f50.google.com [209.85.128.50])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 82E36332EA3;
-	Fri, 17 Oct 2025 12:16:32 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=52.34.181.151
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1760703394; cv=fail; b=W/Af5TaPJszZjsRUUBgUO1Ho1tfVjumiL0p7U7q8iwZ2NMpZsObbp1/qeejgb5MwZfpfeKFyrDyHhJU443m4Ol2m4R25dzS3jVpKUqsJtJikTQQ1Eu8CE3g9jfHIC1b7dQowXLC86kqCXYHG5KxWrzHBiXINsKPBMdiUoYs5xQU=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1760703394; c=relaxed/simple;
-	bh=gYDnavJxgHF2BtLIfegCkhALowUX2Q2vhSCtPw4pBrM=;
-	h=From:To:CC:Subject:Date:Message-ID:References:In-Reply-To:
-	 Content-Type:MIME-Version; b=NQ3PHz25s1J5ccNHE94s+bTRZoQZhIw4wd0oB4ZtNinCSjhagLoCftKIewp5eph4VRm7ceSXZ6H69kLqDA1S+4vRSS7AgU/x/C26ShoF6kbeUqk8YMX7jtLw6KDuQ5CTOJ4J4RDrfp2UkQmD9lQiTldVAD1+tO8ixgS5nRNmfDw=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=amazon.com; spf=pass smtp.mailfrom=amazon.com; dkim=pass (2048-bit key) header.d=amazon.com header.i=@amazon.com header.b=IjNIezMb; arc=fail smtp.client-ip=52.34.181.151
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=amazon.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=amazon.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3E3A3328B79
+	for <linux-btrfs@vger.kernel.org>; Fri, 17 Oct 2025 13:04:05 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.50
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1760706246; cv=none; b=U2fIQkX4vo5CGyCRof2LEXfNq23XvG7jDENrClMnn5WQCCBBOn6dWmxeKD0UKRQUBom/f0vb0PhxQ0wJhhhkFcGLWUwkuU/htL20Xx+G0t18Mro9jHuLVVhfIFHZTnYxU1ItPbq1bogceYcIWoUf0WCKAd4BwvADeaJNRfbq4yg=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1760706246; c=relaxed/simple;
+	bh=EnbZpCV2oos3Jgvhi11hSD+v/55Wmtyl1F1TrRakyyM=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=szsnrNutr1RjIvWhpu7UJ8CQlGIil56mTk53GYDU+YyC17XIWbza/jO2yTCjEgFiAlqFMb3KSiYbViDSjVXaEtfP60youDqYmjQM0qp/s9EYa1MqOdDcBbNdMJ3UbXlPafpYltpFECg4BmUQaK3gTdCEN+vferYdVHEXQf3Vk/4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=moD+WMGr; arc=none smtp.client-ip=209.85.128.50
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=amazon.com header.i=@amazon.com header.b="IjNIezMb"
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="moD+WMGr"
+Received: by mail-wm1-f50.google.com with SMTP id 5b1f17b1804b1-46e42fa08e4so17721695e9.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 17 Oct 2025 06:04:05 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-  d=amazon.com; i=@amazon.com; q=dns/txt; s=amazoncorp2;
-  t=1760703392; x=1792239392;
-  h=from:to:cc:subject:date:message-id:references:
-   in-reply-to:content-transfer-encoding:mime-version;
-  bh=gYDnavJxgHF2BtLIfegCkhALowUX2Q2vhSCtPw4pBrM=;
-  b=IjNIezMb6XRPNgiscb20x7PWd9Bnon15/2W76a+lWlF4HJWgall4QiwZ
-   sdA6/OhZlr0C0AvKQ733/U5xqe0n0z/9ANJLgkz98vIR7HFV0GycbxynO
-   2XPDlxq3f29DTILXoRXp55joUxfiWdSsZ92JcAhIE9GryxgSuHvf5I7rY
-   0rBr/H4k3wnPOKp8wmIREx4jIUliP0fEKcrlSeq1lLanBZQvaQ59Rznty
-   qdSmQcXp80rwJ8WWcpwP5m4neW3j0z8fOw4JsqusbRK99UF9iPzMicdCL
-   XBYFrH6A41o8ZRY71Vnm3Rbv5fb+AcMezCdi471Co6d7lyQESAM7i66AI
-   g==;
-X-CSE-ConnectionGUID: 08iORPpUR/C3qpk1PF36yA==
-X-CSE-MsgGUID: /JR+maiMThSU5TpzwA21yg==
-X-IronPort-AV: E=Sophos;i="6.18,263,1751241600"; 
-   d="scan'208";a="5080123"
-Received: from ip-10-5-0-115.us-west-2.compute.internal (HELO smtpout.naws.us-west-2.prod.farcaster.email.amazon.dev) ([10.5.0.115])
-  by internal-pdx-out-007.esa.us-west-2.outbound.mail-perimeter.amazon.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 17 Oct 2025 12:16:30 +0000
-Received: from EX19MTAUWC001.ant.amazon.com [205.251.233.105:1691]
- by smtpin.naws.us-west-2.prod.farcaster.email.amazon.dev [10.0.16.196:2525] with esmtp (Farcaster)
- id 8ec0af0c-e575-4157-a7af-213ccc389138; Fri, 17 Oct 2025 12:16:30 +0000 (UTC)
-X-Farcaster-Flow-ID: 8ec0af0c-e575-4157-a7af-213ccc389138
-Received: from EX19EXOUWA001.ant.amazon.com (10.250.64.209) by
- EX19MTAUWC001.ant.amazon.com (10.250.64.174) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA) id 15.2.2562.20;
- Fri, 17 Oct 2025 12:16:29 +0000
-Received: from EX19EXOUWB001.ant.amazon.com (10.250.64.229) by
- EX19EXOUWA001.ant.amazon.com (10.250.64.209) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA) id 15.2.2562.20;
- Fri, 17 Oct 2025 12:16:29 +0000
-Received: from PH0PR07CU006.outbound.protection.outlook.com (10.250.64.206) by
- EX19EXOUWB001.ant.amazon.com (10.250.64.229) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA) id 15.2.2562.20
- via Frontend Transport; Fri, 17 Oct 2025 12:16:29 +0000
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
- b=nbwhkxny5R8fdLaKd/VtBFCpv4FItEDUGYYw83CT1YGw7QS88We0f+dOIyqI1vxzcd48TsaDprHGplgQ9K/ukiQjy2PXZ1UkGuCWbx5uj9QVcNQLp5S6CDeTadIePUaKzTWOfYcXfcChz4nUV56O9W1AzXmxGwz5Vk8m99Wt0NbIsFqkhANLSbPKxGiS9X887Xg8sLTAaVy0TPdGrTnGGIBkUe1KqPPJQHnJAjOuqLZVhSdkb9FzFMrOWQTNdHTPEZ7U1Xc7YxVHbLUQpPF+NIIDp9VwIYS1hXMM3Dkfxf3AXXCXU7sV5hb4pS9q9TzxTN3YJJfvewzcI0xsWr/vfg==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector10001;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
- bh=gYDnavJxgHF2BtLIfegCkhALowUX2Q2vhSCtPw4pBrM=;
- b=e7y4PgWP8o/nTyV48Cp+sg3y1/2H63nTYam4EgYbJ9GRKUXQaBua6WVzXd6hnP/jVLtw4SawnwUWxVsLK3jpYII1I+vcI5yvrpDrONpTJgn1JIXZaUMZ/LuoY7bRRdsKDi3K0+Hly7DM7v9D/iTZjaLM/W8bgg4TjX/uUgsrmmHnV9WZI0Cawc823IzzqGE8dEq7xThLIN/9O5zBjpbfm5JoIIUmhvgqMbswFKmJBEbfy8rwjcVsUdf2MJ2K3Fprd6V5EUO5L7tJYy0fqcZugMuT3EDLwJCek0EBE6aPwpIqmaiaN39AdYw3drLSFB88Rd0PmZ3FEyFVsfW8IHP39w==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=amazon.com; dmarc=pass action=none header.from=amazon.com;
- dkim=pass header.d=amazon.com; arc=none
-Received: from CH0PR18MB5433.namprd18.prod.outlook.com (2603:10b6:610:181::16)
- by SJ0PR18MB3898.namprd18.prod.outlook.com (2603:10b6:a03:2e8::11) with
- Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.9228.13; Fri, 17 Oct
- 2025 12:16:27 +0000
-Received: from CH0PR18MB5433.namprd18.prod.outlook.com
- ([fe80::1423:ab6b:11cc:7b0]) by CH0PR18MB5433.namprd18.prod.outlook.com
- ([fe80::1423:ab6b:11cc:7b0%7]) with mapi id 15.20.9228.012; Fri, 17 Oct 2025
- 12:16:27 +0000
-From: "Farber, Eliav" <farbere@amazon.com>
-To: Greg KH <gregkh@linuxfoundation.org>
-CC: "stable@vger.kernel.org" <stable@vger.kernel.org>, "linux@armlinux.org.uk"
-	<linux@armlinux.org.uk>, "jdike@addtoit.com" <jdike@addtoit.com>,
-	"richard@nod.at" <richard@nod.at>, "anton.ivanov@cambridgegreys.com"
-	<anton.ivanov@cambridgegreys.com>, "dave.hansen@linux.intel.com"
-	<dave.hansen@linux.intel.com>, "luto@kernel.org" <luto@kernel.org>,
-	"peterz@infradead.org" <peterz@infradead.org>, "tglx@linutronix.de"
-	<tglx@linutronix.de>, "mingo@redhat.com" <mingo@redhat.com>, "bp@alien8.de"
-	<bp@alien8.de>, "x86@kernel.org" <x86@kernel.org>, "hpa@zytor.com"
-	<hpa@zytor.com>, "tony.luck@intel.com" <tony.luck@intel.com>,
-	"qiuxu.zhuo@intel.com" <qiuxu.zhuo@intel.com>, "mchehab@kernel.org"
-	<mchehab@kernel.org>, "james.morse@arm.com" <james.morse@arm.com>,
-	"rric@kernel.org" <rric@kernel.org>, "harry.wentland@amd.com"
-	<harry.wentland@amd.com>, "sunpeng.li@amd.com" <sunpeng.li@amd.com>,
-	"alexander.deucher@amd.com" <alexander.deucher@amd.com>,
-	"christian.koenig@amd.com" <christian.koenig@amd.com>, "airlied@linux.ie"
-	<airlied@linux.ie>, "daniel@ffwll.ch" <daniel@ffwll.ch>, "evan.quan@amd.com"
-	<evan.quan@amd.com>, "james.qian.wang@arm.com" <james.qian.wang@arm.com>,
-	"liviu.dudau@arm.com" <liviu.dudau@arm.com>, "mihail.atanassov@arm.com"
-	<mihail.atanassov@arm.com>, "brian.starkey@arm.com" <brian.starkey@arm.com>,
-	"maarten.lankhorst@linux.intel.com" <maarten.lankhorst@linux.intel.com>,
-	"mripard@kernel.org" <mripard@kernel.org>, "tzimmermann@suse.de"
-	<tzimmermann@suse.de>, "robdclark@gmail.com" <robdclark@gmail.com>,
-	"sean@poorly.run" <sean@poorly.run>, "jdelvare@suse.com" <jdelvare@suse.com>,
-	"linux@roeck-us.net" <linux@roeck-us.net>, "fery@cypress.com"
-	<fery@cypress.com>, "dmitry.torokhov@gmail.com" <dmitry.torokhov@gmail.com>,
-	"agk@redhat.com" <agk@redhat.com>, "snitzer@redhat.com" <snitzer@redhat.com>,
-	"dm-devel@redhat.com" <dm-devel@redhat.com>, "rajur@chelsio.com"
-	<rajur@chelsio.com>, "davem@davemloft.net" <davem@davemloft.net>,
-	"kuba@kernel.org" <kuba@kernel.org>, "peppe.cavallaro@st.com"
-	<peppe.cavallaro@st.com>, "alexandre.torgue@st.com"
-	<alexandre.torgue@st.com>, "joabreu@synopsys.com" <joabreu@synopsys.com>,
-	"mcoquelin.stm32@gmail.com" <mcoquelin.stm32@gmail.com>, "malattia@linux.it"
-	<malattia@linux.it>, "hdegoede@redhat.com" <hdegoede@redhat.com>,
-	"mgross@linux.intel.com" <mgross@linux.intel.com>,
-	"intel-linux-scu@intel.com" <intel-linux-scu@intel.com>,
-	"artur.paszkiewicz@intel.com" <artur.paszkiewicz@intel.com>,
-	"jejb@linux.ibm.com" <jejb@linux.ibm.com>, "martin.petersen@oracle.com"
-	<martin.petersen@oracle.com>, "sakari.ailus@linux.intel.com"
-	<sakari.ailus@linux.intel.com>, "clm@fb.com" <clm@fb.com>,
-	"josef@toxicpanda.com" <josef@toxicpanda.com>, "dsterba@suse.com"
-	<dsterba@suse.com>, "xiang@kernel.org" <xiang@kernel.org>, "chao@kernel.org"
-	<chao@kernel.org>, "jack@suse.com" <jack@suse.com>, "tytso@mit.edu"
-	<tytso@mit.edu>, "adilger.kernel@dilger.ca" <adilger.kernel@dilger.ca>,
-	"dushistov@mail.ru" <dushistov@mail.ru>, "luc.vanoostenryck@gmail.com"
-	<luc.vanoostenryck@gmail.com>, "rostedt@goodmis.org" <rostedt@goodmis.org>,
-	"pmladek@suse.com" <pmladek@suse.com>, "sergey.senozhatsky@gmail.com"
-	<sergey.senozhatsky@gmail.com>, "andriy.shevchenko@linux.intel.com"
-	<andriy.shevchenko@linux.intel.com>, "linux@rasmusvillemoes.dk"
-	<linux@rasmusvillemoes.dk>, "minchan@kernel.org" <minchan@kernel.org>,
-	"ngupta@vflare.org" <ngupta@vflare.org>, "akpm@linux-foundation.org"
-	<akpm@linux-foundation.org>, "kuznet@ms2.inr.ac.ru" <kuznet@ms2.inr.ac.ru>,
-	"yoshfuji@linux-ipv6.org" <yoshfuji@linux-ipv6.org>, "pablo@netfilter.org"
-	<pablo@netfilter.org>, "kadlec@netfilter.org" <kadlec@netfilter.org>,
-	"fw@strlen.de" <fw@strlen.de>, "jmaloy@redhat.com" <jmaloy@redhat.com>,
-	"ying.xue@windriver.com" <ying.xue@windriver.com>, "willy@infradead.org"
-	<willy@infradead.org>, "sashal@kernel.org" <sashal@kernel.org>,
-	"ruanjinjie@huawei.com" <ruanjinjie@huawei.com>, "David.Laight@aculab.com"
-	<David.Laight@aculab.com>, "herve.codina@bootlin.com"
-	<herve.codina@bootlin.com>, "Jason@zx2c4.com" <Jason@zx2c4.com>,
-	"keescook@chromium.org" <keescook@chromium.org>, "kbusch@kernel.org"
-	<kbusch@kernel.org>, "nathan@kernel.org" <nathan@kernel.org>,
-	"bvanassche@acm.org" <bvanassche@acm.org>, "ndesaulniers@google.com"
-	<ndesaulniers@google.com>, "linux-arm-kernel@lists.infradead.org"
-	<linux-arm-kernel@lists.infradead.org>, "linux-kernel@vger.kernel.org"
-	<linux-kernel@vger.kernel.org>, "linux-um@lists.infradead.org"
-	<linux-um@lists.infradead.org>, "linux-edac@vger.kernel.org"
-	<linux-edac@vger.kernel.org>, "amd-gfx@lists.freedesktop.org"
-	<amd-gfx@lists.freedesktop.org>, "dri-devel@lists.freedesktop.org"
-	<dri-devel@lists.freedesktop.org>, "linux-arm-msm@vger.kernel.org"
-	<linux-arm-msm@vger.kernel.org>, "freedreno@lists.freedesktop.org"
-	<freedreno@lists.freedesktop.org>, "linux-hwmon@vger.kernel.org"
-	<linux-hwmon@vger.kernel.org>, "linux-input@vger.kernel.org"
-	<linux-input@vger.kernel.org>, "linux-media@vger.kernel.org"
-	<linux-media@vger.kernel.org>, "netdev@vger.kernel.org"
-	<netdev@vger.kernel.org>, "linux-stm32@st-md-mailman.stormreply.com"
-	<linux-stm32@st-md-mailman.stormreply.com>,
-	"platform-driver-x86@vger.kernel.org" <platform-driver-x86@vger.kernel.org>,
-	"linux-scsi@vger.kernel.org" <linux-scsi@vger.kernel.org>,
-	"linux-staging@lists.linux.dev" <linux-staging@lists.linux.dev>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-	"linux-erofs@lists.ozlabs.org" <linux-erofs@lists.ozlabs.org>,
-	"linux-ext4@vger.kernel.org" <linux-ext4@vger.kernel.org>,
-	"linux-sparse@vger.kernel.org" <linux-sparse@vger.kernel.org>,
-	"linux-mm@kvack.org" <linux-mm@kvack.org>, "netfilter-devel@vger.kernel.org"
-	<netfilter-devel@vger.kernel.org>, "coreteam@netfilter.org"
-	<coreteam@netfilter.org>, "tipc-discussion@lists.sourceforge.net"
-	<tipc-discussion@lists.sourceforge.net>, Arnd Bergmann <arnd@arndb.de>, "Dan
- Williams" <dan.j.williams@intel.com>, Eric Dumazet <edumazet@google.com>,
-	Isabella Basso <isabbasso@riseup.net>, Josh Poimboeuf <jpoimboe@kernel.org>,
-	Masami Hiramatsu <mhiramat@kernel.org>, Sander Vanheule
-	<sander@svanheule.net>, Vlastimil Babka <vbabka@suse.cz>, Yury Norov
-	<yury.norov@gmail.com>
-Subject: RE: [PATCH v2 01/27 5.10.y] overflow, tracing: Define the
- is_signed_type() macro once
-Thread-Topic: [PATCH v2 01/27 5.10.y] overflow, tracing: Define the
- is_signed_type() macro once
-Thread-Index: AQHcP1/cJJbWkEozCEifWbQxPnjh1Q==
-Date: Fri, 17 Oct 2025 12:16:27 +0000
-Message-ID: <CH0PR18MB54337BD648C23CBE40C1060CC6F6A@CH0PR18MB5433.namprd18.prod.outlook.com>
-References: <20251017090519.46992-1-farbere@amazon.com>
- <20251017090519.46992-2-farbere@amazon.com>
- <2025101708-obtuse-ellipse-e355@gregkh>
-In-Reply-To: <2025101708-obtuse-ellipse-e355@gregkh>
-Accept-Language: en-US
-Content-Language: en-US
-X-MS-Has-Attach:
-X-MS-TNEF-Correlator:
-authentication-results: dkim=none (message not signed)
- header.d=none;dmarc=none action=none header.from=amazon.com;
-x-ms-publictraffictype: Email
-x-ms-traffictypediagnostic: CH0PR18MB5433:EE_|SJ0PR18MB3898:EE_
-x-ms-office365-filtering-correlation-id: d2272b9f-112f-46df-aed1-08de0d76ff4d
-x-ms-exchange-senderadcheck: 1
-x-ms-exchange-antispam-relay: 0
-x-microsoft-antispam: BCL:0;ARA:13230040|7416014|376014|366016|1800799024|38070700021;
-x-microsoft-antispam-message-info: =?us-ascii?Q?oH/lX6LqDPomk/HqyEBHvVh+yzsjtGo9hP4/6Jrv9HjvkWW+/Cw94zLGUlq+?=
- =?us-ascii?Q?WXEbxqDHRuXFrAfy15DECKN4MaBm6jI/AENOLxYizRuFg8EoKKUfQ/TO9tlP?=
- =?us-ascii?Q?ascSWkQ3fHQqjojnu7uhejFQc3h0LSF98BHo6l/LPvbQImfuECjNiMP/rKYi?=
- =?us-ascii?Q?bKY8edVhiZB2utV8Kix18D5LcRj8hHcp9KvX6JzO7PBKw+rcy+tp07Yco0WU?=
- =?us-ascii?Q?B7YKutFmS9oW35V7QUsxpH2GtlrACZzgbt9vPp4hi7L+WJNfQWn1+vrqLzNH?=
- =?us-ascii?Q?gQu9TxvBfQHCvZwOdYTHK7R4apLvBEIwGQ2w0ZtobEolS2PUaEsL7bPLzNY5?=
- =?us-ascii?Q?c9lftgwng+x2YwsuHnKFPlChTZWQvFRJstgD20qvO3tXbaHlJQ1XmgiVbYAV?=
- =?us-ascii?Q?PWxHF7KCfxptWQJIczRE1LS2xxtqwM7HvcV2bgT4fUG9ycZyK2X5UffIETcD?=
- =?us-ascii?Q?kQu7jmM8ppf4wfULJXrNy2SL2MjzuL7ncX30Sa1dzWB8/eHRGVGuVemfedVe?=
- =?us-ascii?Q?0ylz3AA46fkT31HNbSfxvL9p2mRkfOvt+XQdbVeXsFGlJc9MKw8dCsh0P/JR?=
- =?us-ascii?Q?QeWm73yiV/OmuEPURqXvGh7mkatKvbTXvUh2fHhU8PkwyA1oFaSF3q87FPUG?=
- =?us-ascii?Q?P0PaVH7Hb0CtrWnxdsu2p4Y9+GhX08KlLa/ayz0GLBDRKRfCQOm5D6FJI5kW?=
- =?us-ascii?Q?pF7t8QIPzRFsV3AOcHKxAsgO9kSz3QaermZXFrG61CwnWwpyXCBrz3uD6f8Y?=
- =?us-ascii?Q?M4zUcf035ipqPXEX6pjtn1Rkvqvnji/xWBKsx9+GpMPD9iLyOTvMjjw5bmFR?=
- =?us-ascii?Q?iMMLQ9nTGE0fw72wZ6k/h56MT2ZTkIdOmutKPdiVqwpXum2Y0JHzrovZF/f0?=
- =?us-ascii?Q?+AXk+iLmY22bM9c45oq/wKiqdqfh2DLS6gKYtNikrI2ZZAptnSl+K44PS09e?=
- =?us-ascii?Q?yO9hjd0Yq06hjmmo0EIyvcB9+I5wWEcpdBpAK4yH5v2GEr1XwpN8F0bR17oX?=
- =?us-ascii?Q?bhqd+xynobSgtGtbvBNBtenBlyM1/xRnsfHrPgQQLh+lVdXlwxG/LPNNG+LM?=
- =?us-ascii?Q?QdU6nsqnJvaRnlkE1Y04Oi/6YDEdcnDN3Pacv/ojVWZBXQ39f93cJ9MyYTFN?=
- =?us-ascii?Q?IpkLbAt+Yq+emScZEehGhGe+C/9gWoI0zKQBthrcZkiWNm0cSJnjg6qKe4Vs?=
- =?us-ascii?Q?aBQ6iXiEYxqvoOuQ5noDHzRIEZgbuj4b6bE6UeXSx4/WnVl/wPZ5kO04A3Ez?=
- =?us-ascii?Q?cgjGZJ0ryDcI+b5XXhO3yqQ465fHhjQaaB9796rQSyhcQaNOuhpSYCFRKYJO?=
- =?us-ascii?Q?ovwD33+FC5KiEekhb7c7OAhI6gLEFY5SiulAvfXQGKICSY+lujz90x1pbNkw?=
- =?us-ascii?Q?i1MOM+ZEI+oUaqX6bs70awvDBgSZVCbFWFiNmlsQQTOo8kNVAa7cAi8TLnN0?=
- =?us-ascii?Q?PpbXd99+RuaSNFedrephLqmAyFcQf99DewCmZF4n0SbyyfYzwl0UDx3r0ks/?=
- =?us-ascii?Q?8VRWCFBuNR70vYhOn1jVggu6pJCcWqwa+aRPam+H+hgGk9iPdFzEs4YXOg?=
- =?us-ascii?Q?=3D=3D?=
-x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:CH0PR18MB5433.namprd18.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(7416014)(376014)(366016)(1800799024)(38070700021);DIR:OUT;SFP:1101;
-x-ms-exchange-antispam-messagedata-chunkcount: 1
-x-ms-exchange-antispam-messagedata-0: =?us-ascii?Q?2zWhqfqzxCe5eoq47fdxbmsimpshmvLNqwawP56Ucuc1Qibdfysb3A8mGU5S?=
- =?us-ascii?Q?y4i2Ss1cnYpE51JvwhzSlzEz6r29K2K6BafFiizKoMBYXim8L9LUr9NJiQUR?=
- =?us-ascii?Q?tZWATgYUG2LxG2xUn57BmF6o7cWGdtNNPnf3pGG9gw6Dzyv9nzUqNm5HL+0F?=
- =?us-ascii?Q?thXqbLJxmaLy/sg504YeXDqSwmAudkovXc+jy9iANUCvRTFuqjfRU7thZKHw?=
- =?us-ascii?Q?dSa/lCNymR2vcvO/4g0xvUusQGFuIEanQh+cPqAlGtzIgcaHNBBufDIXu8gF?=
- =?us-ascii?Q?tZXjI41HOKsRDSRxjGj1GRMv6d4ogaiEJ4CUZA0+4iH+jKNe4R+wNwZkY0eA?=
- =?us-ascii?Q?6doVAg9Io4YsoaCE95D9GCK4rCvh0WWf7RXSxIFZVNkjcM1qV2fpxdpOkUDT?=
- =?us-ascii?Q?aFlk50SEHiEtH8/FJRhFbdNY0ZVJuvmkBib1V2iUUuPbtm6svbF2WefX/oyf?=
- =?us-ascii?Q?G6OHPIZi7icoH83Cf4AyIZt8sIEK9+tkH5DSt+SlSb4zfcaZjlBhlCtrnDTD?=
- =?us-ascii?Q?8rAjIpuC6j62kHX0lE/ApoH/XcBFgaXb4PO7TwoIACCgMOYcFOhfetiakVen?=
- =?us-ascii?Q?wQ7ujDCtkpo8q05EqUy3dmQ7IHp2rb31GZ5tbsIwLgDdc4pe92ovL7f99TJz?=
- =?us-ascii?Q?Qvj00h5Jpr9v9ye760tPCc7c6/iF2p54QJDNxIIxokGa+TR5hW8+X7+x7w+e?=
- =?us-ascii?Q?XJrJmQJT/U0yFrjPZUOSk4B0IJEHDvk2dQrjAca+n4V9+C8XDq/xtwo9doIi?=
- =?us-ascii?Q?HtfgEXnWII8zUHWMFwfxVwxRly74kNBkq0MvuRXll6ufr0XNP3s1qw0rK0GC?=
- =?us-ascii?Q?3dDA/hA9PcZF12UcClbpU1eWA88m00WWNeQGnNKNjzBjvlYYINBSGNPwj9Kh?=
- =?us-ascii?Q?eOmSW7WmGTprnV16AZzA+hZXfpWv6P//2zcdaiDcrz0YMU8Wmnx0QtETH8XI?=
- =?us-ascii?Q?PKTm1GhK4y+yS44FPlgAL0/alULYDMJp6oVjXPtvuvB4W1fwM3jQGhIbeFyK?=
- =?us-ascii?Q?PkaqZMERQ0TR2Thc8aQOvG3YaSVLIu7qLCIAAfkzMheszcUkqrWD9kLQi7cz?=
- =?us-ascii?Q?ql0MSBPpNykuAMiSjpC6WJisQcScptp0YewoVtWrkvkvk6fK9k5eL1QSyDLh?=
- =?us-ascii?Q?MP64r9Ri1FzO7Eb/Sxrt893yrgGX6nyYQH/1v/uwTyEv/WXiYo419IHYysQe?=
- =?us-ascii?Q?GNY8apfrczf/AasDOzPhS4MbB4oVUJLZVtGwUT7L9mhYqmdPPjgzjpz+36Vs?=
- =?us-ascii?Q?/W7USOXU9GiZQ0jR7e0rPPZBp841ldBEkZeRyFDCXHWMCzGqV5Hm/+9W27b0?=
- =?us-ascii?Q?wVAtL+F6aa/PEVGNFDEbklQusrqFLaVTmijzdXufvnC/bvZeAzaaee6l74fu?=
- =?us-ascii?Q?jDa59Cfj6hGXGHPR3961DD51Az+PL/KRYptIRBnTtEJPYK3brWViToqz8QW+?=
- =?us-ascii?Q?bfpxyVLTi+rK2N5UiYH3XM8LxTpQhKukDcPZGYBLbjKkARks09VTTJhUUV/+?=
- =?us-ascii?Q?1X01j8icWASygDmTgvlNdEQ2Qfx4nIQze4VnvUuU5LTynDL+BJ9rW2ZQZfJ5?=
- =?us-ascii?Q?OQbktRJIGxKTNGVwvGQ=3D?=
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
+        d=gmail.com; s=20230601; t=1760706244; x=1761311044; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=wFTC0WsD5qvNosCiq2VmFrrRyJq6s96dRtq2SvFE0SM=;
+        b=moD+WMGr98s86nDujas9yVGz3UCrSzusiyKUT0WLpAvmNz7pRELkrSfoyOsd06kuAC
+         yb1UHgf1G9+avqFX+PJyMQBoumxj4trk1hEr9/lTn6ETLKEv0EM+Amk2UVnG1pIliKyj
+         uUKaqmOn2eJuwHO2KDkK9VUl1YN2xGSx/46oNDbWTLyk3E/JCgka0j2BJjMhfCL/jcEO
+         pu2VqFOTnz8p0NBN0CX4nBEfw5iSiv2Q9Y+z/5kIFUa/MfioGzKbcI7P5hzCaSRmV/r6
+         u5eGxWrqJVuvtbp32Mmj86e6KUsJIxchILWSbQxHAt1RqqDnVVlt53WAYp444SirtoRz
+         pW3A==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1760706244; x=1761311044;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=wFTC0WsD5qvNosCiq2VmFrrRyJq6s96dRtq2SvFE0SM=;
+        b=nJGa+BUZ5FgDG4X4wF6kWpPsbo8U8fGCIorEmkAYnKbEBznaUITT8H+PLxCNCZO4L+
+         mxhcCvvkQJ+4W2BFBbUdrpxoiyaJOGK2XrEl1haRLIQ5CItso3pYVLAmXFW2bzVT1mDz
+         gkZ0xByavcxtaoqgoyC8nIRCmr0xp7q0J8lKXXWAtqrVo1flmaL6XqxXhIq+XNmvfau1
+         Rjawj0kWFiv0IfNM4PUFGnGbqeMUFynCbnmfgv79ngY+FWIPxxX6ln2jFmNl6tFnL52c
+         2komwr8yLX9LLa9VGmfsf/xnAWc9uRIC1HHxoHb8nOmQ20tLTOGUlewo/NwjELh+n+pT
+         Gd5A==
+X-Gm-Message-State: AOJu0YzdOVNDim7sLB7xv4lJm8g2lQrHo2d6uPPZreQQXQu2jGX/bk2M
+	lwGoFUo0ahxrjBEVMdyl7ev5ofy/4nt+N9W1iXeEniiyzrIVBO5nDO60
+X-Gm-Gg: ASbGncsVhMz1GfzvWt1XepAjhu4K5d6YG3n7DbWPBW2XVkUmiiHjw6b35GTnbZcheIG
+	1P/luLdW5zNu+0JyFcTx4c6Mgi5G3NOOypQEiNtx/nKoaSlw7Az9w5IIIC9T+E0P9jW7VEj1Xfd
+	3xOS4/QrmYPtpvWZqVrlE+cVnWiZCM+j6FrCKBs8GgRbLFdk7O/EwnFXPAve19ZyVv7Bzr9wrHv
+	lyZn0VNTo7yXCKnzogjbLZTaAC5vdL0lh9gJ+DkfyKbBCmQHFyNYFRxM25QNJwfM+nn7uiinJfv
+	bv6bJC3AbpY/lYFUPLwv7ERJMvUA4t+VVFVWeiw3SkD7bVoyUvpjle8A2E+blJPL+DJYhd8ykBd
+	lHkfS8v3ZtGW0otpo/0YrQyCyLcHfUbj9Y/ymM2bzMkiSQ2LfyHzVjvPplvpSUKqfJcZ2ciiKlM
+	M0lv6sHCeMWsXo
+X-Google-Smtp-Source: AGHT+IHxdVe8R4Ee/9NeMrGNCke8XwsGOQ/x9Bf3YavpVSyroujqC8TZYteAQvxyAAHNQAEj7b2TKw==
+X-Received: by 2002:a05:600c:3e0a:b0:45d:d8d6:7fcc with SMTP id 5b1f17b1804b1-4711791c522mr25667535e9.27.1760706243321;
+        Fri, 17 Oct 2025 06:04:03 -0700 (PDT)
+Received: from localhost ([212.73.77.104])
+        by smtp.gmail.com with UTF8SMTPSA id ffacd0b85a97d-42701a5f83bsm8490768f8f.16.2025.10.17.06.04.02
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Fri, 17 Oct 2025 06:04:02 -0700 (PDT)
+From: Askar Safin <safinaskar@gmail.com>
+To: safinaskar@gmail.com
+Cc: linux-btrfs@vger.kernel.org,
+	wqu@suse.com
+Subject: Re: [PATCH v2 0/3] btrfs: scrub: enhance freezing and signal handling
+Date: Fri, 17 Oct 2025 16:03:31 +0300
+Message-ID: <20251017130331.4045-1-safinaskar@gmail.com>
+X-Mailer: git-send-email 2.47.3
+In-Reply-To: <20251017093947.1170945-1-safinaskar@gmail.com>
+References: <20251017093947.1170945-1-safinaskar@gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-AuthSource: CH0PR18MB5433.namprd18.prod.outlook.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: d2272b9f-112f-46df-aed1-08de0d76ff4d
-X-MS-Exchange-CrossTenant-originalarrivaltime: 17 Oct 2025 12:16:27.3648
- (UTC)
-X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: 5280104a-472d-4538-9ccf-1e1d0efe8b1b
-X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
-X-MS-Exchange-CrossTenant-userprincipalname: dlwakfkWPrCmyP4L3IyDhJEw/yKNGU9QXvfsoNPKhTM6UNmbIhyzw+PR2eLVNiKu9ws6u8cCmvnwkBI8/yMn8g==
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: SJ0PR18MB3898
-X-OriginatorOrg: amazon.com
+Content-Transfer-Encoding: 8bit
 
-> On Fri, Oct 17, 2025 at 09:04:53AM +0000, Eliav Farber wrote:
-> > From: Bart Van Assche <bvanassche@acm.org>
-> >
-> > [ Upstream commit 92d23c6e94157739b997cacce151586a0d07bb8a ]
->
-> This isn't in 5.15.y, why is it needed in 5.10.y?
+I did some more testing. I found that when systemd freezes processes using
+cgroup freezer, then:
+- fatal_signal_pending(current) returns false
+- freezing(current) returns false
+- signal_pending(current) returns true
 
-This is the mainline commit:
-https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/i=
-nclude/linux/overflow.h?h=3Dv6.18-rc1&id=3D92d23c6e94157739b997cacce151586a=
-0d07bb8a
+So, systemd cgroup freezer indeed looks very similar to signal.
 
-The commit hash is 92d23c6e94157739b997cacce151586a0d07bb8a, which is
-the one I used for the backport.
-
-And here is the corresponding commit in the 5.15.y branch:
-https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/commit/inc=
-lude/linux/overflow.h?h=3Dv5.15.194&id=3Ded6e37e30826b12572636c6bbfe6319233=
-690c90
-However, the commit message there references a different hash:
-a49a64b5bf195381c09202c524f0f84b5f3e816f.
-
----
-Regards, Eliav
+-- 
+Askar Safin

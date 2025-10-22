@@ -1,88 +1,44 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from bombadil.infradead.org (bombadil.infradead.org [198.137.202.133])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1B0312EAB6F
-	for <linux-btrfs@vger.kernel.org>; Wed, 22 Oct 2025 07:11:52 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 090572F60A7;
+	Wed, 22 Oct 2025 07:23:00 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.137.202.133
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1761117115; cv=none; b=X2KKxTkErolg+iRHiXVZSEOgVjSATQEXACMBepC1bQDL8j4nuchZ8C6fjvJxHYumS2zka6K0zjj2PXyJzpjea1/9L05GQOwbpKzZx/cRZ4WSxSYeayGYNOW52zukhjbMt3TNTkDzwwy/L+7jVhrU/WspOBaY8gxFkQkzHKDmw2k=
+	t=1761117783; cv=none; b=lIlImvTxFJEEwrUjrWG1VtYNI2LJ65zhQJQMqEIy6R4vkjk4V4dQdUq2Q0DqA72deBnadPQaElzoa5SrROLxoy5Uc3CK12bJVOBwIgkCfhC4BrZ+PwlNgT7R1FgSX7yOzjBU/Kq/O9i5SXyFpGbEow5TeOCE7Xbs5jaB0oL6Zms=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1761117115; c=relaxed/simple;
-	bh=lFxy0NK1X/El45Qs3Wjm9AlJrpb5J9XKmRCy6hI9130=;
+	s=arc-20240116; t=1761117783; c=relaxed/simple;
+	bh=2cMEmbN8Jxckh4k5M+FzMZuIRSeU+pNUJKZMNKUzE7M=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=tDf09S+I3cOWhZmq7NLFdFU7oz1Z9zXrOZ4Gqc48I5G2SxDQCHRaSHFEKw8mBxvgnXXEbp7IASFOsC44MIu0HAjOaARQedqQRPJPnIvU51CmEr33U4mkgakR+/JTE9aR/Q3QgSw0XE114CK1GvVSn22ALgT18+/stVGPF1Si3EY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=uwyl57t8; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=ugWAT5ne; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=Nz14d9Rp; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=2CbetMO3; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	 Content-Type:Content-Disposition:In-Reply-To; b=AsI84BZBcu9b8CJPtf8kFozwHw+PuDrMSoJq3XK4cyQteQz40WOuLcJJhBHvGGS/3+TRl1GTJaQhSOFyiA0k5eX+pLKjPTJKXyqVQU8ztbXZ2HqJAl9Vt+BKhHgBTXpuZxOrQewsC8AuCyzWNRiojBa4yILfFkzGi8AvfWMlL+M=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=infradead.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=Ab2x9GoW; arc=none smtp.client-ip=198.137.202.133
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=infradead.org
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="uwyl57t8";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="ugWAT5ne";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="Nz14d9Rp";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="2CbetMO3"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 239FE1F397;
-	Wed, 22 Oct 2025 07:11:43 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1761117107;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=bCo6c3jOZCaszWTotbd5IGeLwwS2UDsyK+Ikn6++0Po=;
-	b=uwyl57t81guhonppnXFDGMXfR9U7SWkuCFBhChzVol4xQBLUSuzn0vE3zVnroUarlwG8az
-	8inLHxz9uQBj8/nMVAq638zCJxrpfbV347iysJTXbv0YZYVfzYfiazWkTiKsxheKoNXzMx
-	k9yUr4Ck5sSmOF1zucXr97+dnPOPG6M=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1761117107;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=bCo6c3jOZCaszWTotbd5IGeLwwS2UDsyK+Ikn6++0Po=;
-	b=ugWAT5ne/R5Uah2/TnNa3gI2htSG4EnlTGU3w6Kl45ggvUjN+4lut8u3dXWgBspObgqLBn
-	i3Xra7Ck8l9/Q6Aw==
-Authentication-Results: smtp-out2.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1761117103;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=bCo6c3jOZCaszWTotbd5IGeLwwS2UDsyK+Ikn6++0Po=;
-	b=Nz14d9Rpu4YM6XFzzL3V01i3AKFihaFLwOi9Xtd1MRq+ewjQte5pYedDmNdlKN2SzFKQYs
-	qxT6/s/ZGoB4cjd/0ej5Egw10+wRs2QdL8iu9anPR8O8kjB0FNUVsmmXDONP4bXb3l/2oB
-	HRQzUIWtu+xpL/d1xFmlS/7RRF39ycU=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1761117103;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=bCo6c3jOZCaszWTotbd5IGeLwwS2UDsyK+Ikn6++0Po=;
-	b=2CbetMO3lkdIzGNlIxl8ebU5307el5FJS9UnUP+rsBIIL4JcxlrJJCmefxy6qJcF5nCf5o
-	hqKE8JlAFQ8aygBw==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 0F9231339F;
-	Wed, 22 Oct 2025 07:11:43 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id VeGiA6+D+GgRBAAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Wed, 22 Oct 2025 07:11:43 +0000
-Date: Wed, 22 Oct 2025 09:11:41 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Eric Biggers <ebiggers@kernel.org>
-Cc: linux-crypto@vger.kernel.org, linux-kernel@vger.kernel.org,
-	linux-btrfs@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
-	Ard Biesheuvel <ardb@kernel.org>,
-	"Jason A . Donenfeld" <Jason@zx2c4.com>
-Subject: Re: [PATCH 10/10] btrfs: switch to library APIs for checksums
-Message-ID: <20251022071141.GV13776@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20251018043106.375964-1-ebiggers@kernel.org>
- <20251018043106.375964-11-ebiggers@kernel.org>
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="Ab2x9GoW"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
+	:References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+	Content-Transfer-Encoding:Content-ID:Content-Description;
+	bh=jp8hcVOKyhoWq7SdhoGR9Zpb4JSwyCYDRPrya8d5ZcM=; b=Ab2x9GoWeijc96WPk0GMzNnVjE
+	F0QepEFGsjZ104+ijmxjB+iRb/pAK2+XpnTxtXo8WLzqXdbcp4Y366BJm/f7S2+Fa0t0fSwkKAJ/G
+	8Ho+UclRACXYe2ScsBUttmbX58rQamIfBA2uAjrSTNw8TEfL7MxfCtepD0m4n5nSuucs3uphfX4xh
+	0UfB1SAYqg3WWvrAMSXbmk/jk8sb6q0wXl+E+M0MjH5dprcvL1rkVuEtGhFBYi1K60Tc9iRhYnOuy
+	mJ3EdlXV2/POY6Dr63ENXCN8JCXp15UU8Ejx0zllYL9Un0hEArLEAZALdm1JutAaTlFywrTj3Cb5d
+	HkBtisrw==;
+Received: from hch by bombadil.infradead.org with local (Exim 4.98.2 #2 (Red Hat Linux))
+	id 1vBTBU-00000001qme-1d48;
+	Wed, 22 Oct 2025 07:23:00 +0000
+Date: Wed, 22 Oct 2025 00:23:00 -0700
+From: Christoph Hellwig <hch@infradead.org>
+To: Christian Brauner <brauner@kernel.org>
+Cc: linux-btrfs@vger.kernel.org, Qu Wenruo <wqu@suse.com>,
+	Christoph Hellwig <hch@infradead.org>, djwong@kernel.org,
+	linux-xfs@vger.kernel.org, linux-fsdevel@vger.kernel.org
+Subject: Re: [PATCH v2] iomap: add IOMAP_DIO_FSBLOCK_ALIGNED flag
+Message-ID: <aPiGVJTpM8aohQpk@infradead.org>
+References: <c78d08f4e709158f30e1e88e62ab98db45dd7883.1760345826.git.wqu@suse.com>
+ <20251021-leber-dienlich-0bee81a049e1@brauner>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -91,67 +47,22 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20251018043106.375964-11-ebiggers@kernel.org>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Spam-Level: 
-X-Spamd-Result: default: False [-4.00 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	RCPT_COUNT_SEVEN(0.00)[7];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	ARC_NA(0.00)[];
-	TO_DN_SOME(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.cz:replyto];
-	FROM_HAS_DN(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	REPLYTO_DOM_NEQ_TO_DOM(0.00)[]
-X-Spam-Flag: NO
-X-Spam-Score: -4.00
+In-Reply-To: <20251021-leber-dienlich-0bee81a049e1@brauner>
+X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 
-On Fri, Oct 17, 2025 at 09:31:06PM -0700, Eric Biggers wrote:
-> Make btrfs use the library APIs instead of crypto_shash, for all
-> checksum computations.  This has many benefits:
+On Tue, Oct 21, 2025 at 03:03:08PM +0200, Christian Brauner wrote:
+> On Mon, 13 Oct 2025 19:35:16 +1030, Qu Wenruo wrote:
+> > Btrfs requires all of its bios to be fs block aligned, normally it's
+> > totally fine but with the incoming block size larger than page size
+> > (bs > ps) support, the requirement is no longer met for direct IOs.
+> > 
+> > Because iomap_dio_bio_iter() calls bio_iov_iter_get_pages(), only
+> > requiring alignment to be bdev_logical_block_size().
+> > 
+> > [...]
 > 
-> - Allows future checksum types, e.g. XXH3 or CRC64, to be more easily
->   supported.  Only a library API will be needed, not crypto_shash too.
-> 
-> - Eliminates the overhead of the generic crypto layer, including an
->   indirect call for every function call and other API overhead.  A
->   microbenchmark of btrfs_check_read_bio() with crc32c checksums shows a
->   speedup from 658 cycles to 608 cycles per 4096-byte block.
-> 
-> - Decreases the stack usage of btrfs by reducing the size of checksum
->   contexts from 384 bytes to 240 bytes, and by eliminating the need for
->   some functions to declare a checksum context at all.
-> 
-> - Increases reliability.  The library functions always succeed and
->   return void.  In contrast, crypto_shash can fail and return errors.
->   Also, the library functions are guaranteed to be available when btrfs
->   is loaded; there's no longer any need to use module softdeps to try to
->   work around the crypto modules sometimes not being loaded.
-> 
-> - Fixes a bug where blake2b checksums didn't work on kernels booted with
->   fips=1.  Since btrfs checksums are for integrity only, it's fine for
->   them to use non-FIPS-approved algorithms.
-> 
-> Note that with having to handle 4 algorithms instead of just 1-2, this
-> commit does result in a slightly positive diffstat.  That being said,
-> this wouldn't have been the case if btrfs had actually checked for
-> errors from crypto_shash, which technically it should have been doing.
-> 
-> Signed-off-by: Eric Biggers <ebiggers@kernel.org>
+> Applied to the vfs-6.19.iomap branch of the vfs/vfs.git tree.
+> Patches in the vfs-6.19.iomap branch should appear in linux-next soon.
 
-Thanks, this simplifies quite a few things. I'd like to take it via the
-btrfs tree as there may be the hash additions (XXH3, BLAKE3) but
-currently I'm not sure if it won't make things more complicated. I
-haven't started the kernel part yet so I can use this patchset for
-development and rebase once it's merged. 
+I'm not seeing it yet.
+

@@ -1,171 +1,183 @@
-Received: from mail-wr1-f99.google.com (mail-wr1-f99.google.com [209.85.221.99])
+Received: from mail-wm1-f44.google.com (mail-wm1-f44.google.com [209.85.128.44])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EE36028489B
-	for <linux-btrfs@vger.kernel.org>; Thu, 23 Oct 2025 20:18:37 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.99
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F31D91DE3C7
+	for <linux-btrfs@vger.kernel.org>; Thu, 23 Oct 2025 20:42:10 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.44
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1761250720; cv=none; b=ElO8E+UxqVt9O17M9E9DarxMIEcT/2p7lrwQQsVkBNat6D3+jAXqplJpOJL2FcZDrCZ9kBef2lRTejuRwYOCDK6KYL4An2KL62+GEs1ldT6fb1PirS3mP572jCScLscfTOEIZXhtEuGP0fRSw4ZqpSETjQRtDcAXI5US/O5E8QI=
+	t=1761252133; cv=none; b=h8nr2VSbrhpKaeo54kEnTdeaPe793eEL3FfTkqAdhJdIDCgaJ6mpb80P/yJjID/kDIDOgL3Hfie0R7w054rO1nXwgpsLNp1Nwxhz0rXAPivykF0c9P69BgYua8T8duehSpiBs8mB9CDo4xCvaezgiAc1zYZEYFRYObpQ7Enuvdw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1761250720; c=relaxed/simple;
-	bh=5e89GXt6DhKyASePnDrD7cthV1505P8u/yKg4DMfB4Q=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=ieSakonxhxZdMmhVk5Zc2KsH+j0UWO/ziTNqnA51ZStMzNoGRKzcuI8WAMVRK6LslTISXGftT95x6QjYTkymmYLHoAbnk/aFXHvMwiSkyf9W34m8lWO6s5FPGLMrufnTDqeYgFGxDeNBE509wo+7a87MFKupfZcI9H3N2rpik1I=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=purestorage.com; spf=fail smtp.mailfrom=purestorage.com; dkim=pass (2048-bit key) header.d=purestorage.com header.i=@purestorage.com header.b=Ce2+7RrS; arc=none smtp.client-ip=209.85.221.99
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=purestorage.com
-Authentication-Results: smtp.subspace.kernel.org; spf=fail smtp.mailfrom=purestorage.com
+	s=arc-20240116; t=1761252133; c=relaxed/simple;
+	bh=PDOk5q4ikNsoJ7LaEKqMOSHmjcL2HrrBiXoNtKrmcuQ=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=TnPg5vdncUIlNt1r2yAm0qzWJUoFXzVq9bl4ltm8aWWVaF2Zy2y2NPltmdxVmckpJsBYYoj4Jce3JWwC1s0aWsVVXg2JxfPXsccc19Zk5NFgZJlJWOOMTfYnaHw2ioPxalGTGhirwrC7ZRwseqvw1i3/HSJgjUz8aV4jh0xYH1M=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=Nz7YYkvR; arc=none smtp.client-ip=209.85.128.44
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=purestorage.com header.i=@purestorage.com header.b="Ce2+7RrS"
-Received: by mail-wr1-f99.google.com with SMTP id ffacd0b85a97d-4270a072a0bso225533f8f.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 23 Oct 2025 13:18:37 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="Nz7YYkvR"
+Received: by mail-wm1-f44.google.com with SMTP id 5b1f17b1804b1-47117e75258so9980465e9.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 23 Oct 2025 13:42:10 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=purestorage.com; s=google2022; t=1761250716; x=1761855516; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=96BiLrpc0TjSBBUxSZ5BCVjSp2BMxOcWJzQbIZwxLNw=;
-        b=Ce2+7RrSDt64qEdAiiM7W8oVRbhsCRxQmw6H+uO9r++8Jr5zF+3c14fhcDeUAUICoY
-         8pm039TwNICcmH3sYwyzHtfckVKK9jwA+KS7HWIhMfpEOi90tFh3SNTKj0uwDp376Fmh
-         uQThz9o+7YgS/FO7HkZ+AIQL91Ce3Uztgwh3JFnHZ1cPq7PwFpCz76sO63MRY2A0Rf9s
-         3hfu8oOr6voaDXiwXUrsQrXwVRZWsqMBubzlBHs2bzloDsRe1q+kJS7P0MndMMgC+d7q
-         5LLoD6TlqlHtfsxfzQ5Qnlgt/b1Poh1nlMV0zX/ImVmCMgsN0/UXAx4tuCiX52RkCuQ+
-         7sCQ==
+        d=gmail.com; s=20230601; t=1761252129; x=1761856929; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to;
+        bh=zH23/gL2/USZLjj/JPdi7ffud5niCkNtnKaJxQ+IhR4=;
+        b=Nz7YYkvRfAPWuBQiozd2EoqtjCYhMKY1dzhlJQNeryYt2f9leHj/UhBjlrC2RmuOYf
+         gzKUb/dWuNSaTvxZQC/BWnWGG9nyAkH1CsipyuCT7ah/gpVqqeb0ZDwCElJilz1neUBi
+         pfHn3MvsPbX/1KnqEvtrrwWsB0dUzTlKavo0NQWRXRBf1OFKYCTdQJbFTMINehKqrIv/
+         WIxgqSZNofWjjzSITfOSqjKiPVTITDXBctcJQflCV4d4d4F00O2zxuV7WNhMH1GlrpDW
+         gPmyETMU1QZ7lfLjlqtk9kVmt3jN05MJGbCbaHchmEWNYX/lLHOVmyCwkq9nVcnP95/Q
+         9kgA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1761250716; x=1761855516;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=96BiLrpc0TjSBBUxSZ5BCVjSp2BMxOcWJzQbIZwxLNw=;
-        b=SSVw/frJPMZNhvCMUcoJzCSvW5d3DPE1T3pOE5a08eHBUXU70QcqgDW/+AS+VbVqdA
-         qzZ2baDKJpUUVvK0KPduJW4t1gv0D6inFEtOU9fpw57jBpJ3+uaE0eYdTeXkQrA7ECrI
-         FfW9l40k8g/knputWvI3lmAnzo8VSIR1Dp6cCQZcalsx/bsRRr6kqbsJyfMZPXNJzes7
-         dOGgpWi1xBb4pzH4pjJYn0VIAeEqBUQTdAXU9iGLYXQ5IUtoNYBWMJXRLz72KpqXLLpm
-         hGagh0yO82rHlLMIMJLl6iDIlvxrjsD+kZe6KBoglQmfJ2VsxX+lf+L7gXadNUFPwPIm
-         5Qqw==
-X-Forwarded-Encrypted: i=1; AJvYcCVhtuRvqeoV7iNzrBRLViX8jtFJBRQddyLvB4THEPnU3evkQyDT+86ErZn1g/aRJAynuxETyYMyWWchLA==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yz3kahEWzuFUZlKPHrPN7nNKd9jKXrqMle1z+BLU/Y/Au4hvRWa
-	OBhB5JJxiWAMHRA4BCBk2DGe92VdV6S3qck3ufExT3+KPhsh4fvYLj1i/DfIuvzU3kllnaOI/j4
-	tdd4R2YriN0a+HlgwBehPXaZ1rGTTVOQFfz0RQ+9NCmKzd5YkuCHA
-X-Gm-Gg: ASbGnctGiqwCLxuCGLep936T5TfnhnChmNhD/9yWaAlEu4AR32qcxrKIHkrMqx0AYaw
-	lR5KTN8Xq4NYg7xDWRPZxDE1mqFU7/Y99kqCHWryD9yHsXu73nIo1yzOvXRqVb93yxOR0t8pSCC
-	IHKpPwd7RFEuGUKqZm6H1T5PLA72L0SFiZtZfAJFNxt0dxHf7hCkCTBKntiDdNzx7PxBgMHdbZq
-	5Ucd4gJqdzfvBTgDr0Wfx51qKo/Oyctnzc1QnpHHbOr/4nBYRjd3BEOkbKuKiwLpzzp4T9JWiUL
-	ULluJEWczwRRrmUaqLAnbwABXNzgvOSRXYA9vHQfihl+TTkMcDOHVwKnkX4NqQ4fWI8w5ZkWceF
-	JhW63F3I8Ns9fVq/F
-X-Google-Smtp-Source: AGHT+IHWadkx9kp6MhgZHi2KvIKXfztJZsFFBsc7zE5C/VRcCJIv9FwFI0VQ0GJaihcf27tHQSLLkNs29ZhV
-X-Received: by 2002:a05:6000:290e:b0:426:ff0e:b563 with SMTP id ffacd0b85a97d-4284e52d956mr4357297f8f.3.1761250716288;
-        Thu, 23 Oct 2025 13:18:36 -0700 (PDT)
-Received: from c7-smtp-2023.dev.purestorage.com ([2620:125:9017:12:36:3:5:0])
-        by smtp-relay.gmail.com with ESMTPS id ffacd0b85a97d-429898e70easm248962f8f.38.2025.10.23.13.18.34
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 23 Oct 2025 13:18:36 -0700 (PDT)
-X-Relaying-Domain: purestorage.com
-Received: from dev-csander.dev.purestorage.com (unknown [IPv6:2620:125:9007:640:ffff::1199])
-	by c7-smtp-2023.dev.purestorage.com (Postfix) with ESMTP id EBE47340772;
-	Thu, 23 Oct 2025 14:18:33 -0600 (MDT)
-Received: by dev-csander.dev.purestorage.com (Postfix, from userid 1557716354)
-	id E9B1BE41B1D; Thu, 23 Oct 2025 14:18:33 -0600 (MDT)
-From: Caleb Sander Mateos <csander@purestorage.com>
-To: Jens Axboe <axboe@kernel.dk>,
-	Miklos Szeredi <miklos@szeredi.hu>,
-	Ming Lei <ming.lei@redhat.com>,
-	Keith Busch <kbusch@kernel.org>,
-	Christoph Hellwig <hch@lst.de>,
-	Sagi Grimberg <sagi@grimberg.me>,
-	Chris Mason <clm@fb.com>,
-	David Sterba <dsterba@suse.com>
-Cc: io-uring@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org,
-	linux-block@vger.kernel.org,
-	linux-nvme@lists.infradead.org,
-	linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	Caleb Sander Mateos <csander@purestorage.com>
-Subject: [PATCH v2 1/3] io_uring: expose io_should_terminate_tw()
-Date: Thu, 23 Oct 2025 14:18:28 -0600
-Message-ID: <20251023201830.3109805-2-csander@purestorage.com>
-X-Mailer: git-send-email 2.45.2
-In-Reply-To: <20251023201830.3109805-1-csander@purestorage.com>
-References: <20251023201830.3109805-1-csander@purestorage.com>
+        d=1e100.net; s=20230601; t=1761252129; x=1761856929;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=zH23/gL2/USZLjj/JPdi7ffud5niCkNtnKaJxQ+IhR4=;
+        b=C2/dm7Q20dx/u0kWWV+DBPCingGQ9Gk8XAG+kkQfOM6Fn1l82r3U0VXAhP6xLfgOqI
+         z1Qu93GpBQ3Tw437CQ+2qcOmQ08iJQSscRiFOOn2i+LVDsOojsZIhAqWXG4vms7O56gm
+         xgIuuzHaE6Sh5li/V80gvfihDYvbFlrW5zf3YyE+aUoTvSF43Q3GxO04KdC1yljxeNGg
+         TCe/+HZo1xMHAgddbgZ0D9oplwmU3mSIk0buLbByb8V2tr3qcpTC9ZKaS/1nNha4FeFF
+         zXwPRQm1t+XQ3N8VuWm/ye1lpyESSojuxNF2PuxqXC/PonZ/gC+npUcWXy+338C8+LVM
+         bcDA==
+X-Forwarded-Encrypted: i=1; AJvYcCX5S/oI9wrVWYS7uXCdode745CQmPafSatVrkdDuz4RB/VgBj0hZ+GzjA1Bl5gcZOyaebk7EXSB668qsA==@vger.kernel.org
+X-Gm-Message-State: AOJu0YyaoKgaHWE4FouJHojYjhostrTH8AC2Nrx5mgtF+qon1ySVdSVN
+	hEPoM+MWz6Zhd0p6UplKdSUdq85TQYzkNuxjrbdyDPrl1AIBw0AMZbFS
+X-Gm-Gg: ASbGncvkbZuGq/BDn7EylZ0n51zPh/5OA3vUG+Iel3rpIV3TrLR2obTQbEB/+yQy3F+
+	cfWfRb8yyM7/CfHcKnzpndrdEdqZmjNFw58nIRLtLF6uCq7Hmccr5Dy8TQPKwTh+6Momm7M1q2L
+	H22beham4zLBSM0c4yfH+wkFGpEz2PfMHEI2xwUtKXXyEDyZHDUrix72cED16g1rYn+Pw17Jyhg
+	wRtufCd6GFn+n/mo0Hr9C3QgdqhSeAoMXR+kIOA1pyO6TJvbDZpyfWvU5/4GfyLyCtIPF1ELjll
+	FF1niZDaM2B0C4VMrPf0opyK2cEBAZVZUGlHdUz7jZ4kuXzEs94/K+40XecpYPvMRRty692S9eu
+	4AhriYX2Eg3GlhPV9/ma0+6CilDrsPofHDY0XrP0o2cWHBJtBmEW/zWrthl8b4NlS6NL4rCPqs+
+	5Z1/kgRwrLk77430A/ikw55u+U+g==
+X-Google-Smtp-Source: AGHT+IHCVB+Pybief1JnxZp/9KwSmKb9+DyZ4IikoY3sTAsLQTmu8dNdfCeK9ekGtKedPfaO6daR0Q==
+X-Received: by 2002:a05:600c:46c5:b0:46e:1cc6:25f7 with SMTP id 5b1f17b1804b1-475cafacc30mr25848925e9.9.1761252129022;
+        Thu, 23 Oct 2025 13:42:09 -0700 (PDT)
+Received: from [192.168.2.12] (85-70-151-113.rcd.o2.cz. [85.70.151.113])
+        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-475caf2f142sm56851425e9.15.2025.10.23.13.42.07
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Thu, 23 Oct 2025 13:42:08 -0700 (PDT)
+Message-ID: <a48a37e3-2c22-44fb-97a4-0e57dc20421a@gmail.com>
+Date: Thu, 23 Oct 2025 22:42:07 +0200
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+User-Agent: Mozilla Thunderbird
+Subject: Re: dm bug: hibernate to swap located on dm-integrity doesn't work
+ (how to get data redundancy for swap?)
+To: Askar Safin <safinaskar@gmail.com>, linux-mm@kvack.org,
+ linux-pm@vger.kernel.org, linux-block@vger.kernel.org,
+ linux-crypto@vger.kernel.org, linux-lvm@lists.linux.dev,
+ lvm-devel@lists.linux.dev, linux-raid@vger.kernel.org,
+ DellClientKernel <Dell.Client.Kernel@dell.com>, dm-devel@lists.linux.dev,
+ linux-btrfs@vger.kernel.org
+Cc: Nhat Pham <nphamcs@gmail.com>, Kairui Song <ryncsn@gmail.com>,
+ Pavel Machek <pavel@ucw.cz>, =?UTF-8?B?Um9kb2xmbyBHYXJjw61hIFBlw7FhcyAoa2l4?=
+ =?UTF-8?Q?=29?= <kix@kix.es>, "Rafael J. Wysocki" <rafael@kernel.org>,
+ Eric Biggers <ebiggers@kernel.org>, Lennart Poettering
+ <mzxreary@0pointer.de>, Christian Brauner <brauner@kernel.org>,
+ Linus Torvalds <torvalds@linux-foundation.org>
+References: <20251023112920.133897-1-safinaskar@gmail.com>
+Content-Language: en-US
+From: Milan Broz <gmazyland@gmail.com>
+Autocrypt: addr=gmazyland@gmail.com; keydata=
+ xsFNBE94p38BEADZRET8y1gVxlfDk44/XwBbFjC7eM6EanyCuivUPMmPwYDo9qRey0JdOGhW
+ hAZeutGGxsKliozmeTL25Z6wWICu2oeY+ZfbgJQYHFeQ01NVwoYy57hhytZw/6IMLFRcIaWS
+ Hd7oNdneQg6mVJcGdA/BOX68uo3RKSHj6Q8GoQ54F/NpCotzVcP1ORpVJ5ptyG0x6OZm5Esn
+ 61pKE979wcHsz7EzcDYl+3MS63gZm+O3D1u80bUMmBUlxyEiC5jo5ksTFheA8m/5CAPQtxzY
+ vgezYlLLS3nkxaq2ERK5DhvMv0NktXSutfWQsOI5WLjG7UWStwAnO2W+CVZLcnZV0K6OKDaF
+ bCj4ovg5HV0FyQZknN2O5QbxesNlNWkMOJAnnX6c/zowO7jq8GCpa3oJl3xxmwFbCZtH4z3f
+ EVw0wAFc2JlnufR4dhaax9fhNoUJ4OSVTi9zqstxhEyywkazakEvAYwOlC5+1FKoc9UIvApA
+ GvgcTJGTOp7MuHptHGwWvGZEaJqcsqoy7rsYPxtDQ7bJuJJblzGIUxWAl8qsUsF8M4ISxBkf
+ fcUYiR0wh1luUhXFo2rRTKT+Ic/nJDE66Ee4Ecn9+BPlNODhlEG1vk62rhiYSnyzy5MAUhUl
+ stDxuEjYK+NGd2aYH0VANZalqlUZFTEdOdA6NYROxkYZVsVtXQARAQABzSBNaWxhbiBCcm96
+ IDxnbWF6eWxhbmRAZ21haWwuY29tPsLBlQQTAQgAPwIbAwYLCQgHAwIGFQgCCQoLBBYCAwEC
+ HgECF4AWIQQqKRgkP95GZI0GhvnZsFd72T6Y/AUCYaUUZgUJJPhv5wAKCRDZsFd72T6Y/D5N
+ D/438pkYd5NyycQ2Gu8YAjF57Od2GfeiftCDBOMXzh1XxIx7gLosLHvzCZ0SaRYPVF/Nr/X9
+ sreJVrMkwd1ILNdCQB1rLBhhKzwYFztmOYvdCG9LRrBVJPgtaYqO/0493CzXwQ7FfkEc4OVB
+ uhBs4YwFu+kmhh0NngcP4jaaaIziHw/rQ9vLiAi28p1WeVTzOjtBt8QisTidS2VkZ+/iAgqB
+ 9zz2UPkE1UXBAPU4iEsGCVXGWRz99IULsTNjP4K3p8ZpdZ6ovy7X6EN3lYhbpmXYLzZ3RXst
+ PEojSvqpkSQsjUksR5VBE0GnaY4B8ZlM3Ng2o7vcxbToQOsOkbVGn+59rpBKgiRadRFuT+2D
+ x80VrwWBccaph+VOfll9/4FVv+SBQ1wSPOUHl11TWVpdMFKtQgA5/HHldVqrcEssWJb9/tew
+ 9pqxTDn6RHV/pfzKCspiiLVkI66BF802cpyboLBBSvcDuLHbOBHrpC+IXCZ7mgkCrgMlZMql
+ wFWBjAu8Zlc5tQJPgE9eeQAQrfZRcLgux88PtxhVihA1OsMNoqYapgMzMTubLUMYCCsjrHZe
+ nzw5uTcjig0RHz9ilMJlvVbhwVVLmmmf4p/R37QYaqm1RycLpvkUZUzSz2NCyTcZp9nM6ooR
+ GhpDQWmUdH1Jz9T6E9//KIhI6xt4//P15ZfiIs7BTQRPeKd/ARAA3oR1fJ/D3GvnoInVqydD
+ U9LGnMQaVSwQe+fjBy5/ILwo3pUZSVHdaKeVoa84gLO9g6JLToTo+ooMSBtsCkGHb//oiGTU
+ 7KdLTLiFh6kmL6my11eiK53o1BI1CVwWMJ8jxbMBPet6exUubBzceBFbmqq3lVz4RZ2D1zKV
+ njxB0/KjdbI53anIv7Ko1k+MwaKMTzO/O6vBmI71oGQkKO6WpcyzVjLIip9PEpDUYJRCrhKg
+ hBeMPwe+AntP9Om4N/3AWF6icarGImnFvTYswR2Q+C6AoiAbqI4WmXOuzJLKiImwZrSYnSfQ
+ 7qtdDGXWYr/N1+C+bgI8O6NuAg2cjFHE96xwJVhyaMzyROUZgm4qngaBvBvCQIhKzit61oBe
+ I/drZ/d5JolzlKdZZrcmofmiCQRa+57OM3Fbl8ykFazN1ASyCex2UrftX5oHmhaeeRlGVaTV
+ iEbAvU4PP4RnNKwaWQivsFhqQrfFFhvFV9CRSvsR6qu5eiFI6c8CjB49gBcKKAJ9a8gkyWs8
+ sg4PYY7L15XdRn8kOf/tg98UCM1vSBV2moEJA0f98/Z48LQXNb7dgvVRtH6owARspsV6nJyD
+ vktsLTyMW5BW9q4NC1rgQC8GQXjrQ+iyQLNwy5ESe2MzGKkHogxKg4Pvi1wZh9Snr+RyB0Rq
+ rIrzbXhyi47+7wcAEQEAAcLBfAQYAQgAJgIbDBYhBCopGCQ/3kZkjQaG+dmwV3vZPpj8BQJh
+ pRSXBQkk+HAYAAoJENmwV3vZPpj8BPMP/iZV+XROOhs/MsKd7ngQeFgETkmt8YVhb2Rg3Vgp
+ AQe9cn6aw9jk3CnB0ecNBdoyyt33t3vGNau6iCwlRfaTdXg9qtIyctuCQSewY2YMk5AS8Mmb
+ XoGvjH1Z/irrVsoSz+N7HFPKIlAy8D/aRwS1CHm9saPQiGoeR/zThciVYncRG/U9J6sV8XH9
+ OEPnQQR4w/V1bYI9Sk+suGcSFN7pMRMsSslOma429A3bEbZ7Ikt9WTJnUY9XfL5ZqQnjLeRl
+ 8243OTfuHSth26upjZIQ2esccZMYpQg0/MOlHvuFuFu6MFL/gZDNzH8jAcBrNd/6ABKsecYT
+ nBInKH2TONc0kC65oAhrSSBNLudTuPHce/YBCsUCAEMwgJTybdpMQh9NkS68WxQtXxU6neoQ
+ U7kEJGGFsc7/yXiQXuVvJUkK/Xs04X6j0l1f/6KLoNQ9ep/2In596B0BcvvaKv7gdDt1Trgg
+ vlB+GpT+iFRLvhCBe5kAERREfRfmWJq1bHod/ulrp/VLGAaZlOBTgsCzufWF5SOLbZkmV2b5
+ xy2F/AU3oQUZncCvFMTWpBC+gO/o3kZCyyGCaQdQe4jS/FUJqR1suVwNMzcOJOP/LMQwujE/
+ Ch7XLM35VICo9qqhih4OvLHUAWzC5dNSipL+rSGHvWBdfXDhbezJIl6sp7/1rJfS8qPs
+In-Reply-To: <20251023112920.133897-1-safinaskar@gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
 
-A subsequent commit will call io_should_terminate_tw() from an inline
-function in include/linux/io_uring/cmd.h, so move it from an io_uring
-internal header to include/linux/io_uring.h. Callers outside io_uring
-should not call it directly.
+Hi,
 
-Signed-off-by: Caleb Sander Mateos <csander@purestorage.com>
----
- include/linux/io_uring.h | 14 ++++++++++++++
- io_uring/io_uring.h      | 13 -------------
- 2 files changed, 14 insertions(+), 13 deletions(-)
+I am not sure why you cc so many people, most of lists are not relevant here.
 
-diff --git a/include/linux/io_uring.h b/include/linux/io_uring.h
-index 85fe4e6b275c..c2a12287b821 100644
---- a/include/linux/io_uring.h
-+++ b/include/linux/io_uring.h
-@@ -1,13 +1,27 @@
- /* SPDX-License-Identifier: GPL-2.0-or-later */
- #ifndef _LINUX_IO_URING_H
- #define _LINUX_IO_URING_H
- 
-+#include <linux/io_uring_types.h>
- #include <linux/sched.h>
- #include <linux/xarray.h>
- #include <uapi/linux/io_uring.h>
- 
-+/*
-+ * Terminate the request if either of these conditions are true:
-+ *
-+ * 1) It's being executed by the original task, but that task is marked
-+ *    with PF_EXITING as it's exiting.
-+ * 2) PF_KTHREAD is set, in which case the invoker of the task_work is
-+ *    our fallback task_work.
-+ */
-+static inline bool io_should_terminate_tw(struct io_ring_ctx *ctx)
-+{
-+	return (current->flags & (PF_KTHREAD | PF_EXITING)) || percpu_ref_is_dying(&ctx->refs);
-+}
-+
- #if defined(CONFIG_IO_URING)
- void __io_uring_cancel(bool cancel_all);
- void __io_uring_free(struct task_struct *tsk);
- void io_uring_unreg_ringfd(void);
- const char *io_uring_get_opcode(u8 opcode);
-diff --git a/io_uring/io_uring.h b/io_uring/io_uring.h
-index 46d9141d772a..78777bf1ea4b 100644
---- a/io_uring/io_uring.h
-+++ b/io_uring/io_uring.h
-@@ -556,23 +556,10 @@ static inline bool io_allowed_run_tw(struct io_ring_ctx *ctx)
- {
- 	return likely(!(ctx->flags & IORING_SETUP_DEFER_TASKRUN) ||
- 		      ctx->submitter_task == current);
- }
- 
--/*
-- * Terminate the request if either of these conditions are true:
-- *
-- * 1) It's being executed by the original task, but that task is marked
-- *    with PF_EXITING as it's exiting.
-- * 2) PF_KTHREAD is set, in which case the invoker of the task_work is
-- *    our fallback task_work.
-- */
--static inline bool io_should_terminate_tw(struct io_ring_ctx *ctx)
--{
--	return (current->flags & (PF_KTHREAD | PF_EXITING)) || percpu_ref_is_dying(&ctx->refs);
--}
--
- static inline void io_req_queue_tw_complete(struct io_kiocb *req, s32 res)
- {
- 	io_req_set_res(req, res, 0);
- 	req->io_task_work.func = io_req_task_complete;
- 	io_req_task_work_add(req);
--- 
-2.45.2
+Anyway, could you please test one thing below so the problem is better isolated?
+
+On 10/23/25 1:29 PM, Askar Safin wrote:
+...
+> Also I tried to add "--integrity-no-journal" to "format" and "open".
+> It didn't work, either. (I don't remember what exactly didn't work.
+> I can do this experiment again, if needed.)
+
+Are you sure you used --integrity-no-journal both in activation before
+hibernation and also in resume? If not, please try it.
+This flag activates direct mode and and completely avoids dm-integrity journal.
+You can verify it with "integritysetup status <device>" - it should say "journal: not active".
+
+And if it does not work, could you try to use -integrity-recovery-mode the same
+way (both before hibernation and later in resume)? This will effectively ignore checksums
+providing no protection, but keeping dm-integrity device still in place.
+You can verify it with "integritysetup status <device>" - it should say "mode: read/write recovery".
+Is the problem still in place with this setting?
+
+You can also try to decrease journal commit time with --journal-commit-time option,
+but this is not a real solution.
+
+...> 
+> Then I tried to do "cryptsetup" instead of "integritysetup". I created
+> swap partition so:
+> 
+> cryptsetup luksFormat --type luks2 /dev/disk/by-partuuid/c4bbc73d-7909-42ea-8d96-eab82512cbe7 /tmp/key
+> cryptsetup open --type luks2 --key-file /tmp/key /dev/disk/by-partuuid/c4bbc73d-7909-42ea-8d96-eab82512cbe7 swap
+> mkswap /dev/mapper/swap
+> swapon /dev/mapper/swap
+> 
+> And, of course, I did all necessary edits to initramfs.
+> 
+> And this time everything worked. This proves that I didn't do any mistakes in my setup
+> (i. e. I got initramfs right, etc), and this is actual bug in dm-integrity.
+> 
+> Unfortunately, LUKS created such way doesn't have any redundancy. So this is not solution for me.
+
+Redundancy? You mean data integrity protection? There is no redundancy, only additional authentication tag
+(detecting integrity error but not correcting it).
+
+Thanks,
+Milan
 

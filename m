@@ -1,39 +1,42 @@
-Received: from mout-p-201.mailbox.org (mout-p-201.mailbox.org [80.241.56.171])
+Received: from mout-p-101.mailbox.org (mout-p-101.mailbox.org [80.241.56.151])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 646CD30F943;
-	Fri, 24 Oct 2025 10:22:32 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=80.241.56.171
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 40D0030F808;
+	Fri, 24 Oct 2025 10:22:38 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=80.241.56.151
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1761301354; cv=none; b=GYvRiMPIOmUESWLvykS8yppC16OUQa2U/HZWld4VmolpDS81CbFWX3M4OAN061+HRYCtPAaY0sdEHqLuZO0bcMB3/ypi90/07hkJhK+ukA4htWEnrzl++dmvCOse0d/361u8udfGGICV7plLsjWu1EeDOYfoig9Eveg+rExDGhE=
+	t=1761301360; cv=none; b=Hj7vo2LcAlCODLBIWJErn/NfRHgtVnM7Gjwn33fuuwfd78S2te0jC93EA7n7V+TXL0pz+HRAgEaflUSr81tVFxxmH6YnrFPUC+rcMdM91vdJwsX2/BxC8tu+57zgzFEKABE05S9/yEToiK0/t36HqXRHMCSlZMj1clenqMpk1S4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1761301354; c=relaxed/simple;
-	bh=AYexWKgjlC/6/XZ+rMCz8Yfsdbd8Oc2v0vGOxZNjBXM=;
+	s=arc-20240116; t=1761301360; c=relaxed/simple;
+	bh=dfYrRcCz625GU5Hv4qF7R5hDzF21+y53LzlCMNULDzs=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=IAt4PGHqrpfjrZmjgRPVbSUAFOCRA8/BT1SZOAOPjHcG98GTQJqz87yG/U3k1AiAnb5m1ulNrbxxazZoT95SlCK6ArYrPGcVkyzy2QD53cppugpxrygfirjIOjj4liOpT8V3dvcRgTmP+ktfKfCCBTVp/4xJBH4GvExwY9VGJHQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=mssola.com; spf=fail smtp.mailfrom=mssola.com; dkim=pass (2048-bit key) header.d=mssola.com header.i=@mssola.com header.b=DevviGX8; arc=none smtp.client-ip=80.241.56.171
+	 MIME-Version:Content-Type; b=FGZssqviwCVN2b3DhsjT1k7HpZCPJ0+qAZO8zp4wqy+eLLMLOXU3rSrv6cvbUJKHj16OcxOfgYRVFkrTy4LgLuQD/DEOkljYaL6usXm+anj/N3g25wEwDQI3p2IuOpN2y0g+GKs8AEpK8/voA/r/m2dyLWY3SXIBNSa0V4PJHKg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=mssola.com; spf=fail smtp.mailfrom=mssola.com; dkim=pass (2048-bit key) header.d=mssola.com header.i=@mssola.com header.b=EGNpaG/u; arc=none smtp.client-ip=80.241.56.151
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=mssola.com
 Authentication-Results: smtp.subspace.kernel.org; spf=fail smtp.mailfrom=mssola.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=mssola.com header.i=@mssola.com header.b="DevviGX8"
-Received: from smtp102.mailbox.org (smtp102.mailbox.org [10.196.197.102])
+	dkim=pass (2048-bit key) header.d=mssola.com header.i=@mssola.com header.b="EGNpaG/u"
+Received: from smtp102.mailbox.org (smtp102.mailbox.org [IPv6:2001:67c:2050:b231:465::102])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by mout-p-201.mailbox.org (Postfix) with ESMTPS id 4ctJqm5MMjz9v3b;
-	Fri, 24 Oct 2025 12:22:28 +0200 (CEST)
+	by mout-p-101.mailbox.org (Postfix) with ESMTPS id 4ctJqt3YW7z9sSs;
+	Fri, 24 Oct 2025 12:22:34 +0200 (CEST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=mssola.com; s=MBO0001;
-	t=1761301348;
+	t=1761301354;
 	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
 	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=NSAxISSN6q/2TqVC51fgp56Z4tqCi+4yr5cLFM6xPMo=;
-	b=DevviGX8z6r1TIaKDwug0FvawULqpf6R+3l13Pu6aeSFdk0gOuN92LKf7m3ccWXgV3lEQb
-	R4+FBtyecaiBtio3udOEO1WMwwQoZmO+6/eOC6qB6EneMzUXQ/jCZrLpSUNj/zvcYUAzIE
-	pgcOkh0w51V6/IrWPYmgBfn7z1OaAq9BsKV/MXiZ0wfEbbjCQ/OrQ4v/9ztf7Id11JnX21
-	sBa92ScWd17KrB0hs+Oy1hFcbmC0A/XCbOiZ7GZsWqNv55+dfiJypDp9G4YCrAHVtf7R37
-	3YP7ey+n6JhWSNQcbbjRJRZ2zJiBeL2ZAWwLbP5EcP5MSgkCuevDbXGCyS4HfA==
+	bh=Js1n6kPDTMBIfCKrUsee5DCSrbS0DlAuQlCfrk27LTQ=;
+	b=EGNpaG/uoS52MNNPLbxnB53UgA98RvddtykD6ad/Vjuo/dryjnHsRoMQnsk1JNu2nVoS2y
+	JR02OQr6WVGzfokQ4cONmF9QjiKRdGsE5YpBJfcz00JmuXFaXMWuLkMcpkG7gOprvlSLFB
+	PWmUsp+ixF7nerJZgbM8GxSupDCZHoHM5n41HP1ppuv+iAavFG5EGKnPqUY/nKcQa5fGsm
+	fP4+kPpFXWseYF6iQR3+ntNrPxzebZWasCoq2I1kXCbvW4RmB5LQt/OtyPs5pB7xHNafWx
+	B6PDA0eTjC2KV7Tel5Uv7jnsQGSxEahOxqd7Fsqdn+NP2noxSeQuoBJ8fy2TMQ==
+Authentication-Results: outgoing_mbo_mout;
+	dkim=none;
+	spf=softfail (outgoing_mbo_mout: 2001:67c:2050:b231:465::102 is neither permitted nor denied by domain of mssola@mssola.com) smtp.mailfrom=mssola@mssola.com
 From: =?UTF-8?q?Miquel=20Sabat=C3=A9=20Sol=C3=A0?= <mssola@mssola.com>
 To: linux-btrfs@vger.kernel.org
 Cc: clm@fb.com,
@@ -43,11 +46,10 @@ Cc: clm@fb.com,
 	boris@bur.io,
 	wqu@suse.com,
 	linux-kernel@vger.kernel.org,
-	=?UTF-8?q?Miquel=20Sabat=C3=A9=20Sol=C3=A0?= <mssola@mssola.com>,
-	David Sterba <dsterba@suse.cz>
-Subject: [PATCH v2 2/4] btrfs: define the AUTO_K(V)FREE helper macros
-Date: Fri, 24 Oct 2025 12:21:41 +0200
-Message-ID: <20251024102143.236665-3-mssola@mssola.com>
+	=?UTF-8?q?Miquel=20Sabat=C3=A9=20Sol=C3=A0?= <mssola@mssola.com>
+Subject: [PATCH v2 4/4] btrfs: add ASSERTs on prealloc in qgroup functions
+Date: Fri, 24 Oct 2025 12:21:43 +0200
+Message-ID: <20251024102143.236665-5-mssola@mssola.com>
 In-Reply-To: <20251024102143.236665-1-mssola@mssola.com>
 References: <20251024102143.236665-1-mssola@mssola.com>
 Precedence: bulk
@@ -58,34 +60,81 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
+X-Rspamd-Queue-Id: 4ctJqt3YW7z9sSs
 
-These are two simple macros which ensure that a pointer is initialized
-to NULL and with the proper cleanup attribute for it.
+The prealloc variable in these functions is always initialized to
+NULL. Whenever we allocate memory for it, if it fails then NULL is
+preserved, otherwise we delegate the ownership of the pointer to
+add_qgroup_rb() and set it right after to NULL
 
-Suggested-by: David Sterba <dsterba@suse.cz>
+Since in any case the pointer ends up being NULL at the end of its
+usage, we can safely remove calls to kfree() for it, while adding an
+ASSERT as an extra check.
+
 Signed-off-by: Miquel Sabaté Solà <mssola@mssola.com>
 ---
- fs/btrfs/misc.h | 7 +++++++
- 1 file changed, 7 insertions(+)
+ fs/btrfs/qgroup.c | 27 +++++++++++++++++++++++----
+ 1 file changed, 23 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/misc.h b/fs/btrfs/misc.h
-index 60f9b000d644..4d0a417af77e 100644
---- a/fs/btrfs/misc.h
-+++ b/fs/btrfs/misc.h
-@@ -13,6 +13,13 @@
- #include <linux/rbtree.h>
- #include <linux/bio.h>
- 
-+/*
-+ * Convenient macros to define a pointer with the __free(kfree) and
-+ * __free(kvfree) cleanup attributes and initialized to NULL.
-+ */
-+#define AUTO_KFREE(name)       *name __free(kfree) = NULL
-+#define AUTO_KVFREE(name)      *name __free(kvfree) = NULL
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 6919f429c6b3..1c00a5330c4d 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -1263,7 +1263,14 @@ int btrfs_quota_enable(struct btrfs_fs_info *fs_info,
+ 		btrfs_end_transaction(trans);
+ 	else if (trans)
+ 		ret = btrfs_end_transaction(trans);
+-	kfree(prealloc);
 +
- /*
-  * Enumerate bits using enum autoincrement. Define the @name as the n-th bit.
-  */
++	/*
++	 * At this point we either failed at allocating prealloc, or we
++	 * succeeded and passed the ownership to it to add_qgroup_rb(). In any
++	 * case, this needs to be NULL or there is something wrong.
++	 */
++	ASSERT(prealloc == NULL);
++
+ 	return ret;
+ }
+ 
+@@ -1693,7 +1700,12 @@ int btrfs_create_qgroup(struct btrfs_trans_handle *trans, u64 qgroupid)
+ 	ret = btrfs_sysfs_add_one_qgroup(fs_info, qgroup);
+ out:
+ 	mutex_unlock(&fs_info->qgroup_ioctl_lock);
+-	kfree(prealloc);
++	/*
++	 * At this point we either failed at allocating prealloc, or we
++	 * succeeded and passed the ownership to it to add_qgroup_rb(). In any
++	 * case, this needs to be NULL or there is something wrong.
++	 */
++	ASSERT(prealloc == NULL);
+ 	return ret;
+ }
+ 
+@@ -3301,7 +3313,7 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans, u64 srcid,
+ 	struct btrfs_root *quota_root;
+ 	struct btrfs_qgroup *srcgroup;
+ 	struct btrfs_qgroup *dstgroup;
+-	struct btrfs_qgroup *prealloc;
++	struct btrfs_qgroup *prealloc = NULL;
+ 	struct btrfs_qgroup_list **qlist_prealloc = NULL;
+ 	bool free_inherit = false;
+ 	bool need_rescan = false;
+@@ -3542,7 +3554,14 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans, u64 srcid,
+ 	}
+ 	if (free_inherit)
+ 		kfree(inherit);
+-	kfree(prealloc);
++
++	/*
++	 * At this point we either failed at allocating prealloc, or we
++	 * succeeded and passed the ownership to it to add_qgroup_rb(). In any
++	 * case, this needs to be NULL or there is something wrong.
++	 */
++	ASSERT(prealloc == NULL);
++
+ 	return ret;
+ }
+ 
 -- 
 2.51.1
 

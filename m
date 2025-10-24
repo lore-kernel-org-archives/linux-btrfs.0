@@ -1,60 +1,67 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5729B30E0CD
-	for <linux-btrfs@vger.kernel.org>; Fri, 24 Oct 2025 10:50:08 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C3A0E311949
+	for <linux-btrfs@vger.kernel.org>; Fri, 24 Oct 2025 10:50:10 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1761303010; cv=none; b=eVd2aom1p+9PGU0We+aPPJDlVmY+YInjRA7z/Lb3Hwh4XeYLVF3FJZuxkvWrhvJVcnXG09Tj7myd86fpP+wCkFP2MJgYTVFHJEHmWsEX4xp+v/H3IlMw9ZqturVctzLfY3fpC29hw/RKSRDK4F4L+mKSPZQXnBHuwBbfNDCx9Ec=
+	t=1761303012; cv=none; b=o/jWwmNcYhHSiuzDQdxh7GXbm8WNvgZ9STIONHr+XOCiK0yL1PMY5730LwnZ+g178HDhF9i1hmvE41ktutjLPBP2keeQV53kP/GTSwdIRRAP1Pxxcos9OrcRB3rBKOe7OVYV0saYCCYdt7LHcphWjJSoRlSzIUznOEqpBXrnGD8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1761303010; c=relaxed/simple;
-	bh=9odnC4FOHeQCap8cZdgJBX+Rq46wJkc35+opunU23hs=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=I5m4CaZACarSafOD5fb224HiWXoLWQpkE3ytY+/VEGPhTDv7fqyKXcY1pUOYuvV5K76oNOLoSFDw9jpTlYl6WRg9M+cPyTOGI3KJksuqSImFRKvulqUK+72XcyplcX3dx0HuoPpNi94B8Ahpiv0mBv/ekR0IG4s0qmKrolM9Dw0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=pjvP0lVF; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=qBElR3rx; arc=none smtp.client-ip=195.135.223.130
+	s=arc-20240116; t=1761303012; c=relaxed/simple;
+	bh=Jh/PZyugb9dgUHSGZju4shOV9LYfr5FOdjWQlhNhP8k=;
+	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=La4C54QacDbriiKNtEM5eGG19OHwvFpfcCjlG0vNmqf+cRf1SkeZ/PCaZpyJQRjTrj3pF1WytyuHH33D/nj6a1sBBn4cHkEA19LAFwkUAiGecCm7a3Y1N1OdTKg0V3IpO2YpvBaROnrnyXga7ux5UQls4oijcEU3UqbhiMT3v9c=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=YC7hDdBR; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=C19adLp1; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="pjvP0lVF";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="qBElR3rx"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="YC7hDdBR";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="C19adLp1"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 372B6211B1
-	for <linux-btrfs@vger.kernel.org>; Fri, 24 Oct 2025 10:49:58 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id BE6211F388
+	for <linux-btrfs@vger.kernel.org>; Fri, 24 Oct 2025 10:50:00 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1761303002; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=hp7HmrOdRBjZgzsZmxvhFor5byCD9Z+apo4xVE3hTN8=;
-	b=pjvP0lVFkEo3gYyJ1XR3/Z2zYgHV81AEc14VkTyo5g35+1dgRc3KV0xg3mHD8h6bUylJpg
-	8aN9yK3iaRTHWrR/bZAONk6ULntpR7Bfa399MfvKbYvSUWOClKGLqdNvYL/R6DXZwfQrei
-	uBUz0PI2Vfk3a4XCft0qfS7Ma/RmGBc=
-Authentication-Results: smtp-out1.suse.de;
+	t=1761303004; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=JI8Kv2zE422EpC9eo2MFjlqMGPAfbu5u86ZyqHhh64Y=;
+	b=YC7hDdBRV5yiNYw5PPWQGsQYfxShSuuBUEfigVwku6VJgnRSjYMY1LiTROFRqFZQ21ktK0
+	+RQUjogIoBIGf5/++Dn8V1Fu/lCO8UjDT4xeLSGLBvoHfN8zLgXW+LGN4UOCmg8l+KpkYF
+	GpiTgjFHtRCQ94RuW4KH90+3lXN+g/w=
+Authentication-Results: smtp-out2.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1761302998; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=hp7HmrOdRBjZgzsZmxvhFor5byCD9Z+apo4xVE3hTN8=;
-	b=qBElR3rxrLFwfnj9CcCCfojZeA8pNweTc0vBgeRi/eA2WgC0PlfJPFbrpcgEW0CLlYx/Dm
-	7R1hSbwaDFnW+6UBooqV5juYb18hQ6AMYHuZVQHkXGYO++Q3u8dADPvfsXexzYCcPHHCK/
-	o24AZU86ia3FV+AJSDQKIq3TRUFN/hY=
+	t=1761303000; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=JI8Kv2zE422EpC9eo2MFjlqMGPAfbu5u86ZyqHhh64Y=;
+	b=C19adLp1R8R62jsl+B6LswQ/lEq5ZuLz9yP/vGLvNxm8dlcXPhE+aFv5keYJr1E0WW5CEE
+	q4tNQsq21hodE14TyEmEMRkwKsTaUrDZj1pM4VFQ8ajcPkjsQyMZaqbbVth6/LODk24a0x
+	iq4q6PqRrOwzRuUT78LrxJRAU3DgK3U=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 7155113693
-	for <linux-btrfs@vger.kernel.org>; Fri, 24 Oct 2025 10:49:57 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id E6DCD13A8E
+	for <linux-btrfs@vger.kernel.org>; Fri, 24 Oct 2025 10:49:59 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id RVIJDdVZ+2iaZQAAD6G6ig
+	id 8Pm5KddZ+2iaZQAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Fri, 24 Oct 2025 10:49:57 +0000
+	for <linux-btrfs@vger.kernel.org>; Fri, 24 Oct 2025 10:49:59 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/4] btrfs: introduce async_csum feature
-Date: Fri, 24 Oct 2025 21:19:31 +1030
-Message-ID: <cover.1761302592.git.wqu@suse.com>
+Subject: [PATCH 2/4] btrfs: remove btrfs_fs_info::compressed_write_workers
+Date: Fri, 24 Oct 2025 21:19:33 +1030
+Message-ID: <95d75af0b5a20e9fde6ace86f5a015e52982ab50.1761302592.git.wqu@suse.com>
 X-Mailer: git-send-email 2.51.0
+In-Reply-To: <cover.1761302592.git.wqu@suse.com>
+References: <cover.1761302592.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -78,7 +85,7 @@ X-Spamd-Result: default: False [-2.80 / 50.00];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,imap1.dmz-prg2.suse.org:helo];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:mid];
 	RCVD_COUNT_TWO(0.00)[2];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	TO_DN_NONE(0.00)[];
@@ -86,54 +93,160 @@ X-Spamd-Result: default: False [-2.80 / 50.00];
 X-Spam-Flag: NO
 X-Spam-Score: -2.80
 
-The new async_csum feature will allow btrfs to calculate checksum for
-data write bios and submit them in parallel.
+The reason why end_bbio_compressed_write() queues a work into
+compressed_write_workers wq is for end_compressed_writeback() call, as
+it will grab all the involved folioes and clear the writeback flags,
+which may sleep.
 
-This will reduce latency and improve write throughput when data checksum
-is utilized.
+However now we always run btrfs_bio::end_io() in task context, there is
+no need to queue the work anymore.
 
-This will slightly reclaim the performance drop after commit
-968f19c5b1b7 ("btrfs: always fallback to buffered write if the inode
-requires checksum").
+Just remove btrfs_fs_info::compressed_write_workers and
+compressed_bio::write_end_work.
 
-The first patch makes sure btrfs_bio::end_io() is executed in task
-context, as we will need to wait for csum calculation to finish before
-end_io() function.
+There is a comment about the works queued into
+compressed_write_workers, now change to flush endio wq instead, which is
+responsible to handle all data endio functions.
 
-Then patch 2~3 are small cleanups related to the new task context of
-end_io().
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/compression.c | 27 ++++++++-------------------
+ fs/btrfs/compression.h |  7 ++-----
+ fs/btrfs/disk-io.c     |  9 ++-------
+ fs/btrfs/fs.h          |  1 -
+ 4 files changed, 12 insertions(+), 32 deletions(-)
 
-The last one enables async_csum for data writes with checksum, this will
-slightly change the behavior of data checksum offload feature (offload
-data checksum calculation to another thread, but still doing serial
-calculation then submit behavior).
-
-Since the new async_csum should be better than the csum offload anyway,
-we may want to deprecate the csum offload feature completely in the
-future.
-Thankfully csum offload feature is still behind the experimental flag,
-thus it should not affect end users.
-
-Qu Wenruo (4):
-  btrfs: make sure all btrfs_bio::end_io is called in task context
-  btrfs: remove btrfs_fs_info::compressed_write_workers
-  btrfs: relax btrfs_inode::ordered_tree_lock
-  btrfs: introduce btrfs_bio::async_csum
-
- fs/btrfs/bio.c          | 79 +++++++++++++++++++++++++++++------------
- fs/btrfs/bio.h          |  5 +++
- fs/btrfs/compression.c  | 27 +++++---------
- fs/btrfs/compression.h  |  7 ++--
- fs/btrfs/disk-io.c      |  9 ++---
- fs/btrfs/extent_io.c    |  5 ++-
- fs/btrfs/file-item.c    | 61 +++++++++++++++++++++----------
- fs/btrfs/file-item.h    |  2 +-
- fs/btrfs/fs.h           |  1 -
- fs/btrfs/inode.c        |  4 +--
- fs/btrfs/ordered-data.c | 57 +++++++++++++----------------
- fs/btrfs/tree-log.c     |  4 +--
- 12 files changed, 148 insertions(+), 113 deletions(-)
-
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index bacad18357b3..2d7992e0145a 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -321,22 +321,6 @@ static noinline void end_compressed_writeback(const struct compressed_bio *cb)
+ 	/* the inode may be gone now */
+ }
+ 
+-static void btrfs_finish_compressed_write_work(struct work_struct *work)
+-{
+-	struct compressed_bio *cb =
+-		container_of(work, struct compressed_bio, write_end_work);
+-
+-	btrfs_finish_ordered_extent(cb->bbio.ordered, NULL, cb->start, cb->len,
+-				    cb->bbio.bio.bi_status == BLK_STS_OK);
+-
+-	if (cb->writeback)
+-		end_compressed_writeback(cb);
+-	/* Note, our inode could be gone now */
+-
+-	btrfs_free_compressed_folios(cb);
+-	bio_put(&cb->bbio.bio);
+-}
+-
+ /*
+  * Do the cleanup once all the compressed pages hit the disk.  This will clear
+  * writeback on the file pages and free the compressed pages.
+@@ -347,9 +331,15 @@ static void btrfs_finish_compressed_write_work(struct work_struct *work)
+ static void end_bbio_compressed_write(struct btrfs_bio *bbio)
+ {
+ 	struct compressed_bio *cb = to_compressed_bio(bbio);
+-	struct btrfs_fs_info *fs_info = bbio->inode->root->fs_info;
+ 
+-	queue_work(fs_info->compressed_write_workers, &cb->write_end_work);
++	btrfs_finish_ordered_extent(cb->bbio.ordered, NULL, cb->start, cb->len,
++				    cb->bbio.bio.bi_status == BLK_STS_OK);
++
++	if (cb->writeback)
++		end_compressed_writeback(cb);
++	/* Note, our inode could be gone now */
++	btrfs_free_compressed_folios(cb);
++	bio_put(&cb->bbio.bio);
+ }
+ 
+ static void btrfs_add_compressed_bio_folios(struct compressed_bio *cb)
+@@ -402,7 +392,6 @@ void btrfs_submit_compressed_write(struct btrfs_ordered_extent *ordered,
+ 	cb->compressed_folios = compressed_folios;
+ 	cb->compressed_len = ordered->disk_num_bytes;
+ 	cb->writeback = writeback;
+-	INIT_WORK(&cb->write_end_work, btrfs_finish_compressed_write_work);
+ 	cb->nr_folios = nr_folios;
+ 	cb->bbio.bio.bi_iter.bi_sector = ordered->disk_bytenr >> SECTOR_SHIFT;
+ 	cb->bbio.ordered = ordered;
+diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
+index eba188a9e3bb..2ebf94794f0d 100644
+--- a/fs/btrfs/compression.h
++++ b/fs/btrfs/compression.h
+@@ -65,11 +65,8 @@ struct compressed_bio {
+ 	/* Whether this is a write for writeback. */
+ 	bool writeback;
+ 
+-	union {
+-		/* For reads, this is the bio we are copying the data into */
+-		struct btrfs_bio *orig_bbio;
+-		struct work_struct write_end_work;
+-	};
++	/* For reads, this is the bio we are copying the data into */
++	struct btrfs_bio *orig_bbio;
+ 
+ 	/* Must be last. */
+ 	struct btrfs_bio bbio;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 0aa7e5d1b05f..c96051343450 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1773,8 +1773,6 @@ static void btrfs_stop_all_workers(struct btrfs_fs_info *fs_info)
+ 		destroy_workqueue(fs_info->endio_workers);
+ 	if (fs_info->rmw_workers)
+ 		destroy_workqueue(fs_info->rmw_workers);
+-	if (fs_info->compressed_write_workers)
+-		destroy_workqueue(fs_info->compressed_write_workers);
+ 	btrfs_destroy_workqueue(fs_info->endio_write_workers);
+ 	btrfs_destroy_workqueue(fs_info->endio_freespace_worker);
+ 	btrfs_destroy_workqueue(fs_info->delayed_workers);
+@@ -1986,8 +1984,6 @@ static int btrfs_init_workqueues(struct btrfs_fs_info *fs_info)
+ 	fs_info->endio_write_workers =
+ 		btrfs_alloc_workqueue(fs_info, "endio-write", flags,
+ 				      max_active, 2);
+-	fs_info->compressed_write_workers =
+-		alloc_workqueue("btrfs-compressed-write", flags, max_active);
+ 	fs_info->endio_freespace_worker =
+ 		btrfs_alloc_workqueue(fs_info, "freespace-write", flags,
+ 				      max_active, 0);
+@@ -2003,7 +1999,6 @@ static int btrfs_init_workqueues(struct btrfs_fs_info *fs_info)
+ 	if (!(fs_info->workers &&
+ 	      fs_info->delalloc_workers && fs_info->flush_workers &&
+ 	      fs_info->endio_workers && fs_info->endio_meta_workers &&
+-	      fs_info->compressed_write_workers &&
+ 	      fs_info->endio_write_workers &&
+ 	      fs_info->endio_freespace_worker && fs_info->rmw_workers &&
+ 	      fs_info->caching_workers && fs_info->fixup_workers &&
+@@ -4290,7 +4285,7 @@ void __cold close_ctree(struct btrfs_fs_info *fs_info)
+ 
+ 	/*
+ 	 * When finishing a compressed write bio we schedule a work queue item
+-	 * to finish an ordered extent - btrfs_finish_compressed_write_work()
++	 * to finish an ordered extent - end_bbio_compressed_write()
+ 	 * calls btrfs_finish_ordered_extent() which in turns does a call to
+ 	 * btrfs_queue_ordered_fn(), and that queues the ordered extent
+ 	 * completion either in the endio_write_workers work queue or in the
+@@ -4298,7 +4293,7 @@ void __cold close_ctree(struct btrfs_fs_info *fs_info)
+ 	 * below, so before we flush them we must flush this queue for the
+ 	 * workers of compressed writes.
+ 	 */
+-	flush_workqueue(fs_info->compressed_write_workers);
++	flush_workqueue(fs_info->endio_workers);
+ 
+ 	/*
+ 	 * After we parked the cleaner kthread, ordered extents may have
+diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
+index ad389fb1c01a..2e705025a8a5 100644
+--- a/fs/btrfs/fs.h
++++ b/fs/btrfs/fs.h
+@@ -654,7 +654,6 @@ struct btrfs_fs_info {
+ 	struct workqueue_struct *endio_workers;
+ 	struct workqueue_struct *endio_meta_workers;
+ 	struct workqueue_struct *rmw_workers;
+-	struct workqueue_struct *compressed_write_workers;
+ 	struct btrfs_workqueue *endio_write_workers;
+ 	struct btrfs_workqueue *endio_freespace_worker;
+ 	struct btrfs_workqueue *caching_workers;
 -- 
 2.51.0
 

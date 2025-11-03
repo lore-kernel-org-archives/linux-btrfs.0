@@ -1,203 +1,398 @@
-Received: from savella.carfax.org.uk (savella.carfax.org.uk [85.119.84.138])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail.burntcomma.com (mail2.burntcomma.com [217.169.27.34])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C4A29290F
-	for <linux-btrfs@vger.kernel.org>; Mon,  3 Nov 2025 16:52:57 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=85.119.84.138
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 23D8D31A7F7
+	for <linux-btrfs@vger.kernel.org>; Mon,  3 Nov 2025 17:01:25 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=217.169.27.34
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1762188780; cv=none; b=TymMJOoSXiaDoTZ1EtCsPy/S2H9yWjViogJu5IWJZrlSznQXL2gskolKxe0yhoGR4ryAFvFcIGEMHJ+iGO0ESQlq1ODCAkGzgw1yE3Qdon4quSBoWrOhGF4nWIDOEcAMTAvy1Bt0HpJAFZCjwjO8D9NrrNJR9BMjcU/e5Q/We6c=
+	t=1762189289; cv=none; b=uJtD1DSHV7lfxdpnb31jTFDt4FP1xQJh+CB3P+pzOCRmNebOUY/Ifqkf8/ojXduD7DLWgs0j1fX/Ru284toEs7X4LZXaQE7lik5GRHDvDTelXQttBzbKC+hAXaASY+j7hNjt04I1eNm3nv4Vqxvqt2uxkuqB9EiErQilIAg7UwI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1762188780; c=relaxed/simple;
-	bh=w6OZu5hrlqMjhg28XjoBsggm1j9Tq6C8iIZa+siJKtg=;
-	h=Date:From:To:Subject:Message-ID:MIME-Version:Content-Type:
-	 Content-Disposition; b=BJxcSMUuYA89j1JaxHRFPS+8aFKos5ItkZCYjTdvfDgwACtezeGJfZMKVL5xaDyFiMRYcWHh7qx613luQMaJbkiRqd+DvrkOLfOCOMA4c4GX0PLTxq09A3h86XS9oCDkLbgM4B/aJ7yWKagsUKcPbiImIXW5Wy8b/oySL6zQCs8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=carfax.org.uk; spf=pass smtp.mailfrom=savella.carfax.org.uk; arc=none smtp.client-ip=85.119.84.138
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=carfax.org.uk
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=savella.carfax.org.uk
-Received: from hrm by savella.carfax.org.uk with local (Exim 4.98.2)
-	(envelope-from <hrm@savella.carfax.org.uk>)
-	id 1vFxFN-00000003KPK-1o16
-	for linux-btrfs@vger.kernel.org;
-	Mon, 03 Nov 2025 16:17:33 +0000
-Date: Mon, 3 Nov 2025 16:17:33 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: linux-btrfs@vger.kernel.org
-Subject: Kernel backtrace and hang while replacing dead drive
-Message-ID: <aQjVnfVTSjtOtosd@savella.carfax.org.uk>
-Mail-Followup-To: Hugo Mills <hugo@carfax.org.uk>,
-	linux-btrfs@vger.kernel.org
+	s=arc-20240116; t=1762189289; c=relaxed/simple;
+	bh=dfdrk8mSR1eAvaRIrFRDDQvTVPXfXGckGACEBnCR28k=;
+	h=Message-ID:Date:Mime-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=Y07kzhr5z7HgFT4CdPkklbzOSb+buYDqKlP+8xhC7qo2YPf1G2G86LmZioGXFYuuh14fpQwRjRhLOwWomsBqWgZsHZJpINSLRJL7KaPfMMAlwfFeBJV7nZzMKu5ff0JKORnt+rTUMFYwXGI+z9YiHqHjqi0FEnDN6o7D5/LabNo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com; spf=pass smtp.mailfrom=harmstone.com; dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b=ZN3raJg4; arc=none smtp.client-ip=217.169.27.34
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=harmstone.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b="ZN3raJg4"
+Received: from [IPV6:2a02:8012:8cf0:0:ce28:aaff:fe0d:6db2] (beren.burntcomma.com [IPv6:2a02:8012:8cf0:0:ce28:aaff:fe0d:6db2])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256
+	 client-signature RSA-PSS (2048 bits) client-digest SHA256)
+	(Client CN "hellas", Issuer "burntcomma.com" (verified OK))
+	by mail.burntcomma.com (Postfix) with ESMTPS id 17CAE2D5548;
+	Mon,  3 Nov 2025 17:01:23 +0000 (GMT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=harmstone.com;
+	s=mail; t=1762189283;
+	bh=oz4aKvJbG0gfJ4rJ2A3JqxhZoR1Glw7MNPaSzC7X9Yc=;
+	h=Date:Subject:To:Cc:References:From:In-Reply-To;
+	b=ZN3raJg4j6ipV+YVDKpt0EioD0q1R9J3bauMdwAPDeUH2Q+XNdjxdS6WSpuAjEK3J
+	 WT4alMu/tmZQ46U5D/hggt0JuFzaWUZsB4ZCfBMvV/bNhYLZzSl5VYGZeWwyfjmndH
+	 2vc0BZio4Ef7NYhYsWwJ8CCifu52fHShA79IxwZY=
+Message-ID: <e39be7bb-c37e-4585-95bb-c0c09f7ee2c2@harmstone.com>
+Date: Mon, 3 Nov 2025 17:01:22 +0000
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-X-GPG-Fingerprint: DD84 D558 9D81 DDEE 930D  2054 585E 1475 E2AB 1DE4
-X-GPG-Key: E2AB1DE4
-X-Parrot: It is no more. It has joined the choir invisible.
-X-IRC-Nicks: darksatanic darkersatanic darkling darkthing
+Mime-Version: 1.0
+Subject: Re: [PATCH v4 15/16] btrfs: handle discarding fully-remapped block
+ groups
+To: Boris Burkov <boris@bur.io>
+Cc: linux-btrfs@vger.kernel.org
+References: <20251024181227.32228-1-mark@harmstone.com>
+ <20251024181227.32228-16-mark@harmstone.com>
+ <aQU0CDKWD4LoXdCB@devvm12410.ftw0.facebook.com>
+Content-Language: en-US
+From: Mark Harmstone <mark@harmstone.com>
+Autocrypt: addr=mark@harmstone.com; keydata=
+ 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
+In-Reply-To: <aQU0CDKWD4LoXdCB@devvm12410.ftw0.facebook.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
 
-   On Saturday morning, one SSD in a 4-drive RAID-1 array failed (the
-failed drive is /dev/sdb, devid 5). The replacement arrived today. I
-physically removed the dead drive, and added the new one to the
-machine. This was /dev/sdj.
+On 31/10/2025 10.11 pm, Boris Burkov wrote:
+> On Fri, Oct 24, 2025 at 07:12:16PM +0100, Mark Harmstone wrote:
+>> Discard normally works by iterating over the free-space entries of a
+>> block group. This doesn't work for fully-remapped block groups, as we
+>> removed their free-space entries when we started relocation.
+>>
+>> For sync discard, call btrfs_discard_extent() when we commit the
+>> transaction in which the last identity remap was removed.
+>>
+>> For async discard, add a new function btrfs_trim_fully_remapped_block_group()
+>> to be called by the discard worker, which iterates over the block
+>> group's range using the normal async discard rules. Once we reach the
+>> end, remove the chunk's stripes and device extents to get back its free
+>> space.
+>>
+>> Signed-off-by: Mark Harmstone <mark@harmstone.com>
+>> ---
+>>   fs/btrfs/block-group.c      |  2 ++
+>>   fs/btrfs/block-group.h      |  1 +
+>>   fs/btrfs/discard.c          | 57 ++++++++++++++++++++++++++----
+>>   fs/btrfs/extent-tree.c      | 10 ++++++
+>>   fs/btrfs/free-space-cache.c | 70 +++++++++++++++++++++++++++++++++++++
+>>   fs/btrfs/free-space-cache.h |  1 +
+>>   6 files changed, 134 insertions(+), 7 deletions(-)
+>>
+>> diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+>> index 8feddb472882..0c91553b02cf 100644
+>> --- a/fs/btrfs/block-group.c
+>> +++ b/fs/btrfs/block-group.c
+>> @@ -4833,4 +4833,6 @@ void btrfs_mark_bg_fully_remapped(struct btrfs_block_group *bg,
+>>   
+>>   	spin_unlock(&fs_info->unused_bgs_lock);
+>>   
+>> +	if (btrfs_test_opt(fs_info, DISCARD_ASYNC))
+>> +		btrfs_discard_queue_work(&fs_info->discard_ctl, bg);
+>>   }
+>> diff --git a/fs/btrfs/block-group.h b/fs/btrfs/block-group.h
+>> index 4522074a45c2..b0b16efea19a 100644
+>> --- a/fs/btrfs/block-group.h
+>> +++ b/fs/btrfs/block-group.h
+>> @@ -49,6 +49,7 @@ enum btrfs_discard_state {
+>>   	BTRFS_DISCARD_EXTENTS,
+>>   	BTRFS_DISCARD_BITMAPS,
+>>   	BTRFS_DISCARD_RESET_CURSOR,
+>> +	BTRFS_DISCARD_FULLY_REMAPPED,
+>>   };
+>>   
+>>   /*
+>> diff --git a/fs/btrfs/discard.c b/fs/btrfs/discard.c
+>> index ee5f5b2788e1..f9890037395a 100644
+>> --- a/fs/btrfs/discard.c
+>> +++ b/fs/btrfs/discard.c
+>> @@ -215,6 +215,27 @@ static struct btrfs_block_group *find_next_block_group(
+>>   	return ret_block_group;
+>>   }
+>>   
+>> +/*
+>> + * Returns whether a block group is empty.
+>> + *
+>> + * @block_group: block_group of interest
+>> + *
+>> + * "Empty" here means that there are no extents physically located within the
+>> + * device extents corresponding to this block group.
+>> + *
+>> + * For a remapped block group, this means that all of its identity remaps have
+>> + * been removed. For a non-remapped block group, this means that no extents
+>> + * have an address within its range, and that nothing has been remapped to be
+>> + * within it.
+>> + */
+>> +static bool block_group_is_empty(struct btrfs_block_group *block_group)
+>> +{
+>> +	if (block_group->flags & BTRFS_BLOCK_GROUP_REMAPPED)
+>> +		return block_group->identity_remap_count == 0;
+>> +	else
+>> +		return block_group->used == 0 && block_group->remap_bytes == 0;
+>> +}
+>> +
+>>   /*
+>>    * Look up next block group and set it for use.
+>>    *
+>> @@ -241,8 +262,10 @@ static struct btrfs_block_group *peek_discard_list(
+>>   	block_group = find_next_block_group(discard_ctl, now);
+>>   
+>>   	if (block_group && now >= block_group->discard_eligible_time) {
+>> +		bool empty = block_group_is_empty(block_group);
+>> +
+>>   		if (block_group->discard_index == BTRFS_DISCARD_INDEX_UNUSED &&
+>> -		    block_group->used != 0) {
+>> +		    !empty) {
+>>   			if (btrfs_is_block_group_data_only(block_group)) {
+>>   				__add_to_discard_list(discard_ctl, block_group);
+>>   				/*
+>> @@ -267,7 +290,15 @@ static struct btrfs_block_group *peek_discard_list(
+>>   		}
+>>   		if (block_group->discard_state == BTRFS_DISCARD_RESET_CURSOR) {
+>>   			block_group->discard_cursor = block_group->start;
+>> -			block_group->discard_state = BTRFS_DISCARD_EXTENTS;
+>> +
+>> +			if (block_group->flags & BTRFS_BLOCK_GROUP_REMAPPED &&
+>> +			    empty) {
+>> +				block_group->discard_state =
+>> +					BTRFS_DISCARD_FULLY_REMAPPED;
+>> +			} else {
+>> +				block_group->discard_state =
+>> +					BTRFS_DISCARD_EXTENTS;
+>> +			}
+>>   		}
+>>   	}
+>>   	if (block_group) {
+>> @@ -373,7 +404,7 @@ void btrfs_discard_queue_work(struct btrfs_discard_ctl *discard_ctl,
+>>   	if (!block_group || !btrfs_test_opt(block_group->fs_info, DISCARD_ASYNC))
+>>   		return;
+>>   
+>> -	if (block_group->used == 0 && block_group->remap_bytes == 0)
+>> +	if (block_group_is_empty(block_group))
+>>   		add_to_discard_unused_list(discard_ctl, block_group);
+>>   	else
+>>   		add_to_discard_list(discard_ctl, block_group);
+>> @@ -470,7 +501,7 @@ static void btrfs_finish_discard_pass(struct btrfs_discard_ctl *discard_ctl,
+>>   {
+>>   	remove_from_discard_list(discard_ctl, block_group);
+>>   
+>> -	if (block_group->used == 0) {
+>> +	if (block_group_is_empty(block_group)) {
+>>   		if (btrfs_is_free_space_trimmed(block_group))
+>>   			btrfs_mark_bg_unused(block_group);
+>>   		else
+>> @@ -524,7 +555,8 @@ static void btrfs_discard_workfn(struct work_struct *work)
+>>   	/* Perform discarding */
+>>   	minlen = discard_minlen[discard_index];
+>>   
+>> -	if (discard_state == BTRFS_DISCARD_BITMAPS) {
+>> +	switch (discard_state) {
+>> +	case BTRFS_DISCARD_BITMAPS: {
+>>   		u64 maxlen = 0;
+>>   
+>>   		/*
+>> @@ -541,17 +573,28 @@ static void btrfs_discard_workfn(struct work_struct *work)
+>>   				       btrfs_block_group_end(block_group),
+>>   				       minlen, maxlen, true);
+>>   		discard_ctl->discard_bitmap_bytes += trimmed;
+>> -	} else {
+>> +
+>> +		break;
+>> +	}
+>> +
+>> +	case BTRFS_DISCARD_FULLY_REMAPPED:
+>> +		btrfs_trim_fully_remapped_block_group(block_group);
+>> +		break;
+>> +
+>> +	default:
+>>   		btrfs_trim_block_group_extents(block_group, &trimmed,
+>>   				       block_group->discard_cursor,
+>>   				       btrfs_block_group_end(block_group),
+>>   				       minlen, true);
+>>   		discard_ctl->discard_extent_bytes += trimmed;
+>> +
+>> +		break;
+>>   	}
+>>   
+>>   	/* Determine next steps for a block_group */
+>>   	if (block_group->discard_cursor >= btrfs_block_group_end(block_group)) {
+>> -		if (discard_state == BTRFS_DISCARD_BITMAPS) {
+>> +		if (discard_state == BTRFS_DISCARD_BITMAPS ||
+>> +		    discard_state == BTRFS_DISCARD_FULLY_REMAPPED) {
+>>   			btrfs_finish_discard_pass(discard_ctl, block_group);
+>>   		} else {
+>>   			block_group->discard_cursor = block_group->start;
+>> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+>> index 82dc88915b7e..82d102a157e9 100644
+>> --- a/fs/btrfs/extent-tree.c
+>> +++ b/fs/btrfs/extent-tree.c
+>> @@ -2860,6 +2860,12 @@ int btrfs_handle_fully_remapped_bgs(struct btrfs_trans_handle *trans)
+>>   	list_for_each_entry_safe(block_group, tmp, fully_remapped_bgs, bg_list) {
+>>   		struct btrfs_chunk_map *map;
+>>   
+>> +		btrfs_discard_queue_work(&fs_info->discard_ctl, block_group);
+> 
+> Any reason to queue this when DISCARD_ASYNC isn't set?
+> i.e., put this in the if (btrfs_test_opt(..)) below?
 
-   I ran "btrfs replace start -r 5 /dev/sdj1 /". At 12% done,
-everything hung. I was able to get the log info below before the whole
-machine locked up (the array in question contains the system
-installation, so when the array locked up, the machine became
-unresponsive).
+Oops, you're right - btrfs_discard_queue_work() returns early if 
+DISCARD_ASYNC isn't set, so we might as well move it into the if.
 
-   I'm going to reboot and try again. I'm leaving this report here in
-case anyone's interested in following up on why it happened, or wants
-to suggest an alternative way forward. (I'll be on the freenode IRC
-channel, too, as darkling).
+> 
+>> +
+>> +		/* for async discard the below gets done in discard job */
+>> +		if (btrfs_test_opt(fs_info, DISCARD_ASYNC))
+>> +			continue;
+>> +
+>>   		map = btrfs_get_chunk_map(fs_info, block_group->start, 1);
+>>   		if (IS_ERR(map))
+>>   			return PTR_ERR(map);
+>> @@ -2870,6 +2876,10 @@ int btrfs_handle_fully_remapped_bgs(struct btrfs_trans_handle *trans)
+>>   			return ret;
+>>   		}
+>>   
+>> +		if (!TRANS_ABORTED(trans))
+>> +			btrfs_discard_extent(fs_info, block_group->start,
+>> +					     block_group->length, NULL, false);
+>> +
+>>   		/*
+>>   		 * Set num_stripes to 0, so that btrfs_remove_dev_extents()
+>>   		 * won't run a second time.
+>> diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+>> index 91670d0af179..5d5e3401e723 100644
+>> --- a/fs/btrfs/free-space-cache.c
+>> +++ b/fs/btrfs/free-space-cache.c
+>> @@ -29,6 +29,7 @@
+>>   #include "file-item.h"
+>>   #include "file.h"
+>>   #include "super.h"
+>> +#include "relocation.h"
+>>   
+>>   #define BITS_PER_BITMAP		(PAGE_SIZE * 8UL)
+>>   #define MAX_CACHE_BYTES_PER_GIG	SZ_64K
+>> @@ -3066,6 +3067,11 @@ bool btrfs_is_free_space_trimmed(struct btrfs_block_group *block_group)
+>>   	struct rb_node *node;
+>>   	bool ret = true;
+>>   
+>> +	if (block_group->flags & BTRFS_BLOCK_GROUP_REMAPPED &&
+>> +	    block_group->identity_remap_count == 0) {
+>> +		return true;
+>> +	}
+>> +
+>>   	spin_lock(&ctl->tree_lock);
+>>   	node = rb_first(&ctl->free_space_offset);
+>>   
+>> @@ -3830,6 +3836,70 @@ static int trim_no_bitmap(struct btrfs_block_group *block_group,
+>>   	return ret;
+>>   }
+>>   
+>> +void btrfs_trim_fully_remapped_block_group(struct btrfs_block_group *bg)
+>> +{
+>> +	struct btrfs_fs_info *fs_info = bg->fs_info;
+>> +	struct btrfs_discard_ctl *discard_ctl = &fs_info->discard_ctl;
+>> +	int ret = 0;
+>> +	u64 bytes, trimmed;
+>> +	const u64 max_discard_size = READ_ONCE(discard_ctl->max_discard_size);
+>> +	u64 end = btrfs_block_group_end(bg);
+>> +	struct btrfs_trans_handle *trans;
+>> +	struct btrfs_chunk_map *map;
+>> +
+>> +	bytes = end - bg->discard_cursor;
+>> +
+>> +	if (max_discard_size &&
+>> +		bytes >= (max_discard_size +
+>> +			BTRFS_ASYNC_DISCARD_MIN_FILTER)) {
+>> +		bytes = max_discard_size;
+>> +	}
+>> +
+>> +	ret = btrfs_discard_extent(fs_info, bg->discard_cursor, bytes, &trimmed,
+>> +				   false);
+>> +	if (ret)
+>> +		return;
+>> +
+>> +	bg->discard_cursor += trimmed;
+>> +
+>> +	if (bg->discard_cursor < end)
+>> +		return;
+>> +
+>> +	trans = btrfs_start_transaction(fs_info->tree_root, 0);
+>> +	if (IS_ERR(trans))
+>> +		return;
+>> +
+>> +	map = btrfs_get_chunk_map(fs_info, bg->start, 1);
+>> +	if (IS_ERR(map)) {
+>> +		ret = PTR_ERR(map);
+>> +		btrfs_abort_transaction(trans, ret);
+>> +		return;
+>> +	}
+>> +
+>> +	ret = btrfs_last_identity_remap_gone(trans, map, bg);
+>> +	if (ret) {
+>> +		btrfs_free_chunk_map(map);
+>> +		btrfs_abort_transaction(trans, ret);
+>> +		return;
+>> +	}
+>> +
+>> +	btrfs_end_transaction(trans);
+>> +
+>> +	/*
+>> +	 * Set num_stripes to 0, so that btrfs_remove_dev_extents()
+>> +	 * won't run a second time.
+>> +	 */
+>> +	map->num_stripes = 0;
+>> +
+>> +	btrfs_free_chunk_map(map);
+>> +
+>> +	if (bg->used == 0) {
+>> +		spin_lock(&fs_info->unused_bgs_lock);
+>> +		list_move_tail(&bg->bg_list, &fs_info->unused_bgs);
+>> +		spin_unlock(&fs_info->unused_bgs_lock);
+>> +	}
+>> +}
+>> +
+>>   /*
+>>    * If we break out of trimming a bitmap prematurely, we should reset the
+>>    * trimming bit.  In a rather contrived case, it's possible to race here so
+>> diff --git a/fs/btrfs/free-space-cache.h b/fs/btrfs/free-space-cache.h
+>> index 9f1dbfdee8ca..33fc3b245648 100644
+>> --- a/fs/btrfs/free-space-cache.h
+>> +++ b/fs/btrfs/free-space-cache.h
+>> @@ -166,6 +166,7 @@ int btrfs_trim_block_group_extents(struct btrfs_block_group *block_group,
+>>   int btrfs_trim_block_group_bitmaps(struct btrfs_block_group *block_group,
+>>   				   u64 *trimmed, u64 start, u64 end, u64 minlen,
+>>   				   u64 maxlen, bool async);
+>> +void btrfs_trim_fully_remapped_block_group(struct btrfs_block_group *bg);
+>>   
+>>   bool btrfs_free_space_cache_v1_active(struct btrfs_fs_info *fs_info);
+>>   int btrfs_set_free_space_cache_v1_active(struct btrfs_fs_info *fs_info, bool active);
+>> -- 
+>> 2.49.1
+>>
 
-   Thanks,
-   Hugo.
-
-Nov  3 15:56:14 s_src@amelia kernel: BTRFS error (device sdd1): bdev /dev/s=
-db1 errs: wr 50488570, rd 36558204, f
-lush 24486, corrupt 0, gen 0
-Nov  3 15:56:16 s_src@amelia kernel: scrub_handle_errored_block: 18199 call=
-backs suppressed
-Nov  3 15:56:16 s_src@amelia kernel: _btrfs_printk: 163 callbacks suppressed
-Nov  3 15:56:16 s_src@amelia kernel: BTRFS warning (device sdd1): i/o error=
- at logical 2236658860032 on dev /dev
-/sdb1, physical 61027368960: metadata leaf (level 0) in tree 2284479184896
-Nov  3 15:56:16 s_src@amelia kernel: BTRFS warning (device sdd1): i/o error=
- at logical 2236658860032 on dev /dev
-/sdb1, physical 61027368960: metadata leaf (level 0) in tree 2284479184896
-Nov  3 15:56:16 s_src@amelia kernel: BTRFS warning (device sdd1): i/o error=
- at logical 2236658909184 on dev /dev
-/sdb1, physical 61027418112: metadata leaf (level 0) in tree 257
-Nov  3 15:56:16 s_src@amelia kernel: BTRFS warning (device sdd1): i/o error=
- at logical 2236658909184 on dev /dev
-/sdb1, physical 61027418112: metadata leaf (level 0) in tree 257
-Nov  3 15:56:16 s_src@amelia kernel: BTRFS warning (device sdd1): i/o error=
- at logical 2236659089408 on dev /dev
-/sdb1, physical 61027598336: metadata leaf (level 0) in tree 7
-Nov  3 15:56:16 s_src@amelia kernel: BTRFS warning (device sdd1): i/o error=
- at logical 2236659089408 on dev /dev
-/sdb1, physical 61027598336: metadata leaf (level 0) in tree 7
-Nov  3 15:56:16 s_src@amelia kernel: BTRFS warning (device sdd1): i/o error=
- at logical 2236659204096 on dev /dev
-/sdb1, physical 61027713024: metadata leaf (level -1) in tree 1844674407370=
-9551615
-Nov  3 15:56:16 s_src@amelia kernel: BTRFS warning (device sdd1): bad eb me=
-mber end: ptr 0x4000 start 2237987028
-992 member offset 16384 size 1
-Nov  3 15:56:16 s_src@amelia kernel: general protection fault, probably for=
- non-canonical address 0xda7b8c000000
-0: 0000 [#1] PREEMPT SMP NOPTI
-Nov  3 15:56:16 s_src@amelia kernel: CPU: 5 PID: 1939101 Comm: kworker/u16:=
-8 Not tainted 5.19.0-2-amd64 #1  Debi
-an 5.19.11-1
-Nov  3 15:56:16 s_src@amelia kernel: Hardware name: Gigabyte Technology Co.=
-, Ltd. To be filled by O.E.M./970A-DS
-3P, BIOS FD 02/26/2016
-Nov  3 15:56:16 s_src@amelia kernel: Workqueue: btrfs-scrub scrub_bio_end_i=
-o_worker [btrfs]
-Nov  3 15:56:16 s_src@amelia kernel: RIP: 0010:btrfs_get_8+0x57/0x70 [btrfs]
-Nov  3 15:56:16 s_src@amelia kernel: Code: e5 ff 0f 00 00 48 c1 fb 06 48 c1=
- e3 0c 48 03 1d 4f 83 12 ec 49 39 d0=20
-0f 87 22 2f 09 00 49 8d 48 01 48 39 ca 0f 82 36 2f 09 00 <0f> b6 04 2b 5b 5=
-d e9 ce 4e b4 eb 66 66 2e 0f 1f 84 00
- 00 00 00 00
-Nov  3 15:56:16 s_src@amelia kernel: RSP: 0018:ffffa3cf8d6abc50 EFLAGS: 000=
-10296
-Nov  3 15:56:16 s_src@amelia kernel: RAX: 0000000000000000 RBX: 000da7b8c00=
-00000 RCX: 0000000000000000
-Nov  3 15:56:16 s_src@amelia kernel: RDX: 0000000000000000 RSI: ffffffffac7=
-6ee29 RDI: 00000000ffffffff
-Nov  3 15:56:16 s_src@amelia kernel: RBP: 0000000000000000 R08: 00000000000=
-00000 R09: 0000000104903c77
-Nov  3 15:56:16 s_src@amelia kernel: R10: ffffa3cf8d6aba60 R11: fffffffface=
-cca48 R12: 0000000000003fd6
-Nov  3 15:56:16 s_src@amelia kernel: R13: 0000000000004000 R14: 00000000000=
-03fee R15: ffff94c9d6cfc400
-Nov  3 15:56:16 s_src@amelia kernel: FS:  0000000000000000(0000) GS:ffff94c=
-ceed40000(0000) knlGS:000000000000000
-0
-Nov  3 15:56:16 s_src@amelia kernel: CS:  0010 DS: 0000 ES: 0000 CR0: 00000=
-00080050033
-Nov  3 15:56:16 s_src@amelia kernel: CR2: 00007fc2cba0a360 CR3: 000000010b8=
-a6000 CR4: 00000000000406e0
-Nov  3 15:56:16 s_src@amelia kernel: Call Trace:
-Nov  3 15:56:16 s_src@amelia kernel:  <TASK>
-Nov  3 15:56:16 s_src@amelia kernel:  btrfs_get_extent_inline_ref_type+0x1a=
-/0x110 [btrfs]
-Nov  3 15:56:16 s_src@amelia kernel:  tree_backref_for_extent+0x96/0x1a0 [b=
-trfs]
-Nov  3 15:56:16 s_src@amelia kernel:  scrub_print_warning+0x1b1/0x1d0 [btrf=
-s]
-Nov  3 15:56:16 s_src@amelia kernel:  scrub_handle_errored_block.isra.0+0x1=
-00f/0x1110 [btrfs]
-Nov  3 15:56:16 s_src@amelia kernel:  scrub_bio_end_io_worker+0xa6/0x230 [b=
-trfs]
-Nov  3 15:56:16 s_src@amelia kernel:  process_one_work+0x1e5/0x3b0
-Nov  3 15:56:16 s_src@amelia kernel:  worker_thread+0x50/0x3a0
-Nov  3 15:56:16 s_src@amelia kernel:  ? rescuer_thread+0x390/0x390
-Nov  3 15:56:16 s_src@amelia kernel:  kthread+0xe8/0x110
-Nov  3 15:56:16 s_src@amelia kernel:  ? kthread_complete_and_exit+0x20/0x20
-Nov  3 15:56:16 s_src@amelia kernel:  ret_from_fork+0x22/0x30
-Nov  3 15:56:16 s_src@amelia kernel:  </TASK>
-Nov  3 15:56:16 s_src@amelia kernel: Modules linked in: tls unix_diag fuse =
-udf crc_itu_t nfsd auth_rpcgss nfs_acl lockd grace sunrpc bridge stp llc it=
-87 hwmon_vid parport_pc ppdev lp parport dm_crypt dm_mod ses enclosure scsi=
-_transport_sas amdgpu gpu_sched radeon amd64_edac edac_mce_amd drm_display_=
-helper kvm_amd cec ccp rc_core snd_hda_codec_realtek drm_ttm_helper ttm rng=
-_core r8169 snd_hda_codec_generic drm_kms_helper kvm snd_hda_codec_hdmi led=
-trig_audio irqbypass realtek xhci_pci crc32_pclmul snd_hda_intel sr_mod snd=
-_intel_dspcfg snd_intel_sdw_acpi snd_hda_codec snd_hda_core mdio_devres ohc=
-i_pci ghash_clmulni_intel cdrom drm megaraid_sas snd_hwdep pcspkr efi_pstor=
-e k10temp fam15h_power libphy xhci_hcd sg ohci_hcd ehci_pci i2c_algo_bit sn=
-d_pcm sp5100_tco ehci_hcd watchdog snd_timer usbcore snd i2c_piix4 usb_comm=
-on soundcore button acpi_cpufreq btrfs blake2b_generic zstd_compress efivar=
-fs raid10 raid456 async_raid6_recov async_memcpy async_pq async_xor async_t=
-x libcrc32c crc32c_generic xor raid6_pq raid1 raid0
-Nov  3 15:56:16 s_src@amelia kernel:  multipath linear md_mod sd_mod t10_pi=
- crc64_rocksoft crc64 crc_t10dif crct10dif_generic crct10dif_pclmul crct10d=
-if_common crc32c_intel ahci libahci sata_sil24 libata aesni_intel scsi_mod =
-crypto_simd cryptd evdev serio_raw scsi_common
-Nov  3 15:56:16 s_src@amelia kernel: ---[ end trace 0000000000000000 ]---
-Nov  3 15:56:17 s_src@amelia kernel: RIP: 0010:btrfs_get_8+0x57/0x70 [btrfs]
-Nov  3 15:56:17 s_src@amelia kernel: Code: e5 ff 0f 00 00 48 c1 fb 06 48 c1=
- e3 0c 48 03 1d 4f 83 12 ec 49 39 d0 0f 87 22 2f 09 00 49 8d 48 01 48 39 ca=
- 0f 82 36 2f 09 00 <0f> b6 04 2b 5b 5d e9 ce 4e b4 eb 66 66 2e 0f 1f 84 00 =
-00 00 00 00
-Nov  3 15:56:17 s_src@amelia kernel: RSP: 0018:ffffa3cf8d6abc50 EFLAGS: 000=
-10296
-Nov  3 15:56:17 s_src@amelia kernel: RAX: 0000000000000000 RBX: 000da7b8c00=
-00000 RCX: 0000000000000000
-Nov  3 15:56:17 s_src@amelia kernel: RDX: 0000000000000000 RSI: ffffffffac7=
-6ee29 RDI: 00000000ffffffff
-Nov  3 15:56:17 s_src@amelia kernel: RBP: 0000000000000000 R08: 00000000000=
-00000 R09: 0000000104903c77
-Nov  3 15:56:17 s_src@amelia kernel: R10: ffffa3cf8d6aba60 R11: fffffffface=
-cca48 R12: 0000000000003fd6
-Nov  3 15:56:17 s_src@amelia kernel: R13: 0000000000004000 R14: 00000000000=
-03fee R15: ffff94c9d6cfc400
-Nov  3 15:56:17 s_src@amelia kernel: FS:  0000000000000000(0000) GS:ffff94c=
-ceed40000(0000) knlGS:0000000000000000
-Nov  3 15:56:17 s_src@amelia kernel: CS:  0010 DS: 0000 ES: 0000 CR0: 00000=
-00080050033
-Nov  3 15:56:17 s_src@amelia kernel: CR2: 00007fc2cba0a360 CR3: 000000010b8=
-a6000 CR4: 00000000000406e0
-Nov  3 15:56:23 s_src@amelia kernel: btrfs_dev_stat_print_on_error: 7137 ca=
-llbacks suppressed
-Nov  3 15:56:23 s_src@amelia kernel: BTRFS error (device sdd1): bdev /dev/s=
-db1 errs: wr 50488571, rd 36565341, flush 24486, corrupt 0, gen 0
-Nov  3 15:56:24 s_src@amelia kernel: BTRFS error (device sdd1): bdev /dev/s=
-db1 errs: wr 50488571, rd 36565341, flush 24487, corrupt 0, gen 0
-
-
---=20
-Hugo Mills             | "You know, the British have always been nice to mad
-hugo@... carfax.org.uk | people."
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |                         Laura Jesson, Brief Encoun=
-ter

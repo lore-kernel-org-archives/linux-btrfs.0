@@ -1,90 +1,55 @@
-Received: from mail-wm1-f48.google.com (mail-wm1-f48.google.com [209.85.128.48])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from savella.carfax.org.uk (savella.carfax.org.uk [85.119.84.138])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B10C8283FF9
-	for <linux-btrfs@vger.kernel.org>; Mon,  3 Nov 2025 16:01:03 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.48
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BA3ED2E7F1A
+	for <linux-btrfs@vger.kernel.org>; Mon,  3 Nov 2025 16:24:12 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=85.119.84.138
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1762185665; cv=none; b=pyyU9kHhX9CeFQgk7/kxuol/ZrvZP1mm9Xqb+5+H38mQ91qr2DtwMCGdIk2FGtrTbShREezSvADgiY4hb/hzVz/X9ojgDEkwK+g+JLmsiCnsm8dVUKIGYw4E+F8Rw9bh9TxXsyqjd0OxFmbpUgcPhAAU33oglGl+Sn4RpA9Z18o=
+	t=1762187054; cv=none; b=DiMmYGOCVRmVO7l/n8LW4/FT3YzEz0ZANi5nIlXZBWLaaED7gQMtPbW4Ji3O92FH/cs8yKswXBPq2hRcc5zQtCIcqYM6ikz6gxYekUp/tFly3ATuexRXFusCqiRC5rK0NWL0lGYtfYvrCwkxvZo89rBI/Ll+9sTy5dVb8fVrLa4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1762185665; c=relaxed/simple;
-	bh=oausMmPsZ+dnjkMLaZyQvuVYUCi3K7LrgIJK0YnBvWg=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=ZguLFuUSCHKR5fZQWGNu8XGX9r/8nmJ6nvsYPAtBblg14P4ERiApPuTOFORrlVNZsBffrbK2OP3LNimGPkVVlXh/rKFKchaL1hPG5VZlVKb7LumHTn6pvMHCE6QdbICmqYDon3O4SwIhrUdUHwDKvdlbx4JHr1vmgYfGu5ygVos=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=erqQzFya; arc=none smtp.client-ip=209.85.128.48
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="erqQzFya"
-Received: by mail-wm1-f48.google.com with SMTP id 5b1f17b1804b1-47112edf9f7so37272585e9.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 03 Nov 2025 08:01:03 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1762185662; x=1762790462; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=xqvWytGZ2s4a9qUQN0oYT7joij1/BdFZNGcsK+FMm5Q=;
-        b=erqQzFya1RXGkUFjRlxZLbawcMyCLY1zQd+fuObmG/MV2Hr894nh8khvfwyrg20rAd
-         5PyPZGxfUec3QnKVAsU8YLQflG3rwabmWJXUHyQuv6SjRaltFA01WoEZR3kopA+4iO7h
-         Q9BbyTVGcyjCfjIm+NR7d2XRppTrlWA4N0fkzRCy36GTsXaqlzII8n2QkgkBX/asKwp1
-         yWF6VHc3jnQlO/Z+U2oP2k6/htgJdxcSrYQ7K1LeXX5TOi8MsqV2d88Sp8Jq2AOqO9tD
-         frGkjKrxntqqenLj0bBPm5zx61KWec3j67lEnOds/WghpSNmhYjmE/ZDWXwLKtRyaEv+
-         CXyg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1762185662; x=1762790462;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=xqvWytGZ2s4a9qUQN0oYT7joij1/BdFZNGcsK+FMm5Q=;
-        b=vC5bx3UQ3zUPBRrhmpmkLVvX6vhDGVYWEru9HVr2wfrFOnBGrKck9nSYkEtEawZrqt
-         ml84+Y3kGhtaEctDopcJE03RRd4Efj/RXuALh28n9YF3bfik216rhxTFaanV114tVoBY
-         LgBGw8EqN6Es85Xwq92pCLs04Xr/pbvZVl7qwRXCnk/9WO37IzqNeZRqVATtTeqvgBW4
-         klJwS1WNCDCy/iVNeYQGJVPAzQghVeL1JWdjyroXoKHoTwn9K1bZ9hOZ3wnM9HwoSDpD
-         YURDV9hOAhOmy10JE8S6pA083x8C20C5BcjRsIZw+t+6qxeuJh08whkhx7eZGpAe99E/
-         LasA==
-X-Forwarded-Encrypted: i=1; AJvYcCX8xHrRNcQ4eZkc4s3CO9CgYRgFC0ma5qnOz4l0i4Qm/iyJy+GgsySS2GNoxpm4ujGJ0I/OCTesvxeeSA==@vger.kernel.org
-X-Gm-Message-State: AOJu0Ywy95xmytN+dR3f8rZzgobzisCIayNETSS39t5YrOvaq4Du8xqY
-	uT7dt8gRAFDdzQBDPM2GzyTls/fEyhpOVLLiXj4UVSJU8PRC1l4SlmFk
-X-Gm-Gg: ASbGncs2XOOHLC8dnYVxPBbcjNyf40w9nq5WgNIwrbhsl0Z0/PJbFgikFR5TAEg+0go
-	TjCbEbCIof5TlSVGiYVHZ1pIqa9+aAPR2QNgAyFSNFn1S9PaEJLmjiuI72Dm+CYbH8oRqBehmfK
-	tR4Y9vnwKvtrong06cGLL/z7n3T3BVF8iPaeVFmtJfkAuEBFkFMhsDdoeFhX8ilUhXT7X1CkCeY
-	/5sDGlchfccL1v9hGT6JUW5pr96cVVt0afEqvkEgwR8o/xRxv1U6msqMpaiiV0uka5ugeYkbNT9
-	0s9Jsd35wVt7n1+5Ng2L29xGShQFTmGvEm/aEPLZlnGblEandfbWuCB3HkXSiVEQRtEUsi7rYY/
-	mSolbtKHXLIjw6qseXAaND6yGWCmMdqj2QDNG64NvRpgE2XnKQlsHZspdCi1wDMz9F8oFrw8R
-X-Google-Smtp-Source: AGHT+IFgI9+UJlRaWTMZvJVKvOi2KSbU5UoaEQKzf5dC8MbcMLHKWJBbkTAIDGnT9gXpw+caRRANUQ==
-X-Received: by 2002:a05:600c:828f:b0:475:df91:ddf2 with SMTP id 5b1f17b1804b1-4773c7862cbmr77521625e9.17.1762185661579;
-        Mon, 03 Nov 2025 08:01:01 -0800 (PST)
-Received: from localhost ([212.73.77.104])
-        by smtp.gmail.com with UTF8SMTPSA id 5b1f17b1804b1-4773c48ee52sm165705805e9.2.2025.11.03.08.01.00
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 03 Nov 2025 08:01:01 -0800 (PST)
-From: Askar Safin <safinaskar@gmail.com>
-To: wqu@suse.com
-Cc: brauner@kernel.org,
-	jack@suse.cz,
-	linux-btrfs@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org,
-	viro@zeniv.linux.org.uk
-Subject: Re: [PATCH RFC 0/2] fs: fully sync all fsese even for an emergency sync
-Date: Mon,  3 Nov 2025 19:00:56 +0300
-Message-ID: <20251103160056.1154138-1-safinaskar@gmail.com>
-X-Mailer: git-send-email 2.47.3
-In-Reply-To: <cover.1762142636.git.wqu@suse.com>
-References: <cover.1762142636.git.wqu@suse.com>
+	s=arc-20240116; t=1762187054; c=relaxed/simple;
+	bh=jLHKYLXh3s6ggVLYaTEvQGuRScTebA/bRLHTfiTuTkE=;
+	h=Date:From:To:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=I5XzucNy2v4SRf51daZzjZeeenYg6Hizg3cgPNvcJaB8MPLw8B1QELpjQxZGJkPV0ftRODuqBNOXgtEoDrBRTyR5Eh21V7W2nftARh1dsPTyecNFun9+SQ3y/CtMQ/PzNH6wPmjSRDDlE4p6tsfOsluOoupOTmqzuiQM538XWAc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=carfax.org.uk; spf=pass smtp.mailfrom=savella.carfax.org.uk; arc=none smtp.client-ip=85.119.84.138
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=carfax.org.uk
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=savella.carfax.org.uk
+Received: from hrm by savella.carfax.org.uk with local (Exim 4.98.2)
+	(envelope-from <hrm@savella.carfax.org.uk>)
+	id 1vFxLm-00000003KQe-3lrd
+	for linux-btrfs@vger.kernel.org;
+	Mon, 03 Nov 2025 16:24:10 +0000
+Date: Mon, 3 Nov 2025 16:24:10 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Kernel backtrace and hang while replacing dead drive
+Message-ID: <aQjXKmuW7FUjAIu5@savella.carfax.org.uk>
+Mail-Followup-To: Hugo Mills <hugo@carfax.org.uk>,
+	linux-btrfs@vger.kernel.org
+References: <aQjVnfVTSjtOtosd@savella.carfax.org.uk>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <aQjVnfVTSjtOtosd@savella.carfax.org.uk>
+X-GPG-Fingerprint: DD84 D558 9D81 DDEE 930D  2054 585E 1475 E2AB 1DE4
+X-GPG-Key: E2AB1DE4
+X-Parrot: It is no more. It has joined the choir invisible.
+X-IRC-Nicks: darksatanic darkersatanic darkling darkthing
 
-Qu Wenruo <wqu@suse.com>:
-> The first patch is a cleanup related to sync_inodes_one_sb() callback.
-> Since it always wait for the writeback, there is no need to pass any
-> parameter for it.
+   Wait... I just noticed the kernel version on this thing. I don't
+know why it's so old. Ignore this.
 
-I tested this patchset, and it indeed works (in Qemu).
+   Hugo.
+
+> Nov  3 15:56:16 s_src@amelia kernel: CPU: 5 PID: 1939101 Comm: kworker/u16:8 Not tainted 5.19.0-2-amd64 #1  Debian 5.19.11-1
 
 -- 
-Askar Safin
+Hugo Mills             | But somewhere along the line, it seems
+hugo@... carfax.org.uk | That pimp became cool, and punk mainstream.
+http://carfax.org.uk/  |
+PGP: E2AB1DE4          |                              Machinae Supremacy, Rise

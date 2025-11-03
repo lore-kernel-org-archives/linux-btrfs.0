@@ -1,247 +1,203 @@
-Received: from mail.burntcomma.com (mail2.burntcomma.com [217.169.27.34])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from savella.carfax.org.uk (savella.carfax.org.uk [85.119.84.138])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4E77931987E
-	for <linux-btrfs@vger.kernel.org>; Mon,  3 Nov 2025 16:49:28 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=217.169.27.34
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C4A29290F
+	for <linux-btrfs@vger.kernel.org>; Mon,  3 Nov 2025 16:52:57 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=85.119.84.138
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1762188574; cv=none; b=kcYL8uK1Rbh2oPOn4RMeI6oaki/Bmr7idWwQEdQZ6mMnIYojbBjfthSEd5gKVl4iwqfsWKPe4lYDNVUslo8hOV/Q2JP4KJKtha+OZqeK+7pXZ1YAAsB3W6uvwnhBnAH70RKd6E2Q8QndPO4FnM4KHYlAw9OSt3MSRKdqK12moVc=
+	t=1762188780; cv=none; b=TymMJOoSXiaDoTZ1EtCsPy/S2H9yWjViogJu5IWJZrlSznQXL2gskolKxe0yhoGR4ryAFvFcIGEMHJ+iGO0ESQlq1ODCAkGzgw1yE3Qdon4quSBoWrOhGF4nWIDOEcAMTAvy1Bt0HpJAFZCjwjO8D9NrrNJR9BMjcU/e5Q/We6c=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1762188574; c=relaxed/simple;
-	bh=d3Z6bOubMmKCm2dtiQv5GB16VgWSwoTz/L3+465/xso=;
-	h=Message-ID:Date:Mime-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=r+m7WEQTqjXS7rU655/5F3GD0pVLE5SvWipK4IGL+WXa2o1+B4z2uf0zHnngDc0XQ3OuA5DvJSaTbAkiWm/2fJiUbKweHt8yeKH+NOj0Lh/q5zFs3kNNllWHg9dOQUcjpvEXSVOJBFD0wZx9fmO3bNiUjy9TW9aEuqPAxcHCCCA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com; spf=pass smtp.mailfrom=harmstone.com; dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b=mFVkXXAZ; arc=none smtp.client-ip=217.169.27.34
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=harmstone.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b="mFVkXXAZ"
-Received: from [IPV6:2a02:8012:8cf0:0:ce28:aaff:fe0d:6db2] (beren.burntcomma.com [IPv6:2a02:8012:8cf0:0:ce28:aaff:fe0d:6db2])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
-	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256
-	 client-signature RSA-PSS (2048 bits) client-digest SHA256)
-	(Client CN "hellas", Issuer "burntcomma.com" (verified OK))
-	by mail.burntcomma.com (Postfix) with ESMTPS id 31D4A2D5526;
-	Mon,  3 Nov 2025 16:49:27 +0000 (GMT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=harmstone.com;
-	s=mail; t=1762188567;
-	bh=Pe/DV0A17vmtgKXNI1x+5tjznCB5XqGuhee9GH4vKRM=;
-	h=Date:Subject:To:Cc:References:From:In-Reply-To;
-	b=mFVkXXAZKl9R5bvoAWRMH64za366h7L5TEYnIA6z7H6SU1s5VaSeCmiZbwRln0wzX
-	 yeApOmz4ZazXkhPz4JijfaNDsZAkR7NIYORXuPxzPHqe5vMj7D8amrVHB13YR0K3G9
-	 vS41Yun3Lgzu3Ycn7rQMrcKiA4wfn0TlttUE2FJI=
-Message-ID: <475df362-2bf8-4cfd-b85d-df4579ddc8d3@harmstone.com>
-Date: Mon, 3 Nov 2025 16:49:26 +0000
+	s=arc-20240116; t=1762188780; c=relaxed/simple;
+	bh=w6OZu5hrlqMjhg28XjoBsggm1j9Tq6C8iIZa+siJKtg=;
+	h=Date:From:To:Subject:Message-ID:MIME-Version:Content-Type:
+	 Content-Disposition; b=BJxcSMUuYA89j1JaxHRFPS+8aFKos5ItkZCYjTdvfDgwACtezeGJfZMKVL5xaDyFiMRYcWHh7qx613luQMaJbkiRqd+DvrkOLfOCOMA4c4GX0PLTxq09A3h86XS9oCDkLbgM4B/aJ7yWKagsUKcPbiImIXW5Wy8b/oySL6zQCs8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=carfax.org.uk; spf=pass smtp.mailfrom=savella.carfax.org.uk; arc=none smtp.client-ip=85.119.84.138
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=carfax.org.uk
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=savella.carfax.org.uk
+Received: from hrm by savella.carfax.org.uk with local (Exim 4.98.2)
+	(envelope-from <hrm@savella.carfax.org.uk>)
+	id 1vFxFN-00000003KPK-1o16
+	for linux-btrfs@vger.kernel.org;
+	Mon, 03 Nov 2025 16:17:33 +0000
+Date: Mon, 3 Nov 2025 16:17:33 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: linux-btrfs@vger.kernel.org
+Subject: Kernel backtrace and hang while replacing dead drive
+Message-ID: <aQjVnfVTSjtOtosd@savella.carfax.org.uk>
+Mail-Followup-To: Hugo Mills <hugo@carfax.org.uk>,
+	linux-btrfs@vger.kernel.org
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-Mime-Version: 1.0
-Subject: Re: [PATCH v4 15/16] btrfs: handle discarding fully-remapped block
- groups
-To: Boris Burkov <boris@bur.io>, kernel test robot <lkp@intel.com>
-Cc: linux-btrfs@vger.kernel.org, oe-kbuild-all@lists.linux.dev
-References: <20251024181227.32228-16-mark@harmstone.com>
- <202510272322.N1S5rdDc-lkp@intel.com>
- <aQU0TJLSbEXcSX1s@devvm12410.ftw0.facebook.com>
-Content-Language: en-US
-From: Mark Harmstone <mark@harmstone.com>
-Autocrypt: addr=mark@harmstone.com; keydata=
- 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
-In-Reply-To: <aQU0TJLSbEXcSX1s@devvm12410.ftw0.facebook.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+X-GPG-Fingerprint: DD84 D558 9D81 DDEE 930D  2054 585E 1475 E2AB 1DE4
+X-GPG-Key: E2AB1DE4
+X-Parrot: It is no more. It has joined the choir invisible.
+X-IRC-Nicks: darksatanic darkersatanic darkling darkthing
 
-On 31/10/2025 10.12 pm, Boris Burkov wrote:
-> On Tue, Oct 28, 2025 at 12:04:11AM +0800, kernel test robot wrote:
->> Hi Mark,
->>
->> kernel test robot noticed the following build warnings:
->>
->> [auto build test WARNING on kdave/for-next]
->> [also build test WARNING on next-20251027]
->> [cannot apply to linus/master v6.18-rc3]
->> [If your patch is applied to the wrong git tree, kindly drop us a note.
->> And when submitting patch, we suggest to use '--base' as documented in
->> https://git-scm.com/docs/git-format-patch#_base_tree_information]
->>
->> url:    https://github.com/intel-lab-lkp/linux/commits/Mark-Harmstone/btrfs-add-definitions-and-constants-for-remap-tree/20251025-021910
->> base:   https://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-next
->> patch link:    https://lore.kernel.org/r/20251024181227.32228-16-mark%40harmstone.com
->> patch subject: [PATCH v4 15/16] btrfs: handle discarding fully-remapped block groups
->> config: arm-randconfig-003-20251027 (https://download.01.org/0day-ci/archive/20251027/202510272322.N1S5rdDc-lkp@intel.com/config)
->> compiler: arm-linux-gnueabi-gcc (GCC) 8.5.0
->> reproduce (this is a W=1 build): (https://download.01.org/0day-ci/archive/20251027/202510272322.N1S5rdDc-lkp@intel.com/reproduce)
->>
->> If you fix the issue in a separate patch/commit (i.e. not just a new version of
->> the same patch/commit), kindly add following tags
->> | Reported-by: kernel test robot <lkp@intel.com>
->> | Closes: https://lore.kernel.org/oe-kbuild-all/202510272322.N1S5rdDc-lkp@intel.com/
->>
->> Note: it may well be a FALSE warning. FWIW you are at least aware of it now.
->> http://gcc.gnu.org/wiki/Better_Uninitialized_Warnings
->>
->> All warnings (new ones prefixed by >>):
->>
->>     fs/btrfs/discard.c: In function 'btrfs_discard_workfn':
->>>> fs/btrfs/discard.c:596:6: warning: 'discard_state' may be used uninitialized in this function [-Wmaybe-uninitialized]
->>        if (discard_state == BTRFS_DISCARD_BITMAPS ||
->>           ^
-> 
-> I think this gets set by peek_discard_list() so I don't think this is
-> a valid warning.
+   On Saturday morning, one SSD in a 4-drive RAID-1 array failed (the
+failed drive is /dev/sdb, devid 5). The replacement arrived today. I
+physically removed the dead drive, and added the new one to the
+machine. This was /dev/sdj.
 
-You are correct. discard_state gets initialized if the return value of 
-peek_discard_list() is not NULL, and if it is NULL we return before we 
-use it.
+   I ran "btrfs replace start -r 5 /dev/sdj1 /". At 12% done,
+everything hung. I was able to get the log info below before the whole
+machine locked up (the array in question contains the system
+installation, so when the array locked up, the machine became
+unresponsive).
 
-This is an ancient version of GCC, the warning doesn't trigger on GCC 15 
-- presumably it has better control flow analysis. I don't think the 
-robot should be compiling with this warning turned on for old compiler 
-versions, if it's prone to false positives.
+   I'm going to reboot and try again. I'm leaving this report here in
+case anyone's interested in following up on why it happened, or wants
+to suggest an alternative way forward. (I'll be on the freenode IRC
+channel, too, as darkling).
 
->>
->>
->> vim +/discard_state +596 fs/btrfs/discard.c
->>
->>     513	
->>     514	/*
->>     515	 * Discard work queue callback
->>     516	 *
->>     517	 * @work: work
->>     518	 *
->>     519	 * Find the next block_group to start discarding and then discard a single
->>     520	 * region.  It does this in a two-pass fashion: first extents and second
->>     521	 * bitmaps.  Completely discarded block groups are sent to the unused_bgs path.
->>     522	 */
->>     523	static void btrfs_discard_workfn(struct work_struct *work)
->>     524	{
->>     525		struct btrfs_discard_ctl *discard_ctl;
->>     526		struct btrfs_block_group *block_group;
->>     527		enum btrfs_discard_state discard_state;
->>     528		int discard_index = 0;
->>     529		u64 trimmed = 0;
->>     530		u64 minlen = 0;
->>     531		u64 now = ktime_get_ns();
->>     532	
->>     533		discard_ctl = container_of(work, struct btrfs_discard_ctl, work.work);
->>     534	
->>     535		block_group = peek_discard_list(discard_ctl, &discard_state,
->>     536						&discard_index, now);
->>     537		if (!block_group)
->>     538			return;
->>     539		if (!btrfs_run_discard_work(discard_ctl)) {
->>     540			spin_lock(&discard_ctl->lock);
->>     541			btrfs_put_block_group(block_group);
->>     542			discard_ctl->block_group = NULL;
->>     543			spin_unlock(&discard_ctl->lock);
->>     544			return;
->>     545		}
->>     546		if (now < block_group->discard_eligible_time) {
->>     547			spin_lock(&discard_ctl->lock);
->>     548			btrfs_put_block_group(block_group);
->>     549			discard_ctl->block_group = NULL;
->>     550			spin_unlock(&discard_ctl->lock);
->>     551			btrfs_discard_schedule_work(discard_ctl, false);
->>     552			return;
->>     553		}
->>     554	
->>     555		/* Perform discarding */
->>     556		minlen = discard_minlen[discard_index];
->>     557	
->>     558		switch (discard_state) {
->>     559		case BTRFS_DISCARD_BITMAPS: {
->>     560			u64 maxlen = 0;
->>     561	
->>     562			/*
->>     563			 * Use the previous levels minimum discard length as the max
->>     564			 * length filter.  In the case something is added to make a
->>     565			 * region go beyond the max filter, the entire bitmap is set
->>     566			 * back to BTRFS_TRIM_STATE_UNTRIMMED.
->>     567			 */
->>     568			if (discard_index != BTRFS_DISCARD_INDEX_UNUSED)
->>     569				maxlen = discard_minlen[discard_index - 1];
->>     570	
->>     571			btrfs_trim_block_group_bitmaps(block_group, &trimmed,
->>     572					       block_group->discard_cursor,
->>     573					       btrfs_block_group_end(block_group),
->>     574					       minlen, maxlen, true);
->>     575			discard_ctl->discard_bitmap_bytes += trimmed;
->>     576	
->>     577			break;
->>     578		}
->>     579	
->>     580		case BTRFS_DISCARD_FULLY_REMAPPED:
->>     581			btrfs_trim_fully_remapped_block_group(block_group);
->>     582			break;
->>     583	
->>     584		default:
->>     585			btrfs_trim_block_group_extents(block_group, &trimmed,
->>     586					       block_group->discard_cursor,
->>     587					       btrfs_block_group_end(block_group),
->>     588					       minlen, true);
->>     589			discard_ctl->discard_extent_bytes += trimmed;
->>     590	
->>     591			break;
->>     592		}
->>     593	
->>     594		/* Determine next steps for a block_group */
->>     595		if (block_group->discard_cursor >= btrfs_block_group_end(block_group)) {
->>   > 596			if (discard_state == BTRFS_DISCARD_BITMAPS ||
->>     597			    discard_state == BTRFS_DISCARD_FULLY_REMAPPED) {
->>     598				btrfs_finish_discard_pass(discard_ctl, block_group);
->>     599			} else {
->>     600				block_group->discard_cursor = block_group->start;
->>     601				spin_lock(&discard_ctl->lock);
->>     602				if (block_group->discard_state !=
->>     603				    BTRFS_DISCARD_RESET_CURSOR)
->>     604					block_group->discard_state =
->>     605								BTRFS_DISCARD_BITMAPS;
->>     606				spin_unlock(&discard_ctl->lock);
->>     607			}
->>     608		}
->>     609	
->>     610		now = ktime_get_ns();
->>     611		spin_lock(&discard_ctl->lock);
->>     612		discard_ctl->prev_discard = trimmed;
->>     613		discard_ctl->prev_discard_time = now;
->>     614		btrfs_put_block_group(block_group);
->>     615		discard_ctl->block_group = NULL;
->>     616		__btrfs_discard_schedule_work(discard_ctl, now, false);
->>     617		spin_unlock(&discard_ctl->lock);
->>     618	}
->>     619	
->>
->> -- 
->> 0-DAY CI Kernel Test Service
->> https://github.com/intel/lkp-tests/wiki
+   Thanks,
+   Hugo.
 
+Nov  3 15:56:14 s_src@amelia kernel: BTRFS error (device sdd1): bdev /dev/s=
+db1 errs: wr 50488570, rd 36558204, f
+lush 24486, corrupt 0, gen 0
+Nov  3 15:56:16 s_src@amelia kernel: scrub_handle_errored_block: 18199 call=
+backs suppressed
+Nov  3 15:56:16 s_src@amelia kernel: _btrfs_printk: 163 callbacks suppressed
+Nov  3 15:56:16 s_src@amelia kernel: BTRFS warning (device sdd1): i/o error=
+ at logical 2236658860032 on dev /dev
+/sdb1, physical 61027368960: metadata leaf (level 0) in tree 2284479184896
+Nov  3 15:56:16 s_src@amelia kernel: BTRFS warning (device sdd1): i/o error=
+ at logical 2236658860032 on dev /dev
+/sdb1, physical 61027368960: metadata leaf (level 0) in tree 2284479184896
+Nov  3 15:56:16 s_src@amelia kernel: BTRFS warning (device sdd1): i/o error=
+ at logical 2236658909184 on dev /dev
+/sdb1, physical 61027418112: metadata leaf (level 0) in tree 257
+Nov  3 15:56:16 s_src@amelia kernel: BTRFS warning (device sdd1): i/o error=
+ at logical 2236658909184 on dev /dev
+/sdb1, physical 61027418112: metadata leaf (level 0) in tree 257
+Nov  3 15:56:16 s_src@amelia kernel: BTRFS warning (device sdd1): i/o error=
+ at logical 2236659089408 on dev /dev
+/sdb1, physical 61027598336: metadata leaf (level 0) in tree 7
+Nov  3 15:56:16 s_src@amelia kernel: BTRFS warning (device sdd1): i/o error=
+ at logical 2236659089408 on dev /dev
+/sdb1, physical 61027598336: metadata leaf (level 0) in tree 7
+Nov  3 15:56:16 s_src@amelia kernel: BTRFS warning (device sdd1): i/o error=
+ at logical 2236659204096 on dev /dev
+/sdb1, physical 61027713024: metadata leaf (level -1) in tree 1844674407370=
+9551615
+Nov  3 15:56:16 s_src@amelia kernel: BTRFS warning (device sdd1): bad eb me=
+mber end: ptr 0x4000 start 2237987028
+992 member offset 16384 size 1
+Nov  3 15:56:16 s_src@amelia kernel: general protection fault, probably for=
+ non-canonical address 0xda7b8c000000
+0: 0000 [#1] PREEMPT SMP NOPTI
+Nov  3 15:56:16 s_src@amelia kernel: CPU: 5 PID: 1939101 Comm: kworker/u16:=
+8 Not tainted 5.19.0-2-amd64 #1  Debi
+an 5.19.11-1
+Nov  3 15:56:16 s_src@amelia kernel: Hardware name: Gigabyte Technology Co.=
+, Ltd. To be filled by O.E.M./970A-DS
+3P, BIOS FD 02/26/2016
+Nov  3 15:56:16 s_src@amelia kernel: Workqueue: btrfs-scrub scrub_bio_end_i=
+o_worker [btrfs]
+Nov  3 15:56:16 s_src@amelia kernel: RIP: 0010:btrfs_get_8+0x57/0x70 [btrfs]
+Nov  3 15:56:16 s_src@amelia kernel: Code: e5 ff 0f 00 00 48 c1 fb 06 48 c1=
+ e3 0c 48 03 1d 4f 83 12 ec 49 39 d0=20
+0f 87 22 2f 09 00 49 8d 48 01 48 39 ca 0f 82 36 2f 09 00 <0f> b6 04 2b 5b 5=
+d e9 ce 4e b4 eb 66 66 2e 0f 1f 84 00
+ 00 00 00 00
+Nov  3 15:56:16 s_src@amelia kernel: RSP: 0018:ffffa3cf8d6abc50 EFLAGS: 000=
+10296
+Nov  3 15:56:16 s_src@amelia kernel: RAX: 0000000000000000 RBX: 000da7b8c00=
+00000 RCX: 0000000000000000
+Nov  3 15:56:16 s_src@amelia kernel: RDX: 0000000000000000 RSI: ffffffffac7=
+6ee29 RDI: 00000000ffffffff
+Nov  3 15:56:16 s_src@amelia kernel: RBP: 0000000000000000 R08: 00000000000=
+00000 R09: 0000000104903c77
+Nov  3 15:56:16 s_src@amelia kernel: R10: ffffa3cf8d6aba60 R11: fffffffface=
+cca48 R12: 0000000000003fd6
+Nov  3 15:56:16 s_src@amelia kernel: R13: 0000000000004000 R14: 00000000000=
+03fee R15: ffff94c9d6cfc400
+Nov  3 15:56:16 s_src@amelia kernel: FS:  0000000000000000(0000) GS:ffff94c=
+ceed40000(0000) knlGS:000000000000000
+0
+Nov  3 15:56:16 s_src@amelia kernel: CS:  0010 DS: 0000 ES: 0000 CR0: 00000=
+00080050033
+Nov  3 15:56:16 s_src@amelia kernel: CR2: 00007fc2cba0a360 CR3: 000000010b8=
+a6000 CR4: 00000000000406e0
+Nov  3 15:56:16 s_src@amelia kernel: Call Trace:
+Nov  3 15:56:16 s_src@amelia kernel:  <TASK>
+Nov  3 15:56:16 s_src@amelia kernel:  btrfs_get_extent_inline_ref_type+0x1a=
+/0x110 [btrfs]
+Nov  3 15:56:16 s_src@amelia kernel:  tree_backref_for_extent+0x96/0x1a0 [b=
+trfs]
+Nov  3 15:56:16 s_src@amelia kernel:  scrub_print_warning+0x1b1/0x1d0 [btrf=
+s]
+Nov  3 15:56:16 s_src@amelia kernel:  scrub_handle_errored_block.isra.0+0x1=
+00f/0x1110 [btrfs]
+Nov  3 15:56:16 s_src@amelia kernel:  scrub_bio_end_io_worker+0xa6/0x230 [b=
+trfs]
+Nov  3 15:56:16 s_src@amelia kernel:  process_one_work+0x1e5/0x3b0
+Nov  3 15:56:16 s_src@amelia kernel:  worker_thread+0x50/0x3a0
+Nov  3 15:56:16 s_src@amelia kernel:  ? rescuer_thread+0x390/0x390
+Nov  3 15:56:16 s_src@amelia kernel:  kthread+0xe8/0x110
+Nov  3 15:56:16 s_src@amelia kernel:  ? kthread_complete_and_exit+0x20/0x20
+Nov  3 15:56:16 s_src@amelia kernel:  ret_from_fork+0x22/0x30
+Nov  3 15:56:16 s_src@amelia kernel:  </TASK>
+Nov  3 15:56:16 s_src@amelia kernel: Modules linked in: tls unix_diag fuse =
+udf crc_itu_t nfsd auth_rpcgss nfs_acl lockd grace sunrpc bridge stp llc it=
+87 hwmon_vid parport_pc ppdev lp parport dm_crypt dm_mod ses enclosure scsi=
+_transport_sas amdgpu gpu_sched radeon amd64_edac edac_mce_amd drm_display_=
+helper kvm_amd cec ccp rc_core snd_hda_codec_realtek drm_ttm_helper ttm rng=
+_core r8169 snd_hda_codec_generic drm_kms_helper kvm snd_hda_codec_hdmi led=
+trig_audio irqbypass realtek xhci_pci crc32_pclmul snd_hda_intel sr_mod snd=
+_intel_dspcfg snd_intel_sdw_acpi snd_hda_codec snd_hda_core mdio_devres ohc=
+i_pci ghash_clmulni_intel cdrom drm megaraid_sas snd_hwdep pcspkr efi_pstor=
+e k10temp fam15h_power libphy xhci_hcd sg ohci_hcd ehci_pci i2c_algo_bit sn=
+d_pcm sp5100_tco ehci_hcd watchdog snd_timer usbcore snd i2c_piix4 usb_comm=
+on soundcore button acpi_cpufreq btrfs blake2b_generic zstd_compress efivar=
+fs raid10 raid456 async_raid6_recov async_memcpy async_pq async_xor async_t=
+x libcrc32c crc32c_generic xor raid6_pq raid1 raid0
+Nov  3 15:56:16 s_src@amelia kernel:  multipath linear md_mod sd_mod t10_pi=
+ crc64_rocksoft crc64 crc_t10dif crct10dif_generic crct10dif_pclmul crct10d=
+if_common crc32c_intel ahci libahci sata_sil24 libata aesni_intel scsi_mod =
+crypto_simd cryptd evdev serio_raw scsi_common
+Nov  3 15:56:16 s_src@amelia kernel: ---[ end trace 0000000000000000 ]---
+Nov  3 15:56:17 s_src@amelia kernel: RIP: 0010:btrfs_get_8+0x57/0x70 [btrfs]
+Nov  3 15:56:17 s_src@amelia kernel: Code: e5 ff 0f 00 00 48 c1 fb 06 48 c1=
+ e3 0c 48 03 1d 4f 83 12 ec 49 39 d0 0f 87 22 2f 09 00 49 8d 48 01 48 39 ca=
+ 0f 82 36 2f 09 00 <0f> b6 04 2b 5b 5d e9 ce 4e b4 eb 66 66 2e 0f 1f 84 00 =
+00 00 00 00
+Nov  3 15:56:17 s_src@amelia kernel: RSP: 0018:ffffa3cf8d6abc50 EFLAGS: 000=
+10296
+Nov  3 15:56:17 s_src@amelia kernel: RAX: 0000000000000000 RBX: 000da7b8c00=
+00000 RCX: 0000000000000000
+Nov  3 15:56:17 s_src@amelia kernel: RDX: 0000000000000000 RSI: ffffffffac7=
+6ee29 RDI: 00000000ffffffff
+Nov  3 15:56:17 s_src@amelia kernel: RBP: 0000000000000000 R08: 00000000000=
+00000 R09: 0000000104903c77
+Nov  3 15:56:17 s_src@amelia kernel: R10: ffffa3cf8d6aba60 R11: fffffffface=
+cca48 R12: 0000000000003fd6
+Nov  3 15:56:17 s_src@amelia kernel: R13: 0000000000004000 R14: 00000000000=
+03fee R15: ffff94c9d6cfc400
+Nov  3 15:56:17 s_src@amelia kernel: FS:  0000000000000000(0000) GS:ffff94c=
+ceed40000(0000) knlGS:0000000000000000
+Nov  3 15:56:17 s_src@amelia kernel: CS:  0010 DS: 0000 ES: 0000 CR0: 00000=
+00080050033
+Nov  3 15:56:17 s_src@amelia kernel: CR2: 00007fc2cba0a360 CR3: 000000010b8=
+a6000 CR4: 00000000000406e0
+Nov  3 15:56:23 s_src@amelia kernel: btrfs_dev_stat_print_on_error: 7137 ca=
+llbacks suppressed
+Nov  3 15:56:23 s_src@amelia kernel: BTRFS error (device sdd1): bdev /dev/s=
+db1 errs: wr 50488571, rd 36565341, flush 24486, corrupt 0, gen 0
+Nov  3 15:56:24 s_src@amelia kernel: BTRFS error (device sdd1): bdev /dev/s=
+db1 errs: wr 50488571, rd 36565341, flush 24487, corrupt 0, gen 0
+
+
+--=20
+Hugo Mills             | "You know, the British have always been nice to mad
+hugo@... carfax.org.uk | people."
+http://carfax.org.uk/  |
+PGP: E2AB1DE4          |                         Laura Jesson, Brief Encoun=
+ter

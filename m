@@ -1,113 +1,127 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from sm-r-010-dus.org-dns.com (sm-r-010-dus.org-dns.com [84.19.1.238])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8ED7B304BB5;
-	Tue,  4 Nov 2025 21:27:06 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A20662DA774
+	for <linux-btrfs@vger.kernel.org>; Tue,  4 Nov 2025 23:01:42 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=84.19.1.238
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1762291628; cv=none; b=KoTRXH8QukNMZAKQiq/Wj5obDHHG19WmZ71W7bW3ItL0eX6fiA84f2Fl8A8VecmEUviY3P7rfQNo+VdO+y1ssb259XpjnCcv7rYZUlQ43ayd4eI8YLs4/4v3kEKw5SU/Oh1qB0aJ45vpiJUKjag4F/Gpi9e8HqF/Zx3P66ygTR4=
+	t=1762297306; cv=none; b=IUNKAgnt+aKfGPR7oNQK236c4YGbG2aJsrpb/pAoxBq92TIt1VKxHlMRZ8WnKOU9776CluwXisdf8oAFNEkyw1D+Nb5cGrCzpayRca57KlA3wfgIzgmI/I66RtCPB7KLM5Ilql+sgo2DwT07SuzbWCLVXRj/k/A3PuMkMi1qaHg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1762291628; c=relaxed/simple;
-	bh=OQJzlNo20cxcnEk3FJgiDo6Dfxs8oL2XA0KXotU9jrQ=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=t85S2Yo7TqkdVuwOK5vovhMIYnOVObGVVtSHJCd+gFN1Nlb7EcWUDK3cclZOaDCJJgF74+k5q+8vR6yTF2wAdpbDN2YePrenFwXpbF9la4iQNVMMssABXZ8P6qsO93M/IHfeH5pj0q/6bUrr82cf+iOJMirSbIiS8J9q2/12z+w=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=lDsbMl2I; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1762297306; c=relaxed/simple;
+	bh=xA5AxH3M8PuHwcNdpWa5Cc92+Rpfy9basQX9vCLAnVw=;
+	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
+	 In-Reply-To:Content-Type; b=A5kJKTK604ISj0h7Ubkij1H0lv6OKZBHIpscMDVm08dGbupIdc/ixxMfoGNnoxTuOnT8WWBvioHhBKl6SXf3dq+NJ1FFx4Kqy5J39FSwwC4NNWo1DrvJdJxn5/2AfMnug0AJp3AH1Q5st500oAiTOGapIKAKleQq0pILVo4ZNgw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=friedels.name; spf=pass smtp.mailfrom=friedels.name; dkim=pass (1024-bit key) header.d=friedels.name header.i=@friedels.name header.b=Trh/booP; arc=none smtp.client-ip=84.19.1.238
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=friedels.name
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=friedels.name
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="lDsbMl2I"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 56E1BC4CEF8;
-	Tue,  4 Nov 2025 21:27:04 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1762291626;
-	bh=OQJzlNo20cxcnEk3FJgiDo6Dfxs8oL2XA0KXotU9jrQ=;
-	h=From:To:Subject:Date:In-Reply-To:References:From;
-	b=lDsbMl2Ib95UWzVMEszHNVW0LZ/UQVhAG+7vl4sAaW1//W859fe04tmmAL4eLHg7c
-	 GaWplzCjr3z9cPOImzf8OPTBIGFKA5LXZGTA0fNLgE2HRZPF2UkmvUAkY0Kn6S/uSx
-	 qO/cmb8v878KjoCFCVI1X6S3MhdJNSGoS7jA3FVrvG5SSNfLylmdQwlNE2JL7RqIuP
-	 xVhT5AV/HkmBfFyHSH5e/2DUxH4FdgKzN8YPiEP2gOI7hzf67XKLxBHJfD3+zmuAhV
-	 a2lR3akvoElHY5EvhrhacYCbH9SdZdUkZNp3ddaYR8va2X3KTO57rOK/2tumhhOrQ/
-	 SaRLUg+iM16XQ==
-From: Damien Le Moal <dlemoal@kernel.org>
-To: Jens Axboe <axboe@kernel.dk>,
-	linux-block@vger.kernel.org,
-	linux-nvme@lists.infradead.org,
-	Keith Busch <keith.busch@wdc.com>,
-	Christoph Hellwig <hch@lst.de>,
-	dm-devel@lists.linux.dev,
-	Mike Snitzer <snitzer@kernel.org>,
-	Mikulas Patocka <mpatocka@redhat.com>,
-	"Martin K . Petersen" <martin.petersen@oracle.com>,
-	linux-scsi@vger.kernel.org,
-	linux-xfs@vger.kernel.org,
-	Carlos Maiolino <cem@kernel.org>,
-	linux-btrfs@vger.kernel.org,
-	David Sterba <dsterba@suse.com>
-Subject: [PATCH v4 14/15] btrfs: use blkdev_report_zones_cached()
-Date: Wed,  5 Nov 2025 06:22:48 +0900
-Message-ID: <20251104212249.1075412-15-dlemoal@kernel.org>
-X-Mailer: git-send-email 2.51.0
-In-Reply-To: <20251104212249.1075412-1-dlemoal@kernel.org>
-References: <20251104212249.1075412-1-dlemoal@kernel.org>
+	dkim=pass (1024-bit key) header.d=friedels.name header.i=@friedels.name header.b="Trh/booP"
+Received: from smarthost-dus.org-dns.com (localhost [127.0.0.1])
+	by smarthost-dus.org-dns.com (Postfix) with ESMTP id CB855A1795
+	for <linux-btrfs@vger.kernel.org>; Tue,  4 Nov 2025 23:50:08 +0100 (CET)
+Received: by smarthost-dus.org-dns.com (Postfix, from userid 1001)
+	id BE9E4A17C2; Tue,  4 Nov 2025 23:50:08 +0100 (CET)
+Received: from ha01s030.org-dns.com (ha01s030.org-dns.com [62.108.32.110])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (2048 bits))
+	(No client certificate requested)
+	by smarthost-dus.org-dns.com (Postfix) with ESMTPS id C81BEA1795;
+	Tue,  4 Nov 2025 23:50:07 +0100 (CET)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=friedels.name;
+	s=default; t=1762296661;
+	bh=hNPIdIiuwPzKtRj5LVu7vQiHMzYHrywQVCHcscJsrNA=; h=Subject:To:From;
+	b=Trh/booPB3CJl7sCc3lbT3lfBWDvLU6QUpruhm8/PoZHqcjM9BkEaww18fC+qLW+Q
+	 iP0uadrGUaeJZnm5aYie70H/2pyIgoNxvEoa+syWJB5uQB95t41iFAnX7ffY6DveAr
+	 r/1E+lvcTPfDvbwCEl6c3fWIgANaELhHa7y3EBk8=
+Authentication-Results: ha01s030.org-dns.com;
+        spf=pass (sender IP is 88.65.226.178) smtp.mailfrom=hendrik@friedels.name smtp.helo=[192.168.177.137]
+Received-SPF: pass (ha01s030.org-dns.com: connection is authenticated)
+Message-ID: <eddf3273-d7f9-4bef-865d-dfec1d7ffb66@friedels.name>
+Date: Tue, 4 Nov 2025 23:50:07 +0100
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+Subject: Re: Corrupt Filesystem (Mirror) despite previously successful scrub
+To: Chris Murphy <lists@colorremedies.com>,
+ Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <cfc7539c-a0c5-45d2-a781-89c2e0cb2c62@friedels.name>
+ <12716866-2ffe-4cbb-8e2f-8b2e4abd0237@app.fastmail.com>
+ <a37cea05-f77f-41f1-8763-a28311b72790@friedels.name>
+ <f6858f97-1fe2-49d7-b1ad-dc688142fdcb@app.fastmail.com>
+From: Hendrik Friedel <hendrik@friedels.name>
+In-Reply-To: <f6858f97-1fe2-49d7-b1ad-dc688142fdcb@app.fastmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
+X-PPP-Message-ID: 
+ <176229666169.1015906.3658468288478824603@ha01s030.org-dns.com>
+X-PPP-Vhost: friedels.name
+X-POWERED-BY: wint.global - AV:CLEAN SPAM:OK
 
-Modify btrfs_get_dev_zones() and btrfs_sb_log_location_bdev() to replace
-the call to blkdev_report_zones() with blkdev_report_zones_cached() to
-speed-up mount operations. btrfs_get_dev_zone_info() is also modified to
-take into account the BLK_ZONE_COND_ACTIVE condition, which is
-equivalent to either BLK_ZONE_COND_IMP_OPEN, BLK_ZONE_COND_EXP_OPEN or
-BLK_ZONE_COND_CLOSED.
+Hi Chris,
 
-With this change, mounting a freshly formatted large capacity (30 TB)
-SMR HDD completes under 100ms compared to over 1.8s before.
+thanks for your reply. Indeed, I missed it.
 
-Signed-off-by: Damien Le Moal <dlemoal@kernel.org>
-Acked-by: David Sterba <dsterba@suse.com>
-Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
----
- fs/btrfs/zoned.c | 11 ++++++-----
- 1 file changed, 6 insertions(+), 5 deletions(-)
+I checked STC ERC vs kernel command timer:
 
-diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-index 0ea0df18a8e4..a16b1a896c78 100644
---- a/fs/btrfs/zoned.c
-+++ b/fs/btrfs/zoned.c
-@@ -264,8 +264,8 @@ static int btrfs_get_dev_zones(struct btrfs_device *device, u64 pos,
- 		}
- 	}
- 
--	ret = blkdev_report_zones(device->bdev, pos >> SECTOR_SHIFT, *nr_zones,
--				  copy_zone_info_cb, zones);
-+	ret = blkdev_report_zones_cached(device->bdev, pos >> SECTOR_SHIFT,
-+					 *nr_zones, copy_zone_info_cb, zones);
- 	if (ret < 0) {
- 		btrfs_err(device->fs_info,
- 				 "zoned: failed to read zone %llu on %s (devid %llu)",
-@@ -494,6 +494,7 @@ int btrfs_get_dev_zone_info(struct btrfs_device *device, bool populate_cache)
- 			case BLK_ZONE_COND_IMP_OPEN:
- 			case BLK_ZONE_COND_EXP_OPEN:
- 			case BLK_ZONE_COND_CLOSED:
-+			case BLK_ZONE_COND_ACTIVE:
- 				__set_bit(nreported, zone_info->active_zones);
- 				nactive++;
- 				break;
-@@ -896,9 +897,9 @@ int btrfs_sb_log_location_bdev(struct block_device *bdev, int mirror, int rw,
- 	if (sb_zone + 1 >= nr_zones)
- 		return -ENOENT;
- 
--	ret = blkdev_report_zones(bdev, zone_start_sector(sb_zone, bdev),
--				  BTRFS_NR_SB_LOG_ZONES, copy_zone_info_cb,
--				  zones);
-+	ret = blkdev_report_zones_cached(bdev, zone_start_sector(sb_zone, bdev),
-+					 BTRFS_NR_SB_LOG_ZONES,
-+					 copy_zone_info_cb, zones);
- 	if (ret < 0)
- 		return ret;
- 	if (unlikely(ret != BTRFS_NR_SB_LOG_ZONES))
--- 
-2.51.0
+SCT Error Recovery Control:
+            Read:     70 (7.0 seconds)
+           Write:     70 (7.0 seconds)
+
+
+root@homeserver:~# cat /sys/block/sdb/device/timeout
+30
+
+That is on both drives, so it seems ok.
+
+>> Okt 14 23:33:36 homeserver kernel: BTRFS error (device sdb1): balance: reduces metadata redundancy, use --force if you want this
+> Hopefully this is a mistake and the command was not reissued with -f
+
+It was. This is because I do not need this Filesystem anymore. But I am 
+a bit worried now that I had corrupt data before.
+
+The history:
+
+1) I did run this as my main home-server until two weeks ago.
+
+2) I copied all data over to another, new machine
+
+3) I want to use these drives in that new machine as (onsite) backup
+
+4) I do have an offsite backup
+
+The problem is: If my data has been corrupted earlier - before two weeks 
+ago - then the data on my new machine is also corrupt.
+
+Can we find out?
+
+
+> Over 2 million dropped writes on sda1? That doesn't tell us for sure they're missing, they might have gotten fixed later. But it's so many missing writes, that if there is even 1 copy wrong, corrupt, or missing on sdb1 then Btrfs can't fix itself.
+This is what was causing me to be worried.
+> No the file system could be inconsistent.
+
+So, the file system would point to a wrong chunk which in itself has 
+correct data and csum?
+
+Why would not the metadata redundancy spot this? Would this be caused by 
+a bug that corrupts both copies (rather than some hardware error)?
+
+Message on outdated kernel is understood.
+
+
+My main worries now are:
+
+- what could have caused it / what can I do better in future
+
+- was my data corrupted before I transferred it to the new machine
+
+- is there some bug in btrfs that we could find
+
+
+Thanks and best regards,
+
+HEndrik
+
 

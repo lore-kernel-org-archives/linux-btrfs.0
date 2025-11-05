@@ -1,85 +1,149 @@
-Received: from mail-m155101.qiye.163.com (mail-m155101.qiye.163.com [101.71.155.101])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 53625207A0B;
-	Wed,  5 Nov 2025 03:58:39 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=101.71.155.101
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3063D2D0635
+	for <linux-btrfs@vger.kernel.org>; Wed,  5 Nov 2025 07:02:12 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1762315124; cv=none; b=vEvNH9RAbyPosfiydSFXDvbfpraunrJ7KFFxaFKWg0OWuryI51S4hFhUk2L499qsVb88KJoySbT/uOtCc4J2ze/+xT5vysPSedZRmYiafQ8B//VG33H8F1OkmSwdkuQ6OeXtUTXqxYlnPt4RAClGG3FLhiACFLneMXss5Uf32fU=
+	t=1762326135; cv=none; b=tSe58Y1A/sGM4fA7hLfnuhvDE5HjKFHQNdfXgj3Ka2OEietzShXuYhO9BtIYCJsamdKLfDQeKA7uLzjA39RInIKk109fBMDjb+Ana2nOSlg5QyZxhQogEAdBaUmgJDv+LO+zFJ9ui+HB+kNqNehAgnyVR/WCk2GJgb7LfegcIds=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1762315124; c=relaxed/simple;
-	bh=HA34rT9MbOn6v+cCHPIG6gebFGnfBZSXK78zPX3McMU=;
-	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version; b=ESj9eMbfxn9r26U/oE5H9yXmsTHro6KFVULgRqhq9uM5YOw7ia9JSf6LleyqqbpbjjA0FScGMcUlYqSc/ItqZm6g4NNOa03JPRBSJGXcHPzK4U6xsuLr+rRRqnlfipqtUbvKKHaIhAPrKn9d1eSrY7uJj2euOBW19ZFBxTguzvU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=seu.edu.cn; spf=pass smtp.mailfrom=seu.edu.cn; dkim=pass (1024-bit key) header.d=seu.edu.cn header.i=@seu.edu.cn header.b=Z7eIMiTl; arc=none smtp.client-ip=101.71.155.101
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=seu.edu.cn
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=seu.edu.cn
+	s=arc-20240116; t=1762326135; c=relaxed/simple;
+	bh=gIbZAVyb3XvaNqywmxw8bSlwhzPTd2U80vLEEe9WntM=;
+	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
+	 In-Reply-To:Content-Type; b=ugjzG2Asm7rFxa4WXtKHLv/8ZZg7bzsUCXMmfjaLdnlspWFpeHLVA76QznMegzKRE47uEaUAxfNvbZ8K95Hekhxj9lU5HpfFLydrUQEVh3K4wOdyqiiu7acyqTFJ+jAFuvx3wfWwHijATAhpFg+YGVXM89CEF74VdmSmNZxnjDc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=suse.de; spf=pass smtp.mailfrom=suse.de; dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b=bamh70B1; dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b=824OQiKv; dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b=bamh70B1; dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b=824OQiKv; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=suse.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=seu.edu.cn header.i=@seu.edu.cn header.b="Z7eIMiTl"
-Received: from LAPTOP-N070L597.localdomain (unknown [221.228.238.82])
-	by smtp.qiye.163.com (Hmail) with ESMTP id 286d74537;
-	Wed, 5 Nov 2025 11:53:28 +0800 (GMT+08:00)
-From: Zilin Guan <zilin@seu.edu.cn>
-To: clm@fb.com
-Cc: dsterba@suse.com,
-	linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	jianhao.xu@seu.edu.cn,
-	Zilin Guan <zilin@seu.edu.cn>
-Subject: [PATCH] btrfs: scrub: fix memory leak in scrub_raid56_parity_stripe()
-Date: Wed,  5 Nov 2025 03:53:21 +0000
-Message-Id: <20251105035321.1897952-1-zilin@seu.edu.cn>
-X-Mailer: git-send-email 2.34.1
+	dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b="bamh70B1";
+	dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b="824OQiKv";
+	dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b="bamh70B1";
+	dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b="824OQiKv"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 13B7F2118E;
+	Wed,  5 Nov 2025 07:02:10 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
+	t=1762326130; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=HiWTKq6RFEsgq4tdBiXrdi6UiJ/nLkzXTBqjXsIruM0=;
+	b=bamh70B1hocnN40iCBeYeIBTceV1d9Zm1rbXv4xuvaTBVzsdEAhq4ltYE7RaNBvAwM/fuh
+	XyllWQMANOViiywAfJoxaycYqphihAlEhzkrbtawyT6GuL/Eo94dSpX941ZBEf5avmGfhb
+	IInP8tgBAax5LnAfHKtbguwpljEt7eA=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
+	s=susede2_ed25519; t=1762326130;
+	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=HiWTKq6RFEsgq4tdBiXrdi6UiJ/nLkzXTBqjXsIruM0=;
+	b=824OQiKvKNmQ5aey60IjcInoMm2F1zM+hwgVZc13D2zIR2xaMjz2NLuYOqB4IEIt7vV7Ja
+	I04Bwr0romzXawDQ==
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
+	t=1762326130; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=HiWTKq6RFEsgq4tdBiXrdi6UiJ/nLkzXTBqjXsIruM0=;
+	b=bamh70B1hocnN40iCBeYeIBTceV1d9Zm1rbXv4xuvaTBVzsdEAhq4ltYE7RaNBvAwM/fuh
+	XyllWQMANOViiywAfJoxaycYqphihAlEhzkrbtawyT6GuL/Eo94dSpX941ZBEf5avmGfhb
+	IInP8tgBAax5LnAfHKtbguwpljEt7eA=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
+	s=susede2_ed25519; t=1762326130;
+	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=HiWTKq6RFEsgq4tdBiXrdi6UiJ/nLkzXTBqjXsIruM0=;
+	b=824OQiKvKNmQ5aey60IjcInoMm2F1zM+hwgVZc13D2zIR2xaMjz2NLuYOqB4IEIt7vV7Ja
+	I04Bwr0romzXawDQ==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 7E819132DD;
+	Wed,  5 Nov 2025 07:02:09 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id v1XlHHH2CmmGDAAAD6G6ig
+	(envelope-from <hare@suse.de>); Wed, 05 Nov 2025 07:02:09 +0000
+Message-ID: <57f304f4-ddfe-4d31-91c0-c4fcc5c6c737@suse.de>
+Date: Wed, 5 Nov 2025 08:02:09 +0100
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v3 05/15] block: reorganize struct blk_zone_wplug
+To: Damien Le Moal <dlemoal@kernel.org>, Jens Axboe <axboe@kernel.dk>,
+ linux-block@vger.kernel.org, linux-nvme@lists.infradead.org,
+ Keith Busch <keith.busch@wdc.com>, Christoph Hellwig <hch@lst.de>,
+ dm-devel@lists.linux.dev, Mike Snitzer <snitzer@kernel.org>,
+ Mikulas Patocka <mpatocka@redhat.com>,
+ "Martin K . Petersen" <martin.petersen@oracle.com>,
+ linux-scsi@vger.kernel.org, linux-xfs@vger.kernel.org,
+ Carlos Maiolino <cem@kernel.org>, linux-btrfs@vger.kernel.org,
+ David Sterba <dsterba@suse.com>
+References: <20251104013147.913802-1-dlemoal@kernel.org>
+ <20251104013147.913802-6-dlemoal@kernel.org>
+Content-Language: en-US
+From: Hannes Reinecke <hare@suse.de>
+In-Reply-To: <20251104013147.913802-6-dlemoal@kernel.org>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
-X-HM-Tid: 0a9a5225ead503a1kunmf844b9e66dba2c
-X-HM-MType: 10
-X-HM-Spam-Status: e1kfGhgUHx5ZQUpXWQgPGg8OCBgUHx5ZQUlOS1dZFg8aDwILHllBWSg2Ly
-	tZV1koWUFITzdXWS1ZQUlXWQ8JGhUIEh9ZQVkaTh8YVhkZSEoZQhlJQk1OSVYeHw5VEwETFhoSFy
-	QUDg9ZV1kYEgtZQVlJSUpVSUlDVUlIQ1VDSVlXWRYaDxIVHRRZQVlPS0hVSktJQkNDTFVKS0tVS1
-	kG
-DKIM-Signature: a=rsa-sha256;
-	b=Z7eIMiTl1ncyFYsvF4gbkHWil0ig1x5vlXEqz5l47QmWx7clsSP6mCiNiiugbu5RYGK3jf77nXiTjlemuO3mYzJ4f+HQF7eDzMB0uYTb41PC/zuBQKi4npzq/2YAGvymXYuhFkZaJGjFKwH3cUvdGY6+EQvQ/ET+Yu3l3s3mZ08=; s=default; c=relaxed/relaxed; d=seu.edu.cn; v=1;
-	bh=ntexdCEkYYHSEBIlmY4trtOnJFYrjtO9ngytPeHvIUA=;
-	h=date:mime-version:subject:message-id:from;
+X-Spam-Level: 
+X-Spamd-Result: default: False [-4.30 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	NEURAL_HAM_SHORT(-0.20)[-0.997];
+	MIME_GOOD(-0.10)[text/plain];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	ARC_NA(0.00)[];
+	RCPT_COUNT_TWELVE(0.00)[15];
+	MID_RHS_MATCH_FROM(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	DKIM_SIGNED(0.00)[suse.de:s=susede2_rsa,suse.de:s=susede2_ed25519];
+	FROM_HAS_DN(0.00)[];
+	TO_DN_SOME(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.de:email,suse.de:mid]
+X-Spam-Flag: NO
+X-Spam-Score: -4.30
 
-scrub_raid56_parity_stripe() allocates a bio with bio_alloc(), but
-fails to release it on some error paths, leading to a potential
-memory leak.
+On 11/4/25 02:31, Damien Le Moal wrote:
+> Reorganize the fields of struct blk_zone_wplug to remove a hole after
+> the wp_offset field and avoid having the bio_work structure split
+> between 2 cache lines.
+> 
+> No functional changes.
+> 
+> Signed-off-by: Damien Le Moal <dlemoal@kernel.org>
+> Reviewed-by: Christoph Hellwig <hch@lst.de>
+> Reviewed-by: Bart Van Assche <bvanassche@acm.org>
+> Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+> ---
+>   block/blk-zoned.c | 20 ++++++++++----------
+>   1 file changed, 10 insertions(+), 10 deletions(-)
+> 
+Reviewed-by: Hannes Reinecke <hare@suse.de>
 
-Add the missing bio_put() calls to properly drop the bio reference
-in those error cases.
+Cheers,
 
-Fixes: 1009254bf22a3 ("btrfs: scrub: use scrub_stripe to implement RAID56 P/Q scrub")
-Signed-off-by: Zilin Guan <zilin@seu.edu.cn>
----
- fs/btrfs/scrub.c | 2 ++
- 1 file changed, 2 insertions(+)
-
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 651b11884f82..ba20d9286a34 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -2203,6 +2203,7 @@ static int scrub_raid56_parity_stripe(struct scrub_ctx *sctx,
- 	ret = btrfs_map_block(fs_info, BTRFS_MAP_WRITE, full_stripe_start,
- 			      &length, &bioc, NULL, NULL);
- 	if (ret < 0) {
-+		bio_put(bio);
- 		btrfs_put_bioc(bioc);
- 		btrfs_bio_counter_dec(fs_info);
- 		goto out;
-@@ -2212,6 +2213,7 @@ static int scrub_raid56_parity_stripe(struct scrub_ctx *sctx,
- 	btrfs_put_bioc(bioc);
- 	if (!rbio) {
- 		ret = -ENOMEM;
-+		bio_put(bio);
- 		btrfs_bio_counter_dec(fs_info);
- 		goto out;
- 	}
+Hannes
 -- 
-2.34.1
-
+Dr. Hannes Reinecke                  Kernel Storage Architect
+hare@suse.de                                +49 911 74053 688
+SUSE Software Solutions GmbH, Frankenstr. 146, 90461 Nürnberg
+HRB 36809 (AG Nürnberg), GF: I. Totev, A. McDonald, W. Knoblich

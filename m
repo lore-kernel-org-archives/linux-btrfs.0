@@ -1,104 +1,151 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-ej1-f51.google.com (mail-ej1-f51.google.com [209.85.218.51])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C87B332ABFE
-	for <linux-btrfs@vger.kernel.org>; Thu,  6 Nov 2025 12:08:13 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 926FD2D97A0
+	for <linux-btrfs@vger.kernel.org>; Thu,  6 Nov 2025 18:01:12 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.51
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1762430893; cv=none; b=rKEfc+5TbQwymcmAB2HT8km/BWKMXTPg/D7dqmrSxKfGZz8dSOE2AZrFe0qksx7aDvMrFLg1hs3HVw3hP64UO1eVwcqBxV8cb2p67wHs3ON7eUBDbCPgzfrQiH6750iMljgUXfNnyKJsD25W4VKyGmJUknBccxgI5MY5U6Ylz/I=
+	t=1762452074; cv=none; b=OOoA8/LD9Psd3tNF/N0vJibrQuxB7raq92Z7HQuBgI8ZprfsY+pN0fS4+IINyyA5zc3GDqTvG27sDEVRY0SIo1u1FeDBgm22+0jXJdKc29TzjoAfvW3NHpTX7vZFhJZ8tSszSvIcH0EA9tenmX5FH006ZsFc5AxQmALA1KHJyoc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1762430893; c=relaxed/simple;
-	bh=Aar7eFd3R700xfzZm3sCk5Sec9d7OyY/+yvISPN/D40=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=LDWbZa/3PZnch1dTn8QJ7QGTxFA6yD00/SvcimQj81X2C2m+lO0kcBuXx5mrPR/15VIQE48U+qC0JiAYMoKK15mKIrNI/56P9R1kToVkRz5g9w5ksRRfL0hQELLMKWtOG8B5HLwHpWfXFNHuKwpMkk+qX0iAJfwlend3efyXQTo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=QvZ8fiz6; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1762452074; c=relaxed/simple;
+	bh=d6fcH4YBy4tJrSO/61Sxb3Q4+XTZBualHoVt8LZv+l4=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=K6TZDYE2JJQF562gwBA87lgWI2fkHtGRKiFVIJ6Nzeu0p33T+BnUbr2qOS6N0LHWlfWM3sBN+2KmK8cWVmN/xHZ04ibLoNoNnJJ+PqgWBup+OuuAnNaOrhvJUptM5e1ZRiT+TgDSNSLGtJrPLX2/WAs1lF1yvjGeeDsHE6mZecQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=H4XyW7vN; arc=none smtp.client-ip=209.85.218.51
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="QvZ8fiz6"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id A00F8C2BC86
-	for <linux-btrfs@vger.kernel.org>; Thu,  6 Nov 2025 12:08:13 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1762430893;
-	bh=Aar7eFd3R700xfzZm3sCk5Sec9d7OyY/+yvISPN/D40=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-	b=QvZ8fiz6EwxNyKkgcohUdcCq8lY8S9cxDQpZL3biPCMLeHFfqV/oW+NR8hkW0lahM
-	 VGf5+cfApPzgyCU2Z/DPhwD5TTLzgzHoj2BP2/Ly5ATWRzNFb/CCID1OFWP5e9cFK5
-	 6EjKgAVSNaHnLXYo6c7Yzobp0SnxZRGOmP6SZ1xqDwdcEJAeWIyO+kN0ezYQ8CRrD4
-	 QWSsGeOG7lBfjEwf7b1KYEqdmVkigXC1IqFeod6bhEbNKcekl89/JHRO1p1G1Csa1d
-	 8MuoMFcon3mnKx6T8I9mw2MM6/IXBvctzFDGIyEv+kWj7xqfk3PlK/8tqQlVXtUGAB
-	 nRTzxESuV0lZw==
-Received: by mail-ej1-f44.google.com with SMTP id a640c23a62f3a-b64cdbb949cso162764566b.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 06 Nov 2025 04:08:13 -0800 (PST)
-X-Forwarded-Encrypted: i=1; AJvYcCUfnnEGZ2ov9C8IBsKsNd0GvJXPGYX9xfsvSNaW5EufBPeG48BB0FS3sYktDJqEUENZ9wRpQNgzw++jLA==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yzp+G3OI/eLVjCTckT5Rz7OJwYbugMwmBljoTlw5IThJrH1dUxz
-	8BnMD2q5N8wuXKXkXQSvEKH9+UAbLw3iMvGiNA5rlT4fWgWMJzXeUjvqLOhCbm5cfUuWRpdngk5
-	ojsF6C87m9ALMRunn/cGfOHsO97bo7y8=
-X-Google-Smtp-Source: AGHT+IHJBojcI4LThKdQabx1Jr9H+Z/R/nBtoVin6b935q8j85JCsvlSy8xz6HbvSVrDz/QcgRJD5LVb0K3HU6TvfuI=
-X-Received: by 2002:a17:907:7248:b0:b6d:62e4:a63a with SMTP id
- a640c23a62f3a-b72654ddbd0mr831230966b.40.1762430892135; Thu, 06 Nov 2025
- 04:08:12 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="H4XyW7vN"
+Received: by mail-ej1-f51.google.com with SMTP id a640c23a62f3a-b714b1290aeso160709366b.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 06 Nov 2025 10:01:12 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1762452071; x=1763056871; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to;
+        bh=2T3N0BT2STs8n+iZkoEMWI+F1MMhUxu61N6/yM0vzrc=;
+        b=H4XyW7vNizeqxrowPTLAfeOBkxdjSJITunlBteHpteph+J+7BmYmJCpR9GrFefnTTY
+         6nZipxgJ1VsZ41P0dGGWhJqrSOhiAemwl6HohvZVI4zDTK/VThxaM4QARJZ2wVFOPtRn
+         90oB05KIAkDTE6XFXDh9ySSGNPKt/2ZNo1bFKI1nzutr9tBLe+W2s+2/qc9ATVQ6NxYF
+         opKDplbrNWInoix5Pir7KA9QAt4ig5OudhDDU8wPkTjNULayXg5VZX0MsSbZcXPof6CJ
+         mljex2KoNGh0VOdAMvKaMes93OGIqGHv7VXc4oMJkvrP5MNecRl91Iw920w7WttD9AHo
+         he7A==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1762452071; x=1763056871;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=2T3N0BT2STs8n+iZkoEMWI+F1MMhUxu61N6/yM0vzrc=;
+        b=hfK8oEoV0hl7XiG25FIQfE5ZyojPSVC04iVRUS4E41xJ2VB8UWZxeS2fshqT5E2jE0
+         66dw2jN56psSFKoXwAsCxA8a94wFNmbTkvSvSs7+DlFPrPH3iahVlH42P2oaU+FQy7bT
+         /11zbgGEt/HY4HNdUO5Fia4YEOvMGXhQ5uPsVvK3l4hK2LR3/CISZVX50m3yw6Ry3X9q
+         CDCOQpbMNfyCW2VclhmgucijWvvDb3WTK6x+/oXJ6fSQt+RoytmG0uqKBghd/2TDQezg
+         JxQ9w411azCPuMKO2CKk/nMOUzQbtG0QfYMk2GzsTPSFZ5swkoTQXC0v7t3HyZINja0m
+         0eYw==
+X-Forwarded-Encrypted: i=1; AJvYcCW9F5CIgvZxSTLFPAOaNH/xPiLHSSJWa7GVJCqmweVI8ac9XbBTC6BmZyyolcM6dLMUx2zzBsuDgJIcUw==@vger.kernel.org
+X-Gm-Message-State: AOJu0YxPz+ODS7gbjo7qRI9jNWGG4HxHAvpwyEtZ4fffDIa82QEQ6Sw8
+	cKF1F2gEzR8fdRNotamnzTMCTFx0Z7yLGWFXEtNYCLON+by7GRa/2f0O
+X-Gm-Gg: ASbGnct3I4yZq0c3yIuY1TBiOVC0dbSNdveNclWpsy7lXdIRyxBSCdnXwAEh24X4D11
+	QqaEJuPuoJvnasoRdXkjpVRrW6qsKLZ2YNeYOO9qHboluUtjbl0hqIp+96B/Osj7dfT7MqAlV7b
+	57ZVf7WRAiaSfAYIeIYcUc3XxdB6TTMbh/gibjpLCm9x9QJNL5vcUHPRVITCUrhoi2/PiwZ32Hc
+	Jq5ifzwJbZRvtPC6AcM+QGVGnSu4Tvj8Tt7JhoBDH/6roB+hROhbCtCj+bBv+c2nCG4z8kq5oNX
+	JKlkn5qmDy7RbUqT5oXCfbkMDiwogetHq77mYEzD1q/D6yzVzYJKgRRzE7XLlg/9k0TwPId6av2
+	T2WjLV6ANRQOsU6SrYQ0M0jD94NrkzMeq+N1DNmMMHGQPJrzNFw1xejbDpTb+aWSrUO+XVrrFjq
+	IrnTzlUa2+Lq/rN4FQJr6l+Od6fKtqHB/a2ItB7ftDHVsiwBRB
+X-Google-Smtp-Source: AGHT+IHjp607z6cdgZ7HFt5E5SFL6QJoNHGzb+TT6QDSql6CaQ0lp76FRbpfISADQTjtlAYn9VTXPA==
+X-Received: by 2002:a17:907:9607:b0:b70:b5b9:1f82 with SMTP id a640c23a62f3a-b72c0abcb78mr4492966b.31.1762452070474;
+        Thu, 06 Nov 2025 10:01:10 -0800 (PST)
+Received: from f.. (cst-prg-14-82.cust.vodafone.cz. [46.135.14.82])
+        by smtp.gmail.com with ESMTPSA id a640c23a62f3a-b72bfa0f1bbsm15430466b.65.2025.11.06.10.01.08
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Thu, 06 Nov 2025 10:01:09 -0800 (PST)
+From: Mateusz Guzik <mjguzik@gmail.com>
+To: brauner@kernel.org
+Cc: viro@zeniv.linux.org.uk,
+	jack@suse.cz,
+	linux-kernel@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org,
+	linux-ext4@vger.kernel.org,
+	tytso@mit.edu,
+	torvalds@linux-foundation.org,
+	josef@toxicpanda.com,
+	linux-btrfs@vger.kernel.org,
+	Mateusz Guzik <mjguzik@gmail.com>
+Subject: [PATCH v2 0/4] permission check avoidance during lookup
+Date: Thu,  6 Nov 2025 19:00:58 +0100
+Message-ID: <20251106180103.923856-1-mjguzik@gmail.com>
+X-Mailer: git-send-email 2.43.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20251106115815.3635405-1-zilin@seu.edu.cn>
-In-Reply-To: <20251106115815.3635405-1-zilin@seu.edu.cn>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Thu, 6 Nov 2025 12:07:35 +0000
-X-Gmail-Original-Message-ID: <CAL3q7H7rWHsWrkwywymXeoqt-Ah0V4Y4JtzdVzMCDxTY0-Tk0w@mail.gmail.com>
-X-Gm-Features: AWmQ_blToCLvXdJ-dGoHOpIXo2Rc6qTDsv_gGL000JsR-r2kPI93Xwio88VamZU
-Message-ID: <CAL3q7H7rWHsWrkwywymXeoqt-Ah0V4Y4JtzdVzMCDxTY0-Tk0w@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: avoid redundant cleanup when device allocation fails
-To: Zilin Guan <zilin@seu.edu.cn>
-Cc: clm@fb.com, dsterba@suse.com, fdmanana@suse.com, neal@gompa.dev, 
-	boris@bur.io, linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, 
-	jianhao.xu@seu.edu.cn
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
 
-On Thu, Nov 6, 2025 at 12:03=E2=80=AFPM Zilin Guan <zilin@seu.edu.cn> wrote=
-:
->
-> When device allocation fails, the chunk map has not been added to the
-> mapping tree, so locking for cleanup is unnecessary. Simply free the
-> chunk map as done when adding it to the mapping tree fails.
->
-> Fixes: bf2e2eb060fa2 ("btrfs: Add self-tests for btrfs_rmap_block")
+To quote from patch 1:
+<quote>
+Vast majority of real-world lookups happen on directories which are
+traversable by anyone. Figuring out that this holds for a given inode
+can be done when instantiating it or changing permissions, avoiding the
+overhead during lookup. Stats below.
 
-Seriously? How is this a bug?
+A simple microbench of stating /usr/include/linux/fs.h on ext4 in a loop
+on Sapphire Rapids (ops/s):
+before: 3640352
+after:  3797258 (+4%)
+</quote>
 
-It's fine as it is, it may be not optimal due to extra locking and
-such, but this is an error path which should be rare, plus it's in the
-self tests that run only when the module is loaded (needs
-CONFIG_BTRFS_FS_RUN_SANITY_TESTS=3Dy).
+During a kernel build about 90% of all lookups managed to skip
+permission checks in my setup, see the commit message for a breakdown.
 
-It's an unnecessary patch.
+WARNING: more testing is needed for correctness, but I'm largely happy
+with the state as is.
 
+WARNING: I'm assuming the following bit is applied:
+diff --git a/fs/ext4/inode.c b/fs/ext4/inode.c
+index 78ea864fa8cd..eaf776cd4175 100644
+--- a/fs/ext4/inode.c
++++ b/fs/ext4/inode.c
+@@ -5518,6 +5518,10 @@ struct inode *__ext4_iget(struct super_block *sb, unsigned long ino,
+                goto bad_inode;
+        brelse(iloc.bh);
+ 
++       /* Initialize the "no ACL's" state for the simple cases */
++       if (!ext4_test_inode_state(inode, EXT4_STATE_XATTR) && !ei->i_file_acl)
++               cache_no_acl(inode);
++
+        unlock_new_inode(inode);
+        return inode;
 
-> Signed-off-by: Zilin Guan <zilin@seu.edu.cn>
-> ---
->  fs/btrfs/tests/extent-map-tests.c | 3 ++-
->  1 file changed, 2 insertions(+), 1 deletion(-)
->
-> diff --git a/fs/btrfs/tests/extent-map-tests.c b/fs/btrfs/tests/extent-ma=
-p-tests.c
-> index 42af6c737c6e..e227cfff1e8d 100644
-> --- a/fs/btrfs/tests/extent-map-tests.c
-> +++ b/fs/btrfs/tests/extent-map-tests.c
-> @@ -1036,7 +1036,8 @@ static int test_rmap_block(struct btrfs_fs_info *fs=
-_info,
->                 if (IS_ERR(dev)) {
->                         test_err("cannot allocate device");
->                         ret =3D PTR_ERR(dev);
-> -                       goto out;
-> +                       btrfs_free_chunk_map(map);
-> +                       goto out_free;
->                 }
->                 map->stripes[i].dev =3D dev;
->                 map->stripes[i].physical =3D test->data_stripe_phys_start=
-[i];
-> --
-> 2.34.1
->
->
+Lack of the patch does not affect correctness, but it does make the
+patch ineffective for ext4. I did not include it in the posting as other
+people promised to sort it out.
+
+Discussion is here with an ack from Jan:
+https://lore.kernel.org/linux-fsdevel/kn44smk4dgaj5rqmtcfr7ruecixzrik6omur2l2opitn7lbvfm@rm4y24fcfzbz/T/#m30d6cea6be48e95c0d824e98a328fb90c7a5766d
+and full thread:
+https://lore.kernel.org/linux-fsdevel/kn44smk4dgaj5rqmtcfr7ruecixzrik6omur2l2opitn7lbvfm@rm4y24fcfzbz/T/#t
+
+v2:
+- productize
+- btrfs and tmpfs support
+
+Mateusz Guzik (4):
+  fs: speed up path lookup with cheaper MAY_EXEC checks
+  ext4: opt-in for IOP_MAY_FAST_EXEC
+  btrfs: opt-in for IOP_MAY_FAST_EXEC
+  tmpfs: opt-in for IOP_MAY_FAST_EXEC
+
+ fs/attr.c          |  1 +
+ fs/btrfs/inode.c   | 12 +++++-
+ fs/ext4/inode.c    |  2 +
+ fs/ext4/namei.c    |  1 +
+ fs/namei.c         | 95 +++++++++++++++++++++++++++++++++++++++++++++-
+ fs/posix_acl.c     |  1 +
+ fs/xattr.c         |  1 +
+ include/linux/fs.h | 21 +++++++---
+ mm/shmem.c         |  9 +++++
+ 9 files changed, 134 insertions(+), 9 deletions(-)
+
+-- 
+2.48.1
+

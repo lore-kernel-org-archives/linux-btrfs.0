@@ -1,210 +1,262 @@
-Received: from sm-r-011-dus.org-dns.com (sm-r-011-dus.org-dns.com [84.19.1.230])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E2A2034D3B5
-	for <linux-btrfs@vger.kernel.org>; Thu,  6 Nov 2025 07:34:42 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=84.19.1.230
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8F70E14F70
+	for <linux-btrfs@vger.kernel.org>; Thu,  6 Nov 2025 07:49:57 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1762414486; cv=none; b=J2oHg3MbG3WVKhtZvnp8LrnqRwbO6cXLbFUtd+RNSYdki6XTJnt7BwHzL4/VQFV6tJipFK7YhdeGtErqF2XoJCZ8ABSDM8gAjxSdZfgv3fz7/DNjkyLjk+03ghGLzD86OeXu8qEhzCmrU57rnqQ83G+V/g442lq5+ul9QW0vbO8=
+	t=1762415399; cv=none; b=k4xlr67n6MUMgLrkw93Fco5NROQOhREB6PWKGpqjjPBNQbdji0sLsNnO4+JwN3VJPHm40PvAetHp4GKumirzE69C2TOQAjo0w0K/aMbrDniyMlV6gPmK/tXsAB5mrj9LuAQWOfoPil23dFVrHemO6LrbG0W4zFVlex1kYNEyGS0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1762414486; c=relaxed/simple;
-	bh=EWUqdvnJ+i54kcix/MHA+/LF4F8Zs6xXz+PTzD/cbbQ=;
-	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=P6mSdColtlu39j93hRIir6y0gAMYm3Y7J8v38bxiITVnhjm0ep2SCddOY+yxxbrv+C4HVPc97Q462jB6YSPA7DMoa2Bj3taLzA78v8aUVyhgCdong4mcZOcG7g58a+4SfQsB9hRtqhBSeudfZnn5//FHwTwo/GJugULyYaza1BI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=friedels.name; spf=pass smtp.mailfrom=friedels.name; dkim=pass (1024-bit key) header.d=friedels.name header.i=@friedels.name header.b=VAETHdCo; arc=none smtp.client-ip=84.19.1.230
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=friedels.name
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=friedels.name
+	s=arc-20240116; t=1762415399; c=relaxed/simple;
+	bh=HQGAzzNT4PaZ8XWCmd6n1c8Fn6rXJBG8rTFU/u2tmqE=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=krcucY99n5+5rvCXCmBPCeTKbmRpatgg7tpq0Rsz2FYWNaTIrgGbIsYRP/ur3zDbHnM4j0qDEmjcIW5LIIeDp8/nNjew9I/7dKpC5GAV0QI2t6WkW8EMG8SUeNAZM3f6e/pvIYzt//Br3gZWd06PWjA5S7JvSd1XSRU8rJNzz3A=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=f/hfJ4qj; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=Ac3qd9H7; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=f/hfJ4qj; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=Ac3qd9H7; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=friedels.name header.i=@friedels.name header.b="VAETHdCo"
-Received: from smarthost-dus.org-dns.com (localhost [127.0.0.1])
-	by smarthost-dus.org-dns.com (Postfix) with ESMTP id 041EEA37EB
-	for <linux-btrfs@vger.kernel.org>; Thu,  6 Nov 2025 08:29:03 +0100 (CET)
-Received: by smarthost-dus.org-dns.com (Postfix, from userid 1001)
-	id E1299A3898; Thu,  6 Nov 2025 08:29:02 +0100 (CET)
-Received: from ha01s030.org-dns.com (ha01s030.org-dns.com [62.108.32.110])
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="f/hfJ4qj";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="Ac3qd9H7";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="f/hfJ4qj";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="Ac3qd9H7"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (2048 bits))
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smarthost-dus.org-dns.com (Postfix) with ESMTPS id 72E9BA37EB;
-	Thu,  6 Nov 2025 08:29:01 +0100 (CET)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=friedels.name;
-	s=default; t=1762414196;
-	bh=81rjDGsDmU5PNgqs4vDZ23YQxAwbM425pRiiqnpZkTM=; h=Subject:To:From;
-	b=VAETHdCoL/SbjG1QsgIh9GONEx2zWpwVfsR7TL5hkK0IcYDKrM4+o2C+BLFqdyhpk
-	 pHbAp2OMAVQUjS599DsHRj1IkWNLuy14K0cBQ4gMFMTuFpTQlyRBNiFj6A8BiHhClF
-	 z9GrRj/4SK42lVckXiCVr8fR/ZBby9zpKXqDkNZM=
-Authentication-Results: ha01s030.org-dns.com;
-        spf=pass (sender IP is 88.65.226.178) smtp.mailfrom=hendrik@friedels.name smtp.helo=[192.168.177.137]
-Received-SPF: pass (ha01s030.org-dns.com: connection is authenticated)
-Message-ID: <02fab723-6371-4c45-94ad-fa77ceed2003@friedels.name>
-Date: Thu, 6 Nov 2025 08:29:02 +0100
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 498901F393;
+	Thu,  6 Nov 2025 07:49:55 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1762415395;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=IcyDckSOrTcJhNabj2L7iJ0d4UztOhxiRaZsZMlfbsE=;
+	b=f/hfJ4qj5i+cg4nUG6CmUsGgjnBmu6LpB3aGyDcdirLavHdU4rPXpRQH8eYOlkzGFvNrye
+	hIxVC7A+IiwTzYEuOHSIOVu43jL7uEa5fBM3BGZuGDpdF5TQatpDLsFaK/kuIcNsvZ2BjJ
+	Zz6lcbQolJfx2Xk4Yy4W/GfNFl/lfkQ=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1762415395;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=IcyDckSOrTcJhNabj2L7iJ0d4UztOhxiRaZsZMlfbsE=;
+	b=Ac3qd9H7ljBoS5OVx1U3SFukY5EJL4rK6nbwCFpgyJmhiQPk6S0PboEHTiq8WwYRkSiy6c
+	NLQX0U0R9jybSDBQ==
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b="f/hfJ4qj";
+	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=Ac3qd9H7
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1762415395;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=IcyDckSOrTcJhNabj2L7iJ0d4UztOhxiRaZsZMlfbsE=;
+	b=f/hfJ4qj5i+cg4nUG6CmUsGgjnBmu6LpB3aGyDcdirLavHdU4rPXpRQH8eYOlkzGFvNrye
+	hIxVC7A+IiwTzYEuOHSIOVu43jL7uEa5fBM3BGZuGDpdF5TQatpDLsFaK/kuIcNsvZ2BjJ
+	Zz6lcbQolJfx2Xk4Yy4W/GfNFl/lfkQ=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1762415395;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=IcyDckSOrTcJhNabj2L7iJ0d4UztOhxiRaZsZMlfbsE=;
+	b=Ac3qd9H7ljBoS5OVx1U3SFukY5EJL4rK6nbwCFpgyJmhiQPk6S0PboEHTiq8WwYRkSiy6c
+	NLQX0U0R9jybSDBQ==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 222D6139A9;
+	Thu,  6 Nov 2025 07:49:55 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id 8ALOByNTDGmbMQAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Thu, 06 Nov 2025 07:49:55 +0000
+Date: Thu, 6 Nov 2025 08:49:53 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org, Calvin Owens <calvin@wbinvd.org>
+Subject: Re: [PATCH] btrfs: use kvmalloc for btrfs_bio::csum allocation
+Message-ID: <20251106074953.GT13846@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <22b5e7a4dad73b2c97069f34910a56fcf58d5f6c.1762379016.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Subject: Re: Corrupt Filesystem (Mirror) despite previously successful scrub
-To: Chris Murphy <lists@colorremedies.com>,
- Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <cfc7539c-a0c5-45d2-a781-89c2e0cb2c62@friedels.name>
- <12716866-2ffe-4cbb-8e2f-8b2e4abd0237@app.fastmail.com>
- <a37cea05-f77f-41f1-8763-a28311b72790@friedels.name>
- <f6858f97-1fe2-49d7-b1ad-dc688142fdcb@app.fastmail.com>
- <eddf3273-d7f9-4bef-865d-dfec1d7ffb66@friedels.name>
- <27964904-b200-46d1-87c6-0dc5d8174036@app.fastmail.com>
- <9efd0399-62c3-4800-81c2-761c53592540@app.fastmail.com>
-From: Hendrik Friedel <hendrik@friedels.name>
-In-Reply-To: <9efd0399-62c3-4800-81c2-761c53592540@app.fastmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
-X-PPP-Message-ID: 
- <176241419628.1888657.7388621375358260600@ha01s030.org-dns.com>
-X-PPP-Vhost: friedels.name
-X-POWERED-BY: wint.global - AV:CLEAN SPAM:OK
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <22b5e7a4dad73b2c97069f34910a56fcf58d5f6c.1762379016.git.wqu@suse.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-Rspamd-Queue-Id: 498901F393
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Spamd-Result: default: False [-4.21 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	HAS_REPLYTO(0.30)[dsterba@suse.cz];
+	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	ARC_NA(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	TO_DN_SOME(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCVD_TLS_ALL(0.00)[];
+	REPLYTO_DOM_NEQ_TO_DOM(0.00)[];
+	RCPT_COUNT_THREE(0.00)[3];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	REPLYTO_ADDR_EQ_FROM(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.cz:replyto,suse.cz:dkim,suse.com:email];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	DKIM_TRACE(0.00)[suse.cz:+]
+X-Rspamd-Action: no action
+X-Spam-Flag: NO
+X-Spam-Score: -4.21
+X-Spam-Level: 
 
-Hello Chris,
+On Thu, Nov 06, 2025 at 08:15:03AM +1030, Qu Wenruo wrote:
+> [BUG]
+> There is a report that memory allocation failed for btrfs_bio::csum
+> during a large read:
+> 
+>  b2sum: page allocation failure: order:4, mode:0x40c40(GFP_NOFS|__GFP_COMP), nodemask=(null),cpuset=/,mems_allowed=0
+>  CPU: 0 UID: 0 PID: 416120 Comm: b2sum Tainted: G        W           6.17.0 #1 NONE
+>  Tainted: [W]=WARN
+>  Hardware name: Raspberry Pi 4 Model B Rev 1.5 (DT)
+>  Call trace:
+>   show_stack+0x18/0x30 (C)
+>   dump_stack_lvl+0x5c/0x7c
+>   dump_stack+0x18/0x24
+>   warn_alloc+0xec/0x184
+>   __alloc_pages_slowpath.constprop.0+0x21c/0x730
+>   __alloc_frozen_pages_noprof+0x230/0x260
+>   ___kmalloc_large_node+0xd4/0xf0
+>   __kmalloc_noprof+0x1c8/0x260
+>   btrfs_lookup_bio_sums+0x214/0x278
+>   btrfs_submit_chunk+0xf0/0x3c0
+>   btrfs_submit_bbio+0x2c/0x4c
+>   submit_one_bio+0x50/0xac
+>   submit_extent_folio+0x13c/0x340
+>   btrfs_do_readpage+0x4b0/0x7a0
+>   btrfs_readahead+0x184/0x254
+>   read_pages+0x58/0x260
+>   page_cache_ra_unbounded+0x170/0x24c
+>   page_cache_ra_order+0x360/0x3bc
+>   page_cache_async_ra+0x1a4/0x1d4
+>   filemap_readahead.isra.0+0x44/0x74
+>   filemap_get_pages+0x2b4/0x3b4
+>   filemap_read+0xc4/0x3bc
+>   btrfs_file_read_iter+0x70/0x7c
+>   vfs_read+0x1ec/0x2c0
+>   ksys_read+0x4c/0xe0
+>   __arm64_sys_read+0x18/0x24
+>   el0_svc_common.constprop.0+0x5c/0x130
+>   do_el0_svc+0x1c/0x30
+>   el0_svc+0x30/0xa0
+>   el0t_64_sync_handler+0xa0/0xe4
+>   el0t_64_sync+0x198/0x19c
+> 
+> [CAUSE]
+> Btrfs needs to allocate memory for btrfs_bio::csum for large reads, so
+> that we can later verify the contents of the read.
+> 
+> However nowadays a read bio can easily go beyond BIO_MAX_VECS *
+> PAGE_SIZE (which is 1M for 4K page sizes), due to the multi-page bvec
+> that one bvec can have more than one pages, as long as the pages are
+> physically adjacent.
+> 
+> This will become more common when the large folio support is moved out
+> of experimental features.
+> 
+> In the above case, a read larger than 4MiB with SHA256 checksum (32
+> bytes for each 4K block) will be able to trigger a order 4 allocation.
 
-thanks for your reply. Much appreciated.
+Can we possibly avoid allocating order 4 and keep it only up to the
+costly order 3? btrfs_submit_chunk() already splits the bio and is the
+only caller of btrfs_lookup_bio_sums(). The calculation could take into
+account csum size and page size so it's not splitting unnecessarily.
 
-By the way: badblocks and smart long test on sdb passed.
+> 
+> The order 4 is larger than PAGE_ALLOC_COSTLY_ORDER (3), thus without
+> extra flags such allocation will not retry.
+> 
+> And if the system has very small amount of memory (e.g. RPI4 with low
+> memory spec) or VMs with small vRAM, or the memory is heavily
+> fragmented, such allocation will fail and cause the above warning.
+> 
+> [FIX]
+> Although btrfs is handling the memory allocation failure correctly, we
+> do not really need those physically contiguous memory just to restore
+> our checksum.
+> 
+> In fact btrfs_csum_one_bio() is already using kvzallocated memory to
+> reduce the memory pressure.
 
-My main worry is still whether the copy I made two weeks ago (with no 
-errors I spotted on the commandline) is good or not.
+Reading the commit a3d46aea46f99d134b4e07, kvzalloc was also a
+workaround and it kept the code simple but relying on the virtual page
+mappings. I'd consider the bio paths critical enough so there are
+fallbacks that work with heavily fragmented memory where we can't get a
+contiguous memory or the mappings.
 
-> Btrfs doesn't permit corrupt data from getting to user space.
-Good news! And I was under that impression until recently
-> So I'm not sure why you think corruption has replicated from this source to a new destination.
+> So follow the step to use kvmalloc() for btrfs_bio::csum.
 
-Well, we suspect a filesystem corruption. I was/am not sure of the 
-consequences.
+This is ok for now and that it worked for btrfs_csum_one_bio() so far
+sounds promising.
 
-My understanding is, that a fileystem corruption means a wrong table of 
-contents. The pages are still ok and protected by csum. But the 
-Filesystem may point to a wrong "page". But you explained that this is 
-unlikely further below.
+Reviewed-by: David Sterba <dsterba@suse.com>
 
-> What could happen is corrupt files are requested for transfer, Btrfs detects corrupt blocks, returns EIO to user space for those corrupt blocks, and the user space app just inserts holes for those blocks, or truncates the file at that point. So it should be pretty easy to discover from either the destination files having issues
-But that is not easy! One needs to read each file with a tool that would 
-detect issues. may be possible for a video or an image, but not for a 
-textfile.
->   OR the journal history will contain btrfs errors for these transfers. Anytime data corruption is detected, Btrfs reports to dmesg with the exact root (subvolume) and inode an offset and block size. There is no reference to path to file in this case.
-
-ok, what would I have to search for?
-
-I found
-
-Okt 14 11:39:26 homeserver kernel: BTRFS warning (device sda1): i/o 
-error at logical 24389920346112 on dev /dev/sdb1, physical 23264022528, 
-root 1382, inode 5800, offset 277139456, length 4096, links 1 (path: 
-Mavic/GranCanaria/DJI_0019.MOV)
-but I am not sure, whether it would always be i/o error.
-
->>> Over 2 million dropped writes on sda1? That doesn't tell us for sure they're missing, they might have gotten fixed later. But it's so many missing writes, that if there is even 1 copy wrong, corrupt, or missing on sdb1 then Btrfs can't fix itself.
->> This is what was causing me to be worried.
->>> No the file system could be inconsistent.
->> So, the file system would point to a wrong chunk which in itself has
->> correct data and csum?
-> It's not likely because the wrong chunk even with the correct checksum would have wrong generation and be rejected, even with an older kernel.
-understood.
->> Why would not the metadata redundancy spot this? Would this be caused by
->> a bug that corrupts both copies (rather than some hardware error)?
-> The metadata redundancy did spot this and fixed up many of the problems, but like it's millions of errors. It could be one problem with the file system detected millions of times, or millions of problems detected once - it's a very simple counter and you'd have to go through the log from the very start of the problem and look at all of these messages to find out what's going on.
->
-> Also the counter doesn't reset itself. You need to use -z option to clear the statistics. It should be zero for all devices all of the time - so if it's not then you need to completely understand and resolve why this is happening.
-
-The problem is, that these errors do not become visible to the user - 
-unless he searches. And he does once there is a problem. And that is too 
-late. Not a problem of btrfs, but one of linux.
-
-Your car gives you a master-warning if something is wrong and does not 
-rely on you regularly browsing logs...
-
->> - what could have caused it / what can I do better in future
-> Manual or automatic detection of errors so you can start troubleshooting sooner. I'm vaguely familiar with nagios for this. It might be overkill for your purposes.
-yes. But how to get the hints...
-> There's so many errors it's really tedious for anyone to go through them to find out what happened. But for sure both drives dropping writes at the same time is fatal for any setup.
-
-We have no evidence for simultaneous errors. On the contrary we did not 
-find any.
-
-[thanks for the other recommendations. Understood]
-
->> - was my data corrupted before I transferred it to the new machine
-> I think the data isn't corrupt, I think the file system is inconsistent.
-
-I still do not understand the difference. But I think it means: What can 
-be read is ok.
-
-So if I do a cp -R /old/ /new/ and do not get any errors, then I am fine.
-
-Would these errors be in the commandline or hidden in the kernel logs?
-
-> If the problem is reproducible, and the logs show only one drive is affected by hardware (or firmware) issues, then that suggests a software bug or missing feature. But I do not  think it's worth the time to speculate about an old and EOL kernel. Just do data recovery and move forward.
-
-Ok.
-
-<<A bit more on this, in addition to using more recent kernel and 
-btrfs-progs, and finding problems sooner with monitoring.
-
-When providing logs, most people on this list prefer raw, unfiltered, uncurrated logs. Seems like providing a lot of junk, but the thing is, problems with file systems tend to involve other areas of the kernel or storage stack. With snippets of logs, it's impossible to get a complete picture of what's going on. There are always questions. With complete logs, there's far less questions.
-
-Speaking for myself, I will want to see kernel messages starting at the last clean mount with no errors which represents a state in which scrub was clean, and btrfs check was clean - and then leading up to the problem so we can see whether the kernel is in some kind of distress or there are block layer errors happening. By the time you see problems reported, it's likely the actual instigator problem happened before that.
-
-It's kinda tedious but that's sysadmin stuff.>>
-
-The problem is, that I do not know when the last clean mount was. I went through the logs until Oct 14th and filtered for btrfs (though I understand that most do not like filtering)
-
-Interestingly the first btrfs error is on another device
-Okt 14 11:33:52 homeserver kernel: BTRFS error (device nvme0n1p3): tree first key mismatch detected, bytenr=570949632 parent_transid=9572251 key expected=(38580,96,2) has=(38
-581,96,2)
-
-then the first on sda/sdb:
-so that was during a scrub. But no scrub that I did showed errors in the scrub output.
-Okt 14 11:34:24 homeserver kernel: BTRFS info (device sda1): scrub: started on devid 1
-Okt 14 11:34:24 homeserver kernel: BTRFS info (device sda1): scrub: started on devid 2
-Okt 14 11:37:05 homeserver kernel: BTRFS error (device sda1): bdev /dev/sdb1 errs: wr 0, rd 1, flush 0, corrupt 0, gen 0
-Okt 14 11:37:05 homeserver kernel: BTRFS error (device sda1): bdev /dev/sdb1 errs: wr 0, rd 2, flush 0, corrupt 0, gen 0
-Okt 14 11:37:05 homeserver kernel: BTRFS error (device sda1): bdev /dev/sdb1 errs: wr 1, rd 2, flush 0, corrupt 0, gen 0
-Okt 14 11:37:05 homeserver kernel: BTRFS error (device sda1): bdev /dev/sdb1 errs: wr 1, rd 3, flush 0, corrupt 0, gen 0
-Okt 14 11:37:05 homeserver kernel: BTRFS error (device sda1): bdev /dev/sdb1 errs: wr 1, rd 4, flush 0, corrupt 0, gen 0
-Okt 14 11:37:05 homeserver kernel: BTRFS error (device sda1): bdev /dev/sdb1 errs: wr 1, rd 5, flush 0, corrupt 0, gen 0
-Okt 14 11:37:05 homeserver kernel: BTRFS error (device sda1): bdev /dev/sdb1 errs: wr 1, rd 6, flush 0, corrupt 0, gen 0
-Okt 14 11:37:05 homeserver kernel: BTRFS error (device sda1): bdev /dev/sdb1 errs: wr 1, rd 7, flush 0, corrupt 0, gen 0
-Okt 14 11:37:05 homeserver kernel: BTRFS error (device sda1): bdev /dev/sdb1 errs: wr 1, rd 8, flush 0, corrupt 0, gen 0
-Okt 14 11:37:05 homeserver kernel: BTRFS error (device sda1): bdev /dev/sdb1 errs: wr 1, rd 9, flush 0, corrupt 0, gen 0
-Okt 14 11:37:05 homeserver kernel: BTRFS info (device sda1): read error corrected: ino 0 off 7995740143616 (dev /dev/sda1 sector 1238556704)
-Okt 14 11:37:05 homeserver kernel: BTRFS info (device sda1): read error corrected: ino 0 off 7995740143616 (dev /dev/sda1 sector 1238556704)
-Okt 14 11:37:05 homeserver kernel: BTRFS info (device sda1): read error corrected: ino 0 off 7995740147712 (dev /dev/sda1 sector 1238556712)
-Okt 14 11:37:05 homeserver kernel: BTRFS info (device sda1): read error corrected: ino 0 off 7995740147712 (dev /dev/sda1 sector 1238556712)
-Okt 14 11:37:05 homeserver kernel: BTRFS info (device sda1): read error corrected: ino 0 off 7995740151808 (dev /dev/sda1 sector 1238556720)
-Okt 14 11:37:05 homeserver kernel: BTRFS info (device sda1): read error corrected: ino 0 off 7995740151808 (dev /dev/sda1 sector 1238556720)
-Okt 14 11:37:05 homeserver kernel: BTRFS info (device sda1): read error corrected: ino 0 off 7995740155904 (dev /dev/sda1 sector 1238556728)
-Okt 14 11:37:05 homeserver kernel: BTRFS info (device sda1): read error corrected: ino 0 off 7995740155904 (dev /dev/sda1 sector 1238556728)
-Okt 14 11:37:05 homeserver kernel: BTRFS info (device sda1): read error corrected: ino 0 off 16465591336960 (dev /dev/sda1 sector 15306398848)
-Okt 14 11:37:05 homeserver kernel: BTRFS info (device sda1): read error corrected: ino 0 off 16465591341056 (dev /dev/sda1 sector 15306398856)
-Okt 14 11:37:05 homeserver kernel: BTRFS warning (device sda1): i/o error at logical 24386345566208 on dev /dev/sdb1, physical 19689242624, root 1382, inode 5846, offset 3276
-800, length 4096, links 1 (path: Mavic/Jana/DJI_0003.MOV)
-Okt 14 11:37:05 homeserver kernel: BTRFS warning (device sda1): i/o error at logical 24386345172992 on dev /dev/sdb1, physical 19688849408, root 1382, inode 5846, offset 2883
-584, length 4096, links 1 (path: Mavic/Jana/DJI_0003.MOV)
-Okt 14 11:37:05 homeserver kernel: BTRFS warning (device sda1): i/o error at logical 24386345041920 on dev /dev/sdb1, physical 19688718336, root 1382, inode 5846, offset 2752
-512, length 4096, links 1 (path: Mavic/Jana/DJI_0003.MOV)
-Okt 14 11:37:05 homeserver kernel: BTRFS warning (device sda1): i/o error at logical 24386329051136 on dev /dev/sdb1, physical 19672727552, root 1382, inode 5844, offset 1820
-721152, length 4096, links 1 (path: Mavic/Jana/DJI_0002.MOV)
-Okt 14 11:37:05 homeserver kernel: BTRFS warning (device sda1): i/o error at logical 24386345304064 on dev /dev/sdb1, physical 19688980480, root 1382, inode 5846, offset 3014
-656, length 4096, links 1 (path: Mavic/Jana/DJI_0003.MOV)
-Okt 14 11:37:05 homeserver kernel: BTRFS warning (device sda1): i/o error at logical 24386328920064 on dev /dev/sdb1, physical 19672596480, root 1382, inode 5844, offset 1820
-590080, length 4096, links 1 (path: Mavic/Jana/DJI_0002.MOV)
-Okt 14 11:37:05 homeserver kernel: BTRFS error (device sda1): unable to fixup (regular) error at logical 24386345041920 on dev /dev/sdb1
-Okt 14 11:37:05 homeserver kernel: BTRFS error (device sda1): unable to fixup (regular) error at logical 24386345172992 on dev /dev/sdb1
-Okt 14 11:37:05 homeserver kernel: BTRFS error (device sda1): unable to fixup (regular) error at logical 24386345566208 on dev /dev/sdb1
-Okt 14 11:37:05 homeserver kernel: BTRFS error (device sda1): unable to fixup (regular) error at logical 24386345304064 on dev /dev/sdb1
-
-
-On the filtering:
-That's a good information. I would have felt horrible to just dump a bunch of logs onto you.
-
-Greetings,
-Hendrik
-
-
+> Reported-by: Calvin Owens <calvin@wbinvd.org>
+> Link: https://lore.kernel.org/linux-btrfs/20251105180054.511528-1-calvin@wbinvd.org/
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  fs/btrfs/bio.c       | 2 +-
+>  fs/btrfs/file-item.c | 4 ++--
+>  2 files changed, 3 insertions(+), 3 deletions(-)
+> 
+> diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
+> index 8af2b68c2d53..bb7ef4c67911 100644
+> --- a/fs/btrfs/bio.c
+> +++ b/fs/btrfs/bio.c
+> @@ -293,7 +293,7 @@ static void btrfs_check_read_bio(struct btrfs_bio *bbio, struct btrfs_device *de
+>  		offset += sectorsize;
+>  	}
+>  	if (bbio->csum != bbio->csum_inline)
+> -		kfree(bbio->csum);
+> +		kvfree(bbio->csum);
+>  
+>  	if (fbio)
+>  		btrfs_repair_done(fbio);
+> diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+> index 4b7c40f05e8f..bb8eb43334f6 100644
+> --- a/fs/btrfs/file-item.c
+> +++ b/fs/btrfs/file-item.c
+> @@ -373,7 +373,7 @@ int btrfs_lookup_bio_sums(struct btrfs_bio *bbio)
+>  		return -ENOMEM;
+>  
+>  	if (nblocks * csum_size > BTRFS_BIO_INLINE_CSUM_SIZE) {
+> -		bbio->csum = kmalloc_array(nblocks, csum_size, GFP_NOFS);
+> +		bbio->csum = kvmalloc(nblocks * csum_size, GFP_NOFS);
+>  		if (!bbio->csum)
+>  			return -ENOMEM;
+>  	} else {
+> @@ -439,7 +439,7 @@ int btrfs_lookup_bio_sums(struct btrfs_bio *bbio)
+>  		if (count < 0) {
+>  			ret = count;
+>  			if (bbio->csum != bbio->csum_inline)
+> -				kfree(bbio->csum);
+> +				kvfree(bbio->csum);
+>  			bbio->csum = NULL;
+>  			break;
+>  		}
+> -- 
+> 2.51.2
+> 

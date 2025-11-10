@@ -1,41 +1,41 @@
 Received: from mail.burntcomma.com (mail2.burntcomma.com [217.169.27.34])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A827D299929
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A81FD299928
 	for <linux-btrfs@vger.kernel.org>; Mon, 10 Nov 2025 17:15:27 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=217.169.27.34
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1762794929; cv=none; b=VDLfcojDjC3MhAEXN9OWjyxLnGqLzOEUgTnfFZ5eJ5UfuhIBIpeSEc4kMwAuEy/xcQP+aPLLBMqpSidZehkIK9De2zpHIZutOVU3h7WhN6su5QWFivKHncnOyL27IB6/RtH7QyEu9cGO8E9yYSOQ2ElsOMcGfGOi5HwFI2eR8LU=
+	t=1762794929; cv=none; b=aNgJYHWuyd898uNqhYi0XC5D8fqzh6zx4vo5WlI1Vb3E+qLzIIeJGVjyhGUNOEsBiSCrSeCYnMACCW1v5+wsgLWJJBkI17QKxKTL9LXtNbWQs0Q/14ebxH5YhU9+ZnNSkSN3y+iiiNgPwS7QoOwDkumrAysPKpC8y6I/vKzeSuA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
 	s=arc-20240116; t=1762794929; c=relaxed/simple;
-	bh=+wJA1c7Xc3n8KnHAHII7scQvcLE0GKairqKPwueFVdQ=;
+	bh=pxxeOghhYxlzs3T7Xv0JawYobyKH7I4gqCbc+2F8t/M=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 Mime-Version; b=ddo/N3c6uE+7LBZIknvC0SWw3NTOIZDfyePH4smHDBidNri8W91PvyjihkA6WwraSMtG+3pHtuiHY/Pde4d8DxSHTfYN4jkSEJsjxqXuilv8KBuwfDaGi3BHik/6tmDA8qFOXdGrCzNvEPv7iTEDRkO398VJMfHANgUijMau7rg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com; spf=pass smtp.mailfrom=harmstone.com; dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b=65EEMD8N; arc=none smtp.client-ip=217.169.27.34
+	 Mime-Version; b=vCVhkBih1x4OGgOH+ywGfmLeLXwgLEXgiRcif1/fDis6MeTwKsW7ysiYbNw3DzCUORw+Y1S+LBa7+mf470r9rLFLqpxyRmcYDikmJK2Nbr/cKffJPScgeKTDRM1AGDZVGxsA6vE32t44KF3HbHW6MiDa0s9I0mC4h7iyDnNqtaY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com; spf=pass smtp.mailfrom=harmstone.com; dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b=Ff2KwC0E; arc=none smtp.client-ip=217.169.27.34
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=harmstone.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b="65EEMD8N"
+	dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b="Ff2KwC0E"
 Received: from beren (beren.burntcomma.com [IPv6:2a02:8012:8cf0:0:ce28:aaff:fe0d:6db2])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
 	(Client did not present a certificate)
-	by mail.burntcomma.com (Postfix) with ESMTPSA id 038132D8F90;
-	Mon, 10 Nov 2025 17:15:15 +0000 (GMT)
+	by mail.burntcomma.com (Postfix) with ESMTPSA id D32F12D8F8D;
+	Mon, 10 Nov 2025 17:15:14 +0000 (GMT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=harmstone.com;
-	s=mail; t=1762794915;
-	bh=cXxRU7VzW/+lJnMEvOcjDDlTb3/9RhT62KQ9LHgHn9A=;
+	s=mail; t=1762794914;
+	bh=+1Y5EO506xp/N1lUt64Y/kBe9QBWtZVnlTOOkuXyB9I=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References;
-	b=65EEMD8NBBu6AwXOYGt98oRfbrIKURVSS+pDsRKlYaa5+2Ofa3Z/m8fL+irUNJ0GM
-	 ekMR9S8o1LUrewI0PdfJFzgNLvwJFAy4v+twlWzgHj1nOieWk6ClK3UKDC6n4msoJI
-	 yMUn1AfOOO10W3mhXZcc0fHjkbozL/5FqyquR45s=
+	b=Ff2KwC0EwRkOi9q/P5G371KrOX0MjKZreaBt69a33/1aJN0IUZy4VAStkFHgnBBZl
+	 uBXhF5GL8LEY6+RMt/0Wm8JO2GCXCtChTv5TI0ghg1QabBkZXiKmjsMSoOEEh4H28j
+	 8zgycqJEehQR8fDlR2NkZy4T8dM0wcMH+6fBgGO4=
 From: Mark Harmstone <mark@harmstone.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Mark Harmstone <mark@harmstone.com>,
 	Boris Burkov <boris@bur.io>
-Subject: [PATCH v5 08/16] btrfs: redirect I/O for remapped block groups
-Date: Mon, 10 Nov 2025 17:14:32 +0000
-Message-ID: <20251110171511.20900-9-mark@harmstone.com>
+Subject: [PATCH v5 05/16] btrfs: don't add metadata items for the remap tree to the extent tree
+Date: Mon, 10 Nov 2025 17:14:29 +0000
+Message-ID: <20251110171511.20900-6-mark@harmstone.com>
 In-Reply-To: <20251110171511.20900-1-mark@harmstone.com>
 References: <20251110171511.20900-1-mark@harmstone.com>
 Precedence: bulk
@@ -46,133 +46,127 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Change btrfs_map_block() so that if the block group has the REMAPPED
-flag set, we call btrfs_translate_remap() to obtain a new address.
+There is the following potential problem with the remap tree and delayed refs:
 
-btrfs_translate_remap() searches the remap tree for a range
-corresponding to the logical address passed to btrfs_map_block(). If it
-is within an identity remap, this part of the block group hasn't yet
-been relocated, and so we use the existing address.
+* Remapped extent freed in a delayed ref, which removes an entry from the
+  remap tree
+* Remap tree now small enough to fit in a single leaf
+* Corruption as we now have a level-0 block with a level-1 metadata item
+  in the extent tree
 
-If it is within an actual remap, we subtract the start of the remap
-range and add the address of its destination, contained in the item's
-payload.
+One solution to this would be to rework the remap tree code so that it operates
+via delayed refs. But as we're hoping to remove cow-only metadata items in the
+future anyway, change things so that the remap tree doesn't have any entries in
+the extent tree. This also has the benefit of reducing write amplification.
+
+We also make it so that the clear_cache mount option is a no-op, as with the
+extent tree v2, as the free-space tree can no longer be recreated from the
+extent tree.
+
+Finally disable relocating the remap tree itself, which is added back in
+a later patch. As it is we would get corruption as the traditional
+relocation method walks the extent tree, and we're removing its metadata
+items.
 
 Signed-off-by: Mark Harmstone <mark@harmstone.com>
 Reviewed-by: Boris Burkov <boris@bur.io>
 ---
- fs/btrfs/relocation.c | 54 +++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/relocation.h |  2 ++
- fs/btrfs/volumes.c    | 19 +++++++++++++++
- 3 files changed, 75 insertions(+)
+ fs/btrfs/disk-io.c     |  3 +++
+ fs/btrfs/extent-tree.c | 31 ++++++++++++++++++++++++++++++-
+ fs/btrfs/volumes.c     |  3 +++
+ 3 files changed, 36 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 739fca944296..00e1898edbbe 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -3860,6 +3860,60 @@ static const char *stage_to_string(enum reloc_stage stage)
- 	return "unknown";
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 22f3d4f9a3e0..9348f57a8653 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3046,6 +3046,9 @@ int btrfs_start_pre_rw_mount(struct btrfs_fs_info *fs_info)
+ 		if (btrfs_fs_incompat(fs_info, EXTENT_TREE_V2))
+ 			btrfs_warn(fs_info,
+ 				   "'clear_cache' option is ignored with extent tree v2");
++		else if (btrfs_fs_incompat(fs_info, REMAP_TREE))
++			btrfs_warn(fs_info,
++				   "'clear_cache' option is ignored with remap tree");
+ 		else
+ 			rebuild_free_space_tree = true;
+ 	} else if (btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE) &&
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 86004b8daa96..383f6fce0079 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -1553,6 +1553,28 @@ static void free_head_ref_squota_rsv(struct btrfs_fs_info *fs_info,
+ 				  BTRFS_QGROUP_RSV_DATA);
  }
  
-+int btrfs_translate_remap(struct btrfs_fs_info *fs_info, u64 *logical,
-+			  u64 *length)
++static int drop_remap_tree_ref(struct btrfs_trans_handle *trans,
++			       const struct btrfs_delayed_ref_node *node)
 +{
++	u64 bytenr = node->bytenr;
++	u64 num_bytes = node->num_bytes;
 +	int ret;
-+	struct btrfs_key key, found_key;
-+	struct extent_buffer *leaf;
-+	struct btrfs_remap *remap;
-+	BTRFS_PATH_AUTO_FREE(path);
 +
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
-+
-+	key.objectid = *logical;
-+	key.type = (u8)-1;
-+	key.offset = (u64)-1;
-+
-+	ret = btrfs_search_slot(NULL, fs_info->remap_root, &key, path,
-+				0, 0);
-+	if (ret < 0)
++	ret = btrfs_add_to_free_space_tree(trans, bytenr, num_bytes);
++	if (ret) {
++		btrfs_abort_transaction(trans, ret);
 +		return ret;
-+
-+	leaf = path->nodes[0];
-+
-+	if (path->slots[0] == 0)
-+		return -ENOENT;
-+
-+	path->slots[0]--;
-+
-+	btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
-+
-+	if (found_key.type != BTRFS_REMAP_KEY &&
-+	    found_key.type != BTRFS_IDENTITY_REMAP_KEY) {
-+		return -ENOENT;
 +	}
 +
-+	if (found_key.objectid > *logical ||
-+	    found_key.objectid + found_key.offset <= *logical) {
-+		return -ENOENT;
++	ret = btrfs_update_block_group(trans, bytenr, num_bytes, false);
++	if (ret) {
++		btrfs_abort_transaction(trans, ret);
++		return ret;
 +	}
-+
-+	if (*logical + *length > found_key.objectid + found_key.offset)
-+		*length = found_key.objectid + found_key.offset - *logical;
-+
-+	if (found_key.type == BTRFS_IDENTITY_REMAP_KEY)
-+		return 0;
-+
-+	remap = btrfs_item_ptr(leaf, path->slots[0], struct btrfs_remap);
-+
-+	*logical += btrfs_remap_address(leaf, remap) - found_key.objectid;
 +
 +	return 0;
 +}
 +
- /*
-  * function to relocate all extents in a block group.
-  */
-diff --git a/fs/btrfs/relocation.h b/fs/btrfs/relocation.h
-index 5c36b3f84b57..b2ba83966650 100644
---- a/fs/btrfs/relocation.h
-+++ b/fs/btrfs/relocation.h
-@@ -31,5 +31,7 @@ int btrfs_should_cancel_balance(const struct btrfs_fs_info *fs_info);
- struct btrfs_root *find_reloc_root(struct btrfs_fs_info *fs_info, u64 bytenr);
- bool btrfs_should_ignore_reloc_root(const struct btrfs_root *root);
- u64 btrfs_get_reloc_bg_bytenr(const struct btrfs_fs_info *fs_info);
-+int btrfs_translate_remap(struct btrfs_fs_info *fs_info, u64 *logical,
-+			  u64 *length);
+ static int run_delayed_data_ref(struct btrfs_trans_handle *trans,
+ 				struct btrfs_delayed_ref_head *href,
+ 				const struct btrfs_delayed_ref_node *node,
+@@ -1747,7 +1769,10 @@ static int run_delayed_tree_ref(struct btrfs_trans_handle *trans,
+ 	} else if (node->action == BTRFS_ADD_DELAYED_REF) {
+ 		ret = __btrfs_inc_extent_ref(trans, node, extent_op);
+ 	} else if (node->action == BTRFS_DROP_DELAYED_REF) {
+-		ret = __btrfs_free_extent(trans, href, node, extent_op);
++		if (node->ref_root == BTRFS_REMAP_TREE_OBJECTID)
++			ret = drop_remap_tree_ref(trans, node);
++		else
++			ret = __btrfs_free_extent(trans, href, node, extent_op);
+ 	} else {
+ 		BUG();
+ 	}
+@@ -4894,6 +4919,9 @@ static int alloc_reserved_tree_block(struct btrfs_trans_handle *trans,
+ 	int level = btrfs_delayed_ref_owner(node);
+ 	bool skinny_metadata = btrfs_fs_incompat(fs_info, SKINNY_METADATA);
  
- #endif
++	if (unlikely(node->ref_root == BTRFS_REMAP_TREE_OBJECTID))
++		goto skip;
++
+ 	extent_key.objectid = node->bytenr;
+ 	if (skinny_metadata) {
+ 		/* The owner of a tree block is the level. */
+@@ -4946,6 +4974,7 @@ static int alloc_reserved_tree_block(struct btrfs_trans_handle *trans,
+ 
+ 	btrfs_free_path(path);
+ 
++skip:
+ 	return alloc_reserved_extent(trans, node->bytenr, fs_info->nodesize);
+ }
+ 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 453e8581650e..6a72c2a599a6 100644
+index ca3bbbd3b213..453e8581650e 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -6586,6 +6586,25 @@ int btrfs_map_block(struct btrfs_fs_info *fs_info, enum btrfs_map_op op,
- 	if (IS_ERR(map))
- 		return PTR_ERR(map);
+@@ -3971,6 +3971,9 @@ static bool should_balance_chunk(struct extent_buffer *leaf, struct btrfs_chunk
+ 	struct btrfs_balance_args *bargs = NULL;
+ 	u64 chunk_type = btrfs_chunk_type(leaf, chunk);
  
-+	if (map->type & BTRFS_BLOCK_GROUP_REMAPPED) {
-+		u64 new_logical = logical;
++	if (chunk_type & BTRFS_BLOCK_GROUP_REMAP)
++		return false;
 +
-+		ret = btrfs_translate_remap(fs_info, &new_logical, length);
-+		if (ret)
-+			return ret;
-+
-+		if (new_logical != logical) {
-+			btrfs_free_chunk_map(map);
-+
-+			map = btrfs_get_chunk_map(fs_info, new_logical,
-+						  *length);
-+			if (IS_ERR(map))
-+				return PTR_ERR(map);
-+
-+			logical = new_logical;
-+		}
-+	}
-+
- 	num_copies = btrfs_chunk_map_num_copies(map);
- 	if (io_geom.mirror_num > num_copies)
- 		return -EINVAL;
+ 	/* type filter */
+ 	if (!((chunk_type & BTRFS_BLOCK_GROUP_TYPE_MASK) &
+ 	      (bctl->flags & BTRFS_BALANCE_TYPE_MASK))) {
 -- 
 2.51.0
 

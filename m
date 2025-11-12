@@ -1,49 +1,47 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 154EF354AE1
-	for <linux-btrfs@vger.kernel.org>; Wed, 12 Nov 2025 19:36:54 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2B5D52D8DDD
+	for <linux-btrfs@vger.kernel.org>; Wed, 12 Nov 2025 19:36:59 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1762976216; cv=none; b=XQKh0uow+x/egjSDuOAs19VAY3G2pn3q4NBuMEclYaehG6FuIZnZSxLcHvh0Q3CCjcymyitpLpOLKNKzJTM5Th4liU2+P4qsOA6XPU+feE7tJrqcdJ1eI122p34DxjGzLlv7DxDoP1Sy9B9BxnE30bpQdDhAQ4Zs7nohw4Pxclg=
+	t=1762976220; cv=none; b=WSOXaeXzf8E4l3OPKj+BWpM2tq16coGuooV5EEvPQ1zKmDwk60AEHghREQqX80AxtnC+P85agpCBQP9ai7iUtdDxYMvC8yqc/fw//1KMXdY0oMBygZF+iGvwKWgbKOndMqfhmct6R/SsdBaYcy++5DXpmF509UwzyNDM+Fcyd7Q=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1762976216; c=relaxed/simple;
-	bh=xymZVfFCJfQzSdbUC7e/Ua6YrGiRBeqz+tdX5ASlweQ=;
+	s=arc-20240116; t=1762976220; c=relaxed/simple;
+	bh=PFv1OmBfIMgSJ3pXO9p+5/cBcBjYjG4mM7vYgMXZFLo=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=uo7RR+GBnVEccV7Xo4mPdMsu5ZXAaQSUHcxFWFJPhGLj3x5N3YmI42YUhrC/DPqsQpNxrTuKOpM28IJMDQ4Mj3BhHSN11Q5GpRSLx/yPB6xUOCwhb01et/DYiYsGggk6Oo9ZPWoV0x+zNHmt6crWvEwc34+prLdXJ0Q5CWkVaW0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; arc=none smtp.client-ip=195.135.223.130
+	 MIME-Version; b=rBMj/4Rnc2KHZCUrZz+wns/wvpRwUZOPlIBnHlpKGr6oNS9YxcRX9o/oc5nZ/MeRVBVE6ahKPC8e+KQt2CLLQ1O89MhvcUof0yn1zzPyW4eGYpOEbbhmgLSve2E/833AJsoIIkLnfeG04bpaxuG8nPdQnoM2XuZo5FmQcVVtWpU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 9303221B5F;
-	Wed, 12 Nov 2025 19:36:41 +0000 (UTC)
-Authentication-Results: smtp-out1.suse.de;
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 249FB1F798;
+	Wed, 12 Nov 2025 19:36:43 +0000 (UTC)
+Authentication-Results: smtp-out2.suse.de;
 	none
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 781D63EA61;
-	Wed, 12 Nov 2025 19:36:41 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 0D8113EA61;
+	Wed, 12 Nov 2025 19:36:43 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 0MbEHMnhFGm+YgAAD6G6ig
-	(envelope-from <neelx@suse.com>); Wed, 12 Nov 2025 19:36:41 +0000
+	id 0LvQAsvhFGm+YgAAD6G6ig
+	(envelope-from <neelx@suse.com>); Wed, 12 Nov 2025 19:36:43 +0000
 From: Daniel Vacek <neelx@suse.com>
 To: Chris Mason <clm@fb.com>,
 	Josef Bacik <josef@toxicpanda.com>,
 	David Sterba <dsterba@suse.com>
 Cc: Daniel Vacek <neelx@suse.com>,
 	linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	Sweet Tea Dorminy <sweettea-kernel@dorminy.me>,
-	Boris Burkov <boris@bur.io>
-Subject: [PATCH v6 2/8] btrfs: disable verity on encrypted inodes
-Date: Wed, 12 Nov 2025 20:36:02 +0100
-Message-ID: <20251112193611.2536093-3-neelx@suse.com>
+	linux-kernel@vger.kernel.org
+Subject: [PATCH v6 5/8] btrfs: don't rewrite ret from inode_permission
+Date: Wed, 12 Nov 2025 20:36:05 +0100
+Message-ID: <20251112193611.2536093-6-neelx@suse.com>
 X-Mailer: git-send-email 2.51.0
 In-Reply-To: <20251112193611.2536093-1-neelx@suse.com>
 References: <20251112193611.2536093-1-neelx@suse.com>
@@ -57,7 +55,7 @@ Content-Transfer-Encoding: 8bit
 X-Rspamd-Pre-Result: action=no action;
 	module=replies;
 	Message is reply to one we originated
-X-Rspamd-Queue-Id: 9303221B5F
+X-Rspamd-Queue-Id: 249FB1F798
 X-Rspamd-Pre-Result: action=no action;
 	module=replies;
 	Message is reply to one we originated
@@ -69,35 +67,36 @@ X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
 X-Spamd-Result: default: False [-4.00 / 50.00];
 	REPLY(-4.00)[]
 
-From: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
+From: Josef Bacik <josef@toxicpanda.com>
 
-Right now there isn't a way to encrypt things that aren't either
-filenames in directories or data on blocks on disk with extent
-encryption, so for now, disable verity usage with encryption on btrfs.
+In our user safe ino resolve ioctl we'll just turn any ret into -EACCES
+from inode_permission.  This is redundant, and could potentially be
+wrong if we had an ENOMEM in the security layer or some such other
+error, so simply return the actual return value.
 
-Signed-off-by: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-Reviewed-by: Boris Burkov <boris@bur.io>
 ---
-No changes since v5, just a merge conflict due to cleanup in context.
+No changes since v5 other than context.
 ---
- fs/btrfs/verity.c | 3 +++
- 1 file changed, 3 insertions(+)
+ fs/btrfs/ioctl.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/verity.c b/fs/btrfs/verity.c
-index 16f5580cba55..06dfcb461f53 100644
---- a/fs/btrfs/verity.c
-+++ b/fs/btrfs/verity.c
-@@ -578,6 +578,9 @@ static int btrfs_begin_enable_verity(struct file *filp)
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index b524db8a4973..2973230f2988 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1910,10 +1910,8 @@ static int btrfs_search_path_in_tree_user(struct mnt_idmap *idmap,
+ 			ret = inode_permission(idmap, &temp_inode->vfs_inode,
+ 					       MAY_READ | MAY_EXEC);
+ 			iput(&temp_inode->vfs_inode);
+-			if (ret) {
+-				ret = -EACCES;
++			if (ret)
+ 				goto out_put;
+-			}
  
- 	btrfs_assert_inode_locked(inode);
- 
-+	if (IS_ENCRYPTED(&inode->vfs_inode))
-+		return -EOPNOTSUPP;
-+
- 	if (test_bit(BTRFS_INODE_VERITY_IN_PROGRESS, &inode->runtime_flags))
- 		return -EBUSY;
- 
+ 			if (key.offset == upper_limit)
+ 				break;
 -- 
 2.51.0
 

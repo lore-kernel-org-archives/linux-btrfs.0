@@ -1,42 +1,44 @@
 Received: from sender5.mail.selcloud.ru (sender5.mail.selcloud.ru [5.8.75.168])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D577734D38A;
-	Wed, 12 Nov 2025 19:07:56 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3788934CFBA;
+	Wed, 12 Nov 2025 19:08:02 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=5.8.75.168
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1762974480; cv=none; b=KBc3VZ5dZrxlfL/36VFj8lskPkIt8K3tCeJNIa1yhivLt5/fRNp1mmMsV+xqiy+SH69XY8qmbj7GTUZzz4AHuAi9Obit2pYHu+NZKbVwjWCAL6/OROI3GzMEtM3SWdqs1kGoaU+bgj2/J7ZzH4QLE1MSJIX53cKM/Cc9rn5b9eo=
+	t=1762974485; cv=none; b=B25Rb8NwPzlgQBFMzrsg5NfZhLIaplukz+9IMvsPFxMw15dtU7Yv3+eo92SMfyQgAs6p4I/3/zoGVd1Jy2pg6HhQQVR0uCyTOODvyPLE8s9cw6weh+zZuCfy26PrCTci5c7nDvfh6celthEA5rRyGpCIfyCximlBNJn6lgHKWog=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1762974480; c=relaxed/simple;
-	bh=V5fWYnlVVVRJ0ZXaYW4ZbiwWkBGvchEUI5SI/1W/82w=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=bJI6WCRPRTEw8ha4h32j6kYp/o+w/tZLkdZrjhLWRAeG9Pbkj61ZyHPYiTJaL2aSo44+sBcD4WXFpZF+9UeXpubm/hRnTIrdnHSwAa9ld3x7jnFQDQrWwcVf2e6bxWA6sqO61BfZlVwiYbSS2aeq1lLRlPLE9sqZ2ZpzeVY3Kjs=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=foxido.dev; spf=pass smtp.mailfrom=mail.selcloud.ru; dkim=pass (1024-bit key) header.d=mail.selcloud.ru header.i=@mail.selcloud.ru header.b=qZoyQ7CL; dkim=pass (1024-bit key) header.d=foxido.dev header.i=@foxido.dev header.b=m9k5eOaQ; dkim=pass (2048-bit key) header.d=foxido.dev header.i=@foxido.dev header.b=URGzCgPo; dkim=permerror (0-bit key) header.d=foxido.dev header.i=@foxido.dev header.b=5b6zkV5P; arc=none smtp.client-ip=5.8.75.168
+	s=arc-20240116; t=1762974485; c=relaxed/simple;
+	bh=H3JOqqmt+1fG3hT7keMlacoJDCKNtISkT/vLwvm69+g=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=Yn/oYq2h1Mpzra6Z12BP8gF1VPcZ/gTTXNp6NfUog8abxIrau8avUjl+WmeSxfgvkSTP1Zl0P9aaBRnZp9dQdHxf+WgbQC7yCCOqGsDOXmXmhs+KxghE0vA9K1wLoa5RIOan/BbZ525JWVZ/6ZDqO/OGPQPZ5Pzp7O/Xw5ZwDCE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=foxido.dev; spf=pass smtp.mailfrom=mail.selcloud.ru; dkim=pass (1024-bit key) header.d=mail.selcloud.ru header.i=@mail.selcloud.ru header.b=hVpXgeiu; dkim=pass (1024-bit key) header.d=foxido.dev header.i=@foxido.dev header.b=FdSY0h7F; dkim=pass (2048-bit key) header.d=foxido.dev header.i=@foxido.dev header.b=QhRV8soy; dkim=permerror (0-bit key) header.d=foxido.dev header.i=@foxido.dev header.b=IbfBZsk3; arc=none smtp.client-ip=5.8.75.168
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=foxido.dev
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=mail.selcloud.ru
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=mail.selcloud.ru header.i=@mail.selcloud.ru header.b="qZoyQ7CL";
-	dkim=pass (1024-bit key) header.d=foxido.dev header.i=@foxido.dev header.b="m9k5eOaQ";
-	dkim=pass (2048-bit key) header.d=foxido.dev header.i=@foxido.dev header.b="URGzCgPo";
-	dkim=permerror (0-bit key) header.d=foxido.dev header.i=@foxido.dev header.b="5b6zkV5P"
+	dkim=pass (1024-bit key) header.d=mail.selcloud.ru header.i=@mail.selcloud.ru header.b="hVpXgeiu";
+	dkim=pass (1024-bit key) header.d=foxido.dev header.i=@foxido.dev header.b="FdSY0h7F";
+	dkim=pass (2048-bit key) header.d=foxido.dev header.i=@foxido.dev header.b="QhRV8soy";
+	dkim=permerror (0-bit key) header.d=foxido.dev header.i=@foxido.dev header.b="IbfBZsk3"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
 	d=mail.selcloud.ru; s=selcloud; h=Content-Transfer-Encoding:MIME-Version:
+	References:In-Reply-To:Message-ID:Date:Subject:Cc:To:From:List-id:
+	List-Unsubscribe:Sender:Reply-To:Content-Type:Content-ID:Content-Description:
+	Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:
+	List-Help:List-Subscribe:List-Post:List-Owner:List-Archive;
+	bh=QG2I65kYf3DvIF6rGWtUyx74i3yvRyAiTrmBUA2bRsE=; t=1762974483; x=1763147283;
+	 b=hVpXgeiuJCSIpRFOOlCwvwsaj7RZ+Uko1X9+aaJzqfKcVLcwFd0nLTlRyLAv9AwXCL2GgrqAip
+	pl+bNEV7UeqwJUje/wERBzZ77dRYC94jL8HyCewLPQl3bFvpZZ2+7Zp0doF5KcXNJ1oh65a+WZrAs
+	xCLcLxVQ8b0WroO4bBtg=;
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=foxido.dev;
+	 s=selcloud; h=Content-Transfer-Encoding:MIME-Version:References:In-Reply-To:
 	Message-ID:Date:Subject:Cc:To:From:List-id:List-Unsubscribe:Sender:Reply-To:
 	Content-Type:Content-ID:Content-Description:Resent-Date:Resent-From:
-	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:In-Reply-To:References:
-	List-Help:List-Subscribe:List-Post:List-Owner:List-Archive;
-	bh=YUpBY81CpFL4cQNk4GiTtgGsVsvDOcDetadJcGbk9zo=; t=1762974477; x=1763147277;
-	 b=qZoyQ7CL1CiTZfWMJ1eODP1ewiOuV3bpsK0AV2eCeK+0ErmtYqE4pPbkk/rvqTnW8OFDU3Oq79
-	ndzArcQRzobbdyTftxQHObwQQTSWZmNEP/n9G+hx8Mt2TsmyBl46OhWqfpoza+dV9GRY0pjcj0Svq
-	kpFMDsfFLPn55L1mVyng=;
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=foxido.dev;
-	 s=selcloud; h=Content-Transfer-Encoding:MIME-Version:Message-ID:Date:Subject
-	:Cc:To:From:List-id:List-Unsubscribe:Sender:Reply-To:Content-Type:Content-ID:
-	Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
-	:Resent-Message-ID:In-Reply-To:References:List-Help:List-Subscribe:List-Post:
-	List-Owner:List-Archive; bh=YUpBY81CpFL4cQNk4GiTtgGsVsvDOcDetadJcGbk9zo=;
-	t=1762974477; x=1763147277; b=m9k5eOaQUQ+QaHqSBtNuA312Y1fjnMfQe7GOhWmDLgwLpPR
-	J/4C7T4GFjF7VVBudokhIMqEGYiEJ5Nq5UewClTRsrAqHTaHiHZDxU+Xl/0aeWcRT6JktIgHETeQu
-	67jMC07daJH5XjCnVvZ4WWCqJR9Xir00ogp3hKsz+1AoLmo=;
+	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Help:List-Subscribe:
+	List-Post:List-Owner:List-Archive;
+	bh=QG2I65kYf3DvIF6rGWtUyx74i3yvRyAiTrmBUA2bRsE=; t=1762974483; x=1763147283;
+	 b=FdSY0h7FedZNVREYoGsKCHhA6HRsfxS+Oc3HkTyrA4qsGWFWfAWP8ENu70/e+ep0bMGZN10j4Z
+	787Fam65wK51Ia2zdFrA+tPd3k3AiBfMN6R3dQ2M79F5F8kgk83hspMHkSSB0eBxaMbUooU65Q8R6
+	hD8fOwOnq/63ceJ+A1oQ=;
 Precedence: bulk
 X-Issuen: 1428244
 X-User: 149890965
@@ -50,26 +52,28 @@ X-blist-id: 3849
 X-Gungo: 20251107.120132
 X-SMTPUID: mlgnr59
 DKIM-Signature: v=1; a=rsa-sha256; s=202508r; d=foxido.dev; c=relaxed/relaxed;
-	h=Message-ID:Date:Subject:To:From; t=1762973418; bh=YUpBY81CpFL4cQNk4GiTtgG
-	sVsvDOcDetadJcGbk9zo=; b=URGzCgPoWPiiOHOoDXBAljuJhUX1tfcyrztn5sEEiP2GVUEFL5
-	cQ23Ace5VqZJjq4Lql0HpfTTue5fRuTolOMpQCMmsFgoaMqtiZD+7/gNN/Xa+ztOcH9ZGz6k6yq
-	s0QXNQ0VTuYLXqHt1S9U4Dvdvqa1x/lNfitlbMB7Ou8if0vDI1GfSivAfdtYgsTaVEDktSKuS9X
-	72ICLZyqZAAX7Z+kL5+jVyrmYBqZLBXRvG2iwlcdFAipJBS1n8S8rcKaYfy6buaj/NVkheSMpxb
-	kAzATN3P3mOZivCtotsESxPral/yo+WRhnX0GV4fJp6b/BWUHPmmdoDM03BifPCzjMg==;
+	h=Message-ID:Date:Subject:To:From; t=1762973419; bh=QG2I65kYf3DvIF6rGWtUyx7
+	4i3yvRyAiTrmBUA2bRsE=; b=QhRV8soydkWEbXUaDKh6KEdhaPSfd3/IetrX58pw02dbuF7kh5
+	uwjNdg9sfGR8InfnnO7dz+5tJcBFeRc5YV5bU1WTCy2bKMOBf/8XSkDZQ5UTJodqW8YCjPUy8mL
+	b1sj7NH6MOpm/CUthe4XInU1kRGmWXeKfBK76rSzdZt0Og0vW+0RdbQJaJsoVv7YETcH3Qj9GCT
+	/IWfkEhLHxjK7GanXkeA2XNbX5yS/IGNIjcv9eHYB96mMlhMza5k+Ybj85VNbEzMxGIfkKZIDPt
+	0O9WPUmxXqz/K2kOPGWEkrB2/EwWutt7DeWvNXNBomz8CmkArYOb5IDLInGIINURLHA==;
 DKIM-Signature: v=1; a=ed25519-sha256; s=202508e; d=foxido.dev; c=relaxed/relaxed;
-	h=Message-ID:Date:Subject:To:From; t=1762973418; bh=YUpBY81CpFL4cQNk4GiTtgG
-	sVsvDOcDetadJcGbk9zo=; b=5b6zkV5PljStXJ6UWY6I9W4Nlx9kEh6/r5KB4lIoZzlp/jbZ7i
-	uAaoYknAOcHVrJzf5lB2hf8Bu/9LP6HrDsAw==;
+	h=Message-ID:Date:Subject:To:From; t=1762973419; bh=QG2I65kYf3DvIF6rGWtUyx7
+	4i3yvRyAiTrmBUA2bRsE=; b=IbfBZsk30duP3rbRi7vY0NSWbijiAeabgULamR9ddya4+MfW6e
+	8H7kOiKwLSisdZdWyUyb0xDKcX5u9Vxf5WAg==;
 From: Gladyshev Ilya <foxido@foxido.dev>
 To: foxido@foxido.dev
 Cc: Chris Mason <clm@fb.com>,
 	David Sterba <dsterba@suse.com>,
 	linux-btrfs@vger.kernel.org,
 	linux-kernel@vger.kernel.org
-Subject: [RFC PATCH 0/8] use cleanup.h in btrfs
-Date: Wed, 12 Nov 2025 21:49:36 +0300
-Message-ID: <cover.1762972845.git.foxido@foxido.dev>
+Subject: [RFC PATCH 3/8] btrfs: simplify control flow in scrub_simple_mirror
+Date: Wed, 12 Nov 2025 21:49:39 +0300
+Message-ID: <b0a5361d2b5f98836283c0f38261933e52182a1e.1762972845.git.foxido@foxido.dev>
 X-Mailer: git-send-email 2.51.1.dirty
+In-Reply-To: <cover.1762972845.git.foxido@foxido.dev>
+References: <cover.1762972845.git.foxido@foxido.dev>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -78,66 +82,74 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-This series represents my experimentation with refactoring with
-cleanup guards. In my opinion, RAII-style locking improves readability
-in most cases and also improves code robustness for future code changes,
-so I tried to refactor simple cases that really benefits from lock guards.
+Replace 'ret = VAL; break;' pattern with direct return statements
+to reduce indirection and improve code clarity.
 
-However readability is a subjective concept, so you can freely disagree
-and reject any of those changes, I won't insist on any. Please note that
-patches 1-3 can be useful even without lock guards.
+Signed-off-by: Gladyshev Ilya <foxido@foxido.dev>
+---
+ fs/btrfs/scrub.c | 19 ++++++++-----------
+ 1 file changed, 8 insertions(+), 11 deletions(-)
 
-I didn't know how to split this series, mostly because it's just a lot of
-small changes... so I tried to split it by types of transformation:
-
-1. Patches 1-3 include some preparation work and simple fixes I noticed.
-2. Patches 4-6  gradually increase the complexity of the refactored
-  situations, from simple lock/unlock pairs to scoped guards.
-3. Patch 7 refactors functions which control flow can really benefit from
-  removed cleanups on exit. E.g. we can get rid of obscure if statements
-  in exit paths.
-4. Patch 8 is kinda an example of overdone code refactoring and I predict
-  that it will be dropped anyway.
-
-There is no TODOs for this series, but it's junk enough to be marked as
-RFC.
-
-Gladyshev Ilya (8):
-  btrfs: remove redundant label in __del_qgroup_relation
-  btrfs: move kfree out of btrfs_create_qgroup's cleanup path
-  btrfs: simplify control flow in scrub_simple_mirror
-  btrfs: simplify function protections with guards
-  btrfs: use cleanup.h guard()s to simplify unlocks on return
-  btrfs: simplify cleanup via scoped_guard()
-  btrfs: simplify return path via cleanup.h
-  btrfs: simplify cleanup in btrfs_add_qgroup_relation
-
- fs/btrfs/block-group.c      |  24 ++----
- fs/btrfs/compression.c      |  13 ++-
- fs/btrfs/discard.c          |  20 ++---
- fs/btrfs/disk-io.c          |   9 +-
- fs/btrfs/extent-io-tree.c   |  72 ++++++----------
- fs/btrfs/extent-tree.c      | 104 ++++++++++-------------
- fs/btrfs/extent_io.c        |  33 ++++----
- fs/btrfs/file-item.c        |   6 +-
- fs/btrfs/free-space-cache.c |  87 +++++++------------
- fs/btrfs/fs.c               |   9 +-
- fs/btrfs/inode.c            |   3 +-
- fs/btrfs/ordered-data.c     |  67 ++++++---------
- fs/btrfs/qgroup.c           | 165 ++++++++++++++----------------------
- fs/btrfs/raid56.c           |  20 ++---
- fs/btrfs/scrub.c            |  19 ++---
- fs/btrfs/send.c             |  40 ++++-----
- fs/btrfs/space-info.c       |   4 +-
- fs/btrfs/subpage.c          |  41 +++------
- fs/btrfs/tree-log.c         |  28 +++---
- fs/btrfs/volumes.c          |   3 +-
- fs/btrfs/zoned.c            |  13 +--
- fs/btrfs/zstd.c             |  13 +--
- 22 files changed, 299 insertions(+), 494 deletions(-)
-
-
-base-commit: 24172e0d79900908cf5ebf366600616d29c9b417
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index ba20d9286a34..dd4e6d20e35f 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -2253,7 +2253,7 @@ static int scrub_simple_mirror(struct scrub_ctx *sctx,
+ 	struct btrfs_fs_info *fs_info = sctx->fs_info;
+ 	const u64 logical_end = logical_start + logical_length;
+ 	u64 cur_logical = logical_start;
+-	int ret = 0;
++	int ret;
+ 
+ 	/* The range must be inside the bg */
+ 	ASSERT(logical_start >= bg->start && logical_end <= bg->start + bg->length);
+@@ -2265,10 +2265,9 @@ static int scrub_simple_mirror(struct scrub_ctx *sctx,
+ 
+ 		/* Canceled? */
+ 		if (atomic_read(&fs_info->scrub_cancel_req) ||
+-		    atomic_read(&sctx->cancel_req)) {
+-			ret = -ECANCELED;
+-			break;
+-		}
++		    atomic_read(&sctx->cancel_req))
++			return -ECANCELED;
++
+ 		/* Paused? */
+ 		if (atomic_read(&fs_info->scrub_pause_req)) {
+ 			/* Push queued extents */
+@@ -2278,8 +2277,7 @@ static int scrub_simple_mirror(struct scrub_ctx *sctx,
+ 		spin_lock(&bg->lock);
+ 		if (test_bit(BLOCK_GROUP_FLAG_REMOVED, &bg->runtime_flags)) {
+ 			spin_unlock(&bg->lock);
+-			ret = 0;
+-			break;
++			return 0;
+ 		}
+ 		spin_unlock(&bg->lock);
+ 
+@@ -2291,11 +2289,10 @@ static int scrub_simple_mirror(struct scrub_ctx *sctx,
+ 			spin_lock(&sctx->stat_lock);
+ 			sctx->stat.last_physical = physical + logical_length;
+ 			spin_unlock(&sctx->stat_lock);
+-			ret = 0;
+-			break;
++			return 0;
+ 		}
+ 		if (ret < 0)
+-			break;
++			return ret;
+ 
+ 		/* queue_scrub_stripe() returned 0, @found_logical must be updated. */
+ 		ASSERT(found_logical != U64_MAX);
+@@ -2304,7 +2301,7 @@ static int scrub_simple_mirror(struct scrub_ctx *sctx,
+ 		/* Don't hold CPU for too long time */
+ 		cond_resched();
+ 	}
+-	return ret;
++	return 0;
+ }
+ 
+ /* Calculate the full stripe length for simple stripe based profiles */
 -- 
 2.51.1.dirty
 

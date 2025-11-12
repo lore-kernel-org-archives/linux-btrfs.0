@@ -1,47 +1,49 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EBF8F34D914
-	for <linux-btrfs@vger.kernel.org>; Wed, 12 Nov 2025 19:36:43 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 943CA34DB54
+	for <linux-btrfs@vger.kernel.org>; Wed, 12 Nov 2025 19:36:48 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1762976206; cv=none; b=Q0m3fjjYSYDnSFDPABfmUhe8OWzbV/ctds+u8BwPrLrGEzuSRCiMRkm9MfBr6wje/WXBAMN6hep0BNjWETRzjRYe8AU/xd7PzoWknEU+enRR+MaK5ZZCjDsb1qn+gVDLrzyGRuIkD7s3PPRRh0uN9JR7vnRTYKSnVWnma8IbqhM=
+	t=1762976210; cv=none; b=oWuaa2MBcxkVDeXqgublfEb328GJ+7j77AE2N5vOMIh6xPvD+WbhjEbC+BJMY4UFQYC88fiwpxb3wpTNsRBV8irkCXY9M8igeY7j7XanpqpkbbLFer37WbEGEUvsji3UMB29RVKreKG4NQkqg2F4FMFyyDB8aDqkiQTpbNmOHhw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1762976206; c=relaxed/simple;
-	bh=cJRleMYkhB7ftVmOOWDmYy5Xb7gMv+BWoTmEtMo3il0=;
+	s=arc-20240116; t=1762976210; c=relaxed/simple;
+	bh=DF+MVdRWcVUZ/4TkEyR6yaW+AaoXs/sGpAXtLMqbLGw=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=Nnqa+WMgsVuNQ8gMSGrYuH55pott4RLtmSfo0PFZFrCQj6I8qn4IK+QBDgCgwROVAfaz2lLS72Iy9jzMbYzgDme0wh4ugPJ42cSJ1OIh/go8WSFB6/d+V8U6cfNhFzhXZlhdAFCMKGSZGeEczZMM9DJnQF1oZRLPuSl0T78T16Q=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; arc=none smtp.client-ip=195.135.223.131
+	 MIME-Version; b=jeQX+q9UmYY5B7hJ6n5ibF1R8tZzSrWr99a+9ZL2y018tcO7sy8pemQLHpSCVJrpc29SLfusbJAKkhflIKUeVyqyc37u3efaxFlp50lw7kpX3ovrakDde8ismrmI9X3lEKwbwdknUEu5xse7VAR1iPcYGjBu5p/OPFnYQi+yLcs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 3A00C1F7A1;
-	Wed, 12 Nov 2025 19:36:42 +0000 (UTC)
-Authentication-Results: smtp-out2.suse.de;
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 3448521B61;
+	Wed, 12 Nov 2025 19:36:41 +0000 (UTC)
+Authentication-Results: smtp-out1.suse.de;
 	none
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 2403D3EA61;
-	Wed, 12 Nov 2025 19:36:42 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 1A3A73EA61;
+	Wed, 12 Nov 2025 19:36:41 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 6IBNCMrhFGm+YgAAD6G6ig
-	(envelope-from <neelx@suse.com>); Wed, 12 Nov 2025 19:36:42 +0000
+	id CJW8BcnhFGm+YgAAD6G6ig
+	(envelope-from <neelx@suse.com>); Wed, 12 Nov 2025 19:36:41 +0000
 From: Daniel Vacek <neelx@suse.com>
 To: Chris Mason <clm@fb.com>,
 	Josef Bacik <josef@toxicpanda.com>,
 	David Sterba <dsterba@suse.com>
 Cc: Daniel Vacek <neelx@suse.com>,
 	linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-Subject: [PATCH v6 3/8] btrfs: add a bio argument to btrfs_csum_one_bio
-Date: Wed, 12 Nov 2025 20:36:03 +0100
-Message-ID: <20251112193611.2536093-4-neelx@suse.com>
+	linux-kernel@vger.kernel.org,
+	Omar Sandoval <osandov@osandov.com>,
+	Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
+Subject: [PATCH v6 1/8] btrfs: disable various operations on encrypted inodes
+Date: Wed, 12 Nov 2025 20:36:01 +0100
+Message-ID: <20251112193611.2536093-2-neelx@suse.com>
 X-Mailer: git-send-email 2.51.0
 In-Reply-To: <20251112193611.2536093-1-neelx@suse.com>
 References: <20251112193611.2536093-1-neelx@suse.com>
@@ -55,146 +57,79 @@ Content-Transfer-Encoding: 8bit
 X-Rspamd-Pre-Result: action=no action;
 	module=replies;
 	Message is reply to one we originated
-X-Rspamd-Queue-Id: 3A00C1F7A1
+X-Spam-Level: 
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Spamd-Result: default: False [-4.00 / 50.00];
+	REPLY(-4.00)[]
+X-Rspamd-Queue-Id: 3448521B61
 X-Rspamd-Pre-Result: action=no action;
 	module=replies;
 	Message is reply to one we originated
 X-Rspamd-Action: no action
 X-Spam-Flag: NO
 X-Spam-Score: -4.00
-X-Spam-Level: 
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Spamd-Result: default: False [-4.00 / 50.00];
-	REPLY(-4.00)[]
 
-From: Josef Bacik <josef@toxicpanda.com>
+From: Omar Sandoval <osandov@osandov.com>
 
-We only ever needed the bbio in btrfs_csum_one_bio, since that has the
-bio embedded in it.  However with encryption we'll have a different bio
-with the encrypted data in it, and the original bbio.  Update
-btrfs_csum_one_bio to take the bio we're going to csum as an argument,
-which will allow us to csum the encrypted bio and stuff the csums into
-the corresponding bbio to be used later when the IO completes.
+Initially, only normal data extents will be encrypted. This change
+forbids various other bits:
+- allows reflinking only if both inodes have the same encryption status
+- disable inline data on encrypted inodes
 
+Signed-off-by: Omar Sandoval <osandov@osandov.com>
+Signed-off-by: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 Signed-off-by: Daniel Vacek <neelx@suse.com>
 ---
-Compared to v5 this needed to adapt to recent async csum changes.
----
- fs/btrfs/bio.c       |  4 ++--
- fs/btrfs/bio.h       |  1 +
- fs/btrfs/file-item.c | 17 ++++++++---------
- fs/btrfs/file-item.h |  2 +-
- 4 files changed, 12 insertions(+), 12 deletions(-)
+v5 was 'Reviewed-by: Boris Burkov <boris@bur.io>' [1] but the rebase
+changed the code a bit so dropping.
 
-diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
-index a73652b8724a..a69174b2b6b6 100644
---- a/fs/btrfs/bio.c
-+++ b/fs/btrfs/bio.c
-@@ -542,9 +542,9 @@ static int btrfs_bio_csum(struct btrfs_bio *bbio)
- 	if (bbio->bio.bi_opf & REQ_META)
- 		return btree_csum_one_bio(bbio);
- #ifdef CONFIG_BTRFS_EXPERIMENTAL
--	return btrfs_csum_one_bio(bbio, true);
-+	return btrfs_csum_one_bio(bbio, &bbio->bio, true);
- #else
--	return btrfs_csum_one_bio(bbio, false);
-+	return btrfs_csum_one_bio(bbio, &bbio->bio, false);
- #endif
+[1] https://lore.kernel.org/linux-btrfs/20240124195303.GC1789919@zen.localdomain/
+---
+ fs/btrfs/inode.c   | 4 ++++
+ fs/btrfs/reflink.c | 7 +++++++
+ 2 files changed, 11 insertions(+)
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 8737914e8552..b810e831fc23 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -592,6 +592,10 @@ static bool can_cow_file_range_inline(struct btrfs_inode *inode,
+ 	if (size < i_size_read(&inode->vfs_inode))
+ 		return false;
+ 
++	/* Encrypted file cannot be inlined. */
++	if (IS_ENCRYPTED(&inode->vfs_inode))
++		return false;
++
+ 	return true;
  }
  
-diff --git a/fs/btrfs/bio.h b/fs/btrfs/bio.h
-index deaeea3becf4..c5a6c66d51a0 100644
---- a/fs/btrfs/bio.h
-+++ b/fs/btrfs/bio.h
-@@ -58,6 +58,7 @@ struct btrfs_bio {
- 			struct btrfs_ordered_sum *sums;
- 			struct work_struct csum_work;
- 			struct completion csum_done;
-+			struct bio *csum_bio;
- 			struct bvec_iter csum_saved_iter;
- 			u64 orig_physical;
- 		};
-diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index 72be3ede0edf..474949074da8 100644
---- a/fs/btrfs/file-item.c
-+++ b/fs/btrfs/file-item.c
-@@ -765,21 +765,19 @@ int btrfs_lookup_csums_bitmap(struct btrfs_root *root, struct btrfs_path *path,
- 	return ret;
- }
+diff --git a/fs/btrfs/reflink.c b/fs/btrfs/reflink.c
+index 775a32a7953a..3c9c570d6493 100644
+--- a/fs/btrfs/reflink.c
++++ b/fs/btrfs/reflink.c
+@@ -1,6 +1,7 @@
+ // SPDX-License-Identifier: GPL-2.0
  
--static void csum_one_bio(struct btrfs_bio *bbio, struct bvec_iter *src)
-+static void csum_one_bio(struct btrfs_bio *bbio, struct bio *bio, struct bvec_iter *iter)
- {
- 	struct btrfs_inode *inode = bbio->inode;
- 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
- 	SHASH_DESC_ON_STACK(shash, fs_info->csum_shash);
--	struct bio *bio = &bbio->bio;
- 	struct btrfs_ordered_sum *sums = bbio->sums;
--	struct bvec_iter iter = *src;
- 	phys_addr_t paddr;
- 	const u32 blocksize = fs_info->sectorsize;
- 	int index = 0;
- 
- 	shash->tfm = fs_info->csum_shash;
- 
--	btrfs_bio_for_each_block(paddr, bio, &iter, blocksize) {
-+	btrfs_bio_for_each_block(paddr, bio, iter, blocksize) {
- 		btrfs_calculate_block_csum(fs_info, paddr, sums->sums + index);
- 		index += fs_info->csum_size;
+ #include <linux/blkdev.h>
++#include <linux/fscrypt.h>
+ #include <linux/iversion.h>
+ #include "ctree.h"
+ #include "fs.h"
+@@ -789,6 +790,12 @@ static int btrfs_remap_file_range_prep(struct file *file_in, loff_t pos_in,
+ 		ASSERT(inode_in->vfs_inode.i_sb == inode_out->vfs_inode.i_sb);
  	}
-@@ -791,19 +789,18 @@ static void csum_one_bio_work(struct work_struct *work)
  
- 	ASSERT(btrfs_op(&bbio->bio) == BTRFS_MAP_WRITE);
- 	ASSERT(bbio->async_csum == true);
--	csum_one_bio(bbio, &bbio->csum_saved_iter);
-+	csum_one_bio(bbio, bbio->csum_bio, &bbio->csum_saved_iter);
- 	complete(&bbio->csum_done);
- }
- 
- /*
-  * Calculate checksums of the data contained inside a bio.
-  */
--int btrfs_csum_one_bio(struct btrfs_bio *bbio, bool async)
-+int btrfs_csum_one_bio(struct btrfs_bio *bbio, struct bio *bio, bool async)
- {
- 	struct btrfs_ordered_extent *ordered = bbio->ordered;
- 	struct btrfs_inode *inode = bbio->inode;
- 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
--	struct bio *bio = &bbio->bio;
- 	struct btrfs_ordered_sum *sums;
- 	unsigned nofs_flag;
- 
-@@ -822,12 +819,14 @@ int btrfs_csum_one_bio(struct btrfs_bio *bbio, bool async)
- 	btrfs_add_ordered_sum(ordered, sums);
- 
- 	if (!async) {
--		csum_one_bio(bbio, &bbio->bio.bi_iter);
-+		struct bvec_iter iter = bio->bi_iter;
-+		csum_one_bio(bbio, bio, &iter);
- 		return 0;
- 	}
- 	init_completion(&bbio->csum_done);
- 	bbio->async_csum = true;
--	bbio->csum_saved_iter = bbio->bio.bi_iter;
-+	bbio->csum_bio = bio;
-+	bbio->csum_saved_iter = bio->bi_iter;
- 	INIT_WORK(&bbio->csum_work, csum_one_bio_work);
- 	schedule_work(&bbio->csum_work);
- 	return 0;
-diff --git a/fs/btrfs/file-item.h b/fs/btrfs/file-item.h
-index 5645c5e3abdb..d16fd2144552 100644
---- a/fs/btrfs/file-item.h
-+++ b/fs/btrfs/file-item.h
-@@ -64,7 +64,7 @@ int btrfs_lookup_file_extent(struct btrfs_trans_handle *trans,
- int btrfs_csum_file_blocks(struct btrfs_trans_handle *trans,
- 			   struct btrfs_root *root,
- 			   struct btrfs_ordered_sum *sums);
--int btrfs_csum_one_bio(struct btrfs_bio *bbio, bool async);
-+int btrfs_csum_one_bio(struct btrfs_bio *bbio, struct bio *bio, bool async);
- int btrfs_alloc_dummy_sum(struct btrfs_bio *bbio);
- int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
- 			     struct list_head *list, int search_commit,
++	/*
++	 * Can only reflink encrypted files if both files are encrypted.
++	 */
++	if (IS_ENCRYPTED(&inode_in->vfs_inode) != IS_ENCRYPTED(&inode_out->vfs_inode))
++		return -EINVAL;
++
+ 	/* Don't make the dst file partly checksummed */
+ 	if ((inode_in->flags & BTRFS_INODE_NODATASUM) !=
+ 	    (inode_out->flags & BTRFS_INODE_NODATASUM)) {
 -- 
 2.51.0
 

@@ -1,239 +1,316 @@
-Received: from mail-pl1-f171.google.com (mail-pl1-f171.google.com [209.85.214.171])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mx.swemel.ru (mx.swemel.ru [95.143.211.150])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DDD4931197A
-	for <linux-btrfs@vger.kernel.org>; Fri, 14 Nov 2025 19:39:24 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.214.171
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3FC1B220F5D;
+	Fri, 14 Nov 2025 19:44:54 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=95.143.211.150
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1763149166; cv=none; b=lqVop9eXLcZVptJPm+7iC6I6oIB/ocE35WB3pYmE6rSbu4mvvPCYm0aldUW5ADQM0saPAAIIeIaK9WmMscyR780Kormx5bGOFzEakYhB6ewwdigw7L39Xgwo0mp+KqaCD39T/IZrB/0cWbViS2M7qrj18uLXvcLx3IKP3ztt6iE=
+	t=1763149500; cv=none; b=uMjYtHwgsjSgDzIWFsJT3pZ8nLC+z4ceNoaWInSreuO88JWUAHHkjyhGCRmwoL98Ch4hp7lHEOGx1hIyQ064vQAsa1GvYT4sMwP0X7ethB1g2febW86AZrmvk2/UV3Vj/gmMH4Od3HtnJcEeWsCfOzACgR2ujsAmJfqTMOWYNDg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1763149166; c=relaxed/simple;
-	bh=Gg94zcvxqWVQ3XTTTynfd90sJLPVI5Fol1gyuExMvkQ=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=CdmtJQ8hPAN/jmvmj1nePUzFMwBAhlQRnlYBuqhD6fToftTzcXFpdW9h5dLCivOltC87L1+bYqgiTv5l64RvwA/UUS4X1DJumQdZcJ64ogI/53nU2E2saI1mtj0fZ/0c0mWSr9PRU26/HznsqsHN+yuJGi0lVX61vWnBnEqvxDc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=wbinvd.org; spf=pass smtp.mailfrom=wbinvd.org; dkim=pass (2048-bit key) header.d=wbinvd.org header.i=@wbinvd.org header.b=YXFX1VdJ; arc=none smtp.client-ip=209.85.214.171
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=wbinvd.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wbinvd.org
+	s=arc-20240116; t=1763149500; c=relaxed/simple;
+	bh=XKpveSL5Z6b34jCGpd7cXJXs6RMhq2ZxNsMDNGu09FU=;
+	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
+	 MIME-Version; b=P60mjexoaMS5XaqPNzWIr9BZIhfZUph/SEWZmQUUF31gsajxPV57r+HuacyPKQhvBlOQRULfNHb8lfJ2ZjOfF76J0PR4pSPnxk8Cxnv9gMerGmW1S9ctJ2PqgfTMKRTXVGo2Wvxq0KYdRt3Qu5YcLf5Y4kY26p9RcVZie4f4fxc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=swemel.ru; spf=pass smtp.mailfrom=swemel.ru; dkim=pass (1024-bit key) header.d=swemel.ru header.i=@swemel.ru header.b=bY66F0hi; arc=none smtp.client-ip=95.143.211.150
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=swemel.ru
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=swemel.ru
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wbinvd.org header.i=@wbinvd.org header.b="YXFX1VdJ"
-Received: by mail-pl1-f171.google.com with SMTP id d9443c01a7336-2957850c63bso25328555ad.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 14 Nov 2025 11:39:24 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=wbinvd.org; s=wbinvd; t=1763149164; x=1763753964; darn=vger.kernel.org;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
-        bh=tavLr036pG63tigGC/Pibenu75r7sClmuoJWM6BfG84=;
-        b=YXFX1VdJUHAKsEzL0MAcl9yH2rFOqkW/B4TY+YlkKymT+B4J/afkw9ThjU4yv0HboM
-         Al6zyOKPduBvZGxWwrw/YaJ7wvPjP7xdJyZoVf40/rreyatOHV0xBBY8+r6PvkmmCHYu
-         BwoJHv9PzYyZOqYTbe5frdwd0+yFVDovDRfXowLMGjuL0Q/8qVKqo3XFuPROltlaBMkv
-         Y0JSPdTRlhsj620hdAzw6KfKGTbXe46FltmDo4QkcG+HP5HzYHyULLawSTMePkK4V7GD
-         gM4gPHdBHUGnHnSl0aQyMvi9T2q+EFsw07AZVu1sQLwG7sJWniPaAoZEjw6Kwn2qaVCj
-         AXnA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1763149164; x=1763753964;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=tavLr036pG63tigGC/Pibenu75r7sClmuoJWM6BfG84=;
-        b=GUOdGr9TYMar+/29d62qDHJMC2LqzSkjtQahgx0OnyUD5QiIBDf8wt/X/O2+APaQ7A
-         dowwm4fIwlq/wJXkN1JOTNNfeYTE9rcx7jsfO8bGu8k7XXF2ugbLgOyHl64CHf/qP03e
-         oRM+Qq2SXHguj1wMAMe1uMo5UICiYAOQFdwuCH1zrnj+8q3PtUosvwW/Fo9EhDCf++hi
-         xdJ6oWUz9GNzdcdPpJVATR+0Jx64UT6BPtSI+AbG+d+kKUDt5GFZ0s23/PbaNxDWLob7
-         WwQpFkKwf4axaW1yAccD/jJYLEKQcSTxYgWjl00HMtgfC2jau0ol054sdsQjKA903Yx6
-         j7Og==
-X-Forwarded-Encrypted: i=1; AJvYcCVVWSv3r/SMDzpWHX5fiynEgK4MYGidz+sOrInCGeaZ2/slVtZKiQxcRnZEsF1JLFEaWOzxqyzpA6nB9g==@vger.kernel.org
-X-Gm-Message-State: AOJu0YwwPEPwjKjfrYDZat5atKPDmfftg5Blm5oZTWCd4YX0kOV1H3bh
-	Wn/DRFhb+KBfhPi6KgSkCDfSFta6q4OMdkT5hySpm4mcQJYDBLug6GcdcvsdcHkrHE8=
-X-Gm-Gg: ASbGncv+0I2sKXv+G7WD4SA1HKpePjtqkFzLN1Qv1Lvn6k4mAMcXS5ETGhmhItPaxWz
-	k7O4pJ6TTAjZb9h89N2fnPKWIwxjh2YI9FxEKs1UUBEHF1PzJlw0pOewv3zLxYYtAbC3YtapN4q
-	bofJHfhwfNT48ScGs0GUsrP824JtL/vWVBHwDmok5Tu3FWSFUy434t/Co4V21SzZltAYXjpuH//
-	ryQCS/RPiaFpFGNuVxEgdH0JyWYeAXzDn4oxSz0R7QLegGUpnfTm6A50XYh0dR2bjVDLVesk5+l
-	3E1CJkQ4BjGBCgUUPLTcpbRs6PYz1kjkH6tT2Zr2Q7KTQ0+IQiGt8Zbu+ue4kCX1tkCkVpAU3LE
-	X6z/HY+uF+N2l0idxLU9bdj5p7rx66WBKZJlm0cJ5P/WZSoR7qScLJRA5fpvPVfcFIrrX7xlnaw
-	4zBU7mr3exTOy/
-X-Google-Smtp-Source: AGHT+IGGrHC2AIZ0Km169BwzHrymQfZjImARw8BbmjGAS2uV1DjPSYHcuNdmc0xN11aKitAqtfnZMg==
-X-Received: by 2002:a17:903:2f07:b0:295:592f:9496 with SMTP id d9443c01a7336-29867fd0ddfmr51094975ad.20.1763149164125;
-        Fri, 14 Nov 2025 11:39:24 -0800 (PST)
-Received: from mozart.vkv.me ([192.184.167.117])
-        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2985c253b30sm63168895ad.46.2025.11.14.11.39.22
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 14 Nov 2025 11:39:23 -0800 (PST)
-Date: Fri, 14 Nov 2025 11:39:21 -0800
-From: Calvin Owens <calvin@wbinvd.org>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: linux-block@vger.kernel.org, linux-raid@vger.kernel.org,
-	linux-btrfs@vger.kernel.org, linux-crypto@vger.kernel.org
-Subject: Re: [QUESTION] Debugging some file data corruption
-Message-ID: <aReFaSpMe3yxoBMA@mozart.vkv.me>
-References: <20251111170142.635908-1-calvin@wbinvd.org>
- <cd54e3a7-d676-46fe-8922-bb97d4e775cc@gmx.com>
+	dkim=pass (1024-bit key) header.d=swemel.ru header.i=@swemel.ru header.b="bY66F0hi"
+From: Andrey Kalachev <kalachev@swemel.ru>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=swemel.ru; s=mail;
+	t=1763149487;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=uatAyZLBs/ZlMsqeIpgTbVbbr0fqmjX5V3sr8+oQxJo=;
+	b=bY66F0hiDgaE+bzgseUcxJtwCkHwSQ0y1Esjz0C70VQA2XPP6l5ArBPJnpSccm17LPLHyx
+	d33HVdpyDomG1afYCJgAie4VsZYv+vS20rmh5k5knsYWdYm9NzMaCkQFoQeoMwubO/ehoW
+	+7xkHzZ7/3iuyOr6l5aPmxkYJUJEr6A=
+To: linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	fdmanana@suse.com,
+	josef@toxicpanda.com,
+	dsterba@suse.com
+Cc: stable@vger.kernel.org,
+	kalachev@swemel.ru,
+	lvc-project@linuxtesting.org
+Subject: [PATCH 6.1.y v2 2/6] btrfs: fix race between ordered extent completion and fiemap
+Date: Fri, 14 Nov 2025 22:44:34 +0300
+Message-Id: <20251114194438.5694-3-kalachev@swemel.ru>
+In-Reply-To: <20251114194438.5694-1-kalachev@swemel.ru>
+References: <20251030131254.9225-1-kalachev@swemel.ru>
+ <20251114194438.5694-1-kalachev@swemel.ru>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-In-Reply-To: <cd54e3a7-d676-46fe-8922-bb97d4e775cc@gmx.com>
+Content-Transfer-Encoding: 8bit
 
-On Wednesday 11/12 at 07:32 +1030, Qu Wenruo wrote:
-> With LUKS in the middle, it makes any corruption pattern very human
-> unreadable.
-> 
-> I guess it's not really feasible to try to reproduce the problem again since
-> it has 10TiB data involved?
+From: Filipe Manana <fdmanana@suse.com>
 
-I can try again. It only takes 10 minutes of my time to get it started,
-even if it takes a few days to run, I've got spare machines for it.
+[ Upstream commit a1a4a9ca77f143c00fce69c1239887ff8b813bec ]
 
-> But if you can spend a lot of time waiting for data copy, mind to try
-> the following combination(s)?
-> 
-> - btrfs on mdraid1
-> - btrfs RAID1 on raw two HDDs
+For fiemap we recently stopped locking the target extent range for the
+whole duration of the fiemap call, in order to avoid a deadlock in a
+scenario where the fiemap buffer happens to be a memory mapped range of
+the same file. This use case is very unlikely to be useful in practice but
+it may be triggered by fuzz testing (syzbot, etc).
 
-Will do.
+However by not locking the target extent range for the whole duration of
+the fiemap call we can race with an ordered extent. This happens like
+this:
 
-> Considering there is no bad/bad combinations, I strongly doubt if it's
-> mdraid1 itself causing problems.
-> 
-> Does the mdraid1 has something like write-behind feature enabled?
+1) The fiemap task finishes processing a file extent item that covers
+   the file range [512K, 1M[, and that file extent item is the last item
+   in the leaf currently being processed;
 
-No, nothing special, I'm creating the array using:
+2) And ordered extent for the file range [768K, 2M[, in COW mode,
+   completes (btrfs_finish_one_ordered()) and the file extent item
+   covering the range [512K, 1M[ is trimmed to cover the range
+   [512K, 768K[ and then a new file extent item for the range [768K, 2M[
+   is inserted in the inode's subvolume tree;
 
-    mdadm --create -l 1 -n 2 --write-zeroes /dev/sda /dev/sdb
+3) The fiemap task calls fiemap_next_leaf_item(), which then calls
+   btrfs_next_leaf() to find the next leaf / item. This finds that the
+   the next key following the one we previously processed (its type is
+   BTRFS_EXTENT_DATA_KEY and its offset is 512K), is the key corresponding
+   to the new file extent item inserted by the ordered extent, which has
+   a type of BTRFS_EXTENT_DATA_KEY and an offset of 768K;
 
-> > Then, I re-ran the offline scrubs: drive A now shows all the errors
-> > originally seen across both drives, and drive B is now clean.
-> > 
-> > Finally, I ran userspace checksums of the full set of files on the
-> > newly clean drive B: they perfectly match an older copy in my backups.
-> > 
-> > This proves that:
-> > 
-> >      1) RAID mismatches and btrfs checksum failures are strictly 1:1.
-> >      2) For every RAID mismatch, strictly one mirror was corrupted.
-> >      3) No slient corruption occurred, btrfs caught everything.
-> > 
-> > The hard drives are brand new, so that is my current suspicion.
-> 
-> I won't suspect HDD as the first culprit. Since no powerloss there is no
-> FLUSH/FUA bugs involved, and all corruptions are related to data but not
-> metadata, if it's really HDD I guess we should have at least one or two
-> metadata corruption too.
+4) Later the fiemap code ends up at emit_fiemap_extent() and triggers
+   the warning:
 
-I should have mentioned this: there were a few metadata corruptions, but
-the first online scrub fixed them (DUP), so I didn't get a chance to see
-what their contents were. Here's the full log:
+      if (cache->offset + cache->len > offset) {
+               WARN_ON(1);
+               return -EINVAL;
+      }
 
-    [Oct 5 00:45] [ T307779] BTRFS: device fsid 3bd1727b-c8ae-4876-96b2-9318c1f9556f devid 1 transid 121 /dev/mapper/md0_crypt (253:1) scanned by mount (307779)
-    [  +0.000875] [ T307779] BTRFS info (device dm-1): first mount of filesystem 3bd1727b-c8ae-4876-96b2-9318c1f9556f
-    [  +0.000054] [ T307779] BTRFS info (device dm-1): using blake2b (blake2b-256-generic) checksum algorithm
-    [  +3.510409] [ T307779] BTRFS info (device dm-1): enabling ssd optimizations
-    [  +0.000052] [ T307779] BTRFS info (device dm-1): enabling free space tree
-    [  +0.000015] [ T307779] BTRFS info (device dm-1): use zstd compression, level 1
-    [  +9.793525] [ T307802] BTRFS info (device dm-1): scrub: started on devid 1
-    [Oct 5 01:30] [ T307812] BTRFS error (device dm-1): scrub: fixed up error at logical 316151431168 on dev /dev/mapper/md0_crypt physical 310791110656
-    [  +0.000070] [ T307812] BTRFS error (device dm-1): bdev /dev/mapper/md0_crypt errs: wr 0, rd 0, flush 0, corrupt 1, gen 0
-    [Oct 5 05:16] [ T308052] BTRFS error (device dm-1): scrub: unable to fixup (regular) error at logical 1850055917568 on dev /dev/mapper/md0_crypt physical 1858654240768
-    [  +0.082724] [ T308052] BTRFS warning (device dm-1): scrub: checksum error at logical 1850055917568 on dev /dev/mapper/md0_crypt, physical 1858654240768 root 5 inode 387 offset 40929132544 length 4096 links 1 (path: REDACTED)
-    [  +0.000077] [ T308052] BTRFS error (device dm-1): bdev /dev/mapper/md0_crypt errs: wr 0, rd 0, flush 0, corrupt 2, gen 0
-    [Oct 5 06:51] [ T312207] BTRFS warning (device dm-1): scrub: tree block 2493640359936 mirror 2 has bad csum, has 0x4086e4014eeb997db83ae7255c333697ed4d740338405795861d6f3d0c7848af want 0xbdbcdc764674915f8899d9c164916bd7aad34693e78e9e9ba479b2339e12ef1c
-    [  +0.077111] [ T312207] BTRFS error (device dm-1): scrub: fixed up error at logical 2493640343552 on dev /dev/mapper/md0_crypt physical 2510828601344
-    [  +0.000065] [ T312207] BTRFS error (device dm-1): scrub: fixed up error at logical 2493640343552 on dev /dev/mapper/md0_crypt physical 2510828601344
-    [  +0.000026] [ T312207] BTRFS error (device dm-1): scrub: fixed up error at logical 2493640343552 on dev /dev/mapper/md0_crypt physical 2510828601344
-    [  +0.000016] [ T312207] BTRFS error (device dm-1): scrub: fixed up error at logical 2493640343552 on dev /dev/mapper/md0_crypt physical 2510828601344
-    [Oct 5 07:47] [ T312650] BTRFS error (device dm-1): scrub: unable to fixup (regular) error at logical 2878389944320 on dev /dev/mapper/md0_crypt physical 2896685498368
-    [  +0.079176] [ T312650] BTRFS warning (device dm-1): scrub: checksum error at logical 2878389944320 on dev /dev/mapper/md0_crypt, physical 2896685498368 root 5 inode 431 offset 2979594240 length 4096 links 1 (path: REDACTED)
-    [  +0.000079] [ T312650] BTRFS error (device dm-1): bdev /dev/mapper/md0_crypt errs: wr 0, rd 0, flush 0, corrupt 3, gen 0
-    [Oct 5 08:42] [ T312757] BTRFS error (device dm-1): scrub: fixed up error at logical 3255455711232 on dev /dev/mapper/md0_crypt physical 3273751265280
-    [  +0.000066] [ T312757] BTRFS error (device dm-1): bdev /dev/mapper/md0_crypt errs: wr 0, rd 0, flush 0, corrupt 4, gen 0
-    [Oct 5 12:31] [ T316045] BTRFS error (device dm-1): scrub: unable to fixup (regular) error at logical 4804342972416 on dev /dev/mapper/md0_crypt physical 4836597170176
-    [  +0.106254] [ T316045] BTRFS warning (device dm-1): scrub: checksum error at logical 4804342972416 on dev /dev/mapper/md0_crypt, physical 4836597170176 root 5 inode 12231 offset 626524160 length 4096 links 1 (path: REDACTED)
-    [  +0.000082] [ T316045] BTRFS error (device dm-1): bdev /dev/mapper/md0_crypt errs: wr 0, rd 0, flush 0, corrupt 5, gen 0
-    [Oct 5 12:40] [ T316489] BTRFS error (device dm-1): scrub: unable to fixup (regular) error at logical 4864481624064 on dev /dev/mapper/md0_crypt physical 4896735821824
-    [  +0.018418] [ T316489] BTRFS warning (device dm-1): scrub: checksum error at logical 4864481624064 on dev /dev/mapper/md0_crypt, physical 4896735821824 root 5 inode 12268 offset 635633664 length 4096 links 1 (path: REDACTED)
-    [  +0.000067] [ T316489] BTRFS error (device dm-1): bdev /dev/mapper/md0_crypt errs: wr 0, rd 0, flush 0, corrupt 6, gen 0
-    [Oct 5 15:18] [ T317014] BTRFS error (device dm-1): scrub: unable to fixup (regular) error at logical 5960080556032 on dev /dev/mapper/md0_crypt physical 5996629721088
-    [  +0.088397] [ T317014] BTRFS warning (device dm-1): scrub: checksum error at logical 5960080556032 on dev /dev/mapper/md0_crypt, physical 5996629721088 root 5 inode 15079 offset 43859968 length 4096 links 1 (path: REDACTED)
-    [  +0.000078] [ T317014] BTRFS error (device dm-1): bdev /dev/mapper/md0_crypt errs: wr 0, rd 0, flush 0, corrupt 7, gen 0
-    [ +11.379069] [ T319380] BTRFS error (device dm-1): scrub: unable to fixup (regular) error at logical 5961402220544 on dev /dev/mapper/md0_crypt physical 5997951385600
-    [  +0.000245] [ T319380] BTRFS warning (device dm-1): scrub: checksum error at logical 5961402220544 on dev /dev/mapper/md0_crypt, physical 5997951385600 root 5 inode 15079 offset 612937728 length 4096 links 1 (path: REDACTED)
-    [  +0.000038] [ T319380] BTRFS error (device dm-1): bdev /dev/mapper/md0_crypt errs: wr 0, rd 0, flush 0, corrupt 8, gen 0
-    [Oct 5 16:39] [ T320461] BTRFS error (device dm-1): scrub: fixed up error at logical 6508309970944 on dev /dev/mapper/md0_crypt physical 6551301586944
-    [  +0.000066] [ T320461] BTRFS error (device dm-1): bdev /dev/mapper/md0_crypt errs: wr 0, rd 0, flush 0, corrupt 9, gen 0
-    [Oct 5 16:44] [ T319972] BTRFS error (device dm-1): scrub: unable to fixup (regular) error at logical 6542744813568 on dev /dev/mapper/md0_crypt physical 6585736429568
-    [  +0.072550] [ T319972] BTRFS warning (device dm-1): scrub: checksum error at logical 6542744813568 on dev /dev/mapper/md0_crypt, physical 6585736429568 root 5 inode 16518 offset 103481344 length 4096 links 1 (path: REDACTED)
-    [  +0.000079] [ T319972] BTRFS error (device dm-1): bdev /dev/mapper/md0_crypt errs: wr 0, rd 0, flush 0, corrupt 10, gen 0
-    [Oct 5 20:28] [ T320144] BTRFS error (device dm-1): scrub: unable to fixup (regular) error at logical 8062253727744 on dev /dev/mapper/md0_crypt physical 8112761536512
-    [  +0.059861] [ T320144] BTRFS warning (device dm-1): scrub: checksum error at logical 8062253727744 on dev /dev/mapper/md0_crypt, physical 8112761536512 root 5 inode 349790 offset 16443854848 length 4096 links 1 (path: REDACTED)
-    [  +0.000069] [ T320144] BTRFS error (device dm-1): bdev /dev/mapper/md0_crypt errs: wr 0, rd 0, flush 0, corrupt 11, gen 0
-    [Oct 5 21:01] [ T307802] BTRFS info (device dm-1): scrub: finished on devid 1 with status: 0
+   Since we get 1M > 768K, because the previously emitted entry for the
+   old extent covering the file range [512K, 1M[ ends at an offset that
+   is greater than the new extent's start offset (768K). This makes fiemap
+   fail with -EINVAL besides triggering the warning that produces a stack
+   trace like the following:
 
-    UUID:             3bd1727b-c8ae-4876-96b2-9318c1f9556f
-    Scrub started:    Sun Oct  5 00:45:20 2025
-    Status:           finished
-    Duration:         20:15:56
-    Total to scrub:   7.54TiB
-    Rate:             108.38MiB/s
-    Error summary:    verify=4 csum=11
-      Corrected:      7
-      Uncorrectable:  8
-      Unverified:     0
+     [1621.677651] ------------[ cut here ]------------
+     [1621.677656] WARNING: CPU: 1 PID: 204366 at fs/btrfs/extent_io.c:2492 emit_fiemap_extent+0x84/0x90 [btrfs]
+     [1621.677899] Modules linked in: btrfs blake2b_generic (...)
+     [1621.677951] CPU: 1 PID: 204366 Comm: pool Not tainted 6.8.0-rc5-btrfs-next-151+ #1
+     [1621.677954] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.16.2-0-gea1b7a073390-prebuilt.qemu.org 04/01/2014
+     [1621.677956] RIP: 0010:emit_fiemap_extent+0x84/0x90 [btrfs]
+     [1621.678033] Code: 2b 4c 89 63 (...)
+     [1621.678035] RSP: 0018:ffffab16089ffd20 EFLAGS: 00010206
+     [1621.678037] RAX: 00000000004fa000 RBX: ffffab16089ffe08 RCX: 0000000000009000
+     [1621.678039] RDX: 00000000004f9000 RSI: 00000000004f1000 RDI: ffffab16089ffe90
+     [1621.678040] RBP: 00000000004f9000 R08: 0000000000001000 R09: 0000000000000000
+     [1621.678041] R10: 0000000000000000 R11: 0000000000001000 R12: 0000000041d78000
+     [1621.678043] R13: 0000000000001000 R14: 0000000000000000 R15: ffff9434f0b17850
+     [1621.678044] FS:  00007fa6e20006c0(0000) GS:ffff943bdfa40000(0000) knlGS:0000000000000000
+     [1621.678046] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+     [1621.678048] CR2: 00007fa6b0801000 CR3: 000000012d404002 CR4: 0000000000370ef0
+     [1621.678053] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+     [1621.678055] DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+     [1621.678056] Call Trace:
+     [1621.678074]  <TASK>
+     [1621.678076]  ? __warn+0x80/0x130
+     [1621.678082]  ? emit_fiemap_extent+0x84/0x90 [btrfs]
+     [1621.678159]  ? report_bug+0x1f4/0x200
+     [1621.678164]  ? handle_bug+0x42/0x70
+     [1621.678167]  ? exc_invalid_op+0x14/0x70
+     [1621.678170]  ? asm_exc_invalid_op+0x16/0x20
+     [1621.678178]  ? emit_fiemap_extent+0x84/0x90 [btrfs]
+     [1621.678253]  extent_fiemap+0x766/0xa30 [btrfs]
+     [1621.678339]  btrfs_fiemap+0x45/0x80 [btrfs]
+     [1621.678420]  do_vfs_ioctl+0x1e4/0x870
+     [1621.678431]  __x64_sys_ioctl+0x6a/0xc0
+     [1621.678434]  do_syscall_64+0x52/0x120
+     [1621.678445]  entry_SYSCALL_64_after_hwframe+0x6e/0x76
 
-That scrub missed about half the data errors, which makes sense to me:
-the mdraid1 "randomly" reads a given block from one or the other
-underlying drive.
+There's also another case where before calling btrfs_next_leaf() we are
+processing a hole or a prealloc extent and we had several delalloc ranges
+within that hole or prealloc extent. In that case if the ordered extents
+complete before we find the next key, we may end up finding an extent item
+with an offset smaller than (or equals to) the offset in cache->offset.
 
-But the metadata doesn't make sense to me: the one scrub appears to have
-seen and fixed *all* the metadata errors, because my later offline
-scrubs of each individual drive saw no metadata errors. Seems unlikely.
+So fix this by changing emit_fiemap_extent() to address these three
+scenarios like this:
 
-I'll make sure to only run offline scrubs next time, so I can inspect
-the metadata corruptions too (and for the btrfs-raid1, so I can inspect
-the corruptions at all before they're fixed up).
+1) For the first case, steps listed above, adjust the length of the
+   previously cached extent so that it does not overlap with the current
+   extent, emit the previous one and cache the current file extent item;
 
-> > I've
-> > used the same two-drive USB enclosure extensively with older HDDs and
-> > never seen a problem. I'm running this FIO job to test them:
-> > 
-> >      [global]
-> >      numjobs=1
-> >      loops=20
-> >      ioengine=io_uring
-> >      rw=randrw
-> >      percentage_random=5%
-> >      rwmixwrite=95
-> >      iodepth=32
-> >      direct=1
-> >      size=5%
-> >      blocksize_range=1k-32m
-> >      sync=none
-> >      refill_buffers=1
-> >      random_distribution=random
-> >      random_generator=tausworthe64
-> >      verify=xxhash
-> >      verify_fatal=1
-> >      verify_dump=1
-> >      do_verify=1
-> >      verify_async=$ncpus
-> >      [hdd-sdb-test]
-> >      filename=/dev/sdb
-> >      [hdd-sdc-test]
-> >      filename=/dev/sdc
-> > 
-> > ...but no luck hitting anything after about 18 hours.
-> 
-> I didn't have a good experience using fio to find corruption, thus if you
-> hit the problem by simplying copying data (I guess through 'cp'?), then
-> maybe stick to the working reproducer?
-> 
-> Although copying 10TiB into HDDs will take over 40 hours, still much longer
-> than your fio workload.
+2) For the second case where he had a hole or prealloc extent with
+   multiple delalloc ranges inside the hole or prealloc extent's range,
+   and the current file extent item has an offset that matches the offset
+   in the fiemap cache, just discard what we have in the fiemap cache and
+   assign the current file extent item to the cache, since it's more up
+   to date;
 
-Makes sense. I'll stick to making copies like the original workload,
-and report back if I can trigger it again.
+3) For the third case where he had a hole or prealloc extent with
+   multiple delalloc ranges inside the hole or prealloc extent's range
+   and the offset of the file extent item we just found is smaller than
+   what we have in the cache, just skip the current file extent item
+   if its range end at or behind the cached extent's end, because we may
+   have emitted (to the fiemap user space buffer) delalloc ranges that
+   overlap with the current file extent item's range. If the file extent
+   item's range goes beyond the end offset of the cached extent, just
+   emit the cached extent and cache a subrange of the file extent item,
+   that goes from the end offset of the cached extent to the end offset
+   of the file extent item.
 
-Thanks,
-Calvin
+Dealing with those cases in those ways makes everything consistent by
+reflecting the current state of file extent items in the btree and
+without emitting extents that have overlapping ranges (which would be
+confusing and violating expectations).
+
+This issue could be triggered often with test case generic/561, and was
+also hit and reported by Wang Yugui.
+
+CC: stable@vger.kernel.org # 6.1
+Reported-by: Wang Yugui <wangyugui@e16-tech.com>
+Link: https://lore.kernel.org/linux-btrfs/20240223104619.701F.409509F4@e16-tech.com/
+Fixes: b0ad381fa769 ("btrfs: fix deadlock with fiemap and extent locking")
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
+[cherry picked from upstream commit]
+Signed-off-by: Andrey Kalachev <kalachev@swemel.ru>
+---
+ fs/btrfs/extent_io.c | 103 ++++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 96 insertions(+), 7 deletions(-)
+
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 5372a4fa78e9..2c2c66c26869 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3528,6 +3528,7 @@ static int emit_fiemap_extent(struct fiemap_extent_info *fieinfo,
+ 				struct fiemap_cache *cache,
+ 				u64 offset, u64 phys, u64 len, u32 flags)
+ {
++	u64 cache_end;
+ 	int ret = 0;
+ 
+ 	/* Set at the end of extent_fiemap(). */
+@@ -3537,15 +3538,102 @@ static int emit_fiemap_extent(struct fiemap_extent_info *fieinfo,
+ 		goto assign;
+ 
+ 	/*
+-	 * Sanity check, extent_fiemap() should have ensured that new
+-	 * fiemap extent won't overlap with cached one.
+-	 * Not recoverable.
++	 * When iterating the extents of the inode, at extent_fiemap(), we may
++	 * find an extent that starts at an offset behind the end offset of the
++	 * previous extent we processed. This happens if fiemap is called
++	 * without FIEMAP_FLAG_SYNC and there are ordered extents completing
++	 * while we call btrfs_next_leaf() (through fiemap_next_leaf_item()).
+ 	 *
+-	 * NOTE: Physical address can overlap, due to compression
++	 * For example we are in leaf X processing its last item, which is the
++	 * file extent item for file range [512K, 1M[, and after
++	 * btrfs_next_leaf() releases the path, there's an ordered extent that
++	 * completes for the file range [768K, 2M[, and that results in trimming
++	 * the file extent item so that it now corresponds to the file range
++	 * [512K, 768K[ and a new file extent item is inserted for the file
++	 * range [768K, 2M[, which may end up as the last item of leaf X or as
++	 * the first item of the next leaf - in either case btrfs_next_leaf()
++	 * will leave us with a path pointing to the new extent item, for the
++	 * file range [768K, 2M[, since that's the first key that follows the
++	 * last one we processed. So in order not to report overlapping extents
++	 * to user space, we trim the length of the previously cached extent and
++	 * emit it.
++	 *
++	 * Upon calling btrfs_next_leaf() we may also find an extent with an
++	 * offset smaller than or equals to cache->offset, and this happens
++	 * when we had a hole or prealloc extent with several delalloc ranges in
++	 * it, but after btrfs_next_leaf() released the path, delalloc was
++	 * flushed and the resulting ordered extents were completed, so we can
++	 * now have found a file extent item for an offset that is smaller than
++	 * or equals to what we have in cache->offset. We deal with this as
++	 * described below.
+ 	 */
+-	if (cache->offset + cache->len > offset) {
+-		WARN_ON(1);
+-		return -EINVAL;
++	cache_end = cache->offset + cache->len;
++	if (cache_end > offset) {
++		if (offset == cache->offset) {
++			/*
++			 * We cached a dealloc range (found in the io tree) for
++			 * a hole or prealloc extent and we have now found a
++			 * file extent item for the same offset. What we have
++			 * now is more recent and up to date, so discard what
++			 * we had in the cache and use what we have just found.
++			 */
++			goto assign;
++		} else if (offset > cache->offset) {
++			/*
++			 * The extent range we previously found ends after the
++			 * offset of the file extent item we found and that
++			 * offset falls somewhere in the middle of that previous
++			 * extent range. So adjust the range we previously found
++			 * to end at the offset of the file extent item we have
++			 * just found, since this extent is more up to date.
++			 * Emit that adjusted range and cache the file extent
++			 * item we have just found. This corresponds to the case
++			 * where a previously found file extent item was split
++			 * due to an ordered extent completing.
++			 */
++			cache->len = offset - cache->offset;
++			goto emit;
++		} else {
++			const u64 range_end = offset + len;
++
++			/*
++			 * The offset of the file extent item we have just found
++			 * is behind the cached offset. This means we were
++			 * processing a hole or prealloc extent for which we
++			 * have found delalloc ranges (in the io tree), so what
++			 * we have in the cache is the last delalloc range we
++			 * found while the file extent item we found can be
++			 * either for a whole delalloc range we previously
++			 * emmitted or only a part of that range.
++			 *
++			 * We have two cases here:
++			 *
++			 * 1) The file extent item's range ends at or behind the
++			 *    cached extent's end. In this case just ignore the
++			 *    current file extent item because we don't want to
++			 *    overlap with previous ranges that may have been
++			 *    emmitted already;
++			 *
++			 * 2) The file extent item starts behind the currently
++			 *    cached extent but its end offset goes beyond the
++			 *    end offset of the cached extent. We don't want to
++			 *    overlap with a previous range that may have been
++			 *    emmitted already, so we emit the currently cached
++			 *    extent and then partially store the current file
++			 *    extent item's range in the cache, for the subrange
++			 *    going the cached extent's end to the end of the
++			 *    file extent item.
++			 */
++			if (range_end <= cache_end)
++				return 0;
++
++			if (!(flags & (FIEMAP_EXTENT_ENCODED | FIEMAP_EXTENT_DELALLOC)))
++				phys += cache_end - offset;
++
++			offset = cache_end;
++			len = range_end - cache_end;
++			goto emit;
++		}
+ 	}
+ 
+ 	/*
+@@ -3565,6 +3653,7 @@ static int emit_fiemap_extent(struct fiemap_extent_info *fieinfo,
+ 		return 0;
+ 	}
+ 
++emit:
+ 	/* Not mergeable, need to submit cached one */
+ 	ret = fiemap_fill_next_extent(fieinfo, cache->offset, cache->phys,
+ 				      cache->len, cache->flags);
+-- 
+2.39.5
+

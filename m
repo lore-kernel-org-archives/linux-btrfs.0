@@ -1,64 +1,64 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 578572EA749
-	for <linux-btrfs@vger.kernel.org>; Mon, 17 Nov 2025 07:31:46 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7525F318143
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Nov 2025 07:31:48 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1763364708; cv=none; b=hRvqZA7qWd4MX7JeFbuW0aNT/HiTtDNJRENEnj2fGQS7mVCSvHb38nPAvOzgFYQoimS6Gv8x+SKIflemxAeQWKfqHo0Gub//UNxTc/yXdCk0ybkBrG5qKe2VTQC04+1W5e3u2WPSO1eHGnOoMBJK/xXZHvtPF0g+5OBJK3tJx4E=
+	t=1763364710; cv=none; b=qCWi+DfuLP8vxonSpBJzYYQs9Jl6iwS9hHucduROoxcAeC1iPFjGadhGVGIIaUzDCmWiJpqotlgm6FuTePN5s66FfEXzCOF3OO1FZOwrVgsCTd51YxlwGfccxWlz0kNPd4Pc7Qdl3znRsrh3P1MY/u9lXrZ53C1fMb1gN0LZgT0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1763364708; c=relaxed/simple;
-	bh=GftiFXSNKEjvHyz0qmAS3TmMDqqJNDG2yzS5L8bXoxw=;
+	s=arc-20240116; t=1763364710; c=relaxed/simple;
+	bh=aXMjQjkaGGrw8oI/WV207Tk3B1l93VRBOceLgo7CEEY=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=MUZdpScaI1WZ4EH5oxOtEyw+wJcX6t2YwoG5wimYDmovaXHrTiKztmpgJKitTij+oDXx6UrfLYl5YCs923JLDZeUEA5+/6z5dcg4lFW1hLFh/azwoHjrJhCwZFAakXfdoYj/g+0AR7gBDcdgtHreqNMnKxu4yxLzWUqxOID1i9U=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=sGTGDTts; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=sGTGDTts; arc=none smtp.client-ip=195.135.223.130
+	 MIME-Version; b=XIA5ptQ1Jr4+o85dVB6gbw+QmrEjBt/KVqhnpEONQJ6uIJqD+yA65GnHDxxkPxhwalT8lCsY/G27MNTqtJ1Zwu8xWhSWsjik72Z1fQl5g+wNx7CSMweRlbn/cjvVPfHKMDdpmXha94LtzrdO/8VGAJbpKdeVt1I7s5B19CV8JYk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=TbSz8L9/; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=TbSz8L9/; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="sGTGDTts";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="sGTGDTts"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="TbSz8L9/";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="TbSz8L9/"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id F3FC921209
-	for <linux-btrfs@vger.kernel.org>; Mon, 17 Nov 2025 07:31:23 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 79D0C1F798
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Nov 2025 07:31:21 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1763364684; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1763364681; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=xB6xk89V4V0hzt9DhhLl2ds3hiliIAW+NHkrO3l6OvE=;
-	b=sGTGDTts1kR8LiS3p/2QWk8HmjhAHcSRN0+AI2jb/8mw3sxv1nbxNdLQcZU5i2h98WySL4
-	CQNFsKsTPR68FdQOHyPIlUzeYXwZraFdgXJXQ7yiW6WkkPP+yw0kEgR3cBifv+MC+Sdu7P
-	9Hj2yXDoFTMudXUEGrUV0+A9J3HuDlo=
-Authentication-Results: smtp-out1.suse.de;
+	bh=xQ6QrXgxbKxpcjtvnpa7XMpl/XHuexGd+5eMs6FBIbE=;
+	b=TbSz8L9/TG/vRurwN61gVTYIC15ulQVVi+P4VntRegSbET9rzf65VILTcy/XLXCTIfGvat
+	sDI9L1JHEgEIh1I5i49UtPZMchkbykNdz42IGs4XwdxGacHPErKX6trhHokMj13nsPWGN6
+	AU661cGNcCrn9GDt7bKI1q8zg0bDuyc=
+Authentication-Results: smtp-out2.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1763364684; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1763364681; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=xB6xk89V4V0hzt9DhhLl2ds3hiliIAW+NHkrO3l6OvE=;
-	b=sGTGDTts1kR8LiS3p/2QWk8HmjhAHcSRN0+AI2jb/8mw3sxv1nbxNdLQcZU5i2h98WySL4
-	CQNFsKsTPR68FdQOHyPIlUzeYXwZraFdgXJXQ7yiW6WkkPP+yw0kEgR3cBifv+MC+Sdu7P
-	9Hj2yXDoFTMudXUEGrUV0+A9J3HuDlo=
+	bh=xQ6QrXgxbKxpcjtvnpa7XMpl/XHuexGd+5eMs6FBIbE=;
+	b=TbSz8L9/TG/vRurwN61gVTYIC15ulQVVi+P4VntRegSbET9rzf65VILTcy/XLXCTIfGvat
+	sDI9L1JHEgEIh1I5i49UtPZMchkbykNdz42IGs4XwdxGacHPErKX6trhHokMj13nsPWGN6
+	AU661cGNcCrn9GDt7bKI1q8zg0bDuyc=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 39F9A3EA61
-	for <linux-btrfs@vger.kernel.org>; Mon, 17 Nov 2025 07:31:22 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id B34773EA61
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Nov 2025 07:31:20 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id qCYKO0rPGmkLIgAAD6G6ig
+	id EIr9HEjPGmkLIgAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Mon, 17 Nov 2025 07:31:22 +0000
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Nov 2025 07:31:20 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 10/12] btrfs: prepare finish_parity_scrub() to support bs > ps cases
-Date: Mon, 17 Nov 2025 18:00:50 +1030
-Message-ID: <25850cab671970eb8a09670511fc943fba47eeaa.1763361991.git.wqu@suse.com>
+Subject: [PATCH 08/12] btrfs: prepare steal_rbio() to support bs > ps cases
+Date: Mon, 17 Nov 2025 18:00:48 +1030
+Message-ID: <c6b6695f1752ef2cebe8f0e1e958aa07b29448b1.1763361991.git.wqu@suse.com>
 X-Mailer: git-send-email 2.51.2
 In-Reply-To: <cover.1763361991.git.wqu@suse.com>
 References: <cover.1763361991.git.wqu@suse.com>
@@ -69,6 +69,7 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
+X-Spam-Level: 
 X-Spamd-Result: default: False [-2.80 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
@@ -81,7 +82,7 @@ X-Spamd-Result: default: False [-2.80 / 50.00];
 	RCPT_COUNT_ONE(0.00)[1];
 	ARC_NA(0.00)[];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:mid,suse.com:email];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:mid];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
 	MIME_TRACE(0.00)[0:+];
@@ -92,268 +93,130 @@ X-Spamd-Result: default: False [-2.80 / 50.00];
 	RCVD_TLS_ALL(0.00)[]
 X-Spam-Flag: NO
 X-Spam-Score: -2.80
-X-Spam-Level: 
 
-The function finish_parity_scrub() assume each fs block can be mapped by
+The function steal_rbio() assume each fs block can be mapped by
 one page, blocking bs > ps support for raid56.
 
 Prepare it for bs > ps cases by:
 
-- Introduce a helper, verify_one_parity_step()
-  Since the P/Q generation is always done in a vertical stripe, we have
-  to handle the range step by step.
+- Introduce two helpers to calculate the sector number
+  Previously we assume one page will contain at least one fs block, thus
+  can use something like "sectors_per_page = PAGE_SIZE / secotrsize;",
+  but with bs > ps support that above number will be 0.
 
-- Only clear the rbio->dbitmap if all steps of an fs block match
+  Instead introduce two helpers:
 
-- Remove rbio_stripe_paddr() and sector_paddr_in_rbio() helpers
-  Now we either use the paddrs version for checksum, or the step version
-  for P/Q generation/recovery.
+  * page_nr_to_sector_nr()
+    Returns the sector number of the first sector covered by the page.
 
-- Make alloc_rbio_essential_pages() to handle bs > ps cases
-  Since for bs > ps cases, one fs block needs multiple pages, the
-  existing simple check against rbio->stripe_pages[] is not enough.
+  * page_nr_to_num_sectors()
+    Return how many sectors are covered by the page.
 
-  Extract a dedicated helper, alloc_rbio_sector_pages(), for the
-  existing alloc_rbio_essential_pages(), which is still based on sector
-  number.
+  And use the returned values for bitmap operations other than
+  open-coded "PAGE_SIZE / sectorsize".
+  Those helpers also have extra ASSERT()s to catch weird numbers.
+
+- Use above helpers
+  The involved functions are:
+  * steal_rbio_page()
+  * is_data_stripe_page()
+  * full_page_sectors_uptodate()
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/raid56.c | 175 +++++++++++++++++++++++-----------------------
- 1 file changed, 86 insertions(+), 89 deletions(-)
+ fs/btrfs/raid56.c | 57 ++++++++++++++++++++++++++++++++++++-----------
+ 1 file changed, 44 insertions(+), 13 deletions(-)
 
 diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index 44eede8d9544..d8d3af2c4db5 100644
+index 820bdc7f6dbe..7cb3b3eccda6 100644
 --- a/fs/btrfs/raid56.c
 +++ b/fs/btrfs/raid56.c
-@@ -735,13 +735,6 @@ static unsigned int rbio_paddr_index(const struct btrfs_raid_bio *rbio,
- 	return ret;
+@@ -300,18 +300,47 @@ static int rbio_bucket(struct btrfs_raid_bio *rbio)
+ 	return hash_64(num >> 16, BTRFS_STRIPE_HASH_TABLE_BITS);
  }
  
--/* Return a paddr from rbio->stripe_sectors, not from the bio list */
--static phys_addr_t rbio_stripe_paddr(const struct btrfs_raid_bio *rbio,
--				     unsigned int stripe_nr, unsigned int sector_nr)
--{
--	return rbio->stripe_paddrs[rbio_paddr_index(rbio, stripe_nr, sector_nr, 0)];
--}
--
- static phys_addr_t rbio_stripe_step_paddr(const struct btrfs_raid_bio *rbio,
- 					  unsigned int stripe_nr, unsigned int sector_nr,
- 					  unsigned int step_nr)
-@@ -1001,46 +994,6 @@ static void rbio_orig_end_io(struct btrfs_raid_bio *rbio, blk_status_t status)
- 		rbio_endio_bio_list(extra, status);
- }
- 
--/*
-- * Get the paddr specified by its @stripe_nr and @sector_nr.
-- *
-- * @rbio:               The raid bio
-- * @stripe_nr:          Stripe number, valid range [0, real_stripe)
-- * @sector_nr:		Sector number inside the stripe,
-- *			valid range [0, stripe_nsectors)
-- * @bio_list_only:      Whether to use sectors inside the bio list only.
-- *
-- * The read/modify/write code wants to reuse the original bio page as much
-- * as possible, and only use stripe_sectors as fallback.
-- */
--static phys_addr_t sector_paddr_in_rbio(struct btrfs_raid_bio *rbio,
--					int stripe_nr, int sector_nr,
--					bool bio_list_only)
--{
--	phys_addr_t ret = INVALID_PADDR;
--	int index;
--
--	ASSERT_RBIO_STRIPE(stripe_nr >= 0 && stripe_nr < rbio->real_stripes,
--			   rbio, stripe_nr);
--	ASSERT_RBIO_SECTOR(sector_nr >= 0 && sector_nr < rbio->stripe_nsectors,
--			   rbio, sector_nr);
--
--	index = stripe_nr * rbio->stripe_nsectors + sector_nr;
--	ASSERT(index >= 0 && index < rbio->nr_sectors);
--
--	spin_lock(&rbio->bio_list_lock);
--	if (rbio->bio_paddrs[index] != INVALID_PADDR || bio_list_only) {
--		/* Don't return sector without a valid page pointer */
--		if (rbio->bio_paddrs[index] != INVALID_PADDR)
--			ret = rbio->bio_paddrs[index];
--		spin_unlock(&rbio->bio_list_lock);
--		return ret;
--	}
--	spin_unlock(&rbio->bio_list_lock);
--
--	return rbio->stripe_paddrs[index];
--}
--
- /*
-  * Get paddr pointer for the sector specified by its @stripe_nr and @sector_nr.
-  *
-@@ -2635,42 +2588,115 @@ struct btrfs_raid_bio *raid56_parity_alloc_scrub_rbio(struct bio *bio,
- 	return rbio;
- }
- 
-+static int alloc_rbio_sector_pages(struct btrfs_raid_bio *rbio,
-+				  int sector_nr)
-+{
-+	const u32 step = min(PAGE_SIZE, rbio->bioc->fs_info->sectorsize);
-+	const u32 base = sector_nr * rbio->sector_nsteps;
-+
-+	for (int i = base; i < base + rbio->sector_nsteps; i++) {
-+		const unsigned int page_index = (i * step) >> PAGE_SHIFT;
-+		struct page *page;
-+
-+		if (rbio->stripe_pages[page_index])
-+			continue;
-+		page = alloc_page(GFP_NOFS);
-+		if (!page)
-+			return -ENOMEM;
-+		rbio->stripe_pages[page_index] = page;
-+	}
-+	return 0;
-+}
-+
- /*
-  * We just scrub the parity that we have correct data on the same horizontal,
-  * so we needn't allocate all pages for all the stripes.
-  */
- static int alloc_rbio_essential_pages(struct btrfs_raid_bio *rbio)
+-static __maybe_unused bool full_page_sectors_uptodate(struct btrfs_raid_bio *rbio,
+-						      unsigned int page_nr)
++/* Get the sector number of the first sector covered by @page_nr. */
++static u32 page_nr_to_sector_nr(struct btrfs_raid_bio *rbio, unsigned int page_nr)
  {
 -	const u32 sectorsize = rbio->bioc->fs_info->sectorsize;
- 	int total_sector_nr;
+-	const u32 sectors_per_page = PAGE_SIZE / sectorsize;
+-	int i;
++	u32 sector_nr;
  
- 	for (total_sector_nr = 0; total_sector_nr < rbio->nr_sectors;
- 	     total_sector_nr++) {
--		struct page *page;
- 		int sectornr = total_sector_nr % rbio->stripe_nsectors;
--		int index = (total_sector_nr * sectorsize) >> PAGE_SHIFT;
-+		int ret;
+ 	ASSERT(page_nr < rbio->nr_pages);
  
- 		if (!test_bit(sectornr, &rbio->dbitmap))
- 			continue;
--		if (rbio->stripe_pages[index])
--			continue;
--		page = alloc_page(GFP_NOFS);
--		if (!page)
--			return -ENOMEM;
--		rbio->stripe_pages[index] = page;
-+		ret = alloc_rbio_sector_pages(rbio, total_sector_nr);
-+		if (ret < 0)
-+			return ret;
- 	}
- 	index_stripe_sectors(rbio);
- 	return 0;
- }
- 
-+/* Return true if the content of the step matches the caclulated one. */
-+static bool verify_one_parity_step(struct btrfs_raid_bio *rbio,
-+				   void *pointers[], unsigned int sector_nr,
-+				   unsigned int step_nr)
-+{
-+	const unsigned int nr_data = rbio->nr_data;
-+	const bool has_qstripe = (rbio->real_stripes - rbio->nr_data == 2);
-+	const u32 step = min(rbio->bioc->fs_info->sectorsize, PAGE_SIZE);
-+	void *parity;
-+	bool ret = false;
-+
-+	ASSERT(step_nr < rbio->sector_nsteps);
-+
-+	/* first collect one page from each data stripe */
-+	for (int stripe = 0; stripe < nr_data; stripe++)
-+		pointers[stripe] = kmap_local_paddr(
-+				sector_step_paddr_in_rbio(rbio, stripe, sector_nr, step_nr, 0));
-+
-+	if (has_qstripe) {
-+		assert_rbio(rbio);
-+		/* RAID6, call the library function to fill in our P/Q */
-+		raid6_call.gen_syndrome(rbio->real_stripes, step, pointers);
-+	} else {
-+		/* raid5 */
-+		memcpy(pointers[nr_data], pointers[0], step);
-+		run_xor(pointers + 1, nr_data - 1, step);
-+	}
-+
-+	/* Check scrubbing parity and repair it */
-+	parity = kmap_local_paddr(rbio_stripe_step_paddr(rbio, rbio->scrubp, sector_nr, step_nr));
-+	if (memcmp(parity, pointers[rbio->scrubp], step) != 0)
-+		memcpy(parity, pointers[rbio->scrubp], step);
-+	else
-+		ret = true;
-+	kunmap_local(parity);
-+
-+	for (int stripe = nr_data - 1; stripe >= 0; stripe--)
-+		kunmap_local(pointers[stripe]);
-+	return ret;
+-	for (i = sectors_per_page * page_nr;
+-	     i < sectors_per_page * page_nr + sectors_per_page;
+-	     i++) {
++	sector_nr = page_nr << PAGE_SHIFT >> rbio->bioc->fs_info->sectorsize_bits;
++	ASSERT(sector_nr < rbio->nr_sectors);
++	return sector_nr;
 +}
 +
 +/*
-+ * The @pointers array should have the P/Q parity already mapped.
++ * Get the number of sectors covered by @page_nr.
++ *
++ * For bs > ps cases, the result will always be 1.
++ * For bs <= ps cases, the result will be ps / bs.
 + */
-+static void verify_one_parity_sector(struct btrfs_raid_bio *rbio,
-+				    void *pointers[], unsigned int sector_nr)
++static u32 page_nr_to_num_sectors(struct btrfs_raid_bio *rbio, unsigned int page_nr)
 +{
-+	bool found_error = false;
++	struct btrfs_fs_info *fs_info = rbio->bioc->fs_info;
++	u32 nr_sectors;
 +
-+	for (int step_nr = 0; step_nr < rbio->sector_nsteps; step_nr++) {
-+		bool match;
++	ASSERT(page_nr < rbio->nr_pages);
 +
-+		match = verify_one_parity_step(rbio, pointers, sector_nr, step_nr);
-+		if (!match)
-+			found_error = true;
-+	}
-+	if (!found_error)
-+		bitmap_clear(&rbio->dbitmap, sector_nr, 1);
++	nr_sectors = round_up(PAGE_SIZE, fs_info->sectorsize) >> fs_info->sectorsize_bits;
++	ASSERT(nr_sectors > 0);
++	return nr_sectors;
 +}
 +
- static int finish_parity_scrub(struct btrfs_raid_bio *rbio)
++static __maybe_unused bool full_page_sectors_uptodate(struct btrfs_raid_bio *rbio,
++						      unsigned int page_nr)
++{
++	const u32 sector_nr = page_nr_to_sector_nr(rbio, page_nr);
++	const u32 nr_bits = page_nr_to_num_sectors(rbio, page_nr);
++	int i;
++
++	ASSERT(page_nr < rbio->nr_pages);
++	ASSERT(sector_nr + nr_bits < rbio->nr_sectors);
++
++	for (i = sector_nr; i < sector_nr + nr_bits; i++) {
+ 		if (!test_bit(i, rbio->stripe_uptodate_bitmap))
+ 			return false;
+ 	}
+@@ -345,8 +374,11 @@ static void index_stripe_sectors(struct btrfs_raid_bio *rbio)
+ static void steal_rbio_page(struct btrfs_raid_bio *src,
+ 			    struct btrfs_raid_bio *dest, int page_nr)
  {
- 	struct btrfs_io_context *bioc = rbio->bioc;
--	const u32 sectorsize = bioc->fs_info->sectorsize;
- 	void **pointers = rbio->finish_pointers;
- 	unsigned long *pbitmap = &rbio->finish_pbitmap;
- 	int nr_data = rbio->nr_data;
--	int stripe;
- 	int sectornr;
- 	bool has_qstripe;
- 	struct page *page;
-@@ -2729,37 +2755,8 @@ static int finish_parity_scrub(struct btrfs_raid_bio *rbio)
+-	const u32 sectorsize = src->bioc->fs_info->sectorsize;
+-	const u32 sectors_per_page = PAGE_SIZE / sectorsize;
++	const u32 sector_nr = page_nr_to_sector_nr(src, page_nr);
++	const u32 nr_bits = page_nr_to_num_sectors(src, page_nr);
++
++	ASSERT(page_nr < src->nr_pages);
++	ASSERT(sector_nr + nr_bits < src->nr_sectors);
  
- 	/* Map the parity stripe just once */
+ 	if (dest->stripe_pages[page_nr])
+ 		__free_page(dest->stripe_pages[page_nr]);
+@@ -354,13 +386,12 @@ static void steal_rbio_page(struct btrfs_raid_bio *src,
+ 	src->stripe_pages[page_nr] = NULL;
  
--	for_each_set_bit(sectornr, &rbio->dbitmap, rbio->stripe_nsectors) {
--		void *parity;
--
--		/* first collect one page from each data stripe */
--		for (stripe = 0; stripe < nr_data; stripe++)
--			pointers[stripe] = kmap_local_paddr(
--					sector_paddr_in_rbio(rbio, stripe, sectornr, 0));
--
--		if (has_qstripe) {
--			assert_rbio(rbio);
--			/* RAID6, call the library function to fill in our P/Q */
--			raid6_call.gen_syndrome(rbio->real_stripes, sectorsize,
--						pointers);
--		} else {
--			/* raid5 */
--			memcpy(pointers[nr_data], pointers[0], sectorsize);
--			run_xor(pointers + 1, nr_data - 1, sectorsize);
--		}
--
--		/* Check scrubbing parity and repair it */
--		parity = kmap_local_paddr(rbio_stripe_paddr(rbio, rbio->scrubp, sectornr));
--		if (memcmp(parity, pointers[rbio->scrubp], sectorsize) != 0)
--			memcpy(parity, pointers[rbio->scrubp], sectorsize);
--		else
--			/* Parity is right, needn't writeback */
--			bitmap_clear(&rbio->dbitmap, sectornr, 1);
--		kunmap_local(parity);
--
--		for (stripe = nr_data - 1; stripe >= 0; stripe--)
--			kunmap_local(pointers[stripe]);
--	}
-+	for_each_set_bit(sectornr, &rbio->dbitmap, rbio->stripe_nsectors)
-+		verify_one_parity_sector(rbio, pointers, sectornr);
+ 	/* Also update the stripe_uptodate_bitmap bits. */
+-	bitmap_set(dest->stripe_uptodate_bitmap, sectors_per_page * page_nr, sectors_per_page);
++	bitmap_set(dest->stripe_uptodate_bitmap, sector_nr, nr_bits);
+ }
  
- 	kunmap_local(pointers[nr_data]);
- 	__free_page(phys_to_page(p_paddr));
+ static bool is_data_stripe_page(struct btrfs_raid_bio *rbio, int page_nr)
+ {
+-	const int sector_nr = (page_nr << PAGE_SHIFT) >>
+-			      rbio->bioc->fs_info->sectorsize_bits;
++	const int sector_nr = page_nr_to_sector_nr(rbio, page_nr);
+ 
+ 	/*
+ 	 * We have ensured PAGE_SIZE is aligned with sectorsize, thus
 -- 
 2.51.2
 

@@ -1,64 +1,64 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7525F318143
-	for <linux-btrfs@vger.kernel.org>; Mon, 17 Nov 2025 07:31:48 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C2765319840
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Nov 2025 07:31:52 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1763364710; cv=none; b=qCWi+DfuLP8vxonSpBJzYYQs9Jl6iwS9hHucduROoxcAeC1iPFjGadhGVGIIaUzDCmWiJpqotlgm6FuTePN5s66FfEXzCOF3OO1FZOwrVgsCTd51YxlwGfccxWlz0kNPd4Pc7Qdl3znRsrh3P1MY/u9lXrZ53C1fMb1gN0LZgT0=
+	t=1763364714; cv=none; b=CvJQ8BR4JfX1NUCnip+bDXkEil4wrHEZRxxavx5h3wO9EL8BjyN7iHhpWhZ0fgDEJePlRDROc4VIkScEPbvOTb1nb8n3HSlT3kWH/wC/6JZPAehaV9tu9b3RhfCK/CM9f1qM/vKLTaMopTvxfJE4UGv++xQMUBhJSXwqdSe+HIM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1763364710; c=relaxed/simple;
-	bh=aXMjQjkaGGrw8oI/WV207Tk3B1l93VRBOceLgo7CEEY=;
+	s=arc-20240116; t=1763364714; c=relaxed/simple;
+	bh=k8U4nO3tCqdL6tNqdKzr8zIKbXgtF7kAplKW+ygXJpM=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=XIA5ptQ1Jr4+o85dVB6gbw+QmrEjBt/KVqhnpEONQJ6uIJqD+yA65GnHDxxkPxhwalT8lCsY/G27MNTqtJ1Zwu8xWhSWsjik72Z1fQl5g+wNx7CSMweRlbn/cjvVPfHKMDdpmXha94LtzrdO/8VGAJbpKdeVt1I7s5B19CV8JYk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=TbSz8L9/; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=TbSz8L9/; arc=none smtp.client-ip=195.135.223.131
+	 MIME-Version; b=B7GfHcTsQ0S3r/o2ZQBiJC4muc+RKPJ9X8s+QHAByaWCoZQDjTdpO9mETl3wVRvG+r7Pp+7nA0uEpMta2m3D+4CAZOG//TmMk88mrzPcua0HR8UuAf7IBpaOlYpzhd1xyfI1PjIJ/yoL8PymvD+aJkuaRjF2VJl5Eq5ueA6+0hM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=n4Xb3NWs; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=n4Xb3NWs; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="TbSz8L9/";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="TbSz8L9/"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="n4Xb3NWs";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="n4Xb3NWs"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 79D0C1F798
-	for <linux-btrfs@vger.kernel.org>; Mon, 17 Nov 2025 07:31:21 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 3B57B21210
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Nov 2025 07:31:25 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1763364681; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1763364685; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=xQ6QrXgxbKxpcjtvnpa7XMpl/XHuexGd+5eMs6FBIbE=;
-	b=TbSz8L9/TG/vRurwN61gVTYIC15ulQVVi+P4VntRegSbET9rzf65VILTcy/XLXCTIfGvat
-	sDI9L1JHEgEIh1I5i49UtPZMchkbykNdz42IGs4XwdxGacHPErKX6trhHokMj13nsPWGN6
-	AU661cGNcCrn9GDt7bKI1q8zg0bDuyc=
-Authentication-Results: smtp-out2.suse.de;
+	bh=MT8Gv+4uwJSX9V8a35iCRIkI4zq+kBv0qOxigZiT2LY=;
+	b=n4Xb3NWsNVU8VToeWNnqOck4YAM1WfVkh3AEtifzzmIYQTbLW5CXa/DWtUr0JIUjUISVH1
+	vFgvM2+P13UoNJnkUjUtJZGToQ1jpo8nIvKk6dDySFmk7CEbOgCHuMZa5S0EtVnuQhx/Ie
+	Xzd+xoHTJBtHL8BlvQ3lqSgRnWTbVJM=
+Authentication-Results: smtp-out1.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1763364681; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1763364685; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=xQ6QrXgxbKxpcjtvnpa7XMpl/XHuexGd+5eMs6FBIbE=;
-	b=TbSz8L9/TG/vRurwN61gVTYIC15ulQVVi+P4VntRegSbET9rzf65VILTcy/XLXCTIfGvat
-	sDI9L1JHEgEIh1I5i49UtPZMchkbykNdz42IGs4XwdxGacHPErKX6trhHokMj13nsPWGN6
-	AU661cGNcCrn9GDt7bKI1q8zg0bDuyc=
+	bh=MT8Gv+4uwJSX9V8a35iCRIkI4zq+kBv0qOxigZiT2LY=;
+	b=n4Xb3NWsNVU8VToeWNnqOck4YAM1WfVkh3AEtifzzmIYQTbLW5CXa/DWtUr0JIUjUISVH1
+	vFgvM2+P13UoNJnkUjUtJZGToQ1jpo8nIvKk6dDySFmk7CEbOgCHuMZa5S0EtVnuQhx/Ie
+	Xzd+xoHTJBtHL8BlvQ3lqSgRnWTbVJM=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id B34773EA61
-	for <linux-btrfs@vger.kernel.org>; Mon, 17 Nov 2025 07:31:20 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 74C623EA61
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Nov 2025 07:31:24 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id EIr9HEjPGmkLIgAAD6G6ig
+	id OAK4DUzPGmkLIgAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Mon, 17 Nov 2025 07:31:20 +0000
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Nov 2025 07:31:24 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 08/12] btrfs: prepare steal_rbio() to support bs > ps cases
-Date: Mon, 17 Nov 2025 18:00:48 +1030
-Message-ID: <c6b6695f1752ef2cebe8f0e1e958aa07b29448b1.1763361991.git.wqu@suse.com>
+Subject: [PATCH 11/12] btrfs: enable bs > ps support for raid56
+Date: Mon, 17 Nov 2025 18:00:51 +1030
+Message-ID: <8aeabb3ab32d2b3c2da3baece4903791ff891dcd.1763361991.git.wqu@suse.com>
 X-Mailer: git-send-email 2.51.2
 In-Reply-To: <cover.1763361991.git.wqu@suse.com>
 References: <cover.1763361991.git.wqu@suse.com>
@@ -69,7 +69,6 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Level: 
 X-Spamd-Result: default: False [-2.80 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
@@ -82,7 +81,7 @@ X-Spamd-Result: default: False [-2.80 / 50.00];
 	RCPT_COUNT_ONE(0.00)[1];
 	ARC_NA(0.00)[];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:mid];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:email,imap1.dmz-prg2.suse.org:helo];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
 	MIME_TRACE(0.00)[0:+];
@@ -93,130 +92,60 @@ X-Spamd-Result: default: False [-2.80 / 50.00];
 	RCVD_TLS_ALL(0.00)[]
 X-Spam-Flag: NO
 X-Spam-Score: -2.80
-
-The function steal_rbio() assume each fs block can be mapped by
-one page, blocking bs > ps support for raid56.
-
-Prepare it for bs > ps cases by:
-
-- Introduce two helpers to calculate the sector number
-  Previously we assume one page will contain at least one fs block, thus
-  can use something like "sectors_per_page = PAGE_SIZE / secotrsize;",
-  but with bs > ps support that above number will be 0.
-
-  Instead introduce two helpers:
-
-  * page_nr_to_sector_nr()
-    Returns the sector number of the first sector covered by the page.
-
-  * page_nr_to_num_sectors()
-    Return how many sectors are covered by the page.
-
-  And use the returned values for bitmap operations other than
-  open-coded "PAGE_SIZE / sectorsize".
-  Those helpers also have extra ASSERT()s to catch weird numbers.
-
-- Use above helpers
-  The involved functions are:
-  * steal_rbio_page()
-  * is_data_stripe_page()
-  * full_page_sectors_uptodate()
+X-Spam-Level: 
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/raid56.c | 57 ++++++++++++++++++++++++++++++++++++-----------
- 1 file changed, 44 insertions(+), 13 deletions(-)
+ fs/btrfs/disk-io.c |  6 ------
+ fs/btrfs/raid56.c  | 11 ++++++-----
+ 2 files changed, 6 insertions(+), 11 deletions(-)
 
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 0df81a09a3d1..fe62f5a244f5 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3258,12 +3258,6 @@ int btrfs_check_features(struct btrfs_fs_info *fs_info, bool is_rw_mount)
+ 			   PAGE_SIZE, fs_info->sectorsize);
+ 		return -EINVAL;
+ 	}
+-	if (fs_info->sectorsize > PAGE_SIZE && btrfs_fs_incompat(fs_info, RAID56)) {
+-		btrfs_err(fs_info,
+-		"RAID56 is not supported for page size %lu with sectorsize %u",
+-			  PAGE_SIZE, fs_info->sectorsize);
+-		return -EINVAL;
+-	}
+ 
+ 	/* This can be called by remount, we need to protect the super block. */
+ 	spin_lock(&fs_info->super_lock);
 diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index 820bdc7f6dbe..7cb3b3eccda6 100644
+index d8d3af2c4db5..ec6427565f25 100644
 --- a/fs/btrfs/raid56.c
 +++ b/fs/btrfs/raid56.c
-@@ -300,18 +300,47 @@ static int rbio_bucket(struct btrfs_raid_bio *rbio)
- 	return hash_64(num >> 16, BTRFS_STRIPE_HASH_TABLE_BITS);
- }
+@@ -1070,8 +1070,12 @@ static struct btrfs_raid_bio *alloc_rbio(struct btrfs_fs_info *fs_info,
+ 	const unsigned int sector_nsteps = fs_info->sectorsize / step;
+ 	struct btrfs_raid_bio *rbio;
  
--static __maybe_unused bool full_page_sectors_uptodate(struct btrfs_raid_bio *rbio,
--						      unsigned int page_nr)
-+/* Get the sector number of the first sector covered by @page_nr. */
-+static u32 page_nr_to_sector_nr(struct btrfs_raid_bio *rbio, unsigned int page_nr)
- {
--	const u32 sectorsize = rbio->bioc->fs_info->sectorsize;
--	const u32 sectors_per_page = PAGE_SIZE / sectorsize;
--	int i;
-+	u32 sector_nr;
- 
- 	ASSERT(page_nr < rbio->nr_pages);
- 
--	for (i = sectors_per_page * page_nr;
--	     i < sectors_per_page * page_nr + sectors_per_page;
--	     i++) {
-+	sector_nr = page_nr << PAGE_SHIFT >> rbio->bioc->fs_info->sectorsize_bits;
-+	ASSERT(sector_nr < rbio->nr_sectors);
-+	return sector_nr;
-+}
-+
-+/*
-+ * Get the number of sectors covered by @page_nr.
-+ *
-+ * For bs > ps cases, the result will always be 1.
-+ * For bs <= ps cases, the result will be ps / bs.
-+ */
-+static u32 page_nr_to_num_sectors(struct btrfs_raid_bio *rbio, unsigned int page_nr)
-+{
-+	struct btrfs_fs_info *fs_info = rbio->bioc->fs_info;
-+	u32 nr_sectors;
-+
-+	ASSERT(page_nr < rbio->nr_pages);
-+
-+	nr_sectors = round_up(PAGE_SIZE, fs_info->sectorsize) >> fs_info->sectorsize_bits;
-+	ASSERT(nr_sectors > 0);
-+	return nr_sectors;
-+}
-+
-+static __maybe_unused bool full_page_sectors_uptodate(struct btrfs_raid_bio *rbio,
-+						      unsigned int page_nr)
-+{
-+	const u32 sector_nr = page_nr_to_sector_nr(rbio, page_nr);
-+	const u32 nr_bits = page_nr_to_num_sectors(rbio, page_nr);
-+	int i;
-+
-+	ASSERT(page_nr < rbio->nr_pages);
-+	ASSERT(sector_nr + nr_bits < rbio->nr_sectors);
-+
-+	for (i = sector_nr; i < sector_nr + nr_bits; i++) {
- 		if (!test_bit(i, rbio->stripe_uptodate_bitmap))
- 			return false;
- 	}
-@@ -345,8 +374,11 @@ static void index_stripe_sectors(struct btrfs_raid_bio *rbio)
- static void steal_rbio_page(struct btrfs_raid_bio *src,
- 			    struct btrfs_raid_bio *dest, int page_nr)
- {
--	const u32 sectorsize = src->bioc->fs_info->sectorsize;
--	const u32 sectors_per_page = PAGE_SIZE / sectorsize;
-+	const u32 sector_nr = page_nr_to_sector_nr(src, page_nr);
-+	const u32 nr_bits = page_nr_to_num_sectors(src, page_nr);
-+
-+	ASSERT(page_nr < src->nr_pages);
-+	ASSERT(sector_nr + nr_bits < src->nr_sectors);
- 
- 	if (dest->stripe_pages[page_nr])
- 		__free_page(dest->stripe_pages[page_nr]);
-@@ -354,13 +386,12 @@ static void steal_rbio_page(struct btrfs_raid_bio *src,
- 	src->stripe_pages[page_nr] = NULL;
- 
- 	/* Also update the stripe_uptodate_bitmap bits. */
--	bitmap_set(dest->stripe_uptodate_bitmap, sectors_per_page * page_nr, sectors_per_page);
-+	bitmap_set(dest->stripe_uptodate_bitmap, sector_nr, nr_bits);
- }
- 
- static bool is_data_stripe_page(struct btrfs_raid_bio *rbio, int page_nr)
- {
--	const int sector_nr = (page_nr << PAGE_SHIFT) >>
--			      rbio->bioc->fs_info->sectorsize_bits;
-+	const int sector_nr = page_nr_to_sector_nr(rbio, page_nr);
- 
+-	/* PAGE_SIZE must also be aligned to sectorsize for subpage support */
+-	ASSERT(IS_ALIGNED(PAGE_SIZE, fs_info->sectorsize));
++	/*
++	 * For bs <= ps cases, ps must be aligned to bs.
++	 * For bs > ps cases, bs must be aligned to ps.
++	 */
++	ASSERT(IS_ALIGNED(PAGE_SIZE, fs_info->sectorsize) ||
++	       IS_ALIGNED(fs_info->sectorsize, PAGE_SIZE));
  	/*
- 	 * We have ensured PAGE_SIZE is aligned with sectorsize, thus
+ 	 * Our current stripe len should be fixed to 64k thus stripe_nsectors
+ 	 * (at most 16) should be no larger than BITS_PER_LONG.
+@@ -3013,9 +3017,6 @@ void raid56_parity_cache_data_folios(struct btrfs_raid_bio *rbio,
+ 	unsigned int foffset = 0;
+ 	int ret;
+ 
+-	/* We shouldn't hit RAID56 for bs > ps cases for now. */
+-	ASSERT(fs_info->sectorsize <= PAGE_SIZE);
+-
+ 	/*
+ 	 * If we hit ENOMEM temporarily, but later at
+ 	 * raid56_parity_submit_scrub_rbio() time it succeeded, we just do
 -- 
 2.51.2
 

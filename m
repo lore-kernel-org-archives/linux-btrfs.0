@@ -1,51 +1,64 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5ADA421CC79
-	for <linux-btrfs@vger.kernel.org>; Tue, 18 Nov 2025 16:01:03 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 11022368283
+	for <linux-btrfs@vger.kernel.org>; Tue, 18 Nov 2025 16:01:01 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1763481666; cv=none; b=nukDX6L0j6XhjRtGX+6RlBAO2noEXIJAYT8VOWvuMVMXdOLUyWeo8ZiN4vk9Mm7gKgeg8pY0tXC2h4UyDhNAzR4XGn0j7Dst4YM/BAfsv9mGtuRKhKhoqTiz4+2W7pkndHYl3xa6qV561mqBkmRXomX1QQThMUMO1LFREOCMS9I=
+	t=1763481666; cv=none; b=Xg307yvDb0axKO2gRe/4J6T14VyFsFBRHScdJPJvYvFtRgZdwtdMBH9PpSbGrhcq8sxeU5x6nhUlg5EQ81/RM277+HgUcxJWs8PoyhV7kmWwwc1vu9x9DuXImZylLta5eWzG/jeLxYpxJpIheiFDju9/3ZQkNBxzPA6bkmeZ5Kw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
 	s=arc-20240116; t=1763481666; c=relaxed/simple;
-	bh=Nzhid2/pJpHrx5bd6hwPpov67PXovshnomGwlX0XCu8=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=NafpO8U50GBOmYp/tCi+/I1qmEMqmhtH8MQV/kQbepw/BBKLofof7uC7CYOQmAhklRG+7yIT0IbudUeUKt/9jp7agHJtww0g3uLT29DUGrXwDTLeJHRgKhvERWPA2KfM2LZsv4ny+Em0XPDVSrtvLqO48ziNdSl9Eogu6up4vkE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; arc=none smtp.client-ip=195.135.223.131
+	bh=G/PcL32W6pN6LJNIU48lHEYBuakJhvRcUWn4ANif34c=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=Mo6sZko7qW+JhgtfOfKbXfUNOZWRd4K+ScxixbTdNyt3Jl789IhsDTYLQF+xBkC8zgGEYs3lOKSpSVL1tyHn7wtanOSU3sJlRG8h5ds6T6PmO/AfnErkZTs5LiU2H5SA9gICwFRoZBHpJfNNl+BFRJNNZmjgfrjGbLCnORuXgtQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=SYd3M0L/; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=SYd3M0L/; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="SYd3M0L/";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="SYd3M0L/"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id B2B371FF82;
-	Tue, 18 Nov 2025 16:01:01 +0000 (UTC)
-Authentication-Results: smtp-out2.suse.de;
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 4713E21213;
+	Tue, 18 Nov 2025 16:01:00 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1763481660; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=f1yQrO6NNXsyK4sDSdaeK2nzBywWbKW9HcWTS+j25H8=;
+	b=SYd3M0L/PGYwZOrnWn2WcCc92FToUSznRJKpUdF3czJyFmYpNrWLS0h+1WgoYarc4BzGkA
+	yWdCjQyvO9VEhEdBiNBHgE8Ovcw8By+Q0D9xC8ByrsBvyn1/OGQ+X3Y0s7OSQO9qp83Twv
+	fQ9Yj0UH4r5J5tRHPJxZ/5Ln75BUwlQ=
+Authentication-Results: smtp-out1.suse.de;
 	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1763481660; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=f1yQrO6NNXsyK4sDSdaeK2nzBywWbKW9HcWTS+j25H8=;
+	b=SYd3M0L/PGYwZOrnWn2WcCc92FToUSznRJKpUdF3czJyFmYpNrWLS0h+1WgoYarc4BzGkA
+	yWdCjQyvO9VEhEdBiNBHgE8Ovcw8By+Q0D9xC8ByrsBvyn1/OGQ+X3Y0s7OSQO9qp83Twv
+	fQ9Yj0UH4r5J5tRHPJxZ/5Ln75BUwlQ=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 996483EA61;
-	Tue, 18 Nov 2025 16:01:01 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 2F3B33EA61;
+	Tue, 18 Nov 2025 16:01:00 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id GLHpJD2YHGkSWgAAD6G6ig
-	(envelope-from <neelx@suse.com>); Tue, 18 Nov 2025 16:01:01 +0000
+	id nJGyCjyYHGkSWgAAD6G6ig
+	(envelope-from <neelx@suse.com>); Tue, 18 Nov 2025 16:01:00 +0000
 From: Daniel Vacek <neelx@suse.com>
 To: Chris Mason <clm@fb.com>,
 	Josef Bacik <josef@toxicpanda.com>,
 	David Sterba <dsterba@suse.com>
 Cc: Daniel Vacek <neelx@suse.com>,
 	linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	Daniel Vacek <neelx.g@gmail.com>
-Subject: [PATCH v7 3/6] btrfs: add orig_logical to btrfs_bio
-Date: Tue, 18 Nov 2025 17:00:38 +0100
-Message-ID: <20251118160043.3005684-4-neelx@suse.com>
+	linux-kernel@vger.kernel.org
+Subject: [PATCH v7 0/7] btrfs: add fscrypt support, PART 1
+Date: Tue, 18 Nov 2025 17:00:35 +0100
+Message-ID: <20251118160043.3005684-1-neelx@suse.com>
 X-Mailer: git-send-email 2.51.0
-In-Reply-To: <20251118160043.3005684-1-neelx@suse.com>
-References: <20251118160043.3005684-1-neelx@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -53,100 +66,69 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Rspamd-Pre-Result: action=no action;
-	module=replies;
-	Message is reply to one we originated
-X-Spam-Level: 
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Spamd-Result: default: False [-4.00 / 50.00];
-	REPLY(-4.00)[];
-	TAGGED_RCPT(0.00)[]
-X-Rspamd-Queue-Id: B2B371FF82
-X-Rspamd-Pre-Result: action=no action;
-	module=replies;
-	Message is reply to one we originated
-X-Rspamd-Action: no action
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	ARC_NA(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	TO_DN_SOME(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	RCPT_COUNT_FIVE(0.00)[6];
+	RCVD_TLS_ALL(0.00)[]
 X-Spam-Flag: NO
-X-Spam-Score: -4.00
+X-Spam-Score: -2.80
+X-Spam-Level: 
 
-From: Josef Bacik <josef@toxicpanda.com>
+This is a revive of former work [1] of Omar, Sweet Tea and Josef to bring
+native encryption support to btrfs.
 
-When checksumming the encrypted bio on writes we need to know which
-logical address this checksum is for.  At the point where we get the
-encrypted bio the bi_sector is the physical location on the target disk,
-so we need to save the original logical offset in the btrfs_bio.  Then
-we can use this when csum'ing the bio instead of the
-bio->iter.bi_sector.
+It will come in more parts. The first part this time is splitting the simple
+and isolated stuff out first to reduce the size of the final patchset.
 
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-Signed-off-by: Daniel Vacek <neelx.g@gmail.com>
----
- fs/btrfs/bio.c       | 10 ++++++++++
+Changes:
+ * v7 - Drop the checksum patch for now. It will make more sense later.
+      - Drop the btrfs/330 fix. It seems no longer needed after the years.
+ * v6 vs v5 [1] is mostly rebase to the latest for-next and cleaning up the
+   conflicts.
+
+The remaining part needs further cleanup and a bit of redesign and it will
+follow later.
+
+[1] https://lore.kernel.org/linux-btrfs/cover.1706116485.git.josef@toxicpanda.com/
+
+Josef Bacik (4):
+  btrfs: add orig_logical to btrfs_bio
+  btrfs: don't rewrite ret from inode_permission
+  btrfs: move inode_to_path higher in backref.c
+  btrfs: don't search back for dir inode item in INO_LOOKUP_USER
+
+Omar Sandoval (1):
+  btrfs: disable various operations on encrypted inodes
+
+Sweet Tea Dorminy (1):
+  btrfs: disable verity on encrypted inodes
+
+ fs/btrfs/backref.c   | 68 +++++++++++++++++++++-----------------------
+ fs/btrfs/bio.c       | 10 +++++++
  fs/btrfs/bio.h       |  2 ++
  fs/btrfs/file-item.c |  2 +-
- 3 files changed, 13 insertions(+), 1 deletion(-)
+ fs/btrfs/inode.c     |  4 +++
+ fs/btrfs/ioctl.c     | 27 +++---------------
+ fs/btrfs/reflink.c   |  7 +++++
+ fs/btrfs/verity.c    |  3 ++
+ 8 files changed, 63 insertions(+), 60 deletions(-)
 
-diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
-index 1b38e3ee0a33..4a7bef895b97 100644
---- a/fs/btrfs/bio.c
-+++ b/fs/btrfs/bio.c
-@@ -94,6 +94,8 @@ static struct btrfs_bio *btrfs_split_bio(struct btrfs_fs_info *fs_info,
- 	if (bbio_has_ordered_extent(bbio)) {
- 		refcount_inc(&orig_bbio->ordered->refs);
- 		bbio->ordered = orig_bbio->ordered;
-+		bbio->orig_logical = orig_bbio->orig_logical;
-+		orig_bbio->orig_logical += map_length;
- 	}
- 	bbio->csum_search_commit_root = orig_bbio->csum_search_commit_root;
- 	atomic_inc(&orig_bbio->pending_ios);
-@@ -765,6 +767,14 @@ static bool btrfs_submit_chunk(struct btrfs_bio *bbio, int mirror_num)
- 		goto end_bbio;
- 	}
- 
-+	/*
-+	 * For fscrypt writes we will get the encrypted bio after we've
-+	 * remapped our bio to the physical disk location, so we need to
-+	 * save the original bytenr so we know what we're checksumming.
-+	 */
-+	if (bio_op(bio) == REQ_OP_WRITE && is_data_bbio(bbio))
-+		bbio->orig_logical = logical;
-+
- 	map_length = min(map_length, length);
- 	if (use_append)
- 		map_length = btrfs_append_map_length(bbio, map_length);
-diff --git a/fs/btrfs/bio.h b/fs/btrfs/bio.h
-index 035145909b00..56279b7f3b2a 100644
---- a/fs/btrfs/bio.h
-+++ b/fs/btrfs/bio.h
-@@ -52,6 +52,7 @@ struct btrfs_bio {
- 		 * - pointer to the checksums for this bio
- 		 * - original physical address from the allocator
- 		 *   (for zone append only)
-+		 * - original logical address, used for checksumming fscrypt bios.
- 		 */
- 		struct {
- 			struct btrfs_ordered_extent *ordered;
-@@ -60,6 +61,7 @@ struct btrfs_bio {
- 			struct completion csum_done;
- 			struct bvec_iter csum_saved_iter;
- 			u64 orig_physical;
-+			u64 orig_logical;
- 		};
- 
- 		/* For metadata reads: parentness verification. */
-diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index b17632ea085f..14e5257f0f04 100644
---- a/fs/btrfs/file-item.c
-+++ b/fs/btrfs/file-item.c
-@@ -824,7 +824,7 @@ int btrfs_csum_one_bio(struct btrfs_bio *bbio, bool async)
- 	if (!sums)
- 		return -ENOMEM;
- 
--	sums->logical = bio->bi_iter.bi_sector << SECTOR_SHIFT;
-+	sums->logical = bbio->orig_logical;
- 	sums->len = bio->bi_iter.bi_size;
- 	INIT_LIST_HEAD(&sums->list);
- 	bbio->sums = sums;
 -- 
 2.51.0
 

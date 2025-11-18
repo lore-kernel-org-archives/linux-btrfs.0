@@ -1,58 +1,58 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 30A5836B04E
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B5FBB3730DC
 	for <linux-btrfs@vger.kernel.org>; Tue, 18 Nov 2025 16:09:08 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1763482150; cv=none; b=KPj5weenthDNSFqagWJD7HdkFt2m0bSbwn9AnvNIq+mm7T/Y1LAXL1bm/Da6m8DlHxOvy1rYVGyqqUM+ED9+/0YTObA+gA6gpaROJfF8Jyvp1Y4b0YY6C7dolgeB+1seWpO+5SmPAqitDXPjNqiYI8fzV3/LNTtfzht5PJRdsHI=
+	t=1763482155; cv=none; b=pkQfD7Wj7SPEEZMuvFaBW1vmJyy5Cpxpsk2C3kcWnrsKkPn06b/Q1eF8T6s0YXd1oTuJM0nIV8s/Faw2s7g5m1rZjToDWWwMbSrOATsjWk3EFiLD7TrCyL4BMfanAzpwWJ9uM3awkDck08yfn/lx7YSxtDlNd9jeUkRoX/NqQsk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1763482150; c=relaxed/simple;
-	bh=EqBXRxLaT5bXn9isFY1BGIkHkrg2gtWCsErmndXmkfQ=;
+	s=arc-20240116; t=1763482155; c=relaxed/simple;
+	bh=H09kXkzCHjshIOsBvxrpbDVneOhMeKZ4DakgDGkO498=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=Gb9lcOb4DMrt2RZmGmJypfgJNq+GErM1SZVvh6HEkXo0VO4ZgBcGEVOPUWnAqVYqYw/fMfB6CX8KkuLI6p7X5vqEIZEgKlu63dP2s4G40E0xAspDglaNG5QasOa+oOKO/EXhOy46ZfoPRaP7Rfq5uBA1Is2ue0S2JEWxqYFwAX4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=XDR1rTrw; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=tbtVxzrG; arc=none smtp.client-ip=195.135.223.130
+	 MIME-Version; b=E5Ki5089UO7wMo2QCwMcKlhRmCIQpRvHlCI6uundY4Wo5XPsjnH2cEE+LlWf5VI2/Pqqv14MzzffsVwVf0Am3YwTk65oQzmPjCi/mc/zG/g7i/aKCHwDbgfReNrd4Q5hUnRbVk0fx45F29E5VvRZtHcLJWTc3lmcR+XF5lZw3gE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=rWeRhXbc; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=rWeRhXbc; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="XDR1rTrw";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="tbtVxzrG"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="rWeRhXbc";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="rWeRhXbc"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id E64052126E;
-	Tue, 18 Nov 2025 16:08:54 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id BB8791FF8B;
+	Tue, 18 Nov 2025 16:08:53 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1763482135; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1763482133; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=rGiyHM236mKp4HMdnwwzVRNs3LJ5NzSkeXvprHlui7E=;
-	b=XDR1rTrw9UICaG8Gyc/NWxVpJ2akZ7338YXWmJgyiwb+yrNeDIdnBOLP0uMxvBIw+TK8+6
-	OBNrNIP9WOEV0ol6FQHcZk65EQ6OQtIRmPBPElsKp1uvKqOFP1Ro9P7G8GYppd5ukgj2cQ
-	W+kIsnJ0aED8wwmt1bOJiaE0IOVZ3eM=
-Authentication-Results: smtp-out1.suse.de;
+	bh=izpK1ZO+0JeJl4swc++dI5OHKibxqNBLEWwV3CvwziQ=;
+	b=rWeRhXbcmaeroHmZG4GZU5coA/btSey/IEb6usvfnVxEgsyRrSaqOKhotd3O72suVQU91P
+	u01UCI6fw+0JJxxe7mijKHWgfJPuF2kzqrBxmVRXyoL2UQeTTQp9iop5o6C6ulqfBLCoCP
+	yD/Fsm6RXBamilIJBuEj+lZTnz3gSQs=
+Authentication-Results: smtp-out2.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1763482134; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1763482133; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=rGiyHM236mKp4HMdnwwzVRNs3LJ5NzSkeXvprHlui7E=;
-	b=tbtVxzrGcvbSvS+Jp/kA0lL1MmQUjWCxMxJahubj7//pS3zITOaA08MVEGes00iRlxuTLT
-	Y8kjdkQj5IbrAS9n1RPt8fTWtA5W9jdFVykY1te8+Ytosi+cWmXSO2ginZh6BdxKjAac7D
-	RgTnxrVK72Q7MBN0V0gtOwFmm6yqiLs=
+	bh=izpK1ZO+0JeJl4swc++dI5OHKibxqNBLEWwV3CvwziQ=;
+	b=rWeRhXbcmaeroHmZG4GZU5coA/btSey/IEb6usvfnVxEgsyRrSaqOKhotd3O72suVQU91P
+	u01UCI6fw+0JJxxe7mijKHWgfJPuF2kzqrBxmVRXyoL2UQeTTQp9iop5o6C6ulqfBLCoCP
+	yD/Fsm6RXBamilIJBuEj+lZTnz3gSQs=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id D2BD83EA61;
-	Tue, 18 Nov 2025 16:08:54 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id A655C3EA61;
+	Tue, 18 Nov 2025 16:08:53 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id qNjJMhaaHGlnYQAAD6G6ig
-	(envelope-from <neelx@suse.com>); Tue, 18 Nov 2025 16:08:54 +0000
+	id QNIBKBWaHGlnYQAAD6G6ig
+	(envelope-from <neelx@suse.com>); Tue, 18 Nov 2025 16:08:53 +0000
 From: Daniel Vacek <neelx@suse.com>
 To: Chris Mason <clm@fb.com>,
 	Josef Bacik <josef@toxicpanda.com>,
@@ -60,9 +60,9 @@ To: Chris Mason <clm@fb.com>,
 Cc: Daniel Vacek <neelx@suse.com>,
 	linux-btrfs@vger.kernel.org,
 	linux-kernel@vger.kernel.org
-Subject: [PATCH v7 6/6] btrfs: don't search back for dir inode item in INO_LOOKUP_USER
-Date: Tue, 18 Nov 2025 17:08:43 +0100
-Message-ID: <20251118160845.3006733-7-neelx@suse.com>
+Subject: [PATCH v7 3/6] btrfs: add orig_logical to btrfs_bio
+Date: Tue, 18 Nov 2025 17:08:40 +0100
+Message-ID: <20251118160845.3006733-4-neelx@suse.com>
 X-Mailer: git-send-email 2.51.0
 In-Reply-To: <20251118160845.3006733-1-neelx@suse.com>
 References: <20251118160845.3006733-1-neelx@suse.com>
@@ -100,67 +100,81 @@ X-Spam-Score: -6.80
 
 From: Josef Bacik <josef@toxicpanda.com>
 
-We don't need to search back to the inode item, the directory inode
-number is in key.offset, so simply use that.  If we can't find the
-directory we'll get an ENOENT at the iget.
+When checksumming the encrypted bio on writes we need to know which
+logical address this checksum is for.  At the point where we get the
+encrypted bio the bi_sector is the physical location on the target disk,
+so we need to save the original logical offset in the btrfs_bio.  Then
+we can use this when csum'ing the bio instead of the
+bio->iter.bi_sector.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/ioctl.c | 23 +++--------------------
- 1 file changed, 3 insertions(+), 20 deletions(-)
+ fs/btrfs/bio.c       | 10 ++++++++++
+ fs/btrfs/bio.h       |  2 ++
+ fs/btrfs/file-item.c |  2 +-
+ 3 files changed, 13 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index c2d992f5ce7d..69df5765acfa 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1822,7 +1822,7 @@ static int btrfs_search_path_in_tree_user(struct mnt_idmap *idmap,
- 	struct btrfs_root_ref *rref;
- 	struct btrfs_root *root = NULL;
- 	struct btrfs_path *path;
--	struct btrfs_key key, key2;
-+	struct btrfs_key key;
- 	struct extent_buffer *leaf;
- 	char *ptr;
- 	int slot;
-@@ -1877,24 +1877,6 @@ static int btrfs_search_path_in_tree_user(struct mnt_idmap *idmap,
- 			read_extent_buffer(leaf, ptr,
- 					(unsigned long)(iref + 1), len);
+diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
+index 1b38e3ee0a33..4a7bef895b97 100644
+--- a/fs/btrfs/bio.c
++++ b/fs/btrfs/bio.c
+@@ -94,6 +94,8 @@ static struct btrfs_bio *btrfs_split_bio(struct btrfs_fs_info *fs_info,
+ 	if (bbio_has_ordered_extent(bbio)) {
+ 		refcount_inc(&orig_bbio->ordered->refs);
+ 		bbio->ordered = orig_bbio->ordered;
++		bbio->orig_logical = orig_bbio->orig_logical;
++		orig_bbio->orig_logical += map_length;
+ 	}
+ 	bbio->csum_search_commit_root = orig_bbio->csum_search_commit_root;
+ 	atomic_inc(&orig_bbio->pending_ios);
+@@ -765,6 +767,14 @@ static bool btrfs_submit_chunk(struct btrfs_bio *bbio, int mirror_num)
+ 		goto end_bbio;
+ 	}
  
--			/* Check the read+exec permission of this directory */
--			ret = btrfs_previous_item(root, path, dirid,
--						  BTRFS_INODE_ITEM_KEY);
--			if (ret < 0) {
--				goto out_put;
--			} else if (ret > 0) {
--				ret = -ENOENT;
--				goto out_put;
--			}
--
--			leaf = path->nodes[0];
--			slot = path->slots[0];
--			btrfs_item_key_to_cpu(leaf, &key2, slot);
--			if (key2.objectid != dirid) {
--				ret = -ENOENT;
--				goto out_put;
--			}
--
- 			/*
- 			 * We don't need the path anymore, so release it and
- 			 * avoid deadlocks and lockdep warnings in case
-@@ -1902,11 +1884,12 @@ static int btrfs_search_path_in_tree_user(struct mnt_idmap *idmap,
- 			 * btree and lock the same leaf.
- 			 */
- 			btrfs_release_path(path);
--			temp_inode = btrfs_iget(key2.objectid, root);
-+			temp_inode = btrfs_iget(key.offset, root);
- 			if (IS_ERR(temp_inode)) {
- 				ret = PTR_ERR(temp_inode);
- 				goto out_put;
- 			}
-+			/* Check the read+exec permission of this directory */
- 			ret = inode_permission(idmap, &temp_inode->vfs_inode,
- 					       MAY_READ | MAY_EXEC);
- 			iput(&temp_inode->vfs_inode);
++	/*
++	 * For fscrypt writes we will get the encrypted bio after we've
++	 * remapped our bio to the physical disk location, so we need to
++	 * save the original bytenr so we know what we're checksumming.
++	 */
++	if (bio_op(bio) == REQ_OP_WRITE && is_data_bbio(bbio))
++		bbio->orig_logical = logical;
++
+ 	map_length = min(map_length, length);
+ 	if (use_append)
+ 		map_length = btrfs_append_map_length(bbio, map_length);
+diff --git a/fs/btrfs/bio.h b/fs/btrfs/bio.h
+index 035145909b00..56279b7f3b2a 100644
+--- a/fs/btrfs/bio.h
++++ b/fs/btrfs/bio.h
+@@ -52,6 +52,7 @@ struct btrfs_bio {
+ 		 * - pointer to the checksums for this bio
+ 		 * - original physical address from the allocator
+ 		 *   (for zone append only)
++		 * - original logical address, used for checksumming fscrypt bios.
+ 		 */
+ 		struct {
+ 			struct btrfs_ordered_extent *ordered;
+@@ -60,6 +61,7 @@ struct btrfs_bio {
+ 			struct completion csum_done;
+ 			struct bvec_iter csum_saved_iter;
+ 			u64 orig_physical;
++			u64 orig_logical;
+ 		};
+ 
+ 		/* For metadata reads: parentness verification. */
+diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+index b17632ea085f..14e5257f0f04 100644
+--- a/fs/btrfs/file-item.c
++++ b/fs/btrfs/file-item.c
+@@ -824,7 +824,7 @@ int btrfs_csum_one_bio(struct btrfs_bio *bbio, bool async)
+ 	if (!sums)
+ 		return -ENOMEM;
+ 
+-	sums->logical = bio->bi_iter.bi_sector << SECTOR_SHIFT;
++	sums->logical = bbio->orig_logical;
+ 	sums->len = bio->bi_iter.bi_size;
+ 	INIT_LIST_HEAD(&sums->list);
+ 	bbio->sums = sums;
 -- 
 2.51.0
 

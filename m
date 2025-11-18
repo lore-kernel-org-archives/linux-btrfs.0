@@ -1,53 +1,37 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1890B31A810
-	for <linux-btrfs@vger.kernel.org>; Tue, 18 Nov 2025 16:08:53 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 372BA36C5B3
+	for <linux-btrfs@vger.kernel.org>; Tue, 18 Nov 2025 16:09:01 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1763482135; cv=none; b=u2gLxhgR15Q1xqbICzZcVkGnnhzoqOFX/7WBfCUnjHrfIDk97DoQzbL4YLO3mlekCLSU1VgzPCo4vwi+3llSfYp9H5l3gPmkjatfEvi2Q2P0lFGvXUaxE3GFOZBZ/l3qFIO/D6rUR9h8XobR34QvbwJWhlsxm0gAfUhPSuA5c6o=
+	t=1763482143; cv=none; b=lUFJy7MFRVsfJ4o10SMuTIwOsKbM05euch3Q8s2ivBEYK+gXpEUizJDgM3hcfrv9MavvkLnGDZ/giPixGLharbzUl1URVn5UBv3cHJ2u7cvGeDxEWw3jJdRcvSX2qYpTl9n9ELFmKuhRFerksV3YHzGn3KRxbBecMc17M6e8gdM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1763482135; c=relaxed/simple;
-	bh=qQNxbrPJgckfxl5XEzf9AC+vQWWpW1+4JFGp7mTmgRU=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=WGoG363JlK1XpENGNg1nFKi7mlvPgcS/nzYq6YmNhgInTaCPXFeyGeP+QjoXnFPwRTHwzyas90Djjqd7jWxb6sMtNv0b0n9VSNcvHt/zFBkwICRtsuumqlpUflqXZWOAiTvyCs08Yv4X/b4w/z28wdGryFi81fd/rDRihCxrLgQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=VNW82bH7; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=VNW82bH7; arc=none smtp.client-ip=195.135.223.131
+	s=arc-20240116; t=1763482143; c=relaxed/simple;
+	bh=a4EeTFdOmh5nbZ+a7Uyi1ZCNfwYSq1mywHIrl7yJSOc=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=ptujEOoiYHD03xeg8NtKp+VrLYkPyV6LG274n6KkcA4QAnpH1husxK2I5T2XD7x7gHkggRwTG6aQT6bcN+p/ib07Cz4u/h8kX59nMkFnwd7qE3iRQ8oJArBcExvAB77XpwERBLI3OxlNax0LbinpZSMtnEoJhWwh/W5ZpPiyY1k=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="VNW82bH7";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="VNW82bH7"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 558251FF89;
-	Tue, 18 Nov 2025 16:08:52 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1763482132; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=ZN8hz8qH0kyaqIpHFb2FDOim+tbb3QcWxi70pd8Ptz8=;
-	b=VNW82bH7ei1p6dvCeqczcQNOj43VcsL6024u4tRD/STn59//wiMejx/xZavh8HsRKlI9pB
-	qnfp7qY37ZuZgx9HJQESg48ml7psf8RjSCHT9tkuB41Yrq0E7OBze5PwO7sYtxChUwlcY9
-	wQMbCJ3Z1F74CUK80Onx5ON1jy2pjHU=
-Authentication-Results: smtp-out2.suse.de;
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 8836B211F6;
+	Tue, 18 Nov 2025 16:08:54 +0000 (UTC)
+Authentication-Results: smtp-out1.suse.de;
 	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1763482132; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=ZN8hz8qH0kyaqIpHFb2FDOim+tbb3QcWxi70pd8Ptz8=;
-	b=VNW82bH7ei1p6dvCeqczcQNOj43VcsL6024u4tRD/STn59//wiMejx/xZavh8HsRKlI9pB
-	qnfp7qY37ZuZgx9HJQESg48ml7psf8RjSCHT9tkuB41Yrq0E7OBze5PwO7sYtxChUwlcY9
-	wQMbCJ3Z1F74CUK80Onx5ON1jy2pjHU=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 3C4143EA61;
-	Tue, 18 Nov 2025 16:08:52 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 716293EA61;
+	Tue, 18 Nov 2025 16:08:54 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id MrIoDhSaHGlnYQAAD6G6ig
-	(envelope-from <neelx@suse.com>); Tue, 18 Nov 2025 16:08:52 +0000
+	id EHchGxaaHGlnYQAAD6G6ig
+	(envelope-from <neelx@suse.com>); Tue, 18 Nov 2025 16:08:54 +0000
 From: Daniel Vacek <neelx@suse.com>
 To: Chris Mason <clm@fb.com>,
 	Josef Bacik <josef@toxicpanda.com>,
@@ -55,10 +39,12 @@ To: Chris Mason <clm@fb.com>,
 Cc: Daniel Vacek <neelx@suse.com>,
 	linux-btrfs@vger.kernel.org,
 	linux-kernel@vger.kernel.org
-Subject: [PATCH v8 0/6] btrfs: add fscrypt support, PART 1
-Date: Tue, 18 Nov 2025 17:08:37 +0100
-Message-ID: <20251118160845.3006733-1-neelx@suse.com>
+Subject: [PATCH v7 5/6] btrfs: move inode_to_path higher in backref.c
+Date: Tue, 18 Nov 2025 17:08:42 +0100
+Message-ID: <20251118160845.3006733-6-neelx@suse.com>
 X-Mailer: git-send-email 2.51.0
+In-Reply-To: <20251118160845.3006733-1-neelx@suse.com>
+References: <20251118160845.3006733-1-neelx@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -66,70 +52,118 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
+X-Rspamd-Pre-Result: action=no action;
+	module=replies;
+	Message is reply to one we originated
 X-Spam-Level: 
-X-Spamd-Result: default: False [-2.80 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	MID_CONTAINS_FROM(1.00)[];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	ARC_NA(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	TO_DN_SOME(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,imap1.dmz-prg2.suse.org:helo];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RCPT_COUNT_FIVE(0.00)[6];
-	RCVD_TLS_ALL(0.00)[]
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Spamd-Result: default: False [-4.00 / 50.00];
+	REPLY(-4.00)[]
+X-Rspamd-Queue-Id: 8836B211F6
+X-Rspamd-Pre-Result: action=no action;
+	module=replies;
+	Message is reply to one we originated
+X-Rspamd-Action: no action
 X-Spam-Flag: NO
-X-Spam-Score: -2.80
+X-Spam-Score: -4.00
 
-This is a revive of former work [1] of Omar, Sweet Tea and Josef to bring
-native encryption support to btrfs.
+From: Josef Bacik <josef@toxicpanda.com>
 
-It will come in more parts. The first part this time is splitting the simple
-and isolated stuff out first to reduce the size of the final patchset.
+We have a prototype and then the definition lower below, we don't need
+to do this, simply move the function to where the prototype is.
 
-Changes:
- * v8 - Clean my mistakenly added Signed-off-by:
- * v7 - Drop the checksum patch for now. It will make more sense later.
-      - Drop the btrfs/330 fix. It seems no longer needed after the years.
- * v6 vs v5 [1] is mostly rebase to the latest for-next and cleaning up the
-   conflicts.
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+---
+ fs/btrfs/backref.c | 68 ++++++++++++++++++++++------------------------
+ 1 file changed, 32 insertions(+), 36 deletions(-)
 
-The remaining part needs further cleanup and a bit of redesign and it will
-follow later.
-
-[1] https://lore.kernel.org/linux-btrfs/cover.1706116485.git.josef@toxicpanda.com/
-
-Josef Bacik (4):
-  btrfs: add orig_logical to btrfs_bio
-  btrfs: don't rewrite ret from inode_permission
-  btrfs: move inode_to_path higher in backref.c
-  btrfs: don't search back for dir inode item in INO_LOOKUP_USER
-
-Omar Sandoval (1):
-  btrfs: disable various operations on encrypted inodes
-
-Sweet Tea Dorminy (1):
-  btrfs: disable verity on encrypted inodes
-
- fs/btrfs/backref.c   | 68 +++++++++++++++++++++-----------------------
- fs/btrfs/bio.c       | 10 +++++++
- fs/btrfs/bio.h       |  2 ++
- fs/btrfs/file-item.c |  2 +-
- fs/btrfs/inode.c     |  4 +++
- fs/btrfs/ioctl.c     | 27 +++---------------
- fs/btrfs/reflink.c   |  7 +++++
- fs/btrfs/verity.c    |  3 ++
- 8 files changed, 63 insertions(+), 60 deletions(-)
-
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index 78da47a3d00e..bd913e3c356f 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -2574,8 +2574,39 @@ int iterate_inodes_from_logical(u64 logical, struct btrfs_fs_info *fs_info,
+ 	return iterate_extent_inodes(&walk_ctx, false, build_ino_list, ctx);
+ }
+ 
++/*
++ * returns 0 if the path could be dumped (probably truncated)
++ * returns <0 in case of an error
++ */
+ static int inode_to_path(u64 inum, u32 name_len, unsigned long name_off,
+-			 struct extent_buffer *eb, struct inode_fs_paths *ipath);
++			 struct extent_buffer *eb, struct inode_fs_paths *ipath)
++{
++	char *fspath;
++	char *fspath_min;
++	int i = ipath->fspath->elem_cnt;
++	const int s_ptr = sizeof(char *);
++	u32 bytes_left;
++
++	bytes_left = ipath->fspath->bytes_left > s_ptr ? ipath->fspath->bytes_left - s_ptr : 0;
++
++	fspath_min = (char *)ipath->fspath->val + (i + 1) * s_ptr;
++	fspath = btrfs_ref_to_path(ipath->fs_root, ipath->btrfs_path, name_len,
++				   name_off, eb, inum, fspath_min, bytes_left);
++	if (IS_ERR(fspath))
++		return PTR_ERR(fspath);
++
++	if (fspath > fspath_min) {
++		ipath->fspath->val[i] = (u64)(unsigned long)fspath;
++		++ipath->fspath->elem_cnt;
++		ipath->fspath->bytes_left = fspath - fspath_min;
++	} else {
++		++ipath->fspath->elem_missed;
++		ipath->fspath->bytes_missing += fspath_min - fspath;
++		ipath->fspath->bytes_left = 0;
++	}
++
++	return 0;
++}
+ 
+ static int iterate_inode_refs(u64 inum, struct inode_fs_paths *ipath)
+ {
+@@ -2700,41 +2731,6 @@ static int iterate_inode_extrefs(u64 inum, struct inode_fs_paths *ipath)
+ 	return ret;
+ }
+ 
+-/*
+- * returns 0 if the path could be dumped (probably truncated)
+- * returns <0 in case of an error
+- */
+-static int inode_to_path(u64 inum, u32 name_len, unsigned long name_off,
+-			 struct extent_buffer *eb, struct inode_fs_paths *ipath)
+-{
+-	char *fspath;
+-	char *fspath_min;
+-	int i = ipath->fspath->elem_cnt;
+-	const int s_ptr = sizeof(char *);
+-	u32 bytes_left;
+-
+-	bytes_left = ipath->fspath->bytes_left > s_ptr ?
+-					ipath->fspath->bytes_left - s_ptr : 0;
+-
+-	fspath_min = (char *)ipath->fspath->val + (i + 1) * s_ptr;
+-	fspath = btrfs_ref_to_path(ipath->fs_root, ipath->btrfs_path, name_len,
+-				   name_off, eb, inum, fspath_min, bytes_left);
+-	if (IS_ERR(fspath))
+-		return PTR_ERR(fspath);
+-
+-	if (fspath > fspath_min) {
+-		ipath->fspath->val[i] = (u64)(unsigned long)fspath;
+-		++ipath->fspath->elem_cnt;
+-		ipath->fspath->bytes_left = fspath - fspath_min;
+-	} else {
+-		++ipath->fspath->elem_missed;
+-		ipath->fspath->bytes_missing += fspath_min - fspath;
+-		ipath->fspath->bytes_left = 0;
+-	}
+-
+-	return 0;
+-}
+-
+ /*
+  * this dumps all file system paths to the inode into the ipath struct, provided
+  * is has been created large enough. each path is zero-terminated and accessed
 -- 
 2.51.0
 

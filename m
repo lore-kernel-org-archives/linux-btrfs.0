@@ -1,60 +1,67 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 13DDC372AA2
-	for <linux-btrfs@vger.kernel.org>; Thu, 20 Nov 2025 09:17:09 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6F166235C01
+	for <linux-btrfs@vger.kernel.org>; Thu, 20 Nov 2025 09:17:13 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1763630233; cv=none; b=FMLNu+9NKqrbF/Ec3EL0DUI+N7qSDccaUFY68EnsUhwtSPAG3xTtsWj0dfakdzQNiMuFylRO/l4wUE+R74fCPwu/eFdG/sJRmxBPz1gndbshJs1RvhXYiZ3sabExj/ISnX3QqUdgWXWjt/0kGNbUdBVfp7GYG4STFE0x+H5USXs=
+	t=1763630235; cv=none; b=M7Eykj5/yN7cpv23FQ9RpeuKfrpcLKHx7kRKJlxAAMDcr9DRiqRmlq+NIvsOjIkOKIH0nw+yGJj2rWyc+0KpaWImu5O8K4fMiusGgP0hEUEea3oOv7Khl21RSNKFm4o10QzV1sjReh/HPwo7sgI58HwcenENgHKFJsVMCrtL2rU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1763630233; c=relaxed/simple;
-	bh=CZqOCYwS7ktE0W3/T+UFAwjnOhXo9lgxRUROQA8qBH0=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=jdZGCfPQtuPUciZExiksCi6Fjnc7Q4in9qq/gfG74vYVQBIGXu/hdsu2oqE68UPYz2rWL4FLP00u/eU5FFqzMBRdR65vkokYfeKvSAnK6lYLrVU2H68GyRqEUN10fZpcovNuWKE6at7/hL1mghKiXTOvLYefaeevLgS4fLt2SXA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=mpZCavp5; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=qL1Kq/P+; arc=none smtp.client-ip=195.135.223.130
+	s=arc-20240116; t=1763630235; c=relaxed/simple;
+	bh=23kQmplAhMlyf9LbIq+DbdvRWx0huUdpkFiY3Nl7syw=;
+	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=Wl7HXCGlA4tKVTM5ipQsmCii7Jyj3MGaU/oSzuDKhV6DtG17aeNL86qrGGvRfBqSZhwuWxgMy/abtNHyHIjggXB79CuhGmB3jrE1dIv2/AZizLJ2s/I+PRJDfGVeGMt3P/1nvX5yRFrlyWNk+y81/pfQA/0J73DDZ5zRzVqAriA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=rCf2zQ+S; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=rCf2zQ+S; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="mpZCavp5";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="qL1Kq/P+"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="rCf2zQ+S";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="rCf2zQ+S"
 Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id DDF7421266
-	for <linux-btrfs@vger.kernel.org>; Thu, 20 Nov 2025 09:17:07 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 92D632095C
+	for <linux-btrfs@vger.kernel.org>; Thu, 20 Nov 2025 09:17:11 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1763630228; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=230disXH3T9XJTaKQJkfHwDmX8w/gsireaeAq1SsePQ=;
-	b=mpZCavp5r0uBxPbYEguuNXbICQP6G3I5PoKYnjIAIeqksZFRy7uDZDGr7HJb3OyW3omUV0
-	RES/Y6Axo6m/jeRHEAu4NShwORh1cg6E3ihka+6vsHoefe+NXTWgkwPsnNGdT3QbQ8V7vm
-	DLYx73hvSyHtMIUZZrQyLjA+yRNwI6k=
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b="qL1Kq/P+"
+	t=1763630231; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=hoqZ6Gp+3+D7jP13hC9XE+SliGxngOFuPoy1tPWDU/8=;
+	b=rCf2zQ+Sh8M+13VLqpcFDrN7MX3JHBl11nozWip715FHkEKRNGkXToliKXwXaXGjqgKs5f
+	tOMmU4xz3g0QtYnYbRf8KRwbGXEa6o/lV088nAB9QMd3yQB87LR1VSeBcZ4zGFdeBSl1ck
+	XFU6Dmos2Jh2By/Y1VpUrp8fQui9Hzw=
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=rCf2zQ+S
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1763630227; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=230disXH3T9XJTaKQJkfHwDmX8w/gsireaeAq1SsePQ=;
-	b=qL1Kq/P+voZ5KteL9LoC+hjG2vJ1ksJ4TdCspCr/BCXxFgkVL4+Ie4fjlgAwUgWg6ofwBV
-	FRiKbmzj6W6sXGNx8/Kv26j6C9cGvYHxxUJ+tLwtX/5vEQ9x491auFfVONpt0J+rbNZFyW
-	ZQhbRXu61sTQACEPVnq1BTjZn+XTg14=
+	t=1763630231; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=hoqZ6Gp+3+D7jP13hC9XE+SliGxngOFuPoy1tPWDU/8=;
+	b=rCf2zQ+Sh8M+13VLqpcFDrN7MX3JHBl11nozWip715FHkEKRNGkXToliKXwXaXGjqgKs5f
+	tOMmU4xz3g0QtYnYbRf8KRwbGXEa6o/lV088nAB9QMd3yQB87LR1VSeBcZ4zGFdeBSl1ck
+	XFU6Dmos2Jh2By/Y1VpUrp8fQui9Hzw=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 0C2523EA61
-	for <linux-btrfs@vger.kernel.org>; Thu, 20 Nov 2025 09:17:06 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id CBC073EA61
+	for <linux-btrfs@vger.kernel.org>; Thu, 20 Nov 2025 09:17:10 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id FSnGL5LcHmn9FQAAD6G6ig
+	id 0KvjIpbcHmn9FQAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Thu, 20 Nov 2025 09:17:06 +0000
+	for <linux-btrfs@vger.kernel.org>; Thu, 20 Nov 2025 09:17:10 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 0/4] btrfs: reduce btrfs_get_extent() calls for buffered write path
-Date: Thu, 20 Nov 2025 19:46:45 +1030
-Message-ID: <cover.1763629982.git.wqu@suse.com>
+Subject: [PATCH v3 3/4] btrfs: replace for_each_set_bit() with for_each_set_bitmap()
+Date: Thu, 20 Nov 2025 19:46:48 +1030
+Message-ID: <033001df5923febd00c6ea925f54b5abea1504b2.1763629982.git.wqu@suse.com>
 X-Mailer: git-send-email 2.52.0
+In-Reply-To: <cover.1763629982.git.wqu@suse.com>
+References: <cover.1763629982.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -62,96 +69,125 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Rspamd-Queue-Id: DDF7421266
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Spam-Level: 
+X-Spam-Flag: NO
+X-Rspamd-Queue-Id: 92D632095C
+X-Rspamd-Action: no action
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
 X-Spamd-Result: default: False [-3.01 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
 	R_MISSING_CHARSET(0.50)[];
 	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
 	MX_GOOD(-0.01)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	RCPT_COUNT_ONE(0.00)[1];
-	ARC_NA(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
 	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RCVD_TLS_ALL(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+];
 	RCVD_COUNT_TWO(0.00)[2];
-	FROM_EQ_ENVFROM(0.00)[];
+	ARC_NA(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
 	FROM_HAS_DN(0.00)[];
 	MIME_TRACE(0.00)[0:+];
-	TO_DN_NONE(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
 	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns]
-X-Rspamd-Action: no action
-X-Spam-Flag: NO
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DKIM_TRACE(0.00)[suse.com:+]
 X-Spam-Score: -3.01
-X-Spam-Level: 
 
-[CHANGELOG]
-v3:
-- Use @cur_len for btrfs_get_extent() in the last patch
-  And remove the hole related comment.
-  This should not cause any behavior change.
+Inside extent_io.c, there are several simple call sites doing things
+like:
 
-  The @len parameter for btrfs_get_extent() is only going to cause a
-  difference when the range is completely a hole (e.g. beyond EOF).
+	for_each_set_bit(bit, bitmap, bitmap_size) {
+		/* handle one fs block */
+	}
 
-  For our writeback routine, there should be an extent map for us thus
-  it's no different passing @cur_len or sectorsize.
+The workload includes:
 
-  I think this @len parameter of btrfs_get_extent() is causing
-  unnecessary complexity, and want to remove it completely. But that
-  will be a new series.
+- set_bit()
+  Inside extent_writepage_io().
 
-v2:
-- Fix a potential bug where OEs beyond EOF are not truncated properly
-  This replace the original patch to extract the code into a helper.
+  This can be replaced with a bitmap_set().
 
-- Replace more for_each_set_bit() with for_each_set_bitrange()
+- btrfs_folio_set_lock()
+- btrfs_mark_ordered_io_finished()
+  Inside writepage_delalloc().
 
-- Fix several copy-n-pasted incorrect range inside submit_range()
+  Instead of calling it multiple times, we can pass a range into the
+  function with one call.
 
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/extent_io.c | 26 ++++++++++++++++----------
+ 1 file changed, 16 insertions(+), 10 deletions(-)
 
-Although btrfs has bs < ps support for a long time, and the larger data
-folios support is also going to be graduate from experimental features
-soon, the write path is still iterating each fs block and call
-btrfs_get_extent() on each fs block.
-
-What makes the situation worse is that, for the write path we do not
-have any cached extent map, meaning even with large folios and we got a
-continuous range that can be submitted in one go, we still call
-btrfs_get_extent() many times and get the same range extent map again
-and again.
-
-This series will reduce the duplicated btrfs_get_extent() calls by only
-call it once for each range, other than for each fs block.
-
-The first one is a potential bug inspired by Boris' review.
-Patch 2~3 are minor cleanups.
-Patch 4 is the core of the optimization.
-
-Although I don't expect there will be much difference in the real world though.
-
-
-Qu Wenruo (4):
-  btrfs: make sure all ordered extents beyond EOF is properly truncated
-  btrfs: integrate the error handling of submit_one_sector()
-  btrfs: replace for_each_set_bit() with for_each_set_bitmap()
-  btrfs: reduce extent map lookup during writes
-
- fs/btrfs/extent_io.c    | 230 ++++++++++++++++++++--------------------
- fs/btrfs/ordered-data.c |  38 +++++++
- fs/btrfs/ordered-data.h |   2 +
- 3 files changed, 156 insertions(+), 114 deletions(-)
-
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 0f1bf9a4f0ae..87bf5ce17264 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -1426,8 +1426,9 @@ static noinline_for_stack int writepage_delalloc(struct btrfs_inode *inode,
+ 	u64 delalloc_start = page_start;
+ 	u64 delalloc_end = page_end;
+ 	u64 delalloc_to_write = 0;
++	unsigned int start_bit;
++	unsigned int end_bit;
+ 	int ret = 0;
+-	int bit;
+ 
+ 	/* Save the dirty bitmap as our submission bitmap will be a subset of it. */
+ 	if (btrfs_is_subpage(fs_info, folio)) {
+@@ -1437,10 +1438,12 @@ static noinline_for_stack int writepage_delalloc(struct btrfs_inode *inode,
+ 		bio_ctrl->submit_bitmap = 1;
+ 	}
+ 
+-	for_each_set_bit(bit, &bio_ctrl->submit_bitmap, blocks_per_folio) {
+-		u64 start = page_start + (bit << fs_info->sectorsize_bits);
++	for_each_set_bitrange(start_bit, end_bit, &bio_ctrl->submit_bitmap,
++			      blocks_per_folio) {
++		u64 start = page_start + (start_bit << fs_info->sectorsize_bits);
++		u32 len = (end_bit - start_bit) << fs_info->sectorsize_bits;
+ 
+-		btrfs_folio_set_lock(fs_info, folio, start, fs_info->sectorsize);
++		btrfs_folio_set_lock(fs_info, folio, start, len);
+ 	}
+ 
+ 	/* Lock all (subpage) delalloc ranges inside the folio first. */
+@@ -1557,10 +1560,13 @@ static noinline_for_stack int writepage_delalloc(struct btrfs_inode *inode,
+ 				fs_info->sectorsize_bits,
+ 				blocks_per_folio);
+ 
+-		for_each_set_bit(bit, &bio_ctrl->submit_bitmap, bitmap_size)
+-			btrfs_mark_ordered_io_finished(inode, folio,
+-				page_start + (bit << fs_info->sectorsize_bits),
+-				fs_info->sectorsize, false);
++		for_each_set_bitrange(start_bit, end_bit, &bio_ctrl->submit_bitmap,
++				      bitmap_size) {
++			u64 start = page_start + (start_bit << fs_info->sectorsize_bits);
++			u32 len = (end_bit - start_bit) << fs_info->sectorsize_bits;
++
++			btrfs_mark_ordered_io_finished(inode, folio, start, len, false);
++		}
+ 		return ret;
+ 	}
+ out:
+@@ -1728,8 +1734,8 @@ static noinline_for_stack int extent_writepage_io(struct btrfs_inode *inode,
+ 		return ret;
+ 	}
+ 
+-	for (cur = start; cur < end; cur += fs_info->sectorsize)
+-		set_bit((cur - folio_start) >> fs_info->sectorsize_bits, &range_bitmap);
++	bitmap_set(&range_bitmap, (start - folio_pos(folio)) >> fs_info->sectorsize_bits,
++		   len >> fs_info->sectorsize_bits);
+ 	bitmap_and(&bio_ctrl->submit_bitmap, &bio_ctrl->submit_bitmap, &range_bitmap,
+ 		   blocks_per_folio);
+ 
 -- 
 2.52.0
 

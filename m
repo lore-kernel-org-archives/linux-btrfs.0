@@ -1,64 +1,64 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6F166235C01
-	for <linux-btrfs@vger.kernel.org>; Thu, 20 Nov 2025 09:17:13 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E8E74372AB5
+	for <linux-btrfs@vger.kernel.org>; Thu, 20 Nov 2025 09:17:17 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1763630235; cv=none; b=M7Eykj5/yN7cpv23FQ9RpeuKfrpcLKHx7kRKJlxAAMDcr9DRiqRmlq+NIvsOjIkOKIH0nw+yGJj2rWyc+0KpaWImu5O8K4fMiusGgP0hEUEea3oOv7Khl21RSNKFm4o10QzV1sjReh/HPwo7sgI58HwcenENgHKFJsVMCrtL2rU=
+	t=1763630239; cv=none; b=mKLmOrQTzKx6Stvb9vIp/DdTliiKZAKyAknqgxcv28xRaD8/2rypS9pBVeXfnsrUPxMbjTGFtBn331Dnij+dw2ongSm/CLc07qmE1LoRblvz6dezET9QngrSgChaWjq/JW7gtS9bNy60JwvwmHE73HcbmT501yoomyzk0BXy6qw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1763630235; c=relaxed/simple;
-	bh=23kQmplAhMlyf9LbIq+DbdvRWx0huUdpkFiY3Nl7syw=;
+	s=arc-20240116; t=1763630239; c=relaxed/simple;
+	bh=qjdPG0p6Gm+KefSYzSA+VCUacsD8oXFVrLqtIlg9qvE=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=Wl7HXCGlA4tKVTM5ipQsmCii7Jyj3MGaU/oSzuDKhV6DtG17aeNL86qrGGvRfBqSZhwuWxgMy/abtNHyHIjggXB79CuhGmB3jrE1dIv2/AZizLJ2s/I+PRJDfGVeGMt3P/1nvX5yRFrlyWNk+y81/pfQA/0J73DDZ5zRzVqAriA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=rCf2zQ+S; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=rCf2zQ+S; arc=none smtp.client-ip=195.135.223.131
+	 MIME-Version; b=iZ6dc8ddfW7LUFSxK1KPrz5hxayEvOfZXWPmXmHAm4xdWs5kgLKAcke/BycbGBFgRX8bfG2rG9oiDBYdCym7yzERyrkJEtzLLN0/1o0XkoWduEXAdyayQtUawxWhm71tyCzMNrr5YIVzTRjq3oxvhP3j+2xhlnyjocsV6C31BHU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=J4jpasCO; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=J4jpasCO; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="rCf2zQ+S";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="rCf2zQ+S"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="J4jpasCO";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="J4jpasCO"
 Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 92D632095C
-	for <linux-btrfs@vger.kernel.org>; Thu, 20 Nov 2025 09:17:11 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 1BFFB2170C
+	for <linux-btrfs@vger.kernel.org>; Thu, 20 Nov 2025 09:17:09 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1763630231; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1763630229; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=hoqZ6Gp+3+D7jP13hC9XE+SliGxngOFuPoy1tPWDU/8=;
-	b=rCf2zQ+Sh8M+13VLqpcFDrN7MX3JHBl11nozWip715FHkEKRNGkXToliKXwXaXGjqgKs5f
-	tOMmU4xz3g0QtYnYbRf8KRwbGXEa6o/lV088nAB9QMd3yQB87LR1VSeBcZ4zGFdeBSl1ck
-	XFU6Dmos2Jh2By/Y1VpUrp8fQui9Hzw=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=rCf2zQ+S
+	bh=Eu2gFuLDn2e7KJddtCJu/s9ad32iJdvcHmMAamRxghI=;
+	b=J4jpasCOZcnLaFp0B4lqhKMlH9VBvt+j0m0bdpAD/UbITIpRhYPuxCKjdNKmF+w0PCVxh9
+	46O4AjFR/JJc3eGp2OA0j15L0w36Qs4Szn2UjIJ9SjKkzvDJatStsmPOClW9S3zPboxAUD
+	9FgzEonJqm7YMP26sE0c4yxfZqrMpjA=
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=J4jpasCO
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1763630231; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1763630229; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=hoqZ6Gp+3+D7jP13hC9XE+SliGxngOFuPoy1tPWDU/8=;
-	b=rCf2zQ+Sh8M+13VLqpcFDrN7MX3JHBl11nozWip715FHkEKRNGkXToliKXwXaXGjqgKs5f
-	tOMmU4xz3g0QtYnYbRf8KRwbGXEa6o/lV088nAB9QMd3yQB87LR1VSeBcZ4zGFdeBSl1ck
-	XFU6Dmos2Jh2By/Y1VpUrp8fQui9Hzw=
+	bh=Eu2gFuLDn2e7KJddtCJu/s9ad32iJdvcHmMAamRxghI=;
+	b=J4jpasCOZcnLaFp0B4lqhKMlH9VBvt+j0m0bdpAD/UbITIpRhYPuxCKjdNKmF+w0PCVxh9
+	46O4AjFR/JJc3eGp2OA0j15L0w36Qs4Szn2UjIJ9SjKkzvDJatStsmPOClW9S3zPboxAUD
+	9FgzEonJqm7YMP26sE0c4yxfZqrMpjA=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id CBC073EA61
-	for <linux-btrfs@vger.kernel.org>; Thu, 20 Nov 2025 09:17:10 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 53D083EA61
+	for <linux-btrfs@vger.kernel.org>; Thu, 20 Nov 2025 09:17:08 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 0KvjIpbcHmn9FQAAD6G6ig
+	id OMqdBZTcHmn9FQAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Thu, 20 Nov 2025 09:17:10 +0000
+	for <linux-btrfs@vger.kernel.org>; Thu, 20 Nov 2025 09:17:08 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 3/4] btrfs: replace for_each_set_bit() with for_each_set_bitmap()
-Date: Thu, 20 Nov 2025 19:46:48 +1030
-Message-ID: <033001df5923febd00c6ea925f54b5abea1504b2.1763629982.git.wqu@suse.com>
+Subject: [PATCH v3 1/4] btrfs: make sure all ordered extents beyond EOF is properly truncated
+Date: Thu, 20 Nov 2025 19:46:46 +1030
+Message-ID: <5960f3429b90311423a57beff157494698ab1395.1763629982.git.wqu@suse.com>
 X-Mailer: git-send-email 2.52.0
 In-Reply-To: <cover.1763629982.git.wqu@suse.com>
 References: <cover.1763629982.git.wqu@suse.com>
@@ -69,11 +69,8 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Level: 
-X-Spam-Flag: NO
-X-Rspamd-Queue-Id: 92D632095C
-X-Rspamd-Action: no action
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Rspamd-Queue-Id: 1BFFB2170C
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
 X-Spamd-Result: default: False [-3.01 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
@@ -92,7 +89,7 @@ X-Spamd-Result: default: False [-3.01 / 50.00];
 	MIME_TRACE(0.00)[0:+];
 	FROM_EQ_ENVFROM(0.00)[];
 	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	TO_DN_NONE(0.00)[];
 	RCVD_TLS_ALL(0.00)[];
@@ -100,94 +97,153 @@ X-Spamd-Result: default: False [-3.01 / 50.00];
 	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
 	DKIM_TRACE(0.00)[suse.com:+]
+X-Rspamd-Action: no action
+X-Spam-Flag: NO
 X-Spam-Score: -3.01
+X-Spam-Level: 
 
-Inside extent_io.c, there are several simple call sites doing things
-like:
+[POSSIBLE BUG]
+If there are multiple ordered extents beyond EOF, at folio writeback
+time we may only truncate the first ordered extent, but leaving the
+remaining ones finished but not marked as truncated.
 
-	for_each_set_bit(bit, bitmap, bitmap_size) {
-		/* handle one fs block */
-	}
+Since those OEs are not marked as truncated, it will still insert an
+file extent item, and may lead to false missing csum errors during
+"btrfs check".
 
-The workload includes:
+[CAUSE]
+Since we have bs < ps support for a while and experimental large data
+folios are also going to graduate from experimental features soon, we
+can have the following folio to be written back:
 
-- set_bit()
-  Inside extent_writepage_io().
+  fs block size 4K
+  page size 4K, folio size 64K.
 
-  This can be replaced with a bitmap_set().
+           0        16K      32K                  64K
+	   |<---------------- Dirty -------------->|
+	   |<-OE A->|<-OE B->|<----- OE C -------->|
+               |
+	       i_size 4K.
 
-- btrfs_folio_set_lock()
-- btrfs_mark_ordered_io_finished()
-  Inside writepage_delalloc().
+In above case we need to submit the writeback for the range [0, 4K).
+For range [4K, 64K) there is no need to submit any IO but mark the
+involved OEs (OE A, B, C) all as truncated.
 
-  Instead of calling it multiple times, we can pass a range into the
-  function with one call.
+However during the EOF handling, we only call
+btrfs_lookup_first_ordered_range() once, thus only got OE A and mark it
+as truncated.
+But OE B and C are not marked as truncated, they will finish as usual,
+which will leave a regular file extent item to be inserted beyond EOF,
+and without any data checksum.
 
+[FIX]
+Introduce a new helper, btrfs_mark_ordered_io_truncated(), to handle all
+OEs of a range, and mark them all as truncated.
+
+With that helper, all OEs (A B and C) will be marked as truncated.
+OE B and C will have 0 truncated_len, preventing any file extent item to
+be inserted from them.
+
+Fixes: f0a0f5bfe04e ("btrfs: truncate ordered extent when skipping writeback past i_size")
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/extent_io.c | 26 ++++++++++++++++----------
- 1 file changed, 16 insertions(+), 10 deletions(-)
+ fs/btrfs/extent_io.c    | 19 +------------------
+ fs/btrfs/ordered-data.c | 38 ++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/ordered-data.h |  2 ++
+ 3 files changed, 41 insertions(+), 18 deletions(-)
 
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 0f1bf9a4f0ae..87bf5ce17264 100644
+index 2d32dfc34ae3..2044b889c887 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -1426,8 +1426,9 @@ static noinline_for_stack int writepage_delalloc(struct btrfs_inode *inode,
- 	u64 delalloc_start = page_start;
- 	u64 delalloc_end = page_end;
- 	u64 delalloc_to_write = 0;
-+	unsigned int start_bit;
-+	unsigned int end_bit;
- 	int ret = 0;
--	int bit;
+@@ -1725,24 +1725,7 @@ static noinline_for_stack int extent_writepage_io(struct btrfs_inode *inode,
+ 		cur = folio_pos(folio) + (bit << fs_info->sectorsize_bits);
  
- 	/* Save the dirty bitmap as our submission bitmap will be a subset of it. */
- 	if (btrfs_is_subpage(fs_info, folio)) {
-@@ -1437,10 +1438,12 @@ static noinline_for_stack int writepage_delalloc(struct btrfs_inode *inode,
- 		bio_ctrl->submit_bitmap = 1;
- 	}
+ 		if (cur >= i_size) {
+-			struct btrfs_ordered_extent *ordered;
+-
+-			ordered = btrfs_lookup_first_ordered_range(inode, cur,
+-								   folio_end - cur);
+-			/*
+-			 * We have just run delalloc before getting here, so
+-			 * there must be an ordered extent.
+-			 */
+-			ASSERT(ordered != NULL);
+-			spin_lock(&inode->ordered_tree_lock);
+-			set_bit(BTRFS_ORDERED_TRUNCATED, &ordered->flags);
+-			ordered->truncated_len = min(ordered->truncated_len,
+-						     cur - ordered->file_offset);
+-			spin_unlock(&inode->ordered_tree_lock);
+-			btrfs_put_ordered_extent(ordered);
+-
+-			btrfs_mark_ordered_io_finished(inode, folio, cur,
+-						       end - cur, true);
++			btrfs_mark_ordered_io_truncated(inode, folio, cur, end - cur);
+ 			/*
+ 			 * This range is beyond i_size, thus we don't need to
+ 			 * bother writing back.
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index a421f7db9eec..9a0638d13225 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -546,6 +546,44 @@ void btrfs_mark_ordered_io_finished(struct btrfs_inode *inode,
+ 	spin_unlock(&inode->ordered_tree_lock);
+ }
  
--	for_each_set_bit(bit, &bio_ctrl->submit_bitmap, blocks_per_folio) {
--		u64 start = page_start + (bit << fs_info->sectorsize_bits);
-+	for_each_set_bitrange(start_bit, end_bit, &bio_ctrl->submit_bitmap,
-+			      blocks_per_folio) {
-+		u64 start = page_start + (start_bit << fs_info->sectorsize_bits);
-+		u32 len = (end_bit - start_bit) << fs_info->sectorsize_bits;
- 
--		btrfs_folio_set_lock(fs_info, folio, start, fs_info->sectorsize);
-+		btrfs_folio_set_lock(fs_info, folio, start, len);
- 	}
- 
- 	/* Lock all (subpage) delalloc ranges inside the folio first. */
-@@ -1557,10 +1560,13 @@ static noinline_for_stack int writepage_delalloc(struct btrfs_inode *inode,
- 				fs_info->sectorsize_bits,
- 				blocks_per_folio);
- 
--		for_each_set_bit(bit, &bio_ctrl->submit_bitmap, bitmap_size)
--			btrfs_mark_ordered_io_finished(inode, folio,
--				page_start + (bit << fs_info->sectorsize_bits),
--				fs_info->sectorsize, false);
-+		for_each_set_bitrange(start_bit, end_bit, &bio_ctrl->submit_bitmap,
-+				      bitmap_size) {
-+			u64 start = page_start + (start_bit << fs_info->sectorsize_bits);
-+			u32 len = (end_bit - start_bit) << fs_info->sectorsize_bits;
++/*
++ * Mark all ordered extents io inside the specified range as truncated.
++ *
++ * This is utilized by writeback path, thus there must be an ordered extent
++ * for the range.
++ */
++void btrfs_mark_ordered_io_truncated(struct btrfs_inode *inode, struct folio *folio,
++				     u64 file_offset, u32 len)
++{
++	u64 cur = file_offset;
 +
-+			btrfs_mark_ordered_io_finished(inode, folio, start, len, false);
++	ASSERT(file_offset >= folio_pos(folio));
++	ASSERT(file_offset + len <= folio_end(folio));
++
++	while  (cur < file_offset + len) {
++		u32 cur_len = file_offset + len - cur;
++		struct btrfs_ordered_extent *ordered;
++
++		ordered = btrfs_lookup_first_ordered_range(inode, cur, cur_len);
++
++		/*
++		 * We have just run delalloc before getting here, so there must
++		 * be an ordered extent.
++		 */
++		ASSERT(ordered != NULL);
++		scoped_guard(spinlock, &inode->ordered_tree_lock) {
++			set_bit(BTRFS_ORDERED_TRUNCATED, &ordered->flags);
++			ordered->truncated_len = min(ordered->truncated_len,
++						     cur - ordered->file_offset);
 +		}
- 		return ret;
- 	}
- out:
-@@ -1728,8 +1734,8 @@ static noinline_for_stack int extent_writepage_io(struct btrfs_inode *inode,
- 		return ret;
- 	}
- 
--	for (cur = start; cur < end; cur += fs_info->sectorsize)
--		set_bit((cur - folio_start) >> fs_info->sectorsize_bits, &range_bitmap);
-+	bitmap_set(&range_bitmap, (start - folio_pos(folio)) >> fs_info->sectorsize_bits,
-+		   len >> fs_info->sectorsize_bits);
- 	bitmap_and(&bio_ctrl->submit_bitmap, &bio_ctrl->submit_bitmap, &range_bitmap,
- 		   blocks_per_folio);
- 
++		cur_len = min(cur_len, ordered->file_offset + ordered->num_bytes - cur);
++		btrfs_put_ordered_extent(ordered);
++
++		cur += cur_len;
++	}
++	btrfs_mark_ordered_io_finished(inode, folio, file_offset, len, true);
++}
++
+ /*
+  * Finish IO for one ordered extent across a given range.  The range can only
+  * contain one ordered extent.
+diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
+index 1e6b0b182b29..dd4cdc1a8b78 100644
+--- a/fs/btrfs/ordered-data.h
++++ b/fs/btrfs/ordered-data.h
+@@ -169,6 +169,8 @@ void btrfs_finish_ordered_extent(struct btrfs_ordered_extent *ordered,
+ void btrfs_mark_ordered_io_finished(struct btrfs_inode *inode,
+ 				    struct folio *folio, u64 file_offset,
+ 				    u64 num_bytes, bool uptodate);
++void btrfs_mark_ordered_io_truncated(struct btrfs_inode *inode, struct folio *folio,
++				     u64 file_offset, u32 len);
+ bool btrfs_dec_test_ordered_pending(struct btrfs_inode *inode,
+ 				    struct btrfs_ordered_extent **cached,
+ 				    u64 file_offset, u64 io_size);
 -- 
 2.52.0
 

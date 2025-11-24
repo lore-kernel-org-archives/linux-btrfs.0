@@ -1,139 +1,116 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from mail.burntcomma.com (mail2.burntcomma.com [217.169.27.34])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 818D5317702
-	for <linux-btrfs@vger.kernel.org>; Mon, 24 Nov 2025 18:09:11 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4573D2D3A89
+	for <linux-btrfs@vger.kernel.org>; Mon, 24 Nov 2025 18:53:33 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=217.169.27.34
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1764007753; cv=none; b=KJL3RbLJE2kM7eaA/toBgFrgaGGHXLXrbd+b0Xw3jyQgbqgZgEKACL297PY7h655N2m9cVdtBJY5jCB0E2g6JsAjpMEi9PpE16T/fCcFfhUSn6TLWfaFhU5OquXOfmevv15CLEVe3AhsK0EK7cS9IWcaMkVRp+WvEB76iAvjs+c=
+	t=1764010415; cv=none; b=S2OgeU3p5hg1OUZpckUT/kvZeQRLW6kKp282zm/3T73cJyp5ZI/7bgWT9e7sy5szCzWlCMEeq5zyNIy3P5LOteeQkYy2YNBmI8D+CIiOR6mhx4/BkWKFTbMes+AQ1GoncC3zzjpMSge0JFhxbOc3O9EYY3yVE6nRLRrO81nr8nw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1764007753; c=relaxed/simple;
-	bh=+jKeJZfpPxTC2i3xf26RgLNmtF2TbOO4PZbQm7e6hFg=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=FtksozchYPNdZCeTppwyHjU3BP7RXSKNdTk7o3Nn6+sa9t+/J+wK1ODYkH0BgOAfgKEF2szKRFqBF82xFNdHv9+GxpZKGY+1eYmD5ynaT4YvlvqPce0wfZhXVHN2ipj6FQ1HywIxo/H97pDl8se5TXD9wjh3Ux+M51Ne9qPoVPI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=Xb5/L/2g; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=Q4m0i0P0; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=Xb5/L/2g; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=Q4m0i0P0; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	s=arc-20240116; t=1764010415; c=relaxed/simple;
+	bh=4BkWwgn/iSsyIGfZdIeaTU/ESh7mzU7kcFx37SnUAtY=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 Mime-Version; b=fm9MtzV5kXfOkNkbTU4ELxwDn2qloaab+yVLQWskTHyiaslPXvYD8pla9CZ9KdN3AzHEAXrCHt76+lCaKdu32URhOs2W9Xfbtfg1Ka/2xjYEyTYxOaZRSH09Uc/SOiWiHbR8ypaQs0V8gk+5wC+Bt2gbKET38oeU4eC3+2LzQh8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com; spf=pass smtp.mailfrom=harmstone.com; dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b=dbw7yyVq; arc=none smtp.client-ip=217.169.27.34
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=harmstone.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="Xb5/L/2g";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="Q4m0i0P0";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="Xb5/L/2g";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="Q4m0i0P0"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b="dbw7yyVq"
+Received: from beren (beren.burntcomma.com [IPv6:2a02:8012:8cf0:0:ce28:aaff:fe0d:6db2])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 8BFBB5BD7F;
-	Mon, 24 Nov 2025 18:09:09 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1764007749;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=fYJceS8e1GQiXDpDXbr1qo6aKLEpp5llriDLYL5+/tI=;
-	b=Xb5/L/2gjP7rJp0E30Rsr6Wn7zl7XBwXQxH5hxvO4SyiARv8EkfzlUUqpYyqa8lFh2f2tH
-	PSTCqR/qOwaq+3Pm6asQeohNE0F4ye42tJmDxHcgn9QngqMD/EOvsT5heD/9Nj9p7sxfDf
-	RcHUwz/dhGxsi24EzilRz79tyMS35Uw=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1764007749;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=fYJceS8e1GQiXDpDXbr1qo6aKLEpp5llriDLYL5+/tI=;
-	b=Q4m0i0P0Yxy0FQZWBs9scFbvO5JZw4JYk43YlAG8Q+4cmxzik238nDZ0xeSYe1E4uNp9vw
-	IdGPiDSg7hcwkvAw==
-Authentication-Results: smtp-out2.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1764007749;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=fYJceS8e1GQiXDpDXbr1qo6aKLEpp5llriDLYL5+/tI=;
-	b=Xb5/L/2gjP7rJp0E30Rsr6Wn7zl7XBwXQxH5hxvO4SyiARv8EkfzlUUqpYyqa8lFh2f2tH
-	PSTCqR/qOwaq+3Pm6asQeohNE0F4ye42tJmDxHcgn9QngqMD/EOvsT5heD/9Nj9p7sxfDf
-	RcHUwz/dhGxsi24EzilRz79tyMS35Uw=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1764007749;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=fYJceS8e1GQiXDpDXbr1qo6aKLEpp5llriDLYL5+/tI=;
-	b=Q4m0i0P0Yxy0FQZWBs9scFbvO5JZw4JYk43YlAG8Q+4cmxzik238nDZ0xeSYe1E4uNp9vw
-	IdGPiDSg7hcwkvAw==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 6FA6B3EA63;
-	Mon, 24 Nov 2025 18:09:09 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id +i0EG0WfJGkjZQAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Mon, 24 Nov 2025 18:09:09 +0000
-Date: Mon, 24 Nov 2025 19:09:04 +0100
-From: David Sterba <dsterba@suse.cz>
-To: David Sterba <dsterba@suse.cz>
-Cc: Daniel Vacek <neelx@suse.com>, Chris Mason <clm@fb.com>,
-	Josef Bacik <josef@toxicpanda.com>, David Sterba <dsterba@suse.com>,
-	Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-Subject: Re: [PATCH v2] btrfs: simplify async csum synchronization
-Message-ID: <20251124180904.GR13846@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20251113101731.2624000-1-neelx@suse.com>
- <20251118120716.GT13846@twin.jikos.cz>
+	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
+	(Client did not present a certificate)
+	by mail.burntcomma.com (Postfix) with ESMTPSA id 032EF2DEC5C;
+	Mon, 24 Nov 2025 18:53:30 +0000 (GMT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=harmstone.com;
+	s=mail; t=1764010411;
+	bh=70wmNIw2WlCR3Zx8SPB0mEGz30WtEBCd57UMjK728Sk=;
+	h=From:To:Cc:Subject:Date:In-Reply-To:References;
+	b=dbw7yyVqEJHXTYx2rxO/O6fx2YlTIUd0gUywmBaLIGAiU8oIAhJQmdBHn8O8+Gr2z
+	 sOcRJgjJSBHaSmGO61QfPHHdXXTID9RmDA2cmg72CuxBh4MrbeRx5qgl03C8suWoMb
+	 SyJHpOF8S7pcQ5EZr8QxadY5k9bUiYeA1rnUO4cE=
+From: Mark Harmstone <mark@harmstone.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Mark Harmstone <mark@harmstone.com>,
+	Boris Burkov <boris@bur.io>
+Subject: [PATCH v7 04/16] btrfs: remove remapped block groups from the free-space tree
+Date: Mon, 24 Nov 2025 18:52:56 +0000
+Message-ID: <20251124185335.16556-5-mark@harmstone.com>
+In-Reply-To: <20251124185335.16556-1-mark@harmstone.com>
+References: <20251124185335.16556-1-mark@harmstone.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20251118120716.GT13846@twin.jikos.cz>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Spam-Level: *
-X-Spamd-Result: default: False [1.00 / 50.00];
-	REPLYTO_EQ_TO_ADDR(5.00)[];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	NEURAL_HAM_SHORT(-0.20)[-0.999];
-	MIME_GOOD(-0.10)[text/plain];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	MIME_TRACE(0.00)[0:+];
-	ARC_NA(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	FROM_EQ_ENVFROM(0.00)[];
-	TO_DN_SOME(0.00)[];
-	RCPT_COUNT_SEVEN(0.00)[8];
-	RCVD_TLS_ALL(0.00)[];
-	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	FROM_HAS_DN(0.00)[]
-X-Spam-Flag: NO
-X-Spam-Score: 1.00
+Mime-Version: 1.0
+Content-Transfer-Encoding: 8bit
 
-On Tue, Nov 18, 2025 at 01:07:16PM +0100, David Sterba wrote:
-> On Thu, Nov 13, 2025 at 11:17:30AM +0100, Daniel Vacek wrote:
-> > We don't need the redundant completion csum_done which marks the
-> > csum work has been executed. We can simply flush_work() instead.
-> > 
-> > This way we can slim down the btrfs_bio structure by 32 bytes matching
-> > it's size to what it used to be before introducing the async csums.
-> > Hence not making any change with respect to the structure size.
-> > ---
-> > This is a simple fixup for "btrfs: introduce btrfs_bio::async_csum" in
-> > for-next and can be squashed into it.
-> > 
-> > v2: metadata is not checksummed here so use the endio_workers workqueue
-> >     unconditionally. Thanks to Qu Wenruo.
-> 
-> This looks quite useful regarding the size reduction of btrfs_bio,
-> please fold it to the patch. Thanks.
+No new allocations can be done from block groups that have the REMAPPED flag
+set, so there's no value in their having entries in the free-space tree.
 
-The 6.19 branch is now frozen so this patch will be applied separately
-later.
+Prevent a search through the free-space tree being scheduled for such a
+block group, and prevent any additions to the in-memory free-space tree.
+
+Signed-off-by: Mark Harmstone <mark@harmstone.com>
+Reviewed-by: Boris Burkov <boris@bur.io>
+---
+ fs/btrfs/block-group.c      | 19 ++++++++++++++++---
+ fs/btrfs/free-space-cache.c |  3 +++
+ 2 files changed, 19 insertions(+), 3 deletions(-)
+
+diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+index 6e6939d2e902..53c6bbad7df0 100644
+--- a/fs/btrfs/block-group.c
++++ b/fs/btrfs/block-group.c
+@@ -933,6 +933,13 @@ int btrfs_cache_block_group(struct btrfs_block_group *cache, bool wait)
+ 	if (btrfs_is_zoned(fs_info))
+ 		return 0;
+ 
++	/*
++	 * No allocations can be done from remapped block groups, so they have
++	 * no entries in the free-space tree.
++	 */
++	if (cache->flags & BTRFS_BLOCK_GROUP_REMAPPED)
++		return 0;
++
+ 	caching_ctl = kzalloc(sizeof(*caching_ctl), GFP_NOFS);
+ 	if (!caching_ctl)
+ 		return -ENOMEM;
+@@ -1247,10 +1254,16 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
+ 	 * deletes the block group item from the extent tree, allowing for
+ 	 * another task to attempt to create another block group with the same
+ 	 * item key (and failing with -EEXIST and a transaction abort).
++	 *
++	 * If the REMAPPED flag has been set the block group's free space
++	 * has already been removed, so we can skip the call to
++	 * btrfs_remove_block_group_free_space().
+ 	 */
+-	ret = btrfs_remove_block_group_free_space(trans, block_group);
+-	if (ret)
+-		goto out;
++	if (!(block_group->flags & BTRFS_BLOCK_GROUP_REMAPPED)) {
++		ret = btrfs_remove_block_group_free_space(trans, block_group);
++		if (ret)
++			goto out;
++	}
+ 
+ 	ret = remove_block_group_item(trans, path, block_group);
+ 	if (ret < 0)
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index f0f72850fab2..8d4db3d57cf7 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -2756,6 +2756,9 @@ int btrfs_add_free_space(struct btrfs_block_group *block_group,
+ {
+ 	enum btrfs_trim_state trim_state = BTRFS_TRIM_STATE_UNTRIMMED;
+ 
++	if (block_group->flags & BTRFS_BLOCK_GROUP_REMAPPED)
++		return 0;
++
+ 	if (btrfs_is_zoned(block_group->fs_info))
+ 		return __btrfs_add_free_space_zoned(block_group, bytenr, size,
+ 						    true);
+-- 
+2.51.0
+

@@ -1,41 +1,41 @@
 Received: from mail.burntcomma.com (mail2.burntcomma.com [217.169.27.34])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7DAD62D46DD
-	for <linux-btrfs@vger.kernel.org>; Mon, 24 Nov 2025 18:53:33 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E8ED83191A1
+	for <linux-btrfs@vger.kernel.org>; Mon, 24 Nov 2025 18:53:36 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=217.169.27.34
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1764010418; cv=none; b=U7Ht4Ntk169zlwOQDrn6nNbdKSgHbwYnK5FyWbp4HeAuXgC7tFTdl8lXV9TxZGtqQXOefLyHSbsvUmHQL1+wg5jIKXEYppAu5M2fs0z961SJb8TZm4GVlS7b6z8hChdrsb6MU14Tr8ZRGM1gKXuL6+TBQTBWzgX6vdCvM8teo3g=
+	t=1764010418; cv=none; b=P1Qpx4DKU3A7dG93h15MXjV8hPTFPL63QYKVKpgknDfNixydtyyL04Bz8ZLXc06Qv91AFQ8etZ5tXShlnUTP4lTwCBalVHXV/0dTk1XcVJThueDTsr81gG4zfkg5ZLjsv4g0hrGzsyB+nPhSm0CIUKJoMfchbb0wmd9PSrqHlpc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
 	s=arc-20240116; t=1764010418; c=relaxed/simple;
-	bh=2oFTk2aZUtZoTlb0PQOjjHNyJWMqut1ByxbRMVl0Sfo=;
+	bh=YnQ2GcrH28WkZZsNxJ/voHewez6+oBuxd6aIo4XABpc=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 Mime-Version; b=HGxpC/6Lg2uxKHbpj76rRYqnpwBm72W954WEBUzWSwswwKrKgje4QQykJleiXRS7Im18XSpBVsLJem3pv/cpuj5IWMcCg8j0wwYiCGQoCXwYy9wZhIQHhFilVgXlO1KkyiY5nYxs2HyCxbnGRZdaF/oau5h7fE/gJRGJgmjnV7o=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com; spf=pass smtp.mailfrom=harmstone.com; dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b=TC+fPUm8; arc=none smtp.client-ip=217.169.27.34
+	 Mime-Version; b=hZhPyM9BRAcZR7yafcj+aDQKE/2D8G/CYthVsqrNF8NuoZ5pw6aEEjK7ZrBmWvc4yZ202/+HoPSvy0T7TwdT8pl8hAwEgzObbUZBav1XJ/DaANOUCA4AQJ8QVLNg6+AamXL8KJ298IMHc3PQA2CfTyIzqYXlUsI5R5FT580OdvI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com; spf=pass smtp.mailfrom=harmstone.com; dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b=So59GrSQ; arc=none smtp.client-ip=217.169.27.34
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=harmstone.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b="TC+fPUm8"
+	dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b="So59GrSQ"
 Received: from beren (beren.burntcomma.com [IPv6:2a02:8012:8cf0:0:ce28:aaff:fe0d:6db2])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
 	(Client did not present a certificate)
-	by mail.burntcomma.com (Postfix) with ESMTPSA id D5E802DEC5A;
-	Mon, 24 Nov 2025 18:53:30 +0000 (GMT)
+	by mail.burntcomma.com (Postfix) with ESMTPSA id 0ECB32DEC5D;
+	Mon, 24 Nov 2025 18:53:31 +0000 (GMT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=harmstone.com;
-	s=mail; t=1764010410;
-	bh=g5YmaBcvAe/lG2so13wC6rpnCTEZR8sLVB6JwUJjrIs=;
+	s=mail; t=1764010411;
+	bh=je7fzIc5UJX+F8srgnIuon6cWGMOEq1svFmw0yYZwiM=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References;
-	b=TC+fPUm8MPDyxSYKhiJHBWAXf4n9BITp7bHZQubLR/lL5ZIOcM+53DN2dx9p6bra0
-	 p1K4kpjtMqeRZZdPs2Lz095NAbQ8nCso9uSSohyi9PsdpIPh5WWBViYov8yo7Cx+l2
-	 oQCu0SYq8PJ6j7ftvRhNzhtWxi7HROERL8/1YZoQ=
+	b=So59GrSQN78C8v+iSUeDVN59WnZH651GwXkdQ4f12IiGgxpyAHYhtCaj6I52GztqO
+	 jLZQY+hdv2Ara2XLuQYYyAmJ7esG+XSH28y1gakcs1XyECYU2IAzQxX1CcMuOQRzh9
+	 0hJkXrsNw5bCWB8fMwgz4dQFR0KEXHwQJ8FnNfW4=
 From: Mark Harmstone <mark@harmstone.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Mark Harmstone <mark@harmstone.com>,
 	Boris Burkov <boris@bur.io>
-Subject: [PATCH v7 02/16] btrfs: add REMAP chunk type
-Date: Mon, 24 Nov 2025 18:52:54 +0000
-Message-ID: <20251124185335.16556-3-mark@harmstone.com>
+Subject: [PATCH v7 05/16] btrfs: don't add metadata items for the remap tree to the extent tree
+Date: Mon, 24 Nov 2025 18:52:57 +0000
+Message-ID: <20251124185335.16556-6-mark@harmstone.com>
 In-Reply-To: <20251124185335.16556-1-mark@harmstone.com>
 References: <20251124185335.16556-1-mark@harmstone.com>
 Precedence: bulk
@@ -46,262 +46,127 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Add a new REMAP chunk type, which is a metadata chunk that holds the
-remap tree.
+There is the following potential problem with the remap tree and delayed refs:
 
-This is needed for bootstrapping purposes: the remap tree can't itself
-be remapped, and must be relocated the existing way, by COWing every
-leaf. The remap tree can't go in the SYSTEM chunk as space there is
-limited, because a copy of the chunk item gets placed in the superblock.
+* Remapped extent freed in a delayed ref, which removes an entry from the
+  remap tree
+* Remap tree now small enough to fit in a single leaf
+* Corruption as we now have a level-0 block with a level-1 metadata item
+  in the extent tree
 
-The changes in fs/btrfs/volumes.h are because we're adding a new block
-group type bit after the profile bits, and so can no longer rely on the
-const_ilog2 trick.
+One solution to this would be to rework the remap tree code so that it operates
+via delayed refs. But as we're hoping to remove cow-only metadata items in the
+future anyway, change things so that the remap tree doesn't have any entries in
+the extent tree. This also has the benefit of reducing write amplification.
 
-The sizing to 32MB per chunk, matching the SYSTEM chunk, is an estimate
-here, we can adjust it later if it proves to be too big or too small.
-This works out to be ~500,000 remap items, which for a 4KB block size
-covers ~2GB of remapped data in the worst case and ~500TB in the best case.
+We also make it so that the clear_cache mount option is a no-op, as with the
+extent tree v2, as the free-space tree can no longer be recreated from the
+extent tree.
+
+Finally disable relocating the remap tree itself, which is added back in
+a later patch. As it is we would get corruption as the traditional
+relocation method walks the extent tree, and we're removing its metadata
+items.
 
 Signed-off-by: Mark Harmstone <mark@harmstone.com>
 Reviewed-by: Boris Burkov <boris@bur.io>
 ---
- fs/btrfs/block-rsv.c            |  8 ++++++++
- fs/btrfs/block-rsv.h            |  1 +
- fs/btrfs/disk-io.c              |  1 +
- fs/btrfs/fs.h                   |  2 ++
- fs/btrfs/space-info.c           | 13 ++++++++++++-
- fs/btrfs/sysfs.c                |  2 ++
- fs/btrfs/tree-checker.c         | 13 +++++++++++--
- fs/btrfs/volumes.c              |  3 +++
- fs/btrfs/volumes.h              | 10 +++++++++-
- include/uapi/linux/btrfs_tree.h |  4 +++-
- 10 files changed, 52 insertions(+), 5 deletions(-)
+ fs/btrfs/disk-io.c     |  3 +++
+ fs/btrfs/extent-tree.c | 31 ++++++++++++++++++++++++++++++-
+ fs/btrfs/volumes.c     |  3 +++
+ 3 files changed, 36 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/block-rsv.c b/fs/btrfs/block-rsv.c
-index 96cf7a162987..71bcaa6fa7ee 100644
---- a/fs/btrfs/block-rsv.c
-+++ b/fs/btrfs/block-rsv.c
-@@ -419,6 +419,9 @@ void btrfs_init_root_block_rsv(struct btrfs_root *root)
- 	case BTRFS_TREE_LOG_OBJECTID:
- 		root->block_rsv = &fs_info->treelog_rsv;
- 		break;
-+	case BTRFS_REMAP_TREE_OBJECTID:
-+		root->block_rsv = &fs_info->remap_block_rsv;
-+		break;
- 	default:
- 		root->block_rsv = NULL;
- 		break;
-@@ -432,6 +435,9 @@ void btrfs_init_global_block_rsv(struct btrfs_fs_info *fs_info)
- 	space_info = btrfs_find_space_info(fs_info, BTRFS_BLOCK_GROUP_SYSTEM);
- 	fs_info->chunk_block_rsv.space_info = space_info;
- 
-+	space_info = btrfs_find_space_info(fs_info, BTRFS_BLOCK_GROUP_REMAP);
-+	fs_info->remap_block_rsv.space_info = space_info;
-+
- 	space_info = btrfs_find_space_info(fs_info, BTRFS_BLOCK_GROUP_METADATA);
- 	fs_info->global_block_rsv.space_info = space_info;
- 	fs_info->trans_block_rsv.space_info = space_info;
-@@ -458,6 +464,8 @@ void btrfs_release_global_block_rsv(struct btrfs_fs_info *fs_info)
- 	WARN_ON(fs_info->trans_block_rsv.reserved > 0);
- 	WARN_ON(fs_info->chunk_block_rsv.size > 0);
- 	WARN_ON(fs_info->chunk_block_rsv.reserved > 0);
-+	WARN_ON(fs_info->remap_block_rsv.size > 0);
-+	WARN_ON(fs_info->remap_block_rsv.reserved > 0);
- 	WARN_ON(fs_info->delayed_block_rsv.size > 0);
- 	WARN_ON(fs_info->delayed_block_rsv.reserved > 0);
- 	WARN_ON(fs_info->delayed_refs_rsv.reserved > 0);
-diff --git a/fs/btrfs/block-rsv.h b/fs/btrfs/block-rsv.h
-index 79ae9d05cd91..8359fb96bc3c 100644
---- a/fs/btrfs/block-rsv.h
-+++ b/fs/btrfs/block-rsv.h
-@@ -22,6 +22,7 @@ enum btrfs_rsv_type {
- 	BTRFS_BLOCK_RSV_DELALLOC,
- 	BTRFS_BLOCK_RSV_TRANS,
- 	BTRFS_BLOCK_RSV_CHUNK,
-+	BTRFS_BLOCK_RSV_REMAP,
- 	BTRFS_BLOCK_RSV_DELOPS,
- 	BTRFS_BLOCK_RSV_DELREFS,
- 	BTRFS_BLOCK_RSV_TREELOG,
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 89149fac804c..6f27bbf8f887 100644
+index 6f27bbf8f887..e44bcb73cb47 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -2806,6 +2806,7 @@ void btrfs_init_fs_info(struct btrfs_fs_info *fs_info)
- 			     BTRFS_BLOCK_RSV_GLOBAL);
- 	btrfs_init_block_rsv(&fs_info->trans_block_rsv, BTRFS_BLOCK_RSV_TRANS);
- 	btrfs_init_block_rsv(&fs_info->chunk_block_rsv, BTRFS_BLOCK_RSV_CHUNK);
-+	btrfs_init_block_rsv(&fs_info->remap_block_rsv, BTRFS_BLOCK_RSV_REMAP);
- 	btrfs_init_block_rsv(&fs_info->treelog_rsv, BTRFS_BLOCK_RSV_TREELOG);
- 	btrfs_init_block_rsv(&fs_info->empty_block_rsv, BTRFS_BLOCK_RSV_EMPTY);
- 	btrfs_init_block_rsv(&fs_info->delayed_block_rsv,
-diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
-index 3c7eeaefa7d5..2d9dc32c7af9 100644
---- a/fs/btrfs/fs.h
-+++ b/fs/btrfs/fs.h
-@@ -499,6 +499,8 @@ struct btrfs_fs_info {
- 	struct btrfs_block_rsv trans_block_rsv;
- 	/* Block reservation for chunk tree */
- 	struct btrfs_block_rsv chunk_block_rsv;
-+	/* Block reservation for remap tree */
-+	struct btrfs_block_rsv remap_block_rsv;
- 	/* Block reservation for delayed operations */
- 	struct btrfs_block_rsv delayed_block_rsv;
- 	/* Block reservation for delayed refs */
-diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index 6babbe333741..8e040dcea64a 100644
---- a/fs/btrfs/space-info.c
-+++ b/fs/btrfs/space-info.c
-@@ -215,7 +215,7 @@ static u64 calc_chunk_size(const struct btrfs_fs_info *fs_info, u64 flags)
+@@ -3040,6 +3040,9 @@ int btrfs_start_pre_rw_mount(struct btrfs_fs_info *fs_info)
+ 		if (btrfs_fs_incompat(fs_info, EXTENT_TREE_V2))
+ 			btrfs_warn(fs_info,
+ 				   "'clear_cache' option is ignored with extent tree v2");
++		else if (btrfs_fs_incompat(fs_info, REMAP_TREE))
++			btrfs_warn(fs_info,
++				   "'clear_cache' option is ignored with remap tree");
+ 		else
+ 			rebuild_free_space_tree = true;
+ 	} else if (btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE) &&
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index e4cae34620d1..91cad486046d 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -1553,6 +1553,28 @@ static void free_head_ref_squota_rsv(struct btrfs_fs_info *fs_info,
+ 				  BTRFS_QGROUP_RSV_DATA);
+ }
  
- 	if (flags & BTRFS_BLOCK_GROUP_DATA)
- 		return BTRFS_MAX_DATA_CHUNK_SIZE;
--	else if (flags & BTRFS_BLOCK_GROUP_SYSTEM)
-+	else if (flags & (BTRFS_BLOCK_GROUP_SYSTEM | BTRFS_BLOCK_GROUP_REMAP))
- 		return SZ_32M;
- 
- 	/* Handle BTRFS_BLOCK_GROUP_METADATA */
-@@ -344,6 +344,8 @@ int btrfs_init_space_info(struct btrfs_fs_info *fs_info)
- 	if (mixed) {
- 		flags = BTRFS_BLOCK_GROUP_METADATA | BTRFS_BLOCK_GROUP_DATA;
- 		ret = create_space_info(fs_info, flags);
-+		if (ret)
-+			goto out;
++static int drop_remap_tree_ref(struct btrfs_trans_handle *trans,
++			       const struct btrfs_delayed_ref_node *node)
++{
++	u64 bytenr = node->bytenr;
++	u64 num_bytes = node->num_bytes;
++	int ret;
++
++	ret = btrfs_add_to_free_space_tree(trans, bytenr, num_bytes);
++	if (ret) {
++		btrfs_abort_transaction(trans, ret);
++		return ret;
++	}
++
++	ret = btrfs_update_block_group(trans, bytenr, num_bytes, false);
++	if (ret) {
++		btrfs_abort_transaction(trans, ret);
++		return ret;
++	}
++
++	return 0;
++}
++
+ static int run_delayed_data_ref(struct btrfs_trans_handle *trans,
+ 				struct btrfs_delayed_ref_head *href,
+ 				const struct btrfs_delayed_ref_node *node,
+@@ -1747,7 +1769,10 @@ static int run_delayed_tree_ref(struct btrfs_trans_handle *trans,
+ 	} else if (node->action == BTRFS_ADD_DELAYED_REF) {
+ 		ret = __btrfs_inc_extent_ref(trans, node, extent_op);
+ 	} else if (node->action == BTRFS_DROP_DELAYED_REF) {
+-		ret = __btrfs_free_extent(trans, href, node, extent_op);
++		if (node->ref_root == BTRFS_REMAP_TREE_OBJECTID)
++			ret = drop_remap_tree_ref(trans, node);
++		else
++			ret = __btrfs_free_extent(trans, href, node, extent_op);
  	} else {
- 		flags = BTRFS_BLOCK_GROUP_METADATA;
- 		ret = create_space_info(fs_info, flags);
-@@ -352,7 +354,15 @@ int btrfs_init_space_info(struct btrfs_fs_info *fs_info)
+ 		BUG();
+ 	}
+@@ -4883,6 +4908,9 @@ static int alloc_reserved_tree_block(struct btrfs_trans_handle *trans,
+ 	int level = btrfs_delayed_ref_owner(node);
+ 	bool skinny_metadata = btrfs_fs_incompat(fs_info, SKINNY_METADATA);
  
- 		flags = BTRFS_BLOCK_GROUP_DATA;
- 		ret = create_space_info(fs_info, flags);
-+		if (ret)
-+			goto out;
-+	}
++	if (unlikely(node->ref_root == BTRFS_REMAP_TREE_OBJECTID))
++		goto skip;
 +
-+	if (features & BTRFS_FEATURE_INCOMPAT_REMAP_TREE) {
-+		flags = BTRFS_BLOCK_GROUP_REMAP;
-+		ret = create_space_info(fs_info, flags);
- 	}
-+
- out:
- 	return ret;
- }
-@@ -623,6 +633,7 @@ static void dump_global_block_rsv(struct btrfs_fs_info *fs_info)
- 	DUMP_BLOCK_RSV(fs_info, global_block_rsv);
- 	DUMP_BLOCK_RSV(fs_info, trans_block_rsv);
- 	DUMP_BLOCK_RSV(fs_info, chunk_block_rsv);
-+	DUMP_BLOCK_RSV(fs_info, remap_block_rsv);
- 	DUMP_BLOCK_RSV(fs_info, delayed_block_rsv);
- 	DUMP_BLOCK_RSV(fs_info, delayed_refs_rsv);
- }
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index e095936c2389..ff7f79a3c3e7 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -2026,6 +2026,8 @@ static const char *alloc_name(struct btrfs_space_info *space_info)
- 	case BTRFS_BLOCK_GROUP_SYSTEM:
- 		ASSERT(space_info->subgroup_id == BTRFS_SUB_GROUP_PRIMARY);
- 		return "system";
-+	case BTRFS_BLOCK_GROUP_REMAP:
-+		return "remap";
- 	default:
- 		WARN_ON(1);
- 		return "invalid-combination";
-diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-index aedc208a95b8..21bf57e81e1a 100644
---- a/fs/btrfs/tree-checker.c
-+++ b/fs/btrfs/tree-checker.c
-@@ -748,17 +748,26 @@ static int check_block_group_item(struct extent_buffer *leaf,
- 		return -EUCLEAN;
- 	}
+ 	extent_key.objectid = node->bytenr;
+ 	if (skinny_metadata) {
+ 		/* The owner of a tree block is the level. */
+@@ -4935,6 +4963,7 @@ static int alloc_reserved_tree_block(struct btrfs_trans_handle *trans,
  
-+	if (flags & BTRFS_BLOCK_GROUP_REMAP &&
-+		!btrfs_fs_incompat(fs_info, REMAP_TREE)) {
-+		block_group_err(leaf, slot,
-+"invalid flags, have 0x%llx (REMAP flag set) but no remap-tree incompat flag",
-+				flags);
-+		return -EUCLEAN;
-+	}
-+
- 	type = flags & BTRFS_BLOCK_GROUP_TYPE_MASK;
- 	if (unlikely(type != BTRFS_BLOCK_GROUP_DATA &&
- 		     type != BTRFS_BLOCK_GROUP_METADATA &&
- 		     type != BTRFS_BLOCK_GROUP_SYSTEM &&
-+		     type != BTRFS_BLOCK_GROUP_REMAP &&
- 		     type != (BTRFS_BLOCK_GROUP_METADATA |
- 			      BTRFS_BLOCK_GROUP_DATA))) {
- 		block_group_err(leaf, slot,
--"invalid type, have 0x%llx (%lu bits set) expect either 0x%llx, 0x%llx, 0x%llx or 0x%llx",
-+"invalid type, have 0x%llx (%lu bits set) expect either 0x%llx, 0x%llx, 0x%llx, 0x%llx or 0x%llx",
- 			type, hweight64(type),
- 			BTRFS_BLOCK_GROUP_DATA, BTRFS_BLOCK_GROUP_METADATA,
--			BTRFS_BLOCK_GROUP_SYSTEM,
-+			BTRFS_BLOCK_GROUP_SYSTEM, BTRFS_BLOCK_GROUP_REMAP,
- 			BTRFS_BLOCK_GROUP_METADATA | BTRFS_BLOCK_GROUP_DATA);
- 		return -EUCLEAN;
- 	}
+ 	btrfs_free_path(path);
+ 
++skip:
+ 	return alloc_reserved_extent(trans, node->bytenr, fs_info->nodesize);
+ }
+ 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 193cbb634ba3..c036d341f5c2 100644
+index a3e93fc795b2..a9fbced3ad5c 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -231,6 +231,9 @@ void btrfs_describe_block_groups(u64 bg_flags, char *buf, u32 size_buf)
- 	DESCRIBE_FLAG(BTRFS_BLOCK_GROUP_DATA, "data");
- 	DESCRIBE_FLAG(BTRFS_BLOCK_GROUP_SYSTEM, "system");
- 	DESCRIBE_FLAG(BTRFS_BLOCK_GROUP_METADATA, "metadata");
-+	/* block groups containing the remap tree */
-+	DESCRIBE_FLAG(BTRFS_BLOCK_GROUP_REMAP, "remap");
-+	/* block group that has been remapped */
- 	DESCRIBE_FLAG(BTRFS_BLOCK_GROUP_REMAPPED, "remapped");
+@@ -3971,6 +3971,9 @@ static bool should_balance_chunk(struct extent_buffer *leaf, struct btrfs_chunk
+ 	struct btrfs_balance_args *bargs = NULL;
+ 	u64 chunk_type = btrfs_chunk_type(leaf, chunk);
  
- 	DESCRIBE_FLAG(BTRFS_AVAIL_ALLOC_BIT_SINGLE, "single");
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 34b854c1a303..4117fabb248b 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -58,7 +58,6 @@ static_assert(ilog2(BTRFS_STRIPE_LEN) == BTRFS_STRIPE_LEN_SHIFT);
-  */
- static_assert(const_ffs(BTRFS_BLOCK_GROUP_RAID0) <
- 	      const_ffs(BTRFS_BLOCK_GROUP_PROFILE_MASK & ~BTRFS_BLOCK_GROUP_RAID0));
--static_assert(ilog2(BTRFS_BLOCK_GROUP_RAID0) > ilog2(BTRFS_BLOCK_GROUP_TYPE_MASK));
- 
- /* ilog2() can handle both constants and variables */
- #define BTRFS_BG_FLAG_TO_INDEX(profile)					\
-@@ -80,6 +79,15 @@ enum btrfs_raid_types {
- 	BTRFS_NR_RAID_TYPES
- };
- 
-+static_assert(BTRFS_RAID_RAID0 == 1);
-+static_assert(BTRFS_RAID_RAID1 == 2);
-+static_assert(BTRFS_RAID_DUP == 3);
-+static_assert(BTRFS_RAID_RAID10 == 4);
-+static_assert(BTRFS_RAID_RAID5 == 5);
-+static_assert(BTRFS_RAID_RAID6 == 6);
-+static_assert(BTRFS_RAID_RAID1C3 == 7);
-+static_assert(BTRFS_RAID_RAID1C4 == 8);
++	if (chunk_type & BTRFS_BLOCK_GROUP_REMAP)
++		return false;
 +
- /*
-  * Use sequence counter to get consistent device stat data on
-  * 32-bit processors.
-diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
-index 4439d77a7252..9a36f0206d90 100644
---- a/include/uapi/linux/btrfs_tree.h
-+++ b/include/uapi/linux/btrfs_tree.h
-@@ -1169,12 +1169,14 @@ struct btrfs_dev_replace_item {
- #define BTRFS_BLOCK_GROUP_RAID1C3       (1ULL << 9)
- #define BTRFS_BLOCK_GROUP_RAID1C4       (1ULL << 10)
- #define BTRFS_BLOCK_GROUP_REMAPPED      (1ULL << 11)
-+#define BTRFS_BLOCK_GROUP_REMAP         (1ULL << 12)
- #define BTRFS_BLOCK_GROUP_RESERVED	(BTRFS_AVAIL_ALLOC_BIT_SINGLE | \
- 					 BTRFS_SPACE_INFO_GLOBAL_RSV)
- 
- #define BTRFS_BLOCK_GROUP_TYPE_MASK	(BTRFS_BLOCK_GROUP_DATA |    \
- 					 BTRFS_BLOCK_GROUP_SYSTEM |  \
--					 BTRFS_BLOCK_GROUP_METADATA)
-+					 BTRFS_BLOCK_GROUP_METADATA | \
-+					 BTRFS_BLOCK_GROUP_REMAP)
- 
- #define BTRFS_BLOCK_GROUP_PROFILE_MASK	(BTRFS_BLOCK_GROUP_RAID0 |   \
- 					 BTRFS_BLOCK_GROUP_RAID1 |   \
+ 	/* type filter */
+ 	if (!((chunk_type & BTRFS_BLOCK_GROUP_TYPE_MASK) &
+ 	      (bctl->flags & BTRFS_BALANCE_TYPE_MASK))) {
 -- 
 2.51.0
 

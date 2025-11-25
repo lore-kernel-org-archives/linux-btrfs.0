@@ -1,133 +1,77 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C678D2D7813
-	for <linux-btrfs@vger.kernel.org>; Tue, 25 Nov 2025 08:20:25 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CAB9A263F54;
+	Tue, 25 Nov 2025 09:18:38 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1764058828; cv=none; b=ffs2G8Bxi4gEjAkSNyxmrixOarUuRLxySSYh4oqNHPtuF1WSZYAD31JkDnZ1KD5ihZDKTim7TNJltKCvDNQgIRKQ1FYVJSzLKJqo81bLJoTuBb5vD7DvIQwZGnGlG8oi+jDhpaFDVW/9EtKZ/icffBeeB8VZ3SF+WBMEajjW8L4=
+	t=1764062319; cv=none; b=o3d70eGqDmJ/qspVfoSiqOrMneSs6LqGGyIAhRoK5NV1GvEVbT9r/qX8s8Ju8bt/WmriUFOgshE53gQH1PufGvQGq2NJhHkfOQtHsmyE+ktpjlsYfOLliFocm7oyfQXXqc85toCHL91A8g3ybVSUppzHuWZGqFlipbpS/XDRJ8Y=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1764058828; c=relaxed/simple;
-	bh=YemQMjiQjUaXngCz2fr6scBoksPdCwyvaMvLpcQB8lY=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=Ua/shtEkyQT9Art/EtKUcCVoQ/vnEeQHkHMIuxASA6f0UfPOj1SmYB1QHz1mWRneDdAiILHQYeMFiyAxRqhoZfnK1Y65l+q5CXuCASwEOVKmU91EtIH9NoNdGW4OGUQyN8gvhsZAPbCNbiJaQct4EVxsyjS578ygkIOlFpoDK6U=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Z576VWbz; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Z576VWbz; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1764062319; c=relaxed/simple;
+	bh=U9iYrYsglLkG8TnBDbI9yrwUWiI8plUWD8Oh3w7r1lw=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=Pug8qhPlHqLSY3p2qkdJb/rZI/H3zF1g2ZKKsdS++5sflR683fnaXiQ+5Z8mcpD1+7QO94sTfFlrY+bdFBLzsctoiciHztP0csErL/NUcQxKibqkJL4I3XH9V6ZxaO87wMGVRT9Ci3Mt+bTPhkaLNN5lMVTsa78YPQzsJiImAeI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=sctjiYa/; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Z576VWbz";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Z576VWbz"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 82FDB5BCE8
-	for <linux-btrfs@vger.kernel.org>; Tue, 25 Nov 2025 08:20:17 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1764058817; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=LurPeMVgHHlr45q/Nk7TyIY8tHs0ttk3smaTnI6Cl/I=;
-	b=Z576VWbzr72BGoe8lt8ye64PjNlXTnRVxEekTCGLTyIqgJ3URXqKkUstiNh2qrVfVvjb1A
-	Vo9Ya796l2V8bczv7KMTiXWRFsSIhBdn8Oxgi3uIeyrLIMzf1WRuqSdL0/6Lsnso1UBMyG
-	nFkmdyJ9fOrXNzgow32u4AYJ6FHavcQ=
-Authentication-Results: smtp-out2.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1764058817; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=LurPeMVgHHlr45q/Nk7TyIY8tHs0ttk3smaTnI6Cl/I=;
-	b=Z576VWbzr72BGoe8lt8ye64PjNlXTnRVxEekTCGLTyIqgJ3URXqKkUstiNh2qrVfVvjb1A
-	Vo9Ya796l2V8bczv7KMTiXWRFsSIhBdn8Oxgi3uIeyrLIMzf1WRuqSdL0/6Lsnso1UBMyG
-	nFkmdyJ9fOrXNzgow32u4AYJ6FHavcQ=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id B7D113EA63
-	for <linux-btrfs@vger.kernel.org>; Tue, 25 Nov 2025 08:20:16 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id kN6aHsBmJWlRfwAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Tue, 25 Nov 2025 08:20:16 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/2] btrfs: fix a potential path leak in print_data_reloc_error()
-Date: Tue, 25 Nov 2025 18:49:56 +1030
-Message-ID: <96c04602ed664de5aceeb9fb16b4b33a2215f8a7.1764058736.git.wqu@suse.com>
-X-Mailer: git-send-email 2.52.0
-In-Reply-To: <cover.1764058736.git.wqu@suse.com>
-References: <cover.1764058736.git.wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="sctjiYa/"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 62470C4CEF1;
+	Tue, 25 Nov 2025 09:18:34 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1764062318;
+	bh=U9iYrYsglLkG8TnBDbI9yrwUWiI8plUWD8Oh3w7r1lw=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=sctjiYa/DATKoaFc3hWyAe155qdsmeZ0LOX1jyiLgNBS5DiZw+4snbDy8w3moMIlw
+	 qD25hlXOxRpAQw7ks/SOJcVlNOSn2alp+vSe+skncJ9fnv47blkRv/OO1HEnfaLieL
+	 Pdfx8nRHNYcPX7bTnyTH+HvgbdCM1/yJVva5Dr3pvCvteXBjjd4kwFh15WUdPqWtXT
+	 KDE5JgmgqxTmE7mMVxru75iVNEw+PlMkuj4dLF4KAWCHoOTXoPZcis8CK0XFDtFgFD
+	 fKp2aeOAxiijY6s+DoOEPPdvCjJNOF89n2osZI1BVl6VydJ00KKVQTPicDc0+hBj82
+	 /u0YfbHQEuJ6g==
+Date: Tue, 25 Nov 2025 10:18:32 +0100
+From: Christian Brauner <brauner@kernel.org>
+To: Christoph Hellwig <hch@lst.de>
+Cc: Al Viro <viro@zeniv.linux.org.uk>, David Sterba <dsterba@suse.com>, 
+	Jan Kara <jack@suse.cz>, Mike Marshall <hubcap@omnibond.com>, 
+	Martin Brandenburg <martin@omnibond.com>, Carlos Maiolino <cem@kernel.org>, Stefan Roesch <shr@fb.com>, 
+	Jeff Layton <jlayton@kernel.org>, linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org, 
+	linux-fsdevel@vger.kernel.org, gfs2@lists.linux.dev, io-uring@vger.kernel.org, 
+	devel@lists.orangefs.org, linux-unionfs@vger.kernel.org, linux-mtd@lists.infradead.org, 
+	linux-xfs@vger.kernel.org, linux-nfs@vger.kernel.org
+Subject: Re: re-enable IOCB_NOWAIT writes to files v2
+Message-ID: <20251125-loten-fabuliert-c0fb6b195b53@brauner>
+References: <20251120064859.2911749-1-hch@lst.de>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spam-Level: 
-X-Spamd-Result: default: False [-2.80 / 50.00];
-	BAYES_HAM(-3.00)[99.99%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	MID_CONTAINS_FROM(1.00)[];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	ARC_NA(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:mid];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Flag: NO
-X-Spam-Score: -2.80
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+In-Reply-To: <20251120064859.2911749-1-hch@lst.de>
 
-Inside print_data_reloc_error(), if extent_from_logical() failed we
-return immediately.
+On Thu, Nov 20, 2025 at 07:47:21AM +0100, Christoph Hellwig wrote:
+> Hi all,
+> 
+> commit 66fa3cedf16a ("fs: Add async write file modification handling.")
+> effectively disabled IOCB_NOWAIT writes as timestamp updates currently
+> always require blocking, and the modern timestamp resolution means we
+> always update timestamps.  This leads to a lot of context switches from
+> applications using io_uring to submit file writes, making it often worse
+> than using the legacy aio code that is not using IOCB_NOWAIT.
+> 
+> This series allows non-blocking updates for lazytime if the file system
+> supports it, and adds that support for XFS.
+> 
+> It also fixes the layering bypass in btrfs when updating timestamps on
+> device files for devices removed from btrfs usage, and FMODE_NOCMTIME
+> handling in the VFS now that nfsd started using it.  Note that I'm still
+> not sure that nfsd usage is fully correct for all file systems, as only
+> XFS explicitly supports FMODE_NOCMTIME, but at least the generic code
+> does the right thing now.
 
-However there are the following cases where extent_from_logical() can
-return error but still holds a path:
+It's a bit too close to the merge window for my taste and we have about
+17 pull request topics for this cycle already.
 
-- btrfs_search_slot() returned 0
-
-- No backref item found in extent tree
-
-- No @flags_ret provided
-  This is not possible in this call site though.
-
-So for the above two cases, we can return without releasing the path,
-causing extent buffer leaks.
-
-Fixes: b9a9a85059cd ("btrfs: output affected files when relocation fails")
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/inode.c | 1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 3cf30abcdb08..46b5d29f7e29 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -255,6 +255,7 @@ static void print_data_reloc_error(const struct btrfs_inode *inode, u64 file_off
- 	if (ret < 0) {
- 		btrfs_err_rl(fs_info, "failed to lookup extent item for logical %llu: %d",
- 			     logical, ret);
-+		btrfs_release_path(&path);
- 		return;
- 	}
- 	eb = path.nodes[0];
--- 
-2.52.0
-
+So I'll take this for vfs-6.20.iomap. As usual I'll create that branch
+now so that the patches don't get lost and will rebase once v6.19-rc1 is
+out.

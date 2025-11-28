@@ -1,192 +1,286 @@
-Received: from mail-pl1-f173.google.com (mail-pl1-f173.google.com [209.85.214.173])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from libero.it (smtp-18.italiaonline.it [213.209.10.18])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B949123E32D
-	for <linux-btrfs@vger.kernel.org>; Fri, 28 Nov 2025 18:06:03 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.214.173
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1898B23B638
+	for <linux-btrfs@vger.kernel.org>; Fri, 28 Nov 2025 19:51:59 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=213.209.10.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1764353167; cv=none; b=qShpA6D+zGaolzxm1+f9eELunqACwFZO0G8Dix7jc/3LIHJ8rhOwmyoDEpch6CnNc3tNUKClWHrFnlVWCjxCIE34VI0Zxb32ZpfDiQgXcLgkPJ7/uFOa+WjW363Lk2fl/hcbs034laAvz4U8qxxrmfu4FkGahsO2XZsNi/ZliDw=
+	t=1764359523; cv=none; b=eDfgw9btWG2GI5GZkij7kHMZb3Cv5gklugA2tKRj73g//bw6Dh6b0EC/Kkr7fl6Yi+w6WIXaKul134fxruANkNoMn/k0BhTxYz6x1ffTFE/ob/pyRpZ2IgrzyeISHgt6OW0YOVg40ZbENMVk2r+f8+6WBHhNEQKF3l5eJlGb72I=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1764353167; c=relaxed/simple;
-	bh=6w0WqNLswcBxi6LRI5vB+VPqgxywN9zCOksdOzS0zR8=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=GMf2hRzuCa5m4nEZI8jYWk4aXwVEPN1knV9npu/jPQjXDHwyN73PK38gjG+CDcPO7GU4/xbXFocrI6C+OB4PETo1Voqs6RpQk5wU360uUF2zfjP263xODp3VPGzel8wnuVMOxCO3+OZ2dCitbG1Ix+uoN7vuljjos/m9ilv+qf8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=wbinvd.org; spf=pass smtp.mailfrom=wbinvd.org; dkim=pass (2048-bit key) header.d=wbinvd.org header.i=@wbinvd.org header.b=fVPTbZ4w; arc=none smtp.client-ip=209.85.214.173
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=wbinvd.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wbinvd.org
+	s=arc-20240116; t=1764359523; c=relaxed/simple;
+	bh=fr+jP199sGl3igilTi+Z1y48pflhFtqO7Bl3hqEOijo=;
+	h=Message-ID:Date:MIME-Version:Subject:To:References:From:Cc:
+	 In-Reply-To:Content-Type; b=BrjjTUZXePJBWlw9CJSKVvfWmJcfQGiduZIQAjKaAEeT/ayDziiF324wSwhOvWiISVVqEC29Rs2NGt4pLNufaI5ROkt0JRp9SnAjWlUlH5EVvRWKgWVNg14mstIrqWxiGWnznVFDXntp7SpgYP0quDZ7LP3hGcvd88ul0/xqNvw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=libero.it; spf=pass smtp.mailfrom=libero.it; dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b=oRkHD7GW; arc=none smtp.client-ip=213.209.10.18
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=libero.it
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=libero.it
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wbinvd.org header.i=@wbinvd.org header.b="fVPTbZ4w"
-Received: by mail-pl1-f173.google.com with SMTP id d9443c01a7336-2955623e6faso23710745ad.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 28 Nov 2025 10:06:03 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=wbinvd.org; s=wbinvd; t=1764353163; x=1764957963; darn=vger.kernel.org;
-        h=in-reply-to:content-transfer-encoding:content-disposition
-         :mime-version:references:message-id:subject:cc:to:from:date:from:to
-         :cc:subject:date:message-id:reply-to;
-        bh=dgb47dnkWdmAc7YttyFgO1rjl/binCxUPsmVtpY7Z1U=;
-        b=fVPTbZ4wJ79VIHQQuY2YJiKnxqfPhlp16/K/nLwiHqXDW8IzFK0rxGEW0+Xnh/k9M5
-         ssbyew/6s+Is5hHfz7lEsYvxdp5ZNDddhPLu0NLC6oPS22xkxKcr/74RmO4toGMzPL/h
-         hCYHfOrCRPKIQfIqfakGjCRS9sSwlenslfjvozLLizrvXm+6XVMeGHh8gXLaSd/UrqUW
-         tygxXyALMN6+/SkcEw/8JHlwbRUONbf6ThtSIOv7Z2TcM30eR+9OhQkWD0NJxYzLc4Na
-         D8BCXugiLNdsAyYepD7dJSvOmQsbBkiW25cM6LPy5WLJQpBLBbMqyRw1AYYJdL4URHJm
-         7Wmg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1764353163; x=1764957963;
-        h=in-reply-to:content-transfer-encoding:content-disposition
-         :mime-version:references:message-id:subject:cc:to:from:date:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=dgb47dnkWdmAc7YttyFgO1rjl/binCxUPsmVtpY7Z1U=;
-        b=JQcCpGB03181ZbefAWfZYqraF63QDfWfcQjORTMcHQXlTjOst5tZ4SS9fu4EZeamXr
-         gr0W8x6cfvOQusptIGvZQMZCiee9NL6QqUEEj2RT4S/h3g0dZBxqcj6qONThLXT+hDXY
-         guW46xyVWzpWnlji3XcXpSx/svLJDd7olbUD7szfhT08BK/QobhrzMtST/XRp4/Cw4C5
-         hKY0F3zct6I3k2B54pJjS3MgYt+omrIEIQrakH+SmLTdAY24GAyS4A5XhtYyjz03+aEl
-         WeFG1Xh2LFjmxt09Jb7B7FW/40l/CPe41B6XZ1xBpScqjpGR3/a/sdj4fN4WOP4J0vIo
-         xigw==
-X-Forwarded-Encrypted: i=1; AJvYcCWcWuWhstqyrxa/kTvK5XJ1ip/klVUThyPROtfw5YwzxkbsjcLa/AVd30Ur8EFSJNW5eKC2e8mAzGGXqw==@vger.kernel.org
-X-Gm-Message-State: AOJu0YxWSvTzB8UCf50aXG5P/qaCFZuv+MtwOeezuVpK4bfxFS/QW2Fv
-	wL4X0kztExg2R+qVtexD8z8sCKOx50N4jkasigkUh/dRS++OTgqoYvYvcpHMuB86rkg=
-X-Gm-Gg: ASbGncui/iwc3Nj3iILvS43p1v8kohS9WNE443+Ar9KnoyTWr8QNWp4g+pHmvWy2BkY
-	Dd8mlFwg1oD9JpQDtU2WBz+3HPEY6q1/L8LEqVUVOXXqytTRvNgx0+LN0Gdd1UnKHSaSexQw4OG
-	jFIQYvCYNG+UL2yKZwKvb+hn//aieZQJFy1Zr2FQFbM9OXGg1WTiEzZ9h7sKJ1/oPgnJkc5Xob5
-	lfGvSuEe9vnxSswjJzICthtVLUHHD9zuskG4G04O+uyvedwU0xt+l35edfK9J9J6vGmAbeP0i0X
-	jEEh/oUQ+thLtI1+L2YVZBq/BRxr+1VDpGh/3ohaElXFxu8B2FC8Xiym3GrZRXW4Hs3Jji1/95Z
-	Y+t91eto4bZ0SRE8tqJfyLKJVAYYvO2nPktijB+39nOzKL87XfFBh8EzDr5rlDgzlkaaSVex6AW
-	PKKmyOuO+uUHDX
-X-Google-Smtp-Source: AGHT+IG/G/Qlu/NJA45f7NjuwNCsI3vIWAHFoRQ5BSeGUXXkGPCFpQePUYpxgWRXhcyUcAsZRYsBBg==
-X-Received: by 2002:a17:903:2f10:b0:295:c2e7:7199 with SMTP id d9443c01a7336-29bab16b24emr156343865ad.29.1764353162734;
-        Fri, 28 Nov 2025 10:06:02 -0800 (PST)
-Received: from mozart.vkv.me ([192.184.167.117])
-        by smtp.gmail.com with ESMTPSA id d9443c01a7336-29bceb5519dsm52268095ad.93.2025.11.28.10.06.01
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 28 Nov 2025 10:06:02 -0800 (PST)
-Date: Fri, 28 Nov 2025 10:06:00 -0800
-From: Calvin Owens <calvin@wbinvd.org>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: Demi Marie Obenour <demiobenour@gmail.com>, Qu Wenruo <wqu@suse.com>,
-	linux-btrfs@vger.kernel.org
-Subject: Re: mkfs.btrfs reproducibility
-Message-ID: <aSnkiEKGUon3pqa9@mozart.vkv.me>
-References: <0ff47dc5-cf0d-4b5a-8d84-f309a74cbf32@gmail.com>
- <9194ad3f-183d-46e9-afc3-b52ab2bf28cb@suse.com>
- <fa8d6257-649b-4de1-b723-64cbc34c0a7f@gmail.com>
- <3247ee84-5a0d-4561-8d25-b1b8e180215a@gmx.com>
- <14681d38-fbdf-4ac2-93fa-7eba21588930@gmail.com>
- <0b099290-03bf-4a1d-8411-716f78058586@gmx.com>
+	dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b="oRkHD7GW"
+Received: from [192.168.1.27] ([84.220.171.3])
+	by smtp-18.iol.local with ESMTPA
+	id P4T2vwL7JNPOjP4T2vR7Wm; Fri, 28 Nov 2025 20:49:20 +0100
+x-libjamoibt: 1601
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=libero.it; s=s2021;
+	t=1764359360; bh=/cxiBHYHSHBK4pdc/WBVYZOwI9cSyPcAiyDzJ7AgTC8=;
+	h=From;
+	b=oRkHD7GW7WqkgNljKBjLHHKw2zVITIUQDe3z3Jc05N8sDYnNyrkoDB0dhh3zwkl7g
+	 QgZ2bqWuzkVtSJaF2FqFQwSrPcWIhGuEoHI8fwnuSjMJvTv4lcszf2hFaBPaMDi1T0
+	 1tQZLLbokSGNZQzN9/sE0LCUxzEklVpmIqH/4juVQ67QEFuepyNBLiSUoClv+NWYXk
+	 amdFgh314MljwDGyBcZqFOCOyW9+12pThEeYXx6JBzyxanOMHFd1iJcvqiVw0sKmfX
+	 MHKYbo/44j0k22vn7ax7fFLNCFUivqVlYGpDDidW3t9hJ+oEzLZ6lsFrDEanCfzzPS
+	 fbFeokwRXMUmA==
+X-CNFS-Analysis: v=2.4 cv=CfUI5Krl c=1 sm=1 tr=0 ts=6929fcc0 cx=a_exe
+ a=hciw9o01/L1eIHAASTHaSw==:117 a=hciw9o01/L1eIHAASTHaSw==:17
+ a=IkcTkHD0fZMA:10 a=NGwE20YKNqMAeTZI74wA:9 a=3ZKOabzyN94A:10 a=QEXdDO2ut3YA:10
+Message-ID: <f7e56d56-014f-4027-ab9d-d602c5e67137@libero.it>
+Date: Fri, 28 Nov 2025 20:49:20 +0100
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
+User-Agent: Mozilla Thunderbird
+Reply-To: kreijack@inwind.it
+Subject: Re: Ideas for RAIDZ-like design to solve write-holes, with larger fs
+ block size
+To: Qu Wenruo <wqu@suse.com>
+References: <4c0c1d27-957c-4a6f-9397-47ca321b1805@suse.com>
+Content-Language: en-US
+From: Goffredo Baroncelli <kreijack@libero.it>
+Cc: "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
+ linux-btrfs <linux-btrfs@vger.kernel.org>, zfs-devel@list.zfsonlinux.org
+In-Reply-To: <4c0c1d27-957c-4a6f-9397-47ca321b1805@suse.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <0b099290-03bf-4a1d-8411-716f78058586@gmx.com>
+X-CMAE-Envelope: MS4xfDpanaMlEmEWynxBIBqgLFcHBhnGtHwzSaWvXylp9Zxj9Bzr8KcE9PbdTcjgEppkzUm6g8VF+DkLe1o41r1Su3ocSNwFKyBK0sJmneMz6LIkNpsRUbi+
+ sEFYGvYsQb04LcwtNNakxK6iDhCFuW2aeLez4qe9b/cPIScwNNVqWdGfW20tTOjdoZxa8jKgNXXIbUtxnVHMIrV4qdEti9sWwdgSjRA1pyI+3SwOjMjTso9k
+ c0A/YvxFUGiq628GBx36x/6HLfbji+3bIONZV3prRHlR6W7PsVd12dgk0vQpJ9YRFwfNJguz4ZfGr8npaHy51w==
 
-On Friday 10/17 at 09:20 +1030, Qu Wenruo wrote:
-> 在 2025/10/17 09:12, Demi Marie Obenour 写道:
-> > On 10/15/25 02:49, Qu Wenruo wrote:
-> > > 
-> > > 
-> > > 在 2025/10/15 16:31, Demi Marie Obenour 写道:
-> > > > On 10/15/25 01:47, Qu Wenruo wrote:
-> > > > > 在 2025/10/15 16:13, Demi Marie Obenour 写道:
-> > > > > > I need to create a BTRFS filesystem where /home and /tmp are BTRFS
-> > > > > > subvolumes owned by root.  It's easy to create the subvolumes with
-> > > > > > --subvol and --rootdir, but they wind up being owned by the user that
-> > > > > > ran mkfs.btrfs, not by root.  I tried using fakeroot and it doesn't
-> > > > > > work, regardless of whether fakeroot and btrfs-progs come from Arch
-> > > > > > or Nixpkgs.
-> > > > > > 
-> > > > > > What is the best way to do this without needing root privileges?
-> > > > > > Nix builders don't have root access, and I don't know if they have
-> > > > > > access to user namespaces either.
-> > > > > 
-> > > > > Not familiar with namespace but I believe we can address it with some
-> > > > > extra options like --pid-map and --gid-map options, so that we can map
-> > > > > the user pid/gid to 0:0 in that case.
-> > > > > 
-> > > > > Thanks,
-> > > > > Qu
-> > > > 
-> > > > Thank you!  This would be awesome.  In the meantime I worked around
-> > > > the issue by having systemd-tmpfiles fix up the permissions.
-> > > 
-> > > Mind to share some details? I believe this will help other users, and I
-> > > can add a short note into the docs.
-> > 
-> > I fixed the owner and permissions at startup.  This is not good
-> > because it means that the image is not reproducible.
+On 28/11/2025 04.07, Qu Wenruo wrote:
+> Hi,
 > 
-> OK, so it's not the proper fix.
+> With the recent bs > ps support for btrfs, I'm wondering if it's possible to experiment some RAIDZ-like solutions to solve RAID56 write-holes problems (at least for data COW cases) without traditional journal.
+
+More than a RAIDZ-like solution (== a variable stripe size), it seems that you want to use a stripe width equal to the fs block size. So you can avoid the RWM cycles inside a stripe. It is an interesting idea, with a little development cost, which may work quite well when the number of disks * ps matches the fs bs.
+
+In order to reduce some downside, I suggests to use a "per chunk" fs-bs
+
 > 
-> I'll continue working on the new --pid-map/--gid-map solution so that the
-> files will have the proper gid/pid set.
+> Currently my idea looks like this:
+> 
+> - Fixed and much smaller stripe data length
+>    Currently the data stripe length is fixed for all btrfs RAID profiles,
+>    64K.
+> 
+>    But will change to 4K (minimal and default) for RAIDZ chunks.
+> 
+> - Force a larger than 4K fs block size (or data io size)
+>    And that fs block size will determine how many devices we can use for
+>    a RAIDZ chunk.
+> 
+>    E.g. with 32K fs block size, and 4K stripe length, we can use 8
+>    devices for data, +1 for parity.
+>    But this also means, one has to have at least 9 devices to maintain
+>    the this scheme with 4K stripe length.
+>    (More is fine, less is not possible)
+> 
+> 
+> But there are still some uncertainty that I hope to get some feedback before starting coding on this.
+> 
+> - Conflicts with raid-stripe-tree and no zoned support
+>    I know WDC is working on raid-stripe-tree feature, which will support
+>    all profiles including RAID56 for data on zoned devices.
+> 
+>    And the feature can be used without zoned device.
+> 
+>    Although there is never RAID56 support implemented so far.
+> 
+>    Would raid-stripe-tree conflicts with this new RAIDZ idea, or it's
+>    better just wait for raid-stripe-tree?
+> 
+> - Performance
+>    If our stripe length is 4K it means one fs block will be split into
+>    4K writes into each device.
+> 
+>    The initial sequential write will be split into a lot of 4K sized
+>    random writes into the real disks.
+> 
+>    Not sure how much performance impact it will have, maybe it can be
+>    solved with proper blk plug?
+> 
+> - Larger fs block size or larger IO size
+>    If the fs block size is larger than the 4K stripe length, it means
+>    the data checksum is calulated for the whole fs block, and it will
+>    make rebuild much harder.
+> 
+>    E.g. fs block size is 16K, stripe length is 4K, and have 4 data
+>    stripes and 1 parity stripe.
+> 
+>    If one data stripe is corrupted, the checksum will mismatch for the
+>    whole 16K, but we don't know which 4K is corrupted, thus has to try
+>    4 times to get a correct rebuild result.
+> 
+>    Apply this to a whole disk, then rebuild will take forever...
 
-Hi Qu,
+I am not sure about that: the checksum failure should be an exception.
+A disk failure is more common. But it this case, the parity should be enough
+to rebuild correctly the data and in the most case the checksum will be correct.
 
-I bumped into this: the issue is that mkfs.btrfs uses ntfw, which isn't
-instrumented by the LD_PRELOADs from fakeroot.
+> 
+>    But this only requires extra rebuild mechanism for RAID chunks.
+> 
+> 
+>    The other solution is to introduce another size limit, maybe something
+>    like data_io_size, and for example using 16K data_io_size, and still
+>    4K fs block size, with the same 4K stripe length.
+> 
+>    So that every writes will be aligned to that 16K (a single 4K write
+>    will dirty the whole 16K range). And checksum will be calculated for
+>    each 4K block.
+> 
+>    Then reading the 16K we verify every 4K block, and can detect which
+>    block is corrupted and just repair that block.
+> 
+>    The cost will be the extra space spent saving 4x data checksum, and
+>    the extra data_io_size related code.
 
-The kludge patch below in btrfs-progs gives me the behavior I want, and
-what I think Demi wanted as well.
+I am not sure about the assumption that the BS must be equal to 4k*(ndisk-1).
 
-Credit: https://github.com/NixOS/nixpkgs/issues/455331
+This is an upper limit, but you could have different mapping. E.g. another valid
+example is having BS=4k*(ndisk/2-2). But I think that even more strange arrangement
+can be done, like:
+	ndisk = 7
+	BS=4k*3
 
-Really though, IMHO it should be fixed in fakeroot: the Yocto clone of
-it called pseudo does have ntfw support, as noted in the above issue. I
-haven't had time to follow up on that yet but I will soon.
+so the 2nd stripe is in two different rows:
 
-Thanks,
-Calvin
 
------8<-----
-From: Calvin Owens <calvin@wbinvd.org>
-Subject: [KLUDGE][btrfs-progs] Make the --rootdir argument work with fakeroot
+              D1     D2     D2     D4     D5     D6     D7
+            ------ ------ ------ ------ ------ ------ ------
+              B1     B1     B1     P1     B2     B2     B2
+              P2     B3 ....
 
-Signed-off-by: Calvin Owens <calvin@wbinvd.org>
----
- mkfs/rootdir.c | 17 +++++++++++++++--
- 1 file changed, 15 insertions(+), 2 deletions(-)
+What you really need is that:
+1) bs=stripe width <= (ndisk - parity-level)* 4k
+2) each bs is never updated in the middle (which would create a new RWM cycle)
 
-diff --git a/mkfs/rootdir.c b/mkfs/rootdir.c
-index 7bdd6245..0f2c23c9 100644
---- a/mkfs/rootdir.c
-+++ b/mkfs/rootdir.c
-@@ -1631,7 +1631,7 @@ out:
- 	return ret;
- }
- 
--static int ftw_add_inode(const char *full_path, const struct stat *st,
-+static int ftw_add_inode(const char *full_path, const struct stat *unused,
- 			 int typeflag, struct FTW *ftwbuf)
- {
- 	struct btrfs_fs_info *fs_info = g_trans->fs_info;
-@@ -1639,10 +1639,23 @@ static int ftw_add_inode(const char *full_path, const struct stat *st,
- 	struct btrfs_inode_item inode_item = { 0 };
- 	struct inode_entry *parent;
- 	struct rootdir_subvol *rds;
--	const bool have_hard_links = (!S_ISDIR(st->st_mode) && st->st_nlink > 1);
-+	struct stat kludgebuf;
-+	const struct stat *st;
-+	bool have_hard_links;
- 	u64 ino;
- 	int ret;
- 
-+	/*
-+	 * KLUDGE: Explicitly call lstat(), so our view of the filesystem is
-+	 * through the LD_PRELOAD installed by the fakeroot command.
-+	 */
-+	if (lstat(full_path, &kludgebuf)) {
-+		error("Kludge with second stat() call failed: %m");
-+		return ret;
-+	}
-+	st = &kludgebuf;
-+	have_hard_links = (!S_ISDIR(st->st_mode) && st->st_nlink > 1);
-+
- 	/* The rootdir itself. */
- 	if (unlikely(ftwbuf->level == 0)) {
- 		u64 root_ino;
+> 
+> 
+> - Way more rigid device number requirement
+>    Everything must be decided at mkfs time, the stripe length, fs block
+>    size/data io size, and number of devices.
+
+As wrote above, I suggests to use a "per chunk" fs-bs
+
+>    Sure one can still add more devices than required, but it will just
+>    behave like more disks with RAID1.
+>    Each RAIDZ chunk will have fixed amount of devices.
+> 
+>    And furthermore, one can no longer remove devices below the minimal
+>    amount required by the RAIDZ chunks.
+>    If going with 16K blocksize/data io size, 4K stripe length, then it
+>    will always require 5 disks for RAIDZ1.
+>    Unless the end user gets rid of all RAIDZ chunks (e.g. convert
+>    to regular RAID1* or even SINGLE).
+> 
+> - Larger fs block size/data io size means higher write amplification
+>    That's the most obvious part, and may be less obvious higher memory
+>    pressure, and btrfs is already pretty bad at write-amplification.
+> 
+
+This is true, but you avoid the RWM cycle which is also expensive.
+
+>    Currently page cache is relying on larger folios to handle those
+>    bs > ps cases, requiring more contigous physical memory space.
+> 
+>    And this limit will not go away even the end user choose to get
+>    rid of all RAIDZ chunks.
+> 
+> 
+> So any feedback is appreciated, no matter from end users, or even ZFS developers who invented RAIDZ in the first place.
+> 
+> Thanks,
+> Qu
+> 
+
+Let me to add a "my" proposal (which is completely unrelated to your one :-)
+
+
+Assumptions:
+
+- an extent is never update (true for BTRFS)
+- in the example below it is showed a raid5 case; but it can be easily extend for higher redundancy level
+
+Nomenclature:
+- N = disks count
+- stride = number of consecutive block in a disk, before jumping to other disks
+- stripe = stride * (N - 1)   # -1 is for raid5, -2 in case of raid6 ...
+
+Idea design:
+
+- the redundancy is put inside the extent (and not below). Think it like a new kind of compression.
+
+- a new chunk type is created composed by a sequence of blocks (4k ?) spread on the disks, where the 1st block is disk1 - offeset 0,  2nd block is disk2 - offset 0 .... Nth block is disk N, offset 0, (N+1)th block is placed at disk1, offset +4K.... Like raid 0 with stride 4k.
+
+- option #1 (simpler)
+
+     - when an extent is created, every (N-1) blocks a parity block is stored; if the extent is shorter than N-1, a parity block is attached at its end;
+
+              D1     D2     D2     D4	
+            ------ ------ ------ ------
+             E1,0   E1,1   P1,0   E2,0
+             E2,1   E2,2   P2,1   E2,3
+             E2,4   P2,1   E3,0   E3,1
+             E3,2   P3,0   E3,3   E3,4
+             E3,5   P3,1   E3,6   E3,7
+             E3,8   P3,2   E3,9   E3,10
+             P3,3
+
+        Dz      Disk #z
+        Ex,y	Extent x, offset y
+        Px,y    Parity, extent x, range [y*N...y*N+N-1]
+
+
+- option #2 (more complex)
+
+     - like above when an extent is created, every (N-1) blocks a parity block is stored; if the extent is shorter than N-1, a parity block is attached at its end;
+       The idea is that if an extent spans more than a rows, the logical block can be arranged so the stride may be longer (comparable with the number of the rows).
+       In this way you can write more *consecutive* 4K block a time (when enough data to write is available). In this case is crucial the delayed block allocation.
+       See E2,{0,1} and E3,{0,3},E3,{4,7}, E3,{8,10}....
+
+              D1     D2     D2     D4	
+            ------ ------ ------ ------
+             E1,0   E1,1   P1,0   E2,0
+             E2,1   E2,3   P2,1   E2,4
+             E2,2   P2,1   E3,0   E3,4
+             E3,8   P3,0   E3,1   E3,5
+             E3,9   P3,1   E3,2   E3,6
+             E3,10  P3,2   E3,3   E3,7
+             P3,3
+
+        Dz      Disk #z
+        Ex,y	Extent x, offset y
+        Px,y    Parity, extent x, range row related
+
+
+
+Pros:
+- no update in the middle of a stripe with so no RWM cycles anymore
+- (option 2 only), in case a large write, consecutive blocks can be arranged in the same disk
+- each block can have its checksum
+- each stripe can have different raid level
+- maximum flexibility to change the number of disks
+
+Cons:
+- the scrub logic must be totally redesigned
+- the map logical block <-> physical block in option#1 is not complex to compute. However in option#2 it will be ... funny to find a good algorithm.
+- the ratio data-blocks/parity-blocks may be very inefficient for small write.
+- moving an extent between different block groups with different number of disks, would cause to reallocate the parity blocks inside the extent
+
+Best
+G.Baroncelli
+
 -- 
-2.47.3
-
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

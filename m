@@ -1,47 +1,47 @@
 Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AF0AA2EBDE3
-	for <linux-btrfs@vger.kernel.org>; Mon,  8 Dec 2025 12:10:38 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C87112F3638
+	for <linux-btrfs@vger.kernel.org>; Mon,  8 Dec 2025 12:10:44 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.133.124
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1765195840; cv=none; b=JwnCljnXgMMp1HTsFQVxdAuThL1WP/pvW9ZhYRRAhizfzv4S3dVF8HaytyBdOVkLdqag2cNbAgoLXQgm1SqzTum0Qq7yHoX2rKvOLL3zej7nBLdcJ7VKbhDdE4UlFJZ4kve2P/X8Lml4zHbncxDaR70zLrrDJaAXqPLkN1uF9T4=
+	t=1765195846; cv=none; b=aCfdjhQp8SJ6bGqOT7urJOgxwMo03juisTrRu93Tm1LwlbPSIMxH61Nk5OpM1nkYa/9td3LnENLnQFYWO92WAOXgb9PdaShlwljJQvx+AcFPt4t6woJCy+yoxqpyhSe7k6AKYQ0e8tAH26DxhSAxK+h5vX+e+avUM8i2wc8lKNA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1765195840; c=relaxed/simple;
-	bh=9k1l5oP0yXJfVXtLxOCu5RYALmuhZB/zpoPE5QPpVGs=;
+	s=arc-20240116; t=1765195846; c=relaxed/simple;
+	bh=CqnLgM9bxGlrVxyPzoFh+1bkpkx8bpzOqL+eTMygvt0=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=m8+xcO83llPmxgJCqoiFlNZZAg9vwZOKts8J+0qnWoneWuhjPSgeUWkAYPRU5rjov39exqKj+bDLrAiSpG6t7aYwQkMunVJDlMTAXZkZttjE6L3Ncigef8tcSawwSoDe/1c/0o3AzkZ9+7RsnjF39ik1qRedDex6jQiCn07I1is=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=U5DStzKN; arc=none smtp.client-ip=170.10.133.124
+	 MIME-Version; b=BOjARUu+2DtyQfClwCRqn/P8ZWZLlWVLfHTUjkedZKYYfjSyKBUE50N5akXrjf+12yocB8u11M66RVoKoheKoIYaLFWroY8y++vjv+n0/Bjeiq0RJ9czaJzEQzqxpbl2uoST/bT7DVR0NV7OCZue5yhY3O1zAzoVZzH8fx2jw0g=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=SILJS9Ev; arc=none smtp.client-ip=170.10.133.124
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="U5DStzKN"
+	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="SILJS9Ev"
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-	s=mimecast20190719; t=1765195837;
+	s=mimecast20190719; t=1765195844;
 	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
 	 to:to:cc:cc:mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=X8Q0v07JW9uSTBXNVPvB76vEIqMmpZ+G2A5HsI4ewQk=;
-	b=U5DStzKNwL6tAP6caAjIp4hDM32K1dQSmj8beYd1yH26XupizmVAPEeqLcFfawrc207jsq
-	5q+EOulk6Q1hkTzgMBE+a4ZosOPxm1ywMlCYtXs7QF6ynWqRldxsOECrCqkAnLKLqJEkSh
-	eKaYr+ZDdRMcrfQfNgxBFa7/HqcjGpg=
-Received: from mx-prod-mc-05.mail-002.prod.us-west-2.aws.redhat.com
- (ec2-54-186-198-63.us-west-2.compute.amazonaws.com [54.186.198.63]) by
+	bh=H4kcdoSw7LDS9+yf8C2Tt+DzBl7/RT2q80T0a13WnlE=;
+	b=SILJS9EvgxZzhjeD78EEIUMCqbekiW+5FG3FDnBLLvqNJW5o7a5fAzVY7zVTvkv88RGKKH
+	l6PLAa7GL5tLb3qNvdXc0P1EGjSdaLAENFp5x+FyIzvpDxEUshYXzr7RuEipON+hRNX/Qd
+	HYbStRdDjAj0Ay6oh/hgiKmAIMJQwyM=
+Received: from mx-prod-mc-06.mail-002.prod.us-west-2.aws.redhat.com
+ (ec2-35-165-154-97.us-west-2.compute.amazonaws.com [35.165.154.97]) by
  relay.mimecast.com with ESMTP with STARTTLS (version=TLSv1.3,
- cipher=TLS_AES_256_GCM_SHA384) id us-mta-642-kCi3znmHORW-rI5eE-cFgw-1; Mon,
- 08 Dec 2025 07:10:32 -0500
-X-MC-Unique: kCi3znmHORW-rI5eE-cFgw-1
-X-Mimecast-MFC-AGG-ID: kCi3znmHORW-rI5eE-cFgw_1765195831
+ cipher=TLS_AES_256_GCM_SHA384) id us-mta-618-NPV6KeqjMjW1Oqy3pjOVkA-1; Mon,
+ 08 Dec 2025 07:10:40 -0500
+X-MC-Unique: NPV6KeqjMjW1Oqy3pjOVkA-1
+X-Mimecast-MFC-AGG-ID: NPV6KeqjMjW1Oqy3pjOVkA_1765195839
 Received: from mx-prod-int-05.mail-002.prod.us-west-2.aws.redhat.com (mx-prod-int-05.mail-002.prod.us-west-2.aws.redhat.com [10.30.177.17])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
 	(No client certificate requested)
-	by mx-prod-mc-05.mail-002.prod.us-west-2.aws.redhat.com (Postfix) with ESMTPS id A81971956080;
-	Mon,  8 Dec 2025 12:10:30 +0000 (UTC)
+	by mx-prod-mc-06.mail-002.prod.us-west-2.aws.redhat.com (Postfix) with ESMTPS id 21E1B18001D7;
+	Mon,  8 Dec 2025 12:10:39 +0000 (UTC)
 Received: from pasta.fast.eng.rdu2.dc.redhat.com (unknown [10.44.34.3])
-	by mx-prod-int-05.mail-002.prod.us-west-2.aws.redhat.com (Postfix) with ESMTP id 7C8141956095;
-	Mon,  8 Dec 2025 12:10:27 +0000 (UTC)
+	by mx-prod-int-05.mail-002.prod.us-west-2.aws.redhat.com (Postfix) with ESMTP id EC7F41956095;
+	Mon,  8 Dec 2025 12:10:35 +0000 (UTC)
 From: Andreas Gruenbacher <agruenba@redhat.com>
 To: Christoph Hellwig <hch@infradead.org>,
 	Jens Axboe <axboe@kernel.dk>,
@@ -53,9 +53,9 @@ Cc: Andreas Gruenbacher <agruenba@redhat.com>,
 	linux-raid@vger.kernel.org,
 	dm-devel@lists.linux.dev,
 	linux-kernel@vger.kernel.org
-Subject: [RFC 01/12] bio: rename bio_chain arguments
-Date: Mon,  8 Dec 2025 12:10:08 +0000
-Message-ID: <20251208121020.1780402-2-agruenba@redhat.com>
+Subject: [RFC 03/12] bio: add bio_set_errno
+Date: Mon,  8 Dec 2025 12:10:10 +0000
+Message-ID: <20251208121020.1780402-4-agruenba@redhat.com>
 In-Reply-To: <20251208121020.1780402-1-agruenba@redhat.com>
 References: <20251208121020.1780402-1-agruenba@redhat.com>
 Precedence: bulk
@@ -67,52 +67,86 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-Scanned-By: MIMEDefang 3.0 on 10.30.177.17
 
-Use the same argument names in bio_chain() as in bio_chain_and_submit()
-to be consistent.  Slightly improve the function description.
+Add a bio_set_errno(bio, errno) helper that sets bio->bi_status to
+errno_to_blk_status(errno) if errno != 0.  Replace instances of this
+pattern in the code with a call to the new helper.
+
+The WRITE_ONCE() in bio_set_errno() ensures that the compiler won't
+reorder things in a weird way, but it isn't needed to prevent tearing
+because a single-byte field like bi_status cannot tear.
+
+Created with Coccinelle using the following semantic patch:
+
+@@
+struct bio *bio;
+expression errno;
+@@
+- if (errno)
+-	bio->bi_status = errno_to_blk_status(errno);
++ bio_set_errno(bio, errno);
+
+@@
+struct bio *bio;
+expression errno;
+@@
+- if (unlikely(errno))
+-	bio->bi_status = errno_to_blk_status(errno);
++ bio_set_errno(bio, errno);
 
 Signed-off-by: Andreas Gruenbacher <agruenba@redhat.com>
 ---
- block/bio.c | 22 +++++++++++-----------
- 1 file changed, 11 insertions(+), 11 deletions(-)
+ drivers/block/drbd/drbd_req.c | 3 +--
+ drivers/nvdimm/pmem.c         | 3 +--
+ include/linux/bio.h           | 8 ++++++++
+ 3 files changed, 10 insertions(+), 4 deletions(-)
 
-diff --git a/block/bio.c b/block/bio.c
-index b3a79285c278..3f408e1ba13f 100644
---- a/block/bio.c
-+++ b/block/bio.c
-@@ -327,22 +327,22 @@ static void bio_chain_endio(struct bio *bio)
- 
- /**
-  * bio_chain - chain bio completions
-- * @bio: the target bio
-- * @parent: the parent bio of @bio
-+ * @prev: the bio to chain
-+ * @new: the bio to chain to
-  *
-- * The caller won't have a bi_end_io called when @bio completes - instead,
-- * @parent's bi_end_io won't be called until both @parent and @bio have
-- * completed; the chained bio will also be freed when it completes.
-+ * The caller won't have a bi_end_io called when @prev completes.  Instead,
-+ * @new's bi_end_io will be called once both @new and @prev have completed.
-+ * Like an unchained bio, @prev will be put when it completes.
-  *
-- * The caller must not set bi_private or bi_end_io in @bio.
-+ * The caller must not set bi_private or bi_end_io in @prev.
-  */
--void bio_chain(struct bio *bio, struct bio *parent)
-+void bio_chain(struct bio *prev, struct bio *new)
+diff --git a/drivers/block/drbd/drbd_req.c b/drivers/block/drbd/drbd_req.c
+index d15826f6ee81..bd4bc882cc5a 100644
+--- a/drivers/block/drbd/drbd_req.c
++++ b/drivers/block/drbd/drbd_req.c
+@@ -176,8 +176,7 @@ void start_new_tl_epoch(struct drbd_connection *connection)
+ void complete_master_bio(struct drbd_device *device,
+ 		struct bio_and_error *m)
  {
--	BUG_ON(bio->bi_private || bio->bi_end_io);
-+	BUG_ON(prev->bi_private || prev->bi_end_io);
- 
--	bio->bi_private = parent;
--	bio->bi_end_io	= bio_chain_endio;
--	bio_inc_remaining(parent);
-+	prev->bi_private = new;
-+	prev->bi_end_io	= bio_chain_endio;
-+	bio_inc_remaining(new);
+-	if (unlikely(m->error))
+-		m->bio->bi_status = errno_to_blk_status(m->error);
++	bio_set_errno(m->bio, m->error);
+ 	bio_endio(m->bio);
+ 	dec_ap_bio(device);
  }
- EXPORT_SYMBOL(bio_chain);
+diff --git a/drivers/nvdimm/pmem.c b/drivers/nvdimm/pmem.c
+index 05785ff21a8b..a2f8b5a85326 100644
+--- a/drivers/nvdimm/pmem.c
++++ b/drivers/nvdimm/pmem.c
+@@ -232,8 +232,7 @@ static void pmem_submit_bio(struct bio *bio)
+ 	if (bio->bi_opf & REQ_FUA)
+ 		ret = nvdimm_flush(nd_region, bio);
  
+-	if (ret)
+-		bio->bi_status = errno_to_blk_status(ret);
++	bio_set_errno(bio, ret);
+ 
+ 	bio_endio(bio);
+ }
+diff --git a/include/linux/bio.h b/include/linux/bio.h
+index 16c1c85613b7..38ebf03036cb 100644
+--- a/include/linux/bio.h
++++ b/include/linux/bio.h
+@@ -389,6 +389,14 @@ static inline void bio_wouldblock_error(struct bio *bio)
+ 	bio_endio(bio);
+ }
+ 
++blk_status_t errno_to_blk_status(int errno);
++
++static inline void bio_set_errno(struct bio *bio, int errno)
++{
++	if (errno)
++		WRITE_ONCE(bio->bi_status, errno_to_blk_status(errno));
++}
++
+ /*
+  * Calculate number of bvec segments that should be allocated to fit data
+  * pointed by @iter. If @iter is backed by bvec it's going to be reused
 -- 
 2.51.0
 

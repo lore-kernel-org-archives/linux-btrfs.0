@@ -1,146 +1,99 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from mail-pg1-f193.google.com (mail-pg1-f193.google.com [209.85.215.193])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6B3752765DF
-	for <linux-btrfs@vger.kernel.org>; Tue,  9 Dec 2025 03:32:16 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B92262253EE
+	for <linux-btrfs@vger.kernel.org>; Tue,  9 Dec 2025 03:38:02 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.215.193
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1765251138; cv=none; b=RiNLflMaMY8av5Vh/eyw2YUcTkwVnLoSgAutCSVVGLiNPbiGlxYcKVo6Pt4dVUDWhpglB++9oefSLbMWDLQ9qvx0HHmL1ilXMjGRjmoFWml4je4ivjmtvyLg8rqUEyCWk2+P7YXgCPohDG2R+tccn9n/+lZgFDm+zEo1qMXzeHQ=
+	t=1765251485; cv=none; b=htdy7PuJBpyQS6+0o2++RI0znAtPFZpU01Zf3CSzKR6f3WgPcAV4XVzpe3YTRD1NsO7AlNounDCsOhgUVaAkDomQFagffrJEeIxJzGxnFDUGMNC+YWD6TfaFOftMu1BhFPZblfKejVUsC3xgPFL1+u9huJMhyvUs1aUoAnrfaqY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1765251138; c=relaxed/simple;
-	bh=iKbUOvozTUcDjWGdk0gFrhHRUlevzyfHRqWi1OObHPY=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=BWY9TRuDIUF18sVtkKM4fKDZSOdiL7l0JZtbLS/VPRrKBbrLdBaHJ1q8AQdDkfqz8DSiQ6K4FtmjpNxzuvtnP0eseVdrm110LECMcIkAlRIRgQhTENiNwDIv358rqk5ISa/d5x4Te+n3sYOh6SVRwEqscDgQzHIarxY/4Xe8b/4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=VGLBtrSn; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=awdG7ukz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=VGLBtrSn; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=awdG7ukz; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	s=arc-20240116; t=1765251485; c=relaxed/simple;
+	bh=VaAYZHvvfpbMb8OfBXvulLEmbIGaXIBJjXKjzfKzMco=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=AZ6ap/aGxQnp+QImSDfN5wcUwnowQoC9O+f+mEaEaZ2GOqfnpymje/sBlsQ04Y7ofESu4uYg0Mk7kHZg5ZW7hMX904q6GF0xGkRtkNsA+8DoamZ6A4TiTSjyQqBmxVw+pQIdUJ/6DSQU5Xf3UmvvCSb3x0qLti1Pgk/2Zx2t71E=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=aOt6Pr4h; arc=none smtp.client-ip=209.85.215.193
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="VGLBtrSn";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="awdG7ukz";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="VGLBtrSn";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="awdG7ukz"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 932255BD8E;
-	Tue,  9 Dec 2025 03:32:14 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1765251134;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=dK5KHqJHuxC0Vq5OqfttGAUtjiXF9FshssrZSe7Fcxg=;
-	b=VGLBtrSnPe8iGZ26utWGY6liH0g1BUcjJjgoQMAuFWtfLILPc37EbKfrR6tZwtw+4xfRTl
-	Ialui0y2c5pbz6+D73lH9Jltrb9zGiZ/8Nndk8Ka/C7Hz7wZk1zJQuApu/blVa5iJSeiZi
-	6j81H9n0f6nP6jNR/3I8QGoq4cNVWC4=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1765251134;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=dK5KHqJHuxC0Vq5OqfttGAUtjiXF9FshssrZSe7Fcxg=;
-	b=awdG7ukzLJVArLakQLMyksZCPpJAg5z9C6iAP3Q6yywR9OfduKgSIrYDNIJ0PH7SmnyhaQ
-	pdNiTrOJE6iRycAw==
-Authentication-Results: smtp-out2.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1765251134;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=dK5KHqJHuxC0Vq5OqfttGAUtjiXF9FshssrZSe7Fcxg=;
-	b=VGLBtrSnPe8iGZ26utWGY6liH0g1BUcjJjgoQMAuFWtfLILPc37EbKfrR6tZwtw+4xfRTl
-	Ialui0y2c5pbz6+D73lH9Jltrb9zGiZ/8Nndk8Ka/C7Hz7wZk1zJQuApu/blVa5iJSeiZi
-	6j81H9n0f6nP6jNR/3I8QGoq4cNVWC4=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1765251134;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=dK5KHqJHuxC0Vq5OqfttGAUtjiXF9FshssrZSe7Fcxg=;
-	b=awdG7ukzLJVArLakQLMyksZCPpJAg5z9C6iAP3Q6yywR9OfduKgSIrYDNIJ0PH7SmnyhaQ
-	pdNiTrOJE6iRycAw==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 737013EA63;
-	Tue,  9 Dec 2025 03:32:14 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id B5OtGz6YN2kqegAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Tue, 09 Dec 2025 03:32:14 +0000
-Date: Tue, 9 Dec 2025 04:32:13 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Miquel =?iso-8859-1?Q?Sabat=E9_Sol=E0?= <mssola@mssola.com>
-Cc: linux-btrfs@vger.kernel.org, clm@fb.com, dsterba@suse.com,
-	rostedt@goodmis.org, mhiramat@kernel.org,
-	mathieu.desnoyers@efficios.com, linux-kernel@vger.kernel.org,
-	linux-trace-kernel@vger.kernel.org,
-	syzbot+d991fea1b4b23b1f6bf8@syzkaller.appspotmail.com
-Subject: Re: [PATCH] btrfs: fix NULL dereference on root when tracing inode
- eviction
-Message-ID: <20251209033213.GF4859@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20251021091125.259500-1-mssola@mssola.com>
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="aOt6Pr4h"
+Received: by mail-pg1-f193.google.com with SMTP id 41be03b00d2f7-be9ab2335beso107073a12.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 08 Dec 2025 19:38:02 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1765251482; x=1765856282; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to;
+        bh=OiqU/pK81ad7+w/vQEMY0EJJdoqSmprGQQgxAo5DdU4=;
+        b=aOt6Pr4hl2KKvbkM1a2Xk7cRODXKydo0VcXfDu7WSZPJ48GD33lMSc2xwo0yROQKET
+         NIPnjfb046f/YmvGfeWm7m7bAtzEeist9P/FBV69N4sbizlxmdakc7q6WV3jvLkuZSTd
+         /zV6eUb3HrOAhQSW5ehR/IFCZizUGVxtCX8wOOWs69nKvMqjHGZFnKuAOAgIt/rP0jpr
+         uEg5UHvTD1uCmgbtlEUEdNFizAiVVrKl0QMcgEvsfIAOQuP69717OOUY6l2GyH++JWiS
+         LJ23aGLjiMWal7s+mfWs+BBU8W3nf9zdZEtNA+1NpWZvZfMBq/0BYaiC9ENGuQ+xv8w/
+         BHMA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1765251482; x=1765856282;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=OiqU/pK81ad7+w/vQEMY0EJJdoqSmprGQQgxAo5DdU4=;
+        b=TJ//D8kQJkHo/YjTZSHRuYUZSyW6BN8qGiVmuWZjAc+cS/z6UsyfgnR6hw/oM9mt0v
+         4OfvEP1vDiX9j8eIURFOTlc3t23xUM/pTZ5bDmRMP87bdsp/NSXZ7AwYSJvsFAeeg8Mh
+         2LLrfPdP5/mEcWKq2GKrVpFnv+ONnhuZs5Zn2DNSYbPfMnKNMopKl3MAzIjmLpMzdxdF
+         GD5Ksfc2dWASAhlwp6YEFmbC7ZhEsJpqNWvFJTYuam4CH1Zi0vOiNJ3T1CNTf1AUogCQ
+         fmOGgWy3JsrOy/m2+zoybiJfncfo9hGGflbr7mPxcUn2KlVYJ3aE3liAGsse8oifPMcv
+         hxmg==
+X-Gm-Message-State: AOJu0YxSOUZYTpe0RWxhnHalJ/6RcEtvhL/xTD7CWp7ZU7cDYwztH3NW
+	8jv0fysmDnQhT+yWQI9qcEOayF5I1GuXmc8p5Bpac0odidXfg+hCCh6ai1fMdo7FDM2PuQ==
+X-Gm-Gg: ASbGncuR5ASphlhuEczq12AE/ya3mQ5mMMDC/2aK+k0VVUj17Mxa4c08fsjdpePctx3
+	HmNl1I6Nn8W9SZq8DGyOV0MDFyw32tw1he7HIjPhAdgOuXcOo5Q8/aohdVuPaZrE3lYQ1ETLJxZ
+	lpLPmSweDg1yXgvmkfbBFA00AZ2R49excnN/sbd8Fp2FlU8ywkTuEWk3l7WuFp8EwngdxU7iq8l
+	mr/vYmsgH++NZHx4tga6EM//zf0zx7/xLWCnkav3Cxqn7zluFGMIC6diNlAE3G0I7qDp3uAFiap
+	XLSSgSuwT/PxH1V7dXsqazuO/BtbO0k7+QSxbXw9UbLx+oboE0UnFV4I4bkz9waRVJTkUOtaNyv
+	EbG69wcNElLgb+UV1cfFQa21w1E3svdD0GvKnZE+6yv4xgbf70ZEpUUUsOyDaag6Pdm+eTSt8F7
+	W7B3VI5tIPxbUpWAfPvy4j
+X-Google-Smtp-Source: AGHT+IGdrBZRs8gvNLpMsxbCDYF5gjI+2GDTqi6rtsGHajLuZD7l4zQy3fJFqbFxvHTWrwKj7jrRuA==
+X-Received: by 2002:a05:6a00:84e:b0:7e1:afd9:9a66 with SMTP id d2e1a72fcca58-7e8bfb3c5b8mr6721689b3a.2.1765251481928;
+        Mon, 08 Dec 2025 19:38:01 -0800 (PST)
+Received: from SaltyKitkat ([195.88.211.122])
+        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-7edac47617dsm3923900b3a.42.2025.12.08.19.38.00
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 08 Dec 2025 19:38:01 -0800 (PST)
+From: Sun YangKai <sunk67188@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Sun YangKai <sunk67188@gmail.com>
+Subject: [PATCH 0/4] btrfs: some cleanups for two ctree functions
+Date: Tue,  9 Dec 2025 11:27:17 +0800
+Message-ID: <20251209033747.31010-1-sunk67188@gmail.com>
+X-Mailer: git-send-email 2.51.2
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <20251021091125.259500-1-mssola@mssola.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Spamd-Result: default: False [-2.50 / 50.00];
-	BAYES_HAM(-3.00)[99.99%];
-	SUSPICIOUS_RECIPS(1.50)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	NEURAL_HAM_SHORT(-0.20)[-0.994];
-	MIME_GOOD(-0.10)[text/plain];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	MIME_TRACE(0.00)[0:+];
-	ARC_NA(0.00)[];
-	TO_DN_SOME(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	REPLYTO_DOM_NEQ_TO_DOM(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	TAGGED_RCPT(0.00)[d991fea1b4b23b1f6bf8];
-	RCPT_COUNT_SEVEN(0.00)[10];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo]
-X-Spam-Level: 
-X-Spam-Flag: NO
-X-Spam-Score: -2.50
 
-On Tue, Oct 21, 2025 at 11:11:25AM +0200, Miquel Sabaté Solà wrote:
-> When evicting an inode the first thing we do is to setup tracing for it,
-> which implies fetching the root's id. But in btrfs_evict_inode() the
-> root might be NULL, as implied in the next check that we do in
-> btrfs_evict_inode().
-> 
-> Hence, we either should set the ->root_objectid to 0 in case the root is
-> NULL, or we move tracing setup after checking that the root is not
-> NULL. Setting the rootid to 0 at least gives us the possibility to trace
-> this call even in the case when the root is NULL, so that's the solution
-> taken here.
-> 
-> Fixes: 1abe9b8a138c ("Btrfs: add initial tracepoint support for btrfs")
-> Reported-by: syzbot+d991fea1b4b23b1f6bf8@syzkaller.appspotmail.com
-> Closes: https://syzkaller.appspot.com/bug?extid=d991fea1b4b23b1f6bf8
-> Signed-off-by: Miquel Sabaté Solà <mssola@mssola.com>
+The first three patches is cleanups for btrfs_search_slot_for_read().
+There're only two callers that set @return_any to 1 and both of them
+is unnecessary. So @return_any and related logic could be removed.
 
-Added to for-next, thanks.
+The last patch is cleanup for btrfs_prev_leaf(). Callers expect a
+valid p->slots[0] to read the item's key. So make sure btrfs_prev_leaf()
+return a valid p->slots[0] and remove related checks in callers.
+
+Sun YangKai (4):
+  btrfs: don't set @return_any for btrfs_search_slot_for_read in
+    btrfs_read_qgroup_config
+  btrfs: don't set return_any @return_any for btrfs_search_slot_for_read
+    in get_last_extent()
+  btrfs: cleanup btrfs_search_slot_for_read()
+  btrfs: ctree: cleanup btrfs_prev_leaf()
+
+ fs/btrfs/ctree.c           | 141 ++++++-------------------------------
+ fs/btrfs/ctree.h           |   3 +-
+ fs/btrfs/free-space-tree.c |   2 +-
+ fs/btrfs/qgroup.c          |  10 +--
+ fs/btrfs/send.c            |  22 +++---
+ 5 files changed, 40 insertions(+), 138 deletions(-)
+
+-- 
+2.51.2
+

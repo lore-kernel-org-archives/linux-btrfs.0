@@ -1,221 +1,306 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1848F3164D6
-	for <linux-btrfs@vger.kernel.org>; Mon, 15 Dec 2025 10:30:58 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BE9B1314A8E
+	for <linux-btrfs@vger.kernel.org>; Mon, 15 Dec 2025 10:39:20 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1765794658; cv=none; b=WWTza/c2hkmJ7clfiqWS7nKkFeR9dzkhfyDXcdOf8U8ldL5ohlKqBzdT87SfzXkfD+tDiCJYu1RRRpC1EKsm+BrE1/7mkDhqAPEHX7Asr05FGPAGewzQJ1p9k0+EPdCbLVUq02rKy5qICLXc5KWyZR0DgIVmR7Ap5YCG5qKoe6c=
+	t=1765795160; cv=none; b=pSwPmwl61IVIWQVkQt5Yc6imyBw+vVFcu61Ztde9s1pC9vGVDsE6mBI2Ra6TbwYiZpqv9G/3HpuQFXg/wVII29KSjteKo+Ti4NzLgJS81ZqrlGTq5g3kEVBzEMKf+2cIf8i4Lxofn9yb5c/099u2nyonHVCy4DLMxV65SnicHkY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1765794658; c=relaxed/simple;
-	bh=+r2w1ecQLoZPkZjVkkgUEkPMN72cyX+DP7bG8vMJJos=;
+	s=arc-20240116; t=1765795160; c=relaxed/simple;
+	bh=vGSF6K5zCfynjMKyz5F9NAYFfV1tXg3c/K6I0x2CMsE=;
 	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=W7XZwl5bp7dEXC1M38k9Qh6B7u+GjCuILT65Y9lMS5u5biZUbcAaN45F9KfPVBPK7qk3/gg9sTA1vi4dzc//yMklFL91HEYDBpuhmWlz3NaBqpbCypOChNZMnSkEhgLUkz6Ultx33Tp3prfLZQ1f5aNWNllldtfJHmEltg5lSS0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=cwEinBBc; arc=none smtp.client-ip=10.30.226.201
+	 To:Cc:Content-Type; b=Wcx6jpQppTe8i1DryG08AatriHd/eJmthyADCuh+NgDdhN3c9Jv0uXRFwXHP81kQsUIlUK8FNXvHgq2gJEp92cv1vgoCDmdEz7KqS+9pA15ONe25c0zpUPvwQvIvpYNwQ2cV/Lzws8hXE8IsFBc6wIhvftNoZ7a1K5q0aGNWmog=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=FJrzZ6jE; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="cwEinBBc"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id E491DC4CEF5
-	for <linux-btrfs@vger.kernel.org>; Mon, 15 Dec 2025 10:30:57 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="FJrzZ6jE"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 26460C4CEF5
+	for <linux-btrfs@vger.kernel.org>; Mon, 15 Dec 2025 10:39:20 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1765794657;
-	bh=+r2w1ecQLoZPkZjVkkgUEkPMN72cyX+DP7bG8vMJJos=;
+	s=k20201202; t=1765795160;
+	bh=vGSF6K5zCfynjMKyz5F9NAYFfV1tXg3c/K6I0x2CMsE=;
 	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-	b=cwEinBBc4h/zWLBEcpdkncwAN+jTJ3yeyl2IUHWAnNTVa1NGh5NtqaQBo+kvcK46q
-	 1kypIWFr7jmdm1nQ65+VyUxxyq4SA9Ieqnr9q4NS86CIjADuSXlbHmSqMRFJVEP3cn
-	 J2HhwAcv7Epasp2ODi7JQoszjtD5/Dpw311ZeNOFvZb3W0TtSsYHK62OfW0iHdXA+U
-	 QGBTbjfkYzfFKG9En9jgDl8m+tDnUEg9b6xbYGWOxrJKt15KsnsGyENf+G+SMs8YK7
-	 Q5fg40tedanyFsJz5Et6TJ3Pgkw2a8ZKNlmw3XHKXRMY8nIGI+ZX86bxnJK4N/z82a
-	 PIazwyjgIqa7w==
-Received: by mail-ed1-f46.google.com with SMTP id 4fb4d7f45d1cf-6419aaced59so5144292a12.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 15 Dec 2025 02:30:57 -0800 (PST)
-X-Gm-Message-State: AOJu0YyOWDLbWOSzhdEEz4KDidy9AyY3Dix2QZnTxzZM55gNePUhQnGU
-	ToPXgERHrCBGTLFOQN4hQV6iPAjlI96G540wZCT8Vaw4bwfQ8yTqIFw9TpoblGW0sf3ObVfWUPw
-	F+ZjYhflA0oI22WWLZoLMMRJSPSCzM1o=
-X-Google-Smtp-Source: AGHT+IF/i6RcCtVzz2hH97nzOeqf+OTGfAy4NTG0WR7smtJxXq9YCv6Q6zQNRyt58+QsKRt0LuiLC9YrLLg2fYqyeLc=
-X-Received: by 2002:a17:907:2d11:b0:b73:70db:49ab with SMTP id
- a640c23a62f3a-b7d237743f2mr990500966b.35.1765794656500; Mon, 15 Dec 2025
- 02:30:56 -0800 (PST)
+	b=FJrzZ6jEqmddi2SPAPAP99gmJJZepnzXU4YVe7i3u+b22wKYied+jPrLAIxbAPXWl
+	 uIqb83Xa7pF7geJpb/pwLA5unS2Da97h0p6niDb2xO4lEb+AG49g/USJag1zZoQb1f
+	 58GdW8FM6fpoI9Qf6wELO7fPRfnBHRgc8Al26wTT6vfwmZmW1HdMiRS0JSHD1Y4td6
+	 roOU15LmPrr0N9UaBlvwuOahhPSt1l9JvfC8GUmV0L/ZM7AhiOL4hmk8ZwXyv+/iNu
+	 iVFRymRykdNswW/VwoP+DufCFC5Xwdfbz+xkGjbncIbPpbq79Yk+qHflv4R9JZx6Xl
+	 H8S9qu2/a2/4g==
+Received: by mail-ed1-f44.google.com with SMTP id 4fb4d7f45d1cf-640a0812658so5690386a12.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 15 Dec 2025 02:39:20 -0800 (PST)
+X-Gm-Message-State: AOJu0YydcqJH9ChnkYE8DStqNZUb3SFY76vYUX61MVGChCjFlP/BhVPu
+	FnqC3IP+MVXrq+kPLyylKdkgH5GegGnJVwz4bbmEqhu7JdtFQWEE+vrbj1RHAFzDMjkolBRa+Wi
+	Ug01ebuMYE7pJrVbs+ONq06H3N+oLqfI=
+X-Google-Smtp-Source: AGHT+IFqcgyZl3rUACXsitNdKGdK8k23bQpcKo5lBexucLNU9aWPZYtAy3slJg5XgUasMyGPKVnoLsXlEfuicvfggqc=
+X-Received: by 2002:a17:907:7b82:b0:b70:68d7:ac0c with SMTP id
+ a640c23a62f3a-b7d238ddd7emr893971566b.42.1765795158741; Mon, 15 Dec 2025
+ 02:39:18 -0800 (PST)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <b9ce1fd6cf3ef17a4d4b24a71d51792c6979fe68.1765744373.git.wqu@suse.com>
-In-Reply-To: <b9ce1fd6cf3ef17a4d4b24a71d51792c6979fe68.1765744373.git.wqu@suse.com>
+References: <20251213050305.10790-1-johannes.thumshirn@wdc.com> <20251213050305.10790-2-johannes.thumshirn@wdc.com>
+In-Reply-To: <20251213050305.10790-2-johannes.thumshirn@wdc.com>
 From: Filipe Manana <fdmanana@kernel.org>
-Date: Mon, 15 Dec 2025 10:30:19 +0000
-X-Gmail-Original-Message-ID: <CAL3q7H5ThZf4NmB_VAXbhbf_YumC79KwE9VzAVyW16HDCa7HZQ@mail.gmail.com>
-X-Gm-Features: AQt7F2ohkRanfEm-nsHyoElrXcFioNz_gFdh-aJIvc8YI_eVrkpF8kEa8K1gZCQ
-Message-ID: <CAL3q7H5ThZf4NmB_VAXbhbf_YumC79KwE9VzAVyW16HDCa7HZQ@mail.gmail.com>
-Subject: Re: [PATCH v3] btrfs: add an ASSERT() to catch ordered extents with
- incorrect csums
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
+Date: Mon, 15 Dec 2025 10:38:41 +0000
+X-Gmail-Original-Message-ID: <CAL3q7H5pJXeNwuD7+BEfnXrKnRE8Ff10Rtr02OUjWfgA=euoUw@mail.gmail.com>
+X-Gm-Features: AQt7F2p0i1eozarzZyrdWWA4BTIZxScwQChW8f96M-WsxDwH_W6tJM_gVt2x9io
+Message-ID: <CAL3q7H5pJXeNwuD7+BEfnXrKnRE8Ff10Rtr02OUjWfgA=euoUw@mail.gmail.com>
+Subject: Re: [PATCH v4 1/4] btrfs: zoned: move zoned stats to mountstats
+To: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>, 
+	Damien Le Moal <dlemoal@kernel.org>, Naohiro Aota <naohiro.aota@wdc.com>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Sun, Dec 14, 2025 at 8:33=E2=80=AFPM Qu Wenruo <wqu@suse.com> wrote:
+On Sat, Dec 13, 2025 at 5:03=E2=80=AFAM Johannes Thumshirn
+<johannes.thumshirn@wdc.com> wrote:
 >
-> Inspired by recent bug fix like 18de34daa7c6 ("btrfs: truncate ordered
-> extent when skipping writeback past i_size"), and the patch "btrfs: fix
-> beyond-EOF write handling", if we can catch ordered extents with
-> incorrect checksums, the above bugs will be caught much easier.
-
-So reading "incorrect checksums", both in this paragraph and in the
-subject, gives the idea that the checksums don't match the data...
-I find it very misleading.
-
-I would phrase it as "ordered extents missing checksum ranges" or just
-"ordered extents missing checksums".
-
+> Move zoned statistics to /proc/<pid>/mountstats just like it is for XFS,
+> because sysfs is limited to a single page, which causes the output to be
+> truncated.
 >
-> Introduce the following extra checks for an ordered extent at
-> btrfs_finish_one_ordered(), before inserting an file extent item:
->
-> - Skip data reloc inodes first
->   A data reloc inode represents a block group during relocation, which
->   can have ranges that have csum but some without.
->   So we can not easily check them.
->
-> - NODATACOW OEs, NODATASUM inodes must have no csums
->   NODATACOW implies NODATASUM, and it's pretty obvious that NODATASUM
->   inode should not have ordered extents with csums.
->
-> - Compressed file extents must have csum covering the on-disk range
->   Even if a compressed file extents is truncated, the csum is calculated
->   using the on-disk extent, thus the csum must still cover the on-disk
->   length.
->
-> - Truncated regular file extents must have csum for the truncated length
->
-> - The remaining regular file extents must have csum for the whole length
->
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 > ---
-> Changelog:
-> v3:
-> - Fix a compiler warning when CONFIG_BTRFS_ASSERT is not selected
->   By hiding the oe_csum_bytes() and the main part of assert_oe_csums()
->   behind that config.
+>  fs/btrfs/super.c | 12 +++++++++++
+>  fs/btrfs/sysfs.c | 52 ------------------------------------------------
+>  fs/btrfs/zoned.c | 43 +++++++++++++++++++++++++++++++++++++++
+>  fs/btrfs/zoned.h |  8 ++++++++
+>  4 files changed, 63 insertions(+), 52 deletions(-)
 >
-> v2:
-> - Updated to check all possible combinations
->   Previously version can only detect the OEs in patch "btrfs: fix
->   beyond-EOF write handling" where the OE has no csum at all, but can
->   not detect OEs that has partial csums.
-> ---
->  fs/btrfs/inode.c | 68 ++++++++++++++++++++++++++++++++++++++++++++++++
->  1 file changed, 68 insertions(+)
->
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 461725c8ccd7..28227d43b082 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -3090,6 +3090,72 @@ static int insert_ordered_extent_file_extent(struc=
-t btrfs_trans_handle *trans,
->                                            update_inode_bytes, oe->qgroup=
-_rsv);
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index a37b71091014..ecbfeaa859a0 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -2485,6 +2485,17 @@ static void btrfs_shutdown(struct super_block *sb)
 >  }
+>  #endif
 >
-> +#ifdef CONFIG_BTRFS_ASSERT
-> +static u64 oe_csum_bytes(struct btrfs_ordered_extent *oe)
+> +static int btrfs_show_stats(struct seq_file *s, struct dentry *root)
 > +{
-> +       struct btrfs_ordered_sum *sum;
-> +       u64 ret =3D 0;
+> +       struct btrfs_fs_info *fs_info =3D btrfs_sb(root->d_sb);
 > +
-> +       list_for_each_entry(sum, &oe->list, list)
-> +               ret +=3D sum->len;
-> +       return ret;
+> +       if (!btrfs_is_zoned(fs_info))
+> +               return 0 ;
+> +
+> +       btrfs_show_zoned_stats(fs_info, s);
+> +       return 0;
 > +}
-> +#endif
 > +
-> +#define ASSERT_OE(cond, oe)                            \
-> +       ASSERT(cond,                                    \
-> +"root=3D%lld ino=3D%llu file_pos=3D%llu num_bytes=3D%llu ram_bytes=3D%ll=
-u truncated_len=3D%lld csum_bytes=3D%llu disk_bytenr=3D%llu disk_num_bytes=
-=3D%llu flags=3D0x%lx", \
-> +              btrfs_root_id((oe)->inode->root),        \
-> +              btrfs_ino((oe)->inode),                  \
-> +              (oe)->file_offset, (oe)->num_bytes,      \
-> +              (oe)->ram_bytes, (oe)->truncated_len,    \
-> +              oe_csum_bytes(oe),                       \
-> +              (oe)->disk_bytenr, (oe)->disk_num_bytes, \
-> +              (oe)->flags);
+>  static const struct super_operations btrfs_super_ops =3D {
+>         .drop_inode     =3D btrfs_drop_inode,
+>         .evict_inode    =3D btrfs_evict_inode,
+> @@ -2500,6 +2511,7 @@ static const struct super_operations btrfs_super_op=
+s =3D {
+>         .unfreeze_fs    =3D btrfs_unfreeze,
+>         .nr_cached_objects =3D btrfs_nr_cached_objects,
+>         .free_cached_objects =3D btrfs_free_cached_objects,
+> +       .show_stats     =3D btrfs_show_stats,
+>  #ifdef CONFIG_BTRFS_EXPERIMENTAL
+>         .remove_bdev    =3D btrfs_remove_bdev,
+>         .shutdown       =3D btrfs_shutdown,
+> diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+> index 7f00e4babbc1..f0974f4c0ae4 100644
+> --- a/fs/btrfs/sysfs.c
+> +++ b/fs/btrfs/sysfs.c
+> @@ -25,7 +25,6 @@
+>  #include "misc.h"
+>  #include "fs.h"
+>  #include "accessors.h"
+> -#include "zoned.h"
+>
+>  /*
+>   * Structure name                       Path
+> @@ -1188,56 +1187,6 @@ static ssize_t btrfs_commit_stats_store(struct kob=
+ject *kobj,
+>  }
+>  BTRFS_ATTR_RW(, commit_stats, btrfs_commit_stats_show, btrfs_commit_stat=
+s_store);
+>
+> -static ssize_t btrfs_zoned_stats_show(struct kobject *kobj,
+> -                                     struct kobj_attribute *a, char *buf=
+)
+> -{
+> -       struct btrfs_fs_info *fs_info =3D to_fs_info(kobj);
+> -       struct btrfs_block_group *bg;
+> -       size_t ret =3D 0;
+> -
+> -
+> -       if (!btrfs_is_zoned(fs_info))
+> -               return ret;
+> -
+> -       spin_lock(&fs_info->zone_active_bgs_lock);
+> -       ret +=3D sysfs_emit_at(buf, ret, "active block-groups: %zu\n",
+> -                            list_count_nodes(&fs_info->zone_active_bgs))=
+;
+> -       spin_unlock(&fs_info->zone_active_bgs_lock);
+> -
+> -       mutex_lock(&fs_info->reclaim_bgs_lock);
+> -       spin_lock(&fs_info->unused_bgs_lock);
+> -       ret +=3D sysfs_emit_at(buf, ret, "\treclaimable: %zu\n",
+> -                            list_count_nodes(&fs_info->reclaim_bgs));
+> -       ret +=3D sysfs_emit_at(buf, ret, "\tunused: %zu\n",
+> -                            list_count_nodes(&fs_info->unused_bgs));
+> -       spin_unlock(&fs_info->unused_bgs_lock);
+> -       mutex_unlock(&fs_info->reclaim_bgs_lock);
+> -
+> -       ret +=3D sysfs_emit_at(buf, ret, "\tneed reclaim: %s\n",
+> -                            str_true_false(btrfs_zoned_should_reclaim(fs=
+_info)));
+> -
+> -       if (fs_info->data_reloc_bg)
+> -               ret +=3D sysfs_emit_at(buf, ret,
+> -                                    "data relocation block-group: %llu\n=
+",
+> -                                    fs_info->data_reloc_bg);
+> -       if (fs_info->treelog_bg)
+> -               ret +=3D sysfs_emit_at(buf, ret,
+> -                                    "tree-log block-group: %llu\n",
+> -                                    fs_info->treelog_bg);
+> -
+> -       spin_lock(&fs_info->zone_active_bgs_lock);
+> -       ret +=3D sysfs_emit_at(buf, ret, "active zones:\n");
+> -       list_for_each_entry(bg, &fs_info->zone_active_bgs, active_bg_list=
+) {
+> -               ret +=3D sysfs_emit_at(buf, ret,
+> -                                    "\tstart: %llu, wp: %llu used: %llu,=
+ reserved: %llu, unusable: %llu\n",
+> -                                    bg->start, bg->alloc_offset, bg->use=
+d,
+> -                                    bg->reserved, bg->zone_unusable);
+> -       }
+> -       spin_unlock(&fs_info->zone_active_bgs_lock);
+> -       return ret;
+> -}
+> -BTRFS_ATTR(, zoned_stats, btrfs_zoned_stats_show);
+> -
+>  static ssize_t btrfs_clone_alignment_show(struct kobject *kobj,
+>                                 struct kobj_attribute *a, char *buf)
+>  {
+> @@ -1649,7 +1598,6 @@ static const struct attribute *btrfs_attrs[] =3D {
+>         BTRFS_ATTR_PTR(, bg_reclaim_threshold),
+>         BTRFS_ATTR_PTR(, commit_stats),
+>         BTRFS_ATTR_PTR(, temp_fsid),
+> -       BTRFS_ATTR_PTR(, zoned_stats),
+>  #ifdef CONFIG_BTRFS_EXPERIMENTAL
+>         BTRFS_ATTR_PTR(, offload_csum),
+>  #endif
+> diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
+> index 359a98e6de85..41c6b58556a9 100644
+> --- a/fs/btrfs/zoned.c
+> +++ b/fs/btrfs/zoned.c
+> @@ -2984,3 +2984,46 @@ int btrfs_reset_unused_block_groups(struct btrfs_s=
+pace_info *space_info, u64 num
+>
+>         return 0;
+>  }
 > +
-> +static void assert_oe_csums(struct btrfs_ordered_extent *oe)
-
-Both here and in oe_csum_bytes(), the oe can be made const.
-
+> +void btrfs_show_zoned_stats(struct btrfs_fs_info *fs_info, struct seq_fi=
+le *s)
 > +{
-> +#ifdef CONFIG_BTRFS_ASSERT
-> +       struct btrfs_inode *inode =3D oe->inode;
-> +       const u64 csum_bytes =3D oe_csum_bytes(oe);
+> +       struct btrfs_block_group *bg;
+> +       u64 data_reloc_bg;
+> +       u64 treelog_bg;
 > +
-> +       /*
-> +        * Skip data reloc inodes. They are for relocation and they
-> +        * can have ranges with csum and ranges without.
-> +        */
-> +       if (btrfs_is_data_reloc_root(inode->root))
-> +               return;
+> +       seq_puts(s, "\n");
 > +
-> +       /*
-> +        * There should be no csum for NODATACOW (implies NOCSUM),
-> +        * NODATASUM inode.
+> +       spin_lock(&fs_info->zone_active_bgs_lock);
+> +       seq_printf(s, "\tactive block-groups: %zu\n",
+> +                            list_count_nodes(&fs_info->zone_active_bgs))=
+;
+> +       spin_unlock(&fs_info->zone_active_bgs_lock);
+> +
+> +       mutex_lock(&fs_info->reclaim_bgs_lock);
+> +       spin_lock(&fs_info->unused_bgs_lock);
+> +       seq_printf(s, "\t  reclaimable: %zu\n",
+> +                            list_count_nodes(&fs_info->reclaim_bgs));
+> +       seq_printf(s, "\t  unused: %zu\n", list_count_nodes(&fs_info->unu=
+sed_bgs));
+> +       spin_unlock(&fs_info->unused_bgs_lock);
+> +       mutex_unlock(&fs_info->reclaim_bgs_lock);
+> +
+> +       seq_printf(s,"\t  need reclaim: %s\n",
+> +                  str_true_false(btrfs_zoned_should_reclaim(fs_info)));
+> +
+> +       data_reloc_bg =3D data_race(fs_info->data_reloc_bg);
+> +       if (data_reloc_bg)
+> +               seq_printf(s, "\tdata relocation block-group: %llu\n",
+> +                          data_reloc_bg);
+> +       treelog_bg =3D data_race(fs_info->treelog_bg);
+> +       if (treelog_bg)
+> +               seq_printf(s, "\ttree-log block-group: %llu\n", treelog_b=
+g);
+> +
+> +       spin_lock(&fs_info->zone_active_bgs_lock);
+> +       seq_puts(s, "\tactive zones:\n");
+> +       list_for_each_entry(bg, &fs_info->zone_active_bgs, active_bg_list=
+) {
+> +               seq_printf(s,
+> +                          "\t  start: %llu, wp: %llu used: %llu, reserve=
+d: %llu, unusable: %llu\n",
+> +                          bg->start, bg->alloc_offset, bg->used, bg->res=
+erved,
+> +                          bg->zone_unusable);
 
-A bit confusing, especially because NOCSUM does not exist, it's NODATASUM.
-Just say "There are no checksums for NODATACOW and NODATASUM".
-Or say nothing at all, as it's pretty obvious and doesn't add any
-value as the code below is trivial to read.
+We need data_race(), or bg locking, before accessing ->used, ->reserved, et=
+c...
 
-> +        */
-> +       if (test_bit(BTRFS_ORDERED_NOCOW, &oe->flags) ||
-> +           inode->flags & BTRFS_INODE_NODATASUM) {
-> +               ASSERT_OE(csum_bytes =3D=3D 0, oe);
-> +               return;
 > +       }
-> +       /* For compressed OE, csum must cover the on-disk range. */
-> +       if (test_bit(BTRFS_ORDERED_COMPRESSED, &oe->flags)) {
-> +               ASSERT_OE(oe->disk_num_bytes =3D=3D csum_bytes, oe);
-> +               return;
-> +       }
-> +
-> +       /* For truncated uncompressed OE, the csum must cover the truncat=
-ed length. */
-> +       if (test_bit(BTRFS_ORDERED_TRUNCATED, &oe->flags)) {
-> +               ASSERT_OE(oe->truncated_len =3D=3D csum_bytes, oe);
-> +               return;
-> +       }
-> +
-> +       /*
-> +        * The remaining case is untruncated regular extents.
-> +        *
-> +        * The csum must cover the whole range.
+> +       spin_unlock(&fs_info->zone_active_bgs_lock);
 
-csum -> csums, since we can have several csum items in the ordered
-extent's list.
-Also the new line seems superfluous.
+I think it would be nice and clear to an example output of the file to
+changelog, like the one you pasted here:
+
+https://lore.kernel.org/linux-btrfs/847e76d6-fc1a-434e-85ef-b6887f426934@wd=
+c.com/
 
 Thanks.
 
-> +        */
-> +       ASSERT_OE(oe->num_bytes =3D=3D csum_bytes, oe);
-> +#endif
+
+> +}
+> diff --git a/fs/btrfs/zoned.h b/fs/btrfs/zoned.h
+> index 5cefdeb08b7b..e54b951359ea 100644
+> --- a/fs/btrfs/zoned.h
+> +++ b/fs/btrfs/zoned.h
+> @@ -10,6 +10,7 @@
+>  #include <linux/errno.h>
+>  #include <linux/spinlock.h>
+>  #include <linux/mutex.h>
+> +#include <linux/seq_file.h>
+>  #include "messages.h"
+>  #include "volumes.h"
+>  #include "disk-io.h"
+> @@ -96,6 +97,8 @@ int btrfs_zone_finish_one_bg(struct btrfs_fs_info *fs_i=
+nfo);
+>  int btrfs_zoned_activate_one_bg(struct btrfs_space_info *space_info, boo=
+l do_finish);
+>  void btrfs_check_active_zone_reservation(struct btrfs_fs_info *fs_info);
+>  int btrfs_reset_unused_block_groups(struct btrfs_space_info *space_info,=
+ u64 num_bytes);
+> +void btrfs_show_zoned_stats(struct btrfs_fs_info *fs_info, struct seq_fi=
+le *s);
+> +
+>  #else /* CONFIG_BLK_DEV_ZONED */
+>
+>  static inline int btrfs_get_dev_zone_info_all_devices(struct btrfs_fs_in=
+fo *fs_info)
+> @@ -275,6 +278,11 @@ static inline int btrfs_reset_unused_block_groups(st=
+ruct btrfs_space_info *space
+>         return 0;
+>  }
+>
+> +static inline int btrfs_show_zoned_stats(struct btrfs_fs_info *fs_info, =
+struct seq_file *s)
+> +{
+> +       return 0;
 > +}
 > +
->  /*
->   * As ordered data IO finishes, this gets called so we can finish
->   * an ordered extent if the range of bytes in the file it covers are
-> @@ -3170,6 +3236,8 @@ int btrfs_finish_one_ordered(struct btrfs_ordered_e=
-xtent *ordered_extent)
+>  #endif
 >
->         trans->block_rsv =3D &inode->block_rsv;
->
-> +       assert_oe_csums(ordered_extent);
-> +
->         ret =3D btrfs_insert_raid_extent(trans, ordered_extent);
->         if (unlikely(ret)) {
->                 btrfs_abort_transaction(trans, ret);
+>  static inline bool btrfs_dev_is_sequential(struct btrfs_device *device, =
+u64 pos)
 > --
 > 2.52.0
 >

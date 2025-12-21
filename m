@@ -1,64 +1,69 @@
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-pf1-f175.google.com (mail-pf1-f175.google.com [209.85.210.175])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 408CA26F2AA
-	for <linux-btrfs@vger.kernel.org>; Sun, 21 Dec 2025 02:53:42 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.129.124
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 51AEA28A3FA
+	for <linux-btrfs@vger.kernel.org>; Sun, 21 Dec 2025 12:02:03 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.175
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1766285640; cv=none; b=NHc2qgAigDSYE+8x18eOAlGrY51/pl8BKkpnJeOnHaK+mRkFbPrgipeLXHzXfNVSa5iKMcjKp+dTkGUuAZiF8OuMyiA4epo7Hkj7x1SJ+GAojhmHUqrWYxXbIJawg0AAo+L//Rxf+A1nW2DfPZsuhkjrurKmp73LVWGlO29/XNU=
+	t=1766318524; cv=none; b=F1W56kxWJvgb55kFiGAVJ41yjqNs76QuODKXGqhftfiNkGgZsjImofSI92m5II2hM+/9hDA6XgN6Evwiuznv8QmqFzSBa/xvFFSuQ2X0UXM7bJQQ+hGniah74kV/3Z6UAZ1M9mTFdMxBiAmxrjkvZea0+wYCAoe50lhg6cQfbM4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1766285640; c=relaxed/simple;
-	bh=kS8wU+Kr6qroCP7DZhoh64x8fFSwe6S0dB5tsS+Jaw0=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=DK5CQS/trg972ndv2NBEP84FN0yAzpwfDgk7hKsSzFHWl4ImDYgLwo0lN0IprNhMW6/J6kJcNvCbSziJWupHdA0p1vwPnk79XAKB+F9LVGVyMCYAk7EIJtAYZawuT1YfY5dX2Xhv/1azSkuqNhzGF/qm0eRLJr5evgQfplKXpdM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=P1NaJmby; arc=none smtp.client-ip=170.10.129.124
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
+	s=arc-20240116; t=1766318524; c=relaxed/simple;
+	bh=M2AiEtwpFL5Bt0BfPeNxPOLws/Pj+JCumAL6243DCSg=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=REaR2D2ExpuqX7RokCoXK2XvzK0pyahzWqMdo/SW0watPBkulLeRTxwRYjnyjg+ADcYHOzG/di39Vuvywqc6J3n68EL5dIW4caBOr2bOVEicUY3TVEWTosxn5qckKuBz3cRsT8YpzaHXzLib7OuBZ9RsBfg93M5Q+KP8OKgkW0Y=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=furiosa.ai; spf=none smtp.mailfrom=furiosa.ai; dkim=pass (1024-bit key) header.d=furiosa.ai header.i=@furiosa.ai header.b=fGNZePcB; arc=none smtp.client-ip=209.85.210.175
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=furiosa.ai
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=furiosa.ai
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="P1NaJmby"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-	s=mimecast20190719; t=1766285620;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=x4YveIZPStQoOwAVRFZjjRjkOAhnls6D4Neb20u0xq8=;
-	b=P1NaJmbyL8UPjLz4cY76jGVgzEV3IyzGWb3/NjojsqUTA7r6xmA13qK59MtvmyGLqBcH8D
-	hPav6qqa1UNKvoU/308KB8WNK0UvgHZBbssPmxDnIvWfnRFpC7VMQgh0jMvW3z8tCRjx3A
-	lg43Jyr7ZvjcULjt/9PxjXqJlq8PE6A=
-Received: from mx-prod-mc-08.mail-002.prod.us-west-2.aws.redhat.com
- (ec2-35-165-154-97.us-west-2.compute.amazonaws.com [35.165.154.97]) by
- relay.mimecast.com with ESMTP with STARTTLS (version=TLSv1.3,
- cipher=TLS_AES_256_GCM_SHA384) id us-mta-101-s95MwjcOPB-9iFVMjIt5ng-1; Sat,
- 20 Dec 2025 21:53:34 -0500
-X-MC-Unique: s95MwjcOPB-9iFVMjIt5ng-1
-X-Mimecast-MFC-AGG-ID: s95MwjcOPB-9iFVMjIt5ng_1766285613
-Received: from mx-prod-int-08.mail-002.prod.us-west-2.aws.redhat.com (mx-prod-int-08.mail-002.prod.us-west-2.aws.redhat.com [10.30.177.111])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
-	(No client certificate requested)
-	by mx-prod-mc-08.mail-002.prod.us-west-2.aws.redhat.com (Postfix) with ESMTPS id 26FEB1800378;
-	Sun, 21 Dec 2025 02:53:33 +0000 (UTC)
-Received: from pasta.fast.eng.rdu2.dc.redhat.com (unknown [10.44.32.8])
-	by mx-prod-int-08.mail-002.prod.us-west-2.aws.redhat.com (Postfix) with ESMTP id 075D9180049F;
-	Sun, 21 Dec 2025 02:53:29 +0000 (UTC)
-From: Andreas Gruenbacher <agruenba@redhat.com>
-To: Christoph Hellwig <hch@infradead.org>,
-	Jens Axboe <axboe@kernel.dk>,
-	Chris Mason <clm@fb.com>,
-	David Sterba <dsterba@suse.com>,
-	Satya Tangirala <satyat@google.com>
-Cc: Andreas Gruenbacher <agruenba@redhat.com>,
-	linux-block@vger.kernel.org,
+	dkim=pass (1024-bit key) header.d=furiosa.ai header.i=@furiosa.ai header.b="fGNZePcB"
+Received: by mail-pf1-f175.google.com with SMTP id d2e1a72fcca58-7f1243792f2so2162638b3a.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 21 Dec 2025 04:02:03 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=furiosa.ai; s=google; t=1766318522; x=1766923322; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to;
+        bh=c/iRjByD4MzaTOAdzKo4Fg6NvrM9NFqznEjpAk7mN14=;
+        b=fGNZePcB0sDKPrnuzNgF3LgNm2Mr1WsibWKUw2wpTIL+LSor6jrcJA7Uw/yoIvmlwK
+         bFfa+Pdsh1W3OWfGS9AsM8hDws6NHr0Rq9+6eSEkFu6PW/+c6aubAHWEatlSdU3TaMTq
+         EROlOzDAqyKRwoR56o2UcHgnixim0tMC4q/aI=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1766318522; x=1766923322;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=c/iRjByD4MzaTOAdzKo4Fg6NvrM9NFqznEjpAk7mN14=;
+        b=DDzaSfvrB8ko0LRSWPz1QEaKFHWNx/FFo3jd+gyEgvIi3ggVR88weyPqI2qquZWxZk
+         aJ++m5w3EIM3ZXQWeaccaXJV2Gu5BZgf9tJRUDjizJ+E98LNtZz9aK46PVudObE8qvNo
+         TFs62Xh211aO4OMsugTeiTmuSeTX4rADyRPKNN6iaew6NHolry6JX8I5TfcltfJDpzfR
+         poGSBdD44FfLS2zMm0QJ8iZ+KI8z4c0AAMm9EO67nuM/EXp3WLcXcljCVMQOoF2Q80+b
+         GpgTFbUKSc2tYOy+p9leXqBmeqah5nCK+jJigHwPD2dCHGqkIrclOLy8vZ8pTP7qiOeS
+         gS2Q==
+X-Forwarded-Encrypted: i=1; AJvYcCXOanJi8J1joWPRPNvnAKMDFxNhlq8JiywPGt44B++DqCA7GaVcwE6XqNdSovnhXR5rWqO+oTsRpacT/A==@vger.kernel.org
+X-Gm-Message-State: AOJu0YwtWQaQ+r80Nin5bV55NbbHFqJori+6Y/3OFkTd2lGqVAyUj2vH
+	zbUshDGv7F82tI9B/H9sSzlEwxKBK1ES0MQxcHmOx8Rxt4CVpdoSzjmt8nyeqBIEZPI=
+X-Gm-Gg: AY/fxX6WDch5vIEiv1q4xBUfDRbReDbHb+FnP1vylbzxwQ7Rh9QbqyICaZE3H7tPedM
+	/OEFIfqnHWZu9QuRtCSn+p3UTT1XA6jL2Tq7V/Tba+gH+qkiKemOY6s0de6Qhvh+de2GGaG3l6T
+	Vb8oJjlqIEFk/sXRfRmPfzlGZ+1BWkd/dRA7cJmqTaTuLaA6/YLjRnNtx12BBOFqvXMXXpnplyO
+	7rfs0788kHk/JGTuNSg7pZOnqn04DUCfAtcOUo3PT/W26dKg0cbNPcos93/3v5yVMDJ2VH/rdvS
+	ycAEpGpPKIzoBYS7BiXr9QgVa0+4N7b8asIVpAVSROYhRdbpWIIlUnzFu88QIofc2UEow14CKO0
+	hTGSTN+90kSRVaQLj7M6aSxcbMB0Hc+htlo4DR1tZRx4rIoz3Pr7FWUlDZ7LGT9XzPLxasAGpUT
+	z2vvEqiwn3nBOZYB+xjzT5N46NwXF9DrsmduLYJnhz7Z/qxtqujg==
+X-Google-Smtp-Source: AGHT+IGB4sJiYzHzP5dWDP6fuxUU7A7UkVkSfOihLi/fm3p8R67y5Lcj/ddzJZe9YwtMLlrkZIkECQ==
+X-Received: by 2002:a05:6a00:1f14:b0:7b7:90de:e191 with SMTP id d2e1a72fcca58-7ff654b812amr7349198b3a.23.1766318522530;
+        Sun, 21 Dec 2025 04:02:02 -0800 (PST)
+Received: from sidong.sidong.yang.office.furiosa.vpn ([175.195.128.78])
+        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-7ff7aa32916sm7461719b3a.8.2025.12.21.04.02.00
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sun, 21 Dec 2025 04:02:02 -0800 (PST)
+From: Sidong Yang <sidong.yang@furiosa.ai>
+To: David Sterba <dsterba@suse.com>,
+	Caleb Sander Mateos <csander@purestorage.com>
+Cc: Sidong Yang <sidong.yang@furiosa.ai>,
 	linux-btrfs@vger.kernel.org,
-	linux-raid@vger.kernel.org,
-	dm-devel@lists.linux.dev,
 	linux-kernel@vger.kernel.org
-Subject: [RFC v2 15/17] bio: never set bi_status to BLK_STS_OK during completion
-Date: Sun, 21 Dec 2025 03:52:30 +0100
-Message-ID: <20251221025233.87087-16-agruenba@redhat.com>
-In-Reply-To: <20251221025233.87087-1-agruenba@redhat.com>
-References: <20251221025233.87087-1-agruenba@redhat.com>
+Subject: [PATCH 1/1] btrfs: ioctl: introduce btrfs_uring_import_iovec()
+Date: Sun, 21 Dec 2025 12:01:45 +0000
+Message-ID: <20251221120146.19131-1-sidong.yang@furiosa.ai>
+X-Mailer: git-send-email 2.43.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -66,73 +71,74 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Scanned-By: MIMEDefang 3.4.1 on 10.30.177.111
 
-In a few places in the code, we don't know if a bio has failed or
-completed successfully, so use bio_set_status() instead of setting
-bi_status directly.  That way, bi_status will never be set to
-BI_STS_OK (0) during completion.
+This patch introduces btrfs_uring_import_iovec(). In encoded read/write
+with uring cmd, it uses import_iovec without supporting fixed buffer.
+btrfs_using_import_iovec() could use fixed buffer if cmd flags has
+IORING_URING_CMD_FIXED.
 
-Signed-off-by: Andreas Gruenbacher <agruenba@redhat.com>
+Signed-off-by: Sidong Yang <sidong.yang@furiosa.ai>
 ---
- block/blk-crypto-fallback.c   | 2 +-
- drivers/block/ps3vram.c       | 2 +-
- drivers/md/dm-flakey.c        | 2 +-
- drivers/md/dm-verity-target.c | 2 +-
- 4 files changed, 4 insertions(+), 4 deletions(-)
+ fs/btrfs/ioctl.c | 32 ++++++++++++++++++++++++--------
+ 1 file changed, 24 insertions(+), 8 deletions(-)
 
-diff --git a/block/blk-crypto-fallback.c b/block/blk-crypto-fallback.c
-index 8a2631b1e7e1..7014f646e236 100644
---- a/block/blk-crypto-fallback.c
-+++ b/block/blk-crypto-fallback.c
-@@ -150,7 +150,7 @@ static void blk_crypto_fallback_encrypt_endio(struct bio *enc_bio)
- 		mempool_free(enc_bio->bi_io_vec[i].bv_page,
- 			     blk_crypto_bounce_page_pool);
- 
--	src_bio->bi_status = enc_bio->bi_status;
-+	bio_set_status(src_bio, enc_bio->bi_status);
- 
- 	bio_uninit(enc_bio);
- 	kfree(enc_bio);
-diff --git a/drivers/block/ps3vram.c b/drivers/block/ps3vram.c
-index bdcf083b45e2..06844674c998 100644
---- a/drivers/block/ps3vram.c
-+++ b/drivers/block/ps3vram.c
-@@ -573,7 +573,7 @@ static struct bio *ps3vram_do_bio(struct ps3_system_bus_device *dev,
- 	next = bio_list_peek(&priv->list);
- 	spin_unlock_irq(&priv->lock);
- 
--	bio->bi_status = error;
-+	bio_set_status(bio, error);
- 	bio_endio(bio);
- 	return next;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index d9e7dd317670..0653e9c7d617 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -4722,6 +4722,28 @@ static int btrfs_uring_read_extent(struct kiocb *iocb, struct iov_iter *iter,
+ 	return ret;
  }
-diff --git a/drivers/md/dm-flakey.c b/drivers/md/dm-flakey.c
-index 08925aca838c..8dde47beb387 100644
---- a/drivers/md/dm-flakey.c
-+++ b/drivers/md/dm-flakey.c
-@@ -420,7 +420,7 @@ static void clone_free(struct bio *clone)
- static void clone_endio(struct bio *clone)
+ 
++
++static int btrfs_uring_import_iovec(struct io_uring_cmd *cmd,
++				    unsigned int issue_flags, int rw)
++{
++	struct io_btrfs_cmd *bc = io_uring_cmd_to_pdu(cmd, struct io_btrfs_cmd);
++	struct btrfs_uring_encoded_data *data = bc->data;
++	int ret;
++
++	if (cmd->flags & IORING_URING_CMD_FIXED) {
++		data->iov = NULL;
++		ret = io_uring_cmd_import_fixed_vec(cmd, data->args.iov,
++						    data->args.iovcnt, rw,
++						    &data->iter, issue_flags);
++	} else {
++		data->iov = data->iovstack;
++		ret = import_iovec(rw, data->args.iov, data->args.iovcnt,
++				   ARRAY_SIZE(data->iovstack), &data->iov,
++				   &data->iter);
++	}
++	return ret;
++}
++
+ static int btrfs_uring_encoded_read(struct io_uring_cmd *cmd, unsigned int issue_flags)
  {
- 	struct bio *bio = clone->bi_private;
--	bio->bi_status = clone->bi_status;
-+	bio_set_status(bio, clone->bi_status);
- 	clone_free(clone);
- 	bio_endio(bio);
- }
-diff --git a/drivers/md/dm-verity-target.c b/drivers/md/dm-verity-target.c
-index 66a00a8ccb39..4793bcf546ad 100644
---- a/drivers/md/dm-verity-target.c
-+++ b/drivers/md/dm-verity-target.c
-@@ -544,7 +544,7 @@ static void verity_finish_io(struct dm_verity_io *io, blk_status_t status)
- 	struct bio *bio = dm_bio_from_per_bio_data(io, v->ti->per_io_data_size);
+ 	struct file *file = cmd->file;
+@@ -4795,10 +4817,7 @@ static int btrfs_uring_encoded_read(struct io_uring_cmd *cmd, unsigned int issue
+ 			goto out_acct;
+ 		}
  
- 	bio->bi_end_io = io->orig_bi_end_io;
--	bio->bi_status = status;
-+	bio_set_status(bio, status);
+-		data->iov = data->iovstack;
+-		ret = import_iovec(ITER_DEST, data->args.iov, data->args.iovcnt,
+-				   ARRAY_SIZE(data->iovstack), &data->iov,
+-				   &data->iter);
++		ret = btrfs_uring_import_iovec(cmd, issue_flags, ITER_DEST);
+ 		if (ret < 0)
+ 			goto out_acct;
  
- 	if (!static_branch_unlikely(&use_bh_wq_enabled) || !io->in_bh)
- 		verity_fec_finish_io(io);
+@@ -4950,10 +4969,7 @@ static int btrfs_uring_encoded_write(struct io_uring_cmd *cmd, unsigned int issu
+ 		if (data->args.len > data->args.unencoded_len - data->args.unencoded_offset)
+ 			goto out_acct;
+ 
+-		data->iov = data->iovstack;
+-		ret = import_iovec(ITER_SOURCE, data->args.iov, data->args.iovcnt,
+-				   ARRAY_SIZE(data->iovstack), &data->iov,
+-				   &data->iter);
++		ret = btrfs_uring_import_iovec(cmd, issue_flags, ITER_SOURCE);
+ 		if (ret < 0)
+ 			goto out_acct;
+ 
 -- 
-2.52.0
+2.43.0
 

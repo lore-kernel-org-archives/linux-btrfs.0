@@ -1,64 +1,43 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 40BB23128BE
-	for <linux-btrfs@vger.kernel.org>; Tue,  6 Jan 2026 16:21:08 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EEAE9326933
+	for <linux-btrfs@vger.kernel.org>; Tue,  6 Jan 2026 16:21:12 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1767716472; cv=none; b=ZnGmlzLvrGRcgNgVj+RVBODMY5uFA0zze3EDEE/XdRduHXSveLe/VKlRD1QQh84O/am17QStK9oqMsgSWKCBky5oXuC2f1GmNQHiCK2e7i52bsd/axjglKe7nocOlNFKa0+Jrm228nqa0jC3NyJ52kdXVTBrAOxXZw7z7SSLucc=
+	t=1767716474; cv=none; b=Mfnq9wb9fsgwjmBKuCb3ozl26lbBlBIyezRezqIBRMQTJjz9oqRp2MY9BYjF1RMKCOdCa++8Up5i840yKjYVKMF7fS5HpgNBc9AL0NXfwriZ8Ro6kUydXGSpYu+pg6GRDp+ef1nnYItjlOvS0ZYcTJqEewFYMzrHwdmEn97cFo0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1767716472; c=relaxed/simple;
-	bh=4Ga5QADH+ZIIdICRwZQjrV0xEQV55QTLSqbNhJU96sA=;
+	s=arc-20240116; t=1767716474; c=relaxed/simple;
+	bh=xx4Ziklrv1X/fYvuvBVhGa14eFdxKJUrjRz6rgSxpxY=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=eEty4QqzVgFD5ZRctfDSyFqnJMYPclBiw8uBkykC3xnnmGXjoB1f/AyQmAKMLQjUk0QFM2foTr3aIn5kn5S7rn4ZFQsePE3WMgp0++Gl209BIhtHBFXFtn8UIhiMGUToK8oP1uRA1tF5awHebiv1F9PdCAe9KPR+nZ8lKOYW7IM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Slg5rfHn; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Slg5rfHn; arc=none smtp.client-ip=195.135.223.130
+	 MIME-Version; b=BkCwOEDaNwjC/Vs6tvILc4i7aFju215hSmDVbgN2bU5hKMyWjtuSUESXb2Tlb/SehqxkbwfU6LeToykJP1jFFmZY/EGh6EG8OGKi9Iy3v/0Sfi9FhiWx9sSs5f468d05CjXCsMh6Y5i/RRXX1UsjoK77IDoAGutef03nOcXFbgw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Slg5rfHn";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Slg5rfHn"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 6CF5F33690;
-	Tue,  6 Jan 2026 16:20:58 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1767716458; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=nkTblaIl33dizAeUuXfxtu7jnHW0yeaihrs7rpGx/u4=;
-	b=Slg5rfHnZEPeiRU/heu7k1eyNPvu2QUz442l4tTa1SgVeRPvHDWJUr2yywETUzOZr6NhYj
-	vYJbZl5GgMRqmVuceK5ztY56fsIZyzFtqMmBEmy2PeIL73wRGXRKFLAIXyUb/nVxh+VdVl
-	iiRr7fnf/XKh9wumWDdWauy6jqgO7u4=
-Authentication-Results: smtp-out1.suse.de;
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 4F0D35BCD1;
+	Tue,  6 Jan 2026 16:21:11 +0000 (UTC)
+Authentication-Results: smtp-out2.suse.de;
 	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1767716458; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=nkTblaIl33dizAeUuXfxtu7jnHW0yeaihrs7rpGx/u4=;
-	b=Slg5rfHnZEPeiRU/heu7k1eyNPvu2QUz442l4tTa1SgVeRPvHDWJUr2yywETUzOZr6NhYj
-	vYJbZl5GgMRqmVuceK5ztY56fsIZyzFtqMmBEmy2PeIL73wRGXRKFLAIXyUb/nVxh+VdVl
-	iiRr7fnf/XKh9wumWDdWauy6jqgO7u4=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 67ACA3EA63;
-	Tue,  6 Jan 2026 16:20:58 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 494513EA63;
+	Tue,  6 Jan 2026 16:21:11 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 641NGWo2XWmwWQAAD6G6ig
-	(envelope-from <dsterba@suse.com>); Tue, 06 Jan 2026 16:20:58 +0000
+	id ajHgEXc2XWm/WQAAD6G6ig
+	(envelope-from <dsterba@suse.com>); Tue, 06 Jan 2026 16:21:11 +0000
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 05/12] btrfs: use common eb range validation in read_extent_buffer_to_user_nofault()
-Date: Tue,  6 Jan 2026 17:20:28 +0100
-Message-ID: <1a00041c9fec994ea70ba05edad7fd53a1630bc2.1767716314.git.dsterba@suse.com>
+Subject: [PATCH 09/12] btrfs: zlib: remove local variable nr_dest_folios in zlib_compress_folios()
+Date: Tue,  6 Jan 2026 17:20:32 +0100
+Message-ID: <6a4a71802a5f26209bed59b492fd07029d52686f.1767716314.git.dsterba@suse.com>
 X-Mailer: git-send-email 2.51.1
 In-Reply-To: <cover.1767716314.git.dsterba@suse.com>
 References: <cover.1767716314.git.dsterba@suse.com>
@@ -69,56 +48,61 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
+X-Rspamd-Pre-Result: action=no action;
+	module=replies;
+	Message is reply to one we originated
+X-Spamd-Result: default: False [-4.00 / 50.00];
+	REPLY(-4.00)[]
 X-Spam-Flag: NO
-X-Spam-Score: -6.80
+X-Spam-Score: -4.00
+X-Rspamd-Queue-Id: 4F0D35BCD1
+X-Rspamd-Pre-Result: action=no action;
+	module=replies;
+	Message is reply to one we originated
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Rspamd-Action: no action
 X-Spam-Level: 
-X-Spamd-Result: default: False [-6.80 / 50.00];
-	REPLY(-4.00)[];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	MID_CONTAINS_FROM(1.00)[];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.976];
-	MIME_GOOD(-0.10)[text/plain];
-	RCVD_COUNT_TWO(0.00)[2];
-	ARC_NA(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:mid];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	FROM_EQ_ENVFROM(0.00)[];
-	TO_DN_SOME(0.00)[];
-	RCPT_COUNT_TWO(0.00)[2];
-	RCVD_TLS_ALL(0.00)[]
 
-The extent buffer access is checked in other helpers by
-check_eb_range(), which validates the requested start, length against
-the extent buffer. While this almost never fails we should still handle
-it as an error and not just warn.
+The value of *out_folios does not change and nr_dest_folios is only a
+local copy, we can remove it. This saves 8 bytes of stack.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/extent_io.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ fs/btrfs/zlib.c | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 97cf1ad91e5780..897ea52167c612 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -4003,8 +4003,8 @@ int read_extent_buffer_to_user_nofault(const struct extent_buffer *eb,
- 	unsigned long i;
- 	int ret = 0;
+diff --git a/fs/btrfs/zlib.c b/fs/btrfs/zlib.c
+index bb4a9f70714682..fa35513267ae42 100644
+--- a/fs/btrfs/zlib.c
++++ b/fs/btrfs/zlib.c
+@@ -158,8 +158,7 @@ int zlib_compress_folios(struct list_head *ws, struct btrfs_inode *inode,
+ 	struct folio *in_folio = NULL;
+ 	struct folio *out_folio = NULL;
+ 	unsigned long len = *total_out;
+-	unsigned long nr_dest_folios = *out_folios;
+-	const unsigned long max_out = nr_dest_folios << min_folio_shift;
++	const unsigned long max_out = *out_folios << min_folio_shift;
+ 	const u64 orig_end = start + len;
  
--	WARN_ON(start > eb->len);
--	WARN_ON(start + len > eb->start + eb->len);
-+	if (check_eb_range(eb, start, len))
-+		return -EINVAL;
- 
- 	if (eb->addr) {
- 		if (copy_to_user_nofault(dstv, eb->addr + start, len))
+ 	*out_folios = 0;
+@@ -257,7 +256,7 @@ int zlib_compress_folios(struct list_head *ws, struct btrfs_inode *inode,
+ 		 * the stream end if required
+ 		 */
+ 		if (workspace->strm.avail_out == 0) {
+-			if (nr_folios == nr_dest_folios) {
++			if (nr_folios == *out_folios) {
+ 				ret = -E2BIG;
+ 				goto out;
+ 			}
+@@ -292,7 +291,7 @@ int zlib_compress_folios(struct list_head *ws, struct btrfs_inode *inode,
+ 			goto out;
+ 		} else if (workspace->strm.avail_out == 0) {
+ 			/* Get another folio for the stream end. */
+-			if (nr_folios == nr_dest_folios) {
++			if (nr_folios == *out_folios) {
+ 				ret = -E2BIG;
+ 				goto out;
+ 			}
 -- 
 2.51.1
 

@@ -1,203 +1,136 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 89104238C3B
-	for <linux-btrfs@vger.kernel.org>; Tue,  6 Jan 2026 16:21:38 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 233C4275B15
+	for <linux-btrfs@vger.kernel.org>; Tue,  6 Jan 2026 17:01:24 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1767716500; cv=none; b=pRK9p7wVlI3n+pKxX5tJDFiTYijSAHqDS2yxqX5NkwqaiFjrPNc7ym3jESqUz/lz+RApWpeOCC7afyHXcR9FzAEl6dzsR1xa0h8c77BeyF9eTvpBfLMaXW+IkcfwULhA51zvWoGq8x5YMuNYnFEaxbQTrrsaBRNKdjK23N+WiYA=
+	t=1767718885; cv=none; b=dgLieoJosf4rP1GwjSUClU6B37mvRp9x1kpzvCZPhXwhqGC2i5a9kKXhy9ug0oTf/ujw2CGBRjNDi9Wixv2UdCgugOMRJMvJpi2RYQgCHJzcfavrxA1YDjrjIUrepJpz/cFf72TcNhSK64plO/0Cn5CI0aGa97psCQdL3fXa9ew=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1767716500; c=relaxed/simple;
-	bh=u18h7i0zrkWOK56nSXeuzzwK9BC6q7mGsenGCCmcsno=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=HDcqKtp1Dlx9Yi2UxmScngv6GBueOBdbahQjlKSKtirc/4M5tjjZgMmioHkPVEWC8wG0nEecNPqO/8uZSF+PvkXTPmZ/KexLDjpyOkgV0Q6BvVR0u5+3W5q0EogRk9scV4CY1yrMJy9W5bGP1N2585ZJroexgxu00/vmImiLejU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=gTfHRcee; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=gTfHRcee; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1767718885; c=relaxed/simple;
+	bh=BK4xicKtnnC+8n+T04RKoCRQV0z2sI5t77KOfy7q7W8=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=gtXOifVVkPKGdGNVJLu0DKgKdxcKY0nnrUzXJtwLmlKvQpSZiRj0RWB+//ZjVZTR1u/3MyQskyzGDaxR1riZk3ixU1YtUFHyhfBt0BYV+bx8jjRbhugg2RpFqHBL8aYyQN9S9Swwq8sD+cfgYjtxFVuOA+8iRJAsYm0W5awUvb8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=MfPj5gyT; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="gTfHRcee";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="gTfHRcee"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 8AF5E336C2;
-	Tue,  6 Jan 2026 16:21:13 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1767716473; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=ndU9CBFiDzKRAT/8UV2v7NDFyXdr3nDdxE41naxutng=;
-	b=gTfHRceevQBNN1TBiMwxTJgytr3TLaQ0/531mYwtezeyQg39oLVOHeqccWW9dqzucjX1eU
-	GPUrObMLhKdgzHJJmpXot0OoQ2BYvbod7uJBuNly6tg0J63QN1+20FiLWH2ya28UD9r8fD
-	KXRT1kQieeg0k2trLyrN+yq3Y/knM0E=
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1767716473; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=ndU9CBFiDzKRAT/8UV2v7NDFyXdr3nDdxE41naxutng=;
-	b=gTfHRceevQBNN1TBiMwxTJgytr3TLaQ0/531mYwtezeyQg39oLVOHeqccWW9dqzucjX1eU
-	GPUrObMLhKdgzHJJmpXot0OoQ2BYvbod7uJBuNly6tg0J63QN1+20FiLWH2ya28UD9r8fD
-	KXRT1kQieeg0k2trLyrN+yq3Y/knM0E=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 7A01A3EA63;
-	Tue,  6 Jan 2026 16:21:13 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 6pfHHXk2XWnDWQAAD6G6ig
-	(envelope-from <dsterba@suse.com>); Tue, 06 Jan 2026 16:21:13 +0000
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 10/12] btrfs: zstd: reuse total in and out parameters for calculations
-Date: Tue,  6 Jan 2026 17:20:33 +0100
-Message-ID: <1e419f75980c1014c0fa860ba7ba650f5d51da3c.1767716314.git.dsterba@suse.com>
-X-Mailer: git-send-email 2.51.1
-In-Reply-To: <cover.1767716314.git.dsterba@suse.com>
-References: <cover.1767716314.git.dsterba@suse.com>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="MfPj5gyT"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id A798CC116C6
+	for <linux-btrfs@vger.kernel.org>; Tue,  6 Jan 2026 17:01:24 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1767718884;
+	bh=BK4xicKtnnC+8n+T04RKoCRQV0z2sI5t77KOfy7q7W8=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+	b=MfPj5gyT4V1bOtm4o+ZVf/ZyGN9i/lk/b3Xz1Z/i9csB+LLId/bhPB46FAYnDNI1P
+	 1hVNoX3UqN3gCfkn90SJ/2k8p4VI8Bjlh1zKgEEFxhm1Y66nEJ278zdcbY2DyLXNVu
+	 /5Z2xlPQDhBfZQCAfLghPnXD1/2JdjZZa5An94mNMWPmFkjRbYCn0oM/eTZh+gyFQ0
+	 LQxB7PHLfUU/2ilZA2wIvFQNOZj0VA4EXx39Re8EbZKYDnMaGY/WyL9waFT6WjF9v9
+	 9ULL9+EuOEs8iD3hQFLQeYVwgDyO42FfF2DlJD57uWNH3uuOw0e2VzNTu2DeIw8yXb
+	 0Eof/8G3CI6fw==
+Received: by mail-ej1-f46.google.com with SMTP id a640c23a62f3a-b7a6e56193cso213623666b.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 06 Jan 2026 09:01:24 -0800 (PST)
+X-Gm-Message-State: AOJu0Yz33bfGWzuNpdCOK8vp8SuB3x31uRMEIWMfMtMWF6gaVvXwqg+C
+	7vwGDW/vRrPG9/ixsfbzT4XRfcXf7sJVVXd5FsO7x4CvQdD51aOj+xGsCBHeSpaRlrFLdIIW5n0
+	892Jr5scnZviCbC8MvrjkSzXP4g0e3B8=
+X-Google-Smtp-Source: AGHT+IG3rFczdoyc4DUbIbPvE22uYnMn90ZxV7EA6Qy0knmhwKPMHCsH0YHdbT0IJcq6MhMkVjBDCueAEwuG7RCaKuw=
+X-Received: by 2002:a17:907:1b0a:b0:b83:6e2b:890d with SMTP id
+ a640c23a62f3a-b8426ac78fbmr404542366b.25.1767718883153; Tue, 06 Jan 2026
+ 09:01:23 -0800 (PST)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spam-Flag: NO
-X-Spam-Score: -6.80
-X-Spam-Level: 
-X-Spamd-Result: default: False [-6.80 / 50.00];
-	REPLY(-4.00)[];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	MID_CONTAINS_FROM(1.00)[];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.980];
-	MIME_GOOD(-0.10)[text/plain];
-	RCVD_COUNT_TWO(0.00)[2];
-	ARC_NA(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:mid,imap1.dmz-prg2.suse.org:helo];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	FROM_EQ_ENVFROM(0.00)[];
-	TO_DN_SOME(0.00)[];
-	RCPT_COUNT_TWO(0.00)[2];
-	RCVD_TLS_ALL(0.00)[]
+References: <20260106123028.3105367-1-dsterba@suse.com>
+In-Reply-To: <20260106123028.3105367-1-dsterba@suse.com>
+From: Filipe Manana <fdmanana@kernel.org>
+Date: Tue, 6 Jan 2026 17:00:46 +0000
+X-Gmail-Original-Message-ID: <CAL3q7H40sMw0H7Z73mhReRB6FzdsRW6tnjG7tRdHjZfKkC0ucQ@mail.gmail.com>
+X-Gm-Features: AQt7F2pMzikh-MavHz0Dh6WSE_e86i5qpMRtqvGFBtF8zz0OfzzSJi6lf4IAs5I
+Message-ID: <CAL3q7H40sMw0H7Z73mhReRB6FzdsRW6tnjG7tRdHjZfKkC0ucQ@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: split btrfs_fs_closing() and change return type to bool
+To: David Sterba <dsterba@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-Reduce the stack consumption which is 240 bytes on release config by 16
-bytes. The local variables are not adding anything on top of the
-parameters. As a calling convention if the compression helper returns an
-error the parameters are considered invalid.
+On Tue, Jan 6, 2026 at 12:30=E2=80=AFPM David Sterba <dsterba@suse.com> wro=
+te:
+>
+> There are two tests in btrfs_fs_closing() but checking the
+> BTRFS_FS_CLOSING_DONE bit is done only in one place
+> load_extent_tree_free(). As this is an inline we can reduce size of the
+> generated code. The types can be also changed to bool as this becomes a
+> simple condition.
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/zstd.c | 26 +++++++++++---------------
- 1 file changed, 11 insertions(+), 15 deletions(-)
+Can you mention here how much was the reduction?
 
-diff --git a/fs/btrfs/zstd.c b/fs/btrfs/zstd.c
-index c9cddcfa337b91..4edc5f6f63a110 100644
---- a/fs/btrfs/zstd.c
-+++ b/fs/btrfs/zstd.c
-@@ -408,8 +408,6 @@ int zstd_compress_folios(struct list_head *ws, struct btrfs_inode *inode,
- 	int nr_folios = 0;
- 	struct folio *in_folio = NULL;  /* The current folio to read. */
- 	struct folio *out_folio = NULL; /* The current folio to write to. */
--	unsigned long tot_in = 0;
--	unsigned long tot_out = 0;
- 	unsigned long len = *total_out;
- 	const unsigned long nr_dest_folios = *out_folios;
- 	const u64 orig_end = start + len;
-@@ -471,23 +469,23 @@ int zstd_compress_folios(struct list_head *ws, struct btrfs_inode *inode,
- 		}
- 
- 		/* Check to see if we are making it bigger */
--		if (tot_in + workspace->in_buf.pos > blocksize * 2 &&
--				tot_in + workspace->in_buf.pos <
--				tot_out + workspace->out_buf.pos) {
-+		if (*total_in + workspace->in_buf.pos > blocksize * 2 &&
-+				*total_in + workspace->in_buf.pos <
-+				*total_out + workspace->out_buf.pos) {
- 			ret = -E2BIG;
- 			goto out;
- 		}
- 
- 		/* We've reached the end of our output range */
- 		if (workspace->out_buf.pos >= max_out) {
--			tot_out += workspace->out_buf.pos;
-+			*total_out += workspace->out_buf.pos;
- 			ret = -E2BIG;
- 			goto out;
- 		}
- 
- 		/* Check if we need more output space */
- 		if (workspace->out_buf.pos == workspace->out_buf.size) {
--			tot_out += min_folio_size;
-+			*total_out += min_folio_size;
- 			max_out -= min_folio_size;
- 			if (nr_folios == nr_dest_folios) {
- 				ret = -E2BIG;
-@@ -506,13 +504,13 @@ int zstd_compress_folios(struct list_head *ws, struct btrfs_inode *inode,
- 
- 		/* We've reached the end of the input */
- 		if (workspace->in_buf.pos >= len) {
--			tot_in += workspace->in_buf.pos;
-+			*total_in += workspace->in_buf.pos;
- 			break;
- 		}
- 
- 		/* Check if we need more input */
- 		if (workspace->in_buf.pos == workspace->in_buf.size) {
--			tot_in += workspace->in_buf.size;
-+			*total_in += workspace->in_buf.size;
- 			kunmap_local(workspace->in_buf.src);
- 			workspace->in_buf.src = NULL;
- 			folio_put(in_folio);
-@@ -542,16 +540,16 @@ int zstd_compress_folios(struct list_head *ws, struct btrfs_inode *inode,
- 			goto out;
- 		}
- 		if (ret2 == 0) {
--			tot_out += workspace->out_buf.pos;
-+			*total_out += workspace->out_buf.pos;
- 			break;
- 		}
- 		if (workspace->out_buf.pos >= max_out) {
--			tot_out += workspace->out_buf.pos;
-+			*total_out += workspace->out_buf.pos;
- 			ret = -E2BIG;
- 			goto out;
- 		}
- 
--		tot_out += min_folio_size;
-+		*total_out += min_folio_size;
- 		max_out -= min_folio_size;
- 		if (nr_folios == nr_dest_folios) {
- 			ret = -E2BIG;
-@@ -568,14 +566,12 @@ int zstd_compress_folios(struct list_head *ws, struct btrfs_inode *inode,
- 		workspace->out_buf.size = min_t(size_t, max_out, min_folio_size);
- 	}
- 
--	if (tot_out >= tot_in) {
-+	if (*total_out >= *total_in) {
- 		ret = -E2BIG;
- 		goto out;
- 	}
- 
- 	ret = 0;
--	*total_in = tot_in;
--	*total_out = tot_out;
- out:
- 	*out_folios = nr_folios;
- 	if (workspace->in_buf.src) {
--- 
-2.51.1
+>
+> Signed-off-by: David Sterba <dsterba@suse.com>
+> ---
+>  fs/btrfs/block-group.c |  2 +-
+>  fs/btrfs/fs.h          | 21 +++++++++++++--------
+>  2 files changed, 14 insertions(+), 9 deletions(-)
+>
+> diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+> index e417aba4c4c7a0..a1119f06b6d106 100644
+> --- a/fs/btrfs/block-group.c
+> +++ b/fs/btrfs/block-group.c
+> @@ -761,7 +761,7 @@ static int load_extent_tree_free(struct btrfs_caching=
+_control *caching_ctl)
+>         nritems =3D btrfs_header_nritems(leaf);
+>
+>         while (1) {
+> -               if (btrfs_fs_closing(fs_info) > 1) {
+> +               if (btrfs_fs_closing_done(fs_info)) {
+>                         last =3D (u64)-1;
+>                         break;
+>                 }
+> diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
+> index 0dc851b9c51bc2..e220202e6a10c3 100644
+> --- a/fs/btrfs/fs.h
+> +++ b/fs/btrfs/fs.h
+> @@ -1110,15 +1110,20 @@ void __btrfs_clear_fs_compat_ro(struct btrfs_fs_i=
+nfo *fs_info, u64 flag,
+>  #define btrfs_test_opt(fs_info, opt)   ((fs_info)->mount_opt & \
+>                                          BTRFS_MOUNT_##opt)
+>
+> -static inline int btrfs_fs_closing(const struct btrfs_fs_info *fs_info)
+> +static inline bool btrfs_fs_closing(const struct btrfs_fs_info *fs_info)
+>  {
+> -       /* Do it this way so we only ever do one test_bit in the normal c=
+ase. */
+> -       if (test_bit(BTRFS_FS_CLOSING_START, &fs_info->flags)) {
+> -               if (test_bit(BTRFS_FS_CLOSING_DONE, &fs_info->flags))
+> -                       return 2;
+> -               return 1;
+> -       }
+> -       return 0;
+> +       if (unlikely(test_bit(BTRFS_FS_CLOSING_START, &fs_info->flags)))
+> +               return true;
+> +
+> +       return false;
 
+This can simply be:
+
+return unlikely(test_bit(BTRFS_FS_CLOSING_START, &fs_info->flags));
+
+Thanks.
+
+> +}
+> +
+> +static inline bool btrfs_fs_closing_done(const struct btrfs_fs_info *fs_=
+info)
+> +{
+> +       if (btrfs_fs_closing(fs_info) && test_bit(BTRFS_FS_CLOSING_DONE, =
+&fs_info->flags))
+> +               return true;
+> +
+> +       return false;
+>  }
+>
+>  /*
+> --
+> 2.51.1
+>
+>

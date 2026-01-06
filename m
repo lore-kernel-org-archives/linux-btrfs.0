@@ -1,64 +1,43 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 12E8D313558
-	for <linux-btrfs@vger.kernel.org>; Tue,  6 Jan 2026 16:20:53 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A7C3E2DA75C
+	for <linux-btrfs@vger.kernel.org>; Tue,  6 Jan 2026 16:20:55 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1767716455; cv=none; b=RqhiuIK1qELdsXMXB37lnzgl6hgQONm4QGFQcHV3YjYNjJrYLHlmQJLgicf0vhlYO5xhjG0m+xJ46kmzH41wAtmIZxBlE7bRkXgWnnQcanS+UIknQcdqBMMqnSGGUTGKslbfqskD72spghOqj7+7Mrr06FNBt2SmiGwUTGqdvZE=
+	t=1767716457; cv=none; b=V7PvKRGbIQwDqoFlnC+EqN0eJiGfIMNyHWu6gzbpomAt8FD1z15PHqN8hLK9cLK4thMcQCz7BBANXaW0Hvc+jiQ8hAgP5tpoiYxbMjs7Q3Jr+tcFy9hMTMYA24N1CpAhTCCtbaj7KuFYJdALR0JkptrN297mofXgu3PHAC1ci5g=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1767716455; c=relaxed/simple;
-	bh=eHI1NiEdgGtkXslDLWJvqPWLFch5vw8n2JWvrmwNoMw=;
+	s=arc-20240116; t=1767716457; c=relaxed/simple;
+	bh=1LFrHb7tDrvd2n1QsxqFaX+Lik6VkKSv9qJMi7c8s1g=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=A46MongQQkagGfpx6ibDwHhOa/QM0bk5GtgwysJyp1G2utcs10d6qF7mhz9RChdpjscmk+jnRBk5AJQKqChJz47JX/DhO5vLcCY0gte90p4kutZmVNXLfMpsRa5kNh7XJ5c2MuLvZG89bUrO6NQphOXP90ZNr/2mvRzq3Bys6j0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=vV0d/ZZH; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=vV0d/ZZH; arc=none smtp.client-ip=195.135.223.131
+	 MIME-Version; b=A3vQHuceWsPIuSFtvoLCM0OTgktH0CPXfYbTfciCGmZYzERc6sZkX1uHuf0CU/kmCVytzooGPEq2xh2DwOXeq7yfVVlelZcC9HgpharumgnLrPGx6ab8yygIvu7f2QRrIlG7b2tv2OZprlfC/d7tIwXCTUlMku3wsgsWQ9cI7cE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="vV0d/ZZH";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="vV0d/ZZH"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 370BC5BCD0;
-	Tue,  6 Jan 2026 16:20:52 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1767716452; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=VRFSBThkoo5NJ/fGtTsjAS5M48eKkRT4oa/dQa6/Nqk=;
-	b=vV0d/ZZHx5fcw6EITHLZQksGQSiLYix+O5v+GzVL7d+rqLol6typcNkLsH/H5JCvp5zisw
-	qiTaSUF5DFUnijCJKLNZ61MXUFM/DoFXNm+DwrGU4tECFPjdxkbCgRQIt+i/Y2elsypUEs
-	zOHHejLg04Fy5eDsoqyS1Yq1LimhA78=
-Authentication-Results: smtp-out2.suse.de;
+	by smtp-out1.suse.de (Postfix) with ESMTPS id C3D6F33691;
+	Tue,  6 Jan 2026 16:20:47 +0000 (UTC)
+Authentication-Results: smtp-out1.suse.de;
 	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1767716452; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=VRFSBThkoo5NJ/fGtTsjAS5M48eKkRT4oa/dQa6/Nqk=;
-	b=vV0d/ZZHx5fcw6EITHLZQksGQSiLYix+O5v+GzVL7d+rqLol6typcNkLsH/H5JCvp5zisw
-	qiTaSUF5DFUnijCJKLNZ61MXUFM/DoFXNm+DwrGU4tECFPjdxkbCgRQIt+i/Y2elsypUEs
-	zOHHejLg04Fy5eDsoqyS1Yq1LimhA78=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 316623EA63;
-	Tue,  6 Jan 2026 16:20:52 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id BD16E3EA63;
+	Tue,  6 Jan 2026 16:20:47 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id b8wMDGQ2XWmnWQAAD6G6ig
-	(envelope-from <dsterba@suse.com>); Tue, 06 Jan 2026 16:20:52 +0000
+	id AOwnLl82XWmgWQAAD6G6ig
+	(envelope-from <dsterba@suse.com>); Tue, 06 Jan 2026 16:20:47 +0000
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 04/12] btrfs: read eb folio index right before loops
-Date: Tue,  6 Jan 2026 17:20:27 +0100
-Message-ID: <447e5571c40fef2bd83cc8c1580b2747c9eb41a3.1767716314.git.dsterba@suse.com>
+Subject: [PATCH 02/12] btrfs: unify types for binary search variables
+Date: Tue,  6 Jan 2026 17:20:25 +0100
+Message-ID: <3fb05ea43fb3967a6327c2c0bf81f23fe2e57c82.1767716314.git.dsterba@suse.com>
 X-Mailer: git-send-email 2.51.1
 In-Reply-To: <cover.1767716314.git.dsterba@suse.com>
 References: <cover.1767716314.git.dsterba@suse.com>
@@ -69,138 +48,46 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Flag: NO
-X-Spam-Score: -6.80
+X-Rspamd-Pre-Result: action=no action;
+	module=replies;
+	Message is reply to one we originated
+X-Spamd-Result: default: False [-4.00 / 50.00];
+	REPLY(-4.00)[]
+X-Rspamd-Queue-Id: C3D6F33691
+X-Rspamd-Pre-Result: action=no action;
+	module=replies;
+	Message is reply to one we originated
+X-Spam-Score: -4.00
 X-Spam-Level: 
-X-Spamd-Result: default: False [-6.80 / 50.00];
-	REPLY(-4.00)[];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	MID_CONTAINS_FROM(1.00)[];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.980];
-	MIME_GOOD(-0.10)[text/plain];
-	RCVD_COUNT_TWO(0.00)[2];
-	ARC_NA(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:mid,imap1.dmz-prg2.suse.org:helo];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	FROM_EQ_ENVFROM(0.00)[];
-	TO_DN_SOME(0.00)[];
-	RCPT_COUNT_TWO(0.00)[2];
-	RCVD_TLS_ALL(0.00)[]
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Spam-Flag: NO
+X-Rspamd-Action: no action
 
-There are generic helpers to access extent buffer folio data of any
-length, potentially iterating over a few of them. This is a slow path,
-either we use the type based accessors or the eb folio allocation is
-contiguous and we can use the memcpy/memcmp helpers.
+The variables calculating where to jump next are useing mixed in types
+which requires some conversions on the instruction level. Using 'u32'
+removes one call to 'movslq', making the main loop shorter.
 
-The initialization of 'i' is done at the beginning though it may not be
-needed. Move it right before the folio loop, this has minor effect on
-generated code in __write_extent_buffer().
+This complements type conversion done in a724f313f84beb ("btrfs: do
+unsigned integer division in the extent buffer binary search loop")
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/extent_io.c | 19 ++++++++++---------
- 1 file changed, 10 insertions(+), 9 deletions(-)
+ fs/btrfs/ctree.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index bbc55873cb1678..97cf1ad91e5780 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3960,7 +3960,7 @@ void read_extent_buffer(const struct extent_buffer *eb, void *dstv,
- 	size_t cur;
- 	size_t offset;
- 	char *dst = (char *)dstv;
--	unsigned long i = get_eb_folio_index(eb, start);
-+	unsigned long i;
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 1eef80c2108331..0a7ee47aa8aaab 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -766,7 +766,7 @@ int btrfs_bin_search(const struct extent_buffer *eb, int first_slot,
+ 		unsigned long offset;
+ 		struct btrfs_disk_key *tmp;
+ 		struct btrfs_disk_key unaligned;
+-		int mid;
++		u32 mid;
  
- 	if (check_eb_range(eb, start, len)) {
- 		/*
-@@ -3977,7 +3977,7 @@ void read_extent_buffer(const struct extent_buffer *eb, void *dstv,
- 	}
- 
- 	offset = get_eb_offset_in_folio(eb, start);
--
-+	i = get_eb_folio_index(eb, start);
- 	while (len > 0) {
- 		char *kaddr;
- 
-@@ -4000,7 +4000,7 @@ int read_extent_buffer_to_user_nofault(const struct extent_buffer *eb,
- 	size_t cur;
- 	size_t offset;
- 	char __user *dst = (char __user *)dstv;
--	unsigned long i = get_eb_folio_index(eb, start);
-+	unsigned long i;
- 	int ret = 0;
- 
- 	WARN_ON(start > eb->len);
-@@ -4013,7 +4013,7 @@ int read_extent_buffer_to_user_nofault(const struct extent_buffer *eb,
- 	}
- 
- 	offset = get_eb_offset_in_folio(eb, start);
--
-+	i = get_eb_folio_index(eb, start);
- 	while (len > 0) {
- 		char *kaddr;
- 
-@@ -4041,7 +4041,7 @@ int memcmp_extent_buffer(const struct extent_buffer *eb, const void *ptrv,
- 	size_t offset;
- 	char *kaddr;
- 	char *ptr = (char *)ptrv;
--	unsigned long i = get_eb_folio_index(eb, start);
-+	unsigned long i;
- 	int ret = 0;
- 
- 	if (check_eb_range(eb, start, len))
-@@ -4051,7 +4051,7 @@ int memcmp_extent_buffer(const struct extent_buffer *eb, const void *ptrv,
- 		return memcmp(ptrv, eb->addr + start, len);
- 
- 	offset = get_eb_offset_in_folio(eb, start);
--
-+	i = get_eb_folio_index(eb, start);
- 	while (len > 0) {
- 		cur = min(len, unit_size - offset);
- 		kaddr = folio_address(eb->folios[i]);
-@@ -4111,7 +4111,7 @@ static void __write_extent_buffer(const struct extent_buffer *eb,
- 	size_t offset;
- 	char *kaddr;
- 	const char *src = (const char *)srcv;
--	unsigned long i = get_eb_folio_index(eb, start);
-+	unsigned long i;
- 	/* For unmapped (dummy) ebs, no need to check their uptodate status. */
- 	const bool check_uptodate = !test_bit(EXTENT_BUFFER_UNMAPPED, &eb->bflags);
- 
-@@ -4127,7 +4127,7 @@ static void __write_extent_buffer(const struct extent_buffer *eb,
- 	}
- 
- 	offset = get_eb_offset_in_folio(eb, start);
--
-+	i = get_eb_folio_index(eb, start);
- 	while (len > 0) {
- 		if (check_uptodate)
- 			assert_eb_folio_uptodate(eb, i);
-@@ -4213,7 +4213,7 @@ void copy_extent_buffer(const struct extent_buffer *dst,
- 	size_t cur;
- 	size_t offset;
- 	char *kaddr;
--	unsigned long i = get_eb_folio_index(dst, dst_offset);
-+	unsigned long i;
- 
- 	if (check_eb_range(dst, dst_offset, len) ||
- 	    check_eb_range(src, src_offset, len))
-@@ -4223,6 +4223,7 @@ void copy_extent_buffer(const struct extent_buffer *dst,
- 
- 	offset = get_eb_offset_in_folio(dst, dst_offset);
- 
-+	i = get_eb_folio_index(dst, dst_offset);
- 	while (len > 0) {
- 		assert_eb_folio_uptodate(dst, i);
- 
+ 		mid = (low + high) / 2;
+ 		offset = p + mid * item_size;
 -- 
 2.51.1
 

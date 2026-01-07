@@ -1,99 +1,153 @@
-Received: from mail-wm1-f46.google.com (mail-wm1-f46.google.com [209.85.128.46])
+Received: from mail-yx1-f66.google.com (mail-yx1-f66.google.com [74.125.224.66])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6DA7A34A79B
-	for <linux-btrfs@vger.kernel.org>; Wed,  7 Jan 2026 17:00:55 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.46
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E7D7726F29C
+	for <linux-btrfs@vger.kernel.org>; Wed,  7 Jan 2026 17:45:56 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.224.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1767805260; cv=none; b=r9d52uuq8HUku3hJ9H4RySFyNhi1gRVZcnq6fgs7eF4vmBi/YBkNPqPM4ML/C9LzQ6GJfFK2fsSTaORSI2ZgU+AD80tSBMHB8BJKrEXlzrhDHADxpqQTbreBuwMAi/ZYRLVBZQAeSX0ZCNJgmFa3s5Ky7m0WlVsaMtCW2PfSePI=
+	t=1767807967; cv=none; b=N8f969mD5KkVeuWzba/MT3e9kEOnvRfUKJ+k5ZYlcfkkHl2erkezD0VXXTfFFS8+Ok23BLpRFUG70rBXjAOxLbQF/1ZEk30YKO9uh6CHWA4JqfsxjnlYUkbe0W4UUc75ddw2mjV6KYmwPR1+33hM+1xv8xg9ivBNZbRexv0yvRE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1767805260; c=relaxed/simple;
-	bh=EEZX0gmeIxCJEW8Dixu8l3LleO3vQL/HwMgKwe8okdM=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=QMsaLNTOwbzvyFYYpzCjEQCPcXqX5mPE5BaLrTZ8aLmlo0E0ENLSu5dYCdqmy9Qb4FMaq8Jj+atE0/L4C+BFhpAYo597iEJy6l+U83K1qMqovRcrV+cvo+VYT2aWqN82wGIBm4iwTLaD8nz/SOS9e1AuQxzFjy2Ij6YbJiDX7+A=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=S8VYZRHa; arc=none smtp.client-ip=209.85.128.46
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1767807967; c=relaxed/simple;
+	bh=qileGSf2c7ijmYzCuIc/EYVYDbMSNUHL9+gNmFw/7Bc=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=mQWGgffx4k4gieZbaLrws127fFnW4AK5xc8JVBxMVv97Obh4LVDD31KBGBgWrmUObWYDe3ipKofBvg1Zf1diZrU3yRjHMTHXnCBL2+i4PdASV+KKS05dapG7zkPcJlRen35hYADwOML13noF3TDaQd//cPjX07pSiGQSV32oUWQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=M1/Vk0Y3; arc=none smtp.client-ip=74.125.224.66
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="S8VYZRHa"
-Received: by mail-wm1-f46.google.com with SMTP id 5b1f17b1804b1-47bdbc90dcaso16929705e9.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 07 Jan 2026 09:00:54 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="M1/Vk0Y3"
+Received: by mail-yx1-f66.google.com with SMTP id 956f58d0204a3-6446704997cso2037687d50.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 07 Jan 2026 09:45:56 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1767805248; x=1768410048; darn=vger.kernel.org;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:from:to:cc:subject:date:message-id:reply-to;
-        bh=C8ots2RRfPSvPCN8lZ4HPOZ03//ZEXekGHk6amm9afI=;
-        b=S8VYZRHaO4Dp86DCfcRMMDjAvHBfXPFAlPsB8AM6fOcRQ4ZFtod/PaUyIlxAEHoFr9
-         6dZpP6OwvOz48Ip1kXLbB2ePe/u2V9hddRWg56Usq5kuUlQ9RsAi6CQ52j08Eq3afCDW
-         pBXL8OFM6wcPfzo6UGK54/NswA6nBHAvZHcSpFygs8ONHJMU9I1lfEloeVeFPqzzkBOq
-         d/vLea2zM3x7mgTTrX30QSlRf9zEuYv1vOB2O+EdM332b3o2aek5S2n2f2gr09iy4yEP
-         MwRuCZxijjvr4YwJf94I+LGEYzI1bbc392A4AdkWyjI5T4hMqP4JEaQD4iXMpcAOyl9j
-         Au1A==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1767805248; x=1768410048;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+        d=gmail.com; s=20230601; t=1767807951; x=1768412751; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=C8ots2RRfPSvPCN8lZ4HPOZ03//ZEXekGHk6amm9afI=;
-        b=kJXOpfkrzn59hJw4gNIYvdSJelS2+kqJ9Jr1gGblTFwer2lxaqqhIZNJK8vec1ShbH
-         ShpR4UTfDACponxewBKtlb8e7RK26ASJQFQ4MjCLTRHJ+iMZhQ5ZcQYzZqgwzgDdSBrU
-         431ujmnYbjeQAPZrA66l60+Knpy2ce6QNolFh9vRCUfeZAqV8ucP/sT/a2GEB349XmND
-         MYzTRHL/5BhwCDSQocUtssSAtNCjEqTy1Y9IVCSUOIRqiEvMX0iTK/ixCaYNVX66TKfd
-         ZyGz2j+uqsK/EFEAQchtUKxnCm19tKL+S5HWldSxlAJkYtjjWkWFhiLH/1vvXW2ntcBV
-         /5Ng==
-X-Forwarded-Encrypted: i=1; AJvYcCW8rMIK0V9r/Nf1SujC+e1dtRblimPLO5APutY970/E9gVvltZk3X2Q1PjXxorNUGkeQ+pRf5YKLVrmUA==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yz3su5S4JkbsjBHBaEElo9kgfpaQ6zKVYHehCQYo1iT7fYZcSJv
-	hhfMDCEwFBp8xoJQMlLoRVtPxvwM6ra9+RV8F2EuV+Qvw5O6zmo+z8t0bv2MEGXlRQ7scSlQDqz
-	j228ZGzrKotpfMQ4IPawx+Azwp1WjNhD5urdZCtllhA==
-X-Gm-Gg: AY/fxX6XLNJGv1xycXzVkYZsMIS7wUUddfUQuRgoZOGB0bK+dCjI5E3Fzbdde2iPrS7
-	OeywcMbo3hL6D3RtawHINzKiEGLjO1mXItGYPFeCmqLQAWim/MO+EQs0Iint3rkNuFcIW6coxme
-	JxXa5MMg24Jv7wsVgOiSd7ES8flWRTt+6+zI1yCL+0v5uQMzUCUPyOSM6FVUNFG6aEWIDUYTu9n
-	HKFqusf5ZRVE4HLvXvq12HOv04epeHLEXnVPbqL1tSn0/SvbuT9+ZnHP1xRuUWCU3AC496x1+cn
-	S1XMuXfIHhI3QtgoIrL+tUYBKNHK3mKnyM5asg1ksjqXghslfHWv1v+GULoUKkOgMqJ0
-X-Google-Smtp-Source: AGHT+IETeiBGNH/0hZMmPdJeCSLzHXrWmkcqwkgPyUAg+jnO3xwilcqEf2wnOAgHn8AoTL2PFvtXrYoMWXJdWGLvL+4=
-X-Received: by 2002:a05:600c:1c28:b0:477:632c:5b91 with SMTP id
- 5b1f17b1804b1-47d84b1a2e7mr46376105e9.16.1767805248044; Wed, 07 Jan 2026
- 09:00:48 -0800 (PST)
+        bh=07ypZOUFUGEXXmt2EssDaX9DCT/Cq3jKiLjKniS0MwA=;
+        b=M1/Vk0Y314l9hUwgD6wLATQMdd93XLuG/zMJHX0dGyzO+pWQmhDCW0Of3C8ULlVxDh
+         8zq3oAK6qD0eknLIYj4fWD+Ex5uFRbcAioOOq4nt4YQxTRQ1qJxfqKHDtH5OxSFk+pbh
+         NieF7AhTPaJD9KWhkC0C3VtjH6UIUDQn7x/Ufofoeu9m882oe2dYKoCR49gPwKjHmvJN
+         hT7huZ4K/7VlweS5M6rnXqw+jjw5Q24CRYjtZW/nLyDG5h0EZaL2LM9sAWHooHkFCWm8
+         mEm27OjKWMXzgcGkCvVWCMWb+B54ryf8m/eswRCSE/qRQfb4hWeP2XKzx/l2k6Gv2Yom
+         B1Jg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1767807951; x=1768412751;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
+         :to:cc:subject:date:message-id:reply-to;
+        bh=07ypZOUFUGEXXmt2EssDaX9DCT/Cq3jKiLjKniS0MwA=;
+        b=D2bN4oY7eAR+dXhixc3SuLgg15EF/P5H8fx1KVga3exYUwdOPzCqIibLOibY3+88+b
+         dLOgqkON5RrKAP3Y3WrHx2J9xuXyw9qB146O+Q18u4S07RDs1EdDxZcPM6WLEfAMRaLj
+         khE1XXllj01rZHeC6/hQLOYgI8yAjtZ4M943FHf3Qc8WSCy/nyDkonaKfpDvFquNHQVZ
+         6CO1Tb6p1ZY1LSCJFK1L+RHXPenU1WuDJmiv4HvWqjSzpGqwdTKZfD7jHwFBFqpEQY98
+         5jruhHUicNNBIFiobG8OlRRpCezjeCPj3ErU/CBk9JZd0TI6S+UG0XHW+a9fEzJwcsB4
+         vDxQ==
+X-Forwarded-Encrypted: i=1; AJvYcCWvODmRBp7edcOIziReOFquqyAEVHPL4teMvP0JZWtfcjhcUUpRmD+xxG5ukWViBUjvYdZ8IPrHqXPOWQ==@vger.kernel.org
+X-Gm-Message-State: AOJu0YwrjQ6yAwT1ghOoeJn7K3Vh9uuOoFYb+CdFI9u3Q9p7TCkm6a4l
+	DRgK0/EBoovZohH+Wg+DAK8+NhtQSf/7L3n8urhw2TOM3dtcytxPWxDo
+X-Gm-Gg: AY/fxX67V6HRXJU/NjA2OkaOukKlzwB8N/22oz80Cbq1xBMORgBAT0VM6KMvcnU+vuq
+	sfwvDKGzQEnOtwQYqzO5S5/3bRoB7HJ4nEq5QKNltoyHvhW/y888MiwtqC2bZTyxi+vQ/JnGEjV
+	hja5znmo4NUY3O4wVySha8s4Bcvkpl+q2drEw87omrNx13lbXWMXl9B5rGScc8dLgYnXJ0lzeZh
+	oDh1p+R77KlH2pTJBkQ9bhSRwWvW1rn31LHoak6z7RegJJJ06nBZD5trGvOTm/7nWxW4JiZ+tAD
+	tlFmadHY/lqi0E+/QRdJW4dMXJqo7VDAu/3CMi1ktE9XTrTDVxiUk67itFxDSRfNonrFx7jdadh
+	h4i5AZW9qg7RH6UmJR9cgYl3HYCzaf1NPtBXcyaXr7/Oy7fb+9eLj+NJ3ggdkoKRsbIjWh4kyCj
+	dZznpdnQEYP47sg4c32g==
+X-Google-Smtp-Source: AGHT+IGe8EGyArCaPl6GeiH6SavSmbbiVzVu/Bk+lLN8nQq1AiFyxt9JzdYvdO+sL6LB5P6YV/OBpw==
+X-Received: by 2002:a05:690e:58a:b0:63f:9448:e81 with SMTP id 956f58d0204a3-64716baea7fmr2229980d50.39.1767807950666;
+        Wed, 07 Jan 2026 09:45:50 -0800 (PST)
+Received: from localhost ([2a03:2880:25ff:44::])
+        by smtp.gmail.com with ESMTPSA id 956f58d0204a3-6470d89d4fasm2292246d50.15.2026.01.07.09.45.49
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 07 Jan 2026 09:45:50 -0800 (PST)
+From: Leo Martins <loemra.dev@gmail.com>
+To: Christian Heusel <christian@heusel.eu>
+Cc: Gideon Farrell <gideon@solnickfarrell.co.uk>,
+	linux-btrfs@vger.kernel.org,
+	regressions@lists.linux.dev,
+	arch-devops@lists.archlinux.org
+Subject: Re: refcount_warn_saturate in __btrfs_release_delayed_node for 6.18.2-arch2-1
+Date: Wed,  7 Jan 2026 09:45:38 -0800
+Message-ID: <20260107174547.3875297-1-loemra.dev@gmail.com>
+X-Mailer: git-send-email 2.47.3
+In-Reply-To: <584c770b-8e59-457c-a8a4-0f9630ec9635@heusel.eu>
+References: 
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20251113101731.2624000-1-neelx@suse.com> <20251118120716.GT13846@twin.jikos.cz>
- <20251124180904.GR13846@twin.jikos.cz>
-In-Reply-To: <20251124180904.GR13846@twin.jikos.cz>
-From: Daniel Vacek <neelx@suse.com>
-Date: Wed, 7 Jan 2026 18:00:37 +0100
-X-Gm-Features: AQt7F2qGF6ki6bg2E35T9TzutnneG1xFD1O8nB4C2L6Mk-DmjROcdKHXNL3donE
-Message-ID: <CAPjX3FftzNN1PZd+UbJU7WVCCX+J8hqktP20fwOFJ=OYx1-eMA@mail.gmail.com>
-Subject: Re: [PATCH v2] btrfs: simplify async csum synchronization
-To: dsterba@suse.cz
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>, David Sterba <dsterba@suse.com>, 
-	Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
 
-On Mon, 24 Nov 2025 at 19:09, David Sterba <dsterba@suse.cz> wrote:
->
-> On Tue, Nov 18, 2025 at 01:07:16PM +0100, David Sterba wrote:
-> > On Thu, Nov 13, 2025 at 11:17:30AM +0100, Daniel Vacek wrote:
-> > > We don't need the redundant completion csum_done which marks the
-> > > csum work has been executed. We can simply flush_work() instead.
-> > >
-> > > This way we can slim down the btrfs_bio structure by 32 bytes matching
-> > > it's size to what it used to be before introducing the async csums.
-> > > Hence not making any change with respect to the structure size.
-> > > ---
-> > > This is a simple fixup for "btrfs: introduce btrfs_bio::async_csum" in
-> > > for-next and can be squashed into it.
-> > >
-> > > v2: metadata is not checksummed here so use the endio_workers workqueue
-> > >     unconditionally. Thanks to Qu Wenruo.
-> >
-> > This looks quite useful regarding the size reduction of btrfs_bio,
-> > please fold it to the patch. Thanks.
->
-> The 6.19 branch is now frozen so this patch will be applied separately
-> later.
+On Wed, 7 Jan 2026 14:15:56 +0100 Christian Heusel <christian@heusel.eu> wrote:
 
-Gentle ping. It seems this one has not been picked yet.
+> On 26/01/07 02:52AM, Christian Heusel wrote:
+> > On 26/01/06 05:10PM, Leo Martins wrote:
+> > > On Tue, 06 Jan 2026 22:01:58 +0000 "Gideon Farrell" <gideon@solnickfarrell.co.uk> wrote:
+> > > 
+> > > > Hi there,
+> > > > 
+> > > > I recently experienced a type of crash I haven't seen before on this system which seems to originate in __btrfs_release_delayed_node on Kernel 6.18.2-arch2-1.
+> > > 
+> > > Hey, thanks for the report. This looks very similar to a different
+> > > report that has been fixed in 6.19-rc5.
+> > > Report: https://lore.kernel.org/oe-lkp/202511262228.6dda231e-lkp@intel.com/
+> > 
+> > I think this is the issue we have been seeing on the Arch Linux
+> > infrastructure aswell, see this issue for reference:
+> > 
+> > https://gitlab.archlinux.org/archlinux/infrastructure/-/issues/788#note_385420
+> > 
+> > This has caused us to downgrade the kernel on all hosts in our
+> > infrastructure due to the crashes caused by this.
+> > 
+> > > Fix: https://lore.kernel.org/linux-btrfs/7c89417ac3352ce3cb0a6373a1746155c1e2754d.1765588168.git.loemra.dev@gmail.com/
+> > > 
+> > > Please let me know if this fixes your issue.
+> > 
+> > So far we have not found a good lab-setting to reproduce the issue
+> > outside of the production machines workloads (but we have also not
+> > looked into the issue a lot).
+> > 
+> > Do you have a good reproducer already that we could use to verify the
+> > fix?
+
+I believe the lkp-test from the original report is able to consistently
+reproduce this.
+
+> > 
+> > Also the fix is not yet even scheduled for inclusion in the stable
+> > trees, since it is still not in linus tree right?
+> 
+> Sorry, I messed up here! I got fooled by the output of `git log --grep`
+> and therefore missed the commit! As pointed out by heftig on gitlab the
+> commit already is present in 6.18.3 which I'll try to roll out to our
+> systems shortly! :)
+
+Let me know if you're still seeing any issues after rolling out the fix.
+
+Thanks,
+Leo Martins.
+
+> 
+> > 
+> > > 
+> > > > 
+> > > > Here's the stack trace:
+> > > > 
+> > > > ```
+> > > 
+> > > Are these the first refcount_t: warnings in your dmesg? I would
+> > > expect an earlier warning that looks like
+> > > refcount_t: addition on 0; use-after-free.
+> > > 
+> > 
+> > This is what our stacktrace looks like:
+> > 
+> > [...]
+> > 
+> > Cheers,
+> > Chris
+> 
+> 
+> 

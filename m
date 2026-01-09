@@ -1,55 +1,55 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DAA6D366556
-	for <linux-btrfs@vger.kernel.org>; Fri,  9 Jan 2026 17:07:27 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D96B823817E
+	for <linux-btrfs@vger.kernel.org>; Fri,  9 Jan 2026 17:09:31 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1767978447; cv=none; b=cGbS2fBPIq2e0WRqythh1bWvMo/06ufW+iv/8eJDHht7Ry4+aet4Kh06Xvtww30ZF/souwieAjST1Y1ZmvHR3vYmHtPZxlxyruN8UUvgWLXQk+XhOC2j153WnB87VJ3bMDAt5YmgOdVl8QgxGoF+pRDEn3Y4/+fA8xTV8qfNO9Q=
+	t=1767978571; cv=none; b=d1Kvj34NrdAKuz9vJs53jU4aKZaXxvDbncjuNgHsa8j56q39bQVhSqJ5sd1iqiJ/f9+l4KjTknemqdlV2tCP7n93SA4sw+KpTfOxrQMd/3AZ5Rqhza/MGJp0AwYDjWDE5llxs24i5/HeY5ApksmlRLw6fO2Yf9wbGFgyY7/l/+Y=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1767978447; c=relaxed/simple;
-	bh=XVJb+spUsOXmk3Ka32Q/lXdIj7zL97Hajw+2/Bfk4is=;
+	s=arc-20240116; t=1767978571; c=relaxed/simple;
+	bh=CmmC3NzlCTnOQbz4Ij7QmBHDhBb/WMIocxB9pzKpeoQ=;
 	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=UfihycjECCDRJN2Qs7NeWj5AKJXFsR95n2Id60tEMj1GmKmjcaTaikDWKkVv1O2Knh76YyksuSM8sp4ZDpRwCGa3cuHem7L/IBrlTaDNKUt+U/jBD9pm0/NzcC9W6xL1ljshlCblcnj+6CKgOii5hSmOIbQVoxhKLnVis+N0I1A=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Ag3SD+HD; arc=none smtp.client-ip=10.30.226.201
+	 To:Cc:Content-Type; b=ZHmD7oZGLk7q/5ZaT4/K4WG4JYBRRWeJv0qjobGYMqgt6imCkMnGnfQkGzfnx1XuopHVitI0g7DumvtHolTvnlf4fAsQ/nsyCdQg00jNFKNrCV6uQ3dQxRPOtS6AoYIIyZzt2894yGVKzjPF5eaU5KfP2AzWZwk1zfwjkplRwEw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=NqlIXH02; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Ag3SD+HD"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 852EEC19423
-	for <linux-btrfs@vger.kernel.org>; Fri,  9 Jan 2026 17:07:27 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="NqlIXH02"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 92144C19424
+	for <linux-btrfs@vger.kernel.org>; Fri,  9 Jan 2026 17:09:31 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1767978447;
-	bh=XVJb+spUsOXmk3Ka32Q/lXdIj7zL97Hajw+2/Bfk4is=;
+	s=k20201202; t=1767978571;
+	bh=CmmC3NzlCTnOQbz4Ij7QmBHDhBb/WMIocxB9pzKpeoQ=;
 	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-	b=Ag3SD+HDBfARfsjqGeXq9p7f74iRI/L63NcdHz7lxyBeJXMwTMQl+7VseqmWSC4FR
-	 5vqI1tO8LMHjdUrmKEtnCg0K2L5TMXDuoiXhZbQl7prUlsFORJM0BKBQ+8uCy+LXbz
-	 8JdRgj2B1i7dDIHpFUXEAO9rYKeHzjSWTSBOEho/Br4fkKZfa+2TxcM+awYQtNGxZ8
-	 uTUKK9wAVMhdF7fIgHf1fL0IUMSHHK2vBM94tQSO4d3fRy7Gt+Zhu3vhDK6UDdQtWy
-	 pxJeX3lwoZelYEbPWrmu9gQ7drPM6lumWLWzOr100Dfh1aQ7M378XvD2bnD4aE7z1n
-	 ZM/NvPQkSnohg==
-Received: by mail-ed1-f43.google.com with SMTP id 4fb4d7f45d1cf-64b791b5584so7273230a12.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 09 Jan 2026 09:07:27 -0800 (PST)
-X-Gm-Message-State: AOJu0Yx5SQFr1SNW5BDs4oh2j3I0JFwHUXVskcDnEPC7/Ckbj5BwV7Te
-	DjXZPJkktuKY1Aq6q3CfaUrk8kM057VtDPZQUXq4JwWvVMZc3bTrka9I0B1QAR5prgpOq2LJcWU
-	48QKew5zOnpdZMY2BocfMMAQyvtiBoG8=
-X-Google-Smtp-Source: AGHT+IHFEd/Cji7DPzPk6Q0cBLN926Pva19PuOn+kn33FVn6/MaIdCy6zJRKw3cfNEMg7xUNGSJUX33GisYNnMtjBsg=
-X-Received: by 2002:a17:907:9615:b0:b80:4119:2436 with SMTP id
- a640c23a62f3a-b8444d4ea89mr980899166b.7.1767978446098; Fri, 09 Jan 2026
- 09:07:26 -0800 (PST)
+	b=NqlIXH02rDdtTYfTQ0NhQZYEpFm8uNgYTuql9ORmjvUoPG3aUxPsI5nnbvvVEPI+V
+	 jx1r+GtyyAF/9uxCylR2SwfxHSOBfjakDHRriK2D7/PtFwfMTNdaWKQ4ZHcsTFV8tq
+	 S2O7FS0XnV2xrEbzBvktV1UZuwl8OkFt7dNrFpfJOryTymQvWcM1qcVijCseicu+pt
+	 jMrAhYecI0m6Wr0ah/R0vzztuZp4P/P6U++/vW5fCshATYenl/wlGaZJf2fng/d1WN
+	 gMAJlNJ9bCUfODzt+pXAc2LnLyoXEt6+1ZQ4hg9Nk+/LoH6pdzZE+KKrFX2zY1K/70
+	 p9ADt5Tktdmgw==
+Received: by mail-ej1-f54.google.com with SMTP id a640c23a62f3a-b7633027cb2so861776466b.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 09 Jan 2026 09:09:31 -0800 (PST)
+X-Gm-Message-State: AOJu0YwzCNFWZ6N0Pyf8ecFyptWmLZfL0/xjLdSMZpaGX2VmPHvI+gCR
+	fMA1N+r9kbM6BZRg2Zx40soZgSNxPSyURJdPezCsHs1iGucti8Jipg3SKGQAZak66m8uC8U4OsX
+	N53DrPViypPQQPxNIovqiHnikYgw1jU4=
+X-Google-Smtp-Source: AGHT+IHtdU3Ba+HS2MP5A8puWjvbeDMt3AIgA6tutRjgeki7znqHviULA03UAFqEJgO1j+1H5uKJ6vF+kcwvIv8IVFU=
+X-Received: by 2002:a17:907:9603:b0:b73:210a:44e with SMTP id
+ a640c23a62f3a-b8444f4f675mr984174866b.30.1767978570170; Fri, 09 Jan 2026
+ 09:09:30 -0800 (PST)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <cover.1767801889.git.fdmanana@suse.com> <46b13dc5c957deb72a7f085916757a20878a8e73.1767801889.git.fdmanana@suse.com>
- <20260108220505.GP21071@twin.jikos.cz>
-In-Reply-To: <20260108220505.GP21071@twin.jikos.cz>
+References: <cover.1767801889.git.fdmanana@suse.com> <a56191f13dc946951f94ddec1dc714991576d38f.1767801889.git.fdmanana@suse.com>
+ <20260108214838.GO21071@twin.jikos.cz>
+In-Reply-To: <20260108214838.GO21071@twin.jikos.cz>
 From: Filipe Manana <fdmanana@kernel.org>
-Date: Fri, 9 Jan 2026 17:06:48 +0000
-X-Gmail-Original-Message-ID: <CAL3q7H67kO2LLDPSZQePkC6J-F5SPT45zjLg_Y4rBo7kAJqhtA@mail.gmail.com>
-X-Gm-Features: AQt7F2qp9c9HYxqNlhVhsEIFw6qT9YzEVqAsgG2OIq2ycz_33z2wEPOq90T9_xI
-Message-ID: <CAL3q7H67kO2LLDPSZQePkC6J-F5SPT45zjLg_Y4rBo7kAJqhtA@mail.gmail.com>
-Subject: Re: [PATCH 3/4] btrfs: use may_delete_dentry() in btrfs_ioctl_snap_destroy()
+Date: Fri, 9 Jan 2026 17:08:52 +0000
+X-Gmail-Original-Message-ID: <CAL3q7H5svDGgRO5aMoB_bdWCQECvtPe1KMWv554ijTDw2y8k5g@mail.gmail.com>
+X-Gm-Features: AQt7F2pP5UnoyMr0w_5RW0_lm7rrUo3DIW4lBozNwDrYLOiy_XDmOApMceXvnK0
+Message-ID: <CAL3q7H5svDGgRO5aMoB_bdWCQECvtPe1KMWv554ijTDw2y8k5g@mail.gmail.com>
+Subject: Re: [PATCH 4/4] btrfs: use may_create_dentry() in btrfs_mksubvol()
 To: dsterba@suse.cz
 Cc: linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
 	brauner@kernel.org, viro@zeniv.linux.org.uk, 
@@ -57,159 +57,51 @@ Cc: linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Thu, Jan 8, 2026 at 10:05=E2=80=AFPM David Sterba <dsterba@suse.cz> wrot=
-e:
+On Thu, Jan 8, 2026 at 9:48=E2=80=AFPM David Sterba <dsterba@suse.cz> wrote=
+:
 >
-> On Thu, Jan 08, 2026 at 01:35:33PM +0000, fdmanana@kernel.org wrote:
+> On Thu, Jan 08, 2026 at 01:35:34PM +0000, fdmanana@kernel.org wrote:
 > > From: Filipe Manana <fdmanana@suse.com>
 > >
-> > There is no longer the need to use btrfs_may_delete(), which was a copy
-> > of the VFS private function may_delete(), since now that functionality
-> > is exported by the VFS as a function named may_delete_dentry(). In fact
-> > our local copy of may_delete() lacks an update that happened to that
-> > function which is point number 7 in that function's comment:
-> >
-> >   "7. If the victim has an unknown uid or gid we can't change the inode=
-."
-> >
-> > which corresponds to this code:
-> >
-> >       /* Inode writeback is not safe when the uid or gid are invalid. *=
-/
-> >       if (!vfsuid_valid(i_uid_into_vfsuid(idmap, inode)) ||
-> >           !vfsgid_valid(i_gid_into_vfsgid(idmap, inode)))
-> >               return -EOVERFLOW;
-> >
-> > As long as we keep a separate copy, duplicating code, we are also prone
-> > to updates to the VFS being missed in our local copy.
-> >
-> > So change btrfs_ioctl_snap_destroy() to use the VFS function and remove
-> > btrfs_may_delete().
+> > There is no longer the need to use btrfs_may_create(), which was a copy
+> > of the VFS private function may_create(), since now that functionality
+> > is exported by the VFS as a function named may_create_dentry(). So chan=
+ge
+> > btrfs_mksubvol() to use the VFS function and remove btrfs_may_create().
 > >
 > > Signed-off-by: Filipe Manana <fdmanana@suse.com>
 > > ---
-> >  fs/btrfs/ioctl.c | 58 +-----------------------------------------------
-> >  1 file changed, 1 insertion(+), 57 deletions(-)
+> >  fs/btrfs/ioctl.c | 15 +--------------
+> >  1 file changed, 1 insertion(+), 14 deletions(-)
 > >
 > > diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> > index d9e7dd317670..0cb3cd3d05a5 100644
+> > index 0cb3cd3d05a5..9cf37459ef6d 100644
 > > --- a/fs/btrfs/ioctl.c
 > > +++ b/fs/btrfs/ioctl.c
-> > @@ -815,62 +815,6 @@ static int create_snapshot(struct btrfs_root *root=
+> > @@ -815,19 +815,6 @@ static int create_snapshot(struct btrfs_root *root=
 , struct inode *dir,
 > >       return ret;
 > >  }
 > >
-> > -/*  copy of may_delete in fs/namei.c()
-> > - *   Check whether we can remove a link victim from directory dir, che=
-ck
-> > - *  whether the type of victim is right.
-> > - *  1. We can't do it if dir is read-only (done in permission())
-> > - *  2. We should have write and exec permissions on dir
-> > - *  3. We can't remove anything from append-only dir
-> > - *  4. We can't do anything with immutable dir (done in permission())
-> > - *  5. If the sticky bit on dir is set we should either
-> > - *   a. be owner of dir, or
-> > - *   b. be owner of victim, or
-> > - *   c. have CAP_FOWNER capability
-> > - *  6. If the victim is append-only or immutable we can't do anything =
-with
-> > - *     links pointing to it.
-> > - *  7. If we were asked to remove a directory and victim isn't one - E=
-NOTDIR.
-> > - *  8. If we were asked to remove a non-directory and victim isn't one=
- - EISDIR.
-> > - *  9. We can't remove a root or mountpoint.
-> > - * 10. We don't allow removal of NFS sillyrenamed files; it's handled =
-by
-> > - *     nfs_async_unlink().
-> > - */
-> > -
-> > -static int btrfs_may_delete(struct mnt_idmap *idmap,
-> > -                         struct inode *dir, struct dentry *victim, int=
- isdir)
+> > -/* copy of may_create in fs/namei.c() */
+> > -static inline int btrfs_may_create(struct mnt_idmap *idmap,
+> > -                                struct inode *dir, const struct dentry=
+ *child)
 > > -{
-> > -     int ret;
 >
-> There are some differences in VFS may_delete that I don't know if are
-> significant, they seem to be releated to stacked filesystems.
->
-> For example the associated inode of the victim dentry is obtained as
-> d_backing_inode() vs our simple d_inode().
->
-> > -
-> > -     if (d_really_is_negative(victim))
->
-> VFS does d_is_negative() which does not check for NULL pointer but some
-> other internal state.
->
-> > -             return -ENOENT;
-> > -
-> > -     /* The @victim is not inside @dir. */
-> > -     if (d_inode(victim->d_parent) !=3D dir)
-> > -             return -EINVAL;
->
-> We handle that properly, while VFS does BUG_ON, so this can be fixed
-> separeately in the VFS version.
+> The difference to the VFS version is lack of audit_inode_child() in
+> this place, so this may be good to mention in the changelog.
+> Functionally the audit subsystem missed the event of subvolume creation.
 
-Yes, but it's one of those cases that should never happen.
-In fact we used to have the BUG_ON in btrfs too, you converted it to
-proper error handling in:
-
-commit 1686570265559ebfa828c1b784a31407ec2877bd
-Author: David Sterba <dsterba@suse.com>
-Date:   Fri Jan 19 20:23:56 2024 +0100
-
-    btrfs: handle directory and dentry mismatch in btrfs_may_delete()
-
-
+I'll add that to the changelog in the next version, after getting
+comments from the VFS people.
 
 >
-> There are no changes in the rest of the function (other than the
-> different way how inode is obtained).
-
-Yes, small differences like that. Some of those things seem to be
-because our btrfs copy was not updated.
-fstests pass with this patchset.
-
->
-> The original commit 4260f7c7516f4c ("Btrfs: allow subvol deletion by
-> unprivileged user with -o user_subvol_rm_allowed") adding this helper
-> says something about adding the write and exec checks and size checks
-> but I don't see what it's referring to, neither in the current nor in
-> the old code.
-
-I noticed that, but the VFS may_delete() does those checks, which is this l=
-ine:
-
-error =3D inode_permission(idmap, dir, MAY_WRITE | MAY_EXEC);
-
-Exactly the same as our btrfs copy.
-
-
->
-> > -     audit_inode_child(dir, victim, AUDIT_TYPE_CHILD_DELETE);
-> > -
-> > -     ret =3D inode_permission(idmap, dir, MAY_WRITE | MAY_EXEC);
-> > -     if (ret)
-> > -             return ret;
-> > -     if (IS_APPEND(dir))
-> > -             return -EPERM;
-> > -     if (check_sticky(idmap, dir, d_inode(victim)) ||
-> > -         IS_APPEND(d_inode(victim)) || IS_IMMUTABLE(d_inode(victim)) |=
-|
-> > -         IS_SWAPFILE(d_inode(victim)))
-> > -             return -EPERM;
-> > -     if (isdir) {
-> > -             if (!d_is_dir(victim))
-> > -                     return -ENOTDIR;
-> > -             if (IS_ROOT(victim))
-> > -                     return -EBUSY;
-> > -     } else if (d_is_dir(victim))
-> > -             return -EISDIR;
+> > -     if (d_really_is_positive(child))
+> > -             return -EEXIST;
 > > -     if (IS_DEADDIR(dir))
 > > -             return -ENOENT;
-> > -     if (victim->d_flags & DCACHE_NFSFS_RENAMED)
-> > -             return -EBUSY;
-> > -     return 0;
+> > -     if (!fsuidgid_has_mapping(dir->i_sb, idmap))
+> > -             return -EOVERFLOW;
+> > -     return inode_permission(idmap, dir, MAY_WRITE | MAY_EXEC);
 > > -}

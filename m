@@ -1,83 +1,79 @@
-Received: from fhigh-b5-smtp.messagingengine.com (fhigh-b5-smtp.messagingengine.com [202.12.124.156])
+Received: from fout-b6-smtp.messagingengine.com (fout-b6-smtp.messagingengine.com [202.12.124.149])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5DDAC50094C;
-	Thu, 15 Jan 2026 22:47:29 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.156
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B9611248F66
+	for <linux-btrfs@vger.kernel.org>; Thu, 15 Jan 2026 23:30:12 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.149
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1768517250; cv=none; b=cZeuTjNOkorFFK/MGcbNEDn5LZ37LmwD6QW7gqXUM9WnThmoQt0QV9R3kqHDJ4UC0d+43yKMzGPK2BhFOLGHvSmf2zmD4U8z+czuUwRkGC4L/ndSFPRwBkAYMvgtk07T3ARaWEMo/ygyTB13g2Je1sIITEx5P8+kb2gLL5UDJN4=
+	t=1768519814; cv=none; b=NVgwgqNr/+orPAVkj+OIt98/bV/QsjG9vQvlTL6byRoTzBdCpG3BAcVXYxdqemr2QZrjEI7Nz9FaVuiXnLXRwo8BhdJMHeg/D7tm/bUa4379puhjRUdSbpxuRWKM6Oal9toBtDut/FR3Mf1Z+8R8RYFMQptSzg6TJiklcXIN110=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1768517250; c=relaxed/simple;
-	bh=t5X4TfulTs7ImIEAgDj0NJj2vA9q4FkGlIve8mp8738=;
+	s=arc-20240116; t=1768519814; c=relaxed/simple;
+	bh=BBlvTJM1dMfM4cVSy3k56IePBkejwNovHmqiMQZTz24=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=JIEU0HYEB1rjHHqGr+csqMoy5VO5ssW9ejUKCA9NPDAKXeBgBDnlddkbpisy6EAP+ail15xpTp2CYN5gjTIq90m0dYfyehbVgPB1B0W1fZxJWKQqP9ZhnPxdS1PxGvAMrXG2qQgeb8gX6+gDiog27mjv11CS1b4jSSym/5Kr9C0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=F4bMw3bM; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=u+jf7D50; arc=none smtp.client-ip=202.12.124.156
+	 Content-Type:Content-Disposition:In-Reply-To; b=Yn4nTMG6tvQUXP7Jbk26zP1gUlHQueRuAUhb6bJ/B1MdLY16uZht77thUJccU1p+9dfvnxugfsZM7sQCZvXDK8092IxIWrYjeIqyVES7aPVx3IA3C7zc8CPF4Iy86PUaoL7VXG6hkgMQdW/w/dFdOJzEwCiQQ5hs6BqkHZnspFQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=rO+mgCHu; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=hL7CuUmx; arc=none smtp.client-ip=202.12.124.149
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="F4bMw3bM";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="u+jf7D50"
-Received: from phl-compute-03.internal (phl-compute-03.internal [10.202.2.43])
-	by mailfhigh.stl.internal (Postfix) with ESMTP id 86C557A007B;
-	Thu, 15 Jan 2026 17:47:28 -0500 (EST)
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="rO+mgCHu";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="hL7CuUmx"
+Received: from phl-compute-04.internal (phl-compute-04.internal [10.202.2.44])
+	by mailfout.stl.internal (Postfix) with ESMTP id DB1D91D00124;
+	Thu, 15 Jan 2026 18:30:11 -0500 (EST)
 Received: from phl-frontend-03 ([10.202.2.162])
-  by phl-compute-03.internal (MEProxy); Thu, 15 Jan 2026 17:47:28 -0500
+  by phl-compute-04.internal (MEProxy); Thu, 15 Jan 2026 18:30:12 -0500
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
 	:content-type:content-type:date:date:from:from:in-reply-to
 	:in-reply-to:message-id:mime-version:references:reply-to:subject
-	:subject:to:to; s=fm3; t=1768517248; x=1768603648; bh=2JIKgs1Hqf
-	n9oQAIfi1Vtb/eXrI2GRHBVWpAhBeqAPo=; b=F4bMw3bMd+EF/kDdRSazXDcVO7
-	ggw4O4p099NhQNZ6LC99pWQZu38tmdfRIjLak2wT03gQRaDglNFusQKJ574tnZYi
-	glzdU2Mmpl4GL6A9VyspwLjqvVuWMjYbTtgefL3NuFdDDJrfUNFpiOAlcBNvO1jk
-	WlEcdECL/6Fyi9td8dR1+dvhCnKu8bubOdxagSq8pozhyOQLykxE100V4DEjVhTn
-	3D+f3wyiLH8lT67R9b9kFXU+GFebUnUuyyyNhu2NgIQNZIIyM8qEq+xv9MqEQjXy
-	p8WEah03/GSBcXX067sxj/1x6d22hV4Ew/ErQNo7XpFPdw5ak0/sIAU4dfSQ==
+	:subject:to:to; s=fm3; t=1768519811; x=1768606211; bh=+akwpDgBOz
+	RYzTXlt4hidCaRczqe5PG2XqWmk1ZzBhI=; b=rO+mgCHuI+8JVfrwQBOrBP1S08
+	hE410/rnwnfW+FOfYoLLfvqHi6LY5Ozl2yQVCNcnzz3wazixoUEUaxXU00kTj9cQ
+	lPwjlRjy3IrGvYzGiBw7ltv/fMGJ77hgPtnWsen4vI0424T+B5UkWdNpzCRSYR99
+	shrrRs7JNAqYdN2qpV8JulQxp7ltao2NXktyDPmPDBTWX2iSh/lpIFZfEDxem8tS
+	cUAgldoabdwV0fQKcUaLISh1pW0MjiN47N2cZkseUJa9051UZy0lGOHLdwQ3cm9P
+	/qaWMaQPvMJPI3z1CUM8Q846qobp7LEoVTPzWkuKnt7cK1SNAARUh0g3jwsA==
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
 	messagingengine.com; h=cc:cc:content-type:content-type:date:date
 	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
 	:message-id:mime-version:references:reply-to:subject:subject:to
 	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=
-	1768517248; x=1768603648; bh=2JIKgs1Hqfn9oQAIfi1Vtb/eXrI2GRHBVWp
-	AhBeqAPo=; b=u+jf7D50RejUgzY/2SZnODEqzb18KxWHIRqWywKp+SJDfSoZLgo
-	V4S68sbAaxMIZfYe7RTDSzWf7I7orvl8m0FRlySCaMVjkkLqNs10LT8wtRrxhjtl
-	rAsKdVPuDDCXvcb/CqKu1/3afO9CdcYYC/9f9ZMPGPlFxR/s+yxkHXmrYLdWmcct
-	s6x/LWOOeBRFRR6ScBtDNgCdl7gAgN6JptbErkMzUlbkQULOM8hjbrBi3mFtytgY
-	RW9q06UGf/vj0hGMBuYgz99phJKtXtKrU2qNywfMuIJl3KybJ62sFX4wd0ce80fH
-	W74OiwPzK/fDn38L3O2g1/6oRZANQ9QrzFQ==
-X-ME-Sender: <xms:gG5paQNjyevqGq5ajiSjgsaphFXkcggIyu_xcw9YAi72tzGaBoUDkQ>
-    <xme:gG5paYcEGbrUBkOg_vu4iG0HePChRm3yJ_VoWR31mRx88rJM5QYYrUkuhkYdCeead
-    1B2jjjR3Pi_j8DU7EYDZuqdn2k56R8TJbEThV9FHgH765kJv6dR0Hc>
-X-ME-Received: <xmr:gG5paXX0QSravSKpE-mBLlgPYbzXP5yiWTxHUqu9t_ChZYbmG0MsJL8nKTdkalKxXtdrI3Si75yovrcL8tM2ennth0E>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefgedrtddtgdduvdejvdelucetufdoteggodetrf
+	1768519811; x=1768606211; bh=+akwpDgBOzRYzTXlt4hidCaRczqe5PG2XqW
+	mk1ZzBhI=; b=hL7CuUmxWayw98eUP9uw4WIt9VW+jTvodY9EQJP9+N8mje2xifT
+	/W9/mG2nkAc2hn9QF0kyCxnEP561E9AE6Wpv116mZAGjrcsw+b94anvQnC3/5Tr5
+	ZW7/u4IO1K8EZzwEScB4CnAeS/DVUWF6Z+REJr7BumcBoGXPd9SkNYRhKwpYIrcu
+	yGBq6SzKEvBbpyOQmAlUKXOdnLy3G+HJAsoFfiQxLE/KbnSnKPY0GeGds/UY0xrC
+	I4VHEdptQT61zOS200MU8KVz3g065fHdlzWkENmlSz5lDFNyYy46FQKCEkcmu0LH
+	IePJ3EJ03bC5eBqPPxwoMULrQu4tN9Mrp6w==
+X-ME-Sender: <xms:g3hpacMgwcdEueqqep9eNQAuMHIpDq5E3tci0-eR6-11rJLdbskNmA>
+    <xme:g3hpaaYcQJBFEHbxBufsPpHuqM87XVu7_3MMtL_1b4Xgb3DfdWCl4JwvnReaOS3Mo
+    efcvnBs7VuV55apa82ZPORGzZYhURAYici63TlJ8dy_T6tgrTHDOr4>
+X-ME-Received: <xmr:g3hpaQpfj5Y3V6up6Ji3xGN0YY3xSQbsZEAX5Z46TujWhNNh-95QNAL2dlvLswFhi4Sa2nYc-D3RdR5xu0_5AB2rkhQ>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefgedrtddtgdduvdejfeekucetufdoteggodetrf
     dotffvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfurfetoffkrfgpnffqhgenuceu
     rghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmnecujf
     gurhepfffhvfevuffkfhggtggujgesthdtredttddtvdenucfhrhhomhepuehorhhishcu
     uehurhhkohhvuceosghorhhishessghurhdrihhoqeenucggtffrrghtthgvrhhnpeekvd
     ekffejleelhfevhedvjeduhfejtdfhvdevieeiiedugfeugfdtjefgfeeljeenucevlhhu
     shhtvghrufhiiigvpedtnecurfgrrhgrmhepmhgrihhlfhhrohhmpegsohhrihhssegsuh
-    hrrdhiohdpnhgspghrtghpthhtohephedpmhhouggvpehsmhhtphhouhhtpdhrtghpthht
-    ohepjhhirghshhgvnhhgjhhirghnghgtohholhesghhmrghilhdrtghomhdprhgtphhtth
-    hopegtlhhmsehfsgdrtghomhdprhgtphhtthhopegushhtvghrsggrsehsuhhsvgdrtgho
-    mhdprhgtphhtthhopehlihhnuhigqdgsthhrfhhssehvghgvrhdrkhgvrhhnvghlrdhorh
-    hgpdhrtghpthhtoheplhhinhhugidqkhgvrhhnvghlsehvghgvrhdrkhgvrhhnvghlrdho
-    rhhg
-X-ME-Proxy: <xmx:gG5paYiNjhVrnqhRQ1M3_BBJzN8G1S4LFi-oZ2XMDxVWq1hkUeay5Q>
-    <xmx:gG5pae-6cwCWKOH54Oba4J12Ri_r0kGz-VAVR7H7VoD8juxdOuFcMQ>
-    <xmx:gG5paSaT_rif-D1x9O08YkhgyZ_9ZdZ40YJZXYV1f7kX0VggLloURg>
-    <xmx:gG5pad0lZGAcIMvZOyczQlxY1p7Vi9JuguXV5L_Tbe9eAFwb09qe2A>
-    <xmx:gG5paY58t2mSqIS1b9x2dRoKbCIroxR2v-Q0mo8jn-EWz2kd-dtQ7Z94>
+    hrrdhiohdpnhgspghrtghpthhtohepfedpmhhouggvpehsmhhtphhouhhtpdhrtghpthht
+    ohepfihquhesshhushgvrdgtohhmpdhrtghpthhtoheplhhinhhugidqsghtrhhfshesvh
+    hgvghrrdhkvghrnhgvlhdrohhrghdprhgtphhtthhopehjrggtkhesshhushgvrdgtii
+X-ME-Proxy: <xmx:g3hpaeb2cBylxFA6KmY-ZgzDuZTC2ERwbFU9kc4bMCbS4EErXKWRcg>
+    <xmx:g3hpaYQ_VRTkxFQ3pjIcdboWnShr8d9tjwFP-KAgG5OJvxkOr-we5w>
+    <xmx:g3hpaV4knk-tPRUigfOfatfePPxs4brg_agfB_zCu4-YLH0eIQz3Yw>
+    <xmx:g3hpadz5fHNO9z3enPd7VekJos-O1HNzWPpxz4ed_o7N2ya1v8i9xA>
+    <xmx:g3hpaTFqffY5YfSvWhxOdezJKoK4q9NwZSi43Hg1dZ1ajQ2Fhf0xabFL>
 Feedback-ID: i083147f8:Fastmail
 Received: by mail.messagingengine.com (Postfix) with ESMTPA; Thu,
- 15 Jan 2026 17:47:27 -0500 (EST)
-Date: Thu, 15 Jan 2026 14:47:24 -0800
+ 15 Jan 2026 18:30:10 -0500 (EST)
+Date: Thu, 15 Jan 2026 15:30:07 -0800
 From: Boris Burkov <boris@bur.io>
-To: Jiasheng Jiang <jiashengjiangcool@gmail.com>
-Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
-	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] btrfs: remove unnecessary RCU protection in
- clear_incompat_bg_bits
-Message-ID: <20260115224724.GB2118372@zen.localdomain>
-References: <20260115143826.17725-1-jiashengjiangcool@gmail.com>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org, Jan Kara <jack@suse.cz>
+Subject: Re: [PATCH] btrfs: do not strictly require dirty metadata threshold
+ for metadata writepages
+Message-ID: <20260115233007.GC2118372@zen.localdomain>
+References: <ccfd051d2ae173d95f3f6e75b7466efbf4596620.1768452808.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -86,72 +82,132 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20260115143826.17725-1-jiashengjiangcool@gmail.com>
+In-Reply-To: <ccfd051d2ae173d95f3f6e75b7466efbf4596620.1768452808.git.wqu@suse.com>
 
-On Thu, Jan 15, 2026 at 02:38:26PM +0000, Jiasheng Jiang wrote:
-> The function clear_incompat_bg_bits() currently uses
-> list_for_each_entry_rcu() to iterate over the fs_info->space_info list.
-> However, inside the loop, it calls down_read(&sinfo->groups_sem).
+On Thu, Jan 15, 2026 at 03:23:44PM +1030, Qu Wenruo wrote:
+> [BUG]
+> There is an internal report that btrfs hits a hang at
+> balance_dirty_pages() for btree inode.
 > 
-> Since down_read() is a blocking operation that can sleep, calling it
-> inside an implied RCU read-side critical section is illegal and can
-> trigger "scheduling while atomic" errors or lockdep warnings.
+> [CAUSE]
+> balance_dirty_pages() can be triggered by both internal calls like
+> btrfs_btree_balance_dirty() and external callers like mm or cgroup.
+> 
+> For internal calls, btrfs_btree_balance_dirty() calls
+> __btrfs_btree_balance_dirty() which will check if the current dirty
+> metadata reaches a certain threshold (32M), and if not we just skip the
+> workload.
+> 
+> For external calls they can directly call btree_writepages(), which
 
-Since we aren't actually in an rcu critical section this isn't really
-the case. You did say "implied" but that is kind of hiding a lot of
-meaning for a quick read. And the suggestion of hitting a scheduling
-while atomic warning *is* wrong and misleading.
+grammar nit: you don't need the "can".
+"External callers directly call btree_writepages()" or something is
+clearer.
 
-The debug warning this will really trigger is __list_check_rcu()
-calling rcu_read_lock_any_held() if CONFIG_PROVE_RCU_LIST is enabled.
+> is doing a similar check against the threshold, and skip the writeback
+> again if it's not reaching the same 32M threshold.
+> 
+> But the threshold is only internal to btrfs, if cgroup or mm chose to
+> balance dirty pages for the metadata inode at a much lower threshold, in
+> this case the dirty pages count is around 28M, lower than btrfs'
+> internal threshold.
+
+I think this is a good argument. Layering multiple different mechanisms
+for metering writeback doesn't make a ton of sense to me. With that
+said, it's not great for the write performance of the btrees if we
+writeback already cow-ed nodes, so allowing more frequent writeback
+might be harmful in practice.
+
+I still think it's worth it to simplify things and "find out",
+especially if this existing behavior is buggy...
 
 > 
-> As established in commit 728049050012 ("btrfs: kill the RCU protection
-> for fs_info->space_info"), the space_info list is initialized upon mount
-> and destroyed during unmount. It does not change during the runtime of
-> the filesystem, making RCU protection unnecessary.
+> This causes all writeback request to be ignored, and no dirty pages for
+> btrfs btree inode can be balanced, resulting hang for all
+> balance_dirty_pages() callers.
+
+Does this happen determinstically if balance_dirty_pages() is called on
+the btrfs sb with <32M dirty eb pages? Or does it depend on the state of
+the dirty file pages too, like if those inodes get back some memory,
+it's OK? Just curious to understand better.
+
 > 
-> Fix this by switching to the standard list_for_each_entry() iterator,
-> which safely allows blocking operations like semaphore acquisition within
-> the loop.
+> Thanks Jan Kara a lot for the analyze on the root cause.
+> 
+> [FIX]
+> For internal callers using btrfs_btree_balance_dirty() since that
+> function is already doing internal threshold check, we don't need to
+> bother it.
+> 
+> But for external callers of btree_writepages(), then respect their
+> request and just writeback whatever they want, ignoring the internal
+> btrfs threshold to avoid such deadlock on btree inode dirty page
+> balancing.
 
-Please rephrase the commit message to indicate that the problem is the
-unnecessary/misleading usage of the _rcu variant since we are not
-in an rcu read critical section, rather than focusing on the semaphore,
-which is a code smell but not actually wrong.
+Is it a deadlock or a livelock? Can you explain the hang a bit more? Is
+it something bad about returning 0 or does the balance_dirty_pages()
+loop forever trying to balance and failing to make progress? Is it a
+hard requirement that if balance_dirty_pages() selects some inode it
+must make progress on writeback in one call to writepages or else it's a
+bug? That would be a bit surprising to me as well, but I am not a memory
+expert obviously.
 
-In general, my advice to you for your contributions going forward is to
-focus on the specific improvement your fix results in, ideally with a
-demonstration that it truly happens, as opposed to theoretical issues
-with the code that may or may not actually be realized.
+Sorry for being a bit pedantic, but I have coincidentally been thinking
+about this a lot lately.
 
-So in this case, for example, you would point out that the code hits the
-CONFIG_PROVE_RCU_LIST warning and show the dmesg snippet. That also
-has the positive side effect of improving reviewer confidence that you
-are fully understanding and validating your changes.
+Thanks for hunting it down, by the way.
 
-Thanks,
 Boris
 
 > 
-> Signed-off-by: Jiasheng Jiang <jiashengjiangcool@gmail.com>
+> Cc: Jan Kara <jack@suse.cz>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 > ---
->  fs/btrfs/block-group.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
+>  fs/btrfs/disk-io.c | 24 +-----------------------
+>  1 file changed, 1 insertion(+), 23 deletions(-)
 > 
-> diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-> index 08b14449fabe..d2cb26f130eb 100644
-> --- a/fs/btrfs/block-group.c
-> +++ b/fs/btrfs/block-group.c
-> @@ -1011,7 +1011,7 @@ static void clear_incompat_bg_bits(struct btrfs_fs_info *fs_info, u64 flags)
->  		struct list_head *head = &fs_info->space_info;
->  		struct btrfs_space_info *sinfo;
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 5e4b7933ab20..9add1f287635 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -485,28 +485,6 @@ static int btree_migrate_folio(struct address_space *mapping,
+>  #define btree_migrate_folio NULL
+>  #endif
 >  
-> -		list_for_each_entry_rcu(sinfo, head, list) {
-> +		list_for_each_entry(sinfo, head, list) {
->  			down_read(&sinfo->groups_sem);
->  			if (!list_empty(&sinfo->block_groups[BTRFS_RAID_RAID5]))
->  				found_raid56 = true;
+> -static int btree_writepages(struct address_space *mapping,
+> -			    struct writeback_control *wbc)
+> -{
+> -	int ret;
+> -
+> -	if (wbc->sync_mode == WB_SYNC_NONE) {
+> -		struct btrfs_fs_info *fs_info;
+> -
+> -		if (wbc->for_kupdate)
+> -			return 0;
+> -
+> -		fs_info = inode_to_fs_info(mapping->host);
+> -		/* this is a bit racy, but that's ok */
+> -		ret = __percpu_counter_compare(&fs_info->dirty_metadata_bytes,
+> -					     BTRFS_DIRTY_METADATA_THRESH,
+> -					     fs_info->dirty_metadata_batch);
+> -		if (ret < 0)
+> -			return 0;
+> -	}
+> -	return btree_write_cache_pages(mapping, wbc);
+> -}
+> -
+>  static bool btree_release_folio(struct folio *folio, gfp_t gfp_flags)
+>  {
+>  	if (folio_test_writeback(folio) || folio_test_dirty(folio))
+> @@ -584,7 +562,7 @@ static bool btree_dirty_folio(struct address_space *mapping,
+>  #endif
+>  
+>  static const struct address_space_operations btree_aops = {
+> -	.writepages	= btree_writepages,
+> +	.writepages	= btree_write_cache_pages,
+>  	.release_folio	= btree_release_folio,
+>  	.invalidate_folio = btree_invalidate_folio,
+>  	.migrate_folio	= btree_migrate_folio,
 > -- 
-> 2.25.1
+> 2.52.0
 > 

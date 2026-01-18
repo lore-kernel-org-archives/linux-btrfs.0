@@ -1,60 +1,67 @@
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5135F500962
-	for <linux-btrfs@vger.kernel.org>; Sun, 18 Jan 2026 05:30:31 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4A726500962
+	for <linux-btrfs@vger.kernel.org>; Sun, 18 Jan 2026 05:30:37 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1768714232; cv=none; b=T5JLBHS8IhVFMN2X6G3tUWarqRNYRzdPXQg0N7WzolNrs1KEFoBMhmbS/ZzHBVMcGA6yHxlBuR3jmIqUEoPjso1amfngjlUN8lAKiA3pPbBYOWxZ2Ysv/KYXgO8xjoXzNYuv9AgcJ/O86kbrlk6NEqwEZg6YWamHTPwO1BfkKE0=
+	t=1768714238; cv=none; b=gJdMoMAnVBTAvWYznMjkdFqKsTmDRZDjDlpsJIFv+pai8lC6cXtGm0LjH48/VTQqZU7AeA4437ZJGsMCsGK0hYy4GGoNru2ZYSyTYwHzut9i+/XUaTDFMhcwOYqxk8NAHg4t/a4K5PG0KAfsXz+V6G9/NzH1L9sTuWifnlqLstg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1768714232; c=relaxed/simple;
-	bh=57Np6Zi2x23dcRdBW6DkC+ohjoVVK2MGXIaT9bX+JC4=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=dgTUbilepTpL+yyynBguY77dzEYvqOuPlldLAA8+quxLhP5YhReMdpwrqgc1umxzcIaCZYt/xebUUpaw+jZCm41ZLNlVlkPbNuA+6AogR2x06RRmQdmugBXQtmSjb+zFwakNNaGKEXahjLX8Dd66lKCKynzA4Aw5YHumMaaxP/E=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=ElSTXfDi; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=YCt54Zuv; arc=none smtp.client-ip=195.135.223.131
+	s=arc-20240116; t=1768714238; c=relaxed/simple;
+	bh=jqpeOeKVkE4HkVdqVXNBjSYRejZDcCIgeUt/BlQEPiw=;
+	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=mNxNvfbjSWMwpMcjICfVb9od9VYcJPr+xl7oyS7/unKCkqehSAHNcCK6wmegfDst9LV4dUFP2qXcbNuDuSDCGpezrKlcbwbkgP7wN5VuVun/0HTs4jmIaTNOL6I3OK+c/wVRdObrj0l3BDIzzJ1bDq7GIncvu6c/6rTx/cQB9Do=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=thJiEHiY; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=thJiEHiY; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="ElSTXfDi";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="YCt54Zuv"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="thJiEHiY";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="thJiEHiY"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id E33715BCC3
-	for <linux-btrfs@vger.kernel.org>; Sun, 18 Jan 2026 05:30:23 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 2FD805BCC4
+	for <linux-btrfs@vger.kernel.org>; Sun, 18 Jan 2026 05:30:27 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1768714224; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=AokTDU0xm3/KCsQELLUUHpIde1C+CQTECiD8I3aGLsc=;
-	b=ElSTXfDiZHTpP4EwjtWytnErXQMfVysxWh+bQj/WF2PhknexD0zhKFIieiC52k32I/eYqF
-	Eche6Uv+Gjy8XutA2BDg2UxP1Zd7Seh8SlwyHZIENU9+hFdk5wxiclTftd9SK8sSOv5jwY
-	PJm7IUbATaSGQDHp/BIcCGqv0mNL88Y=
+	t=1768714227; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=ov2S0b3a9YnLjXLhZqLitzoywBCJDZPuUYiVIU2/p04=;
+	b=thJiEHiYljCD4FzsukdrZQgygWcmqYOwi3uzGwTZBF/iqQ0ZrerJfp+JYj9YSjkMp+hqZn
+	hQwH3By09ATopXUOHolCDUMWfaXSonBdcbPjRKanNrij213bcBSqbO0aeHzrn/HwQ4qyPA
+	NK7p4T0MyRU7yj73GLVqh9VzV2jstBI=
 Authentication-Results: smtp-out2.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1768714223; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=AokTDU0xm3/KCsQELLUUHpIde1C+CQTECiD8I3aGLsc=;
-	b=YCt54Zuv5jBw3kZS5GGQZqGWUTeRqOqpwm0M9T7s0PcG1AkLO4ogJ4krIkpUt0slXaQAIH
-	8xb1xR0RQ0ksO4GCmam7RfrpWcawhB6dEnxwaKwIu+USK2qqkw6yJ5V6vr395Y5AilrLhE
-	eVEU5zUVO3+WBYVy9Z4Td3HfTtsljNk=
+	t=1768714227; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=ov2S0b3a9YnLjXLhZqLitzoywBCJDZPuUYiVIU2/p04=;
+	b=thJiEHiYljCD4FzsukdrZQgygWcmqYOwi3uzGwTZBF/iqQ0ZrerJfp+JYj9YSjkMp+hqZn
+	hQwH3By09ATopXUOHolCDUMWfaXSonBdcbPjRKanNrij213bcBSqbO0aeHzrn/HwQ4qyPA
+	NK7p4T0MyRU7yj73GLVqh9VzV2jstBI=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id CF38F3EA63
-	for <linux-btrfs@vger.kernel.org>; Sun, 18 Jan 2026 05:30:22 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 32C123EA63
+	for <linux-btrfs@vger.kernel.org>; Sun, 18 Jan 2026 05:30:25 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id HKugHu5vbGnScQAAD6G6ig
+	id YGG+NPFvbGnScQAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Sun, 18 Jan 2026 05:30:22 +0000
+	for <linux-btrfs@vger.kernel.org>; Sun, 18 Jan 2026 05:30:25 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/3] btrfs: apply strict alignment checks to extent maps
-Date: Sun, 18 Jan 2026 15:59:57 +1030
-Message-ID: <cover.1768714131.git.wqu@suse.com>
+Subject: [PATCH 2/3] btrfs: tests: prepare extent map tests for strict alignment checks
+Date: Sun, 18 Jan 2026 15:59:59 +1030
+Message-ID: <81ea002b4dd0a522b41fd9f9fd2bec5ef97d515c.1768714131.git.wqu@suse.com>
 X-Mailer: git-send-email 2.52.0
+In-Reply-To: <cover.1768714131.git.wqu@suse.com>
+References: <cover.1768714131.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -65,70 +72,101 @@ Content-Transfer-Encoding: 8bit
 X-Spam-Score: -2.80
 X-Spamd-Result: default: False [-2.80 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
 	R_MISSING_CHARSET(0.50)[];
 	NEURAL_HAM_SHORT(-0.20)[-0.999];
 	MIME_GOOD(-0.10)[text/plain];
-	TO_DN_NONE(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
 	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	ARC_NA(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	FROM_HAS_DN(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	FROM_EQ_ENVFROM(0.00)[];
 	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	ARC_NA(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:email];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
 	MIME_TRACE(0.00)[0:+];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid]
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	RCVD_TLS_ALL(0.00)[]
 X-Spam-Level: 
 X-Spam-Flag: NO
 
-Although we already have strict checks on file extent items from
-tree-checker, we never do proper alignment checks for extent maps.
+Currently the extent map self tests have the following points that will
+cause false alerts for the incoming strict extent map alignment checks:
 
-The reason is mostly due to the failure of self tests and how hard it is
-to touch them, especially for the inode self tests.
+- Inlined extents have their sized smaller than block size
+  Which is not following what the kernel is doing for inlined extents,
+  as btrfs_extent_item_to_extent_map() always uses the fs block size as
+  the length, not the ram_bytes.
 
-I have to say the inode self test is really something, the extent maps
-of the self test makes no sense, and would be rejected by tree-checker if
-they show up in the real world.
-Thankfully only the first few ones are invalid, the remaining ones are
-totally fine.
+  Fix it by using SZ_4K as extent map's length.
 
-The comments are not any better, after the first line, there are no more
-aligned number at all, and the numbers are not offset by 1, but 3 or
-even more.
-Considering we're using decimals for most of our dump-tree and comments,
-no one is really going to note the wrong numbers until one throw them
-into python or whatever calculator one prefers.
+- btrfs_fs_info::sectorsize is not properly initialized
+  As we always use PAGE_SIZE, which can be values larger than 4K.
+  And all the immediate numbers used in the test case is based on 4K
+  fs block size.
 
-The series will mostly rework the inode self tests file extent item
-layout so that they represent the real world better, and update the
-comments and make the poor person who needs to update that selftest
-suffer less in the future.
+  Fix it by using fixed SZ_4K fs block size when allocating the dummy
+  btrfs_fs_info.
 
-Then address the minor problem in the extent-map selftest where
-fs_info->sectorsize is never properly populated for the 4K based self
-test.
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/tests/extent-map-tests.c | 16 +++++++++++-----
+ 1 file changed, 11 insertions(+), 5 deletions(-)
 
-With all those done, we can finally put a proper alignment check into 
-validate_extent_map() which is called for every new, merged or replaced
-extent map.
-
-Qu Wenruo (3):
-  btrfs: tests: remove invalid file extent map tests
-  btrfs: tests: prepare extent map tests for strict alignment checks
-  btrfs: add strict extent map alignment checks
-
- fs/btrfs/extent_map.c             |  12 ++++
- fs/btrfs/tests/extent-map-tests.c |  16 +++--
- fs/btrfs/tests/inode-tests.c      | 111 +++++++++++++++++-------------
- 3 files changed, 87 insertions(+), 52 deletions(-)
-
+diff --git a/fs/btrfs/tests/extent-map-tests.c b/fs/btrfs/tests/extent-map-tests.c
+index aabf825e8d7b..811f36d41101 100644
+--- a/fs/btrfs/tests/extent-map-tests.c
++++ b/fs/btrfs/tests/extent-map-tests.c
+@@ -173,9 +173,12 @@ static int test_case_2(struct btrfs_fs_info *fs_info, struct btrfs_inode *inode)
+ 		return -ENOMEM;
+ 	}
+ 
+-	/* Add [0, 1K) */
++	/*
++	 * Add [0, 1K) which is inlined. And the extent map length must
++	 * be one block.
++	 */
+ 	em->start = 0;
+-	em->len = SZ_1K;
++	em->len = SZ_4K;
+ 	em->disk_bytenr = EXTENT_MAP_INLINE;
+ 	em->disk_num_bytes = 0;
+ 	em->ram_bytes = SZ_1K;
+@@ -219,7 +222,7 @@ static int test_case_2(struct btrfs_fs_info *fs_info, struct btrfs_inode *inode)
+ 
+ 	/* Add [0, 1K) */
+ 	em->start = 0;
+-	em->len = SZ_1K;
++	em->len = SZ_4K;
+ 	em->disk_bytenr = EXTENT_MAP_INLINE;
+ 	em->disk_num_bytes = 0;
+ 	em->ram_bytes = SZ_1K;
+@@ -235,7 +238,7 @@ static int test_case_2(struct btrfs_fs_info *fs_info, struct btrfs_inode *inode)
+ 		ret = -ENOENT;
+ 		goto out;
+ 	}
+-	if (em->start != 0 || btrfs_extent_map_end(em) != SZ_1K ||
++	if (em->start != 0 || btrfs_extent_map_end(em) != SZ_4K ||
+ 	    em->disk_bytenr != EXTENT_MAP_INLINE) {
+ 		test_err(
+ "case2 [0 1K]: ret %d return a wrong em (start %llu len %llu disk_bytenr %llu",
+@@ -1131,8 +1134,11 @@ int btrfs_test_extent_map(void)
+ 	/*
+ 	 * Note: the fs_info is not set up completely, we only need
+ 	 * fs_info::fsid for the tracepoint.
++	 *
++	 * And all the immediate numbers are based on 4K blocksize,
++	 * thus we have to use 4K as sectorsize no matter the page size.
+ 	 */
+-	fs_info = btrfs_alloc_dummy_fs_info(PAGE_SIZE, PAGE_SIZE);
++	fs_info = btrfs_alloc_dummy_fs_info(SZ_4K, SZ_4K);
+ 	if (!fs_info) {
+ 		test_std_err(TEST_ALLOC_FS_INFO);
+ 		return -ENOMEM;
 -- 
 2.52.0
 

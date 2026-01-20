@@ -1,101 +1,89 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from mail-ej1-f53.google.com (mail-ej1-f53.google.com [209.85.218.53])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 03CF540757B
-	for <linux-btrfs@vger.kernel.org>; Tue, 20 Jan 2026 17:29:45 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0BFA12236F7
+	for <linux-btrfs@vger.kernel.org>; Tue, 20 Jan 2026 18:05:33 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.53
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1768930187; cv=none; b=fSed4VJ2rAjRDbXx6v23cVCHA1d3RgcDdE6OmiJ2AvgXs+iNOs9Ai/kFd43H9ZyPPSwWb/mmKxhawcjuaF1J4XNdSh2POLZHqPJZvbwAViZ+BT6+J/1zAakvA/bJx7xvlrw7yYsAhn7l7akODWN/t3CrF1C44aDP5JzFZ+LhnKA=
+	t=1768932337; cv=none; b=mQqGq+IEWTRhsdAPeK1apmD80LwOTUX+xUqBuO/G6B5S5P8+gAd9kjklu965fHyQR3M6noZdKsxtdpkAzDWP/wEOzmO+lCJwb2OzagSEd02TXYHuR2WVUAM2GQq2UKCvYJt2Huioc3RGNdAgG4gLcV6ef0v0ewnMA02S5+CUXzU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1768930187; c=relaxed/simple;
-	bh=+nl2e4PoWLPkVm94j0hmq5w0/ipdEp8JUizHKmURTCU=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=qUt/TIcESq90f6vSOo2+j1FF+EQwsePB/6ZffiiSmA+NgGS+ACXzN60K9x0h0CjOToufSsHi7UG1p8hz0rK18JHASvgoBwBG9dZC4AwWWUXB2Es5dXWBM1S2MComEqtfFz13uWsjPAkoXgV1q0gYHOAy0OLpRzRc89JKRoOmfm8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 3E8445BCC3;
-	Tue, 20 Jan 2026 17:29:44 +0000 (UTC)
-Authentication-Results: smtp-out2.suse.de;
-	none
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 2203E3EA63;
-	Tue, 20 Jan 2026 17:29:44 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id v/YTCIi7b2mtFQAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Tue, 20 Jan 2026 17:29:44 +0000
-Date: Tue, 20 Jan 2026 18:29:42 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/3] btrfs: get rid of
- compressed_bio::compressed_folios[] part 1
-Message-ID: <20260120172942.GH26902@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1768866942.git.wqu@suse.com>
+	s=arc-20240116; t=1768932337; c=relaxed/simple;
+	bh=PLPBMJ+Xul+GCVmsfjqrQBSjs4dMWtSa1Yyl4ZdhPyk=;
+	h=Date:From:To:Cc:Subject:Message-ID:MIME-Version:Content-Type:
+	 Content-Disposition; b=HV9NzCQy/ArasQzz1sX/cvyRQr5X/FgqHEnJQDMm5G9wMqL36fxN48y10pg/N9cJqU+gbuvhA809OZtdxGwNsTGervUG1mjH0h/csu3X7DtZLDW345RP0tDhXDnmHtPndOdqS1hClih2/JCGFAkRVjVqUQeBcNw6Q77nwm5KiS0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=jakstys.lt; spf=pass smtp.mailfrom=jakstys.lt; dkim=pass (2048-bit key) header.d=jakstys.lt header.i=@jakstys.lt header.b=TOEr5Fsa; arc=none smtp.client-ip=209.85.218.53
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=jakstys.lt
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=jakstys.lt
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=jakstys.lt header.i=@jakstys.lt header.b="TOEr5Fsa"
+Received: by mail-ej1-f53.google.com with SMTP id a640c23a62f3a-b870732cce2so866559166b.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 20 Jan 2026 10:05:33 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=jakstys.lt; s=google; t=1768932332; x=1769537132; darn=vger.kernel.org;
+        h=content-disposition:mime-version:message-id:subject:cc:to:from:date
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=UCVqhiNdGxyvTknOJgRK/gQVdV9IWty332W75iVfXug=;
+        b=TOEr5FsasC0qBqi2cwml4hr4XRysGftOZSPVJTFdhU9KstaiF0CRanBOMYdozr6pOi
+         xUN8Y3oY4X4dqOJ08Ho+qAUWwQN3rrOQnRkozCf6o4emQDxW1MxgKA6nm02H2iNuDnu1
+         pqGkU5F6IyPx1D7C+ZxukPo+TD5f2kKQ2V9um9Ej8ijolEuM3KPLjYR3A6RjLJSsk4rA
+         hkATtOv9o/e3kBBBvHVeYgIdl4byeqzyfY6kyMY7v9I+fqEmjH4F3LfFmel5AKmiPl4v
+         eZ9QjDmFnlHl+OJZ6XzscNNZKJoUFh+AeM6woyyccLQDbepSPryGccw1sNw65ggsS6gn
+         ECIw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1768932332; x=1769537132;
+        h=content-disposition:mime-version:message-id:subject:cc:to:from:date
+         :x-gm-gg:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=UCVqhiNdGxyvTknOJgRK/gQVdV9IWty332W75iVfXug=;
+        b=dC7hA0DIje+fKQBjwDOCLaN5ZaNZXoSZJTjmz+pRZICyYweqNA8r5l5KVdGucwXnnW
+         CJmk1uD0n5Nn9sNuBQnInEp1godNCMhug+qcsmRcmP2qOXuRarbUuGaTWBD/Y77zJrVE
+         r/f41n33h1nrLWBvYAmD5MIiUJ5tbrXjmKfGff7fsRGfGhBSZM39GTsCbkKZ87gqpk9A
+         rv2qVdJ2pBAdBt9gG+DNZYmxDyDRazsWUtfR68UT0WM6AmRXNNyo6tpYm/SKRJVSjpZ9
+         2v9MUfPZgPaS6JWxOzuzA6R7qJryOZZDLJ06wb8hdJ9o77LQ4QAIs/XXcgZtHHszjiMo
+         nPwg==
+X-Forwarded-Encrypted: i=1; AJvYcCVegMDCrLR9Hf00fsqDE/5m3O70z1dPV8SfGNwLkWGKoU1GfXzMI9su5W11orrl2js2jEXpcgnq7K5KOA==@vger.kernel.org
+X-Gm-Message-State: AOJu0Yy/MQCbjf/nvkZqdW2dZgUztZeyR4vnUI/FGeTu4MUD2g17B4ul
+	ALhUWDk5bqe7M5Ohrtw6VepQvFPzsWVsZv/LUjp9fbgAv5rvPSeuNwsJ8TdVkmhhTw==
+X-Gm-Gg: AZuq6aLAJ9ypoBw2wKju+UVGhFkhrAAcr4nE326Gwz3KggvAD6Q0mTo3sTLJwOWZh4e
+	5nfDBf27URjla9+LK7NLwCiQFO/w+8gId3G3bQ+1JQnS2nP6oiUrKly31HlxDf3SJtYr68/QFDe
+	64QvobqlpeI4wfJU3wuT6HXQheZBmspDE2l+FRMqiJ/mcBu4/gh5xDt+Bn90C2+jgo8So2vkwFs
+	pktE46SZC0DS2uYFNfQ007vwqHcQwAa+syIjDgvKuDOLUUKJ6USz2YcT4rVvdulVuu/lz5L1GiQ
+	5PpR/F/82ZbyT8BSvqpTLkOB/xK39BZJJ/5a9Bs8Yz48L/h/txUoT87bj4pynXOAJ464+j4mMOr
+	mT9SwfA0lQZuGJpHdV+6DQVq8HKPRH+sNhJRwfrv1MsNdXpdqPvbWNCro6qMo6rvsDZcWw7B+KV
+	lLKrdLCuMVuFmy/BZBTqI1HB6vmF73FqfSyVTHxROQ5V4K4g0pxEtN0nz4pNAIaysLo0NHP29IU
+	UEEpTHP30Jy6vaRu5qnV88nksLjZSY=
+X-Received: by 2002:a17:907:9443:b0:b3b:5fe6:577a with SMTP id a640c23a62f3a-b87968b6ac7mr1274696166b.8.1768932331790;
+        Tue, 20 Jan 2026 10:05:31 -0800 (PST)
+Received: from localhost ([185.104.176.238])
+        by smtp.gmail.com with ESMTPSA id a640c23a62f3a-b879513ea20sm1495498766b.12.2026.01.20.10.05.30
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 20 Jan 2026 10:05:30 -0800 (PST)
+Date: Tue, 20 Jan 2026 20:05:28 +0200
+From: Motiejus =?utf-8?Q?Jak=C5=A1tys?= <motiejus@jakstys.lt>
+To: stable@vger.kernel.org
+Cc: sashal@kernel.org, clm@fb.com, dsterba@suse.com, fdmanana@suse.com, 
+	linux-btrfs@vger.kernel.org, robbieko@synology.com
+Subject: btrfs: fix deadlock in wait_current_trans() due to ignored
+ transaction type
+Message-ID: <kytenpx2jfpyit2rxt2v7owrcxd6qy7amlrxkizdgcmuvhkqjg@tqzxg44mrsey>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <cover.1768866942.git.wqu@suse.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Rspamd-Pre-Result: action=no action;
-	module=replies;
-	Message is reply to one we originated
-X-Spam-Score: -4.00
-X-Rspamd-Pre-Result: action=no action;
-	module=replies;
-	Message is reply to one we originated
-X-Rspamd-Action: no action
-X-Rspamd-Queue-Id: 3E8445BCC3
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Spam-Level: 
-X-Spamd-Result: default: False [-4.00 / 50.00];
-	REPLY(-4.00)[]
-X-Spam-Flag: NO
 
-On Tue, Jan 20, 2026 at 10:30:07AM +1030, Qu Wenruo wrote:
-> Currently we have compressed_bio::compressed_folios[] allowing us to do
-> random access to any compressed folio, then we queue all folios in that
-> array into a real btrfs_bio, and submit that btrfs_bio for read/write.
-> 
-> However there is not really any need to do random access of that array.
-> 
-> All compression/decompression is doing sequential folio access.
-> 
-> The part 1 is some easy and safe conversion on decompression path.
-> 
-> The part 2 will handle the compression part, but unfortunately that will
-> require some changes all compression path, thus will need some extra
-> work.
-> 
-> And only after compression paths also got converted, we still need
-> that compressed_folios[] array for now.
-> 
-> Qu Wenruo (3):
->   btrfs: use folio_iter to handle lzo_decompress_bio()
->   btrfs: use folio_iter to handle zlib_decompress_bio()
->   btrfs: use folio_iter to handle zstd_decompress_bio()
+Dear stable maintainers,
 
-The change makes sense, however there are some low level effects that
-are not desirable in the compression callbacks as they're deep in the IO
-path. Using the folio iterator on stack adds 40 bytes for lzo (144 -> 184),
-and for zstd it's +24 (120 -> 144). This can be fixed by moving the
-iterator to the workspace as we're not using the full slab bucket size
-for either (lzo workspace is 40, zstd is 160).
+Please apply 5037b342825df7094a4906d1e2a9674baab50cb2:
 
-The code increases by ~2800 due to specialized cold versions of the
-decompression callbacks but other than increasing the size it's
-acceptable.
+    btrfs: fix deadlock in wait_current_trans() due to ignored transaction type
+
+To stable kernels v5.10 - v6.18.
+
+This patch fixes a btrfs lock-up, which we have observed a couple of
+times over the last few months.
+
+Motiejus

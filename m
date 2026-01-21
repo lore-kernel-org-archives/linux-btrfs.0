@@ -1,36 +1,36 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EE4E9477E30
-	for <linux-btrfs@vger.kernel.org>; Wed, 21 Jan 2026 11:14:07 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E53D1481224
+	for <linux-btrfs@vger.kernel.org>; Wed, 21 Jan 2026 11:14:09 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1768994049; cv=none; b=BGt1gkl/YyDUxj55fwvMEqeOkpNTPWa0v8vLGrYGXgvamOo/b9rioFnh9yhl65UuqsfCTuV8dBw75H/+RTvL5u50/JTBkuPe3Qke+eIAqJFb7yuwJNQW6h3Ay8mCKp4aGzqXU7RTPGSwoyrQ50MbIfKYTe7hKwfnWiVylkAIEJA=
+	t=1768994050; cv=none; b=eAMbMDE51zkEV0vhrJjtwAlsgHUc3QtFYkWQnVhk+yh+ugrkRfdxBfG0AYwvg3mXD4KjPl58A/pQb/fPSO/X3ojyLWXRuPCK1KciDNSywB3SPFHDmTkR/8APP4wVXPhpQJyThAmDjIfIzG4fenvF7lCQHJOBhe+cdRX3AjTMdIw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1768994049; c=relaxed/simple;
-	bh=nMOl2T0KpAO5544eEo+6Ur6v6RMtVI5rPfV6t8dCNhU=;
+	s=arc-20240116; t=1768994050; c=relaxed/simple;
+	bh=RvwV6Za786E1ozrQb+JPPJvA0E7DivWDEDVY1xGUA1g=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=WBpaxiWMLNflUijmuTjv5nrE+u/NzApGYpNvd/tCogmG1Ro37KJhjygNFkjgEPqpBVPy0AHbBCQ0CS4nBaLz7iL+2RSUDopYEOHNLDhcd7rvjcJFk6kWo9EWxWRst72Gup5GMcB8AR2bR7aauQKiYJ4KOmyYFIfb4IpIm+gbNqE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=eD4sYXyy; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version; b=st1w3a4zYiaETIW7ZOMK4FzHz94b5L/HDQHG58uYLVIfWrmXw36taqqSt0nUkBPJdbG8dybOWUYWKXEBiYvKvbdGZbSLUVHqwrTgsWf6NQY57CSKdw9g3/tM1kwxkP60/hGXRu8kDkWp0hq76GmgsAUZ06Y1A5vIamejk6GrcXs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=V7DHPRdY; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="eD4sYXyy"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 3FE91C19425
-	for <linux-btrfs@vger.kernel.org>; Wed, 21 Jan 2026 11:14:07 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="V7DHPRdY"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id F17DCC19424
+	for <linux-btrfs@vger.kernel.org>; Wed, 21 Jan 2026 11:14:08 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1768994047;
-	bh=nMOl2T0KpAO5544eEo+6Ur6v6RMtVI5rPfV6t8dCNhU=;
+	s=k20201202; t=1768994049;
+	bh=RvwV6Za786E1ozrQb+JPPJvA0E7DivWDEDVY1xGUA1g=;
 	h=From:To:Subject:Date:In-Reply-To:References:From;
-	b=eD4sYXyy0H9umxnh5Dgnvd1yweITz97NnGP2hD+qKh0dZyepW1j5AV/aboog1PBqN
-	 W4yHKx6Drd30BYbFlClqJePtgFrVk6VClKQYr9i8qllCK2w7xrTofw6YCBowCELYkO
-	 XOJh2UX4xm3yFa+TBn1nZKhRqwCbMkpO2W3bJNb9bs3N9rgTLIMtMD1FO+8eMyhFs4
-	 rdt8YBR9VubGEdqOtH3BZ85OtUs91PXKNVeFV4Kw4R4hyUTo1SgfH5n8lTy/drVCrc
-	 zAXMFxdeXBUnUy5DU7rZ6MyDOYJoGrh2JznVTeBj4Pzsyex1TeZHiMP4dCqKbmCtwo
-	 rxLa9bhQK0wcg==
+	b=V7DHPRdYVtfQnQ1MTDb6zOxdUByHuieTufsDQVvt4Qm/oS6El1b+Gr/aQUE2Z9KPK
+	 oxB44D4mRNrigjVpZCYD/M+lORmCplS+EWvqSkBLLxFuxESZ7QmoXeZNnF9aa/XeRM
+	 3cXks/xz3JGHbOsZKG0jj0R+0p9BjkLGPmfJ3gunjbmeMaxts+wfSXLEnMo3s8tWlC
+	 23iWZoH3H94MfdkCmzLrbI0wFbkQFAzcc4OYnG3isHDn8NRwAMKwJ4XKhA7cKqpVup
+	 kRWzck39JXVG+iXWVNRrCtbpxg9JvwZIyMyHKZB1CzFrmSvazR8JilD1h9WFjOllWs
+	 t1ZgpE6R/acpQ==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 12/19] btrfs: remove out label in btrfs_csum_file_blocks()
-Date: Wed, 21 Jan 2026 11:13:46 +0000
-Message-ID: <b9d2d3fb1662771e93fe2f2b935ebb39900161fa.1768993725.git.fdmanana@suse.com>
+Subject: [PATCH 14/19] btrfs: remove out label in lzo_decompress()
+Date: Wed, 21 Jan 2026 11:13:48 +0000
+Message-ID: <6a11cbe85585c51f7c133914e35fa37e2816834e.1768993725.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.47.2
 In-Reply-To: <cover.1768993725.git.fdmanana@suse.com>
 References: <cover.1768993725.git.fdmanana@suse.com>
@@ -50,69 +50,48 @@ and remove the label.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/file-item.c | 16 ++++++++--------
- 1 file changed, 8 insertions(+), 8 deletions(-)
+ fs/btrfs/lzo.c | 15 ++++++---------
+ 1 file changed, 6 insertions(+), 9 deletions(-)
 
-diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index 568f0e0ebdf6..7bd715442f3e 100644
---- a/fs/btrfs/file-item.c
-+++ b/fs/btrfs/file-item.c
-@@ -1134,7 +1134,7 @@ int btrfs_csum_file_blocks(struct btrfs_trans_handle *trans,
+diff --git a/fs/btrfs/lzo.c b/fs/btrfs/lzo.c
+index 83c106ca1c14..2c6deed55811 100644
+--- a/fs/btrfs/lzo.c
++++ b/fs/btrfs/lzo.c
+@@ -486,7 +486,7 @@ int lzo_decompress(struct list_head *ws, const u8 *data_in,
+ 	size_t in_len;
+ 	size_t out_len;
+ 	size_t max_segment_len = workspace_buf_length(fs_info);
+-	int ret = 0;
++	int ret;
+ 
+ 	if (unlikely(srclen < LZO_LEN || srclen > max_segment_len + LZO_LEN * 2))
+ 		return -EUCLEAN;
+@@ -497,10 +497,8 @@ int lzo_decompress(struct list_head *ws, const u8 *data_in,
+ 	data_in += LZO_LEN;
+ 
+ 	in_len = read_compress_length(data_in);
+-	if (unlikely(in_len != srclen - LZO_LEN * 2)) {
+-		ret = -EUCLEAN;
+-		goto out;
+-	}
++	if (unlikely(in_len != srclen - LZO_LEN * 2))
++		return -EUCLEAN;
+ 	data_in += LZO_LEN;
+ 
+ 	out_len = sectorsize;
+@@ -512,8 +510,7 @@ int lzo_decompress(struct list_head *ws, const u8 *data_in,
+ 		"lzo decompression failed, error %d root %llu inode %llu offset %llu",
+ 			  ret, btrfs_root_id(inode->root), btrfs_ino(inode),
+ 			  folio_pos(dest_folio));
+-		ret = -EIO;
+-		goto out;
++		return -EIO;
  	}
- 	ret = PTR_ERR(item);
- 	if (ret != -EFBIG && ret != -ENOENT)
--		goto out;
-+		return ret;
  
- 	if (ret == -EFBIG) {
- 		u32 item_size;
-@@ -1150,7 +1150,7 @@ int btrfs_csum_file_blocks(struct btrfs_trans_handle *trans,
- 		/* We didn't find a csum item, insert one. */
- 		ret = find_next_csum_offset(root, path, &next_offset);
- 		if (ret < 0)
--			goto out;
-+			return ret;
- 		found_next = 1;
- 		goto insert;
- 	}
-@@ -1178,7 +1178,7 @@ int btrfs_csum_file_blocks(struct btrfs_trans_handle *trans,
- 				csum_size, 1);
- 	path->search_for_extension = false;
- 	if (ret < 0)
--		goto out;
-+		return ret;
- 
- 	if (ret > 0) {
- 		if (path->slots[0] == 0)
-@@ -1234,14 +1234,14 @@ int btrfs_csum_file_blocks(struct btrfs_trans_handle *trans,
- 			    btrfs_header_nritems(path->nodes[0])) {
- 				ret = find_next_csum_offset(root, path, &next_offset);
- 				if (ret < 0)
--					goto out;
-+					return ret;
- 				found_next = 1;
- 				goto insert;
- 			}
- 
- 			ret = find_next_csum_offset(root, path, &next_offset);
- 			if (ret < 0)
--				goto out;
-+				return ret;
- 
- 			tmp = (next_offset - bytenr) >> fs_info->sectorsize_bits;
- 			if (tmp <= INT_MAX)
-@@ -1282,7 +1282,7 @@ int btrfs_csum_file_blocks(struct btrfs_trans_handle *trans,
- 	ret = btrfs_insert_empty_item(trans, root, path, &file_key,
- 				      ins_size);
- 	if (ret < 0)
--		goto out;
-+		return ret;
- 	leaf = path->nodes[0];
- csum:
- 	item = btrfs_item_ptr(leaf, path->slots[0], struct btrfs_csum_item);
-@@ -1307,8 +1307,8 @@ int btrfs_csum_file_blocks(struct btrfs_trans_handle *trans,
- 		cond_resched();
- 		goto again;
+ 	ASSERT(out_len <= sectorsize);
+@@ -523,8 +520,8 @@ int lzo_decompress(struct list_head *ws, const u8 *data_in,
+ 		ret = -EIO;
+ 		folio_zero_range(dest_folio, dest_pgoff + out_len, destlen - out_len);
  	}
 -out:
 -	return ret;
@@ -120,7 +99,7 @@ index 568f0e0ebdf6..7bd715442f3e 100644
 +	return 0;
  }
  
- void btrfs_extent_item_to_extent_map(struct btrfs_inode *inode,
+ const struct btrfs_compress_levels  btrfs_lzo_compress = {
 -- 
 2.47.2
 

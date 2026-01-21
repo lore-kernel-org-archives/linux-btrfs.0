@@ -1,36 +1,36 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2C5B5495531
-	for <linux-btrfs@vger.kernel.org>; Wed, 21 Jan 2026 16:30:57 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 944F24218A8
+	for <linux-btrfs@vger.kernel.org>; Wed, 21 Jan 2026 16:31:00 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1769013058; cv=none; b=py9eANutmYWkMA8FDjl9QAAu41Awu/qBlo09DPlKA6WNzYoQcTA0fgS5l90hn1k4/80BoE+PtcP1V0flX48vtgw/pvWpdrilm9SYLvOQUWBkgtsYCHhwaErQQ5eOiWqyD+ytkGwwVYNZ4DfGxDnPp3WQUvoy/YPIg75sV/60IWM=
+	t=1769013060; cv=none; b=kmf5ZM+erxap39ZCiYCrB6n1OhRm9asQ6ogibwNa3fhE6KvUcEWwL4Rc5M5kqsnXrDWFo7hpUEB9MmyLuemrjUaX+h3cYY0g0OmkE5vkQ1AWWdwHnT7Ab+G87HLC+0UYTMxA1/OEcxlTiHPwk51Xt8DO0+lRGssU7Zg039PxihM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1769013058; c=relaxed/simple;
-	bh=fkEhwUkhGJrQgDfjQKNmilXuHCSsAyuUmnMNJyKBJcw=;
+	s=arc-20240116; t=1769013060; c=relaxed/simple;
+	bh=fqg+D9PceXDTkAQibhXYCBJxcdCyKQdtYF8gTEoVwMc=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=pBj5aZcwwxmnOHJD1bNQ4JrYUoAWotaf+WW6qXknwjw2C2Q0LK4/4HSLNcQ/QaWwR8DLuY7vXmRTUeUWIEMjwdLFOp3nWhqJ490lR4enpOekMxzMSizEteffdj3bAfXOWbCw5tCzsinsJ7BUrbnaWuLaG6wUXI3u3m4zy4aK8GU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=CUmxkt34; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version; b=koKgVsx34fnTkEla88uRtxNfffio/TM0hOvOOOOMUlwNsSIWyETurWsssd/8HUma3+Q07UR+tR/OB08YKa8g4dN7OqGQM+ZjEZ4sXUJW34XlYmEcC8ZJ77LjqA7nCVQnhSGe8ihEGjlRHyoXwMfNOZAN7Ame7A4oqbnF0ysBAsk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=t0aPtn5r; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="CUmxkt34"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 60C2BC4CEF1
-	for <linux-btrfs@vger.kernel.org>; Wed, 21 Jan 2026 16:30:57 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="t0aPtn5r"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 04C98C4CEF1
+	for <linux-btrfs@vger.kernel.org>; Wed, 21 Jan 2026 16:30:59 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1769013057;
-	bh=fkEhwUkhGJrQgDfjQKNmilXuHCSsAyuUmnMNJyKBJcw=;
+	s=k20201202; t=1769013060;
+	bh=fqg+D9PceXDTkAQibhXYCBJxcdCyKQdtYF8gTEoVwMc=;
 	h=From:To:Subject:Date:In-Reply-To:References:From;
-	b=CUmxkt34f776GgH8z2Bhkc8Em/OQstXflAw24PCXDcImIBADiaX7juBz2QYvfIOp9
-	 DaeIGSsc/051uj7CzNV5FnyCcV3YFu5IUfL/ly9PULl7YlAD2YRe2I+dmjNykA4nj0
-	 gXNfBYlTs5mUEnZ4UCHYPua7xy0YHEVzcnbgqrkOt98x5S14D5dgdC+2CbsXkqcill
-	 e9Bw73RGuGOILFv5HkmxjYIASlDCI7+v0LUmUPg24W3FPUN5Ku4S340Au2DJ9aukDA
-	 ut3Fyb8tCzIAH3m6Gt09FpZ0+tiLdiRtul2Vt9LeCpLbluLpY2lqQ0fgK4oPQB5pKA
-	 o23UExpXDJRaA==
+	b=t0aPtn5rZXUZ3WMOZRZGUrhztL1S7pioVQUV+CzqUAQHrgdnsnFci+wMw35xnvWbZ
+	 0wghikiKNZlk5UTHtjkA0YdfiXw+icLWnFQM9ZOU2kVn3iV+5GXmdCgs67pAvpFj6D
+	 w4fdIhvmjtnY/gEB0c7/ZJW+e4ieIRCq+Rl2fBN93LhTpcwlXtr8sgheCVzkGtyHCP
+	 httfBqChHXY6qrQyFjlaXk06FZ5eP116wVzIWgPAezhv0lrlhAr7DN+INe6Z4PMAvY
+	 O3CnQEaRaURmeQ14Vb0nUkFdrCkPxy2x6G0yJ7ZNiTn4N48v/CWHJQnDF1UYpECRb3
+	 GgUS0SbuWl/hw==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 10/19] btrfs: remove out label in load_extent_tree_free()
-Date: Wed, 21 Jan 2026 16:30:36 +0000
-Message-ID: <572e0e0de60d363b557653e315824f0b2ae0cf7c.1769012877.git.fdmanana@suse.com>
+Subject: [PATCH v2 13/19] btrfs: remove out label in btrfs_mark_extent_written()
+Date: Wed, 21 Jan 2026 16:30:39 +0000
+Message-ID: <caf261a36800f9d85008208c9ebab7470a759904.1769012877.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.47.2
 In-Reply-To: <cover.1769012876.git.fdmanana@suse.com>
 References: <cover.1769012876.git.fdmanana@suse.com>
@@ -50,51 +50,133 @@ and remove the label.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/block-group.c | 10 ++++------
- 1 file changed, 4 insertions(+), 6 deletions(-)
+ fs/btrfs/file.c | 30 +++++++++++++++---------------
+ 1 file changed, 15 insertions(+), 15 deletions(-)
 
-diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index 11ed303c6640..feec6f513ea0 100644
---- a/fs/btrfs/block-group.c
-+++ b/fs/btrfs/block-group.c
-@@ -761,7 +761,7 @@ static int load_extent_tree_free(struct btrfs_caching_control *caching_ctl)
- next:
- 	ret = btrfs_search_slot(NULL, extent_root, &key, path, 0, 0);
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 1759776d2d57..56ece1109832 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -565,7 +565,7 @@ int btrfs_mark_extent_written(struct btrfs_trans_handle *trans,
+ 	int del_nr = 0;
+ 	int del_slot = 0;
+ 	int recow;
+-	int ret = 0;
++	int ret;
+ 	u64 ino = btrfs_ino(inode);
+ 
+ 	path = btrfs_alloc_path();
+@@ -580,7 +580,7 @@ int btrfs_mark_extent_written(struct btrfs_trans_handle *trans,
+ 
+ 	ret = btrfs_search_slot(trans, root, &key, path, -1, 1);
  	if (ret < 0)
 -		goto out;
 +		return ret;
+ 	if (ret > 0 && path->slots[0] > 0)
+ 		path->slots[0]--;
  
- 	leaf = path->nodes[0];
- 	nritems = btrfs_header_nritems(leaf);
-@@ -792,7 +792,7 @@ static int load_extent_tree_free(struct btrfs_caching_control *caching_ctl)
- 
- 			ret = btrfs_next_leaf(extent_root, path);
- 			if (ret < 0)
--				goto out;
-+				return ret;
- 			if (ret)
- 				break;
- 			leaf = path->nodes[0];
-@@ -823,7 +823,7 @@ static int load_extent_tree_free(struct btrfs_caching_control *caching_ctl)
- 			ret = btrfs_add_new_free_space(block_group, last,
- 						       key.objectid, &space_added);
- 			if (ret)
--				goto out;
-+				return ret;
- 			total_found += space_added;
- 			if (key.type == BTRFS_METADATA_ITEM_KEY)
- 				last = key.objectid +
-@@ -842,9 +842,7 @@ static int load_extent_tree_free(struct btrfs_caching_control *caching_ctl)
- 		path->slots[0]++;
+@@ -589,20 +589,20 @@ int btrfs_mark_extent_written(struct btrfs_trans_handle *trans,
+ 	if (unlikely(key.objectid != ino || key.type != BTRFS_EXTENT_DATA_KEY)) {
+ 		ret = -EINVAL;
+ 		btrfs_abort_transaction(trans, ret);
+-		goto out;
++		return ret;
+ 	}
+ 	fi = btrfs_item_ptr(leaf, path->slots[0],
+ 			    struct btrfs_file_extent_item);
+ 	if (unlikely(btrfs_file_extent_type(leaf, fi) != BTRFS_FILE_EXTENT_PREALLOC)) {
+ 		ret = -EINVAL;
+ 		btrfs_abort_transaction(trans, ret);
+-		goto out;
++		return ret;
+ 	}
+ 	extent_end = key.offset + btrfs_file_extent_num_bytes(leaf, fi);
+ 	if (unlikely(key.offset > start || extent_end < end)) {
+ 		ret = -EINVAL;
+ 		btrfs_abort_transaction(trans, ret);
+-		goto out;
++		return ret;
  	}
  
--	ret = btrfs_add_new_free_space(block_group, last, block_group_end, NULL);
+ 	bytenr = btrfs_file_extent_disk_bytenr(leaf, fi);
+@@ -632,7 +632,7 @@ int btrfs_mark_extent_written(struct btrfs_trans_handle *trans,
+ 							 trans->transid);
+ 			btrfs_set_file_extent_num_bytes(leaf, fi,
+ 							end - other_start);
+-			goto out;
++			return 0;
+ 		}
+ 	}
+ 
+@@ -660,7 +660,7 @@ int btrfs_mark_extent_written(struct btrfs_trans_handle *trans,
+ 							other_end - start);
+ 			btrfs_set_file_extent_offset(leaf, fi,
+ 						     start - orig_offset);
+-			goto out;
++			return 0;
+ 		}
+ 	}
+ 
+@@ -676,7 +676,7 @@ int btrfs_mark_extent_written(struct btrfs_trans_handle *trans,
+ 		}
+ 		if (unlikely(ret < 0)) {
+ 			btrfs_abort_transaction(trans, ret);
+-			goto out;
++			return ret;
+ 		}
+ 
+ 		leaf = path->nodes[0];
+@@ -704,7 +704,7 @@ int btrfs_mark_extent_written(struct btrfs_trans_handle *trans,
+ 		ret = btrfs_inc_extent_ref(trans, &ref);
+ 		if (unlikely(ret)) {
+ 			btrfs_abort_transaction(trans, ret);
+-			goto out;
++			return ret;
+ 		}
+ 
+ 		if (split == start) {
+@@ -713,7 +713,7 @@ int btrfs_mark_extent_written(struct btrfs_trans_handle *trans,
+ 			if (unlikely(start != key.offset)) {
+ 				ret = -EINVAL;
+ 				btrfs_abort_transaction(trans, ret);
+-				goto out;
++				return ret;
+ 			}
+ 			path->slots[0]--;
+ 			extent_end = end;
+@@ -744,7 +744,7 @@ int btrfs_mark_extent_written(struct btrfs_trans_handle *trans,
+ 		ret = btrfs_free_extent(trans, &ref);
+ 		if (unlikely(ret)) {
+ 			btrfs_abort_transaction(trans, ret);
+-			goto out;
++			return ret;
+ 		}
+ 	}
+ 	other_start = 0;
+@@ -762,7 +762,7 @@ int btrfs_mark_extent_written(struct btrfs_trans_handle *trans,
+ 		ret = btrfs_free_extent(trans, &ref);
+ 		if (unlikely(ret)) {
+ 			btrfs_abort_transaction(trans, ret);
+-			goto out;
++			return ret;
+ 		}
+ 	}
+ 	if (del_nr == 0) {
+@@ -783,11 +783,11 @@ int btrfs_mark_extent_written(struct btrfs_trans_handle *trans,
+ 		ret = btrfs_del_items(trans, root, path, del_slot, del_nr);
+ 		if (unlikely(ret < 0)) {
+ 			btrfs_abort_transaction(trans, ret);
+-			goto out;
++			return ret;
+ 		}
+ 	}
 -out:
 -	return ret;
-+	return btrfs_add_new_free_space(block_group, last, block_group_end, NULL);
++
++	return 0;
  }
  
- static inline void btrfs_free_excluded_extents(const struct btrfs_block_group *bg)
+ /*
 -- 
 2.47.2
 

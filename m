@@ -1,36 +1,36 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5625D4657FC
-	for <linux-btrfs@vger.kernel.org>; Wed, 21 Jan 2026 11:14:00 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E7C3744D683
+	for <linux-btrfs@vger.kernel.org>; Wed, 21 Jan 2026 11:14:01 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1768994041; cv=none; b=CT168PYm8bZYwn0AnDaGTjbTsy15QDe0hbBWg3yLcLUq4R8H/yoTDfywJ6PLMfTGFkOgutduXLPH/s6Hdt9PNwN1OeBrt8zNYg5TXEqTMI5vNn90X3g5UIWcgqxh3OFGTu4pfktnB2J7QgUIMR6Uiv+cbafcUgJWoPPkyFYi4Mw=
+	t=1768994042; cv=none; b=ANnbtsDflp5l88/E+MwgLTxR5f0ENmMKqkoDUg0xJu3Z3+rUhI/P3aTIt9+BJULOPjGj9JbOQmJ6pqcBfKc1ftaBj1lPi+Iw8HvjEEiFKcr4xBBa9ZzFake1VWHyUq3t6RwqYLJ3UekQbfYIFyJUAdr687huiY4qqLiJevTV6ec=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1768994041; c=relaxed/simple;
-	bh=AsmOV4maTG+jWOsDDkDbnBzjH7GwC397xYIf8vPLQ8M=;
+	s=arc-20240116; t=1768994042; c=relaxed/simple;
+	bh=FeQcJQPc/0OBlEL40Vy4K1mWq+dGfRncv8KHYp5AjjU=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=Ab75pwlu8TbU+jy99W5xiuv8B5ZyIBxsqsz90FGGldkNbBSAXZeaW64BDg023dsZ3SAoFEg0eT3HJiCb+6cfyxstbvMfmHB8JuH8Gl9TOOZwQX9KgQYfq16UJXKvLCeRQ+BHf/VTioPOROKrwOcCdaLGBH9fpBN4bOf7q0suBNg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Qst8dNM+; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version; b=LS+K4idQ8vsHxbSu8627n8VhTdGo1Aeqhv8Lh8rw9GjwD2Gc6B/r8/WLkrWqF3j5xfpUh5AqZH9H1chOkO6Yj25ztjHW+nMM0rXXPMm8BZpxA4kGWcUdFmpWa4payI+oIVTuThOO++Wi4FYG9OqvhpVTMcW85V8z9AD9ZuDa1C8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Tq/RCKqw; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Qst8dNM+"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 7B3DEC19422
-	for <linux-btrfs@vger.kernel.org>; Wed, 21 Jan 2026 11:13:59 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Tq/RCKqw"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 376DBC116D0
+	for <linux-btrfs@vger.kernel.org>; Wed, 21 Jan 2026 11:14:01 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1768994039;
-	bh=AsmOV4maTG+jWOsDDkDbnBzjH7GwC397xYIf8vPLQ8M=;
+	s=k20201202; t=1768994041;
+	bh=FeQcJQPc/0OBlEL40Vy4K1mWq+dGfRncv8KHYp5AjjU=;
 	h=From:To:Subject:Date:In-Reply-To:References:From;
-	b=Qst8dNM+4NQdw/2FLlpnCR7j8tEusBPaMwArIKGbNHRUDlpIMuoOhUSQSWWa3o64H
-	 kCisgPtPo0LUj5xWIJHdeLol8mWiroWNpGAI9hTMGAG619MpljJDKc9R8U2wTkHli1
-	 EdgBSB+OPc/ZwXb85FZgeWKRnjjZDpwK3IOuptqqT2j7pecUNjVDcVCpnUwzIxGyfx
-	 ZeFTy0UyKGA/5Pe8MIg0iDoRDzmvvKH81Wn4E+VKq2u3J9Wp6t5M6C0+mCASiAKale
-	 sv4t8J/iWs0Xbjfaj1Blk9I+0NKvl5LtTP5GuYxK34kEIdIVJKm4tYr55bt1gQ+xrL
-	 bas93mJ10yDdw==
+	b=Tq/RCKqwr67H5Uk0C64SzCmt5siI4T9okAKkSWUBmx7Wpykf7W1wM+AaOx8e27zgD
+	 Dx2fTpkSuEc6NqEo/aZLP4uUoO3aY4qxK8Ht425XHqq7He/xletnA+kliaqlh8dt++
+	 qNMlcanMmuk2rAiWhWNx4yjhoUZ3FkfJ1ztSQOywvHrZKZ0AGd7fJ2lTspnj6wCh2S
+	 cwFjbAt/8OlVHkQykLB004068X//hIllAdOXKdGnI/S5V4OKhWfdhWRXnTFj2llbUR
+	 C5aGNLG0HPcPo09z+u6pM177o29rC1YcNUBqwES+xDdZVfV3YitQ0rwM6vTBtlTyY/
+	 hiy+Tk62i2gbQ==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 03/19] btrfs: remove pointless out labels from send.c
-Date: Wed, 21 Jan 2026 11:13:37 +0000
-Message-ID: <9684a687dd031bdc506fd15472be9356369a163c.1768993725.git.fdmanana@suse.com>
+Subject: [PATCH 05/19] btrfs: remove pointless out labels from disk-io.c
+Date: Wed, 21 Jan 2026 11:13:39 +0000
+Message-ID: <98dea65a35d1d912e7d01c4b9d76e51aba9a58fb.1768993725.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.47.2
 In-Reply-To: <cover.1768993725.git.fdmanana@suse.com>
 References: <cover.1768993725.git.fdmanana@suse.com>
@@ -44,160 +44,195 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-Some functions (process_extent(), process_recorded_refs_if_needed(),
-changed_inode(), compare_refs() and changed_cb()) have an 'out' label that
-does nothing but return, making it pointless. Simplify this by removing
-the label and returning instead of gotos plus setting the 'ret' variable.
+Some functions (btrfs_validate_extent_buffer() and
+btrfs_start_pre_rw_mount()) have an 'out' label that does nothing but
+return, making it pointless. Simplify this by removing the label and
+returning instead of gotos plus setting the 'ret' variable.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/send.c | 67 +++++++++++++++++++++----------------------------
- 1 file changed, 29 insertions(+), 38 deletions(-)
+ fs/btrfs/disk-io.c | 54 +++++++++++++++++++---------------------------
+ 1 file changed, 22 insertions(+), 32 deletions(-)
 
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index d8127a7120c2..f536b2679bcd 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -6449,7 +6449,7 @@ static int process_extent(struct send_ctx *sctx,
- 	if (sctx->parent_root && !sctx->cur_inode_new) {
- 		ret = is_extent_unchanged(sctx, path, key);
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 32fffb0557e5..cdda16775231 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -369,22 +369,19 @@ int btrfs_validate_extent_buffer(struct extent_buffer *eb,
+ 		btrfs_err_rl(fs_info,
+ 			"bad tree block start, mirror %u want %llu have %llu",
+ 			     eb->read_mirror, eb->start, found_start);
+-		ret = -EIO;
+-		goto out;
++		return -EIO;
+ 	}
+ 	if (unlikely(check_tree_block_fsid(eb))) {
+ 		btrfs_err_rl(fs_info, "bad fsid on logical %llu mirror %u",
+ 			     eb->start, eb->read_mirror);
+-		ret = -EIO;
+-		goto out;
++		return -EIO;
+ 	}
+ 	found_level = btrfs_header_level(eb);
+ 	if (unlikely(found_level >= BTRFS_MAX_LEVEL)) {
+ 		btrfs_err(fs_info,
+ 			"bad tree block level, mirror %u level %d on logical %llu",
+ 			eb->read_mirror, btrfs_header_level(eb), eb->start);
+-		ret = -EIO;
+-		goto out;
++		return -EIO;
+ 	}
+ 
+ 	csum_tree_block(eb, result);
+@@ -399,18 +396,15 @@ int btrfs_validate_extent_buffer(struct extent_buffer *eb,
+ 			      BTRFS_CSUM_FMT_VALUE(csum_size, result),
+ 			      btrfs_header_level(eb),
+ 			      ignore_csum ? ", ignored" : "");
+-		if (unlikely(!ignore_csum)) {
+-			ret = -EUCLEAN;
+-			goto out;
+-		}
++		if (unlikely(!ignore_csum))
++			return -EUCLEAN;
+ 	}
+ 
+ 	if (unlikely(found_level != check->level)) {
+ 		btrfs_err(fs_info,
+ 		"level verify failed on logical %llu mirror %u wanted %u found %u",
+ 			  eb->start, eb->read_mirror, check->level, found_level);
+-		ret = -EIO;
+-		goto out;
++		return -EIO;
+ 	}
+ 	if (unlikely(check->transid &&
+ 		     btrfs_header_generation(eb) != check->transid)) {
+@@ -418,8 +412,7 @@ int btrfs_validate_extent_buffer(struct extent_buffer *eb,
+ "parent transid verify failed on logical %llu mirror %u wanted %llu found %llu",
+ 				eb->start, eb->read_mirror, check->transid,
+ 				btrfs_header_generation(eb));
+-		ret = -EIO;
+-		goto out;
++		return -EIO;
+ 	}
+ 	if (check->has_first_key) {
+ 		const struct btrfs_key *expect_key = &check->first_key;
+@@ -437,14 +430,13 @@ int btrfs_validate_extent_buffer(struct extent_buffer *eb,
+ 				  expect_key->type, expect_key->offset,
+ 				  found_key.objectid, found_key.type,
+ 				  found_key.offset);
+-			ret = -EUCLEAN;
+-			goto out;
++			return -EUCLEAN;
+ 		}
+ 	}
+ 	if (check->owner_root) {
+ 		ret = btrfs_check_eb_owner(eb, check->owner_root);
  		if (ret < 0)
 -			goto out;
 +			return ret;
- 		if (ret) {
- 			ret = 0;
- 			goto out_hole;
-@@ -6469,30 +6469,25 @@ static int process_extent(struct send_ctx *sctx,
- 			 * we have enough commands queued up to justify rev'ing
- 			 * the send spec.
- 			 */
--			if (type == BTRFS_FILE_EXTENT_PREALLOC) {
--				ret = 0;
--				goto out;
--			}
-+			if (type == BTRFS_FILE_EXTENT_PREALLOC)
-+				return 0;
- 
- 			/* Have a hole, just skip it. */
--			if (btrfs_file_extent_disk_bytenr(path->nodes[0], ei) == 0) {
--				ret = 0;
--				goto out;
--			}
-+			if (btrfs_file_extent_disk_bytenr(path->nodes[0], ei) == 0)
-+				return 0;
- 		}
  	}
  
- 	ret = find_extent_clone(sctx, path, key->objectid, key->offset,
- 			sctx->cur_inode_size, &found_clone);
- 	if (ret != -ENOENT && ret < 0)
--		goto out;
-+		return ret;
- 
- 	ret = send_write_or_clone(sctx, path, key, found_clone);
- 	if (ret)
--		goto out;
-+		return ret;
- out_hole:
- 	ret = maybe_send_hole(sctx, path, key);
+ 	/* If this is a leaf block and it is corrupt, just return -EIO. */
+@@ -458,7 +450,6 @@ int btrfs_validate_extent_buffer(struct extent_buffer *eb,
+ 		btrfs_err(fs_info,
+ 		"read time tree block corruption detected on logical %llu mirror %u",
+ 			  eb->start, eb->read_mirror);
 -out:
  	return ret;
  }
  
-@@ -6535,23 +6530,22 @@ static int process_recorded_refs_if_needed(struct send_ctx *sctx, bool at_end,
- 					   int *pending_move,
- 					   int *refs_processed)
- {
--	int ret = 0;
-+	int ret;
+@@ -3075,7 +3066,7 @@ int btrfs_start_pre_rw_mount(struct btrfs_fs_info *fs_info)
+ 		if (ret) {
+ 			btrfs_warn(fs_info,
+ 				   "failed to rebuild free space tree: %d", ret);
+-			goto out;
++			return ret;
+ 		}
+ 	}
  
- 	if (sctx->cur_ino == 0)
--		goto out;
-+		return 0;
- 	if (!at_end && sctx->cur_ino == sctx->cmp_key->objectid &&
- 	    sctx->cmp_key->type <= BTRFS_INODE_EXTREF_KEY)
--		goto out;
-+		return 0;
- 	if (list_empty(&sctx->new_refs) && list_empty(&sctx->deleted_refs))
--		goto out;
-+		return 0;
+@@ -3086,7 +3077,7 @@ int btrfs_start_pre_rw_mount(struct btrfs_fs_info *fs_info)
+ 		if (ret) {
+ 			btrfs_warn(fs_info,
+ 				   "failed to disable free space tree: %d", ret);
+-			goto out;
++			return ret;
+ 		}
+ 	}
  
- 	ret = process_recorded_refs(sctx, pending_move);
- 	if (ret < 0)
+@@ -3097,7 +3088,7 @@ int btrfs_start_pre_rw_mount(struct btrfs_fs_info *fs_info)
+ 	ret = btrfs_delete_orphan_free_space_entries(fs_info);
+ 	if (ret < 0) {
+ 		btrfs_err(fs_info, "failed to delete orphan free space tree entries: %d", ret);
+-		goto out;
++		return ret;
+ 	}
+ 	/*
+ 	 * btrfs_find_orphan_roots() is responsible for finding all the dead
+@@ -3112,17 +3103,17 @@ int btrfs_start_pre_rw_mount(struct btrfs_fs_info *fs_info)
+ 	 */
+ 	ret = btrfs_find_orphan_roots(fs_info);
+ 	if (ret)
 -		goto out;
 +		return ret;
  
- 	*refs_processed = 1;
--out:
--	return ret;
-+	return 0;
- }
+ 	ret = btrfs_cleanup_fs_roots(fs_info);
+ 	if (ret)
+-		goto out;
++		return ret;
  
- static int finish_inode_if_needed(struct send_ctx *sctx, bool at_end)
-@@ -6768,7 +6762,7 @@ static void close_current_inode(struct send_ctx *sctx)
- static int changed_inode(struct send_ctx *sctx,
- 			 enum btrfs_compare_tree_result result)
- {
--	int ret = 0;
-+	int ret;
- 	struct btrfs_key *key = sctx->cmp_key;
- 	struct btrfs_inode_item *left_ii = NULL;
- 	struct btrfs_inode_item *right_ii = NULL;
-@@ -6860,7 +6854,7 @@ static int changed_inode(struct send_ctx *sctx,
- 	if (result == BTRFS_COMPARE_TREE_NEW) {
- 		if (btrfs_inode_nlink(sctx->left_path->nodes[0], left_ii) == 0) {
- 			sctx->ignore_cur_inode = true;
+ 	down_read(&fs_info->cleanup_work_sem);
+ 	if ((ret = btrfs_orphan_cleanup(fs_info->fs_root)) ||
+ 	    (ret = btrfs_orphan_cleanup(fs_info->tree_root))) {
+ 		up_read(&fs_info->cleanup_work_sem);
+-		goto out;
++		return ret;
+ 	}
+ 	up_read(&fs_info->cleanup_work_sem);
+ 
+@@ -3131,7 +3122,7 @@ int btrfs_start_pre_rw_mount(struct btrfs_fs_info *fs_info)
+ 	mutex_unlock(&fs_info->cleaner_mutex);
+ 	if (ret < 0) {
+ 		btrfs_warn(fs_info, "failed to recover relocation: %d", ret);
+-		goto out;
++		return ret;
+ 	}
+ 
+ 	if (btrfs_test_opt(fs_info, FREE_SPACE_TREE) &&
+@@ -3141,24 +3132,24 @@ int btrfs_start_pre_rw_mount(struct btrfs_fs_info *fs_info)
+ 		if (ret) {
+ 			btrfs_warn(fs_info,
+ 				"failed to create free space tree: %d", ret);
 -			goto out;
-+			return 0;
++			return ret;
  		}
- 		sctx->cur_inode_gen = left_gen;
- 		sctx->cur_inode_new = true;
-@@ -6888,7 +6882,7 @@ static int changed_inode(struct send_ctx *sctx,
- 		old_nlinks = btrfs_inode_nlink(sctx->right_path->nodes[0], right_ii);
- 		if (new_nlinks == 0 && old_nlinks == 0) {
- 			sctx->ignore_cur_inode = true;
+ 	}
+ 
+ 	if (cache_opt != btrfs_free_space_cache_v1_active(fs_info)) {
+ 		ret = btrfs_set_free_space_cache_v1_active(fs_info, cache_opt);
+ 		if (ret)
 -			goto out;
-+			return 0;
- 		} else if (new_nlinks == 0 || old_nlinks == 0) {
- 			sctx->cur_inode_new_gen = 1;
- 		}
-@@ -6914,7 +6908,7 @@ static int changed_inode(struct send_ctx *sctx,
- 				ret = process_all_refs(sctx,
- 						BTRFS_COMPARE_TREE_DELETED);
- 				if (ret < 0)
--					goto out;
-+					return ret;
- 			}
++			return ret;
+ 	}
  
- 			/*
-@@ -6935,11 +6929,11 @@ static int changed_inode(struct send_ctx *sctx,
- 						left_ii);
- 				ret = send_create_inode_if_needed(sctx);
- 				if (ret < 0)
--					goto out;
-+					return ret;
+ 	ret = btrfs_resume_balance_async(fs_info);
+ 	if (ret)
+-		goto out;
++		return ret;
  
- 				ret = process_all_refs(sctx, BTRFS_COMPARE_TREE_NEW);
- 				if (ret < 0)
--					goto out;
-+					return ret;
- 				/*
- 				 * Advance send_progress now as we did not get
- 				 * into process_recorded_refs_if_needed in the
-@@ -6953,10 +6947,10 @@ static int changed_inode(struct send_ctx *sctx,
- 				 */
- 				ret = process_all_extents(sctx);
- 				if (ret < 0)
--					goto out;
-+					return ret;
- 				ret = process_all_new_xattrs(sctx);
- 				if (ret < 0)
--					goto out;
-+					return ret;
- 			}
- 		} else {
- 			sctx->cur_inode_gen = left_gen;
-@@ -6970,8 +6964,7 @@ static int changed_inode(struct send_ctx *sctx,
+ 	ret = btrfs_resume_dev_replace_async(fs_info);
+ 	if (ret) {
+ 		btrfs_warn(fs_info, "failed to resume dev_replace");
+-		goto out;
++		return ret;
+ 	}
+ 
+ 	btrfs_qgroup_rescan_resume(fs_info);
+@@ -3169,12 +3160,11 @@ int btrfs_start_pre_rw_mount(struct btrfs_fs_info *fs_info)
+ 		if (ret) {
+ 			btrfs_warn(fs_info,
+ 				   "failed to create the UUID tree %d", ret);
+-			goto out;
++			return ret;
  		}
  	}
  
@@ -207,65 +242,6 @@ index d8127a7120c2..f536b2679bcd 100644
  }
  
  /*
-@@ -7104,20 +7097,20 @@ static int compare_refs(struct send_ctx *sctx, struct btrfs_path *path,
- 	u32 item_size;
- 	u32 cur_offset = 0;
- 	int ref_name_len;
--	int ret = 0;
- 
- 	/* Easy case, just check this one dirid */
- 	if (key->type == BTRFS_INODE_REF_KEY) {
- 		dirid = key->offset;
- 
--		ret = dir_changed(sctx, dirid);
--		goto out;
-+		return dir_changed(sctx, dirid);
- 	}
- 
- 	leaf = path->nodes[0];
- 	item_size = btrfs_item_size(leaf, path->slots[0]);
- 	ptr = btrfs_item_ptr_offset(leaf, path->slots[0]);
- 	while (cur_offset < item_size) {
-+		int ret;
-+
- 		extref = (struct btrfs_inode_extref *)(ptr +
- 						       cur_offset);
- 		dirid = btrfs_inode_extref_parent(leaf, extref);
-@@ -7130,8 +7123,7 @@ static int compare_refs(struct send_ctx *sctx, struct btrfs_path *path,
- 			break;
- 		last_dirid = dirid;
- 	}
--out:
--	return ret;
-+	return 0;
- }
- 
- /*
-@@ -7212,12 +7204,12 @@ static int changed_cb(struct btrfs_path *left_path,
- 
- 	ret = finish_inode_if_needed(sctx, 0);
- 	if (ret < 0)
--		goto out;
-+		return ret;
- 
- 	/* Ignore non-FS objects */
- 	if (key->objectid == BTRFS_FREE_INO_OBJECTID ||
- 	    key->objectid == BTRFS_FREE_SPACE_OBJECTID)
--		goto out;
-+		return 0;
- 
- 	if (key->type == BTRFS_INODE_ITEM_KEY) {
- 		ret = changed_inode(sctx, result);
-@@ -7234,8 +7226,7 @@ static int changed_cb(struct btrfs_path *left_path,
- 			ret = changed_verity(sctx, result);
- 	}
- 
--out:
--	return ret;
-+	return 0;
- }
- 
- static int search_key_again(const struct send_ctx *sctx,
 -- 
 2.47.2
 

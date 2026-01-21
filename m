@@ -1,36 +1,36 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 661B7480960
-	for <linux-btrfs@vger.kernel.org>; Wed, 21 Jan 2026 11:14:07 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 66036477E30
+	for <linux-btrfs@vger.kernel.org>; Wed, 21 Jan 2026 11:14:05 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1768994047; cv=none; b=ggVn1Lr0TpiIvFn2GnCLt0dFG31qkdHeRHZ5hGymYODiYDhGXhY62u4tdfwV8hq2imSNN6QbYb/tYlAy+60QoAQBl9dPlWOgtkJUsmb0yIVvmJeJsuvpXwcBfpDtWxKgndRmBDCeVFNuoVNC0ndV2UUaab1WtO9DH80BIgFV4hE=
+	t=1768994047; cv=none; b=K/dLC912vugvZaDLvEccPxDmTabK4ji+xX2x//n/m17cGXvAkx7rXq6soqydCuos71VFdWghVluGWL9T3/3qPXzYqlG1pGZeRxWz6fdi4h/J+if1kM3QPJhpwETUn+tp3kLFDwTBVOlkeV7k4eA1hlcQg6mgXzeRH7LemBuhbIU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
 	s=arc-20240116; t=1768994047; c=relaxed/simple;
-	bh=AFX21W9vR8YpM42S6GNoRm6OKklQMMJbuHfdq6MEIbU=;
+	bh=TMxAAar5nEPD6prqoNNtiNWr/QDL3Dlw2rQO59urzIU=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=egHc1uKNjF5f9lVg8/vHbAWvHadR0y6Hs042QZigERnT6aLMpWD2K5Wjt3PiocHxB2Pxwi3Iw85HnA8y6z23EXrny4f13caoXI8ShRRg/fm+cPv5Zdn2hMslwCLAT9x9BDoZIBS7IOG/eid7ntpfMk2YpriUU70YU48O8dKn3mA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=JaArpAAQ; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version; b=WsW8DFCxvAsK9apA1WH0J5ioirZMbTNiPeomaGkP9pHc6bd/9T/IlniB56wFJa9WC/4HLVL5LzWTUPGP/jbr8PbEkOYFbCws0EioYEgXP79QmNlAjpcdOFvU5PYBJ89EaRs0oYyCdCUqk3AQheDfSVm3kpTzDS9J9TsprWYbjYo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=sVNujqrg; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="JaArpAAQ"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 61310C19424
-	for <linux-btrfs@vger.kernel.org>; Wed, 21 Jan 2026 11:14:06 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="sVNujqrg"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id A3DDEC19422
+	for <linux-btrfs@vger.kernel.org>; Wed, 21 Jan 2026 11:14:04 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1768994046;
-	bh=AFX21W9vR8YpM42S6GNoRm6OKklQMMJbuHfdq6MEIbU=;
+	s=k20201202; t=1768994045;
+	bh=TMxAAar5nEPD6prqoNNtiNWr/QDL3Dlw2rQO59urzIU=;
 	h=From:To:Subject:Date:In-Reply-To:References:From;
-	b=JaArpAAQukxgMKxFlmoNZByliSwEoZ8IySHGlq5q6mfScorR0Se/BiF4yAzCFajvu
-	 cCifGdb3FI3k1bMYCJKUtb+AgFkjzqcNNs15BVbX+KcoZ7S5kUTf2H6na0aEEBzdsi
-	 MvHwQtJuFB6hEB0f+dAU6ks8ieSpBIfCbupcyPEPWQ3P74ZXAVj7LBEfDngMxy7v3D
-	 R0vOEW5pClEB3AiyNyBHd4JOExaePhTEDKUzTu3RIFzKvZE2pp6GMseTZEher1xSSA
-	 bAZB8c3O5CEM0tUc/xuQQxLfN9J+5K212d85ito90Xk94Mxrjx2rWUKGLF/WXnk7rA
-	 jNXSyinjro5ZA==
+	b=sVNujqrgqse5swZNKJvzLt6MAJCnXD9ytKTM6oJRPDC4LwOLIb9hGLhAH2TzvkaIP
+	 oko3OUtE0MfF84DKkOv6kmFJ87an972dxaiV3rcL59IOjzrQ2LChB3OGB1OExXHQth
+	 KLAiMolNgUNN81xaZxD6yGIT2thFje8PvveVG1XEeBX2PrCaMlJhPwCfhlU8rUICXE
+	 nsbJObNy7iTrLR2UG54a0WRsr9Mfy+CNhg6ZaGb3wr/Vv2oWq0pAyej/RGjXVXr7ZZ
+	 Mxd4j3tC4KxRneXPSG4dJK5Cw5LXz3h6DKG6NC+ZNq8X7jSnzjyQRq39FmxiQxbxOZ
+	 3CxOmvBbCXQew==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 11/19] btrfs: remove out_failed label in find_lock_delalloc_range()
-Date: Wed, 21 Jan 2026 11:13:45 +0000
-Message-ID: <7d2ac3cba9f38bc61dc3a629551b2d2416734e7d.1768993725.git.fdmanana@suse.com>
+Subject: [PATCH 09/19] btrfs: remove pointless out labels from uuid-tree.c
+Date: Wed, 21 Jan 2026 11:13:43 +0000
+Message-ID: <6d959362892c7c5efdbd85dbb8e4bb2df2e57443.1768993725.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.47.2
 In-Reply-To: <cover.1768993725.git.fdmanana@suse.com>
 References: <cover.1768993725.git.fdmanana@suse.com>
@@ -44,36 +44,63 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-There is no point in having the label since all it does is return the
-value in the 'found' variable. Instead make every goto return directly
-and remove the label.
+Some functions (btrfs_uuid_iter_rem() and btrfs_check_uuid_tree_entry())
+have an 'out' label that does nothing but return, making it pointless.
+Simplify this by removing the label and returning instead of gotos plus
+setting the 'ret' variable.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/extent_io.c | 5 ++---
- 1 file changed, 2 insertions(+), 3 deletions(-)
+ fs/btrfs/uuid-tree.c | 16 ++++++----------
+ 1 file changed, 6 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index dfc17c292217..3df399dc8856 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -440,8 +440,7 @@ noinline_for_stack bool find_lock_delalloc_range(struct inode *inode,
- 			loops = 1;
- 			goto again;
- 		} else {
--			found = false;
--			goto out_failed;
-+			return false;
- 		}
+diff --git a/fs/btrfs/uuid-tree.c b/fs/btrfs/uuid-tree.c
+index e3a1310fa7d5..f24c14b9bb2f 100644
+--- a/fs/btrfs/uuid-tree.c
++++ b/fs/btrfs/uuid-tree.c
+@@ -207,15 +207,11 @@ static int btrfs_uuid_iter_rem(struct btrfs_root *uuid_root, u8 *uuid, u8 type,
+ 
+ 	/* 1 - for the uuid item */
+ 	trans = btrfs_start_transaction(uuid_root, 1);
+-	if (IS_ERR(trans)) {
+-		ret = PTR_ERR(trans);
+-		goto out;
+-	}
++	if (IS_ERR(trans))
++		return PTR_ERR(trans);
+ 
+ 	ret = btrfs_uuid_tree_remove(trans, uuid, type, subid);
+ 	btrfs_end_transaction(trans);
+-
+-out:
+ 	return ret;
+ }
+ 
+@@ -235,14 +231,14 @@ static int btrfs_check_uuid_tree_entry(struct btrfs_fs_info *fs_info,
+ 
+ 	if (type != BTRFS_UUID_KEY_SUBVOL &&
+ 	    type != BTRFS_UUID_KEY_RECEIVED_SUBVOL)
+-		goto out;
++		return 0;
+ 
+ 	subvol_root = btrfs_get_fs_root(fs_info, subvolid, true);
+ 	if (IS_ERR(subvol_root)) {
+ 		ret = PTR_ERR(subvol_root);
+ 		if (ret == -ENOENT)
+-			ret = 1;
+-		goto out;
++			return 1;
++		return ret;
  	}
  
-@@ -461,7 +460,7 @@ noinline_for_stack bool find_lock_delalloc_range(struct inode *inode,
+ 	switch (type) {
+@@ -257,7 +253,7 @@ static int btrfs_check_uuid_tree_entry(struct btrfs_fs_info *fs_info,
+ 		break;
  	}
- 	*start = delalloc_start;
- 	*end = delalloc_end;
--out_failed:
+ 	btrfs_put_root(subvol_root);
+-out:
 +
- 	return found;
+ 	return ret;
  }
  
 -- 

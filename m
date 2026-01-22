@@ -1,234 +1,127 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wr1-f68.google.com (mail-wr1-f68.google.com [209.85.221.68])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B325C3BFE53;
-	Thu, 22 Jan 2026 21:22:33 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E9FDB37881C
+	for <linux-btrfs@vger.kernel.org>; Thu, 22 Jan 2026 21:22:51 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.68
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1769116953; cv=none; b=DneEapncicktxAHQaTDarK2k/wiBHLap7AUsKaWpUqwJtcZbc5dpPV3/7IpVklWgaOjia7w/R3mKzUdM3xzbAeJecUXWae7lFohczKwQdYyScnCSPSV7x3+NXZ1GbqCbBY71bEo5lqO2bVey2MU3F0SZncIL0NPRRrkL/XRXswU=
+	t=1769116978; cv=none; b=Wqj25w3XWmTxivl0O5PtcANfqdIT9Qqmn6yiJO3+OHwfGqewcQFahyiny7JONHGr5n5I+sJzEahVufIJmTK2v2pENrmqGTY6e0ZX8weh7vDHKlUHdm2gbpwLZ6RCCeGqk+TcVC+4kqn++w7lnTsxMfRkG3fFnsInnvitYHCIkaw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1769116953; c=relaxed/simple;
-	bh=B+jnuGYgQo83TrhiEfEXS+wVSPnlTv4IH6jqS1kNwwI=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=o7OLoNDyVAW499Xju17MORIvG1sDRtMrTnFQga04PGjwy3TZrk3xk8arQtjlgpZYXpN4W5BvP4DuexHMrFZUMFuXUJq3WlplNowAI99DmgA8t2SmT0yf+/Dhk+98CdNgncznYnWoKpAdTWej4irMmeMuQIqCd8Cm1QP9Oa+18/k=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=PtelV9A+; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1769116978; c=relaxed/simple;
+	bh=rdGCfKHQB7MtPLRMSfcCLtNKr8uShXuBfd7yBYGPCAU=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=i8FQPQhV+C0mYUgnKPGWJ4uE7kcn/zUY1Q4HDBSSuD98REfM5I3Vmi0XUmmMDPp0O66S3LLDnIsHEije9lK2WwC2R7avyofS+2LiTWNH5+WnKD2tTyrBcii72hRxN583S5mtf6qsHod7CY/vpr9wQFij+MQcdem7N/mCMA9SUTo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=jingk.ai; spf=fail smtp.mailfrom=jingkai.info; dkim=pass (2048-bit key) header.d=jingkai-info.20230601.gappssmtp.com header.i=@jingkai-info.20230601.gappssmtp.com header.b=nVWQyNfK; arc=none smtp.client-ip=209.85.221.68
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=jingk.ai
+Authentication-Results: smtp.subspace.kernel.org; spf=fail smtp.mailfrom=jingkai.info
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="PtelV9A+"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 17FF9C116C6;
-	Thu, 22 Jan 2026 21:22:32 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1769116952;
-	bh=B+jnuGYgQo83TrhiEfEXS+wVSPnlTv4IH6jqS1kNwwI=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=PtelV9A+J6P1rl+oOlYGbsHZ1fooIwtDLA3d0XEZZWPBHtbSj578s/6UAKEgNugZ0
-	 cBClTHW6w0IXU6JUah0jpSzRp3z0dWJCW/MYuxFeX6V2L0ug3+a1S+SKgXudxqh3Td
-	 qFWHU1W/15F2YIBxVD3sxAP0jm4vafSiJdUWGawkMJEc9cyIcPd9eZtAEueGlspy8F
-	 Ut/yCcWedetrpag13j9fULX75iJYVfUKdcKPV90id87aoc4f3jx79morkytLrwWoSi
-	 diRmPhYFaPwboREXO3QUmGbvUmuUXCyraEhrThedai1tvbAF0nufYNEtS3QBTN0eoU
-	 63NX5HmxrcMRw==
-Date: Thu, 22 Jan 2026 13:22:31 -0800
-From: "Darrick J. Wong" <djwong@kernel.org>
-To: Christoph Hellwig <hch@lst.de>
-Cc: Eric Biggers <ebiggers@kernel.org>, Al Viro <viro@zeniv.linux.org.uk>,
-	Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>,
-	David Sterba <dsterba@suse.com>, Theodore Ts'o <tytso@mit.edu>,
-	Jaegeuk Kim <jaegeuk@kernel.org>, Chao Yu <chao@kernel.org>,
-	Andrey Albershteyn <aalbersh@redhat.com>,
-	"Matthew Wilcox (Oracle)" <willy@infradead.org>,
-	linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
-	fsverity@lists.linux.dev
-Subject: Re: [PATCH 02/11] fs,fsverity: clear out fsverity_info from common
- code
-Message-ID: <20260122212231.GB5910@frogsfrogsfrogs>
-References: <20260122082214.452153-1-hch@lst.de>
- <20260122082214.452153-3-hch@lst.de>
+	dkim=pass (2048-bit key) header.d=jingkai-info.20230601.gappssmtp.com header.i=@jingkai-info.20230601.gappssmtp.com header.b="nVWQyNfK"
+Received: by mail-wr1-f68.google.com with SMTP id ffacd0b85a97d-435a517be33so979974f8f.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 Jan 2026 13:22:51 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=jingkai-info.20230601.gappssmtp.com; s=20230601; t=1769116968; x=1769721768; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=EIpJ90o01Nm/KQlxcf6QRt/dVhIs/n+pCs62VYHafdY=;
+        b=nVWQyNfKRZQZvK9NJaStKyrqmu6IqHGFVQyVIj7KSJJ/1wxBZYX6p9AMSQHf+PfIju
+         P7p7qXS2RDZ6nOgQuTfnfnhoR2poDqNhGzJ+INLGqTd8LL1gmQUD0R2MaX31uPTDOIH4
+         aNkEUl1EKyoUqwZhkC5unMNGnmTOua1M+2IfVGr129VsX3eOC8gcP549SVV2T1SU7ybp
+         Zr9k23WcDdvAs5/6J0lzN/DbQ8JWohxBYs9DfDOyAYed62ef9lzRTXZo0qZedv5DcbhL
+         3Jr/TBeQZQ3cLpN/dh4lpfSCkgFJpAWtPaO4h6gHHJ65D2Ssn6zgP06EjyDqqLcvjzji
+         rXNA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1769116968; x=1769721768;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
+         :to:cc:subject:date:message-id:reply-to;
+        bh=EIpJ90o01Nm/KQlxcf6QRt/dVhIs/n+pCs62VYHafdY=;
+        b=DfPn33um0rek8vpAIz//H51aiqjV6wxZRqmwAYMXNJomk4PRZnl0eKuf7ASjJycYCw
+         oaCHJCzi6q30a0PK7n/7CWFTrNVD4ZFRIbZkV82/oEeet0QJXfONKWQ4mvL+Xk5garr9
+         6K/p3iaZ0RvMvw4uQfVEkcG0cHTTHEdPMuRlBevr7fARWimYljUcUsgsDOw/s9EH96qY
+         2JA2FQalT1Inlj1BCRrljZHPeZfPIua3Ig/a+yU4BDhi1ZZ5IcX6MWvSV/IV6NdKrD7u
+         hYDdYDb7wJfeN9cM3ZHGXACKOpX2yOqqXJZvsqjj0Pa2G0K8Bd+75gIzdAp8L0l0yXjw
+         wdsg==
+X-Forwarded-Encrypted: i=1; AJvYcCVaGhPBtbPKuNwwj8xTx0pzGICjHa+d5JxNm/1+dGYUkNHYOVUpXIof/S1l66hpQBi+xsqVBCT2ptb3lQ==@vger.kernel.org
+X-Gm-Message-State: AOJu0Ywj+f3I+z4TgdR/wzE6ERKoaEqrosbCVon1BfOtyalBbx5XBTk0
+	lj84ndmuSU7RQ6EkmwXPreO0XMEoRT3lt//bW6W1FW4U8QqN2oLy8ZqsPuxqZHpUAhw=
+X-Gm-Gg: AZuq6aIyzCSCHzA0b3IXXpnApX7ULbJ821q0yYD7U1Xg+Xd2qh3hza8TCdR44lwByiF
+	8yfONcUXrjBEnC3URSWOwp/20K68EBNF8wsUIMriTaC6kG46jbWCXE48+hFxxMAz13nRvjSvQVw
+	GYHWB5SnEYhh/cE/8eS675Yt4YnoxS4wvz0ZvfG5BsY00/zzV/DGFMzjeP9BxVOGl4IUbojZALn
+	yIkmik1o77cVX/gLyNVvg0VuZprrLihuaDx1doXMWcUxuNzEK8RqrLtr1MUSXRh4RGZEzj88BJn
+	wgcK6jqap985Ik5SFwFMTHFanoqNIUBpw3yCZ6ujJHjt9pVpriZKsSkXaeWbsBiGqM8P/zNwT3O
+	v1+ftMjlqLwqjZEl/IXqEaeYYHHs5JoUwAhtHkY0iT3Q1AW+XWFZBV8JjPDq9B6yuzUNG0xExDt
+	AzuWfxP3Fqdk0zHu0gXoGQkl63yoGbfmcINvb2kwnn4CZPkRdHaPLHpkGLN2Da/44Yw3lh+SIz2
+	otFTiSDGoPYVY3dmNotnbuWWHaGI/UqUJ1pRi/gv3o=
+X-Received: by 2002:a05:6000:2dc4:b0:429:b751:7935 with SMTP id ffacd0b85a97d-435b16280damr1625650f8f.56.1769116968488;
+        Thu, 22 Jan 2026 13:22:48 -0800 (PST)
+Received: from localhost.localdomain ([2a01:4b00:b002:8300:6d4:c4ff:fe4e:6522])
+        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-435b1f74b15sm1488683f8f.35.2026.01.22.13.22.47
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Thu, 22 Jan 2026 13:22:47 -0800 (PST)
+From: Jingkai Tan <contact@jingk.ai>
+To: Chris Mason <clm@fb.com>,
+	David Sterba <dsterba@suse.com>
+Cc: Qu Wenruo <wqu@suse.com>,
+	linux-btrfs@vger.kernel.org,
+	Jingkai Tan <contact@jingk.ai>
+Subject: [PATCH v2] btrfs: handle return value assignment in btrfs_finish_extent_commit()
+Date: Thu, 22 Jan 2026 21:14:10 +0000
+Message-ID: <20260122212244.19518-1-contact@jingk.ai>
+X-Mailer: git-send-email 2.52.0
+In-Reply-To: <3de1ff71-2c74-4dd8-a69f-25c80a313425@suse.com>
+References: <3de1ff71-2c74-4dd8-a69f-25c80a313425@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20260122082214.452153-3-hch@lst.de>
+Content-Transfer-Encoding: 8bit
 
-On Thu, Jan 22, 2026 at 09:21:58AM +0100, Christoph Hellwig wrote:
-> Directly remove the fsverity_info from the hash and free it from
-> clear_inode instead of requiring file systems to handle it.
-> 
-> Signed-off-by: Christoph Hellwig <hch@lst.de>
+Coverity (ID: 1226842) reported that the return value of
+btrfs_discard_extent() is assigned to ret but is immediately
+overwritten by unpin_extent_range() without being checked.
 
-Also seems like a reasonable hoist, so
-Reviewed-by: "Darrick J. Wong" <djwong@kernel.org>
+Use the same error handling that is used for btrfs_discard_extent
+in extent-tree.c
 
---D
+Signed-off-by: Jingkai Tan <contact@jingk.ai>
+---
+ Thanks for the feedback Wenruo. Updated to use the same error handling
+ as the call to btrfs_discard_extent further down in
+ btrfs_finish_extent_commit.
+ 
+ Apologies as I have just started learning how to contribute to the linux
+ kernel and am looking for relatively simple low hanging fruits to
+ familarize myself with the process.
 
-> ---
->  fs/btrfs/inode.c         | 10 +++-------
->  fs/ext4/super.c          |  1 -
->  fs/f2fs/inode.c          |  1 -
->  fs/inode.c               |  9 +++++++++
->  fs/verity/open.c         |  3 +--
->  include/linux/fsverity.h | 26 ++------------------------
->  6 files changed, 15 insertions(+), 35 deletions(-)
-> 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index a2b5b440637e..67c64efc5099 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -34,7 +34,6 @@
->  #include <linux/sched/mm.h>
->  #include <linux/iomap.h>
->  #include <linux/unaligned.h>
-> -#include <linux/fsverity.h>
->  #include "misc.h"
->  #include "ctree.h"
->  #include "disk-io.h"
-> @@ -5571,11 +5570,8 @@ void btrfs_evict_inode(struct inode *inode)
->  
->  	trace_btrfs_inode_evict(inode);
->  
-> -	if (!root) {
-> -		fsverity_cleanup_inode(inode);
-> -		clear_inode(inode);
-> -		return;
-> -	}
-> +	if (!root)
-> +		goto clear_inode;
->  
->  	fs_info = inode_to_fs_info(inode);
->  	evict_inode_truncate_pages(inode);
-> @@ -5675,7 +5671,7 @@ void btrfs_evict_inode(struct inode *inode)
->  	 * to retry these periodically in the future.
->  	 */
->  	btrfs_remove_delayed_node(BTRFS_I(inode));
-> -	fsverity_cleanup_inode(inode);
-> +clear_inode:
->  	clear_inode(inode);
->  }
->  
-> diff --git a/fs/ext4/super.c b/fs/ext4/super.c
-> index 87205660c5d0..86131f4d8718 100644
-> --- a/fs/ext4/super.c
-> +++ b/fs/ext4/super.c
-> @@ -1527,7 +1527,6 @@ void ext4_clear_inode(struct inode *inode)
->  		EXT4_I(inode)->jinode = NULL;
->  	}
->  	fscrypt_put_encryption_info(inode);
-> -	fsverity_cleanup_inode(inode);
->  }
->  
->  static struct inode *ext4_nfs_get_inode(struct super_block *sb,
-> diff --git a/fs/f2fs/inode.c b/fs/f2fs/inode.c
-> index 38b8994bc1b2..ee332b994348 100644
-> --- a/fs/f2fs/inode.c
-> +++ b/fs/f2fs/inode.c
-> @@ -1000,7 +1000,6 @@ void f2fs_evict_inode(struct inode *inode)
->  	}
->  out_clear:
->  	fscrypt_put_encryption_info(inode);
-> -	fsverity_cleanup_inode(inode);
->  	clear_inode(inode);
->  }
->  
-> diff --git a/fs/inode.c b/fs/inode.c
-> index 379f4c19845c..38dbdfbb09ba 100644
-> --- a/fs/inode.c
-> +++ b/fs/inode.c
-> @@ -14,6 +14,7 @@
->  #include <linux/cdev.h>
->  #include <linux/memblock.h>
->  #include <linux/fsnotify.h>
-> +#include <linux/fsverity.h>
->  #include <linux/mount.h>
->  #include <linux/posix_acl.h>
->  #include <linux/buffer_head.h> /* for inode_has_buffers */
-> @@ -773,6 +774,14 @@ void dump_mapping(const struct address_space *mapping)
->  
->  void clear_inode(struct inode *inode)
->  {
-> +	/*
-> +	 * Only IS_VERITY() inodes can have verity info, so start by checking
-> +	 * for IS_VERITY() (which is faster than retrieving the pointer to the
-> +	 * verity info).  This minimizes overhead for non-verity inodes.
-> +	 */
-> +	if (IS_ENABLED(CONFIG_FS_VERITY) && IS_VERITY(inode))
-> +		fsverity_cleanup_inode(inode);
-> +
->  	/*
->  	 * We have to cycle the i_pages lock here because reclaim can be in the
->  	 * process of removing the last page (in __filemap_remove_folio())
-> diff --git a/fs/verity/open.c b/fs/verity/open.c
-> index 2aa5eae5a540..090cb77326ee 100644
-> --- a/fs/verity/open.c
-> +++ b/fs/verity/open.c
-> @@ -384,14 +384,13 @@ int __fsverity_file_open(struct inode *inode, struct file *filp)
->  }
->  EXPORT_SYMBOL_GPL(__fsverity_file_open);
->  
-> -void __fsverity_cleanup_inode(struct inode *inode)
-> +void fsverity_cleanup_inode(struct inode *inode)
->  {
->  	struct fsverity_info **vi_addr = fsverity_info_addr(inode);
->  
->  	fsverity_free_info(*vi_addr);
->  	*vi_addr = NULL;
->  }
-> -EXPORT_SYMBOL_GPL(__fsverity_cleanup_inode);
->  
->  void __init fsverity_init_info_cache(void)
->  {
-> diff --git a/include/linux/fsverity.h b/include/linux/fsverity.h
-> index 86fb1708676b..ea1ed2e6c2f9 100644
-> --- a/include/linux/fsverity.h
-> +++ b/include/linux/fsverity.h
-> @@ -179,26 +179,6 @@ int fsverity_get_digest(struct inode *inode,
->  /* open.c */
->  
->  int __fsverity_file_open(struct inode *inode, struct file *filp);
-> -void __fsverity_cleanup_inode(struct inode *inode);
-> -
-> -/**
-> - * fsverity_cleanup_inode() - free the inode's verity info, if present
-> - * @inode: an inode being evicted
-> - *
-> - * Filesystems must call this on inode eviction to free the inode's verity info.
-> - */
-> -static inline void fsverity_cleanup_inode(struct inode *inode)
-> -{
-> -	/*
-> -	 * Only IS_VERITY() inodes can have verity info, so start by checking
-> -	 * for IS_VERITY() (which is faster than retrieving the pointer to the
-> -	 * verity info).  This minimizes overhead for non-verity inodes.
-> -	 */
-> -	if (IS_VERITY(inode))
-> -		__fsverity_cleanup_inode(inode);
-> -	else
-> -		VFS_WARN_ON_ONCE(*fsverity_info_addr(inode) != NULL);
-> -}
->  
->  /* read_metadata.c */
->  
-> @@ -250,10 +230,6 @@ static inline int __fsverity_file_open(struct inode *inode, struct file *filp)
->  	return -EOPNOTSUPP;
->  }
->  
-> -static inline void fsverity_cleanup_inode(struct inode *inode)
-> -{
-> -}
-> -
->  /* read_metadata.c */
->  
->  static inline int fsverity_ioctl_read_metadata(struct file *filp,
-> @@ -331,4 +307,6 @@ static inline int fsverity_file_open(struct inode *inode, struct file *filp)
->  	return 0;
->  }
->  
-> +void fsverity_cleanup_inode(struct inode *inode);
-> +
->  #endif	/* _LINUX_FSVERITY_H */
-> -- 
-> 2.47.3
-> 
-> 
+ fs/btrfs/extent-tree.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index e4cae34620d1..67d6afb04bc1 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2837,9 +2837,17 @@ int btrfs_finish_extent_commit(struct btrfs_trans_handle *trans)
+ 	while (!TRANS_ABORTED(trans) && cached_state) {
+ 		struct extent_state *next_state;
+ 
+-		if (btrfs_test_opt(fs_info, DISCARD_SYNC))
++		if (btrfs_test_opt(fs_info, DISCARD_SYNC)) {
+ 			ret = btrfs_discard_extent(fs_info, start,
+ 						   end + 1 - start, NULL);
++			if (ret) {
++				const char *errstr = btrfs_decode_error(ret);
++
++				btrfs_warn(fs_info,
++					   "discard failed for extent [%llu, %llu]: errno=%d %s",
++					   start, end, ret, errstr);
++			}
++		}
+ 
+ 		next_state = btrfs_next_extent_state(unpin, cached_state);
+ 		btrfs_clear_extent_dirty(unpin, start, end, &cached_state);
+-- 
+2.52.0
+

@@ -1,140 +1,201 @@
-Received: from mail-wm1-f67.google.com (mail-wm1-f67.google.com [209.85.128.67])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 93ED731986E
-	for <linux-btrfs@vger.kernel.org>; Thu, 22 Jan 2026 20:41:36 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.67
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3589B3A731F;
+	Thu, 22 Jan 2026 21:21:22 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1769114499; cv=none; b=dshCC1hSJTZb1nKnnocmM2TEiXkrvcScG0CmcQWFE3nC/6d1XpLh9gqG1a5y4TCDM+4SA06SUirNJp5BlAUKTimAmxafheoKkS6SwKpmL0B1bPrUOraJbHaLVtw1H+WVtLPcVeZQs5EeK+0prsq2VeoWg4mEoBLzC1UAgNePRTc=
+	t=1769116883; cv=none; b=CUiXCOz/v2IecDDaHfAJH4Yo6oDwqUQYbs/YHxRkRvcVpvnhf6Sq+WRGA8gS69t8uwagYNMYL7U4AolHZcSpBZh6XK1J2hBP/FujwVvf4uQIb4q9n6HMULaU/LSlIqrAy3evyzIPgGnWtglJHGOLdHUth8olDyiTaM416UWTysg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1769114499; c=relaxed/simple;
-	bh=ToP2wZi8J8lq8iZAElDrWtKd7iwAuCoCTLq9h5VhZk8=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=uc0w34rfgYznGjPbflpMwD3uQ+qNO5OiJh0tY02L+mJ/qM+zDTAakOGuO/N4tUlctpSodtKKzffADaGFhOHQEFwtEQ+FfH0EiVnzgEFFd1UUl+loMCTp7SbMUVND2/HgBhueQUCCjT1hq0Ec1cdubi3l1nR4eBiaCQZahSfvcWc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=JF/28zkk; arc=none smtp.client-ip=209.85.128.67
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1769116883; c=relaxed/simple;
+	bh=HuuV2V7oQdXHpZv2p1xtrH9rIpKzASmyg1enkricVyM=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=c5FgbtpapsjTpBSKsum4rc2L/SrQmuS+uyqWVdrZ4bXdcTTyvHbBaGhSOXOIrdfOVoVd8rFFVdbhwI45tQ/0TnXLIYO4bKVNccA3qgJi91/scTRuxyhEe71rLRRG5xNnDO5emW9rZWdJiNGZoDloGyKU6iqDBSF/ddqhYtC/GNc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=vH0CIJFD; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="JF/28zkk"
-Received: by mail-wm1-f67.google.com with SMTP id 5b1f17b1804b1-47ee3da7447so11286265e9.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 Jan 2026 12:41:36 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1769114491; x=1769719291; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to;
-        bh=30RcJPudQvo2MeI32/f0AT1tgEbvd+bGjfYhCieZLYY=;
-        b=JF/28zkkEZGT7TJcTakYK7mU2UsH0Nro4G06FwZ/Vvr0W4l8bqJEiI93WGSWkgQbs+
-         CuBmS8aRNB9xxcPQCy7n7eZgba775Pfmi0WZl7KnCAfSoHaZyQd1mIlaQJJCWM2zmQ8Q
-         71HoUS9MzTrUQm8ODpfxXR+PrEUEHKSs2syA9hgvQi6Yqv0ysIq0F20jY8frN82nFBc5
-         QPXqP4wDS66HlV23yoX3Gi32G2AMyuDYXFYNt74cmA9JNWi5yCUKKtp5kcVtp5zg+mG0
-         zHCeuoacOd+sSGym0WDaNRAQc2n+scWBpGH9jwJv5NwewSEBIqD2Ompo3+zPhU0Yngxo
-         kePA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1769114491; x=1769719291;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=30RcJPudQvo2MeI32/f0AT1tgEbvd+bGjfYhCieZLYY=;
-        b=UpU9Yd820WaffCiLqqsR71cm5eEs3lHKHu8H+QaxzKp3oSaDs3a5fkW+P96xBO+F6k
-         ZAm+CGYltCdz2a4FaXS6KV+7h0y0abX8YZDmpvwNMIdJKADniMcHUE3cqb3MnoMvQWC0
-         Oq97Z/NwqiGvg/RwrMu3TKqM4mz4aCsCt29zPOS95ta+F2eEu5QyUMxTcAcmvefS3W/N
-         ieKoKxc9mma45GFFUfbZVTRpiVCy2C++rea7tuGkAdndVnaO9plVsfeQeTHCq9elWLKG
-         dfV5fT/40GUnCli4W1wcUhTzJ011Y9aK7PYNhjvGhSXa0JPIzrefEMmsy6V4cvBDRl5a
-         FZzQ==
-X-Gm-Message-State: AOJu0YxneM+3jgC0pM1pt6mH+BZPp2xNOeYi6bRCrjKzOcicYr6CEP+h
-	7tMjTyS1r3gWzdad80m548s0425BkOaUjOR0By3oOY479DjsDS7arMVDLH24PHQjgUo=
-X-Gm-Gg: AZuq6aLeDEWwh3hcSRQOz6d3K+F0UwYmUlqR8PQ4jE7Dpehr5eW4IB4DYIhPsEKrz36
-	5TLgG0DhNJAwne/B+LMXCU3yQXAJyEiwH6/v6rH13UX8bYqlewOCut6cjLx2KFLbsqCjj3hLx3q
-	7rfy341zpJWJWDMYhz68EcGRBlSuSHQ0J+Zwm1mk4o4JbczAYivWHrLJ7sDjcJUukEqF877G0eN
-	q8bOpPiWEBubH0Q520ZAuENMGNiyYliY/NAYngL/5Rg1z+TU0Qj8v0gSTagC5YZPKOELyAB1Fc5
-	U6nyHXjylnRQScDVLjIX1zrJowBdaMc45nc/0ymU+gjvonjP3WMsq0gxHq9FgudSZ2E5SRvfhmE
-	zuzPJ2g1w33JBECiU3oPAqUCQrXKNwbJO7mE2qKr2blC1AYZAkQMb+lCMbJbE0HemW688AXF2+O
-	/Fud0NNqaMm3s1KCTMwtoaxutEswaS0bA5lMhINHY=
-X-Received: by 2002:a05:600c:8b65:b0:47d:3690:7490 with SMTP id 5b1f17b1804b1-4804c95c541mr15156945e9.9.1769114491406;
-        Thu, 22 Jan 2026 12:41:31 -0800 (PST)
-Received: from ?IPV6:2403:580d:fda1::299? (2403-580d-fda1--299.ip6.aussiebb.net. [2403:580d:fda1::299])
-        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2a802daa65fsm1065975ad.12.2026.01.22.12.41.29
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 22 Jan 2026 12:41:30 -0800 (PST)
-Message-ID: <3de1ff71-2c74-4dd8-a69f-25c80a313425@suse.com>
-Date: Fri, 23 Jan 2026 07:11:26 +1030
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="vH0CIJFD"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 38BCFC116C6;
+	Thu, 22 Jan 2026 21:21:22 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1769116882;
+	bh=HuuV2V7oQdXHpZv2p1xtrH9rIpKzASmyg1enkricVyM=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=vH0CIJFDafluSg7UmFnP+wjTXB3u+C5rT5g6Fzh5Bi3H+8e35YmszXezwTTlhPksL
+	 8WxIH7HbfjYE2Y/mAGaDpnlM+ypNi1FUDuIOso3Tirt6B66U+S/ZS6qetMBTOtw4UL
+	 9avQGMG35wKclM34S2LK+YX86Wqw07SE1YJp95eXHsOuq75HZatUlF+9lElX5oEPzM
+	 ll9Q/xIg+wx2+3Fk7N5zO03sT/D0ws0naqyXinxDVz6+IxEoM2QT+9BMd30BSdyCpD
+	 Us+c3wHkr/4tHMAzzKnwV0Kt9d6uoc19ORrVXfsl0nltbSvLUvvDjTRIfzmbDMkiyR
+	 PrHGcC77U9wQA==
+Date: Thu, 22 Jan 2026 13:21:21 -0800
+From: "Darrick J. Wong" <djwong@kernel.org>
+To: Christoph Hellwig <hch@lst.de>
+Cc: Eric Biggers <ebiggers@kernel.org>, Al Viro <viro@zeniv.linux.org.uk>,
+	Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>,
+	David Sterba <dsterba@suse.com>, Theodore Ts'o <tytso@mit.edu>,
+	Jaegeuk Kim <jaegeuk@kernel.org>, Chao Yu <chao@kernel.org>,
+	Andrey Albershteyn <aalbersh@redhat.com>,
+	"Matthew Wilcox (Oracle)" <willy@infradead.org>,
+	linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
+	fsverity@lists.linux.dev
+Subject: Re: [PATCH 01/11] fs,fsverity: reject size changes on fsverity files
+ in setattr_prepare
+Message-ID: <20260122212121.GA5910@frogsfrogsfrogs>
+References: <20260122082214.452153-1-hch@lst.de>
+ <20260122082214.452153-2-hch@lst.de>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: remove unused return value assignment in
- btrfs_finish_extent_commit()
-To: Jingkai Tan <contact@jingk.ai>, Chris Mason <clm@fb.com>,
- David Sterba <dsterba@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-References: <20260122175325.7148-1-contact@jingk.ai>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <20260122175325.7148-1-contact@jingk.ai>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260122082214.452153-2-hch@lst.de>
 
-
-
-在 2026/1/23 04:23, Jingkai Tan 写道:
-> Coverity (ID: 1226842) reported that the return value of
-> btrfs_discard_extent() is assigned to ret but is immediately
-> overwritten by unpin_extent_range() without being checked.
+On Thu, Jan 22, 2026 at 09:21:57AM +0100, Christoph Hellwig wrote:
+> Add the check to reject truncates of fsverity files directly to
+> setattr_prepare instead of requiring the file system to handle it.
+> Besides removing boilerplate code, this also fixes the complete lack of
+> such check in btrfs.
 > 
-> Signed-off-by: Jingkai Tan <contact@jingk.ai>
+> Fixes: 146054090b08 ("btrfs: initial fsverity support")
+> Signed-off-by: Christoph Hellwig <hch@lst.de>
+
+Seems reasonable to me.
+Reviewed-by: "Darrick J. Wong" <djwong@kernel.org>
+
+--D
+
 > ---
->   fs/btrfs/extent-tree.c | 4 ++--
->   1 file changed, 2 insertions(+), 2 deletions(-)
+>  fs/attr.c                | 12 +++++++++++-
+>  fs/ext4/inode.c          |  4 ----
+>  fs/f2fs/file.c           |  4 ----
+>  fs/verity/open.c         |  8 --------
+>  include/linux/fsverity.h | 25 -------------------------
+>  5 files changed, 11 insertions(+), 42 deletions(-)
 > 
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index e4cae34620d1..0d69c3067ed8 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -2838,8 +2838,8 @@ int btrfs_finish_extent_commit(struct btrfs_trans_handle *trans)
->   		struct extent_state *next_state;
->   
->   		if (btrfs_test_opt(fs_info, DISCARD_SYNC))
-> -			ret = btrfs_discard_extent(fs_info, start,
-> -						   end + 1 - start, NULL);
-> +			btrfs_discard_extent(fs_info, start,
-> +					     end + 1 - start, NULL);
-
-If you really want to silent coverity, do a proper error handling other 
-than blindly removing the return value.
-
-Especially there is already a proper error handling of 
-btrfs_discard_extent() later in the function.
-
->   
->   		next_state = btrfs_next_extent_state(unpin, cached_state);
->   		btrfs_clear_extent_dirty(unpin, start, end, &cached_state);
-
+> diff --git a/fs/attr.c b/fs/attr.c
+> index b9ec6b47bab2..e7d7c6d19fe9 100644
+> --- a/fs/attr.c
+> +++ b/fs/attr.c
+> @@ -169,7 +169,17 @@ int setattr_prepare(struct mnt_idmap *idmap, struct dentry *dentry,
+>  	 * ATTR_FORCE.
+>  	 */
+>  	if (ia_valid & ATTR_SIZE) {
+> -		int error = inode_newsize_ok(inode, attr->ia_size);
+> +		int error;
+> +
+> +		/*
+> +		 * Verity files are immutable, so deny truncates.  This isn't
+> +		 * covered by the open-time check because sys_truncate() takes a
+> +		 * path, not an open file.
+> +		 */
+> +		if (IS_ENABLED(CONFIG_FS_VERITY) && IS_VERITY(inode))
+> +			return -EPERM;
+> +
+> +		error = inode_newsize_ok(inode, attr->ia_size);
+>  		if (error)
+>  			return error;
+>  	}
+> diff --git a/fs/ext4/inode.c b/fs/ext4/inode.c
+> index 0c466ccbed69..8c2ef98fa530 100644
+> --- a/fs/ext4/inode.c
+> +++ b/fs/ext4/inode.c
+> @@ -5835,10 +5835,6 @@ int ext4_setattr(struct mnt_idmap *idmap, struct dentry *dentry,
+>  	if (error)
+>  		return error;
+>  
+> -	error = fsverity_prepare_setattr(dentry, attr);
+> -	if (error)
+> -		return error;
+> -
+>  	if (is_quota_modification(idmap, inode, attr)) {
+>  		error = dquot_initialize(inode);
+>  		if (error)
+> diff --git a/fs/f2fs/file.c b/fs/f2fs/file.c
+> index d7047ca6b98d..da029fed4e5a 100644
+> --- a/fs/f2fs/file.c
+> +++ b/fs/f2fs/file.c
+> @@ -1074,10 +1074,6 @@ int f2fs_setattr(struct mnt_idmap *idmap, struct dentry *dentry,
+>  	if (err)
+>  		return err;
+>  
+> -	err = fsverity_prepare_setattr(dentry, attr);
+> -	if (err)
+> -		return err;
+> -
+>  	if (unlikely(IS_IMMUTABLE(inode)))
+>  		return -EPERM;
+>  
+> diff --git a/fs/verity/open.c b/fs/verity/open.c
+> index 77b1c977af02..2aa5eae5a540 100644
+> --- a/fs/verity/open.c
+> +++ b/fs/verity/open.c
+> @@ -384,14 +384,6 @@ int __fsverity_file_open(struct inode *inode, struct file *filp)
+>  }
+>  EXPORT_SYMBOL_GPL(__fsverity_file_open);
+>  
+> -int __fsverity_prepare_setattr(struct dentry *dentry, struct iattr *attr)
+> -{
+> -	if (attr->ia_valid & ATTR_SIZE)
+> -		return -EPERM;
+> -	return 0;
+> -}
+> -EXPORT_SYMBOL_GPL(__fsverity_prepare_setattr);
+> -
+>  void __fsverity_cleanup_inode(struct inode *inode)
+>  {
+>  	struct fsverity_info **vi_addr = fsverity_info_addr(inode);
+> diff --git a/include/linux/fsverity.h b/include/linux/fsverity.h
+> index 5bc7280425a7..86fb1708676b 100644
+> --- a/include/linux/fsverity.h
+> +++ b/include/linux/fsverity.h
+> @@ -179,7 +179,6 @@ int fsverity_get_digest(struct inode *inode,
+>  /* open.c */
+>  
+>  int __fsverity_file_open(struct inode *inode, struct file *filp);
+> -int __fsverity_prepare_setattr(struct dentry *dentry, struct iattr *attr);
+>  void __fsverity_cleanup_inode(struct inode *inode);
+>  
+>  /**
+> @@ -251,12 +250,6 @@ static inline int __fsverity_file_open(struct inode *inode, struct file *filp)
+>  	return -EOPNOTSUPP;
+>  }
+>  
+> -static inline int __fsverity_prepare_setattr(struct dentry *dentry,
+> -					     struct iattr *attr)
+> -{
+> -	return -EOPNOTSUPP;
+> -}
+> -
+>  static inline void fsverity_cleanup_inode(struct inode *inode)
+>  {
+>  }
+> @@ -338,22 +331,4 @@ static inline int fsverity_file_open(struct inode *inode, struct file *filp)
+>  	return 0;
+>  }
+>  
+> -/**
+> - * fsverity_prepare_setattr() - prepare to change a verity inode's attributes
+> - * @dentry: dentry through which the inode is being changed
+> - * @attr: attributes to change
+> - *
+> - * Verity files are immutable, so deny truncates.  This isn't covered by the
+> - * open-time check because sys_truncate() takes a path, not a file descriptor.
+> - *
+> - * Return: 0 on success, -errno on failure
+> - */
+> -static inline int fsverity_prepare_setattr(struct dentry *dentry,
+> -					   struct iattr *attr)
+> -{
+> -	if (IS_VERITY(d_inode(dentry)))
+> -		return __fsverity_prepare_setattr(dentry, attr);
+> -	return 0;
+> -}
+> -
+>  #endif	/* _LINUX_FSVERITY_H */
+> -- 
+> 2.47.3
+> 
+> 

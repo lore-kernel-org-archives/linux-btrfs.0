@@ -1,604 +1,221 @@
-Received: from bombadil.infradead.org (bombadil.infradead.org [198.137.202.133])
+Received: from verein.lst.de (verein.lst.de [213.95.11.211])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8648813AA2F;
-	Mon, 26 Jan 2026 04:53:56 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.137.202.133
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1371720E31C
+	for <linux-btrfs@vger.kernel.org>; Mon, 26 Jan 2026 04:55:57 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=213.95.11.211
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1769403238; cv=none; b=tdiVgDOrFawMZIb0mzWEhxslk2aDZ/bdTSOpnqxkjUM5akvP8gSOrVnp+v9qDgwFiaOwsL8qcEFWreFthU1Zqm5ROtcR3pVTNCAQtqsi+uTftfhh4Crg20OJ/weWCgg1UlJgE2M1Jm6Us7T33pRsticwVnwsFrXTshw1l5SRLhw=
+	t=1769403359; cv=none; b=isuOUYxNxsMGA0B1HHbssr6+LPN3hHnog5d8TK+QU3k9MYJJOGxaTvZ6JKQkmjfVScnl/dN5O49f0mHeLAPGH+4IRtX6OsHPzwfH+pe6za6FbzBIZ0/zwcjpsLqc3cGKNlv8ZkehNmIebgocXQTL6J621i7vPMbL6rIeZLO0QgI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1769403238; c=relaxed/simple;
-	bh=zaFEwUYNdEzppkBci1H95VsOoLqhqhKVurtYikKOr/s=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=cHh+VVrehgPKFJ3e9zQIef/6LpF31Mk5Uxua/A1wxr9Nsu29qM9/csHbNoiBQCXSH2LeTTo8HrBbiHlw/nYilVvGheTATXU46qYpf6FY4c9Ro8ZYoykIMlsjO8wgllkZYMtT3qtOd0EhwrsSIxxCfOHBcEMBXwn/hoYXcp+KV/w=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=kMIpJuTm; arc=none smtp.client-ip=198.137.202.133
-Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="kMIpJuTm"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
-	MIME-Version:References:In-Reply-To:Message-ID:Date:Subject:Cc:To:From:Sender
-	:Reply-To:Content-Type:Content-ID:Content-Description;
-	bh=YQnSjepDKXW70OJxXp2ImkT3oZg0EF+gECmDnN8GcBM=; b=kMIpJuTm09C33lc4Duq/q9Cv7H
-	DBCVPmtkcue89UAwaI9OsokNrPPj66TAIAZQ4yQPmqkxf0THS0o4G+rPYdSZ8FveiLT/nDx0GF8GK
-	Vf1hk8+uq7jEE9tFcgA26gwUojkxxPQpPk3TYQ8lxLMTIrEmhKNEmTQX8iqNJQJ/ESMBIcpw3J3BP
-	871TIkQuI1jNQ6rzEDyUzu5c6+95cM7YR2KeoAkqzBe91hFWSdevtlITVOulfeIakTyg/rsMaeLdF
-	7N4gJ0c6twKMAtNxnlf+Jo3UrkFrbOFIJzqHmtCyD/sAQAsEmb5D1xse4x6jv60QBfBjUydr1i4IL
-	oArt1iXw==;
-Received: from 2a02-8389-2341-5b80-d601-7564-c2e0-491c.cable.dynamic.v6.surfer.at ([2a02:8389:2341:5b80:d601:7564:c2e0:491c] helo=localhost)
-	by bombadil.infradead.org with esmtpsa (Exim 4.98.2 #2 (Red Hat Linux))
-	id 1vkEbp-0000000BuW4-28zu;
-	Mon, 26 Jan 2026 04:53:53 +0000
+	s=arc-20240116; t=1769403359; c=relaxed/simple;
+	bh=T4tXQwkxWhAuC2FXp/NUGSyvCd8xwXBLlJvEUOFafrU=;
+	h=Date:From:To:Cc:Subject:Message-ID:MIME-Version:Content-Type:
+	 Content-Disposition; b=aTUFHXCpcaC+rDtsyygoRqBkvRRCpeOEXbdKLGXlONdkg1/jmFJk90YWJY6PM3x8abzqV3MvGjWysyicInxFQWmrPYUxlQSXCXPGEceen8wBSnaxvwcUYLtnKeDWlXYVq3+WcZPUM189gPVEpiK2OFNVd2gVif6L/q9Fma440WY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lst.de; spf=pass smtp.mailfrom=lst.de; arc=none smtp.client-ip=213.95.11.211
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lst.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=lst.de
+Received: by verein.lst.de (Postfix, from userid 2407)
+	id C7410227A88; Mon, 26 Jan 2026 05:55:55 +0100 (CET)
+Date: Mon, 26 Jan 2026 05:55:55 +0100
 From: Christoph Hellwig <hch@lst.de>
-To: Eric Biggers <ebiggers@kernel.org>
-Cc: Al Viro <viro@zeniv.linux.org.uk>,
-	Christian Brauner <brauner@kernel.org>,
-	Jan Kara <jack@suse.cz>,
-	David Sterba <dsterba@suse.com>,
-	"Theodore Ts'o" <tytso@mit.edu>,
-	Jaegeuk Kim <jaegeuk@kernel.org>,
-	Chao Yu <chao@kernel.org>,
-	Andrey Albershteyn <aalbersh@redhat.com>,
-	Matthew Wilcox <willy@infradead.org>,
-	linux-fsdevel@vger.kernel.org,
-	linux-btrfs@vger.kernel.org,
-	linux-ext4@vger.kernel.org,
-	linux-f2fs-devel@lists.sourceforge.net,
-	fsverity@lists.linux.dev
-Subject: [PATCH 16/16] fsverity: use a hashtable to find the fsverity_info
-Date: Mon, 26 Jan 2026 05:51:02 +0100
-Message-ID: <20260126045212.1381843-17-hch@lst.de>
-X-Mailer: git-send-email 2.47.3
-In-Reply-To: <20260126045212.1381843-1-hch@lst.de>
-References: <20260126045212.1381843-1-hch@lst.de>
+To: David Sterba <dsterba@suse.com>
+Cc: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Subject: btrfs/124 assert failure / crash
+Message-ID: <20260126045555.GB31641@lst.de>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+User-Agent: Mutt/1.5.17 (2007-11-01)
 
-Use the kernel's resizable hash table (rhashtable) to find the
-fsverity_info.  This way file systems that want to support fsverity don't
-have to bloat every inode in the system with an extra pointer.  The
-trade-off is that looking up the fsverity_info is a bit more expensive
-now, but the main operations are still dominated by I/O and hashing
-overhead.
+When running xfstets on btrfs with SCRATCH_DEV_POOL enabled, I the
+warning below pretty much every time, and then the assert fail crashing
+the kernel after it (also in the log below) about every second run.
 
-The rhashtable implementations requires no external synchronization, and
-the _fast versions of the APIs provide the RCU critical sections required
-by the implementation.  Because struct fsverity_info is only removed on
-inode eviction and does not contain a reference count, there is no need
-for an extended critical section to grab a reference or validate the
-object state.  The file open path uses rhashtable_lookup_get_insert_fast,
-which can either find an existing object for the hash key or insert a
-new one in a single atomic operation, so that concurrent opens never
-allocate duplicate fsverity_info structure.  FS_IOC_ENABLE_VERITY must
-already be synchronized by a combination of i_rwsem and file system flags
-and uses rhashtable_lookup_insert_fast, which errors out on an existing
-object for the hash key as an additional safety check.
+This is current Linus' tree as of yesterday.
 
-Because insertion into the hash table now happens before S_VERITY is set,
-fsverity just becomes a barrier and a flag check and doesn't have to look
-up the fsverity_info at all, so there is only a single lookup per
-->read_folio or ->readahead invocation.  For btrfs there is an additional
-one for each bio completion, while for ext4 and f2fs the fsverity_info
-is stored in the per-I/O context and reused for the completion workqueue.
-
-Signed-off-by: Christoph Hellwig <hch@lst.de>
----
- fs/btrfs/btrfs_inode.h       |  4 --
- fs/btrfs/inode.c             |  3 --
- fs/btrfs/verity.c            |  2 -
- fs/ext4/ext4.h               |  4 --
- fs/ext4/super.c              |  3 --
- fs/ext4/verity.c             |  2 -
- fs/f2fs/f2fs.h               |  3 --
- fs/f2fs/super.c              |  3 --
- fs/f2fs/verity.c             |  2 -
- fs/verity/enable.c           | 30 +++++++-----
- fs/verity/fsverity_private.h | 17 +++----
- fs/verity/open.c             | 75 +++++++++++++++++++-----------
- fs/verity/verify.c           |  2 +-
- include/linux/fsverity.h     | 90 ++++++++++++------------------------
- 14 files changed, 104 insertions(+), 136 deletions(-)
-
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 73602ee8de3f..55c272fe5d92 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -339,10 +339,6 @@ struct btrfs_inode {
- 
- 	struct rw_semaphore i_mmap_lock;
- 
--#ifdef CONFIG_FS_VERITY
--	struct fsverity_info *i_verity_info;
--#endif
--
- 	struct inode vfs_inode;
- };
- 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 67c64efc5099..93b2ce75fb06 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -8097,9 +8097,6 @@ static void init_once(void *foo)
- 	struct btrfs_inode *ei = foo;
- 
- 	inode_init_once(&ei->vfs_inode);
--#ifdef CONFIG_FS_VERITY
--	ei->i_verity_info = NULL;
--#endif
- }
- 
- void __cold btrfs_destroy_cachep(void)
-diff --git a/fs/btrfs/verity.c b/fs/btrfs/verity.c
-index c152bef71e8b..cd96fac4739f 100644
---- a/fs/btrfs/verity.c
-+++ b/fs/btrfs/verity.c
-@@ -795,8 +795,6 @@ static int btrfs_write_merkle_tree_block(struct file *file, const void *buf,
- }
- 
- const struct fsverity_operations btrfs_verityops = {
--	.inode_info_offs         = (int)offsetof(struct btrfs_inode, i_verity_info) -
--				   (int)offsetof(struct btrfs_inode, vfs_inode),
- 	.begin_enable_verity     = btrfs_begin_enable_verity,
- 	.end_enable_verity       = btrfs_end_enable_verity,
- 	.get_verity_descriptor   = btrfs_get_verity_descriptor,
-diff --git a/fs/ext4/ext4.h b/fs/ext4/ext4.h
-index 56112f201cac..60c549bc894e 100644
---- a/fs/ext4/ext4.h
-+++ b/fs/ext4/ext4.h
-@@ -1205,10 +1205,6 @@ struct ext4_inode_info {
- #ifdef CONFIG_FS_ENCRYPTION
- 	struct fscrypt_inode_info *i_crypt_info;
- #endif
--
--#ifdef CONFIG_FS_VERITY
--	struct fsverity_info *i_verity_info;
--#endif
- };
- 
- /*
-diff --git a/fs/ext4/super.c b/fs/ext4/super.c
-index 86131f4d8718..1fb0c90c7a4b 100644
---- a/fs/ext4/super.c
-+++ b/fs/ext4/super.c
-@@ -1484,9 +1484,6 @@ static void init_once(void *foo)
- #ifdef CONFIG_FS_ENCRYPTION
- 	ei->i_crypt_info = NULL;
- #endif
--#ifdef CONFIG_FS_VERITY
--	ei->i_verity_info = NULL;
--#endif
- }
- 
- static int __init init_inodecache(void)
-diff --git a/fs/ext4/verity.c b/fs/ext4/verity.c
-index 54ae4d4a176c..e3ab3ba8799b 100644
---- a/fs/ext4/verity.c
-+++ b/fs/ext4/verity.c
-@@ -380,8 +380,6 @@ static int ext4_write_merkle_tree_block(struct file *file, const void *buf,
- }
- 
- const struct fsverity_operations ext4_verityops = {
--	.inode_info_offs	= (int)offsetof(struct ext4_inode_info, i_verity_info) -
--				  (int)offsetof(struct ext4_inode_info, vfs_inode),
- 	.begin_enable_verity	= ext4_begin_enable_verity,
- 	.end_enable_verity	= ext4_end_enable_verity,
- 	.get_verity_descriptor	= ext4_get_verity_descriptor,
-diff --git a/fs/f2fs/f2fs.h b/fs/f2fs/f2fs.h
-index f2fcadc7a6fe..8ee8a7bc012c 100644
---- a/fs/f2fs/f2fs.h
-+++ b/fs/f2fs/f2fs.h
-@@ -974,9 +974,6 @@ struct f2fs_inode_info {
- #ifdef CONFIG_FS_ENCRYPTION
- 	struct fscrypt_inode_info *i_crypt_info; /* filesystem encryption info */
- #endif
--#ifdef CONFIG_FS_VERITY
--	struct fsverity_info *i_verity_info; /* filesystem verity info */
--#endif
- };
- 
- static inline void get_read_extent_info(struct extent_info *ext,
-diff --git a/fs/f2fs/super.c b/fs/f2fs/super.c
-index c4c225e09dc4..cd00d030edda 100644
---- a/fs/f2fs/super.c
-+++ b/fs/f2fs/super.c
-@@ -504,9 +504,6 @@ static void init_once(void *foo)
- #ifdef CONFIG_FS_ENCRYPTION
- 	fi->i_crypt_info = NULL;
- #endif
--#ifdef CONFIG_FS_VERITY
--	fi->i_verity_info = NULL;
--#endif
- }
- 
- #ifdef CONFIG_QUOTA
-diff --git a/fs/f2fs/verity.c b/fs/f2fs/verity.c
-index 628e8eafa96a..4f5230d871f7 100644
---- a/fs/f2fs/verity.c
-+++ b/fs/f2fs/verity.c
-@@ -278,8 +278,6 @@ static int f2fs_write_merkle_tree_block(struct file *file, const void *buf,
- }
- 
- const struct fsverity_operations f2fs_verityops = {
--	.inode_info_offs	= (int)offsetof(struct f2fs_inode_info, i_verity_info) -
--				  (int)offsetof(struct f2fs_inode_info, vfs_inode),
- 	.begin_enable_verity	= f2fs_begin_enable_verity,
- 	.end_enable_verity	= f2fs_end_enable_verity,
- 	.get_verity_descriptor	= f2fs_get_verity_descriptor,
-diff --git a/fs/verity/enable.c b/fs/verity/enable.c
-index c56c18e2605b..94c88c419054 100644
---- a/fs/verity/enable.c
-+++ b/fs/verity/enable.c
-@@ -265,9 +265,24 @@ static int enable_verity(struct file *filp,
- 		goto rollback;
- 	}
- 
-+	/*
-+	 * Add the fsverity_info into the hash table before finishing the
-+	 * initialization so that we don't have to undo the enabling when memory
-+	 * allocation for the hash table fails.  This is safe because looking up
-+	 * the fsverity_info always first checks the S_VERITY flag on the inode,
-+	 * which will only be set at the very end of the ->end_enable_verity
-+	 * method.
-+	 */
-+	err = fsverity_set_info(vi);
-+	if (err)
-+		goto rollback;
-+
- 	/*
- 	 * Tell the filesystem to finish enabling verity on the file.
--	 * Serialized with ->begin_enable_verity() by the inode lock.
-+	 * Serialized with ->begin_enable_verity() by the inode lock.  The file
-+	 * system needs to set the S_VERITY flag on the inode at the very end of
-+	 * the method, at which point the fsverity information can be accessed
-+	 * by other threads.
- 	 */
- 	inode_lock(inode);
- 	err = vops->end_enable_verity(filp, desc, desc_size, params.tree_size);
-@@ -275,19 +290,10 @@ static int enable_verity(struct file *filp,
- 	if (err) {
- 		fsverity_err(inode, "%ps() failed with err %d",
- 			     vops->end_enable_verity, err);
--		fsverity_free_info(vi);
-+		fsverity_remove_info(vi);
- 	} else if (WARN_ON_ONCE(!IS_VERITY(inode))) {
-+		fsverity_remove_info(vi);
- 		err = -EINVAL;
--		fsverity_free_info(vi);
--	} else {
--		/* Successfully enabled verity */
--
--		/*
--		 * Readers can start using the inode's verity info immediately,
--		 * so it can't be rolled back once set.  So don't set it until
--		 * just after the filesystem has successfully enabled verity.
--		 */
--		fsverity_set_info(inode, vi);
- 	}
- out:
- 	kfree(params.hashstate);
-diff --git a/fs/verity/fsverity_private.h b/fs/verity/fsverity_private.h
-index f9f3936b0a89..4d4a0a560562 100644
---- a/fs/verity/fsverity_private.h
-+++ b/fs/verity/fsverity_private.h
-@@ -11,6 +11,7 @@
- #define pr_fmt(fmt) "fs-verity: " fmt
- 
- #include <linux/fsverity.h>
-+#include <linux/rhashtable.h>
- 
- /*
-  * Implementation limit: maximum depth of the Merkle tree.  For now 8 is plenty;
-@@ -63,13 +64,14 @@ struct merkle_tree_params {
-  * fsverity_info - cached verity metadata for an inode
-  *
-  * When a verity file is first opened, an instance of this struct is allocated
-- * and a pointer to it is stored in the file's in-memory inode.  It remains
-- * until the inode is evicted.  It caches information about the Merkle tree
-- * that's needed to efficiently verify data read from the file.  It also caches
-- * the file digest.  The Merkle tree pages themselves are not cached here, but
-- * the filesystem may cache them.
-+ * and a pointer to it is stored in the global hash table, indexed by the inode
-+ * pointer value.  It remains alive until the inode is evicted.  It caches
-+ * information about the Merkle tree that's needed to efficiently verify data
-+ * read from the file.  It also caches the file digest.  The Merkle tree pages
-+ * themselves are not cached here, but the filesystem may cache them.
-  */
- struct fsverity_info {
-+	struct rhash_head rhash_head;
- 	struct merkle_tree_params tree_params;
- 	u8 root_hash[FS_VERITY_MAX_DIGEST_SIZE];
- 	u8 file_digest[FS_VERITY_MAX_DIGEST_SIZE];
-@@ -127,9 +129,8 @@ int fsverity_init_merkle_tree_params(struct merkle_tree_params *params,
- struct fsverity_info *fsverity_create_info(struct inode *inode,
- 					   struct fsverity_descriptor *desc);
- 
--void fsverity_set_info(struct inode *inode, struct fsverity_info *vi);
--
--void fsverity_free_info(struct fsverity_info *vi);
-+int fsverity_set_info(struct fsverity_info *vi);
-+void fsverity_remove_info(struct fsverity_info *vi);
- 
- int fsverity_get_descriptor(struct inode *inode,
- 			    struct fsverity_descriptor **desc_ret);
-diff --git a/fs/verity/open.c b/fs/verity/open.c
-index 128502cf0a23..1bde8fe79b3f 100644
---- a/fs/verity/open.c
-+++ b/fs/verity/open.c
-@@ -12,6 +12,14 @@
- #include <linux/slab.h>
- 
- static struct kmem_cache *fsverity_info_cachep;
-+static struct rhashtable fsverity_info_hash;
-+
-+static const struct rhashtable_params fsverity_info_hash_params = {
-+	.key_len		= sizeof_field(struct fsverity_info, inode),
-+	.key_offset		= offsetof(struct fsverity_info, inode),
-+	.head_offset		= offsetof(struct fsverity_info, rhash_head),
-+	.automatic_shrinking	= true,
-+};
- 
- /**
-  * fsverity_init_merkle_tree_params() - initialize Merkle tree parameters
-@@ -170,6 +178,13 @@ static void compute_file_digest(const struct fsverity_hash_alg *hash_alg,
- 	desc->sig_size = sig_size;
- }
- 
-+static void fsverity_free_info(struct fsverity_info *vi)
-+{
-+	kfree(vi->tree_params.hashstate);
-+	kvfree(vi->hash_block_verified);
-+	kmem_cache_free(fsverity_info_cachep, vi);
-+}
-+
- /*
-  * Create a new fsverity_info from the given fsverity_descriptor (with optional
-  * appended builtin signature), and check the signature if present.  The
-@@ -241,33 +256,18 @@ struct fsverity_info *fsverity_create_info(struct inode *inode,
- 	return ERR_PTR(err);
- }
- 
--void fsverity_set_info(struct inode *inode, struct fsverity_info *vi)
-+int fsverity_set_info(struct fsverity_info *vi)
- {
--	/*
--	 * Multiple tasks may race to set the inode's verity info pointer, so
--	 * use cmpxchg_release().  This pairs with the smp_load_acquire() in
--	 * fsverity_get_info().  I.e., publish the pointer with a RELEASE
--	 * barrier so that other tasks can ACQUIRE it.
--	 */
--	if (cmpxchg_release(fsverity_info_addr(inode), NULL, vi) != NULL) {
--		/* Lost the race, so free the verity info we allocated. */
--		fsverity_free_info(vi);
--		/*
--		 * Afterwards, the caller may access the inode's verity info
--		 * directly, so make sure to ACQUIRE the winning verity info.
--		 */
--		(void)fsverity_get_info(inode);
--	}
-+	return rhashtable_lookup_insert_fast(&fsverity_info_hash,
-+			&vi->rhash_head, fsverity_info_hash_params);
- }
- 
--void fsverity_free_info(struct fsverity_info *vi)
-+struct fsverity_info *__fsverity_get_info(const struct inode *inode)
- {
--	if (!vi)
--		return;
--	kfree(vi->tree_params.hashstate);
--	kvfree(vi->hash_block_verified);
--	kmem_cache_free(fsverity_info_cachep, vi);
-+	return rhashtable_lookup_fast(&fsverity_info_hash, &inode,
-+			fsverity_info_hash_params);
- }
-+EXPORT_SYMBOL_GPL(__fsverity_get_info);
- 
- static bool validate_fsverity_descriptor(struct inode *inode,
- 					 const struct fsverity_descriptor *desc,
-@@ -352,7 +352,7 @@ int fsverity_get_descriptor(struct inode *inode,
- 
- static int ensure_verity_info(struct inode *inode)
- {
--	struct fsverity_info *vi = fsverity_get_info(inode);
-+	struct fsverity_info *vi = fsverity_get_info(inode), *found;
- 	struct fsverity_descriptor *desc;
- 	int err;
- 
-@@ -369,8 +369,18 @@ static int ensure_verity_info(struct inode *inode)
- 		goto out_free_desc;
- 	}
- 
--	fsverity_set_info(inode, vi);
--	err = 0;
-+	/*
-+	 * Multiple tasks may race to set the inode's verity info, in which case
-+	 * we might find an existing fsverity_info in the hash table.
-+	 */
-+	found = rhashtable_lookup_get_insert_fast(&fsverity_info_hash,
-+			&vi->rhash_head, fsverity_info_hash_params);
-+	if (found) {
-+		fsverity_free_info(vi);
-+		if (IS_ERR(found))
-+			err = PTR_ERR(found);
-+	}
-+
- out_free_desc:
- 	kfree(desc);
- 	return err;
-@@ -384,16 +394,25 @@ int __fsverity_file_open(struct inode *inode, struct file *filp)
- }
- EXPORT_SYMBOL_GPL(__fsverity_file_open);
- 
-+void fsverity_remove_info(struct fsverity_info *vi)
-+{
-+	rhashtable_remove_fast(&fsverity_info_hash, &vi->rhash_head,
-+			fsverity_info_hash_params);
-+	fsverity_free_info(vi);
-+}
-+
- void fsverity_cleanup_inode(struct inode *inode)
- {
--	struct fsverity_info **vi_addr = fsverity_info_addr(inode);
-+	struct fsverity_info *vi = fsverity_get_info(inode);
- 
--	fsverity_free_info(*vi_addr);
--	*vi_addr = NULL;
-+	if (vi)
-+		fsverity_remove_info(vi);
- }
- 
- void __init fsverity_init_info_cache(void)
- {
-+	if (rhashtable_init(&fsverity_info_hash, &fsverity_info_hash_params))
-+		panic("failed to initialize fsverity hash\n");
- 	fsverity_info_cachep = KMEM_CACHE_USERCOPY(
- 					fsverity_info,
- 					SLAB_RECLAIM_ACCOUNT | SLAB_PANIC,
-diff --git a/fs/verity/verify.c b/fs/verity/verify.c
-index 57aea5a2a0ee..75b997a936c7 100644
---- a/fs/verity/verify.c
-+++ b/fs/verity/verify.c
-@@ -320,7 +320,7 @@ fsverity_init_verification_context(struct fsverity_verification_context *ctx,
- 	ctx->inode = vi->inode;
- 	ctx->vi = vi;
- 	ctx->num_pending = 0;
--	if (vi->tree_params.hash_alg->algo_id == HASH_ALGO_SHA256 &&
-+	if (ctx->vi->tree_params.hash_alg->algo_id == HASH_ALGO_SHA256 &&
- 	    sha256_finup_2x_is_optimized())
- 		ctx->max_pending = 2;
- 	else
-diff --git a/include/linux/fsverity.h b/include/linux/fsverity.h
-index 1d70b270e90a..c8958971f65a 100644
---- a/include/linux/fsverity.h
-+++ b/include/linux/fsverity.h
-@@ -30,13 +30,6 @@ struct fsverity_info;
- 
- /* Verity operations for filesystems */
- struct fsverity_operations {
--	/**
--	 * The offset of the pointer to struct fsverity_info in the
--	 * filesystem-specific part of the inode, relative to the beginning of
--	 * the common part of the inode (the 'struct inode').
--	 */
--	ptrdiff_t inode_info_offs;
--
- 	/**
- 	 * Begin enabling verity on the given file.
- 	 *
-@@ -142,40 +135,6 @@ struct fsverity_operations {
- };
- 
- #ifdef CONFIG_FS_VERITY
--
--/*
-- * Returns the address of the verity info pointer within the filesystem-specific
-- * part of the inode.  (To save memory on filesystems that don't support
-- * fsverity, a field in 'struct inode' itself is no longer used.)
-- */
--static inline struct fsverity_info **
--fsverity_info_addr(const struct inode *inode)
--{
--	VFS_WARN_ON_ONCE(inode->i_sb->s_vop->inode_info_offs == 0);
--	return (void *)inode + inode->i_sb->s_vop->inode_info_offs;
--}
--
--static inline struct fsverity_info *fsverity_get_info(const struct inode *inode)
--{
--	/*
--	 * Since this function can be called on inodes belonging to filesystems
--	 * that don't support fsverity at all, and fsverity_info_addr() doesn't
--	 * work on such filesystems, we have to start with an IS_VERITY() check.
--	 * Checking IS_VERITY() here is also useful to minimize the overhead of
--	 * fsverity_active() on non-verity files.
--	 */
--	if (!IS_VERITY(inode))
--		return NULL;
--
--	/*
--	 * Pairs with the cmpxchg_release() in fsverity_set_info().  I.e.,
--	 * another task may publish the inode's verity info concurrently,
--	 * executing a RELEASE barrier.  Use smp_load_acquire() here to safely
--	 * ACQUIRE the memory the other task published.
--	 */
--	return smp_load_acquire(fsverity_info_addr(inode));
--}
--
- /* enable.c */
- 
- int fsverity_ioctl_enable(struct file *filp, const void __user *arg);
-@@ -204,18 +163,6 @@ void fsverity_enqueue_verify_work(struct work_struct *work);
- 
- #else /* !CONFIG_FS_VERITY */
- 
--/*
-- * Provide a stub to allow code using this to compile.  All callsites should be
-- * guarded by compiler dead code elimination, and this forces a link error if
-- * not.
-- */
--struct fsverity_info **fsverity_info_addr(const struct inode *inode);
--
--static inline struct fsverity_info *fsverity_get_info(const struct inode *inode)
--{
--	return NULL;
--}
--
- /* enable.c */
- 
- static inline int fsverity_ioctl_enable(struct file *filp,
-@@ -296,18 +243,39 @@ static inline bool fsverity_verify_page(struct fsverity_info *vi,
-  * fsverity_active() - do reads from the inode need to go through fs-verity?
-  * @inode: inode to check
-  *
-- * This checks whether the inode's verity info has been set.
-- *
-- * Filesystems call this from ->readahead() to check whether the pages need to
-- * be verified or not.  Don't use IS_VERITY() for this purpose; it's subject to
-- * a race condition where the file is being read concurrently with
-- * FS_IOC_ENABLE_VERITY completing.  (S_VERITY is set before the verity info.)
-+ * This checks whether the inode's verity info has been set, and reads need
-+ * to verify the verity information.
-  *
-  * Return: true if reads need to go through fs-verity, otherwise false
-  */
--static inline bool fsverity_active(const struct inode *inode)
-+static __always_inline bool fsverity_active(const struct inode *inode)
-+{
-+	if (IS_ENABLED(CONFIG_FS_VERITY) && IS_VERITY(inode)) {
-+		/*
-+		 * This pairs with the try_cmpxchg in set_mask_bits()
-+		 * used to set the S_VERITY bit in i_flags.
-+		 */
-+		smp_mb();
-+		return true;
-+	}
-+
-+	return false;
-+}
-+
-+/**
-+ * fsverity_get_info - get fsverity information for an inode
-+ * @inode: inode to operate on.
-+ *
-+ * This gets the fsverity_info for @inode if it exists.  Safe to call without
-+ * knowin that a fsverity_info exist for @inode, including on file systems that
-+ * do not support fsverity.
-+ */
-+struct fsverity_info *__fsverity_get_info(const struct inode *inode);
-+static inline struct fsverity_info *fsverity_get_info(const struct inode *inode)
- {
--	return fsverity_get_info(inode) != NULL;
-+	if (!fsverity_active(inode))
-+		return NULL;
-+	return __fsverity_get_info(inode);
- }
- 
- /**
--- 
-2.47.3
+btrfs/124          [  803.258963] run fstests btrfs/124 at 2026-01-24 15:53:31
+[  803.459709] BTRFS: device fsid 791f1a52-bc19-4383-b042-6a488112d43c devid 1 transid 60 /dev/vdb (254:16) scanned by mount (383521)
+[  803.460698] BTRFS info (device vdb): first mount of filesystem 791f1a52-bc19-4383-b042-6a488112d43c
+[  803.461176] BTRFS info (device vdb): using crc32c (crc32c-lib) checksum algorithm
+[  803.464844] BTRFS info (device vdb): turning on async discard
+[  803.465179] BTRFS info (device vdb): enabling free space tree
+[  803.651482] BTRFS info (device vdb): last unmount of filesystem 791f1a52-bc19-4383-b042-6a488112d43c
+[  803.705448] BTRFS: device fsid e8352875-c6cb-4da6-8eb2-e1c359bcc4e0 devid 1 transid 6 /dev/vdc (254:32) scanned by mkfs.btrfs (383755)
+[  803.706956] BTRFS: device fsid e8352875-c6cb-4da6-8eb2-e1c359bcc4e0 devid 2 transid 6 /dev/nvme0n1 (259:1) scanned by mkfs.btrfs (383755)
+[  803.712173] BTRFS info (device vdc): first mount of filesystem e8352875-c6cb-4da6-8eb2-e1c359bcc4e0
+[  803.712823] BTRFS info (device vdc): using crc32c (crc32c-lib) checksum algorithm
+[  803.717493] BTRFS info (device vdc): checking UUID tree
+[  803.718320] BTRFS info (device vdc): turning on async discard
+[  803.718662] BTRFS info (device vdc): enabling free space tree
+[  803.949121] BTRFS info (device vdc): last unmount of filesystem e8352875-c6cb-4da6-8eb2-e1c359bcc4e0
+[  803.960021] BTRFS: device fsid e8352875-c6cb-4da6-8eb2-e1c359bcc4e0 devid 1 transid 7 /dev/vdc (254:32) scanned by mount (383794)
+[  803.960973] BTRFS info (device vdc): first mount of filesystem e8352875-c6cb-4da6-8eb2-e1c359bcc4e0
+[  803.961489] BTRFS info (device vdc): using crc32c (crc32c-lib) checksum algorithm
+[  803.962808] BTRFS warning (device vdc): devid 2 uuid a4f0f038-a059-4f84-87ad-08633e38f9a1 is missing
+[  803.963440] BTRFS warning (device vdc): devid 2 uuid a4f0f038-a059-4f84-87ad-08633e38f9a1 is missing
+[  803.966467] BTRFS info (device vdc): allowing degraded mounts
+[  803.966774] BTRFS info (device vdc): turning on async discard
+[  803.967059] BTRFS info (device vdc): enabling free space tree
+[  807.379299] BTRFS info (device vdc): last unmount of filesystem e8352875-c6cb-4da6-8eb2-e1c359bcc4e0
+[  807.617408] BTRFS info (device vdc): first mount of filesystem e8352875-c6cb-4da6-8eb2-e1c359bcc4e0
+[  807.617908] BTRFS info (device vdc): using crc32c (crc32c-lib) checksum algorithm
+[  807.620685] BTRFS info (device vdc): turning on async discard
+[  807.621015] BTRFS info (device vdc): enabling free space tree
+[  807.808679] BTRFS info (device vdc): balance: start -d -m -s
+[  807.809220] BTRFS info (device vdc): relocating block group 1808793600 flags data
+[  808.017398] BTRFS info (device vdc): found 1 extents, stage: move data extents
+[  808.021382] BTRFS info (device vdc): found 1 extents, stage: update data pointers
+[  808.023658] BTRFS info (device vdc): relocating block group 1590689792 flags data
+[  808.247363] BTRFS info (device vdc): found 1 extents, stage: move data extents
+[  808.252635] BTRFS info (device vdc): found 1 extents, stage: update data pointers
+[  808.256882] BTRFS info (device vdc): relocating block group 1372585984 flags data
+[  808.569603] BTRFS info (device vdc): found 2 extents, stage: move data extents
+[  808.573668] BTRFS info (device vdc): found 2 extents, stage: update data pointers
+[  808.576237] BTRFS info (device vdc): relocating block group 298844160 flags data|raid1
+[  808.579486] BTRFS info (device vdc): relocating block group 30408704 flags metadata|raid1
+[  808.579936] ------------[ cut here ]------------
+[  808.580175] BTRFS: Transaction aborted (error -28)
+[  808.580422] WARNING: fs/btrfs/extent-tree.c:3235 at __btrfs_free_extent.isra.0+0x453/0xfd0, CPU#1: btrfs/383844
+[  808.580930] Modules linked in: kvm_intel kvm irqbypass
+[  808.581195] CPU: 1 UID: 0 PID: 383844 Comm: btrfs Tainted: G                 N  6.19.0-rc6+ #4788 PREEMPT(full) 
+[  808.581713] Tainted: [N]=TEST
+[  808.581884] Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS rel-1.17.0-0-gb52ca86e094d-prebuilt.qemu.org 04/01/2014
+[  808.582535] RIP: 0010:__btrfs_free_extent.isra.0+0x457/0xfd0
+[  808.582839] Code: 00 00 00 5b 5d 41 5c 41 5d 41 5e 41 5f c3 cc cc cc cc 4d 8b 6e 60 4d 8b 66 68 e9 1e fc ff ff 48 8d 3d 3d b1 09 02 8b 74 24 14 <67> 48 0f b9 3a e9 a9 fd ff ff 8b 4c 24 28 48 8b 74 24 20 4c 89 fa
+[  808.583795] RSP: 0018:ffffc9000a34b968 EFLAGS: 00010292
+[  808.584069] RAX: 0000000000000002 RBX: 0000000002124000 RCX: 0000000000000000
+[  808.584432] RDX: 0000000002040001 RSI: 00000000ffffffe4 RDI: ffffffff83c5bae0
+[  808.584799] RBP: 0000000000000000 R08: 0000000000000000 R09: 00000000ffffffe4
+[  808.585147] R10: ffff888168b8a000 R11: ffff88810fa97940 R12: 0000000000000000
+[  808.585531] R13: 0000000000000000 R14: ffff88810df660d8 R15: ffff88812d2dcdd8
+[  808.585899] FS:  00007ff8bb7af3c0(0000) GS:ffff8885e762c000(0000) knlGS:0000000000000000
+[  808.586347] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[  808.586630] CR2: 00007ff8bb94b8f5 CR3: 00000001692ff004 CR4: 0000000000772ef0
+[  808.586979] PKRU: 55555554
+[  808.587119] Call Trace:
+[  808.587250]  <TASK>
+[  808.587364]  ? btrfs_tree_mod_log_lowest_seq+0x43/0x50
+[  808.587620]  ? btrfs_merge_delayed_refs+0x1b5/0x290
+[  808.587866]  ? _raw_spin_unlock+0x13/0x30
+[  808.588070]  __btrfs_run_delayed_refs+0x2fa/0xf70
+[  808.588312]  ? need_preemptive_reclaim+0x2e/0x180
+[  808.588583]  ? start_transaction+0x151/0x870
+[  808.588827]  ? __slab_alloc.isra.0+0x67/0xc0
+[  808.589069]  btrfs_run_delayed_refs+0x36/0x130
+[  808.589329]  btrfs_commit_transaction+0x74/0xd30
+[  808.589589]  ? start_transaction+0x227/0x870
+[  808.589830]  prepare_to_relocate+0x12f/0x1c0
+[  808.590069]  relocate_block_group+0x4f/0x520
+[  808.590352]  btrfs_relocate_block_group+0x257/0x390
+[  808.590624]  btrfs_relocate_chunk+0x3f/0x170
+[  808.590857]  btrfs_balance+0x974/0x1320
+[  808.591070]  ? __slab_alloc.isra.0+0x67/0xc0
+[  808.591306]  ? __kmalloc_cache_noprof+0x378/0x410
+[  808.591559]  btrfs_ioctl+0x2b6e/0x3060
+[  808.591767]  ? init_object+0x3d/0xc0
+[  808.591966]  ? free_to_partial_list+0xb3/0x520
+[  808.592208]  ? __x64_sys_close+0x38/0x80
+[  808.592425]  ? _raw_spin_unlock_irqrestore+0x1d/0x40
+[  808.592697]  __x64_sys_ioctl+0x91/0xe0
+[  808.592900]  do_syscall_64+0x50/0xf80
+[  808.593090]  entry_SYSCALL_64_after_hwframe+0x76/0x7e
+[  808.593356] RIP: 0033:0x7ff8bb8c88db
+[  808.593544] Code: 00 48 89 44 24 18 31 c0 48 8d 44 24 60 c7 04 24 10 00 00 00 48 89 44 24 08 48 8d 44 24 20 48 89 44 24 10 b8 10 00 00 00 0f 05 <89> c2 3d 00 f0 ff ff 77 1c 48 8b 44 24 18 64 48 2b 04 25 28 00 00
+[  808.594491] RSP: 002b:00007ffe4409c590 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
+[  808.594870] RAX: ffffffffffffffda RBX: 0000000000000003 RCX: 00007ff8bb8c88db
+[  808.595229] RDX: 00007ffe4409c680 RSI: 00000000c4009420 RDI: 0000000000000003
+[  808.595588] RBP: 00007ffe4409eaca R08: 0000000000000000 R09: 0000000000000000
+[  808.595947] R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000001
+[  808.596315] R13: 00007ffe4409c680 R14: 0000000000000000 R15: 0000000000000002
+[  808.596716]  </TASK>
+[  808.596846] ---[ end trace 0000000000000000 ]---
+[  808.597095] BTRFS info (device vdc state A): dumping space info:
+[  808.597424] BTRFS info (device vdc state A): space_info DATA (sub-group id 0) has 610271232 free, is full
+[  808.597941] BTRFS info (device vdc state A): space_info total=1869611008, used=1259339776, pinned=0, reserved=0, may_use=0, readonly=0 zone_unusable=0
+[  808.598681] BTRFS info (device vdc state A): space_info METADATA (sub-group id 0) has -11010048 free, is full
+[  808.599203] BTRFS info (device vdc state A): space_info total=268435456, used=1409024, pinned=0, reserved=16384, may_use=11010048, readonly=267010048 zone_unusable=0
+[  808.599994] BTRFS info (device vdc state A): space_info SYSTEM (sub-group id 0) has 8372224 free, is not full
+[  808.600522] BTRFS info (device vdc state A): space_info total=8388608, used=16384, pinned=0, reserved=0, may_use=0, readonly=0 zone_unusable=0
+[  808.601199] BTRFS info (device vdc state A): global_block_rsv: size 5767168 reserved 5767168
+[  808.601639] BTRFS info (device vdc state A): trans_block_rsv: size 0 reserved 0
+[  808.602017] BTRFS info (device vdc state A): chunk_block_rsv: size 0 reserved 0
+[  808.602418] BTRFS info (device vdc state A): delayed_block_rsv: size 0 reserved 0
+[  808.602795] BTRFS info (device vdc state A): delayed_refs_rsv: size 1048576 reserved 1048576
+[  808.603220] BTRFS: error (device vdc state A) in __btrfs_free_extent:3235: errno=-28 No space left
+[  808.603688] BTRFS info (device vdc state EA): forced readonly
+[  808.603994] BTRFS error (device vdc state EA): failed to run delayed ref for logical 34750464 num_bytes 16384 type 176 action 2 ref_mod 1: -28
+[  808.604636] BTRFS: error (device vdc state EA) in btrfs_run_delayed_refs:2162: errno=-28 No space left
+[  808.605164] BTRFS info (device vdc state EA): 2 enospc errors during balance
+[  808.605567] BTRFS info (device vdc state EA): balance: ended with status: -30
+[  809.103161] BTRFS error (device vdc state EA): parent transid verify failed on logical 30556160 mirror 2 wanted 8 found 6
+[  809.114326] BTRFS error (device vdc state EA): parent transid verify failed on logical 30588928 mirror 2 wanted 8 found 6
+[  809.126031] BTRFS warning (device vdc state EA): csum failed root 5 ino 258 off 423231488 csum 0x624836f2 expected csum 0x8941f998 mirror 2
+[  809.126176] BTRFS warning (device vdc state EA): csum failed root 5 ino 258 off 422576128 csum 0x33f2863b expected csum 0x8941f998 mirror 2
+[  809.126877] btrfs_dev_stat_inc_and_print: 67333 callbacks suppressed
+[  809.126878] BTRFS error (device vdc state EA): bdev /dev/nvme0n1 errs: wr 0, rd 0, flush 0, corrupt 1, gen 0
+[  809.126896] BTRFS warning (device vdc state EA): csum failed root 5 ino 258 off 425328640 csum 0xe90a7889 expected csum 0x8941f998 mirror 2
+[  809.127540] BTRFS error (device vdc state EA): bdev /dev/nvme0n1 errs: wr 0, rd 0, flush 0, corrupt 2, gen 0
+[  809.127873] BTRFS error (device vdc state EA): bdev /dev/nvme0n1 errs: wr 0, rd 0, flush 0, corrupt 3, gen 0
+[  809.128397] BTRFS warning (device vdc state EA): csum failed root 5 ino 258 off 422580224 csum 0x7f6b1842 expected csum 0x8941f998 mirror 2
+[  809.129104] BTRFS warning (device vdc state EA): csum failed root 5 ino 258 off 425332736 csum 0xe90a7889 expected csum 0x8941f998 mirror 2
+[  809.129638] BTRFS error (device vdc state EA): bdev /dev/nvme0n1 errs: wr 0, rd 0, flush 0, corrupt 4, gen 0
+[  809.130137] BTRFS error (device vdc state EA): bdev /dev/nvme0n1 errs: wr 0, rd 0, flush 0, corrupt 5, gen 0
+[  809.132576] BTRFS warning (device vdc state EA): csum failed root 5 ino 258 off 423235584 csum 0x624836f2 expected csum 0x8941f998 mirror 2
+[  809.133320] BTRFS error (device vdc state EA): bdev /dev/nvme0n1 errs: wr 0, rd 0, flush 0, corrupt 6, gen 0
+[  809.133862] BTRFS warning (device vdc state EA): csum failed root 5 ino 258 off 423239680 csum 0x624836f2 expected csum 0x8941f998 mirror 2
+[  809.134300] BTRFS warning (device vdc state EA): csum failed root 5 ino 258 off 422584320 csum 0x7f6b1842 expected csum 0x8941f998 mirror 2
+[  809.134603] BTRFS warning (device vdc state EA): csum failed root 5 ino 258 off 424280064 csum 0xa45e27b2 expected csum 0x8941f998 mirror 2
+[  809.135880] BTRFS error (device vdc state EA): bdev /dev/nvme0n1 errs: wr 0, rd 0, flush 0, corrupt 7, gen 0
+[  809.136402] BTRFS warning (device vdc state EA): csum failed root 5 ino 258 off 424284160 csum 0x9b0a6b95 expected csum 0x8941f998 mirror 2
+[  809.137102] BTRFS error (device vdc state EA): bdev /dev/nvme0n1 errs: wr 0, rd 0, flush 0, corrupt 8, gen 0
+[  809.137641] BTRFS error (device vdc state EA): bdev /dev/nvme0n1 errs: wr 0, rd 0, flush 0, corrupt 9, gen 0
+[  809.138214] BTRFS error (device vdc state EA): bdev /dev/nvme0n1 errs: wr 0, rd 0, flush 0, corrupt 10, gen 0
+[  809.143190] assertion failed: !(fs_info->sb->s_flags & SB_RDONLY) :: 0, in fs/btrfs/bio.c:938
+[  809.144241] ------------[ cut here ]------------
+[  809.144747] assertion failed: !(fs_info->sb->s_flags & SB_RDONLY) :: 0, in fs/btrfs/bio.c:938
+[  809.144830] kernel BUG at fs/btrfs/bio.c:938!
+[  809.144835] Oops: invalid opcode: 0000 [#1] SMP NOPTI
+[  809.144837] CPU: 0 UID: 0 PID: 868 Comm: kworker/u8:13 Tainted: G        W        N  6.19.0-rc6+ #4788 PREEMPT(full) 
+[  809.144839] Tainted: [W]=WARN, [N]=TEST
+[  809.144840] Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS rel-1.17.0-0-gb52ca86e094d-prebuilt.qemu.org 04/01/2014
+[  809.144841] Workqueue: btrfs-endio simple_end_io_work
+[  809.144844] RIP: 0010:btrfs_repair_io_failure.cold+0xb2/0x120
+[  809.144847] Code: 82 e8 18 52 fc ff 0f 0b 41 b8 aa 03 00 00 48 c7 c1 f7 2b 07 83 31 d2 48 c7 c6 88 68 fb 82 48 c7 c7 f0 54 fa 82 e8 f4 51 fc ff <0f> 0b 41 b8 b4 03 00 00 48 c7 c1 f7 2b 07 83 31 d2 48 c7 c6 3d 2c
+[  809.144848] RSP: 0000:ffffc90001d2bcf0 EFLAGS: 00010246
+[  809.144849] RAX: 0000000000000051 RBX: 0000000000001000 RCX: 0000000000000000
+[  809.144850] RDX: 0000000000000000 RSI: ffffffff8305cf42 RDI: 00000000ffffffff
+[  809.144850] RBP: 0000000000000002 R08: 00000000fffeffff R09: ffffffff837fa988
+[  809.144851] R10: ffffffff8327a9e0 R11: 6f69747265737361 R12: ffff88813018d310
+[  809.144851] R13: ffff888168b8a000 R14: ffffc90001d2bd90 R15: ffff88810a169000
+[  809.144852] FS:  0000000000000000(0000) GS:ffff8885e752c000(0000) knlGS:0000000000000000
+[  809.144854] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[  809.145320] ------------[ cut here ]------------
+[  809.145542] CR2: 00007fee38baa000 CR3: 0000000106f7f006 CR4: 0000000000772ef0
+[  809.145807] kernel BUG at fs/btrfs/bio.c:938!
+[  809.146282] PKRU: 55555554
+[  809.146282] Call Trace:
+[  809.146282]  <TASK>
+[  809.146282]  btrfs_end_repair_bio+0x189/0x280
+[  809.146282]  ? _raw_spin_unlock+0x13/0x30
+[  809.146282]  ? move_linked_works+0x6b/0xa0
+[  809.146282]  process_one_work+0x16c/0x330
+[  809.146282]  worker_thread+0x254/0x3a0
+[  809.146282]  ? __pfx_worker_thread+0x10/0x10
+[  809.146282]  kthread+0x117/0x230
+[  809.146282]  ? __pfx_kthread+0x10/0x10
+[  809.146282]  ? __pfx_kthread+0x10/0x10
+[  809.146282]  ret_from_fork+0x1b6/0x200
+[  809.146282]  ? __pfx_kthread+0x10/0x10
+[  809.146282]  ret_from_fork_asm+0x1a/0x30
+[  809.146282]  </TASK>
+[  809.146282] Modules linked in:
+[  809.147371] assertion failed: !(fs_info->sb->s_flags & SB_RDONLY) :: 0, in fs/btrfs/bio.c:938
+[  809.146282]  kvm_intel kvm irqbypass
+[  809.147585] ---[ end trace 0000000000000000 ]---
+[  809.147921] ------------[ cut here ]------------
 

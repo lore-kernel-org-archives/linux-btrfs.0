@@ -1,251 +1,679 @@
-Received: from fhigh-b2-smtp.messagingengine.com (fhigh-b2-smtp.messagingengine.com [202.12.124.153])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wm1-f43.google.com (mail-wm1-f43.google.com [209.85.128.43])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2B53210F2
-	for <linux-btrfs@vger.kernel.org>; Mon, 26 Jan 2026 23:03:54 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.153
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 238EE288535
+	for <linux-btrfs@vger.kernel.org>; Mon, 26 Jan 2026 23:27:22 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.43
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1769468637; cv=none; b=Pw+/owCcG5EXYvKnrRTrb+oVaqJr2r2CzABbvBU6InGxPm+TTj7HmNFJkiL04AkZcxxaWkawB6NIOS9/wqlpQ/l4nq4t8mWdKULmO3SncQ+MtERk2TbgGkteJUdrfxVQUtUATSvSZiW+Z5hyv269uFoGlDl5iRvSz8hBHjYHKzU=
+	t=1769470045; cv=none; b=qgDxHBwAw0UaRIyIFRoQhyQua/wdGt3Ca/mkn0L07nTWhUWBSmLor9VmwpOQvV7rLPjBXhjSlGApox1lRAOvl8zoEo2E/3arnB5e2TavYUZhjlsgDgVZLqjYuZlqPmZRUvO+LEl0AV8HwAgM21LvZube5F+zwSGJE/XH0HAQVUg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1769468637; c=relaxed/simple;
-	bh=wnk0dCKQ1zWGcx6L9yHbjTLxXijEFjYyewxCLw6OQ/I=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=bBYAgnyxFb6Xm6L4+VSf+JpekkMV+yMwUtCR2n3W7aH/FTgh6Q4C6suT+3zCK6ZrB6kJwL1NbIIVvJNi/sgoWi1MuvSoI7gKuHpRBQj3Yz2d3X327whR0Ft9PL8tSkAugNpS3brHzD9ftt8+3itZgE6Qq8NSwqV0IVYtsg2wMcU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=lxHX80Pz; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=gAFcffIh; arc=none smtp.client-ip=202.12.124.153
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
+	s=arc-20240116; t=1769470045; c=relaxed/simple;
+	bh=FX8/pabwNfJ8niXx5NtwewhYY/Zq5tQDSCMqRKYhbUU=;
+	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
+	 In-Reply-To:Content-Type; b=lMCT4oRjH9rToqSM/jS2mvxUTDjfRYKxcMRv5+1M6TumM38vUo4myjTmM0AJTvSt5qblXDjZ2A/nfaMQpQvLjrm57xUBdSgWwQSyW3ko9ckq57I/eLcPo5eEW7DJc8H1AVbbC2EtsN6v412o4KI/RgpKyQYNcFsghkDu2mCq58c=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=B/Gh9Ilj; arc=none smtp.client-ip=209.85.128.43
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="lxHX80Pz";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="gAFcffIh"
-Received: from phl-compute-02.internal (phl-compute-02.internal [10.202.2.42])
-	by mailfhigh.stl.internal (Postfix) with ESMTP id 3A45A7A00AC;
-	Mon, 26 Jan 2026 18:03:54 -0500 (EST)
-Received: from phl-frontend-04 ([10.202.2.163])
-  by phl-compute-02.internal (MEProxy); Mon, 26 Jan 2026 18:03:54 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc
-	:content-transfer-encoding:content-type:date:date:from:from
-	:in-reply-to:message-id:mime-version:reply-to:subject:subject:to
-	:to; s=fm3; t=1769468634; x=1769555034; bh=uFszkoXkVp0jnFn4ZJrVx
-	ra0G5A9fY9SBRtok4E3S3c=; b=lxHX80PzrXaJrlJg7tBPLvLn9aNUhv3hOCCMQ
-	nXHOG0i3qKphcqtpCmUG08VlDuAUxgdBV5pDmLNDi4ao/Eeoda1z/Cmpih5jEX9e
-	EhPv8b3oW2ejZ4vkbIYz8QYSmoja7X/d52ITvS7kahGzQPkU9zWHAEKCPCBpsNHU
-	21+GshM3OgRyx+4w04T4+SS2PkqiLIQkcm3VPOjy+eus0HjmHkk8UA+RC4P2x5/g
-	mTR54LFZCbKTCNx3l+QTW5V2N/DhxcbtCGoGV7lzezgfyG8AdDOIXrKRcNkjSXTH
-	cq9yIoLbNdjmMSP3JBql/5PBIcnIyLggJ+NB3SPp91Qpe46iQ==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:content-transfer-encoding:content-type
-	:date:date:feedback-id:feedback-id:from:from:in-reply-to
-	:message-id:mime-version:reply-to:subject:subject:to:to
-	:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=
-	1769468634; x=1769555034; bh=uFszkoXkVp0jnFn4ZJrVxra0G5A9fY9SBRt
-	ok4E3S3c=; b=gAFcffIhmt2Xrdt4BitWkk12pm3LUTP4z4cFEtz0u/Wp1+SAHKB
-	vnMnBIhv5esDQZfPuDgvm/0wVXyRESKpjC4FtEFYOoFT0dATq+cFSiABL1Dwa44F
-	nEczswgptGn2lTORnTFHwUNjGnxzrwGghkrlvtCTxJm+oUI3pc5MpVtwge5ZlGKB
-	Lj4SUNDAzpAZFicvd7tk7tuBDFN4KoJSPeR3HCI5dHtn/TqNQeJlvWnJSX8onY2d
-	JRQYuy/gfURM9m8j75bHRMMT39giaJwHcIHISY9OxyN5VFchgdLNmpzEF+nZyTQL
-	LUoo7wUnz1mlNev+vzqqq8OMvWzX6dozu0g==
-X-ME-Sender: <xms:2fJ3aXlmIacAMwoc0MaBHLGgYGHUh2KuYXZDlKjo1-AOeoGpjBMjHg>
-    <xme:2fJ3aQ33aGmgUV71TmdNeLSRT-4-KXwdGoZgbQSteZontE5Z1zYdnyY-oTLMcbxo7
-    QJ2GRKULKLnqKVO-UWnZn99sODkZiM7HBzUeKV14hitPEqFWlTDR-3B>
-X-ME-Received: <xmr:2fJ3abTU62n0fhU03I7eEleZ8RFBLp_HGgl7PlzTWcTNELkJLbXQcvLlL_Iot83U6y0D8VjRm6-jPd2VWnIMV4WqgGg>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefgedrtddtgdduheekleegucetufdoteggodetrf
-    dotffvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfurfetoffkrfgpnffqhgenuceu
-    rghilhhouhhtmecufedttdenucenucfjughrpefhvffufffkofgggfestdekredtredttd
-    enucfhrhhomhepuehorhhishcuuehurhhkohhvuceosghorhhishessghurhdrihhoqeen
-    ucggtffrrghtthgvrhhnpeduiedtleeuieejfeelffevleeifefgjeejieegkeduudetfe
-    ekffeftefhvdejveenucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmhepmhgrihhl
-    fhhrohhmpegsohhrihhssegsuhhrrdhiohdpnhgspghrtghpthhtohepvddpmhhouggvpe
-    hsmhhtphhouhhtpdhrtghpthhtoheplhhinhhugidqsghtrhhfshesvhhgvghrrdhkvghr
-    nhgvlhdrohhrghdprhgtphhtthhopehkvghrnhgvlhdqthgvrghmsehfsgdrtghomh
-X-ME-Proxy: <xmx:2fJ3aauRTVDq_K23xsMQ2SVaDLPPEUF8utaJ8oxR9fB51d8Lj1hwdw>
-    <xmx:2fJ3aYYlUV_5t5nSG7STPPIfYE8Ynvyr9ZKGc5H3lz0ssvDpHqHWUA>
-    <xmx:2fJ3aXtJY-YflloCLGPD-tMxaDAYfIFUa2UH_W-C2bdnK1zZflkkhg>
-    <xmx:2fJ3aSF-Q4_ObC4gpTHqJ8sGcY8KtLqLdIbu2vvyT5cRYbf2BNvsdw>
-    <xmx:2vJ3adKo9vgn2JDlZujrN6PO6Y4Gz4Q0b4GIgJJj3Oz3LTwbub6J305P>
-Feedback-ID: i083147f8:Fastmail
-Received: by mail.messagingengine.com (Postfix) with ESMTPA; Mon,
- 26 Jan 2026 18:03:53 -0500 (EST)
-From: Boris Burkov <boris@bur.io>
-To: linux-btrfs@vger.kernel.org,
-	kernel-team@fb.com
-Subject: [PATCH] btrfs: fix block_group_tree dirty_list corruption
-Date: Mon, 26 Jan 2026 15:03:31 -0800
-Message-ID: <3fd15bae79aae6bb366ecffced32775e8cb4f55a.1769468599.git.boris@bur.io>
-X-Mailer: git-send-email 2.52.0
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="B/Gh9Ilj"
+Received: by mail-wm1-f43.google.com with SMTP id 5b1f17b1804b1-47f3b7ef761so36390855e9.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Jan 2026 15:27:22 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1769470041; x=1770074841; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:to:subject:user-agent:mime-version:date
+         :message-id:from:to:cc:subject:date:message-id:reply-to;
+        bh=J9WWi0oM2TM5aSyIeftYWxrweXFW0ceNyFpRfgd2Wko=;
+        b=B/Gh9Iljn/N6JCfMU6aOV8u4ZEgJpNcoojnQNYQobHWwcF7pjCsXpMmEWLYpi+N+UA
+         d/xS34Ciw23AOJEb0jAiiXGMDIIIfkmsWv0WM80efCNuHsgEnHjL/E9mFFv8y22UzGlY
+         G5aVMG3K8cVpvlcH3nR7ZSR5l71Wx0Bd1/y4c7brLQscQ1Tfin9oRKmtiNK5vWKg8AMS
+         X1FuFQC+ixFlPhjZgVmM2//OrxM9m8TmvIb420KN4grfhWoUNCbH9pn5SDk/2pivgBKN
+         WVGSRsSuC0efQhnt2gEnymo1ec51nZ2EzHnsSF2KWgK2dd1Z8TYy4kedjzyiMRnggkwp
+         9oVg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1769470041; x=1770074841;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:to:subject:user-agent:mime-version:date
+         :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=J9WWi0oM2TM5aSyIeftYWxrweXFW0ceNyFpRfgd2Wko=;
+        b=rLRqedeosCPsJMpuyPD1jnj3ufP4kqWTEctx5X9BZ0BxcKRO7Lhtee9XTZK923v+Ph
+         Mp/fDJt35eaLtLro9omhoxaUO2fdWGPP2d+WOcrbbTwNoFwDt1rUM2c/OWB7PTjNawwS
+         y1esN+pqyyXsuIJ2/xndwprAeeMm3bV5ROLy7LRfuVcbKyCgWmNYdCsS0PZ+yHVwEe1M
+         eKhXIoELKFW6GdIRh9lyTBG2/6Ve4tljR9jisxZVPbTMibb+g5mWZ2/AK3ActhNY1Sdm
+         w3SRKszAWha5I4Q3bq/NggEBuckQpFxhl7UuGvuooRiCIVRgQSxiFWtiXvJEv5H/2Cht
+         aqJQ==
+X-Forwarded-Encrypted: i=1; AJvYcCW7S/Fl58d/r21OpQNvT8NcSVU7Nj+KS3LCxjWBzDKtWDlM7h76TYM+SY8EDbPbctg0oPzpTGzqHY5Y9Q==@vger.kernel.org
+X-Gm-Message-State: AOJu0YzGe6O/xJ+OA32PhjPNdFPbY3Fd+Uj9xWKt6o7ZBxzcch3uUfrc
+	dUrr91+aaULg6WgP9AKpSPqP2wF9p148GlaeWD+W3IdAACNd0SSsMtl+J6AFPQ7L6R4=
+X-Gm-Gg: AZuq6aIktyCymm2ZHbuBtyqlhCV/9ji13+F1YhBSI7VF6YAT+vPWicj4Dy03KDLw0CU
+	AAJKhXveAb3Tkd6FKOzPJN7UIRSb3UlETeZRarojZfiZZbjH27VWcAmdAcurSIJDo5ssrs/PnIu
+	C2Dx4em1t1K1wMURozWdMvNU2R3Oe1/KOWCb/JVbpQoZljneA0WI9tGAKtLtiJjvtJx7Brv9s3I
+	R0Siahz6vtqoGtqUtdkKtoeqpp1AlhP2CnXLh5ukUO7vAwUYwu8e9TtDCnMABcCXW41YFXnv7b9
+	M+rsze7frbzR980WPWf1zuwBcYgYATnKRQ2Z/M2vyEa7aJaqGIdEjpLB4P+1zdO25zkOpGQKg+e
+	GNdcReyH0hDGDJgvi8dgpWUGOMwm25hSV5t+Qhkmew0rLzo+SVKwAm9LifAUOZ8clSnKHYAnemu
+	qThskE0QvsEB5g23oCkB+vBzHG8Hwps2x7Mhzf1wA=
+X-Received: by 2002:a05:600c:6812:b0:480:32da:f33e with SMTP id 5b1f17b1804b1-4805cf668bfmr92176085e9.17.1769470041207;
+        Mon, 26 Jan 2026 15:27:21 -0800 (PST)
+Received: from ?IPV6:2403:580d:fda1::299? (2403-580d-fda1--299.ip6.aussiebb.net. [2403:580d:fda1::299])
+        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3536f112f22sm4441295a91.5.2026.01.26.15.27.19
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 26 Jan 2026 15:27:20 -0800 (PST)
+Message-ID: <456744a8-71c7-4473-94c5-53a93864bf9f@suse.com>
+Date: Tue, 27 Jan 2026 09:57:16 +1030
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH] btrfs: collect untracked allocation stats
+To: Boris Burkov <boris@bur.io>, linux-btrfs@vger.kernel.org,
+ kernel-team@fb.com
+References: <e42e7c06710b0406ac548739945b386d8319b48e.1747095022.git.boris@bur.io>
+ <95f5c89f52556f69decc7f18a6fd1f2c09d711c9.1747095560.git.boris@bur.io>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <95f5c89f52556f69decc7f18a6fd1f2c09d711c9.1747095560.git.boris@bur.io>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
-When the incompat flag EXTENT_TREE_V2 is set, we unconditionally add the
-block group tree to the switch_commits list before calling
-switch_commit_roots, as we do for the tree root and the chunk root.
-However, the block group tree uses normal root dirty tracking and in any
-transaction that does an allocation and dirties a block group, the block
-group root will already be linked to a list by the dirty_list field and
-this use of list_add_tail() is invalid and corrupts the prev/next
-members of block_group_root->dirty_list.
 
-This is apparent on a subsequent list_del on the prev if we enable
-CONFIG_DEBUG_LIST:
-[   32.157161] ------------[ cut here ]------------
-[   32.157298] list_del corruption. next->prev should be
-ffff958890202538, but was ffff9588992bd538. (next=ffff958890201538)
-[   32.157538] WARNING: lib/list_debug.c:65 at 0x0, CPU#3: sync/607
-[   32.157712] Modules linked in: btrfs libblake2b xor zlib_deflate
-zstd_compress raid6_pq xfs ahci libahci libata virtio_scsi scsi_mod nvme
-virtio_net net_failover bsg nvme_core failover scsi_common evdev
-sch_fq_codel loop dm_mod configfs nfnetlink bpf_preload dmi_sysfs
-qemu_fw_cfg vmw_vsock_virtio_transport vmw_vsock_virtio_transport_common
-vsock virtio_rng rng_core ipv6 crc_ccitt autofs4
-[   32.158368] CPU: 3 UID: 0 PID: 607 Comm: sync Not tainted 6.18.0 #24
-PREEMPT(none)
-[   32.158527] Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS
-1.17.0-4.fc41 04/01/2014
-[   32.158708] RIP: 0010:__list_del_entry_valid_or_report+0x108/0x120
-[   32.158870] Code: e9 48 89 ee 67 48 0f b9 3a 31 c0 e9 67 ff ff ff 4c
-89 e7 e8 3a fb c5 ff 48 8d 3d 03 f8 10 01 49 8b 54 24 08 4c 89 e1 48 89
-ee <67> 48 0f b9 3a 31 c0 e9 41 ff ff ff 66 2e 0f 1f 84 00 00 00 00 00
-[   32.159309] RSP: 0018:ffffaa288287fdd0 EFLAGS: 00010202
-[   32.159430] RAX: 0000000000000001 RBX: ffff95889326e800 RCX:
-ffff958890201538
-[   32.159609] RDX: ffff9588992bd538 RSI: ffff958890202538 RDI:
-ffffffff82a41e00
-[   32.159781] RBP: ffff958890202538 R08: ffffffff828fc1e8 R09:
-00000000ffffefff
-[   32.159973] R10: ffffffff8288c200 R11: ffffffff828e4200 R12:
-ffff958890201538
-[   32.160153] R13: ffff95889326e958 R14: ffff958895c24000 R15:
-ffff958890202538
-[   32.160355] FS:  00007f0c28eb5740(0000) GS:ffff958af2bd2000(0000)
-knlGS:0000000000000000
-[   32.160574] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-[   32.160723] CR2: 00007f0c28e8a3cc CR3: 0000000109942005 CR4:
-0000000000370ef0
-[   32.160967] Call Trace:
-[   32.161054]  <TASK>
-[   32.161119]  switch_commit_roots+0x82/0x1d0 [btrfs]
-[   32.161521]  btrfs_commit_transaction+0x968/0x1550 [btrfs]
-[   32.161803]  ? btrfs_attach_transaction_barrier+0x23/0x60 [btrfs]
-[   32.162114]  __iterate_supers+0xe8/0x190
-[   32.162217]  ? __pfx_sync_fs_one_sb+0x10/0x10
-[   32.162342]  ksys_sync+0x63/0xb0
-[   32.162443]  __do_sys_sync+0xe/0x20
-[   32.162535]  do_syscall_64+0x73/0x450
-[   32.162641]  entry_SYSCALL_64_after_hwframe+0x76/0x7e
-[   32.162760] RIP: 0033:0x7f0c28d05d2b
-[   32.162881] Code: c3 66 0f 1f 44 00 00 48 8b 15 e9 40 0f 00 f7 d8 64
-89 02 b8 ff ff ff ff eb b8 0f 1f 44 00 00 f3 0f 1e fa b8 a2 00 00 00 0f
-05 <48> 3d 01 f0 ff ff 73 01 c3 48 8b 0d bd 40 0f 00 f7 d8 64 89 01 48
-[   32.163278] RSP: 002b:00007ffc9d988048 EFLAGS: 00000246 ORIG_RAX:
-00000000000000a2
-[   32.163452] RAX: ffffffffffffffda RBX: 00007ffc9d988228 RCX:
-00007f0c28d05d2b
-[   32.163614] RDX: 00007f0c28e02301 RSI: 00007ffc9d989b21 RDI:
-00007f0c28dba90d
-[   32.163780] RBP: 0000000000000001 R08: 0000000000000001 R09:
-0000000000000000
-[   32.163954] R10: 0000000000000000 R11: 0000000000000246 R12:
-000055b96572cb80
-[   32.164111] R13: 000055b96572b19f R14: 00007f0c28dfa434 R15:
-000055b96572b034
-[   32.164337]  </TASK>
-[   32.164404] irq event stamp: 0
-[   32.164490] hardirqs last  enabled at (0): [<0000000000000000>] 0x0
-[   32.164649] hardirqs last disabled at (0): [<ffffffff81298817>]
-copy_process+0xb37/0x2260
-[   32.164809] softirqs last  enabled at (0): [<ffffffff81298817>]
-copy_process+0xb37/0x2260
-[   32.165029] softirqs last disabled at (0): [<0000000000000000>] 0x0
-[   32.165222] ---[ end trace 0000000000000000 ]---
 
-Furthermore, this list corruption eventually (when we happen to add a
-new block group) results in getting the switch_commits and
-dirty_cowonly_roots lists mixed up and attempting to call update_root
-on the tree root which can't be found in the tree root, resulting in a
-transaction abort:
+在 2025/5/13 09:52, Boris Burkov 写道:
+> We allocate memory for extent_buffers and compressed io in a manner that
+> isn't tracked by any memory statistic.
 
-[   87.826960] BTRFS critical (device nvme1n1): unable to find root key (1 0 0) in tree 1
-[   87.827271] ------------[ cut here ]------------
-[   87.827418] BTRFS: Transaction aborted (error -117)
-[   87.827540] WARNING: fs/btrfs/root-tree.c:153 at 0x0, CPU#4: sync/703
-[   87.827722] Modules linked in: btrfs libblake2b xor zlib_deflate zstd_compress raid6_pq xfs ahci libahci libata virtio_scsi scsi_mod nvme nvme_core virtio_net bsg net_failover scsi_common failover evdev sch_fq_codel loop dm_mod configfs nfnetlink bpf_preload dmi_sysfs qemu_fw_cfg vmw_vsock_virtio_transport vmw_vsock_virtio_transport_common vsock virtio_rng rng_core ipv6 crc_ccitt autofs4
-[   87.828568] CPU: 4 UID: 0 PID: 703 Comm: sync Not tainted 6.18.0 #25 PREEMPT(none)
-[   87.828760] Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.17.0-4.fc41 04/01/2014
-[   87.828974] RIP: 0010:btrfs_update_root+0x296/0x790 [btrfs]
-[   87.829218] Code: 99 00 00 00 48 c7 c6 10 5d e0 c0 4c 89 ef e8 81 7c 01 00 41 bc 8b ff ff ff e9 1a ff ff ff 48 8d 3d ff e9 ee ff be 8b ff ff ff <67> 48 0f b9 3a 41 b8 01 00 00 00 eb c3 e8 f8 c6 b4 d8 84 c0 75 8a
-[   87.829583] RSP: 0018:ffffa58d035dfd60 EFLAGS: 00010282
-[   87.829704] RAX: ffff9a59126ddb68 RBX: ffff9a59126dc000 RCX: 0000000000000000
-[   87.829958] RDX: 0000000000000000 RSI: 00000000ffffff8b RDI: ffffffffc0b28270
-[   87.830168] RBP: ffff9a5904aec000 R08: 0000000000000000 R09: 00000000ffffefff
-[   87.830324] R10: ffffffff9ac8c200 R11: ffffffff9ace4200 R12: 0000000000000001
-[   87.830550] R13: ffff9a59041740e8 R14: ffff9a5904aec1f7 R15: ffff9a590fdefaf0
-[   87.830750] FS:  00007f54cde6b740(0000) GS:ffff9a5b5a81c000(0000) knlGS:0000000000000000
-[   87.830924] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-[   87.831078] CR2: 00007f54cde403cc CR3: 0000000112902004 CR4: 0000000000370ef0
-[   87.831274] Call Trace:
-[   87.831370]  <TASK>
-[   87.831466]  ? _raw_spin_unlock+0x23/0x40
-[   87.831575]  commit_cowonly_roots+0x1ad/0x250 [btrfs]
-[   87.831787]  ? btrfs_commit_transaction+0x79b/0x1560 [btrfs]
-[   87.832016]  btrfs_commit_transaction+0x8aa/0x1560 [btrfs]
-[   87.832258]  ? btrfs_attach_transaction_barrier+0x23/0x60 [btrfs]
-[   87.832523]  __iterate_supers+0xf1/0x170
-[   87.832621]  ? __pfx_sync_fs_one_sb+0x10/0x10
-[   87.832736]  ksys_sync+0x63/0xb0
-[   87.832835]  __do_sys_sync+0xe/0x20
-[   87.832940]  do_syscall_64+0x73/0x450
-[   87.833035]  entry_SYSCALL_64_after_hwframe+0x76/0x7e
-[   87.833174] RIP: 0033:0x7f54cdd05d2b
-[   87.833277] Code: c3 66 0f 1f 44 00 00 48 8b 15 e9 40 0f 00 f7 d8 64 89 02 b8 ff ff ff ff eb b8 0f 1f 44 00 00 f3 0f 1e fa b8 a2 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 8b 0d bd 40 0f 00 f7 d8 64 89 01 48
-[   87.833697] RSP: 002b:00007fff1b58ff78 EFLAGS: 00000246 ORIG_RAX: 00000000000000a2
-[   87.833896] RAX: ffffffffffffffda RBX: 00007fff1b590158 RCX: 00007f54cdd05d2b
-[   87.834072] RDX: 00007f54cde02301 RSI: 00007fff1b592b66 RDI: 00007f54cddba90d
-[   87.834272] RBP: 0000000000000001 R08: 0000000000000001 R09: 0000000000000000
-[   87.834478] R10: 0000000000000000 R11: 0000000000000246 R12: 000055e07ca96b80
-[   87.834646] R13: 000055e07ca9519f R14: 00007f54cddfa434 R15: 000055e07ca95034
-[   87.834849]  </TASK>
-[   87.834894] irq event stamp: 0
-[   87.834997] hardirqs last  enabled at (0): [<0000000000000000>] 0x0
-[   87.835165] hardirqs last disabled at (0): [<ffffffff99698797>] copy_process+0xb37/0x21e0
-[   87.835338] softirqs last  enabled at (0): [<ffffffff99698797>] copy_process+0xb37/0x21e0
-[   87.835557] softirqs last disabled at (0): [<0000000000000000>] 0x0
-[   87.835709] ---[ end trace 0000000000000000 ]---
-[   87.835824] BTRFS: error (device nvme1n1 state A) in btrfs_update_root:153: errno=-117 Filesystem corrupted
-[   87.836040] BTRFS info (device nvme1n1 state EA): forced readonly
-[   87.836221] BTRFS warning (device nvme1n1 state EA): Skipping commit of aborted transaction.
-[   87.836437] BTRFS: error (device nvme1n1 state EA) in cleanup_transaction:2037: errno=-117 Filesystem corrupted
+IIRC extent buffers are tracked in btree inode, as we only allocate a 
+folio then attach it to the btree inode's page cache.
 
-Since the block group tree was pulled out of the extent tree and uses
-normal root dirty tracking, remove the offending extra list_add. This
-fixes the list corruption and the resulting fs corruption.
+Thus only dummy extent buffers need real long term tracking.
 
-Fixes: f7238e5094048 ("btrfs: add support for multiple global roots")
-Signed-off-by: Boris Burkov <boris@bur.io>
----
- fs/btrfs/transaction.c | 7 -------
- 1 file changed, 7 deletions(-)
+It's still fine to keep tracking those eb folios even if they are 
+attached to the filemap, it may make some curious guys wonder why it's 
+larger than all the memory avaiable with all mm and btrfs numbers added.
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 8aa55cd8a0bf..0b2498749b1e 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -2508,13 +2508,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 	list_add_tail(&fs_info->chunk_root->dirty_list,
- 		      &cur_trans->switch_commits);
- 
--	if (btrfs_fs_incompat(fs_info, EXTENT_TREE_V2)) {
--		btrfs_set_root_node(&fs_info->block_group_root->root_item,
--				    fs_info->block_group_root->node);
--		list_add_tail(&fs_info->block_group_root->dirty_list,
--			      &cur_trans->switch_commits);
--	}
--
- 	switch_commit_roots(trans);
- 
- 	ASSERT(list_empty(&cur_trans->dirty_bgs));
--- 
-2.52.0
+
+For compressed folios, I see your solution is just to track the alloc 
+and release, without bothering the per-module caching, that's a good 
+idea but again it means we under calculate the number, not covering the 
+full lifespan of compressed folios.
+
+> It is, in principle, possible to
+> sort of track this memory by subtracting all trackable allocations from
+> the total memory and comparing to the amount free, but that is clumsy to
+> do, breaks when new memory accounting is added in the mm subsystem and
+> lacks any useful granularity.
+
+And memory hot plug will also screw up the substracting method.
+
+> 
+> This RFC proposes explicitly tracking btrfs's untracked allocations and
+> reporting them in /sys/fs/btrfs/<uuid>/memory_stats.
+> 
+> Open questions:
+> 1. Is this useful?
+
+To me, I believe it can be a cheaper version of kmemleak. Perfect for 
+CONFIG_BTRFS_DEBUG builds.
+Thus if some error/warning can be emitted at close_ctree() time, it will 
+be awesome.
+
+
+I would still recommend to get rid of the per-module compression folio 
+pool as the first step to get a more correct accounting for compression 
+folios.
+
+Personally speaking I do not feel that comfortable to maintain an 
+internal pool.
+I always believe the MM is more clever than us regarding memory allocation.
+
+And large bs support is already making the compr pool less useful anyway.
+
+> 2. What is the best concurrency model? I experimented with percpu
+>     variables which I don't think allow us to split it by fs_info in a
+>     reasonable way (short of dynamically growing a pointed-to percpu
+>     array as we add fs-es). I haven't thought too hard between spinlock,
+>     atomic, etc..
+
+I guess spinlock would be good enough? Memory allocation will take 
+longer time than our tiny spinlock duration anyway.
+
+And the overhead will never be as large as kmemleak.
+
+> 3. Am I missing any classes of untracked allocations?
+
+Scrub is also a user of such folio allocation.
+
+Thanks,
+Qu
+
+> 
+> If this does sound like a good idea to people, I will work harder on
+> validating the correctness of the data and picking an optimal
+> concurrency model. So far, I've just run fstests with this patch.
+> 
+> Signed-off-by: Boris Burkov <boris@bur.io>
+> ---
+> Note: Resent with a completely dumb work-in-progress commit on the
+> sysfs.c code squashed in. This one should actually apply/compile..
+> 
+>   fs/btrfs/compression.c | 31 +++++++++++++++++++++++++++----
+>   fs/btrfs/compression.h |  6 ++++--
+>   fs/btrfs/extent_io.c   | 23 ++++++++++++++++++++++-
+>   fs/btrfs/fs.h          | 10 ++++++++++
+>   fs/btrfs/inode.c       | 16 ++++++++++------
+>   fs/btrfs/lzo.c         | 10 ++++++----
+>   fs/btrfs/sysfs.c       | 15 +++++++++++++++
+>   fs/btrfs/zlib.c        | 16 +++++++---------
+>   fs/btrfs/zstd.c        | 16 +++++++---------
+>   9 files changed, 108 insertions(+), 35 deletions(-)
+> 
+> diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+> index 48d07939fee4..988887cc79ff 100644
+> --- a/fs/btrfs/compression.c
+> +++ b/fs/btrfs/compression.c
+> @@ -160,8 +160,10 @@ static int compression_decompress(int type, struct list_head *ws,
+>   
+>   static void btrfs_free_compressed_folios(struct compressed_bio *cb)
+>   {
+> +	struct btrfs_fs_info *fs_info = cb->bbio.inode->root->fs_info;
+> +
+>   	for (unsigned int i = 0; i < cb->nr_folios; i++)
+> -		btrfs_free_compr_folio(cb->compressed_folios[i]);
+> +		btrfs_free_compr_folio(fs_info, cb->compressed_folios[i]);
+>   	kfree(cb->compressed_folios);
+>   }
+>   
+> @@ -223,7 +225,7 @@ static unsigned long btrfs_compr_pool_scan(struct shrinker *sh, struct shrink_co
+>   /*
+>    * Common wrappers for page allocation from compression wrappers
+>    */
+> -struct folio *btrfs_alloc_compr_folio(void)
+> +struct folio *btrfs_alloc_compr_folio(struct btrfs_fs_info *fs_info)
+>   {
+>   	struct folio *folio = NULL;
+>   
+> @@ -238,10 +240,13 @@ struct folio *btrfs_alloc_compr_folio(void)
+>   	if (folio)
+>   		return folio;
+>   
+> -	return folio_alloc(GFP_NOFS, 0);
+> +	folio = folio_alloc(GFP_NOFS, 0);
+> +	if (folio)
+> +		btrfs_inc_compressed_io_folios(fs_info);
+> +	return folio;
+>   }
+>   
+> -void btrfs_free_compr_folio(struct folio *folio)
+> +void btrfs_free_compr_folio(struct btrfs_fs_info *fs_info, struct folio *folio)
+>   {
+>   	bool do_free = false;
+>   
+> @@ -259,6 +264,22 @@ void btrfs_free_compr_folio(struct folio *folio)
+>   
+>   	ASSERT(folio_ref_count(folio) == 1);
+>   	folio_put(folio);
+> +	btrfs_dec_compressed_io_folios(fs_info);
+> +}
+> +
+> +void btrfs_inc_compressed_io_folios(struct btrfs_fs_info *fs_info) {
+> +	spin_lock(&fs_info->memory_stats_lock);
+> +	fs_info->memory_stats.nr_compressed_io_folios++;
+> +	spin_unlock(&fs_info->memory_stats_lock);
+> +}
+> +
+> +void btrfs_dec_compressed_io_folios(struct btrfs_fs_info *fs_info)
+> +{
+> +	spin_lock(&fs_info->memory_stats_lock);
+> +	ASSERT(fs_info->memory_stats.nr_compressed_io_folios > 0,
+> +	       "%lu", fs_info->memory_stats.nr_compressed_io_folios);
+> +	fs_info->memory_stats.nr_compressed_io_folios--;
+> +	spin_unlock(&fs_info->memory_stats_lock);
+>   }
+>   
+>   static void end_bbio_compressed_read(struct btrfs_bio *bbio)
+> @@ -617,6 +638,8 @@ void btrfs_submit_compressed_read(struct btrfs_bio *bbio)
+>   		status = BLK_STS_RESOURCE;
+>   		goto out_free_compressed_pages;
+>   	}
+> +	for (int i = 0; i < cb->nr_folios; i++)
+> +		btrfs_inc_compressed_io_folios(fs_info);
+>   
+>   	add_ra_bio_pages(&inode->vfs_inode, em_start + em_len, cb, &memstall,
+>   			 &pflags);
+> diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
+> index d34c4341eaf4..a72a58337c76 100644
+> --- a/fs/btrfs/compression.h
+> +++ b/fs/btrfs/compression.h
+> @@ -105,8 +105,8 @@ void btrfs_submit_compressed_read(struct btrfs_bio *bbio);
+>   
+>   int btrfs_compress_str2level(unsigned int type, const char *str);
+>   
+> -struct folio *btrfs_alloc_compr_folio(void);
+> -void btrfs_free_compr_folio(struct folio *folio);
+> +struct folio *btrfs_alloc_compr_folio(struct btrfs_fs_info *fs_info);
+> +void btrfs_free_compr_folio(struct btrfs_fs_info *fs_info, struct folio *folio);
+>   
+>   enum btrfs_compression_type {
+>   	BTRFS_COMPRESS_NONE  = 0,
+> @@ -188,5 +188,7 @@ struct list_head *zstd_alloc_workspace(int level);
+>   void zstd_free_workspace(struct list_head *ws);
+>   struct list_head *zstd_get_workspace(int level);
+>   void zstd_put_workspace(struct list_head *ws);
+> +void btrfs_inc_compressed_io_folios(struct btrfs_fs_info *fs_info);
+> +void btrfs_dec_compressed_io_folios(struct btrfs_fs_info *fs_info);
+>   
+>   #endif
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index 281bb036fcb8..56e036ee3c87 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -611,6 +611,22 @@ int btrfs_alloc_page_array(unsigned int nr_pages, struct page **page_array,
+>   	return 0;
+>   }
+>   
+> +static void inc_extent_buffer_folios(struct btrfs_fs_info *fs_info)
+> +{
+> +	spin_lock(&fs_info->memory_stats_lock);
+> +	fs_info->memory_stats.nr_extent_buffer_folios++;
+> +	spin_unlock(&fs_info->memory_stats_lock);
+> +}
+> +
+> +static void dec_extent_buffer_folios(struct btrfs_fs_info *fs_info)
+> +{
+> +	spin_lock(&fs_info->memory_stats_lock);
+> +	ASSERT(fs_info->memory_stats.nr_extent_buffer_folios > 0,
+> +	       "%lu", fs_info->memory_stats.nr_extent_buffer_folios);
+> +	fs_info->memory_stats.nr_extent_buffer_folios--;
+> +	spin_unlock(&fs_info->memory_stats_lock);
+> +}
+> +
+>   /*
+>    * Populate needed folios for the extent buffer.
+>    *
+> @@ -626,8 +642,10 @@ static int alloc_eb_folio_array(struct extent_buffer *eb, bool nofail)
+>   	if (ret < 0)
+>   		return ret;
+>   
+> -	for (int i = 0; i < num_pages; i++)
+> +	for (int i = 0; i < num_pages; i++) {
+>   		eb->folios[i] = page_folio(page_array[i]);
+> +		inc_extent_buffer_folios(eb->fs_info);
+> +	}
+>   	eb->folio_size = PAGE_SIZE;
+>   	eb->folio_shift = PAGE_SHIFT;
+>   	return 0;
+> @@ -2816,6 +2834,7 @@ static void btrfs_release_extent_buffer_folios(const struct extent_buffer *eb)
+>   			continue;
+>   
+>   		detach_extent_buffer_folio(eb, folio);
+> +		dec_extent_buffer_folios(eb->fs_info);
+>   	}
+>   }
+>   
+> @@ -2865,6 +2884,7 @@ static void cleanup_extent_buffer_folios(struct extent_buffer *eb)
+>   		detach_extent_buffer_folio(eb, eb->folios[i]);
+>   		folio_put(eb->folios[i]);
+>   		eb->folios[i] = NULL;
+> +		dec_extent_buffer_folios(eb->fs_info);
+>   	}
+>   }
+>   
+> @@ -3418,6 +3438,7 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
+>   		ASSERT(!folio_test_private(folio));
+>   		folio_put(folio);
+>   		eb->folios[i] = NULL;
+> +		dec_extent_buffer_folios(eb->fs_info);
+>   	}
+>   	btrfs_release_extent_buffer(eb);
+>   	if (ret < 0)
+> diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
+> index 4394de12a767..47a66251ed1f 100644
+> --- a/fs/btrfs/fs.h
+> +++ b/fs/btrfs/fs.h
+> @@ -3,6 +3,7 @@
+>   #ifndef BTRFS_FS_H
+>   #define BTRFS_FS_H
+>   
+> +#include "compression.h"
+>   #include <linux/blkdev.h>
+>   #include <linux/sizes.h>
+>   #include <linux/time64.h>
+> @@ -422,6 +423,11 @@ struct btrfs_commit_stats {
+>   	u64 total_commit_dur;
+>   };
+>   
+> +struct btrfs_memory_stats {
+> +	unsigned long nr_compressed_io_folios;
+> +	unsigned long nr_extent_buffer_folios;
+> +};
+> +
+>   struct btrfs_fs_info {
+>   	u8 chunk_tree_uuid[BTRFS_UUID_SIZE];
+>   	unsigned long flags;
+> @@ -866,6 +872,9 @@ struct btrfs_fs_info {
+>   	/* Updates are not protected by any lock */
+>   	struct btrfs_commit_stats commit_stats;
+>   
+> +	spinlock_t memory_stats_lock;
+> +	struct btrfs_memory_stats memory_stats;
+> +
+>   	/*
+>   	 * Last generation where we dropped a non-relocation root.
+>   	 * Use btrfs_set_last_root_drop_gen() and btrfs_get_last_root_drop_gen()
+> @@ -897,6 +906,7 @@ struct btrfs_fs_info {
+>   #endif
+>   };
+>   
+> +
+>   #define folio_to_inode(_folio)	(BTRFS_I(_Generic((_folio),			\
+>   					  struct folio *: (_folio))->mapping->host))
+>   
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 964088d3f3f7..6a19f13d2eb6 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -1026,13 +1026,14 @@ static void compress_file_range(struct btrfs_work *work)
+>   	if (folios) {
+>   		for (i = 0; i < nr_folios; i++) {
+>   			WARN_ON(folios[i]->mapping);
+> -			btrfs_free_compr_folio(folios[i]);
+> +			btrfs_free_compr_folio(fs_info, folios[i]);
+>   		}
+>   		kfree(folios);
+>   	}
+>   }
+>   
+> -static void free_async_extent_pages(struct async_extent *async_extent)
+> +static void free_async_extent_pages(struct btrfs_fs_info *fs_info,
+> +				    struct async_extent *async_extent)
+>   {
+>   	int i;
+>   
+> @@ -1041,7 +1042,7 @@ static void free_async_extent_pages(struct async_extent *async_extent)
+>   
+>   	for (i = 0; i < async_extent->nr_folios; i++) {
+>   		WARN_ON(async_extent->folios[i]->mapping);
+> -		btrfs_free_compr_folio(async_extent->folios[i]);
+> +		btrfs_free_compr_folio(fs_info, async_extent->folios[i]);
+>   	}
+>   	kfree(async_extent->folios);
+>   	async_extent->nr_folios = 0;
+> @@ -1175,7 +1176,7 @@ static void submit_one_async_extent(struct async_chunk *async_chunk,
+>   	if (async_chunk->blkcg_css)
+>   		kthread_associate_blkcg(NULL);
+>   	if (free_pages)
+> -		free_async_extent_pages(async_extent);
+> +		free_async_extent_pages(fs_info, async_extent);
+>   	kfree(async_extent);
+>   	return;
+>   
+> @@ -1190,7 +1191,7 @@ static void submit_one_async_extent(struct async_chunk *async_chunk,
+>   				     EXTENT_DEFRAG | EXTENT_DO_ACCOUNTING,
+>   				     PAGE_UNLOCK | PAGE_START_WRITEBACK |
+>   				     PAGE_END_WRITEBACK);
+> -	free_async_extent_pages(async_extent);
+> +	free_async_extent_pages(fs_info, async_extent);
+>   	if (async_chunk->blkcg_css)
+>   		kthread_associate_blkcg(NULL);
+>   	btrfs_debug(fs_info,
+> @@ -9723,6 +9724,7 @@ ssize_t btrfs_do_encoded_write(struct kiocb *iocb, struct iov_iter *from,
+>   			ret = -ENOMEM;
+>   			goto out_folios;
+>   		}
+> +		btrfs_inc_compressed_io_folios(fs_info);
+>   		kaddr = kmap_local_folio(folios[i], 0);
+>   		if (copy_from_iter(kaddr, bytes, from) != bytes) {
+>   			kunmap_local(kaddr);
+> @@ -9845,8 +9847,10 @@ ssize_t btrfs_do_encoded_write(struct kiocb *iocb, struct iov_iter *from,
+>   	btrfs_unlock_extent(io_tree, start, end, &cached_state);
+>   out_folios:
+>   	for (i = 0; i < nr_folios; i++) {
+> -		if (folios[i])
+> +		if (folios[i]) {
+>   			folio_put(folios[i]);
+> +			btrfs_dec_compressed_io_folios(fs_info);
+> +		}
+>   	}
+>   	kvfree(folios);
+>   out:
+> diff --git a/fs/btrfs/lzo.c b/fs/btrfs/lzo.c
+> index d403641889ca..741cf70375a9 100644
+> --- a/fs/btrfs/lzo.c
+> +++ b/fs/btrfs/lzo.c
+> @@ -128,7 +128,8 @@ static inline size_t read_compress_length(const char *buf)
+>    *
+>    * Will allocate new pages when needed.
+>    */
+> -static int copy_compressed_data_to_page(char *compressed_data,
+> +static int copy_compressed_data_to_page(struct btrfs_fs_info *fs_info,
+> +					char *compressed_data,
+>   					size_t compressed_size,
+>   					struct folio **out_folios,
+>   					unsigned long max_nr_folio,
+> @@ -152,7 +153,7 @@ static int copy_compressed_data_to_page(char *compressed_data,
+>   	cur_folio = out_folios[*cur_out / PAGE_SIZE];
+>   	/* Allocate a new page */
+>   	if (!cur_folio) {
+> -		cur_folio = btrfs_alloc_compr_folio();
+> +		cur_folio = btrfs_alloc_compr_folio(fs_info);
+>   		if (!cur_folio)
+>   			return -ENOMEM;
+>   		out_folios[*cur_out / PAGE_SIZE] = cur_folio;
+> @@ -178,7 +179,7 @@ static int copy_compressed_data_to_page(char *compressed_data,
+>   		cur_folio = out_folios[*cur_out / PAGE_SIZE];
+>   		/* Allocate a new page */
+>   		if (!cur_folio) {
+> -			cur_folio = btrfs_alloc_compr_folio();
+> +			cur_folio = btrfs_alloc_compr_folio(fs_info);
+>   			if (!cur_folio)
+>   				return -ENOMEM;
+>   			out_folios[*cur_out / PAGE_SIZE] = cur_folio;
+> @@ -213,6 +214,7 @@ int lzo_compress_folios(struct list_head *ws, struct address_space *mapping,
+>   			u64 start, struct folio **folios, unsigned long *out_folios,
+>   			unsigned long *total_in, unsigned long *total_out)
+>   {
+> +	struct btrfs_fs_info *fs_info = BTRFS_I(mapping->host)->root->fs_info;
+>   	struct workspace *workspace = list_entry(ws, struct workspace, list);
+>   	const u32 sectorsize = inode_to_fs_info(mapping->host)->sectorsize;
+>   	struct folio *folio_in = NULL;
+> @@ -263,7 +265,7 @@ int lzo_compress_folios(struct list_head *ws, struct address_space *mapping,
+>   			goto out;
+>   		}
+>   
+> -		ret = copy_compressed_data_to_page(workspace->cbuf, out_len,
+> +		ret = copy_compressed_data_to_page(fs_info, workspace->cbuf, out_len,
+>   						   folios, max_nr_folio,
+>   						   &cur_out, sectorsize);
+>   		if (ret < 0)
+> diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+> index 5d93d9dd2c12..ff4ae6dd9e5c 100644
+> --- a/fs/btrfs/sysfs.c
+> +++ b/fs/btrfs/sysfs.c
+> @@ -1132,6 +1132,20 @@ static ssize_t btrfs_sectorsize_show(struct kobject *kobj,
+>   	return sysfs_emit(buf, "%u\n", fs_info->sectorsize);
+>   }
+>   
+> +static ssize_t btrfs_memory_stats_show(struct kobject *kobj,
+> +                                        struct kobj_attribute *a, char *buf)
+> +{
+> +	struct btrfs_fs_info *fs_info = to_fs_info(kobj);
+> +	struct btrfs_memory_stats *memory_stats = &fs_info->memory_stats;
+> +
+> +	return sysfs_emit(buf,
+> +			  "compressed_io_folios %lu\n"
+> +			  "extent_buffer_folios %lu\n",
+> +			  memory_stats->nr_compressed_io_folios,
+> +			  memory_stats->nr_extent_buffer_folios);
+> +}
+> +
+> +BTRFS_ATTR(, memory_stats, btrfs_memory_stats_show);
+>   BTRFS_ATTR(, sectorsize, btrfs_sectorsize_show);
+>   
+>   static ssize_t btrfs_commit_stats_show(struct kobject *kobj,
+> @@ -1588,6 +1602,7 @@ static const struct attribute *btrfs_attrs[] = {
+>   	BTRFS_ATTR_PTR(, bg_reclaim_threshold),
+>   	BTRFS_ATTR_PTR(, commit_stats),
+>   	BTRFS_ATTR_PTR(, temp_fsid),
+> +	BTRFS_ATTR_PTR(, memory_stats),
+>   #ifdef CONFIG_BTRFS_EXPERIMENTAL
+>   	BTRFS_ATTR_PTR(, offload_csum),
+>   #endif
+> diff --git a/fs/btrfs/zlib.c b/fs/btrfs/zlib.c
+> index 5292cd341f70..56dd7acaa50b 100644
+> --- a/fs/btrfs/zlib.c
+> +++ b/fs/btrfs/zlib.c
+> @@ -137,6 +137,8 @@ int zlib_compress_folios(struct list_head *ws, struct address_space *mapping,
+>   			 u64 start, struct folio **folios, unsigned long *out_folios,
+>   			 unsigned long *total_in, unsigned long *total_out)
+>   {
+> +	struct btrfs_inode *inode = BTRFS_I(mapping->host);
+> +	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+>   	struct workspace *workspace = list_entry(ws, struct workspace, list);
+>   	int ret;
+>   	char *data_in = NULL;
+> @@ -155,9 +157,7 @@ int zlib_compress_folios(struct list_head *ws, struct address_space *mapping,
+>   
+>   	ret = zlib_deflateInit(&workspace->strm, workspace->level);
+>   	if (unlikely(ret != Z_OK)) {
+> -		struct btrfs_inode *inode = BTRFS_I(mapping->host);
+> -
+> -		btrfs_err(inode->root->fs_info,
+> +		btrfs_err(fs_info,
+>   	"zlib compression init failed, error %d root %llu inode %llu offset %llu",
+>   			  ret, btrfs_root_id(inode->root), btrfs_ino(inode), start);
+>   		ret = -EIO;
+> @@ -167,7 +167,7 @@ int zlib_compress_folios(struct list_head *ws, struct address_space *mapping,
+>   	workspace->strm.total_in = 0;
+>   	workspace->strm.total_out = 0;
+>   
+> -	out_folio = btrfs_alloc_compr_folio();
+> +	out_folio = btrfs_alloc_compr_folio(fs_info);
+>   	if (out_folio == NULL) {
+>   		ret = -ENOMEM;
+>   		goto out;
+> @@ -225,9 +225,7 @@ int zlib_compress_folios(struct list_head *ws, struct address_space *mapping,
+>   
+>   		ret = zlib_deflate(&workspace->strm, Z_SYNC_FLUSH);
+>   		if (unlikely(ret != Z_OK)) {
+> -			struct btrfs_inode *inode = BTRFS_I(mapping->host);
+> -
+> -			btrfs_warn(inode->root->fs_info,
+> +			btrfs_warn(fs_info,
+>   		"zlib compression failed, error %d root %llu inode %llu offset %llu",
+>   				   ret, btrfs_root_id(inode->root), btrfs_ino(inode),
+>   				   start);
+> @@ -252,7 +250,7 @@ int zlib_compress_folios(struct list_head *ws, struct address_space *mapping,
+>   				ret = -E2BIG;
+>   				goto out;
+>   			}
+> -			out_folio = btrfs_alloc_compr_folio();
+> +			out_folio = btrfs_alloc_compr_folio(fs_info);
+>   			if (out_folio == NULL) {
+>   				ret = -ENOMEM;
+>   				goto out;
+> @@ -288,7 +286,7 @@ int zlib_compress_folios(struct list_head *ws, struct address_space *mapping,
+>   				ret = -E2BIG;
+>   				goto out;
+>   			}
+> -			out_folio = btrfs_alloc_compr_folio();
+> +			out_folio = btrfs_alloc_compr_folio(fs_info);
+>   			if (out_folio == NULL) {
+>   				ret = -ENOMEM;
+>   				goto out;
+> diff --git a/fs/btrfs/zstd.c b/fs/btrfs/zstd.c
+> index 4a796a049b5a..77cf8a605532 100644
+> --- a/fs/btrfs/zstd.c
+> +++ b/fs/btrfs/zstd.c
+> @@ -389,6 +389,8 @@ int zstd_compress_folios(struct list_head *ws, struct address_space *mapping,
+>   			 u64 start, struct folio **folios, unsigned long *out_folios,
+>   			 unsigned long *total_in, unsigned long *total_out)
+>   {
+> +	struct btrfs_inode *inode = BTRFS_I(mapping->host);
+> +	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+>   	struct workspace *workspace = list_entry(ws, struct workspace, list);
+>   	zstd_cstream *stream;
+>   	int ret = 0;
+> @@ -412,8 +414,6 @@ int zstd_compress_folios(struct list_head *ws, struct address_space *mapping,
+>   	stream = zstd_init_cstream(&workspace->params, len, workspace->mem,
+>   			workspace->size);
+>   	if (unlikely(!stream)) {
+> -		struct btrfs_inode *inode = BTRFS_I(mapping->host);
+> -
+>   		btrfs_err(inode->root->fs_info,
+>   	"zstd compression init level %d failed, root %llu inode %llu offset %llu",
+>   			  workspace->req_level, btrfs_root_id(inode->root),
+> @@ -432,7 +432,7 @@ int zstd_compress_folios(struct list_head *ws, struct address_space *mapping,
+>   	workspace->in_buf.size = cur_len;
+>   
+>   	/* Allocate and map in the output buffer */
+> -	out_folio = btrfs_alloc_compr_folio();
+> +	out_folio = btrfs_alloc_compr_folio(fs_info);
+>   	if (out_folio == NULL) {
+>   		ret = -ENOMEM;
+>   		goto out;
+> @@ -448,9 +448,7 @@ int zstd_compress_folios(struct list_head *ws, struct address_space *mapping,
+>   		ret2 = zstd_compress_stream(stream, &workspace->out_buf,
+>   				&workspace->in_buf);
+>   		if (unlikely(zstd_is_error(ret2))) {
+> -			struct btrfs_inode *inode = BTRFS_I(mapping->host);
+> -
+> -			btrfs_warn(inode->root->fs_info,
+> +			btrfs_warn(fs_info,
+>   "zstd compression level %d failed, error %d root %llu inode %llu offset %llu",
+>   				   workspace->req_level, zstd_get_error_code(ret2),
+>   				   btrfs_root_id(inode->root), btrfs_ino(inode),
+> @@ -482,7 +480,7 @@ int zstd_compress_folios(struct list_head *ws, struct address_space *mapping,
+>   				ret = -E2BIG;
+>   				goto out;
+>   			}
+> -			out_folio = btrfs_alloc_compr_folio();
+> +			out_folio = btrfs_alloc_compr_folio(fs_info);
+>   			if (out_folio == NULL) {
+>   				ret = -ENOMEM;
+>   				goto out;
+> @@ -525,7 +523,7 @@ int zstd_compress_folios(struct list_head *ws, struct address_space *mapping,
+>   		if (unlikely(zstd_is_error(ret2))) {
+>   			struct btrfs_inode *inode = BTRFS_I(mapping->host);
+>   
+> -			btrfs_err(inode->root->fs_info,
+> +			btrfs_err(fs_info,
+>   "zstd compression end level %d failed, error %d root %llu inode %llu offset %llu",
+>   				  workspace->req_level, zstd_get_error_code(ret2),
+>   				  btrfs_root_id(inode->root), btrfs_ino(inode),
+> @@ -549,7 +547,7 @@ int zstd_compress_folios(struct list_head *ws, struct address_space *mapping,
+>   			ret = -E2BIG;
+>   			goto out;
+>   		}
+> -		out_folio = btrfs_alloc_compr_folio();
+> +		out_folio = btrfs_alloc_compr_folio(fs_info);
+>   		if (out_folio == NULL) {
+>   			ret = -ENOMEM;
+>   			goto out;
 

@@ -1,67 +1,60 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B9DF92EBBB2
-	for <linux-btrfs@vger.kernel.org>; Tue, 27 Jan 2026 03:11:42 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DC72415B971
+	for <linux-btrfs@vger.kernel.org>; Tue, 27 Jan 2026 05:17:17 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1769483504; cv=none; b=dyj7UigMWXfEW39+1iqPk+gQiVVNP7/cO5hmtOS8TpLta4q1LKyPkY+pnRHINC2789RhqPEaTojiXum21UaGr7WFOLA+axc78ITt3iOqwVyuwbgpS/idY0QNkZzB77R+2R/Hg/g1VR9sW6NTT+h711vOy+XE/SpvThgfyo3B0Y8=
+	t=1769491039; cv=none; b=iH11HTMrDPamOmJk7Ptey4n0Wdk7fJgA5kTR4md8TxZ6Kx5eYiNh7U+EqyoF02HV3R6i8b8LP74mKptM7atOQ4sC95ta//5/CJKlNreK0QTcAo1JZYX1RMIja19y/R5B2KVGZr+QHn6GBkT/cAfLV9PMk+/P1dyoN+Z9G41n174=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1769483504; c=relaxed/simple;
-	bh=lMVAftXgHrlNgTQDNRSqqb3mAvePR0cSvRRhH1ypND0=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=hEawWfqwgzwyVxeVFhnLBjHyYAeOaNEZSru3fb3odLpBJ5DsqSIUf5GrNSgms+xWxQW+RxjBOGyh3yXwyECkPXNd3WLzhnIr1LvsES08XwseG3YsuD6z9fIu7n+KQuoBXZADsD5Cq8XvX5j3rxVbnqBBPddnJ/gPthsYIN2HKHg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=RHSYHHsq; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=RHSYHHsq; arc=none smtp.client-ip=195.135.223.130
+	s=arc-20240116; t=1769491039; c=relaxed/simple;
+	bh=WTF1m52iqisP3SFPK+SDBvKd4tCSGzoy1eLL6dVpzlg=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=mu3cqnE/8oXSwg5FUwE0ZQJDi7mvxugduiFtLOLkEq/0SeHxXSMHIZadxp98wDwoCxqXOwHvqJwRnM1Dgo0YTvboUlY6RuiES4JvGX8LpYkaGq4CdIl8SFKvAbi/kwEEXAFRTeMxK0rgxDnaz/tfpS+Mb9ivlKJ7uhQDLzmln5A=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=XENBzRAH; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=dDjNQsTB; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="RHSYHHsq";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="RHSYHHsq"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="XENBzRAH";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="dDjNQsTB"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id BCDFF337AF
-	for <linux-btrfs@vger.kernel.org>; Tue, 27 Jan 2026 03:11:15 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id CC97C5BCD0;
+	Tue, 27 Jan 2026 05:17:15 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1769483475; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=OdV4o/Y96P1PBUMvMIKkXik0j73qewYDTzL6dLvFQac=;
-	b=RHSYHHsqnXnO4kihRw0JiTwXUsGZ84R3J0DnBcVYOQ2Fllt/lTMyr3g+VatqRgTT+SH3md
-	xUkYgwDGG0CTFKAlshDgaoOaFjWOp3XHIlp0EJ3Ky58CxxJQmba5tlUYnyfnT7kQHG0Oqv
-	8+NsNVRg3KKaWUBnI5XRNunLFpWIRp4=
-Authentication-Results: smtp-out1.suse.de;
-	none
+	t=1769491036; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=MjW3oKEZSQibc72ru5QKGjJ89FaiLlqUfRk+NLSinUU=;
+	b=XENBzRAH0/XmkNmdSMG24Os2hiFAIitcDRYB/8C+XUtSIZpITXJAHrguALoP6hQapmM0i8
+	g0ICrwl+8TuFYHb5uQnxHb7szzTGZkZXWoyePN9+NVS9g73SIUfAQ8A5Vvpl8lCid5lyx8
+	9M62cmdNwR8U+DGBplmr/xqxciaiATg=
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=dDjNQsTB
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1769483475; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=OdV4o/Y96P1PBUMvMIKkXik0j73qewYDTzL6dLvFQac=;
-	b=RHSYHHsqnXnO4kihRw0JiTwXUsGZ84R3J0DnBcVYOQ2Fllt/lTMyr3g+VatqRgTT+SH3md
-	xUkYgwDGG0CTFKAlshDgaoOaFjWOp3XHIlp0EJ3Ky58CxxJQmba5tlUYnyfnT7kQHG0Oqv
-	8+NsNVRg3KKaWUBnI5XRNunLFpWIRp4=
+	t=1769491035; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=MjW3oKEZSQibc72ru5QKGjJ89FaiLlqUfRk+NLSinUU=;
+	b=dDjNQsTBNMJmPbZK7/KVTK0IS+KifKuQd2l8YKHLFwKtUUgyTZVHB42H0XpcqKAPH4fvlt
+	XgqOb5ZLRQYj2aYgG7GkifHqK9O5dWY4yIVmiIV3XNdBBYHyEmfTFSsD7bxVPDcxx2dDrU
+	2ESOlitTn9pFhsGAs8gBtOOtVIhS//k=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id B06D813712
-	for <linux-btrfs@vger.kernel.org>; Tue, 27 Jan 2026 03:11:14 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 7008F13712;
+	Tue, 27 Jan 2026 05:17:14 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id cOd3F9IseGnFewAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Tue, 27 Jan 2026 03:11:14 +0000
+	id 4krCBlpKeGlBbwAAD6G6ig
+	(envelope-from <wqu@suse.com>); Tue, 27 Jan 2026 05:17:14 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 8/9] btrfs: get rid of compressed_folios[] usage for encoded writes
-Date: Tue, 27 Jan 2026 13:40:41 +1030
-Message-ID: <9781beb3fa2948d125d16393d755c60096b855e8.1769482298.git.wqu@suse.com>
+Cc: Christoph Hellwig <hch@lst.de>
+Subject: [PATCH] btrfs: do not ASSERT() when the fs flips RO inside btrfs_repair_io_failure()
+Date: Tue, 27 Jan 2026 15:46:55 +1030
+Message-ID: <f21d342502c5ab027f38945fe06cda99af759784.1769491014.git.wqu@suse.com>
 X-Mailer: git-send-email 2.52.0
-In-Reply-To: <cover.1769482298.git.wqu@suse.com>
-References: <cover.1769482298.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -69,276 +62,130 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-2.80 / 50.00];
+X-Spamd-Result: default: False [-3.01 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	MID_CONTAINS_FROM(1.00)[];
 	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	ARC_NA(0.00)[];
+	MX_GOOD(-0.01)[];
 	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	FROM_HAS_DN(0.00)[];
-	TO_DN_NONE(0.00)[];
 	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	RCVD_COUNT_TWO(0.00)[2];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	FROM_EQ_ENVFROM(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:dkim,suse.com:email,lst.de:email];
+	ARC_NA(0.00)[];
 	MIME_TRACE(0.00)[0:+];
-	RCVD_TLS_ALL(0.00)[]
+	FROM_HAS_DN(0.00)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	RCPT_COUNT_TWO(0.00)[2];
+	URIBL_BLOCKED(0.00)[lst.de:email,qemu.org:url,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.com:mid,suse.com:dkim,suse.com:email];
+	RCVD_TLS_ALL(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_DN_SOME(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DKIM_TRACE(0.00)[suse.com:+]
 X-Spam-Flag: NO
-X-Spam-Score: -2.80
+X-Spam-Score: -3.01
+X-Rspamd-Queue-Id: CC97C5BCD0
+X-Rspamd-Action: no action
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
 X-Spam-Level: 
 
-Currently only encoded writes utilized btrfs_submit_compressed_write(),
-which utilized compressed_bio::compressed_folios[] array.
+[BUG]
+There is a bug report that when btrfs hits ENOSPC error in a critical
+path, btrfs flips RO (this part is expected, although the ENOSPC bug
+still needs to be addressed).
 
-Change the only call site to call the new helper,
-btrfs_alloc_compressed_write(), to allocate a compressed bio, then queue
-needed folios into that bio, and finally call
-btrfs_submit_compressed_write() to submit the compreseed bio.
+The problem is after the RO flip, if we trigger a read repair, we can
+hit the ASSERT() inside btrfs_repair_io_failure() like the following:
 
-This change has one hidden benefit, previously we use
-btrfs_alloc_folio_array() for the folios of
-btrfs_submit_compressed_read(), which doesn't utilize the compression
-page pool for bs == ps cases.
+ BTRFS info (device vdc): relocating block group 30408704 flags metadata|raid1
+ ------------[ cut here ]------------
+ BTRFS: Transaction aborted (error -28)
+ WARNING: fs/btrfs/extent-tree.c:3235 at __btrfs_free_extent.isra.0+0x453/0xfd0, CPU#1: btrfs/383844
+ Modules linked in: kvm_intel kvm irqbypass
+ [...]
+ ---[ end trace 0000000000000000 ]---
+ BTRFS info (device vdc state EA): 2 enospc errors during balance
+ BTRFS info (device vdc state EA): balance: ended with status: -30
+ BTRFS error (device vdc state EA): parent transid verify failed on logical 30556160 mirror 2 wanted 8 found 6
+ BTRFS error (device vdc state EA): bdev /dev/nvme0n1 errs: wr 0, rd 0, flush 0, corrupt 10, gen 0
+ [...]
+ assertion failed: !(fs_info->sb->s_flags & SB_RDONLY) :: 0, in fs/btrfs/bio.c:938
+ ------------[ cut here ]------------
+ assertion failed: !(fs_info->sb->s_flags & SB_RDONLY) :: 0, in fs/btrfs/bio.c:938
+ kernel BUG at fs/btrfs/bio.c:938!
+ Oops: invalid opcode: 0000 [#1] SMP NOPTI
+ CPU: 0 UID: 0 PID: 868 Comm: kworker/u8:13 Tainted: G        W        N  6.19.0-rc6+ #4788 PREEMPT(full)
+ Tainted: [W]=WARN, [N]=TEST
+ Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS rel-1.17.0-0-gb52ca86e094d-prebuilt.qemu.org 04/01/2014
+ Workqueue: btrfs-endio simple_end_io_work
+ RIP: 0010:btrfs_repair_io_failure.cold+0xb2/0x120
+ Code: 82 e8 18 52 fc ff 0f 0b 41 b8 aa 03 00 00 48 c7 c1 f7 2b 07 83 31 d2 48 c7 c6 88 68 fb 82 48 c7 c7 f0 54 fa 82 e8 f4 51 fc ff <0f> 0b 41 b8 b4 03 00 00 48 c7 c1 f7 2b 07 83 31 d2 48 c7 c6 3d 2c
+ RSP: 0000:ffffc90001d2bcf0 EFLAGS: 00010246
+ RAX: 0000000000000051 RBX: 0000000000001000 RCX: 0000000000000000
+ RDX: 0000000000000000 RSI: ffffffff8305cf42 RDI: 00000000ffffffff
+ RBP: 0000000000000002 R08: 00000000fffeffff R09: ffffffff837fa988
+ R10: ffffffff8327a9e0 R11: 6f69747265737361 R12: ffff88813018d310
+ R13: ffff888168b8a000 R14: ffffc90001d2bd90 R15: ffff88810a169000
+ FS:  0000000000000000(0000) GS:ffff8885e752c000(0000) knlGS:0000000000000000
+ CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+ ------------[ cut here ]------------
 
-Now we call btrfs_alloc_compr_folio() which will benefit from page pool.
+[CAUSE]
+The cause of -ENOSPC error during the test case btrfs/124 is still
+unknown, although it's known that we still have cases where metadata can
+be over-committed but can not be fulfilled correctly, thus if we hit
+such ENOSPC error inside a critical path, we have no choice but abort
+the current transaction.
 
-The other obvious benefit is that we no longer need to allocate an array
-to hold all those folios, thus one less error path.
+This will mark the fs read-only.
 
+The problem is inside the btrfs_repair_io_failure() path that we require
+the fs not to be mount read-only. This is normally fine, but if we are
+doing a read-repair meanwhile the fs flips RO due to a critical error,
+we can enter btrfs_repair_io_failure() with super block set to
+read-only, thus triggering the above crash.
+
+[FIX]
+Just replace the ASSERT() with a proper return if the fs is already
+read-only.
+
+Reported-by: Christoph Hellwig <hch@lst.de>
+Link: https://lore.kernel.org/linux-btrfs/20260126045555.GB31641@lst.de/
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/compression.c | 53 +++++++++++++++++----------------------
- fs/btrfs/compression.h |  6 ++---
- fs/btrfs/inode.c       | 56 +++++++++++++++++++++++-------------------
- 3 files changed, 56 insertions(+), 59 deletions(-)
+ fs/btrfs/bio.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index c018b3c4554e..205f6828c1e6 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -304,25 +304,6 @@ static void end_bbio_compressed_write(struct btrfs_bio *bbio)
- 	bio_put(&cb->bbio.bio);
- }
+diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
+index d3475d179362..b0e9c46ff25b 100644
+--- a/fs/btrfs/bio.c
++++ b/fs/btrfs/bio.c
+@@ -928,7 +928,6 @@ int btrfs_repair_io_failure(struct btrfs_fs_info *fs_info, u64 ino, u64 fileoff,
+ 	struct bio *bio = NULL;
+ 	int ret = 0;
  
--static void btrfs_add_compressed_bio_folios(struct compressed_bio *cb)
--{
--	struct bio *bio = &cb->bbio.bio;
--	u32 offset = 0;
--	unsigned int findex = 0;
--
--	while (offset < cb->compressed_len) {
--		struct folio *folio = cb->compressed_folios[findex];
--		u32 len = min_t(u32, cb->compressed_len - offset, folio_size(folio));
--		int ret;
--
--		/* Maximum compressed extent is smaller than bio size limit. */
--		ret = bio_add_folio(bio, folio, len, 0);
--		ASSERT(ret);
--		offset += len;
--		findex++;
--	}
--}
--
- /*
-  * worker function to build and submit bios for previously compressed pages.
-  * The corresponding pages in the inode should be marked for writeback
-@@ -333,34 +314,44 @@ static void btrfs_add_compressed_bio_folios(struct compressed_bio *cb)
-  * the end io hooks.
-  */
- void btrfs_submit_compressed_write(struct btrfs_ordered_extent *ordered,
--				   struct folio **compressed_folios,
--				   unsigned int nr_folios,
--				   blk_opf_t write_flags,
--				   bool writeback)
-+				   struct compressed_bio *cb)
- {
- 	struct btrfs_inode *inode = ordered->inode;
- 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
--	struct compressed_bio *cb;
+-	ASSERT(!(fs_info->sb->s_flags & SB_RDONLY));
+ 	BUG_ON(!mirror_num);
  
- 	ASSERT(IS_ALIGNED(ordered->file_offset, fs_info->sectorsize));
- 	ASSERT(IS_ALIGNED(ordered->num_bytes, fs_info->sectorsize));
-+	ASSERT(cb->writeback);
+ 	/* Basic alignment checks. */
+@@ -940,6 +939,13 @@ int btrfs_repair_io_failure(struct btrfs_fs_info *fs_info, u64 ino, u64 fileoff,
+ 	ASSERT(step <= length);
+ 	ASSERT(is_power_of_2(step));
  
--	cb = alloc_compressed_bio(inode, ordered->file_offset,
--				  REQ_OP_WRITE | write_flags,
--				  end_bbio_compressed_write);
- 	cb->start = ordered->file_offset;
- 	cb->len = ordered->num_bytes;
--	cb->compressed_folios = compressed_folios;
- 	cb->compressed_len = ordered->disk_num_bytes;
--	cb->writeback = writeback;
--	cb->nr_folios = nr_folios;
- 	cb->bbio.bio.bi_iter.bi_sector = ordered->disk_bytenr >> SECTOR_SHIFT;
- 	cb->bbio.ordered = ordered;
--	btrfs_add_compressed_bio_folios(cb);
- 
- 	btrfs_submit_bbio(&cb->bbio, 0);
- }
- 
-+/*
-+ * Allocate a compressed write bio for @inode file offset @start length @len.
-+ *
-+ * The caller still needs to properly queue all folios and populate involved
-+ * members.
-+ */
-+struct compressed_bio *btrfs_alloc_compressed_write(struct btrfs_inode *inode,
-+						    u64 start, u64 len)
-+{
-+	struct compressed_bio *cb;
++	/*
++	 * The fs either mounted RO or hit critical errors, no need
++	 * to continue repairing.
++	 */
++	if (unlikely(sb_rdonly(fs_info->sb)))
++		return 0;
 +
-+	cb = alloc_compressed_bio(inode, start, REQ_OP_WRITE,
-+				  end_bbio_compressed_write);
-+	cb->start = start;
-+	cb->len = len;
-+	cb->writeback = true;
-+
-+	return cb;
-+}
-+
- /*
-  * Add extra pages in the same compressed file extent so that we don't need to
-  * re-read the same extent again and again.
-diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
-index 7dc48e556313..2d3a28b26997 100644
---- a/fs/btrfs/compression.h
-+++ b/fs/btrfs/compression.h
-@@ -96,10 +96,10 @@ int btrfs_decompress(int type, const u8 *data_in, struct folio *dest_folio,
- int btrfs_decompress_buf2page(const char *buf, u32 buf_len,
- 			      struct compressed_bio *cb, u32 decompressed);
+ 	if (btrfs_repair_one_zone(fs_info, logical))
+ 		return 0;
  
-+struct compressed_bio *btrfs_alloc_compressed_write(struct btrfs_inode *inode,
-+						    u64 start, u64 len);
- void btrfs_submit_compressed_write(struct btrfs_ordered_extent *ordered,
--				   struct folio **compressed_folios,
--				   unsigned int nr_folios, blk_opf_t write_flags,
--				   bool writeback);
-+				   struct compressed_bio *cb);
- void btrfs_submit_compressed_read(struct btrfs_bio *bbio);
- 
- int btrfs_compress_str2level(unsigned int type, const char *str, int *level_ret);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index d010621b64d5..f1df43f2e69a 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -9804,12 +9804,13 @@ ssize_t btrfs_do_encoded_write(struct kiocb *iocb, struct iov_iter *from,
- 	struct extent_state *cached_state = NULL;
- 	struct btrfs_ordered_extent *ordered;
- 	struct btrfs_file_extent file_extent;
-+	struct compressed_bio *cb = NULL;
- 	int compression;
- 	size_t orig_count;
-+	const u32 min_folio_size = btrfs_min_folio_size(fs_info);
- 	u64 start, end;
- 	u64 num_bytes, ram_bytes, disk_num_bytes;
--	unsigned long nr_folios, i;
--	struct folio **folios;
-+	unsigned long nr_folios;
- 	struct btrfs_key ins;
- 	bool extent_reserved = false;
- 	struct extent_map *em;
-@@ -9899,38 +9900,45 @@ ssize_t btrfs_do_encoded_write(struct kiocb *iocb, struct iov_iter *from,
- 	 */
- 	disk_num_bytes = ALIGN(orig_count, fs_info->sectorsize);
- 	nr_folios = DIV_ROUND_UP(disk_num_bytes, PAGE_SIZE);
--	folios = kvcalloc(nr_folios, sizeof(struct folio *), GFP_KERNEL_ACCOUNT);
--	if (!folios)
--		return -ENOMEM;
--	for (i = 0; i < nr_folios; i++) {
--		size_t bytes = min_t(size_t, PAGE_SIZE, iov_iter_count(from));
-+
-+	cb = btrfs_alloc_compressed_write(inode, start, num_bytes);
-+	for (int i = 0; i < nr_folios; i++) {
-+		struct folio *folio;
-+		size_t bytes = min(min_folio_size, iov_iter_count(from));
- 		char *kaddr;
- 
--		folios[i] = folio_alloc(GFP_KERNEL_ACCOUNT, 0);
--		if (!folios[i]) {
-+		folio = btrfs_alloc_compr_folio(fs_info);
-+		if (!folio) {
- 			ret = -ENOMEM;
--			goto out_folios;
-+			goto out_cb;
- 		}
--		kaddr = kmap_local_folio(folios[i], 0);
-+		kaddr = kmap_local_folio(folio, 0);
- 		if (copy_from_iter(kaddr, bytes, from) != bytes) {
- 			kunmap_local(kaddr);
-+			folio_put(folio);
- 			ret = -EFAULT;
--			goto out_folios;
-+			goto out_cb;
-+		}
-+		if (bytes < min_folio_size)
-+			folio_zero_range(folio, bytes, min_folio_size - bytes);
-+		ret = bio_add_folio(&cb->bbio.bio, folio, folio_size(folio), 0);
-+		if (!unlikely(ret)) {
-+			folio_put(folio);
-+			ret = -EINVAL;
-+			goto out_cb;
- 		}
--		if (bytes < PAGE_SIZE)
--			memset(kaddr + bytes, 0, PAGE_SIZE - bytes);
--		kunmap_local(kaddr);
- 	}
-+	ASSERT(cb->bbio.bio.bi_iter.bi_size == disk_num_bytes);
- 
- 	for (;;) {
- 		ret = btrfs_wait_ordered_range(inode, start, num_bytes);
- 		if (ret)
--			goto out_folios;
-+			goto out_cb;
- 		ret = invalidate_inode_pages2_range(inode->vfs_inode.i_mapping,
- 						    start >> PAGE_SHIFT,
- 						    end >> PAGE_SHIFT);
- 		if (ret)
--			goto out_folios;
-+			goto out_cb;
- 		btrfs_lock_extent(io_tree, start, end, &cached_state);
- 		ordered = btrfs_lookup_ordered_range(inode, start, num_bytes);
- 		if (!ordered &&
-@@ -9962,7 +9970,8 @@ ssize_t btrfs_do_encoded_write(struct kiocb *iocb, struct iov_iter *from,
- 	    encoded->unencoded_offset == 0 &&
- 	    can_cow_file_range_inline(inode, start, encoded->len, orig_count)) {
- 		ret = __cow_file_range_inline(inode, encoded->len,
--					      orig_count, compression, folios[0],
-+					      orig_count, compression,
-+					      bio_first_folio_all(&cb->bbio.bio),
- 					      true);
- 		if (ret <= 0) {
- 			if (ret == 0)
-@@ -10007,7 +10016,7 @@ ssize_t btrfs_do_encoded_write(struct kiocb *iocb, struct iov_iter *from,
- 
- 	btrfs_delalloc_release_extents(inode, num_bytes);
- 
--	btrfs_submit_compressed_write(ordered, folios, nr_folios, 0, false);
-+	btrfs_submit_compressed_write(ordered, cb);
- 	ret = orig_count;
- 	goto out;
- 
-@@ -10029,12 +10038,9 @@ ssize_t btrfs_do_encoded_write(struct kiocb *iocb, struct iov_iter *from,
- 		btrfs_free_reserved_data_space_noquota(inode, disk_num_bytes);
- out_unlock:
- 	btrfs_unlock_extent(io_tree, start, end, &cached_state);
--out_folios:
--	for (i = 0; i < nr_folios; i++) {
--		if (folios[i])
--			folio_put(folios[i]);
--	}
--	kvfree(folios);
-+out_cb:
-+	if (cb)
-+		cleanup_compressed_bio(cb);
- out:
- 	if (ret >= 0)
- 		iocb->ki_pos += encoded->len;
 -- 
 2.52.0
 

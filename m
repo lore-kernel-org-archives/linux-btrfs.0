@@ -1,64 +1,64 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 90B122FD7A7
-	for <linux-btrfs@vger.kernel.org>; Tue, 27 Jan 2026 03:11:27 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4BACE2FD698
+	for <linux-btrfs@vger.kernel.org>; Tue, 27 Jan 2026 03:11:29 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1769483488; cv=none; b=hgSvB6CQ5lHyALvTa444o9kNUis+H/WKUFCL9w4SPM4/PYxkYg0NMxyHFOR8dWIn5B5zthoJmyJa8B/4G74m2ySd+ihat1fey0N/0H7SvjzsgWp+t86s8RcAVIWsoBerQoqjc87i+cpXFLjmaY+SG5F0wN69IuE96GiPW0Rek08=
+	t=1769483490; cv=none; b=sBtwz6OLGPoT6M32N0XtE/gwqmiP8HvzEZQviwI3rk3UwhjVlH5fDSZunokTmajtBCoW4yWPwffx++uJXGrfKCld4JfwTga1P1mW9eu6YxnWKUqS38tvMTsf95LaAWIBBBdzrnR9n/2slsuYEOtU/qVytkXE2rVl0i93NpRi6GQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1769483488; c=relaxed/simple;
-	bh=PvriWESOZixcPxiPQVrPc4W4GjVs06nsmxAZ2QALupU=;
+	s=arc-20240116; t=1769483490; c=relaxed/simple;
+	bh=EXYc+e8UKNeR8mb60u7hFCt4UiDoLux60JdRjTIi3RI=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=HcGzA2st1gp+nN7ZUMznQJLqTH2WYGrTp/JZHJmDthzabJFKBZtcGk/KXWJpWAZEbMCDem7gGMKa+//EYNClRVHNx/TdpMz+CyHsIAeNN5uAKpEfo225qaULkEIZXWmvjHwD5JsiY63WGRdvta+5BrNbLkU3lpAVxu1+j8VEtIg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Hg4iCwOO; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Hg4iCwOO; arc=none smtp.client-ip=195.135.223.131
+	 MIME-Version; b=I9tV90G2kh5t+EP6mmQdJ5WePZfwAZFMrhdtbZN6OmI1Pzu8LvN/pcl4tKkeE7h8chBO3fke+WaYykgySvPiBpclgLtZR2FBcEv76C+vIhfE1bMmllS08aSB+25qlWeGsAmNHT35sNn9T7N9rwTJOKBTQEnkcYAXzfsBtS39yz0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=cCF6BBSB; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=cCF6BBSB; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Hg4iCwOO";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Hg4iCwOO"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="cCF6BBSB";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="cCF6BBSB"
 Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 68F065BCD9
-	for <linux-btrfs@vger.kernel.org>; Tue, 27 Jan 2026 03:11:17 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id CC8493376C
+	for <linux-btrfs@vger.kernel.org>; Tue, 27 Jan 2026 03:11:08 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1769483477; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1769483468; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=vZR2App273Rd519nZWiZJIgVTww7n3VE40VBTJSrMeA=;
-	b=Hg4iCwOOYDG1nNYsWvsUbzLsRgAIYK406B4x/jCtQ6Tv0Gw5eTJTqrgJy2zCjhvqLL71NT
-	QJ5I1YrY25a3JiLONqigigvbWKW1M7J4I3assNNh2A03h0wKKVkehAqYIjKUj/l63OZuo5
-	sAcWCgoisnNHW//Ff/IzrYnsoaFwEN4=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=Hg4iCwOO
+	bh=XR/LaaGQoLbWyYnDEcskMfIT/skymxb8BjihgIc73hY=;
+	b=cCF6BBSBzPRl1lrk+WZVGEEUL5oxrl4tOvE7iURM4I/PGM0TF8kAlr8NuxH0r4faWnlz7l
+	Mf+KdglEYCZBDhT14YB4hB7KwD7wNxVG6JUel6jsxpcQ11yuFdohRlJ+MvHFmwPN9oBBts
+	SXysSMOm7jn88OG21ri9ZIZ2icEZDyI=
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=cCF6BBSB
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1769483477; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1769483468; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=vZR2App273Rd519nZWiZJIgVTww7n3VE40VBTJSrMeA=;
-	b=Hg4iCwOOYDG1nNYsWvsUbzLsRgAIYK406B4x/jCtQ6Tv0Gw5eTJTqrgJy2zCjhvqLL71NT
-	QJ5I1YrY25a3JiLONqigigvbWKW1M7J4I3assNNh2A03h0wKKVkehAqYIjKUj/l63OZuo5
-	sAcWCgoisnNHW//Ff/IzrYnsoaFwEN4=
+	bh=XR/LaaGQoLbWyYnDEcskMfIT/skymxb8BjihgIc73hY=;
+	b=cCF6BBSBzPRl1lrk+WZVGEEUL5oxrl4tOvE7iURM4I/PGM0TF8kAlr8NuxH0r4faWnlz7l
+	Mf+KdglEYCZBDhT14YB4hB7KwD7wNxVG6JUel6jsxpcQ11yuFdohRlJ+MvHFmwPN9oBBts
+	SXysSMOm7jn88OG21ri9ZIZ2icEZDyI=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 5B45F13712
-	for <linux-btrfs@vger.kernel.org>; Tue, 27 Jan 2026 03:11:16 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id C0CD813712
+	for <linux-btrfs@vger.kernel.org>; Tue, 27 Jan 2026 03:11:07 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id yDaaAtQseGnFewAAD6G6ig
+	id 2HBpG8sseGnFewAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Tue, 27 Jan 2026 03:11:16 +0000
+	for <linux-btrfs@vger.kernel.org>; Tue, 27 Jan 2026 03:11:07 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 9/9] btrfs: get rid of compressed_bio::compressed_folios[]
-Date: Tue, 27 Jan 2026 13:40:42 +1030
-Message-ID: <6a307460d479ced80b9b19952ccd311c4df656ea.1769482298.git.wqu@suse.com>
+Subject: [PATCH v3 4/9] btrfs: introduce btrfs_compress_bio() helper
+Date: Tue, 27 Jan 2026 13:40:37 +1030
+Message-ID: <2aea63da96f7bc16101682c922ff2309bccbf85f.1769482298.git.wqu@suse.com>
 X-Mailer: git-send-email 2.52.0
 In-Reply-To: <cover.1769482298.git.wqu@suse.com>
 References: <cover.1769482298.git.wqu@suse.com>
@@ -83,7 +83,7 @@ X-Spamd-Result: default: False [-3.01 / 50.00];
 	RCVD_VIA_SMTP_AUTH(0.00)[];
 	RCPT_COUNT_ONE(0.00)[1];
 	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from,2a07:de40:b281:106:10:150:64:167:received];
+	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received,2a07:de40:b281:104:10:150:64:97:from];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
@@ -95,49 +95,128 @@ X-Spamd-Result: default: False [-3.01 / 50.00];
 	DKIM_TRACE(0.00)[suse.com:+]
 X-Spam-Flag: NO
 X-Spam-Score: -3.01
-X-Rspamd-Queue-Id: 68F065BCD9
+X-Rspamd-Queue-Id: CC8493376C
 X-Rspamd-Action: no action
 X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
 X-Spam-Level: 
 
-Now there is no one utilizing that member, we can safely remove it along
-with compressed_bio::nr_folios member.
+The helper will allocate a new compressed_bio, do the compression, and
+return it to the caller.
+
+This greatly simplifies the compression path, as we no longer need to
+allocate a folio array thus no extra error path, furthermore the
+compressed bio structure can be utilized for submission with very minor
+modifications (like rounding up the bi_size and populate the bi_sector).
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/compression.c | 1 -
- fs/btrfs/compression.h | 6 ------
- 2 files changed, 7 deletions(-)
+ fs/btrfs/compression.c | 68 ++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/compression.h | 13 ++++++++
+ 2 files changed, 81 insertions(+)
 
 diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index 205f6828c1e6..ebada0b64846 100644
+index 4c6298cf01b2..942b85bcacbe 100644
 --- a/fs/btrfs/compression.c
 +++ b/fs/btrfs/compression.c
-@@ -300,7 +300,6 @@ static void end_bbio_compressed_write(struct btrfs_bio *bbio)
- 	/* Note, our inode could be gone now. */
- 	bio_for_each_folio_all(fi, &bbio->bio)
- 		btrfs_free_compr_folio(fi.folio);
--	kfree(cb->compressed_folios);
- 	bio_put(&cb->bbio.bio);
+@@ -1064,6 +1064,74 @@ int btrfs_compress_folios(unsigned int type, int level, struct btrfs_inode *inod
+ 	return ret;
  }
  
++/*
++ * Given an address space and start and length, compress the page cache
++ * contents into @cb.
++ *
++ * @type_level is encoded algorithm and level, where level 0 means whatever
++ * default the algorithm chooses and is opaque here;
++ * - compression algo are 0-3
++ * - the level are bits 4-7
++ *
++ * @cb->bbio.bio.bi_iter.bi_size will indicate the compressed data size.
++ * The bi_size may not be sectorsize aligned, thus the caller still need
++ * to do the round up before submission.
++ *
++ * This function will allocate compressed folios with btrfs_alloc_compr_folio(),
++ * thus callers must make sure the endio function and error handling are using
++ * btrfs_free_compr_folio() to release those folios.
++ * This is already done in end_bbio_compressed_write() and cleanup_compressed_bio().
++ */
++struct compressed_bio *btrfs_compress_bio(struct btrfs_inode *inode,
++					  u64 start, u32 len, unsigned int type,
++					  int level, blk_opf_t write_flags)
++{
++	struct btrfs_fs_info *fs_info = inode->root->fs_info;
++	struct list_head *workspace;
++	struct compressed_bio *cb;
++	int ret;
++
++	cb = alloc_compressed_bio(inode, start, REQ_OP_WRITE | write_flags,
++				  end_bbio_compressed_write);
++	cb->start = start;
++	cb->len = len;
++	cb->writeback = true;
++	cb->compress_type = type;
++
++	level = btrfs_compress_set_level(type, level);
++	workspace = get_workspace(fs_info, type, level);
++	switch (type) {
++	case BTRFS_COMPRESS_ZLIB:
++		ret = zlib_compress_bio(workspace, cb);
++		break;
++	case BTRFS_COMPRESS_LZO:
++		ret = lzo_compress_bio(workspace, cb);
++		break;
++	case BTRFS_COMPRESS_ZSTD:
++		ret = zstd_compress_bio(workspace, cb);
++		break;
++	case BTRFS_COMPRESS_NONE:
++	default:
++		/*
++		 * This can happen when compression races with remount setting
++		 * it to 'no compress', while caller doesn't call
++		 * inode_need_compress() to check if we really need to
++		 * compress.
++		 *
++		 * Not a big deal, just need to inform caller that we
++		 * haven't allocated any pages yet.
++		 */
++		ret = -E2BIG;
++	}
++
++	put_workspace(fs_info, type, workspace);
++	if (ret < 0) {
++		cleanup_compressed_bio(cb);
++		return ERR_PTR(ret);
++	}
++	return cb;
++}
++
+ static int btrfs_decompress_bio(struct compressed_bio *cb)
+ {
+ 	struct btrfs_fs_info *fs_info = cb_to_fs_info(cb);
 diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
-index 2d3a28b26997..65b8bc4bbe0b 100644
+index eee4190efa02..fd0cce5d07cf 100644
 --- a/fs/btrfs/compression.h
 +++ b/fs/btrfs/compression.h
-@@ -42,12 +42,6 @@ static_assert((BTRFS_MAX_COMPRESSED % PAGE_SIZE) == 0);
- #define	BTRFS_ZLIB_DEFAULT_LEVEL		3
+@@ -146,6 +146,19 @@ int btrfs_compress_heuristic(struct btrfs_inode *inode, u64 start, u64 end);
  
- struct compressed_bio {
--	/* Number of compressed folios in the array. */
--	unsigned int nr_folios;
--
--	/* The folios with the compressed data on them. */
--	struct folio **compressed_folios;
--
- 	/* starting offset in the inode for our pages */
- 	u64 start;
+ int btrfs_compress_filemap_get_folio(struct address_space *mapping, u64 start,
+ 				     struct folio **in_folio_ret);
++struct compressed_bio *btrfs_compress_bio(struct btrfs_inode *inode,
++					  u64 start, u32 len, unsigned int type,
++					  int level, blk_opf_t write_flags);
++
++static inline void cleanup_compressed_bio(struct compressed_bio *cb)
++{
++	struct bio *bio = &cb->bbio.bio;
++	struct folio_iter fi;
++
++	bio_for_each_folio_all(fi, bio)
++		btrfs_free_compr_folio(fi.folio);
++	bio_put(bio);
++}
  
+ int zlib_compress_folios(struct list_head *ws, struct btrfs_inode *inode,
+ 			 u64 start, struct folio **folios, unsigned long *out_folios,
 -- 
 2.52.0
 

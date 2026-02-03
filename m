@@ -1,62 +1,36 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 52CC4324707
-	for <linux-btrfs@vger.kernel.org>; Tue,  3 Feb 2026 17:45:39 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BD46B36405E
+	for <linux-btrfs@vger.kernel.org>; Tue,  3 Feb 2026 18:03:39 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1770140741; cv=none; b=nV28GPMFoWGLKGI0JgwgW52HytPlasudYOs1MUyz9KGma2ua2Acw5UMYvoYbEg+y4l0RUTgkEbCrys+7kL9h3h4Pzz/cydXGwy1iHnnHgFEj2/GvKygjem3ytBouxJbGKXSY5CvDAE2qf3hTmexykj4IffklzbUJMAUs3PV7EjI=
+	t=1770141819; cv=none; b=kAAA9LLK/rPEKrVIFQBaq/aiE/92Q+/zEfxiIWYV1LGpm7zs3rib+2PCxeAcFhkscIC7+tYkoXC4fc1VacAkVM5j0+JwuEsKtA0Fa6cDzZCXu5NSby3XZW3OCXShs2bBTvlu/BqwuCatgNSU2GWCKkEXDcCvnogDfMPSLVw/hDY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1770140741; c=relaxed/simple;
-	bh=BmtOh4t8XNgRg071+WHJozvxbVn9vaNZ1NKE6ArEOjo=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=esDlETR7oEkfO+DjRX5zYbEitpkKRItPObjlGuYtt551MTu6XAzgcvW+wun3dTBx5dO/XPH8wBazmMlD+T/H6G+KsnkqPtuiZePxTumUpRoH1VNifQcKwqBwH4M1P/U0Gu0wclBzYoh9Wh+Pm5/H8xBHciOElNUuJe2Y79GH7Sg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=bOjOdLPd; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=bOjOdLPd; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1770141819; c=relaxed/simple;
+	bh=bYh4GqRlzqlbDurVee3rGbEIMnw4AnddC4mxTKOUACI=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=GnNrGb9h8jTAEc+gNs4IsrrmiZxdwvl8wCDfEdRytfqCA6fIBiSbJWdz0MUca1M5rmYIQFPdVeF8X5LzxTNtd40skIsyCxkTdStiI7qA5x7nRFgp+U64B0SJ4gJ42mIKkpwlLx4tHDaHzj7l0DxW4VhlB6qhh17aQE5WRDjYIHY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=OO+ytZFE; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="bOjOdLPd";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="bOjOdLPd"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 76C105BCC3;
-	Tue,  3 Feb 2026 17:45:37 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1770140737; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=2eeMrccm5hQAtP9oZTFQ+qTVpE7Nwc8/3NmPGHRw89Q=;
-	b=bOjOdLPdvNPmBT4diemr2zQRHOAP2PkxK39T0TV5wd6glozGtaforQrwLpkxYe3lqWHGHM
-	cFeIEHAomh/+lsqw3cUEgBE1lCm0QneIbbSS9JUugA3UviaP86IsYlvr6B9OjUZfldXPrk
-	S8Asd95cxjmT6e3YRmpCv6UmZvdUAfg=
-Authentication-Results: smtp-out2.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1770140737; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=2eeMrccm5hQAtP9oZTFQ+qTVpE7Nwc8/3NmPGHRw89Q=;
-	b=bOjOdLPdvNPmBT4diemr2zQRHOAP2PkxK39T0TV5wd6glozGtaforQrwLpkxYe3lqWHGHM
-	cFeIEHAomh/+lsqw3cUEgBE1lCm0QneIbbSS9JUugA3UviaP86IsYlvr6B9OjUZfldXPrk
-	S8Asd95cxjmT6e3YRmpCv6UmZvdUAfg=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 652803EA62;
-	Tue,  3 Feb 2026 17:45:37 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 19SoGEE0gmmgXwAAD6G6ig
-	(envelope-from <dsterba@suse.com>); Tue, 03 Feb 2026 17:45:37 +0000
-From: David Sterba <dsterba@suse.com>
-To: torvalds@linux-foundation.org
-Cc: David Sterba <dsterba@suse.com>,
-	linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-Subject: [GIT PULL] Btrfs fix for 6.19-rc8+
-Date: Tue,  3 Feb 2026 18:45:22 +0100
-Message-ID: <cover.1770137071.git.dsterba@suse.com>
-X-Mailer: git-send-email 2.51.0
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="OO+ytZFE"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id E6323C116D0
+	for <linux-btrfs@vger.kernel.org>; Tue,  3 Feb 2026 18:03:38 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1770141819;
+	bh=bYh4GqRlzqlbDurVee3rGbEIMnw4AnddC4mxTKOUACI=;
+	h=From:To:Subject:Date:From;
+	b=OO+ytZFEM7DbH67L+11Xi8Ly0njGJEol1GDLj9p06psgXZrNPEfa3JGlRPW1gGXR3
+	 mh2A4T9/zRle8t3SHV2Lt4FleVWfP6F2y/NY5HfLsk5NO+XVpnjEIZac37KQZFh6ua
+	 yBFY6WVOpB+kC1waWyU7pRwkLGXk6po0a73mMr5PmRKSt/OT4p4Koy11DjBxQrckO+
+	 bl4XrDnlCreHV2rLZh8pTD5tbT7VPRfzrhpcEHg+vyPp8ka3dMMDks1bPGCsbsnv/R
+	 AJjrPiHuhgXVd7wbifIGV8lq+WfEbQdGCSXPQDD5OpWFfuivGKPlg+u81rEEHSk4cp
+	 9wQPPTDmf8QkQ==
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: use the correct type to initialize block reserve for delayed refs
+Date: Tue,  3 Feb 2026 18:03:35 +0000
+Message-ID: <c16363c678a392fafd249223228c6c75985e4a59.1770141624.git.fdmanana@suse.com>
+X-Mailer: git-send-email 2.47.2
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -64,51 +38,42 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Score: -2.80
-X-Spamd-Result: default: False [-2.80 / 50.00];
-	BAYES_HAM(-3.00)[99.99%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	MID_CONTAINS_FROM(1.00)[];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.997];
-	MIME_GOOD(-0.10)[text/plain];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	ARC_NA(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	TO_DN_SOME(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,imap1.dmz-prg2.suse.org:helo];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RCPT_COUNT_THREE(0.00)[4];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Level: 
-X-Spam-Flag: NO
 
-Hi,
+From: Filipe Manana <fdmanana@suse.com>
 
-please pull the following regression fix for a memory leak when raid56
-is used.  Thanks.
+When initializing the delayed refs block reserve for a transaction handle
+we are passing a type of BTRFS_BLOCK_RSV_DELOPS, which is meant for
+delayed items and not for delayed refs. The correct type for delayed refs
+is BTRFS_BLOCK_RSV_DELREFS.
 
-----------------------------------------------------------------
-The following changes since commit 0d0f1314e8f86f5205f71f9e31e272a1d008e40b:
+The consequence here is that when releasing unused space from that local
+block reserve, instead of transferring it to the global delayed refs
+block reserve we transfer it to global block reserve. If the global block
+reserve is full, we just return that space to the metadata space info.
+There's no harm in that, but ideally we should transfer the excess
+reserved space to the delayed refs block reserve.
 
-  btrfs: zlib: fix the folio leak on S390 hardware acceleration (2026-01-21 19:35:41 +0100)
+Reported-by: Alex Lyakas <alex.lyakas@zadara.com>
+Link: https://lore.kernel.org/linux-btrfs/CAOcd+r0FHG5LWzTSu=LknwSoqxfw+C00gFAW7fuX71+Z5AfEew@mail.gmail.com/
+Fixes: 28270e25c69a ("btrfs: always reserve space for delayed refs when starting transaction")
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/transaction.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-are available in the Git repository at:
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 87a3f746cecc..08f691661874 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -726,7 +726,7 @@ start_transaction(struct btrfs_root *root, unsigned int num_items,
+ 
+ 	h->type = type;
+ 	INIT_LIST_HEAD(&h->new_bgs);
+-	btrfs_init_metadata_block_rsv(fs_info, &h->delayed_rsv, BTRFS_BLOCK_RSV_DELOPS);
++	btrfs_init_metadata_block_rsv(fs_info, &h->delayed_rsv, BTRFS_BLOCK_RSV_DELREFS);
+ 
+ 	smp_mb();
+ 	if (cur_trans->state >= TRANS_STATE_COMMIT_START &&
+-- 
+2.47.2
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git tags/for-6.19-rc8-tag
-
-for you to fetch changes up to 29fb415a6a72c9207d118dd0a7a37184a14a3680:
-
-  btrfs: raid56: fix memory leak of btrfs_raid_bio::stripe_uptodate_bitmap (2026-02-03 06:37:29 +0100)
-
-----------------------------------------------------------------
-Filipe Manana (1):
-      btrfs: raid56: fix memory leak of btrfs_raid_bio::stripe_uptodate_bitmap
-
- fs/btrfs/raid56.c | 1 +
- 1 file changed, 1 insertion(+)

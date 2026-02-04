@@ -1,67 +1,53 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from esa6.hgst.iphmx.com (esa6.hgst.iphmx.com [216.71.154.45])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6AB432D9481
-	for <linux-btrfs@vger.kernel.org>; Wed,  4 Feb 2026 02:54:41 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B99D827E04C
+	for <linux-btrfs@vger.kernel.org>; Wed,  4 Feb 2026 07:36:14 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=216.71.154.45
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1770173682; cv=none; b=Z5wBw13kQCox7PZq9Evbi2r4YObLLMInKPOf769JRzPk520zmjk+L5Tg+OCIW5A5dYbr8WcgL24yyqZTPL0ZJ4nbNsJ/xh2nX2cdOCqVYuIke83DNX/Xh69xjN2bONtByRQAm5UnxOKCRISE16g74clZ2TLkQbCiYf58gH0Eee0=
+	t=1770190575; cv=none; b=YvObsZxiey8pWKFgfQP0YzwUzjr9ttbhoTZf6dL6G6St95paV+vI31s33b0GKWXN6DXaxOSpWbn//QVuwWF/Y2+Mc5h5rDDYDCAHcf0n/uC2FOKeP1eNLrsoUi9icEMQTEwqy9OWdbFvWH7OFIA38RAvaqFSaWhEz7aeAoWlM28=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1770173682; c=relaxed/simple;
-	bh=qO50DjIbCfaC+odm5zGh8ThTFrxC9SsNIpQz28560l0=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=DxafMm5RbqebNth0Sb/lhdxCy/gqItgfPNsHuG0AVxk7pFTC+fcDG8OhOat99C/DhW8t5na68ozRwY6eDBzSzmopiPTGxukl4PAPUry5/yyimi5Y8z61H1xycz6ZErJuFVQ1fpbDzXRZzHfIIlUeTcQ3Fhu+w7UJfYrHI/37apg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=XY+MBTny; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=XY+MBTny; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1770190575; c=relaxed/simple;
+	bh=GLXJUNd4q6U05ipjoAupiUL0HQA2BOzwYus6JRa3V5w=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=MsViULETnXExVXy7PM7jqIw35ioxG1yWrlJeYvKFONh/s9fVRABZknUXu/TxSBzd7smCuoC+tdjMZSPM1zNKyvhEPCM9e2iCM2eQgvLdJKZiIXGoHjyH2pPocj3P1gnHXcT9I5nZbdre1Ov5iat8oWsL4PEKT+n3boYSaZJbUc4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=NyMAVpaf; arc=none smtp.client-ip=216.71.154.45
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="XY+MBTny";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="XY+MBTny"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 7C8CF5BCCB
-	for <linux-btrfs@vger.kernel.org>; Wed,  4 Feb 2026 02:54:34 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1770173674; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=JoReeVm8Ez2F3dzjnNjgihpuRtTDFfUzbrGhRSnh3jU=;
-	b=XY+MBTnynrhfwvLzlzY6/n+55uWPVVrJpaf4zU7eAS4dCM/sBb7FzQdCne14HH7JusVqvJ
-	sYhdha6cHmdMaX2K47oPq2RsfpLa3EX3ed4EcDbn1ytEPbykilIuFy7F6CoHicYIBgTxuM
-	2j/49ExV68obn4UOTDYyDI5UM2P0PVY=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=XY+MBTny
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1770173674; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=JoReeVm8Ez2F3dzjnNjgihpuRtTDFfUzbrGhRSnh3jU=;
-	b=XY+MBTnynrhfwvLzlzY6/n+55uWPVVrJpaf4zU7eAS4dCM/sBb7FzQdCne14HH7JusVqvJ
-	sYhdha6cHmdMaX2K47oPq2RsfpLa3EX3ed4EcDbn1ytEPbykilIuFy7F6CoHicYIBgTxuM
-	2j/49ExV68obn4UOTDYyDI5UM2P0PVY=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id A96D13EA63
-	for <linux-btrfs@vger.kernel.org>; Wed,  4 Feb 2026 02:54:33 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id AGViGum0gmknHAAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Wed, 04 Feb 2026 02:54:33 +0000
-From: Qu Wenruo <wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="NyMAVpaf"
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1770190574; x=1801726574;
+  h=from:to:cc:subject:date:message-id:mime-version:
+   content-transfer-encoding;
+  bh=GLXJUNd4q6U05ipjoAupiUL0HQA2BOzwYus6JRa3V5w=;
+  b=NyMAVpafxOzQHzTSNeYRzj4Amf8KdUCE+5QC+4Tlncl1LExr3cJB6dSh
+   LI0OMRfsVgmL1jDkX5EoX2fihtS1EPVpD1rzr5oqJY16YwWGcs9C2xFS9
+   raedQewYME66dgNHR2DCdo2auswA2m4RijkXlVvh0WJbF/bAzWKsxVJv2
+   0j0IjnSl4gknqaAjw9mfVIU8dUksL3Pi+BDKo3ZrJxDipyxjk4Homqqdi
+   ybNC/rFxetw+Ehxvup6RrJjFcFGvCgHNIBFAaqxewx7avVK1AkQlFYVMK
+   MKPa9SCjZNLNJnLkXUAW8uLMrao2UC3KoJ7ubwNAp0uOFm/JPgisKZDa0
+   w==;
+X-CSE-ConnectionGUID: S4AGusVWSwauBX96JF053Q==
+X-CSE-MsgGUID: x3WlqNUdQjqytcL/gxc3OQ==
+X-IronPort-AV: E=Sophos;i="6.21,272,1763395200"; 
+   d="scan'208";a="139250036"
+Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep03.wdc.com) ([199.255.45.15])
+  by ob1.hgst.iphmx.com with ESMTP; 04 Feb 2026 15:36:14 +0800
+IronPort-SDR: 6982f6ee_Qqscmoftw2VCcVpLWkH3vWPQU2Rwc3uh5mej9DXsFXlgzeZ
+ LcVgnv5y8iOVQKdJnB7hM6iwrBpBhvHgR7NL8/A==
+Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
+  by uls-op-cesaep03.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 03 Feb 2026 23:36:14 -0800
+WDCIronportException: Internal
+Received: from wdap-p2d7qjs7w9.ad.shared (HELO naota-xeon) ([10.224.106.65])
+  by uls-op-cesaip02.wdc.com with ESMTP; 03 Feb 2026 23:36:13 -0800
+From: Naohiro Aota <naohiro.aota@wdc.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 3/3] btrfs: use per-profile available space in calc_available_free_space()
-Date: Wed,  4 Feb 2026 13:24:08 +1030
-Message-ID: <9972fe271795271b21f9cd0db81d450473993374.1770173615.git.wqu@suse.com>
-X-Mailer: git-send-email 2.52.0
-In-Reply-To: <cover.1770173615.git.wqu@suse.com>
-References: <cover.1770173615.git.wqu@suse.com>
+Cc: Naohiro Aota <naohiro.aota@wdc.com>
+Subject: [PATCH v3 0/1] btrfs: tests: zoned: add selftest for zoned code
+Date: Wed,  4 Feb 2026 16:31:24 +0900
+Message-ID: <20260204073125.3173982-1-naohiro.aota@wdc.com>
+X-Mailer: git-send-email 2.53.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -69,111 +55,31 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	ARC_NA(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_DN_NONE(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	MIME_TRACE(0.00)[0:+];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Spam-Flag: NO
-X-Spam-Score: -3.01
-X-Rspamd-Queue-Id: 7C8CF5BCCB
-X-Rspamd-Action: no action
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Spam-Level: 
 
-For the following disk layout, can_overcommit() can cause false
-confidence in available space:
+Having conventional zones on a RAID profile made the alloc_offset
+loading code enough complex. It would be good time to add btrfs test for
+the zoned code.
 
-  devid 1 unallocated:	1GiB
-  devid 2 unallocated:	50GiB
-  metadata type:	RAID1
+For now it tests btrfs_load_block_group_by_raid_type() with various test
+cases. The load_zone_info_tests[] array defines the test cases.
 
-As can_overcommit() simply uses unallocated space with factor to
-calculate the allocatable metadata chunk size, resulting 25.5GiB
-available space.
+- v3:
+  - Rebased on fresh for-next
+- v2: https://lore.kernel.org/linux-btrfs/20260126054953.2245883-1-naohiro.aota@wdc.com/
+  - Fix compile error without CONFIG_BLK_DEV_ZONED
+- v1: https://lore.kernel.org/linux-btrfs/20260123125920.4129581-1-naohiro.aota@wdc.com/
 
-But in reality we can only allocate one 1GiB RAID1 chunk, the remaining
-49GiB on devid 2 will never be utilized to fulfill a RAID1 chunk.
+Naohiro Aota (1):
+  btrfs: tests: zoned: add selftest for zoned code
 
-This leads to various ENOSPC related transaction abort and flips the fs
-read-only.
+ fs/btrfs/Makefile            |   4 +
+ fs/btrfs/tests/btrfs-tests.c |   3 +
+ fs/btrfs/tests/btrfs-tests.h |   8 +
+ fs/btrfs/tests/zoned-tests.c | 676 +++++++++++++++++++++++++++++++++++
+ fs/btrfs/zoned.c             |   3 +
+ 5 files changed, 694 insertions(+)
+ create mode 100644 fs/btrfs/tests/zoned-tests.c
 
-Now use per-profile available space in calc_available_free_space(), and
-only when that failed we fall back to the old factor based estimation.
-
-And for zoned devices or for the very low chance of temporary memory
-allocation failure, we will still fallback to factor based estimation.
-But I hope in reality it's very rare.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/space-info.c | 27 +++++++++++++++------------
- 1 file changed, 15 insertions(+), 12 deletions(-)
-
-diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index bb5aac7ee9d2..78b771d656b9 100644
---- a/fs/btrfs/space-info.c
-+++ b/fs/btrfs/space-info.c
-@@ -444,6 +444,7 @@ static u64 calc_available_free_space(const struct btrfs_space_info *space_info,
- 				     enum btrfs_reserve_flush_enum flush)
- {
- 	struct btrfs_fs_info *fs_info = space_info->fs_info;
-+	bool has_per_profile;
- 	u64 profile;
- 	u64 avail;
- 	u64 data_chunk_size;
-@@ -454,19 +455,21 @@ static u64 calc_available_free_space(const struct btrfs_space_info *space_info,
- 	else
- 		profile = btrfs_metadata_alloc_profile(fs_info);
- 
--	avail = atomic64_read(&fs_info->free_chunk_space);
--
--	/*
--	 * If we have dup, raid1 or raid10 then only half of the free
--	 * space is actually usable.  For raid56, the space info used
--	 * doesn't include the parity drive, so we don't have to
--	 * change the math
--	 */
--	factor = btrfs_bg_type_to_factor(profile);
--	avail = div_u64(avail, factor);
--	if (avail == 0)
--		return 0;
-+	has_per_profile = btrfs_get_per_profile_avail(fs_info, profile, &avail);
-+	if (!has_per_profile) {
-+		avail = atomic64_read(&fs_info->free_chunk_space);
- 
-+		/*
-+		 * If we have dup, raid1 or raid10 then only half of the free
-+		 * space is actually usable.  For raid56, the space info used
-+		 * doesn't include the parity drive, so we don't have to
-+		 * change the math
-+		 */
-+		factor = btrfs_bg_type_to_factor(profile);
-+		avail = div_u64(avail, factor);
-+		if (avail == 0)
-+			return 0;
-+	}
- 	data_chunk_size = calc_effective_data_chunk_size(fs_info);
- 
- 	/*
 -- 
-2.52.0
+2.53.0
 

@@ -1,39 +1,36 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CFD82421F0B
-	for <linux-btrfs@vger.kernel.org>; Wed,  4 Feb 2026 15:52:19 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0A16D33B945
+	for <linux-btrfs@vger.kernel.org>; Wed,  4 Feb 2026 17:28:24 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1770220339; cv=none; b=U7YDuZ/GbeNmoaEc44ODqgBNkFOd6jKpb9onjzxkIjZMn93VrzrZq26F5Y6+flD9y5vGbUVIuKOe+z8VDmuPgqxmov2EqpqRdEs53K+1ChHHbehGaePHHSTe5nKL0QxB5ZhZuPgXnIUj/FE4ovohDe4xUNhqu1roD1jBfbmsSHQ=
+	t=1770226105; cv=none; b=hp9/6bxYIO0jq2I7TqGUgIC0xsKyGZXsDAiQ6Ldem3weysqr5++92sKzObYu/hAqBE7M/UscgRGQL+8MEA1HCSk4cUXUQ+n45lXoDpEFmN52qACgHewJSe2qvqsgZHVe3O0Z/KvHqv/hR1l/Dv0jAd7tAefPbMoLmfHjdnMtPxE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1770220339; c=relaxed/simple;
-	bh=u6rH/MA9GyvKxn+7d4Wd+vJMHeFFCuklJ2zoIwBHlH8=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=Gs7kvpXrhzlPzHXIU+lY3Ms2nN5z4XiCE18jE8IvC3jJvZCI/DN/Jw2lHn1Kg0WlMp5Ymfy5SjCWHrTreAQFOb0uk8d//2T1Onb70P9ViBixcl+7qE5CauopGYmddkDJghiuWf0sJSzCZ7ck3EHjE8nb/1oFCDjCKBk6WCDYvKo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=QDmu7+VZ; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1770226105; c=relaxed/simple;
+	bh=I406EnWiYKNCpt/Hvx7t0Pr7p2+ROqnnQmWYwf6idmg=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=q1wet816lwUHTB2ZogCDFEbMrnaBx0/WpgvFpClVhC1yfjP0vN6HPooz5CmfmhPkzp86aqRm0/v9ofCuW1zEPyVaYALRYqNGiuOe4OKr1crKAdbtBqQ4C+QV8TJuJsxJ+KamsCgalW859Y4WWdVd9SZCZq15IF0vMf4DaZfqU3A=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=gnMYfOZ7; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="QDmu7+VZ"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 3B4D3C19423
-	for <linux-btrfs@vger.kernel.org>; Wed,  4 Feb 2026 15:52:19 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="gnMYfOZ7"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 1C188C4CEF7
+	for <linux-btrfs@vger.kernel.org>; Wed,  4 Feb 2026 17:28:23 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1770220339;
-	bh=u6rH/MA9GyvKxn+7d4Wd+vJMHeFFCuklJ2zoIwBHlH8=;
-	h=From:To:Subject:Date:In-Reply-To:References:From;
-	b=QDmu7+VZHUYHUJkLi5mWY3qcFoFRXaGJJG+X+rFbDKMAjqmurD3686WvqdBSH7owJ
-	 72VLF/jGoB0Ya7TBH67k0IbcQ/XLzneiXna0r/d712gyaqeQWZeaSeXGPKCbLrw5hN
-	 Fn8/cmeuFnakmoMYohH/gOaJcNk36N1+uogpk1YArHBycAgqUSFTHLrmYs3Vm9j48k
-	 fIc8OjKx4Wcp6UGjuXArHyGJi4h8AQSQbCA6w2zBCl55UpVVor2a9jhR/ieW4CY4MO
-	 sG+aXnKQyimvns1Ee6HzY1SJ7ut4IpEfplskp/Av4er8uNUlFGMB8wFqGB7FVR/1kv
-	 CAszgBu/TySNg==
+	s=k20201202; t=1770226104;
+	bh=I406EnWiYKNCpt/Hvx7t0Pr7p2+ROqnnQmWYwf6idmg=;
+	h=From:To:Subject:Date:From;
+	b=gnMYfOZ7P9rqfVnkvXRRi2q6u/B3tCLHT4GXdsjfNBQcfajtToAdtIKMC/q7AX7YP
+	 5+V2e7LdNSYChAL8a1t9CxXcon9L7VozTT3EmcBMoBWm4Ep+kdaXvoBTGG11oI6dLa
+	 3Pq3Dct1ng857lCWtQcF2ie4b2wImvvnFZvXPYRGQpP7ce8wjlTuwO62apu4Y8XFk8
+	 HsURTTp+zno2ZhA8CtnnDfEYS90e27obqvj1c5EvTzc5CVaptPDbRTIbSnB1ToAhc1
+	 HwBIyXAK9n9vFrLt8rwPO7TF0od3qrWrftprgGciFITjaAAa4Lv5cpPF6QhhCweBpx
+	 3y5PUFU8E/spA==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 7/7] btrfs: set written super flag once in write_all_supers()
-Date: Wed,  4 Feb 2026 15:52:04 +0000
-Message-ID: <ec91c8271e892894ae2d4918beff1e31cc3d6dce.1770212626.git.fdmanana@suse.com>
+Subject: [PATCH] btrfs: fix invalid leaf access in btrfs_quota_enable() if ref key not found
+Date: Wed,  4 Feb 2026 17:28:20 +0000
+Message-ID: <78d48962c97102192c0daea9393b0014430024f0.1770225728.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.47.2
-In-Reply-To: <cover.1770212626.git.fdmanana@suse.com>
-References: <cover.1770212626.git.fdmanana@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -44,46 +41,41 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-In case we have multiple devices, there is no point in setting the written
-flag in the super block on every iteration over the device list. Just do
-it once before the loop.
+If btrfs_search_slot_for_read() returns 1, it means we did not find any
+key greather than or equals to the key we asked for, meaning we have
+reached the end of the tree and therefore the path is not valid. If
+this happens we need to break out of the loop and stop, instead of
+continuing and accessing an invalid path.
 
+Fixes: 5223cc60b40a ("btrfs: drop the path before adding qgroup items when enabling qgroups")
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/disk-io.c | 6 ++----
- 1 file changed, 2 insertions(+), 4 deletions(-)
+ fs/btrfs/qgroup.c | 11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index cf4ab067be72..e95c699a0bae 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -4023,7 +4023,6 @@ int write_all_supers(struct btrfs_trans_handle *trans)
- 	int do_barriers;
- 	int max_errors;
- 	int total_errors = 0;
--	u64 flags;
- 
- 	do_barriers = !btrfs_test_opt(fs_info, NOBARRIER);
- 
-@@ -4053,6 +4052,8 @@ int write_all_supers(struct btrfs_trans_handle *trans)
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index f53c313ab6e4..ea1806accdca 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -1169,11 +1169,14 @@ int btrfs_quota_enable(struct btrfs_fs_info *fs_info,
+ 			}
+ 			if (ret > 0) {
+ 				/*
+-				 * Shouldn't happen, but in case it does we
+-				 * don't need to do the btrfs_next_item, just
+-				 * continue.
++				 * Shouldn't happen because the keu should still
++				 * be there (return 0), but in case it does it
++				 * means we have reached the end of the tree -
++				 * there are no more leaves with items that have
++				 * a key greater than or equals to @found_key,
++				 * so just stop the search loop.
+ 				 */
+-				continue;
++				break;
+ 			}
  		}
- 	}
- 
-+	btrfs_set_super_flags(sb, btrfs_super_flags(sb) | BTRFS_HEADER_FLAG_WRITTEN);
-+
- 	list_for_each_entry(dev, head, dev_list) {
- 		if (unlikely(!dev->bdev)) {
- 			total_errors++;
-@@ -4076,9 +4077,6 @@ int write_all_supers(struct btrfs_trans_handle *trans)
- 		memcpy(dev_item->fsid, dev->fs_devices->metadata_uuid,
- 		       BTRFS_FSID_SIZE);
- 
--		flags = btrfs_super_flags(sb);
--		btrfs_set_super_flags(sb, flags | BTRFS_HEADER_FLAG_WRITTEN);
--
- 		ret = btrfs_validate_write_super(fs_info, sb);
- 		if (unlikely(ret < 0)) {
- 			mutex_unlock(&fs_info->fs_devices->device_list_mutex);
+ 		ret = btrfs_next_item(tree_root, path);
 -- 
 2.47.2
 

@@ -1,66 +1,65 @@
-Received: from mail-wm1-f46.google.com (mail-wm1-f46.google.com [209.85.128.46])
+Received: from mail-wm1-f41.google.com (mail-wm1-f41.google.com [209.85.128.41])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A0F282E888C
-	for <linux-btrfs@vger.kernel.org>; Thu,  5 Feb 2026 04:24:25 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.46
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B574513D638
+	for <linux-btrfs@vger.kernel.org>; Thu,  5 Feb 2026 04:43:42 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.41
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1770265466; cv=none; b=cc4VV6MtQ76DByVWJiRMTpnCcAXAcMZebjBxbT89M/fe1CcmLnLALQ8Xap8NzYCFQNBCe7UFZDAfgz2MesnHAHy8FHUYp7zWmBBjXy3ZioMT6q59TYpM+0dY3NOaAs1zXzNamH6pOPq7wa8XyyUCsb8hnh5J5TvS5Sz+l4OPSNk=
+	t=1770266623; cv=none; b=Mqvx3lw2knYxE8nfgHKOP8GGQGja3ZoEAuq73pivcL2nBgW0cy2C9CxcLGTvLOlJlfJJtQsM1Nk5dVngCH72Ba8G80xYqihL7GW46Pb2fJhPxbnYrxVGZAdrs55wckR3GLSGLeCz7wz5pLulzNIqQqPSNLuWUsrIYhCYUACkSrw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1770265466; c=relaxed/simple;
-	bh=uqaBNWuKMtfpAUlRLveGczjo1f/a4zmBSLBHZYCb4R4=;
+	s=arc-20240116; t=1770266623; c=relaxed/simple;
+	bh=F4vyN2NBGSbZ+b6hEl9AR/gsTORIlIf+/kyAMKxba5E=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=Ivgp0HBNF3YeXYtCaFarAzq7LnAbb27QskQHAL+umkBpi5acc9l/YrD6S0RPgJu2QnSz7bJ9Cud+rF9irJ4fVZk7u8pSEDKCoBMVpRCa7KwjCTBeiy7Uc7N04s3Eh4NVbqjVNbMddi1vcB5f4hshlJjlugfTK9zaFSCqSd15HWE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=TgYl+sFU; arc=none smtp.client-ip=209.85.128.46
+	 In-Reply-To:Content-Type; b=pDCAZuDOy9CUsg6xp+jV0fp7Gp37LLjOj6aoMkwe6JxF+cRpJaNtHBxI2yYNV5eGOYbinC1w/uIGsXlxrKvYfSqdid9pzic+6MnzWjas1ZV+fUZXdeb7niLrx2TOkBYD35/R/laTN0SUPPujOQZiD563TUrrSt3XNikz5VKiFDM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=AIM9AVqa; arc=none smtp.client-ip=209.85.128.41
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="TgYl+sFU"
-Received: by mail-wm1-f46.google.com with SMTP id 5b1f17b1804b1-48069a48629so4169355e9.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 04 Feb 2026 20:24:25 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="AIM9AVqa"
+Received: by mail-wm1-f41.google.com with SMTP id 5b1f17b1804b1-4806e0f6b69so2906485e9.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 04 Feb 2026 20:43:42 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1770265464; x=1770870264; darn=vger.kernel.org;
+        d=suse.com; s=google; t=1770266621; x=1770871421; darn=vger.kernel.org;
         h=content-transfer-encoding:in-reply-to:autocrypt:from
          :content-language:references:cc:to:subject:user-agent:mime-version
          :date:message-id:from:to:cc:subject:date:message-id:reply-to;
-        bh=IRMQoJe6lxyavLbVB8579zPQO6rITEzovQTqZ0nCc9g=;
-        b=TgYl+sFUIP3/XekCiVbdGq6hg5Dvpckfy+oINowtTqPFta5xX6WHCoYsjq22KeptKa
-         zexTJ1SAYGrlGC6QYU+HnhPRmdVj7/PveRoHMl4a+YWz3BIFGDFftPa+zX/X8uOiYW0J
-         ct6zzMO7RuzcMiOC2J0CMvyM8HPlHIv17MCE5ytzIBhRhxH14T2R3xTVqiuusmalysCD
-         VpVkKvv6OZNw/azp4EcgoK7Pk0xT2z/cAnjsSqYd3402ZjbXSGAPq0V+vjFsTGXfILCr
-         LbGBmcWFEv0ZFpS+P2fAKvg6SggAkNm9HeI+DGKaBB6f31JJ2mSFQ8HaBbcStY4yqgth
-         LAfg==
+        bh=7o7FDsDkzCoY1fST6VuwM0jJy+FxUEWDabvQrDAQiHw=;
+        b=AIM9AVqacfgyZDAKTQ7k8wnOx2S6ORAH9VaFUENSlsc2mQkIgF/YfX6ZlVbMKJ1g4z
+         SHK9VPz5RuiclowWzm+gMEU+jy0xkjn1Vrzmh739iQVHG+3alUXJABMF7kQppCGI2/kl
+         r0Mc25/QvpV9ZonhpMJKxTeK5E+x/4s9gse0bkyVc4AVpgKjXgR7a/HYyz2gMHypFNym
+         7OzejxSratVPGUwMtXSiX1oj8U1r8c6atcyGCAILfALa81214IzTKyGgngCAGjqp1P0A
+         NUDXBheKFMRekO5lLA3zxBUtVD5VW67b600xqeioxI62JXJiNboqaaksnXvNsPxO+3jN
+         AaIA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1770265464; x=1770870264;
+        d=1e100.net; s=20230601; t=1770266621; x=1770871421;
         h=content-transfer-encoding:in-reply-to:autocrypt:from
          :content-language:references:cc:to:subject:user-agent:mime-version
          :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=IRMQoJe6lxyavLbVB8579zPQO6rITEzovQTqZ0nCc9g=;
-        b=dk7uguaO8XZQiEBgHr7y4Trj+OT2/NA+qLLb48e3KD4lxV2srENw3nES31AYI1DDJE
-         W6QDZ0R2L1cIZq5dAX4g4qhFLCmTEB4q5QS8T9xBtHWJn70ey00mMJFjwqyRcMt40N3I
-         /YEpAntR5/at/GC2EEvUujV2A5KI7A3g08bsmQ04CQ7HwXBMq3IzP6yIcrMSzfCLq4A1
-         Xw01nyFgKGdoAa+wdN18RNoMpWt7RtFhZs58XU8cZC4Z7tgXE8c06J8ZddrMq/Y25/3z
-         +zM7QYnsJ7ulT4iX/Igydc+ZTS3eFGx59YWw4AMpsktsJigLmFKg0A0gHOXRCEMq3Rw6
-         covA==
-X-Gm-Message-State: AOJu0YxGeQc81R3I99rCllZn18QE6KOUFCfQ6Vuqa+xF+B1rwPf9n2cw
-	4Na5isgiJsxsXeF5cK1KBzY4ny2BpNGkTLYLC7AqosVFqtgJDSeKpPCovXyGdll0GuKfpaMVmuZ
-	7y0WfHtc=
-X-Gm-Gg: AZuq6aJkqGX+l+yhgKMD1velkxbj4BJ34qj9a9kf/afDG+vcVBkSFZHn+dVzavUYlWZ
-	mowS994+avnsPmKu+Jc4nn40WbAuOs1EdszqWfrtgDiVwOFoiH4PyRin8eMMY/cn1H/OmOnrfCO
-	YX1IMjzlQQ9F5c1Vo7nCxzOH6cZlgBx/ONO8kHSVOvVMaMxADGFbCped/snpTamUyuKjJW2hDfY
-	Ba/KurycB/rmxssHMeVpYsIfYYOTeauu3bM2CTn214L5kXrUY1gnORuowq+pFU/1W2aruBXLC1e
-	2P6iUP2IxnFMezm0Wg8LmOhuXtvacAVcrXZgmtZcbJWpKAsGy9jfDUeYbl6daFGDhEtuAwrQQkx
-	RwCvz8FZT9zHzAmygkgbYhZQtytr0BrNqpJ1n6NWLDfvK4bLkUdXq5F7jzz22A+sg2XxyroJ7op
-	YXCE4fuqa6hWkIwd1PSX8CLYAVKLNfRZW4qpzy9Fk=
-X-Received: by 2002:a05:600c:19cd:b0:480:32da:f338 with SMTP id 5b1f17b1804b1-4830e940b2cmr71937235e9.14.1770265463973;
-        Wed, 04 Feb 2026 20:24:23 -0800 (PST)
+        bh=7o7FDsDkzCoY1fST6VuwM0jJy+FxUEWDabvQrDAQiHw=;
+        b=CTQIAEK2A+Sow4ApwWLer87rXkXwJZgjj2faNnMW31m6nEWEPe2ryOM+c2pBAsRAId
+         ux7LItq5xT+XtC4jgrR2yas559z3n0HnMi6sS9uZLbQJei0R+sDgkX3dK5FTluXlIwTU
+         Z//5ptfGeB94TRYYR1/8xHIYLWlCaWS8yTN4Yqar7rGjWU0UOyI1maCkbx/pQh8qrCC+
+         XPB3X5mdbpBECtzy1JQ409gE1glM/oJjhf518GZSko+BTPKD0n2mUw+hh0byYdxUjQwL
+         E2RewFxa+Ano+U/5OTX7A7PCNweHYy0UhXXGCSLzTLE+tfCGJcWijTfHpSb5qb4DKpw6
+         MeBg==
+X-Gm-Message-State: AOJu0YwR2/yF2rC7C/7HrTb6zgz3i1P0ZhiSa2nj35Z+P5s3Qzcf5R80
+	5K3I341X75Ta3ltdL+HlShwAP+4KyW231lxvVoctRuFBB+m5eTb4SJXWXWUjTTxfhEc=
+X-Gm-Gg: AZuq6aIV46HbXtA6C9z7B43xuReLfN79NnKmpCbHi5iPRrmg2+J/25TH3zXtAUIVosN
+	FrRzcXJfKgBFUy5dpQS5ILzdHf64ar6QFIXWMiXKs8qBhvLf2J4c0XHgZew5Evh2D7grj+1QvLL
+	Ucs7CteXg0B8txbdYexiGUJOzWY9/qebwUz32o4X/mDqJRkC8yAgqmkI1lOytw7tqes/BK4XSlq
+	goVsTJr+gel6PetStsF1wtmLn8188vp4ylKQPp1e2UjRWXs108Kv3YdvcTS5yNl5nIcZljF3z4+
+	UXp6F2zKoKFB/KYDv/rRF6vXI72AClDXMoRlyeDnXXaAkI5/w27Y2sqCpn8u2gWzqBQCwhuGQ5N
+	rSyYIAe/ZQXEQADIvwX2qH0p4z+AKKOtO9EDm+KHHT7ZmwIVD4+cf9UDXOsQmEEFaS7TvLDn1WD
+	OGUEjZSrUhH/ZY/czjHyrogxLIFxiY6EBC2itKDUs=
+X-Received: by 2002:a05:600c:3b16:b0:479:35e7:a0e3 with SMTP id 5b1f17b1804b1-4830e993349mr78816935e9.30.1770266620733;
+        Wed, 04 Feb 2026 20:43:40 -0800 (PST)
 Received: from ?IPV6:2403:580d:fda1::299? (2403-580d-fda1--299.ip6.aussiebb.net. [2403:580d:fda1::299])
-        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-8241d1a5214sm4207403b3a.16.2026.02.04.20.24.22
+        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-8241d437c74sm4081860b3a.35.2026.02.04.20.43.39
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 04 Feb 2026 20:24:23 -0800 (PST)
-Message-ID: <b681834e-7b0f-4606-8c52-f2b4dafba246@suse.com>
-Date: Thu, 5 Feb 2026 14:54:19 +1030
+        Wed, 04 Feb 2026 20:43:40 -0800 (PST)
+Message-ID: <cca8b4ea-97ef-433e-9db9-4eca67b89576@suse.com>
+Date: Thu, 5 Feb 2026 15:13:36 +1030
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -76,6 +75,8 @@ References: <f3574976d7b5bc8f05e42055d85d4b61263bc5c5.camel@scientia.org>
  <31615495f428dbe499ae5f5a109cc6c74c8979ca.camel@scientia.org>
  <fc2f1d31-7f2c-493f-be42-2cb8c1fd5a17@gmx.com>
  <84b22b2cc7534be60eb423973336101c9e9b9ad3.camel@scientia.org>
+ <b681834e-7b0f-4606-8c52-f2b4dafba246@suse.com>
+ <4e6ad7ef198de72edaf890a2257bf63864984197.camel@scientia.org>
 Content-Language: en-US
 From: Qu Wenruo <wqu@suse.com>
 Autocrypt: addr=wqu@suse.com; keydata=
@@ -102,58 +103,63 @@ Autocrypt: addr=wqu@suse.com; keydata=
  /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
  o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
  JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <84b22b2cc7534be60eb423973336101c9e9b9ad3.camel@scientia.org>
+In-Reply-To: <4e6ad7ef198de72edaf890a2257bf63864984197.camel@scientia.org>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
 
 
-在 2026/2/5 12:14, Christoph Anton Mitterer 写道:
-> Hey Qu.
+在 2026/2/5 15:00, Christoph Anton Mitterer 写道:
+> On Thu, 2026-02-05 at 14:54 +1030, Qu Wenruo wrote:
+>> Can you provide the dmesg during that mount and unmount.
 > 
-> Took me a while... but I’ve tried that now (kernel 6.18.8), but even
-> after clearing the v2 space cache, btrfs check still finds the space
-> info key for a block group that doesn't exist:
+> Tried the same with two different filesystems:
+> Feb 05 02:21:10 heisenberg kernel: BTRFS info (device dm-1): last unmount of filesystem ff14e046-d72c-4671-b30a-6ec17c58a0f1
+> Feb 05 02:32:03 heisenberg kernel: BTRFS: device label data-a-1 devid 1 transid 4084 /dev/mapper/data-a-1 (253:1) scanned by mount (39262)
+> Feb 05 02:32:03 heisenberg kernel: BTRFS info (device dm-1): first mount of filesystem ff14e046-d72c-4671-b30a-6ec17c58a0f1
+> Feb 05 02:32:03 heisenberg kernel: BTRFS info (device dm-1): using crc32c (crc32c-lib) checksum algorithm
+> Feb 05 02:32:17 heisenberg kernel: BTRFS info (device dm-1): enabling free space tree
+> Feb 05 02:32:17 heisenberg kernel: BTRFS info (device dm-1): force clearing of disk cache
+> Feb 05 02:32:29 heisenberg kernel: BTRFS info (device dm-1): last unmount of filesystem ff14e046-d72c-4671-b30a-6ec17c58a0f1
 > 
-> # mount /data/a/1/ -o space_cache=v2,clear_cache
-> # umount /data/a/1
-
-Can you provide the dmesg during that mount and unmount.
-
-It looks like the v2 cache is not rebuilt.
-
-And that's the thing concerning me.
-
-> # btrfs check /dev/mapper/data-a-1 ; echo $? ; beep
-> Opening filesystem to check...
-> Checking filesystem on /dev/mapper/data-a-1
-> UUID: ff14e046-d72c-4671-b30a-6ec17c58a0f1
-> [1/8] checking log skipped (none written)
-> [2/8] checking root items
-> [3/8] checking extents
-> [4/8] checking free space tree
-> We have a space info key for a block group that doesn't exist
-> [5/8] checking fs roots
-> [6/8] checking only csums items (without verifying data)
-> [7/8] checking root refs
-> [8/8] checking quota groups skipped (not enabled on this FS)
-> found 15359868010496 bytes used, error(s) found
-> total csum bytes: 14972501936
-> total tree bytes: 28026028032
-> total fs tree bytes: 10490626048
-> total extent tree bytes: 773816320
-> btree space waste bytes: 3556556510
-> file data blocks allocated: 21845206437888
->   referenced 17683364839424
-> 1
+> Feb 05 03:39:12 heisenberg kernel: BTRFS info (device dm-2): last unmount of filesystem e1a465db-0227-46e1-9917-d6be986266cd
+> Feb 05 03:39:24 heisenberg kernel: BTRFS: device label data-a-2 devid 1 transid 2620 /dev/mapper/data-a-2 (253:2) scanned by mount (53935)
+> Feb 05 03:39:24 heisenberg kernel: BTRFS info (device dm-2): first mount of filesystem e1a465db-0227-46e1-9917-d6be986266cd
+> Feb 05 03:39:24 heisenberg kernel: BTRFS info (device dm-2): using crc32c (crc32c-lib) checksum algorithm
+> Feb 05 03:39:40 heisenberg kernel: BTRFS info (device dm-2): enabling free space tree
+> Feb 05 03:39:40 heisenberg kernel: BTRFS info (device dm-2): force clearing of disk cache
+> Feb 05 03:39:59 heisenberg kernel: BTRFS info (device dm-2): last unmount of filesystem e1a465db-0227-46e1-9917-d6be986266cd
+> Feb 05 03:40:00 heisenberg kernel: BTRFS: device label data-a-2 devid 1 transid 2620 /dev/mapper/data-a-2 (253:2) scanned by mount (54040)
+> Feb 05 03:40:00 heisenberg kernel: BTRFS info (device dm-2): first mount of filesystem e1a465db-0227-46e1-9917-d6be986266cd
+> Feb 05 03:40:00 heisenberg kernel: BTRFS info (device dm-2): using crc32c (crc32c-lib) checksum algorithm
+> Feb 05 03:40:16 heisenberg kernel: BTRFS info (device dm-2): enabling free space tree
+> Feb 05 03:40:20 heisenberg kernel: BTRFS info (device dm-2): last unmount of filesystem e1a465db-0227-46e1-9917-d6be986266cd
 > 
-> Still nothing to worry about? (in terms of possible corruptions? right
-> now I’d still have backups of all data... but probably not forever)
+> 
+>> It looks like the v2 cache is not rebuilt.
+> 
+> At least it claims it would clear it ("force clearing of disk cache").
 
-For the check error itself, you have nothing to worry.
+That message only means we're parsing the "clear_cache" mount option, it 
+doesn't really mean we're rebuilding the v2 cache.
+
+Normally for "clear_cache,space_cache=v2" mount option, we will enter 
+btrfs_start_pre_rw_mouont(), and it will set @rebuild_free_space_tree to 
+true, and later entering btrfs_rebuild_free_space_tree(), and outputting 
+a message showing "rebuilding free space tree".
+
+So by somehow your kernel didn't go that path. I have no idea why that 
+happened.
+
+I guess for the worst case you can disable space cache completely first?
+E.g. -o space_cache=no,clear_cache.
+
+Then retry with v2 cache.
 
 Thanks,
 Qu
+
+> 
 > 
 > 
 > Thanks,

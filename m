@@ -1,168 +1,141 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from crocodile.elm.relay.mailchannels.net (crocodile.elm.relay.mailchannels.net [23.83.212.45])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 325001F2380
-	for <linux-btrfs@vger.kernel.org>; Fri,  6 Feb 2026 00:00:18 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1770336019; cv=none; b=arNfMKlU0a+8m/5Ur1bA1yH6EPd3ndVuWAvWM31xhEG3p4zv8jKV7yUN4Os8rHeo+R1NXkiFPlaLy+7yy0VFU54FTm2eNfQUMdnuP3RTWhYJQN4emP4Z56B/ZcsolOuq0/obq7TwtRNk87g9lzU93ESLNpGgTeXWcFS6P8DWwgk=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1770336019; c=relaxed/simple;
-	bh=vzsqm8WyBc/00hJxb+ydjhokCCFlw2OUN0UiPY2+kyg=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=WxmUHcwxzBzpHrx5DSAuYcS/N/GH1HQqSw4+r4j3tWcyONX6KDrhbKnVw3a8l9oX4hUj9d2jVq4QUIlumwc80pqFQn2bbLUZEuieC73KHNHpRmFM/f1f9Eu1a7B5ji+6tiz3JpRkyzxQQovqOvNyGYpycibeGAdO4/iHXB60wes=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=dJbvrGvi; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=dJbvrGvi; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="dJbvrGvi";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="dJbvrGvi"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id C2ED43E6D2
-	for <linux-btrfs@vger.kernel.org>; Fri,  6 Feb 2026 00:00:05 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1770336005; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A41F36A8D2
+	for <linux-btrfs@vger.kernel.org>; Fri,  6 Feb 2026 00:13:25 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=23.83.212.45
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1770336805; cv=pass; b=JfaGNYhBh/MjQwuxn3BCSqsWsZVuBiz0gE7EefEIU988QnlJCanDKzlsC9sAHEne/+IZE6o15h3C5wjZp/1ftjkjbX1fQq8fRxYHZnSm5lWYmXvhc37ffNGp+VimCdt4OtI+SKeg1I7Hy/wLTZN80ecBeGS/EnBwX2S/yagVGZs=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1770336805; c=relaxed/simple;
+	bh=UWlG8NpSHt1uSo+1ffX85lHhtGDANZYzI3mFhw6rDc4=;
+	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=WW/QcdihsgK+DC+xD6936TLldWfRu6ChFCeBKLmSVnB7kIeHD1q0zYhRkPszDPL68b0OHuWiqsyCjqNuF8+6/VXOll+oVZPxz89k2L2w/MhGrNaBFjR0IPnh9hDpacvw+1HTIdziOAA6l3EDg9XAw0sx9LyCe0ykP3CfTXx8icA=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=scientia.org; spf=pass smtp.mailfrom=scientia.org; arc=pass smtp.client-ip=23.83.212.45
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=scientia.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=scientia.org
+X-Sender-Id: instrampxe0y3a|x-authuser|calestyo@scientia.org
+Received: from relay.mailchannels.net (localhost [127.0.0.1])
+	by relay.mailchannels.net (Postfix) with ESMTP id 42FA6160876;
+	Thu, 05 Feb 2026 23:56:28 +0000 (UTC)
+Received: from cpanel-007-fra.hostingww.com (100-96-80-213.trex-nlb.outbound.svc.cluster.local [100.96.80.213])
+	(Authenticated sender: instrampxe0y3a)
+	by relay.mailchannels.net (Postfix) with ESMTPA id 6298B162A31;
+	Thu, 05 Feb 2026 23:56:27 +0000 (UTC)
+ARC-Seal: i=1; a=rsa-sha256; d=mailchannels.net; s=arc-2022; cv=none;
+	t=1770335787;
+	b=uDPcXuYbZv6d/UnzV8l/27YaIZ0UUUJmPSp7tZOi07MwLzNS8BS+EG3q/WKCJzRbSbBfvM
+	smTTyfdceyDrimmasMNO8ZAsgoDTTmYij48McWN+sicnBn/SX9YGyYhcSKXF8n7mD9oJ1F
+	54C568mxDHGSV0SGNRH7ZPBD+aCSNbQ2eBejKZlIEKKYkfZ/7zBqYPmK78ciet27fFRk/b
+	5A2T1TANik63mksmKx579yNfWPuCAzmLxm8ZZXZk1ARa6mlAaax4HhTP27+h50l/jRrySH
+	E96nb/n870KzjZA3A6rT9uaARPnbFyMFtERDaV20FnzTZH0vLI3UIKNIzAPfDA==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=mailchannels.net;
+	s=arc-2022; t=1770335787;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=TM5lJGfDYu6zse+vDkkhISHF+6+59H6HfOrZm63xqN8=;
-	b=dJbvrGviZi3JS82lyOtZLspMwG8DyWmaV7fde1Z44QOvLQ71KzFiVFm+Qr2217M6FFErwW
-	Ms9eP9f/xV9+Nuq+T5nqng1I+JehuUM97AiUtKad7c+kNjFjhcjgTMjj1gzNybt7S0tLVd
-	FJ3ZO970/yFZtpoNuck4Y0rSmXHKezM=
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=dJbvrGvi
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1770336005; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=TM5lJGfDYu6zse+vDkkhISHF+6+59H6HfOrZm63xqN8=;
-	b=dJbvrGviZi3JS82lyOtZLspMwG8DyWmaV7fde1Z44QOvLQ71KzFiVFm+Qr2217M6FFErwW
-	Ms9eP9f/xV9+Nuq+T5nqng1I+JehuUM97AiUtKad7c+kNjFjhcjgTMjj1gzNybt7S0tLVd
-	FJ3ZO970/yFZtpoNuck4Y0rSmXHKezM=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id EF9513EA63
-	for <linux-btrfs@vger.kernel.org>; Fri,  6 Feb 2026 00:00:04 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id oK+EKwQvhWlzOQAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Fri, 06 Feb 2026 00:00:04 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/3] btrfs-progs: fsck-tests: add a new test case for deleting orphan fst entries
-Date: Fri,  6 Feb 2026 10:29:43 +1030
-Message-ID: <dd3a868f33762d907a1c8bfc99c14b47c917ba7b.1770335913.git.wqu@suse.com>
-X-Mailer: git-send-email 2.52.0
-In-Reply-To: <cover.1770335913.git.wqu@suse.com>
-References: <cover.1770335913.git.wqu@suse.com>
+	bh=UWlG8NpSHt1uSo+1ffX85lHhtGDANZYzI3mFhw6rDc4=;
+	b=96u6mVI4/pcLyCwa4kqasqppkX0DDSiFkyv8dH3LuUKCxaJeZandfnHa9zaPvDwhgLHO2q
+	VVbRglhSvJcBszRax4RiPpJPCvrMDMos6etUxO12WJWoOqI+T6U3Vy4EZf96xww2+Jyuz+
+	/y0Kyd4ySVs+m1k3svPekAyw/UDk2KgCAJ3A6ZBG7f/C1WpH94vtZx+gfVA28hSZBlwZ+v
+	EC2cE1XvVnrnUrEZEXd8ej4jPFzkUxCpDEx0+U+gwrnnr4p6Ful/NICp6Lx6FwXPGtw6C8
+	MVXAZO1mXdWoqkUtOi7AnbuXJ6bPMOedm7z93LPwZn7VtXf0MTfq5Ttiyej/OA==
+ARC-Authentication-Results: i=1;
+	rspamd-845545c4df-6qgk2;
+	auth=pass smtp.auth=instrampxe0y3a smtp.mailfrom=calestyo@scientia.org
+X-Sender-Id: instrampxe0y3a|x-authuser|calestyo@scientia.org
+X-MC-Relay: Neutral
+X-MC-Copy: stored-urls
+X-MailChannels-SenderId: instrampxe0y3a|x-authuser|calestyo@scientia.org
+X-MailChannels-Auth-Id: instrampxe0y3a
+X-Celery-Plucky: 2cb7aa0e331ff75f_1770335788092_83588400
+X-MC-Loop-Signature: 1770335788092:889217597
+X-MC-Ingress-Time: 1770335788092
+Received: from cpanel-007-fra.hostingww.com (cpanel-007-fra.hostingww.com
+ [3.69.87.180])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384)
+	by 100.96.80.213 (trex/7.1.3);
+	Thu, 05 Feb 2026 23:56:28 +0000
+Received: from [212.104.214.84] (port=34332 helo=[10.2.0.2])
+	by cpanel-007-fra.hostingww.com with esmtpsa  (TLS1.3) tls TLS_AES_256_GCM_SHA384
+	(Exim 4.99.1)
+	(envelope-from <calestyo@scientia.org>)
+	id 1vo9Cy-00000000TZ1-2oOR;
+	Thu, 05 Feb 2026 23:56:24 +0000
+Message-ID: <18a87dd4f3155bb1d9c9884f39dbf53c802a10cd.camel@scientia.org>
+Subject: Re: We have a space info key for a block group that doesn't exist
+From: Christoph Anton Mitterer <calestyo@scientia.org>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Date: Fri, 06 Feb 2026 00:56:22 +0100
+In-Reply-To: <fff60222-0b9f-4f09-b3a6-d415aa64b6d7@gmx.com>
+References: <f3574976d7b5bc8f05e42055d85d4b61263bc5c5.camel@scientia.org>
+	 <c07b6fde-03a3-4c97-9f59-866c81e78b85@suse.com>
+	 <31615495f428dbe499ae5f5a109cc6c74c8979ca.camel@scientia.org>
+	 <fc2f1d31-7f2c-493f-be42-2cb8c1fd5a17@gmx.com>
+	 <84b22b2cc7534be60eb423973336101c9e9b9ad3.camel@scientia.org>
+	 <b681834e-7b0f-4606-8c52-f2b4dafba246@suse.com>
+	 <4e6ad7ef198de72edaf890a2257bf63864984197.camel@scientia.org>
+	 <cca8b4ea-97ef-433e-9db9-4eca67b89576@suse.com>
+	 <f1aaada378adad0da020bd679531c7f503ad6f93.camel@scientia.org>
+	 <914a6a60-6bb6-4255-a8cc-ea6f28e7a9cf@suse.com>
+	 <a75537dc77e5b6fac922a97409ca4636805147dc.camel@scientia.org>
+	 <fff60222-0b9f-4f09-b3a6-d415aa64b6d7@gmx.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.56.2-8 
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[99.99%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	MID_CONTAINS_FROM(1.00)[];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	MIME_TRACE(0.00)[0:+];
-	ARC_NA(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received,2a07:de40:b281:104:10:150:64:97:from];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RCVD_TLS_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Spam-Flag: NO
-X-Spam-Score: -3.01
-X-Rspamd-Queue-Id: C2ED43E6D2
-X-Rspamd-Action: no action
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Spam-Level: 
+X-AuthUser: calestyo@scientia.org
 
-The image is created by creating an empty btrfs with older v6.16 btrfs-progs.
-Which has free space tree entries for two temporary block groups.
+On Fri, 2026-02-06 at 07:18 +1030, Qu Wenruo wrote:
+> The only explanation I can come up with is some downstream patches
+> from=20
+> Debian. Would appreciate if you can test with an vanilla upstream
+> kernel.
 
-And the test itself is going through the common repair test procedure.
+Uhm... that=E2=80=99s at least a bit of an effort (not because of the
+compilation itself, but rather because I=E2=80=99m rather security consciou=
+s
+and have no trust path to the upstream kernel sources)...
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- .../071-orphan-fst-entry/.lowmem_repairable      |   0
- .../orphan_fst_entries.img.xz                    | Bin 0 -> 1864 bytes
- 2 files changed, 0 insertions(+), 0 deletions(-)
- create mode 100644 tests/fsck-tests/071-orphan-fst-entry/.lowmem_repairable
- create mode 100644 tests/fsck-tests/071-orphan-fst-entry/orphan_fst_entries.img.xz
 
-diff --git a/tests/fsck-tests/071-orphan-fst-entry/.lowmem_repairable b/tests/fsck-tests/071-orphan-fst-entry/.lowmem_repairable
-new file mode 100644
-index 000000000000..e69de29bb2d1
-diff --git a/tests/fsck-tests/071-orphan-fst-entry/orphan_fst_entries.img.xz b/tests/fsck-tests/071-orphan-fst-entry/orphan_fst_entries.img.xz
-new file mode 100644
-index 0000000000000000000000000000000000000000..bc68661b1e1917da5266c50747e6c7f14cfecf49
-GIT binary patch
-literal 1864
-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
+Before doing that, would you consider the following as enough
+"checking"?
 
-literal 0
-HcmV?d00001
+I=E2=80=99ve downloaded the (Debian) source package for my kernel:
+$ apt-get source linux
 
--- 
-2.52.0
+Debian puts all distro-specific patches in ./debian/patches (and
+applies them to the original upstream tarball when extracting the
+source package.
 
+Looking at these patches, only two contain btrfs at all:
+$ grep -Ril btrfs linux-6.18.8/debian/patches/
+linux-6.18.8/debian/patches/bugfix/all/fs-add-module_softdep-declarations-f=
+or-hard-coded-cr.patch
+linux-6.18.8/debian/patches/debian/btrfs-warn-about-raid5-6-being-experimen=
+tal-at-mount.patch
+linux-6.18.8/debian/patches/series
+
+I=E2=80=99d say none of them touches anything that could explain the above
+behaviour, but you can look up these patches yourself:
+https://salsa.debian.org/kernel-team/linux/-/blob/debian/latest/debian/patc=
+hes/bugfix/all/fs-add-module_softdep-declarations-for-hard-coded-cr.patch?r=
+ef_type=3Dheads
+https://salsa.debian.org/kernel-team/linux/-/blob/debian/latest/debian/patc=
+hes/debian/btrfs-warn-about-raid5-6-being-experimental-at-mount.patch?ref_t=
+ype=3Dheads
+
+
+If that=E2=80=99s not enough, tell me and I=E2=80=99ll compile it myself.
+
+
+Cheers,
+Chris.

@@ -1,16 +1,16 @@
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9C7E743DA49
-	for <linux-btrfs@vger.kernel.org>; Fri,  6 Feb 2026 18:25:31 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 601A743DA5A
+	for <linux-btrfs@vger.kernel.org>; Fri,  6 Feb 2026 18:25:36 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1770402331; cv=none; b=GTdN7ZE8bR+RNKpSh2dPr3wg0NquqysupVCgFebv7LSH7aVOERjCOGFHvjcBqhxskS9P8//CDZDcKye0idjjJ+XG6wXi5JdkYuIwJn7nv9cl4frHQbMnDqNB2YIcx4lhts5+xMHbCz4ps3LVxHUeUGFJgwUZt9yXSK35kkcPjr8=
+	t=1770402336; cv=none; b=SibU+CndFDPbF26ewYREKPC/UQm+7ThIK0TEGXu6xwImSnxHFKYasf3ziIvz/lET5m/ROsmOTy7q9rTOw9BUIBDhxA/GFmFMRgJo1t8POnPEf/ECM40NIuTY+k61RHJOMVmR3a9vWXeJqZlvWYCw/MRlsiVnyJkuDWx/m8/WNPo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1770402331; c=relaxed/simple;
-	bh=Tfn+Z9xauLtsg6WSNT0FytGznv6AKi3dk0uKZsElWiM=;
+	s=arc-20240116; t=1770402336; c=relaxed/simple;
+	bh=HDKQWiuOFYGyr6lPE2282Odn8MY1GFwXoZFWSi5il2k=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=Smvd8eZu2NpC5dOHflvSYFLtgxgeHqf7Uo7Jr7vLB7fxfkXk4niKnGwV/zdhJv795i4eachhQCn9vDMkEtFQALt5r34fgPu2s3VYH76pLXdhn23wHTPXsE07VZKI2cxXQFbfDF9Rw87SXLFCv5TPoL+GyP+DvMKCN4tRd3UnCxk=
+	 MIME-Version; b=drnC5x+XzM/irEj3YH5D478kCWCwGKpgTs8Gem22ZMxMNtcda3ujEJ+Q+1JgEuFLvFv7OhaFIwzdEfIhepWDQCknwTVUsn5ZyGAXV/OEnoJGwMHhN6Aak9HWRZrDW8vhGeZlslMWXW6dk6oBs1YRpOX+CiR9z1zEe/7b+sBLxW0=
 ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
@@ -18,20 +18,20 @@ Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 7B99D3E75F;
-	Fri,  6 Feb 2026 18:24:17 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 565393E760;
+	Fri,  6 Feb 2026 18:24:18 +0000 (UTC)
 Authentication-Results: smtp-out1.suse.de;
 	none
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 505653EA63;
-	Fri,  6 Feb 2026 18:24:17 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 2A5E23EA63;
+	Fri,  6 Feb 2026 18:24:18 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id IFK3EtExhmkTCQAAD6G6ig
-	(envelope-from <neelx@suse.com>); Fri, 06 Feb 2026 18:24:17 +0000
+	id 2L3dCdIxhmkTCQAAD6G6ig
+	(envelope-from <neelx@suse.com>); Fri, 06 Feb 2026 18:24:18 +0000
 From: Daniel Vacek <neelx@suse.com>
 To: Chris Mason <clm@fb.com>,
 	Josef Bacik <josef@toxicpanda.com>,
@@ -45,9 +45,9 @@ Cc: linux-block@vger.kernel.org,
 	linux-fscrypt@vger.kernel.org,
 	linux-btrfs@vger.kernel.org,
 	linux-kernel@vger.kernel.org
-Subject: [PATCH v6 36/43] btrfs: deal with encrypted symlinks in send
-Date: Fri,  6 Feb 2026 19:23:08 +0100
-Message-ID: <20260206182336.1397715-37-neelx@suse.com>
+Subject: [PATCH v6 38/43] btrfs: load the inode context before sending writes
+Date: Fri,  6 Feb 2026 19:23:10 +0100
+Message-ID: <20260206182336.1397715-39-neelx@suse.com>
 X-Mailer: git-send-email 2.51.0
 In-Reply-To: <20260206182336.1397715-1-neelx@suse.com>
 References: <20260206182336.1397715-1-neelx@suse.com>
@@ -66,7 +66,7 @@ X-Rspamd-Pre-Result: action=no action;
 	module=replies;
 	Message is reply to one we originated
 X-Rspamd-Action: no action
-X-Rspamd-Queue-Id: 7B99D3E75F
+X-Rspamd-Queue-Id: 565393E760
 X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
 X-Spam-Level: 
 X-Spamd-Result: default: False [-4.00 / 50.00];
@@ -75,83 +75,74 @@ X-Spam-Flag: NO
 
 From: Josef Bacik <josef@toxicpanda.com>
 
-Send needs to send the decrypted value of the symlinks, handle the case
-where the inode is encrypted and decrypt the symlink name into a buffer
-and copy this buffer into our fs_path struct.
+For send we will read the pages and copy them into our buffer.  Use the
+fscrypt_inode_open helper to make sure the key is loaded properly before
+trying to read from the inode so the contents are properly decrypted.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 Signed-off-by: Daniel Vacek <neelx@suse.com>
 ---
 
-v5: https://lore.kernel.org/linux-btrfs/4d97f35d6f85ff041b09bed33b63446a92b7a20c.1706116485.git.josef@toxicpanda.com/
- * read_symlink_encrypted() reworked from using pages to using folios.
+v5: https://lore.kernel.org/linux-btrfs/a307def01bf28c3ed99398868a142180c6088527.1706116485.git.josef@toxicpanda.com/
+ * btrfs_iget() returns binode now.
 ---
- fs/btrfs/send.c | 45 ++++++++++++++++++++++++++++++++++++++++++---
- 1 file changed, 42 insertions(+), 3 deletions(-)
+ fs/btrfs/send.c | 36 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
 
 diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 3dcfdba018b5..b77f96ae2fea 100644
+index faaade4c35dc..bf9a99a9d24d 100644
 --- a/fs/btrfs/send.c
 +++ b/fs/btrfs/send.c
-@@ -1701,9 +1701,7 @@ static int find_extent_clone(struct send_ctx *sctx,
+@@ -5331,6 +5331,38 @@ static int put_file_data(struct send_ctx *sctx, u64 offset, u32 len)
  	return ret;
  }
  
--static int read_symlink(struct btrfs_root *root,
--			u64 ino,
--			struct fs_path *dest)
-+static int read_symlink_unencrypted(struct btrfs_root *root, u64 ino, struct fs_path *dest)
- {
- 	int ret;
- 	BTRFS_PATH_AUTO_FREE(path);
-@@ -1764,6 +1762,47 @@ static int read_symlink(struct btrfs_root *root,
- 	return fs_path_add_from_extent_buffer(dest, path->nodes[0], off, len);
- }
- 
-+static int read_symlink_encrypted(struct btrfs_root *root, u64 ino, struct fs_path *dest)
++static int load_fscrypt_context(struct send_ctx *sctx)
 +{
-+	DEFINE_DELAYED_CALL(done);
-+	const char *buf;
-+	struct folio *folio;
-+	struct btrfs_inode *inode;
-+	int ret = 0;
++	struct btrfs_root *root = sctx->send_root;
++	struct name_cache_entry *nce;
++	struct btrfs_inode *dir;
++	int ret;
 +
-+	inode = btrfs_iget(ino, root);
-+	if (IS_ERR(inode))
-+		return PTR_ERR(inode);
++	if (!btrfs_fs_incompat(root->fs_info, ENCRYPT))
++		return 0;
 +
-+	folio = read_mapping_folio(inode->vfs_inode.i_mapping, 0, NULL);
-+	if (IS_ERR(folio)) {
-+		iput(&inode->vfs_inode);
-+		return PTR_ERR(folio);
++	/*
++	 * If we're encrypted we need to load the parent inode in order to make
++	 * sure the encryption context is loaded.  We have to do this even if
++	 * we're not encrypted, as we need to make sure that we don't violate
++	 * the rule about encrypted children with non-encrypted parents, which
++	 * is enforced by __fscrypt_file_open.
++	 */
++	nce = name_cache_search(sctx, sctx->cur_ino, sctx->cur_inode_gen);
++	if (!nce) {
++		ASSERT(nce);
++		return -EINVAL;
 +	}
 +
-+	buf = fscrypt_get_symlink(&inode->vfs_inode, folio_address(folio),
-+				  BTRFS_MAX_INLINE_DATA_SIZE(root->fs_info),
-+				  &done);
-+	folio_put(folio);
-+	iput(&inode->vfs_inode);
++	dir = btrfs_iget(nce->parent_ino, root);
++	if (IS_ERR(dir))
++		return PTR_ERR(dir);
 +
-+	if (IS_ERR(buf))
-+		return PTR_ERR(buf);
-+
-+	ret = fs_path_add(dest, buf, strlen(buf));
-+	do_delayed_call(&done);
++	ret = __fscrypt_file_open(&dir->vfs_inode, sctx->cur_inode);
++	iput(&dir->vfs_inode);
 +	return ret;
 +}
 +
-+
-+static int read_symlink(struct btrfs_root *root, u64 ino,
-+			struct fs_path *dest)
-+{
-+	if (btrfs_fs_incompat(root->fs_info, ENCRYPT))
-+		return read_symlink_encrypted(root, ino, dest);
-+	return read_symlink_unencrypted(root, ino, dest);
-+}
-+
  /*
-  * Helper function to generate a file name that is unique in the root of
-  * send_root and parent_root. This is used to generate names for orphan inodes.
+  * Read some bytes from the current inode/file and send a write command to
+  * user space.
+@@ -5348,6 +5380,10 @@ static int send_write(struct send_ctx *sctx, u64 offset, u32 len)
+ 	if (ret < 0)
+ 		return ret;
+ 
++	ret = load_fscrypt_context(sctx);
++	if (ret < 0)
++		return ret;
++
+ 	TLV_PUT_PATH(sctx, BTRFS_SEND_A_PATH, p);
+ 	TLV_PUT_U64(sctx, BTRFS_SEND_A_FILE_OFFSET, offset);
+ 	ret = put_file_data(sctx, offset, len);
 -- 
 2.51.0
 

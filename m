@@ -1,58 +1,37 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 70ACC43DA56
-	for <linux-btrfs@vger.kernel.org>; Fri,  6 Feb 2026 18:24:33 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7FCE243E4A6
+	for <linux-btrfs@vger.kernel.org>; Fri,  6 Feb 2026 18:24:36 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1770402273; cv=none; b=JPLlYTaog39oSTubntiuovFtvG0b78wo3ivPXbJH7R53TAKgZhnGAocQwitdW+tDOxIkktkM1J9Q34NrgC5EUYal1e50nxYULHD/sF6QX8u0rI6RGTooq3MBDmCYwF5t9td6SQO1xgUSpGD5TWWJCtQGPzRKmHtVAk7ZuUiLoMA=
+	t=1770402276; cv=none; b=riep3lGN3CYUW/apokAsRtDFgpF6xAb0BK5dvpXSeGOlPX+oPSF7dlx7lW67K1NX0zTsA0BTz/f132pH+YURClni1zSvBkVtpzS/niZ5k6Epzi4nLarFVIj1l3kOk7cBqOovEroSN1gFCBW1DOEhPGmr0BuQBpZl322CulT9krs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1770402273; c=relaxed/simple;
-	bh=S88iX+pQLBnDUUEDjcXBBPJboVrjuvn/D1vOa8/e714=;
+	s=arc-20240116; t=1770402276; c=relaxed/simple;
+	bh=gvoi/0nQGPPiJP3k8zgHGQ32lRhLX5hgreRW21At+Y8=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=itSCjCU0iD2NMqweRp6ifVUFNB+96FBbj6TeSbRvI7bdOhXBaF2FXl2ti21Fhsd7Z3mvddgCBOEfvZj3sXK4xYxG0Yew147wCrEVmebEgqGptkAOmd5pF8x0U2UuvJMmF1yxfPcsWCSdbRsRNzPkZ0f+z1SUfHqheiQm358aguo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=EPlOWgnH; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=EPlOWgnH; arc=none smtp.client-ip=195.135.223.131
+	 MIME-Version; b=DKI+SSF8wdYuDJCDT9U14U2ylw+kWOqNZRQ2A+y7fpEFnn2k0wQ60FGsxFz5FhJBtYOgsRDg+bB9uVpkJe3zaPE3o3r5sZKRpAxmCrsEcUszYs1NycA5tW3T24UN11jWWgDFuQ2fJgNkj/ctWTKeyqrrd+vCaBEq5xzD5fY8TZU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="EPlOWgnH";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="EPlOWgnH"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id D55885BD24;
-	Fri,  6 Feb 2026 18:24:03 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1770402243; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=PMDR3hJyN7VskU25nVZ2Nq4bl6y56eSfjjKv060wZho=;
-	b=EPlOWgnHFdABA6aPE9m/SivtblsNvbmggbgLx/5/uUeFc/PuXBfeAjZ2gOoK2RryhoSIj2
-	utt7KOCusHGWskuMJOOLu1qx5wr/t3ZNcjRhxjglDRrrdYtsVRapSxyGNd7HFW7001LlMV
-	WnVQwUabmYwUHAoLpSz4gBDT+AEBELY=
-Authentication-Results: smtp-out2.suse.de;
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 98D793E742;
+	Fri,  6 Feb 2026 18:24:06 +0000 (UTC)
+Authentication-Results: smtp-out1.suse.de;
 	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1770402243; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=PMDR3hJyN7VskU25nVZ2Nq4bl6y56eSfjjKv060wZho=;
-	b=EPlOWgnHFdABA6aPE9m/SivtblsNvbmggbgLx/5/uUeFc/PuXBfeAjZ2gOoK2RryhoSIj2
-	utt7KOCusHGWskuMJOOLu1qx5wr/t3ZNcjRhxjglDRrrdYtsVRapSxyGNd7HFW7001LlMV
-	WnVQwUabmYwUHAoLpSz4gBDT+AEBELY=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id A65FF3EA63;
-	Fri,  6 Feb 2026 18:24:03 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 69C773EA63;
+	Fri,  6 Feb 2026 18:24:06 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id ECYfKMMxhmkTCQAAD6G6ig
-	(envelope-from <neelx@suse.com>); Fri, 06 Feb 2026 18:24:03 +0000
+	id KPpVGcYxhmkTCQAAD6G6ig
+	(envelope-from <neelx@suse.com>); Fri, 06 Feb 2026 18:24:06 +0000
 From: Daniel Vacek <neelx@suse.com>
 To: Chris Mason <clm@fb.com>,
 	Josef Bacik <josef@toxicpanda.com>,
@@ -67,9 +46,9 @@ Cc: linux-block@vger.kernel.org,
 	linux-btrfs@vger.kernel.org,
 	linux-kernel@vger.kernel.org,
 	Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-Subject: [PATCH v6 14/43] btrfs: handle nokey names
-Date: Fri,  6 Feb 2026 19:22:46 +0100
-Message-ID: <20260206182336.1397715-15-neelx@suse.com>
+Subject: [PATCH v6 19/43] btrfs: add fscrypt_info and encryption_type to extent_map
+Date: Fri,  6 Feb 2026 19:22:51 +0100
+Message-ID: <20260206182336.1397715-20-neelx@suse.com>
 X-Mailer: git-send-email 2.51.0
 In-Reply-To: <20260206182336.1397715-1-neelx@suse.com>
 References: <20260206182336.1397715-1-neelx@suse.com>
@@ -80,190 +59,206 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Score: -6.80
-X-Spamd-Result: default: False [-6.80 / 50.00];
-	REPLY(-4.00)[];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:email];
-	ARC_NA(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	TO_DN_SOME(0.00)[];
-	RCPT_COUNT_TWELVE(0.00)[13];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	FROM_HAS_DN(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	R_RATELIMIT(0.00)[to_ip_from(RLjpbzrka5mc1bf4fb9cmz1e4f)];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Level: 
+X-Rspamd-Pre-Result: action=no action;
+	module=replies;
+	Message is reply to one we originated
+X-Spamd-Result: default: False [-4.00 / 50.00];
+	REPLY(-4.00)[]
 X-Spam-Flag: NO
+X-Spam-Score: -4.00
+X-Rspamd-Queue-Id: 98D793E742
+X-Rspamd-Pre-Result: action=no action;
+	module=replies;
+	Message is reply to one we originated
+X-Rspamd-Action: no action
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Spam-Level: 
 
 From: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
 
-For encrypted or unencrypted names, we calculate the offset for the dir
-item by hashing the name for the dir item. However, this doesn't work
-for a long nokey name, where we do not have the complete ciphertext.
-Instead, fscrypt stores the filesystem-provided hash in the nokey name,
-and we can extract it from the fscrypt_name structure in such a case.
-
-Additionally, for nokey names, if we find the nokey name on disk we can
-update the fscrypt_name with the disk name, so add that to searching for
-diritems.
+Each extent_map will end up with a pointer to its associated
+fscrypt_info if any, which should have the same lifetime as the
+extent_map.  We are also going to need to track the encryption_type
+for the file extent items.  Add the fscrypt_info to the extent_map and
+the subsequent code for transferring it in the split and merge cases
+as well as the code necessary to free them.  A future patch will add
+the code to load them as appropriate.
 
 Signed-off-by: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 Signed-off-by: Daniel Vacek <neelx@suse.com>
 ---
 
-v5: https://lore.kernel.org/linux-btrfs/a7e3aec8ec03814b4baa1d929ae8fb77f13c17d2.1706116485.git.josef@toxicpanda.com/
- * No changes since.
+v5: https://lore.kernel.org/linux-btrfs/9818cd4134d048d2d641b9b8ae10be6c6af51956.1706116485.git.josef@toxicpanda.com/
+ * No significant changes since. Just add some btrfs_ prefixes even
+   to static functions in extent map header file to match the style.
 ---
- fs/btrfs/dir-item.c | 35 +++++++++++++++++++++++++++++++++--
- fs/btrfs/fscrypt.c  | 27 +++++++++++++++++++++++++++
- fs/btrfs/fscrypt.h  | 11 +++++++++++
- 3 files changed, 71 insertions(+), 2 deletions(-)
+ fs/btrfs/extent_map.c | 32 +++++++++++++++++++++++++++++---
+ fs/btrfs/extent_map.h | 16 ++++++++++++++++
+ fs/btrfs/file-item.c  |  1 +
+ fs/btrfs/inode.c      |  1 +
+ 4 files changed, 47 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/dir-item.c b/fs/btrfs/dir-item.c
-index 6e10dd4a4e9e..75c213bd826e 100644
---- a/fs/btrfs/dir-item.c
-+++ b/fs/btrfs/dir-item.c
-@@ -228,6 +228,27 @@ struct btrfs_dir_item *btrfs_lookup_dir_item(struct btrfs_trans_handle *trans,
- 	return di;
+diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
+index 58589fc11802..f6b58a5c1151 100644
+--- a/fs/btrfs/extent_map.c
++++ b/fs/btrfs/extent_map.c
+@@ -59,6 +59,7 @@ struct extent_map *btrfs_alloc_extent_map(void)
+ 
+ static void free_extent_map(struct extent_map *em)
+ {
++	fscrypt_put_extent_info(em->fscrypt_info);
+ 	kmem_cache_free(extent_map_cache, em);
  }
  
-+/*
-+ * If appropriate, populate the disk name for a fscrypt_name looked up without
-+ * a key.
-+ *
-+ * @path:	The path to the extent buffer in which the name was found.
-+ * @di:		The dir item corresponding.
-+ * @fname:	The fscrypt_name to perhaps populate.
-+ *
-+ * Returns: 0 if the name is already populated or the dir item doesn't exist
-+ * or the name was successfully populated, else an error code.
-+ */
-+static int ensure_disk_name_from_dir_item(struct btrfs_path *path,
-+					  struct btrfs_dir_item *di,
-+					  struct fscrypt_name *name)
-+{
-+	if (name->disk_name.name || !di)
-+		return 0;
+@@ -99,12 +100,24 @@ void btrfs_free_extent_map_safe(struct extent_map_tree *tree,
+ 	if (!em)
+ 		return;
+ 
+-	if (refcount_dec_and_test(&em->refs)) {
+-		WARN_ON(btrfs_extent_map_in_tree(em));
+-		WARN_ON(!list_empty(&em->list));
++	if (!refcount_dec_and_test(&em->refs))
++		return;
 +
-+	return btrfs_fscrypt_get_disk_name(path->nodes[0], di, &name->disk_name);
-+}
++	WARN_ON(btrfs_extent_map_in_tree(em));
++	WARN_ON(!list_empty(&em->list));
 +
- /*
-  * Lookup for a directory item by fscrypt_name.
-  *
-@@ -254,8 +275,11 @@ struct btrfs_dir_item *btrfs_lookup_dir_item_fname(struct btrfs_trans_handle *tr
- 
- 	key.objectid = dir;
- 	key.type = BTRFS_DIR_ITEM_KEY;
--	key.offset = btrfs_name_hash(name->disk_name.name, name->disk_name.len);
--	/* XXX get the right hash for no-key names */
-+
-+	if (!name->disk_name.name)
-+		key.offset = name->hash | ((u64)name->minor_hash << 32);
-+	else
-+		key.offset = btrfs_name_hash(name->disk_name.name, name->disk_name.len);
- 
- 	ret = btrfs_search_slot(trans, root, &key, path, mod, -mod);
- 	if (ret == 0)
-@@ -263,6 +287,8 @@ struct btrfs_dir_item *btrfs_lookup_dir_item_fname(struct btrfs_trans_handle *tr
- 
- 	if (ret == -ENOENT || (di && IS_ERR(di) && PTR_ERR(di) == -ENOENT))
- 		return NULL;
-+	if (ret == 0)
-+		ret = ensure_disk_name_from_dir_item(path, di, name);
- 	if (ret < 0)
- 		di = ERR_PTR(ret);
- 
-@@ -373,7 +399,12 @@ btrfs_search_dir_index_item(struct btrfs_root *root, struct btrfs_path *path,
- 	btrfs_for_each_slot(root, &key, &key, path, ret) {
- 		if (key.objectid != dirid || key.type != BTRFS_DIR_INDEX_KEY)
- 			break;
-+
- 		di = btrfs_match_dir_item_fname(path, name);
-+		if (di)
-+			ret = ensure_disk_name_from_dir_item(path, di, name);
-+		if (ret)
-+			break;
- 		if (di)
- 			return di;
- 	}
-diff --git a/fs/btrfs/fscrypt.c b/fs/btrfs/fscrypt.c
-index 99b87776ce51..078b8c9a0334 100644
---- a/fs/btrfs/fscrypt.c
-+++ b/fs/btrfs/fscrypt.c
-@@ -15,6 +15,33 @@
- #include "transaction.h"
- #include "xattr.h"
- 
-+/*
-+ * From a given location in a leaf, read a name into a qstr (usually a
-+ * fscrypt_name's disk_name), allocating the required buffer. Used for
-+ * nokey names.
-+ */
-+int btrfs_fscrypt_get_disk_name(struct extent_buffer *leaf,
-+				struct btrfs_dir_item *dir_item,
-+				struct fscrypt_str *name)
-+{
-+	unsigned long de_name_len = btrfs_dir_name_len(leaf, dir_item);
-+	unsigned long de_name = (unsigned long)(dir_item + 1);
 +	/*
-+	 * For no-key names, we use this opportunity to find the disk
-+	 * name, so future searches don't need to deal with nokey names
-+	 * and we know what the encrypted size is.
++	 * We could take a lock freeing the fscrypt_info, so add this to the
++	 * list of freed_extents to be freed later.
 +	 */
-+	name->name = kmalloc(de_name_len, GFP_NOFS);
++	if (em->fscrypt_info) {
+ 		list_add_tail(&em->free_list, &tree->freed_extents);
+ 		set_bit(EXTENT_MAP_TREE_PENDING_FREES, &tree->flags);
++		return;
+ 	}
 +
-+	if (!name->name)
-+		return -ENOMEM;
-+
-+	read_extent_buffer(leaf, name->name, de_name, de_name_len);
-+
-+	name->len = de_name_len;
-+	return 0;
-+}
-+
++	/* Nothing scary here, just free the object. */
++	free_extent_map(em);
+ }
+ 
  /*
-  * This function is extremely similar to fscrypt_match_name() but uses an
-  * extent_buffer.
-diff --git a/fs/btrfs/fscrypt.h b/fs/btrfs/fscrypt.h
-index 4e9c87290158..c5cdc27f943c 100644
---- a/fs/btrfs/fscrypt.h
-+++ b/fs/btrfs/fscrypt.h
-@@ -9,11 +9,22 @@
- #include "fs.h"
+@@ -291,6 +304,10 @@ static bool can_merge_extent_map(const struct extent_map *em)
+ 	if (!list_empty(&em->list))
+ 		return false;
  
- #ifdef CONFIG_FS_ENCRYPTION
-+int btrfs_fscrypt_get_disk_name(struct extent_buffer *leaf,
-+				struct btrfs_dir_item *di,
-+				struct fscrypt_str *qstr);
++	/* We can't merge encrypted extents. */
++	if (em->fscrypt_info)
++		return false;
 +
- bool btrfs_fscrypt_match_name(struct fscrypt_name *fname,
- 			      struct extent_buffer *leaf,
- 			      unsigned long de_name, u32 de_name_len);
+ 	return true;
+ }
  
- #else
-+static inline int btrfs_fscrypt_get_disk_name(struct extent_buffer *leaf,
-+					      struct btrfs_dir_item *di,
-+					      struct fscrypt_str *qstr)
+@@ -311,6 +328,10 @@ static bool mergeable_maps(const struct extent_map *prev, const struct extent_ma
+ 	if (next->disk_bytenr < EXTENT_MAP_LAST_BYTE - 1)
+ 		return btrfs_extent_map_block_start(next) == extent_map_block_end(prev);
+ 
++	/* Don't merge adjacent encrypted maps. */
++	if (prev->fscrypt_info || next->fscrypt_info)
++		return false;
++
+ 	/* HOLES and INLINE extents. */
+ 	return next->disk_bytenr == prev->disk_bytenr;
+ }
+@@ -977,6 +998,7 @@ void btrfs_drop_extent_map_range(struct btrfs_inode *inode, u64 start, u64 end,
+ 
+ 			split->generation = gen;
+ 			split->flags = flags;
++			split->fscrypt_info = fscrypt_get_extent_info(em->fscrypt_info);
+ 			replace_extent_mapping(inode, em, split, modified);
+ 			btrfs_free_extent_map(split);
+ 			split = split2;
+@@ -1005,6 +1027,7 @@ void btrfs_drop_extent_map_range(struct btrfs_inode *inode, u64 start, u64 end,
+ 				split->ram_bytes = split->len;
+ 			}
+ 
++			split->fscrypt_info = fscrypt_get_extent_info(em->fscrypt_info);
+ 			if (btrfs_extent_map_in_tree(em)) {
+ 				replace_extent_mapping(inode, em, split, modified);
+ 			} else {
+@@ -1163,6 +1186,7 @@ int btrfs_split_extent_map(struct btrfs_inode *inode, u64 start, u64 len, u64 pr
+ 	split_pre->ram_bytes = split_pre->len;
+ 	split_pre->flags = flags;
+ 	split_pre->generation = em->generation;
++	split_pre->fscrypt_info = fscrypt_get_extent_info(em->fscrypt_info);
+ 
+ 	replace_extent_mapping(inode, em, split_pre, true);
+ 
+@@ -1180,6 +1204,8 @@ int btrfs_split_extent_map(struct btrfs_inode *inode, u64 start, u64 len, u64 pr
+ 	split_mid->ram_bytes = split_mid->len;
+ 	split_mid->flags = flags;
+ 	split_mid->generation = em->generation;
++	split_mid->fscrypt_info = fscrypt_get_extent_info(em->fscrypt_info);
++
+ 	add_extent_mapping(inode, split_mid, true);
+ 
+ 	/* Once for us */
+diff --git a/fs/btrfs/extent_map.h b/fs/btrfs/extent_map.h
+index a962012be1c3..a0d5be758e7e 100644
+--- a/fs/btrfs/extent_map.h
++++ b/fs/btrfs/extent_map.h
+@@ -24,6 +24,7 @@ enum {
+ 	ENUM_BIT(EXTENT_FLAG_COMPRESS_ZLIB),
+ 	ENUM_BIT(EXTENT_FLAG_COMPRESS_LZO),
+ 	ENUM_BIT(EXTENT_FLAG_COMPRESS_ZSTD),
++	ENUM_BIT(EXTENT_FLAG_ENCRYPT_FSCRYPT),
+ 	/* pre-allocated extent */
+ 	ENUM_BIT(EXTENT_FLAG_PREALLOC),
+ 	/* Logging this extent */
+@@ -96,6 +97,7 @@ struct extent_map {
+ 	u64 generation;
+ 	u32 flags;
+ 	refcount_t refs;
++	struct fscrypt_extent_info *fscrypt_info;
+ 	struct list_head list;
+ 	struct list_head free_list;
+ };
+@@ -114,6 +116,20 @@ struct extent_map_tree {
+ 
+ struct btrfs_inode;
+ 
++static inline void btrfs_extent_map_set_encryption(struct extent_map *em,
++					     enum btrfs_encryption_type type)
 +{
-+	return 0;
++	if (type == BTRFS_ENCRYPTION_FSCRYPT)
++		em->flags |= EXTENT_FLAG_ENCRYPT_FSCRYPT;
 +}
 +
- static inline bool btrfs_fscrypt_match_name(struct fscrypt_name *fname,
- 					    struct extent_buffer *leaf,
- 					    unsigned long de_name,
++static inline enum btrfs_encryption_type btrfs_extent_map_encryption(const struct extent_map *em)
++{
++	if (em->flags & EXTENT_FLAG_ENCRYPT_FSCRYPT)
++		return BTRFS_ENCRYPTION_FSCRYPT;
++	return BTRFS_ENCRYPTION_NONE;
++}
++
+ static inline void btrfs_extent_map_set_compression(struct extent_map *em,
+ 						    enum btrfs_compression_type type)
+ {
+diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+index 7bd715442f3e..08dc78295707 100644
+--- a/fs/btrfs/file-item.c
++++ b/fs/btrfs/file-item.c
+@@ -1357,6 +1357,7 @@ void btrfs_extent_item_to_extent_map(struct btrfs_inode *inode,
+ 			if (type == BTRFS_FILE_EXTENT_PREALLOC)
+ 				em->flags |= EXTENT_FLAG_PREALLOC;
+ 		}
++		btrfs_extent_map_set_encryption(em, btrfs_file_extent_encryption(leaf, fi));
+ 	} else if (type == BTRFS_FILE_EXTENT_INLINE) {
+ 		/* Tree-checker has ensured this. */
+ 		ASSERT(extent_start == 0);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 758dde148be6..b425047f77c7 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -7580,6 +7580,7 @@ struct extent_map *btrfs_create_io_em(struct btrfs_inode *inode, u64 start,
+ 	em->flags |= EXTENT_FLAG_PINNED;
+ 	if (type == BTRFS_ORDERED_COMPRESSED)
+ 		btrfs_extent_map_set_compression(em, file_extent->compression);
++	btrfs_extent_map_set_encryption(em, BTRFS_ENCRYPTION_NONE);
+ 
+ 	ret = btrfs_replace_extent_map_range(inode, em, true);
+ 	if (ret) {
 -- 
 2.51.0
 

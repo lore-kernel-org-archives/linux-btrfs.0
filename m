@@ -1,151 +1,119 @@
-Received: from cheetah.ash.relay.mailchannels.net (cheetah.ash.relay.mailchannels.net [23.83.222.34])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C10201482E8
-	for <linux-btrfs@vger.kernel.org>; Sat,  7 Feb 2026 04:28:09 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=23.83.222.34
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1770438490; cv=pass; b=Bfv8GfgUuoBn5b1pbI1EsrKyBCzM6ScBFs17QDF/ejjhnpCkAMoP4cqg4tBvUvrx0N1SjsNlJRC328cAOnFJ1rbdBwLw8BbVW+feHgubcNcuR77q9U4Vpw3LAftmAZRYlkrSgKJSuz1JdbPvdoXWWBY/7cI2GW5dd87tKNTmB5c=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1770438490; c=relaxed/simple;
-	bh=uuVqxeOjSx4ZGb4B/RQJc18ZDMO6Yl1bEpd79wsIMYU=;
-	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=CnSJgRbpCvYllEksLBev2Zk9wd7LIsqopWhMLqF7AoGlIDrntHBfKr0w62QyBOOtgjVIM/EGKgO4hlDrXufBObl8XxxAXO1FgN5Q3SvgCAZQyfunho5FYRw8xG9iMuVnjbgsMf9Inkte4kd2Or55RntrAobJviIoYqjC5s4R2PE=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=scientia.org; spf=pass smtp.mailfrom=scientia.org; arc=pass smtp.client-ip=23.83.222.34
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=scientia.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=scientia.org
-X-Sender-Id: instrampxe0y3a|x-authuser|calestyo@scientia.org
-Received: from relay.mailchannels.net (localhost [127.0.0.1])
-	by relay.mailchannels.net (Postfix) with ESMTP id ADDF38C009F;
-	Sat, 07 Feb 2026 01:28:02 +0000 (UTC)
-Received: from cpanel-007-fra.hostingww.com (trex-green-0.trex.outbound.svc.cluster.local [100.96.77.52])
-	(Authenticated sender: instrampxe0y3a)
-	by relay.mailchannels.net (Postfix) with ESMTPA id D53EA8C26F7;
-	Sat, 07 Feb 2026 01:28:01 +0000 (UTC)
-ARC-Seal: i=1; a=rsa-sha256; d=mailchannels.net; s=arc-2022; cv=none;
-	t=1770427682;
-	b=Q76LvCTIt5xASiN5TMypt/AUx9F8A8dsZVaZSxDCm8oQBCmMW3oy8THMaRl1PKenP/a3zF
-	rSgQhimYFf9uKRv5dfGFFso6g2BZ31ZR7RWTY5Mz+5mpgYacnbJ+qFmFKtDLPk4CdM15BB
-	Koniu/v7QZMM0m/3Vj8zB2mL3Poc4qXDQ/QPCrE4udxZSl/8fJGXUn+Xr6k73ZTiYryC6d
-	5WvER89FmhNV08IXpinb9xa9ubVrZmiT+qlZgHezfjKW8+JwngRBRv8qIG1DrdMdvvGv8U
-	Bdq59FIEByjTAwHh22TBV9/kRt3HWnIr5VIMKSrVSbQYyH7IfpmRO4WtoTB1Cw==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed;
- d=mailchannels.net;
-	s=arc-2022; t=1770427682;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=5eicBYGp5GfEIGwb9VR2vaD7Cr1hi4wD+/T/Nkcxnd4=;
-	b=Hip7TBuSz0pzi9oxXJwHfT75rWVEy6OI0vGB7Myj1QeEWPEjsy8pQ6oPuHz0fbyaDZemJQ
-	aRAlwZjv0HNjKKWnK8D1Rx7ww3fEwQ4ymr61eI1NROIV+b2c+wRrOc1P3qj2ACecZcTlBQ
-	Smo4hPPAAEvyk0QcmF2q7VT4Q7Tx46hNXTMshJLmBMpKecYsqxMPUXxUnwkSfi1G5Z52jo
-	fcuhxxIEeOVJuk2Hkenjjb6A9WqwgjzZqUISYmESEMdv3+mzDNIbCws2NwKpJ9hDBZqlyj
-	MagBCuKV9Ht+oedzYYjvvvdwNbo45HgpwicsXHdcyw8D7rdRsfP6mrATDGo1gQ==
-ARC-Authentication-Results: i=1;
-	rspamd-845545c4df-nxw5v;
-	auth=pass smtp.auth=instrampxe0y3a smtp.mailfrom=calestyo@scientia.org
-X-Sender-Id: instrampxe0y3a|x-authuser|calestyo@scientia.org
-X-MC-Relay: Neutral
-X-MailChannels-SenderId: instrampxe0y3a|x-authuser|calestyo@scientia.org
-X-MailChannels-Auth-Id: instrampxe0y3a
-X-Continue-Lettuce: 1a22994e1a081438_1770427682592_533619037
-X-MC-Loop-Signature: 1770427682592:3315925643
-X-MC-Ingress-Time: 1770427682592
-Received: from cpanel-007-fra.hostingww.com (cpanel-007-fra.hostingww.com
- [3.69.87.180])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384)
-	by 100.96.77.52 (trex/7.1.3);
-	Sat, 07 Feb 2026 01:28:02 +0000
-Received: from [212.104.214.84] (port=10942 helo=[10.2.0.2])
-	by cpanel-007-fra.hostingww.com with esmtpsa  (TLS1.3) tls TLS_AES_256_GCM_SHA384
-	(Exim 4.99.1)
-	(envelope-from <calestyo@scientia.org>)
-	id 1voX7B-00000009a4r-2W4W;
-	Sat, 07 Feb 2026 01:28:00 +0000
-Message-ID: <f094ddbb70cabd2e329615269519b1844f786629.camel@scientia.org>
-Subject: Re: We have a space info key for a block group that doesn't exist
-From: Christoph Anton Mitterer <calestyo@scientia.org>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Date: Sat, 07 Feb 2026 02:27:58 +0100
-In-Reply-To: <52c813cf8dffe11325ce291d3f3bd41bcce21936.camel@scientia.org>
-References: <f3574976d7b5bc8f05e42055d85d4b61263bc5c5.camel@scientia.org>
-		 <c07b6fde-03a3-4c97-9f59-866c81e78b85@suse.com>
-		 <31615495f428dbe499ae5f5a109cc6c74c8979ca.camel@scientia.org>
-		 <fc2f1d31-7f2c-493f-be42-2cb8c1fd5a17@gmx.com>
-		 <84b22b2cc7534be60eb423973336101c9e9b9ad3.camel@scientia.org>
-		 <b681834e-7b0f-4606-8c52-f2b4dafba246@suse.com>
-		 <4e6ad7ef198de72edaf890a2257bf63864984197.camel@scientia.org>
-		 <cca8b4ea-97ef-433e-9db9-4eca67b89576@suse.com>
-		 <f1aaada378adad0da020bd679531c7f503ad6f93.camel@scientia.org>
-		 <914a6a60-6bb6-4255-a8cc-ea6f28e7a9cf@suse.com>
-		 <a75537dc77e5b6fac922a97409ca4636805147dc.camel@scientia.org>
-		 <fff60222-0b9f-4f09-b3a6-d415aa64b6d7@gmx.com>
-		 <18a87dd4f3155bb1d9c9884f39dbf53c802a10cd.camel@scientia.org>
-		 <572f0ac4-90f6-4c56-aa4c-2a64e365d526@suse.com>
-	 <52c813cf8dffe11325ce291d3f3bd41bcce21936.camel@scientia.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.56.2-8 
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 02FC72BE657
+	for <linux-btrfs@vger.kernel.org>; Sat,  7 Feb 2026 04:35:43 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1770438944; cv=none; b=RYUMt8KHyNGhWIVpfqvSQ3QTohkIeAqMk7KJr9T48eFLQsJx+Fr22AKxNLoc60+KeUerqkWh+mkpP75BPJMbLFJ2W7IMDghCNRClEXpMUXCVfFJZ1DiMjbqWbmXm6CfwY1IFMV0AXD92MvTANjm4uScsx66k34mmdxypTn1dSpY=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1770438944; c=relaxed/simple;
+	bh=HAWrRRNryCnBR1QVFH39aNpxKZfVCxqJdFDy0gzXQtE=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=VwZURBJ2cEobzVJQQKr/OsKjYGPi/U+YFhUTPDlYQRtPCpQLBi/QWK4tl+Hj3l/SFONRbtucsvJqVhj3YHL/jyY28Rt9zAsS2PYejCImvBU/nvM93LDYXpMWLcO/g7aB+8VrJeWlg/91GFOP0INABMSvY1VR2+GG4cT/ZVBFHsU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=DcoJRwz/; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=DcoJRwz/; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="DcoJRwz/";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="DcoJRwz/"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 20DB83E6CD;
+	Sat,  7 Feb 2026 04:35:42 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1770438942; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=1yHClctTzv367wW03OQKcVlDjfI0sotwdQk6C+RKPgg=;
+	b=DcoJRwz/ejULz+GTIm9f1822sfsXMVcnruUnYhy8Ou7lfCpbSno7L23nOEPUwGTutlZcpH
+	mkqznhzpQc/QjJUPi7Ufc7Paky3k/25ScVsVCEDaEp5FarEWWDe4tILmi/GErQBmdMYcFs
+	Ij/NC26K6T406hBa84Kt3wHPRsq840k=
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1770438942; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=1yHClctTzv367wW03OQKcVlDjfI0sotwdQk6C+RKPgg=;
+	b=DcoJRwz/ejULz+GTIm9f1822sfsXMVcnruUnYhy8Ou7lfCpbSno7L23nOEPUwGTutlZcpH
+	mkqznhzpQc/QjJUPi7Ufc7Paky3k/25ScVsVCEDaEp5FarEWWDe4tILmi/GErQBmdMYcFs
+	Ij/NC26K6T406hBa84Kt3wHPRsq840k=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 100EC3EA63;
+	Sat,  7 Feb 2026 04:35:40 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id RDZ2MBzBhmm0LQAAD6G6ig
+	(envelope-from <wqu@suse.com>); Sat, 07 Feb 2026 04:35:40 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Christoph Anton Mitterer <calestyo@scientia.org>
+Subject: [PATCH] btrfs-progs: docs: add a note for clear_cache mount option
+Date: Sat,  7 Feb 2026 15:05:22 +1030
+Message-ID: <bac89ac52147344ab6244beef8c0085552a3aacb.1770438921.git.wqu@suse.com>
+X-Mailer: git-send-email 2.52.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-AuthUser: calestyo@scientia.org
+Content-Transfer-Encoding: 8bit
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[99.99%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	ARC_NA(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[scientia.org:email,imap1.dmz-prg2.suse.org:helo,suse.com:mid,suse.com:email];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCPT_COUNT_TWO(0.00)[2];
+	RCVD_COUNT_TWO(0.00)[2];
+	FROM_EQ_ENVFROM(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	TO_DN_SOME(0.00)[];
+	RCVD_TLS_ALL(0.00)[]
+X-Spam-Flag: NO
+X-Spam-Score: -2.80
+X-Spam-Level: 
 
-Hey.
+There is a report that "clear_cache,space_cache=v2" mount option didn't
+rebuild the free space tree.
 
-I think I might have found the reason... and I guess it's a mix of me
-being an imbecile and perhaps not detailed enough
-documentation/messages:
+It turns out that the reporter was relying on the fstab to do the mount,
+and the fstab has specified "ro" mount option. This prevents btrfs to
+enter btrfs_start_pre_rw_mount() thus no free space tree rebuilding.
 
+Add such note to avoid future confusion.
 
-When I did e.g.:
-  mount -o space_cache=3Dv2,clear_cache
-I actually used my fstab entries and did e.g.:
-  mount -o space_cache=3Dv2,clear_cache /data/e
+Reported-by: Christoph Anton Mitterer <calestyo@scientia.org>
+Link: https://lore.kernel.org/linux-btrfs/f094ddbb70cabd2e329615269519b1844f786629.camel@scientia.org/
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ Documentation/ch-mount-options.rst | 1 +
+ 1 file changed, 1 insertion(+)
 
-but my fstab is has ro set as option for all these data devices.
+diff --git a/Documentation/ch-mount-options.rst b/Documentation/ch-mount-options.rst
+index 60f8570e9d1a..8f65b8311e7e 100644
+--- a/Documentation/ch-mount-options.rst
++++ b/Documentation/ch-mount-options.rst
+@@ -73,6 +73,7 @@ barrier, nobarrier
+ clear_cache
+         Force clearing and rebuilding of the free space cache if something
+         has gone wrong.
++        This option only takes effect on the first read-write mount.
+ 
+         For free space cache *v1*, this only clears (and, unless *nospace_cache* is
+         used, rebuilds) the free space cache for block groups that are modified while
+-- 
+2.52.0
 
-
-So I'd guess ro here not only means no "normal" IO. but also no fs
-internal IO (like rebuilding/clearing the tree).
-
-Would also explain why it worked with btrfs check.
-
-If I now mount it explicitly e.g:
- # mount -o space_cache=3Dv2,clear_cache /dev/mapper/data-e /mnt/
-
-I get:
-Feb 07 02:20:33 heisenberg kernel: BTRFS: device label data-e devid 1 trans=
-id 12267 /dev/mapper/data-e (253:1) scanned by mount (21114)
-Feb 07 02:20:33 heisenberg kernel: BTRFS info (device dm-1): first mount of=
- filesystem 1f346f85-af92-4025-8647-6d1ecb962bc1
-Feb 07 02:20:33 heisenberg kernel: BTRFS info (device dm-1): using crc32c (=
-crc32c-lib) checksum algorithm
-Feb 07 02:20:48 heisenberg kernel: BTRFS info (device dm-1): creating free =
-space tree
-Feb 07 02:23:41 heisenberg kernel: BTRFS info (device dm-1): setting compat=
--ro feature flag for FREE_SPACE_TREE (0x1)
-Feb 07 02:23:41 heisenberg kernel: BTRFS info (device dm-1): setting compat=
--ro feature flag for FREE_SPACE_TREE_VALID (0x2)
-Feb 07 02:23:41 heisenberg kernel: BTRFS info (device dm-1): checking UUID =
-tree
-Feb 07 02:23:41 heisenberg kernel: BTRFS info (device dm-1): enabling free =
-space tree
-Feb 07 02:23:41 heisenberg kernel: BTRFS info (device dm-1): force clearing=
- of disk cache
-
-
-Not sure what one should do to prevent this trap?
-Nothing a all? A kernel message that xxx isn't done because the fs is
-mounted ro?
-Documenting all these cases (this probably not just space cache
-related?) in the manpage?
-
-
-Cheers,
-Chris.

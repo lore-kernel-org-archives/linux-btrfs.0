@@ -1,138 +1,179 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from mx0a-00082601.pphosted.com (mx0b-00082601.pphosted.com [67.231.153.30])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 72517243969
-	for <linux-btrfs@vger.kernel.org>; Sun,  8 Feb 2026 18:38:32 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 02AB51C3C1F
+	for <linux-btrfs@vger.kernel.org>; Sun,  8 Feb 2026 18:38:56 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=67.231.153.30
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1770575912; cv=none; b=A84ez0LWCUWMw3IPRVuLLBAvfmH0EGE+fO8/Rz3ZC9BV5QcF1MCBlNMh4YC1ngH7hCk8UprImB9R8dBMjz3DErzmWwl8RyaTFtixkAtQEUqE//GLlsdfm9xcbN8ap12VjjmqI+alsajd2u58PEWsDjwPHvuaKXhh4Co6XnYjG5U=
+	t=1770575937; cv=none; b=W0TzWNzPPicgu+mJhqZGKZuZS5SBKuTxI1wMG+8vRzryKdW+LyV5ofDmguQ+6KvyP07OyYEBI5Rfs0MIz1AOHNC1EWmHbLvvOJ9bCvQl9iwjIhRxlegCV2Ql7xukF3sSpBTlpOKNEJDHwt4g1ZZ8pJvm8S+YsSbE8QjvGMv1uuk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1770575912; c=relaxed/simple;
-	bh=pe1arkh94VOEvuGQyV9/CWHoBvOSxb/OcxSRjDlDQ/s=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=mDMB8jX3AJmCRTQD0FRFhJxUHu4DemLVKz7ig21mN1Biq5r3InEvpC0Y+zRpxKr/XxLZnr9tFbkMqQSpMTuE+jleIzvgc7WW37pf61/xgnvBhRW4sLLA8XNapk1Dlq9g5rhAfoNeMuSg6x1y7ChTrcX494XTGG0RTsl2xp/Jl1M=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=jhU/1ib4; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1770575937; c=relaxed/simple;
+	bh=0+SdzJuA7jJaLCRHdTQPiiZweQQqKl7ebWx521/Eblc=;
+	h=From:To:CC:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version:Content-Type; b=dSMsWGAHEFRm3mxeUAc/cd8nvsHN64fg9W5zWChSAVBcRmrjor+H8evPva+qyKBaWgxVK981yn3JsuoYC2IGADY6wMk+Pi1rKRgpIGmPu3VWY1lHYGdx2H+186Ew9vQooCzWFcdat5YXcQpDKZRHpL6O2drwuJQoF79VewQEPAA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=meta.com; spf=pass smtp.mailfrom=meta.com; dkim=pass (2048-bit key) header.d=meta.com header.i=@meta.com header.b=iIvCNNPC; arc=none smtp.client-ip=67.231.153.30
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=meta.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=meta.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="jhU/1ib4"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 4CF44C19421
-	for <linux-btrfs@vger.kernel.org>; Sun,  8 Feb 2026 18:38:32 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1770575912;
-	bh=pe1arkh94VOEvuGQyV9/CWHoBvOSxb/OcxSRjDlDQ/s=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-	b=jhU/1ib4/aTn3GxXqnYUuxVnrBhFBI4nJnrvwlTl7JGYobgxPMUa6oq1omsokpqRw
-	 9lYAtbUyqap/pmaN1Q6vbjpJub501dALx9MdWncxCDOQa//T9cRtOMfhRmhb/M/Udm
-	 EltafQpVrodd6aHQ/kEA860CC1vfg7P/JzyfrK+EmpMoE6rp0mNTnkFhlRhQ1DwxQA
-	 RAporses6J7NkQks2Factli87BJdxQvhW8Yt/CfPQeGbyvib6c753CBzGllniFGtPj
-	 BHFpUk+LP/yTaBRbIvrEX6NrMFfCQa/SB7HfulpJdEulKbLofkyQ37fCegzMVkiOr4
-	 MhbNKA26KCKmA==
-Received: by mail-ed1-f54.google.com with SMTP id 4fb4d7f45d1cf-658b511573cso6270594a12.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 08 Feb 2026 10:38:32 -0800 (PST)
-X-Gm-Message-State: AOJu0Yz3RZf1G1ipIUOG0VtTO2glaoj7rZyIOH1+UiW99ZNQ8DL19jqP
-	rmvZe3hhlglcTpFguW2+pbBZb+s835gI5kU+3aLImxUNvnU3St2jTtnQLtn1/675H+J389R6Acp
-	ymOF3xhJ8GGJWddeuo47MSFqxdbQT+Qo=
-X-Received: by 2002:a17:906:4fd2:b0:b86:edb9:c01b with SMTP id
- a640c23a62f3a-b8edf175e47mr586458866b.8.1770575910881; Sun, 08 Feb 2026
- 10:38:30 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=meta.com header.i=@meta.com header.b="iIvCNNPC"
+Received: from pps.filterd (m0001303.ppops.net [127.0.0.1])
+	by m0001303.ppops.net (8.18.1.11/8.18.1.11) with ESMTP id 618GVaoD1283895;
+	Sun, 8 Feb 2026 10:38:55 -0800
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=meta.com; h=cc
+	:content-transfer-encoding:content-type:date:from:in-reply-to
+	:message-id:mime-version:references:subject:to; s=s2048-2025-q2;
+	 bh=c4SMInCxSEMe4A6nYRNuE3KQcBtJyCKBHTFI/40Ixh0=; b=iIvCNNPCZYX7
+	8OUf/Qk1RoeKJHDSM4/eKtOJTFYsD714XtPwP24raj2L3gy6wFvjiNEmyB+vqOmx
+	1ZltSaBbVJrVHNMlfkZmg8me6pqpDKbvYDgJ1EIylMkbk3bIuk9Se343cBGTV5VB
+	O8w+rI6aTpwC4IjcA7mJWO5vQLzb0dj3wjn1f06lEdqqRIUof9Foiha0XU6nSaGJ
+	Gjl8sqGarITalUeGi3k4hqsfN2B0T5S5SQLJEhNnMQT8WPadjBpZqmTyZ+hdfRqb
+	svIPi7dq9HpeQ53CnXOqeUq3R0iRK84HXx1moF8hjKXBbVK8XaeP+GvUaCvHKiki
+	ZyxB2/VBhw==
+Received: from maileast.thefacebook.com ([163.114.135.16])
+	by m0001303.ppops.net (PPS) with ESMTPS id 4c6x33rnh0-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128 verify=NOT);
+	Sun, 08 Feb 2026 10:38:55 -0800 (PST)
+Received: from devbig003.atn7.facebook.com (2620:10d:c0a8:1b::2d) by
+ mail.thefacebook.com (2620:10d:c0a9:6f::8fd4) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
+ 15.2.2562.35; Sun, 8 Feb 2026 18:38:54 +0000
+From: Chris Mason <clm@meta.com>
+To: Qu Wenruo <wqu@suse.com>
+CC: <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v2] btrfs: reject single block sized compression early
+Date: Sun, 8 Feb 2026 10:34:24 -0800
+Message-ID: <20260208183840.975975-1-clm@meta.com>
+X-Mailer: git-send-email 2.47.3
+In-Reply-To: <89c6eb7756051dbe2e63693b5051394b16a9080b.1767667652.git.wqu@suse.com>
+References: <89c6eb7756051dbe2e63693b5051394b16a9080b.1767667652.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <cover.1768993725.git.fdmanana@suse.com> <1974159cc321acb84acea5ccef0427592a576cad.1768993725.git.fdmanana@suse.com>
- <20260208161129.3888234-1-clm@meta.com>
-In-Reply-To: <20260208161129.3888234-1-clm@meta.com>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Sun, 8 Feb 2026 18:37:54 +0000
-X-Gmail-Original-Message-ID: <CAL3q7H5nyMS8VfEHDYKY1ELyWv3BTxrc5wkLHycYHGR8sZqa_w@mail.gmail.com>
-X-Gm-Features: AZwV_Qi_RHeuZJ10P6OIPrTdPe07k5LgynR2xQyEpqVUcg4fVUkta1D6Ns2DM84
-Message-ID: <CAL3q7H5nyMS8VfEHDYKY1ELyWv3BTxrc5wkLHycYHGR8sZqa_w@mail.gmail.com>
-Subject: Re: [PATCH 16/19] btrfs: remove out label in finish_verity()
-To: Chris Mason <clm@meta.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
+Content-Type: text/plain
+X-Proofpoint-ORIG-GUID: 4QKknRWvkrcPFgkf5mEsKrzLNW6m8Qc3
+X-Proofpoint-GUID: 4QKknRWvkrcPFgkf5mEsKrzLNW6m8Qc3
+X-Authority-Analysis: v=2.4 cv=KbnfcAYD c=1 sm=1 tr=0 ts=6988d83f cx=c_pps
+ a=MfjaFnPeirRr97d5FC5oHw==:117 a=MfjaFnPeirRr97d5FC5oHw==:17
+ a=HzLeVaNsDn8A:10 a=VkNPw1HP01LnGYTKEx00:22 a=Mpw57Om8IfrbqaoTuvik:22
+ a=GgsMoib0sEa3-_RKJdDe:22 a=NEAV23lmAAAA:8 a=VwQbUJbxAAAA:8 a=iox4zFpeAAAA:8
+ a=lIM-JIJdq4LJHzknk1IA:9 a=WzC6qhA0u3u7Ye7llzcV:22
+X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYwMjA4MDE2MSBTYWx0ZWRfX7b0Ax63qnib8
+ qar8QTBzl9vbR6YYbXzWF5sgAPj+d7A8xbnBxXX1vAJMnHFsu1+TuTwtNtcj1e9v2mopeRE+0OS
+ CmLC54RTFe27GIFaZceeJbE0ZWeZKWyX5dsXpjxfxxBHqw0eURajGbJ7aR/xBpmFCqjYdq7saDz
+ 4GZHlncp9giEv6QgdOMBii/0i0BKktJYeWgbxCqvosxTxK+hr4wPWbLLm1tkSnUq4On4UdaAtp5
+ ZO7bgqeIp85r9obEZiM+9mc2zFM63xXyDFKQ8orCnwBYpWjcEnI2RFpDLhlQiCOWkiR7KWtUhtm
+ S1lpMMGeRDt5m4GcIk9sucFJa7GNCocigJWQuSQ1JrSZoPBjaQESLmdazpj1Vgd7qMRBg+DVRuv
+ rYbttOvnGihOAvWYutwdZ31UD/OLlv6aL1Uo0RdNhkI+ab7wVRehfVJmRYI0HeOJyUa/PrAqccW
+ 3hHH8nRmZry5VJyq9ww==
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.293,Aquarius:18.0.1121,Hydra:6.1.51,FMLib:17.12.100.49
+ definitions=2026-02-08_05,2026-02-05_03,2025-10-01_01
 
-On Sun, Feb 8, 2026 at 4:11=E2=80=AFPM Chris Mason <clm@meta.com> wrote:
->
-> fdmanana@kernel.org wrote:
-> > From: Filipe Manana <fdmanana@suse.com>
-> >
-> > There is no point in having the label since all it does is return the
-> > value in the 'ret' variable. Instead make every goto return directly
-> > and remove the label.
->
-> Hi everyone,
->
-> I'm running the btrfs for-next branch, along with the encryption patch se=
-t
-> through my AI review prompts:
->
-> https://github.com/masoncl/review-prompts
->
-> I'm working on some btrfs specific instructions, but hopefully these revi=
-ews
-> are already useful.  I've kept the headers to make it easier to double ch=
-eck
-> that I'm actually replying to the right email, but please let me know if =
-any
-> parts of this are incorrect:
->
-> commit 61fb7f04ee06e6c7e113a490af1a057f958f1d05
-> Author: Filipe Manana <fdmanana@suse.com>
->
-> btrfs: remove out label in finish_verity()
->
-> This commit refactors the finish_verity() function by removing the 'out'
-> label and making error paths return directly. The goal is to simplify the
-> control flow.
->
-> > diff --git a/fs/btrfs/verity.c b/fs/btrfs/verity.c
-> > index a2ac3fb68bc85..06cbd6f00a78c 100644
-> > --- a/fs/btrfs/verity.c
-> > +++ b/fs/btrfs/verity.c
->
-> [ ... ]
->
-> > @@ -554,8 +552,7 @@ static int finish_verity(struct btrfs_inode *inode,=
- const void *desc,
-> >       btrfs_set_fs_compat_ro(root->fs_info, VERITY);
-> >  end_trans:
-> >       btrfs_end_transaction(trans);
-> > -out:
-> > -     return ret;
-> > +     return 0;
-> >
->
-> Does this change introduce an error handling regression? When
-> btrfs_update_inode() or del_orphan() fail (lines 546, 549), execution
-> jumps to the end_trans label which now returns 0 instead of returning the
-> error code in 'ret'.
+Qu Wenruo <wqu@suse.com> wrote:
+> Currently for an inode that needs compression, even if there is a delalloc
+> range that is single fs block sized and can not be inlined, we will
+> still go through the compression path.
+> 
+> Then inside compress_file_range(), we have one extra check to reject
+> single block sized range, and fall back to regular uncompressed write.
+> 
+> This rejection is in fact a little too late, we have already allocated
+> memory to async_chunk, delayed the submission, just to fallback to the
+> same uncompressed write.
+> 
+> Change the behavior to reject such cases earlier at
+> inode_need_compress(), so for such single block sized range we won't
+> even bother trying to go through compress path.
+> 
+> And since the inline small block check is inside inode_need_compress()
+> and compress_file_range() also calls that function, we no longer need a
+> dedicate check inside compress_file_range().
+> 
 
-Correct, fix sent here:
+Hi everyone,
 
-https://lore.kernel.org/linux-btrfs/1d384c9ac09392353418f47a8b41366545d7386=
-7.1770575632.git.fdmanana@suse.com/
+I'm running the btrfs for-next branch, along with the encryption patch set
+through my AI review prompts:
 
-Thanks.
+https://github.com/masoncl/review-prompts
 
+I'm working on some btrfs specific instructions, but hopefully these reviews
+are already useful.  I've kept the headers to make it easier to double check
+that I'm actually replying to the right email, but please let me know if any
+parts of this are incorrect:
+
+commit 59615e2c1f63dfd65f74c166e803873d3362e51a
+Author: Qu Wenruo <wqu@suse.com>
+
+btrfs: reject single block sized compression early
+
+This commit moves single block size rejection earlier from
+compress_file_range() to inode_need_compress() to avoid allocating
+async_chunk memory for ranges that will not be compressed anyway.
+
+Link: https://git.kernel.org/linus/59615e2c1f63dfd65f74c166e803873d3362e51a
+
+> diff --git fs/btrfs/inode.c fs/btrfs/inode.c
+> index 247b373bf5cf0..be47aa58e944e 100644
+> --- fs/btrfs/inode.c
+> +++ fs/btrfs/inode.c
+> @@ -816,6 +816,13 @@ static inline int inode_need_compress(struct btrfs_inode *inode, u64 start,
+>  		return 0;
+>  	}
 >
-> Looking at btrfs_end_enable_verity() at line 632:
+> +	/*
+> +	 * If the delalloc range is only one fs block and can not be inlined,
+> +	 * do not even bother try compression, as there will be no space saving
+> +	 * and will always fallback to regular write later.
+> +	 */
+> +	if (start != 0 && end + 1 - start <= fs_info->sectorsize)
+> +		return 0;
+
+Is the early rejection check in inode_need_compress() missing the
+'end + 1 < inode->disk_i_size' condition from the original check?
+
+The old code in compress_file_range() rejected single-block ranges with:
+
+    if (total_compressed <= blocksize &&
+       (start > 0 || end + 1 < inode->disk_i_size))
+        goto cleanup_and_bail_uncompressed;
+
+The new check only tests 'start != 0' but doesn't check whether the write
+reaches EOF. This means a single-block write at offset 0 that doesn't reach
+EOF will now go through compression, inline attempt, and ratio checking in
+compress_file_range() before being rejected, when the old code rejected it
+immediately.
+
+Doesn't this cause MORE work for the case where start == 0 AND single block
+AND end + 1 < disk_i_size?
+
+>  	/* Defrag ioctl takes precedence over mount options and properties. */
+>  	if (inode->defrag_compress == BTRFS_DEFRAG_DONT_COMPRESS)
+>  		return 0;
+
+[ ... ]
+
+> @@ -953,18 +960,7 @@ static void compress_file_range(struct btrfs_work *work)
+>  	if (actual_end <= start)
+>  		goto cleanup_and_bail_uncompressed;
 >
->     ret =3D finish_verity(inode, desc, desc_size);
->     if (ret)
->         goto rollback;
->
-> If finish_verity incorrectly returns 0 on these failures, the caller will
-> not trigger its rollback mechanism, leaving the inode in an inconsistent
-> state. The verity flag changes (BTRFS_INODE_RO_VERITY set at line 543)
-> would not be persisted to disk and the orphan item would not be properly
-> removed.
->
-> The original code correctly returned 'ret' via the 'out' label. Should th=
-e
-> end_trans label also return 'ret' instead of 0?
->
-> >  }
->
+> -	total_compressed = actual_end - start;
+> -
+> -	/*
+> -	 * Skip compression for a small file range(<=blocksize) that
+> -	 * isn't an inline extent, since it doesn't save disk space at all.
+> -	 */
+> -	if (total_compressed <= blocksize &&
+> -	   (start > 0 || end + 1 < inode->disk_i_size))
+> -		goto cleanup_and_bail_uncompressed;
+> -
+> -	total_compressed = min_t(unsigned long, total_compressed,
+> -			BTRFS_MAX_UNCOMPRESSED);
+> +	total_compressed = min_t(unsigned long, actual_end - start, BTRFS_MAX_UNCOMPRESSED);
+>  	total_in = 0;
+>  	ret = 0;
+

@@ -1,143 +1,196 @@
-Received: from mx0b-00082601.pphosted.com (mx0b-00082601.pphosted.com [67.231.153.30])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 38FB134A789
-	for <linux-btrfs@vger.kernel.org>; Sun,  8 Feb 2026 16:17:16 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=67.231.153.30
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1FAA82D839B
+	for <linux-btrfs@vger.kernel.org>; Sun,  8 Feb 2026 18:25:21 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1770567437; cv=none; b=iKq5vOdL3FnGvAFePDJv64yL2jvDGEPy0HKLk1HZWdhKZ2WFfNwu7aTOwyQVOC7RvLUdUMmPkwhTmc+DPFjJaJvqmn5QHy0S1M51didZjusNbxMa/k1qWKRcingp7GbRjZHbzufCQ6da0Ae+wH+V568KCjw6CnWf5gcPFPlxDN4=
+	t=1770575122; cv=none; b=q76Y7XuXlBNiKrfcJ7OeeY431nn+MQQPN+jDUyi3fLAvrDpUgskLGIWrjPfxn2t2Ignxfprfz+C29tuO2viPVXm038x8dD5GdxssDOgle/XFuvOsmqj1fqRZwXU3daf3ffy5VnnKnBfefyJr34Age2bS+KL+zCG3BppyHAoLVzg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1770567437; c=relaxed/simple;
-	bh=qLm8Oi4bPgYeSPaUetgZopS89RdH2WUEsoVWzL1uJhc=;
-	h=From:To:CC:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=nuE076jMab57PosyVkpWQyfxz91Ro0Sh3QH9W/+HyyNbhmbHbLMGPnR6L58yfftyyLuTYQmCoFZVIge1ZrDczu2+3QJPxhYA/9ndQmItacS47WnnYwgelnWH6k9gZg8bphm9iYV9kHfvX3tFT5MEOeATy7cMKczTPXRp3uGN5kg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=meta.com; spf=pass smtp.mailfrom=meta.com; dkim=pass (2048-bit key) header.d=meta.com header.i=@meta.com header.b=pEnieuZZ; arc=none smtp.client-ip=67.231.153.30
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=meta.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=meta.com
+	s=arc-20240116; t=1770575122; c=relaxed/simple;
+	bh=WMbC7h8S5DhILpgsq7NS1ALdIKeimVQwRo7EUECEaXo=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=QRZpE0Dj/DtenHcZXiREUvBNwL50Td2FvwY0B1Y9ms46d98dggqSHsGF1z2yYW0sTUOCZQdxASCZOU1+YS4xhsZvY3cBqlz8diIEewik/mpyX7qKw/SmJ+4M7EfwduCQ/mxpNAd5ursVLUIkBd+N31VONWT4dVPCR7zqvwbSmlE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=dO6Ad491; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=meta.com header.i=@meta.com header.b="pEnieuZZ"
-Received: from pps.filterd (m0109332.ppops.net [127.0.0.1])
-	by mx0a-00082601.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 6182E2ud1888399;
-	Sun, 8 Feb 2026 08:17:13 -0800
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=meta.com; h=cc
-	:content-transfer-encoding:content-type:date:from:in-reply-to
-	:message-id:mime-version:references:subject:to; s=s2048-2025-q2;
-	 bh=abHJ9zKDsvRxMLkC+/4pvjTawCHbRvVF/3KCQ0WdUos=; b=pEnieuZZjtWq
-	CRkcMxACg0a/E6kyLRyBSHAUGNDeWLHAuOrSfGlK8xav3CrWCE8z3xxzBrV0Fj+t
-	+W2GhbeTVddQDfxSVUUX9gf9kLZUOyx13p85K2u091Gfzt8kg2Eytf1NK3VWyTvI
-	Ofbvpnch8CPn8iAPa5DhEPd4ExuRIFGVjMslWbdUFAqvHIH9qpdsuPdU+TqzjLsm
-	F8dVkAasVeeod8JvnqJ0wYNbQp1X3sZqMsvFzYFoP7DN1Cse4BcybVVf3ufo/dpJ
-	stSZfe7IxP5SXx34bnts5iqC1lMaYNZ49Wcok2wk51hWYp0o0HMtiHbYcr1kAfVe
-	xPnwl5WQbA==
-Received: from mail.thefacebook.com ([163.114.134.16])
-	by mx0a-00082601.pphosted.com (PPS) with ESMTPS id 4c67ycf8pc-4
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128 verify=NOT);
-	Sun, 08 Feb 2026 08:17:13 -0800 (PST)
-Received: from devbig003.atn7.facebook.com (2620:10d:c085:108::4) by
- mail.thefacebook.com (2620:10d:c08b:78::c78f) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
- 15.2.2562.35; Sun, 8 Feb 2026 16:17:12 +0000
-From: Chris Mason <clm@meta.com>
-To: <fdmanana@kernel.org>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 2/2] btrfs: deal with missing root in sample_block_group_extent_item()
-Date: Sun, 8 Feb 2026 08:16:33 -0800
-Message-ID: <20260208161657.3972997-1-clm@meta.com>
-X-Mailer: git-send-email 2.47.3
-In-Reply-To: <30034e48a39502638fbac40662914132895cca4b.1769028677.git.fdmanana@suse.com>
-References: <cover.1769028677.git.fdmanana@suse.com> <30034e48a39502638fbac40662914132895cca4b.1769028677.git.fdmanana@suse.com>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="dO6Ad491"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id B0486C4CEF7
+	for <linux-btrfs@vger.kernel.org>; Sun,  8 Feb 2026 18:25:21 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1770575121;
+	bh=WMbC7h8S5DhILpgsq7NS1ALdIKeimVQwRo7EUECEaXo=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+	b=dO6Ad491R15OiVnlOfP1nNN92N4rwZzkwVV+MxWFvJPOdkfBHymaaMNv4I0A5geGN
+	 qRSPIU00S5YJapXtYQh+03Qn95hskmcMcLtoti2BdutzED7wakr4DprJ2Bi9kzoucD
+	 3ffFCfWgkYYMluNY7BIqeWOgMP19eD/utQt6jwz7/kCWw1mgsKGg1FK9ci/TPbbJ39
+	 V8dQyWttCXt8g7Dsr8HOGONBOdepCqF9qbJ2UMk6q54xYCmxHAZfakzwYKemGZYkol
+	 Cq/LL89ozGCxjFx15QhiSnGzZrCRgbwR078iXdlFlV7qBjshFn6hMEG5xtq4SS+7mA
+	 qwcq/LxA527Fg==
+Received: by mail-ed1-f46.google.com with SMTP id 4fb4d7f45d1cf-65941c07e8dso3398814a12.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 08 Feb 2026 10:25:21 -0800 (PST)
+X-Gm-Message-State: AOJu0YymDKQdcb9PpNsOvapAAcdysDgnPFYAF6txiRTa53WifN1TngAq
+	+u1uTn8mxVTPEe3i9BjZYgRda49vjlyf/4Db+O/PtrqaHgC7ihaORKWcztnVMChT6BivrZLbcOy
+	ffVzneoyths0Dw8wWjHdnKw1yPgw1898=
+X-Received: by 2002:a17:907:940a:b0:b88:448c:be08 with SMTP id
+ a640c23a62f3a-b8edf14f46dmr509845466b.5.1770575120256; Sun, 08 Feb 2026
+ 10:25:20 -0800 (PST)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-Content-Type: text/plain
-X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYwMjA4MDE0MCBTYWx0ZWRfXwNRc+9/okv2e
- UABAJ6Zrx0gY47xR1rUuuvjOtjp0+SeOAXBrzta6hPd+e8832nBf9IidsQRvX7E4i5o9S5RPBvr
- Hr+HTWpMe24I/t/YZnh1wsgN21HLATVZ7cv/GdYP4MqHiYhJCtn2vUuXbbccpgDTPJq4R/wIKyB
- mhwtuHQ7RSx54TmS7VoCuR3rgH2HdxaqG8iJ8aNvVc2WHsbqGizsakRrC0bfLbazcQvapE70dWB
- 11v8YetIzqf6mwSoCPpmuYDsd0KKxuUSuf2QV4UfxcgXGMVuEo8eQDDhxCnugrvVsdMJlJ1+l0D
- /8QL+mfMYzqGC1JFym4pkI9BeYccnsahz8umjgwuHL8tWdj0VP8ocvxRBaZ5VaX66mIM4uAI9Ve
- ltRRmxkdR3TNwrDSgfP336QHVMsHS5utsVCOxjdF982AfvgcQWj2sJBgTazabe0E3PfwZDnEUiW
- FHtvl60s0BP4xn6Xnhw==
-X-Proofpoint-ORIG-GUID: f0DNI3Hf5Pnq8FI4iQwNGeRC9ePb3ZbK
-X-Authority-Analysis: v=2.4 cv=PomergM3 c=1 sm=1 tr=0 ts=6988b709 cx=c_pps
- a=CB4LiSf2rd0gKozIdrpkBw==:117 a=CB4LiSf2rd0gKozIdrpkBw==:17
- a=HzLeVaNsDn8A:10 a=VkNPw1HP01LnGYTKEx00:22 a=Mpw57Om8IfrbqaoTuvik:22
- a=GgsMoib0sEa3-_RKJdDe:22 a=NEAV23lmAAAA:8 a=VwQbUJbxAAAA:8 a=iox4zFpeAAAA:8
- a=PdGY9H71u8uL4sseGzYA:9 a=WzC6qhA0u3u7Ye7llzcV:22
-X-Proofpoint-GUID: f0DNI3Hf5Pnq8FI4iQwNGeRC9ePb3ZbK
-X-Proofpoint-Virus-Version: vendor=baseguard
- engine=ICAP:2.0.293,Aquarius:18.0.1121,Hydra:6.1.51,FMLib:17.12.100.49
- definitions=2026-02-08_04,2026-02-05_03,2025-10-01_01
+References: <cover.1770212626.git.fdmanana@suse.com> <a7a8b95c9c2f5d5c6a481aea277194fa615b8390.1770212626.git.fdmanana@suse.com>
+ <20260208155148.3637328-1-clm@meta.com>
+In-Reply-To: <20260208155148.3637328-1-clm@meta.com>
+From: Filipe Manana <fdmanana@kernel.org>
+Date: Sun, 8 Feb 2026 18:24:43 +0000
+X-Gmail-Original-Message-ID: <CAL3q7H6K0Ve+G16Mk+nFyo_dTF0mMA07PQq63S6y7=tkvsiemw@mail.gmail.com>
+X-Gm-Features: AZwV_QjrYNtAI6AjvqDNGCkXGgy5XKsWL65NVgQoX0hP2fO-ir5W56LuO8bk6Ho
+Message-ID: <CAL3q7H6K0Ve+G16Mk+nFyo_dTF0mMA07PQq63S6y7=tkvsiemw@mail.gmail.com>
+Subject: Re: [PATCH 6/7] btrfs: remove max_mirrors argument from write_all_supers()
+To: Chris Mason <clm@meta.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> In case the does not exists, which is unexpected, btrfs_extent_root()
-> returns NULL, but we ignore that and so if it happens we can trigger
-> a NULL pointer dereference later. So verify if we found the root and
-> log an error message in case it's missing.
-
-Hi everyone,
-
-I'm running the btrfs for-next branch, along with the encryption patch set
-through my AI review prompts:
-
-https://github.com/masoncl/review-prompts
-
-I'm working on some btrfs specific instructions, but hopefully these reviews
-are already useful.  I've kept the headers to make it easier to double check
-that I'm actually replying to the right email, but please let me know if any
-parts of this are incorrect:
-
-commit a8bec25e014eab671ec8a25b03d391cad3e55230
-Author: Filipe Manana <fdmanana@suse.com>
-
-btrfs: deal with missing root in sample_block_group_extent_item()
-
-This commit adds a NULL check for extent_root after calling
-btrfs_extent_root() in sample_block_group_extent_item(), addressing
-a potential NULL pointer dereference.
-
-> diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-> index 66c512bc022c5..28aa87872f0d9 100644
-> --- a/fs/btrfs/block-group.c
-> +++ b/fs/btrfs/block-group.c
-> @@ -607,6 +607,12 @@ static int sample_block_group_extent_item(struct btrfs_caching_control *caching_
->  	lockdep_assert_held_read(&fs_info->commit_root_sem);
+On Sun, Feb 8, 2026 at 3:52=E2=80=AFPM Chris Mason <clm@meta.com> wrote:
 >
->  	extent_root = btrfs_extent_root(fs_info, block_group->start);
-> +	if (unlikely(!extent_root)) {
-> +		btrfs_err(fs_info,
-> +			  "missing extent root for block group at offset %llu",
-> +			  block_group->start);
-> +		return -EUCLEAN;
-> +	}
+> fdmanana@kernel.org wrote:
+> > From: Filipe Manana <fdmanana@suse.com>
+> >
+> > There's no need to pass max_mirrors to write_all_supers() since from th=
+e
+> > given transaction handle we can infer if we are in a transaction commit
+> > or fsync context, so we can determine how many mirrors we need to use.
+> >
+> > So remove the max_mirror argument from write_all_supers() and stop
+> > adjusting it in the callees write_dev_supers() and wait_dev_supers(),
+> > simplifying them besides the parameter list for write_all_supers().
 >
->  	search_offset = index * div_u64(block_group->length, max_index);
->  	search_key.objectid = block_group->start + search_offset;
+> Hi everyone,
+>
+> I'm running the btrfs for-next branch, along with the encryption patch se=
+t
+> through my AI review prompts:
+>
+> https://github.com/masoncl/review-prompts
+>
+> I'm working on some btrfs specific instructions, but hopefully these revi=
+ews
+> are already useful.  I've kept the headers to make it easier to double ch=
+eck
+> that I'm actually replying to the right email, but please let me know if =
+any
+> parts of this are incorrect:
+>
+> commit a30345d606f40c870c69fb77195b3516a6dd6504
+> Author: Filipe Manana <fdmanana@suse.com>
+>
+> btrfs: remove max_mirrors argument from write_all_supers()
+>
+> This commit removes the max_mirrors parameter from write_all_supers()
+> and determines the mirror count from the transaction handle's in_fsync
+> flag, claiming this simplifies the code while maintaining correctness.
+>
+> > diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> > index 19f7927a000d9..cf4ab067be72c 100644
+> > --- a/fs/btrfs/disk-io.c
+> > +++ b/fs/btrfs/disk-io.c
+>
+> [ ... ]
+>
+> > @@ -4018,13 +4011,14 @@ int btrfs_get_num_tolerated_disk_barrier_failur=
+es(u64 flags)
+> >       return min_tolerated;
+> >  }
+> >
+> > -int write_all_supers(struct btrfs_trans_handle *trans, int max_mirrors=
+)
+> > +int write_all_supers(struct btrfs_trans_handle *trans)
+> >  {
+> >       struct btrfs_fs_info *fs_info =3D trans->fs_info;
+> >       struct list_head *head;
+> >       struct btrfs_device *dev;
+> >       struct btrfs_super_block *sb;
+> >       struct btrfs_dev_item *dev_item;
+> > +     int max_mirrors;
+> >       int ret;
+> >       int do_barriers;
+> >       int max_errors;
+> > @@ -4033,13 +4027,13 @@ int write_all_supers(struct btrfs_trans_handle =
+*trans, int max_mirrors)
+> >
+> >       do_barriers =3D !btrfs_test_opt(fs_info, NOBARRIER);
+> >
+> > -     /*
+> > -      * max_mirrors =3D=3D 0 indicates we're from commit_transaction,
+> > -      * not from fsync where the tree roots in fs_info have not
+> > -      * been consistent on disk.
+> > -      */
+> > -     if (max_mirrors =3D=3D 0)
+> > +     if (trans->in_fsync) {
+> > +             max_mirrors =3D 1;
+> > +     } else {
+> > +             /* We are called from transaction commit. */
+> > +             max_mirrors =3D BTRFS_SUPER_MIRROR_MAX;
+> >               backup_super_roots(fs_info);
+> > +     }
+>
+> Can this logic handle the case where btrfs_sync_file() falls through to
+> btrfs_commit_transaction()? Looking at fs/btrfs/file.c, when a full_sync
+> encounters a log sync failure or BTRFS_LOG_FORCE_COMMIT, the code flow is=
+:
+>
+> btrfs_sync_file()
+>    trans->in_fsync =3D true;  /* Set at file.c:1728 */
+>    ...
+>    btrfs_sync_log()  /* May fail or return BTRFS_LOG_FORCE_COMMIT */
+>    ...
+>    btrfs_commit_transaction(trans)  /* Fallthrough at file.c:1787-1816 */
+>       write_all_supers(trans)
+>          if (trans->in_fsync)  /* Still true here */
+>             max_mirrors =3D 1;  /* But we're in transaction commit */
+>
+> The OLD code always passed max_mirrors=3D0 from btrfs_commit_transaction(=
+)
+> (transaction.c:2560), ensuring full superblock redundancy with
+> BTRFS_SUPER_MIRROR_MAX=3D3 and calling backup_super_roots() regardless of
+> how the transaction commit was triggered.
+>
+> The NEW code uses trans->in_fsync which remains true during the
+> fsync-to-commit fallthrough path. This causes write_all_supers() to set
+> max_mirrors=3D1 and skip backup_super_roots(), reducing superblock
+> redundancy from 3 copies to 1 and skipping tree root backups during these
+> commits.
 
-Does load_extent_tree_free() in the same file have the same issue?
+Oh yes, it won't write the super block to all mirrors if a fsync falls
+back to a transaction commit.
 
-Looking at load_extent_tree_free() around line 741:
+This fixup addresses the issue (which I'll fold into for-next):
 
-	last = max_t(u64, block_group->start, BTRFS_SUPER_INFO_OFFSET);
-	extent_root = btrfs_extent_root(fs_info, last);
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index e95c699a0bae..67117e7516bf 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -4026,7 +4026,8 @@ int write_all_supers(struct btrfs_trans_handle *trans=
+)
 
-and then at line 767:
+        do_barriers =3D !btrfs_test_opt(fs_info, NOBARRIER);
 
-	ret = btrfs_search_slot(NULL, extent_root, &key, path, 0, 0);
+-       if (trans->in_fsync) {
++       if (trans->transaction->state < TRANS_STATE_UNBLOCKED) {
++               /* We are called from fsync. */
+                max_mirrors =3D 1;
+        } else {
+                /* We are called from transaction commit. */
 
-There's no NULL check between the btrfs_extent_root() call and the
-btrfs_search_slot() call. If btrfs_extent_root() returns NULL (via
-btrfs_global_root() when rb_find() fails), extent_root would be
-dereferenced in btrfs_search_slot(), causing a NULL pointer
-dereference.
 
-Both sample_block_group_extent_item() and load_extent_tree_free() are
-called from caching_thread() during block group caching operations, so
-they have the same risk profile. Should load_extent_tree_free() have
-the same NULL check added?
+Thanks.
+
+>
+> Is the commit message claim that "from the given transaction handle we ca=
+n
+> infer if we are in a transaction commit or fsync context" accurate for
+> this case?
+>

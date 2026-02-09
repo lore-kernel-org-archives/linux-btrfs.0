@@ -1,135 +1,125 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from esa2.hgst.iphmx.com (esa2.hgst.iphmx.com [68.232.143.124])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 95FED274B48
-	for <linux-btrfs@vger.kernel.org>; Mon,  9 Feb 2026 13:23:00 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A85A037A48A
+	for <linux-btrfs@vger.kernel.org>; Mon,  9 Feb 2026 14:38:01 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=68.232.143.124
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1770643380; cv=none; b=IfAgMIUClgVC7rdDZa0p6WKFAoLKZz/VI3NMuldBylG3T8+YmFbzrdJoJuwp3zMINuD0eAKszL58GkdNvXHRUd1uq5GJiBloRCq4yHvRo9N5CYeScTnTkvXayHYNzzsbM/kpSaqtsC9c3IK96oo3/ggk+Q/PXOyUdUFE78hNCtM=
+	t=1770647882; cv=none; b=UemB+KitiGpGV30XT5tObySexYp41zUgZVfLLDQtAboNaBknhF/2UAMvSy9jMxkoiN5oR+bO42sIOJtBasocSiymy99xaiHXc03TVGEy6L9JR3KE7nrFwxwyRRihPeAIl7EOJVhAYkVqDS7twLlRX9u51Jxd5T+iyIX6cpXu7y0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1770643380; c=relaxed/simple;
-	bh=qRwNyNQ8ntnZIt7r/zei4Jf/r/8i91smyFsOYSlgWxE=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=jaU1MQxQycoW4W3zkXuB9QMXwFjfeLxR0a/qsTgkR+WGN0ueh00s5XLOF09xIs9pzxVO5MRJsPaB44/n75rsLy4N7luht4xeUI9FNBAgKSAHASv2YgDrh4Bh6baablXXr6mCgzksFC66NBlWqB2A+qXT2Km+0DPyt/IsJ/OT3HM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=dchvTjq6; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=78avsXgo; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=dchvTjq6; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=78avsXgo; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	s=arc-20240116; t=1770647882; c=relaxed/simple;
+	bh=5TtK4QL682SDtoW+nxy7KlLKFZMHHuJSwfsUd1B9bYo=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=uOISGuwLbmdFiWTUTCtgkwSEkz63zEhAybq45NbfDvYTpKMW0+DP3MXm0k/5UGcyiuUL5xYTdxH+kiygK6Q/AJ8UJxkknCrvNwroXK2c3p3WzlDvg2olx/va5MZrw//sRFdUMqPv75GDBoMaK+fP/SpwHonW/jUMn84I1XJJ69c=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=Cdbc65xL; arc=none smtp.client-ip=68.232.143.124
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="dchvTjq6";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="78avsXgo";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="dchvTjq6";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="78avsXgo"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id BE24B3E6FE;
-	Mon,  9 Feb 2026 13:22:58 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1770643378;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=iTAgc03/6oW2lfJa7WS175FZK1/SbDKpVtIksEsMUu8=;
-	b=dchvTjq6g/jiGGF0RksL3VT2e628mgz+ArR4fRC8zAAxYiBwQmvse32DAy+j7JHoEwOICp
-	lqVV98SyPCxKUdJNOZOuE77aIZ3zNh1XWxfsJZo3uwDMHOZ+qKiXHz0lnnQx2GiIuLsOcc
-	dDgTsyU8cCRYjPDX0qUQSfsQBy9NHPU=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1770643378;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=iTAgc03/6oW2lfJa7WS175FZK1/SbDKpVtIksEsMUu8=;
-	b=78avsXgoDLA56H1Td1J1t+O13aWewWD4k0j3NTKSZ7UM5C9wZSAfVWA7nD0mP6lZoeNsC3
-	+/DfQco9BvoHZUBA==
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1770643378;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=iTAgc03/6oW2lfJa7WS175FZK1/SbDKpVtIksEsMUu8=;
-	b=dchvTjq6g/jiGGF0RksL3VT2e628mgz+ArR4fRC8zAAxYiBwQmvse32DAy+j7JHoEwOICp
-	lqVV98SyPCxKUdJNOZOuE77aIZ3zNh1XWxfsJZo3uwDMHOZ+qKiXHz0lnnQx2GiIuLsOcc
-	dDgTsyU8cCRYjPDX0qUQSfsQBy9NHPU=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1770643378;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=iTAgc03/6oW2lfJa7WS175FZK1/SbDKpVtIksEsMUu8=;
-	b=78avsXgoDLA56H1Td1J1t+O13aWewWD4k0j3NTKSZ7UM5C9wZSAfVWA7nD0mP6lZoeNsC3
-	+/DfQco9BvoHZUBA==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id A38863EA63;
-	Mon,  9 Feb 2026 13:22:58 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id rjPCJ7LfiWlDBQAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Mon, 09 Feb 2026 13:22:58 +0000
-Date: Mon, 9 Feb 2026 14:22:53 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Filipe Manana <fdmanana@kernel.org>
-Cc: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: sink RCU protection to _btrfs_printk()
-Message-ID: <20260209132253.GA26902@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20260205114546.210418-1-dsterba@suse.com>
- <CAL3q7H4pLHd6oKKShm_3OvTHN1jJ8g8HHxQwKYkDZ1ShQqeMbQ@mail.gmail.com>
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="Cdbc65xL"
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1770647879; x=1802183879;
+  h=from:to:cc:subject:date:message-id:mime-version:
+   content-transfer-encoding;
+  bh=5TtK4QL682SDtoW+nxy7KlLKFZMHHuJSwfsUd1B9bYo=;
+  b=Cdbc65xLlv75GRfK0CANSrHeKIE3A5r0RR8oay8+/1CtY3kiZ4nPW6hY
+   8u2LIrPRktcNDut19rzy/WjiemeRDT19PkpmCQbpO3z+ZG1DnLasXJEh6
+   1lMrF3S7NkOfRc122s0x71ntlfg3KXppuUL/MyKVYQVZjAcapOZgjRv8y
+   kWJpwguqmpz6zjPiOLc9kMB2DlwTGvsYjlF+tZ1raYd/0kAumQxOoRyIR
+   2xRSL4pv1fl8eQmBXyO2ukODO2tqbmS3uWEudtgNA7eoGX4IWjXed+C6L
+   c4Y96wAdQHh8CyO/9qqNj3T6MQ5cRcovyDwJI+x7ziJJ6OtdtAFR84lHd
+   Q==;
+X-CSE-ConnectionGUID: os+AiArzQ/q60m7CjtuTOA==
+X-CSE-MsgGUID: S4Gfzx5HTNKKuCWkfnNIOA==
+X-IronPort-AV: E=Sophos;i="6.21,282,1763395200"; 
+   d="scan'208";a="141537540"
+Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep03.wdc.com) ([199.255.45.15])
+  by ob1.hgst.iphmx.com with ESMTP; 09 Feb 2026 22:36:51 +0800
+IronPort-SDR: 6989f105_G/n1AnlSz0zL7fZhDUZe2GQn/2eiMNopZTWx4DniF/FxBiE
+ 8Q1xRzW/uqlIqR0pvAMNJpX/ugwZ6LrfWPshWsw==
+Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
+  by uls-op-cesaep03.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 09 Feb 2026 06:36:53 -0800
+WDCIronportException: Internal
+Received: from f170w04lxh.ad.shared (HELO neo.fritz.box) ([10.224.28.114])
+  by uls-op-cesaip01.wdc.com with ESMTP; 09 Feb 2026 06:36:51 -0800
+From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>,
+	Damien Le Moal <dlemoal@kernel.org>,
+	Naohiro Aota <naohiro.aota@wdc.com>,
+	Christoph Hellwig <hch@lst.de>,
+	Hans Holmberg <Hans.Holmberg@wdc.com>,
+	Boris Burkov <boris@bur.io>,
+	David Sterba <dsterba@suse.com>,
+	Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Subject: [PATCH 0/3] btrfs: zoned fix two long standing ENOSPC bugs
+Date: Mon,  9 Feb 2026 15:36:41 +0100
+Message-ID: <20260209143644.96411-1-johannes.thumshirn@wdc.com>
+X-Mailer: git-send-email 2.53.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CAL3q7H4pLHd6oKKShm_3OvTHN1jJ8g8HHxQwKYkDZ1ShQqeMbQ@mail.gmail.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Spamd-Result: default: False [-4.00 / 50.00];
-	BAYES_HAM(-3.00)[99.99%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_SOME(0.00)[];
-	ARC_NA(0.00)[];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	MIME_TRACE(0.00)[0:+];
-	FROM_HAS_DN(0.00)[];
-	REPLYTO_DOM_NEQ_TO_DOM(0.00)[];
-	RCPT_COUNT_THREE(0.00)[3];
-	FROM_EQ_ENVFROM(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo]
-X-Spam-Flag: NO
-X-Spam-Score: -4.00
-X-Spam-Level: 
+Content-Transfer-Encoding: 8bit
 
-On Mon, Feb 09, 2026 at 09:39:07AM +0000, Filipe Manana wrote:
-> > --- a/fs/btrfs/messages.h
-> > +++ b/fs/btrfs/messages.h
-> > @@ -85,9 +85,7 @@ void _btrfs_printk(const struct btrfs_fs_info *fs_info, unsigned int level, cons
-> >
-> >  #define btrfs_printk_in_rcu(fs_info, level, fmt, args...)      \
-> >  do {                                                           \
-> > -       rcu_read_lock();                                        \
-> >         _btrfs_printk(fs_info, level, fmt, ##args);             \
-> > -       rcu_read_unlock();                                      \
-> >  } while (0)
-> 
-> There's no longer any need for the do while, so it could now be simply:
-> 
->  #define btrfs_printk_in_rcu(fs_info, level, fmt, args...)
-> _btrfs_printk(fs_info, level, fmt, ##args)
+This series fixes two long standing bugs with zoned BTRFS leading to
+premature ENOSPC.
 
-Right, fixed in for-next, thanks.
+Patch 1 caps the amount of metadata reservations to not let
+`bytes_may_use + bytes_zone_available` climb beyond a space_info's
+capacity.
+
+Patch 2 moves a block-group to the reclaim list, if it cannot be deleted
+in btrfs_delete_unused_bgs() because there's still user data left.
+
+Patch 3 adds a new zoned only state to the flush machinery performing
+reclaim of block-groups that can be reclaimed.
+
+
+For all these patches a single reproducer was used (and it can be turned
+into a fstest):
+
+```
+#!/bin/sh
+
+SCRATCH_DEV="/dev/vdb"
+SCRATCH_MNT="/tmp/scratch"
+MOUNT_OPTIONS="-o enospc_debug"
+
+mkdir -p $SCRATCH_MNT
+mkfs.btrfs -f $SCRATCH_DEV
+mount $MOUNT_OPTIONS $SCRATCH_DEV $SCRATCH_MNT
+
+blocks="$(df -TB 1G $SCRATCH_DEV | awk '/btrfs/ { print $3}')"
+
+loops=$(echo "$blocks * 4 - 2" | bc)
+
+for (( i = 0; i < $loops; i++)); do
+	dd if=/dev/zero of=$SCRATCH_MNT/test bs=1M count=1024 > /dev/null
+	if [ $? -ne 0 ]; then
+		break
+	fi
+done
+
+umount $SCRATCH_DEV
+btrfs check $SCRATCH_DEV
+```
+
+Johannes Thumshirn (3):
+  btrfs: zoned: cap delayed refs metadata reservation to avoid
+    overcommit
+  btrfs: zoned: move partially zone_unusable block groups to reclaim
+    list
+  btrfs: zoned: add zone reclaim flush state for DATA space_info
+
+ fs/btrfs/block-group.c | 16 ++++++++++++++++
+ fs/btrfs/delayed-ref.c | 26 ++++++++++++++++++++++++++
+ fs/btrfs/space-info.c  | 12 ++++++++++++
+ fs/btrfs/space-info.h  |  1 +
+ fs/btrfs/transaction.c |  7 +++++++
+ 5 files changed, 62 insertions(+)
+
+-- 
+2.53.0
+

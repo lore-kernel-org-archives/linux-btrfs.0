@@ -1,131 +1,107 @@
-Received: from siberian.tulip.relay.mailchannels.net (siberian.tulip.relay.mailchannels.net [23.83.218.246])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-dl1-f42.google.com (mail-dl1-f42.google.com [74.125.82.42])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1A48A1C7012
-	for <linux-btrfs@vger.kernel.org>; Mon,  9 Feb 2026 04:37:18 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=23.83.218.246
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BB6BA317712
+	for <linux-btrfs@vger.kernel.org>; Mon,  9 Feb 2026 09:11:40 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=74.125.82.42
 ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1770611855; cv=pass; b=mayuv8o5zFJIadvJkSEWqoycF8VvjRMg7dzW9+uQ29109RbGnzF1u/mXuLfeiG7yfV06y7D6vxN4fhLcMWW5CA3QMZ20DLWPrqTyRLHw/bCCtWaWV8rV+xyoPBKLI1c0wpDQ1XQR0Yln0qjLZp7ZXSS6Iys9X0YZ9nOOEU9KWbs=
+	t=1770628300; cv=pass; b=XkpQ1Wnvw1H+xC+nf0FtZW/EUX6aBOeSQlEIeywEtEc0WZg+PZgl/fN7Wc3kppStJ9Bd4Dl6wJPN7+XVbzSHd6ogVLTBTlSyZx1VLwZD25wNYxNXn29lbBh3V5I96OshbrDIeHH8WgPcvWQnAhipE0y9zRp21jJ5y2618juHTJo=
 ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1770611855; c=relaxed/simple;
-	bh=7rgSobQH/J6mvfmDSJvUjQZX325KrZQY4ByHn7AxiSM=;
-	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=DHirVkqfhjj6nEaoAW1HufbC+M6fRoiVjXzwLEHDcg2vjHgM6LCya9vL/VgReRP9rL3ayFLKBDhHmZMmebY4knngY6voO0D0fEXICwqFxxxYVmNrw1PgEWLxSiCbGNdzBSRcgCGlcqoclIRx0RYdD8pyS26OHrE7TzjVElknFRM=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=scientia.org; spf=pass smtp.mailfrom=scientia.org; arc=pass smtp.client-ip=23.83.218.246
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=scientia.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=scientia.org
-Received: from relay.mailchannels.net (localhost [127.0.0.1])
-	by relay.mailchannels.net (Postfix) with ESMTP id 28AD8800A23;
-	Mon, 09 Feb 2026 03:58:22 +0000 (UTC)
-Received: from cpanel-007-fra.hostingww.com (100-97-7-35.trex-nlb.outbound.svc.cluster.local [100.97.7.35])
-	(Authenticated sender: instrampxe0y3a)
-	by relay.mailchannels.net (Postfix) with ESMTPA id 18682801509;
-	Mon, 09 Feb 2026 03:58:20 +0000 (UTC)
-ARC-Seal: i=1; a=rsa-sha256; d=mailchannels.net; s=arc-2022; cv=none;
-	t=1770609501;
-	b=yIFrxdoMf2PDbiYDdn6xQu5gmqGVM9nyDgzDSs9Te9HtdH/0f2Pt6KtOLNVzLbRJ0pZ5Fv
-	5U+dP1H2s7RrE18ZXpOynJSLRspH6zhMY45Fiz3InEYe6aldLnHYRKumUuq2BcKwsPOkvW
-	Iu7FStf23ghr+Uz0NqvHlrjKg0XEVShow4ua32JASvmrpf1lStFEWUZbVg5diKBDf4zT6Q
-	eIr6/R3bFakVIR+vr0pI9+seuqJ6Y+ski6M1eh3vi/2+hshtEdmKTm4PLnKDJuiosAlzlU
-	MbObzmKqmeCACaOdzVf1Aetn+hFypwQ/a9JnyMF6fm0rF3H6joNuB63BntsvQQ==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed;
- d=mailchannels.net;
-	s=arc-2022; t=1770609501;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=7rgSobQH/J6mvfmDSJvUjQZX325KrZQY4ByHn7AxiSM=;
-	b=RRagktqadjTC0aLgrXwP+Zb+xbn0eAQ4VMyngm1c3k0Gzd0c/z529HP3e9yHDj4dYc958i
-	ZoOHAVt5b7IC7rexw7XE3fevTk4FPU83hASrAOAI+fjoFU10gER5w+obfFt52MuPvj2gH0
-	y39uYDvoA4z5mvjv0q1azaLxDscl9D76z/N8Du17hirZjRfZvq9pYxl/M6/cz+RrVn3wxL
-	OVYrC1+DyU/jJqEl9YMt9rJCcZ3bKzxZ9UI4iKU7v7YdefwdL89sXxFeF3TiTA93kEi6uN
-	LBROGSxTVNlxRLf1DDtJNyPSDGs4hAEhtJD4DcteItFxg4iCCUY1UEDdWsTUzg==
-ARC-Authentication-Results: i=1;
-	rspamd-845545c4df-9vhkv;
-	auth=pass smtp.auth=instrampxe0y3a smtp.mailfrom=calestyo@scientia.org
-X-Sender-Id: instrampxe0y3a|x-authuser|calestyo@scientia.org
-X-MC-Relay: Neutral
-X-MailChannels-SenderId: instrampxe0y3a|x-authuser|calestyo@scientia.org
-X-MailChannels-Auth-Id: instrampxe0y3a
-X-Wiry-Stupid: 0e4a41df2ffc891f_1770609501968_2562544661
-X-MC-Loop-Signature: 1770609501968:1683419736
-X-MC-Ingress-Time: 1770609501967
-Received: from cpanel-007-fra.hostingww.com (cpanel-007-fra.hostingww.com
- [3.69.87.180])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384)
-	by 100.97.7.35 (trex/7.1.3);
-	Mon, 09 Feb 2026 03:58:21 +0000
-Received: from p5b071a6f.dip0.t-ipconnect.de ([91.7.26.111]:65162 helo=heisenberg.fritz.box)
-	by cpanel-007-fra.hostingww.com with esmtpsa  (TLS1.3) tls TLS_AES_256_GCM_SHA384
-	(Exim 4.99.1)
-	(envelope-from <calestyo@scientia.org>)
-	id 1vpIPi-00000007lpT-0oC1;
-	Mon, 09 Feb 2026 03:58:19 +0000
-Message-ID: <4aa883f597c4d12ddfb50912cc03349594d4fdd7.camel@scientia.org>
-Subject: Re: space_info METADATA (sub-group id 0) has 691535872 free, is not
- full // open_ctree failed: -2
-From: Christoph Anton Mitterer <calestyo@scientia.org>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Date: Mon, 09 Feb 2026 04:58:17 +0100
-In-Reply-To: <54b7e6a4-7a08-434c-b7e0-849d3f961de3@suse.com>
-References: <f3574976d7b5bc8f05e42055d85d4b61263bc5c5.camel@scientia.org>
-	 <b681834e-7b0f-4606-8c52-f2b4dafba246@suse.com>
-	 <4e6ad7ef198de72edaf890a2257bf63864984197.camel@scientia.org>
-	 <cca8b4ea-97ef-433e-9db9-4eca67b89576@suse.com>
-	 <f1aaada378adad0da020bd679531c7f503ad6f93.camel@scientia.org>
-	 <914a6a60-6bb6-4255-a8cc-ea6f28e7a9cf@suse.com>
-	 <a75537dc77e5b6fac922a97409ca4636805147dc.camel@scientia.org>
-	 <fff60222-0b9f-4f09-b3a6-d415aa64b6d7@gmx.com>
-	 <18a87dd4f3155bb1d9c9884f39dbf53c802a10cd.camel@scientia.org>
-	 <572f0ac4-90f6-4c56-aa4c-2a64e365d526@suse.com>
-	 <52c813cf8dffe11325ce291d3f3bd41bcce21936.camel@scientia.org>
-	 <f094ddbb70cabd2e329615269519b1844f786629.camel@scientia.org>
-	 <a6d825eb-3e8c-404f-90f6-6b4e5621479d@suse.com>
-	 <05e63d59951cfb8612c876d5bc7fdb76b272b01c.camel@scientia.org>
-	 <89188b7b8b5a1f9bb64af37777aec906134ad75c.camel@scientia.org>
-	 <9b05f9a3-5efe-4e57-9585-a3886bb419fa@suse.com>
-	 <3137a2417287037a2ed52ded55fab35181254009.camel@scientia.org>
-	 <54b7e6a4-7a08-434c-b7e0-849d3f961de3@suse.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.56.2-8 
+	s=arc-20240116; t=1770628300; c=relaxed/simple;
+	bh=JgH4F9Fp+brpzH0Qr303C9Lv8LVUjDh+jR8lblMQb80=;
+	h=MIME-Version:From:Date:Message-ID:Subject:To:Content-Type; b=MvkUuVQS/eijAmUcBnLPSunj8ochAR0hseq8Jtt6XHd4go2T4L4sP3tUSPTb9go0si0agZ2zsSgNjkk2RzYOvyPos2WTnv4By+PdQARJWjTmXN2o24u2puOqNmykrqH1b1PaaMOeJwX2dZi6egsKi+ey0HNbM1yPebW5OCiiS8g=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=iJN7+B6q; arc=pass smtp.client-ip=74.125.82.42
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="iJN7+B6q"
+Received: by mail-dl1-f42.google.com with SMTP id a92af1059eb24-12336c0a8b6so1066654c88.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 09 Feb 2026 01:11:40 -0800 (PST)
+ARC-Seal: i=1; a=rsa-sha256; t=1770628300; cv=none;
+        d=google.com; s=arc-20240605;
+        b=ShAmMAFqpJ4aV6CrVaj3Wl0z2fLUHi3ooYwUtLCCIyNxEA8fDy/eUMpT2eY3W+JSLg
+         0AlwbVMVK+MMuFuo/pHvy0KHthHu+j6QfxnUiNns7sFZkdsI0fn16DGeqTjTQYxM6ICG
+         LThK6On8PbHJ8uZZZX3EWNKcadNKnUbbddf9GScH04nI3xRRkj5Zc9BSHDAhboDAsw1E
+         zA9DH82XdBOTKELcxgILstn9CU6vVcuOkMn1rS5LytQxiCmhlfT0CbLceOtioxK3iAxL
+         p7LQjlKZy4BcBSSzSZq6So9vY0kRjP5bCxbr/rVL3qJPhCMfsTZgAVJC4f9mdmzT9AeW
+         PLJQ==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
+        h=to:subject:message-id:date:from:mime-version:dkim-signature;
+        bh=JgH4F9Fp+brpzH0Qr303C9Lv8LVUjDh+jR8lblMQb80=;
+        fh=IOI3BSFtc4S+mY5yRaEOyEQVEbaexZFmwOG7FNW1hpE=;
+        b=fJAtyjTtFEsTx6ixmDa6Ds2zuaTBAJwM1sdBTVXvzbQw+faCTWs+lNU3mewKKohUU+
+         qO0q9LZYnYXkX88VX50z1C4VSE0BpB7hq6bM6uDx2jDUA0QdjacMG05fixyIn6csgVQt
+         dIYbEeYpe8+2/WxYLojSZ4GHgrjdPRM6WDHZwv95dKrGlEwdhYTxZOVfrBz2UQ7wg0SD
+         NpdJ0S32lO8FsI8BymVS1gvg009puk6q/kj7GrbdZ/RO5DYJM/GXiTu5nqKLSIX8a+UM
+         /n3lrAgLNufOMEPKhELEWkfY2+Wu9hlcKvYrn7aEpWp89HAY15uihUYb0tuyTOK21UaR
+         1c0A==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1770628300; x=1771233100; darn=vger.kernel.org;
+        h=to:subject:message-id:date:from:mime-version:from:to:cc:subject
+         :date:message-id:reply-to;
+        bh=JgH4F9Fp+brpzH0Qr303C9Lv8LVUjDh+jR8lblMQb80=;
+        b=iJN7+B6qreym6YEdg61wsyIlCrtZK3FJo8/DTjgytE21v9YkK6lClWT3qQG/UiLvcE
+         pxDVXFbQBzqo6NiNqc7H+1Zw82UtVKVYcNaPoZ28kX/ESUoat7Grq9tPnoch+QlsB9pY
+         wwmb8lV5hMWYXAP4gkz1ADi4tOpQRC8pA8L+/EcZ9OocegDXn/2sSZ0fNwDWdgu2LHHN
+         fAYlnG+QP8l4nbGsOU5m3aAUboREGQH0ncIlSwHVfVabxtxYO0G04rnD9t4i622MnYIa
+         49utYyVN/6yrGe+xKHRaabqLD9cIfl9R+mskglSwX1KR/ZjmcBoOobVeocxZFjXJIRaG
+         SRIA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1770628300; x=1771233100;
+        h=to:subject:message-id:date:from:mime-version:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=JgH4F9Fp+brpzH0Qr303C9Lv8LVUjDh+jR8lblMQb80=;
+        b=Wxi85Mz3XNlXhxYGM689ykMPZ/YriXsu/9CrpoO1vbCFCYB6XwprNU1Q5R0mtZa+l8
+         cpokEQeeA1B9lfxMM1SPoz4hd3uFxRNzNrORMs7iLujSREAw0WbyivDSrsVg6fqkPsX6
+         B0gyhkrf+lDe/kPLRIxBjqGaYax5AUu6aKa2zYQIUTebd3i0b7BjYWg6/Mlzl+iPZ1St
+         It8t1+qedyGA6wNkW3L7SwOKjX6khRFvgI92gNo5sK+s707YPEc6j17J0H78dWz7Urlc
+         Wy+3oE3QuWymrKKfmeNHg/YNIFF2BjfRzU9DE2wT8qC3aLD6Hv1Wv526ynvl4bHscQZh
+         HGrA==
+X-Gm-Message-State: AOJu0Yzj1DoJRvbe26enxEnxgQpwSBmuSV0qyodjELTrHl+qpN2Zq2yH
+	/nkld9Fni6O0fFlJ3ADEHgPunX69jnW9o4fUcwuH8FUk9izAgfn8QINzEGut+nakIVx/iWOLR6N
+	6SfxEdVr1SSleU6gX7tokhc0N7FISjoPiksrk0w0=
+X-Gm-Gg: AZuq6aK1g0GmQAv314/b3iSXlz81nIopiLj8OPVZ7SQvyiQZdNCr/tJyDwHkXfjlwjw
+	M/xnuVMd/vZ01uhjyW9A/iy/+xpSjxwYBah61Qz6pYD50/Z/bpRKpMYk8QCMVURYQRD0HZrR4Mv
+	h+DqaWWg6i6iBm9gQfI2vQCFyi9Q+rdr4Y6IwE6t3rJqPJoxw1ZjlgDX2cj7i0NItHPn654/FJe
+	jncaz8AcT6/MlOhEfhSkrgVAN/Wit8yD+1onMrLwg7GT/JM9D9EU00+nVyI0AE1t/hUeuPw2hlv
+	Xb/ObxL7Mk+2mUJOb/ELXjNE/sj9SL9CtMdIol8tumVY76oAeWkLKZi8
+X-Received: by 2002:a05:7300:aca6:b0:2b7:20c6:36dc with SMTP id
+ 5a478bee46e88-2b85670ff1dmr5015347eec.42.1770628299561; Mon, 09 Feb 2026
+ 01:11:39 -0800 (PST)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-AuthUser: calestyo@scientia.org
+From: Wladi <wladik.haha.psn@gmail.com>
+Date: Mon, 9 Feb 2026 10:11:30 +0100
+X-Gm-Features: AZwV_QiQ2Vf57gcM3iIPaJ6A8aOdhDEuy01X9ejX5MOkO1t8DcwWawJm80zw9fw
+Message-ID: <CAGpq3yLOFSSn3knMWLOCu39DnJeKPbSGZZky6KfPJEo=+U5p4A@mail.gmail.com>
+Subject: Kernel 6.18, 6.19 very slow write speed compared to 6.12
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 
-On Mon, 2026-02-09 at 14:18 +1030, Qu Wenruo wrote:
-> I don't think the key point is the context.
->=20
-> I believe the key point here is the size of the fs, which should be
-> very=20
-> large, so that rebuild itself will take over 30s.
+Hello,
 
-That fs (where it failed) is on an 8 TB HDD (and I think it's at best
-half full)...
+(If this isn't the correct place to ask this, I'm sorry)
 
-I did the same procedure on a significantly larger fs (20 TB HDD, ~16
-TB used)... and it worked.
+My system:
+WD SN850x 2 TB (PCIE 4.0 x4)
+BTRFS + Luks2 (4096 sector size)
+Ryzen 7 5800X3D on B550
+Fresh installation, drive only 5% full
 
-Or what do you mean by size? Size in terms of bytes or in terms of
-number of files?
+I have noticed that my write speeds are very slow with Kernel 6.18 and
+6.19 (on both linux-cachyos and linux-arch) compared to 6.12 LTS
 
+I've tested with "KDiskmark" (Fio):
+SEQ1M Q8T1 with cow
+6.18 and 6.19 -> Read 6900MB/s, write 900MB/s
+6.12 -> Read 6600MB/s, write 4500MB/s
 
+With no_cow write speeds reach around 6000MB/s on 6.18 and 6.19
 
-> With that said, feel free to clear v2 cache and let the kernel to re-
-> create.
->=20
-> When we want to test later, you can just go the same=20
-> clear_cache,space_cache=3Dv2 mount option, as long as you didn't=20
-> significantly reduce the (used) size of the fs.
-
-Okay.
-
-
-Thanks,
-Chris.
+Is this a known regression?

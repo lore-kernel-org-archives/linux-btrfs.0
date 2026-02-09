@@ -1,209 +1,186 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 277F2364032
-	for <linux-btrfs@vger.kernel.org>; Mon,  9 Feb 2026 09:50:50 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 08BB0366040
+	for <linux-btrfs@vger.kernel.org>; Mon,  9 Feb 2026 09:54:56 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1770630650; cv=none; b=Wc65a2Jzqpynw/zU49gwvt62gi595mHEKGGpPPmZ/n+znbe596KlsfU7PmIlJ90yziEJMynBu64p/zw5HlTAfbBMjVRN0UrrIlEveax2cYNCM3RiMyMRJ9ggdMCk4KgeqVhgezQU5e5/I73sOGFwJd3SWGfeL77H6tBi+KsSAuM=
+	t=1770630897; cv=none; b=NnkVlalj3YcFgYFq9HjJI4HaT3hDTEHE+k7sq4bvOHPIlk5hE+1Xh3t/446t4GVgZiN1px5cX00Ig7K8QcdNIxgMMdpAeVGB1qN7TreZkbvWUH7J1joIleOjTFkUk+p++4U3T4rXzX1vdKRudpOYGVywNiuLNViW3yrhPXu4blo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1770630650; c=relaxed/simple;
-	bh=dxKRcLcjqyVPJyS1KD0KU6VpowAojSgFwrFJpFCsmtY=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=Tkl4I3H+VQ3X3LDInAxDIXd6bNgUT8jQ9VUIuY70hlNWa3Wf3FAdBGguMT7odngeB1FGPdR51HiWTcwQNQbppGnQCUfT6fPfzB+NWcJIYKXHz8hK8+CHn6O9TzuhiLk6PfnhcPCMP/wqDJwAkd6ssquilkmlrk/q/y3ON0CiaLU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Mw8vDAFf; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Mw8vDAFf; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1770630897; c=relaxed/simple;
+	bh=hYODIDh8W+YitfT96sel4kiJsxob5ho0S42GjgaBDVg=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=IfPG/sF0nJByNSxlI4zS1j33TDHpVIu774+2985WEXno9x2XjldpOUv1b/1KJlbocwp8fSt2FvzPz70jJnOKxhikVGHOtunzSkVkDgX4wxqWITtmoQ7lYy+sLLMocBZpNQ/8+i3GU9X28qk4DtTtg+NOI4uXpjkAk57wQc8QREE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=ho8/cku6; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Mw8vDAFf";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Mw8vDAFf"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 6C0795BCD8;
-	Mon,  9 Feb 2026 09:50:48 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1770630648; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=Cpz5a2A1RJZrZaGITuvW/E6Oq3lFmzho2q+PCx42zFI=;
-	b=Mw8vDAFfeeoWg+9e+w4bYfPSQA25tq94NKAiFV0GNMNeo0pLUZth9Jfnivlv51iRaBCiHk
-	6wgqorlNu+dgPPhNkGk2TU2K7pM2D72h6SwJrZ1xcZ6mtTn19qW9AW9s9up9AwXiFPn5rm
-	xNBsf/u1hV80QB1FP4/P/tQLj5LOU/o=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=Mw8vDAFf
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1770630648; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=Cpz5a2A1RJZrZaGITuvW/E6Oq3lFmzho2q+PCx42zFI=;
-	b=Mw8vDAFfeeoWg+9e+w4bYfPSQA25tq94NKAiFV0GNMNeo0pLUZth9Jfnivlv51iRaBCiHk
-	6wgqorlNu+dgPPhNkGk2TU2K7pM2D72h6SwJrZ1xcZ6mtTn19qW9AW9s9up9AwXiFPn5rm
-	xNBsf/u1hV80QB1FP4/P/tQLj5LOU/o=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id B94313EA63;
-	Mon,  9 Feb 2026 09:50:46 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id M+gpGvatiWkuSQAAD6G6ig
-	(envelope-from <wqu@suse.com>); Mon, 09 Feb 2026 09:50:46 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org,
-	fstests@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v2] fstests: btrfs: add a regression test for incorrect inode incompressible flag
-Date: Mon,  9 Feb 2026 20:20:20 +1030
-Message-ID: <20260209095020.128806-1-wqu@suse.com>
-X-Mailer: git-send-email 2.52.0
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="ho8/cku6"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9B508C19423
+	for <linux-btrfs@vger.kernel.org>; Mon,  9 Feb 2026 09:54:56 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1770630896;
+	bh=hYODIDh8W+YitfT96sel4kiJsxob5ho0S42GjgaBDVg=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+	b=ho8/cku6OwaRl/MpbvUAEQBmMyqMtp2VGqTARLVqTMSzMx7mP4OznzWOltb6upxm+
+	 YKDtJ3ZVUzClEpWdlozg59cybWw6f1z5c1rg6aZFbSLb3m+fMEY44Rd55k3Ki6z3uX
+	 y8w7etaqRdtxByNRG2iOBVhXgIdWYYPZUyKuXjh6Ovpx72p9eDeKoj+u1gROrCqEvZ
+	 pd7uRjod84Wd1nAaYx76l/vZe2swIjYQ0PLXSvBzOO1wNXCJcuufcENX/20iZbe5bQ
+	 g0+OURCxqShHrWXLRZO3jzrmTjKC3udpsw/JxDKZ/nYWCYh+CXwQohigq+2tNuDkdy
+	 rsmEahiEQS45g==
+Received: by mail-ed1-f54.google.com with SMTP id 4fb4d7f45d1cf-6597a7bd7d6so4332056a12.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 09 Feb 2026 01:54:56 -0800 (PST)
+X-Gm-Message-State: AOJu0Yyg6vy6cXF+bCJdBWxilVjhTZvqaWdBIs/gKKV97Ufr1JCxIWfo
+	PdwfmOeAf734NJ+vpvqQ4vw+hPGGg2gJPxecbP98miW2ANxCzxfGGcvYdQNAYGB5xY29Cs89NNB
+	Vl7jTsrum/nbDNyvca1Ki1brACEwTQUQ=
+X-Received: by 2002:a17:907:3c93:b0:b8e:99f8:8c4d with SMTP id
+ a640c23a62f3a-b8edf3497cemr625190366b.51.1770630895187; Mon, 09 Feb 2026
+ 01:54:55 -0800 (PST)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spam-Score: -3.01
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	MID_CONTAINS_FROM(1.00)[];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:dkim,suse.com:mid,suse.com:email];
-	ARC_NA(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	TO_DN_SOME(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	RCVD_TLS_ALL(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	FROM_EQ_ENVFROM(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RCPT_COUNT_THREE(0.00)[3];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Spam-Level: 
-X-Rspamd-Action: no action
-X-Rspamd-Queue-Id: 6C0795BCD8
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Spam-Flag: NO
+References: <20260209095020.128806-1-wqu@suse.com>
+In-Reply-To: <20260209095020.128806-1-wqu@suse.com>
+From: Filipe Manana <fdmanana@kernel.org>
+Date: Mon, 9 Feb 2026 09:54:18 +0000
+X-Gmail-Original-Message-ID: <CAL3q7H4_pRExfW6U67YfMK7hXouXspAXXJHPWM2t3yGC3AY0CQ@mail.gmail.com>
+X-Gm-Features: AZwV_Qg9tSDQEvDvwRSzTaHl32fKL5yh49LkWTAzJUyxDzNjKitt0KKyAbZrrf4
+Message-ID: <CAL3q7H4_pRExfW6U67YfMK7hXouXspAXXJHPWM2t3yGC3AY0CQ@mail.gmail.com>
+Subject: Re: [PATCH v2] fstests: btrfs: add a regression test for incorrect
+ inode incompressible flag
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org, fstests@vger.kernel.org, 
+	Filipe Manana <fdmanana@suse.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-[BUG]
-Since kernel commit 59615e2c1f63 ("btrfs: reject single block sized
-compression early"), a single block write at file offset 0, which can
-not be inlined due the inode size, will mark the inode incompressible.
+On Mon, Feb 9, 2026 at 9:50=E2=80=AFAM Qu Wenruo <wqu@suse.com> wrote:
+>
+> [BUG]
+> Since kernel commit 59615e2c1f63 ("btrfs: reject single block sized
+> compression early"), a single block write at file offset 0, which can
+> not be inlined due the inode size, will mark the inode incompressible.
+>
+> [REGRESSION TEST]
+> The new regression test will do:
+>
+> - Create and mount the fs with compression,max_inline=3D2k
+>
+> - Do the following operations:
+>   * Truncate the inode to 2 * blocksize
+>     This will rule out any future inlined writes.
+>
+>   * Buffered write [0, 2K)
+>     Which will not be inlined.
+>
+>   * Sync
+>     For affected kernels, this will set the inode with NOCOMPRESS
+>     and reject all future compression on that inode.
+>
+>   * Buffered write [1M, 2M)
+>     For affected kernels, the range will not be compressed due
+>     to the NOCOMPRESS inode flag.
+>
+> - Unmount the fs
+>
+> - Make sure that:
+>   * The inode has no NOCOMPRESS flag
+>   * File extent at file offset 1M is being compressed
+>
+> Reviewed-by: Filipe Manana <fdmanana@suse.com>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+> Changelog:
+> v2:
+> - Remove an unnessary sentence
+>   Which is confusing because I missed the "and" to connect the two
+>   sentences, and it's not needed after the first paragraph anyway.
+>
+> - Use full "btrfs inspect-internal" group name instead
+>
+> - Add missing punctures
+> ---
+>  tests/btrfs/343     | 47 +++++++++++++++++++++++++++++++++++++++++++++
+>  tests/btrfs/343.out |  2 ++
+>  2 files changed, 49 insertions(+)
+>  create mode 100755 tests/btrfs/343
+>  create mode 100644 tests/btrfs/343.out
+>
+> diff --git a/tests/btrfs/343 b/tests/btrfs/343
+> new file mode 100755
+> index 00000000..78079eff
+> --- /dev/null
+> +++ b/tests/btrfs/343
+> @@ -0,0 +1,47 @@
+> +#! /bin/bash
+> +# SPDX-License-Identifier: GPL-2.0
+> +# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
+> +#
+> +# FS QA Test 343
+> +#
+> +# A regression test to make sure a single-block write at file offset 0 w=
+on't
+> +# incorrectly mark the inode incompressible.
+> +#
+> +. ./common/preamble
+> +_begin_fstest auto quick compress
+> +
+> +_require_scratch
 
-[REGRESSION TEST]
-The new regression test will do:
+Still missing a:
 
-- Create and mount the fs with compression,max_inline=2k
+_require_btrfs_command inspect-internal dump-tree
 
-- Do the following operations:
-  * Truncate the inode to 2 * blocksize
-    This will rule out any future inlined writes.
+As noted in the review of the first version.
+Otherwise it looks good, thanks.
 
-  * Buffered write [0, 2K)
-    Which will not be inlined.
-
-  * Sync
-    For affected kernels, this will set the inode with NOCOMPRESS
-    and reject all future compression on that inode.
-
-  * Buffered write [1M, 2M)
-    For affected kernels, the range will not be compressed due
-    to the NOCOMPRESS inode flag.
-
-- Unmount the fs
-
-- Make sure that:
-  * The inode has no NOCOMPRESS flag
-  * File extent at file offset 1M is being compressed
-
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
-Changelog:
-v2:
-- Remove an unnessary sentence
-  Which is confusing because I missed the "and" to connect the two
-  sentences, and it's not needed after the first paragraph anyway.
-
-- Use full "btrfs inspect-internal" group name instead
-
-- Add missing punctures
----
- tests/btrfs/343     | 47 +++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/343.out |  2 ++
- 2 files changed, 49 insertions(+)
- create mode 100755 tests/btrfs/343
- create mode 100644 tests/btrfs/343.out
-
-diff --git a/tests/btrfs/343 b/tests/btrfs/343
-new file mode 100755
-index 00000000..78079eff
---- /dev/null
-+++ b/tests/btrfs/343
-@@ -0,0 +1,47 @@
-+#! /bin/bash
-+# SPDX-License-Identifier: GPL-2.0
-+# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
-+#
-+# FS QA Test 343
-+#
-+# A regression test to make sure a single-block write at file offset 0 won't
-+# incorrectly mark the inode incompressible.
-+#
-+. ./common/preamble
-+_begin_fstest auto quick compress
-+
-+_require_scratch
-+
-+_fixed_by_kernel_commit xxxxxxxxxxxx \
-+	"btrfs: fix the inline compressed extent check in inode_need_compress()"
-+
-+_scratch_mkfs >>$seqres.full 2>&1
-+_scratch_mount "-o compress,max_inline=2048"
-+
-+blocksize=$(_get_block_size $SCRATCH_MNT)
-+
-+# Create a sparse file which is 2 * blocksize, then try a small write at
-+# file offset 0 which should not be inlined.
-+# Sync so that [0, 2K) range is written, then write a larger range which
-+# should be able to be compressed.
-+$XFS_IO_PROG -f -c "truncate $((2 * $blocksize))" -c "pwrite 0 2k" -c sync \
-+		-c "pwrite 1m 1m" $SCRATCH_MNT/foobar >> $seqres.full
-+ino=$(stat -c "%i" $SCRATCH_MNT/foobar)
-+_scratch_unmount
-+
-+# Dump the fstree into seqres.full for debug
-+$BTRFS_UTIL_PROG inspect dump-tree -t 5 $SCRATCH_DEV >> $seqres.full
-+
-+# Check the NOCOMPRESS flag of the inode.
-+$BTRFS_UTIL_PROG inspect dump-tree -t 5 $SCRATCH_DEV |\
-+grep -A 4 -e "item .* key ($ino INODE_ITEM 0)" | grep -q NOCOMPRESS
-+[ $? -eq 0 ] && echo "inode $ino has NOCOMPRESS flag"
-+
-+# Check the file extent at fileoffset 1m
-+$BTRFS_UTIL_PROG inspect dump-tree -t 5 $SCRATCH_DEV |\
-+grep -A 4 -e "item .* key ($ino EXTENT_DATA 1048576)" | grep -q "compression 0"
-+[ $? -eq 0 ] && echo "inode $ino file offset 1M is not compressed"
-+
-+echo "Silence is golden"
-+# success, all done
-+_exit 0
-diff --git a/tests/btrfs/343.out b/tests/btrfs/343.out
-new file mode 100644
-index 00000000..2eb30e4f
---- /dev/null
-+++ b/tests/btrfs/343.out
-@@ -0,0 +1,2 @@
-+QA output created by 343
-+Silence is golden
--- 
-2.51.2
-
+> +
+> +_fixed_by_kernel_commit xxxxxxxxxxxx \
+> +       "btrfs: fix the inline compressed extent check in inode_need_comp=
+ress()"
+> +
+> +_scratch_mkfs >>$seqres.full 2>&1
+> +_scratch_mount "-o compress,max_inline=3D2048"
+> +
+> +blocksize=3D$(_get_block_size $SCRATCH_MNT)
+> +
+> +# Create a sparse file which is 2 * blocksize, then try a small write at
+> +# file offset 0 which should not be inlined.
+> +# Sync so that [0, 2K) range is written, then write a larger range which
+> +# should be able to be compressed.
+> +$XFS_IO_PROG -f -c "truncate $((2 * $blocksize))" -c "pwrite 0 2k" -c sy=
+nc \
+> +               -c "pwrite 1m 1m" $SCRATCH_MNT/foobar >> $seqres.full
+> +ino=3D$(stat -c "%i" $SCRATCH_MNT/foobar)
+> +_scratch_unmount
+> +
+> +# Dump the fstree into seqres.full for debug
+> +$BTRFS_UTIL_PROG inspect dump-tree -t 5 $SCRATCH_DEV >> $seqres.full
+> +
+> +# Check the NOCOMPRESS flag of the inode.
+> +$BTRFS_UTIL_PROG inspect dump-tree -t 5 $SCRATCH_DEV |\
+> +grep -A 4 -e "item .* key ($ino INODE_ITEM 0)" | grep -q NOCOMPRESS
+> +[ $? -eq 0 ] && echo "inode $ino has NOCOMPRESS flag"
+> +
+> +# Check the file extent at fileoffset 1m
+> +$BTRFS_UTIL_PROG inspect dump-tree -t 5 $SCRATCH_DEV |\
+> +grep -A 4 -e "item .* key ($ino EXTENT_DATA 1048576)" | grep -q "compres=
+sion 0"
+> +[ $? -eq 0 ] && echo "inode $ino file offset 1M is not compressed"
+> +
+> +echo "Silence is golden"
+> +# success, all done
+> +_exit 0
+> diff --git a/tests/btrfs/343.out b/tests/btrfs/343.out
+> new file mode 100644
+> index 00000000..2eb30e4f
+> --- /dev/null
+> +++ b/tests/btrfs/343.out
+> @@ -0,0 +1,2 @@
+> +QA output created by 343
+> +Silence is golden
+> --
+> 2.51.2
+>
+>

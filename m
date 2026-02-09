@@ -1,59 +1,59 @@
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6E2C018AE3
-	for <linux-btrfs@vger.kernel.org>; Mon,  9 Feb 2026 03:30:46 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5DDD3176FB1
+	for <linux-btrfs@vger.kernel.org>; Mon,  9 Feb 2026 03:45:33 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1770607846; cv=none; b=U9ogU3XEqUDJPoxjmYV3663bvIhc46Mz+U5eJBSlJP5TqhCuS55i8fEEAvVCsYalfZvabeBzIPanWb5Z6S5pP/Imiyt2HP5wxsmBLB5zPbXyJHzxCxT5c5YPQc8yNbHQMIEGS9xGb4hSSc91FekLKW9Mp1U1uKJKGq3TgL9FeHs=
+	t=1770608733; cv=none; b=imBJJKRumS6btdBsjBCuEtOcuEy+0JQK2yJDSNzQXaBANBVFtWVfY4pX1ea8Zk4F/nqHULx4uCyJGyzibR2e2lz/nLbppWt041ZbP1wb7K3OzgCvkrlb3pP9L77RG3jk5rlY/3BP1x0oPMHO5EPjTL4+FceNE2YXnD1JdN9Z8kg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1770607846; c=relaxed/simple;
-	bh=PXR9x+oMj/MPZPv1F9jB6JgZc/OwlemEGids7ulSk6M=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=lbyVsO0QASJ1JUMwZZMU2bTiPAjvO0AHSwm0BUG6Qo+Q2XCVBLbFa58Jg/jA2lnsGR298s7KWX02g/6AtuTpf3IXEIP7Iei6MgZj0KO14JjNAcu3KJP2JFGRNiHHmXLDqvvU6uQQbcKhByL4nwKznEwxPJtpZye+YTPw9kutJ54=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=C0dkG2gl; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=C0dkG2gl; arc=none smtp.client-ip=195.135.223.130
+	s=arc-20240116; t=1770608733; c=relaxed/simple;
+	bh=dBebfKE0kEs+87bKpRYi7zKbqxZlWJniPvZK1rMWtOE=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=bqQ9Uwm/+dbYx4UMqct86ndzIyAjfVu5ZAYepjE4E7l2RPERKq2TqEXmYOkg5QQkM8BmVddSVXaylHp5IIHgEuTyyUyXTUPflRRXOAnq3FUKtl5ZJeIijcOh5hv7AAJX9hQnZRc50N72zH1glk+0JmfzYAs1sRBPP7oZ1DMinaE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=XqFxV25A; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=XqFxV25A; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="C0dkG2gl";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="C0dkG2gl"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="XqFxV25A";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="XqFxV25A"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id BC2E23E6E1;
-	Mon,  9 Feb 2026 03:30:44 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 826D53E6E1;
+	Mon,  9 Feb 2026 03:45:31 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1770607844; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1770608731; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=2iC0itCku5YiuF+y1vxrx8ZdBXJi0zdF0+XEofUit3w=;
-	b=C0dkG2gl05clTkGuZ2CzN2njNd6nViuuaNt1D/6VQPC9gr2jL1crMynsRP2g2FiH+v8iw4
-	BETdpgVDmLW+XyV86TzKF5vaVtR+xEfgjkagKrZro4cBvmT4SyVaWUT/MGBuEY47adhyTM
-	BqWsuWsvMERJb5RlzkNMsOvsuIoXgss=
+	bh=6PEhiq+xKTZzSKKXPqfgEY9qeV6NGFSPOKhi0pD51oc=;
+	b=XqFxV25A5UhNBg5vlAgIawCCv8MAj493Hh3+SKqpyAe/6G/n/+Kmm+Xvz5jVR7NSTn3BpU
+	7h1NxU+iMg9w6blx/UO3tnxVYe5cZ35nIA3m8hmqQiGYyy82JsxpBpYyqmxvKDK1nieRHv
+	diLAPSlbdRDpx3oDCAHKNj/7EUi61+I=
 Authentication-Results: smtp-out1.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1770607844; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1770608731; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=2iC0itCku5YiuF+y1vxrx8ZdBXJi0zdF0+XEofUit3w=;
-	b=C0dkG2gl05clTkGuZ2CzN2njNd6nViuuaNt1D/6VQPC9gr2jL1crMynsRP2g2FiH+v8iw4
-	BETdpgVDmLW+XyV86TzKF5vaVtR+xEfgjkagKrZro4cBvmT4SyVaWUT/MGBuEY47adhyTM
-	BqWsuWsvMERJb5RlzkNMsOvsuIoXgss=
+	bh=6PEhiq+xKTZzSKKXPqfgEY9qeV6NGFSPOKhi0pD51oc=;
+	b=XqFxV25A5UhNBg5vlAgIawCCv8MAj493Hh3+SKqpyAe/6G/n/+Kmm+Xvz5jVR7NSTn3BpU
+	7h1NxU+iMg9w6blx/UO3tnxVYe5cZ35nIA3m8hmqQiGYyy82JsxpBpYyqmxvKDK1nieRHv
+	diLAPSlbdRDpx3oDCAHKNj/7EUi61+I=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 616B23EA63;
-	Mon,  9 Feb 2026 03:30:43 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 223213EA63;
+	Mon,  9 Feb 2026 03:45:29 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id +aBmBONUiWn8KgAAD6G6ig
-	(envelope-from <wqu@suse.com>); Mon, 09 Feb 2026 03:30:43 +0000
+	id 6zMjMFlYiWmPFAAAD6G6ig
+	(envelope-from <wqu@suse.com>); Mon, 09 Feb 2026 03:45:29 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Chris Mason <clm@meta.com>
-Subject: [PATCH v2] btrfs: fix the inline compressed extent check in inode_need_compress()
-Date: Mon,  9 Feb 2026 14:00:16 +1030
-Message-ID: <3cd5a484ffc3d8a499b062cbda89793d560b85d7.1770607799.git.wqu@suse.com>
+Subject: [PATCH] btrfs: fix a double release on reserved extents in cow_one_range()
+Date: Mon,  9 Feb 2026 14:15:11 +1030
+Message-ID: <09b588005eec0809898978728261fff1a7b23d35.1770608707.git.wqu@suse.com>
 X-Mailer: git-send-email 2.52.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
@@ -67,105 +67,124 @@ X-Spamd-Result: default: False [-2.80 / 50.00];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	MID_CONTAINS_FROM(1.00)[];
 	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.994];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	ARC_NA(0.00)[];
 	RCVD_VIA_SMTP_AUTH(0.00)[];
 	FROM_HAS_DN(0.00)[];
-	TO_DN_SOME(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:email];
+	MIME_TRACE(0.00)[0:+];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo];
 	FUZZY_RATELIMITED(0.00)[rspamd.com];
 	RCPT_COUNT_TWO(0.00)[2];
 	RCVD_COUNT_TWO(0.00)[2];
 	FROM_EQ_ENVFROM(0.00)[];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	MIME_TRACE(0.00)[0:+];
+	TO_DN_SOME(0.00)[];
 	RCVD_TLS_ALL(0.00)[]
 X-Spam-Flag: NO
 X-Spam-Score: -2.80
 X-Spam-Level: 
 
 [BUG]
-Since commit 59615e2c1f63 ("btrfs: reject single block sized compression
-early"), the following script will result the inode to have NOCOMPRESS
-flag, meanwhile old kernels don't:
+Commit c28214bde6da ("btrfs: refactor the main loop of
+cow_file_range()") refactored the handling of COWing one range.
 
-	# mkfs.btrfs -f $dev
-	# mount $dev $mnt -o max_inline=2k,compress=zstd
-	# truncate -s 8k $mnt/foobar
-	# xfs_io -f -c "pwrite 0 2k" $mnt/foobar
-	# sync
+However it changed the error handling of the reserved extent.
 
-Before that commit, the inode will not have NOCOMPRESS flag:
+The old cleanup looks like this:
 
-	item 4 key (257 INODE_ITEM 0) itemoff 15879 itemsize 160
-		generation 9 transid 9 size 8192 nbytes 4096
-		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
-		sequence 3 flags 0x0(none)
+out_drop_extent_cache:
+	btrfs_drop_extent_map_range(inode, start, start + cur_alloc_size - 1, false);
+out_reserve:
+	btrfs_dec_block_group_reservations(fs_info, ins.objectid);
+	btrfs_free_reserved_extent(fs_info, ins.objectid, ins.offset, true);
+	[...]
+	clear_bits = EXTENT_LOCKED | EXTENT_DELALLOC | EXTENT_DELALLOC_NEW |
+		     EXTENT_DEFRAG | EXTENT_CLEAR_META_RESV;
+	page_ops = PAGE_UNLOCK | PAGE_START_WRITEBACK | PAGE_END_WRITEBACK;
+	/*
+	 * For the range (2). If we reserved an extent for our delalloc range
+	 * (or a subrange) and failed to create the respective ordered extent,
+	 * then it means that when we reserved the extent we decremented the
+	 * extent's size from the data space_info's bytes_may_use counter and
+	 * incremented the space_info's bytes_reserved counter by the same
+	 * amount. We must make sure extent_clear_unlock_delalloc() does not try
+	 * to decrement again the data space_info's bytes_may_use counter,
+	 * therefore we do not pass it the flag EXTENT_CLEAR_DATA_RESV.
+	 */
+	if (cur_alloc_size) {
+	        extent_clear_unlock_delalloc(inode, start,
+	                                     start + cur_alloc_size - 1,
+	                                     locked_folio, &cached, clear_bits,
+	                                     page_ops);
+	        btrfs_qgroup_free_data(inode, NULL, start, cur_alloc_size, NULL);
+	}
 
-But after that commit, the inode will have NOCOMPRESS flag:
+Which only calls EXTENT_CLEAR_META_RESV.
+As the reserved extent is properly handled by
+btrfs_free_reserved_extent().
 
-	item 4 key (257 INODE_ITEM 0) itemoff 15879 itemsize 160
-		generation 9 transid 10 size 8192 nbytes 4096
-		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
-		sequence 3 flags 0x8(NOCOMPRESS)
+However the new cleanup is:
 
-This will make a lot of files no longer to be compressed.
+	extent_clear_unlock_delalloc(inode, file_offset, cur_end, locked_folio, cached,
+				     EXTENT_LOCKED | EXTENT_DELALLOC |
+				     EXTENT_DELALLOC_NEW |
+				     EXTENT_DEFRAG | EXTENT_DO_ACCOUNTING,
+				     PAGE_UNLOCK | PAGE_START_WRITEBACK |
+				     PAGE_END_WRITEBACK);
+	btrfs_qgroup_free_data(inode, NULL, file_offset, cur_len, NULL);
+	btrfs_dec_block_group_reservations(fs_info, ins->objectid);
+	btrfs_free_reserved_extent(fs_info, ins->objectid, ins->offset, true);
 
-[CAUSE]
-The old compressed inline check looks like this:
-
-	if (total_compressed <= blocksize &&
-	   (start > 0 || end + 1 < inode->disk_i_size))
-		goto cleanup_and_bail_uncompressed;
-
-That inline part check is equal to "!(start == 0 && end + 1 >=
-inode->disk_i_size)", but the new check no longer has that disk_i_size
-check.
-
-Thus it means any single block sized write at file offset 0 will pass
-the inline check, which is wrong.
-
-Furthermore, since we have merged the old check into
-inode_need_compress(), there is no disk_i_size based inline check
-anymore, we will always try compressing that single block at file offset
-0, then later find out it's not a net win and go to the
-mark_incompressible tag.
-
-This results the inode to have NOCOMPRESS flag.
+The flag EXTENT_DO_ACCOUNTING implies both EXTENT_CLEAR_META_RESV and
+EXTENT_CLEAR_DATA_RESV, which will release the bytes_may_use, which
+later btrfs_free_reserved_extent() will do again, causing incorrect
+double release (and may underflow bytes_may_use).
 
 [FIX]
-Add back the missing disk_i_size based check into inode_need_compress().
+Use EXTENT_CLEAR_META_RESV to replace EXTENT_DO_ACCOUNTING, and add back
+the comments on why we only use EXTENT_CLEAR_META_RESV.
 
-Now the same script will no longer cause NOCOMPRESS flag.
-
-Fixes: 59615e2c1f63 ("btrfs: reject single block sized compression early")
+Fixes: c28214bde6da ("btrfs: refactor the main loop of cow_file_range()")
 Reported-by: Chris Mason <clm@meta.com>
-Link: https://lore.kernel.org/linux-btrfs/20260208183840.975975-1-clm@meta.com/
+Link: https://lore.kernel.org/linux-btrfs/20260208184920.1102719-1-clm@meta.com/
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
-Changelog:
-v2:
-- Fix a off-by-one bug in the disk_i_size check
----
- fs/btrfs/inode.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ fs/btrfs/inode.c | 17 ++++++++++++++++-
+ 1 file changed, 16 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index b6c763a17406..7b23ae6872fc 100644
+index 7b23ae6872fc..4ba38ec22610 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -811,7 +811,8 @@ static inline int inode_need_compress(struct btrfs_inode *inode, u64 start,
- 	 * do not even bother try compression, as there will be no space saving
- 	 * and will always fallback to regular write later.
- 	 */
--	if (start != 0 && end + 1 - start <= fs_info->sectorsize)
-+	if (end + 1 - start <= fs_info->sectorsize &&
-+	    !(start == 0 && end + 1 >= inode->disk_i_size))
- 		return 0;
- 	/* Defrag ioctl takes precedence over mount options and properties. */
- 	if (inode->defrag_compress == BTRFS_DEFRAG_DONT_COMPRESS)
+@@ -1393,10 +1393,25 @@ static int cow_one_range(struct btrfs_inode *inode, struct folio *locked_folio,
+ 	return ret;
+ 
+ free_reserved:
++	/*
++	 * If we have reserved an extent for the current range and failed to
++	 * create the respectiv extent map or ordered extent, it means that
++	 * when we reserved the extent we decremented the extent's size from
++	 * the data space_info's bytes_may_use counter and
++	 * incremented the space_info's bytes_reserved counter by the same
++	 * amount.
++	 *
++	 * We must make sure extent_clear_unlock_delalloc() does not try
++	 * to decrement again the data space_info's bytes_may_use counter, which
++	 * will be handled by btrfs_free_reserved_extent().
++	 *
++	 * Therefore we do not pass it the flag EXTENT_CLEAR_DATA_RESV, but only
++	 * EXTENT_CLEAR_META_RESV.
++	 */
+ 	extent_clear_unlock_delalloc(inode, file_offset, cur_end, locked_folio, cached,
+ 				     EXTENT_LOCKED | EXTENT_DELALLOC |
+ 				     EXTENT_DELALLOC_NEW |
+-				     EXTENT_DEFRAG | EXTENT_DO_ACCOUNTING,
++				     EXTENT_DEFRAG | EXTENT_CLEAR_META_RESV,
+ 				     PAGE_UNLOCK | PAGE_START_WRITEBACK |
+ 				     PAGE_END_WRITEBACK);
+ 	btrfs_qgroup_free_data(inode, NULL, file_offset, cur_len, NULL);
 -- 
 2.52.0
 

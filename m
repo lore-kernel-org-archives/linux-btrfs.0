@@ -1,127 +1,97 @@
-Received: from fhigh-a5-smtp.messagingengine.com (fhigh-a5-smtp.messagingengine.com [103.168.172.156])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail.burntcomma.com (mail2.burntcomma.com [217.169.27.34])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 67B2F26B76A
-	for <linux-btrfs@vger.kernel.org>; Mon,  9 Feb 2026 17:11:43 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.156
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A46CA2E762C
+	for <linux-btrfs@vger.kernel.org>; Mon,  9 Feb 2026 18:20:22 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=217.169.27.34
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1770657103; cv=none; b=OrXLjqAc2Dz2Li9r/LhPpz/F1fvFSQjFQwR30FGRSHWsQIARMuXlKo4HLn1oTXlLsyYsl3aAfyxapOS2SbEaeX9UxHXhANNWiWxXpbZPSKo26cO5VRiWL2FEtxeGJ3QnvHHA3i+fz63a8ZAFFzsIuJT8eDrfjMWux3AT+40qnz8=
+	t=1770661224; cv=none; b=F463GuuGvHgdq4B+T3+7mcuSanFy1zjn8whN1NP9OvF4N5Jv0VYbF6EL9C+205a5QHQJkNQ3sU9wK6ScNUGPYhSvRSrvBTyg8aBLlRuMJE+iprlnBQpc89Ggj6Lzk0pjupk05ZF2QcKJ9TBAPhkdZDnbJZXO2jK7yc/6PqGryyk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1770657103; c=relaxed/simple;
-	bh=oXgadktlvyg/Q1R9QvVZMN5BzYHwy56iYjGnyRkAUuI=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=fgOs3xdNq8ZmOgWISG5PjazkiejA4X9Kr3JyoBVrDgK8ybgsSoQodu2wKACU/I+rF40zpqSvYdddPFE/mCBsYr77exTX7mjIJkLtysXKcl03v2ChAoo4kjltihgfBrcwCOJOThwnD/yq+H1HiTtfIpFBVKOr+KgVfKy4c4KZSAo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=ebgCy82/; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=fZG21/Wc; arc=none smtp.client-ip=103.168.172.156
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
+	s=arc-20240116; t=1770661224; c=relaxed/simple;
+	bh=CGuk3MS9hmN4IAHBJzKpdqACCGoEDgKHIKm+Gz69gIE=;
+	h=From:To:Cc:Subject:Date:Message-ID:Mime-Version; b=ICrj807q7P6HX3+N1U+n1CSnv9e6nJXJ2s7CnFART4SAb7sldXIjWZKFhICkP29iwfxHcfhUGeeWZZYyCGrDpLjKTkXWhfB+Egb7hwnKXzus7Grcd6rnWTs2BPxAaiZ0z2+8FB+7doerlKV9KHjYi72mzVhKhlwMT/XODE94XoQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com; spf=pass smtp.mailfrom=harmstone.com; dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b=LDQgKwse; arc=none smtp.client-ip=217.169.27.34
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=harmstone.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="ebgCy82/";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="fZG21/Wc"
-Received: from phl-compute-06.internal (phl-compute-06.internal [10.202.2.46])
-	by mailfhigh.phl.internal (Postfix) with ESMTP id 935461400154;
-	Mon,  9 Feb 2026 12:11:42 -0500 (EST)
-Received: from phl-frontend-03 ([10.202.2.162])
-  by phl-compute-06.internal (MEProxy); Mon, 09 Feb 2026 12:11:42 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
-	:content-type:content-type:date:date:from:from:in-reply-to
-	:in-reply-to:message-id:mime-version:references:reply-to:subject
-	:subject:to:to; s=fm1; t=1770657102; x=1770743502; bh=AjPzlcNdlA
-	UUyWM83vl6UnQSWbIdk3M+IaPyB5q6qgo=; b=ebgCy82/zjCtXZR3pAG8DrK9C+
-	4zNkTulZ43WgoX5Sh5ARi079PXLOGvcGUIQWn2YnevlZ5SuZi+4xMcO5QNSRI2OV
-	uECS4wkeALbw/W2GEfeVtKESpqGC6u6cMux22QsCFkqWO9XnAy2YxksCZv80L8y3
-	XrbhifUDdUGA90zB7nJL+DbkXiPpZO754mIvcaohBzvLKAVrHRqy3PmglnAlfqZM
-	su3XCtw51pXGcsyhC8D4ds/Zgfh7UMuvRAXW+SyuQrvuPgsoIX0J6QDrV6W8pLBo
-	m7SzXwfakqPMD3su6V1gSb02CpV8btv4kG0sdDmVsN1NPMe8g8IxUR27ortQ==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:cc:content-type:content-type:date:date
-	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
-	:message-id:mime-version:references:reply-to:subject:subject:to
-	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm3; t=
-	1770657102; x=1770743502; bh=AjPzlcNdlAUUyWM83vl6UnQSWbIdk3M+IaP
-	yB5q6qgo=; b=fZG21/Wc+QiP6DJaEYStb2CLtLinslP7U1zQWWMQ3ltrBFNc40o
-	f9HKVLw+3CxMswAmzFgriFjUUsZ/uEeyVNG2xa/wVoWnCWtEJH6srS/kxk3HEVw7
-	EtD7yCCQKzHona+nOo/p7huMm6AyrSVj03m8ptPhl82rMhGFYBjXO9HRAGzGp4rb
-	4Sn9GCITHKMgdrw5Stz45nvN/9KXDHZLYThTL+vhDCP6OLCiPW07T7at5gHH2gk8
-	ULBRvzSlS+YCQE9+gVMljqAlZGwje7HR46D6+sdbZqrVidin0bOX7gA8TEiTDriS
-	M5wEH9p94V6rpzHjg2FiN3HeVHv1od5aFUA==
-X-ME-Sender: <xms:ThWKaa6E-AHls5noC3QOC-1Z1EzJRiMd6S0Ede1vQmPKs0qtGO1HVQ>
-    <xme:ThWKabXJPgSmqCXfSIarNl3ttloZsHlzqO4V9EouWi5w0T9Fg1x--UsoKC55nZK17
-    QoF8Nl0p6m3s-08Qe9b1Glcr5XKE8ZiKQ8iFUGnbHrBDobuxsXE_ZM>
-X-ME-Received: <xmr:ThWKaW2ITlUgYL8SADEA-gZrh6Tb49bFTxNqLlYbR30KviPM9BPuQEFxgFPvcqp2ZRGq81BUeC8KVWVjLv8_KRlaL8I>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefgedrtddtgdduleejfeejucetufdoteggodetrf
-    dotffvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfurfetoffkrfgpnffqhgenuceu
-    rghilhhouhhtmecufedttdenucenucfjughrpeffhffvvefukfhfgggtuggjsehttdertd
-    dttddvnecuhfhrohhmpeeuohhrihhsuceuuhhrkhhovhcuoegsohhrihhssegsuhhrrdhi
-    oheqnecuggftrfgrthhtvghrnhephedthfevgffhtdevgffhlefhgfeuueegtdevudeihe
-    eiheetleeghedvfeegfeegnecuffhomhgrihhnpehkvghrnhgvlhdrohhrghenucevlhhu
-    shhtvghrufhiiigvpedtnecurfgrrhgrmhepmhgrihhlfhhrohhmpegsohhrihhssegsuh
-    hrrdhiohdpnhgspghrtghpthhtohepfedpmhhouggvpehsmhhtphhouhhtpdhrtghpthht
-    ohepshhunhhkieejudekkeesghhmrghilhdrtghomhdprhgtphhtthhopehlihhnuhigqd
-    gsthhrfhhssehvghgvrhdrkhgvrhhnvghlrdhorhhgpdhrtghpthhtoheptghlmhesmhgv
-    thgrrdgtohhm
-X-ME-Proxy: <xmx:ThWKaQ2ISBTUgqbNGLqP-eADF9x5-0WxYipMXUm7UTFeIVeiBp_2zQ>
-    <xmx:ThWKaR8Xe-ldlUW9r1IV9rJcVPUOC5KncyONp6SohS6ZIsGyi4xEnQ>
-    <xmx:ThWKaV0zVD2Jrec8hLuOv2p2l70zvO5i4yN0edhkKl1EzC2jL_khOQ>
-    <xmx:ThWKaW92jjAp9HlUpreRONnJD-HSdyyCawB9mUG-i4hpLljbKW7vPw>
-    <xmx:ThWKaV2kdBnPZp4gpXjZ8noQ9FDV0n1_y3f3H_GyuKiUe8TqUnrh8nHN>
-Feedback-ID: i083147f8:Fastmail
-Received: by mail.messagingengine.com (Postfix) with ESMTPA; Mon,
- 9 Feb 2026 12:11:41 -0500 (EST)
-Date: Mon, 9 Feb 2026 09:10:55 -0800
-From: Boris Burkov <boris@bur.io>
-To: Sun YangKai <sunk67188@gmail.com>
-Cc: linux-btrfs@vger.kernel.org, Chris Mason <clm@meta.com>
-Subject: Re: [PATCH] btrfs: hold space_info->lock when clearing periodic
- reclaim ready
-Message-ID: <20260209171032.GA216489@zen.localdomain>
-References: <20260209130248.29418-1-sunk67188@gmail.com>
+	dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b="LDQgKwse"
+Received: from beren (beren.burntcomma.com [IPv6:2a02:8012:8cf0:0:ce28:aaff:fe0d:6db2])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
+	(Client did not present a certificate)
+	by mail.burntcomma.com (Postfix) with ESMTPSA id 266AD2FF732;
+	Mon,  9 Feb 2026 18:10:45 +0000 (GMT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=harmstone.com;
+	s=mail; t=1770660645;
+	bh=8/0yh32eDFd6ZZDVMciUdSt2QeEiZVNPxLVuR/k4/vM=;
+	h=From:To:Cc:Subject:Date;
+	b=LDQgKwseD+oxSq341y4bfH7Zu6Sk5ZBjI+Ikc1M5+iJVl00rKP6Q7naCQJ4j2AQKZ
+	 o03FajXUZ7c0NcVXhVOSyt7mbWHB7QNXYfccau5UCGu367pcpZYWkXoPRxzodAPwmU
+	 fmGY/Z8KuKDBQYy/VZnbHJwprjlizWnsSHSRTrws=
+From: Mark Harmstone <mark@harmstone.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Mark Harmstone <mark@harmstone.com>
+Subject: [PATCH] btrfs: add remap tree definitions for print-tree
+Date: Mon,  9 Feb 2026 18:10:19 +0000
+Message-ID: <20260209181043.27364-1-mark@harmstone.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20260209130248.29418-1-sunk67188@gmail.com>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 8bit
 
-On Mon, Feb 09, 2026 at 08:53:39PM +0800, Sun YangKai wrote:
-> btrfs_set_periodic_reclaim_ready() requires space_info->lock to be held,
-> as enforced by lockdep_assert_held(). However, btrfs_reclaim_sweep() was
-> calling it after do_reclaim_sweep() returns, at which point
-> space_info->lock is no longer held.
-> 
-> Fix this by explicitly acquiring space_info->lock before clearing the
-> periodic reclaim ready flag in btrfs_reclaim_sweep().
-> 
-> Fixes: 19eff93dc738 ("btrfs: fix periodic reclaim condition")
-> Reported-by: Chris Mason <clm@meta.com>
-> Closes: https://lore.kernel.org/linux-btrfs/20260208182556.891815-1-clm@meta.com/
-> Signed-off-by: Sun YangKai <sunk67188@gmail.com>
+Add the definitions for the remap tree to print-tree.c, so that we get
+more useful information if a tree is dumped to dmesg.
 
-Reviewed-by: Boris Burkov <boris@bur.io>
+Signed-off-by: Mark Harmstone <mark@harmstone.com>
+---
+ fs/btrfs/print-tree.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-> ---
->  fs/btrfs/space-info.c | 5 ++++-
->  1 file changed, 4 insertions(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-> index 1dd65fae6349..931f0dc02b95 100644
-> --- a/fs/btrfs/space-info.c
-> +++ b/fs/btrfs/space-info.c
-> @@ -2205,8 +2205,11 @@ void btrfs_reclaim_sweep(const struct btrfs_fs_info *fs_info)
->  		if (!btrfs_should_periodic_reclaim(space_info))
->  			continue;
->  		for (raid = 0; raid < BTRFS_NR_RAID_TYPES; raid++) {
-> -			if (do_reclaim_sweep(space_info, raid))
-> +			if (do_reclaim_sweep(space_info, raid)) {
-> +				spin_lock(&space_info->lock);
->  				btrfs_set_periodic_reclaim_ready(space_info, false);
-> +				spin_unlock(&space_info->lock);
-> +			}
->  		}
->  	}
->  }
-> -- 
-> 2.52.0
-> 
+diff --git a/fs/btrfs/print-tree.c b/fs/btrfs/print-tree.c
+index f189bf09ce6a..b7dfe877cf8d 100644
+--- a/fs/btrfs/print-tree.c
++++ b/fs/btrfs/print-tree.c
+@@ -38,6 +38,7 @@ static const struct root_name_map root_map[] = {
+ 	{ BTRFS_BLOCK_GROUP_TREE_OBJECTID,	"BLOCK_GROUP_TREE"	},
+ 	{ BTRFS_DATA_RELOC_TREE_OBJECTID,	"DATA_RELOC_TREE"	},
+ 	{ BTRFS_RAID_STRIPE_TREE_OBJECTID,	"RAID_STRIPE_TREE"	},
++	{ BTRFS_REMAP_TREE_OBJECTID,		"REMAP_TREE"		},
+ };
+ 
+ const char *btrfs_root_name(const struct btrfs_key *key, char *buf)
+@@ -415,6 +416,9 @@ static void key_type_string(const struct btrfs_key *key, char *buf, int buf_size
+ 		[BTRFS_UUID_KEY_SUBVOL]			= "UUID_KEY_SUBVOL",
+ 		[BTRFS_UUID_KEY_RECEIVED_SUBVOL]	= "UUID_KEY_RECEIVED_SUBVOL",
+ 		[BTRFS_RAID_STRIPE_KEY]			= "RAID_STRIPE",
++		[BTRFS_IDENTITY_REMAP_KEY]		= "IDENTITY_REMAP",
++		[BTRFS_REMAP_KEY]			= "REMAP",
++		[BTRFS_REMAP_BACKREF_KEY]		= "REMAP_BACKREF",
+ 	};
+ 
+ 	if (key->type == 0 && key->objectid == BTRFS_FREE_SPACE_OBJECTID)
+@@ -435,6 +439,7 @@ void btrfs_print_leaf(const struct extent_buffer *l)
+ 	struct btrfs_extent_data_ref *dref;
+ 	struct btrfs_shared_data_ref *sref;
+ 	struct btrfs_dev_extent *dev_extent;
++	struct btrfs_remap_item *remap;
+ 	struct btrfs_key key;
+ 
+ 	if (!l)
+@@ -569,6 +574,11 @@ void btrfs_print_leaf(const struct extent_buffer *l)
+ 			print_raid_stripe_key(l, btrfs_item_size(l, i),
+ 				btrfs_item_ptr(l, i, struct btrfs_stripe_extent));
+ 			break;
++		case BTRFS_REMAP_KEY:
++		case BTRFS_REMAP_BACKREF_KEY:
++			remap = btrfs_item_ptr(l, i, struct btrfs_remap_item);
++			pr_info("\t\taddress %llu\n", btrfs_remap_address(l, remap));
++			break;
+ 		}
+ 	}
+ }
+-- 
+2.52.0
+

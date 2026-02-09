@@ -1,141 +1,116 @@
-Received: from mail-wm1-f51.google.com (mail-wm1-f51.google.com [209.85.128.51])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from poodle.tulip.relay.mailchannels.net (poodle.tulip.relay.mailchannels.net [23.83.218.249])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F3E261862A
-	for <linux-btrfs@vger.kernel.org>; Mon,  9 Feb 2026 04:05:07 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.51
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1770609908; cv=none; b=qhd7knlvSYrgivaaqCmnIFl2MVb/4A0d4vnGYKzG0ZtKJAckJVm65NHA7eBPI5gf0MYqu8KJNkVGIUJ4BTVRSVloQeRgBsByf5l1rkdYL8DdyCQmxq46JfE1t5og1CcWhXq8ioJt35OPFXlEjwL5cCnXzZd7JM8OiZYdf8BCZL4=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1770609908; c=relaxed/simple;
-	bh=MDAVAtySpgS4GWToBknbLoytjGNQA+9lN5qc3pA7H3g=;
-	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=em/CxzE6bu/SjepFIDO0muZjQVjRjiYIcS0M7G3FX97na/3WCZD4ao8myzQVyZTYMGnthklroWobhiaYnXK2XZuuBbroVG5H2khjsi+RS2mIS8ykMTWxlDvLVKKJ1mYIoUd3IFVwrj23hzOyT4k+4dUbehaXyX+Ymm1gmR++B3I=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=E2Flr85C; arc=none smtp.client-ip=209.85.128.51
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="E2Flr85C"
-Received: by mail-wm1-f51.google.com with SMTP id 5b1f17b1804b1-483337aa225so3596975e9.2
-        for <linux-btrfs@vger.kernel.org>; Sun, 08 Feb 2026 20:05:07 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1770609906; x=1771214706; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:to:subject:user-agent:mime-version:date
-         :message-id:from:to:cc:subject:date:message-id:reply-to;
-        bh=qvvSRJp6eqFb5z508i7UNREdNJ6x2Fr+taJ0YnT7AZ0=;
-        b=E2Flr85Cj88OvLlM24ngft4+Gi6eZGRlO5Idr4tZI2OWYWG5EGnzQyZzN7HAs1BUqk
-         Ir0CNKoLYcpmEaVh4FqAHFRAll4Ns33Zug+uppv2Fjd/Bcj0F3r+OX4RQO7DUC1c1oqr
-         /RyvYC70Str5e2dFpT1/bXALTl7CZ9kdY/CwTCy+gNVvjRYWVUv5FXJJR0GcLdSUjtln
-         zo+Sia78CkmTT+W6gz7KYISK1AR4Gr6vBR75xak3R1qdrBSva7CBKcsQBB8DjTY4aaw6
-         daJJWh82KXqj5tTDH5lhi3EGjbx7dDO3ZqFvZXWYIDGcJ3hvYyEuVATmUtOPgHs1d0fs
-         onsQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1770609906; x=1771214706;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:to:subject:user-agent:mime-version:date
-         :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=qvvSRJp6eqFb5z508i7UNREdNJ6x2Fr+taJ0YnT7AZ0=;
-        b=nHM/GivmwVIlmZypFwuiudO8cB5ceWiUNpso+3/YXfNMMIsi+hSlv7Z3nvRgwPjG4l
-         cUZEKJj5NtrR9m5CiMHIerUOI+8XXsQx2qmXACXFMSnCLPUJXgusN8zRtGC+2o2taodU
-         /zX0GGSKoq+6DOk40SzJ/MrpuJs9YNm+JjV4RmRNXzchG0bHS+owinVCWGvSTy2KMTp5
-         s20nLCacXiqyKvWxY2EdZYbb4gTQAzgjULm2eAQDShvg7aT7yA8SVRAweTlxfLC5JpoC
-         2LSDj/aAugC0NXMmsIyqH4guHoAntP89SGl0YVPdlI4dbvnOrdkUZPIDgfwPm237Cwj0
-         VQUg==
-X-Forwarded-Encrypted: i=1; AJvYcCWRLWLgwvx6ZRoOQxBWde5/WFktSF+SbHRf2e2YVL0BhfFS5oHk6+saBEMmpQU/FiPxhu7qJ/dNnTGmZw==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yxf1VogwXl9dTfckAyca/MAxikZnbzVSADyOx9Z5B21zQhxfB0O
-	PWK0V+/E9bHwkMruPMP360NNsIe1MH1h8Qv7qNMrnAwXRBhq4XOx9Gf+Lad7hzvAKh5vVkmZ2tq
-	KseBbUfg=
-X-Gm-Gg: AZuq6aJVbX0CfExqtQ+yuW/HOu7wG1iSz/Kbb35bkhfKeWzkNus8So+uvpfQsqlBWp2
-	qPF5/hIO8bEPp31iUYg9vMlAergptjj4RjOLyBISoULqi60EBn4O4NhTGvMM5UTdJRlogRbGnk7
-	BthUK6zPNYDvMlLVxqiEux8u2gdeQ53jcaZ5AMsYwM7gq7F5JHX7y3zGPzkUhD6USzN2q5Rl9Bs
-	7vYjrlkdFNxAuHCfBhauEVQwrzGUvfuk0nEYlJXTBXABpyGfTKTUakFjxZ62QicYjZ1zMoyAX85
-	VLOGM+gVLhneDeE/Y0LJyx07QkWKNKHVQhAN66S4JNE0hyQhkkldt5pV0yO1b3g0GTeK6WNSjQ+
-	Kf9VEesXn79Y/Nfn7un9fmBy4oHDTHa7jQHwNg0G9IxwZHwkUWSIZCBvlN7jqjoPpb1gA7SU1U3
-	0QXZ2y8ZWCW2ejC9Y4oFPTqD8qhD5wqbwgGbCbguY=
-X-Received: by 2002:a05:600c:8b88:b0:47e:e20e:bbb0 with SMTP id 5b1f17b1804b1-483201d9fa8mr136553385e9.6.1770609906196;
-        Sun, 08 Feb 2026 20:05:06 -0800 (PST)
-Received: from ?IPV6:2403:580d:fda1::299? (2403-580d-fda1--299.ip6.aussiebb.net. [2403:580d:fda1::299])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-354b46ba137sm3871585a91.13.2026.02.08.20.05.02
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sun, 08 Feb 2026 20:05:05 -0800 (PST)
-Message-ID: <78ebf47f-9cd2-4d71-acee-965a75e50ca7@suse.com>
-Date: Mon, 9 Feb 2026 14:34:58 +1030
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 758891CEADB
+	for <linux-btrfs@vger.kernel.org>; Mon,  9 Feb 2026 04:09:25 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=23.83.218.249
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1770610206; cv=pass; b=rWpsXtJz74D48+wKBPiHp8jLzrF7plzytpbkuktrruiaCZRLSGVsFbHP0rRl6aXAOIv0c+FgO6SaMwHryrzKCsH5yZvy6GV5Quuo/UOjrePmzcgQoMGb4T17LYQo48rcVwRRLi66xfjWjHgaQu6y8rrbt0IODP926dL6EHuuSv8=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1770610206; c=relaxed/simple;
+	bh=Yfp43SoApQE8TaDOZa9rL37I+xDaRPRa3KqCRfJxNmI=;
+	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=gN4sb1xXF2JGF6FE9eLX9tBq7lSfimy9q5wBJ9gEXtYAZIAfrupTowcZ44H4lxc5X+DvAk46RAG2qAHcC5coQRNMVoDzLZkLPlb8pEqYAGPYP5GamE27/ohYKSovWIV34pX0N6l+IW2BLhLDXM+dcWut9Ch2urrL+C/zW1vQBls=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=scientia.org; spf=pass smtp.mailfrom=scientia.org; arc=pass smtp.client-ip=23.83.218.249
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=scientia.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=scientia.org
+Received: from relay.mailchannels.net (localhost [127.0.0.1])
+	by relay.mailchannels.net (Postfix) with ESMTP id 20A95461E80;
+	Mon, 09 Feb 2026 03:32:22 +0000 (UTC)
+Received: from cpanel-007-fra.hostingww.com (100-96-81-148.trex-nlb.outbound.svc.cluster.local [100.96.81.148])
+	(Authenticated sender: instrampxe0y3a)
+	by relay.mailchannels.net (Postfix) with ESMTPA id 2FFE146235B;
+	Mon, 09 Feb 2026 03:32:21 +0000 (UTC)
+ARC-Seal: i=1; a=rsa-sha256; d=mailchannels.net; s=arc-2022; cv=none;
+	t=1770607941;
+	b=w0mglxSOEfFnuWraX2sVD45L2EqzVWYUjVT9jCfzwMz6T4+WBlPTSasM+ZPT+YFDeQAtTV
+	QyNcxoje9chU+pzGHKMk72tgKSPiqwmdyhU+M3uWVJR29Ep6oULDJxbhihQcAqf7EUT4h2
+	wleKh6Sbr7fiZbbzYdmkGU1cPzhrn4t8e4kpPpMIIsaVHelQbR04v+ZRNMc21TMbm864QB
+	K9PBufc5djWFq8s1uWxlxdY4zHQ94yf5E9BCRIS0XCbH7TaXcPVu9Vk47igBWPzVTJchJD
+	zUhjqpFdazQXiTsMAwc9oEXSy10mxoP8VdfDWZCruS2ZRLyoEMLIJjereSHy+Q==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=mailchannels.net;
+	s=arc-2022; t=1770607941;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=Yfp43SoApQE8TaDOZa9rL37I+xDaRPRa3KqCRfJxNmI=;
+	b=6yc5IH5VYLy+MuNCYr9ztSBv+NqScENVX9wwtp4ywvKoQhneZytzVVyzvMsrm9Jd9uyt8w
+	n9g4jP9JWAJ0gujFx/OB76CO5LkFUcVYUzKxrZRV3vb6aYmOqZ8NhZyHkYOJ9mNBxsWAJi
+	6Yni6h44oZUwdMExbVVWEnFiuRAubK5ieK12SNJzVnLJApf/8Bllc4Hl4lRXNL6KuDyhR7
+	/8d43Mea1JIRHMaqI+dw54SgpU1qJU17UVDLSrjI6CkqyAgrj3eV2Uxws9DtUUQJqfi0uY
+	2TUtwX0sAQYNcXDbWVPX59cZKcgyq/WZ+NTy3K2pMh1cBZvU+P9xwZwk9SqfVg==
+ARC-Authentication-Results: i=1;
+	rspamd-845545c4df-rtwjf;
+	auth=pass smtp.auth=instrampxe0y3a smtp.mailfrom=calestyo@scientia.org
+X-Sender-Id: instrampxe0y3a|x-authuser|calestyo@scientia.org
+X-MC-Relay: Neutral
+X-MailChannels-SenderId: instrampxe0y3a|x-authuser|calestyo@scientia.org
+X-MailChannels-Auth-Id: instrampxe0y3a
+X-Company-Descriptive: 17edafe717557bce_1770607941872_625575656
+X-MC-Loop-Signature: 1770607941872:2964859231
+X-MC-Ingress-Time: 1770607941872
+Received: from cpanel-007-fra.hostingww.com (cpanel-007-fra.hostingww.com
+ [3.69.87.180])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384)
+	by 100.96.81.148 (trex/7.1.3);
+	Mon, 09 Feb 2026 03:32:21 +0000
+Received: from p5b071a6f.dip0.t-ipconnect.de ([91.7.26.111]:62710 helo=heisenberg.fritz.box)
+	by cpanel-007-fra.hostingww.com with esmtpsa  (TLS1.3) tls TLS_AES_256_GCM_SHA384
+	(Exim 4.99.1)
+	(envelope-from <calestyo@scientia.org>)
+	id 1vpI0Y-00000007dNY-1jPQ;
+	Mon, 09 Feb 2026 03:32:19 +0000
+Message-ID: <3137a2417287037a2ed52ded55fab35181254009.camel@scientia.org>
+Subject: Re: space_info METADATA (sub-group id 0) has 691535872 free, is not
+ full // open_ctree failed: -2
+From: Christoph Anton Mitterer <calestyo@scientia.org>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Date: Mon, 09 Feb 2026 04:32:17 +0100
+In-Reply-To: <9b05f9a3-5efe-4e57-9585-a3886bb419fa@suse.com>
+References: <f3574976d7b5bc8f05e42055d85d4b61263bc5c5.camel@scientia.org>
+	 <fc2f1d31-7f2c-493f-be42-2cb8c1fd5a17@gmx.com>
+	 <84b22b2cc7534be60eb423973336101c9e9b9ad3.camel@scientia.org>
+	 <b681834e-7b0f-4606-8c52-f2b4dafba246@suse.com>
+	 <4e6ad7ef198de72edaf890a2257bf63864984197.camel@scientia.org>
+	 <cca8b4ea-97ef-433e-9db9-4eca67b89576@suse.com>
+	 <f1aaada378adad0da020bd679531c7f503ad6f93.camel@scientia.org>
+	 <914a6a60-6bb6-4255-a8cc-ea6f28e7a9cf@suse.com>
+	 <a75537dc77e5b6fac922a97409ca4636805147dc.camel@scientia.org>
+	 <fff60222-0b9f-4f09-b3a6-d415aa64b6d7@gmx.com>
+	 <18a87dd4f3155bb1d9c9884f39dbf53c802a10cd.camel@scientia.org>
+	 <572f0ac4-90f6-4c56-aa4c-2a64e365d526@suse.com>
+	 <52c813cf8dffe11325ce291d3f3bd41bcce21936.camel@scientia.org>
+	 <f094ddbb70cabd2e329615269519b1844f786629.camel@scientia.org>
+	 <a6d825eb-3e8c-404f-90f6-6b4e5621479d@suse.com>
+	 <05e63d59951cfb8612c876d5bc7fdb76b272b01c.camel@scientia.org>
+	 <89188b7b8b5a1f9bb64af37777aec906134ad75c.camel@scientia.org>
+	 <9b05f9a3-5efe-4e57-9585-a3886bb419fa@suse.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.56.2-8 
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: fix lost return value on error in finish_verity()
-To: fdmanana@kernel.org, linux-btrfs@vger.kernel.org
-References: <1d384c9ac09392353418f47a8b41366545d73867.1770575632.git.fdmanana@suse.com>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <1d384c9ac09392353418f47a8b41366545d73867.1770575632.git.fdmanana@suse.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+X-AuthUser: calestyo@scientia.org
 
+On Mon, 2026-02-09 at 13:51 +1030, Qu Wenruo wrote:
+> I think you're safe to clear the v2 cache, and let the kernel create
+> at=20
+> mount time.
 
+Would it help you if I keep the fs for further debugging (or later
+checking a possible fix)?
 
-在 2026/2/9 05:06, fdmanana@kernel.org 写道:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> If btrfs_update_inode() or del_orphan() fail, we jump to the 'end_trans'
-> label and then return 0 instead of the error returned by one of those
-> calls. Fix this and return the error.
-> 
-> Fixes: 61fb7f04ee06 ("btrfs: remove out label in finish_verity()")
-> Reported-by: Chris Mason <clm@meta.com>
-> Link: https://lore.kernel.org/linux-btrfs/20260208161129.3888234-1-clm@meta.com/
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+If so, any rough estimate on how long that would take (cause in
+principle I would sooner or later want to use that device again for
+backups ;-) ).
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
 
 Thanks,
-Qu
-
-> ---
->   fs/btrfs/verity.c | 2 +-
->   1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/verity.c b/fs/btrfs/verity.c
-> index 06cbd6f00a78..95ea794f20d3 100644
-> --- a/fs/btrfs/verity.c
-> +++ b/fs/btrfs/verity.c
-> @@ -552,7 +552,7 @@ static int finish_verity(struct btrfs_inode *inode, const void *desc,
->   	btrfs_set_fs_compat_ro(root->fs_info, VERITY);
->   end_trans:
->   	btrfs_end_transaction(trans);
-> -	return 0;
-> +	return ret;
->   
->   }
->   
-
+Chris

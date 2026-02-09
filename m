@@ -1,78 +1,76 @@
-Received: from poodle.tulip.relay.mailchannels.net (poodle.tulip.relay.mailchannels.net [23.83.218.249])
+Received: from siberian.tulip.relay.mailchannels.net (siberian.tulip.relay.mailchannels.net [23.83.218.246])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 758891CEADB
-	for <linux-btrfs@vger.kernel.org>; Mon,  9 Feb 2026 04:09:25 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=23.83.218.249
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1A48A1C7012
+	for <linux-btrfs@vger.kernel.org>; Mon,  9 Feb 2026 04:37:18 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=23.83.218.246
 ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1770610206; cv=pass; b=rWpsXtJz74D48+wKBPiHp8jLzrF7plzytpbkuktrruiaCZRLSGVsFbHP0rRl6aXAOIv0c+FgO6SaMwHryrzKCsH5yZvy6GV5Quuo/UOjrePmzcgQoMGb4T17LYQo48rcVwRRLi66xfjWjHgaQu6y8rrbt0IODP926dL6EHuuSv8=
+	t=1770611855; cv=pass; b=mayuv8o5zFJIadvJkSEWqoycF8VvjRMg7dzW9+uQ29109RbGnzF1u/mXuLfeiG7yfV06y7D6vxN4fhLcMWW5CA3QMZ20DLWPrqTyRLHw/bCCtWaWV8rV+xyoPBKLI1c0wpDQ1XQR0Yln0qjLZp7ZXSS6Iys9X0YZ9nOOEU9KWbs=
 ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1770610206; c=relaxed/simple;
-	bh=Yfp43SoApQE8TaDOZa9rL37I+xDaRPRa3KqCRfJxNmI=;
+	s=arc-20240116; t=1770611855; c=relaxed/simple;
+	bh=7rgSobQH/J6mvfmDSJvUjQZX325KrZQY4ByHn7AxiSM=;
 	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=gN4sb1xXF2JGF6FE9eLX9tBq7lSfimy9q5wBJ9gEXtYAZIAfrupTowcZ44H4lxc5X+DvAk46RAG2qAHcC5coQRNMVoDzLZkLPlb8pEqYAGPYP5GamE27/ohYKSovWIV34pX0N6l+IW2BLhLDXM+dcWut9Ch2urrL+C/zW1vQBls=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=scientia.org; spf=pass smtp.mailfrom=scientia.org; arc=pass smtp.client-ip=23.83.218.249
+	 Content-Type:MIME-Version; b=DHirVkqfhjj6nEaoAW1HufbC+M6fRoiVjXzwLEHDcg2vjHgM6LCya9vL/VgReRP9rL3ayFLKBDhHmZMmebY4knngY6voO0D0fEXICwqFxxxYVmNrw1PgEWLxSiCbGNdzBSRcgCGlcqoclIRx0RYdD8pyS26OHrE7TzjVElknFRM=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=scientia.org; spf=pass smtp.mailfrom=scientia.org; arc=pass smtp.client-ip=23.83.218.246
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=scientia.org
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=scientia.org
 Received: from relay.mailchannels.net (localhost [127.0.0.1])
-	by relay.mailchannels.net (Postfix) with ESMTP id 20A95461E80;
-	Mon, 09 Feb 2026 03:32:22 +0000 (UTC)
-Received: from cpanel-007-fra.hostingww.com (100-96-81-148.trex-nlb.outbound.svc.cluster.local [100.96.81.148])
+	by relay.mailchannels.net (Postfix) with ESMTP id 28AD8800A23;
+	Mon, 09 Feb 2026 03:58:22 +0000 (UTC)
+Received: from cpanel-007-fra.hostingww.com (100-97-7-35.trex-nlb.outbound.svc.cluster.local [100.97.7.35])
 	(Authenticated sender: instrampxe0y3a)
-	by relay.mailchannels.net (Postfix) with ESMTPA id 2FFE146235B;
-	Mon, 09 Feb 2026 03:32:21 +0000 (UTC)
+	by relay.mailchannels.net (Postfix) with ESMTPA id 18682801509;
+	Mon, 09 Feb 2026 03:58:20 +0000 (UTC)
 ARC-Seal: i=1; a=rsa-sha256; d=mailchannels.net; s=arc-2022; cv=none;
-	t=1770607941;
-	b=w0mglxSOEfFnuWraX2sVD45L2EqzVWYUjVT9jCfzwMz6T4+WBlPTSasM+ZPT+YFDeQAtTV
-	QyNcxoje9chU+pzGHKMk72tgKSPiqwmdyhU+M3uWVJR29Ep6oULDJxbhihQcAqf7EUT4h2
-	wleKh6Sbr7fiZbbzYdmkGU1cPzhrn4t8e4kpPpMIIsaVHelQbR04v+ZRNMc21TMbm864QB
-	K9PBufc5djWFq8s1uWxlxdY4zHQ94yf5E9BCRIS0XCbH7TaXcPVu9Vk47igBWPzVTJchJD
-	zUhjqpFdazQXiTsMAwc9oEXSy10mxoP8VdfDWZCruS2ZRLyoEMLIJjereSHy+Q==
+	t=1770609501;
+	b=yIFrxdoMf2PDbiYDdn6xQu5gmqGVM9nyDgzDSs9Te9HtdH/0f2Pt6KtOLNVzLbRJ0pZ5Fv
+	5U+dP1H2s7RrE18ZXpOynJSLRspH6zhMY45Fiz3InEYe6aldLnHYRKumUuq2BcKwsPOkvW
+	Iu7FStf23ghr+Uz0NqvHlrjKg0XEVShow4ua32JASvmrpf1lStFEWUZbVg5diKBDf4zT6Q
+	eIr6/R3bFakVIR+vr0pI9+seuqJ6Y+ski6M1eh3vi/2+hshtEdmKTm4PLnKDJuiosAlzlU
+	MbObzmKqmeCACaOdzVf1Aetn+hFypwQ/a9JnyMF6fm0rF3H6joNuB63BntsvQQ==
 ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed;
  d=mailchannels.net;
-	s=arc-2022; t=1770607941;
+	s=arc-2022; t=1770609501;
 	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
 	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=Yfp43SoApQE8TaDOZa9rL37I+xDaRPRa3KqCRfJxNmI=;
-	b=6yc5IH5VYLy+MuNCYr9ztSBv+NqScENVX9wwtp4ywvKoQhneZytzVVyzvMsrm9Jd9uyt8w
-	n9g4jP9JWAJ0gujFx/OB76CO5LkFUcVYUzKxrZRV3vb6aYmOqZ8NhZyHkYOJ9mNBxsWAJi
-	6Yni6h44oZUwdMExbVVWEnFiuRAubK5ieK12SNJzVnLJApf/8Bllc4Hl4lRXNL6KuDyhR7
-	/8d43Mea1JIRHMaqI+dw54SgpU1qJU17UVDLSrjI6CkqyAgrj3eV2Uxws9DtUUQJqfi0uY
-	2TUtwX0sAQYNcXDbWVPX59cZKcgyq/WZ+NTy3K2pMh1cBZvU+P9xwZwk9SqfVg==
+	bh=7rgSobQH/J6mvfmDSJvUjQZX325KrZQY4ByHn7AxiSM=;
+	b=RRagktqadjTC0aLgrXwP+Zb+xbn0eAQ4VMyngm1c3k0Gzd0c/z529HP3e9yHDj4dYc958i
+	ZoOHAVt5b7IC7rexw7XE3fevTk4FPU83hASrAOAI+fjoFU10gER5w+obfFt52MuPvj2gH0
+	y39uYDvoA4z5mvjv0q1azaLxDscl9D76z/N8Du17hirZjRfZvq9pYxl/M6/cz+RrVn3wxL
+	OVYrC1+DyU/jJqEl9YMt9rJCcZ3bKzxZ9UI4iKU7v7YdefwdL89sXxFeF3TiTA93kEi6uN
+	LBROGSxTVNlxRLf1DDtJNyPSDGs4hAEhtJD4DcteItFxg4iCCUY1UEDdWsTUzg==
 ARC-Authentication-Results: i=1;
-	rspamd-845545c4df-rtwjf;
+	rspamd-845545c4df-9vhkv;
 	auth=pass smtp.auth=instrampxe0y3a smtp.mailfrom=calestyo@scientia.org
 X-Sender-Id: instrampxe0y3a|x-authuser|calestyo@scientia.org
 X-MC-Relay: Neutral
 X-MailChannels-SenderId: instrampxe0y3a|x-authuser|calestyo@scientia.org
 X-MailChannels-Auth-Id: instrampxe0y3a
-X-Company-Descriptive: 17edafe717557bce_1770607941872_625575656
-X-MC-Loop-Signature: 1770607941872:2964859231
-X-MC-Ingress-Time: 1770607941872
+X-Wiry-Stupid: 0e4a41df2ffc891f_1770609501968_2562544661
+X-MC-Loop-Signature: 1770609501968:1683419736
+X-MC-Ingress-Time: 1770609501967
 Received: from cpanel-007-fra.hostingww.com (cpanel-007-fra.hostingww.com
  [3.69.87.180])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384)
-	by 100.96.81.148 (trex/7.1.3);
-	Mon, 09 Feb 2026 03:32:21 +0000
-Received: from p5b071a6f.dip0.t-ipconnect.de ([91.7.26.111]:62710 helo=heisenberg.fritz.box)
+	by 100.97.7.35 (trex/7.1.3);
+	Mon, 09 Feb 2026 03:58:21 +0000
+Received: from p5b071a6f.dip0.t-ipconnect.de ([91.7.26.111]:65162 helo=heisenberg.fritz.box)
 	by cpanel-007-fra.hostingww.com with esmtpsa  (TLS1.3) tls TLS_AES_256_GCM_SHA384
 	(Exim 4.99.1)
 	(envelope-from <calestyo@scientia.org>)
-	id 1vpI0Y-00000007dNY-1jPQ;
-	Mon, 09 Feb 2026 03:32:19 +0000
-Message-ID: <3137a2417287037a2ed52ded55fab35181254009.camel@scientia.org>
+	id 1vpIPi-00000007lpT-0oC1;
+	Mon, 09 Feb 2026 03:58:19 +0000
+Message-ID: <4aa883f597c4d12ddfb50912cc03349594d4fdd7.camel@scientia.org>
 Subject: Re: space_info METADATA (sub-group id 0) has 691535872 free, is not
  full // open_ctree failed: -2
 From: Christoph Anton Mitterer <calestyo@scientia.org>
 To: Qu Wenruo <wqu@suse.com>
 Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Date: Mon, 09 Feb 2026 04:32:17 +0100
-In-Reply-To: <9b05f9a3-5efe-4e57-9585-a3886bb419fa@suse.com>
+Date: Mon, 09 Feb 2026 04:58:17 +0100
+In-Reply-To: <54b7e6a4-7a08-434c-b7e0-849d3f961de3@suse.com>
 References: <f3574976d7b5bc8f05e42055d85d4b61263bc5c5.camel@scientia.org>
-	 <fc2f1d31-7f2c-493f-be42-2cb8c1fd5a17@gmx.com>
-	 <84b22b2cc7534be60eb423973336101c9e9b9ad3.camel@scientia.org>
 	 <b681834e-7b0f-4606-8c52-f2b4dafba246@suse.com>
 	 <4e6ad7ef198de72edaf890a2257bf63864984197.camel@scientia.org>
 	 <cca8b4ea-97ef-433e-9db9-4eca67b89576@suse.com>
@@ -88,6 +86,8 @@ References: <f3574976d7b5bc8f05e42055d85d4b61263bc5c5.camel@scientia.org>
 	 <05e63d59951cfb8612c876d5bc7fdb76b272b01c.camel@scientia.org>
 	 <89188b7b8b5a1f9bb64af37777aec906134ad75c.camel@scientia.org>
 	 <9b05f9a3-5efe-4e57-9585-a3886bb419fa@suse.com>
+	 <3137a2417287037a2ed52ded55fab35181254009.camel@scientia.org>
+	 <54b7e6a4-7a08-434c-b7e0-849d3f961de3@suse.com>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 User-Agent: Evolution 3.56.2-8 
@@ -99,18 +99,33 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 X-AuthUser: calestyo@scientia.org
 
-On Mon, 2026-02-09 at 13:51 +1030, Qu Wenruo wrote:
-> I think you're safe to clear the v2 cache, and let the kernel create
-> at=20
-> mount time.
+On Mon, 2026-02-09 at 14:18 +1030, Qu Wenruo wrote:
+> I don't think the key point is the context.
+>=20
+> I believe the key point here is the size of the fs, which should be
+> very=20
+> large, so that rebuild itself will take over 30s.
 
-Would it help you if I keep the fs for further debugging (or later
-checking a possible fix)?
+That fs (where it failed) is on an 8 TB HDD (and I think it's at best
+half full)...
 
-If so, any rough estimate on how long that would take (cause in
-principle I would sooner or later want to use that device again for
-backups ;-) ).
+I did the same procedure on a significantly larger fs (20 TB HDD, ~16
+TB used)... and it worked.
+
+Or what do you mean by size? Size in terms of bytes or in terms of
+number of files?
+
+
+
+> With that said, feel free to clear v2 cache and let the kernel to re-
+> create.
+>=20
+> When we want to test later, you can just go the same=20
+> clear_cache,space_cache=3Dv2 mount option, as long as you didn't=20
+> significantly reduce the (used) size of the fs.
+
+Okay.
 
 
 Thanks,
-Chris
+Chris.

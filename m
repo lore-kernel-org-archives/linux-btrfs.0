@@ -1,66 +1,65 @@
-Received: from mail-wr1-f51.google.com (mail-wr1-f51.google.com [209.85.221.51])
+Received: from mail-wm1-f47.google.com (mail-wm1-f47.google.com [209.85.128.47])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3BD4F176FB1
-	for <linux-btrfs@vger.kernel.org>; Mon,  9 Feb 2026 03:48:25 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.51
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 43A88469D
+	for <linux-btrfs@vger.kernel.org>; Mon,  9 Feb 2026 04:02:14 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.47
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1770608905; cv=none; b=Nh7mQExE/P95lB9sav0mZCPoVYRUUvpMQG6af1+TikdkDS9t+9TanFcjXsvieJpBbKVxlBqziW9RlnyU04GgZlUMi4ww7rOgY2hZGaKFu6diI+cD92Q+H5WegXOFSsOSc8sYe7FuKwk/XNcz0z4K3i0x6L0LRB2WabAS53QBfnY=
+	t=1770609734; cv=none; b=mGpGoOdSR2ks1Vu8ZqIAtF1c/FmYomao/CsJnt3WAjw/uRJA+BC8OiEA2g0yh3fRkpuJxoPkewBZZCIjuNeyQweJ4JVZGCmWIqxWjh5Q2SH/iyJKbl8KufVlnH6MsP++ao7ogeN+ZDvdbJtyEmPzWe3ecwkF2ctwV1AbvUeYcRA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1770608905; c=relaxed/simple;
-	bh=rCjVztGWd0QytKRX5GY2FnCA66ZdsSPTCyXqhxa5x70=;
+	s=arc-20240116; t=1770609734; c=relaxed/simple;
+	bh=SZa/9UfQaN0owfBWrJ6MWqktllzbwAs76kia2EiDrzI=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=DicgoLivtDzXxqEspO/n+6JMZgwQ/HSXxYYhpiEYBlE6T56qqTiWT1LQL/9PQlTSRT0yBTRF8EIpRDrhPkt/Ijb+8+VOS/zyakZNd2E/V9NoQ6L07cVTzCUmQPsAV7yi8apVhM3D3quobIyHMXUfy7kJIhInODPJyAZHKesbtao=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=CW1tENx6; arc=none smtp.client-ip=209.85.221.51
+	 In-Reply-To:Content-Type; b=jWJK1srf/KgPxf0UNuYuGNMrP/bDs0WUDWJr5oPX+iPWB5HwciCdWO6hcrpe1NQJpy+Jc5iHlm3zyPmZgB3GrwooBNp9wvQHKvPOf4afB9jB8UL3kmNF8b5oD922cU97n3+L8WjBdSoOKMm7XuegDbtxtVl8yaAJ+aX0hEMeo8I=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=UzT47qIc; arc=none smtp.client-ip=209.85.128.47
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="CW1tENx6"
-Received: by mail-wr1-f51.google.com with SMTP id ffacd0b85a97d-4359108fd24so2513293f8f.2
-        for <linux-btrfs@vger.kernel.org>; Sun, 08 Feb 2026 19:48:25 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="UzT47qIc"
+Received: by mail-wm1-f47.google.com with SMTP id 5b1f17b1804b1-47fedb7c68dso42179925e9.2
+        for <linux-btrfs@vger.kernel.org>; Sun, 08 Feb 2026 20:02:14 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1770608904; x=1771213704; darn=vger.kernel.org;
+        d=suse.com; s=google; t=1770609733; x=1771214533; darn=vger.kernel.org;
         h=content-transfer-encoding:in-reply-to:autocrypt:from
          :content-language:references:cc:to:subject:user-agent:mime-version
          :date:message-id:from:to:cc:subject:date:message-id:reply-to;
-        bh=70FZ4uVVmtyGDkcbeubLIg+ONnDXD4WhlqD3IkSs2uM=;
-        b=CW1tENx6AUqdHzf4m40zqnshqItO2rhHwbPS14Dapt03egTV2pirO0Ox6WfDXdUWhV
-         OrVE9X87PJjAyb9uPiv9K+qpmdzKLti5F3pAOTEUaC9GAjzY04kuxnepR8R0zeDi9HFN
-         W8Ya/dTo0yXjb4o6WXqYNkgQRyp/ArBW090Vqh2bHlMQb9u9dwWMLth4ZP/JIFrdq4x1
-         lE0tAa/8LmpxWwbLUvf5iGep3zigpTzwDbhoyez/Z8mXe6FKUUWrALuJiv3RO1aXFNg3
-         K4mFjBHtysZVGXDmSsXrBHHaVyuupLh1ir8D4kyih8x8YtHu1RbQaNwwY2rZxRZfN1yQ
-         fhHw==
+        bh=GeWl/XpNCsumgdye4yW/lIdXLdzF5JiqZP9x4XKxjHI=;
+        b=UzT47qIc5oNhvncIZrWPe6w+Sd9tgea82CVfDGzWSz78NYeON4je/on/nLh4fry83n
+         6bKmYXCYIRhgsWDYVSdBSf5lQb5pp/pVmzYIWQ0nwBs7GPCRwWOhlShtJ9D9g3I5rQgL
+         6tJ6HGkUP1ttN+yylLJF4XqHV/lz2wme+I7t5FF3apPkBnq/cH5WJQJcqO+IWux7Vd4p
+         fBN1u6ofuVpbrb7oSB+HIg0DjTAMZaBHJGbrSrSiEJ9/GstYtWBPU8BYZ5fsP3gYEqTT
+         TQg+2g5X1RnQQvxomoPr0+2LzQ/V4gUkGA4qOAjepLSLyzdDlDQeVSbT5Iwu2tLgB/6G
+         kK3Q==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1770608904; x=1771213704;
+        d=1e100.net; s=20230601; t=1770609733; x=1771214533;
         h=content-transfer-encoding:in-reply-to:autocrypt:from
          :content-language:references:cc:to:subject:user-agent:mime-version
          :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=70FZ4uVVmtyGDkcbeubLIg+ONnDXD4WhlqD3IkSs2uM=;
-        b=O9YIx4OrGbvovVfATtp9OeIOE07v+A4o7aTUbSidxIdTzu6Jg0aivLr19xrCF4hFJC
-         COyYjuZHg6hnMvVdsuTneVYu/7kET3/9YLokRUYU5zMAv9v3GojQbckFoGXXq9ZqjhAK
-         1ehSdDJXbdPx7/k4sEK/ANimjBr9COnahioAiDOGqBhi7a+0QMjbzxQD0kGvEuQGj5bL
-         nRAGsihfRuHB/ddSdW/qMnYF+0WZcNl+xZFTj3sMLVly9aWM8sMj2yGteSzfrUZ1vGPE
-         e30H/54r3IJg9loyCeMmWUIiD0cSl9RAT158pY/u1VuPFYOxcMMPkip6UXCDYiSZiSzE
-         MWsg==
-X-Gm-Message-State: AOJu0Yzi7x6fv2oAwmSUMkZq3wmX/HnQa9Wr5oqshfRRv553As6sbbOj
-	qppxi8y/i1UpVX1AqnxJRLS5K13XmNhL6kYUptEG5MbasFP/+2wjDb44dH9EwWxix4yO9OZRzm+
-	87Ij5VSw=
-X-Gm-Gg: AZuq6aJyX6xudAq6IDz2Qea8iw/vl25nOcF35J/AcCeYgW2IHmd9QI+S112637ODm1V
-	DbPB+nKUa2gTYpLWIe6PVHgbxgk0e1IlqZjHrlNpjMEvxNJADakBsqUIGhK77hGQ+4vwV61AdGX
-	cLW5vu3E8gsASXvl2Cx9wBxUxHq8idS3PD3kQDyz3Vg0w3RjQk9nK2Gkw73/fNVeuZOoKv1eviv
-	R8KGRtQxDkb39sm6In+B9vi7AAd95UMgzz0QlfN5FKgX2hVaMcWmE1KpAr8akurw8Izf8arsaks
-	WemXUO1dHdGfggX3ZUIv0aoS4yO7oLE7h5joq3D1GmIY0DevbCR/beYDoY9eXjIvbc3dvVPjSag
-	fh72IqzxM26nV9ke9iui4SbB31b+KTwB1K166e7axz7rtuKhSbRjzi/XNNPJA6qP37bjRq5F6gu
-	O/HQ5WDfCUE1oK8Xemowi4w6iqgQkeRSjksYwbPF0=
-X-Received: by 2002:a05:600c:4eca:b0:47e:e4ff:e2ac with SMTP id 5b1f17b1804b1-483209c557amr137477305e9.33.1770608903620;
-        Sun, 08 Feb 2026 19:48:23 -0800 (PST)
+        bh=GeWl/XpNCsumgdye4yW/lIdXLdzF5JiqZP9x4XKxjHI=;
+        b=oUMB3H0jPxsSRSXThgLIC5T3WzvOIdZkWjJtgZqa2ztBbfpPsSJZHueSoDwgEAq+Kw
+         qIgrknYjDqsTywXdNKmCJCT3DpvK5alnnMacWMokpzL0UDAtr1tkph5JQJ1MNocVG71n
+         j6tLYaicD7IqSAgEbd7bJDU/9toIBkA96CPGrF5STxbwfVg9fMQqsgUxliHDC5v6CeMk
+         M5CcUkkBmDiRfhJGApgbsJMp1JDhICYcB7lL8lIZ2D21OS+6px6vXiMLiQUfwtlWxPT7
+         e25HVOOIl8npni0H8bWT/+/rgW8dfX9Rof04BP/FTekmdwLLwV9lLwXSurzifAw+b6VD
+         wNfw==
+X-Gm-Message-State: AOJu0Ywp/Bf/Wfw5xk6CnDCSVWpRbO3EvCqaUbyeiHdLaadmGQzSEzSS
+	97nglVI8B+zcaeA+bdzSwHA1korEBl6Z4eBci69XK2etrxZu314IECpoaMrr54QVogA=
+X-Gm-Gg: AZuq6aKr6dqJW/g4Us8niLVjfm/vAgaJLK+0nhjj+ph+P6yz+kYn+Fbt5DurtrY3CHe
+	WRtN2h6oGlaLlHm8lwJjIo1qDsfN4XCB9xL4J2u03krZBJHA+r9HTPhl2D90YVT0vxsbVhh65QR
+	NCTtmbuDbtuvCZdXBBwIs8hv8XdCwX2oNHNV0fLuIc7AP8lRx09Lc/t6BS8f3dkY6McwwPnG63E
+	79Ll3lpwknIxhRwYjjm6DHpi0b70Gs7P67InUxaCEGlvRwaf9w3QlNsqJmCZW6NSMjqFdV3l+4w
+	gqa1n+HfV8v36LPDK3VOkzZ5nbiFFci0NtzN2XsnUT4T8qAy6SqmFU0iDZeMZd5FZQ0iFxn+Mkw
+	/wSoS5cHl6B8TqJhyqLoTuazXDXNtht9iNcXo21fBMTmELUhuUWg7MDLOXKR2oX8s7ZujxbbyoW
+	QrGpDjYQgO8mTbSv5PrxIH/Nf+hC1kUy6OWXJVo/A=
+X-Received: by 2002:a05:600c:548e:b0:480:1e40:3d2 with SMTP id 5b1f17b1804b1-48320983bf7mr125796905e9.29.1770609732602;
+        Sun, 08 Feb 2026 20:02:12 -0800 (PST)
 Received: from ?IPV6:2403:580d:fda1::299? (2403-580d-fda1--299.ip6.aussiebb.net. [2403:580d:fda1::299])
-        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-8244166f7cesm9172214b3a.5.2026.02.08.19.48.19
+        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-824418ccb2asm8394039b3a.58.2026.02.08.20.02.08
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sun, 08 Feb 2026 19:48:23 -0800 (PST)
-Message-ID: <54b7e6a4-7a08-434c-b7e0-849d3f961de3@suse.com>
-Date: Mon, 9 Feb 2026 14:18:16 +1030
+        Sun, 08 Feb 2026 20:02:12 -0800 (PST)
+Message-ID: <c8fe54d5-d088-4326-a5ec-4c9687f89902@suse.com>
+Date: Mon, 9 Feb 2026 14:32:05 +1030
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -73,8 +72,6 @@ Subject: Re: space_info METADATA (sub-group id 0) has 691535872 free, is not
 To: Christoph Anton Mitterer <calestyo@scientia.org>
 Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 References: <f3574976d7b5bc8f05e42055d85d4b61263bc5c5.camel@scientia.org>
- <b681834e-7b0f-4606-8c52-f2b4dafba246@suse.com>
- <4e6ad7ef198de72edaf890a2257bf63864984197.camel@scientia.org>
  <cca8b4ea-97ef-433e-9db9-4eca67b89576@suse.com>
  <f1aaada378adad0da020bd679531c7f503ad6f93.camel@scientia.org>
  <914a6a60-6bb6-4255-a8cc-ea6f28e7a9cf@suse.com>
@@ -89,6 +86,8 @@ References: <f3574976d7b5bc8f05e42055d85d4b61263bc5c5.camel@scientia.org>
  <89188b7b8b5a1f9bb64af37777aec906134ad75c.camel@scientia.org>
  <9b05f9a3-5efe-4e57-9585-a3886bb419fa@suse.com>
  <3137a2417287037a2ed52ded55fab35181254009.camel@scientia.org>
+ <54b7e6a4-7a08-434c-b7e0-849d3f961de3@suse.com>
+ <4aa883f597c4d12ddfb50912cc03349594d4fdd7.camel@scientia.org>
 Content-Language: en-US
 From: Qu Wenruo <wqu@suse.com>
 Autocrypt: addr=wqu@suse.com; keydata=
@@ -115,41 +114,49 @@ Autocrypt: addr=wqu@suse.com; keydata=
  /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
  o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
  JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <3137a2417287037a2ed52ded55fab35181254009.camel@scientia.org>
+In-Reply-To: <4aa883f597c4d12ddfb50912cc03349594d4fdd7.camel@scientia.org>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
 
 
-在 2026/2/9 14:02, Christoph Anton Mitterer 写道:
-> On Mon, 2026-02-09 at 13:51 +1030, Qu Wenruo wrote:
->> I think you're safe to clear the v2 cache, and let the kernel create
->> at
->> mount time.
+在 2026/2/9 14:28, Christoph Anton Mitterer 写道:
+> On Mon, 2026-02-09 at 14:18 +1030, Qu Wenruo wrote:
+>> I don't think the key point is the context.
+>>
+>> I believe the key point here is the size of the fs, which should be
+>> very
+>> large, so that rebuild itself will take over 30s.
 > 
-> Would it help you if I keep the fs for further debugging (or later
-> checking a possible fix)?
+> That fs (where it failed) is on an 8 TB HDD (and I think it's at best
+> half full)...
+> 
+> I did the same procedure on a significantly larger fs (20 TB HDD, ~16
+> TB used)... and it worked.
+> 
+> Or what do you mean by size? Size in terms of bytes or in terms of
+> number of files?
 
-I don't think the key point is the context.
-
-I believe the key point here is the size of the fs, which should be very 
-large, so that rebuild itself will take over 30s.
-
-With that said, feel free to clear v2 cache and let the kernel to re-create.
-
-When we want to test later, you can just go the same 
-clear_cache,space_cache=v2 mount option, as long as you didn't 
-significantly reduce the (used) size of the fs.
+Mostly in bytes, but also related to how fragmented the free space is.
+The more fragmented the more time it will take thus higher chance to hit 
+problems.
 
 Thanks,
 Qu
 
 > 
-> If so, any rough estimate on how long that would take (cause in
-> principle I would sooner or later want to use that device again for
-> backups ;-) ).
+> 
+> 
+>> With that said, feel free to clear v2 cache and let the kernel to re-
+>> create.
+>>
+>> When we want to test later, you can just go the same
+>> clear_cache,space_cache=v2 mount option, as long as you didn't
+>> significantly reduce the (used) size of the fs.
+> 
+> Okay.
 > 
 > 
 > Thanks,
-> Chris
+> Chris.
 

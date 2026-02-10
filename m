@@ -1,125 +1,140 @@
-Received: from esa3.hgst.iphmx.com (esa3.hgst.iphmx.com [216.71.153.141])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 423AF33D508
-	for <linux-btrfs@vger.kernel.org>; Tue, 10 Feb 2026 10:01:24 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=216.71.153.141
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2F8AB352F8B
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 Feb 2026 10:20:29 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1770717685; cv=none; b=F/faHWdjqVw0xq/ux7GPB6yOvW+bUVXxpcrFOiSt9E3/DQL7cI3nSsH+n6fNQa7jQ2DIuraBwcVk+5guef86DyszCrLM0decq3UnakwGKgdXtIKdzW8aOTsnMYLheJ8fAoh5/pGOvebA2dNeoKpaRC+uEZTRqujv9SyEXVQCXNg=
+	t=1770718830; cv=none; b=RW14uUlso88JXYAK7uPd9hLkok9OYeUdLuS6RTZhMBMxpsWJhN1mLNL5/TExV/cVk4+WzZWgn9D2ImOfkUE6sXSi/Xu64greYgu6zLYBwVIiJkF7g7r/DjDf0jLrH+EKKqGpoFApxqJ7Hxv7S/Kp/iJzM8P1UswtKDFo3fJrF5o=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1770717685; c=relaxed/simple;
-	bh=UaC8HwuNsthqNqvwjkFjqPuGLg18e4wnFZ9vfuRs+O8=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=APj/384pZVkS50y1CdU+S/9qq9Wga0JFaHbXmcIi30qSgW9NAHp+AWHZngLCqVcJRckPPSWPTdOCGLapIXzK1bHQQsLfjlapPFL88lvP9NfOPHPHPqOVS/51gsmqrFfrk0LcExHExsxq8XIej1QBDL5tOlMiTcqcodJ+XfD8M7k=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=mpGsuGfW; arc=none smtp.client-ip=216.71.153.141
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
+	s=arc-20240116; t=1770718830; c=relaxed/simple;
+	bh=6yiSByRlBsWbStKvwSU8g7mdeiPzvQ0EVpgXdf1wLoY=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=SMYRbjiYCB5HuxEWcxNaBSPD2r6UWLhKYZ85kw+RYq+49Ji+tfcwqJwdj42RELccvrgaautBSeMHQnxyxVLjmGz8ORCW2yScp5T3AIW+8dsBwNmz0l7CHa9o8GTfID4bTBqo3qr1Nv52sLYp4tLmVFul6PL2Zc12USEPKxXiUCo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=UDixJmPK; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="mpGsuGfW"
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1770717684; x=1802253684;
-  h=from:to:cc:subject:date:message-id:mime-version:
-   content-transfer-encoding;
-  bh=UaC8HwuNsthqNqvwjkFjqPuGLg18e4wnFZ9vfuRs+O8=;
-  b=mpGsuGfWXM/+xUG2ObWIml0fFpmIPyoPbQpx0TZFOHOVWmtsaUY4vpGn
-   A5zhoxePdNm3upfFWmp/NTcfXY0zVX4Rgq32wvxB8fgNQU8KTTbltJ7BY
-   Kjjdw0m57jtkw6LhC3j5DN/frgxd7MIEI1kT4Yq3Tw9Nju7ulb4gLpTou
-   PBgiBixGfMwAlw4a1Tr1aj3OKV/itjEnnd1fKGWhSnSj6CEJaegitq1LX
-   Gla+alUg7ZXDqZgICo+K8MYLYUYNEe2aP3/3icg6ZQi/TrFcTQQAYYMRk
-   r0b+nghHA/QofzXCATWINRC5piwv2koVyJvkdsBEE4VPagFpoznpIqiDi
-   Q==;
-X-CSE-ConnectionGUID: IH5bKXqHTAKNiUrN2KYYvQ==
-X-CSE-MsgGUID: DWe7+N7XTs2klT9vut36Ew==
-X-IronPort-AV: E=Sophos;i="6.21,283,1763395200"; 
-   d="scan'208";a="141056533"
-Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 10 Feb 2026 18:01:23 +0800
-IronPort-SDR: 698b01f3_HE8Mie/touwzadaAzItbgEM/cabwy2R2FO0058YpXq1+r+c
- 2/MwCoukNAM/GC+DWTe+nhghaJceVvbYHoIF8uQ==
-Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 10 Feb 2026 02:01:23 -0800
-WDCIronportException: Internal
-Received: from unknown (HELO neo.fritz.box) ([10.224.28.118])
-  by uls-op-cesaip02.wdc.com with ESMTP; 10 Feb 2026 02:01:23 -0800
-From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH] btrfs: handle errors from cache_save_setup
-Date: Tue, 10 Feb 2026 11:01:15 +0100
-Message-ID: <20260210100115.235406-1-johannes.thumshirn@wdc.com>
-X-Mailer: git-send-email 2.53.0
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="UDixJmPK"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id A7B70C19423
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 Feb 2026 10:20:29 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1770718829;
+	bh=6yiSByRlBsWbStKvwSU8g7mdeiPzvQ0EVpgXdf1wLoY=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+	b=UDixJmPKpCOetiNsqDudqrIgHzP6p1N3cgPHt2P9zCIlYdOM2D4BvelPkF3Sd5y19
+	 x1bAqf+x5WubJ2usY5pT3g5kAlMGjS7RftT0MZSQyWzYgcqcSq4fgVRcj6wXw9OtSm
+	 kA+mhbY5vkRPVPTtuEMbI18dhgaRtZeOY2AqzC7+BKB+psiNJ9XibXvSXvFVZWRAfn
+	 molXv58+STF/Txl1lePZjQdoZTpeIkyZP3u+1F4lhPHxXNjPClZ18UZeCJlY0XOtqa
+	 NerGzAghTWYvPihQ/jbWsLWpDKIDpieYNTyAKPNbxZixQjWINbjBiW8jpp0vkph+Lc
+	 wXrbWf61C9h0w==
+Received: by mail-ej1-f41.google.com with SMTP id a640c23a62f3a-b8860d6251bso92762566b.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Feb 2026 02:20:29 -0800 (PST)
+X-Gm-Message-State: AOJu0Yy4/EOIQkhkRUqjtWdW5EsRY5DJMwa0+bwXPTK4QpziaYFkkBUa
+	oT1lFUepD6orLVxkBqBP6nrP9TgJH7mlwTT2gX1PSKn3s8IiLhk/q7ojWiLKEyJmNT4F63gpB1f
+	twHm4JvQFFO7cclcjE/6BLr/ZJyjSdJY=
+X-Received: by 2002:a17:906:c112:b0:b87:2abc:4a23 with SMTP id
+ a640c23a62f3a-b8edf173b7cmr816142066b.2.1770718828209; Tue, 10 Feb 2026
+ 02:20:28 -0800 (PST)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+References: <20260210100115.235406-1-johannes.thumshirn@wdc.com>
+In-Reply-To: <20260210100115.235406-1-johannes.thumshirn@wdc.com>
+From: Filipe Manana <fdmanana@kernel.org>
+Date: Tue, 10 Feb 2026 10:19:51 +0000
+X-Gmail-Original-Message-ID: <CAL3q7H7n+sq=ULNqx2MWCPcv4USEpd2qvwzyawC66NtVMh8rJw@mail.gmail.com>
+X-Gm-Features: AZwV_QjzaS4vPM9meqvTWvXXvoNh0KdLyqWJUzfeql090ddk_TbIM5xElieNSR0
+Message-ID: <CAL3q7H7n+sq=ULNqx2MWCPcv4USEpd2qvwzyawC66NtVMh8rJw@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: handle errors from cache_save_setup
+To: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-While looking at call sites calling `if (TRANS_ABORTED(trans))` I
-stumbled upon `cache_save_setup` and realized none of it's callers is
-performing error handling.
+On Tue, Feb 10, 2026 at 10:05=E2=80=AFAM Johannes Thumshirn
+<johannes.thumshirn@wdc.com> wrote:
+>
+> While looking at call sites calling `if (TRANS_ABORTED(trans))` I
+> stumbled upon `cache_save_setup` and realized none of it's callers is
+> performing error handling.
+>
+> Check if `cache_save_setup` returns an error and if yes handle it
 
-Check if `cache_save_setup` returns an error and if yes handle it
+There's a reason why we don't handle errors.
+Because a space cache is an optimization, so failing to persist it is
+no major deal, it just means that after a crash/power failure, when
+mounting we will scan the extent tree.
+Looking at the changes below, we can now trigger unnecessary transaction ab=
+orts.
 
-Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
----
- fs/btrfs/block-group.c | 21 +++++++++++++++++----
- 1 file changed, 17 insertions(+), 4 deletions(-)
+This is also space cache v1, which is now deprecated for a long time.
 
-diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index e3e7852dd3e0..47a3ca76e304 100644
---- a/fs/btrfs/block-group.c
-+++ b/fs/btrfs/block-group.c
-@@ -3470,8 +3470,13 @@ int btrfs_setup_space_cache(struct btrfs_trans_handle *trans)
- 	/* Could add new block groups, use _safe just in case */
- 	list_for_each_entry_safe(cache, tmp, &cur_trans->dirty_bgs,
- 				 dirty_list) {
--		if (cache->disk_cache_state == BTRFS_DC_CLEAR)
--			cache_save_setup(cache, trans, path);
-+		if (cache->disk_cache_state == BTRFS_DC_CLEAR) {
-+			int ret;
-+
-+			ret = cache_save_setup(cache, trans, path);
-+			if (ret)
-+				return ret;
-+		}
- 	}
- 
- 	return 0;
-@@ -3558,7 +3563,9 @@ int btrfs_start_dirty_block_groups(struct btrfs_trans_handle *trans)
- 
- 		should_put = 1;
- 
--		cache_save_setup(cache, trans, path);
-+		ret = cache_save_setup(cache, trans, path);
-+		if (ret)
-+			goto out;
- 
- 		if (cache->disk_cache_state == BTRFS_DC_SETUP) {
- 			cache->io_ctl.inode = NULL;
-@@ -3685,6 +3692,8 @@ int btrfs_write_dirty_block_groups(struct btrfs_trans_handle *trans)
- 	 */
- 	spin_lock(&cur_trans->dirty_bgs_lock);
- 	while (!list_empty(&cur_trans->dirty_bgs)) {
-+		int ret2;
-+
- 		cache = list_first_entry(&cur_trans->dirty_bgs,
- 					 struct btrfs_block_group,
- 					 dirty_list);
-@@ -3710,7 +3719,11 @@ int btrfs_write_dirty_block_groups(struct btrfs_trans_handle *trans)
- 		spin_unlock(&cur_trans->dirty_bgs_lock);
- 		should_put = 1;
- 
--		cache_save_setup(cache, trans, path);
-+		ret2 = cache_save_setup(cache, trans, path);
-+		if (ret2) {
-+			btrfs_abort_transaction(trans, ret2);
-+			return ret2;
-+		}
- 
- 		if (!ret)
- 			ret = btrfs_run_delayed_refs(trans, U64_MAX);
--- 
-2.53.0
-
+>
+> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+> ---
+>  fs/btrfs/block-group.c | 21 +++++++++++++++++----
+>  1 file changed, 17 insertions(+), 4 deletions(-)
+>
+> diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+> index e3e7852dd3e0..47a3ca76e304 100644
+> --- a/fs/btrfs/block-group.c
+> +++ b/fs/btrfs/block-group.c
+> @@ -3470,8 +3470,13 @@ int btrfs_setup_space_cache(struct btrfs_trans_han=
+dle *trans)
+>         /* Could add new block groups, use _safe just in case */
+>         list_for_each_entry_safe(cache, tmp, &cur_trans->dirty_bgs,
+>                                  dirty_list) {
+> -               if (cache->disk_cache_state =3D=3D BTRFS_DC_CLEAR)
+> -                       cache_save_setup(cache, trans, path);
+> +               if (cache->disk_cache_state =3D=3D BTRFS_DC_CLEAR) {
+> +                       int ret;
+> +
+> +                       ret =3D cache_save_setup(cache, trans, path);
+> +                       if (ret)
+> +                               return ret;
+> +               }
+>         }
+>
+>         return 0;
+> @@ -3558,7 +3563,9 @@ int btrfs_start_dirty_block_groups(struct btrfs_tra=
+ns_handle *trans)
+>
+>                 should_put =3D 1;
+>
+> -               cache_save_setup(cache, trans, path);
+> +               ret =3D cache_save_setup(cache, trans, path);
+> +               if (ret)
+> +                       goto out;
+>
+>                 if (cache->disk_cache_state =3D=3D BTRFS_DC_SETUP) {
+>                         cache->io_ctl.inode =3D NULL;
+> @@ -3685,6 +3692,8 @@ int btrfs_write_dirty_block_groups(struct btrfs_tra=
+ns_handle *trans)
+>          */
+>         spin_lock(&cur_trans->dirty_bgs_lock);
+>         while (!list_empty(&cur_trans->dirty_bgs)) {
+> +               int ret2;
+> +
+>                 cache =3D list_first_entry(&cur_trans->dirty_bgs,
+>                                          struct btrfs_block_group,
+>                                          dirty_list);
+> @@ -3710,7 +3719,11 @@ int btrfs_write_dirty_block_groups(struct btrfs_tr=
+ans_handle *trans)
+>                 spin_unlock(&cur_trans->dirty_bgs_lock);
+>                 should_put =3D 1;
+>
+> -               cache_save_setup(cache, trans, path);
+> +               ret2 =3D cache_save_setup(cache, trans, path);
+> +               if (ret2) {
+> +                       btrfs_abort_transaction(trans, ret2);
+> +                       return ret2;
+> +               }
+>
+>                 if (!ret)
+>                         ret =3D btrfs_run_delayed_refs(trans, U64_MAX);
+> --
+> 2.53.0
+>
+>

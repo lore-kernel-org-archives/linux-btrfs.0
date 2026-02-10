@@ -1,82 +1,135 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from esa4.hgst.iphmx.com (esa4.hgst.iphmx.com [216.71.154.42])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C53C0145A05
-	for <linux-btrfs@vger.kernel.org>; Tue, 10 Feb 2026 12:48:02 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 449E2328B7B
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 Feb 2026 13:19:51 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=216.71.154.42
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1770727682; cv=none; b=XLSbw73UglMgmFT1a0kFjOprqOoqFCDaO/9xzv1vpwZ08nB/XuM+3MsF45qSqfQC/DQpdThnMRUh1RVMMT1LTUYpbLwhsQfrPnz1QW7xLNyWWiPPUesWCWerzsMmn9SMzuipZgFLPzvVcYMxgcEqZ0Pj1iH/3uEu+l8k7qYtz+4=
+	t=1770729592; cv=none; b=kOmrq/AiHASL5hgKe4nhU5rDM8IbFUxiAF3grzWVztUlZ6aBQL2m9teyMcljJSO3MJ0UfrzzdG5kS9zuQ+XJS9Ol5+LF8WqTR7j4qYfHSj+muWiP7eUdQJdfaDbh8beAdslLvqGG9LmsITLIm1b1CYoHYJiyBwIWUgi/c17wtZQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1770727682; c=relaxed/simple;
-	bh=8JopNUqiCvjf4RJ0UivVKWkaSe4+4Rn9gi/oczn5UzM=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=QD+587SkI4jBOolJsLrFJcOO4ONYiOqXnykHg5igW92BqxlQM/GwgIEd8Di57LKLoq925inlEjFdx41/Ksq86ZsId333FX3EGA7Bj8ucBGvproEaZXa3evUTDhpc5A3BgQxSe6UIJMJVIh/zU2dxBm5kcU/SK2/XPq37R0S/GvE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=qe77g47f; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1770729592; c=relaxed/simple;
+	bh=bN/JaH2qGWIuxtRBubXXm67DssucKxnfRNVkyec9+OQ=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=nzpm7ZyCTCVrJuDwzn0it+Xmr+qW1Vp3vzQCUL9x49GX+4WWbg/pYOXbPMjiyfwV2WqDdrzOsxVe6INFbCy/o4tXgrQgbuGhkmMTQVcdGJqcF5954kBRb939VBn5SZM+YSSHTq3F5+ifsem2fBa3D1s3rUeiM1clA2pM2LgNjGs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=bRGfrS7i; arc=none smtp.client-ip=216.71.154.42
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="qe77g47f"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 6A2FBC16AAE
-	for <linux-btrfs@vger.kernel.org>; Tue, 10 Feb 2026 12:48:02 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1770727682;
-	bh=8JopNUqiCvjf4RJ0UivVKWkaSe4+4Rn9gi/oczn5UzM=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-	b=qe77g47fK0haypDjochC3DTJWSBvjMMQ6Lc69Rjpiph6Xw+izoRd9eiEjjHSVAMUs
-	 iqte9ImcUT1Bu4A10oqk7Lq9Vy8pO+s4hJQ1nxws1TsmOvwHP64Z5B4PLFq+pm/p1t
-	 VoKnOIif8PyNVK2o/jNzBkjcKyB+7gNcMsTAUkKI+Sbx9Sm2SONwACJqx8RbazfnRF
-	 TFFn6lctB8KkfKl4m5CXbjmo5iKuFcezA0kYsLvQYqs1OWw4QUA9QWS9+rkRxTUT+0
-	 /Z54OtC//KOl/XhALSpFdTyTmtq4rbk2lJd3QLAXA7U5qC3x3C8XaNIBejIzs1nNeQ
-	 F8ak9Z3onerqw==
-Received: by mail-ej1-f52.google.com with SMTP id a640c23a62f3a-b79f8f7ea43so146205166b.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Feb 2026 04:48:02 -0800 (PST)
-X-Gm-Message-State: AOJu0Yz/1ADVE+bwOPUzkq9oaNqNL7l+jg7PLZQ7GRpy5eeuGm3vSklR
-	dXyDJDjJhaHdEwsEzRgIGyIfdkzyzcZqlvj8Ktg4jK3zoPtGHthSPqEWuae1g3XM9IKbyQCeW6T
-	2ceyzEDhmZ5r4Jn2OFA2S8PUW4rIEeXw=
-X-Received: by 2002:a17:907:1c8e:b0:b8e:a024:1c81 with SMTP id
- a640c23a62f3a-b8edf176c31mr803745166b.7.1770727681027; Tue, 10 Feb 2026
- 04:48:01 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="bRGfrS7i"
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1770729589; x=1802265589;
+  h=from:to:cc:subject:date:message-id:mime-version:
+   content-transfer-encoding;
+  bh=bN/JaH2qGWIuxtRBubXXm67DssucKxnfRNVkyec9+OQ=;
+  b=bRGfrS7iIsfkK7EwzsAqmo6GOjLLjXvZ7uvIoMXSBRHVWTeP3FGL4xAM
+   vlNjM0S0GRE+grMJZxVAYujfLIHCYqxsBMo29aT/Da9LSxYbHN+WGZdKr
+   kyavHb/OEnnabjhjHBTjBix0kJzY2Cfiw6y7HA2SHLum4p79/Nuprv523
+   nLIPOZ49uI+gf4eqSK33sYcYJmbwiQCMj+HBncKNYfVHvmSYUj5joiiRt
+   zwmq/g7VZIyfJJdlo0CY9vZn2M9LF9IJQCido29xHnEBmJ1N6XSld82sG
+   ZJgZQWIXEHAYRLMlKOF+jbff5s8r65720qvt1zcADPyC54ol/pszW/AXU
+   Q==;
+X-CSE-ConnectionGUID: 83NfjawkQKusP8UijXN/yA==
+X-CSE-MsgGUID: hLSYa3AGQ7iPm/tpzkUOVw==
+X-IronPort-AV: E=Sophos;i="6.21,283,1763395200"; 
+   d="scan'208";a="136955027"
+Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep03.wdc.com) ([199.255.45.15])
+  by ob1.hgst.iphmx.com with ESMTP; 10 Feb 2026 21:19:49 +0800
+IronPort-SDR: 698b3076_lbEotpuq+y4tY2sbDOU+/KG1lqVKRG7Cyc1W8OJDxAMfMaS
+ TR4I3NyuHjJGNtgWSXwSNevlJVjZAiA48Eelsyw==
+Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
+  by uls-op-cesaep03.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 10 Feb 2026 05:19:51 -0800
+WDCIronportException: Internal
+Received: from unknown (HELO neo.wdc.com) ([10.224.28.118])
+  by uls-op-cesaip02.wdc.com with ESMTP; 10 Feb 2026 05:19:48 -0800
+From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>,
+	Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Subject: [PATCH] btrfs: change return type of cache_save_setup to void
+Date: Tue, 10 Feb 2026 14:19:46 +0100
+Message-ID: <20260210131946.286557-1-johannes.thumshirn@wdc.com>
+X-Mailer: git-send-email 2.53.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <cover.1770693583.git.wqu@suse.com>
-In-Reply-To: <cover.1770693583.git.wqu@suse.com>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Tue, 10 Feb 2026 12:47:24 +0000
-X-Gmail-Original-Message-ID: <CAL3q7H64p=4TAsocvUPz=r_EjttF0cS3xt3SDR4sJUTYXOZ46Q@mail.gmail.com>
-X-Gm-Features: AZwV_QjpJC1JwCRDSlg1PKNa3JiITrzNi-tQhe0BAqec8PprGlUgpkxKH0nux2k
-Message-ID: <CAL3q7H64p=4TAsocvUPz=r_EjttF0cS3xt3SDR4sJUTYXOZ46Q@mail.gmail.com>
-Subject: Re: [PATCH 0/3] btrfs: ordered extent csum list related cleanup
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
 
-On Tue, Feb 10, 2026 at 3:24=E2=80=AFAM Qu Wenruo <wqu@suse.com> wrote:
->
-> Trivial changes, please refer to the commit message of each patch.
->
-> Qu Wenruo (3):
->   btrfs: rename btrfs_ordered_extent::list to csum_list
->   btrfs: make add_pending_csums() to take an ordered extent as parameter
->   btrfs: rename btrfs_csum_file_blocks() to btrfs_insert_data_csums()
+None of the callers of `cache_save_setup` care about the return type as
+the space cache is purely and optimization.
+Also the free space cache is a deprecated feature that is being phased
+out.
 
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
+Change the return type of `cache_save_setup` to void to reflect this.
 
-Looks good, thanks.
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+---
+ fs/btrfs/block-group.c | 18 ++++++++----------
+ 1 file changed, 8 insertions(+), 10 deletions(-)
 
->
->  fs/btrfs/file-item.c    |  6 +++---
->  fs/btrfs/file-item.h    |  6 +++---
->  fs/btrfs/inode.c        | 18 ++++++++++--------
->  fs/btrfs/ordered-data.c | 10 +++++-----
->  fs/btrfs/ordered-data.h |  2 +-
->  fs/btrfs/tree-log.c     |  8 ++++----
->  fs/btrfs/zoned.c        |  7 +++----
->  7 files changed, 29 insertions(+), 28 deletions(-)
->
-> --
-> 2.52.0
->
->
+diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+index e3e7852dd3e0..0857b720667f 100644
+--- a/fs/btrfs/block-group.c
++++ b/fs/btrfs/block-group.c
+@@ -3288,9 +3288,9 @@ static int update_block_group_item(struct btrfs_trans_handle *trans,
+ 
+ }
+ 
+-static int cache_save_setup(struct btrfs_block_group *block_group,
+-			    struct btrfs_trans_handle *trans,
+-			    struct btrfs_path *path)
++static void cache_save_setup(struct btrfs_block_group *block_group,
++			     struct btrfs_trans_handle *trans,
++			     struct btrfs_path *path)
+ {
+ 	struct btrfs_fs_info *fs_info = block_group->fs_info;
+ 	struct inode *inode = NULL;
+@@ -3302,7 +3302,7 @@ static int cache_save_setup(struct btrfs_block_group *block_group,
+ 	int ret = 0;
+ 
+ 	if (!btrfs_test_opt(fs_info, SPACE_CACHE))
+-		return 0;
++		return;
+ 
+ 	/*
+ 	 * If this block group is smaller than 100 megs don't bother caching the
+@@ -3312,11 +3312,11 @@ static int cache_save_setup(struct btrfs_block_group *block_group,
+ 		spin_lock(&block_group->lock);
+ 		block_group->disk_cache_state = BTRFS_DC_WRITTEN;
+ 		spin_unlock(&block_group->lock);
+-		return 0;
++		return;
+ 	}
+ 
+ 	if (TRANS_ABORTED(trans))
+-		return 0;
++		return;
+ again:
+ 	inode = lookup_free_space_inode(block_group, path);
+ 	if (IS_ERR(inode) && PTR_ERR(inode) != -ENOENT) {
+@@ -3398,10 +3398,8 @@ static int cache_save_setup(struct btrfs_block_group *block_group,
+ 	 * We hit an ENOSPC when setting up the cache in this transaction, just
+ 	 * skip doing the setup, we've already cleared the cache so we're safe.
+ 	 */
+-	if (test_bit(BTRFS_TRANS_CACHE_ENOSPC, &trans->transaction->flags)) {
+-		ret = -ENOSPC;
++	if (test_bit(BTRFS_TRANS_CACHE_ENOSPC, &trans->transaction->flags))
+ 		goto out_put;
+-	}
+ 
+ 	/*
+ 	 * Try to preallocate enough space based on how big the block group is.
+@@ -3449,7 +3447,7 @@ static int cache_save_setup(struct btrfs_block_group *block_group,
+ 	spin_unlock(&block_group->lock);
+ 
+ 	extent_changeset_free(data_reserved);
+-	return ret;
++	return;
+ }
+ 
+ int btrfs_setup_space_cache(struct btrfs_trans_handle *trans)
+-- 
+2.53.0
+

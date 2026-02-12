@@ -1,135 +1,49 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from verein.lst.de (verein.lst.de [213.95.11.211])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E79D920A5F3
-	for <linux-btrfs@vger.kernel.org>; Thu, 12 Feb 2026 10:03:36 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0CF092E040E;
+	Thu, 12 Feb 2026 10:11:46 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=213.95.11.211
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1770890617; cv=none; b=gGg1AFuuXPT2sjUEzcOKO+9eEjOzr1ub4CuLD+ytdssMXsP7fHZxg0O/xJOq9BHRtGDDuPFKHDMiq0b9fJ2W7fWNKmMLa+aELNCWcMT1ULwuCy4ysrRpUXeZwKBCcgNfg1MNPcsI6KP3Trcrc+onijE8ppb+xeNWFM6qvZazTz0=
+	t=1770891109; cv=none; b=bkYW3+LeoNRtimQgdzRKTY3qJRkY+wn/1hX2kWV+2OLOXucZ89/42jg5FglmUZJ+mCS3xR24JEXqELIKc7geRa1tS4gZ9Lm1cvkAdoH8QOg7xr/WyeimO0Iw31Q/Nj9tiXuj/UMBrP2gzuJkcqSdY/7YFuiwDHnQf0Lqrmwufrw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1770890617; c=relaxed/simple;
-	bh=ZwVyy0Xf08Qfj4qwM9uLRHemsPiRu5RE3SpOxkgtJek=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=e4Rlw0Bm2ysK80xW4eTLzkjeCOLy7wZEl+Uc+5bJ95BoBZgM0Fqz2RxZvWju2X5i1HXQJBcMlG7eJSG+giJNFPF/ub+3EIyqKqa7m1I9pMJp8fju5d3DNIT5ipnzcfMqNShuFUnkDkOcaLvw8jgAUgZlXaW+9gqLK7+MhwA6Jac=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=UIQcb8FE; arc=none smtp.client-ip=10.30.226.201
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="UIQcb8FE"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9C94EC19422
-	for <linux-btrfs@vger.kernel.org>; Thu, 12 Feb 2026 10:03:36 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1770890616;
-	bh=ZwVyy0Xf08Qfj4qwM9uLRHemsPiRu5RE3SpOxkgtJek=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-	b=UIQcb8FEBmcJYpY3WYzZ0Ae4oOPAbKhjYH0CEMJKSpOXxTuHyhqUjih/ZNvJo6SkV
-	 Fs+FenvGm7dFZ3AliwN0kRkfGy5gUWwSF1ZYnK5/hZ8Qv8Y6b6W/wvWl+mbpX/mCuB
-	 YKIdC4sPlgjvXEp/kLEsXfK2D1OUH0hqHoWRVNmp1l9wQucNSYkQ7rQqS4J1Xw7XOJ
-	 T+2zZoiEOr9rIGlVGeUilqr2bgB3CDT3tXfotshpnZvd/9O9gN94IU6GDr9XDUHOp4
-	 6UCzTl4+58N1mT1vbgUGzooSQ7eoeZmdsv+aAMuautczbwaDC85GbPjOfTMxj3LwQX
-	 AYj/gxSAPF/fw==
-Received: by mail-ej1-f44.google.com with SMTP id a640c23a62f3a-b88593aa4dcso1046252266b.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 Feb 2026 02:03:36 -0800 (PST)
-X-Gm-Message-State: AOJu0Yx6F3NTYk0SPOvcNLQ3zyQTU/+q4AQoHMsyVBMf4DFy9Ukm2L41
-	PLApGufI6VvWQZnn1+FNWKRHFIfWAbjKChQEmTYkmlqNMTLagMXiALslrE5lKwhWypiFDK3mDih
-	63cxiEnMbAt/md0NOfxoISXbdwCUD03o=
-X-Received: by 2002:a17:906:f599:b0:b84:1fef:329f with SMTP id
- a640c23a62f3a-b8f8f658e66mr121940666b.26.1770890615162; Thu, 12 Feb 2026
- 02:03:35 -0800 (PST)
+	s=arc-20240116; t=1770891109; c=relaxed/simple;
+	bh=02odUGS0UD+ubBm3bc3OVqHMb4hikW3j0yQ+PaU080E=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=YX6cweGYpzVqRm4vfJ68kmvLQzE4m19QbKHmKQ0src0SQ4qbM72mxcovznCHpQ/fDSaDwEg41s2jmEyS+Tbqm5VZ9mDHt6fCmz7894txex7+pWhyM+gRkVxfafthmpvncDGmI5hrSvsYRpNeMuUidRA5mODbt1lwBpLzvfq/WxI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lst.de; spf=pass smtp.mailfrom=lst.de; arc=none smtp.client-ip=213.95.11.211
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lst.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=lst.de
+Received: by verein.lst.de (Postfix, from userid 2407)
+	id 984CA68D09; Thu, 12 Feb 2026 11:11:43 +0100 (CET)
+Date: Thu, 12 Feb 2026 11:11:43 +0100
+From: Christoph Hellwig <hch@lst.de>
+To: Eric Biggers <ebiggers@kernel.org>
+Cc: Linus Torvalds <torvalds@linux-foundation.org>,
+	fsverity@lists.linux.dev, linux-fsdevel@vger.kernel.org,
+	linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
+	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+	Theodore Ts'o <tytso@mit.edu>,
+	Andrey Albershteyn <aalbersh@redhat.com>,
+	Christoph Hellwig <hch@lst.de>,
+	"Darrick J. Wong" <djwong@kernel.org>,
+	David Sterba <dsterba@suse.com>, Jan Kara <jack@suse.cz>
+Subject: Re: [GIT PULL] fsverity updates for 7.0
+Message-ID: <20260212101143.GA7951@lst.de>
+References: <20260212012652.GA8885@sol>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <1a8b542d5058110fdb0f42c1aad03f05c6439d39.1770850152.git.wqu@suse.com>
-In-Reply-To: <1a8b542d5058110fdb0f42c1aad03f05c6439d39.1770850152.git.wqu@suse.com>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Thu, 12 Feb 2026 10:02:58 +0000
-X-Gmail-Original-Message-ID: <CAL3q7H51G6wQmCLoV8bqTikLxWsqUqPS_8XZJFz5=tQQ7foLEw@mail.gmail.com>
-X-Gm-Features: AZwV_Qjzs423Uh4cGwArp4lm0ZHMkZkZx4Zx2N9wFC79kKS5jd2dNMuHZMkj1qQ
-Message-ID: <CAL3q7H51G6wQmCLoV8bqTikLxWsqUqPS_8XZJFz5=tQQ7foLEw@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: remove the btrfs_inode parameter from btrfs_remove_ordered_extent()
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260212012652.GA8885@sol>
+User-Agent: Mutt/1.5.17 (2007-11-01)
 
-On Wed, Feb 11, 2026 at 10:49=E2=80=AFPM Qu Wenruo <wqu@suse.com> wrote:
->
-> We already have btrfs_ordered_extent::inode, thus there is no need to
-> pass a btrfs_inode parameter to btrfs_remove_ordered_extent().
->
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+Note that this had a merge conflict in linux-next.  So unless that
+went away, it needs a merge resolution like:
 
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
+https://lore.kernel.org/fsverity/20260203053604.GC15956@lst.de/T/#m291294c1f6b7368d3c426ee47e6d23dc854b3ba6
 
-Looks good, thanks.
-
-> ---
->  fs/btrfs/inode.c        | 4 ++--
->  fs/btrfs/ordered-data.c | 4 ++--
->  fs/btrfs/ordered-data.h | 3 +--
->  3 files changed, 5 insertions(+), 6 deletions(-)
->
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 81600abc0297..3af087c81724 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -3416,7 +3416,7 @@ int btrfs_finish_one_ordered(struct btrfs_ordered_e=
-xtent *ordered_extent)
->          * This needs to be done to make sure anybody waiting knows we ar=
-e done
->          * updating everything for this ordered extent.
->          */
-> -       btrfs_remove_ordered_extent(inode, ordered_extent);
-> +       btrfs_remove_ordered_extent(ordered_extent);
->
->         /* once for us */
->         btrfs_put_ordered_extent(ordered_extent);
-> @@ -8141,7 +8141,7 @@ void btrfs_destroy_inode(struct inode *vfs_inode)
->                         if (!freespace_inode)
->                                 btrfs_lockdep_acquire(root->fs_info, btrf=
-s_ordered_extent);
->
-> -                       btrfs_remove_ordered_extent(inode, ordered);
-> +                       btrfs_remove_ordered_extent(ordered);
->                         btrfs_put_ordered_extent(ordered);
->                         btrfs_put_ordered_extent(ordered);
->                 }
-> diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-> index a17f18673bed..e47c3a3a619a 100644
-> --- a/fs/btrfs/ordered-data.c
-> +++ b/fs/btrfs/ordered-data.c
-> @@ -638,9 +638,9 @@ void btrfs_put_ordered_extent(struct btrfs_ordered_ex=
-tent *entry)
->   * remove an ordered extent from the tree.  No references are dropped
->   * and waiters are woken up.
->   */
-> -void btrfs_remove_ordered_extent(struct btrfs_inode *btrfs_inode,
-> -                                struct btrfs_ordered_extent *entry)
-> +void btrfs_remove_ordered_extent(struct btrfs_ordered_extent *entry)
->  {
-> +       struct btrfs_inode *btrfs_inode =3D entry->inode;
->         struct btrfs_root *root =3D btrfs_inode->root;
->         struct btrfs_fs_info *fs_info =3D root->fs_info;
->         struct rb_node *node;
-> diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
-> index e178d4a489af..86e69de9e9ff 100644
-> --- a/fs/btrfs/ordered-data.h
-> +++ b/fs/btrfs/ordered-data.h
-> @@ -161,8 +161,7 @@ int btrfs_finish_one_ordered(struct btrfs_ordered_ext=
-ent *ordered_extent);
->  int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)=
-;
->
->  void btrfs_put_ordered_extent(struct btrfs_ordered_extent *entry);
-> -void btrfs_remove_ordered_extent(struct btrfs_inode *btrfs_inode,
-> -                               struct btrfs_ordered_extent *entry);
-> +void btrfs_remove_ordered_extent(struct btrfs_ordered_extent *entry);
->  void btrfs_finish_ordered_extent(struct btrfs_ordered_extent *ordered,
->                                  struct folio *folio, u64 file_offset, u6=
-4 len,
->                                  bool uptodate);
-> --
-> 2.52.0
->
->

@@ -1,164 +1,70 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail.burntcomma.com (mail2.burntcomma.com [217.169.27.34])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3544037105D
-	for <linux-btrfs@vger.kernel.org>; Tue, 17 Feb 2026 17:56:53 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F422136BCF3
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Feb 2026 18:09:42 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=217.169.27.34
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1771351013; cv=none; b=Ac2a9SjxX9WAl4aZnOKIIgj6jHQoFJ09EnEJ74IAZNrZs2Xhu2KPJGF3RiGbJ994UTBbbySZd3P4SaUYdxi0kv/yXRrQIlXdPHnignLRqe8LglFbV5vwF4eLpkNHcMH0zSLqd1JmF6RWn9yOyDsM5LmvlHChX4JCmK2aMckKuyE=
+	t=1771351786; cv=none; b=Je7WSPgyo9FsBWJncHPVSRA9mSwwSPUBkGV+hhsEKwyI3QLNqxc1l4BcoNIJvQNGuweikWUkS/42v3duhK9DEBApT2Pe9Ev2D3k8QRwBJm0+/BxgA1GAmRUhSMYtZ2pGf3iXyjgl67BotYnbPndxnLVb+aru+FrSMB7ihUve+d0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1771351013; c=relaxed/simple;
-	bh=GJUFOmhRNj9EGe0GZsQND00GxAZXnX2m1Pgza3fP+NQ=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=Ibylyl+/YQ1oCnN1kdQ5YuW5RJ7TsmEVs1Z1tvHu77y2XM2Pa7CV4T8CecPVcz4/XSAth0k+DQ+VEaLzFQxpTcWMFuVgWJjh8hJdku9NbW+5AYmzLdacn1KZWPF3KosvBD5p/nw2DG7ZppT9/GRNJ4ohw7gG9uTV824h6Om2Frk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=StGRKmj5; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1771351786; c=relaxed/simple;
+	bh=gHXnPfpdVVl0C1lzxZDDQ90faUDf5+b2WDShKj3MbB0=;
+	h=From:To:Cc:Subject:Date:Message-ID:Mime-Version; b=C3DZ2PQV+SzvPB2O+O9IU45dlSVeBbQABlGJfrUsxyOYhnrl4G2QxmUn3rugNz1F6m7zw0xLeTAffY4LjPO5PLNbvEbPYXu6Qmx6ads9zeKq9zfa05Ajea0Ia24pQ0oe86Wm0n2HgrPSu8KJYoYyuPMzR3c0GQHLsNdiu6pPjI8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com; spf=pass smtp.mailfrom=harmstone.com; dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b=EvMh6tXX; arc=none smtp.client-ip=217.169.27.34
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=harmstone.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="StGRKmj5"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id DCDB8C19421
-	for <linux-btrfs@vger.kernel.org>; Tue, 17 Feb 2026 17:56:52 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1771351012;
-	bh=GJUFOmhRNj9EGe0GZsQND00GxAZXnX2m1Pgza3fP+NQ=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-	b=StGRKmj53b1vuuENRcePYUqonlm1/+Ba0Zc84gHwwvq/DSG/vmP79M40f0leky7pF
-	 k88m2eBlGdXb4TBZklYipopI8N5LD17tf7VRTVpu1oajPq9YjdkR63iPDe0hFd5F5x
-	 KpzhaKen0udXBPJbs4peytagFfcb8zuaWLvBoBmUVlz7GwXIRBzK0VupZEOf3SbLe3
-	 cBUNJmKF4majaXwmsI6/5AQv41ClrvaNVFG3V5ut5Ospivl1DgQbQ1PUPVCAkFiZfB
-	 7aVjawSXOI02DMknmhyebJLInwDv2ZWU1K8LIxv3GXaeykZix9li63eko9bES/Obez
-	 cAIRurf+lKIfg==
-Received: by mail-ej1-f42.google.com with SMTP id a640c23a62f3a-b884ad1026cso596547666b.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 17 Feb 2026 09:56:52 -0800 (PST)
-X-Forwarded-Encrypted: i=1; AJvYcCXMef7cxe+CgeozuCdrgi+rXoLCnKJX9avyj9iPAWOM4xQOs/2X93M2icbWrq8oCXd5mV9KY8k7MBeEng==@vger.kernel.org
-X-Gm-Message-State: AOJu0YwtVcipSW1kaRL+nqTMhAPuu3rGxXE/ofqUJdQ9KgEmyflefauJ
-	B+lG9gP3wzkjvQ4/i9/LPGefeH5ar+hZvpCxTdrkPmC0eijxznl6yDHiwB6GVgFDr5PQ1wlWRWM
-	taI6dv137Nkji+77S+H4LuKI+8mJLo+Q=
-X-Received: by 2002:a17:907:3e88:b0:b8f:a5c8:f75 with SMTP id
- a640c23a62f3a-b8fb4528579mr733729866b.52.1771351011329; Tue, 17 Feb 2026
- 09:56:51 -0800 (PST)
+	dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b="EvMh6tXX"
+Received: from beren (beren.burntcomma.com [IPv6:2a02:8012:8cf0:0:ce28:aaff:fe0d:6db2])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
+	(Client did not present a certificate)
+	by mail.burntcomma.com (Postfix) with ESMTPSA id B30CB3030D4;
+	Tue, 17 Feb 2026 18:09:38 +0000 (GMT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=harmstone.com;
+	s=mail; t=1771351778;
+	bh=XKO6Bu8e9HkDMfo173jH+1cxDWWxnSPATaUEcbfEBPg=;
+	h=From:To:Cc:Subject:Date;
+	b=EvMh6tXX2tMuq/Y2Zc5fqgwWJ7YPs09ZRdX8lkd7PC6u+SPbnCTBflD+XUCL4Eh3o
+	 z4Nbec60E252Oa7pVaxNoJ6yjIs8tBO3NsbLrT/asJqWQ+BcNofpOfdCQmSPweP+oX
+	 Elh/Zr7plkRawjEdcYApu5X8z+bfm67GxcRlQ/do=
+From: Mark Harmstone <mark@harmstone.com>
+To: linux-btrfs@vger.kernel.org,
+	wqu@suse.com
+Cc: Mark Harmstone <mark@harmstone.com>
+Subject: [PATCH] btrfs: fix error message in check_extent_data_ref()
+Date: Tue, 17 Feb 2026 18:09:07 +0000
+Message-ID: <20260217180933.15805-1-mark@harmstone.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-References: <20260216221632.23087-1-jkchen@ugreen.com> <CAL3q7H7-SNQMoXzvTVCVzZx9gYXq3rzRfRp5OERz+riPQ-=tow@mail.gmail.com>
- <CAJFOPmtqt_u_JUQyntOjr+0W9X_CgcAXCkx8gArR9-L57Et5TA@mail.gmail.com>
-In-Reply-To: <CAJFOPmtqt_u_JUQyntOjr+0W9X_CgcAXCkx8gArR9-L57Et5TA@mail.gmail.com>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Tue, 17 Feb 2026 17:56:14 +0000
-X-Gmail-Original-Message-ID: <CAL3q7H7z4uEZphBRs=oQJHBko00+=U23aUMi1T39t99tAFcbLQ@mail.gmail.com>
-X-Gm-Features: AaiRm50wImHFSrKgOaepZzW-84KsjiMRlGoZFQqBps-YUM-bMQYeNBerlEHfHoE
-Message-ID: <CAL3q7H7z4uEZphBRs=oQJHBko00+=U23aUMi1T39t99tAFcbLQ@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: check snapshot_force_cow earlier in can_nocow_file_extent
-To: Guan-Jie Chen <jk.chen1095@gmail.com>
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>, David Sterba <dsterba@suse.com>, 
-	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, 
-	jkchen <jkchen@ugreen.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Mime-Version: 1.0
+Content-Transfer-Encoding: 8bit
 
-On Tue, Feb 17, 2026 at 5:17=E2=80=AFPM Guan-Jie Chen <jk.chen1095@gmail.co=
-m> wrote:
->
-> Hi Filipe,
->
-> Thanks again for picking up the patch.
->
-> I realized that I should use my full real name and my personal email
-> for the Signed-off-by line. Could you please update it to:
->
-> Signed-off-by: Chen Guan Jie <jk.chen1095@gmail.com>
+Fix a copy-paste error in check_extent_data_ref(): we're printing root
+as in the message above, we should be printing objectid.
 
-Ok, updated it.
+Signed-off-by: Mark Harmstone <mark@harmstone.com>
+Fixes: f333a3c7e832 ("btrfs: tree-checker: validate dref root and objectid")
+---
+ fs/btrfs/tree-checker.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
->
-> Sorry for the trouble, and thank you for your help.
->
-> Best regards,
-> Chen Guan Jie
->
-> On Tue, Feb 17, 2026 at 19:42 Filipe Manana <fdmanana@kernel.org> wrote:
->>
->> On Mon, Feb 16, 2026 at 10:17=E2=80=AFPM jkchen <jk.chen1095@gmail.com> =
-wrote:
->> >
->> > When a snapshot is being created, the atomic counter snapshot_force_co=
-w
->> > is incremented to force incoming writes to fallback to COW. This is a
->> > critical mechanism to protect the consistency of the snapshot being ta=
-ken.
->> >
->> > Currently, can_nocow_file_extent() checks this counter only after
->> > performing several checks, most notably the expensive cross-reference
->> > check via btrfs_cross_ref_exist(). btrfs_cross_ref_exist() releases th=
-e
->> > path and performs a search in the extent tree or backref cache, which
->> > involves btree traversals and locking overhead.
->> >
->> > This patch moves the snapshot_force_cow check to the very beginning of
->> > can_nocow_file_extent().
->> >
->> > This reordering is safe and beneficial because:
->> > 1. args->writeback_path is invariant for the duration of the call (set
->> >    by caller run_delalloc_nocow).
->> > 2. is_freespace_inode is a static property of the inode.
->> > 3. The state of snapshot_force_cow is driven by the btrfs_mksnapshot
->> >    process. Checking it earlier does not change the outcome of the NOC=
-OW
->> >    decision, but effectively prunes the expensive code path when a
->> >    fallback to COW is inevitable.
->> >
->> > By failing fast when a snapshot is pending, we avoid the unnecessary
->> > overhead of btrfs_cross_ref_exist() and other extent item checks in th=
-e
->> > scenario where NOCOW is already known to be impossible.
->> >
->> > Signed-off-by: jkchen <jkchen@ugreen.com>
->>
->> Reviewed-by: Filipe Manana <fdmanana@suse.com>
->>
->> Looks good, I'll add it to the github for-next branch, thanks.
->>
->> > ---
->> >  fs/btrfs/inode.c | 10 +++++-----
->> >  1 file changed, 5 insertions(+), 5 deletions(-)
->> >
->> > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
->> > index 845164485..3549031f3 100644
->> > --- a/fs/btrfs/inode.c
->> > +++ b/fs/btrfs/inode.c
->> > @@ -1921,6 +1921,11 @@ static int can_nocow_file_extent(struct btrfs_p=
-ath *path,
->> >         int ret =3D 0;
->> >         bool nowait =3D path->nowait;
->> >
->> > +       /* If there are pending snapshots for this root, we must COW. =
-*/
->> > +       if (args->writeback_path && !is_freespace_inode &&
->> > +           atomic_read(&root->snapshot_force_cow))
->> > +               goto out;
->> > +
->> >         fi =3D btrfs_item_ptr(leaf, path->slots[0], struct btrfs_file_=
-extent_item);
->> >         extent_type =3D btrfs_file_extent_type(leaf, fi);
->> >
->> > @@ -1982,11 +1987,6 @@ static int can_nocow_file_extent(struct btrfs_p=
-ath *path,
->> >                 path =3D NULL;
->> >         }
->> >
->> > -       /* If there are pending snapshots for this root, we must COW. =
-*/
->> > -       if (args->writeback_path && !is_freespace_inode &&
->> > -           atomic_read(&root->snapshot_force_cow))
->> > -               goto out;
->> > -
->> >         args->file_extent.num_bytes =3D min(args->end + 1, extent_end)=
- - args->start;
->> >         args->file_extent.offset +=3D args->start - key->offset;
->> >         io_start =3D args->file_extent.disk_bytenr + args->file_extent=
-.offset;
->> > --
->> > 2.43.0
->> >
->> >
+diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
+index 9774779f060b..ac4c4573ee39 100644
+--- a/fs/btrfs/tree-checker.c
++++ b/fs/btrfs/tree-checker.c
+@@ -1740,7 +1740,7 @@ static int check_extent_data_ref(struct extent_buffer *leaf,
+ 			     objectid > BTRFS_LAST_FREE_OBJECTID)) {
+ 			extent_err(leaf, slot,
+ 				   "invalid extent data backref objectid value %llu",
+-				   root);
++				   objectid);
+ 			return -EUCLEAN;
+ 		}
+ 		if (unlikely(!IS_ALIGNED(offset, leaf->fs_info->sectorsize))) {
+-- 
+2.52.0
+

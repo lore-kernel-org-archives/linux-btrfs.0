@@ -1,63 +1,99 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-oi1-f170.google.com (mail-oi1-f170.google.com [209.85.167.170])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9E938194C95;
-	Wed, 18 Feb 2026 07:09:34 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1F36E38D
+	for <linux-btrfs@vger.kernel.org>; Wed, 18 Feb 2026 07:35:52 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.167.170
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1771398574; cv=none; b=Ti7kcvHvgNg4hcpCLaVV1n8H6IWkcJe2brpyBQwu5v0YV+XaTazCij03SZ6MCsKxdbf/iZJRN3zXxSdzV/OrqoxXFzVBtprJV6JY99qtRMfbMnLof/YevobVNr8bz+VnJAtEOdN9Lc9A8zL971ub56bEfTyN9NJF8Qatk80sUaU=
+	t=1771400154; cv=none; b=HXFrCnQ8ctZdkQQn/+P+W90ooN3DTUW/4JM6UXaQ/92nv9bmLT9H+Qw//ycN4VPSa77gkU0xSEerrVFYGhVQO1C+2T6ZJCOt00s5FMQjW4GcRh/NSsxmLqyJjK6wfuJ3r36ohorQi+pLQg9+4m83EB2hbUYbxySif7S5H4NhuUY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1771398574; c=relaxed/simple;
-	bh=E+JXX/D7nVzCbXMojQr2+ZsL9vr1MB+pmBhAmWQe0k8=;
-	h=Message-ID:Date:MIME-Version:To:From:Subject:Content-Type; b=o99xO4lLDVQItMCN403VnqBEFAbH/0VwFEmPbe9Ey8jfEeK7mQLXGte+tmUbnNTsSD108GmQOS8zozwpjZUMe40ISR4vPdr7dXYaCoHZC87I18iKT79qRivEUrTH8hTapLnNeRTmhgNDIQf/EgRLng9CGdos9FsU1eHSCNbcJlk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=LDHuZRUu; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1771400154; c=relaxed/simple;
+	bh=ZqiyAarfZ9c5AIXXieSpT+WDVCKx/hTUaT4q7X2ZUf4=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=AbyUweK7+Or+te36Mp89/Ko8R4pyWquPtttk18OO67NWzff9wkkfsWswR1YPOS3Do4p9pHjk5lPCN91r2dUvGombA2+iLOrp8im2wWN1BI9veW9ER7tDpnix+3ABjUwwRDrZ/MC3BW2X4CQ4lZlvWcN+z52gv5Fl4k7fn+L5IPE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=JTwWSjrp; arc=none smtp.client-ip=209.85.167.170
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="LDHuZRUu"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id D1BAAC19421;
-	Wed, 18 Feb 2026 07:09:33 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1771398574;
-	bh=E+JXX/D7nVzCbXMojQr2+ZsL9vr1MB+pmBhAmWQe0k8=;
-	h=Date:To:From:Subject:From;
-	b=LDHuZRUu6OngjnaydxbpkZ65GQxnOAfkhQO6/chsr3A1tIPlWufr0b1+Y7Ho47hp0
-	 CU84Xv58/u9Dz8KmeN3Es/448wrPKHHoODhG4UPNWfCpN0R1O5kdwP/nTSbydocZyx
-	 W64Zm3P4v/79C02NVpxZLHnbBh5jLc40so9xaLbJ3YGRYI4RlHMzhz6U33KDg8hofT
-	 +nnCDnYd5CuN6ZjVS//p+IFJXqdAVOmmHJObxpIw7o5Q14hLvOwnJaQDVJccjfBSeg
-	 aVhJxskiaXZ1QcFtIFoML2Bcu8DjMTFwmwx9n/YUWowbKgHswjmMyFdnpo2Gcw2V4F
-	 BRk+idOUs470A==
-Message-ID: <924998a5-9786-4868-ba9f-726c4437cd7d@kernel.org>
-Date: Wed, 18 Feb 2026 16:09:32 +0900
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="JTwWSjrp"
+Received: by mail-oi1-f170.google.com with SMTP id 5614622812f47-46392972257so3285961b6e.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 17 Feb 2026 23:35:52 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1771400151; x=1772004951; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to;
+        bh=8z/PylMAl/e6ccvGm3MpeK5HLTy0MvwuZNR7LPhbsGo=;
+        b=JTwWSjrpZHUqBX1m25FsL2Tk3SeJqkZ3l0R+wZ12nUdYxFBXihP9h2qRFOCrB77pZR
+         Fh4pB4WU794+I3Zk1iP7DQj44n9z1PkAxnmg2/OXn63q2hAHYnRad2Uj1Q9guVi+bDlF
+         ZZeGvqlY+HmNxNyPacpEyXSmjoy54C1l8Zdf3bYO378wUj45lNwgn7dZC2h+vHKDtGBj
+         HSohIs/F4igCdlmnkA4X3ECiGLpaYdu/wqyuktpwqRIwVc/XFodCLwvwhyxrT4t0s8Ka
+         U1T3E0XtZ1hS8jbm+DxJnFtos7la3rX2A2YabybmhW+Yq9MSh5LbY06PNEjZdEUGrfti
+         6PcQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1771400151; x=1772004951;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=8z/PylMAl/e6ccvGm3MpeK5HLTy0MvwuZNR7LPhbsGo=;
+        b=hqqPsH0ztI9VrZcLtpv6PEemnAvK5XZA4u48+plKOMMAEjQmrjAL97i2o/pUyLIhUc
+         RFfTolXUuqlGMeigAEsmiTWuFq183eTx5/urGlONpaMiWK9plDDfWRfl3cz7UTk1HUgj
+         UL1eQ7JiYAwN9Vw4rtqZBC2kfRN1LRq1cNuuJqWnvGZFJXFlHCn2g1aWIJgO5SqRKci3
+         vAYtDzHPKTrCpJdjQbnt/2Eioy6OInguDZBshvhYiT6GbxdnYRrKIz7LZwL6kg1GWbF9
+         lt2fGy1d5FzfpaAMtFct50aBfbBUTuDo2VSnSxcaGvJam9uTKo3uUp6eeqe4p4KVzY4k
+         /bmw==
+X-Gm-Message-State: AOJu0Yxs+KFQZBpIevLh1noyuDZStzPYWzaipCQyJiTCym/EwmeSiHRg
+	6auakf5i9xF4HV1+cTM4i1EApqwu13i6KTAi/3Go90ZxQPzPg92oZM4LzCPJEWuU
+X-Gm-Gg: AZuq6aI+pO1kZgfKqIrpht6mDtgBVl9e1nFsjxmDYifQxb5s9Wvj9nSWW/1cLeBxHlZ
+	3W7SsQv/tQ65OaxKtCVl/HcGAr0BCsEYNZPM1tl+izHnDkoxXPGSu71NsyvRdJ6j9zJs0wBexe9
+	CPE7GpzzL4GefNtGvJx6kp/dwdgF1OHxU4Phg6hd6I912I5CISvEHs0zk2lLTWuCbZLPneenjjd
+	X2g1nonV5ElrQtoirbXnDRwOGS2BncBvK/r+cohi0eErsbF5JSr50W3qafESLh1NIPbT1cWtwQa
+	ONq32QZU4T13M9k/tO+HdiN5T3lWDXbH6DrnHWrwXsL0C5M4t8zvVbFf2s96cD+CeQIZyHmH6eI
+	jUZmzyVedwDLSiozr2xZJjcLLY90nC8CO+I0tGkbWL3TAQlXCXbIjkcsj3gSTsKKSXWjOC4vJKp
+	tCMdJmRRy6CRUBHEbKc1FgGFSupOY58T7H3dwF
+X-Received: by 2002:a05:6820:151c:b0:677:87ab:a78a with SMTP id 006d021491bc7-679a7470bddmr506323eaf.61.1771400151139;
+        Tue, 17 Feb 2026 23:35:51 -0800 (PST)
+Received: from gamma.attlocal.net ([2600:1700:5ae0:ae0:7bc1:6088:681:9c27])
+        by smtp.gmail.com with ESMTPSA id 006d021491bc7-67832657b04sm8877580eaf.16.2026.02.17.23.35.48
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 17 Feb 2026 23:35:49 -0800 (PST)
+From: Illia Bobyr <illia.bobyr@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Illia Bobyr <illia.bobyr@gmail.com>
+Subject: [PATCH] btrfs-progs: balance: usage range filter not working
+Date: Tue, 17 Feb 2026 23:33:24 -0800
+Message-ID: <20260218073357.3897563-1-illia.bobyr@gmail.com>
+X-Mailer: git-send-email 2.51.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Content-Language: en-US
-To: linux-xfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
- linux-btrfs@vger.kernel.org
-From: Damien Le Moal <dlemoal@kernel.org>
-Subject: Zonar v1.0.0 released
-Organization: Western Digital Research
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
 
-This is to announce the release of zonar, a graphical tool for monitoring and
-inspecting the usage of a file system on a zoned block device. Zonar source code
-is hosted on github here:
+When range support was added to the usage filter, a bug was
+introduced, as `BTRFS_BALANCE_ARGS_USAGE` is set unconditionally, even
+when `BTRFS_BALANCE_ARGS_USAGE_RANGE` is also set.
 
-https://github.com/westerndigitalcorporation/zonar
+If `BTRFS_BALANCE_ARGS_USAGE` is set, `BTRFS_BALANCE_ARGS_USAGE_RANGE` is
+ignored, see `fs/btrfs/volumes.c:should_balance_chunk()`.
 
-Zonar currently only supports XFS but we are working toward adding BTRFS support
-as well.
+Signed-off-by: Illia Bobyr <illia.bobyr@gmail.com>
+---
+ cmds/balance.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-Command-line tools like xfs_bmap already allow getting the disk location of file
-data extents. Zonar allows the same, but graphically, and for many number of
-files and zones at a time, which can greatly facilitate understanding and
-visualization of a file system data placement decisions.
-
+diff --git a/cmds/balance.c b/cmds/balance.c
+index 25c5e..d6296 100644
+--- a/cmds/balance.c
++++ b/cmds/balance.c
+@@ -141,7 +141,6 @@ static int parse_filters(char *filters, struct btrfs_balance_args *args)
+ 				args->flags &= ~BTRFS_BALANCE_ARGS_USAGE_RANGE;
+ 				args->flags |= BTRFS_BALANCE_ARGS_USAGE;
+ 			}
+-			args->flags |= BTRFS_BALANCE_ARGS_USAGE;
+ 		} else if (strcmp(this_char, "devid") == 0) {
+ 			if (!value || !*value) {
+ 				error("the devid filter requires an argument");
 -- 
-Damien Le Moal
-Western Digital Research
+2.51.0
 

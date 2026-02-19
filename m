@@ -1,148 +1,80 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3D957226CF6
-	for <linux-btrfs@vger.kernel.org>; Thu, 19 Feb 2026 15:21:27 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 980A326CE05
+	for <linux-btrfs@vger.kernel.org>; Thu, 19 Feb 2026 15:45:43 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1771514488; cv=none; b=MnVCn4AaA7/V1rTmRJPOd92oYNT3pZWI4NF5yz/YImF0Iagc3iejwD+jHd+wamJqllKrj8MCpD2CPGQRV3LWt8+2ZmuQzrfHhp2zIRjmcTUjCN7WR4y5j0x3pgHHupXjW/7iihyycusgwXH8fh/oPf8AGPOWSLuPTtySjVakoJ0=
+	t=1771515943; cv=none; b=U7Z1s4wU23jO2WSGtKgqOEDRpBhPXJ2e5eKgBrh0E85PYffRnsF7wM/khBqd15IxnMQip4tFiQidsw5C6ZHSuFGmUs62dRhe/hkvZvF4ZSJCZt1njeB67ffJVGBWykZN6MMleg1KAnH9l+As5HFiDDgv1bQdd0JkOnczgcO8qII=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1771514488; c=relaxed/simple;
-	bh=rqtWRep3LvvALHsKRkwAk7vbvqtD5h4OvTLiNbldG/c=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=M9JUaIZb1gob9KyqS6ZWeeETfgacFep4bD6ft/s3gm/GV7fGFREJPpAxJIsLEbFCkx/xwokU3e6FFwZ0j6mqv23txoFFCP14DTsdO971HqDUR9lGk+MfzMSzKXmiMInOIdyi7wN1nhnbT3JafzSBOYWdlJvIuw8hA67UoISK7z4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=DBixWZmZ; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1771515943; c=relaxed/simple;
+	bh=tjT4qqc0bXMyFSx1RkAPRj0QgppFHyB0W9k3sokn65Y=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=i/A1xFADeTYGQFL2UrZuNO6wMWgpNlozIAEmbWPTGhpe2SCLW14nx4o1Jj14hT69ZAmie1M+YG9/LNj5HFGrtnJpF7vdtOd4yiwnwF8ExA5xN67MNVgKm55ojqoymN7AM0I5VXEwNwJQTRzi4SdmId8DTXAQ1M0jxTtZUjpJAUs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=ja5uhdbL; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="DBixWZmZ"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id D06F5C4CEF7
-	for <linux-btrfs@vger.kernel.org>; Thu, 19 Feb 2026 15:21:27 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="ja5uhdbL"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id B4863C4CEF7
+	for <linux-btrfs@vger.kernel.org>; Thu, 19 Feb 2026 15:45:42 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1771514487;
-	bh=rqtWRep3LvvALHsKRkwAk7vbvqtD5h4OvTLiNbldG/c=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-	b=DBixWZmZ49sqxpxJtwWX7CL7Jo5zJoUYbFWazptrcSHt4qH4cZqgOIAWSylvc7jeq
-	 5TB9jjr5uCuYBE57UyMyu9p7KZ+/cv+SeUDIcM3yjPE4PGot6irI2rojjnoDvK5I1B
-	 E+ugsRCboJmB9LjRH9QTFBPliSNfZf2TL6IZ6ES86LTkbhX118wg8iBG6p5Vd4tFAC
-	 kXp3uBN/78x7ni3989vbFnD7U8P475b4q/sFb9wqHyYljnmHGgFZlS3wOHk709/6mk
-	 DmhO0dzq+NlcKUaYLmb7GCUWBaFux7l2wzr9ZJnIk3jEmI1wt7HDxPtjwpnSdar/2e
-	 KsLuA7C70ZQQA==
-Received: by mail-ed1-f54.google.com with SMTP id 4fb4d7f45d1cf-65a1970b912so3469824a12.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Feb 2026 07:21:27 -0800 (PST)
-X-Gm-Message-State: AOJu0YwDhtr6PgNwHkIf8cTkTtivHQ5s23/RTOcMIKxvuoDZ7cDvbfPS
-	XzGYiQ0pVCNi+zJCjs24DdtXB0V/VCVBVcjdlErnbIUL0AA79a0wnHoharn0axyTNOYuXHDXkdh
-	rGWITMZD+mgoU3Afn+7J5VlzvieWjWJo=
-X-Received: by 2002:a17:907:940f:b0:b8f:8054:504 with SMTP id
- a640c23a62f3a-b905444ceafmr140986966b.29.1771514486301; Thu, 19 Feb 2026
- 07:21:26 -0800 (PST)
+	s=k20201202; t=1771515943;
+	bh=tjT4qqc0bXMyFSx1RkAPRj0QgppFHyB0W9k3sokn65Y=;
+	h=From:To:Subject:Date:From;
+	b=ja5uhdbLkQ923xUrKWjtJsn7xRAEbhqHLWP5sPl8JRi/5FJ9KKdh5xyIbVmUFDdAb
+	 g6HeuliwxhrCehCTmLZfA1banmF82ng7wupennURqbiu/qiI5G67cfjpthEykkQkjP
+	 I4ls/KKckjQX1SWSQ/l+XXNUCNi636aBtlzHU45kL8pNpf/fDNjaMZHdrXv8EfZb9Z
+	 auW+Aqm+Qkc31D50vV0EHa+bMtJydaHbwaIoo73WhBZJFAWmrhEqe+o+G+BpBpKRVN
+	 0jugZ/+y70vdMa9URG8RUq050U7GY0IdDOMYuOwsbFOzeOC1n331y9Lj/fALBbFeoK
+	 7vIHsiZPvgDNw==
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: stop printing condition result in assertion failure messages
+Date: Thu, 19 Feb 2026 15:45:39 +0000
+Message-ID: <9c3463215d864eb706860e7d9c853e34d4125408.1771515807.git.fdmanana@suse.com>
+X-Mailer: git-send-email 2.47.2
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <cover.1771488629.git.wqu@suse.com> <6c9530ebc218de97439aa5043840d544e9b6470a.1771488629.git.wqu@suse.com>
-In-Reply-To: <6c9530ebc218de97439aa5043840d544e9b6470a.1771488629.git.wqu@suse.com>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Thu, 19 Feb 2026 15:20:49 +0000
-X-Gmail-Original-Message-ID: <CAL3q7H7LvU_2iNpTpSY8nmBKTCm87g7QvmQ6__yGpQcijX7Www@mail.gmail.com>
-X-Gm-Features: AaiRm51vwQsUvXFrBrj2zH7mARtMiwveBauQvWibLpIDZPPkAVSuArTFb0Bf_mI
-Message-ID: <CAL3q7H7LvU_2iNpTpSY8nmBKTCm87g7QvmQ6__yGpQcijX7Www@mail.gmail.com>
-Subject: Re: [PATCH v2 4/4] btrfs: fix an incorrect ASSERT() condition inside lzo_decompress_bio()
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
 
-On Thu, Feb 19, 2026 at 8:22=E2=80=AFAM Qu Wenruo <wqu@suse.com> wrote:
->
-> [BUG]
-> When running btrfs/284 with 64K page size and 4K fs block size, it
-> crashes with the following ASSERT() triggered:
->
->  BTRFS info (device dm-3): use lzo compression, level 1
->  assertion failed: folio_size(fi.folio) =3D=3D sectorsize :: 0, in lzo.c:=
-450
->  ------------[ cut here ]------------
->  kernel BUG at lzo.c:450!
->  Internal error: Oops - BUG: 00000000f2000800 [#1]  SMP
->  CPU: 4 UID: 0 PID: 329 Comm: kworker/u37:2 Tainted: G           OE      =
- 6.19.0-rc8-custom+ #185 PREEMPT(voluntary)
->  Hardware name: QEMU KVM Virtual Machine, BIOS unknown 2/2/2022
->  Workqueue: btrfs-endio simple_end_io_work [btrfs]
->  pc : lzo_decompress_bio+0x61c/0x630 [btrfs]
->  lr : lzo_decompress_bio+0x61c/0x630 [btrfs]
->  Call trace:
->   lzo_decompress_bio+0x61c/0x630 [btrfs] (P)
->   end_bbio_compressed_read+0x2a8/0x2c0 [btrfs]
->   btrfs_bio_end_io+0xc4/0x258 [btrfs]
->   btrfs_check_read_bio+0x424/0x7e0 [btrfs]
->   simple_end_io_work+0x40/0xa8 [btrfs]
->   process_one_work+0x168/0x3f0
->   worker_thread+0x25c/0x398
->   kthread+0x154/0x250
->   ret_from_fork+0x10/0x20
->  Code: 912a2021 b0000e00 91246000 940244e9 (d4210000)
->  ---[ end trace 0000000000000000 ]---
->
-> [CAUSE]
-> Commit 37cc07cab7dc ("btrfs: lzo: use folio_iter to handle
-> lzo_decompress_bio()") added the ASSERT() to make sure the folio size
-> match the fs block size.
+From: Filipe Manana <fdmanana@suse.com>
 
-match -> matches
+It's useless to print the result of the condition, it's always 0 if the
+assertion is triggered, so it doesn't provide any useful information.
+Examples:
 
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
+   assertion failed: cb->bbio.bio.bi_iter.bi_size == disk_num_bytes :: 0, in inode.c:9991
+   assertion failed: folio_test_writeback(folio) :: 0, in subpage.c:476
 
-Thanks.
+So stop printing that, it's always ":: 0" for any assertion triggered.
 
->
-> But the check is completely wrong, the original intention is to make
-> sure for bs > ps cases, we always got a large folio that covers a full fs
-> block.
->
-> However for bs < ps cases, a folio can never be smaller than page size,
-> and the ASSERT() gets triggered immediately.
->
-> [FIX]
-> Check the folio size against @min_folio_size instead, which will never
-> be smaller than PAGE_SIZE, and still cover bs > ps cases.
->
-> Fixes: 37cc07cab7dc ("btrfs: lzo: use folio_iter to handle lzo_decompress=
-_bio()")
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
->  fs/btrfs/lzo.c | 4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
->
-> diff --git a/fs/btrfs/lzo.c b/fs/btrfs/lzo.c
-> index 8e20497afffe..971c2ea98e18 100644
-> --- a/fs/btrfs/lzo.c
-> +++ b/fs/btrfs/lzo.c
-> @@ -429,7 +429,7 @@ static void copy_compressed_segment(struct compressed=
-_bio *cb,
->  int lzo_decompress_bio(struct list_head *ws, struct compressed_bio *cb)
->  {
->         struct workspace *workspace =3D list_entry(ws, struct workspace, =
-list);
-> -       const struct btrfs_fs_info *fs_info =3D cb->bbio.inode->root->fs_=
-info;
-> +       struct btrfs_fs_info *fs_info =3D cb->bbio.inode->root->fs_info;
->         const u32 sectorsize =3D fs_info->sectorsize;
->         struct folio_iter fi;
->         char *kaddr;
-> @@ -447,7 +447,7 @@ int lzo_decompress_bio(struct list_head *ws, struct c=
-ompressed_bio *cb)
->         /* There must be a compressed folio and matches the sectorsize. *=
-/
->         if (unlikely(!fi.folio))
->                 return -EINVAL;
-> -       ASSERT(folio_size(fi.folio) =3D=3D sectorsize);
-> +       ASSERT(folio_size(fi.folio) =3D=3D btrfs_min_folio_size(fs_info))=
-;
->         kaddr =3D kmap_local_folio(fi.folio, 0);
->         len_in =3D read_compress_length(kaddr);
->         kunmap_local(kaddr);
-> --
-> 2.52.0
->
->
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/messages.h | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/fs/btrfs/messages.h b/fs/btrfs/messages.h
+index 81f59afe4a99..17cdc14dc89d 100644
+--- a/fs/btrfs/messages.h
++++ b/fs/btrfs/messages.h
+@@ -141,11 +141,11 @@ do {										\
+ 	verify_assert_printk_format("check the format string" args);		\
+ 	if (!likely(cond)) {							\
+ 		if (("" __FIRST_ARG(args) [0]) == 0) {				\
+-			pr_err("assertion failed: %s :: %ld, in %s:%d\n",	\
+-				#cond, (long)(cond), __FILE__, __LINE__);	\
++			pr_err("assertion failed: %s, in %s:%d\n",		\
++				#cond, __FILE__, __LINE__);			\
+ 		} else {							\
+-			pr_err("assertion failed: %s :: %ld, in %s:%d (" __FIRST_ARG(args) ")\n", \
+-				#cond, (long)(cond), __FILE__, __LINE__ __REST_ARGS(args)); \
++			pr_err("assertion failed: %s, in %s:%d (" __FIRST_ARG(args) ")\n", \
++				#cond, __FILE__, __LINE__ __REST_ARGS(args));	\
+ 		}								\
+ 		BUG();								\
+ 	}									\
+-- 
+2.47.2
+

@@ -1,73 +1,201 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0C4AC32E724;
-	Fri, 20 Feb 2026 13:20:56 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 19F2A25B31D
+	for <linux-btrfs@vger.kernel.org>; Fri, 20 Feb 2026 15:48:15 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.133.124
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1771593657; cv=none; b=Ppr/l/z5dbkfFntDFN1LFnh5tNohac+MxmjdUpGhxcm1P+vSjrvf7oPm1MEDey/nrA5jwmKgymZvvwtwZDORiOe9rMGQNBgIMdQpAsfj9r5utYPXQru23KZcmPLbEIQTU/kYnfWGChEoLGNrFcN2iAhHnOGifJA74JEynmZA2Pg=
+	t=1771602497; cv=none; b=AtQbSD5Ga+rauQ0tOBLm6EDv8ULlS/6x+pioUOjEDboEZYVIeKJQFkvU+j8nlFmLZG1PuK53kxBs2kZb9WtTHM/MQRs72xbExYPQSezVk/MB7O5kaHsIKWLnyETARm6v08OAzlj6942QLfHktoYWRxra/tedbhbS0DfowNov7To=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1771593657; c=relaxed/simple;
-	bh=+/qPuPAVaJSpihzZa+SDcXfGfdnlNwfaWfbPw+GQyDE=;
+	s=arc-20240116; t=1771602497; c=relaxed/simple;
+	bh=oGD0Dqtxdam/f2v6pXkHshry2SBRwhc39ZrZ++WLS7s=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=X/JY4U2gcUgmYQUtsbmvkAKDlXFggQ02BkbPvkNgRF75eOCIxGJX6NAtAMUjsmrnQsffX+9Jgl/TH/k9pjhc+lOpeef9azT0SZ0OfmXZNMR1+PT1bVWP0JkpEo7JU/srH29eWrKnMXGGzodPspH2wnBwl1HSwdxlksP3hjPEsFY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (1024-bit key) header.d=linuxfoundation.org header.i=@linuxfoundation.org header.b=A54vb1jV; arc=none smtp.client-ip=10.30.226.201
+	 Content-Type:Content-Disposition:In-Reply-To; b=OJsWPVKuuL9KFzr3YOR+lzuH8Ef/+LcpEPwZceVFAYRgeBWzUdDJ69rGaZPH5tSzNGaznSYdOhPOgf2LawQAmikgYacpTOyzVTgCeIhAv4LLausJQ2PyU5uagjeAso+Uo/KVx4toQxOVdeoE4ZUxBjRVBV5tXpmSZZj4ZzkZlrM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=ZfVfB865; dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b=PRlPlNO+; arc=none smtp.client-ip=170.10.133.124
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linuxfoundation.org header.i=@linuxfoundation.org header.b="A54vb1jV"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 4AF06C116D0;
-	Fri, 20 Feb 2026 13:20:56 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linuxfoundation.org;
-	s=korg; t=1771593656;
-	bh=+/qPuPAVaJSpihzZa+SDcXfGfdnlNwfaWfbPw+GQyDE=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=A54vb1jV4QD7H3Ux0lg52BYY/99wnh+upsYDRaL4oQb7hvedAZnI5J9ZLjHCfx1LC
-	 RbtHtu26J98IFj1pQkmSsbPPk7dddpiQW908RewGu1C5100prQymd9wPl6zVkG5jai
-	 uwqvxsEXf7xcQqsN9rRuvQYmP+Ea9SDs0riDn5kw=
-Date: Fri, 20 Feb 2026 14:20:53 +0100
-From: Greg KH <gregkh@linuxfoundation.org>
-To: Filipe Manana <fdmanana@kernel.org>
-Cc: Mark Harmstone <mark@harmstone.com>, linux-btrfs@vger.kernel.org,
-	johannes.thumshirn@wdc.com, stable@vger.kernel.org
-Subject: Re: [PATCH] btrfs: fix chunk map leak in btrfs_map_block() after
- btrfs_chunk_map_num_copies()
-Message-ID: <2026022052-aqueduct-gallows-a487@gregkh>
-References: <20260220130209.5020-1-mark@harmstone.com>
- <CAL3q7H6RnMw=GLAuv20u0e8azr5Tyr_wXFKKjUEgvp3iFAak_g@mail.gmail.com>
+	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="ZfVfB865";
+	dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b="PRlPlNO+"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+	s=mimecast20190719; t=1771602495;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=UByZ/fZkiO75MPabPlfve5T92mlXJbTpDo0SxQ0ZYiU=;
+	b=ZfVfB865+5R+J5rpgoWl9MopvJ/SAjHHCwpJIfKpRG/ZBVRpQAt29BzduGDF2Fi45d6s4r
+	9riuXnxbci+X2mTz4mDuX9ZgJkGyDe5BcZ+9ru1+O4P1nMaEQ3BEQi2UQdXNMEXDwO5p4N
+	68zBrguy2Yeu0dTnxsIBIdqJ1+dJl38=
+Received: from mail-pg1-f199.google.com (mail-pg1-f199.google.com
+ [209.85.215.199]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
+ us-mta-76-9V1cC6eoOCirL8FXsXiNuw-1; Fri, 20 Feb 2026 10:48:13 -0500
+X-MC-Unique: 9V1cC6eoOCirL8FXsXiNuw-1
+X-Mimecast-MFC-AGG-ID: 9V1cC6eoOCirL8FXsXiNuw_1771602492
+Received: by mail-pg1-f199.google.com with SMTP id 41be03b00d2f7-c6e8ec30182so10565842a12.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 20 Feb 2026 07:48:13 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=redhat.com; s=google; t=1771602492; x=1772207292; darn=vger.kernel.org;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
+        bh=UByZ/fZkiO75MPabPlfve5T92mlXJbTpDo0SxQ0ZYiU=;
+        b=PRlPlNO+WBrF0VxI9GtciNFEjazh6B7dcJawjFIAEMXhgoDjOqkbQ9zLOZz3aheGfQ
+         q/MdTm+12pyciwcm27lHCJgQiGK2ho+3ODfGnowLCPfqa/N+Bl324hYckxzXabIrCek5
+         yWsllJB40vXzUx0QcW3rhZyk2k49cqW9UYaiceXUemdmE1DXwjSAqGhJD72Lgnvvpkrv
+         PHCpWfPUdxBEkKRv+k6uQ8jOFCLYkZ4PL64Rzfmqbcz2eTUBFSeG02FiF2L8qDp0nDX/
+         veyPyTnGADLDghIZde7O9qADe1b8GJAJua6+XZx8vmUG8dD38EHPhRBYB+Po+O1BIr5U
+         werQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1771602492; x=1772207292;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=UByZ/fZkiO75MPabPlfve5T92mlXJbTpDo0SxQ0ZYiU=;
+        b=Jo8Ux2cAjFXK1kQzAhsyN2U8nAw9yjc2jmcCvzAONqRu/THUrSa6tm0G0bNm0pYMop
+         ykYZSo8+09z/vDjXzIvDmjG2L3dqUsESi7gz47UV/a67VmnW3a5MSPT8J8KntH95ccf7
+         jy9qCFVaRY5w4nDCWPpUAXbjW4PB1ZtmVj8crtwDu0xml7YCPpRGlrTMyT/VhC1bQw9p
+         h0yyjp0ut724AWaMRVNrjrFK6ETXUy3rrX2umd9o17E/AhkQTHbr61UhZhiSM/tdIcWe
+         5kuuf1Y9BILpt2WaDek7fi/j32cCUAkFTE/0CD2PTP7sP0Pez0NKARtGXtl/qfqojBHX
+         ZgmA==
+X-Forwarded-Encrypted: i=1; AJvYcCVK1k+3tOopXy0+ORB22ZKVYm55OMDBMsNB+hzk+Oz8XA8eZ+Y8ufe8Jinsw3+J8v9D0R1J8PMhCc0tzw==@vger.kernel.org
+X-Gm-Message-State: AOJu0YwZuUvnqQjIK8yJYmz2bPUzEqxaf8tdGKuxvpzC6drDU7d/41w0
+	/E2NNfAlk1NsoTTSo0T3im/ulqwbupYaqn4CHg3iRl5hvHtMYSyrLG52KAIRzOgF+KpMSrHs0P5
+	5fESVtI+GMueoRGbqTS+fKViLFZyF1eBadOzpFPu7j1A3rGyIsX2GJbtIYbgSAC556gYyejql
+X-Gm-Gg: AZuq6aK/JpA/kbOrNKrjpisnY3hbxmodIlZOmu7MbtJSOSzIkHzc7OaTDCn7gdPLXbo
+	CcV7cta3ZFtxPZPmCD94x3QeBKvm3xlDznlfjAh1aaL+FqM2WZL9LD5fLV/1HSw9EzDg9a4IVKt
+	J0ZXYRSKlMy5c/MNXkk8pLwi8k3hZkNhNru57ipJ2wqFo3/qIKPu2Re8yBVDFfx0NA5pNaMHJPS
+	7LHo7Taa1SBRd9YcITKtHqp18NPkvPBw2/ihSM8DtRiyt2UwS0WQexifPIbJdi7fKuErSus4CIB
+	V/vyEqLBSK+Y7lFHtCU3CCL+e9dQLlwmFil7bkLpno164mlWtzVU0Roqy781/ZD6irgZY8IdK1I
+	nk2BkMeWlN2qoA6+ATQjXu88W/7S94ca0OSR9IiOxYC3mMraeYqmDzO9VPyWw3g==
+X-Received: by 2002:a05:6a00:4296:b0:81f:9b09:ad02 with SMTP id d2e1a72fcca58-826da8d7d6amr306939b3a.1.1771602492042;
+        Fri, 20 Feb 2026 07:48:12 -0800 (PST)
+X-Received: by 2002:a05:6a00:4296:b0:81f:9b09:ad02 with SMTP id d2e1a72fcca58-826da8d7d6amr306912b3a.1.1771602491587;
+        Fri, 20 Feb 2026 07:48:11 -0800 (PST)
+Received: from dell-per750-06-vm-08.rhts.eng.pek2.redhat.com ([209.132.188.88])
+        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-824c6b94562sm23054638b3a.54.2026.02.20.07.48.09
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Fri, 20 Feb 2026 07:48:11 -0800 (PST)
+Date: Fri, 20 Feb 2026 23:48:07 +0800
+From: Zorro Lang <zlang@redhat.com>
+To: fdmanana@kernel.org
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	Filipe Manana <fdmanana@suse.com>
+Subject: Re: [PATCH] generic: test fsync of a file truncated to a length of
+ zero
+Message-ID: <20260220154807.jdya3knqauhvnq46@dell-per750-06-vm-08.rhts.eng.pek2.redhat.com>
+References: <f4a25aa2a17255493a9887e0ba6610a307a4961a.1771352543.git.fdmanana@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <CAL3q7H6RnMw=GLAuv20u0e8azr5Tyr_wXFKKjUEgvp3iFAak_g@mail.gmail.com>
+In-Reply-To: <f4a25aa2a17255493a9887e0ba6610a307a4961a.1771352543.git.fdmanana@suse.com>
 
-On Fri, Feb 20, 2026 at 01:07:27PM +0000, Filipe Manana wrote:
-> On Fri, Feb 20, 2026 at 1:02 PM Mark Harmstone <mark@harmstone.com> wrote:
-> >
-> > Fix a chunk map leak in btrfs_map_block(): if we return early with -EINVAL,
-> > we're not freeing the chunk map that we've just looked up.
-> >
-> > Signed-off-by: Mark Harmstone <mark@harmstone.com>
-> > Cc: stable@vger.kernel.org
-> > Fixes: 0ae653fbec2b ("btrfs: reduce chunk_map lookups in btrfs_map_block()")
+On Tue, Feb 17, 2026 at 06:33:30PM +0000, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
 > 
-> Reviewed-by: Filipe Manana <fdmanana@suse.com>
+> Test that if we truncate a file to 0, fsync it, add a hard link to the
+> file and then fsync the parent directory, after a power failure the file
+> has a size of 0 (and the hardlink exists too).
 > 
-> Side note: if there's a Fixes tag, we don't need a CC stable tag
-> anymore nowadays.
+> This exercises a bug fixed by the following kernel patch for btrfs:
+> 
+>   "btrfs: fix zero size inode with non-zero size after log replay"
+> 
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
 
-Not true at all, please read:
+Thanks Filipe, this patch is good to me,
 
-    https://www.kernel.org/doc/html/latest/process/stable-kernel-rules.html
+Reviewed-by: Zorro Lang <zlang@redhat.com>
 
-You HAVE to have a cc: stable if you know you want it to be added to a
-stable tree.  If you do not do that, you are at the mercy of "when Greg
-and Sasha get bored and attempt to pick up things that maintainers
-forgot about".
+>  tests/generic/788     | 59 +++++++++++++++++++++++++++++++++++++++++++
+>  tests/generic/788.out |  5 ++++
+>  2 files changed, 64 insertions(+)
+>  create mode 100755 tests/generic/788
+>  create mode 100644 tests/generic/788.out
+> 
+> diff --git a/tests/generic/788 b/tests/generic/788
+> new file mode 100755
+> index 00000000..0234cc7f
+> --- /dev/null
+> +++ b/tests/generic/788
+> @@ -0,0 +1,59 @@
+> +#! /bin/bash
+> +# SPDX-License-Identifier: GPL-2.0
+> +# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
+> +#
+> +# FS QA Test 788
+> +#
+> +# Test that if we truncate a file to 0, fsync it, add a hard link to the file
+> +# and then fsync the parent directory, after a power failure the file has a
+> +# size of 0 (and the hardlink exists too).
+> +#
+> +. ./common/preamble
+> +_begin_fstest auto quick log
+> +
+> +_cleanup()
+> +{
+> +	_cleanup_flakey
+> +	cd /
+> +	rm -r -f $tmp.*
+> +}
+> +
+> +. ./common/filter
+> +. ./common/dmflakey
+> +
+> +_require_scratch
+> +_require_dm_target flakey
+> +
+> +[ "$FSTYP" = "btrfs" ] && _fixed_by_kernel_commit xxxxxxxxxxxx \
+> +	"btrfs: fix zero size inode with non-zero size after log replay"
+> +
+> +_scratch_mkfs >>$seqres.full 2>&1 || _fail "mkfs failed"
+> +_require_metadata_journaling $SCRATCH_DEV
+> +_init_flakey
+> +_scratch_mount
+> +
+> +mkdir $SCRATCH_MNT/dir
+> +$XFS_IO_PROG -f -c "pwrite -S 0xab 0 64K" $SCRATCH_MNT/dir/foo | _filter_xfs_io
+> +
+> +# Persist the file and directory.
+> +_scratch_sync
+> +
+> +# Truncate the file to 0 and fsync it.
+> +$XFS_IO_PROG -c "truncate 0" -c "fsync" $SCRATCH_MNT/dir/foo
+> +
+> +# Create a link to foo in the same dir.
+> +ln $SCRATCH_MNT/dir/foo $SCRATCH_MNT/dir/bar
+> +
+> +# Fsync the directory.
+> +$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/dir
+> +
+> +# Simulate a power failure and then mount again the filesystem to replay the
+> +# journal/log.
+> +_flakey_drop_and_remount
+> +
+> +echo "file size after power failure: $(stat -c %s $SCRATCH_MNT/dir/foo)"
+> +echo "file link count after power failure: $(stat -c %h $SCRATCH_MNT/dir/foo)"
+> +[ -f $SCRATCH_MNT/dir/bar ] || echo "link dir/bar is missing"
+> +
+> +# success, all done
+> +_exit 0
+> diff --git a/tests/generic/788.out b/tests/generic/788.out
+> new file mode 100644
+> index 00000000..37f3f36a
+> --- /dev/null
+> +++ b/tests/generic/788.out
+> @@ -0,0 +1,5 @@
+> +QA output created by 788
+> +wrote 65536/65536 bytes at offset 0
+> +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+> +file size after power failure: 0
+> +file link count after power failure: 2
+> -- 
+> 2.47.2
+> 
+> 
 
-thanks,
-
-greg k-h

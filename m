@@ -1,252 +1,255 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9AFFF2DECDE
-	for <linux-btrfs@vger.kernel.org>; Fri, 20 Feb 2026 03:42:03 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A248C336EE9
+	for <linux-btrfs@vger.kernel.org>; Fri, 20 Feb 2026 10:27:04 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1771558926; cv=none; b=cTE3GiOrKXrb0Mn/DO+pIaZoOGU35VsF1MKc3ePI3yIh8RBCadj25axuaQQzzGafLgUR3RUo9JqFcW06jCrDH+55GANKYUsYF/RveqItsijsnNe+5dH1ty8sGPF4OvfUenXbPHQmEUFuD+wtKgxlaNm1hSVO/w3rez7kCr0FfPY=
+	t=1771583224; cv=none; b=LfafbauzNHq6ay2DSaLPqBCLIXVL9mXYOvb8K9kKUaTmtXnNSgGm85f1KAYaQEsZ8PlIeTfFMN2ld1jf59XUbbTDwTvX+dS4k9tBwA1USI6wq8Ls5QoJmPMqabeJoJeO/t4k8C716nmRaqKoU2wb+e2KXUPRoU3Cc47di9q7QCg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1771558926; c=relaxed/simple;
-	bh=ytEPq+g6EKkKRAf8dZGrabH0HP4/3Q/hp606SoN6gR4=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=TulnMjRmKWT6WtkkEBQzM2UV0nSFsr6CpOddBdTQC0zjrU0P3FqHEQz6k56YDNWsuq0jsTaINFgCPD3fx9uuqmSd43ULLtRQwVZGfmXnmpQi7pitdhIq9Hw6zCBb/hs4NQgxZt6TGVwbm+4/f1TeqExNfoCFw6ynlVFi91IY2eE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=OvkGKgZB; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=tZf63gdd; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1771583224; c=relaxed/simple;
+	bh=aVvul8cP9KSae0wFnc275b4kprejmgSWdfzbu2FiXYA=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=jZZP+kn7ebTX6+ETpx/omkAdzF/tziE0z1RtJnrSoGKrfoPIYBddk+koOhxaNOlG0hV8Nk8ElIuGGdpL+q+HmBtrB7FFvfA7yOdr15Xl0ky3DVwAwnZtNAP0lVtMnQuEU0q+BAJOSGgtm3Fh5ncGBHfSh0zzFvcSU+egADyzlVQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=PwG+BrYz; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="OvkGKgZB";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="tZf63gdd"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id D56955BCC7
-	for <linux-btrfs@vger.kernel.org>; Fri, 20 Feb 2026 03:41:56 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1771558917; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=LyjGptBbo+/uERrLTdtjlpwuOF+9YrtwXhGoYU0uPnw=;
-	b=OvkGKgZBwAIf3gnJhKBWCDqMLY7klbLUP/TMqwPGvu2WTexflwbhF7klewf/4vfD/4Y9SL
-	Z41BCkQ4y+P/EMpCJIuhJBvjG5x8B0g6S58ShwsJAMucKgCXDEBoPv5DVRNSDtB8K0PC4/
-	qeYSPwXnG9QkmhxCZmqH81FYU639x6s=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=tZf63gdd
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1771558916; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=LyjGptBbo+/uERrLTdtjlpwuOF+9YrtwXhGoYU0uPnw=;
-	b=tZf63gddVDhbT/76bezzJkh7AJPXMHpgLYvD93Rnpsi58jKs9boZ2Go3W98+XWjpkLi7bk
-	Y5aOH4L+oCqtwmiuKUNQjMD1l8u30fhR1WoXsR++wtsswakMzNM7+qyKXD/s7sj1OLqxfO
-	qYqeSrXr+49/LSnLc613HvMJ+c1Jkfo=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 1488A3EA65
-	for <linux-btrfs@vger.kernel.org>; Fri, 20 Feb 2026 03:41:55 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id eLBUMgPYl2nODgAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Fri, 20 Feb 2026 03:41:55 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/2] btrfs: introduce a common helper to calculate the size of a bio
-Date: Fri, 20 Feb 2026 14:11:50 +1030
-Message-ID: <4392c94fea9644702e3985c30cf0a30c434aa3d5.1771558832.git.wqu@suse.com>
-X-Mailer: git-send-email 2.52.0
-In-Reply-To: <cover.1771558832.git.wqu@suse.com>
-References: <cover.1771558832.git.wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="PwG+BrYz"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 3C080C116D0
+	for <linux-btrfs@vger.kernel.org>; Fri, 20 Feb 2026 10:27:04 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1771583224;
+	bh=aVvul8cP9KSae0wFnc275b4kprejmgSWdfzbu2FiXYA=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+	b=PwG+BrYznpY3xdDzPOhPdjcXCAQBwwQJActxmcsEMT37N+1DgJnHRFwYzfOdk0VJD
+	 kSVPsRy1NRRkZem0b1yVaQHIoL/ZwN0pTyrM4/bLKlfVYEhvKGBWo8j5dCnzqahk/Z
+	 4A+uJfXhTeOukEM46b0bC0FCUq9APImrvb4c1gMEGt5dxjsgOFiTS70r4CIejaJ5G+
+	 3MKRZeeszvcXUlAqap4C6h34vbYOZCdOOKeenNA/chhpYP6yG13Sr6SuxJL92MoLwm
+	 htQg2S25PD6HXwwtfcyPUXwIsDzti+IoHMPWriz9VAOtxZg+0Plg00qsxrU9gihxCi
+	 mGIEmNlFlM+/w==
+Received: by mail-ej1-f44.google.com with SMTP id a640c23a62f3a-b79f8f7ea43so326093366b.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 20 Feb 2026 02:27:04 -0800 (PST)
+X-Gm-Message-State: AOJu0YwLFQa9IIlmg/3D44MGItfezoNAZnwPHv4f2+ETxEIyQmh8hgCS
+	N6/S+pGe0CbXjFZ3TBmDe8OqtK6kCmQoOsK/4WRFf0L9E1r4/nle8LS5czgSptL1puIpo/zXQ1W
+	rXtW1ZBTo8YlkJmUZuuix4xd09qkYyWw=
+X-Received: by 2002:a17:907:980e:b0:b88:20c0:d378 with SMTP id
+ a640c23a62f3a-b903da966d3mr589050966b.20.1771583222528; Fri, 20 Feb 2026
+ 02:27:02 -0800 (PST)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	ARC_NA(0.00)[];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	MIME_TRACE(0.00)[0:+];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RCVD_TLS_ALL(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	TO_DN_NONE(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received,2a07:de40:b281:104:10:150:64:97:from];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns]
-X-Rspamd-Action: no action
-X-Spam-Flag: NO
-X-Spam-Score: -3.01
-X-Spam-Level: 
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Rspamd-Queue-Id: D56955BCC7
+References: <718a3b0c2275324b9e287af7e4434f55a4a45901.1771529877.git.boris@bur.io>
+In-Reply-To: <718a3b0c2275324b9e287af7e4434f55a4a45901.1771529877.git.boris@bur.io>
+From: Filipe Manana <fdmanana@kernel.org>
+Date: Fri, 20 Feb 2026 10:26:24 +0000
+X-Gmail-Original-Message-ID: <CAL3q7H4+3T0sXEy3q11Zo+mbw7cu-eo1DoBbkoOsgAwYjhRQSQ@mail.gmail.com>
+X-Gm-Features: AaiRm53LnVcYoPo7ibZNv9opJ5euv9PyXXbUag0OD9ziBKEFCyg2ySLe3WpUkGw
+Message-ID: <CAL3q7H4+3T0sXEy3q11Zo+mbw7cu-eo1DoBbkoOsgAwYjhRQSQ@mail.gmail.com>
+Subject: Re: [PATCH 1/1] btrfs: set BTRFS_ROOT_ORPHAN_CLEANUP during subvol create
+To: Boris Burkov <boris@bur.io>
+Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-We have several call sites doing the same work to calculate the size of
-a bio:
+On Thu, Feb 19, 2026 at 7:38=E2=80=AFPM Boris Burkov <boris@bur.io> wrote:
+>
+> We have recently observed a number of subvolumes with broken dentries.
+> ls-ing the parent dir looks like:
+>
+> drwxrwxrwt 1 root root 16 Jan 23 16:49 .
+> drwxr-xr-x 1 root root 24 Jan 23 16:48 ..
+> d????????? ? ?    ?     ?            ? broken_subvol
+>
+> and similarly stat-ing the file fails.
+>
+> In this state, deleting the subvol fails with ENOENT, but attempting to
+> create a new file or subvol over it errors out with EEXIST and even
+> aborts the fs. Which leaves us a bit stuck.
+>
+> dmesg contains a single notable error message reading:
+> "could not do orphan cleanup -2"
+>
+> 2 is ENOENT and the error comes from the failure handling path of
+> btrfs_orphan_cleanup(), with the stack leading back up to
+> btrfs_lookup().
 
-	struct bio_vec *bvec;
-	u32 bio_size = 0;
-	int i;
+Please include the stack trace in the changelog.
 
-	bio_for_each_bvec_all(bvec, bio, i)
-		bio_size += bvec->bv_len;
+>
+> After some detailed inspection of the internal state, it became clear
+> that:
+> - there are no orphan items for the subvol
+> - the subvol is otherwise healthy looking, it is not half-deleted or
+>   anything, there is no drop progress, etc.
+> - the subvol was created a while ago and first does orphan_cleanup()
 
-We can use a common helper instead of open-coding it everywhere.
+What do you mean by "first does"? The first call to btrfs_orphan_cleanup()?
 
-This also allows us to constify the @bio_size variables used in all the
-call sites.
+Also please use full function name, orphan_cleanup() -> btrfs_orphan_cleanu=
+p()
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/misc.h   | 15 +++++++++++----
- fs/btrfs/raid56.c |  9 ++-------
- fs/btrfs/scrub.c  | 22 ++++------------------
- 3 files changed, 17 insertions(+), 29 deletions(-)
+>   much later
+> - after orphan_cleanup fails, btrfs_lookup_dentry() returns -ENOENT,
 
-diff --git a/fs/btrfs/misc.h b/fs/btrfs/misc.h
-index 12c5a9d6564f..189c25cc5eff 100644
---- a/fs/btrfs/misc.h
-+++ b/fs/btrfs/misc.h
-@@ -52,15 +52,22 @@ static inline phys_addr_t bio_iter_phys(struct bio *bio, struct bvec_iter *iter)
- 	     (paddr = bio_iter_phys((bio), (iter)), 1);			\
- 	     bio_advance_iter_single((bio), (iter), (blocksize)))
- 
--/* Initialize a bvec_iter to the size of the specified bio. */
--static inline struct bvec_iter init_bvec_iter_for_bio(struct bio *bio)
-+/* Can only be called on a non-cloned bio. */
-+static inline u32 bio_get_size(struct bio *bio)
- {
- 	struct bio_vec *bvec;
--	u32 bio_size = 0;
-+	u32 ret = 0;
- 	int i;
- 
- 	bio_for_each_bvec_all(bvec, bio, i)
--		bio_size += bvec->bv_len;
-+		ret += bvec->bv_len;
-+	return ret;
-+}
-+
-+/* Initialize a bvec_iter to the size of the specified bio. */
-+static inline struct bvec_iter init_bvec_iter_for_bio(struct bio *bio)
-+{
-+	const u32 bio_size = bio_get_size(bio);
- 
- 	return (struct bvec_iter) {
- 		.bi_sector = 0,
-diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index 230dd93dad6e..da2f57cbf07c 100644
---- a/fs/btrfs/raid56.c
-+++ b/fs/btrfs/raid56.c
-@@ -1651,12 +1651,7 @@ static int get_bio_sector_nr(struct btrfs_raid_bio *rbio, struct bio *bio)
- static void rbio_update_error_bitmap(struct btrfs_raid_bio *rbio, struct bio *bio)
- {
- 	int total_sector_nr = get_bio_sector_nr(rbio, bio);
--	u32 bio_size = 0;
--	struct bio_vec *bvec;
--	int i;
--
--	bio_for_each_bvec_all(bvec, bio, i)
--		bio_size += bvec->bv_len;
-+	const u32 bio_size = bio_get_size(bio);
- 
- 	/*
- 	 * Since we can have multiple bios touching the error_bitmap, we cannot
-@@ -1664,7 +1659,7 @@ static void rbio_update_error_bitmap(struct btrfs_raid_bio *rbio, struct bio *bi
- 	 *
- 	 * Instead use set_bit() for each bit, as set_bit() itself is atomic.
- 	 */
--	for (i = total_sector_nr; i < total_sector_nr +
-+	for (int i = total_sector_nr; i < total_sector_nr +
- 	     (bio_size >> rbio->bioc->fs_info->sectorsize_bits); i++)
- 		set_bit(i, rbio->error_bitmap);
- }
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 2a64e2d50ced..9be663526672 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -892,16 +892,11 @@ static void scrub_repair_read_endio(struct btrfs_bio *bbio)
- {
- 	struct scrub_stripe *stripe = bbio->private;
- 	struct btrfs_fs_info *fs_info = stripe->bg->fs_info;
--	struct bio_vec *bvec;
- 	int sector_nr = calc_sector_number(stripe, bio_first_bvec_all(&bbio->bio));
--	u32 bio_size = 0;
--	int i;
-+	const u32 bio_size = bio_get_size(&bbio->bio);
- 
- 	ASSERT(sector_nr < stripe->nr_sectors);
- 
--	bio_for_each_bvec_all(bvec, &bbio->bio, i)
--		bio_size += bvec->bv_len;
--
- 	if (bbio->bio.bi_status) {
- 		scrub_bitmap_set_io_error(stripe, sector_nr,
- 					  bio_size >> fs_info->sectorsize_bits);
-@@ -1250,15 +1245,11 @@ static void scrub_stripe_read_repair_worker(struct work_struct *work)
- static void scrub_read_endio(struct btrfs_bio *bbio)
- {
- 	struct scrub_stripe *stripe = bbio->private;
--	struct bio_vec *bvec;
- 	int sector_nr = calc_sector_number(stripe, bio_first_bvec_all(&bbio->bio));
- 	int num_sectors;
--	u32 bio_size = 0;
--	int i;
-+	const u32 bio_size = bio_get_size(&bbio->bio);
- 
- 	ASSERT(sector_nr < stripe->nr_sectors);
--	bio_for_each_bvec_all(bvec, &bbio->bio, i)
--		bio_size += bvec->bv_len;
- 	num_sectors = bio_size >> stripe->bg->fs_info->sectorsize_bits;
- 
- 	if (bbio->bio.bi_status) {
-@@ -1279,13 +1270,8 @@ static void scrub_write_endio(struct btrfs_bio *bbio)
- {
- 	struct scrub_stripe *stripe = bbio->private;
- 	struct btrfs_fs_info *fs_info = stripe->bg->fs_info;
--	struct bio_vec *bvec;
- 	int sector_nr = calc_sector_number(stripe, bio_first_bvec_all(&bbio->bio));
--	u32 bio_size = 0;
--	int i;
--
--	bio_for_each_bvec_all(bvec, &bbio->bio, i)
--		bio_size += bvec->bv_len;
-+	const u32 bio_size = bio_get_size(&bbio->bio);
- 
- 	if (bbio->bio.bi_status) {
- 		unsigned long flags;
-@@ -1294,7 +1280,7 @@ static void scrub_write_endio(struct btrfs_bio *bbio)
- 		bitmap_set(&stripe->write_error_bitmap, sector_nr,
- 			   bio_size >> fs_info->sectorsize_bits);
- 		spin_unlock_irqrestore(&stripe->write_error_lock, flags);
--		for (i = 0; i < (bio_size >> fs_info->sectorsize_bits); i++)
-+		for (int i = 0; i < (bio_size >> fs_info->sectorsize_bits); i++)
- 			btrfs_dev_stat_inc_and_print(stripe->dev,
- 						     BTRFS_DEV_STAT_WRITE_ERRS);
- 	}
--- 
-2.52.0
+orphan_cleanup -> btrfs_orphan_cleanup()
 
+>   which results in a negative dentry for the subvolume via
+>   d_splice_alias(NULL, dentry), leading to the observed behavior. The
+>   bug can be mitigated by dropping the dentry cache, at which point we
+>   can successfully delete the subvolume if we want.
+>
+> btrfs_orphan_cleanup() does test_and_set_bit(BTRFS_ROOT_ORPHAN_CLEANUP)
+> on the root when it runs, so it cannot run more than once on a given
+> root, so something else must run concurrently. However, the obvious
+> routes to deleting an orphan when nlinks goes to 0 should not be able to
+> run without first doing a lookup into the subvolume, which should run
+> btrfs_orphan_cleanup() and set the bit.
+>
+> The final important observation is that create_subvol() calls
+> d_instantiate_new() but does not set BTRFS_ROOT_ORPHAN_CLEANUP, so if
+> the dentry cache gets dropped, the next lookup into the subvolume will
+> make a real call into btrfs_orphan_cleanup() for the first time. This
+> opens up the possibility of concurrently deleting the inode/orphan items
+> but most typical evict() paths will be holding a reference on the parent
+> dentry (child dentry holds parent->d_lockref.count via dget in
+> d_alloc(), released in __dentry_kill()) and prevent the parent from
+> being removed from the dentry cache.
+>
+> The one exception is delayed iputs. Ordered extent creation calls
+> igrab() on the inode. If the file is unlinked and closed while those
+> refs are held, iput() in __dentry_kill() decrements i_count but does
+> not trigger eviction (i_count > 0). The child dentry is freed and the
+> subvol dentry's d_lockref.count drops to 0, making it evictable while
+> the inode is still alive.
+>
+> Since there are two races (the race between writeback and unlink and
+> the race between lookup and delayed iputs), and there are too many moving
+> parts, the following two diagrams show the complete picture. The first
+> sets us up in a condition where we can evict the subvol dentry and there
+> is a delayed iput on the inode:
+>
+> T1 (task)                    T2 (writeback)                   T3 (OE work=
+queue)
+>
+> write() // dirty pages
+>                               btrfs_writepages()
+>                                 btrfs_run_delalloc_range()
+>                                   cow_file_range()
+>                                     btrfs_alloc_ordered_extent()
+>                                       igrab() // i_count: 1 -> 1+N
+
+I find this confusing:   1 -> 1 + N ?
+
+Shouldn't it be 1 -> 2, meaning the igrab() increased i_count from 1 to 2?
+
+> btrfs_unlink_inode()
+>   btrfs_orphan_add()
+> close()
+>   __dentry_kill()
+>     dentry_unlink_inode()
+>       iput() // 1+N -> N
+>     --parent->d_lockref.count
+
+Where does this decrement of parent->d_lockref.count happens exactly?
+I don't see it immediately in iput(), or iput_final(). Please put the
+full call chain.
+
+
+>     // count -> 0
+>                                                                 finish_or=
+dered_fn()
+>                                                                   btrfs_f=
+inish_ordered_io()
+>                                                                     btrfs=
+_put_ordered_extent()
+>                                                                       btr=
+fs_add_delayed_iput()
+>
+> Once the delayed iput is pending and the subvol dentry is evictable,
+> the shrinker can free it, causing the next lookup to go through
+> btrfs_lookup() and call btrfs_orphan_cleanup() for the first time.
+> If the cleaner kthread processes the delayed iput concurrently, the
+> two race:
+>
+>   T1 (shrinker)              T2 (cleaner kthread)                        =
+  T3 (lookup)
+>
+>   super_cache_scan()
+>     prune_dcache_sb()
+>       __dentry_kill()
+>       // subvol dentry freed
+>                               btrfs_run_delayed_iputs()
+>                                 iput()  // i_count -> 0
+>                                   evict()  // sets I_FREEING
+>                                     btrfs_evict_inode()
+>                                       // truncation loop
+>                                                                          =
+   btrfs_lookup()
+>                                                                          =
+     btrfs_lookup_dentry()
+>                                                                          =
+       btrfs_orphan_cleanup()
+>                                                                          =
+         // first call (bit never set)
+>                                                                          =
+         btrfs_iget()
+>                                                                          =
+           // blocks on I_FREEING
+>
+>                                       btrfs_orphan_del()
+>                                       // inode freed
+>                                                                          =
+           // returns -ENOENT
+>                                                                          =
+         btrfs_del_orphan_item()
+>                                                                          =
+           // -ENOENT
+>                                                                          =
+       // "could not do orphan cleanup -2"
+>                                                                          =
+   d_splice_alias(NULL, dentry)
+>                                                                          =
+   // negative dentry for valid subvol
+>
+> The most straightforward fix is to ensure the invariant that a dentry
+> for a subvolume can exist if and only if that subvolume has
+> BTRFS_ROOT_ORPHAN_CLEANUP set on its root (and is known to have no
+> orphans or ran btrfs_orphan_cleanup()).
+
+Looks reasonable to me.
+
+Thanks!
+
+>
+> Signed-off-by: Boris Burkov <boris@bur.io>
+> ---
+>  fs/btrfs/ioctl.c | 7 +++++++
+>  1 file changed, 7 insertions(+)
+>
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index b8db877be61cc..77f7db18c6ca5 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -672,6 +672,13 @@ static noinline int create_subvol(struct mnt_idmap *=
+idmap,
+>                 goto out;
+>         }
+>
+> +       /*
+> +        * Subvolumes have orphans cleaned on first dentry lookup. A new
+> +        * subvolume cannot have any orphans, so we should set the bit be=
+fore we
+> +        * add the subvolume dentry to the dentry cache, so that it is in=
+ the
+> +        * same state as a subvolume after first lookup.
+> +        */
+> +       set_bit(BTRFS_ROOT_ORPHAN_CLEANUP, &new_root->state);
+>         d_instantiate_new(dentry, new_inode_args.inode);
+>         new_inode_args.inode =3D NULL;
+>
+> --
+> 2.47.3
+>
+>

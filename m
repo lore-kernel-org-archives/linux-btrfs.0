@@ -1,60 +1,67 @@
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F24AA3C2F
-	for <linux-btrfs@vger.kernel.org>; Sun, 22 Feb 2026 23:13:28 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 93EC93C2F
+	for <linux-btrfs@vger.kernel.org>; Sun, 22 Feb 2026 23:13:34 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1771802010; cv=none; b=fTDQrzAd1ohl29Si6A4532z/Iywbvl5oWt+t9M1gln9C6FzY9/GqORcako5ZuEuh889nmCJLOHd7XYYwH4xCJ0WcHEAddwgCLMnSdFooo+wVEeOzBRk9qlNZoF9OLDZtAKxLBDI/Dlipre3L8artG34NXLXcMD6o4TMyJJPdxPU=
+	t=1771802015; cv=none; b=niJ9Awdd+HtgfvhyCM2pm6Ee3LvE25uRqGUZf6dHZIm5OyDl3Hyvg9QfbhG+zbGLJmm0whp7I78MJ0n1VOB2XMQ3Eb8vzORGE4+vFC13kmm1VeWXiSSAbEWw7BLrfGak0MshuKvPkCV4tKUgGFYjTWk73jcSVuoHruXWLvdZSeo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1771802010; c=relaxed/simple;
-	bh=f9W6v1qRmuCh7d6CkLPD7V6x2bnsccY++gqvdCziuH4=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=PpBi2XjUnBW4ENg6+CVU1kQ1XudSSfQUf9JSwzk6J9vHF/kBr1K22wKIhqg4FptKqVKa2RsCIXZPdRVPjPuRRBXDMOrP6AlUu9JZg5U8V0dKM+cuzpHNEu87XJqmpGNRerFFg6JCZjpV4ffOCKco+LM1BF5itduTbr3zfMwu7V8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=c3hzdEA4; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=c3hzdEA4; arc=none smtp.client-ip=195.135.223.130
+	s=arc-20240116; t=1771802015; c=relaxed/simple;
+	bh=1Sr8vAgHffPsPcDhFMRggh9AvNDffcMeS4IPHjjADGk=;
+	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=fR+TCxNMIMkSEHSwtt9LF+zM7+t7Yb3XAgNMztuEXAsauROuSnVa9VBy7AUae0wxFyAgTquFPBkJuZDqrI1BKnm3zO99PTi392GWP01VyRbnEIxvES5wAqGsdwOzml3QOl8LKb0Nwgp3rAbOeUQt1mKyHQnOjqIyW0h8i3kWM2I=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=QOmLkIrp; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Rf9jSlbP; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="c3hzdEA4";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="c3hzdEA4"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="QOmLkIrp";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Rf9jSlbP"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 48A133E962
-	for <linux-btrfs@vger.kernel.org>; Sun, 22 Feb 2026 23:13:27 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id EE7EA3E962
+	for <linux-btrfs@vger.kernel.org>; Sun, 22 Feb 2026 23:13:30 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1771802007; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=gOhbKA4J9ggp0FMraxyJYbFnuXCT1CBLJ+ldFO1chp4=;
-	b=c3hzdEA4Z/VqRSqnRX7sNpdGkh9KKRe1HGyAHz1F3Kcz7SrCVDyGXdKTcdxdWw5kdy5kVT
-	Rw30xegk4xBSc1DYTcbdYBrM0aYXlcn3eqA1EIxIJG4iby09lc5W96NnfdfKE0x2MXxpEo
-	nsvp57Oc801qmVrU+xED4c0YwZqygh8=
+	t=1771802011; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=+fu3muSX3Fp1RZzYmjDQ8arf2jObpNVHAPGemrE56ns=;
+	b=QOmLkIrpBiRZX1cALOfGHTeDsf0JjG7WFZRQL45lpaYtu0vjKGWzATIMDkLB9/2/nonCTZ
+	CltTGkydnA88WeQBSgtTpTTVnaiSMbhrO9ej45MZneZWqNwJGuzvWcMapvTLpZqqZsvY/H
+	wHfdpTmGPwen4TyaZWBaxNSqklZhX/0=
 Authentication-Results: smtp-out1.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1771802007; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=gOhbKA4J9ggp0FMraxyJYbFnuXCT1CBLJ+ldFO1chp4=;
-	b=c3hzdEA4Z/VqRSqnRX7sNpdGkh9KKRe1HGyAHz1F3Kcz7SrCVDyGXdKTcdxdWw5kdy5kVT
-	Rw30xegk4xBSc1DYTcbdYBrM0aYXlcn3eqA1EIxIJG4iby09lc5W96NnfdfKE0x2MXxpEo
-	nsvp57Oc801qmVrU+xED4c0YwZqygh8=
+	t=1771802010; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=+fu3muSX3Fp1RZzYmjDQ8arf2jObpNVHAPGemrE56ns=;
+	b=Rf9jSlbPwPRoJTYHT7XjVhHO4wwIsUZDlcefhAtaZ9yG75b8gPviTlGo1xj/sAghMhUtLP
+	GvHNs1fs6qdQGJUMC95qz51759SI1R+8/DcdT5N0OTkcjpOKfqG+MfRlhPOfZhM5sxJbdp
+	Zq+xvNz7zo6+Vwe5C3PyxHVROH/Fv5M=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 791FE3EA68
-	for <linux-btrfs@vger.kernel.org>; Sun, 22 Feb 2026 23:13:26 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 2B49A3EA68
+	for <linux-btrfs@vger.kernel.org>; Sun, 22 Feb 2026 23:13:29 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id dj3zDpaNm2n0NwAAD6G6ig
+	id iNmJN5mNm2n0NwAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Sun, 22 Feb 2026 23:13:26 +0000
+	for <linux-btrfs@vger.kernel.org>; Sun, 22 Feb 2026 23:13:29 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/3] btrfs-progs: fix dropped 'const' qualifiers exposed by the latest GCC (15.2.1)
-Date: Mon, 23 Feb 2026 09:42:57 +1030
-Message-ID: <cover.1771801832.git.wqu@suse.com>
+Subject: [PATCH 3/3] btrfs-progs: drop the 'const' qualifier from bconf_save_param()
+Date: Mon, 23 Feb 2026 09:43:00 +1030
+Message-ID: <3627dacff11c0f84b269cd0c7d07a3bdf4843c91.1771801832.git.wqu@suse.com>
 X-Mailer: git-send-email 2.53.0
+In-Reply-To: <cover.1771801832.git.wqu@suse.com>
+References: <cover.1771801832.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -62,8 +69,6 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Score: -2.80
-X-Spam-Level: 
 X-Spamd-Result: default: False [-2.80 / 50.00];
 	BAYES_HAM(-3.00)[99.99%];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
@@ -76,7 +81,7 @@ X-Spamd-Result: default: False [-2.80 / 50.00];
 	RCPT_COUNT_ONE(0.00)[1];
 	ARC_NA(0.00)[];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:mid];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:email,imap1.dmz-prg2.suse.org:helo];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
 	MIME_TRACE(0.00)[0:+];
@@ -86,45 +91,64 @@ X-Spamd-Result: default: False [-2.80 / 50.00];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
 	RCVD_TLS_ALL(0.00)[]
 X-Spam-Flag: NO
+X-Spam-Score: -2.80
+X-Spam-Level: 
 
-It looks lile the latest gcc has taken the 'const' qualifier checks one
-step further, a char pointer that points into a string that has 'const'
-qualifier should also has 'const'.
+[BUG]
+The latest GCC (15.2.1) will report the following warning:
 
-This will expose unexpected modification like the following:
+ common/utils.c: In function 'bconf_save_param':
+ common/utils.c:975:13: warning: assignment discards 'const' qualifier from pointer target type [-Wdiscarded-qualifiers]
+   975 |         tmp = strchr(str, '=');
+       |             ^
 
- void my_func(const char *options)
- {
-         char *dot;
+[CAUSE]
+I believe the latest GCC has a more strict const qualifier checks, that
+any returned pointer that points into a const pointer should also
+have a 'const' qualifier.
 
-         dot = strchr(options, '.');
-         if (!dot)
-                 *dot = '\0';
+But in this particular case, we're even modifying the content of the
+original const string.
+
+This means we shouldn't really have 'const' qualifier for
+bconf_save_param() in the first place.
+
+[FIX]
+Drop the 'const' qualifier from @str parameter, as we're going to modify
+the string in that function.
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ common/utils.c | 2 +-
+ common/utils.h | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/common/utils.c b/common/utils.c
+index f183705edb8f..59e318282918 100644
+--- a/common/utils.c
++++ b/common/utils.c
+@@ -968,7 +968,7 @@ const char *bconf_param_value(const char *key)
+ 	return NULL;
  }
-
-In above example, @dot is either NULL or points to a location inside
-@options. For the later case, since @dot itself is not const, we can
-modify the content, resulting modification of the content of @options.
-The latest GCC is able to detect such proxy modification and gives us
-warning on them.
-
-And in fact, btrfs-progs has exactly such proxied modification in
-bconf_save_param(), fixed in the last patch by dropping the 'const'
-quailifer.
-
-Other than that, most are just false alerts and we can fix them by
-adding a const quailifer.
-
-Qu Wenruo (3):
-  btrfs-progs: enhance find_option()
-  btrfs-progs: constify the @dots variable inside parse_range_u64()
-  btrfs-progs: drop the 'const' qualifier from bconf_save_param()
-
- common/parse-utils.c |  4 ++--
- common/utils.c       | 24 ++++++++++++++++++------
- common/utils.h       |  2 +-
- 3 files changed, 21 insertions(+), 9 deletions(-)
-
---
+ 
+-void bconf_save_param(const char *str)
++void bconf_save_param(char *str)
+ {
+ 	char *tmp;
+ 
+diff --git a/common/utils.h b/common/utils.h
+index 1419850df387..d0bd062b75a5 100644
+--- a/common/utils.h
++++ b/common/utils.h
+@@ -118,7 +118,7 @@ void btrfs_config_init(void);
+ void bconf_be_verbose(void);
+ void bconf_be_quiet(void);
+ void bconf_add_param(const char *key, const char *value);
+-void bconf_save_param(const char *str);
++void bconf_save_param(char *str);
+ void bconf_set_dry_run(void);
+ bool bconf_is_dry_run(void);
+ const char *bconf_param_value(const char *key);
+-- 
 2.53.0
 

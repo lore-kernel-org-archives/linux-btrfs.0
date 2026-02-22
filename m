@@ -1,64 +1,64 @@
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6510B1A704B
-	for <linux-btrfs@vger.kernel.org>; Sun, 22 Feb 2026 23:13:41 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 236EA26ACC
+	for <linux-btrfs@vger.kernel.org>; Sun, 22 Feb 2026 23:19:38 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1771802022; cv=none; b=tuhTlT3WVh3bQMBozlWxhlAxGa8mjkj6n2wXPVJWnKHGEBMXejK4mbKVKJiQG7w57bz5DDzTIaMCpdqL9rHrNG5PbGRMuIN/Rf3u7ZZulFr43GFeYWuC2OQTGQaJfdOnpUhyvYt3kJWFbwGPOAGMVZaAU+m6an9gpeq4q5U24WY=
+	t=1771802379; cv=none; b=j+tUWOCYgG4EoMPL1+Lmtr7c0QtYuUHsgEqweNdDsbQKamTEIQtDj//02fL/eaOomnJ07tLkea6z1ZC9PZp/at4MJFK5FbW+EQ6H5wkJ4GTQ9Br+uVJKasY/yLU42S0EyFU5saeALtu+TCO3e2odkgpZv+kAnQNBveODKKmyMf8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1771802022; c=relaxed/simple;
-	bh=zvAqTl55h4Pyh4sPB5CbaOj+tMiIchTwfuBxIXoyvvg=;
+	s=arc-20240116; t=1771802379; c=relaxed/simple;
+	bh=6xaDiP6aReIzkfOOn8xil+y4i04LBcnw+X2ah+Y7cMA=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=IsrKIupj98zGO2+hNUOWj1NkYmVvIpZ6WhwXH+6tURzJFdBBaG1+8QL1FCW3BWxgL3cTrxVwXlj1zy/1oNkiSl7s+/B8Qrs4PBloEqiqyPIOqDc06lL9c4aGARcJw+kGWmPcN3hqchwS14St8JxYj3njB9p+QM5z1iAsPN+PJCI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Bmh6AJes; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Bmh6AJes; arc=none smtp.client-ip=195.135.223.131
+	 MIME-Version; b=uZWfbMOlxUwFQ3rCd4DIceeDRsR3M8lTNe6paRIzWLsPcWrgWZms7MgMewjV62+Bw454+kcSw5OFUmCRZx9QNoYRv90nc5AissqN0/yndnAEcqCAD6v6u71FbyG0KCFKjxh/k9qKdWY+REyBbFf8iuxLRRtkv6qGVxhsxhwmIh0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=rHubPijL; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=rHubPijL; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Bmh6AJes";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Bmh6AJes"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="rHubPijL";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="rHubPijL"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id B70F45BCCB
-	for <linux-btrfs@vger.kernel.org>; Sun, 22 Feb 2026 23:13:29 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 78ABC5BD01
+	for <linux-btrfs@vger.kernel.org>; Sun, 22 Feb 2026 23:13:28 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1771802009; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1771802008; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=QPp2j8HzG7VF3AhmihNTKWuLFBKSqoDmRfM/j51QduI=;
-	b=Bmh6AJesQFoa/9izxFZjscOphHz8LBydwfObBpEyvVRtpV7kMnAF3l5mq9j7uTgEjBVPBG
-	661Hr3j031u7EAT0iQ7fS/1B9ohFcOgyofsLAj3KeKBb/LFr2OkP1n+HZX1kksQIC2lzYj
-	cMNa5cN1CLwLlBIQxmsZd5g/zhLSib8=
+	bh=yQPZYOlkeHiLqQZzYuM5QoSl7InkR1K5z+q+xbiM+Es=;
+	b=rHubPijLaSwJLkY0XtEShJOqrZVFoWjcL0GfG4dN69amp1qrT9+bLenv0qMaLiP8EYXPR7
+	LQ+6nFo9q2B8tGGA3/J2yrUz7Ah3PwbuRV9AeygfdLs1XBmcZ1f6l4y1Mn2Bip63aXaBzj
+	WW4qcW9HelhGcpgVJ2mplatZgwHm2O4=
 Authentication-Results: smtp-out2.suse.de;
-	none
+	dkim=pass header.d=suse.com header.s=susede1 header.b=rHubPijL
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1771802009; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1771802008; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=QPp2j8HzG7VF3AhmihNTKWuLFBKSqoDmRfM/j51QduI=;
-	b=Bmh6AJesQFoa/9izxFZjscOphHz8LBydwfObBpEyvVRtpV7kMnAF3l5mq9j7uTgEjBVPBG
-	661Hr3j031u7EAT0iQ7fS/1B9ohFcOgyofsLAj3KeKBb/LFr2OkP1n+HZX1kksQIC2lzYj
-	cMNa5cN1CLwLlBIQxmsZd5g/zhLSib8=
+	bh=yQPZYOlkeHiLqQZzYuM5QoSl7InkR1K5z+q+xbiM+Es=;
+	b=rHubPijLaSwJLkY0XtEShJOqrZVFoWjcL0GfG4dN69amp1qrT9+bLenv0qMaLiP8EYXPR7
+	LQ+6nFo9q2B8tGGA3/J2yrUz7Ah3PwbuRV9AeygfdLs1XBmcZ1f6l4y1Mn2Bip63aXaBzj
+	WW4qcW9HelhGcpgVJ2mplatZgwHm2O4=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id E70B03EA68
-	for <linux-btrfs@vger.kernel.org>; Sun, 22 Feb 2026 23:13:28 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id B06A13EA68
+	for <linux-btrfs@vger.kernel.org>; Sun, 22 Feb 2026 23:13:27 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 4BLZKZiNm2n0NwAAD6G6ig
+	id 8L5/HJeNm2n0NwAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Sun, 22 Feb 2026 23:13:28 +0000
+	for <linux-btrfs@vger.kernel.org>; Sun, 22 Feb 2026 23:13:27 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/3] btrfs-progs: constify the @dots variable inside parse_range_u64()
-Date: Mon, 23 Feb 2026 09:42:59 +1030
-Message-ID: <0110c5e6cd740b78989ec6fdd06d0691a88acd13.1771801832.git.wqu@suse.com>
+Subject: [PATCH 1/3] btrfs-progs: enhance find_option()
+Date: Mon, 23 Feb 2026 09:42:58 +1030
+Message-ID: <4f0ee51a24d281ae387f01db510e825e9259f73f.1771801832.git.wqu@suse.com>
 X-Mailer: git-send-email 2.53.0
 In-Reply-To: <cover.1771801832.git.wqu@suse.com>
 References: <cover.1771801832.git.wqu@suse.com>
@@ -69,71 +69,120 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Score: -2.80
-X-Spam-Level: 
-X-Spamd-Result: default: False [-2.80 / 50.00];
-	BAYES_HAM(-3.00)[99.99%];
+X-Rspamd-Action: no action
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Spamd-Result: default: False [-3.01 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	MID_CONTAINS_FROM(1.00)[];
 	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
+	MX_GOOD(-0.01)[];
 	ARC_NA(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:email,imap1.dmz-prg2.suse.org:helo];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
 	RCVD_COUNT_TWO(0.00)[2];
+	RCPT_COUNT_ONE(0.00)[1];
+	MIME_TRACE(0.00)[0:+];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	FROM_HAS_DN(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,suse.com:mid,suse.com:email,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	TO_DN_NONE(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_TLS_ALL(0.00)[]
+	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from,2a07:de40:b281:106:10:150:64:167:received];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DKIM_TRACE(0.00)[suse.com:+]
+X-Rspamd-Queue-Id: 78ABC5BD01
 X-Spam-Flag: NO
+X-Spam-Score: -3.01
+X-Spam-Level: 
 
-[WARNING]
-The latest compiler (GCC 15.2.1) along with the latest glibc (2.43) will
-report the following warning:
+There are two minor problems in that function:
 
- common/parse-utils.c: In function 'parse_range_u64':
- common/parse-utils.c:82:14: warning: assignment discards 'const' qualifier from pointer target type [-Wdiscarded-qualifiers]
-    82 |         dots = strstr(range, "..");
-       |              ^
+- Latest GCC reports dropped 'const' qualifier
 
-[CAUSE]
-Although the strstr() definition in man page doesn't have a 'const'
-qualifier, it looks like the latest GCC has taken the 'const' qualifier checks
-one step further, that any pointer that points into a 'const' pointer
-should also have a 'const' qualifier, to make sure there is no
-modification into the original pointed memory.
+  The latest GCC (15.2.1) will report the 'const' qualifier is dropped
+  for the strstr() call.
 
-[FIX]
-Just add a 'const' qualifier to @dots.
+  It looks like the latest GCC has taken the 'const' qualifier checks
+  one step further, that any pointer that points into a 'const' pointer
+  should also have a 'const' qualifier, to make sure there is no
+  modification into the original pointed memory.
+
+  In our case, @options parameter has a 'const' qualifier, thus the
+  returned @tmp pointer should also have a 'const' qualifier, or we can
+  modify the @options through @tmp.
+
+- No error handling if strdup() failed
+
+Enhance them by:
+
+- Add the 'const' qualifier for @tmp
+  This also means we can not use @tmp pointer to modify the newly
+  duplicated string.
+  Instead use a new @i index to access the new string.
+
+- Return NULL if strdup() failed
+  And make the caller check errno for memory allocation failure.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- common/parse-utils.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ common/utils.c | 22 +++++++++++++++++-----
+ 1 file changed, 17 insertions(+), 5 deletions(-)
 
-diff --git a/common/parse-utils.c b/common/parse-utils.c
-index 9e88aa844b44..4fc9ec865572 100644
---- a/common/parse-utils.c
-+++ b/common/parse-utils.c
-@@ -74,9 +74,9 @@ int parse_u64(const char *str, u64 *result)
+diff --git a/common/utils.c b/common/utils.c
+index 23dbd9d16781..f183705edb8f 100644
+--- a/common/utils.c
++++ b/common/utils.c
+@@ -375,19 +375,27 @@ struct mnt_entry {
+ /*
+  * Find first occurrence of up an option string (as "option=") in @options,
+  * separated by comma. Return allocated string as "option=value"
++ *
++ * If NULL is returned, the caller needs to check errno to make sure it's not
++ * caused by memory allocation failure.
   */
- int parse_range_u64(const char *range, u64 *start, u64 *end)
+ static char *find_option(const char *options, const char *option)
  {
--	char *dots;
--	char *endptr;
-+	const char *dots;
- 	const char *rest;
-+	char *endptr;
- 	int skipped = 0;
+-	char *tmp, *ret;
++	const char *tmp;
++	char *ret;
++	int i;
  
- 	dots = strstr(range, "..");
++	errno = 0;
+ 	tmp = strstr(options, option);
+ 	if (!tmp)
+ 		return NULL;
+ 	ret = strdup(tmp);
+-	tmp = ret;
+-	while (*tmp && *tmp != ',')
+-		tmp++;
+-	*tmp = 0;
++	if (!ret)
++		return NULL;
++	i = 0;
++	while (*(ret + i) && *(ret + i) != ',')
++		i++;
++	*(ret + i) = '\0';
+ 	return ret;
+ }
+ 
+@@ -600,6 +608,10 @@ int find_mount_fsroot(const char *subvol, const char *subvolid, char **mount)
+ 			 * requested by the caller
+ 			 */
+ 			opt = find_option(ent.options2, "subvolid=");
++			if (!opt && errno) {
++				ret = -errno;
++				goto out;
++			}
+ 			if (!opt)
+ 				goto nextline;
+ 			value = opt + strlen("subvolid=");
 -- 
 2.53.0
 

@@ -1,83 +1,83 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4AD5436923F
-	for <linux-btrfs@vger.kernel.org>; Mon, 23 Feb 2026 18:55:31 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C898034029C
+	for <linux-btrfs@vger.kernel.org>; Mon, 23 Feb 2026 18:59:12 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1771872933; cv=none; b=DOkUzabxAUs7VSJevY3Cb5gENXic8mFZ0IKkTPj6xwJsP1/b66pLHYF6/i3xrX7OsiKRAxgDm17fzaTLyG4H4ZZz+rTj+SmA0cNOD9dwPfK9Js5589nfimxrDCeeomkVgK266kn1OyQzBhtwIAH0Bnx8P2H5AQUBQaXJxfwhERs=
+	t=1771873154; cv=none; b=S426bIxNtURh9DqgTRiR4zjk1Dd1HyNXg8WfmG74GZgi+n/FIVZX+n17Kv4d7KPaTpiHgohrcV8Lml5c72NlKtu7A4GN3a3N5XFa52bYiO0MzfHgEn4yTRdp/b/DkXCaPOR4Y4QKId0ScA68XlKNkHFwfIIxA05lbfc1Wu9Z9fk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1771872933; c=relaxed/simple;
-	bh=IbXsTTXVhH3CHedr1wqXSPyN2lvsmw/q1HIapTxMUps=;
+	s=arc-20240116; t=1771873154; c=relaxed/simple;
+	bh=dzcoLPEkhAhaIbQYfb77237fplddM2dDJUSk25thWuA=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=B8/tS/0rCcxVrRDN1hXoY3dlou8S0UmvQVbyHc64deHdO181juybDcktG4ZrJ73l01/hDgUV2MuLxXFETki+6u8fyA6omGsvnUFXtIr1yvFvINyWqxXaW+VIhFNegVjgBhkyJHRTl+nVO+NpySCZgSHNgGjdADR5ZhtCWpK/Pv4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=LZ2MCy4z; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=bZaQX/0S; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=LZ2MCy4z; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=bZaQX/0S; arc=none smtp.client-ip=195.135.223.130
+	 Content-Type:Content-Disposition:In-Reply-To; b=nDHkuPQfTXEJMcOv+E7BDSj2HEFffj7a3lhwZ5SJ/NhV6ols6KPhp9s6zFYjqs27WZbZ3U/3LEmZOd+if0wObHptrtZvo0T15P+oqDY+r+lB/N+ibJSkYbIfmim38F9CvL7ffpnzsFwJQ4KbgmuXLhdLdu8SNuoY5gdlT5S2suE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=Muv8O1Hc; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=l/PkGmwH; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=YqKq8fbY; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=dZ4vvn+v; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="LZ2MCy4z";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="bZaQX/0S";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="LZ2MCy4z";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="bZaQX/0S"
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="Muv8O1Hc";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="l/PkGmwH";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="YqKq8fbY";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="dZ4vvn+v"
 Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 47ABF3ED67;
-	Mon, 23 Feb 2026 18:55:29 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id E0C965BD27;
+	Mon, 23 Feb 2026 18:59:09 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1771872929;
+	t=1771873150;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=5Gup9FBAT5KcIJm2vrHB8DcYq2Bf4l5SQ8E/bLZOR2M=;
-	b=LZ2MCy4zzucH4hs+QrG7ZeR9t8nuWCFon5UbG76wVhn9B/8I9uFZ6q/k/dBWPlN69VctM6
-	hvwqhiSZeS94MXoBVMpAHR3UQK+oqcgjhgYISpsFMR7frayVUAuMmwMYgyxyCKB6tLA9S3
-	JfhKRCAViDejhBObMf/L+WldHomPSIk=
+	bh=dzcoLPEkhAhaIbQYfb77237fplddM2dDJUSk25thWuA=;
+	b=Muv8O1HcvRjy8nPMlLiXaaltYx2h7xgTPplaWqUKgSspU8Bhamt4Kg3Pv2qLNEHGvvmqDa
+	VSvvAIa6drw2Nlv5V6x/ZY+0FYh2NRSTJ8HZuA/npI5D+ciFQXMujHv6E9QSYWgTtxVZRe
+	xbtgMUIV6Rq99E2qQpn3qStu1iZJi3c=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1771872929;
+	s=susede2_ed25519; t=1771873150;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=5Gup9FBAT5KcIJm2vrHB8DcYq2Bf4l5SQ8E/bLZOR2M=;
-	b=bZaQX/0SQJMOOuhYrXesVGcr/jKJaJSuuWVhu+T1G6G/wrr8boqsCi+bKysBZlY2aJkXjM
-	zahxlbGtWiJA+cBw==
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b=LZ2MCy4z;
-	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b="bZaQX/0S"
+	bh=dzcoLPEkhAhaIbQYfb77237fplddM2dDJUSk25thWuA=;
+	b=l/PkGmwHPGGiJ8ZkYtLI0sXvPfA1e8OwqIFS5ISskGRU3UW4chavmD2umNWcW9i0dwoppe
+	UgybX3rOHvnGo+AQ==
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b=YqKq8fbY;
+	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=dZ4vvn+v
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1771872929;
+	t=1771873149;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=5Gup9FBAT5KcIJm2vrHB8DcYq2Bf4l5SQ8E/bLZOR2M=;
-	b=LZ2MCy4zzucH4hs+QrG7ZeR9t8nuWCFon5UbG76wVhn9B/8I9uFZ6q/k/dBWPlN69VctM6
-	hvwqhiSZeS94MXoBVMpAHR3UQK+oqcgjhgYISpsFMR7frayVUAuMmwMYgyxyCKB6tLA9S3
-	JfhKRCAViDejhBObMf/L+WldHomPSIk=
+	bh=dzcoLPEkhAhaIbQYfb77237fplddM2dDJUSk25thWuA=;
+	b=YqKq8fbYD/foRJ+TyxpW+LvJe1gbJWaqPmX2+PhEgqP3ZZdrn+kC9YjhXtkUThQpHptJgm
+	FKRyq2p2l6b7NyddC3+Nm5rjCwJEQ+37yfxjRjjR1n/fPlKoMWAs0JGtKU1kBIBhX7WN+F
+	FbP7G1vsM0M91Uh6n6cKw+dWVcE7KVg=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1771872929;
+	s=susede2_ed25519; t=1771873149;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=5Gup9FBAT5KcIJm2vrHB8DcYq2Bf4l5SQ8E/bLZOR2M=;
-	b=bZaQX/0SQJMOOuhYrXesVGcr/jKJaJSuuWVhu+T1G6G/wrr8boqsCi+bKysBZlY2aJkXjM
-	zahxlbGtWiJA+cBw==
+	bh=dzcoLPEkhAhaIbQYfb77237fplddM2dDJUSk25thWuA=;
+	b=dZ4vvn+vyNn7fNOweei/wpwEIqkW4iYoMJrn00V+EvYqmaG7cM4gJxMeriBS6v+hDFbLnx
+	sbXX9BOu/gXLGGCg==
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 1D1233EA68;
-	Mon, 23 Feb 2026 18:55:29 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id C9AA53EA68;
+	Mon, 23 Feb 2026 18:59:09 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 8lTlBqGinGl6DQAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Mon, 23 Feb 2026 18:55:29 +0000
-Date: Mon, 23 Feb 2026 19:55:27 +0100
+	id rfEQMX2jnGmUEQAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Mon, 23 Feb 2026 18:59:09 +0000
+Date: Mon, 23 Feb 2026 19:59:00 +0100
 From: David Sterba <dsterba@suse.cz>
 To: Mark Harmstone <mark@harmstone.com>
 Cc: linux-btrfs@vger.kernel.org, wqu@suse.com
 Subject: Re: [PATCH] btrfs: fix error messages in btrfs_check_features()
-Message-ID: <20260223185527.GN26902@twin.jikos.cz>
+Message-ID: <20260223185900.GO26902@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <20260218111346.31243-1-mark@harmstone.com>
 Precedence: bulk
@@ -90,85 +90,41 @@ Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
 In-Reply-To: <20260218111346.31243-1-mark@harmstone.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Rspamd-Action: no action
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
 X-Spamd-Result: default: False [-4.21 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
+	BAYES_HAM(-3.00)[99.99%];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	HAS_REPLYTO(0.30)[dsterba@suse.cz];
 	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
 	NEURAL_HAM_SHORT(-0.20)[-0.999];
 	MIME_GOOD(-0.10)[text/plain];
 	MX_GOOD(-0.01)[];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	ARC_NA(0.00)[];
-	TO_DN_SOME(0.00)[];
 	RCVD_TLS_ALL(0.00)[];
-	REPLYTO_DOM_NEQ_TO_DOM(0.00)[];
+	ARC_NA(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	TO_DN_SOME(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	DKIM_TRACE(0.00)[suse.cz:+];
 	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	REPLYTO_ADDR_EQ_FROM(0.00)[];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
-	URIBL_BLOCKED(0.00)[harmstone.com:email,suse.cz:dkim,suse.cz:replyto,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns];
-	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	URIBL_BLOCKED(0.00)[suse.cz:dkim,suse.cz:replyto,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,twin.jikos.cz:mid];
 	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns];
 	RCPT_COUNT_THREE(0.00)[3];
-	DKIM_TRACE(0.00)[suse.cz:+]
-X-Rspamd-Queue-Id: 47ABF3ED67
+	REPLYTO_DOM_NEQ_TO_DOM(0.00)[]
+X-Rspamd-Action: no action
 X-Spam-Flag: NO
 X-Spam-Score: -4.21
 X-Spam-Level: 
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Rspamd-Queue-Id: E0C965BD27
 
 On Wed, Feb 18, 2026 at 11:13:40AM +0000, Mark Harmstone wrote:
 > Commit d7f67ac9
 
-Please use full commit reference in changelog text at least for the
-first occurence, the format is the same as for the Fixes: line. Thanks.
-
-> introduced a regression when it comes to handling
-> unsupported incompat or compat_ro flags. Beforehand we only printed the
-> flags that we didn't recognize, afterwards we printed them all, which is
-> less useful. Fix the error handling so it behaves like it used to.
-> 
-> Signed-off-by: Mark Harmstone <mark@harmstone.com>
-> Fixes: d7f67ac9a928 ("btrfs: relax block-group-tree feature dependency checks")
-> ---
->  fs/btrfs/disk-io.c | 6 +++---
->  1 file changed, 3 insertions(+), 3 deletions(-)
-> 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index f39008591631..7478d1c50cca 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -3176,7 +3176,7 @@ int btrfs_check_features(struct btrfs_fs_info *fs_info, bool is_rw_mount)
->  	if (incompat & ~BTRFS_FEATURE_INCOMPAT_SUPP) {
->  		btrfs_err(fs_info,
->  		"cannot mount because of unknown incompat features (0x%llx)",
-> -		    incompat);
-> +		    incompat & ~BTRFS_FEATURE_INCOMPAT_SUPP);
->  		return -EINVAL;
->  	}
->  
-> @@ -3208,7 +3208,7 @@ int btrfs_check_features(struct btrfs_fs_info *fs_info, bool is_rw_mount)
->  	if (compat_ro_unsupp && is_rw_mount) {
->  		btrfs_err(fs_info,
->  	"cannot mount read-write because of unknown compat_ro features (0x%llx)",
-> -		       compat_ro);
-> +		       compat_ro_unsupp);
->  		return -EINVAL;
->  	}
->  
-> @@ -3221,7 +3221,7 @@ int btrfs_check_features(struct btrfs_fs_info *fs_info, bool is_rw_mount)
->  	    !btrfs_test_opt(fs_info, NOLOGREPLAY)) {
->  		btrfs_err(fs_info,
->  "cannot replay dirty log with unsupported compat_ro features (0x%llx), try rescue=nologreplay",
-> -			  compat_ro);
-> +			  compat_ro_unsupp);
->  		return -EINVAL;
->  	}
->  
-> -- 
-> 2.52.0
-> 
+Also please configure your git so the hashes are at least 12 characters,
+I've been using 14 and I think others do too. This is 'core.abbrev'
+config.

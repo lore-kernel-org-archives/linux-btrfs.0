@@ -1,1579 +1,403 @@
-Received: from bombadil.infradead.org (bombadil.infradead.org [198.137.202.133])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 724663ECBF3;
-	Thu, 26 Feb 2026 15:12:16 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.137.202.133
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5FAA21B424F
+	for <linux-btrfs@vger.kernel.org>; Thu, 26 Feb 2026 15:24:08 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1772118745; cv=none; b=ccM4jSfvM2eSbNKhC/F8t2L9OTr+aYeX9ZgZ4RpegVNEqv5PLzqoEbqdxviNqBYboaffjd8dYPLBG44JqGEuXJr2PKKxv4vwvF34SFd9tuyXPDaY18mPpovVIEX1o7+hrWrEI3IPHEIpgH2yJhanyMTFRjzaHQQZmD820RsCJsg=
+	t=1772119448; cv=none; b=rfgIUJmzQ1jBUFx+swpBnv1pEdieDPhm8w0woQjZNyufqOr7pgzBWZEDDkdkYKlmO6ldpgLs/ns17nfBkmya1ZpxMmOrP6zUZ6dyK1V8fBveBejeNgD/WGUM+8yxJw9VR2hGFFvo1H8OV0e+c1qUaSfZFW9AsXzymC8q3r1GIog=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1772118745; c=relaxed/simple;
-	bh=iYQxWngO34/BV18kRU6oCtENoi+VTiNYjBRQHtnQayo=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=Ss9xx6sDOoYMZ0eCSF3YED3lyFNuOFtk1JF1olhTfvrgxgEUJC6EYflXj5c2DwxlfCIyKvZ1cf9NRkyxCo/Q3VdQAmj+e0z5hvTWnRvoIQMsBrQqjeHbQg+BdDJx+5q6k1dn9OYI+g3PJpk9LuiYllF60nnl8EppaG3LsgXqmds=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=b/6dBKkm; arc=none smtp.client-ip=198.137.202.133
-Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org
+	s=arc-20240116; t=1772119448; c=relaxed/simple;
+	bh=yXgtme9Bkpt//mImZ/k5pXIQeb0TjhOk+Aow2qQg4RY=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=sMPyFuB20WpfQw5dnUl+VlZtWnqADdcL0fGwoUXAMj+Uqolywr2KvYzEVg1M5a92fjp8+IUO4X2wxHm5VJoUaGuDO5wjt6QmAbvkgBpkCef96jUyn4D4OogCtojnADM8Sbpu23O0qVY1leBb5ZoAEkGP4YHI5VNn7emDnCATV+w=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=DKWz7tE1; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="b/6dBKkm"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
-	MIME-Version:References:In-Reply-To:Message-ID:Date:Subject:Cc:To:From:Sender
-	:Reply-To:Content-Type:Content-ID:Content-Description;
-	bh=K4l9ZkzSckMxURtWF70ZO+gc5JoMPZeK4EVbJax8Sws=; b=b/6dBKkmydVkehF8XwlrV2zif8
-	SeB+r29TQrXc2nff7Wbevdc6AqCS8omcX0XQwFNqV+Aqzq34wmvu1p5eENQJjqEUBZEXyEENopCeY
-	nx0Pjuql6bch9np3IgJuYw3bQzmVPOfvH0EYAo4yJKPBzaJHNGeTwoUOorasCl8PyOyULylGYatKz
-	ks3G3JNvHmo4WwmiFg9AwMmqzCPt+dxj595CPStB04pFNGuDIjSyxgDN7VufPE8iOW1p3Iym2NPUr
-	PpEDra22Kqlj3n7cAUo6FhEPgB5ZNSnSLg72a8IiOKG6GXKE+uRlwBjaVqW6TSUWG02B0eWIJVBmW
-	EJY2e2pQ==;
-Received: from [4.28.11.157] (helo=localhost)
-	by bombadil.infradead.org with esmtpsa (Exim 4.98.2 #2 (Red Hat Linux))
-	id 1vvd1o-00000006Qov-2ars;
-	Thu, 26 Feb 2026 15:11:48 +0000
-From: Christoph Hellwig <hch@lst.de>
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Richard Henderson <richard.henderson@linaro.org>,
-	Matt Turner <mattst88@gmail.com>,
-	Magnus Lindholm <linmag7@gmail.com>,
-	Russell King <linux@armlinux.org.uk>,
-	Catalin Marinas <catalin.marinas@arm.com>,
-	Will Deacon <will@kernel.org>,
-	Huacai Chen <chenhuacai@kernel.org>,
-	WANG Xuerui <kernel@xen0n.name>,
-	Madhavan Srinivasan <maddy@linux.ibm.com>,
-	Michael Ellerman <mpe@ellerman.id.au>,
-	Nicholas Piggin <npiggin@gmail.com>,
-	"Christophe Leroy (CS GROUP)" <chleroy@kernel.org>,
-	Paul Walmsley <pjw@kernel.org>,
-	Palmer Dabbelt <palmer@dabbelt.com>,
-	Albert Ou <aou@eecs.berkeley.edu>,
-	Alexandre Ghiti <alex@ghiti.fr>,
-	Heiko Carstens <hca@linux.ibm.com>,
-	Vasily Gorbik <gor@linux.ibm.com>,
-	Alexander Gordeev <agordeev@linux.ibm.com>,
-	Christian Borntraeger <borntraeger@linux.ibm.com>,
-	Sven Schnelle <svens@linux.ibm.com>,
-	"David S. Miller" <davem@davemloft.net>,
-	Andreas Larsson <andreas@gaisler.com>,
-	Richard Weinberger <richard@nod.at>,
-	Anton Ivanov <anton.ivanov@cambridgegreys.com>,
-	Johannes Berg <johannes@sipsolutions.net>,
-	Thomas Gleixner <tglx@kernel.org>,
-	Ingo Molnar <mingo@redhat.com>,
-	Borislav Petkov <bp@alien8.de>,
-	Dave Hansen <dave.hansen@linux.intel.com>,
-	x86@kernel.org,
-	"H. Peter Anvin" <hpa@zytor.com>,
-	Herbert Xu <herbert@gondor.apana.org.au>,
-	Dan Williams <dan.j.williams@intel.com>,
-	Chris Mason <clm@fb.com>,
-	David Sterba <dsterba@suse.com>,
-	Arnd Bergmann <arnd@arndb.de>,
-	Song Liu <song@kernel.org>,
-	Yu Kuai <yukuai@fnnas.com>,
-	Li Nan <linan122@huawei.com>,
-	linux-alpha@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	linux-arm-kernel@lists.infradead.org,
-	loongarch@lists.linux.dev,
-	linuxppc-dev@lists.ozlabs.org,
-	linux-riscv@lists.infradead.org,
-	linux-s390@vger.kernel.org,
-	sparclinux@vger.kernel.org,
-	linux-um@lists.infradead.org,
-	linux-crypto@vger.kernel.org,
-	linux-btrfs@vger.kernel.org,
-	linux-arch@vger.kernel.org,
-	linux-raid@vger.kernel.org
-Subject: [PATCH 24/25] xor: pass the entire operation to the low-level ops
-Date: Thu, 26 Feb 2026 07:10:36 -0800
-Message-ID: <20260226151106.144735-25-hch@lst.de>
-X-Mailer: git-send-email 2.47.3
-In-Reply-To: <20260226151106.144735-1-hch@lst.de>
-References: <20260226151106.144735-1-hch@lst.de>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="DKWz7tE1"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id ED86EC116C6
+	for <linux-btrfs@vger.kernel.org>; Thu, 26 Feb 2026 15:24:07 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1772119448;
+	bh=yXgtme9Bkpt//mImZ/k5pXIQeb0TjhOk+Aow2qQg4RY=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+	b=DKWz7tE1oS8Vv6TjxM1gsJ+NNS+kzTRutkMoUBOfuxkpqXPwa+qmjDhtfwhBW0o0E
+	 +2qAIGC9mFhj3Wh4m+JV4CMPEIZNsw8uKkMuXdPqqLyj6QB/OPYx3B4BXRl4yMg+xi
+	 9ZuDZCfTWpkHS7x5q6WVVDSdEN0KPhAml6Vep/9XsU7IPorCPQTwNkM9n4IWhYez/A
+	 2KvKwiIB0iFfbYp74TV3Y0THpTHlMZx7pWT00MGnsMzmPP2Zp4ZZCX1gqp00T7KRbY
+	 tLxmJsjiSFZl3MQ47z5gT7RlWzNVBp2QRR2W0NCaGEFKdcZgKdgOuTr9f52h4if0A3
+	 059VAvgBPiSqg==
+Received: by mail-ej1-f50.google.com with SMTP id a640c23a62f3a-b936331787bso89556066b.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 26 Feb 2026 07:24:07 -0800 (PST)
+X-Gm-Message-State: AOJu0YyRfjVPN1c1tKXIg3IA2quTVr9DNi7iDA4/UKJhTAMT7v+VznGZ
+	NysUFmk0MX/STrMsF3eLIA9MLCH2sZStVcRxJBi4ByYi1diFjgE5hxdSY28/hlwWVNWlU58RiVA
+	/OYaxFwiX4YFs7F9FYyhq1qwsI/pcA1o=
+X-Received: by 2002:a17:906:f590:b0:b8e:a179:aa59 with SMTP id
+ a640c23a62f3a-b9081c15939mr1496469866b.56.1772119446350; Thu, 26 Feb 2026
+ 07:24:06 -0800 (PST)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
+References: <cover.1772097864.git.loemra.dev@gmail.com> <9e49ee6ee946e6cabb6b691693a955dbd201055c.1772097864.git.loemra.dev@gmail.com>
+In-Reply-To: <9e49ee6ee946e6cabb6b691693a955dbd201055c.1772097864.git.loemra.dev@gmail.com>
+From: Filipe Manana <fdmanana@kernel.org>
+Date: Thu, 26 Feb 2026 15:23:29 +0000
+X-Gmail-Original-Message-ID: <CAL3q7H6ggs37j889cyOpczo-5-DKQUTaa6QLVuM9uq5O08HK6Q@mail.gmail.com>
+X-Gm-Features: AaiRm51AeUmvt8-yHC2V5YkqfBNUEt1InZHPnmVIcYbDX5QRSW4W626yHft4338
+Message-ID: <CAL3q7H6ggs37j889cyOpczo-5-DKQUTaa6QLVuM9uq5O08HK6Q@mail.gmail.com>
+Subject: Re: [PATCH v4 2/3] btrfs: inhibit extent buffer writeback to prevent
+ COW amplification
+To: Leo Martins <loemra.dev@gmail.com>
+Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-Currently the high-level xor code chunks up all operations into small
-units for only up to 1 + 4 vectors, and passes it to four different
-methods.  This means the FPU/vector context is entered and left a lot
-for wide stripes, and a lot of indirect expensive indirect calls are
-performed.  Switch to passing the entire gen_xor request to the
-low-level ops, and provide a macro to dispatch it to the existing
-helper.
+On Thu, Feb 26, 2026 at 9:58=E2=80=AFAM Leo Martins <loemra.dev@gmail.com> =
+wrote:
+>
+> Inhibit writeback on COW'd extent buffers for the lifetime of the
+> transaction handle, preventing background writeback from setting
+> BTRFS_HEADER_FLAG_WRITTEN and causing unnecessary re-COW.
+>
+> COW amplification occurs when background writeback flushes an extent
+> buffer that a transaction handle is still actively modifying. When
+> lock_extent_buffer_for_io() transitions a buffer from dirty to
+> writeback, it sets BTRFS_HEADER_FLAG_WRITTEN, marking the block as
+> having been persisted to disk at its current bytenr. Once WRITTEN is
+> set, should_cow_block() must either COW the block again or overwrite
+> it in place, both of which are unnecessary overhead when the buffer
+> is still being modified by the same handle that allocated it. By
+> inhibiting background writeback on actively-used buffers, WRITTEN is
+> never set while a transaction handle holds a reference to the buffer,
+> avoiding this overhead entirely.
+>
+> Add an atomic_t writeback_inhibitors counter to struct extent_buffer,
+> which fits in an existing 6-byte hole without increasing struct size.
+> When a buffer is COW'd in btrfs_force_cow_block(), call
+> btrfs_inhibit_eb_writeback() to store the eb in the transaction
+> handle's writeback_inhibited_ebs xarray (keyed by eb->start), take a
+> reference, and increment writeback_inhibitors. The function handles
+> dedup (same eb inhibited twice by the same handle) and replacement
+> (different eb at the same logical address). Allocation failure is
+> graceful: the buffer simply falls back to the pre-existing behavior
+> where it may be written back and re-COW'd.
+>
+> Also inhibit writeback in should_cow_block() when COW is skipped,
+> so that every transaction handle that reuses an already-COW'd buffer
+> also inhibits its writeback. Without this, if handle A COWs a block
+> and inhibits it, and handle B later reuses the same block without
+> inhibiting, handle A's uninhibit on end_transaction leaves the buffer
+> unprotected while handle B is still using it. This ensures all handles
+> that access a COW'd buffer contribute to the inhibitor count, and the
+> buffer remains protected until the last handle releases it.
+>
+> In lock_extent_buffer_for_io(), when writeback_inhibitors is non-zero
+> and the writeback mode is WB_SYNC_NONE, skip the buffer. WB_SYNC_NONE
+> is used by the VM flusher threads for background and periodic
+> writeback, which are the only paths that cause COW amplification by
+> opportunistically writing out dirty extent buffers mid-transaction.
+> Skipping these is safe because the buffers remain dirty in the page
+> cache and will be written out at transaction commit time.
+>
+> WB_SYNC_ALL must always proceed regardless of writeback_inhibitors.
+> This is required for correctness in the fsync path: btrfs_sync_log()
+> writes log tree blocks via filemap_fdatawrite_range() (WB_SYNC_ALL)
+> while the transaction handle that inhibited those same blocks is still
+> active. Without the WB_SYNC_ALL bypass, those inhibited log tree
+> blocks would be silently skipped, resulting in an incomplete log on
+> disk and corruption on replay. btrfs_write_and_wait_transaction()
+> also uses WB_SYNC_ALL via filemap_fdatawrite_range(); for that path,
+> inhibitors are already cleared beforehand, but the bypass ensures
+> correctness regardless.
+>
+> Uninhibit in __btrfs_end_transaction() before atomic_dec(num_writers)
+> to prevent a race where the committer proceeds while buffers are still
+> inhibited. Also uninhibit in btrfs_commit_transaction() before writing
+> and in cleanup_transaction() for the error path.
+>
+> Signed-off-by: Leo Martins <loemra.dev@gmail.com>
+> ---
+>  fs/btrfs/ctree.c       |  9 ++++++
+>  fs/btrfs/extent_io.c   | 63 +++++++++++++++++++++++++++++++++++++++++-
+>  fs/btrfs/extent_io.h   |  6 ++++
+>  fs/btrfs/transaction.c | 19 +++++++++++++
+>  fs/btrfs/transaction.h |  3 ++
+>  5 files changed, 99 insertions(+), 1 deletion(-)
+>
+> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+> index ea7cfc3a9e89..46a715c95bc8 100644
+> --- a/fs/btrfs/ctree.c
+> +++ b/fs/btrfs/ctree.c
+> @@ -21,6 +21,7 @@
+>  #include "fs.h"
+>  #include "accessors.h"
+>  #include "extent-tree.h"
+> +#include "extent_io.h"
+>  #include "relocation.h"
+>  #include "file-item.h"
+>
+> @@ -590,6 +591,10 @@ int btrfs_force_cow_block(struct btrfs_trans_handle =
+*trans,
+>                 btrfs_tree_unlock(buf);
+>         free_extent_buffer_stale(buf);
+>         btrfs_mark_buffer_dirty(trans, cow);
+> +
+> +       /* Inhibit writeback on the COW'd buffer for this transaction han=
+dle. */
+> +       btrfs_inhibit_eb_writeback(trans, cow);
 
-This reduce the number of indirect calls and FPU/vector context switches
-by a factor approaching nr_stripes / 4, and also reduces source and
-binary code size.
+Btw, that comment is redundant. It's clear what we are doing, since
+the function's name is clear about what it does and the eb is named
+"cow".
+Usually we add comments for things that are not obvious.
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
----
- include/linux/raid/xor.h               |  5 --
- lib/raid/xor/alpha/xor.c               | 19 ++++----
- lib/raid/xor/arm/xor-neon-glue.c       | 49 ++------------------
- lib/raid/xor/arm/xor-neon.c            |  9 +---
- lib/raid/xor/arm/xor.c                 | 10 ++--
- lib/raid/xor/arm/xor_arch.h            |  3 ++
- lib/raid/xor/arm64/xor-neon-glue.c     | 44 ++----------------
- lib/raid/xor/arm64/xor-neon.c          | 20 +++++---
- lib/raid/xor/arm64/xor-neon.h          | 32 ++-----------
- lib/raid/xor/loongarch/xor_simd_glue.c | 62 +++++--------------------
- lib/raid/xor/powerpc/xor_vmx.c         | 40 ++++++++--------
- lib/raid/xor/powerpc/xor_vmx.h         | 16 +------
- lib/raid/xor/powerpc/xor_vmx_glue.c    | 49 ++------------------
- lib/raid/xor/riscv/xor-glue.c          | 43 +++--------------
- lib/raid/xor/s390/xor.c                |  9 ++--
- lib/raid/xor/sparc/xor-niagara-glue.c  | 10 ++--
- lib/raid/xor/sparc/xor-sparc32.c       |  9 ++--
- lib/raid/xor/sparc/xor-vis-glue.c      |  9 ++--
- lib/raid/xor/x86/xor-avx.c             | 29 ++++--------
- lib/raid/xor/x86/xor-mmx.c             | 64 ++++++++++----------------
- lib/raid/xor/x86/xor-sse.c             | 63 +++++++++----------------
- lib/raid/xor/xor-32regs-prefetch.c     | 10 ++--
- lib/raid/xor/xor-32regs.c              |  9 ++--
- lib/raid/xor/xor-8regs-prefetch.c      | 11 +++--
- lib/raid/xor/xor-8regs.c               |  9 ++--
- lib/raid/xor/xor-core.c                | 47 ++-----------------
- lib/raid/xor/xor_impl.h                | 48 +++++++++++++------
- 27 files changed, 224 insertions(+), 504 deletions(-)
+> +
+>         *cow_ret =3D cow;
+>         return 0;
+>
+> @@ -617,6 +622,9 @@ int btrfs_force_cow_block(struct btrfs_trans_handle *=
+trans,
+>   * When returning false for a WRITTEN buffer allocated in the current
+>   * transaction, re-dirties the buffer for in-place overwrite instead
+>   * of requesting a new COW.
+> + *
+> + * When returning false, inhibits background writeback on the buffer
+> + * for the lifetime of the transaction handle.
+>   */
+>  static inline bool should_cow_block(struct btrfs_trans_handle *trans,
+>                                     const struct btrfs_root *root,
+> @@ -684,6 +692,7 @@ static inline bool should_cow_block(struct btrfs_tran=
+s_handle *trans,
+>                 btrfs_mark_buffer_dirty(trans, buf);
+>         }
+>
+> +       btrfs_inhibit_eb_writeback(trans, buf);
+>         return false;
+>  }
+>
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index ff1fc699a6ca..e04e42a81978 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -1940,7 +1940,9 @@ static noinline_for_stack bool lock_extent_buffer_f=
+or_io(struct extent_buffer *e
+>          * of time.
+>          */
+>         spin_lock(&eb->refs_lock);
+> -       if (test_and_clear_bit(EXTENT_BUFFER_DIRTY, &eb->bflags)) {
+> +       if ((wbc->sync_mode =3D=3D WB_SYNC_ALL ||
+> +            atomic_read(&eb->writeback_inhibitors) =3D=3D 0) &&
+> +           test_and_clear_bit(EXTENT_BUFFER_DIRTY, &eb->bflags)) {
+>                 XA_STATE(xas, &fs_info->buffer_tree, eb->start >> fs_info=
+->nodesize_bits);
+>                 unsigned long flags;
+>
+> @@ -2999,6 +3001,64 @@ static inline void btrfs_release_extent_buffer(str=
+uct extent_buffer *eb)
+>         kmem_cache_free(extent_buffer_cache, eb);
+>  }
+>
+> +/*
+> + * btrfs_inhibit_eb_writeback - Inhibit writeback on buffer during trans=
+action.
+> + * @trans: transaction handle that will own the inhibitor
+> + * @eb: extent buffer to inhibit writeback on
+> + *
+> + * Attempts to track this extent buffer in the transaction's inhibited s=
+et.
+> + * If memory allocation fails, the buffer is simply not tracked. It may
+> + * be written back and need re-COW, which is the original behavior.
+> + * This is acceptable since inhibiting writeback is an optimization.
+> + */
+> +void btrfs_inhibit_eb_writeback(struct btrfs_trans_handle *trans,
+> +                               struct extent_buffer *eb)
+> +{
+> +       unsigned long index =3D eb->start >> trans->fs_info->nodesize_bit=
+s;
+> +       void *old;
+> +
+> +       /* Check if already inhibited by this handle. */
+> +       old =3D xa_load(&trans->writeback_inhibited_ebs, index);
+> +       if (old =3D=3D eb)
+> +               return;
+> +
+> +       /* Take reference for the xarray entry. */
+> +       refcount_inc(&eb->refs);
+> +
+> +       old =3D xa_store(&trans->writeback_inhibited_ebs, index, eb, GFP_=
+NOFS);
+> +       if (xa_is_err(old)) {
+> +               /* Allocation failed, just skip inhibiting this buffer. *=
+/
+> +               free_extent_buffer(eb);
+> +               return;
+> +       }
+> +
+> +       /* Handle replacement of different eb at same index. */
+> +       if (old && old !=3D eb) {
+> +               struct extent_buffer *old_eb =3D old;
+> +
+> +               atomic_dec(&old_eb->writeback_inhibitors);
+> +               free_extent_buffer(old_eb);
+> +       }
+> +
+> +       atomic_inc(&eb->writeback_inhibitors);
 
-diff --git a/include/linux/raid/xor.h b/include/linux/raid/xor.h
-index 4735a4e960f9..11620d5f5b93 100644
---- a/include/linux/raid/xor.h
-+++ b/include/linux/raid/xor.h
-@@ -2,11 +2,6 @@
- #ifndef _XOR_H
- #define _XOR_H
- 
--#define MAX_XOR_BLOCKS 4
--
--extern void xor_blocks(unsigned int count, unsigned int bytes,
--	void *dest, void **srcs);
--
- void xor_gen(void *dest, void **srcss, unsigned int src_cnt,
- 		unsigned int bytes);
- 
-diff --git a/lib/raid/xor/alpha/xor.c b/lib/raid/xor/alpha/xor.c
-index 90694cc47395..a8f72f2dd3a5 100644
---- a/lib/raid/xor/alpha/xor.c
-+++ b/lib/raid/xor/alpha/xor.c
-@@ -832,18 +832,17 @@ xor_alpha_prefetch_5:						\n\
- 	.end xor_alpha_prefetch_5				\n\
- ");
- 
-+DO_XOR_BLOCKS(alpha, xor_alpha_2, xor_alpha_3, xor_alpha_4, xor_alpha_5);
-+
- struct xor_block_template xor_block_alpha = {
--	.name	= "alpha",
--	.do_2	= xor_alpha_2,
--	.do_3	= xor_alpha_3,
--	.do_4	= xor_alpha_4,
--	.do_5	= xor_alpha_5,
-+	.name		= "alpha",
-+	.xor_gen	= xor_gen_alpha,
- };
- 
-+DO_XOR_BLOCKS(alpha_prefetch, xor_alpha_prefetch_2, xor_alpha_prefetch_3,
-+		xor_alpha_prefetch_4, xor_alpha_prefetch_5);
-+
- struct xor_block_template xor_block_alpha_prefetch = {
--	.name	= "alpha prefetch",
--	.do_2	= xor_alpha_prefetch_2,
--	.do_3	= xor_alpha_prefetch_3,
--	.do_4	= xor_alpha_prefetch_4,
--	.do_5	= xor_alpha_prefetch_5,
-+	.name		= "alpha prefetch",
-+	.xor_gen	= xor_gen_alpha_prefetch,
- };
-diff --git a/lib/raid/xor/arm/xor-neon-glue.c b/lib/raid/xor/arm/xor-neon-glue.c
-index 7afd6294464b..cea39e019904 100644
---- a/lib/raid/xor/arm/xor-neon-glue.c
-+++ b/lib/raid/xor/arm/xor-neon-glue.c
-@@ -5,54 +5,15 @@
- #include "xor_impl.h"
- #include "xor_arch.h"
- 
--extern struct xor_block_template const xor_block_neon_inner;
--
--static void
--xor_neon_2(unsigned long bytes, unsigned long * __restrict p1,
--	   const unsigned long * __restrict p2)
--{
--	kernel_neon_begin();
--	xor_block_neon_inner.do_2(bytes, p1, p2);
--	kernel_neon_end();
--}
--
--static void
--xor_neon_3(unsigned long bytes, unsigned long * __restrict p1,
--	   const unsigned long * __restrict p2,
--	   const unsigned long * __restrict p3)
--{
--	kernel_neon_begin();
--	xor_block_neon_inner.do_3(bytes, p1, p2, p3);
--	kernel_neon_end();
--}
--
--static void
--xor_neon_4(unsigned long bytes, unsigned long * __restrict p1,
--	   const unsigned long * __restrict p2,
--	   const unsigned long * __restrict p3,
--	   const unsigned long * __restrict p4)
--{
--	kernel_neon_begin();
--	xor_block_neon_inner.do_4(bytes, p1, p2, p3, p4);
--	kernel_neon_end();
--}
--
--static void
--xor_neon_5(unsigned long bytes, unsigned long * __restrict p1,
--	   const unsigned long * __restrict p2,
--	   const unsigned long * __restrict p3,
--	   const unsigned long * __restrict p4,
--	   const unsigned long * __restrict p5)
-+static void xor_gen_neon(void *dest, void **srcs, unsigned int src_cnt,
-+		unsigned int bytes)
- {
- 	kernel_neon_begin();
--	xor_block_neon_inner.do_5(bytes, p1, p2, p3, p4, p5);
-+	xor_gen_neon_inner(dest, srcs, src_cnt, bytes);
- 	kernel_neon_end();
- }
- 
- struct xor_block_template xor_block_neon = {
--	.name	= "neon",
--	.do_2	= xor_neon_2,
--	.do_3	= xor_neon_3,
--	.do_4	= xor_neon_4,
--	.do_5	= xor_neon_5
-+	.name		= "neon",
-+	.xor_gen	= xor_gen_neon,
- };
-diff --git a/lib/raid/xor/arm/xor-neon.c b/lib/raid/xor/arm/xor-neon.c
-index 806a42c5952c..23147e3a7904 100644
---- a/lib/raid/xor/arm/xor-neon.c
-+++ b/lib/raid/xor/arm/xor-neon.c
-@@ -4,6 +4,7 @@
-  */
- 
- #include "xor_impl.h"
-+#include "xor_arch.h"
- 
- #ifndef __ARM_NEON__
- #error You should compile this file with '-march=armv7-a -mfloat-abi=softfp -mfpu=neon'
-@@ -22,10 +23,4 @@
- #define NO_TEMPLATE
- #include "../xor-8regs.c"
- 
--struct xor_block_template const xor_block_neon_inner = {
--	.name	= "__inner_neon__",
--	.do_2	= xor_8regs_2,
--	.do_3	= xor_8regs_3,
--	.do_4	= xor_8regs_4,
--	.do_5	= xor_8regs_5,
--};
-+__DO_XOR_BLOCKS(neon_inner, xor_8regs_2, xor_8regs_3, xor_8regs_4, xor_8regs_5);
-diff --git a/lib/raid/xor/arm/xor.c b/lib/raid/xor/arm/xor.c
-index 5bd5f048bbe9..45139b6c55ea 100644
---- a/lib/raid/xor/arm/xor.c
-+++ b/lib/raid/xor/arm/xor.c
-@@ -127,10 +127,10 @@ xor_arm4regs_5(unsigned long bytes, unsigned long * __restrict p1,
- 	} while (--lines);
- }
- 
-+DO_XOR_BLOCKS(arm4regs, xor_arm4regs_2, xor_arm4regs_3, xor_arm4regs_4,
-+		xor_arm4regs_5);
-+
- struct xor_block_template xor_block_arm4regs = {
--	.name	= "arm4regs",
--	.do_2	= xor_arm4regs_2,
--	.do_3	= xor_arm4regs_3,
--	.do_4	= xor_arm4regs_4,
--	.do_5	= xor_arm4regs_5,
-+	.name		= "arm4regs",
-+	.xor_gen	= xor_gen_arm4regs,
- };
-diff --git a/lib/raid/xor/arm/xor_arch.h b/lib/raid/xor/arm/xor_arch.h
-index 5a7eedb48fbb..775ff835df65 100644
---- a/lib/raid/xor/arm/xor_arch.h
-+++ b/lib/raid/xor/arm/xor_arch.h
-@@ -7,6 +7,9 @@
- extern struct xor_block_template xor_block_arm4regs;
- extern struct xor_block_template xor_block_neon;
- 
-+void xor_gen_neon_inner(void *dest, void **srcs, unsigned int src_cnt,
-+		unsigned int bytes);
-+
- static __always_inline void __init arch_xor_init(void)
- {
- 	xor_register(&xor_block_arm4regs);
-diff --git a/lib/raid/xor/arm64/xor-neon-glue.c b/lib/raid/xor/arm64/xor-neon-glue.c
-index 3db0a318cf5b..f0284f86feb4 100644
---- a/lib/raid/xor/arm64/xor-neon-glue.c
-+++ b/lib/raid/xor/arm64/xor-neon-glue.c
-@@ -10,50 +10,16 @@
- #include "xor-neon.h"
- 
- #define XOR_TEMPLATE(_name)						\
--static void								\
--xor_##_name##_2(unsigned long bytes, unsigned long * __restrict p1,	\
--	   const unsigned long * __restrict p2)				\
-+static void xor_gen_##_name(void *dest, void **srcs, unsigned int src_cnt, \
-+		unsigned int bytes)					\
- {									\
- 	scoped_ksimd()							\
--		__xor_##_name##_2(bytes, p1, p2);			\
--}									\
--									\
--static void								\
--xor_##_name##_3(unsigned long bytes, unsigned long * __restrict p1,	\
--	   const unsigned long * __restrict p2,				\
--	   const unsigned long * __restrict p3)				\
--{									\
--	scoped_ksimd()							\
--		__xor_##_name##_3(bytes, p1, p2, p3);			\
--}									\
--									\
--static void								\
--xor_##_name##_4(unsigned long bytes, unsigned long * __restrict p1,	\
--	   const unsigned long * __restrict p2,				\
--	   const unsigned long * __restrict p3,				\
--	   const unsigned long * __restrict p4)				\
--{									\
--	scoped_ksimd()							\
--		__xor_##_name##_4(bytes, p1, p2, p3, p4);		\
--}									\
--									\
--static void								\
--xor_##_name##_5(unsigned long bytes, unsigned long * __restrict p1,	\
--	   const unsigned long * __restrict p2,				\
--	   const unsigned long * __restrict p3,				\
--	   const unsigned long * __restrict p4,				\
--	   const unsigned long * __restrict p5)				\
--{									\
--	scoped_ksimd()							\
--		__xor_##_name##_5(bytes, p1, p2, p3, p4, p5);		\
-+		xor_gen_##_name##_inner(dest, srcs, src_cnt, bytes);	\
- }									\
- 									\
- struct xor_block_template xor_block_##_name = {				\
--	.name   = __stringify(_name),					\
--	.do_2   = xor_##_name##_2,					\
--	.do_3   = xor_##_name##_3,					\
--	.do_4   = xor_##_name##_4,					\
--	.do_5	= xor_##_name##_5					\
-+	.name   	= __stringify(_name),				\
-+	.xor_gen	= xor_gen_##_name,				\
- };
- 
- XOR_TEMPLATE(neon);
-diff --git a/lib/raid/xor/arm64/xor-neon.c b/lib/raid/xor/arm64/xor-neon.c
-index 61f00c4fee49..97ef3cb92496 100644
---- a/lib/raid/xor/arm64/xor-neon.c
-+++ b/lib/raid/xor/arm64/xor-neon.c
-@@ -10,7 +10,7 @@
- #include "xor_arch.h"
- #include "xor-neon.h"
- 
--void __xor_neon_2(unsigned long bytes, unsigned long * __restrict p1,
-+static void __xor_neon_2(unsigned long bytes, unsigned long * __restrict p1,
- 		const unsigned long * __restrict p2)
- {
- 	uint64_t *dp1 = (uint64_t *)p1;
-@@ -37,7 +37,7 @@ void __xor_neon_2(unsigned long bytes, unsigned long * __restrict p1,
- 	} while (--lines > 0);
- }
- 
--void __xor_neon_3(unsigned long bytes, unsigned long * __restrict p1,
-+static void __xor_neon_3(unsigned long bytes, unsigned long * __restrict p1,
- 		const unsigned long * __restrict p2,
- 		const unsigned long * __restrict p3)
- {
-@@ -73,7 +73,7 @@ void __xor_neon_3(unsigned long bytes, unsigned long * __restrict p1,
- 	} while (--lines > 0);
- }
- 
--void __xor_neon_4(unsigned long bytes, unsigned long * __restrict p1,
-+static void __xor_neon_4(unsigned long bytes, unsigned long * __restrict p1,
- 		const unsigned long * __restrict p2,
- 		const unsigned long * __restrict p3,
- 		const unsigned long * __restrict p4)
-@@ -118,7 +118,7 @@ void __xor_neon_4(unsigned long bytes, unsigned long * __restrict p1,
- 	} while (--lines > 0);
- }
- 
--void __xor_neon_5(unsigned long bytes, unsigned long * __restrict p1,
-+static void __xor_neon_5(unsigned long bytes, unsigned long * __restrict p1,
- 		const unsigned long * __restrict p2,
- 		const unsigned long * __restrict p3,
- 		const unsigned long * __restrict p4,
-@@ -172,6 +172,9 @@ void __xor_neon_5(unsigned long bytes, unsigned long * __restrict p1,
- 	} while (--lines > 0);
- }
- 
-+__DO_XOR_BLOCKS(neon_inner, __xor_neon_2, __xor_neon_3, __xor_neon_4,
-+		__xor_neon_5);
-+
- static inline uint64x2_t eor3(uint64x2_t p, uint64x2_t q, uint64x2_t r)
- {
- 	uint64x2_t res;
-@@ -182,7 +185,7 @@ static inline uint64x2_t eor3(uint64x2_t p, uint64x2_t q, uint64x2_t r)
- 	return res;
- }
- 
--void __xor_eor3_3(unsigned long bytes, unsigned long * __restrict p1,
-+static void __xor_eor3_3(unsigned long bytes, unsigned long * __restrict p1,
- 		const unsigned long * __restrict p2,
- 		const unsigned long * __restrict p3)
- {
-@@ -216,7 +219,7 @@ void __xor_eor3_3(unsigned long bytes, unsigned long * __restrict p1,
- 	} while (--lines > 0);
- }
- 
--void __xor_eor3_4(unsigned long bytes, unsigned long * __restrict p1,
-+static void __xor_eor3_4(unsigned long bytes, unsigned long * __restrict p1,
- 		const unsigned long * __restrict p2,
- 		const unsigned long * __restrict p3,
- 		const unsigned long * __restrict p4)
-@@ -259,7 +262,7 @@ void __xor_eor3_4(unsigned long bytes, unsigned long * __restrict p1,
- 	} while (--lines > 0);
- }
- 
--void __xor_eor3_5(unsigned long bytes, unsigned long * __restrict p1,
-+static void __xor_eor3_5(unsigned long bytes, unsigned long * __restrict p1,
- 		const unsigned long * __restrict p2,
- 		const unsigned long * __restrict p3,
- 		const unsigned long * __restrict p4,
-@@ -304,3 +307,6 @@ void __xor_eor3_5(unsigned long bytes, unsigned long * __restrict p1,
- 		dp5 += 8;
- 	} while (--lines > 0);
- }
-+
-+__DO_XOR_BLOCKS(eor3_inner, __xor_neon_2, __xor_eor3_3, __xor_eor3_4,
-+		__xor_eor3_5);
-diff --git a/lib/raid/xor/arm64/xor-neon.h b/lib/raid/xor/arm64/xor-neon.h
-index cec0ac846fea..514699ba8f5f 100644
---- a/lib/raid/xor/arm64/xor-neon.h
-+++ b/lib/raid/xor/arm64/xor-neon.h
-@@ -1,30 +1,6 @@
- /* SPDX-License-Identifier: GPL-2.0-only */
- 
--void __xor_neon_2(unsigned long bytes, unsigned long * __restrict p1,
--		const unsigned long * __restrict p2);
--void __xor_neon_3(unsigned long bytes, unsigned long * __restrict p1,
--		const unsigned long * __restrict p2,
--		const unsigned long * __restrict p3);
--void __xor_neon_4(unsigned long bytes, unsigned long * __restrict p1,
--		const unsigned long * __restrict p2,
--		const unsigned long * __restrict p3,
--		const unsigned long * __restrict p4);
--void __xor_neon_5(unsigned long bytes, unsigned long * __restrict p1,
--		const unsigned long * __restrict p2,
--		const unsigned long * __restrict p3,
--		const unsigned long * __restrict p4,
--		const unsigned long * __restrict p5);
--
--#define __xor_eor3_2	__xor_neon_2
--void __xor_eor3_3(unsigned long bytes, unsigned long * __restrict p1,
--		const unsigned long * __restrict p2,
--		const unsigned long * __restrict p3);
--void __xor_eor3_4(unsigned long bytes, unsigned long * __restrict p1,
--		const unsigned long * __restrict p2,
--		const unsigned long * __restrict p3,
--		const unsigned long * __restrict p4);
--void __xor_eor3_5(unsigned long bytes, unsigned long * __restrict p1,
--		const unsigned long * __restrict p2,
--		const unsigned long * __restrict p3,
--		const unsigned long * __restrict p4,
--		const unsigned long * __restrict p5);
-+void xor_gen_neon_inner(void *dest, void **srcs, unsigned int src_cnt,
-+		unsigned int bytes);
-+void xor_gen_eor3_inner(void *dest, void **srcs, unsigned int src_cnt,
-+		unsigned int bytes);
-diff --git a/lib/raid/xor/loongarch/xor_simd_glue.c b/lib/raid/xor/loongarch/xor_simd_glue.c
-index b387aa0213b4..7f324d924f87 100644
---- a/lib/raid/xor/loongarch/xor_simd_glue.c
-+++ b/lib/raid/xor/loongarch/xor_simd_glue.c
-@@ -11,63 +11,23 @@
- #include "xor_arch.h"
- #include "xor_simd.h"
- 
--#define MAKE_XOR_GLUE_2(flavor)							\
--static void xor_##flavor##_2(unsigned long bytes, unsigned long * __restrict p1,\
--		      const unsigned long * __restrict p2)			\
-+#define MAKE_XOR_GLUES(flavor)							\
-+DO_XOR_BLOCKS(flavor##_inner, __xor_##flavor##_2, __xor_##flavor##_3,		\
-+		__xor_##flavor##_4, __xor_##flavor##_5);			\
-+										\
-+static void xor_gen_##flavor(void *dest, void **srcs, unsigned int src_cnt,	\
-+		unsigned int bytes)						\
- {										\
- 	kernel_fpu_begin();							\
--	__xor_##flavor##_2(bytes, p1, p2);					\
-+	xor_gen_##flavor##_inner(dest, srcs, src_cnt, bytes);			\
- 	kernel_fpu_end();							\
- }										\
--
--#define MAKE_XOR_GLUE_3(flavor)							\
--static void xor_##flavor##_3(unsigned long bytes, unsigned long * __restrict p1,\
--		      const unsigned long * __restrict p2,			\
--		      const unsigned long * __restrict p3)			\
--{										\
--	kernel_fpu_begin();							\
--	__xor_##flavor##_3(bytes, p1, p2, p3);					\
--	kernel_fpu_end();							\
--}										\
--
--#define MAKE_XOR_GLUE_4(flavor)							\
--static void xor_##flavor##_4(unsigned long bytes, unsigned long * __restrict p1,\
--		      const unsigned long * __restrict p2,			\
--		      const unsigned long * __restrict p3,			\
--		      const unsigned long * __restrict p4)			\
--{										\
--	kernel_fpu_begin();							\
--	__xor_##flavor##_4(bytes, p1, p2, p3, p4);				\
--	kernel_fpu_end();							\
--}										\
--
--#define MAKE_XOR_GLUE_5(flavor)							\
--static void xor_##flavor##_5(unsigned long bytes, unsigned long * __restrict p1,\
--		      const unsigned long * __restrict p2,			\
--		      const unsigned long * __restrict p3,			\
--		      const unsigned long * __restrict p4,			\
--		      const unsigned long * __restrict p5)			\
--{										\
--	kernel_fpu_begin();							\
--	__xor_##flavor##_5(bytes, p1, p2, p3, p4, p5);				\
--	kernel_fpu_end();							\
--}										\
--
--#define MAKE_XOR_GLUES(flavor)				\
--	MAKE_XOR_GLUE_2(flavor);			\
--	MAKE_XOR_GLUE_3(flavor);			\
--	MAKE_XOR_GLUE_4(flavor);			\
--	MAKE_XOR_GLUE_5(flavor);			\
--							\
--struct xor_block_template xor_block_##flavor = {	\
--	.name = __stringify(flavor),			\
--	.do_2 = xor_##flavor##_2,			\
--	.do_3 = xor_##flavor##_3,			\
--	.do_4 = xor_##flavor##_4,			\
--	.do_5 = xor_##flavor##_5,			\
-+										\
-+struct xor_block_template xor_block_##flavor = {				\
-+	.name		= __stringify(flavor),					\
-+	.xor_gen	= xor_gen_##flavor					\
- }
- 
--
- #ifdef CONFIG_CPU_HAS_LSX
- MAKE_XOR_GLUES(lsx);
- #endif /* CONFIG_CPU_HAS_LSX */
-diff --git a/lib/raid/xor/powerpc/xor_vmx.c b/lib/raid/xor/powerpc/xor_vmx.c
-index aab49d056d18..09bed98c1bc7 100644
---- a/lib/raid/xor/powerpc/xor_vmx.c
-+++ b/lib/raid/xor/powerpc/xor_vmx.c
-@@ -10,6 +10,7 @@
-  * Sparse (as at v0.5.0) gets very, very confused by this file.
-  * Make it a bit simpler for it.
-  */
-+#include "xor_impl.h"
- #if !defined(__CHECKER__)
- #include <altivec.h>
- #else
-@@ -49,9 +50,9 @@ typedef vector signed char unative_t;
- 		V1##_3 = vec_xor(V1##_3, V2##_3);	\
- 	} while (0)
- 
--void __xor_altivec_2(unsigned long bytes,
--		     unsigned long * __restrict v1_in,
--		     const unsigned long * __restrict v2_in)
-+static void __xor_altivec_2(unsigned long bytes,
-+		unsigned long * __restrict v1_in,
-+		const unsigned long * __restrict v2_in)
- {
- 	DEFINE(v1);
- 	DEFINE(v2);
-@@ -68,10 +69,10 @@ void __xor_altivec_2(unsigned long bytes,
- 	} while (--lines > 0);
- }
- 
--void __xor_altivec_3(unsigned long bytes,
--		     unsigned long * __restrict v1_in,
--		     const unsigned long * __restrict v2_in,
--		     const unsigned long * __restrict v3_in)
-+static void __xor_altivec_3(unsigned long bytes,
-+		unsigned long * __restrict v1_in,
-+		const unsigned long * __restrict v2_in,
-+		const unsigned long * __restrict v3_in)
- {
- 	DEFINE(v1);
- 	DEFINE(v2);
-@@ -92,11 +93,11 @@ void __xor_altivec_3(unsigned long bytes,
- 	} while (--lines > 0);
- }
- 
--void __xor_altivec_4(unsigned long bytes,
--		     unsigned long * __restrict v1_in,
--		     const unsigned long * __restrict v2_in,
--		     const unsigned long * __restrict v3_in,
--		     const unsigned long * __restrict v4_in)
-+static void __xor_altivec_4(unsigned long bytes,
-+		unsigned long * __restrict v1_in,
-+		const unsigned long * __restrict v2_in,
-+		const unsigned long * __restrict v3_in,
-+		const unsigned long * __restrict v4_in)
- {
- 	DEFINE(v1);
- 	DEFINE(v2);
-@@ -121,12 +122,12 @@ void __xor_altivec_4(unsigned long bytes,
- 	} while (--lines > 0);
- }
- 
--void __xor_altivec_5(unsigned long bytes,
--		     unsigned long * __restrict v1_in,
--		     const unsigned long * __restrict v2_in,
--		     const unsigned long * __restrict v3_in,
--		     const unsigned long * __restrict v4_in,
--		     const unsigned long * __restrict v5_in)
-+static void __xor_altivec_5(unsigned long bytes,
-+		unsigned long * __restrict v1_in,
-+		const unsigned long * __restrict v2_in,
-+		const unsigned long * __restrict v3_in,
-+		const unsigned long * __restrict v4_in,
-+		const unsigned long * __restrict v5_in)
- {
- 	DEFINE(v1);
- 	DEFINE(v2);
-@@ -154,3 +155,6 @@ void __xor_altivec_5(unsigned long bytes,
- 		v5 += 4;
- 	} while (--lines > 0);
- }
-+
-+__DO_XOR_BLOCKS(altivec_inner, __xor_altivec_2, __xor_altivec_3,
-+		__xor_altivec_4, __xor_altivec_5);
-diff --git a/lib/raid/xor/powerpc/xor_vmx.h b/lib/raid/xor/powerpc/xor_vmx.h
-index 573c41d90dac..1d26c1133a86 100644
---- a/lib/raid/xor/powerpc/xor_vmx.h
-+++ b/lib/raid/xor/powerpc/xor_vmx.h
-@@ -6,17 +6,5 @@
-  * outside of the enable/disable altivec block.
-  */
- 
--void __xor_altivec_2(unsigned long bytes, unsigned long * __restrict p1,
--		     const unsigned long * __restrict p2);
--void __xor_altivec_3(unsigned long bytes, unsigned long * __restrict p1,
--		     const unsigned long * __restrict p2,
--		     const unsigned long * __restrict p3);
--void __xor_altivec_4(unsigned long bytes, unsigned long * __restrict p1,
--		     const unsigned long * __restrict p2,
--		     const unsigned long * __restrict p3,
--		     const unsigned long * __restrict p4);
--void __xor_altivec_5(unsigned long bytes, unsigned long * __restrict p1,
--		     const unsigned long * __restrict p2,
--		     const unsigned long * __restrict p3,
--		     const unsigned long * __restrict p4,
--		     const unsigned long * __restrict p5);
-+void xor_gen_altivec_inner(void *dest, void **srcs, unsigned int src_cnt,
-+		unsigned int bytes);
-diff --git a/lib/raid/xor/powerpc/xor_vmx_glue.c b/lib/raid/xor/powerpc/xor_vmx_glue.c
-index 56e99ddfb64f..dbfbb5cadc36 100644
---- a/lib/raid/xor/powerpc/xor_vmx_glue.c
-+++ b/lib/raid/xor/powerpc/xor_vmx_glue.c
-@@ -12,56 +12,17 @@
- #include "xor_arch.h"
- #include "xor_vmx.h"
- 
--static void xor_altivec_2(unsigned long bytes, unsigned long * __restrict p1,
--		const unsigned long * __restrict p2)
-+static void xor_gen_altivec(void *dest, void **srcs, unsigned int src_cnt,
-+		unsigned int bytes)
- {
- 	preempt_disable();
- 	enable_kernel_altivec();
--	__xor_altivec_2(bytes, p1, p2);
--	disable_kernel_altivec();
--	preempt_enable();
--}
--
--static void xor_altivec_3(unsigned long bytes, unsigned long * __restrict p1,
--		const unsigned long * __restrict p2,
--		const unsigned long * __restrict p3)
--{
--	preempt_disable();
--	enable_kernel_altivec();
--	__xor_altivec_3(bytes, p1, p2, p3);
--	disable_kernel_altivec();
--	preempt_enable();
--}
--
--static void xor_altivec_4(unsigned long bytes, unsigned long * __restrict p1,
--		const unsigned long * __restrict p2,
--		const unsigned long * __restrict p3,
--		const unsigned long * __restrict p4)
--{
--	preempt_disable();
--	enable_kernel_altivec();
--	__xor_altivec_4(bytes, p1, p2, p3, p4);
--	disable_kernel_altivec();
--	preempt_enable();
--}
--
--static void xor_altivec_5(unsigned long bytes, unsigned long * __restrict p1,
--		const unsigned long * __restrict p2,
--		const unsigned long * __restrict p3,
--		const unsigned long * __restrict p4,
--		const unsigned long * __restrict p5)
--{
--	preempt_disable();
--	enable_kernel_altivec();
--	__xor_altivec_5(bytes, p1, p2, p3, p4, p5);
-+	xor_gen_altivec_inner(dest, srcs, src_cnt, bytes);
- 	disable_kernel_altivec();
- 	preempt_enable();
- }
- 
- struct xor_block_template xor_block_altivec = {
--	.name = "altivec",
--	.do_2 = xor_altivec_2,
--	.do_3 = xor_altivec_3,
--	.do_4 = xor_altivec_4,
--	.do_5 = xor_altivec_5,
-+	.name		= "altivec",
-+	.xor_gen	= xor_gen_altivec,
- };
-diff --git a/lib/raid/xor/riscv/xor-glue.c b/lib/raid/xor/riscv/xor-glue.c
-index 060e5f22ebcc..2e4c1b05d998 100644
---- a/lib/raid/xor/riscv/xor-glue.c
-+++ b/lib/raid/xor/riscv/xor-glue.c
-@@ -9,48 +9,17 @@
- #include "xor_impl.h"
- #include "xor_arch.h"
- 
--static void xor_vector_2(unsigned long bytes, unsigned long *__restrict p1,
--			 const unsigned long *__restrict p2)
--{
--	kernel_vector_begin();
--	xor_regs_2_(bytes, p1, p2);
--	kernel_vector_end();
--}
--
--static void xor_vector_3(unsigned long bytes, unsigned long *__restrict p1,
--			 const unsigned long *__restrict p2,
--			 const unsigned long *__restrict p3)
--{
--	kernel_vector_begin();
--	xor_regs_3_(bytes, p1, p2, p3);
--	kernel_vector_end();
--}
--
--static void xor_vector_4(unsigned long bytes, unsigned long *__restrict p1,
--			 const unsigned long *__restrict p2,
--			 const unsigned long *__restrict p3,
--			 const unsigned long *__restrict p4)
--{
--	kernel_vector_begin();
--	xor_regs_4_(bytes, p1, p2, p3, p4);
--	kernel_vector_end();
--}
-+DO_XOR_BLOCKS(vector_inner, xor_regs_2_, xor_regs_3_, xor_regs_4_, xor_regs_5_);
- 
--static void xor_vector_5(unsigned long bytes, unsigned long *__restrict p1,
--			 const unsigned long *__restrict p2,
--			 const unsigned long *__restrict p3,
--			 const unsigned long *__restrict p4,
--			 const unsigned long *__restrict p5)
-+static void xor_gen_vector(void *dest, void **srcs, unsigned int src_cnt,
-+		unsigned int bytes)
- {
- 	kernel_vector_begin();
--	xor_regs_5_(bytes, p1, p2, p3, p4, p5);
-+	xor_gen_vector_inner(dest, srcs, src_cnt, bytes);
- 	kernel_vector_end();
- }
- 
- struct xor_block_template xor_block_rvv = {
--	.name = "rvv",
--	.do_2 = xor_vector_2,
--	.do_3 = xor_vector_3,
--	.do_4 = xor_vector_4,
--	.do_5 = xor_vector_5
-+	.name		= "rvv",
-+	.xor_gen	= xor_gen_vector,
- };
-diff --git a/lib/raid/xor/s390/xor.c b/lib/raid/xor/s390/xor.c
-index 48b8cdc684a3..d8a62a70db6c 100644
---- a/lib/raid/xor/s390/xor.c
-+++ b/lib/raid/xor/s390/xor.c
-@@ -126,10 +126,9 @@ static void xor_xc_5(unsigned long bytes, unsigned long * __restrict p1,
- 		: : "0", "cc", "memory");
- }
- 
-+DO_XOR_BLOCKS(xc, xor_xc_2, xor_xc_3, xor_xc_4, xor_xc_5);
-+
- struct xor_block_template xor_block_xc = {
--	.name = "xc",
--	.do_2 = xor_xc_2,
--	.do_3 = xor_xc_3,
--	.do_4 = xor_xc_4,
--	.do_5 = xor_xc_5,
-+	.name		= "xc",
-+	.xor_gen	= xor_gen_xc,
- };
-diff --git a/lib/raid/xor/sparc/xor-niagara-glue.c b/lib/raid/xor/sparc/xor-niagara-glue.c
-index 92d4712c65e1..a4adb088e7d3 100644
---- a/lib/raid/xor/sparc/xor-niagara-glue.c
-+++ b/lib/raid/xor/sparc/xor-niagara-glue.c
-@@ -24,10 +24,10 @@ void xor_niagara_5(unsigned long bytes, unsigned long * __restrict p1,
- 		   const unsigned long * __restrict p4,
- 		   const unsigned long * __restrict p5);
- 
-+DO_XOR_BLOCKS(niagara, xor_niagara_2, xor_niagara_3, xor_niagara_4,
-+		xor_niagara_5);
-+
- struct xor_block_template xor_block_niagara = {
--        .name	= "Niagara",
--        .do_2	= xor_niagara_2,
--        .do_3	= xor_niagara_3,
--        .do_4	= xor_niagara_4,
--        .do_5	= xor_niagara_5,
-+        .name		= "Niagara",
-+	.xor_gen	= xor_gen_niagara,
- };
-diff --git a/lib/raid/xor/sparc/xor-sparc32.c b/lib/raid/xor/sparc/xor-sparc32.c
-index 307c4a84f535..fb37631e90e6 100644
---- a/lib/raid/xor/sparc/xor-sparc32.c
-+++ b/lib/raid/xor/sparc/xor-sparc32.c
-@@ -244,10 +244,9 @@ sparc_5(unsigned long bytes, unsigned long * __restrict p1,
- 	} while (--lines > 0);
- }
- 
-+DO_XOR_BLOCKS(sparc32, sparc_2, sparc_3, sparc_4, sparc_5);
-+
- struct xor_block_template xor_block_SPARC = {
--	.name	= "SPARC",
--	.do_2	= sparc_2,
--	.do_3	= sparc_3,
--	.do_4	= sparc_4,
--	.do_5	= sparc_5,
-+	.name		= "SPARC",
-+	.xor_gen	= xor_gen_sparc32,
- };
-diff --git a/lib/raid/xor/sparc/xor-vis-glue.c b/lib/raid/xor/sparc/xor-vis-glue.c
-index 1c0977e85f53..ef39d6c8b9bb 100644
---- a/lib/raid/xor/sparc/xor-vis-glue.c
-+++ b/lib/raid/xor/sparc/xor-vis-glue.c
-@@ -26,10 +26,9 @@ void xor_vis_5(unsigned long bytes, unsigned long * __restrict p1,
- 
- /* XXX Ugh, write cheetah versions... -DaveM */
- 
-+DO_XOR_BLOCKS(vis, xor_vis_2, xor_vis_3, xor_vis_4, xor_vis_5);
-+
- struct xor_block_template xor_block_VIS = {
--        .name	= "VIS",
--        .do_2	= xor_vis_2,
--        .do_3	= xor_vis_3,
--        .do_4	= xor_vis_4,
--        .do_5	= xor_vis_5,
-+        .name		= "VIS",
-+	.xor_gen	= xor_gen_vis,
- };
-diff --git a/lib/raid/xor/x86/xor-avx.c b/lib/raid/xor/x86/xor-avx.c
-index d411efa1ff43..f7777d7aa269 100644
---- a/lib/raid/xor/x86/xor-avx.c
-+++ b/lib/raid/xor/x86/xor-avx.c
-@@ -29,8 +29,6 @@ static void xor_avx_2(unsigned long bytes, unsigned long * __restrict p0,
- {
- 	unsigned long lines = bytes >> 9;
- 
--	kernel_fpu_begin();
--
- 	while (lines--) {
- #undef BLOCK
- #define BLOCK(i, reg) \
-@@ -47,8 +45,6 @@ do { \
- 		p0 = (unsigned long *)((uintptr_t)p0 + 512);
- 		p1 = (unsigned long *)((uintptr_t)p1 + 512);
- 	}
--
--	kernel_fpu_end();
- }
- 
- static void xor_avx_3(unsigned long bytes, unsigned long * __restrict p0,
-@@ -57,8 +53,6 @@ static void xor_avx_3(unsigned long bytes, unsigned long * __restrict p0,
- {
- 	unsigned long lines = bytes >> 9;
- 
--	kernel_fpu_begin();
--
- 	while (lines--) {
- #undef BLOCK
- #define BLOCK(i, reg) \
-@@ -78,8 +72,6 @@ do { \
- 		p1 = (unsigned long *)((uintptr_t)p1 + 512);
- 		p2 = (unsigned long *)((uintptr_t)p2 + 512);
- 	}
--
--	kernel_fpu_end();
- }
- 
- static void xor_avx_4(unsigned long bytes, unsigned long * __restrict p0,
-@@ -89,8 +81,6 @@ static void xor_avx_4(unsigned long bytes, unsigned long * __restrict p0,
- {
- 	unsigned long lines = bytes >> 9;
- 
--	kernel_fpu_begin();
--
- 	while (lines--) {
- #undef BLOCK
- #define BLOCK(i, reg) \
-@@ -113,8 +103,6 @@ do { \
- 		p2 = (unsigned long *)((uintptr_t)p2 + 512);
- 		p3 = (unsigned long *)((uintptr_t)p3 + 512);
- 	}
--
--	kernel_fpu_end();
- }
- 
- static void xor_avx_5(unsigned long bytes, unsigned long * __restrict p0,
-@@ -125,8 +113,6 @@ static void xor_avx_5(unsigned long bytes, unsigned long * __restrict p0,
- {
- 	unsigned long lines = bytes >> 9;
- 
--	kernel_fpu_begin();
--
- 	while (lines--) {
- #undef BLOCK
- #define BLOCK(i, reg) \
-@@ -152,14 +138,19 @@ do { \
- 		p3 = (unsigned long *)((uintptr_t)p3 + 512);
- 		p4 = (unsigned long *)((uintptr_t)p4 + 512);
- 	}
-+}
-+
-+DO_XOR_BLOCKS(avx_inner, xor_avx_2, xor_avx_3, xor_avx_4, xor_avx_5);
- 
-+static void xor_gen_avx(void *dest, void **srcs, unsigned int src_cnt,
-+			unsigned int bytes)
-+{
-+	kernel_fpu_begin();
-+	xor_gen_avx_inner(dest, srcs, src_cnt, bytes);
- 	kernel_fpu_end();
- }
- 
- struct xor_block_template xor_block_avx = {
--	.name = "avx",
--	.do_2 = xor_avx_2,
--	.do_3 = xor_avx_3,
--	.do_4 = xor_avx_4,
--	.do_5 = xor_avx_5,
-+	.name		= "avx",
-+	.xor_gen	= xor_gen_avx,
- };
-diff --git a/lib/raid/xor/x86/xor-mmx.c b/lib/raid/xor/x86/xor-mmx.c
-index e48c58f92874..63a8b0444fce 100644
---- a/lib/raid/xor/x86/xor-mmx.c
-+++ b/lib/raid/xor/x86/xor-mmx.c
-@@ -21,8 +21,6 @@ xor_pII_mmx_2(unsigned long bytes, unsigned long * __restrict p1,
- {
- 	unsigned long lines = bytes >> 7;
- 
--	kernel_fpu_begin();
--
- 	asm volatile(
- #undef BLOCK
- #define BLOCK(i)				\
-@@ -55,8 +53,6 @@ xor_pII_mmx_2(unsigned long bytes, unsigned long * __restrict p1,
- 	  "+r" (p1), "+r" (p2)
- 	:
- 	: "memory");
--
--	kernel_fpu_end();
- }
- 
- static void
-@@ -66,8 +62,6 @@ xor_pII_mmx_3(unsigned long bytes, unsigned long * __restrict p1,
- {
- 	unsigned long lines = bytes >> 7;
- 
--	kernel_fpu_begin();
--
- 	asm volatile(
- #undef BLOCK
- #define BLOCK(i)				\
-@@ -105,8 +99,6 @@ xor_pII_mmx_3(unsigned long bytes, unsigned long * __restrict p1,
- 	  "+r" (p1), "+r" (p2), "+r" (p3)
- 	:
- 	: "memory");
--
--	kernel_fpu_end();
- }
- 
- static void
-@@ -117,8 +109,6 @@ xor_pII_mmx_4(unsigned long bytes, unsigned long * __restrict p1,
- {
- 	unsigned long lines = bytes >> 7;
- 
--	kernel_fpu_begin();
--
- 	asm volatile(
- #undef BLOCK
- #define BLOCK(i)				\
-@@ -161,8 +151,6 @@ xor_pII_mmx_4(unsigned long bytes, unsigned long * __restrict p1,
- 	  "+r" (p1), "+r" (p2), "+r" (p3), "+r" (p4)
- 	:
- 	: "memory");
--
--	kernel_fpu_end();
- }
- 
- 
-@@ -175,8 +163,6 @@ xor_pII_mmx_5(unsigned long bytes, unsigned long * __restrict p1,
- {
- 	unsigned long lines = bytes >> 7;
- 
--	kernel_fpu_begin();
--
- 	/* Make sure GCC forgets anything it knows about p4 or p5,
- 	   such that it won't pass to the asm volatile below a
- 	   register that is shared with any other variable.  That's
-@@ -237,8 +223,6 @@ xor_pII_mmx_5(unsigned long bytes, unsigned long * __restrict p1,
- 	   Clobber them just to be sure nobody does something stupid
- 	   like assuming they have some legal value.  */
- 	asm("" : "=r" (p4), "=r" (p5));
--
--	kernel_fpu_end();
- }
- 
- #undef LD
-@@ -255,8 +239,6 @@ xor_p5_mmx_2(unsigned long bytes, unsigned long * __restrict p1,
- {
- 	unsigned long lines = bytes >> 6;
- 
--	kernel_fpu_begin();
--
- 	asm volatile(
- 	" .align 32	             ;\n"
- 	" 1:                         ;\n"
-@@ -293,8 +275,6 @@ xor_p5_mmx_2(unsigned long bytes, unsigned long * __restrict p1,
- 	  "+r" (p1), "+r" (p2)
- 	:
- 	: "memory");
--
--	kernel_fpu_end();
- }
- 
- static void
-@@ -304,8 +284,6 @@ xor_p5_mmx_3(unsigned long bytes, unsigned long * __restrict p1,
- {
- 	unsigned long lines = bytes >> 6;
- 
--	kernel_fpu_begin();
--
- 	asm volatile(
- 	" .align 32,0x90             ;\n"
- 	" 1:                         ;\n"
-@@ -351,8 +329,6 @@ xor_p5_mmx_3(unsigned long bytes, unsigned long * __restrict p1,
- 	  "+r" (p1), "+r" (p2), "+r" (p3)
- 	:
- 	: "memory" );
--
--	kernel_fpu_end();
- }
- 
- static void
-@@ -363,8 +339,6 @@ xor_p5_mmx_4(unsigned long bytes, unsigned long * __restrict p1,
- {
- 	unsigned long lines = bytes >> 6;
- 
--	kernel_fpu_begin();
--
- 	asm volatile(
- 	" .align 32,0x90             ;\n"
- 	" 1:                         ;\n"
-@@ -419,8 +393,6 @@ xor_p5_mmx_4(unsigned long bytes, unsigned long * __restrict p1,
- 	  "+r" (p1), "+r" (p2), "+r" (p3), "+r" (p4)
- 	:
- 	: "memory");
--
--	kernel_fpu_end();
- }
- 
- static void
-@@ -432,8 +404,6 @@ xor_p5_mmx_5(unsigned long bytes, unsigned long * __restrict p1,
- {
- 	unsigned long lines = bytes >> 6;
- 
--	kernel_fpu_begin();
--
- 	/* Make sure GCC forgets anything it knows about p4 or p5,
- 	   such that it won't pass to the asm volatile below a
- 	   register that is shared with any other variable.  That's
-@@ -510,22 +480,36 @@ xor_p5_mmx_5(unsigned long bytes, unsigned long * __restrict p1,
- 	   Clobber them just to be sure nobody does something stupid
- 	   like assuming they have some legal value.  */
- 	asm("" : "=r" (p4), "=r" (p5));
-+}
-+
-+DO_XOR_BLOCKS(pII_mmx_inner, xor_pII_mmx_2, xor_pII_mmx_3, xor_pII_mmx_4,
-+		xor_pII_mmx_5);
- 
-+static void xor_gen_pII_mmx(void *dest, void **srcs, unsigned int src_cnt,
-+		unsigned int bytes)
-+{
-+	kernel_fpu_begin();
-+	xor_gen_pII_mmx_inner(dest, srcs, src_cnt, bytes);
- 	kernel_fpu_end();
- }
- 
- struct xor_block_template xor_block_pII_mmx = {
--	.name = "pII_mmx",
--	.do_2 = xor_pII_mmx_2,
--	.do_3 = xor_pII_mmx_3,
--	.do_4 = xor_pII_mmx_4,
--	.do_5 = xor_pII_mmx_5,
-+	.name		= "pII_mmx",
-+	.xor_gen	= xor_gen_pII_mmx,
- };
- 
-+DO_XOR_BLOCKS(p5_mmx_inner, xor_p5_mmx_2, xor_p5_mmx_3, xor_p5_mmx_4,
-+		xor_p5_mmx_5);
-+
-+static void xor_gen_p5_mmx(void *dest, void **srcs, unsigned int src_cnt,
-+		unsigned int bytes)
-+{
-+	kernel_fpu_begin();
-+	xor_gen_p5_mmx_inner(dest, srcs, src_cnt, bytes);
-+	kernel_fpu_end();
-+}
-+
- struct xor_block_template xor_block_p5_mmx = {
--	.name = "p5_mmx",
--	.do_2 = xor_p5_mmx_2,
--	.do_3 = xor_p5_mmx_3,
--	.do_4 = xor_p5_mmx_4,
--	.do_5 = xor_p5_mmx_5,
-+	.name		= "p5_mmx",
-+	.xor_gen	= xor_gen_p5_mmx,
- };
-diff --git a/lib/raid/xor/x86/xor-sse.c b/lib/raid/xor/x86/xor-sse.c
-index 5993ed688c15..c6626ecae6ba 100644
---- a/lib/raid/xor/x86/xor-sse.c
-+++ b/lib/raid/xor/x86/xor-sse.c
-@@ -51,8 +51,6 @@ xor_sse_2(unsigned long bytes, unsigned long * __restrict p1,
- {
- 	unsigned long lines = bytes >> 8;
- 
--	kernel_fpu_begin();
--
- 	asm volatile(
- #undef BLOCK
- #define BLOCK(i)					\
-@@ -93,8 +91,6 @@ xor_sse_2(unsigned long bytes, unsigned long * __restrict p1,
- 	  [p1] "+r" (p1), [p2] "+r" (p2)
- 	: [inc] XOR_CONSTANT_CONSTRAINT (256UL)
- 	: "memory");
--
--	kernel_fpu_end();
- }
- 
- static void
-@@ -103,8 +99,6 @@ xor_sse_2_pf64(unsigned long bytes, unsigned long * __restrict p1,
- {
- 	unsigned long lines = bytes >> 8;
- 
--	kernel_fpu_begin();
--
- 	asm volatile(
- #undef BLOCK
- #define BLOCK(i)			\
-@@ -128,8 +122,6 @@ xor_sse_2_pf64(unsigned long bytes, unsigned long * __restrict p1,
- 	  [p1] "+r" (p1), [p2] "+r" (p2)
- 	: [inc] XOR_CONSTANT_CONSTRAINT (256UL)
- 	: "memory");
--
--	kernel_fpu_end();
- }
- 
- static void
-@@ -139,8 +131,6 @@ xor_sse_3(unsigned long bytes, unsigned long * __restrict p1,
- {
- 	unsigned long lines = bytes >> 8;
- 
--	kernel_fpu_begin();
--
- 	asm volatile(
- #undef BLOCK
- #define BLOCK(i) \
-@@ -188,8 +178,6 @@ xor_sse_3(unsigned long bytes, unsigned long * __restrict p1,
- 	  [p1] "+r" (p1), [p2] "+r" (p2), [p3] "+r" (p3)
- 	: [inc] XOR_CONSTANT_CONSTRAINT (256UL)
- 	: "memory");
--
--	kernel_fpu_end();
- }
- 
- static void
-@@ -199,8 +187,6 @@ xor_sse_3_pf64(unsigned long bytes, unsigned long * __restrict p1,
- {
- 	unsigned long lines = bytes >> 8;
- 
--	kernel_fpu_begin();
--
- 	asm volatile(
- #undef BLOCK
- #define BLOCK(i)			\
-@@ -226,8 +212,6 @@ xor_sse_3_pf64(unsigned long bytes, unsigned long * __restrict p1,
- 	  [p1] "+r" (p1), [p2] "+r" (p2), [p3] "+r" (p3)
- 	: [inc] XOR_CONSTANT_CONSTRAINT (256UL)
- 	: "memory");
--
--	kernel_fpu_end();
- }
- 
- static void
-@@ -238,8 +222,6 @@ xor_sse_4(unsigned long bytes, unsigned long * __restrict p1,
- {
- 	unsigned long lines = bytes >> 8;
- 
--	kernel_fpu_begin();
--
- 	asm volatile(
- #undef BLOCK
- #define BLOCK(i) \
-@@ -294,8 +276,6 @@ xor_sse_4(unsigned long bytes, unsigned long * __restrict p1,
- 	  [p2] "+r" (p2), [p3] "+r" (p3), [p4] "+r" (p4)
- 	: [inc] XOR_CONSTANT_CONSTRAINT (256UL)
- 	: "memory");
--
--	kernel_fpu_end();
- }
- 
- static void
-@@ -306,8 +286,6 @@ xor_sse_4_pf64(unsigned long bytes, unsigned long * __restrict p1,
- {
- 	unsigned long lines = bytes >> 8;
- 
--	kernel_fpu_begin();
--
- 	asm volatile(
- #undef BLOCK
- #define BLOCK(i)			\
-@@ -335,8 +313,6 @@ xor_sse_4_pf64(unsigned long bytes, unsigned long * __restrict p1,
- 	  [p2] "+r" (p2), [p3] "+r" (p3), [p4] "+r" (p4)
- 	: [inc] XOR_CONSTANT_CONSTRAINT (256UL)
- 	: "memory");
--
--	kernel_fpu_end();
- }
- 
- static void
-@@ -348,8 +324,6 @@ xor_sse_5(unsigned long bytes, unsigned long * __restrict p1,
- {
- 	unsigned long lines = bytes >> 8;
- 
--	kernel_fpu_begin();
--
- 	asm volatile(
- #undef BLOCK
- #define BLOCK(i) \
-@@ -411,8 +385,6 @@ xor_sse_5(unsigned long bytes, unsigned long * __restrict p1,
- 	  [p3] "+r" (p3), [p4] "+r" (p4), [p5] "+r" (p5)
- 	: [inc] XOR_CONSTANT_CONSTRAINT (256UL)
- 	: "memory");
--
--	kernel_fpu_end();
- }
- 
- static void
-@@ -424,8 +396,6 @@ xor_sse_5_pf64(unsigned long bytes, unsigned long * __restrict p1,
- {
- 	unsigned long lines = bytes >> 8;
- 
--	kernel_fpu_begin();
--
- 	asm volatile(
- #undef BLOCK
- #define BLOCK(i)			\
-@@ -455,22 +425,35 @@ xor_sse_5_pf64(unsigned long bytes, unsigned long * __restrict p1,
- 	  [p3] "+r" (p3), [p4] "+r" (p4), [p5] "+r" (p5)
- 	: [inc] XOR_CONSTANT_CONSTRAINT (256UL)
- 	: "memory");
-+}
-+
-+DO_XOR_BLOCKS(sse_inner, xor_sse_2, xor_sse_3, xor_sse_4, xor_sse_5);
- 
-+static void xor_gen_sse(void *dest, void **srcs, unsigned int src_cnt,
-+			unsigned int bytes)
-+{
-+	kernel_fpu_begin();
-+	xor_gen_sse_inner(dest, srcs, src_cnt, bytes);
- 	kernel_fpu_end();
- }
- 
- struct xor_block_template xor_block_sse = {
--	.name = "sse",
--	.do_2 = xor_sse_2,
--	.do_3 = xor_sse_3,
--	.do_4 = xor_sse_4,
--	.do_5 = xor_sse_5,
-+	.name		= "sse",
-+	.xor_gen	= xor_gen_sse,
- };
- 
-+DO_XOR_BLOCKS(sse_pf64_inner, xor_sse_2_pf64, xor_sse_3_pf64, xor_sse_4_pf64,
-+		xor_sse_5_pf64);
-+
-+static void xor_gen_sse_pf64(void *dest, void **srcs, unsigned int src_cnt,
-+			unsigned int bytes)
-+{
-+	kernel_fpu_begin();
-+	xor_gen_sse_pf64_inner(dest, srcs, src_cnt, bytes);
-+	kernel_fpu_end();
-+}
-+
- struct xor_block_template xor_block_sse_pf64 = {
--	.name = "prefetch64-sse",
--	.do_2 = xor_sse_2_pf64,
--	.do_3 = xor_sse_3_pf64,
--	.do_4 = xor_sse_4_pf64,
--	.do_5 = xor_sse_5_pf64,
-+	.name		= "prefetch64-sse",
-+	.xor_gen	= xor_gen_sse_pf64,
- };
-diff --git a/lib/raid/xor/xor-32regs-prefetch.c b/lib/raid/xor/xor-32regs-prefetch.c
-index 2856a8e50cb8..ade2a7d8cbe2 100644
---- a/lib/raid/xor/xor-32regs-prefetch.c
-+++ b/lib/raid/xor/xor-32regs-prefetch.c
-@@ -258,10 +258,10 @@ xor_32regs_p_5(unsigned long bytes, unsigned long * __restrict p1,
- 		goto once_more;
- }
- 
-+DO_XOR_BLOCKS(32regs_p, xor_32regs_p_2, xor_32regs_p_3, xor_32regs_p_4,
-+		xor_32regs_p_5);
-+
- struct xor_block_template xor_block_32regs_p = {
--	.name = "32regs_prefetch",
--	.do_2 = xor_32regs_p_2,
--	.do_3 = xor_32regs_p_3,
--	.do_4 = xor_32regs_p_4,
--	.do_5 = xor_32regs_p_5,
-+	.name		= "32regs_prefetch",
-+	.xor_gen	= xor_gen_32regs_p,
- };
-diff --git a/lib/raid/xor/xor-32regs.c b/lib/raid/xor/xor-32regs.c
-index cc44d64032fa..acb4a10d1e95 100644
---- a/lib/raid/xor/xor-32regs.c
-+++ b/lib/raid/xor/xor-32regs.c
-@@ -209,10 +209,9 @@ xor_32regs_5(unsigned long bytes, unsigned long * __restrict p1,
- 	} while (--lines > 0);
- }
- 
-+DO_XOR_BLOCKS(32regs, xor_32regs_2, xor_32regs_3, xor_32regs_4, xor_32regs_5);
-+
- struct xor_block_template xor_block_32regs = {
--	.name = "32regs",
--	.do_2 = xor_32regs_2,
--	.do_3 = xor_32regs_3,
--	.do_4 = xor_32regs_4,
--	.do_5 = xor_32regs_5,
-+	.name		= "32regs",
-+	.xor_gen	= xor_gen_32regs,
- };
-diff --git a/lib/raid/xor/xor-8regs-prefetch.c b/lib/raid/xor/xor-8regs-prefetch.c
-index 1d53aec50d27..451527a951b1 100644
---- a/lib/raid/xor/xor-8regs-prefetch.c
-+++ b/lib/raid/xor/xor-8regs-prefetch.c
-@@ -136,10 +136,11 @@ xor_8regs_p_5(unsigned long bytes, unsigned long * __restrict p1,
- 		goto once_more;
- }
- 
-+
-+DO_XOR_BLOCKS(8regs_p, xor_8regs_p_2, xor_8regs_p_3, xor_8regs_p_4,
-+		xor_8regs_p_5);
-+
- struct xor_block_template xor_block_8regs_p = {
--	.name = "8regs_prefetch",
--	.do_2 = xor_8regs_p_2,
--	.do_3 = xor_8regs_p_3,
--	.do_4 = xor_8regs_p_4,
--	.do_5 = xor_8regs_p_5,
-+	.name		= "8regs_prefetch",
-+	.xor_gen	= xor_gen_8regs_p,
- };
-diff --git a/lib/raid/xor/xor-8regs.c b/lib/raid/xor/xor-8regs.c
-index 72a44e898c55..1edaed8acffe 100644
---- a/lib/raid/xor/xor-8regs.c
-+++ b/lib/raid/xor/xor-8regs.c
-@@ -94,11 +94,10 @@ xor_8regs_5(unsigned long bytes, unsigned long * __restrict p1,
- }
- 
- #ifndef NO_TEMPLATE
-+DO_XOR_BLOCKS(8regs, xor_8regs_2, xor_8regs_3, xor_8regs_4, xor_8regs_5);
-+
- struct xor_block_template xor_block_8regs = {
--	.name = "8regs",
--	.do_2 = xor_8regs_2,
--	.do_3 = xor_8regs_3,
--	.do_4 = xor_8regs_4,
--	.do_5 = xor_8regs_5,
-+	.name		= "8regs",
-+	.xor_gen	= xor_gen_8regs,
- };
- #endif /* NO_TEMPLATE */
-diff --git a/lib/raid/xor/xor-core.c b/lib/raid/xor/xor-core.c
-index b7c29ca931ec..f18dcc57004b 100644
---- a/lib/raid/xor/xor-core.c
-+++ b/lib/raid/xor/xor-core.c
-@@ -13,39 +13,9 @@
- #include <linux/preempt.h>
- #include "xor_impl.h"
- 
--/* The xor routines to use.  */
-+/* The xor routine to use.  */
- static struct xor_block_template *active_template;
- 
--void
--xor_blocks(unsigned int src_count, unsigned int bytes, void *dest, void **srcs)
--{
--	unsigned long *p1, *p2, *p3, *p4;
--
--	WARN_ON_ONCE(in_interrupt());
--
--	p1 = (unsigned long *) srcs[0];
--	if (src_count == 1) {
--		active_template->do_2(bytes, dest, p1);
--		return;
--	}
--
--	p2 = (unsigned long *) srcs[1];
--	if (src_count == 2) {
--		active_template->do_3(bytes, dest, p1, p2);
--		return;
--	}
--
--	p3 = (unsigned long *) srcs[2];
--	if (src_count == 3) {
--		active_template->do_4(bytes, dest, p1, p2, p3);
--		return;
--	}
--
--	p4 = (unsigned long *) srcs[3];
--	active_template->do_5(bytes, dest, p1, p2, p3, p4);
--}
--EXPORT_SYMBOL(xor_blocks);
--
- /**
-  * xor_gen - generate RAID-style XOR information
-  * @dest:	destination vector
-@@ -61,16 +31,8 @@ EXPORT_SYMBOL(xor_blocks);
-  */
- void xor_gen(void *dest, void **srcs, unsigned int src_cnt, unsigned int bytes)
- {
--	unsigned int src_off = 0;
--
--	while (src_cnt > 0) {
--		unsigned int this_cnt = min(src_cnt, MAX_XOR_BLOCKS);
--
--		xor_blocks(this_cnt, bytes, dest, srcs + src_off);
--
--		src_cnt -= this_cnt;
--		src_off += this_cnt;
--	}
-+	WARN_ON_ONCE(in_interrupt());
-+	active_template->xor_gen(dest, srcs, src_cnt, bytes);
- }
- EXPORT_SYMBOL(xor_gen);
- 
-@@ -114,6 +76,7 @@ do_xor_speed(struct xor_block_template *tmpl, void *b1, void *b2)
- 	int speed;
- 	unsigned long reps;
- 	ktime_t min, start, t0;
-+	void *srcs[1] = { b2 };
- 
- 	preempt_disable();
- 
-@@ -124,7 +87,7 @@ do_xor_speed(struct xor_block_template *tmpl, void *b1, void *b2)
- 		cpu_relax();
- 	do {
- 		mb(); /* prevent loop optimization */
--		tmpl->do_2(BENCH_SIZE, b1, b2);
-+		tmpl->xor_gen(b1, srcs, 1, BENCH_SIZE);
- 		mb();
- 	} while (reps++ < REPS || (t0 = ktime_get()) == start);
- 	min = ktime_sub(t0, start);
-diff --git a/lib/raid/xor/xor_impl.h b/lib/raid/xor/xor_impl.h
-index 44b6c99e2093..968dd07df627 100644
---- a/lib/raid/xor/xor_impl.h
-+++ b/lib/raid/xor/xor_impl.h
-@@ -3,27 +3,47 @@
- #define _XOR_IMPL_H
- 
- #include <linux/init.h>
-+#include <linux/minmax.h>
- 
- struct xor_block_template {
- 	struct xor_block_template *next;
- 	const char *name;
- 	int speed;
--	void (*do_2)(unsigned long, unsigned long * __restrict,
--		     const unsigned long * __restrict);
--	void (*do_3)(unsigned long, unsigned long * __restrict,
--		     const unsigned long * __restrict,
--		     const unsigned long * __restrict);
--	void (*do_4)(unsigned long, unsigned long * __restrict,
--		     const unsigned long * __restrict,
--		     const unsigned long * __restrict,
--		     const unsigned long * __restrict);
--	void (*do_5)(unsigned long, unsigned long * __restrict,
--		     const unsigned long * __restrict,
--		     const unsigned long * __restrict,
--		     const unsigned long * __restrict,
--		     const unsigned long * __restrict);
-+	void (*xor_gen)(void *dest, void **srcs, unsigned int src_cnt,
-+			unsigned int bytes);
- };
- 
-+#define __DO_XOR_BLOCKS(_name, _handle1, _handle2, _handle3, _handle4)	\
-+void								\
-+xor_gen_##_name(void *dest, void **srcs, unsigned int src_cnt,		\
-+		unsigned int bytes)					\
-+{									\
-+	unsigned int src_off = 0;					\
-+									\
-+	while (src_cnt > 0) {						\
-+		unsigned int this_cnt = min(src_cnt, 4);		\
-+		unsigned long *p1 = (unsigned long *)srcs[src_off];	\
-+		unsigned long *p2 = (unsigned long *)srcs[src_off + 1];	\
-+		unsigned long *p3 = (unsigned long *)srcs[src_off + 2];	\
-+		unsigned long *p4 = (unsigned long *)srcs[src_off + 3];	\
-+									\
-+		if (this_cnt == 1)					\
-+			_handle1(bytes, dest, p1);			\
-+		else if (this_cnt == 2)					\
-+			_handle2(bytes, dest, p1, p2);			\
-+		else if (this_cnt == 3)					\
-+			_handle3(bytes, dest, p1, p2, p3);		\
-+		else							\
-+			_handle4(bytes, dest, p1, p2, p3, p4);		\
-+									\
-+		src_cnt -= this_cnt;					\
-+		src_off += this_cnt;					\
-+	}								\
-+}
-+
-+#define DO_XOR_BLOCKS(_name, _handle1, _handle2, _handle3, _handle4)	\
-+	static __DO_XOR_BLOCKS(_name, _handle1, _handle2, _handle3, _handle4)
-+
- /* generic implementations */
- extern struct xor_block_template xor_block_8regs;
- extern struct xor_block_template xor_block_32regs;
--- 
-2.47.3
+Btw, at the top of this function we should assert the eb is locked.
 
+Otherwise,
+
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
+
+Thanks.
+
+> +}
+> +
+> +/*
+> + * btrfs_uninhibit_all_eb_writeback - Uninhibit writeback on all buffers=
+.
+> + * @trans: transaction handle to clean up
+> + */
+> +void btrfs_uninhibit_all_eb_writeback(struct btrfs_trans_handle *trans)
+> +{
+> +       struct extent_buffer *eb;
+> +       unsigned long index;
+> +
+> +       xa_for_each(&trans->writeback_inhibited_ebs, index, eb) {
+> +               atomic_dec(&eb->writeback_inhibitors);
+> +               free_extent_buffer(eb);
+> +       }
+> +       xa_destroy(&trans->writeback_inhibited_ebs);
+> +}
+> +
+>  static struct extent_buffer *__alloc_extent_buffer(struct btrfs_fs_info =
+*fs_info,
+>                                                    u64 start)
+>  {
+> @@ -3009,6 +3069,7 @@ static struct extent_buffer *__alloc_extent_buffer(=
+struct btrfs_fs_info *fs_info
+>         eb->len =3D fs_info->nodesize;
+>         eb->fs_info =3D fs_info;
+>         init_rwsem(&eb->lock);
+> +       atomic_set(&eb->writeback_inhibitors, 0);
+>
+>         btrfs_leak_debug_add_eb(eb);
+>
+> diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+> index 73571d5d3d5a..fb68fbd4866c 100644
+> --- a/fs/btrfs/extent_io.h
+> +++ b/fs/btrfs/extent_io.h
+> @@ -102,6 +102,8 @@ struct extent_buffer {
+>         /* >=3D 0 if eb belongs to a log tree, -1 otherwise */
+>         s8 log_index;
+>         u8 folio_shift;
+> +       /* Inhibits WB_SYNC_NONE writeback when > 0. */
+> +       atomic_t writeback_inhibitors;
+>         struct rcu_head rcu_head;
+>
+>         struct rw_semaphore lock;
+> @@ -381,4 +383,8 @@ void btrfs_extent_buffer_leak_debug_check(struct btrf=
+s_fs_info *fs_info);
+>  #define btrfs_extent_buffer_leak_debug_check(fs_info)  do {} while (0)
+>  #endif
+>
+> +void btrfs_inhibit_eb_writeback(struct btrfs_trans_handle *trans,
+> +                              struct extent_buffer *eb);
+> +void btrfs_uninhibit_all_eb_writeback(struct btrfs_trans_handle *trans);
+> +
+>  #endif
+> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+> index f4cc9e1a1b93..a9a22629b49d 100644
+> --- a/fs/btrfs/transaction.c
+> +++ b/fs/btrfs/transaction.c
+> @@ -15,6 +15,7 @@
+>  #include "misc.h"
+>  #include "ctree.h"
+>  #include "disk-io.h"
+> +#include "extent_io.h"
+>  #include "transaction.h"
+>  #include "locking.h"
+>  #include "tree-log.h"
+> @@ -688,6 +689,8 @@ start_transaction(struct btrfs_root *root, unsigned i=
+nt num_items,
+>                 goto alloc_fail;
+>         }
+>
+> +       xa_init(&h->writeback_inhibited_ebs);
+> +
+>         /*
+>          * If we are JOIN_NOLOCK we're already committing a transaction a=
+nd
+>          * waiting on this guy, so we don't need to do the sb_start_intwr=
+ite
+> @@ -1083,6 +1086,13 @@ static int __btrfs_end_transaction(struct btrfs_tr=
+ans_handle *trans,
+>         if (trans->type & __TRANS_FREEZABLE)
+>                 sb_end_intwrite(info->sb);
+>
+> +       /*
+> +        * Uninhibit extent buffer writeback before decrementing num_writ=
+ers,
+> +        * since the decrement wakes the committing thread which needs al=
+l
+> +        * buffers uninhibited to write them to disk.
+> +        */
+> +       btrfs_uninhibit_all_eb_writeback(trans);
+> +
+>         WARN_ON(cur_trans !=3D info->running_transaction);
+>         WARN_ON(atomic_read(&cur_trans->num_writers) < 1);
+>         atomic_dec(&cur_trans->num_writers);
+> @@ -2110,6 +2120,7 @@ static void cleanup_transaction(struct btrfs_trans_=
+handle *trans, int err)
+>         if (!test_bit(BTRFS_FS_RELOC_RUNNING, &fs_info->flags))
+>                 btrfs_scrub_cancel(fs_info);
+>
+> +       btrfs_uninhibit_all_eb_writeback(trans);
+>         kmem_cache_free(btrfs_trans_handle_cachep, trans);
+>  }
+>
+> @@ -2556,6 +2567,14 @@ int btrfs_commit_transaction(struct btrfs_trans_ha=
+ndle *trans)
+>             fs_info->cleaner_kthread)
+>                 wake_up_process(fs_info->cleaner_kthread);
+>
+> +       /*
+> +        * Uninhibit writeback on all extent buffers inhibited during thi=
+s
+> +        * transaction before writing them to disk. Inhibiting prevented
+> +        * writeback while the transaction was building, but now we need
+> +        * them written.
+> +        */
+> +       btrfs_uninhibit_all_eb_writeback(trans);
+> +
+>         ret =3D btrfs_write_and_wait_transaction(trans);
+>         if (unlikely(ret)) {
+>                 btrfs_err(fs_info, "error while writing out transaction: =
+%d", ret);
+> diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+> index 18ef069197e5..7d70fe486758 100644
+> --- a/fs/btrfs/transaction.h
+> +++ b/fs/btrfs/transaction.h
+> @@ -12,6 +12,7 @@
+>  #include <linux/time64.h>
+>  #include <linux/mutex.h>
+>  #include <linux/wait.h>
+> +#include <linux/xarray.h>
+>  #include "btrfs_inode.h"
+>  #include "delayed-ref.h"
+>
+> @@ -162,6 +163,8 @@ struct btrfs_trans_handle {
+>         struct btrfs_fs_info *fs_info;
+>         struct list_head new_bgs;
+>         struct btrfs_block_rsv delayed_rsv;
+> +       /* Extent buffers with writeback inhibited by this handle. */
+> +       struct xarray writeback_inhibited_ebs;
+>  };
+>
+>  /*
+> --
+> 2.47.3
+>
+>

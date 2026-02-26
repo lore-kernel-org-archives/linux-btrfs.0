@@ -1,36 +1,36 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9AF253B8BB5
-	for <linux-btrfs@vger.kernel.org>; Thu, 26 Feb 2026 14:34:11 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5CA9A3ACEFD
+	for <linux-btrfs@vger.kernel.org>; Thu, 26 Feb 2026 14:34:12 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1772116451; cv=none; b=f0PGRIUF51r0mJuRmRABMsdHBsBT9hyuhfUz+w/O1lQZq/pxoKDJfwvR+1W3Wt+Kkfdb6eav7tq7C7aHfIrp1ndl1crJdRtDZlLGyU7d4r8ax1HAbBqwTJ6FY2SGPuZ+bWsHpn5wLfYqQRKkOgyczNmRLqxoBdFVfrS0CZQq9/k=
+	t=1772116452; cv=none; b=ChnwcLLeL0IMd5/Z9Mv0wyRNG7DKa2C3bwadYBDArTmNpII7d2KZeL7bYivs7cALJLhHKEh4ATgpOYww3Cak3Iu2+JLljGH+rYwc4Z8hEi/dBGsDPFdE7qVvvkc47AnFv3th8+DFuelgho3H3cOYGXQ0hl0IT74/JHqJVUAHIR0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1772116451; c=relaxed/simple;
-	bh=HmyzvG65nrH0nVXFJ0/g50Ouag4hINC5RjNaCS2AG4U=;
+	s=arc-20240116; t=1772116452; c=relaxed/simple;
+	bh=Dpm3Mjb7z+SgWYWXJF2eVY9mJYITCyy5sP+yjLRYEdU=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=mdAj2MdmOcXfzkrC0njAE6SlmbjwHADW40DHnoZ6YKvct2UthL076fQYMYG8iNw0EgfUp1Qe2tR4cR5JXVcmAs/tX/ekXy+rBG5ktnihedjAizuCiNYcHrfF3g1jm9YmzAW94FqTKJ3khidapn5DiiIgk7xhpQmWj07PVjrx4eM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=S3sM5fv8; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version; b=N6TvUPrpYa30sFjIF8VWWMTRWMkb585OLztemZ44Oy3YXG3d1m/Mo2RXvNlPkyE0d8SSW7AjGLE36ODcYmQlJEqWFenX40dVs6AoAHiUpquLTR357nmvQj3XhxJvIx3Pm1SdfcP7PyuWmkwhPwQozU1cW8ggIFh9DqQTwvlqT2s=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=rJPCG8wN; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="S3sM5fv8"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id D383AC19422
-	for <linux-btrfs@vger.kernel.org>; Thu, 26 Feb 2026 14:34:10 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="rJPCG8wN"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id B4560C116C6
+	for <linux-btrfs@vger.kernel.org>; Thu, 26 Feb 2026 14:34:11 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1772116451;
-	bh=HmyzvG65nrH0nVXFJ0/g50Ouag4hINC5RjNaCS2AG4U=;
+	s=k20201202; t=1772116452;
+	bh=Dpm3Mjb7z+SgWYWXJF2eVY9mJYITCyy5sP+yjLRYEdU=;
 	h=From:To:Subject:Date:In-Reply-To:References:From;
-	b=S3sM5fv8rP/VrAD5G+lQ3UFbT2SYRboJxwh0hnidIgNBf008sXdMvz7ydMnWs4pPh
-	 dywYO4R1DVPo+eSUb3YhXtMulXGUPYl4bBVnvpxbKNAN45tzpoMas2f7MUBFk1myrv
-	 XZ4Y1Z4Z59phAIjoSgtBFry2Hnzn31OlHZ+vfqyE8LsHvankx3S0rcxKk5AHFiTdep
-	 3VUzotASk5CMgBb8fWknJtyCeABRYhK0hdw0hg0S0Ks+o/3LIJPw2KqIdTwJLoGBMW
-	 E09ISn7sXbVsrGCiacCo7P3lxNPhICnwzu+V+/2CB3zXdF2GN+z/6qDLtozJSI6lqJ
-	 NwkBd+bnzkobQ==
+	b=rJPCG8wNMw2bKy1D65RA/wJm7iYFeHJ6XLrnLnq1c6aYBLBF5DvXr+yYu05SZ1KfI
+	 /S3DbRvUIIGwGC0naYXA7bNIR+iCRpj5Uxq/fXZSuPB+FfXJTHYhppbi/1P4gvY2eJ
+	 SdRZ8SzfuzxER5mQOlScQIpmN2hPPe9YYHoy/VoLyVV2ShqHwW3pk+4GB17WLsAnEh
+	 51i0gnd3FU/uQtB17EemuAS7EAcKo0qMDdUd4b/O/Sfetmm7IHrc4GWZwZzinmZrPu
+	 4N8p/Bauo1gkoakP83RimfZyxijtQGBZ0u0KE7xaaKlJia9iMnCP6rrT/2icHP8MZN
+	 V9VK7ChUdsolA==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/5] btrfs: stop checking for -EEXIST return value from btrfs_uuid_tree_add()
-Date: Thu, 26 Feb 2026 14:34:00 +0000
-Message-ID: <b6c668479a3a2e2a1406c8caf44014a3bf3e2510.1772105193.git.fdmanana@suse.com>
+Subject: [PATCH 4/5] btrfs: remove duplicated uuid tree existence check in btrfs_uuid_tree_add()
+Date: Thu, 26 Feb 2026 14:34:01 +0000
+Message-ID: <d81337ba97086fb9cc9ee7fecfc425d1d0fd82d3.1772105193.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.47.2
 In-Reply-To: <cover.1772105193.git.fdmanana@suse.com>
 References: <cover.1772105193.git.fdmanana@suse.com>
@@ -44,47 +44,40 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-We never return -EEXIST from btrfs_uuid_tree_add(), if the item already
-exists we extend it, so it's pointless to check for such return value.
-
-Furthermore, in create_pending_snapshot(), the logic is completely broken.
-The goal was to not error out and abort the transaction in case of -EEXIST
-but we left 'ret' with the -EEXIST value, so we end up setting
-pending->error to -EEXIST and return that error up the call chain up to
-btrfs_commit_transaction(), which will abort the transaction.
+There's no point in checking if the uuid root exists in
+btrfs_uuid_tree_add(), since we already do it in btrfs_uuid_tree_lookup().
+We can just remove the check from btrfs_uuid_tree_add() and make
+btrfs_uuid_tree_lookup() return -EINVAL instead of -ENOENT in case the
+uuid tree does not exists.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/ioctl.c       | 2 +-
- fs/btrfs/transaction.c | 2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+ fs/btrfs/uuid-tree.c | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index b8db877be61c..e5cff9c0616d 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3974,7 +3974,7 @@ static long _btrfs_ioctl_set_received_subvol(struct file *file,
- 		ret = btrfs_uuid_tree_add(trans, sa->uuid,
- 					  BTRFS_UUID_KEY_RECEIVED_SUBVOL,
- 					  btrfs_root_id(root));
--		if (unlikely(ret < 0 && ret != -EEXIST)) {
-+		if (unlikely(ret < 0)) {
- 			btrfs_abort_transaction(trans, ret);
- 			btrfs_end_transaction(trans);
- 			goto out;
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 1a0daf2c68fb..c6a2328b6a22 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1918,7 +1918,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 		 */
- 		if (ret == -EOVERFLOW)
- 			ret = 0;
--		if (unlikely(ret && ret != -EEXIST)) {
-+		if (unlikely(ret)) {
- 			btrfs_abort_transaction(trans, ret);
- 			goto fail;
- 		}
+diff --git a/fs/btrfs/uuid-tree.c b/fs/btrfs/uuid-tree.c
+index f24c14b9bb2f..7942d3887515 100644
+--- a/fs/btrfs/uuid-tree.c
++++ b/fs/btrfs/uuid-tree.c
+@@ -35,7 +35,7 @@ static int btrfs_uuid_tree_lookup(struct btrfs_root *uuid_root, const u8 *uuid,
+ 	struct btrfs_key key;
+ 
+ 	if (WARN_ON_ONCE(!uuid_root))
+-		return -ENOENT;
++		return -EINVAL;
+ 
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+@@ -92,9 +92,6 @@ int btrfs_uuid_tree_add(struct btrfs_trans_handle *trans, const u8 *uuid, u8 typ
+ 	if (ret != -ENOENT)
+ 		return ret;
+ 
+-	if (WARN_ON_ONCE(!uuid_root))
+-		return -EINVAL;
+-
+ 	btrfs_uuid_to_key(uuid, type, &key);
+ 
+ 	path = btrfs_alloc_path();
 -- 
 2.47.2
 

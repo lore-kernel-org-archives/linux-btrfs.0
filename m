@@ -1,34 +1,35 @@
 Received: from bombadil.infradead.org (bombadil.infradead.org [198.137.202.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4F0D1389E06;
-	Thu, 26 Feb 2026 15:11:39 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4039F3ED113;
+	Thu, 26 Feb 2026 15:11:41 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.137.202.133
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1772118700; cv=none; b=qe3jqpA9Ia228fYj4Y1ywe9D/1Se4cUaptYhnSTyxjpyE2Ah7eYDliB24ZEq/CXC2YdpLyIcoBvFhG1ZO4SQYls+f8W56zATYzcW6zBldcYFo0gN5uYBSZRs9DJnkaha4GkKRKjwnndzG9d7Q5qSdqWcab1AFEHXdgXRPkT3RkM=
+	t=1772118702; cv=none; b=nJ1c6QOvUi134OSRrK1gzj5nfybXAM18++f3PSk/52mi2nlB/9TCvdI4XSTFXPs51htSozAQtY/X1i8dBYdrNYKHPQAEmsiUS3f1bwiOcRav0c9gKOMm+kNASVU2JckblOpMfxNmQnb5jdqhf5Omxm9De+DqNVqyBe42vuLUVTQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1772118700; c=relaxed/simple;
-	bh=TUaqwSYTvclS+sWK53n6TjxnxsuKNTYDMRO6+RyQ5I0=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=THeOhadWniRYMByxSKXfbv2VbseEALi5AiKO28v+FaoVyjYoGlqfEvCisZT+2MLqg1gbUlmd4mBV5ZOI9wbC8bres1HO0HLezh5ORNWEb2e45hyTXCU9hQhFXi+ZHuXaWBKHfpZ68el9T/VadPh3/8GY4oU2MQ7dnV1vxMCnDvg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=QR03zetW; arc=none smtp.client-ip=198.137.202.133
+	s=arc-20240116; t=1772118702; c=relaxed/simple;
+	bh=kkLhTX8SNEP6fadb6HiDEIQ5D5FAdu8ib06EqlKUntA=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=YSubBXv63i6EtDuy+RkMvKz3svYnQByii05nqBwlhQGhUgN+DSvGTCNWhfmONS8YZWe0J4lzMMtn8yN0o9T7G/V5Z/onICM2NxzM7RAr0bRH+SBwfIp0h9I+oY7pHPvs+92MvK80J5vXXFH1G7a1oStET1gy+iaT5x/VKfbjPy4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=URePQ71d; arc=none smtp.client-ip=198.137.202.133
 Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de
 Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="QR03zetW"
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="URePQ71d"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
 	d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
-	MIME-Version:Message-ID:Date:Subject:Cc:To:From:Sender:Reply-To:Content-Type:
-	Content-ID:Content-Description:In-Reply-To:References;
-	bh=qP+8VdwzX18rY5bvgdY1sWuLjPIGZuDXB9vEoLM33a0=; b=QR03zetWTad5XyZ1Gw4pLwB3nJ
-	bBW2z8/AfBzf6ywTsDIo41OiCTtpsjYjgepK9QsrzsI7cElVXtM7rURrehCLHg7n3dJp3pEEuguPs
-	IV28EsbN9NXPibalVzcYNCMt7WUj5amt2cLL/uhfFZSbZasPO8mE2vPJU0F6TCesV+k682eK7OpEb
-	0s0PEhS0Lb4d7H7xxKtb1UPzv/QjIpRm5y7UyO6jsg8yFhe2aE6J9EjqkFmDdqerweEN4NKLgisiM
-	Kabaz6sDQQzQIMT6aHsvYmfsxULpzWH25hK5F1NxFrVLPKvob/3mX0qd2TgoR9ypObigmjPl/bDFb
-	OUEtcJnA==;
+	MIME-Version:References:In-Reply-To:Message-ID:Date:Subject:Cc:To:From:Sender
+	:Reply-To:Content-Type:Content-ID:Content-Description;
+	bh=uWVTxVXofLMNGO7crXJ27khW3O1RifHdgil+Iut8nqA=; b=URePQ71dMeGUGa1CdsTZ/NWEcU
+	kN7dqnbo+IzYt3fKmhdSuC1u4M2JlRpUp43VemPG2p9a8/X3pJTAmS286DayguZoIDqV7DNCh1Lr9
+	04AkA3PabrFV1Mog+67HBx1F6PkOEbIO+WDokW7MRWklmqx8pINKSn+zvu12BeHbdB6aRWzLtLyUP
+	e3qCRYeMLvojSKA7IgpEyu4XiRAzp1GCOh1K3OUjqgd5L4kg7pFHo07P+HGRtUew16mP0ZWekmYbW
+	OYdfZGW8Aw+NzDr5qC2Au5lsmLuRDqKVA6UIwN941qa5z0Y+Vb7w41AVKv0i/1x6e12Sp4p1TR0Jb
+	vNeljVKA==;
 Received: from [4.28.11.157] (helo=localhost)
 	by bombadil.infradead.org with esmtpsa (Exim 4.98.2 #2 (Red Hat Linux))
-	id 1vvd1A-00000006Pxh-0z8F;
-	Thu, 26 Feb 2026 15:11:08 +0000
+	id 1vvd1F-00000006PyU-0jJQ;
+	Thu, 26 Feb 2026 15:11:13 +0000
 From: Christoph Hellwig <hch@lst.de>
 To: Andrew Morton <akpm@linux-foundation.org>
 Cc: Richard Henderson <richard.henderson@linaro.org>,
@@ -84,10 +85,12 @@ Cc: Richard Henderson <richard.henderson@linaro.org>,
 	linux-btrfs@vger.kernel.org,
 	linux-arch@vger.kernel.org,
 	linux-raid@vger.kernel.org
-Subject: cleanup the RAID5 XOR library
-Date: Thu, 26 Feb 2026 07:10:12 -0800
-Message-ID: <20260226151106.144735-1-hch@lst.de>
+Subject: [PATCH 04/25] xor: move to lib/raid/
+Date: Thu, 26 Feb 2026 07:10:16 -0800
+Message-ID: <20260226151106.144735-5-hch@lst.de>
 X-Mailer: git-send-email 2.47.3
+In-Reply-To: <20260226151106.144735-1-hch@lst.de>
+References: <20260226151106.144735-1-hch@lst.de>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -97,112 +100,107 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 
-Hi all,
+Move the RAID XOR code to lib/raid/ as it has nothing to do with the
+crypto API.
 
-the XOR library used for the RAID5 parity is a bit of a mess right now.
-The main file sits in crypto/ despite not being cryptography and not
-using the crypto API, with the generic implementations sitting in
-include/asm-generic and the arch implementations sitting in an asm/
-header in theory.  The latter doesn't work for many cases, so
-architectures often build the code directly into the core kernel, or
-create another module for the architecture code.
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ crypto/Kconfig                          | 2 --
+ crypto/Makefile                         | 1 -
+ lib/Kconfig                             | 1 +
+ lib/Makefile                            | 2 +-
+ lib/raid/Kconfig                        | 3 +++
+ lib/raid/Makefile                       | 2 ++
+ lib/raid/xor/Makefile                   | 5 +++++
+ crypto/xor.c => lib/raid/xor/xor-core.c | 0
+ 8 files changed, 12 insertions(+), 4 deletions(-)
+ create mode 100644 lib/raid/Kconfig
+ create mode 100644 lib/raid/Makefile
+ create mode 100644 lib/raid/xor/Makefile
+ rename crypto/xor.c => lib/raid/xor/xor-core.c (100%)
 
-Changes this to a single module in lib/ that also contains the
-architecture optimizations, similar to the library work Eric Biggers
-has done for the CRC and crypto libraries later.  After that it changes
-to better calling conventions that allow for smarter architecture
-implementations (although none is contained here yet), and uses
-static_call to avoid indirection function call overhead.
+diff --git a/crypto/Kconfig b/crypto/Kconfig
+index e2b4106ac961..5cdb1b25ae87 100644
+--- a/crypto/Kconfig
++++ b/crypto/Kconfig
+@@ -2,8 +2,6 @@
+ #
+ # Generic algorithms support
+ #
+-config XOR_BLOCKS
+-	tristate
+ 
+ #
+ # async_tx api: hardware offloaded memory transfer/transform support
+diff --git a/crypto/Makefile b/crypto/Makefile
+index 04e269117589..795c2eea51fe 100644
+--- a/crypto/Makefile
++++ b/crypto/Makefile
+@@ -196,7 +196,6 @@ obj-$(CONFIG_CRYPTO_ECRDSA) += ecrdsa_generic.o
+ #
+ # generic algorithms and the async_tx api
+ #
+-obj-$(CONFIG_XOR_BLOCKS) += xor.o
+ obj-$(CONFIG_ASYNC_CORE) += async_tx/
+ obj-$(CONFIG_ASYMMETRIC_KEY_TYPE) += asymmetric_keys/
+ crypto_simd-y := simd.o
+diff --git a/lib/Kconfig b/lib/Kconfig
+index 0f2fb9610647..5be57adcd454 100644
+--- a/lib/Kconfig
++++ b/lib/Kconfig
+@@ -138,6 +138,7 @@ config TRACE_MMIO_ACCESS
+ 
+ source "lib/crc/Kconfig"
+ source "lib/crypto/Kconfig"
++source "lib/raid/Kconfig"
+ 
+ config XXHASH
+ 	tristate
+diff --git a/lib/Makefile b/lib/Makefile
+index 1b9ee167517f..84da412a044f 100644
+--- a/lib/Makefile
++++ b/lib/Makefile
+@@ -120,7 +120,7 @@ endif
+ obj-$(CONFIG_DEBUG_INFO_REDUCED) += debug_info.o
+ CFLAGS_debug_info.o += $(call cc-option, -femit-struct-debug-detailed=any)
+ 
+-obj-y += math/ crc/ crypto/ tests/ vdso/
++obj-y += math/ crc/ crypto/ tests/ vdso/ raid/
+ 
+ obj-$(CONFIG_GENERIC_IOMAP) += iomap.o
+ obj-$(CONFIG_HAS_IOMEM) += iomap_copy.o devres.o
+diff --git a/lib/raid/Kconfig b/lib/raid/Kconfig
+new file mode 100644
+index 000000000000..4b720f3454a2
+--- /dev/null
++++ b/lib/raid/Kconfig
+@@ -0,0 +1,3 @@
++
++config XOR_BLOCKS
++	tristate
+diff --git a/lib/raid/Makefile b/lib/raid/Makefile
+new file mode 100644
+index 000000000000..382f2d1694bd
+--- /dev/null
++++ b/lib/raid/Makefile
+@@ -0,0 +1,2 @@
++
++obj-y				+= xor/
+diff --git a/lib/raid/xor/Makefile b/lib/raid/xor/Makefile
+new file mode 100644
+index 000000000000..7bca0ce8e90a
+--- /dev/null
++++ b/lib/raid/xor/Makefile
+@@ -0,0 +1,5 @@
++# SPDX-License-Identifier: GPL-2.0
++
++obj-$(CONFIG_XOR_BLOCKS)	+= xor.o
++
++xor-y				+= xor-core.o
+diff --git a/crypto/xor.c b/lib/raid/xor/xor-core.c
+similarity index 100%
+rename from crypto/xor.c
+rename to lib/raid/xor/xor-core.c
+-- 
+2.47.3
 
-A git tree is also available here:
-
-    git://git.infradead.org/users/hch/misc.git xor-improvements
-
-Gitweb:
-
-    https://git.infradead.org/?p=users/hch/misc.git;a=shortlog;h=refs/heads/xor-improvements
-
-Diffstat:
- arch/arm64/include/asm/xor.h              |   73 --
- arch/loongarch/include/asm/xor.h          |   68 --
- arch/loongarch/include/asm/xor_simd.h     |   34 -
- arch/loongarch/lib/xor_simd_glue.c        |   72 --
- arch/powerpc/include/asm/xor.h            |   47 -
- arch/powerpc/include/asm/xor_altivec.h    |   22 
- arch/powerpc/lib/xor_vmx.h                |   22 
- arch/powerpc/lib/xor_vmx_glue.c           |   63 --
- arch/riscv/include/asm/xor.h              |   68 --
- arch/s390/include/asm/xor.h               |   21 
- arch/sparc/include/asm/xor.h              |    9 
- arch/sparc/include/asm/xor_64.h           |   79 ---
- arch/um/include/asm/xor.h                 |   24 
- arch/x86/include/asm/xor_64.h             |   28 -
- b/arch/alpha/Kconfig                      |    1 
- b/arch/arm/Kconfig                        |    1 
- b/arch/arm/lib/Makefile                   |    5 
- b/arch/arm64/Kconfig                      |    1 
- b/arch/arm64/lib/Makefile                 |    6 
- b/arch/loongarch/Kconfig                  |    1 
- b/arch/loongarch/lib/Makefile             |    2 
- b/arch/powerpc/Kconfig                    |    1 
- b/arch/powerpc/lib/Makefile               |    5 
- b/arch/riscv/Kconfig                      |    1 
- b/arch/riscv/lib/Makefile                 |    1 
- b/arch/s390/Kconfig                       |    1 
- b/arch/s390/lib/Makefile                  |    2 
- b/arch/sparc/Kconfig                      |    1 
- b/arch/sparc/include/asm/asm-prototypes.h |    1 
- b/arch/sparc/lib/Makefile                 |    2 
- b/arch/um/Kconfig                         |    1 
- b/arch/x86/Kconfig                        |    1 
- b/crypto/Kconfig                          |    2 
- b/crypto/Makefile                         |    1 
- b/crypto/async_tx/async_xor.c             |   16 
- b/fs/btrfs/raid56.c                       |   27 -
- b/include/asm-generic/Kbuild              |    1 
- b/include/linux/raid/xor.h                |   28 -
- b/lib/Kconfig                             |    1 
- b/lib/Makefile                            |    2 
- b/lib/raid/Kconfig                        |    7 
- b/lib/raid/Makefile                       |    2 
- b/lib/raid/xor/Makefile                   |   50 ++
- b/lib/raid/xor/alpha/xor.c                |   46 -
- b/lib/raid/xor/alpha/xor_arch.h           |   22 
- b/lib/raid/xor/arm/xor-neon-glue.c        |   19 
- b/lib/raid/xor/arm/xor-neon.c             |   22 
- b/lib/raid/xor/arm/xor.c                  |  105 ----
- b/lib/raid/xor/arm/xor_arch.h             |   22 
- b/lib/raid/xor/arm64/xor-neon-glue.c      |   26 +
- b/lib/raid/xor/arm64/xor-neon.c           |   94 +--
- b/lib/raid/xor/arm64/xor-neon.h           |    6 
- b/lib/raid/xor/arm64/xor_arch.h           |   21 
- b/lib/raid/xor/loongarch/xor_arch.h       |   33 +
- b/lib/raid/xor/loongarch/xor_simd_glue.c  |   37 +
- b/lib/raid/xor/powerpc/xor_arch.h         |   22 
- b/lib/raid/xor/powerpc/xor_vmx.c          |   40 -
- b/lib/raid/xor/powerpc/xor_vmx.h          |   10 
- b/lib/raid/xor/powerpc/xor_vmx_glue.c     |   28 +
- b/lib/raid/xor/riscv/xor-glue.c           |   25 +
- b/lib/raid/xor/riscv/xor_arch.h           |   17 
- b/lib/raid/xor/s390/xor.c                 |   15 
- b/lib/raid/xor/s390/xor_arch.h            |   13 
- b/lib/raid/xor/sparc/xor-niagara-glue.c   |   33 +
- b/lib/raid/xor/sparc/xor-niagara.S        |  346 --------------
- b/lib/raid/xor/sparc/xor-sparc32.c        |   32 -
- b/lib/raid/xor/sparc/xor-vis-glue.c       |   34 +
- b/lib/raid/xor/sparc/xor-vis.S            |  348 ++++++++++++++
- b/lib/raid/xor/sparc/xor_arch.h           |   35 +
- b/lib/raid/xor/um/xor_arch.h              |    9 
- b/lib/raid/xor/x86/xor-avx.c              |   52 --
- b/lib/raid/xor/x86/xor-mmx.c              |  120 +---
- b/lib/raid/xor/x86/xor-sse.c              |  105 +---
- b/lib/raid/xor/x86/xor_arch.h             |   36 +
- b/lib/raid/xor/xor-32regs-prefetch.c      |  267 ++++++++++
- b/lib/raid/xor/xor-32regs.c               |  217 ++++++++
- b/lib/raid/xor/xor-8regs-prefetch.c       |  146 +++++
- b/lib/raid/xor/xor-8regs.c                |  103 ++++
- b/lib/raid/xor/xor-core.c                 |  187 +++++++
- b/lib/raid/xor/xor_impl.h                 |   60 ++
- crypto/xor.c                              |  174 -------
- include/asm-generic/xor.h                 |  738 ------------------------------
- 82 files changed, 2033 insertions(+), 2433 deletions(-)

@@ -1,35 +1,35 @@
 Received: from bombadil.infradead.org (bombadil.infradead.org [198.137.202.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9420641B34A;
-	Thu, 26 Feb 2026 15:12:02 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4E20E41C2EF;
+	Thu, 26 Feb 2026 15:12:05 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.137.202.133
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1772118729; cv=none; b=o+g9U7V+mbmnW1sg7v9fThhhRXiKF5pT3rqWYVfMEv9sblHc2bqb+4Nt3Qoykodau/36c7rVN5TyfgZjDPgFn6qxAYgl745HPM1ONSu3/kZ6Od8TR+2J5FE8O5SFZmCxKF9fT0ItcjUcOjZjPMrvmGpikJ6WGZcW8TLHRG+ZePU=
+	t=1772118730; cv=none; b=aor1k9SJ1kjLnBzxRPQ74qRclQ7Fg4fqWIioVIoG0ETU7AH9Llnui2TAzDCFv3rZwJ5qiHfqjb1jwIJ+WvRM9NeD6C+m5yFb92mf6QThmBLskEysfFXcsE/UWRS3eZswyAQMIhYRTx/hB7EUQXVCWgBVV1tyy6NKhjT2z8sd7vI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1772118729; c=relaxed/simple;
-	bh=awWmiEZWXvrJ6JpJKD0k+pHVwLweIGLxtIr3YThA9PQ=;
+	s=arc-20240116; t=1772118730; c=relaxed/simple;
+	bh=2NKiHY4+RTOzsyvk7dubB1vbqIXW9ibW87L0oYS8JSc=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=MQJwHMEADSSf9sxXZdFGqwwuShe+ObO70bjWa7AMlkHWrRMVh6yRjzJHeN6Rm8crWNrU7bi5DPJsSqGbkijvuK2jSLkXns4Loj3fTEGJwdissjzKRVWquG5MJokvJQDIJvPZ8Dg979D2qUYi+jm/PlGPdTpAxhZv6U/HZkDluPk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=ADOsznnf; arc=none smtp.client-ip=198.137.202.133
+	 MIME-Version; b=G0wN0rv6M0+saDOKgMbbew17IlwlWcfZcc0kt9lX1IfT+KbDGroXGMZzjt7BOrdGgTvc+FuZx6CE1YPgnVYH6RtCkVTLwlB3jtLBcq9ZEo6W83Xm2qVb05bmjmpLcZByV30YlV3zHCs1xZtrOYElU25hlxzzI9UiyTr8IzO32FY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=vI141pgN; arc=none smtp.client-ip=198.137.202.133
 Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de
 Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="ADOsznnf"
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="vI141pgN"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
 	d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
 	MIME-Version:References:In-Reply-To:Message-ID:Date:Subject:Cc:To:From:Sender
 	:Reply-To:Content-Type:Content-ID:Content-Description;
-	bh=Iojt6ABC36hZ6qPmKwT+Q9wyR57qrAUPmBlE40Pk7uo=; b=ADOsznnfeLg8gUPG4uWJ8Eb9FG
-	7/NW8jGBssbJIjgixJZQse/JQYsr5+ax0sQ+uHscli5ldIdk2gCcwUmw9HI8zHs/2tggxZWapHmkX
-	dA7r7oCwAldHQvpvsDPX+FQv6ZMZgOmUdzBS7EOK/pMng1Xc6OjvDou9zB+6S0nOJc/H3QWJpQZiH
-	P7GPSuPWg79UqIc8mYZbWzyWUuvh/KZZcCHalz4CutJo3X7DwZvrhUtUXQpHoj9xBsbMziGeeP0Pn
-	n90Bl3MC+0XWz606W1pRxT4GvaCGlT7GF9jipWmVURyzz92aOm5gRE75uTHl6Maz+e/t9SIgnIBwp
-	EA3hQTtQ==;
+	bh=9A9Yz8/Cuuvhtyv7lk9AujInuJ9yx6/sygljaE8NTzM=; b=vI141pgNfFpEqWZpBYCgwHWjeg
+	N7kZDl9hta7v4qPUhdrGX/BZ7a4ncIqvhYtFKfBETR1Xcwo5DvbLGtIRtEQLbpahXiMa+da7PRgqx
+	yx1b9JzOvZckot5AYVcghvmJzRWIZsB8no5NdEczx4Q9sx//cAUhaQmZqG1m1bZKp+mL0uEwHIez+
+	AW1zpovXhPwhZvaYaf5tmKVaZMTVIlMYPN3KJ2wTMN3X5SkyfeCM3+e0pxPw95K4KofjMyND1LVK4
+	9ZRIvun5OoQ5pKEdRmjN0vlYyFUpK4MinnYw4CuIxeg/sfiWDpk9muIJbg9CfMFW1GE8PcmQN5x+G
+	apUYP0BQ==;
 Received: from [4.28.11.157] (helo=localhost)
 	by bombadil.infradead.org with esmtpsa (Exim 4.98.2 #2 (Red Hat Linux))
-	id 1vvd1Y-00000006QRG-1Ede;
-	Thu, 26 Feb 2026 15:11:32 +0000
+	id 1vvd1k-00000006QjI-3Ujl;
+	Thu, 26 Feb 2026 15:11:44 +0000
 From: Christoph Hellwig <hch@lst.de>
 To: Andrew Morton <akpm@linux-foundation.org>
 Cc: Richard Henderson <richard.henderson@linaro.org>,
@@ -85,9 +85,9 @@ Cc: Richard Henderson <richard.henderson@linaro.org>,
 	linux-btrfs@vger.kernel.org,
 	linux-arch@vger.kernel.org,
 	linux-raid@vger.kernel.org
-Subject: [PATCH 17/25] s390: move the XOR code to lib/raid/
-Date: Thu, 26 Feb 2026 07:10:29 -0800
-Message-ID: <20260226151106.144735-18-hch@lst.de>
+Subject: [PATCH 22/25] async_xor: use xor_gen
+Date: Thu, 26 Feb 2026 07:10:34 -0800
+Message-ID: <20260226151106.144735-23-hch@lst.de>
 X-Mailer: git-send-email 2.47.3
 In-Reply-To: <20260226151106.144735-1-hch@lst.de>
 References: <20260226151106.144735-1-hch@lst.de>
@@ -100,62 +100,52 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 
-Move the optimized XOR into lib/raid and include it it in xor.ko
-instead of unconditionally building it into the main kernel image.
+Replace use of the loop around xor_blocks with the easier to use xor_gen
+API.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- arch/s390/lib/Makefile                     | 2 +-
- lib/raid/xor/Makefile                      | 1 +
- {arch/s390/lib => lib/raid/xor/s390}/xor.c | 2 --
- 3 files changed, 2 insertions(+), 3 deletions(-)
- rename {arch/s390/lib => lib/raid/xor/s390}/xor.c (98%)
+ crypto/async_tx/async_xor.c | 16 ++--------------
+ 1 file changed, 2 insertions(+), 14 deletions(-)
 
-diff --git a/arch/s390/lib/Makefile b/arch/s390/lib/Makefile
-index f43f897d3fc0..2bf47204f6ab 100644
---- a/arch/s390/lib/Makefile
-+++ b/arch/s390/lib/Makefile
-@@ -5,7 +5,7 @@
+diff --git a/crypto/async_tx/async_xor.c b/crypto/async_tx/async_xor.c
+index 2c499654a36c..460960d45388 100644
+--- a/crypto/async_tx/async_xor.c
++++ b/crypto/async_tx/async_xor.c
+@@ -103,7 +103,6 @@ do_sync_xor_offs(struct page *dest, unsigned int offset,
+ {
+ 	int i;
+ 	int xor_src_cnt = 0;
+-	int src_off = 0;
+ 	void *dest_buf;
+ 	void **srcs;
  
- lib-y += delay.o string.o uaccess.o find.o spinlock.o tishift.o
- lib-y += csum-partial.o
--obj-y += mem.o xor.o
-+obj-y += mem.o
- lib-$(CONFIG_KPROBES) += probes.o
- lib-$(CONFIG_UPROBES) += probes.o
- obj-$(CONFIG_S390_KPROBES_SANITY_TEST) += test_kprobes_s390.o
-diff --git a/lib/raid/xor/Makefile b/lib/raid/xor/Makefile
-index eb7617b5c61b..15fd8797ae61 100644
---- a/lib/raid/xor/Makefile
-+++ b/lib/raid/xor/Makefile
-@@ -22,6 +22,7 @@ xor-$(CONFIG_RISCV_ISA_V)	+= riscv/xor.o riscv/xor-glue.o
- xor-$(CONFIG_SPARC32)		+= sparc/xor-sparc32.o
- xor-$(CONFIG_SPARC64)		+= sparc/xor-vis.o sparc/xor-vis-glue.o
- xor-$(CONFIG_SPARC64)		+= sparc/xor-niagara.o sparc/xor-niagara-glue.o
-+xor-$(CONFIG_S390)		+= s390/xor.o
+@@ -117,23 +116,12 @@ do_sync_xor_offs(struct page *dest, unsigned int offset,
+ 		if (src_list[i])
+ 			srcs[xor_src_cnt++] = page_address(src_list[i]) +
+ 				(src_offs ? src_offs[i] : offset);
+-	src_cnt = xor_src_cnt;
++
+ 	/* set destination address */
+ 	dest_buf = page_address(dest) + offset;
+-
+ 	if (submit->flags & ASYNC_TX_XOR_ZERO_DST)
+ 		memset(dest_buf, 0, len);
+-
+-	while (src_cnt > 0) {
+-		/* process up to 'MAX_XOR_BLOCKS' sources */
+-		xor_src_cnt = min(src_cnt, MAX_XOR_BLOCKS);
+-		xor_blocks(xor_src_cnt, len, dest_buf, &srcs[src_off]);
+-
+-		/* drop completed sources */
+-		src_cnt -= xor_src_cnt;
+-		src_off += xor_src_cnt;
+-	}
+-
++	xor_gen(dest_buf, srcs, xor_src_cnt, len);
+ 	async_tx_sync_epilog(submit);
+ }
  
- 
- CFLAGS_arm/xor-neon.o		+= $(CC_FLAGS_FPU)
-diff --git a/arch/s390/lib/xor.c b/lib/raid/xor/s390/xor.c
-similarity index 98%
-rename from arch/s390/lib/xor.c
-rename to lib/raid/xor/s390/xor.c
-index 4d5ed638d850..2d5e33eca2a8 100644
---- a/arch/s390/lib/xor.c
-+++ b/lib/raid/xor/s390/xor.c
-@@ -7,7 +7,6 @@
-  */
- 
- #include <linux/types.h>
--#include <linux/export.h>
- #include <linux/raid/xor_impl.h>
- #include <asm/xor.h>
- 
-@@ -134,4 +133,3 @@ struct xor_block_template xor_block_xc = {
- 	.do_4 = xor_xc_4,
- 	.do_5 = xor_xc_5,
- };
--EXPORT_SYMBOL(xor_block_xc);
 -- 
 2.47.3
 

@@ -1,35 +1,35 @@
 Received: from bombadil.infradead.org (bombadil.infradead.org [198.137.202.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E6FD83ED133;
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7B2653F23CC;
 	Thu, 26 Feb 2026 15:11:50 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.137.202.133
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1772118716; cv=none; b=tWPRJH/sg5xxvTfSKYMQ3/T6a3+EZmFsw1d55NwXrRt3A2e2AVERZfw/xEugxSTiGp0r2MJbEFfTx1DggnATSs6PlzMXCw1jP4dOyAosN3gXNqskMzwsxwoHAVAeMiRdgQ7uRP/bb8ulDR4hi9jCPmyqJ1qL6xG4EC02W7LIsy8=
+	t=1772118715; cv=none; b=haXMmPH2xOd7MVJXuXQjChhMUQh/NwCEb+t2M2rDkKnxyc7+9HuORrsEK7ZhYegqso1aMdHHtJLz6MVVeboOM7efrLkqo9WKfJjwnLOaWRpsFukOM22jHWVC521077sJKQUjJxErmf4fCQBY7C+kgeEwDEQGu9I2eFXHpkh+/eE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1772118716; c=relaxed/simple;
-	bh=1rbZjmYEfEuqKNPXrS9Qd3W+l5Ph8gegf7Ph77YfY7o=;
+	s=arc-20240116; t=1772118715; c=relaxed/simple;
+	bh=I9EvbEFxeOnc01jrpHg1V/vXlBjSoYwW3/zyd1URsHU=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=dvjQi4o8hVHap9nnsnVpKmlltOLW+Mz6bXOn72wD9bWPc+x919UVX3PlKME/nlxjRPU53eb2Shpg2IfQcImzgrY4plw3IgHeXGxqAUUF0zz+yIR0YqTm/82SXILUSICZ2K+e7g1G7K55ajTtLb4jCcn/oppmVz7Qr8E5npo8rNI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=4aoRs2mL; arc=none smtp.client-ip=198.137.202.133
+	 MIME-Version; b=OUG7V8Oi88DtxAhLbZc7w0fIXWeyOUjJ6f7vRLbk8aeQVqJh8Qm0Cgm/SOy/OYrOn/NFWt9Aq8ze16RU9jRNG2iPKxZD/WGIpBfL7cTnFcljgTg9HXtI6fWeMkVZb7iypyDxLdXIuhZi8RWh70mkJjMwzbv+VPR7y/44Hs/KR+4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=LjU2z+DA; arc=none smtp.client-ip=198.137.202.133
 Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de
 Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="4aoRs2mL"
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="LjU2z+DA"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
 	d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
 	MIME-Version:References:In-Reply-To:Message-ID:Date:Subject:Cc:To:From:Sender
 	:Reply-To:Content-Type:Content-ID:Content-Description;
-	bh=vwKqUvKDtSm4UWQCjM0gAMoI+iHppoMDTf59idSkcFk=; b=4aoRs2mLG63dZ2rnHao9M4bup8
-	NhK+Fll40nxMI6XwhNwq5YU3yBKmR1ldJdg2IDg8ldeYRyzGjFSTwteEB4MVHQqpuJorvVU0bMIuK
-	Gbga/cPpDR723dwaz/6vJLsaqSafK4BkomOdDsJvXXMA9rZRxf43OGDfcKiHgBsB/FoyN2r+njPu/
-	SyFb0azgzHm243fwrSciZ4S0Csx8Muh2jmpemFl+5R7xdgicCkUC7NatVRx4GOUmxooC3Kw5zQYI5
-	QCPvzOiQsJw23bX3On9763+eKd48xBiD76mENrzjPRE/sWQArv58RqhgskdcOReAqLUFLNVsL2eut
-	J3UCbAxg==;
+	bh=tBP3lqkLvZbHCNzBRHSEX4EeHgIBly3cDjq7DhgYF64=; b=LjU2z+DAAkpCqrHxbvJ+1rk2Qx
+	frrj0cWlSn+MYb3koqBrK7f/Q1b9UkQ2vpJBYUQL7/KlFsRoZEEdODEtL4uajXvnJaGeOvpJ9daEZ
+	bjDaSRzBUjwJKrGxUz7TVTq69Iy05PWCJgJ0J0EDHH//k+z/Lx3TbtnlSYSyRI/MDh3nOl8AjsiKA
+	Wj3C1LgX6cikRiUVYuQUd4StdsxI7J5ssYdQdagPruCX2LnVI+fhiSK3/R6l6ijzZ879w4SjFwu0j
+	VzJUXhJr80FyajL+eNbUq9CtwS4wIBto60rRk9yIRVe93C0K7vWdZjwSZUUEcPm0gFDTmV0S5YAKV
+	HG2RqtEA==;
 Received: from [4.28.11.157] (helo=localhost)
 	by bombadil.infradead.org with esmtpsa (Exim 4.98.2 #2 (Red Hat Linux))
-	id 1vvd1V-00000006QLl-0jhv;
-	Thu, 26 Feb 2026 15:11:29 +0000
+	id 1vvd1H-00000006Q0A-2PJD;
+	Thu, 26 Feb 2026 15:11:15 +0000
 From: Christoph Hellwig <hch@lst.de>
 To: Andrew Morton <akpm@linux-foundation.org>
 Cc: Richard Henderson <richard.henderson@linaro.org>,
@@ -85,9 +85,9 @@ Cc: Richard Henderson <richard.henderson@linaro.org>,
 	linux-btrfs@vger.kernel.org,
 	linux-arch@vger.kernel.org,
 	linux-raid@vger.kernel.org
-Subject: [PATCH 15/25] riscv: move the XOR code to lib/raid/
-Date: Thu, 26 Feb 2026 07:10:27 -0800
-Message-ID: <20260226151106.144735-16-hch@lst.de>
+Subject: [PATCH 06/25] xor: cleanup registration and probing
+Date: Thu, 26 Feb 2026 07:10:18 -0800
+Message-ID: <20260226151106.144735-7-hch@lst.de>
 X-Mailer: git-send-email 2.47.3
 In-Reply-To: <20260226151106.144735-1-hch@lst.de>
 References: <20260226151106.144735-1-hch@lst.de>
@@ -100,175 +100,178 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 
-Move the optimized XOR into lib/raid and include it it in xor.ko
-instead of always building it into the main kernel image.
+Originally, the XOR code benchmarked all algorithms at load time, but
+it has since then been hacked multiple times to allow forcing an
+algorithm, and then commit 524ccdbdfb52 ("crypto: xor - defer load time
+benchmark to a later time") changed the logic to a two-step process
+or registration and benchmarking, but only when built-in.
+
+Rework this, so that the XOR_TRY_TEMPLATES macro magic now always just
+deals with adding the templates to the list, and benchmarking is always
+done in a second pass; for modular builds from module_init, and for the
+built-in case using a separate init call level.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- arch/riscv/include/asm/xor.h                 | 54 +------------------
- arch/riscv/lib/Makefile                      |  1 -
- lib/raid/xor/Makefile                        |  1 +
- lib/raid/xor/riscv/xor-glue.c                | 56 ++++++++++++++++++++
- {arch/riscv/lib => lib/raid/xor/riscv}/xor.S |  0
- 5 files changed, 59 insertions(+), 53 deletions(-)
- create mode 100644 lib/raid/xor/riscv/xor-glue.c
- rename {arch/riscv/lib => lib/raid/xor/riscv}/xor.S (100%)
+ lib/raid/xor/xor-core.c | 98 ++++++++++++++++++++---------------------
+ 1 file changed, 48 insertions(+), 50 deletions(-)
 
-diff --git a/arch/riscv/include/asm/xor.h b/arch/riscv/include/asm/xor.h
-index ed5f27903efc..614d9209d078 100644
---- a/arch/riscv/include/asm/xor.h
-+++ b/arch/riscv/include/asm/xor.h
-@@ -2,60 +2,10 @@
- /*
-  * Copyright (C) 2021 SiFive
-  */
--
--#include <linux/hardirq.h>
--#include <asm-generic/xor.h>
--#ifdef CONFIG_RISCV_ISA_V
- #include <asm/vector.h>
--#include <asm/switch_to.h>
--#include <asm/asm-prototypes.h>
--
--static void xor_vector_2(unsigned long bytes, unsigned long *__restrict p1,
--			 const unsigned long *__restrict p2)
--{
--	kernel_vector_begin();
--	xor_regs_2_(bytes, p1, p2);
--	kernel_vector_end();
--}
--
--static void xor_vector_3(unsigned long bytes, unsigned long *__restrict p1,
--			 const unsigned long *__restrict p2,
--			 const unsigned long *__restrict p3)
--{
--	kernel_vector_begin();
--	xor_regs_3_(bytes, p1, p2, p3);
--	kernel_vector_end();
--}
--
--static void xor_vector_4(unsigned long bytes, unsigned long *__restrict p1,
--			 const unsigned long *__restrict p2,
--			 const unsigned long *__restrict p3,
--			 const unsigned long *__restrict p4)
--{
--	kernel_vector_begin();
--	xor_regs_4_(bytes, p1, p2, p3, p4);
--	kernel_vector_end();
--}
--
--static void xor_vector_5(unsigned long bytes, unsigned long *__restrict p1,
--			 const unsigned long *__restrict p2,
--			 const unsigned long *__restrict p3,
--			 const unsigned long *__restrict p4,
--			 const unsigned long *__restrict p5)
--{
--	kernel_vector_begin();
--	xor_regs_5_(bytes, p1, p2, p3, p4, p5);
--	kernel_vector_end();
--}
-+#include <asm-generic/xor.h>
+diff --git a/lib/raid/xor/xor-core.c b/lib/raid/xor/xor-core.c
+index 28aa654c288d..a2c529d7b7c2 100644
+--- a/lib/raid/xor/xor-core.c
++++ b/lib/raid/xor/xor-core.c
+@@ -52,29 +52,14 @@ EXPORT_SYMBOL(xor_blocks);
  
--static struct xor_block_template xor_block_rvv = {
--	.name = "rvv",
--	.do_2 = xor_vector_2,
--	.do_3 = xor_vector_3,
--	.do_4 = xor_vector_4,
--	.do_5 = xor_vector_5
--};
--#endif /* CONFIG_RISCV_ISA_V */
-+extern struct xor_block_template xor_block_rvv;
+ /* Set of all registered templates.  */
+ static struct xor_block_template *__initdata template_list;
++static int __initdata xor_forced = false;
  
- #define arch_xor_init arch_xor_init
- static __always_inline void __init arch_xor_init(void)
-diff --git a/arch/riscv/lib/Makefile b/arch/riscv/lib/Makefile
-index bbc031124974..e220c35764eb 100644
---- a/arch/riscv/lib/Makefile
-+++ b/arch/riscv/lib/Makefile
-@@ -16,5 +16,4 @@ lib-$(CONFIG_MMU)	+= uaccess.o
- lib-$(CONFIG_64BIT)	+= tishift.o
- lib-$(CONFIG_RISCV_ISA_ZICBOZ)	+= clear_page.o
- obj-$(CONFIG_FUNCTION_ERROR_INJECTION) += error-inject.o
--lib-$(CONFIG_RISCV_ISA_V)	+= xor.o
- lib-$(CONFIG_RISCV_ISA_V)	+= riscv_v_helpers.o
-diff --git a/lib/raid/xor/Makefile b/lib/raid/xor/Makefile
-index 3df9e04a1a9b..c939fad43735 100644
---- a/lib/raid/xor/Makefile
-+++ b/lib/raid/xor/Makefile
-@@ -18,6 +18,7 @@ endif
- xor-$(CONFIG_CPU_HAS_LSX)	+= loongarch/xor_simd.o
- xor-$(CONFIG_CPU_HAS_LSX)	+= loongarch/xor_simd_glue.o
- xor-$(CONFIG_ALTIVEC)		+= powerpc/xor_vmx.o powerpc/xor_vmx_glue.o
-+xor-$(CONFIG_RISCV_ISA_V)	+= riscv/xor.o riscv/xor-glue.o
+-#ifndef MODULE
+ static void __init do_xor_register(struct xor_block_template *tmpl)
+ {
+ 	tmpl->next = template_list;
+ 	template_list = tmpl;
+ }
  
+-static int __init register_xor_blocks(void)
+-{
+-	active_template = XOR_SELECT_TEMPLATE(NULL);
+-
+-	if (!active_template) {
+-#define xor_speed	do_xor_register
+-		// register all the templates and pick the first as the default
+-		XOR_TRY_TEMPLATES;
+-#undef xor_speed
+-		active_template = template_list;
+-	}
+-	return 0;
+-}
+-#endif
+-
+ #define BENCH_SIZE	4096
+ #define REPS		800U
  
- CFLAGS_arm/xor-neon.o		+= $(CC_FLAGS_FPU)
-diff --git a/lib/raid/xor/riscv/xor-glue.c b/lib/raid/xor/riscv/xor-glue.c
-new file mode 100644
-index 000000000000..11666a4b6b68
---- /dev/null
-+++ b/lib/raid/xor/riscv/xor-glue.c
-@@ -0,0 +1,56 @@
-+// SPDX-License-Identifier: GPL-2.0-or-later
+@@ -85,9 +70,6 @@ do_xor_speed(struct xor_block_template *tmpl, void *b1, void *b2)
+ 	unsigned long reps;
+ 	ktime_t min, start, t0;
+ 
+-	tmpl->next = template_list;
+-	template_list = tmpl;
+-
+ 	preempt_disable();
+ 
+ 	reps = 0;
+@@ -111,63 +93,79 @@ do_xor_speed(struct xor_block_template *tmpl, void *b1, void *b2)
+ 	pr_info("   %-16s: %5d MB/sec\n", tmpl->name, speed);
+ }
+ 
+-static int __init
+-calibrate_xor_blocks(void)
++static int __init calibrate_xor_blocks(void)
+ {
+ 	void *b1, *b2;
+ 	struct xor_block_template *f, *fastest;
+ 
+-	fastest = XOR_SELECT_TEMPLATE(NULL);
+-
+-	if (fastest) {
+-		printk(KERN_INFO "xor: automatically using best "
+-				 "checksumming function   %-10s\n",
+-		       fastest->name);
+-		goto out;
+-	}
++	if (xor_forced)
++		return 0;
+ 
+ 	b1 = (void *) __get_free_pages(GFP_KERNEL, 2);
+ 	if (!b1) {
+-		printk(KERN_WARNING "xor: Yikes!  No memory available.\n");
++		pr_info("xor: Yikes!  No memory available.\n");
+ 		return -ENOMEM;
+ 	}
+ 	b2 = b1 + 2*PAGE_SIZE + BENCH_SIZE;
+ 
+-	/*
+-	 * If this arch/cpu has a short-circuited selection, don't loop through
+-	 * all the possible functions, just test the best one
+-	 */
+-
+-#define xor_speed(templ)	do_xor_speed((templ), b1, b2)
+-
+-	printk(KERN_INFO "xor: measuring software checksum speed\n");
+-	template_list = NULL;
+-	XOR_TRY_TEMPLATES;
++	pr_info("xor: measuring software checksum speed\n");
+ 	fastest = template_list;
+-	for (f = fastest; f; f = f->next)
++	for (f = template_list; f; f = f->next) {
++		do_xor_speed(f, b1, b2);
+ 		if (f->speed > fastest->speed)
+ 			fastest = f;
+-
++	}
++	active_template = fastest;
+ 	pr_info("xor: using function: %s (%d MB/sec)\n",
+ 	       fastest->name, fastest->speed);
+ 
++	free_pages((unsigned long)b1, 2);
++	return 0;
++}
++
++static int __init xor_init(void)
++{
++	/*
++	 * If this arch/cpu has a short-circuited selection, don't loop through
++	 * all the possible functions, just use the best one.
++	 */
++	active_template = XOR_SELECT_TEMPLATE(NULL);
++	if (active_template) {
++		pr_info("xor: automatically using best checksumming function   %-10s\n",
++			active_template->name);
++		xor_forced = true;
++		return 0;
++	}
++
++#define xor_speed	do_xor_register
++	XOR_TRY_TEMPLATES;
+ #undef xor_speed
+ 
+-	free_pages((unsigned long)b1, 2);
+-out:
+-	active_template = fastest;
++#ifdef MODULE
++	return calibrate_xor_blocks();
++#else
++	/*
++	 * Pick the first template as the temporary default until calibration
++	 * happens.
++	 */
++	active_template = template_list;
+ 	return 0;
++#endif
+ }
+ 
+-static __exit void xor_exit(void) { }
++static __exit void xor_exit(void)
++{
++}
+ 
+ MODULE_DESCRIPTION("RAID-5 checksumming functions");
+ MODULE_LICENSE("GPL");
+ 
 +/*
-+ * Copyright (C) 2021 SiFive
++ * When built-in we must register the default template before md, but we don't
++ * want calibration to run that early as that would delay the boot process.
 + */
-+
-+#include <linux/raid/xor_impl.h>
-+#include <asm/vector.h>
-+#include <asm/switch_to.h>
-+#include <asm/asm-prototypes.h>
-+#include <asm/xor.h>
-+
-+static void xor_vector_2(unsigned long bytes, unsigned long *__restrict p1,
-+			 const unsigned long *__restrict p2)
-+{
-+	kernel_vector_begin();
-+	xor_regs_2_(bytes, p1, p2);
-+	kernel_vector_end();
-+}
-+
-+static void xor_vector_3(unsigned long bytes, unsigned long *__restrict p1,
-+			 const unsigned long *__restrict p2,
-+			 const unsigned long *__restrict p3)
-+{
-+	kernel_vector_begin();
-+	xor_regs_3_(bytes, p1, p2, p3);
-+	kernel_vector_end();
-+}
-+
-+static void xor_vector_4(unsigned long bytes, unsigned long *__restrict p1,
-+			 const unsigned long *__restrict p2,
-+			 const unsigned long *__restrict p3,
-+			 const unsigned long *__restrict p4)
-+{
-+	kernel_vector_begin();
-+	xor_regs_4_(bytes, p1, p2, p3, p4);
-+	kernel_vector_end();
-+}
-+
-+static void xor_vector_5(unsigned long bytes, unsigned long *__restrict p1,
-+			 const unsigned long *__restrict p2,
-+			 const unsigned long *__restrict p3,
-+			 const unsigned long *__restrict p4,
-+			 const unsigned long *__restrict p5)
-+{
-+	kernel_vector_begin();
-+	xor_regs_5_(bytes, p1, p2, p3, p4, p5);
-+	kernel_vector_end();
-+}
-+
-+struct xor_block_template xor_block_rvv = {
-+	.name = "rvv",
-+	.do_2 = xor_vector_2,
-+	.do_3 = xor_vector_3,
-+	.do_4 = xor_vector_4,
-+	.do_5 = xor_vector_5
-+};
-diff --git a/arch/riscv/lib/xor.S b/lib/raid/xor/riscv/xor.S
-similarity index 100%
-rename from arch/riscv/lib/xor.S
-rename to lib/raid/xor/riscv/xor.S
+ #ifndef MODULE
+-/* when built-in xor.o must initialize before drivers/md/md.o */
+-core_initcall(register_xor_blocks);
++__initcall(calibrate_xor_blocks);
+ #endif
+-
+-module_init(calibrate_xor_blocks);
++core_initcall(xor_init);
+ module_exit(xor_exit);
 -- 
 2.47.3
 

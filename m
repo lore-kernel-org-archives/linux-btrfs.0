@@ -1,35 +1,35 @@
 Received: from bombadil.infradead.org (bombadil.infradead.org [198.137.202.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8DFD13F23D1;
-	Thu, 26 Feb 2026 15:11:50 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6BF793F23DF;
+	Thu, 26 Feb 2026 15:11:52 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.137.202.133
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1772118719; cv=none; b=tCKAFaD+5hM5GT0SWPKSiBLODGGGpK0Xw1ZKUQIRR2Ly4WcUaH94+8kApuOHs4L2Pq3/rKZarEkAbqzswQnxbr2hNkX4gpA00SBQJe2fEt8rbwjjJ7EVkE68X3JrI4+YcJW+ByHbb+kkLUlRWYIYqbQnUyPORvzMcDiaMS1eRSc=
+	t=1772118720; cv=none; b=Kq1/xK2g3zxpeazAtwzBwipyu0PRbEXHpDD2EzQfOU9wqeyklNLGTWiX9Lz2m+tst8ZgmhluwAqGa0USO054C3cVH8M/LqJhcSqv2Bdux20tEmOEYRYUvDOjUv5Tx/E0l37es/90h8SH2JL4PNXti9ETfxkN9Eqh4uujP1naUm0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1772118719; c=relaxed/simple;
-	bh=bSGYfU+NSLebUTI0qeINaGfAUS3aoaLS0g6HCxdQ4+0=;
+	s=arc-20240116; t=1772118720; c=relaxed/simple;
+	bh=+9D6mHGaIjN2UOOWZj88XByt2JlBIGbgLZojQ68H6aQ=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=gaKd5fp9XHba0+nMUiVSvpvSDXoOvmftaOal/UFMjuGJUiDvKTL+/S3ce6vHehoLqGU3uZx/6nrvg5K3Gs0dE574vmNYP/aKzOzS1KGh7bWdayfUnbECXVJT6fX6OVVwU67h2X5ZZgRcdeoVcxtNya7br17EQdIqHu405v4vBrQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=xnHX5/c6; arc=none smtp.client-ip=198.137.202.133
+	 MIME-Version; b=Uhl+j/SrdA7+qjU2TO40qxpMQDxEqk8GEjDR/zxi9mhCmJfFBsZSd+H7kDpwxjiBtz65cfnX7YzoKC3Q+qynWhWth5FvZA6NickFeuEUWI0rZeMq3Q3gIH2BulM6XOdm0OBhbb7HkV8Oiv5UOxXAGKyxP5xKbgFHrk0RCrAR7BA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=FJNKTZnF; arc=none smtp.client-ip=198.137.202.133
 Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de
 Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="xnHX5/c6"
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="FJNKTZnF"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
 	d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
 	MIME-Version:References:In-Reply-To:Message-ID:Date:Subject:Cc:To:From:Sender
 	:Reply-To:Content-Type:Content-ID:Content-Description;
-	bh=UZ1AI4WO/A62adxyb/Oc887TemGMIj0BXG02atwm4qQ=; b=xnHX5/c6BLaL+eGizbHcSes+Vt
-	S1cd5vaUrpdJf9mzPQMBfkesh+HM48Hc5m2bZhcu1NPiT6ka3K208aaJLoVM2EBZGxoHBw4N+JXXs
-	cLOtYlU12aYj5F9sRlJhDdkhkuFvUFg7sEueuEX2zq1e2RZmBOq8ALvupG6Og4YsX7SDz69wqZY33
-	XH0k/6iK9vwqm0nbg1ZOTTIo1VmSMPZAkv54L49nDY20ur9kVMJIW5L0paC52VNiKXAqnk1+VecYe
-	oX6eSviAc8mPByoDJIXmzSPqBp9C8YrKZgvPWIQbFe3QOax+bpSXTUgZWQOcg7nkOW9OmGI8RMV3h
-	yCWa+bxw==;
+	bh=Wm3fq6lPyIAlZT0/xjmEusfNIQRwR8CzDQcR5/1fvIU=; b=FJNKTZnFdI19cSqah+OXNH0v6X
+	4b9y/9miHcVb4VyFk724rS7AzaXnL3AHrITYrP/uJFxjMeKes8twt90hhIHnqUd7hWM6G/u+POAnS
+	wLJ6kGG06ct6JHxgZoyWn9HwWLF2nwgc32OY53eq3y5/X99C6WnP0Sh1alWaLhMhOrkRHK9J6WrFs
+	VE09b/LI5WwOV5BefqLuEfHN7G2XvzGwugsGTVamurWchEqBowzVamzb5Yl/TuAppe29nU0okyX/5
+	1n8QxZUXbMg00IDPGHr1Up3DDy/Ubj/aSwB9jxW+TUXrOjV3NtvVUcom9xxJUjh+JHKQmrIArjnIZ
+	TddTmD4g==;
 Received: from [4.28.11.157] (helo=localhost)
 	by bombadil.infradead.org with esmtpsa (Exim 4.98.2 #2 (Red Hat Linux))
-	id 1vvd1O-00000006Q8M-09qg;
-	Thu, 26 Feb 2026 15:11:22 +0000
+	id 1vvd1W-00000006QOa-3gka;
+	Thu, 26 Feb 2026 15:11:30 +0000
 From: Christoph Hellwig <hch@lst.de>
 To: Andrew Morton <akpm@linux-foundation.org>
 Cc: Richard Henderson <richard.henderson@linaro.org>,
@@ -85,9 +85,9 @@ Cc: Richard Henderson <richard.henderson@linaro.org>,
 	linux-btrfs@vger.kernel.org,
 	linux-arch@vger.kernel.org,
 	linux-raid@vger.kernel.org
-Subject: [PATCH 10/25] alpha: move the XOR code to lib/raid/
-Date: Thu, 26 Feb 2026 07:10:22 -0800
-Message-ID: <20260226151106.144735-11-hch@lst.de>
+Subject: [PATCH 16/25] sparc: move the XOR code to lib/raid/
+Date: Thu, 26 Feb 2026 07:10:28 -0800
+Message-ID: <20260226151106.144735-17-hch@lst.de>
 X-Mailer: git-send-email 2.47.3
 In-Reply-To: <20260226151106.144735-1-hch@lst.de>
 References: <20260226151106.144735-1-hch@lst.de>
@@ -100,1750 +100,1084 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 
-Move the optimized XOR code out of line into lib/raid.
+Move the optimized XOR into lib/raid and include it it in xor.ko
+instead of always building it into the main kernel image.
 
-Note that the giant inline assembly block might be better off as a
-separate assembly source file now, but I'll leave that to the alpha
-maintainers.
+This also splits the sparc64 code into separate files for the two
+implementations.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- arch/alpha/include/asm/xor.h | 853 +----------------------------------
- lib/raid/xor/Makefile        |   2 +
- lib/raid/xor/alpha/xor.c     | 849 ++++++++++++++++++++++++++++++++++
- 3 files changed, 855 insertions(+), 849 deletions(-)
- create mode 100644 lib/raid/xor/alpha/xor.c
+ arch/sparc/include/asm/asm-prototypes.h       |   1 -
+ arch/sparc/include/asm/xor.h                  |  45 ++-
+ arch/sparc/include/asm/xor_64.h               |  76 ----
+ arch/sparc/lib/Makefile                       |   2 +-
+ lib/raid/xor/Makefile                         |   3 +
+ lib/raid/xor/sparc/xor-niagara-glue.c         |  33 ++
+ .../xor.S => lib/raid/xor/sparc/xor-niagara.S | 346 +----------------
+ .../raid/xor/sparc/xor-sparc32.c              |  23 +-
+ lib/raid/xor/sparc/xor-vis-glue.c             |  35 ++
+ lib/raid/xor/sparc/xor-vis.S                  | 348 ++++++++++++++++++
+ 10 files changed, 465 insertions(+), 447 deletions(-)
+ delete mode 100644 arch/sparc/include/asm/xor_64.h
+ create mode 100644 lib/raid/xor/sparc/xor-niagara-glue.c
+ rename arch/sparc/lib/xor.S => lib/raid/xor/sparc/xor-niagara.S (53%)
+ rename arch/sparc/include/asm/xor_32.h => lib/raid/xor/sparc/xor-sparc32.c (93%)
+ create mode 100644 lib/raid/xor/sparc/xor-vis-glue.c
+ create mode 100644 lib/raid/xor/sparc/xor-vis.S
 
-diff --git a/arch/alpha/include/asm/xor.h b/arch/alpha/include/asm/xor.h
-index 4c8085711df1..e517be577a09 100644
---- a/arch/alpha/include/asm/xor.h
-+++ b/arch/alpha/include/asm/xor.h
-@@ -1,856 +1,11 @@
- /* SPDX-License-Identifier: GPL-2.0-or-later */
+diff --git a/arch/sparc/include/asm/asm-prototypes.h b/arch/sparc/include/asm/asm-prototypes.h
+index 08810808ca6d..bbd1a8afaabf 100644
+--- a/arch/sparc/include/asm/asm-prototypes.h
++++ b/arch/sparc/include/asm/asm-prototypes.h
+@@ -14,7 +14,6 @@
+ #include <asm/oplib.h>
+ #include <asm/pgtable.h>
+ #include <asm/trap_block.h>
+-#include <asm/xor.h>
+ 
+ void *__memscan_zero(void *, size_t);
+ void *__memscan_generic(void *, int, size_t);
+diff --git a/arch/sparc/include/asm/xor.h b/arch/sparc/include/asm/xor.h
+index f4c651e203c4..f923b009fc24 100644
+--- a/arch/sparc/include/asm/xor.h
++++ b/arch/sparc/include/asm/xor.h
+@@ -1,9 +1,44 @@
+ /* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * Copyright (C) 1997, 1999 Jakub Jelinek (jj@ultra.linux.cz)
++ * Copyright (C) 2006 David S. Miller <davem@davemloft.net>
++ */
+ #ifndef ___ASM_SPARC_XOR_H
+ #define ___ASM_SPARC_XOR_H
++
+ #if defined(__sparc__) && defined(__arch64__)
+-#include <asm/xor_64.h>
+-#else
+-#include <asm/xor_32.h>
+-#endif
+-#endif
++#include <asm/spitfire.h>
++
++extern struct xor_block_template xor_block_VIS;
++extern struct xor_block_template xor_block_niagara;
++
++#define arch_xor_init arch_xor_init
++static __always_inline void __init arch_xor_init(void)
++{
++	/* Force VIS for everything except Niagara.  */
++	if (tlb_type == hypervisor &&
++	    (sun4v_chip_type == SUN4V_CHIP_NIAGARA1 ||
++	     sun4v_chip_type == SUN4V_CHIP_NIAGARA2 ||
++	     sun4v_chip_type == SUN4V_CHIP_NIAGARA3 ||
++	     sun4v_chip_type == SUN4V_CHIP_NIAGARA4 ||
++	     sun4v_chip_type == SUN4V_CHIP_NIAGARA5))
++		xor_force(&xor_block_niagara);
++	else
++		xor_force(&xor_block_VIS);
++}
++#else /* sparc64 */
++
++/* For grins, also test the generic routines.  */
++#include <asm-generic/xor.h>
++
++extern struct xor_block_template xor_block_SPARC;
++
++#define arch_xor_init arch_xor_init
++static __always_inline void __init arch_xor_init(void)
++{
++	xor_register(&xor_block_8regs);
++	xor_register(&xor_block_32regs);
++	xor_register(&xor_block_SPARC);
++}
++#endif /* !sparc64 */
++#endif /* ___ASM_SPARC_XOR_H */
+diff --git a/arch/sparc/include/asm/xor_64.h b/arch/sparc/include/asm/xor_64.h
+deleted file mode 100644
+index e0482ecc0a68..000000000000
+--- a/arch/sparc/include/asm/xor_64.h
++++ /dev/null
+@@ -1,76 +0,0 @@
+-/* SPDX-License-Identifier: GPL-2.0-or-later */
 -/*
-- * include/asm-alpha/xor.h
+- * include/asm/xor.h
 - *
-- * Optimized RAID-5 checksumming functions for alpha EV5 and EV6
+- * High speed xor_block operation for RAID4/5 utilizing the
+- * UltraSparc Visual Instruction Set and Niagara block-init
+- * twin-load instructions.
+- *
+- * Copyright (C) 1997, 1999 Jakub Jelinek (jj@ultra.linux.cz)
+- * Copyright (C) 2006 David S. Miller <davem@davemloft.net>
 - */
 -
--extern void
--xor_alpha_2(unsigned long bytes, unsigned long * __restrict p1,
--	    const unsigned long * __restrict p2);
--extern void
--xor_alpha_3(unsigned long bytes, unsigned long * __restrict p1,
--	    const unsigned long * __restrict p2,
--	    const unsigned long * __restrict p3);
--extern void
--xor_alpha_4(unsigned long bytes, unsigned long * __restrict p1,
--	    const unsigned long * __restrict p2,
--	    const unsigned long * __restrict p3,
--	    const unsigned long * __restrict p4);
--extern void
--xor_alpha_5(unsigned long bytes, unsigned long * __restrict p1,
--	    const unsigned long * __restrict p2,
--	    const unsigned long * __restrict p3,
--	    const unsigned long * __restrict p4,
--	    const unsigned long * __restrict p5);
+-#include <asm/spitfire.h>
 -
--extern void
--xor_alpha_prefetch_2(unsigned long bytes, unsigned long * __restrict p1,
--		     const unsigned long * __restrict p2);
--extern void
--xor_alpha_prefetch_3(unsigned long bytes, unsigned long * __restrict p1,
--		     const unsigned long * __restrict p2,
--		     const unsigned long * __restrict p3);
--extern void
--xor_alpha_prefetch_4(unsigned long bytes, unsigned long * __restrict p1,
--		     const unsigned long * __restrict p2,
--		     const unsigned long * __restrict p3,
--		     const unsigned long * __restrict p4);
--extern void
--xor_alpha_prefetch_5(unsigned long bytes, unsigned long * __restrict p1,
--		     const unsigned long * __restrict p2,
--		     const unsigned long * __restrict p3,
--		     const unsigned long * __restrict p4,
--		     const unsigned long * __restrict p5);
- 
--asm("								\n\
--	.text							\n\
--	.align 3						\n\
--	.ent xor_alpha_2					\n\
--xor_alpha_2:							\n\
--	.prologue 0						\n\
--	srl $16, 6, $16						\n\
--	.align 4						\n\
--2:								\n\
--	ldq $0,0($17)						\n\
--	ldq $1,0($18)						\n\
--	ldq $2,8($17)						\n\
--	ldq $3,8($18)						\n\
--								\n\
--	ldq $4,16($17)						\n\
--	ldq $5,16($18)						\n\
--	ldq $6,24($17)						\n\
--	ldq $7,24($18)						\n\
--								\n\
--	ldq $19,32($17)						\n\
--	ldq $20,32($18)						\n\
--	ldq $21,40($17)						\n\
--	ldq $22,40($18)						\n\
--								\n\
--	ldq $23,48($17)						\n\
--	ldq $24,48($18)						\n\
--	ldq $25,56($17)						\n\
--	xor $0,$1,$0		# 7 cycles from $1 load		\n\
--								\n\
--	ldq $27,56($18)						\n\
--	xor $2,$3,$2						\n\
--	stq $0,0($17)						\n\
--	xor $4,$5,$4						\n\
--								\n\
--	stq $2,8($17)						\n\
--	xor $6,$7,$6						\n\
--	stq $4,16($17)						\n\
--	xor $19,$20,$19						\n\
--								\n\
--	stq $6,24($17)						\n\
--	xor $21,$22,$21						\n\
--	stq $19,32($17)						\n\
--	xor $23,$24,$23						\n\
--								\n\
--	stq $21,40($17)						\n\
--	xor $25,$27,$25						\n\
--	stq $23,48($17)						\n\
--	subq $16,1,$16						\n\
--								\n\
--	stq $25,56($17)						\n\
--	addq $17,64,$17						\n\
--	addq $18,64,$18						\n\
--	bgt $16,2b						\n\
--								\n\
--	ret							\n\
--	.end xor_alpha_2					\n\
--								\n\
--	.align 3						\n\
--	.ent xor_alpha_3					\n\
--xor_alpha_3:							\n\
--	.prologue 0						\n\
--	srl $16, 6, $16						\n\
--	.align 4						\n\
--3:								\n\
--	ldq $0,0($17)						\n\
--	ldq $1,0($18)						\n\
--	ldq $2,0($19)						\n\
--	ldq $3,8($17)						\n\
--								\n\
--	ldq $4,8($18)						\n\
--	ldq $6,16($17)						\n\
--	ldq $7,16($18)						\n\
--	ldq $21,24($17)						\n\
--								\n\
--	ldq $22,24($18)						\n\
--	ldq $24,32($17)						\n\
--	ldq $25,32($18)						\n\
--	ldq $5,8($19)						\n\
--								\n\
--	ldq $20,16($19)						\n\
--	ldq $23,24($19)						\n\
--	ldq $27,32($19)						\n\
--	nop							\n\
--								\n\
--	xor $0,$1,$1		# 8 cycles from $0 load		\n\
--	xor $3,$4,$4		# 6 cycles from $4 load		\n\
--	xor $6,$7,$7		# 6 cycles from $7 load		\n\
--	xor $21,$22,$22		# 5 cycles from $22 load	\n\
--								\n\
--	xor $1,$2,$2		# 9 cycles from $2 load		\n\
--	xor $24,$25,$25		# 5 cycles from $25 load	\n\
--	stq $2,0($17)						\n\
--	xor $4,$5,$5		# 6 cycles from $5 load		\n\
--								\n\
--	stq $5,8($17)						\n\
--	xor $7,$20,$20		# 7 cycles from $20 load	\n\
--	stq $20,16($17)						\n\
--	xor $22,$23,$23		# 7 cycles from $23 load	\n\
--								\n\
--	stq $23,24($17)						\n\
--	xor $25,$27,$27		# 7 cycles from $27 load	\n\
--	stq $27,32($17)						\n\
--	nop							\n\
--								\n\
--	ldq $0,40($17)						\n\
--	ldq $1,40($18)						\n\
--	ldq $3,48($17)						\n\
--	ldq $4,48($18)						\n\
--								\n\
--	ldq $6,56($17)						\n\
--	ldq $7,56($18)						\n\
--	ldq $2,40($19)						\n\
--	ldq $5,48($19)						\n\
--								\n\
--	ldq $20,56($19)						\n\
--	xor $0,$1,$1		# 4 cycles from $1 load		\n\
--	xor $3,$4,$4		# 5 cycles from $4 load		\n\
--	xor $6,$7,$7		# 5 cycles from $7 load		\n\
--								\n\
--	xor $1,$2,$2		# 4 cycles from $2 load		\n\
--	xor $4,$5,$5		# 5 cycles from $5 load		\n\
--	stq $2,40($17)						\n\
--	xor $7,$20,$20		# 4 cycles from $20 load	\n\
--								\n\
--	stq $5,48($17)						\n\
--	subq $16,1,$16						\n\
--	stq $20,56($17)						\n\
--	addq $19,64,$19						\n\
--								\n\
--	addq $18,64,$18						\n\
--	addq $17,64,$17						\n\
--	bgt $16,3b						\n\
--	ret							\n\
--	.end xor_alpha_3					\n\
--								\n\
--	.align 3						\n\
--	.ent xor_alpha_4					\n\
--xor_alpha_4:							\n\
--	.prologue 0						\n\
--	srl $16, 6, $16						\n\
--	.align 4						\n\
--4:								\n\
--	ldq $0,0($17)						\n\
--	ldq $1,0($18)						\n\
--	ldq $2,0($19)						\n\
--	ldq $3,0($20)						\n\
--								\n\
--	ldq $4,8($17)						\n\
--	ldq $5,8($18)						\n\
--	ldq $6,8($19)						\n\
--	ldq $7,8($20)						\n\
--								\n\
--	ldq $21,16($17)						\n\
--	ldq $22,16($18)						\n\
--	ldq $23,16($19)						\n\
--	ldq $24,16($20)						\n\
--								\n\
--	ldq $25,24($17)						\n\
--	xor $0,$1,$1		# 6 cycles from $1 load		\n\
--	ldq $27,24($18)						\n\
--	xor $2,$3,$3		# 6 cycles from $3 load		\n\
--								\n\
--	ldq $0,24($19)						\n\
--	xor $1,$3,$3						\n\
--	ldq $1,24($20)						\n\
--	xor $4,$5,$5		# 7 cycles from $5 load		\n\
--								\n\
--	stq $3,0($17)						\n\
--	xor $6,$7,$7						\n\
--	xor $21,$22,$22		# 7 cycles from $22 load	\n\
--	xor $5,$7,$7						\n\
--								\n\
--	stq $7,8($17)						\n\
--	xor $23,$24,$24		# 7 cycles from $24 load	\n\
--	ldq $2,32($17)						\n\
--	xor $22,$24,$24						\n\
--								\n\
--	ldq $3,32($18)						\n\
--	ldq $4,32($19)						\n\
--	ldq $5,32($20)						\n\
--	xor $25,$27,$27		# 8 cycles from $27 load	\n\
--								\n\
--	ldq $6,40($17)						\n\
--	ldq $7,40($18)						\n\
--	ldq $21,40($19)						\n\
--	ldq $22,40($20)						\n\
--								\n\
--	stq $24,16($17)						\n\
--	xor $0,$1,$1		# 9 cycles from $1 load		\n\
--	xor $2,$3,$3		# 5 cycles from $3 load		\n\
--	xor $27,$1,$1						\n\
--								\n\
--	stq $1,24($17)						\n\
--	xor $4,$5,$5		# 5 cycles from $5 load		\n\
--	ldq $23,48($17)						\n\
--	ldq $24,48($18)						\n\
--								\n\
--	ldq $25,48($19)						\n\
--	xor $3,$5,$5						\n\
--	ldq $27,48($20)						\n\
--	ldq $0,56($17)						\n\
--								\n\
--	ldq $1,56($18)						\n\
--	ldq $2,56($19)						\n\
--	xor $6,$7,$7		# 8 cycles from $6 load		\n\
--	ldq $3,56($20)						\n\
--								\n\
--	stq $5,32($17)						\n\
--	xor $21,$22,$22		# 8 cycles from $22 load	\n\
--	xor $7,$22,$22						\n\
--	xor $23,$24,$24		# 5 cycles from $24 load	\n\
--								\n\
--	stq $22,40($17)						\n\
--	xor $25,$27,$27		# 5 cycles from $27 load	\n\
--	xor $24,$27,$27						\n\
--	xor $0,$1,$1		# 5 cycles from $1 load		\n\
--								\n\
--	stq $27,48($17)						\n\
--	xor $2,$3,$3		# 4 cycles from $3 load		\n\
--	xor $1,$3,$3						\n\
--	subq $16,1,$16						\n\
--								\n\
--	stq $3,56($17)						\n\
--	addq $20,64,$20						\n\
--	addq $19,64,$19						\n\
--	addq $18,64,$18						\n\
--								\n\
--	addq $17,64,$17						\n\
--	bgt $16,4b						\n\
--	ret							\n\
--	.end xor_alpha_4					\n\
--								\n\
--	.align 3						\n\
--	.ent xor_alpha_5					\n\
--xor_alpha_5:							\n\
--	.prologue 0						\n\
--	srl $16, 6, $16						\n\
--	.align 4						\n\
--5:								\n\
--	ldq $0,0($17)						\n\
--	ldq $1,0($18)						\n\
--	ldq $2,0($19)						\n\
--	ldq $3,0($20)						\n\
--								\n\
--	ldq $4,0($21)						\n\
--	ldq $5,8($17)						\n\
--	ldq $6,8($18)						\n\
--	ldq $7,8($19)						\n\
--								\n\
--	ldq $22,8($20)						\n\
--	ldq $23,8($21)						\n\
--	ldq $24,16($17)						\n\
--	ldq $25,16($18)						\n\
--								\n\
--	ldq $27,16($19)						\n\
--	xor $0,$1,$1		# 6 cycles from $1 load		\n\
--	ldq $28,16($20)						\n\
--	xor $2,$3,$3		# 6 cycles from $3 load		\n\
--								\n\
--	ldq $0,16($21)						\n\
--	xor $1,$3,$3						\n\
--	ldq $1,24($17)						\n\
--	xor $3,$4,$4		# 7 cycles from $4 load		\n\
--								\n\
--	stq $4,0($17)						\n\
--	xor $5,$6,$6		# 7 cycles from $6 load		\n\
--	xor $7,$22,$22		# 7 cycles from $22 load	\n\
--	xor $6,$23,$23		# 7 cycles from $23 load	\n\
--								\n\
--	ldq $2,24($18)						\n\
--	xor $22,$23,$23						\n\
--	ldq $3,24($19)						\n\
--	xor $24,$25,$25		# 8 cycles from $25 load	\n\
--								\n\
--	stq $23,8($17)						\n\
--	xor $25,$27,$27		# 8 cycles from $27 load	\n\
--	ldq $4,24($20)						\n\
--	xor $28,$0,$0		# 7 cycles from $0 load		\n\
--								\n\
--	ldq $5,24($21)						\n\
--	xor $27,$0,$0						\n\
--	ldq $6,32($17)						\n\
--	ldq $7,32($18)						\n\
--								\n\
--	stq $0,16($17)						\n\
--	xor $1,$2,$2		# 6 cycles from $2 load		\n\
--	ldq $22,32($19)						\n\
--	xor $3,$4,$4		# 4 cycles from $4 load		\n\
--								\n\
--	ldq $23,32($20)						\n\
--	xor $2,$4,$4						\n\
--	ldq $24,32($21)						\n\
--	ldq $25,40($17)						\n\
--								\n\
--	ldq $27,40($18)						\n\
--	ldq $28,40($19)						\n\
--	ldq $0,40($20)						\n\
--	xor $4,$5,$5		# 7 cycles from $5 load		\n\
--								\n\
--	stq $5,24($17)						\n\
--	xor $6,$7,$7		# 7 cycles from $7 load		\n\
--	ldq $1,40($21)						\n\
--	ldq $2,48($17)						\n\
--								\n\
--	ldq $3,48($18)						\n\
--	xor $7,$22,$22		# 7 cycles from $22 load	\n\
--	ldq $4,48($19)						\n\
--	xor $23,$24,$24		# 6 cycles from $24 load	\n\
--								\n\
--	ldq $5,48($20)						\n\
--	xor $22,$24,$24						\n\
--	ldq $6,48($21)						\n\
--	xor $25,$27,$27		# 7 cycles from $27 load	\n\
--								\n\
--	stq $24,32($17)						\n\
--	xor $27,$28,$28		# 8 cycles from $28 load	\n\
--	ldq $7,56($17)						\n\
--	xor $0,$1,$1		# 6 cycles from $1 load		\n\
--								\n\
--	ldq $22,56($18)						\n\
--	ldq $23,56($19)						\n\
--	ldq $24,56($20)						\n\
--	ldq $25,56($21)						\n\
--								\n\
--	xor $28,$1,$1						\n\
--	xor $2,$3,$3		# 9 cycles from $3 load		\n\
--	xor $3,$4,$4		# 9 cycles from $4 load		\n\
--	xor $5,$6,$6		# 8 cycles from $6 load		\n\
--								\n\
--	stq $1,40($17)						\n\
--	xor $4,$6,$6						\n\
--	xor $7,$22,$22		# 7 cycles from $22 load	\n\
--	xor $23,$24,$24		# 6 cycles from $24 load	\n\
--								\n\
--	stq $6,48($17)						\n\
--	xor $22,$24,$24						\n\
--	subq $16,1,$16						\n\
--	xor $24,$25,$25		# 8 cycles from $25 load	\n\
--								\n\
--	stq $25,56($17)						\n\
--	addq $21,64,$21						\n\
--	addq $20,64,$20						\n\
--	addq $19,64,$19						\n\
--								\n\
--	addq $18,64,$18						\n\
--	addq $17,64,$17						\n\
--	bgt $16,5b						\n\
--	ret							\n\
--	.end xor_alpha_5					\n\
--								\n\
--	.align 3						\n\
--	.ent xor_alpha_prefetch_2				\n\
--xor_alpha_prefetch_2:						\n\
--	.prologue 0						\n\
--	srl $16, 6, $16						\n\
--								\n\
--	ldq $31, 0($17)						\n\
--	ldq $31, 0($18)						\n\
--								\n\
--	ldq $31, 64($17)					\n\
--	ldq $31, 64($18)					\n\
--								\n\
--	ldq $31, 128($17)					\n\
--	ldq $31, 128($18)					\n\
--								\n\
--	ldq $31, 192($17)					\n\
--	ldq $31, 192($18)					\n\
--	.align 4						\n\
--2:								\n\
--	ldq $0,0($17)						\n\
--	ldq $1,0($18)						\n\
--	ldq $2,8($17)						\n\
--	ldq $3,8($18)						\n\
--								\n\
--	ldq $4,16($17)						\n\
--	ldq $5,16($18)						\n\
--	ldq $6,24($17)						\n\
--	ldq $7,24($18)						\n\
--								\n\
--	ldq $19,32($17)						\n\
--	ldq $20,32($18)						\n\
--	ldq $21,40($17)						\n\
--	ldq $22,40($18)						\n\
--								\n\
--	ldq $23,48($17)						\n\
--	ldq $24,48($18)						\n\
--	ldq $25,56($17)						\n\
--	ldq $27,56($18)						\n\
--								\n\
--	ldq $31,256($17)					\n\
--	xor $0,$1,$0		# 8 cycles from $1 load		\n\
--	ldq $31,256($18)					\n\
--	xor $2,$3,$2						\n\
--								\n\
--	stq $0,0($17)						\n\
--	xor $4,$5,$4						\n\
--	stq $2,8($17)						\n\
--	xor $6,$7,$6						\n\
--								\n\
--	stq $4,16($17)						\n\
--	xor $19,$20,$19						\n\
--	stq $6,24($17)						\n\
--	xor $21,$22,$21						\n\
--								\n\
--	stq $19,32($17)						\n\
--	xor $23,$24,$23						\n\
--	stq $21,40($17)						\n\
--	xor $25,$27,$25						\n\
--								\n\
--	stq $23,48($17)						\n\
--	subq $16,1,$16						\n\
--	stq $25,56($17)						\n\
--	addq $17,64,$17						\n\
--								\n\
--	addq $18,64,$18						\n\
--	bgt $16,2b						\n\
--	ret							\n\
--	.end xor_alpha_prefetch_2				\n\
--								\n\
--	.align 3						\n\
--	.ent xor_alpha_prefetch_3				\n\
--xor_alpha_prefetch_3:						\n\
--	.prologue 0						\n\
--	srl $16, 6, $16						\n\
--								\n\
--	ldq $31, 0($17)						\n\
--	ldq $31, 0($18)						\n\
--	ldq $31, 0($19)						\n\
--								\n\
--	ldq $31, 64($17)					\n\
--	ldq $31, 64($18)					\n\
--	ldq $31, 64($19)					\n\
--								\n\
--	ldq $31, 128($17)					\n\
--	ldq $31, 128($18)					\n\
--	ldq $31, 128($19)					\n\
--								\n\
--	ldq $31, 192($17)					\n\
--	ldq $31, 192($18)					\n\
--	ldq $31, 192($19)					\n\
--	.align 4						\n\
--3:								\n\
--	ldq $0,0($17)						\n\
--	ldq $1,0($18)						\n\
--	ldq $2,0($19)						\n\
--	ldq $3,8($17)						\n\
--								\n\
--	ldq $4,8($18)						\n\
--	ldq $6,16($17)						\n\
--	ldq $7,16($18)						\n\
--	ldq $21,24($17)						\n\
--								\n\
--	ldq $22,24($18)						\n\
--	ldq $24,32($17)						\n\
--	ldq $25,32($18)						\n\
--	ldq $5,8($19)						\n\
--								\n\
--	ldq $20,16($19)						\n\
--	ldq $23,24($19)						\n\
--	ldq $27,32($19)						\n\
--	nop							\n\
--								\n\
--	xor $0,$1,$1		# 8 cycles from $0 load		\n\
--	xor $3,$4,$4		# 7 cycles from $4 load		\n\
--	xor $6,$7,$7		# 6 cycles from $7 load		\n\
--	xor $21,$22,$22		# 5 cycles from $22 load	\n\
--								\n\
--	xor $1,$2,$2		# 9 cycles from $2 load		\n\
--	xor $24,$25,$25		# 5 cycles from $25 load	\n\
--	stq $2,0($17)						\n\
--	xor $4,$5,$5		# 6 cycles from $5 load		\n\
--								\n\
--	stq $5,8($17)						\n\
--	xor $7,$20,$20		# 7 cycles from $20 load	\n\
--	stq $20,16($17)						\n\
--	xor $22,$23,$23		# 7 cycles from $23 load	\n\
--								\n\
--	stq $23,24($17)						\n\
--	xor $25,$27,$27		# 7 cycles from $27 load	\n\
--	stq $27,32($17)						\n\
--	nop							\n\
--								\n\
--	ldq $0,40($17)						\n\
--	ldq $1,40($18)						\n\
--	ldq $3,48($17)						\n\
--	ldq $4,48($18)						\n\
--								\n\
--	ldq $6,56($17)						\n\
--	ldq $7,56($18)						\n\
--	ldq $2,40($19)						\n\
--	ldq $5,48($19)						\n\
--								\n\
--	ldq $20,56($19)						\n\
--	ldq $31,256($17)					\n\
--	ldq $31,256($18)					\n\
--	ldq $31,256($19)					\n\
--								\n\
--	xor $0,$1,$1		# 6 cycles from $1 load		\n\
--	xor $3,$4,$4		# 5 cycles from $4 load		\n\
--	xor $6,$7,$7		# 5 cycles from $7 load		\n\
--	xor $1,$2,$2		# 4 cycles from $2 load		\n\
--								\n\
--	xor $4,$5,$5		# 5 cycles from $5 load		\n\
--	xor $7,$20,$20		# 4 cycles from $20 load	\n\
--	stq $2,40($17)						\n\
--	subq $16,1,$16						\n\
--								\n\
--	stq $5,48($17)						\n\
--	addq $19,64,$19						\n\
--	stq $20,56($17)						\n\
--	addq $18,64,$18						\n\
--								\n\
--	addq $17,64,$17						\n\
--	bgt $16,3b						\n\
--	ret							\n\
--	.end xor_alpha_prefetch_3				\n\
--								\n\
--	.align 3						\n\
--	.ent xor_alpha_prefetch_4				\n\
--xor_alpha_prefetch_4:						\n\
--	.prologue 0						\n\
--	srl $16, 6, $16						\n\
--								\n\
--	ldq $31, 0($17)						\n\
--	ldq $31, 0($18)						\n\
--	ldq $31, 0($19)						\n\
--	ldq $31, 0($20)						\n\
--								\n\
--	ldq $31, 64($17)					\n\
--	ldq $31, 64($18)					\n\
--	ldq $31, 64($19)					\n\
--	ldq $31, 64($20)					\n\
--								\n\
--	ldq $31, 128($17)					\n\
--	ldq $31, 128($18)					\n\
--	ldq $31, 128($19)					\n\
--	ldq $31, 128($20)					\n\
--								\n\
--	ldq $31, 192($17)					\n\
--	ldq $31, 192($18)					\n\
--	ldq $31, 192($19)					\n\
--	ldq $31, 192($20)					\n\
--	.align 4						\n\
--4:								\n\
--	ldq $0,0($17)						\n\
--	ldq $1,0($18)						\n\
--	ldq $2,0($19)						\n\
--	ldq $3,0($20)						\n\
--								\n\
--	ldq $4,8($17)						\n\
--	ldq $5,8($18)						\n\
--	ldq $6,8($19)						\n\
--	ldq $7,8($20)						\n\
--								\n\
--	ldq $21,16($17)						\n\
--	ldq $22,16($18)						\n\
--	ldq $23,16($19)						\n\
--	ldq $24,16($20)						\n\
--								\n\
--	ldq $25,24($17)						\n\
--	xor $0,$1,$1		# 6 cycles from $1 load		\n\
--	ldq $27,24($18)						\n\
--	xor $2,$3,$3		# 6 cycles from $3 load		\n\
--								\n\
--	ldq $0,24($19)						\n\
--	xor $1,$3,$3						\n\
--	ldq $1,24($20)						\n\
--	xor $4,$5,$5		# 7 cycles from $5 load		\n\
--								\n\
--	stq $3,0($17)						\n\
--	xor $6,$7,$7						\n\
--	xor $21,$22,$22		# 7 cycles from $22 load	\n\
--	xor $5,$7,$7						\n\
--								\n\
--	stq $7,8($17)						\n\
--	xor $23,$24,$24		# 7 cycles from $24 load	\n\
--	ldq $2,32($17)						\n\
--	xor $22,$24,$24						\n\
--								\n\
--	ldq $3,32($18)						\n\
--	ldq $4,32($19)						\n\
--	ldq $5,32($20)						\n\
--	xor $25,$27,$27		# 8 cycles from $27 load	\n\
--								\n\
--	ldq $6,40($17)						\n\
--	ldq $7,40($18)						\n\
--	ldq $21,40($19)						\n\
--	ldq $22,40($20)						\n\
--								\n\
--	stq $24,16($17)						\n\
--	xor $0,$1,$1		# 9 cycles from $1 load		\n\
--	xor $2,$3,$3		# 5 cycles from $3 load		\n\
--	xor $27,$1,$1						\n\
--								\n\
--	stq $1,24($17)						\n\
--	xor $4,$5,$5		# 5 cycles from $5 load		\n\
--	ldq $23,48($17)						\n\
--	xor $3,$5,$5						\n\
--								\n\
--	ldq $24,48($18)						\n\
--	ldq $25,48($19)						\n\
--	ldq $27,48($20)						\n\
--	ldq $0,56($17)						\n\
--								\n\
--	ldq $1,56($18)						\n\
--	ldq $2,56($19)						\n\
--	ldq $3,56($20)						\n\
--	xor $6,$7,$7		# 8 cycles from $6 load		\n\
--								\n\
--	ldq $31,256($17)					\n\
--	xor $21,$22,$22		# 8 cycles from $22 load	\n\
--	ldq $31,256($18)					\n\
--	xor $7,$22,$22						\n\
--								\n\
--	ldq $31,256($19)					\n\
--	xor $23,$24,$24		# 6 cycles from $24 load	\n\
--	ldq $31,256($20)					\n\
--	xor $25,$27,$27		# 6 cycles from $27 load	\n\
--								\n\
--	stq $5,32($17)						\n\
--	xor $24,$27,$27						\n\
--	xor $0,$1,$1		# 7 cycles from $1 load		\n\
--	xor $2,$3,$3		# 6 cycles from $3 load		\n\
--								\n\
--	stq $22,40($17)						\n\
--	xor $1,$3,$3						\n\
--	stq $27,48($17)						\n\
--	subq $16,1,$16						\n\
--								\n\
--	stq $3,56($17)						\n\
--	addq $20,64,$20						\n\
--	addq $19,64,$19						\n\
--	addq $18,64,$18						\n\
--								\n\
--	addq $17,64,$17						\n\
--	bgt $16,4b						\n\
--	ret							\n\
--	.end xor_alpha_prefetch_4				\n\
--								\n\
--	.align 3						\n\
--	.ent xor_alpha_prefetch_5				\n\
--xor_alpha_prefetch_5:						\n\
--	.prologue 0						\n\
--	srl $16, 6, $16						\n\
--								\n\
--	ldq $31, 0($17)						\n\
--	ldq $31, 0($18)						\n\
--	ldq $31, 0($19)						\n\
--	ldq $31, 0($20)						\n\
--	ldq $31, 0($21)						\n\
--								\n\
--	ldq $31, 64($17)					\n\
--	ldq $31, 64($18)					\n\
--	ldq $31, 64($19)					\n\
--	ldq $31, 64($20)					\n\
--	ldq $31, 64($21)					\n\
--								\n\
--	ldq $31, 128($17)					\n\
--	ldq $31, 128($18)					\n\
--	ldq $31, 128($19)					\n\
--	ldq $31, 128($20)					\n\
--	ldq $31, 128($21)					\n\
--								\n\
--	ldq $31, 192($17)					\n\
--	ldq $31, 192($18)					\n\
--	ldq $31, 192($19)					\n\
--	ldq $31, 192($20)					\n\
--	ldq $31, 192($21)					\n\
--	.align 4						\n\
--5:								\n\
--	ldq $0,0($17)						\n\
--	ldq $1,0($18)						\n\
--	ldq $2,0($19)						\n\
--	ldq $3,0($20)						\n\
--								\n\
--	ldq $4,0($21)						\n\
--	ldq $5,8($17)						\n\
--	ldq $6,8($18)						\n\
--	ldq $7,8($19)						\n\
--								\n\
--	ldq $22,8($20)						\n\
--	ldq $23,8($21)						\n\
--	ldq $24,16($17)						\n\
--	ldq $25,16($18)						\n\
--								\n\
--	ldq $27,16($19)						\n\
--	xor $0,$1,$1		# 6 cycles from $1 load		\n\
--	ldq $28,16($20)						\n\
--	xor $2,$3,$3		# 6 cycles from $3 load		\n\
--								\n\
--	ldq $0,16($21)						\n\
--	xor $1,$3,$3						\n\
--	ldq $1,24($17)						\n\
--	xor $3,$4,$4		# 7 cycles from $4 load		\n\
--								\n\
--	stq $4,0($17)						\n\
--	xor $5,$6,$6		# 7 cycles from $6 load		\n\
--	xor $7,$22,$22		# 7 cycles from $22 load	\n\
--	xor $6,$23,$23		# 7 cycles from $23 load	\n\
--								\n\
--	ldq $2,24($18)						\n\
--	xor $22,$23,$23						\n\
--	ldq $3,24($19)						\n\
--	xor $24,$25,$25		# 8 cycles from $25 load	\n\
--								\n\
--	stq $23,8($17)						\n\
--	xor $25,$27,$27		# 8 cycles from $27 load	\n\
--	ldq $4,24($20)						\n\
--	xor $28,$0,$0		# 7 cycles from $0 load		\n\
--								\n\
--	ldq $5,24($21)						\n\
--	xor $27,$0,$0						\n\
--	ldq $6,32($17)						\n\
--	ldq $7,32($18)						\n\
--								\n\
--	stq $0,16($17)						\n\
--	xor $1,$2,$2		# 6 cycles from $2 load		\n\
--	ldq $22,32($19)						\n\
--	xor $3,$4,$4		# 4 cycles from $4 load		\n\
--								\n\
--	ldq $23,32($20)						\n\
--	xor $2,$4,$4						\n\
--	ldq $24,32($21)						\n\
--	ldq $25,40($17)						\n\
--								\n\
--	ldq $27,40($18)						\n\
--	ldq $28,40($19)						\n\
--	ldq $0,40($20)						\n\
--	xor $4,$5,$5		# 7 cycles from $5 load		\n\
--								\n\
--	stq $5,24($17)						\n\
--	xor $6,$7,$7		# 7 cycles from $7 load		\n\
--	ldq $1,40($21)						\n\
--	ldq $2,48($17)						\n\
--								\n\
--	ldq $3,48($18)						\n\
--	xor $7,$22,$22		# 7 cycles from $22 load	\n\
--	ldq $4,48($19)						\n\
--	xor $23,$24,$24		# 6 cycles from $24 load	\n\
--								\n\
--	ldq $5,48($20)						\n\
--	xor $22,$24,$24						\n\
--	ldq $6,48($21)						\n\
--	xor $25,$27,$27		# 7 cycles from $27 load	\n\
--								\n\
--	stq $24,32($17)						\n\
--	xor $27,$28,$28		# 8 cycles from $28 load	\n\
--	ldq $7,56($17)						\n\
--	xor $0,$1,$1		# 6 cycles from $1 load		\n\
--								\n\
--	ldq $22,56($18)						\n\
--	ldq $23,56($19)						\n\
--	ldq $24,56($20)						\n\
--	ldq $25,56($21)						\n\
--								\n\
--	ldq $31,256($17)					\n\
--	xor $28,$1,$1						\n\
--	ldq $31,256($18)					\n\
--	xor $2,$3,$3		# 9 cycles from $3 load		\n\
--								\n\
--	ldq $31,256($19)					\n\
--	xor $3,$4,$4		# 9 cycles from $4 load		\n\
--	ldq $31,256($20)					\n\
--	xor $5,$6,$6		# 8 cycles from $6 load		\n\
--								\n\
--	stq $1,40($17)						\n\
--	xor $4,$6,$6						\n\
--	xor $7,$22,$22		# 7 cycles from $22 load	\n\
--	xor $23,$24,$24		# 6 cycles from $24 load	\n\
--								\n\
--	stq $6,48($17)						\n\
--	xor $22,$24,$24						\n\
--	ldq $31,256($21)					\n\
--	xor $24,$25,$25		# 8 cycles from $25 load	\n\
--								\n\
--	stq $25,56($17)						\n\
--	subq $16,1,$16						\n\
--	addq $21,64,$21						\n\
--	addq $20,64,$20						\n\
--								\n\
--	addq $19,64,$19						\n\
--	addq $18,64,$18						\n\
--	addq $17,64,$17						\n\
--	bgt $16,5b						\n\
--								\n\
--	ret							\n\
--	.end xor_alpha_prefetch_5				\n\
--");
+-void xor_vis_2(unsigned long bytes, unsigned long * __restrict p1,
+-	       const unsigned long * __restrict p2);
+-void xor_vis_3(unsigned long bytes, unsigned long * __restrict p1,
+-	       const unsigned long * __restrict p2,
+-	       const unsigned long * __restrict p3);
+-void xor_vis_4(unsigned long bytes, unsigned long * __restrict p1,
+-	       const unsigned long * __restrict p2,
+-	       const unsigned long * __restrict p3,
+-	       const unsigned long * __restrict p4);
+-void xor_vis_5(unsigned long bytes, unsigned long * __restrict p1,
+-	       const unsigned long * __restrict p2,
+-	       const unsigned long * __restrict p3,
+-	       const unsigned long * __restrict p4,
+-	       const unsigned long * __restrict p5);
 -
--static struct xor_block_template xor_block_alpha = {
--	.name	= "alpha",
--	.do_2	= xor_alpha_2,
--	.do_3	= xor_alpha_3,
--	.do_4	= xor_alpha_4,
--	.do_5	= xor_alpha_5,
+-/* XXX Ugh, write cheetah versions... -DaveM */
+-
+-static struct xor_block_template xor_block_VIS = {
+-        .name	= "VIS",
+-        .do_2	= xor_vis_2,
+-        .do_3	= xor_vis_3,
+-        .do_4	= xor_vis_4,
+-        .do_5	= xor_vis_5,
 -};
 -
--static struct xor_block_template xor_block_alpha_prefetch = {
--	.name	= "alpha prefetch",
--	.do_2	= xor_alpha_prefetch_2,
--	.do_3	= xor_alpha_prefetch_3,
--	.do_4	= xor_alpha_prefetch_4,
--	.do_5	= xor_alpha_prefetch_5,
+-void xor_niagara_2(unsigned long bytes, unsigned long * __restrict p1,
+-		   const unsigned long * __restrict p2);
+-void xor_niagara_3(unsigned long bytes, unsigned long * __restrict p1,
+-		   const unsigned long * __restrict p2,
+-		   const unsigned long * __restrict p3);
+-void xor_niagara_4(unsigned long bytes, unsigned long * __restrict p1,
+-		   const unsigned long * __restrict p2,
+-		   const unsigned long * __restrict p3,
+-		   const unsigned long * __restrict p4);
+-void xor_niagara_5(unsigned long bytes, unsigned long * __restrict p1,
+-		   const unsigned long * __restrict p2,
+-		   const unsigned long * __restrict p3,
+-		   const unsigned long * __restrict p4,
+-		   const unsigned long * __restrict p5);
+-
+-static struct xor_block_template xor_block_niagara = {
+-        .name	= "Niagara",
+-        .do_2	= xor_niagara_2,
+-        .do_3	= xor_niagara_3,
+-        .do_4	= xor_niagara_4,
+-        .do_5	= xor_niagara_5,
 -};
 -
--/* For grins, also test the generic routines.  */
-+#include <asm/special_insns.h>
- #include <asm-generic/xor.h>
+-#define arch_xor_init arch_xor_init
+-static __always_inline void __init arch_xor_init(void)
+-{
+-	/* Force VIS for everything except Niagara.  */
+-	if (tlb_type == hypervisor &&
+-	    (sun4v_chip_type == SUN4V_CHIP_NIAGARA1 ||
+-	     sun4v_chip_type == SUN4V_CHIP_NIAGARA2 ||
+-	     sun4v_chip_type == SUN4V_CHIP_NIAGARA3 ||
+-	     sun4v_chip_type == SUN4V_CHIP_NIAGARA4 ||
+-	     sun4v_chip_type == SUN4V_CHIP_NIAGARA5))
+-		xor_force(&xor_block_niagara);
+-	else
+-		xor_force(&xor_block_VIS);
+-}
+diff --git a/arch/sparc/lib/Makefile b/arch/sparc/lib/Makefile
+index 783bdec0d7be..dd10cdd6f062 100644
+--- a/arch/sparc/lib/Makefile
++++ b/arch/sparc/lib/Makefile
+@@ -48,7 +48,7 @@ lib-$(CONFIG_SPARC64) += GENmemcpy.o GENcopy_from_user.o GENcopy_to_user.o
+ lib-$(CONFIG_SPARC64) += GENpatch.o GENpage.o GENbzero.o
  
-+extern struct xor_block_template xor_block_alpha;
-+extern struct xor_block_template xor_block_alpha_prefetch;
-+
- /*
-  * Force the use of alpha_prefetch if EV6, as it is significantly faster in the
-  * cold cache case.
+ lib-$(CONFIG_SPARC64) += copy_in_user.o memmove.o
+-lib-$(CONFIG_SPARC64) += mcount.o ipcsum.o xor.o hweight.o ffs.o
++lib-$(CONFIG_SPARC64) += mcount.o ipcsum.o hweight.o ffs.o
+ 
+ obj-$(CONFIG_SPARC64) += iomap.o
+ obj-$(CONFIG_SPARC32) += atomic32.o
 diff --git a/lib/raid/xor/Makefile b/lib/raid/xor/Makefile
-index 89a944c9f990..6d03c27c37c7 100644
+index c939fad43735..eb7617b5c61b 100644
 --- a/lib/raid/xor/Makefile
 +++ b/lib/raid/xor/Makefile
-@@ -7,3 +7,5 @@ xor-y				+= xor-8regs.o
- xor-y				+= xor-32regs.o
- xor-y				+= xor-8regs-prefetch.o
- xor-y				+= xor-32regs-prefetch.o
-+
-+xor-$(CONFIG_ALPHA)		+= alpha/xor.o
-diff --git a/lib/raid/xor/alpha/xor.c b/lib/raid/xor/alpha/xor.c
+@@ -19,6 +19,9 @@ xor-$(CONFIG_CPU_HAS_LSX)	+= loongarch/xor_simd.o
+ xor-$(CONFIG_CPU_HAS_LSX)	+= loongarch/xor_simd_glue.o
+ xor-$(CONFIG_ALTIVEC)		+= powerpc/xor_vmx.o powerpc/xor_vmx_glue.o
+ xor-$(CONFIG_RISCV_ISA_V)	+= riscv/xor.o riscv/xor-glue.o
++xor-$(CONFIG_SPARC32)		+= sparc/xor-sparc32.o
++xor-$(CONFIG_SPARC64)		+= sparc/xor-vis.o sparc/xor-vis-glue.o
++xor-$(CONFIG_SPARC64)		+= sparc/xor-niagara.o sparc/xor-niagara-glue.o
+ 
+ 
+ CFLAGS_arm/xor-neon.o		+= $(CC_FLAGS_FPU)
+diff --git a/lib/raid/xor/sparc/xor-niagara-glue.c b/lib/raid/xor/sparc/xor-niagara-glue.c
 new file mode 100644
-index 000000000000..0964ac420604
+index 000000000000..5087e63ac130
 --- /dev/null
-+++ b/lib/raid/xor/alpha/xor.c
-@@ -0,0 +1,849 @@
++++ b/lib/raid/xor/sparc/xor-niagara-glue.c
+@@ -0,0 +1,33 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later
 +/*
-+ * Optimized XOR parity functions for alpha EV5 and EV6
++ * High speed xor_block operation for RAID4/5 utilizing the
++ * Niagara block-init twin-load instructions.
++ *
++ * Copyright (C) 2006 David S. Miller <davem@davemloft.net>
 + */
++
 +#include <linux/raid/xor_impl.h>
 +#include <asm/xor.h>
 +
-+extern void
-+xor_alpha_2(unsigned long bytes, unsigned long * __restrict p1,
-+	    const unsigned long * __restrict p2);
-+extern void
-+xor_alpha_3(unsigned long bytes, unsigned long * __restrict p1,
-+	    const unsigned long * __restrict p2,
-+	    const unsigned long * __restrict p3);
-+extern void
-+xor_alpha_4(unsigned long bytes, unsigned long * __restrict p1,
-+	    const unsigned long * __restrict p2,
-+	    const unsigned long * __restrict p3,
-+	    const unsigned long * __restrict p4);
-+extern void
-+xor_alpha_5(unsigned long bytes, unsigned long * __restrict p1,
-+	    const unsigned long * __restrict p2,
-+	    const unsigned long * __restrict p3,
-+	    const unsigned long * __restrict p4,
-+	    const unsigned long * __restrict p5);
++void xor_niagara_2(unsigned long bytes, unsigned long * __restrict p1,
++		   const unsigned long * __restrict p2);
++void xor_niagara_3(unsigned long bytes, unsigned long * __restrict p1,
++		   const unsigned long * __restrict p2,
++		   const unsigned long * __restrict p3);
++void xor_niagara_4(unsigned long bytes, unsigned long * __restrict p1,
++		   const unsigned long * __restrict p2,
++		   const unsigned long * __restrict p3,
++		   const unsigned long * __restrict p4);
++void xor_niagara_5(unsigned long bytes, unsigned long * __restrict p1,
++		   const unsigned long * __restrict p2,
++		   const unsigned long * __restrict p3,
++		   const unsigned long * __restrict p4,
++		   const unsigned long * __restrict p5);
 +
-+extern void
-+xor_alpha_prefetch_2(unsigned long bytes, unsigned long * __restrict p1,
-+		     const unsigned long * __restrict p2);
-+extern void
-+xor_alpha_prefetch_3(unsigned long bytes, unsigned long * __restrict p1,
-+		     const unsigned long * __restrict p2,
-+		     const unsigned long * __restrict p3);
-+extern void
-+xor_alpha_prefetch_4(unsigned long bytes, unsigned long * __restrict p1,
-+		     const unsigned long * __restrict p2,
-+		     const unsigned long * __restrict p3,
-+		     const unsigned long * __restrict p4);
-+extern void
-+xor_alpha_prefetch_5(unsigned long bytes, unsigned long * __restrict p1,
-+		     const unsigned long * __restrict p2,
-+		     const unsigned long * __restrict p3,
-+		     const unsigned long * __restrict p4,
-+		     const unsigned long * __restrict p5);
-+
-+asm("								\n\
-+	.text							\n\
-+	.align 3						\n\
-+	.ent xor_alpha_2					\n\
-+xor_alpha_2:							\n\
-+	.prologue 0						\n\
-+	srl $16, 6, $16						\n\
-+	.align 4						\n\
-+2:								\n\
-+	ldq $0,0($17)						\n\
-+	ldq $1,0($18)						\n\
-+	ldq $2,8($17)						\n\
-+	ldq $3,8($18)						\n\
-+								\n\
-+	ldq $4,16($17)						\n\
-+	ldq $5,16($18)						\n\
-+	ldq $6,24($17)						\n\
-+	ldq $7,24($18)						\n\
-+								\n\
-+	ldq $19,32($17)						\n\
-+	ldq $20,32($18)						\n\
-+	ldq $21,40($17)						\n\
-+	ldq $22,40($18)						\n\
-+								\n\
-+	ldq $23,48($17)						\n\
-+	ldq $24,48($18)						\n\
-+	ldq $25,56($17)						\n\
-+	xor $0,$1,$0		# 7 cycles from $1 load		\n\
-+								\n\
-+	ldq $27,56($18)						\n\
-+	xor $2,$3,$2						\n\
-+	stq $0,0($17)						\n\
-+	xor $4,$5,$4						\n\
-+								\n\
-+	stq $2,8($17)						\n\
-+	xor $6,$7,$6						\n\
-+	stq $4,16($17)						\n\
-+	xor $19,$20,$19						\n\
-+								\n\
-+	stq $6,24($17)						\n\
-+	xor $21,$22,$21						\n\
-+	stq $19,32($17)						\n\
-+	xor $23,$24,$23						\n\
-+								\n\
-+	stq $21,40($17)						\n\
-+	xor $25,$27,$25						\n\
-+	stq $23,48($17)						\n\
-+	subq $16,1,$16						\n\
-+								\n\
-+	stq $25,56($17)						\n\
-+	addq $17,64,$17						\n\
-+	addq $18,64,$18						\n\
-+	bgt $16,2b						\n\
-+								\n\
-+	ret							\n\
-+	.end xor_alpha_2					\n\
-+								\n\
-+	.align 3						\n\
-+	.ent xor_alpha_3					\n\
-+xor_alpha_3:							\n\
-+	.prologue 0						\n\
-+	srl $16, 6, $16						\n\
-+	.align 4						\n\
-+3:								\n\
-+	ldq $0,0($17)						\n\
-+	ldq $1,0($18)						\n\
-+	ldq $2,0($19)						\n\
-+	ldq $3,8($17)						\n\
-+								\n\
-+	ldq $4,8($18)						\n\
-+	ldq $6,16($17)						\n\
-+	ldq $7,16($18)						\n\
-+	ldq $21,24($17)						\n\
-+								\n\
-+	ldq $22,24($18)						\n\
-+	ldq $24,32($17)						\n\
-+	ldq $25,32($18)						\n\
-+	ldq $5,8($19)						\n\
-+								\n\
-+	ldq $20,16($19)						\n\
-+	ldq $23,24($19)						\n\
-+	ldq $27,32($19)						\n\
-+	nop							\n\
-+								\n\
-+	xor $0,$1,$1		# 8 cycles from $0 load		\n\
-+	xor $3,$4,$4		# 6 cycles from $4 load		\n\
-+	xor $6,$7,$7		# 6 cycles from $7 load		\n\
-+	xor $21,$22,$22		# 5 cycles from $22 load	\n\
-+								\n\
-+	xor $1,$2,$2		# 9 cycles from $2 load		\n\
-+	xor $24,$25,$25		# 5 cycles from $25 load	\n\
-+	stq $2,0($17)						\n\
-+	xor $4,$5,$5		# 6 cycles from $5 load		\n\
-+								\n\
-+	stq $5,8($17)						\n\
-+	xor $7,$20,$20		# 7 cycles from $20 load	\n\
-+	stq $20,16($17)						\n\
-+	xor $22,$23,$23		# 7 cycles from $23 load	\n\
-+								\n\
-+	stq $23,24($17)						\n\
-+	xor $25,$27,$27		# 7 cycles from $27 load	\n\
-+	stq $27,32($17)						\n\
-+	nop							\n\
-+								\n\
-+	ldq $0,40($17)						\n\
-+	ldq $1,40($18)						\n\
-+	ldq $3,48($17)						\n\
-+	ldq $4,48($18)						\n\
-+								\n\
-+	ldq $6,56($17)						\n\
-+	ldq $7,56($18)						\n\
-+	ldq $2,40($19)						\n\
-+	ldq $5,48($19)						\n\
-+								\n\
-+	ldq $20,56($19)						\n\
-+	xor $0,$1,$1		# 4 cycles from $1 load		\n\
-+	xor $3,$4,$4		# 5 cycles from $4 load		\n\
-+	xor $6,$7,$7		# 5 cycles from $7 load		\n\
-+								\n\
-+	xor $1,$2,$2		# 4 cycles from $2 load		\n\
-+	xor $4,$5,$5		# 5 cycles from $5 load		\n\
-+	stq $2,40($17)						\n\
-+	xor $7,$20,$20		# 4 cycles from $20 load	\n\
-+								\n\
-+	stq $5,48($17)						\n\
-+	subq $16,1,$16						\n\
-+	stq $20,56($17)						\n\
-+	addq $19,64,$19						\n\
-+								\n\
-+	addq $18,64,$18						\n\
-+	addq $17,64,$17						\n\
-+	bgt $16,3b						\n\
-+	ret							\n\
-+	.end xor_alpha_3					\n\
-+								\n\
-+	.align 3						\n\
-+	.ent xor_alpha_4					\n\
-+xor_alpha_4:							\n\
-+	.prologue 0						\n\
-+	srl $16, 6, $16						\n\
-+	.align 4						\n\
-+4:								\n\
-+	ldq $0,0($17)						\n\
-+	ldq $1,0($18)						\n\
-+	ldq $2,0($19)						\n\
-+	ldq $3,0($20)						\n\
-+								\n\
-+	ldq $4,8($17)						\n\
-+	ldq $5,8($18)						\n\
-+	ldq $6,8($19)						\n\
-+	ldq $7,8($20)						\n\
-+								\n\
-+	ldq $21,16($17)						\n\
-+	ldq $22,16($18)						\n\
-+	ldq $23,16($19)						\n\
-+	ldq $24,16($20)						\n\
-+								\n\
-+	ldq $25,24($17)						\n\
-+	xor $0,$1,$1		# 6 cycles from $1 load		\n\
-+	ldq $27,24($18)						\n\
-+	xor $2,$3,$3		# 6 cycles from $3 load		\n\
-+								\n\
-+	ldq $0,24($19)						\n\
-+	xor $1,$3,$3						\n\
-+	ldq $1,24($20)						\n\
-+	xor $4,$5,$5		# 7 cycles from $5 load		\n\
-+								\n\
-+	stq $3,0($17)						\n\
-+	xor $6,$7,$7						\n\
-+	xor $21,$22,$22		# 7 cycles from $22 load	\n\
-+	xor $5,$7,$7						\n\
-+								\n\
-+	stq $7,8($17)						\n\
-+	xor $23,$24,$24		# 7 cycles from $24 load	\n\
-+	ldq $2,32($17)						\n\
-+	xor $22,$24,$24						\n\
-+								\n\
-+	ldq $3,32($18)						\n\
-+	ldq $4,32($19)						\n\
-+	ldq $5,32($20)						\n\
-+	xor $25,$27,$27		# 8 cycles from $27 load	\n\
-+								\n\
-+	ldq $6,40($17)						\n\
-+	ldq $7,40($18)						\n\
-+	ldq $21,40($19)						\n\
-+	ldq $22,40($20)						\n\
-+								\n\
-+	stq $24,16($17)						\n\
-+	xor $0,$1,$1		# 9 cycles from $1 load		\n\
-+	xor $2,$3,$3		# 5 cycles from $3 load		\n\
-+	xor $27,$1,$1						\n\
-+								\n\
-+	stq $1,24($17)						\n\
-+	xor $4,$5,$5		# 5 cycles from $5 load		\n\
-+	ldq $23,48($17)						\n\
-+	ldq $24,48($18)						\n\
-+								\n\
-+	ldq $25,48($19)						\n\
-+	xor $3,$5,$5						\n\
-+	ldq $27,48($20)						\n\
-+	ldq $0,56($17)						\n\
-+								\n\
-+	ldq $1,56($18)						\n\
-+	ldq $2,56($19)						\n\
-+	xor $6,$7,$7		# 8 cycles from $6 load		\n\
-+	ldq $3,56($20)						\n\
-+								\n\
-+	stq $5,32($17)						\n\
-+	xor $21,$22,$22		# 8 cycles from $22 load	\n\
-+	xor $7,$22,$22						\n\
-+	xor $23,$24,$24		# 5 cycles from $24 load	\n\
-+								\n\
-+	stq $22,40($17)						\n\
-+	xor $25,$27,$27		# 5 cycles from $27 load	\n\
-+	xor $24,$27,$27						\n\
-+	xor $0,$1,$1		# 5 cycles from $1 load		\n\
-+								\n\
-+	stq $27,48($17)						\n\
-+	xor $2,$3,$3		# 4 cycles from $3 load		\n\
-+	xor $1,$3,$3						\n\
-+	subq $16,1,$16						\n\
-+								\n\
-+	stq $3,56($17)						\n\
-+	addq $20,64,$20						\n\
-+	addq $19,64,$19						\n\
-+	addq $18,64,$18						\n\
-+								\n\
-+	addq $17,64,$17						\n\
-+	bgt $16,4b						\n\
-+	ret							\n\
-+	.end xor_alpha_4					\n\
-+								\n\
-+	.align 3						\n\
-+	.ent xor_alpha_5					\n\
-+xor_alpha_5:							\n\
-+	.prologue 0						\n\
-+	srl $16, 6, $16						\n\
-+	.align 4						\n\
-+5:								\n\
-+	ldq $0,0($17)						\n\
-+	ldq $1,0($18)						\n\
-+	ldq $2,0($19)						\n\
-+	ldq $3,0($20)						\n\
-+								\n\
-+	ldq $4,0($21)						\n\
-+	ldq $5,8($17)						\n\
-+	ldq $6,8($18)						\n\
-+	ldq $7,8($19)						\n\
-+								\n\
-+	ldq $22,8($20)						\n\
-+	ldq $23,8($21)						\n\
-+	ldq $24,16($17)						\n\
-+	ldq $25,16($18)						\n\
-+								\n\
-+	ldq $27,16($19)						\n\
-+	xor $0,$1,$1		# 6 cycles from $1 load		\n\
-+	ldq $28,16($20)						\n\
-+	xor $2,$3,$3		# 6 cycles from $3 load		\n\
-+								\n\
-+	ldq $0,16($21)						\n\
-+	xor $1,$3,$3						\n\
-+	ldq $1,24($17)						\n\
-+	xor $3,$4,$4		# 7 cycles from $4 load		\n\
-+								\n\
-+	stq $4,0($17)						\n\
-+	xor $5,$6,$6		# 7 cycles from $6 load		\n\
-+	xor $7,$22,$22		# 7 cycles from $22 load	\n\
-+	xor $6,$23,$23		# 7 cycles from $23 load	\n\
-+								\n\
-+	ldq $2,24($18)						\n\
-+	xor $22,$23,$23						\n\
-+	ldq $3,24($19)						\n\
-+	xor $24,$25,$25		# 8 cycles from $25 load	\n\
-+								\n\
-+	stq $23,8($17)						\n\
-+	xor $25,$27,$27		# 8 cycles from $27 load	\n\
-+	ldq $4,24($20)						\n\
-+	xor $28,$0,$0		# 7 cycles from $0 load		\n\
-+								\n\
-+	ldq $5,24($21)						\n\
-+	xor $27,$0,$0						\n\
-+	ldq $6,32($17)						\n\
-+	ldq $7,32($18)						\n\
-+								\n\
-+	stq $0,16($17)						\n\
-+	xor $1,$2,$2		# 6 cycles from $2 load		\n\
-+	ldq $22,32($19)						\n\
-+	xor $3,$4,$4		# 4 cycles from $4 load		\n\
-+								\n\
-+	ldq $23,32($20)						\n\
-+	xor $2,$4,$4						\n\
-+	ldq $24,32($21)						\n\
-+	ldq $25,40($17)						\n\
-+								\n\
-+	ldq $27,40($18)						\n\
-+	ldq $28,40($19)						\n\
-+	ldq $0,40($20)						\n\
-+	xor $4,$5,$5		# 7 cycles from $5 load		\n\
-+								\n\
-+	stq $5,24($17)						\n\
-+	xor $6,$7,$7		# 7 cycles from $7 load		\n\
-+	ldq $1,40($21)						\n\
-+	ldq $2,48($17)						\n\
-+								\n\
-+	ldq $3,48($18)						\n\
-+	xor $7,$22,$22		# 7 cycles from $22 load	\n\
-+	ldq $4,48($19)						\n\
-+	xor $23,$24,$24		# 6 cycles from $24 load	\n\
-+								\n\
-+	ldq $5,48($20)						\n\
-+	xor $22,$24,$24						\n\
-+	ldq $6,48($21)						\n\
-+	xor $25,$27,$27		# 7 cycles from $27 load	\n\
-+								\n\
-+	stq $24,32($17)						\n\
-+	xor $27,$28,$28		# 8 cycles from $28 load	\n\
-+	ldq $7,56($17)						\n\
-+	xor $0,$1,$1		# 6 cycles from $1 load		\n\
-+								\n\
-+	ldq $22,56($18)						\n\
-+	ldq $23,56($19)						\n\
-+	ldq $24,56($20)						\n\
-+	ldq $25,56($21)						\n\
-+								\n\
-+	xor $28,$1,$1						\n\
-+	xor $2,$3,$3		# 9 cycles from $3 load		\n\
-+	xor $3,$4,$4		# 9 cycles from $4 load		\n\
-+	xor $5,$6,$6		# 8 cycles from $6 load		\n\
-+								\n\
-+	stq $1,40($17)						\n\
-+	xor $4,$6,$6						\n\
-+	xor $7,$22,$22		# 7 cycles from $22 load	\n\
-+	xor $23,$24,$24		# 6 cycles from $24 load	\n\
-+								\n\
-+	stq $6,48($17)						\n\
-+	xor $22,$24,$24						\n\
-+	subq $16,1,$16						\n\
-+	xor $24,$25,$25		# 8 cycles from $25 load	\n\
-+								\n\
-+	stq $25,56($17)						\n\
-+	addq $21,64,$21						\n\
-+	addq $20,64,$20						\n\
-+	addq $19,64,$19						\n\
-+								\n\
-+	addq $18,64,$18						\n\
-+	addq $17,64,$17						\n\
-+	bgt $16,5b						\n\
-+	ret							\n\
-+	.end xor_alpha_5					\n\
-+								\n\
-+	.align 3						\n\
-+	.ent xor_alpha_prefetch_2				\n\
-+xor_alpha_prefetch_2:						\n\
-+	.prologue 0						\n\
-+	srl $16, 6, $16						\n\
-+								\n\
-+	ldq $31, 0($17)						\n\
-+	ldq $31, 0($18)						\n\
-+								\n\
-+	ldq $31, 64($17)					\n\
-+	ldq $31, 64($18)					\n\
-+								\n\
-+	ldq $31, 128($17)					\n\
-+	ldq $31, 128($18)					\n\
-+								\n\
-+	ldq $31, 192($17)					\n\
-+	ldq $31, 192($18)					\n\
-+	.align 4						\n\
-+2:								\n\
-+	ldq $0,0($17)						\n\
-+	ldq $1,0($18)						\n\
-+	ldq $2,8($17)						\n\
-+	ldq $3,8($18)						\n\
-+								\n\
-+	ldq $4,16($17)						\n\
-+	ldq $5,16($18)						\n\
-+	ldq $6,24($17)						\n\
-+	ldq $7,24($18)						\n\
-+								\n\
-+	ldq $19,32($17)						\n\
-+	ldq $20,32($18)						\n\
-+	ldq $21,40($17)						\n\
-+	ldq $22,40($18)						\n\
-+								\n\
-+	ldq $23,48($17)						\n\
-+	ldq $24,48($18)						\n\
-+	ldq $25,56($17)						\n\
-+	ldq $27,56($18)						\n\
-+								\n\
-+	ldq $31,256($17)					\n\
-+	xor $0,$1,$0		# 8 cycles from $1 load		\n\
-+	ldq $31,256($18)					\n\
-+	xor $2,$3,$2						\n\
-+								\n\
-+	stq $0,0($17)						\n\
-+	xor $4,$5,$4						\n\
-+	stq $2,8($17)						\n\
-+	xor $6,$7,$6						\n\
-+								\n\
-+	stq $4,16($17)						\n\
-+	xor $19,$20,$19						\n\
-+	stq $6,24($17)						\n\
-+	xor $21,$22,$21						\n\
-+								\n\
-+	stq $19,32($17)						\n\
-+	xor $23,$24,$23						\n\
-+	stq $21,40($17)						\n\
-+	xor $25,$27,$25						\n\
-+								\n\
-+	stq $23,48($17)						\n\
-+	subq $16,1,$16						\n\
-+	stq $25,56($17)						\n\
-+	addq $17,64,$17						\n\
-+								\n\
-+	addq $18,64,$18						\n\
-+	bgt $16,2b						\n\
-+	ret							\n\
-+	.end xor_alpha_prefetch_2				\n\
-+								\n\
-+	.align 3						\n\
-+	.ent xor_alpha_prefetch_3				\n\
-+xor_alpha_prefetch_3:						\n\
-+	.prologue 0						\n\
-+	srl $16, 6, $16						\n\
-+								\n\
-+	ldq $31, 0($17)						\n\
-+	ldq $31, 0($18)						\n\
-+	ldq $31, 0($19)						\n\
-+								\n\
-+	ldq $31, 64($17)					\n\
-+	ldq $31, 64($18)					\n\
-+	ldq $31, 64($19)					\n\
-+								\n\
-+	ldq $31, 128($17)					\n\
-+	ldq $31, 128($18)					\n\
-+	ldq $31, 128($19)					\n\
-+								\n\
-+	ldq $31, 192($17)					\n\
-+	ldq $31, 192($18)					\n\
-+	ldq $31, 192($19)					\n\
-+	.align 4						\n\
-+3:								\n\
-+	ldq $0,0($17)						\n\
-+	ldq $1,0($18)						\n\
-+	ldq $2,0($19)						\n\
-+	ldq $3,8($17)						\n\
-+								\n\
-+	ldq $4,8($18)						\n\
-+	ldq $6,16($17)						\n\
-+	ldq $7,16($18)						\n\
-+	ldq $21,24($17)						\n\
-+								\n\
-+	ldq $22,24($18)						\n\
-+	ldq $24,32($17)						\n\
-+	ldq $25,32($18)						\n\
-+	ldq $5,8($19)						\n\
-+								\n\
-+	ldq $20,16($19)						\n\
-+	ldq $23,24($19)						\n\
-+	ldq $27,32($19)						\n\
-+	nop							\n\
-+								\n\
-+	xor $0,$1,$1		# 8 cycles from $0 load		\n\
-+	xor $3,$4,$4		# 7 cycles from $4 load		\n\
-+	xor $6,$7,$7		# 6 cycles from $7 load		\n\
-+	xor $21,$22,$22		# 5 cycles from $22 load	\n\
-+								\n\
-+	xor $1,$2,$2		# 9 cycles from $2 load		\n\
-+	xor $24,$25,$25		# 5 cycles from $25 load	\n\
-+	stq $2,0($17)						\n\
-+	xor $4,$5,$5		# 6 cycles from $5 load		\n\
-+								\n\
-+	stq $5,8($17)						\n\
-+	xor $7,$20,$20		# 7 cycles from $20 load	\n\
-+	stq $20,16($17)						\n\
-+	xor $22,$23,$23		# 7 cycles from $23 load	\n\
-+								\n\
-+	stq $23,24($17)						\n\
-+	xor $25,$27,$27		# 7 cycles from $27 load	\n\
-+	stq $27,32($17)						\n\
-+	nop							\n\
-+								\n\
-+	ldq $0,40($17)						\n\
-+	ldq $1,40($18)						\n\
-+	ldq $3,48($17)						\n\
-+	ldq $4,48($18)						\n\
-+								\n\
-+	ldq $6,56($17)						\n\
-+	ldq $7,56($18)						\n\
-+	ldq $2,40($19)						\n\
-+	ldq $5,48($19)						\n\
-+								\n\
-+	ldq $20,56($19)						\n\
-+	ldq $31,256($17)					\n\
-+	ldq $31,256($18)					\n\
-+	ldq $31,256($19)					\n\
-+								\n\
-+	xor $0,$1,$1		# 6 cycles from $1 load		\n\
-+	xor $3,$4,$4		# 5 cycles from $4 load		\n\
-+	xor $6,$7,$7		# 5 cycles from $7 load		\n\
-+	xor $1,$2,$2		# 4 cycles from $2 load		\n\
-+								\n\
-+	xor $4,$5,$5		# 5 cycles from $5 load		\n\
-+	xor $7,$20,$20		# 4 cycles from $20 load	\n\
-+	stq $2,40($17)						\n\
-+	subq $16,1,$16						\n\
-+								\n\
-+	stq $5,48($17)						\n\
-+	addq $19,64,$19						\n\
-+	stq $20,56($17)						\n\
-+	addq $18,64,$18						\n\
-+								\n\
-+	addq $17,64,$17						\n\
-+	bgt $16,3b						\n\
-+	ret							\n\
-+	.end xor_alpha_prefetch_3				\n\
-+								\n\
-+	.align 3						\n\
-+	.ent xor_alpha_prefetch_4				\n\
-+xor_alpha_prefetch_4:						\n\
-+	.prologue 0						\n\
-+	srl $16, 6, $16						\n\
-+								\n\
-+	ldq $31, 0($17)						\n\
-+	ldq $31, 0($18)						\n\
-+	ldq $31, 0($19)						\n\
-+	ldq $31, 0($20)						\n\
-+								\n\
-+	ldq $31, 64($17)					\n\
-+	ldq $31, 64($18)					\n\
-+	ldq $31, 64($19)					\n\
-+	ldq $31, 64($20)					\n\
-+								\n\
-+	ldq $31, 128($17)					\n\
-+	ldq $31, 128($18)					\n\
-+	ldq $31, 128($19)					\n\
-+	ldq $31, 128($20)					\n\
-+								\n\
-+	ldq $31, 192($17)					\n\
-+	ldq $31, 192($18)					\n\
-+	ldq $31, 192($19)					\n\
-+	ldq $31, 192($20)					\n\
-+	.align 4						\n\
-+4:								\n\
-+	ldq $0,0($17)						\n\
-+	ldq $1,0($18)						\n\
-+	ldq $2,0($19)						\n\
-+	ldq $3,0($20)						\n\
-+								\n\
-+	ldq $4,8($17)						\n\
-+	ldq $5,8($18)						\n\
-+	ldq $6,8($19)						\n\
-+	ldq $7,8($20)						\n\
-+								\n\
-+	ldq $21,16($17)						\n\
-+	ldq $22,16($18)						\n\
-+	ldq $23,16($19)						\n\
-+	ldq $24,16($20)						\n\
-+								\n\
-+	ldq $25,24($17)						\n\
-+	xor $0,$1,$1		# 6 cycles from $1 load		\n\
-+	ldq $27,24($18)						\n\
-+	xor $2,$3,$3		# 6 cycles from $3 load		\n\
-+								\n\
-+	ldq $0,24($19)						\n\
-+	xor $1,$3,$3						\n\
-+	ldq $1,24($20)						\n\
-+	xor $4,$5,$5		# 7 cycles from $5 load		\n\
-+								\n\
-+	stq $3,0($17)						\n\
-+	xor $6,$7,$7						\n\
-+	xor $21,$22,$22		# 7 cycles from $22 load	\n\
-+	xor $5,$7,$7						\n\
-+								\n\
-+	stq $7,8($17)						\n\
-+	xor $23,$24,$24		# 7 cycles from $24 load	\n\
-+	ldq $2,32($17)						\n\
-+	xor $22,$24,$24						\n\
-+								\n\
-+	ldq $3,32($18)						\n\
-+	ldq $4,32($19)						\n\
-+	ldq $5,32($20)						\n\
-+	xor $25,$27,$27		# 8 cycles from $27 load	\n\
-+								\n\
-+	ldq $6,40($17)						\n\
-+	ldq $7,40($18)						\n\
-+	ldq $21,40($19)						\n\
-+	ldq $22,40($20)						\n\
-+								\n\
-+	stq $24,16($17)						\n\
-+	xor $0,$1,$1		# 9 cycles from $1 load		\n\
-+	xor $2,$3,$3		# 5 cycles from $3 load		\n\
-+	xor $27,$1,$1						\n\
-+								\n\
-+	stq $1,24($17)						\n\
-+	xor $4,$5,$5		# 5 cycles from $5 load		\n\
-+	ldq $23,48($17)						\n\
-+	xor $3,$5,$5						\n\
-+								\n\
-+	ldq $24,48($18)						\n\
-+	ldq $25,48($19)						\n\
-+	ldq $27,48($20)						\n\
-+	ldq $0,56($17)						\n\
-+								\n\
-+	ldq $1,56($18)						\n\
-+	ldq $2,56($19)						\n\
-+	ldq $3,56($20)						\n\
-+	xor $6,$7,$7		# 8 cycles from $6 load		\n\
-+								\n\
-+	ldq $31,256($17)					\n\
-+	xor $21,$22,$22		# 8 cycles from $22 load	\n\
-+	ldq $31,256($18)					\n\
-+	xor $7,$22,$22						\n\
-+								\n\
-+	ldq $31,256($19)					\n\
-+	xor $23,$24,$24		# 6 cycles from $24 load	\n\
-+	ldq $31,256($20)					\n\
-+	xor $25,$27,$27		# 6 cycles from $27 load	\n\
-+								\n\
-+	stq $5,32($17)						\n\
-+	xor $24,$27,$27						\n\
-+	xor $0,$1,$1		# 7 cycles from $1 load		\n\
-+	xor $2,$3,$3		# 6 cycles from $3 load		\n\
-+								\n\
-+	stq $22,40($17)						\n\
-+	xor $1,$3,$3						\n\
-+	stq $27,48($17)						\n\
-+	subq $16,1,$16						\n\
-+								\n\
-+	stq $3,56($17)						\n\
-+	addq $20,64,$20						\n\
-+	addq $19,64,$19						\n\
-+	addq $18,64,$18						\n\
-+								\n\
-+	addq $17,64,$17						\n\
-+	bgt $16,4b						\n\
-+	ret							\n\
-+	.end xor_alpha_prefetch_4				\n\
-+								\n\
-+	.align 3						\n\
-+	.ent xor_alpha_prefetch_5				\n\
-+xor_alpha_prefetch_5:						\n\
-+	.prologue 0						\n\
-+	srl $16, 6, $16						\n\
-+								\n\
-+	ldq $31, 0($17)						\n\
-+	ldq $31, 0($18)						\n\
-+	ldq $31, 0($19)						\n\
-+	ldq $31, 0($20)						\n\
-+	ldq $31, 0($21)						\n\
-+								\n\
-+	ldq $31, 64($17)					\n\
-+	ldq $31, 64($18)					\n\
-+	ldq $31, 64($19)					\n\
-+	ldq $31, 64($20)					\n\
-+	ldq $31, 64($21)					\n\
-+								\n\
-+	ldq $31, 128($17)					\n\
-+	ldq $31, 128($18)					\n\
-+	ldq $31, 128($19)					\n\
-+	ldq $31, 128($20)					\n\
-+	ldq $31, 128($21)					\n\
-+								\n\
-+	ldq $31, 192($17)					\n\
-+	ldq $31, 192($18)					\n\
-+	ldq $31, 192($19)					\n\
-+	ldq $31, 192($20)					\n\
-+	ldq $31, 192($21)					\n\
-+	.align 4						\n\
-+5:								\n\
-+	ldq $0,0($17)						\n\
-+	ldq $1,0($18)						\n\
-+	ldq $2,0($19)						\n\
-+	ldq $3,0($20)						\n\
-+								\n\
-+	ldq $4,0($21)						\n\
-+	ldq $5,8($17)						\n\
-+	ldq $6,8($18)						\n\
-+	ldq $7,8($19)						\n\
-+								\n\
-+	ldq $22,8($20)						\n\
-+	ldq $23,8($21)						\n\
-+	ldq $24,16($17)						\n\
-+	ldq $25,16($18)						\n\
-+								\n\
-+	ldq $27,16($19)						\n\
-+	xor $0,$1,$1		# 6 cycles from $1 load		\n\
-+	ldq $28,16($20)						\n\
-+	xor $2,$3,$3		# 6 cycles from $3 load		\n\
-+								\n\
-+	ldq $0,16($21)						\n\
-+	xor $1,$3,$3						\n\
-+	ldq $1,24($17)						\n\
-+	xor $3,$4,$4		# 7 cycles from $4 load		\n\
-+								\n\
-+	stq $4,0($17)						\n\
-+	xor $5,$6,$6		# 7 cycles from $6 load		\n\
-+	xor $7,$22,$22		# 7 cycles from $22 load	\n\
-+	xor $6,$23,$23		# 7 cycles from $23 load	\n\
-+								\n\
-+	ldq $2,24($18)						\n\
-+	xor $22,$23,$23						\n\
-+	ldq $3,24($19)						\n\
-+	xor $24,$25,$25		# 8 cycles from $25 load	\n\
-+								\n\
-+	stq $23,8($17)						\n\
-+	xor $25,$27,$27		# 8 cycles from $27 load	\n\
-+	ldq $4,24($20)						\n\
-+	xor $28,$0,$0		# 7 cycles from $0 load		\n\
-+								\n\
-+	ldq $5,24($21)						\n\
-+	xor $27,$0,$0						\n\
-+	ldq $6,32($17)						\n\
-+	ldq $7,32($18)						\n\
-+								\n\
-+	stq $0,16($17)						\n\
-+	xor $1,$2,$2		# 6 cycles from $2 load		\n\
-+	ldq $22,32($19)						\n\
-+	xor $3,$4,$4		# 4 cycles from $4 load		\n\
-+								\n\
-+	ldq $23,32($20)						\n\
-+	xor $2,$4,$4						\n\
-+	ldq $24,32($21)						\n\
-+	ldq $25,40($17)						\n\
-+								\n\
-+	ldq $27,40($18)						\n\
-+	ldq $28,40($19)						\n\
-+	ldq $0,40($20)						\n\
-+	xor $4,$5,$5		# 7 cycles from $5 load		\n\
-+								\n\
-+	stq $5,24($17)						\n\
-+	xor $6,$7,$7		# 7 cycles from $7 load		\n\
-+	ldq $1,40($21)						\n\
-+	ldq $2,48($17)						\n\
-+								\n\
-+	ldq $3,48($18)						\n\
-+	xor $7,$22,$22		# 7 cycles from $22 load	\n\
-+	ldq $4,48($19)						\n\
-+	xor $23,$24,$24		# 6 cycles from $24 load	\n\
-+								\n\
-+	ldq $5,48($20)						\n\
-+	xor $22,$24,$24						\n\
-+	ldq $6,48($21)						\n\
-+	xor $25,$27,$27		# 7 cycles from $27 load	\n\
-+								\n\
-+	stq $24,32($17)						\n\
-+	xor $27,$28,$28		# 8 cycles from $28 load	\n\
-+	ldq $7,56($17)						\n\
-+	xor $0,$1,$1		# 6 cycles from $1 load		\n\
-+								\n\
-+	ldq $22,56($18)						\n\
-+	ldq $23,56($19)						\n\
-+	ldq $24,56($20)						\n\
-+	ldq $25,56($21)						\n\
-+								\n\
-+	ldq $31,256($17)					\n\
-+	xor $28,$1,$1						\n\
-+	ldq $31,256($18)					\n\
-+	xor $2,$3,$3		# 9 cycles from $3 load		\n\
-+								\n\
-+	ldq $31,256($19)					\n\
-+	xor $3,$4,$4		# 9 cycles from $4 load		\n\
-+	ldq $31,256($20)					\n\
-+	xor $5,$6,$6		# 8 cycles from $6 load		\n\
-+								\n\
-+	stq $1,40($17)						\n\
-+	xor $4,$6,$6						\n\
-+	xor $7,$22,$22		# 7 cycles from $22 load	\n\
-+	xor $23,$24,$24		# 6 cycles from $24 load	\n\
-+								\n\
-+	stq $6,48($17)						\n\
-+	xor $22,$24,$24						\n\
-+	ldq $31,256($21)					\n\
-+	xor $24,$25,$25		# 8 cycles from $25 load	\n\
-+								\n\
-+	stq $25,56($17)						\n\
-+	subq $16,1,$16						\n\
-+	addq $21,64,$21						\n\
-+	addq $20,64,$20						\n\
-+								\n\
-+	addq $19,64,$19						\n\
-+	addq $18,64,$18						\n\
-+	addq $17,64,$17						\n\
-+	bgt $16,5b						\n\
-+								\n\
-+	ret							\n\
-+	.end xor_alpha_prefetch_5				\n\
-+");
-+
-+struct xor_block_template xor_block_alpha = {
-+	.name	= "alpha",
-+	.do_2	= xor_alpha_2,
-+	.do_3	= xor_alpha_3,
-+	.do_4	= xor_alpha_4,
-+	.do_5	= xor_alpha_5,
++struct xor_block_template xor_block_niagara = {
++        .name	= "Niagara",
++        .do_2	= xor_niagara_2,
++        .do_3	= xor_niagara_3,
++        .do_4	= xor_niagara_4,
++        .do_5	= xor_niagara_5,
 +};
+diff --git a/arch/sparc/lib/xor.S b/lib/raid/xor/sparc/xor-niagara.S
+similarity index 53%
+rename from arch/sparc/lib/xor.S
+rename to lib/raid/xor/sparc/xor-niagara.S
+index 35461e3b2a9b..f8749a212eb3 100644
+--- a/arch/sparc/lib/xor.S
++++ b/lib/raid/xor/sparc/xor-niagara.S
+@@ -1,11 +1,8 @@
+ /* SPDX-License-Identifier: GPL-2.0 */
+ /*
+- * arch/sparc64/lib/xor.S
+- *
+  * High speed xor_block operation for RAID4/5 utilizing the
+- * UltraSparc Visual Instruction Set and Niagara store-init/twin-load.
++ * Niagara store-init/twin-load.
+  *
+- * Copyright (C) 1997, 1999 Jakub Jelinek (jj@ultra.linux.cz)
+  * Copyright (C) 2006 David S. Miller <davem@davemloft.net>
+  */
+ 
+@@ -16,343 +13,6 @@
+ #include <asm/dcu.h>
+ #include <asm/spitfire.h>
+ 
+-/*
+- *	Requirements:
+- *	!(((long)dest | (long)sourceN) & (64 - 1)) &&
+- *	!(len & 127) && len >= 256
+- */
+-	.text
+-
+-	/* VIS versions. */
+-ENTRY(xor_vis_2)
+-	rd	%fprs, %o5
+-	andcc	%o5, FPRS_FEF|FPRS_DU, %g0
+-	be,pt	%icc, 0f
+-	 sethi	%hi(VISenter), %g1
+-	jmpl	%g1 + %lo(VISenter), %g7
+-	 add	%g7, 8, %g7
+-0:	wr	%g0, FPRS_FEF, %fprs
+-	rd	%asi, %g1
+-	wr	%g0, ASI_BLK_P, %asi
+-	membar	#LoadStore|#StoreLoad|#StoreStore
+-	sub	%o0, 128, %o0
+-	ldda	[%o1] %asi, %f0
+-	ldda	[%o2] %asi, %f16
+-
+-2:	ldda	[%o1 + 64] %asi, %f32
+-	fxor	%f0, %f16, %f16
+-	fxor	%f2, %f18, %f18
+-	fxor	%f4, %f20, %f20
+-	fxor	%f6, %f22, %f22
+-	fxor	%f8, %f24, %f24
+-	fxor	%f10, %f26, %f26
+-	fxor	%f12, %f28, %f28
+-	fxor	%f14, %f30, %f30
+-	stda	%f16, [%o1] %asi
+-	ldda	[%o2 + 64] %asi, %f48
+-	ldda	[%o1 + 128] %asi, %f0
+-	fxor	%f32, %f48, %f48
+-	fxor	%f34, %f50, %f50
+-	add	%o1, 128, %o1
+-	fxor	%f36, %f52, %f52
+-	add	%o2, 128, %o2
+-	fxor	%f38, %f54, %f54
+-	subcc	%o0, 128, %o0
+-	fxor	%f40, %f56, %f56
+-	fxor	%f42, %f58, %f58
+-	fxor	%f44, %f60, %f60
+-	fxor	%f46, %f62, %f62
+-	stda	%f48, [%o1 - 64] %asi
+-	bne,pt	%xcc, 2b
+-	 ldda	[%o2] %asi, %f16
+-
+-	ldda	[%o1 + 64] %asi, %f32
+-	fxor	%f0, %f16, %f16
+-	fxor	%f2, %f18, %f18
+-	fxor	%f4, %f20, %f20
+-	fxor	%f6, %f22, %f22
+-	fxor	%f8, %f24, %f24
+-	fxor	%f10, %f26, %f26
+-	fxor	%f12, %f28, %f28
+-	fxor	%f14, %f30, %f30
+-	stda	%f16, [%o1] %asi
+-	ldda	[%o2 + 64] %asi, %f48
+-	membar	#Sync
+-	fxor	%f32, %f48, %f48
+-	fxor	%f34, %f50, %f50
+-	fxor	%f36, %f52, %f52
+-	fxor	%f38, %f54, %f54
+-	fxor	%f40, %f56, %f56
+-	fxor	%f42, %f58, %f58
+-	fxor	%f44, %f60, %f60
+-	fxor	%f46, %f62, %f62
+-	stda	%f48, [%o1 + 64] %asi
+-	membar	#Sync|#StoreStore|#StoreLoad
+-	wr	%g1, %g0, %asi
+-	retl
+-	  wr	%g0, 0, %fprs
+-ENDPROC(xor_vis_2)
+-EXPORT_SYMBOL(xor_vis_2)
+-
+-ENTRY(xor_vis_3)
+-	rd	%fprs, %o5
+-	andcc	%o5, FPRS_FEF|FPRS_DU, %g0
+-	be,pt	%icc, 0f
+-	 sethi	%hi(VISenter), %g1
+-	jmpl	%g1 + %lo(VISenter), %g7
+-	 add	%g7, 8, %g7
+-0:	wr	%g0, FPRS_FEF, %fprs
+-	rd	%asi, %g1
+-	wr	%g0, ASI_BLK_P, %asi
+-	membar	#LoadStore|#StoreLoad|#StoreStore
+-	sub	%o0, 64, %o0
+-	ldda	[%o1] %asi, %f0
+-	ldda	[%o2] %asi, %f16
+-
+-3:	ldda	[%o3] %asi, %f32
+-	fxor	%f0, %f16, %f48
+-	fxor	%f2, %f18, %f50
+-	add	%o1, 64, %o1
+-	fxor	%f4, %f20, %f52
+-	fxor	%f6, %f22, %f54
+-	add	%o2, 64, %o2
+-	fxor	%f8, %f24, %f56
+-	fxor	%f10, %f26, %f58
+-	fxor	%f12, %f28, %f60
+-	fxor	%f14, %f30, %f62
+-	ldda	[%o1] %asi, %f0
+-	fxor	%f48, %f32, %f48
+-	fxor	%f50, %f34, %f50
+-	fxor	%f52, %f36, %f52
+-	fxor	%f54, %f38, %f54
+-	add	%o3, 64, %o3
+-	fxor	%f56, %f40, %f56
+-	fxor	%f58, %f42, %f58
+-	subcc	%o0, 64, %o0
+-	fxor	%f60, %f44, %f60
+-	fxor	%f62, %f46, %f62
+-	stda	%f48, [%o1 - 64] %asi
+-	bne,pt	%xcc, 3b
+-	 ldda	[%o2] %asi, %f16
+-
+-	ldda	[%o3] %asi, %f32
+-	fxor	%f0, %f16, %f48
+-	fxor	%f2, %f18, %f50
+-	fxor	%f4, %f20, %f52
+-	fxor	%f6, %f22, %f54
+-	fxor	%f8, %f24, %f56
+-	fxor	%f10, %f26, %f58
+-	fxor	%f12, %f28, %f60
+-	fxor	%f14, %f30, %f62
+-	membar	#Sync
+-	fxor	%f48, %f32, %f48
+-	fxor	%f50, %f34, %f50
+-	fxor	%f52, %f36, %f52
+-	fxor	%f54, %f38, %f54
+-	fxor	%f56, %f40, %f56
+-	fxor	%f58, %f42, %f58
+-	fxor	%f60, %f44, %f60
+-	fxor	%f62, %f46, %f62
+-	stda	%f48, [%o1] %asi
+-	membar	#Sync|#StoreStore|#StoreLoad
+-	wr	%g1, %g0, %asi
+-	retl
+-	 wr	%g0, 0, %fprs
+-ENDPROC(xor_vis_3)
+-EXPORT_SYMBOL(xor_vis_3)
+-
+-ENTRY(xor_vis_4)
+-	rd	%fprs, %o5
+-	andcc	%o5, FPRS_FEF|FPRS_DU, %g0
+-	be,pt	%icc, 0f
+-	 sethi	%hi(VISenter), %g1
+-	jmpl	%g1 + %lo(VISenter), %g7
+-	 add	%g7, 8, %g7
+-0:	wr	%g0, FPRS_FEF, %fprs
+-	rd	%asi, %g1
+-	wr	%g0, ASI_BLK_P, %asi
+-	membar	#LoadStore|#StoreLoad|#StoreStore
+-	sub	%o0, 64, %o0
+-	ldda	[%o1] %asi, %f0
+-	ldda	[%o2] %asi, %f16
+-
+-4:	ldda	[%o3] %asi, %f32
+-	fxor	%f0, %f16, %f16
+-	fxor	%f2, %f18, %f18
+-	add	%o1, 64, %o1
+-	fxor	%f4, %f20, %f20
+-	fxor	%f6, %f22, %f22
+-	add	%o2, 64, %o2
+-	fxor	%f8, %f24, %f24
+-	fxor	%f10, %f26, %f26
+-	fxor	%f12, %f28, %f28
+-	fxor	%f14, %f30, %f30
+-	ldda	[%o4] %asi, %f48
+-	fxor	%f16, %f32, %f32
+-	fxor	%f18, %f34, %f34
+-	fxor	%f20, %f36, %f36
+-	fxor	%f22, %f38, %f38
+-	add	%o3, 64, %o3
+-	fxor	%f24, %f40, %f40
+-	fxor	%f26, %f42, %f42
+-	fxor	%f28, %f44, %f44
+-	fxor	%f30, %f46, %f46
+-	ldda	[%o1] %asi, %f0
+-	fxor	%f32, %f48, %f48
+-	fxor	%f34, %f50, %f50
+-	fxor	%f36, %f52, %f52
+-	add	%o4, 64, %o4
+-	fxor	%f38, %f54, %f54
+-	fxor	%f40, %f56, %f56
+-	fxor	%f42, %f58, %f58
+-	subcc	%o0, 64, %o0
+-	fxor	%f44, %f60, %f60
+-	fxor	%f46, %f62, %f62
+-	stda	%f48, [%o1 - 64] %asi
+-	bne,pt	%xcc, 4b
+-	 ldda	[%o2] %asi, %f16
+-
+-	ldda	[%o3] %asi, %f32
+-	fxor	%f0, %f16, %f16
+-	fxor	%f2, %f18, %f18
+-	fxor	%f4, %f20, %f20
+-	fxor	%f6, %f22, %f22
+-	fxor	%f8, %f24, %f24
+-	fxor	%f10, %f26, %f26
+-	fxor	%f12, %f28, %f28
+-	fxor	%f14, %f30, %f30
+-	ldda	[%o4] %asi, %f48
+-	fxor	%f16, %f32, %f32
+-	fxor	%f18, %f34, %f34
+-	fxor	%f20, %f36, %f36
+-	fxor	%f22, %f38, %f38
+-	fxor	%f24, %f40, %f40
+-	fxor	%f26, %f42, %f42
+-	fxor	%f28, %f44, %f44
+-	fxor	%f30, %f46, %f46
+-	membar	#Sync
+-	fxor	%f32, %f48, %f48
+-	fxor	%f34, %f50, %f50
+-	fxor	%f36, %f52, %f52
+-	fxor	%f38, %f54, %f54
+-	fxor	%f40, %f56, %f56
+-	fxor	%f42, %f58, %f58
+-	fxor	%f44, %f60, %f60
+-	fxor	%f46, %f62, %f62
+-	stda	%f48, [%o1] %asi
+-	membar	#Sync|#StoreStore|#StoreLoad
+-	wr	%g1, %g0, %asi
+-	retl
+-	 wr	%g0, 0, %fprs
+-ENDPROC(xor_vis_4)
+-EXPORT_SYMBOL(xor_vis_4)
+-
+-ENTRY(xor_vis_5)
+-	save	%sp, -192, %sp
+-	rd	%fprs, %o5
+-	andcc	%o5, FPRS_FEF|FPRS_DU, %g0
+-	be,pt	%icc, 0f
+-	 sethi	%hi(VISenter), %g1
+-	jmpl	%g1 + %lo(VISenter), %g7
+-	 add	%g7, 8, %g7
+-0:	wr	%g0, FPRS_FEF, %fprs
+-	rd	%asi, %g1
+-	wr	%g0, ASI_BLK_P, %asi
+-	membar	#LoadStore|#StoreLoad|#StoreStore
+-	sub	%i0, 64, %i0
+-	ldda	[%i1] %asi, %f0
+-	ldda	[%i2] %asi, %f16
+-
+-5:	ldda	[%i3] %asi, %f32
+-	fxor	%f0, %f16, %f48
+-	fxor	%f2, %f18, %f50
+-	add	%i1, 64, %i1
+-	fxor	%f4, %f20, %f52
+-	fxor	%f6, %f22, %f54
+-	add	%i2, 64, %i2
+-	fxor	%f8, %f24, %f56
+-	fxor	%f10, %f26, %f58
+-	fxor	%f12, %f28, %f60
+-	fxor	%f14, %f30, %f62
+-	ldda	[%i4] %asi, %f16
+-	fxor	%f48, %f32, %f48
+-	fxor	%f50, %f34, %f50
+-	fxor	%f52, %f36, %f52
+-	fxor	%f54, %f38, %f54
+-	add	%i3, 64, %i3
+-	fxor	%f56, %f40, %f56
+-	fxor	%f58, %f42, %f58
+-	fxor	%f60, %f44, %f60
+-	fxor	%f62, %f46, %f62
+-	ldda	[%i5] %asi, %f32
+-	fxor	%f48, %f16, %f48
+-	fxor	%f50, %f18, %f50
+-	add	%i4, 64, %i4
+-	fxor	%f52, %f20, %f52
+-	fxor	%f54, %f22, %f54
+-	add	%i5, 64, %i5
+-	fxor	%f56, %f24, %f56
+-	fxor	%f58, %f26, %f58
+-	fxor	%f60, %f28, %f60
+-	fxor	%f62, %f30, %f62
+-	ldda	[%i1] %asi, %f0
+-	fxor	%f48, %f32, %f48
+-	fxor	%f50, %f34, %f50
+-	fxor	%f52, %f36, %f52
+-	fxor	%f54, %f38, %f54
+-	fxor	%f56, %f40, %f56
+-	fxor	%f58, %f42, %f58
+-	subcc	%i0, 64, %i0
+-	fxor	%f60, %f44, %f60
+-	fxor	%f62, %f46, %f62
+-	stda	%f48, [%i1 - 64] %asi
+-	bne,pt	%xcc, 5b
+-	 ldda	[%i2] %asi, %f16
+-
+-	ldda	[%i3] %asi, %f32
+-	fxor	%f0, %f16, %f48
+-	fxor	%f2, %f18, %f50
+-	fxor	%f4, %f20, %f52
+-	fxor	%f6, %f22, %f54
+-	fxor	%f8, %f24, %f56
+-	fxor	%f10, %f26, %f58
+-	fxor	%f12, %f28, %f60
+-	fxor	%f14, %f30, %f62
+-	ldda	[%i4] %asi, %f16
+-	fxor	%f48, %f32, %f48
+-	fxor	%f50, %f34, %f50
+-	fxor	%f52, %f36, %f52
+-	fxor	%f54, %f38, %f54
+-	fxor	%f56, %f40, %f56
+-	fxor	%f58, %f42, %f58
+-	fxor	%f60, %f44, %f60
+-	fxor	%f62, %f46, %f62
+-	ldda	[%i5] %asi, %f32
+-	fxor	%f48, %f16, %f48
+-	fxor	%f50, %f18, %f50
+-	fxor	%f52, %f20, %f52
+-	fxor	%f54, %f22, %f54
+-	fxor	%f56, %f24, %f56
+-	fxor	%f58, %f26, %f58
+-	fxor	%f60, %f28, %f60
+-	fxor	%f62, %f30, %f62
+-	membar	#Sync
+-	fxor	%f48, %f32, %f48
+-	fxor	%f50, %f34, %f50
+-	fxor	%f52, %f36, %f52
+-	fxor	%f54, %f38, %f54
+-	fxor	%f56, %f40, %f56
+-	fxor	%f58, %f42, %f58
+-	fxor	%f60, %f44, %f60
+-	fxor	%f62, %f46, %f62
+-	stda	%f48, [%i1] %asi
+-	membar	#Sync|#StoreStore|#StoreLoad
+-	wr	%g1, %g0, %asi
+-	wr	%g0, 0, %fprs
+-	ret
+-	 restore
+-ENDPROC(xor_vis_5)
+-EXPORT_SYMBOL(xor_vis_5)
+ 
+ 	/* Niagara versions. */
+ ENTRY(xor_niagara_2) /* %o0=bytes, %o1=dest, %o2=src */
+@@ -399,7 +59,6 @@ ENTRY(xor_niagara_2) /* %o0=bytes, %o1=dest, %o2=src */
+ 	ret
+ 	 restore
+ ENDPROC(xor_niagara_2)
+-EXPORT_SYMBOL(xor_niagara_2)
+ 
+ ENTRY(xor_niagara_3) /* %o0=bytes, %o1=dest, %o2=src1, %o3=src2 */
+ 	save		%sp, -192, %sp
+@@ -461,7 +120,6 @@ ENTRY(xor_niagara_3) /* %o0=bytes, %o1=dest, %o2=src1, %o3=src2 */
+ 	ret
+ 	 restore
+ ENDPROC(xor_niagara_3)
+-EXPORT_SYMBOL(xor_niagara_3)
+ 
+ ENTRY(xor_niagara_4) /* %o0=bytes, %o1=dest, %o2=src1, %o3=src2, %o4=src3 */
+ 	save		%sp, -192, %sp
+@@ -544,7 +202,6 @@ ENTRY(xor_niagara_4) /* %o0=bytes, %o1=dest, %o2=src1, %o3=src2, %o4=src3 */
+ 	ret
+ 	 restore
+ ENDPROC(xor_niagara_4)
+-EXPORT_SYMBOL(xor_niagara_4)
+ 
+ ENTRY(xor_niagara_5) /* %o0=bytes, %o1=dest, %o2=src1, %o3=src2, %o4=src3, %o5=src4 */
+ 	save		%sp, -192, %sp
+@@ -643,4 +300,3 @@ ENTRY(xor_niagara_5) /* %o0=bytes, %o1=dest, %o2=src1, %o3=src2, %o4=src3, %o5=s
+ 	ret
+ 	 restore
+ ENDPROC(xor_niagara_5)
+-EXPORT_SYMBOL(xor_niagara_5)
+diff --git a/arch/sparc/include/asm/xor_32.h b/lib/raid/xor/sparc/xor-sparc32.c
+similarity index 93%
+rename from arch/sparc/include/asm/xor_32.h
+rename to lib/raid/xor/sparc/xor-sparc32.c
+index 8fbf0c07ec28..b65a75a6e59d 100644
+--- a/arch/sparc/include/asm/xor_32.h
++++ b/lib/raid/xor/sparc/xor-sparc32.c
+@@ -1,16 +1,12 @@
+-/* SPDX-License-Identifier: GPL-2.0-or-later */
+-/*
+- * include/asm/xor.h
+- *
+- * Optimized RAID-5 checksumming functions for 32-bit Sparc.
+- */
+-
++// SPDX-License-Identifier: GPL-2.0-or-later
+ /*
+  * High speed xor_block operation for RAID4/5 utilizing the
+  * ldd/std SPARC instructions.
+  *
+  * Copyright (C) 1999 Jakub Jelinek (jj@ultra.linux.cz)
+  */
++#include <linux/raid/xor_impl.h>
++#include <asm/xor.h>
+ 
+ static void
+ sparc_2(unsigned long bytes, unsigned long * __restrict p1,
+@@ -248,21 +244,10 @@ sparc_5(unsigned long bytes, unsigned long * __restrict p1,
+ 	} while (--lines > 0);
+ }
+ 
+-static struct xor_block_template xor_block_SPARC = {
++struct xor_block_template xor_block_SPARC = {
+ 	.name	= "SPARC",
+ 	.do_2	= sparc_2,
+ 	.do_3	= sparc_3,
+ 	.do_4	= sparc_4,
+ 	.do_5	= sparc_5,
+ };
+-
+-/* For grins, also test the generic routines.  */
+-#include <asm-generic/xor.h>
+-
+-#define arch_xor_init arch_xor_init
+-static __always_inline void __init arch_xor_init(void)
+-{
+-	xor_register(&xor_block_8regs);
+-	xor_register(&xor_block_32regs);
+-	xor_register(&xor_block_SPARC);
+-}
+diff --git a/lib/raid/xor/sparc/xor-vis-glue.c b/lib/raid/xor/sparc/xor-vis-glue.c
+new file mode 100644
+index 000000000000..73e5b293d0c9
+--- /dev/null
++++ b/lib/raid/xor/sparc/xor-vis-glue.c
+@@ -0,0 +1,35 @@
++// SPDX-License-Identifier: GPL-2.0-or-later
++/*
++ * High speed xor_block operation for RAID4/5 utilizing the
++ * UltraSparc Visual Instruction Set.
++ *
++ * Copyright (C) 1997, 1999 Jakub Jelinek (jj@ultra.linux.cz)
++ */
 +
-+struct xor_block_template xor_block_alpha_prefetch = {
-+	.name	= "alpha prefetch",
-+	.do_2	= xor_alpha_prefetch_2,
-+	.do_3	= xor_alpha_prefetch_3,
-+	.do_4	= xor_alpha_prefetch_4,
-+	.do_5	= xor_alpha_prefetch_5,
++#include <linux/raid/xor_impl.h>
++#include <asm/xor.h>
++
++void xor_vis_2(unsigned long bytes, unsigned long * __restrict p1,
++	       const unsigned long * __restrict p2);
++void xor_vis_3(unsigned long bytes, unsigned long * __restrict p1,
++	       const unsigned long * __restrict p2,
++	       const unsigned long * __restrict p3);
++void xor_vis_4(unsigned long bytes, unsigned long * __restrict p1,
++	       const unsigned long * __restrict p2,
++	       const unsigned long * __restrict p3,
++	       const unsigned long * __restrict p4);
++void xor_vis_5(unsigned long bytes, unsigned long * __restrict p1,
++	       const unsigned long * __restrict p2,
++	       const unsigned long * __restrict p3,
++	       const unsigned long * __restrict p4,
++	       const unsigned long * __restrict p5);
++
++/* XXX Ugh, write cheetah versions... -DaveM */
++
++struct xor_block_template xor_block_VIS = {
++        .name	= "VIS",
++        .do_2	= xor_vis_2,
++        .do_3	= xor_vis_3,
++        .do_4	= xor_vis_4,
++        .do_5	= xor_vis_5,
 +};
+diff --git a/lib/raid/xor/sparc/xor-vis.S b/lib/raid/xor/sparc/xor-vis.S
+new file mode 100644
+index 000000000000..d06e221055d9
+--- /dev/null
++++ b/lib/raid/xor/sparc/xor-vis.S
+@@ -0,0 +1,348 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * High speed xor_block operation for RAID4/5 utilizing the
++ * UltraSparc Visual Instruction Set.
++ *
++ * Copyright (C) 1997, 1999 Jakub Jelinek (jj@ultra.linux.cz)
++ */
++
++#include <linux/export.h>
++#include <linux/linkage.h>
++#include <asm/visasm.h>
++#include <asm/asi.h>
++#include <asm/dcu.h>
++#include <asm/spitfire.h>
++
++/*
++ *	Requirements:
++ *	!(((long)dest | (long)sourceN) & (64 - 1)) &&
++ *	!(len & 127) && len >= 256
++ */
++	.text
++
++	/* VIS versions. */
++ENTRY(xor_vis_2)
++	rd	%fprs, %o5
++	andcc	%o5, FPRS_FEF|FPRS_DU, %g0
++	be,pt	%icc, 0f
++	 sethi	%hi(VISenter), %g1
++	jmpl	%g1 + %lo(VISenter), %g7
++	 add	%g7, 8, %g7
++0:	wr	%g0, FPRS_FEF, %fprs
++	rd	%asi, %g1
++	wr	%g0, ASI_BLK_P, %asi
++	membar	#LoadStore|#StoreLoad|#StoreStore
++	sub	%o0, 128, %o0
++	ldda	[%o1] %asi, %f0
++	ldda	[%o2] %asi, %f16
++
++2:	ldda	[%o1 + 64] %asi, %f32
++	fxor	%f0, %f16, %f16
++	fxor	%f2, %f18, %f18
++	fxor	%f4, %f20, %f20
++	fxor	%f6, %f22, %f22
++	fxor	%f8, %f24, %f24
++	fxor	%f10, %f26, %f26
++	fxor	%f12, %f28, %f28
++	fxor	%f14, %f30, %f30
++	stda	%f16, [%o1] %asi
++	ldda	[%o2 + 64] %asi, %f48
++	ldda	[%o1 + 128] %asi, %f0
++	fxor	%f32, %f48, %f48
++	fxor	%f34, %f50, %f50
++	add	%o1, 128, %o1
++	fxor	%f36, %f52, %f52
++	add	%o2, 128, %o2
++	fxor	%f38, %f54, %f54
++	subcc	%o0, 128, %o0
++	fxor	%f40, %f56, %f56
++	fxor	%f42, %f58, %f58
++	fxor	%f44, %f60, %f60
++	fxor	%f46, %f62, %f62
++	stda	%f48, [%o1 - 64] %asi
++	bne,pt	%xcc, 2b
++	 ldda	[%o2] %asi, %f16
++
++	ldda	[%o1 + 64] %asi, %f32
++	fxor	%f0, %f16, %f16
++	fxor	%f2, %f18, %f18
++	fxor	%f4, %f20, %f20
++	fxor	%f6, %f22, %f22
++	fxor	%f8, %f24, %f24
++	fxor	%f10, %f26, %f26
++	fxor	%f12, %f28, %f28
++	fxor	%f14, %f30, %f30
++	stda	%f16, [%o1] %asi
++	ldda	[%o2 + 64] %asi, %f48
++	membar	#Sync
++	fxor	%f32, %f48, %f48
++	fxor	%f34, %f50, %f50
++	fxor	%f36, %f52, %f52
++	fxor	%f38, %f54, %f54
++	fxor	%f40, %f56, %f56
++	fxor	%f42, %f58, %f58
++	fxor	%f44, %f60, %f60
++	fxor	%f46, %f62, %f62
++	stda	%f48, [%o1 + 64] %asi
++	membar	#Sync|#StoreStore|#StoreLoad
++	wr	%g1, %g0, %asi
++	retl
++	  wr	%g0, 0, %fprs
++ENDPROC(xor_vis_2)
++
++ENTRY(xor_vis_3)
++	rd	%fprs, %o5
++	andcc	%o5, FPRS_FEF|FPRS_DU, %g0
++	be,pt	%icc, 0f
++	 sethi	%hi(VISenter), %g1
++	jmpl	%g1 + %lo(VISenter), %g7
++	 add	%g7, 8, %g7
++0:	wr	%g0, FPRS_FEF, %fprs
++	rd	%asi, %g1
++	wr	%g0, ASI_BLK_P, %asi
++	membar	#LoadStore|#StoreLoad|#StoreStore
++	sub	%o0, 64, %o0
++	ldda	[%o1] %asi, %f0
++	ldda	[%o2] %asi, %f16
++
++3:	ldda	[%o3] %asi, %f32
++	fxor	%f0, %f16, %f48
++	fxor	%f2, %f18, %f50
++	add	%o1, 64, %o1
++	fxor	%f4, %f20, %f52
++	fxor	%f6, %f22, %f54
++	add	%o2, 64, %o2
++	fxor	%f8, %f24, %f56
++	fxor	%f10, %f26, %f58
++	fxor	%f12, %f28, %f60
++	fxor	%f14, %f30, %f62
++	ldda	[%o1] %asi, %f0
++	fxor	%f48, %f32, %f48
++	fxor	%f50, %f34, %f50
++	fxor	%f52, %f36, %f52
++	fxor	%f54, %f38, %f54
++	add	%o3, 64, %o3
++	fxor	%f56, %f40, %f56
++	fxor	%f58, %f42, %f58
++	subcc	%o0, 64, %o0
++	fxor	%f60, %f44, %f60
++	fxor	%f62, %f46, %f62
++	stda	%f48, [%o1 - 64] %asi
++	bne,pt	%xcc, 3b
++	 ldda	[%o2] %asi, %f16
++
++	ldda	[%o3] %asi, %f32
++	fxor	%f0, %f16, %f48
++	fxor	%f2, %f18, %f50
++	fxor	%f4, %f20, %f52
++	fxor	%f6, %f22, %f54
++	fxor	%f8, %f24, %f56
++	fxor	%f10, %f26, %f58
++	fxor	%f12, %f28, %f60
++	fxor	%f14, %f30, %f62
++	membar	#Sync
++	fxor	%f48, %f32, %f48
++	fxor	%f50, %f34, %f50
++	fxor	%f52, %f36, %f52
++	fxor	%f54, %f38, %f54
++	fxor	%f56, %f40, %f56
++	fxor	%f58, %f42, %f58
++	fxor	%f60, %f44, %f60
++	fxor	%f62, %f46, %f62
++	stda	%f48, [%o1] %asi
++	membar	#Sync|#StoreStore|#StoreLoad
++	wr	%g1, %g0, %asi
++	retl
++	 wr	%g0, 0, %fprs
++ENDPROC(xor_vis_3)
++
++ENTRY(xor_vis_4)
++	rd	%fprs, %o5
++	andcc	%o5, FPRS_FEF|FPRS_DU, %g0
++	be,pt	%icc, 0f
++	 sethi	%hi(VISenter), %g1
++	jmpl	%g1 + %lo(VISenter), %g7
++	 add	%g7, 8, %g7
++0:	wr	%g0, FPRS_FEF, %fprs
++	rd	%asi, %g1
++	wr	%g0, ASI_BLK_P, %asi
++	membar	#LoadStore|#StoreLoad|#StoreStore
++	sub	%o0, 64, %o0
++	ldda	[%o1] %asi, %f0
++	ldda	[%o2] %asi, %f16
++
++4:	ldda	[%o3] %asi, %f32
++	fxor	%f0, %f16, %f16
++	fxor	%f2, %f18, %f18
++	add	%o1, 64, %o1
++	fxor	%f4, %f20, %f20
++	fxor	%f6, %f22, %f22
++	add	%o2, 64, %o2
++	fxor	%f8, %f24, %f24
++	fxor	%f10, %f26, %f26
++	fxor	%f12, %f28, %f28
++	fxor	%f14, %f30, %f30
++	ldda	[%o4] %asi, %f48
++	fxor	%f16, %f32, %f32
++	fxor	%f18, %f34, %f34
++	fxor	%f20, %f36, %f36
++	fxor	%f22, %f38, %f38
++	add	%o3, 64, %o3
++	fxor	%f24, %f40, %f40
++	fxor	%f26, %f42, %f42
++	fxor	%f28, %f44, %f44
++	fxor	%f30, %f46, %f46
++	ldda	[%o1] %asi, %f0
++	fxor	%f32, %f48, %f48
++	fxor	%f34, %f50, %f50
++	fxor	%f36, %f52, %f52
++	add	%o4, 64, %o4
++	fxor	%f38, %f54, %f54
++	fxor	%f40, %f56, %f56
++	fxor	%f42, %f58, %f58
++	subcc	%o0, 64, %o0
++	fxor	%f44, %f60, %f60
++	fxor	%f46, %f62, %f62
++	stda	%f48, [%o1 - 64] %asi
++	bne,pt	%xcc, 4b
++	 ldda	[%o2] %asi, %f16
++
++	ldda	[%o3] %asi, %f32
++	fxor	%f0, %f16, %f16
++	fxor	%f2, %f18, %f18
++	fxor	%f4, %f20, %f20
++	fxor	%f6, %f22, %f22
++	fxor	%f8, %f24, %f24
++	fxor	%f10, %f26, %f26
++	fxor	%f12, %f28, %f28
++	fxor	%f14, %f30, %f30
++	ldda	[%o4] %asi, %f48
++	fxor	%f16, %f32, %f32
++	fxor	%f18, %f34, %f34
++	fxor	%f20, %f36, %f36
++	fxor	%f22, %f38, %f38
++	fxor	%f24, %f40, %f40
++	fxor	%f26, %f42, %f42
++	fxor	%f28, %f44, %f44
++	fxor	%f30, %f46, %f46
++	membar	#Sync
++	fxor	%f32, %f48, %f48
++	fxor	%f34, %f50, %f50
++	fxor	%f36, %f52, %f52
++	fxor	%f38, %f54, %f54
++	fxor	%f40, %f56, %f56
++	fxor	%f42, %f58, %f58
++	fxor	%f44, %f60, %f60
++	fxor	%f46, %f62, %f62
++	stda	%f48, [%o1] %asi
++	membar	#Sync|#StoreStore|#StoreLoad
++	wr	%g1, %g0, %asi
++	retl
++	 wr	%g0, 0, %fprs
++ENDPROC(xor_vis_4)
++
++ENTRY(xor_vis_5)
++	save	%sp, -192, %sp
++	rd	%fprs, %o5
++	andcc	%o5, FPRS_FEF|FPRS_DU, %g0
++	be,pt	%icc, 0f
++	 sethi	%hi(VISenter), %g1
++	jmpl	%g1 + %lo(VISenter), %g7
++	 add	%g7, 8, %g7
++0:	wr	%g0, FPRS_FEF, %fprs
++	rd	%asi, %g1
++	wr	%g0, ASI_BLK_P, %asi
++	membar	#LoadStore|#StoreLoad|#StoreStore
++	sub	%i0, 64, %i0
++	ldda	[%i1] %asi, %f0
++	ldda	[%i2] %asi, %f16
++
++5:	ldda	[%i3] %asi, %f32
++	fxor	%f0, %f16, %f48
++	fxor	%f2, %f18, %f50
++	add	%i1, 64, %i1
++	fxor	%f4, %f20, %f52
++	fxor	%f6, %f22, %f54
++	add	%i2, 64, %i2
++	fxor	%f8, %f24, %f56
++	fxor	%f10, %f26, %f58
++	fxor	%f12, %f28, %f60
++	fxor	%f14, %f30, %f62
++	ldda	[%i4] %asi, %f16
++	fxor	%f48, %f32, %f48
++	fxor	%f50, %f34, %f50
++	fxor	%f52, %f36, %f52
++	fxor	%f54, %f38, %f54
++	add	%i3, 64, %i3
++	fxor	%f56, %f40, %f56
++	fxor	%f58, %f42, %f58
++	fxor	%f60, %f44, %f60
++	fxor	%f62, %f46, %f62
++	ldda	[%i5] %asi, %f32
++	fxor	%f48, %f16, %f48
++	fxor	%f50, %f18, %f50
++	add	%i4, 64, %i4
++	fxor	%f52, %f20, %f52
++	fxor	%f54, %f22, %f54
++	add	%i5, 64, %i5
++	fxor	%f56, %f24, %f56
++	fxor	%f58, %f26, %f58
++	fxor	%f60, %f28, %f60
++	fxor	%f62, %f30, %f62
++	ldda	[%i1] %asi, %f0
++	fxor	%f48, %f32, %f48
++	fxor	%f50, %f34, %f50
++	fxor	%f52, %f36, %f52
++	fxor	%f54, %f38, %f54
++	fxor	%f56, %f40, %f56
++	fxor	%f58, %f42, %f58
++	subcc	%i0, 64, %i0
++	fxor	%f60, %f44, %f60
++	fxor	%f62, %f46, %f62
++	stda	%f48, [%i1 - 64] %asi
++	bne,pt	%xcc, 5b
++	 ldda	[%i2] %asi, %f16
++
++	ldda	[%i3] %asi, %f32
++	fxor	%f0, %f16, %f48
++	fxor	%f2, %f18, %f50
++	fxor	%f4, %f20, %f52
++	fxor	%f6, %f22, %f54
++	fxor	%f8, %f24, %f56
++	fxor	%f10, %f26, %f58
++	fxor	%f12, %f28, %f60
++	fxor	%f14, %f30, %f62
++	ldda	[%i4] %asi, %f16
++	fxor	%f48, %f32, %f48
++	fxor	%f50, %f34, %f50
++	fxor	%f52, %f36, %f52
++	fxor	%f54, %f38, %f54
++	fxor	%f56, %f40, %f56
++	fxor	%f58, %f42, %f58
++	fxor	%f60, %f44, %f60
++	fxor	%f62, %f46, %f62
++	ldda	[%i5] %asi, %f32
++	fxor	%f48, %f16, %f48
++	fxor	%f50, %f18, %f50
++	fxor	%f52, %f20, %f52
++	fxor	%f54, %f22, %f54
++	fxor	%f56, %f24, %f56
++	fxor	%f58, %f26, %f58
++	fxor	%f60, %f28, %f60
++	fxor	%f62, %f30, %f62
++	membar	#Sync
++	fxor	%f48, %f32, %f48
++	fxor	%f50, %f34, %f50
++	fxor	%f52, %f36, %f52
++	fxor	%f54, %f38, %f54
++	fxor	%f56, %f40, %f56
++	fxor	%f58, %f42, %f58
++	fxor	%f60, %f44, %f60
++	fxor	%f62, %f46, %f62
++	stda	%f48, [%i1] %asi
++	membar	#Sync|#StoreStore|#StoreLoad
++	wr	%g1, %g0, %asi
++	wr	%g0, 0, %fprs
++	ret
++	 restore
++ENDPROC(xor_vis_5)
 -- 
 2.47.3
 

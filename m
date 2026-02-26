@@ -1,36 +1,36 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5CA9A3ACEFD
-	for <linux-btrfs@vger.kernel.org>; Thu, 26 Feb 2026 14:34:12 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 59ED536F415
+	for <linux-btrfs@vger.kernel.org>; Thu, 26 Feb 2026 14:34:13 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1772116452; cv=none; b=ChnwcLLeL0IMd5/Z9Mv0wyRNG7DKa2C3bwadYBDArTmNpII7d2KZeL7bYivs7cALJLhHKEh4ATgpOYww3Cak3Iu2+JLljGH+rYwc4Z8hEi/dBGsDPFdE7qVvvkc47AnFv3th8+DFuelgho3H3cOYGXQ0hl0IT74/JHqJVUAHIR0=
+	t=1772116453; cv=none; b=qdGoy8BQJODEjQipfnbpSWj+P/UiMQ1shWYoXL1K4NflNnqaUTy/MXovoQKOCzqXW0PbEbN8j0umTb2+Jf8jrAOQXyUPi7AkHjVM1jQ+R4SkYExrIj1BKnsVD5NldyVW8IKrG2Ld8GJqmvhTZc3kYxFJOA3miUDI/6BP5sieauc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1772116452; c=relaxed/simple;
-	bh=Dpm3Mjb7z+SgWYWXJF2eVY9mJYITCyy5sP+yjLRYEdU=;
+	s=arc-20240116; t=1772116453; c=relaxed/simple;
+	bh=anSX/SV9xeOSkJX8l+vsEHjGwvYXyn0HsOBOtmZMnDQ=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=N6TvUPrpYa30sFjIF8VWWMTRWMkb585OLztemZ44Oy3YXG3d1m/Mo2RXvNlPkyE0d8SSW7AjGLE36ODcYmQlJEqWFenX40dVs6AoAHiUpquLTR357nmvQj3XhxJvIx3Pm1SdfcP7PyuWmkwhPwQozU1cW8ggIFh9DqQTwvlqT2s=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=rJPCG8wN; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version; b=EVPo0zFREyCqJ/l77QQNeTbXQbrZhJ17EPAjdEW8oY0Y3yLAq/U1KXIchUs8jWR5YBBe8c82+FO+a6yXyUWyQuNoophTFzwr7ZpkdD6eXyNYmmZGw5IBgFmqtEr85d8iH2Nm1iaciyX7Y37zjqybHGtq4lsFGUl6FBOhsC4sP2c=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=QZ/uS638; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="rJPCG8wN"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id B4560C116C6
-	for <linux-btrfs@vger.kernel.org>; Thu, 26 Feb 2026 14:34:11 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="QZ/uS638"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 94E95C116C6
+	for <linux-btrfs@vger.kernel.org>; Thu, 26 Feb 2026 14:34:12 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1772116452;
-	bh=Dpm3Mjb7z+SgWYWXJF2eVY9mJYITCyy5sP+yjLRYEdU=;
+	s=k20201202; t=1772116453;
+	bh=anSX/SV9xeOSkJX8l+vsEHjGwvYXyn0HsOBOtmZMnDQ=;
 	h=From:To:Subject:Date:In-Reply-To:References:From;
-	b=rJPCG8wNMw2bKy1D65RA/wJm7iYFeHJ6XLrnLnq1c6aYBLBF5DvXr+yYu05SZ1KfI
-	 /S3DbRvUIIGwGC0naYXA7bNIR+iCRpj5Uxq/fXZSuPB+FfXJTHYhppbi/1P4gvY2eJ
-	 SdRZ8SzfuzxER5mQOlScQIpmN2hPPe9YYHoy/VoLyVV2ShqHwW3pk+4GB17WLsAnEh
-	 51i0gnd3FU/uQtB17EemuAS7EAcKo0qMDdUd4b/O/Sfetmm7IHrc4GWZwZzinmZrPu
-	 4N8p/Bauo1gkoakP83RimfZyxijtQGBZ0u0KE7xaaKlJia9iMnCP6rrT/2icHP8MZN
-	 V9VK7ChUdsolA==
+	b=QZ/uS638xmI/Ti7AZzCXCY/hD7BnDvZogTIk1ivOifDIfnuz/sHDRvr527Orr45DG
+	 ERzQs4IOC0Y7DMDnBiKrvmtPoljVXqTW2aYp5AG/mDanicwx/lU1sFIsopz8s+QlsU
+	 OOYfz9xOHLOLe8CciUVgt9/5loB1p+wwu90PEMriMqk9MtmbTssjJvuSiQp9kI0ZY5
+	 0Boc7vHM9GTnz5xIIB4huAXG3HenboUOJf2Q7yXaDhXYF6cfPLlfVi+nDE+AfimQqK
+	 eiPmTHhVq7RZyxBJqQuV29i3r64t7n9KYEtyOOozdzJM0nP+bcWa4dGnlBH9sTL7Qs
+	 Dc3wiSh0gtqww==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 4/5] btrfs: remove duplicated uuid tree existence check in btrfs_uuid_tree_add()
-Date: Thu, 26 Feb 2026 14:34:01 +0000
-Message-ID: <d81337ba97086fb9cc9ee7fecfc425d1d0fd82d3.1772105193.git.fdmanana@suse.com>
+Subject: [PATCH 5/5] btrfs: remove pointless error check in btrfs_check_dir_item_collision()
+Date: Thu, 26 Feb 2026 14:34:02 +0000
+Message-ID: <2c5b7e7df7209fe866024d2dad12563af2fa851a.1772105193.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.47.2
 In-Reply-To: <cover.1772105193.git.fdmanana@suse.com>
 References: <cover.1772105193.git.fdmanana@suse.com>
@@ -44,40 +44,30 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-There's no point in checking if the uuid root exists in
-btrfs_uuid_tree_add(), since we already do it in btrfs_uuid_tree_lookup().
-We can just remove the check from btrfs_uuid_tree_add() and make
-btrfs_uuid_tree_lookup() return -EINVAL instead of -ENOENT in case the
-uuid tree does not exists.
+We're under the IS_ERR() branch so we know that 'ret', which got assigned
+the value of PTR_ERR(di) is always negative, so there's no point in
+checking if it's negative.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/uuid-tree.c | 5 +----
- 1 file changed, 1 insertion(+), 4 deletions(-)
+ fs/btrfs/dir-item.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/uuid-tree.c b/fs/btrfs/uuid-tree.c
-index f24c14b9bb2f..7942d3887515 100644
---- a/fs/btrfs/uuid-tree.c
-+++ b/fs/btrfs/uuid-tree.c
-@@ -35,7 +35,7 @@ static int btrfs_uuid_tree_lookup(struct btrfs_root *uuid_root, const u8 *uuid,
- 	struct btrfs_key key;
- 
- 	if (WARN_ON_ONCE(!uuid_root))
--		return -ENOENT;
-+		return -EINVAL;
- 
- 	path = btrfs_alloc_path();
- 	if (!path)
-@@ -92,9 +92,6 @@ int btrfs_uuid_tree_add(struct btrfs_trans_handle *trans, const u8 *uuid, u8 typ
- 	if (ret != -ENOENT)
- 		return ret;
- 
--	if (WARN_ON_ONCE(!uuid_root))
--		return -EINVAL;
+diff --git a/fs/btrfs/dir-item.c b/fs/btrfs/dir-item.c
+index 085a83ae9e62..84f1c64423d3 100644
+--- a/fs/btrfs/dir-item.c
++++ b/fs/btrfs/dir-item.c
+@@ -253,9 +253,7 @@ int btrfs_check_dir_item_collision(struct btrfs_root *root, u64 dir_ino,
+ 		/* Nothing found, we're safe */
+ 		if (ret == -ENOENT)
+ 			return 0;
 -
- 	btrfs_uuid_to_key(uuid, type, &key);
+-		if (ret < 0)
+-			return ret;
++		return ret;
+ 	}
  
- 	path = btrfs_alloc_path();
+ 	/* we found an item, look for our name in the item */
 -- 
 2.47.2
 

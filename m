@@ -1,67 +1,45 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from canpmsgout11.his.huawei.com (canpmsgout11.his.huawei.com [113.46.200.226])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8C55A32F766
-	for <linux-btrfs@vger.kernel.org>; Fri, 27 Feb 2026 03:34:27 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1A2723D903C
+	for <linux-btrfs@vger.kernel.org>; Fri, 27 Feb 2026 06:44:58 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=113.46.200.226
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1772163268; cv=none; b=bFRjbF51bp4EMBkSusbNbTBwaeGsR/MfC1NEzaN4RQAmeDMUzcFAD4yLICheMaTwTZzEnAFGiDZohiEmGJoUAVVeMGOF214gV89lHinklpOUqu3dJH+QB2DsPsWME7hCNlgI8zsCcmmZfv45xGR5p1LAJBSgn1GqqnBQ2X2Hcio=
+	t=1772174701; cv=none; b=O+r5hCHtlF8KJEykORcQiaAxnFxpBfPQfJWkT5BCg4I/BHqCpMn4TN951jFrIbfzL9p/B2eiC970Kid/QxnOP31tpHqBWvckewWvs7IT+oMc/eaL1ydF6AgdeuX1pOd7EK4uIhWwA+84rLVunshA1qr6+z7gVQHAtctmPH9NgJo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1772163268; c=relaxed/simple;
-	bh=VILCLS3KdsoFWsJ8v7pEASR4B0aI/bOZfPc3FHD22ZY=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=qmSiDwCC/ycoE5KSI6kNyM3bFhhrAKBpSgQ/aiBLcu0L7CZ6SO6xpkkIm9tN52/1NreM6QYLEuJlTMlWOFcMIvI2Q6i4/IxSmqUYlK4rjnAvBOqusI9HTM6hQrg+TAnPknIsOge4ZVYBlFhBoXCyfd59/T8YqI4tx1YkHB2DTAg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=V2BRy8ps; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=V2BRy8ps; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1772174701; c=relaxed/simple;
+	bh=McUsGtsYMIjoW4/3cyGX4W2lRKGWMgcD+jtlcBg/R7M=;
+	h=From:To:CC:Subject:Date:Message-ID:MIME-Version:Content-Type; b=UbxOXaOcPDGOl/KW8H1lLpwcQZ1LESqVZX4zl9wqgt+sc4WgFcNOclqrzJlTBUHWIvmQMpxlp4QKKSeYu3I7me5t1XoguA4JyCLt3SjCDZ9vYJFi7adkP0jKRgTBbzlQZO6aYUR7pYHxggICYW6ymc1OpwO2fQYL1Q4gO+ael58=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=huawei.com; spf=pass smtp.mailfrom=huawei.com; dkim=pass (1024-bit key) header.d=huawei.com header.i=@huawei.com header.b=nQsRkN6m; arc=none smtp.client-ip=113.46.200.226
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=huawei.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=huawei.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="V2BRy8ps";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="V2BRy8ps"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id DAE0740416
-	for <linux-btrfs@vger.kernel.org>; Fri, 27 Feb 2026 03:34:15 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1772163255; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=zFLRcFqBKnyE2hVo5hfbXqrIHg57g197QeA8FpcMHbw=;
-	b=V2BRy8pst8Y06wjMrSpoL2mqrZoSqw5YHwkQ/tmrw/TgHG068pEjoT7N10J9dTQdfk3zOk
-	a15/LhJw5B+/ucvUjtqI73NCB5VWUgG2f2hMtisO6c84R3NDQR56n97ut2b20rMLD/l+ak
-	qM5o1ZzJot4+WvEZxNdiPjEXA9/oxqs=
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1772163255; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=zFLRcFqBKnyE2hVo5hfbXqrIHg57g197QeA8FpcMHbw=;
-	b=V2BRy8pst8Y06wjMrSpoL2mqrZoSqw5YHwkQ/tmrw/TgHG068pEjoT7N10J9dTQdfk3zOk
-	a15/LhJw5B+/ucvUjtqI73NCB5VWUgG2f2hMtisO6c84R3NDQR56n97ut2b20rMLD/l+ak
-	qM5o1ZzJot4+WvEZxNdiPjEXA9/oxqs=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 1CE823EA69
-	for <linux-btrfs@vger.kernel.org>; Fri, 27 Feb 2026 03:34:14 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id MNycM7YQoWmcNAAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Fri, 27 Feb 2026 03:34:14 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 2/4] btrfs: move shutdown and remove_bdev callbacks out of experimental features
-Date: Fri, 27 Feb 2026 14:03:44 +1030
-Message-ID: <23b2b0a8d249d0ead16acf0b017109321719213a.1772162871.git.wqu@suse.com>
-X-Mailer: git-send-email 2.53.0
-In-Reply-To: <cover.1772162871.git.wqu@suse.com>
-References: <cover.1772162871.git.wqu@suse.com>
+	dkim=pass (1024-bit key) header.d=huawei.com header.i=@huawei.com header.b="nQsRkN6m"
+dkim-signature: v=1; a=rsa-sha256; d=huawei.com; s=dkim;
+	c=relaxed/relaxed; q=dns/txt;
+	h=From;
+	bh=K+IYaWPR83WGqnjCvqNaJeEeVaFQcqF7c5tIrgNlKIU=;
+	b=nQsRkN6mWwn99Ic49rPGfv98cxBuO+E90HLVU0dqhRcAtgNYs7YRD52Kax0I+rg02x1sxq2St
+	UzILMmnEdIr9cdyvj8d4sknESQkQNjaWcS4paYEvRcPA4jC0wfZ/KrLzIm8EfcPs/JKHkVoIS6w
+	osXISQS6DSQnpoj5So+1gpc=
+Received: from mail.maildlp.com (unknown [172.19.163.214])
+	by canpmsgout11.his.huawei.com (SkyGuard) with ESMTPS id 4fMdwx6P18zKm65;
+	Fri, 27 Feb 2026 14:40:01 +0800 (CST)
+Received: from kwepemr500015.china.huawei.com (unknown [7.202.195.162])
+	by mail.maildlp.com (Postfix) with ESMTPS id 7F3F84056C;
+	Fri, 27 Feb 2026 14:44:50 +0800 (CST)
+Received: from huawei.com (10.90.53.73) by kwepemr500015.china.huawei.com
+ (7.202.195.162) with Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.2.1544.11; Fri, 27 Feb
+ 2026 14:44:49 +0800
+From: Hongbo Li <lihongbo22@huawei.com>
+To: <clm@fb.com>, <josef@toxicpanda.com>, <dsterba@suse.com>
+CC: <wqu@suse.com>, <sashal@kernel.org>, <fdmanana@suse.com>,
+	<linux-btrfs@vger.kernel.org>, <lihongbo22@huawei.com>
+Subject: [PATCH 6.6] btrfs: free path if inline extents in range_is_hole_in_parent()
+Date: Fri, 27 Feb 2026 14:44:14 +0800
+Message-ID: <20260227064414.2314529-1-lihongbo22@huawei.com>
+X-Mailer: git-send-email 2.34.1
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -69,95 +47,43 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-2.80 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	MID_CONTAINS_FROM(1.00)[];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	ARC_NA(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:email,imap1.dmz-prg2.suse.org:helo];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Flag: NO
-X-Spam-Score: -2.80
-X-Spam-Level: 
+Content-Type: text/plain
+X-ClientProxiedBy: kwepems200002.china.huawei.com (7.221.188.68) To
+ kwepemr500015.china.huawei.com (7.202.195.162)
 
-These two new callbacks are introduced in v6.19, and it has been two
-releases in v7.1.
+Commit f2dc6ab3a14c ("btrfs: send: check for inline extents in
+range_is_hole_in_parent()") is a patch backported directly from
+mainline to 6.6, it does not free the path in the inline extents case.
 
-During that time we have not yet exposed bugs related that two features,
-thus it's time to expose them for end users.
+Commit 4ca6f24a52c4 ("btrfs: more trivial BTRFS_PATH_AUTO_FREE
+conversions") in 6.18-rc1 fixes this by accident by converting to
+BTRFS_PATH_AUTO_FREE, but we cannot backport this to 6.6 due to many
+dependencies. Instead, we choose to use a goto statement to avoid the
+memory leak in inline extents case.
 
-It's especially important to expose remove_bdev callback to end users.
-
-That new callback makes btrfs automatically shutdown or go degraded
-when a device is missing (depending on if the fs can maintain RW), which
-is affecting end users.
-
-We want some feedback from early adopters.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Fixes: f2dc6ab3a14c ("btrfs: send: check for inline extents in range_is_hole_in_parent()")
+Signed-off-by: Hongbo Li <lihongbo22@huawei.com>
 ---
- fs/btrfs/Kconfig | 2 --
- fs/btrfs/super.c | 4 ----
- 2 files changed, 6 deletions(-)
+ fs/btrfs/send.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/Kconfig b/fs/btrfs/Kconfig
-index ede184b6eda1..5e75438e0b73 100644
---- a/fs/btrfs/Kconfig
-+++ b/fs/btrfs/Kconfig
-@@ -112,8 +112,6 @@ config BTRFS_EXPERIMENTAL
- 
- 	  - large folio and block size (> page size) support
- 
--	  - shutdown ioctl and auto-degradation support
--
- 	  - asynchronous checksum generation for data writes
- 
- 	  - remap-tree - logical address remapping tree
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index b4d26ca9220a..52137366b79b 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -2423,7 +2423,6 @@ static long btrfs_free_cached_objects(struct super_block *sb, struct shrink_cont
- 	return 0;
- }
- 
--#ifdef CONFIG_BTRFS_EXPERIMENTAL
- static int btrfs_remove_bdev(struct super_block *sb, struct block_device *bdev)
- {
- 	struct btrfs_fs_info *fs_info = btrfs_sb(sb);
-@@ -2481,7 +2480,6 @@ static void btrfs_shutdown(struct super_block *sb)
- 
- 	btrfs_force_shutdown(fs_info);
- }
--#endif
- 
- static int btrfs_show_stats(struct seq_file *seq, struct dentry *root)
- {
-@@ -2511,10 +2509,8 @@ static const struct super_operations btrfs_super_ops = {
- 	.nr_cached_objects = btrfs_nr_cached_objects,
- 	.free_cached_objects = btrfs_free_cached_objects,
- 	.show_stats	= btrfs_show_stats,
--#ifdef CONFIG_BTRFS_EXPERIMENTAL
- 	.remove_bdev	= btrfs_remove_bdev,
- 	.shutdown	= btrfs_shutdown,
--#endif
- };
- 
- static const struct file_operations btrfs_ctl_fops = {
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 6768e2231d61..b107a33dfd4d 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -6545,8 +6545,10 @@ static int range_is_hole_in_parent(struct send_ctx *sctx,
+ 		extent_end = btrfs_file_extent_end(path);
+ 		if (extent_end <= start)
+ 			goto next;
+-		if (btrfs_file_extent_type(leaf, fi) == BTRFS_FILE_EXTENT_INLINE)
+-			return 0;
++		if (btrfs_file_extent_type(leaf, fi) == BTRFS_FILE_EXTENT_INLINE) {
++			ret = 0;
++			goto out;
++		}
+ 		if (btrfs_file_extent_disk_bytenr(leaf, fi) == 0) {
+ 			search_start = extent_end;
+ 			goto next;
 -- 
-2.53.0
+2.34.1
 

@@ -1,32 +1,32 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 058F62C187;
-	Sat, 28 Feb 2026 04:43:58 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 87E042EB5AF;
+	Sat, 28 Feb 2026 05:37:35 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1772253839; cv=none; b=kzJLqA3IflFybZnFTfFzSjbdSlSjgbnakmVBy13DXYZYSWyD6+vEE8WLyvRCJUMwxUm9oVJVVlk0r9NuP2yACQeIyCXSeSwOM4kyOiZhBCzgwBtVH/Q5K+F/MMJR3nlHFYH9YACy0Uhpujn23jyiS5kiM1f2aToYU4d+Cmk8y2Q=
+	t=1772257055; cv=none; b=eJvN/QXQHTmgxUR25TTfEGbJrx+9CbSuHaZGKvia5v1aLVmCZ6He/RMbLQ9SkfilzsvsuVuU4+2DkqJslcXhz28+8SM0lGcEnTLG24ql2aOhoA6AxHHjp8W/wyELnEyz66E7UlHk6xQH84c4oHRKFdnk6yW2Uz66UogMTT1IDH4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1772253839; c=relaxed/simple;
-	bh=yQS8EYr1F4rANaBe7v+3inxmWJU0zVKQEOlUsxymw4k=;
+	s=arc-20240116; t=1772257055; c=relaxed/simple;
+	bh=eqLNM+it9jPNWRs+scO49PSKMIRVyGiqn9NcqSlCp7w=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=XMBaBCEeVKmGiLKX8utILiZkGnDg3M9PnsKS/2BRE0S6KmHUwZvXWpbbRv6Ue4rFJ0trgE+Ohp3L/hXd4VfgS+kl5mv5pFqK8oPGFl83vjXA2XL+RwFUziplSXl5hCZM83xuqsJyQx/uDUqCj1BbK4jVQNKl7sFyvaxG5YmLmAM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=PuoEPD5d; arc=none smtp.client-ip=10.30.226.201
+	 Content-Type:Content-Disposition:In-Reply-To; b=q/4XkdK9AuhzrwTLQlud7tjATmEfhZGZbtmeYjWmkRdxDVZ9XRkYeeThj1c8hMuUnP5cpDD53sXoJp4riVbhOYMnakmI29YmuLGzs9tRq3hyMUAQ5UmFKURd6ADH1DHpCYV2IIsm6vjYjXzeklov9WQVYaSJcMMuTl1ksM9kOko=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=vJAxXZ8K; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="PuoEPD5d"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id B7B7EC116D0;
-	Sat, 28 Feb 2026 04:43:56 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="vJAxXZ8K"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id BE76EC116D0;
+	Sat, 28 Feb 2026 05:37:31 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1772253838;
-	bh=yQS8EYr1F4rANaBe7v+3inxmWJU0zVKQEOlUsxymw4k=;
+	s=k20201202; t=1772257055;
+	bh=eqLNM+it9jPNWRs+scO49PSKMIRVyGiqn9NcqSlCp7w=;
 	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=PuoEPD5dGKM2iOhSW+0my0D/f4VLvinBi2jt5Kbxbd81P1k+jWi0+KVciBAPrpL/g
-	 r4r2NT2v38o9qtnIhfBxVgmjQSQJywLVObj3muDNlyHJqSESQCTZhmJe/6Rzsk2R9M
-	 8ZnzLPFYGLtie7deDR1V8Pnkzre6yCwdaC1qBSQ9wNIL1XaAUgCSzSUwN7lW5l11mD
-	 VW2gjQBqijiFVLqfxqw/TTKXHQthqIgVue3hQeJ64rdHrmcizqorwLbqqoBbwNSZH4
-	 QorQ2T+BBBGPZMVwQBEeX4nOyWDWoKOqpyMPTJ5mdi+JknVW5oDrCxr9Qb4qEoWrJm
-	 UhY0/KMibUBXA==
-Date: Fri, 27 Feb 2026 20:43:55 -0800
+	b=vJAxXZ8Kz5WRI3FAqQiiWltyd3uQ9vRfiXCgBQwT4V+lApPXGfBKpNyhyElFSuB3u
+	 XB4VENMAfKNQt4jt5mepYgezGyP/JFcan/V5g78ruKQj4Ji3BOedSoLRvaGOzY6b7q
+	 Mc5XWWLUQF0PcVSlTTmo7S7Zck6GQKRu3zWFaP+B5XItpiitYzcZpUfca6qi8XUfOd
+	 6vh1cIQZcaLVpiV5n3ZguAWWWmPlxPcj2Nj9plSsomBCSSLqZZekWhAfjQ2YeYW7iu
+	 rDzWS5l+PL0z3I+4kxGk4sYmPecb+wzM6vyPcl7Y9d2Uxa1CYls2Am5BPUZnt/qH5z
+	 mB77YqO/RTn8A==
+Date: Fri, 27 Feb 2026 21:37:30 -0800
 From: Eric Biggers <ebiggers@kernel.org>
 To: Christoph Hellwig <hch@lst.de>
 Cc: Andrew Morton <akpm@linux-foundation.org>,
@@ -68,10 +68,10 @@ Cc: Andrew Morton <akpm@linux-foundation.org>,
 	sparclinux@vger.kernel.org, linux-um@lists.infradead.org,
 	linux-crypto@vger.kernel.org, linux-btrfs@vger.kernel.org,
 	linux-arch@vger.kernel.org, linux-raid@vger.kernel.org
-Subject: Re: [PATCH 07/25] xor: split xor.h
-Message-ID: <20260228044355.GD65277@quark>
+Subject: Re: [PATCH 15/25] riscv: move the XOR code to lib/raid/
+Message-ID: <20260228053730.GE65277@quark>
 References: <20260226151106.144735-1-hch@lst.de>
- <20260226151106.144735-8-hch@lst.de>
+ <20260226151106.144735-16-hch@lst.de>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -80,23 +80,21 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20260226151106.144735-8-hch@lst.de>
+In-Reply-To: <20260226151106.144735-16-hch@lst.de>
 
-On Thu, Feb 26, 2026 at 07:10:19AM -0800, Christoph Hellwig wrote:
-> Keep xor.h for the public API, and split the struct xor_block_template
-> definition that is only needed by the xor.ko core and
-> architecture-specific optimizations into a separate xor_impl.h header.
+On Thu, Feb 26, 2026 at 07:10:27AM -0800, Christoph Hellwig wrote:
+> Move the optimized XOR into lib/raid and include it it in xor.ko
+> instead of always building it into the main kernel image.
 > 
 > Signed-off-by: Christoph Hellwig <hch@lst.de>
 > ---
->  arch/arm/lib/xor-neon.c       |  1 +
->  arch/s390/lib/xor.c           |  2 +-
->  include/linux/raid/xor.h      | 22 +---------------------
->  include/linux/raid/xor_impl.h | 25 +++++++++++++++++++++++++
->  lib/raid/xor/xor-core.c       |  1 +
->  5 files changed, 29 insertions(+), 22 deletions(-)
->  create mode 100644 include/linux/raid/xor_impl.h
+>  arch/riscv/include/asm/xor.h                 | 54 +------------------
+>  arch/riscv/lib/Makefile                      |  1 -
+>  lib/raid/xor/Makefile                        |  1 +
+>  lib/raid/xor/riscv/xor-glue.c                | 56 ++++++++++++++++++++
+>  {arch/riscv/lib => lib/raid/xor/riscv}/xor.S |  0
 
-arch/arm64/lib/xor-neon.c needs to be updated to include xor_impl.h.
+The EXPORT_SYMBOL() statements in xor.S can be removed, since the
+functions are now located in the same module as their callers.
 
 - Eric

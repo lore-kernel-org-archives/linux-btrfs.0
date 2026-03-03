@@ -1,25 +1,25 @@
 Received: from verein.lst.de (verein.lst.de [213.95.11.211])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E18A6373BF5;
-	Tue,  3 Mar 2026 16:05:49 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E2EF93BA24E;
+	Tue,  3 Mar 2026 16:06:37 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=213.95.11.211
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1772553950; cv=none; b=Z1WcPHyi0YnB4uH0UYYVMKHHi9fkWy7X2nTDTZ7I0+3owzIzVrp5fAavyfDywIgmrZ65FlFyttKY0rawEyplrvPR1wkh41yLVO7t85KA29cH4jQvsso2JQRk3tZx/PEFbRLR0fc/Gq0oYh9dhXa8D6R027utGVxzgR9WoS63zqQ=
+	t=1772553999; cv=none; b=L2yiDhjojtoXMWuFUoXL2k0lRaY1jIfiSROFgNnSUNaubDasAncWiCiyX+qXGIlCyViJVXkJI+9YssSnMpPw4+vS9snfqW1SIfPdlM6Hs83jddT84W2fPEEvb4SYkNuDOA/1WNlij7/R6FrTcVHLUxuX0uUN2/r5evUHcD9cmWY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1772553950; c=relaxed/simple;
-	bh=LiIn5md/RWD4r6G62DIU3V7G/0dft2GTXxPIWZIc+zc=;
+	s=arc-20240116; t=1772553999; c=relaxed/simple;
+	bh=/wMqUr1oFFcSH02CIxEVS3SedbzLJllF9I0IKdIbhro=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=aebaWFJ/lYIazelASV5POyCIZaYQ/0ZA/BOgaDyC09stvBP21unb1/WTtjPDPm/H+1HRrUGu5bMGoGU9mSzHtHLzL8ibOKZTpX4KwM7zYXgmjwcM9ZUK+k2V+yNTofPofjT97sn909WrYDPFlst2hy4Vj2DBXwyh8ES0uetdCM8=
+	 Content-Type:Content-Disposition:In-Reply-To; b=TefRmdxfLf5NdIiR15XEcmPGeZS/vkIPtPU+eoi0dQTcxBlYM6i8Vf73LklRK7GEZwGI/ZFBU4cKXZJCc/tsLBp+vF7+Vrz9FNMspsQqknbH0sFgz/qcL4EDzLofAWf9ceoFjgWz8hQzy/d1hEDCojtNpya1hCsVuNlyjPKcM/s=
 ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lst.de; spf=pass smtp.mailfrom=lst.de; arc=none smtp.client-ip=213.95.11.211
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lst.de
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=lst.de
 Received: by verein.lst.de (Postfix, from userid 2407)
-	id BF4F068BEB; Tue,  3 Mar 2026 17:05:46 +0100 (CET)
-Date: Tue, 3 Mar 2026 17:05:46 +0100
+	id B41BF68BFE; Tue,  3 Mar 2026 17:06:34 +0100 (CET)
+Date: Tue, 3 Mar 2026 17:06:34 +0100
 From: Christoph Hellwig <hch@lst.de>
-To: Peter Zijlstra <peterz@infradead.org>
-Cc: Eric Biggers <ebiggers@kernel.org>, Christoph Hellwig <hch@lst.de>,
+To: Eric Biggers <ebiggers@kernel.org>
+Cc: Christoph Hellwig <hch@lst.de>,
 	Andrew Morton <akpm@linux-foundation.org>,
 	Richard Henderson <richard.henderson@linaro.org>,
 	Matt Turner <mattst88@gmail.com>,
@@ -59,9 +59,9 @@ Cc: Eric Biggers <ebiggers@kernel.org>, Christoph Hellwig <hch@lst.de>,
 	sparclinux@vger.kernel.org, linux-um@lists.infradead.org,
 	linux-crypto@vger.kernel.org, linux-btrfs@vger.kernel.org,
 	linux-arch@vger.kernel.org, linux-raid@vger.kernel.org
-Subject: Re: [PATCH 18/25] x86: move the XOR code to lib/raid/
-Message-ID: <20260303160546.GF7021@lst.de>
-References: <20260226151106.144735-1-hch@lst.de> <20260226151106.144735-19-hch@lst.de> <20260227143016.GH1282955@noisy.programming.kicks-ass.net> <20260227235529.GA31321@quark> <20260228103117.GK1282955@noisy.programming.kicks-ass.net>
+Subject: Re: [PATCH 20/25] xor: make xor.ko self-contained in lib/raid/
+Message-ID: <20260303160634.GG7021@lst.de>
+References: <20260226151106.144735-1-hch@lst.de> <20260226151106.144735-21-hch@lst.de> <20260228064249.GG65277@quark>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -70,17 +70,37 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20260228103117.GK1282955@noisy.programming.kicks-ass.net>
+In-Reply-To: <20260228064249.GG65277@quark>
 User-Agent: Mutt/1.5.17 (2007-11-01)
 
-On Sat, Feb 28, 2026 at 11:31:17AM +0100, Peter Zijlstra wrote:
-> Hmm, I suppose. Its just weird that we now have to look in both
-> arch/$foo and lib/*/$foo/ to find all arch code.
+On Fri, Feb 27, 2026 at 10:42:49PM -0800, Eric Biggers wrote:
+> On Thu, Feb 26, 2026 at 07:10:32AM -0800, Christoph Hellwig wrote:
+> > diff --git a/arch/um/include/asm/xor.h b/lib/raid/xor/um/xor_arch.h
+> > similarity index 61%
+> > rename from arch/um/include/asm/xor.h
+> > rename to lib/raid/xor/um/xor_arch.h
+> > index c9ddedc19301..c75cd9caf792 100644
+> > --- a/arch/um/include/asm/xor.h
+> > +++ b/lib/raid/xor/um/xor_arch.h
+> > @@ -1,7 +1,4 @@
+> >  /* SPDX-License-Identifier: GPL-2.0 */
+> > -#ifndef _ASM_UM_XOR_H
+> > -#define _ASM_UM_XOR_H
+> > -
+> >  #ifdef CONFIG_64BIT
+> >  #undef CONFIG_X86_32
+> >  #else
+> >  #define CONFIG_X86_32 1
+> >  #endif
+> 
+> Due to this change, the above code that sets CONFIG_X86_32 to the
+> opposite of CONFIG_64BIT is no longer included in xor-sse.c, which uses
+> CONFIG_X86_32.  So if the above code actually did anything, this change
+> would have broken it for xor-sse.c.  However, based on
+> arch/x86/um/Kconfig, CONFIG_X86_32 is always the opposite of
+> CONFIG_64BIT, so the above code actually has no effect.  Does that sound
+> right?
 
-We've had instance of that for a long time, e.g. lib/raid6/
+This whole thing looked weird to me.  I'll try to do a more extensive
+cleanup pass on the um mess ahead of the rest of the series.
 
-> And I don't suppose symlinks would make it better?
-
-Ugg, just purely from the organizaton perspective it would make
-things a lot worse.  I'm also not sure how well git copes with
-symlinks.

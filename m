@@ -1,35 +1,37 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 860DE37B025
-	for <linux-btrfs@vger.kernel.org>; Tue,  3 Mar 2026 17:19:52 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5C0713537CD;
+	Tue,  3 Mar 2026 17:20:19 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1772558392; cv=none; b=SKczqP9XYn5GwXa9w+LKpNsubIUd6MlgA285gDeJNoy2h8BT08/LCUMBXyeja1DLSws3YL0H8gstbQFYsCJbuGZ6kyyPXQ6nOeX4g/kVK0OxDagIdSossQlgUEsTjdJGrMHKBWraWwgCwIJj5eRxGRkdM87ugRTlT6PN836sYmU=
+	t=1772558419; cv=none; b=d9DR2rUpJf82Y7rOWUZZwrI4McC6sr6ZMQIVKkTiTEXUFLYd6A73sSMqqFFFxa/BM7QsFHG69FJ7BT99A8blpET/6dSI1xq3hsiRlJrjJVOslXH8sA3e++ECoBEr5hNYhUT1aRb968vMxMXHjgyF40vexvg7WIj+YgfIHxPeYfM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1772558392; c=relaxed/simple;
-	bh=0AnxHAtTwZdpZ17TUy+idd0Ym04+NlcpUvUABFCzoBY=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=l7hYy1bZxnQyTKpDdPk8VgVFPQ6/fhSZM/c0g6Ml2PmvdIVyXMBa5EqgquWGH91CC3g6XPcq2g7ksR1n7ojnIRv4Sm1aJDiMT4eXVaXbXG0vecaaQ3Ely/0rKvYgqaKcSauLiQvCcD7rzdMnklFzVxzVmqlcpKIB7skudWI+5As=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=WeVTOkUb; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1772558419; c=relaxed/simple;
+	bh=TVH3/gfJTLCRKCKNDmtOWdhwgUO28COAH57ZVdOsufw=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=cxb1JNgtxEo2PP0I+dppYCNIyP1xkyqD4/oIipIMQhLX5ekSnfwv3qbNlC3JWMqOUNwdTFGd+Ui/7H79CZoTbAhWfUdl1M6S5qUOGp3uZ+YQxdaZhcgvRkEaB5C3nz6a4sM9gomZsytk26Hwof5HMbVvnQ1V5hdS+BGOngJ/spY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=ZKlRGR8T; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="WeVTOkUb"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id B108AC116C6
-	for <linux-btrfs@vger.kernel.org>; Tue,  3 Mar 2026 17:19:51 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="ZKlRGR8T"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 407B0C19425;
+	Tue,  3 Mar 2026 17:20:18 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1772558392;
-	bh=0AnxHAtTwZdpZ17TUy+idd0Ym04+NlcpUvUABFCzoBY=;
-	h=From:To:Subject:Date:From;
-	b=WeVTOkUbKhfbMTbof40b0jTTjOpoOiMgCQff3zx97Yy5FTf0qo3wlx+HrkzvIR98l
-	 N2mivGXxE25a4pZudntL8LtrvNrQMV+ul1EY9gKdWDAZYrNrbw/SvTdw4EAuVHKvl8
-	 VAvfU0u2s4dRPF6Y8vFOteLsuTEuQ7YVaHBIC52RtHzp0Io6op7xmMO5d4ASbzUwtW
-	 elt8Cf6spkgE9cnuzs8HPE+Vi+RyYPucQ/U3ve16otKMF/yCoRdfZeOYLY9qiVcv+X
-	 iRzCACfsml/QM/TwiEwhEB1k24lBAnV9shhwfUsPl6bVfAUCtlK559HozNe1DUYLw3
-	 JjpXA5bxuUfXA==
+	s=k20201202; t=1772558419;
+	bh=TVH3/gfJTLCRKCKNDmtOWdhwgUO28COAH57ZVdOsufw=;
+	h=From:To:Cc:Subject:Date:From;
+	b=ZKlRGR8T0WZ3icxzkTnAriVfJGfaBar5n51pD5UJjWWlIZazyJ55EMLbUHEM+Supq
+	 /EBG5ONnb2z5Uk3EMYCHCajARVtfoEhWJ/rxceJ8jABM9Q24Fj2tA9BKcib7AHRfP8
+	 XBCYGUAR/cz44aYFxKdR5t7UKAQASUtdY9SrSchh9ZUKdyBbe4Fpn1G73aM86XldM8
+	 JufPurxIs3lqVHq58/uqMw+oBapXNhnw9MTkTG/hCY+mJa0dXwbSGDojzjN3UnWBzB
+	 j4CxlUYW6K1i4BAaYY1xKqEbbG3XuOTSLmx+R2K7bM2FPOvVPfZllfZNbUEuftoUgf
+	 vakhLLAPalOww==
 From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: log new dentries when logging parent dir of a conflicting inode
-Date: Tue,  3 Mar 2026 17:19:48 +0000
-Message-ID: <9a367f025abf4ea19c96aead75d206e129b2c56e.1772558089.git.fdmanana@suse.com>
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org,
+	Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] btrfs: test a directory fsync scenaro after replacing a subdir with a file
+Date: Tue,  3 Mar 2026 17:20:10 +0000
+Message-ID: <8e3c1626b6e49678976db67a861cb5dcfdb532c0.1772558357.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.47.2
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
@@ -41,88 +43,118 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-If we log the parent directory of a conflicting inode, we are not logging
-the new dentries of the directory, so when we finish we have the parent
-directory's inode marked as logged but we did not log its new dentries.
-As a consequence if the parent directory is explicitly fsynced later and
-it does not have any new changes since we logged it, the fsync is a no-op
-and after a power failure the new dentries are missing.
+Test a scenario where we remove a directory previously persisted, create
+a file with the same name and parent directory, create two directories in
+the same parent directory, create a hard link for the new file in one of
+the new directories, fsync the directory with the hard link and fsync the
+parent directory. After a power failure we expect both directories to be
+persisted as well as the new file and its hard link.
 
-Example scenario:
+This exercises a bug on btrfs fixed by the following kernel patch:
 
- $ mkdir foo
+  "btrfs: log new dentries when logging parent dir of a conflicting inode"
 
- $ sync
-
- $rmdir foo
-
- $ mkdir dir1
- $ mkdir dir2
-
- # A file with the same name and parent as the directory we just deleted
- # and was persisted in a past transaction. So the deleted directory's
- # inode is a conflicting inode of this new file's inode.
- $ touch foo
-
- $ ln foo dir2/link
-
- # The fsync on dir2 will log the parent directory (".") because the
- # conflicting inode (deleted directory) does not exists anymore, but it
- # it does not log its new dentries (dir1).
- $ xfs_io -c "fsync" dir2
-
- # This fsync on the parent directory is no-op, since the previous fsync
- # logged it (but without logging its new dentries).
- $ xfs_io -c "fsync" .
-
- <power failure>
-
- # After log replay dir1 is missing.
-
-Fix this by ensuring we log new dir dentries whenever we log the parent
-directory of a no longer existing conflicting inode.
-
-A test case for fstests will follow soon.
-
-Reported-by: Vyacheslav Kovalevsky <slava.kovalevskiy.2014@gmail.com>
-Link: https://lore.kernel.org/linux-btrfs/182055fa-e9ce-4089-9f5f-4b8a23e8dd91@gmail.com/
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/tree-log.c | 6 ++++++
- 1 file changed, 6 insertions(+)
+ tests/generic/790     | 69 +++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/790.out | 12 ++++++++
+ 2 files changed, 81 insertions(+)
+ create mode 100755 tests/generic/790
+ create mode 100644 tests/generic/790.out
 
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index e011786cbd94..af8de67d1304 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -6246,6 +6246,7 @@ static int log_conflicting_inodes(struct btrfs_trans_handle *trans,
- 				  struct btrfs_root *root,
- 				  struct btrfs_log_ctx *ctx)
- {
-+	const bool orig_log_new_dentries = ctx->log_new_dentries;
- 	int ret = 0;
- 
- 	/*
-@@ -6307,7 +6308,11 @@ static int log_conflicting_inodes(struct btrfs_trans_handle *trans,
- 			 * dir index key range logged for the directory. So we
- 			 * must make sure the deletion is recorded.
- 			 */
-+			ctx->log_new_dentries = false;
- 			ret = btrfs_log_inode(trans, inode, LOG_INODE_ALL, ctx);
-+			if (!ret && ctx->log_new_dentries)
-+				ret = log_new_dir_dentries(trans, inode, ctx);
+diff --git a/tests/generic/790 b/tests/generic/790
+new file mode 100755
+index 00000000..a25203a1
+--- /dev/null
++++ b/tests/generic/790
+@@ -0,0 +1,69 @@
++#! /bin/bash
++# SPDX-License-Identifier: GPL-2.0
++# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
++#
++# FS QA Test 790
++#
++# Test a scenario where we remove a directory previously persisted, create a
++# file with the same name and parent directory, create two directories in the
++# same parent directory, create a hard link for the new file in one of the
++# new directories, fsync the directory with the hard link and fsync the parent
++# directory. After a power failure we expect both directories to be persisted
++# as well as the new file and its hard link.
++#
++. ./common/preamble
++_begin_fstest auto quick log
 +
- 			btrfs_add_delayed_iput(inode);
- 			if (ret)
- 				break;
-@@ -6342,6 +6347,7 @@ static int log_conflicting_inodes(struct btrfs_trans_handle *trans,
- 			break;
- 	}
- 
-+	ctx->log_new_dentries = orig_log_new_dentries;
- 	ctx->logging_conflict_inodes = false;
- 	if (ret)
- 		free_conflicting_inodes(ctx);
++_cleanup()
++{
++	_cleanup_flakey
++	cd /
++	rm -r -f $tmp.*
++}
++
++. ./common/dmflakey
++
++_require_scratch
++_require_dm_target flakey
++
++[ "$FSTYP" = "btrfs" ] && _fixed_by_kernel_commit xxxxxxxxxxxx \
++	"btrfs: log new dentries when logging parent dir of a conflicting inode"
++
++_scratch_mkfs >>$seqres.full 2>&1 || _fail "mkfs failed"
++_require_metadata_journaling $SCRATCH_DEV
++_init_flakey
++_scratch_mount
++
++mkdir $SCRATCH_MNT/foo
++
++_scratch_sync
++
++rmdir $SCRATCH_MNT/foo
++
++# Create two new directories in the same parent directory as the new file.
++mkdir $SCRATCH_MNT/dir1
++mkdir $SCRATCH_MNT/dir2
++
++# Create a file with the name of the directly we deleted and was persisted
++# before.
++touch $SCRATCH_MNT/foo
++
++# Create a hard link for the new file inside one of the new directories.
++ln $SCRATCH_MNT/foo $SCRATCH_MNT/dir2/link
++
++$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/dir2
++$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/
++
++# Simulate a power failure and then mount again the filesystem to replay the
++# journal/log.
++_flakey_drop_and_remount
++
++# We expect to see dir1, dir2, file foo and its hard link, since dir2 was
++# explicitly fsynced as well as the parent directory.
++echo -e "Filesystem content after power failure:\n"
++# Exclude 'lost+found' dir from ext4 and last line if it's blank (due to removal
++# of 'lost+found').
++ls -R $SCRATCH_MNT/ | grep -v 'lost+found' | sed -e '${/^$/d;}'
++
++# success, all done
++_exit 0
+diff --git a/tests/generic/790.out b/tests/generic/790.out
+new file mode 100644
+index 00000000..d2232a19
+--- /dev/null
++++ b/tests/generic/790.out
+@@ -0,0 +1,12 @@
++QA output created by 790
++Filesystem content after power failure:
++
++/home/fdmanana/btrfs-tests/scratch_1/:
++dir1
++dir2
++foo
++
++/home/fdmanana/btrfs-tests/scratch_1/dir1:
++
++/home/fdmanana/btrfs-tests/scratch_1/dir2:
++link
 -- 
 2.47.2
 

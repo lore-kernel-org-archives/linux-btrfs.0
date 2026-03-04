@@ -1,44 +1,42 @@
 Received: from bombadil.infradead.org (bombadil.infradead.org [198.137.202.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1BD8427B34D;
-	Wed,  4 Mar 2026 13:05:53 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7F1CE352F95;
+	Wed,  4 Mar 2026 13:28:17 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.137.202.133
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1772629555; cv=none; b=UEBNu5sgzyhzFqd4WyhbP8SbqpYVbTjzJsmOIk7AmWmwrDPsAk2E4Tpie7biFXYJv82cAUfW56HVI9j8uWsUyfhR1HusXAQ1sBb8iie6V8vX/JoN3+Y5MTYi2OcaBsGddmkgsMzKhOOXK4HTlLy+LdHUgNfOsgSPfLs604ZS7bU=
+	t=1772630898; cv=none; b=MaFjLMHqUHRVwMKPm32KE+U0YQfQ6LRPV46VjvVwiVnL0wYsQXWKMHi8RYVZEVwQz5h/1kIy5Wx5fY/KMfItSfIvuB6bw/ZoHRkUKEQRAadLNePx3UJARJntOYWEm2NqcH8lYz6VY58cOwcgXqbhjyDJn1qY6gq4ukcS81ck71U=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1772629555; c=relaxed/simple;
-	bh=qW2uZJF8G4cHoLk9Cs8Nm6DlzN/ieCEqoSLV4RcIMYs=;
+	s=arc-20240116; t=1772630898; c=relaxed/simple;
+	bh=SVOIZ+ZQm6umt0dgDvXK33VRlElbT4kLC7JaxnoN+0A=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=EUgAf0IPnsVSiXSoR1NTfp0RphUHgQx6BCyJVTJE0YzV0YmQvspzgjdRzZH34YoWF0st7zMmZpwzWki2SNG0t5KpsByClQCldK9eijh+4ZqtODfRh3BAkxlqbh/tyRahes0hdB3NzzZX/szni3g0DPZXjTWTT2CMKErX0gWmAlw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=plJ2JubC; arc=none smtp.client-ip=198.137.202.133
+	 Content-Type:Content-Disposition:In-Reply-To; b=s/6Urr3Ti3NM40Nf1jae4BhUtxzqT4D1gjH+y82TlVd4D/X17JM9HbBJ1IXHGWGobpasFq4O3igH4xvzqntsMdZL8hOWocA3PyOizOGY6yWipzgw1pw6+TrGLWJK5kUWqHuSR6RW5YkBXE8QwFZAdkSc9rzk3fLn1ecTPaXQsHQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=B9wXMS43; arc=none smtp.client-ip=198.137.202.133
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org
 Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="plJ2JubC"
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="B9wXMS43"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
 	d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
 	:References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
 	Content-Transfer-Encoding:Content-ID:Content-Description;
-	bh=qW2uZJF8G4cHoLk9Cs8Nm6DlzN/ieCEqoSLV4RcIMYs=; b=plJ2JubCqQsE10JJqIV6r6+s1l
-	H18neL3htFlBJZt+BoikcNlhFTNG8636WAfL3AuCltFCSR6bwwICOyqUswL3ZEth/zF7A/QS7tXjR
-	PZ9T9Q8e6515cwCZXOs7CEs7znDavLpcKivV2uKK6cjTyBeqwQD+TKvcJkp5eBwPt/LdQV7HHqViw
-	x2hueon8YnthsdvVWeToPVwptMXgAl4kf8DO2fsBE0q2e+4r0XGpq0h5zfLQisNjNnuEwoLPkcEKi
-	3kwilUjfQMwqS5L1JoayHDoM85ifpyQ3cAzU8/Ab4zBhOU26wxn1BOQWsyrkAeIaL5norYeqCz1GZ
-	DtM7dF8Q==;
+	bh=u4tDNrsfmkN1jCpPN9zt23p6IPrJrTgXec+c+UsxUz0=; b=B9wXMS43baSn2tXBwUe7m8IBeu
+	5IXVC89bWglrmU2qDRUbibxmLfgTXUoaasP32IEISDvcx05r3AOf7sDiKMsdl5kUXYOph2nLd5tTG
+	buu4i4HnIELFf30YTYO6QHIUYLpKA9M8qBWH3s752P9SbJQ83MsgEQS3BJoyXZtz8YxRtQN5YCGF/
+	J0JOLbLCppR4AenYRt+btPFy189yONESl5VvZrUzk6eTxvjfEXWqHziyWHs8XateJ07X5qW0sylRH
+	nhweam1Y8mQHwfbYpk8OjEId4m0R/rufevmN6Sh6k1UCVa/V0W/yAu5Rm45XDrQ/NFY9y0TD8wWS+
+	pXmadYAQ==;
 Received: from hch by bombadil.infradead.org with local (Exim 4.98.2 #2 (Red Hat Linux))
-	id 1vxlvF-0000000HDkR-2iUg;
-	Wed, 04 Mar 2026 13:05:53 +0000
-Date: Wed, 4 Mar 2026 05:05:53 -0800
+	id 1vxmGv-0000000HFKG-0F3o;
+	Wed, 04 Mar 2026 13:28:17 +0000
+Date: Wed, 4 Mar 2026 05:28:17 -0800
 From: Christoph Hellwig <hch@infradead.org>
-To: fdmanana@kernel.org
-Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	Filipe Manana <fdmanana@suse.com>
-Subject: Re: [PATCH v2] btrfs: test a directory fsync scenaro after replacing
- a subdir with a file
-Message-ID: <aaguMUK6TgYfwtZk@infradead.org>
-References: <8e3c1626b6e49678976db67a861cb5dcfdb532c0.1772558357.git.fdmanana@suse.com>
- <7997e07a4f530bc52edd1b93e662907c4cd07377.1772561118.git.fdmanana@suse.com>
+To: Anand Jain <asj@kernel.org>
+Cc: linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org
+Subject: Re: [PATCH 0/3] fix s_uuid and f_fsid consistency for cloned
+ filesystems
+Message-ID: <aagzcbj_CohXgIXe@infradead.org>
+References: <cover.1772095546.git.asj@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -47,8 +45,24 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <7997e07a4f530bc52edd1b93e662907c4cd07377.1772561118.git.fdmanana@suse.com>
+In-Reply-To: <cover.1772095546.git.asj@kernel.org>
 X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 
-The subject is wrong, this is actually a generic test.
+On Thu, Feb 26, 2026 at 10:23:32PM +0800, Anand Jain wrote:
+> This series resolves the tradeoff by aligning btrfs and ext4 behaviour
+> with XFS: f_fsid incorporates device identity (devt) to remain unique
+> across clones, while s_uuid is preserved consistently matching the on-disk
+> uuid.
+
+While I like fixing this up, switching the f_fsid construction to a
+different method might break things.  Is there a way to only change
+it for cloned file systems to reduce the surface of this change?
+
+> Patches
+> -------
+> Patch 1/3: btrfs: fix f_fsid to include rootid and devt
+> Patch 2/3: btrfs: fix s_uuid to be stable across mounts for cloned filesystems  
+> Patch 3/3: ext4: fix f_fsid to use devt instead of s_uuid
+
+I don't really see that patch 3 in my inbox on linux-btrfs.
 

@@ -1,47 +1,68 @@
-Received: from bombadil.infradead.org (bombadil.infradead.org [198.137.202.133])
+Received: from verein.lst.de (verein.lst.de [213.95.11.211])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2F20033F37F;
-	Wed,  4 Mar 2026 15:25:35 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.137.202.133
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7B78C34FF48;
+	Wed,  4 Mar 2026 15:42:54 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=213.95.11.211
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1772637937; cv=none; b=q6J/oF2iJ8Po/zvgcGz4m/ZzwhEDfQeVQUszFEtMO32snivLS/Ob76KcWtxZvmKOxOXmS0+1VzTTFjfEq8lI3EAp1hTjxj0vxB30/N6TCHpBrYa/9Ls+1bE/yaroU9CDnR0u8xMdwlpDBJVNh0iRmCSC1FbMdH9B05AB9s979WM=
+	t=1772638975; cv=none; b=tHwvrdTlxV8UzX/nX+8JRhJ4xKmmDDWWRKs82A+k+aGGDKzxhUCVcYI6fADcDDdxbXySlVpTMz9Fg1+xGHEmMSz5+vnHaB3tXFnUEFXeLQqMLAG38NjBvgtoKu6qlLWMOfekEwETStVwtAglx3QPlMrtCcNc80ElFU5cCZoUyA4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1772637937; c=relaxed/simple;
-	bh=3TMcHI3fpBXUKGV1pTVwgnH6e8rfMQ03ftP6Od4ORtA=;
+	s=arc-20240116; t=1772638975; c=relaxed/simple;
+	bh=G35ADxfoqXbd7RRW+WhhRkiRg+yJnXX6ywEBdaUxinA=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=Z+r1id6Gy9M2+/bdyBCz9LLA1p/UxPbmbqNwsvlT1VnuDE87o5Nv/FHkG//Xs1oE/bkmLom35cbT1FlN2i4DWMZLolwqIUJ01cwNkioBEG+sqaYJvVklG1Jq25x5ZMdmbKR/03kjRUo6+ndxJg93WjtG/cEolIDu7IuDs4uzleI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=BxpFnBOw; arc=none smtp.client-ip=198.137.202.133
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="BxpFnBOw"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
-	:References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-	Content-Transfer-Encoding:Content-ID:Content-Description;
-	bh=MwsrxkPOXCaYkQX0joRl0M8XJJY5G8w37JtoiYGpkHw=; b=BxpFnBOwTfdz6+tAMVJtZ+EGtr
-	/nLSq3ik6/oKx9A+1Ujp0looFVrCTaJsxpQ1dixrWAqfObLrOM6aeWdtDj/wqA3X9I7bfpw62DMv3
-	FDq6IO0jhJcpwVJqy2+ceJXuI/n1o0aeEfRjrRLFdo1ssDaRzucz4y8OGrLQDJDw4ejPJOT0fPneU
-	RawkaeEkEVterh7YZfYywjnQWezyQkeK31fd2NiTA+pWeOrs81JLKH/sOCk+tOJf7JzrYMXLvjiKs
-	Vcz0hgbeJmvyWsIgN+i2LaE2DYsJ5hmYDJvPB1n2kYbd9Fe/LCJHMmyQJE9RdjeOwF6U6x5YO2XS+
-	pdYES3oA==;
-Received: from hch by bombadil.infradead.org with local (Exim 4.98.2 #2 (Red Hat Linux))
-	id 1vxo6Q-0000000HXSZ-0pJa;
-	Wed, 04 Mar 2026 15:25:34 +0000
-Date: Wed, 4 Mar 2026 07:25:34 -0800
-From: Christoph Hellwig <hch@infradead.org>
-To: Zorro Lang <zlang@redhat.com>
-Cc: Christoph Hellwig <hch@infradead.org>, fdmanana@kernel.org,
-	fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	Filipe Manana <fdmanana@suse.com>
-Subject: Re: [PATCH v2] btrfs: test a directory fsync scenaro after replacing
- a subdir with a file
-Message-ID: <aahO7rnnaYg2MQ1o@infradead.org>
-References: <8e3c1626b6e49678976db67a861cb5dcfdb532c0.1772558357.git.fdmanana@suse.com>
- <7997e07a4f530bc52edd1b93e662907c4cd07377.1772561118.git.fdmanana@suse.com>
- <aaguMUK6TgYfwtZk@infradead.org>
- <20260304151800.6qkmxjsufen7sbq4@dell-per750-06-vm-08.rhts.eng.pek2.redhat.com>
+	 Content-Type:Content-Disposition:In-Reply-To; b=WZOn3y89IrFmqTSTAejvJ1Ku8B5ZQXYCCutjzbuG7q6brtEvuUBQFlA9P7+i4cm6PIPVT0O+a8XUeWq5SXE9OW3iWJjzllT1WjAZgichrTwME9vL2518vR5qq7CcHZ0W371qU5w9QCbPaTzbDt4gnyEVswPy19WtskWKfocw8BY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lst.de; spf=pass smtp.mailfrom=lst.de; arc=none smtp.client-ip=213.95.11.211
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lst.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=lst.de
+Received: by verein.lst.de (Postfix, from userid 2407)
+	id 7375068AFE; Wed,  4 Mar 2026 16:42:41 +0100 (CET)
+Date: Wed, 4 Mar 2026 16:42:41 +0100
+From: Christoph Hellwig <hch@lst.de>
+To: Peter Zijlstra <peterz@infradead.org>
+Cc: Christoph Hellwig <hch@lst.de>, Eric Biggers <ebiggers@kernel.org>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Richard Henderson <richard.henderson@linaro.org>,
+	Matt Turner <mattst88@gmail.com>,
+	Magnus Lindholm <linmag7@gmail.com>,
+	Russell King <linux@armlinux.org.uk>,
+	Catalin Marinas <catalin.marinas@arm.com>,
+	Will Deacon <will@kernel.org>, Huacai Chen <chenhuacai@kernel.org>,
+	WANG Xuerui <kernel@xen0n.name>,
+	Madhavan Srinivasan <maddy@linux.ibm.com>,
+	Michael Ellerman <mpe@ellerman.id.au>,
+	Nicholas Piggin <npiggin@gmail.com>,
+	"Christophe Leroy (CS GROUP)" <chleroy@kernel.org>,
+	Paul Walmsley <pjw@kernel.org>, Palmer Dabbelt <palmer@dabbelt.com>,
+	Albert Ou <aou@eecs.berkeley.edu>, Alexandre Ghiti <alex@ghiti.fr>,
+	Heiko Carstens <hca@linux.ibm.com>,
+	Vasily Gorbik <gor@linux.ibm.com>,
+	Alexander Gordeev <agordeev@linux.ibm.com>,
+	Christian Borntraeger <borntraeger@linux.ibm.com>,
+	Sven Schnelle <svens@linux.ibm.com>,
+	"David S. Miller" <davem@davemloft.net>,
+	Andreas Larsson <andreas@gaisler.com>,
+	Richard Weinberger <richard@nod.at>,
+	Anton Ivanov <anton.ivanov@cambridgegreys.com>,
+	Johannes Berg <johannes@sipsolutions.net>,
+	Thomas Gleixner <tglx@kernel.org>, Ingo Molnar <mingo@redhat.com>,
+	Borislav Petkov <bp@alien8.de>,
+	Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
+	"H. Peter Anvin" <hpa@zytor.com>,
+	Herbert Xu <herbert@gondor.apana.org.au>,
+	Dan Williams <dan.j.williams@intel.com>, Chris Mason <clm@fb.com>,
+	David Sterba <dsterba@suse.com>, Arnd Bergmann <arnd@arndb.de>,
+	Song Liu <song@kernel.org>, Yu Kuai <yukuai@fnnas.com>,
+	Li Nan <linan122@huawei.com>, linux-alpha@vger.kernel.org,
+	linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+	loongarch@lists.linux.dev, linuxppc-dev@lists.ozlabs.org,
+	linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
+	sparclinux@vger.kernel.org, linux-um@lists.infradead.org,
+	linux-crypto@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	linux-arch@vger.kernel.org, linux-raid@vger.kernel.org
+Subject: Re: [PATCH 01/25] xor: assert that xor_blocks is not called from
+ interrupt context
+Message-ID: <20260304154241.GA26451@lst.de>
+References: <20260226151106.144735-1-hch@lst.de> <20260226151106.144735-2-hch@lst.de> <20260227142455.GG1282955@noisy.programming.kicks-ass.net> <20260303160050.GB7021@lst.de> <20260303195517.GC2846@sol> <20260304145134.GA21983@lst.de> <20260304151548.GN1395266@noisy.programming.kicks-ass.net>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -50,15 +71,19 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20260304151800.6qkmxjsufen7sbq4@dell-per750-06-vm-08.rhts.eng.pek2.redhat.com>
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
+In-Reply-To: <20260304151548.GN1395266@noisy.programming.kicks-ass.net>
+User-Agent: Mutt/1.5.17 (2007-11-01)
 
-On Wed, Mar 04, 2026 at 11:18:00PM +0800, Zorro Lang wrote:
-> On Wed, Mar 04, 2026 at 05:05:53AM -0800, Christoph Hellwig wrote:
-> > The subject is wrong, this is actually a generic test.
+On Wed, Mar 04, 2026 at 04:15:48PM +0100, Peter Zijlstra wrote:
+> On Wed, Mar 04, 2026 at 03:51:34PM +0100, Christoph Hellwig wrote:
 > 
-> Yeah, thanks Christoph, I'll change it to "generic" when I merge it.
+> > > How about "WARN_ON_ONCE(!preemptible())"?  I think that covers the union
+> > > of the context restrictions correctly.  (Compared to in_task(), it
+> > > handles the cases where hardirqs or softirqs are disabled.)
+> > 
+> > Good enough I guess.  Peter?
+> 
+> Sure. The only caveat with that is that for PREEMPT_COUNT=n this might
+> not work, it unconditionally returns 0.
 
-Assuming you also pick up Johanne's per fs fixed by cleanups, it
-would be good to switch the new test over to that scheme.
-
+That's a pretty good argument for the lockdep version...

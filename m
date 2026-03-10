@@ -1,89 +1,110 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D893928504D;
-	Tue, 10 Mar 2026 13:34:01 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2C0AD40DFB1
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 Mar 2026 13:40:48 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773149642; cv=none; b=Gk9ySCD5/rAR5Gy3RzZ4VZBJ5YdQkLjvYY3CnURVP6azsDNuNLXl67L7AwfaW+kFIVmAg69qVzOEqgj1SgEicJMOH+W8Zq7YP/hG3GghJRlD42iVd8OxXSxWs9zv9sYp0gHdLV4jeOoeLIJgn3eLZThMvzq+Cl9pzD19ix1SKk0=
+	t=1773150048; cv=none; b=iZwDoRkrbLTFiSRk2SZEAX3dRmCnkNMoA/mjZMy6PZcQgMUJTDyNb48xbk+nfGAMy5cqyx7Um/B6lRUmXgbAsJmvShHTpRzRjehf8fQwVqlhBCSLxcVYKBb3ievaw7SuxEDpsPIa5xgoGLvmT+IPumtNqLvsYNJ/BfjttFTskcg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773149642; c=relaxed/simple;
-	bh=1YnmztTcNk3Ff+PgeiUurE/Sk941AjWRBcXze9NtmZ0=;
-	h=From:To:Cc:In-Reply-To:References:Subject:Message-Id:Date:
-	 MIME-Version:Content-Type; b=CTaqG6Qbuu27oteze+zxysGBNFSZ/btmMioft52nvKI7u8kDplNmtazy1wXjbYOnW6IAfyvScHf9HGoQcVC8rXKgOTP1RaAYz/MfYZtaBiOdpXgFIo/Pnx9zFBqS3PnIPl2BT7kNJblGVTah+KTbnSiLxbJ+eXQdz8NNZ0MSxtU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=gbboZny9; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1773150048; c=relaxed/simple;
+	bh=EMW9Sr4WgrFhXTOPAzIcV47orF4/J2jE1f9BIXSit8U=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=ENcTpD8THB+QqIBPSxlZH9y3/RP0R/M2DmR6UB3Z40uDoC0u/ArP0MbEsI7NUDR+NfkzuNVv4TPZblIY8J5Cns24YiJDMfNBYcj3RDlrC+corfpH6V74l472w4Sv1L+fCnC1N5oczLyAI8YswvL5Ni1/ZKEo7agrZ+7J3YHLEfY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=kadi4Uaq; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="gbboZny9"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 1338AC19423;
-	Tue, 10 Mar 2026 13:33:50 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="kadi4Uaq"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id C84EBC19425
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 Mar 2026 13:40:47 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1773149641;
-	bh=1YnmztTcNk3Ff+PgeiUurE/Sk941AjWRBcXze9NtmZ0=;
-	h=From:To:Cc:In-Reply-To:References:Subject:Date:From;
-	b=gbboZny9vDD72Pka+n0iXs0baByjKbSZoFC4cppvyGvi6DURLPzP7/PURy6H4x0SE
-	 hZcTDQvWtiIR96dUWEkTSxfg7YW1/icauTRQtPPhn3DjatNJnXXgx9ePr2EFS/J1xE
-	 m2MZHJen8/8vAxVjX4Rh0mvAwOneBCTEICPjlkx0jZOCBN/iedVV5+9QBqwIzFk1vO
-	 tVOWY5YqoR5nPBwka2P8esnXtwU65aqvGrom7R8xo/zbp7HcZsAU1Ct1Z6jDsVgPm9
-	 q6q+cosYNG9tKwHqU9XoTXUFgoVy3XzQYbAwRSYwrOvATdzUAyZiFt5O4W3gYPYlF6
-	 gVdqFVkFvSybA==
-From: Lee Jones <lee@kernel.org>
-To: amd-gfx@lists.freedesktop.org, apparmor@lists.ubuntu.com, 
- bpf@vger.kernel.org, ceph-devel@vger.kernel.org, cocci@inria.fr, 
- dm-devel@lists.linux.dev, dri-devel@lists.freedesktop.org, 
- gfs2@lists.linux.dev, intel-gfx@lists.freedesktop.org, 
- intel-wired-lan@lists.osuosl.org, iommu@lists.linux.dev, 
- kvm@vger.kernel.org, linux-arm-kernel@lists.infradead.org, 
- linux-block@vger.kernel.org, linux-bluetooth@vger.kernel.org, 
- linux-btrfs@vger.kernel.org, linux-cifs@vger.kernel.org, 
- linux-clk@vger.kernel.org, linux-erofs@lists.ozlabs.org, 
- linux-ext4@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
- linux-gpio@vger.kernel.org, linux-hyperv@vger.kernel.org, 
- linux-input@vger.kernel.org, linux-kernel@vger.kernel.org, 
- linux-leds@vger.kernel.org, linux-media@vger.kernel.org, 
- linux-mips@vger.kernel.org, linux-mm@kvack.org, 
- linux-modules@vger.kernel.org, linux-mtd@lists.infradead.org, 
- linux-nfs@vger.kernel.org, linux-omap@vger.kernel.org, 
- linux-phy@lists.infradead.org, linux-pm@vger.kernel.org, 
- linux-rockchip@lists.infradead.org, linux-s390@vger.kernel.org, 
- linux-scsi@vger.kernel.org, linux-sctp@vger.kernel.org, 
- linux-security-module@vger.kernel.org, linux-sh@vger.kernel.org, 
- linux-sound@vger.kernel.org, linux-stm32@st-md-mailman.stormreply.com, 
- linux-trace-kernel@vger.kernel.org, linux-usb@vger.kernel.org, 
- linux-wireless@vger.kernel.org, netdev@vger.kernel.org, 
- ntfs3@lists.linux.dev, samba-technical@lists.samba.org, 
- sched-ext@lists.linux.dev, target-devel@vger.kernel.org, 
- tipc-discussion@lists.sourceforge.net, v9fs@lists.linux.dev, 
- Philipp Hahn <phahn-oss@avm.de>
-Cc: Lee Jones <lee@kernel.org>, Pavel Machek <pavel@kernel.org>
-In-Reply-To: <20260310-b4-is_err_or_null-v1-51-bd63b656022d@avm.de>
-References: <20260310-b4-is_err_or_null-v1-51-bd63b656022d@avm.de>
-Subject: Re: (subset) [PATCH 51/61] leds: Prefer IS_ERR_OR_NULL over manual
- NULL check
-Message-Id: <177314963081.2226692.3105447886678957300.b4-ty@kernel.org>
-Date: Tue, 10 Mar 2026 13:33:50 +0000
+	s=k20201202; t=1773150047;
+	bh=EMW9Sr4WgrFhXTOPAzIcV47orF4/J2jE1f9BIXSit8U=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+	b=kadi4UaqscTIYPZWnJNdVKOngoPgZ0RyvnwsL6JhErfyXyXaKp7dsYOlpfyQxM8GU
+	 50SICPLkG08ydUS8M8c153UhMs3JvtXXIQuJSuQ5IHX+cMiIPRk4eLKWMOPg75nGRb
+	 WTYqP2TYiLJxFiqjZ+IzLGzqYRxJZjW5Luv929l0IMOwi9GLv29l2L/FluNZPIUuh7
+	 o1VPk82wZzIYmPz0PVCHS99ONPT/d2vLeNgh+l1wqddYKdDYqMS67e0LW8rJi2MhgV
+	 qMvcvYC8BBdKku1cZJh3t1lr54sbDRmXzdeO/M6x8LRQ/UFoO7xCRIsSR60Jg2B9t3
+	 PirfZlid/9U9g==
+Received: by mail-ej1-f50.google.com with SMTP id a640c23a62f3a-b9704cd6951so183355666b.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Mar 2026 06:40:47 -0700 (PDT)
+X-Forwarded-Encrypted: i=1; AJvYcCUnWIrGXjdE9VwUPvyNDKmRdAz7TsdXDrWIitj7pMw/xDAVm59ehmYJ+qI5jckQbVZ5q9AveFiH3he56Q==@vger.kernel.org
+X-Gm-Message-State: AOJu0YwuFoxGYDJOS8KfZUXzHPZSUf6Fym/2TGxUA7mxlKdv/Sc2Pv3Q
+	9/y6Gtlu/bjhf12t3eo0vS5OWJ/mgSGiSoIuDVyGglKbEf/dVCy/rJfu5iVxUpef7PNQI0q7xnL
+	BiAWuDSYwLJLDzNDrRDEf+xd9NzRcp/s=
+X-Received: by 2002:a17:907:3c91:b0:b97:3db:c7cb with SMTP id
+ a640c23a62f3a-b9703dbe04cmr339433766b.46.1773150046254; Tue, 10 Mar 2026
+ 06:40:46 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-X-Mailer: b4 0.15-dev-52d38
+References: <a1e2690efeb8570651894567d80511144424fb5e.1772106022.git.fdmanana@suse.com>
+ <aarmPHmLnGtvhUcO@infradead.org> <CAL3q7H5r5_FuTSUM_5TqFGFPSZ4qC=qG49_JuLpUfzFCa=8YyQ@mail.gmail.com>
+ <abAZDvPLRbCeQh1D@infradead.org>
+In-Reply-To: <abAZDvPLRbCeQh1D@infradead.org>
+From: Filipe Manana <fdmanana@kernel.org>
+Date: Tue, 10 Mar 2026 13:40:09 +0000
+X-Gmail-Original-Message-ID: <CAL3q7H7GhATX4hMqtgvJzLS2G8qoWwD8nYPFwQ771WgMjacVUg@mail.gmail.com>
+X-Gm-Features: AaiRm53Kc58VM1mM17n1jX-p2JmPqwHKRjIa7PRoPZT29Fu1Vxy2VRUM4JT9Q5g
+Message-ID: <CAL3q7H7GhATX4hMqtgvJzLS2G8qoWwD8nYPFwQ771WgMjacVUg@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: test create a bunch of files with name hash collision
+To: Christoph Hellwig <hch@infradead.org>
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org, 
+	Filipe Manana <fdmanana@suse.com>, linux-fsdevel@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On Tue, 10 Mar 2026 12:49:17 +0100, Philipp Hahn wrote:
-> Prefer using IS_ERR_OR_NULL() over using IS_ERR() and a manual NULL
-> check.
-> 
-> Change generated with coccinelle.
-> 
-> 
+On Tue, Mar 10, 2026 at 1:13=E2=80=AFPM Christoph Hellwig <hch@infradead.or=
+g> wrote:
+>
+> On Fri, Mar 06, 2026 at 02:55:23PM +0000, Filipe Manana wrote:
+> > > Umm, file systems must handle an unlimited number of name collisions.
+> > > While going read-only is of course really bad, just rejecting them
+> > > can also pretty easily break things.
+> >
+> > I don't think in practice we get a large enough number of names with a
+> > crc32c hash collision in btrfs.
+>
+> That's not the point.  Posix and Linux file systems don't have an
+> error code or defined condition for adding this file name would cause
+> a hash collision and we were to lazy to deal with it.
 
-Applied, thanks!
+No one is disagreeing with you Christoph.
 
-[51/61] leds: Prefer IS_ERR_OR_NULL over manual NULL check
-        commit: e68f95a51d1a8c1594b536c4d495cbea38d47561
+What I was saying is that giving support for an unlimited number of
+collisions would require an update to the on-disk format, which is a
+lot of work as it implies metadata changes, feature incompatibility
+bits, updating the user space tools, etc.
+Given the work that would be needed and the fact no users have
+complained about this (to my knowledge at least), the motivation for
+such big changes isn't much.
 
---
-Lee Jones [李琼斯]
+>
+> > Adding support for an unlimited number of collisions is simply not
+> > easily doable, it would require an on-disk format change (new key
+> > type, item, etc, update btrfs-progs, etc).
+> > The motivation for that is very low, as I'm not aware of users ever com=
+plaining.
+>
+> Well, how would they know this happened?  The users only sees the file
+> system acting weird in completely unpredictable ways.
 
+Because no one reported -EOVERFLOW errors when creating files. I
+haven't seen it in more than 12 years at least - sure it doesn't mean
+there isn't someone who hasn't hit it, but we don't know about it.
+
+What this test is doing is to verify we don't turn the fs into RO mode
+after -EOVERFLOW - which is actually a regression we had since 2022,
+and could be used as a sort of denial of service.
+This is a useful test for us btrfs developers to make sure we don't
+regress on that.
+
+You may disagree with not allowing an unlimited number of hash
+collisions, but that is another topic and doesn't invalidate this test
+(and that's part of the reason why it's a btrfs specific test).
+
+
+>

@@ -1,182 +1,133 @@
-Received: from mail-wr1-f43.google.com (mail-wr1-f43.google.com [209.85.221.43])
+Received: from mail-ej1-f52.google.com (mail-ej1-f52.google.com [209.85.218.52])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BB3D93EB7E6
-	for <linux-btrfs@vger.kernel.org>; Tue, 10 Mar 2026 08:13:15 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.43
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773130398; cv=none; b=E46EiOBEfymb9w+Lxnf9+33SB0Y+2xT/o/Oic25R6s5X2H92hoSAj2w16h2XjgJsMgNfz8DoC7bbPK5vqwz1qh46wpdUu8dms/yfrx7GEaAu1vc8+QqVxMGp3K1190RUkt2ms+TeyTWIBDnX7pabmYEj2QSSN0Q9pZ45lMb17/o=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773130398; c=relaxed/simple;
-	bh=Ogl1A47+skh40swvXNBfLLd9OGEpxiAPGpg7kD8IlMs=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=MkU8quLz6XjxHolYMHjzuko72w79/DoX28s777DHHlo2IjMPg2Au7QgxgSvnOuj307Q1mHMEnD/ethxTCDkDQaHSOjCV5oNccBDyoAsHLlxOq+7OaGuolejlXi31FGDaXOqjvIlz5uQ8Ii9SlRxGsXM5r4ox/ynfVa1chl5cTsQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=H2l7YS/j; arc=none smtp.client-ip=209.85.221.43
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B010626A1B5
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 Mar 2026 08:41:56 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.218.52
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1773132118; cv=pass; b=m4pDa/5Sm1MxESLCkgvR2T2Js4ZkuNWFleIa7XmeKeFpQHHee71yOVWFkf6u3996C/VIRbvi0tAd/b5GKyEGnrFQ5Hq6YEVa3fcd9a/SLXimZlUllJena0E5kIOe0wZX/fBIttGcDzec3rLPqd137R0WTEtncTNflwmcNxXocew=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1773132118; c=relaxed/simple;
+	bh=eDSWPCbwxBzo4De/D6dtfMarcGEIAzAKbz8L29S2nKY=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=ADGAhSaZE3/+hdo7j+0M561rfqH3PbOCDbPo2kF9ys2AFz7vLd6TPPUGLxuZ+Y9ZxmGC8+1WKPt9Qr2KnOhgCUEVbOvdxmzWMIZwwA/F9TOAZrkmgukT5XFfQZtD+LmytI/WkBiqi75+s1spKydEKTMH6m7Fh4EjSv657O1s8sc=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=Pozq2Wei; arc=pass smtp.client-ip=209.85.218.52
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="H2l7YS/j"
-Received: by mail-wr1-f43.google.com with SMTP id ffacd0b85a97d-439d8df7620so2638533f8f.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Mar 2026 01:13:15 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="Pozq2Wei"
+Received: by mail-ej1-f52.google.com with SMTP id a640c23a62f3a-b941bb3e23cso762796366b.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Mar 2026 01:41:56 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1773132115; cv=none;
+        d=google.com; s=arc-20240605;
+        b=TvMvQZNBDr2Z9hvlIBc2Q11DRQHpb1L4imIQMJsxBuExZ4PdYsJzdqlSaZ9kqM9pld
+         bNIdE0oR8JW7kq/FIyT+rURDT/n5uzjXC/pVpBxybGE7zr3JlXp7W+bEHU1p2EgUfN9T
+         XKJO0meehkAWiw5vlR4iaalQ1/mvKij9Qi8LfCv8qRzoQCJ6GhxXE3XE8d9R5ZPY/CO1
+         5yL/i1h5yL4t/W5YbmgdtkfquAbdjET8HjFfcA21rjc4pu4lqFF0PdEhC55zYFt0FQlW
+         MGMt9MykOFpFHOCD8mrehcsSEPn3si2x/7iC8V1cSJus2mz0FqtckHDVKF928zH08T4m
+         VEng==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:dkim-signature;
+        bh=tcHneVAopfvC6QrBV1mtbNtLaENsIGFUlG2qWEyDgec=;
+        fh=8jZY04UmseQRUT97drUR/R9FjWScxTuiBtugywDNwcQ=;
+        b=jr7p8UebkDZf7ZxU/5vLKZO8uG87Dxsydu/lDPI7gmW1SNc49dAgfgNua5Nkcg7y9F
+         ukIPwYpSR+pRuM1SaygEDtTgFq4w4Zz8lONkCBxRbyN6SdJpAmBUEvoUGXaSfemDJuXg
+         yAn+4rmuO9sibrXju4+9YS92/SIZCimdNUvQZDOEoTuN+3vVzpqUPeqO8Qgh/Xmqy/mp
+         gKZKlBIwYhFJ6PREaV3ZL4iyAzMGRnSsc2L3kovOsm5WQo+YrekJQvUAQFi7xgKjDWLc
+         FPHbuilFSlE5B/rRTXVrUe5Fq53q3Gl0/1+8RrI3QLCHynbl+mcv7or4r62qDQ7t7H++
+         ZPVQ==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1773130394; x=1773735194; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to;
-        bh=gb/E7qAzjllB7lD/mOoAbiOu6V9IkXKupTTjpaqwPps=;
-        b=H2l7YS/j6u2BkQqGGJR+ShRHv8wz3M+24Ec9A/D71ZUA4Jb8qE7oqKIJHt1dLNKo1d
-         gxjyU/4o9KMLUYLohwONvcvF2rB6dPWZQLnWlbMNR1Nkb65rB3gUnqf81SGAJ5PwkMrj
-         uP/1wSHVoc/2aUP5xyVhNlFkXS2XNs3ySgFGNs7kzPKkN0zKe8AJbPjXVCnbHOKpAmgx
-         UilPze9ehHRivVM9pjDLGF38rpDn++GWDG68+laOMhVoJsqpX9+8fopu11eyH6VYkPTI
-         07jm8EyNP1liWp4G8IZLGaAKB8gBSu9Fc1WDmttju8o+qnhL+03zsf2h7zyrDHrzVmHp
-         QiKw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1773130394; x=1773735194;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+        d=gmail.com; s=20230601; t=1773132115; x=1773736915; darn=vger.kernel.org;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=gb/E7qAzjllB7lD/mOoAbiOu6V9IkXKupTTjpaqwPps=;
-        b=b+DpGtjNbeMbroCqZVhh5UDTCzlihAMphmgIO2KCEWaq7QDegDw/C/hR3T266Fl4Bl
-         v0URKPbabxcTZYx/MP2irIHVdyw0Drc2Td2BT1SFM0ywKXoJmp2ccZk0ZLvceUFoDrwZ
-         ydVNSaTBc7u5eb9IuxveQ2e5l6DdWHG2Po3sQLww/nDD/Mmq1tptQqpD5il2WWuh4IPQ
-         DdRlJC2eN9QfbFN5BUlVA0CaOMCe2CkErHZbj21/DAuVi+8mkmwx1UoeCb8j02hs3TaJ
-         tIDAxZUfD/sH7zBvgnwqGPh4OmH+sUlgfaiYqS5IJQM5sIJGh+jGHjKB2jWQsT1+9es4
-         yQaA==
-X-Gm-Message-State: AOJu0Yx/9/RgWA6V+qogBdpyHWTHj4SL3he3KogZ0qAFQ63PdMhqcKuo
-	bCAXRLVBQsf23wc0aR3Vx7vp36CAvatPG4+8azbVF7TQbz2dUDcxr9KmASCRZQOEDz0=
-X-Gm-Gg: ATEYQzzB9QW9ryRRs9pm87oqR72Hge0wiTAi35cPxeJyDwB3+a79VdYYyGCOb1WsqcI
-	RKtJCpwG64mkZBO1CXp3frY5hMBPClXHt/TER5oOiL8PTrmnMR1l8aULDMc5tSFcJzOoQc9F9/1
-	ufjJnIkaAQrIihFx8ziuSZqnw4R2elPvfEb5gyyfNiD2w1tNbppEQ6TVscQyvzArbcyQrZduxF1
-	vpM1e5WPfmwMuKFU4/cEGgm9g4sUAadNEX9kZiLRl72nY0X2GfNTCk2ZeYfMZCy+DffKCgRa/ah
-	G7EVgqfLXQPHFHWABkOmJhgRrmL+CiVU3EasyBppiIO1AlNHtYeYU8FjLCs/s1uP9MGkGU48AEl
-	JJjvDH4Hz1aZHVwQiZxs38TnIS+qtNe6cL9jCylm86aLbBMJgu4NRAJIqqvTVF21Jvh9CdMaVAr
-	4YpLEFxHEjQ1npEFJB0fADBR1JHou+RDmdc4XgjKKbgHpkxR+iXL4=
-X-Received: by 2002:a05:600c:4fc2:b0:477:a1a2:d829 with SMTP id 5b1f17b1804b1-4852692bfa5mr230428775e9.13.1773130393898;
-        Tue, 10 Mar 2026 01:13:13 -0700 (PDT)
-Received: from ?IPV6:2403:580d:fda1::299? (2403-580d-fda1--299.ip6.aussiebb.net. [2403:580d:fda1::299])
-        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-829a465b6f7sm15435258b3a.23.2026.03.10.01.12.57
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 10 Mar 2026 01:13:12 -0700 (PDT)
-Message-ID: <19e81a86-a8ce-42df-8cf7-da74205584ce@suse.com>
-Date: Tue, 10 Mar 2026 18:42:54 +1030
+        bh=tcHneVAopfvC6QrBV1mtbNtLaENsIGFUlG2qWEyDgec=;
+        b=Pozq2WeiKfChyXk3ex92JwbqnxDHNpHr1yfu6eNn3cz2TssemkyL3XxjZ8GHdu9Dkt
+         gO5mlQJmb6nptT/oTXCsMtQZ0CZup7tVndaMQiIp7ZNby5eiD3wNQI9n5S1OrR1p2k3e
+         qZ1u4wIqgCHZlp5Auy2lNnTmSClhFxuWuJslzD0yVTLoNnvMRGC+CZ9hzYy5D6GLnyJL
+         hJPgx/LR3wzgd++bvIVxoHApj+gHGuZcry7icts/Wcu4kfvt2g2pfI2c5W81usFUeYOY
+         K89qbA1l98CO+NF3NnDWRqcjreWX4MwYcI6FIXaRbBUjQB5W0my2My3Lq9VXBheoSUMf
+         FzIg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1773132115; x=1773736915;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-gg:x-gm-message-state:from
+         :to:cc:subject:date:message-id:reply-to;
+        bh=tcHneVAopfvC6QrBV1mtbNtLaENsIGFUlG2qWEyDgec=;
+        b=H8gVfs5iRCAmQWpuxpEeFhkTjtLZrsgfsRApShkWtX8o4fE+eTCpa1IAJi/PJlf8P3
+         PAA7zREUw+qDfmJMQc5euh+8GwNPJxw5S3oEQ+f7K26yx00Abm5oe7OWRtlL5P9F9lIT
+         3t+FiyggW9LZUfIlkbKeNyf0Ka+x4cH6RXE1PMjZRmn8kr/wKe4145A45S8LSzucjORf
+         FU+KRwMazmIoq7NMklBLesrl5LurWSy4rxD5DMDIbkSJhsEtlMlmW0Zq7wJGf7uyNvdY
+         ejCeth/N7/fFZNde74QJ3MxiwxYDHPR5DxfhAx7vvzBMWD+hpR85FksOrVHLaygh57ZR
+         A3vA==
+X-Forwarded-Encrypted: i=1; AJvYcCUhR2ifJTpXCi702GyaBEx/xxFST9hgvhtpT9IwY1PCMuLDEETGSWpxcvb+1UfrJQj08nKjF8iXKNpKyA==@vger.kernel.org
+X-Gm-Message-State: AOJu0YyyDer1vMiam9TffRi7CyW36bh2MjZxNH6ykS/pGyl6Z42zvs6O
+	209OvSOHGMkvfKvOaEz5ZOtO8XLyMYkugYpQfx5nclKAm2qIpiLqpqX8FSSYvjQFDVbzYot2KZx
+	xvSqRbfTa10pnvKG8mkDiYetNKg1iLJI=
+X-Gm-Gg: ATEYQzy3lWVeTnvGZod5K6ixfuP9v1gO1SgiqwSxOeQ4xVsX0YKmRj9gYSJUJ17WDxE
+	3gqSgNg5IJ0P/Ajy0El/Ze9hQU8GELUZlvJqmCidalZe1qgG4xr2Zjx38EOcSGMGfr+OAriwUw1
+	5ntCZAnHFhN4aMb4CONay9eizFWP+z2moxGz6VXyXI2wOn9Wg3JvujL1oWp3Vts74qqkh2G+uCO
+	Z3FHR2YjcD+/eTze0j129CQyssfbX3C/9meqLEE/afDzWnF4//7UtssilA5QutwNP0RVOxT4I+L
+	jfAhdlWMUG1t/YOz85yZ92zj+tMh76RA/qmYmG8N7wCX7LED200QEr3whlJ/FMoMj6dWlxrR/Vf
+	kLwcW/oGBJcAq+wlt+nc45A==
+X-Received: by 2002:a17:906:4fc8:b0:b94:25b5:2b52 with SMTP id
+ a640c23a62f3a-b942dcde31emr782688966b.27.1773132114793; Tue, 10 Mar 2026
+ 01:41:54 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: reloc: unlink orphan reloc roots before dropping
- them
-To: ZhengYuan Huang <gality369@gmail.com>, dsterba@suse.com, clm@fb.com,
- wqu@suse.com
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
- baijiaju1990@gmail.com, r33s3n6@gmail.com, zzzccc427@gmail.com,
- stable@vger.kernel.org
-References: <20260310075447.2088205-1-gality369@gmail.com>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <20260310075447.2088205-1-gality369@gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+References: <20260310075447.2088205-1-gality369@gmail.com> <19e81a86-a8ce-42df-8cf7-da74205584ce@suse.com>
+In-Reply-To: <19e81a86-a8ce-42df-8cf7-da74205584ce@suse.com>
+From: ZhengYuan Huang <gality369@gmail.com>
+Date: Tue, 10 Mar 2026 16:41:43 +0800
+X-Gm-Features: AaiRm52HhZz3j4znZQsuhdkwjJzg2SYK8Z_mFutGffEHv2kfRcHu3qiVx8J_a08
+Message-ID: <CAOmEq9Umi=3AA+0DkmHrfFjj2hBnkq4xGSFdfS40x5F7DpEtuw@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: reloc: unlink orphan reloc roots before dropping them
+To: Qu Wenruo <wqu@suse.com>
+Cc: dsterba@suse.com, clm@fb.com, linux-btrfs@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, baijiaju1990@gmail.com, r33s3n6@gmail.com, 
+	zzzccc427@gmail.com, stable@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
+On Tue, Mar 10, 2026 at 4:13=E2=80=AFPM Qu Wenruo <wqu@suse.com> wrote:
+> >  [...]
+>
+> Put this important info into changelog, and this is not the first time I
+> or other reviewing asking you to do it.
 
+Thanks a lot for the detailed review and for being patient with my patch
+submissions. I'm still learning the kernel patch submission style,
+especially how much detail should go into the changelog above the "---" lin=
+e
+versus what should stay below it.
 
-在 2026/3/10 18:24, ZhengYuan Huang 写道:
-> clean_dirty_subvols() walks rc->dirty_subvol_roots during relocation
-> recovery at mount time. That list can contain both normal subvolume
-> roots and orphan relocation roots.
-> 
-> For normal subvolume roots, clean_dirty_subvols() first removes
-> root->reloc_dirty_list from rc->dirty_subvol_roots and then drops the
-> associated relocation tree. But for orphan relocation roots it directly
-> calls btrfs_drop_snapshot(root, false, true) without unlinking
-> root->reloc_dirty_list first.
-> 
-> This leaves a freed btrfs_root still linked in rc->dirty_subvol_roots.
-> Later list_del_init() on a neighboring entry writes through that stale
-> list node, triggering a slab-use-after-free in clean_dirty_subvols().
+I think part of my confusion comes from seeing many patches with very conci=
+se
+changelogs, so I have been trying to keep that part short, but I may
+have overdone it and moved too much useful information below the separator.
 
-The analyze is correct.
+From your feedback, my understanding is that the changelog should include
+the essential root cause, the fix rationale, and the key crash symptom
+(for example
+a concise KASAN summary), while the material below "---" should be limited =
+to
+supplementary information such as full reproduction details or longer
+logs. Is that
+the right interpretation?
 
-[...]
-> Fixes: 30d40577e322 ("btrfs: reloc: Also queue orphan reloc tree for cleanup to avoid BUG_ON()")
-> Cc: stable@vger.kernel.org # 5.1+
-> Signed-off-by: ZhengYuan Huang <gality369@gmail.com>
-> ---
-> Root cause
-> ==========
+If there is a patch or changelog example that you think is a good reference
+for this style, I would really appreciate it. I'd like to study it carefull=
+y
+and improve how I write future submissions.
 
-Tell your AI/LLM or whatever to listen to the feedback.
-
-> clean_dirty_subvols() walks rc->dirty_subvol_roots, which can contain
-> both normal subvolume roots and orphan relocation roots.
-> 
-> For normal roots, it first removes root->reloc_dirty_list from the list
-> before dropping the related relocation tree. But for orphan relocation
-> roots it calls btrfs_drop_snapshot(root, false, true) directly, without
-> unlinking root->reloc_dirty_list first.
-> 
-> btrfs_drop_snapshot() can free the last reference to root via
-> btrfs_put_root(), leaving a freed btrfs_root still linked in
-> rc->dirty_subvol_roots. Later list_del_init() on a neighboring entry
-> writes through that stale list node and triggers the slab-use-after-free.
-> 
-> Reproduction (v6.18, x86_64, KASAN)
-> ===================================
-
-This section is useless as commit message, and that's the only part that 
-should be kept after the "---" line.
-
-[...]
-> 
-> Fix
-> ===
-> Remove orphan relocation roots from rc->dirty_subvol_roots before
-> calling btrfs_drop_snapshot() on them.
-> 
-> That restores the normal list lifetime rule:
->    unlink from external containers first,
->    then allow the final put/free to happen.
-> 
-> This is a minimal fix. Since both branches now call
-> list_del_init(&root->reloc_dirty_list), it may be possible to move the
-> unlink before the if/else and simplify the flow. I left that out here to
-> avoid changing more than needed, but I can respin the patch that way if
-> preferred.
-> 
-> KASAN reports
-> =============
-
-Put this important info into changelog, and this is not the first time I 
-or other reviewing asking you to do it.
-
-With all these fixed it looks good to me.
+Thanks again for the guidance.
 
 Thanks,
-Qu
+ZhengYuan Huang

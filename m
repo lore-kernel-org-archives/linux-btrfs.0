@@ -1,125 +1,231 @@
-Received: from mail-ed1-f53.google.com (mail-ed1-f53.google.com [209.85.208.53])
+Received: from mail-wr1-f52.google.com (mail-wr1-f52.google.com [209.85.221.52])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1530343E9CB
-	for <linux-btrfs@vger.kernel.org>; Tue, 10 Mar 2026 09:43:23 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.208.53
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3C1D83EFD3F
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 Mar 2026 10:29:20 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.221.52
 ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773135806; cv=pass; b=hHweQQPw7aV/G/u/M+ypAHHLV7t7/+QYgh3lzsWFTtqxN/+1Dy5yVpVtFGvDRB0WF5GrEBuScGsyB1kIAEP4HEK0OFEjdHhYuWoPOREAL0x9Ni3pkElCJyog016Z3gHxTRSo32fyEn5v9RHwr208SbVnRY0b2ghZ4DXHKBxra1c=
+	t=1773138562; cv=pass; b=cykGv70d8LQCqlMJJBPxdN74+zzpUCSBd+6LVyi48omRtGmYpCxziLzBQcYNvedFQ90ButGJM2tdDnX0pNpPe5RteoxWKGfgaagK2obSoqbYnSXnwn9O+npYi8xkWdBTmTr2y6sCrJF3nrnBieoHVi/kSb7GPRupgwSZh7+klzU=
 ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773135806; c=relaxed/simple;
-	bh=D6BEttDHIZ8SMAl+BzTFPlqZNeDWk3kXgelyvPsAYsQ=;
+	s=arc-20240116; t=1773138562; c=relaxed/simple;
+	bh=0THoj63G4X/OLZWMRzXnJ5AOY+xdFq93ZDdOjPEu2yY=;
 	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=Uzf7/6r4DDhdHBF/l5M2vkW4jTDitx1DBn6ifIG7qomN1u9GuUHFktYauw+JM2rzRmnRFOP9HPgBY7I1aI3h0JO2OZaI+ByQdat1tcM18g2MXMB/r7ce9TpdYFHo/c43THHFm661kJWtyDPlUTkyZO7U+h4MKUc7C+U0zHiakyM=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=LvtN+Tcp; arc=pass smtp.client-ip=209.85.208.53
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	 To:Cc:Content-Type; b=R8xg6qgg6EDE0jZN7mZZSM9qjH0KomvTrqXHP83nb00dDXauSxInj4LvWPHwppB1K/BjYpHQjyCyrI/Ux1C/+0rwdbRtx7g8DR4H3nLcze3WQrlLdQAIHo7lbmPikdOn+Xj/VEoqJCVM/3fzVP11sDe1k27GZThDzBj0euu0xmg=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=YNtPUgpS; arc=pass smtp.client-ip=209.85.221.52
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="LvtN+Tcp"
-Received: by mail-ed1-f53.google.com with SMTP id 4fb4d7f45d1cf-662a1855af2so2616831a12.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Mar 2026 02:43:23 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1773135802; cv=none;
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="YNtPUgpS"
+Received: by mail-wr1-f52.google.com with SMTP id ffacd0b85a97d-439b78b638eso9961423f8f.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Mar 2026 03:29:19 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1773138558; cv=none;
         d=google.com; s=arc-20240605;
-        b=BjJHiF+SUWU2n5lGCVOaT9K5EaVmREnTtZJvjeKTiTV+zv6u0YzAMr7BcNlrLNecJ9
-         VDba9bTVTsKxJztfdWV1kpytRbv9SS6Y18sOgZD25f5LVb9vxhD9Ui4S1QGS77qWGWJj
-         I+plgY07wazYWcgKdGwKStDSnyDLygQxovsPhBsG1tS4VKqgkMb+uipyC4ELSX287sGQ
-         09bTCO2taW6IPWlsjJVKvAWH2fXFK7XB4tjjhI16F1QiJ1vSu+0sovkahiVXTlVWQ3Gh
-         9TYT7che0TuFnZiiu7b/9d3Z/3QAhSk4rxn5Hc8sNj1DEgqcogjisqrWVGFWVI8DRWSB
-         q+eg==
+        b=C7SzREuusojHq8mZdZ2CWOWsnYGn5Pztsq9GvLzsQnao/Cd3A5Lw0dtwCdAs73+xJo
+         FdHkQpsd6N0QEabvxaqdLPoyeNtXAUS8Y6Kngx04GxaHtHnrfIiPpmqHdUCXiSQ5iLgj
+         5ocI+TDeIXs4JwFEbUVi/pfssab9pMfbqJiGvCb97i6W7Vyo7RM9lZzGbIUl1oqmzXtk
+         121eXNv3KgCzL+7O6oTalNIKVY9Ck/jem5PUt7jdUAM5aD7R302sPtfZsx7bDkTp9XpS
+         ip+kSTyOhsbDJ0Wouimgd9tyqEfMSD7FNIBbNNQ+GrUIMnE3GbuDufwTRuSAHaFvVgMe
+         jU3g==
 ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:dkim-signature;
-        bh=D6BEttDHIZ8SMAl+BzTFPlqZNeDWk3kXgelyvPsAYsQ=;
-        fh=t236rE980Lsm93i75SgHItj3/bBrzs0QcOkhd5Sentg=;
-        b=cD3xzvtKfFcWAtte2vCnpsRAMoc2YvnmWNckIBQgjvYcYMhkM7JlO5iejsAV702ldO
-         Y89Lx2mR4SUzXgMVIizXb/7Uwwko4onEv9ACQ+e72d7rjuF3P92aP4us/x43ZA6rbV0U
-         NVHjWmDTORzkl/3XlrtBYSYBDVmxPrtR6xPNKfNzD7VdgNTtaZwOLXIJShyk/tzVIZKM
-         BxiSTsEe9GnMn01Jn6ydFl+LyqfKDA10/xgXgv65olsaaNK5LcF0Zz5RJQ/GzlJ2M/TD
-         nB3Yghzq0psY9EJjZcpnWtPZItIidUFLsq+BSUbdjJDKw8Gjkla1zIoer2tL8UFi8qkU
-         7FYg==;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:dkim-signature;
+        bh=6jiRYwrSlheK33/3j3KcGTsXsYmQOfwg8Zg5a92qNT8=;
+        fh=NgBqX5NDqMJPqlOTR6Sd5kUOPNqA0/UG6lMt3daPftA=;
+        b=TMphvg34m0Fe/HnKUp0pczKdVFHZJqG8yUpbjxL+daknHHlOkvtRzcM4U59/clm4N0
+         Ty5xJrcWogBq9PstEYshF86yeW24anuTURathbeBvaE8/KkOvAMuXuFi6UjtDDTatnjp
+         2FyoB3p1fEGWPkhgKtu5n++FwOZDJZkgtDa67DP49pn4tDJEmRuryZfxZJubDnsQcVzM
+         RH7vcs7+esZ+xP23KL9zdOXS/ge1T+8gxIHEYDWh1l2DDt3QC2ITB338lSU/8tkRHyno
+         cSE7nDOBgADzcMZwcIqhVKHx7CBHuyuIf7pqqsTlHHZHOmIuS3aUCMAQlRtwqiWTyL9X
+         psNg==;
         darn=vger.kernel.org
 ARC-Authentication-Results: i=1; mx.google.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1773135802; x=1773740602; darn=vger.kernel.org;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=D6BEttDHIZ8SMAl+BzTFPlqZNeDWk3kXgelyvPsAYsQ=;
-        b=LvtN+TcpsaTHiJXKR25JYWuQMDH/Z+lJpcJajEfYQSMqMPSHiRl1XWpHqXm8c3A8t+
-         rFxwpgXSFZLKiDqSTm1RCCTfGk6ChUj+Q30eyGXI3ag4s/nQS1mP/cobwAwTp31HTv0d
-         8lKBweO0/mQhw/aa0t0a6kRZd+kz0NyjWfCN+ooM6o+0Cc8PwLVJ2tTh2psjRxKWN/oK
-         VEcbya7g91FU0dIQYfq8HGj3Jv8jyaV37Hi5GOj5LQaLvxzWajq/nP5OUSb/qSMH6oe3
-         LwHh3SrfFo5ECSXITJnHKpvPxnlTfQ3k0BRftvvNZki7DwpRFKRJDt7MN6HiThBMc4OP
-         uXHA==
+        d=suse.com; s=google; t=1773138558; x=1773743358; darn=vger.kernel.org;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:from:to:cc:subject:date:message-id:reply-to;
+        bh=6jiRYwrSlheK33/3j3KcGTsXsYmQOfwg8Zg5a92qNT8=;
+        b=YNtPUgpSDSAPvUq91GfN9Pp1GcpOOj3MAJdZLLt7ii8gOXnYowlW/nR868XrfQQNML
+         BUJACPaHQnpqWtQVITYhCePZx0I9/jQRvwJsQDc9mnPnZbAQyRL5r/oYaM/fx5gJa9+X
+         yRBu1ro7nU4HMA6TPcgam7hfkxNMd7MPM0gmPr3/uNVXQy+9PJ/Xi7YVTTntvAw1MUwM
+         yj5IhIV7BXBcQ+vrbdocN7Iad7bbpgB4FTQUKc+mqGApJyXbN8jUDevcFqEsQHVquTf7
+         yforgNMBNdnfbXJ08DU4OhaOoQOeW9WhXgANq5ymd5AU3jg68j51evUrTz3MlACTBJBe
+         Dqwg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1773135802; x=1773740602;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-gg:x-gm-message-state:from
-         :to:cc:subject:date:message-id:reply-to;
-        bh=D6BEttDHIZ8SMAl+BzTFPlqZNeDWk3kXgelyvPsAYsQ=;
-        b=nfeJ/YZ7Ryl5jSqJY1QZ9g4j9hI6M9/O9LaIEvF8t92W0gTdZaus1bfSGsGGm4YVMp
-         YyXTRnJu6CiQoWRIMn9zdoLLEVd+JOBCrCTBiYA/HrLt1LaUiIkuMz633zwmShiE4sPq
-         T06gFl5SsYVNm4j9sGjb0S090cYtozMxsLdt7+oRK1zYqKwdW35g+i8TsPt4Aow53XNV
-         wldRwSgdSiGBHX/Zri2mbXi+mv8yTCYkMtT2kSe1UJXlatbtxzw7DE/Xa3RgtpQAYYnM
-         +csIpK9IbzSd63c7H2e8coOeE/EA0jbm93eybrkoGCUKHdMQpwMWtdRY6d5z0YNtBzrT
-         ZoHA==
-X-Forwarded-Encrypted: i=1; AJvYcCVZxb6VHuYMJE8KdyuDYbMV6HXreWS4FJEHZl2/PxYLXT00NTTTMlIIBK6O+ARjJ12m0z9WoKTTV7UCkQ==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yyh+qj7p32GzQBM5w3VU5/0CUm3EXHFhDSBfXav9YSXeHGhgeMy
-	Fmksj8myMPi4uojgGYJMVv7y1yIc37vguHAjdgNWk31Hna8YCFopQd1PQ9KDF9maXF6dJmxe7ic
-	ZelVIt/DHG5CBfVdAxtKRKZwrYeQXK8Q=
-X-Gm-Gg: ATEYQzyUyoYHeQHVivDgaYhWE3oHNlO4Mphk4UQhXhpuID1A3o5vb8yEYcJl8hgGqb5
-	0ywc8CzPDFlv1f1ps9CJPHqjzow9xRwSyRHARYFhwbeHKyoK5EX56ju23PMkT1I0p9yGnUYOEZ4
-	HvHyjC7l6nz6hnH9RKSrUMyFh4sUyWa2BxTRfS/lTLGL4pTRyTAoX0otpIJ6jLKdibRzJ08j5DY
-	MyBWcyrTWrzcC0RC9wBrQmLjoZuoD428OfVmEjQgcl7kprdScvWaGKtPC0hFjQVdo06s3JLg1YG
-	Ug6ihbJltcAdONJkof+v4lxS6rzP7mf9U1XyiRk/IskWse+zbtE2MjcU1Rk6MIgNJGldb0SsoPS
-	pAvlE9WZYfOw=
-X-Received: by 2002:a17:907:960d:b0:b93:5744:aee1 with SMTP id
- a640c23a62f3a-b942dfb9f56mr860539966b.51.1773135801970; Tue, 10 Mar 2026
- 02:43:21 -0700 (PDT)
+        d=1e100.net; s=20230601; t=1773138558; x=1773743358;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=6jiRYwrSlheK33/3j3KcGTsXsYmQOfwg8Zg5a92qNT8=;
+        b=LcxHcWqtd0OPhR8SKsm5DBy/TKboUm8KGp8/sAjzGaN5uy7f9T/rAN2Qtps6k5LuUm
+         7yujhY78QQnoFT8KR5VcIMIUjrD8Q6r9RLEpBpF7LHpJwCtINFquHlz4LW7rk44l+y4s
+         1BbwWDeBjBAaod8VGBP010/VQYcr1odIhNa542CrkNY+c3YHt/jc74Tf7VThopm4zt4+
+         RIB+OHSzRRRfpz0FkCNeTZnwyzMaRnZk3IfmQLmu4+aycgWj22ZJyn+EDdqSagI+HikA
+         7jUKGP+XAm0qf2i9eTJVqrTtaIVESawbtE+9uWTYoESMnz4bTZbD+h1LzQZBt3Kjyguc
+         g1CQ==
+X-Forwarded-Encrypted: i=1; AJvYcCWyIBSrxZJ28/MSsy76hSkocsaUKoHGo+YG7oOoijIBgtdt7WX3sv/dv+yqVAFOX6l6NLnPlYEUr2InNA==@vger.kernel.org
+X-Gm-Message-State: AOJu0YyjRW36zjM6jenuLcwP7fIBNF2l6G0bgKdbq8YaodxP/bWwRM2+
+	dAoIi0hJzrJHpMIeZJs2x1VaMUtyxbWnW0jgUgdGO27n2O/ZlWz7jbvsNJTBeckLmm6TkN7/grN
+	eY05T0H0mrMT4pQ6beWjR3+qxjPsLE0d+UuQfZxFtTw==
+X-Gm-Gg: ATEYQzyMAQNKBaRo05nnYK6JTzZ2ESkk8O0c76OoiGEq1s3nnfBTtJ3mhHQiqPZgCNq
+	KnJVc8a5P51HnpUQA7xLmP0PppI2cRVBfVEHMFfjZJfOuuv49Dx07IcNDBkuZ+Q0E76tzE+6RrK
+	sqy9LS+4aPRgCJdZSUrTpC97i7ffVEhH2IVmu2vNvbD2bWRuxXJ/voQ21CiOhnoX4W9bDIBcUJg
+	kYDpuoUx1MCm64EgoBqYjC/12AqlgAwssQQMuL4KSJtXsPSMTv3U5G+W6cikd+1gL3J/J14RmSW
+	5XjJ4Fcis7Gu0ufYWDKGTQVq9ooRkgJBkLe+Q+Wd9tc2vN6J132PfXoxpV44cLQeFpSAlZsaiYP
+	pSQ8E
+X-Received: by 2002:a5d:5887:0:b0:439:b3f8:7757 with SMTP id
+ ffacd0b85a97d-439da8a729emr25742771f8f.55.1773138558404; Tue, 10 Mar 2026
+ 03:29:18 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260310075447.2088205-1-gality369@gmail.com> <19e81a86-a8ce-42df-8cf7-da74205584ce@suse.com>
- <CAOmEq9Umi=3AA+0DkmHrfFjj2hBnkq4xGSFdfS40x5F7DpEtuw@mail.gmail.com> <4e697f30-1057-451c-9238-5ea748dd3236@suse.com>
-In-Reply-To: <4e697f30-1057-451c-9238-5ea748dd3236@suse.com>
-From: ZhengYuan Huang <gality369@gmail.com>
-Date: Tue, 10 Mar 2026 17:43:10 +0800
-X-Gm-Features: AaiRm536-m2uYjLqi9U5ujWYS_-IxuEn188Eo6qNjtn33hUuJVhYfzIx46MnQs4
-Message-ID: <CAOmEq9UNR3ykGP6exskiJLQpUT36xe91aAs_4Jk8mNvEfNkJ8g@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: reloc: unlink orphan reloc roots before dropping them
-To: Qu Wenruo <wqu@suse.com>
-Cc: dsterba@suse.com, clm@fb.com, linux-btrfs@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, baijiaju1990@gmail.com, r33s3n6@gmail.com, 
-	zzzccc427@gmail.com, stable@vger.kernel.org
+References: <a1e2690efeb8570651894567d80511144424fb5e.1772106022.git.fdmanana@suse.com>
+In-Reply-To: <a1e2690efeb8570651894567d80511144424fb5e.1772106022.git.fdmanana@suse.com>
+From: Daniel Vacek <neelx@suse.com>
+Date: Tue, 10 Mar 2026 11:29:07 +0100
+X-Gm-Features: AaiRm53zdbSu2cqkrGddMddUj7QuXOvlCrthC_JgcKlKC2t11dskmJhjsvDYt3s
+Message-ID: <CAPjX3FfPExsBfs+0QsehE9G-oHidDHod45pbnDJBJadXzRTusg@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: test create a bunch of files with name hash collision
+To: fdmanana@kernel.org
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org, 
+	Filipe Manana <fdmanana@suse.com>
 Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
 
-On Tue, Mar 10, 2026 at 5:33=E2=80=AFPM Qu Wenruo <wqu@suse.com> wrote:
-> I just grabbed one from Johannes:
+On Thu, 26 Feb 2026 at 15:40, <fdmanana@kernel.org> wrote:
+> From: Filipe Manana <fdmanana@suse.com>
 >
-> https://lore.kernel.org/linux-btrfs/20260224125113.14831-1-johannes.thums=
-hirn@wdc.com/
+> Test that if we create a high number of files with a name that results in
+> a hash collision, the filesystem is not turned to RO due to a transaction
+> abort. This could be exploited by malicious users to disrupt a system.
 >
-> And from Filipe:
+> This exercies a bug fixed by the following kernel patch:
 >
-> https://lore.kernel.org/linux-btrfs/b99cee6ce652b926463a080ef052a2e8e37bf=
-f33.1772105193.git.fdmanana@suse.com/
+>  "btrfs: fix transaction abort on file creation due to name hash collision"
 >
-> And myself, which is more aligned to your style:
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
+>  tests/btrfs/346     | 95 +++++++++++++++++++++++++++++++++++++++++++++
+>  tests/btrfs/346.out |  3 ++
+>  2 files changed, 98 insertions(+)
+>  create mode 100755 tests/btrfs/346
+>  create mode 100644 tests/btrfs/346.out
 >
-> https://lore.kernel.org/linux-btrfs/4170e39bac4a2559ad0535f9bd74a89bc44a3=
-6d4.1771488629.git.wqu@suse.com/
+> diff --git a/tests/btrfs/346 b/tests/btrfs/346
+> new file mode 100755
+> index 00000000..ef301ef7
+> --- /dev/null
+> +++ b/tests/btrfs/346
+> @@ -0,0 +1,95 @@
+> +#! /bin/bash
+> +# SPDX-License-Identifier: GPL-2.0
+> +# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
+> +#
+> +# FS QA Test 346
+> +#
+> +# Test that if we create a high number of files with a name that results in a
+> +# hash collision, the filesystem is not turned to RO due to a transaction abort.
+> +# This could be exploited by malicious users to disrupt a system.
+> +#
+> +. ./common/preamble
+> +_begin_fstest auto quick subvol
+> +
+> +_require_scratch
+> +_require_btrfs_support_sectorsize 4096
+> +
+> +_fixed_by_kernel_commit xxxxxxxxxxxx \
+> +       "btrfs: fix transaction abort on file creation due to name hash collision"
+> +
+> +# Use a 4K node/leaf size to make the test faster and require less file names
+> +# that trigger a crc32c hash collision.
+> +_scratch_mkfs -n 4K >> $seqres.full 2>&1 || _fail "mkfs failed"
+> +_scratch_mount
+> +
+> +# List of names that result in the same crc32c hash for btrfs.
+> +declare -a names=(
+> +       'foobar'
+> +       '%a8tYkxfGMLWRGr55QSeQc4PBNH9PCLIvR6jZnkDtUUru1t@RouaUe_L:@xGkbO3nCwvLNYeK9vhE628gss:T$yZjZ5l-Nbd6CbC$M=hqE-ujhJICXyIxBvYrIU9-TDC'
+> +       'AQci3EUB%shMsg-N%frgU:02ByLs=IPJU0OpgiWit5nexSyxZDncY6WB:=zKZuk5Zy0DD$Ua78%MelgBuMqaHGyKsJUFf9s=UW80PcJmKctb46KveLSiUtNmqrMiL9-Y0I_l5Fnam04CGIg=8@U:Z'
+> +       'CvVqJpJzueKcuA$wqwePfyu7VxuWNN3ho$p0zi2H8QFYK$7YlEqOhhb%:hHgjhIjW5vnqWHKNP4'
+> +       'ET:vk@rFU4tsvMB0$C_p=xQHaYZjvoF%-BTc%wkFW8yaDAPcCYoR%x$FH5O:'
+> +       'HwTon%v7SGSP4FE08jBwwiu5aot2CFKXHTeEAa@38fUcNGOWvE@Mz6WBeDH_VooaZ6AgsXPkVGwy9l@@ZbNXabUU9csiWrrOp0MWUdfi$EZ3w9GkIqtz7I_eOsByOkBOO'
+> +       'Ij%2VlFGXSuPvxJGf5UWy6O@1svxGha%b@=%wjkq:CIgE6u7eJOjmQY5qTtxE2Rjbis9@us'
+> +       'KBkjG5%9R8K9sOG8UTnAYjxLNAvBmvV5vz3IiZaPmKuLYO03-6asI9lJ_j4@6Xo$KZicaLWJ3Pv8XEwVeUPMwbHYWwbx0pYvNlGMO9F:ZhHAwyctnGy%_eujl%WPd4U2BI7qooOSr85J-C2V$LfY'
+> +       'NcRfDfuUQ2=zP8K3CCF5dFcpfiOm6mwenShsAb_F%n6GAGC7fT2JFFn:c35X-3aYwoq7jNX5$ZJ6hI3wnZs$7KgGi7wjulffhHNUxAT0fRRLF39vJ@NvaEMxsMO'
+> +       'Oj42AQAEzRoTxa5OuSKIr=A_lwGMy132v4g3Pdq1GvUG9874YseIFQ6QU'
+> +       'Ono7avN5GjC:_6dBJ_'
+> +       'WHmN2gnmaN-9dVDy4aWo:yNGFzz8qsJyJhWEWcud7$QzN2D9R0efIWWEdu5kwWr73NZm4=@CoCDxrrZnRITr-kGtU_cfW2:%2_am'
+> +       'WiFnuTEhAG9FEC6zopQmj-A-$LDQ0T3WULz%ox3UZAPybSV6v1Z$b4L_XBi4M4BMBtJZpz93r9xafpB77r:lbwvitWRyo$odnAUYlYMmU4RvgnNd--e=I5hiEjGLETTtaScWlQp8mYsBovZwM2k'
+> +       'XKyH=OsOAF3p%uziGF_ZVr$ivrvhVgD@1u%5RtrV-gl_vqAwHkK@x7YwlxX3qT6WKKQ%PR56NrUBU2dOAOAdzr2=5nJuKPM-T-$ZpQfCL7phxQbUcb:BZOTPaFExc-qK-gDRCDW2'
+> +       'd3uUR6OFEwZr%ns1XH_@tbxA@cCPmbBRLdyh7p6V45H$P2$F%w0RqrD3M0g8aGvWpoTFMiBdOTJXjD:JF7=h9a_43xBywYAP%r$SPZi%zDg%ql-KvkdUCtF9OLaQlxmd'
+> +       'ePTpbnit%hyNm@WELlpKzNZYOzOTf8EQ$sEfkMy1VOfIUu3coyvIr13-Y7Sv5v-Ivax2Go_GQRFMU1b3362nktT9WOJf3SpT%z8sZmM3gvYQBDgmKI%%RM-G7hyrhgYflOw%z::ZRcv5O:lDCFm'
+> +       'evqk743Y@dvZAiG5J05L_ROFV@$2%rVWJ2%3nxV72-W7$e$-SK3tuSHA2mBt$qloC5jwNx33GmQUjD%akhBPu=VJ5g$xhlZiaFtTrjeeM5x7dt4cHpX0cZkmfImndYzGmvwQG:$euFYmXn$_2rA9mKZ'
+> +       'gkgUtnihWXsZQTEkrMAWIxir09k3t7jk_IK25t1:cy1XWN0GGqC%FrySdcmU7M8MuPO_ppkLw3=Dfr0UuBAL4%GFk2$Ma10V1jDRGJje%Xx9EV2ERaWKtjpwiZwh0gCSJsj5UL7CR8RtW5opCVFKGGy8Cky'
+> +       'hNgsG_8lNRik3PvphqPm0yEH3P%%fYG:kQLY=6O-61Wa6nrV_WVGR6TLB09vHOv%g4VQRP8Gzx7VXUY1qvZyS'
+> +       'isA7JVzN12xCxVPJZ_qoLm-pTBuhjjHMvV7o=F:EaClfYNyFGlsfw-Kf%uxdqW-kwk1sPl2vhbjyHU1A6$hz'
+> +       'kiJ_fgcdZFDiOptjgH5PN9-PSyLO4fbk_:u5_2tz35lV_iXiJ6cx7pwjTtKy-XGaQ5IefmpJ4N_ZqGsqCsKuqOOBgf9LkUdffHet@Wu'
+> +       'lvwtxyhE9:%Q3UxeHiViUyNzJsy:fm38pg_b6s25JvdhOAT=1s0$pG25x=LZ2rlHTszj=gN6M4zHZYr_qrB49i=pA--@WqWLIuX7o1S_SfS@2FSiUZN'
+> +       'rC24cw3UBDZ=5qJBUMs9e$=S4Y94ni%Z8639vnrGp=0Hv4z3dNFL0fBLmQ40=EYIY:Z=SLc@QLMSt2zsss2ZXrP7j4='
+> +       'uwGl2s-fFrf@GqS=DQqq2I0LJSsOmM%xzTjS:lzXguE3wChdMoHYtLRKPvfaPOZF2fER@j53evbKa7R%A7r4%YEkD=kicJe@SFiGtXHbKe4gCgPAYbnVn'
+> +       'UG37U6KKua2bgc:IHzRs7BnB6FD:2Mt5Cc5NdlsW%$1tyvnfz7S27FvNkroXwAW:mBZLA1@qa9WnDbHCDmQmfPMC9z-Eq6QT0jhhPpqyymaD:R02ghwYo%yx7SAaaq-:x33LYpei$5g8DMl3C'
+> +       'y2vjek0FE1PDJC0qpfnN:x8k2wCFZ9xiUF2ege=JnP98R%wxjKkdfEiLWvQzmnW'
+> +       '8-HCSgH5B%K7P8_jaVtQhBXpBk:pE-$P7ts58U0J@iR9YZntMPl7j$s62yAJO@_9eanFPS54b=UTw$94C-t=HLxT8n6o9P=QnIxq-f1=Ne2dvhe6WbjEQtc'
+> +       'YPPh:IFt2mtR6XWSmjHptXL_hbSYu8bMw-JP8@PNyaFkdNFsk$M=xfL6LDKCDM-mSyGA_2MBwZ8Dr4=R1D%7-mCaaKGxb990jzaagRktDTyp'
+> +       '9hD2ApKa_t_7x-a@GCG28kY:7$M@5udI1myQ$x5udtggvagmCQcq9QXWRC5hoB0o-_zHQUqZI5rMcz_kbMgvN5jr63LeYA4Cj-c6F5Ugmx6DgVf@2Jqm%MafecpgooqreJ53P-QTS'
+> +)
+> +
+> +# Now create files with all those names in the same parent directory.
+> +# It should not fail since a 4K leaf has enough space for them.
+> +for name in "${names[@]}"; do
+> +       touch $SCRATCH_MNT/$name
+> +done
+> +
+> +# Now add one more file name that causes a crc32c hash collision.
+> +# This should fail, but it should not cause a transaction abort and turn the
+> +# filesystem into RO mode (which could be exploited by malicious users).
+> +touch $SCRATCH_MNT/'W6tIm-VK2@BGC@IBfcgg6j_p:pxp_QUqtWpGD5Ok_GmijKOJJt' \
+> +      >> $seqres.full 2>&1
+> +[ $? -eq 0 ] && echo "should not have been able to create file"
+> +
+> +# Check that we are able to create another file, with a name that does not cause
+> +# a crc32c hash collision.
+> +echo -n "hello world" > $SCRATCH_MNT/baz
+> +
+> +# Unmount and mount again, verify file baz exists and with the right content.
+> +_scratch_cycle_mount
+> +echo "File baz content: $(cat $SCRATCH_MNT/baz)"
+> +
+> +# Now try to create a subvolume with the same name that causes a hash collision.
+> +# It should fail, but it shouldn't trigger a transaction abort and turns the
+> +# filesystem to RO mode. Subvolume creation takes a different code path.
+> +$BTRFS_UTIL_PROG subvolume create \
+> +       $SCRATCH_MNT/'W6tIm-VK2@BGC@IBfcgg6j_p:pxp_QUqtWpGD5Ok_GmijKOJJt' \
+> +               >> $seqres.full 2>&1
+> +[ $? -eq 0 ] && echo "should not have been able to subvolume"
 
-Thanks a lot for the clarification and for the example patches.
+"... to create subvolume"
 
-This is very helpful. I understand the changelog expectations much
-better now, especially for crash/KASAN fixes. I'll study the examples
-you linked and use them as references for future submissions.
-
-Thanks again for the guidance.
-
-Thanks,
-ZhengYuan Huang
+> +
+> +# Check that we are able to create another file, with a name that does not cause
+> +# a crc32c hash collision.
+> +echo -n "yada yada" > $SCRATCH_MNT/xyz
+> +
+> +# Unmount and mount again, verify file xyz exists and with the right content.
+> +_scratch_cycle_mount
+> +echo "File xyz content: $(cat $SCRATCH_MNT/xyz)"
+> +
+> +_exit 0
+> diff --git a/tests/btrfs/346.out b/tests/btrfs/346.out
+> new file mode 100644
+> index 00000000..e1b82cbd
+> --- /dev/null
+> +++ b/tests/btrfs/346.out
+> @@ -0,0 +1,3 @@
+> +QA output created by 346
+> +File baz content: hello world
+> +File xyz content: yada yada
+> --
+> 2.47.2
+>
+>

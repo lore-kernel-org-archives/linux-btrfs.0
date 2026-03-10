@@ -1,46 +1,119 @@
-Received: from bombadil.infradead.org (bombadil.infradead.org [198.137.202.133])
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EF6F940DFA5;
-	Tue, 10 Mar 2026 13:13:50 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.137.202.133
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5C0D53B0AD0
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 Mar 2026 13:22:07 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.133.124
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773148432; cv=none; b=tvljGEKfxTJoGhSvDj8DKX9uNUsWUEPzmM8KVOUSV25c/FTyQrWNKxNxHz7ht/enFVXGzSnj8HcpAmOhLV+dXcuZmbZiJxwznhFAPTXRzjis7nhpRbHNDFMEAj3vdS78Ws2dQoTlOA1G06Z/xdZI0OecqFYNM3ij5bWvAcNEXXc=
+	t=1773148930; cv=none; b=GzysPqgVQyEIND0mO2emlAqcT/CmIVtQGTsru1qOFW8fV3tR68tOGWJNqwx6tFSfW8NkuCQ2bxm4smW183CBYev8Ig6dGrp14+lQoqw8GHGH1frQOh6Y11qYwC6I5Cg0WFgjZnLVeje2pcQYf6SV1bD3AJokgwfC9LPjUecFXD8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773148432; c=relaxed/simple;
-	bh=e/pv3CxAxC2RnAlfOfrfKu284sfmuZfniHtWEju2ZC4=;
+	s=arc-20240116; t=1773148930; c=relaxed/simple;
+	bh=7C48eJwQxF2SZSyojjO4eehKdtPdDBqSboD/LkVXOwA=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=BoS+eWZo0xLHp1jHhulNGXBLlb0EMRZXrfYnBwxgOvwyQRJtCQpPHYMAFTJTzgTuZZIvuFhqciNMP+zLr0zNbvgFPYzKddalvLIdhHei17ym5y8DlQBGEcShIJkVB/f2PUH8adl4ovDl+8O8xuXdO8sdK6QwXTBlCTTZgo82rg4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=KXA2AVzj; arc=none smtp.client-ip=198.137.202.133
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org
+	 Content-Type:Content-Disposition:In-Reply-To; b=OFAEdpp1AClATX7ryLlgtAqsPYbgAmgmV2viIYer0WUUN77SCKNsRTVfjvoFlAk6ao+NhCCedi+m1qrFoPBRe71EYDyMIbM1V33vc0DS2DS36oU6YGsnBNgGBYOd7wpUcM3gWQvg8VxEI8YepvzPu7q0rpZkaOssJr42F5HWMQ4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=ADQQpd+b; dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b=DLhvlaPb; arc=none smtp.client-ip=170.10.133.124
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="KXA2AVzj"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
-	:References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-	Content-Transfer-Encoding:Content-ID:Content-Description;
-	bh=0uzoy50EcKDUvv4Q7osdCggdIiDAs86AMvSoYoV05Hc=; b=KXA2AVzjsScPXXh/0V/WwVZ1eX
-	bcwt92TKX0DYfBXDXsioaNAIfVZuwN/7gkoBRMX8U9lRnnQABJddUJUgWCdk7wtXvSig2f2CzbcVz
-	KYA6SZvHNw1p+Hrg51V79692tlF+JnUUhKwqVR0QPd+XoGbCZlAvRfZOb7uOOdU0rDJq8BWI8Ayi9
-	XM07ulfjFRn97hX75IqocXPU6MRPED+umDdBoVHneseH4hMGdsYQpAfTKIVZxB1Algl538fw2YeI3
-	4HxI1yCUGPZfLtOWruPVtxEEfsHo0XsIr1K++7skqxOi0xar8ZXeHWcaFXhpT9wDHvifxTM8aXP0v
-	8V8E4mtA==;
-Received: from hch by bombadil.infradead.org with local (Exim 4.98.2 #2 (Red Hat Linux))
-	id 1vzwuE-00000009Z6w-2pw8;
-	Tue, 10 Mar 2026 13:13:50 +0000
-Date: Tue, 10 Mar 2026 06:13:50 -0700
-From: Christoph Hellwig <hch@infradead.org>
-To: Filipe Manana <fdmanana@kernel.org>
-Cc: Christoph Hellwig <hch@infradead.org>, fstests@vger.kernel.org,
-	linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>,
-	linux-fsdevel@vger.kernel.org
-Subject: Re: [PATCH] btrfs: test create a bunch of files with name hash
- collision
-Message-ID: <abAZDvPLRbCeQh1D@infradead.org>
-References: <a1e2690efeb8570651894567d80511144424fb5e.1772106022.git.fdmanana@suse.com>
- <aarmPHmLnGtvhUcO@infradead.org>
- <CAL3q7H5r5_FuTSUM_5TqFGFPSZ4qC=qG49_JuLpUfzFCa=8YyQ@mail.gmail.com>
+	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="ADQQpd+b";
+	dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b="DLhvlaPb"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+	s=mimecast20190719; t=1773148926;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=5/adDEbR57gUpYJcJq84OoDVxrrM3xMPFmZCRo0jKXM=;
+	b=ADQQpd+bpcMvyiI6BuK6I/AtlFPVjRaT1jbvm8x0bcg2sn4Mv+l/q+wGsOaa7zGZavpvJL
+	HOw6n0NTrJxN8BVrJlzy+3Oyq/AicE10gafpjzfnHFVMImjvlOy3qRSEO7jpexZVWETsUQ
+	RoRPrXnJkd5ZbUZ0X+x9wM3CIJYSD9c=
+Received: from mail-qk1-f198.google.com (mail-qk1-f198.google.com
+ [209.85.222.198]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
+ us-mta-376-ajK56Bq-M6q2F65BkRI1ng-1; Tue, 10 Mar 2026 09:22:05 -0400
+X-MC-Unique: ajK56Bq-M6q2F65BkRI1ng-1
+X-Mimecast-MFC-AGG-ID: ajK56Bq-M6q2F65BkRI1ng_1773148925
+Received: by mail-qk1-f198.google.com with SMTP id af79cd13be357-8cd773dd39bso2180667285a.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Mar 2026 06:22:05 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=redhat.com; s=google; t=1773148925; x=1773753725; darn=vger.kernel.org;
+        h=user-agent:in-reply-to:content-disposition:mime-version:references
+         :message-id:subject:cc:to:from:date:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=5/adDEbR57gUpYJcJq84OoDVxrrM3xMPFmZCRo0jKXM=;
+        b=DLhvlaPbwaSFQKg/FmxemLJJZifDd7cIIhpxvIrZaWROKjgqKnQK81zS2r/WSu9mvZ
+         1x4TVLhhO06glvOYJXTBYTQHe1C/lCEECiyKmpprEGkSpnbhT/+Xy+wfN5x6paEUKxsd
+         eleVUcWebznHZRscghpqRSurxi7A6fJyr8+SC/oFm4tth2mVEOc19JKZit9S00HY03E/
+         XNzQnAGkguTRFL3rrkTJWt1Ev4Xq7DVoDTHr6r9kNjeVPxV8v11X5FGr4E58NddnvLYv
+         QUA4HTbgZjVMx4thX/P6FGMyY+HUc/G2+EnczacjtLqtmfpojjqt59bZxWNPmXy2pn5x
+         ulpQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1773148925; x=1773753725;
+        h=user-agent:in-reply-to:content-disposition:mime-version:references
+         :message-id:subject:cc:to:from:date:x-gm-gg:x-gm-message-state:from
+         :to:cc:subject:date:message-id:reply-to;
+        bh=5/adDEbR57gUpYJcJq84OoDVxrrM3xMPFmZCRo0jKXM=;
+        b=Fg1EW980IAm545qPXktkMEfTHBGat4lp7tboOYqRqnQ2kAUDyIuiqZegVMAtznMZvA
+         jcg5em1x0DyK1Tjhxd61sfN37ZE6AJvoD02aRpV7xYXnfO49IQDHihtxnwPIRFWUD3jj
+         Fdtw0s4Gf0z+MkjAW3Ok1EoRaEmRGofEpsdRpug9Ffe8FVUc8ItNge0OTlORBAZMKma3
+         R4DbwvZ061bCd0OO6gXcLUdYVVrF6ZospaZKn4JauSRo8g5/VglKcvl2ilKLPSwxhDHR
+         PWb+ZV9qeq3UqkWmvKxLG1UwLIG8XSlLzADZQ94XKEVUVER7tK3j7jMdWxr8JVHTrOYW
+         gPWA==
+X-Forwarded-Encrypted: i=1; AJvYcCUnRXutk3LV8hGz44JFnWM2gjr0JGxwt80fE75s9Zfy8+x0nVqlH8IBoBSJdiKJDrNz0MXl2yu5IXBNLA==@vger.kernel.org
+X-Gm-Message-State: AOJu0Ywwu+WQ2Ff/RI/lXG9lqmpYaiOvLzHjP2icBuwWyMvEDQn5GEm7
+	zWmQgcxF5WnwpPibHDDPyyUH7K8NQ2Pavnu8HdM3kcSOQLkzGDhriJ/5eotYCvpUlXOoh6nJ+tt
+	Vcmp46T7l7hQYalM5ALDtEYLbF8euEUX4J5R0PUzq5r9v36pMokqjq4DN3h4DQTWx
+X-Gm-Gg: ATEYQzwELnYoA5uc/QwLw/VEdr9n3Ac9nKB9fzPtZeM7iH6PfrG5jdbgONo5zYSRWMj
+	ZJX3iF5LEEMfzk5ZD7HhSK+oynSzgZ0QF8sU67BV1F+ILl9bB9/uCV3nMfUgyulyDN9HzZAUbB+
+	yabcLe+t79aHS5yteX9Y61v7tAQfB4E4FrubUYJJcni8T/DU/yKB0uuHgj/meemz7rCy8c3xhdz
+	eyxu1bmvHJm/qwB6JxyI7XBSAtYycBMEbZIekSFEtQJjyHmfXIq/DJvga3Q6/F2EMY9e3Bfl2te
+	E8Ovm7t/moIDw0N/bVKTsaJ3Jp9oQ20WqKY+KlBQMisbJ6F0XvNqZS0VGp8Gsc4kOR4ZJA/NZrb
+	bgBpyDcjipl01ukOzHsoP5S/Jsn4kOFGtsiR2l8O5RbrLZxVoG5mP8cwW
+X-Received: by 2002:a05:620a:3713:b0:8ca:1240:4991 with SMTP id af79cd13be357-8cd6d4f9469mr1830786585a.45.1773148924719;
+        Tue, 10 Mar 2026 06:22:04 -0700 (PDT)
+X-Received: by 2002:a05:620a:3713:b0:8ca:1240:4991 with SMTP id af79cd13be357-8cd6d4f9469mr1830766185a.45.1773148922638;
+        Tue, 10 Mar 2026 06:22:02 -0700 (PDT)
+Received: from redhat.com (c-73-183-52-120.hsd1.pa.comcast.net. [73.183.52.120])
+        by smtp.gmail.com with ESMTPSA id af79cd13be357-8cd8576db0esm474754485a.47.2026.03.10.06.21.59
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 10 Mar 2026 06:22:01 -0700 (PDT)
+Date: Tue, 10 Mar 2026 09:21:58 -0400
+From: Brian Masney <bmasney@redhat.com>
+To: Philipp Hahn <phahn-oss@avm.de>
+Cc: amd-gfx@lists.freedesktop.org, apparmor@lists.ubuntu.com,
+	bpf@vger.kernel.org, ceph-devel@vger.kernel.org, cocci@inria.fr,
+	dm-devel@lists.linux.dev, dri-devel@lists.freedesktop.org,
+	gfs2@lists.linux.dev, intel-gfx@lists.freedesktop.org,
+	intel-wired-lan@lists.osuosl.org, iommu@lists.linux.dev,
+	kvm@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+	linux-block@vger.kernel.org, linux-bluetooth@vger.kernel.org,
+	linux-btrfs@vger.kernel.org, linux-cifs@vger.kernel.org,
+	linux-clk@vger.kernel.org, linux-erofs@lists.ozlabs.org,
+	linux-ext4@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+	linux-gpio@vger.kernel.org, linux-hyperv@vger.kernel.org,
+	linux-input@vger.kernel.org, linux-kernel@vger.kernel.org,
+	linux-leds@vger.kernel.org, linux-media@vger.kernel.org,
+	linux-mips@vger.kernel.org, linux-mm@kvack.org,
+	linux-modules@vger.kernel.org, linux-mtd@lists.infradead.org,
+	linux-nfs@vger.kernel.org, linux-omap@vger.kernel.org,
+	linux-phy@lists.infradead.org, linux-pm@vger.kernel.org,
+	linux-rockchip@lists.infradead.org, linux-s390@vger.kernel.org,
+	linux-scsi@vger.kernel.org, linux-sctp@vger.kernel.org,
+	linux-security-module@vger.kernel.org, linux-sh@vger.kernel.org,
+	linux-sound@vger.kernel.org,
+	linux-stm32@st-md-mailman.stormreply.com,
+	linux-trace-kernel@vger.kernel.org, linux-usb@vger.kernel.org,
+	linux-wireless@vger.kernel.org, netdev@vger.kernel.org,
+	ntfs3@lists.linux.dev, samba-technical@lists.samba.org,
+	sched-ext@lists.linux.dev, target-devel@vger.kernel.org,
+	tipc-discussion@lists.sourceforge.net, v9fs@lists.linux.dev,
+	Michael Turquette <mturquette@baylibre.com>,
+	Stephen Boyd <sboyd@kernel.org>,
+	Daniel Lezcano <daniel.lezcano@kernel.org>,
+	Thomas Gleixner <tglx@kernel.org>
+Subject: Re: [PATCH 56/61] clk: Prefer IS_ERR_OR_NULL over manual NULL check
+Message-ID: <abAa9vQg4BSxl1BJ@redhat.com>
+References: <20260310-b4-is_err_or_null-v1-0-bd63b656022d@avm.de>
+ <20260310-b4-is_err_or_null-v1-56-bd63b656022d@avm.de>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -49,26 +122,31 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <CAL3q7H5r5_FuTSUM_5TqFGFPSZ4qC=qG49_JuLpUfzFCa=8YyQ@mail.gmail.com>
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
+In-Reply-To: <20260310-b4-is_err_or_null-v1-56-bd63b656022d@avm.de>
+User-Agent: Mutt/2.2.14 (2025-02-20)
 
-On Fri, Mar 06, 2026 at 02:55:23PM +0000, Filipe Manana wrote:
-> > Umm, file systems must handle an unlimited number of name collisions.
-> > While going read-only is of course really bad, just rejecting them
-> > can also pretty easily break things.
+On Tue, Mar 10, 2026 at 12:49:22PM +0100, Philipp Hahn wrote:
+> Prefer using IS_ERR_OR_NULL() over using IS_ERR() and a manual NULL
+> check.
 > 
-> I don't think in practice we get a large enough number of names with a
-> crc32c hash collision in btrfs.
+> Semantich change: Previously the code only printed the warning on error,
 
-That's not the point.  Posix and Linux file systems don't have an
-error code or defined condition for adding this file name would cause
-a hash collision and we were to lazy to deal with it.
+Semantic ...
 
-> Adding support for an unlimited number of collisions is simply not
-> easily doable, it would require an on-disk format change (new key
-> type, item, etc, update btrfs-progs, etc).
-> The motivation for that is very low, as I'm not aware of users ever complaining.
+> but not when the pointer was NULL. Now the warning is printed in both
+> cases!
+> 
+> Change found with coccinelle.
+> 
+> To: Michael Turquette <mturquette@baylibre.com>
+> To: Stephen Boyd <sboyd@kernel.org>
+> To: Daniel Lezcano <daniel.lezcano@kernel.org>
+> To: Thomas Gleixner <tglx@kernel.org>
+> Cc: linux-clk@vger.kernel.org
+> Cc: linux-kernel@vger.kernel.org
+> Signed-off-by: Philipp Hahn <phahn-oss@avm.de>
 
-Well, how would they know this happened?  The users only sees the file
-system acting weird in completely unpredictable ways.
+With the minor typo addressed:
+
+Reviewed-by: Brian Masney <bmasney@redhat.com>
 

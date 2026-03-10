@@ -1,110 +1,117 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from kylie.crudebyte.com (kylie.crudebyte.com [5.189.157.229])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2C0AD40DFB1
-	for <linux-btrfs@vger.kernel.org>; Tue, 10 Mar 2026 13:40:48 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 96FA029B78D;
+	Tue, 10 Mar 2026 13:45:36 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=5.189.157.229
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773150048; cv=none; b=iZwDoRkrbLTFiSRk2SZEAX3dRmCnkNMoA/mjZMy6PZcQgMUJTDyNb48xbk+nfGAMy5cqyx7Um/B6lRUmXgbAsJmvShHTpRzRjehf8fQwVqlhBCSLxcVYKBb3ievaw7SuxEDpsPIa5xgoGLvmT+IPumtNqLvsYNJ/BfjttFTskcg=
+	t=1773150338; cv=none; b=p/AMbRR71gTFzmuPbm7wiofwKTPWuJcjhXkdESF7JaJPil8FGCdzDGw/jt/QfYWuwf/Cvr8haCwtox/tB3waz0sGv+MMT71h0Q43eiPxVFgmNBvYZlUqGpfJoL4Z+Kaz8wrLQ4EcTdGpQIjuXZOoW/2YY1JNnoSBBICiDtG53FI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773150048; c=relaxed/simple;
-	bh=EMW9Sr4WgrFhXTOPAzIcV47orF4/J2jE1f9BIXSit8U=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=ENcTpD8THB+QqIBPSxlZH9y3/RP0R/M2DmR6UB3Z40uDoC0u/ArP0MbEsI7NUDR+NfkzuNVv4TPZblIY8J5Cns24YiJDMfNBYcj3RDlrC+corfpH6V74l472w4Sv1L+fCnC1N5oczLyAI8YswvL5Ni1/ZKEo7agrZ+7J3YHLEfY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=kadi4Uaq; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1773150338; c=relaxed/simple;
+	bh=BpET1FSzK/QYA+eM7BKpT/a7409mmPZXJHCSp+mv7MQ=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version:Content-Type; b=PLeoOcFKUsvR/7RIO06n9v9Iopf36W9nIyhBrNvzyzi0zHZo+zmYfVeWvDKVfYr5AIX3xmbyJ5vI1sWa5XgrjM1tpH4flr3Qj0/dNyyq5iBD3bAQ19MCwIs/nGj7alGlaZakOqYDflDEPKQv52GjU57Dcn4VI2hiJSdiZhNwrCs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=crudebyte.com; spf=pass smtp.mailfrom=crudebyte.com; dkim=pass (4096-bit key) header.d=crudebyte.com header.i=@crudebyte.com header.b=BSv+5VTS; arc=none smtp.client-ip=5.189.157.229
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=crudebyte.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=crudebyte.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="kadi4Uaq"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id C84EBC19425
-	for <linux-btrfs@vger.kernel.org>; Tue, 10 Mar 2026 13:40:47 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1773150047;
-	bh=EMW9Sr4WgrFhXTOPAzIcV47orF4/J2jE1f9BIXSit8U=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-	b=kadi4UaqscTIYPZWnJNdVKOngoPgZ0RyvnwsL6JhErfyXyXaKp7dsYOlpfyQxM8GU
-	 50SICPLkG08ydUS8M8c153UhMs3JvtXXIQuJSuQ5IHX+cMiIPRk4eLKWMOPg75nGRb
-	 WTYqP2TYiLJxFiqjZ+IzLGzqYRxJZjW5Luv929l0IMOwi9GLv29l2L/FluNZPIUuh7
-	 o1VPk82wZzIYmPz0PVCHS99ONPT/d2vLeNgh+l1wqddYKdDYqMS67e0LW8rJi2MhgV
-	 qMvcvYC8BBdKku1cZJh3t1lr54sbDRmXzdeO/M6x8LRQ/UFoO7xCRIsSR60Jg2B9t3
-	 PirfZlid/9U9g==
-Received: by mail-ej1-f50.google.com with SMTP id a640c23a62f3a-b9704cd6951so183355666b.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Mar 2026 06:40:47 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AJvYcCUnWIrGXjdE9VwUPvyNDKmRdAz7TsdXDrWIitj7pMw/xDAVm59ehmYJ+qI5jckQbVZ5q9AveFiH3he56Q==@vger.kernel.org
-X-Gm-Message-State: AOJu0YwuFoxGYDJOS8KfZUXzHPZSUf6Fym/2TGxUA7mxlKdv/Sc2Pv3Q
-	9/y6Gtlu/bjhf12t3eo0vS5OWJ/mgSGiSoIuDVyGglKbEf/dVCy/rJfu5iVxUpef7PNQI0q7xnL
-	BiAWuDSYwLJLDzNDrRDEf+xd9NzRcp/s=
-X-Received: by 2002:a17:907:3c91:b0:b97:3db:c7cb with SMTP id
- a640c23a62f3a-b9703dbe04cmr339433766b.46.1773150046254; Tue, 10 Mar 2026
- 06:40:46 -0700 (PDT)
+	dkim=pass (4096-bit key) header.d=crudebyte.com header.i=@crudebyte.com header.b="BSv+5VTS"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=crudebyte.com; s=kylie; h=Content-Type:Content-Transfer-Encoding:
+	MIME-Version:References:In-Reply-To:Message-ID:Date:Subject:Cc:To:From:
+	Content-ID:Content-Description;
+	bh=tqNoaL94Dj4pObM+6pGSr4RMsIJmELh6Cj7p3cxJGxE=; b=BSv+5VTSyPyrhpKWnMZVCjZEvG
+	yrk6LWxlGwnUUZjquKMol+ljVUIUp9jBraubgLqBi4cKz4hniKCf9rIQTsThme1FexxEN+zxKvsgC
+	uvMYbDhkYi+shFX+PLCD/IMwmjSpYMDJbZGsateoQvss1ByMiB7n5CokueqpdePTp7697ajozqLcL
+	QNNNvSzTIj5kMR2wUJSupi5THJtiu7VhPmFy8ePRrdnRpYFSOebiyO3IlTbeTGO/MmRM5PEIBBHLD
+	zejwvm6ItsldfqTIXTc6O0Z/soDk0el6lSZ+MrXBoszSWB5pdQE71J71rNLjrXAAIRkB6hWfEOV6d
+	5s2EICAGfy5rFvZnPzPqZQFNMJmMF1OtxV9pY8V9U1rZXYRb0+cWjl6X1xLcFCZOiZcoHLob301cc
+	kRokX7oWqU/2ExVyAy+qxf6eKje0uvqaOqv9hMGZ5ryaSKPC2aKAIJfnAVSBvJS/v1i4KIjPZc3rm
+	OWRlN9QVYisM4o3VWUWhQE9QLOSHJzH7XsIe7kcAxjAHPZYtil03PpuGESYai0z/ycOzdMPXNnK8s
+	RUYQ5R4xdnnK/uIBRJ5tLN+fwlf+9zGkqtXzZ7Db2ibQTV2JC6OBFoQ9ds8aqQ/KGsNN9Qx1u7AAn
+	wqTFHtO0j/nTwkXDvMBIt3or3MQXIgQCujiNGxQ00=;
+From: Christian Schoenebeck <linux_oss@crudebyte.com>
+To: amd-gfx@lists.freedesktop.org, apparmor@lists.ubuntu.com,
+ bpf@vger.kernel.org, ceph-devel@vger.kernel.org, cocci@inria.fr,
+ dm-devel@lists.linux.dev, dri-devel@lists.freedesktop.org,
+ gfs2@lists.linux.dev, intel-gfx@lists.freedesktop.org,
+ intel-wired-lan@lists.osuosl.org, iommu@lists.linux.dev, kvm@vger.kernel.org,
+ linux-arm-kernel@lists.infradead.org, linux-block@vger.kernel.org,
+ linux-bluetooth@vger.kernel.org, linux-btrfs@vger.kernel.org,
+ linux-cifs@vger.kernel.org, linux-clk@vger.kernel.org,
+ linux-erofs@lists.ozlabs.org, linux-ext4@vger.kernel.org,
+ linux-fsdevel@vger.kernel.org, linux-gpio@vger.kernel.org,
+ linux-hyperv@vger.kernel.org, linux-input@vger.kernel.org,
+ linux-kernel@vger.kernel.org, linux-leds@vger.kernel.org,
+ linux-media@vger.kernel.org, linux-mips@vger.kernel.org, linux-mm@kvack.org,
+ linux-modules@vger.kernel.org, linux-mtd@lists.infradead.org,
+ linux-nfs@vger.kernel.org, linux-omap@vger.kernel.org,
+ linux-phy@lists.infradead.org, linux-pm@vger.kernel.org,
+ linux-rockchip@lists.infradead.org, linux-s390@vger.kernel.org,
+ linux-scsi@vger.kernel.org, linux-sctp@vger.kernel.org,
+ linux-security-module@vger.kernel.org, linux-sh@vger.kernel.org,
+ linux-sound@vger.kernel.org, linux-stm32@st-md-mailman.stormreply.com,
+ linux-trace-kernel@vger.kernel.org, linux-usb@vger.kernel.org,
+ linux-wireless@vger.kernel.org, netdev@vger.kernel.org,
+ ntfs3@lists.linux.dev, samba-technical@lists.samba.org,
+ sched-ext@lists.linux.dev, target-devel@vger.kernel.org,
+ tipc-discussion@lists.sourceforge.net, v9fs@lists.linux.dev,
+ Philipp Hahn <phahn-oss@avm.de>, Philipp Hahn <phahn-oss@avm.de>
+Cc: Eric Van Hensbergen <ericvh@kernel.org>,
+ Latchesar Ionkov <lucho@ionkov.net>,
+ Dominique Martinet <asmadeus@codewreck.org>
+Subject: Re: [PATCH 06/61] 9p: Prefer IS_ERR_OR_NULL over manual NULL check
+Date: Tue, 10 Mar 2026 14:45:07 +0100
+Message-ID: <2401874.ElGaqSPkdT@weasel>
+In-Reply-To: <20260310-b4-is_err_or_null-v1-6-bd63b656022d@avm.de>
+References:
+ <20260310-b4-is_err_or_null-v1-0-bd63b656022d@avm.de>
+ <20260310-b4-is_err_or_null-v1-6-bd63b656022d@avm.de>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <a1e2690efeb8570651894567d80511144424fb5e.1772106022.git.fdmanana@suse.com>
- <aarmPHmLnGtvhUcO@infradead.org> <CAL3q7H5r5_FuTSUM_5TqFGFPSZ4qC=qG49_JuLpUfzFCa=8YyQ@mail.gmail.com>
- <abAZDvPLRbCeQh1D@infradead.org>
-In-Reply-To: <abAZDvPLRbCeQh1D@infradead.org>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Tue, 10 Mar 2026 13:40:09 +0000
-X-Gmail-Original-Message-ID: <CAL3q7H7GhATX4hMqtgvJzLS2G8qoWwD8nYPFwQ771WgMjacVUg@mail.gmail.com>
-X-Gm-Features: AaiRm53Kc58VM1mM17n1jX-p2JmPqwHKRjIa7PRoPZT29Fu1Vxy2VRUM4JT9Q5g
-Message-ID: <CAL3q7H7GhATX4hMqtgvJzLS2G8qoWwD8nYPFwQ771WgMjacVUg@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: test create a bunch of files with name hash collision
-To: Christoph Hellwig <hch@infradead.org>
-Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org, 
-	Filipe Manana <fdmanana@suse.com>, linux-fsdevel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/plain; charset="utf-8"
 
-On Tue, Mar 10, 2026 at 1:13=E2=80=AFPM Christoph Hellwig <hch@infradead.or=
-g> wrote:
->
-> On Fri, Mar 06, 2026 at 02:55:23PM +0000, Filipe Manana wrote:
-> > > Umm, file systems must handle an unlimited number of name collisions.
-> > > While going read-only is of course really bad, just rejecting them
-> > > can also pretty easily break things.
-> >
-> > I don't think in practice we get a large enough number of names with a
-> > crc32c hash collision in btrfs.
->
-> That's not the point.  Posix and Linux file systems don't have an
-> error code or defined condition for adding this file name would cause
-> a hash collision and we were to lazy to deal with it.
+On Tuesday, 10 March 2026 12:48:32 CET Philipp Hahn wrote:
+> Prefer using IS_ERR_OR_NULL() over using IS_ERR() and a manual NULL
+> check.
+> 
+> Change generated with coccinelle.
+> 
+> To: Eric Van Hensbergen <ericvh@kernel.org>
+> To: Latchesar Ionkov <lucho@ionkov.net>
+> To: Dominique Martinet <asmadeus@codewreck.org>
+> To: Christian Schoenebeck <linux_oss@crudebyte.com>
+> Cc: v9fs@lists.linux.dev
+> Cc: linux-kernel@vger.kernel.org
+> Signed-off-by: Philipp Hahn <phahn-oss@avm.de>
+> ---
+>  fs/9p/fid.h | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
 
-No one is disagreeing with you Christoph.
+"fs/9p" in the subject on this one, please, not just "9p".
 
-What I was saying is that giving support for an unlimited number of
-collisions would require an update to the on-disk format, which is a
-lot of work as it implies metadata changes, feature incompatibility
-bits, updating the user space tools, etc.
-Given the work that would be needed and the fact no users have
-complained about this (to my knowledge at least), the motivation for
-such big changes isn't much.
+Except of that:
 
->
-> > Adding support for an unlimited number of collisions is simply not
-> > easily doable, it would require an on-disk format change (new key
-> > type, item, etc, update btrfs-progs, etc).
-> > The motivation for that is very low, as I'm not aware of users ever com=
-plaining.
->
-> Well, how would they know this happened?  The users only sees the file
-> system acting weird in completely unpredictable ways.
+Reviewed-by: Christian Schoenebeck <linux_oss@crudebyte.com>
 
-Because no one reported -EOVERFLOW errors when creating files. I
-haven't seen it in more than 12 years at least - sure it doesn't mean
-there isn't someone who hasn't hit it, but we don't know about it.
-
-What this test is doing is to verify we don't turn the fs into RO mode
-after -EOVERFLOW - which is actually a regression we had since 2022,
-and could be used as a sort of denial of service.
-This is a useful test for us btrfs developers to make sure we don't
-regress on that.
-
-You may disagree with not allowing an unlimited number of hash
-collisions, but that is another topic and doesn't invalidate this test
-(and that's part of the reason why it's a btrfs specific test).
+> diff --git a/fs/9p/fid.h b/fs/9p/fid.h
+> index
+> 0d6138bee2a3d1ab565ab2d210c0a3f3bf97e4e3..3bb7ef4380e972a2d9ab67eb4aab6cc5b
+> fe2eea7 100644 --- a/fs/9p/fid.h
+> +++ b/fs/9p/fid.h
+> @@ -27,7 +27,7 @@ static inline struct p9_fid *v9fs_fid_clone(struct dentry
+> *dentry) struct p9_fid *fid, *nfid;
+> 
+>  	fid = v9fs_fid_lookup(dentry);
+> -	if (!fid || IS_ERR(fid))
+> +	if (IS_ERR_OR_NULL(fid))
+>  		return fid;
+> 
+>  	nfid = clone_fid(fid);
 
 
->

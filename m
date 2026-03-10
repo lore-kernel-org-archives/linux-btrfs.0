@@ -1,125 +1,86 @@
-Received: from relay8-d.mail.gandi.net (relay8-d.mail.gandi.net [217.70.183.201])
+Received: from verein.lst.de (verein.lst.de [213.95.11.211])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A4ECB2FFF90;
-	Tue, 10 Mar 2026 13:56:08 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=217.70.183.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0DACE38D6AE;
+	Tue, 10 Mar 2026 14:00:33 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=213.95.11.211
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773150974; cv=none; b=Qk4/Xrgt5Sj9P95xXLzQSzP3bfCVB+xh5G6PbnPTyGgXknF1nIwFyDD4BheE+1PFH4RbQIJspfylvolmZBxmc2OIKLujB+PDdXK2DOn9YGSUijqFBwmAgM/niwzj+34UXZO65dOV8+5pm8gMp0V0dH61m4yTpayLAgN7r1Fjxss=
+	t=1773151235; cv=none; b=dTigyRm/6no5hNC/1+W4GVG3r23clSRFPz5aSpwCehvfZN1ZoTdFsH1QWvGcM9b5SHoHkCWk5ULUPPSUUZJCR4w3ebz5dINBCU/FIwS4ZcoxWuW9di4Kafc7tYy+3Bp5uh4RTmgY/3pPKUOGDxdduLxp38/1rXkEzDU1CoIQT7Y=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773150974; c=relaxed/simple;
-	bh=FDMwXaHKDrOM7khDAib7qUUe1UeRwowP+SR16jql6lQ=;
-	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=ZTIc6zSixu52GG6Cq6DFY5tJLrjwcodwjvew156TLPu3UZdI/AjKkUoXgOHKlz5EhlvD0JwfW9l6hkoTCobqwWX4GpFOJz/Rmhc6shERJ+T2pbqVQYjj2Ua3YEWV9POuFDCGFdks1EToRJhzERQReKQXEpnzrNJCKxMa84Jkcbo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=hadess.net; spf=pass smtp.mailfrom=hadess.net; arc=none smtp.client-ip=217.70.183.201
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=hadess.net
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=hadess.net
-Received: by mail.gandi.net (Postfix) with ESMTPSA id 539B3433BD;
-	Tue, 10 Mar 2026 13:55:53 +0000 (UTC)
-Message-ID: <375c7c30c184d331c199876e45920976030f3cbc.camel@hadess.net>
-Subject: Re: [PATCH 25/61] net/bluetooth: Prefer IS_ERR_OR_NULL over manual
- NULL check
-From: Bastien Nocera <hadess@hadess.net>
-To: Philipp Hahn <phahn-oss@avm.de>, amd-gfx@lists.freedesktop.org, 
-	apparmor@lists.ubuntu.com, bpf@vger.kernel.org, ceph-devel@vger.kernel.org,
- 	cocci@inria.fr, dm-devel@lists.linux.dev, dri-devel@lists.freedesktop.org,
- 	gfs2@lists.linux.dev, intel-gfx@lists.freedesktop.org, 
-	intel-wired-lan@lists.osuosl.org, iommu@lists.linux.dev,
- kvm@vger.kernel.org, 	linux-arm-kernel@lists.infradead.org,
- linux-block@vger.kernel.org, 	linux-bluetooth@vger.kernel.org,
- linux-btrfs@vger.kernel.org, 	linux-cifs@vger.kernel.org,
- linux-clk@vger.kernel.org, 	linux-erofs@lists.ozlabs.org,
- linux-ext4@vger.kernel.org, 	linux-fsdevel@vger.kernel.org,
- linux-gpio@vger.kernel.org, 	linux-hyperv@vger.kernel.org,
- linux-input@vger.kernel.org, 	linux-kernel@vger.kernel.org,
- linux-leds@vger.kernel.org, 	linux-media@vger.kernel.org,
- linux-mips@vger.kernel.org, linux-mm@kvack.org, 
-	linux-modules@vger.kernel.org, linux-mtd@lists.infradead.org, 
-	linux-nfs@vger.kernel.org, linux-omap@vger.kernel.org, 
-	linux-phy@lists.infradead.org, linux-pm@vger.kernel.org, 
-	linux-rockchip@lists.infradead.org, linux-s390@vger.kernel.org, 
-	linux-scsi@vger.kernel.org, linux-sctp@vger.kernel.org, 
-	linux-security-module@vger.kernel.org, linux-sh@vger.kernel.org, 
-	linux-sound@vger.kernel.org, linux-stm32@st-md-mailman.stormreply.com, 
-	linux-trace-kernel@vger.kernel.org, linux-usb@vger.kernel.org, 
-	linux-wireless@vger.kernel.org, netdev@vger.kernel.org,
- ntfs3@lists.linux.dev, 	samba-technical@lists.samba.org,
- sched-ext@lists.linux.dev, 	target-devel@vger.kernel.org,
- tipc-discussion@lists.sourceforge.net, 	v9fs@lists.linux.dev
-Cc: Marcel Holtmann <marcel@holtmann.org>, Johan Hedberg
-	 <johan.hedberg@gmail.com>, Luiz Augusto von Dentz <luiz.dentz@gmail.com>
-Date: Tue, 10 Mar 2026 14:55:52 +0100
-In-Reply-To: <20260310-b4-is_err_or_null-v1-25-bd63b656022d@avm.de>
-References: <20260310-b4-is_err_or_null-v1-0-bd63b656022d@avm.de>
-	 <20260310-b4-is_err_or_null-v1-25-bd63b656022d@avm.de>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.58.3 (3.58.3-1.fc43) 
+	s=arc-20240116; t=1773151235; c=relaxed/simple;
+	bh=9cKCbksrXdq7qQIbd19mcsGEruocKNk/N9O3kK26goI=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=Y5M/knTJZpROdKPf4OzTi7qwkwVZqS5+ihgieGpmmHOd7QEIWm0k9DPUkYGohGCwo9NAcKR89qanOPhBJ3eg97MabfWwZEiP8fCalLs15dI6W3J8aUPGt5Zwr4nPIClZrQh9iWTgpHoAtd1bmyeHpsceC5ddHHLsTuCRrav3NTA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lst.de; spf=pass smtp.mailfrom=lst.de; arc=none smtp.client-ip=213.95.11.211
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lst.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=lst.de
+Received: by verein.lst.de (Postfix, from userid 2407)
+	id 9EFDD68C4E; Tue, 10 Mar 2026 15:00:21 +0100 (CET)
+Date: Tue, 10 Mar 2026 15:00:20 +0100
+From: Christoph Hellwig <hch@lst.de>
+To: Eric Biggers <ebiggers@kernel.org>
+Cc: Christoph Hellwig <hch@lst.de>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Richard Henderson <richard.henderson@linaro.org>,
+	Matt Turner <mattst88@gmail.com>,
+	Magnus Lindholm <linmag7@gmail.com>,
+	Russell King <linux@armlinux.org.uk>,
+	Catalin Marinas <catalin.marinas@arm.com>,
+	Will Deacon <will@kernel.org>, Huacai Chen <chenhuacai@kernel.org>,
+	WANG Xuerui <kernel@xen0n.name>,
+	Madhavan Srinivasan <maddy@linux.ibm.com>,
+	Michael Ellerman <mpe@ellerman.id.au>,
+	Nicholas Piggin <npiggin@gmail.com>,
+	"Christophe Leroy (CS GROUP)" <chleroy@kernel.org>,
+	Paul Walmsley <pjw@kernel.org>, Palmer Dabbelt <palmer@dabbelt.com>,
+	Albert Ou <aou@eecs.berkeley.edu>, Alexandre Ghiti <alex@ghiti.fr>,
+	Heiko Carstens <hca@linux.ibm.com>,
+	Vasily Gorbik <gor@linux.ibm.com>,
+	Alexander Gordeev <agordeev@linux.ibm.com>,
+	Christian Borntraeger <borntraeger@linux.ibm.com>,
+	Sven Schnelle <svens@linux.ibm.com>,
+	"David S. Miller" <davem@davemloft.net>,
+	Andreas Larsson <andreas@gaisler.com>,
+	Richard Weinberger <richard@nod.at>,
+	Anton Ivanov <anton.ivanov@cambridgegreys.com>,
+	Johannes Berg <johannes@sipsolutions.net>,
+	Thomas Gleixner <tglx@kernel.org>, Ingo Molnar <mingo@redhat.com>,
+	Borislav Petkov <bp@alien8.de>,
+	Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
+	"H. Peter Anvin" <hpa@zytor.com>,
+	Herbert Xu <herbert@gondor.apana.org.au>,
+	Dan Williams <dan.j.williams@intel.com>, Chris Mason <clm@fb.com>,
+	David Sterba <dsterba@suse.com>, Arnd Bergmann <arnd@arndb.de>,
+	Song Liu <song@kernel.org>, Yu Kuai <yukuai@fnnas.com>,
+	Li Nan <linan122@huawei.com>, linux-alpha@vger.kernel.org,
+	linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+	loongarch@lists.linux.dev, linuxppc-dev@lists.ozlabs.org,
+	linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
+	sparclinux@vger.kernel.org, linux-um@lists.infradead.org,
+	linux-crypto@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	linux-arch@vger.kernel.org, linux-raid@vger.kernel.org
+Subject: Re: [PATCH 09/25] xor: move generic implementations out of
+ asm-generic/xor.h
+Message-ID: <20260310140020.GA8490@lst.de>
+References: <20260226151106.144735-1-hch@lst.de> <20260226151106.144735-10-hch@lst.de> <20260228071521.GK65277@quark> <20260303160911.GI7021@lst.de>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-GND-Sasl: hadess@hadess.net
-X-GND-Cause: gggruggvucftvghtrhhoucdtuddrgeefgedrtddtgddvkeduudelucetufdoteggodetrfdotffvucfrrhhofhhilhgvmecuifetpfffkfdpucggtfgfnhhsuhgsshgtrhhisggvnecuuegrihhlohhuthemuceftddunecusecvtfgvtghiphhivghnthhsucdlqddutddtmdenucfjughrpefkuffhvfevffgjfhgtgfgfggesthhqredttderjeenucfhrhhomhepuegrshhtihgvnhcupfhotggvrhgruceohhgruggvshhssehhrgguvghsshdrnhgvtheqnecuggftrfgrthhtvghrnhepieffgfehtedtgefgjeeggfffgeeuvdegveekveejfeekkedujeehteffueefffeunecukfhppedvrgdtudemvgefgeemvggtjeefmegtfhdvtdemsggrgeefmegrieejieemtgdvugefmeejrgehfeenucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmhepihhnvghtpedvrgdtudemvgefgeemvggtjeefmegtfhdvtdemsggrgeefmegrieejieemtgdvugefmeejrgehfedphhgvlhhopeglkffrvheimedvrgdtudemvgefgeemvggtjeefmegtfhdvtdemsggrgeefmegrieejieemtgdvugefmeejrgehfegnpdhmrghilhhfrhhomhephhgruggvshhssehhrgguvghsshdrnhgvthdpqhhiugepheefleeufeegfeefueffpdhmohguvgepshhmthhpohhuthdpnhgspghrtghpthhtohepheejpdhrtghpthhtohepphhhrghhnhdqohhsshesrghvmhdruggvpdhrtghpthhtoheprghmugdqghhfgieslhhishhtshdrfhhrvggvu
- ggvshhkthhophdrohhrghdprhgtphhtthhopegrphhprghrmhhorheslhhishhtshdruhgsuhhnthhurdgtohhmpdhrtghpthhtohepsghpfhesvhhgvghrrdhkvghrnhgvlhdrohhrghdprhgtphhtthhopegtvghphhdquggvvhgvlhesvhhgvghrrdhkvghrnhgvlhdrohhrghdprhgtphhtthhopegtohgttghisehinhhrihgrrdhfrh
-X-GND-State: clean
-X-GND-Score: -100
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260303160911.GI7021@lst.de>
+User-Agent: Mutt/1.5.17 (2007-11-01)
 
-On Tue, 2026-03-10 at 12:48 +0100, Philipp Hahn wrote:
-> Prefer using IS_ERR_OR_NULL() over using IS_ERR() and a manual NULL
-> check.
->=20
-> Change generated with coccinelle.
->=20
-> To: Marcel Holtmann <marcel@holtmann.org>
-> To: Johan Hedberg <johan.hedberg@gmail.com>
-> To: Luiz Augusto von Dentz <luiz.dentz@gmail.com>
-> Cc: linux-bluetooth@vger.kernel.org
-> Cc: linux-kernel@vger.kernel.org
-> Signed-off-by: Philipp Hahn <phahn-oss@avm.de>
+On Tue, Mar 03, 2026 at 05:09:11PM +0100, Christoph Hellwig wrote:
+> And earlier version did this, but it's a bit ugly.  What I might
+> consider is to require architectures that provide optimized version
+> to opt into any generic one they want to use.  This would require
+> extra kconfig symbols, but be a lot cleaner overall.
 
-Reviewed-by: Bastien Nocera <hadess@hadess.net>
-
-> ---
-> =C2=A0net/bluetooth/mgmt.c | 6 +++---
-> =C2=A01 file changed, 3 insertions(+), 3 deletions(-)
->=20
-> diff --git a/net/bluetooth/mgmt.c b/net/bluetooth/mgmt.c
-> index
-> a7238fd3b03bb54f39af1afee74dc1acd931c324..06d2da67bbe14e17ee478aa939d
-> e26526c333d91 100644
-> --- a/net/bluetooth/mgmt.c
-> +++ b/net/bluetooth/mgmt.c
-> @@ -4169,7 +4169,7 @@ static void set_default_phy_complete(struct
-> hci_dev *hdev, void *data, int err)
-> =C2=A0		mgmt_phy_configuration_changed(hdev, cmd->sk);
-> =C2=A0	}
-> =C2=A0
-> -	if (skb && !IS_ERR(skb))
-> +	if (!IS_ERR_OR_NULL(skb))
-> =C2=A0		kfree_skb(skb);
-> =C2=A0
-> =C2=A0	mgmt_pending_free(cmd);
-> @@ -5730,7 +5730,7 @@ static void read_local_oob_data_complete(struct
-> hci_dev *hdev, void *data,
-> =C2=A0			=C2=A0 MGMT_STATUS_SUCCESS, &mgmt_rp, rp_size);
-> =C2=A0
-> =C2=A0remove:
-> -	if (skb && !IS_ERR(skb))
-> +	if (!IS_ERR_OR_NULL(skb))
-> =C2=A0		kfree_skb(skb);
-> =C2=A0
-> =C2=A0	mgmt_pending_free(cmd);
-> @@ -8277,7 +8277,7 @@ static void
-> read_local_oob_ext_data_complete(struct hci_dev *hdev, void *data,
-> =C2=A0				 mgmt_rp, sizeof(*mgmt_rp) +
-> eir_len,
-> =C2=A0				 HCI_MGMT_OOB_DATA_EVENTS, cmd->sk);
-> =C2=A0done:
-> -	if (skb && !IS_ERR(skb))
-> +	if (!IS_ERR_OR_NULL(skb))
-> =C2=A0		kfree_skb(skb);
-> =C2=A0
-> =C2=A0	kfree(mgmt_rp);
+I looked into this, but because the static_call requires a default
+version I gave up on it for now.  In theory we could build just
+a single generic one for that and make the others optional, but
+that feels a bit odd.

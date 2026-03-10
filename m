@@ -1,263 +1,284 @@
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.21])
+Received: from mgamail.intel.com (mgamail.intel.com [198.175.65.21])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 86CC029993D
-	for <linux-btrfs@vger.kernel.org>; Tue, 10 Mar 2026 07:03:27 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.17.21
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773126214; cv=none; b=LoeJLTFObfWHCw9OJVwJp9c45qu/jZuWRaUF86NTlatVsgSVEcWMPHlEg2dyVLkZeNSxyquRRw93w72tApnFCk8toTHfNMstkiBSgClNbccmTSMeby3suD14596BLiqrHU2YvHAqIlGoSktu1E0FxEv6GPK4c1zt1szMpbs9v+8=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773126214; c=relaxed/simple;
-	bh=ozX7UE5orb6eNp1znTNYiahWVhJczk56k7wvyL6iugE=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=tpEM6OQx0T03T1FcemAY/iJb/dFOjr+fYEYCE28jl2BlseF/p2bCq9qgjPoI7IDelwnhpNoJQuSQdj/mVIXboMZ9Ba6KqyEUKgm5QWmyPxUZU0cg5EfIJOH7YHmjp+qQgvfL2401IuMrcOqLDsPKn83oZIxLiev18Nxc5pDeqnc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=b63ISKc5; arc=none smtp.client-ip=212.227.17.21
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5DD55318EC9
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 Mar 2026 07:21:32 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=198.175.65.21
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1773127294; cv=fail; b=DQtq0SFwAB4RexSNzq8Cf/ZY0h7t/AyFViEG/o16gSRYkUMfjXz7dpbBjSh9HwoXCxnBQrvxA8spiSWPTh8FLNHCsfJsNh+NFL5SYxTTdXeNE+5ipWQO5M7p5iY2OMMPTIGZWNkL8FDecyMpaJoCTuL7v6LVXSklUlU5zHGej2Q=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1773127294; c=relaxed/simple;
+	bh=mV5u0XJhb3WUxJlhMnwIcgq1eXmWXpdkM40876v0/pM=;
+	h=Date:From:To:CC:Subject:Message-ID:References:Content-Type:
+	 Content-Disposition:In-Reply-To:MIME-Version; b=cMDUCaKL2btUytzEadAaoFOWC8QqscRKxHzKh77OrPlWqn3sByiyhK8nsEItN+BIRgZyZcP29MLUYBWtwko7WdWDcYlEO2mou6vc6mmJgGAI1m8macUyWW3AwKKBczgUY/0LOzIomdHP4S0I0DeSdKYe4OMnGo3Hws/xfOOQT9k=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com; spf=pass smtp.mailfrom=intel.com; dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b=kqgfSo22; arc=fail smtp.client-ip=198.175.65.21
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=intel.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="b63ISKc5"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1773126206; x=1773731006; i=quwenruo.btrfs@gmx.com;
-	bh=prJWPjI65Gfzy7Q98TAugpuqwjSOrfEpm5gkTzOx++8=;
-	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
-	 References:From:In-Reply-To:Content-Type:
-	 Content-Transfer-Encoding:cc:content-transfer-encoding:
-	 content-type:date:from:message-id:mime-version:reply-to:subject:
-	 to;
-	b=b63ISKc5bh+kMVZ9dQWOmo665kGoNNQr04s1Al3z8+379QM6aNCVVbx1u8jCYrrV
-	 EyILOiSlZgfwqakoPaBtfAPrbQkaBtANHg8zv/d8YO64OUoI+HmDHMauN/umF4NMT
-	 UtS+WE1vj2D0QBqE2jT5gc1h26lokEm+3tUL2qVAfGVvhzajDCaocdkTTUH7c7VJT
-	 A5wMfQ/tOg7VU0UYPkkhyvv0SIQWetxeorTVnwA/Fl9QVguJ5L2amZQP/LJP+cZfQ
-	 L0XgPieP6ylmuguPOlwvzRBOeCCvhjA7mH+aIVqa8dDjuxj55AgGG/+tS+XzkqokP
-	 YOK0BUgW7lbJfkZo4g==
-X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from client.hidden.invalid by mail.gmx.net (mrgmx104
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1Mnaof-1vGO1A3RLx-00e0tt; Tue, 10
- Mar 2026 08:03:26 +0100
-Message-ID: <933c12fd-0d10-4ef7-b10e-cb64497829eb@gmx.com>
-Date: Tue, 10 Mar 2026 17:33:16 +1030
+	dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b="kqgfSo22"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
+  t=1773127293; x=1804663293;
+  h=date:from:to:cc:subject:message-id:references:
+   content-transfer-encoding:in-reply-to:mime-version;
+  bh=mV5u0XJhb3WUxJlhMnwIcgq1eXmWXpdkM40876v0/pM=;
+  b=kqgfSo22Cj5uQBdUeO1U28K1kggbo0rup+gPiGDzW+96fJxXEj2yraGW
+   hCENUxvBPBVLDG5r8044VmFOAm+2DP1gHIAvrbyd+jl60lqHKJoqM+nia
+   Kx+F/2UQTqwCWpWiwcjG2MTLnIAgy3Fg/BKvoO1TlVsgdmLwH4MjNAbtx
+   UsXLCKvDtc77hs2DNEDIrQHik9+5UsaN5fVapZdYSTLzM9Kl4g6aUOTq3
+   /tyHG2gEhQuXlL4sUw0YBgK1dillBcOJKv/0DRkr2ARuGKQpOJfYcuYj2
+   GIoomKxGDKEEXxe2ZWRVKisPa/4EcwoHKRjtwXWtPNE7n2D3cbFKXWKeQ
+   g==;
+X-CSE-ConnectionGUID: ZOb2SSbiS3626cZ35rd3Lw==
+X-CSE-MsgGUID: R0PbnoOaQOKC4/MjUBL/Xg==
+X-IronPort-AV: E=McAfee;i="6800,10657,11724"; a="74041741"
+X-IronPort-AV: E=Sophos;i="6.23,111,1770624000"; 
+   d="bad'?full'?gz'50?log'50?scan'50,208,49,50";a="74041741"
+Received: from fmviesa008.fm.intel.com ([10.60.135.148])
+  by orvoesa113.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 10 Mar 2026 00:21:31 -0700
+X-CSE-ConnectionGUID: +uNbp6QHT9WmYfC6REMI9g==
+X-CSE-MsgGUID: vdRmCRK9QZyQitAiEx0/lA==
+X-ExtLoop1: 1
+X-IronPort-AV: E=Sophos;i="6.23,111,1770624000"; 
+   d="bad'?full'?gz'50?log'50?scan'50,208,49,50";a="218015440"
+Received: from orsmsx903.amr.corp.intel.com ([10.22.229.25])
+  by fmviesa008.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 10 Mar 2026 00:21:30 -0700
+Received: from ORSMSX903.amr.corp.intel.com (10.22.229.25) by
+ ORSMSX903.amr.corp.intel.com (10.22.229.25) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.2.2562.37; Tue, 10 Mar 2026 00:21:29 -0700
+Received: from ORSEDG901.ED.cps.intel.com (10.7.248.11) by
+ ORSMSX903.amr.corp.intel.com (10.22.229.25) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.2.2562.37 via Frontend Transport; Tue, 10 Mar 2026 00:21:29 -0700
+Received: from DM1PR04CU001.outbound.protection.outlook.com (52.101.61.29) by
+ edgegateway.intel.com (134.134.137.111) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.2.2562.37; Tue, 10 Mar 2026 00:21:28 -0700
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
+ b=a1BdCfT61Msps06AD+Z+OzMYPz37+UVm4nS9uZ/+ErZwMo+F16YfwgRqflgB0JmxU6JuAtlxRf8OFn79pxcFV7fp4goikW4hdQOYn7SYuuAz1KN/GgdVeELuIxHElFoMPbfmzaVFZzk0yJf8BdRygtZLFYnzzY1T0BPx+paGm/jfcFp6li08O3ZyNKb7Z90sUVTWt6TFIKzTvCB0aytb6QFByplx3R2NBMjWWoeK09J1NY7AB9dkNDJFWcfTa6focd9RoUk2kUa+SmWcIcL0sgp3GT322SnLOZkAqPHdajknnYa2B3tXIYvAkoZQ6qJovRt4cKw7kIAiDS8mJA73rQ==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector10001;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=bjMjixaBXk8KueJnZyNqqs5ZKFBqrYFGL4oEnS/HGmQ=;
+ b=wauDAug4i85J8e2n/ejDws94DQkOgb1+67UQfOVM0niK38Sx1qyxWnYiGJyawsC0kG5wxBuD87VgJu16gjBsXzLPYdGzw8iKtu//OOmCruijYJmphBm11VWTW1J7HA4DVejfUf5/KA4ouCghsnIidB+t9+TFPc3w3tzY2Wfso5/8ill5NCx3xu++qxSGb72FpEdXtU++XF8bK/xJOJ0UyRnXT8kSoYP+PlzWL+TlMzY5bFYrBlpx1DXt3VGwAXBkn5yYPQRpWf8YVptq6ztWR2Dm4QAiKaQUJGAUFyTQH7eD6FbF3uuGtQcxMnkTklIWtp/eQsk84qbOrGBgID683Q==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=intel.com; dmarc=pass action=none header.from=intel.com;
+ dkim=pass header.d=intel.com; arc=none
+Authentication-Results: dkim=none (message not signed)
+ header.d=none;dmarc=none action=none header.from=intel.com;
+Received: from BN6PR11MB4033.namprd11.prod.outlook.com (2603:10b6:405:78::25)
+ by SN7PR11MB7592.namprd11.prod.outlook.com (2603:10b6:806:343::16) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.9700.11; Tue, 10 Mar
+ 2026 07:21:24 +0000
+Received: from BN6PR11MB4033.namprd11.prod.outlook.com
+ ([fe80::2c28:2983:2947:24b1]) by BN6PR11MB4033.namprd11.prod.outlook.com
+ ([fe80::2c28:2983:2947:24b1%6]) with mapi id 15.20.9700.010; Tue, 10 Mar 2026
+ 07:21:24 +0000
+Date: Tue, 10 Mar 2026 15:21:15 +0800
+From: Oliver Sang <oliver.sang@intel.com>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+CC: Qu Wenruo <wqu@suse.com>, <oe-lkp@lists.linux.dev>, <lkp@intel.com>,
+	<linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v2 3/4] btrfs: move larger data folios out of
+ experimental features
+Message-ID: <aa/Ga0S+ZtmpNWVl@xsang-OptiPlex-9020>
+References: <202603101405.288f83f3-lkp@intel.com>
+ <933c12fd-0d10-4ef7-b10e-cb64497829eb@gmx.com>
+Content-Type: multipart/mixed; boundary="wmrXy9HJV6rNqZoR"
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <933c12fd-0d10-4ef7-b10e-cb64497829eb@gmx.com>
+X-ClientProxiedBy: TP0P295CA0019.TWNP295.PROD.OUTLOOK.COM
+ (2603:1096:910:5::13) To BN6PR11MB4033.namprd11.prod.outlook.com
+ (2603:10b6:405:78::25)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2 3/4] btrfs: move larger data folios out of experimental
- features
-To: kernel test robot <oliver.sang@intel.com>, Qu Wenruo <wqu@suse.com>
-Cc: oe-lkp@lists.linux.dev, lkp@intel.com, linux-btrfs@vger.kernel.org
-References: <202603101405.288f83f3-lkp@intel.com>
-Content-Language: en-US
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1YAUJEP5a
- sQAKCRDCPZHzoSX+qF+mB/9gXu9C3BV0omDZBDWevJHxpWpOwQ8DxZEbk9b9LcrQlWdhFhyn
- xi+l5lRziV9ZGyYXp7N35a9t7GQJndMCFUWYoEa+1NCuxDs6bslfrCaGEGG/+wd6oIPb85xo
- naxnQ+SQtYLUFbU77WkUPaaIU8hH2BAfn9ZSDX9lIxheQE8ZYGGmo4wYpnN7/hSXALD7+oun
- tZljjGNT1o+/B8WVZtw/YZuCuHgZeaFdhcV2jsz7+iGb+LsqzHuznrXqbyUQgQT9kn8ZYFNW
- 7tf+LNxXuwedzRag4fxtR+5GVvJ41Oh/eygp8VqiMAtnFYaSlb9sjia1Mh+m+OBFeuXjgGlG
- VvQFzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1gQUJEP5a0gAK
- CRDCPZHzoSX+qHGpB/kB8A7M7KGL5qzat+jBRoLwB0Y3Zax0QWuANVdZM3eJDlKJKJ4HKzjo
- B2Pcn4JXL2apSan2uJftaMbNQbwotvabLXkE7cPpnppnBq7iovmBw++/d8zQjLQLWInQ5kNq
- Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
- +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
- HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
-In-Reply-To: <202603101405.288f83f3-lkp@intel.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:zudRgtVwVurAGt/gGCoy7CP8cn+BHo4gUbFSh7ep/JCAcwC4Oo2
- comA50jhgIDtu0plccfLwEw8rOCmPlZl0EMI+KEyJQfQX+/TO4+WL/T8bGI1YCEE3uN3onK
- KOtPUhrsLi6cYatDCoZo26SU1ozp6UKWMFDibHI1bNQi87ARRGoMBVas8LJeh6F//+gwzd+
- m3SmUlgdW3f0bEN1OGWCA==
-X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:PHTYCuXQANc=;7MKxxP8b3nWdsOehonqMIvjHU4n
- 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
+X-MS-PublicTrafficType: Email
+X-MS-TrafficTypeDiagnostic: BN6PR11MB4033:EE_|SN7PR11MB7592:EE_
+X-MS-Office365-Filtering-Correlation-Id: dd0df72d-5907-46a0-d3b3-08de7e75a2a3
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam: BCL:0;ARA:13230040|1800799024|6049299003|366016|376014|4053099003|7053199007;
+X-Microsoft-Antispam-Message-Info: 9xQDKr+MRE0qusY88Qj8uX36Izvdy995N28/klbZvM07RX+ujSyfm91VL4E1NCvFTNaYCkrlMt2cSDU2gkBpyyrODdYyTd+BDKAz8N4VQFA86AfGLaMNhGVi3LznJCmnhB9Bcvrhcv6+szynhcOW3RzJe6b1x+vAhGkwUzgGBZhTFrh3d/TVS/NQqhjAHQX8Q4XPvRMTEGjC78Z0ISbSP8rbjdrTbamP0EgRgwKIAkvtCoR8S6KmyQLKeE83gTQZmjYuslhLhPFxwc3rC6CjSC9GksdEBewEUjr7bSDC2eUMqze30tuAQJ2OgxFffZAg87l6iknbPXm7xqphlUD7XAD6L6cfDRS61oQZ8hDXQHqRTjtfAJxqAbGMbUxY9QmjQQ+EU0zlInssEqoTDqTW7NawaQJCoPq8G09aT90WXcvl51XdKYfs0eu9NUjP/IAIIb5s3fjIiEgDlJEsSt7qgacEN6/BZAECQqIAIiWPwYgvqdvuNy7nJn09UHkSNxGk1VNUg94jBHwRFcWyTKxtmACL3ep5LD7EsMNGY6TT/Lc7pSIYvoLm4B+JxemzNMgeCec/DBQd6zv+89Mqa6RDz8F4DE00yd6hJeOjofDj7Co06lr+Mryw0JkrJztGzANGeHhoIJ1JMUDllQC20agsRw==
+X-Forefront-Antispam-Report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:BN6PR11MB4033.namprd11.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(1800799024)(6049299003)(366016)(376014)(4053099003)(7053199007);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-MessageData-0: =?utf-8?B?UDZ1VXNxQWZ2Q0tPd0hLT2xDTW5kUDRTNjRWc3ZHT0lwcGNDNHN5UTQxSmcy?=
+ =?utf-8?B?a2QvSE8zSTNUSHpIbnpwM29tN2Ezemw2dUdHNTFsaHhUaEVUN1FPVmw5eDBq?=
+ =?utf-8?B?T3p3V3dqdnM4aUhpQWlhbjV2bU9pb2g4V0U5Z2t4TTBrNzhzRThaSnVzcm83?=
+ =?utf-8?B?T0dZSDRRZ3pyVUNTSk52S1ppazNsdHhCbVFIVVlJZHU4SVpRaWR0WGt6Rkc0?=
+ =?utf-8?B?ek5KVHlnZnZZdEQ4cVBwQTJhNjJ0cy9Vc040VlgvenV6QlJVK2JaMTlVTkZz?=
+ =?utf-8?B?K3B0U0h5MDlqUFhIOFNBMVhYNE1EekRTbUxBS0V6bjAzbGtMOXFva0M4ZUZF?=
+ =?utf-8?B?M1FURzZodHRXdjdjUDNXZEdRcDF0REl6T2gzaEI2TzQ2SysvcnIyUUJvTGxC?=
+ =?utf-8?B?WFEzajk0eTFXUUJMOUxnd1VqdUplK2xnS3lBUWEzTUIwbndLalg3OG9aSEdB?=
+ =?utf-8?B?dUVVa2JzMytDZVUvQUlHQU83UzV0aUZ0L3l6VjFaVXV3Q09lQnQydmRxRFJk?=
+ =?utf-8?B?ZDhuRXZ3UU5IT3pjOC95S09ibHJXdjQzWVBzeU5pUVNmNEVxTzBEdm9MckZl?=
+ =?utf-8?B?ZlhiWDdoeVlkZnBwOC9ZdHJCQnBya1dtVm04QmZoUSt2WkUyZlZnNTdxUmt5?=
+ =?utf-8?B?bmRJT1ovUG1rdGtCTFRQZk1ZVm5ZN0VKZ0pZZGtiSzlRZ2ZpVzhkdHJVQ215?=
+ =?utf-8?B?QkovUWQ4NlYvaVBvN1h0NnA5blAwMzhXekhpclJWa0Vlb09tZm9IRHlFdWdG?=
+ =?utf-8?B?SVFmQ3ZyWUprRC9TeitBbWZ3S2Ftbk5qa2hYY1Q4NmpzSnR5dWxYaEdMaSt5?=
+ =?utf-8?B?ZHkwd3hsdjlCWVVGQmhwdEZvdEtncmpGR00yZmM3cCtEcnpMZjJoMlFoYWRh?=
+ =?utf-8?B?cnRjRXpQZkdISTd2QWtvTmJ1czRqVkN1WjdaUVBJeVF3ejhNcGkveGIwT2ZV?=
+ =?utf-8?B?VU41NzJNOUc0MnlyN3ZDRUMzbkxDK2xGcXI0WG1kdURKTkJZR3NhY1lDRVJx?=
+ =?utf-8?B?eFgzY1AxY3ZWMndWZlJ1cjRlSUt3cnBiOVl5VEpNbTdRM2pOKzhTVTcwWGVM?=
+ =?utf-8?B?UVEyMGFObEp6NmozVi9ERndCYUlublRoUms4UEx4RGtBSjZxTnpDSk90a3p5?=
+ =?utf-8?B?VW1GaHRpM3hlSVZ3eWRaSGRKRGhxelhYaldaZWxFbG11Sjg1bDBQU01OYk4r?=
+ =?utf-8?B?V1VFK2hjWGh1bXJiLzNwa1JtM3ZMUXhoT2JjTTZLV09NQURQUkU4QlVlRmdr?=
+ =?utf-8?B?UXBUVTE4Zy9pSVA4azUvdGRkeUY4T3JPWUxEamxKWHB4QmVYTW1pUUNka1Fm?=
+ =?utf-8?B?ZmdhdGpQZVdoVGZaZ2JKc0lsSlRvWGxCcXkwMXNvWUExVXV5N1I2USt2d2Ru?=
+ =?utf-8?B?a0tuZ0h5RFRoVUtTczNjNlptckQvR2pNWHRLTjNqamJoZnZBRUtsdEJFdGhp?=
+ =?utf-8?B?OWZYdE5tODBxZlUwbXNZbkRVaHBGZTIrWjl4N0VPZjBKc21tcjFyK0lGN0hn?=
+ =?utf-8?B?ZFMrMTZqQllwUGU3ZGNUN1hrNzEreStGNU94Z2lLNWw4SWVLSW91aDdMZEpu?=
+ =?utf-8?B?UjlwaUxGRnNnVWJhU2V5bktYNUI1bC9mUzdQb21VdTlqaWJYUyt2aFlmSE0x?=
+ =?utf-8?B?VjZ2bVphaUFzQ1V6NkNyRWhWK1NqVGJvZ21FNEg1VkxVQ1p0ZlppK2JJVWpC?=
+ =?utf-8?B?MmtLaXhhQVpZMXNUaEpEUkw5ZXVEK3dQZzRFOWtzcHhraDYvM2lnVGljV3JP?=
+ =?utf-8?B?bzA5STZvZFhUbjFUaGdrQXluaEU0Wm8rMGZpSnhDeDJ6MHA1S1FJcXlhU3pR?=
+ =?utf-8?B?dmFWUG5qWkhBbVhVQ1c4NW5kZXRSODgvQVIrWkJkWVBadFVreEhEQkFlL25S?=
+ =?utf-8?B?Qm1Ob0VxVHRWT2xxTUIxZWpZQmd4ZC91bEJYZFNPbHd2YmNlaU93ZGFELzcy?=
+ =?utf-8?B?NnRzaWVuT0ZhNUxncGpwTzJ6Z3hHaWxMOEdySHowTy9hSEhDZVRpbEFTaFlF?=
+ =?utf-8?B?ck9ZNkNMMVVYS1VQeWxRQzlqbkpMcC9KU3NLbzZQL2xrcmh6d1QzS0lNYlF2?=
+ =?utf-8?B?U1JiaVY0YUs4TjJ5RUlVQ2ticUpuSldpdC9QUk1XL2xjQTlYcHFyQ1NwZUV4?=
+ =?utf-8?B?OXgxTi90VnlDMUdQZ2NSNS9hLzc4VUovaytBcUE1VUhnNzRiREx4RjJLN3pl?=
+ =?utf-8?B?UU1DT08yS29MNTdncEZmNUJBUCtWN21vT1JRK3RCSE95NWZpUGZmaDdPNGgw?=
+ =?utf-8?B?ZHBMRVlIMHE4UHZDQ0xJS0lEK0xGV05rT0JTZkFOL0xTWkRNNEhQRHM1a3NB?=
+ =?utf-8?B?NHY3a3IvRFd3OFRPRDlEMlBramUva3RyRjBGaThNWmxnVDUza1BJZz09?=
+X-Exchange-RoutingPolicyChecked: J5Ll7VBujT1C8DGgbr8qwL7rr5B3uhUsn/YYtezEPbDkXuiNiurBX28K61d4y74ByYO0BJQAd/v0s3mFeFb1Br0d+bS9W8BqR8Vg5rnQOwCgS1fx8mx3dgb4uIO5UjxzZyEgDPETjIw8qECUzXhFWsnwxt8E3Vj4GyP2c0w6MxpDHf0ngzjBnMYOWOWNXdL2OJP5fXiebJCvrY9kGi2ISLgSIxK2ivzG+rYAOcJIUKUk7IvSfq5/roSfS32u/bQVVjw2YRgQAZEmAd9Y2sR+77FFbOGe6bOrzlYS7M7Q3DFGLxZ2j4SU+o45Mv9I9BhdKKvJ6FXlEopmej9LVfdnTA==
+X-MS-Exchange-CrossTenant-Network-Message-Id: dd0df72d-5907-46a0-d3b3-08de7e75a2a3
+X-MS-Exchange-CrossTenant-AuthSource: BN6PR11MB4033.namprd11.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 10 Mar 2026 07:21:24.0283
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: 46c98d88-e344-4ed4-8496-4ed7712e255d
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: Z28iAE5RaPKUZ6cK26jEJ1iVgNU6SI65v7xE96+g4MUnlHKyHBH3s/n3Hcg8XJ70s4n0orhYQtP616EhfyLSOw==
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: SN7PR11MB7592
+X-OriginatorOrg: intel.com
 
+--wmrXy9HJV6rNqZoR
+Content-Type: text/plain; charset="utf-8"
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
 
+hi, Qu,
 
-=E5=9C=A8 2026/3/10 17:13, kernel test robot =E5=86=99=E9=81=93:
->=20
->=20
-> Hello,
->=20
-> kernel test robot noticed "xfstests.btrfs.052.fail" on:
->=20
-> commit: 50bb0fb60d1d55c7447535d17081ea009700cfd7 ("[PATCH v2 3/4] btrfs:=
- move larger data folios out of experimental features")
-> url: https://github.com/intel-lab-lkp/linux/commits/Qu-Wenruo/btrfs-drop=
--2K-block-size-support/20260227-113649
-> base: https://git.kernel.org/cgit/linux/kernel/git/kdave/linux.git for-n=
-ext
-> patch link: https://lore.kernel.org/all/0d8fe02f58ccbc0c53714ea45b0a4303=
-f2ee8206.1772162871.git.wqu@suse.com/
-> patch subject: [PATCH v2 3/4] btrfs: move larger data folios out of expe=
-rimental features
->=20
-> in testcase: xfstests
-> version: xfstests-x86_64-63a29724-1_20260218
-> with following parameters:
->=20
-> 	disk: 6HDD
-> 	fs: btrfs
-> 	test: btrfs-052
->=20
->=20
->=20
-> config: x86_64-rhel-9.4-func
-> compiler: gcc-14
-> test machine: 8 threads 1 sockets Intel(R) Core(TM) i7-4770 CPU @ 3.40GH=
-z (Haswell) with 8G memory
->=20
-> (please refer to attached dmesg/kmsg for entire log/backtrace)
->=20
->=20
->=20
-> If you fix the issue in a separate patch/commit (i.e. not just a new ver=
-sion of
-> the same patch/commit), kindly add following tags
-> | Reported-by: kernel test robot <oliver.sang@intel.com>
-> | Closes: https://lore.kernel.org/oe-lkp/202603101405.288f83f3-lkp@intel=
-.com
->=20
->=20
-> 2026-03-06 18:12:00 cd /lkp/benchmarks/xfstests
-> 2026-03-06 18:12:00 export TEST_DIR=3D/fs/sdb1
-> 2026-03-06 18:12:00 export TEST_DEV=3D/dev/sdb1
-> 2026-03-06 18:12:00 export FSTYP=3Dbtrfs
-> 2026-03-06 18:12:00 export SCRATCH_MNT=3D/fs/scratch
-> 2026-03-06 18:12:00 mkdir /fs/scratch -p
-> 2026-03-06 18:12:00 export SCRATCH_DEV_POOL=3D"/dev/sdb2 /dev/sdb3 /dev/=
-sdb4 /dev/sdb5 /dev/sdb6"
-> 2026-03-06 18:12:00 echo btrfs/052
-> 2026-03-06 18:12:00 ./check btrfs/052
-> FSTYP         -- btrfs
-> PLATFORM      -- Linux/x86_64 lkp-hsw-d01 7.0.0-rc1-00110-g50bb0fb60d1d =
-#1 SMP PREEMPT_DYNAMIC Sat Mar  7 01:56:32 CST 2026
-> MKFS_OPTIONS  -- /dev/sdb2
-> MOUNT_OPTIONS -- /dev/sdb2 /fs/scratch
->=20
-> btrfs/052          [failed, exit status 1]- output mismatch (see /lkp/be=
-nchmarks/xfstests/results//btrfs/052.out.bad)
->      --- tests/btrfs/052.out	2026-02-18 09:47:02.000000000 +0000
->      +++ /lkp/benchmarks/xfstests/results//btrfs/052.out.bad	2026-03-06 =
-18:12:03.421371379 +0000
->      @@ -91,553 +91,5 @@
->       23 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->       *
->       30
->      -0 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
->      -*
->      -2 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->      -*
->      ...
->      (Run 'diff -u /lkp/benchmarks/xfstests/tests/btrfs/052.out /lkp/ben=
-chmarks/xfstests/results//btrfs/052.out.bad'  to see the entire diff)
-> Ran: btrfs/052
-> Failures: btrfs/052
-> Failed 1 of 1 tests
+On Tue, Mar 10, 2026 at 05:33:16PM +1030, Qu Wenruo wrote:
+> 
+> 
+> 在 2026/3/10 17:13, kernel test robot 写道:
+> > 
+> > 
+> > Hello,
+> > 
+> > kernel test robot noticed "xfstests.btrfs.052.fail" on:
+> > 
+> > commit: 50bb0fb60d1d55c7447535d17081ea009700cfd7 ("[PATCH v2 3/4] btrfs: move larger data folios out of experimental features")
+> > url: https://github.com/intel-lab-lkp/linux/commits/Qu-Wenruo/btrfs-drop-2K-block-size-support/20260227-113649
+> > base: https://git.kernel.org/cgit/linux/kernel/git/kdave/linux.git for-next
+> > patch link: https://lore.kernel.org/all/0d8fe02f58ccbc0c53714ea45b0a4303f2ee8206.1772162871.git.wqu@suse.com/
+> > patch subject: [PATCH v2 3/4] btrfs: move larger data folios out of experimental features
+> > 
+> > in testcase: xfstests
+> > version: xfstests-x86_64-63a29724-1_20260218
+> > with following parameters:
+> > 
+> > 	disk: 6HDD
+> > 	fs: btrfs
+> > 	test: btrfs-052
+> > 
+> > 
+> > 
+> > config: x86_64-rhel-9.4-func
+> > compiler: gcc-14
+> > test machine: 8 threads 1 sockets Intel(R) Core(TM) i7-4770 CPU @ 3.40GHz (Haswell) with 8G memory
+> > 
+> > (please refer to attached dmesg/kmsg for entire log/backtrace)
+> > 
+> > 
+> > 
+> > If you fix the issue in a separate patch/commit (i.e. not just a new version of
+> > the same patch/commit), kindly add following tags
+> > | Reported-by: kernel test robot <oliver.sang@intel.com>
+> > | Closes: https://lore.kernel.org/oe-lkp/202603101405.288f83f3-lkp@intel.com
+> > 
+> > 
+> > 2026-03-06 18:12:00 cd /lkp/benchmarks/xfstests
+> > 2026-03-06 18:12:00 export TEST_DIR=/fs/sdb1
+> > 2026-03-06 18:12:00 export TEST_DEV=/dev/sdb1
+> > 2026-03-06 18:12:00 export FSTYP=btrfs
+> > 2026-03-06 18:12:00 export SCRATCH_MNT=/fs/scratch
+> > 2026-03-06 18:12:00 mkdir /fs/scratch -p
+> > 2026-03-06 18:12:00 export SCRATCH_DEV_POOL="/dev/sdb2 /dev/sdb3 /dev/sdb4 /dev/sdb5 /dev/sdb6"
+> > 2026-03-06 18:12:00 echo btrfs/052
+> > 2026-03-06 18:12:00 ./check btrfs/052
+> > FSTYP         -- btrfs
+> > PLATFORM      -- Linux/x86_64 lkp-hsw-d01 7.0.0-rc1-00110-g50bb0fb60d1d #1 SMP PREEMPT_DYNAMIC Sat Mar  7 01:56:32 CST 2026
+> > MKFS_OPTIONS  -- /dev/sdb2
+> > MOUNT_OPTIONS -- /dev/sdb2 /fs/scratch
+> > 
+> > btrfs/052          [failed, exit status 1]- output mismatch (see /lkp/benchmarks/xfstests/results//btrfs/052.out.bad)
+> >      --- tests/btrfs/052.out	2026-02-18 09:47:02.000000000 +0000
+> >      +++ /lkp/benchmarks/xfstests/results//btrfs/052.out.bad	2026-03-06 18:12:03.421371379 +0000
+> >      @@ -91,553 +91,5 @@
+> >       23 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
+> >       *
+> >       30
+> >      -0 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+> >      -*
+> >      -2 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
+> >      -*
+> >      ...
+> >      (Run 'diff -u /lkp/benchmarks/xfstests/tests/btrfs/052.out /lkp/benchmarks/xfstests/results//btrfs/052.out.bad'  to see the entire diff)
+> > Ran: btrfs/052
+> > Failures: btrfs/052
+> > Failed 1 of 1 tests
+> 
+> Can you provide the full btrfs/052.full?
 
-Can you provide the full btrfs/052.full?
+I attached tar.gz which contains all test results. thanks
 
-I checked my older logs (we have enabled larger folios for a while for=20
-experimental tests) and can not fild a similar failure.
+> 
+> I checked my older logs (we have enabled larger folios for a while for
+> experimental tests) and can not fild a similar failure.
+> 
+> Thus I'm wondering what is causing the failure.
+> 
+> Thanks,
+> Qu
+> 
+> > 
+> > 
+> > 
+> > 
+> > The kernel config and materials to reproduce are available at:
+> > https://download.01.org/0day-ci/archive/20260310/202603101405.288f83f3-lkp@intel.com
+> > 
+> > 
+> > 
+> 
 
-Thus I'm wondering what is causing the failure.
+--wmrXy9HJV6rNqZoR
+Content-Type: application/gzip
+Content-Disposition: attachment; filename="results.tar.gz"
+Content-Transfer-Encoding: base64
 
-Thanks,
-Qu
+H4sIAAAAAAAAA+1Y32vbMBDOs/+Kgz20HSSWZFkuftvGCmOMsdA9jT3ItpyYOFaR5Kb973dOmtGm
+CZ3TJBtMHyImPp1+3PlOn84o29bOhoMjgiCSJF4+Cafdk1HCVv9XGNCYxkxQHoloQCgVMRtAfMxF
+rdFaJw3AYLFYDAvp5K5+9ezmFMs5NcyD//Opymejsq3rw8/ROVgIvtP/lPMN/0eCov/J4ZfyHP+5
+/9u5bhuXQlja0OZGunyaQqMdLN+rYhT87lGo29AWGd0l3znC396jx248jf9aT44wx0vxz0i0Gf+c
+xT7+T4HgszKNquFWGVvpJoVkREZkaHI6xMRMyXASkywjZSZIQYvgylTwpbOXAHqZUpaSCL5ffwBG
+mAjGEvUzZzARkJgFV7KqW/y+Nt+pAijoEn+css769PA3sY7/lYuOM8ef8r8o4YxTlFOWiMTzv1Pg
+qf8xREe6daNMFgec44X8z+N4k//zWHj+dxJ8ewfo8JvWQW6URLoG2T10mfoac3PVTGBRuSlIyPUC
+SszdcF6oUuIncxG8r3U+s0jziqqsVJHCDwJDoD+3CBgKom0CjoJ4m0CgINkmuEQBw7EIENqrBW8D
+BqRfQx0OeMT1aagjgPBeDXUobiju1VApIkFe60ZBuTxXU/jU3Mq6KkCaSTtXjfNm8mbqYyayx1ze
+Dvvbwe/pFXtiZI/VMbqPGaL9TL7ziCRQlr2a98VrfbHO/WdhVjUrvrtkNPbeOjUHpDVGTrrD4HEl
+Kyy1PgvOrVIQIgMMM9Xk07k0MxvelXZ5fw3XFPoRh+7qqFBqg6M6nNZe/LOX3Of8//A14JfqP1FC
+N/k/Fb7+cxK8gb7hEHwcj7+O04ceD5QKdLPZL4VrdedWl4astfeB007WQJcaXV3oNRHpi9IeHh4e
+Hh4eHh4eHh498Qvllf44ACgAAA==
 
->=20
->=20
->=20
->=20
-> The kernel config and materials to reproduce are available at:
-> https://download.01.org/0day-ci/archive/20260310/202603101405.288f83f3-l=
-kp@intel.com
->=20
->=20
->=20
-
+--wmrXy9HJV6rNqZoR--

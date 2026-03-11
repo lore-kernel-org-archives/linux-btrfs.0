@@ -1,35 +1,35 @@
 Received: from bombadil.infradead.org (bombadil.infradead.org [198.137.202.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5FC2F27470;
-	Wed, 11 Mar 2026 07:05:29 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 68D0127470;
+	Wed, 11 Mar 2026 07:05:43 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.137.202.133
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773212730; cv=none; b=J2iGNEdOoip8D0fJNPbJhFK6A1//x+yvunlktkwESS4rGZ0K+QE//4jNwEmxwevvFRh+vKvO+3r8OwJTtzmm5ay/NP0EO8rJU+X5jYmrzKGi6Bd52f0WdyNJWQE5FGtB+KEWeuGET0mloKTc0yoXicA2lQdu//bhcVAApiA3Cc0=
+	t=1773212745; cv=none; b=QQeWlKfhpSUlNyVDTnVQASjEqSvyK16k0/dGZ2xJ41x+WDQsM3UxYKsERvSbtdcj80/TKeouLdM8/FkRE+JErEF9zwY+QSfE164Jk5RTGHuInX/O9ssDY6LU1OuMYcRAyrvZ+OMS3a14ZLZskxlJSC0iz+NXQBQQ1q/Ok+rYk1I=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773212730; c=relaxed/simple;
-	bh=m3TZCiWmkkFeXtFfJJmPa3Uy6IQpst3ERuPUtfH8NY0=;
+	s=arc-20240116; t=1773212745; c=relaxed/simple;
+	bh=BifARZXSftWdO9hfP3qfSEVzFLHG2PG2J8BDVrSmCzg=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=OXzwHneUpPRr/q3KV2TQXOn0Eciu6xOp+2v/mSI02GQmEkGmfri/rKhd+1y7j8+zSE1z9EoZp5YjQcCa8j/fn5JPaY7mDuhPIw74TgH5/Xj/74bRTrRyng3jrmu0K7qZjOgf66QgYvfEXihs5XnVSYDvLuXr8qEXZxQJjS+C650=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=D4k58v58; arc=none smtp.client-ip=198.137.202.133
+	 MIME-Version; b=gq5IGcm/3LHgJErfWK2nY8PAsDfxE5nuLHMFkywyXMyvglY/P/cl1ibn9FK6At5eTylTUnoiBAFNZT7Y/2IhD0zsENZujUM8/GeVfh3y4kwg8JR9e+kVMDrmV622a9aXAG5qhuM7nrg2hlMHAroiBmtOdM5dVVOG0wMz+OSqhZs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=LxBDjT6e; arc=none smtp.client-ip=198.137.202.133
 Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de
 Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="D4k58v58"
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="LxBDjT6e"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
 	d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
 	MIME-Version:References:In-Reply-To:Message-ID:Date:Subject:Cc:To:From:Sender
 	:Reply-To:Content-Type:Content-ID:Content-Description;
-	bh=WGxZOFGJjbC4KZLgbzmM1eG4Dgszv7Etxq5IbgQGdlc=; b=D4k58v58vrgrfQ7Qik0j8hncUS
-	QDsoJ7UW0grGKEM72bCaImi+9rKpClKCgXEdyS3ehhLv173t7BD6xOMz0EuquuGo5TkqtibtKhQT5
-	metuwVJt3OeE3oINB8U99sXZ2lgbFmPVF9DuvkFKK+1HV1QdayBobVjX329D1qDFHJzKCk5iWzCE0
-	x93nqDDScdurz3v8PRl2V6FiSmp70VjFIGld+61oaVDno8LFej+TH44bbp9qx9S1PJOy8E4br/Ztj
-	ekOie1fwZHnUMPF7LXeiInRGO3KY6apG6z0be0jGbTjX8179D8mNqvEUlYTaYJdsDIpsuObXOteHk
-	03QJEvNA==;
+	bh=O6va2IgTMiqnAT/Kurlve9FMTRmwTjwBvna18czcjgs=; b=LxBDjT6e09eo7f8On8p2vPK3IY
+	1defn0XUJE+FkcUouPnHUYvWb2UfFIKHmi8Xoclj0tWLe+O4QR0c18afL+jiSGdeqYHG/eQ1ICVCj
+	offPwnqF0yylhw21JW/OW4yQ3/1sC+g51hKVAo2GwTqCjr4lbKXDSUDI2JgrwgmtLnoUChNXEb4Hu
+	uM4TvIDHZpyN/01XXcX7TiD/lYX5H45vDcr7QZufv8ZK/5gTBgJkJDVj5waTm3FJzBoYWdZCFwCqr
+	K2+l+Cvx5PrvBmTE7+0Kjwq/fMIDHrZ039UdzgQ3CZY+2LOSqtHl5QmQazShM2xVtLJsVdXex32NU
+	HbPzYNjQ==;
 Received: from [212.243.42.10] (helo=localhost)
 	by bombadil.infradead.org with esmtpsa (Exim 4.98.2 #2 (Red Hat Linux))
-	id 1w0Dd1-0000000AyGU-2w5z;
-	Wed, 11 Mar 2026 07:05:12 +0000
+	id 1w0DdG-0000000AyO6-1sea;
+	Wed, 11 Mar 2026 07:05:26 +0000
 From: Christoph Hellwig <hch@lst.de>
 To: Andrew Morton <akpm@linux-foundation.org>
 Cc: Richard Henderson <richard.henderson@linaro.org>,
@@ -87,9 +87,9 @@ Cc: Richard Henderson <richard.henderson@linaro.org>,
 	linux-btrfs@vger.kernel.org,
 	linux-arch@vger.kernel.org,
 	linux-raid@vger.kernel.org
-Subject: [PATCH 03/27] um/xor: cleanup xor.h
-Date: Wed, 11 Mar 2026 08:03:35 +0100
-Message-ID: <20260311070416.972667-4-hch@lst.de>
+Subject: [PATCH 04/27] xor: move to lib/raid/
+Date: Wed, 11 Mar 2026 08:03:36 +0100
+Message-ID: <20260311070416.972667-5-hch@lst.de>
 X-Mailer: git-send-email 2.47.3
 In-Reply-To: <20260311070416.972667-1-hch@lst.de>
 References: <20260311070416.972667-1-hch@lst.de>
@@ -102,48 +102,109 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 
-Since commit c055e3eae0f1 ("crypto: xor - use ktime for template
-benchmarking") the benchmarking works just fine even for TT_MODE_INFCPU,
-so drop the workarounds.  Note that for CPUs supporting AVX2, which
-includes almost everything built in the last 10 years, the AVX2
-implementation is forced anyway.
-
-CONFIG_X86_32 is always correctly set for UM in arch/x86/um/Kconfig,
-so don't override it either.
+Move the RAID XOR code to lib/raid/ as it has nothing to do with the
+crypto API.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- arch/um/include/asm/xor.h | 16 ----------------
- 1 file changed, 16 deletions(-)
+ crypto/Kconfig                          | 2 --
+ crypto/Makefile                         | 1 -
+ lib/Kconfig                             | 1 +
+ lib/Makefile                            | 2 +-
+ lib/raid/Kconfig                        | 4 ++++
+ lib/raid/Makefile                       | 3 +++
+ lib/raid/xor/Makefile                   | 5 +++++
+ crypto/xor.c => lib/raid/xor/xor-core.c | 0
+ 8 files changed, 14 insertions(+), 4 deletions(-)
+ create mode 100644 lib/raid/Kconfig
+ create mode 100644 lib/raid/Makefile
+ create mode 100644 lib/raid/xor/Makefile
+ rename crypto/xor.c => lib/raid/xor/xor-core.c (100%)
 
-diff --git a/arch/um/include/asm/xor.h b/arch/um/include/asm/xor.h
-index 647fae200c5d..99e5c7e1f475 100644
---- a/arch/um/include/asm/xor.h
-+++ b/arch/um/include/asm/xor.h
-@@ -2,23 +2,7 @@
- #ifndef _ASM_UM_XOR_H
- #define _ASM_UM_XOR_H
+diff --git a/crypto/Kconfig b/crypto/Kconfig
+index b4bb85e8e226..97d73136a0b4 100644
+--- a/crypto/Kconfig
++++ b/crypto/Kconfig
+@@ -2,8 +2,6 @@
+ #
+ # Generic algorithms support
+ #
+-config XOR_BLOCKS
+-	tristate
  
--#ifdef CONFIG_64BIT
--#undef CONFIG_X86_32
--#define TT_CPU_INF_XOR_DEFAULT (AVX_SELECT(&xor_block_sse_pf64))
--#else
--#define CONFIG_X86_32 1
--#define TT_CPU_INF_XOR_DEFAULT (AVX_SELECT(&xor_block_8regs))
--#endif
--
- #include <asm/cpufeature.h>
- #include <../../x86/include/asm/xor.h>
--#include <linux/time-internal.h>
--
--#ifdef CONFIG_UML_TIME_TRAVEL_SUPPORT
--#undef XOR_SELECT_TEMPLATE
--/* pick an arbitrary one - measuring isn't possible with inf-cpu */
--#define XOR_SELECT_TEMPLATE(x)	\
--	(time_travel_mode == TT_MODE_INFCPU ? TT_CPU_INF_XOR_DEFAULT : x)
--#endif
+ #
+ # async_tx api: hardware offloaded memory transfer/transform support
+diff --git a/crypto/Makefile b/crypto/Makefile
+index 04e269117589..795c2eea51fe 100644
+--- a/crypto/Makefile
++++ b/crypto/Makefile
+@@ -196,7 +196,6 @@ obj-$(CONFIG_CRYPTO_ECRDSA) += ecrdsa_generic.o
+ #
+ # generic algorithms and the async_tx api
+ #
+-obj-$(CONFIG_XOR_BLOCKS) += xor.o
+ obj-$(CONFIG_ASYNC_CORE) += async_tx/
+ obj-$(CONFIG_ASYMMETRIC_KEY_TYPE) += asymmetric_keys/
+ crypto_simd-y := simd.o
+diff --git a/lib/Kconfig b/lib/Kconfig
+index 0f2fb9610647..5be57adcd454 100644
+--- a/lib/Kconfig
++++ b/lib/Kconfig
+@@ -138,6 +138,7 @@ config TRACE_MMIO_ACCESS
  
- #endif
+ source "lib/crc/Kconfig"
+ source "lib/crypto/Kconfig"
++source "lib/raid/Kconfig"
+ 
+ config XXHASH
+ 	tristate
+diff --git a/lib/Makefile b/lib/Makefile
+index 1b9ee167517f..84da412a044f 100644
+--- a/lib/Makefile
++++ b/lib/Makefile
+@@ -120,7 +120,7 @@ endif
+ obj-$(CONFIG_DEBUG_INFO_REDUCED) += debug_info.o
+ CFLAGS_debug_info.o += $(call cc-option, -femit-struct-debug-detailed=any)
+ 
+-obj-y += math/ crc/ crypto/ tests/ vdso/
++obj-y += math/ crc/ crypto/ tests/ vdso/ raid/
+ 
+ obj-$(CONFIG_GENERIC_IOMAP) += iomap.o
+ obj-$(CONFIG_HAS_IOMEM) += iomap_copy.o devres.o
+diff --git a/lib/raid/Kconfig b/lib/raid/Kconfig
+new file mode 100644
+index 000000000000..01b73a1c303f
+--- /dev/null
++++ b/lib/raid/Kconfig
+@@ -0,0 +1,4 @@
++# SPDX-License-Identifier: GPL-2.0
++
++config XOR_BLOCKS
++	tristate
+diff --git a/lib/raid/Makefile b/lib/raid/Makefile
+new file mode 100644
+index 000000000000..3540fe846dc4
+--- /dev/null
++++ b/lib/raid/Makefile
+@@ -0,0 +1,3 @@
++# SPDX-License-Identifier: GPL-2.0
++
++obj-y				+= xor/
+diff --git a/lib/raid/xor/Makefile b/lib/raid/xor/Makefile
+new file mode 100644
+index 000000000000..7bca0ce8e90a
+--- /dev/null
++++ b/lib/raid/xor/Makefile
+@@ -0,0 +1,5 @@
++# SPDX-License-Identifier: GPL-2.0
++
++obj-$(CONFIG_XOR_BLOCKS)	+= xor.o
++
++xor-y				+= xor-core.o
+diff --git a/crypto/xor.c b/lib/raid/xor/xor-core.c
+similarity index 100%
+rename from crypto/xor.c
+rename to lib/raid/xor/xor-core.c
 -- 
 2.47.3
 

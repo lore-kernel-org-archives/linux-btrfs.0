@@ -1,35 +1,35 @@
 Received: from bombadil.infradead.org (bombadil.infradead.org [198.137.202.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 089BA382378;
-	Wed, 11 Mar 2026 07:07:53 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B20E63822BB;
+	Wed, 11 Mar 2026 07:08:06 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.137.202.133
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773212875; cv=none; b=guQMIEZW/luMDiYLvFd9eC1q9Dycrwg54T9twkcP/+Lj+GFWtKgdQ+TXLRgHisAzs0HyOFZ9Hufa0P6DvpbLEGKpCBOIqieSh4ubdyHf++86+49P00bUdQKNJP57JJOtX49H0wOGwZwYL+ymkuOzE6eS8HvqdVOo6uxVcWG+i1g=
+	t=1773212888; cv=none; b=IDCB+sjjidjltQvxeTOjrVoRB/nsjeV8sxyGzvtm3uEawLaDv2hvVVDJXRP6EPJRZeXjQqaFG/0Cog81twsBQcW4yesYgXk013CU6JtLTeRolkOJectam9pAs2tPTBzzESGVQcvYqTZH0gCEfLtqYchUMGV5dpTjg0YdS9H6TuQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773212875; c=relaxed/simple;
-	bh=rkU6xMpjHBvFoQf8bTQVv1BJaOUwen2u2axKl3/uPYA=;
+	s=arc-20240116; t=1773212888; c=relaxed/simple;
+	bh=1vNIIgUdZYX4FBrkvoVU7YjBqtBC8bbfQbZmXotvqb0=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=JdtOE736wihWiy+3UC9V8QKFsAotgw3tZcLrs2w3KbZqk6BhdAahc4JMVOJZIIbko0GspP8hfXX4+mKign65+MPj3e6aUVTTYFkQh12tBjkpDR5GT85q/lmHO/bijRc7ZF7YIsrPE/gEU6opYyAXTXR+zHgvakmBbufSxVGyZHM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=M7Cf8VQ9; arc=none smtp.client-ip=198.137.202.133
+	 MIME-Version; b=A8EavajiFNUo4KNjffscvBnOZrS4uchc7D5s1dHg/dAuyNVgUrhm6tqD/39NNCk4DF12zLdhpPps+u5b7o8K/nHxqSg4XktNqqIAlZsNa3TOR3nzKVCDJHKOE6lWQprWip7AtQm5VFvTXS6D6LTC1ZK9rFmdMvkFqm/nOJanT0s=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=C9HbFFNG; arc=none smtp.client-ip=198.137.202.133
 Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de
 Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="M7Cf8VQ9"
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="C9HbFFNG"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
 	d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
 	MIME-Version:References:In-Reply-To:Message-ID:Date:Subject:Cc:To:From:Sender
 	:Reply-To:Content-Type:Content-ID:Content-Description;
-	bh=1N/WiUgWMSpYjlopJG9AbWnsi38DwWQVuDQYplZc2H8=; b=M7Cf8VQ9mRDsmyZl1HeG3cfMGf
-	DQV2D40U1E+JtCEHKAiIWQ6p3Ddwv3M6rg+WbZuxSnpFm1ixYM8kIehFlEd9xTRGEqu4hcolRXnbl
-	skeFtM0uWMVnUXQnc7bsrxpkaLiQRzLVgmjeEFF5SL4mzOIqJIizDOiYuWfr6zdjuMjvJ9KxkbQI8
-	lJ6n7e+WIzD3AG8dPX0/z4tuWittDsbnPvyuEz2puaxefayFsnhaB/TSdKzBy5mUdDH0frS/aWBTL
-	fU016BS2CKLDsSp4hDkFzzdTLt/cJ/NLckGIkmctyiDA03E3Ff8QLoK5hIrHufClBmMCIgnNeSBor
-	rKq7FOFg==;
+	bh=YPyANLqg5hqrVsVOEPNjtS+GLiKI++rSSPuBBCl9deQ=; b=C9HbFFNGspHvxt3NHgsXSMO8KC
+	sXrVkuWvaG0TCgxy3a0XMGulSbPKDRb+YTeCaaf2JVWblhC7CWVvnxMmRpFr0TSn+VcypTIzQ6Eo0
+	eMQivfgzCaFcKvuGRqv8XjdOurUfWdWXTZciTGCoXlE4F1LV+85yQXY0u+2HIsN2cVHqmWa+04LlR
+	1+kkZfDc43FHqL+I/gyt2+lVR5qKFo6h0i78MhzFPy1tgjPEn0OYu/PUtJKDj34wP1c0XuqsS6X+V
+	WCE55N31oiwApoMhIs6qvN64Tp49z14wT+F/UGnpIDDD4QqZBr2+W/z6+tB/f9HBzAhOeIrrdPhDh
+	Lj/1PxMw==;
 Received: from [212.243.42.10] (helo=localhost)
 	by bombadil.infradead.org with esmtpsa (Exim 4.98.2 #2 (Red Hat Linux))
-	id 1w0DfL-0000000AzeY-30Fy;
-	Wed, 11 Mar 2026 07:07:36 +0000
+	id 1w0Dfa-0000000AzpY-1BOO;
+	Wed, 11 Mar 2026 07:07:50 +0000
 From: Christoph Hellwig <hch@lst.de>
 To: Andrew Morton <akpm@linux-foundation.org>
 Cc: Richard Henderson <richard.henderson@linaro.org>,
@@ -87,9 +87,9 @@ Cc: Richard Henderson <richard.henderson@linaro.org>,
 	linux-btrfs@vger.kernel.org,
 	linux-arch@vger.kernel.org,
 	linux-raid@vger.kernel.org
-Subject: [PATCH 13/27] loongarch: move the XOR code to lib/raid/
-Date: Wed, 11 Mar 2026 08:03:45 +0100
-Message-ID: <20260311070416.972667-14-hch@lst.de>
+Subject: [PATCH 14/27] powerpc: move the XOR code to lib/raid/
+Date: Wed, 11 Mar 2026 08:03:46 +0100
+Message-ID: <20260311070416.972667-15-hch@lst.de>
 X-Mailer: git-send-email 2.47.3
 In-Reply-To: <20260311070416.972667-1-hch@lst.de>
 References: <20260311070416.972667-1-hch@lst.de>
@@ -107,234 +107,264 @@ instead of always building it into the main kernel image.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- arch/loongarch/include/asm/xor.h              | 24 ++----------
- arch/loongarch/include/asm/xor_simd.h         | 34 ----------------
- arch/loongarch/lib/Makefile                   |  2 -
- lib/raid/xor/Makefile                         |  2 +
- .../lib => lib/raid/xor/loongarch}/xor_simd.c |  0
- .../lib => lib/raid/xor/loongarch}/xor_simd.h |  0
- .../raid/xor/loongarch}/xor_simd_glue.c       | 39 +++++++++++--------
- .../raid/xor/loongarch}/xor_template.c        |  0
- 8 files changed, 27 insertions(+), 74 deletions(-)
- delete mode 100644 arch/loongarch/include/asm/xor_simd.h
- rename {arch/loongarch/lib => lib/raid/xor/loongarch}/xor_simd.c (100%)
- rename {arch/loongarch/lib => lib/raid/xor/loongarch}/xor_simd.h (100%)
- rename {arch/loongarch/lib => lib/raid/xor/loongarch}/xor_simd_glue.c (64%)
- rename {arch/loongarch/lib => lib/raid/xor/loongarch}/xor_template.c (100%)
+ arch/powerpc/include/asm/xor.h                | 17 +----
+ arch/powerpc/include/asm/xor_altivec.h        | 22 ------
+ arch/powerpc/lib/Makefile                     |  5 --
+ arch/powerpc/lib/xor_vmx_glue.c               | 63 -----------------
+ lib/raid/xor/Makefile                         |  5 ++
+ .../lib => lib/raid/xor/powerpc}/xor_vmx.c    |  0
+ .../lib => lib/raid/xor/powerpc}/xor_vmx.h    |  0
+ lib/raid/xor/powerpc/xor_vmx_glue.c           | 67 +++++++++++++++++++
+ 8 files changed, 74 insertions(+), 105 deletions(-)
+ delete mode 100644 arch/powerpc/include/asm/xor_altivec.h
+ delete mode 100644 arch/powerpc/lib/xor_vmx_glue.c
+ rename {arch/powerpc/lib => lib/raid/xor/powerpc}/xor_vmx.c (100%)
+ rename {arch/powerpc/lib => lib/raid/xor/powerpc}/xor_vmx.h (100%)
+ create mode 100644 lib/raid/xor/powerpc/xor_vmx_glue.c
 
-diff --git a/arch/loongarch/include/asm/xor.h b/arch/loongarch/include/asm/xor.h
-index d17c0e3b047f..7e32f72f8b03 100644
---- a/arch/loongarch/include/asm/xor.h
-+++ b/arch/loongarch/include/asm/xor.h
-@@ -6,27 +6,6 @@
- #define _ASM_LOONGARCH_XOR_H
+diff --git a/arch/powerpc/include/asm/xor.h b/arch/powerpc/include/asm/xor.h
+index 30224c5279c4..3293ac87181c 100644
+--- a/arch/powerpc/include/asm/xor.h
++++ b/arch/powerpc/include/asm/xor.h
+@@ -8,24 +8,11 @@
+ #ifndef _ASM_POWERPC_XOR_H
+ #define _ASM_POWERPC_XOR_H
  
- #include <asm/cpu-features.h>
--#include <asm/xor_simd.h>
+-#ifdef CONFIG_ALTIVEC
 -
--#ifdef CONFIG_CPU_HAS_LSX
--static struct xor_block_template xor_block_lsx = {
--	.name = "lsx",
--	.do_2 = xor_lsx_2,
--	.do_3 = xor_lsx_3,
--	.do_4 = xor_lsx_4,
--	.do_5 = xor_lsx_5,
--};
--#endif /* CONFIG_CPU_HAS_LSX */
+-#include <asm/cputable.h>
+ #include <asm/cpu_has_feature.h>
+-#include <asm/xor_altivec.h>
 -
--#ifdef CONFIG_CPU_HAS_LASX
--static struct xor_block_template xor_block_lasx = {
--	.name = "lasx",
--	.do_2 = xor_lasx_2,
--	.do_3 = xor_lasx_3,
--	.do_4 = xor_lasx_4,
--	.do_5 = xor_lasx_5,
+-static struct xor_block_template xor_block_altivec = {
+-	.name = "altivec",
+-	.do_2 = xor_altivec_2,
+-	.do_3 = xor_altivec_3,
+-	.do_4 = xor_altivec_4,
+-	.do_5 = xor_altivec_5,
 -};
--#endif /* CONFIG_CPU_HAS_LASX */
- 
- /*
-  * For grins, also test the generic routines.
-@@ -38,6 +17,9 @@ static struct xor_block_template xor_block_lasx = {
-  */
+-#endif /* CONFIG_ALTIVEC */
+-
+-/* Also try the generic routines. */
  #include <asm-generic/xor.h>
  
-+extern struct xor_block_template xor_block_lsx;
-+extern struct xor_block_template xor_block_lasx;
++extern struct xor_block_template xor_block_altivec;
 +
  #define arch_xor_init arch_xor_init
  static __always_inline void __init arch_xor_init(void)
  {
-diff --git a/arch/loongarch/include/asm/xor_simd.h b/arch/loongarch/include/asm/xor_simd.h
+diff --git a/arch/powerpc/include/asm/xor_altivec.h b/arch/powerpc/include/asm/xor_altivec.h
 deleted file mode 100644
-index 471b96332f38..000000000000
---- a/arch/loongarch/include/asm/xor_simd.h
+index 294620a25f80..000000000000
+--- a/arch/powerpc/include/asm/xor_altivec.h
 +++ /dev/null
-@@ -1,34 +0,0 @@
--/* SPDX-License-Identifier: GPL-2.0-or-later */
+@@ -1,22 +0,0 @@
+-/* SPDX-License-Identifier: GPL-2.0 */
+-#ifndef _ASM_POWERPC_XOR_ALTIVEC_H
+-#define _ASM_POWERPC_XOR_ALTIVEC_H
+-
+-#ifdef CONFIG_ALTIVEC
+-void xor_altivec_2(unsigned long bytes, unsigned long * __restrict p1,
+-		   const unsigned long * __restrict p2);
+-void xor_altivec_3(unsigned long bytes, unsigned long * __restrict p1,
+-		   const unsigned long * __restrict p2,
+-		   const unsigned long * __restrict p3);
+-void xor_altivec_4(unsigned long bytes, unsigned long * __restrict p1,
+-		   const unsigned long * __restrict p2,
+-		   const unsigned long * __restrict p3,
+-		   const unsigned long * __restrict p4);
+-void xor_altivec_5(unsigned long bytes, unsigned long * __restrict p1,
+-		   const unsigned long * __restrict p2,
+-		   const unsigned long * __restrict p3,
+-		   const unsigned long * __restrict p4,
+-		   const unsigned long * __restrict p5);
+-
+-#endif
+-#endif /* _ASM_POWERPC_XOR_ALTIVEC_H */
+diff --git a/arch/powerpc/lib/Makefile b/arch/powerpc/lib/Makefile
+index f14ecab674a3..002edc3f01d5 100644
+--- a/arch/powerpc/lib/Makefile
++++ b/arch/powerpc/lib/Makefile
+@@ -73,9 +73,4 @@ obj-$(CONFIG_PPC_LIB_RHEAP) += rheap.o
+ 
+ obj-$(CONFIG_FTR_FIXUP_SELFTEST) += feature-fixups-test.o
+ 
+-obj-$(CONFIG_ALTIVEC)	+= xor_vmx.o xor_vmx_glue.o
+-CFLAGS_xor_vmx.o += -mhard-float -maltivec $(call cc-option,-mabi=altivec)
+-# Enable <altivec.h>
+-CFLAGS_xor_vmx.o += -isystem $(shell $(CC) -print-file-name=include)
+-
+ obj-$(CONFIG_PPC64) += $(obj64-y)
+diff --git a/arch/powerpc/lib/xor_vmx_glue.c b/arch/powerpc/lib/xor_vmx_glue.c
+deleted file mode 100644
+index 35d917ece4d1..000000000000
+--- a/arch/powerpc/lib/xor_vmx_glue.c
++++ /dev/null
+@@ -1,63 +0,0 @@
+-// SPDX-License-Identifier: GPL-2.0-or-later
 -/*
-- * Copyright (C) 2023 WANG Xuerui <git@xen0n.name>
+- * Altivec XOR operations
+- *
+- * Copyright 2017 IBM Corp.
 - */
--#ifndef _ASM_LOONGARCH_XOR_SIMD_H
--#define _ASM_LOONGARCH_XOR_SIMD_H
 -
--#ifdef CONFIG_CPU_HAS_LSX
--void xor_lsx_2(unsigned long bytes, unsigned long * __restrict p1,
--	       const unsigned long * __restrict p2);
--void xor_lsx_3(unsigned long bytes, unsigned long * __restrict p1,
--	       const unsigned long * __restrict p2, const unsigned long * __restrict p3);
--void xor_lsx_4(unsigned long bytes, unsigned long * __restrict p1,
--	       const unsigned long * __restrict p2, const unsigned long * __restrict p3,
--	       const unsigned long * __restrict p4);
--void xor_lsx_5(unsigned long bytes, unsigned long * __restrict p1,
--	       const unsigned long * __restrict p2, const unsigned long * __restrict p3,
--	       const unsigned long * __restrict p4, const unsigned long * __restrict p5);
--#endif /* CONFIG_CPU_HAS_LSX */
+-#include <linux/preempt.h>
+-#include <linux/export.h>
+-#include <linux/sched.h>
+-#include <asm/switch_to.h>
+-#include <asm/xor_altivec.h>
+-#include "xor_vmx.h"
 -
--#ifdef CONFIG_CPU_HAS_LASX
--void xor_lasx_2(unsigned long bytes, unsigned long * __restrict p1,
--	        const unsigned long * __restrict p2);
--void xor_lasx_3(unsigned long bytes, unsigned long * __restrict p1,
--	        const unsigned long * __restrict p2, const unsigned long * __restrict p3);
--void xor_lasx_4(unsigned long bytes, unsigned long * __restrict p1,
--	        const unsigned long * __restrict p2, const unsigned long * __restrict p3,
--	        const unsigned long * __restrict p4);
--void xor_lasx_5(unsigned long bytes, unsigned long * __restrict p1,
--	        const unsigned long * __restrict p2, const unsigned long * __restrict p3,
--	        const unsigned long * __restrict p4, const unsigned long * __restrict p5);
--#endif /* CONFIG_CPU_HAS_LASX */
+-void xor_altivec_2(unsigned long bytes, unsigned long * __restrict p1,
+-		   const unsigned long * __restrict p2)
+-{
+-	preempt_disable();
+-	enable_kernel_altivec();
+-	__xor_altivec_2(bytes, p1, p2);
+-	disable_kernel_altivec();
+-	preempt_enable();
+-}
+-EXPORT_SYMBOL(xor_altivec_2);
 -
--#endif /* _ASM_LOONGARCH_XOR_SIMD_H */
-diff --git a/arch/loongarch/lib/Makefile b/arch/loongarch/lib/Makefile
-index ccea3bbd4353..827a88529a42 100644
---- a/arch/loongarch/lib/Makefile
-+++ b/arch/loongarch/lib/Makefile
-@@ -8,6 +8,4 @@ lib-y	+= delay.o memset.o memcpy.o memmove.o \
- 
- obj-$(CONFIG_ARCH_SUPPORTS_INT128) += tishift.o
- 
--obj-$(CONFIG_CPU_HAS_LSX) += xor_simd.o xor_simd_glue.o
+-void xor_altivec_3(unsigned long bytes, unsigned long * __restrict p1,
+-		   const unsigned long * __restrict p2,
+-		   const unsigned long * __restrict p3)
+-{
+-	preempt_disable();
+-	enable_kernel_altivec();
+-	__xor_altivec_3(bytes, p1, p2, p3);
+-	disable_kernel_altivec();
+-	preempt_enable();
+-}
+-EXPORT_SYMBOL(xor_altivec_3);
 -
- obj-$(CONFIG_FUNCTION_ERROR_INJECTION) += error-inject.o
+-void xor_altivec_4(unsigned long bytes, unsigned long * __restrict p1,
+-		   const unsigned long * __restrict p2,
+-		   const unsigned long * __restrict p3,
+-		   const unsigned long * __restrict p4)
+-{
+-	preempt_disable();
+-	enable_kernel_altivec();
+-	__xor_altivec_4(bytes, p1, p2, p3, p4);
+-	disable_kernel_altivec();
+-	preempt_enable();
+-}
+-EXPORT_SYMBOL(xor_altivec_4);
+-
+-void xor_altivec_5(unsigned long bytes, unsigned long * __restrict p1,
+-		   const unsigned long * __restrict p2,
+-		   const unsigned long * __restrict p3,
+-		   const unsigned long * __restrict p4,
+-		   const unsigned long * __restrict p5)
+-{
+-	preempt_disable();
+-	enable_kernel_altivec();
+-	__xor_altivec_5(bytes, p1, p2, p3, p4, p5);
+-	disable_kernel_altivec();
+-	preempt_enable();
+-}
+-EXPORT_SYMBOL(xor_altivec_5);
 diff --git a/lib/raid/xor/Makefile b/lib/raid/xor/Makefile
-index 3c13851219e5..fafd131cef27 100644
+index fafd131cef27..3df9e04a1a9b 100644
 --- a/lib/raid/xor/Makefile
 +++ b/lib/raid/xor/Makefile
-@@ -15,6 +15,8 @@ xor-$(CONFIG_KERNEL_MODE_NEON)	+= arm/xor-neon.o arm/xor-neon-glue.o
- else
- xor-$(CONFIG_KERNEL_MODE_NEON)	+= arm64/xor-neon.o arm64/xor-neon-glue.o
+@@ -17,6 +17,7 @@ xor-$(CONFIG_KERNEL_MODE_NEON)	+= arm64/xor-neon.o arm64/xor-neon-glue.o
  endif
-+xor-$(CONFIG_CPU_HAS_LSX)	+= loongarch/xor_simd.o
-+xor-$(CONFIG_CPU_HAS_LSX)	+= loongarch/xor_simd_glue.o
+ xor-$(CONFIG_CPU_HAS_LSX)	+= loongarch/xor_simd.o
+ xor-$(CONFIG_CPU_HAS_LSX)	+= loongarch/xor_simd_glue.o
++xor-$(CONFIG_ALTIVEC)		+= powerpc/xor_vmx.o powerpc/xor_vmx_glue.o
  
  
  CFLAGS_arm/xor-neon.o		+= $(CC_FLAGS_FPU)
-diff --git a/arch/loongarch/lib/xor_simd.c b/lib/raid/xor/loongarch/xor_simd.c
-similarity index 100%
-rename from arch/loongarch/lib/xor_simd.c
-rename to lib/raid/xor/loongarch/xor_simd.c
-diff --git a/arch/loongarch/lib/xor_simd.h b/lib/raid/xor/loongarch/xor_simd.h
-similarity index 100%
-rename from arch/loongarch/lib/xor_simd.h
-rename to lib/raid/xor/loongarch/xor_simd.h
-diff --git a/arch/loongarch/lib/xor_simd_glue.c b/lib/raid/xor/loongarch/xor_simd_glue.c
-similarity index 64%
-rename from arch/loongarch/lib/xor_simd_glue.c
-rename to lib/raid/xor/loongarch/xor_simd_glue.c
-index 393f689dbcf6..11fa3b47ba83 100644
---- a/arch/loongarch/lib/xor_simd_glue.c
-+++ b/lib/raid/xor/loongarch/xor_simd_glue.c
-@@ -5,24 +5,23 @@
-  * Copyright (C) 2023 WANG Xuerui <git@xen0n.name>
-  */
+@@ -24,3 +25,7 @@ CFLAGS_REMOVE_arm/xor-neon.o	+= $(CC_FLAGS_NO_FPU)
  
--#include <linux/export.h>
- #include <linux/sched.h>
+ CFLAGS_arm64/xor-neon.o		+= $(CC_FLAGS_FPU)
+ CFLAGS_REMOVE_arm64/xor-neon.o	+= $(CC_FLAGS_NO_FPU)
++
++CFLAGS_powerpc/xor_vmx.o	+= -mhard-float -maltivec \
++				   $(call cc-option,-mabi=altivec) \
++				   -isystem $(shell $(CC) -print-file-name=include)
+diff --git a/arch/powerpc/lib/xor_vmx.c b/lib/raid/xor/powerpc/xor_vmx.c
+similarity index 100%
+rename from arch/powerpc/lib/xor_vmx.c
+rename to lib/raid/xor/powerpc/xor_vmx.c
+diff --git a/arch/powerpc/lib/xor_vmx.h b/lib/raid/xor/powerpc/xor_vmx.h
+similarity index 100%
+rename from arch/powerpc/lib/xor_vmx.h
+rename to lib/raid/xor/powerpc/xor_vmx.h
+diff --git a/lib/raid/xor/powerpc/xor_vmx_glue.c b/lib/raid/xor/powerpc/xor_vmx_glue.c
+new file mode 100644
+index 000000000000..c41e38340700
+--- /dev/null
++++ b/lib/raid/xor/powerpc/xor_vmx_glue.c
+@@ -0,0 +1,67 @@
++// SPDX-License-Identifier: GPL-2.0-or-later
++/*
++ * Altivec XOR operations
++ *
++ * Copyright 2017 IBM Corp.
++ */
++
++#include <linux/preempt.h>
++#include <linux/sched.h>
 +#include <linux/raid/xor_impl.h>
- #include <asm/fpu.h>
--#include <asm/xor_simd.h>
++#include <asm/switch_to.h>
 +#include <asm/xor.h>
- #include "xor_simd.h"
- 
- #define MAKE_XOR_GLUE_2(flavor)							\
--void xor_##flavor##_2(unsigned long bytes, unsigned long * __restrict p1,	\
-+static void xor_##flavor##_2(unsigned long bytes, unsigned long * __restrict p1,\
- 		      const unsigned long * __restrict p2)			\
- {										\
- 	kernel_fpu_begin();							\
- 	__xor_##flavor##_2(bytes, p1, p2);					\
- 	kernel_fpu_end();							\
- }										\
--EXPORT_SYMBOL_GPL(xor_##flavor##_2)
- 
- #define MAKE_XOR_GLUE_3(flavor)							\
--void xor_##flavor##_3(unsigned long bytes, unsigned long * __restrict p1,	\
-+static void xor_##flavor##_3(unsigned long bytes, unsigned long * __restrict p1,\
- 		      const unsigned long * __restrict p2,			\
- 		      const unsigned long * __restrict p3)			\
- {										\
-@@ -30,10 +29,9 @@ void xor_##flavor##_3(unsigned long bytes, unsigned long * __restrict p1,	\
- 	__xor_##flavor##_3(bytes, p1, p2, p3);					\
- 	kernel_fpu_end();							\
- }										\
--EXPORT_SYMBOL_GPL(xor_##flavor##_3)
- 
- #define MAKE_XOR_GLUE_4(flavor)							\
--void xor_##flavor##_4(unsigned long bytes, unsigned long * __restrict p1,	\
-+static void xor_##flavor##_4(unsigned long bytes, unsigned long * __restrict p1,\
- 		      const unsigned long * __restrict p2,			\
- 		      const unsigned long * __restrict p3,			\
- 		      const unsigned long * __restrict p4)			\
-@@ -42,10 +40,9 @@ void xor_##flavor##_4(unsigned long bytes, unsigned long * __restrict p1,	\
- 	__xor_##flavor##_4(bytes, p1, p2, p3, p4);				\
- 	kernel_fpu_end();							\
- }										\
--EXPORT_SYMBOL_GPL(xor_##flavor##_4)
- 
- #define MAKE_XOR_GLUE_5(flavor)							\
--void xor_##flavor##_5(unsigned long bytes, unsigned long * __restrict p1,	\
-+static void xor_##flavor##_5(unsigned long bytes, unsigned long * __restrict p1,\
- 		      const unsigned long * __restrict p2,			\
- 		      const unsigned long * __restrict p3,			\
- 		      const unsigned long * __restrict p4,			\
-@@ -55,18 +52,26 @@ void xor_##flavor##_5(unsigned long bytes, unsigned long * __restrict p1,	\
- 	__xor_##flavor##_5(bytes, p1, p2, p3, p4, p5);				\
- 	kernel_fpu_end();							\
- }										\
--EXPORT_SYMBOL_GPL(xor_##flavor##_5)
- 
--#define MAKE_XOR_GLUES(flavor)		\
--	MAKE_XOR_GLUE_2(flavor);	\
--	MAKE_XOR_GLUE_3(flavor);	\
--	MAKE_XOR_GLUE_4(flavor);	\
--	MAKE_XOR_GLUE_5(flavor)
-+#define MAKE_XOR_GLUES(flavor)				\
-+	MAKE_XOR_GLUE_2(flavor);			\
-+	MAKE_XOR_GLUE_3(flavor);			\
-+	MAKE_XOR_GLUE_4(flavor);			\
-+	MAKE_XOR_GLUE_5(flavor);			\
-+							\
-+struct xor_block_template xor_block_##flavor = {	\
-+	.name = __stringify(flavor),			\
-+	.do_2 = xor_##flavor##_2,			\
-+	.do_3 = xor_##flavor##_3,			\
-+	.do_4 = xor_##flavor##_4,			\
-+	.do_5 = xor_##flavor##_5,			\
++#include "xor_vmx.h"
++
++static void xor_altivec_2(unsigned long bytes, unsigned long * __restrict p1,
++		const unsigned long * __restrict p2)
++{
++	preempt_disable();
++	enable_kernel_altivec();
++	__xor_altivec_2(bytes, p1, p2);
++	disable_kernel_altivec();
++	preempt_enable();
 +}
 +
- 
- #ifdef CONFIG_CPU_HAS_LSX
- MAKE_XOR_GLUES(lsx);
--#endif
-+#endif /* CONFIG_CPU_HAS_LSX */
- 
- #ifdef CONFIG_CPU_HAS_LASX
- MAKE_XOR_GLUES(lasx);
--#endif
-+#endif /* CONFIG_CPU_HAS_LASX */
-diff --git a/arch/loongarch/lib/xor_template.c b/lib/raid/xor/loongarch/xor_template.c
-similarity index 100%
-rename from arch/loongarch/lib/xor_template.c
-rename to lib/raid/xor/loongarch/xor_template.c
++static void xor_altivec_3(unsigned long bytes, unsigned long * __restrict p1,
++		const unsigned long * __restrict p2,
++		const unsigned long * __restrict p3)
++{
++	preempt_disable();
++	enable_kernel_altivec();
++	__xor_altivec_3(bytes, p1, p2, p3);
++	disable_kernel_altivec();
++	preempt_enable();
++}
++
++static void xor_altivec_4(unsigned long bytes, unsigned long * __restrict p1,
++		const unsigned long * __restrict p2,
++		const unsigned long * __restrict p3,
++		const unsigned long * __restrict p4)
++{
++	preempt_disable();
++	enable_kernel_altivec();
++	__xor_altivec_4(bytes, p1, p2, p3, p4);
++	disable_kernel_altivec();
++	preempt_enable();
++}
++
++static void xor_altivec_5(unsigned long bytes, unsigned long * __restrict p1,
++		const unsigned long * __restrict p2,
++		const unsigned long * __restrict p3,
++		const unsigned long * __restrict p4,
++		const unsigned long * __restrict p5)
++{
++	preempt_disable();
++	enable_kernel_altivec();
++	__xor_altivec_5(bytes, p1, p2, p3, p4, p5);
++	disable_kernel_altivec();
++	preempt_enable();
++}
++
++struct xor_block_template xor_block_altivec = {
++	.name = "altivec",
++	.do_2 = xor_altivec_2,
++	.do_3 = xor_altivec_3,
++	.do_4 = xor_altivec_4,
++	.do_5 = xor_altivec_5,
++};
 -- 
 2.47.3
 

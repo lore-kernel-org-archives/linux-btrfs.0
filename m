@@ -1,35 +1,35 @@
 Received: from bombadil.infradead.org (bombadil.infradead.org [198.137.202.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8821230B525;
-	Wed, 11 Mar 2026 07:05:14 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5FC2F27470;
+	Wed, 11 Mar 2026 07:05:29 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.137.202.133
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773212716; cv=none; b=dxEARdW3ycaizUnA81TC/Wpou4iAQs0sCyfMNFDMZAVVtIZCKSxjqZChFGnwp1oBLq6ASYGSSpMqBkM8hBiuMLWX5+gCthe0w+rZMKAonwoDrPwJQLEvQ4LBqYqQrYUyURxNHFDyY1+bOhNq9r3DM9XQ70Csta5UFS99dWXkihE=
+	t=1773212730; cv=none; b=J2iGNEdOoip8D0fJNPbJhFK6A1//x+yvunlktkwESS4rGZ0K+QE//4jNwEmxwevvFRh+vKvO+3r8OwJTtzmm5ay/NP0EO8rJU+X5jYmrzKGi6Bd52f0WdyNJWQE5FGtB+KEWeuGET0mloKTc0yoXicA2lQdu//bhcVAApiA3Cc0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773212716; c=relaxed/simple;
-	bh=EJHbkVk02Zxov++6Dbrdb9PCSkVIIYHMlYnGkZk91dw=;
+	s=arc-20240116; t=1773212730; c=relaxed/simple;
+	bh=m3TZCiWmkkFeXtFfJJmPa3Uy6IQpst3ERuPUtfH8NY0=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=jpVWQYdWtS4yG4mSS6PLDyVaQ/131ZxcaGwGyGEuPLy428ZC+7qxylSVrnnpNwuWibdiULMoGwIPqGlTDsOgGYh8JZdg+FadGpavcyhxosIzGAwNlr/rlaXTLMEVLNjiNFa7BC7umo0bIFRiUWTL3Th6YbR4tJ9erOdQ9I330b0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=3NWptu+0; arc=none smtp.client-ip=198.137.202.133
+	 MIME-Version; b=OXzwHneUpPRr/q3KV2TQXOn0Eciu6xOp+2v/mSI02GQmEkGmfri/rKhd+1y7j8+zSE1z9EoZp5YjQcCa8j/fn5JPaY7mDuhPIw74TgH5/Xj/74bRTrRyng3jrmu0K7qZjOgf66QgYvfEXihs5XnVSYDvLuXr8qEXZxQJjS+C650=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=D4k58v58; arc=none smtp.client-ip=198.137.202.133
 Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de
 Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="3NWptu+0"
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="D4k58v58"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
 	d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
 	MIME-Version:References:In-Reply-To:Message-ID:Date:Subject:Cc:To:From:Sender
 	:Reply-To:Content-Type:Content-ID:Content-Description;
-	bh=5Q4WO2fmqU3XVJCOHArp4PLeLItyndyIBgJVZQfhExI=; b=3NWptu+0INfjN+SogdzPM3UFBP
-	5DdlJB4X5/GBdbRZdyRmqgQlGSWSm8g/JV9zX+PCHogr0tZRN8EfqYzBDNhmMVyyGbtAzfdRlSwvW
-	L8tVZZ3ViJmRecg4hZX6cJFrnsExhb1VgZklwyCd8Hj0VAWQGMkNAuXqhjIT262n6fU/74AtbtGml
-	2NeDewfBK4hjddNiDh4Q6Q3aG9q6tJDm6cerU9HIC2HXvF6Af787VRfI8gvEP2yR5nqVf2vSgWhn+
-	ikFmX0ppbkUUsjrcpR+AOZ7OUV7Mra33j1vAZKYRMDAEcA+N0YsmKP/dQuw5+Up1W+Ihs+JcSgBce
-	8bPqrQ5g==;
+	bh=WGxZOFGJjbC4KZLgbzmM1eG4Dgszv7Etxq5IbgQGdlc=; b=D4k58v58vrgrfQ7Qik0j8hncUS
+	QDsoJ7UW0grGKEM72bCaImi+9rKpClKCgXEdyS3ehhLv173t7BD6xOMz0EuquuGo5TkqtibtKhQT5
+	metuwVJt3OeE3oINB8U99sXZ2lgbFmPVF9DuvkFKK+1HV1QdayBobVjX329D1qDFHJzKCk5iWzCE0
+	x93nqDDScdurz3v8PRl2V6FiSmp70VjFIGld+61oaVDno8LFej+TH44bbp9qx9S1PJOy8E4br/Ztj
+	ekOie1fwZHnUMPF7LXeiInRGO3KY6apG6z0be0jGbTjX8179D8mNqvEUlYTaYJdsDIpsuObXOteHk
+	03QJEvNA==;
 Received: from [212.243.42.10] (helo=localhost)
 	by bombadil.infradead.org with esmtpsa (Exim 4.98.2 #2 (Red Hat Linux))
-	id 1w0Dck-0000000AyAL-1e59;
-	Wed, 11 Mar 2026 07:04:54 +0000
+	id 1w0Dd1-0000000AyGU-2w5z;
+	Wed, 11 Mar 2026 07:05:12 +0000
 From: Christoph Hellwig <hch@lst.de>
 To: Andrew Morton <akpm@linux-foundation.org>
 Cc: Richard Henderson <richard.henderson@linaro.org>,
@@ -87,9 +87,9 @@ Cc: Richard Henderson <richard.henderson@linaro.org>,
 	linux-btrfs@vger.kernel.org,
 	linux-arch@vger.kernel.org,
 	linux-raid@vger.kernel.org
-Subject: [PATCH 02/27] arm/xor: remove in_interrupt() handling
-Date: Wed, 11 Mar 2026 08:03:34 +0100
-Message-ID: <20260311070416.972667-3-hch@lst.de>
+Subject: [PATCH 03/27] um/xor: cleanup xor.h
+Date: Wed, 11 Mar 2026 08:03:35 +0100
+Message-ID: <20260311070416.972667-4-hch@lst.de>
 X-Mailer: git-send-email 2.47.3
 In-Reply-To: <20260311070416.972667-1-hch@lst.de>
 References: <20260311070416.972667-1-hch@lst.de>
@@ -102,94 +102,48 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 
-xor_blocks can't be called from interrupt context, so remove the
-handling for that.
+Since commit c055e3eae0f1 ("crypto: xor - use ktime for template
+benchmarking") the benchmarking works just fine even for TT_MODE_INFCPU,
+so drop the workarounds.  Note that for CPUs supporting AVX2, which
+includes almost everything built in the last 10 years, the AVX2
+implementation is forced anyway.
+
+CONFIG_X86_32 is always correctly set for UM in arch/x86/um/Kconfig,
+so don't override it either.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- arch/arm/include/asm/xor.h | 41 +++++++++++---------------------------
- 1 file changed, 12 insertions(+), 29 deletions(-)
+ arch/um/include/asm/xor.h | 16 ----------------
+ 1 file changed, 16 deletions(-)
 
-diff --git a/arch/arm/include/asm/xor.h b/arch/arm/include/asm/xor.h
-index 934b549905f5..bca2a6514746 100644
---- a/arch/arm/include/asm/xor.h
-+++ b/arch/arm/include/asm/xor.h
-@@ -4,7 +4,6 @@
-  *
-  *  Copyright (C) 2001 Russell King
-  */
--#include <linux/hardirq.h>
- #include <asm-generic/xor.h>
- #include <asm/hwcap.h>
- #include <asm/neon.h>
-@@ -156,13 +155,9 @@ static void
- xor_neon_2(unsigned long bytes, unsigned long * __restrict p1,
- 	   const unsigned long * __restrict p2)
- {
--	if (in_interrupt()) {
--		xor_arm4regs_2(bytes, p1, p2);
--	} else {
--		kernel_neon_begin();
--		xor_block_neon_inner.do_2(bytes, p1, p2);
--		kernel_neon_end();
--	}
-+	kernel_neon_begin();
-+	xor_block_neon_inner.do_2(bytes, p1, p2);
-+	kernel_neon_end();
- }
+diff --git a/arch/um/include/asm/xor.h b/arch/um/include/asm/xor.h
+index 647fae200c5d..99e5c7e1f475 100644
+--- a/arch/um/include/asm/xor.h
++++ b/arch/um/include/asm/xor.h
+@@ -2,23 +2,7 @@
+ #ifndef _ASM_UM_XOR_H
+ #define _ASM_UM_XOR_H
  
- static void
-@@ -170,13 +165,9 @@ xor_neon_3(unsigned long bytes, unsigned long * __restrict p1,
- 	   const unsigned long * __restrict p2,
- 	   const unsigned long * __restrict p3)
- {
--	if (in_interrupt()) {
--		xor_arm4regs_3(bytes, p1, p2, p3);
--	} else {
--		kernel_neon_begin();
--		xor_block_neon_inner.do_3(bytes, p1, p2, p3);
--		kernel_neon_end();
--	}
-+	kernel_neon_begin();
-+	xor_block_neon_inner.do_3(bytes, p1, p2, p3);
-+	kernel_neon_end();
- }
+-#ifdef CONFIG_64BIT
+-#undef CONFIG_X86_32
+-#define TT_CPU_INF_XOR_DEFAULT (AVX_SELECT(&xor_block_sse_pf64))
+-#else
+-#define CONFIG_X86_32 1
+-#define TT_CPU_INF_XOR_DEFAULT (AVX_SELECT(&xor_block_8regs))
+-#endif
+-
+ #include <asm/cpufeature.h>
+ #include <../../x86/include/asm/xor.h>
+-#include <linux/time-internal.h>
+-
+-#ifdef CONFIG_UML_TIME_TRAVEL_SUPPORT
+-#undef XOR_SELECT_TEMPLATE
+-/* pick an arbitrary one - measuring isn't possible with inf-cpu */
+-#define XOR_SELECT_TEMPLATE(x)	\
+-	(time_travel_mode == TT_MODE_INFCPU ? TT_CPU_INF_XOR_DEFAULT : x)
+-#endif
  
- static void
-@@ -185,13 +176,9 @@ xor_neon_4(unsigned long bytes, unsigned long * __restrict p1,
- 	   const unsigned long * __restrict p3,
- 	   const unsigned long * __restrict p4)
- {
--	if (in_interrupt()) {
--		xor_arm4regs_4(bytes, p1, p2, p3, p4);
--	} else {
--		kernel_neon_begin();
--		xor_block_neon_inner.do_4(bytes, p1, p2, p3, p4);
--		kernel_neon_end();
--	}
-+	kernel_neon_begin();
-+	xor_block_neon_inner.do_4(bytes, p1, p2, p3, p4);
-+	kernel_neon_end();
- }
- 
- static void
-@@ -201,13 +188,9 @@ xor_neon_5(unsigned long bytes, unsigned long * __restrict p1,
- 	   const unsigned long * __restrict p4,
- 	   const unsigned long * __restrict p5)
- {
--	if (in_interrupt()) {
--		xor_arm4regs_5(bytes, p1, p2, p3, p4, p5);
--	} else {
--		kernel_neon_begin();
--		xor_block_neon_inner.do_5(bytes, p1, p2, p3, p4, p5);
--		kernel_neon_end();
--	}
-+	kernel_neon_begin();
-+	xor_block_neon_inner.do_5(bytes, p1, p2, p3, p4, p5);
-+	kernel_neon_end();
- }
- 
- static struct xor_block_template xor_block_neon = {
+ #endif
 -- 
 2.47.3
 

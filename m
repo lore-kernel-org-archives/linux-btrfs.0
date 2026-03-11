@@ -1,140 +1,97 @@
-Received: from mail-pl1-f180.google.com (mail-pl1-f180.google.com [209.85.214.180])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9B9F83D2FE0
-	for <linux-btrfs@vger.kernel.org>; Wed, 11 Mar 2026 09:27:35 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.214.180
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773221262; cv=pass; b=M3O9BURQm3Ds9I8CX14JZ8C5xS8kWMdR/we5DVwFmkSFimVcZIXQ1A5gmoQRaOPXnOWPAzy8e95GPJ5DYicdCoW6jPafUFSC37F4ozA00/nzbT9FATt4/IT1q5Pd9Ej8XwLICVxQZx4TmrNHFAdP5UbqonfHeR/UlKStI5DGheA=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773221262; c=relaxed/simple;
-	bh=0Sk9IgBaRP3/2Rrnn9kJRNjprchHpqhGnqSmPgT8ifY=;
-	h=MIME-Version:From:Date:Message-ID:Subject:To:Cc:Content-Type; b=myHxdMU+4finOtXp1wRnS3gqfxPw+chAvIxnEE8Hp8kCkuh0lPXoKm7NPtLYlM0N51K2tdhWNqMlAZl6U77eRJQgux1gG8kKo3xhIWPtD+lzAojUd3fbwQijCmC7YL+V4Pok+zKg5SEays4me9CnGx1qdU5WDR1c+Ji5EBlft2I=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=JB0oOZQN; arc=pass smtp.client-ip=209.85.214.180
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CE6B03C3C12
+	for <linux-btrfs@vger.kernel.org>; Wed, 11 Mar 2026 09:32:25 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1773221545; cv=none; b=RNLYw3ode7O3V4KsdF0podDzRTE/U1+1OqijMaynRqkZ4dSViXQJTuCWdntqawRMq3X5OUmNXW/HLhZm5sSnymGbO3bw7XGqKvxL8b4sMqefqPMp8PTovE8bdDL0L/2HB5NbjGvrM2Pj17GDkzL6cAfz1bbEYRkdKIEMGZGLzZg=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1773221545; c=relaxed/simple;
+	bh=JGYhPK256pxU9EiY8jbQSSjgozqR8V5kd9EUseD+GRo=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=P2znmueVohF/BVI0EaIlwwmCtTfjQQguW5VPnf1F0yJKKnmh368+ljPql4NpV7iuBmmuKUb81x8Q6pClvGAG4CU/xsr7ukRAIuwgtC0iZW6delk5+vO6lYjpVI6JkExpbvekQToWq4kP4EnpQzS+NFqx1vyycNngD+H5RvZotGY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=JfVWEI4z; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="JB0oOZQN"
-Received: by mail-pl1-f180.google.com with SMTP id d9443c01a7336-2ae4d919f9bso63654715ad.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Mar 2026 02:27:35 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1773221255; cv=none;
-        d=google.com; s=arc-20240605;
-        b=TPCP8J0d0JDmUh4G+tQ3m3CFlIcyPWGKSJ3qSs7YoTSfNV/q6PDwj/JAKC6xY6R6jO
-         H9i3bJE5nDiF6CFx+SddVA3OYm23PW+pz0USMnXTwsivWwO/nYFx25ZrS0H/1RFJ2TuA
-         KOEu6FcNJnP0uJEqlK1Qvc95emX81txW3jS/t6/LexMPlJ3NncOaJCQVOtK60a6iNAOZ
-         31wW/uGLTFOeakyFMD5vOBSHtxmo4hPUzEXm9eKYdelY4SepTybVX441w7AzeEPS75V7
-         IBJaGr01kqSrqP/4RRJv54haA5MWgm28le9Veq4Qn5J4sdmcoGp/GvVewiF3Ze8hAU2V
-         zYCA==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
-        h=cc:to:subject:message-id:date:from:mime-version:dkim-signature;
-        bh=0FuBYPs7JMnez5s7bGejvUDHfv5Less9EspYC3sfJKk=;
-        fh=Y3qOY9vms4ie3XiVCowdld77NqVFLP4+Tnd+UCoO99Q=;
-        b=Els+9Djz7/jcHYTwdndXmopTBdCm8o9s3Iz0aSFnRdC2LqoLi3EX8TW3bDpZZXZ24l
-         OnMPTMh/h3hgTLfwsmlicakdSVXZBVP+28EJ2jisXZY1I2SAMFyjBNDDNmHLlgMX8ZVA
-         lg4YX3n2zy9zMZqE+gAu1Sa28nFjcoWouMkvRWDjEWJW4iC086/qmNpLZFRQQpNH7lTR
-         2sghMC46Su6TIZ8vXX9zTx1ItTI6zBSnHiRSNEdm4QWgq6SOH7zwwFPbiGheNNLJRaBW
-         MNIXbnqF/Xnf/19l7O3le8L8qzpj3GAexRMwoawrxYwlMtd2HOA/tFasWRHTeWKHgngo
-         gXug==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1773221255; x=1773826055; darn=vger.kernel.org;
-        h=cc:to:subject:message-id:date:from:mime-version:from:to:cc:subject
-         :date:message-id:reply-to;
-        bh=0FuBYPs7JMnez5s7bGejvUDHfv5Less9EspYC3sfJKk=;
-        b=JB0oOZQNjrvQAzMT3jfAoPsQ5fV5x37RRg0ew+S+y1Ei8/gvtGD7jjkbsWuyAhEIWv
-         LcXgD2EBHucE2Gnerv91Yt5iuq+/SPyJPZuoL2wvayXRpRJQ6WF4MG5o94jp1WD17qZv
-         aJHWru4yzhtfej4zK64YiDA2kcS3xCOu1G61jqyoAseschnlwM2HvmmVllyDBIzRtCwi
-         SLmVPuHQHUiHuL4YiztPjjay/RyqWZzryDo0InUYW6OEkOJr+RVORnvDe9JHmsgHQ4Jh
-         F/5xkB/u2pCx/+/0TDpgQ6HtmGrzZ2u0tZQdQWgOHja8UMhMtXH0Cx7VBeThtxOPx7au
-         xG7g==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1773221255; x=1773826055;
-        h=cc:to:subject:message-id:date:from:mime-version:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=0FuBYPs7JMnez5s7bGejvUDHfv5Less9EspYC3sfJKk=;
-        b=mTTSHn9uLw1a9JtFq4UGHLjjGrLtahpcl4MDC2Dg/6D38sqMYZASIrQRD+bQJOHakI
-         sY9rE3Q0EgXcxLFw4iBdK2EldLvwroBd4n/SXdMLRLCRduw3NumA6zVdxHgA8VgPTrfh
-         KD0GN/xNLsINY+6s6IG/R49721atN2qWLGB3lPGhAH2pjeOZf8F6WrQUqOUkOs09tYTM
-         h3sbUJClUsr9ACqdxHwjQXhN/IXfGGS6nFFQOsfMkX1hvFk6+75hTcBAA7yeAFm0YRr3
-         OPkxZKWIzB7KiRnF06tb4M6EzsSTkRQWyi0p8Den0Ztdf6A5vsyHQ8zCbTas+RxjmsGZ
-         YZtQ==
-X-Forwarded-Encrypted: i=1; AJvYcCW97kbhCr0XY5s1LdM+cEAYwB72Tagl/8dXTEf2t9zLRRCehSGn4UAjf0iTwaTUFKYWAaqQuxKA5fSswg==@vger.kernel.org
-X-Gm-Message-State: AOJu0YxTmesB9aTAkdDocXAXThwH2o1ELM6wLdp2XfifhxJpdRzDZSs1
-	Yan2PEyqAQdmcGYBL3Gejz+Yhpd8iRBXaNjl6YHnun15FqePM06XJ7XHP2JphD/ZI+ujpBvAMTF
-	Ugguwci6nXoMttBVWMGstvpmO8DUwFxU=
-X-Gm-Gg: ATEYQzxvUPqYSFX+x3Gv1C7AUXa0osnZ75t8QHa7FyMcinBe5MbZb9kw6EcM11fKe8Q
-	Gm1+ap2I4Dctf+7wlB1lOnpWX2ZHimi7o9143/BKJVN7EQDam6Vb+nCxg3E4tRQPuD+vvVzOUyd
-	LMDS4z5ejvDw9Mh+AWCfgEeGHVZWMJudO3rgelV4c0zYPWvZFfHLA6n10e7IInP1S0TsU3YYyRz
-	j0T9lkvJbklyCT9xjqQX6p9BJjjDJ4qTW334KgkUpnKqoL7PN9cNbTpu50wOn7904eBdXlz79zb
-	F5Lb5W8=
-X-Received: by 2002:a17:903:37ce:b0:2ae:5b64:12e3 with SMTP id
- d9443c01a7336-2aeae8a83f3mr23261485ad.41.1773221254583; Wed, 11 Mar 2026
- 02:27:34 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="JfVWEI4z"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8775EC2BCB5
+	for <linux-btrfs@vger.kernel.org>; Wed, 11 Mar 2026 09:32:25 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1773221545;
+	bh=JGYhPK256pxU9EiY8jbQSSjgozqR8V5kd9EUseD+GRo=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+	b=JfVWEI4zDrh3iHX+1r4cle8Phcf0RBN0zERjJ8PQNA3EYWSATJ9h5lha/xBvVFGnI
+	 lElqdFOyu5rUcg336ldY8JBHZo/CNZ6A5HFkXurPLCqwCA7763w9Gzh1MrCiovz1O6
+	 4/dhditNlUPPz/o6nb1awN/pC+8W+SveVLbbW1M3XSJ0LknHbar0z1P9mnX5NF58yX
+	 1Uj5dsDyxTrkO1DJZv/qpV8j6iPNzVVJVRqNM1MXMlgjgqpNnn65QlcqD5KydSFEzI
+	 yLns3+tdmVfBsvgohk6ekX61JLdkJkatIbZorvb97Pbamw8/hcF79oQl43JkoSoDtA
+	 x5H4ornHcPhQg==
+Received: by mail-yx1-f41.google.com with SMTP id 956f58d0204a3-64ae2ce2fe1so13016792d50.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Mar 2026 02:32:25 -0700 (PDT)
+X-Forwarded-Encrypted: i=1; AJvYcCU/xS+CTV6YG4AFRAkvH0lBUekCtnKg5Hiej/DeVgbBQa6UCYAN1i4fdyc5FPijbmXh9J87qxo1JtI8Bw==@vger.kernel.org
+X-Gm-Message-State: AOJu0YxbYHqriKBDSAD/MOio7aHmhhYrCM5DV47SBRhGjKUn4lRfVWy3
+	hBdo9SDXhkx3VwgESgl2GD1gVdgdfT4cSBa4yk3VSLkEsKU4VF6gNkL5bmXJZyAlW3jwj7n+MZ7
+	ROP2O0sjRCOaAWyS/jMEvlO0/GvyhltM=
+X-Received: by 2002:a05:690e:144d:b0:64c:e890:fbb9 with SMTP id
+ 956f58d0204a3-64d656f696dmr1649157d50.20.1773221544775; Wed, 11 Mar 2026
+ 02:32:24 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-From: Zw Tang <shicenci@gmail.com>
-Date: Wed, 11 Mar 2026 17:27:23 +0800
-X-Gm-Features: AaiRm50C1L78jmDCo58vwv1OHeemoEqCpr9e8doupmh7IZXfuHASnMcrYJpqwZQ
-Message-ID: <CAPHJ_V++eKhA8gbTAHmqVBNfLE0KyDA8DSAJYwb9Gnyy9vFtBQ@mail.gmail.com>
-Subject: [BUG] WARNING in btrfs_commit_transaction during balance/relocation
-To: David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>, linux-btrfs@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org
+References: <20260310-b4-is_err_or_null-v1-0-bd63b656022d@avm.de> <20260310-b4-is_err_or_null-v1-41-bd63b656022d@avm.de>
+In-Reply-To: <20260310-b4-is_err_or_null-v1-41-bd63b656022d@avm.de>
+From: Linus Walleij <linusw@kernel.org>
+Date: Wed, 11 Mar 2026 10:32:12 +0100
+X-Gmail-Original-Message-ID: <CAD++jLnDv00ErgVdQ4EBpKH9KMWrPD8ODrQ6m846zyQ=wNzCzQ@mail.gmail.com>
+X-Gm-Features: AaiRm52aI8z_G2E4qYaKWPEA43RhLektjwMDQXSLwHd-Xy_BYcin-6heFFY4jM4
+Message-ID: <CAD++jLnDv00ErgVdQ4EBpKH9KMWrPD8ODrQ6m846zyQ=wNzCzQ@mail.gmail.com>
+Subject: Re: [PATCH 41/61] pinctrl: Prefer IS_ERR_OR_NULL over manual NULL check
+To: Philipp Hahn <phahn-oss@avm.de>
+Cc: amd-gfx@lists.freedesktop.org, apparmor@lists.ubuntu.com, 
+	bpf@vger.kernel.org, ceph-devel@vger.kernel.org, cocci@inria.fr, 
+	dm-devel@lists.linux.dev, dri-devel@lists.freedesktop.org, 
+	gfs2@lists.linux.dev, intel-gfx@lists.freedesktop.org, 
+	intel-wired-lan@lists.osuosl.org, iommu@lists.linux.dev, kvm@vger.kernel.org, 
+	linux-arm-kernel@lists.infradead.org, linux-block@vger.kernel.org, 
+	linux-bluetooth@vger.kernel.org, linux-btrfs@vger.kernel.org, 
+	linux-cifs@vger.kernel.org, linux-clk@vger.kernel.org, 
+	linux-erofs@lists.ozlabs.org, linux-ext4@vger.kernel.org, 
+	linux-fsdevel@vger.kernel.org, linux-gpio@vger.kernel.org, 
+	linux-hyperv@vger.kernel.org, linux-input@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, linux-leds@vger.kernel.org, 
+	linux-media@vger.kernel.org, linux-mips@vger.kernel.org, linux-mm@kvack.org, 
+	linux-modules@vger.kernel.org, linux-mtd@lists.infradead.org, 
+	linux-nfs@vger.kernel.org, linux-omap@vger.kernel.org, 
+	linux-phy@lists.infradead.org, linux-pm@vger.kernel.org, 
+	linux-rockchip@lists.infradead.org, linux-s390@vger.kernel.org, 
+	linux-scsi@vger.kernel.org, linux-sctp@vger.kernel.org, 
+	linux-security-module@vger.kernel.org, linux-sh@vger.kernel.org, 
+	linux-sound@vger.kernel.org, linux-stm32@st-md-mailman.stormreply.com, 
+	linux-trace-kernel@vger.kernel.org, linux-usb@vger.kernel.org, 
+	linux-wireless@vger.kernel.org, netdev@vger.kernel.org, ntfs3@lists.linux.dev, 
+	samba-technical@lists.samba.org, sched-ext@lists.linux.dev, 
+	target-devel@vger.kernel.org, tipc-discussion@lists.sourceforge.net, 
+	v9fs@lists.linux.dev
 Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-Hi,
+On Tue, Mar 10, 2026 at 12:55=E2=80=AFPM Philipp Hahn <phahn-oss@avm.de> wr=
+ote:
 
-I am reporting a WARNING issue triggered by a syzkaller reproducer on
-Linux 7.0.0-rc3.
+> Prefer using IS_ERR_OR_NULL() over using IS_ERR() and a manual NULL
+> check.
+>
+> Change generated with coccinelle.
+>
+> To: Linus Walleij <linusw@kernel.org>
+> Cc: linux-gpio@vger.kernel.org
+> Cc: linux-kernel@vger.kernel.org
+> Signed-off-by: Philipp Hahn <phahn-oss@avm.de>
 
-The reproducer mounts a crafted Btrfs image and then issues
-BTRFS_IOC_QGROUP_LIMIT on the mounted filesystem. The crash happens in the
-Btrfs balance/relocation path, where the filesystem aborts a transaction
-with error -28 and then hits a WARNING in btrfs_commit_transaction().
+Patch applied to the pinctrl tree as obviously correct.
 
-This seems to be related to ENOSPC handling in the Btrfs
-balance/relocation path. The transaction gets aborted with error -28,
-cleanup_transaction reports "No space left", and the filesystem is forced
-read-only before btrfs_commit_transaction() emits the WARNING.
-
-Reproducer:
-C reproducer: pastebin.com/raw/SZTu4rBj
-console output: pastebin.com/raw/AxuvZmnY
-kernel config: pastebin.com/raw/uJh0PYV8
-
-Kernel:
-HEAD commit:1f318b96cc84d7c2ab792fcc0bfd42a7ca890681
-git tree: torvalds/linux
-kernel version: 7.0.0-rc3 #1 PREEMPT(full) (QEMU Standard PC (Q35 + ICH9, 2009))
-
-Crash log:
-[  104.838103] ------------[ cut here ]------------
-[  104.838841] BTRFS: Transaction aborted (error -28)
-[  104.839649] WARNING: fs/btrfs/transaction.c:2045 at
-btrfs_commit_transaction+0x26f0/0x4c40, CPU#1: repro/635
-[  104.841814] CPU: 1 UID: 0 PID: 635 Comm: repro Tainted: G    B D
-      N  7.0.0-rc3 #1 PREEMPT(lazy)
-[  104.845630] RIP: 0010:btrfs_commit_transaction+0x26f3/0x4c40
-[  104.859441] Call Trace:
-[  104.863409]  prepare_to_relocate+0x39d/0x520
-[  104.864140]  relocate_block_group+0x127/0xe20
-[  104.868107]  btrfs_relocate_block_group+0x1692/0x5aa0
-[  104.877674]  btrfs_relocate_chunk+0x135/0x950
-[  104.879094]  btrfs_balance+0x2392/0x5d60
-[  104.884685]  btrfs_ioctl_balance+0x3a4/0x700
-[  104.885434]  btrfs_ioctl+0x1edc/0x64b0
-[  104.898312]  __x64_sys_ioctl+0x197/0x220
-[  104.960636] BTRFS: error (device loop2 state A) in
-cleanup_transaction:2045: errno=-28 No space left
-[  104.962986] BTRFS info (device loop2 state EA): forced readonly
-[  104.966206] BTRFS info (device loop2 state EA): 1 enospc errors
-during balance
-[  104.969915] BTRFS info (device loop2 state EA): balance: ended with
-status: -28
-
-Thanks.
-Zw Tang
+Yours,
+Linus Walleij

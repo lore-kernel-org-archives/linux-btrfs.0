@@ -1,110 +1,166 @@
-Received: from relay.hostedemail.com (smtprelay0012.hostedemail.com [216.40.44.12])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7A977257824;
-	Thu, 12 Mar 2026 15:40:55 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=216.40.44.12
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 201F13AF652
+	for <linux-btrfs@vger.kernel.org>; Thu, 12 Mar 2026 15:42:18 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773330056; cv=none; b=Y6UZxc2Usnurr3H2kvIxEeqMakntKygUasQqwmHy3I3/DLMX0f9mvm6vhmtqcDUKjzo1YnIJa7ZIqCMwVNBnFeHwhESvAgY849aeh9+AklFfPIWi4Kt8N10WK+HpqLdA8wTN1j7GQUTGw8QtQotrIXa+6nEbY7nfoBYmCoc/Flo=
+	t=1773330140; cv=none; b=hdutIMg2ZZSOCHVoeBZHKFE0SssNfXUBBnHsv5qPJBAdmbx+T0HPDS1JVKDVie+KyUUnPy6n7kl11T+eyqb2Hz2KgF8PUukXAh4p0ZgnwsdZvCP9x1T2ezYQowmvybTEEnmXcS7hiQXnRW00PYPwK5O6kkgGDLznJOiN5TIO0j4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773330056; c=relaxed/simple;
-	bh=OxRg7tA8kXUHRx+mx/a3uzYLf94/OiyMz274Pyh6DSY=;
-	h=Date:From:To:Cc:Subject:Message-ID:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=qQ+Dq/qZw9ICMtISiU3Fr6+xOz1M9Ihosfe9Cxr+JMjFTOEN5/gedINxmEvCfOzcb2elG1BNGk4pNR18oNwGtN1fS8qgMBnEicS0FjP4zRF6ZOA6zF31zGFsOGmkOPGvxgdwm6Xvz9aKuuXGA668mHjwRQLtThMauNdUgiFFS6U=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=goodmis.org; spf=pass smtp.mailfrom=goodmis.org; arc=none smtp.client-ip=216.40.44.12
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=goodmis.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=goodmis.org
-Received: from omf02.hostedemail.com (a10.router.float.18 [10.200.18.1])
-	by unirelay10.hostedemail.com (Postfix) with ESMTP id EEB99C17C4;
-	Thu, 12 Mar 2026 15:40:52 +0000 (UTC)
-Received: from [HIDDEN] (Authenticated sender: rostedt@goodmis.org) by omf02.hostedemail.com (Postfix) with ESMTPA id 3AE588000E;
-	Thu, 12 Mar 2026 15:40:27 +0000 (UTC)
-Date: Thu, 12 Mar 2026 11:40:41 -0400
-From: Steven Rostedt <rostedt@goodmis.org>
-To: Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
-Cc: "Vineeth Pillai (Google)" <vineeth@bitbyteword.org>, Peter Zijlstra
- <peterz@infradead.org>, Dmitry Ilvokhin <d@ilvokhin.com>, Masami Hiramatsu
- <mhiramat@kernel.org>, Ingo Molnar <mingo@redhat.com>, Jens Axboe
- <axboe@kernel.dk>, io-uring@vger.kernel.org, "David S. Miller"
- <davem@davemloft.net>, Eric Dumazet <edumazet@google.com>, Jakub Kicinski
- <kuba@kernel.org>, Paolo Abeni <pabeni@redhat.com>, Alexei Starovoitov
- <ast@kernel.org>, Daniel Borkmann <daniel@iogearbox.net>, Marcelo Ricardo
- Leitner <marcelo.leitner@gmail.com>, Xin Long <lucien.xin@gmail.com>, Jon
- Maloy <jmaloy@redhat.com>, Aaron Conole <aconole@redhat.com>, Eelco
- Chaudron <echaudro@redhat.com>, Ilya Maximets <i.maximets@ovn.org>,
- netdev@vger.kernel.org, bpf@vger.kernel.org, linux-sctp@vger.kernel.org,
- tipc-discussion@lists.sourceforge.net, dev@openvswitch.org, Oded Gabbay
- <ogabbay@kernel.org>, Koby Elbaz <koby.elbaz@intel.com>,
- dri-devel@lists.freedesktop.org, "Rafael J. Wysocki" <rafael@kernel.org>,
- Viresh Kumar <viresh.kumar@linaro.org>, "Gautham R. Shenoy"
- <gautham.shenoy@amd.com>, Huang Rui <ray.huang@amd.com>, Mario Limonciello
- <mario.limonciello@amd.com>, Len Brown <lenb@kernel.org>, Srinivas
- Pandruvada <srinivas.pandruvada@linux.intel.com>, linux-pm@vger.kernel.org,
- MyungJoo Ham <myungjoo.ham@samsung.com>, Kyungmin Park
- <kyungmin.park@samsung.com>, Chanwoo Choi <cw00.choi@samsung.com>,
- Christian =?UTF-8?B?S8O2bmln?= <christian.koenig@amd.com>, Sumit Semwal
- <sumit.semwal@linaro.org>, linaro-mm-sig@lists.linaro.org, Eddie James
- <eajames@linux.ibm.com>, Andrew Jeffery <andrew@codeconstruct.com.au>, Joel
- Stanley <joel@jms.id.au>, linux-fsi@lists.ozlabs.org, David Airlie
- <airlied@gmail.com>, Simona Vetter <simona@ffwll.ch>, Alex Deucher
- <alexander.deucher@amd.com>, Danilo Krummrich <dakr@kernel.org>, Matthew
- Brost <matthew.brost@intel.com>, Philipp Stanner <phasta@kernel.org>, Harry
- Wentland <harry.wentland@amd.com>, Leo Li <sunpeng.li@amd.com>,
- amd-gfx@lists.freedesktop.org, Jiri Kosina <jikos@kernel.org>, Benjamin
- Tissoires <bentiss@kernel.org>, linux-input@vger.kernel.org, Wolfram Sang
- <wsa+renesas@sang-engineering.com>, linux-i2c@vger.kernel.org, Mark Brown
- <broonie@kernel.org>, Michael Hennerich <michael.hennerich@analog.com>,
- Nuno =?UTF-8?B?U8Oh?= <nuno.sa@analog.com>, linux-spi@vger.kernel.org,
- "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, "Martin K.
- Petersen" <martin.petersen@oracle.com>, linux-scsi@vger.kernel.org, Chris
- Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
- linux-btrfs@vger.kernel.org, linux-trace-kernel@vger.kernel.org,
- linux-kernel@vger.kernel.org
-Subject: Re: [PATCH 00/15] tracepoint: Avoid double static_branch evaluation
- at guarded call sites
-Message-ID: <20260312114041.5193c729@gandalf.local.home>
-In-Reply-To: <219d015d-076b-4c80-8f63-88569115fdad@efficios.com>
-References: <20260312150523.2054552-1-vineeth@bitbyteword.org>
-	<1e3c2830-765e-4271-89f7-0b6784b37597@efficios.com>
-	<20260312112354.3dd99e36@gandalf.local.home>
-	<219d015d-076b-4c80-8f63-88569115fdad@efficios.com>
-X-Mailer: Claws Mail 3.20.0git84 (GTK+ 2.24.33; x86_64-pc-linux-gnu)
+	s=arc-20240116; t=1773330140; c=relaxed/simple;
+	bh=BC14mZMWnqVAIzfkSlRKJyYcJPi/ih6edQbPGtbXUb8=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=W2IQ8mlXJQ5/Ocsg741Nksj/XVIy3dYULA7s04rrssSj2k3YAoqx88f9vZYY4VhLaJq3/gz1+vr/nV/RWh7082KvAGQ7H46Zfru+wXVgbHLfVHFiOqOPofHhLbjz2fKUSMke5y+SNmqd2aDSZ8Wsb5X46Q3LahJ6lYLxA5nQVbk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=pDa/crwb; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=pDa/crwb; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="pDa/crwb";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="pDa/crwb"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 606C64D3B7;
+	Thu, 12 Mar 2026 15:42:16 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1773330136; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=d54Z0aaNQtE1wotqT4KogCOLNuJRsfdFCT2Db8Ek+hM=;
+	b=pDa/crwb0ezkt2HoBoITTrE4TOFYYHiqrkr9JKXGqt6XjRGhWr31pQk/R07kMVSsTCLy0E
+	AETHo83U82/CG0Po+T5/htrxYwxrSNHJTz4SGw6hICNFpSbG1QQGAB2H5PPdKBKg2jXrpr
+	OAm0AVTrSYdc6E1/poF4IDARP/vvfSI=
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1773330136; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=d54Z0aaNQtE1wotqT4KogCOLNuJRsfdFCT2Db8Ek+hM=;
+	b=pDa/crwb0ezkt2HoBoITTrE4TOFYYHiqrkr9JKXGqt6XjRGhWr31pQk/R07kMVSsTCLy0E
+	AETHo83U82/CG0Po+T5/htrxYwxrSNHJTz4SGw6hICNFpSbG1QQGAB2H5PPdKBKg2jXrpr
+	OAm0AVTrSYdc6E1/poF4IDARP/vvfSI=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 5A6CC40040;
+	Thu, 12 Mar 2026 15:42:16 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id LxMOFtjesmmUQwAAD6G6ig
+	(envelope-from <dsterba@suse.com>); Thu, 12 Mar 2026 15:42:16 +0000
+From: David Sterba <dsterba@suse.com>
+To: torvalds@linux-foundation.org
+Cc: David Sterba <dsterba@suse.com>,
+	linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+Subject: [GIT PULL] Btrfs fixes for 7.0-rc4
+Date: Thu, 12 Mar 2026 16:42:09 +0100
+Message-ID: <cover.1773328799.git.dsterba@suse.com>
+X-Mailer: git-send-email 2.51.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
-X-Stat-Signature: dizt9eoph1r46hcc7akmrtw69qmbfetk
-X-Rspamd-Server: rspamout02
-X-Rspamd-Queue-Id: 3AE588000E
-X-Session-Marker: 726F737465647440676F6F646D69732E6F7267
-X-Session-ID: U2FsdGVkX1/ZXXm4w5C9U5+099b/PvZQ7eUGtYiH+vY=
-X-HE-Tag: 1773330027-687590
-X-HE-Meta: U2FsdGVkX19Y0BxKc9hfd6/oWlCbD7knRVU4HNig4rSlbKfyoeUNxe0xLyOxKy2jHEKNmwC/SBnntITQ/gcP4GV84MGrzwGO/jSnmxSVU90QW1UewwurfqZf/IccLcQyMpO0NVm7ICOGECdjfFMFxxfbyCK2b8HRZTmFiNSnZRhQ3v2UxaLgnk4IGz6tQzClK6n9/8XrtKTpdPEXN08WeqXofu0CM6mgHZtypBJf2bNTx3bZ6VgbT/vGoPrjz+ku8bbQ/05BjCRjqyBZ8chjnNTTV2DkdRZQ/aDGM8chdSripiOGF3zSwSXCsldB5u/XfRMFDIioWgHfx7JpJLp63e8jmL0gMnugNLpYx40Y3FDqgXh+0wGRwMvubNhu5lNM
+Content-Transfer-Encoding: 8bit
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-0.996];
+	MIME_GOOD(-0.10)[text/plain];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	ARC_NA(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	TO_DN_SOME(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,imap1.dmz-prg2.suse.org:helo];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	RCPT_COUNT_THREE(0.00)[4];
+	RCVD_TLS_ALL(0.00)[]
+X-Spam-Flag: NO
+X-Spam-Score: -2.80
+X-Spam-Level: 
 
-On Thu, 12 Mar 2026 11:28:07 -0400
-Mathieu Desnoyers <mathieu.desnoyers@efficios.com> wrote:
+Hi,
 
-> > Note, Vineeth came up with the naming. I would have done "do" but when I
-> > saw "invoke" I thought it sounded better.  
-> 
-> It works as long as you don't have a tracing subsystem called
-> "invoke", then you get into identifier clash territory.
+please pull the following fixes. Some of them are for user actions that
+can lead to transaction abort and turn the filesystem read-only. Thanks.
 
-True. Perhaps we should do the double underscore trick.
+- detect possible file name hash collision earlier so it does not lead
+  to transaction abort
 
-Instead of:  trace_invoke_foo()
+- handle b-tree leaf overflows when snapshotting a subvolume with set
+  received UUID, leading to transaction abort
 
-use:  trace_invoke__foo()
+- in zoned mode, reorder relocation block group initialization after the
+  transaction kthread start
 
+- fix orphan cleanup state tracking of subvolume, this could lead to
+  invalid dentries under some conditions
 
-Which will make it more visible to what the trace event is.
+- add locking around updates of dynamic reclain state update
 
-Hmm, we probably should have used: trace__foo() for all tracepoints, as
-there's still functions that are called trace_foo() that are not
-tracepoints :-p
+- in subpage mode, add missing RCU unlock when trying to releae extent
+  buffer
 
--- Steve
+- remap tree fixes:
+  - add missing description strings for the newly added remap tree
+  - properly update search key when iterating backrefs
+
+----------------------------------------------------------------
+The following changes since commit f8db8009ea65297dba7786668d4561f6dbd99678:
+
+  btrfs: check block group lookup in remove_range_from_remap_tree() (2026-02-26 15:03:29 +0100)
+
+are available in the Git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git tags/for-7.0-rc3-tag
+
+for you to fetch changes up to 0749cab6174dc035b1628fb6db03abf758cfda6f:
+
+  btrfs: remove duplicated definition of btrfs_printk_in_rcu() (2026-03-03 17:20:51 +0100)
+
+----------------------------------------------------------------
+Bart Van Assche (1):
+      btrfs: add missing RCU unlock in error path in try_release_subpage_extent_buffer()
+
+Boris Burkov (1):
+      btrfs: set BTRFS_ROOT_ORPHAN_CLEANUP during subvol create
+
+Filipe Manana (6):
+      btrfs: fix transaction abort on file creation due to name hash collision
+      btrfs: fix transaction abort when snapshotting received subvolumes
+      btrfs: fix transaction abort on set received ioctl due to item overflow
+      btrfs: abort transaction on failure to update root in the received subvol ioctl
+      btrfs: remove unnecessary transaction abort in the received subvol ioctl
+      btrfs: remove duplicated definition of btrfs_printk_in_rcu()
+
+Johannes Thumshirn (1):
+      btrfs: zoned: move btrfs_zoned_reserve_data_reloc_bg() after kthread start
+
+Mark Harmstone (2):
+      btrfs: print-tree: add remap tree definitions
+      btrfs: read key again after incrementing slot in move_existing_remaps()
+
+Sun YangKai (1):
+      btrfs: hold space_info->lock when clearing periodic reclaim ready
+
+ fs/btrfs/disk-io.c     |  7 ++++++-
+ fs/btrfs/extent_io.c   |  1 +
+ fs/btrfs/inode.c       | 19 +++++++++++++++++++
+ fs/btrfs/ioctl.c       | 32 ++++++++++++++++++++++++++++----
+ fs/btrfs/messages.h    |  3 ---
+ fs/btrfs/print-tree.c  | 10 ++++++++++
+ fs/btrfs/relocation.c  |  2 ++
+ fs/btrfs/space-info.c  |  5 ++++-
+ fs/btrfs/transaction.c | 16 ++++++++++++++++
+ fs/btrfs/uuid-tree.c   | 38 ++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/uuid-tree.h   |  2 ++
+ 11 files changed, 126 insertions(+), 9 deletions(-)

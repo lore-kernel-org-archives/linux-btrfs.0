@@ -1,114 +1,163 @@
-Received: from mail-ej1-f47.google.com (mail-ej1-f47.google.com [209.85.218.47])
+Received: from mail-wm1-f41.google.com (mail-wm1-f41.google.com [209.85.128.41])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2BD06375F9F
-	for <linux-btrfs@vger.kernel.org>; Thu, 12 Mar 2026 02:10:30 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.218.47
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773281431; cv=pass; b=SwUfa+8vzkzlYDKmtD/NtTHIBgoYwwu3uA0Cc+XwBNH6rMO8SOpYZHbiJ3USrKEbGCeKw1HzryL9AImc/PXg0WGrjSjgX1DgmRG0zIa7mlDoYkJ1DgeVAJ06AeBY0N6Q+7Kk7v1KBgpo1OmjxtWny1vVNWfCE6l2dbCnRqivAUk=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773281431; c=relaxed/simple;
-	bh=uAOVhNzDH+nb9Kc/yjaQMWFh3tidbWM9bwHFzGealYc=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=Yr4T/ZIG6Q7UGSWK4ePV8tW1ohGoP9JplvAsZUABpnFtES/H9TcnDVKrg/BuK4VMUaJNtewZDJ1NjshaDapnPfoYlnQdLED8qX3M/mnv56D8NvpH+qpi/RprYvmzq+9YLi7eGY18Pwzl7P6Kvv9UuIDUTQ7PxmABwnHsFBvjT8Q=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=Gp8i8SMR; arc=pass smtp.client-ip=209.85.218.47
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E944B394793
+	for <linux-btrfs@vger.kernel.org>; Thu, 12 Mar 2026 04:16:38 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.41
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1773289000; cv=none; b=IKMYcqfPYPIPoBASFZp7g0ja3oGMqIltq6kZkUMg2x0RPFkjxXXycghO70JO/KOhLoQ+nF8uG1dS4CtwL9rk+fe8c+7B0T9l1NY003fCSyxclfrcGfUC6TMwz1fxmRLrowc6N3GlPbcsfUmSEh/NQYU83PUkvKik3tMLWPEwLsc=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1773289000; c=relaxed/simple;
+	bh=degI9UtriRzk6E9NLOGTEqlhW9RkWB4S+ky7EXT+Jqk=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=PaWsccgJ0ANf+UtsShz7GmGPB+Ar3mdTZ60kgW7bINAuJl+UH9eXBq+XBAWCe16jXvIujozFeVziH7hY+kOz3r6/cPDeAAC32fJ572B57BidIO2waLc8//ZnVb2yGoEMbqwqh6UMKjk0eNK8+zc7BRaHrDo5FHmSPiz/Z1JtOQ0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=gFHlc347; arc=none smtp.client-ip=209.85.128.41
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="Gp8i8SMR"
-Received: by mail-ej1-f47.google.com with SMTP id a640c23a62f3a-b9704cd6951so45980666b.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Mar 2026 19:10:29 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1773281428; cv=none;
-        d=google.com; s=arc-20240605;
-        b=C+7lzTeCXgTTKmoiqHKcBKXM1j5SINDoEXgSzHaojQeudB+G9BV3tsJcVv46F6XAc5
-         FzyP2g+vpayr+H6VF43jV0bQ0WSUXmKf9ZxlZ4C5HVMgZGcrj2KWZpgMvdo8Hufw3jDU
-         47LAhuzAhkMWbe+fmBRFVjgKHCe85/GRYEbIn9YpbFqJ+5D2fGiXuIK0Y8+DrBpOR4YP
-         lIocWbOSr68LQn1gPX6EFno3lRD8msaRK4n5kBZM/6uFGa/QcYcWWOeutGq/vGZYhG52
-         5El3GsF+EXC5DF8avsd5jqAGBHxY9WKpCS+7Ji5MLD0Mt2Em7BtZxuZ+MXZYSkuxnBrY
-         2z2Q==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:dkim-signature;
-        bh=uAOVhNzDH+nb9Kc/yjaQMWFh3tidbWM9bwHFzGealYc=;
-        fh=mg5IWP7ByR4Q4SPvowez3LPjctggNktyeXlLczXlEUc=;
-        b=Wkpyy+NlAmrNGkcdFrACwsw0Fuhr/I+tmAv8fnS+/4BeOf+zj0v6jjEzQc9880S27F
-         XxOsH8JcC/5YNv8TxuFmNOXg46vICQ4SAO4iht9p3BBFOzaN+OY+Tn7pPJhiD9U7ipAA
-         HN0MvmIULmYBqVSyaWK2c5hs0FnjsmHgTcP5vuJBmjc9kfP6wOEzKZE+e9DrVQmXpHnC
-         poVJv9I7911lRzMlt1IKyggXebF7K1Co7ftp5pHHUCsDlYv2r9E5GzgKjEFpX45C76jl
-         +RTidGfRJO+DVH6fKO/ljvtJ4VzB+7P0YxshUATO7AMUhK8wDZVwDDXb2oPTh5xoCsqy
-         TMaQ==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="gFHlc347"
+Received: by mail-wm1-f41.google.com with SMTP id 5b1f17b1804b1-48541edecf9so5405205e9.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Mar 2026 21:16:38 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1773281428; x=1773886228; darn=vger.kernel.org;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:from:to:cc:subject:date:message-id:reply-to;
-        bh=uAOVhNzDH+nb9Kc/yjaQMWFh3tidbWM9bwHFzGealYc=;
-        b=Gp8i8SMRZw9FoG1vD1GrOSgTk5O7zLDohdEWX5eXkwLNaP/mOWzvXc82ESPFZw6BBu
-         D69GiKN4ttLAEvfzFXovQJPRsbKiWhVXZ3YVG+NFbpX8zCwpUzbkshl9ZKQO4hu41+L+
-         aRToEmQjZE9WUtpzGuKnkQHBd2FpI0w4U56E1nV6zG6Euu+O4hiRZ8rBWhKeT712rsy+
-         1v+ovCuUWalBtYEToK8RJ1HiIMRp00V6w1VZUOI6Q/GxMfufJWvMUHrO/8RlHBQX24Iy
-         qmZCLBPUZzt5DIMGDeXlYKDQDXcyT+ARykoy4o8mnueANO81EFrxKtS5BPQUBSzSJkDq
-         vs1Q==
+        d=suse.com; s=google; t=1773288997; x=1773893797; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to;
+        bh=LeKguCeq1Mvbd8EXbCPRxs/GF0b3KgpsAgS9qiROQR4=;
+        b=gFHlc3472Jn5X6W78FXvETC0WD2EulP+gIliYblqYfKMfFeUGhFbR6rlb1H0IrtFDj
+         BVyRsVAb04ct9sPU/fkaEvHzW0/c9doAK9XujLvSbLsteYgS07MnVCSZQmNdL5ntnKzs
+         gDMpKebvs0WiXOV8R1sLPSXvWuvPdTjWjFG8KYy0Ln09ddbT9V4ZcloXnc+lObJBocfD
+         qD77Z7YqAQiOPUbEhA7t97q6iNXwFPybTgQaJhTdVGy1zNnTymD6zIqnerZglZ3pWoYZ
+         vCOrXBY9Hk05OoNuO8Du8wYU+qWTgNfbNrFYP3+AgNYFgvmA4EYwr1pvfgk4ECZdnCoq
+         yMQw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1773281428; x=1773886228;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+        d=1e100.net; s=20230601; t=1773288997; x=1773893797;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=uAOVhNzDH+nb9Kc/yjaQMWFh3tidbWM9bwHFzGealYc=;
-        b=SzICV6l+1AWEvEyfMSkMyAWiKkko0O+tPrV13+YUQlB9+oCbthNeTv5aBUTGbmk6m9
-         DoMj77x1egpV0DYIIOtepks7u37wAETZ/d5DtyVBOsFc3X3ssnFin/Yqtt+BtodI3nOD
-         qsW+s7Hw5LB2n3EqMZQbVVKBhV+aw/nEBK+tFrsTWUolQ72Qqx0uklPhOHfGWPBQBOwN
-         WMAmC73QhYb+DUwEzmePLxn3XdeQKR3tPEVoG4CutM2eqgblx4o+k7ImN8AQLJvI40bq
-         TJOsLWw8eCGsJz12Xkq9pK3N1hCprH3AzzrGMZy4D1fMFYdUGHN4E68iWxdZpQSTzQeg
-         iiiQ==
-X-Forwarded-Encrypted: i=1; AJvYcCWi2llMjUMy0q0FEj4Ne+dIbVPSLNV0vkDCIG6TiINEUKh15woszNPrHbD6UiXv6kxnunrtkgTP8NuDEA==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yz9HejRJaA+9h467SMKIY/Aj4heDy00yF+wCkdoU1oNYY0V6S49
-	ba52wZe3PEQzysF5x0KlNbjPsrB7ME2YGCvaEOKBWzCxZwH/pQnZNy1XtMJYTp3rAK6mfM4TnZw
-	lhkbAms9zqrlM7rKdWW6p7gEutTIWZbE=
-X-Gm-Gg: ATEYQzwA9QRdP2gTaWFIvI5BoN56QCeXt4K0fzdMeTqD5igjavSMzSVLnRMh68u1iMm
-	vsrqeVli5LA3024Z9+PfljlsaHt46Xk6dVveNB6Y1tLIPSPd8UXIZlmkhcYyiYAm7F7dzS1iWTI
-	JH33DEuktm8byWoJKgeR+7niAQVg4bSSwTvxSRmDYiqlRg3Dd1INikrgTjNAio1GSsGNLAjTZqm
-	Y5ylFdgGplDQfZYFe21A8xgEfgHJOnlYetWaXRw9OcXEfa7trSM8WnqqaUTPk5V532ayzfs1kDk
-	KPQliMD+FNSwGe5upiDjPBJr9KA5hUKRx4ytyagyW/vm69eghJyCpuU=
-X-Received: by 2002:a17:907:e112:b0:b93:8e7f:3d3f with SMTP id
- a640c23a62f3a-b972e5faca6mr189113066b.32.1773281428332; Wed, 11 Mar 2026
- 19:10:28 -0700 (PDT)
+        bh=LeKguCeq1Mvbd8EXbCPRxs/GF0b3KgpsAgS9qiROQR4=;
+        b=u400w8RZqAJ1ssnU21Z4EUmTSxgafhtfAgcSlOJ6qjwzImFJUeKnR1ao+FZh5XNeKm
+         4GCwc2nbVCUejj9nSpBCnoYAdA6WjYx37NPuHLJWLlQeBYd516cXoO9LwYErAabOfBAC
+         DAjclo0tHOxolyJRVLcXgWkbttDISQcdJVE5+LE7U7/CFU3RfPsz2H9FAxunPZ4MdMj5
+         N899c/8Q3peLa13+QXaW7kyQlPdr4ajGjBQK6tVFrPvqcVEcPe0P+8wrcCwM4DM6rKTr
+         fB8W1YnGTB1zRcUncQIMSvedZqzWIgzJR2RoqvImeKpEB0FNSKvJCwS9iPfrQRpSBqL8
+         ghZw==
+X-Forwarded-Encrypted: i=1; AJvYcCWH02hEnaZbX+NPHg7hk2q3sql8WsEUtXlBBwe40mVUkp9Sj9Ml4Whi2riKE2YIoL/TguJnPbV79E02yg==@vger.kernel.org
+X-Gm-Message-State: AOJu0YwR8HLADYp7jG7ZekUXjtYyLalpRb+cp4IgCDA9xUcMQLI3g0oj
+	Rd8S8lrDvYEkTTUuq5R8lnIuGct7h9GQ5DeVpZEhkeaU65bWA5aYB55oYfMtpvEymq4=
+X-Gm-Gg: ATEYQzyHdGiLNUh+2cOZQR2V/OZMrSrdLPcM+/oHBsiMe5qv7g0gYk+K98t7yaphi3D
+	kWGgqTYYAwwtnhVu6e5IBqKEx/GWMzWLePJ59MiSp6jAFmc+FYUth/zUcXrxjIb88VS9XqzMxe6
+	7w893qEniGVloab1/UASWIug4AWlGRUzycOxJ0RMIAAH6oheIq2CpGcykB3prDZh6zLLvQ/10cJ
+	R/wP8slcq0oD0FX85WVCCpi37zMnRqnlkcpo6iBDJlTzC68sGC2J2Eq/M3mVGgNqd8vXzjaf2lM
+	DQcbUFaZwyFU/suPmukSKHHKrGpx6h5xKHx3l3Q7qwO4VexKXMxzLc7YPFX8U9ZF7YGXOaeShQT
+	Zcmt+fAsI7sn0fT5QQ4zZs/zgFNzhJMMuZ2azaptnmgmcPjmIy2P/e36+/JmUC/iIkKLqbjeK7A
+	/fS+MtEJPQ7DRmA7rPXMOwaqf+qyMxCMmLANp4n5HeWauhJp7Exlw=
+X-Received: by 2002:a05:600c:46d2:b0:485:38fc:7080 with SMTP id 5b1f17b1804b1-4854b10ef23mr74677455e9.28.1773288997208;
+        Wed, 11 Mar 2026 21:16:37 -0700 (PDT)
+Received: from ?IPV6:2403:580d:fda1::299? (2403-580d-fda1--299.ip6.aussiebb.net. [2403:580d:fda1::299])
+        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-82a0725e0cdsm1278294b3a.16.2026.03.11.21.16.33
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 11 Mar 2026 21:16:36 -0700 (PDT)
+Message-ID: <a478f7a7-5255-4039-9ace-7d2b410db602@suse.com>
+Date: Thu, 12 Mar 2026 14:46:29 +1030
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260312001443.3011961-1-gality369@gmail.com> <17c102a6-bbd1-4937-b5cc-5f6912551180@suse.com>
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v2] btrfs: reject root items with drop_progress and zero
+ drop_level
+To: ZhengYuan Huang <gality369@gmail.com>
+Cc: dsterba@suse.com, clm@fb.com, linux-btrfs@vger.kernel.org,
+ linux-kernel@vger.kernel.org, baijiaju1990@gmail.com, r33s3n6@gmail.com,
+ zzzccc427@gmail.com, stable@vger.kernel.org
+References: <20260312001443.3011961-1-gality369@gmail.com>
+ <17c102a6-bbd1-4937-b5cc-5f6912551180@suse.com>
  <8533b404-3377-416e-81d9-2bdb00baaae2@suse.com>
-In-Reply-To: <8533b404-3377-416e-81d9-2bdb00baaae2@suse.com>
-From: ZhengYuan Huang <gality369@gmail.com>
-Date: Thu, 12 Mar 2026 10:10:16 +0800
-X-Gm-Features: AaiRm53d7xqK8oTpL1WJOX5npfX4-cLTkfjwSrYGYK7OxzBZYQaiYslkFoedJ14
-Message-ID: <CAOmEq9UusAbrMLSMkca+DEPff9hXokAvVn3V4acQ0EvSp67HLQ@mail.gmail.com>
-Subject: Re: [PATCH v2] btrfs: reject root items with drop_progress and zero drop_level
-To: Qu Wenruo <wqu@suse.com>
-Cc: dsterba@suse.com, clm@fb.com, linux-btrfs@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, baijiaju1990@gmail.com, r33s3n6@gmail.com, 
-	zzzccc427@gmail.com, stable@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+ <CAOmEq9UusAbrMLSMkca+DEPff9hXokAvVn3V4acQ0EvSp67HLQ@mail.gmail.com>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <CAOmEq9UusAbrMLSMkca+DEPff9hXokAvVn3V4acQ0EvSp67HLQ@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 
-Thanks a lot for the explanation. I think I now understand the
-intended use of the
-Fixes: tag.
 
-I still have one question, though. In this case, scripts/checkpatch.pl
-warns that a
-Fixes: tag should be added, which seems inconsistent with the submission
-guidelines you pointed me to.
 
-My understanding had been that patches should generally be sent only
-after passing
-checkpatch.pl cleanly, so I wanted to ask: is this kind of warning acceptable in
-practice, or does it mean my local checkpatch.pl is outdated? If it is outdated,
-should I generally use the latest checkpatch.pl when checking patches
-before submission?
+在 2026/3/12 12:40, ZhengYuan Huang 写道:
+> Thanks a lot for the explanation. I think I now understand the
+> intended use of the
+> Fixes: tag.
+> 
+> I still have one question, though. In this case, scripts/checkpatch.pl
+> warns that a
+> Fixes: tag should be added, which seems inconsistent with the submission
+> guidelines you pointed me to.
 
-Thanks again,
-ZhengYuan Huang
+If you check the checkpatch.pl itself, the logic in it is pretty simple 
+and can give false alerts.
+
+It just checks if the commit message has BUG: or KASAN/UBSAN lines.
+
+So it's false alert prune.
+
+> 
+> My understanding had been that patches should generally be sent only
+> after passing
+> checkpatch.pl cleanly,
+
+No, that is only a script which has its limits.
+Checkpatch is good for its code style checks, but not always correct on 
+other suggestions.
+
+Sometimes even its code style checks may conflict with the rules inside 
+each subsystem.
+
+
+> so I wanted to ask: is this kind of warning acceptable in
+> practice,
+
+Yes, unless you believe a simple perl script can be as good as human 
+common sense.
+
+> or does it mean my local checkpatch.pl is outdated?
+
+Since you're already using the latest rc kernel, I believe you're 
+already using the latest checkpatch.
+
+Thanks,
+Qu
+
+> If it is outdated,
+> should I generally use the latest checkpatch.pl when checking patches
+> before submission?
+> 
+> Thanks again,
+> ZhengYuan Huang
+

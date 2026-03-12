@@ -1,352 +1,245 @@
-Received: from mgamail.intel.com (mgamail.intel.com [198.175.65.12])
+Received: from stravinsky.debian.org (stravinsky.debian.org [82.195.75.108])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 69A523F7A80;
-	Thu, 12 Mar 2026 16:12:49 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=198.175.65.12
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773331971; cv=fail; b=J4BpzCiWRZeY07235PGEBYkaPdfSsqjzJ8NGAyyPOBTTBwRoMjuzkEuXGOo0vb67PB6bK1wq5CVsGf3Cu7cp/EXoVfslQwAPbhZHLzzjdcX0YjHxU0UN7QkyT40dnrlwH92A1yermkoYQ/3liYid8EB+UeLSTkFV6GG0zZEcT6M=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773331971; c=relaxed/simple;
-	bh=5bFRno/x5CuND9g6xv0lanCw5CYbDU9w0cEWHBHlDpc=;
-	h=Message-ID:Date:Subject:To:CC:References:From:In-Reply-To:
-	 Content-Type:MIME-Version; b=Zgc14FN1TDrDk8KftinL7xjxOkeZMM7JFOJwgCtCISari/GIFUfXg69mt56R3JXAN8oFFVxDHLCJVKabGvXCCAX9K+EVEUw+ke3eoU8CuBvNF9PjrEaQdqlG8VNgT+nTJCJz0u1k2HRqPHAksRXeWG5FNGya9MX0+pdn154nMsI=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com; spf=pass smtp.mailfrom=intel.com; dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b=QKxuje0U; arc=fail smtp.client-ip=198.175.65.12
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=intel.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 561132E3FE;
+	Thu, 12 Mar 2026 16:18:30 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=82.195.75.108
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1773332312; cv=none; b=JJ+jZurxZ6KiJGpwousht1sygQccqfRPk15/EPxAzcJS4hIWezGrTG45ohOdNiSpTAA0NaM4pphtJ7Rr/n6ype1AzG145ooQH1uiYpnxMMhU8KhsXb1a/WwpaOO1jp5kn8OcWiNyTnFrRIT26e+xn0KjHrYy+iJHmovqEl2wkHU=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1773332312; c=relaxed/simple;
+	bh=jHQXCTGTEh81pGQI5ovCtV4BR7vo7kiocBIpGSB/6V8=;
+	h=From:Subject:Date:Message-Id:MIME-Version:Content-Type:To:Cc; b=Ko61riavGhDrGDEI/5oPwqPfsR5hUzGxeKFi4LZ7/Y2Ms/GVxs+jDE1B//AgEpF8XHM/WTM8erI5GFftffwzVF5dtzQqRtP8MhIF168ICYblerlHxG0xpHdQKKLPpmHOXTbQASV+qtOngnuw7uOdfVLA/o1FcA/ReVqAlDVv5+Y=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=debian.org; spf=none smtp.mailfrom=debian.org; dkim=pass (2048-bit key) header.d=debian.org header.i=@debian.org header.b=H6xwub8s; arc=none smtp.client-ip=82.195.75.108
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=debian.org
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=debian.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b="QKxuje0U"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1773331970; x=1804867970;
-  h=message-id:date:subject:to:cc:references:from:
-   in-reply-to:content-transfer-encoding:mime-version;
-  bh=5bFRno/x5CuND9g6xv0lanCw5CYbDU9w0cEWHBHlDpc=;
-  b=QKxuje0UbuSKkxxULV7CO2cMxnqGSWJ7Fntx6Tq6FErGTcc7RglSN0de
-   JhISvRlMqVMv5V80ay72cIzVfbaoo/NE1c6sUheNll2MtDkhVXGyKgVOH
-   UUcm2CTOvMculuFAFgnkyhHxHjXxT+3l4K0XDA6nkg7YrfADTbE6wxaOH
-   9qgy+w84MDYsDPcHNnCnGW0LTMJEWiyFTDBa4uv6DTR+5jw3sb+Rirc/c
-   YpzeFSuX/SKgLErtic6ySzH4VqxUEu5Q0TOIk8EndrhGUFB+AgB2wvHAH
-   dQF6ix+2sr8qdwEvoAXTsNpBzOgkeZtdvTSKRQ48IqZOKs1vrGxzNO4Si
-   Q==;
-X-CSE-ConnectionGUID: sJsO/9TMTGWT6BqT3SckcQ==
-X-CSE-MsgGUID: XZRbuLVzRTKxt0TCfMR5aA==
-X-IronPort-AV: E=McAfee;i="6800,10657,11727"; a="85910029"
-X-IronPort-AV: E=Sophos;i="6.23,116,1770624000"; 
-   d="scan'208";a="85910029"
-Received: from orviesa007.jf.intel.com ([10.64.159.147])
-  by orvoesa104.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 12 Mar 2026 09:12:42 -0700
-X-CSE-ConnectionGUID: wo9a9boLQ3W77nLAysyVeA==
-X-CSE-MsgGUID: UCZc7QZASc6MQg3o49dwnQ==
-X-ExtLoop1: 1
-X-IronPort-AV: E=Sophos;i="6.23,116,1770624000"; 
-   d="scan'208";a="221051544"
-Received: from fmsmsx903.amr.corp.intel.com ([10.18.126.92])
-  by orviesa007.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 12 Mar 2026 09:12:26 -0700
-Received: from FMSMSX901.amr.corp.intel.com (10.18.126.90) by
- fmsmsx903.amr.corp.intel.com (10.18.126.92) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.2.2562.37; Thu, 12 Mar 2026 09:12:16 -0700
-Received: from fmsedg901.ED.cps.intel.com (10.1.192.143) by
- FMSMSX901.amr.corp.intel.com (10.18.126.90) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.2.2562.37 via Frontend Transport; Thu, 12 Mar 2026 09:12:16 -0700
-Received: from MW6PR02CU001.outbound.protection.outlook.com (52.101.48.16) by
- edgegateway.intel.com (192.55.55.81) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.2.2562.37; Thu, 12 Mar 2026 09:12:16 -0700
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
- b=aQffyITYkzTS7flG4mkV7DfqRy6p0yvoelsD1vPvzqmebccUjnkt1BqsOASVKXX4x3BQJ0/fhMjJjYTbKnlf3lvYGmjtJVizJ69cNSh5jhuSL2AQ01AGkoVtcw3unypqT9dvuaTwpqb+jjgJ7vlCBtf1HWVN6s4fqOYqq9QZwsk1A9WzGZGdEs/5dSSqLdPPfixlVnwkDluMZyAhItvv5kGdMIcI6g35NEL5jpCBIoBM372SFwDMdrPpAdQ5KcYZcdMKZRMeyPvTlVgDa8AjH2VNO5QGAihTlm5OehOlbQf/y69qehIByv+JbnNkYOFrLMG4EmrTpDQKs37UJp4uYg==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector10001;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
- bh=S2r3mEx4jaS69b6pg4TeplPYQyNYaMq5f3Q1pXlTbJ4=;
- b=BztW+Cme5OBlZFfQyBCT3cw5ysoYvV9bvxO9E6neEsl0PT5FFXC3+hYCwymttBgqy/O1ZLFwr0kDKiWbQkgNkrKS4GIU57Keqr5x34a5354EeTMbgD3X8v5XNkdeHaxX/rr3vxJFgx2JDRU8FQbxz4nMP5ci3XJHEh43dAgT8+mP0ZXNwXUvKgg+BXL7/+njvxLtEkUIMgxIflWkKsSVdgeYD4aMFtVpIeABrP99SEHA1GvIK5GAlGmSYhMUpM5kPkTPOM6wrwVlwR5CjOhT6Qgc7hMTjtxIa8k1CJOgDbe0WZCQKoI2qggdWbyMknWbNKzpzgNtgx2i25vyrDOpjg==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=intel.com; dmarc=pass action=none header.from=intel.com;
- dkim=pass header.d=intel.com; arc=none
-Authentication-Results: dkim=none (message not signed)
- header.d=none;dmarc=none action=none header.from=intel.com;
-Received: from MN6PR11MB8102.namprd11.prod.outlook.com (2603:10b6:208:46d::9)
- by DS4PPFDA9EFDFDB.namprd11.prod.outlook.com (2603:10b6:f:fc02::55) with
- Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.9700.12; Thu, 12 Mar
- 2026 16:12:12 +0000
-Received: from MN6PR11MB8102.namprd11.prod.outlook.com
- ([fe80::8d98:e538:8d7:6311]) by MN6PR11MB8102.namprd11.prod.outlook.com
- ([fe80::8d98:e538:8d7:6311%5]) with mapi id 15.20.9723.000; Thu, 12 Mar 2026
- 16:12:12 +0000
-Message-ID: <0da51c50-3afd-464a-aad8-99e475a31339@intel.com>
-Date: Thu, 12 Mar 2026 17:11:56 +0100
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 38/61] net: Prefer IS_ERR_OR_NULL over manual NULL check
-To: Philipp Hahn <phahn-oss@avm.de>
-CC: <amd-gfx@lists.freedesktop.org>, <apparmor@lists.ubuntu.com>,
-	<bpf@vger.kernel.org>, <ceph-devel@vger.kernel.org>, <cocci@inria.fr>,
-	<dm-devel@lists.linux.dev>, <dri-devel@lists.freedesktop.org>,
-	<gfs2@lists.linux.dev>, <intel-gfx@lists.freedesktop.org>,
-	<intel-wired-lan@lists.osuosl.org>, <iommu@lists.linux.dev>,
-	<kvm@vger.kernel.org>, <linux-arm-kernel@lists.infradead.org>,
-	<linux-block@vger.kernel.org>, <linux-bluetooth@vger.kernel.org>,
-	<linux-btrfs@vger.kernel.org>, <linux-cifs@vger.kernel.org>,
-	<linux-clk@vger.kernel.org>, <linux-erofs@lists.ozlabs.org>,
-	<linux-ext4@vger.kernel.org>, <linux-fsdevel@vger.kernel.org>,
-	<linux-gpio@vger.kernel.org>, <linux-hyperv@vger.kernel.org>,
-	<linux-input@vger.kernel.org>, <linux-kernel@vger.kernel.org>,
-	<linux-leds@vger.kernel.org>, <linux-media@vger.kernel.org>,
-	<linux-mips@vger.kernel.org>, <linux-mm@kvack.org>,
-	<linux-modules@vger.kernel.org>, <linux-mtd@lists.infradead.org>,
-	<linux-nfs@vger.kernel.org>, <linux-omap@vger.kernel.org>,
-	<linux-phy@lists.infradead.org>, <linux-pm@vger.kernel.org>,
-	<linux-rockchip@lists.infradead.org>, <linux-s390@vger.kernel.org>,
-	<linux-scsi@vger.kernel.org>, <linux-sctp@vger.kernel.org>,
-	<linux-security-module@vger.kernel.org>, <linux-sh@vger.kernel.org>,
-	<linux-sound@vger.kernel.org>, <linux-stm32@st-md-mailman.stormreply.com>,
-	<linux-trace-kernel@vger.kernel.org>, <linux-usb@vger.kernel.org>,
-	<linux-wireless@vger.kernel.org>, <netdev@vger.kernel.org>,
-	<ntfs3@lists.linux.dev>, <samba-technical@lists.samba.org>,
-	<sched-ext@lists.linux.dev>, <target-devel@vger.kernel.org>,
-	<tipc-discussion@lists.sourceforge.net>, <v9fs@lists.linux.dev>, "Igor
- Russkikh" <irusskikh@marvell.com>, Andrew Lunn <andrew+netdev@lunn.ch>,
-	"David S. Miller" <davem@davemloft.net>, Eric Dumazet <edumazet@google.com>,
-	"Jakub Kicinski" <kuba@kernel.org>, Paolo Abeni <pabeni@redhat.com>, Pavan
- Chebbi <pavan.chebbi@broadcom.com>, Michael Chan <mchan@broadcom.com>,
-	"Potnuri Bharat Teja" <bharat@chelsio.com>, Tony Nguyen
-	<anthony.l.nguyen@intel.com>, Taras Chornyi <taras.chornyi@plvision.eu>,
-	Maxime Coquelin <mcoquelin.stm32@gmail.com>, Alexandre Torgue
-	<alexandre.torgue@foss.st.com>, Iyappan Subramanian
-	<iyappan@os.amperecomputing.com>, Keyur Chudgar
-	<keyur@os.amperecomputing.com>, Quan Nguyen <quan@os.amperecomputing.com>,
-	Heiner Kallweit <hkallweit1@gmail.com>, Russell King <linux@armlinux.org.uk>
-References: <20260310-b4-is_err_or_null-v1-0-bd63b656022d@avm.de>
- <20260310-b4-is_err_or_null-v1-38-bd63b656022d@avm.de>
-From: Przemek Kitszel <przemyslaw.kitszel@intel.com>
-Content-Language: en-US
-In-Reply-To: <20260310-b4-is_err_or_null-v1-38-bd63b656022d@avm.de>
-Content-Type: text/plain; charset="UTF-8"; format=flowed
-Content-Transfer-Encoding: 7bit
-X-ClientProxiedBy: DB9PR05CA0028.eurprd05.prod.outlook.com
- (2603:10a6:10:1da::33) To MN6PR11MB8102.namprd11.prod.outlook.com
- (2603:10b6:208:46d::9)
+	dkim=pass (2048-bit key) header.d=debian.org header.i=@debian.org header.b="H6xwub8s"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=debian.org;
+	s=smtpauto.stravinsky; h=X-Debian-User:Cc:To:Content-Transfer-Encoding:
+	Content-Type:MIME-Version:Message-Id:Date:Subject:From:Reply-To:Content-ID:
+	Content-Description:In-Reply-To:References;
+	bh=OTO8aN3iiCYIWs8KCCxCePBEVrjIPE/e0Hifk4yYCbs=; b=H6xwub8suN//TdZAwGQz+qXYCm
+	lUsI9hnfLFEhhMbdLfUp292iZllkN7vVi0wcyCSuwRqB9tO8U7BBY45IZqHiHZLY+QmLP5BPg6MmC
+	wy8QWod9Dgi9HF4rvfOxOwPDlqh82mu1nDsm26YzbRD5TS3yoc9lD9oQcxcbE3jdh/mpfxBiZIzDA
+	f9tn5aZWgerIrHZAR9TYDwxI65bB+NpIDMyiz5pn6J3U3sEWae/D743Uj7oh3xEAToRATn++Kgj0n
+	WclR3H8KpIvbj4D2VrdB7g9dv8uHUmXGUajEPaRuReVmxk6P8M4sJ4KUTnc8xbLxZXE8wIwa+z/ip
+	5XXfHUjQ==;
+Received: from authenticated user
+	by stravinsky.debian.org with esmtpsa (TLS1.3:ECDHE_X25519__RSA_PSS_RSAE_SHA256__AES_256_GCM:256)
+	(Exim 4.94.2)
+	(envelope-from <leitao@debian.org>)
+	id 1w0ijw-004fNl-Cu; Thu, 12 Mar 2026 16:18:24 +0000
+From: Breno Leitao <leitao@debian.org>
+Subject: [PATCH RFC 0/5] workqueue: add WQ_AFFN_CACHE_SHARD affinity scope
+Date: Thu, 12 Mar 2026 09:12:01 -0700
+Message-Id: <20260312-workqueue_sharded-v1-0-2c43a7b861d0@debian.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-MS-PublicTrafficType: Email
-X-MS-TrafficTypeDiagnostic: MN6PR11MB8102:EE_|DS4PPFDA9EFDFDB:EE_
-X-MS-Office365-Filtering-Correlation-Id: 6f0f9ecc-edd7-4e03-1a3f-08de80521e93
-X-MS-Exchange-SenderADCheck: 1
-X-MS-Exchange-AntiSpam-Relay: 0
-X-Microsoft-Antispam: BCL:0;ARA:13230040|366016|1800799024|376014|7416014|22082099003|7053199007|56012099003|18002099003;
-X-Microsoft-Antispam-Message-Info: 0JzyEtz+ZbY+UJfay1MMx6cC7k0VDpTAisQfHr8ee8fhRS9oZ/3EkK0SYa4H9xO+17cqN8E+INuWd0bDOhg6KyMSzQi4RLCB8yuN8addTN8WfkoDEXNJd3uynlJwQMFvJpVc5/6mTD+E8XvzGrnqrFo3mdW0yJLnV+UL+VFlNvaI7d3JY+amn8fmczN5NWzLWPhGBAt2EMHTRLTc8v8nGb0g73JENOqONAlmDCfKE0GXQx238nSbuoRBzBGsrkpYLX0pGkMHDk5HsKqQySnqWHSIGAs9FIfiQ40DdaWm8mwqbOfnJpoxF8PSYWVX02H6lUXF2NuGRZVoW0O6iEmJTBTtk47r/Uob+aS0SdHobYpGy2JhDE1CFbFyiD8Rhr9YqFpB6I7pUC5CO376reeOmS1ggrEUisVWCJ8UCW/cm7uZVmRS7KJnFOPnJ0H1rbHeXczxrtg13GUOjBpAoeHkI6e72lLPv5Xj5OOdYD8GCbWA6bNGCfVjbZXkKtYzNhOp9gtoZ1NNYTLIklJDjukLNoia6KYo5rUKZkX3sMViba6m8oY1T/8y6T83Q7cSeVNXpdvgJ+D3rUuF66Bn29BhUp50Gss35pc8jsAIvV92tpazJssg2Yfv3zGruCBTbGG6uKoA/+Lyct3jhQyr2suol6i7dMGHlSURpaY/Y65Ye+icJJRzr306I9/r63LzJ5Kl
-X-Forefront-Antispam-Report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:MN6PR11MB8102.namprd11.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(366016)(1800799024)(376014)(7416014)(22082099003)(7053199007)(56012099003)(18002099003);DIR:OUT;SFP:1101;
-X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
-X-MS-Exchange-AntiSpam-MessageData-0: =?utf-8?B?UTh0emRrTjRWY2xrdUwrdmFCeDU4bmVmeGtUQTI5MnZ2MnQ5UmJtWFllN3Nv?=
- =?utf-8?B?WVZpMHFMNGREY2IxMllKYnY1UGxWanZTNlFHTGk1QjdyS0lvTVh4eU9BUkhk?=
- =?utf-8?B?L2tJRUJEN1RQdmlqUUtvY2hhOGgrSis2Y00wTC9uU0U4WXZuOUZWL25kWXNX?=
- =?utf-8?B?eXBRZkprWlpkUFU4M2RPckgxNlFBM0lCZnIxZzJpeWV0UmczVkMweGRHUFM3?=
- =?utf-8?B?Sjh6TWE3WVNJd21XM1RQODMzT1J3c2ZTa1NyUEs4dTdmMlNtQXlzZU5nVzND?=
- =?utf-8?B?K29aRHA4ZDllcmNWRFNZeDBRUTNheWd2dWNWdHY4RjJIVnhuRGNvRG93NVZv?=
- =?utf-8?B?dGhPVkUvYlJSbmhxZDJFMEF5TU5Bb3RkbjlvVktNQWVqWWlRSWMyNlFYei8v?=
- =?utf-8?B?ZFdzUFpFR0xseWs3ZDNRbW5qenowWXM3MEpjTldRc0J6eVdBT0prNTNqQUF2?=
- =?utf-8?B?SjloL0Jzd0lnSC8yTkFvMzJtemJzckxHeEVKU1FmcU5lcXcrT29BWGsvNmFB?=
- =?utf-8?B?SEE0ZlFaTlkvOUNHZDdjRDN2Vzg4Y1lEOFlRRitsOC9IOVJrSi93YnFyRnB0?=
- =?utf-8?B?d1ZjTm1TUWl4TnBQSytnektHR1hzWk1mT1BuTi9ZVlJyaFlWTVJjSnZ1WUo3?=
- =?utf-8?B?MEUyYkUraHNhcTRtMmNMa3VIS1ovVFlVbTYyc2NVMDlYN2svaDRHYmlpa0lz?=
- =?utf-8?B?RjhZaEF0eVZTUDJBREtqZTdaMkNobkkwTURGTmFHOFlnNGUwSTFSRmEvSmFF?=
- =?utf-8?B?TnE5RXp4MmZOeEFzZ0xUZTBZSlh0VWVnams3eWlpWTNOL1JmN3RleEExRVo4?=
- =?utf-8?B?R0JyVUg1ZkxnV21LSUtocHMzSDJ4bTdYTFpBK1VPWjVoTnBEU1NKaHRLUW1z?=
- =?utf-8?B?ODFUYTdUZm9ZUysrUm9pbEd5ZXZXd1J5ZGRsMjV6eXRmWVIvVUkva2FSYjVC?=
- =?utf-8?B?OUFyTVhNQ2xCWkJEdnNjUm1VM0VLM2lEYkVnazRSalVzQUl3cFk3UDhMcHBJ?=
- =?utf-8?B?U2pMWC93eUIzZy9QVGJGQkp6d21rRTR1R1gyWUdScVdkRVo5R1FTcDlvOGI4?=
- =?utf-8?B?cmNLeWdZKzJnaDlYa0xMSXNRamg3YWE5eWhsTldaS21jaUNDVHBKZGdOcEZT?=
- =?utf-8?B?V2wrZWNhOTBCVEdkMnpIdTNWdGt6MlJXTXlRdDIzanYreUEydGsrTU92SVFu?=
- =?utf-8?B?OHluS3JyS0RiR2N0UVU0V01Ub1l0K2hZVjNjeTJiVEFhTklBWm52eHRWQjI3?=
- =?utf-8?B?THByM21VZ3V2QVV2ZWJEWG5SbFNRZzdoR0lnM0F6aDBxSFU3aU1RbEZYa0VL?=
- =?utf-8?B?SUc5ZDRkWXRhWkRvamZxMlh6eDBGSVJJeHZnanBRU0FUaE5lcUZXMzB4WSt2?=
- =?utf-8?B?cFBNRC91b0FlaSthVXpjK1VnZXMrakl2enVYdFMrU09UZHNQbnY1dk15V243?=
- =?utf-8?B?UEdGL05LczgzTHMrUlRVNk9IallyLzFyb0xwbkxYZ0wrZm9PeUx2MXVwbzEx?=
- =?utf-8?B?NTA4Wk9GUlpFRElnUEpNNDZqODAxQ0F0ejdQS1JZaGtmd1V3MG5QYnZ5K1Rs?=
- =?utf-8?B?MGFTK3VsblR1M3dQaDB6NHhkV3pUaUFERTd4UUxQQjlSK2JsZjRQNForNENm?=
- =?utf-8?B?MFpKYjVWc21qOXBKSmR4T1F3TW9uaFpxY0EzWVZZZFRoMW5RWk5HdWNTMmJr?=
- =?utf-8?B?OWtBbG9XODhZNEphWURHbjdwYnNEUlNPcGRQNmtvNHhuSHZQN2VBQ21MWUxD?=
- =?utf-8?B?L04zYzQvRTBzc25HSGtLMHNBWlgzZTFud1VOUGdTVkhRU0lydExMZ1hiRUVk?=
- =?utf-8?B?OEo3SGtYelUxRW1QT05oNG1FVlB6WDIxc05TVU5EMVpQb0w0WjJIdVFVTnNG?=
- =?utf-8?B?eUhPZm5hZU1JeG5tbTRMbUNKR0h6R2xEaEdyWFRSWksrWnE4UkY5NkZlM2ZX?=
- =?utf-8?B?N0h6WSszYVZhQUVOREhCNDdlZmlXV3UvUFMwbG5sbWFjS3pPWEdnMlBqRGxG?=
- =?utf-8?B?ZWpmb1NNUWN6UDg3NVVwTlhKZGZ4RThBdUI5cFJjazZKWUhyTmZyRm9VZ0Nx?=
- =?utf-8?B?VmVXMXg0T0dtODErRndFcndkWG5EeGY5NGNsSDdoYTZRZFpLbDAwU0pDSnRD?=
- =?utf-8?B?NVRYS3RZNkZvRVEwVjNlajFJVTRVZlM0ek9JbnozeFBQY1U0c25BaFkzMGl5?=
- =?utf-8?B?bG1FZlBZdGxZTGdmSnFHdXdjR240OGZGR3JiQ2w4UE1YSHNaVVMydG9CZHo2?=
- =?utf-8?B?OVRkd0hTaENFTEhscWluWVN2N3RCOWUrTnRuTEs5NHRtWVoxK21LSDQvWnpD?=
- =?utf-8?B?WkhKZkp4U3dVVzE2VG9Fc0hERXRBdUFWRHlSWjdGMDNmUEZzYW1VY1lDNEtF?=
- =?utf-8?Q?lEcw5NvkT6Xp+YVo=3D?=
-X-Exchange-RoutingPolicyChecked: k+VKSPAM7KWe+eF9eQg7nB4SNgLOqJ5F7bFdYbbZTeKXANRkNzvGEEYyC8gBkAnYBQbBnLETSuGZzhg7V4slfrEEpJGCeVVYiKSNWO4OGl7pZi68LFMzCHTPrtuvVgpFVD4uDxqt1/HNubsnanmP1G8FAl6IOpxVKnaoPEg/NVcU52Q0KSEBFFkAPBogHPZy7e9fZJLJe3ETdjYg9N6IwBd9le+DB9VqnLVHfYvwevLcu2RqYd8Pnb86MrH17SC1qPrVolB8jsGaZJmKP6DFKbBWzt6ba1ADz8SHmFKvpVy8K5W1mh+EmY5zJIOQfUYIOwbE9LGf9+WF/pWC99LnEQ==
-X-MS-Exchange-CrossTenant-Network-Message-Id: 6f0f9ecc-edd7-4e03-1a3f-08de80521e93
-X-MS-Exchange-CrossTenant-AuthSource: MN6PR11MB8102.namprd11.prod.outlook.com
-X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-OriginalArrivalTime: 12 Mar 2026 16:12:12.3882
- (UTC)
-X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
-X-MS-Exchange-CrossTenant-Id: 46c98d88-e344-4ed4-8496-4ed7712e255d
-X-MS-Exchange-CrossTenant-MailboxType: HOSTED
-X-MS-Exchange-CrossTenant-UserPrincipalName: NEdWwkLUzCzbtdV4esOcW+KF0h2yXcJdE4EMktG7LaB1JizSgLunmzY78asDDAwWKzmb3uxKUCQCT5c3xwKLv6ET/L3+njS36DMvqibeYL4=
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: DS4PPFDA9EFDFDB
-X-OriginatorOrg: intel.com
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+X-B4-Tracking: v=1; b=H4sIANLlsmkC/yXMQQrCMBAF0KsMf91ATLE22Qo9gFsRaZvRjkKrE
+ 6NC6d1F3b7Fm5FYhRMCzVB+SpJpRKBVQeiHdjyzkYhAcNZVtrTevCa93jNnPqah1cjRuNJt/Lr
+ iuvYdCsJN+STv37nHrtni8MeUuwv3j++GZfkASvaug3oAAAA=
+X-Change-ID: 20260309-workqueue_sharded-2327956e889b
+To: Tejun Heo <tj@kernel.org>, Lai Jiangshan <jiangshanlai@gmail.com>, 
+ Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-kernel@vger.kernel.org, puranjay@kernel.org, 
+ linux-crypto@vger.kernel.org, linux-btrfs@vger.kernel.org, 
+ linux-fsdevel@vger.kernel.org, Michael van der Westhuizen <rmikey@meta.com>, 
+ kernel-team@meta.com, Chuck Lever <chuck.lever@oracle.com>, 
+ Breno Leitao <leitao@debian.org>
+X-Mailer: b4 0.15-dev-363b9
+X-Developer-Signature: v=1; a=openpgp-sha256; l=10065; i=leitao@debian.org;
+ h=from:subject:message-id; bh=jHQXCTGTEh81pGQI5ovCtV4BR7vo7kiocBIpGSB/6V8=;
+ b=owEBbQKS/ZANAwAIATWjk5/8eHdtAcsmYgBpsudLBKWu+8dlXvB6aT4PksjwFqZq3Q7NJnERw
+ OmPvHxXEUSJAjMEAAEIAB0WIQSshTmm6PRnAspKQ5s1o5Of/Hh3bQUCabLnSwAKCRA1o5Of/Hh3
+ bWCFD/9EdT9lnOWzTfLJRsJG0tso2iZnhWhTupiGaiwGMgYUtjBQU8GW6WiIyObhlW4cnSaU3n/
+ L3qK4mt+wggvzWyf4UDb5LyNaQaYUEpIaMlPtPzuKbmO1VVZK56coXyzzEZHDYWsSAZ2Zcp3Nbg
+ 7bYlmWuv5Ry2pozm9qh2j+KzgO/ZkQluDsQ02XtiYVa1/JVfTtFjHKHbuBYxwwdoPbZDwBrqyBW
+ S85GCMsdaALaG68HTU7oAAOtOw1eIYq0WzVA2Uspn5L8SFilYnN5996azOJ6WrzrzgerPe2J/Er
+ dfVzAxr1K4vDIe0D8q+RmNPMDC8Pyu60OSSajMDzxavplR8avJF9CTSWh0CF8RyFgojReSZGowL
+ BPyBLMmWc+kRXVJi+IQXRI/+Ku/lhaTVliumz15PPYd4B88pof1V4llvHDfGEaU7tfoF27cQZiB
+ 0DYOqfl3R9o3Y4F5Zo+8nRRIiNroYlJQezd2FxOUuN8Y4AlHrRMnxPniQdGgMwHtvix/+02/BSh
+ ZSDbMELkqd+/d2RV9p6oB8zfCRqwsUg1HNbUvNQqe3FJigCgTTnxKBsgCxvkUmdW6ijE5ULysHY
+ 40bfYzldMFroyALSO0Gng4dJ09K1J8bh0Lh0HlhX5Lkty4m2HpyzXyAJNDmB7B3GSeeLurnHpWb
+ wsX7Lk4eTKUt43w==
+X-Developer-Key: i=leitao@debian.org; a=openpgp;
+ fpr=AC8539A6E8F46702CA4A439B35A3939FFC78776D
+X-Debian-User: leitao
 
-On 3/10/26 12:49, Philipp Hahn wrote:
-> Prefer using IS_ERR_OR_NULL() over using IS_ERR() and a manual NULL
-> check.
-> 
-> Change generated with coccinelle.
-> 
-> To: Igor Russkikh <irusskikh@marvell.com>
-> To: Andrew Lunn <andrew+netdev@lunn.ch>
-> To: "David S. Miller" <davem@davemloft.net>
-> To: Eric Dumazet <edumazet@google.com>
-> To: Jakub Kicinski <kuba@kernel.org>
-> To: Paolo Abeni <pabeni@redhat.com>
-> To: Pavan Chebbi <pavan.chebbi@broadcom.com>
-> To: Michael Chan <mchan@broadcom.com>
-> To: Potnuri Bharat Teja <bharat@chelsio.com>
-> To: Tony Nguyen <anthony.l.nguyen@intel.com>
-> To: Przemek Kitszel <przemyslaw.kitszel@intel.com>
-> To: Taras Chornyi <taras.chornyi@plvision.eu>
-> To: Maxime Coquelin <mcoquelin.stm32@gmail.com>
-> To: Alexandre Torgue <alexandre.torgue@foss.st.com>
-> To: Iyappan Subramanian <iyappan@os.amperecomputing.com>
-> To: Keyur Chudgar <keyur@os.amperecomputing.com>
-> To: Quan Nguyen <quan@os.amperecomputing.com>
-> To: Heiner Kallweit <hkallweit1@gmail.com>
-> To: Russell King <linux@armlinux.org.uk>
-> Cc: netdev@vger.kernel.org
-> Cc: linux-kernel@vger.kernel.org
-> Cc: intel-wired-lan@lists.osuosl.org
-> Cc: linux-stm32@st-md-mailman.stormreply.com
-> Cc: linux-arm-kernel@lists.infradead.org
-> Cc: linux-usb@vger.kernel.org
-> Signed-off-by: Philipp Hahn <phahn-oss@avm.de>
+TL;DR: Some modern processors have many CPUs per LLC (L3 cache), and
+unbound workqueues using the default affinity (WQ_AFFN_CACHE) collapse
+to a single worker pool, causing heavy spinlock (pool->lock) contention.
+Create a new affinity (WQ_AFFN_CACHE_SHARD) that caps each pool at
+wq_cache_shard_size CPUs (default 8).
 
-this is too trivial change, especially when combined like that
-https://docs.kernel.org/process/maintainer-netdev.html#clean-up-patches
+Problem
+=======
 
-> ---
->   drivers/net/ethernet/aquantia/atlantic/aq_ring.c        | 2 +-
->   drivers/net/ethernet/broadcom/tg3.c                     | 2 +-
->   drivers/net/ethernet/chelsio/cxgb4/cxgb4_tc_flower.c    | 3 +--
->   drivers/net/ethernet/intel/ice/devlink/devlink.c        | 2 +-
->   drivers/net/ethernet/marvell/prestera/prestera_router.c | 2 +-
->   drivers/net/ethernet/stmicro/stmmac/stmmac_main.c       | 2 +-
->   drivers/net/mdio/mdio-xgene.c                           | 2 +-
->   drivers/net/usb/r8152.c                                 | 2 +-
->   8 files changed, 8 insertions(+), 9 deletions(-)
-> 
-> diff --git a/drivers/net/ethernet/aquantia/atlantic/aq_ring.c b/drivers/net/ethernet/aquantia/atlantic/aq_ring.c
-> index e270327e47fd804cc8ee5cfd53ed1b993c955c41..43edef35c4b1ff606b2f1519a07fad4c9a990ad4 100644
-> --- a/drivers/net/ethernet/aquantia/atlantic/aq_ring.c
-> +++ b/drivers/net/ethernet/aquantia/atlantic/aq_ring.c
-> @@ -810,7 +810,7 @@ static int __aq_ring_xdp_clean(struct aq_ring_s *rx_ring,
->   		}
->   
->   		skb = aq_xdp_run_prog(aq_nic, &xdp, rx_ring, buff);
-> -		if (IS_ERR(skb) || !skb)
-> +		if (IS_ERR_OR_NULL(skb))
->   			continue;
->   
->   		if (ptp_hwtstamp_len > 0)
-> diff --git a/drivers/net/ethernet/broadcom/tg3.c b/drivers/net/ethernet/broadcom/tg3.c
-> index 2328fce336447eb4a796f9300ccc0ab536ff0a35..8ed79f34f03d81184dcc12e6eaff009cb8f7756e 100644
-> --- a/drivers/net/ethernet/broadcom/tg3.c
-> +++ b/drivers/net/ethernet/broadcom/tg3.c
-> @@ -7943,7 +7943,7 @@ static int tg3_tso_bug(struct tg3 *tp, struct tg3_napi *tnapi,
->   
->   	segs = skb_gso_segment(skb, tp->dev->features &
->   				    ~(NETIF_F_TSO | NETIF_F_TSO6));
-> -	if (IS_ERR(segs) || !segs) {
-> +	if (IS_ERR_OR_NULL(segs)) {
->   		tnapi->tx_dropped++;
->   		goto tg3_tso_bug_end;
->   	}
-> diff --git a/drivers/net/ethernet/chelsio/cxgb4/cxgb4_tc_flower.c b/drivers/net/ethernet/chelsio/cxgb4/cxgb4_tc_flower.c
-> index 3307e50426819087ad985178c4a5383f16b8e7b4..1c8a6445d4b2e3535d8f1b7908dd02d8dd2f23fa 100644
-> --- a/drivers/net/ethernet/chelsio/cxgb4/cxgb4_tc_flower.c
-> +++ b/drivers/net/ethernet/chelsio/cxgb4/cxgb4_tc_flower.c
-> @@ -1032,8 +1032,7 @@ static void ch_flower_stats_handler(struct work_struct *work)
->   	do {
->   		rhashtable_walk_start(&iter);
->   
-> -		while ((flower_entry = rhashtable_walk_next(&iter)) &&
-> -		       !IS_ERR(flower_entry)) {
-> +		while (!IS_ERR_OR_NULL((flower_entry = rhashtable_walk_next(&iter)))) {
->   			ret = cxgb4_get_filter_counters(adap->port[0],
->   							flower_entry->filter_id,
->   							&packets, &bytes,
-> diff --git a/drivers/net/ethernet/intel/ice/devlink/devlink.c b/drivers/net/ethernet/intel/ice/devlink/devlink.c
-> index 6c72bd15db6d75a1d4fa04ef8fefbd26fb6e84bd..3d08b9187fd76ca3198af28111b6f1c1765ea01e 100644
-> --- a/drivers/net/ethernet/intel/ice/devlink/devlink.c
-> +++ b/drivers/net/ethernet/intel/ice/devlink/devlink.c
-> @@ -791,7 +791,7 @@ static void ice_traverse_tx_tree(struct devlink *devlink, struct ice_sched_node
->   						  node->parent->rate_node);
->   	}
->   
-> -	if (rate_node && !IS_ERR(rate_node))
-> +	if (!IS_ERR_OR_NULL(rate_node))
->   		node->rate_node = rate_node;
->   
->   traverse_children:
-> diff --git a/drivers/net/ethernet/marvell/prestera/prestera_router.c b/drivers/net/ethernet/marvell/prestera/prestera_router.c
-> index b036b173a308b5f994ad8538eb010fa27196988c..4492938e8a3da91d32efe8d45ccbe2eb437c0e49 100644
-> --- a/drivers/net/ethernet/marvell/prestera/prestera_router.c
-> +++ b/drivers/net/ethernet/marvell/prestera/prestera_router.c
-> @@ -1061,7 +1061,7 @@ static void __prestera_k_arb_hw_state_upd(struct prestera_switch *sw,
->   		n = NULL;
->   	}
->   
-> -	if (!IS_ERR(n) && n) {
-> +	if (!IS_ERR_OR_NULL(n)) {
->   		neigh_event_send(n, NULL);
->   		neigh_release(n);
->   	} else {
-> diff --git a/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c b/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
-> index 6827c99bde8c22db42b363d2d36ad6f26075ed50..356a4e9ce04b1fcf8786d7274d31ace404be2cf6 100644
-> --- a/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
-> +++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
-> @@ -1275,7 +1275,7 @@ static int stmmac_init_phy(struct net_device *dev)
->   	/* Some DT bindings do not set-up the PHY handle. Let's try to
->   	 * manually parse it
->   	 */
-> -	if (!phy_fwnode || IS_ERR(phy_fwnode)) {
-> +	if (IS_ERR_OR_NULL(phy_fwnode)) {
->   		int addr = priv->plat->phy_addr;
->   		struct phy_device *phydev;
->   
-> diff --git a/drivers/net/mdio/mdio-xgene.c b/drivers/net/mdio/mdio-xgene.c
-> index a8f91a4b7fed0927ee14e408000cd3a2bfb9b09a..09b30b563295c6085dc1358ac361301e5cf6b2a8 100644
-> --- a/drivers/net/mdio/mdio-xgene.c
-> +++ b/drivers/net/mdio/mdio-xgene.c
-> @@ -265,7 +265,7 @@ struct phy_device *xgene_enet_phy_register(struct mii_bus *bus, int phy_addr)
->   	struct phy_device *phy_dev;
->   
->   	phy_dev = get_phy_device(bus, phy_addr, false);
-> -	if (!phy_dev || IS_ERR(phy_dev))
-> +	if (IS_ERR_OR_NULL(phy_dev))
->   		return NULL;
->   
->   	if (phy_device_register(phy_dev))
-> diff --git a/drivers/net/usb/r8152.c b/drivers/net/usb/r8152.c
-> index 0c83bbbea2e7c322ee6339893e281237663bd3ae..73f17ebd7d40007eec5004f887a46249defd28ab 100644
-> --- a/drivers/net/usb/r8152.c
-> +++ b/drivers/net/usb/r8152.c
-> @@ -2218,7 +2218,7 @@ static void r8152_csum_workaround(struct r8152 *tp, struct sk_buff *skb,
->   
->   		features &= ~(NETIF_F_SG | NETIF_F_IPV6_CSUM | NETIF_F_TSO6);
->   		segs = skb_gso_segment(skb, features);
-> -		if (IS_ERR(segs) || !segs)
-> +		if (IS_ERR_OR_NULL(segs))
->   			goto drop;
->   
->   		__skb_queue_head_init(&seg_list);
-> 
+Some modern systems have many CPUs sharing one LLC. Here are some examples I have
+access to:
+
+ * NVIDIA Grace CPU: 72 real CPUs per LLC
+ * Intel(R) Xeon(R) Gold 6450C: 59 SMT threads per LLC
+ * Intel(R) Xeon(R) Platinum 8321HC: 51 SMT threads per LLC
+
+On these systems, the default unbound workqueue uses the WQ_AFFN_CACHE
+affinity, which results in just a single pool for the whole system (when
+all the CPUs share the same LLC as the systems above).
+
+This causes contention on pool->lock, potentially affecting IO
+performance (btrfs, writeback, etc)
+
+When profiling an IO-intensive usercache at Meta, I found significant
+contention on __queue_work(), making it one of the top 5 contended
+locks.
+
+Additionally, Chuck Lever recently reported this problem:
+
+	"For example, on a 12-core system with a single shared L3 cache running
+	NFS over RDMA with 12 fio jobs, perf shows approximately 39% of CPU
+	cycles spent in native_queued_spin_lock_slowpath, nearly all from
+	__queue_work() contending on the single pool lock.
+
+	On such systems WQ_AFFN_CACHE, WQ_AFFN_SMT, and WQ_AFFN_NUMA
+	scopes all collapse to a single pod."
+
+Link: https://lore.kernel.org/all/20260203143744.16578-1-cel@kernel.org/
+
+Solution
+========
+
+Tejun suggested solving this problem by creating an intermediate
+affinity level (aka cache_shard), which would shard the WQ_AFFN_CACHE
+using a heuristic, avoiding collapsing all those affinity levels to
+a single pod.
+
+Solve this by creating an intermediate sharded cache affinity, and use
+it as the default one.
+
+Micro benchmark
+===============
+
+To test its benefit, I created a microbenchmark (part of this series)
+that enqueues work (queue_work) in a loop and reports the latency.
+
+  Benchmark on NVIDIA Grace (72 CPUs, single LLC, 50k items/thread):
+
+    cpu          3248519 items/sec p50=10944    p90=11488    p95=11648 ns
+    smt          3362119 items/sec p50=10945    p90=11520    p95=11712 ns
+    cache_shard  3629098 items/sec p50=6080     p90=8896     p95=9728 ns (NEW) **
+    cache        708168 items/sec  p50=44000    p90=47104    p95=47904 ns
+    numa         710559 items/sec  p50=44096    p90=47265    p95=48064 ns
+    system       718370 items/sec  p50=43104    p90=46432    p95=47264 ns
+
+Same benchmark on Intel 8321HC.
+
+    cpu          2831751 items/sec p50=3909     p90=9222     p95=11580 ns
+    smt          2810699 items/sec p50=2229     p90=4928     p95=5979 ns
+    cache_shard  1861028 items/sec p50=4874     p90=8423     p95=9415 ns (NEW)
+    cache        591001 items/sec p50=24901     p90=29865    p95=31169 ns
+    numa         590431 items/sec p50=24901     p90=29819    p95=31133 ns
+    system       591912 items/sec p50=25049     p90=29916    p95=31219 ns
+
+(** It is still unclear why cache_shard is "better" than SMT on
+Grace/ARM. The result is constantly reproducible, though. Still
+investigating it)
+
+Block benchmark
+===============
+
+Host: Intel(R) Xeon(R) D-2191A CPU @ 1.60GHz (16 Cores - 32 SMT)
+
+In order to stress the workqueue, I am running fio on a dm-crypt device.
+
+  1) Create a plain dm-crypt device on top of NVMe
+   * cryptsetup creates an encrypted block device (/dev/mapper/crypt_nvme) on top
+     of a raw NVMe drive. All I/O to this device goes through kcryptd — dm-crypt's
+     workqueue that handles AES encryption/decryption of every data block.
+
+   # cryptsetup open --type plain -c aes-xts-plain64 -s 256 /dev/nvme0n1 crypt_nvme -d -
+
+  2) Run fio
+   * fio hammers the encrypted device with 36 threads (one per CPU), each doing
+     128-deep 4K _buffered_ I/O for 10 seconds. This generates massive workqueue
+     pressure — every I/O completion triggers a kcryptd work item to encrypt or
+     decrypt data.
+
+   # fio --filename=/dev/mapper/crypt_nvme \
+         --ioengine=io_uring --direct=0 \
+         --bs=4k --iodepth=128 \
+         --numjobs=$(nproc) --runtime=10 \
+         --time_based --group_reporting
+
+Running this for ~3 hours:
+
+  ┌────────────┬────────────────────────┬────────────────────────┬───────────┬────────┬─────────────────┐
+  │ Workload   │       Avg cache        │    Avg cache_shard     │ Avg delta │ Stddev │  2-sigma range  │
+  ├────────────┼────────────────────────┼────────────────────────┼───────────┼────────┼─────────────────┤
+  │ randread   │ 389 MiB/s (99.6k IOPS) │ 413 MiB/s (106k IOPS)  │ +5.9%     │ 3.3%   │ -0.7% to +12.5% │
+  ├────────────┼────────────────────────┼────────────────────────┼───────────┼────────┼─────────────────┤
+  │ randwrite  │ 622 MiB/s (159k IOPS)  │ 614 MiB/s (157k IOPS)  │ -1.3%     │ 0.9%   │ -3.1% to +0.5%  │
+  ├────────────┼────────────────────────┼────────────────────────┼───────────┼────────┼─────────────────┤
+  │ randrw     │ 240 MiB/s (61.4k IOPS) │ 250 MiB/s (64.1k IOPS) │ +4.3%     │ 3.4%   │ -2.5% to +11.1% │
+  └────────────┴────────────────────────┴────────────────────────┴───────────┴────────┴─────────────────┘
+
+Same results for buffered IO:
+
+  ┌───────────┬────────────────────────┬────────────────────────┬───────────┬────────┬────────────────┐
+  │ Workload  │       Avg cache        │    Avg cache_shard     │ Avg delta │ Stddev │ 2-sigma range  │
+  ├───────────┼────────────────────────┼────────────────────────┼───────────┼────────┼────────────────┤
+  │ randread  │ 559 MiB/s (143k IOPS)  │ 577 MiB/s (148k IOPS)  │ +3.1%     │ 1.3%   │ +0.5% to +5.7% │
+  ├───────────┼────────────────────────┼────────────────────────┼───────────┼────────┼────────────────┤
+  │ randwrite │ 437 MiB/s (112k IOPS)  │ 431 MiB/s (110k IOPS)  │ -1.5%     │ 1.0%   │ -3.5% to +0.5% │
+  ├───────────┼────────────────────────┼────────────────────────┼───────────┼────────┼────────────────┤
+  │ randrw    │ 272 MiB/s (69.7k IOPS) │ 273 MiB/s (69.8k IOPS) │ +0.1%     │ 1.5%   │ -2.9% to +3.1% │
+  └───────────┴────────────────────────┴────────────────────────┴───────────┴────────┴────────────────┘
+
+(randwrite result seems to be noise (!?))
+
+Patchset organization
+=====================
+
+This series adds a new WQ_AFFN_CACHE_SHARD affinity scope that
+subdivides each LLC into groups of at most wq_cache_shard_size CPUs
+(default 8, tunable via boot parameter), providing an intermediate
+option between per-LLC and per-SMT-core granularity.
+
+On top of the feature, this patchset also prepares the code for the new
+cache_shard affinity, and creates a stress test for workqueue.
+
+Then, make this new cache affinity the default one.
+
+On systems with 8 or fewer CPUs per LLC, CACHE_SHARD produces a single
+shard covering the entire LLC, making it functionally identical to the
+previous CACHE default. The sharding only activates when an LLC has more
+than 8 CPUs.
+
+---
+Breno Leitao (5):
+      workqueue: fix parse_affn_scope() prefix matching bug
+      workqueue: add WQ_AFFN_CACHE_SHARD affinity scope
+      workqueue: set WQ_AFFN_CACHE_SHARD as the default affinity scope
+      workqueue: add test_workqueue benchmark module
+      tools/workqueue: add CACHE_SHARD support to wq_dump.py
+
+ include/linux/workqueue.h  |   1 +
+ kernel/workqueue.c         |  72 ++++++++++--
+ lib/Kconfig.debug          |  10 ++
+ lib/Makefile               |   1 +
+ lib/test_workqueue.c       | 275 +++++++++++++++++++++++++++++++++++++++++++++
+ tools/workqueue/wq_dump.py |   3 +-
+ 6 files changed, 352 insertions(+), 10 deletions(-)
+---
+base-commit: b29fb8829bff243512bb8c8908fd39406f9fd4c3
+change-id: 20260309-workqueue_sharded-2327956e889b
+
+Best regards,
+--  
+Breno Leitao <leitao@debian.org>
 

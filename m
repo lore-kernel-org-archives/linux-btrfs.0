@@ -1,109 +1,203 @@
-Received: from stravinsky.debian.org (stravinsky.debian.org [82.195.75.108])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-pj1-f44.google.com (mail-pj1-f44.google.com [209.85.216.44])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7B1AB3F7874;
-	Thu, 12 Mar 2026 16:18:47 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=82.195.75.108
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773332328; cv=none; b=e7ZF/9zEqDxR6n+LROcaEViRTZIlL9To+PfBLSl1mOyOCKciXyG0b+BR6UFA3C/w82+69BVy4dxZsAmvwlkfuQ/CCALwKUkxrUMY1snKKg0adkkNCGOos6c62vB9WOQqPwVqjmFrxrmsKx5ynwbyBzyO8S72MkrQYs7PLQVNQ0E=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773332328; c=relaxed/simple;
-	bh=r+H4nN8FEm5hqBTVEcbg+154s0B6+qEaV7hbQZF5BCU=;
-	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
-	 In-Reply-To:To:Cc; b=ZoQYV6yvDdaMnNrLUAU/ahfsElvHQA8Y0l3dwa4QBKiAOSdPJ0q1iMAaknu0eyNZkw2y63BZ0S0j+xMI/9bwj32oEKvYBuEsxQjn0tJeyfFBdz9RkYLbA21VQr4a5Ltk/qV3YNhPiwL/HTtYmET59bSvwvh8UvzstRBVkc8jNfk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=debian.org; spf=none smtp.mailfrom=debian.org; dkim=pass (2048-bit key) header.d=debian.org header.i=@debian.org header.b=FkQyeAB/; arc=none smtp.client-ip=82.195.75.108
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=debian.org
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=debian.org
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 17BA23CCFB5
+	for <linux-btrfs@vger.kernel.org>; Thu, 12 Mar 2026 16:54:44 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.216.44
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1773334485; cv=pass; b=RfimvJ8yOXECcB8/za6cj4CiJvrv5RJX8QCYdkWtyilJGvRLozEB0AmwRciW2pJlzWeaYS7UOCuFI+2fxeZZEdkqNLwKj5lVl9NuRJptOOaJ2Em9n9bZ6XbhqcMMgH2vQTUPT9eClQjLKYd5y1Vuskx///EeBFJh/QOLfSxWbRI=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1773334485; c=relaxed/simple;
+	bh=0ivvtg/7i339ZQR+9yPgWn9tEIiWD5JfW0IrpKNu4D4=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=b3YCi91R+5bAnc3pO4T1k1sqdm2NvLO7xWR2id8mjQfOVChpkFBZjo/iyIetrF3ldqR6pSvKuFUVO4njV3V4HC7pljs3R89lS8XGpV6/+piZ5MEZX9iFdQeT9lZ4rMBLQEHdH6PKoFAK/IVXgY711K9FeSEBJZpdua7B9HBljtA=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=kFrQITnb; arc=pass smtp.client-ip=209.85.216.44
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=debian.org header.i=@debian.org header.b="FkQyeAB/"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=debian.org;
-	s=smtpauto.stravinsky; h=X-Debian-User:Cc:To:In-Reply-To:References:
-	Message-Id:Content-Transfer-Encoding:Content-Type:MIME-Version:Subject:Date:
-	From:Reply-To:Content-ID:Content-Description;
-	bh=VG0dZbZo9KDGej1wf7CUWCHE5nKIFztp1R/yW2wVRKY=; b=FkQyeAB/VV7RF0kXpLFUAlFwvL
-	HXDl9sN9WFn2NMcnyOuatdnTn5etxr8r7l+ncxCQrJamiNBLbEnshGUzlpu0cFvPW/Ul3asIXF74A
-	OQTYFDB17IMKzM0VXvOGPB7/kZMmIR+qVeS+NQGcpO9H+8c/wtTNw+AZ6JqhiXUvaeaLTTFSDY8nS
-	0V6yJLFqyAIQo8h3ZlyioJdOYOfTBWD11gOxS5/0sOjYA4x6kHCw3MJsDvq73q6fouRJq2EUa7vZZ
-	uWN5UYEHY53aWAwHEjj5LhVDIHYQG7GRQzGqx5Gq1/Dahx/oqtHROrpokctpLyM5/L5zIBf14kvPQ
-	WVKC1k8A==;
-Received: from authenticated user
-	by stravinsky.debian.org with esmtpsa (TLS1.3:ECDHE_X25519__RSA_PSS_RSAE_SHA256__AES_256_GCM:256)
-	(Exim 4.94.2)
-	(envelope-from <leitao@debian.org>)
-	id 1w0ikH-004fOP-Fd; Thu, 12 Mar 2026 16:18:45 +0000
-From: Breno Leitao <leitao@debian.org>
-Date: Thu, 12 Mar 2026 09:12:06 -0700
-Subject: [PATCH RFC 5/5] tools/workqueue: add CACHE_SHARD support to
- wq_dump.py
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="kFrQITnb"
+Received: by mail-pj1-f44.google.com with SMTP id 98e67ed59e1d1-35a1dd9c842so316908a91.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Mar 2026 09:54:44 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1773334483; cv=none;
+        d=google.com; s=arc-20240605;
+        b=dng/NXroR6QY3tkVH/awzznhHSOAmy2W6Y78Yq2PAcWEf6rKXQQfX5VsE2N/DBb7nV
+         o4gQraOzVEbH74YYKR4EUl9xdkfVL5d/FoKT9MU/b5PpJej9LPrOYUj3Zl1dIn7oZ41m
+         M9wEkHmP7u2TumhTag3xOM4ugvUvrJxRDlk+qWP0rxnSt56ao6P+oMY+0qugX/+g+Udj
+         NhqRDPwQG9d1TrIDJfZJ4wAj+f/0PXwKs0tyxHfBca9XW/DXLETAt3fxAmJwDlFJPqwK
+         yVIOADNbll551A9I3sXZ4/7C4JKCI3Ys29Mc3eyYvmeJd224MmgC6KFZNokh78gXhc9+
+         y1jQ==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:dkim-signature;
+        bh=+kWy5KRAZzJ0k+gfnUe4+KiD3cukw8nZMNARL7dWDnQ=;
+        fh=UAid8CGyT/q04n/rPaW+nTqI1JzfUPQ1oTM59gPyueU=;
+        b=jHabBQ5x5iQXi4NeVxXM8iZKMwvbBHGToIcs0dU2b7gpxOKn2brktMSRUkbg2J+SQJ
+         TyavyeEsnvhoI0AxslUISxb6Va31LptF6i1DAynGVhf27dga5X8SdL0fUqgof9GGW0wx
+         wHE74/SFuYRLtjpvAW2JLhsTumKs1MtCswZGm7NG2or25KnOjrlwyU22uQvCE9rUmkQL
+         2KW+zACgVGpgZt30ps4oXrUot9/EW6uol2vsyC5sRDuK0Z64DH8CGnBvSrO9Y5IefJBi
+         bDy0+/WYE6xLcpxd4AO2JrUQbNRkb7ye1TIHYiugC7jqR9LoD8clUHx/mzicazhvJr1q
+         lgaw==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1773334483; x=1773939283; darn=vger.kernel.org;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=+kWy5KRAZzJ0k+gfnUe4+KiD3cukw8nZMNARL7dWDnQ=;
+        b=kFrQITnbSdq6fGGAo1Qs91MmVTz356ySgdYWMhoXz+qDA2sI5h/kKKPobud1lef9Qq
+         Vnjg2VUjWxY13G90CmzMMLIGG1mhAwthMdOZYeJon+O+0g87Kr6AJ417GKQwYBg4ntGg
+         crbqh1wylitW5W3iDY0c9cFEY7XSz1kk+X6ijp5ETi+DfQfNFfcOE0+jm8SyHkpkeZCH
+         z7cnWY15WdETUtxAXisuTIbTwonAFvkgAQR0r46HDiAaLCOdaFl6hAZomSDbAEI+l/d2
+         UjnUvLY2rcGWyZPKGUWcqGXGW+Udo+G6jXAxvhMluPCc79Lf1wiRS3jOdfepdDepHnRM
+         dA6w==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1773334483; x=1773939283;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-gg:x-gm-message-state:from
+         :to:cc:subject:date:message-id:reply-to;
+        bh=+kWy5KRAZzJ0k+gfnUe4+KiD3cukw8nZMNARL7dWDnQ=;
+        b=fcxvwOBdGGrtWyhpkmphdv7zNaTjiXdf4l/iBE7Z29fNFHguv2oEGScL2PLipZEkRB
+         QeXuLq08bdg+gi1Z7OQYPPPrvs3YYhn/lO1ZAVf1F3s8Z/GCuC9qBXzSOBFKoQ4zNcyb
+         JqnLeP93okrhRXFM6HpKX8Mr6vwi8jYwW4ToAhrevnVUrOy88hauUey3uztbdVxF64KQ
+         Leh4azdVbxbh3iRPbP6aR+/eL8W0TZ45252PEWkDfm/3sooessXyKsJPMLUfYffwgBdF
+         GzHfCeNt2MNl+tk/0eysbQTCRzdxfmQL5hSytHJjqrFIp/zQtMj3XckGqkLyfqMbxSr9
+         U65Q==
+X-Forwarded-Encrypted: i=1; AJvYcCUl1puvsb5pUo4ppHz1YD8oqSivVJZEhnDKLrUTRK4laRWipHuYxrZlLahCR+/tmbJXwVhyjg5JH/Ls3w==@vger.kernel.org
+X-Gm-Message-State: AOJu0YzGLkJZMnrtheoGi7CgQG5ds13mpfSmvE3bkvCuu3GcD8JMW0x7
+	LbvjQ673gqYZtZEmzMCtdsR6BxVSKOaYAIH27GL7aLQpad33mLtAyYblhRL6dO5UC0eriOzgXGB
+	ELwWf4XCaNJ1W/glp8tgV2bqYhSgEFLo=
+X-Gm-Gg: ATEYQzxpwL0Zto0DteJzA+ishlm3pNkjm5oPsPPtP6v9OIllcnW29cdOkHIRFXcntPW
+	v8He1zxGM5hyejqygH/Qoy569W31wxdVH4nVxI94tYZtR9zzMoYKYGarSqRzol07wCkD6leWhNH
+	viySpMHlNpZpsHjAR/MzSZ+g5OPHLPCoeposiOwJmjdflENCKbdgie72ejDy4xbyI+AXzK0y5iM
+	/jbO2KJsRH6rBybXHk9fGjP8L6Ie+mOWmEULueg/Sfhx8T7rx3dFk0YVluGhUOmQDdoMa4YiIWJ
+	Ek7Z2r0DCv0qDO49NAJf8zM=
+X-Received: by 2002:a17:90b:288e:b0:359:8d0d:5905 with SMTP id
+ 98e67ed59e1d1-35a21eba194mr250522a91.9.1773334483388; Thu, 12 Mar 2026
+ 09:54:43 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 7bit
-Message-Id: <20260312-workqueue_sharded-v1-5-2c43a7b861d0@debian.org>
-References: <20260312-workqueue_sharded-v1-0-2c43a7b861d0@debian.org>
-In-Reply-To: <20260312-workqueue_sharded-v1-0-2c43a7b861d0@debian.org>
-To: Tejun Heo <tj@kernel.org>, Lai Jiangshan <jiangshanlai@gmail.com>, 
- Andrew Morton <akpm@linux-foundation.org>
-Cc: linux-kernel@vger.kernel.org, puranjay@kernel.org, 
- linux-crypto@vger.kernel.org, linux-btrfs@vger.kernel.org, 
- linux-fsdevel@vger.kernel.org, Michael van der Westhuizen <rmikey@meta.com>, 
- kernel-team@meta.com, Chuck Lever <chuck.lever@oracle.com>, 
- Breno Leitao <leitao@debian.org>
-X-Mailer: b4 0.15-dev-363b9
-X-Developer-Signature: v=1; a=openpgp-sha256; l=1483; i=leitao@debian.org;
- h=from:subject:message-id; bh=r+H4nN8FEm5hqBTVEcbg+154s0B6+qEaV7hbQZF5BCU=;
- b=owEBbQKS/ZANAwAIATWjk5/8eHdtAcsmYgBpsudLdu6jztiCIa49vWfR67tssVeoNTyxtlM4e
- G2BSgAQvS2JAjMEAAEIAB0WIQSshTmm6PRnAspKQ5s1o5Of/Hh3bQUCabLnSwAKCRA1o5Of/Hh3
- bZiMD/9HmhdhcqFn2Ncw/zabyyHdLOliiElUKHcXEcS64MVyiyyML/7/jidN/oEELOSWa7qmcZq
- QorndoXg9UF0GhV9F0P7wZ3utzL8Z7kIymthUQ6IG3SM1OTMwUGYu3ooLLUQUfSSkFDwrU01rkj
- AIWpV4JZOigopP22XnRcrG4VY+6ewJog19NtlE/Geu0KfUzGDrSUsqjIPRKKY5B2bv1wRJ7rxKw
- SFmBXDWIJ7NuRZ/hL1vkJ/kGcePkyi04c+FOsnXk50Gt2ncEiBs8injNx+O+YBxN81mAbpcRmMC
- mmtXP2CJ+JyowH1LcXuiPMt0skOH0OQkaDNrqro07yTgaemEjek9rJwu8vGfY+g2zI/+gZCvGsY
- pfN/9Oq6wGuQvlN2sOQoMA3TEWZDCIxsK9s2C9FfaQpD1eE7ULjlzQs6jvY+K0cans6AItP5C42
- 7RawNU+sIkZGo7pa1TeZNFKiqIu+TyxvvqkKUDRiwGHa32+4F46tm4PYCcqFyd08gI3jZRs/ZzG
- KTnGE0eW7Ybwj9MU+Qr+G6PObV4U0GFThoDg78FqwLmqHMHlnJQY/TzjB54lwwZ0MzPwcDzO1AN
- l1OBNynFfFg3h5CNGLBFav8efnVzrCtofyNRyjr0XOOwCZSnXlF9hkV4k9GzScT2Sd+ZclxbSbn
- kqv+o3SIGuwqGvw==
-X-Developer-Key: i=leitao@debian.org; a=openpgp;
- fpr=AC8539A6E8F46702CA4A439B35A3939FFC78776D
-X-Debian-User: leitao
+References: <20260312150523.2054552-1-vineeth@bitbyteword.org>
+ <1e3c2830-765e-4271-89f7-0b6784b37597@efficios.com> <20260312112354.3dd99e36@gandalf.local.home>
+ <219d015d-076b-4c80-8f63-88569115fdad@efficios.com> <20260312114041.5193c729@gandalf.local.home>
+ <1becdbce-2c01-468a-bbab-42b5dea9fdf8@efficios.com> <CAO7JXPjnnruhM5oC6xMgnYaQ9efzYFqMCFiJLNM3HCQ+ZeCiJw@mail.gmail.com>
+In-Reply-To: <CAO7JXPjnnruhM5oC6xMgnYaQ9efzYFqMCFiJLNM3HCQ+ZeCiJw@mail.gmail.com>
+From: Andrii Nakryiko <andrii.nakryiko@gmail.com>
+Date: Thu, 12 Mar 2026 09:54:29 -0700
+X-Gm-Features: AaiRm51tg7oVvkVGab0X55k0oYxIuUltKNvtNsrbO-Cw57of2y67mwv1ziUvJS0
+Message-ID: <CAEf4BzbnfyhCqp0ne=2gRnVxp-mdGmuZwDeFRyhRYH+eDcz2-w@mail.gmail.com>
+Subject: Re: [PATCH 00/15] tracepoint: Avoid double static_branch evaluation
+ at guarded call sites
+To: Vineeth Remanan Pillai <vineeth@bitbyteword.org>
+Cc: Mathieu Desnoyers <mathieu.desnoyers@efficios.com>, Steven Rostedt <rostedt@goodmis.org>, 
+	Peter Zijlstra <peterz@infradead.org>, Dmitry Ilvokhin <d@ilvokhin.com>, 
+	Masami Hiramatsu <mhiramat@kernel.org>, Ingo Molnar <mingo@redhat.com>, Jens Axboe <axboe@kernel.dk>, 
+	io-uring@vger.kernel.org, "David S. Miller" <davem@davemloft.net>, 
+	Eric Dumazet <edumazet@google.com>, Jakub Kicinski <kuba@kernel.org>, Paolo Abeni <pabeni@redhat.com>, 
+	Alexei Starovoitov <ast@kernel.org>, Daniel Borkmann <daniel@iogearbox.net>, 
+	Marcelo Ricardo Leitner <marcelo.leitner@gmail.com>, Xin Long <lucien.xin@gmail.com>, 
+	Jon Maloy <jmaloy@redhat.com>, Aaron Conole <aconole@redhat.com>, 
+	Eelco Chaudron <echaudro@redhat.com>, Ilya Maximets <i.maximets@ovn.org>, netdev@vger.kernel.org, 
+	bpf@vger.kernel.org, linux-sctp@vger.kernel.org, 
+	tipc-discussion@lists.sourceforge.net, dev@openvswitch.org, 
+	Oded Gabbay <ogabbay@kernel.org>, Koby Elbaz <koby.elbaz@intel.com>, 
+	dri-devel@lists.freedesktop.org, "Rafael J. Wysocki" <rafael@kernel.org>, 
+	Viresh Kumar <viresh.kumar@linaro.org>, "Gautham R. Shenoy" <gautham.shenoy@amd.com>, 
+	Huang Rui <ray.huang@amd.com>, Mario Limonciello <mario.limonciello@amd.com>, 
+	Len Brown <lenb@kernel.org>, Srinivas Pandruvada <srinivas.pandruvada@linux.intel.com>, 
+	linux-pm@vger.kernel.org, MyungJoo Ham <myungjoo.ham@samsung.com>, 
+	Kyungmin Park <kyungmin.park@samsung.com>, Chanwoo Choi <cw00.choi@samsung.com>, 
+	=?UTF-8?Q?Christian_K=C3=B6nig?= <christian.koenig@amd.com>, 
+	Sumit Semwal <sumit.semwal@linaro.org>, linaro-mm-sig@lists.linaro.org, 
+	Eddie James <eajames@linux.ibm.com>, Andrew Jeffery <andrew@codeconstruct.com.au>, 
+	Joel Stanley <joel@jms.id.au>, linux-fsi@lists.ozlabs.org, 
+	David Airlie <airlied@gmail.com>, Simona Vetter <simona@ffwll.ch>, 
+	Alex Deucher <alexander.deucher@amd.com>, Danilo Krummrich <dakr@kernel.org>, 
+	Matthew Brost <matthew.brost@intel.com>, Philipp Stanner <phasta@kernel.org>, 
+	Harry Wentland <harry.wentland@amd.com>, Leo Li <sunpeng.li@amd.com>, 
+	amd-gfx@lists.freedesktop.org, Jiri Kosina <jikos@kernel.org>, 
+	Benjamin Tissoires <bentiss@kernel.org>, linux-input@vger.kernel.org, 
+	Wolfram Sang <wsa+renesas@sang-engineering.com>, linux-i2c@vger.kernel.org, 
+	Mark Brown <broonie@kernel.org>, Michael Hennerich <michael.hennerich@analog.com>, 
+	=?UTF-8?B?TnVubyBTw6E=?= <nuno.sa@analog.com>, linux-spi@vger.kernel.org, 
+	"James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>, 
+	"Martin K. Petersen" <martin.petersen@oracle.com>, linux-scsi@vger.kernel.org, 
+	Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org, 
+	linux-trace-kernel@vger.kernel.org, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-The WQ_AFFN_CACHE_SHARD affinity scope was added to the kernel but
-wq_dump.py was not updated to enumerate it. Add the missing constant
-lookup and include it in the affinity scopes iteration so that drgn
-output shows the CACHE_SHARD pod topology alongside the other scopes.
+On Thu, Mar 12, 2026 at 9:15=E2=80=AFAM Vineeth Remanan Pillai
+<vineeth@bitbyteword.org> wrote:
+>
+> On Thu, Mar 12, 2026 at 11:49=E2=80=AFAM Mathieu Desnoyers
+> <mathieu.desnoyers@efficios.com> wrote:
+> >
+> > On 2026-03-12 11:40, Steven Rostedt wrote:
+> > > On Thu, 12 Mar 2026 11:28:07 -0400
+> > > Mathieu Desnoyers <mathieu.desnoyers@efficios.com> wrote:
+> > >
+> > >>> Note, Vineeth came up with the naming. I would have done "do" but w=
+hen I
+> > >>> saw "invoke" I thought it sounded better.
+> > >>
+> > >> It works as long as you don't have a tracing subsystem called
+> > >> "invoke", then you get into identifier clash territory.
+> > >
+> > > True. Perhaps we should do the double underscore trick.
+> > >
+> > > Instead of:  trace_invoke_foo()
+> > >
+> > > use:  trace_invoke__foo()
+> > >
+> > >
+> > > Which will make it more visible to what the trace event is.
+> > >
+> > > Hmm, we probably should have used: trace__foo() for all tracepoints, =
+as
+> > > there's still functions that are called trace_foo() that are not
+> > > tracepoints :-p
+> >
+> > One certain way to eliminate identifier clash would be to go for a
+> > prefix to "trace_", e.g.
+> >
+> > do_trace_foo()
+> > call_trace_foo()
+>
+> This was the initial idea, but it had conflict in the existing source:
+> call_trace_sched_update_nr_running. do_trace_##name also had
+> collisions when I checked. So, went with trace_invoke_##name. Did not
+> check rest of the suggestions here though.
+>
+> Thanks,
+> Vineeth
+>
+> > emit_trace_foo()
+> > __trace_foo()
 
-Signed-off-by: Breno Leitao <leitao@debian.org>
----
- tools/workqueue/wq_dump.py | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+this seems like the best approach, IMO. double-underscored variants
+are usually used for some specialized/internal version of a function
+when we know that some conditions are correct (e.g., lock is already
+taken, or something like that). Which fits here: trace_xxx() will
+check if tracepoint is enabled, while __trace_xxx() will not check and
+just invoke the tracepoint? It's short, it's distinct, and it says "I
+know what I am doing".
 
-diff --git a/tools/workqueue/wq_dump.py b/tools/workqueue/wq_dump.py
-index d29b918306b48..06948ffcfc4b6 100644
---- a/tools/workqueue/wq_dump.py
-+++ b/tools/workqueue/wq_dump.py
-@@ -107,6 +107,7 @@ WQ_MEM_RECLAIM          = prog['WQ_MEM_RECLAIM']
- WQ_AFFN_CPU             = prog['WQ_AFFN_CPU']
- WQ_AFFN_SMT             = prog['WQ_AFFN_SMT']
- WQ_AFFN_CACHE           = prog['WQ_AFFN_CACHE']
-+WQ_AFFN_CACHE_SHARD     = prog['WQ_AFFN_CACHE_SHARD']
- WQ_AFFN_NUMA            = prog['WQ_AFFN_NUMA']
- WQ_AFFN_SYSTEM          = prog['WQ_AFFN_SYSTEM']
- 
-@@ -138,7 +139,7 @@ def print_pod_type(pt):
-         print(f' [{cpu}]={pt.cpu_pod[cpu].value_()}', end='')
-     print('')
- 
--for affn in [WQ_AFFN_CPU, WQ_AFFN_SMT, WQ_AFFN_CACHE, WQ_AFFN_NUMA, WQ_AFFN_SYSTEM]:
-+for affn in [WQ_AFFN_CPU, WQ_AFFN_SMT, WQ_AFFN_CACHE, WQ_AFFN_CACHE_SHARD, WQ_AFFN_NUMA, WQ_AFFN_SYSTEM]:
-     print('')
-     print(f'{wq_affn_names[affn].string_().decode().upper()}{" (default)" if affn == wq_affn_dfl else ""}')
-     print_pod_type(wq_pod_types[affn])
-
--- 
-2.52.0
-
+> > invoke_trace_foo()
+> > dispatch_trace_foo()
+> >
+> > Thanks,
+> >
+> > Mathieu
+> >
+> >
+> >
+> > --
+> > Mathieu Desnoyers
+> > EfficiOS Inc.
+> > https://www.efficios.com
+>

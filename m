@@ -1,190 +1,163 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from mail-wm1-f43.google.com (mail-wm1-f43.google.com [209.85.128.43])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 499642E62B7
-	for <linux-btrfs@vger.kernel.org>; Fri, 13 Mar 2026 19:47:42 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 234D5382392
+	for <linux-btrfs@vger.kernel.org>; Fri, 13 Mar 2026 21:13:19 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.43
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773431263; cv=none; b=dgUGHkwqgUGbuZvohPN0XcXTA9KG2+gc5uJCanI3SIAjSa89hZcCoSA7ewFdxnSYbQPN5Ux+i9jN5fYAAueWhiTiE3Qn0iXETwwKki8RBo6s5xG1fy1W71zVhBZAlxVez2h8kCt6us7edTlD1TT5gnlacG7ze12KQOEsBLjov0g=
+	t=1773436401; cv=none; b=Gio/w9je4Y8s+t7+UyIG+P7B96OKsUQU67LdegJpGkaae/UjZaMBBN6YWrRGKNDhXbTkGyU8eNhxRzP7YJb19OW2RW3OxuQ5y4Kj6WcoMjx5Wpjqpr2HF5gkuVnFDkSDtvVQizSYnM4LWaq+QMmtSZyH/FBjuJhFy6xfQLJ1AN8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773431263; c=relaxed/simple;
-	bh=7PAR6oJgug5y+pGYC+lFzHxoHSf14o36YcnmRoxevqc=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=BJDmctBj52AW6uIqBCEZeeldyXXjhGePHaawjJJak4ryPYQI54v7QsINaQta7PkGElEWBAXw/Pn4/Qcaqym+Gy8uiwAoiRq8jBL4LWNaU1MSrb4Qaop1q1rVGmYeDz4fUGugijspxCEowNw7HFJNwuDivG+ZhTnjukkV/nUL9fc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=vvVp0YOj; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=+4/nisCJ; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=vvVp0YOj; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=+4/nisCJ; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	s=arc-20240116; t=1773436401; c=relaxed/simple;
+	bh=TRCrN0LvTLbVYn+uQhcjcd5AjD7Dke+okf0Za9UeZpw=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=AN7LFaN3Gy9F5PkQ93fHbh1KNeHK/Yhq5+LU1Lpws9OAdNBEQ0gtIcJn9gDu9aAF1/LL3qJdL5vPG7awVP8/IcXIfFpBNbZd2Ia1oCkOzXROawvojhG1ijulXyFJbMms2SQpvhUtCdxc1LEu/rsbzhGUiJ7kzZgmwsnkDOSs7bU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=NiPiBAd6; arc=none smtp.client-ip=209.85.128.43
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="vvVp0YOj";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="+4/nisCJ";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="vvVp0YOj";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="+4/nisCJ"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 4D91F4DAE2;
-	Fri, 13 Mar 2026 19:47:40 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1773431260;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=Ine/dPrN6erv666w318kZqV25NbvxGY85XUvYri24D8=;
-	b=vvVp0YOjFtHgpIFMXrcinySCJUyWDcmBPFVT7xERq4ubaT35LNvCSUYeUOC/srNmsOpR00
-	UZYRRyAiTZuFGHXn/fQ5iUa3Ig/mXPZ7/sFe/wZUwjUNQLYdY9IyCZ5DABz9dOSfYlYRo/
-	x/VtU4Lktuic7opVwivsJ/6DNMmWABQ=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1773431260;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=Ine/dPrN6erv666w318kZqV25NbvxGY85XUvYri24D8=;
-	b=+4/nisCJyK42BlV/s5NL3PS/VGWh94DpvDav/SIPYzttCsMTNOhBQBA88wXfuST9dP/Ac5
-	kX3/uXFNpyXMvlAA==
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b=vvVp0YOj;
-	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b="+4/nisCJ"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1773431260;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=Ine/dPrN6erv666w318kZqV25NbvxGY85XUvYri24D8=;
-	b=vvVp0YOjFtHgpIFMXrcinySCJUyWDcmBPFVT7xERq4ubaT35LNvCSUYeUOC/srNmsOpR00
-	UZYRRyAiTZuFGHXn/fQ5iUa3Ig/mXPZ7/sFe/wZUwjUNQLYdY9IyCZ5DABz9dOSfYlYRo/
-	x/VtU4Lktuic7opVwivsJ/6DNMmWABQ=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1773431260;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=Ine/dPrN6erv666w318kZqV25NbvxGY85XUvYri24D8=;
-	b=+4/nisCJyK42BlV/s5NL3PS/VGWh94DpvDav/SIPYzttCsMTNOhBQBA88wXfuST9dP/Ac5
-	kX3/uXFNpyXMvlAA==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 34ADD406C5;
-	Fri, 13 Mar 2026 19:47:40 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 7fWzDNxptGkufAAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Fri, 13 Mar 2026 19:47:40 +0000
-Date: Fri, 13 Mar 2026 20:47:39 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org, gality369@gmail.com
-Subject: Re: [PATCH 1/2] btrfs: tree-checker: introduce checks for
- FREE_SPACE_INFO
-Message-ID: <20260313194739.GL5735@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1773094579.git.wqu@suse.com>
- <dcc4425060fb18e7dc5b45e4ea05cd8afec13f6c.1773094579.git.wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="NiPiBAd6"
+Received: by mail-wm1-f43.google.com with SMTP id 5b1f17b1804b1-48535a0ef86so21819225e9.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 Mar 2026 14:13:19 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1773436398; x=1774041198; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to;
+        bh=rhZc4u3pbqODB7oTivHIB5tOwR6xc6+a8ijONTmr6ic=;
+        b=NiPiBAd6gCSdiUda9RNLzHT+L6bWsd82+7ecxjyJGK5r9FU5W24ELEU7dDd2qRj0Ru
+         D/3Du1Nel68dCdYiATCeIqiEPEcP0mpgPHqW1INR0gP+MPz5guDrQYzocRAL57QzFYeJ
+         MkA9CeQr/Ics4ujWiheiktubcUtU8bFtKUeE1KnehlVyIL00uV+vWZJ5S82aLC5nc9dd
+         DTtpU9aMrt52bUttLxvHn9rZuuU28xRHytJdQfL6CM3Babu8Ow72a0yxaKeuCIzsOpio
+         3lkL5jHVs0GjWe+VVvL1unnN81NVqo2K6me/5v2ZVSCYMERohXEmTvNaySi4WUQzky9I
+         fHoQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1773436398; x=1774041198;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=rhZc4u3pbqODB7oTivHIB5tOwR6xc6+a8ijONTmr6ic=;
+        b=Wno1HDHZiWiqk6hIrHqSLQodvXqcZVFFi0tgQ9SK6p+7+rof1q5E7eVGepaWJaKzPX
+         3EtUoALN3f4zEdZlrvFbbFE5qvEfcTlH0N2pAQt+tp3fdGPzYRvTQC/i2A7TyCSUnkT3
+         I4Cl0UVS4b5C4Eyx+50c8KnFYGEIK4YJrvWXImL33OIpWywPewGDltPzoPhd2YKj8RCV
+         Af2hRG2M9qEG4SDPC8o73FaeDD9olb85zpsPGZP3LjiywrHgT3BbhofoLh0Z5brN/3Al
+         fJRQaMGu4yRhQ58RGkOm//2wcCmO7Pzo6I8h4bAZe0m7YZYTpfDYCP2Y099gdh0j9L5+
+         ppNw==
+X-Gm-Message-State: AOJu0Yw+e+2aGsdtz2KY7ey3hCCBPfGKbeq9QFBJxuzvejWWCmQ+4J3K
+	omPtXhmhIQedSmHVoFrL1Iv6RaE2wjn3t4FT5+SIbBPF/hykL/aM1ZEKCV+1ntKZe6I=
+X-Gm-Gg: ATEYQzwaiBNUKGbMId1vNuUiFSRIHNMSMZM9e9BpGW/2FO/qNnDP6AUqrQ9zO+d+cpH
+	osyO8YTqH7EENgLzUaOZv9z7v2BjJ5iwYn2r9fYIPgr4iZUR72iLbZdsP8aWbHyW6ZLw/UxGPxJ
+	3N9uZ4WWvVb43Ph+l78agmGtJGWrKbuJWoWJT2yDg60cu4wMyrfWA8u6R185fsmqPm1j97H4DVK
+	38XmXHv9dPaDYa7LVHhgJZqY5zpilVQT2cB8aYLsCf1aUpGR5HOS8v5pvSoq/PT0wxhnHUWTUV0
+	idF+Kfmn/SK2MFXOFBfRKoO4xFNiPSUx4CdTyerazg+aF8a7wc5ptMltsgXF0SB/7cTp64DnhRn
+	z2B32tNYgsgYhsntKnCvFLKpQk08JlzNAqeouRo4jZXpL/u0w8JFM3lkNL/QM/ZAm42tBiAkSsa
+	OGN1H1JdvxYuMT2iq2g4LO3pUmuXZh6L39P5A7jgLZK9EIVWGD05U=
+X-Received: by 2002:a05:600c:8b2c:b0:485:4bd1:4c7e with SMTP id 5b1f17b1804b1-485567148e8mr76437915e9.33.1773436398136;
+        Fri, 13 Mar 2026 14:13:18 -0700 (PDT)
+Received: from ?IPV6:2403:580d:fda1::299? (2403-580d-fda1--299.ip6.aussiebb.net. [2403:580d:fda1::299])
+        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-35a17be605asm7630704a91.17.2026.03.13.14.13.14
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Fri, 13 Mar 2026 14:13:15 -0700 (PDT)
+Message-ID: <17eee229-5539-4d61-ac77-0ccc468a1f4b@suse.com>
+Date: Sat, 14 Mar 2026 07:43:11 +1030
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <dcc4425060fb18e7dc5b45e4ea05cd8afec13f6c.1773094579.git.wqu@suse.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Rspamd-Action: no action
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Spamd-Result: default: False [-4.21 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	ARC_NA(0.00)[];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_SOME(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	FREEMAIL_ENVRCPT(0.00)[gmail.com];
-	FREEMAIL_CC(0.00)[vger.kernel.org,gmail.com];
-	DKIM_TRACE(0.00)[suse.cz:+];
-	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	REPLYTO_DOM_NEQ_TO_DOM(0.00)[];
-	RCPT_COUNT_THREE(0.00)[3];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.cz:dkim,suse.cz:replyto,twin.jikos.cz:mid,suse.com:email,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns]
-X-Rspamd-Queue-Id: 4D91F4DAE2
-X-Spam-Flag: NO
-X-Spam-Score: -4.21
-X-Spam-Level: 
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH 2/2] btrfs: output more info when duplicated ordered
+ extent is found
+To: dsterba@suse.cz
+Cc: linux-btrfs@vger.kernel.org
+References: <cover.1772874800.git.wqu@suse.com>
+ <9568c0c9f72806be005a8ab7c35201229518af2b.1772874800.git.wqu@suse.com>
+ <20260313193847.GJ5735@twin.jikos.cz>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <20260313193847.GJ5735@twin.jikos.cz>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 
-On Tue, Mar 10, 2026 at 08:49:25AM +1030, Qu Wenruo wrote:
-> Introduce checks for FREE_SPACE_INFO item, which include:
-> 
-> - Key alignment check
->   The objectid is the logical bytenr of the chunk/bg, and offset is the
->   length of the chunk/bg, thus they should all be aligned to the fs
->   block size.
-> 
-> - Item size check
->   The FREE_SPACE_INFO should a fix size.
-> 
-> - Flags check
->   The flags member should has no other flags than
->   BTRFS_FREE_SPACE_USING_BITMAPS.
-> 
->   For future expansion, introduce a new macro
->   BTRFS_FREE_SPACE_FLAGS_MASK for such checks.
-> 
->   And since we're here, the BTRFS_FREE_SPACE_USING_BITMAPS should not
->   use unsigned long long, as the flags is only 32 bits wide.
->   So fix that to use unsigned long.
-> 
-> - Extent count check
->   That member shows how many free space bitmap/extent items there are
->   inside the chunk/bg.
-> 
->   And we know the chunk size (from key->offset), thus there should be at
->   most (key->offset >> sectorsize_bits) blocks inside the chunk.
->   Use that value as the upper limit and if that counter is larger than
->   that, there is a high chance it's a bitflip in high bits.
-> 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
->  fs/btrfs/tree-checker.c         | 45 +++++++++++++++++++++++++++++++++
->  include/uapi/linux/btrfs_tree.h |  3 ++-
->  2 files changed, 47 insertions(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-> index ac4c4573ee39..980e4d52061f 100644
-> --- a/fs/btrfs/tree-checker.c
-> +++ b/fs/btrfs/tree-checker.c
-> @@ -1928,6 +1928,48 @@ static int check_dev_extent_item(const struct extent_buffer *leaf,
->  	return 0;
->  }
->  
-> +static int check_free_space_info(struct extent_buffer *leaf, struct btrfs_key *key,
-> +				 int slot)
-> +{
-> +	struct btrfs_fs_info *fs_info = leaf->fs_info;
-> +	struct btrfs_free_space_info *fsi;
-> +	const u32 blocksize = fs_info->sectorsize;
-> +	u32 flags;
-> +
-> +	if (unlikely(!IS_ALIGNED(key->objectid, blocksize) ||
-> +		     !IS_ALIGNED(key->offset, blocksize))) {
-> +		generic_err(leaf, slot,
-> +		"free space info key range is not aligned to %u, has (%llu %u %llu)",
 
-Please use the BTRFS_KEY_FMT macro for key specifier, I'll fix it in
-git, thanks.
+
+在 2026/3/14 06:08, David Sterba 写道:
+> On Sat, Mar 07, 2026 at 07:43:37PM +1030, Qu Wenruo wrote:
+>> During development of a new feature, I triggered that btrfs_panic()
+>> inside insert_ordered_extent() and spent quite some unnecessary before
+>> noticing I'm passing incorrect flags when creating a new ordered extent.
+>>
+>> Unfortunately the existing error message is not providing much help.
+>>
+>> Enhance the output to provide file offset, num bytes and flags of both
+>> existing and new ordered extents.
+>>
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>> ---
+>>   fs/btrfs/ordered-data.c | 11 ++++++++---
+>>   1 file changed, 8 insertions(+), 3 deletions(-)
+>>
+>> diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+>> index b34a0df282f3..bc88b904d024 100644
+>> --- a/fs/btrfs/ordered-data.c
+>> +++ b/fs/btrfs/ordered-data.c
+>> @@ -253,10 +253,15 @@ static void insert_ordered_extent(struct btrfs_ordered_extent *entry)
+>>   	spin_lock(&inode->ordered_tree_lock);
+>>   	node = tree_insert(&inode->ordered_tree, entry->file_offset,
+>>   			   &entry->rb_node);
+>> -	if (unlikely(node))
+>> +	if (unlikely(node)) {
+>> +		struct btrfs_ordered_extent *exist =
+>> +			rb_entry(node, struct btrfs_ordered_extent, rb_node);
+>> +
+>>   		btrfs_panic(fs_info, -EEXIST,
+>> -				"inconsistency in ordered tree at offset %llu",
+>> -				entry->file_offset);
+>> +"existing oe file_offset=%llu num_bytes=%llu flags=0x%lx new oe file_offset=%llu num_bytes=%llu flags=0x%lx",
+> 
+> This uses the "key=value" format while this is an exception in the
+> messages. The tracepoints use "=" as it's main purpose is to print just
+> a list of values but messages also contain other text. We should keep it
+> consistent.
+
+Got it, will go using the existing "key value" style.
+
+Thanks,
+Qu
+
+> 
+>> +			    exist->file_offset, exist->num_bytes, exist->flags,
+>> +			    entry->file_offset, entry->num_bytes, entry->flags);
+>> +	}
+>>   	spin_unlock(&inode->ordered_tree_lock);
+>>   
+>>   	spin_lock(&root->ordered_extent_lock);
+>> -- 
+>> 2.53.0
+>>
+

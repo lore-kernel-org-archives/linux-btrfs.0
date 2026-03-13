@@ -1,134 +1,91 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from 11.mo533.mail-out.ovh.net (11.mo533.mail-out.ovh.net [87.98.181.139])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BB6B03A7F74;
-	Fri, 13 Mar 2026 14:55:52 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F3D013A8757
+	for <linux-btrfs@vger.kernel.org>; Fri, 13 Mar 2026 17:21:52 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=87.98.181.139
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773413752; cv=none; b=LDzjf+LfqH1gOChC7ZrqeoX8ddldpj/u7gy2TmqKlZjOsSWIN1JftEDq7lH3CS8kcWXR6pA9wc+g2niXVoZKpTjyf49MywgtC7qUYo65SLVNNdImk18X+V5Gxd2E4pmll/hZh96LZ+9d9FXQZ/PvHcsQBOrzHAfkd6rd5esMm1w=
+	t=1773422517; cv=none; b=nPVwbLrk5KsDmV6PMioSaU0ftQJen+RRmd79kYbovDAuSolGHyn/xYqGb62iC+1iqgJxmaQzZbdGUmrON7y90cDqJhK2ctJkzwmTY7vE8jU5Y9YsgUZRWbG6s4Ivob3T7DW7Qu3gODZGr/xg7gu1AKEGSyXs3WeotDsN9LeUa0k=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773413752; c=relaxed/simple;
-	bh=1SJdVb46rEOXp0TNCRzNQH20hOu3F1a8jHEpr/61pdg=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=O7wF6pWkjx8hO36/j38Beivm2HccAJRhszXIHRi7Bb7NK/SIEWToK+tYveWFeyZWdkWFqCyIWH6Umwo+8ZeI69jX6YxyeuNZ1raj+wK2I3bItLAyg91JGRuGe3tWJth5S9iibByenRNbyEnzanDWfOrGwz4iIzwCbQplnEtfRL0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=STCiPlE7; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1773422517; c=relaxed/simple;
+	bh=o9C8GlaQINVvOBi8fo+i1hg6qc0ZSM+TwzJ3qKNbgeA=;
+	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=OMTIb7xtXdEXIgLJOorXUd6tp5dDqmWGzARNgqHccOAGWLkyzbnZK7M3t3HL3XDUxrHPfB6VHQz7urs0FL2jUIWV2X4Ut462ZBIufn3tabCgEBk4ZlC3tGekTBk4zHLLXUiUThMhXunvOSnyA3Wgd9SpJKqZX6QIcAGO2b1X7HA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=guillain.net; spf=pass smtp.mailfrom=guillain.net; dkim=pass (2048-bit key) header.d=guillain.net header.i=@guillain.net header.b=VcJ55QOy; arc=none smtp.client-ip=87.98.181.139
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=guillain.net
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=guillain.net
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="STCiPlE7"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 45E4FC19421;
-	Fri, 13 Mar 2026 14:55:52 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1773413752;
-	bh=1SJdVb46rEOXp0TNCRzNQH20hOu3F1a8jHEpr/61pdg=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=STCiPlE7YCJ6EP08/0/rI3sm0hiVo8h5O7hPvhYrwE3F9gUgh6x4qYOG+oseUMFcp
-	 0fco+B87d09Raz+TTKdqXsLyYzKcXAdDlu7u6dynGTXapE5MiKaRnCLZNtHfy4iPVf
-	 YrFUa2ViLJHx3lj6THIzfxNRTHyc59xkPpq2G4OYaS7/FpXFsareyepu+TXhtqXV1t
-	 +IWXOamdz1kto1W1vQdKKch43W+DgpLtRQt/JCOlpjqXu2nAG9q2e5bg95X1VbUZkm
-	 zFHSXzhBhfLcoSN9hVcPH55Kp/YFTYgSIxZnb4g0wcPn5Iu25E8YXr01CGvzb/Z3K7
-	 vTjplDCeoUGQQ==
-Date: Fri, 13 Mar 2026 07:55:51 -0700
-From: "Darrick J. Wong" <djwong@kernel.org>
-To: Andrey Albershteyn <aalbersh@redhat.com>
-Cc: Andrey Albershteyn <aalbersh@kernel.org>, linux-xfs@vger.kernel.org,
-	fsverity@lists.linux.dev, linux-fsdevel@vger.kernel.org,
-	ebiggers@kernel.org, hch@lst.de, linux-ext4@vger.kernel.org,
-	linux-f2fs-devel@lists.sourceforge.net, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v4 19/25] xfs: remove unwritten extents after
- preallocations in fsverity metadata
-Message-ID: <20260313145551.GN1770774@frogsfrogsfrogs>
-References: <20260309192355.176980-1-aalbersh@kernel.org>
- <20260309192355.176980-20-aalbersh@kernel.org>
- <20260310012914.GG1105363@frogsfrogsfrogs>
- <ymisdrze3ohdnxa4inqfwp4riaz4qk5nmtil33adn5ukhngq7v@f3tcv3hbzobz>
- <20260312145250.GE6069@frogsfrogsfrogs>
- <dz3va7indkh4to2pingopyndck737qvyxvlfomkqqothzj4pdk@wu26ba5stnf6>
+	dkim=pass (2048-bit key) header.d=guillain.net header.i=@guillain.net header.b="VcJ55QOy"
+Received: from director1.derp.mail-out.ovh.net (director1.derp.mail-out.ovh.net [51.68.80.175])
+	by mo533.mail-out.ovh.net (Postfix) with ESMTPS id 4fXWJ432gkz5yPV;
+	Fri, 13 Mar 2026 17:12:20 +0000 (UTC)
+Received: from director1.derp.mail-out.ovh.net (director1.derp.mail-out.ovh.net. [127.0.0.1])
+        by director1.derp.mail-out.ovh.net (inspect_sender_mail_agent) with SMTP
+        for <dsterba@suse.com>; Fri, 13 Mar 2026 17:12:20 +0000 (UTC)
+Received: from mta11.priv.ovhmail-u1.ea.mail.ovh.net (unknown [10.110.37.222])
+	by director1.derp.mail-out.ovh.net (Postfix) with ESMTPS id 4fXWJ40whfz5xTh;
+	Fri, 13 Mar 2026 17:12:20 +0000 (UTC)
+Received: from guillain.net (unknown [10.1.6.9])
+	(Authenticated sender: jean-christophe@guillain.net)
+	by mta11.priv.ovhmail-u1.ea.mail.ovh.net (Postfix) with ESMTPSA id 81B5B9A13A8;
+	Fri, 13 Mar 2026 17:12:19 +0000 (UTC)
+Authentication-Results:garm.ovh; auth=pass (GARM-97G002a3a49725-80a7-446e-b7c9-4b020084ec8f,
+                    E50281848AA3A500EAF2CA0FEADB084EFD0FEAE0) smtp.auth=jean-christophe@guillain.net
+X-OVh-ClientIp:78.240.83.207
+Message-ID: <f49e0f4fc028966240c191ef59bf5c4e935c06a9.camel@guillain.net>
+Subject: Re: [PATCH v2] btrfs: zlib: handle page aligned compressed size
+ correctly
+From: Jean-Christophe Guillain <jean-christophe@guillain.net>
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Cc: stable@vger.kernel.org, David Sterba <dsterba@suse.com>
+Date: Fri, 13 Mar 2026 18:12:18 +0100
+In-Reply-To: <ab5c12312b275589abd42c47a0c34b7e68375407.1773389056.git.wqu@suse.com>
+References: 
+	<ab5c12312b275589abd42c47a0c34b7e68375407.1773389056.git.wqu@suse.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.56.2-0+deb13u1 
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <dz3va7indkh4to2pingopyndck737qvyxvlfomkqqothzj4pdk@wu26ba5stnf6>
+x-ovh-tracer-id: 5004625086269115163
+X-VR-SPAMSTATE: OK
+X-VR-SPAMSCORE: -100
+X-VR-SPAMCAUSE: dmFkZTGrwVLVG0zrFrVwavWGXqEXkpmNbZVtBW5sheGeDHqR6feMA25pEWiYjzizTTXaQe06b+7YXr/AxFg1TSvne1g2W5WaNVLcAXIq207VtwMFdLQEEr2gbuktLYw5VauxRHQ7FLG7El53fyrtjkep4eW22tjUjbyjwKA0JztosTBG8+e/OXDdjljb1OQqLMUI7BFApTuEtcv4Ywx2gHaOnJrbLSDyuo4/RlmRTiedeDDrXgHlxnJx/RqlhVbRJuHJIcJe3OhZgXh7ew76ZzQpH9ShvBm8qSPabfcv8FO0+tJDvzbHoOCaUFMGMB/T2t1u+AJOz02jzeheQtgahOKKYkZDPR0SaUIj2Jf0gQZu4nWl7SmaXehrXDtjbm+jRpHi2SIV1e8xA5yshpy9M6trGO0ZStL8xjsEyhnlzBGW+d9lWOVO4x9NezH6yJek2MQWq5SMWufIxYIj4MQWzkF/S44l7KTL3UQJ3UQS/drbqEak9jmbB1F6Fr4en3Gd8SfhIf+twUV1cz1C14FOIKPrPnleYxkfN0CTi//a33TeF85SHymCpDmqGredZLErXSRed283tH9uurBPqWgf5naiT7ev/FePVQgjYwzDmol1MH5ohaM+5dQ/mLiUvGOE6vCU8lf/aw8clZ6+mFKZsOqbqPWLp/bJveAkaV10u2LHAF8kNw
+DKIM-Signature: a=rsa-sha256; bh=o9C8GlaQINVvOBi8fo+i1hg6qc0ZSM+TwzJ3qKNbgeA=;
+ c=relaxed/relaxed; d=guillain.net; h=From; s=ovhmo31693-selector1;
+ t=1773421940; v=1;
+ b=VcJ55QOynT/YNcI+lR2/eCPNdjIcFWwR78Uo/XGFexmZ5IQWR+pWkre/qYlBwtpkd07syZKm
+ KaiA83j34K0Q8b6FQRU4sVGZzyxN+NdTEWDb1eROcYAg95kvx9cq2mcrNEWy8bsw+8T4bH0Y64e
+ 1XacdFVuTEBe821N6X+1uoEhYyzinmuiHV5qZkoRrrqRr1Ejf6rYcEtHw83EPpjXWjdL6TO0hiQ
+ 1wGfckRTe9xjm8CTqNqpbh8HKm9CEoPFgALUmdnpEP7QGRrJnKpS7UQwGykJS/RkYmncrznB8QQ
+ AP7Z5U6dNI01arnGvop0pQvcEh89h90/scumS6UBj9KXg==
 
-On Fri, Mar 13, 2026 at 12:17:15PM +0100, Andrey Albershteyn wrote:
-> On 2026-03-12 07:52:50, Darrick J. Wong wrote:
-> > On Thu, Mar 12, 2026 at 02:50:57PM +0100, Andrey Albershteyn wrote:
-> > > On 2026-03-09 18:29:14, Darrick J. Wong wrote:
-> > > > > XFS preallocates spaces during writes. In normal I/O this space, if
-> > > > > unused, is removed by truncate. For files with fsverity, XFS does not
-> > > > > use truncate as fsverity metadata is stored past EOF.
-> > > > > 
-> > > > > After we're done with writing fsverity metadata iterate over extents in
-> > > > > that region and remove any unwritten ones. These would be preallocation
-> > > > > leftovers in the merkle tree holes and past fsverity descriptor.
-> > > > > 
-> > > > > Signed-off-by: Andrey Albershteyn <aalbersh@kernel.org>
-> > > > > ---
-> > > 
-> > > > There's an upper limit on the number of blocks you can unmap/free in a
-> > > > single transaction.  Maybe move the xfs_trans_{alloc,commit} into the
-> > > > loop body?
-> > > > 
-> > > > Oh wait, you skip the written extents.  Ok, so maybe just roll it after
-> > > > you've done a bunmapi.
-> > > 
-> > > I see, I will add a rolling transaction. Btw, why skipping the
-> > > written extents let's us use rolling here?
-> > 
-> > Hrmm.  At first I thought: why can't xfs_fsverity_cancel_unwritten
-> > allocate (and commit) the transaction inside the loop body?  Then I
-> > thought "well, it's only conditionally unmapping things, and it's sort
-> > of a pain to allocate a transaction only then to find out if you
-> > actually want to run one".
-> > 
-> > OTOH there could be billions of extents in the data fork, so holding the
-> > ILOCK for that many transactions isn't a good thing because tr_write
-> > only preallocates space for a certain number of transaction rolls.
-> > fsverity already holds IOLOCK_EXCL so there can't be any other programs
-> > using the file.
-> > 
-> > So now I arrive back at "The transaction allocation and commit/cancel
-> > should be inside the loop body, since crashing midway through wouldn't
-> > result in user-visible changes to the file data".
-> > 
-> > > > Do you need to purge the cow fork too?
-> > > 
-> > > hmm, what case are you thinking about here? The fsverity is written
-> > > in past EOF region, I don't see how COW extent could be left there.
-> > > Can they somehow be left mapped for blocks past i_size?
-> > 
-> > I was talking about speculative cow fork preallocations below i_size.
-> > They'll eventually get purged by blockgc, but you could give the space
-> > back once you've committed enabling the fsverity file flag.
-> 
-> hmm, if they're purged by blockgc, then why to do it here? I'm
+On Fri, 2026-03-13 at 18:35 +1030, Qu Wenruo wrote:
+> [FIX]
+> Instead of offset_inside_folio(), directly use the difference between
+> strm.total_out and bi_size.
+> So that if the last folio is completely full, we can still properly
+> queue the full folio other than queueing zero byte.
+>=20
+> Fixes: 3d74a7556fba ("btrfs: zlib: introduce zlib_compress_bio()
+> helper")
+> Cc: stable@vger.kernel.org=C2=A0# 7.0+
+> Reported-by: David Sterba <dsterba@suse.com>
+> Reported-by: Jean-Christophe Guillain <jean-christophe@guillain.net>
+> Link: https://bugzilla.kernel.org/show_bug.cgi?id=3D221176
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+> Changelog:
+> v2:
+> - Add missing reported-by/link/cc tags
 
-Since you've made the file read-only by turning on fsverity, I think
-it's appropriate to return the COW fork preallocations to the free space
-pool.  Granted, you're correct that blockgc will eventually call
-xfs_reflink_cancel_cow_range for you either due to timeout or because
-something hit ENOSPC and kicked blockgc.  So I guess its not a
-requirement to land this series; I was just surprised not to see
-xfs_reflink_cancel_cow_range done explicitly here.
+This patch (applied on 7.0.0-rc3) fixed the bug for me.
+(The uptime of my workstation is more than 5 hours now ; it didn't work
+more than 40 minutes before.)
 
-> iterating and removing unwritten extents here only because
-> xfs_inode_free_eofblocks() will skip fsverity inodes, the check in
-> xfs_can_free_eofblocks():
-> 
-> 	if (IS_VERITY(VFS_I(ip)))
-> 		return false;
-> 
-> The skipping is done to not remove all the fsverity metadata
-> extents. With preallocations enabled there could be unwritten
-> extents left in the metadata.
-
-<nod> Cleaning out the unwritten extents from the data fork when
-enabling fsverity makes sense to me and is totally fine.
-
-> Am I missing something?
-
-Nah, but we might be talking past each other a bit at this point. :/
-
---D
+Thank you very much,
+Jean-Christophe

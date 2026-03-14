@@ -1,60 +1,62 @@
-Received: from mail-pl1-f176.google.com (mail-pl1-f176.google.com [209.85.214.176])
+Received: from mail-pl1-f175.google.com (mail-pl1-f175.google.com [209.85.214.175])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6CE7F4A3C
-	for <linux-btrfs@vger.kernel.org>; Sat, 14 Mar 2026 12:37:51 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.214.176
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7D08A273D76
+	for <linux-btrfs@vger.kernel.org>; Sat, 14 Mar 2026 12:37:55 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.214.175
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773491872; cv=none; b=E2AT7t1aR1l4XQqP9X6Tzbt8HmdCxHr7pYX+2gw3nhWrw6fDc/Xv6T8rwYXOeUVNfJBYpEIf/L7gg+h4aENAc7AEkP9Hw44NK2PXqt24dDel4s9QEJy/jT2ESVONhWEkdL/yUWUqjQAR199kNHTWEh44gef7lpGCWSvLQyRMmXE=
+	t=1773491878; cv=none; b=cR4Cn6BcZgAV79mOtktgwUrbkdkESK7EMj7UKsgZzAMhMs04I8TlmcRFHPUzjFwiq8DIIcOzhlNH2gVbjAz1JEvWdb98gKGU9bjyhj92InilbJpi4XfbMJN5j4/tu7WJixTdljUwYXWR2yKVr3JDCgojEzLgWp+/RUAPXHJtJ1k=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773491872; c=relaxed/simple;
-	bh=1EttMn2WyrlAL7EiN8TRNM+MsBSVVAgFeIpbT3Ge0Ao=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=oTF/2QoX9P4TLjI/8eKftE8ZOkFtZvun+zUbNF1kvyIjPGB171bZtR0PsVMzK1b2pBKPGxYuarKAAS6oOiAPBpDCkx39qX3vOhoAMiAuoCyXJgsMRZNbFDy/CdsrDrcN0dPm9cBgTsFYkpb1Mqd0ooRHdWKNmXa0wjtsZGDXmiM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=mPuX9/8Z; arc=none smtp.client-ip=209.85.214.176
+	s=arc-20240116; t=1773491878; c=relaxed/simple;
+	bh=z5AD4JniElssw7dAZ3Z2sfNgq0aQO8sOOb3qGgHe3LU=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=hHFJdKhGaRB6cOR0fBqCR3gniQBYB3jNllo0h+9fSNuX3OYEzJ6Pz0T7Z4hg1QK2KXdIIOTUoHXeBWlZn7D2/hMPNS+q213CUclLLd0PGfAy+shOEhOM19zkJ/XJCk04AdHlOaN9ae86mmVa2GwraWkSkhq4bm+YVjU+ktCNpYQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=XR3DcV50; arc=none smtp.client-ip=209.85.214.175
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="mPuX9/8Z"
-Received: by mail-pl1-f176.google.com with SMTP id d9443c01a7336-2ad21f437eeso24432175ad.0
-        for <linux-btrfs@vger.kernel.org>; Sat, 14 Mar 2026 05:37:51 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="XR3DcV50"
+Received: by mail-pl1-f175.google.com with SMTP id d9443c01a7336-2ad4d639db3so15170815ad.0
+        for <linux-btrfs@vger.kernel.org>; Sat, 14 Mar 2026 05:37:55 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1773491871; x=1774096671; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:from:to:cc:subject:date:message-id:reply-to;
-        bh=cI9qA3YsUWUIm5OkTAeFYumy4qZ7WkJ6k0zEBLCN0zU=;
-        b=mPuX9/8ZVD0JY8xcwjhWNTCeKEHCU1I2nS1IQkKgwAqaKcQ3hFcBjZHDXcYTSaY30X
-         XaUJzLc3EubtA2ZsZBLVl5rWQP/HGoCo54IAdNTJqyZR0gBJXpXGL6nAt75OTJ4tsjsq
-         LxsrBYl6oZMEsGtEJCTNstyrNCjxmk+B8BPoOiKTg2nViVAVs/mOf87HyFW0k1xVMbEH
-         luniAFEZT7MChODdvz+2ASrX8QwuJ87FnojutswLvUuVa20ecC9lv8SgKPoUVGPNOuRZ
-         77Z4YlEMBoM2T7F+cVoOLIR7wJ+rSC7QV2YZKFuyr5ry9GjlH6n334wuEnoQvLhwz1Sd
-         e6kQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1773491871; x=1774096671;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+        d=gmail.com; s=20230601; t=1773491875; x=1774096675; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=cI9qA3YsUWUIm5OkTAeFYumy4qZ7WkJ6k0zEBLCN0zU=;
-        b=GntD/hYh/da+Ra0xK6XuCaXmLnBIjzhvYbGYlpO05q+IGFgWKotU/JcMECfZO83Gjb
-         nP+tjyRmygrIr7JcOxKZ3Zd6pUUVCAXL8daaxnQRFGk+xrERinRYMryQaw1SB0SyI2et
-         illFMANg9ByIwziwegBuxN27hRWA3h+TO19J0tLEE7jJJwf2MzQEaryG9hHB/5RwLI+a
-         RiVVGRxaC6FzE/YkiPozeOZrKn+8SY/Zx8l5CACY0BeFTmcH44RTIKyiuwknXuSqQjzq
-         bOQvoYNFsAXUvrCDmv96dcSQ71DdTQ74zkCPkoQqzidf3wbyaCpg2Gl9zi27LwHidl+w
-         IH9Q==
-X-Gm-Message-State: AOJu0YwnUb6FXKxD0AdJFsTIiFWYf48bn923+OgBHF/fstiF/erLMPhc
-	rT91zV3Lz7al2nioPFn3zuHxZLLECNnkejvIoifXBHU2IcHQHN1VI/in
-X-Gm-Gg: ATEYQzy76DtE86Fm8D7vy5TsWNls0D8tQKbDmwuDKXWZphthp+b+QrdBgbWXKg3QYik
-	f4LmRGg76kvb/D6sqd8+YDgAMF/vjA25rPqg3dGZ7cuEIx6CY9/DQToPDtwykUpog74eYGWopzd
-	0MB5o32WhSagTi4kHCSes30MbuJdhD50LxsvooEYIftuT6az16r0DEAsXfz64Yfy/YIWjMovNNB
-	I31frmQfyBBjuKGHM/DnMMcYIkPxkBHDzxfknZsjQAqxm8CNyeKASPrKIHqF+xWNzEj4rvzaGtD
-	JH9xHvVDERdiZuRsLLf+LWAkSjaDIAu2Flcc9nZoZ1kW0pA6F58GyEX/Pgc+qAFOdP+gnCuvVE2
-	3GnYzv5c+ygZ0dAhUNgp17MC+bHyL603Hy0qtaO1ifpM+nxHvJNW7HBkgLnQI/+TKHvnjzDbsFH
-	5uJkywRcsdoH7B0fIrYWRYXsNUMpvvPF16VZHd7fF4RPRFWjQjJIvpc8t0kXlOpkWFjdtDK58=
-X-Received: by 2002:a17:902:da81:b0:2b0:4c68:283a with SMTP id d9443c01a7336-2b04c6829b2mr616735ad.6.1773491870733;
-        Sat, 14 Mar 2026 05:37:50 -0700 (PDT)
+        bh=ch0eaxVQ4/ts2cf46sQ450Wifko7pmpNDC0czkFsQbk=;
+        b=XR3DcV50O2XxLiQpqzCAMkbgY8hoGrNVcoru0cycEVQuzkUynVoJFkIWyRjP/71eil
+         oO0nB6b1Glb4h+ZZ4Yn2BV7jx3kqjTzA1eRR8+y83tuP8Q34bhnXA6ujG8eGte+AOnXg
+         l2laMb3cnQUvDXJfWEFuBA8LXRdxOF/HnIAjoZyoUGNj0FUl5lFRm2nkDh2PYDvknJI0
+         g0w3RJoCPEhkaWaq5HqQSt29CgeuO3Xe7SyXoXgLgkFBVrYCLYh+YeXWjuAP5qy0KXT0
+         5SUIjzuqEdXSKPuP70Nk0MsNk48oKZhZM8aTO8SRjx7JW7nDTUnYtBhKllOdjbhsKnDN
+         MWUg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1773491875; x=1774096675;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
+         :to:cc:subject:date:message-id:reply-to;
+        bh=ch0eaxVQ4/ts2cf46sQ450Wifko7pmpNDC0czkFsQbk=;
+        b=gIy7kzoleI5AxIJCmNtVCvFF4dC+dMyfVktOvTCnnLUzp0eIr18XJabJUmK+NOvrL7
+         vOP5pgcTu0Jj0ljE0EuJfvhGZnyD0zmo1dAtiVP8oQkqNkY1yILoRlIqU75Qwa84H9s6
+         HLsDV66+1e71Idwc/sNmtDiWRXRj2mdCeVAFAj+brm+jpo+dobPzjABqE+zvUKGgSoTk
+         zydbfwbAEtH6nFIitXmB3B3P00LI6Ty7ia8V6B/9USYMz7CDV3zFlX6Gj4NtxmTAVg8Y
+         DPQuJcMA86KG5sw5t7bYDdu100SDI0PQx+JpZJkVcP2V7JxlshFBJIjCrwss+vkNw5tW
+         Tzgw==
+X-Gm-Message-State: AOJu0YwnIZg0K6nIvrFgYHVS0Kj5q8mI0GFDGQnxVdchR8EGh16oAN6N
+	tzzMXx6IPI6MCbtEbAcF+F2ZFEoDsQCqyxA/wR21bH7ElHXJ9Om+Jt5azCIt5NT8
+X-Gm-Gg: ATEYQzxGi5wboamLDW4ot+5yN5V9RvXTDdNKx7z3+5uq7KAss1uaGbLrhSWHV7eNn8S
+	A+uxuHGb2H4yqHaVHxtZxwQHeKahRUBiMlWbmGO1HepemL5T671qsYQMHOJr6UOuCDkY3LKV97v
+	HsKUyLVv8UJVRouxl6KlSPvkJANdYlZw/XxWpf7px2UWXzEz12Y4Qi4stYLFWgbjBADSBGAk5wt
+	L0zmgr+1RiOsLfEt7+P1zaQcdOtH+Qf44q/3sw0NNXNxp8p83pPtFVTGDQPrdW3Q4zZUvri7ph2
+	6A6zZLGKVR9BFKPdIl98kOSbW4di1RF5b89Oy8gYUGM8TuSmOV9FlMYB2gVQEd24UfNQMSVVZOP
+	1XYRs6YDoJIdA8DpI2V50By2S+7jVKRaptyNRoW7OEeu2sD7O7sHqnJblsSuxso3omAhfycwFHE
+	k+nqug37FzJDJ993beKEH3qw4t6MWIVQfJkzRzBzoi1AmoJoCS7rP63V9xKmwR8nLbjtdFdqE=
+X-Received: by 2002:a17:903:20ce:b0:2ae:6031:bc59 with SMTP id d9443c01a7336-2aecaa1504emr50150105ad.30.1773491874677;
+        Sat, 14 Mar 2026 05:37:54 -0700 (PDT)
 Received: from kernel-fuzz.. ([103.172.183.54])
-        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2aece56e0b8sm63561935ad.16.2026.03.14.05.37.47
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2aece56e0b8sm63561935ad.16.2026.03.14.05.37.51
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sat, 14 Mar 2026 05:37:50 -0700 (PDT)
+        Sat, 14 Mar 2026 05:37:54 -0700 (PDT)
 From: ZhengYuan Huang <gality369@gmail.com>
 To: dsterba@suse.com,
 	clm@fb.com,
@@ -64,11 +66,14 @@ Cc: linux-btrfs@vger.kernel.org,
 	baijiaju1990@gmail.com,
 	r33s3n6@gmail.com,
 	zzzccc427@gmail.com,
-	ZhengYuan Huang <gality369@gmail.com>
-Subject: [PATCH v2 0/3] btrfs: fix balance NULL derefs and chunk/bg mapping verification
-Date: Sat, 14 Mar 2026 20:37:38 +0800
-Message-ID: <20260314123741.1439792-1-gality369@gmail.com>
+	ZhengYuan Huang <gality369@gmail.com>,
+	stable@vger.kernel.org
+Subject: [PATCH v2 1/3] btrfs: balance: fix null-ptr-deref in chunk_usage_filter
+Date: Sat, 14 Mar 2026 20:37:39 +0800
+Message-ID: <20260314123741.1439792-2-gality369@gmail.com>
 X-Mailer: git-send-email 2.43.0
+In-Reply-To: <20260314123741.1439792-1-gality369@gmail.com>
+References: <20260314123741.1439792-1-gality369@gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -77,70 +82,143 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-This series fixes two NULL dereferences in btrfs balance usage filters and
-the underlying mount-time verification bug that lets the corresponding
-chunk/block-group inconsistency go undetected.
+[BUG]
+Running btrfs balance with a usage filter (-dusage=N) can trigger a
+null-ptr-deref when metadata corruption causes a chunk to have no
+corresponding block group in the in-memory cache:
 
-The balance crashes happen when metadata corruption leaves a chunk present
-in the chunk tree but without a corresponding block group in the in-memory
-block group cache. In that case, the usage filters call
-btrfs_lookup_block_group() and dereference the returned pointer without
-checking for NULL.
+  KASAN: null-ptr-deref in range [0x0000000000000070-0x0000000000000077]
+  RIP: 0010:chunk_usage_filter fs/btrfs/volumes.c:3874 [inline]
+  RIP: 0010:should_balance_chunk fs/btrfs/volumes.c:4018 [inline]
+  RIP: 0010:__btrfs_balance fs/btrfs/volumes.c:4172 [inline]
+  RIP: 0010:btrfs_balance+0x2024/0x42b0 fs/btrfs/volumes.c:4604
+  ...
+  Call Trace:
+    btrfs_ioctl_balance fs/btrfs/ioctl.c:3577 [inline]
+    btrfs_ioctl+0x25cf/0x5b90 fs/btrfs/ioctl.c:5313
+    vfs_ioctl fs/ioctl.c:51 [inline]
+    ...
 
-The first two patches add the missing NULL checks and propagate -EUCLEAN
-back to userspace instead of crashing. They are split because the usage
-and usage-range filters were introduced by different commits, which should
-also make backporting easier, as suggested by Qu Wenruo.
+The bug is reproducible on next-20260312 with our dynamic metadata
+fuzzing tool, which corrupts btrfs metadata at runtime.
 
-The third patch fixes the root cause on the mount-time verification side.
-check_chunk_block_group_mappings() is supposed to verify that every chunk
-has a matching block group, but its current iteration starts with
-btrfs_find_chunk_map(fs_info, 0, 1). If no chunk contains logical address
-0, the lookup returns NULL immediately and the loop exits without checking
-any chunk at all. As a result, the corrupted mapping can survive mount and
-only crash later when balance reaches it.
+[CAUSE]
+Two separate data structures are involved:
 
-This series makes btrfs reject the inconsistency earlier at mount time,
-and also hardens the balance filters so the corruption is reported as
--EUCLEAN instead of triggering a NULL dereference.
+1. The on-disk chunk tree, which records every chunk (logical address
+   space region) and is iterated by __btrfs_balance().
+2. The in-memory block group cache (fs_info->block_group_cache_tree),
+   which is built at mount time by btrfs_read_block_groups() and holds
+   a struct btrfs_block_group for each chunk. This cache is what the
+   usage filter queries.
 
-Changes since v1:
-- split the two balance filter fixes into separate patches
-- reworked the third patch to fix the case where
-  check_chunk_block_group_mappings() does not actually check all chunk
-  mappings
+On a well-formed filesystem, these two are kept in 1:1 correspondence.
+However, btrfs_read_block_groups() builds the cache from block group
+items in the extent tree, not directly from the chunk tree. A corrupted
+image can therefore contain a chunk item in the chunk tree whose
+corresponding block group item is absent from the extent tree; that
+chunk's block group is then never inserted into the in-memory cache.
 
-[NOTE]
-Some of the changelogs may repeat parts of the bug analysis, which can
-make the series somewhat verbose. I did that intentionally because I was
-trying to follow the usual expectation that each patch should be able to
-stand on its own and explain the specific issue it fixes. In particular,
-I wanted each patch to describe its own immediate cause clearly, even
-where the overall trigger path overlaps with the others. If that is not
-the preferred style here, I would be happy to rework the changelogs and
-resend the series in a different form.
+When balance iterates the chunk tree and reaches such an orphaned chunk,
+should_balance_chunk() calls chunk_usage_filter(), which queries the block
+group cache:
 
-Also, in a previous reply, Qu Wenruo suggested adding a separate
-chunk/block-group consistency check. After looking into that, I found
-that btrfs already has a function intended for this purpose,
-check_chunk_block_group_mappings(). Patch 3 is based on the observation
-that this check exists, but due to its current iteration logic it can
-exit without checking any chunk mappings at all.
+  cache = btrfs_lookup_block_group(fs_info, chunk_offset);
+  chunk_used = cache->used;   /* cache may be NULL */
 
-Since I am not very familiar with all the details of btrfs internals, if
-my analysis of patch 3 is flawed, or if the fix is not the right one, I
-would greatly appreciate any correction or guidance, and I will revise
-and resend the patch accordingly.
+btrfs_lookup_block_group() returns NULL silently when no cached entry
+covers chunk_offset. chunk_usage_filter() does not check the return value,
+so the immediately following dereference of cache->used triggers the crash.
 
-ZhengYuan Huang (3):
-  btrfs: balance: handle missing block groups in usage filter
-  btrfs: balance: handle missing block groups in usage range filter
-  btrfs: fix check_chunk_block_group_mappings() to iterate all chunk maps
+[FIX]
+Add a NULL check after btrfs_lookup_block_group() in chunk_usage_filter().
+When the lookup fails, emit a btrfs_err() message identifying the
+affected bytenr and return -EUCLEAN to indicate filesystem corruption.
 
- fs/btrfs/block-group.c | 21 ++++++------------
- fs/btrfs/volumes.c     | 48 +++++++++++++++++++++++++++++++-----------
- 2 files changed, 42 insertions(+), 27 deletions(-)
+Since the filter function now has an error return path, change its
+return type from bool to int (negative = error, 0 = do not balance,
+positive = balance). Update should_balance_chunk() accordingly (bool ->
+int, with the same convention) and add error propagation for the usage
+filter path. Finally, handle the new negative return in __btrfs_balance()
+by jumping to the existing error path, which aborts the balance
+operation and reports the error to userspace.
 
+After the fix, the same corruption is correctly detected and reported
+by the filter, and the null-ptr-deref is no longer triggered.
+
+Fixes: 5ce5b3c0916b ("Btrfs: usage filter")
+Cc: stable@vger.kernel.org
+Signed-off-by: ZhengYuan Huang <gality369@gmail.com>
+---
+ fs/btrfs/volumes.c | 28 +++++++++++++++++++++-------
+ 1 file changed, 21 insertions(+), 7 deletions(-)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 2bec544d8ba3..7c21ac249383 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3863,14 +3863,20 @@ static bool chunk_usage_range_filter(struct btrfs_fs_info *fs_info, u64 chunk_of
+ 	return ret;
+ }
+ 
+-static bool chunk_usage_filter(struct btrfs_fs_info *fs_info, u64 chunk_offset,
+-			       struct btrfs_balance_args *bargs)
++static int chunk_usage_filter(struct btrfs_fs_info *fs_info, u64 chunk_offset,
++			      struct btrfs_balance_args *bargs)
+ {
+ 	struct btrfs_block_group *cache;
+ 	u64 chunk_used, user_thresh;
+ 	bool ret = true;
+ 
+ 	cache = btrfs_lookup_block_group(fs_info, chunk_offset);
++	if (!cache) {
++		btrfs_err(fs_info,
++			  "balance: chunk at bytenr %llu has no corresponding block group",
++			  chunk_offset);
++		return -EUCLEAN;
++	}
+ 	chunk_used = cache->used;
+ 
+ 	if (bargs->usage_min == 0)
+@@ -3986,8 +3992,8 @@ static bool chunk_soft_convert_filter(u64 chunk_type, struct btrfs_balance_args
+ 	return false;
+ }
+ 
+-static bool should_balance_chunk(struct extent_buffer *leaf, struct btrfs_chunk *chunk,
+-				 u64 chunk_offset)
++static int should_balance_chunk(struct extent_buffer *leaf, struct btrfs_chunk *chunk,
++				u64 chunk_offset)
+ {
+ 	struct btrfs_fs_info *fs_info = leaf->fs_info;
+ 	struct btrfs_balance_control *bctl = fs_info->balance_ctl;
+@@ -4014,9 +4020,13 @@ static bool should_balance_chunk(struct extent_buffer *leaf, struct btrfs_chunk
+ 	}
+ 
+ 	/* usage filter */
+-	if ((bargs->flags & BTRFS_BALANCE_ARGS_USAGE) &&
+-	    chunk_usage_filter(fs_info, chunk_offset, bargs)) {
+-		return false;
++	if (bargs->flags & BTRFS_BALANCE_ARGS_USAGE) {
++		int filter_ret = chunk_usage_filter(fs_info, chunk_offset, bargs);
++
++		if (filter_ret < 0)
++			return filter_ret;
++		if (filter_ret)
++			return false;
+ 	} else if ((bargs->flags & BTRFS_BALANCE_ARGS_USAGE_RANGE) &&
+ 	    chunk_usage_range_filter(fs_info, chunk_offset, bargs)) {
+ 		return false;
+@@ -4172,6 +4182,10 @@ static int __btrfs_balance(struct btrfs_fs_info *fs_info)
+ 		ret = should_balance_chunk(leaf, chunk, found_key.offset);
+ 
+ 		btrfs_release_path(path);
++		if (ret < 0) {
++			mutex_unlock(&fs_info->reclaim_bgs_lock);
++			goto error;
++		}
+ 		if (!ret) {
+ 			mutex_unlock(&fs_info->reclaim_bgs_lock);
+ 			goto loop;
 -- 
 2.43.0
 

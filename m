@@ -1,136 +1,134 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C177733EC
-	for <linux-btrfs@vger.kernel.org>; Sat, 14 Mar 2026 00:01:06 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4D6C91E1DFC;
+	Sat, 14 Mar 2026 00:24:17 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773446468; cv=none; b=rIFiLW6NsmbWt+jvkevtVm/UmAu/BjgiFJ52Tqo1nezWhQP6OBfnNL0LRR0PcRVscZJLJ9x1E4osoCNgkxOziiC5gjoGE+sKVAwuT8xQVfHO8H4RFRTeSF0X4RJPzOL7vYmoTKb0Su3pZngRF/Anm8dsi39OZ2Pqbm3kvqwZ3AA=
+	t=1773447857; cv=none; b=OmkocTklgA31pph7YOFzSAPAIu9zBaDf4y45ruIhU0+40SD0g/vLUJ7qimS2NoWqjMLV1VnwcOzEEMoNfFwCtJp11/tE55yrT/tlaOaf/te6EbxJXo5rPn3UsJ+BGfgL3hd5/fnKrokdT+gM4fx1cJodd0sUuGlZ9NWiLxeKbtY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773446468; c=relaxed/simple;
-	bh=nWQAX3at5wTDYdXAjG4qSLjyK91ZjPT8g0HpfWl9MJk=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=Np4PGBb0xnhsZ84LG7ci5MrC2wSf/HnZHnBXms1QYOEjFNdfOW1lfH8SbB+SZ0U2SR49fqnB+dthE/hb3Gg55FBj5Ey7UBj2bowSxOpOEat5CM4Swrl5dALs+4xNOdCx9sgwoN4DkQiWh5V3wFEVWmQj77R3nlk8ddmISF9xunE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=UNtv0Li3; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=UNtv0Li3; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1773447857; c=relaxed/simple;
+	bh=WQRXpjIwf6KYkSpJNf4xnZTekqBOFUxWV+yK0mOoxb8=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=IuXgEA8LGhFGAY716oX5be948llbvXznJxvd45NbEuNc0+F6rONKtXKYfWsPqkyhToOiDU0x9i09RVRYOv1NEaLi90l2V7mzYTW5u5is/EJ21nH6vc8euzuipTFjZN/qNJMlKrtJJbLKBCgHsYrSpZkuemFfRjcR4XX5iP4fVxg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=i0nggihj; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="UNtv0Li3";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="UNtv0Li3"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 2895D5BD66
-	for <linux-btrfs@vger.kernel.org>; Sat, 14 Mar 2026 00:01:00 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1773446460; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=hCWhqSkZNzcid3cbiKsPRT5qKcfwZWhLXZvXRO7G7Zw=;
-	b=UNtv0Li3U2hFeEYpwyPQQZjvXfoNYDHIgA/M4Xwc8nQyzTO/O2qCEIranLdwbS/eFGGfLY
-	iGrbHjdrZ3PerBn8ACDEPMh/eDX+hNu9hwTitp1OoR2U1mAYoxokB8OJTaPdBxm5BhCjTb
-	x+Ja3MvqD2JHbOHo7vjs+wdPaKok/JM=
-Authentication-Results: smtp-out2.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1773446460; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=hCWhqSkZNzcid3cbiKsPRT5qKcfwZWhLXZvXRO7G7Zw=;
-	b=UNtv0Li3U2hFeEYpwyPQQZjvXfoNYDHIgA/M4Xwc8nQyzTO/O2qCEIranLdwbS/eFGGfLY
-	iGrbHjdrZ3PerBn8ACDEPMh/eDX+hNu9hwTitp1OoR2U1mAYoxokB8OJTaPdBxm5BhCjTb
-	x+Ja3MvqD2JHbOHo7vjs+wdPaKok/JM=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 63071407C3
-	for <linux-btrfs@vger.kernel.org>; Sat, 14 Mar 2026 00:00:59 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id WJuFCTultGl9dQAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Sat, 14 Mar 2026 00:00:59 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 2/2] btrfs: output more info when duplicated ordered extent is found
-Date: Sat, 14 Mar 2026 10:30:39 +1030
-Message-ID: <6dc9f2f9702f0ce9e52c0aaff3b702ceedcdadb5.1773446363.git.wqu@suse.com>
-X-Mailer: git-send-email 2.53.0
-In-Reply-To: <cover.1773446363.git.wqu@suse.com>
-References: <cover.1773446363.git.wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="i0nggihj"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 088E7C19421;
+	Sat, 14 Mar 2026 00:24:13 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1773447856;
+	bh=WQRXpjIwf6KYkSpJNf4xnZTekqBOFUxWV+yK0mOoxb8=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=i0nggihjXmXTKML8sut6lB5srcFWHmMKN3tSb0vnbiKDcMNVltZU2CmPxcxFrG3o3
+	 nQrXA1wQ5YuTbmhgcTPNORS+379TzqDGm/7lSrQ1+WOrB6YJhRCIjKA7zUUcBgPch0
+	 EYChM4p2xmMbNvogwcdaYFHJ9nHAZ56sOZLrj4G67jwJtQWWuJzeM6LK+rXxZtPvPL
+	 7hsCy1/fez24lkAmdr6y8xZG7yqBOpidyJ0h37yL3W7fcEPRQk675mEsDmHjbA8Xn+
+	 hN93oY8bX37rGdXAEkgAe3QI7f5zrI2DHLm42gIk1V7HmETARtzUHgwH52MHcPBfBz
+	 VF6ZMYEbGWSgg==
+Date: Fri, 13 Mar 2026 18:24:12 -0600
+From: Keith Busch <kbusch@kernel.org>
+To: Vineeth Remanan Pillai <vineeth@bitbyteword.org>
+Cc: Peter Zijlstra <peterz@infradead.org>,
+	Steven Rostedt <rostedt@goodmis.org>,
+	Dmitry Ilvokhin <d@ilvokhin.com>,
+	Masami Hiramatsu <mhiramat@kernel.org>,
+	Mathieu Desnoyers <mathieu.desnoyers@efficios.com>,
+	Ingo Molnar <mingo@redhat.com>, Jens Axboe <axboe@kernel.dk>,
+	io-uring@vger.kernel.org, "David S. Miller" <davem@davemloft.net>,
+	Eric Dumazet <edumazet@google.com>,
+	Jakub Kicinski <kuba@kernel.org>, Paolo Abeni <pabeni@redhat.com>,
+	Alexei Starovoitov <ast@kernel.org>,
+	Daniel Borkmann <daniel@iogearbox.net>,
+	Marcelo Ricardo Leitner <marcelo.leitner@gmail.com>,
+	Xin Long <lucien.xin@gmail.com>, Jon Maloy <jmaloy@redhat.com>,
+	Aaron Conole <aconole@redhat.com>,
+	Eelco Chaudron <echaudro@redhat.com>,
+	Ilya Maximets <i.maximets@ovn.org>, netdev@vger.kernel.org,
+	bpf@vger.kernel.org, linux-sctp@vger.kernel.org,
+	tipc-discussion@lists.sourceforge.net, dev@openvswitch.org,
+	Oded Gabbay <ogabbay@kernel.org>, Koby Elbaz <koby.elbaz@intel.com>,
+	dri-devel@lists.freedesktop.org,
+	"Rafael J. Wysocki" <rafael@kernel.org>,
+	Viresh Kumar <viresh.kumar@linaro.org>,
+	"Gautham R. Shenoy" <gautham.shenoy@amd.com>,
+	Huang Rui <ray.huang@amd.com>,
+	Mario Limonciello <mario.limonciello@amd.com>,
+	Len Brown <lenb@kernel.org>,
+	Srinivas Pandruvada <srinivas.pandruvada@linux.intel.com>,
+	linux-pm@vger.kernel.org, MyungJoo Ham <myungjoo.ham@samsung.com>,
+	Kyungmin Park <kyungmin.park@samsung.com>,
+	Chanwoo Choi <cw00.choi@samsung.com>,
+	Christian =?iso-8859-1?Q?K=F6nig?= <christian.koenig@amd.com>,
+	Sumit Semwal <sumit.semwal@linaro.org>,
+	linaro-mm-sig@lists.linaro.org, Eddie James <eajames@linux.ibm.com>,
+	Andrew Jeffery <andrew@codeconstruct.com.au>,
+	Joel Stanley <joel@jms.id.au>, linux-fsi@lists.ozlabs.org,
+	David Airlie <airlied@gmail.com>, Simona Vetter <simona@ffwll.ch>,
+	Alex Deucher <alexander.deucher@amd.com>,
+	Danilo Krummrich <dakr@kernel.org>,
+	Matthew Brost <matthew.brost@intel.com>,
+	Philipp Stanner <phasta@kernel.org>,
+	Harry Wentland <harry.wentland@amd.com>,
+	Leo Li <sunpeng.li@amd.com>, amd-gfx@lists.freedesktop.org,
+	Jiri Kosina <jikos@kernel.org>,
+	Benjamin Tissoires <bentiss@kernel.org>,
+	linux-input@vger.kernel.org,
+	Wolfram Sang <wsa+renesas@sang-engineering.com>,
+	linux-i2c@vger.kernel.org, Mark Brown <broonie@kernel.org>,
+	Michael Hennerich <michael.hennerich@analog.com>,
+	Nuno =?iso-8859-1?Q?S=E1?= <nuno.sa@analog.com>,
+	linux-spi@vger.kernel.org,
+	"James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>,
+	"Martin K. Petersen" <martin.petersen@oracle.com>,
+	linux-scsi@vger.kernel.org, Chris Mason <clm@fb.com>,
+	David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+	linux-trace-kernel@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH 01/15] tracepoint: Add trace_invoke_##name() API
+Message-ID: <abSqrJ1J59RQC47U@kbusch-mbp>
+References: <20260312150523.2054552-1-vineeth@bitbyteword.org>
+ <20260312150523.2054552-2-vineeth@bitbyteword.org>
+ <20260312111255.7925b4e2@gandalf.local.home>
+ <CAO7JXPhg-Etspj9YahZrq8cmZ2K6AGWDrMnHO+oD96P_SmOLBw@mail.gmail.com>
+ <20260312155326.GB1282955@noisy.programming.kicks-ass.net>
+ <CAO7JXPiu8-LE_gG001_GQLoGVYakPdzmH2SXLqfzJjEUxbn1Rw@mail.gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-X-Spam-Score: -2.77
-X-Spam-Level: 
-X-Spamd-Result: default: False [-2.77 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	MID_CONTAINS_FROM(1.00)[];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.17)[-0.857];
-	MIME_GOOD(-0.10)[text/plain];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	ARC_NA(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:mid,suse.com:email];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Flag: NO
+In-Reply-To: <CAO7JXPiu8-LE_gG001_GQLoGVYakPdzmH2SXLqfzJjEUxbn1Rw@mail.gmail.com>
 
-During development of a new feature, I triggered that btrfs_panic()
-inside insert_ordered_extent() and spent quite some unnecessary before
-noticing I'm passing incorrect flags when creating a new ordered extent.
+On Thu, Mar 12, 2026 at 12:05:37PM -0400, Vineeth Remanan Pillai wrote:
+> On Thu, Mar 12, 2026 at 11:53 AM Peter Zijlstra <peterz@infradead.org> wrote:
+> >
+> > That seems like an unreasonable waste of energy. You could've had claude
+> > write a Coccinelle script for you and saved a ton of tokens.
+> 
+> Yeah true, Steve also mentioned this to me offline. Haven't used
+> Coccinelle before, but now I know :-)
 
-Unfortunately the existing error message is not providing much help.
+[+ Chris Mason]
 
-Enhance the output to provide file offset, num bytes and flags of both
-existing and new ordered extents.
+At the risk of creating a distraction...
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/ordered-data.c | 11 ++++++++---
- 1 file changed, 8 insertions(+), 3 deletions(-)
+This discussion got me thinking the right skill loaded should have the
+AI implicitly use coccinelle to generate the patchset rather than do it
+by hand. You could prompt with simple language for a pattern
+substitution rather than explicitly request coccinelle, and it should
+generate a patch set using a script rather than spending tokens on doing
+it "by hand".
 
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index de6b60c52292..d39f1c49d1cf 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -253,10 +253,15 @@ static void insert_ordered_extent(struct btrfs_ordered_extent *entry)
- 	spin_lock(&inode->ordered_tree_lock);
- 	node = tree_insert(&inode->ordered_tree, entry->file_offset,
- 			   &entry->rb_node);
--	if (unlikely(node))
-+	if (unlikely(node)) {
-+		struct btrfs_ordered_extent *exist =
-+			rb_entry(node, struct btrfs_ordered_extent, rb_node);
-+
- 		btrfs_panic(fs_info, -EEXIST,
--				"inconsistency in ordered tree at offset %llu",
--				entry->file_offset);
-+"overlapping ordered extents, existing oe file_offset %llu num_bytes %llu flags 0x%lx, new oe file_offset %llu num_bytes %llu flags 0x%lx",
-+			    exist->file_offset, exist->num_bytes, exist->flags,
-+			    entry->file_offset, entry->num_bytes, entry->flags);
-+	}
- 	spin_unlock(&inode->ordered_tree_lock);
- 
- 	spin_lock(&root->ordered_extent_lock);
--- 
-2.53.0
+I sent such a "skill" to Chris' kernel "review-prompts":
 
+  https://github.com/masoncl/review-prompts/pull/35
+
+I used patch one from this series as the starting point and let the AI
+figure the rest out. The result actually found additional patterns that
+could take advantage of the optimisation that this series did not
+include. The resulting kernel tree that the above github pull request
+references cost 2.8k tokens to create with the skill.

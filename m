@@ -1,189 +1,159 @@
-Received: from mail-pl1-f170.google.com (mail-pl1-f170.google.com [209.85.214.170])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2789B27B4FA
-	for <linux-btrfs@vger.kernel.org>; Sat, 14 Mar 2026 12:38:02 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.214.170
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AC3E9296BC9
+	for <linux-btrfs@vger.kernel.org>; Sat, 14 Mar 2026 17:04:31 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.129.124
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773491884; cv=none; b=mGiwW71gd8udQL+1Lo1/6+vkqgZ/36cI/WulfmxckpKpLpSAfNAGgGXoCucw4/vyFcgY040Lt1NCZTo8QNHD/Knyx61p1pOuHE6SP7DqSiCq4n2VFuCZQC/hub6r938D/WvC1GrfUh2yZsGEDYC9C4YOXhRU0NddO5bL4/vTneg=
+	t=1773507873; cv=none; b=ea5+9TScS59foAc2CxIJJaQ8UoBdIAyQbw9Ls+EK+OmaD2V1yf7FQPZcMhxi0mSzX+o+stENEmGoYbm0m/DUcw5qtZ2LjS2zpXqUtEyG5I1liOyR4vUCoWemTe+65g5HQ2MLMTCeeMKQUqhmZi80Qb5pHb1XZCU9HebK4nqQ9E4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773491884; c=relaxed/simple;
-	bh=TRKl+q0Zn4TfohZfg56MGKZFT66Ys4Q73PpKsm0gc5g=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=PcR51xkP10rB+fGUJbW1KRo7YNObDL/eOsk4+IOPiZTo7YHzFMS3NEgbpsghCp1Ss6Qq0U11j/+ZFxrjx0Ba/3gSl6igDz+ArX/RB37rAwKTj53Vhp79vSgcFBObbgew1oyCVMVytWv4LQ6sabyU0SCG8LK0Ws9StU8/Bgx8Q6A=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=HkuCMLu4; arc=none smtp.client-ip=209.85.214.170
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1773507873; c=relaxed/simple;
+	bh=+ysvLkOY/6j/R/TWM/XeHYspBYMAFmbYe1y4eHA9qLA=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=AyBAxPi0RPP/0RXmKJMuUPMb2UY26YovbvXLEHg+B4Mmiej8chjFYT7JA0QcXpHhXkDy5Ivu9s7fhXO6u0mwXbyY5+6deaNgHUw6s+69WVCJkLxQyAK2tn1o9TpuI5MzEPEVkujzbxS/n0aQJ4PMFqBxhOBDm01weA3BiO/iMbM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=EY8UBmPA; dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b=OZjPWx1p; arc=none smtp.client-ip=170.10.129.124
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="HkuCMLu4"
-Received: by mail-pl1-f170.google.com with SMTP id d9443c01a7336-2ad4d639db3so15170975ad.0
-        for <linux-btrfs@vger.kernel.org>; Sat, 14 Mar 2026 05:38:02 -0700 (PDT)
+	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="EY8UBmPA";
+	dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b="OZjPWx1p"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+	s=mimecast20190719; t=1773507870;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=TY2RZifNMA2+PGDu5d8zIqDKxVt19EdeEHnDXNRBqlI=;
+	b=EY8UBmPAdqvTBSxaTTtpC06V4Bgb7/f4THV1WTi1dvzgZauR9CJPXiSJsZlxcx8V7D9ecA
+	Q8c/W9uJwM/YXZgIWubhXNzrFDDh+6DPJjow5GMB1nPA0bcWdO5f+Zr8YC/ujdXoitjmKT
+	h6tpQ4+IRmzUVfHByVA8AwtZh07MkMA=
+Received: from mail-pl1-f200.google.com (mail-pl1-f200.google.com
+ [209.85.214.200]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
+ us-mta-489-7_S4VVfXOOyP2ZbdzWJzPw-1; Sat, 14 Mar 2026 13:04:29 -0400
+X-MC-Unique: 7_S4VVfXOOyP2ZbdzWJzPw-1
+X-Mimecast-MFC-AGG-ID: 7_S4VVfXOOyP2ZbdzWJzPw_1773507868
+Received: by mail-pl1-f200.google.com with SMTP id d9443c01a7336-2b04db6c138so653935ad.0
+        for <linux-btrfs@vger.kernel.org>; Sat, 14 Mar 2026 10:04:29 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1773491882; x=1774096682; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=2jZpZGRHbhNYi4Yj4ueDS5CDpIlSRqZLNbqutOeOrqM=;
-        b=HkuCMLu4W9vJqlsB49AdKBRWxq4uTDzIvKeO4s3mv4MfEB7+iWVe7H1jmSQyY8Wkus
-         5cqv+xUbvytflgmA5QxgjHOp/Mw668dk0OWP8mY94ZuOTRNGKywHPfTqOTg4rCxJP0Kn
-         2Jcf/dpHjvJI0wKdnw7bVgnhYYH0wrDolXQ+PAlGZI02TojMIdo7oO+FmPSOaz9qHivZ
-         9XrMrL7gldEplyMBKDY9+QCQsZgqQ8FBj0kezrNMu0lJmJEDU0GFf1MHAIrevHEjDZA+
-         Hb68KQYpMca45/9z/yCc9zUN1pKre9YGzCjperZqRZ81CFnWXpVG3aWFpMfaD3K99H/o
-         Zxag==
+        d=redhat.com; s=google; t=1773507868; x=1774112668; darn=vger.kernel.org;
+        h=in-reply-to:content-transfer-encoding:content-disposition
+         :mime-version:references:message-id:subject:cc:to:from:date:from:to
+         :cc:subject:date:message-id:reply-to;
+        bh=TY2RZifNMA2+PGDu5d8zIqDKxVt19EdeEHnDXNRBqlI=;
+        b=OZjPWx1pr3ATCwsqXFldQaaMg0jHR3FcYdl4U1d7djGcjDIsz3rjZZnXn+8yFJuyl8
+         YEW+6H2fs4kM4wIyIM0KuEgoYJYXHbM2p+b12NHJp4PwnoYJaPOriyNb2BRxR7DK7ZPe
+         121McMA2KZ7EECJ3LmlV3BmQU7PzhTOaLTnxLGTWnxqdJjvj6s+HXSYKQPAZpcQ83YQf
+         gAqyx15XyqjSEJB/eTLxlvcGDMFzZh3f4zofMG9I1CAMIyVVbpxSJzJMRVANRKzCI9WS
+         HMO96eNQAYIo94bvngQFTEMHvQEFU4TS+fmT3sRxNzEKgyLQuZGTLPQrz5P07pdkoXGj
+         Vwtg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1773491882; x=1774096682;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
-         :to:cc:subject:date:message-id:reply-to;
-        bh=2jZpZGRHbhNYi4Yj4ueDS5CDpIlSRqZLNbqutOeOrqM=;
-        b=OE/MJ7kX727tv5+zB93kaZxFnIWhXEcRC53FRXJrdJYv2CjXxfOf40I8jj8PC832ro
-         ZqZF0+WxJ25Hg2kzXMfZY7blXPIDxJYkOkvqaF8xbL6zmGB2dVpW4dwZnGIb/tbWqwDO
-         Kis8h56AuyNc+LJrVZiQInOMaiC2pVPSv/Jl6yThgFZbbk1uinoj51/Qt+zip3KSVyXN
-         MlOaGeG+UZUutQ/mUWr4pVYpD4pltuPRKgOIpot3xpGJSryMmqOYbDlcK6gr2rOtOE7a
-         yIn/+DUTptF9nlCVk+RLvq+QK618ff2bIcxRHNjZhGTXV9ggzEtKcu6cUNxV6BB4H9dn
-         HPbw==
-X-Gm-Message-State: AOJu0YylFhGktFQ9vpK8iOBNYNaOnSzd0OkdKwiLj0c07+uNfS2vk+Vt
-	xwdPHuG4gAwft7wC8Ie/ln5mY1rE/6Q2kyzCM+CwR3wpAWB50BvnYyHqT9VidCt3
-X-Gm-Gg: ATEYQzy+ROJ9ulBxt99/493z8FD1oJNMubz0RS3NVYfNlJN0Yt+Sl9vzmOsJBlHG2Zb
-	nqFA7zefSCOoS5ywji+OOJPOBB38fj41fAcdTb6/UfeLdY62VGpby7KulZ3a1zN5ZFXxLHONP+g
-	qyQ9SapNUc5BA+lR9T2jHi9ji3kXmBpSmgsvcXI8oHiiFqp3yqu1NOCrpb38Cer5W5cEs1BmkeK
-	b0LwZbzuMKJDafyG6Q4xhiqTYr3TFxYDSxe41bq1onuZFzg1uDFRKlyI+lo0XvrFU6tbVJiW7Ll
-	D9OWtd3iM7f5hr9KL9XkEud8woOkHdnHd0J8BR/dqlTQSawhR/BTpMmy6+F79IPi8TcVMAfYKQ5
-	AoJP0lWAMs6qnL2h04eq587gP35CrMpZ/B5hisDvno+beFRmx/srmEyydereLsLbmPhbty5f5zh
-	j9lfbMHbVkhwSO4fY6tJTiEUf6k8/Nyj6RDWXbe2ydWHqGKzKYZtT5PagJ+BK7BSG16Z/oCXY=
-X-Received: by 2002:a17:902:ea0f:b0:2ae:54b2:27d1 with SMTP id d9443c01a7336-2aecaaaa8d1mr72132375ad.44.1773491882447;
-        Sat, 14 Mar 2026 05:38:02 -0700 (PDT)
-Received: from kernel-fuzz.. ([103.172.183.54])
-        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2aece56e0b8sm63561935ad.16.2026.03.14.05.37.59
+        d=1e100.net; s=20251104; t=1773507868; x=1774112668;
+        h=in-reply-to:content-transfer-encoding:content-disposition
+         :mime-version:references:message-id:subject:cc:to:from:date:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=TY2RZifNMA2+PGDu5d8zIqDKxVt19EdeEHnDXNRBqlI=;
+        b=py3PH2gXqK9pXcaT639PScNqabE9kwmyD+CRCbuwU+rklFvWj2eI03lYwGUg1H3RL2
+         hTHNccnnapq0qt+M2ioJHYbZCcjpbmIazwx3iGki0rYh4G4mV8S16X3Uhfou3afeEAyI
+         4yn4OxoEX+ONPbe99dI/FFg+pN9Bmit3Qd/vb8cqSjCtQQghSu/5X0f0r5fA/rZ0EUTa
+         aTPGv3wGMXuxfMciNvsSb7b75v7HSOsNzvG271+ekv8XMx8A5g2hVFjOxP/sIWBiRjnO
+         TxVC87JAJ3o1m5L6ENtacG2isC2OF2Bfx7OSpR+M/OkyipV3VmmSnOlzoLHJgrcUG2Q/
+         s3VA==
+X-Forwarded-Encrypted: i=1; AJvYcCWMYjbepo3gJDGbnabLLw8mtjzTaUV/x+xFmQ5wzohVrFtTI20DFlJVZNT5DDvVNf7pe9WsrfVuPatigg==@vger.kernel.org
+X-Gm-Message-State: AOJu0YyPq6kIfrNX2PyQhyThFRG+UI261RVM5j1MyO/CCyPqyZY+loWx
+	3khDmRMrhdJFC8XSOtQ1RMJ5rdGUvTWH0WHic2t54NAwqAWBNNGAjBjZCxVjTu/uc0y6IpJxMP7
+	pm6nrw3QjeJsGkiP4+Z2/qK5HtnwqgL/eCVSOy3KHJtnfpQEF0rpfMWe7sBP/pRMd
+X-Gm-Gg: ATEYQzxj8GonenAeD0iLtA4+dqq6nTnl/xqg7Fmio7arR2aAO8zYLBn7bgPN2hYV24J
+	L5E1zbIJMG5RscWIdpDFC7Cu+fNhC4j3yF2P6V9cWnc00fz/Y/ObReOOCBLPZWNHXXFwjDy9hRE
+	r8/4rQPPa+r04ril+HrS9PD28Ey3srScFjF2++TsEa8TLBAowYxgmRFVVWcaVuoOJQqSz+iVdm7
+	CnZvs3Vg3L1ThuOsFpcV6tdCr8KCZtUYv4FFtpDywS7hAeLjZUIRgLUYc31St7qvdrx0G6kIR/v
+	Qow7QCt/LgEGDVNxHZ3VJKRpV8hqGEuEA6jnswD98pvbSlzX0JmHc+Yp+DxQ3fiEeL93CWG9SpH
+	9MudONb5UJ9758A5yGvCHhoCu9ia76MNWL6R6IsFIFDIbwzGIfocJ2MW4XqKMRw==
+X-Received: by 2002:a17:902:ef07:b0:2ad:e02b:4629 with SMTP id d9443c01a7336-2aecac81c73mr90329815ad.50.1773507868281;
+        Sat, 14 Mar 2026 10:04:28 -0700 (PDT)
+X-Received: by 2002:a17:902:ef07:b0:2ad:e02b:4629 with SMTP id d9443c01a7336-2aecac81c73mr90329605ad.50.1773507867842;
+        Sat, 14 Mar 2026 10:04:27 -0700 (PDT)
+Received: from dell-per750-06-vm-08.rhts.eng.pek2.redhat.com ([209.132.188.88])
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2aece7ed753sm73365325ad.45.2026.03.14.10.04.25
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sat, 14 Mar 2026 05:38:01 -0700 (PDT)
-From: ZhengYuan Huang <gality369@gmail.com>
-To: dsterba@suse.com,
-	clm@fb.com,
-	idryomov@gmail.com
-Cc: linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	baijiaju1990@gmail.com,
-	r33s3n6@gmail.com,
-	zzzccc427@gmail.com,
-	ZhengYuan Huang <gality369@gmail.com>
-Subject: [PATCH v2 3/3] btrfs: fix check_chunk_block_group_mappings() to actually iterate all chunks
-Date: Sat, 14 Mar 2026 20:37:41 +0800
-Message-ID: <20260314123741.1439792-4-gality369@gmail.com>
-X-Mailer: git-send-email 2.43.0
-In-Reply-To: <20260314123741.1439792-1-gality369@gmail.com>
-References: <20260314123741.1439792-1-gality369@gmail.com>
+        Sat, 14 Mar 2026 10:04:27 -0700 (PDT)
+Date: Sun, 15 Mar 2026 01:04:22 +0800
+From: Zorro Lang <zlang@redhat.com>
+To: Anand Jain <anajain.sg@gmail.com>
+Cc: Anand Jain <asj@kernel.org>, fstests@vger.kernel.org,
+	linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+	linux-xfs@vger.kernel.org
+Subject: Re: [PATCH 2/9] fstests: add _mkfs_scratch_clone() helper
+Message-ID: <20260314170422.a62qqwqe6agom443@dell-per750-06-vm-08.rhts.eng.pek2.redhat.com>
+References: <cover.1772095513.git.asj@kernel.org>
+ <254fdd3e212f6618ea33207ef24db2b316d2d8fc.1772095513.git.asj@kernel.org>
+ <20260309191317.vxcjvqfpoqdiycki@dell-per750-06-vm-08.rhts.eng.pek2.redhat.com>
+ <43710dd2-4282-4475-a29d-983295fab86f@gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
+In-Reply-To: <43710dd2-4282-4475-a29d-983295fab86f@gmail.com>
 
-[BUG]
-A corrupted image with a chunk present in the chunk tree but whose
-corresponding block group item is missing from the extent tree can be
-mounted successfully, even though check_chunk_block_group_mappings()
-is supposed to catch exactly this corruption at mount time.  Once
-mounted, running btrfs balance with a usage filter (-dusage=N or
--dusage=min..max) triggers a null-ptr-deref:
+On Wed, Mar 11, 2026 at 10:32:18AM +0800, Anand Jain wrote:
+> 
+> > What about if ${#devs[@]} > 2 ?
+> 
+> On purpose- so tests using _scratch_mkfs_sized_clone() don't
+> pick a random higher number. If a test needs more than two
+> devices, opens an opportunity to critically review this function.
+> >> +	fi
+> >> +
+> >> +	case "$FSTYP" in
+> >> +	"btrfs")
+> >> +		_scratch_mkfs_sized $size
+> >> +		_scratch_mount
+> >> +		$BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/sv1
+> >> +		_scratch_unmount
+> >> +		;;
+> >> +	"xfs"|"ext4")
+> >> +		_scratch_mkfs_sized $size
+> >> +		;;
+> >> +	*)
+> >> +		_notrun "fstests clone op unsupported for FS $FSTYP"
+> >> +		;;
+> >> +	esac
+> >> +
+> >> +	# clone SCRATCH_DEV devs[0] to devs[1].
+> >> +	dd if=$SCRATCH_DEV of=${devs[1]} bs=$size status=none count=1 || \
+> >> +							_fail "Clone failed"
+> > 
+> > I'm wondering if we absolutely need to use SCRATCH_DEV_POOL for this test. Could we clone SCRATCH_DEV
+> > to an image file instead? Or would it be feasible to simply run the test using two image files?
+> 
+> Using a config file and testing directly on block devices lets
+> us cover a wider range of devices.
+> 
+> When I wrote this test case, I was also considering whether a
+> serial-number–based mount without extra mount option, would be
+> better in the kernel.
+> 
+> The downside is that xfs/ext4 testers now need to use
+> SCRATCH_DEV_POOL. Let me know what you prefer.
 
-  KASAN: null-ptr-deref in range [0x0000000000000070-0x0000000000000077]
-    RIP: 0010:chunk_usage_filter fs/btrfs/volumes.c:3874 [inline]
-    RIP: 0010:should_balance_chunk fs/btrfs/volumes.c:4018 [inline]
-    RIP: 0010:__btrfs_balance fs/btrfs/volumes.c:4172 [inline]
-    RIP: 0010:btrfs_balance+0x2024/0x42b0 fs/btrfs/volumes.c:4604
+I'm concerned that testers from other filesystems might not be familiar
+with SCRATCH_DEV_POOL, as it's typically not a requirement for their
+testing. I'm not sure if they would be willing to configure and switch
+to SCRATCH_DEV_POOL, just for these few test cases. If we can avoid making
+the pool to be a hard requirement, it might be more user-friendly for other
+fs list. Welcome feedback and review points from other filesystem mailing
+lists :)
 
-The crash occurs because __btrfs_balance() iterates the on-disk chunk
-tree, finds the orphaned chunk, calls chunk_usage_filter() (or
-chunk_usage_range_filter()), which queries the in-memory block group
-cache via btrfs_lookup_block_group().  Since no block group was ever
-inserted for this chunk, the lookup returns NULL, and the subsequent
-dereference of cache->used crashes.
+Thanks,
+Zorro
 
-[CAUSE]
-check_chunk_block_group_mappings() uses btrfs_find_chunk_map() to
-iterate the in-memory chunk map (fs_info->mapping_tree):
-
-  map = btrfs_find_chunk_map(fs_info, start, 1);
-
-With @start = 0 and @length = 1, btrfs_find_chunk_map() looks for a
-chunk map that *contains* the logical address 0. If no chunk contains
-logical address 0, btrfs_find_chunk_map(fs_info, 0, 1) returns NULL
-immediately and the loop breaks after the very first iteration,
-having checked zero chunks. The entire verification function is therefore
-a no-op, and the corrupted image passes the mount-time check undetected.
-
-[FIX]
-Replace the btrfs_find_chunk_map() based loop with a direct in-order
-walk of fs_info->mapping_tree using rb_first_cached() + rb_next(),
-protected by mapping_tree_lock. This guarantees that every chunk map
-in the tree is visited regardless of the logical addresses involved.
-Since the mapping_tree itself is accessed under read_lock, no refcount
-manipulation of each map entry is needed inside the loop, so the
-btrfs_free_chunk_map() calls on the map are also removed.
-
-Signed-off-by: ZhengYuan Huang <gality369@gmail.com>
----
- fs/btrfs/block-group.c | 21 ++++++---------------
- 1 file changed, 6 insertions(+), 15 deletions(-)
-
-diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index 5322ef2ae015..25bd0d058be6 100644
---- a/fs/btrfs/block-group.c
-+++ b/fs/btrfs/block-group.c
-@@ -2319,29 +2319,22 @@ static struct btrfs_block_group *btrfs_create_block_group_cache(
-  */
- static int check_chunk_block_group_mappings(struct btrfs_fs_info *fs_info)
- {
--	u64 start = 0;
-+	struct rb_node *node;
- 	int ret = 0;
- 
--	while (1) {
-+	read_lock(&fs_info->mapping_tree_lock);
-+	for (node = rb_first_cached(&fs_info->mapping_tree); node;
-+	     node = rb_next(node)) {
- 		struct btrfs_chunk_map *map;
- 		struct btrfs_block_group *bg;
- 
--		/*
--		 * btrfs_find_chunk_map() will return the first chunk map
--		 * intersecting the range, so setting @length to 1 is enough to
--		 * get the first chunk.
--		 */
--		map = btrfs_find_chunk_map(fs_info, start, 1);
--		if (!map)
--			break;
--
-+		map = rb_entry(node, struct btrfs_chunk_map, rb_node);
- 		bg = btrfs_lookup_block_group(fs_info, map->start);
- 		if (unlikely(!bg)) {
- 			btrfs_err(fs_info,
- 	"chunk start=%llu len=%llu doesn't have corresponding block group",
- 				     map->start, map->chunk_len);
- 			ret = -EUCLEAN;
--			btrfs_free_chunk_map(map);
- 			break;
- 		}
- 		if (unlikely(bg->start != map->start || bg->length != map->chunk_len ||
-@@ -2354,14 +2347,12 @@ static int check_chunk_block_group_mappings(struct btrfs_fs_info *fs_info)
- 				bg->start, bg->length,
- 				bg->flags & BTRFS_BLOCK_GROUP_TYPE_MASK);
- 			ret = -EUCLEAN;
--			btrfs_free_chunk_map(map);
- 			btrfs_put_block_group(bg);
- 			break;
- 		}
--		start = map->start + map->chunk_len;
--		btrfs_free_chunk_map(map);
- 		btrfs_put_block_group(bg);
- 	}
-+	read_unlock(&fs_info->mapping_tree_lock);
- 	return ret;
- }
- 
--- 
-2.43.0
+> 
+> 
+> 
+> 
 

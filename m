@@ -1,142 +1,148 @@
-Received: from mail-ot1-f80.google.com (mail-ot1-f80.google.com [209.85.210.80])
+Received: from mail-pl1-f172.google.com (mail-pl1-f172.google.com [209.85.214.172])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DB4AB25228D
-	for <linux-btrfs@vger.kernel.org>; Mon, 16 Mar 2026 13:40:29 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.80
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 72B8B34E768
+	for <linux-btrfs@vger.kernel.org>; Mon, 16 Mar 2026 13:46:50 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.214.172
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773668431; cv=none; b=F3ZWaYgcp1/9RVJ2zIQCrjbUV++Kwg8SZGNP2ANQRDzTlGpfWXE/CXCdGkKtLVY9odV0RfoPvMw4LYLybRfwBj9VF+kDEi4HV4HvfmW1aB9qYgeydV2H0w/003NVaO0Q0gkMxu7rWEDok60NEjJdRmTz3K+E7PKjntguevgP2hs=
+	t=1773668812; cv=none; b=fGA6vHAya06S0EmrCWJ0R5nRQux8PrnKRLA35jV+vFARt6SRuozeZYH5ltVIUnSQos9Y9uUgbWcbIrdem3KTXQ741hrDi/qkp9Yko1bpYNtIRUx9sNprmKeCmoBJoMXwlABEEaDvX5xhoReDROTL+QW+RWl2EFKSTeXummyqSyY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773668431; c=relaxed/simple;
-	bh=p+3P4JUs1V4+xxqxPwpAMJrV8uAlwDsvwMYrAzcRoT8=;
-	h=MIME-Version:Date:Message-ID:Subject:From:To:Content-Type; b=eWmffuL/l8DKCeWUx150ymUT60uX2Xzq0iNhzg1yjSlTLWzkGpU13NqFKGMLznHn9IZDzsV5PEr05B31CMAYk9hwBG9kFyV8rAoR0D5MMs9jryjGSCxEDgDMy2Cs6JRwhGgBExwrTqW/2FI/dTIQXRC327sH0NeKFToN12m15eI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com; arc=none smtp.client-ip=209.85.210.80
-Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
-Received: by mail-ot1-f80.google.com with SMTP id 46e09a7af769-7d753cb3174so44224585a34.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 Mar 2026 06:40:29 -0700 (PDT)
+	s=arc-20240116; t=1773668812; c=relaxed/simple;
+	bh=breDB+00djj9jhqac1wBzBjoA2b5kvIH5MdmzZDEYws=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=UBYX5Ed8i2TEGvwO3IUk9HIFDXio467kpEEoq3tdOkRYiMofkElXQad59dVlIJ6RNahWorzOyih+NzNVerK+ozn2C/JY987xWm9zX7fHaYpXmYBJ+0/T+PPUELcqu1WmOEpApGzAAboHMdGGZTU/Zx0kRbTf4LZhkSdHc9AVcJU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=iWciS++s; arc=none smtp.client-ip=209.85.214.172
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="iWciS++s"
+Received: by mail-pl1-f172.google.com with SMTP id d9443c01a7336-2b048527825so10502235ad.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 Mar 2026 06:46:50 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1773668810; x=1774273610; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to;
+        bh=8sFGbjk8Rr0qu9K/p0VmFfHdyoMlcL5YQ+B7+8Owpfw=;
+        b=iWciS++s8DKcrC/tTnIb6FymswINft1+owJ4HYvZZZC4a3imZ3DE7AFbbQSwiMzQoO
+         pWHbIFJBOU8PV13NFlU3nF1KlAX+2Maqi+FZp+MSkQWW94g3BGtVY2ho4larq5WnC8DT
+         jRf3gEh9USOEkvM9h5O4s97OOCGqcLfy5LMfrvef6Wjt0wQOlQq2gtnu71Q+bwOktbvs
+         R6VHpzebEqh4E/slk+2G19HzYixr45Y9nR8Fm22wKx/OxB08xOP2YX341hgnEAJcYbYd
+         9sNcmJ4PLXUJYKakqJ0+E2FqOUm67kHH/KAEL534d091lE3g+jxtq0AQtVxhhsSjDSQL
+         SdQg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1773668429; x=1774273229;
-        h=to:from:subject:message-id:date:mime-version:x-gm-message-state
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=lpYOf3euST0B9M0VgPqc0cDSB6qYsqLMk5rOtkx0oMI=;
-        b=o9akyXyFqnLYPL11SGsAjhmgu/bn1hZY0hTq285pjo23V4FZJ5lFS0GcuxOnf+8rzY
-         Wvj2XFkWk6m60Fe3oMIAlB1xlztfbfogYQ43s3uD23r/B9PHQ8MDQt9uRz3pA2O9yMzv
-         nbUuh3IdVfBkjfRi40RUn0fPdx6h8z6scTvDmnZg4v0UQx63vKNGynfgCDNI8NpXhBHn
-         Qesr/vlhUVecvzWYm7ty18HH0RD/RVNxzvFnsq0Ukt2z+erH+a/lyTi3Q8Knl+CStqxw
-         uZEGu3XikkCGdjOzEORTFNT5KwwrsQQp+U3EZorsnHHbtjQSSEP08DRcQfXiDpj378z5
-         K19Q==
-X-Forwarded-Encrypted: i=1; AJvYcCVPTpGkgiu5LhN2SBs8flsK7bZbO4V3IZ4SHv/1R0ior8BtWEzXsYdjAelidBHGvNgx1nqqDEpHqZPbjA==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yy4PTUztoullRcFgxSuEqh8mOn0o8keBk7Ecoym0a2V+Sx8SrBM
-	qd51NEtV548eMqWK9JN0YNm2cAKfLInoSBT7qVCG3A5imWsotWPAZMlXpE9ySwX0YhpYlz7hCsR
-	Timtz60NEKuksNPPVeaKdn844gyWTc290qwOxF/gu0SrqFWsmtzL70rWvbq4=
+        d=1e100.net; s=20251104; t=1773668810; x=1774273610;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=8sFGbjk8Rr0qu9K/p0VmFfHdyoMlcL5YQ+B7+8Owpfw=;
+        b=X3R5J9w2lvSjo+ma3euvwPfwWF/RNfMpNHlBROdrKOWltvrXu5EU4V6FsXBOisDNxE
+         4KZ2FIwkh4KaZ93sygibHKzSjTyw+Jy/8RKQz3puCP7KA7L0/ZPjeZhMwVSHw0Ln8njK
+         I5CQVLJgfs5aXhQNoBJiSp6hg6CCzq7wmi61+X/xjtnuIcdOjaO0/FMydEHiKrag7+MQ
+         SeOmxjbpIDgYhO6OBmPS0dLa+GRZmqcPxwRmsL//hsQ6v0cteKPMgiGyvM3EaMGTckhJ
+         4+F6nTVO0jzAdVU7WlwtYwHQVerACSHUTpb0GzmsszNrk0cw+NDw2jHSeHUp+ew4PWVw
+         GeiQ==
+X-Gm-Message-State: AOJu0YzOReudY3sY3zMOuJ2l83NLEKluK0H+CWAbnqCRrSDDYD+El/hN
+	1A7FYrPNyVz+N5KFQ6dxVvxrxHhjOtG8jhkspFmcS6BeJC97T2rITXUu
+X-Gm-Gg: ATEYQzy1otA2oefrkV6YKxHcpu5HRnfKhCugdwzpHUJVkEVnSoWqwvS+q08eL+1cScM
+	6TO0dPON8eKTytMp5LpJdymb6ThqY55I9LXlxUQkZpJXoIScRBnGG7R8eso0hEiasuW+NFpvzqf
+	pyQUAmE7+cQkJtPoT3PJ1ZlQtCbduPKsJ0+9UeGgX4zgDGUa3jiY8cpp+KFeRqOqGtBXyNkAKcO
+	UEBD0O/C1CCUF/wGlBlKyQjHOHRFuyYoNCmxRv4YiEDHLmXOqYYapjtcWcEvS+WUeLksPZsQ9HR
+	m0dZ0MskkGa2qg/HH4lIy/NiqJ2IYLuGjUZjJ26XcU49uca5m0kZMRmFasSVPkHQDqIY2MjkX7O
+	kw0GuQEzFHKmEtrx8NtZWsz+UvETg0Se8FChgnyAzdWkJcHbUCT6VjnGUGxLW0nggGL1ic0DFea
+	MiUlEEUx4jQOQFPLfzbMzoEdpd7odRq+3Z3LvY93nXlYkd7y7grE24/1cFGFBrS5O1pFTfLXk=
+X-Received: by 2002:a17:903:19cf:b0:2b0:4eeb:f800 with SMTP id d9443c01a7336-2b04eebfb1bmr59113245ad.33.1773668809726;
+        Mon, 16 Mar 2026 06:46:49 -0700 (PDT)
+Received: from kernel-fuzz.. ([103.172.183.54])
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2b05b4ca68csm25859945ad.79.2026.03.16.06.46.45
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 16 Mar 2026 06:46:49 -0700 (PDT)
+From: ZhengYuan Huang <gality369@gmail.com>
+To: dsterba@suse.com,
+	clm@fb.com,
+	bo.li.liu@oracle.com
+Cc: linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	baijiaju1990@gmail.com,
+	r33s3n6@gmail.com,
+	zzzccc427@gmail.com,
+	ZhengYuan Huang <gality369@gmail.com>,
+	stable@vger.kernel.org
+Subject: [PATCH] btrfs: balance: fix null-ptr-deref in btrfs_may_alloc_data_chunk
+Date: Mon, 16 Mar 2026 21:46:40 +0800
+Message-ID: <20260316134640.2605237-1-gality369@gmail.com>
+X-Mailer: git-send-email 2.43.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Received: by 2002:a4a:d809:0:b0:67b:e4a1:9e66 with SMTP id
- 006d021491bc7-67be4a1a48amr5629775eaf.22.1773668428853; Mon, 16 Mar 2026
- 06:40:28 -0700 (PDT)
-Date: Mon, 16 Mar 2026 06:40:28 -0700
-X-Google-Appengine-App-Id: s~syzkaller
-X-Google-Appengine-App-Id-Alias: syzkaller
-Message-ID: <69b8084c.050a0220.248e02.0115.GAE@google.com>
-Subject: [syzbot] [btrfs?] BUG: corrupted list in btrfs_free_compr_folio
-From: syzbot <syzbot+3c4d8371d65230f852a2@syzkaller.appspotmail.com>
-To: clm@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
 
-Hello,
+[BUG]
+Running btrfs balance can trigger a null-ptr-deref before relocating a
+data chunk when metadata corruption leaves a chunk in the chunk tree
+without a corresponding block group in the in-memory cache:
 
-syzbot found the following issue on:
+  KASAN: null-ptr-deref in range [0x0000000000000088-0x000000000000008f]
+  RIP: 0010:btrfs_may_alloc_data_chunk+0x40/0x1c0 fs/btrfs/volumes.c:3601
+  Call Trace:
+    __btrfs_balance fs/btrfs/volumes.c:4217 [inline]
+    btrfs_balance+0x2516/0x42b0 fs/btrfs/volumes.c:4604
+    btrfs_ioctl_balance fs/btrfs/ioctl.c:3577 [inline]
+    btrfs_ioctl+0x25cf/0x5b90 fs/btrfs/ioctl.c:5313
+    ...
 
-HEAD commit:    f338e7738378 Linux 7.0-rc4
-git tree:       upstream
-console output: https://syzkaller.appspot.com/x/log.txt?x=15265602580000
-kernel config:  https://syzkaller.appspot.com/x/.config?x=d46eab0cfd31c214
-dashboard link: https://syzkaller.appspot.com/bug?extid=3c4d8371d65230f852a2
-compiler:       Debian clang version 21.1.8 (++20251221033036+2078da43e25a-1~exp1~20251221153213.50), Debian LLD 21.1.8
+[CAUSE]
+__btrfs_balance() iterates the on-disk chunk tree and passes the chunk
+logical bytenr to btrfs_may_alloc_data_chunk() before relocating a data
+chunk. That helper then queries the in-memory block group cache:
 
-Unfortunately, I don't have any reproducer for this issue yet.
+  cache = btrfs_lookup_block_group(fs_info, chunk_offset);
+  chunk_type = cache->flags;   /* cache may be NULL */
 
-Downloadable assets:
-disk image (non-bootable): https://storage.googleapis.com/syzbot-assets/d900f083ada3/non_bootable_disk-f338e773.raw.xz
-vmlinux: https://storage.googleapis.com/syzbot-assets/2567fb35ebfb/vmlinux-f338e773.xz
-kernel image: https://storage.googleapis.com/syzbot-assets/f9124de81ddb/bzImage-f338e773.xz
+On a corrupt image can contain a chunk item whose matching block group
+item is missing, so no block group is ever inserted into the cache. In
+that case btrfs_lookup_block_group() returns NULL.
 
-IMPORTANT: if you fix the issue, please add the following tag to the commit:
-Reported-by: syzbot+3c4d8371d65230f852a2@syzkaller.appspotmail.com
+The code only guards this with ASSERT(cache), which becomes a no-op when
+CONFIG_BTRFS_ASSERT is disabled. The subsequent dereference of
+cache->flags therefore crashes the kernel.
 
-list_add double add: new=ffffea00010a8488, prev=ffffffff9a43a948, next=ffffea00010a8488.
-------------[ cut here ]------------
-kernel BUG at lib/list_debug.c:37!
-Oops: invalid opcode: 0000 [#1] SMP KASAN NOPTI
-CPU: 0 UID: 0 PID: 1045 Comm: kworker/u4:8 Not tainted syzkaller #0 PREEMPT(full) 
-Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2 04/01/2014
-Workqueue: btrfs-delalloc btrfs_work_helper
-RIP: 0010:__list_add_valid_or_report+0xa5/0x130 lib/list_debug.c:35
-Code: 74 12 b0 01 5b 41 5c 41 5d 41 5e 41 5f 5d e9 12 c6 f8 06 cc 48 c7 c7 e0 d7 27 8c 4c 89 fe 4c 89 f2 48 89 d9 e8 5c 49 6d fc 90 <0f> 0b 48 c7 c7 c0 d5 27 8c e8 4d 49 6d fc 90 0f 0b 48 c7 c7 80 d6
-RSP: 0018:ffffc90000d6f800 EFLAGS: 00010246
-RAX: 0000000000000058 RBX: ffffea00010a8488 RCX: 9af6677df2ed2e00
-RDX: 0000000000000000 RSI: 0000000000000001 RDI: 0000000000000000
-RBP: 1ffffd4000215092 R08: ffffc90000d6f587 R09: 1ffff920001adeb0
-R10: dffffc0000000000 R11: fffff520001adeb1 R12: 1ffffffff3487529
-R13: dffffc0000000000 R14: ffffffff9a43a948 R15: ffffea00010a8488
-FS:  0000000000000000(0000) GS:ffff88808ca55000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 000055e37eb87168 CR3: 0000000041bd8000 CR4: 0000000000352ef0
-Call Trace:
- <TASK>
- __list_add_valid include/linux/list.h:96 [inline]
- __list_add include/linux/list.h:158 [inline]
- list_add include/linux/list.h:177 [inline]
- btrfs_free_compr_folio+0x1e1/0x340 fs/btrfs/compression.c:218
- cleanup_compressed_bio fs/btrfs/compression.h:150 [inline]
- btrfs_compress_bio+0x35a/0x6b0 fs/btrfs/compression.c:1047
- compress_file_range+0x8df/0x19b0 fs/btrfs/inode.c:1023
- btrfs_work_helper+0x38c/0xc80 fs/btrfs/async-thread.c:312
- process_one_work kernel/workqueue.c:3276 [inline]
- process_scheduled_works+0xb6e/0x18c0 kernel/workqueue.c:3359
- worker_thread+0xa53/0xfc0 kernel/workqueue.c:3440
- kthread+0x388/0x470 kernel/kthread.c:436
- ret_from_fork+0x51e/0xb90 arch/x86/kernel/process.c:158
- ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
- </TASK>
-Modules linked in:
----[ end trace 0000000000000000 ]---
-RIP: 0010:__list_add_valid_or_report+0xa5/0x130 lib/list_debug.c:35
-Code: 74 12 b0 01 5b 41 5c 41 5d 41 5e 41 5f 5d e9 12 c6 f8 06 cc 48 c7 c7 e0 d7 27 8c 4c 89 fe 4c 89 f2 48 89 d9 e8 5c 49 6d fc 90 <0f> 0b 48 c7 c7 c0 d5 27 8c e8 4d 49 6d fc 90 0f 0b 48 c7 c7 80 d6
-RSP: 0018:ffffc90000d6f800 EFLAGS: 00010246
-RAX: 0000000000000058 RBX: ffffea00010a8488 RCX: 9af6677df2ed2e00
-RDX: 0000000000000000 RSI: 0000000000000001 RDI: 0000000000000000
-RBP: 1ffffd4000215092 R08: ffffc90000d6f587 R09: 1ffff920001adeb0
-R10: dffffc0000000000 R11: fffff520001adeb1 R12: 1ffffffff3487529
-R13: dffffc0000000000 R14: ffffffff9a43a948 R15: ffffea00010a8488
-FS:  0000000000000000(0000) GS:ffff88808ca55000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 000055e37eb87168 CR3: 0000000041bd8000 CR4: 0000000000352ef0
+[FIX]
+Add a NULL check after btrfs_lookup_block_group() in
+btrfs_may_alloc_data_chunk(). If the lookup fails, emit a btrfs_err()
+message identifying the affected bytenr and return -EUCLEAN to report
+filesystem corruption instead of dereferencing NULL.
 
+The caller already treats negative returns from
+btrfs_may_alloc_data_chunk() as fatal errors, so balance aborts cleanly
+and reports the corruption to userspace.
 
+Fixes: a6f93c71d412 ("Btrfs: avoid losing data raid profile when deleting a device")
+Cc: stable@vger.kernel.org
+Signed-off-by: ZhengYuan Huang <gality369@gmail.com>
 ---
-This report is generated by a bot. It may contain errors.
-See https://goo.gl/tpsmEJ for more information about syzbot.
-syzbot engineers can be reached at syzkaller@googlegroups.com.
+ fs/btrfs/volumes.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
 
-syzbot will keep track of this issue. See:
-https://goo.gl/tpsmEJ#status for how to communicate with syzbot.
-
-If the report is already addressed, let syzbot know by replying with:
-#syz fix: exact-commit-title
-
-If you want to overwrite report's subsystems, reply with:
-#syz set subsystems: new-subsystem
-(See the list of subsystem names on the web dashboard)
-
-If the report is a duplicate of another one, reply with:
-#syz dup: exact-subject-of-another-report
-
-If you want to undo deduplication, reply with:
-#syz undup
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 4958e074d420..4657b826b48b 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3597,7 +3597,12 @@ static int btrfs_may_alloc_data_chunk(struct btrfs_fs_info *fs_info,
+ 	u64 bytes_used;
+ 	u64 chunk_type;
+ 
+ 	cache = btrfs_lookup_block_group(fs_info, chunk_offset);
+-	ASSERT(cache);
++	if (!cache) {
++		btrfs_err(fs_info,
++			  "balance: chunk at bytenr %llu has no corresponding block group",
++			  chunk_offset);
++		return -EUCLEAN;
++	}
+ 	chunk_type = cache->flags;
+ 	btrfs_put_block_group(cache);
+ 
+-- 
+2.43.0

@@ -1,36 +1,36 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D4FEC332EB1
-	for <linux-btrfs@vger.kernel.org>; Mon, 16 Mar 2026 16:14:26 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 01EC3332EB1
+	for <linux-btrfs@vger.kernel.org>; Mon, 16 Mar 2026 16:14:27 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773677666; cv=none; b=r6Mvkwdg6ii/pttgnVPntHPj/r6D2HarMXl6oyzrpBc/fOO5tXzzZVw0LdxPazt6wo2e1xI642vAW4NZCfZkoodDK6jD6aO5XA3BJUu9ZNcz5aUBOJWt+1CUgSsChs/ukPdKWFSFO4WfPA4gZ5jROr0O44gDCFwsafIXW9eeDqA=
+	t=1773677668; cv=none; b=Z8PywjJ4HJsfU/yg4BOrjDBUxnRB7HIDZIMHmtXjRiZyaZzcuop+IfljaFxk8cGkPst5RSMPaRfD75ARG6FEbngVFznzejWzOHG+PtVP8ezSWLJEpTcgXNTL804Q142lnDcCyRlsQKbzRRYvuvH+f94GpxAOCWgyPg9FU9zLGAc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773677666; c=relaxed/simple;
-	bh=miD+LGNQAX1N6vAE+cLm1D71XJzUFti3ZhA43Riacjc=;
+	s=arc-20240116; t=1773677668; c=relaxed/simple;
+	bh=zgyMwuxMnjoSq1M2pDPyNCNxQAiuVS6Jj44OxrdBGbg=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=LrS2w+Hheq4+2dlcuzdQVr+hLE+RSN+y9zDPr3jW5o/uo1qXNmB0NRP7/7tXAJ2nESOCx2QJvQdAHeEwifLIO73/Lgt1OD89LcOM4ysbt/IctoiGjKjVqGktWuSBzxgxJ5mNruNAAYlfWybsM1BdVkQ+BMm3uvT9CGDFAPocfp8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=ajEwhmWS; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version; b=jafAn/B517/EcOEp46keFf9Z1PK6BZ9uZiE+yM8G7P27EY+DcZ47swLwp2zxg+GD2dzp8hSARf4jtHx8kfp3S/8MXLOjjQnjRhNZKxTrevr3MbCHKIOOY0O6GqQAb/hfr7ohGTBvPflz2H1PRVQMGIwIng8oB0a05DaE1SrHENk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=WQvvkwJ/; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="ajEwhmWS"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 44819C19421
-	for <linux-btrfs@vger.kernel.org>; Mon, 16 Mar 2026 16:14:26 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="WQvvkwJ/"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2B895C2BC9E
+	for <linux-btrfs@vger.kernel.org>; Mon, 16 Mar 2026 16:14:27 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1773677666;
-	bh=miD+LGNQAX1N6vAE+cLm1D71XJzUFti3ZhA43Riacjc=;
+	s=k20201202; t=1773677667;
+	bh=zgyMwuxMnjoSq1M2pDPyNCNxQAiuVS6Jj44OxrdBGbg=;
 	h=From:To:Subject:Date:In-Reply-To:References:From;
-	b=ajEwhmWSs7idGkCVoradNSeTs3nHbG/20zJaSt0G6F2vzEfkcmMdAoDmesUAm7+00
-	 uw4bdFkoQ5xQ2+Ylh/9gCgZ9UmAVZFr8iF/CkZL56jXSVeZnoBDfLDVKHzioVs9oD7
-	 T+F7J7yE7Rq4PrHsluBJ7jOgo41L9lTsXI6JMKYHrgE1Vn8+jLeSd0jLFN0Ng7zarB
-	 wmv/aQ2E3kNnm/UJOzo/BQO9dctcJ/tHzOkERQg13uQy9k21yhGxgpJQDPW2vnDsdz
-	 1/DpjwXf48XRQy9UJ5Q+cc0h+dLr1HYZiR+eDC5xiQQEB73/C2OrhoI671h1MbpD9o
-	 nXvhnOAqCRWFg==
+	b=WQvvkwJ/VI7yFhpnZIiukdsIvBa/C541fzHsvwzSAoJC6CmQqiU6Fcid9oZ9xX386
+	 bkvljWHq1zAJfzeskiK9mqFr97ZLlRTKCbvwn7l4iwky4fxuYOD1QZU17Jtr6MoOy4
+	 AWxJXS2nJWzjBaLtH+5PHTH7qaG7vzEA17EMP8XU8fNSHPk9YwXRLNajdpRhbwdzqw
+	 eHQ8ZqTZMSWGU8PJtm+t/kxUd/n/t5rQkhti8VPHzaUeHKTbK7bMhA0WZqy0MagnWt
+	 rGZGr0pnwE/RItjiXT58jEQz5aXagi0/dpumKWHW6DZ2WMf+xsalYcoeoRiX1yCS2N
+	 9lJ41yws1PTXg==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 09/11] btrfs: free cached state outside critical section in wait_extent_bit()
-Date: Mon, 16 Mar 2026 16:14:12 +0000
-Message-ID: <2a5ab88b82b622067c88095f28136d17a802ef0a.1773676775.git.fdmanana@suse.com>
+Subject: [PATCH 10/11] btrfs: panic instead of warn when splitting extent state not in the tree
+Date: Mon, 16 Mar 2026 16:14:13 +0000
+Message-ID: <80720dfbe2a3084fe8f25e44d2d931ed26d0d2ed.1773676775.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.47.2
 In-Reply-To: <cover.1773676775.git.fdmanana@suse.com>
 References: <cover.1773676775.git.fdmanana@suse.com>
@@ -44,34 +44,59 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-There's no need to free the cached extent state record while holding the
-io tree's spinlock, it's just making the critical section longer than it
-needs to be. So just do it after unlocking the io tree.
+We are not expected ever to split an extent state record that is not in
+the rbtree, as every record we pass to split_state() was found by
+iterating the rbtree, so if that ever happens it means we are not holding
+the extent io tree's spinlock or we have some memory corruption.
+
+Instead of simply warning in case the extent state record passed to
+split_state() is not in the rbtree, panic as this is a serious problem.
+Also tag as unlikely the case where the record is not in the rbtree.
+
+This also makes a tiny reduction the btrfs module's text size.
+
+Before:
+
+  $ size fs/btrfs/btrfs.ko
+     text	   data	    bss	    dec	    hex	filename
+  2000080	 174328	  15592	2190000	 216ab0	fs/btrfs/btrfs.ko
+
+After:
+
+  $ size fs/btrfs/btrfs.ko
+     text	   data	    bss	    dec	    hex	filename
+  2000064	 174328	  15592	2189984	 216aa0	fs/btrfs/btrfs.ko
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/extent-io-tree.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/btrfs/extent-io-tree.c | 13 ++++++-------
+ 1 file changed, 6 insertions(+), 7 deletions(-)
 
 diff --git a/fs/btrfs/extent-io-tree.c b/fs/btrfs/extent-io-tree.c
-index 0d9437e72bd4..29fcd08b9ca9 100644
+index 29fcd08b9ca9..72ddd8d2e7a3 100644
 --- a/fs/btrfs/extent-io-tree.c
 +++ b/fs/btrfs/extent-io-tree.c
-@@ -877,13 +877,13 @@ static void wait_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 		}
- 	}
- out:
-+	spin_unlock(&tree->lock);
- 	/* This state is no longer useful, clear it and free it up. */
- 	if (cached_state && *cached_state) {
- 		state = *cached_state;
- 		*cached_state = NULL;
- 		btrfs_free_extent_state(state);
- 	}
--	spin_unlock(&tree->lock);
- }
- 
- static void cache_state_if_flags(struct extent_state *state,
+@@ -591,14 +591,13 @@ static struct extent_state *clear_state_bit(struct extent_io_tree *tree,
+ 	state->state &= ~bits_to_clear;
+ 	state_wake_up(tree, state, bits);
+ 	if (state->state == 0) {
++		if (unlikely(!extent_state_in_tree(state)))
++			extent_io_tree_panic(tree, state, "extent_state_in_tree", -EUCLEAN);
++
+ 		next = next_search_state(state, end);
+-		if (extent_state_in_tree(state)) {
+-			rb_erase(&state->rb_node, &tree->state);
+-			RB_CLEAR_NODE(&state->rb_node);
+-			btrfs_free_extent_state(state);
+-		} else {
+-			WARN_ON(1);
+-		}
++		rb_erase(&state->rb_node, &tree->state);
++		RB_CLEAR_NODE(&state->rb_node);
++		btrfs_free_extent_state(state);
+ 	} else {
+ 		merge_state(tree, state);
+ 		next = next_search_state(state, end);
 -- 
 2.47.2
 

@@ -1,36 +1,36 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0FEC3334C0D
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id ED7FC334C39
 	for <linux-btrfs@vger.kernel.org>; Mon, 16 Mar 2026 16:14:25 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773677665; cv=none; b=WPHCxR1uvKUeawvDCnhBXbXxd0weYjazHaeZTZSlh4c8RpVDLZcw8A7FxE9zDXRSQhDIP/wuAX5JuCijaTWv48kmEzeaGStK+/65D4ZrCz+Pp/zIBu3FcC635U8wAGEi87ggGvQ19CY/oR6oovyb2/BdXeuBgrHVSSjbScrci0A=
+	t=1773677666; cv=none; b=BLCcCYjXcqpXbEEM8qmuWbxKY/4L3i/xCnW/gR5+bHy4uKXv3PEz0O0yRegVt44GH9tPYJFicfFhsMhj5NO1gTHKioymsfUP6FzkpIivMCHc8ou+A4Hw0wskFxWLVrChdBvNDOkX56Tl/JYgh4f5wxlfatUKOmW+arT5i9QebV0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773677665; c=relaxed/simple;
-	bh=cvbDFJO/EZ/7VAJn51+TrHq3XSLm42305FlpbCRPUT8=;
+	s=arc-20240116; t=1773677666; c=relaxed/simple;
+	bh=hlxSSj216h6OJ9vxrS652BOB1aOpNWndk1ZKMwVxal0=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=HkGwT/HpdCEEw8sdQNwveOJP6JzdTieX1bhnzU1WDxsT7ujZgAa7xOjAc+JKxomC2foq183stURY/AmX9vzVyAhnrIET230hvr6wkKsi89oWY9PVVvdSHALYGafrTmKALoJyC9QX/WU1zAe2TD6qSn5LgevcjbeOhftdo6rkTbk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=noCUSNo5; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version; b=aaPMy1UcPX95T1A23aO2UugHjnvvRR0W6Cpj/6yG3uHu996uTE9duQbywKc16vhWyNGtMoyQsl/KwrXRZ6XRJDSfX2jQ/0X4AJ/lgrs5uBvwTC8OAzwKqK3Ry4wb7KKUyfUtzzQmjTabnV49mBNezQ+6IfbJX/v7mAL6mbn1Mhg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=gBFpiNug; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="noCUSNo5"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 75F31C19421
-	for <linux-btrfs@vger.kernel.org>; Mon, 16 Mar 2026 16:14:24 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="gBFpiNug"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 5D54AC19421
+	for <linux-btrfs@vger.kernel.org>; Mon, 16 Mar 2026 16:14:25 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1773677664;
-	bh=cvbDFJO/EZ/7VAJn51+TrHq3XSLm42305FlpbCRPUT8=;
+	s=k20201202; t=1773677665;
+	bh=hlxSSj216h6OJ9vxrS652BOB1aOpNWndk1ZKMwVxal0=;
 	h=From:To:Subject:Date:In-Reply-To:References:From;
-	b=noCUSNo5srISFtWEZNRsU6XBmMG/NZXI8Na1As7nE+IDVo6skxS1u9Xr2upf9BS0X
-	 R0PDjD2vhHGFx/HNB0qZqK3r64hIVw4OuKtGpo3f+EWrJTnFgdbhydhs2bzrsMvGpB
-	 rYuAemxrrQ8QHKmIs/32Sxh3UxKYCfKqjvF+6P/zu+hBc/qFeydkkyRt9bI/c6x9hr
-	 iKwf/CsNLbUo/FJIH+hEft4K/OJZ+6726mN7zQYFVkQDTrD/gBgNKR0Y6yUy+4+g03
-	 FUIDSsTzMaTu7BFE4+e9ojHeN21j0NN4IhoC8HtuBZNWlOw3PyLzsv/mzaDLJA25te
-	 zWgyne5T7oBvA==
+	b=gBFpiNugGeLdofuo/ILA5A2u4jYkLMyVJ9maKJYvX9qu/JMwr0zqYCyclN6T8cW3e
+	 Va37Q0TR7N64fZy0RLN5+mE44Eu+j9F1S4KBSaTq11k/6AJgRbaYRoVNKm4fxegt69
+	 05NEYYuCPbF+eLgoGfyNmzmt0qnGRBgAworknhk0wE8wcax55JcSELDusCumU+H2m0
+	 Lm1vX1xpyJQROz2xYJ6re3Wdn4pL7dr2483qeQGWUoU3ZZAdYu9nRvoaGmoRjVC5xO
+	 lweDzGcrUEh9vdoOYff/COWTaNDaiRBYW+rLo/V7c9Uk7UQz29TEyL/LcpaZiFHz2A
+	 bhY44OKHOOzGw==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 07/11] btrfs: remove wake parameter from clear_state_bit()
-Date: Mon, 16 Mar 2026 16:14:10 +0000
-Message-ID: <96fe9129f85ed910d38bd02b0e046e23db4a4cd6.1773676775.git.fdmanana@suse.com>
+Subject: [PATCH 08/11] btrfs: avoid unnecessary wake ups on io trees when there are no waiters
+Date: Mon, 16 Mar 2026 16:14:11 +0000
+Message-ID: <d001deb68dd2b5635be02c2490ff6f39a3b4d8af.1773676775.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.47.2
 In-Reply-To: <cover.1773676775.git.fdmanana@suse.com>
 References: <cover.1773676775.git.fdmanana@suse.com>
@@ -44,98 +44,97 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-There's no need to pass the 'wake' parameter, we can determine if we have
-to wake up waiters by checking if EXTENT_LOCK_BITS is set in the bits to
-clear. So simplify things and remove the parameter.
+Whenever clearing the extent lock bits of an extent state record, we
+unconditionally call wake_up() on the state's waitqueue. Most of the
+time there are no waiters on the queue so we are just wasting time calling
+wake_up(), since that requires locking and unlocking the queue's spinlock,
+disable and re-enable interrupts, function calls, and other minor overhead
+while we are holding a critical section delimited by the extent io tree's
+spinlock.
+
+So call wake_up() only if there are waiters on an extent state's wait
+queue.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/extent-io-tree.c | 19 +++++++++----------
- 1 file changed, 9 insertions(+), 10 deletions(-)
+ fs/btrfs/extent-io-tree.c | 29 +++++++++++++++++++++--------
+ 1 file changed, 21 insertions(+), 8 deletions(-)
 
 diff --git a/fs/btrfs/extent-io-tree.c b/fs/btrfs/extent-io-tree.c
-index a99e67585d64..5ffb99c258e9 100644
+index 5ffb99c258e9..0d9437e72bd4 100644
 --- a/fs/btrfs/extent-io-tree.c
 +++ b/fs/btrfs/extent-io-tree.c
-@@ -550,14 +550,14 @@ static inline struct extent_state *next_search_state(struct extent_state *state,
+@@ -536,6 +536,24 @@ static int split_state(struct extent_io_tree *tree, struct extent_state *orig,
+ 	return 0;
+ }
  
++static inline void state_wake_up(struct extent_io_tree *tree,
++				 struct extent_state *state, u32 bits)
++{
++	lockdep_assert_held(&tree->lock);
++
++	if (!(bits & EXTENT_LOCK_BITS))
++		return;
++
++	/*
++	 * No memory barriers because the tree's lock is held while:
++	 *
++	 * 1) Adding waiters to the queue.
++	 * 2) Waking up waiters.
++	 * 3) Removing waiters from queue.
++	 */
++	cond_wake_up_nomb(&state->wq);
++}
++
  /*
-  * Utility function to clear some bits in an extent state struct.  It will
-- * optionally wake up anyone waiting on this state (wake == 1).
-+ * optionally wake up anyone waiting on this state.
-  *
-  * If no bits are set on the state struct after clearing things, the
-  * struct is freed and removed from the tree
-  */
- static struct extent_state *clear_state_bit(struct extent_io_tree *tree,
- 					    struct extent_state *state,
--					    u32 bits, int wake, u64 end,
-+					    u32 bits, u64 end,
- 					    struct extent_changeset *changeset)
- {
- 	struct extent_state *next;
-@@ -571,7 +571,7 @@ static struct extent_state *clear_state_bit(struct extent_io_tree *tree,
+  * Use this during tree iteration to avoid doing next node searches when it's
+  * not needed (the current record ends at or after the target range's end).
+@@ -571,8 +589,7 @@ static struct extent_state *clear_state_bit(struct extent_io_tree *tree,
  	if (unlikely(ret))
  		extent_io_tree_panic(tree, state, "add_extent_changeset", ret);
  	state->state &= ~bits_to_clear;
--	if (wake)
-+	if (bits & EXTENT_LOCK_BITS)
- 		wake_up(&state->wq);
+-	if (bits & EXTENT_LOCK_BITS)
+-		wake_up(&state->wq);
++	state_wake_up(tree, state, bits);
  	if (state->state == 0) {
  		next = next_search_state(state, end);
-@@ -708,8 +708,7 @@ int btrfs_clear_extent_bit_changeset(struct extent_io_tree *tree, u64 start, u64
+ 		if (extent_state_in_tree(state)) {
+@@ -618,7 +635,6 @@ int btrfs_clear_extent_bit_changeset(struct extent_io_tree *tree, u64 start, u64
+ 	u64 last_end;
+ 	int ret = 0;
+ 	bool clear;
+-	bool wake;
+ 	const bool delete = (bits & EXTENT_CLEAR_ALL_BITS);
+ 	gfp_t mask;
+ 
+@@ -632,7 +648,6 @@ int btrfs_clear_extent_bit_changeset(struct extent_io_tree *tree, u64 start, u64
+ 	if (bits & EXTENT_DELALLOC)
+ 		bits |= EXTENT_NORESERVE;
+ 
+-	wake = (bits & EXTENT_LOCK_BITS);
+ 	clear = (bits & (EXTENT_LOCK_BITS | EXTENT_BOUNDARY));
+ again:
+ 	if (!prealloc) {
+@@ -758,8 +773,7 @@ int btrfs_clear_extent_bit_changeset(struct extent_io_tree *tree, u64 start, u64
+ 			state->start = end + 1;
+ 			state->end = orig_end;
+ 
+-			if (wake)
+-				wake_up(&state->wq);
++			state_wake_up(tree, state, bits);
  			goto out;
  		}
- 		if (state->end <= end) {
--			state = clear_state_bit(tree, state, bits, wake, end,
--						changeset);
-+			state = clear_state_bit(tree, state, bits, end, changeset);
- 			goto next;
- 		}
- 		if (need_resched())
-@@ -777,13 +776,13 @@ int btrfs_clear_extent_bit_changeset(struct extent_io_tree *tree, u64 start, u64
- 		if (wake)
- 			wake_up(&state->wq);
  
--		clear_state_bit(tree, prealloc, bits, wake, end, changeset);
-+		clear_state_bit(tree, prealloc, bits, end, changeset);
- 
- 		prealloc = NULL;
- 		goto out;
- 	}
- 
--	state = clear_state_bit(tree, state, bits, wake, end, changeset);
-+	state = clear_state_bit(tree, state, bits, end, changeset);
- next:
- 	if (last_end >= end)
- 		goto out;
-@@ -1422,7 +1421,7 @@ int btrfs_convert_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 	if (state->start == start && state->end <= end) {
- 		set_state_bits(tree, state, bits, NULL);
- 		cache_state(state, cached_state);
--		state = clear_state_bit(tree, state, clear_bits, 0, end, NULL);
-+		state = clear_state_bit(tree, state, clear_bits, end, NULL);
- 		if (last_end >= end)
+@@ -773,8 +787,7 @@ int btrfs_clear_extent_bit_changeset(struct extent_io_tree *tree, u64 start, u64
  			goto out;
- 		start = last_end + 1;
-@@ -1461,7 +1460,7 @@ int btrfs_convert_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 		if (state->end <= end) {
- 			set_state_bits(tree, state, bits, NULL);
- 			cache_state(state, cached_state);
--			state = clear_state_bit(tree, state, clear_bits, 0, end, NULL);
-+			state = clear_state_bit(tree, state, clear_bits, end, NULL);
- 			if (last_end >= end)
- 				goto out;
- 			start = last_end + 1;
-@@ -1546,7 +1545,7 @@ int btrfs_convert_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+ 		}
  
- 		set_state_bits(tree, prealloc, bits, NULL);
- 		cache_state(prealloc, cached_state);
--		clear_state_bit(tree, prealloc, clear_bits, 0, end, NULL);
-+		clear_state_bit(tree, prealloc, clear_bits, end, NULL);
- 		prealloc = NULL;
- 		goto out;
- 	}
+-		if (wake)
+-			wake_up(&state->wq);
++		state_wake_up(tree, state, bits);
+ 
+ 		clear_state_bit(tree, prealloc, bits, end, changeset);
+ 
 -- 
 2.47.2
 

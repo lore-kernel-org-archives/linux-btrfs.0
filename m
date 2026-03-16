@@ -1,36 +1,36 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5814F332EA2
-	for <linux-btrfs@vger.kernel.org>; Mon, 16 Mar 2026 16:14:24 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0FEC3334C0D
+	for <linux-btrfs@vger.kernel.org>; Mon, 16 Mar 2026 16:14:25 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773677664; cv=none; b=CjhB+Mf+NEwPGrmYhp1xPM6l6yGgY3nb5PmksuNxMwtwpbShnY+7HWO38CX1XE+v/oExt11Odssv6V3azCSk3cE0NW95LT7AVJOZ1WquA/YHia3li8YtbZSOypaurDS8N9DcHZ5Y2lrt+WipOQTXd1ioj2o+rwPqGIbDxsTAKgo=
+	t=1773677665; cv=none; b=WPHCxR1uvKUeawvDCnhBXbXxd0weYjazHaeZTZSlh4c8RpVDLZcw8A7FxE9zDXRSQhDIP/wuAX5JuCijaTWv48kmEzeaGStK+/65D4ZrCz+Pp/zIBu3FcC635U8wAGEi87ggGvQ19CY/oR6oovyb2/BdXeuBgrHVSSjbScrci0A=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773677664; c=relaxed/simple;
-	bh=J+RoL+gdYVvHEhpC/3gZFBX5PjczCUAWaVBPdvZyS1E=;
+	s=arc-20240116; t=1773677665; c=relaxed/simple;
+	bh=cvbDFJO/EZ/7VAJn51+TrHq3XSLm42305FlpbCRPUT8=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=Q67qL2voF7X0JPEyucHpCVtqbm1p7Wtnxpnoh6SwYShcLiJ8wxgc0Vlf9DaipReTTbE/PPY/EgshB4FejOpruhG+V3wDGgx3vMpafZ08kfa1FSgLSmgfmniAxjO8xfW7RgUhealIVHBMj/32urg058i1yi/XF0//KsutwGROrHw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=sJ9hSbpE; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version; b=HkGwT/HpdCEEw8sdQNwveOJP6JzdTieX1bhnzU1WDxsT7ujZgAa7xOjAc+JKxomC2foq183stURY/AmX9vzVyAhnrIET230hvr6wkKsi89oWY9PVVvdSHALYGafrTmKALoJyC9QX/WU1zAe2TD6qSn5LgevcjbeOhftdo6rkTbk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=noCUSNo5; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="sJ9hSbpE"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8EF51C19425
-	for <linux-btrfs@vger.kernel.org>; Mon, 16 Mar 2026 16:14:23 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="noCUSNo5"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 75F31C19421
+	for <linux-btrfs@vger.kernel.org>; Mon, 16 Mar 2026 16:14:24 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
 	s=k20201202; t=1773677664;
-	bh=J+RoL+gdYVvHEhpC/3gZFBX5PjczCUAWaVBPdvZyS1E=;
+	bh=cvbDFJO/EZ/7VAJn51+TrHq3XSLm42305FlpbCRPUT8=;
 	h=From:To:Subject:Date:In-Reply-To:References:From;
-	b=sJ9hSbpEuXdALTXAZ7qHgjzf5DhE2Qt+2Q0oXBCyw9XjxqnXjg9aE49fPKtYnXQZp
-	 PvQCptQis59kzr+OWJVg8eBOpw5XwKLq/ez/T2USe1HaBgnLKjy7l3fRN0nrtW+gNv
-	 pHN81D9ufZRtk4zHqMnOhTcjk7K38O2Ta+tyIT/0cb2/BSkDODKq3rrW2NVs2faQwu
-	 6vHcUNV0/g4KzgjzSCiCb/MYbWmLRJq79hEjZGyBou+KjFkULWQfSefkBPK+USy8Fb
-	 2BBvkq+/1m2+eoZDkA8Q/rPEInOnF7fNzX0MYSa+P1+Tb6kDqiiFxrPOyiqMzblowS
-	 QHI3wFr94R0Hw==
+	b=noCUSNo5srISFtWEZNRsU6XBmMG/NZXI8Na1As7nE+IDVo6skxS1u9Xr2upf9BS0X
+	 R0PDjD2vhHGFx/HNB0qZqK3r64hIVw4OuKtGpo3f+EWrJTnFgdbhydhs2bzrsMvGpB
+	 rYuAemxrrQ8QHKmIs/32Sxh3UxKYCfKqjvF+6P/zu+hBc/qFeydkkyRt9bI/c6x9hr
+	 iKwf/CsNLbUo/FJIH+hEft4K/OJZ+6726mN7zQYFVkQDTrD/gBgNKR0Y6yUy+4+g03
+	 FUIDSsTzMaTu7BFE4+e9ojHeN21j0NN4IhoC8HtuBZNWlOw3PyLzsv/mzaDLJA25te
+	 zWgyne5T7oBvA==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 06/11] btrfs: change last argument of add_extent_changeset() to boolean
-Date: Mon, 16 Mar 2026 16:14:09 +0000
-Message-ID: <899f6217567e23acb67724520b915d09dfda1750.1773676775.git.fdmanana@suse.com>
+Subject: [PATCH 07/11] btrfs: remove wake parameter from clear_state_bit()
+Date: Mon, 16 Mar 2026 16:14:10 +0000
+Message-ID: <96fe9129f85ed910d38bd02b0e046e23db4a4cd6.1773676775.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.47.2
 In-Reply-To: <cover.1773676775.git.fdmanana@suse.com>
 References: <cover.1773676775.git.fdmanana@suse.com>
@@ -44,54 +44,98 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-The argument is used as a boolean but it's defined as an integer.
-Switch it to a boolean for better readability.
+There's no need to pass the 'wake' parameter, we can determine if we have
+to wake up waiters by checking if EXTENT_LOCK_BITS is set in the bits to
+clear. So simplify things and remove the parameter.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/extent-io-tree.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ fs/btrfs/extent-io-tree.c | 19 +++++++++----------
+ 1 file changed, 9 insertions(+), 10 deletions(-)
 
 diff --git a/fs/btrfs/extent-io-tree.c b/fs/btrfs/extent-io-tree.c
-index c2ede01f1762..a99e67585d64 100644
+index a99e67585d64..5ffb99c258e9 100644
 --- a/fs/btrfs/extent-io-tree.c
 +++ b/fs/btrfs/extent-io-tree.c
-@@ -185,7 +185,7 @@ void btrfs_free_extent_state(struct extent_state *state)
+@@ -550,14 +550,14 @@ static inline struct extent_state *next_search_state(struct extent_state *state,
  
- static int add_extent_changeset(struct extent_state *state, u32 bits,
- 				 struct extent_changeset *changeset,
--				 int set)
-+				 bool set)
+ /*
+  * Utility function to clear some bits in an extent state struct.  It will
+- * optionally wake up anyone waiting on this state (wake == 1).
++ * optionally wake up anyone waiting on this state.
+  *
+  * If no bits are set on the state struct after clearing things, the
+  * struct is freed and removed from the tree
+  */
+ static struct extent_state *clear_state_bit(struct extent_io_tree *tree,
+ 					    struct extent_state *state,
+-					    u32 bits, int wake, u64 end,
++					    u32 bits, u64 end,
+ 					    struct extent_changeset *changeset)
  {
- 	int ret;
- 
-@@ -394,7 +394,7 @@ static void set_state_bits(struct extent_io_tree *tree,
- 	if (tree->owner == IO_TREE_INODE_IO)
- 		btrfs_set_delalloc_extent(tree->inode, state, bits);
- 
--	ret = add_extent_changeset(state, bits_to_set, changeset, 1);
-+	ret = add_extent_changeset(state, bits_to_set, changeset, true);
- 	if (unlikely(ret))
- 		extent_io_tree_panic(tree, state, "add_extent_changeset", ret);
- 	state->state |= bits_to_set;
-@@ -567,7 +567,7 @@ static struct extent_state *clear_state_bit(struct extent_io_tree *tree,
- 	if (tree->owner == IO_TREE_INODE_IO)
- 		btrfs_clear_delalloc_extent(tree->inode, state, bits);
- 
--	ret = add_extent_changeset(state, bits_to_clear, changeset, 0);
-+	ret = add_extent_changeset(state, bits_to_clear, changeset, false);
+ 	struct extent_state *next;
+@@ -571,7 +571,7 @@ static struct extent_state *clear_state_bit(struct extent_io_tree *tree,
  	if (unlikely(ret))
  		extent_io_tree_panic(tree, state, "add_extent_changeset", ret);
  	state->state &= ~bits_to_clear;
-@@ -746,7 +746,7 @@ int btrfs_clear_extent_bit_changeset(struct extent_io_tree *tree, u64 start, u64
- 			 */
- 			state->end = end;
+-	if (wake)
++	if (bits & EXTENT_LOCK_BITS)
+ 		wake_up(&state->wq);
+ 	if (state->state == 0) {
+ 		next = next_search_state(state, end);
+@@ -708,8 +708,7 @@ int btrfs_clear_extent_bit_changeset(struct extent_io_tree *tree, u64 start, u64
+ 			goto out;
+ 		}
+ 		if (state->end <= end) {
+-			state = clear_state_bit(tree, state, bits, wake, end,
+-						changeset);
++			state = clear_state_bit(tree, state, bits, end, changeset);
+ 			goto next;
+ 		}
+ 		if (need_resched())
+@@ -777,13 +776,13 @@ int btrfs_clear_extent_bit_changeset(struct extent_io_tree *tree, u64 start, u64
+ 		if (wake)
+ 			wake_up(&state->wq);
  
--			ret = add_extent_changeset(state, bits_to_clear, changeset, 0);
-+			ret = add_extent_changeset(state, bits_to_clear, changeset, false);
- 			if (unlikely(ret < 0)) {
- 				extent_io_tree_panic(tree, state,
- 						     "add_extent_changeset", ret);
+-		clear_state_bit(tree, prealloc, bits, wake, end, changeset);
++		clear_state_bit(tree, prealloc, bits, end, changeset);
+ 
+ 		prealloc = NULL;
+ 		goto out;
+ 	}
+ 
+-	state = clear_state_bit(tree, state, bits, wake, end, changeset);
++	state = clear_state_bit(tree, state, bits, end, changeset);
+ next:
+ 	if (last_end >= end)
+ 		goto out;
+@@ -1422,7 +1421,7 @@ int btrfs_convert_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+ 	if (state->start == start && state->end <= end) {
+ 		set_state_bits(tree, state, bits, NULL);
+ 		cache_state(state, cached_state);
+-		state = clear_state_bit(tree, state, clear_bits, 0, end, NULL);
++		state = clear_state_bit(tree, state, clear_bits, end, NULL);
+ 		if (last_end >= end)
+ 			goto out;
+ 		start = last_end + 1;
+@@ -1461,7 +1460,7 @@ int btrfs_convert_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+ 		if (state->end <= end) {
+ 			set_state_bits(tree, state, bits, NULL);
+ 			cache_state(state, cached_state);
+-			state = clear_state_bit(tree, state, clear_bits, 0, end, NULL);
++			state = clear_state_bit(tree, state, clear_bits, end, NULL);
+ 			if (last_end >= end)
+ 				goto out;
+ 			start = last_end + 1;
+@@ -1546,7 +1545,7 @@ int btrfs_convert_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+ 
+ 		set_state_bits(tree, prealloc, bits, NULL);
+ 		cache_state(prealloc, cached_state);
+-		clear_state_bit(tree, prealloc, clear_bits, 0, end, NULL);
++		clear_state_bit(tree, prealloc, clear_bits, end, NULL);
+ 		prealloc = NULL;
+ 		goto out;
+ 	}
 -- 
 2.47.2
 

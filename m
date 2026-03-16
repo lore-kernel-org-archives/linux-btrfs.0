@@ -1,36 +1,36 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 46F5E33468C
-	for <linux-btrfs@vger.kernel.org>; Mon, 16 Mar 2026 16:14:23 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5814F332EA2
+	for <linux-btrfs@vger.kernel.org>; Mon, 16 Mar 2026 16:14:24 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773677663; cv=none; b=Fptbe1SALMEMfjpxiBVY27zr4zDOWDuqvoN1mRJ8wAUp0TnJfL3OamN1V2afZJcGGHNk426mDSCh1yiYw7wxKpkoCr5j1C0HFemskO3qz+0Z/NGTIJYBDj7ZXH/TXZvkK5BVm5Tjjs5zjdprl16kVQlO9C3LlhEWtXneus9N8Y0=
+	t=1773677664; cv=none; b=CjhB+Mf+NEwPGrmYhp1xPM6l6yGgY3nb5PmksuNxMwtwpbShnY+7HWO38CX1XE+v/oExt11Odssv6V3azCSk3cE0NW95LT7AVJOZ1WquA/YHia3li8YtbZSOypaurDS8N9DcHZ5Y2lrt+WipOQTXd1ioj2o+rwPqGIbDxsTAKgo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773677663; c=relaxed/simple;
-	bh=3ucqsHv3wSI99hTWT6qp5XOjTvGbt0EEBAx5JJ1Yhm4=;
+	s=arc-20240116; t=1773677664; c=relaxed/simple;
+	bh=J+RoL+gdYVvHEhpC/3gZFBX5PjczCUAWaVBPdvZyS1E=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=Sh6ReVpgOHSfN6fWKWN+4NNfZQGPyhYKREHb1ncAyB6HDlMD6NDHwlYN0kiRRg8uCIzTthgxRtWQQU8/P7QfR3/Uq13CgWE+v+ah758yRsNsWX5p03gqR0T8YqfThQ4OMrHtSf9k4BZnul6GidLk8EJf70zKGHhFPKxb64Bs93w=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=UTGXnUyx; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version; b=Q67qL2voF7X0JPEyucHpCVtqbm1p7Wtnxpnoh6SwYShcLiJ8wxgc0Vlf9DaipReTTbE/PPY/EgshB4FejOpruhG+V3wDGgx3vMpafZ08kfa1FSgLSmgfmniAxjO8xfW7RgUhealIVHBMj/32urg058i1yi/XF0//KsutwGROrHw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=sJ9hSbpE; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="UTGXnUyx"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id A73A8C19425
-	for <linux-btrfs@vger.kernel.org>; Mon, 16 Mar 2026 16:14:22 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="sJ9hSbpE"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8EF51C19425
+	for <linux-btrfs@vger.kernel.org>; Mon, 16 Mar 2026 16:14:23 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1773677663;
-	bh=3ucqsHv3wSI99hTWT6qp5XOjTvGbt0EEBAx5JJ1Yhm4=;
+	s=k20201202; t=1773677664;
+	bh=J+RoL+gdYVvHEhpC/3gZFBX5PjczCUAWaVBPdvZyS1E=;
 	h=From:To:Subject:Date:In-Reply-To:References:From;
-	b=UTGXnUyxoDGkCBXVBMKGFYeS4r1iFtf9Zirkjbd7D6BjQvlf417xzC9OfKpEKp7QV
-	 aH8kTruzquXbi3t5Hqv+v3Vl6/HwhPCTkWC/+14c/l5pAnvGobRqbp1KZi39h3M3Uu
-	 3ugTee93DQVDXLC9v9ip0noHcMyMBJS3jkGSYqjwujfity+ejOVKzL4SZA/fSDWQ5a
-	 1kDGbTQa6rzPuL1jWZgIJjrrokH4KUBsyMN4clTRpMbo2ZZJ2pkiUJEy1G74O9gpCS
-	 ZtE3HzRdcTepTzSaUarsuzGawfop6iOI5R/IJ3YB54iXrxLOxcP92Ds2HqGvTeYXwm
-	 n3Sgvn476QJUg==
+	b=sJ9hSbpEuXdALTXAZ7qHgjzf5DhE2Qt+2Q0oXBCyw9XjxqnXjg9aE49fPKtYnXQZp
+	 PvQCptQis59kzr+OWJVg8eBOpw5XwKLq/ez/T2USe1HaBgnLKjy7l3fRN0nrtW+gNv
+	 pHN81D9ufZRtk4zHqMnOhTcjk7K38O2Ta+tyIT/0cb2/BSkDODKq3rrW2NVs2faQwu
+	 6vHcUNV0/g4KzgjzSCiCb/MYbWmLRJq79hEjZGyBou+KjFkULWQfSefkBPK+USy8Fb
+	 2BBvkq+/1m2+eoZDkA8Q/rPEInOnF7fNzX0MYSa+P1+Tb6kDqiiFxrPOyiqMzblowS
+	 QHI3wFr94R0Hw==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 05/11] btrfs: use extent_io_tree_panic() instead of BUG_ON()
-Date: Mon, 16 Mar 2026 16:14:08 +0000
-Message-ID: <24685790cf25bebeb74912e62a1b3191ba0d1c4a.1773676775.git.fdmanana@suse.com>
+Subject: [PATCH 06/11] btrfs: change last argument of add_extent_changeset() to boolean
+Date: Mon, 16 Mar 2026 16:14:09 +0000
+Message-ID: <899f6217567e23acb67724520b915d09dfda1750.1773676775.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.47.2
 In-Reply-To: <cover.1773676775.git.fdmanana@suse.com>
 References: <cover.1773676775.git.fdmanana@suse.com>
@@ -44,39 +44,54 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-There's no need to call BUG_ON(), instead call extent_io_tree_panic(),
-which also calls BUG(), but it prints an additional error message with
-some useful information before hitting BUG().
+The argument is used as a boolean but it's defined as an integer.
+Switch it to a boolean for better readability.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/extent-io-tree.c | 6 ++++--
- 1 file changed, 4 insertions(+), 2 deletions(-)
+ fs/btrfs/extent-io-tree.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/fs/btrfs/extent-io-tree.c b/fs/btrfs/extent-io-tree.c
-index 5972fe28716e..c2ede01f1762 100644
+index c2ede01f1762..a99e67585d64 100644
 --- a/fs/btrfs/extent-io-tree.c
 +++ b/fs/btrfs/extent-io-tree.c
-@@ -395,7 +395,8 @@ static void set_state_bits(struct extent_io_tree *tree,
+@@ -185,7 +185,7 @@ void btrfs_free_extent_state(struct extent_state *state)
+ 
+ static int add_extent_changeset(struct extent_state *state, u32 bits,
+ 				 struct extent_changeset *changeset,
+-				 int set)
++				 bool set)
+ {
+ 	int ret;
+ 
+@@ -394,7 +394,7 @@ static void set_state_bits(struct extent_io_tree *tree,
+ 	if (tree->owner == IO_TREE_INODE_IO)
  		btrfs_set_delalloc_extent(tree->inode, state, bits);
  
- 	ret = add_extent_changeset(state, bits_to_set, changeset, 1);
--	BUG_ON(ret < 0);
-+	if (unlikely(ret))
-+		extent_io_tree_panic(tree, state, "add_extent_changeset", ret);
+-	ret = add_extent_changeset(state, bits_to_set, changeset, 1);
++	ret = add_extent_changeset(state, bits_to_set, changeset, true);
+ 	if (unlikely(ret))
+ 		extent_io_tree_panic(tree, state, "add_extent_changeset", ret);
  	state->state |= bits_to_set;
- }
- 
-@@ -567,7 +568,8 @@ static struct extent_state *clear_state_bit(struct extent_io_tree *tree,
+@@ -567,7 +567,7 @@ static struct extent_state *clear_state_bit(struct extent_io_tree *tree,
+ 	if (tree->owner == IO_TREE_INODE_IO)
  		btrfs_clear_delalloc_extent(tree->inode, state, bits);
  
- 	ret = add_extent_changeset(state, bits_to_clear, changeset, 0);
--	BUG_ON(ret < 0);
-+	if (unlikely(ret))
-+		extent_io_tree_panic(tree, state, "add_extent_changeset", ret);
+-	ret = add_extent_changeset(state, bits_to_clear, changeset, 0);
++	ret = add_extent_changeset(state, bits_to_clear, changeset, false);
+ 	if (unlikely(ret))
+ 		extent_io_tree_panic(tree, state, "add_extent_changeset", ret);
  	state->state &= ~bits_to_clear;
- 	if (wake)
- 		wake_up(&state->wq);
+@@ -746,7 +746,7 @@ int btrfs_clear_extent_bit_changeset(struct extent_io_tree *tree, u64 start, u64
+ 			 */
+ 			state->end = end;
+ 
+-			ret = add_extent_changeset(state, bits_to_clear, changeset, 0);
++			ret = add_extent_changeset(state, bits_to_clear, changeset, false);
+ 			if (unlikely(ret < 0)) {
+ 				extent_io_tree_panic(tree, state,
+ 						     "add_extent_changeset", ret);
 -- 
 2.47.2
 

@@ -1,118 +1,142 @@
-Received: from foss.arm.com (foss.arm.com [217.140.110.172])
-	by smtp.subspace.kernel.org (Postfix) with ESMTP id 3B44B3988EE;
-	Mon, 16 Mar 2026 13:30:32 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=217.140.110.172
+Received: from mail-ot1-f80.google.com (mail-ot1-f80.google.com [209.85.210.80])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+	(No client certificate requested)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DB4AB25228D
+	for <linux-btrfs@vger.kernel.org>; Mon, 16 Mar 2026 13:40:29 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.80
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773667835; cv=none; b=dMmWbQcH9JXXE3dVUgMNW4DFLAhgCEZhhlhpCenx9HwWxkTmE1uTzwVMrvrtGunNs1VrPWP5rZM4lkGQSP7FsIOJODAJxpbrEmTA5eCCzSOxYC5y/ou/ovFowog2PpdEUnuaZZ3pNPDtvj+wqVD6PA4W2aQFgtQyVmbqVOi490o=
+	t=1773668431; cv=none; b=F3ZWaYgcp1/9RVJ2zIQCrjbUV++Kwg8SZGNP2ANQRDzTlGpfWXE/CXCdGkKtLVY9odV0RfoPvMw4LYLybRfwBj9VF+kDEi4HV4HvfmW1aB9qYgeydV2H0w/003NVaO0Q0gkMxu7rWEDok60NEjJdRmTz3K+E7PKjntguevgP2hs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773667835; c=relaxed/simple;
-	bh=12QmHVFW6kvGAsAEHlRgc6k9FaOX+eCOvB+1XSjB85g=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=Bbj9i3OmX6tLHsLG9LsVUer8BMIseUV+cewr4p5b4W0GLlnwPuU7seL8aE/at0nXm72aSd8dJNxLetLzuHHuYyH1LmmKQGBoR67oCN6y9fm4gvzOaf7ZCgi6tFdE7Nt15YoWXaTLjQ3vkM5D8UeKzGqO7h9DPbsmd2QLdRgsNKs=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arm.com; spf=pass smtp.mailfrom=arm.com; arc=none smtp.client-ip=217.140.110.172
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arm.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=arm.com
-Received: from usa-sjc-imap-foss1.foss.arm.com (unknown [10.121.207.14])
-	by usa-sjc-mx-foss1.foss.arm.com (Postfix) with ESMTP id 357291477;
-	Mon, 16 Mar 2026 06:30:25 -0700 (PDT)
-Received: from [10.57.61.116] (unknown [10.57.61.116])
-	by usa-sjc-imap-foss1.foss.arm.com (Postfix) with ESMTPSA id 9D4953F778;
-	Mon, 16 Mar 2026 06:30:22 -0700 (PDT)
-Message-ID: <2c7466f5-d952-4356-9b55-9d2ebb3471f2@arm.com>
-Date: Mon, 16 Mar 2026 13:30:19 +0000
+	s=arc-20240116; t=1773668431; c=relaxed/simple;
+	bh=p+3P4JUs1V4+xxqxPwpAMJrV8uAlwDsvwMYrAzcRoT8=;
+	h=MIME-Version:Date:Message-ID:Subject:From:To:Content-Type; b=eWmffuL/l8DKCeWUx150ymUT60uX2Xzq0iNhzg1yjSlTLWzkGpU13NqFKGMLznHn9IZDzsV5PEr05B31CMAYk9hwBG9kFyV8rAoR0D5MMs9jryjGSCxEDgDMy2Cs6JRwhGgBExwrTqW/2FI/dTIQXRC327sH0NeKFToN12m15eI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com; arc=none smtp.client-ip=209.85.210.80
+Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
+Received: by mail-ot1-f80.google.com with SMTP id 46e09a7af769-7d753cb3174so44224585a34.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 Mar 2026 06:40:29 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1773668429; x=1774273229;
+        h=to:from:subject:message-id:date:mime-version:x-gm-message-state
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=lpYOf3euST0B9M0VgPqc0cDSB6qYsqLMk5rOtkx0oMI=;
+        b=o9akyXyFqnLYPL11SGsAjhmgu/bn1hZY0hTq285pjo23V4FZJ5lFS0GcuxOnf+8rzY
+         Wvj2XFkWk6m60Fe3oMIAlB1xlztfbfogYQ43s3uD23r/B9PHQ8MDQt9uRz3pA2O9yMzv
+         nbUuh3IdVfBkjfRi40RUn0fPdx6h8z6scTvDmnZg4v0UQx63vKNGynfgCDNI8NpXhBHn
+         Qesr/vlhUVecvzWYm7ty18HH0RD/RVNxzvFnsq0Ukt2z+erH+a/lyTi3Q8Knl+CStqxw
+         uZEGu3XikkCGdjOzEORTFNT5KwwrsQQp+U3EZorsnHHbtjQSSEP08DRcQfXiDpj378z5
+         K19Q==
+X-Forwarded-Encrypted: i=1; AJvYcCVPTpGkgiu5LhN2SBs8flsK7bZbO4V3IZ4SHv/1R0ior8BtWEzXsYdjAelidBHGvNgx1nqqDEpHqZPbjA==@vger.kernel.org
+X-Gm-Message-State: AOJu0Yy4PTUztoullRcFgxSuEqh8mOn0o8keBk7Ecoym0a2V+Sx8SrBM
+	qd51NEtV548eMqWK9JN0YNm2cAKfLInoSBT7qVCG3A5imWsotWPAZMlXpE9ySwX0YhpYlz7hCsR
+	Timtz60NEKuksNPPVeaKdn844gyWTc290qwOxF/gu0SrqFWsmtzL70rWvbq4=
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 50/61] iommu: Prefer IS_ERR_OR_NULL over manual NULL check
-To: Philipp Hahn <phahn-oss@avm.de>, amd-gfx@lists.freedesktop.org,
- apparmor@lists.ubuntu.com, bpf@vger.kernel.org, ceph-devel@vger.kernel.org,
- cocci@inria.fr, dm-devel@lists.linux.dev, dri-devel@lists.freedesktop.org,
- gfs2@lists.linux.dev, intel-gfx@lists.freedesktop.org,
- intel-wired-lan@lists.osuosl.org, iommu@lists.linux.dev,
- kvm@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
- linux-block@vger.kernel.org, linux-bluetooth@vger.kernel.org,
- linux-btrfs@vger.kernel.org, linux-cifs@vger.kernel.org,
- linux-clk@vger.kernel.org, linux-erofs@lists.ozlabs.org,
- linux-ext4@vger.kernel.org, linux-fsdevel@vger.kernel.org,
- linux-gpio@vger.kernel.org, linux-hyperv@vger.kernel.org,
- linux-input@vger.kernel.org, linux-kernel@vger.kernel.org,
- linux-leds@vger.kernel.org, linux-media@vger.kernel.org,
- linux-mips@vger.kernel.org, linux-mm@kvack.org,
- linux-modules@vger.kernel.org, linux-mtd@lists.infradead.org,
- linux-nfs@vger.kernel.org, linux-omap@vger.kernel.org,
- linux-phy@lists.infradead.org, linux-pm@vger.kernel.org,
- linux-rockchip@lists.infradead.org, linux-s390@vger.kernel.org,
- linux-scsi@vger.kernel.org, linux-sctp@vger.kernel.org,
- linux-security-module@vger.kernel.org, linux-sh@vger.kernel.org,
- linux-sound@vger.kernel.org, linux-stm32@st-md-mailman.stormreply.com,
- linux-trace-kernel@vger.kernel.org, linux-usb@vger.kernel.org,
- linux-wireless@vger.kernel.org, netdev@vger.kernel.org,
- ntfs3@lists.linux.dev, samba-technical@lists.samba.org,
- sched-ext@lists.linux.dev, target-devel@vger.kernel.org,
- tipc-discussion@lists.sourceforge.net, v9fs@lists.linux.dev
-Cc: Joerg Roedel <joro@8bytes.org>, Will Deacon <will@kernel.org>
-References: <20260310-b4-is_err_or_null-v1-0-bd63b656022d@avm.de>
- <20260310-b4-is_err_or_null-v1-50-bd63b656022d@avm.de>
-From: Robin Murphy <robin.murphy@arm.com>
-Content-Language: en-GB
-In-Reply-To: <20260310-b4-is_err_or_null-v1-50-bd63b656022d@avm.de>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+X-Received: by 2002:a4a:d809:0:b0:67b:e4a1:9e66 with SMTP id
+ 006d021491bc7-67be4a1a48amr5629775eaf.22.1773668428853; Mon, 16 Mar 2026
+ 06:40:28 -0700 (PDT)
+Date: Mon, 16 Mar 2026 06:40:28 -0700
+X-Google-Appengine-App-Id: s~syzkaller
+X-Google-Appengine-App-Id-Alias: syzkaller
+Message-ID: <69b8084c.050a0220.248e02.0115.GAE@google.com>
+Subject: [syzbot] [btrfs?] BUG: corrupted list in btrfs_free_compr_folio
+From: syzbot <syzbot+3c4d8371d65230f852a2@syzkaller.appspotmail.com>
+To: clm@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
+Content-Type: text/plain; charset="UTF-8"
 
-On 2026-03-10 11:49 am, Philipp Hahn wrote:
-> Prefer using IS_ERR_OR_NULL() over using IS_ERR() and a manual NULL
-> check.
+Hello,
 
-AFAICS it doesn't look possible for the argument to be anything other 
-than valid at both callsites, so *both* conditions here seem in fact to 
-be entirely redundant.
+syzbot found the following issue on:
 
-> Change generated with coccinelle.
+HEAD commit:    f338e7738378 Linux 7.0-rc4
+git tree:       upstream
+console output: https://syzkaller.appspot.com/x/log.txt?x=15265602580000
+kernel config:  https://syzkaller.appspot.com/x/.config?x=d46eab0cfd31c214
+dashboard link: https://syzkaller.appspot.com/bug?extid=3c4d8371d65230f852a2
+compiler:       Debian clang version 21.1.8 (++20251221033036+2078da43e25a-1~exp1~20251221153213.50), Debian LLD 21.1.8
 
-Please use coccinelle responsibly. Mechanical changes are great for 
-scripted API updates, but for cleanup, whilst it's ideal for *finding* 
-areas of code that are worth looking at, the code then wants actually 
-looking at, in its whole context, because meaningful cleanup often goes 
-deeper than trivial replacement.
+Unfortunately, I don't have any reproducer for this issue yet.
 
-In particular, anywhere IS_ERR_OR_NULL() is genuinely relevant is 
-usually a sign of bad interface design, so if you're looking at this 
-then you really should be looking first and foremost to remove any 
-checks that are already unnecessary, and for the remainder, to see if 
-the thing being checked can be improved to not mix the two different 
-styles. That would be constructive and (usually) welcome cleanup. Simply 
-churning a bunch of code with this ugly macro that's arguably less 
-readable than what it replaces, not so much.
+Downloadable assets:
+disk image (non-bootable): https://storage.googleapis.com/syzbot-assets/d900f083ada3/non_bootable_disk-f338e773.raw.xz
+vmlinux: https://storage.googleapis.com/syzbot-assets/2567fb35ebfb/vmlinux-f338e773.xz
+kernel image: https://storage.googleapis.com/syzbot-assets/f9124de81ddb/bzImage-f338e773.xz
 
-Thanks,
-Robin.
+IMPORTANT: if you fix the issue, please add the following tag to the commit:
+Reported-by: syzbot+3c4d8371d65230f852a2@syzkaller.appspotmail.com
 
-> To: Joerg Roedel <joro@8bytes.org>
-> To: Will Deacon <will@kernel.org>
-> To: Robin Murphy <robin.murphy@arm.com>
-> Cc: iommu@lists.linux.dev
-> Cc: linux-kernel@vger.kernel.org
-> Signed-off-by: Philipp Hahn <phahn-oss@avm.de>
-> ---
->   drivers/iommu/omap-iommu.c | 2 +-
->   1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/drivers/iommu/omap-iommu.c b/drivers/iommu/omap-iommu.c
-> index 8231d7d6bb6a9202025643639a6b28e6faa84659..500a42b57a997696ff37c76f028a717ab71d01f9 100644
-> --- a/drivers/iommu/omap-iommu.c
-> +++ b/drivers/iommu/omap-iommu.c
-> @@ -881,7 +881,7 @@ static int omap_iommu_attach(struct omap_iommu *obj, u32 *iopgd)
->    **/
->   static void omap_iommu_detach(struct omap_iommu *obj)
->   {
-> -	if (!obj || IS_ERR(obj))
-> +	if (IS_ERR_OR_NULL(obj))
->   		return;
->   
->   	spin_lock(&obj->iommu_lock);
-> 
+list_add double add: new=ffffea00010a8488, prev=ffffffff9a43a948, next=ffffea00010a8488.
+------------[ cut here ]------------
+kernel BUG at lib/list_debug.c:37!
+Oops: invalid opcode: 0000 [#1] SMP KASAN NOPTI
+CPU: 0 UID: 0 PID: 1045 Comm: kworker/u4:8 Not tainted syzkaller #0 PREEMPT(full) 
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2 04/01/2014
+Workqueue: btrfs-delalloc btrfs_work_helper
+RIP: 0010:__list_add_valid_or_report+0xa5/0x130 lib/list_debug.c:35
+Code: 74 12 b0 01 5b 41 5c 41 5d 41 5e 41 5f 5d e9 12 c6 f8 06 cc 48 c7 c7 e0 d7 27 8c 4c 89 fe 4c 89 f2 48 89 d9 e8 5c 49 6d fc 90 <0f> 0b 48 c7 c7 c0 d5 27 8c e8 4d 49 6d fc 90 0f 0b 48 c7 c7 80 d6
+RSP: 0018:ffffc90000d6f800 EFLAGS: 00010246
+RAX: 0000000000000058 RBX: ffffea00010a8488 RCX: 9af6677df2ed2e00
+RDX: 0000000000000000 RSI: 0000000000000001 RDI: 0000000000000000
+RBP: 1ffffd4000215092 R08: ffffc90000d6f587 R09: 1ffff920001adeb0
+R10: dffffc0000000000 R11: fffff520001adeb1 R12: 1ffffffff3487529
+R13: dffffc0000000000 R14: ffffffff9a43a948 R15: ffffea00010a8488
+FS:  0000000000000000(0000) GS:ffff88808ca55000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000055e37eb87168 CR3: 0000000041bd8000 CR4: 0000000000352ef0
+Call Trace:
+ <TASK>
+ __list_add_valid include/linux/list.h:96 [inline]
+ __list_add include/linux/list.h:158 [inline]
+ list_add include/linux/list.h:177 [inline]
+ btrfs_free_compr_folio+0x1e1/0x340 fs/btrfs/compression.c:218
+ cleanup_compressed_bio fs/btrfs/compression.h:150 [inline]
+ btrfs_compress_bio+0x35a/0x6b0 fs/btrfs/compression.c:1047
+ compress_file_range+0x8df/0x19b0 fs/btrfs/inode.c:1023
+ btrfs_work_helper+0x38c/0xc80 fs/btrfs/async-thread.c:312
+ process_one_work kernel/workqueue.c:3276 [inline]
+ process_scheduled_works+0xb6e/0x18c0 kernel/workqueue.c:3359
+ worker_thread+0xa53/0xfc0 kernel/workqueue.c:3440
+ kthread+0x388/0x470 kernel/kthread.c:436
+ ret_from_fork+0x51e/0xb90 arch/x86/kernel/process.c:158
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:__list_add_valid_or_report+0xa5/0x130 lib/list_debug.c:35
+Code: 74 12 b0 01 5b 41 5c 41 5d 41 5e 41 5f 5d e9 12 c6 f8 06 cc 48 c7 c7 e0 d7 27 8c 4c 89 fe 4c 89 f2 48 89 d9 e8 5c 49 6d fc 90 <0f> 0b 48 c7 c7 c0 d5 27 8c e8 4d 49 6d fc 90 0f 0b 48 c7 c7 80 d6
+RSP: 0018:ffffc90000d6f800 EFLAGS: 00010246
+RAX: 0000000000000058 RBX: ffffea00010a8488 RCX: 9af6677df2ed2e00
+RDX: 0000000000000000 RSI: 0000000000000001 RDI: 0000000000000000
+RBP: 1ffffd4000215092 R08: ffffc90000d6f587 R09: 1ffff920001adeb0
+R10: dffffc0000000000 R11: fffff520001adeb1 R12: 1ffffffff3487529
+R13: dffffc0000000000 R14: ffffffff9a43a948 R15: ffffea00010a8488
+FS:  0000000000000000(0000) GS:ffff88808ca55000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000055e37eb87168 CR3: 0000000041bd8000 CR4: 0000000000352ef0
 
+
+---
+This report is generated by a bot. It may contain errors.
+See https://goo.gl/tpsmEJ for more information about syzbot.
+syzbot engineers can be reached at syzkaller@googlegroups.com.
+
+syzbot will keep track of this issue. See:
+https://goo.gl/tpsmEJ#status for how to communicate with syzbot.
+
+If the report is already addressed, let syzbot know by replying with:
+#syz fix: exact-commit-title
+
+If you want to overwrite report's subsystems, reply with:
+#syz set subsystems: new-subsystem
+(See the list of subsystem names on the web dashboard)
+
+If the report is a duplicate of another one, reply with:
+#syz dup: exact-subject-of-another-report
+
+If you want to undo deduplication, reply with:
+#syz undup

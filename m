@@ -1,264 +1,191 @@
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.21])
+Received: from SY8PR01CU002.outbound.protection.outlook.com (mail-australiaeastazon11020134.outbound.protection.outlook.com [52.101.150.134])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E2A04277035;
-	Mon, 16 Mar 2026 10:07:49 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.17.21
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773655671; cv=none; b=fu0PSG26+mjIQyKmzYaXFJ0tA+cXALMIaQI3StvWR00iwa3NIxqGJVxll1Mw1vnLVoB1QtCKl1byX3wvLQhT54cSQJ0jg4L/dm71Odq4bYBDknRzC5PlkJHKQOYghXBdUS25yozV86b0Nklo6H31FJ7Aur1pVilci1xdCfr9sko=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773655671; c=relaxed/simple;
-	bh=Gc2zTWaBTqLU3LGhJOjnWnJ3ZidRM15XTpaP2B+owC8=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=ZqMRg1JeoQ+Iso96k8ZYSFcjtcamWUdJ0VbxBL63GiaOHXhychWhEpU+lXkxWnZLyUESwBmb3UNSXqNixtX1+Yl41mIKpYXMOTb4iFf7lm42S/gDQmftK980yPkdFIL+UL/hQXxck3o4eEJV/JN+92TXiNVnqplzuQbOBx0QKlY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=EfTepgmB; arc=none smtp.client-ip=212.227.17.21
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 601F65CDF1;
+	Mon, 16 Mar 2026 10:57:01 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=52.101.150.134
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1773658622; cv=fail; b=F2zSYtinQLfOgCdLWmoIpNI1MLRdoAJizdAbP418HtX6eClkDmfeCbvvaKMhPLEVx8YhQaSJY6wtuf7Kpn/bQcyBuwDoEvIPFAb64A5wqoP1D5JIsIwkqx5OQ461VuTLlSZq4HByquknymfgga5pOwt+XP10sDxLsVoR9XdRc0I=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1773658622; c=relaxed/simple;
+	bh=d5hNtX6DpWb48mk9GMOtWsv4+ZkGU1EDB5Jdxm07lYE=;
+	h=From:To:CC:Subject:Date:Message-ID:Content-Type:MIME-Version; b=sILLaUfx3e5WIu/v48t/OCqlsAvzeRuFlnY2KBR1Hnkmru9tf//rgmzf90xKuqhnaG4SkDvMueyId1rgrS98e3xWLWFD3NiVWIFgVZbpVohnc5IVkAjcaaC7okEleX4PJVrSmL/PaOpQDPu6s4VVeyFgrqdOpSq+/9paHeISlJ4=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=verivus.ai; spf=pass smtp.mailfrom=verivus.ai; dkim=fail (2048-bit key) header.d=verivus.ai header.i=@verivus.ai header.b=gejhQU0F reason="signature verification failed"; arc=fail smtp.client-ip=52.101.150.134
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=verivus.ai
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=verivus.ai
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="EfTepgmB"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1773655668; x=1774260468; i=quwenruo.btrfs@gmx.com;
-	bh=qyEvNl1tKSixCmf67zYgwh80e/tveFiWuVHvjI5wx1I=;
-	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
-	 References:From:In-Reply-To:Content-Type:
-	 Content-Transfer-Encoding:cc:content-transfer-encoding:
-	 content-type:date:from:message-id:mime-version:reply-to:subject:
-	 to;
-	b=EfTepgmB0DC0cGxZ/bmPGpwksiPhh7HXqrOxzq6f8n0JwHhhLAAtsbALNuOmIN3Y
-	 M9Mc7cAJpsoDjva9v9M3s62necJsSAnXll1pLZbUSruSX171C8tA4qtEZ10+aTfF9
-	 1bm266AWViSkf9dsCf3AG6SDUyXc1zP7IhFIHmPb4gSL+d46DN8ddh4H8bvXom9Tp
-	 2+KMA/kKCTBcyafD5Zfjlwrv8OJasKNVkvVej0v2k3W0P4LZiqX4ZheXWo3CdeB/g
-	 TSX42qQyIq9NdYChabeQKncxZEYyfO+pm4ahllERjZ0GyGYGZCLtjS7mhstHjrPvd
-	 UUj+GUg+4+DpBmhHaw==
-X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from client.hidden.invalid by mail.gmx.net (mrgmx105
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1MOiDX-1wFT6y1slj-00LRoT; Mon, 16
- Mar 2026 11:07:47 +0100
-Message-ID: <ef838960-b0e0-4ad1-bfd1-556167120b5d@gmx.com>
-Date: Mon, 16 Mar 2026 20:37:44 +1030
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=verivus.ai header.i=@verivus.ai header.b="gejhQU0F"
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
+ b=QRn3KFGNkArWzTf7Wc7Mlx+cTJYE9jodL6pEwadEaTTXx4M38iFbQhTJewNYbi6D6r+X60/mPnrP+oFiYlLHfw7+rZ9m0jiX6fbNXxBwPL8KP6oT9uHNjwCVyAXVTinOMLv5DWzEmWvlfEqE8JAGBAQL8lh7TD3UmhqIJXfM/rx/fMGJQZd6hHROCxJuoyIRRiUDtUfUqqsY69sFioJLDhnbVipzi4cFT/xDxCVkWm8uI27L6yBjGFAu3ZrVvT+Mqob1bFFxhluIYEfjb85sUH7th2T/4s5DqWaQbaI0VNA60Xi8EGPz8XFqf9LuEXi7WjafKOHcckCwfi5JoGN43A==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector10001;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=XOCCwPojCpX/58d++EKWqx5C9P4/Vfd+2EOtU0u16BI=;
+ b=uhs8reGj1DAnlggZf47xWcvhgpMg34lc7f8m0eausen5SYG2FnbEj/Vfj41ddwDODDIF3aRdmVuMxfQT5dRQc2D/+3dHr8mfHdurcWIe/26GkFqF08pQ4PZNERleXH+CAPdPrr7cyAd7d4hxlmUc5I9OaAWpFhUcJnObDPolmBLDVHit7qLfZPQ6GW/dqCEoeQeS2OMr+ch2zgKIjQLBbzYm8k10bIO5SfcmhvACmosXDge23cJ/xrxiflaYYk23cuAh/paNf2QOruS7ONM+2U2AzaBeKJfG1J8VbK88BOtbWm31Bn7D7y1Kaq7WMaMdD8VijeZZw9w+Xl2ey8Y2Zw==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=verivus.ai; dmarc=pass action=none header.from=verivus.ai;
+ dkim=pass header.d=verivus.ai; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=verivus.ai;
+ s=selector1;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=XOCCwPojCpX/58d++EKWqx5C9P4/Vfd+2EOtU0u16BI=;
+ b=gejhQU0F/9oJuNhgABSoUhY8RxSH0ihboG0ZoAWQWPOKTIoV/NlVEO3HSqbz4mSR9cuHMd4Nn0GTJH4FcMNamqHZJnrIL9fcGzzXO3zk85F0nGmSRl+qMFQbEdUWVwlPl8pi0xKCw7qtUUt6puBAWbiQsUM49BSBbIfGnmeb7XnLtNTk5z8di9GKaKCeKBpbShLgrSY0m/iryMnQHNhgKQ3kBVI+G3TwQRMCqq4JMPVSlu8x7ygMshd/rYIqo5Y+IIEmVmu/SGTQwAxobv6XWpHz02NkD56UC+EdToT0bvIKAyYRz5AuQI64p35ciqt8MHsCz3IQqabbJAHeKgtfuw==
+Received: from ME0P300MB0853.AUSP300.PROD.OUTLOOK.COM (2603:10c6:220:22a::5)
+ by SY3PPFFCE4AABF2.AUSP300.PROD.OUTLOOK.COM (2603:10c6:18::4ba) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.9723.16; Mon, 16 Mar
+ 2026 10:56:56 +0000
+Received: from ME0P300MB0853.AUSP300.PROD.OUTLOOK.COM
+ ([fe80::1e3f:9cb9:4a95:b5a2]) by ME0P300MB0853.AUSP300.PROD.OUTLOOK.COM
+ ([fe80::1e3f:9cb9:4a95:b5a2%5]) with mapi id 15.20.9723.018; Mon, 16 Mar 2026
+ 10:56:56 +0000
+From: Werner Kasselman <werner@verivus.ai>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+CC: "wqu@suse.com" <wqu@suse.com>, "dsterba@suse.com" <dsterba@suse.com>,
+	"josef@toxicpanda.com" <josef@toxicpanda.com>, "linux-kernel@vger.kernel.org"
+	<linux-kernel@vger.kernel.org>, Werner Kasselman <werner@verivus.ai>,
+	"stable@vger.kernel.org" <stable@vger.kernel.org>
+Subject: [PATCH] btrfs: fix subpage state mismatch in cow_fixup writeback path
+Thread-Topic: [PATCH] btrfs: fix subpage state mismatch in cow_fixup writeback
+ path
+Thread-Index: AQHctTObRWzC431DjEmnyqvxv2SVgA==
+Date: Mon, 16 Mar 2026 10:56:56 +0000
+Message-ID: <20260316105654.710798-1-werner@verivus.com>
+Accept-Language: en-AU, en-AT, en-GB, en-US
+Content-Language: en-US
+X-MS-Has-Attach:
+X-MS-TNEF-Correlator:
+x-mailer: git-send-email 2.43.0
+authentication-results: dkim=none (message not signed)
+ header.d=none;dmarc=none action=none header.from=verivus.ai;
+x-ms-publictraffictype: Email
+x-ms-traffictypediagnostic: ME0P300MB0853:EE_|SY3PPFFCE4AABF2:EE_
+x-ms-office365-filtering-correlation-id: a8344331-c519-41fc-8336-08de834abd86
+x-ms-exchange-senderadcheck: 1
+x-ms-exchange-antispam-relay: 0
+x-microsoft-antispam:
+ BCL:0;ARA:13230040|1800799024|376014|366016|38070700021|18002099003|56012099003;
+x-microsoft-antispam-message-info:
+ iwSKC6aPptz7W1w3VvmGLX818qRHR8pOOsab76Koi4+3Vjj9SXcNZ99S9dKtB1akSk1UYm5FCrAwht3nfVSgI+uKnDeMwU9GLLfOYRJ+bUYT44NZyR6umStGkBMq1jI2iaPDgPcgmlhJ6EiDxF6oiQDUuu5EarRwthPfzBThiUkaw8O2f57a/VUYZR7TqF4MNbrzSmJxwfSPCLno+NIgSlTozpln1ZIBaV5rTNXKhB5mBmedxPS5/uxViLoks8sacGXSuNdvQxDnkNQxEy+JzkZfD90e7rQ3olU5ZV+TCLIWBrdz289rJHfOZaT7ro1IvPBczCiP2JOT6HOo6j0BHxgI4V+heOTc0uEdnCl0M1Z7ZbJLw9LlyzlH2e2jw5W36MUuSgwhjZRWdDtHqEcrXYdw4D0cjgYfAu10XSfLxiskxfhjTAKlv+f8lRYVwvaNHR9getl/z+DA+NEvw1U75hrPtEej2iLP1HYXlYitl5/gA+TG5dos9ekVtvTMT4K7sNsqikHBwId+9AcW77pRSKVez6qQKNGZwCKK/USzuqz+LSn/6oYTECNXCWhknRXNTHctSR/P6vVMyp6F2QvfLt4uu7bfWbYZMnKaVWKY/i1SLRNEBawIzKMjMwZRkps1ABkxiidb4eZy/GTmrme/0KuOdEgHhN4WyC/i6yxBQvCpbpUcHv8odIW+1mm4tYiij10yzrwkQ/EBdfr0mfx4Sj6zcNXtX9CoBHi5dF4QllYgF8wMk55TkCEiJW1QaZ+xm1viYr5HCDbJWpHSAZCckS1JmH5LkSYs76HTftYD/PA=
+x-forefront-antispam-report:
+ CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:ME0P300MB0853.AUSP300.PROD.OUTLOOK.COM;PTR:;CAT:NONE;SFS:(13230040)(1800799024)(376014)(366016)(38070700021)(18002099003)(56012099003);DIR:OUT;SFP:1102;
+x-ms-exchange-antispam-messagedata-chunkcount: 1
+x-ms-exchange-antispam-messagedata-0:
+ =?iso-8859-1?Q?ZcxJlnV0/+Z/8ClfKo97hdSBUcYXIhTaB+ZxpxT8m8gQfjTm1wyu2GqV6g?=
+ =?iso-8859-1?Q?Mer6khCxMevH3+1XUzrc/wVcl4/y5CxSbRrz+oHZ0lbfNz0kWMSndBc1hU?=
+ =?iso-8859-1?Q?TziQWaY9pTIjDWq5YKgwSN4/o1Oo0SxAm5rFDoVY/2wWAQY59KkzB88FzL?=
+ =?iso-8859-1?Q?BUK0rpOIUdvdeVqY11gvFNYCup4mZs1+uQA+8SllO3sjC3L7fPR105TxII?=
+ =?iso-8859-1?Q?1p/+0NW6bGtgOKT3CMBm/rojHyouhFjxLwuS6aCP1eS4uDWfa/amI+GDzK?=
+ =?iso-8859-1?Q?WUJGsgOAO/6kc0nj4GS7rjr5qulx+dbh5yrsS8ThIlbuq0as73XnkmM3+m?=
+ =?iso-8859-1?Q?hN94VbvdKej30uQfUbrgygmpODEV2Yw1lYIt8ZCejPnOil4CrVWmmlfCTE?=
+ =?iso-8859-1?Q?3qB5c0QjRNrxnmyW59rKvI6JpMauIynGGNRfF4hnISC3WKvrZadiXm8abZ?=
+ =?iso-8859-1?Q?CZNqhlKuiPrvVJQffTzK+EAGWRmuQh1cTSuta05TlXMN3qx6paYgf+1gOh?=
+ =?iso-8859-1?Q?BVs83c8Lz1jnzEiB8sYGl3A/vmyHib9ZdTTanEUlslHQb453ML4b7KK5FZ?=
+ =?iso-8859-1?Q?3/yL9ab2Ck5EWy5CZ1ITVp0xZdWxcqi7f2e8jofwIB4Hsy7ZyBJLcU8VFh?=
+ =?iso-8859-1?Q?Jt0LyVmtt61qiUiWS5GHc0yhXaUOAxjgWarc/neKV8dZJdv8MaV4Tg1QHS?=
+ =?iso-8859-1?Q?I08wgi3JYXp7p5k9YlzoM0Py+EZeQGMPvv4qE3WYWk6z4Isyh622vzHc1E?=
+ =?iso-8859-1?Q?pvxiObTuxVWxJk1mB0tV5cLN6HGbxH9JsX4/ny0xBFA1irqzh+nUqP4Yqa?=
+ =?iso-8859-1?Q?vpr1XF8i1rmTZ2zXiBLz2I5KyOYb30qNt3+5RXCmj3QXZDbe/XuFnAsBAY?=
+ =?iso-8859-1?Q?S8/jysth8iDzumbhxu4G71WlcnSjLTeSsATBZ4Wm9nNI2lnBbFlAYoJNIQ?=
+ =?iso-8859-1?Q?wL58UtKbDWIWhzgtMXfE+rurt5O4KPyNYXLsAg4b4J0M66/j6iN9TcpByM?=
+ =?iso-8859-1?Q?4WEB9beKa2KwiYuP/HRvukOhKnDvQXkD0/GZFfe805It+aFKwMAOzmjJyP?=
+ =?iso-8859-1?Q?Zh80ZSgVsz2C5nOVah5PIdnf7CeXFAh5eh1Idi1AaV4+SJUGWimU3dv/qD?=
+ =?iso-8859-1?Q?UtG1TZu6JMwqRGi5dImNrzIMsg/rMzsCqcJ5DQAXlobf0TtU05Wb242grZ?=
+ =?iso-8859-1?Q?fd59i23VC+97HEclAcT76wwd8vMbn2ftQEtoWBqL9jj01cI4jF3uLKE0dZ?=
+ =?iso-8859-1?Q?mp/RjCkNAvDZiF1A403rWUkX2rYXD/BkgEScwS/CebkRUiVwklbENe8k1D?=
+ =?iso-8859-1?Q?psCVL1PbTLL053EME9pZhfTkak7wrKt5SRNZIWVFhh/zuidsaBA39aQ+tc?=
+ =?iso-8859-1?Q?mJf3UY2WOxXCoVaL6ZZCH9JOEUkgtNiPGENu8skYOrk2Nh1FVYUyIpOCT1?=
+ =?iso-8859-1?Q?KJLD+sAV0A/hn706x1ffVx/f+adICxPFwdcGU6zfRQzLvWlxhzzXscLGlb?=
+ =?iso-8859-1?Q?JmxdveCtnqiA+RgBabnNV1r9zRWEG4IqoewJW7yHDj92EUQsRH4axeP8on?=
+ =?iso-8859-1?Q?TXWmPfba8gXEN7KLRTiLUx6GRgD+DunfUsX6ESgO+s5tV3Ezd5OgLeFxvI?=
+ =?iso-8859-1?Q?HRkbZKGley+hcMVo+4xzEAMC/62aMiOntKDGYPLVzhCQAUeIxKz7VRto1e?=
+ =?iso-8859-1?Q?eEeZI5a0l+IYLodKeVONgohZXU0nZbu+36wqeaiiBymScFrHWAaMzlQKcG?=
+ =?iso-8859-1?Q?Coj+ShPxSIMK/AiVOpV7dRlKreUsQ59fEEfePn5ZLmL/dYGPIX6EwzfQ8l?=
+ =?iso-8859-1?Q?eoj0WqBjJQ=3D=3D?=
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: fix subpage locked bitmap leak in cow_fixup
- writeback path
-To: Werner Kasselman <werner@verivus.com>,
- "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Cc: "wqu@suse.com" <wqu@suse.com>, "dsterba@suse.com" <dsterba@suse.com>,
- "josef@toxicpanda.com" <josef@toxicpanda.com>,
- "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
-References: <ME0P300MB0853F6FA6D7872D77E98338CBD40A@ME0P300MB0853.AUSP300.PROD.OUTLOOK.COM>
-Content-Language: en-US
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1YAUJEP5a
- sQAKCRDCPZHzoSX+qF+mB/9gXu9C3BV0omDZBDWevJHxpWpOwQ8DxZEbk9b9LcrQlWdhFhyn
- xi+l5lRziV9ZGyYXp7N35a9t7GQJndMCFUWYoEa+1NCuxDs6bslfrCaGEGG/+wd6oIPb85xo
- naxnQ+SQtYLUFbU77WkUPaaIU8hH2BAfn9ZSDX9lIxheQE8ZYGGmo4wYpnN7/hSXALD7+oun
- tZljjGNT1o+/B8WVZtw/YZuCuHgZeaFdhcV2jsz7+iGb+LsqzHuznrXqbyUQgQT9kn8ZYFNW
- 7tf+LNxXuwedzRag4fxtR+5GVvJ41Oh/eygp8VqiMAtnFYaSlb9sjia1Mh+m+OBFeuXjgGlG
- VvQFzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1gQUJEP5a0gAK
- CRDCPZHzoSX+qHGpB/kB8A7M7KGL5qzat+jBRoLwB0Y3Zax0QWuANVdZM3eJDlKJKJ4HKzjo
- B2Pcn4JXL2apSan2uJftaMbNQbwotvabLXkE7cPpnppnBq7iovmBw++/d8zQjLQLWInQ5kNq
- Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
- +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
- HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
-In-Reply-To: <ME0P300MB0853F6FA6D7872D77E98338CBD40A@ME0P300MB0853.AUSP300.PROD.OUTLOOK.COM>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:NI81kJPIuey9eRsDeoWKcL5L70Wzm89OOANcyGQYY5EAwSw1nVq
- 6RUBcDFiKbnrP68WKhs/iqgSF/QC2s8k4HvyzzkJg6QULCNZ62fLDzgd2+WJgIxon5juzie
- sT4f5gejP9dF9cMZfQ38amVhzRFoeoLB41VDSjyVqOfesux6pwBczUG2nuOKnoMLL0MjRgX
- rAaaEkaj7y9S8oBac3cUw==
-X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:3dkUxYceW2g=;72M86PZRH77bYxYHGqgW4KaOcAb
- 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
+X-OriginatorOrg: verivus.ai
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-AuthSource: ME0P300MB0853.AUSP300.PROD.OUTLOOK.COM
+X-MS-Exchange-CrossTenant-Network-Message-Id: a8344331-c519-41fc-8336-08de834abd86
+X-MS-Exchange-CrossTenant-originalarrivaltime: 16 Mar 2026 10:56:56.3181
+ (UTC)
+X-MS-Exchange-CrossTenant-fromentityheader: Hosted
+X-MS-Exchange-CrossTenant-id: ccdcedb0-4edc-4cc8-9791-c44ee6610030
+X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
+X-MS-Exchange-CrossTenant-userprincipalname: Fx7OxXtSusinOcm9zeF79WfaXAyEwqjbPNztb6Nih6e3MKcrGErIjNYBmTYr6xtDQ2rJYFxpqS7+KKVkHIhZQA==
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: SY3PPFFCE4AABF2
 
-
-
-=E5=9C=A8 2026/3/16 20:27, Werner Kasselman =E5=86=99=E9=81=93:
-> Hi,
->=20
-> While auditing the btrfs subpage writeback path in 7.0-rc4, I found a=20
-> locked bitmap leak in extent_writepage_io() when=20
-> btrfs_writepage_cow_fixup() returns -EAGAIN.
->=20
-> Since commit c96d0e392141 ("btrfs: mark all dirty sectors as locked=20
-> inside writepage_delalloc()"), writepage_delalloc() calls=20
-> btrfs_folio_set_lock() for all dirty sectors, setting bits in the=20
-> subpage locked bitmap and incrementing nr_locked. These are normally=20
-> cleaned up by btrfs_folio_end_lock_bitmap() at the end of=20
-> extent_writepage().
->=20
-> However, when cow_fixup returns -EAGAIN, extent_writepage_io() calls=20
-> plain folio_unlock() and returns 1.=C2=A0 This causes extent_writepage()=
- to=20
-> skip btrfs_folio_end_lock_bitmap() entirely.=C2=A0 The locked bitmap bit=
-s and=20
-> nr_locked counter are leaked.
-
-You (or the LLM) are right, although I won't call it bitmap leak, but=20
-subpage state mismatch against folio status.
-
-The folio is unlocked but its subpage bitmap is not.
-
-However this is already in a very corner case, that cow fixup path can=20
-only be triggered when a dirty range is submitted without an ordered exten=
-t.
-
-It's possible to trigger but only with certain error injection, and even=
-=20
-when that is triggered, it will be more likely for the EUCLEAN case=20
-other than EAGAIN.
-
-Just check the EXPERIMENTAL feature check inside that function.
-
->=20
-> When writeback retries the folio, btrfs_folio_set_lock() tries to set=20
-> the same bits again and hits the ASSERT at subpage.c:746.
->=20
-> The fix replaces folio_unlock() with btrfs_folio_end_lock_bitmap(),=20
-> which clears the locked bitmap bits before unlocking.=C2=A0 For non-subp=
-age=20
-> configurations, btrfs_folio_end_lock_bitmap() falls through to plain=20
-> folio_unlock(), so behavior is unchanged.
->=20
-> This affects subpage configurations (sectorsize < PAGE_SIZE, e.g. 4K=20
-> sector on 64K-page ARM64) when the cow_fixup path triggers, which=20
-> happens when a page is dirtied via GUP/pin_user_pages without going=20
-> through the filesystem.
-
-IIRC it's no longer the case, the dirty but without informing the fs bug=
-=20
-is already fixed on the GUP side.
-
-
-Finally, please send a patch properly through git-send-email, not an=20
-attachment.
-
-How do you expect one to review an attachment?
-
-Thanks,
-Qu
-
->=20
-> I also wrote a standalone bitmap state machine simulation that=20
-> reproduces the invariant violation and verifies the fix:
->=20
->  =C2=A0 tools/testing/btrfs/test-subpage-cow-fixup.c
->=20
->  =C2=A0 $ cc -o test tools/testing/btrfs/test-subpage-cow-fixup.c && ./t=
-est
->=20
->  =C2=A0 TEST 1: Buggy path (folio_unlock)=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
-=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 ... PASS (bug=
-=20
-> reproduced)
->=20
->  =C2=A0 TEST 2: Fixed path (end_lock_bitmap)=C2=A0=C2=A0=C2=A0=C2=A0=C2=
-=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 ... PASS
->=20
->  =C2=A0 TEST 3: Non-subpage path (both behave)=C2=A0=C2=A0=C2=A0=C2=A0=
-=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 ... PASS
->=20
->  =C2=A0 TEST 4: Partial async + cow_fixup (buggy)=C2=A0=C2=A0=C2=A0=C2=
-=A0=C2=A0=C2=A0=C2=A0 ... PASS (bug=20
-> reproduced)
->=20
->  =C2=A0 TEST 5: Partial async + cow_fixup (fixed)=C2=A0=C2=A0=C2=A0=C2=
-=A0=C2=A0=C2=A0=C2=A0 ... PASS
->=20
-> Please review.
->=20
-> Thanks,
->=20
-> Werner
->=20
-
+writepage_delalloc() marks all dirty sectors as locked via=0A=
+btrfs_folio_set_lock(), setting bits in the subpage locked bitmap and=0A=
+incrementing nr_locked.  These are cleaned up by=0A=
+btrfs_folio_end_lock_bitmap() at the end of extent_writepage().=0A=
+=0A=
+However, when btrfs_writepage_cow_fixup() returns -EAGAIN inside=0A=
+extent_writepage_io(), the code calls folio_unlock() directly and=0A=
+returns 1, causing extent_writepage() to skip the bitmap cleanup:=0A=
+=0A=
+    ret =3D btrfs_writepage_cow_fixup(folio);=0A=
+    if (ret =3D=3D -EAGAIN) {=0A=
+        folio_redirty_for_writepage(bio_ctrl->wbc, folio);=0A=
+        folio_unlock(folio);     // doesn't clear locked bitmap=0A=
+        return 1;                // caller skips end_lock_bitmap()=0A=
+    }=0A=
+=0A=
+This leaves the subpage locked bitmap out of sync with the folio lock=0A=
+state: the folio is unlocked but its subpage locked bitmap still has=0A=
+bits set and nr_locked is elevated.  When writeback retries the folio,=0A=
+btrfs_folio_set_lock() hits the ASSERT at subpage.c:746 because the=0A=
+bits are still set from the previous attempt.=0A=
+=0A=
+The cow_fixup path is largely a legacy path -- the GUP dirty-without-=0A=
+informing-fs issue that triggered it has been fixed on the GUP side,=0A=
+and experimental builds already catch this case with -EUCLEAN before=0A=
+reaching the -EAGAIN return.  However the subpage state mismatch is=0A=
+still a correctness issue for non-experimental builds under error=0A=
+injection or memory pressure (kzalloc failure in=0A=
+btrfs_writepage_cow_fixup()).=0A=
+=0A=
+Fix this by replacing folio_unlock() with btrfs_folio_end_lock_bitmap(),=0A=
+which properly clears the locked bitmap bits before unlocking.  For=0A=
+non-subpage or when nr_locked is 0 (e.g. called from=0A=
+extent_write_locked_range()), btrfs_folio_end_lock_bitmap() falls=0A=
+through to plain folio_unlock(), so existing behavior is preserved.=0A=
+=0A=
+Fixes: d034cdb4cc8a ("btrfs: lock subpage ranges in one go for writepage_de=
+lalloc()")=0A=
+CC: stable@vger.kernel.org=0A=
+Signed-off-by: Werner Kasselman <werner@verivus.com>=0A=
+---=0A=
+ fs/btrfs/extent_io.c | 8 +++++++-=0A=
+ 1 file changed, 7 insertions(+), 1 deletion(-)=0A=
+=0A=
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c=0A=
+index 5f97a3d2a8d7..c7b25e415498 100644=0A=
+--- a/fs/btrfs/extent_io.c=0A=
++++ b/fs/btrfs/extent_io.c=0A=
+@@ -1746,7 +1746,13 @@ static noinline_for_stack int extent_writepage_io(st=
+ruct btrfs_inode *inode,=0A=
+ 	if (ret =3D=3D -EAGAIN) {=0A=
+ 		/* Fixup worker will requeue */=0A=
+ 		folio_redirty_for_writepage(bio_ctrl->wbc, folio);=0A=
+-		folio_unlock(folio);=0A=
++		/*=0A=
++		 * For subpage case, writepage_delalloc() may have set locked=0A=
++		 * bitmap bits for this folio.  We need to clear them or=0A=
++		 * btrfs_folio_set_lock() will ASSERT when writeback retries.=0A=
++		 */=0A=
++		btrfs_folio_end_lock_bitmap(fs_info, folio,=0A=
++					    bio_ctrl->submit_bitmap);=0A=
+ 		return 1;=0A=
+ 	}=0A=
+ 	if (ret < 0) {=0A=
+-- =0A=
+2.43.0=0A=
+=0A=

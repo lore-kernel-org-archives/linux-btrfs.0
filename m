@@ -1,66 +1,65 @@
-Received: from mail-wm1-f51.google.com (mail-wm1-f51.google.com [209.85.128.51])
+Received: from mail-wm1-f42.google.com (mail-wm1-f42.google.com [209.85.128.42])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D164531F9B8
-	for <linux-btrfs@vger.kernel.org>; Mon, 16 Mar 2026 20:44:37 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.51
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DEF44351C1C
+	for <linux-btrfs@vger.kernel.org>; Mon, 16 Mar 2026 20:46:14 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.42
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773693879; cv=none; b=fZqWLOVNh0DG7nDJNjk4nGHO5aDdl45E4yV4LuwJWGd3B4QXlgbVIvhwuprIZ1gCOXEo1PgDAEOq90tXwvMiSdHGFW/LdBPWF+zUz9WVJo7IKOXTAAM8cKo/C/F63uptHZe0T02bvs5lDxy8ArmiWbtlVvJuFCGY27NQVVO9YCk=
+	t=1773693976; cv=none; b=N02gPnhUYQX9mVfnJ3n6Qv06qTh4A9OC+3u9mZUp6mUHmo8dKB9QhyuK7IHNgoDf9xPIKnmPiF4dxZ7ZfuBr+R0eoH96mgqKs1+4Tgq8+EWMDBTYzgIRCGcEeE7zzQyToIz4ZUUjSri6QH7a9HJ2LuZLXnvbb+S8jPwriyorkHs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773693879; c=relaxed/simple;
-	bh=h2VXYtemE1C5y7Tdzs487OaWnAgk6sPyBPTqJtqpEQ4=;
+	s=arc-20240116; t=1773693976; c=relaxed/simple;
+	bh=cfxy7m5SmaGK44qNGuo7u522WR7ogGxfc0kVM4B1qsI=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=TpONTz0evQDnE/vUofxEwTRhRiWiLOJmscwdoJHG4XuAh6zS8ScfPuPDaLrbzUPG2GRgvWk6LZcUQ7OQOdrVqkMr55VC7CirVZ4oq8s9ZO6JJUkJEkVnv2FiQWXfBwoFNVNe8NE+TnE+mJQgmw4+OMtw9pBWRaG9XHGcwLcR7k0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=SiRs3lqg; arc=none smtp.client-ip=209.85.128.51
+	 In-Reply-To:Content-Type; b=PqVwbd2UczlUh+Hs01KsWzO6eRNUGSGddcLoKx9gltWELK53en9rOnv/mj/6ajsdClq/mAF9VFTzDzKWUyKDfjxlpySvc8efOoOO3QDbsoxxi3P6ovmKr5G2nVY6leNpqqVqrZp/gCKJqBjeUzeH1xdaPBLZJOCBjpMKpHCYJ4g=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=AMdJt3LS; arc=none smtp.client-ip=209.85.128.42
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="SiRs3lqg"
-Received: by mail-wm1-f51.google.com with SMTP id 5b1f17b1804b1-485345e1013so674075e9.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 Mar 2026 13:44:37 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="AMdJt3LS"
+Received: by mail-wm1-f42.google.com with SMTP id 5b1f17b1804b1-48541edecf9so54657385e9.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 Mar 2026 13:46:14 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1773693876; x=1774298676; darn=vger.kernel.org;
+        d=suse.com; s=google; t=1773693973; x=1774298773; darn=vger.kernel.org;
         h=content-transfer-encoding:in-reply-to:autocrypt:from
          :content-language:references:cc:to:subject:user-agent:mime-version
          :date:message-id:from:to:cc:subject:date:message-id:reply-to;
-        bh=7ggRONPuFqqcaG1Wz/ZsfPgnHZc/yWyaUJQeBEum4qI=;
-        b=SiRs3lqgPmBQPSeCTpSDkAUnmmNjJ+6bPEvj4A3Y8ayv+q1igCI0vAMfAPEyJS4eo+
-         mGXqYdhqC1INVeSSj1evD781bhh+yVc1+S1zaFb16V0q2oIoiio4QQ3kiAtrsH4jVg/l
-         1mNWk1CWawWhSOtk8RMkFICw6im6fTeW5L18RP/A/nGq6Nl6NbdzbymXqXTQIDY5lHOf
-         SmPGX+rDN7zPQhfPoziTx8eJQIVFRSSyy3cafXEST6ZEBZ9VinpMK28kTL+Xr6Gvow/z
-         70vBS/8OF5XGcGlvxQWEMaPvvjEU/ZMgbK2PvDII3DIxnPtlWyCgbpKIzYtEf5ZD8jXG
-         MRSQ==
+        bh=tchLCfMO3KOBdKYh3AzKmlQaSKhfRam2UpN/PpWJfaw=;
+        b=AMdJt3LSpJf52qqp9hOc2PZ4/WkvXeu5NVicOu+eaqTE40xsyTGfb8yzVA4QAc1Q1o
+         eWvMDk59xEeHrQSDUSaqGvk3PAWWyJMBqTluSSiVirAzB4MebUTNE5bF70xuuH1P0HDK
+         V/NA+J283Ucx2NNRkZTp18BfIWjH7VoC/b4AN3A/4RWqomTEYENgYWgFOZ3ecTDWfkUu
+         HEraiCQE8QMUMU7teZPZzU/8HOkinxVY33XtCFKzkPHVVXb2KrRggmecM4LgccTDsxeZ
+         L0zjSL33YcSynCIgW/hHJzaKj3No+n705LOB1E5f1UDrdYok+z7iO+p0T0d8Iw/BZRWW
+         K8ZQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1773693876; x=1774298676;
+        d=1e100.net; s=20251104; t=1773693973; x=1774298773;
         h=content-transfer-encoding:in-reply-to:autocrypt:from
          :content-language:references:cc:to:subject:user-agent:mime-version
          :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=7ggRONPuFqqcaG1Wz/ZsfPgnHZc/yWyaUJQeBEum4qI=;
-        b=hfCn81OOvkVf6Gyl0RDc6wv/NHjlvCCI0tufhGfFD0PlZhfqa2OoGVXjcdlQVqS4p4
-         Y2iLBkfaSARl8IZJ9Cw4VFnQBQfsCgpBmWQboyn4CXP9ep/pZgcERxigvRDoN3k8m7jp
-         p9D5gICpdEkjDp3kDp2A86qL7312/+sbW53fakleghx3i2z2Txz8ABf5FGKsdhTWtj2o
-         9zjH2OEdrGHTeYqZmA2RCEAo17/JlMURMbq8UUgkVbO8Es2AR5wW2oKs92zPC4fX81JJ
-         eXxbErLyKBV8UhAgJhr9cap2bBIMaQr3fGD0j0STj9vYzgpBuoohBYPMhXdg+FKvpFJh
-         zbRw==
-X-Gm-Message-State: AOJu0YwMp9iIHBAutn5O8ThgcBWamSPdVuw8viRzjzM0ty7c3gcmSE5v
-	y0u/hs5T4M3W4KicKAbWFM1pO1Puu1VBn8LDx8m6wQTneyfBvHMmL6FNKZpO3mXQmxnTmTctUFO
-	fm2izXR8=
-X-Gm-Gg: ATEYQzz2JZQtMO/q8LDbyl+z6Gxh9rjGlovQZfJ/K3KEJjBGsSZETcl9pUpEEB/mqeg
-	jEokdTfcdGXjQy7d2gTvX3HvfVgS6fBqnMjgBvop4CZ3Xc/25gTuUHkkjYXqBpKdKusdL+ueMpg
-	oyPDmgDkpFdN1iz20BdCyqzViC+WQSH0SRn31ct/nmS+V1fwz2UzCSBRPqUSVJsPtVaRjsj4ANF
-	5csEzv1AcncXPmH8IDjpT8oBzEY9ZH/OpXmmeh77joivmXTdiGfP2PhQVWI3V6cTTh+08ciEnGC
-	Bb5NePaRhdJ+sDYEra+kOwPBcfiEuFg6Q6QXbIL4nkIhrWm1EcfLD8c0X7ewOiXEXlDRAIVUyhx
-	XyNaqbH4oP3OGyH8uU28J3W/rr+qeR9ZyII24LeiKnBqIQl+q2IgUp31GUwpAQ9GLs0naz+gNDp
-	++lptA0CudAjN41RDLqTyQwYdhbVMQU+IZWvh3p4P9zcfItunsTys=
-X-Received: by 2002:a05:600c:304a:b0:485:3f1c:d89b with SMTP id 5b1f17b1804b1-4856ea9f24amr11578435e9.4.1773693876139;
-        Mon, 16 Mar 2026 13:44:36 -0700 (PDT)
+        bh=tchLCfMO3KOBdKYh3AzKmlQaSKhfRam2UpN/PpWJfaw=;
+        b=PpRevn7ZhEi97adhiphh7OkpiLReNwSftUZSkVo8pSYKLmVPpuftCZljtaK1K7wIFX
+         cTM2eW1suiICPiYheZYg4rrVuI9cjM+1KiU5FpSTNaCb+8MUASIG3KPym8ESo/LcLFyw
+         sMqi+rpKAFPmotpD7uMxM0ZP3/9cFaF4rBI1+a2s7awrNY1YvL13D8F9FM3u5f+rOZSA
+         OcnpvArUAE6Ngohksoaajs06Ks403o8q8T/wBOmyD5Yregvvm/lcCB2CY0lkizaQFjzC
+         qWFzb8xl7GRofbmzOtLURIzdk9n6EMNEgTvOU/u/60Bly7QXL4KsHE4DoBSQIBYaJGDw
+         eyrg==
+X-Gm-Message-State: AOJu0YwE9P2UxzKEn+KkulL8K1F+fShY8V6LDRvNf6osSfsR8Pso/eeg
+	W/WBKe3CZeXN78zyDmOuy74xxKpcdpA7ip/MFpvuIXfOVNa9Ucog1Wltuaj/FljwAtI=
+X-Gm-Gg: ATEYQzx4iAgCy7cSjAA8XrL+NYX+4nuyU7ub50ern3ShRPqlnHOU7U0yrO0DBGq5CFo
+	zf//XGfySdxewflggeR4A82rZBsB0pig81QBK72pRVDBV/H3m/UOPpxqx0r2Yc2xzuDNe/TJIrF
+	bN+leJDlIpiopmB50r++mwqSgCcbtNGxnadnfrB9QJv7LUCka7llbmGoW7g2B9yM7F8kIkzy/99
+	gCxthrlC8XM9egi8yHErOb1xU16sxVoU/RQJ3yY9vRHtqcJgUOF2NQ3W6Qa16Wcqzr8Vc3cV+nk
+	pPr/lc1nXtc3myXEOOCgl36FRj9/S2gQxkq2RiSt5DXGYP4eHj3VMZxNRkxH+cfv6AeAqk9+m0b
+	40mvxPeV9BfAgETKuRBhJUPEXxK+7yu8ho9ss84/B2bXMww80vRwScdZqh0VjgSKuuuq8C+KH3M
+	NmysFL1fxFxkvMC10o/9Gu0yFSMDZLu3TeQMCJcvHdHZtlcU+DDog=
+X-Received: by 2002:a05:600c:8489:b0:482:eec4:76d with SMTP id 5b1f17b1804b1-485566f7a2amr259118885e9.17.1773693973244;
+        Mon, 16 Mar 2026 13:46:13 -0700 (PDT)
 Received: from ?IPV6:2403:580d:fda1::299? (2403-580d-fda1--299.ip6.aussiebb.net. [2403:580d:fda1::299])
-        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2aece56ca0csm125056015ad.4.2026.03.16.13.44.31
+        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-82a07244071sm14734422b3a.6.2026.03.16.13.46.08
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 16 Mar 2026 13:44:35 -0700 (PDT)
-Message-ID: <32d99dc8-964e-44ee-a8eb-566886546bd5@suse.com>
-Date: Tue, 17 Mar 2026 07:14:28 +1030
+        Mon, 16 Mar 2026 13:46:12 -0700 (PDT)
+Message-ID: <f3497ad9-8ee6-4185-b935-013e596e764d@suse.com>
+Date: Tue, 17 Mar 2026 07:16:06 +1030
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -68,11 +67,14 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] block: reject zero length in bio_add_page()
-To: Christoph Hellwig <hch@infradead.org>
-Cc: linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org
-References: <f3db373bad065ae6251892acd15993f5dd56dfe1.1773368732.git.wqu@suse.com>
- <abgwAPMckUrmsnUx@infradead.org>
+Subject: Re: [PATCH] btrfs: balance: fix null-ptr-deref in
+ btrfs_may_alloc_data_chunk
+To: ZhengYuan Huang <gality369@gmail.com>, dsterba@suse.com, clm@fb.com,
+ bo.li.liu@oracle.com
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+ baijiaju1990@gmail.com, r33s3n6@gmail.com, zzzccc427@gmail.com,
+ stable@vger.kernel.org
+References: <20260316134640.2605237-1-gality369@gmail.com>
 Content-Language: en-US
 From: Qu Wenruo <wqu@suse.com>
 Autocrypt: addr=wqu@suse.com; keydata=
@@ -99,28 +101,82 @@ Autocrypt: addr=wqu@suse.com; keydata=
  /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
  o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
  JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <abgwAPMckUrmsnUx@infradead.org>
+In-Reply-To: <20260316134640.2605237-1-gality369@gmail.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
 
 
-在 2026/3/17 02:59, Christoph Hellwig 写道:
-> I'm a bit worried about adding more an more checks, but this seems like
-> an actually useful one.
+在 2026/3/17 00:16, ZhengYuan Huang 写道:
+> [BUG]
+> Running btrfs balance can trigger a null-ptr-deref before relocating a
+> data chunk when metadata corruption leaves a chunk in the chunk tree
+> without a corresponding block group in the in-memory cache:
 > 
-> On Fri, Mar 13, 2026 at 12:55:55PM +1030, Qu Wenruo wrote:
->> [BUG]
+>    KASAN: null-ptr-deref in range [0x0000000000000088-0x000000000000008f]
+>    RIP: 0010:btrfs_may_alloc_data_chunk+0x40/0x1c0 fs/btrfs/volumes.c:3601
+>    Call Trace:
+>      __btrfs_balance fs/btrfs/volumes.c:4217 [inline]
+>      btrfs_balance+0x2516/0x42b0 fs/btrfs/volumes.c:4604
+>      btrfs_ioctl_balance fs/btrfs/ioctl.c:3577 [inline]
+>      btrfs_ioctl+0x25cf/0x5b90 fs/btrfs/ioctl.c:5313
+>      ...
 > 
-> However this [TAG] style commit message is a bit weird.  Can you
-> rewrite it like a normal kernel commit message?
+> [CAUSE]
+> __btrfs_balance() iterates the on-disk chunk tree and passes the chunk
+> logical bytenr to btrfs_may_alloc_data_chunk() before relocating a data
+> chunk. That helper then queries the in-memory block group cache:
 > 
+>    cache = btrfs_lookup_block_group(fs_info, chunk_offset);
+>    chunk_type = cache->flags;   /* cache may be NULL */
+> 
+> On a corrupt image can contain a chunk item whose matching block group
+> item is missing, so no block group is ever inserted into the cache. In
+> that case btrfs_lookup_block_group() returns NULL.
 
-Sure, I'll check the history commits of block layer and follow them.
+I'd say adding a proper chunk/bg mapping check is the root fix.
 
-I thought the usual chapter splits of BUG/CAUSE/FIX would make it clear 
-to read, but if it's not following the subsystem's requirement, I can 
-definitely change it.
+Or you'll need to adhoc a lot of null pointer checks.
 
-Thanks,
-Qu
+> 
+> The code only guards this with ASSERT(cache), which becomes a no-op when
+> CONFIG_BTRFS_ASSERT is disabled. The subsequent dereference of
+> cache->flags therefore crashes the kernel.
+> 
+> [FIX]
+> Add a NULL check after btrfs_lookup_block_group() in
+> btrfs_may_alloc_data_chunk(). If the lookup fails, emit a btrfs_err()
+> message identifying the affected bytenr and return -EUCLEAN to report
+> filesystem corruption instead of dereferencing NULL.
+> 
+> The caller already treats negative returns from
+> btrfs_may_alloc_data_chunk() as fatal errors, so balance aborts cleanly
+> and reports the corruption to userspace.
+> 
+> Fixes: a6f93c71d412 ("Btrfs: avoid losing data raid profile when deleting a device")
+> Cc: stable@vger.kernel.org
+> Signed-off-by: ZhengYuan Huang <gality369@gmail.com>
+> ---
+>   fs/btrfs/volumes.c | 6 +++++-
+>   1 file changed, 5 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 4958e074d420..4657b826b48b 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -3597,7 +3597,12 @@ static int btrfs_may_alloc_data_chunk(struct btrfs_fs_info *fs_info,
+>   	u64 bytes_used;
+>   	u64 chunk_type;
+>   
+>   	cache = btrfs_lookup_block_group(fs_info, chunk_offset);
+> -	ASSERT(cache);
+> +	if (!cache) {
+> +		btrfs_err(fs_info,
+> +			  "balance: chunk at bytenr %llu has no corresponding block group",
+> +			  chunk_offset);
+> +		return -EUCLEAN;
+> +	}
+>   	chunk_type = cache->flags;
+>   	btrfs_put_block_group(cache);
+>   
+

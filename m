@@ -1,117 +1,149 @@
-Received: from mail-ej1-f53.google.com (mail-ej1-f53.google.com [209.85.218.53])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C33B538FA3
-	for <linux-btrfs@vger.kernel.org>; Tue, 17 Mar 2026 00:09:32 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.218.53
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773706174; cv=pass; b=VH4Qu3tu/1RbOgPhvv6S2fpQtiRgBKGAv9k39sxAwDY2NYJeXv8izb6S1VsZzfrNpag+uHtNR3lBwhL0sdCVbihQ9jmM0UXz07WHC1NnmUslSvrsGRuyJjt6yKooj8g7uCoZXd6schJuzO7uE1Euzqv+K39jAG6lcit+H6r5gyw=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773706174; c=relaxed/simple;
-	bh=hHH0zbsAVNkdVzk96SM2ZhuoyeFWcJYCO04DOXgNmMo=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=Tny2/4+YK3zq062BrTyRIsjbT39toWhqUDKseFIFAwwsdpmy6T8MOJnsDAoYTshTCZHUxOiWBW0W8hA4jgq0qI4SoHJeoIOPrCyyK0Cvs+fF0n8cz1IfAnU/Hp26LHITPHgf3k07NnQVv/vF4qsopISgw1O5wGi8THXTmb9ckZ4=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=lg1wpstQ; arc=pass smtp.client-ip=209.85.218.53
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 83B6E392C5B
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Mar 2026 08:07:05 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1773734827; cv=none; b=MQsklHP+BHDOUVxhuk231ZoBFishE+HM4/M22OvNLicC24qXWn9uS+ZU0HTdWJav7ADMcbry7aeejpx3Qz3RSm9OWeOyXHAVz5ZDfP9SiVNC925CDmxKZiDrtqmplmg5G20SpznL4kyQEEYKwpNZ9E0NhuVbQEv0+lmbg7iZuUE=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1773734827; c=relaxed/simple;
+	bh=fZsWJUbPmEiQjGoupJPmo7dmbljlbIYsM0Mp40acSmg=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=mh9Wk5N1CSxjDcPpvS0Wf2QJMuwIXr9vSOPyVsnuiBs1cMErQjmm9tttfkWvlcSDS5nzfZpn0/SAz9fxWKwF9UQB+rKyG2eJEVkPoBJobVqDqt0Y0wgyo3NcFRPzObVg5j7rP4D3xqz040zMwwySwfFxgqPoA0RCMi6WGMmjyTw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=XTWlESlj; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=XTWlESlj; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="lg1wpstQ"
-Received: by mail-ej1-f53.google.com with SMTP id a640c23a62f3a-b9795ca4e6dso442091266b.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 Mar 2026 17:09:32 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1773706171; cv=none;
-        d=google.com; s=arc-20240605;
-        b=FEDQQ6HobGZoDir3Vw5OoMzl03a1JGfK0XLY8cI9Ssve37zMOfYPL+NnbR2mBVLqUF
-         FcE1fjSuFOMVItJkyBHWkjI5I23GuhgLXRQ36VJCMBS/X0SpV2X7xWk5rQkb/vc+u5mc
-         KmO7Ej02KtmXX6Ve9Yjgl5TLJnlZ13iIvLDtUptQIXJTnhYEpzdPahrbhN/ku+N6WPIo
-         UQvfYceNgyWSnVP1kSHpIgK0kPDQFgEbWiwZGZa1i67UsVwMEOlJKk5jOI3WSpO1Fbxy
-         AwqAXXo0FwSIAJbK6HQfEXOacmPV9OLXNnb6p0MCSSvLeuusOOa5n/XF+ZNh5ZlfDnNg
-         JBYw==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:dkim-signature;
-        bh=hHH0zbsAVNkdVzk96SM2ZhuoyeFWcJYCO04DOXgNmMo=;
-        fh=5XBbIA7wpfMgLi5oasKn5nUtReWeq6WjaROnXA/fauA=;
-        b=YqJYy7oU3LlAYSowrT9KfT9sS0Z04hG2qEmc777aUeYxPGCUgas4sAPLhGt6mPM9Pd
-         d957TcPIfU1AoAHMQmynzlXxqgpyUv/8BBS49Sqevk4XYh+scM08jGALEyAeaBzcbcqx
-         VNeS80fzNVhmHnIDkz7mhLQzj/x5VNprirAAxND3lLOa35sX0NfHLrHzVPyppRZLWJ2i
-         QaidoAox8dA07EI6tZ2liOdhI86jlqR9Ej44TBug18q27AbMIYP1WZbKiKG6CsYR2nLs
-         m+Crpt5skEFtEniOB3qqqJ9c6OsAqdt4kfMnP0PJqCv6jG65M7gVnxUanLrjqvba3iuz
-         tGCg==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1773706171; x=1774310971; darn=vger.kernel.org;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=hHH0zbsAVNkdVzk96SM2ZhuoyeFWcJYCO04DOXgNmMo=;
-        b=lg1wpstQw5qLe0+ZJxVtqY1awPE/bYFmqRoPnSQoq1IDdO415Q51LvdA/UBlImgg4U
-         kaN4RCn3wz6g01DLUj4ABOPTAWGTpCS/YlsweG7BtweKV2h6N4CH87olHDmTj6SZYjaA
-         fUqI9fdde1tMVCFv+RzUyCXD8h2HDhZ7PqcjeIkH9FBjcQyRsFuhjotxTMPzK0VtEV++
-         eK6fb4VaWy34NyphWTYsWifHXBQZ2B5CFyi66S7W4V11skIAMU9UDdgIlMdyujIpVut5
-         fbiqWJitlA2/z1wF2LaF23fioc9KK4WTinmB4nnQ77kGyFk+L+jyJfaeWTGry2jEFJNR
-         o2aA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1773706171; x=1774310971;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-gg:x-gm-message-state:from
-         :to:cc:subject:date:message-id:reply-to;
-        bh=hHH0zbsAVNkdVzk96SM2ZhuoyeFWcJYCO04DOXgNmMo=;
-        b=Fd4UHdnVE/6YBaJbUr1AI/ZD6Wke5d4wa34Xgd/tuGobf/QQbCVqQvLZXy25LeXWgl
-         hBtcqJDr72MR1LN1g5IhrMHJQdVvYF7CY78OSUsaI5Uo9F4w+6MOzng1BDUqOXbyE38z
-         z0hLMIkIPaek4wYgYjGekyQ2AhF+aZkBlrkbT3+ZiBA8SeQ0CWapp7v7S+3PV/ZiOx+p
-         2CFw5B2GLZV4BkddYVhWrbG/g4DpWAfA9GPQ0EUKNWimuwz5sfqu1APIsu6bZ/P9RIuU
-         6UOObhKoRwbOkUjxTn4gireqZJl3KdG1Wvm3XUORWfgfdjEBSXV9ecK7ApRkgKtlxXH0
-         XP1Q==
-X-Forwarded-Encrypted: i=1; AJvYcCXu20AwAfbp5z+irmaJyzEUD21q6YpCBlGI+W+XMWLJa9u8NPfYiu/IPMeswZ/nkVuj4fugzCmFdpndeA==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yw1wJbVZaNebvWu0A8wRdvA6jvITJxVUcahIuSOmz6mCD85m13l
-	l/SIfscoXnjAcGM5oafZma6RmUwkW6QtxUil3b3wKLzuprBLjsZ6H7D1BmTVLTYuxRG6daRW/qH
-	0TI5iyUL9tyqdwSe8L3ZYfTVjP1sLcFs=
-X-Gm-Gg: ATEYQzwRU+gfKdlpjnU8DqfVUReVu7QEoUuX8uDDv8n5l51jGQhH5Foi1o78za+oSIg
-	7OkPnhcPtPGZfGFm3byOBr3GtH+qPnxJTLekZOjJWQj0t3ccbf0/OuqrucE6/Dp+rlNO6cxy+sA
-	jQlbVtira6QHpX888VzBdKzmO1o8BuQlAcPtM5R7uiPQJcLQceZlw8PPwZm/f5a5ZfMWZOqBtAE
-	xK590Ji4kWKy8k1xRbJ6y+Tbl0ft1QXBwDJc3q4/Rr5ubDQiKSsM9QaECZs4nB9Weqs/+P5aG+5
-	lTwVpji3ZR3I+1pRt5Mu5Bwlge46NNYyKjI0HVyA98NrCyAVfIVKi1SW63sT8FjvfwrpabCgJzX
-	HHqqtabnEvoE=
-X-Received: by 2002:a17:907:3f9a:b0:b97:dcdd:615 with SMTP id
- a640c23a62f3a-b97dcdd101bmr46515066b.13.1773706170825; Mon, 16 Mar 2026
- 17:09:30 -0700 (PDT)
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="XTWlESlj";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="XTWlESlj"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id ACCD85BCFD;
+	Tue, 17 Mar 2026 08:06:57 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1773734817; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=7WbneBgTR6+0lgMtlPXk1kP8Y9ntcRev0lKTMxRKV4E=;
+	b=XTWlESlj0+AYX07lZ7aeIpvlRIa26HozJWb0h+hQaCsqLTnjzrWp2yCWnYL3j7zt5HNX1g
+	wDHgLNy362w2sZwWtgOXQqyijUuLxe/eOTNXcLtfISgNLkc+hxWEb+LGf9Hj1KCTfBzVO6
+	4kFKU54MFuBqqQo0pfWq/vH5+CdbqLk=
+Authentication-Results: smtp-out2.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1773734817; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=7WbneBgTR6+0lgMtlPXk1kP8Y9ntcRev0lKTMxRKV4E=;
+	b=XTWlESlj0+AYX07lZ7aeIpvlRIa26HozJWb0h+hQaCsqLTnjzrWp2yCWnYL3j7zt5HNX1g
+	wDHgLNy362w2sZwWtgOXQqyijUuLxe/eOTNXcLtfISgNLkc+hxWEb+LGf9Hj1KCTfBzVO6
+	4kFKU54MFuBqqQo0pfWq/vH5+CdbqLk=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id AC6D34273B;
+	Tue, 17 Mar 2026 08:06:56 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id fnpwG6ALuWlHUQAAD6G6ig
+	(envelope-from <wqu@suse.com>); Tue, 17 Mar 2026 08:06:56 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org,
+	linux-block@vger.kernel.org
+Subject: [PATCH v2] block: reject zero length in bio_add_page()
+Date: Tue, 17 Mar 2026 18:36:34 +1030
+Message-ID: <bc2223c080f38d0b63f968f605c918181c840f40.1773734749.git.wqu@suse.com>
+X-Mailer: git-send-email 2.53.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260316134640.2605237-1-gality369@gmail.com> <f3497ad9-8ee6-4185-b935-013e596e764d@suse.com>
-In-Reply-To: <f3497ad9-8ee6-4185-b935-013e596e764d@suse.com>
-From: ZhengYuan Huang <gality369@gmail.com>
-Date: Tue, 17 Mar 2026 08:09:19 +0800
-X-Gm-Features: AaiRm50tF6oYZiQBR8o55N2avJfUEiXBS-geZWxPXng4elSLAAsBYaYsERiaW1c
-Message-ID: <CAOmEq9VVwimgxYxhUaRUv+7es4xd6u7-ttYGCeHC-+_Z1V6jhg@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: balance: fix null-ptr-deref in btrfs_may_alloc_data_chunk
-To: Qu Wenruo <wqu@suse.com>
-Cc: dsterba@suse.com, clm@fb.com, bo.li.liu@oracle.com, 
-	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, 
-	baijiaju1990@gmail.com, r33s3n6@gmail.com, zzzccc427@gmail.com, 
-	stable@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-0.999];
+	MIME_GOOD(-0.10)[text/plain];
+	RCPT_COUNT_TWO(0.00)[2];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	ARC_NA(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:mid,suse.com:email];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	RCVD_TLS_ALL(0.00)[]
+X-Spam-Flag: NO
+X-Spam-Score: -2.80
+X-Spam-Level: 
 
-On Tue, Mar 17, 2026 at 4:46=E2=80=AFAM Qu Wenruo <wqu@suse.com> wrote:
-> I'd say adding a proper chunk/bg mapping check is the root fix.
->
-> Or you'll need to adhoc a lot of null pointer checks.
+The function bio_add_page() returns the number of bytes added to the
+bio, and if that failed it should return 0.
 
-Thank you for the reminder. A patch addressing the root cause of this
-issue has already been submitted, but I am unsure if the solution is
-fully appropriate and would appreciate further guidance. The relevant
-patch series can be found here:
-https://lore.kernel.org/all/20260314123741.1439792-1-gality369@gmail.com/.
-Please take a look at the series.
+However there is a special quirk, if a caller is passing a page with
+length 0, that function will always return 0 but with different results:
 
-Since you are not directly responsible for this, I didn't CC you on
-the email to avoid causing any disruption. Apologies for any
-inconvenience this may have caused.
+- The page is added to the bio
+  If there is enough bvec slot or the folio can be merged with the last
+  bvec.
 
-Looking forward to your feedback,
-ZhengYuan Huang
+  The return value 0 is just the length passed in, which is also 0.
+
+- The page is not added to the bio
+  If the page is not mergeable with the last bvec, or there is no bvec
+  slot available.
+
+  The return value 0 means page is not added into the bio.
+
+Unfortunately the caller is not able to distinguish the above two cases,
+and will treat the 0 return value as page addition failure.
+
+In that case, this can lead to the double releasing of the last page:
+
+- By the bio cleanup
+  Which normally goes through every page of the bio, including the last
+  page which is added into the bio.
+
+- By the caller
+  Which believes the page is not added into the bio, thus would manually
+  release the page.
+
+I do not think anyone should call bio_add_folio()/bio_add_page() with zero
+length, but idiots like me can still show up.
+
+So add an extra WARN_ON_ONCE() check for zero length and rejects it
+early to avoid double freeing.
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+Changelog:
+- Rewords the commit message
+---
+ block/bio.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/block/bio.c b/block/bio.c
+index d80d5d26804e..6048d9382fec 100644
+--- a/block/bio.c
++++ b/block/bio.c
+@@ -1064,6 +1064,8 @@ int bio_add_page(struct bio *bio, struct page *page,
+ {
+ 	if (WARN_ON_ONCE(bio_flagged(bio, BIO_CLONED)))
+ 		return 0;
++	if (WARN_ON_ONCE(len == 0))
++		return 0;
+ 	if (bio->bi_iter.bi_size > BIO_MAX_SIZE - len)
+ 		return 0;
+ 
+-- 
+2.53.0
+

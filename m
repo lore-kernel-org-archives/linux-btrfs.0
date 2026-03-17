@@ -1,36 +1,36 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D58133254BD
-	for <linux-btrfs@vger.kernel.org>; Tue, 17 Mar 2026 19:47:10 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 88AB0330644
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Mar 2026 19:47:11 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773776830; cv=none; b=ertF6n1Egv+IDYBakMcRcbw7AnlwIdr9pzlSXBo8WNtQk9ZR2yCKpEyHsmNeoD6BtjNzIeRAYGWufrJjvk6wu//ou7CvbgJrwFKJ0DJ5JMe13x0D7/J2sd2Mph+3BT59X87LCNyG45h+wylQyCxl72Hy2/80UvPvoop3ONZ4VG8=
+	t=1773776831; cv=none; b=saNAp9MHxXxWp77mLx+zBKZK3P1rZBQ7VVazT7wF7631MbluISNxglHfdRzm6BxEBsF9BpBB92RlE4CpI3s3nxhtKeDGEgcfQOAtr/e+yMMzHhAWOro9tbr32UfrS2wf3viaUh/jp/eFJ6InNPgQsWAZ4bNvgOS+VQnUcmGkSvk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773776830; c=relaxed/simple;
-	bh=hp3GhMCjNJxOj5Jx0PHxX9cac11syk0lxk3e2eIDw9g=;
+	s=arc-20240116; t=1773776831; c=relaxed/simple;
+	bh=wW9UUr0+aHgZVvQ1xKdRLDyxiEv2WsUDBIsjKhAYhPU=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=RgBs+4XvtL08hq3Pcdww8El2v5LOEOPJGEb3DwXS/CkH/U3rNbMQPp0OZhrhsH8vfL6im3JbgNsSCC9AVljTshrzBA5PgHscigOgcacgdmgN1A4MgAltsiKsFkvOPucUJnqqwx9kGkl3NIxIbA0Nyu3555pRU+x1B/oJdsvhOAM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=KCJfSUea; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version; b=bJDhgoOn7Lhyda/DvOPUlvlyDLjiyRAMhFoh65x42toteY/MF7b/8Ni1GP8dGgbWAygof7+k9q3zkcVVJ1Pg417lMFZyqEdTCuD9eAlmzIqmka7brsS/qe05KtyTN0uYDijeW2/Pv7r4s9ZW2NvqbQkU4XfThuQamAGVYAmnJds=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=NzN9lkgp; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="KCJfSUea"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 0E958C2BC9E
-	for <linux-btrfs@vger.kernel.org>; Tue, 17 Mar 2026 19:47:09 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="NzN9lkgp"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id EC27EC2BC86
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Mar 2026 19:47:10 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1773776830;
-	bh=hp3GhMCjNJxOj5Jx0PHxX9cac11syk0lxk3e2eIDw9g=;
+	s=k20201202; t=1773776831;
+	bh=wW9UUr0+aHgZVvQ1xKdRLDyxiEv2WsUDBIsjKhAYhPU=;
 	h=From:To:Subject:Date:In-Reply-To:References:From;
-	b=KCJfSUeaUMVESRcX/Ji0n0m+N+rxmTOUuUMv3RaBfqnjPTic07uQ9e3583cSfO00W
-	 M5+qFXp3CF29WeXzEyZqenAr+GzKauuc2YweLCUG7ApIMP86fve8HHIDjPUCNEm65m
-	 HZJR9FIlrI2gmRHucWvg5mPi43JcZMP3BXp8+dCKaEJVjI85jFCI4AZl+yUSwEDVpc
-	 9unX5UBu2N7p4XjQgxI10wzNcgJr7wIokHCZ1pRZi3c6dVzuAqBCo0oBQorxTr5kLp
-	 A7VPF2ZDa+YdGcAjgh20vCVio4HB5a/EbNpwxD9pIch7JQo26mldu8EP8w7WQt0dyp
-	 ZblSanS7/w7BQ==
+	b=NzN9lkgpGmf/X1ahNFeDF8onLsZUXgcqWpAqb6K31rXQUziqig1Y5HPxUwhIbw8Yl
+	 dUhRBLOfFiH4qbVNdV150/YX6HKsExFEbYQv6h0S7bmz+YY6WADB4aoJ738cOJJi1M
+	 Os2XE5cRy6sVAZuIgwBMdN95wVLJjr3UvGN7uBt5yXOVOU7PnrOPuFCBN/yycJKGYs
+	 oifL2G92Iy1AjrzY9DhI3PKpEjjEOR1UFUTrgFcw0UlPMOQ4AFcdkW8IJ/aYtnh2jb
+	 56KWFPenlMbY6W7SE6JIOFr0h9Dx29DDgJO71pn1HfShm9K6cFCZ5/88M7wEXW1VtT
+	 I7TbD5fVh6dqg==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/4] btrfs: removed unused qgroup functions for pertrans reservation and freeing
-Date: Tue, 17 Mar 2026 19:47:00 +0000
-Message-ID: <f0c0642868d1f968e675511d566caf9a7efbddc6.1773776355.git.fdmanana@suse.com>
+Subject: [PATCH 2/4] btrfs: collapse __btrfs_qgroup_free_meta() into btrfs_qgroup_free_meta_prealloc()
+Date: Tue, 17 Mar 2026 19:47:01 +0000
+Message-ID: <2b6035bc5438581a0667cfba7eec3558dc13d18e.1773776355.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.47.2
 In-Reply-To: <cover.1773776354.git.fdmanana@suse.com>
 References: <cover.1773776354.git.fdmanana@suse.com>
@@ -44,49 +44,69 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-They have no more users since commit a6496849671a ("btrfs: fix start
-transaction qgroup rsv double free"), so remove them.
+Since __btrfs_qgroup_free_meta() is only called by
+btrfs_qgroup_free_meta_prealloc(), which is a simple inline wrapper, get
+rid of the later and rename __btrfs_qgroup_free_meta() to the later.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/qgroup.h | 17 +----------------
- 1 file changed, 1 insertion(+), 16 deletions(-)
+ fs/btrfs/qgroup.c | 12 +++++++-----
+ fs/btrfs/qgroup.h | 10 +---------
+ 2 files changed, 8 insertions(+), 14 deletions(-)
 
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 65ec45859507..8a9039fba158 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -4551,8 +4551,7 @@ void btrfs_qgroup_free_meta_all_pertrans(struct btrfs_root *root)
+ 				  BTRFS_QGROUP_RSV_META_PERTRANS);
+ }
+ 
+-void __btrfs_qgroup_free_meta(struct btrfs_root *root, int num_bytes,
+-			      enum btrfs_qgroup_rsv_type type)
++void btrfs_qgroup_free_meta_prealloc(struct btrfs_root *root, int num_bytes)
+ {
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+ 
+@@ -4565,10 +4564,13 @@ void __btrfs_qgroup_free_meta(struct btrfs_root *root, int num_bytes,
+ 	 * which can lead to underflow.
+ 	 * Here ensure we will only free what we really have reserved.
+ 	 */
+-	num_bytes = sub_root_meta_rsv(root, num_bytes, type);
++	num_bytes = sub_root_meta_rsv(root, num_bytes,
++				      BTRFS_QGROUP_RSV_META_PREALLOC);
+ 	BUG_ON(num_bytes != round_down(num_bytes, fs_info->nodesize));
+-	trace_btrfs_qgroup_meta_reserve(root, -(s64)num_bytes, type);
+-	btrfs_qgroup_free_refroot(fs_info, btrfs_root_id(root), num_bytes, type);
++	trace_btrfs_qgroup_meta_reserve(root, -(s64)num_bytes,
++					BTRFS_QGROUP_RSV_META_PREALLOC);
++	btrfs_qgroup_free_refroot(fs_info, btrfs_root_id(root), num_bytes,
++				  BTRFS_QGROUP_RSV_META_PREALLOC);
+ }
+ 
+ static void qgroup_convert_meta(struct btrfs_fs_info *fs_info, u64 ref_root,
 diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-index a979fd59a4da..419f3c4120ce 100644
+index 419f3c4120ce..190efe3ca64b 100644
 --- a/fs/btrfs/qgroup.h
 +++ b/fs/btrfs/qgroup.h
-@@ -397,14 +397,7 @@ int btrfs_qgroup_reserve_meta(struct btrfs_root *root, int num_bytes,
- int __btrfs_qgroup_reserve_meta(struct btrfs_root *root, int num_bytes,
- 				enum btrfs_qgroup_rsv_type type, bool enforce,
- 				bool noflush);
--/* Reserve metadata space for pertrans and prealloc type */
--static inline int btrfs_qgroup_reserve_meta_pertrans(struct btrfs_root *root,
--				int num_bytes, bool enforce)
--{
--	return __btrfs_qgroup_reserve_meta(root, num_bytes,
--					   BTRFS_QGROUP_RSV_META_PERTRANS,
--					   enforce, false);
--}
-+
- static inline int btrfs_qgroup_reserve_meta_prealloc(struct btrfs_root *root,
- 						     int num_bytes, bool enforce,
- 						     bool noflush)
-@@ -417,14 +410,6 @@ static inline int btrfs_qgroup_reserve_meta_prealloc(struct btrfs_root *root,
- void __btrfs_qgroup_free_meta(struct btrfs_root *root, int num_bytes,
- 			     enum btrfs_qgroup_rsv_type type);
+@@ -407,16 +407,8 @@ static inline int btrfs_qgroup_reserve_meta_prealloc(struct btrfs_root *root,
+ 					   enforce, noflush);
+ }
  
--/* Free per-transaction meta reservation for error handling */
--static inline void btrfs_qgroup_free_meta_pertrans(struct btrfs_root *root,
+-void __btrfs_qgroup_free_meta(struct btrfs_root *root, int num_bytes,
+-			     enum btrfs_qgroup_rsv_type type);
+-
+ /* Pre-allocated meta reservation can be freed at need */
+-static inline void btrfs_qgroup_free_meta_prealloc(struct btrfs_root *root,
 -						   int num_bytes)
 -{
 -	__btrfs_qgroup_free_meta(root, num_bytes,
--			BTRFS_QGROUP_RSV_META_PERTRANS);
+-			BTRFS_QGROUP_RSV_META_PREALLOC);
 -}
--
- /* Pre-allocated meta reservation can be freed at need */
- static inline void btrfs_qgroup_free_meta_prealloc(struct btrfs_root *root,
- 						   int num_bytes)
++void btrfs_qgroup_free_meta_prealloc(struct btrfs_root *root, int num_bytes);
+ 
+ void btrfs_qgroup_free_meta_all_pertrans(struct btrfs_root *root);
+ void btrfs_qgroup_convert_reserved_meta(struct btrfs_root *root, int num_bytes);
 -- 
 2.47.2
 

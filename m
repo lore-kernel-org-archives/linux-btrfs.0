@@ -1,85 +1,86 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8539734AB17
-	for <linux-btrfs@vger.kernel.org>; Tue, 17 Mar 2026 16:39:40 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 406E33EF64D
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Mar 2026 16:43:20 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773765581; cv=none; b=B6BwIjHuzh3LBwynOzbPkHYK4qSpcg3K4buoo0JqeYOomG2W7AV+3oBya3GNrXLqpfFwzMqO9egfumfw5En6gKOIpVuAHbOXWHKVWtutig0JUrpqbDUdAH2g6cE1W3UImxui5rQs5S7IjXmprbhXrO4JA4XMlM4/7qF5DPfzEFM=
+	t=1773765802; cv=none; b=r6mAcJjpIQKK+DbMoMj6BR6IMwEqPI4H8nQAmm+ZiEiZYA0adpGqg1rZyhBSvxVWbtjfD0dERMuQR66xLWlGer48E61EpoCwfEvqaAQtbmz+6Z+6KzcVt0870Pslf8XgSQcP/nClQXIBqWffB5t/VfqzSmvUOQVDKGEGqO9Tfuk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773765581; c=relaxed/simple;
-	bh=M2Wd+on+OO97FcHcgiBqi3gwLLOnb+KGyApPctxjUdA=;
+	s=arc-20240116; t=1773765802; c=relaxed/simple;
+	bh=ZXhY6cUSQwgP8H3BOpR9P+D5/7zR6q8zB94SMbFrNUA=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=u05pr3xUkK1PzLUg2Hk2bpUVFL1jw4rUh2f++0Wrr+ItlD/K5PdqeBPwB9jyHciW9fEBQNjAEa57c+0HZntbGCdwHmQPvCgBAmv+I/xEL6ARy8+g8xNBf6GWdz3eV7rD106/cW7t/iA/Q7/CXkrblnDfN9bwkCRos4gYL1fH+sc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=yyWI8Zbe; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=uwTtNabf; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=yyWI8Zbe; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=uwTtNabf; arc=none smtp.client-ip=195.135.223.130
+	 Content-Type:Content-Disposition:In-Reply-To; b=o2pymThj4Tc7KON/3VdsvkwaUsfWqZOEgJYKB+yQy0BOo2SkWyhNSR5QOc69isXJ7TMAeIoxriufh2N15LQLkzwTlI+c7IzT5vlvXF6DZagLgcl9h/6vUY2Vwys26Kx1cCPbi1vaP4MZgwPpejQ/RzuIYFOPPcnBNyn9yUIaLIc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=KpmGgDcN; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=0VpLgLz0; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=KpmGgDcN; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=0VpLgLz0; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="yyWI8Zbe";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="uwTtNabf";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="yyWI8Zbe";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="uwTtNabf"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="KpmGgDcN";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="0VpLgLz0";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="KpmGgDcN";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="0VpLgLz0"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id CAA124D300;
-	Tue, 17 Mar 2026 16:39:38 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 7BB135BDAC;
+	Tue, 17 Mar 2026 16:43:18 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1773765578;
+	t=1773765798;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=NuIZek0fdoRq36hFPyteLpFrmJK0cKKq2AqEad6xsyI=;
-	b=yyWI8Zbel44GlEqsN+4muSmgKxNbLbCmCtgzFKM8fTgTNT5ZGcvL2o5e/5C132b1QaEqIj
-	E4BvjCaXFk5gv413u37lg5sEpHSyBMRvIUxptqYJu2/gXPOrGAe3FNSKGNsYuWKUafVbNM
-	Ews50Y4GISB0yXyg04hAhPlke6yEjq8=
+	bh=4vz/Zlz+QDkMxIm/xjEdIGVw7zg7jXnVstfH7pADBA4=;
+	b=KpmGgDcNs5ZnTHRLpb+LwUdoVSukq/tNjUEMZU1iC1lixg0cHjYK1rCo2ahyekW0Y0fRnR
+	XpYK8R6yhZR4xgFeD+N95PPu2y2joakBHEp9Qiskzdi2Uoe6tOqr+5HinMeTR6/vPM0bJm
+	ngrWr2QP0k8oa04zM2xjrJuB/PXt0Ys=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1773765578;
+	s=susede2_ed25519; t=1773765798;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=NuIZek0fdoRq36hFPyteLpFrmJK0cKKq2AqEad6xsyI=;
-	b=uwTtNabfv3ZmPfTeCJKJ7vaTe2Tqe5Yw6kCz1/cUEuX0tkJ2ez7OHwYKMZCnImHQOoHJS9
-	q3qfqptnEi+4i5Ag==
-Authentication-Results: smtp-out1.suse.de;
-	none
+	bh=4vz/Zlz+QDkMxIm/xjEdIGVw7zg7jXnVstfH7pADBA4=;
+	b=0VpLgLz0Iu2Tr5BQG0gizIMRTPQUJ35D92SlfO6og6bHFuJXyWr+Kcgkk4eDoMDO9bVSJy
+	Zxw3DGhOIhNRAbAQ==
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b=KpmGgDcN;
+	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=0VpLgLz0
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1773765578;
+	t=1773765798;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=NuIZek0fdoRq36hFPyteLpFrmJK0cKKq2AqEad6xsyI=;
-	b=yyWI8Zbel44GlEqsN+4muSmgKxNbLbCmCtgzFKM8fTgTNT5ZGcvL2o5e/5C132b1QaEqIj
-	E4BvjCaXFk5gv413u37lg5sEpHSyBMRvIUxptqYJu2/gXPOrGAe3FNSKGNsYuWKUafVbNM
-	Ews50Y4GISB0yXyg04hAhPlke6yEjq8=
+	bh=4vz/Zlz+QDkMxIm/xjEdIGVw7zg7jXnVstfH7pADBA4=;
+	b=KpmGgDcNs5ZnTHRLpb+LwUdoVSukq/tNjUEMZU1iC1lixg0cHjYK1rCo2ahyekW0Y0fRnR
+	XpYK8R6yhZR4xgFeD+N95PPu2y2joakBHEp9Qiskzdi2Uoe6tOqr+5HinMeTR6/vPM0bJm
+	ngrWr2QP0k8oa04zM2xjrJuB/PXt0Ys=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1773765578;
+	s=susede2_ed25519; t=1773765798;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=NuIZek0fdoRq36hFPyteLpFrmJK0cKKq2AqEad6xsyI=;
-	b=uwTtNabfv3ZmPfTeCJKJ7vaTe2Tqe5Yw6kCz1/cUEuX0tkJ2ez7OHwYKMZCnImHQOoHJS9
-	q3qfqptnEi+4i5Ag==
+	bh=4vz/Zlz+QDkMxIm/xjEdIGVw7zg7jXnVstfH7pADBA4=;
+	b=0VpLgLz0Iu2Tr5BQG0gizIMRTPQUJ35D92SlfO6og6bHFuJXyWr+Kcgkk4eDoMDO9bVSJy
+	Zxw3DGhOIhNRAbAQ==
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id B14F94273B;
-	Tue, 17 Mar 2026 16:39:38 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 622E24273B;
+	Tue, 17 Mar 2026 16:43:18 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id kR8jK8qDuWlvCwAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Tue, 17 Mar 2026 16:39:38 +0000
-Date: Tue, 17 Mar 2026 17:39:37 +0100
+	id UTbMF6aEuWmSDwAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Tue, 17 Mar 2026 16:43:18 +0000
+Date: Tue, 17 Mar 2026 17:43:17 +0100
 From: David Sterba <dsterba@suse.cz>
 To: Qu Wenruo <wqu@suse.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/3] btrfs-progs: enhance find_option()
-Message-ID: <20260317163937.GZ5735@twin.jikos.cz>
+Subject: Re: [PATCH 0/3] btrfs-progs: fix dropped 'const' qualifiers exposed
+ by the latest GCC (15.2.1)
+Message-ID: <20260317164317.GA5735@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <cover.1771801832.git.wqu@suse.com>
- <4f0ee51a24d281ae387f01db510e825e9259f73f.1771801832.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -88,98 +89,73 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <4f0ee51a24d281ae387f01db510e825e9259f73f.1771801832.git.wqu@suse.com>
+In-Reply-To: <cover.1771801832.git.wqu@suse.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Spamd-Result: default: False [-4.00 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
+X-Spamd-Result: default: False [-4.21 / 50.00];
+	BAYES_HAM(-3.00)[99.99%];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	NEURAL_HAM_SHORT(-0.20)[-0.998];
+	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	RCVD_TLS_ALL(0.00)[];
+	MX_GOOD(-0.01)[];
+	ASN(0.00)[asn:32098, ipnet:2800::/6, country:US];
 	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	MIME_TRACE(0.00)[0:+];
+	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
 	ARC_NA(0.00)[];
 	TO_DN_SOME(0.00)[];
-	RCPT_COUNT_TWO(0.00)[2];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	REPLYTO_DOM_NEQ_TO_DOM(0.00)[];
 	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,twin.jikos.cz:mid,imap1.dmz-prg2.suse.org:helo,suse.cz:replyto];
-	FROM_HAS_DN(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	FROM_EQ_ENVFROM(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
+	FROM_HAS_DN(0.00)[];
+	RCPT_COUNT_TWO(0.00)[2];
 	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	REPLYTO_DOM_NEQ_TO_DOM(0.00)[]
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.cz:dkim,suse.cz:replyto,twin.jikos.cz:mid,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	DKIM_TRACE(0.00)[suse.cz:+]
+X-Rspamd-Action: no action
 X-Spam-Flag: NO
-X-Spam-Score: -4.00
+X-Spam-Score: -4.21
 X-Spam-Level: 
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Rspamd-Queue-Id: 7BB135BDAC
 
-On Mon, Feb 23, 2026 at 09:42:58AM +1030, Qu Wenruo wrote:
-> There are two minor problems in that function:
+On Mon, Feb 23, 2026 at 09:42:57AM +1030, Qu Wenruo wrote:
+> It looks lile the latest gcc has taken the 'const' qualifier checks one
+> step further, a char pointer that points into a string that has 'const'
+> qualifier should also has 'const'.
 > 
-> - Latest GCC reports dropped 'const' qualifier
+> This will expose unexpected modification like the following:
 > 
->   The latest GCC (15.2.1) will report the 'const' qualifier is dropped
->   for the strstr() call.
-> 
->   It looks like the latest GCC has taken the 'const' qualifier checks
->   one step further, that any pointer that points into a 'const' pointer
->   should also have a 'const' qualifier, to make sure there is no
->   modification into the original pointed memory.
-> 
->   In our case, @options parameter has a 'const' qualifier, thus the
->   returned @tmp pointer should also have a 'const' qualifier, or we can
->   modify the @options through @tmp.
-> 
-> - No error handling if strdup() failed
-> 
-> Enhance them by:
-> 
-> - Add the 'const' qualifier for @tmp
->   This also means we can not use @tmp pointer to modify the newly
->   duplicated string.
->   Instead use a new @i index to access the new string.
-> 
-> - Return NULL if strdup() failed
->   And make the caller check errno for memory allocation failure.
-> 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
->  common/utils.c | 22 +++++++++++++++++-----
->  1 file changed, 17 insertions(+), 5 deletions(-)
-> 
-> diff --git a/common/utils.c b/common/utils.c
-> index 23dbd9d16781..f183705edb8f 100644
-> --- a/common/utils.c
-> +++ b/common/utils.c
-> @@ -375,19 +375,27 @@ struct mnt_entry {
->  /*
->   * Find first occurrence of up an option string (as "option=") in @options,
->   * separated by comma. Return allocated string as "option=value"
-> + *
-> + * If NULL is returned, the caller needs to check errno to make sure it's not
-> + * caused by memory allocation failure.
->   */
->  static char *find_option(const char *options, const char *option)
+>  void my_func(const char *options)
 >  {
-> -	char *tmp, *ret;
-> +	const char *tmp;
-> +	char *ret;
-> +	int i;
->  
-> +	errno = 0;
->  	tmp = strstr(options, option);
->  	if (!tmp)
->  		return NULL;
->  	ret = strdup(tmp);
-> -	tmp = ret;
-> -	while (*tmp && *tmp != ',')
-> -		tmp++;
-> -	*tmp = 0;
-> +	if (!ret)
-> +		return NULL;
-> +	i = 0;
-> +	while (*(ret + i) && *(ret + i) != ',')
+>          char *dot;
+> 
+>          dot = strchr(options, '.');
+>          if (!dot)
+>                  *dot = '\0';
+>  }
+> 
+> In above example, @dot is either NULL or points to a location inside
+> @options. For the later case, since @dot itself is not const, we can
+> modify the content, resulting modification of the content of @options.
+> The latest GCC is able to detect such proxy modification and gives us
+> warning on them.
+> 
+> And in fact, btrfs-progs has exactly such proxied modification in
+> bconf_save_param(), fixed in the last patch by dropping the 'const'
+> quailifer.
+> 
+> Other than that, most are just false alerts and we can fix them by
+> adding a const quailifer.
+> 
+> Qu Wenruo (3):
+>   btrfs-progs: enhance find_option()
+>   btrfs-progs: constify the @dots variable inside parse_range_u64()
+>   btrfs-progs: drop the 'const' qualifier from bconf_save_param()
 
-Is there a reason for not using ret[i] ?
+Added to devel, thanks.

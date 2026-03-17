@@ -1,103 +1,261 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8BC2F32F757
-	for <linux-btrfs@vger.kernel.org>; Tue, 17 Mar 2026 19:47:13 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A1FC62D780C
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Mar 2026 19:54:40 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773776833; cv=none; b=Ul7tsBv6OqUQhHDWfqVpFeZvOqQSQMNufHO/fNPwosrtkko+nHa85BBPngTorTmV5YPaRglqBz9YtfdHcdpVevqAzdfvVtpQa4cDhKNPggBJ8Gcg2ZtUCJjHTTHT5pwbNoA4RCURWYQ+r++LeGeCdPgz27tuMMvlGSFYvL8koDY=
+	t=1773777280; cv=none; b=tWu3wBVt9Oqmg0S5od96jDU9TTuRCD50r/bwjKD/JvICdpKK98OOJXKtNgguW5IJpIHt8DcCBEI/bjB6gBXM2XM1+FGcEcMAjg9bUGbIgv7vaZbW0zH7+RKoWAIkvjVOED2uWD16xhbLADJS7bGJ3JV97zcS2eXe4biwAieIMT0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773776833; c=relaxed/simple;
-	bh=sIqB7QKvlIJv7719kn8nAb9tZs5paCtle+qDZlnLwsk=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=T+rNO50BPpkHFDqBW3wIrh0LvsX8eJUfExDJiPHeLysw+v5SSVMqZaEN+uqEWsu7h+sxw+t77FC3HBi0kAJcSvFig7F0e+erbQvoY2B7LytbQhndtLNG0xJJzhKmtOIa7X+Y+SkRKuvpRHQa5duLKSc0TaFcmYXVlNdplq4anaw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=sqcOe++s; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1773777280; c=relaxed/simple;
+	bh=tcpy5nZQbKvD7cen2UDYpjtxlToZzEPKqp6MKyQgTC0=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=aBV5ghuoa3FdSt1i5b0UJNYJSGdtxnKmD2cMMGTyQJVN1GHBnForXf17BSuPVKXsfqm/sUzJsLcxhtRm68sfjTaR01m/GmPzs137FslkRXI4wGo7/L2Nq4BTCsSIKzP+jXykczJAGi+ZuBBGBEuFW6oOryGDx9ITm5p5AcdrMSo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=gZ2l9LCk; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="sqcOe++s"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id C0A98C4CEF7
-	for <linux-btrfs@vger.kernel.org>; Tue, 17 Mar 2026 19:47:12 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="gZ2l9LCk"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 40A30C4CEF7
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Mar 2026 19:54:40 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1773776833;
-	bh=sIqB7QKvlIJv7719kn8nAb9tZs5paCtle+qDZlnLwsk=;
-	h=From:To:Subject:Date:In-Reply-To:References:From;
-	b=sqcOe++seUz8DMuCDSg3F2jTZnxqgWwNK8q+Rni/GcBy3OBF0IN2pfYrsKVqoP7VX
-	 8Zcc9BpyE0iOwxxs6mmZma2bLmeAYxEnYXLHll5Cp9f0saRDa4ISAPlq36F46Rmkg2
-	 9RNdh9bOwS1/GW0ISnl5bbm/CPrpCPfuALy8HIsz24H7y1pe1u2XKPnnz4jIMYvmad
-	 JuY5OvEz52Qk6tf6ddPnLblZ/IRP6ohpWpc0fgNbLf3NF0QH/fEMcHgQWAnFXZ7xEn
-	 arrXsemPoVqd7vwaiyIWwAM1VjI4ZWMqNl5jm0hEGeDfIx1a2cpWhV+gqq52iAnqJN
-	 cq6vxp3gWvz6Q==
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 4/4] btrfs: unexport btrfs_qgroup_reserve_meta()
-Date: Tue, 17 Mar 2026 19:47:03 +0000
-Message-ID: <de05b20a2b71e313beab28cc6fc07caa10556666.1773776356.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.47.2
-In-Reply-To: <cover.1773776354.git.fdmanana@suse.com>
-References: <cover.1773776354.git.fdmanana@suse.com>
+	s=k20201202; t=1773777280;
+	bh=tcpy5nZQbKvD7cen2UDYpjtxlToZzEPKqp6MKyQgTC0=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+	b=gZ2l9LCknrmfrbtUlTnoytZis7xLX55kdqTW57uFsBXVb4QUdu2UdL5f3yJYNwKKZ
+	 pKecOC+quNQRl7TJC5xMzid7bgolZIk5AQIZWhWhLJvL8QwEhsTgiQCYiNLf9G+dXy
+	 pmU4JzjWIIotdSn0UWl3+lGnhHik/Ry38xxHfXza0soCEbo9GGEeECUl/BpqqwMcEk
+	 LcHBEAYzK1KDz2dRl3uIPTkOB937b0DmelKpjNVuqEyeMygra9r1nTiHWJ4UBeBXWL
+	 7y92hWVX8+KbIwsYpowLZpqQeenm9OngVfcFpc1gU5jU45zUoHCRv0lnRm65WdnMUB
+	 QcOpqJS464Sng==
+Received: by mail-ej1-f52.google.com with SMTP id a640c23a62f3a-b97be593f09so37985566b.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 17 Mar 2026 12:54:40 -0700 (PDT)
+X-Gm-Message-State: AOJu0YyLstqe333ORkijDrY2U6yskRet3UIq1m9yUsgCldEIcV2v9nWE
+	FCQGlYlNbZYXMQ1SikIeqipTJSvJ73+UVxwONqJjfvk+TgWhMVa/5/uv0XYIVkjjnLNT7+a89Et
+	GN7SRpkq0Mpc+pZt7AU3A5wnISNE4r2c=
+X-Received: by 2002:a17:907:3f26:b0:b97:ec8d:b10e with SMTP id
+ a640c23a62f3a-b97ec8db2c1mr114462866b.27.1773777278686; Tue, 17 Mar 2026
+ 12:54:38 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+References: <20260317132526.299099-1-johannes.thumshirn@wdc.com>
+In-Reply-To: <20260317132526.299099-1-johannes.thumshirn@wdc.com>
+From: Filipe Manana <fdmanana@kernel.org>
+Date: Tue, 17 Mar 2026 19:54:01 +0000
+X-Gmail-Original-Message-ID: <CAL3q7H4SzFpqBYCZ7V52Gg-c=oRCTGKp==QUhy26kBdKfJEG-g@mail.gmail.com>
+X-Gm-Features: AaiRm5209MdRDyyctyb-whuLuPGsD5klFWS_sq1LfsC2GEgl21r2-e6LYRtbFr8
+Message-ID: <CAL3q7H4SzFpqBYCZ7V52Gg-c=oRCTGKp==QUhy26kBdKfJEG-g@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: decrease indendation of find_free_extent_update_loop
+To: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-From: Filipe Manana <fdmanana@suse.com>
+On Tue, Mar 17, 2026 at 1:29=E2=80=AFPM Johannes Thumshirn
+<johannes.thumshirn@wdc.com> wrote:
+>
+> Decrease the indendation of find_free_extent_update_loop(), by inverting
+> the check if the loop state is smaller than LOOP_NO_EMPTY_SIZE.
+>
+> This also allows for an early return from find_free_extent_update_loop(),
+> in case LOOP_NO_EMPTY_SIZE is already set at this point.
+>
+> While at if change a
 
-There's only one caller outside qgroup.c of btrfs_qgroup_reserve_meta()
-and we have btrfs_qgroup_reserve_meta_prealloc() is a wrapper around
-that function. Make that caller use btrfs_qgroup_reserve_meta_prealloc()
-and unexport btrfs_qgroup_reserve_meta(), simplifying the external API.
+if -> it
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/delayed-inode.c | 3 +--
- fs/btrfs/qgroup.c        | 4 ++--
- fs/btrfs/qgroup.h        | 2 --
- 3 files changed, 3 insertions(+), 6 deletions(-)
+>
+> if () {
+> }
+> else if
+> else
+>
+> pattern to all using curly braces and be consistent with the rest of btrf=
+s
+> code.
+>
+> No functional changes intended.
+>
+> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+> ---
+>  fs/btrfs/extent-tree.c | 111 +++++++++++++++++++++--------------------
+>  1 file changed, 57 insertions(+), 54 deletions(-)
+>
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index a55b910c755b..062fc1beb26b 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -4349,71 +4349,74 @@ static int find_free_extent_update_loop(struct bt=
+rfs_fs_info *fs_info,
+>                 return 1;
+>
+>         /* See the comments for btrfs_loop_type for an explanation of the=
+ phases. */
+> -       if (ffe_ctl->loop < LOOP_NO_EMPTY_SIZE) {
+> -               ffe_ctl->index =3D 0;
+> -               /*
+> -                * We want to skip the LOOP_CACHING_WAIT step if we don't=
+ have
+> -                * any uncached bgs and we've already done a full search
+> -                * through.
+> -                */
+> -               if (ffe_ctl->loop =3D=3D LOOP_CACHING_NOWAIT &&
+> -                   (!ffe_ctl->orig_have_caching_bg && full_search))
+> -                       ffe_ctl->loop++;
+> +       if (ffe_ctl->loop =3D=3D LOOP_NO_EMPTY_SIZE)
+> +               return -ENOSPC;
+> +
+> +       ffe_ctl->index =3D 0;
+> +       /*
+> +        * We want to skip the LOOP_CACHING_WAIT step if we don't have
+> +        * any uncached bgs and we've already done a full search
+> +        * through.
+> +        */
+> +       if (ffe_ctl->loop =3D=3D LOOP_CACHING_NOWAIT &&
+> +           (!ffe_ctl->orig_have_caching_bg && full_search))
+>                 ffe_ctl->loop++;
+> +       ffe_ctl->loop++;
+>
+> -               if (ffe_ctl->loop =3D=3D LOOP_ALLOC_CHUNK) {
+> -                       struct btrfs_trans_handle *trans;
+> -                       int exist =3D 0;
+> +       if (ffe_ctl->loop =3D=3D LOOP_ALLOC_CHUNK) {
+> +               struct btrfs_trans_handle *trans;
+> +               int exist =3D 0;
 
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index 56ff8afe9a22..09795439b9fb 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -596,8 +596,7 @@ static int btrfs_delayed_inode_reserve_metadata(
- 	 */
- 	if (!src_rsv || (!trans->bytes_reserved &&
- 			 src_rsv->type != BTRFS_BLOCK_RSV_DELALLOC)) {
--		ret = btrfs_qgroup_reserve_meta(root, num_bytes,
--					  BTRFS_QGROUP_RSV_META_PREALLOC, true);
-+		ret = btrfs_qgroup_reserve_meta_prealloc(root, num_bytes, true, true);
- 		if (ret < 0)
- 			return ret;
- 		ret = btrfs_block_rsv_add(fs_info, dst_rsv, num_bytes,
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 702338580601..0bf3ebc1ffb7 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -4489,8 +4489,8 @@ static int sub_root_meta_rsv(struct btrfs_root *root, int num_bytes,
- 	return num_bytes;
- }
- 
--int btrfs_qgroup_reserve_meta(struct btrfs_root *root, int num_bytes,
--			      enum btrfs_qgroup_rsv_type type, bool enforce)
-+static int btrfs_qgroup_reserve_meta(struct btrfs_root *root, int num_bytes,
-+				     enum btrfs_qgroup_rsv_type type, bool enforce)
- {
- 	struct btrfs_fs_info *fs_info = root->fs_info;
- 	int ret;
-diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-index 1c568fc9544e..80dd2dacd56d 100644
---- a/fs/btrfs/qgroup.h
-+++ b/fs/btrfs/qgroup.h
-@@ -392,8 +392,6 @@ int btrfs_qgroup_release_data(struct btrfs_inode *inode, u64 start, u64 len, u64
- int btrfs_qgroup_free_data(struct btrfs_inode *inode,
- 			   struct extent_changeset *reserved, u64 start,
- 			   u64 len, u64 *freed);
--int btrfs_qgroup_reserve_meta(struct btrfs_root *root, int num_bytes,
--			      enum btrfs_qgroup_rsv_type type, bool enforce);
- int btrfs_qgroup_reserve_meta_prealloc(struct btrfs_root *root, int num_bytes,
- 				       bool enforce, bool noflush);
- /* Pre-allocated meta reservation can be freed at need */
--- 
-2.47.2
+This is a good opportunity to change the variable type to bool and
+give it a more meaningful and correct name:
 
+bool have_trans =3D false;
+
+>
+> -                       /* Check if allocation policy allows to create a =
+new chunk */
+> -                       ret =3D can_allocate_chunk(fs_info, ffe_ctl);
+> -                       if (ret)
+> -                               return ret;
+> +               /* Check if allocation policy allows to create a new chun=
+k */
+
+A good opportunity too to add missing punctuation to comment.
+
+> +               ret =3D can_allocate_chunk(fs_info, ffe_ctl);
+> +               if (ret)
+> +                       return ret;
+>
+> -                       trans =3D current->journal_info;
+> -                       if (trans)
+> -                               exist =3D 1;
+> -                       else
+> -                               trans =3D btrfs_join_transaction(root);
+> +               trans =3D current->journal_info;
+> +               if (trans)
+> +                       exist =3D 1;
+
+And then here:
+
+have_trans =3D true;
+
+> +               else
+> +                       trans =3D btrfs_join_transaction(root);
+>
+> -                       if (IS_ERR(trans))
+> -                               return PTR_ERR(trans);
+> +               if (IS_ERR(trans))
+> +                       return PTR_ERR(trans);
+>
+> -                       ret =3D btrfs_chunk_alloc(trans, space_info, ffe_=
+ctl->flags,
+> -                                               CHUNK_ALLOC_FORCE_FOR_EXT=
+ENT);
+> +               ret =3D btrfs_chunk_alloc(trans, space_info, ffe_ctl->fla=
+gs,
+> +                                       CHUNK_ALLOC_FORCE_FOR_EXTENT);
+>
+> -                       /* Do not bail out on ENOSPC since we can do more=
+. */
+> -                       if (ret =3D=3D -ENOSPC) {
+> -                               ret =3D 0;
+> -                               ffe_ctl->loop++;
+> -                       }
+> -                       else if (ret < 0)
+> -                               btrfs_abort_transaction(trans, ret);
+> -                       else
+> -                               ret =3D 0;
+> -                       if (!exist)
+> -                               btrfs_end_transaction(trans);
+> -                       if (ret)
+> -                               return ret;
+> +               /* Do not bail out on ENOSPC since we can do more. */
+> +               if (ret =3D=3D -ENOSPC) {
+> +                       ret =3D 0;
+> +                       ffe_ctl->loop++;
+> +               } else if (ret < 0) {
+> +                       btrfs_abort_transaction(trans, ret);
+> +               } else {
+> +                       ret =3D 0;
+>                 }
+>
+> -               if (ffe_ctl->loop =3D=3D LOOP_NO_EMPTY_SIZE) {
+> -                       if (ffe_ctl->policy !=3D BTRFS_EXTENT_ALLOC_CLUST=
+ERED)
+> -                               return -ENOSPC;
+> +               if (!exist)
+
+And here:
+
+if (!have_trans)
+
+And have such change mentioned in the changelog too.
+
+Otherwise it looks good:
+
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
+
+Thanks.
+
+
+> +                       btrfs_end_transaction(trans);
+>
+> -                       /*
+> -                        * Don't loop again if we already have no empty_s=
+ize and
+> -                        * no empty_cluster.
+> -                        */
+> -                       if (ffe_ctl->empty_size =3D=3D 0 &&
+> -                           ffe_ctl->empty_cluster =3D=3D 0)
+> -                               return -ENOSPC;
+> -                       ffe_ctl->empty_size =3D 0;
+> -                       ffe_ctl->empty_cluster =3D 0;
+> -               }
+> -               return 1;
+> +               if (ret)
+> +                       return ret;
+> +       }
+> +
+> +       if (ffe_ctl->loop =3D=3D LOOP_NO_EMPTY_SIZE) {
+> +               if (ffe_ctl->policy !=3D BTRFS_EXTENT_ALLOC_CLUSTERED)
+> +                       return -ENOSPC;
+> +
+> +               /*
+> +                * Don't loop again if we already have no empty_size and
+> +                * no empty_cluster.
+> +                */
+> +               if (ffe_ctl->empty_size =3D=3D 0 &&
+> +                   ffe_ctl->empty_cluster =3D=3D 0)
+> +                       return -ENOSPC;
+> +               ffe_ctl->empty_size =3D 0;
+> +               ffe_ctl->empty_cluster =3D 0;
+>         }
+> -       return -ENOSPC;
+> +
+> +       return 1;
+>  }
+>
+>  static int prepare_allocation_clustered(struct btrfs_fs_info *fs_info,
+> --
+> 2.53.0
+>
+>

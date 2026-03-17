@@ -1,144 +1,185 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E007C3E5ED6
-	for <linux-btrfs@vger.kernel.org>; Tue, 17 Mar 2026 16:34:31 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8539734AB17
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Mar 2026 16:39:40 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773765273; cv=none; b=Z03sikLRAldLEwEm4izfIsQwmWe/od5/ftbrN7xcj/oVdtGOTdgadqqSJthYCM7U5ZDHuhVNKmCYzADj8o+H6iF7+ehtW+iP7oq0ar5WlWNyS3W/OZHyem5M6l/vxSoLjany2JVZ3dYrsVDacsq3lVzJynF7NIoUHpXEjrkQfD8=
+	t=1773765581; cv=none; b=B6BwIjHuzh3LBwynOzbPkHYK4qSpcg3K4buoo0JqeYOomG2W7AV+3oBya3GNrXLqpfFwzMqO9egfumfw5En6gKOIpVuAHbOXWHKVWtutig0JUrpqbDUdAH2g6cE1W3UImxui5rQs5S7IjXmprbhXrO4JA4XMlM4/7qF5DPfzEFM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773765273; c=relaxed/simple;
-	bh=GlE06TKs9RbDWNy0Sk4+l3d2oAqsAhKHXSYjB4MovJE=;
+	s=arc-20240116; t=1773765581; c=relaxed/simple;
+	bh=M2Wd+on+OO97FcHcgiBqi3gwLLOnb+KGyApPctxjUdA=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=u6Wc32x6b4DP1npAyiFIfzpAt/m36G4wbHfqOqxzZ2F/unazS04ES56SYeFm6zYiWTCZHRtU1So7OoehsOycBS1OEMM214nQoyscYozeL9GNtLyM0bXSsBHVhd1EnUVix617dafS3kCpfrFnYU+5/2gj8LZ86PlmBp/GXKcZzsA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=rfne/hnM; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=Qz3r1WVC; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=rfne/hnM; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=Qz3r1WVC; arc=none smtp.client-ip=195.135.223.131
+	 Content-Type:Content-Disposition:In-Reply-To; b=u05pr3xUkK1PzLUg2Hk2bpUVFL1jw4rUh2f++0Wrr+ItlD/K5PdqeBPwB9jyHciW9fEBQNjAEa57c+0HZntbGCdwHmQPvCgBAmv+I/xEL6ARy8+g8xNBf6GWdz3eV7rD106/cW7t/iA/Q7/CXkrblnDfN9bwkCRos4gYL1fH+sc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=yyWI8Zbe; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=uwTtNabf; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=yyWI8Zbe; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=uwTtNabf; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="rfne/hnM";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="Qz3r1WVC";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="rfne/hnM";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="Qz3r1WVC"
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="yyWI8Zbe";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="uwTtNabf";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="yyWI8Zbe";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="uwTtNabf"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 3F4375BE01;
-	Tue, 17 Mar 2026 16:34:30 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id CAA124D300;
+	Tue, 17 Mar 2026 16:39:38 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1773765270;
+	t=1773765578;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=fKMCDoNN4jb9CSi6NRsQWv/MWIuRrS+54sb5jX+8RRM=;
-	b=rfne/hnMEpN/HwrPsbG4APjXq7zhLTsiq8ur8lItywNK3j/MqhotOsbUg70AAoYF029XJu
-	d2Gm4A/3b2B7oA2x5UzDu3QlY+v7ZtryaxRffmyv0VANI/gce4Zqbgywb7Ec7730d2w9AB
-	i7Ptf+/1qhVUhEUMdEk/6NVHG+6HIqU=
+	bh=NuIZek0fdoRq36hFPyteLpFrmJK0cKKq2AqEad6xsyI=;
+	b=yyWI8Zbel44GlEqsN+4muSmgKxNbLbCmCtgzFKM8fTgTNT5ZGcvL2o5e/5C132b1QaEqIj
+	E4BvjCaXFk5gv413u37lg5sEpHSyBMRvIUxptqYJu2/gXPOrGAe3FNSKGNsYuWKUafVbNM
+	Ews50Y4GISB0yXyg04hAhPlke6yEjq8=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1773765270;
+	s=susede2_ed25519; t=1773765578;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=fKMCDoNN4jb9CSi6NRsQWv/MWIuRrS+54sb5jX+8RRM=;
-	b=Qz3r1WVCQw3RR5cfVBS1oWKDpE1dq85N15bH0vyi+jTBOq54ko3uvy95ymjbxYtKJPUWss
-	sPpc2u+NNeY9owCA==
-Authentication-Results: smtp-out2.suse.de;
+	bh=NuIZek0fdoRq36hFPyteLpFrmJK0cKKq2AqEad6xsyI=;
+	b=uwTtNabfv3ZmPfTeCJKJ7vaTe2Tqe5Yw6kCz1/cUEuX0tkJ2ez7OHwYKMZCnImHQOoHJS9
+	q3qfqptnEi+4i5Ag==
+Authentication-Results: smtp-out1.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1773765270;
+	t=1773765578;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=fKMCDoNN4jb9CSi6NRsQWv/MWIuRrS+54sb5jX+8RRM=;
-	b=rfne/hnMEpN/HwrPsbG4APjXq7zhLTsiq8ur8lItywNK3j/MqhotOsbUg70AAoYF029XJu
-	d2Gm4A/3b2B7oA2x5UzDu3QlY+v7ZtryaxRffmyv0VANI/gce4Zqbgywb7Ec7730d2w9AB
-	i7Ptf+/1qhVUhEUMdEk/6NVHG+6HIqU=
+	bh=NuIZek0fdoRq36hFPyteLpFrmJK0cKKq2AqEad6xsyI=;
+	b=yyWI8Zbel44GlEqsN+4muSmgKxNbLbCmCtgzFKM8fTgTNT5ZGcvL2o5e/5C132b1QaEqIj
+	E4BvjCaXFk5gv413u37lg5sEpHSyBMRvIUxptqYJu2/gXPOrGAe3FNSKGNsYuWKUafVbNM
+	Ews50Y4GISB0yXyg04hAhPlke6yEjq8=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1773765270;
+	s=susede2_ed25519; t=1773765578;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=fKMCDoNN4jb9CSi6NRsQWv/MWIuRrS+54sb5jX+8RRM=;
-	b=Qz3r1WVCQw3RR5cfVBS1oWKDpE1dq85N15bH0vyi+jTBOq54ko3uvy95ymjbxYtKJPUWss
-	sPpc2u+NNeY9owCA==
+	bh=NuIZek0fdoRq36hFPyteLpFrmJK0cKKq2AqEad6xsyI=;
+	b=uwTtNabfv3ZmPfTeCJKJ7vaTe2Tqe5Yw6kCz1/cUEuX0tkJ2ez7OHwYKMZCnImHQOoHJS9
+	q3qfqptnEi+4i5Ag==
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 292F44273C;
-	Tue, 17 Mar 2026 16:34:30 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id B14F94273B;
+	Tue, 17 Mar 2026 16:39:38 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id ibDmCZaCuWk5BgAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Tue, 17 Mar 2026 16:34:30 +0000
-Date: Tue, 17 Mar 2026 17:34:25 +0100
+	id kR8jK8qDuWlvCwAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Tue, 17 Mar 2026 16:39:38 +0000
+Date: Tue, 17 Mar 2026 17:39:37 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Christoph Anton Mitterer <calestyo@scientia.org>
-Cc: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: Btrfs progs release 6.19
-Message-ID: <20260317163424.GY5735@twin.jikos.cz>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/3] btrfs-progs: enhance find_option()
+Message-ID: <20260317163937.GZ5735@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20260213185647.21966-1-dsterba@suse.com>
- <ced007c60ff226a2988f388c9389c240c8057843.camel@scientia.org>
+References: <cover.1771801832.git.wqu@suse.com>
+ <4f0ee51a24d281ae387f01db510e825e9259f73f.1771801832.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <ced007c60ff226a2988f388c9389c240c8057843.camel@scientia.org>
+In-Reply-To: <4f0ee51a24d281ae387f01db510e825e9259f73f.1771801832.git.wqu@suse.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Spam-Score: -4.00
-X-Spam-Level: 
 X-Spamd-Result: default: False [-4.00 / 50.00];
-	BAYES_HAM(-3.00)[99.99%];
+	BAYES_HAM(-3.00)[100.00%];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	NEURAL_HAM_SHORT(-0.20)[-0.999];
+	NEURAL_HAM_SHORT(-0.20)[-0.998];
 	MIME_GOOD(-0.10)[text/plain];
+	RCVD_TLS_ALL(0.00)[];
 	FUZZY_RATELIMITED(0.00)[rspamd.com];
 	RCVD_VIA_SMTP_AUTH(0.00)[];
 	MIME_TRACE(0.00)[0:+];
 	ARC_NA(0.00)[];
 	TO_DN_SOME(0.00)[];
+	RCPT_COUNT_TWO(0.00)[2];
 	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	RCVD_TLS_ALL(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,twin.jikos.cz:mid,imap1.dmz-prg2.suse.org:helo,suse.cz:replyto];
+	FROM_HAS_DN(0.00)[];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	RCPT_COUNT_THREE(0.00)[3];
-	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.cz:replyto,imap1.dmz-prg2.suse.org:helo,twin.jikos.cz:mid];
 	RCVD_COUNT_TWO(0.00)[2];
+	REPLYTO_ADDR_EQ_FROM(0.00)[];
 	REPLYTO_DOM_NEQ_TO_DOM(0.00)[]
 X-Spam-Flag: NO
+X-Spam-Score: -4.00
+X-Spam-Level: 
 
-On Sat, Feb 14, 2026 at 03:18:51AM +0100, Christoph Anton Mitterer wrote:
-> On Fri, 2026-02-13 at 19:56 +0100, David Sterba wrote:
-> >   * make block-group-tree default (support since linux 6.1), use -O
-> > ^bgt to
-> >     unset it for backward compatibility
+On Mon, Feb 23, 2026 at 09:42:58AM +1030, Qu Wenruo wrote:
+> There are two minor problems in that function:
 > 
-> I guess that also mean that this is now considered stable and has been
-> very well tested?
+> - Latest GCC reports dropped 'const' qualifier
+> 
+>   The latest GCC (15.2.1) will report the 'const' qualifier is dropped
+>   for the strstr() call.
+> 
+>   It looks like the latest GCC has taken the 'const' qualifier checks
+>   one step further, that any pointer that points into a 'const' pointer
+>   should also have a 'const' qualifier, to make sure there is no
+>   modification into the original pointed memory.
+> 
+>   In our case, @options parameter has a 'const' qualifier, thus the
+>   returned @tmp pointer should also have a 'const' qualifier, or we can
+>   modify the @options through @tmp.
+> 
+> - No error handling if strdup() failed
+> 
+> Enhance them by:
+> 
+> - Add the 'const' qualifier for @tmp
+>   This also means we can not use @tmp pointer to modify the newly
+>   duplicated string.
+>   Instead use a new @i index to access the new string.
+> 
+> - Return NULL if strdup() failed
+>   And make the caller check errno for memory allocation failure.
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  common/utils.c | 22 +++++++++++++++++-----
+>  1 file changed, 17 insertions(+), 5 deletions(-)
+> 
+> diff --git a/common/utils.c b/common/utils.c
+> index 23dbd9d16781..f183705edb8f 100644
+> --- a/common/utils.c
+> +++ b/common/utils.c
+> @@ -375,19 +375,27 @@ struct mnt_entry {
+>  /*
+>   * Find first occurrence of up an option string (as "option=") in @options,
+>   * separated by comma. Return allocated string as "option=value"
+> + *
+> + * If NULL is returned, the caller needs to check errno to make sure it's not
+> + * caused by memory allocation failure.
+>   */
+>  static char *find_option(const char *options, const char *option)
+>  {
+> -	char *tmp, *ret;
+> +	const char *tmp;
+> +	char *ret;
+> +	int i;
+>  
+> +	errno = 0;
+>  	tmp = strstr(options, option);
+>  	if (!tmp)
+>  		return NULL;
+>  	ret = strdup(tmp);
+> -	tmp = ret;
+> -	while (*tmp && *tmp != ',')
+> -		tmp++;
+> -	*tmp = 0;
+> +	if (!ret)
+> +		return NULL;
+> +	i = 0;
+> +	while (*(ret + i) && *(ret + i) != ',')
 
-Yes, the bgt feature has been part of the fstests runs.
-
-> How about migrating an existing fs to use the block-group-tree (with
-> btrfstune --convert-to-block-group-tree)... has that also been well
-> tested and is considered safe to be used on filesystems with precious
-> data?
-
-The in-place conversions are a bit more tricky as they start from an
-existing filesystem and there's a possibility of finding some corner
-case. Last time this was in 6.15.
-
-It should be doable to test the conversion using device mapper snapshot
-devices on an existing valuable filesystem without destroying it.
+Is there a reason for not using ret[i] ?

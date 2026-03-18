@@ -1,79 +1,108 @@
-Received: from stravinsky.debian.org (stravinsky.debian.org [82.195.75.108])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3B366356A37;
-	Wed, 18 Mar 2026 17:51:29 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=82.195.75.108
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 35D7933D4E1
+	for <linux-btrfs@vger.kernel.org>; Wed, 18 Mar 2026 20:05:07 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773856290; cv=none; b=s9Mmv3+KoLLzTnc4/J8kj1OfmEJsehHFwtHV5TwJKWWR87Y6UXBCibpj++OogIx6pflwV2Kg9oVcotLuPasDRC8tV0l02HouyDNPtOa2t1aHRvgxs1oM9JbJb/uIphniiRMZswBpnPp09a3DuRS6BYxIVPUPZvUnEF+I4pjfsIs=
+	t=1773864308; cv=none; b=sFv3MmbNENAk0TSX5Ct6267ju4qrKwW4Sv50kIK3MglTZLQSP23TYSgXrMuqWYSGkA+KBc7FrBaY9uUTv0NzUX8taGQg3I6g8adexT3CzijFf4peYz01rQGMx59RvApcv94egnXRk9nrDncy9RbjlJBMESmCEERQcRDMJH/VcgY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773856290; c=relaxed/simple;
-	bh=EDBlyoiXkGjVuAtMcXzb2GV3zjSDR/jqOI6A7Tor6XU=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=ChWiA3rf2QcbkZLCNJ0lN1BNDQq4FAXlAED1nE7mx61umRWFBKcI1B2x5R5RNGYX8sjAKShVSdS9vwK6yifxz4JbFKlSrUNgLSwH5LHtXZzk5i8jAl/KCLBE7rCaEH1EBsZSrCnB8qdcfR+Z5uv5x0ICsxhnFX9B/WjOJl6mGs8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=debian.org; spf=none smtp.mailfrom=debian.org; dkim=pass (2048-bit key) header.d=debian.org header.i=@debian.org header.b=QcFw9CJV; arc=none smtp.client-ip=82.195.75.108
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=debian.org
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=debian.org
+	s=arc-20240116; t=1773864308; c=relaxed/simple;
+	bh=q65ai55pVDNUotjJgnqfPaE2nmaSNgl8ZMAeuIycSVw=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=eMhrHFmKo5e4o+dF1FJesrWCe25B9mqCq4xo7HInmbQG516cD4qfY+p1E1JJ/fP0f8/jZ6Coe45egu+jPgqRAhpHZ4P296oItO/0riOfIyRF4mNHBIgN1WLthobNMnmDUThEcjphV+/qvChBKxJywQnBTnL8AFR31H91R0zEYa0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Cp2BJDyT; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Cp2BJDyT; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=debian.org header.i=@debian.org header.b="QcFw9CJV"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=debian.org;
-	s=smtpauto.stravinsky; h=X-Debian-User:In-Reply-To:Content-Transfer-Encoding:
-	Content-Type:MIME-Version:References:Message-ID:Subject:Cc:To:From:Date:
-	Reply-To:Content-ID:Content-Description;
-	bh=EDBlyoiXkGjVuAtMcXzb2GV3zjSDR/jqOI6A7Tor6XU=; b=QcFw9CJVBL6yssnKmxjONDY8GT
-	TnExAMBio7BoAKwzlOeeFZT5m0ky9C001Nz83bRqK+srspqtao9/Y+i8mMIl8FMjsxkwPru9HL4jz
-	wR+pTmvS8KrhpqvJEBvvhGWtESUQnvxi/EJTg7Rtr+eH989lwNvJRSEOBF+cB/8T76q/YyDwMYL2k
-	+agw7FtPxcy2Air2RTt1LD7ydjwkDxmRU31hfPoZhKLDpl7ovK/oXx0RSTyQq5+L9+SAH2tfOj6b9
-	U6oL4ZFPssGJgPIFA/TlM23AW3+jzslv64z0PgyQB5vWJoGOLx5Bfh1+SPvD4KGcPg/T9eahPig/c
-	uVtdMhuA==;
-Received: from authenticated user
-	by stravinsky.debian.org with esmtpsa (TLS1.3:ECDHE_X25519__RSA_PSS_RSAE_SHA256__AES_256_GCM:256)
-	(Exim 4.94.2)
-	(envelope-from <leitao@debian.org>)
-	id 1w2v3B-003pWI-JT; Wed, 18 Mar 2026 17:51:20 +0000
-Date: Wed, 18 Mar 2026 10:51:15 -0700
-From: Breno Leitao <leitao@debian.org>
-To: Chuck Lever <chuck.lever@oracle.com>
-Cc: Tejun Heo <tj@kernel.org>, Lai Jiangshan <jiangshanlai@gmail.com>, 
-	Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, puranjay@kernel.org, 
-	linux-crypto@vger.kernel.org, linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
-	Michael van der Westhuizen <rmikey@meta.com>, kernel-team@meta.com
-Subject: Re: [PATCH RFC 0/5] workqueue: add WQ_AFFN_CACHE_SHARD affinity scope
-Message-ID: <abrkrZc52h0vcTTj@gmail.com>
-References: <20260312-workqueue_sharded-v1-0-2c43a7b861d0@debian.org>
- <6b952e7087c5fd8f040b692a92374871@kernel.org>
- <abk6PMrSDcb-yXZ9@gmail.com>
- <30adaf6c-657c-41f1-9234-79d807d74f02@oracle.com>
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Cp2BJDyT";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Cp2BJDyT"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 5E7144D1C3
+	for <linux-btrfs@vger.kernel.org>; Wed, 18 Mar 2026 20:05:05 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1773864305; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=tI3eUBCu6ANHM5G+mnNO92tdAj3HF71ZO11iSYA/QCE=;
+	b=Cp2BJDyT+pefYqXi6rCwnVgLcTWIKAUVP58ObRusfY1j//WRc2+/huZWYKkXOkbnIMj7JY
+	mcNrIEl24sdt3w4ikFjPTSK1u45aAY8rCM2T8b8D0FPvNJbVCnC9NPVqxSC4aRinfOEb4R
+	ieh2LlhQztsvi47gm0iY+v1lrLXlofA=
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1773864305; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=tI3eUBCu6ANHM5G+mnNO92tdAj3HF71ZO11iSYA/QCE=;
+	b=Cp2BJDyT+pefYqXi6rCwnVgLcTWIKAUVP58ObRusfY1j//WRc2+/huZWYKkXOkbnIMj7JY
+	mcNrIEl24sdt3w4ikFjPTSK1u45aAY8rCM2T8b8D0FPvNJbVCnC9NPVqxSC4aRinfOEb4R
+	ieh2LlhQztsvi47gm0iY+v1lrLXlofA=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 57C714273B
+	for <linux-btrfs@vger.kernel.org>; Wed, 18 Mar 2026 20:05:05 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id hn1iFXEFu2lSQwAAD6G6ig
+	(envelope-from <dsterba@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Wed, 18 Mar 2026 20:05:05 +0000
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: Btrfs progs release 6.19.1
+Date: Wed, 18 Mar 2026 21:05:03 +0100
+Message-ID: <20260318200505.22729-1-dsterba@suse.com>
+X-Mailer: git-send-email 2.51.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <30adaf6c-657c-41f1-9234-79d807d74f02@oracle.com>
-X-Debian-User: leitao
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[99.98%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	ARC_NA(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	RCVD_TLS_ALL(0.00)[]
+X-Spam-Flag: NO
+X-Spam-Score: -2.80
+X-Spam-Level: 
 
-On Tue, Mar 17, 2026 at 09:58:54AM -0400, Chuck Lever wrote:
-> On 3/17/26 7:32 AM, Breno Leitao wrote:
-> >> - How was the default shard size of 8 picked? There's a tradeoff
-> >> between the number of kworkers created and locality. Can you also
-> >> report the number of kworkers for each configuration? And is there
-> >> data on different shard sizes? It'd be useful to see how the numbers
-> >> change across e.g. 4, 8, 16, 32.
-> >
-> > The choice of 8 as the default shard size was somewhat arbitrary – it was
-> > selected primarily to generate initial data points.
->
-> Perhaps instead of basing the sharding on a particular number of CPUs
-> per shard, why not cap the total number of shards? IIUC that is the main
-> concern about ballooning the number of kworker threads.
+Hi,
 
-That's a great suggestion. I'll send a v2 that implements this approach,
-where the parameter specifies the number of shards rather than the number
-of CPUs per shard.
+btrfs-progs version 6.19.1 have been released. This is a bugfix release.
 
-Thanks for the feedback,
---breno
+Changelog:
+
+* fix balance filter 'usage' that was incorrectly used for ranged usage
+* core:
+  * fix tree-checker vararg format print
+  * stability fixes
+  * compiler warning fixes
+* other:
+  * CI updates, action version updates, more build targets
+  * cleanups, refactoring
+  * minor documentation updates
+
+Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
+Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
+Release: https://github.com/kdave/btrfs-progs/releases/tag/v6.19.1

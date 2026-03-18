@@ -1,154 +1,79 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from stravinsky.debian.org (stravinsky.debian.org [82.195.75.108])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 09C4B33EAEB
-	for <linux-btrfs@vger.kernel.org>; Wed, 18 Mar 2026 16:35:28 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3B366356A37;
+	Wed, 18 Mar 2026 17:51:29 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=82.195.75.108
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773851732; cv=none; b=IA/+ED1uLXjwBWZYG5u2G0idNdUgAP7Lwz6Oei7bUTIp4GC5A3RMzsB5+4Fbns3jZOSs9Q2SzqB22f21IwTATmJTZWLUF1j2M2E0tEXFQ6PZFk+Xau1+i/3hlm3D/UCVMZfzLiMZjG0puIwzmqZetDMWe0CP5dOfxqr2ikHWkL0=
+	t=1773856290; cv=none; b=s9Mmv3+KoLLzTnc4/J8kj1OfmEJsehHFwtHV5TwJKWWR87Y6UXBCibpj++OogIx6pflwV2Kg9oVcotLuPasDRC8tV0l02HouyDNPtOa2t1aHRvgxs1oM9JbJb/uIphniiRMZswBpnPp09a3DuRS6BYxIVPUPZvUnEF+I4pjfsIs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773851732; c=relaxed/simple;
-	bh=bZLBblemA+Mki3wPx/7+AbG8DpFQZqqKkjWcYFGqnMc=;
+	s=arc-20240116; t=1773856290; c=relaxed/simple;
+	bh=EDBlyoiXkGjVuAtMcXzb2GV3zjSDR/jqOI6A7Tor6XU=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=G5VlgjNxjH4qtRio22ES1yCAo1AKhKi/kRfPkOidfrGz44oEowC/tzNuvRvY08QPJovw8009iqEsRPZoowfbGUfHyz8N51zPadj15zFUzfRc3zXw1KymeXdviM3dHnrH+A0DIJ5e8y2sJ89+EyOpbzsOmv6ygs2ZOzs8o5Czgeo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=a5OqacaF; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=us4w2Wkp; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=yUzrdIFq; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=VLEFXz+5; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	 Content-Type:Content-Disposition:In-Reply-To; b=ChWiA3rf2QcbkZLCNJ0lN1BNDQq4FAXlAED1nE7mx61umRWFBKcI1B2x5R5RNGYX8sjAKShVSdS9vwK6yifxz4JbFKlSrUNgLSwH5LHtXZzk5i8jAl/KCLBE7rCaEH1EBsZSrCnB8qdcfR+Z5uv5x0ICsxhnFX9B/WjOJl6mGs8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=debian.org; spf=none smtp.mailfrom=debian.org; dkim=pass (2048-bit key) header.d=debian.org header.i=@debian.org header.b=QcFw9CJV; arc=none smtp.client-ip=82.195.75.108
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=debian.org
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=debian.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="a5OqacaF";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="us4w2Wkp";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="yUzrdIFq";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="VLEFXz+5"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id A5DD54D429;
-	Wed, 18 Mar 2026 16:35:26 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1773851727;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=C35Ic6GUhAGueVVmVxBvv8ErmbDlqEHLoDkeE//qxLY=;
-	b=a5OqacaF8UzcXHOtOd1pgY9ARIWNPpyEAfC6sVZOU7VA3lL+UAJFAX1f3u9a/hk6d9ApfZ
-	r4wLGY5rNCxZeMYqPz7q4VJ+zqIZImaXuogCWiRTGVEUnffXNIjynIehEbzMXKNHs0Dy25
-	clB6GRoy3l5FN+de3uyEjiSkSSFsuP0=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1773851727;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=C35Ic6GUhAGueVVmVxBvv8ErmbDlqEHLoDkeE//qxLY=;
-	b=us4w2Wkpk1651TcPT6cDErBm843btyH+GqxkPo96IbQHoPFM7+Fx/cnDgVmPBhuuubkCZ1
-	N1TI2TKXaZpxHnDg==
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b=yUzrdIFq;
-	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=VLEFXz+5
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1773851726;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=C35Ic6GUhAGueVVmVxBvv8ErmbDlqEHLoDkeE//qxLY=;
-	b=yUzrdIFq4R8yhso8Vys/RdFeBiu+ERAIElwBHBfs9MX+IRdK2euNIMaWqeg9AMDz+E2qRp
-	wRTRjdSlol2GJLF+G+P1rX6Sz4Cd8HltH1eMpm27UPb9yC3XiHzhsiKQUDoNnaWjvZTua/
-	2ICk57gi9D558CSy5IckB2NHgH59KTQ=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1773851726;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=C35Ic6GUhAGueVVmVxBvv8ErmbDlqEHLoDkeE//qxLY=;
-	b=VLEFXz+58ydBbgOnbrEmuT3cKHU2fXMzBVMmutzNw+XkaBbgnhWZWJZl7vj/JPPdnNwrJg
-	1cjYbq4Mjpr/cHBw==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 8BA3C4273B;
-	Wed, 18 Mar 2026 16:35:26 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id xE3eIU7UumlyaQAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Wed, 18 Mar 2026 16:35:26 +0000
-Date: Wed, 18 Mar 2026 17:35:10 +0100
-From: David Sterba <dsterba@suse.cz>
-To: syzbot <syzbot+3c4d8371d65230f852a2@syzkaller.appspotmail.com>
-Cc: clm@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
-Subject: Re: [syzbot] [btrfs?] BUG: corrupted list in btrfs_free_compr_folio
-Message-ID: <20260318163510.GE5735@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <69b8084c.050a0220.248e02.0115.GAE@google.com>
+	dkim=pass (2048-bit key) header.d=debian.org header.i=@debian.org header.b="QcFw9CJV"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=debian.org;
+	s=smtpauto.stravinsky; h=X-Debian-User:In-Reply-To:Content-Transfer-Encoding:
+	Content-Type:MIME-Version:References:Message-ID:Subject:Cc:To:From:Date:
+	Reply-To:Content-ID:Content-Description;
+	bh=EDBlyoiXkGjVuAtMcXzb2GV3zjSDR/jqOI6A7Tor6XU=; b=QcFw9CJVBL6yssnKmxjONDY8GT
+	TnExAMBio7BoAKwzlOeeFZT5m0ky9C001Nz83bRqK+srspqtao9/Y+i8mMIl8FMjsxkwPru9HL4jz
+	wR+pTmvS8KrhpqvJEBvvhGWtESUQnvxi/EJTg7Rtr+eH989lwNvJRSEOBF+cB/8T76q/YyDwMYL2k
+	+agw7FtPxcy2Air2RTt1LD7ydjwkDxmRU31hfPoZhKLDpl7ovK/oXx0RSTyQq5+L9+SAH2tfOj6b9
+	U6oL4ZFPssGJgPIFA/TlM23AW3+jzslv64z0PgyQB5vWJoGOLx5Bfh1+SPvD4KGcPg/T9eahPig/c
+	uVtdMhuA==;
+Received: from authenticated user
+	by stravinsky.debian.org with esmtpsa (TLS1.3:ECDHE_X25519__RSA_PSS_RSAE_SHA256__AES_256_GCM:256)
+	(Exim 4.94.2)
+	(envelope-from <leitao@debian.org>)
+	id 1w2v3B-003pWI-JT; Wed, 18 Mar 2026 17:51:20 +0000
+Date: Wed, 18 Mar 2026 10:51:15 -0700
+From: Breno Leitao <leitao@debian.org>
+To: Chuck Lever <chuck.lever@oracle.com>
+Cc: Tejun Heo <tj@kernel.org>, Lai Jiangshan <jiangshanlai@gmail.com>, 
+	Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, puranjay@kernel.org, 
+	linux-crypto@vger.kernel.org, linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
+	Michael van der Westhuizen <rmikey@meta.com>, kernel-team@meta.com
+Subject: Re: [PATCH RFC 0/5] workqueue: add WQ_AFFN_CACHE_SHARD affinity scope
+Message-ID: <abrkrZc52h0vcTTj@gmail.com>
+References: <20260312-workqueue_sharded-v1-0-2c43a7b861d0@debian.org>
+ <6b952e7087c5fd8f040b692a92374871@kernel.org>
+ <abk6PMrSDcb-yXZ9@gmail.com>
+ <30adaf6c-657c-41f1-9234-79d807d74f02@oracle.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <69b8084c.050a0220.248e02.0115.GAE@google.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Spamd-Result: default: False [-1.71 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	SUSPICIOUS_RECIPS(1.50)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	URI_HIDDEN_PATH(1.00)[https://syzkaller.appspot.com/x/.config?x=d46eab0cfd31c214];
-	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	ARC_NA(0.00)[];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	TO_DN_SOME(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns];
-	RCVD_TLS_ALL(0.00)[];
-	REPLYTO_DOM_NEQ_TO_DOM(0.00)[];
-	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	RCPT_COUNT_FIVE(0.00)[6];
-	RCVD_COUNT_TWO(0.00)[2];
-	TAGGED_RCPT(0.00)[3c4d8371d65230f852a2];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	DKIM_TRACE(0.00)[suse.cz:+];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	SUBJECT_HAS_QUESTION(0.00)[]
-X-Rspamd-Action: no action
-X-Spam-Flag: NO
-X-Spam-Score: -1.71
-X-Spam-Level: 
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Rspamd-Queue-Id: A5DD54D429
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <30adaf6c-657c-41f1-9234-79d807d74f02@oracle.com>
+X-Debian-User: leitao
 
-On Mon, Mar 16, 2026 at 06:40:28AM -0700, syzbot wrote:
-> Hello,
-> 
-> syzbot found the following issue on:
-> 
-> HEAD commit:    f338e7738378 Linux 7.0-rc4
-> git tree:       upstream
-> console output: https://syzkaller.appspot.com/x/log.txt?x=15265602580000
-> kernel config:  https://syzkaller.appspot.com/x/.config?x=d46eab0cfd31c214
-> dashboard link: https://syzkaller.appspot.com/bug?extid=3c4d8371d65230f852a2
-> compiler:       Debian clang version 21.1.8 (++20251221033036+2078da43e25a-1~exp1~20251221153213.50), Debian LLD 21.1.8
-> 
-> Unfortunately, I don't have any reproducer for this issue yet.
-> 
-> Downloadable assets:
-> disk image (non-bootable): https://storage.googleapis.com/syzbot-assets/d900f083ada3/non_bootable_disk-f338e773.raw.xz
-> vmlinux: https://storage.googleapis.com/syzbot-assets/2567fb35ebfb/vmlinux-f338e773.xz
-> kernel image: https://storage.googleapis.com/syzbot-assets/f9124de81ddb/bzImage-f338e773.xz
-> 
-> IMPORTANT: if you fix the issue, please add the following tag to the commit:
-> Reported-by: syzbot+3c4d8371d65230f852a2@syzkaller.appspotmail.com
+On Tue, Mar 17, 2026 at 09:58:54AM -0400, Chuck Lever wrote:
+> On 3/17/26 7:32 AM, Breno Leitao wrote:
+> >> - How was the default shard size of 8 picked? There's a tradeoff
+> >> between the number of kworkers created and locality. Can you also
+> >> report the number of kworkers for each configuration? And is there
+> >> data on different shard sizes? It'd be useful to see how the numbers
+> >> change across e.g. 4, 8, 16, 32.
+> >
+> > The choice of 8 as the default shard size was somewhat arbitrary – it was
+> > selected primarily to generate initial data points.
+>
+> Perhaps instead of basing the sharding on a particular number of CPUs
+> per shard, why not cap the total number of shards? IIUC that is the main
+> concern about ballooning the number of kworker threads.
 
-syz: fix: btrfs: zlib: handle page aligned compressed size correctly
+That's a great suggestion. I'll send a v2 that implements this approach,
+where the parameter specifies the number of shards rather than the number
+of CPUs per shard.
+
+Thanks for the feedback,
+--breno

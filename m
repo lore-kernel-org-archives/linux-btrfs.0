@@ -1,236 +1,198 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from mail-yw1-f195.google.com (mail-yw1-f195.google.com [209.85.128.195])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 399EC3ACA5E
-	for <linux-btrfs@vger.kernel.org>; Thu, 19 Mar 2026 21:05:38 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A25973E958E
+	for <linux-btrfs@vger.kernel.org>; Thu, 19 Mar 2026 23:49:13 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.195
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773954339; cv=none; b=IHPaGWs4dzvgiTuRNxwJyMH19LH0AyJ6Wsjtksv1sNHW36EtmGkb+yn62zr3bhwsh8yr4tkQWtBlu4yH8ULOX1zzPeZAIMNSGgiT3sP2u0gAXvVE3oIyPbmr6ZssVQa4GFA+PfUhwHVSZS7EGqKBDrLWO0hQGyNmslQGdUr/1fA=
+	t=1773964155; cv=none; b=Hm+WoIWruTBxEdJHTY/QP3b6wJPBLtc6Eg0qh9uuYZaZe/kxvlZaKZQFtjF05NQYmtqashOADeNgmKtUT4/sC/ab/evYK68oIbokyFUNGifStMw8APQQc2dxGzl6eAt/T3ElFGVjGJmMcc9kgYEF40y4wdQcZobFWTtvBGVb37E=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773954339; c=relaxed/simple;
-	bh=syqA3qw1XRr/hlL+xH4edDbIkAUIDNnISLMz2/HNDi0=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=YMTbOA0bVdlk3aBrbn6a+YIz1jgsr4jF1bL2wcZMuxpEi/X3DZWs01a0oRk3JvYfMXhWJ84m4gQz40etYhfSCeN34yQIKgf2ZcKPB1FA2UjlDQrQf9UrCSiau3NIH21HDfESZANEwgN48BSD9xNLCOu+eqz7yM68QKGB61aIO+s=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=B2WWYXDr; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=B2WWYXDr; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1773964155; c=relaxed/simple;
+	bh=rRD5ZludA6VlSKPhCxvU8WbOFoLdup/czN+fOv9PAkc=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version:Content-Type; b=Rwe3vMq0A2D0n8i/mL9HY3DjHRVxoYpIJ+8lgcvDtNPZJUjiRwoMM3xdQMVca5EGszQ6zlT/6cOGJYAs8TZHnhlGRhaDNBJLN6Z/Zm8B1j887cTSjTlgQEduHp3UpXCrObK4d0Ckeb9xf/G2QRg2y5b8UjW7OSICsmOIIt8G/No=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=Hixm7et5; arc=none smtp.client-ip=209.85.128.195
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="B2WWYXDr";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="B2WWYXDr"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 701855BDE4
-	for <linux-btrfs@vger.kernel.org>; Thu, 19 Mar 2026 21:05:19 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1773954319; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=l73gxsxr5mDqJP9oDcrpWfCHlYC+Wt+3YbaXNW1eRO0=;
-	b=B2WWYXDrHtITSTrv1px+9HuSrR9WdcVkKfV8bbnjexHceg9J/bdsu4VQRnvQrTYok9rrj3
-	NkVCNUP3vjO0ZrfInNmtQbHOH88i6aVh2LK24L6s0cEi0esWBoUtBYFQXuKKxfhqMtNxw9
-	my+VB1uGH52T8RKumaClGYyLimG7q+E=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=B2WWYXDr
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1773954319; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=l73gxsxr5mDqJP9oDcrpWfCHlYC+Wt+3YbaXNW1eRO0=;
-	b=B2WWYXDrHtITSTrv1px+9HuSrR9WdcVkKfV8bbnjexHceg9J/bdsu4VQRnvQrTYok9rrj3
-	NkVCNUP3vjO0ZrfInNmtQbHOH88i6aVh2LK24L6s0cEi0esWBoUtBYFQXuKKxfhqMtNxw9
-	my+VB1uGH52T8RKumaClGYyLimG7q+E=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 71A554273B
-	for <linux-btrfs@vger.kernel.org>; Thu, 19 Mar 2026 21:05:18 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id eJ5ZCA5lvGk5FAAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Thu, 19 Mar 2026 21:05:18 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 6/6] btrfs: enable experimental delayed compression support
-Date: Fri, 20 Mar 2026 07:34:50 +1030
-Message-ID: <b966c38785c6d75e96c8f475d5d9e43d17fcd800.1773953307.git.wqu@suse.com>
-X-Mailer: git-send-email 2.53.0
-In-Reply-To: <cover.1773953307.git.wqu@suse.com>
-References: <cover.1773953307.git.wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="Hixm7et5"
+Received: by mail-yw1-f195.google.com with SMTP id 00721157ae682-7982c3b7dfcso12993927b3.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Mar 2026 16:49:13 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1773964152; x=1774568952; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:to
+         :from:from:to:cc:subject:date:message-id:reply-to;
+        bh=qJb6OZt1WAWED6nRaqGxNidc+dvuYdrMIW8g1vW0gjY=;
+        b=Hixm7et5xw7sisdJ47WrD57XiaUsWibVmPEOblAaBly6eN3g/TDkgYZpy+O71FgERA
+         Qb3G8F5IM5wsQKRy3ovwBBsqN/zTBuPBb0xdJn/k3Lb6kGTTRspMV5cLzHRaVNd2q1u1
+         b3Qr5734nWcNRcXzk/HjTZNIK1kr0eZw0jMw2gy/Dy5tJvZ6n4Us7PyP+K602PeX8rtN
+         ILpR/1q3pOWv7rBPXZw2SoajVl03HlzcK7ve2cdvwbQLPAN++vEGt/LwrFjOWrk4Tr/R
+         uA3JCeaGzoUIchw0nQt1DR1Yoji5SDaqu4LEpwVjrV7gTcKXSw2ubUhOrmFBS2CDaP/L
+         VsRA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1773964152; x=1774568952;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:to
+         :from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=qJb6OZt1WAWED6nRaqGxNidc+dvuYdrMIW8g1vW0gjY=;
+        b=sirJDqfx/DeAgF1vZS5G6WcOQLlgE2Q0Yk3ieyNblMtA+kvY+eckMMCOLsrtqt4UYq
+         vbuLKWfNs6jFVD2kdZ+LrN6/Fn3nUlhWy60VMt9QRoVwnmjKw+VsnqwUJ8QbtKXWpHw4
+         1QWbGreQRqSQA79fBz3ZpeFie8Uziy1ISLBxNx5WOpyZDSGX05OVJaZuKpZDnelanoTK
+         Cg9W1y26pjIRQNyGtdnxnLavfl8+OS8LKbD8WlMqhQ39oyjnwi3jjnQX/Q4/Gy9QQD0T
+         vbnGye4KxT3Ta/d0bw5W0//k3zNpzB27y5WNeUlfqsZcrZXm/FjQvri+5u5ZYTpCpG7p
+         PGfg==
+X-Gm-Message-State: AOJu0YwNBydEH6glcfO41IKLzO43uQOSG92DmOmvKzvbLYdE+7Isk5w2
+	pJX1fuRMwfoKzhqPqWQD6l1yeJsWm6xWisR7tuH9T17+Ao0x2F/DCLDGYuYKa/0v
+X-Gm-Gg: ATEYQzyzOxH7qpXP9sULRCxe4SU04Me1z0hl0CfgLK2VP0plUfWnrGrt2pp1ZnOb8F6
+	kUpUJzw4mOvX0ZIOAogDjl7IUeSBCBaj/ulTgP9iIp7h88NzCuMs9yyifHbKWie7aS1Idy075I3
+	cwglUFCDHYWoShkaYZHM8xyhvcwz4xs8DHgYfdMVrk+P2hopeknwGYERkKkjyjLh+SRhyIawSkg
+	OkoCWuBp+LdSMJxxG2UB4zcfqH2DOkHLA/9wWsCnKBVNsMlZRQ6okLRJX9wLiwqQUoTSElgGBJL
+	w/gKIBlXL1AGm16Wbo24RK2FrTWLiuqPH69PdGbNETrqqP1p65Gl0m8zLqhCDSHEJcneNRJqZyr
+	JS55IHFRi/cnSxApubQFPEdEOa6F8X1aC4+vdX6+PqI+ll1WocXk1eAN8jEGXH2bMXeldKTrxIF
+	hhjKY8MkD5HTmCDVNxgg==
+X-Received: by 2002:a05:690c:d88:b0:798:7821:8b8c with SMTP id 00721157ae682-79a90c25bc0mr11298657b3.49.1773964152283;
+        Thu, 19 Mar 2026 16:49:12 -0700 (PDT)
+Received: from localhost ([2a03:2880:25ff:4e::])
+        by smtp.gmail.com with ESMTPSA id 00721157ae682-79a9057ff43sm6160517b3.39.2026.03.19.16.49.11
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Thu, 19 Mar 2026 16:49:11 -0700 (PDT)
+From: Leo Martins <loemra.dev@gmail.com>
+To: linux-btrfs@vger.kernel.org,
+	kernel-team@fb.com
+Subject: [PATCH] btrfs: avoid GFP_ATOMIC allocations in qgroup free paths
+Date: Thu, 19 Mar 2026 16:49:08 -0700
+Message-ID: <44a36cda2b9cdc4a600c942c051f9e028239308b.1773941507.git.loemra.dev@gmail.com>
+X-Mailer: git-send-email 2.52.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	ARC_NA(0.00)[];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	MIME_TRACE(0.00)[0:+];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RCVD_TLS_ALL(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	TO_DN_NONE(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from,2a07:de40:b281:106:10:150:64:167:received];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.com:mid,suse.com:dkim,suse.com:email]
-X-Rspamd-Action: no action
-X-Spam-Flag: NO
-X-Spam-Score: -3.01
-X-Spam-Level: 
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Rspamd-Queue-Id: 701855BDE4
 
-Instead of the existing async submission path, the new delayed bbio will
-handle compressed write by:
+When qgroups are enabled, __btrfs_qgroup_release_data() and
+qgroup_free_reserved_data() pass an extent_changeset to
+btrfs_clear_record_extent_bits() to track how many bytes had their
+EXTENT_QGROUP_RESERVED bits cleared. Inside the extent IO tree spinlock,
+add_extent_changeset() calls ulist_add() with GFP_ATOMIC to record each
+changed range. If this allocation fails, it hits a BUG_ON and panics the
+kernel.
 
-- Allocating delayed em/oe at run_delalloc_*() time
-  Thus no data extent is reserved at that time.
+However, both of these callers only read changeset.bytes_changed
+afterwards — the range_changed ulist is populated and immediately freed
+without ever being iterated. The GFP_ATOMIC allocation is entirely
+unnecessary for these paths.
 
-- Delayed bbio will be assembled at extent_writepage_io() time
+Introduce extent_changeset_init_bytes_only() which uses a sentinel value
+(EXTENT_CHANGESET_BYTES_ONLY) on the ulist's prealloc field to signal
+that only bytes_changed should be tracked. add_extent_changeset() checks
+for this sentinel and returns early after updating bytes_changed,
+skipping the ulist_add() call entirely. This eliminates the GFP_ATOMIC
+allocation and makes the BUG_ON unreachable for these paths.
 
-- Delayed bbio will be intercepted just before submission
-  Which will run compression (or fallback to uncompressed writes) in
-  workqueue.
-  Data extents will only be reserved at that time, and the delayed em
-  will be replaced by real ones.
+Callers that need range tracking (qgroup_reserve_data,
+qgroup_unreserve_range, btrfs_qgroup_check_reserved_leak) continue to
+use extent_changeset_init() and are unaffected.
 
-  Meanwhile the real OE will be added as a child of the parent delayed
-  OE, and when the parent OE finishes, the child OE will be finished
-  with their file extents inserted.
-
-This has some benefits:
-
-- Higher concurrency
-  Previously async submission will hold the folio and io tree range
-  locked, this means we can not even read the uptodate folio.
-
-  Furthermore although the compressed write is queued into a workqueue
-  for submission and extent_writepage_io() will skip the compressed
-  range, when we need to write the next folio of the compressed range,
-  we will need to wait for the folio to be unlocked.
-
-  This makes async submission less async.
-
-- Future DONTCACHE writes support
-  We do not support DONTCACHE because that feature requires writeback path
-  to clear the folio dirty and submit them sequentially.
-
-  Meanwhile async submission makes the writeback async, breaking the
-  sequential submission requirement.
-
-  This is also why we need a complex per-block tracking for writeback
-  flags, meanwhile iomap only requires a counter tracking.
-
-  With the new delayed compression, the lifespan of a folio aligns with
-  DONTCACHE and iomap.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: Leo Martins <loemra.dev@gmail.com>
 ---
- fs/btrfs/inode.c | 60 +++++++++++++++++++++++++++++++++++++++++++++---
- 1 file changed, 57 insertions(+), 3 deletions(-)
+ fs/btrfs/extent-io-tree.c |  2 ++
+ fs/btrfs/extent_io.h      | 23 ++++++++++++++++++++++-
+ fs/btrfs/qgroup.c         |  5 +++--
+ 3 files changed, 27 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 183fb3c83c10..c95207009210 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1673,6 +1673,57 @@ static bool run_delalloc_compressed(struct btrfs_inode *inode,
- 	return true;
+diff --git a/fs/btrfs/extent-io-tree.c b/fs/btrfs/extent-io-tree.c
+index b1b96eb5f64e..bdef41d492a3 100644
+--- a/fs/btrfs/extent-io-tree.c
++++ b/fs/btrfs/extent-io-tree.c
+@@ -195,6 +195,8 @@ static int add_extent_changeset(struct extent_state *state, u32 bits,
+ 	if (!set && (state->state & bits) == 0)
+ 		return 0;
+ 	changeset->bytes_changed += state->end - state->start + 1;
++	if (!extent_changeset_tracks_ranges(changeset))
++		return 0;
+ 	ret = ulist_add(&changeset->range_changed, state->start, state->end,
+ 			GFP_ATOMIC);
+ 	return ret;
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index c11890ae16c7..8696d13b043f 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -199,6 +199,25 @@ static inline void extent_changeset_init(struct extent_changeset *changeset)
+ 	ulist_init(&changeset->range_changed);
  }
  
-+static int run_delalloc_delayed(struct btrfs_inode *inode, struct folio *locked_folio,
-+				u64 start, u64 end)
++/*
++ * Sentinel value for range_changed.prealloc indicating that the changeset
++ * only tracks bytes_changed and does not record individual ranges. This
++ * avoids GFP_ATOMIC allocations inside add_extent_changeset() when the
++ * caller doesn't need to iterate the changed ranges afterwards.
++ */
++#define EXTENT_CHANGESET_BYTES_ONLY	((struct ulist_node *)1)
++
++static inline void extent_changeset_init_bytes_only(struct extent_changeset *changeset)
 +{
-+	struct btrfs_root *root = inode->root;
-+	struct btrfs_fs_info *fs_info = root->fs_info;
-+	struct extent_state *cached = NULL;
-+	u64 cur = start;
-+	int ret;
-+
-+	if (btrfs_is_shutdown(fs_info)) {
-+		ret = -EIO;
-+		goto error;
-+	}
-+	while (cur < end) {
-+		struct extent_map *em;
-+		struct btrfs_ordered_extent *oe;
-+		u32 cur_len = min_t(u64, end + 1 - cur, BTRFS_MAX_COMPRESSED);
-+
-+		btrfs_lock_extent(&inode->io_tree, cur, cur + cur_len - 1, &cached);
-+		em = btrfs_create_delayed_em(inode, cur, cur_len);
-+		if (IS_ERR(em)) {
-+			ret = PTR_ERR(em);
-+			goto error;
-+		}
-+		btrfs_free_extent_map(em);
-+		oe = btrfs_alloc_delayed_ordered_extent(inode, cur, cur_len);
-+		if (IS_ERR(oe)) {
-+			btrfs_drop_extent_map_range(inode, cur, cur + cur_len - 1, false);
-+			ret = PTR_ERR(em);
-+			goto error;
-+		}
-+		btrfs_put_ordered_extent(oe);
-+
-+		cur += cur_len;
-+	}
-+	extent_clear_unlock_delalloc(inode, start, end, locked_folio, &cached,
-+				     EXTENT_LOCKED | EXTENT_DELALLOC,
-+				     PAGE_UNLOCK | PAGE_SET_ORDERED);
-+	return 0;
-+error:
-+	/* We have to drop any created delayed extent maps. */
-+	if (start < cur)
-+		btrfs_drop_extent_map_range(inode, start, cur - 1, false);
-+	/* No range has any extent reserved, just clear them all. */
-+	extent_clear_unlock_delalloc(inode, start, end, locked_folio, &cached,
-+			EXTENT_LOCKED | EXTENT_DELALLOC | EXTENT_DELALLOC_NEW |
-+			EXTENT_DEFRAG | EXTENT_DO_ACCOUNTING,
-+			PAGE_UNLOCK | PAGE_START_WRITEBACK | PAGE_END_WRITEBACK);
-+	return ret;
++	changeset->bytes_changed = 0;
++	changeset->range_changed.prealloc = EXTENT_CHANGESET_BYTES_ONLY;
 +}
 +
- /*
-  * Run the delalloc range from start to end, and write back any dirty pages
-  * covered by the range.
-@@ -2436,9 +2487,12 @@ int btrfs_run_delalloc_range(struct btrfs_inode *inode, struct folio *locked_fol
- 		return run_delalloc_nocow(inode, locked_folio, start, end);
++static inline bool extent_changeset_tracks_ranges(const struct extent_changeset *changeset)
++{
++	return changeset->range_changed.prealloc != EXTENT_CHANGESET_BYTES_ONLY;
++}
++
+ static inline struct extent_changeset *extent_changeset_alloc(void)
+ {
+ 	struct extent_changeset *ret;
+@@ -213,6 +232,7 @@ static inline struct extent_changeset *extent_changeset_alloc(void)
  
- 	if (btrfs_inode_can_compress(inode) &&
--	    inode_need_compress(inode, start, end, false) &&
--	    run_delalloc_compressed(inode, locked_folio, start, end, wbc))
--		return 1;
-+	    inode_need_compress(inode, start, end, false)) {
-+		if (IS_ENABLED(CONFIG_BTRFS_EXPERIMENTAL))
-+			return run_delalloc_delayed(inode, locked_folio, start, end);
-+		else if (run_delalloc_compressed(inode, locked_folio, start, end, wbc))
-+			return 1;
-+	}
+ static inline void extent_changeset_prealloc(struct extent_changeset *changeset, gfp_t gfp_mask)
+ {
++	ASSERT(extent_changeset_tracks_ranges(changeset));
+ 	ulist_prealloc(&changeset->range_changed, gfp_mask);
+ }
  
- 	if (zoned)
- 		return run_delalloc_cow(inode, locked_folio, start, end, wbc, true);
+@@ -221,7 +241,8 @@ static inline void extent_changeset_release(struct extent_changeset *changeset)
+ 	if (!changeset)
+ 		return;
+ 	changeset->bytes_changed = 0;
+-	ulist_release(&changeset->range_changed);
++	if (extent_changeset_tracks_ranges(changeset))
++		ulist_release(&changeset->range_changed);
+ }
+ 
+ static inline void extent_changeset_free(struct extent_changeset *changeset)
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 20173563231e..9db09a920bdb 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -4357,7 +4357,7 @@ static int qgroup_free_reserved_data(struct btrfs_inode *inode,
+ 	u64 freed = 0;
+ 	int ret;
+ 
+-	extent_changeset_init(&changeset);
++	extent_changeset_init_bytes_only(&changeset);
+ 	len = round_up(start + len, root->fs_info->sectorsize);
+ 	start = round_down(start, root->fs_info->sectorsize);
+ 
+@@ -4422,7 +4422,7 @@ static int __btrfs_qgroup_release_data(struct btrfs_inode *inode,
+ 	WARN_ON(!free && reserved);
+ 	if (free && reserved)
+ 		return qgroup_free_reserved_data(inode, reserved, start, len, released);
+-	extent_changeset_init(&changeset);
++	extent_changeset_init_bytes_only(&changeset);
+ 	ret = btrfs_clear_record_extent_bits(&inode->io_tree, start, start + len - 1,
+ 					     EXTENT_QGROUP_RESERVED, &changeset);
+ 	if (ret < 0)
+@@ -4677,6 +4677,7 @@ void btrfs_qgroup_check_reserved_leak(struct btrfs_inode *inode)
+ 
+ 	WARN_ON(ret < 0);
+ 	if (WARN_ON(changeset.bytes_changed)) {
++		ASSERT(extent_changeset_tracks_ranges(&changeset));
+ 		ULIST_ITER_INIT(&iter);
+ 		while ((unode = ulist_next(&changeset.range_changed, &iter))) {
+ 			btrfs_warn(inode->root->fs_info,
 -- 
-2.53.0
+2.52.0
 

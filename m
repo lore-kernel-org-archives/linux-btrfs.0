@@ -1,173 +1,218 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CC87730E83F
-	for <linux-btrfs@vger.kernel.org>; Thu, 19 Mar 2026 14:13:53 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7403E314A90;
+	Thu, 19 Mar 2026 17:02:40 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773929636; cv=none; b=j5Gd3ykvNx4Le101zCIdW9SfcxuUJLEE5xTjVfW/h01+krb09/ZawvNFu1tJVxbcs5M/1fwY37L6Py/gh5kjTqL/1AtAxAkv0qvMquitAWcAw8GVIkoYmkKXGxQgGZWyYTxTl2RQVAByiqr5XZ9J1WNZoI8Wb7lTNcsqnFxvzIE=
+	t=1773939760; cv=none; b=OFhMPZt++gup7Zey5rtjR2dvFtOR5aJV48F2i2GlSodNvcEpaNmKlhswNXhHXmCb6U5ifk1brEa4srnAy64uwj0strSH0Qmyv9/Wre9x0dNZdoHb3Yx3+tm7qbcHjSz3S7huh2tnK769t9Sy9u37/BaxMRrSzmJQ+CoBQ/q7kJM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773929636; c=relaxed/simple;
-	bh=4zAon2/wL1xkF183JwLxXVvEK05OvlwLI29zwOFhq2E=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=lKQdl5woSmL7s8tx/8sy0HBTpRaDsYwVaSFtL4PY9WlqnGdtcapyddJ4Li9NaoobOHE79mKmli2bFVh/N8ee8M8GDlSXaLPedC+ZZ257S4tutSkeqSN5E9CKzTIG2DbtZpiPEOyr2HkdFHmYMDX4wgD+gxvr0WaxJRKaX9UrvjA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=qJFdgiFw; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=4jpB79yc; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=OrcSAEzL; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=HXVk5/yP; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	s=arc-20240116; t=1773939760; c=relaxed/simple;
+	bh=1joVFanxDh8PwgMXEWccLkn6Kcw2pxcU3MySKiM4AmA=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=Nd8lTE+n9+tI1n0UFZVykcZz9165Hv7jB/T7Fd41hva+5B1mc0h77m8M93r/JV0VZDLe6UASjYZVXaUflUft2XTOd1LMYjsl88qNlfg8nqxg8II3AcllURA8hjz3yp4SGLGuG/wsl+yJUI4PyKFuN5YAW3750I4ihCsdpMKNZuo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=fRKc/RQd; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="qJFdgiFw";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="4jpB79yc";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="OrcSAEzL";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="HXVk5/yP"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 233AB5BD4B;
-	Thu, 19 Mar 2026 14:13:51 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1773929632; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=4fUFXPph0d+U/6GDmGbgLZ/FXBjYuxpYsgD69WTKZEc=;
-	b=qJFdgiFwZof840urwELAyJUPmqr5R5KSb1T4rwYuc7bb8XNbCm/kv+M5FkrKSBEOM1bZiu
-	/MGyuwm/OFnFKmJm/t/Uz/+GbEcAEAQCMtEWioCbgwKOh4DWZ0qNVZOg9g66xDY+m4U+fD
-	w9Xqoe30eNI+goFz62hSwZMzWorThdA=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1773929632;
-	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=4fUFXPph0d+U/6GDmGbgLZ/FXBjYuxpYsgD69WTKZEc=;
-	b=4jpB79ycXSQsxOkgtV3HKUa6Dm/vQ/wRir8pmFsiYnB6qgK3LbPe12RtulXb4tol7/E3ij
-	faYPra8B4GTfZjDQ==
-Authentication-Results: smtp-out2.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1773929631; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=4fUFXPph0d+U/6GDmGbgLZ/FXBjYuxpYsgD69WTKZEc=;
-	b=OrcSAEzL/6c4UDB40dZmtUkHL2UKN/t418W/3/WLfRE3VUYtttdOTA1LBRs2LexriSZBXr
-	IUCLAcO9QxQoLCNXA0PSitgNb7BC5cuH9t+EXroQLbXGhfbC1mTChSWj64vc6V41FfYy8R
-	mio6pb/J12e+5TPnOnmBoDRex83ce1A=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1773929631;
-	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=4fUFXPph0d+U/6GDmGbgLZ/FXBjYuxpYsgD69WTKZEc=;
-	b=HXVk5/yPJtxIjyky0dtujMNvVHE9KONXRU8D1O6wb4LBxoqwDaKPYOnkGEkCrYDJmYyVOA
-	klxEA++oJw6AsaAw==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 14B714273B;
-	Thu, 19 Mar 2026 14:13:51 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id TmUEBZ8EvGlPZwAAD6G6ig
-	(envelope-from <jack@suse.cz>); Thu, 19 Mar 2026 14:13:51 +0000
-Received: by quack3.suse.cz (Postfix, from userid 1000)
-	id C850FA0B32; Thu, 19 Mar 2026 15:13:46 +0100 (CET)
-Date: Thu, 19 Mar 2026 15:13:46 +0100
-From: Jan Kara <jack@suse.cz>
-To: Philipp Hahn <phahn-oss@avm.de>
-Cc: amd-gfx@lists.freedesktop.org, apparmor@lists.ubuntu.com, 
-	bpf@vger.kernel.org, ceph-devel@vger.kernel.org, cocci@inria.fr, 
-	dm-devel@lists.linux.dev, dri-devel@lists.freedesktop.org, gfs2@lists.linux.dev, 
-	intel-gfx@lists.freedesktop.org, intel-wired-lan@lists.osuosl.org, iommu@lists.linux.dev, 
-	kvm@vger.kernel.org, linux-arm-kernel@lists.infradead.org, 
-	linux-block@vger.kernel.org, linux-bluetooth@vger.kernel.org, linux-btrfs@vger.kernel.org, 
-	linux-cifs@vger.kernel.org, linux-clk@vger.kernel.org, linux-erofs@lists.ozlabs.org, 
-	linux-ext4@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-gpio@vger.kernel.org, 
-	linux-hyperv@vger.kernel.org, linux-input@vger.kernel.org, linux-kernel@vger.kernel.org, 
-	linux-leds@vger.kernel.org, linux-media@vger.kernel.org, linux-mips@vger.kernel.org, 
-	linux-mm@kvack.org, linux-modules@vger.kernel.org, linux-mtd@lists.infradead.org, 
-	linux-nfs@vger.kernel.org, linux-omap@vger.kernel.org, linux-phy@lists.infradead.org, 
-	linux-pm@vger.kernel.org, linux-rockchip@lists.infradead.org, linux-s390@vger.kernel.org, 
-	linux-scsi@vger.kernel.org, linux-sctp@vger.kernel.org, 
-	linux-security-module@vger.kernel.org, linux-sh@vger.kernel.org, linux-sound@vger.kernel.org, 
-	linux-stm32@st-md-mailman.stormreply.com, linux-trace-kernel@vger.kernel.org, linux-usb@vger.kernel.org, 
-	linux-wireless@vger.kernel.org, netdev@vger.kernel.org, ntfs3@lists.linux.dev, 
-	samba-technical@lists.samba.org, sched-ext@lists.linux.dev, target-devel@vger.kernel.org, 
-	tipc-discussion@lists.sourceforge.net, v9fs@lists.linux.dev, Jan Kara <jack@suse.com>
-Subject: Re: [PATCH 12/61] quota: Prefer IS_ERR_OR_NULL over manual NULL check
-Message-ID: <ol2d7c5z7yfyuwo5tyfxurgqedruhr6bzmuv37bx5phhrmmoyh@4zjspbtexid3>
-References: <20260310-b4-is_err_or_null-v1-0-bd63b656022d@avm.de>
- <20260310-b4-is_err_or_null-v1-12-bd63b656022d@avm.de>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="fRKc/RQd"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id C2148C19424;
+	Thu, 19 Mar 2026 17:02:37 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1773939760;
+	bh=1joVFanxDh8PwgMXEWccLkn6Kcw2pxcU3MySKiM4AmA=;
+	h=From:To:Cc:Subject:Date:From;
+	b=fRKc/RQdcmF8WuT8iYok51UB0OX4N96zZrvJTOrnqk0grGzC7rNAA1tco0sSQdhrm
+	 aUruzC2WAYo2pMcUeT1Ak91yJCzqnLW0Eq+zQ0SnM/3vEh/xjuUVSr4cGNW8s5gkF8
+	 +sKchm7xrKq4fsS1T4ZdjoyhSGkdCEJe+3uahXPM2rNXCnje1CYVHe/2czSFKJS3SZ
+	 uUdk/oSG1LOvPVGUFSn/KJWfyVcB9YF1FQnnRq7r/TZLV2HYX8nL7RxwkP4VYqfHBW
+	 dFW1SqxWHb/l4PAw/T4AuHkvI4vAtzTzn6MmqgJtg+fx0r1gIkCDgIvJpKm+MhDS5J
+	 Zy+WbVYmn/3aQ==
+From: Andrey Albershteyn <aalbersh@kernel.org>
+To: linux-xfs@vger.kernel.org,
+	fsverity@lists.linux.dev,
+	linux-fsdevel@vger.kernel.org,
+	ebiggers@kernel.org
+Cc: Andrey Albershteyn <aalbersh@kernel.org>,
+	hch@lst.de,
+	linux-ext4@vger.kernel.org,
+	linux-f2fs-devel@lists.sourceforge.net,
+	linux-btrfs@vger.kernel.org,
+	djwong@kernel.org,
+	david@fromorbit.com
+Subject: [PATCH v5 00/25] fs-verity support for XFS with post EOF merkle tree
+Date: Thu, 19 Mar 2026 18:01:47 +0100
+Message-ID: <20260319170231.1455553-1-aalbersh@kernel.org>
+X-Mailer: git-send-email 2.51.2
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20260310-b4-is_err_or_null-v1-12-bd63b656022d@avm.de>
-X-Spam-Score: -2.30
-X-Spam-Level: 
-X-Spamd-Result: default: False [-2.30 / 50.00];
-	BAYES_HAM(-3.00)[99.99%];
-	SUSPICIOUS_RECIPS(1.50)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	MID_RHS_NOT_FQDN(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.999];
-	MIME_GOOD(-0.10)[text/plain];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	TO_DN_SOME(0.00)[];
-	ARC_NA(0.00)[];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	MISSING_XM_UA(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	FROM_HAS_DN(0.00)[];
-	RCVD_COUNT_THREE(0.00)[3];
-	TO_MATCH_ENVRCPT_SOME(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	R_RATELIMIT(0.00)[to_ip_from(RLck44p98ib5bmd95s13xxw3gp)];
-	RCVD_TLS_LAST(0.00)[];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	RCPT_COUNT_GT_50(0.00)[55];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email]
-X-Spam-Flag: NO
+Content-Transfer-Encoding: 8bit
 
-On Tue 10-03-26 12:48:38, Philipp Hahn wrote:
-> Prefer using IS_ERR_OR_NULL() over using IS_ERR() and a manual NULL
-> check.
-> 
-> Change generated with coccinelle.
-> 
-> To: Jan Kara <jack@suse.com>
-> Cc: linux-kernel@vger.kernel.org
-> Signed-off-by: Philipp Hahn <phahn-oss@avm.de>
+Hi all,
 
-Thanks for the patch but frankly I find the original variant clearer wrt
-what is going on. So I prefer to keep the code as is.
+This patch series adds fs-verity support for XFS. This version stores
+merkle tree beyond end of the file, the same way as ext4 does it. The
+difference is that verity descriptor is stored at the next aligned 64k
+block after the merkle tree last block. This is done due to sparse
+merkle tree which doesn't store hashes of zero data blocks.
 
-								Honza
+The patchset starts with a few fs-verity preparation patches. Then, a
+few patches to allow iomap to work in post EOF region. The XFS fs-verity
+implementation follows.
 
-> ---
->  fs/quota/quota.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/fs/quota/quota.c b/fs/quota/quota.c
-> index 33bacd70758007129e0375bab44d7431195ec441..2e09fc247d0cf45b9e83a4f8a0be7ea694c8c2a1 100644
-> --- a/fs/quota/quota.c
-> +++ b/fs/quota/quota.c
-> @@ -965,7 +965,7 @@ SYSCALL_DEFINE4(quotactl, unsigned int, cmd, const char __user *, special,
->  	else
->  		drop_super_exclusive(sb);
->  out:
-> -	if (pathp && !IS_ERR(pathp))
-> +	if (!IS_ERR_OR_NULL(pathp))
->  		path_put(pathp);
->  	return ret;
->  }
-> 
-> -- 
-> 2.43.0
-> 
+The tree is read by iomap into page cache at offset of next largest
+folio past end of file. The same offset is used for on-disk.
+
+This patchsets also synthesizes merkle tree block full of hashes of
+zeroed data blocks. This merkle blocks are not stored on disk, they are
+holes in the tree.
+
+Testing. The -g verity is passing for 1k, 8k and 4k with/without quota
+on 4k and 64k page size systems. Tested -g auto for enabled/disabled
+fsverity.
+
+This series based on latest fsverity/for-next with patchset fs generated
+integrity information [1].
+
+kernel:
+https://git.kernel.org/pub/scm/linux/kernel/git/aalbersh/xfs-linux.git/log/?h=b4/fsverity
+
+xfsprogs:
+https://github.com/alberand/xfsprogs/tree/b4/fsverity
+
+xfstests:
+https://github.com/alberand/xfstests/tree/b4/fsverity
+
+Cc: fsverity@lists.linux.dev
+Cc: linux-fsdevel@vger.kernel.org
+Cc: linux-xfs@vger.kernel.org
+
+Cc: david@fromorbit.com
+Cc: djwong@kernel.org
+Cc: ebiggers@kernel.org
+Cc: hch@lst.de
+
+[1]: https://lore.kernel.org/linux-xfs/20260223132021.292832-1-hch@lst.de/
+
+---
+Changes in v5:
+- Add fserror_report_data_lost() for data blocks in page spanning EOF
+- Issue fsverity metadata readahead in data readahead
+- iomap_fsverity_write() return type fix
+- Use of S_ISREG(mode)
+- Make 65536 #define instead of open-coded
+- Use transaction per unwritten extent removal
+- Fetch fsverity_info for all fsverity metadata
+- Revert fsverity_folio_zero_hash() stub as used in iomap
+- Extend cancel_unwritten to whole file range to remove cow leftovers
+- Drop delayed allocation on the COW fork on fsverity completion
+Changes in v4:
+- Use fserror interface in fsverity instead of fs callback
+- Hoist pagecache_read from f2fs/ext4 to fsverity
+- Refactor iomap code
+- Fetch fsverity_info only for file data and merkle tree holes
+- Do not disable preallocation, remove unwritten extents instead
+- Offload fsverity hash I/O to fsverity workqueue in read path
+- Store merkle tree at round_up(i_size, 64k)
+- Add a spacing between merkle tree and fsverity descriptor as next 64k
+  aligned block
+- Squash helpers into first user commits
+- Squash on-disk format changes into single commit
+- Drop different offset for pagecache/on-disk
+- Don't zero out pages in higher order folios in write path
+- Link to v3: https://lore.kernel.org/fsverity/20260217231937.1183679-1-aalbersh@kernel.org/T/#t
+Changes in v3:
+- Different on-disk and pagecache offset
+- Use read path ioends
+- Switch to hashtable fsverity info
+- Synthesize merkle tree blocks full of zeroes
+- Other minor refactors
+- Link to v2: https://lore.kernel.org/fsverity/20260114164210.GO15583@frogsfrogsfrogs/T/#t
+Changes in v2:
+- Move to VFS interface for merkle tree block reading
+- Drop patchset for per filesystem workqueues
+- Change how offsets of the descriptor and tree metadata is calculated
+- Store fs-verity descriptor in data fork side by side with merkle tree
+- Simplify iomap changes, remove interface for post eof read/write
+- Get rid of extended attribute implementation
+- Link to v1: https://lore.kernel.org/r/20250728-fsverity-v1-0-9e5443af0e34@kernel.org
+
+Andrey Albershteyn (23):
+  fsverity: report validation errors through fserror to fsnotify
+  fsverity: expose ensure_fsverity_info()
+  fsverity: generate and store zero-block hash
+  fsverity: introduce fsverity_folio_zero_hash()
+  fsverity: pass digest size and hash of the empty block to ->write
+  fsverity: hoist pagecache_read from f2fs/ext4 to fsverity
+  iomap: introduce IOMAP_F_FSVERITY and teach writeback to handle
+    fsverity
+  iomap: obtain fsverity info for read path
+  iomap: issue readahead for fsverity merkle tree
+  iomap: teach iomap to handle fsverity holes and verify data holes
+  iomap: introduce iomap_fsverity_write() for writing fsverity metadata
+  xfs: introduce fsverity on-disk changes
+  xfs: initialize fs-verity on file open
+  xfs: don't allow to enable DAX on fs-verity sealed inode
+  xfs: disable direct read path for fs-verity files
+  xfs: handle fsverity I/O in write/read path
+  xfs: use read ioend for fsverity data verification
+  xfs: add fs-verity support
+  xfs: remove unwritten extents after preallocations in fsverity
+    metadata
+  xfs: add fs-verity ioctls
+  xfs: introduce health state for corrupted fsverity metadata
+  xfs: add fsverity traces
+  xfs: enable ro-compat fs-verity flag
+
+Darrick J. Wong (2):
+  xfs: advertise fs-verity being available on filesystem
+  xfs: check and repair the verity inode flag state
+
+ fs/btrfs/verity.c              |   6 +-
+ fs/ext4/verity.c               |  36 +--
+ fs/f2fs/verity.c               |  34 +--
+ fs/iomap/buffered-io.c         |  99 ++++++-
+ fs/iomap/trace.h               |   3 +-
+ fs/verity/enable.c             |   4 +-
+ fs/verity/fsverity_private.h   |   3 +
+ fs/verity/open.c               |   8 +-
+ fs/verity/pagecache.c          |  55 ++++
+ fs/verity/verify.c             |   4 +
+ fs/xfs/Makefile                |   1 +
+ fs/xfs/libxfs/xfs_bmap.c       |   7 +
+ fs/xfs/libxfs/xfs_format.h     |  35 ++-
+ fs/xfs/libxfs/xfs_fs.h         |   2 +
+ fs/xfs/libxfs/xfs_health.h     |   4 +-
+ fs/xfs/libxfs/xfs_inode_buf.c  |   8 +
+ fs/xfs/libxfs/xfs_inode_util.c |   2 +
+ fs/xfs/libxfs/xfs_sb.c         |   4 +
+ fs/xfs/scrub/attr.c            |   7 +
+ fs/xfs/scrub/common.c          |  53 ++++
+ fs/xfs/scrub/common.h          |   2 +
+ fs/xfs/scrub/inode.c           |   7 +
+ fs/xfs/scrub/inode_repair.c    |  36 +++
+ fs/xfs/xfs_aops.c              |  62 ++++-
+ fs/xfs/xfs_bmap_util.c         |   8 +
+ fs/xfs/xfs_file.c              |  19 +-
+ fs/xfs/xfs_fsverity.c          | 457 +++++++++++++++++++++++++++++++++
+ fs/xfs/xfs_fsverity.h          |  28 ++
+ fs/xfs/xfs_health.c            |   1 +
+ fs/xfs/xfs_inode.h             |   6 +
+ fs/xfs/xfs_ioctl.c             |  14 +
+ fs/xfs/xfs_iomap.c             |  15 +-
+ fs/xfs/xfs_iops.c              |   4 +
+ fs/xfs/xfs_message.c           |   4 +
+ fs/xfs/xfs_message.h           |   1 +
+ fs/xfs/xfs_mount.h             |   4 +
+ fs/xfs/xfs_super.c             |   7 +
+ fs/xfs/xfs_trace.h             |  46 ++++
+ include/linux/fsverity.h       |  23 +-
+ include/linux/iomap.h          |  10 +
+ 40 files changed, 1035 insertions(+), 94 deletions(-)
+ create mode 100644 fs/xfs/xfs_fsverity.c
+ create mode 100644 fs/xfs/xfs_fsverity.h
+
 -- 
-Jan Kara <jack@suse.com>
-SUSE Labs, CR
+2.51.2
+

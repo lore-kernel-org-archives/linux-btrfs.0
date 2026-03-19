@@ -1,85 +1,130 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from r9205.ps.combzmail.jp (r9205.ps.combzmail.jp [160.16.62.121])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 509031F1537;
-	Wed, 18 Mar 2026 23:00:09 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0667E261B91
+	for <linux-btrfs@vger.kernel.org>; Thu, 19 Mar 2026 01:02:51 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=160.16.62.121
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773874809; cv=none; b=juwW94cyXAhLCngc1MIx5t7y+1vlHl+ZCJ/A0AEyIFKhNgJvdOr50W2AHUF0oA7LD5BGLB5BP9ND7ueySIhZx/oLECGaUwamMXZU8Jo9ZywnlJQPpOgiKxnUcdcYu+7To3uVkQxlo/jQnfdakw6MzdDtDG0yvSjZXBKhxIwyYnE=
+	t=1773882173; cv=none; b=huvbAGljAoAbTpoN12SGynz4UwLmIL1Ma+bsprU1Ca3rAlxCFwtCdaTjM/aF4uMtZqnqr6ZgUFy5qcbFXv1jc34KK2iv6h4dwwrdZth2idHDJH9MBhU6dJVKhNoXkS1wAjwgR+y5fWXNkvLzc7Fk+dFsX3xd80Gj1FhV5xGFnxM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773874809; c=relaxed/simple;
-	bh=2JTDMuhc/A2g3wL+Ka0kBPLhcjr+9DtDMfgXlPUl79Q=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=SQElYuwvb7SrUkrwE5Q/0B/EMM0tz/YP4/LyErbTr7QOvw2rLSR1vb7w8qj4KRqDXWJ5Ji/kxh5KA1FX0P0gHqxXDjaTQb7fI8CQ0VVBaiBrxHFe+we+udF8lVjFssFLkLJ8U9hvosIFzhDVwYRvoYv8V6O61H5hgkQsI6lyff4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=YcjxgPvI; arc=none smtp.client-ip=10.30.226.201
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="YcjxgPvI"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id C5FBAC19421;
-	Wed, 18 Mar 2026 23:00:08 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1773874808;
-	bh=2JTDMuhc/A2g3wL+Ka0kBPLhcjr+9DtDMfgXlPUl79Q=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=YcjxgPvImHLLGbG/87IHLU9MaYNxucg34z/SD+qzNawEPsmuPhMSaDpk++6qSVSzH
-	 aY5p7oPUZ6F7GczrxbT79vvIzBtTJEmaReWjBaWkdEH7L6TfDnTVs+ainyef9z6Pyn
-	 pVg5ircX+VB1pPdM3/3plF+bU/eNe/570hviOFtD3QFsIdHlWdPSjV/KitfWfz8ew1
-	 N2B+SgkSnBT9pTL51s1ZHi1UcoQrrlmIUJ8g/jGw4muQUTe7KO61ozQY8/yTWPX98j
-	 H5zgLEfrYSSlg8XNCRUPgBnvzXahB88Ez7dreiWUHr1++U6HouNp84XNdGJWlM6Ymb
-	 G+NPaQYsbNs+Q==
-Date: Wed, 18 Mar 2026 13:00:07 -1000
-From: Tejun Heo <tj@kernel.org>
-To: Breno Leitao <leitao@debian.org>
-Cc: Chuck Lever <chuck.lever@oracle.com>,
-	Lai Jiangshan <jiangshanlai@gmail.com>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	linux-kernel@vger.kernel.org, puranjay@kernel.org,
-	linux-crypto@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org,
-	Michael van der Westhuizen <rmikey@meta.com>, kernel-team@meta.com
-Subject: Re: [PATCH RFC 0/5] workqueue: add WQ_AFFN_CACHE_SHARD affinity scope
-Message-ID: <absud4FKm-3Trvjj@slm.duckdns.org>
-References: <20260312-workqueue_sharded-v1-0-2c43a7b861d0@debian.org>
- <6b952e7087c5fd8f040b692a92374871@kernel.org>
- <abk6PMrSDcb-yXZ9@gmail.com>
- <30adaf6c-657c-41f1-9234-79d807d74f02@oracle.com>
- <abrkrZc52h0vcTTj@gmail.com>
+	s=arc-20240116; t=1773882173; c=relaxed/simple;
+	bh=QQ+3gEbhGo+AoipHB9xiZytr5r9L1Ma7CYIdP1mEhBk=;
+	h=To:From:Subject:Mime-Version:Content-Type:Message-Id:Date; b=KyN2LG+gjLZffE+pdlPBxqNGiuPREOep0488+nOyQ+06Q81WeDiVCKXpH/1mwiNxXqKZcTohRvohpAPRrJHp8+fhzVdJUr8QCpgK6BagCZe3XKUSj16cw2vMX27eo2IOpJymCyWlUVzgMKGSpET8RQdnDRPxv5OeHb4dNtqczvs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=knowledge-seminar.jp; spf=pass smtp.mailfrom=magerr.combzmail.jp; arc=none smtp.client-ip=160.16.62.121
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=knowledge-seminar.jp
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=magerr.combzmail.jp
+Received: by r9205.ps.combzmail.jp (Postfix, from userid 99)
+	id 9FBB0C499F; Thu, 19 Mar 2026 10:02:14 +0900 (JST)
+DKIM-Filter: OpenDKIM Filter v2.11.0 r9205.ps.combzmail.jp 9FBB0C499F
+To: linux-btrfs@vger.kernel.org
+From: =?ISO-2022-JP?B?GyRCP0BFRCE/JUolbCVDJTglaiVzJS8bKEI=?= <info@knowledge-seminar.jp>
+X-Ip: 5751564157930239
+X-Ip-source: k85gj72848dnsad1u0p6gd
+Precedence: bulk
+List-Unsubscribe-Post: List-Unsubscribe=One-Click
+Subject: =?ISO-2022-JP?B?GyRCPFJEOSROGyhCTkcbJEI5VEYwGyhC?=
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <abrkrZc52h0vcTTj@gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=iso-2022-jp
+Content-Transfer-Encoding: 7bit
+X-MagazineId: 28d1
+X-uId: 6764245737486059715077191059
+X-Sender: CombzMailSender
+X-Url: http://www.combzmail.jp/
+Message-Id: <20260319010245.9FBB0C499F@r9205.ps.combzmail.jp>
+Date: Thu, 19 Mar 2026 10:02:14 +0900 (JST)
 
-On Wed, Mar 18, 2026 at 10:51:15AM -0700, Breno Leitao wrote:
-> On Tue, Mar 17, 2026 at 09:58:54AM -0400, Chuck Lever wrote:
-> > On 3/17/26 7:32 AM, Breno Leitao wrote:
-> > >> - How was the default shard size of 8 picked? There's a tradeoff
-> > >> between the number of kworkers created and locality. Can you also
-> > >> report the number of kworkers for each configuration? And is there
-> > >> data on different shard sizes? It'd be useful to see how the numbers
-> > >> change across e.g. 4, 8, 16, 32.
-> > >
-> > > The choice of 8 as the default shard size was somewhat arbitrary – it was
-> > > selected primarily to generate initial data points.
-> >
-> > Perhaps instead of basing the sharding on a particular number of CPUs
-> > per shard, why not cap the total number of shards? IIUC that is the main
-> > concern about ballooning the number of kworker threads.
-> 
-> That's a great suggestion. I'll send a v2 that implements this approach,
-> where the parameter specifies the number of shards rather than the number
-> of CPUs per shard.
+$B!!$*@$OC$K$J$j$^$9!#%J%l%C%8%j%s%/%;%_%J!<;vL36I$G$9!#(B
+$B!!(B
+$B!!(B
+$B!!!V<R0w$N%b%A%Y!<%7%g%s$r>e$2$h$&$H@<$r$+$1$k!W(B
+$B!!!VIt2<$NAjCL$K>h$j!"0l=o$KG:$s$G$"$2$k!W(B
+$B!!!V8=>l$N%H%i%V%k$K!"<+$i@hF,$KN)$C$FBP1~$9$k!W(B
+$B!!(B
+$B!!$b$7<RD9$,$3$l$i$rN(@h$7$F$$$k$h$&$G$"$l$P!"(B
+$B!!;DG0$J$,$i!"$=$NAH?%$N@.D9$O$=$3$G;_$^$j$^$9!#(B
+$B!!(B
+$B!!<RD9$N$=$N!HM%$7$5!I$,!"<R0w$N4E$($r@8$_!"@UG$46$rC%$$!"(B
+$B!!!V;X<(BT$A?M4V!W$rNL;:$9$kAuCV$K$J$C$F$$$k$+$i$G$9!#(B
+$B!!(B
+$B!!(B
+$B!!(B4,800$B<R$N7P1D<T$,>W7b$r<u$1$?!"(B
+$B!!NI$+$l$H;W$C$F$d$C$F$7$^$&!V<RD9$N(BNG$B9TF0!W$N@5BN!#(B
+$B!!(B
+$B!!AH?%$r7`E*$KJQ$($k$?$a$N!"(B
+$B!!%*%s%i%$%s%;%_%J!<$r3+:E$$$?$7$^$9!#(B
+$B!!(B
+$B!!(B1$B$D$G$b?4Ev$?$j$,$"$l$P!"0lEY$4;kD0$/$@$5$$!#!!(B
+$B!!(B
+$B!!(B>>$B;kD0M=Ls$O$3$A$i(B
+$B!!(Bhttps://knowledge-corp.jp/shikigaku5/
+$B!!(B
+----------------------------------------------
+$B!!(B
+$B!!%F!<%^(B $B!'!!$=$l!"4m81$G$9(B $B!X<RD9$N(BNG$B9TF0!Y(B
+$B!!!!!!!!!!(B $B!A(B $B$=$N9TF0$,!"AH?%Jx2u$r>7$/(B $B!A(B
+$B!!(B
 
-Woudl it make sense tho? If feels really odd to define the maximum number of
-shards when contention is primarily a function of the number of CPUs banging
-on the same CPU. Why would 32 cpu and 512 cpu systems have the same number
-of shards?
+$B!!F|(B $BDx!!!'(B 3$B7n(B19$BF|!JLZ!K(B13:00$B!A(B15:00$B!!;D$j(B14$BOH(B
+$B!!!!!!!!!!(B  4$B7n(B14$BF|!J2P!K(B13:00&#12316;15:00
+$B!!!!!!!!!!(B  4$B7n(B21$BF|!J2P!K(B13:00&#12316;15:00
+$B!!!!!!!!!!"($I$A$i$NF|Dx$bFbMF$OF1$8(B
+$B!!2q(B $B>l!!!'(BZoom$B3+:E(B
+$B!!Dj(B $B0w!!!'@hCe(B100$BL>!JHqMQ$OITMW!K(B
+----------------------------------------------
+$B!!"(7P1DAX$NJ}8BDj$G$9(B
+$B!!(B
+$B!!(B
+$B!!$J$<!"<R0w$O!V8@$o$l$?$3$H!W$7$+$d$i$J$$$N$+!#(B
+$B!!$J$<!"<!@$Be$N%j!<%@!<8uJd$,0i$?$J$$$N$+!#(B
+$B!!(B
+$B!!$=$l$O!"G=NO$NLdBj$G$O$J$/!"(B
+$B!!(B
+$B!!NI$+$l$H;W$C$FB3$1$F$$$k!V<RD9$NG[N8!W$3$=$,!"(B
+$B!!AH?%@.D9$r;_$a$k!":GBg$N%\%H%k%M%C%/$+$b$7$l$^$;$s!#(B
+$B!!(B
+$B!!K\%;%_%J!<$G$O!"(B4,800$B<R0J>e$,F3F~$7$?(B
+$B!!FH<+$NAH?%O@!V<13X!W$K4p$E$-!"<RD9$N!V(BNG$B9TF0!W$H(B
+$B!!??$N7P1D<T$XC&Hi$9$k$?$a$N%^%$%s%I%;%C%H$rEA<x$7$^$9!#(B
+$B!!(B
+$B!!(B
+$B!!!Z%;%_%J!<FbMF(B($B0lItH4?h(B)$B![(B
+$B!!(B $B!{(B NG$B9TF0(B3$BA*(B
+$B!!(B $B!{(B $B$J$<M%=($J(BNo.2$B$dItD9$,0i$?$J$$$N$+(B
+$B!!(B $B!{(B $B%^%M%8%a%s%H%9%?%$%k$NJQ3W$K$D$$$F(B
+$B!!(B $B!{(B $BF3F~4k6H$N;vNc(B
+$B!!(B
+$B!!!V4IM}?&$,0i$C$?$iG$$;$k!W$G$O$J$/!VG$$;$k$+$i0i$D!W(B
+$B!!$H$$$&;W9M$N5UE>$rDs8@!#(B
+$B!!(B
+$B!!8=>l$+$i!VNd$?$/$J$C$?!W$H;W$o$l$k$3$H$r62$l$:!"(B
+$B!!5!G=E*$J3,AX9=B$!J;EAH$_!K$r:n$k$3$H$G(B
 
-Thanks.
+$B!!7k2L$H$7$F<R0wA40w$r<i$j!"(B
+$B!!Mx1W$r:GBg2=$5$;$kF;6Z$rL@<($7$^$9!#(B
 
--- 
-tejun
+$B!!!VM%$7$5!W$G?M$rF0$+$9$N$G$O$J$/!"(B
+$B!!!V@5$7$5!W$GAH?%$rF0$+$9!#(B
+
+$B!!2;@<$d$*4i$,I=$K=P$k$3$H$O$4$6$$$^$;$s$N$G(B
+$B!!$*5$7Z$K$4;kD0$/$@$5$$!#(B
+$B!!(B
+$B!!(B>>$B;kD0M=Ls$O$3$A$i(B
+$B!!(Bhttps://knowledge-corp.jp/shikigaku5/
+$B!!(B
+$B!!(B
+-----------------------
+$B!!0lHL<RCDK!?M(B $B%J%l%C%8%j%s%/(B
+$B!!El5~ET@iBeED6h?@ED>.@nD.(B1-8-3
+$B!!EEOC!'(B03-5256-7638
+
+$B!!%;%_%J!<$N$40FFb$,ITMW$JJ}$OBgJQ;DG0$G$O$4$6$$$^$9$,!"(B
+$B!!2<5-(BURL$B$h$j<jB3$-2<$5$$$^$;!#(B
+$B!!(B
+$B!!%a!<%kG[?.$N%o%s%/%j%C%/2r=|$O$3$A$i(B
+$B!!(Bhttps://fc-knowledgelink-corp.jp/mail/
+$B!!(B

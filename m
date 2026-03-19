@@ -1,253 +1,173 @@
-Received: from stravinsky.debian.org (stravinsky.debian.org [82.195.75.108])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 033BF40DFDA;
-	Thu, 19 Mar 2026 14:03:18 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=82.195.75.108
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CC87730E83F
+	for <linux-btrfs@vger.kernel.org>; Thu, 19 Mar 2026 14:13:53 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773929000; cv=none; b=Rw2pkPQqHtyzoMRbocLK1fSlywWnHzOXR2+dsC9YpnesDl4wUe68S9ulv6IBn+lo9J+KCvlWaihI5x0hXP6G9VOZAmD+r514lR9eFWke6TctjR+Pl7ML487k+I8xKVGFoMNqHlc2F5fhyzKgp/yi4hiRYnFTVnGt+Low2IP0h6k=
+	t=1773929636; cv=none; b=j5Gd3ykvNx4Le101zCIdW9SfcxuUJLEE5xTjVfW/h01+krb09/ZawvNFu1tJVxbcs5M/1fwY37L6Py/gh5kjTqL/1AtAxAkv0qvMquitAWcAw8GVIkoYmkKXGxQgGZWyYTxTl2RQVAByiqr5XZ9J1WNZoI8Wb7lTNcsqnFxvzIE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773929000; c=relaxed/simple;
-	bh=rrK1DEKvdfzzbViu1VH4kX9mz5h9D1buXrSBejxy2QA=;
+	s=arc-20240116; t=1773929636; c=relaxed/simple;
+	bh=4zAon2/wL1xkF183JwLxXVvEK05OvlwLI29zwOFhq2E=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=vC9ibgS2Lk8DbZ1HdztsSJ/Ur9miJnFbNHZ7Ly66BrpcYNFvKQWyOtgeQldNlHSCewEDsTF2/doZ9GsDRMrjxT/+dwuZDtdCJCH/3yB6Jc4mQ5zDrjOvDMssJyOVLU6BTVpaQD5hDGLeuvpCa21pg+wu575OAScbToRhKOEXs1U=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=debian.org; spf=none smtp.mailfrom=debian.org; dkim=pass (2048-bit key) header.d=debian.org header.i=@debian.org header.b=gXc7ztyR; arc=none smtp.client-ip=82.195.75.108
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=debian.org
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=debian.org
+	 Content-Type:Content-Disposition:In-Reply-To; b=lKQdl5woSmL7s8tx/8sy0HBTpRaDsYwVaSFtL4PY9WlqnGdtcapyddJ4Li9NaoobOHE79mKmli2bFVh/N8ee8M8GDlSXaLPedC+ZZ257S4tutSkeqSN5E9CKzTIG2DbtZpiPEOyr2HkdFHmYMDX4wgD+gxvr0WaxJRKaX9UrvjA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=qJFdgiFw; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=4jpB79yc; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=OrcSAEzL; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=HXVk5/yP; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=debian.org header.i=@debian.org header.b="gXc7ztyR"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=debian.org;
-	s=smtpauto.stravinsky; h=X-Debian-User:In-Reply-To:Content-Transfer-Encoding:
-	Content-Type:MIME-Version:References:Message-ID:Subject:Cc:To:From:Date:
-	Reply-To:Content-ID:Content-Description;
-	bh=lrKQ0lUDcZ4n9cZJSU/bLkmFE9iZLfmP9PtFseK4jVk=; b=gXc7ztyReVEoTPs5EeLZ5HOYef
-	JDz07PAsrL0Bu/OfZbL1MB+cwr24V/8hRIyPKMBsQ08vS4WGMDqB+j08sKMOq0yEWsMqgW6Ae5Twl
-	19ryY3XOCjQINeMB4rywXX0b+vZaCF7BFgkIzktVyWxrVgLFg+R8eT3G+bsWwx5NOAJxhJk31ujGA
-	yKjXucQe8s/altsMY6nXdcSqbcAKDuR3YyZzzPJ0sBv8kp0wBsJpEDAWs0SN0kSO6LEz3eNQfOXC2
-	MSFxEQJ6adO3UQu4p2d8myMpiC8X5Vm37idRuiLj+OYKskQOHscejUeM42U3dOIXKV2P6Z879Z3Nm
-	mG0KnuDA==;
-Received: from authenticated user
-	by stravinsky.debian.org with esmtpsa (TLS1.3:ECDHE_X25519__RSA_PSS_RSAE_SHA256__AES_256_GCM:256)
-	(Exim 4.94.2)
-	(envelope-from <leitao@debian.org>)
-	id 1w3Dxp-004To0-2l; Thu, 19 Mar 2026 14:03:04 +0000
-Date: Thu, 19 Mar 2026 07:02:58 -0700
-From: Breno Leitao <leitao@debian.org>
-To: Tejun Heo <tj@kernel.org>
-Cc: Chuck Lever <chuck.lever@oracle.com>, 
-	Lai Jiangshan <jiangshanlai@gmail.com>, Andrew Morton <akpm@linux-foundation.org>, 
-	linux-kernel@vger.kernel.org, puranjay@kernel.org, linux-crypto@vger.kernel.org, 
-	linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
-	Michael van der Westhuizen <rmikey@meta.com>, kernel-team@meta.com
-Subject: Re: [PATCH RFC 0/5] workqueue: add WQ_AFFN_CACHE_SHARD affinity scope
-Message-ID: <abv8CBeQMlB-Zb2z@gmail.com>
-References: <20260312-workqueue_sharded-v1-0-2c43a7b861d0@debian.org>
- <6b952e7087c5fd8f040b692a92374871@kernel.org>
- <abk6PMrSDcb-yXZ9@gmail.com>
- <30adaf6c-657c-41f1-9234-79d807d74f02@oracle.com>
- <abrkrZc52h0vcTTj@gmail.com>
- <absud4FKm-3Trvjj@slm.duckdns.org>
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="qJFdgiFw";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="4jpB79yc";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="OrcSAEzL";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="HXVk5/yP"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 233AB5BD4B;
+	Thu, 19 Mar 2026 14:13:51 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1773929632; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=4fUFXPph0d+U/6GDmGbgLZ/FXBjYuxpYsgD69WTKZEc=;
+	b=qJFdgiFwZof840urwELAyJUPmqr5R5KSb1T4rwYuc7bb8XNbCm/kv+M5FkrKSBEOM1bZiu
+	/MGyuwm/OFnFKmJm/t/Uz/+GbEcAEAQCMtEWioCbgwKOh4DWZ0qNVZOg9g66xDY+m4U+fD
+	w9Xqoe30eNI+goFz62hSwZMzWorThdA=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1773929632;
+	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=4fUFXPph0d+U/6GDmGbgLZ/FXBjYuxpYsgD69WTKZEc=;
+	b=4jpB79ycXSQsxOkgtV3HKUa6Dm/vQ/wRir8pmFsiYnB6qgK3LbPe12RtulXb4tol7/E3ij
+	faYPra8B4GTfZjDQ==
+Authentication-Results: smtp-out2.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1773929631; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=4fUFXPph0d+U/6GDmGbgLZ/FXBjYuxpYsgD69WTKZEc=;
+	b=OrcSAEzL/6c4UDB40dZmtUkHL2UKN/t418W/3/WLfRE3VUYtttdOTA1LBRs2LexriSZBXr
+	IUCLAcO9QxQoLCNXA0PSitgNb7BC5cuH9t+EXroQLbXGhfbC1mTChSWj64vc6V41FfYy8R
+	mio6pb/J12e+5TPnOnmBoDRex83ce1A=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1773929631;
+	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=4fUFXPph0d+U/6GDmGbgLZ/FXBjYuxpYsgD69WTKZEc=;
+	b=HXVk5/yPJtxIjyky0dtujMNvVHE9KONXRU8D1O6wb4LBxoqwDaKPYOnkGEkCrYDJmYyVOA
+	klxEA++oJw6AsaAw==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 14B714273B;
+	Thu, 19 Mar 2026 14:13:51 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id TmUEBZ8EvGlPZwAAD6G6ig
+	(envelope-from <jack@suse.cz>); Thu, 19 Mar 2026 14:13:51 +0000
+Received: by quack3.suse.cz (Postfix, from userid 1000)
+	id C850FA0B32; Thu, 19 Mar 2026 15:13:46 +0100 (CET)
+Date: Thu, 19 Mar 2026 15:13:46 +0100
+From: Jan Kara <jack@suse.cz>
+To: Philipp Hahn <phahn-oss@avm.de>
+Cc: amd-gfx@lists.freedesktop.org, apparmor@lists.ubuntu.com, 
+	bpf@vger.kernel.org, ceph-devel@vger.kernel.org, cocci@inria.fr, 
+	dm-devel@lists.linux.dev, dri-devel@lists.freedesktop.org, gfs2@lists.linux.dev, 
+	intel-gfx@lists.freedesktop.org, intel-wired-lan@lists.osuosl.org, iommu@lists.linux.dev, 
+	kvm@vger.kernel.org, linux-arm-kernel@lists.infradead.org, 
+	linux-block@vger.kernel.org, linux-bluetooth@vger.kernel.org, linux-btrfs@vger.kernel.org, 
+	linux-cifs@vger.kernel.org, linux-clk@vger.kernel.org, linux-erofs@lists.ozlabs.org, 
+	linux-ext4@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-gpio@vger.kernel.org, 
+	linux-hyperv@vger.kernel.org, linux-input@vger.kernel.org, linux-kernel@vger.kernel.org, 
+	linux-leds@vger.kernel.org, linux-media@vger.kernel.org, linux-mips@vger.kernel.org, 
+	linux-mm@kvack.org, linux-modules@vger.kernel.org, linux-mtd@lists.infradead.org, 
+	linux-nfs@vger.kernel.org, linux-omap@vger.kernel.org, linux-phy@lists.infradead.org, 
+	linux-pm@vger.kernel.org, linux-rockchip@lists.infradead.org, linux-s390@vger.kernel.org, 
+	linux-scsi@vger.kernel.org, linux-sctp@vger.kernel.org, 
+	linux-security-module@vger.kernel.org, linux-sh@vger.kernel.org, linux-sound@vger.kernel.org, 
+	linux-stm32@st-md-mailman.stormreply.com, linux-trace-kernel@vger.kernel.org, linux-usb@vger.kernel.org, 
+	linux-wireless@vger.kernel.org, netdev@vger.kernel.org, ntfs3@lists.linux.dev, 
+	samba-technical@lists.samba.org, sched-ext@lists.linux.dev, target-devel@vger.kernel.org, 
+	tipc-discussion@lists.sourceforge.net, v9fs@lists.linux.dev, Jan Kara <jack@suse.com>
+Subject: Re: [PATCH 12/61] quota: Prefer IS_ERR_OR_NULL over manual NULL check
+Message-ID: <ol2d7c5z7yfyuwo5tyfxurgqedruhr6bzmuv37bx5phhrmmoyh@4zjspbtexid3>
+References: <20260310-b4-is_err_or_null-v1-0-bd63b656022d@avm.de>
+ <20260310-b4-is_err_or_null-v1-12-bd63b656022d@avm.de>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <absud4FKm-3Trvjj@slm.duckdns.org>
-X-Debian-User: leitao
+In-Reply-To: <20260310-b4-is_err_or_null-v1-12-bd63b656022d@avm.de>
+X-Spam-Score: -2.30
+X-Spam-Level: 
+X-Spamd-Result: default: False [-2.30 / 50.00];
+	BAYES_HAM(-3.00)[99.99%];
+	SUSPICIOUS_RECIPS(1.50)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_RHS_NOT_FQDN(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-0.999];
+	MIME_GOOD(-0.10)[text/plain];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	TO_DN_SOME(0.00)[];
+	ARC_NA(0.00)[];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	MISSING_XM_UA(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	FROM_HAS_DN(0.00)[];
+	RCVD_COUNT_THREE(0.00)[3];
+	TO_MATCH_ENVRCPT_SOME(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	R_RATELIMIT(0.00)[to_ip_from(RLck44p98ib5bmd95s13xxw3gp)];
+	RCVD_TLS_LAST(0.00)[];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	RCPT_COUNT_GT_50(0.00)[55];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email]
+X-Spam-Flag: NO
 
-On Wed, Mar 18, 2026 at 01:00:07PM -1000, Tejun Heo wrote:
-> On Wed, Mar 18, 2026 at 10:51:15AM -0700, Breno Leitao wrote:
-> > On Tue, Mar 17, 2026 at 09:58:54AM -0400, Chuck Lever wrote:
-> > > On 3/17/26 7:32 AM, Breno Leitao wrote:
-> > > >> - How was the default shard size of 8 picked? There's a tradeoff
-> > > >> between the number of kworkers created and locality. Can you also
-> > > >> report the number of kworkers for each configuration? And is there
-> > > >> data on different shard sizes? It'd be useful to see how the numbers
-> > > >> change across e.g. 4, 8, 16, 32.
-> > > >
-> > > > The choice of 8 as the default shard size was somewhat arbitrary – it was
-> > > > selected primarily to generate initial data points.
-> > >
-> > > Perhaps instead of basing the sharding on a particular number of CPUs
-> > > per shard, why not cap the total number of shards? IIUC that is the main
-> > > concern about ballooning the number of kworker threads.
-> >
-> > That's a great suggestion. I'll send a v2 that implements this approach,
-> > where the parameter specifies the number of shards rather than the number
-> > of CPUs per shard.
->
-> Woudl it make sense tho? If feels really odd to define the maximum number of
-> shards when contention is primarily a function of the number of CPUs banging
-> on the same CPU. Why would 32 cpu and 512 cpu systems have the same number
-> of shards?
+On Tue 10-03-26 12:48:38, Philipp Hahn wrote:
+> Prefer using IS_ERR_OR_NULL() over using IS_ERR() and a manual NULL
+> check.
+> 
+> Change generated with coccinelle.
+> 
+> To: Jan Kara <jack@suse.com>
+> Cc: linux-kernel@vger.kernel.org
+> Signed-off-by: Philipp Hahn <phahn-oss@avm.de>
 
-The trade-off is that specifying the maximum number of shards makes it
-clearer how many times the LLC is being sharded, which might be easier
-to reason about, but it will have less impact on contention scaling as
-you reported above.
+Thanks for the patch but frankly I find the original variant clearer wrt
+what is going on. So I prefer to keep the code as is.
 
-I've collected some numbers with sharding per LLC, and I will switch
-back to the original approach to gather comparison data.
+								Honza
 
-Current change:
-https://github.com/leitao/linux/commit/bedaf9ebe9594320976dcbf0cb507ecf083097c0
-
-
-Workload:
-========
-
-I've finally found a workload that exercises the workqueue sufficiently,
-which allows me to obtain stable benchmark results.
-
-This is what I am doing:
-
-  - Sets  up a local loopback NFS environment backed by an 8 GB tmpfs
-    (/tmp/nfsexport → /mnt/nfs)
-  - Iterates over six fio I/O engines: sync, psync, vsync, pvsync, pvsync2,
-    libaio
-  - For each engine, runs a 200-job, 512-byte block size fio benchmark (writes
-    then reads)
-  - Tests each workload under both cache and cache_shard workqueue affinity
-    scopes via /sys/module/workqueue/parameters/default_affinity_scope
-  - Prints a summary table with aggregate bandwidth (MB) per scope and the
-    percentage delta to show whether cache_shard helps or hurts
-  - Restores the affinity scope back to cache when done
-
-The test I am running could be found at
-https://github.com/leitao/debug/blob/main/workqueue_performance/test_affinity.sh
-
-Hosts:
-======
-
- * ARM (NVIDIA Grace - Neoverse V2 - single L3 domain: CPUs 0-71)
-	# cat /sys/devices/system/cpu/cpu*/cache/index3/shared_cpu_list | sort -u
-	0-71
-
- * Intel (AMD EPYC 9D64 88-Core Processor - 11 L3 domains, 8 Cores / 16 vCPUs each)
-	#   cat /sys/devices/system/cpu/cpu*/cache/index3/shared_cpu_list | sort -u
-	0-7,88-95
-	16-23,104-111
-	24-31,112-119
-	32-39,120-127
-	40-47,128-135
-	48-55,136-143
-	56-63,144-151
-	64-71,152-159
-	72-79,160-167
-	80-87,168-175
-	8-15,96-103
-
-
-Results
-=======
-
-
-Tl;DR: 
-
- * ARM (single L3, 72 CPUs): cache_shard consistently improves write
-   throughput by +6 to +12% across all shard counts (2-32), with
-   the peak at 2 shards. Read impact is minimal (noise-level).
-   Shard=1 confirms no effect as expected.
-
- * Intel (11 L3 domains, 16 CPUs each): cache_shard shows no meaningful
-   benefit at 1-4 shards (all within noise/stddev). At 8 shards it
-   regresses by ~4% for both reads and writes, likely due to loss of
-   data locality when sharding already-small 16-CPU cache domains
-   further.
-
-benchmark Data:
-===============
-
-ARM:
-
-  ┌────────┬───────────────────┬──────────────┬──────────────────┬─────────────┐
-  │ Shards │ Write Delta (avg) │ Write stddev │ Read Delta (avg) │ Read stddev │
-  ├────────┼───────────────────┼──────────────┼──────────────────┼─────────────┤
-  │      1 │             -0.2% │        ±1.0% │            +1.2% │       ±1.7% │
-  ├────────┼───────────────────┼──────────────┼──────────────────┼─────────────┤
-  │      2 │            +12.5% │        ±1.3% │            -0.3% │       ±0.9% │
-  ├────────┼───────────────────┼──────────────┼──────────────────┼─────────────┤
-  │      4 │             +8.7% │        ±0.9% │            +1.8% │       ±1.5% │
-  ├────────┼───────────────────┼──────────────┼──────────────────┼─────────────┤
-  │      8 │            +11.4% │        ±1.8% │            +3.1% │       ±1.5% │
-  ├────────┼───────────────────┼──────────────┼──────────────────┼─────────────┤
-  │     16 │             +7.8% │        ±1.3% │            +1.6% │       ±1.0% │
-  ├────────┼───────────────────┼──────────────┼──────────────────┼─────────────┤
-  │     32 │             +6.1% │        ±0.6% │            +0.3% │       ±1.5% │
-  └────────┴───────────────────┴──────────────┴──────────────────┴─────────────┘
-
-Intel:
-
-  ┌────────┬───────────────────┬──────────────┬──────────────────┬─────────────┐
-  │ Shards │ Write Delta (avg) │ Write stddev │ Read Delta (avg) │ Read stddev │
-  ├────────┼───────────────────┼──────────────┼──────────────────┼─────────────┤
-  │      1 │             -0.2% │        ±1.2% │            +0.1% │       ±1.0% │
-  ├────────┼───────────────────┼──────────────┼──────────────────┼─────────────┤
-  │      2 │             +0.7% │        ±1.4% │            +0.5% │       ±1.1% │
-  ├────────┼───────────────────┼──────────────┼──────────────────┼─────────────┤
-  │      4 │             +0.8% │        ±1.1% │            +1.3% │       ±1.2% │
-  ├────────┼───────────────────┼──────────────┼──────────────────┼─────────────┤
-  │      8 │             -4.0% │        ±1.3% │            -4.5% │       ±0.9% │
-  └────────┴───────────────────┴──────────────┴──────────────────┴─────────────┘
-
-
-Microbenchmark result
-=====================
-
-I've run the micro-benchmark from this patchset as well, and the resluts
-comparison:
-
- * Intel (11 L3 domains, 16 CPUs each): cache_shard delivers +45-55%
-   throughput and 36-44% lower latency at 2-8 shards. The sweet spot is
-   4 shards (+55%, p50 cut nearly in half). Shard=1 confirms no effect.
-
-   Even though Intel already has multiple L3 domains, each 16-CPU domain
-   still has enough contention to benefit from further splitting (for
-   the sake of this microbenchmark/stress test)
-
- * ARM (single L3, 72 CPUs): The gains are dramatic — 2x at 2 shards,
-   3.2x at 4 shards, and 4.4x at 8 shards. At 8 shards, cache_shard
-   (3.2M items/s) nearly matches cpu scope performance (3.7M), with p50
-   latency dropping from 43.5 us to 6.9 us.
-
-   The single monolithic L3 makes cache scope degenerate to a single
-   contended pool, so sharding  has a massive effect.
-
-
-Intel
-
-  ┌────────┬─────────────────┬───────────────────────┬─────────────────┬───────────┬───────────┬───────────────────┐
-  │ Shards │ cache (items/s) │ cache_shard (items/s) │ Throughput gain │ cache p50 │ shard p50 │ Latency reduction │
-  ├────────┼─────────────────┼───────────────────────┼─────────────────┼───────────┼───────────┼───────────────────┤
-  │      1 │       2,660,103 │             2,667,740 │           +0.3% │   27.5 us │   27.5 us │                0% │
-  ├────────┼─────────────────┼───────────────────────┼─────────────────┼───────────┼───────────┼───────────────────┤
-  │      2 │       2,619,884 │             3,788,454 │          +44.6% │   28.0 us │   17.8 us │              -36% │
-  ├────────┼─────────────────┼───────────────────────┼─────────────────┼───────────┼───────────┼───────────────────┤
-  │      4 │       2,506,185 │             3,891,064 │          +55.3% │   29.3 us │   16.5 us │              -44% │
-  ├────────┼─────────────────┼───────────────────────┼─────────────────┼───────────┼───────────┼───────────────────┤
-  │      8 │       2,628,321 │             4,015,312 │          +52.8% │   27.9 us │   16.4 us │              -41% │
-  └────────┴─────────────────┴───────────────────────┴─────────────────┴───────────┴───────────┴───────────────────┘
-
-  Reference scopes (stable across shard counts): cpu ~6.2M items/s, smt ~4.0M, numa/system ~422K.
-
-ARM
-
-  ┌────────┬─────────────────┬───────────────────────┬─────────────────┬───────────┬───────────┬───────────────────┐
-  │ Shards │ cache (items/s) │ cache_shard (items/s) │ Throughput gain │ cache p50 │ shard p50 │ Latency reduction │
-  ├────────┼─────────────────┼───────────────────────┼─────────────────┼───────────┼───────────┼───────────────────┤
-  │      2 │         725,999 │             1,516,967 │           +109% │   43.8 us │   19.6 us │              -55% │
-  ├────────┼─────────────────┼───────────────────────┼─────────────────┼───────────┼───────────┼───────────────────┤
-  │      4 │         729,615 │             2,347,335 │           +222% │   43.6 us │   11.0 us │              -75% │
-  ├────────┼─────────────────┼───────────────────────┼─────────────────┼───────────┼───────────┼───────────────────┤
-  │      8 │         731,517 │             3,230,168 │           +342% │   43.5 us │    6.9 us │              -84% │
-  └────────┴─────────────────┴───────────────────────┴─────────────────┴───────────┴───────────┴───────────────────┘
-
-
-Next Steps:
-  * Revert the code to sharding by CPU count (instead of by shard count) and
-    report it again. 
-  * Any other test that would help us?
+> ---
+>  fs/quota/quota.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/fs/quota/quota.c b/fs/quota/quota.c
+> index 33bacd70758007129e0375bab44d7431195ec441..2e09fc247d0cf45b9e83a4f8a0be7ea694c8c2a1 100644
+> --- a/fs/quota/quota.c
+> +++ b/fs/quota/quota.c
+> @@ -965,7 +965,7 @@ SYSCALL_DEFINE4(quotactl, unsigned int, cmd, const char __user *, special,
+>  	else
+>  		drop_super_exclusive(sb);
+>  out:
+> -	if (pathp && !IS_ERR(pathp))
+> +	if (!IS_ERR_OR_NULL(pathp))
+>  		path_put(pathp);
+>  	return ret;
+>  }
+> 
+> -- 
+> 2.43.0
+> 
+-- 
+Jan Kara <jack@suse.com>
+SUSE Labs, CR

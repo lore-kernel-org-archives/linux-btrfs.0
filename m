@@ -1,205 +1,253 @@
-Received: from mail-wm1-f53.google.com (mail-wm1-f53.google.com [209.85.128.53])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from stravinsky.debian.org (stravinsky.debian.org [82.195.75.108])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EE2072E8E16
-	for <linux-btrfs@vger.kernel.org>; Thu, 19 Mar 2026 08:56:42 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.53
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 033BF40DFDA;
+	Thu, 19 Mar 2026 14:03:18 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=82.195.75.108
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773910604; cv=none; b=GzMZo8hoqXrtt6rB1ev2x7OVc4eCsTkQIJEY0U6sWmSese+RL4tjT2gbFjc/uoqv394CAcDSP6Tp2qqsS5kYK25muPyjqFEaNY3Onfld6WGIDblCJRrw/1ilhY+2WhvUOjPD86MIOXnTs/mL4g8itjPPBU7rCF64BzJ7IynK1yw=
+	t=1773929000; cv=none; b=Rw2pkPQqHtyzoMRbocLK1fSlywWnHzOXR2+dsC9YpnesDl4wUe68S9ulv6IBn+lo9J+KCvlWaihI5x0hXP6G9VOZAmD+r514lR9eFWke6TctjR+Pl7ML487k+I8xKVGFoMNqHlc2F5fhyzKgp/yi4hiRYnFTVnGt+Low2IP0h6k=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773910604; c=relaxed/simple;
-	bh=Tc3fnVCr6vQZPGnfOswFl1JPIB7ZVw7azQgVeJSOGS8=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=VyGGUqzEdGybF2xXnrmP/Y/9ulIv6j+pq1CDbgCmGGa54OcXyKGPj3GhQCFxofiW46GUprpOfHwM70bmJbh3EhBPg8TIhGgVGWoUQN0h31vqgIbVa3tzWpTBPWtZkgGGyI9tQv65bVRDbKY8+mt5+IVC+vOj1IZ0XHHeMfW2+vI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=Cvo6YXze; arc=none smtp.client-ip=209.85.128.53
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1773929000; c=relaxed/simple;
+	bh=rrK1DEKvdfzzbViu1VH4kX9mz5h9D1buXrSBejxy2QA=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=vC9ibgS2Lk8DbZ1HdztsSJ/Ur9miJnFbNHZ7Ly66BrpcYNFvKQWyOtgeQldNlHSCewEDsTF2/doZ9GsDRMrjxT/+dwuZDtdCJCH/3yB6Jc4mQ5zDrjOvDMssJyOVLU6BTVpaQD5hDGLeuvpCa21pg+wu575OAScbToRhKOEXs1U=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=debian.org; spf=none smtp.mailfrom=debian.org; dkim=pass (2048-bit key) header.d=debian.org header.i=@debian.org header.b=gXc7ztyR; arc=none smtp.client-ip=82.195.75.108
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=debian.org
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=debian.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="Cvo6YXze"
-Received: by mail-wm1-f53.google.com with SMTP id 5b1f17b1804b1-486fba7ce4cso2445255e9.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Mar 2026 01:56:42 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1773910601; x=1774515401; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to;
-        bh=CCaKyfTy+MCb3lDMXR7lXvvGpD74epCt+GMoNk9ZEQw=;
-        b=Cvo6YXze1pfpGSGTW0Vz+gcnRnWpan7KRB+g7c2oJ8tQY620Xh9Lw10lqnbEoWJQUU
-         IfKpS9Qg1aFQZaeMQ5EgKGu7FIzraB8WjfbwvKmynwbJiRLdvGBXy5JHRMgKhr/9PZMZ
-         RVeLWs43bjvXSKxH9RB27IS41iZ2O02hoKgp8YoaPh3VLWx6uBHN8QCdosmhNMdET2yu
-         IifweCNmMxxKvv6iyAK+NAkIxB8HMasZRdSjq1wAZFdvK8Cx9/RQ7IcsfPXb6nab7Quq
-         huFrbHFpbCkNhzKV139cC3lTn4RIZL4JE6bkcrPTyjwFZseLniqqZRhiadT9kWSIXuuk
-         Itrw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1773910601; x=1774515401;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=CCaKyfTy+MCb3lDMXR7lXvvGpD74epCt+GMoNk9ZEQw=;
-        b=hamuwnZVNzcKkRqCi/Z5RVFNYUDpOKBzUt4VrO7H2Eh9T1Yd+rVLp9uaeyGaHOqhl2
-         ZblV6/LIXasbWTgleHnPeFsOJSp1sswE975cY9GAxkidC9j1U3U6uxSPRx9RZclfwl1N
-         kD6TS2OpZYG83nRv8RTHaesvmXXY8VytRcwKlA1VGdwv0+9SIlYbNNqDIQqsXhS3gTri
-         Xt+RxRMUs0jXZTxUVYJIu7QWzubZpQyPIKJsvQQ0Bns6wo0E16d3oGjWEvxxbDi3WqNG
-         2DqfzLSrEZ4jbEo45O1g7Gk0mj/ylapwRDIS2bPtXksOs2pdEyHf81Rddmt1HeaLfq2K
-         Iofw==
-X-Gm-Message-State: AOJu0YzNPR1nWmJqDBzUiQW4+GD3dbtRCw0m3NOd1ugR9a4JejIUGwJ1
-	/6ZTgdHwzHhn01ttbQM+NTj+wZTOh8AUFWHrVhD0AgsKe+8kxLgrxOFBIaqOKrgg9CwZhgJ1JTF
-	Ikyqyuac=
-X-Gm-Gg: ATEYQzwrImgu2HIqYF7kuLweP2dHFK5iMR/frJ2+oercBqR0+tPzXrfmQ8klKwiWiqk
-	0oS+e+0S9my8/eV64wQvpEBL+qeJZhdu+8dlL4/yh8cfxD1eVeBrU/TH6rZShuEO47N7iYexa31
-	A/m0pdNAX+TGDfXJIXlbYUSo0G8SvD1xRIi3YbljjD23VvAXudJNeZv3EgrvhArUIAdDlC70mKV
-	jcqVx4PvYQBaZEl5fzgcysa2XsOsUVKj5fvbciXIfza8giWycy8lKfaLRn1/r/Di779aMrSsc4m
-	KBKzkmbWK3TAhHCRzaHKN0fRR/906kfnL835dhXGHS38DI9hYk6E1sbS0bHw0Rk4Wxba5eNazjb
-	dJAgy+cNJYIHsvSuBvXbt52A7YTcKcm8vbXRwvVbcXXdIloiIU58yDhrBn+GoUwd/QGHL7bSlow
-	OI2c7wZsiUg3HgrhdJUxvMV8O7qSyB4xYfOaGfgNfpvDWdLM5JQxI=
-X-Received: by 2002:a05:600c:630a:b0:485:5574:8ccc with SMTP id 5b1f17b1804b1-486f445122amr102903715e9.13.1773910601068;
-        Thu, 19 Mar 2026 01:56:41 -0700 (PDT)
-Received: from ?IPV6:2403:580d:fda1::299? (2403-580d-fda1--299.ip6.aussiebb.net. [2403:580d:fda1::299])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-35bbaf9452asm1653656a91.12.2026.03.19.01.56.37
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 19 Mar 2026 01:56:39 -0700 (PDT)
-Message-ID: <4d6f78d3-f274-43e1-adc8-c4fff4f85e24@suse.com>
-Date: Thu, 19 Mar 2026 19:26:34 +1030
+	dkim=pass (2048-bit key) header.d=debian.org header.i=@debian.org header.b="gXc7ztyR"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=debian.org;
+	s=smtpauto.stravinsky; h=X-Debian-User:In-Reply-To:Content-Transfer-Encoding:
+	Content-Type:MIME-Version:References:Message-ID:Subject:Cc:To:From:Date:
+	Reply-To:Content-ID:Content-Description;
+	bh=lrKQ0lUDcZ4n9cZJSU/bLkmFE9iZLfmP9PtFseK4jVk=; b=gXc7ztyReVEoTPs5EeLZ5HOYef
+	JDz07PAsrL0Bu/OfZbL1MB+cwr24V/8hRIyPKMBsQ08vS4WGMDqB+j08sKMOq0yEWsMqgW6Ae5Twl
+	19ryY3XOCjQINeMB4rywXX0b+vZaCF7BFgkIzktVyWxrVgLFg+R8eT3G+bsWwx5NOAJxhJk31ujGA
+	yKjXucQe8s/altsMY6nXdcSqbcAKDuR3YyZzzPJ0sBv8kp0wBsJpEDAWs0SN0kSO6LEz3eNQfOXC2
+	MSFxEQJ6adO3UQu4p2d8myMpiC8X5Vm37idRuiLj+OYKskQOHscejUeM42U3dOIXKV2P6Z879Z3Nm
+	mG0KnuDA==;
+Received: from authenticated user
+	by stravinsky.debian.org with esmtpsa (TLS1.3:ECDHE_X25519__RSA_PSS_RSAE_SHA256__AES_256_GCM:256)
+	(Exim 4.94.2)
+	(envelope-from <leitao@debian.org>)
+	id 1w3Dxp-004To0-2l; Thu, 19 Mar 2026 14:03:04 +0000
+Date: Thu, 19 Mar 2026 07:02:58 -0700
+From: Breno Leitao <leitao@debian.org>
+To: Tejun Heo <tj@kernel.org>
+Cc: Chuck Lever <chuck.lever@oracle.com>, 
+	Lai Jiangshan <jiangshanlai@gmail.com>, Andrew Morton <akpm@linux-foundation.org>, 
+	linux-kernel@vger.kernel.org, puranjay@kernel.org, linux-crypto@vger.kernel.org, 
+	linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
+	Michael van der Westhuizen <rmikey@meta.com>, kernel-team@meta.com
+Subject: Re: [PATCH RFC 0/5] workqueue: add WQ_AFFN_CACHE_SHARD affinity scope
+Message-ID: <abv8CBeQMlB-Zb2z@gmail.com>
+References: <20260312-workqueue_sharded-v1-0-2c43a7b861d0@debian.org>
+ <6b952e7087c5fd8f040b692a92374871@kernel.org>
+ <abk6PMrSDcb-yXZ9@gmail.com>
+ <30adaf6c-657c-41f1-9234-79d807d74f02@oracle.com>
+ <abrkrZc52h0vcTTj@gmail.com>
+ <absud4FKm-3Trvjj@slm.duckdns.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: Fix BTRFS arm64 tagged KASAN false-positive
-To: Daniel J Blueman <daniel@quora.org>, Chris Mason <clm@fb.com>,
- David Sterba <dsterba@suse.com>
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-References: <20260319053413.14771-1-daniel@quora.org>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <20260319053413.14771-1-daniel@quora.org>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
+In-Reply-To: <absud4FKm-3Trvjj@slm.duckdns.org>
+X-Debian-User: leitao
+
+On Wed, Mar 18, 2026 at 01:00:07PM -1000, Tejun Heo wrote:
+> On Wed, Mar 18, 2026 at 10:51:15AM -0700, Breno Leitao wrote:
+> > On Tue, Mar 17, 2026 at 09:58:54AM -0400, Chuck Lever wrote:
+> > > On 3/17/26 7:32 AM, Breno Leitao wrote:
+> > > >> - How was the default shard size of 8 picked? There's a tradeoff
+> > > >> between the number of kworkers created and locality. Can you also
+> > > >> report the number of kworkers for each configuration? And is there
+> > > >> data on different shard sizes? It'd be useful to see how the numbers
+> > > >> change across e.g. 4, 8, 16, 32.
+> > > >
+> > > > The choice of 8 as the default shard size was somewhat arbitrary – it was
+> > > > selected primarily to generate initial data points.
+> > >
+> > > Perhaps instead of basing the sharding on a particular number of CPUs
+> > > per shard, why not cap the total number of shards? IIUC that is the main
+> > > concern about ballooning the number of kworker threads.
+> >
+> > That's a great suggestion. I'll send a v2 that implements this approach,
+> > where the parameter specifies the number of shards rather than the number
+> > of CPUs per shard.
+>
+> Woudl it make sense tho? If feels really odd to define the maximum number of
+> shards when contention is primarily a function of the number of CPUs banging
+> on the same CPU. Why would 32 cpu and 512 cpu systems have the same number
+> of shards?
+
+The trade-off is that specifying the maximum number of shards makes it
+clearer how many times the LLC is being sharded, which might be easier
+to reason about, but it will have less impact on contention scaling as
+you reported above.
+
+I've collected some numbers with sharding per LLC, and I will switch
+back to the original approach to gather comparison data.
+
+Current change:
+https://github.com/leitao/linux/commit/bedaf9ebe9594320976dcbf0cb507ecf083097c0
 
 
+Workload:
+========
 
-在 2026/3/19 16:04, Daniel J Blueman 写道:
-> When booting Linux 7.0-rc4 on a Qualcomm Snapdragon X1 with KASAN
-> software tagging with a BTRFS filesystem, we see:
-> 
-> BUG: KASAN: invalid-access in xxh64_update (lib/xxhash.c:143 lib/xxhash.c:283)
-> Read of size 8 at addr 7bff000804fe1000 by task kworker/u49:2/138
-> Pointer tag: [7b], memory tag: [b2]
-> 
-> CPU: 0 UID: 0 PID: 138 Comm: kworker/u49:2 Not tainted 7.0.0-rc4+ #34 PREEMPTLAZY
-> Hardware name: LENOVO 83ED/LNVNB161216, BIOS NHCN60WW 09/11/2025
-> Workqueue: btrfs-endio-meta simple_end_io_work
-> Call trace:
-> show_stack (arch/arm64/kernel/stacktrace.c:501) (C)
-> dump_stack_lvl (lib/dump_stack.c:122)
-> print_report (mm/kasan/report.c:379 mm/kasan/report.c:482)
-> kasan_report (mm/kasan/report.c:597)
-> kasan_check_range (mm/kasan/sw_tags.c:86 (discriminator 1))
-> __hwasan_loadN_noabort (mm/kasan/sw_tags.c:158)
-> xxh64_update (lib/xxhash.c:143 lib/xxhash.c:283)
-> btrfs_csum_update (fs/btrfs/fs.c:106)
-> csum_tree_block (fs/btrfs/disk-io.c:103 (discriminator 3))
-> btrfs_validate_extent_buffer (fs/btrfs/disk-io.c:389)
-> end_bbio_meta_read (fs/btrfs/extent_io.c:3853 (discriminator 1))
-> btrfs_bio_end_io (fs/btrfs/bio.c:152)
-> simple_end_io_work (fs/btrfs/bio.c:388)
-> process_one_work (./arch/arm64/include/asm/jump_label.h:36 ./include/trace/events/workqueue.h:110 kernel/workqueue.c:3281)
-> worker_thread (kernel/workqueue.c:3353 (discriminator 2) kernel/workqueue.c:3440 (discriminator 2))
-> kthread (kernel/kthread.c:436)
-> ret_from_fork (arch/arm64/kernel/entry.S:861)
-> 
-> The buggy address belongs to the physical page:
-> page: refcount:3 mapcount:0 mapping:f1ff00080055dee8 index:0x2467bd pfn:0x884fe1
-> memcg:51ff000800e68ec0 aops:btree_aops ino:1
-> flags: 0x9340000000004000(private|zone=2|kasantag=0x4d)
-> raw: 9340000000004000 0000000000000000 dead000000000122 f1ff00080055dee8
-> raw: 00000000002467bd 43ff00081d0cc6f0 00000003ffffffff 51ff000800e68ec0
-> page dumped because: kasan: bad access detected
-> 
-> Memory state around the buggy address:
-> ffff000804fe0e00: 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b
-> ffff000804fe0f00: 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b
->> ffff000804fe1000: b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2
-> ^
-> ffff000804fe1100: b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2
-> ffff000804fe1200: b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2
-> 
-> This occurs as contiguous pages may have different KASAN tags in the upper address
-> bits, leading to a tag mismatch if linear addressing is used.
-> 
-> Fix this by treating them as discontiguous.
-> 
-> Signed-off-by: Daniel J Blueman <daniel@quora.org>
-> Fixes: 397239ed6a6c ("btrfs: allow extent buffer helpers to skip cross-page handling")
-> 
-> ---
->   fs/btrfs/extent_io.c | 12 ++++++++++--
->   1 file changed, 10 insertions(+), 2 deletions(-)
-> 
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index 5f97a3d2a8d7..e2b241fb6c0e 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -3517,8 +3517,16 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
->   		 * At this stage, either we allocated a large folio, thus @i
->   		 * would only be 0, or we fall back to per-page allocation.
->   		 */
-> -		if (i && folio_page(eb->folios[i - 1], 0) + 1 != folio_page(folio, 0))
-> -			page_contig = false;
-> +		if (i > 0) {
-> +			struct page *prev = folio_page(eb->folios[i - 1], 0);
-> +			struct page *curr = folio_page(folio, 0);
-> +
-> +			/*
-> +			 * Contiguous pages may have different tags; can't be treated as contiguous
-> +			 */
-> +			if (curr != prev + 1 || page_kasan_tag(curr) != page_kasan_tag(prev))
-> +				page_contig = false;
+I've finally found a workload that exercises the workqueue sufficiently,
+which allows me to obtain stable benchmark results.
 
-I am not a fan of this solution.
+This is what I am doing:
 
-Although it doesn't affect end users who don't have KASAN soft tag 
-enabled, I don't get what we can really get from the different tags.
+  - Sets  up a local loopback NFS environment backed by an 8 GB tmpfs
+    (/tmp/nfsexport → /mnt/nfs)
+  - Iterates over six fio I/O engines: sync, psync, vsync, pvsync, pvsync2,
+    libaio
+  - For each engine, runs a 200-job, 512-byte block size fio benchmark (writes
+    then reads)
+  - Tests each workload under both cache and cache_shard workqueue affinity
+    scopes via /sys/module/workqueue/parameters/default_affinity_scope
+  - Prints a summary table with aggregate bandwidth (MB) per scope and the
+    percentage delta to show whether cache_shard helps or hurts
+  - Restores the affinity scope back to cache when done
 
-I mean all those pages are already contig in physical addresses, why we 
-can not access the range in one go?
+The test I am running could be found at
+https://github.com/leitao/debug/blob/main/workqueue_performance/test_affinity.sh
 
-Maybe it will be better to set all pages with the same random tag if 
-page_contig is true?
+Hosts:
+======
 
-Thanks,
-Qu
+ * ARM (NVIDIA Grace - Neoverse V2 - single L3 domain: CPUs 0-71)
+	# cat /sys/devices/system/cpu/cpu*/cache/index3/shared_cpu_list | sort -u
+	0-71
+
+ * Intel (AMD EPYC 9D64 88-Core Processor - 11 L3 domains, 8 Cores / 16 vCPUs each)
+	#   cat /sys/devices/system/cpu/cpu*/cache/index3/shared_cpu_list | sort -u
+	0-7,88-95
+	16-23,104-111
+	24-31,112-119
+	32-39,120-127
+	40-47,128-135
+	48-55,136-143
+	56-63,144-151
+	64-71,152-159
+	72-79,160-167
+	80-87,168-175
+	8-15,96-103
 
 
-> +		}
->   
->   		if (!btrfs_meta_folio_test_uptodate(folio, eb))
->   			uptodate = 0;
+Results
+=======
 
+
+Tl;DR: 
+
+ * ARM (single L3, 72 CPUs): cache_shard consistently improves write
+   throughput by +6 to +12% across all shard counts (2-32), with
+   the peak at 2 shards. Read impact is minimal (noise-level).
+   Shard=1 confirms no effect as expected.
+
+ * Intel (11 L3 domains, 16 CPUs each): cache_shard shows no meaningful
+   benefit at 1-4 shards (all within noise/stddev). At 8 shards it
+   regresses by ~4% for both reads and writes, likely due to loss of
+   data locality when sharding already-small 16-CPU cache domains
+   further.
+
+benchmark Data:
+===============
+
+ARM:
+
+  ┌────────┬───────────────────┬──────────────┬──────────────────┬─────────────┐
+  │ Shards │ Write Delta (avg) │ Write stddev │ Read Delta (avg) │ Read stddev │
+  ├────────┼───────────────────┼──────────────┼──────────────────┼─────────────┤
+  │      1 │             -0.2% │        ±1.0% │            +1.2% │       ±1.7% │
+  ├────────┼───────────────────┼──────────────┼──────────────────┼─────────────┤
+  │      2 │            +12.5% │        ±1.3% │            -0.3% │       ±0.9% │
+  ├────────┼───────────────────┼──────────────┼──────────────────┼─────────────┤
+  │      4 │             +8.7% │        ±0.9% │            +1.8% │       ±1.5% │
+  ├────────┼───────────────────┼──────────────┼──────────────────┼─────────────┤
+  │      8 │            +11.4% │        ±1.8% │            +3.1% │       ±1.5% │
+  ├────────┼───────────────────┼──────────────┼──────────────────┼─────────────┤
+  │     16 │             +7.8% │        ±1.3% │            +1.6% │       ±1.0% │
+  ├────────┼───────────────────┼──────────────┼──────────────────┼─────────────┤
+  │     32 │             +6.1% │        ±0.6% │            +0.3% │       ±1.5% │
+  └────────┴───────────────────┴──────────────┴──────────────────┴─────────────┘
+
+Intel:
+
+  ┌────────┬───────────────────┬──────────────┬──────────────────┬─────────────┐
+  │ Shards │ Write Delta (avg) │ Write stddev │ Read Delta (avg) │ Read stddev │
+  ├────────┼───────────────────┼──────────────┼──────────────────┼─────────────┤
+  │      1 │             -0.2% │        ±1.2% │            +0.1% │       ±1.0% │
+  ├────────┼───────────────────┼──────────────┼──────────────────┼─────────────┤
+  │      2 │             +0.7% │        ±1.4% │            +0.5% │       ±1.1% │
+  ├────────┼───────────────────┼──────────────┼──────────────────┼─────────────┤
+  │      4 │             +0.8% │        ±1.1% │            +1.3% │       ±1.2% │
+  ├────────┼───────────────────┼──────────────┼──────────────────┼─────────────┤
+  │      8 │             -4.0% │        ±1.3% │            -4.5% │       ±0.9% │
+  └────────┴───────────────────┴──────────────┴──────────────────┴─────────────┘
+
+
+Microbenchmark result
+=====================
+
+I've run the micro-benchmark from this patchset as well, and the resluts
+comparison:
+
+ * Intel (11 L3 domains, 16 CPUs each): cache_shard delivers +45-55%
+   throughput and 36-44% lower latency at 2-8 shards. The sweet spot is
+   4 shards (+55%, p50 cut nearly in half). Shard=1 confirms no effect.
+
+   Even though Intel already has multiple L3 domains, each 16-CPU domain
+   still has enough contention to benefit from further splitting (for
+   the sake of this microbenchmark/stress test)
+
+ * ARM (single L3, 72 CPUs): The gains are dramatic — 2x at 2 shards,
+   3.2x at 4 shards, and 4.4x at 8 shards. At 8 shards, cache_shard
+   (3.2M items/s) nearly matches cpu scope performance (3.7M), with p50
+   latency dropping from 43.5 us to 6.9 us.
+
+   The single monolithic L3 makes cache scope degenerate to a single
+   contended pool, so sharding  has a massive effect.
+
+
+Intel
+
+  ┌────────┬─────────────────┬───────────────────────┬─────────────────┬───────────┬───────────┬───────────────────┐
+  │ Shards │ cache (items/s) │ cache_shard (items/s) │ Throughput gain │ cache p50 │ shard p50 │ Latency reduction │
+  ├────────┼─────────────────┼───────────────────────┼─────────────────┼───────────┼───────────┼───────────────────┤
+  │      1 │       2,660,103 │             2,667,740 │           +0.3% │   27.5 us │   27.5 us │                0% │
+  ├────────┼─────────────────┼───────────────────────┼─────────────────┼───────────┼───────────┼───────────────────┤
+  │      2 │       2,619,884 │             3,788,454 │          +44.6% │   28.0 us │   17.8 us │              -36% │
+  ├────────┼─────────────────┼───────────────────────┼─────────────────┼───────────┼───────────┼───────────────────┤
+  │      4 │       2,506,185 │             3,891,064 │          +55.3% │   29.3 us │   16.5 us │              -44% │
+  ├────────┼─────────────────┼───────────────────────┼─────────────────┼───────────┼───────────┼───────────────────┤
+  │      8 │       2,628,321 │             4,015,312 │          +52.8% │   27.9 us │   16.4 us │              -41% │
+  └────────┴─────────────────┴───────────────────────┴─────────────────┴───────────┴───────────┴───────────────────┘
+
+  Reference scopes (stable across shard counts): cpu ~6.2M items/s, smt ~4.0M, numa/system ~422K.
+
+ARM
+
+  ┌────────┬─────────────────┬───────────────────────┬─────────────────┬───────────┬───────────┬───────────────────┐
+  │ Shards │ cache (items/s) │ cache_shard (items/s) │ Throughput gain │ cache p50 │ shard p50 │ Latency reduction │
+  ├────────┼─────────────────┼───────────────────────┼─────────────────┼───────────┼───────────┼───────────────────┤
+  │      2 │         725,999 │             1,516,967 │           +109% │   43.8 us │   19.6 us │              -55% │
+  ├────────┼─────────────────┼───────────────────────┼─────────────────┼───────────┼───────────┼───────────────────┤
+  │      4 │         729,615 │             2,347,335 │           +222% │   43.6 us │   11.0 us │              -75% │
+  ├────────┼─────────────────┼───────────────────────┼─────────────────┼───────────┼───────────┼───────────────────┤
+  │      8 │         731,517 │             3,230,168 │           +342% │   43.5 us │    6.9 us │              -84% │
+  └────────┴─────────────────┴───────────────────────┴─────────────────┴───────────┴───────────┴───────────────────┘
+
+
+Next Steps:
+  * Revert the code to sharding by CPU count (instead of by shard count) and
+    report it again. 
+  * Any other test that would help us?

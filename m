@@ -1,39 +1,40 @@
 Received: from mail.burntcomma.com (mail2.burntcomma.com [217.169.27.34])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AC3BE317175
-	for <linux-btrfs@vger.kernel.org>; Fri, 20 Mar 2026 12:51:07 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E8A1A3ACA48;
+	Fri, 20 Mar 2026 12:52:27 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=217.169.27.34
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774011071; cv=none; b=bvXlzeGEfHIQAgwnd5htNbHGCONY8ksul+nem60TVclt0AsJ9YkmFLPtJzqhIXo28Er5fQisI3f+LmDAeRz2esD9uNYHrEfirOxWRu/H9Q+JnF+KoNh5qzmy3jCxR08sJXW4YP+7JnrbQ7wCiTEfRDmpnua5p9NQfUMnx4yeHwY=
+	t=1774011150; cv=none; b=EmvR/KD+yXoU+XKplozSWnyQ77v2PTbEYsjl4Y90H8GZ+hsRCSGZfHAkMwaxgz2kB90NwObmYJF0W7FLV2DMLDqn0I6ZSbv5uiWk4A5/tTQtV1pSNIMs3SHYcLnaiyb/if9stKJJnv+RTmDLWYrJBUbME5QLvigugQblUKDuNag=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774011071; c=relaxed/simple;
-	bh=CpeRDDSIiEttiM60VtzdtTRmNVtYaTQYS40BcgkOJew=;
-	h=From:To:Cc:Subject:Date:Message-ID:Mime-Version; b=e6YJfgXhBbVdFWE6A2gGdrvG/wXgMesM91qpGlmPHHMlxb6nvQ0SZSCaZsnBiHZJA0M5CmaQomDkLcukYsT1PyxjuNBPfXV8Ow25VotpeXzN1pkOhhDrt3VdujUuCEX8LOCNuyuFzpmZGrQquQXrpAVqSSI0UD/8BGugr3Ehxj4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com; spf=pass smtp.mailfrom=harmstone.com; dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b=5R77846q; arc=none smtp.client-ip=217.169.27.34
+	s=arc-20240116; t=1774011150; c=relaxed/simple;
+	bh=/MtjJOPJ9vy4+8qDzT0OqCnLHtcw5P+UHbcQKexDnm4=;
+	h=From:To:Cc:Subject:Date:Message-ID:Mime-Version; b=Wj8PcqXNUkFSBvMSX1arDuOPzeVc2aRv5fOG+ZZICUXMdfLNnYZOtkIg3zKUBVLFLzk1YXYnBVs/M17RFN5NK+EApENwRQLkrEvZQxsK4kDnIaPz9zeMlM6THHBZJ31wuEvTCMxFeLIbF14Y7u8Q4+Mj2CCXWXLa1VUq13X7hzI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com; spf=pass smtp.mailfrom=harmstone.com; dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b=gYRIWb4w; arc=none smtp.client-ip=217.169.27.34
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=harmstone.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b="5R77846q"
+	dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b="gYRIWb4w"
 Received: from beren (beren.burntcomma.com [IPv6:2a02:8012:8cf0:0:ce28:aaff:fe0d:6db2])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
 	(Client did not present a certificate)
-	by mail.burntcomma.com (Postfix) with ESMTPSA id EFD553125F0;
-	Fri, 20 Mar 2026 12:51:04 +0000 (GMT)
+	by mail.burntcomma.com (Postfix) with ESMTPSA id A282E3125F3;
+	Fri, 20 Mar 2026 12:52:25 +0000 (GMT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=harmstone.com;
-	s=mail; t=1774011065;
-	bh=Ai/yNtXUJdbNUJP+OE/pg8cp6idU9p/4S3iJYeoAWpY=;
+	s=mail; t=1774011145;
+	bh=eucBlLAg2AqPxkjLC4ZMuRVrwDQfv4D9xOXt95z7Wpo=;
 	h=From:To:Cc:Subject:Date;
-	b=5R77846q+YVwJMP4aMV4ZeiHwB0l34R/B7XjwiGAVnLIqacmJRSYYjW9Ge9U5o12w
-	 SF/9ipZAEOK1Py3GlXEEgtgSHqQyKGUmicWPNajwWL88Oz+xPpS0dtUJddReYw6QIX
-	 MSPtT13TN5mPz3bTfjGeB9UuFQtFmiAHDHeq0aLw=
+	b=gYRIWb4wX9jQUzzkZBUFutwGVzyhhSpdlAhRZi9yRNaoC2Fs1HgPCbv1roR5fRomf
+	 +J/ZuLUbxqgj4Rv1hdm4+iA0mEUBn+sS3JVBEXsYlMMQzXLHRuU7I8RYz/amfjjXpY
+	 NuDjY5V9z1IRw/Ueq0LQO808iW/7KWH/IOQzAseU=
 From: Mark Harmstone <mark@harmstone.com>
-To: linux-btrfs@vger.kernel.org
+To: linux-btrfs@vger.kernel.org,
+	fstests@vger.kernel.org
 Cc: Mark Harmstone <mark@harmstone.com>
-Subject: [PATCH] btrfs: add BTRFS_IOC_GET_CSUMS ioctl
-Date: Fri, 20 Mar 2026 12:50:51 +0000
-Message-ID: <20260320125058.90053-1-mark@harmstone.com>
+Subject: [PATCH] btrfs: add test for BTRFS_IOC_GET_CSUMS ioctl
+Date: Fri, 20 Mar 2026 12:52:18 +0000
+Message-ID: <20260320125223.90171-1-mark@harmstone.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -42,469 +43,486 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Add a new unprivileged BTRFS_IOC_GET_CSUMS ioctl, which can be used to
-query the on-disk csums for a file.
+Test the new BTRFS_IOC_GET_CSUMS ioctl which retrieves file checksums
+from the kernel's csum tree. The test covers:
 
-This is done by userspace passing a struct btrfs_ioctl_get_csums_args to
-the kernel, which details the offset and length we're interested in, and
-a buffer for the kernel to write its results into. The kernel writes a
-struct btrfs_ioctl_get_csums_entry into the buffer, followed by the
-csums if available.
-
-If the extent is an uncompressed, non-nodatasum extent, the kernel sets
-the entry type to BTRFS_GET_CSUMS_HAS_CSUMS and follows it with the
-csums. If it is sparse, preallocated, or beyond the EOF, it sets the
-type to BTRFS_GET_CSUMS_SPARSE - this is so userspace knows it can use
-the precomputed hash of the zero sector. Otherwise, it sets the type to
-BTRFS_GET_CSUMS_NO_CSUMS.
-
-We do store the csums of compressed extents, but we deliberately don't
-return them here: they're hashed over the compressed data, not the
-uncompressed data that's returned to userspace.
-
-The main use case for this is for speeding up mkfs.btrfs --rootdir. For
-the case when the source FS is btrfs and using the same csum algorithm,
-we can avoid having to recalculate the csums - in my synthetic
-benchmarks (16GB file on a spinning-rust drive), this resulted in a ~11%
-speed-up (218s to 196s).
-
-When using the --reflink option added in btrfs-progs v6.16.1, we can forgo
-reading the data entirely, resulting a ~2200% speed-up on the same test
-(128s to 6s).
-
-    # mkdir rootdir
-    # dd if=/dev/urandom of=rootdir/file bs=4096 count=4194304
-
-    (without ioctl)
-    # echo 3 > /proc/sys/vm/drop_caches
-    # time mkfs.btrfs --rootdir rootdir testimg
-    ...
-    real    3m37.965s
-    user    0m5.496s
-    sys     0m6.125s
-
-    # echo 3 > /proc/sys/vm/drop_caches
-    # time mkfs.btrfs --rootdir rootdir --reflink testimg
-    ...
-    real    2m8.342s
-    user    0m5.472s
-    sys     0m1.667s
-
-    (with ioctl)
-    # echo 3 > /proc/sys/vm/drop_caches
-    # time mkfs.btrfs --rootdir rootdir testimg
-    ...
-    real    3m15.865s
-    user    0m4.258s
-    sys     0m6.261s
-
-    # echo 3 > /proc/sys/vm/drop_caches
-    # time mkfs.btrfs --rootdir rootdir --reflink testimg
-    ...
-    real    0m5.847s
-    user    0m2.899s
-    sys     0m0.097s
+1. Regular data extents returning HAS_CSUMS with checksum data
+2. Holes returning SPARSE entries
+3. Preallocated extents returning SPARSE entries
+4. Buffer continuation (small buffer forcing multiple calls)
+5. Checksum consistency (identical data produces identical csums)
+6. Querying past file data returning SPARSE
+7. Precomputed values
 
 Signed-off-by: Mark Harmstone <mark@harmstone.com>
 ---
- fs/btrfs/ioctl.c           | 330 +++++++++++++++++++++++++++++++++++++
- include/uapi/linux/btrfs.h |  21 +++
- 2 files changed, 351 insertions(+)
+ src/Makefile          |   2 +-
+ src/btrfs_get_csums.c | 198 ++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/343       | 196 +++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/343.out   |  33 +++++++
+ 4 files changed, 428 insertions(+), 1 deletion(-)
+ create mode 100644 src/btrfs_get_csums.c
+ create mode 100755 tests/btrfs/343
+ create mode 100644 tests/btrfs/343.out
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index a4d715bbed57ba..b7c8bfb90fed29 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -56,6 +56,7 @@
- #include "uuid-tree.h"
- #include "ioctl.h"
- #include "file.h"
-+#include "file-item.h"
- #include "scrub.h"
- #include "super.h"
+diff --git a/src/Makefile b/src/Makefile
+index d0a4106e..49649537 100644
+--- a/src/Makefile
++++ b/src/Makefile
+@@ -36,7 +36,7 @@ LINUX_TARGETS = xfsctl bstat t_mtab getdevicesize preallo_rw_pattern_reader \
+ 	fscrypt-crypt-util bulkstat_null_ocount splice-test chprojid_fail \
+ 	detached_mounts_propagation ext4_resize t_readdir_3 splice2pipe \
+ 	uuid_ioctl t_snapshot_deleted_subvolume fiemap-fault min_dio_alignment \
+-	rw_hint
++	rw_hint btrfs_get_csums
  
-@@ -5138,6 +5139,333 @@ static int btrfs_ioctl_shutdown(struct btrfs_fs_info *fs_info, unsigned long arg
- }
- #endif
- 
-+#define GET_CSUMS_BUF_MAX	(16 * 1024 * 1024)
+ EXTRA_EXECS = dmerror fill2attr fill2fs fill2fs_check scaleread.sh \
+ 	      btrfs_crc32c_forged_name.py popdir.pl popattr.py \
+diff --git a/src/btrfs_get_csums.c b/src/btrfs_get_csums.c
+new file mode 100644
+index 00000000..0a75959a
+--- /dev/null
++++ b/src/btrfs_get_csums.c
+@@ -0,0 +1,198 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (c) 2026 Meta Platforms, Inc.  All Rights Reserved.
++ *
++ * Test helper for BTRFS_IOC_GET_CSUMS.
++ *
++ * Usage: btrfs_get_csums <file> <offset> <length> [bufsize]
++ *
++ * Prints one line per entry returned by the ioctl:
++ *   HAS_CSUMS <offset> <length> <hex csums>
++ *   SPARSE <offset> <length>
++ *   NO_CSUMS <offset> <length>
++ *
++ * On completion prints:
++ *   remaining <offset> <length>
++ */
 +
-+static int copy_csums_to_user(struct btrfs_fs_info *fs_info, u64 disk_bytenr,
-+			      u64 len, u8 __user *buf)
-+{
-+	struct btrfs_root *csum_root;
-+	struct btrfs_ordered_sum *sums;
-+	LIST_HEAD(list);
-+	const u32 csum_size = fs_info->csum_size;
-+	int ret;
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <errno.h>
++#include <fcntl.h>
++#include <unistd.h>
++#include <stdint.h>
++#include <sys/ioctl.h>
++#include <linux/btrfs.h>
 +
-+	csum_root = btrfs_csum_root(fs_info, disk_bytenr);
++#ifndef BTRFS_IOC_GET_CSUMS
 +
-+	ret = btrfs_lookup_csums_list(csum_root, disk_bytenr,
-+				      disk_bytenr + len - 1, &list, false);
-+	if (ret < 0)
-+		return ret;
-+
-+	/* Clear the output buffer to handle potential gaps in csum coverage. */
-+	if (clear_user(buf, (len >> fs_info->sectorsize_bits) * csum_size)) {
-+		ret = -EFAULT;
-+		goto out;
-+	}
-+
-+	ret = 0;
-+	while (!list_empty(&list)) {
-+		u64 offset;
-+		size_t copy_size;
-+
-+		sums = list_first_entry(&list, struct btrfs_ordered_sum, list);
-+		list_del(&sums->list);
-+
-+		offset = ((sums->logical - disk_bytenr) >> fs_info->sectorsize_bits) * csum_size;
-+		copy_size = (sums->len >> fs_info->sectorsize_bits) * csum_size;
-+
-+		if (copy_to_user(buf + offset, sums->sums, copy_size)) {
-+			kfree(sums);
-+			ret = -EFAULT;
-+			goto out;
-+		}
-+
-+		kfree(sums);
-+	}
-+
-+out:
-+	while (!list_empty(&list)) {
-+		sums = list_first_entry(&list, struct btrfs_ordered_sum, list);
-+		list_del(&sums->list);
-+		kfree(sums);
-+	}
-+	return ret;
-+}
-+
-+static int btrfs_ioctl_get_csums(struct file *file, void __user *argp)
-+{
-+	struct inode *inode = file_inode(file);
-+	struct btrfs_inode *bi = BTRFS_I(inode);
-+	struct btrfs_fs_info *fs_info = bi->root->fs_info;
-+	struct btrfs_root *root = bi->root;
-+	struct btrfs_ioctl_get_csums_args args;
-+	BTRFS_PATH_AUTO_FREE(path);
-+	const u64 ino = btrfs_ino(bi);
-+	const u32 sectorsize = fs_info->sectorsize;
-+	const u32 csum_size = fs_info->csum_size;
-+	u8 __user *ubuf;
-+	u64 buf_limit;
-+	u64 buf_used = 0;
-+	u64 cur_offset;
-+	u64 end_offset;
-+	u64 prev_extent_end;
-+	struct btrfs_key key;
-+	int ret;
-+
-+	if (!(file->f_mode & FMODE_READ))
-+		return -EBADF;
-+
-+	if (!S_ISREG(inode->i_mode))
-+		return -EINVAL;
-+
-+	if (copy_from_user(&args, argp, sizeof(args)))
-+		return -EFAULT;
-+
-+	if (!IS_ALIGNED(args.offset, sectorsize) ||
-+	    !IS_ALIGNED(args.length, sectorsize))
-+		return -EINVAL;
-+	if (args.length == 0)
-+		return -EINVAL;
-+	if (args.offset + args.length < args.offset)
-+		return -EOVERFLOW;
-+	if (args.buf_size < sizeof(struct btrfs_ioctl_get_csums_entry))
-+		return -EINVAL;
-+
-+	buf_limit = min_t(u64, args.buf_size, GET_CSUMS_BUF_MAX);
-+	ubuf = (u8 __user *)(argp + offsetof(struct btrfs_ioctl_get_csums_args, buf));
-+	cur_offset = args.offset;
-+	end_offset = args.offset + args.length;
-+
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
-+
-+	ret = btrfs_wait_ordered_range(bi, cur_offset, args.length);
-+	if (ret)
-+		return ret;
-+
-+	btrfs_inode_lock(bi, BTRFS_ILOCK_SHARED);
-+
-+	ret = btrfs_wait_ordered_range(bi, cur_offset, args.length);
-+	if (ret)
-+		goto out_unlock;
-+
-+	/* NODATASUM early exit. */
-+	if (bi->flags & BTRFS_INODE_NODATASUM) {
-+		struct btrfs_ioctl_get_csums_entry entry = {
-+			.offset = cur_offset,
-+			.length = end_offset - cur_offset,
-+			.type = BTRFS_GET_CSUMS_NO_CSUMS,
-+		};
-+
-+		if (copy_to_user(ubuf, &entry, sizeof(entry))) {
-+			ret = -EFAULT;
-+			goto out_unlock;
-+		}
-+
-+		buf_used = sizeof(entry);
-+		cur_offset = end_offset;
-+		goto done;
-+	}
-+
-+	prev_extent_end = cur_offset;
-+
-+	while (cur_offset < end_offset) {
-+		struct btrfs_file_extent_item *ei;
-+		struct extent_buffer *leaf;
-+		struct btrfs_ioctl_get_csums_entry entry;
-+		u64 extent_end;
-+		u64 disk_bytenr = 0;
-+		u64 extent_offset = 0;
-+		u64 range_start, range_len;
-+		u64 entry_csum_size;
-+		u64 key_offset;
-+		int extent_type;
-+		u8 compression;
-+
-+		/* Search for the extent at or before cur_offset. */
-+		key.objectid = ino;
-+		key.type = BTRFS_EXTENT_DATA_KEY;
-+		key.offset = cur_offset;
-+
-+		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
-+		if (ret < 0)
-+			goto out_unlock;
-+
-+		if (ret > 0 && path->slots[0] > 0) {
-+			btrfs_item_key_to_cpu(path->nodes[0], &key,
-+					      path->slots[0] - 1);
-+			if (key.objectid == ino &&
-+			    key.type == BTRFS_EXTENT_DATA_KEY) {
-+				path->slots[0]--;
-+				if (btrfs_file_extent_end(path) <= cur_offset)
-+					path->slots[0]++;
-+			}
-+		}
-+
-+		if (path->slots[0] >= btrfs_header_nritems(path->nodes[0])) {
-+			ret = btrfs_next_leaf(root, path);
-+			if (ret < 0)
-+				goto out_unlock;
-+			if (ret > 0) {
-+				ret = 0;
-+				btrfs_release_path(path);
-+				break;
-+			}
-+		}
-+
-+		leaf = path->nodes[0];
-+
-+		btrfs_item_key_to_cpu(leaf, &key, path->slots[0]);
-+		if (key.objectid != ino || key.type != BTRFS_EXTENT_DATA_KEY) {
-+			btrfs_release_path(path);
-+			break;
-+		}
-+
-+		extent_end = btrfs_file_extent_end(path);
-+		key_offset = key.offset;
-+
-+		/* Read extent fields before releasing the path. */
-+		ei = btrfs_item_ptr(leaf, path->slots[0],
-+				    struct btrfs_file_extent_item);
-+		extent_type = btrfs_file_extent_type(leaf, ei);
-+		compression = btrfs_file_extent_compression(leaf, ei);
-+
-+		if (extent_type != BTRFS_FILE_EXTENT_INLINE) {
-+			disk_bytenr = btrfs_file_extent_disk_bytenr(leaf, ei);
-+			if (disk_bytenr && compression == BTRFS_COMPRESS_NONE)
-+				extent_offset = btrfs_file_extent_offset(leaf, ei);
-+		}
-+
-+		btrfs_release_path(path);
-+
-+		/* Implicit hole (NO_HOLES feature). */
-+		if (prev_extent_end < key_offset) {
-+			u64 hole_end = min(key_offset, end_offset);
-+			u64 hole_len = hole_end - prev_extent_end;
-+
-+			if (prev_extent_end >= cur_offset) {
-+				memset(&entry, 0, sizeof(entry));
-+				entry.offset = prev_extent_end;
-+				entry.length = hole_len;
-+				entry.type = BTRFS_GET_CSUMS_SPARSE;
-+
-+				if (buf_used + sizeof(entry) > buf_limit)
-+					goto done;
-+				if (copy_to_user(ubuf + buf_used, &entry,
-+						 sizeof(entry))) {
-+					ret = -EFAULT;
-+					goto out_unlock;
-+				}
-+				buf_used += sizeof(entry);
-+				cur_offset = hole_end;
-+			}
-+
-+			if (key_offset >= end_offset) {
-+				cur_offset = end_offset;
-+				break;
-+			}
-+		}
-+
-+		/* Clamp to our query range. */
-+		range_start = max(cur_offset, key_offset);
-+		range_len = min(extent_end, end_offset) - range_start;
-+
-+		memset(&entry, 0, sizeof(entry));
-+		entry.offset = range_start;
-+		entry.length = range_len;
-+
-+		if (extent_type == BTRFS_FILE_EXTENT_INLINE) {
-+			entry.type = BTRFS_GET_CSUMS_NO_CSUMS;
-+			entry_csum_size = 0;
-+		} else if (extent_type == BTRFS_FILE_EXTENT_PREALLOC) {
-+			entry.type = BTRFS_GET_CSUMS_SPARSE;
-+			entry_csum_size = 0;
-+		} else {
-+			/* BTRFS_FILE_EXTENT_REG */
-+			if (disk_bytenr == 0) {
-+				/* Explicit hole. */
-+				entry.type = BTRFS_GET_CSUMS_SPARSE;
-+				entry_csum_size = 0;
-+			} else if (compression != BTRFS_COMPRESS_NONE) {
-+				entry.type = BTRFS_GET_CSUMS_NO_CSUMS;
-+				entry_csum_size = 0;
-+			} else {
-+				entry.type = BTRFS_GET_CSUMS_HAS_CSUMS;
-+				entry_csum_size = (range_len >> fs_info->sectorsize_bits) * csum_size;
-+			}
-+		}
-+
-+		/* Check if this entry (+ csum data) fits in the buffer. */
-+		if (buf_used + sizeof(entry) + entry_csum_size > buf_limit) {
-+			if (buf_used == 0) {
-+				ret = -EOVERFLOW;
-+				goto out_unlock;
-+			}
-+			goto done;
-+		}
-+
-+		if (copy_to_user(ubuf + buf_used, &entry, sizeof(entry))) {
-+			ret = -EFAULT;
-+			goto out_unlock;
-+		}
-+		buf_used += sizeof(entry);
-+
-+		if (entry.type == BTRFS_GET_CSUMS_HAS_CSUMS) {
-+			ret = copy_csums_to_user(fs_info,
-+				disk_bytenr + extent_offset + (range_start - key_offset),
-+				range_len, ubuf + buf_used);
-+			if (ret)
-+				goto out_unlock;
-+			buf_used += entry_csum_size;
-+		}
-+
-+		cur_offset = range_start + range_len;
-+		prev_extent_end = extent_end;
-+
-+		if (fatal_signal_pending(current)) {
-+			if (buf_used == 0) {
-+				ret = -EINTR;
-+				goto out_unlock;
-+			}
-+			goto done;
-+		}
-+
-+		cond_resched();
-+	}
-+
-+	/* Handle trailing implicit hole. */
-+	if (cur_offset < end_offset) {
-+		struct btrfs_ioctl_get_csums_entry entry = {
-+			.offset = prev_extent_end,
-+			.length = end_offset - prev_extent_end,
-+			.type = BTRFS_GET_CSUMS_SPARSE,
-+		};
-+
-+		if (buf_used + sizeof(entry) <= buf_limit) {
-+			if (copy_to_user(ubuf + buf_used, &entry,
-+					 sizeof(entry))) {
-+				ret = -EFAULT;
-+				goto out_unlock;
-+			}
-+			buf_used += sizeof(entry);
-+			cur_offset = end_offset;
-+		}
-+	}
-+
-+done:
-+	args.offset = cur_offset;
-+	args.length = (cur_offset < end_offset) ? end_offset - cur_offset : 0;
-+	args.buf_size = buf_used;
-+
-+	if (copy_to_user(argp, &args, sizeof(args)))
-+		ret = -EFAULT;
-+
-+out_unlock:
-+	btrfs_inode_unlock(bi, BTRFS_ILOCK_SHARED);
-+	return ret;
-+}
-+
- long btrfs_ioctl(struct file *file, unsigned int
- 		cmd, unsigned long arg)
- {
-@@ -5293,6 +5621,8 @@ long btrfs_ioctl(struct file *file, unsigned int
- #endif
- 	case BTRFS_IOC_SUBVOL_SYNC_WAIT:
- 		return btrfs_ioctl_subvol_sync(fs_info, argp);
-+	case BTRFS_IOC_GET_CSUMS:
-+		return btrfs_ioctl_get_csums(file, argp);
- #ifdef CONFIG_BTRFS_EXPERIMENTAL
- 	case BTRFS_IOC_SHUTDOWN:
- 		return btrfs_ioctl_shutdown(fs_info, arg);
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index 9165154a274d94..db1374c892f825 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -1100,6 +1100,25 @@ enum btrfs_err_code {
- 	BTRFS_ERROR_DEV_RAID1C4_MIN_NOT_MET,
- };
- 
-+/* Types for struct btrfs_ioctl_get_csums_entry::type */
 +#define BTRFS_GET_CSUMS_HAS_CSUMS	0
 +#define BTRFS_GET_CSUMS_SPARSE		1
 +#define BTRFS_GET_CSUMS_NO_CSUMS	2
 +
 +struct btrfs_ioctl_get_csums_entry {
-+	__u64 offset;		/* file offset of this range */
-+	__u64 length;		/* length in bytes */
-+	__u32 type;		/* BTRFS_GET_CSUMS_* type */
-+	__u32 reserved;		/* padding, must be 0 */
++	__u64 offset;
++	__u64 length;
++	__u32 type;
++	__u32 reserved;
 +};
 +
 +struct btrfs_ioctl_get_csums_args {
-+	__u64 offset;		/* in/out: file offset */
-+	__u64 length;		/* in/out: range length */
-+	__u64 buf_size;		/* in/out: buffer capacity / bytes written */
-+	__u8 buf[];		/* out: entries + csum data */
++	__u64 offset;
++	__u64 length;
++	__u64 buf_size;
++	__u8 buf[];
 +};
 +
- /* Flags for IOC_SHUTDOWN, must match XFS_FSOP_GOING_FLAGS_* flags. */
- #define BTRFS_SHUTDOWN_FLAGS_DEFAULT			0x0
- #define BTRFS_SHUTDOWN_FLAGS_LOGFLUSH			0x1
-@@ -1226,6 +1245,8 @@ enum btrfs_err_code {
- 				     struct btrfs_ioctl_encoded_io_args)
- #define BTRFS_IOC_SUBVOL_SYNC_WAIT _IOW(BTRFS_IOCTL_MAGIC, 65, \
- 					struct btrfs_ioctl_subvol_wait)
 +#define BTRFS_IOC_GET_CSUMS _IOWR(BTRFS_IOCTL_MAGIC, 66, \
 +				  struct btrfs_ioctl_get_csums_args)
- 
- /* Shutdown ioctl should follow XFS's interfaces, thus not using btrfs magic. */
- #define BTRFS_IOC_SHUTDOWN	_IOR('X', 125, __u32)
++#endif
++
++/* Get csum_size from FS_INFO ioctl. */
++static int get_csum_size(int fd, uint16_t *csum_size_ret)
++{
++	struct btrfs_ioctl_fs_info_args fi;
++
++	memset(&fi, 0, sizeof(fi));
++	fi.flags = BTRFS_FS_INFO_FLAG_CSUM_INFO;
++
++	if (ioctl(fd, BTRFS_IOC_FS_INFO, &fi) < 0) {
++		perror("BTRFS_IOC_FS_INFO");
++		return -1;
++	}
++
++	*csum_size_ret = fi.csum_size;
++	return 0;
++}
++
++static const char *type_str(uint32_t type)
++{
++	switch (type) {
++	case BTRFS_GET_CSUMS_HAS_CSUMS:
++		return "HAS_CSUMS";
++	case BTRFS_GET_CSUMS_SPARSE:
++		return "SPARSE";
++	case BTRFS_GET_CSUMS_NO_CSUMS:
++		return "NO_CSUMS";
++	default:
++		return "UNKNOWN";
++	}
++}
++
++int main(int argc, char **argv)
++{
++	int fd;
++	uint64_t offset, length;
++	uint64_t buf_size = 64 * 1024;
++	uint16_t csum_size;
++	uint32_t sectorsize;
++	struct btrfs_ioctl_get_csums_args *args;
++	uint64_t pos;
++	int ret = 0;
++
++	if (argc < 4 || argc > 5) {
++		fprintf(stderr,
++			"Usage: %s <file> <offset> <length> [bufsize]\n",
++			argv[0]);
++		return 1;
++	}
++
++	offset = strtoull(argv[2], NULL, 0);
++	length = strtoull(argv[3], NULL, 0);
++	if (argc == 5)
++		buf_size = strtoull(argv[4], NULL, 0);
++
++	fd = open(argv[1], O_RDONLY);
++	if (fd < 0) {
++		perror(argv[1]);
++		return 1;
++	}
++
++	if (get_csum_size(fd, &csum_size) < 0) {
++		ret = 1;
++		goto out;
++	}
++
++	/* Use FIGETBSZ to get the sector size. */
++	if (ioctl(fd, FIGETBSZ, &sectorsize) < 0) {
++		perror("FIGETBSZ");
++		ret = 1;
++		goto out;
++	}
++
++	args = calloc(1, sizeof(*args) + buf_size);
++	if (!args) {
++		perror("calloc");
++		ret = 1;
++		goto out;
++	}
++
++	args->offset = offset;
++	args->length = length;
++	args->buf_size = buf_size;
++
++	if (ioctl(fd, BTRFS_IOC_GET_CSUMS, args) < 0) {
++		fprintf(stderr, "BTRFS_IOC_GET_CSUMS: %s\n", strerror(errno));
++		ret = 1;
++		free(args);
++		goto out;
++	}
++
++	/* Walk the returned entries. */
++	pos = 0;
++
++	while (pos < args->buf_size) {
++		struct btrfs_ioctl_get_csums_entry *entry;
++
++		if (pos + sizeof(*entry) > args->buf_size)
++			break;
++
++		entry = (void *)(args->buf + pos);
++		pos += sizeof(*entry);
++
++		printf("%s %llu %llu",
++		       type_str(entry->type),
++		       (unsigned long long)entry->offset,
++		       (unsigned long long)entry->length);
++
++		if (entry->type == BTRFS_GET_CSUMS_HAS_CSUMS) {
++			uint64_t num_sectors;
++			uint64_t csums_len;
++
++			num_sectors = entry->length / sectorsize;
++			csums_len = num_sectors * csum_size;
++
++			if (pos + csums_len > args->buf_size) {
++				printf(" TRUNCATED\n");
++				break;
++			}
++
++			for (uint64_t s = 0; s < num_sectors; s++) {
++				uint64_t off = pos + s * csum_size;
++
++				printf(" ");
++				if (csum_size <= 8) {
++					for (int16_t b = csum_size - 1; b >= 0; b--)
++						printf("%02x", args->buf[off + b]);
++				} else {
++					for (uint16_t b = 0; b < csum_size; b++)
++						printf("%02x", args->buf[off + b]);
++				}
++			}
++
++			pos += csums_len;
++		}
++
++		printf("\n");
++	}
++
++	printf("remaining %llu %llu\n",
++	       (unsigned long long)args->offset,
++	       (unsigned long long)args->length);
++
++	free(args);
++out:
++	close(fd);
++	return ret;
++}
+diff --git a/tests/btrfs/343 b/tests/btrfs/343
+new file mode 100755
+index 00000000..065dba64
+--- /dev/null
++++ b/tests/btrfs/343
+@@ -0,0 +1,196 @@
++#! /bin/bash
++# SPDX-License-Identifier: GPL-2.0
++# Copyright (c) 2026 Meta Platforms, Inc.  All Rights Reserved.
++#
++# FS QA Test No. 343
++#
++# Test the BTRFS_IOC_GET_CSUMS ioctl which retrieves file checksums.
++#
++# Verifies:
++# 1) Regular data extents return HAS_CSUMS with checksum data
++# 2) Holes return SPARSE
++# 3) Preallocated extents return SPARSE
++# 4) Continuation works when buffer is too small for all entries
++# 5) Identical data produces identical checksums
++# 6) Query range past file data returns SPARSE
++# 7) Checksum values match precomputed values for all algorithms (4k sectorsize)
++#
++. ./common/preamble
++_begin_fstest auto quick ioctl
++
++_require_scratch
++_require_test_program "btrfs_get_csums"
++_require_xfs_io_command "falloc"
++
++_scratch_mkfs >> $seqres.full 2>&1
++_scratch_mount
++
++GET_CSUMS=$here/src/btrfs_get_csums
++blksz=$(_get_block_size $SCRATCH_MNT)
++
++# Check that the kernel supports the ioctl.
++$XFS_IO_PROG -f -c "pwrite -S 0x00 0 ${blksz}" $SCRATCH_MNT/probe >> $seqres.full
++sync
++$GET_CSUMS $SCRATCH_MNT/probe 0 $blksz > /dev/null 2>&1 || \
++	_notrun "kernel does not support BTRFS_IOC_GET_CSUMS"
++rm -f $SCRATCH_MNT/probe
++
++# Helper: print just the entry types from GET_CSUMS output (excluding remaining)
++print_types() {
++	grep -v "^remaining" | awk '{print $1}'
++}
++
++# Helper: check if ioctl completed (remaining length is 0)
++check_complete() {
++	local remaining_len
++	remaining_len=$(grep "^remaining" | awk '{print $3}')
++	[ "$remaining_len" -eq 0 ] && echo "complete" || echo "incomplete"
++}
++
++# Test 1: Regular file with one block of data
++echo "=== Test 1: regular data ==="
++$XFS_IO_PROG -f -c "pwrite -S 0xab 0 ${blksz}" $SCRATCH_MNT/file1 >> $seqres.full
++sync
++output=$($GET_CSUMS $SCRATCH_MNT/file1 0 $blksz)
++echo "$output" >> $seqres.full
++echo "$output" | print_types
++ncsums=$(echo "$output" | head -1 | awk '{print NF - 3}')
++[ "$ncsums" -gt 0 ] && echo "has csums" || echo "no csums"
++echo "$output" | check_complete
++
++# Test 2: File with a hole in the middle
++echo "=== Test 2: hole ==="
++$XFS_IO_PROG -f \
++	-c "pwrite -S 0xbb 0 ${blksz}" \
++	-c "pwrite -S 0xcc $((blksz * 4)) ${blksz}" \
++	$SCRATCH_MNT/file2 >> $seqres.full
++sync
++output=$($GET_CSUMS $SCRATCH_MNT/file2 0 $((blksz * 5)))
++echo "$output" >> $seqres.full
++echo "$output" | print_types
++echo "$output" | check_complete
++
++# Test 3: Preallocated extent
++echo "=== Test 3: prealloc ==="
++$XFS_IO_PROG -f -c "falloc 0 $((blksz * 2))" $SCRATCH_MNT/file3 >> $seqres.full
++sync
++output=$($GET_CSUMS $SCRATCH_MNT/file3 0 $((blksz * 2)))
++echo "$output" >> $seqres.full
++echo "$output" | print_types
++echo "$output" | check_complete
++
++# Test 4: Continuation with small buffer
++# Create a file with a hole [0, 2*blksz) then data [2*blksz, 4*blksz).
++# Query with a 24-byte buffer (fits exactly one entry header, no csum data).
++# The SPARSE entry for the hole needs only 24 bytes, so it fits.
++# Then the following HAS_CSUMS entry won't fit, so the ioctl returns
++# with remaining offset/length pointing past the hole.
++echo "=== Test 4: continuation ==="
++$XFS_IO_PROG -f \
++	-c "pwrite -S 0xee $((blksz * 2)) $((blksz * 2))" \
++	$SCRATCH_MNT/file4 >> $seqres.full
++sync
++output=$($GET_CSUMS $SCRATCH_MNT/file4 0 $((blksz * 4)) 24)
++echo "$output" >> $seqres.full
++echo "$output" | print_types
++echo "$output" | check_complete
++
++# Now call again with a large buffer starting from the remaining offset
++remaining_off=$(echo "$output" | grep "^remaining" | awk '{print $2}')
++remaining_len=$(echo "$output" | grep "^remaining" | awk '{print $3}')
++output2=$($GET_CSUMS $SCRATCH_MNT/file4 $remaining_off $remaining_len)
++echo "$output2" >> $seqres.full
++echo "$output2" | print_types
++echo "$output2" | check_complete
++
++# Test 5: Identical data blocks produce identical checksums
++echo "=== Test 5: csum consistency ==="
++$XFS_IO_PROG -f -c "pwrite -S 0xff 0 ${blksz}" $SCRATCH_MNT/file5a >> $seqres.full
++$XFS_IO_PROG -f -c "pwrite -S 0xff 0 ${blksz}" $SCRATCH_MNT/file5b >> $seqres.full
++sync
++csum_a=$($GET_CSUMS $SCRATCH_MNT/file5a 0 $blksz | head -1 | \
++	awk '{for(i=4;i<=NF;i++) printf $i}')
++csum_b=$($GET_CSUMS $SCRATCH_MNT/file5b 0 $blksz | head -1 | \
++	awk '{for(i=4;i<=NF;i++) printf $i}')
++[ "$csum_a" = "$csum_b" ] && echo "csums match" || echo "csums differ"
++
++# Test 6: Query range past file data returns SPARSE
++echo "=== Test 6: past data ==="
++$XFS_IO_PROG -f -c "pwrite -S 0x11 0 ${blksz}" $SCRATCH_MNT/file6 >> $seqres.full
++sync
++output=$($GET_CSUMS $SCRATCH_MNT/file6 $((blksz * 10)) $blksz)
++echo "$output" >> $seqres.full
++echo "$output" | print_types
++echo "$output" | check_complete
++
++# Test 7: Verify checksum values against precomputed values for all algorithms.
++# Uses explicit -s 4096 as the expected values are precomputed for 4096-byte
++# sectors. Write three sectors: all 0x00, all 0xff, all 0xaa.
++echo "=== Test 7: precomputed csums ==="
++_scratch_unmount
++for csum_algo in crc32c xxhash sha256 blake2; do
++	echo "--- $csum_algo ---"
++
++	_scratch_mkfs -s 4096 --csum $csum_algo >> $seqres.full 2>&1
++	_scratch_mount
++
++	case "$csum_algo" in
++	crc32c)
++		expect_00="98f94189"
++		expect_ff="25c1fe13"
++		expect_aa="4ed66b65"
++		;;
++	xxhash)
++		expect_00="ac869b6f32d8bbdb"
++		expect_ff="10af2cb94282321f"
++		expect_aa="e35ac2d66625ceaa"
++		;;
++	sha256)
++		expect_00="ad7facb2586fc6e966c004d7d1d16b024f5805ff7cb47c7a85dabd8b48892ca7"
++		expect_ff="f47a8ec3e9aff2318d896942282ad4fe37d6391c82914f54a5da8a37de1300c6"
++		expect_aa="c622005493c4cb75f3e08eda4cc0bfe172e2c5eeca661ec4908c5490fc3d6994"
++		;;
++	blake2)
++		expect_00="686ede9288c391e7e05026e56f2f91bfd879987a040ea98445dabc76f55b8e5f"
++		expect_ff="1e23d2944a4523734ef9c8b536eed668fa8a99b272bfc10988864e1ef135197d"
++		expect_aa="8337334ce71745681a24e9aa409fdf85fe4081242c39815ccf266df6d33355a2"
++		;;
++	esac
++
++	$XFS_IO_PROG -f \
++		-c "pwrite -S 0x00 0 4096" \
++		-c "pwrite -S 0xff 4096 4096" \
++		-c "pwrite -S 0xaa 8192 4096" \
++		$SCRATCH_MNT/file7 >> $seqres.full
++	sync
++
++	output=$($GET_CSUMS $SCRATCH_MNT/file7 0 12288)
++	echo "$output" >> $seqres.full
++
++	got_csums=$(echo "$output" | grep "^HAS_CSUMS" | \
++		awk '{for(i=4;i<=NF;i++) printf $i " "; print ""}')
++	got_00=$(echo $got_csums | awk '{print $1}')
++	got_ff=$(echo $got_csums | awk '{print $2}')
++	got_aa=$(echo $got_csums | awk '{print $3}')
++
++	pass=true
++	if [ "$got_00" != "$expect_00" ]; then
++		echo "FAIL: 0x00 sector csum $got_00 != $expect_00"
++		pass=false
++	fi
++	if [ "$got_ff" != "$expect_ff" ]; then
++		echo "FAIL: 0xff sector csum $got_ff != $expect_ff"
++		pass=false
++	fi
++	if [ "$got_aa" != "$expect_aa" ]; then
++		echo "FAIL: 0xaa sector csum $got_aa != $expect_aa"
++		pass=false
++	fi
++	$pass && echo "csums verified"
++
++	_scratch_unmount
++done
++
++echo "=== done ==="
++status=0
++exit
+diff --git a/tests/btrfs/343.out b/tests/btrfs/343.out
+new file mode 100644
+index 00000000..85582c24
+--- /dev/null
++++ b/tests/btrfs/343.out
+@@ -0,0 +1,33 @@
++QA output created by 343
++=== Test 1: regular data ===
++HAS_CSUMS
++has csums
++complete
++=== Test 2: hole ===
++HAS_CSUMS
++SPARSE
++HAS_CSUMS
++complete
++=== Test 3: prealloc ===
++SPARSE
++complete
++=== Test 4: continuation ===
++SPARSE
++incomplete
++HAS_CSUMS
++complete
++=== Test 5: csum consistency ===
++csums match
++=== Test 6: past data ===
++SPARSE
++complete
++=== Test 7: precomputed csums ===
++--- crc32c ---
++csums verified
++--- xxhash ---
++csums verified
++--- sha256 ---
++csums verified
++--- blake2 ---
++csums verified
++=== done ===
 -- 
 2.52.0
 

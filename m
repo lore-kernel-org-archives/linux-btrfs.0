@@ -1,142 +1,97 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from stravinsky.debian.org (stravinsky.debian.org [82.195.75.108])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9F00D175A78
-	for <linux-btrfs@vger.kernel.org>; Fri, 20 Mar 2026 17:55:29 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 280643D4122;
+	Fri, 20 Mar 2026 17:57:12 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=82.195.75.108
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774029330; cv=none; b=urjJLtzmuR//3MvbkaRAgBUrye6x7+M8+wfsYODoNbFprUGgXORMnZxcCz4Cske08gmergY3qswFsECbqGfJMcSdOhzCfor7YQDcLkj6ULoLFvVsUeGQUNbigx6VCmfJSc0Iz/WZLlPsvvwZNxDURGCTImAOW81xJZCBwGV4Y9E=
+	t=1774029433; cv=none; b=jpXwTxCljIwjc2c+VHZ1wg+POtPoAmyUuBR5GdM+1Trpk4Ik6roaXadK2+HiCSugMJJ2keqBYGxhF1n/DEl9vIPfj3llJVd8EkIdQ1tpE3Fq7++HTz8X8Zntli1TYPi040iPa7/jw2Y5KKSxhwRgX63B1zrkkXzZs1zxE7RjPsI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774029330; c=relaxed/simple;
-	bh=nm4EZB/jjixJTzOYTjCNeAiYC3Cla4SutPL4iW+WGBM=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=X3pj/elO/hNh3WLhB5LQXc5mH2m7LU7+FxiNLDpllOBj1rq1HWznwz6me75hjX0uZ0hK+R3Y95gol1bTD4vsLvdKOai94VPGxOTeGbmuMU2P18Mjw6jEB7bVKBghU+EXq6YsgTPfySzHFsYOHiIDYO3S9FRft3zLpzacrCxr89A=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=3JRG7AMg; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=Nvp+6tW5; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=3JRG7AMg; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=Nvp+6tW5; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	s=arc-20240116; t=1774029433; c=relaxed/simple;
+	bh=XXjsLSCYrZPoSfx1FEQORAbrzU8ErrlZmhCUMONwZuM=;
+	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
+	 In-Reply-To:To:Cc; b=L+M3VHF3Zlpi/whv5DOeK827+h4HSv2MWN4ZdOepKMW6FiYwngQN4TNYwWA9jsejz3G4UUngAajJdm546YINdju86xKLo3qVpvyao6RTb5dia5g8JWvuDh+EQyW7bnctNgw2tIyuSqa1/eP2IjKThpz9pyqohRB0LMyTkB4zm2A=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=debian.org; spf=none smtp.mailfrom=debian.org; dkim=pass (2048-bit key) header.d=debian.org header.i=@debian.org header.b=W3M2t/RK; arc=none smtp.client-ip=82.195.75.108
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=debian.org
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=debian.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="3JRG7AMg";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="Nvp+6tW5";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="3JRG7AMg";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="Nvp+6tW5"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id ACD835BE0E;
-	Fri, 20 Mar 2026 17:55:27 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1774029327;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=sqHbRBnOJZ9MASadKFSaJWmQzM/cmsIWZ8vyqcj80PY=;
-	b=3JRG7AMgpj6JK+YSTiT2tb8+xRwWYu9KrebNXc2epSARy+chy8ws/f7+glUcD8fbcZpQYb
-	TFrE5cVfkBb7qqkqPY+AN53qUtF3ojrEcOqmpQUQAcpVmDFUKgPY4LOtPxket0XMU88LQC
-	J7ixVDKpi+rmrtURuKJ3ItD3lcVKVy8=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1774029327;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=sqHbRBnOJZ9MASadKFSaJWmQzM/cmsIWZ8vyqcj80PY=;
-	b=Nvp+6tW5vz/s9PfdHcsDHDX1BeQaFswlUrqFjzHKeRbFmvvdhGzr06YgZ8nxATq5QAHDd3
-	deBhD7TWfAYOHmDw==
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b=3JRG7AMg;
-	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=Nvp+6tW5
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1774029327;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=sqHbRBnOJZ9MASadKFSaJWmQzM/cmsIWZ8vyqcj80PY=;
-	b=3JRG7AMgpj6JK+YSTiT2tb8+xRwWYu9KrebNXc2epSARy+chy8ws/f7+glUcD8fbcZpQYb
-	TFrE5cVfkBb7qqkqPY+AN53qUtF3ojrEcOqmpQUQAcpVmDFUKgPY4LOtPxket0XMU88LQC
-	J7ixVDKpi+rmrtURuKJ3ItD3lcVKVy8=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1774029327;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=sqHbRBnOJZ9MASadKFSaJWmQzM/cmsIWZ8vyqcj80PY=;
-	b=Nvp+6tW5vz/s9PfdHcsDHDX1BeQaFswlUrqFjzHKeRbFmvvdhGzr06YgZ8nxATq5QAHDd3
-	deBhD7TWfAYOHmDw==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 8AAC242914;
-	Fri, 20 Mar 2026 17:55:27 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 8mgHIQ+KvWmeEQAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Fri, 20 Mar 2026 17:55:27 +0000
-Date: Fri, 20 Mar 2026 18:55:26 +0100
-From: David Sterba <dsterba@suse.cz>
-To: "JP Kobryn (Meta)" <jp.kobryn@linux.dev>
-Cc: boris@bur.io, mark@harmstone.com, clm@fb.com, wqu@suse.com,
-	dsterba@suse.com, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org, linux-team@meta.com
-Subject: Re: [PATCH 1/2] btrfs: additional gfp api for allocating compressed
- folios
-Message-ID: <20260320175526.GF5735@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20260320073445.80218-1-jp.kobryn@linux.dev>
- <20260320073445.80218-2-jp.kobryn@linux.dev>
+	dkim=pass (2048-bit key) header.d=debian.org header.i=@debian.org header.b="W3M2t/RK"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=debian.org;
+	s=smtpauto.stravinsky; h=X-Debian-User:Cc:To:In-Reply-To:References:
+	Message-Id:Content-Transfer-Encoding:Content-Type:MIME-Version:Subject:Date:
+	From:Reply-To:Content-ID:Content-Description;
+	bh=Do267e3m31nTWEqviEIHaZrA779qGfFHwdpybFhU3lQ=; b=W3M2t/RKTspkygxR/jUYXC6347
+	3H8klbHTJcmSOooRBpb3msP3ug/h9/qNXyJ/+Dd166veelnSZM2MVC+UwUabULNA1h1ubM0XKZ8+j
+	t5lxJnmjcMIOeidaxuY0yEZRlrYr2PqTNk4Ct/4IVpjtbu2g63mVPYtJr9uiAdZgqUKJCXj+vSL2i
+	fDDUP7+0PbpmWyY7tq6EL0knJCr9gCObi8AEQLK0PccyUA0d4nQkne3Mn8TWGniv1K3yyv45fQfyx
+	yjfx8fSPUn9UXfJdv+YjzCXFNOAcuz4OMz5+geyTwynH6UMCjuINaoG/P1YXsSN3HqjGmTvBLS45H
+	bSACarhA==;
+Received: from authenticated user
+	by stravinsky.debian.org with esmtpsa (TLS1.3:ECDHE_X25519__RSA_PSS_RSAE_SHA256__AES_256_GCM:256)
+	(Exim 4.94.2)
+	(envelope-from <leitao@debian.org>)
+	id 1w3e5u-005Nf3-5c; Fri, 20 Mar 2026 17:57:09 +0000
+From: Breno Leitao <leitao@debian.org>
+Date: Fri, 20 Mar 2026 10:56:27 -0700
+Subject: [PATCH v2 1/5] workqueue: fix typo in WQ_AFFN_SMT comment
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20260320073445.80218-2-jp.kobryn@linux.dev>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Rspamd-Action: no action
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Spamd-Result: default: False [-4.21 / 50.00];
-	BAYES_HAM(-3.00)[99.99%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	ARC_NA(0.00)[];
-	REPLYTO_DOM_NEQ_TO_DOM(0.00)[];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	TO_DN_SOME(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	RCPT_COUNT_SEVEN(0.00)[9];
-	RCVD_TLS_ALL(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	DKIM_TRACE(0.00)[suse.cz:+]
-X-Rspamd-Queue-Id: ACD835BE0E
-X-Spam-Flag: NO
-X-Spam-Score: -4.21
-X-Spam-Level: 
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+Message-Id: <20260320-workqueue_sharded-v2-1-8372930931af@debian.org>
+References: <20260320-workqueue_sharded-v2-0-8372930931af@debian.org>
+In-Reply-To: <20260320-workqueue_sharded-v2-0-8372930931af@debian.org>
+To: Tejun Heo <tj@kernel.org>, Lai Jiangshan <jiangshanlai@gmail.com>, 
+ Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-kernel@vger.kernel.org, puranjay@kernel.org, 
+ linux-crypto@vger.kernel.org, linux-btrfs@vger.kernel.org, 
+ linux-fsdevel@vger.kernel.org, Michael van der Westhuizen <rmikey@meta.com>, 
+ kernel-team@meta.com, Chuck Lever <chuck.lever@oracle.com>, 
+ Breno Leitao <leitao@debian.org>
+X-Mailer: b4 0.15-dev-363b9
+X-Developer-Signature: v=1; a=openpgp-sha256; l=761; i=leitao@debian.org;
+ h=from:subject:message-id; bh=XXjsLSCYrZPoSfx1FEQORAbrzU8ErrlZmhCUMONwZuM=;
+ b=owEBbQKS/ZANAwAIATWjk5/8eHdtAcsmYgBpvYpr25bOynY+Sr+/qvB3irCHLXQG5E8n1SlHw
+ e/7zJZAAmuJAjMEAAEIAB0WIQSshTmm6PRnAspKQ5s1o5Of/Hh3bQUCab2KawAKCRA1o5Of/Hh3
+ bdmhD/9NNH/ic6E0JuRUopxRmmavQF1wA/Ne5iqTU9PwVx37zFLnkORYeLafo9hTq7Xi12CnZfi
+ bMhK0bAETDdd+n4+PqX5/zTru87IWlfilteloyuB8CEtYS/wlyTkem4Qtn33L44gECpH1fVsW+K
+ e6lwW+kPu67z0SdKeWWwc6ItXcOsPqfBWP5aaxv3xjIG4IcREsS+5dcyhlC7FWIu4lqCBqhEO4o
+ r6s5i4cEDd09e/nmNomcuvs0Lukkzi68B2bXDlT6mwlDFGzUV0KuZHY4Lwi4UGc+5X/2qqUQyzz
+ oaWB5qPuwMXvWtVUrTv6B5/IhXu4gLVXu8X2FWHIvVAVsq7yv3hMJF+HB2+l+uRa0wGsiml9Zfx
+ QiD4ZZdj4JZQqWaPdCa6kETJuxNw1fib4/VYPvSzXFfBhthhNM5TjBCCtiJuxK0bL1FMpB8TU6m
+ OiFDqUtAyvbxW1WhWO4nsS8DwbigR+QT4edZI2dUCbTn6a/JRwMepqfSDxb/BgVOgF+FJa/10hy
+ a0A90tk05WPnNcIdc4JC1mNRDW+f0GyAn4F2m3P0Pe/gL9pR4hzDGjpQQD2tf7LGN9LKsRlE9tp
+ Za9hXRKgJjC/GRk31vn8uCfkmIL+TQHJjKyt9zD5+0UKpvkmzkQ00jh+aG7PuULWBo0o221+4xU
+ w5H5loLnCYUeO+A==
+X-Developer-Key: i=leitao@debian.org; a=openpgp;
+ fpr=AC8539A6E8F46702CA4A439B35A3939FFC78776D
+X-Debian-User: leitao
 
-On Fri, Mar 20, 2026 at 12:34:44AM -0700, JP Kobryn (Meta) wrote:
-> btrfs_alloc_compr_folio() assumes all callers want GFP_NOFS. This is fine
-> for most cases, however there are some call sites that would benefit from
-> different flags. One such case is preventing direct reclaim from occurring
-> during readahead allocations. With unbounded reclaim during this time,
-> noticeable latency will occur under high memory pressure.
-> 
-> Provide an additional API that accepts one additional gfp_t parameter,
-> giving callers flexibility over the characteristics of their allocation.
+Fix "poer" -> "per" in the WQ_AFFN_SMT enum comment.
 
-If you still need to set the gfp flags in v2, please drop this patch and
-extend btrfs_alloc_compr_folio(), the API is internal and we don't need
-it fine grained.
+Signed-off-by: Breno Leitao <leitao@debian.org>
+---
+ include/linux/workqueue.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/linux/workqueue.h b/include/linux/workqueue.h
+index a4749f56398fd..17543aec2a6e1 100644
+--- a/include/linux/workqueue.h
++++ b/include/linux/workqueue.h
+@@ -131,7 +131,7 @@ struct rcu_work {
+ enum wq_affn_scope {
+ 	WQ_AFFN_DFL,			/* use system default */
+ 	WQ_AFFN_CPU,			/* one pod per CPU */
+-	WQ_AFFN_SMT,			/* one pod poer SMT */
++	WQ_AFFN_SMT,			/* one pod per SMT */
+ 	WQ_AFFN_CACHE,			/* one pod per LLC */
+ 	WQ_AFFN_NUMA,			/* one pod per NUMA node */
+ 	WQ_AFFN_SYSTEM,			/* one pod across the whole system */
+
+-- 
+2.52.0
+

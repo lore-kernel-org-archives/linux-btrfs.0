@@ -1,37 +1,37 @@
 Received: from mail.burntcomma.com (mail2.burntcomma.com [217.169.27.34])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0DF1C3803DC;
-	Fri, 20 Mar 2026 11:11:31 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 532D639DBE3;
+	Fri, 20 Mar 2026 11:14:51 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=217.169.27.34
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774005094; cv=none; b=etMFzSIRBOs4ivy7oBoQN2AOg7NBuTPUmn6908JRE0mdnqqPtHo/TNEBFcxjqwhk/Sp72K26Io63llMVZ3zRwm0aFMDkkBEI3jbAkjxa2ZZMTEuoe16xh6PzFUuZDJ19pxdfr+yzFS2qBuA0eDejxZfg4b3S3obgMObJ8sFtGwg=
+	t=1774005292; cv=none; b=I0GlOqeviECKHub+3IvRTgmhTeeaCSPVS5rA+tf7EojOEZyoK7W8ikN/BeyEJ71eXeF9mPuXrjOqn2lo0Fax90arJ4cf92QQ3zQFj8pbf5hbio0n5Ro3wcp4ZwH5kii2b2YR+rlULjOc6Sdp96wQyrJs3qDYwWkylvw0t7/2NKw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774005094; c=relaxed/simple;
-	bh=mLF2InYoR/2IH/KNsj8z1MjUfekGNIg/qaT6QrcdARE=;
+	s=arc-20240116; t=1774005292; c=relaxed/simple;
+	bh=lUe0AcsrhAVKVgfwuiF2nNAVyDKWVFoqNDeLJLhnvQw=;
 	h=Message-ID:Date:Mime-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=oYrjwDn1HrnZ3mgXkAsN1qfx2I6lRNMuVhzGf8QyNz7aPTOoo3jlc+NRwqEeFulxlmUEGKag5j1iHuxphlB6wDg5p5+y1oTwFIou6PE52KnzuNIWgxMq8H7W+vDr+chpqwBRGspd6zN2185kk1teY5PKutWzycTRMUMWRjVPeIM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com; spf=pass smtp.mailfrom=harmstone.com; dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b=CAkXr6Bx; arc=none smtp.client-ip=217.169.27.34
+	 In-Reply-To:Content-Type; b=C+0XR6VWZcnaWcoSb9uusWaZQ6tRu31FMRRCtzpmXOxPBMj/uUjut7VsKvVMWe98OneSUX/EQtEI5KIY4xq7k59369T0mRDNZUGyYaUZtYxNmDtDPoN8CHOYQGy79XfttPGGyqA+h+/e3leEf3WIPdjolA2gAFbcnk7CSv6NcE0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com; spf=pass smtp.mailfrom=harmstone.com; dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b=tivsofr9; arc=none smtp.client-ip=217.169.27.34
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=harmstone.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b="CAkXr6Bx"
+	dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b="tivsofr9"
 Received: from [IPV6:2a02:8012:8cf0:0:ce28:aaff:fe0d:6db2] (beren.burntcomma.com [IPv6:2a02:8012:8cf0:0:ce28:aaff:fe0d:6db2])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256
 	 client-signature RSA-PSS (2048 bits) client-digest SHA256)
 	(Client CN "hellas", Issuer "burntcomma.com" (verified OK))
-	by mail.burntcomma.com (Postfix) with ESMTPS id C59BD312554;
-	Fri, 20 Mar 2026 11:11:29 +0000 (GMT)
+	by mail.burntcomma.com (Postfix) with ESMTPS id A7D8531255E;
+	Fri, 20 Mar 2026 11:14:48 +0000 (GMT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=harmstone.com;
-	s=mail; t=1774005089;
-	bh=pj8gc2gnpxLeGQOemUyQm0N1tt6PPqhL5jZWcDzcK88=;
+	s=mail; t=1774005288;
+	bh=q+F9hCW0vBpqwe50d8+VmLKxBJHOAX/VML+Vd8jCgCc=;
 	h=Date:Subject:To:Cc:References:From:In-Reply-To;
-	b=CAkXr6BxLkBjr7rCOaNa+SS0Z1KvuMMYvRMqSHz0sFfHllSexl8Pcr5gmvZzDWxmc
-	 EPuiZ/owyrdgmm12Xn2SV+LYqKQlsP2XYF8x7ZYGC+mIAusMwGrnKjR7H4hON8gJyV
-	 JNID6QJdSOjsYE1AgA3RhJJNkGAR3Qik4+As2aMs=
-Message-ID: <ad2fa42b-816a-4d9f-aed2-00f506013558@harmstone.com>
-Date: Fri, 20 Mar 2026 11:11:29 +0000
+	b=tivsofr9Mtw0xqbNawzVV03o42XtsX0/TWdVUscghJcVjMBWMKvmtV+Ati6sImtkX
+	 7kU5vzFwab/1yMHA6oXcyCiSGYyB5fQO7T1jzAes7n3RjzLqH8MR/VpNfJJNnleQeu
+	 Z/flxonIY8/r0Flix/n35oincFaK/V9HfMwrOoGM=
+Message-ID: <60096e1c-dad1-474c-808f-f51f09d07117@harmstone.com>
+Date: Fri, 20 Mar 2026 11:14:48 +0000
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -40,11 +40,12 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 Mime-Version: 1.0
 Subject: Re: [PATCH 2/2] btrfs: prevent direct reclaim during compressed
  readahead
-To: "JP Kobryn (Meta)" <jp.kobryn@linux.dev>, boris@bur.io, clm@fb.com,
- wqu@suse.com, dsterba@suse.com, linux-btrfs@vger.kernel.org
+To: Qu Wenruo <wqu@suse.com>, "JP Kobryn (Meta)" <jp.kobryn@linux.dev>,
+ boris@bur.io, clm@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org
 Cc: linux-kernel@vger.kernel.org, linux-team@meta.com
 References: <20260320073445.80218-1-jp.kobryn@linux.dev>
  <20260320073445.80218-3-jp.kobryn@linux.dev>
+ <0585bdae-de5b-4aaa-bb0c-4bbe0c2fca89@suse.com>
 Content-Language: en-US
 From: Mark Harmstone <mark@harmstone.com>
 Autocrypt: addr=mark@harmstone.com; keydata=
@@ -77,128 +78,167 @@ Autocrypt: addr=mark@harmstone.com; keydata=
  6bZCBtwr/O+CwVVqWRzKDQgVo4t1xk2ts1F0R1uHHLsX7mIgfXBYdo/y4UgFBAJH5NYUcBR+
  QQcOgUUZeF2MC9i0oUaHJOIuuN2q+m9eMpnJdxVKAUQcZxDDvNjZwZh+ejsgG4Ejd2XR/T0y
  XFoR/dLFIhf2zxRylN1xq27M9P2t1xfQFocuYToPsVk=
-In-Reply-To: <20260320073445.80218-3-jp.kobryn@linux.dev>
+In-Reply-To: <0585bdae-de5b-4aaa-bb0c-4bbe0c2fca89@suse.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
 
-Reviewed-by: Mark Harmstone <mark@harmstone.com>
+On 20/03/2026 10.12 am, Qu Wenruo wrote:
+> 
+> 
+> 在 2026/3/20 18:04, JP Kobryn (Meta) 写道:
+>> Prevent direct reclaim during compressed readahead. This is achieved by
+>> passing specific GFP flags whenever the bio is marked for readahead. The
+>> flags are similar to GFP_NOFS but stripped of __GFP_DIRECT_RECLAIM. Also,
+>> __GFP_NOWARN is added since these allocations are allowed to fail. Demand
+>> reads still use full GFP_NOFS and will enter reclaim if needed.
+> 
+> I believe it will be more convincing to explain why the current gfp 
+> flags is going to cause the problem you mentioned in the cover letter.
+> 
+>>
+>> btrfs_submit_compressed_read() now makes use of the new gfp_t API for
+>> allocations within. Since non-readahead code may call this function, the
+>> bio flags are inspected to determine whether direct reclaim should be
+>> restricted or not.
+>>
+>> add_ra_bio_pages() gains a bool parameter which allows callers to specify
+>> if they want to allow direct reclaim or not. In either case, the NOWARN
+>> flag was added unconditionally since the allocations are speculative.
+> 
+> After reading the code, I have a feeling that, we shouldn't act on the 
+> behalf of MM layer to add the next few folios into the page cache.
 
-On 20/03/2026 7.34 am, JP Kobryn (Meta) wrote:
-> Prevent direct reclaim during compressed readahead. This is achieved by
-> passing specific GFP flags whenever the bio is marked for readahead. The
-> flags are similar to GFP_NOFS but stripped of __GFP_DIRECT_RECLAIM. Also,
-> __GFP_NOWARN is added since these allocations are allowed to fail. Demand
-> reads still use full GFP_NOFS and will enter reclaim if needed.
+Your idea might have merit, but this is a quick fix for a problem that 
+JP has seen in production. Reworking the whole thing might be the 
+ultimate solution, but that's much riskier, and will take more testing, 
+than the proposed change.
+
+> On the other hand, with the incoming large folios, we will completely 
+> skip the readahead for large folios.
 > 
-> btrfs_submit_compressed_read() now makes use of the new gfp_t API for
-> allocations within. Since non-readahead code may call this function, the
-> bio flags are inspected to determine whether direct reclaim should be
-> restricted or not.
+> I know this is not optimal as the next few folios may still belong to 
+> the same compressed extent and will cause re-read and re-decompression.
 > 
-> add_ra_bio_pages() gains a bool parameter which allows callers to specify
-> if they want to allow direct reclaim or not. In either case, the NOWARN
-> flag was added unconditionally since the allocations are speculative.
+> Thus I'm wondering, for your specific workload, will disabling 
+> compressed ra completely and fully rely on large folios help?
 > 
-> Signed-off-by: JP Kobryn (Meta) <jp.kobryn@linux.dev>
-> ---
->   fs/btrfs/compression.c | 33 ++++++++++++++++++++++++++++-----
->   1 file changed, 28 insertions(+), 5 deletions(-)
+> If the performance is acceptable, I'd prefer to disable compressed 
+> readahead completely and rely on large folios instead.
 > 
-> diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-> index ae9cb5b7676c..f32cfc933bee 100644
-> --- a/fs/btrfs/compression.c
-> +++ b/fs/btrfs/compression.c
-> @@ -372,7 +372,8 @@ struct compressed_bio *btrfs_alloc_compressed_write(struct btrfs_inode *inode,
->   static noinline int add_ra_bio_pages(struct inode *inode,
->   				     u64 compressed_end,
->   				     struct compressed_bio *cb,
-> -				     int *memstall, unsigned long *pflags)
-> +				     int *memstall, unsigned long *pflags,
-> +				     bool direct_reclaim)
->   {
->   	struct btrfs_fs_info *fs_info = inode_to_fs_info(inode);
->   	pgoff_t end_index;
-> @@ -380,6 +381,7 @@ static noinline int add_ra_bio_pages(struct inode *inode,
->   	u64 cur = cb->orig_bbio->file_offset + orig_bio->bi_iter.bi_size;
->   	u64 isize = i_size_read(inode);
->   	int ret;
-> +	gfp_t constraint_gfp, cache_gfp;
->   	struct folio *folio;
->   	struct extent_map *em;
->   	struct address_space *mapping = inode->i_mapping;
-> @@ -409,6 +411,14 @@ static noinline int add_ra_bio_pages(struct inode *inode,
->   
->   	end_index = (i_size_read(inode) - 1) >> PAGE_SHIFT;
->   
-> +	if (!direct_reclaim) {
-> +		constraint_gfp = ~(__GFP_FS | __GFP_DIRECT_RECLAIM);
-> +		cache_gfp = (GFP_NOFS & ~__GFP_DIRECT_RECLAIM) | __GFP_NOWARN;
-> +	} else {
-> +		constraint_gfp = ~__GFP_FS;
-> +		cache_gfp = GFP_NOFS | __GFP_NOWARN;
-> +	}
-> +
->   	while (cur < compressed_end) {
->   		pgoff_t page_end;
->   		pgoff_t pg_index = cur >> PAGE_SHIFT;
-> @@ -438,12 +448,13 @@ static noinline int add_ra_bio_pages(struct inode *inode,
->   			continue;
->   		}
->   
-> -		folio = filemap_alloc_folio(mapping_gfp_constraint(mapping, ~__GFP_FS),
-> +		folio = filemap_alloc_folio(mapping_gfp_constraint(mapping,
-> +					    constraint_gfp) | __GFP_NOWARN,
->   					    0, NULL);
->   		if (!folio)
->   			break;
->   
-> -		if (filemap_add_folio(mapping, folio, pg_index, GFP_NOFS)) {
-> +		if (filemap_add_folio(mapping, folio, pg_index, cache_gfp)) {
->   			/* There is already a page, skip to page end */
->   			cur += folio_size(folio);
->   			folio_put(folio);
-> @@ -536,6 +547,7 @@ void btrfs_submit_compressed_read(struct btrfs_bio *bbio)
->   	unsigned int compressed_len;
->   	const u32 min_folio_size = btrfs_min_folio_size(fs_info);
->   	u64 file_offset = bbio->file_offset;
-> +	gfp_t gfp;
->   	u64 em_len;
->   	u64 em_start;
->   	struct extent_map *em;
-> @@ -543,6 +555,17 @@ void btrfs_submit_compressed_read(struct btrfs_bio *bbio)
->   	int memstall = 0;
->   	int ret;
->   
-> +	/*
-> +	 * If this is a readahead bio, prevent direct reclaim. This is done to
-> +	 * avoid stalling on speculative allocations when memory pressure is
-> +	 * high. The demand fault will retry with GFP_NOFS and enter direct
-> +	 * reclaim if needed.
-> +	 */
-> +	if (bbio->bio.bi_opf & REQ_RAHEAD)
-> +		gfp = (GFP_NOFS & ~__GFP_DIRECT_RECLAIM) | __GFP_NOWARN;
-> +	else
-> +		gfp = GFP_NOFS;
-> +
->   	/* we need the actual starting offset of this extent in the file */
->   	read_lock(&em_tree->lock);
->   	em = btrfs_lookup_extent_mapping(em_tree, file_offset, fs_info->sectorsize);
-> @@ -573,7 +596,7 @@ void btrfs_submit_compressed_read(struct btrfs_bio *bbio)
->   		struct folio *folio;
->   		u32 cur_len = min(compressed_len - i * min_folio_size, min_folio_size);
->   
-> -		folio = btrfs_alloc_compr_folio(fs_info);
-> +		folio = btrfs_alloc_compr_folio_gfp(fs_info, gfp);
->   		if (!folio) {
->   			ret = -ENOMEM;
->   			goto out_free_bio;
-> @@ -589,7 +612,7 @@ void btrfs_submit_compressed_read(struct btrfs_bio *bbio)
->   	ASSERT(cb->bbio.bio.bi_iter.bi_size == compressed_len);
->   
->   	add_ra_bio_pages(&inode->vfs_inode, em_start + em_len, cb, &memstall,
-> -			 &pflags);
-> +			 &pflags, !(bbio->bio.bi_opf & REQ_RAHEAD));
->   
->   	cb->len = bbio->bio.bi_iter.bi_size;
->   	cb->bbio.bio.bi_iter.bi_sector = bbio->bio.bi_iter.bi_sector;
+> (Now I understand why other fses with compression support is completely 
+> relying on fixed IO size)
+> 
+> Thanks,
+> Qu
+> 
+> 
+>>
+>> Signed-off-by: JP Kobryn (Meta) <jp.kobryn@linux.dev>
+>> ---
+>>   fs/btrfs/compression.c | 33 ++++++++++++++++++++++++++++-----
+>>   1 file changed, 28 insertions(+), 5 deletions(-)
+>>
+>> diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+>> index ae9cb5b7676c..f32cfc933bee 100644
+>> --- a/fs/btrfs/compression.c
+>> +++ b/fs/btrfs/compression.c
+>> @@ -372,7 +372,8 @@ struct compressed_bio 
+>> *btrfs_alloc_compressed_write(struct btrfs_inode *inode,
+>>   static noinline int add_ra_bio_pages(struct inode *inode,
+>>                        u64 compressed_end,
+>>                        struct compressed_bio *cb,
+>> -                     int *memstall, unsigned long *pflags)
+>> +                     int *memstall, unsigned long *pflags,
+>> +                     bool direct_reclaim)
+>>   {
+>>       struct btrfs_fs_info *fs_info = inode_to_fs_info(inode);
+>>       pgoff_t end_index;
+>> @@ -380,6 +381,7 @@ static noinline int add_ra_bio_pages(struct inode 
+>> *inode,
+>>       u64 cur = cb->orig_bbio->file_offset + orig_bio->bi_iter.bi_size;
+>>       u64 isize = i_size_read(inode);
+>>       int ret;
+>> +    gfp_t constraint_gfp, cache_gfp;
+>>       struct folio *folio;
+>>       struct extent_map *em;
+>>       struct address_space *mapping = inode->i_mapping;
+>> @@ -409,6 +411,14 @@ static noinline int add_ra_bio_pages(struct inode 
+>> *inode,
+>>       end_index = (i_size_read(inode) - 1) >> PAGE_SHIFT;
+>> +    if (!direct_reclaim) {
+>> +        constraint_gfp = ~(__GFP_FS | __GFP_DIRECT_RECLAIM);
+>> +        cache_gfp = (GFP_NOFS & ~__GFP_DIRECT_RECLAIM) | __GFP_NOWARN;
+>> +    } else {
+>> +        constraint_gfp = ~__GFP_FS;
+>> +        cache_gfp = GFP_NOFS | __GFP_NOWARN;
+>> +    }
+>> +
+>>       while (cur < compressed_end) {
+>>           pgoff_t page_end;
+>>           pgoff_t pg_index = cur >> PAGE_SHIFT;
+>> @@ -438,12 +448,13 @@ static noinline int add_ra_bio_pages(struct 
+>> inode *inode,
+>>               continue;
+>>           }
+>> -        folio = filemap_alloc_folio(mapping_gfp_constraint(mapping, 
+>> ~__GFP_FS),
+>> +        folio = filemap_alloc_folio(mapping_gfp_constraint(mapping,
+>> +                        constraint_gfp) | __GFP_NOWARN,
+>>                           0, NULL);
+>>           if (!folio)
+>>               break;
+>> -        if (filemap_add_folio(mapping, folio, pg_index, GFP_NOFS)) {
+>> +        if (filemap_add_folio(mapping, folio, pg_index, cache_gfp)) {
+>>               /* There is already a page, skip to page end */
+>>               cur += folio_size(folio);
+>>               folio_put(folio);
+>> @@ -536,6 +547,7 @@ void btrfs_submit_compressed_read(struct btrfs_bio 
+>> *bbio)
+>>       unsigned int compressed_len;
+>>       const u32 min_folio_size = btrfs_min_folio_size(fs_info);
+>>       u64 file_offset = bbio->file_offset;
+>> +    gfp_t gfp;
+>>       u64 em_len;
+>>       u64 em_start;
+>>       struct extent_map *em;
+>> @@ -543,6 +555,17 @@ void btrfs_submit_compressed_read(struct 
+>> btrfs_bio *bbio)
+>>       int memstall = 0;
+>>       int ret;
+>> +    /*
+>> +     * If this is a readahead bio, prevent direct reclaim. This is 
+>> done to
+>> +     * avoid stalling on speculative allocations when memory pressure is
+>> +     * high. The demand fault will retry with GFP_NOFS and enter direct
+>> +     * reclaim if needed.
+>> +     */
+>> +    if (bbio->bio.bi_opf & REQ_RAHEAD)
+>> +        gfp = (GFP_NOFS & ~__GFP_DIRECT_RECLAIM) | __GFP_NOWARN;
+>> +    else
+>> +        gfp = GFP_NOFS;
+>> +
+>>       /* we need the actual starting offset of this extent in the file */
+>>       read_lock(&em_tree->lock);
+>>       em = btrfs_lookup_extent_mapping(em_tree, file_offset, fs_info- 
+>> >sectorsize);
+>> @@ -573,7 +596,7 @@ void btrfs_submit_compressed_read(struct btrfs_bio 
+>> *bbio)
+>>           struct folio *folio;
+>>           u32 cur_len = min(compressed_len - i * min_folio_size, 
+>> min_folio_size);
+>> -        folio = btrfs_alloc_compr_folio(fs_info);
+>> +        folio = btrfs_alloc_compr_folio_gfp(fs_info, gfp);
+>>           if (!folio) {
+>>               ret = -ENOMEM;
+>>               goto out_free_bio;
+>> @@ -589,7 +612,7 @@ void btrfs_submit_compressed_read(struct btrfs_bio 
+>> *bbio)
+>>       ASSERT(cb->bbio.bio.bi_iter.bi_size == compressed_len);
+>>       add_ra_bio_pages(&inode->vfs_inode, em_start + em_len, cb, 
+>> &memstall,
+>> -             &pflags);
+>> +             &pflags, !(bbio->bio.bi_opf & REQ_RAHEAD));
+>>       cb->len = bbio->bio.bi_iter.bi_size;
+>>       cb->bbio.bio.bi_iter.bi_sector = bbio->bio.bi_iter.bi_sector;
+> 
 

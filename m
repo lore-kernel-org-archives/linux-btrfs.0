@@ -1,41 +1,66 @@
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.21])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wm1-f42.google.com (mail-wm1-f42.google.com [209.85.128.42])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AE15937416A
-	for <linux-btrfs@vger.kernel.org>; Fri, 20 Mar 2026 22:18:51 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.17.21
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9B22B3783D6
+	for <linux-btrfs@vger.kernel.org>; Fri, 20 Mar 2026 22:27:01 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.42
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774045134; cv=none; b=Q10ayF7rxm1UNNHY9esyYqCJTTFVF78e1aoyiVlKTNcvwRvef6ysbQf2CG9CnI4ihiy6/4OkOX0GJ59ASUkLEY0GYD2acjNGrkFGNFon2/skUzgFhfsskbuTmDm76vJMHFT4Auih9fbALxCWRFl4krTEXFhnB89DSe2Kf6GaRtI=
+	t=1774045626; cv=none; b=t2jvpld69ZMtd2Cz8RSV+oH4RWV2gm+POZTral1hbY3gSKZ1x1XJK+TgZNW99/L37mfzDUJqqowSU8k/E0c+q6xE100tzfYHRxotGCV9qy8I6Cr99nRJx677jE7uD+uByyKw2OL8N6s+704ejOwNo303yVyymzmu6VAGYV/93QA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774045134; c=relaxed/simple;
-	bh=VeV+rfOakT7ky8AVaxXUKak1LIdWIetQFobV9bMmb0s=;
-	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=Vg5bemqNMbFBlaQkJNBF3X0Fa3McvTomzYgQDT7VS+b75zconLHYA/LOjaJvj12l4kcNZTQDSUWiaWg4kHghn980Y8FshPVnYC/KQbFN6hyymEBWWijWYx2QTHQkSMN0P4OFgUjUDzqVyiOsAKsheWaBFOB/fNQBhrm6tUsmu+8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=BW32hf7y; arc=none smtp.client-ip=212.227.17.21
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
+	s=arc-20240116; t=1774045626; c=relaxed/simple;
+	bh=RrHWtNjmagPjo+xiCvixUOMsXB6SF6mT110kYLVQQCg=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=FOQcuhYZYNNJbea4MhJQoqaRGZieit2hM1l8anXBczGWlCBBArnU2JExu09QdULCXWwijuFDdhZfQkirZndaJWZH+SREbimoOTEh8rnH9BxOmx/S2A9a1WGkwZWwNXxrV10EuraS7cCndh/nWrSMmVcME0ZipYrzJDPacSzgxL4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=a9s+Kxrv; arc=none smtp.client-ip=209.85.128.42
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="BW32hf7y"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1774045128; x=1774649928; i=quwenruo.btrfs@gmx.com;
-	bh=ic+wkgIFsgufo7tX1LmDUhenAKlb19n20VCZjtbn/vA=;
-	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:
-	 References:From:In-Reply-To:Content-Type:
-	 Content-Transfer-Encoding:cc:content-transfer-encoding:
-	 content-type:date:from:message-id:mime-version:reply-to:subject:
-	 to;
-	b=BW32hf7yE8Ja8wIbYE+9R7ttHvpg7NRe7L54dHXBZieulytEr/KK3OQ4JR0cmp4o
-	 ewjHasb6XFw5DEu4BDEICG/Z0xPeXciiv4l/Yy11j5L2UIqWI5shZkRpLkd0zMocu
-	 gN6o0VOEOh0h2a3508UqvVZPgGIh8PAtsvzVV4DQLRDadgZ3vclU6fJK5SOb0V0Af
-	 qklvdw1sxclMZOJp6WeTrIFG1ZHq1v60rlG8FzLTcf2dRfyaAGtd68zGVaGZnmXfR
-	 VmY69xRCrPZ+KdzrrcTgmkvjk33skHcnRiTxbiNkGCjPS1u1SBwWzplmVQrfc2lnF
-	 xeO+l80rcrSt0pYKBA==
-X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from client.hidden.invalid by mail.gmx.net (mrgmx105
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1MVeMG-1wBN8u14ce-00NFIt; Fri, 20
- Mar 2026 23:18:48 +0100
-Message-ID: <07cf5ebc-ac52-4fd9-82c5-404c0f4d6056@gmx.com>
-Date: Sat, 21 Mar 2026 08:48:45 +1030
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="a9s+Kxrv"
+Received: by mail-wm1-f42.google.com with SMTP id 5b1f17b1804b1-486fb14227cso23571945e9.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 20 Mar 2026 15:27:01 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1774045620; x=1774650420; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to;
+        bh=oZMf+n+2UaLqD15BKFxgwMFWBdH7VTMfFKDNbfbyD1E=;
+        b=a9s+Kxrvs8gbzkMF8sDvevyDPjRblE9GA1/hM8VCp3Axt3KVX0dhqV9wdr6VgoSVuw
+         JtKihII0Y2IUZatUU19rh2bmiwrvpQjgonoH8v56NRisoZOEGLgvVtSSxr3PfpX9NI9/
+         v0LsG6xTN3/AyL0CL983xRTIhIvWGql5ouwcclUbKrcz9B5PmwSj6a8wdZJJpWaoEmzD
+         hpWFYS7jwBu98vqaZmOZ4sG9fmYihcZteYbw9hpYIyf3UqKN8FVt/1tm59x44imGtENr
+         TFSVNpxM8o6Exn0irAMKZrDoABN20rFjYisZy+VBK2vNghbgkVkiUs87179Pk9Kqr21u
+         C4cQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1774045620; x=1774650420;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=oZMf+n+2UaLqD15BKFxgwMFWBdH7VTMfFKDNbfbyD1E=;
+        b=Hu3W1zXmCySATZu7/KDNQQKXhL8TVrG57166kUyO8JwuSftq3CJAVjQ9CoQAglIn73
+         P6+nkhAuyS2leZBMMYhKtiES12NamCJM7cBfZUxPKa+Wb3+nOYXCg5M6J4fLa7iLilGr
+         YHW9L57s1PoM8EBrijt14M1M7J+GXZrVMRbpUdmVigqE5WmsALc+Ho1wjzYX71xVeTfa
+         JcjFEWWvCw2rjGCdBC0sBTTZEVy6zBI1069mMG3gRGOQVubyeF8mWjToY7AOS5WRAy9t
+         /DAe40flMb9gFDaXNwYn3mJjJLhF0+/MwxNbk5tncLNW2pSCl1SFJArugoEWLlzqHj6h
+         6NEw==
+X-Forwarded-Encrypted: i=1; AJvYcCU0V+aKDAY4AY+6Cr0CD9JSpfYLYdMuwBG86KNMdGkybg7QTtHfCg5vq2b9vHvjgT1WHrpGDYMcq15EmQ==@vger.kernel.org
+X-Gm-Message-State: AOJu0YzmRqksbzDp7mfuxNY9ED2+BVHpJSb2a7MgkYZKqLmQySh85Ypa
+	9JHuPV/VPR+M8tduXZaokt5Soh4UKI4pevulpd2casV8CJyzjaWdJp9DsRVcQ91a4E8=
+X-Gm-Gg: ATEYQzx/ckOGPt+iCX7KOwF780b8Ixi42UnpwgRQrRK0UlLlZR2TrdfWIp3tRfz6xmS
+	bpquo+l8ySlPtgphfNkmGMz2l390/jpNbKHQ77L3dRbyoE8w0/jSQf44Bxc0XR34fP2WvTJcJvu
+	CQNDzv+AgBfxZezGdj8SkGsYXAI6kVP76StkeBkiMWHUlVXBObmRVY9l5NHpaaG4CSahzaDgidS
+	Br2Pc7fQ5NukXCNLVRRhZQd/uRzJMzwR841hxqSu5iF0VRscTf2Ygn13hynSajBhpFPGeD3Xhww
+	SYuHJtiOpXLRNkWJCtHiVa4r48R8kbBGVxQh00EjE1+XSLzFVnO+sUihS6+OPeYr3mjvF2iX3jc
+	e5UqtZBoFHgl5tCOovxLZANPVHy4mGq3QD7XDK6uN/82I3m0f8sxcBX7nLO/j346sZVYw7g6rlm
+	swgryuySEJ9aKLU+VBcj3A38rn4rCauP9JBC05/Z42/ap+Rkt+h1A=
+X-Received: by 2002:a05:600c:548e:b0:485:40c6:f51a with SMTP id 5b1f17b1804b1-486ff028ff2mr67823685e9.31.1774045619752;
+        Fri, 20 Mar 2026 15:26:59 -0700 (PDT)
+Received: from ?IPV6:2403:580d:fda1::299? (2403-580d-fda1--299.ip6.aussiebb.net. [2403:580d:fda1::299])
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2b08352a17asm32327585ad.24.2026.03.20.15.26.56
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Fri, 20 Mar 2026 15:26:58 -0700 (PDT)
+Message-ID: <33164dbf-ab81-4611-ba1a-e6e187bfaf51@suse.com>
+Date: Sat, 21 Mar 2026 08:56:52 +1030
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -43,217 +68,163 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: add BTRFS_IOC_GET_CSUMS ioctl
-To: Mark Harmstone <mark@harmstone.com>, linux-btrfs@vger.kernel.org
-References: <20260320125058.90053-1-mark@harmstone.com>
+Subject: Re: [PATCH] btrfs: Fix BTRFS arm64 tagged KASAN false-positive
+To: dsterba@suse.cz
+Cc: Daniel J Blueman <daniel@quora.org>, Chris Mason <clm@fb.com>,
+ David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+ linux-kernel@vger.kernel.org, kasan-dev@googlegroups.com
+References: <20260319053413.14771-1-daniel@quora.org>
+ <4d6f78d3-f274-43e1-adc8-c4fff4f85e24@suse.com>
+ <20260320220137.GI5735@twin.jikos.cz>
 Content-Language: en-US
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
  xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
  8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
  1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
  9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
  gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1YAUJEP5a
- sQAKCRDCPZHzoSX+qF+mB/9gXu9C3BV0omDZBDWevJHxpWpOwQ8DxZEbk9b9LcrQlWdhFhyn
- xi+l5lRziV9ZGyYXp7N35a9t7GQJndMCFUWYoEa+1NCuxDs6bslfrCaGEGG/+wd6oIPb85xo
- naxnQ+SQtYLUFbU77WkUPaaIU8hH2BAfn9ZSDX9lIxheQE8ZYGGmo4wYpnN7/hSXALD7+oun
- tZljjGNT1o+/B8WVZtw/YZuCuHgZeaFdhcV2jsz7+iGb+LsqzHuznrXqbyUQgQT9kn8ZYFNW
- 7tf+LNxXuwedzRag4fxtR+5GVvJ41Oh/eygp8VqiMAtnFYaSlb9sjia1Mh+m+OBFeuXjgGlG
- VvQFzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1gQUJEP5a0gAK
- CRDCPZHzoSX+qHGpB/kB8A7M7KGL5qzat+jBRoLwB0Y3Zax0QWuANVdZM3eJDlKJKJ4HKzjo
- B2Pcn4JXL2apSan2uJftaMbNQbwotvabLXkE7cPpnppnBq7iovmBw++/d8zQjLQLWInQ5kNq
- Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
- +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
- HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
-In-Reply-To: <20260320125058.90053-1-mark@harmstone.com>
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <20260320220137.GI5735@twin.jikos.cz>
 Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:cU10+N1I18+JDN88J+ZgTmxSMRD+c5O7lTOAZS/Ajoq8FaWpSZf
- p9FjPsufmqfAcMp30lR+UMV2i3qOFF9ZnOwUrcRGjFJUlAPvCO+SL3YanJrB51iNaZk7Zm6
- +ajDZ8RNKE6h6xurf9DsUtABE5zxS/WmUHKNZgQ3zFUqWvTxKZHSAtuTRkcslcFN5rxaAMg
- cmM01O3GHu9dmTtAvXt+w==
-X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:lWGYDaUop9c=;2TPvZUiGAdSfpfgzTr1x+wewlKP
- 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
- 85n+UStqhmnTXQwlpluQhf5+QYDEN
+Content-Transfer-Encoding: 8bit
 
 
 
-=E5=9C=A8 2026/3/20 23:20, Mark Harmstone =E5=86=99=E9=81=93:
-> Add a new unprivileged BTRFS_IOC_GET_CSUMS ioctl, which can be used to
-> query the on-disk csums for a file.
->=20
-> This is done by userspace passing a struct btrfs_ioctl_get_csums_args to
-> the kernel, which details the offset and length we're interested in, and
-> a buffer for the kernel to write its results into. The kernel writes a
-> struct btrfs_ioctl_get_csums_entry into the buffer, followed by the
-> csums if available.
->=20
-> If the extent is an uncompressed, non-nodatasum extent, the kernel sets
-> the entry type to BTRFS_GET_CSUMS_HAS_CSUMS and follows it with the
-> csums. If it is sparse, preallocated, or beyond the EOF, it sets the
-> type to BTRFS_GET_CSUMS_SPARSE - this is so userspace knows it can use
-> the precomputed hash of the zero sector. Otherwise, it sets the type to
-> BTRFS_GET_CSUMS_NO_CSUMS.
+在 2026/3/21 08:31, David Sterba 写道:
+> On Thu, Mar 19, 2026 at 07:26:34PM +1030, Qu Wenruo wrote:
+>>
+>>
+>> 在 2026/3/19 16:04, Daniel J Blueman 写道:
+>>> When booting Linux 7.0-rc4 on a Qualcomm Snapdragon X1 with KASAN
+>>> software tagging with a BTRFS filesystem, we see:
+>>>
+>>> BUG: KASAN: invalid-access in xxh64_update (lib/xxhash.c:143 lib/xxhash.c:283)
+>>> Read of size 8 at addr 7bff000804fe1000 by task kworker/u49:2/138
+>>> Pointer tag: [7b], memory tag: [b2]
+>>>
+>>> CPU: 0 UID: 0 PID: 138 Comm: kworker/u49:2 Not tainted 7.0.0-rc4+ #34 PREEMPTLAZY
+>>> Hardware name: LENOVO 83ED/LNVNB161216, BIOS NHCN60WW 09/11/2025
+>>> Workqueue: btrfs-endio-meta simple_end_io_work
+>>> Call trace:
+>>> show_stack (arch/arm64/kernel/stacktrace.c:501) (C)
+>>> dump_stack_lvl (lib/dump_stack.c:122)
+>>> print_report (mm/kasan/report.c:379 mm/kasan/report.c:482)
+>>> kasan_report (mm/kasan/report.c:597)
+>>> kasan_check_range (mm/kasan/sw_tags.c:86 (discriminator 1))
+>>> __hwasan_loadN_noabort (mm/kasan/sw_tags.c:158)
+>>> xxh64_update (lib/xxhash.c:143 lib/xxhash.c:283)
+>>> btrfs_csum_update (fs/btrfs/fs.c:106)
+>>> csum_tree_block (fs/btrfs/disk-io.c:103 (discriminator 3))
+>>> btrfs_validate_extent_buffer (fs/btrfs/disk-io.c:389)
+>>> end_bbio_meta_read (fs/btrfs/extent_io.c:3853 (discriminator 1))
+>>> btrfs_bio_end_io (fs/btrfs/bio.c:152)
+>>> simple_end_io_work (fs/btrfs/bio.c:388)
+>>> process_one_work (./arch/arm64/include/asm/jump_label.h:36 ./include/trace/events/workqueue.h:110 kernel/workqueue.c:3281)
+>>> worker_thread (kernel/workqueue.c:3353 (discriminator 2) kernel/workqueue.c:3440 (discriminator 2))
+>>> kthread (kernel/kthread.c:436)
+>>> ret_from_fork (arch/arm64/kernel/entry.S:861)
+>>>
+>>> The buggy address belongs to the physical page:
+>>> page: refcount:3 mapcount:0 mapping:f1ff00080055dee8 index:0x2467bd pfn:0x884fe1
+>>> memcg:51ff000800e68ec0 aops:btree_aops ino:1
+>>> flags: 0x9340000000004000(private|zone=2|kasantag=0x4d)
+>>> raw: 9340000000004000 0000000000000000 dead000000000122 f1ff00080055dee8
+>>> raw: 00000000002467bd 43ff00081d0cc6f0 00000003ffffffff 51ff000800e68ec0
+>>> page dumped because: kasan: bad access detected
+>>>
+>>> Memory state around the buggy address:
+>>> ffff000804fe0e00: 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b
+>>> ffff000804fe0f00: 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b
+>>>> ffff000804fe1000: b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2
+>>> ^
+>>> ffff000804fe1100: b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2
+>>> ffff000804fe1200: b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2
+>>>
+>>> This occurs as contiguous pages may have different KASAN tags in the upper address
+>>> bits, leading to a tag mismatch if linear addressing is used.
+>>>
+>>> Fix this by treating them as discontiguous.
+>>>
+>>> Signed-off-by: Daniel J Blueman <daniel@quora.org>
+>>> Fixes: 397239ed6a6c ("btrfs: allow extent buffer helpers to skip cross-page handling")
+>>>
+>>> ---
+>>>    fs/btrfs/extent_io.c | 12 ++++++++++--
+>>>    1 file changed, 10 insertions(+), 2 deletions(-)
+>>>
+>>> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+>>> index 5f97a3d2a8d7..e2b241fb6c0e 100644
+>>> --- a/fs/btrfs/extent_io.c
+>>> +++ b/fs/btrfs/extent_io.c
+>>> @@ -3517,8 +3517,16 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
+>>>    		 * At this stage, either we allocated a large folio, thus @i
+>>>    		 * would only be 0, or we fall back to per-page allocation.
+>>>    		 */
+>>> -		if (i && folio_page(eb->folios[i - 1], 0) + 1 != folio_page(folio, 0))
+>>> -			page_contig = false;
+>>> +		if (i > 0) {
+>>> +			struct page *prev = folio_page(eb->folios[i - 1], 0);
+>>> +			struct page *curr = folio_page(folio, 0);
+>>> +
+>>> +			/*
+>>> +			 * Contiguous pages may have different tags; can't be treated as contiguous
+>>> +			 */
+>>> +			if (curr != prev + 1 || page_kasan_tag(curr) != page_kasan_tag(prev))
+>>> +				page_contig = false;
+>>
+>> I am not a fan of this solution.
+>>
+>> Although it doesn't affect end users who don't have KASAN soft tag
+>> enabled, I don't get what we can really get from the different tags.
+>>
+>> I mean all those pages are already contig in physical addresses, why we
+>> can not access the range in one go?
+>>
+>> Maybe it will be better to set all pages with the same random tag if
+>> page_contig is true?
+> 
+> I don't know if there's an interface how to change the tags but adding
+> one condition that enables a sanitizer to work on some platform does not
+> sound like a terrible thing. The contiguous pages on our side is an
+> optimization so it's a special case, I'd rather adapt to the sanitizers
+> than to let people ignore a warning or have to read a warning that that
+> one is harmless.
 
-I'm not sure if it's a good idea to put hole and preallocated range into=
-=20
-the same BTRFS_GET_CSUMS_SPARSE.
+There is the interface, page_kasan_tag_set()/page_kasan_tag_reset(), and 
+is already utilized inside MM.
 
-Although both means there is no csum, hole case means there is really no=
-=20
-data extent, thus we should not create any extent instead of writing zero.
+And the deeper problem is, if this is a false alert, shouldn't we fix 
+the sanitizer?
 
-For preallocated, indicating it has no CSUM can allow mkfs to=20
-distinguish hole and preallocated, thus change to zero writes to=20
-prealloc, which is faster and make the resulted fs more aligned to the=20
-source dir.
+Especially in this case I didn't see any problem accessing properly 
+allocated and physically adjacent pages.
+
+If this is really a problem, I think a lot of bio accesses are also 
+going to cause problems, as one bvec can have multiple physically 
+adjacent pages, and if they have different tags then drivers copying a 
+large bvec should lead to the same tag difference.
 
 
-And for EOF checks, I think we don't need to bother that much, aka, just=
-=20
-let it return the regular results.
-
-My assumption is, the mkfs shouldn't pass a range completely beyond the=20
-round_up(i_size), as non-reflink rootdir population would always read=20
-out the content of the inode from the host fs.
-Thus we won't really read beyond the inode size.
-
->=20
-> We do store the csums of compressed extents, but we deliberately don't
-> return them here: they're hashed over the compressed data, not the
-> uncompressed data that's returned to userspace.
-
-I agree with the skip of compressed extents, but I'd prefer to have a=20
-special flag to indicate that, other than NO_CSUMS.
-
-Or mkfs is unable to distinguish hole and compressed extents.
-
-[...]
-> +/* Types for struct btrfs_ioctl_get_csums_entry::type */
-> +#define BTRFS_GET_CSUMS_HAS_CSUMS	0
-> +#define BTRFS_GET_CSUMS_SPARSE		1
-> +#define BTRFS_GET_CSUMS_NO_CSUMS	2
-> +
-> +struct btrfs_ioctl_get_csums_entry {
-> +	__u64 offset;		/* file offset of this range */
-> +	__u64 length;		/* length in bytes */
-> +	__u32 type;		/* BTRFS_GET_CSUMS_* type */
-> +	__u32 reserved;		/* padding, must be 0 */
-> +};
-> +
-> +struct btrfs_ioctl_get_csums_args {
-> +	__u64 offset;		/* in/out: file offset */
-> +	__u64 length;		/* in/out: range length */
-> +	__u64 buf_size;		/* in/out: buffer capacity / bytes written */
-> +	__u8 buf[];		/* out: entries + csum data */
-> +};
-
- From the progs usage, it is always a single btrfs_ioctl_get_csums_entry=
-=20
-at the beginning of buf[], then real buffer for csum, can we just=20
-combine both structures into one?
-
-Furthermore, since we only query one extent at one time, the=20
-offset/length are more or less duplicated between args and entry structure=
-.
-
-We can just save the length into the args without the need for entry=20
-members (except the type).
+So to the reporter/KASAN people, what's the problem of accessing 
+different tags in the first place?
 
 Thanks,
 Qu
-
-> +
->   /* Flags for IOC_SHUTDOWN, must match XFS_FSOP_GOING_FLAGS_* flags. */
->   #define BTRFS_SHUTDOWN_FLAGS_DEFAULT			0x0
->   #define BTRFS_SHUTDOWN_FLAGS_LOGFLUSH			0x1
-> @@ -1226,6 +1245,8 @@ enum btrfs_err_code {
->   				     struct btrfs_ioctl_encoded_io_args)
->   #define BTRFS_IOC_SUBVOL_SYNC_WAIT _IOW(BTRFS_IOCTL_MAGIC, 65, \
->   					struct btrfs_ioctl_subvol_wait)
-> +#define BTRFS_IOC_GET_CSUMS _IOWR(BTRFS_IOCTL_MAGIC, 66, \
-> +				  struct btrfs_ioctl_get_csums_args)
->  =20
->   /* Shutdown ioctl should follow XFS's interfaces, thus not using btrfs=
- magic. */
->   #define BTRFS_IOC_SHUTDOWN	_IOR('X', 125, __u32)
-

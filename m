@@ -1,427 +1,141 @@
-Received: from stravinsky.debian.org (stravinsky.debian.org [82.195.75.108])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3AA2E3DA5A5;
-	Fri, 20 Mar 2026 17:57:28 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=82.195.75.108
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A1A4B3ACA62
+	for <linux-btrfs@vger.kernel.org>; Fri, 20 Mar 2026 21:24:54 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774029450; cv=none; b=HICLdnJHM0NrGH+6/ZObDfxCVAkWEVqnQRyQsbla3nM5wLVWWNr49aj7kYetf9qQvjQVAYylNKw6uFpOcll3bteWWGGtYEwMZKRHr8/0K1OHTXRMZmjOrXTHoyL6oydzbdt1vEHx+PrvJbXncZCrtV1MK/H5178u0JrowiPedUg=
+	t=1774041899; cv=none; b=OUwAO+Es9OE3xoTRALF2LXS/Sfu/ZD1kg0GtEvTrGP671mN0f7nxaOFAxNepXj++61rguM3oIrYJA181BUKohS729lyY+0bg4JRpl0FrUC7SA0IBeByRHkuzhKwOQhPZIVqsWZk7z3lm8Xqqwh49975cuFgGc5hKQt/+zqnl4rI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774029450; c=relaxed/simple;
-	bh=fVfV+dg4pefPLaq5wbrR0HxC3vTbP1hv0mlpSnuGkSU=;
-	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
-	 In-Reply-To:To:Cc; b=G9UltzPHsN1A7EhnQP2zgbhzPik3i2+npkwKwNWe0M/eI4Zbb7VMCoEtQhuuO+tc1lleVfVcXysfRhLE+R/+4CzwYyUvrUmaWWQpKN7CVygV/7ib0tVDo4MfimzfSZBSHd8suLKX4D2mHGTWEoZ17fjlHAhLrF3Tza0lvTULTEs=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=debian.org; spf=none smtp.mailfrom=debian.org; dkim=pass (2048-bit key) header.d=debian.org header.i=@debian.org header.b=NUdvJ3j6; arc=none smtp.client-ip=82.195.75.108
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=debian.org
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=debian.org
+	s=arc-20240116; t=1774041899; c=relaxed/simple;
+	bh=dh2XI7grnQvdLjasHy028jiSSez8QznvnxiFWMMODps=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=QxN9Vc2QKKU0TJGeqv+eEFuVAwxc/6fDMph3HtzG8TILz9O2/dcZsoB7fr6YbZojOQ5ZeW/FaY1S9YMSRorhyiUlF1BE1k0mVyoL5Q0UUehRGydjjRfm3E9Ih56lAovMWNKBMN9aZfnt8P2ihkw83NSJmPMGFJm78PCd/asehWY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=abGDScwC; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=WXHGAF4/; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=bK/7Q6JN; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=YpjcLGha; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=debian.org header.i=@debian.org header.b="NUdvJ3j6"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=debian.org;
-	s=smtpauto.stravinsky; h=X-Debian-User:Cc:To:In-Reply-To:References:
-	Message-Id:Content-Transfer-Encoding:Content-Type:MIME-Version:Subject:Date:
-	From:Reply-To:Content-ID:Content-Description;
-	bh=uPLEgN0Y4iP2f3Jy+ESOwggpjSmfDh5GaHCB2jXthXA=; b=NUdvJ3j6ryT8NYpywCFAenz9RW
-	mhYJ/eybi/AR+QXBSlCv72eoblbMllR6MAP1XLMi+Camo8vfkTuPowMVo/12ZXSdsceW1dpv8K/ha
-	w2iqVJZ+X8WfFNW8ccuU0NxlY4iahrMXbQNOrDfAPa/Mr0002BwDS2mxLBT/cYZ3u3okHap6dRiHf
-	BGiOCFtIlZEB1mSetKWuhEBlTaQ8jjq6aUM1K0pZMTYKLp4/Xdpe3ot3XL3aBNLObgV6FwD24pGf8
-	40fXaOLxAvagKwVLofWiUdcKyDBHUmguEZw/uqPlHgV5u0NIg8GuTZLdENLrPyWzY8Cx9Bkalv7D3
-	nbOL2iXg==;
-Received: from authenticated user
-	by stravinsky.debian.org with esmtpsa (TLS1.3:ECDHE_X25519__RSA_PSS_RSAE_SHA256__AES_256_GCM:256)
-	(Exim 4.94.2)
-	(envelope-from <leitao@debian.org>)
-	id 1w3e6A-005Nfl-TV; Fri, 20 Mar 2026 17:57:25 +0000
-From: Breno Leitao <leitao@debian.org>
-Date: Fri, 20 Mar 2026 10:56:31 -0700
-Subject: [PATCH v2 5/5] workqueue: add test_workqueue benchmark module
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="abGDScwC";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="WXHGAF4/";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="bK/7Q6JN";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="YpjcLGha"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 5B17A5BE37;
+	Fri, 20 Mar 2026 21:24:51 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1774041892;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=O+leESMfL9OkPb0pg/3I2PIPEof3VC4snffRFSEtiVo=;
+	b=abGDScwC8ThVT8E7N6bj0ImlB4/iIIA7T/SJkyRoicKL1M6vnunVsgCJniFcUAGEatLn79
+	NPXYPIK46NKvrCrwef8wx+4Bb7xzjU8dkxPVTejwmQvJRjGoEc4ea/cxe3xGM2viHX3FzS
+	mKs4negJ77/LWfJuS22zEzIy5LJFevA=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1774041892;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=O+leESMfL9OkPb0pg/3I2PIPEof3VC4snffRFSEtiVo=;
+	b=WXHGAF4/jEHoR53wq9LQnvgdauIYZPy6dDdudEIgyTcvjrwEjfaMbI9tmSAlMWUVYvdvq5
+	TQ9t6TUiBxIiOxDQ==
+Authentication-Results: smtp-out2.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1774041891;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=O+leESMfL9OkPb0pg/3I2PIPEof3VC4snffRFSEtiVo=;
+	b=bK/7Q6JNFS8vPmAYI+2wBXB1tE6qSSFHt7tN+iTOK54jCneI+/aL0TsatDVPPCSuOSQnel
+	bWZdTI6rc5UXeXT95a6iewcLtQ3ltLdN1mRKCjj0KA+yi9kihRSeljUzO2vJSVYtEziI4y
+	oMCB9V801Z20IuG48LZim9SqPT1eid8=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1774041891;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=O+leESMfL9OkPb0pg/3I2PIPEof3VC4snffRFSEtiVo=;
+	b=YpjcLGhaaP/SktzlajrY5+fyRaBjZLQqcbuyDUd6gwNq5szmDabwpkelB3GY2k6Pb1dRY9
+	rtJMbmyv+hHsdSAw==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 43437429E6;
+	Fri, 20 Mar 2026 21:24:51 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id xik7ECO7vWnpYgAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Fri, 20 Mar 2026 21:24:51 +0000
+Date: Fri, 20 Mar 2026 22:24:35 +0100
+From: David Sterba <dsterba@suse.cz>
+To: fdmanana@kernel.org
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: avoid taking the device_list_mutex in
+ btrfs_run_dev_stats()
+Message-ID: <20260320212435.GG5735@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <bf7c901abdf8279207fed149f76ce0ccc4718159.1773840032.git.fdmanana@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 7bit
-Message-Id: <20260320-workqueue_sharded-v2-5-8372930931af@debian.org>
-References: <20260320-workqueue_sharded-v2-0-8372930931af@debian.org>
-In-Reply-To: <20260320-workqueue_sharded-v2-0-8372930931af@debian.org>
-To: Tejun Heo <tj@kernel.org>, Lai Jiangshan <jiangshanlai@gmail.com>, 
- Andrew Morton <akpm@linux-foundation.org>
-Cc: linux-kernel@vger.kernel.org, puranjay@kernel.org, 
- linux-crypto@vger.kernel.org, linux-btrfs@vger.kernel.org, 
- linux-fsdevel@vger.kernel.org, Michael van der Westhuizen <rmikey@meta.com>, 
- kernel-team@meta.com, Chuck Lever <chuck.lever@oracle.com>, 
- Breno Leitao <leitao@debian.org>
-X-Mailer: b4 0.15-dev-363b9
-X-Developer-Signature: v=1; a=openpgp-sha256; l=9898; i=leitao@debian.org;
- h=from:subject:message-id; bh=fVfV+dg4pefPLaq5wbrR0HxC3vTbP1hv0mlpSnuGkSU=;
- b=owEBbQKS/ZANAwAIATWjk5/8eHdtAcsmYgBpvYpsQpCFFCS6Stdm13hh3rU2USIxnonVGR38q
- mEMNeSo1z2JAjMEAAEIAB0WIQSshTmm6PRnAspKQ5s1o5Of/Hh3bQUCab2KbAAKCRA1o5Of/Hh3
- bQOjD/49gPh2gnFcTxUjeB8k+HtVhOz4JJy5FQkHUNh6WYEYpnG/JUGvYoXk618cli/QxM21Y75
- Unw3wSYLW2hfBUvvRG++8DxpcEE07vYGlHD6Xye1o0YlyjLHy1pTD0Pymp/y9oJtH8EG/c0yxgO
- 6AT7Iyv+PB6zzUVs42sfup7OWUtnNdezQqUUsENRn6MWz13UbMgvxjyyaK74AH6jRKTo2YPaHaT
- KA4r4WbY7qS3voEtvBJ/A49A0uPZGUZsAM28mgadY1Dt51WVZtPDAY/hFHLBnNhP0DRXmNy/HkA
- 4J5k2WKIWPY9H4E/xY2a16NUNWqVendA7vznOf6GISRp+pcvbmGH6LsDxtWy1qCOn6Q+8Y/T2Ve
- BWXbN9UbpjCT0mwuoWQdO0L92k9PmxxxqaJjkMLHzeu1pF56Me2N4OZkxxBsfDQ6x2IFkIxcyg9
- zA1qUaK5eMbE5USZTMrOqUI9WRy3MJ6BbDCCv9j2e4SF0HvJY4UgBvVe0ryzVOi01QoQw6H9lqP
- i6ClgY/O9ypCIaOYBLH8LBLL3xRQ9fRBJYMhkYhbXhAenEt5P+OBW6ss5RaZuxj+/N9rvNhyi/C
- vLfovLiJfX7q4motwj3azeH2HJLZH1ic3wiCKV4dplz8mqfcyaiYV3+uIJTu0wPbI1jG6DKCOY9
- NcvmzzV/x2wapfA==
-X-Developer-Key: i=leitao@debian.org; a=openpgp;
- fpr=AC8539A6E8F46702CA4A439B35A3939FFC78776D
-X-Debian-User: leitao
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <bf7c901abdf8279207fed149f76ce0ccc4718159.1773840032.git.fdmanana@suse.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-Spam-Score: -4.00
+X-Spam-Level: 
+X-Spamd-Result: default: False [-4.00 / 50.00];
+	BAYES_HAM(-3.00)[99.99%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	HAS_REPLYTO(0.30)[dsterba@suse.cz];
+	NEURAL_HAM_SHORT(-0.20)[-0.999];
+	MIME_GOOD(-0.10)[text/plain];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	MIME_TRACE(0.00)[0:+];
+	ARC_NA(0.00)[];
+	RCPT_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	FROM_HAS_DN(0.00)[];
+	REPLYTO_DOM_NEQ_TO_DOM(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	REPLYTO_ADDR_EQ_FROM(0.00)[];
+	TO_DN_NONE(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[twin.jikos.cz:mid,imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.cz:replyto]
+X-Spam-Flag: NO
 
-Add a kernel module that benchmarks queue_work() throughput on an
-unbound workqueue to measure pool->lock contention under different
-affinity scope configurations (cache vs cache_shard).
+On Wed, Mar 18, 2026 at 01:39:51PM +0000, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> btrfs_run_dev_stats() is called during the critical section of a
+> transaction commit and it takes the device_list_mutex, which is also
+> acquired by fitrim, which does discard operations while holding that
+> mutex. Most of the time, if we are on a healthy filesystem, we don't have
+> new stat updates to persist in the device tree, so blocking on the
+> device_list_mutex is just wasting time and making any tasks that need to
+> start a new transaction wait longer that necessary.
+> 
+> Since the device list is RCU safe/protected, make btrfs_run_dev_stats()
+> do an initial check for device stat updates using RCU and quit without
+> taking the device_list_mutex in case there are no new device stats that
+> need to be persisted in the device tree.
+> 
+> Also note that adding/removing devices also requires starting a
+> transaction, and since btrfs_run_dev_stats() is called from the critical
+> section of a transaction commit, no one can be concurrently adding or
+> removing a device while btrfs_run_dev_stats() is called.
+> 
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
-The module spawns N kthreads (default: num_online_cpus()), each bound
-to a different CPU. All threads start simultaneously and queue work
-items, measuring the latency of each queue_work() call. Results are
-reported as p50/p90/p95 latencies for each affinity scope.
-
-The affinity scope is switched between runs via the workqueue's sysfs
-affinity_scope attribute (WQ_SYSFS), avoiding the need for any new
-exported symbols.
-
-The module runs as __init-only, returning -EAGAIN to auto-unload,
-and can be re-run via insmod.
-
-Example of the output:
-
- running 50 threads, 50000 items/thread
-
-   cpu              6806017 items/sec p50=2574    p90=5068    p95=5818 ns
-   smt              6821040 items/sec p50=2624    p90=5168    p95=5949 ns
-   cache_shard      1633653 items/sec p50=5337    p90=9694    p95=11207 ns
-   cache            286069 items/sec p50=72509    p90=82304   p95=85009 ns
-   numa             319403 items/sec p50=63745    p90=73480   p95=76505 ns
-   system           308461 items/sec p50=66561    p90=75714   p95=78048 ns
-
-Signed-off-by: Breno Leitao <leitao@debian.org>
----
- lib/Kconfig.debug    |  10 ++
- lib/Makefile         |   1 +
- lib/test_workqueue.c | 277 +++++++++++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 288 insertions(+)
-
-diff --git a/lib/Kconfig.debug b/lib/Kconfig.debug
-index 93f356d2b3d95..38bee649697f3 100644
---- a/lib/Kconfig.debug
-+++ b/lib/Kconfig.debug
-@@ -2628,6 +2628,16 @@ config TEST_VMALLOC
- 
- 	  If unsure, say N.
- 
-+config TEST_WORKQUEUE
-+	tristate "Test module for stress/performance analysis of workqueue"
-+	default n
-+	help
-+	  This builds the "test_workqueue" module for benchmarking
-+	  workqueue throughput under contention. Useful for evaluating
-+	  affinity scope changes (e.g., cache_shard vs cache).
-+
-+	  If unsure, say N.
-+
- config TEST_BPF
- 	tristate "Test BPF filter functionality"
- 	depends on m && NET
-diff --git a/lib/Makefile b/lib/Makefile
-index 1b9ee167517f3..ea660cca04f40 100644
---- a/lib/Makefile
-+++ b/lib/Makefile
-@@ -79,6 +79,7 @@ UBSAN_SANITIZE_test_ubsan.o := y
- obj-$(CONFIG_TEST_KSTRTOX) += test-kstrtox.o
- obj-$(CONFIG_TEST_LKM) += test_module.o
- obj-$(CONFIG_TEST_VMALLOC) += test_vmalloc.o
-+obj-$(CONFIG_TEST_WORKQUEUE) += test_workqueue.o
- obj-$(CONFIG_TEST_RHASHTABLE) += test_rhashtable.o
- obj-$(CONFIG_TEST_STATIC_KEYS) += test_static_keys.o
- obj-$(CONFIG_TEST_STATIC_KEYS) += test_static_key_base.o
-diff --git a/lib/test_workqueue.c b/lib/test_workqueue.c
-new file mode 100644
-index 0000000000000..a949af1d7e978
---- /dev/null
-+++ b/lib/test_workqueue.c
-@@ -0,0 +1,277 @@
-+// SPDX-License-Identifier: GPL-2.0
-+
-+/*
-+ * Test module for stress and performance analysis of workqueue.
-+ *
-+ * Benchmarks queue_work() throughput on an unbound workqueue to measure
-+ * pool->lock contention under different affinity scope configurations
-+ * (e.g., cache vs cache_shard).
-+ *
-+ * The affinity scope is changed between runs via the workqueue's sysfs
-+ * affinity_scope attribute (WQ_SYSFS).
-+ *
-+ * Copyright (c) 2026 Meta Platforms, Inc. and affiliates
-+ * Copyright (c) 2026 Breno Leitao <leitao@debian.org>
-+ *
-+ */
-+#include <linux/init.h>
-+#include <linux/kernel.h>
-+#include <linux/module.h>
-+#include <linux/workqueue.h>
-+#include <linux/kthread.h>
-+#include <linux/moduleparam.h>
-+#include <linux/completion.h>
-+#include <linux/atomic.h>
-+#include <linux/slab.h>
-+#include <linux/ktime.h>
-+#include <linux/cpumask.h>
-+#include <linux/sched.h>
-+#include <linux/sort.h>
-+#include <linux/fs.h>
-+
-+#define WQ_NAME "bench_wq"
-+#define SCOPE_PATH "/sys/bus/workqueue/devices/" WQ_NAME "/affinity_scope"
-+
-+static int nr_threads;
-+module_param(nr_threads, int, 0444);
-+MODULE_PARM_DESC(nr_threads,
-+		 "Number of threads to spawn (default: 0 = num_online_cpus())");
-+
-+static int wq_items = 50000;
-+module_param(wq_items, int, 0444);
-+MODULE_PARM_DESC(wq_items,
-+		 "Number of work items each thread queues (default: 50000)");
-+
-+static struct workqueue_struct *bench_wq;
-+static atomic_t threads_done;
-+static DECLARE_COMPLETION(start_comp);
-+static DECLARE_COMPLETION(all_done_comp);
-+
-+struct thread_ctx {
-+	struct completion work_done;
-+	struct work_struct work;
-+	u64 *latencies;
-+	int cpu;
-+	int items;
-+};
-+
-+static void bench_work_fn(struct work_struct *work)
-+{
-+	struct thread_ctx *ctx = container_of(work, struct thread_ctx, work);
-+
-+	complete(&ctx->work_done);
-+}
-+
-+static int bench_kthread_fn(void *data)
-+{
-+	struct thread_ctx *ctx = data;
-+	ktime_t t_start, t_end;
-+	int i;
-+
-+	/* Wait for all threads to be ready */
-+	wait_for_completion(&start_comp);
-+
-+	for (i = 0; i < ctx->items; i++) {
-+		reinit_completion(&ctx->work_done);
-+		INIT_WORK(&ctx->work, bench_work_fn);
-+
-+		t_start = ktime_get();
-+		queue_work(bench_wq, &ctx->work);
-+		t_end = ktime_get();
-+
-+		ctx->latencies[i] = ktime_to_ns(ktime_sub(t_end, t_start));
-+		wait_for_completion(&ctx->work_done);
-+	}
-+
-+	if (atomic_dec_and_test(&threads_done))
-+		complete(&all_done_comp);
-+
-+	return 0;
-+}
-+
-+static int cmp_u64(const void *a, const void *b)
-+{
-+	u64 va = *(const u64 *)a;
-+	u64 vb = *(const u64 *)b;
-+
-+	if (va < vb)
-+		return -1;
-+	if (va > vb)
-+		return 1;
-+	return 0;
-+}
-+
-+static int __init set_affn_scope(const char *scope)
-+{
-+	struct file *f;
-+	loff_t pos = 0;
-+	ssize_t ret;
-+
-+	f = filp_open(SCOPE_PATH, O_WRONLY, 0);
-+	if (IS_ERR(f)) {
-+		pr_err("test_workqueue: open %s failed: %ld\n",
-+		       SCOPE_PATH, PTR_ERR(f));
-+		return PTR_ERR(f);
-+	}
-+
-+	ret = kernel_write(f, scope, strlen(scope), &pos);
-+	filp_close(f, NULL);
-+
-+	if (ret < 0) {
-+		pr_err("test_workqueue: write '%s' failed: %zd\n", scope, ret);
-+		return ret;
-+	}
-+
-+	return 0;
-+}
-+
-+static int __init run_bench(int n_threads, const char *scope, const char *label)
-+{
-+	struct task_struct **tasks;
-+	unsigned long total_items;
-+	struct thread_ctx *ctxs;
-+	u64 *all_latencies;
-+	ktime_t start, end;
-+	int cpu, i, j, ret;
-+	s64 elapsed_us;
-+
-+	ret = set_affn_scope(scope);
-+	if (ret)
-+		return ret;
-+
-+	ctxs = kcalloc(n_threads, sizeof(*ctxs), GFP_KERNEL);
-+	if (!ctxs)
-+		return -ENOMEM;
-+
-+	tasks = kcalloc(n_threads, sizeof(*tasks), GFP_KERNEL);
-+	if (!tasks) {
-+		kfree(ctxs);
-+		return -ENOMEM;
-+	}
-+
-+	total_items = (unsigned long)n_threads * wq_items;
-+	all_latencies = kvmalloc_array(total_items, sizeof(u64), GFP_KERNEL);
-+	if (!all_latencies) {
-+		kfree(tasks);
-+		kfree(ctxs);
-+		return -ENOMEM;
-+	}
-+
-+	/* Allocate per-thread latency arrays */
-+	for (i = 0; i < n_threads; i++) {
-+		ctxs[i].latencies = kvmalloc_array(wq_items, sizeof(u64),
-+						   GFP_KERNEL);
-+		if (!ctxs[i].latencies) {
-+			while (--i >= 0)
-+				kvfree(ctxs[i].latencies);
-+			kvfree(all_latencies);
-+			kfree(tasks);
-+			kfree(ctxs);
-+			return -ENOMEM;
-+		}
-+	}
-+
-+	atomic_set(&threads_done, n_threads);
-+	reinit_completion(&all_done_comp);
-+	reinit_completion(&start_comp);
-+
-+	/* Create kthreads, each bound to a different online CPU */
-+	i = 0;
-+	for_each_online_cpu(cpu) {
-+		if (i >= n_threads)
-+			break;
-+
-+		ctxs[i].cpu = cpu;
-+		ctxs[i].items = wq_items;
-+		init_completion(&ctxs[i].work_done);
-+
-+		tasks[i] = kthread_create(bench_kthread_fn, &ctxs[i],
-+					  "wq_bench/%d", cpu);
-+		if (IS_ERR(tasks[i])) {
-+			ret = PTR_ERR(tasks[i]);
-+			pr_err("test_workqueue: failed to create kthread %d: %d\n",
-+			       i, ret);
-+			while (--i >= 0)
-+				kthread_stop(tasks[i]);
-+			goto out_free;
-+		}
-+
-+		kthread_bind(tasks[i], cpu);
-+		wake_up_process(tasks[i]);
-+		i++;
-+	}
-+
-+	/* Start timing and release all threads */
-+	start = ktime_get();
-+	complete_all(&start_comp);
-+
-+	/* Wait for all threads to finish */
-+	wait_for_completion(&all_done_comp);
-+
-+	/* Drain any remaining work */
-+	flush_workqueue(bench_wq);
-+
-+	end = ktime_get();
-+	elapsed_us = ktime_us_delta(end, start);
-+
-+	/* Merge all per-thread latencies and sort for percentile calculation */
-+	j = 0;
-+	for (i = 0; i < n_threads; i++) {
-+		memcpy(&all_latencies[j], ctxs[i].latencies,
-+		       wq_items * sizeof(u64));
-+		j += wq_items;
-+	}
-+
-+	sort(all_latencies, total_items, sizeof(u64), cmp_u64, NULL);
-+
-+	pr_info("test_workqueue:   %-16s %llu items/sec\tp50=%llu\tp90=%llu\tp95=%llu ns\n",
-+		label,
-+		elapsed_us ? total_items * 1000000ULL / elapsed_us : 0,
-+		all_latencies[total_items * 50 / 100],
-+		all_latencies[total_items * 90 / 100],
-+		all_latencies[total_items * 95 / 100]);
-+
-+	ret = 0;
-+out_free:
-+	for (i = 0; i < n_threads; i++)
-+		kvfree(ctxs[i].latencies);
-+	kvfree(all_latencies);
-+	kfree(tasks);
-+	kfree(ctxs);
-+
-+	return ret;
-+}
-+
-+static const char * const bench_scopes[] = {
-+	"cpu", "smt", "cache", "cache_shard", "numa", "system",
-+};
-+
-+static int __init test_workqueue_init(void)
-+{
-+	int n_threads = nr_threads ?: num_online_cpus();
-+	int i;
-+
-+	if (wq_items <= 0) {
-+		pr_err("test_workqueue: wq_items must be > 0\n");
-+		return -EINVAL;
-+	}
-+
-+	bench_wq = alloc_workqueue(WQ_NAME, WQ_UNBOUND | WQ_SYSFS, 0);
-+	if (!bench_wq)
-+		return -ENOMEM;
-+
-+	pr_info("test_workqueue: running %d threads, %d items/thread\n",
-+		n_threads, wq_items);
-+
-+	for (i = 0; i < ARRAY_SIZE(bench_scopes); i++)
-+		run_bench(n_threads, bench_scopes[i], bench_scopes[i]);
-+
-+	destroy_workqueue(bench_wq);
-+
-+	return -EAGAIN;
-+}
-+
-+module_init(test_workqueue_init);
-+MODULE_AUTHOR("Breno Leitao <leitao@debian.org>");
-+MODULE_DESCRIPTION("Stress/performance benchmark for workqueue subsystem");
-+MODULE_LICENSE("GPL");
-
--- 
-2.52.0
-
+Reviewed-by: David Sterba <dsterba@suse.com>

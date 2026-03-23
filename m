@@ -1,133 +1,100 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 809D53B27F9;
-	Mon, 23 Mar 2026 15:28:51 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3E5B93BADA6;
+	Mon, 23 Mar 2026 15:29:43 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774279731; cv=none; b=pqzgTDggbkOmnYCZOBtCVd2o/G/RLAUO4EwFVPqWaxV3xMIqbexOb1htVZ9onI4l1R4M07v+jPSaQR6wkQluWdsS5H58SAxdiayDtv8Qj8lpH7SOmjrKDqwKDtA+Z/8ertHEnFy03TmrFguCZlFuQ3T9yN+sUTn2T7Di/E/sZUI=
+	t=1774279784; cv=none; b=rzYeWbWUuoQosktwW+rHIM2CRCd8i8CSpvLNmQRtSq00tR7O/gKkuflOcVE2JC+rZ+w40f1tayjfSEQLUeAbKYMqyt2D4mS0lxaY33Xk2TZXghR2I4Non/upROyvdRihTmU5buf1Qpeg7vptbfgSfkcnsCgaqdbJD3kS9mJGyDA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774279731; c=relaxed/simple;
-	bh=uKxhkwNLQ1A6zwshl17eoxhqYldXen4HDfeimtnqolw=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=HdRCV+Un98HSC3pQQfkObz+7oUdh+/7qEw5FSfyN/HTKqw98ddWivmTSG8QIC/dTghz3lIMcNg1po5lng3pnnnyYdJMYY0+IXt1w8G/i9xxCnYb7w+uqyWbWpeu/lH9kxFJEhVSSCygnFOj0MXsHTET4ZrNaMBocxBL7jBMhvfE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=SrG2XzhG; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1774279784; c=relaxed/simple;
+	bh=9lta+tyRm/gU47+8BBid2B7jJDSrye7R27Jln0AXetI=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=nCEqJ1d4y2AHDeIjBBBStUqz8UZRt+R92PYnVAPPH64w3Isq7JF3z3GVxhk8bGAgDf613O080QRYew/sWdjPsGVFNBZiSqOO1Jk+U5fsTS0emNqScBwwU0XyiC/BkfqkOfk79e8K8Avrek+yqQLr55pcWDEFG6zM7BAoE0b4xgI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=rasG51Ui; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="SrG2XzhG"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 30BB3C4CEF7;
-	Mon, 23 Mar 2026 15:28:50 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="rasG51Ui"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id C9CEBC4CEF7;
+	Mon, 23 Mar 2026 15:29:43 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1774279731;
-	bh=uKxhkwNLQ1A6zwshl17eoxhqYldXen4HDfeimtnqolw=;
-	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
-	b=SrG2XzhGCXO0jUc79sDAIaXw18YG8XtYZClqLqb7u0nvyZ0hZ6kBjDzWNesVxEOBV
-	 8EqwhoysAWLLqQpCM1+v2+RZLpklIt8r1+abuvOQPHVsq8d58ekiVEa0V+2ys3jOqi
-	 xAgAqumpoaYzq12fPMd+yRbLZMrGxdBUDImcCtBefNmfy9vRA43z38DK4Ou4xGFzGL
-	 lOyTv97zBumxHsf5q6yeYjSBZPuyj92g83S3kKQvvBoElh0W+RqfNw+YI9SjkYknB4
-	 +0Z/ee/7ASCbOOZTlysWEhTAZwGG1OWYdLWEMh/W+302eJTUA+5nGtVxkiWi1xHuHV
-	 prSi57Zd99QGg==
-Message-ID: <f2f7fff3-2f6a-4ebb-aa5e-33188be4dd9a@kernel.org>
-Date: Mon, 23 Mar 2026 11:28:49 -0400
+	s=k20201202; t=1774279783;
+	bh=9lta+tyRm/gU47+8BBid2B7jJDSrye7R27Jln0AXetI=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=rasG51Ui2W3fDtHZhLw8ky6R37Z4HXcSUA4MmyqI6uQ/XGjOVYOkMKvvklqnSJZfc
+	 34TqDcMhUHJXvHua3VMvA12FhNnSmA78otdA/xf4C3+Cb9WM7FRgGQ4ot5TNtw1+Rk
+	 49Ntc13gHwGRoZLbmLZq1p8bnujJyNBhusZrqYvrfaHcSSQXL2SMbj/HuTPSzqz9kr
+	 JB6JXnzWihVujw0qadjKOGSPK6y+6fU8xATZ00RdtZyeahvHpyxwa4BP+eEt+pIKJK
+	 yQilOQu5PoAO1AEYAELI6sNJ/UJSfCr3AxqvsmaG+5yfEEtNKu/RSs1H5Yzz7LkGLh
+	 9NTgY4e58BgxA==
+Date: Mon, 23 Mar 2026 08:29:43 -0700
+From: "Darrick J. Wong" <djwong@kernel.org>
+To: Theodore Tso <tytso@mit.edu>
+Cc: Anand Jain <asj@kernel.org>, linux-ext4@vger.kernel.org,
+	linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org,
+	hch@infradead.org
+Subject: Re: [PATCH v2 3/3] ext4: derive f_fsid from block device to avoid
+ collisions
+Message-ID: <20260323152943.GH6223@frogsfrogsfrogs>
+References: <cover.1774092915.git.asj@kernel.org>
+ <33e8eb64c304a4d42b60f608c26497bf9a2e9e19.1774092915.git.asj@kernel.org>
+ <20260323041624.GA11453@mac.lan>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2 0/5] workqueue: Introduce a sharded cache affinity
- scope
-To: Breno Leitao <leitao@debian.org>
-Cc: Tejun Heo <tj@kernel.org>, Lai Jiangshan <jiangshanlai@gmail.com>,
- Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org,
- puranjay@kernel.org, linux-crypto@vger.kernel.org,
- linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
- Michael van der Westhuizen <rmikey@meta.com>, kernel-team@meta.com,
- Chuck Lever <chuck.lever@oracle.com>
-References: <20260320-workqueue_sharded-v2-0-8372930931af@debian.org>
- <04af531d-d8a3-4fbb-993d-e1da2df62a03@app.fastmail.com>
- <acFVEr7iVnU_70yh@gmail.com>
-Content-Language: en-US
-From: Chuck Lever <cel@kernel.org>
-Organization: kernel.org
-In-Reply-To: <acFVEr7iVnU_70yh@gmail.com>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260323041624.GA11453@mac.lan>
 
-On 3/23/26 11:10 AM, Breno Leitao wrote:
-> Hello Chuck,
+On Sun, Mar 22, 2026 at 11:16:24PM -0500, Theodore Tso wrote:
+> On Sat, Mar 21, 2026 at 07:55:19PM +0800, Anand Jain wrote:
+> > statfs() currently reports f_fsid derived from the on-disk UUID.
+> > Cloned block devices share the same UUID, so distinct ext4 instances
+> > can return identical f_fsid values. This leads to collisions in
+> > fanotify.
+> > 
+> > Encode sb->s_dev into f_fsid instead of using the superblock UUID.
+> > This provides a per-device identifier and avoids conflicts when
+> > filesystem is cloned, matching the behavior with xfs.
 > 
-> On Mon, Mar 23, 2026 at 10:11:07AM -0400, Chuck Lever wrote:
->> On Fri, Mar 20, 2026, at 1:56 PM, Breno Leitao wrote:
->>> TL;DR: Some modern processors have many CPUs per LLC (L3 cache), and
->>> unbound workqueues using the default affinity (WQ_AFFN_CACHE) collapse
->>> to a single worker pool, causing heavy spinlock (pool->lock) contention.
->>> Create a new affinity (WQ_AFFN_CACHE_SHARD) that caps each pool at
->>> wq_cache_shard_size CPUs (default 8).
->>>
->>> Changes from RFC:
->>>
->>> * wq_cache_shard_size is in terms of cores (not vCPU). So,
->>>   wq_cache_shard_size=8 means the pool will have 8 cores and their siblings,
->>>   like 16 threads/CPUs if SMT=1
->>
->> My concern about the "cores per shard" approach is that it
->> improves the default situation for moderately-sized machines
->> little or not at all.
->>
->> A machine with one L3 and 10 cores will go from 1 UNBOUND
->> pool to only 2. For virtual machines commonly deployed as
->> cloud instances, which are 2, 4, or 8 core systems (up to
->> 16 threads) there will still be significant contention for
->> UNBOUND workers.
+> As I observed in [1] this leads to collisions when for removable block
+> devices which can be used to mount different file systems.
 > 
-> Could you clarify your concern? Are you suggesting the default value of
-> wq_cache_shard_size=8 is too high, or that the cores-per-shard approach
-> fundamentally doesn't scale well for moderately-sized systems?
+> [1] https://lore.kernel.org/all/20260322203151.GA98947@mac.lan/
 > 
-> Any approach—whether sharding by cores or by LLC—ultimately relies on
-> heuristics that may need tuning for specific workloads. The key difference
-> is where we draw the line. The current default of 8 cores prevents the
-> worst-case scenario: severe lock contention on large systems with 16+ CPUs
-> all hammering a single unbound workqueue.
-
-An 8-core machine with 16 threads can handle quite a bit of I/O, but
-with the proposed scheme it will still have a single UNBOUND pool.
-For NFS workloads I commonly benchmark, splitting the UNBOUND pool
-on such systems is a very clear win.
-
-
-> For smaller systems (2-4 CPUs), contention is usually negligible
-> regardless of the approach. My perf lock contention measurements
-> consistently show minimal contention in that range.
+> > Place this change behind the new mount option "-o nouuid" for ABI
+> > compatibility.
 > 
->> IOW, if you want good scaling, human intervention (via a
->> boot command-line option) is still needed.
+> I *really* hate this mount option.  It's not at all obvious what it
+> means for a system administrator who hasn't had the context of reading
+> the e-mail discussion on this subject.
+
+I don't love 'nouuid' either, because it means something completely
+different in XFS.  'fsid_from_dev' or something would at least be
+clearer about what it's doing...
+
+> As I stated in [1], I think the f_fsid is a terrible interface that
+> was promulgated by history, and future usage should be strongly
+> discouraged, and the wise programmer won't use it because it has
+> significant compatibility issues.
 > 
-> I am not convinced. The wq_cache_shard_size approach creates multiple
-> pools on large systems while leaving small systems (<8 cores) unchanged.
+> As such, my personal preference is that we not try to condition it on
+> a mount option, which in all likelihood almost no one will use, and
+> instead just change it so that we hash the file system's UUID and
+> block device number together and use that for ext4's f_fsid.
 
-This is exactly my concern. Smaller systems /do/ experience measurable
-contention in this area. I don't object to your series at all, it's
-clean and well-motivated; but the cores-per-shard approach doesn't scale
-down to very commonly deployed machine sizes.
+...but why not just set fsid to some approximation of the dev_t like
+XFS and be done with it?
 
-We might also argue that the NFS client and other subsystems that make
-significant use of UNBOUND workqueues in their I/O paths might be well
-advised to modify their approach. (net/sunrpc/sched.c, hint hint)
+	st->f_fsid = u64_to_fsid(huge_encode_dev(mp->m_ddev_targp->bt_dev))
 
+There are a few other single-bdev filesystems that do this.
 
-> This eliminates the pathological lock contention we're observing on
-> high-core-count machines without impacting smaller deployments.
+--D
+
+> Thoughts, comments?
 > 
-> In contrast, splitting pools per LLC would force fragmentation even on
-> systems that aren't experiencing contention, increasing the need for
-> manual tuning across a wider range of configurations.
-
-I claim that smaller deployments also need help. Further, I don't see
-how UNBOUND pool fragmentation is a problem on such systems that needs
-to be addressed (IMHO).
-
-
--- 
-Chuck Lever
+> 						- Ted
+> 

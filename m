@@ -1,136 +1,115 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EEF5C2FE582;
-	Mon, 23 Mar 2026 22:43:32 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 48DB0377ED4;
+	Mon, 23 Mar 2026 22:51:22 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774305813; cv=none; b=Fvazz4MNAtUCsB8RkG5sMlxI34w8eCUIFHWNbI4xLxid/QzbjH3Lcr/i74zGOwSthHJPqMBzrB7ZY1xArj+JYUvZ2G4pNBVi64wwgCglM9DrH8wkv4uD0P7HZQFJBxRYPw4abVtEaVimg9azyRNpjJBfS6dEWMLGZ1nBxz4xmRI=
+	t=1774306282; cv=none; b=MfKs8I8IIKqi9SpMasGihNt9T7qlCKKP3NclUzo7YE/0jQ6iGEZfQgq0s4lhbjNcFm5uh+lyN/O3afryEEjPwo3DO0H/ctAjAid5BsVAJOyUugXhMflE82eGqgtCxDcbfFzG2xhEHuYEEgztBuGNPpMfW5h5MOi2CiZUl34aP2w=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774305813; c=relaxed/simple;
-	bh=p7HO9XDY3c3UHOq/CP+xJ5mzqUGLPR+z711wGORLXB0=;
+	s=arc-20240116; t=1774306282; c=relaxed/simple;
+	bh=hhZfqB+tDajyqOXd1zYqSaKTiKZ6dVwnBGEXGxxbygw=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=EgGPnJJHGssCx5ifudbFL8Zl6LI20GjjJb3xpMTojaPax2gZ3hK9yWC7H5oqkQE0dPchMRYQh5iIpCi5b1wPVW8EdQn1QT1b0xw6UC5J2OtJ0gMHhs5jKWnlIhvCz07QRb0ckKjgm+WhHnx9nQjUI0VanH3LDUFhX+C86zCatVk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=DivkZfw7; arc=none smtp.client-ip=10.30.226.201
+	 Content-Type:Content-Disposition:In-Reply-To; b=panndpmbkXBa/BfMdX9x6VmY05mCVs77Z5elGk8tso8AAS2s3YjcdYyGbS3nVZT18r7v2a7BdGhYUcDhZOLPwy7zAAax4TjVgVnIe7PBGCL9+R0rvn3p6eDoPzLeGLfYGkqIfhm6VzPm5ZqLKEUH9kOumX6QP9Y15pc6hny8hWY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Iq9feWKs; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="DivkZfw7"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 79C2EC4CEF7;
-	Mon, 23 Mar 2026 22:43:32 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Iq9feWKs"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id D430EC4CEF7;
+	Mon, 23 Mar 2026 22:51:21 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1774305812;
-	bh=p7HO9XDY3c3UHOq/CP+xJ5mzqUGLPR+z711wGORLXB0=;
+	s=k20201202; t=1774306281;
+	bh=hhZfqB+tDajyqOXd1zYqSaKTiKZ6dVwnBGEXGxxbygw=;
 	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=DivkZfw7m671l5LTyI2dgFK4rsbkxJDz2sfMji+C04PgU6YNzv/JHDcLwaQyFfLvn
-	 bHn4dofGltCEG5wh0Qnuwd/CPUG1G/0OVuQrUi9p4I+j7CMikjQzOHbFouw/CzLMwc
-	 I+BwDBJo9YZaaSYTmkQQSk0PbiXFTeBqMTLUsirG0oWKIfhK+AFZyQeHh3nC1Zux5h
-	 5R7laKjklGBpYv7nV6yn6FQtPwmb2MUkDSzH3Q57Bvd4xnaBmhJW6E0AWyKYwh2cL6
-	 S7J5csOBw1OufUCKKBQUDeqDInyWtXkS+SF4H1vNgiEfiPDCXFvqBCk3ZIwksj7fQh
-	 i9bztM5CiZyEw==
-Date: Mon, 23 Mar 2026 12:43:31 -1000
-From: Tejun Heo <tj@kernel.org>
-To: Breno Leitao <leitao@debian.org>
-Cc: Lai Jiangshan <jiangshanlai@gmail.com>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	linux-kernel@vger.kernel.org, puranjay@kernel.org,
-	linux-crypto@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org,
-	Michael van der Westhuizen <rmikey@meta.com>, kernel-team@meta.com,
-	Chuck Lever <chuck.lever@oracle.com>
-Subject: Re: [PATCH v2 2/5] workqueue: add WQ_AFFN_CACHE_SHARD affinity scope
-Message-ID: <acHCE96gzEUaGZFP@slm.duckdns.org>
-References: <20260320-workqueue_sharded-v2-0-8372930931af@debian.org>
- <20260320-workqueue_sharded-v2-2-8372930931af@debian.org>
+	b=Iq9feWKsZ5/u4Xe7PxCq+qawSI/ZQVBvR8mybACYfKaDblycy5MaSVJ4r/lXaSTYk
+	 8Qkfv4zwQ/undV4Wv53oyG/FUN7Era3skw49QevrXv+Nr9CLB0XXLNlcbeWL+NNb4l
+	 zRM8pIc38ZS4f0B5+EUGybgzwTBzhncY6djFDkzt/2z5BN7ajXxzQ7aI3aRLfeOh17
+	 ZkMMnLKR+9XkqYe9Fe9KpLm2R0eMFSKztg51tb/eB2jt4IbH2f4m8Gv5A3aiZF0p3L
+	 1/CMiK3cPiO6z3UDE2LOhDdXmxPV0EXk+wrdrh4cCXe1Wo+Et8ht94+ga4WdETE6Vt
+	 CRwDHnjZXFAqw==
+Date: Mon, 23 Mar 2026 15:51:21 -0700
+From: "Darrick J. Wong" <djwong@kernel.org>
+To: Leo Martins <loemra.dev@gmail.com>
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	Filipe Manana <fdmanana@suse.com>
+Subject: Re: [RFC] generic/301: flaky failure on btrfs after metadata
+ overcommit change
+Message-ID: <20260323225121.GC6212@frogsfrogsfrogs>
+References: <20260323201533.2648753-1-loemra.dev@gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <20260320-workqueue_sharded-v2-2-8372930931af@debian.org>
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <20260323201533.2648753-1-loemra.dev@gmail.com>
 
-Hello,
+On Mon, Mar 23, 2026 at 01:15:29PM -0700, Leo Martins wrote:
+> Hi,
+> 
+> generic/301 has become flaky on btrfs after commit 0dc118b3c327 ("btrfs:
+> be less aggressive with metadata overcommit when we can do full
+> flushing") which landed in btrfs/for-next. Out of 30 runs, 8 fail with:
+> 
+>     +file2 badly fragmented
+> 
+> I bisected this to the above commit, which reduces the metadata
+> overcommit limit from 1/8th to 1/64th of available space for
+> full-flushing contexts. This is a legitimate fix for -ENOSPC transaction
+> aborts on small filesystems, but as a side effect it causes more
+> frequent transaction commits during writeback. The reduced batching
+> means the extent allocator has less opportunity to coalesce adjacent CoW
+> extents, resulting in higher extent counts that sometimes cross the
+> test's threshold.
+> 
+> The fragmentation check in question is:
+> 
+>     test $new_extents -lt $((internal_blks * 2 / 3)) || echo "file2 badly fragmented"
+> 
+> The 2/3 threshold was introduced in 9184ca155d7c ("xfs: test
+> fragmentation characteristics of copy-on-write") as part of a series
+> testing XFS's CoW extent size hint (cowextsize) mechanism. For btrfs,
+> this threshold is arbitrary — btrfs doesn't have XFS's cowextsize hint,
+> and its CoW extent allocation depends on factors like transaction commit
+> frequency and metadata reservation behavior, which is exactly what the
+> overcommit commit changed.
+> 
+> I see two possible fixes and would appreciate input on which is
+> preferred:
+> 
+> Option A: _notrun for btrfs
+> ----------------------------
+> 
+> Skip the entire test since the fragmentation threshold is not applicable
+> to btrfs:
+> 
+>     test $FSTYP = "btrfs" && \
+>         _notrun "CoW fragmentation threshold not applicable to btrfs"
+> 
+> Option B: Skip only the extent count assertion for btrfs
+> ---------------------------------------------------------
+> 
+> Keep the CoW + data integrity portion of the test (the md5sum checks
+> after random CoW writes and remount are still useful) and only skip the
+> fragmentation assertion:
+> 
+>     if [ "$FSTYP" != "btrfs" ]; then
+>         test $new_extents -lt $((internal_blks * 2 / 3)) || \
+>             echo "file2 badly fragmented"
+>     fi
+> 
+> I lean towards option B since the CoW write + remount + md5sum
+> verification is still a reasonable smoke test, but option A is cleaner
+> if the consensus is that this test isn't adding value for btrfs.
+> 
+> Thoughts?
 
-On Fri, Mar 20, 2026 at 10:56:28AM -0700, Breno Leitao wrote:
-> +/**
-> + * llc_count_cores - count distinct cores (SMT groups) within a cpumask
-> + * @pod_cpus: the cpumask to scan (typically an LLC pod)
-> + * @smt_pt:   the SMT pod type, used to identify sibling groups
-> + *
-> + * A core is represented by the lowest-numbered CPU in its SMT group. Returns
-> + * the number of distinct cores found in @pod_cpus.
-> + */
-> +static int __init llc_count_cores(const struct cpumask *pod_cpus,
-> +				  struct wq_pod_type *smt_pt)
-> +{
-> +	const struct cpumask *smt_cpus;
-> +	int nr_cores = 0, c;
-> +
-> +	for_each_cpu(c, pod_cpus) {
-> +		smt_cpus = smt_pt->pod_cpus[smt_pt->cpu_pod[c]];
-> +		if (cpumask_first(smt_cpus) == c)
-> +			nr_cores++;
-> +	}
-> +
-> +	return nr_cores;
-> +}
-> +
-> +/**
-> + * llc_cpu_core_pos - find a CPU's core position within a cpumask
-> + * @cpu:      the CPU to locate
-> + * @pod_cpus: the cpumask to scan (typically an LLC pod)
-> + * @smt_pt:   the SMT pod type, used to identify sibling groups
-> + *
-> + * Returns the zero-based index of @cpu's core among the distinct cores in
-> + * @pod_cpus, ordered by lowest CPU number in each SMT group.
-> + */
-> +static int __init llc_cpu_core_pos(int cpu, const struct cpumask *pod_cpus,
-> +				   struct wq_pod_type *smt_pt)
-> +{
-> +	const struct cpumask *smt_cpus;
-> +	int core_pos = 0, c;
-> +
-> +	for_each_cpu(c, pod_cpus) {
-> +		smt_cpus = smt_pt->pod_cpus[smt_pt->cpu_pod[c]];
-> +		if (cpumask_test_cpu(cpu, smt_cpus))
-> +			break;
-> +		if (cpumask_first(smt_cpus) == c)
-> +			core_pos++;
-> +	}
-> +
-> +	return core_pos;
-> +}
+B, since it's checking data integrity across a mount cycle.
 
-Can you do the above two in a separate pass and record the results and then
-use that to implement cpu_cache_shard_id()? Doing all of it on the fly makes
-it unnecessarily difficult to follow and init_pod_type() is already O(N^2)
-and the above makes it O(N^4). Make the machine large enough and this may
-become noticeable.
+--D
 
-> +/**
-> + * cpu_cache_shard_id - compute the shard index for a CPU within its LLC pod
-> + * @cpu: the CPU to look up
-> + *
-> + * Returns a shard index that is unique within the CPU's LLC pod. The LLC is
-> + * divided into shards of at most wq_cache_shard_size cores, always split on
-> + * core (SMT group) boundaries so that SMT siblings are never placed in
-> + * different shards. Cores are distributed across shards as evenly as possible.
-> + *
-> + * Example: 36 cores with wq_cache_shard_size=8 gives 5 shards of
-> + * 8+7+7+7+7 cores.
-> + */
-
-I always feel a bit uneasy about using max number as split point in cases
-like this because the reason why you picked 8 as the default was that
-testing showed shard sizes close to 8 seems to behave the best (or at least
-acceptably in most cases). However, setting max number to 8 doesn't
-necessarily keep you close to that. e.g. If there are 9 cores, you end up
-with 5 and 4 even though 9 is a lot closer to the 8 that we picked as the
-default. Can the sharding logic updated so that "whatever sharding that gets
-the system closest to the config target?".
-
-Thanks.
-
--- 
-tejun
+> Thanks,
+> Leo Martins
+> 

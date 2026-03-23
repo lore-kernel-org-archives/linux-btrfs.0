@@ -1,152 +1,150 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 943273DC4C5
-	for <linux-btrfs@vger.kernel.org>; Mon, 23 Mar 2026 19:47:36 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 43A332EA151;
+	Mon, 23 Mar 2026 19:53:13 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774295257; cv=none; b=R3RI9pSwEgz607qYdHZ/jGm9/KWWnvPDClb9kGuT0l/g/ApUwB5HaeTp2TemKBkQV1/N149MAUFmj2u2V9vQt2VfLpLxgA4wvdqWsCHeHnmebE+neKGiBVjAUHuxLZzyhKsSOtmyHnb7C6CBxLAjbPnGztHzGJLbUj14m3/07po=
+	t=1774295593; cv=none; b=YlsA8nkdWMpI83ahceqJC0u0rDpOZLyrATLHXuOQp8NGeGb8A9dLL4jgPITxwbM6DbOIQ0FfKSz3OTXl8aatDR+RhBV8heyxY39Te9T73ltbwo4dbBAa6piR79kHUdvmmn2YkKaRiu0iw3dA3HFL8S/AoYY/+AEHefstRByFUyU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774295257; c=relaxed/simple;
-	bh=WXr7Uxqfd7ZzWimGkQ0qZJa2qQrNfnB0X4JxZ0VqxZo=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=bxnIp+OsgloM6gQVGYneqpXPsyIl+dz+1Q9yeSQpk9SNedgrekJ1Gu7CmT/h5JLOa0AD8wbrB+22+e+eixDFaT1g01yC6UpFkPV+MgjzvvGZf79YnPCavLiBm1sEELgCAldB1ntNaPvY7EFrYYC58wGGbUgIffQnQJtIEkXqhng=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=CfcOVf+2; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=FZgaYQ22; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=CfcOVf+2; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=FZgaYQ22; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	s=arc-20240116; t=1774295593; c=relaxed/simple;
+	bh=Wu3kjDSNkN5FVjTb4kqzvVi628241DvvruskNz7eyNU=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=ILGcBcqBVrSfREKUJlezKONIwGfLSGqMrIZlpJNxKkrYApxndygfSQIluxR0emdY6vlF6IZ+5iGZoP0gWHTGieryUV/BxZggdqtmQSqt+J+PC3inng/dQcnD/PPkZMglPPD2fVG50lwha7YqLlPrPa/9ERRa0Yl92Utwm7sjH6Q=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=cVO0umbP; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="CfcOVf+2";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="FZgaYQ22";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="CfcOVf+2";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="FZgaYQ22"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 971355BDCC;
-	Mon, 23 Mar 2026 19:47:34 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1774295254;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=prLONiCqlXJiiAxHJr03M3hsqyprosNVDfpQ4OI7XGU=;
-	b=CfcOVf+2EtjmXB9lMuGJGkBV2rEi8DmoLYvI4g8ObdtDFDxBADTO5q00gO7v3rW0ui7CJc
-	ee9IglSpniLV7rqq3Hn8uBaDW9iMevELe7XCrnthS+XOOHoZrPUShYzh5+5+hRR6yX4rQm
-	X4ABHiKMYzI8mrlQAteUJn6OEC0Y060=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1774295254;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=prLONiCqlXJiiAxHJr03M3hsqyprosNVDfpQ4OI7XGU=;
-	b=FZgaYQ22LNg76nbzRP0MzF7XwK31TkwHANuGS7cggIhRbKh8QIMbztPr5Pbc3/LoVrGluZ
-	/xb89BX7wWuBRGAA==
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b=CfcOVf+2;
-	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=FZgaYQ22
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1774295254;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=prLONiCqlXJiiAxHJr03M3hsqyprosNVDfpQ4OI7XGU=;
-	b=CfcOVf+2EtjmXB9lMuGJGkBV2rEi8DmoLYvI4g8ObdtDFDxBADTO5q00gO7v3rW0ui7CJc
-	ee9IglSpniLV7rqq3Hn8uBaDW9iMevELe7XCrnthS+XOOHoZrPUShYzh5+5+hRR6yX4rQm
-	X4ABHiKMYzI8mrlQAteUJn6OEC0Y060=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1774295254;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=prLONiCqlXJiiAxHJr03M3hsqyprosNVDfpQ4OI7XGU=;
-	b=FZgaYQ22LNg76nbzRP0MzF7XwK31TkwHANuGS7cggIhRbKh8QIMbztPr5Pbc3/LoVrGluZ
-	/xb89BX7wWuBRGAA==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 66FB543A47;
-	Mon, 23 Mar 2026 19:47:34 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id scjtGNaYwWlgawAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Mon, 23 Mar 2026 19:47:34 +0000
-Date: Mon, 23 Mar 2026 20:47:29 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Zi Yan <ziy@nvidia.com>
-Cc: "Matthew Wilcox (Oracle)" <willy@infradead.org>,
-	Song Liu <songliubraving@fb.com>, Chris Mason <clm@fb.com>,
-	David Sterba <dsterba@suse.com>,
-	Alexander Viro <viro@zeniv.linux.org.uk>,
-	Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	David Hildenbrand <david@kernel.org>,
-	Lorenzo Stoakes <ljs@kernel.org>,
-	Baolin Wang <baolin.wang@linux.alibaba.com>,
-	"Liam R. Howlett" <Liam.Howlett@oracle.com>,
-	Nico Pache <npache@redhat.com>, Ryan Roberts <ryan.roberts@arm.com>,
-	Dev Jain <dev.jain@arm.com>, Barry Song <baohua@kernel.org>,
-	Lance Yang <lance.yang@linux.dev>,
-	Vlastimil Babka <vbabka@kernel.org>,
-	Mike Rapoport <rppt@kernel.org>,
-	Suren Baghdasaryan <surenb@google.com>,
-	Michal Hocko <mhocko@suse.com>, Shuah Khan <shuah@kernel.org>,
-	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
-	linux-kselftest@vger.kernel.org
-Subject: Re: [RFC PATCH 09/11] fs/btrfs: remove a comment referring to
- READ_ONLY_THP_FOR_FS
-Message-ID: <20260323194729.GU5735@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20260323190644.1714379-1-ziy@nvidia.com>
- <20260323190644.1714379-10-ziy@nvidia.com>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="cVO0umbP"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 5FB00C4CEF7;
+	Mon, 23 Mar 2026 19:53:06 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1774295592;
+	bh=Wu3kjDSNkN5FVjTb4kqzvVi628241DvvruskNz7eyNU=;
+	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
+	b=cVO0umbPLG2GPAWshF09LgIS68Q0JPofvRWldFefm3OIfXXa2ENAGmD664zeOlBIS
+	 +IpW8DdlJeEWx9sTAzsmsgA8dxMoxvaczbfZJUjMN3GzF4m31/WLnpGHJUAdbchFlb
+	 00B/1LzGj7FXCzEXzhoROtvSzH+htOToA2vGsVw/fq2j2HTcy8dj5EQRonGrdasuXO
+	 47wD7dYqszZ+y4ITQFUelkZJWAwVIHMXvnVgEjSNF5fxESxld3qU4dizX58Cud6Zkn
+	 1Jkr2cjEuMxiX4y0qg1t1uBVJ/zR7xMEpYpvZbsv4qDcci8BmqeawwfmPAA/jU3ET6
+	 dyLEP6SCw7vsw==
+Message-ID: <c20b7dbe-473d-4dca-a10b-b9f5267ad6da@kernel.org>
+Date: Mon, 23 Mar 2026 20:53:05 +0100
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20260323190644.1714379-10-ziy@nvidia.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Spamd-Result: default: False [-4.21 / 50.00];
-	BAYES_HAM(-3.00)[99.99%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	RCPT_COUNT_TWELVE(0.00)[28];
-	URIBL_BLOCKED(0.00)[suse.com:email,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,twin.jikos.cz:mid,suse.cz:dkim,suse.cz:replyto,nvidia.com:email];
-	MIME_TRACE(0.00)[0:+];
-	TO_DN_SOME(0.00)[];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	ARC_NA(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	DKIM_TRACE(0.00)[suse.cz:+];
-	R_RATELIMIT(0.00)[to_ip_from(RLmi6urjzmorgytm9rghjcwzox)];
-	REPLYTO_DOM_NEQ_TO_DOM(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[nvidia.com:email,suse.cz:dkim,suse.cz:replyto]
-X-Rspamd-Action: no action
-X-Spam-Flag: NO
-X-Spam-Score: -4.21
-X-Spam-Level: 
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Rspamd-Queue-Id: 971355BDCC
+User-Agent: Mozilla Thunderbird
+Subject: Re: [RFC PATCH 02/11] mm/khugepaged: remove READ_ONLY_THP_FOR_FS code
+ in collapse_file()
+To: Zi Yan <ziy@nvidia.com>
+Cc: "Matthew Wilcox (Oracle)" <willy@infradead.org>,
+ Song Liu <songliubraving@fb.com>, Chris Mason <clm@fb.com>,
+ David Sterba <dsterba@suse.com>, Alexander Viro <viro@zeniv.linux.org.uk>,
+ Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>,
+ Andrew Morton <akpm@linux-foundation.org>, Lorenzo Stoakes <ljs@kernel.org>,
+ Baolin Wang <baolin.wang@linux.alibaba.com>,
+ "Liam R. Howlett" <Liam.Howlett@oracle.com>, Nico Pache <npache@redhat.com>,
+ Ryan Roberts <ryan.roberts@arm.com>, Dev Jain <dev.jain@arm.com>,
+ Barry Song <baohua@kernel.org>, Lance Yang <lance.yang@linux.dev>,
+ Vlastimil Babka <vbabka@kernel.org>, Mike Rapoport <rppt@kernel.org>,
+ Suren Baghdasaryan <surenb@google.com>, Michal Hocko <mhocko@suse.com>,
+ Shuah Khan <shuah@kernel.org>, linux-btrfs@vger.kernel.org,
+ linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+ linux-mm@kvack.org, linux-kselftest@vger.kernel.org
+References: <20260323190644.1714379-1-ziy@nvidia.com>
+ <20260323190644.1714379-3-ziy@nvidia.com>
+ <7382046f-7c58-4a3e-ab34-b2704355b7d5@kernel.org>
+ <E8D52134-B63E-44E9-BBBC-258DF74B8597@nvidia.com>
+From: "David Hildenbrand (Arm)" <david@kernel.org>
+Content-Language: en-US
+Autocrypt: addr=david@kernel.org; keydata=
+ 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
+ qIws/H2t
+In-Reply-To: <E8D52134-B63E-44E9-BBBC-258DF74B8597@nvidia.com>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 
-On Mon, Mar 23, 2026 at 03:06:42PM -0400, Zi Yan wrote:
-> READ_ONLY_THP_FOR_FS is no longer present, remove related comment.
+On 3/23/26 20:47, Zi Yan wrote:
+> On 23 Mar 2026, at 15:41, David Hildenbrand (Arm) wrote:
 > 
-> Signed-off-by: Zi Yan <ziy@nvidia.com>
+>> On 3/23/26 20:06, Zi Yan wrote:
+>>> READ_ONLY_THP_FOR_FS is no longer present, remove corresponding code.
+>>>
+>>> Signed-off-by: Zi Yan <ziy@nvidia.com>
+>>> ---
+>>>  mm/khugepaged.c | 159 +++++++++++-------------------------------------
+>>>  1 file changed, 34 insertions(+), 125 deletions(-)
+>>>
+>>> diff --git a/mm/khugepaged.c b/mm/khugepaged.c
+>>> index b2ac28ddd480..39f0b8959535 100644
+>>> --- a/mm/khugepaged.c
+>>> +++ b/mm/khugepaged.c
+>>> @@ -1899,7 +1899,7 @@ static enum scan_result collapse_file(struct mm_struct *mm, unsigned long addr,
+>>>  	int nr_none = 0;
+>>>  	bool is_shmem = shmem_file(file);
+>>>
+>>> -	VM_BUG_ON(!IS_ENABLED(CONFIG_READ_ONLY_THP_FOR_FS) && !is_shmem);
+>>> +	VM_WARN_ON_ONCE(!is_shmem);
+>>
+>> Oh, but if that means that khugepaged cannot collapse large folios in
+>> FSes anymore, then this is the wrong approach I suppose?
+>>
+>> I would have assumed that we would now collapse for any files that
+>> support large folios (in PMD size), not stopping to collapse entirely.
+> 
+> My understanding is that collapse_file() is only used for
+> READ_ONLY_THP_FOR_FS. If FSes with large folio support also use it,
+> I can replace IS_ENABLE with mapping_large_folio_support().
 
-Acked-by: David Sterba <dsterba@suse.com>
+Otherwise we'd be losing support for THP collapse in files? We'd have to
+cross fingers that readahead gives us some.
+
+So we have to be a bit careful here. We want khugepaged to collapse THPs
+in filesystems that support large folios even without READ_ONLY_THP_FOR_FS.
+
+-- 
+Cheers,
+
+David

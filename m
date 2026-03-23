@@ -1,135 +1,111 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 716743C9ED9
-	for <linux-btrfs@vger.kernel.org>; Mon, 23 Mar 2026 17:53:27 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CE97B3C5DB5;
+	Mon, 23 Mar 2026 18:05:01 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774288409; cv=none; b=aka9pGTwJ7g0hiJaQg+nT/n/FG7OMzyLnurZWMUmMvF1AmEA0+xkQ9bmMFiKl0iuCjHSGwIwKYlqElOgO/F6BRIS5Vi1N3c3dYmQpXw+HhEd/QbSSTf4gMsQhdicBggI8ciCILzmRXcX2SuAJBPhWXlQO0o/zO/HScdKHECwXjA=
+	t=1774289101; cv=none; b=TIQz20625G5dVN/tLiS5JqYRAHhjybDyc6766nZpvwA3RNMzdrKLLjYe97xkjFuOTkq4lmk5lMdey9SfxKFDyPFe9Gzd1x7JyMC7WtN/DXd/IdiWKk674mwmLsbQUMGkVVePl3kwsrHVYgTmh3RtVR94ta6njAMrVRHgNJ6eJXE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774288409; c=relaxed/simple;
-	bh=wABEVCaymgDsOAF1C8bFFBLnXQtbAubY7mopUnaE2lE=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=Dz9Bx9wpMPDrXjxfvn6pUBu2fYL7FViesGMvVukqAOcOwapkoGwUzPqK/ogRJrr4rbE1OW4QvDLu6qAarioEPZ0AGSwv7ZFVHD0lt/gdrppMb5TJv2G6blnQCG8lpV04HHmrgfVXA5RaFqHafsWaKaFJwO4+bHhpWM4u8gjg6So=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=Q9xCa/0A; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=9IZe8hZK; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=Q9xCa/0A; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=9IZe8hZK; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	s=arc-20240116; t=1774289101; c=relaxed/simple;
+	bh=0u4JasBlYSKASg+QbISo2phqKucpCXk7LdckBb6sXjI=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=ZQZugTvLcp4R694+8PDGkuo/wSqJ7Es95XQgOdV/jcFB+WyHbUm/rGojE+Bl+CUnpXOE5YJQXUwCodI9UOcZCjfBjyuaaKY/2MX9QAeiKriwzPO+/6FHc/FLnz3OqMO8vE+hsytMLXZJt0Ph8dm5viyEtNX/CE5kvcrDx0jrjAk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=u6Z5S+n4; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="Q9xCa/0A";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="9IZe8hZK";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="Q9xCa/0A";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="9IZe8hZK"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id BD3BD4D364;
-	Mon, 23 Mar 2026 17:53:25 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1774288405;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=iiJSeib8y2tud2R3DO0GagCuPq+oG5UXOA7+MtsD6X8=;
-	b=Q9xCa/0A878LAsjrb9GpKyTJ5sENDwBnVZ6soEMCamUg7IHmxM1PFIm6teIbEGHi+NhjmJ
-	ecmI0X4sWjhGdncsvZK/WzqlPJEpjvhMYoj47pUdiMeEfisBsJQq1IW6PXpIkaY21PHW7z
-	qDX7Z3QXsX1lzTIpJcyLbo0h1iJTWAI=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1774288405;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=iiJSeib8y2tud2R3DO0GagCuPq+oG5UXOA7+MtsD6X8=;
-	b=9IZe8hZKLVCMqKMQm+mElS1xXFLwK8up+zge414uSCVKUrm2ePr6hs8+DDVzwK0XqbwcYL
-	q+YHuouj/2VaLODA==
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1774288405;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=iiJSeib8y2tud2R3DO0GagCuPq+oG5UXOA7+MtsD6X8=;
-	b=Q9xCa/0A878LAsjrb9GpKyTJ5sENDwBnVZ6soEMCamUg7IHmxM1PFIm6teIbEGHi+NhjmJ
-	ecmI0X4sWjhGdncsvZK/WzqlPJEpjvhMYoj47pUdiMeEfisBsJQq1IW6PXpIkaY21PHW7z
-	qDX7Z3QXsX1lzTIpJcyLbo0h1iJTWAI=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1774288405;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=iiJSeib8y2tud2R3DO0GagCuPq+oG5UXOA7+MtsD6X8=;
-	b=9IZe8hZKLVCMqKMQm+mElS1xXFLwK8up+zge414uSCVKUrm2ePr6hs8+DDVzwK0XqbwcYL
-	q+YHuouj/2VaLODA==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 4BA8B439D7;
-	Mon, 23 Mar 2026 17:53:25 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id hCJIEhV+wWmBdgAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Mon, 23 Mar 2026 17:53:25 +0000
-Date: Mon, 23 Mar 2026 18:53:24 +0100
-From: David Sterba <dsterba@suse.cz>
-To: "Vineeth Pillai (Google)" <vineeth@bitbyteword.org>
-Cc: Steven Rostedt <rostedt@goodmis.org>,
-	Peter Zijlstra <peterz@infradead.org>, Chris Mason <clm@fb.com>,
-	David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org, linux-trace-kernel@vger.kernel.org
-Subject: Re: [PATCH v2 15/19] btrfs: Use trace_call__##name() at guarded
- tracepoint call sites
-Message-ID: <20260323175324.GP5735@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20260323160052.17528-1-vineeth@bitbyteword.org>
- <20260323160052.17528-16-vineeth@bitbyteword.org>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="u6Z5S+n4"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 75EC9C2BC9E;
+	Mon, 23 Mar 2026 18:05:00 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1774289101;
+	bh=0u4JasBlYSKASg+QbISo2phqKucpCXk7LdckBb6sXjI=;
+	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
+	b=u6Z5S+n4xiQ3XcZURc/dn3ofbB8sDA8HrWBXLc/yoBjyzs/fmDnPK0vPZHNoSGV80
+	 qoH+zza8X1nMv1ljOYXhf85ZJifeESGCJkc4WUen6BqJ5aretOOccrqgidfrJOgCzx
+	 NOIoILZizrjqfGQ+pDsEqaX4zO9JGR5TLag/TdNThtrq5DnOHe/uUTA5KiFSIzxYGD
+	 EPxxKr8Dw/Wx80Ixh8Aezcke4lr4jo+dEhdNi6RCR4ceBX88z+oDBPqmsLAKhO9Q1u
+	 kltxKmQht+4jprvr9mLQTb7FoFNd719uaRP+4aE5L8gWxHA5Lwk3+QyDFCkSooCU7t
+	 JNpXJSsHzcH5w==
+Message-ID: <53a8bc40-f22a-4447-a233-1cf88f837bbf@kernel.org>
+Date: Mon, 23 Mar 2026 14:04:57 -0400
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20260323160052.17528-16-vineeth@bitbyteword.org>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Spamd-Result: default: False [-4.00 / 50.00];
-	BAYES_HAM(-3.00)[99.99%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	FROM_HAS_DN(0.00)[];
-	URIBL_BLOCKED(0.00)[suse.com:email,suse.cz:replyto,infradead.org:email,goodmis.org:email,twin.jikos.cz:mid];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	MIME_TRACE(0.00)[0:+];
-	ARC_NA(0.00)[];
-	TO_DN_SOME(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	REPLYTO_DOM_NEQ_TO_DOM(0.00)[];
-	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	RCPT_COUNT_SEVEN(0.00)[8];
-	RCVD_COUNT_TWO(0.00)[2];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,goodmis.org:email,suse.com:email,twin.jikos.cz:mid,bitbyteword.org:email,suse.cz:replyto,infradead.org:email]
-X-Spam-Flag: NO
-X-Spam-Score: -4.00
-X-Spam-Level: 
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v2 0/5] workqueue: Introduce a sharded cache affinity
+ scope
+To: Breno Leitao <leitao@debian.org>
+Cc: Tejun Heo <tj@kernel.org>, Lai Jiangshan <jiangshanlai@gmail.com>,
+ Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org,
+ puranjay@kernel.org, linux-crypto@vger.kernel.org,
+ linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+ Michael van der Westhuizen <rmikey@meta.com>, kernel-team@meta.com,
+ Chuck Lever <chuck.lever@oracle.com>
+References: <20260320-workqueue_sharded-v2-0-8372930931af@debian.org>
+ <04af531d-d8a3-4fbb-993d-e1da2df62a03@app.fastmail.com>
+ <acFVEr7iVnU_70yh@gmail.com>
+ <f2f7fff3-2f6a-4ebb-aa5e-33188be4dd9a@kernel.org>
+ <acFmcCcbPfznH_it@gmail.com>
+Content-Language: en-US
+From: Chuck Lever <cel@kernel.org>
+Organization: kernel.org
+In-Reply-To: <acFmcCcbPfznH_it@gmail.com>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 
-On Mon, Mar 23, 2026 at 12:00:34PM -0400, Vineeth Pillai (Google) wrote:
-> Replace trace_foo() with the new trace_call__foo() at sites already
-> guarded by trace_foo_enabled(), avoiding a redundant
-> static_branch_unlikely() re-evaluation inside the tracepoint.
-> trace_call__foo() calls the tracepoint callbacks directly without
-> utilizing the static branch again.
+On 3/23/26 12:26 PM, Breno Leitao wrote:
+> Hello Chuck,
 > 
-> Suggested-by: Steven Rostedt <rostedt@goodmis.org>
-> Suggested-by: Peter Zijlstra <peterz@infradead.org>
-> Signed-off-by: Vineeth Pillai (Google) <vineeth@bitbyteword.org>
-> Assisted-by: Claude:claude-sonnet-4-6
+> On Mon, Mar 23, 2026 at 11:28:49AM -0400, Chuck Lever wrote:
+>> On 3/23/26 11:10 AM, Breno Leitao wrote:
+>>>
+>>> I am not convinced. The wq_cache_shard_size approach creates multiple
+>>> pools on large systems while leaving small systems (<8 cores) unchanged.
+>>
+>> This is exactly my concern. Smaller systems /do/ experience measurable
+>> contention in this area. I don't object to your series at all, it's
+>> clean and well-motivated; but the cores-per-shard approach doesn't scale
+>> down to very commonly deployed machine sizes.
+> 
+> I don't see why the cores-per-shard approach wouldn't scale down
+> effectively.
 
-Acked-by: David Sterba <dsterba@suse.com>
+Sharding the UNBOUND pool is fine. But with a fixed cores-per-shard
+ratio of 8, it doesn't scale down to smaller systems.
+
+
+> The sharding mechanism itself is independent of whether we use
+> cores-per-shard or shards-per-LLC as the allocation strategy, correct?
+> 
+> Regardless of the approach, we retain full control over the granularity
+> of the shards.
+> 
+>> We might also argue that the NFS client and other subsystems that make
+>> significant use of UNBOUND workqueues in their I/O paths might be well
+>> advised to modify their approach. (net/sunrpc/sched.c, hint hint)
+>>
+>>
+>>> This eliminates the pathological lock contention we're observing on
+>>> high-core-count machines without impacting smaller deployments.
+>>
+>>> In contrast, splitting pools per LLC would force fragmentation even on
+>>> systems that aren't experiencing contention, increasing the need for
+>>> manual tuning across a wider range of configurations.
+>>
+>> I claim that smaller deployments also need help. Further, I don't see
+>> how UNBOUND pool fragmentation is a problem on such systems that needs
+>> to be addressed (IMHO).
+> 
+> Are you suggesting we should reduce the default value to something like
+> wq_cache_shard_size=2 instead of wq_cache_shard_size=8?
+
+A shard size of 2 clearly won't scale properly to hundreds of cores. A
+varying default cores-per-shard ratio would help scaling in both
+directions, without having to manually tune.
+
+
+-- 
+Chuck Lever

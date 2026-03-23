@@ -1,83 +1,192 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4CC263A5E85;
-	Mon, 23 Mar 2026 18:19:53 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9FE8931F9A8
+	for <linux-btrfs@vger.kernel.org>; Mon, 23 Mar 2026 18:54:11 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774289994; cv=none; b=r7wdSc8Ujoo23BYkvC0YnzB9sDYG3D+EZLDrI1opHa8besa5KknQFlWPD2YflLTm0z752hcbCT6jtT0/n7UrZIhphW3TJge3fTHnoRdYY1DH5NqZ5zga/8DOegG+3C/f1bqyL0EbGEcRUFZjUwYwNK21fS+jXvLys6hN8F0/lKk=
+	t=1774292052; cv=none; b=qBi0BregVgIYhMtcql+glkJl6AYCvREpq5RIS3b1zWGRm9k8nvfSYaMtHWVph6dqcKJ2O5+mwCbhHKfWh2WG/QhEXF3djg6o140CMCWTLfic/1Vkg0CgTR6+vU8N4ZLcL+1BW9koXR+okzyBwSnwo/zUCgNu+xFh5XRD9NB370o=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774289994; c=relaxed/simple;
-	bh=4wxpOyklf0R2XiN92izrinwc+Y/UCGsNqfcUGq1tncg=;
+	s=arc-20240116; t=1774292052; c=relaxed/simple;
+	bh=VDv+q/enA+xXRgE6WsOluGaGDn1jr3HwwdN9L6iuJ54=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=C0CFUoR2cUzNWWctKu2bPIFU373PIVQVRGf6yIcVOrhAXuLe9ZQ15ketZSVoeLDbmausmNvE40g7z10PIn1EewVOaobEqlT6hdB4dveniuOZn4XoKgOxuzsMhTwJBXv+iFs1C3rceCsd1NFO3fE1UdRePeDHU9m35pEKvkUBj/M=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=ULYcJxMC; arc=none smtp.client-ip=10.30.226.201
+	 Content-Type:Content-Disposition:In-Reply-To; b=HmHtMDuS7lj9hq0i8B0dj+6RzA4iZLRgMAyes9EEaqrc9iG0BTj6WFBv7IruvShc+pReXc2OBW7F34wnY2tE3ydE6hUc/Idyva5Z+10pIN5GUxGPPY2vHQ627aVnwoaPPh6xnY2p3VmWHwlFmAa0V1nJYN9+7Vyz3jX5Bfzc9gA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=Y9x7LUtb; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=wCPUPUdT; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=Y9x7LUtb; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=wCPUPUdT; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="ULYcJxMC"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 86E33C4CEF7;
-	Mon, 23 Mar 2026 18:19:53 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1774289993;
-	bh=4wxpOyklf0R2XiN92izrinwc+Y/UCGsNqfcUGq1tncg=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=ULYcJxMCOlOX5abYtvkiGFmJayVoEANH6C7eC/b+GMzZ2bG1Xbucw702ICEeu55CU
-	 8lmmV/O5RY3YZMoCaQIZQ161Y+/DpK9AhczzLukFop+2s//UMgHJeG6T6M1Dlwakt4
-	 Xh8mKWbyqDDidZjrOuOgcP6zh1sFppJLbA6+7hBuyolChvLgbJFqJI+Iq+aByMYn4X
-	 0UGTN59LIuaCBGh5NDLjR0eRXn3BsGQMYFK3qXj6Ufq3gwHGoqdQLFpeXyVAwNUxPK
-	 imz3b7WDEuIo+Be4f/JVxqfmfhHb7mN6YpXmgAsaWSEbXBoruzpiozD31VTddxk406
-	 WD10xpxfegk9Q==
-Date: Mon, 23 Mar 2026 08:19:52 -1000
-From: Tejun Heo <tj@kernel.org>
-To: Chuck Lever <cel@kernel.org>
-Cc: Breno Leitao <leitao@debian.org>,
-	Lai Jiangshan <jiangshanlai@gmail.com>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	linux-kernel@vger.kernel.org, puranjay@kernel.org,
-	linux-crypto@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org,
-	Michael van der Westhuizen <rmikey@meta.com>, kernel-team@meta.com,
-	Chuck Lever <chuck.lever@oracle.com>
-Subject: Re: [PATCH v2 0/5] workqueue: Introduce a sharded cache affinity
- scope
-Message-ID: <acGESIKl0Aqa318l@slm.duckdns.org>
-References: <20260320-workqueue_sharded-v2-0-8372930931af@debian.org>
- <04af531d-d8a3-4fbb-993d-e1da2df62a03@app.fastmail.com>
- <acFVEr7iVnU_70yh@gmail.com>
- <f2f7fff3-2f6a-4ebb-aa5e-33188be4dd9a@kernel.org>
- <acFmcCcbPfznH_it@gmail.com>
- <53a8bc40-f22a-4447-a233-1cf88f837bbf@kernel.org>
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="Y9x7LUtb";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="wCPUPUdT";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="Y9x7LUtb";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="wCPUPUdT"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id BAE4A5BD63;
+	Mon, 23 Mar 2026 18:54:09 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1774292049;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=31hhltaXf/LO2FzPwCMK/yZJoy2bfBw8kjriSVXfPwU=;
+	b=Y9x7LUtbiavST7vO6gqJIvGZNu1QavyaBHwegWCEJPBcUHnNlTKj4E/ltvbx1NTViBjK/2
+	xygH9qxrx6PL/U4gx0rEQUbEOwnmGV6Tfm0IMeGpxB0m/PhjAPd6n1QD4eoTS9+8EgbAOh
+	dDY/hGskLGH7VwQbuPjgetSqbxrArCM=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1774292049;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=31hhltaXf/LO2FzPwCMK/yZJoy2bfBw8kjriSVXfPwU=;
+	b=wCPUPUdTAe9e2okZESkU/MwIflcDOoE6RGS2iAFti2DvGsZOHoKXZ1266qXfuvLjYDO7/D
+	Ff71s/lLVXxxsuAw==
+Authentication-Results: smtp-out2.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1774292049;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=31hhltaXf/LO2FzPwCMK/yZJoy2bfBw8kjriSVXfPwU=;
+	b=Y9x7LUtbiavST7vO6gqJIvGZNu1QavyaBHwegWCEJPBcUHnNlTKj4E/ltvbx1NTViBjK/2
+	xygH9qxrx6PL/U4gx0rEQUbEOwnmGV6Tfm0IMeGpxB0m/PhjAPd6n1QD4eoTS9+8EgbAOh
+	dDY/hGskLGH7VwQbuPjgetSqbxrArCM=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1774292049;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=31hhltaXf/LO2FzPwCMK/yZJoy2bfBw8kjriSVXfPwU=;
+	b=wCPUPUdTAe9e2okZESkU/MwIflcDOoE6RGS2iAFti2DvGsZOHoKXZ1266qXfuvLjYDO7/D
+	Ff71s/lLVXxxsuAw==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 90D4943A12;
+	Mon, 23 Mar 2026 18:54:09 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id zo41IlGMwWlLNQAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Mon, 23 Mar 2026 18:54:09 +0000
+Date: Mon, 23 Mar 2026 19:54:00 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Yochai E <echelonh@gmail.com>
+Cc: dsterba@suse.cz, Chris Mason <clm@fb.com>,
+	Yochai Eisenrich <yochaie@sweet.security>,
+	David Sterba <dsterba@suse.com>, security@kernel.org,
+	linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] fs: btrfs: fix btrfs_ioctl_space_info() slot_count
+ TOCTOU which can lead to info-leak
+Message-ID: <20260323185400.GQ5735@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20260322063935.3951728-1-echelonh@gmail.com>
+ <20260323142633.GL5735@twin.jikos.cz>
+ <CACo1jfiWUVViXh7FTeWyFpubudq-qF4=hJZOFcEF0n0OZLVQtQ@mail.gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <53a8bc40-f22a-4447-a233-1cf88f837bbf@kernel.org>
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <CACo1jfiWUVViXh7FTeWyFpubudq-qF4=hJZOFcEF0n0OZLVQtQ@mail.gmail.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-Spam-Score: -4.00
+X-Spam-Level: 
+X-Spamd-Result: default: False [-4.00 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	HAS_REPLYTO(0.30)[dsterba@suse.cz];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	FREEMAIL_ENVRCPT(0.00)[gmail.com];
+	RCVD_TLS_ALL(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	ARC_NA(0.00)[];
+	TO_DN_SOME(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	FREEMAIL_TO(0.00)[gmail.com];
+	RCPT_COUNT_SEVEN(0.00)[7];
+	URIBL_BLOCKED(0.00)[twin.jikos.cz:mid,sweet.security:email,suse.cz:replyto,suse.cz:email,imap1.dmz-prg2.suse.org:helo];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	REPLYTO_ADDR_EQ_FROM(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.cz:replyto,suse.cz:email,twin.jikos.cz:mid];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	REPLYTO_DOM_NEQ_TO_DOM(0.00)[]
+X-Spam-Flag: NO
 
-Hello,
-
-On Mon, Mar 23, 2026 at 02:04:57PM -0400, Chuck Lever wrote:
-> > I don't see why the cores-per-shard approach wouldn't scale down
-> > effectively.
+On Mon, Mar 23, 2026 at 05:03:47PM +0200, Yochai E wrote:
+> On Mon, Mar 23, 2026 at 4:26 PM David Sterba <dsterba@suse.cz> wrote:
+> >
+> > On Sun, Mar 22, 2026 at 08:39:35AM +0200, Yochai Eisenrich wrote:
+> > > From: Yochai Eisenrich <yochaie@sweet.security>
+> > >
+> > > btrfs_ioctl_space_info() has a TOCTOU race between two passes over the
+> > > block group RAID type lists. The first pass counts entries to determine
+> > > the allocation size, then the second pass fills the buffer. The
+> > > groups_sem rwlock is released between passes, allowing concurrent block
+> > > group removal to reduce the entry count.
+> > >
+> > > When the second pass fills fewer entries than the first pass counted,
+> > > copy_to_user() copies the full alloc_size bytes including trailing
+> > > uninitialized kmalloc bytes to userspace.
+> >
+> > This sounds correct.
+> >
+> > > Fix by copying only total_spaces entries (the actually-filled count from
+> > > the second pass) instead of alloc_size bytes, and switch to kzalloc so
+> > > any future copy size mismatch cannot leak heap data.
+> >
+> > Trying to hit this race looks very hard though, reducing number of block
+> > group types is quite rare.
 > 
-> Sharding the UNBOUND pool is fine. But with a fixed cores-per-shard
-> ratio of 8, it doesn't scale down to smaller systems.
+> I agree that this may not be your btrfs typical behavior, but I wouldn't
+> have raised the issue if I wasn't able to prove it. I can send the PoC
+> code your way if you're interested - it leaks kernel data. A malicious
+> user can utilize a fresh btrfs disk over e.g. zram to trigger the issue.
 
-You aren't making a lot of sense. Contention is primarily the function of
-the number of CPUs competing, not inverse of how many cores are in the LLC.
+I believe you, the pattern for leaking data works, I'd apply the fix
+even without a PoC. Using zeroing allocations in ioctls should be used
+by default, this one was missing it.
 
-> A shard size of 2 clearly won't scale properly to hundreds of cores. A
-> varying default cores-per-shard ratio would help scaling in both
-> directions, without having to manually tune.
+For a user to trigger that I don't see how this can be well timed with
+just passively check the space info ioctl ("btrfs fi df") when the
+administrator runs the rebalance command and the block group number
+decreases. Like on an installed system it takes the defaults and stays
+like that forever.
 
-If your workload is bottlenecked on pool lock on small machines, the right
-course of action is either making the offending workqueue per-cpu or
-configure the unbound workqueue for that specific use case. That's why it's
-progrmatically configurable in the first place.
+Active user would have to be able to mkfs an image (trivial) and have it
+mounted (possible), which on itself opens a lot of other options.
+FS_USERNS_MOUNT is usually not enabled for that reason.
 
-Thanks.
+> > The change to kzalloc looks like best fix, for all ioctls that are
+> > exposed to userspace. Copying the exact number makes sense. The other
+> > case (copying too much) has been fixed in 51788b1bdd0d68 ("btrfs:
+> > prevent heap corruption in btrfs_ioctl_space_info()").
+> 
+> Just to make sure we're on the same page:
+> 1. Following the above, do you approve of the copy_to_user fix I
+>     suggested?
 
--- 
-tejun
+Yeah it's ok. For normal case there's no difference, the user side will
+read up to args.total_spaces which matches the valid data, and ignore the
+empty slot. Attacker will find zeros there.
+
+> 2. I think it makes sense to treat other ioctl kmallocs in a different
+>     patch, no?
+
+Yes, one thing per patch. I was mentioning that as further work as it's
+good to look for the similar problems in other code.

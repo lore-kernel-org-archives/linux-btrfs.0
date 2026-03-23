@@ -1,146 +1,101 @@
-Received: from mail-oo1-f48.google.com (mail-oo1-f48.google.com [209.85.161.48])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from stravinsky.debian.org (stravinsky.debian.org [82.195.75.108])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3ACD43B9611
-	for <linux-btrfs@vger.kernel.org>; Mon, 23 Mar 2026 16:01:37 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.161.48
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0D69B3B8959;
+	Mon, 23 Mar 2026 16:26:39 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=82.195.75.108
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774281699; cv=none; b=FpejMbk88Rh8hug5wQnWLQw0TipUatcD00nnHNkfhms7Ys3cEUiypzgrAl7jIQC82H7nn9LO4F4Iw6RTN53GyTIYQqfM+ef72gPtsFs9eKLOk3/r698/VkA2Pby3azfLa9Z7nEh9tA4/eylzSW6GJEMojLY7HQTzeQ8E37WbI2E=
+	t=1774283201; cv=none; b=nG9IUb8AdfQSfOOaHShreyk2kyREetKRFonlXWEp5M2uAfh/ouuuG3/24zqEywr4lnqOx5VZgK+fttayYJc1DyG/AaATd5YGsvKHwJd92A+wPZWmBbHmrV1FqAOlT2ZrCHef0NNwyqZpubmRo0QI6/yXIqOKJKeH6ycU9//cJGw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774281699; c=relaxed/simple;
-	bh=MZnmVAxJf+X6cHJOBPvDd6V2H0nUoF4Hno5Kv0ax+0k=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=BrzVWeZkKFpmVT1tSmXd/eCc3Ec8r4yTPNSXosKKkoJNZa2vpOm1iTV45lPcpawzusNL58UbH44bti0c1CCq23Wkmm7r2GI2Sl4KtWCbDq5cS5bx/BPR96T3GQ0RFvH6eCdyHVX7mAHNs7ieb7e1+5xFD+FaF8YGOHXFU9Lg6FI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bitbyteword.org; spf=pass smtp.mailfrom=bitbyteword.org; dkim=pass (2048-bit key) header.d=bitbyteword.org header.i=@bitbyteword.org header.b=pObiQh1M; arc=none smtp.client-ip=209.85.161.48
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bitbyteword.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bitbyteword.org
+	s=arc-20240116; t=1774283201; c=relaxed/simple;
+	bh=VR8utIjDTW7aSYJEFiut7g5ORWSt0EO2oE+gyiMEMiQ=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=i+Fu1BtsufM8s1FzkAdqjV95OH5/x76pHbdAXUZ6D5uQR5jQTfHriyeg5OLYJ3b7neDSADnk3Ng71Fqr91pehjcQa2fowx3lqy6vv8gsomLm+ehrIXqdMVOa2Up3lyMtSqiT2ohSuLIopGO0wiK4vij6Z5+5Q1ayv5JtFjalCNA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=debian.org; spf=none smtp.mailfrom=debian.org; dkim=pass (2048-bit key) header.d=debian.org header.i=@debian.org header.b=uuVGHED5; arc=none smtp.client-ip=82.195.75.108
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=debian.org
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=debian.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bitbyteword.org header.i=@bitbyteword.org header.b="pObiQh1M"
-Received: by mail-oo1-f48.google.com with SMTP id 006d021491bc7-67df618d095so1977eaf.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 23 Mar 2026 09:01:37 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=bitbyteword.org; s=google; t=1774281696; x=1774886496; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=3hqD+qM2Gta/bzpbgYsOccfWP/3yL/YGd5soFmEVY9Q=;
-        b=pObiQh1M3Uzo476arwskTOTfu5mJRY56RVmXEgcOiYczx3bT9M+dzcWDX9KL6jw8M0
-         xRVDVuQiCyzR44SPeMc8FFmjpR4YmaM6TqtOwPhBzHn2mL7+nSRbGw66qF3PtJ2KHJIN
-         a1oPZqCgFkqoZvMHQ7KkHftpbrnB0sgX1rAivw3LXstdsrlTzB1r3IzUj0lCyXqtgB6v
-         GiXbW47ihgEKqUK2XjPRoaGfwhdNWaaGUjWJcwHemf1PMQT8R+94g5oockhCCuQwit5N
-         HBP4bkh/wFW0KlysQ+I5PwKWW3/s7gMAo4rqIBPtLXBCgw/7gV4voYrOPK3KtG/G4EBA
-         2vyA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1774281696; x=1774886496;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
-         :to:cc:subject:date:message-id:reply-to;
-        bh=3hqD+qM2Gta/bzpbgYsOccfWP/3yL/YGd5soFmEVY9Q=;
-        b=hthF1tvqSI+pfLwnLY9IQovFTZw5tDR98X7moDe6/29DD2ICglzwilurGNt5p9seRM
-         azrLfTMt/QkWDrsGipmXvnOBvzyJtp/sGlt/y4bosW1SCI+dXE1Rn/LcI0l6GB57HmSX
-         OZ+uMXQ+ZNgpmM8D6xkIyAHIBDTlLDssJkOV4YyN+JsnieeAJCm7aTsopuiwcKaS+JcL
-         7OaFNlCscLfJTzSWxeiMRSe9KtWUXYW+Yhbizgkneat1pAoPvOtTq3h8Ax7gSP/WHNG+
-         4ahBwDEKH+OLCnGEYI/g1JIFp32E3y8TbIPp3GboeHnbMXw/tILLOdacrDnH/ZxN8jGp
-         C6uQ==
-X-Forwarded-Encrypted: i=1; AJvYcCW3fReeEFlS3k0jPve+ZE32qrs8zdvKPd3wAkmojZR90OFJTuj134Xf35CjxWBPqlR4X+tAK8v2wMZkTw==@vger.kernel.org
-X-Gm-Message-State: AOJu0YxE5riz6zqxnBsUxArHVq+4Xv5wr9HKfFPnMzdmFsWYaBali0Ah
-	zVp6bIJo5MVBBQVXHidBn1X2ROl6R6Gc6DDOkEhfor/XnIXKr1W8L9Aaq4sRgrKJSko=
-X-Gm-Gg: ATEYQzyx9UrTpBoka2lHSxA6aGUptHoPKGInil8eWVHvHJNbusrY+HysoQyxzvCqNOy
-	x8uQkIfOxE5XixOiVMstgULrOU8xg0Gwcf96aYSgdzk+TFwALKT4mPZzfJ0BvxJpi1RNqsyCGh0
-	JAC+pPLakv4sQF3BAStQUpenWLEeOHtX/Hjkz532GJRXAHAFPErI7N3IyRsJLnswfHqifNhz6F9
-	9hv4dlJGUg9mY4dtK/2lupTwCw7lxQG+g1I6gpFYX5mg+aUTgPvZq5QZPJtVtVP7HjgYSjObvDd
-	GzYBwVQqCnJbarKrtG+DH1WeqhPmO5R/Rp0bhA50+CoMgrgDAcimFhlOCIU9bVROkWSyBiYG3hl
-	VvolfflodccsUVIZLTM09eBt7G9gm/GUGvxCwvGCKAwaTmmSN7quuq22IZ/2bWyBl5DL1aSbhmn
-	jQxSvYUV4WIhfPW5n+o2SXfrv3ByuOSbd62YB7s7xaKsj9NwkS9Yon7R63a1yQGpqSYw==
-X-Received: by 2002:a05:6820:2085:b0:67b:ab68:b5ed with SMTP id 006d021491bc7-67c22f2703bmr9958074eaf.21.1774281694519;
-        Mon, 23 Mar 2026 09:01:34 -0700 (PDT)
-Received: from vinmini.lan (c-73-143-21-186.hsd1.vt.comcast.net. [73.143.21.186])
-        by smtp.gmail.com with ESMTPSA id af79cd13be357-8cfc9088df1sm843364185a.25.2026.03.23.09.01.33
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 23 Mar 2026 09:01:34 -0700 (PDT)
-From: "Vineeth Pillai (Google)" <vineeth@bitbyteword.org>
-To: 
-Cc: "Vineeth Pillai (Google)" <vineeth@bitbyteword.org>,
-	Steven Rostedt <rostedt@goodmis.org>,
-	Peter Zijlstra <peterz@infradead.org>,
-	Chris Mason <clm@fb.com>,
-	David Sterba <dsterba@suse.com>,
-	linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	linux-trace-kernel@vger.kernel.org
-Subject: [PATCH v2 15/19] btrfs: Use trace_call__##name() at guarded tracepoint call sites
-Date: Mon, 23 Mar 2026 12:00:34 -0400
-Message-ID: <20260323160052.17528-16-vineeth@bitbyteword.org>
-X-Mailer: git-send-email 2.53.0
-In-Reply-To: <20260323160052.17528-1-vineeth@bitbyteword.org>
-References: <20260323160052.17528-1-vineeth@bitbyteword.org>
+	dkim=pass (2048-bit key) header.d=debian.org header.i=@debian.org header.b="uuVGHED5"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=debian.org;
+	s=smtpauto.stravinsky; h=X-Debian-User:In-Reply-To:Content-Type:MIME-Version:
+	References:Message-ID:Subject:Cc:To:From:Date:Reply-To:
+	Content-Transfer-Encoding:Content-ID:Content-Description;
+	bh=VR8utIjDTW7aSYJEFiut7g5ORWSt0EO2oE+gyiMEMiQ=; b=uuVGHED5JOPP1xXa4K+lXUe3yH
+	Dyy6FK1jDXtQYK2gOP7rkQ1j10SbtKV4xSEc0Yf5oCGBGl72PLm4tp+FTwoGMp5A5/90AJiaF6HQ0
+	f75YrmQ+4If9oIjDOvNgwoCPI6/+J0Pm+MCOfTdzrG9M2xj6Ob5+mGeArrBa8rJkf53FLHU9FEWCS
+	40bDqFrcmsRAgnjlRH7rBaSKsxnZ5/xLxa0Ri50tYgiVL3CbXbMoAT8bG39t6KQasy9cC+inLB76P
+	tpWxfRD7s1OVCmLh4fqgOPBSYSulpDCAukhSEmiu9FJtF4S549qS45vGSJOEWPAWDRcmO0aDAUlB7
+	F196ZpYA==;
+Received: from authenticated user
+	by stravinsky.debian.org with esmtpsa (TLS1.3:ECDHE_X25519__RSA_PSS_RSAE_SHA256__AES_256_GCM:256)
+	(Exim 4.94.2)
+	(envelope-from <leitao@debian.org>)
+	id 1w4i6t-007exf-A0; Mon, 23 Mar 2026 16:26:34 +0000
+Date: Mon, 23 Mar 2026 09:26:28 -0700
+From: Breno Leitao <leitao@debian.org>
+To: Chuck Lever <cel@kernel.org>
+Cc: Tejun Heo <tj@kernel.org>, Lai Jiangshan <jiangshanlai@gmail.com>, 
+	Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, puranjay@kernel.org, 
+	linux-crypto@vger.kernel.org, linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
+	Michael van der Westhuizen <rmikey@meta.com>, kernel-team@meta.com, Chuck Lever <chuck.lever@oracle.com>
+Subject: Re: [PATCH v2 0/5] workqueue: Introduce a sharded cache affinity
+ scope
+Message-ID: <acFmcCcbPfznH_it@gmail.com>
+References: <20260320-workqueue_sharded-v2-0-8372930931af@debian.org>
+ <04af531d-d8a3-4fbb-993d-e1da2df62a03@app.fastmail.com>
+ <acFVEr7iVnU_70yh@gmail.com>
+ <f2f7fff3-2f6a-4ebb-aa5e-33188be4dd9a@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <f2f7fff3-2f6a-4ebb-aa5e-33188be4dd9a@kernel.org>
+X-Debian-User: leitao
 
-Replace trace_foo() with the new trace_call__foo() at sites already
-guarded by trace_foo_enabled(), avoiding a redundant
-static_branch_unlikely() re-evaluation inside the tracepoint.
-trace_call__foo() calls the tracepoint callbacks directly without
-utilizing the static branch again.
+Hello Chuck,
 
-Suggested-by: Steven Rostedt <rostedt@goodmis.org>
-Suggested-by: Peter Zijlstra <peterz@infradead.org>
-Signed-off-by: Vineeth Pillai (Google) <vineeth@bitbyteword.org>
-Assisted-by: Claude:claude-sonnet-4-6
----
- fs/btrfs/extent_map.c | 4 ++--
- fs/btrfs/raid56.c     | 4 ++--
- 2 files changed, 4 insertions(+), 4 deletions(-)
+On Mon, Mar 23, 2026 at 11:28:49AM -0400, Chuck Lever wrote:
+> On 3/23/26 11:10 AM, Breno Leitao wrote:
+> >
+> > I am not convinced. The wq_cache_shard_size approach creates multiple
+> > pools on large systems while leaving small systems (<8 cores) unchanged.
+>
+> This is exactly my concern. Smaller systems /do/ experience measurable
+> contention in this area. I don't object to your series at all, it's
+> clean and well-motivated; but the cores-per-shard approach doesn't scale
+> down to very commonly deployed machine sizes.
 
-diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-index 095a561d733f0..9284c0a81befb 100644
---- a/fs/btrfs/extent_map.c
-+++ b/fs/btrfs/extent_map.c
-@@ -1318,7 +1318,7 @@ static void btrfs_extent_map_shrinker_worker(struct work_struct *work)
- 	if (trace_btrfs_extent_map_shrinker_scan_enter_enabled()) {
- 		s64 nr = percpu_counter_sum_positive(&fs_info->evictable_extent_maps);
- 
--		trace_btrfs_extent_map_shrinker_scan_enter(fs_info, nr);
-+		trace_call__btrfs_extent_map_shrinker_scan_enter(fs_info, nr);
- 	}
- 
- 	while (ctx.scanned < ctx.nr_to_scan && !btrfs_fs_closing(fs_info)) {
-@@ -1358,7 +1358,7 @@ static void btrfs_extent_map_shrinker_worker(struct work_struct *work)
- 	if (trace_btrfs_extent_map_shrinker_scan_exit_enabled()) {
- 		s64 nr = percpu_counter_sum_positive(&fs_info->evictable_extent_maps);
- 
--		trace_btrfs_extent_map_shrinker_scan_exit(fs_info, nr_dropped, nr);
-+		trace_call__btrfs_extent_map_shrinker_scan_exit(fs_info, nr_dropped, nr);
- 	}
- 
- 	atomic64_set(&fs_info->em_shrinker_nr_to_scan, 0);
-diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index b4511f560e929..0b5b2432aedf6 100644
---- a/fs/btrfs/raid56.c
-+++ b/fs/btrfs/raid56.c
-@@ -1743,7 +1743,7 @@ static void submit_read_wait_bio_list(struct btrfs_raid_bio *rbio,
- 			struct raid56_bio_trace_info trace_info = { 0 };
- 
- 			bio_get_trace_info(rbio, bio, &trace_info);
--			trace_raid56_read(rbio, bio, &trace_info);
-+			trace_call__raid56_read(rbio, bio, &trace_info);
- 		}
- 		submit_bio(bio);
- 	}
-@@ -2420,7 +2420,7 @@ static void submit_write_bios(struct btrfs_raid_bio *rbio,
- 			struct raid56_bio_trace_info trace_info = { 0 };
- 
- 			bio_get_trace_info(rbio, bio, &trace_info);
--			trace_raid56_write(rbio, bio, &trace_info);
-+			trace_call__raid56_write(rbio, bio, &trace_info);
- 		}
- 		submit_bio(bio);
- 	}
--- 
-2.53.0
+I don't see why the cores-per-shard approach wouldn't scale down
+effectively.
 
+The sharding mechanism itself is independent of whether we use
+cores-per-shard or shards-per-LLC as the allocation strategy, correct?
+
+Regardless of the approach, we retain full control over the granularity
+of the shards.
+
+> We might also argue that the NFS client and other subsystems that make
+> significant use of UNBOUND workqueues in their I/O paths might be well
+> advised to modify their approach. (net/sunrpc/sched.c, hint hint)
+>
+>
+> > This eliminates the pathological lock contention we're observing on
+> > high-core-count machines without impacting smaller deployments.
+>
+> > In contrast, splitting pools per LLC would force fragmentation even on
+> > systems that aren't experiencing contention, increasing the need for
+> > manual tuning across a wider range of configurations.
+>
+> I claim that smaller deployments also need help. Further, I don't see
+> how UNBOUND pool fragmentation is a problem on such systems that needs
+> to be addressed (IMHO).
+
+Are you suggesting we should reduce the default value to something like
+wq_cache_shard_size=2 instead of wq_cache_shard_size=8?
+
+Thanks for the feedback,
+--breno

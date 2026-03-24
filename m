@@ -1,30 +1,30 @@
 Received: from mail.synology.com (mail.synology.com [211.23.38.101])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 12AD52C21F6
-	for <linux-btrfs@vger.kernel.org>; Tue, 24 Mar 2026 05:39:53 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A2B35313E01
+	for <linux-btrfs@vger.kernel.org>; Tue, 24 Mar 2026 05:40:41 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=211.23.38.101
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774330795; cv=none; b=Ek5elCYTY06BDXvNEeRQnCqLOKv66MBMv8Su7AA1IboFHJMRwwezTaYgrDodBqMNCvizcPuTFta3FZyv64AAcmlBaUdR7uEOT/9paTmpgFOfWNq08eDcH6Z3u2IOsviW8JqcGGFLjBBENeo20Q5ojnTT1bnxxAxAFe/lgE/Xd0c=
+	t=1774330843; cv=none; b=ssy23wubLKFMttO9MnTRjrmjzeQjUqUcFapu2QnhNKDY54VutB/b5RS4lRFRarpBgpkYLfdYd/6v3GWfnEKTkrlyRePDwLUGr6JffPcwSlmgqLKuGkQqrgZpXUyspyV2hWA17sCQJW1QWGoXVbkDwmXxjFaHekhbO0nhuGFQK6Y=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774330795; c=relaxed/simple;
+	s=arc-20240116; t=1774330843; c=relaxed/simple;
 	bh=jtXOQILvywLV127KTTl5yJHs/Ruh7SNhN1xKgzorgdA=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=GyDquW5xoUOGtdaP4znPgiTgCDT2DHsrvFGqxDHyp+2CTn4knYhLtsNTgD+1PWXy8YqZSBrjygzmDH+jmbYblkh6crOSgFnzqpUbBMwxTGQltTZDW4LOktJ9yo8GRq6eztRd8PaED6PZOTw5oHXJNii/3thqS71EMO4TIHEko8Q=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=synology.com; spf=pass smtp.mailfrom=synology.com; dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b=RtDAMT65; arc=none smtp.client-ip=211.23.38.101
+	 MIME-Version:Content-Type; b=kivE70VnIWJbRA/R337k3ss8c6waL+dIgKtxpWeykiCVnjykaeb/HqNhdfDH1vrkNkmC7Az9hQLDEF3fTbQOfAq8a6OzCxPygh4vIoUOEx19UYYNOnIi51YT4aslrZCgJ9tcQ/6at9WALFaf0xaR93/jEQ1LPcM1/vJS5usgMOA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=synology.com; spf=pass smtp.mailfrom=synology.com; dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b=l2Co5ipm; arc=none smtp.client-ip=211.23.38.101
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=synology.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=synology.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b="RtDAMT65"
+	dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b="l2Co5ipm"
 Received: from 11212-DT-014.. (unknown [10.17.40.185])
-	by mail.synology.com (Postfix) with ESMTPA id 4ffzPs4TXqzHWZTTx;
-	Tue, 24 Mar 2026 13:39:45 +0800 (CST)
+	by mail.synology.com (Postfix) with ESMTPA id 4ffzQv6YwrzHWZVrc;
+	Tue, 24 Mar 2026 13:40:39 +0800 (CST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=synology.com; s=123;
-	t=1774330785; bh=jtXOQILvywLV127KTTl5yJHs/Ruh7SNhN1xKgzorgdA=;
+	t=1774330840; bh=jtXOQILvywLV127KTTl5yJHs/Ruh7SNhN1xKgzorgdA=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References;
-	b=RtDAMT65Tm5q4QcTktz6zaLij5hWUgNRdkNL5V8EGjPp6qaBfnyw5vpaByWYDHRED
-	 ITnChq31SGbX44jIPz+KLTaIYM9/zXPLuab9q4c+fN52u0mefAuThfNZwZV5boxuug
-	 SaeLz6GA4q6i/RrfCBErGeRb8h8IWj4bEWomWPcU=
+	b=l2Co5ipmrG73/J0qujIOGS/7V7h+GUiNqkquPuNjfImM0eU/IRx/fGlsIYCuH/zr8
+	 NRRkr393uMpi7Wir1xdhrmJoqmsN8geTE6oxXj3TUOBznI940OysSZ7NXHbVZA4JRg
+	 zAhPid94rV4XQJHvxYgwMUsnbShNjK9QSkENjXu0=
 From: Dave Chen <davechen@synology.com>
 To: dsterba@suse.cz
 Cc: cccheng@synology.com,
@@ -33,8 +33,8 @@ Cc: cccheng@synology.com,
 	linux-btrfs@vger.kernel.org,
 	robbieko@synology.com
 Subject: Re: [PATCH] btrfs: fix unnecessary flush on close when truncating zero-sized files
-Date: Tue, 24 Mar 2026 13:39:39 +0800
-Message-ID: <20260324053939.886455-1-davechen@synology.com>
+Date: Tue, 24 Mar 2026 13:40:39 +0800
+Message-ID: <20260324054039.887316-1-davechen@synology.com>
 X-Mailer: git-send-email 2.43.0
 In-Reply-To: <20260323140748.GK5735@twin.jikos.cz>
 References: <20260323140748.GK5735@twin.jikos.cz>

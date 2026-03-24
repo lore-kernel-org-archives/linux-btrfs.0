@@ -1,137 +1,182 @@
-Received: from mail-ej1-f49.google.com (mail-ej1-f49.google.com [209.85.218.49])
+Received: from mail-wm1-f45.google.com (mail-wm1-f45.google.com [209.85.128.45])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6DEB0388394
-	for <linux-btrfs@vger.kernel.org>; Tue, 24 Mar 2026 02:58:01 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.218.49
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774321082; cv=pass; b=aO0f3tTWQSCbky6iyFS1bjq9LXOLVlDC+D23bettdaFrnYdVAqLRub5Ef1J2lP7fPv6ga/kULFAxH9WVV1EXWSLgdUFVGXas/jZ42IbieowMMuqmJjzMN1a6SXnpDnv4PeIiooO5PspatCU3a+HEh52KyOmmaQ6mCCigLoJqBOM=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774321082; c=relaxed/simple;
-	bh=5IL39tZuamPycTA2s4YBZD+YbaPTHgRQCUi50dpbzUc=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=kHR5X8Rri1qYvhuIfPgQnHd/eSYWgiszuvD7d3kxwcpk0jZ3YMwjGJis0djnSRp2rQrjGU7wbBIn81EhV1fAD22R9shDbrU2MDlQTrUpN4t75jWA8Th/EauYjH0Tr4kp2Z9/pVKgoOLXiBErROlozy9qdkE91TrtSionoWaN8R4=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=WfydFu/3; arc=pass smtp.client-ip=209.85.218.49
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 78DE2241695
+	for <linux-btrfs@vger.kernel.org>; Tue, 24 Mar 2026 03:03:25 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.45
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1774321407; cv=none; b=jo5ndBpOUAM+wFYdWWpt3bBpuvKvH+0lvu/hLg4e0ycq/50nPkz18TKLJtGY3XrvXjxrDEbA4WMFO5JCqQmKMff9MEOrSKIQTTuQI9LRXNEe87PzW/NEERC+b/IMebfMwPKD7kpn1VoWp/iYKH6YHDr7vQGQWEpRj+y6JhHHv9M=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1774321407; c=relaxed/simple;
+	bh=uyWeVkKouyf6PAkSsSHmvOuO1ZPES4PsRnMWB+S8dKQ=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=tCj00FopYZ/y1szqP9h/jVYxJu8DHUYzW/WOun1lcHuOKhSYOxESfA9ESiwFHatQG2JWdUTNOemgKOhR7PGVCv7iIsxNOqkjQrtyQ1FSD2KToBMopUMUX+WeiyR4to93C0ko+g0Z3cQGamFBEXN2hVsUU5xfaDguH5wvlR7AyoE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=efn1fEbM; arc=none smtp.client-ip=209.85.128.45
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="WfydFu/3"
-Received: by mail-ej1-f49.google.com with SMTP id a640c23a62f3a-b982518b73fso159079166b.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 23 Mar 2026 19:58:01 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1774321080; cv=none;
-        d=google.com; s=arc-20240605;
-        b=a4aGH0XAsUcd4tgT6ZwCPgYfsNiY0ddPNbgq7tBWW4ecqLF8g2WljtAu6UldXR7vpx
-         XrZCpHP5414Jm5fHp9q1hXMZI4GueRiDxPlnZgWvsU+SiBxde8u/b6olq+61yW3o82Ss
-         zQcZeZ9c4kJnMGaT4GYT426HKLZFktMyVq/4CT8LiOn9LbXgEzKAbM2t/QBoESCdKrFB
-         lD8kBKqD7egfR7yi4LzAogiReLpBt+qkegs0N9JjMBx/nB0vJ2+xdnbpzssherl++3U+
-         GPwkIysMp+YHaELydRDEOKTI6aidsn9edWtyfH8HM3mYXqWhF4qDY0TBFomH7POPr+jZ
-         bYjQ==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:dkim-signature;
-        bh=M354F8P0LheCjQFeoIcJbRMyTMMbZnLsLJRoIG4JM+M=;
-        fh=tgVViCzrLdWVEB6JuQtJaL/CYBMdIH0nmm6DSdCtFGc=;
-        b=eC2x4Q3Ak0L+rgtGvS/gj4EkBPHOBrApUG84Of1/7cxWnhhCe7cempnAAzs1Oe1cLc
-         wR0NC9HeOqx8kzIVDpx+uDHkgC7b4xzbuPpxQVPgdH9h7Jj3FDT2sZiksIUX/qJVs/xG
-         G04InsNWJ9i7FDiKqBz+ZseQRAFL/1eglYZaoJElflvhTx9/WH42MbQi/z3NGBEJlvgD
-         Iq3wZVs/zwyjeDfP5bJ8h6J4Ywn+CSmUkMDNRnI/w+4sjKR9LYtNKhGVvSvY+vOkEs+c
-         DqEJoIyPay0a3la6FMX5Q2uHGolTYmhnq+WbgN32jTbKTNwp0GkuFysuLhY/PzauqpMX
-         DIgQ==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="efn1fEbM"
+Received: by mail-wm1-f45.google.com with SMTP id 5b1f17b1804b1-486fb112c09so30726005e9.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 23 Mar 2026 20:03:25 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1774321080; x=1774925880; darn=vger.kernel.org;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=M354F8P0LheCjQFeoIcJbRMyTMMbZnLsLJRoIG4JM+M=;
-        b=WfydFu/3T+FwaXuCZkCar5Hv6v4y+2Da7owj1SWhxsh03ph7hDak0RQgYS6zZI4kDQ
-         r39+Bh5aqxLQVJoaq1P+/W8nTtwZxv4sXS3t0gNcmRlWpVCNGZuyQGW/UcQRfizWMbYo
-         G1sXj93ns7CzbRZVdKxFXL8TaCIjeEQRIKHMF4OGwhMhxHzqSeA90COWYgbACgpLpcSH
-         V0tVQVCDnVBP07XijKCUGG+dL2NqKROQvybfaL3nB3bpCWyMfEJWhCs39z/apR/VvEoK
-         brnW7EoG/RyvlMu6C7KLNnQ5gVB7TZtif9oyn7K0xdhci2WpKg/yJKzfYqUckOaXVa1z
-         lsaA==
+        d=suse.com; s=google; t=1774321404; x=1774926204; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to;
+        bh=BxiEcWyCIh5XLpAJedlFixpaeU6wHAd7UwWrKLcC3s0=;
+        b=efn1fEbMhJMbZWjVi+/P10kA/iz1kewyjfEsMMcfk3mUGHDenP08ukOwCBLOj3vRS0
+         EUR6TViBG3Iy7YcWuf7KZRs0h0jTdpdbFNR9H7KJ38eWqFLQHsuIKIgI0tadL8rhoIx7
+         sRG39eIWcpjsY0RcePhmxGgAtmhvAv6EsBxKR2y1uSp22z3q+T7oHqycAkR74iC5eOLs
+         0Izt2pN8vnanSt0DovRzMtGnlQ8RSdplpb0a+RceKbO/wHQ2uvb25dYwa+MrhkqXAWUV
+         6ewVobHdSPaQA1b5FhI+QMgkufHvbX+BQxcwH5ls8FQGrdirG5Yzd9lSzHmZa1q8biA1
+         ul7Q==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1774321080; x=1774925880;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-gg:x-gm-message-state:from
-         :to:cc:subject:date:message-id:reply-to;
-        bh=M354F8P0LheCjQFeoIcJbRMyTMMbZnLsLJRoIG4JM+M=;
-        b=jeUvtl66STx+jRSRenIUVWzkg+hBMD3BNrlBHmJgh0lqCX5YW0iFYElkyo/KeUZdxw
-         j96Rm5YPpUUhUQeRLHi6Ywm9NSP6PiD3vS6SbyuHnTPJxDdjQTqwBI9bO3AOwtyhfJO3
-         D75kEFT32UfmtggbD/g+5zMKg9AAnWl2ohl9MiZAP1JzfPXREcG171Xv+Dx+cBOYOff/
-         INSk5UcWfMPTlMq7q9IgfBZyTuk9NjtjHitQpY3vumJ7FWB9VXABzAlV9n4sbwDdKPCz
-         Wzd2LlSUq6NrVR0ZChnermmEatf5rT5ipFZvIPvVmfHMa8OUqf0GX8JyYalCxX0i7ZS4
-         Jivw==
-X-Forwarded-Encrypted: i=1; AJvYcCUqv2dpnnJ/EJ+2OsP1bHFi1WlNYzr9Lw/N67LGDzyIvr53V7liGqzGg5d6exZz2qVQFoPUWRTcTHA/CQ==@vger.kernel.org
-X-Gm-Message-State: AOJu0YyOvQL45belzmy9ZoZ+5NXIyKBMRk5Gml7LNsV+tKLbfitDo21p
-	s2nKGypKfYVTJsgbg3r1z9oEuW+b0hYWvlvBQAzxGE8NY/4snhFzHZP+FKrBrvFwg/Y+7s7F6wq
-	heEDGia7k9Dr9iWTxqfY4jqLSwJ7T1cM=
-X-Gm-Gg: ATEYQzwA5IqtfNtm9zh/S4G00Aoy5zAsTkdj5svPKXAly66VJo281JJ8igtzcDupruL
-	hs5/nB4Ewf4wq/4jZxP0TCOI0ZhVPJrVCsV+2PBchNzkNd+WY3rDO+0NIMR6s9jyOosN80WzKEx
-	VN2qEC+ewPIlir0tThnKD3qMZkOGdPQc45KMYHUJPZlgDdqFVDkk5an4UH6TAvXRaO+oVS2yUgU
-	J20yxyacrT5uwJAtIRFbI9m4dlT3YoMlx6BXWUEciJG/kPK6cK7GOssKqwD6gK1jfFcctUb1Mgm
-	9UuhtLWGLES+r9XQZ5Lk+1xeoXsbUf7QaaYTS+N7NqXQEDB1Y/fG17M=
-X-Received: by 2002:a17:906:5985:b0:b98:5b2:77fe with SMTP id
- a640c23a62f3a-b982f21d401mr646008066b.3.1774321079541; Mon, 23 Mar 2026
- 19:57:59 -0700 (PDT)
+        d=1e100.net; s=20251104; t=1774321404; x=1774926204;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=BxiEcWyCIh5XLpAJedlFixpaeU6wHAd7UwWrKLcC3s0=;
+        b=lFj/plVPIPKE2gFkCVC8sZcjTiN0pbDtaO9j+iXQ0VXc2a9pFftoiUQU8lI9I+JZtL
+         gJUzeq7fhxGod34Cfq9WkrZQr1SomuDuXj9f9NNmnetYzf15u7kwNemRnFz9P0L3gQWS
+         JqPJfMuF3KEuGoDOdplgtPrbongwyjgplM19ysR7HkeSAvRR5JkZAGTSccvrI/2duJkZ
+         EO5UcsazifZZvVl20qi1zpPnrArKJvI10/ryKwljiEbNuDB02ssUZ9SJS8VffsC2ftTm
+         nGwhZMmY+R9O+qVDkFV5RsPCJRnN3uaxsJm3jVvS/2JOAsnhH8BESXoK/JzF2h4xyMiI
+         rhyg==
+X-Gm-Message-State: AOJu0YyLauaM2hGTM2m8AxXHDHWha9NMJ5P8+CNkScJfpwZCp30z+3so
+	UGUHQaXSRRYmQd9tAbFAW4YqABJEvbgCHyNPibpdg9DU8ZPrkTIyrPlvjrhp/2ldamRJOlKni69
+	r6lbHhNQ=
+X-Gm-Gg: ATEYQzyWZn5XW1bG9kBJaNrPzP/+3X/QXA2MOlnOi5mW+X2K4iGZBZB2TADXeEfb9f3
+	Tx68MDGY1cqtTNyi2mGgcw4JToPLxfBBSJN+RjG60Za3KtqMfWbe1RzNtvBrvTqSDJpiPGatLFd
+	iWSPey7rfaWTWBt7aaf7IyokN0okwaUNa5BC54ZJbcdwNbQoRACcOuFbnh7dnx9As/mGLVFFchf
+	1dHeH22hg3ZvWTXo+vEKVb/aAMsLVD/9kZj3lzU/8xRcrKJVlFJJXWr+f+OubAdqupgC9vB+xts
+	NQzwl3oCLbn7KVq/zvgaSEDSkjmwrQ1ijlRmpRakGkSh1wh+4sXTxllBtGfiNflhTCNeKNzuG3m
+	nWg3WdLn3bS89SvVB+rhrZjDWMs1QHmBVSw4UNI8hHOTr7g6gsWxWRG4C0JLycBkzscZxos05+B
+	BNMe60bDHIgOflwNqBrONu4W0p+MyaXXbBLjl8xxrgU3+xRNhU8xJy8ysuwXht9A==
+X-Received: by 2002:a05:600c:3b07:b0:485:419c:4eab with SMTP id 5b1f17b1804b1-486fedab40emr193853785e9.6.1774321403780;
+        Mon, 23 Mar 2026 20:03:23 -0700 (PDT)
+Received: from ?IPV6:2403:580d:fda1::299? (2403-580d-fda1--299.ip6.aussiebb.net. [2403:580d:fda1::299])
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2b08366b9aesm160508875ad.58.2026.03.23.20.03.19
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 23 Mar 2026 20:03:22 -0700 (PDT)
+Message-ID: <4a10806f-27ce-4162-a2df-142e6b670d15@suse.com>
+Date: Tue, 24 Mar 2026 13:33:16 +1030
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260314123741.1439792-1-gality369@gmail.com> <20260314123741.1439792-4-gality369@gmail.com>
- <20260323175212.GO5735@twin.jikos.cz>
-In-Reply-To: <20260323175212.GO5735@twin.jikos.cz>
-From: ZhengYuan Huang <gality369@gmail.com>
-Date: Tue, 24 Mar 2026 10:57:47 +0800
-X-Gm-Features: AQROBzDqHeoQAJF92QQMjXBUGsYCyI0RiNd6XWdGUkALGK-Tg7nug0L3JVYKWlw
-Message-ID: <CAOmEq9WK-uA=mGcoeHOy_11acWgzrqfj5fXfSmzQY-E=nUTWmQ@mail.gmail.com>
-Subject: Re: [PATCH v2 3/3] btrfs: fix check_chunk_block_group_mappings() to
- actually iterate all chunks
-To: dsterba@suse.cz
-Cc: dsterba@suse.com, clm@fb.com, idryomov@gmail.com, 
-	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, 
-	baijiaju1990@gmail.com, r33s3n6@gmail.com, zzzccc427@gmail.com
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+User-Agent: Mozilla Thunderbird
+Subject: Re: [RFC] generic/301: flaky failure on btrfs after metadata
+ overcommit change
+To: Leo Martins <loemra.dev@gmail.com>, fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>,
+ "Darrick J . Wong" <djwong@kernel.org>
+References: <20260323201533.2648753-1-loemra.dev@gmail.com>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <20260323201533.2648753-1-loemra.dev@gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 
-On Tue, Mar 24, 2026 at 1:52=E2=80=AFAM David Sterba <dsterba@suse.cz> wrot=
-e:
-> This is called during mount indirectly from open_ctree() and this is
-> single threaded (partially), so the lock may not be needed. It would be
-> needed if there's eg. caching thread possibly accessing the same
-> structures, I haven't looked closely.
->
-> > +     for (node =3D rb_first_cached(&fs_info->mapping_tree); node;
-> > +          node =3D rb_next(node)) {
-> >               struct btrfs_chunk_map *map;
-> >               struct btrfs_block_group *bg;
-> >
-> > -             /*
-> > -              * btrfs_find_chunk_map() will return the first chunk map
-> > -              * intersecting the range, so setting @length to 1 is eno=
-ugh to
-> > -              * get the first chunk.
-> > -              */
-> > -             map =3D btrfs_find_chunk_map(fs_info, start, 1);
-> > -             if (!map)
-> > -                     break;
-> > -
-> > +             map =3D rb_entry(node, struct btrfs_chunk_map, rb_node);
-> >               bg =3D btrfs_lookup_block_group(fs_info, map->start);
->
-> What concerns me is this lookup. Previously the references avoided
-> taking the big lock. The time the lock is held may add up significanly
-> for all block groups but as said before it might not be necessary due to
-> the mount context.
 
-Thanks for the suggestion, I=E2=80=99ll take a closer look at the locking h=
-ere.
-If the lock turns out to be unnecessary in this context, I=E2=80=99ll drop =
-it
-and include the change in v3.
+
+在 2026/3/24 06:45, Leo Martins 写道:
+> Hi,
+> 
+> generic/301 has become flaky on btrfs after commit 0dc118b3c327 ("btrfs:
+> be less aggressive with metadata overcommit when we can do full
+> flushing") which landed in btrfs/for-next. Out of 30 runs, 8 fail with:
+> 
+>      +file2 badly fragmented
+> 
+> I bisected this to the above commit, which reduces the metadata
+> overcommit limit from 1/8th to 1/64th of available space for
+> full-flushing contexts. This is a legitimate fix for -ENOSPC transaction
+> aborts on small filesystems, but as a side effect it causes more
+> frequent transaction commits during writeback. The reduced batching
+> means the extent allocator has less opportunity to coalesce adjacent CoW
+> extents, resulting in higher extent counts that sometimes cross the
+> test's threshold.
+> 
+> The fragmentation check in question is:
+> 
+>      test $new_extents -lt $((internal_blks * 2 / 3)) || echo "file2 badly fragmented"
+> 
+> The 2/3 threshold was introduced in 9184ca155d7c ("xfs: test
+> fragmentation characteristics of copy-on-write") as part of a series
+> testing XFS's CoW extent size hint (cowextsize) mechanism. For btrfs,
+> this threshold is arbitrary — btrfs doesn't have XFS's cowextsize hint,
+> and its CoW extent allocation depends on factors like transaction commit
+> frequency and metadata reservation behavior, which is exactly what the
+> overcommit commit changed.
+> 
+> I see two possible fixes and would appreciate input on which is
+> preferred:
+> 
+> Option A: _notrun for btrfs
+> ----------------------------
+> 
+> Skip the entire test since the fragmentation threshold is not applicable
+> to btrfs:
+> 
+>      test $FSTYP = "btrfs" && \
+>          _notrun "CoW fragmentation threshold not applicable to btrfs"
+> 
+> Option B: Skip only the extent count assertion for btrfs
+> ---------------------------------------------------------
+> 
+> Keep the CoW + data integrity portion of the test (the md5sum checks
+> after random CoW writes and remount are still useful) and only skip the
+> fragmentation assertion:
+> 
+>      if [ "$FSTYP" != "btrfs" ]; then
+>          test $new_extents -lt $((internal_blks * 2 / 3)) || \
+>              echo "file2 badly fragmented"
+>      fi
+> 
+> I lean towards option B since the CoW write + remount + md5sum
+> verification is still a reasonable smoke test, but option A is cleaner
+> if the consensus is that this test isn't adding value for btrfs.
+
+I also agree on the option B.
+
+The fragmentation behavior is really specific to each fs, thus leaving 
+the number of extents test to xfs, and keeping the contents check looks 
+good to me.
 
 Thanks,
-ZhengYuan Huang
+Qu
+
+> 
+> Thoughts?
+> 
+> Thanks,
+> Leo Martins
+> 
+

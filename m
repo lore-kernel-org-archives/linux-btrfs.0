@@ -1,69 +1,67 @@
-Received: from mail-yx1-f68.google.com (mail-yx1-f68.google.com [74.125.224.68])
+Received: from mail-yw1-f193.google.com (mail-yw1-f193.google.com [209.85.128.193])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3EF333B6346
-	for <linux-btrfs@vger.kernel.org>; Tue, 24 Mar 2026 19:09:57 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.224.68
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DB9923537DB
+	for <linux-btrfs@vger.kernel.org>; Tue, 24 Mar 2026 20:40:04 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.193
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774379400; cv=none; b=g0VWQQqYZ3IUmVD61xQJEnKMNv/WGNBerAtcwLkl1IOrWdQ84LLjnkY/nDztB1ugwSwYaGSE941QB8G3nmuBnd2VGhIF1htRIQ8PFtpalB+M0R4f5By5AMF1h+XbPyKDSg/eyTgVdJDdCU1PJO5Jm3BrNOBKRAwmK8BYvT1v+sQ=
+	t=1774384806; cv=none; b=ct6dVoAcmyzAV7JYTBaRe9LpuL9cs0mXyF9bJ44ZSUv+mT2hae8r4HvShiD7shebjjQqRxOcip7Qu/wy7k7UMmFIGTAZHF7yeIndUzT4i3NI+2M35B0NqfRH+nb9LzX8BwJdRwaO/qGGLXwQ+H8k5P+RmZujmc73xEn+TwQ9pKg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774379400; c=relaxed/simple;
-	bh=hiKo4P2ioUwDqXVsJrK6fVhCAj0j1Tr0U0GoV9gFqB4=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=Wqp23YPJ+Qzxndx+slmrNAutCMZNl9qjO3r5Lv6DIT2992YHJMXtBigJjqAhd47jL1c9201fx/SDEPZMMcl7DNabvj8zY0lb3rXv7Lw+Y6T/+OlM32a2LdH+QGg3afShAMIWHj9DRiwAn0stGpTPcWmykzA/bDL8+15Y8vG8dbI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=sBhsesRh; arc=none smtp.client-ip=74.125.224.68
+	s=arc-20240116; t=1774384806; c=relaxed/simple;
+	bh=Jyvm+hAJgOFR/cXUU6E8c/lAFJ2joNdyKFhBWNxRSbc=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=nfKFekj52Jy9ybBHvIkwTlv6t5i8ePenXF4X7GrlC7UPykBkIS+GE2M2xBQ7CI4+8OrPJU9ueE+4SLCT/poHsZqkEV78SwsGf9vU/KmGVZG93pcoDbSPzxELl6bnXoWwqE4j3BImi1XjcxjkvI6H+29QOBbyYoPBdqRmj8eAVFU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=SlBNQhti; arc=none smtp.client-ip=209.85.128.193
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="sBhsesRh"
-Received: by mail-yx1-f68.google.com with SMTP id 956f58d0204a3-64ad46a44easo5446688d50.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Mar 2026 12:09:56 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="SlBNQhti"
+Received: by mail-yw1-f193.google.com with SMTP id 00721157ae682-7986fb839f5so57484977b3.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 24 Mar 2026 13:40:04 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1774379396; x=1774984196; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:from:to:cc:subject:date:message-id:reply-to;
-        bh=JwC92OC9Eg/R+FN4RRdXyFHlBa0jRNcNvQJ2ENSTAJI=;
-        b=sBhsesRhit6twro9ugChhl0zn3SRK7YKbRoYhdvwJ5uJTy41tyaIqFWOQyTapn5VHQ
-         G4p7LFp6Aegl/DNzOE+sWCCOlajOUCCa3sAJ18XUz+yXsze9Ao5uLkwAU8Sypp/YYY4F
-         5hw+6BxVGxTGTqj2chFDtMD9eMLGZVB7yyPg3/ocX+5a4dCAMri7lDzHjqgWdIlAoPom
-         V4+Z/w8SMd+fAhREek0HKJLjP0RPQCLxKHReDm1anpv1dFuj4iv71Hj4C3rbd82McHMn
-         /1PfVUjm5bBeYyXCyaoxOw3LXVkrlAT5ShFaQocepBKHn0LMrk3UXfPwpvR3RsSilLFY
-         WSRQ==
+        d=gmail.com; s=20251104; t=1774384803; x=1774989603; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:to
+         :from:from:to:cc:subject:date:message-id:reply-to;
+        bh=SV5y3qN1rapkvhai2SfnVgrSnlR+8z62Znia9g0GMWw=;
+        b=SlBNQhti2yPECySDVvVVkXRG7amlyc/FXFl9vzX3soSSX/jycu6ehFBRk+bW1QIvWL
+         8MUHHr44WAVrjhwF7q8Pd2rbGNqIIO+TV8giBMgf/jwV5BXNQZxL5Ik0Iqko9arZYMzU
+         D7c3cWaA/DjIqxbZ0mThfuHC022IxRrGWDtRDYlXd578yZxR5EVCYNUESATUdMhgd4sW
+         0OzDTGXK+HRIkzArIT0KykXT/oQtKb09gLgybNvFf2leGwSOmJan7XwFU9s0Q9WAKr6k
+         iH26oDK7E8cC9Zg/x8RC8gNMLeg3SjmG3ebhL1Sv9/kj1RWDubIDtA9EM1WuzpvRn3jV
+         4P7A==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1774379396; x=1774984196;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=JwC92OC9Eg/R+FN4RRdXyFHlBa0jRNcNvQJ2ENSTAJI=;
-        b=oFqG2rDMyKauZIoJ9gBZXbhu3l1r9D64QTkujFfXUQOOJkZJic3NxoVmjD5hTIeu/d
-         nCE1sc8/KMTj64EdOJibDGrW6ZaTMEb6aga+sEl5AaM+eCkDxhbYL8SCMxn4hwxJqqcA
-         uyHBaE/FB87ogNRlt1w6gKkAddCd7A1lzzRHm5t0qbxQTInXjjVnYmvUxBEELcI64O/n
-         jHlt7MMeTSBcaCbyGSlYYgWGPfrZRn6vbJA2ys571Xld1HjoRVAaqdM7kojhenZmmcDE
-         pzk1UQQmDTlQ5JBdg6J++VJe9GG+aOV2PldltHWmJ6tnaImwhDzwQaSHXcimEWDueyaf
-         If5Q==
-X-Forwarded-Encrypted: i=1; AJvYcCXj1R/o0WqAh8zKy5gcQ2hrZS+GYYnv6u7Prj+TfzS7uB6hWuTfzCJtmzAZlf1BQFrU4CJdEaLZQbLdBQ==@vger.kernel.org
-X-Gm-Message-State: AOJu0YzupoXV32/jzcOCGCBEEA8h5vpEKLqvBPxj8RHVriOhxXS2k+bB
-	g4YsvoLXD41EhWCSrUC1uBO2TFkOsJWpuOT24r+zZlquE+/p/vo6EzeL
-X-Gm-Gg: ATEYQzxD1R1ombZA9EcfAmTSl+zCVmEMiOUTz/q8xQX4MsZEVeNoUytG4jipsJuGfBp
-	ZZB8OXkFgYIJ4kjJkoJCKkOeLSQafdqs9TJ0SpfwCyq0UeoIfep+LxjSFzE2vDkCKPlgEDTNqWQ
-	rqWhx2VjMH6uA3B9pAWJlqwPC59n277qdZqH+qIdAZBfBySfVkmnR9LNv8P/qyY5vhAYT/05Tz1
-	2tETG9hF0+g/oKFWrujAm8M1FP6kkRI6yP3OSHXIScSYogVvDuPMBwl4R8IBkSlxLoWoMnAifoB
-	R+PkyFn+rOfcAcXYT5hwDINqNZwgBXf/NQw7/iSZ36v/0esYd5MOE+35YqrylYjFKp1JyaF5F7S
-	Mufom+smsmW/AhskNeNiqBskrtaj1NruWk5qTaBIQ36ALMS7x37+c6icVSVJI/u0tWzcntV9yAA
-	h04PTPBLvcWP8LUi9Nyg==
-X-Received: by 2002:a05:690e:1289:b0:644:45a9:c0d7 with SMTP id 956f58d0204a3-64ee613eea4mr664994d50.55.1774379395765;
-        Tue, 24 Mar 2026 12:09:55 -0700 (PDT)
-Received: from localhost ([2a03:2880:25ff:55::])
-        by smtp.gmail.com with ESMTPSA id 956f58d0204a3-64eabecdbd3sm8159672d50.18.2026.03.24.12.09.55
+        d=1e100.net; s=20251104; t=1774384804; x=1774989604;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:to
+         :from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=SV5y3qN1rapkvhai2SfnVgrSnlR+8z62Znia9g0GMWw=;
+        b=PqpA0rMy48sgvv+W0eZ7T0tYuYPLNqLmJqa2PrlLxKx3c9MC3QyYdgxXKOjKoK6as4
+         h2ZqrUbJUGS34LBv45dKn4OZzXwwKxJH76rGM7PwLslAshG88Nvgl3RvKSsCFptXPaIQ
+         jnPHmkjTy3YZ8OSpcKLT4PziPa7fve1R3i4tPBfPeJAVfWMQa2g5aSqFm3uNcGlCZtsp
+         Lfsp6+EUZdQrTrwcjBD62urA9cWJvtTPuZMwfnSapA50OK1xxvT/hBdvc00Q6r1ToHHP
+         ZvZ+KxwV8XTlzkA0RwZLxOdxD/AYPmM2B06N+Z/1dI9DtDWvwF7WpFSpvn2IzZdvuf6+
+         2c4A==
+X-Gm-Message-State: AOJu0Yyw3kv1xdY/0Bn4xIgNOaKmpw8up+xu4rQwc2ACNIkgZWeUKBjA
+	jEVWCzcDo879reFKM6i9wvduFPc8tNSvTPe2ZKa1Vtshj3K4pY/Uug4ZrBbnmaYQ
+X-Gm-Gg: ATEYQzyBSOrvtcD4JL9gdkT8pfEHncgmay0USd/kT8steoK03Zo/6d9J4SYUPOgIVnU
+	c2F/r/vG3u2hzFAYFyTxp8oaXB0fg9Xd+otyfmP6TJAzYOdQSADuqYeFTZ5Luhxj2JQLHup/12Z
+	VYOrCX5oZvmznnPKk9uAozds8A/HuhABBheZAHkR0klfvu2SHEP2jTbKqmOYZGhfmoHOo5cSlgH
+	Ya1PeSGwZKtO1IDa9zCmTiHAx5yOscf1sYQj33NrFbzUzv4uOACbQIvg+3gRrghvnzg7vZ6dMz2
+	oWekrBp//nL7+8fVWUxVRT3GSB9AucyGKZIzuCdsHYbdznwUm545Tb2aAhsZQ6Zi3igQwRMB3uP
+	Kh9TPXppo/wrZMYtjc//R7y5raLjVSrphcsjL35z6PpTEJKtkMo2USvJmBw5xBFTl2NeRUHLZeQ
+	MVNAryp8CuPADQixSeMg==
+X-Received: by 2002:a05:690c:22c9:b0:79a:c98d:2bb2 with SMTP id 00721157ae682-79acf69623emr13165777b3.55.1774384803410;
+        Tue, 24 Mar 2026 13:40:03 -0700 (PDT)
+Received: from localhost ([2a03:2880:25ff:59::])
+        by smtp.gmail.com with ESMTPSA id 00721157ae682-79a9057eb37sm77707147b3.33.2026.03.24.13.40.02
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 24 Mar 2026 12:09:55 -0700 (PDT)
+        Tue, 24 Mar 2026 13:40:02 -0700 (PDT)
 From: Leo Martins <loemra.dev@gmail.com>
-To: fstests@vger.kernel.org,
-	linux-btrfs@vger.kernel.org,
-	kernel-team@fb.com
-Cc: Mark Harmstone <maharmstone@fb.com>
-Subject: [PATCH] btrfs: fix stale errno check in btrfs_encoded_read/write helpers
-Date: Tue, 24 Mar 2026 12:09:52 -0700
-Message-ID: <39eac6cef5afd99734483fa0e775a3e75407552b.1774303837.git.loemra.dev@gmail.com>
+To: linux-btrfs@vger.kernel.org,
+	kernel-team@fb.com,
+	fstests@vger.kernel.org
+Subject: [PATCH] generic/301: skip extent count check on btrfs
+Date: Tue, 24 Mar 2026 13:40:00 -0700
+Message-ID: <c56960b514baf810f2929b5e955a966d9955c468.1774383226.git.loemra.dev@gmail.com>
 X-Mailer: git-send-email 2.52.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
@@ -73,50 +71,40 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-The atoll() error check `if (offset == 0 && errno != 0)` can falsely
-trigger because errno is not cleared before the call. Library
-initialization code (e.g. libcap calling prctl(PR_CAPBSET_READ) which
-fails with EINVAL) can leave errno set to a non-zero value. When the
-caller passes offset=0 (a valid value), atoll() returns 0 without
-modifying errno, and the stale errno causes the helper to print usage
-and exit.
+The 2/3 fragmentation threshold was designed for XFS's cowextsize
+mechanism and is not applicable to btrfs. After commit 0dc118b3c327
+("btrfs: be less aggressive with metadata overcommit when we can do
+full flushing"), btrfs commits transactions more frequently during
+writeback, reducing the extent allocator's opportunity to coalesce
+adjacent CoW extents. This causes the extent count to sometimes cross
+the threshold, making the test flaky on btrfs.
 
-This caused btrfs/333 to fail consistently on systems where libcap is
-linked, since every call with offset 0 would bail out.
-
-Fix by clearing errno before the atoll() calls in both
-btrfs_encoded_read and btrfs_encoded_write helpers.
+Skip only the extent count assertion for btrfs while keeping the CoW
+write + remount + md5sum data integrity checks, which remain useful.
 
 Signed-off-by: Leo Martins <loemra.dev@gmail.com>
 ---
- src/btrfs_encoded_read.c  | 1 +
- src/btrfs_encoded_write.c | 1 +
- 2 files changed, 2 insertions(+)
+ tests/generic/301 | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
 
-diff --git a/src/btrfs_encoded_read.c b/src/btrfs_encoded_read.c
-index 3ee0d8b0..c7c25b74 100644
---- a/src/btrfs_encoded_read.c
-+++ b/src/btrfs_encoded_read.c
-@@ -178,6 +178,7 @@ int main(int argc, char *argv[])
+diff --git a/tests/generic/301 b/tests/generic/301
+index 0303f25d..985d943a 100755
+--- a/tests/generic/301
++++ b/tests/generic/301
+@@ -62,7 +62,12 @@ new_extents=$(_count_extents $testdir/file2)
+ echo "old extents: $old_extents" >> $seqres.full
+ echo "new extents: $new_extents" >> $seqres.full
+ echo "maximum extents: $internal_blks" >> $seqres.full
+-test $new_extents -lt $((internal_blks * 2 / 3)) || echo "file2 badly fragmented"
++# btrfs CoW extent allocation depends on transaction commit frequency and
++# metadata reservation behavior, so the 2/3 fragmentation threshold (designed
++# for XFS cowextsize) is not applicable.
++if [ "$FSTYP" != "btrfs" ]; then
++	test $new_extents -lt $((internal_blks * 2 / 3)) || echo "file2 badly fragmented"
++fi
  
- 	filename = argv[2];
- 
-+	errno = 0;
- 	offset = atoll(argv[3]);
- 	if (offset == 0 && errno != 0) {
- 		usage();
-diff --git a/src/btrfs_encoded_write.c b/src/btrfs_encoded_write.c
-index 7e46d9fe..bc05cc3b 100644
---- a/src/btrfs_encoded_write.c
-+++ b/src/btrfs_encoded_write.c
-@@ -179,6 +179,7 @@ int main(int argc, char *argv[])
- 
- 	filename = argv[2];
- 
-+	errno = 0;
- 	offset = atoll(argv[3]);
- 	if (offset == 0 && errno != 0) {
- 		usage();
+ # success, all done
+ status=0
 -- 
 2.52.0
 

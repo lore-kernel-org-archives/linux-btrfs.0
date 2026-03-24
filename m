@@ -1,66 +1,66 @@
-Received: from mail-wm1-f50.google.com (mail-wm1-f50.google.com [209.85.128.50])
+Received: from mail-wm1-f46.google.com (mail-wm1-f46.google.com [209.85.128.46])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6E46113790B
-	for <linux-btrfs@vger.kernel.org>; Tue, 24 Mar 2026 21:04:59 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.50
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9850813790B
+	for <linux-btrfs@vger.kernel.org>; Tue, 24 Mar 2026 21:05:58 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.46
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774386302; cv=none; b=BbvMyNKIlheVX3bNO1axTHoz6AkQ4l9uQvUXxPZMiAK8MBPvfCUsLEvXLbXRbZVv7CiDMq4oNduVi/yZ0+h2SyZNHWQjr0j4h2n1B6nTe+Q7mrMb3QEenEQ5kJAZCDgLSusdOhcU/CUAdT/VQ43nEhCQthNpdEL+oZllqm7mdP8=
+	t=1774386360; cv=none; b=bgKHLR71iYwYdZVs7Na04uAirVQw1rc4qKEJ8puH0dJRXiH3FCorzVPIjT770KDFd+fdGtQa6KOrxv1zCAyBAtAEFsNCoc99zYuZDPt3gZoaLBY6ysaN0UkxSUC4/xOExoTI/avyJ+Sox4Yy9KiJFbhEJgYSSG5rzxVIFm/iKlg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774386302; c=relaxed/simple;
-	bh=7K7qaeVtYcZSnbzQDFYQjvGydUadnzn1QghkjPuO7aI=;
+	s=arc-20240116; t=1774386360; c=relaxed/simple;
+	bh=G0+y1yw23E1qWl6xOYU5tUnvr6RohCiXmi/H2J46QCA=;
 	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=pNCjvp9QQ6c11Cai1UkuK+kprZvMhj7EllaNBIinpIv5ViTruMtCOWGZjRtO6CaRQhtWz/ZrGFSyrubNzF3XabLclLjbz6NXLT3C+EPOXUtMDEWKayl2kN9O5YslT1/aiDZfuPfi5KoCFh1rX2bS41UIHdrEaNl+7j/aUEJ+3UM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=U3ucQW62; arc=none smtp.client-ip=209.85.128.50
+	 In-Reply-To:Content-Type; b=VdNfr4NDgp8QhL0vAEeddRsTqcH9QiRw2RDq/Bx0dxPdCF3jXQBk9E75gu8DzRelWz43DFUL6zmdfYUlCAUPtfYqH3jSLLvdspBdru/6AMCzqKgzECdAK+0ave6lCNvrsYzqh3xZ2DoqRccNZAX9UvI6gUsaSDn96B+foYpOAhM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=eQ424I0d; arc=none smtp.client-ip=209.85.128.46
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="U3ucQW62"
-Received: by mail-wm1-f50.google.com with SMTP id 5b1f17b1804b1-482f454be5bso2598075e9.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Mar 2026 14:04:59 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="eQ424I0d"
+Received: by mail-wm1-f46.google.com with SMTP id 5b1f17b1804b1-48704db565eso35225045e9.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 24 Mar 2026 14:05:58 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1774386298; x=1774991098; darn=vger.kernel.org;
+        d=suse.com; s=google; t=1774386357; x=1774991157; darn=vger.kernel.org;
         h=content-transfer-encoding:in-reply-to:autocrypt:from
          :content-language:references:to:subject:user-agent:mime-version:date
          :message-id:from:to:cc:subject:date:message-id:reply-to;
-        bh=KC+2tsmdptFw8idLDKh8cogqkOougefTgZ4VWagz6YY=;
-        b=U3ucQW62Ujlc4rx+AC78VT8xwQof2/Ks4qGXoeUdhzAVxNN8C9+2c9G26DWbd9zQBu
-         R30oyC8GAQpyOXsRhLVGSLQJ9bjyJK9LkjF8uWAqn19d8RPsFPikObAvg/wyelCCE8yK
-         BGHhB0RswZqGAOf5quAUovZbOfZUC7ov6Zy506q6wBDRgcmnGwa+P/KrFu/zI10q+Pvk
-         iSQbX7ARLkf8mDqKTMramctoOVm3IxvizdZYkPyC+HppkZlRuakJJqwmhaLeIlIaDdcF
-         n30z5DhKDQUNkHSCnhFtZjNDW+qtg+4uNb4zemYJSq1Q/QA42ykV+1v+VWR76HwK9gtn
-         Y4fQ==
+        bh=CTIC6/Y7DWJ9OaxSisLGv+cmlCJv+8LQ0inRrUin7sE=;
+        b=eQ424I0dHrJgYN7IGP4Lh+lNsrQegPo/WjDvnI/txa1i3g/g37Uf9GA7y9kyN2+ERU
+         F0gfx+DNWNkPD6f5AHPV68exMhPPZnVlWfLqtwLb0lPtmVUg5yeScP7+Blbo1RBqMn/3
+         3ErGMOBNkyYEErquKE2DLi4eLlHBX1lqUb839TZ86jRdLzEGHXrNMe4OT5hA4CPAX3Ii
+         ACruDbBv6fbNTAaybknEpR8iZQsZ1OB8w3HM4xBVOBFLrcNOwJlDuaNndbXi+dTybNap
+         sK9jy4tljVb7AgI/2Y1dIiL28rlLOns6kLI4eibNFrU3wl2qTxxUa5+yQdfJAo3cXccw
+         /O0Q==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1774386298; x=1774991098;
+        d=1e100.net; s=20251104; t=1774386357; x=1774991157;
         h=content-transfer-encoding:in-reply-to:autocrypt:from
          :content-language:references:to:subject:user-agent:mime-version:date
          :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=KC+2tsmdptFw8idLDKh8cogqkOougefTgZ4VWagz6YY=;
-        b=eUMXnN+KbOqVJk6DQAylQRmgUyTfqqSjAV1lHe7bYLYUfL/joPsnmkmsA25vdKZH8i
-         WY28rJBOmRwnKvMw7JJGCwOnq3bVk8E+TO8Z6u0X4bmx+VdqMQPZSfzrrdWtHCMGBoa5
-         t6z/y6nKMwLBm+5x5I21D0k2G6NOEy9btcX/EGOgcakc6Wplq3knN/L2dU1FGCcDDPKU
-         arUYQU4apX8pnpcpMDThsqRtBG810d4ug/TaVc9cTdT5TvOK9pB6Xu6IBcEB+TpFBcN4
-         blJGpXlO4MMzpTdllVmvV35etaNIORa8bXDQspHBAszkeUhgmQpqZpUIk5b/Lc60deNh
-         lNpQ==
-X-Forwarded-Encrypted: i=1; AJvYcCXZwdvnuc3po35NsIkaiFjKfbNhYvtbnb8tbgSkqAa86EfsX7bdbv4E3/n8QhQqfICNh/AhYYME8idp8g==@vger.kernel.org
-X-Gm-Message-State: AOJu0YwG7V3ra2vZVhCbXGLGxfMyd+85kYK7HY1OEZd4KwA8zmGz8JZP
-	xyWb6SqjDo2EYPLyKMHeS1/GZACc4ntX5a/Lv2m0AhT4eBdiffjcE9w/9c8jM6NJquk=
-X-Gm-Gg: ATEYQzyTkLKgATI68RixmfvhNLI0lcfclq7cdlV5yoxkCzrgXbICBy/ckJ5Yi/YAwl+
-	JqkmjkNxnTuLMPNXZCC56C1oAPoBq3h4GXYcjiF3nPzqIg3hW/SuQl3JImII7EWBP7bYDxZhlRc
-	H6PJ+MDZlyrZwoFzzWqDJF4oPZmVXBBNRwawh53Ghj28tPMgV8LeCgMh/RQdF9a+Skx8jokXWXH
-	rvXWW8OmJWFFmqUNX81ECv3MOgqr42Ae0vbb/XcraCPdfCCe9yRSYW0rM2H6oKoa0JEoCEwQ913
-	db7f9SYJkALi2Y+eKIe7Ph5n9D/2Oh2r3J+ky7BzxntFQnzBcL9ehHn3YcmUBVcrbUwAjCDc1ia
-	Oo44/jfcHNcP+bB/ha5IWO3MljgrNkEogwCk83EOPJSBYwZ6Vix9Dny7qakX6NdmeSDI/jzCiOd
-	ptHtrPrSmdxwuP4u6dgvyvUtw+LrQeqFlvF01C+VZgwu2K//riaYs=
-X-Received: by 2002:a05:600c:58ce:b0:487:467:49e9 with SMTP id 5b1f17b1804b1-4870f1f29cdmr53921645e9.7.1774386298151;
-        Tue, 24 Mar 2026 14:04:58 -0700 (PDT)
+        bh=CTIC6/Y7DWJ9OaxSisLGv+cmlCJv+8LQ0inRrUin7sE=;
+        b=H/fm+KMhigGbF+EHQ4FKxU1VUUhRSxsgzZ7KI5hBtFbApG9la1mMYLIsjAtwFHSwKD
+         K+xy1s7hR7scdXbCTiqz+HOiH+gsXwSy+dyQcNvvi0FN+oT0H9R0Sklqb8jFdmbjUg5D
+         5u7Il71CWF9hYl50b5i+m+xyMPn7/SCAWfnaGFfr1BdezGFkgfohmVisVorj368zCbFZ
+         dWMOPqoDBL11PJYkRP8obh2OErlbz7jLs+XIDFOsVxs6Tech8GRBvkkU3ysD4awNgWIG
+         uEm5wj/+idDMgSDkTloUXQb5n/5pMD1aXgEA64FCHOfhsDcxpiajOxttUCZbaBBvtWYX
+         hNXQ==
+X-Forwarded-Encrypted: i=1; AJvYcCVco+TNHA2UZlvXqTwwmzRFprsPvLBSCcV421rZJwUWUkmldruA8JebLlzGcN0Xn7xR9meN+XNHqYK0Wg==@vger.kernel.org
+X-Gm-Message-State: AOJu0YwLmleNEMJWS/iG3USaTbtJha90y2i/7gInTXNpjA3y/rILuWBg
+	/F9WXr9f91ca/PvZfN2KGBRPeXT/g5iP1bUWIheMNEDkHAFPOxGLI4V0H4RcQkoewFo=
+X-Gm-Gg: ATEYQzy9BV8WX1BYOzyFqF+x279haNwTIkhnbo3k8DBrBuHn0W9E4Bj1vLfKoA0h1TV
+	kf37bcV2H9EuhVmaDSI55BPc2u5nUbDBgHorisy41wzeUnI8i9jRd5lq5fwa9q8P0MFzf6XxLec
+	E1pp/zObHLFXWN2ei/NytdYtUiGh+H2ikJBXeEFBjx0gqKEvi4xk93j4yjcrqGVYpwPUUou++3e
+	2+k35RjIqvVdK6H0eE7VXz0NJnl8JoAmq+S9sixGiUQhMkZ3W+vL7omEpZ0kDHTOgekHv1mcEgI
+	he1vCgn8E9wb7VUurGGkpQ9mg2kjz+oM+gO18H7ysa61zi6aqSXu7WGGgRoTG9hd6u11z4qP6Z/
+	B20Mxzz4vO43KyGqOQ63EDNS9/i6NyRB1iX5E1x30M2ISFuUBd0qZ9TNTnAgQG2nGv7NlDCJjjR
+	KOrFolarSYZw6ls5Tkj8hPsW+TjQfd9+ONy1FXDZbhXPe3bN2UeSY=
+X-Received: by 2002:a05:600c:350f:b0:485:40c6:f528 with SMTP id 5b1f17b1804b1-487160a213bmr15602385e9.30.1774386356803;
+        Tue, 24 Mar 2026 14:05:56 -0700 (PDT)
 Received: from ?IPV6:2403:580d:fda1::299? (2403-580d-fda1--299.ip6.aussiebb.net. [2403:580d:fda1::299])
-        by smtp.gmail.com with ESMTPSA id 41be03b00d2f7-c74487b5b8csm11346366a12.31.2026.03.24.14.04.55
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2b08352ae70sm164690755ad.23.2026.03.24.14.05.54
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 24 Mar 2026 14:04:57 -0700 (PDT)
-Message-ID: <972fc966-47b0-4376-9843-03a7b276d59e@suse.com>
-Date: Wed, 25 Mar 2026 07:34:51 +1030
+        Tue, 24 Mar 2026 14:05:55 -0700 (PDT)
+Message-ID: <9cb65b37-5f5d-4ca0-b1eb-8c89d942759b@suse.com>
+Date: Wed, 25 Mar 2026 07:35:51 +1030
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -68,10 +68,11 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: make btrfs_free_log() and
- btrfs_free_log_root_tree() return void
-To: fdmanana@kernel.org, linux-btrfs@vger.kernel.org
-References: <ef83fd57b6c94993091a6ad52cb2a828b3557724.1774364595.git.fdmanana@suse.com>
+Subject: Re: [PATCH] btrfs-progs: check: recognize verity item keys in
+ original mode
+To: Leo Martins <loemra.dev@gmail.com>, linux-btrfs@vger.kernel.org,
+ kernel-team@fb.com
+References: <77723ae3c51bb05723123a15b869cdee921727e2.1774378180.git.loemra.dev@gmail.com>
 Content-Language: en-US
 From: Qu Wenruo <wqu@suse.com>
 Autocrypt: addr=wqu@suse.com; keydata=
@@ -98,77 +99,51 @@ Autocrypt: addr=wqu@suse.com; keydata=
  /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
  o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
  JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <ef83fd57b6c94993091a6ad52cb2a828b3557724.1774364595.git.fdmanana@suse.com>
+In-Reply-To: <77723ae3c51bb05723123a15b869cdee921727e2.1774378180.git.loemra.dev@gmail.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
 
 
-在 2026/3/25 01:33, fdmanana@kernel.org 写道:
-> From: Filipe Manana <fdmanana@suse.com>
+在 2026/3/25 05:22, Leo Martins 写道:
+> Commit 4e88bb6e ("btrfs-progs: enhance detection on unknown inode keys")
+> added stricter validation for inode keys in the original mode checker,
+> flagging unknown key types as errors. However, it did not add cases for
+> BTRFS_VERITY_DESC_ITEM_KEY (36) and BTRFS_VERITY_MERKLE_ITEM_KEY (37),
+> causing any filesystem with fs-verity enabled files to fail the check
+> with:
 > 
-> These functions never fail, always return success (0) and none of the
-> callers care about their return values. Change their return type from int
-> to void.
+>    ERROR: unknown key (257 36 0) found in leaf 30621696
 > 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> Add the missing switch cases so that verity metadata items are
+> recognized and silently skipped during the check, matching the behavior
+> of lowmem mode which already handles them.
+> 
+> Signed-off-by: Leo Martins <loemra.dev@gmail.com>
 
 Reviewed-by: Qu Wenruo <wqu@suse.com>
 
-Thanks,
+And I'll merge the PR in github.
+
+Thanks for spotting this,
 Qu
 
 > ---
->   fs/btrfs/tree-log.c | 8 +++-----
->   fs/btrfs/tree-log.h | 4 ++--
->   2 files changed, 5 insertions(+), 7 deletions(-)
+>   check/main.c | 3 +++
+>   1 file changed, 3 insertions(+)
 > 
-> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-> index de4707b1227e..f883d9d979d4 100644
-> --- a/fs/btrfs/tree-log.c
-> +++ b/fs/btrfs/tree-log.c
-> @@ -3681,25 +3681,23 @@ static void free_log_tree(struct btrfs_trans_handle *trans,
->    * free all the extents used by the tree log.  This should be called
->    * at commit time of the full transaction
->    */
-> -int btrfs_free_log(struct btrfs_trans_handle *trans, struct btrfs_root *root)
-> +void btrfs_free_log(struct btrfs_trans_handle *trans, struct btrfs_root *root)
->   {
->   	if (root->log_root) {
->   		free_log_tree(trans, root->log_root);
->   		root->log_root = NULL;
->   		clear_bit(BTRFS_ROOT_HAS_LOG_TREE, &root->state);
->   	}
-> -	return 0;
->   }
->   
-> -int btrfs_free_log_root_tree(struct btrfs_trans_handle *trans,
-> -			     struct btrfs_fs_info *fs_info)
-> +void btrfs_free_log_root_tree(struct btrfs_trans_handle *trans,
-> +			      struct btrfs_fs_info *fs_info)
->   {
->   	if (fs_info->log_root_tree) {
->   		free_log_tree(trans, fs_info->log_root_tree);
->   		fs_info->log_root_tree = NULL;
->   		clear_bit(BTRFS_ROOT_HAS_LOG_TREE, &fs_info->tree_root->state);
->   	}
-> -	return 0;
->   }
->   
->   static bool mark_inode_as_not_logged(const struct btrfs_trans_handle *trans,
-> diff --git a/fs/btrfs/tree-log.h b/fs/btrfs/tree-log.h
-> index 41e47fda036d..ad4e82e86bf9 100644
-> --- a/fs/btrfs/tree-log.h
-> +++ b/fs/btrfs/tree-log.h
-> @@ -71,8 +71,8 @@ static inline int btrfs_need_log_full_commit(struct btrfs_trans_handle *trans)
->   
->   int btrfs_sync_log(struct btrfs_trans_handle *trans,
->   		   struct btrfs_root *root, struct btrfs_log_ctx *ctx);
-> -int btrfs_free_log(struct btrfs_trans_handle *trans, struct btrfs_root *root);
-> -int btrfs_free_log_root_tree(struct btrfs_trans_handle *trans,
-> +void btrfs_free_log(struct btrfs_trans_handle *trans, struct btrfs_root *root);
-> +void btrfs_free_log_root_tree(struct btrfs_trans_handle *trans,
->   			     struct btrfs_fs_info *fs_info);
->   int btrfs_recover_log_trees(struct btrfs_root *tree_root);
->   int btrfs_log_dentry_safe(struct btrfs_trans_handle *trans,
+> diff --git a/check/main.c b/check/main.c
+> index c96969fd..4fdd8867 100644
+> --- a/check/main.c
+> +++ b/check/main.c
+> @@ -1895,6 +1895,9 @@ static int process_one_leaf(struct btrfs_root *root, struct extent_buffer *eb,
+>   		case BTRFS_XATTR_ITEM_KEY:
+>   			ret = process_xattr_item(eb, i, &key, active_node);
+>   			break;
+> +		case BTRFS_VERITY_DESC_ITEM_KEY:
+> +		case BTRFS_VERITY_MERKLE_ITEM_KEY:
+> +			break;
+>   		default:
+>   			error("unknown key (%llu %u %llu) found in leaf %llu",
+>   			      key.objectid, key.type, key.offset, eb->start);
 

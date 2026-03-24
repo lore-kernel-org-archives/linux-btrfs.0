@@ -1,107 +1,104 @@
-Received: from relay.hostedemail.com (smtprelay0011.hostedemail.com [216.40.44.11])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DDC053624BC;
-	Tue, 24 Mar 2026 14:28:02 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=216.40.44.11
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3AE76402B8F
+	for <linux-btrfs@vger.kernel.org>; Tue, 24 Mar 2026 15:03:37 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774362484; cv=none; b=h3iPYxXvfn0HYV7ftl81qTGxxKBG2lf/F0Qg3hhLshSQL1MV+BSDizgUyiJkbdJF8qy9SuWMkK5899VCqoQB1EaX96zgWHQF6KepC4Gx91RDol7GHEAcNut1k0//iKz8e5Ii9c2aB5p5PFtDfVWYCeU/kwz/EuZgs3WGn8PkyAk=
+	t=1774364617; cv=none; b=NhcNz0os/7SH7ZlNz3/A/1FFCzGQqu1iNbsuAj7kyyxj0WqHtUvuy/dVkDCZijR/f+gnEhllzW5nUlyjRshxvCEe13assmZzy9fenuLI70OcXqj7p75nnY7z8uZgiO6rCNJNtZIp7KMBPzKDxCG9UAekd/gJrcSnReXVSIaX50k=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774362484; c=relaxed/simple;
-	bh=Tli2X3y0LVZah9JzvHCs3qERanTby0V0BrV4nXSA3Js=;
-	h=Date:From:To:Cc:Subject:Message-ID:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=EDiC7YBWVSVjd1xuN7MVDRcf1lwlemnAX/FkCSHp/Ezdt1+m+mPid5mVMNdulCjbxsxh4eT78D7rBs8HwjJ/iKvV8gjj9zg0VDoo27Fby5ccARnIYHDa1LrGYzOUjtE/gLloBphqYFyF+ujqub7B3s3H2caxCrixTxF3dwC49Ng=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=goodmis.org; spf=pass smtp.mailfrom=goodmis.org; arc=none smtp.client-ip=216.40.44.11
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=goodmis.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=goodmis.org
-Received: from omf02.hostedemail.com (a10.router.float.18 [10.200.18.1])
-	by unirelay09.hostedemail.com (Postfix) with ESMTP id 1F17D9396F;
-	Tue, 24 Mar 2026 14:27:53 +0000 (UTC)
-Received: from [HIDDEN] (Authenticated sender: rostedt@goodmis.org) by omf02.hostedemail.com (Postfix) with ESMTPA id DC83180011;
-	Tue, 24 Mar 2026 14:27:20 +0000 (UTC)
-Date: Tue, 24 Mar 2026 10:28:02 -0400
-From: Steven Rostedt <rostedt@goodmis.org>
-To: "Vineeth Pillai (Google)" <vineeth@bitbyteword.org>
-Cc: Peter Zijlstra <peterz@infradead.org>, Dmitry Ilvokhin <d@ilvokhin.com>,
- Masami Hiramatsu <mhiramat@kernel.org>, Mathieu Desnoyers
- <mathieu.desnoyers@efficios.com>, Ingo Molnar <mingo@redhat.com>, Jens
- Axboe <axboe@kernel.dk>, io-uring@vger.kernel.org, "David S. Miller"
- <davem@davemloft.net>, Eric Dumazet <edumazet@google.com>, Jakub Kicinski
- <kuba@kernel.org>, Paolo Abeni <pabeni@redhat.com>, Alexei Starovoitov
- <ast@kernel.org>, Daniel Borkmann <daniel@iogearbox.net>, Marcelo Ricardo
- Leitner <marcelo.leitner@gmail.com>, Xin Long <lucien.xin@gmail.com>, Jon
- Maloy <jmaloy@redhat.com>, Aaron Conole <aconole@redhat.com>, Eelco
- Chaudron <echaudro@redhat.com>, Ilya Maximets <i.maximets@ovn.org>,
- netdev@vger.kernel.org, bpf@vger.kernel.org, linux-sctp@vger.kernel.org,
- tipc-discussion@lists.sourceforge.net, dev@openvswitch.org, Jiri Pirko
- <jiri@resnulli.us>, Oded Gabbay <ogabbay@kernel.org>, Koby Elbaz
- <koby.elbaz@intel.com>, dri-devel@lists.freedesktop.org, "Rafael J.
- Wysocki" <rafael@kernel.org>, Viresh Kumar <viresh.kumar@linaro.org>,
- "Gautham R. Shenoy" <gautham.shenoy@amd.com>, Huang Rui
- <ray.huang@amd.com>, Mario Limonciello <mario.limonciello@amd.com>, Len
- Brown <lenb@kernel.org>, Srinivas Pandruvada
- <srinivas.pandruvada@linux.intel.com>, linux-pm@vger.kernel.org, MyungJoo
- Ham <myungjoo.ham@samsung.com>, Kyungmin Park <kyungmin.park@samsung.com>,
- Chanwoo Choi <cw00.choi@samsung.com>, Christian =?UTF-8?B?S8O2bmln?=
- <christian.koenig@amd.com>, Sumit Semwal <sumit.semwal@linaro.org>,
- linaro-mm-sig@lists.linaro.org, Eddie James <eajames@linux.ibm.com>, Andrew
- Jeffery <andrew@codeconstruct.com.au>, Joel Stanley <joel@jms.id.au>,
- linux-fsi@lists.ozlabs.org, David Airlie <airlied@gmail.com>, Simona Vetter
- <simona@ffwll.ch>, Alex Deucher <alexander.deucher@amd.com>, Danilo
- Krummrich <dakr@kernel.org>, Matthew Brost <matthew.brost@intel.com>,
- Philipp Stanner <phasta@kernel.org>, Harry Wentland
- <harry.wentland@amd.com>, Leo Li <sunpeng.li@amd.com>,
- amd-gfx@lists.freedesktop.org, Jiri Kosina <jikos@kernel.org>, Benjamin
- Tissoires <bentiss@kernel.org>, linux-input@vger.kernel.org, Wolfram Sang
- <wsa+renesas@sang-engineering.com>, linux-i2c@vger.kernel.org, Mark Brown
- <broonie@kernel.org>, Michael Hennerich <michael.hennerich@analog.com>,
- Nuno =?UTF-8?B?U8Oh?= <nuno.sa@analog.com>, linux-spi@vger.kernel.org,
- "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, "Martin K.
- Petersen" <martin.petersen@oracle.com>, linux-scsi@vger.kernel.org, Chris
- Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
- linux-btrfs@vger.kernel.org, Thomas Gleixner <tglx@linutronix.de>, Andrew
- Morton <akpm@linux-foundation.org>, SeongJae Park <sj@kernel.org>,
- linux-mm@kvack.org, Borislav Petkov <bp@alien8.de>, Dave Hansen
- <dave.hansen@linux.intel.com>, x86@kernel.org,
- linux-trace-kernel@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH v2 00/19] tracepoint: Avoid double static_branch
- evaluation at guarded call sites
-Message-ID: <20260324102802.4f8af148@gandalf.local.home>
-In-Reply-To: <20260323160052.17528-1-vineeth@bitbyteword.org>
-References: <20260323160052.17528-1-vineeth@bitbyteword.org>
-X-Mailer: Claws Mail 3.20.0git84 (GTK+ 2.24.33; x86_64-pc-linux-gnu)
+	s=arc-20240116; t=1774364617; c=relaxed/simple;
+	bh=CHsMhkba49mQNw+JScRkEpYeBuiBNuGUv5sgQyHaeGI=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=ZAC/vzktmvIgxeZu24Jf4vubcS4xXyyF5/6GkeDa8XO3vwj2IIOmjGZwqlxF+E2McBaec4q1B/ptZ6WhCQNwMIT/WDGoHXZYFVDzt4upAm/zjDBrJURGUa8aiiyV5GNCyZRmx7tDJmxQIq0+omvLcJOScBEEmYPRmYYEyniK3mY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=YtvTZqY4; arc=none smtp.client-ip=10.30.226.201
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="YtvTZqY4"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 91A3DC2BC87
+	for <linux-btrfs@vger.kernel.org>; Tue, 24 Mar 2026 15:03:36 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1774364617;
+	bh=CHsMhkba49mQNw+JScRkEpYeBuiBNuGUv5sgQyHaeGI=;
+	h=From:To:Subject:Date:From;
+	b=YtvTZqY4lkZu74had05hHfvg/onU9TWQm9LOi9DjA5veNA7RE3STDfBby4TMikWmb
+	 f8RBuMZXFt9hydKnSdKWef9Ju+fa3r8z+73fataTBTEO54l9HV+8P6tdxgrwDVfdGG
+	 ZNwMhhM+xvUHOkEYX/xHKGfwrmffw9XDim98ZNQCS60Sj/Gsq2IUA/yqrMT9Pfs8G4
+	 PuWr9oW6Di+0VlRbFBgVSyHVCK3wq7OM+Iz2LJwp3GiO/dm+H/lirOL/apEu/gfOka
+	 PklxdM+IiDBoHsU5vhIvEafqqE4j8LXz0amWSHY/LR1Om/lTiv7VT3y+MlAbAlEa5h
+	 oFDuhXca9RDbQ==
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: make btrfs_free_log() and btrfs_free_log_root_tree() return void
+Date: Tue, 24 Mar 2026 15:03:33 +0000
+Message-ID: <ef83fd57b6c94993091a6ad52cb2a828b3557724.1774364595.git.fdmanana@suse.com>
+X-Mailer: git-send-email 2.47.2
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
-X-Stat-Signature: rgnt1g9q8d9rzsk6azwgoui85joqhwik
-X-Rspamd-Server: rspamout04
-X-Rspamd-Queue-Id: DC83180011
-X-Session-Marker: 726F737465647440676F6F646D69732E6F7267
-X-Session-ID: U2FsdGVkX19u4yDoihzmlvbQbp4GBKk4Sx0FsrK0H8g=
-X-HE-Tag: 1774362440-296898
-X-HE-Meta: U2FsdGVkX18Kg3NfvHLPV0rnp3UrERb/HeySVgjR0PuCDys+LVJ4s2L8fsy1rJHv82yu9UO4h+xU9iEx3z3YFKVS1OFx2Vvti4rEmq0enV2xaTwbpZ+YWf60TFzb8QMlheid4NsXOVqOYcFPHCn+ZrWqPDCdrmq0l+tkyLSeYhbpJixFuANIjXhtSBZInyEBtAAqHPqUuWZ3PdZupXAY7JMTASH2KNw+CMFxYOXnDTbb38gpzJzBKiUcyoxK6GlO0db0aEPLlOAMHWKzcQEu5msgaweBGFFWtD9G0uWRbe+OcS9gBl+SI1CDJFvGCt0Z8gh5xinNWW7KF0gSIEh3ZlA0AO0+B5wCRjivVxgdquYH5bWbk7CtReb5es0u0tOp
+Content-Transfer-Encoding: 8bit
 
-On Mon, 23 Mar 2026 12:00:19 -0400
-"Vineeth Pillai (Google)" <vineeth@bitbyteword.org> wrote:
+From: Filipe Manana <fdmanana@suse.com>
 
-> When a caller already guards a tracepoint with an explicit enabled check:
-> 
->   if (trace_foo_enabled() && cond)
->       trace_foo(args);
+These functions never fail, always return success (0) and none of the
+callers care about their return values. Change their return type from int
+to void.
 
-Thanks Vineeth!
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/tree-log.c | 8 +++-----
+ fs/btrfs/tree-log.h | 4 ++--
+ 2 files changed, 5 insertions(+), 7 deletions(-)
 
-I'm going to start pulling in this series. I'll take the first patch, and
-then any patch that has an Acked-by or Reviewed-by from the maintainer.
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index de4707b1227e..f883d9d979d4 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -3681,25 +3681,23 @@ static void free_log_tree(struct btrfs_trans_handle *trans,
+  * free all the extents used by the tree log.  This should be called
+  * at commit time of the full transaction
+  */
+-int btrfs_free_log(struct btrfs_trans_handle *trans, struct btrfs_root *root)
++void btrfs_free_log(struct btrfs_trans_handle *trans, struct btrfs_root *root)
+ {
+ 	if (root->log_root) {
+ 		free_log_tree(trans, root->log_root);
+ 		root->log_root = NULL;
+ 		clear_bit(BTRFS_ROOT_HAS_LOG_TREE, &root->state);
+ 	}
+-	return 0;
+ }
+ 
+-int btrfs_free_log_root_tree(struct btrfs_trans_handle *trans,
+-			     struct btrfs_fs_info *fs_info)
++void btrfs_free_log_root_tree(struct btrfs_trans_handle *trans,
++			      struct btrfs_fs_info *fs_info)
+ {
+ 	if (fs_info->log_root_tree) {
+ 		free_log_tree(trans, fs_info->log_root_tree);
+ 		fs_info->log_root_tree = NULL;
+ 		clear_bit(BTRFS_ROOT_HAS_LOG_TREE, &fs_info->tree_root->state);
+ 	}
+-	return 0;
+ }
+ 
+ static bool mark_inode_as_not_logged(const struct btrfs_trans_handle *trans,
+diff --git a/fs/btrfs/tree-log.h b/fs/btrfs/tree-log.h
+index 41e47fda036d..ad4e82e86bf9 100644
+--- a/fs/btrfs/tree-log.h
++++ b/fs/btrfs/tree-log.h
+@@ -71,8 +71,8 @@ static inline int btrfs_need_log_full_commit(struct btrfs_trans_handle *trans)
+ 
+ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 		   struct btrfs_root *root, struct btrfs_log_ctx *ctx);
+-int btrfs_free_log(struct btrfs_trans_handle *trans, struct btrfs_root *root);
+-int btrfs_free_log_root_tree(struct btrfs_trans_handle *trans,
++void btrfs_free_log(struct btrfs_trans_handle *trans, struct btrfs_root *root);
++void btrfs_free_log_root_tree(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_fs_info *fs_info);
+ int btrfs_recover_log_trees(struct btrfs_root *tree_root);
+ int btrfs_log_dentry_safe(struct btrfs_trans_handle *trans,
+-- 
+2.47.2
 
-For patches without acks, I'll leave alone and then after the first patch
-gets merged into mainline, the maintainers could pull in their own patches
-at their own convenience. Unless of course they speak up now if they want
-me to take them ;-)
-
--- Steve

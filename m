@@ -1,73 +1,67 @@
-Received: from mail-yx1-f65.google.com (mail-yx1-f65.google.com [74.125.224.65])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 571B330EF68
-	for <linux-btrfs@vger.kernel.org>; Tue, 24 Mar 2026 23:40:16 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.224.65
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DC5C543147
+	for <linux-btrfs@vger.kernel.org>; Tue, 24 Mar 2026 23:48:14 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774395617; cv=none; b=o5h/8jX9WsmKoyCKMS+wJPQAApLrN6M16v4zEVYVd05Zekku2fz2Z/4y09PhP//604djW0SBRCpmmd9MXkqYBbprsK7rjMOioCcWRrH0f+oGrgXRe46KzUiwbiUzffXqLvkfAZKZJqmkvrMBX4Qt3j2TqnF7k0wltVPuSLgLJGo=
+	t=1774396096; cv=none; b=ZmB90HBlRs9oVE+Gz+SGIapNLSqs/9hsgT+lsTBdKFCKiXjjn3JCi9nucjx1u1GfEVv30/xOIPyscBLjH+jB1o4mE2k1KTQTE+K8a9XiGD5uvoMFAjuHZNcL97Y579hZpMP7jz9P1h/m1p0WIzVu6zpn0QfrZAg6Uvu0c08wj7Y=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774395617; c=relaxed/simple;
-	bh=r9gjSYIjP6ljCTjXQL0cbTWCBIMLbqgC/sBRFaWEca0=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=c4ZTh61wbjztPbMbucva5n2V7AQ1iBg97QKUKCF3jXHDeerr8lp+BqcLk4hK6gpyNaQkMuqaqNF1lQ+Th3A7ppy6vcDUX/vVqhaabOjIsYnGq+cpObVH9f8FNtfV8CkRUEIh6o8gQCl91xUDFO68muBpff+l+giOIV7aC+4VxC4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=cuajoa+3; arc=none smtp.client-ip=74.125.224.65
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1774396096; c=relaxed/simple;
+	bh=zRs4WSF9ol9S8uldQCZapbi0HatdGD56LyaE2T00NJg=;
+	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=TQ1+aNj8hf6TbePC0NAihESPFcrpMd6MSIsNpn9GZPEn5jfZxjaM2/uu5wqJo30vZD5tTMEASjkQ2YVSu9etzZ2wwC2K/6CtHTnu0N6X/BTSX0QUWl/cX6GfzIr77wHXCwPZc8sn9+P/PWZHlVr09uS9ImTxdGTBdEG58CJPIAY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=sk0XTRtr; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=sk0XTRtr; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="cuajoa+3"
-Received: by mail-yx1-f65.google.com with SMTP id 956f58d0204a3-64ad8435f46so5267093d50.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Mar 2026 16:40:16 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1774395615; x=1775000415; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=LCX9KWt3A0asKt7lWJtB0L84UdTOx1zabyzk7QfBhdk=;
-        b=cuajoa+3hmCJsRYqWpOL+joModyHGsPmkjj36DhGlHPPDxvm1PrwogeeRoxX50+mf8
-         z67IBxjC5U4IC9U0qm7+xLoFa3bqZtzJzmJMe4zxEPU4eiAibSuGK8pcrAq0hH62ekIl
-         TeLhCjsbBHuoUf+Hz9/wUrz3O0RNdMV7zCb4yAQASI6oR1oongtPOyfDJp2CuPVAbaA+
-         vEUXIcVzwqz0sJ4LTUSIfHGPVQv/ebrKNv6GAsbJH7J9exI1lzwov0mgs6Ae2fM2UY8b
-         20r5gZAXfiIqyhZxwmoCiiAIatsAykj+u/SiLZpT0ybUfEfnWTVfFZ399TF9KI4Mh1Hg
-         8mhA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1774395615; x=1775000415;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
-         :to:cc:subject:date:message-id:reply-to;
-        bh=LCX9KWt3A0asKt7lWJtB0L84UdTOx1zabyzk7QfBhdk=;
-        b=OmKu8Ky4+8Nk4+C9Qn042+nq21XZkQjup98cheM9ZePE6PeAgE3Ou15vlkSokUfLDZ
-         x0ybl5e/3I2djHk6MDk3saTuD32UTVo2COL9rhmJnX2d2R8imgPNzbhrKMaKijTky90/
-         X3xzhZuadrsxJgSA4xLot+Vpu7viuqtU+E3PYXHKyxMtIH4IfH5HGcFacU0sE2Mn8vge
-         BuSdmtxzND5eAOmtypbDX+6jToFNsaE28I5I8j9hXqecPvvv8EM+zddHEH2TfvSVJJbX
-         Ke9Q9x7ntYDDyPryvj6WNu+dKXLzqQguVT/9RDgtr+NuEwvpOhjpj8baT3WN5YMUJit3
-         Cxvg==
-X-Gm-Message-State: AOJu0YxFhhcdVLt+tarev3vMrMh9AHWZyaTFSFZ+yTc4WmIXnVsursF/
-	wXXKQMM+B2mBBfKjO/Gpv4FSMsb3ZKKPl8ZiqeZSV/Yk6f0Jp+eNkqIzgZbI9E8p
-X-Gm-Gg: ATEYQzyDsr7cjgIwDUOSACNHmPDF6XNacyOG5GcFcqG4fjqBxzfbfZR4QjJ03gUKaoF
-	KFmLIyH/DOGlF7uqwysKuZt5E0UUiC5raOfv0hZ6Tj35KXfJy4PlAGzJJS0j2JFKRxoitqGaHfe
-	9FDygXAUtWp+qDdugY7sWirmEDAXU9zCybq2UuQc9EhCn3wAYsQaSAWKVBdvs+o4lf8Z6rqRC5D
-	zQCjDISz8wvCmAGbmBYxpsy2ldtu2Xd/65kH4TkYlEJ5klCw28fm2OSxaDTcVBVTLG6q/n2lvtD
-	Ou9PZ8e9z8czWp0KZ/ZXdu8AF8Ho3J6G3kesgr9vyPovJjZVLHD2PUGv7102jABf1ZZseIvOdvH
-	Yl2e+ztludOSZ3e8nvOk1HKMsYoKQB1MF70QLLaCXZDDIEah9vUHT49p11ZzakRGS1IfoZMd+wQ
-	NHqcP4GuEXp1cATJu8HA==
-X-Received: by 2002:a05:690e:169e:b0:64e:a2a8:f31d with SMTP id 956f58d0204a3-64ee608475bmr1354110d50.7.1774395615403;
-        Tue, 24 Mar 2026 16:40:15 -0700 (PDT)
-Received: from localhost ([2a03:2880:25ff:5a::])
-        by smtp.gmail.com with ESMTPSA id 956f58d0204a3-64edbfbaac0sm1612125d50.14.2026.03.24.16.40.14
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 24 Mar 2026 16:40:15 -0700 (PDT)
-From: Leo Martins <loemra.dev@gmail.com>
-To: Leo Martins <loemra.dev@gmail.com>
-Cc: linux-btrfs@vger.kernel.org,
-	kernel-team@fb.com,
-	fstests@vger.kernel.org
-Subject: Re: [PATCH] generic/747: handle ENOSPC gracefully during write/delete cycles
-Date: Tue, 24 Mar 2026 16:39:43 -0700
-Message-ID: <20260324234010.590043-1-loemra.dev@gmail.com>
-X-Mailer: git-send-email 2.52.0
-In-Reply-To: <efcb3c8470bf099534fec1c1745780eba445e111.1774394322.git.loemra.dev@gmail.com>
-References: 
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="sk0XTRtr";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="sk0XTRtr"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 06B384D216
+	for <linux-btrfs@vger.kernel.org>; Tue, 24 Mar 2026 23:48:13 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1774396093; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=pDCax6ORqUzREtSxDwvJuW+PrGLjKhp9xZSnsJ6JSwA=;
+	b=sk0XTRtrknv5lxDK1FMJl8qhXcqXB+J4wzVeVYFGhO/5M2u+bm7P0oYpSJXKTl2mzsnz1p
+	nXwX33ks69BJjrxTWB8RLkxAzfIBM7ZyS8fILfsFNWom1F9UktsXjZFd/t3Bp5rO3FysLw
+	OkzBeprkQMpBMznGiQxSdZ7s6xYTnFU=
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=sk0XTRtr
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1774396093; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=pDCax6ORqUzREtSxDwvJuW+PrGLjKhp9xZSnsJ6JSwA=;
+	b=sk0XTRtrknv5lxDK1FMJl8qhXcqXB+J4wzVeVYFGhO/5M2u+bm7P0oYpSJXKTl2mzsnz1p
+	nXwX33ks69BJjrxTWB8RLkxAzfIBM7ZyS8fILfsFNWom1F9UktsXjZFd/t3Bp5rO3FysLw
+	OkzBeprkQMpBMznGiQxSdZ7s6xYTnFU=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 44C36440D9
+	for <linux-btrfs@vger.kernel.org>; Tue, 24 Mar 2026 23:48:12 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id 2BQ+Arwiw2nlIgAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Tue, 24 Mar 2026 23:48:12 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/2] btrfs-progs: check/lowmem: recognize verity item keys
+Date: Wed, 25 Mar 2026 10:17:52 +1030
+Message-ID: <2fe8927a275f1e4d635ab11dc57006972be8aa24.1774395991.git.wqu@suse.com>
+X-Mailer: git-send-email 2.53.0
+In-Reply-To: <cover.1774395991.git.wqu@suse.com>
+References: <cover.1774395991.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -75,102 +69,76 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
+X-Spamd-Result: default: False [-3.01 / 50.00];
+	BAYES_HAM(-3.00)[99.99%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:dkim,suse.com:email];
+	ARC_NA(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received,2a07:de40:b281:104:10:150:64:97:from];
+	URIBL_BLOCKED(0.00)[suse.com:mid,suse.com:dkim,suse.com:email,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns];
+	RCVD_TLS_ALL(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	DKIM_TRACE(0.00)[suse.com:+]
+X-Rspamd-Action: no action
+X-Spam-Flag: NO
+X-Spam-Score: -3.01
+X-Spam-Level: 
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Rspamd-Queue-Id: 06B384D216
 
-On Tue, 24 Mar 2026 16:33:26 -0700 Leo Martins <loemra.dev@gmail.com> wrote:
+Commit 4e88bb6e ("btrfs-progs: enhance detection on unknown inode keys")
+added stricter validation for inode keys in the lowmem mode checker,
+flagging unknown key types as errors. However, it did not add cases for
+BTRFS_VERITY_DESC_ITEM_KEY (36) and BTRFS_VERITY_MERKLE_ITEM_KEY (37),
+causing any filesystem with fs-verity enabled files to fail the lowmem
+mode check with the following error:
 
-Forgot to CC fstests mailing list.
+ [5/8] checking fs roots
+ ERROR: ITEM[257 36 0] UNKNOWN TYPE in leaf 30490624
+ ERROR: ITEM[257 36 1] UNKNOWN TYPE in leaf 30490624
+ ERROR: ITEM[257 37 0] UNKNOWN TYPE in leaf 30490624
+ ERROR: ITEM[257 37 2048] UNKNOWN TYPE in leaf 30490624
+ ERROR: errors found in fs roots
 
-> generic/747 consistently fails on btrfs in my fstests setup, with an
-> ~88% failure rate across multiple runs on kernels ranging from v6.9 to
-> v7.0-rc5. This is not a regression but a pre-existing issue since the
-> test was added.
-> 
-> The test fills a filesystem to 95% then does mixed write/delete cycles,
-> using statfs to decide whether to write or delete. However, statfs
-> f_bavail may overestimate the actual available space. On btrfs, the
-> statfs implementation documents its estimate as "a close approximation"
-> (fs/btrfs/super.c). At high fill levels the discrepancy between what
-> statfs reports and what the filesystem can actually allocate becomes
-> significant, causing dd to hit ENOSPC even though statfs indicated
-> there was room.
-> 
-> This is not a filesystem bug. The filesystem correctly rejects the
-> write when it cannot reserve space. The test's purpose is to stress
-> garbage collection through write/delete churn, not to validate space
-> accounting.
-> 
-> Handle ENOSPC by cleaning up the partial file and making room:
-> 
-> In _direct_fillup: break out of the fill loop (we're full enough).
-> In _mixed_write_delete: delete a file to free space and retry. If
-> writes fail 10 consecutive times, _fail the test as that indicates a
-> real filesystem issue rather than a transient statfs discrepancy.
-> 
-> Redirect dd stderr to seqres.full so errors are preserved for
-> debugging without polluting the expected output.
-> 
-> Signed-off-by: Leo Martins <loemra.dev@gmail.com>
-> ---
->  tests/generic/747 | 28 +++++++++++++++++++---------
->  1 file changed, 19 insertions(+), 9 deletions(-)
-> 
-> diff --git a/tests/generic/747 b/tests/generic/747
-> index 44834186..35de3ccb 100755
-> --- a/tests/generic/747
-> +++ b/tests/generic/747
-> @@ -35,11 +35,7 @@ _create_file() {
->  
->  	POSIXLY_CORRECT=yes dd if=/dev/zero of=${file_name} \
->  		bs=${bs} count=$(( $file_sz / ${bs} )) \
-> -		status=none $dd_extra  2>&1
-> -
-> -	if [ $? -ne 0 ]; then
-> -		_fail "Failed writing $file_name"
-> -	fi
-> +		status=none $dd_extra  2>>$seqres.full
->  }
->  
->  _total_M() {
-> @@ -69,7 +65,10 @@ _direct_fillup () {
->  	while [ $(_used_percent) -lt $fill_percent ]; do
->  		local fsz=$(_get_random_fsz)
->  
-> -		_create_file $testseq $fsz "oflag=direct conv=fsync"
-> +		if ! _create_file $testseq $fsz "oflag=direct conv=fsync"; then
-> +			rm ${SCRATCH_MNT}/data_${testseq}
-> +			break
-> +		fi
->  		testseq=$((${testseq} + 1))
->  	done
->  }
-> @@ -79,14 +78,25 @@ _mixed_write_delete() {
->  	local total_M=$(_total_M)
->  	local to_write_M=$(( ${overwrite_percentage} * ${total_M} / 100 ))
->  	local written_M=0
-> +	local enospc_retries=0
-> +	local max_enospc_retries=10
->  
->  	while [ $written_M -lt $to_write_M ]; do
->  		if [ $(_used_percent) -lt $fill_percent ]; then
->  			local fsz=$(_get_random_fsz)
->  
-> -			_create_file $testseq $fsz "$dd_extra"
-> -			written_M=$((${written_M} + ${fsz}/${M}))
-> -			testseq=$((${testseq} + 1))
-> +			if ! _create_file $testseq $fsz "$dd_extra"; then
-> +				rm ${SCRATCH_MNT}/data_${testseq}
-> +				_delete_random_file
-> +				enospc_retries=$((enospc_retries + 1))
-> +				if [ $enospc_retries -ge $max_enospc_retries ]; then
-> +					_fail "failed to write after $max_enospc_retries consecutive ENOSPC attempts"
-> +				fi
-> +			else
-> +				written_M=$((${written_M} + ${fsz}/${M}))
-> +				testseq=$((${testseq} + 1))
-> +				enospc_retries=0
-> +			fi
->  		else
->  			_delete_random_file
->  		fi
-> -- 
-> 2.52.0
+Add the missing switch cases so that verity metadata items are
+recognized and silently skipped during the lowmem check.
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ check/mode-lowmem.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
+index 4375b92a5d12..5f41cda965a4 100644
+--- a/check/mode-lowmem.c
++++ b/check/mode-lowmem.c
+@@ -2817,7 +2817,10 @@ static int check_inode_item(struct btrfs_root *root, struct btrfs_path *path)
+ 			err |= ret;
+ 			break;
+ 		case BTRFS_XATTR_ITEM_KEY:
++		case BTRFS_VERITY_DESC_ITEM_KEY:
++		case BTRFS_VERITY_MERKLE_ITEM_KEY:
+ 			break;
++
+ 		default:
+ 			error("ITEM[%llu %u %llu] UNKNOWN TYPE in leaf %llu",
+ 			      key.objectid, key.type, key.offset, node->start);
+-- 
+2.53.0
+

@@ -1,35 +1,35 @@
 Received: from bombadil.infradead.org (bombadil.infradead.org [198.137.202.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 726863B2FE9;
-	Tue, 24 Mar 2026 06:23:31 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7165B3B774D;
+	Tue, 24 Mar 2026 06:23:43 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.137.202.133
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774333414; cv=none; b=DwBwckXj9Xaa1EzkCIAvkvNBVwr9pC908bUOOjdyrwAKI9a2IpFgEob32neLu19mmaWCok7dgfwBLgHrYAQ9EEncT9uqylzi3NrrMzeIPXM5pWDQ0bfiC+JkpzlxRpoJeElJp7dyOhGn1NkW3xjlKYyUMQTWKhuBkZnLtHd+/Ms=
+	t=1774333426; cv=none; b=nLCbLXK8M8qFm+ZYa9rp9El2fPZi2+WEtTg2Eyw3RtnHjvgmicvXrv6/rOHAvclORcMggTgZvmC4GUPyc4c5nnHAygYFhiroq1lrwgeN3PZblG4JsB9OP/FGrAygSQxWoWL8ZJHRUkdSjW/J+fe6mKVuoPadHji+iWd3dsbUzmw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774333414; c=relaxed/simple;
-	bh=BifARZXSftWdO9hfP3qfSEVzFLHG2PG2J8BDVrSmCzg=;
+	s=arc-20240116; t=1774333426; c=relaxed/simple;
+	bh=GFB1J4WujKBZJw1WDUGiSEAPYZjouR2AxPRPwPq6ym8=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=XEtpv1vUpTKmChQNW8Xm331fZ8aPm/C6sFRSbyJ5ne1y++tsUohGfrQHZaPryW2cpSCegDcKyzW8xuH4QY+337VEG6c1ROl1LmiFHF8Rxcwm4GqpE38A0vVrLi9aiAa2uu/BEX8criVHGTfgy/oAiKK//L1fceQgu2f7mWI5NRc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=sHJeFY3s; arc=none smtp.client-ip=198.137.202.133
+	 MIME-Version; b=Qa/JChf1ZxHZt+4AXYN1CKPTcqogZDWGGJtWGfrz7KQizk1iYbe75SCUDUes9HJ1RypmOnyzVFW/9oEQkNkehjppSFjN0DPMlBlA+iIXNW2w4tZb9l9NIGa7pXTsgpRxIKJhPsvoozKlgFaVvCjG2/tGCL9ROpsWVUeX543Z57A=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=ZJZVPuEp; arc=none smtp.client-ip=198.137.202.133
 Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de
 Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="sHJeFY3s"
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="ZJZVPuEp"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
 	d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
 	MIME-Version:References:In-Reply-To:Message-ID:Date:Subject:Cc:To:From:Sender
 	:Reply-To:Content-Type:Content-ID:Content-Description;
-	bh=O6va2IgTMiqnAT/Kurlve9FMTRmwTjwBvna18czcjgs=; b=sHJeFY3s5kj5+Z/NtZBMxW29bl
-	Ctl0hsGWZbO6j3V6kFjwzaazDomzielLc4V5AoIPbO5ErTEMvfYaItXnDZ5lBzdTqEeI2nu2PuRVw
-	bDISYAXpymVmFmZ+OBnFHc+xBZrLd4M/4f28br9Q0LkzOlhQJdZrzmtwqAu/xQSlpF+VhVsw/4XXW
-	2Dh1VNcsqLlVN8Kz56lPqlQHo4/AzhId+/l6OZDhOG1CtDCcO6CGj44WAe+VBp7TeXELfwq+sGS/5
-	dtqpNohMuUEKNiGxWUspUh67gg5wYVoMm/2kmN/9rYTHNv6DmhNR/GDSO/7j2xEERyTH56pz/dzET
-	V12KEiBg==;
+	bh=LA3t7gmFmV1NbfkwPmVDb+x/QYZiy0EYRNWRMnVHb4k=; b=ZJZVPuEpXwDUj0dF4Wfxor4O24
+	pSbzpzg7mzFhKEjNbbFKGzln8bXXiN7T9LnKk8Sx4L0ErYVaQip7mLThaN0lGAiFDOT7kFNYPO8Xp
+	7raami0hqPkvVQv2zj+80vd3xPK+mHN92XQ3kO6LWR7t4YR3BMgo99vI9mZRWJ1vdL5uZQjIdbY4s
+	Qeo664vHepjuSWVI4SOiOyaGEZ/4vTnHFG5U0cpAgrrUE1E/gM531YaxJBrVO2rqEwsWlkZ8pVQOK
+	ks4kdZF5sWaTvMY9PJ7Tz1v+iZEnnwBpSWtZtTIdqj4/I8mWOhW6ILCe5uUi0mxC0swd/IrK0Vm1y
+	ya2dWK/g==;
 Received: from 2a02-8389-2341-5b80-d601-7564-c2e0-491c.cable.dynamic.v6.surfer.at ([2a02:8389:2341:5b80:d601:7564:c2e0:491c] helo=localhost)
 	by bombadil.infradead.org with esmtpsa (Exim 4.98.2 #2 (Red Hat Linux))
-	id 1w4vAa-00000000gyD-3J3B;
-	Tue, 24 Mar 2026 06:23:17 +0000
+	id 1w4vAm-00000000h6S-3Yjt;
+	Tue, 24 Mar 2026 06:23:29 +0000
 From: Christoph Hellwig <hch@lst.de>
 To: Andrew Morton <akpm@linux-foundation.org>
 Cc: Richard Henderson <richard.henderson@linaro.org>,
@@ -88,9 +88,9 @@ Cc: Richard Henderson <richard.henderson@linaro.org>,
 	linux-btrfs@vger.kernel.org,
 	linux-arch@vger.kernel.org,
 	linux-raid@vger.kernel.org
-Subject: [PATCH 04/26] xor: move to lib/raid/
-Date: Tue, 24 Mar 2026 07:21:40 +0100
-Message-ID: <20260324062211.3216301-5-hch@lst.de>
+Subject: [PATCH 05/26] xor: small cleanups
+Date: Tue, 24 Mar 2026 07:21:41 +0100
+Message-ID: <20260324062211.3216301-6-hch@lst.de>
 X-Mailer: git-send-email 2.47.3
 In-Reply-To: <20260324062211.3216301-1-hch@lst.de>
 References: <20260324062211.3216301-1-hch@lst.de>
@@ -103,109 +103,34 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 
-Move the RAID XOR code to lib/raid/ as it has nothing to do with the
-crypto API.
+Update the to of file comment to be correct and non-redundant, and drop
+the unused BH_TRACE define.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- crypto/Kconfig                          | 2 --
- crypto/Makefile                         | 1 -
- lib/Kconfig                             | 1 +
- lib/Makefile                            | 2 +-
- lib/raid/Kconfig                        | 4 ++++
- lib/raid/Makefile                       | 3 +++
- lib/raid/xor/Makefile                   | 5 +++++
- crypto/xor.c => lib/raid/xor/xor-core.c | 0
- 8 files changed, 14 insertions(+), 4 deletions(-)
- create mode 100644 lib/raid/Kconfig
- create mode 100644 lib/raid/Makefile
- create mode 100644 lib/raid/xor/Makefile
- rename crypto/xor.c => lib/raid/xor/xor-core.c (100%)
+ lib/raid/xor/xor-core.c | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
 
-diff --git a/crypto/Kconfig b/crypto/Kconfig
-index b4bb85e8e226..97d73136a0b4 100644
---- a/crypto/Kconfig
-+++ b/crypto/Kconfig
-@@ -2,8 +2,6 @@
- #
- # Generic algorithms support
- #
--config XOR_BLOCKS
--	tristate
+diff --git a/lib/raid/xor/xor-core.c b/lib/raid/xor/xor-core.c
+index 676d7401af43..edb4e498da60 100644
+--- a/lib/raid/xor/xor-core.c
++++ b/lib/raid/xor/xor-core.c
+@@ -1,14 +1,11 @@
+ // SPDX-License-Identifier: GPL-2.0-or-later
+ /*
+- * xor.c : Multiple Devices driver for Linux
+- *
+  * Copyright (C) 1996, 1997, 1998, 1999, 2000,
+  * Ingo Molnar, Matti Aarnio, Jakub Jelinek, Richard Henderson.
+  *
+- * Dispatch optimized RAID-5 checksumming functions.
++ * Dispatch optimized XOR parity functions.
+  */
  
- #
- # async_tx api: hardware offloaded memory transfer/transform support
-diff --git a/crypto/Makefile b/crypto/Makefile
-index 04e269117589..795c2eea51fe 100644
---- a/crypto/Makefile
-+++ b/crypto/Makefile
-@@ -196,7 +196,6 @@ obj-$(CONFIG_CRYPTO_ECRDSA) += ecrdsa_generic.o
- #
- # generic algorithms and the async_tx api
- #
--obj-$(CONFIG_XOR_BLOCKS) += xor.o
- obj-$(CONFIG_ASYNC_CORE) += async_tx/
- obj-$(CONFIG_ASYMMETRIC_KEY_TYPE) += asymmetric_keys/
- crypto_simd-y := simd.o
-diff --git a/lib/Kconfig b/lib/Kconfig
-index 0f2fb9610647..5be57adcd454 100644
---- a/lib/Kconfig
-+++ b/lib/Kconfig
-@@ -138,6 +138,7 @@ config TRACE_MMIO_ACCESS
- 
- source "lib/crc/Kconfig"
- source "lib/crypto/Kconfig"
-+source "lib/raid/Kconfig"
- 
- config XXHASH
- 	tristate
-diff --git a/lib/Makefile b/lib/Makefile
-index 1b9ee167517f..84da412a044f 100644
---- a/lib/Makefile
-+++ b/lib/Makefile
-@@ -120,7 +120,7 @@ endif
- obj-$(CONFIG_DEBUG_INFO_REDUCED) += debug_info.o
- CFLAGS_debug_info.o += $(call cc-option, -femit-struct-debug-detailed=any)
- 
--obj-y += math/ crc/ crypto/ tests/ vdso/
-+obj-y += math/ crc/ crypto/ tests/ vdso/ raid/
- 
- obj-$(CONFIG_GENERIC_IOMAP) += iomap.o
- obj-$(CONFIG_HAS_IOMEM) += iomap_copy.o devres.o
-diff --git a/lib/raid/Kconfig b/lib/raid/Kconfig
-new file mode 100644
-index 000000000000..01b73a1c303f
---- /dev/null
-+++ b/lib/raid/Kconfig
-@@ -0,0 +1,4 @@
-+# SPDX-License-Identifier: GPL-2.0
-+
-+config XOR_BLOCKS
-+	tristate
-diff --git a/lib/raid/Makefile b/lib/raid/Makefile
-new file mode 100644
-index 000000000000..3540fe846dc4
---- /dev/null
-+++ b/lib/raid/Makefile
-@@ -0,0 +1,3 @@
-+# SPDX-License-Identifier: GPL-2.0
-+
-+obj-y				+= xor/
-diff --git a/lib/raid/xor/Makefile b/lib/raid/xor/Makefile
-new file mode 100644
-index 000000000000..7bca0ce8e90a
---- /dev/null
-+++ b/lib/raid/xor/Makefile
-@@ -0,0 +1,5 @@
-+# SPDX-License-Identifier: GPL-2.0
-+
-+obj-$(CONFIG_XOR_BLOCKS)	+= xor.o
-+
-+xor-y				+= xor-core.o
-diff --git a/crypto/xor.c b/lib/raid/xor/xor-core.c
-similarity index 100%
-rename from crypto/xor.c
-rename to lib/raid/xor/xor-core.c
+-#define BH_TRACE 0
+ #include <linux/module.h>
+ #include <linux/gfp.h>
+ #include <linux/raid/xor.h>
 -- 
 2.47.3
 

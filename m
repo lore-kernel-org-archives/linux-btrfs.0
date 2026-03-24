@@ -1,130 +1,177 @@
-Received: from mail-ej1-f54.google.com (mail-ej1-f54.google.com [209.85.218.54])
+Received: from mail-ej1-f42.google.com (mail-ej1-f42.google.com [209.85.218.42])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 91ED2384235
-	for <linux-btrfs@vger.kernel.org>; Tue, 24 Mar 2026 02:53:47 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.218.54
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CA53E388E4E
+	for <linux-btrfs@vger.kernel.org>; Tue, 24 Mar 2026 02:56:20 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.218.42
 ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774320828; cv=pass; b=RLE+bjoSXpePBgX7ay8dpJb4FAAyklxggaM52E9HJaH+vwePiPIFzZV4qGeyti9Q03RO48lwjUuES9CmohQcUx8mq44JIjhXWOUt5/x5jSX9unMCXWHj6Kp9OgnACSPTB07hA3WepOjRZgAdAPqOLcYoPTPDedbS7XrqdcCjpmo=
+	t=1774320982; cv=pass; b=r5s+OHi4cVzcCQaFbG31yl1oYMw9ID/e8efnEqlpu1nGnCS+uT9/MNLcqeR2CglTjKbvX1R7wgp18ZjyXTtaHaDirrQ2FelpOlGXhALjE7Ukh9D05FLJB0YMlrJYLaOV5VBBhnYIaggt38wyGcNxJFdKuWCtv7m4GGS6175g43E=
 ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774320828; c=relaxed/simple;
-	bh=E4+z9t2+mufnk2+LE9YjDKLH794kwNwNtV9ZrYKAs4I=;
+	s=arc-20240116; t=1774320982; c=relaxed/simple;
+	bh=o/skd7D95WNSbrYtC4xn5gfzVqcvn+A4lGocklhRyt4=;
 	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=hYRtZdCHvbH9QOfR9ovkSBB1K8mkX0OpZLRVnlhUqtT7oMYeMQuHufgNasbX4vZ8VC5wTZsP3fndBK2hzmwh6X9XZ29H34f1ro9LcC9GSme9UAAPNRuxkTdjR4xvhSqZJsCAgSsbLUbnOfPCKNBTdcPeWOiljBacauh1rWKW62M=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=dLnyZnJa; arc=pass smtp.client-ip=209.85.218.54
+	 To:Cc:Content-Type; b=U7Vskb0VEEs5QIalPD4+aLw1YtgOpXfWXuwF00Lqsv/2i3j43igLCChIQ7TfqJYzZHksgjF7Jit0ofxuOV5BIf19EgHdPC0cvqBkyk+hRuS1iXWdD+0PSKmNrRe7OW2iX3/JEeGKXNH8PCC6yy/j1CIGhh/Jmt6heeuGWwZUMFk=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=lTeLrk/J; arc=pass smtp.client-ip=209.85.218.42
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="dLnyZnJa"
-Received: by mail-ej1-f54.google.com with SMTP id a640c23a62f3a-b9358dd7f79so571354066b.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 23 Mar 2026 19:53:47 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1774320826; cv=none;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="lTeLrk/J"
+Received: by mail-ej1-f42.google.com with SMTP id a640c23a62f3a-b976536806cso748515966b.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 23 Mar 2026 19:56:20 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1774320979; cv=none;
         d=google.com; s=arc-20240605;
-        b=iUc1b7sBOG6d2Oe0CNm2NJYYfWGhQDYIbXe8i2xeFG8xAUydXm681hw/zXTYQ8m6Yx
-         T8wfEQCJeUBo+hbXcospby5qlLiPT5om/efIIVxyJVGJAKR/ispjFkxzavUQrVIMAxkA
-         xjzThDruUShwtRPnais5JXFkvLOBBSAK6TsxJHL6Uup4HnaSvZqOanYQPDSlN6pPyk56
-         23dWcOWKfcTEqMy0WOnX4z1flZy+f/ohFe6TSvTlw9eYfakM6wUaCWM8mOYvvmvYA9Nc
-         MaOkrHKJaSwyJfGYLW3GFAFwx7UHsexUZxwGON4ZGyYB9jJ5MMTx8UBH31qqzzQqRIqC
-         k/Yg==
+        b=QFImfhQKAKyTkJ4G8UmaUwjj7suuMvoh5a8pqoZjOHo7b0ZsbcobMuiWThlSe8btM5
+         lvrQrjILd0ZDCV0y/l+LfYgtvmm8TUSwsLZK6j+8D6yHNRhvIkDryPe95rvcDZuVlwQg
+         gCwqK7oiBgSitK8tUN4tMPRm9cFBFyFoDpNk+g7C2PztgJvTJ3OEY6bgiK/Ri4EknuAK
+         xDs5IUf8Hd0iPPU50TLIMuNkwzjjCRVog7RTVsfmogT8FUjnOsCZtRDV40JN+/jIYjLM
+         QpGD43ha6E8yeblSfK9e8EOmldtlz/5/9g0esnVHSHT0DtVAfOqRKxicsMuIBYjjDcLA
+         5rLQ==
 ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
         h=content-transfer-encoding:cc:to:subject:message-id:date:from
          :in-reply-to:references:mime-version:dkim-signature;
-        bh=E4+z9t2+mufnk2+LE9YjDKLH794kwNwNtV9ZrYKAs4I=;
-        fh=nbS8KEEEo2ctCy5PAWcu/fGicfh6OAmrEyBAu/IJz9A=;
-        b=HNm8GD8srBIJ/whu32t6aETXmyxbMUOOOGgl+gR7CQ34qQVJLL6DkKSF4RAW5IhbxH
-         AhJQrwv8cBN7JVr+Fj0A8po6r8z39BeZAc1NeUSXgVbwjqNFzzU9VcPvij1VXgISQM/i
-         qZ4DRC2ksM4ckjo3wQpWQA4+zmCiauyjm2aWMBD7maQd4ydzRLXMrTwPvVzYi1mC17C1
-         VWGTW4c3rxauZ8MTegBJFVHjdhMHpjc9guSRUt+dtIsfqR7s02mExh8mXH8KCfy01tfr
-         JUBu7yCCeiH0ZvzNAAl/7u1M5ls7XJh25XGGfFyahnEgSlMcta4P6EiqliMQn1jKhn1W
-         5tOw==;
+        bh=m1Fy558thMEchxvffNmHIHu+yPWwhkymd/ZNOHH1urs=;
+        fh=7ougG7k8Bkbs1X7RQYqYoqUJflogCu4zLmKKChmf3sY=;
+        b=bZUfQI4HGRtiVRJHxsd310XDlqE8Tk0+JPNmVefcMg4QAWaenSHsF/hEByJ6hcJCUH
+         6Py4FgtSP3pzJgKeNHf8R3ZroL/YRbsdIzG1+NP1Y4Lu3iz7j5oM5tUyQ9MIFPY5GP7p
+         mPFgFv8LgeyHY3swNqzc47gpGscgMpeDovzEa0OtSCrTEUmhUC6bsmCs8KeA8YMpfgCT
+         WNxyG7/lnSEPHO6K/ym7d5oMp2+ckEPoe8UNQTNZHlsaqjLzGShKpxHlV9D6RQ4X2S/r
+         qXAoPHisFALV6iGszSyJ1Cky8n/H1paI4SAlxJ9LQ0IFu3SyWHMUPGNAyxIJmocFcSEu
+         3g3g==;
         darn=vger.kernel.org
 ARC-Authentication-Results: i=1; mx.google.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1774320826; x=1774925626; darn=vger.kernel.org;
+        d=gmail.com; s=20251104; t=1774320979; x=1774925779; darn=vger.kernel.org;
         h=content-transfer-encoding:cc:to:subject:message-id:date:from
          :in-reply-to:references:mime-version:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=E4+z9t2+mufnk2+LE9YjDKLH794kwNwNtV9ZrYKAs4I=;
-        b=dLnyZnJaotFbuytuk1Q4YyERBJF3wsZl8M6u0py0992rU+kkD70FIS3hEvkPALVObT
-         4TgGn1N1fkJrc4EpGTMJKzlYxSMQGOzKa2FCLy9aGzpMVPujfus9mdkufJNv/EXjhykR
-         BH3GXXiZ2H5m41w7Gomu+T/Erm4tKMyYJo1PRJi5wFJxAv7FDEQiHqh4HyWo+Domgii0
-         RpzUSNfomFilMJlgSWwulUw9G9WmvOSjxG5V8cRlH141t0JNT6xR3khCdretx0f486+Z
-         bsDhh0nrJhWRz2fHGRMqfooEBhJvYfWsX1Ele+rgzJ7jfNN/YG8xe6pipNgwbKjtVMfe
-         kPbg==
+        bh=m1Fy558thMEchxvffNmHIHu+yPWwhkymd/ZNOHH1urs=;
+        b=lTeLrk/JTbzuZo2PCc58APDztdI4i8KsUz9ivIihFuU7W9OClOiGZ2JdITxbki5PIU
+         Rl74zF4H40GzTX1U2dX+8s8fwq5A1wBBxnwOOb6hKwhtytHgJMUV3SQ5kNPVgdwK5vSN
+         XThzSOe0qQBSHGMyhHTEmwcuuzxQdZ7bmMP3ic77/X4PAOBupR2P7p9LS4tvOS1qJwsc
+         n3gQS5k2o0i+vSwn+bauoQjuRSss5XHJH3rPblMN5tKTl5O7Yv/QBs/geuBC+jKf/4gY
+         OunB/etT//9XEZcSKEb7t8xU1Pv9q7Qu725iq6Zz6WUbpUNmq9Gq3zldghlLb6Utwrgm
+         VbaQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1774320826; x=1774925626;
+        d=1e100.net; s=20251104; t=1774320979; x=1774925779;
         h=content-transfer-encoding:cc:to:subject:message-id:date:from
          :in-reply-to:references:mime-version:x-gm-gg:x-gm-message-state:from
          :to:cc:subject:date:message-id:reply-to;
-        bh=E4+z9t2+mufnk2+LE9YjDKLH794kwNwNtV9ZrYKAs4I=;
-        b=hTjPy0O+f0eloIulYnu/MEqkeGlHv+S5X35tO2xy3O1ZDHo9jf33iSk1YsUAJrOqdo
-         rRu8IphrpFyDEWx5QCkPj4lXQr1Hy1sgfeK0JFzwJdjUqCFS++wEkDjRIFyCUnLd7oxI
-         Gh00bYLn/qOzvehyMNI9Bvp1Jwdr2CWcMrZUlN16aSQmOAOrRfI4LjwJomsZKEPluwn2
-         jlQGzxoCuJ8jiwGt5sOZhb/JzARWk0CPacwDCRpsUWCfW3XqPjtB2FpmiKS0HqoDvwZQ
-         zqdquamHYUol6ji/sX6ixJH8eXl7EqX/0bjyqUYkU6phkz9B15yVWv1xWdYpwGNgU/DO
-         qb5A==
-X-Forwarded-Encrypted: i=1; AJvYcCU0BE0zVhWn96jdE4At+peE61xOvWmmpBt5mf9bzqggntXjArTalqhSYJJxKKysoN4S1UufyO//2+tecQ==@vger.kernel.org
-X-Gm-Message-State: AOJu0YxJk52KbHTU30iq83yKRM72/Cs/ncY28AWonwmUUk7o0jbd7+sZ
-	UmzcCSPA4yp6gsCS3B2dNmnP8sV92Mx60QdFcCnyIAN4A73PqZ0M/FCkouA8559Zpub10NE4i9T
-	WU86bFL89ROmJeAgN383xrKV/bKf1o4M=
-X-Gm-Gg: ATEYQzys8mBuEaXsWZi9W5wz0pLKqj91YLt4sGr7MG3RY+MA4EbSIOmfClViy80orHc
-	9Rzog0vY5oQSolayPE7GOShQxAAG59pDcEGAqoLvjkdpCmkc7DzNeF7tvk4T6DxSrxFNmj9DuHO
-	HdQoZGGIgZgtOf0um+KWSdxsDf46uK2u4wC4eCz3xn16CI3/Jg3W/SFgvQjyoUR68Rl5hJUZTy6
-	1SzItAQjp7btc4V5zDUKCvIOAKxyoyHf38nc4yZkt2cdm0gARjL4W8OCARZvjQNTor+3QVG+NiH
-	t0Ny1jDfWc/sUUmiy1OwGoXQxzjCax91D/kvcz2v+unfaDgermZ1aiw=
-X-Received: by 2002:a17:907:d58e:b0:b97:aba7:1969 with SMTP id
- a640c23a62f3a-b982f3cbc95mr969518366b.45.1774320825565; Mon, 23 Mar 2026
- 19:53:45 -0700 (PDT)
+        bh=m1Fy558thMEchxvffNmHIHu+yPWwhkymd/ZNOHH1urs=;
+        b=lHzRllhcTk6oBkky5lrZ6pLw33QaLnRKDaduUKK/Jw49HvMbbX8GZiJwDvXmNWaqAg
+         NqNrsuOQjUL90C5kxCSd2ieSc61AiCIajHOkun7d2EWgRhO/vkX6FGZX4faL4XHq9nOv
+         CBg8Sq6xFgJcCVWakSyPig1ZQPqjVKLG9eNJ9U3ZNhtdWmBqcb+XPwsu/zZcvh3PLH2r
+         yIuIrr1jGMKlVFPiNSZH7VDINJkD97eoeo9Mj0B6qohVyM4AxHSLYNk8eVRDCWti/AeJ
+         ppZGDOJTnL9jg4xW/Z9rnf5Nnm7Nn5ysWrWpTm/DT8DH14J1ZuZW2VhNpbLuKVklseUY
+         2kLQ==
+X-Forwarded-Encrypted: i=1; AJvYcCXHTFrrZn1AF5X4/2Kr9qQrOpSTC9+/W4aH68x3k+t25KtOv+j/Xb8bUt63K8JPaV6r+yo735tvXuMViw==@vger.kernel.org
+X-Gm-Message-State: AOJu0YxToAWRS0MzL0uXoX74oNmdrd7mpZGh+pr3j4vqHjUPeyGiiktu
+	JAiqsQEQ9lOucoQJL5OPImH8TGgeQ3E9LUH0tGQzKrIj+LbWz+FP1h2qPlXJ8jbzgeBRn9Ky+wP
+	cDll5boSMbUurfWfpfUdMgu2sWCHmYZE=
+X-Gm-Gg: ATEYQzynQdQFTagzXqnTOj3bza1JIPnA39nDY7+JN91u4BjioHbg9dEpM7GlQhklLcY
+	P3UKFpucg+wW4MiwV4tF7wTrDLll7Pli8KtdBR5W7+TObeW+fWVAeFAJZ80gVlZhb5GlP/XqTXM
+	IGbvLyzmQoM5QiMxb2FLPpSl6DgInsj5fT5pGhFd2dsxFWsBm/ZuuEmkj2S+HKzHQj92YCRuxWK
+	Mzdf9aGnHBtVUUtc0vzuluNFrS2aSYf4FWGKdWfnailapWlerEATjKwVk8cO7S8SB/QqYUlW212
+	sxy8FCwet8ujDhDmiTq/t7n3ecRs6Oiz1dN+Y8BO1iYSSsnb45VutArPn66bf7SFaA==
+X-Received: by 2002:a17:907:158a:b0:b98:2c44:6631 with SMTP id
+ a640c23a62f3a-b982f21dc70mr733527866b.14.1774320978733; Mon, 23 Mar 2026
+ 19:56:18 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260314123741.1439792-1-gality369@gmail.com> <20260323173340.GM5735@twin.jikos.cz>
-In-Reply-To: <20260323173340.GM5735@twin.jikos.cz>
+References: <20260314123741.1439792-1-gality369@gmail.com> <20260314123741.1439792-2-gality369@gmail.com>
+ <20260323174027.GN5735@twin.jikos.cz>
+In-Reply-To: <20260323174027.GN5735@twin.jikos.cz>
 From: ZhengYuan Huang <gality369@gmail.com>
-Date: Tue, 24 Mar 2026 10:53:33 +0800
-X-Gm-Features: AQROBzA3OZEa-dxTDTdEcvGHBdv4WQwWgEJqtaoHs_l1lZe8HHeVOpaJt1H8iPk
-Message-ID: <CAOmEq9WErj1uq-0ARmnJWMC9byNJD6g2cOAxYOphHjTkwxzpBg@mail.gmail.com>
-Subject: Re: [PATCH v2 0/3] btrfs: fix balance NULL derefs and chunk/bg
- mapping verification
+Date: Tue, 24 Mar 2026 10:56:07 +0800
+X-Gm-Features: AQROBzDejusHmhqodxDfy9ApYb3p-75c3_u4nNYjkSfzM53rurgHUy-jBUQ4MT0
+Message-ID: <CAOmEq9UCwf_NzNh3tbuYqWYWxdkM8-V4w38YeVWwaK=RmR9usw@mail.gmail.com>
+Subject: Re: [PATCH v2 1/3] btrfs: balance: fix null-ptr-deref in chunk_usage_filter
 To: dsterba@suse.cz
 Cc: dsterba@suse.com, clm@fb.com, idryomov@gmail.com, 
 	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, 
-	baijiaju1990@gmail.com, r33s3n6@gmail.com, zzzccc427@gmail.com
+	baijiaju1990@gmail.com, r33s3n6@gmail.com, zzzccc427@gmail.com, 
+	stable@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Tue, Mar 24, 2026 at 1:33=E2=80=AFAM David Sterba <dsterba@suse.cz> wrot=
+On Tue, Mar 24, 2026 at 1:40=E2=80=AFAM David Sterba <dsterba@suse.cz> wrot=
 e:
-> As I understand it you're using some advanced fuzzing tool (patch 1
-> mentions runtime fuzzing), so the errors would not normally happen. With
-> fuzzing it depends on the capabilities, at runtime it is possible to
-> confuse the filesystem so much that sipmle checks can't detect it.
+> So, for example you let a filesystem create some structures, let it
+> continue, damage/destroy the structures and then let it access again?
 >
-> Here checking if block group lookups are ok makes sense in general.
-> There are existing checks that seem to be following the same logic like
-> in unpin_extent_range().
+> If this is supposed to emulate a corruption, either on media or in the
+> IO path then OK.
 
-Thanks for your review.
+Yes, this is one of the fuzzing strategies we use, where metadata is
+intentionally corrupted at runtime to emulate possible media corruption
+or I/O errors.
 
-Yes, we are using an in-house runtime fuzzing tool.
-However, after further investigation of this bug, we found that it is
-not limited to fuzzing-only scenarios. The issue can be reliably
-triggered by using a crafted filesystem image together with normal syscalls=
-.
+> > diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> > index 2bec544d8ba3..7c21ac249383 100644
+> > --- a/fs/btrfs/volumes.c
+> > +++ b/fs/btrfs/volumes.c
+> > @@ -3863,14 +3863,20 @@ static bool chunk_usage_range_filter(struct btr=
+fs_fs_info *fs_info, u64 chunk_of
+> >       return ret;
+> >  }
+> >
+> > -static bool chunk_usage_filter(struct btrfs_fs_info *fs_info, u64 chun=
+k_offset,
+> > -                            struct btrfs_balance_args *bargs)
+> > +static int chunk_usage_filter(struct btrfs_fs_info *fs_info, u64 chunk=
+_offset,
+> > +                           struct btrfs_balance_args *bargs)
+> >  {
+> >       struct btrfs_block_group *cache;
+> >       u64 chunk_used, user_thresh;
+> >       bool ret =3D true;
+>
+> As this is bool it does not match the changed return type anymore
+>
+> >
+> >       cache =3D btrfs_lookup_block_group(fs_info, chunk_offset);
+> > +     if (!cache) {
+> > +             btrfs_err(fs_info,
+> > +                       "balance: chunk at bytenr %llu has no correspon=
+ding block group",
+> > +                       chunk_offset);
+> > +             return -EUCLEAN;
+> > +     }
+> >       chunk_used =3D cache->used;
+> >
+> >       if (bargs->usage_min =3D=3D 0)
+> > @@ -3986,8 +3992,8 @@ static bool chunk_soft_convert_filter(u64 chunk_t=
+ype, struct btrfs_balance_args
+> >       return false;
+> >  }
+> >
+> > -static bool should_balance_chunk(struct extent_buffer *leaf, struct bt=
+rfs_chunk *chunk,
+> > -                              u64 chunk_offset)
+> > +static int should_balance_chunk(struct extent_buffer *leaf, struct btr=
+fs_chunk *chunk,
+> > +                             u64 chunk_offset)
+> >  {
+> >       struct btrfs_fs_info *fs_info =3D leaf->fs_info;
+> >       struct btrfs_balance_control *bctl =3D fs_info->balance_ctl;
+> > @@ -4014,9 +4020,13 @@ static bool should_balance_chunk(struct extent_b=
+uffer *leaf, struct btrfs_chunk
+> >       }
+> >
+> >       /* usage filter */
+> > -     if ((bargs->flags & BTRFS_BALANCE_ARGS_USAGE) &&
+> > -         chunk_usage_filter(fs_info, chunk_offset, bargs)) {
+> > -             return false;
+> > +     if (bargs->flags & BTRFS_BALANCE_ARGS_USAGE) {
+> > +             int filter_ret =3D chunk_usage_filter(fs_info, chunk_offs=
+et, bargs);
+>
+> Same problem here. Also please use ret2 for nested return values.
 
-So this may not be purely a fuzzing artifact, but rather a potential
-robustness issue that could be hit in practice.
-
-> This is good, thanks. For simple fixes or cleanups it's fine to
-> make a vague reference to the main patch or a "in the previous/followup
-> patches".
-
-Thanks for the guidance, I=E2=80=99ll continue to follow this convention fo=
-r
-changelogs.
+Thanks for the note, I=E2=80=99ll fix the return type issue and send a v3.
 
 Thanks,
 ZhengYuan Huang

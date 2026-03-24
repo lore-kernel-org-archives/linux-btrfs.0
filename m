@@ -1,104 +1,142 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3AE76402B8F
-	for <linux-btrfs@vger.kernel.org>; Tue, 24 Mar 2026 15:03:37 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 46F4A405ADC
+	for <linux-btrfs@vger.kernel.org>; Tue, 24 Mar 2026 15:26:35 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774364617; cv=none; b=NhcNz0os/7SH7ZlNz3/A/1FFCzGQqu1iNbsuAj7kyyxj0WqHtUvuy/dVkDCZijR/f+gnEhllzW5nUlyjRshxvCEe13assmZzy9fenuLI70OcXqj7p75nnY7z8uZgiO6rCNJNtZIp7KMBPzKDxCG9UAekd/gJrcSnReXVSIaX50k=
+	t=1774365996; cv=none; b=COGM/bJwH0UMr68mhzLvDlFDp2EjmZFJyC8/j7A7lYFRHfxHAy8Z9b+B8P+kpS3JQngQxc97O+WG4gAEGzfO7o981VWm7uifwmRZJG/JywfS0CnKLNolt0UDRooKH1yd1bZXq7gTR9hhf6W2SIptMdHA478vo8mNRgEyuAYttQM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774364617; c=relaxed/simple;
-	bh=CHsMhkba49mQNw+JScRkEpYeBuiBNuGUv5sgQyHaeGI=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=ZAC/vzktmvIgxeZu24Jf4vubcS4xXyyF5/6GkeDa8XO3vwj2IIOmjGZwqlxF+E2McBaec4q1B/ptZ6WhCQNwMIT/WDGoHXZYFVDzt4upAm/zjDBrJURGUa8aiiyV5GNCyZRmx7tDJmxQIq0+omvLcJOScBEEmYPRmYYEyniK3mY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=YtvTZqY4; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1774365996; c=relaxed/simple;
+	bh=8jF9whR5OFSAmDFIy8w3nAh/zmT1K2z5jPukEi3msjU=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=YGcQeZdNZHok3eodEDHDyaHN2fMVvXHy8yBqPoJgvGKL1P3fQW1wDGdpBzXkNVEFchHHJjDN7B8ZGhALZ01LDydG+vYRm2de758VpIbPHrdb8DVI2367orcGhDVrt+TFBxAW2Vf08mXlcDd6eYUft8DKvR8GxgiiDDpdEjDsWyE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=L8o1ktEi; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=cQJw28IE; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=L8o1ktEi; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=cQJw28IE; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="YtvTZqY4"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 91A3DC2BC87
-	for <linux-btrfs@vger.kernel.org>; Tue, 24 Mar 2026 15:03:36 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1774364617;
-	bh=CHsMhkba49mQNw+JScRkEpYeBuiBNuGUv5sgQyHaeGI=;
-	h=From:To:Subject:Date:From;
-	b=YtvTZqY4lkZu74had05hHfvg/onU9TWQm9LOi9DjA5veNA7RE3STDfBby4TMikWmb
-	 f8RBuMZXFt9hydKnSdKWef9Ju+fa3r8z+73fataTBTEO54l9HV+8P6tdxgrwDVfdGG
-	 ZNwMhhM+xvUHOkEYX/xHKGfwrmffw9XDim98ZNQCS60Sj/Gsq2IUA/yqrMT9Pfs8G4
-	 PuWr9oW6Di+0VlRbFBgVSyHVCK3wq7OM+Iz2LJwp3GiO/dm+H/lirOL/apEu/gfOka
-	 PklxdM+IiDBoHsU5vhIvEafqqE4j8LXz0amWSHY/LR1Om/lTiv7VT3y+MlAbAlEa5h
-	 oFDuhXca9RDbQ==
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: make btrfs_free_log() and btrfs_free_log_root_tree() return void
-Date: Tue, 24 Mar 2026 15:03:33 +0000
-Message-ID: <ef83fd57b6c94993091a6ad52cb2a828b3557724.1774364595.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.47.2
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="L8o1ktEi";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="cQJw28IE";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="L8o1ktEi";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="cQJw28IE"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 442CD4D201;
+	Tue, 24 Mar 2026 15:26:33 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1774365993;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=gy6EAi9ScIFfXy7AMj8MBfW6do9j71H3ABECesSv97A=;
+	b=L8o1ktEiaxQkwTwf7HGUadr2DX+z/A5YzU4A8x3AqL/aLZdtjNSYJtRU0ZCbeoD/l6kr4b
+	vaqfxRsqzHQGWVNi9laFO01+rxM2GCNBAa1WKL0L19Qx6QRsNh6o5DQ9vG7MM0JUZgKgpo
+	lm3zaVHxOWcdVORgbHMuOK5RtHYwLI8=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1774365993;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=gy6EAi9ScIFfXy7AMj8MBfW6do9j71H3ABECesSv97A=;
+	b=cQJw28IEGuu2S4ffBnF1b7eTxVZMlaGXtxgtlgsoy6WxMHleCjA91PsTTPg8S0xHd9DP/K
+	3pxeD7y50Py3hrCA==
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1774365993;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=gy6EAi9ScIFfXy7AMj8MBfW6do9j71H3ABECesSv97A=;
+	b=L8o1ktEiaxQkwTwf7HGUadr2DX+z/A5YzU4A8x3AqL/aLZdtjNSYJtRU0ZCbeoD/l6kr4b
+	vaqfxRsqzHQGWVNi9laFO01+rxM2GCNBAa1WKL0L19Qx6QRsNh6o5DQ9vG7MM0JUZgKgpo
+	lm3zaVHxOWcdVORgbHMuOK5RtHYwLI8=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1774365993;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=gy6EAi9ScIFfXy7AMj8MBfW6do9j71H3ABECesSv97A=;
+	b=cQJw28IEGuu2S4ffBnF1b7eTxVZMlaGXtxgtlgsoy6WxMHleCjA91PsTTPg8S0xHd9DP/K
+	3pxeD7y50Py3hrCA==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 292D843EE3;
+	Tue, 24 Mar 2026 15:26:33 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id McXbCSmtwmnaJAAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Tue, 24 Mar 2026 15:26:33 +0000
+Date: Tue, 24 Mar 2026 16:26:27 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Dave Chen <davechen@synology.com>
+Cc: dsterba@suse.cz, cccheng@synology.com, dsterba@suse.com,
+	linux-btrfs@vger.kernel.org, robbieko@synology.com
+Subject: Re: [PATCH] btrfs: fix unnecessary flush on close when truncating
+ zero-sized files
+Message-ID: <20260324152627.GV5735@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20260323140748.GK5735@twin.jikos.cz>
+ <20260324054039.887316-1-davechen@synology.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260324054039.887316-1-davechen@synology.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-Spam-Score: -4.00
+X-Spam-Level: 
+X-Spamd-Result: default: False [-4.00 / 50.00];
+	BAYES_HAM(-3.00)[99.99%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	HAS_REPLYTO(0.30)[dsterba@suse.cz];
+	NEURAL_HAM_SHORT(-0.20)[-0.994];
+	MIME_GOOD(-0.10)[text/plain];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	ARC_NA(0.00)[];
+	TO_DN_SOME(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	URIBL_BLOCKED(0.00)[twin.jikos.cz:mid,imap1.dmz-prg2.suse.org:helo,suse.cz:replyto];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCPT_COUNT_FIVE(0.00)[6];
+	REPLYTO_ADDR_EQ_FROM(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	REPLYTO_DOM_NEQ_TO_DOM(0.00)[]
+X-Spam-Flag: NO
 
-From: Filipe Manana <fdmanana@suse.com>
+On Tue, Mar 24, 2026 at 01:40:39PM +0800, Dave Chen wrote:
+> On Mon, Mar 23, 2026 at 03:07:48PM +0100, David Sterba wrote:
+> > Does this have a measurable impact? Truncating 0 -> 0 without any
+> > intermediate writes could happen but I kind of doubt it's worth
+> > optimizing. I'm not against adding the patch but would like to know if
+> > it's fixing some problem for you. Thanks.
+> 
+> Yes, this comes from a real workload. We have a backup service that
+> creates temporary files via mkstemp(), closes them, and later reopens
+> them with O_TRUNC for writing. The O_TRUNC is defensive -- the file is
+> always empty at that point, but the temp file creation and usage are in
+> separate components, so removing it from userspace isn't straightforward.
+> 
+> This pattern repeats for a large number of files per backup job, and
+> each close() triggers an unnecessary filemap_flush().
+> 
+> When oldsize is already 0, the flag provides no protection -- there is
+> no data being truncated away, so the filemap_flush() on close serves
+> no purpose. The fix simply makes the condition match what the comment
+> already describes.
 
-These functions never fail, always return success (0) and none of the
-callers care about their return values. Change their return type from int
-to void.
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/tree-log.c | 8 +++-----
- fs/btrfs/tree-log.h | 4 ++--
- 2 files changed, 5 insertions(+), 7 deletions(-)
-
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index de4707b1227e..f883d9d979d4 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -3681,25 +3681,23 @@ static void free_log_tree(struct btrfs_trans_handle *trans,
-  * free all the extents used by the tree log.  This should be called
-  * at commit time of the full transaction
-  */
--int btrfs_free_log(struct btrfs_trans_handle *trans, struct btrfs_root *root)
-+void btrfs_free_log(struct btrfs_trans_handle *trans, struct btrfs_root *root)
- {
- 	if (root->log_root) {
- 		free_log_tree(trans, root->log_root);
- 		root->log_root = NULL;
- 		clear_bit(BTRFS_ROOT_HAS_LOG_TREE, &root->state);
- 	}
--	return 0;
- }
- 
--int btrfs_free_log_root_tree(struct btrfs_trans_handle *trans,
--			     struct btrfs_fs_info *fs_info)
-+void btrfs_free_log_root_tree(struct btrfs_trans_handle *trans,
-+			      struct btrfs_fs_info *fs_info)
- {
- 	if (fs_info->log_root_tree) {
- 		free_log_tree(trans, fs_info->log_root_tree);
- 		fs_info->log_root_tree = NULL;
- 		clear_bit(BTRFS_ROOT_HAS_LOG_TREE, &fs_info->tree_root->state);
- 	}
--	return 0;
- }
- 
- static bool mark_inode_as_not_logged(const struct btrfs_trans_handle *trans,
-diff --git a/fs/btrfs/tree-log.h b/fs/btrfs/tree-log.h
-index 41e47fda036d..ad4e82e86bf9 100644
---- a/fs/btrfs/tree-log.h
-+++ b/fs/btrfs/tree-log.h
-@@ -71,8 +71,8 @@ static inline int btrfs_need_log_full_commit(struct btrfs_trans_handle *trans)
- 
- int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 		   struct btrfs_root *root, struct btrfs_log_ctx *ctx);
--int btrfs_free_log(struct btrfs_trans_handle *trans, struct btrfs_root *root);
--int btrfs_free_log_root_tree(struct btrfs_trans_handle *trans,
-+void btrfs_free_log(struct btrfs_trans_handle *trans, struct btrfs_root *root);
-+void btrfs_free_log_root_tree(struct btrfs_trans_handle *trans,
- 			     struct btrfs_fs_info *fs_info);
- int btrfs_recover_log_trees(struct btrfs_root *tree_root);
- int btrfs_log_dentry_safe(struct btrfs_trans_handle *trans,
--- 
-2.47.2
-
+Thanks, I'll add the workload description to changelog.

@@ -1,93 +1,78 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0455639B498;
-	Tue, 24 Mar 2026 16:42:22 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EE2AF408221;
+	Tue, 24 Mar 2026 17:32:27 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774370543; cv=none; b=Nuh0JhSSlQCpAlPltz42D5WtRAPm50gmR/VrNv/Z0AwwI+HREHARp/mYbp31UDojx+3rAj3BjnclYd/sv5AxOmMjP36Fa1YsC3BVvYN5ZpS0B9EAjVtvX2AFB/0HC+K13YwIi8S/5LntMf/VrNrBDEfseIH9hE9mW2GFuxNXxjs=
+	t=1774373548; cv=none; b=gYU+PmC366fg6dNM6bIXbFvJX7z1pyYeXxw69hZvVRy15X6HAmE4/5BYfdTZgjhPdI/obIylWWGHjfcqRdMQq4LAoyHkcylpcA4ulw5FDrw4NdtY+XRZjrix1czIILvg6hJDXh2Pn6Nvec8XFq9SYqKD348O5L2GP63cJ0m+iKk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774370543; c=relaxed/simple;
-	bh=TDgLcRhij5JQVZa60QmaxqOx203j51xbjV/q4WkoTac=;
-	h=Date:From:To:Cc:Subject:Message-Id:In-Reply-To:References:
-	 Mime-Version:Content-Type; b=XCHgQHGrHJAvm7GGtO77OFoXFntIc6XnX5lYMs/laTYSpgSLcAjccCpizO6dDhkIKBb224kzVCezwJH9t4RtXBnLGRWDAEKQYhTRntwXlQEtiVe0nA5OkyVuaoyupVS1WqDgBnjDOsHuzC9OcJBXYZt/+41EO5OCllAFLqHT+V4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (1024-bit key) header.d=linux-foundation.org header.i=@linux-foundation.org header.b=DQOwZZrw; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1774373548; c=relaxed/simple;
+	bh=6PvabfWqgV6Mk2o8Mrspk5xNPAhygV5RC4LIJoudYN8=;
+	h=Content-Type:MIME-Version:Subject:From:Message-Id:Date:References:
+	 In-Reply-To:To:Cc; b=PMpKcYeQgwbfinuCLYS/X5BRTB5dpeKGQzQt24GZ0fSv8tQNBGy20DhMAJiQtnB5+Chf/6jw9YvN6VaRhoha/3ucNwpy17FOzRSrWTiqgyPGkpF2c+eFgAjrlu0pmnWBsgxXXUA2cgNXXGZ1KaJv6GH3dZsTgGx0vMqZlgSMEiw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Zo8h9UkR; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linux-foundation.org header.i=@linux-foundation.org header.b="DQOwZZrw"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id E44B6C19424;
-	Tue, 24 Mar 2026 16:42:20 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linux-foundation.org;
-	s=korg; t=1774370542;
-	bh=TDgLcRhij5JQVZa60QmaxqOx203j51xbjV/q4WkoTac=;
-	h=Date:From:To:Cc:Subject:In-Reply-To:References:From;
-	b=DQOwZZrwl+GxIARWYI809PrjYZgIC0xfeubUvTNhKKAudWXflkBkHkOQxqHhcKfI5
-	 YEd8AoepFJifaDz0cIKUFkW85RTTMclmIhV4gfAqh3VY34KIx4Pm4UqjUG6y+A3vml
-	 FWjY7pXOdRDrlwOVcmMMkatFHeB/Fbf82T5tVjrs=
-Date: Tue, 24 Mar 2026 09:42:20 -0700
-From: Andrew Morton <akpm@linux-foundation.org>
-To: Christoph Hellwig <hch@lst.de>
-Cc: Richard Henderson <richard.henderson@linaro.org>, Matt Turner
- <mattst88@gmail.com>, Magnus Lindholm <linmag7@gmail.com>, Russell King
- <linux@armlinux.org.uk>, Catalin Marinas <catalin.marinas@arm.com>, Will
- Deacon <will@kernel.org>, Ard Biesheuvel <ardb@kernel.org>, Huacai Chen
- <chenhuacai@kernel.org>, WANG Xuerui <kernel@xen0n.name>, Madhavan
- Srinivasan <maddy@linux.ibm.com>, Michael Ellerman <mpe@ellerman.id.au>,
- Nicholas Piggin <npiggin@gmail.com>, "Christophe Leroy (CS GROUP)"
- <chleroy@kernel.org>, Paul Walmsley <pjw@kernel.org>, Palmer Dabbelt
- <palmer@dabbelt.com>, Albert Ou <aou@eecs.berkeley.edu>, Alexandre Ghiti
- <alex@ghiti.fr>, Heiko Carstens <hca@linux.ibm.com>, Vasily Gorbik
- <gor@linux.ibm.com>, Alexander Gordeev <agordeev@linux.ibm.com>, Christian
- Borntraeger <borntraeger@linux.ibm.com>, Sven Schnelle
- <svens@linux.ibm.com>, "David S. Miller" <davem@davemloft.net>, Andreas
- Larsson <andreas@gaisler.com>, Richard Weinberger <richard@nod.at>, Anton
- Ivanov <anton.ivanov@cambridgegreys.com>, Johannes Berg
- <johannes@sipsolutions.net>, Thomas Gleixner <tglx@kernel.org>, Ingo Molnar
- <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, Dave Hansen
- <dave.hansen@linux.intel.com>, x86@kernel.org, "H. Peter Anvin"
- <hpa@zytor.com>, Herbert Xu <herbert@gondor.apana.org.au>, Dan Williams
- <dan.j.williams@intel.com>, Chris Mason <clm@fb.com>, David Sterba
- <dsterba@suse.com>, Arnd Bergmann <arnd@arndb.de>, Song Liu
- <song@kernel.org>, Yu Kuai <yukuai@fnnas.com>, Li Nan
- <linan122@huawei.com>, "Theodore Ts'o" <tytso@mit.edu>,
- "Jason A. Donenfeld" <Jason@zx2c4.com>, linux-alpha@vger.kernel.org,
- linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
- loongarch@lists.linux.dev, linuxppc-dev@lists.ozlabs.org,
- linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
- sparclinux@vger.kernel.org, linux-um@lists.infradead.org,
- linux-crypto@vger.kernel.org, linux-btrfs@vger.kernel.org,
- linux-arch@vger.kernel.org, linux-raid@vger.kernel.org
-Subject: Re: cleanup the RAID5 XOR library v3
-Message-Id: <20260324094220.09e6eb90afc7f55937847f22@linux-foundation.org>
-In-Reply-To: <20260324062211.3216301-1-hch@lst.de>
-References: <20260324062211.3216301-1-hch@lst.de>
-X-Mailer: Sylpheed 3.8.0beta1 (GTK+ 2.24.33; x86_64-pc-linux-gnu)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Zo8h9UkR"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id A1C9DC2BC87;
+	Tue, 24 Mar 2026 17:32:27 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1774373547;
+	bh=6PvabfWqgV6Mk2o8Mrspk5xNPAhygV5RC4LIJoudYN8=;
+	h=Subject:From:Date:References:In-Reply-To:To:Cc:From;
+	b=Zo8h9UkR3EFZ5X+t7pfglF358HIzZfkYCEPXbzgvSpn1932RytFLUmxbaM7vvtb+8
+	 jOc+954Byl6hn4EPrsHfGfcxTsXE+uJ/91AD9cpiFU6fQFUnqTIZOUCz3jiKp9Lt/y
+	 fP9agQ5q5IpglKVONQ2rdOMbIopiphjj96iDiDCdLhsIg4j6oOgV7iv4UPtrAChvwo
+	 Lf11yj5JD7NSZtLROFPsdSkSE5aVMD/liTgqh0NDhuTdaGleJaQf9azubnWFNzP4Uo
+	 AztXkDjv+clCATZJstRL/ReX0kcwsokdxAQqf0P4yOrlBxTSfcE3G2EgYulRsJROWY
+	 I9c7LivQUYhng==
+Received: from [10.30.226.235] (localhost [IPv6:::1])
+	by aws-us-west-2-korg-oddjob-rhel9-1.codeaurora.org (Postfix) with ESMTP id 7D0D83808203;
+	Tue, 24 Mar 2026 17:32:16 +0000 (UTC)
+Content-Type: text/plain; charset="utf-8"
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
+Subject: Re: [f2fs-dev] [GIT PULL] fsverity updates for 6.3
+From: patchwork-bot+f2fs@kernel.org
+Message-Id: 
+ <177437353528.1223048.9746825008977248948.git-patchwork-notify@kernel.org>
+Date: Tue, 24 Mar 2026 17:32:15 +0000
+References: <Y/KLHT3zaA0QFhVJ@sol.localdomain>
+In-Reply-To: <Y/KLHT3zaA0QFhVJ@sol.localdomain>
+To: Eric Biggers <ebiggers@kernel.org>
+Cc: torvalds@linux-foundation.org, fsverity@lists.linux.dev, tytso@mit.edu,
+ linux-kernel@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
+ linux-fscrypt@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+ linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org
 
-On Tue, 24 Mar 2026 07:21:36 +0100 Christoph Hellwig <hch@lst.de> wrote:
+Hello:
 
-> the XOR library used for the RAID5 parity is a bit of a mess right now.
-> The main file sits in crypto/ despite not being cryptography and not
-> using the crypto API, with the generic implementations sitting in
-> include/asm-generic and the arch implementations sitting in an asm/
-> header in theory.  The latter doesn't work for many cases, so
-> architectures often build the code directly into the core kernel, or
-> create another module for the architecture code.
+This pull request was applied to jaegeuk/f2fs.git (dev)
+by Linus Torvalds <torvalds@linux-foundation.org>:
+
+On Sun, 19 Feb 2023 12:48:29 -0800 you wrote:
+> The following changes since commit 88603b6dc419445847923fcb7fe5080067a30f98:
 > 
-> Changes this to a single module in lib/ that also contains the
-> architecture optimizations, similar to the library work Eric Biggers
-> has done for the CRC and crypto libraries later.  After that it changes
-> to better calling conventions that allow for smarter architecture
-> implementations (although none is contained here yet), and uses
-> static_call to avoid indirection function call overhead.
+>   Linux 6.2-rc2 (2023-01-01 13:53:16 -0800)
+> 
+> are available in the Git repository at:
+> 
+>   https://git.kernel.org/pub/scm/fs/fsverity/linux.git tags/fsverity-for-linus
+> 
+> [...]
 
-Thanks, I've updated mm.git's mm-nonmm-unstable branch to this version
-of the patchset.
+Here is the summary with links:
+  - [f2fs-dev,GIT,PULL] fsverity updates for 6.3
+    https://git.kernel.org/jaegeuk/f2fs/c/5ee8dbf54602
+
+You are awesome, thank you!
+-- 
+Deet-doot-dot, I am a bot.
+https://korg.docs.kernel.org/patchwork/pwbot.html
 
 

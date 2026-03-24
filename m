@@ -1,43 +1,96 @@
-Received: from mail.synology.com (mail.synology.com [211.23.38.101])
+Received: from bombadil.infradead.org (bombadil.infradead.org [198.137.202.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A2B35313E01
-	for <linux-btrfs@vger.kernel.org>; Tue, 24 Mar 2026 05:40:41 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=211.23.38.101
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0DC703B27EF;
+	Tue, 24 Mar 2026 06:22:58 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.137.202.133
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774330843; cv=none; b=ssy23wubLKFMttO9MnTRjrmjzeQjUqUcFapu2QnhNKDY54VutB/b5RS4lRFRarpBgpkYLfdYd/6v3GWfnEKTkrlyRePDwLUGr6JffPcwSlmgqLKuGkQqrgZpXUyspyV2hWA17sCQJW1QWGoXVbkDwmXxjFaHekhbO0nhuGFQK6Y=
+	t=1774333384; cv=none; b=hnpLnicD5XRH6ESyfLDbmoemI7nWnKoOlQ54bLHMk1qqujwUkGmpSOO0wHs9sxytM4vyPpJBoWZ4CWu4MXB1aen/EOTAmpcMLN/F8EoCl4EI6PVBbjg3vuRtonCgWVpsDzWO+E1wH4tQIGff9qmS8c59Iqpl60GkbhYQUO1AjGs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774330843; c=relaxed/simple;
-	bh=jtXOQILvywLV127KTTl5yJHs/Ruh7SNhN1xKgzorgdA=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=kivE70VnIWJbRA/R337k3ss8c6waL+dIgKtxpWeykiCVnjykaeb/HqNhdfDH1vrkNkmC7Az9hQLDEF3fTbQOfAq8a6OzCxPygh4vIoUOEx19UYYNOnIi51YT4aslrZCgJ9tcQ/6at9WALFaf0xaR93/jEQ1LPcM1/vJS5usgMOA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=synology.com; spf=pass smtp.mailfrom=synology.com; dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b=l2Co5ipm; arc=none smtp.client-ip=211.23.38.101
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=synology.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=synology.com
+	s=arc-20240116; t=1774333384; c=relaxed/simple;
+	bh=nGZJLjOe5iO4iOeruhTpM3hRiw+N7ndt3b9PtwZc2ko=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=bR05x8olluLJzuMb2e1F0F8J4Kcl9mz2lzggyNMQkB0Jwnuq6QMVuSNV3OSB/Q1d81kQmeOw1tC4xs4uvJCL8e3d2FKmFTu7lgiOTcoxfHnZYW7GwzlkN1KPEIWIhz6hCw975wFw4KvCirNVOp8PRAkQiKv0WbRoICA4bEUCMvU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=c65a7z7Q; arc=none smtp.client-ip=198.137.202.133
+Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b="l2Co5ipm"
-Received: from 11212-DT-014.. (unknown [10.17.40.185])
-	by mail.synology.com (Postfix) with ESMTPA id 4ffzQv6YwrzHWZVrc;
-	Tue, 24 Mar 2026 13:40:39 +0800 (CST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=synology.com; s=123;
-	t=1774330840; bh=jtXOQILvywLV127KTTl5yJHs/Ruh7SNhN1xKgzorgdA=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References;
-	b=l2Co5ipmrG73/J0qujIOGS/7V7h+GUiNqkquPuNjfImM0eU/IRx/fGlsIYCuH/zr8
-	 NRRkr393uMpi7Wir1xdhrmJoqmsN8geTE6oxXj3TUOBznI940OysSZ7NXHbVZA4JRg
-	 zAhPid94rV4XQJHvxYgwMUsnbShNjK9QSkENjXu0=
-From: Dave Chen <davechen@synology.com>
-To: dsterba@suse.cz
-Cc: cccheng@synology.com,
-	davechen@synology.com,
-	dsterba@suse.com,
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="c65a7z7Q"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
+	MIME-Version:Message-ID:Date:Subject:Cc:To:From:Sender:Reply-To:Content-Type:
+	Content-ID:Content-Description:In-Reply-To:References;
+	bh=llZo5AuQgKfnTDSRj0qABwj+a0z1LvEOtH9cegApi48=; b=c65a7z7QGulg3ZLt9fovvHDcTw
+	ZbNOrHtwwGpRemcCz9CWHiJ3Ei2dTofnWWPUL3uUXteeZ8o4CHqd3da+QlqLH8NFQL7+6DxGYY7x/
+	ISh83YpgQoFnaMoWYlk1wLHj1Op7kAZwuQikkXrMfcuGzOKD62v6gHZ+2Uxzk4wjwUmL55wqdwWGr
+	IUkEuJt/x9DI3icLegpslpm2STLooEogQ9Js9TWsnJBxhBFyaFyZMs/6zvfKcL4tEJRvDHxUd8kBd
+	vu03BtS4rMfzdxhHi3ti00AmlupX42OVlGsUDyVcj2JfI7viG3M60ZNS78+dMo3Z7I2Ah04DFsGUu
+	c5dVM7YA==;
+Received: from 2a02-8389-2341-5b80-d601-7564-c2e0-491c.cable.dynamic.v6.surfer.at ([2a02:8389:2341:5b80:d601:7564:c2e0:491c] helo=localhost)
+	by bombadil.infradead.org with esmtpsa (Exim 4.98.2 #2 (Red Hat Linux))
+	id 1w4v9l-00000000ggz-358i;
+	Tue, 24 Mar 2026 06:22:26 +0000
+From: Christoph Hellwig <hch@lst.de>
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Richard Henderson <richard.henderson@linaro.org>,
+	Matt Turner <mattst88@gmail.com>,
+	Magnus Lindholm <linmag7@gmail.com>,
+	Russell King <linux@armlinux.org.uk>,
+	Catalin Marinas <catalin.marinas@arm.com>,
+	Will Deacon <will@kernel.org>,
+	Ard Biesheuvel <ardb@kernel.org>,
+	Huacai Chen <chenhuacai@kernel.org>,
+	WANG Xuerui <kernel@xen0n.name>,
+	Madhavan Srinivasan <maddy@linux.ibm.com>,
+	Michael Ellerman <mpe@ellerman.id.au>,
+	Nicholas Piggin <npiggin@gmail.com>,
+	"Christophe Leroy (CS GROUP)" <chleroy@kernel.org>,
+	Paul Walmsley <pjw@kernel.org>,
+	Palmer Dabbelt <palmer@dabbelt.com>,
+	Albert Ou <aou@eecs.berkeley.edu>,
+	Alexandre Ghiti <alex@ghiti.fr>,
+	Heiko Carstens <hca@linux.ibm.com>,
+	Vasily Gorbik <gor@linux.ibm.com>,
+	Alexander Gordeev <agordeev@linux.ibm.com>,
+	Christian Borntraeger <borntraeger@linux.ibm.com>,
+	Sven Schnelle <svens@linux.ibm.com>,
+	"David S. Miller" <davem@davemloft.net>,
+	Andreas Larsson <andreas@gaisler.com>,
+	Richard Weinberger <richard@nod.at>,
+	Anton Ivanov <anton.ivanov@cambridgegreys.com>,
+	Johannes Berg <johannes@sipsolutions.net>,
+	Thomas Gleixner <tglx@kernel.org>,
+	Ingo Molnar <mingo@redhat.com>,
+	Borislav Petkov <bp@alien8.de>,
+	Dave Hansen <dave.hansen@linux.intel.com>,
+	x86@kernel.org,
+	"H. Peter Anvin" <hpa@zytor.com>,
+	Herbert Xu <herbert@gondor.apana.org.au>,
+	Dan Williams <dan.j.williams@intel.com>,
+	Chris Mason <clm@fb.com>,
+	David Sterba <dsterba@suse.com>,
+	Arnd Bergmann <arnd@arndb.de>,
+	Song Liu <song@kernel.org>,
+	Yu Kuai <yukuai@fnnas.com>,
+	Li Nan <linan122@huawei.com>,
+	"Theodore Ts'o" <tytso@mit.edu>,
+	"Jason A. Donenfeld" <Jason@zx2c4.com>,
+	linux-alpha@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	linux-arm-kernel@lists.infradead.org,
+	loongarch@lists.linux.dev,
+	linuxppc-dev@lists.ozlabs.org,
+	linux-riscv@lists.infradead.org,
+	linux-s390@vger.kernel.org,
+	sparclinux@vger.kernel.org,
+	linux-um@lists.infradead.org,
+	linux-crypto@vger.kernel.org,
 	linux-btrfs@vger.kernel.org,
-	robbieko@synology.com
-Subject: Re: [PATCH] btrfs: fix unnecessary flush on close when truncating zero-sized files
-Date: Tue, 24 Mar 2026 13:40:39 +0800
-Message-ID: <20260324054039.887316-1-davechen@synology.com>
-X-Mailer: git-send-email 2.43.0
-In-Reply-To: <20260323140748.GK5735@twin.jikos.cz>
-References: <20260323140748.GK5735@twin.jikos.cz>
+	linux-arch@vger.kernel.org,
+	linux-raid@vger.kernel.org
+Subject: cleanup the RAID5 XOR library v3
+Date: Tue, 24 Mar 2026 07:21:36 +0100
+Message-ID: <20260324062211.3216301-1-hch@lst.de>
+X-Mailer: git-send-email 2.47.3
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -45,32 +98,136 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Synology-MCP-Status: no
-X-Synology-Spam-Status: score=0, required 6, WHITELIST_FROM_ADDRESS 0
-X-Synology-Spam-Flag: no
-X-Synology-Virus-Status: no
-Content-Type: text/plain
+X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 
-On Mon, Mar 23, 2026 at 03:07:48PM +0100, David Sterba wrote:
-> Does this have a measurable impact? Truncating 0 -> 0 without any
-> intermediate writes could happen but I kind of doubt it's worth
-> optimizing. I'm not against adding the patch but would like to know if
-> it's fixing some problem for you. Thanks.
+Hi all,
 
-Yes, this comes from a real workload. We have a backup service that
-creates temporary files via mkstemp(), closes them, and later reopens
-them with O_TRUNC for writing. The O_TRUNC is defensive -- the file is
-always empty at that point, but the temp file creation and usage are in
-separate components, so removing it from userspace isn't straightforward.
+the XOR library used for the RAID5 parity is a bit of a mess right now.
+The main file sits in crypto/ despite not being cryptography and not
+using the crypto API, with the generic implementations sitting in
+include/asm-generic and the arch implementations sitting in an asm/
+header in theory.  The latter doesn't work for many cases, so
+architectures often build the code directly into the core kernel, or
+create another module for the architecture code.
 
-This pattern repeats for a large number of files per backup job, and
-each close() triggers an unnecessary filemap_flush().
+Changes this to a single module in lib/ that also contains the
+architecture optimizations, similar to the library work Eric Biggers
+has done for the CRC and crypto libraries later.  After that it changes
+to better calling conventions that allow for smarter architecture
+implementations (although none is contained here yet), and uses
+static_call to avoid indirection function call overhead.
 
-When oldsize is already 0, the flag provides no protection -- there is
-no data being truncated away, so the filemap_flush() on close serves
-no purpose. The fix simply makes the condition match what the comment
-already describes.
+A git tree is also available here:
 
-Thanks.
+    git://git.infradead.org/users/hch/misc.git xor-improvements
 
-Disclaimer: The contents of this e-mail message and any attachments are confidential and are intended solely for addressee. The information may also be legally privileged. This transmission is sent in trust, for the sole purpose of delivery to the intended recipient. If you have received this transmission in error, any use, reproduction or dissemination of this transmission is strictly prohibited. If you are not the intended recipient, please immediately notify the sender by reply e-mail or phone and delete this message and its attachments, if any.
+Gitweb:
+
+    https://git.infradead.org/?p=users/hch/misc.git;a=shortlog;h=refs/heads/xor-improvements
+
+Changes since v2:
+ - drop use of CONFIG_KERNEL_MODE_NEON for arm64
+ - drop the new __limit_random_u32_below for the unit test
+ - require 64-bit alignment because sparc64 requires it
+ - use DEFINE_STATIC_CALL_NULL to avoid exposing a specific xor_gen
+   routine
+ - keep CONFIG_XOR_BLOCKS_ARCH self-contained in lib/raid/
+ - don't select library option from kunit test and add a .kunitconfig
+   instead
+ - fix the module description for the kunit test
+ - add a case where buffers are at the end of the allocation in the kunit test
+ - use separate src/dst alignment in the kunit test
+ - fix and improve the kunit assert message
+
+Changes since v1:
+ - use lockdep_assert_preemption_enabled()
+ - improve the commit message for the initial um xor.h cleanup
+ - further clean up the um arch specific header
+ - add SPDX identifier to the new build system files
+ - use bool for xor_forced
+ - fix an incorrect printk level conversion from warn to info
+ - include xor_impl.h in xor-neon.c
+ - remove unused exports for riscv
+ - simply move the sparc code instead of splititng it
+ - simplify the makefile for the x86-specific implementations
+ - remove stray references to xor_blocks in crypto/async_tx
+ - rework __DO_XOR_BLOCKS to avoid (theoretical) out of bounds references
+ - improve the kerneldoc API documentration for xor_gen()
+ - spell the name of the srcs argument to xor_gen correctly in xor.h
+ - add a kunit test, and a new random helper for it.
+
+Diffstat:
+ arch/arm64/include/asm/xor.h              |   73 --
+ arch/loongarch/include/asm/xor.h          |   68 --
+ arch/loongarch/include/asm/xor_simd.h     |   34 -
+ arch/loongarch/lib/xor_simd_glue.c        |   72 --
+ arch/powerpc/include/asm/xor.h            |   47 -
+ arch/powerpc/include/asm/xor_altivec.h    |   22 
+ arch/powerpc/lib/xor_vmx.h                |   22 
+ arch/powerpc/lib/xor_vmx_glue.c           |   63 --
+ arch/riscv/include/asm/xor.h              |   68 --
+ arch/s390/include/asm/xor.h               |   21 
+ arch/sparc/include/asm/xor.h              |    9 
+ arch/um/include/asm/xor.h                 |   24 
+ arch/x86/include/asm/xor_64.h             |   28 -
+ b/arch/arm/lib/Makefile                   |    5 
+ b/arch/arm64/lib/Makefile                 |    6 
+ b/arch/loongarch/lib/Makefile             |    2 
+ b/arch/powerpc/lib/Makefile               |    5 
+ b/arch/riscv/lib/Makefile                 |    1 
+ b/arch/s390/lib/Makefile                  |    2 
+ b/arch/sparc/include/asm/asm-prototypes.h |    1 
+ b/arch/sparc/lib/Makefile                 |    2 
+ b/crypto/Kconfig                          |    2 
+ b/crypto/Makefile                         |    1 
+ b/crypto/async_tx/async_xor.c             |   34 -
+ b/fs/btrfs/raid56.c                       |   27 -
+ b/include/asm-generic/Kbuild              |    1 
+ b/include/linux/raid/xor.h                |   27 -
+ b/lib/Kconfig                             |    1 
+ b/lib/Makefile                            |    2 
+ b/lib/raid/.kunitconfig                   |    3 
+ b/lib/raid/Kconfig                        |   30 +
+ b/lib/raid/Makefile                       |    3 
+ b/lib/raid/xor/Makefile                   |   42 +
+ b/lib/raid/xor/alpha/xor.c                |   46 -
+ b/lib/raid/xor/alpha/xor_arch.h           |   22 
+ b/lib/raid/xor/arm/xor-neon-glue.c        |   19 
+ b/lib/raid/xor/arm/xor-neon.c             |   22 
+ b/lib/raid/xor/arm/xor.c                  |  105 ----
+ b/lib/raid/xor/arm/xor_arch.h             |   22 
+ b/lib/raid/xor/arm64/xor-neon-glue.c      |   26 +
+ b/lib/raid/xor/arm64/xor-neon.c           |   94 +--
+ b/lib/raid/xor/arm64/xor-neon.h           |    6 
+ b/lib/raid/xor/arm64/xor_arch.h           |   21 
+ b/lib/raid/xor/loongarch/xor_arch.h       |   33 +
+ b/lib/raid/xor/loongarch/xor_simd_glue.c  |   37 +
+ b/lib/raid/xor/powerpc/xor_arch.h         |   22 
+ b/lib/raid/xor/powerpc/xor_vmx.c          |   40 -
+ b/lib/raid/xor/powerpc/xor_vmx.h          |   10 
+ b/lib/raid/xor/powerpc/xor_vmx_glue.c     |   28 +
+ b/lib/raid/xor/riscv/xor-glue.c           |   25 +
+ b/lib/raid/xor/riscv/xor.S                |    4 
+ b/lib/raid/xor/riscv/xor_arch.h           |   17 
+ b/lib/raid/xor/s390/xor.c                 |   15 
+ b/lib/raid/xor/s390/xor_arch.h            |   13 
+ b/lib/raid/xor/sparc/xor-sparc32.c        |   32 -
+ b/lib/raid/xor/sparc/xor-sparc64-glue.c   |   48 -
+ b/lib/raid/xor/sparc/xor-sparc64.S        |   10 
+ b/lib/raid/xor/sparc/xor_arch.h           |   35 +
+ b/lib/raid/xor/tests/Makefile             |    3 
+ b/lib/raid/xor/tests/xor_kunit.c          |  187 +++++++
+ b/lib/raid/xor/um/xor_arch.h              |    2 
+ b/lib/raid/xor/x86/xor-avx.c              |   52 --
+ b/lib/raid/xor/x86/xor-mmx.c              |  120 +---
+ b/lib/raid/xor/x86/xor-sse.c              |  105 +---
+ b/lib/raid/xor/x86/xor_arch.h             |   36 +
+ b/lib/raid/xor/xor-32regs-prefetch.c      |  267 ++++++++++
+ b/lib/raid/xor/xor-32regs.c               |  217 ++++++++
+ b/lib/raid/xor/xor-8regs-prefetch.c       |  146 +++++
+ b/lib/raid/xor/xor-8regs.c                |  103 ++++
+ b/lib/raid/xor/xor-core.c                 |  192 +++++++
+ b/lib/raid/xor/xor_impl.h                 |   56 ++
+ crypto/xor.c                              |  174 -------
+ include/asm-generic/xor.h                 |  738 ------------------------------
+ 73 files changed, 1831 insertions(+), 2067 deletions(-)

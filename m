@@ -1,366 +1,506 @@
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.22])
+Received: from fout-a5-smtp.messagingengine.com (fout-a5-smtp.messagingengine.com [103.168.172.148])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CEA30332EC1
-	for <linux-btrfs@vger.kernel.org>; Wed, 25 Mar 2026 21:04:21 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.17.22
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7418029BD90
+	for <linux-btrfs@vger.kernel.org>; Wed, 25 Mar 2026 22:24:30 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.148
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774472664; cv=none; b=AK4qlFGiU6yqBDsZUP0iqk/w10o4U7zLYZ5UGR1DfiPokqCplK8FqWfAepCm+DwmveFW2wnqes0aC7hieITddS8AeB1X5bMYIOb7Z5MdR2H7cXo4JO8ujljHOC67Az8hbKVH3Rj6d9goDotAYRlEbQqgnuwoPTwAEhKm0vQVb8o=
+	t=1774477472; cv=none; b=rl8eeFZ9i4MXd2/NTPrAiw+tHAoSvk8XR94sfY4/5I+GMfERcnVEHTshjNa+98c5tPpNBSmbbIk6BqyuHVJnvFsqTy1GA1b2Ca5jve2KolKboI1D3SUOm27CiFb20K+69MiYRXgy157+89kKlm6gRYV2V7Pk5cTeJLKReV8nGhU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774472664; c=relaxed/simple;
-	bh=fZhOoAcgWMRNwXYKRqf2neXI4CKOIozhlnTPCjxHjyc=;
-	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=XTI9XM3dhzY5uJabsV2ORis590pwxYOmvP3xzlmBTo9LKHzwUkR1COW+3mM74f5w7hzXa9FfHYviDtK5m7hve5vgqkZK5IkFE51HJ9RDtpe/164+MmohreQGPE/Y33eYva5QkvIZ44oaXJIJ4Y3Xr9sNJednw4OIYmeiTcBv/Fw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=o/6SqKp7; arc=none smtp.client-ip=212.227.17.22
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
+	s=arc-20240116; t=1774477472; c=relaxed/simple;
+	bh=DNEDYMVlfeRvJSguwTClBo8rDCe6r+Kt4Tw0NsCcJSc=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=iucyA+//XMSx6kCX5S8mVolZlPOIqGQ9t5/am6buMC6cD6LR7DhyJGbcb4OXLrPlmC64RUj13MKwkVPtpwGY7bInZLrw3qgR56msWOix5YaVrlv2Jbs0km+V1rSid6mUN/dcPnzKP9jWoWZHHHmu+rRJ55nG0EwBIJ3zqOQQUZo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=jRf8zMGv; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=RZQj0vUu; arc=none smtp.client-ip=103.168.172.148
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="o/6SqKp7"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1774472660; x=1775077460; i=quwenruo.btrfs@gmx.com;
-	bh=fZhOoAcgWMRNwXYKRqf2neXI4CKOIozhlnTPCjxHjyc=;
-	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:
-	 References:From:In-Reply-To:Content-Type:
-	 Content-Transfer-Encoding:cc:content-transfer-encoding:
-	 content-type:date:from:message-id:mime-version:reply-to:subject:
-	 to;
-	b=o/6SqKp7XA4GRYKHASwPD8db3GiNZ+WP12SMLEykSSl3uLIHOEAER8LTWLF4/bhW
-	 zVJs4IRGaPSIPPdMgIuYBZazBBoEAOjlY6OxSuEnxiL7m0BMhafjKLX7/j7xNSuG0
-	 X1yLPGAWebLFAFxbGvcU9JC+WNzrcate1LEPTUScyis6xF8t7HJ6c0bGadz5w9w5k
-	 EGkaCwMZjQNN5bZYqehuABxaBDYF111qyRQjbDxyizdgZP3WXobgPNqtOpsv/QKbs
-	 BPviqeDNKoTj/6o3ckyRfRm6e3xmsCIMIPF+VTqYS/W1/P9mxOsExapTINIb6brY4
-	 ATjzvJ8BTtDNPIgskg==
-X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from client.hidden.invalid by mail.gmx.net (mrgmx104
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1M7b6b-1wBHcl2Nqv-00HCyk; Wed, 25
- Mar 2026 22:04:19 +0100
-Message-ID: <a1675480-628b-46ba-95c7-f5ee29d6bf14@gmx.com>
-Date: Thu, 26 Mar 2026 07:34:15 +1030
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="jRf8zMGv";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="RZQj0vUu"
+Received: from phl-compute-04.internal (phl-compute-04.internal [10.202.2.44])
+	by mailfout.phl.internal (Postfix) with ESMTP id C24E9EC02B2;
+	Wed, 25 Mar 2026 18:24:29 -0400 (EDT)
+Received: from phl-frontend-03 ([10.202.2.162])
+  by phl-compute-04.internal (MEProxy); Wed, 25 Mar 2026 18:24:29 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
+	:content-transfer-encoding:content-type:content-type:date:date
+	:from:from:in-reply-to:in-reply-to:message-id:mime-version
+	:references:reply-to:subject:subject:to:to; s=fm2; t=1774477469;
+	 x=1774563869; bh=lt5Z0EK7Ii+4dql0dN7P8Yv5WN4r3okvmGe4aj4zwOg=; b=
+	jRf8zMGvVut5BfIbJeBa5ldWsRhi5+O+21N5c4jODdo6C74Q0jgUKLppppJBUusm
+	iq0fxFthOPeB4ku/MvIA9PegnX+XkHrLrZ3ILnVTuZ/76ImheEmfTd4mofaSePbO
+	vxyoNIc7m2C5bqvdxUN6AlrmFVdDSjPlrSl22+FsjTKi6nqvQ+C9nI7if9kdo+f6
+	dqkMHDrqtD9u+ISS7fwhy+AehXIqrPpkUVfVo7YX0B+DN9a1p5DGRwMq2TmaJTMk
+	0CWAoFipntJFObEnXOFnQBs0GaFW8Hf+VrOPZQHu2nu0iSNTIEg093ig93xkZWdf
+	k8R0foUi/XjCmL5IIMluIw==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:cc:content-transfer-encoding
+	:content-type:content-type:date:date:feedback-id:feedback-id
+	:from:from:in-reply-to:in-reply-to:message-id:mime-version
+	:references:reply-to:subject:subject:to:to:x-me-proxy
+	:x-me-sender:x-me-sender:x-sasl-enc; s=fm1; t=1774477469; x=
+	1774563869; bh=lt5Z0EK7Ii+4dql0dN7P8Yv5WN4r3okvmGe4aj4zwOg=; b=R
+	ZQj0vUuueP21XOmpVhB5o8iL4f8hIG8UoqYAUGXsOaV3AoeVSepc/7hGuSt0K9JE
+	2t2UBuhT7InU/z9u93hFgRw1cxITiHcM6B4JYfW/eKjXX8J+B/4DdeB+aeFjNYRz
+	Ko/yzOp9v7x2clAqbtP+y/l0jDFiqjegcNA41IpuXWkhWSsypYO9gPIAqoDev635
+	2hsE9tjkcXAykPHBKmLgjwpbAIsiQ3+ox2aqYiiwtN1xeqkjTHSg0obi2Yr0Jfmj
+	DKoyxtithv9Et5wOCw/HVX++VZRYL8Q7BEC0QvN+zmEEvWVn4i8iLMDnDK6GQ2Ih
+	WRcS6S18biMezQjw8pzJw==
+X-ME-Sender: <xms:nWDEaRvpBG-U3psyp1VduwvrA4CpbycHOrZ0fh62ehNEwMC34lJg3Q>
+    <xme:nWDEaR56O68ILvmFkz_pUCp2kKX_q5mrnL2U8kYe2oPpbF7ZE6wpSeYqJUm4XJBCn
+    mKxGryu1XYwoziASnOA46vlInAP3p5FNlvf5LFPOOdqW9GDWPcERIY>
+X-ME-Received: <xmr:nWDEaSL7L9igAGFT2MGmqQSIAdxCIC7Yhs96VDwcDWlPAzO46yVVFcqUXvh3BT5XycLzfakmjz62IMrfPMsmaNWbOo4>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefgedrtddtgdefvdehieehucetufdoteggodetrf
+    dotffvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfurfetoffkrfgpnffqhgenuceu
+    rghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmnecujf
+    gurhepfffhvfevuffkfhggtggugfgjsehtkeertddttdejnecuhfhrohhmpeeuohhrihhs
+    uceuuhhrkhhovhcuoegsohhrihhssegsuhhrrdhioheqnecuggftrfgrthhtvghrnhepud
+    elhfdthfetuddvtefhfedtiedtteehvddtkedvledtvdevgedtuedutdeitdeinecuvehl
+    uhhsthgvrhfuihiivgeptdenucfrrghrrghmpehmrghilhhfrhhomhepsghorhhishessg
+    hurhdrihhopdhnsggprhgtphhtthhopeefpdhmohguvgepshhmthhpohhuthdprhgtphht
+    thhopehfughmrghnrghnrgeskhgvrhhnvghlrdhorhhgpdhrtghpthhtoheplhhinhhugi
+    dqsghtrhhfshesvhhgvghrrdhkvghrnhgvlhdrohhrghdprhgtphhtthhopehkvghrnhgv
+    lhdqthgvrghmsehfsgdrtghomh
+X-ME-Proxy: <xmx:nWDEaR79MBA5JdZyuqhy4czPdv75NQDly0ROp0Dk5_B0epewvRJ6nQ>
+    <xmx:nWDEaVw1Tq7Mcjypm5wT9IyI474IKoX6OMlmI3FratUE72Bye99pWA>
+    <xmx:nWDEaVbhnn5p8x65DJ4I3DivWcsZgDSOZC-X4Vwzt9Pyg9qNGMDhvg>
+    <xmx:nWDEaXQ_NGUmC9TWSSG5BDPTlnOhKNhJEk8lPA442VcDvS0MLej5dA>
+    <xmx:nWDEacZ3zgDavsCF0QQt3PqXIEeIUfT3cQ7z0UUx_exP5LxZiklRMnLk>
+Feedback-ID: i083147f8:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Wed,
+ 25 Mar 2026 18:24:29 -0400 (EDT)
+Date: Wed, 25 Mar 2026 15:24:13 -0700
+From: Boris Burkov <boris@bur.io>
+To: Filipe Manana <fdmanana@kernel.org>
+Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: Re: [PATCH 1/5] btrfs: reserve space for delayed_refs in delalloc
+Message-ID: <20260325222413.GA3065561@zen.localdomain>
+References: <cover.1774398665.git.boris@bur.io>
+ <4828515e28d350985e7b7b9d3a58a5990b74362d.1774398665.git.boris@bur.io>
+ <CAL3q7H6nx=Jm_pVRpyBA=dh7WkHo_zvW66SLt6k3Tiw4KWCDtg@mail.gmail.com>
+ <20260325183916.GB2908386@zen.localdomain>
+ <CAL3q7H7h6U4RC+6GS7Utk=ruGQKE9kCNFmTxC68Jd_KnCu2P8Q@mail.gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: add BTRFS_IOC_GET_CSUMS ioctl
-To: Mark Harmstone <mark@harmstone.com>, linux-btrfs@vger.kernel.org
-References: <20260320125058.90053-1-mark@harmstone.com>
- <07cf5ebc-ac52-4fd9-82c5-404c0f4d6056@gmx.com>
- <3ad267b6-cc59-495f-b385-9b4b4686a473@gmx.com>
- <39496ce5-74c2-4300-ba39-032edace4cfe@harmstone.com>
-Content-Language: en-US
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1YAUJEP5a
- sQAKCRDCPZHzoSX+qF+mB/9gXu9C3BV0omDZBDWevJHxpWpOwQ8DxZEbk9b9LcrQlWdhFhyn
- xi+l5lRziV9ZGyYXp7N35a9t7GQJndMCFUWYoEa+1NCuxDs6bslfrCaGEGG/+wd6oIPb85xo
- naxnQ+SQtYLUFbU77WkUPaaIU8hH2BAfn9ZSDX9lIxheQE8ZYGGmo4wYpnN7/hSXALD7+oun
- tZljjGNT1o+/B8WVZtw/YZuCuHgZeaFdhcV2jsz7+iGb+LsqzHuznrXqbyUQgQT9kn8ZYFNW
- 7tf+LNxXuwedzRag4fxtR+5GVvJ41Oh/eygp8VqiMAtnFYaSlb9sjia1Mh+m+OBFeuXjgGlG
- VvQFzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1gQUJEP5a0gAK
- CRDCPZHzoSX+qHGpB/kB8A7M7KGL5qzat+jBRoLwB0Y3Zax0QWuANVdZM3eJDlKJKJ4HKzjo
- B2Pcn4JXL2apSan2uJftaMbNQbwotvabLXkE7cPpnppnBq7iovmBw++/d8zQjLQLWInQ5kNq
- Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
- +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
- HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
-In-Reply-To: <39496ce5-74c2-4300-ba39-032edace4cfe@harmstone.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:gqp0X2TrpihwTfK2+LoNlwWehwA317yL6Js8LWziJjkOKP1xh/Z
- 0d1blW49JfLOYyKIbukNFc9/d2gSMiaKuSdrcEbVqy6y5ZAbb8GnLI2ci5q79zGKBVXNVi7
- TNO37tD9ByVSTlQy1OyCHZMoM8pYUz2C9l5gzzijGoiUSnWqoroS3sppRKHNeWXx2xfHOWT
- SsYcX/9WxgF7udZAX8lFg==
-X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:3t/SskEMzEs=;vO78bdmrVf3hnPh6RF7Y6Y6DZab
- 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
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <CAL3q7H7h6U4RC+6GS7Utk=ruGQKE9kCNFmTxC68Jd_KnCu2P8Q@mail.gmail.com>
 
+On Wed, Mar 25, 2026 at 06:55:49PM +0000, Filipe Manana wrote:
+> On Wed, Mar 25, 2026 at 6:39 PM Boris Burkov <boris@bur.io> wrote:
+> >
+> > On Wed, Mar 25, 2026 at 03:36:21PM +0000, Filipe Manana wrote:
+> > > On Wed, Mar 25, 2026 at 12:45 AM Boris Burkov <boris@bur.io> wrote:
+> > > >
+> > > > delalloc uses a per-inode block_rsv to perform metadata reservations for
+> > > > the cow operations it anticipates based on the number of outstanding
+> > > > extents. This calculation is done based on inode->outstanding_extents in
+> > > > btrfs_calculate_inode_block_rsv_size(). The reservation is *not*
+> > > > meticulously tracked as each ordered_extent is actually created in
+> > > > writeback, but rather delalloc attempts to over-estimate and the
+> > > > writeback and ordered_extent finish portions are responsible to release
+> > > > all the reservation.
+> > > >
+> > > > However, there is a notable gap in this reservation, it reserves no
+> > > > space for the resulting delayed_refs. If you compare to how
+> > > > btrfs_start_transaction() reservations work, this is a noteable
+> > > > difference.
+> > > >
+> > > > As writeback actually occurs, and we trigger btrfs_finish_one_ordered(),
+> > > > that function will start generating delayed refs, which will draw from
+> > > > the trans_handle's delayed_refs_rsv via btrfs_update_delayed_refs_rsv():
+> > > >
+> > > > btrfs_finish_one_ordered()
+> > > >   insert_ordered_extent_file_extent()
+> > > >     insert_reserved_file_extent()
+> > > >       btrfs_alloc_reserved_file_extent()
+> > > >         btrfs_add_delayed_data_ref()
+> > > >           add_delayed_ref()
+> > > >             btrfs_update_delayed_refs_rsv();
+> > > >
+> > > > This trans_handle was created in finish_one_ordered() with
+> > > > btrfs_join_transaction() which calls start_transaction with
+> > > > num_items=0 and BTRFS_RESERVE_NO_FLUSH. As a result, this trans_handle
+> > > > has no reserved in h->delayed_rsv, as neither the num_items reservation
+> > > > nor the btrfs_delayed_refs_rsv_refill() reservation is run.
+> > > >
+> > > > Thus, when btrfs_update_delayed_refs_rsv() runs, reserved_bytes is 0 and
+> > > > fs_info->delayed_rsv->size grows but not fs_info->delayed_rsv->reserved.
+> > > >
+> > > > If a large amount of writeback happens all at once (perhaps due to
+> > > > dirty_ratio being tuned too high), this results in, among other things,
+> > > > erroneous assessments of the amount of delayed_refs reserved in the
+> > > > metadata space reclaim logic, like need_preemptive_reclaim() which
+> > > > relies on fs_info->delayed_rsv->reserved and even worse, poor decision
+> > > > making in btrfs_preempt_reclaim_metadata_space() which counts
+> > > > delalloc_bytes like so:
+> > > >
+> > > >   block_rsv_size = global_rsv_size +
+> > > >           btrfs_block_rsv_reserved(delayed_block_rsv) +
+> > > >           btrfs_block_rsv_reserved(delayed_refs_rsv) +
+> > > >           btrfs_block_rsv_reserved(trans_rsv);
+> > > >   delalloc_size = bytes_may_use - block_rsv_size;
+> > > >
+> > > > So all that lost delayed refs usage gets accounted as delalloc_size and
+> > > > leads to preemptive reclaim continuously choosing FLUSH_DELALLOC, which
+> > > > further exacerbates the problem.
+> > > >
+> > > > With enough writeback around, we can run enough delalloc that we get
+> > > > into async reclaim which starts blocking start_transaction() and
+> > > > eventually hits FLUSH_DELALLOC_WAIT/FLUSH_DELALLOC_FULL at which point
+> > > > the filesystem gets heavily blocked on metadata space in reserve_space(),
+> > > > blocking all new transaction work until all the ordered_extents finish.
+> > > >
+> > > > If we had an accurate view of the reservation for delayed refs, then we
+> > > > could mostly break this feedback loop in preemptive reclaim, and
+> > > > generally would be able to make more accurate decisions with regards to
+> > > > metadata space reclamation.
+> > > >
+> > > > This patch introduces the mechanism of a per-inode delayed_refs rsv
+> > > > which is modeled closely after the same in trans_handle. The delalloc
+> > > > reservation also reserves delayed refs and then finish_one_ordered
+> > > > transfers the inode delayed_refs rsv into the trans_handle one, just
+> > > > like inode->block_rsv.
+> > > >
+> > > > This is not a perfect fix for the most pathological cases, but is the
+> > > > infrastructure needed to keep working on the problem.
+> > > >
+> > > > Signed-off-by: Boris Burkov <boris@bur.io>
+> > > > ---
+> > > >  fs/btrfs/btrfs_inode.h    |  3 +++
+> > > >  fs/btrfs/delalloc-space.c | 34 ++++++++++++++++++++++++++++++----
+> > > >  fs/btrfs/delayed-ref.c    |  2 +-
+> > > >  fs/btrfs/inode.c          |  9 ++++++++-
+> > > >  fs/btrfs/transaction.c    |  7 ++++---
+> > > >  fs/btrfs/transaction.h    |  3 ++-
+> > > >  6 files changed, 48 insertions(+), 10 deletions(-)
+> > > >
+> > > > diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+> > > > index 55c272fe5d92..dca4f6df7e95 100644
+> > > > --- a/fs/btrfs/btrfs_inode.h
+> > > > +++ b/fs/btrfs/btrfs_inode.h
+> > > > @@ -328,6 +328,9 @@ struct btrfs_inode {
+> > > >
+> > > >         struct btrfs_block_rsv block_rsv;
+> > > >
+> > > > +       /* Reserve for delayed refs generated by ordered extent completion. */
+> > > > +       struct btrfs_block_rsv delayed_rsv;
+> > >
+> > > Not that long ago we had an effort to decrease the btrfs_inode
+> > > structure size down to less than 1024 bytes, so that we could have 4
+> > > inodes per 4K page instead of 3, and this change now makes the
+> > > structure larger than 1024 bytes again.
+> >
+> > Good catch, thanks. And sorry for missing it.
+> >
+> > >
+> > > Instead of adding another block reserve to the inode we could:
+> > >
+> > > 1) Add the reservations for delayed refs in the existing block reserve
+> > > (inode->block_rsv);
+> > >
+> > > 2) When finishing the ordered extent, after joining the transaction
+> > > and setting trans->block to inode->block_rsv, we could migrate the
+> > > space reserved for delayed refs from the inode->block_rsv into
+> > > trans->delayed_rsv.
+> >
+> > At first blush, without trying very hard yet, I don't love this because I
+> > think it means tracking or re-computing the delayed_refs portion of
+> > inode->block_rsv for the migration.
+> 
+> Re-computing (calling btrfs_calc_delayed_ref_bytes()) is not
+> expensive, and it's done in workqueue for finishing ordered extents.
+> I wouldn't worry about that. But tracking it somewhere, implies
+> increasing the structure size - if it stays under or at 1024 bytes,
+> it's fine.
+> 
 
+I'm more concerned about the code being unclear and carrying latent
+state in an overloaded block_rsv. Metadata reservations are complicated
+enough as it is so I was really hoping to increase clarity with the
+explicit block_rsv mirroring the design of trans_handle.
 
-=E5=9C=A8 2026/3/26 01:13, Mark Harmstone =E5=86=99=E9=81=93:
-> On 25/03/2026 7.34 am, Qu Wenruo wrote:
->>
->>
->> =E5=9C=A8 2026/3/21 08:48, Qu Wenruo =E5=86=99=E9=81=93:
->>>
->>>
->>> =E5=9C=A8 2026/3/20 23:20, Mark Harmstone =E5=86=99=E9=81=93:
->>>> Add a new unprivileged BTRFS_IOC_GET_CSUMS ioctl, which can be used t=
-o
->>>> query the on-disk csums for a file.
->>>>
->>>> This is done by userspace passing a struct=20
->>>> btrfs_ioctl_get_csums_args to
->>>> the kernel, which details the offset and length we're interested in,=
-=20
->>>> and
->>>> a buffer for the kernel to write its results into. The kernel writes =
-a
->>>> struct btrfs_ioctl_get_csums_entry into the buffer, followed by the
->>>> csums if available.
->>>>
->>>> If the extent is an uncompressed, non-nodatasum extent, the kernel se=
-ts
->>>> the entry type to BTRFS_GET_CSUMS_HAS_CSUMS and follows it with the
->>>> csums. If it is sparse, preallocated, or beyond the EOF, it sets the
->>>> type to BTRFS_GET_CSUMS_SPARSE - this is so userspace knows it can us=
-e
->>>> the precomputed hash of the zero sector. Otherwise, it sets the type =
-to
->>>> BTRFS_GET_CSUMS_NO_CSUMS.
->>>
->>> I'm not sure if it's a good idea to put hole and preallocated range=20
->>> into the same BTRFS_GET_CSUMS_SPARSE.
->>>
->>> Although both means there is no csum, hole case means there is really=
-=20
->>> no data extent, thus we should not create any extent instead of=20
->>> writing zero.
->=20
-> Thanks Qu.
->=20
-> "SPARSE" is probably a bad name for it. It probably should be "ZERO" or=
-=20
-> somesuch. The point is to tell userspace not to waste time calculating=
-=20
-> csums, but use the precomputed values because the data would be zero=20
-> (for whatever reason).
->=20
->>> For preallocated, indicating it has no CSUM can allow mkfs to=20
->>> distinguish hole and preallocated, thus change to zero writes to=20
->>> prealloc, which is faster and make the resulted fs more aligned to=20
->>> the source dir.
->>>
->>>
->>> And for EOF checks, I think we don't need to bother that much, aka,=20
->>> just let it return the regular results.
->>>
->>> My assumption is, the mkfs shouldn't pass a range completely beyond=20
->>> the round_up(i_size), as non-reflink rootdir population would always=
-=20
->>> read out the content of the inode from the host fs.
->>> Thus we won't really read beyond the inode size.
->>
->> After more investigation, I think we can put the hole/preallocation/=20
->> compression detection into the user space.
->>
->> The hole detection is already pending for merge, mostly through=20
->> SEEK_DATA/SEEK_HOLE flags of lseek():
->>
->> =C2=A0=C2=A0https://github.com/kdave/btrfs-progs/pull/1097
->>
->> I'm planning to implement preallocation detection through fiemap,=20
->> which also allows us to detect compressed range and skip them for your=
-=20
->> case.
->>
->> With all those features implemented in progs, we can further simplify=
-=20
->> the get csum ioctl, to something more aligned to=20
->> btrfs_lookup_csums_bitmap().
->>
->> We do not need to bother why there is no checksum for some ranges,=20
->> that will be handled by progs first, we only need to return all the=20
->> checksums found for the specified range.
->>
->> And as an extra safenet, use some bitmap inthe ioctl structure to=20
->> indicate which ranges have checksum and which doesn't.
->>
->> This will definitely simplify the ioctl as we only need to do csum=20
->> tree lookup, no need to bother anything in the subvolume tree.
->=20
-> Unfortunately this won't work. You have to explicitly filter out=20
-> compressed extents, and identifying these requires checking the FS tree.
+> > However, I'm sure I can make it work
+> > and it's certainly worth doing to not regress the size of struct
+> > btrfs_inode.
+> >
+> > What do you think of just allocating inode->delayed_rsv indirectly with
+> > btrfs_alloc_block_rsv? We can save another ~100 bytes on struct
+> > btrfs_inode.
+> 
+> Adding an allocation adds potential for -ENOMEM failures.
+> And for 4K pages we will still be able to allocate 4 inodes per page,
+> so no gains here.
+> For a 64K page we can get a few more inodes (7 or 8).
+> 
+> >  And we could do it for inode->block_rsv to save yet more
+> > space. Do you know if we have experience that it's really important for
+> > inode->block_rsv to be embedded in struct btrfs_inode?
+> 
+> The reason we have it embedded it's because it saves a memory
+> allocation, and it may also be faster and maybe better cache line
+> spatial locality.
 
-That's done by progs through fiemap. There will be a flag ENCODED for=20
-compressed file extents.
+I understand the general tradeoffs.
 
-> The reason is that they may be "bookended", and you would leak=20
-> information about other files if you returned the whole of the csums for=
-=20
-> the compressed extent. This is the reason why encoded read needs root.
+I was asking if we know that it's specifically important or if it's a
+general rule. There are other structs in btrfs_inode that are allocated
+and other allocations that occur while populating and using btrfs_inode.
+(delayed_node, extent_io_tree, path/search_slot, extent_changeset in
+delalloc, etc.) So we could allocate the block_rsvs in a similar way
+(when loading the inode, when doing delalloc for the first time, etc.)
 
-Nope, for the fiemap call, we will never reach any bookend extents.
+But I understand that you don't want to risk regressions, so I can go
+ahead and do it your way if you feel it's the best way to go.
+
+> In the end we won't get any benefit unless the page size is > 4K so
+> that we can get more inodes per page.
+> 
+
+Well there is a benefit of more of a buffer for future additions to the
+struct.
 
 Thanks,
-Qu
+Boris
 
->=20
->> Thanks,
->> Qu
->>
->>>
->>>>
->>>> We do store the csums of compressed extents, but we deliberately don'=
-t
->>>> return them here: they're hashed over the compressed data, not the
->>>> uncompressed data that's returned to userspace.
->>>
->>> I agree with the skip of compressed extents, but I'd prefer to have a=
-=20
->>> special flag to indicate that, other than NO_CSUMS.
->>>
->>> Or mkfs is unable to distinguish hole and compressed extents.
->=20
-> Compressed extents result in NO_CSUMS, a hole results in SPARSE.
->=20
->>> [...]
->>>> +/* Types for struct btrfs_ioctl_get_csums_entry::type */
->>>> +#define BTRFS_GET_CSUMS_HAS_CSUMS=C2=A0=C2=A0=C2=A0 0
->>>> +#define BTRFS_GET_CSUMS_SPARSE=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
-=C2=A0 1
->>>> +#define BTRFS_GET_CSUMS_NO_CSUMS=C2=A0=C2=A0=C2=A0 2
->>>> +
->>>> +struct btrfs_ioctl_get_csums_entry {
->>>> +=C2=A0=C2=A0=C2=A0 __u64 offset;=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
-=C2=A0 /* file offset of this range */
->>>> +=C2=A0=C2=A0=C2=A0 __u64 length;=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
-=C2=A0 /* length in bytes */
->>>> +=C2=A0=C2=A0=C2=A0 __u32 type;=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
-=C2=A0 /* BTRFS_GET_CSUMS_* type */
->>>> +=C2=A0=C2=A0=C2=A0 __u32 reserved;=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
-=A0=C2=A0 /* padding, must be 0 */
->>>> +};
->>>> +
->>>> +struct btrfs_ioctl_get_csums_args {
->>>> +=C2=A0=C2=A0=C2=A0 __u64 offset;=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
-=C2=A0 /* in/out: file offset */
->>>> +=C2=A0=C2=A0=C2=A0 __u64 length;=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
-=C2=A0 /* in/out: range length */
->>>> +=C2=A0=C2=A0=C2=A0 __u64 buf_size;=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
-=A0=C2=A0 /* in/out: buffer capacity / bytes=20
->>>> written */
->>>> +=C2=A0=C2=A0=C2=A0 __u8 buf[];=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
-=C2=A0 /* out: entries + csum data */
->>>> +};
->>>
->>> =C2=A0From the progs usage, it is always a single=20
->>> btrfs_ioctl_get_csums_entry at the beginning of buf[], then real=20
->>> buffer for csum, can we just combine both structures into one?
->>>
->>> Furthermore, since we only query one extent at one time, the offset/=
-=20
->>> length are more or less duplicated between args and entry structure.
->>>
->>> We can just save the length into the args without the need for entry=
-=20
->>> members (except the type).
->>>
->>> Thanks,
->>> Qu
->>>
->>>> +
->>>> =C2=A0 /* Flags for IOC_SHUTDOWN, must match XFS_FSOP_GOING_FLAGS_*=
-=20
->>>> flags. */
->>>> =C2=A0 #define BTRFS_SHUTDOWN_FLAGS_DEFAULT=C2=A0=C2=A0=C2=A0=C2=A0=
-=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 0x0
->>>> =C2=A0 #define BTRFS_SHUTDOWN_FLAGS_LOGFLUSH=C2=A0=C2=A0=C2=A0=C2=A0=
-=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 0x1
->>>> @@ -1226,6 +1245,8 @@ enum btrfs_err_code {
->>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
-=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 struct btr=
-fs_ioctl_encoded_io_args)
->>>> =C2=A0 #define BTRFS_IOC_SUBVOL_SYNC_WAIT _IOW(BTRFS_IOCTL_MAGIC, 65,=
- \
->>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
-=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 struct btrfs_ioc=
-tl_subvol_wait)
->>>> +#define BTRFS_IOC_GET_CSUMS _IOWR(BTRFS_IOCTL_MAGIC, 66, \
->>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
-=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 struct btrfs_ioctl_get_csums_args)
->>>> =C2=A0 /* Shutdown ioctl should follow XFS's interfaces, thus not usi=
-ng=20
->>>> btrfs magic. */
->>>> =C2=A0 #define BTRFS_IOC_SHUTDOWN=C2=A0=C2=A0=C2=A0 _IOR('X', 125, __=
-u32)
->>>
->>>
->>
->>
->=20
-
+> >
+> > If that's a no-go, I will work on using just inode->block_rsv and doing
+> > the migration.
+> >
+> > >
+> > > This would not require increasing the btrfs_inode structure and
+> > > neither add a _local_delayed_rsv field to the transaction handle (and
+> > > btw, we don't use the _ prefix for any structure fields anywhere in
+> > > btrfs).
+> >
+> > Noted, thanks.
+> >
+> > >
+> > > Thanks.
+> > >
+> > >
+> > > > +
+> > > >         struct btrfs_delayed_node *delayed_node;
+> > > >
+> > > >         /* File creation time. */
+> > > > diff --git a/fs/btrfs/delalloc-space.c b/fs/btrfs/delalloc-space.c
+> > > > index 0970799d0aa4..e2944ff4fe47 100644
+> > > > --- a/fs/btrfs/delalloc-space.c
+> > > > +++ b/fs/btrfs/delalloc-space.c
+> > > > @@ -3,6 +3,7 @@
+> > > >  #include "messages.h"
+> > > >  #include "ctree.h"
+> > > >  #include "delalloc-space.h"
+> > > > +#include "delayed-ref.h"
+> > > >  #include "block-rsv.h"
+> > > >  #include "btrfs_inode.h"
+> > > >  #include "space-info.h"
+> > > > @@ -240,6 +241,13 @@ static void btrfs_inode_rsv_release(struct btrfs_inode *inode, bool qgroup_free)
+> > > >         if (released > 0)
+> > > >                 trace_btrfs_space_reservation(fs_info, "delalloc",
+> > > >                                               btrfs_ino(inode), released, 0);
+> > > > +
+> > > > +       released = btrfs_block_rsv_release(fs_info, &inode->delayed_rsv,
+> > > > +                                          0, NULL);
+> > > > +       if (released > 0)
+> > > > +               trace_btrfs_space_reservation(fs_info, "delalloc_delayed_refs",
+> > > > +                                             btrfs_ino(inode), released, 0);
+> > > > +
+> > > >         if (qgroup_free)
+> > > >                 btrfs_qgroup_free_meta_prealloc(inode->root, qgroup_to_release);
+> > > >         else
+> > > > @@ -251,7 +259,9 @@ static void btrfs_calculate_inode_block_rsv_size(struct btrfs_fs_info *fs_info,
+> > > >                                                  struct btrfs_inode *inode)
+> > > >  {
+> > > >         struct btrfs_block_rsv *block_rsv = &inode->block_rsv;
+> > > > +       struct btrfs_block_rsv *delayed_rsv = &inode->delayed_rsv;
+> > > >         u64 reserve_size = 0;
+> > > > +       u64 delayed_refs_size = 0;
+> > > >         u64 qgroup_rsv_size = 0;
+> > > >         unsigned outstanding_extents;
+> > > >
+> > > > @@ -266,6 +276,8 @@ static void btrfs_calculate_inode_block_rsv_size(struct btrfs_fs_info *fs_info,
+> > > >                 reserve_size = btrfs_calc_insert_metadata_size(fs_info,
+> > > >                                                 outstanding_extents);
+> > > >                 reserve_size += btrfs_calc_metadata_size(fs_info, 1);
+> > > > +               delayed_refs_size += btrfs_calc_delayed_ref_bytes(fs_info,
+> > > > +                                               outstanding_extents);
+> > > >         }
+> > > >         if (!(inode->flags & BTRFS_INODE_NODATASUM)) {
+> > > >                 u64 csum_leaves;
+> > > > @@ -285,11 +297,17 @@ static void btrfs_calculate_inode_block_rsv_size(struct btrfs_fs_info *fs_info,
+> > > >         block_rsv->size = reserve_size;
+> > > >         block_rsv->qgroup_rsv_size = qgroup_rsv_size;
+> > > >         spin_unlock(&block_rsv->lock);
+> > > > +
+> > > > +       spin_lock(&delayed_rsv->lock);
+> > > > +       delayed_rsv->size = delayed_refs_size;
+> > > > +       spin_unlock(&delayed_rsv->lock);
+> > > >  }
+> > > >
+> > > >  static void calc_inode_reservations(struct btrfs_inode *inode,
+> > > >                                     u64 num_bytes, u64 disk_num_bytes,
+> > > > -                                   u64 *meta_reserve, u64 *qgroup_reserve)
+> > > > +                                   u64 *meta_reserve,
+> > > > +                                   u64 *delayed_refs_reserve,
+> > > > +                                   u64 *qgroup_reserve)
+> > > >  {
+> > > >         struct btrfs_fs_info *fs_info = inode->root->fs_info;
+> > > >         u64 nr_extents = count_max_extents(fs_info, num_bytes);
+> > > > @@ -309,6 +327,10 @@ static void calc_inode_reservations(struct btrfs_inode *inode,
+> > > >          * for an inode update.
+> > > >          */
+> > > >         *meta_reserve += inode_update;
+> > > > +
+> > > > +       *delayed_refs_reserve = btrfs_calc_delayed_ref_bytes(fs_info,
+> > > > +                                                            nr_extents);
+> > > > +
+> > > >         *qgroup_reserve = nr_extents * fs_info->nodesize;
+> > > >  }
+> > > >
+> > > > @@ -318,7 +340,7 @@ int btrfs_delalloc_reserve_metadata(struct btrfs_inode *inode, u64 num_bytes,
+> > > >         struct btrfs_root *root = inode->root;
+> > > >         struct btrfs_fs_info *fs_info = root->fs_info;
+> > > >         struct btrfs_block_rsv *block_rsv = &inode->block_rsv;
+> > > > -       u64 meta_reserve, qgroup_reserve;
+> > > > +       u64 meta_reserve, delayed_refs_reserve, qgroup_reserve;
+> > > >         unsigned nr_extents;
+> > > >         enum btrfs_reserve_flush_enum flush = BTRFS_RESERVE_FLUSH_ALL;
+> > > >         int ret = 0;
+> > > > @@ -353,12 +375,14 @@ int btrfs_delalloc_reserve_metadata(struct btrfs_inode *inode, u64 num_bytes,
+> > > >          * over-reserve slightly, and clean up the mess when we are done.
+> > > >          */
+> > > >         calc_inode_reservations(inode, num_bytes, disk_num_bytes,
+> > > > -                               &meta_reserve, &qgroup_reserve);
+> > > > +                               &meta_reserve, &delayed_refs_reserve,
+> > > > +                               &qgroup_reserve);
+> > > >         ret = btrfs_qgroup_reserve_meta_prealloc(root, qgroup_reserve, true,
+> > > >                                                  noflush);
+> > > >         if (ret)
+> > > >                 return ret;
+> > > > -       ret = btrfs_reserve_metadata_bytes(block_rsv->space_info, meta_reserve,
+> > > > +       ret = btrfs_reserve_metadata_bytes(block_rsv->space_info,
+> > > > +                                          meta_reserve + delayed_refs_reserve,
+> > > >                                            flush);
+> > > >         if (ret) {
+> > > >                 btrfs_qgroup_free_meta_prealloc(root, qgroup_reserve);
+> > > > @@ -383,6 +407,8 @@ int btrfs_delalloc_reserve_metadata(struct btrfs_inode *inode, u64 num_bytes,
+> > > >         btrfs_block_rsv_add_bytes(block_rsv, meta_reserve, false);
+> > > >         trace_btrfs_space_reservation(root->fs_info, "delalloc",
+> > > >                                       btrfs_ino(inode), meta_reserve, 1);
+> > > > +       btrfs_block_rsv_add_bytes(&inode->delayed_rsv, delayed_refs_reserve,
+> > > > +                                 false);
+> > > >
+> > > >         spin_lock(&block_rsv->lock);
+> > > >         block_rsv->qgroup_rsv_reserved += qgroup_reserve;
+> > > > diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+> > > > index 605858c2d9a9..9fe9cec1bef3 100644
+> > > > --- a/fs/btrfs/delayed-ref.c
+> > > > +++ b/fs/btrfs/delayed-ref.c
+> > > > @@ -89,7 +89,7 @@ void btrfs_update_delayed_refs_rsv(struct btrfs_trans_handle *trans)
+> > > >  {
+> > > >         struct btrfs_fs_info *fs_info = trans->fs_info;
+> > > >         struct btrfs_block_rsv *delayed_rsv = &fs_info->delayed_refs_rsv;
+> > > > -       struct btrfs_block_rsv *local_rsv = &trans->delayed_rsv;
+> > > > +       struct btrfs_block_rsv *local_rsv = trans->delayed_rsv;
+> > > >         u64 num_bytes;
+> > > >         u64 reserved_bytes;
+> > > >
+> > > > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> > > > index 1a4e6a9239ae..1f0f3282e4b8 100644
+> > > > --- a/fs/btrfs/inode.c
+> > > > +++ b/fs/btrfs/inode.c
+> > > > @@ -653,6 +653,7 @@ static noinline int __cow_file_range_inline(struct btrfs_inode *inode,
+> > > >                 goto out;
+> > > >         }
+> > > >         trans->block_rsv = &inode->block_rsv;
+> > > > +       trans->delayed_rsv = &inode->delayed_rsv;
+> > > >
+> > > >         drop_args.path = path;
+> > > >         drop_args.start = 0;
+> > > > @@ -3256,6 +3257,7 @@ int btrfs_finish_one_ordered(struct btrfs_ordered_extent *ordered_extent)
+> > > >         }
+> > > >
+> > > >         trans->block_rsv = &inode->block_rsv;
+> > > > +       trans->delayed_rsv = &inode->delayed_rsv;
+> > > >
+> > > >         ret = btrfs_insert_raid_extent(trans, ordered_extent);
+> > > >         if (unlikely(ret)) {
+> > > > @@ -8074,9 +8076,12 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
+> > > >
+> > > >         spin_lock_init(&ei->lock);
+> > > >         ei->outstanding_extents = 0;
+> > > > -       if (sb->s_magic != BTRFS_TEST_MAGIC)
+> > > > +       if (sb->s_magic != BTRFS_TEST_MAGIC) {
+> > > >                 btrfs_init_metadata_block_rsv(fs_info, &ei->block_rsv,
+> > > >                                               BTRFS_BLOCK_RSV_DELALLOC);
+> > > > +               btrfs_init_metadata_block_rsv(fs_info, &ei->delayed_rsv,
+> > > > +                                             BTRFS_BLOCK_RSV_DELREFS);
+> > > > +       }
+> > > >         ei->runtime_flags = 0;
+> > > >         ei->prop_compress = BTRFS_COMPRESS_NONE;
+> > > >         ei->defrag_compress = BTRFS_COMPRESS_NONE;
+> > > > @@ -8132,6 +8137,8 @@ void btrfs_destroy_inode(struct inode *vfs_inode)
+> > > >         WARN_ON(vfs_inode->i_data.nrpages);
+> > > >         WARN_ON(inode->block_rsv.reserved);
+> > > >         WARN_ON(inode->block_rsv.size);
+> > > > +       WARN_ON(inode->delayed_rsv.reserved);
+> > > > +       WARN_ON(inode->delayed_rsv.size);
+> > > >         WARN_ON(inode->outstanding_extents);
+> > > >         if (!S_ISDIR(vfs_inode->i_mode)) {
+> > > >                 WARN_ON(inode->delalloc_bytes);
+> > > > diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+> > > > index 4358f4b63057..a55f8996cd59 100644
+> > > > --- a/fs/btrfs/transaction.c
+> > > > +++ b/fs/btrfs/transaction.c
+> > > > @@ -737,7 +737,8 @@ start_transaction(struct btrfs_root *root, unsigned int num_items,
+> > > >
+> > > >         h->type = type;
+> > > >         INIT_LIST_HEAD(&h->new_bgs);
+> > > > -       btrfs_init_metadata_block_rsv(fs_info, &h->delayed_rsv, BTRFS_BLOCK_RSV_DELREFS);
+> > > > +       h->delayed_rsv = &h->_local_delayed_rsv;
+> > > > +       btrfs_init_metadata_block_rsv(fs_info, h->delayed_rsv, BTRFS_BLOCK_RSV_DELREFS);
+> > > >
+> > > >         smp_mb();
+> > > >         if (cur_trans->state >= TRANS_STATE_COMMIT_START &&
+> > > > @@ -758,7 +759,7 @@ start_transaction(struct btrfs_root *root, unsigned int num_items,
+> > > >                                                       h->transid,
+> > > >                                                       delayed_refs_bytes, 1);
+> > > >                         h->delayed_refs_bytes_reserved = delayed_refs_bytes;
+> > > > -                       btrfs_block_rsv_add_bytes(&h->delayed_rsv, delayed_refs_bytes, true);
+> > > > +                       btrfs_block_rsv_add_bytes(h->delayed_rsv, delayed_refs_bytes, true);
+> > > >                         delayed_refs_bytes = 0;
+> > > >                 }
+> > > >                 h->reloc_reserved = reloc_reserved;
+> > > > @@ -1067,7 +1068,7 @@ static void btrfs_trans_release_metadata(struct btrfs_trans_handle *trans)
+> > > >         trace_btrfs_space_reservation(fs_info, "local_delayed_refs_rsv",
+> > > >                                       trans->transid,
+> > > >                                       trans->delayed_refs_bytes_reserved, 0);
+> > > > -       btrfs_block_rsv_release(fs_info, &trans->delayed_rsv,
+> > > > +       btrfs_block_rsv_release(fs_info, trans->delayed_rsv,
+> > > >                                 trans->delayed_refs_bytes_reserved, NULL);
+> > > >         trans->delayed_refs_bytes_reserved = 0;
+> > > >  }
+> > > > diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+> > > > index 7d70fe486758..268a415c4f32 100644
+> > > > --- a/fs/btrfs/transaction.h
+> > > > +++ b/fs/btrfs/transaction.h
+> > > > @@ -162,7 +162,8 @@ struct btrfs_trans_handle {
+> > > >         bool in_fsync;
+> > > >         struct btrfs_fs_info *fs_info;
+> > > >         struct list_head new_bgs;
+> > > > -       struct btrfs_block_rsv delayed_rsv;
+> > > > +       struct btrfs_block_rsv *delayed_rsv;
+> > > > +       struct btrfs_block_rsv _local_delayed_rsv;
+> > > >         /* Extent buffers with writeback inhibited by this handle. */
+> > > >         struct xarray writeback_inhibited_ebs;
+> > > >  };
+> > > > --
+> > > > 2.53.0
+> > > >
+> > > >

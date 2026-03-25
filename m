@@ -1,177 +1,118 @@
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail.burntcomma.com (mail2.burntcomma.com [217.169.27.34])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A4DC03D5666
-	for <linux-btrfs@vger.kernel.org>; Wed, 25 Mar 2026 12:38:15 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.133.124
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F01703D5646
+	for <linux-btrfs@vger.kernel.org>; Wed, 25 Mar 2026 12:53:56 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=217.169.27.34
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774442296; cv=none; b=SeqEbzm8GWFjRmOeQ9MEmlk6btucpguq4VpWH9FHWP1iv4bYtAdvWdFG2HV9J2S6SDujFCk4l7S4qhanlBGiqg7uNQXMY+P3szu8Sl08lfYKtAawZj/F7b+Y6hnrBFuj4xGu6UZ6cBj5IHduxr0MhpsB4RTmFtHKeyDQQQgD0gM=
+	t=1774443240; cv=none; b=mDfXOiWQvdtWly7ZZ7CRC0J8LSvFhZCKncD6A2ZbbTks2i+PiGDyPuRZ7PD8WlQoN8kFPEf4k2DYJbt/ayVNEo5qAVsexbeeVnqwkHbU1bY3kV4yGOBlM3eUXpM1FkKrtu6OU2bkvplsrDSrUW9JcKm8q6AEg2Of+ta6Si1KJ9M=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774442296; c=relaxed/simple;
-	bh=B7XEYkMQi5D0EqTXN0etgYXPUL8EADhsGgGCE2iqsCA=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=cqrhE7D2ht7u+rFRVV44tu3c2M4klQXziT0ydg1qQBUoPqGGlbzNcpqKb0DIjZ3LFDTJljXg2EcDEACAUaV5X12cJCg44x6S3iBCTnn+02WcCeHjXSqEpyP26s7OxFdBvv9/aYFhNiwoBcawxuMXrtc39AypXRi9ecBrKupIgFU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=Q5RqP/W1; dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b=AOLIh0Ue; arc=none smtp.client-ip=170.10.133.124
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
+	s=arc-20240116; t=1774443240; c=relaxed/simple;
+	bh=TWlM1gxd6Ysd13vsnGBl9MnJvZhhTKloQ53IzYp/UGU=;
+	h=From:To:Cc:Subject:Date:Message-ID:Mime-Version; b=U6zjYgz7LrpIt6gZFsDTzMHrhVfOHYNnareaO1yf9f3SopywiKGPzLJSM5Nb1cVntbeJ5w6J77n5yoS5eX8Ezojvx8RFrtdxDf/5HyD1t3+RXHEXl/r2W0oY+iE9XuqSX/ClZGMfG8rQCLFTo3KEtZzh0lVnR0LV9OAZ+B6MiDc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com; spf=pass smtp.mailfrom=harmstone.com; dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b=DZlV/SqJ; arc=none smtp.client-ip=217.169.27.34
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=harmstone.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="Q5RqP/W1";
-	dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b="AOLIh0Ue"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-	s=mimecast20190719; t=1774442294;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=zq66uLldOzJDWwFuTQSicat9HZ9onClHiQ97FMgB8gk=;
-	b=Q5RqP/W18UCwle+EqYMTwHu7VNdJdu2wsKbaozziTOY3VwfRi1utpWlCG497fJagY9Mxmx
-	sYTFtDO9b0gJdCC/AeYBPBuTXF2nPa19X8umyxgsSsTjj8NgUHt8SFeYjCtYBGSx8l+z+a
-	qMuem4lCGeB270tx2/LSO/pDfWOATIg=
-Received: from mail-wm1-f69.google.com (mail-wm1-f69.google.com
- [209.85.128.69]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
- us-mta-104-7gPYogIAN0CqKOUBCQfdaQ-1; Wed, 25 Mar 2026 08:38:11 -0400
-X-MC-Unique: 7gPYogIAN0CqKOUBCQfdaQ-1
-X-Mimecast-MFC-AGG-ID: 7gPYogIAN0CqKOUBCQfdaQ_1774442290
-Received: by mail-wm1-f69.google.com with SMTP id 5b1f17b1804b1-48534941525so62001065e9.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 25 Mar 2026 05:38:10 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=redhat.com; s=google; t=1774442290; x=1775047090; darn=vger.kernel.org;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
-        bh=zq66uLldOzJDWwFuTQSicat9HZ9onClHiQ97FMgB8gk=;
-        b=AOLIh0Ue5a3o1fyEajsXxRCiEAE4Rrq4bwtTWcmkudbfF4EGebeo9SW56XtdYxL7gQ
-         xeW4CNOMySdctnDl5F1p0NWrzINeidFsK1GsBMK5qy8II2QIIYddb+3Fodhb3uT+VKGE
-         1v7e5LdWnAHVsWJeK6ghIqQJmUl6MJOFosAG6lA5C/uDp58EhWy87J3zWlWPJZjfwZK2
-         KWy9GMHLWJUNInaYYcCVszumxavzYJx2dmfjsh7j+8dniUK6L50dzCuKbj5d27T2iZIZ
-         WZQcz9r++SsteOFi0YBkYD1BI3vq48IWcbFzmeCDWMrPkfvMwKPhtayf8UlyVwkx66Ug
-         +ELQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1774442290; x=1775047090;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=zq66uLldOzJDWwFuTQSicat9HZ9onClHiQ97FMgB8gk=;
-        b=hlBArNV8VvTTAHFbcaczjjpLo+8uz6P0UKELzUX2azP7JhRNXRSOyQ8JCneELxIlDF
-         CidK4l+0z/AQuzCu8747NMhJS1QOdA/0XdNFW4cxka30QE9Mp765t9A/jFDpr3UUZ2Cd
-         DdO7EdWyB9UMS8hbkMArNqK+NTZOoTb7ub9NvHCTKOWdCnJOKXSgC96bhcJ50jbvstMN
-         DJR3qTfGjUBFZ1M4wDB2UVbfJFzMYIwXU7iMwLUsQelFxiCH3Fm5PPgSOyv7VEEE2SbO
-         xtkKHFgUkGZP4JTwGgkFsoD15qo5wzKK1pOhGsrmGCQKlkD9YEMxsqIjqcHrryTB23Am
-         EeZg==
-X-Forwarded-Encrypted: i=1; AJvYcCUvfHCp68eisz7d6yjwczu67pWP8dDmSxUCf9ub8NYkVRNHb445s5hHYqgmtnYyZ3UWTfWdn9TSiONuVw==@vger.kernel.org
-X-Gm-Message-State: AOJu0YzoZ3Au7NVoWfZzjnwrKUNtBsIeeAJJ1gXP2zo+NNIZEoELGC3M
-	iybJ3yZ6zUl8Ffv8Q9MEMb2Y1poZnozcLy3mdpzvbpagYIQkEl3Po4uMbIF8HQ8L8VvsaoEPVsE
-	SpqxV0huLqzCq3ALqSeY88uQvflMB4dHELifaq8wC/drAm1HaZjjFSCnWzVZVsZo=
-X-Gm-Gg: ATEYQzzPK3diC78WUBTUeP382l0iPxIVjrHsnP99F/0xLZS5DCiIEYaKERXCCEI0s/i
-	dGYMxwlJ9TFDbtVzxi4Ocjk6nny/upfiC9KlhuqChA0tQ5UmZI7LqH3tRn9zGNBaTZHq+2rcLT6
-	PJDHPXhAh83EeZwqorJ9nFowoERe7eotscr97xD8aubQy+rB52EF4G9d09+fMSYjhhFLWDr8soX
-	pvuugy8tcsoZPOQzCLXhYaCtLgJihZx4N2xF7d1ZS4tnkzdribVRF/ebnu++cdBr+TCFmwsju4W
-	j7AIgAa/p80anlpdjBaGSnHVpgbcMU27gweHFmLzatZ87ck0h+BOwY5ki98UKSAwsxxCIpAyNeu
-	vH57gfCnjYhnStA==
-X-Received: by 2002:a05:600c:3f16:b0:483:6d42:25c6 with SMTP id 5b1f17b1804b1-4871606db4amr51426225e9.23.1774442289656;
-        Wed, 25 Mar 2026 05:38:09 -0700 (PDT)
-X-Received: by 2002:a05:600c:3f16:b0:483:6d42:25c6 with SMTP id 5b1f17b1804b1-4871606db4amr51425715e9.23.1774442289131;
-        Wed, 25 Mar 2026 05:38:09 -0700 (PDT)
-Received: from thinky ([91.245.205.131])
-        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-487116ee57esm120806865e9.14.2026.03.25.05.38.08
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 25 Mar 2026 05:38:08 -0700 (PDT)
-Date: Wed, 25 Mar 2026 13:38:07 +0100
-From: Andrey Albershteyn <aalbersh@redhat.com>
-To: Christoph Hellwig <hch@lst.de>
-Cc: Andrey Albershteyn <aalbersh@kernel.org>, linux-xfs@vger.kernel.org, 
-	fsverity@lists.linux.dev, linux-fsdevel@vger.kernel.org, ebiggers@kernel.org, 
-	linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, 
-	linux-btrfs@vger.kernel.org, djwong@kernel.org
-Subject: Re: [PATCH v5 07/25] iomap: introduce IOMAP_F_FSVERITY and teach
- writeback to handle fsverity
-Message-ID: <std5dib2mf5nfd2gf3jbrhujvqr2tytczplopwfy4zrxrrmrgj@py7g4alrifbi>
-References: <20260319170231.1455553-1-aalbersh@kernel.org>
- <20260319170231.1455553-8-aalbersh@kernel.org>
- <20260325080021.GF952@lst.de>
+	dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b="DZlV/SqJ"
+Received: from beren (beren.burntcomma.com [IPv6:2a02:8012:8cf0:0:ce28:aaff:fe0d:6db2])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
+	(Client did not present a certificate)
+	by mail.burntcomma.com (Postfix) with ESMTPSA id 8D12D314E23;
+	Wed, 25 Mar 2026 12:53:53 +0000 (GMT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=harmstone.com;
+	s=mail; t=1774443233;
+	bh=RrY6xLgrHExws+uVlgSk3fZlCbIqedDlqCcIinqrnfA=;
+	h=From:To:Cc:Subject:Date;
+	b=DZlV/SqJtJ7lA8LUkgIMSv7zeZhJhVk3f2RLJ3RRNgCL64+r8XJSCaelRMA/aRsMU
+	 ywWYuAMyAWO8zEe/Jcw7SkHBsUOqdqWY3sQFi5sCS3J7K3WQ2szzYKv5pC8gRr3xuW
+	 ytuuk6yxa/X+qbds6Bq6YNJJpUTd92zL8Yn0eR80=
+From: Mark Harmstone <mark@harmstone.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Mark Harmstone <mark@harmstone.com>
+Subject: [PATCH v2] btrfs: add remap-tree checks to check_block_group_item()
+Date: Wed, 25 Mar 2026 12:53:43 +0000
+Message-ID: <20260325125349.123889-1-mark@harmstone.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20260325080021.GF952@lst.de>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 8bit
 
-On 2026-03-25 09:00:21, Christoph Hellwig wrote:
-> > @@ -353,9 +353,16 @@ static inline bool iomap_block_needs_zeroing(const struct iomap_iter *iter,
-> >  {
-> >  	const struct iomap *srcmap = iomap_iter_srcmap(iter);
-> >  
-> > -	return srcmap->type != IOMAP_MAPPED ||
-> > -		(srcmap->flags & IOMAP_F_NEW) ||
-> > -		pos >= i_size_read(iter->inode);
-> > +	if (srcmap->type != IOMAP_MAPPED)
-> > +		return true;
-> > +
-> > +	if (srcmap->flags & IOMAP_F_NEW)
-> > +		return true;
-> > +
-> > +	if (srcmap->flags & IOMAP_F_FSVERITY)
-> > +		return false;
-> > +
-> > +	return pos >= i_size_read(iter->inode);
-> 
-> This might be a good time to document the various reasons for needing
-> zeroing.
+Add some write-time checks for block group items relating to the remap
+tree.
 
-something like this?
+Here we're checking:
+* That the REMAPPED or METADATA_REMAP flags aren't set unless the
+  REMAP_TREE incompat flag is also set
+* That `remap_bytes` isn't more than the size of the block group
+* That `identity_remap_count` isn't more than the number of sectors in
+  the block group
 
---- a/fs/iomap/buffered-io.c
-+++ b/fs/iomap/buffered-io.c
-@@ -344,9 +344,27 @@ static inline bool iomap_block_needs_zeroing(const struct iomap_iter *iter,
- {
-        const struct iomap *srcmap = iomap_iter_srcmap(iter);
- 
--       return srcmap->type != IOMAP_MAPPED ||
--               (srcmap->flags & IOMAP_F_NEW) ||
--               pos >= i_size_read(iter->inode);
-+       /*
-+        * If this block is not mapped, we don't have any backing blocks to read
-+        * yet
-+        */
-+       if (srcmap->type != IOMAP_MAPPED)
-+               return true;
+Signed-off-by: Mark Harmstone <mark@harmstone.com>
+---
+The original version used a 64-bit division, which is not implemented on
+32-bit arches - this changes it to a right shift instead.
+
+ fs/btrfs/tree-checker.c | 42 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 42 insertions(+)
+
+diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
+index 6117381e4d57f7..75c4b9eedaf9f0 100644
+--- a/fs/btrfs/tree-checker.c
++++ b/fs/btrfs/tree-checker.c
+@@ -777,6 +777,48 @@ static int check_block_group_item(struct extent_buffer *leaf,
+ 			BTRFS_BLOCK_GROUP_METADATA | BTRFS_BLOCK_GROUP_DATA);
+ 		return -EUCLEAN;
+ 	}
 +
-+       /*
-+        * This block just got allocated and does not contain any meaningful data
-+        */
-+       if (srcmap->flags & IOMAP_F_NEW)
-+               return true;
++	if (unlikely(!btrfs_fs_incompat(fs_info, REMAP_TREE) &&
++		     type == BTRFS_BLOCK_GROUP_METADATA_REMAP)) {
++		block_group_err(leaf, slot,
++"invalid type, METADATA_REMAP set but REMAP_TREE incompat flag not set");
++		return -EUCLEAN;
++	}
 +
-+       /*
-+        * fsverity metadata is stored past i_size, we need to read it instead of
-+        * zeroing
-+        */
-+       if (srcmap->flags & IOMAP_F_FSVERITY)
-+               return false;
++	if (unlikely(!btrfs_fs_incompat(fs_info, REMAP_TREE) &&
++		     flags & BTRFS_BLOCK_GROUP_REMAPPED)) {
++		block_group_err(leaf, slot,
++"invalid flags, REMAPPED set but REMAP_TREE incompat flag not set");
++		return -EUCLEAN;
++	}
 +
-+       return pos >= i_size_read(iter->inode);
++	if (item_size == sizeof(struct btrfs_block_group_item_v2)) {
++		struct btrfs_block_group_item_v2 *bgi2;
++		u64 remap_bytes;
++		u32 identity_remap_count;
++
++		bgi2 = btrfs_item_ptr(leaf, slot, struct btrfs_block_group_item_v2);
++
++		remap_bytes = btrfs_block_group_v2_remap_bytes(leaf, bgi2);
++
++		if (unlikely(remap_bytes > key->offset)) {
++			block_group_err(leaf, slot,
++				"invalid remap_bytes, have %llu expect [0, %llu]",
++					remap_bytes, key->offset);
++			return -EUCLEAN;
++		}
++
++		identity_remap_count = btrfs_block_group_v2_identity_remap_count(leaf, bgi2);
++		if (unlikely((u64)identity_remap_count >
++			     key->offset >> fs_info->sectorsize_bits)) {
++			block_group_err(leaf, slot,
++				"invalid identity_remap_count, have %u expect [0, %llu]",
++					identity_remap_count,
++					key->offset >> fs_info->sectorsize_bits);
++			return -EUCLEAN;
++		}
++	}
++
+ 	return 0;
  }
-
-> 
-> > +/*
-> > + * IO happens beyond inode EOF, fsverity metadata is stored there
-> > + */
-> > +#define IOMAP_F_FSVERITY	(1U << 10)
-> 
-> This comment feels a bit too sparse.  Here is my interpretation of what
-> this flag does:
-> 
-> /*
->  * Indicates reads and writes of fsverity metadata.
->  *
->  * Fsverity metadata is stored after the regular file data and thus beyond
->  * i_size.
->  */
-
-Thanks! I will update it
-
+ 
 -- 
-- Andrey
+2.52.0
 

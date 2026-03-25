@@ -1,59 +1,75 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from fout-a4-smtp.messagingengine.com (fout-a4-smtp.messagingengine.com [103.168.172.147])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CD21238C42A
-	for <linux-btrfs@vger.kernel.org>; Tue, 24 Mar 2026 23:53:47 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1A1C41F4634
+	for <linux-btrfs@vger.kernel.org>; Wed, 25 Mar 2026 00:42:13 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.147
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774396429; cv=none; b=lT12CYL0KDeY3suHW4VdDmgmGkPxWRZ4A6RKO/qLJ+oEwLsofu+qwaB8PdPyQWT3pGrex5N7lbgIRqNl4q+a8ElMY7qX7vU+4+s10nnwjyiEZ0vFbqfgZtJFA3IK3WMhDtC9YDwefb6b1zgcz09yC2r6sXetSS34t9waPVYaQZc=
+	t=1774399335; cv=none; b=UzPQIQ6UPGfae5Othfuaq3sPRjJvJll14JsH4UVhCdFFdQGqTCYURmBoh9Mez5p32A3Ye+OraOmJqIpncYAt6OuzVA1UEf1LWRZrMzEMclyFn/aXDKTZZSwTEamgzYfBh1vH40CiTt0wuwRY566O1XtXFshbgJcl+ZVJ/gGiIyI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774396429; c=relaxed/simple;
-	bh=Vc1EvWBzBjxjlmJdjYYdleA5UCQJij33XWKrPkkn7kA=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=d3W8I8ACSgxpmjT1lcD2JBCFzVQTneysvyEMPD86FNXINAS1zUQyB3NPbX13yfJgGyLuCRmPdEVO4YLYf4tT4A99AeE0v0Kv3Ou2eCe52Q/oB3cyzvoPnPz+kz5AwuqVuw5VQhay4VwHXhf2mGbDBYVXKO2CA2uRpthzyXAYs94=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=kU7/5+oq; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=kU7/5+oq; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1774399335; c=relaxed/simple;
+	bh=iYsEw34kmY6RXGhBzPeDH9S4N2QSo8XN2R52P/wUAc4=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=MYoxju2GjSGl8o2LwvKvPyb2UH8epI1WyGmOc43g1BGvAJnZgGZEa9nbI9pLkMTLPsoVXMXFAZ/dLD+3mVDgrAfIaTYgtXaOrUwVr2s/XvYNS4q7k0G9rcXmiBYRQFOzncB9YTR/CkvlpwsQQJJPSDofA4qXG734g2R4YBBaLk4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=TmXAuJtR; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=lCbkcjQv; arc=none smtp.client-ip=103.168.172.147
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="kU7/5+oq";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="kU7/5+oq"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id C63E55BCF7
-	for <linux-btrfs@vger.kernel.org>; Tue, 24 Mar 2026 23:48:11 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1774396091; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=mN3fS7A0aK3pgWXfd77UPbmUJSfMLjBPSxAYyWf+BYA=;
-	b=kU7/5+oq2nOZOAuu/xOupCXSs4lB/FIMrKcTB1kjn/QFlzrvQ8VMfneMvE75tLzxZurbeG
-	pr/u4qXoBijQ8Fwee6TPZEri59L9L/lab1ByPOouguTH4D7SPRtU/2qjmxRD3XC/G6rNvI
-	JxU2euQVIiOx/QQscrm5duDvSS3pfW0=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b="kU7/5+oq"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1774396091; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=mN3fS7A0aK3pgWXfd77UPbmUJSfMLjBPSxAYyWf+BYA=;
-	b=kU7/5+oq2nOZOAuu/xOupCXSs4lB/FIMrKcTB1kjn/QFlzrvQ8VMfneMvE75tLzxZurbeG
-	pr/u4qXoBijQ8Fwee6TPZEri59L9L/lab1ByPOouguTH4D7SPRtU/2qjmxRD3XC/G6rNvI
-	JxU2euQVIiOx/QQscrm5duDvSS3pfW0=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 03DEA440D9
-	for <linux-btrfs@vger.kernel.org>; Tue, 24 Mar 2026 23:48:10 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id /YQDLroiw2nlIgAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Tue, 24 Mar 2026 23:48:10 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/2] btrfs-progs: check/lowmem: fix false alerts about verity items
-Date: Wed, 25 Mar 2026 10:17:51 +1030
-Message-ID: <cover.1774395991.git.wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="TmXAuJtR";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="lCbkcjQv"
+Received: from phl-compute-01.internal (phl-compute-01.internal [10.202.2.41])
+	by mailfout.phl.internal (Postfix) with ESMTP id 0B37BEC00AC;
+	Tue, 24 Mar 2026 20:42:13 -0400 (EDT)
+Received: from phl-frontend-04 ([10.202.2.163])
+  by phl-compute-01.internal (MEProxy); Tue, 24 Mar 2026 20:42:13 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc
+	:content-transfer-encoding:content-type:date:date:from:from
+	:in-reply-to:message-id:mime-version:reply-to:subject:subject:to
+	:to; s=fm2; t=1774399333; x=1774485733; bh=St5To7HrsAs3+/8+JEw17
+	Jm2KeSZVSSxsV8WEiaXBys=; b=TmXAuJtRxwqn74V9sLS0XSWpdaNBzyqyIh2Ow
+	1uN0nMRSnXA+iwxz6uR57HTfG2JJwwOzdiAEZe3EfYI8KLpU+l71YndoS0VbxbUv
+	ScEV3hg1X9n41l9f/Ry2I97Xgql2cvXup0G0/WoA2WpIY8lnbm9hQNm9YfVf6/k0
+	Q+RSuVuno8ZQoeAx6kPEwdAM0zWfOCoFjcnJsyLHVKe8gMtRLtSzDUekTrnz3vCZ
+	MfqSQ0D5uFp1FzrWnE4bxX0bT3JyLP9001CKBVMOhXVP9yhHYqJCWLXAzm0N74ho
+	elEA6a/K1rVIFECmuDWYCQRYAaR7Df+gKJ8jr3RnOoRoZBXIg==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:content-transfer-encoding:content-type
+	:date:date:feedback-id:feedback-id:from:from:in-reply-to
+	:message-id:mime-version:reply-to:subject:subject:to:to
+	:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm1; t=
+	1774399333; x=1774485733; bh=St5To7HrsAs3+/8+JEw17Jm2KeSZVSSxsV8
+	WEiaXBys=; b=lCbkcjQvx2gn56sKphg1z1hBckQA0cLnCR6Jz0eG39XJyB28JXO
+	wo+lMY+5zWclLuWKcSWLT1oemaPmICB6dUU2S7oVIW/Xp1dp8WJEVxMPk06cLijt
+	xymnsmCWgm2JctPyM1zW/q0ayN1LUu5ut4dnilIEVB7tbSOUs//f50STnf7lAH9a
+	hztzaEDau9iUxu174CdGcFStHFbY1K+W6LBdzmygV9AbxqekMwYCsNvzHP6M4uJS
+	VtxliHT43Gsz+7pTK2XTSSeZP1ZniWI0Ex7usvv3cqM/8NLrB3rHhBnJHq6ZDGua
+	Opx2CJzT2P7I7KsuL/xzWhXR83T7EYi3oiA==
+X-ME-Sender: <xms:ZC_DafCUPpe69LS4HEiidpwEckof0ZDTxK-bQUpGbIinOv0XmKrTGw>
+    <xme:ZC_DabipSOVBOFtEdDH9nDhFiYyVraF1I0yGs72lfqPmp4KvXVDVRiudaiUwXE4Mv
+    UwDybZRnsToNjPZrtZDd368fMWCKn8cjKBAfbpu6wEeArLb1VbWuyI>
+X-ME-Received: <xmr:ZC_DaYOJVCIneTYlQAX85pPPjp9wnUZ-NideNkdGIkoYKClbourhZQBukJSTb5-Ib23tvU47yM4bajxUjEVzfq5nrZ4>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefgedrtddtgdefvdeftdehucetufdoteggodetrf
+    dotffvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfurfetoffkrfgpnffqhgenuceu
+    rghilhhouhhtmecufedttdenucenucfjughrpefhvffufffkofgggfestdekredtredttd
+    enucfhrhhomhepuehorhhishcuuehurhhkohhvuceosghorhhishessghurhdrihhoqeen
+    ucggtffrrghtthgvrhhnpeduiedtleeuieejfeelffevleeifefgjeejieegkeduudetfe
+    ekffeftefhvdejveenucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmhepmhgrihhl
+    fhhrohhmpegsohhrihhssegsuhhrrdhiohdpnhgspghrtghpthhtohepvddpmhhouggvpe
+    hsmhhtphhouhhtpdhrtghpthhtoheplhhinhhugidqsghtrhhfshesvhhgvghrrdhkvghr
+    nhgvlhdrohhrghdprhgtphhtthhopehkvghrnhgvlhdqthgvrghmsehfsgdrtghomh
+X-ME-Proxy: <xmx:ZC_Dac6HKBinrNjwrurszXu1WeWySio4yhwtx2RBlpEXh62MELnBvQ>
+    <xmx:ZC_DaW1k83LVev76mL6ccyEp7FHquUw7LdW1nzasYRz4PlgMlAX91Q>
+    <xmx:ZC_Dadab71WKNk_FtlYkdE45lmq9fP8rYls_V5vafWI5VV8MvoYWyQ>
+    <xmx:ZC_DaeBQ5PVEdmQiG3O9-iWGj2bO9_ch5_dqdZrawLB9gmDzLR4bOg>
+    <xmx:ZS_DaTlnfQyPe1vugYW8Nl8JFcx5cbDlWrBDzTaza2JVXAKsfFNKT9Jo>
+Feedback-ID: i083147f8:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Tue,
+ 24 Mar 2026 20:42:12 -0400 (EDT)
+From: Boris Burkov <boris@bur.io>
+To: linux-btrfs@vger.kernel.org,
+	kernel-team@fb.com
+Subject: [PATCH 0/5] btrfs: improve stalls under sudden writeback
+Date: Tue, 24 Mar 2026 17:41:48 -0700
+Message-ID: <cover.1774398665.git.boris@bur.io>
 X-Mailer: git-send-email 2.53.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
@@ -62,58 +78,61 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Rspamd-Action: no action
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[99.99%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,suse.com:mid];
-	ARC_NA(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received,2a07:de40:b281:104:10:150:64:97:from];
-	URIBL_BLOCKED(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.com:dkim,suse.com:mid];
-	RCVD_TLS_ALL(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Rspamd-Queue-Id: C63E55BCF7
-X-Spam-Flag: NO
-X-Spam-Score: -3.01
-X-Spam-Level: 
 
-Leo reported and fixed a bug in original mode where false alerts were
-triggered about verity items.
+If you have a system with very large memory (TiBs) and a normal
+percentage based dirty_ratio/dirty_background_ratio like the defaults of
+20%/10%, then we can theoretically rack up 100s of GiB of dirty pages
+before doing any writeback. This is further exacerbated if we also see a
+sudden drop in the free memory due to a large allocation. If we
+(relatively likely for a large ram system) also have a large disk, we are
+unlikely to do trigger much preemptive metadata reclaim either.
 
-Unfortunately we have a similar problem in lowmem mode too.
+Once we do start doing writeback with such a large supply, the results
+are somewhat ugly. The delalloc work generates a huge amount of delayed
+refs without proper reservations which sends the metadata space system
+into a tailspin trying to run yet more delalloc to free space.
+Ultimately, the system stalls waiting for huge amounts of ordered
+extents and delayed refs blocking all users in start_transaction() on
+tickets in reserve_space().
 
-Fix the lowmem mode false alert and add a test case to prevent similar
-problems in the future.
+This patch series aims to address these issues in a relatively targeted
+way by improving our reservations for delalloc delayed refs and by doing
+some very basic smoothing of the work in flush_space(). Further work
+could be done to improve flush_space() heuristics and latency but this
+is already a big help on my observed workloads.
 
-Qu Wenruo (2):
-  btrfs-progs: check/lowmem: recognize verity item keys
-  btrfs-progs: fsck-tests: add a test case for verity items
+I was able to reproduce stalls on a more "modest" system with 264GiB of
+ram by using a somewhat silly 80% dirty_ratio.
 
- check/mode-lowmem.c                              |   3 +++
- .../fsck-tests/072-verity-items/fsverity.img.xz  | Bin 0 -> 2364 bytes
- tests/fsck-tests/072-verity-items/test.sh        |  15 +++++++++++++++
- 3 files changed, 18 insertions(+)
- create mode 100644 tests/fsck-tests/072-verity-items/fsverity.img.xz
- create mode 100755 tests/fsck-tests/072-verity-items/test.sh
+I was unfortunately unable to reproduce any stalls on a yet smaller
+system with only 32GiB of ram.
 
---
+The first 3 patches do the delayed_ref rsv accounting on btrfs_inode,
+mirroring inode->block_rsv.
+The 4th patch is a cleanup to the types counting max extents
+The 5th patch reduces the size of the unit of work in shrink_delalloc()
+to further reduce stalls.
+
+Boris Burkov (5):
+  btrfs: reserve space for delayed_refs in delalloc
+  btrfs: account for csum delayed_refs in delalloc
+  btrfs: account for compression in delalloc extent reservation
+  btrfs: make inode->outstanding_extents a u64
+  btrfs: cap shrink_delalloc iterations to 128M
+
+ fs/btrfs/btrfs_inode.h       | 20 ++++++--
+ fs/btrfs/delalloc-space.c    | 75 +++++++++++++++++++++-------
+ fs/btrfs/delayed-ref.c       |  2 +-
+ fs/btrfs/fs.h                | 13 -----
+ fs/btrfs/inode.c             | 97 ++++++++++++++++++++++++++++--------
+ fs/btrfs/ordered-data.c      |  4 +-
+ fs/btrfs/space-info.c        | 31 ++++++++----
+ fs/btrfs/tests/inode-tests.c | 18 +++----
+ fs/btrfs/transaction.c       |  7 +--
+ fs/btrfs/transaction.h       |  3 +-
+ include/trace/events/btrfs.h |  8 +--
+ 11 files changed, 193 insertions(+), 85 deletions(-)
+
+-- 
 2.53.0
 

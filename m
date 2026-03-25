@@ -1,75 +1,66 @@
-Received: from mail.mailmag.net (mail.mailmag.net [199.192.20.237])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from bombadil.infradead.org (bombadil.infradead.org [198.137.202.133])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 99C912FC893
-	for <linux-btrfs@vger.kernel.org>; Wed, 25 Mar 2026 04:28:38 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=199.192.20.237
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B41F13112BA;
+	Wed, 25 Mar 2026 05:48:48 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.137.202.133
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774412923; cv=none; b=cKJR+T9U5Afjq1lsqU0WV5cq0gnUhMn4AevbUxFVuhp9T68oQsPVa4baHSS+ULEj7jpQFOW1L3VLKL76Fo6POvYQJ5n+gQ+nPsKaGL5+X21cFf1v0h6CCEdMYebrTWkhG4SlGgehrDv9KwG1luJbzTcF83CQn46jcdXvydG6SuI=
+	t=1774417730; cv=none; b=b1n0HSIim2BD06Dm2kPRxF/mmp/axg/kutlQRSL+/87mSr2mKQhi4fjRZ7/UTkrzf1qPeNwL6yGw+cJbaJgphqyS+iDH0GVdtxh4kz2926ZutibgTGxXjHXQjmEE+UXXlYVBN4Pw2ShIQvo98uYMLvOesqbW1t+2ldGI/wmoOsQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774412923; c=relaxed/simple;
-	bh=nVJZYpcoOW3ul0fyHdSpV1Hf1dV1ITxbu+zJSW15kF0=;
-	h=Content-Type:From:Mime-Version:Subject:Date:Message-Id:References:
-	 Cc:In-Reply-To:To; b=qiFwNgODl0NbxKmHHHoK+NNaOj/5vunjS+/G90JrWj8NxlzNRS3u6MkMHyTuHC1hG9rfUOv0QAAfeyODSaMIPLAIimByjTQdLkG7q2OSE6DDfrDPd4lmDMP2/ixA3A/FkLXvwPAK8Uwlf9Ttkr03RCNwU9xDN1aG8XR4GqR2LL4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=mailmag.net; spf=pass smtp.mailfrom=mailmag.net; dkim=pass (2048-bit key) header.d=mailmag.net header.i=@mailmag.net header.b=euQmyLPT; arc=none smtp.client-ip=199.192.20.237
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=mailmag.net
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=mailmag.net
+	s=arc-20240116; t=1774417730; c=relaxed/simple;
+	bh=uOt/NzW4Lw5hGqfn//3Dv44769lSHgkjQa95b4FncY4=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=lKeBsIatNHQFPjYQh3Iw7rU7a0P6sQ06VxGHrkiKEUp8JkdRwWCrfX0n4dovODW+Ffb/eV5DPMUFMTn1kKQRl4RyDoLX1+15jLpM/sRh3Y0j+bUFA87saDbkHOps+60wIdV7eRqV1oeF3BV3d/3EQ6XfXI2E2etLtgyg5UvR7Ps=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=prWIuupY; arc=none smtp.client-ip=198.137.202.133
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=mailmag.net header.i=@mailmag.net header.b="euQmyLPT"
-Received: from [127.0.0.1] (localhost [127.0.0.1]) by localhost (Mailerdaemon) with ESMTPA id E780D160D0A;
-	Tue, 24 Mar 2026 21:18:02 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=mailmag.net; s=dkim;
-	t=1774412284; h=from:subject:date:message-id:to:cc:mime-version:content-type:
-	 content-transfer-encoding:in-reply-to:references;
-	bh=nVJZYpcoOW3ul0fyHdSpV1Hf1dV1ITxbu+zJSW15kF0=;
-	b=euQmyLPTHCnz9SQJ2DPfBU1ue5UV7Sj8rpMr0Bz7r75fGTC0EDBkhwK6B5L0bUcwzvSRcc
-	eFdUpozvXnCRIX5wbSJqsY4FnZqLevSZPrefPCIQ+SyLY62eA8Ilg4e0/ADxLG1QD6P/n5
-	ifnXV4+nmREk/RmBgd5gtjsSFj3JNygXalYhlKKywnjv7DMErtZpEi7NYmab+RWdTq0lsr
-	v2Hj4qTWSFOyv/+IM85wBe6s8Cj4+qljajYhx3S51JvVQ7F1gcBOJZ2gz+QsDr0CuU2nbX
-	4gDYfU2KTPlC1TNn6LFpd6YyJLLVEvGZlyq4eztgHRgoSyKzZYD/YETwhvnVxg==
-Content-Type: text/plain;
-	charset=utf-8
-Content-Transfer-Encoding: base64
-From: joshua <joshua@mailmag.net>
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="prWIuupY"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
+	:References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+	Content-Transfer-Encoding:Content-ID:Content-Description;
+	bh=hF5YyQ1VKzdYQ8Lo2fkcNZNppKAqOTfn5yvFQfWCe+U=; b=prWIuupYyp65kZ3d7tL9hV2NZj
+	SfcWIb7SzabfojA9qicmNhlni8ayRCLnYvNq/QH/B0tHfKsNKM7TmzsXgruVAHc8jCmoBK2vWQZnI
+	Bb+GPuopq6WgjiyjH9F1+lZSQZt7Q6rsWWDgbTz/Z+7e4CzY+SGwd0piVYs+jnV+SlHfDir4p3p3q
+	ytJchTPUBKYOQQHULkk7ue70/XZQsrBaxBfTKoC+OEMlI9eyjXUSQUuz6fwDc9WsOWjuPZjtPEZSj
+	OG5LAhawcC0VDaNzIc2z0mIunl4zIkhzj9EEwdBnOhbdcrPyUExM3Z3d+cTwDXQ6wGSibegVROv4m
+	4g1ZtE6w==;
+Received: from hch by bombadil.infradead.org with local (Exim 4.98.2 #2 (Red Hat Linux))
+	id 1w5H6m-00000002jjV-0x3y;
+	Wed, 25 Mar 2026 05:48:48 +0000
+Date: Tue, 24 Mar 2026 22:48:48 -0700
+From: Christoph Hellwig <hch@infradead.org>
+To: Leo Martins <loemra.dev@gmail.com>
+Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com,
+	fstests@vger.kernel.org
+Subject: Re: [PATCH] generic/301: skip extent count check on btrfs
+Message-ID: <acN3QEpx_YZZN5Qb@infradead.org>
+References: <c56960b514baf810f2929b5e955a966d9955c468.1774383226.git.loemra.dev@gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-Mime-Version: 1.0 (1.0)
-Subject: Re: Btrfs progs release 6.19
-Date: Tue, 24 Mar 2026 21:18:02 -0700
-Message-Id: <2A0C37E0-28BD-4829-9778-AB20F4482F6D@mailmag.net>
-References: <f7b7f88c6f1b94b6f09f7f54bdaa3c0ee54f60ed.camel@scientia.org>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-In-Reply-To: <f7b7f88c6f1b94b6f09f7f54bdaa3c0ee54f60ed.camel@scientia.org>
-To: Christoph Anton Mitterer <calestyo@scientia.org>
-X-Last-TLS-Session-Version: None
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <c56960b514baf810f2929b5e955a966d9955c468.1774383226.git.loemra.dev@gmail.com>
+X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 
-Rm9yIHdoYXQgaXTigJlzIHdvcnRoLCAobm90IG11Y2gpIEkgdXNlZCAtLWNvbnZlcnQtdG8tYmxv
-Y2stZ3JvdXAtdHJlZSBvbiBhIGxhcmdlIGZzIHdpdGggcHJlY2lvdXMgZGF0YSAofjEwIGRyaXZl
-cywgfjEwMFRiLCBSYWlkMSBkYXRhLCBSYWlkMUMzIG1ldGFkYXRhKSBhbmQgaGFkIG5vIGlzc3Vl
-cy4NCg0KQ29udmVydCB0b29rIGEgTE9ORyB0aW1lLCBidXQgYWZ0ZXJ3YXJkcywgYWxsIG15IGRh
-dGEgaW50ZWdyaXR5IGNoZWNrcyBwYXNzZWQsIHNjcnViIHBhc3NlZCwgYW5kIG1vdW50IHRpbWVz
-IGFyZSBhcHByb3hpbWF0ZWx5IDEgc2Vjb25kIG5vdywgY29tcGFyZWQgdG8gbWludXRlcyBwcmV2
-aW91c2x5Lg0KDQrigJRKb3NodWEgVmlsbHdvY2sNCg0KPiBPbiBNYXIgMjQsIDIwMjYsIGF0IDY6
-MDDigK9QTSwgQ2hyaXN0b3BoIEFudG9uIE1pdHRlcmVyIDxjYWxlc3R5b0BzY2llbnRpYS5vcmc+
-IHdyb3RlOg0KPiANCj4g77u/T24gVHVlLCAyMDI2LTAzLTE3IGF0IDE3OjM0ICswMTAwLCBEYXZp
-ZCBTdGVyYmEgd3JvdGU6DQo+Pj4gSG93IGFib3V0IG1pZ3JhdGluZyBhbiBleGlzdGluZyBmcyB0
-byB1c2UgdGhlIGJsb2NrLWdyb3VwLXRyZWUNCj4+PiAod2l0aA0KPj4+IGJ0cmZzdHVuZSAtLWNv
-bnZlcnQtdG8tYmxvY2stZ3JvdXAtdHJlZSkuLi4gaGFzIHRoYXQgYWxzbyBiZWVuIHdlbGwNCj4+
-PiB0ZXN0ZWQgYW5kIGlzIGNvbnNpZGVyZWQgc2FmZSB0byBiZSB1c2VkIG9uIGZpbGVzeXN0ZW1z
-IHdpdGgNCj4+PiBwcmVjaW91cw0KPj4+IGRhdGE/DQo+PiANCj4+IFRoZSBpbi1wbGFjZSBjb252
-ZXJzaW9ucyBhcmUgYSBiaXQgbW9yZSB0cmlja3kgYXMgdGhleSBzdGFydCBmcm9tIGFuDQo+PiBl
-eGlzdGluZyBmaWxlc3lzdGVtIGFuZCB0aGVyZSdzIGEgcG9zc2liaWxpdHkgb2YgZmluZGluZyBz
-b21lIGNvcm5lcg0KPj4gY2FzZS4gTGFzdCB0aW1lIHRoaXMgd2FzIGluIDYuMTUuDQo+IA0KPiBJ
-IHNlZS4gVGhhbmtzIGZvciB0aGUgaW5mb3JtYXRpb24uDQo+IA0KPiANCj4+IEl0IHNob3VsZCBi
-ZSBkb2FibGUgdG8gdGVzdCB0aGUgY29udmVyc2lvbiB1c2luZyBkZXZpY2UgbWFwcGVyDQo+PiBz
-bmFwc2hvdA0KPj4gZGV2aWNlcyBvbiBhbiBleGlzdGluZyB2YWx1YWJsZSBmaWxlc3lzdGVtIHdp
-dGhvdXQgZGVzdHJveWluZyBpdC4NCj4gDQo+IEJ1dCB0aGF0IHdvdWxkIG9ubHkgdGVsbCBtZSBp
-ZiB0aGUgYnVnIGFjdHVhbGx5IGhhcHBlbnMgKGFuZCBpcw0KPiBub3RpY2VkKSBkdXJpbmcgY29u
-dmVyc2lvbi4uLiBub3QgaWYgc29tZXRoaW5nIGlzIHNpbXBseSBzdG9yZWQgaW4gYQ0KPiB3cm9u
-ZyB3YXkgd2hpY2ggSSBtYXkgbm90IG5vdGljZSB1bnRpbCBtdWNoIGxhdGVyICh3aGVuIGl0IG1p
-Z2h0DQo+IGFscmVhZHkgYmUgdG9vIGxhdGUpLg0KPiANCj4gVGhhbmtzIGFueXdheSA6LSkNCj4g
-Q2hyaXMuDQo+IA0K
+On Tue, Mar 24, 2026 at 01:40:00PM -0700, Leo Martins wrote:
+> +# btrfs CoW extent allocation depends on transaction commit frequency and
+> +# metadata reservation behavior, so the 2/3 fragmentation threshold (designed
+> +# for XFS cowextsize) is not applicable.
+
+It really is a quality of implementation issue and not specifically
+designed for XFS.  But I gues it is hard to force quality of
+implementation on specific file systems.
+
+> +if [ "$FSTYP" != "btrfs" ]; then
+> +	test $new_extents -lt $((internal_blks * 2 / 3)) || echo "file2 badly fragmented"
+
+Please break the echo into a separate line to keep this readable,
+either by just breaking using \ or by turning this into a proper if
+statement.
 

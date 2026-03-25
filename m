@@ -1,138 +1,122 @@
-Received: from mail.burntcomma.com (mail2.burntcomma.com [217.169.27.34])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2A7A33B47C9;
-	Wed, 25 Mar 2026 11:02:39 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=217.169.27.34
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F2A3F3D1CB3
+	for <linux-btrfs@vger.kernel.org>; Wed, 25 Mar 2026 11:41:28 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.133.124
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774436563; cv=none; b=SCOEu62o4zNAaGHK95NP+EJZwJ9Sitg23JjMgkhTwFoN8aYvWKpKNckKhdmBSUdMVTk0uO4EAULSZ86iufbHjH6ERsrToaMOBasO2B+gYhIwHtS7yzCfzONSOaEjrFkL9G7ikqD12d1bZmKuzO9DnyeCL+0YW/ZgJMvm/N4v1G4=
+	t=1774438890; cv=none; b=cA9rorW0pWCQGUoAyxqs86JmAaQ4O8lsrKEmfRE8hXKDAvm4xeBgQzZvbqELeHkrQMYqidLKFIDZ/jtrXNLQDOF3z8Sgb8N4KbFmu8u6e7fa6IGc0uT4YooaC5nSPWgQ2gyNvgnMVlp9uNm5cweOY3mx5J/qZwQrq1Z7BH7mWCQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774436563; c=relaxed/simple;
-	bh=cuBfcZoDG+A53mX/Zw37UyS+5F6zpOonj8CXVMOqhnM=;
-	h=Message-ID:Date:Mime-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=Tikdsy4X6a8vo6BQoez1v4jiEuySMT+8nkcEa5Gv9UNldRAItrOgCd0R007vXUNnrktDcrg7D398YfdMICvtq1wB1NDsMtD5xoSjTTr1ZuImO84tig0gb2faZakt62cm4lORb10fJLJbh5hDoJOwPHNrIBqrHb2KWelWMQ2ab/w=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com; spf=pass smtp.mailfrom=harmstone.com; dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b=r0sPFVDI; arc=none smtp.client-ip=217.169.27.34
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=harmstone.com
+	s=arc-20240116; t=1774438890; c=relaxed/simple;
+	bh=ld1uLQcQ3wX/aLoEZ5yp05fFuiyLeeDey5H16fj3er4=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=UOehyJOraVJFK+N+lGLzoF9vI5J0MsV8ZTmJPuJMSOb6FNFfbR/Ga1oXBj24qIewMFbOqyYbjeXPmHs+occ7D5cv69Flkt1A5WLYw8JjrH3jWWrUc/HH38moQFcyMbQ10+W4IbWKC75qUmxG0uT3IUYoRWIXztoou6pzEy2SbRw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=UpeHMCGI; dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b=Wtu0JiVD; arc=none smtp.client-ip=170.10.133.124
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b="r0sPFVDI"
-Received: from [IPV6:2a02:8012:8cf0:0:ce28:aaff:fe0d:6db2] (beren.burntcomma.com [IPv6:2a02:8012:8cf0:0:ce28:aaff:fe0d:6db2])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
-	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256
-	 client-signature RSA-PSS (2048 bits) client-digest SHA256)
-	(Client CN "hellas", Issuer "burntcomma.com" (verified OK))
-	by mail.burntcomma.com (Postfix) with ESMTPS id A898F314D83;
-	Wed, 25 Mar 2026 11:02:30 +0000 (GMT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=harmstone.com;
-	s=mail; t=1774436550;
-	bh=vQVI5UAPP+iX1xnJmWWeIUeddN+hVEWvTwtIDGYAR7k=;
-	h=Date:Subject:To:References:From:In-Reply-To;
-	b=r0sPFVDIYJg/p2UD4ShXdVynjRRJzhvf+U/LCm1cGr+r/BPcC7YqxmpmyzuTcFtyi
-	 N82Yk/PrurdfFAUdWsx7gqUsixclLydv4milohJZ0s8B2JDYSm/uadLvsZPbr1DO7D
-	 h6Iw7YqwE4xDEbyjC05JwODYgkr1TizQFg7kq1qQ=
-Message-ID: <fdd79c85-177c-4a57-a989-97613f94174b@harmstone.com>
-Date: Wed, 25 Mar 2026 11:02:30 +0000
+	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="UpeHMCGI";
+	dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b="Wtu0JiVD"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+	s=mimecast20190719; t=1774438888;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=1xEylKt1sFxQZZ3xBGKJ8RdOSFC0up8CAh1cSzczQVQ=;
+	b=UpeHMCGI0OWvsjQMOVzzC4cLslpISysz/kVkR/sZ7aKRK3Sh4CIQRuKbRBB9zDIf5djghI
+	5gzo+6rmKZK4xGgR1i2MABBpJQAHMG6hIDNnXIpLSCgvbl++AercDjnevy0+7HE/vcva5W
+	QpIuhJAqQfecAPQApahcjNHWSfc1wQQ=
+Received: from mail-wr1-f70.google.com (mail-wr1-f70.google.com
+ [209.85.221.70]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
+ us-mta-126-btW8HuNRPYCAlDwBFDsS5w-1; Wed, 25 Mar 2026 07:41:26 -0400
+X-MC-Unique: btW8HuNRPYCAlDwBFDsS5w-1
+X-Mimecast-MFC-AGG-ID: btW8HuNRPYCAlDwBFDsS5w_1774438885
+Received: by mail-wr1-f70.google.com with SMTP id ffacd0b85a97d-43b42cd4becso604421f8f.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 25 Mar 2026 04:41:26 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=redhat.com; s=google; t=1774438885; x=1775043685; darn=vger.kernel.org;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
+        bh=1xEylKt1sFxQZZ3xBGKJ8RdOSFC0up8CAh1cSzczQVQ=;
+        b=Wtu0JiVD+ZOnT8ETY7g0l1DNXcvTd6DywMQLr7hyIW1CO08TGRi+GNMzqixlDsdJRn
+         evo01Jx/JvjGV2xcuVSPl8G8gzr8uDz5BV7BI06o9xCV7hU0tIijYgduj7dnV7gqb33W
+         HMIDfexok6vAjCZ4n7eyruOrA+GKKYec8uV1he8WsbyeA8hIkiWSoNsVs+iQcmOyby4A
+         XKHmYnkZoa/MRTLcfWGONxYkUnaM/+7s5cqgNsC+ZoQxS4/JHwDHea9xQA/URDgwvPH2
+         p1P/ocOm+ERXwthsQV2plkzwM2cUJuEJW/cYgPFL43T+fZu8rqYjt6oVfx0vN1yR9e5F
+         Bmzw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1774438885; x=1775043685;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=1xEylKt1sFxQZZ3xBGKJ8RdOSFC0up8CAh1cSzczQVQ=;
+        b=O2LOjOfasYzjckDi1dqe3GSJ7IPVtcBjUvGVVcMD8CYeb9onQxQNU96OSMK3ppzTn2
+         ZgA4YUFic9Pi06livnqK+8JYmw7oN3mhzbpAd0MtA31K/JyeBStRhHqHkRMexbiMS5dT
+         DhuvoSI6QbeHas7iGKz1+k6t4sIljN8k7Wynw/yuJNNTSNXN/iC1zO8HShfW81rjYh1C
+         ZeIc4dzgXxWRNAc1ogckf+sPlQDz73zOpzLB7hUnV4A40Vd6tLLedzxWAR1H1JgHk9Hy
+         jKGjXk+umDl54VjWHbVQ9QKzxybjA4PP2RIrEESIOsf90MORGaejta5jY7joKAojMjK0
+         R6rQ==
+X-Forwarded-Encrypted: i=1; AJvYcCUJILcduzJYMLjD6HrVIUuGTQaGET7gL1Or/BPqDFIJ0293xxP+PVHDQqu2M4Ik9Kb7PuwyFLQcKtIbtA==@vger.kernel.org
+X-Gm-Message-State: AOJu0YxrWDgailWWc/He9f2EvJWTvSE7akvLLTx73Q2N8BIP8VFF776n
+	oZXSPX/qQA5A9+6B9ET/JqUdeuxL/xUNE/7uwUAJak9RP6raryJ2N0OXfY6xJ8JWNnkBK8xfdvS
+	+QE9ETKSFN6tkU3XbuxFdBFNU/61ADkEQEZn1/gG0db3emu8vkC9mQQWp93zJITs=
+X-Gm-Gg: ATEYQzwYmX3bQ1Re22TZZobGwPVefpfK3C7FckG6XuWywF2W8uTP5PVAYnC7VGmcPeR
+	gc+ZOMhBXsBga0MXqaWHB/s/nvIQTUSNueeBWwIK1PE1gDR/OlGANDRPj3J0mykmOLFc4KhTgHe
+	ODclPJFiJqD4cmdS7Dqxuff1mdCIZs1C1zpdfHWf9i7u9PO5rFnulUjNArq7pM4jky841nvLFOV
+	FCfS462UPZmZw7QShkndcrh8mtqrgLtvRxvv3278+qnhnvGULYQ+Fu8xprjirS+KEfToBuneYt6
+	aS70YuPYIzMq15/aZF+5ek6GqBSnGz+JRtErkRsglVtdtSz6d8oOsXardT2Ngsjk070sooXwwcy
+	MeOOlX6RdtnptNQ==
+X-Received: by 2002:a05:6000:2a09:b0:43b:425b:ec3f with SMTP id ffacd0b85a97d-43b80526465mr7202970f8f.4.1774438885294;
+        Wed, 25 Mar 2026 04:41:25 -0700 (PDT)
+X-Received: by 2002:a05:6000:2a09:b0:43b:425b:ec3f with SMTP id ffacd0b85a97d-43b80526465mr7202929f8f.4.1774438884770;
+        Wed, 25 Mar 2026 04:41:24 -0700 (PDT)
+Received: from thinky ([91.245.205.131])
+        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-43b6470c239sm46289550f8f.27.2026.03.25.04.41.23
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 25 Mar 2026 04:41:24 -0700 (PDT)
+Date: Wed, 25 Mar 2026 12:41:23 +0100
+From: Andrey Albershteyn <aalbersh@redhat.com>
+To: Christoph Hellwig <hch@lst.de>
+Cc: Andrey Albershteyn <aalbersh@kernel.org>, linux-xfs@vger.kernel.org, 
+	fsverity@lists.linux.dev, linux-fsdevel@vger.kernel.org, ebiggers@kernel.org, 
+	linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, 
+	linux-btrfs@vger.kernel.org, djwong@kernel.org
+Subject: Re: [PATCH v5 01/25] fsverity: report validation errors through
+ fserror to fsnotify
+Message-ID: <3lllvimldwcgi7crh3kgwy3a5z2ng2ugcka52ab47o5mwx4dnu@xyzbelhykn7n>
+References: <20260319170231.1455553-1-aalbersh@kernel.org>
+ <20260319170231.1455553-2-aalbersh@kernel.org>
+ <20260325075402.GA952@lst.de>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-Mime-Version: 1.0
-Subject: Re: [PATCH] btrfs: fix stale errno check in btrfs_encoded_read/write
- helpers
-To: Leo Martins <loemra.dev@gmail.com>, fstests@vger.kernel.org,
- linux-btrfs@vger.kernel.org, kernel-team@fb.com
-References: <39eac6cef5afd99734483fa0e775a3e75407552b.1774303837.git.loemra.dev@gmail.com>
-Content-Language: en-US
-From: Mark Harmstone <mark@harmstone.com>
-Autocrypt: addr=mark@harmstone.com; keydata=
- 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
-In-Reply-To: <39eac6cef5afd99734483fa0e775a3e75407552b.1774303837.git.loemra.dev@gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260325075402.GA952@lst.de>
 
-On 24/03/2026 7.09 pm, Leo Martins wrote:
-> The atoll() error check `if (offset == 0 && errno != 0)` can falsely
-> trigger because errno is not cleared before the call. Library
-> initialization code (e.g. libcap calling prctl(PR_CAPBSET_READ) which
-> fails with EINVAL) can leave errno set to a non-zero value. When the
-> caller passes offset=0 (a valid value), atoll() returns 0 without
-> modifying errno, and the stale errno causes the helper to print usage
-> and exit.
-
-Thanks Leo. From 
-https://pubs.opengroup.org/onlinepubs/9699919799/functions/errno.html:
-
- > The following sentence is deleted from the DESCRIPTION: "The value of 
-errno is 0 at program start-up, but is never set to 0 by any XSI function".
-
-So yes, apparently you can no longer rely on errno being 0 at the 
-beginning of main. TIL.
-
-Reviewed-by: Mark Harmstone <mark@harmstone.com>
-
-> This caused btrfs/333 to fail consistently on systems where libcap is
-> linked, since every call with offset 0 would bail out.
+On 2026-03-25 08:54:02, Christoph Hellwig wrote:
+> On Thu, Mar 19, 2026 at 06:01:48PM +0100, Andrey Albershteyn wrote:
+> > Reported verification errors to fsnotify through recently added fserror
+> > interface.
 > 
-> Fix by clearing errno before the atoll() calls in both
-> btrfs_encoded_read and btrfs_encoded_write helpers.
+> Looks good:
 > 
-> Signed-off-by: Leo Martins <loemra.dev@gmail.com>
-> ---
->   src/btrfs_encoded_read.c  | 1 +
->   src/btrfs_encoded_write.c | 1 +
->   2 files changed, 2 insertions(+)
+> Reviewed-by: Christoph Hellwig <hch@lst.de>
+Thanks!
+
 > 
-> diff --git a/src/btrfs_encoded_read.c b/src/btrfs_encoded_read.c
-> index 3ee0d8b0..c7c25b74 100644
-> --- a/src/btrfs_encoded_read.c
-> +++ b/src/btrfs_encoded_read.c
-> @@ -178,6 +178,7 @@ int main(int argc, char *argv[])
->   
->   	filename = argv[2];
->   
-> +	errno = 0;
->   	offset = atoll(argv[3]);
->   	if (offset == 0 && errno != 0) {
->   		usage();
-> diff --git a/src/btrfs_encoded_write.c b/src/btrfs_encoded_write.c
-> index 7e46d9fe..bc05cc3b 100644
-> --- a/src/btrfs_encoded_write.c
-> +++ b/src/btrfs_encoded_write.c
-> @@ -179,6 +179,7 @@ int main(int argc, char *argv[])
->   
->   	filename = argv[2];
->   
-> +	errno = 0;
->   	offset = atoll(argv[3]);
->   	if (offset == 0 && errno != 0) {
->   		usage();
+> Btw, would it make sense to enhance the interface to tell why the
+> data vs considered lost?  i.e. checksum failure vs
+
+> (part of) device disappeared?
+
+isn't it something filesystem should report even before fsverity
+gets the page?
+
+-- 
+- Andrey
 

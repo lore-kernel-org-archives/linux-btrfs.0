@@ -1,39 +1,36 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DE0E9330D3B;
-	Wed, 25 Mar 2026 19:39:59 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C56E933A9C3;
+	Wed, 25 Mar 2026 19:58:25 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774467600; cv=none; b=Ql9n7VrixanBSyguemPkD+b61sFZ0AugFAH9QAsRAN6L1xowOhUXgyWEsYJqclw3Tp4rkS6DGdGpyvGMNSSyf5uXDUxVq0hNVPTsuzlwGrCMYLroIdRGMePHjzrxPPLhoBy8/ukZ11cG62PvwseXw96BK42MdgEc8RSEjoO7qUU=
+	t=1774468705; cv=none; b=Ihy1fJT7MjVF3zDnDheKe0WGJLY5/UGv4tJt+FIcLmP0QMAPncyCPVeGDAxxCVFg4fpbhSZ3h66o3XL91Ukpa8WXzT79/IbGJyZJYmtV6JxZi/5XcPBjFLzC+nvVCy72+IRf2qtDIO58YQayx7FbRyEjiBMzT8EYDpZmtkSROPk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774467600; c=relaxed/simple;
-	bh=vgzmS++XGgEKBkb/yAjVP8Sp4H+rVjAZlzJWbYtNQ5k=;
+	s=arc-20240116; t=1774468705; c=relaxed/simple;
+	bh=sejDKf3P8sESG5dibTCxwy1iyZIw53jwzdWcE7qNmpE=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=gw4kHJnU96JqfovIwNY5nBaNPBRAPi1QhLJ3S2iCoNwLbj8wSnjeaQtPpGR1ZQNVcS1TzQ2g79UVWSY+lQA5+GzwQ07o6iTrSDSV+YCpyyyFcUSW8nbxb+FWsh1ih9trQGSPWPe3ehWP/G9ODkd5n4EjRCtPLPUJbHV632K6H3s=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=DygY0E8w; arc=none smtp.client-ip=10.30.226.201
+	 Content-Type:Content-Disposition:In-Reply-To; b=MbUAQ8+jDn66HyUdjylptDhCBYYnOquDfNw4B64z9c8QHqaQ6UzKZML6E4rEvn/MF44AyF39hG8JrCPW1yOM+xgIudsXi1k7TxjUB/Owhz5CwG6aW9+SJe2IPNhdXggv/waTAqq0WMEVh6Fhi5BoRTfsUCM1sfhpq5w/DMB+Cuc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=ge5aalab; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="DygY0E8w"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 86172C4CEF7;
-	Wed, 25 Mar 2026 19:39:56 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="ge5aalab"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2D017C4CEF7;
+	Wed, 25 Mar 2026 19:58:23 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1774467599;
-	bh=vgzmS++XGgEKBkb/yAjVP8Sp4H+rVjAZlzJWbYtNQ5k=;
+	s=k20201202; t=1774468705;
+	bh=sejDKf3P8sESG5dibTCxwy1iyZIw53jwzdWcE7qNmpE=;
 	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=DygY0E8wyP/P9Q9kZFKoknR4RxtR6GMi9PjYKJh3Sbc2gqAytguh48eGOTnsx3c56
-	 Q2YVatKuDK+N4nU8v6AxKOfcBzhChhEI3Df1zCL0wcOyAKNQgEB7oAOxflILmausqP
-	 WOCeoLY2lmAchg2c7NGHGU4qpdmOxFI+jpbH1K0Ei46HKczGrbgGRBm1sI8nru20Vm
-	 WRYSdUfozTetH29mYvuSFOROlG1SXAHZGao0e1tIcm/PcakbXOz5jtLmbmhcaQDLw8
-	 UHpO2j30RaryLjmXyqJNpFRWy5VPKjdg008B9pxWETSOv3xeW2U6bVqeyivRW/5e7y
-	 efVryfxsae7fQ==
-Date: Wed, 25 Mar 2026 12:39:54 -0700
+	b=ge5aalabCqZpp2QV5kqs/vYycoJuqkRoa8OBOAkbF709CENIyaMYwhDvGA5ZmhPZt
+	 uwKdRiC3Cl5ZK3d5Un9FUbs9cKXxNKCY6gkKzPEXJOUXDaqwkeVNlPxvdAJwqG7YKW
+	 lIYxvZcgfmDmflgygmhJEUImKL9vwBOfEzSiOFGHgfj3Klvy6w4NQMdlJgbR9hMqrG
+	 H4++cneHOvL+Ujzn+CcEgc7qA05317D8Q9rBGN3xJLw1p1s1oXuLQklwmmcYGJXV2A
+	 FM+3W2mqWxh2TwuA4BQio+NeDp+0q0ezZAW3u3LQYmFQINgb4M2bbIWWEdcCh46Isa
+	 Z617FMBDSIq2Q==
+Date: Wed, 25 Mar 2026 12:58:21 -0700
 From: Eric Biggers <ebiggers@kernel.org>
-To: Christoph Hellwig <hch@lst.de>
-Cc: Andrew Morton <akpm@linux-foundation.org>,
-	Richard Henderson <richard.henderson@linaro.org>,
-	Matt Turner <mattst88@gmail.com>,
-	Magnus Lindholm <linmag7@gmail.com>,
-	Russell King <linux@armlinux.org.uk>,
+To: "H. Peter Anvin" <hpa@zytor.com>
+Cc: Christoph Hellwig <hch@lst.de>,
+	Andrew Morton <akpm@linux-foundation.org>,
 	Catalin Marinas <catalin.marinas@arm.com>,
 	Will Deacon <will@kernel.org>, Ard Biesheuvel <ardb@kernel.org>,
 	Huacai Chen <chenhuacai@kernel.org>,
@@ -49,30 +46,26 @@ Cc: Andrew Morton <akpm@linux-foundation.org>,
 	Alexander Gordeev <agordeev@linux.ibm.com>,
 	Christian Borntraeger <borntraeger@linux.ibm.com>,
 	Sven Schnelle <svens@linux.ibm.com>,
-	"David S. Miller" <davem@davemloft.net>,
-	Andreas Larsson <andreas@gaisler.com>,
-	Richard Weinberger <richard@nod.at>,
-	Anton Ivanov <anton.ivanov@cambridgegreys.com>,
-	Johannes Berg <johannes@sipsolutions.net>,
 	Thomas Gleixner <tglx@kernel.org>, Ingo Molnar <mingo@redhat.com>,
 	Borislav Petkov <bp@alien8.de>,
 	Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
-	"H. Peter Anvin" <hpa@zytor.com>,
 	Herbert Xu <herbert@gondor.apana.org.au>,
 	Dan Williams <dan.j.williams@intel.com>, Chris Mason <clm@fb.com>,
 	David Sterba <dsterba@suse.com>, Arnd Bergmann <arnd@arndb.de>,
-	Song Liu <song@kernel.org>, Yu Kuai <yukuai@fnnas.com>,
-	Li Nan <linan122@huawei.com>, Theodore Ts'o <tytso@mit.edu>,
-	"Jason A. Donenfeld" <Jason@zx2c4.com>, linux-alpha@vger.kernel.org,
-	linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
-	loongarch@lists.linux.dev, linuxppc-dev@lists.ozlabs.org,
-	linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
-	sparclinux@vger.kernel.org, linux-um@lists.infradead.org,
-	linux-crypto@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	linux-arch@vger.kernel.org, linux-raid@vger.kernel.org
-Subject: Re: cleanup the RAID5 XOR library v3
-Message-ID: <20260325193954.GC2305@quark>
-References: <20260324062211.3216301-1-hch@lst.de>
+	Song Liu <song@kernel.org>,
+	Yu Kuai <yukuai@alb-78bjiv52429oh8qptp.cn-shenzhen.alb.aliyuncs.com>,
+	Li Nan <linan122@huawei.com>, linux-kernel@vger.kernel.org,
+	linux-arm-kernel@lists.infradead.org, loongarch@lists.linux.dev,
+	linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+	linux-s390@vger.kernel.org, linux-crypto@vger.kernel.org,
+	linux-btrfs@vger.kernel.org, linux-arch@vger.kernel.org,
+	linux-raid@vger.kernel.org
+Subject: Re: [PATCH 02/17] raid6: remove __KERNEL__ ifdefs
+Message-ID: <20260325195821.GD2305@quark>
+References: <20260324064115.3217136-1-hch@lst.de>
+ <20260324064115.3217136-3-hch@lst.de>
+ <59d1d178-c141-4229-81e9-a6c23fa81f2f@zytor.com>
+ <fa11e4d3-1c70-4fa7-9f03-8772c002be6a@zytor.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -81,53 +74,46 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20260324062211.3216301-1-hch@lst.de>
+In-Reply-To: <fa11e4d3-1c70-4fa7-9f03-8772c002be6a@zytor.com>
 
-On Tue, Mar 24, 2026 at 07:21:36AM +0100, Christoph Hellwig wrote:
-> Hi all,
+On Wed, Mar 25, 2026 at 09:13:16AM -0700, H. Peter Anvin wrote:
+> On 2026-03-25 08:13, H. Peter Anvin wrote:
+> > On 2026-03-23 23:40, Christoph Hellwig wrote:
+> >> With the test code ported to kernel space, none of this is required.
+> > 
+> > I really *really* don't like this.
+> > 
+> > The ability of running in user space is really useful when it comes to
+> > developing new code for new platforms, which happens often enough for this code.
+> > 
 > 
-> the XOR library used for the RAID5 parity is a bit of a mess right now.
-> The main file sits in crypto/ despite not being cryptography and not
-> using the crypto API, with the generic implementations sitting in
-> include/asm-generic and the arch implementations sitting in an asm/
-> header in theory.  The latter doesn't work for many cases, so
-> architectures often build the code directly into the core kernel, or
-> create another module for the architecture code.
+> That being said -- and I do say this as the original author of this code --
+> this should be reduced to the maximum extent possible to a (minimal) set of
+> #ifndef __KERNEL__, which should be localized as much as possible. The actual
+> user space components, even such a thing as a simple #include, should be moved
+> to a separate user space header.
 > 
-> Changes this to a single module in lib/ that also contains the
-> architecture optimizations, similar to the library work Eric Biggers
-> has done for the CRC and crypto libraries later.  After that it changes
-> to better calling conventions that allow for smarter architecture
-> implementations (although none is contained here yet), and uses
-> static_call to avoid indirection function call overhead.
-> 
-> A git tree is also available here:
-> 
->     git://git.infradead.org/users/hch/misc.git xor-improvements
-> 
-> Gitweb:
-> 
->     https://git.infradead.org/?p=users/hch/misc.git;a=shortlog;h=refs/heads/xor-improvements
+> But pretty please do leave the ability to debug the algorithms in user space.
+> This is hard code to write and debug; it is not just about regression testing.
 
-This generally looks good, but yes, please check the comments from
-https://sashiko.dev/#/patchset/20260324062211.3216301-1-hch@lst.de, as
-Andrew mentioned.
+While I do like developing code in userspace as well, I've been doing it
+less over time as the kernel's tests and benchmarks have been improved.
+Running the KUnit tests is pretty straightforward and fast.
 
-The bug where the test generates length 0 is definitely real.  I
-verified it causes the test to crash on some platforms.
+The issues with providing userspace build support in the tree are that:
 
-raid_run_ops() calling xor_gen() (indirectly) with preemption disabled
-looks real as well, though I haven't tested it.  If preemption is indeed
-not the right thing to check, then I guess (following up from
-https://lore.kernel.org/linux-crypto/20260303195517.GC2846@sol/) it
-would need to be something like:
+- It has to be maintained.
+- It's fundamentally a bit of a hack that is used only by developers
+  (who always have the option of doing something locally that is
+  tailored to the specific function they're working on)
+- It diverts effort from the kernel's actual test and benchmark.
 
-    WARN_ON_ONCE(!in_task() || irqs_disabled() || softirq_count() != 0);
+So while the faster iteration speed that userspace development enables
+is definitely nice, I do think we should be cautious with committing to
+maintain it in the kernel tree.  If it's causing problems for the
+ongoing refactoring, dropping it for now seems reasonable to me.
 
-Ugly, but we're running out of options.
-
-(This sort of thing is why the functions in lib/crypto/ and lib/crc/ are
-just supported in all contexts instead.  If FPU/vector/SIMD registers
-cannot be used in the current context, then a scalar fallback is used.)
+I would suggest adding a benchmark to the KUnit test similar to the
+crypto and CRC ones, though.
 
 - Eric

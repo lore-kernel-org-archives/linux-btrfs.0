@@ -1,164 +1,138 @@
-Received: from mail-pl1-f182.google.com (mail-pl1-f182.google.com [209.85.214.182])
+Received: from mail.burntcomma.com (mail2.burntcomma.com [217.169.27.34])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A7F553AF64B
-	for <linux-btrfs@vger.kernel.org>; Wed, 25 Mar 2026 10:59:37 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.214.182
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2A7A33B47C9;
+	Wed, 25 Mar 2026 11:02:39 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=217.169.27.34
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774436379; cv=none; b=J00K2r+yJwn4ASP/wZBHhbsDfJgnGDyiPtfY8RMLpVn83O1kaDASCi5uc+79xuybosjJbecsxQDmNmjpQLti61eauvqI7CfMqd77J4XIaLi2u9Y3OGGSsvUD0xDBqVsu3fkKifjpNhZWPSxyrWVHFf02umoERxSHOhYqxprUEQc=
+	t=1774436563; cv=none; b=SCOEu62o4zNAaGHK95NP+EJZwJ9Sitg23JjMgkhTwFoN8aYvWKpKNckKhdmBSUdMVTk0uO4EAULSZ86iufbHjH6ERsrToaMOBasO2B+gYhIwHtS7yzCfzONSOaEjrFkL9G7ikqD12d1bZmKuzO9DnyeCL+0YW/ZgJMvm/N4v1G4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774436379; c=relaxed/simple;
-	bh=ESSmAusi22zNrBrBrCZkk53AgiDttI2zhQYE6wfMss4=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=tyx0ClYG2speY+QvEke3wVDoc3WKiVz8BHIdSX2aNq4JqOMTKg8rJ6Kaoqxdfw9MxOcjyjA6EEWrBmk6lyMPZdPnzyyRteUdEMP16ZD/nBqEgAzMMu+8Ca+DNb8liEVEv7L1uTFHA46GQ4fF4ICDO8DsVAeeSoO9G4H9HdhJ+eM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=TMExgBuT; arc=none smtp.client-ip=209.85.214.182
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1774436563; c=relaxed/simple;
+	bh=cuBfcZoDG+A53mX/Zw37UyS+5F6zpOonj8CXVMOqhnM=;
+	h=Message-ID:Date:Mime-Version:Subject:To:References:From:
+	 In-Reply-To:Content-Type; b=Tikdsy4X6a8vo6BQoez1v4jiEuySMT+8nkcEa5Gv9UNldRAItrOgCd0R007vXUNnrktDcrg7D398YfdMICvtq1wB1NDsMtD5xoSjTTr1ZuImO84tig0gb2faZakt62cm4lORb10fJLJbh5hDoJOwPHNrIBqrHb2KWelWMQ2ab/w=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com; spf=pass smtp.mailfrom=harmstone.com; dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b=r0sPFVDI; arc=none smtp.client-ip=217.169.27.34
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=harmstone.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="TMExgBuT"
-Received: by mail-pl1-f182.google.com with SMTP id d9443c01a7336-2addb31945aso48586885ad.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 25 Mar 2026 03:59:37 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1774436377; x=1775041177; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:from:content-language
-         :references:cc:to:subject:user-agent:mime-version:date:message-id
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=kkhBUMnec/GjdnW5fmLX7Wmb/ODJVypSPDeWmYyRkhw=;
-        b=TMExgBuTCemrOuxxCujCSsuE1yJfYUP7dyClGWoO/so6QSTavU2Q2xGlEu0qorXHy/
-         oy3e1MznEJDBJeYVk1VPHynv6r/J0Blr0vUPkPIG430TMIBnOAZQqcX0ScQLutlVCHOL
-         cPj9kXZzUIMO8nnhKcuFF8vyVWiUj2q+Ul1fBVHaDMeJi8hVcZnfQQvdK9bjq7WWIMeo
-         638f2ADX1TEmNtNdY5Y/qjzzNKACP2wakS9qBdA7F5LMHUjbidliBSs3MO0sBCK6D0LA
-         VdZcRadRmRFLvCnqeWNXZ4NqV7tv4meEMInfmgDGKbhPvTIy96dHjnD93lW6L8mJONCh
-         m1CQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1774436377; x=1775041177;
-        h=content-transfer-encoding:in-reply-to:from:content-language
-         :references:cc:to:subject:user-agent:mime-version:date:message-id
-         :x-gm-gg:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=kkhBUMnec/GjdnW5fmLX7Wmb/ODJVypSPDeWmYyRkhw=;
-        b=A/akuZ2uauEZJ52VmmUU/Rs+4ofUu/sKJ4IOrN6pesKBJFXcpoZm/nt/IkvzSoaGqg
-         DdDfPxSgplxVlhJxOmuVpTGzEtSLbkQawsHJfBoncZgacU9gQHa+uZeBe7cax/VlCOaZ
-         NYuw/Rr0+PVy+0C83su5HXN+Kipymg64chCkoUbx/sWRI2bNfh0Cf/2bN9jzG8w4Pad1
-         MhkpLeVJ+ocx7uEgmlM74syXx5vZXiqWrzz4IQWIB2oxaHQKS+J/drUM/a3Rjs8WTgR4
-         81kM1wH3P/TwhRKmdcDl1KMOTKBnOobD3qy0kBD7wzrJTfYdXpp49V0Xgzw3Jfnro59z
-         SgRA==
-X-Forwarded-Encrypted: i=1; AJvYcCUQOwTrk3nqUENby0Q99QExXHNkeJsHs0oy9V5KofHv1UY0N4Fu99IQFHxuLjegoSun1QaPCcRd9ksDOA==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yzg/cKAkshvcosg4coCnW8dzUTWhk73De6ggQbVl6TiwUIEYiab
-	YhK1us1CPZWof7OGzrZBIzxmB8fdk9yZhl8qJ6K3vzwO0EptqbREQ9qN
-X-Gm-Gg: ATEYQzysPhafQR8HFS9OxaUF7lOrnRHKoguiV1QYjs8nuOJgqImvocMjGmgKHXEvkhL
-	c3VSI29ZRAl0xVn4AdtZEkqKGM9dHh0olajT7CtFp+wH+oH3fn6V+y9GkjAN0HayqNkcXI80z1J
-	+cnQ27ttxzw8urve4g6pPJMhhVhfWTxhNQIp23btsGNJJytyGFvvwzVA9sKf/DUzU+l/laG6Aa4
-	2MCThDLZ1GlXdIXSldIS7U1T8iIFK1A3Ti2B8czUc5f343BE5J4qpHK9DcOjn4BoIpf8R774Weh
-	jLGUarBGKCcSQTpnDts72UJHyj3p89BJud/MVbfpEg19AgkAcvebl1piF9rdNLqtImrCXsUWr7L
-	W3cRXdm+cMR0Wy6YVWGIO7fFOxJz9YttEcqriowTl0I69yt2Y7wRcDjZSiIRujZ5A4e6Qzc4JnU
-	+cVjnmJvw6k7Jfbhj4rEMvAtIoi70=
-X-Received: by 2002:a17:903:440f:b0:2b0:700e:fc9b with SMTP id d9443c01a7336-2b0b0aea735mr36634815ad.34.1774436377001;
-        Wed, 25 Mar 2026 03:59:37 -0700 (PDT)
-Received: from [192.168.50.90] ([116.87.14.48])
-        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2b08354bcf0sm182971235ad.33.2026.03.25.03.59.34
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 25 Mar 2026 03:59:36 -0700 (PDT)
-Message-ID: <91d1e10b-b24d-477a-8724-2a75a710dd8d@gmail.com>
-Date: Wed, 25 Mar 2026 18:59:32 +0800
+	dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b="r0sPFVDI"
+Received: from [IPV6:2a02:8012:8cf0:0:ce28:aaff:fe0d:6db2] (beren.burntcomma.com [IPv6:2a02:8012:8cf0:0:ce28:aaff:fe0d:6db2])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256
+	 client-signature RSA-PSS (2048 bits) client-digest SHA256)
+	(Client CN "hellas", Issuer "burntcomma.com" (verified OK))
+	by mail.burntcomma.com (Postfix) with ESMTPS id A898F314D83;
+	Wed, 25 Mar 2026 11:02:30 +0000 (GMT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=harmstone.com;
+	s=mail; t=1774436550;
+	bh=vQVI5UAPP+iX1xnJmWWeIUeddN+hVEWvTwtIDGYAR7k=;
+	h=Date:Subject:To:References:From:In-Reply-To;
+	b=r0sPFVDIYJg/p2UD4ShXdVynjRRJzhvf+U/LCm1cGr+r/BPcC7YqxmpmyzuTcFtyi
+	 N82Yk/PrurdfFAUdWsx7gqUsixclLydv4milohJZ0s8B2JDYSm/uadLvsZPbr1DO7D
+	 h6Iw7YqwE4xDEbyjC05JwODYgkr1TizQFg7kq1qQ=
+Message-ID: <fdd79c85-177c-4a57-a989-97613f94174b@harmstone.com>
+Date: Wed, 25 Mar 2026 11:02:30 +0000
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2 3/3] ext4: derive f_fsid from block device to avoid
- collisions
-To: Andreas Dilger <adilger@dilger.ca>, "Darrick J. Wong" <djwong@kernel.org>
-Cc: Theodore Tso <tytso@mit.edu>, Anand Jain <asj@kernel.org>,
- linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
- linux-xfs@vger.kernel.org, hch@infradead.org
-References: <cover.1774092915.git.asj@kernel.org>
- <33e8eb64c304a4d42b60f608c26497bf9a2e9e19.1774092915.git.asj@kernel.org>
- <20260323041624.GA11453@mac.lan> <20260323152943.GH6223@frogsfrogsfrogs>
- <5DB914D4-594D-49EE-B69E-6F68E9C103A1@dilger.ca>
+Mime-Version: 1.0
+Subject: Re: [PATCH] btrfs: fix stale errno check in btrfs_encoded_read/write
+ helpers
+To: Leo Martins <loemra.dev@gmail.com>, fstests@vger.kernel.org,
+ linux-btrfs@vger.kernel.org, kernel-team@fb.com
+References: <39eac6cef5afd99734483fa0e775a3e75407552b.1774303837.git.loemra.dev@gmail.com>
 Content-Language: en-US
-From: Anand Jain <anajain.sg@gmail.com>
-In-Reply-To: <5DB914D4-594D-49EE-B69E-6F68E9C103A1@dilger.ca>
-Content-Type: text/plain; charset=UTF-8
+From: Mark Harmstone <mark@harmstone.com>
+Autocrypt: addr=mark@harmstone.com; keydata=
+ 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
+In-Reply-To: <39eac6cef5afd99734483fa0e775a3e75407552b.1774303837.git.loemra.dev@gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 7bit
 
+On 24/03/2026 7.09 pm, Leo Martins wrote:
+> The atoll() error check `if (offset == 0 && errno != 0)` can falsely
+> trigger because errno is not cleared before the call. Library
+> initialization code (e.g. libcap calling prctl(PR_CAPBSET_READ) which
+> fails with EINVAL) can leave errno set to a non-zero value. When the
+> caller passes offset=0 (a valid value), atoll() returns 0 without
+> modifying errno, and the stale errno causes the helper to print usage
+> and exit.
 
+Thanks Leo. From 
+https://pubs.opengroup.org/onlinepubs/9699919799/functions/errno.html:
 
-On 25/3/26 18:02, Andreas Dilger wrote:
-> On Mar 23, 2026, at 09:29, Darrick J. Wong <djwong@kernel.org> wrote:
->>
->> On Sun, Mar 22, 2026 at 11:16:24PM -0500, Theodore Tso wrote:
->>> On Sat, Mar 21, 2026 at 07:55:19PM +0800, Anand Jain wrote:
->>>> statfs() currently reports f_fsid derived from the on-disk UUID.
->>>> Cloned block devices share the same UUID, so distinct ext4 instances
->>>> can return identical f_fsid values. This leads to collisions in
->>>> fanotify.
->>>>
->>>> Encode sb->s_dev into f_fsid instead of using the superblock UUID.
->>>> This provides a per-device identifier and avoids conflicts when
->>>> filesystem is cloned, matching the behavior with xfs.
->>>
->>> As I observed in [1] this leads to collisions when for removable block
->>> devices which can be used to mount different file systems.
->>>
->>> [1] https://lore.kernel.org/all/20260322203151.GA98947@mac.lan/
->>>
->>>> Place this change behind the new mount option "-o nouuid" for ABI
->>>> compatibility.
->>>
->>> I *really* hate this mount option.  It's not at all obvious what it
->>> means for a system administrator who hasn't had the context of reading
->>> the e-mail discussion on this subject.
->>
->> I don't love 'nouuid' either, because it means something completely
->> different in XFS.  'fsid_from_dev' or something would at least be
->> clearer about what it's doing...
->>
->>> As I stated in [1], I think the f_fsid is a terrible interface that
->>> was promulgated by history, and future usage should be strongly
->>> discouraged, and the wise programmer won't use it because it has
->>> significant compatibility issues.
->>>
->>> As such, my personal preference is that we not try to condition it on
->>> a mount option, which in all likelihood almost no one will use, and
->>> instead just change it so that we hash the file system's UUID and
->>> block device number together and use that for ext4's f_fsid.
->>
->> ...but why not just set fsid to some approximation of the dev_t like
->> XFS and be done with it?
->>
->> st->f_fsid = u64_to_fsid(huge_encode_dev(mp->m_ddev_targp->bt_dev))
->>
->> There are a few other single-bdev filesystems that do this.
+ > The following sentence is deleted from the DESCRIPTION: "The value of 
+errno is 0 at program start-up, but is never set to 0 by any XSI function".
+
+So yes, apparently you can no longer rely on errno being 0 at the 
+beginning of main. TIL.
+
+Reviewed-by: Mark Harmstone <mark@harmstone.com>
+
+> This caused btrfs/333 to fail consistently on systems where libcap is
+> linked, since every call with offset 0 would bail out.
 > 
-> On the flip side, if the fsid of a filesystem changes because a new disk
-> was installed on a server and the old disk gets a new device number or an
-> upgraded kernel with different device driver load ordering, that would
-> also be a big problem, as it would break NFS file handles over a reboot.
+> Fix by clearing errno before the atoll() calls in both
+> btrfs_encoded_read and btrfs_encoded_write helpers.
 > 
-> The whole point of generating the fsid from the persistent storage is that
-> it is persistent across reboots.  It seems like the real issue here is
-> cloning filesystem images and not assigning a new UUID to the cloned image.
+> Signed-off-by: Leo Martins <loemra.dev@gmail.com>
+> ---
+>   src/btrfs_encoded_read.c  | 1 +
+>   src/btrfs_encoded_write.c | 1 +
+>   2 files changed, 2 insertions(+)
 > 
-
-IMO, sb->s_uuid (as used by overlayfs)
-Represents a filesystem UUID that is persistent.
-It is derived from on-disk metadata.
-
-statfs()->f_fsid is..
-A kind of runtime filesystem identifier used to distinguish mounted
-filesystems within a running system.
-It may be stable across reboots or device removal and reinsertion,
-but this is not guaranteed. It may change if the device dev_t changes.
-
-I have posted a set of five test cases to the mailing list
-to help verify these behaviors, for your review. Another
-test case to verify device reinsertion with a different
-dev_t is a WIP; it will be submitted along with v3.
-
-Thanks.
-
-> Cheers, Andreas
+> diff --git a/src/btrfs_encoded_read.c b/src/btrfs_encoded_read.c
+> index 3ee0d8b0..c7c25b74 100644
+> --- a/src/btrfs_encoded_read.c
+> +++ b/src/btrfs_encoded_read.c
+> @@ -178,6 +178,7 @@ int main(int argc, char *argv[])
+>   
+>   	filename = argv[2];
+>   
+> +	errno = 0;
+>   	offset = atoll(argv[3]);
+>   	if (offset == 0 && errno != 0) {
+>   		usage();
+> diff --git a/src/btrfs_encoded_write.c b/src/btrfs_encoded_write.c
+> index 7e46d9fe..bc05cc3b 100644
+> --- a/src/btrfs_encoded_write.c
+> +++ b/src/btrfs_encoded_write.c
+> @@ -179,6 +179,7 @@ int main(int argc, char *argv[])
+>   
+>   	filename = argv[2];
+>   
+> +	errno = 0;
+>   	offset = atoll(argv[3]);
+>   	if (offset == 0 && errno != 0) {
+>   		usage();
 

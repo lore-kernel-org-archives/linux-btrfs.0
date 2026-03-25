@@ -1,360 +1,431 @@
-Received: from mail-wr1-f54.google.com (mail-wr1-f54.google.com [209.85.221.54])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 723533D523E
-	for <linux-btrfs@vger.kernel.org>; Wed, 25 Mar 2026 15:27:22 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.221.54
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774452444; cv=pass; b=nbaQ2lKiC62Of4vxffW5LG/fZMDJ6pN+LLlnR/2d649FE6EUgOCSGYkUlMqW/O19hN3mY58XBitRSTOm8NY1H9koJEgguADcIc6IW1n07ZtXL7cBrzwfHXLOtkj+hKrBf58fsppWxHmA9GiffPocHGCMbSF0ZNDKRUp6sli15I4=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774452444; c=relaxed/simple;
-	bh=gvTYV6danPBvrbbKycCsMx9z3+3xksJLdC9fppoaH9o=;
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 07DFB3CCFBA
+	for <linux-btrfs@vger.kernel.org>; Wed, 25 Mar 2026 15:37:00 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1774453021; cv=none; b=KhFBo6PKbdrTQnKgt3AblWvqIuwYp4qnEkHM5cLAlCum7YBe5uSrIITSDNIOO8q0EdAyX2yHDShMcpjTwmmidOkUOdfYn4u2HgOFSoxMylMOHYY3KgpZtsiBjHxk0ZxRIJHQoZGtIBoA8NhGkIGXfgAEtNQLmYCKGHFiWjLHerg=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1774453021; c=relaxed/simple;
+	bh=QHvkJ0WeZ98OgpBvsDiw8RfA2o1APEvankX0VNY0xJU=;
 	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=ASIJkr93bahNB1Cn/X9knlol29G6FmwdKBnP2znkW4n3nFUg/DHkzOxNeafw9DPhwBkVCaTwxbsGmZOBlaW8qUeEw7wGEMes+yyGkVXI24lKHK9MJKHoJkxUp1l0GOa+sT/b/o4gvU09rQOI12EPjTsViAyzFSLKrwK0AcjIWrE=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=AEXc+gia; arc=pass smtp.client-ip=209.85.221.54
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	 To:Cc:Content-Type; b=UHy1oxVbsBwWbMGDFTo810iko8o3cqeaUDGUWMg4JscahoqQz6Wd9z3sAi1ymGmEW1g4VPN93n59khQn1UWS1VaJAJ9ZgUQnBSmHreL9laf7Bh/aRtO4P1DJTWzK7RvcBdb5K4N14kVWmlpodNVrYbDNGLZnD9DBmGJzqu8IP/Y=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=i9zrjYHv; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="AEXc+gia"
-Received: by mail-wr1-f54.google.com with SMTP id ffacd0b85a97d-43b4915161fso4998191f8f.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 25 Mar 2026 08:27:22 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1774452441; cv=none;
-        d=google.com; s=arc-20240605;
-        b=N7497CrgfRMNFEe9nZugJCv2MFp1Tw9Cu+LxI9tgsSC9xRYn7KmLKBfqbkhSV1QH9i
-         Y6VP8Ej6QXuWABSrU98OSJMoeizpqZRec7G6t4JDgxo/JyVcvQSgeebkuDfG7RxPFrVQ
-         YC8JG2iYqaruF9eHds3fa+Nc3fMa4j9LovRhLN6T+ZpP9x58QHjZ2OugDLIMK+nDlx/H
-         l5IraNa0orcxhSEdzq6TI7Aa71em1suoI+ciFYPEEByS4/JGXbFFkp666jPcKJ/Bq7kp
-         2WXKuzhWsB1aXiogXDlW4d1nnEyqJgssMzv2gu0dzisBV7rRR0vTollXwyv9rPMME866
-         UuhA==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:dkim-signature;
-        bh=dWX1QioYHvYuj0Wi+UEogcC2o0+HVIkdhxi+oA65LkU=;
-        fh=0mHG8dCXc/aMaegBZeI8Gf99mkHYa7iKY8WHYVAMHZI=;
-        b=N8VPlfGTBGoYI4MjiFGROyVr7zQ01hN7kzG4abbPI5Bbg0Wa1xrR7oXkwXIvr6sGA8
-         5sGUlRqT/tVBNB38mYyqFCTkEwfVk/5dDGrObfNrdkpA+n+SLd1rhfP3f7a7Gmf+om5/
-         UK9nYUVzDChpTS93anUoRI7QBwM0wNIbcSEt9UNJTjdYmTIKipdbHLGnuH0IQkQY/TIQ
-         IaMQybP/scyanRP61JI5MpfSoxYrgmJxYiGCiUDy4AFwqrWWnDisYIeIXXX1s1SunDcV
-         O1+MX07tikGefoFbusQA75aeFT3tWJVDdEwZ6MKc2OBZ/XSpldfcqP8SqbZUpHdmVad9
-         0kvQ==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1774452441; x=1775057241; darn=vger.kernel.org;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:from:to:cc:subject:date:message-id:reply-to;
-        bh=dWX1QioYHvYuj0Wi+UEogcC2o0+HVIkdhxi+oA65LkU=;
-        b=AEXc+gia4X2WLrsXhq+ccPCtrdadkzFqLhLeTTsWZF8bpUj/GXTEskGg0mLZrNfkSQ
-         JTxIxfwUUtVmEkTp+p/XdRf4aBQHw4dLLa7VD9I+xhqdI8OMhDNA6wRxa+ihrFtfAyeU
-         tsW4DPcoTLmEdeMUtBlR6SaGNeaW0rFq2MG8tLlXqM2mwX17jVnCDc0bXFg/KuXzAstc
-         lDQGzmI36TJyyp1W0K3qOmq3HkVkfhOIlLfaN4I1aGCQ7IPpZ+bLP61gGiUgEPMVEpgB
-         41VZEns+2sSHjOjGbE+ZpQgSW5dSlgsqz/N3j1WAUMrxdtUqMh93KP/qMfB/7yZnyn/Y
-         cLGg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1774452441; x=1775057241;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=dWX1QioYHvYuj0Wi+UEogcC2o0+HVIkdhxi+oA65LkU=;
-        b=eEyiJWObZsjIvqafBABOPtJtF0ii3hYb0DLfwkxaDu1zUXgRkxZvdBqC6tpj8lhkz2
-         sOIb7vvYjHOWYOYGVaOFY4wLXJAnaUBd115wrgGZpbHU6njBOme3vfMwQPIWwOgwNrwW
-         HFLrQn4o6y1xW14pDNSaaR7mmb/FHvilZXRP9r0y+xC4lO0Hg7Vq+C3lwr9tAkKY0m63
-         kY9Rg0jC7c7ps0TSkilqTWrkveU6N00ekYkALgNO+OwEDH9JlsCRUPoIw+NadI9zuuUj
-         5dEVfs0kQymiGXKiR8teSBDoy7vCrkHyHXpDnmR4OHaHXQAv8S14HlTT7t9QAVEqas/C
-         gfMA==
-X-Forwarded-Encrypted: i=1; AJvYcCUDS40rgca3to6rG7V5+KwUCNR1sMbJwaKkM+uEITtoE/ZD/JTZmHnmt35ZHDWMsRKL0PVwGxlSKYs1zg==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yw5Idv3IOABmUfodJ6ZmnBR9ds6Z1t+Xz6qGNAz1Mg/hYko4LZd
-	nNHJDuhDrvy/4YP2Qq89cmslpjbjEnv5G43w/09Nu3uXRVbIRXvPrTPgusSQyV7UcGKyikbf4rk
-	U1k4z0WkJJVTIYmTMItZRdwoZrLuvUe8SbU9oyz1EyA==
-X-Gm-Gg: ATEYQzwC9LW/GZ7AuJgDhu8fwKtcsfY+mcCwNsrT4S7K8AFXf+H8XvN5PjJKYAuNjm5
-	MJGY35FLRJBT6rTG0awFW1ua+9bQ6yPHQoQojkXftNCH7f9YR693TlLneQunZwZVNUR8ZuHpe2b
-	XWX6tRZvBr5Ly5zVDgzRPW1w4OrDRkUVgarxk9lA6wtMdT2Y2crcMSFx8sQ29DAOTrVnhShjNhw
-	EkKQwsnkIj9lFL/Ekr4W6cDIBaoU4D1MWjmLxIU03ufxgl0gF7qw8vi16fLAoQR6YMrolcHzqBY
-	EihuxDd1mvN8atu9Kbj1ae+Ee2AGmR38K0RWl6lDkXR4R8TxB4eodCpp8mA29P+RKnZ7o7mIltu
-	J+12d
-X-Received: by 2002:a5d:5f92:0:b0:43b:47bc:c147 with SMTP id
- ffacd0b85a97d-43b88a1d79emr5535228f8f.45.1774452440680; Wed, 25 Mar 2026
- 08:27:20 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="i9zrjYHv"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 84B2CC116C6
+	for <linux-btrfs@vger.kernel.org>; Wed, 25 Mar 2026 15:37:00 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1774453020;
+	bh=QHvkJ0WeZ98OgpBvsDiw8RfA2o1APEvankX0VNY0xJU=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+	b=i9zrjYHvM1r4Nr/57fPPk3k278PuDBqJPxbjCBSRUx6+Y82HnAugGwyN4ucoOM0w2
+	 J/VZtSxXfAheb48nbtrZVk+hRb3qvWN3KobR/picCk9bf5J/29itOwtiQXszVI/tI1
+	 zrHpDD3Q6PFOaUSi6/XmerEfton5wI9WR4Igncu3ow1MPs6/dMn55Pg71jR6Ygy8dK
+	 D3DvfUNJ/eG9AXoo8zCtbIjwXr0k8J+kL9CP8nRhJAQxHb7ckGqnNw2mt1fYmvDKsL
+	 4WrMMkkuFSBM9jiRAngKnM17WMx+V9lwjJAl+boxaRnzSuqHPAobtzAwHBw+KExkaw
+	 Gvc9do8qy/eTw==
+Received: by mail-ed1-f45.google.com with SMTP id 4fb4d7f45d1cf-667de793310so4736563a12.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 25 Mar 2026 08:37:00 -0700 (PDT)
+X-Gm-Message-State: AOJu0YyrBIeG0qB/VMoSnfgnhHpylZvaWu43e7UwshePXNCv/zgb9wOI
+	hY3lLn0lstPK8G8RH0rzQHZdc4Z4c/FD/6MjGWidQD2r9AED0Gy1RpVMf7zNiD+QuLJvu844dlY
+	hkrtFLYc9mpaiH1UQguGNSgsbZWAc5lo=
+X-Received: by 2002:a17:907:6d18:b0:b97:bc3e:6143 with SMTP id
+ a640c23a62f3a-b9a3f148f61mr282971666b.6.1774453018836; Wed, 25 Mar 2026
+ 08:36:58 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260206182336.1397715-1-neelx@suse.com> <20260206182336.1397715-36-neelx@suse.com>
- <20260208150339.3021113-1-clm@meta.com>
-In-Reply-To: <20260208150339.3021113-1-clm@meta.com>
-From: Daniel Vacek <neelx@suse.com>
-Date: Wed, 25 Mar 2026 16:27:09 +0100
-X-Gm-Features: AQROBzAFWXwvrixpcNfzyjbXsLbgIekQDOVglJXPaG63xqqZ-H6T96gnhiEXVX4
-Message-ID: <CAPjX3Ffn_Q1mPs3-6ZpdOTrp6i=2c8ZiJSyR9Mu_MTe_=OQjnA@mail.gmail.com>
-Subject: Re: [PATCH v6 35/43] btrfs: make btrfs_ref_to_path handle encrypted filenames
-To: Chris Mason <clm@meta.com>
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>, Eric Biggers <ebiggers@kernel.org>, 
-	"Theodore Y. Ts'o" <tytso@mit.edu>, Jaegeuk Kim <jaegeuk@kernel.org>, Jens Axboe <axboe@kernel.dk>, 
-	David Sterba <dsterba@suse.com>, linux-block@vger.kernel.org, 
-	linux-fscrypt@vger.kernel.org, linux-btrfs@vger.kernel.org, 
-	linux-kernel@vger.kernel.org
+References: <cover.1774398665.git.boris@bur.io> <4828515e28d350985e7b7b9d3a58a5990b74362d.1774398665.git.boris@bur.io>
+In-Reply-To: <4828515e28d350985e7b7b9d3a58a5990b74362d.1774398665.git.boris@bur.io>
+From: Filipe Manana <fdmanana@kernel.org>
+Date: Wed, 25 Mar 2026 15:36:21 +0000
+X-Gmail-Original-Message-ID: <CAL3q7H6nx=Jm_pVRpyBA=dh7WkHo_zvW66SLt6k3Tiw4KWCDtg@mail.gmail.com>
+X-Gm-Features: AQROBzCdtssLtMjFs_7jq2RcJhjJ_tr1pdLHLwSuf_IIyFgtaBf4ee-3tn_m0wQ
+Message-ID: <CAL3q7H6nx=Jm_pVRpyBA=dh7WkHo_zvW66SLt6k3Tiw4KWCDtg@mail.gmail.com>
+Subject: Re: [PATCH 1/5] btrfs: reserve space for delayed_refs in delalloc
+To: Boris Burkov <boris@bur.io>
+Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com
 Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On Sun, 8 Feb 2026 at 16:04, Chris Mason <clm@meta.com> wrote:
-> Daniel Vacek <neelx@suse.com> wrote:
-> > From: Josef Bacik <josef@toxicpanda.com>
-> >
-> > We use this helper for inode-resolve and path resolution in send, so
-> > update this helper to properly decrypt any encrypted names it finds.
-> >
+On Wed, Mar 25, 2026 at 12:45=E2=80=AFAM Boris Burkov <boris@bur.io> wrote:
 >
-> Hi everyone,
+> delalloc uses a per-inode block_rsv to perform metadata reservations for
+> the cow operations it anticipates based on the number of outstanding
+> extents. This calculation is done based on inode->outstanding_extents in
+> btrfs_calculate_inode_block_rsv_size(). The reservation is *not*
+> meticulously tracked as each ordered_extent is actually created in
+> writeback, but rather delalloc attempts to over-estimate and the
+> writeback and ordered_extent finish portions are responsible to release
+> all the reservation.
 >
-> I'm running the btrfs for-next branch, along with the encryption patch set
-> through my AI review prompts:
+> However, there is a notable gap in this reservation, it reserves no
+> space for the resulting delayed_refs. If you compare to how
+> btrfs_start_transaction() reservations work, this is a noteable
+> difference.
 >
-> https://github.com/masoncl/review-prompts
+> As writeback actually occurs, and we trigger btrfs_finish_one_ordered(),
+> that function will start generating delayed refs, which will draw from
+> the trans_handle's delayed_refs_rsv via btrfs_update_delayed_refs_rsv():
 >
-> I'm working on some btrfs specific instructions, but hopefully these reviews
-> are already useful.  I've kept the headers to make it easier to double check
-> that I'm actually replying to the right email, but please let me know if any
-> parts of this are incorrect:
+> btrfs_finish_one_ordered()
+>   insert_ordered_extent_file_extent()
+>     insert_reserved_file_extent()
+>       btrfs_alloc_reserved_file_extent()
+>         btrfs_add_delayed_data_ref()
+>           add_delayed_ref()
+>             btrfs_update_delayed_refs_rsv();
 >
+> This trans_handle was created in finish_one_ordered() with
+> btrfs_join_transaction() which calls start_transaction with
+> num_items=3D0 and BTRFS_RESERVE_NO_FLUSH. As a result, this trans_handle
+> has no reserved in h->delayed_rsv, as neither the num_items reservation
+> nor the btrfs_delayed_refs_rsv_refill() reservation is run.
 >
-> commit 473bbb12052f731a4e2ce3c48e7d7e9f2510528b
-> Author: Josef Bacik <josef@toxicpanda.com>
+> Thus, when btrfs_update_delayed_refs_rsv() runs, reserved_bytes is 0 and
+> fs_info->delayed_rsv->size grows but not fs_info->delayed_rsv->reserved.
 >
-> btrfs: make btrfs_ref_to_path handle encrypted filenames
+> If a large amount of writeback happens all at once (perhaps due to
+> dirty_ratio being tuned too high), this results in, among other things,
+> erroneous assessments of the amount of delayed_refs reserved in the
+> metadata space reclaim logic, like need_preemptive_reclaim() which
+> relies on fs_info->delayed_rsv->reserved and even worse, poor decision
+> making in btrfs_preempt_reclaim_metadata_space() which counts
+> delalloc_bytes like so:
 >
-> This commit updates btrfs_ref_to_path() to handle encrypted filenames by
-> introducing a new copy_resolved_iref_to_buf() helper that can decrypt
-> names when the filesystem has encryption enabled.
+>   block_rsv_size =3D global_rsv_size +
+>           btrfs_block_rsv_reserved(delayed_block_rsv) +
+>           btrfs_block_rsv_reserved(delayed_refs_rsv) +
+>           btrfs_block_rsv_reserved(trans_rsv);
+>   delalloc_size =3D bytes_may_use - block_rsv_size;
 >
-> > diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-> > index 9bb406f7dd302..577c3ef87791a 100644
-> > --- a/fs/btrfs/backref.c
-> > +++ b/fs/btrfs/backref.c
+> So all that lost delayed refs usage gets accounted as delalloc_size and
+> leads to preemptive reclaim continuously choosing FLUSH_DELALLOC, which
+> further exacerbates the problem.
 >
-> [ ... ]
+> With enough writeback around, we can run enough delalloc that we get
+> into async reclaim which starts blocking start_transaction() and
+> eventually hits FLUSH_DELALLOC_WAIT/FLUSH_DELALLOC_FULL at which point
+> the filesystem gets heavily blocked on metadata space in reserve_space(),
+> blocking all new transaction work until all the ordered_extents finish.
 >
-> > @@ -2107,6 +2108,39 @@ int btrfs_find_one_extref(struct btrfs_root *root, u64 inode_objectid,
-> >       return ret;
-> >  }
-> >
-> > +static int copy_resolved_iref_to_buf(struct btrfs_root *fs_root,
-> > +                                  struct extent_buffer *eb, char *dest,
-> > +                                  u64 parent, unsigned long name_off,
-> > +                                  u32 name_len, s64 *bytes_left)
-> > +{
-> > +     struct btrfs_fs_info *fs_info = fs_root->fs_info;
-> > +     struct fscrypt_str fname = FSTR_INIT(NULL, 0);
-> > +     int ret;
-> > +
-> > +     /* No encryption, just copy the name in. */
-> > +     if (!btrfs_fs_incompat(fs_info, ENCRYPT)) {
-> > +             *bytes_left -= name_len;
-> > +             if (*bytes_left >= 0)
-> > +                     read_extent_buffer(eb, dest + *bytes_left, name_off, name_len);
-> > +             return 0;
-> > +     }
-> > +
-> > +     ret = fscrypt_fname_alloc_buffer(BTRFS_NAME_LEN, &fname);
-> > +     if (ret)
-> > +             return ret;
-> > +
-> > +     ret = btrfs_decrypt_name(fs_root, eb, name_off, name_len, parent, &fname);
-> > +     if (ret)
-> > +             goto out;
-> > +
-> > +     *bytes_left -= fname.len;
-> > +     if (*bytes_left >= 0)
-> > +             memcpy(dest + *bytes_left, fname.name, fname.len);
-> > +out:
-> > +     fscrypt_fname_free_buffer(&fname);
-> > +     return ret;
-> > +}
-> > +
-> >  /*
-> >   * this iterates to turn a name (from iref/extref) into a full filesystem path.
-> >   * Elements of the path are separated by '/' and the path is guaranteed to be
-> > @@ -2138,10 +2172,10 @@ char *btrfs_ref_to_path(struct btrfs_root *fs_root, struct btrfs_path *path,
-> >               dest[bytes_left] = '\0';
-> >
-> >       while (1) {
-> > -             bytes_left -= name_len;
-> > -             if (bytes_left >= 0)
-> > -                     read_extent_buffer(eb, dest + bytes_left,
-> > -                                        name_off, name_len);
-> > +             ret = copy_resolved_iref_to_buf(fs_root, eb, dest, parent,
-> > +                                             name_off, name_len, &bytes_left);
-> > +             if (ret)
-> > +                     break;
-> >               if (eb != eb_in) {
-> >                       if (!path->skip_locking)
-> >                               btrfs_tree_read_unlock(eb);
+> If we had an accurate view of the reservation for delayed refs, then we
+> could mostly break this feedback loop in preemptive reclaim, and
+> generally would be able to make more accurate decisions with regards to
+> metadata space reclamation.
 >
-> Does this code leak the extent buffer when copy_resolved_iref_to_buf()
-> fails? Looking at the loop structure in btrfs_ref_to_path(), when
-> copy_resolved_iref_to_buf() returns an error and we break at line 2178,
-> the cleanup code that follows never executes:
+> This patch introduces the mechanism of a per-inode delayed_refs rsv
+> which is modeled closely after the same in trans_handle. The delalloc
+> reservation also reserves delayed refs and then finish_one_ordered
+> transfers the inode delayed_refs rsv into the trans_handle one, just
+> like inode->block_rsv.
 >
->     if (eb != eb_in) {
->         if (!path->skip_locking)
->             btrfs_tree_read_unlock(eb);
->         free_extent_buffer(eb);
->     }
+> This is not a perfect fix for the most pathological cases, but is the
+> infrastructure needed to keep working on the problem.
 >
-> This can happen in subsequent iterations where eb != eb_in (the extent
-> buffer was detached from path->nodes[0] and set to NULL in the previous
-> iteration). The cleanup at the end of the function (btrfs_release_path()
-> at line 2216) cannot free eb since it's no longer in the path.
+> Signed-off-by: Boris Burkov <boris@bur.io>
+> ---
+>  fs/btrfs/btrfs_inode.h    |  3 +++
+>  fs/btrfs/delalloc-space.c | 34 ++++++++++++++++++++++++++++++----
+>  fs/btrfs/delayed-ref.c    |  2 +-
+>  fs/btrfs/inode.c          |  9 ++++++++-
+>  fs/btrfs/transaction.c    |  7 ++++---
+>  fs/btrfs/transaction.h    |  3 ++-
+>  6 files changed, 48 insertions(+), 10 deletions(-)
+>
+> diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+> index 55c272fe5d92..dca4f6df7e95 100644
+> --- a/fs/btrfs/btrfs_inode.h
+> +++ b/fs/btrfs/btrfs_inode.h
+> @@ -328,6 +328,9 @@ struct btrfs_inode {
+>
+>         struct btrfs_block_rsv block_rsv;
+>
+> +       /* Reserve for delayed refs generated by ordered extent completio=
+n. */
+> +       struct btrfs_block_rsv delayed_rsv;
 
-Right, the break should be placed only after the cleanup.
+Not that long ago we had an effort to decrease the btrfs_inode
+structure size down to less than 1024 bytes, so that we could have 4
+inodes per 4K page instead of 3, and this change now makes the
+structure larger than 1024 bytes again.
 
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -2174,13 +2174,14 @@ char *btrfs_ref_to_path(struct btrfs_root
-*fs_root, struct btrfs_path *path,
-     while (1) {
-         ret = copy_resolved_iref_to_buf(fs_root, eb, dest, parent,
-                         name_off, name_len, &bytes_left);
--        if (ret)
--            break;
-         if (eb != eb_in) {
-             if (!path->skip_locking)
-                 btrfs_tree_read_unlock(eb);
-             free_extent_buffer(eb);
-         }
-+        if (ret)
-+            break;
-+
-         ret = btrfs_find_item(fs_root, path, parent, 0,
-                 BTRFS_INODE_REF_KEY, &found_key);
-         if (ret > 0)
+Instead of adding another block reserve to the inode we could:
+
+1) Add the reservations for delayed refs in the existing block reserve
+(inode->block_rsv);
+
+2) When finishing the ordered extent, after joining the transaction
+and setting trans->block to inode->block_rsv, we could migrate the
+space reserved for delayed refs from the inode->block_rsv into
+trans->delayed_rsv.
+
+This would not require increasing the btrfs_inode structure and
+neither add a _local_delayed_rsv field to the transaction handle (and
+btw, we don't use the _ prefix for any structure fields anywhere in
+btrfs).
 
 Thanks.
 
---nX
 
-> This could be triggered when decryption fails in copy_resolved_iref_to_buf()
-> due to btrfs_iget() error, fscrypt_fname_alloc_buffer() ENOMEM, or
-> fscrypt_prepare_readdir() failure on an encrypted filesystem.
+> +
+>         struct btrfs_delayed_node *delayed_node;
 >
-> Before this patch, the name copy operation (read_extent_buffer) could not
-> fail, so the cleanup always happened before any error check.
+>         /* File creation time. */
+> diff --git a/fs/btrfs/delalloc-space.c b/fs/btrfs/delalloc-space.c
+> index 0970799d0aa4..e2944ff4fe47 100644
+> --- a/fs/btrfs/delalloc-space.c
+> +++ b/fs/btrfs/delalloc-space.c
+> @@ -3,6 +3,7 @@
+>  #include "messages.h"
+>  #include "ctree.h"
+>  #include "delalloc-space.h"
+> +#include "delayed-ref.h"
+>  #include "block-rsv.h"
+>  #include "btrfs_inode.h"
+>  #include "space-info.h"
+> @@ -240,6 +241,13 @@ static void btrfs_inode_rsv_release(struct btrfs_ino=
+de *inode, bool qgroup_free)
+>         if (released > 0)
+>                 trace_btrfs_space_reservation(fs_info, "delalloc",
+>                                               btrfs_ino(inode), released,=
+ 0);
+> +
+> +       released =3D btrfs_block_rsv_release(fs_info, &inode->delayed_rsv=
+,
+> +                                          0, NULL);
+> +       if (released > 0)
+> +               trace_btrfs_space_reservation(fs_info, "delalloc_delayed_=
+refs",
+> +                                             btrfs_ino(inode), released,=
+ 0);
+> +
+>         if (qgroup_free)
+>                 btrfs_qgroup_free_meta_prealloc(inode->root, qgroup_to_re=
+lease);
+>         else
+> @@ -251,7 +259,9 @@ static void btrfs_calculate_inode_block_rsv_size(stru=
+ct btrfs_fs_info *fs_info,
+>                                                  struct btrfs_inode *inod=
+e)
+>  {
+>         struct btrfs_block_rsv *block_rsv =3D &inode->block_rsv;
+> +       struct btrfs_block_rsv *delayed_rsv =3D &inode->delayed_rsv;
+>         u64 reserve_size =3D 0;
+> +       u64 delayed_refs_size =3D 0;
+>         u64 qgroup_rsv_size =3D 0;
+>         unsigned outstanding_extents;
 >
-
-On Sun, 8 Feb 2026 at 16:04, Chris Mason <clm@meta.com> wrote:
+> @@ -266,6 +276,8 @@ static void btrfs_calculate_inode_block_rsv_size(stru=
+ct btrfs_fs_info *fs_info,
+>                 reserve_size =3D btrfs_calc_insert_metadata_size(fs_info,
+>                                                 outstanding_extents);
+>                 reserve_size +=3D btrfs_calc_metadata_size(fs_info, 1);
+> +               delayed_refs_size +=3D btrfs_calc_delayed_ref_bytes(fs_in=
+fo,
+> +                                               outstanding_extents);
+>         }
+>         if (!(inode->flags & BTRFS_INODE_NODATASUM)) {
+>                 u64 csum_leaves;
+> @@ -285,11 +297,17 @@ static void btrfs_calculate_inode_block_rsv_size(st=
+ruct btrfs_fs_info *fs_info,
+>         block_rsv->size =3D reserve_size;
+>         block_rsv->qgroup_rsv_size =3D qgroup_rsv_size;
+>         spin_unlock(&block_rsv->lock);
+> +
+> +       spin_lock(&delayed_rsv->lock);
+> +       delayed_rsv->size =3D delayed_refs_size;
+> +       spin_unlock(&delayed_rsv->lock);
+>  }
 >
-> Daniel Vacek <neelx@suse.com> wrote:
-> > From: Josef Bacik <josef@toxicpanda.com>
-> >
-> > We use this helper for inode-resolve and path resolution in send, so
-> > update this helper to properly decrypt any encrypted names it finds.
-> >
+>  static void calc_inode_reservations(struct btrfs_inode *inode,
+>                                     u64 num_bytes, u64 disk_num_bytes,
+> -                                   u64 *meta_reserve, u64 *qgroup_reserv=
+e)
+> +                                   u64 *meta_reserve,
+> +                                   u64 *delayed_refs_reserve,
+> +                                   u64 *qgroup_reserve)
+>  {
+>         struct btrfs_fs_info *fs_info =3D inode->root->fs_info;
+>         u64 nr_extents =3D count_max_extents(fs_info, num_bytes);
+> @@ -309,6 +327,10 @@ static void calc_inode_reservations(struct btrfs_ino=
+de *inode,
+>          * for an inode update.
+>          */
+>         *meta_reserve +=3D inode_update;
+> +
+> +       *delayed_refs_reserve =3D btrfs_calc_delayed_ref_bytes(fs_info,
+> +                                                            nr_extents);
+> +
+>         *qgroup_reserve =3D nr_extents * fs_info->nodesize;
+>  }
 >
-> Hi everyone,
+> @@ -318,7 +340,7 @@ int btrfs_delalloc_reserve_metadata(struct btrfs_inod=
+e *inode, u64 num_bytes,
+>         struct btrfs_root *root =3D inode->root;
+>         struct btrfs_fs_info *fs_info =3D root->fs_info;
+>         struct btrfs_block_rsv *block_rsv =3D &inode->block_rsv;
+> -       u64 meta_reserve, qgroup_reserve;
+> +       u64 meta_reserve, delayed_refs_reserve, qgroup_reserve;
+>         unsigned nr_extents;
+>         enum btrfs_reserve_flush_enum flush =3D BTRFS_RESERVE_FLUSH_ALL;
+>         int ret =3D 0;
+> @@ -353,12 +375,14 @@ int btrfs_delalloc_reserve_metadata(struct btrfs_in=
+ode *inode, u64 num_bytes,
+>          * over-reserve slightly, and clean up the mess when we are done.
+>          */
+>         calc_inode_reservations(inode, num_bytes, disk_num_bytes,
+> -                               &meta_reserve, &qgroup_reserve);
+> +                               &meta_reserve, &delayed_refs_reserve,
+> +                               &qgroup_reserve);
+>         ret =3D btrfs_qgroup_reserve_meta_prealloc(root, qgroup_reserve, =
+true,
+>                                                  noflush);
+>         if (ret)
+>                 return ret;
+> -       ret =3D btrfs_reserve_metadata_bytes(block_rsv->space_info, meta_=
+reserve,
+> +       ret =3D btrfs_reserve_metadata_bytes(block_rsv->space_info,
+> +                                          meta_reserve + delayed_refs_re=
+serve,
+>                                            flush);
+>         if (ret) {
+>                 btrfs_qgroup_free_meta_prealloc(root, qgroup_reserve);
+> @@ -383,6 +407,8 @@ int btrfs_delalloc_reserve_metadata(struct btrfs_inod=
+e *inode, u64 num_bytes,
+>         btrfs_block_rsv_add_bytes(block_rsv, meta_reserve, false);
+>         trace_btrfs_space_reservation(root->fs_info, "delalloc",
+>                                       btrfs_ino(inode), meta_reserve, 1);
+> +       btrfs_block_rsv_add_bytes(&inode->delayed_rsv, delayed_refs_reser=
+ve,
+> +                                 false);
 >
-> I'm running the btrfs for-next branch, along with the encryption patch set
-> through my AI review prompts:
+>         spin_lock(&block_rsv->lock);
+>         block_rsv->qgroup_rsv_reserved +=3D qgroup_reserve;
+> diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+> index 605858c2d9a9..9fe9cec1bef3 100644
+> --- a/fs/btrfs/delayed-ref.c
+> +++ b/fs/btrfs/delayed-ref.c
+> @@ -89,7 +89,7 @@ void btrfs_update_delayed_refs_rsv(struct btrfs_trans_h=
+andle *trans)
+>  {
+>         struct btrfs_fs_info *fs_info =3D trans->fs_info;
+>         struct btrfs_block_rsv *delayed_rsv =3D &fs_info->delayed_refs_rs=
+v;
+> -       struct btrfs_block_rsv *local_rsv =3D &trans->delayed_rsv;
+> +       struct btrfs_block_rsv *local_rsv =3D trans->delayed_rsv;
+>         u64 num_bytes;
+>         u64 reserved_bytes;
 >
-> https://github.com/masoncl/review-prompts
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 1a4e6a9239ae..1f0f3282e4b8 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -653,6 +653,7 @@ static noinline int __cow_file_range_inline(struct bt=
+rfs_inode *inode,
+>                 goto out;
+>         }
+>         trans->block_rsv =3D &inode->block_rsv;
+> +       trans->delayed_rsv =3D &inode->delayed_rsv;
 >
-> I'm working on some btrfs specific instructions, but hopefully these reviews
-> are already useful.  I've kept the headers to make it easier to double check
-> that I'm actually replying to the right email, but please let me know if any
-> parts of this are incorrect:
+>         drop_args.path =3D path;
+>         drop_args.start =3D 0;
+> @@ -3256,6 +3257,7 @@ int btrfs_finish_one_ordered(struct btrfs_ordered_e=
+xtent *ordered_extent)
+>         }
 >
+>         trans->block_rsv =3D &inode->block_rsv;
+> +       trans->delayed_rsv =3D &inode->delayed_rsv;
 >
-> commit 473bbb12052f731a4e2ce3c48e7d7e9f2510528b
-> Author: Josef Bacik <josef@toxicpanda.com>
+>         ret =3D btrfs_insert_raid_extent(trans, ordered_extent);
+>         if (unlikely(ret)) {
+> @@ -8074,9 +8076,12 @@ struct inode *btrfs_alloc_inode(struct super_block=
+ *sb)
 >
-> btrfs: make btrfs_ref_to_path handle encrypted filenames
+>         spin_lock_init(&ei->lock);
+>         ei->outstanding_extents =3D 0;
+> -       if (sb->s_magic !=3D BTRFS_TEST_MAGIC)
+> +       if (sb->s_magic !=3D BTRFS_TEST_MAGIC) {
+>                 btrfs_init_metadata_block_rsv(fs_info, &ei->block_rsv,
+>                                               BTRFS_BLOCK_RSV_DELALLOC);
+> +               btrfs_init_metadata_block_rsv(fs_info, &ei->delayed_rsv,
+> +                                             BTRFS_BLOCK_RSV_DELREFS);
+> +       }
+>         ei->runtime_flags =3D 0;
+>         ei->prop_compress =3D BTRFS_COMPRESS_NONE;
+>         ei->defrag_compress =3D BTRFS_COMPRESS_NONE;
+> @@ -8132,6 +8137,8 @@ void btrfs_destroy_inode(struct inode *vfs_inode)
+>         WARN_ON(vfs_inode->i_data.nrpages);
+>         WARN_ON(inode->block_rsv.reserved);
+>         WARN_ON(inode->block_rsv.size);
+> +       WARN_ON(inode->delayed_rsv.reserved);
+> +       WARN_ON(inode->delayed_rsv.size);
+>         WARN_ON(inode->outstanding_extents);
+>         if (!S_ISDIR(vfs_inode->i_mode)) {
+>                 WARN_ON(inode->delalloc_bytes);
+> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+> index 4358f4b63057..a55f8996cd59 100644
+> --- a/fs/btrfs/transaction.c
+> +++ b/fs/btrfs/transaction.c
+> @@ -737,7 +737,8 @@ start_transaction(struct btrfs_root *root, unsigned i=
+nt num_items,
 >
-> This commit updates btrfs_ref_to_path() to handle encrypted filenames by
-> introducing a new copy_resolved_iref_to_buf() helper that can decrypt
-> names when the filesystem has encryption enabled.
+>         h->type =3D type;
+>         INIT_LIST_HEAD(&h->new_bgs);
+> -       btrfs_init_metadata_block_rsv(fs_info, &h->delayed_rsv, BTRFS_BLO=
+CK_RSV_DELREFS);
+> +       h->delayed_rsv =3D &h->_local_delayed_rsv;
+> +       btrfs_init_metadata_block_rsv(fs_info, h->delayed_rsv, BTRFS_BLOC=
+K_RSV_DELREFS);
 >
-> > diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-> > index 9bb406f7dd302..577c3ef87791a 100644
-> > --- a/fs/btrfs/backref.c
-> > +++ b/fs/btrfs/backref.c
+>         smp_mb();
+>         if (cur_trans->state >=3D TRANS_STATE_COMMIT_START &&
+> @@ -758,7 +759,7 @@ start_transaction(struct btrfs_root *root, unsigned i=
+nt num_items,
+>                                                       h->transid,
+>                                                       delayed_refs_bytes,=
+ 1);
+>                         h->delayed_refs_bytes_reserved =3D delayed_refs_b=
+ytes;
+> -                       btrfs_block_rsv_add_bytes(&h->delayed_rsv, delaye=
+d_refs_bytes, true);
+> +                       btrfs_block_rsv_add_bytes(h->delayed_rsv, delayed=
+_refs_bytes, true);
+>                         delayed_refs_bytes =3D 0;
+>                 }
+>                 h->reloc_reserved =3D reloc_reserved;
+> @@ -1067,7 +1068,7 @@ static void btrfs_trans_release_metadata(struct btr=
+fs_trans_handle *trans)
+>         trace_btrfs_space_reservation(fs_info, "local_delayed_refs_rsv",
+>                                       trans->transid,
+>                                       trans->delayed_refs_bytes_reserved,=
+ 0);
+> -       btrfs_block_rsv_release(fs_info, &trans->delayed_rsv,
+> +       btrfs_block_rsv_release(fs_info, trans->delayed_rsv,
+>                                 trans->delayed_refs_bytes_reserved, NULL)=
+;
+>         trans->delayed_refs_bytes_reserved =3D 0;
+>  }
+> diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+> index 7d70fe486758..268a415c4f32 100644
+> --- a/fs/btrfs/transaction.h
+> +++ b/fs/btrfs/transaction.h
+> @@ -162,7 +162,8 @@ struct btrfs_trans_handle {
+>         bool in_fsync;
+>         struct btrfs_fs_info *fs_info;
+>         struct list_head new_bgs;
+> -       struct btrfs_block_rsv delayed_rsv;
+> +       struct btrfs_block_rsv *delayed_rsv;
+> +       struct btrfs_block_rsv _local_delayed_rsv;
+>         /* Extent buffers with writeback inhibited by this handle. */
+>         struct xarray writeback_inhibited_ebs;
+>  };
+> --
+> 2.53.0
 >
-> [ ... ]
->
-> > @@ -2107,6 +2108,39 @@ int btrfs_find_one_extref(struct btrfs_root *root, u64 inode_objectid,
-> >       return ret;
-> >  }
-> >
-> > +static int copy_resolved_iref_to_buf(struct btrfs_root *fs_root,
-> > +                                  struct extent_buffer *eb, char *dest,
-> > +                                  u64 parent, unsigned long name_off,
-> > +                                  u32 name_len, s64 *bytes_left)
-> > +{
-> > +     struct btrfs_fs_info *fs_info = fs_root->fs_info;
-> > +     struct fscrypt_str fname = FSTR_INIT(NULL, 0);
-> > +     int ret;
-> > +
-> > +     /* No encryption, just copy the name in. */
-> > +     if (!btrfs_fs_incompat(fs_info, ENCRYPT)) {
-> > +             *bytes_left -= name_len;
-> > +             if (*bytes_left >= 0)
-> > +                     read_extent_buffer(eb, dest + *bytes_left, name_off, name_len);
-> > +             return 0;
-> > +     }
-> > +
-> > +     ret = fscrypt_fname_alloc_buffer(BTRFS_NAME_LEN, &fname);
-> > +     if (ret)
-> > +             return ret;
-> > +
-> > +     ret = btrfs_decrypt_name(fs_root, eb, name_off, name_len, parent, &fname);
-> > +     if (ret)
-> > +             goto out;
-> > +
-> > +     *bytes_left -= fname.len;
-> > +     if (*bytes_left >= 0)
-> > +             memcpy(dest + *bytes_left, fname.name, fname.len);
-> > +out:
-> > +     fscrypt_fname_free_buffer(&fname);
-> > +     return ret;
-> > +}
-> > +
-> >  /*
-> >   * this iterates to turn a name (from iref/extref) into a full filesystem path.
-> >   * Elements of the path are separated by '/' and the path is guaranteed to be
-> > @@ -2138,10 +2172,10 @@ char *btrfs_ref_to_path(struct btrfs_root *fs_root, struct btrfs_path *path,
-> >               dest[bytes_left] = '\0';
-> >
-> >       while (1) {
-> > -             bytes_left -= name_len;
-> > -             if (bytes_left >= 0)
-> > -                     read_extent_buffer(eb, dest + bytes_left,
-> > -                                        name_off, name_len);
-> > +             ret = copy_resolved_iref_to_buf(fs_root, eb, dest, parent,
-> > +                                             name_off, name_len, &bytes_left);
-> > +             if (ret)
-> > +                     break;
-> >               if (eb != eb_in) {
-> >                       if (!path->skip_locking)
-> >                               btrfs_tree_read_unlock(eb);
->
-> Does this code leak the extent buffer when copy_resolved_iref_to_buf()
-> fails? Looking at the loop structure in btrfs_ref_to_path(), when
-> copy_resolved_iref_to_buf() returns an error and we break at line 2178,
-> the cleanup code that follows never executes:
->
->     if (eb != eb_in) {
->         if (!path->skip_locking)
->             btrfs_tree_read_unlock(eb);
->         free_extent_buffer(eb);
->     }
->
-> This can happen in subsequent iterations where eb != eb_in (the extent
-> buffer was detached from path->nodes[0] and set to NULL in the previous
-> iteration). The cleanup at the end of the function (btrfs_release_path()
-> at line 2216) cannot free eb since it's no longer in the path.
->
-> This could be triggered when decryption fails in copy_resolved_iref_to_buf()
-> due to btrfs_iget() error, fscrypt_fname_alloc_buffer() ENOMEM, or
-> fscrypt_prepare_readdir() failure on an encrypted filesystem.
->
-> Before this patch, the name copy operation (read_extent_buffer) could not
-> fail, so the cleanup always happened before any error check.
 >

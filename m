@@ -1,72 +1,177 @@
-Received: from mail.mailmag.net (mail.mailmag.net [199.192.20.237])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D1E0716F288
-	for <linux-btrfs@vger.kernel.org>; Thu, 26 Mar 2026 00:31:48 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=199.192.20.237
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 82FBAF4F1;
+	Thu, 26 Mar 2026 01:28:51 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774485110; cv=none; b=nkjRcVfPp3q9GX1M1biMHMS0ojcMyDb2zRKgY7Q06zi1fafyjVX6KayugTUnpf+cl6dBXEdiT+AwhuOx7QCHqkYUyTA+U2Ey8H0xf+nHRABQ3phbfvyLuPLCObNqBO6oSpi6iNn2UFW2+2InuQ+3Vx9LskHK98Fsy2n1mNLfVww=
+	t=1774488531; cv=none; b=PfZcJtRbXoGVAEVhBuPV/c8amRd0+d9nPDDbcTRhcSRkSlozRgxI4LJvZx1N/VrC80RHM3LZ/ocKuQPJV2arhQoYk01jYtCCA0qkqOho9eL/k0wiHSDMoc/DEqUrWTYJt3YsffIBxctROBTU7nowukEM4Y3mghA7t7ve9zuE9P4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774485110; c=relaxed/simple;
-	bh=0JbB86i4hxaJVNZAQgHhxE7w055V2Cul/YbHs+nmG6k=;
-	h=From:In-Reply-To:Content-Type:References:Date:Cc:To:MIME-Version:
-	 Message-ID:Subject; b=P0sZvwMd1Vk3Wq8D8xxvO7xTgE3pzwCBcX84yal12P0u+QSBmdkUB8zL4PKScTMhof8D3XPkydsi18GLjckRwkRuF/TGQI9dEqNIM2dJXZp+rk2vgpswmjfQsBvBCokbsm4yy8ho9iqa5BcMdKfI83L8wReo/kMegbomjkzRHls=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=mailmag.net; spf=pass smtp.mailfrom=mailmag.net; dkim=pass (2048-bit key) header.d=mailmag.net header.i=@mailmag.net header.b=oWfZA3sT; arc=none smtp.client-ip=199.192.20.237
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=mailmag.net
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=mailmag.net
+	s=arc-20240116; t=1774488531; c=relaxed/simple;
+	bh=0Cq7OMqDyz29Hy/YQIvOOTgh39yp/jjxAwDycnlq/O0=;
+	h=Date:From:To:Cc:Subject:Message-Id:In-Reply-To:References:
+	 Mime-Version:Content-Type; b=WUy6Adt/wTSA2KclWJzTRK3DBM6NvXfdRYO9O51OS3uJiN2S7VmuEBVqfV8fJKFB2cSIbxPioovUs2hkuyPWfq91a2RmVbTK4c8EEq1oxtWUObO/STRlK9n4A+qNfMA5NFkC4CyQ1uy1srPr8fUy2zIJnxggaM3wMmZZPJef4YM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=MLfhqhkz; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=mailmag.net header.i=@mailmag.net header.b="oWfZA3sT"
-Received: from [127.0.0.1] (localhost [127.0.0.1]) by localhost (Mailerdaemon) with ESMTPA id E5F93161D4C;
-	Wed, 25 Mar 2026 17:31:46 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=mailmag.net; s=dkim;
-	t=1774485107; h=from:subject:date:message-id:to:cc:mime-version:content-type:
-	 content-transfer-encoding:in-reply-to:references;
-	bh=0JbB86i4hxaJVNZAQgHhxE7w055V2Cul/YbHs+nmG6k=;
-	b=oWfZA3sTO940xsjEQLbikJ0C+h/Tw5MO6Yr7govJll+Xyo7sBOZN8jnkakXug9DiABE3d+
-	bmM5LYWeJ4QO44v9MXYYtOKfW19B8/9/ejFBgiqxR9n2+mug0F6XjH0aT/k1lyDCs7x+Ti
-	CkzxWY6BusrKm3t74BlxljyNZZfzIWdz/Hp7F1IlNs9sbmC4qhUmJCGWa2nskLRAuQqWvn
-	UIu6hYBW0NBb5bwW0hE6sn8KkggqduBLRQ2qZk3//XBXNF/dZWT3UNfgtcrbDoTo3Y4sUF
-	1qMhXSoA5x8olhvf140ktBqdOlFGIehRyYpWff4ml+CjYc09Mp2DNSWTMngVmg==
-From: "joshua" <joshua@mailmag.net>
-In-Reply-To: <032be7a912897f0cf5ee90f3e5ee0b2c690ff76c.camel@scientia.org>
-Content-Type: text/plain; charset="utf-8"
-References: <f7b7f88c6f1b94b6f09f7f54bdaa3c0ee54f60ed.camel@scientia.org>
-	 <2A0C37E0-28BD-4829-9778-AB20F4482F6D@mailmag.net> <032be7a912897f0cf5ee90f3e5ee0b2c690ff76c.camel@scientia.org>
-Date: Wed, 25 Mar 2026 17:31:46 -0700
-Cc: linux-btrfs@vger.kernel.org
-To: "Christoph Anton Mitterer" <calestyo@scientia.org>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="MLfhqhkz"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 3592AC4CEF7;
+	Thu, 26 Mar 2026 01:28:42 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1774488531;
+	bh=0Cq7OMqDyz29Hy/YQIvOOTgh39yp/jjxAwDycnlq/O0=;
+	h=Date:From:To:Cc:Subject:In-Reply-To:References:From;
+	b=MLfhqhkzsxa7tc0jHzhytzV6qchl81dHU9KAPgpYRYmOHYLzk4wblKHPtqEHyv28p
+	 Q/b1ZGVBAKVMA2DtsWIH4xs0i1VJ2p7crVWlc/njQGIq3j2rxJcz4zZlqQtGtXSKGY
+	 qE7kmn3skAAmdHpynUh6G1IcDYzRBpRJQJ2v9dHtuEYl1SHM9u79m3ODxDTtFbRHwF
+	 TrXVRIXikjQcC748T/h8YzRRuj5Is74hno4IqadGPqhCATzpJM+vXtHmT1645lImlw
+	 xbcKSEnaeY6vjDCFgor9rDZ7RPAf5TB+nN0PUncVs3G3ToCrGTMxxDR5q52eHlIdvK
+	 yL93d9yknBOTA==
+Date: Thu, 26 Mar 2026 10:28:40 +0900
+From: Masami Hiramatsu (Google) <mhiramat@kernel.org>
+To: "Vineeth Pillai (Google)" <vineeth@bitbyteword.org>
+Cc: Steven Rostedt <rostedt@goodmis.org>, Peter Zijlstra
+ <peterz@infradead.org>, Dmitry Ilvokhin <d@ilvokhin.com>, Masami Hiramatsu
+ <mhiramat@kernel.org>, Mathieu Desnoyers <mathieu.desnoyers@efficios.com>,
+ Ingo Molnar <mingo@redhat.com>, Jens Axboe <axboe@kernel.dk>,
+ io-uring@vger.kernel.org, "David S. Miller" <davem@davemloft.net>, Eric
+ Dumazet <edumazet@google.com>, Jakub Kicinski <kuba@kernel.org>, Paolo
+ Abeni <pabeni@redhat.com>, Alexei Starovoitov <ast@kernel.org>, Daniel
+ Borkmann <daniel@iogearbox.net>, Marcelo Ricardo Leitner
+ <marcelo.leitner@gmail.com>, Xin Long <lucien.xin@gmail.com>, Jon Maloy
+ <jmaloy@redhat.com>, Aaron Conole <aconole@redhat.com>, Eelco Chaudron
+ <echaudro@redhat.com>, Ilya Maximets <i.maximets@ovn.org>,
+ netdev@vger.kernel.org, bpf@vger.kernel.org, linux-sctp@vger.kernel.org,
+ tipc-discussion@lists.sourceforge.net, dev@openvswitch.org, Jiri Pirko
+ <jiri@resnulli.us>, Oded Gabbay <ogabbay@kernel.org>, Koby Elbaz
+ <koby.elbaz@intel.com>, dri-devel@lists.freedesktop.org,
+ "Rafael J. Wysocki" <rafael@kernel.org>, Viresh Kumar
+ <viresh.kumar@linaro.org>, "Gautham R. Shenoy" <gautham.shenoy@amd.com>,
+ Huang Rui <ray.huang@amd.com>, Mario Limonciello
+ <mario.limonciello@amd.com>, Len Brown <lenb@kernel.org>, Srinivas
+ Pandruvada <srinivas.pandruvada@linux.intel.com>, linux-pm@vger.kernel.org,
+ MyungJoo Ham <myungjoo.ham@samsung.com>, Kyungmin Park
+ <kyungmin.park@samsung.com>, Chanwoo Choi <cw00.choi@samsung.com>,
+ Christian =?UTF-8?B?S8O2bmln?= <christian.koenig@amd.com>, Sumit Semwal
+ <sumit.semwal@linaro.org>, linaro-mm-sig@lists.linaro.org, Eddie James
+ <eajames@linux.ibm.com>, Andrew Jeffery <andrew@codeconstruct.com.au>, Joel
+ Stanley <joel@jms.id.au>, linux-fsi@lists.ozlabs.org, David Airlie
+ <airlied@gmail.com>, Simona Vetter <simona@ffwll.ch>, Alex Deucher
+ <alexander.deucher@amd.com>, Danilo Krummrich <dakr@kernel.org>, Matthew
+ Brost <matthew.brost@intel.com>, Philipp Stanner <phasta@kernel.org>, Harry
+ Wentland <harry.wentland@amd.com>, Leo Li <sunpeng.li@amd.com>,
+ amd-gfx@lists.freedesktop.org, Jiri Kosina <jikos@kernel.org>, Benjamin
+ Tissoires <bentiss@kernel.org>, linux-input@vger.kernel.org, Wolfram Sang
+ <wsa+renesas@sang-engineering.com>, linux-i2c@vger.kernel.org, Mark Brown
+ <broonie@kernel.org>, Michael Hennerich <michael.hennerich@analog.com>,
+ Nuno =?UTF-8?B?U8Oh?= <nuno.sa@analog.com>, linux-spi@vger.kernel.org,
+ "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
+ "Martin K. Petersen" <martin.petersen@oracle.com>,
+ linux-scsi@vger.kernel.org, Chris Mason <clm@fb.com>, David Sterba
+ <dsterba@suse.com>, linux-btrfs@vger.kernel.org, Thomas Gleixner
+ <tglx@linutronix.de>, Andrew Morton <akpm@linux-foundation.org>, SeongJae
+ Park <sj@kernel.org>, linux-mm@kvack.org, Borislav Petkov <bp@alien8.de>,
+ Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
+ linux-trace-kernel@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH v2 01/19] tracepoint: Add trace_call__##name() API
+Message-Id: <20260326102840.80a270ec818fea7e000aeef4@kernel.org>
+In-Reply-To: <20260323160052.17528-2-vineeth@bitbyteword.org>
+References: <20260323160052.17528-1-vineeth@bitbyteword.org>
+	<20260323160052.17528-2-vineeth@bitbyteword.org>
+X-Mailer: Sylpheed 3.8.0beta1 (GTK+ 2.24.33; x86_64-pc-linux-gnu)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-Message-ID: <4d1ee97f-0147-b303-6a88-dcdb253bb2bc@mailmag.net>
-Subject: =?utf-8?q?Re=3A?= Btrfs progs release =?utf-8?q?6=2E19?=
-User-Agent: SOGoMail 5.12.4
-Content-Transfer-Encoding: quoted-printable
-X-Last-TLS-Session-Version: None
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
 
-On Wednesday, March 25, 2026 09:21 PDT, Christoph Anton Mitterer <cales=
-tyo@scientia.org> wrote:
-> On Tue, 2026-03-24 at 21:18 -0700, joshua wrote:
-> > For what it=E2=80=99s worth, (not much) I used --convert-to-block-g=
-roup-tree
-> > on a large fs with precious data (~10 drives, ~100Tb, Raid1 data,
-> > Raid1C3 metadata) and had no issues.
-> >=20
-> > Convert took a LONG time, but afterwards, all my data integrity
-> > checks passed, scrub passed, and mount times are approximately 1
-> > second now, compared to minutes previously.
->=20
-> Thanks for the information. How long have you been running with it?
+On Mon, 23 Mar 2026 12:00:20 -0400
+"Vineeth Pillai (Google)" <vineeth@bitbyteword.org> wrote:
 
-Don't know exactly, but it was shortly after the new Debian stable rele=
-ase.
-So probably around mid-to-late August.
+> Add trace_call__##name() as a companion to trace_##name().  When a
+> caller already guards a tracepoint with an explicit enabled check:
+> 
+>   if (trace_foo_enabled() && cond)
+>       trace_foo(args);
+> 
+> trace_foo() internally repeats the static_branch_unlikely() test, which
+> the compiler cannot fold since static branches are patched binary
+> instructions.  This results in two static-branch evaluations for every
+> guarded call site.
+> 
+> trace_call__##name() calls __do_trace_##name() directly, skipping the
+> redundant static-branch re-check.  This avoids leaking the internal
+> __do_trace_##name() symbol into call sites while still eliminating the
+> double evaluation:
+> 
+>   if (trace_foo_enabled() && cond)
+>       trace_invoke_foo(args);   /* calls __do_trace_foo() directly */
 
-I'd say a good 4-8 months at least since then, with no issues so far.
+nit: trace_call_foo() instead of trace_invoke_foo()?
 
---=20
---Joshua Villwock
+Anyway looks good to me.
 
+Acked-by: Masami Hiramatsu (Google) <mhiramat@kernel.org>
+
+
+> 
+> Three locations are updated:
+> - __DECLARE_TRACE: invoke form omits static_branch_unlikely, retains
+>   the LOCKDEP RCU-watching assertion.
+> - __DECLARE_TRACE_SYSCALL: same, plus retains might_fault().
+> - !TRACEPOINTS_ENABLED stub: empty no-op so callers compile cleanly
+>   when tracepoints are compiled out.
+> 
+> Suggested-by: Steven Rostedt <rostedt@goodmis.org>
+> Suggested-by: Peter Zijlstra <peterz@infradead.org>
+> Signed-off-by: Vineeth Pillai (Google) <vineeth@bitbyteword.org>
+> Assisted-by: Claude:claude-sonnet-4-6
+> ---
+>  include/linux/tracepoint.h | 11 +++++++++++
+>  1 file changed, 11 insertions(+)
+> 
+> diff --git a/include/linux/tracepoint.h b/include/linux/tracepoint.h
+> index 22ca1c8b54f32..ed969705341f1 100644
+> --- a/include/linux/tracepoint.h
+> +++ b/include/linux/tracepoint.h
+> @@ -294,6 +294,10 @@ static inline struct tracepoint *tracepoint_ptr_deref(tracepoint_ptr_t *p)
+>  			WARN_ONCE(!rcu_is_watching(),			\
+>  				  "RCU not watching for tracepoint");	\
+>  		}							\
+> +	}								\
+> +	static inline void trace_call__##name(proto)			\
+> +	{								\
+> +		__do_trace_##name(args);				\
+>  	}
+>  
+>  #define __DECLARE_TRACE_SYSCALL(name, proto, args, data_proto)		\
+> @@ -313,6 +317,11 @@ static inline struct tracepoint *tracepoint_ptr_deref(tracepoint_ptr_t *p)
+>  			WARN_ONCE(!rcu_is_watching(),			\
+>  				  "RCU not watching for tracepoint");	\
+>  		}							\
+> +	}								\
+> +	static inline void trace_call__##name(proto)			\
+> +	{								\
+> +		might_fault();						\
+> +		__do_trace_##name(args);				\
+>  	}
+>  
+>  /*
+> @@ -398,6 +407,8 @@ static inline struct tracepoint *tracepoint_ptr_deref(tracepoint_ptr_t *p)
+>  #define __DECLARE_TRACE_COMMON(name, proto, args, data_proto)		\
+>  	static inline void trace_##name(proto)				\
+>  	{ }								\
+> +	static inline void trace_call__##name(proto)			\
+> +	{ }								\
+>  	static inline int						\
+>  	register_trace_##name(void (*probe)(data_proto),		\
+>  			      void *data)				\
+> -- 
+> 2.53.0
+> 
+
+
+-- 
+Masami Hiramatsu (Google) <mhiramat@kernel.org>

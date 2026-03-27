@@ -1,32 +1,32 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D37B13E6383;
-	Fri, 27 Mar 2026 13:06:00 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1991FB67A;
+	Fri, 27 Mar 2026 13:06:52 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774616760; cv=none; b=LVMxLFJnZ1smLdL5f4luAd36eT7c+dpiMbpXgI+98HZxCD+6EXXZlMbL9vZL3UVb2uONm9A5txM8+GxETXe72cUgHO1dDMbmLOkThfEBoVv7BMW65xvQjAPjKTlWkKwubnJXxmOOyTU52Eq86QwxkN23qY6OFQWB5tT2+mlcBC8=
+	t=1774616813; cv=none; b=sSOKMXXZ06xt8THQuwAyCin0MdT6LNmG8rNQOTXsKVIlMDCXGzU8s6EAtsjbw/VOCvjCTN+G4Hz/u0aJ3UrqnMzs7KLsOHZ3OCO0NGW5yye7KAGyw/xcToGlcWou3ziWl6vlj33WP2foPs0ZmZt8nhSCiRgYKvP3UhWDimnsDb0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774616760; c=relaxed/simple;
-	bh=d9Up/u6razcCkBI/74+4G1ND2cTaNh5pT3UQX+rht0Y=;
+	s=arc-20240116; t=1774616813; c=relaxed/simple;
+	bh=T6zhnYK1CSxgWl26f7UE87XgwORwUJZ0zoolakMA3Cc=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=bM8UQThRsYIwJC1dMewSzlB1uxn5abG0nl0bq9EwAV3YLxVEVjFvH5+F5m3ZAFxiR3hgF/EjCqR8IMS3VmO4V/MVakpbXV/wsFAFv+SNRP/GIC+AKsxjMjsF4vCkFVQjGWBGCO1MSFEuGY3ShaimgD8+XioAYl6Nw8ECSqE5SYM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=jzLXndaw; arc=none smtp.client-ip=10.30.226.201
+	 Content-Type:Content-Disposition:In-Reply-To; b=Yhr92iSXRFBAknG2dOYXBSTfgRVwwTif4YGfgAnAP45pG72egOHJwzcqqK/mmZ+zPFeguxoc2sChzBcLEwwubTlhpOumiddKUxLFDi/gCbGe3vEYAftiQlGF56EH0GY0GkKYlWAiP18ikyw5qK7LeMh9KY1oPCPdV8rnovUj9y8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=ESs5wAPQ; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="jzLXndaw"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id E173AC19423;
-	Fri, 27 Mar 2026 13:05:59 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="ESs5wAPQ"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2916CC19423;
+	Fri, 27 Mar 2026 13:06:52 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1774616760;
-	bh=d9Up/u6razcCkBI/74+4G1ND2cTaNh5pT3UQX+rht0Y=;
+	s=k20201202; t=1774616812;
+	bh=T6zhnYK1CSxgWl26f7UE87XgwORwUJZ0zoolakMA3Cc=;
 	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=jzLXndawfLJkQValNjTETBv475Kvw4SFYaKpEkaMfFtUyVIlUSL5BSb/j9M9KpFWU
-	 kjzXid+okYLCGy2z8DBdKrN5AMamZUBP50gFVKG5jQsVlqU5koXyq4I8NabJL4PLyw
-	 rbdCO1qdXp8wI4u4Dh1BML9zKWaMXm3iJtEAZlGlGn6pp+8BbtIj0M4TcKI8QJVDRA
-	 ZssEKV+HUeH94mXoiDdXXkyOQbiMaIlK8oEd+6VuqJ3m4sSWUV2E93R4H1GBfXdKAM
-	 KhMvbaTDEVERPTAnYC0osbzS1sOTOVB4/64w2SYUhRIOC3iFGZjvQvj1tZF0i9x6q3
-	 z7H3ivtU1VeVA==
-Date: Fri, 27 Mar 2026 13:05:58 +0000
+	b=ESs5wAPQcVULuQ7S7HOjKjH8K2FBszktECzFfHQQXJ0+q/smu1H3g3rioWCecJWCC
+	 fbRmqDxo8x3gNaTs7qh/dsuYs+wkC+8NzGF8a7lmkDNi8mH/GP057TD/jiDv0EwBZ6
+	 gNCncafuwfUhUX6FPMSqCs9odJp+RPrVHoB4sV5hfxuqPmgW8bd5D3C0F719cuYK9G
+	 cD/v5R+gEIiL97io5O8wIFlnHDiwTjDEPk3KJ4UAh+KP9G09J8oOqCilEAMDvI5hu+
+	 zuWoBsxH1T58iVn4s68sOXe9gCG7612GZRvzjS4o0nmHdqMPYAx07pvA54PE1njAm0
+	 A818CiAVQGBiQ==
+Date: Fri, 27 Mar 2026 13:06:50 +0000
 From: "Lorenzo Stoakes (Oracle)" <ljs@kernel.org>
 To: Zi Yan <ziy@nvidia.com>
 Cc: "Matthew Wilcox (Oracle)" <willy@infradead.org>, 
@@ -40,11 +40,11 @@ Cc: "Matthew Wilcox (Oracle)" <willy@infradead.org>,
 	Suren Baghdasaryan <surenb@google.com>, Michal Hocko <mhocko@suse.com>, Shuah Khan <shuah@kernel.org>, 
 	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
 	linux-mm@kvack.org, linux-kselftest@vger.kernel.org
-Subject: Re: [PATCH v1 09/10] selftests/mm: remove READ_ONLY_THP_FOR_FS in
- khugepaged
-Message-ID: <4e00d7a8-0504-44aa-ac8a-6a2269228525@lucifer.local>
+Subject: Re: [PATCH v1 10/10] selftests/mm: remove READ_ONLY_THP_FOR_FS from
+ comments in guard-regions
+Message-ID: <3f59afdd-1f55-43a7-a390-6160beac1a16@lucifer.local>
 References: <20260327014255.2058916-1-ziy@nvidia.com>
- <20260327014255.2058916-10-ziy@nvidia.com>
+ <20260327014255.2058916-11-ziy@nvidia.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -53,37 +53,51 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20260327014255.2058916-10-ziy@nvidia.com>
+In-Reply-To: <20260327014255.2058916-11-ziy@nvidia.com>
 
-On Thu, Mar 26, 2026 at 09:42:54PM -0400, Zi Yan wrote:
-> Change the requirement to a file system with large folio support and the
-> supported order needs to include PMD_ORDER.
+On Thu, Mar 26, 2026 at 09:42:55PM -0400, Zi Yan wrote:
+> Any file system with large folio support and the supported orders include
+> PMD_ORDER can be used.
 >
 > Signed-off-by: Zi Yan <ziy@nvidia.com>
 
-LGTM, so:
+Thanks :) Wondered if you'd fix these up :) So:
 
 Reviewed-by: Lorenzo Stoakes (Oracle) <ljs@kernel.org>
 
+Cheers, Lorenzo
+
 > ---
->  tools/testing/selftests/mm/khugepaged.c | 4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
+>  tools/testing/selftests/mm/guard-regions.c | 9 +++++----
+>  1 file changed, 5 insertions(+), 4 deletions(-)
 >
-> diff --git a/tools/testing/selftests/mm/khugepaged.c b/tools/testing/selftests/mm/khugepaged.c
-> index 3fe7ef04ac62..bdcdd31beb1e 100644
-> --- a/tools/testing/selftests/mm/khugepaged.c
-> +++ b/tools/testing/selftests/mm/khugepaged.c
-> @@ -1086,8 +1086,8 @@ static void usage(void)
->  	fprintf(stderr, "\t<context>\t: [all|khugepaged|madvise]\n");
->  	fprintf(stderr, "\t<mem_type>\t: [all|anon|file|shmem]\n");
->  	fprintf(stderr, "\n\t\"file,all\" mem_type requires [dir] argument\n");
-> -	fprintf(stderr, "\n\t\"file,all\" mem_type requires kernel built with\n");
-> -	fprintf(stderr,	"\tCONFIG_READ_ONLY_THP_FOR_FS=y\n");
-> +	fprintf(stderr, "\n\t\"file,all\" mem_type requires a file system\n");
-> +	fprintf(stderr,	"\twith large folio support (order >= PMD order)\n");
->  	fprintf(stderr, "\n\tif [dir] is a (sub)directory of a tmpfs mount, tmpfs must be\n");
->  	fprintf(stderr,	"\tmounted with huge=advise option for khugepaged tests to work\n");
->  	fprintf(stderr,	"\n\tSupported Options:\n");
+> diff --git a/tools/testing/selftests/mm/guard-regions.c b/tools/testing/selftests/mm/guard-regions.c
+> index 48e8b1539be3..13e77e48b6ef 100644
+> --- a/tools/testing/selftests/mm/guard-regions.c
+> +++ b/tools/testing/selftests/mm/guard-regions.c
+> @@ -2205,7 +2205,7 @@ TEST_F(guard_regions, collapse)
+>
+>  	/*
+>  	 * We must close and re-open local-file backed as read-only for
+> -	 * CONFIG_READ_ONLY_THP_FOR_FS to work.
+> +	 * MADV_COLLAPSE to work.
+>  	 */
+>  	if (variant->backing == LOCAL_FILE_BACKED) {
+>  		ASSERT_EQ(close(self->fd), 0);
+> @@ -2237,9 +2237,10 @@ TEST_F(guard_regions, collapse)
+>  	/*
+>  	 * Now collapse the entire region. This should fail in all cases.
+>  	 *
+> -	 * The madvise() call will also fail if CONFIG_READ_ONLY_THP_FOR_FS is
+> -	 * not set for the local file case, but we can't differentiate whether
+> -	 * this occurred or if the collapse was rightly rejected.
+> +	 * The madvise() call will also fail if the file system does not support
+> +	 * large folio or the supported orders do not include PMD_ORDER for the
+> +	 * local file case, but we can't differentiate whether this occurred or
+> +	 * if the collapse was rightly rejected.
+>  	 */
+>  	EXPECT_NE(madvise(ptr, size, MADV_COLLAPSE), 0);
+>
 > --
 > 2.43.0
 >

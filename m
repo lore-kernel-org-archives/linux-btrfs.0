@@ -1,35 +1,35 @@
 Received: from bombadil.infradead.org (bombadil.infradead.org [198.137.202.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 374723A1E8C;
-	Fri, 27 Mar 2026 06:22:35 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8B6753845B3;
+	Fri, 27 Mar 2026 06:22:43 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.137.202.133
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774592560; cv=none; b=ns841s4P81L6YoUOe58hy6iQrgfPcL2eYbXbnamO5lgFSRqdavmHnMQv1yu/B8LpNnPGoRyvgeLut4NKdxk61DfMayy9Xejw4YtXwKHjIeGvzmo78lw7IPfeWPiP0tejOwnTsObl4sHVgDH/822rRVjj7aaD+e9yv8czNDSwNDw=
+	t=1774592564; cv=none; b=Z5jf5yfBOWU4QxUgviJktlN3W0Jej1VRxzEABJ5wb5Pz8hfMKF05+8DgY7quT8XjTFsZlAT4C4WROxqSAGprtxwx78twOcbo9LNFDsoj4u19Fi0sfujM89pps8OjxRNwouNoD1ieH/WY8wSszdkZHlBbGUChvtTyFwMVX3n7774=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774592560; c=relaxed/simple;
-	bh=CDmmxvk9JPMhpbd6xfJrPDcSVbMabxDzK/RgR3wBAx0=;
+	s=arc-20240116; t=1774592564; c=relaxed/simple;
+	bh=om2iIuLVI+ZKfPr5xxBqSGSaj6Ljs933ovIOqv8ndaU=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=TaXNY35R8YayztANcLv2ip+M49/H1mlIZBduXv8Fb7tIvc8P7hLsc4iyBFY+vGXfaCEc0OeK8/MUHRUCEwT0cmk5ONLBerFkOxTjtemvzRTh73r6AJRFcbHi/shrg2pFu616Qw5YkjMsWot8vBzczDiz5duw21HZ0Xb4xuhqVmY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=2tcvXMcP; arc=none smtp.client-ip=198.137.202.133
+	 MIME-Version; b=X0ZhP6Tdt1YgrShYoZqzQDnzurpMVRhy6O7tUbUQdlgKjrNqXG+ZYvx0LJ5bB1/KRshb2ULze9ouzAkbKL18BsZlw3DBxMW6Hdda6UqyzvG2GPSTqLgejIUDs7iNrwSP9/N9IQlNpt29dvBahgGW7P9Vxfafq1ithUJdv17OQ/k=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=toImowzz; arc=none smtp.client-ip=198.137.202.133
 Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de
 Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="2tcvXMcP"
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="toImowzz"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
 	d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
 	MIME-Version:References:In-Reply-To:Message-ID:Date:Subject:Cc:To:From:Sender
 	:Reply-To:Content-Type:Content-ID:Content-Description;
-	bh=kGB12FsjrPNedpZLlnKEpALQH6AOTzK6HiV2Z1pgiSc=; b=2tcvXMcP+YLX5rpqWqCOa8vLg/
-	nAhEJN3fNlFJDSs6mPkcQ4SRBaZjqj6OsHCNnBC6lOM260lFYNbMdIZ3YxJ3JfA5WoCKc1dDjrQ5Y
-	m52mhG1A3mSJn31eyGWky193qSLFCs4VPe601Qi9o4EtkTpb+kaiNodszxeeFB2vAVWJ7YpNvKtgl
-	W9dJWdVvT9CN6NKRf3Iv3k3TUvqMqgIWPQ2/EqsOhM76MSxzmTR5usEfnTh4fMiRVYqo8CkrtyJGq
-	RxZUm5Fc1pGWqYxb3o9Omu/BxBAYGwGqECEz33Wh/nmI+3ZP2zdBlxdA1dMpiYmmrN5R4gyi0oykK
-	b47LWWMg==;
+	bh=cXd+P/yafdPCZRxsWFTFtmngTaIOvIFzm+fNmrl5LSg=; b=toImowzzR5sLK/N2cm1GTQnCuz
+	cqd3IBoMjy8bknASMsi0zs6jR1J56F50BT+smBt/KaBYtUqovBddx5CccNXPmXVaW1iYcbLWHNCY4
+	Z8cTUhg27wuxSs/uhXM9MbfT8A85RxDSlvYKfga+ymlWGXWqOEbLHv5Froc4HoQqLSl/nH+wld/Xs
+	OM0mwyquJPzE2ekySLFLcfV6jS8COclLUS/oYG2aiBlDXsF7Q8/AoTym4vGK273g+W2isnTqbxWGB
+	qjXy5TrW20XtDeOW/9Q7EqhZ5wftMbQDkav1MRCZV/JQmC+ECMyqVjcika6O0kGXDvDo/9KwaH0Bp
+	uyaNRlSg==;
 Received: from 2a02-8389-2341-5b80-d601-7564-c2e0-491c.cable.dynamic.v6.surfer.at ([2a02:8389:2341:5b80:d601:7564:c2e0:491c] helo=localhost)
 	by bombadil.infradead.org with esmtpsa (Exim 4.98.2 #2 (Red Hat Linux))
-	id 1w60aH-00000006nPG-15NE;
-	Fri, 27 Mar 2026 06:22:17 +0000
+	id 1w60aT-00000006nXa-1A1l;
+	Fri, 27 Mar 2026 06:22:29 +0000
 From: Christoph Hellwig <hch@lst.de>
 To: Andrew Morton <akpm@linux-foundation.org>
 Cc: Richard Henderson <richard.henderson@linaro.org>,
@@ -88,9 +88,9 @@ Cc: Richard Henderson <richard.henderson@linaro.org>,
 	linux-btrfs@vger.kernel.org,
 	linux-arch@vger.kernel.org,
 	linux-raid@vger.kernel.org
-Subject: [PATCH 21/28] xor: make xor.ko self-contained in lib/raid/
-Date: Fri, 27 Mar 2026 07:16:53 +0100
-Message-ID: <20260327061704.3707577-22-hch@lst.de>
+Subject: [PATCH 22/28] xor: add a better public API
+Date: Fri, 27 Mar 2026 07:16:54 +0100
+Message-ID: <20260327061704.3707577-23-hch@lst.de>
 X-Mailer: git-send-email 2.47.3
 In-Reply-To: <20260327061704.3707577-1-hch@lst.de>
 References: <20260327061704.3707577-1-hch@lst.de>
@@ -103,754 +103,73 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 
-Move the asm/xor.h headers to lib/raid/xor/$(SRCARCH)/xor_arch.h and
-include/linux/raid/xor_impl.h to lib/raid/xor/xor_impl.h so that the
-xor.ko module implementation is self-contained in lib/raid/.
+xor_blocks is very annoying to use, because it is limited to 4 + 1
+sources / destinations, has an odd argument order and is completely
+undocumented.
 
-As this remove the asm-generic mechanism a new kconfig symbol is
-added to indicate that a architecture-specific implementations
-exists, and xor_arch.h should be included.
+Lift the code that loops around it from btrfs and async_tx/async_xor into
+common code under the name xor_gen and properly document it.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- arch/um/include/asm/xor.h                      |  8 --------
- include/asm-generic/Kbuild                     |  1 -
- include/asm-generic/xor.h                      | 11 -----------
- lib/raid/Kconfig                               | 15 +++++++++++++++
- lib/raid/xor/Makefile                          |  6 ++++++
- lib/raid/xor/alpha/xor.c                       |  4 ++--
- .../asm/xor.h => lib/raid/xor/alpha/xor_arch.h |  2 --
- lib/raid/xor/arm/xor-neon-glue.c               |  4 ++--
- lib/raid/xor/arm/xor-neon.c                    |  2 +-
- lib/raid/xor/arm/xor.c                         |  4 ++--
- .../asm/xor.h => lib/raid/xor/arm/xor_arch.h   |  2 --
- lib/raid/xor/arm64/xor-neon-glue.c             |  4 ++--
- lib/raid/xor/arm64/xor-neon.c                  |  4 ++--
- .../asm/xor.h => lib/raid/xor/arm64/xor_arch.h |  3 ---
- .../xor.h => lib/raid/xor/loongarch/xor_arch.h |  7 -------
- lib/raid/xor/loongarch/xor_simd_glue.c         |  4 ++--
- .../xor.h => lib/raid/xor/powerpc/xor_arch.h   |  7 -------
- lib/raid/xor/powerpc/xor_vmx_glue.c            |  4 ++--
- lib/raid/xor/riscv/xor-glue.c                  |  4 ++--
- .../asm/xor.h => lib/raid/xor/riscv/xor_arch.h |  2 --
- lib/raid/xor/s390/xor.c                        |  4 ++--
- .../asm/xor.h => lib/raid/xor/s390/xor_arch.h  |  6 ------
- lib/raid/xor/sparc/xor-sparc32.c               |  4 ++--
- lib/raid/xor/sparc/xor-sparc64-glue.c          |  4 ++--
- .../asm/xor.h => lib/raid/xor/sparc/xor_arch.h |  9 ---------
- lib/raid/xor/um/xor_arch.h                     |  2 ++
- lib/raid/xor/x86/xor-avx.c                     |  4 ++--
- lib/raid/xor/x86/xor-mmx.c                     |  4 ++--
- lib/raid/xor/x86/xor-sse.c                     |  4 ++--
- .../asm/xor.h => lib/raid/xor/x86/xor_arch.h   |  7 -------
- lib/raid/xor/xor-32regs-prefetch.c             |  3 +--
- lib/raid/xor/xor-32regs.c                      |  3 +--
- lib/raid/xor/xor-8regs-prefetch.c              |  3 +--
- lib/raid/xor/xor-8regs.c                       |  3 +--
- lib/raid/xor/xor-core.c                        | 18 +++++++++++-------
- .../linux/raid => lib/raid/xor}/xor_impl.h     |  6 ++++++
- 36 files changed, 73 insertions(+), 109 deletions(-)
- delete mode 100644 arch/um/include/asm/xor.h
- delete mode 100644 include/asm-generic/xor.h
- rename arch/alpha/include/asm/xor.h => lib/raid/xor/alpha/xor_arch.h (90%)
- rename arch/arm/include/asm/xor.h => lib/raid/xor/arm/xor_arch.h (87%)
- rename arch/arm64/include/asm/xor.h => lib/raid/xor/arm64/xor_arch.h (89%)
- rename arch/loongarch/include/asm/xor.h => lib/raid/xor/loongarch/xor_arch.h (85%)
- rename arch/powerpc/include/asm/xor.h => lib/raid/xor/powerpc/xor_arch.h (77%)
- rename arch/riscv/include/asm/xor.h => lib/raid/xor/riscv/xor_arch.h (84%)
- rename arch/s390/include/asm/xor.h => lib/raid/xor/s390/xor_arch.h (71%)
- rename arch/sparc/include/asm/xor.h => lib/raid/xor/sparc/xor_arch.h (81%)
- create mode 100644 lib/raid/xor/um/xor_arch.h
- rename arch/x86/include/asm/xor.h => lib/raid/xor/x86/xor_arch.h (89%)
- rename {include/linux/raid => lib/raid/xor}/xor_impl.h (80%)
+ include/linux/raid/xor.h |  2 ++
+ lib/raid/xor/xor-core.c  | 32 ++++++++++++++++++++++++++++++++
+ 2 files changed, 34 insertions(+)
 
-diff --git a/arch/um/include/asm/xor.h b/arch/um/include/asm/xor.h
-deleted file mode 100644
-index 99e5c7e1f475..000000000000
---- a/arch/um/include/asm/xor.h
-+++ /dev/null
-@@ -1,8 +0,0 @@
--/* SPDX-License-Identifier: GPL-2.0 */
--#ifndef _ASM_UM_XOR_H
--#define _ASM_UM_XOR_H
--
--#include <asm/cpufeature.h>
--#include <../../x86/include/asm/xor.h>
--
--#endif
-diff --git a/include/asm-generic/Kbuild b/include/asm-generic/Kbuild
-index 9aff61e7b8f2..2c53a1e0b760 100644
---- a/include/asm-generic/Kbuild
-+++ b/include/asm-generic/Kbuild
-@@ -65,4 +65,3 @@ mandatory-y += vermagic.h
- mandatory-y += vga.h
- mandatory-y += video.h
- mandatory-y += word-at-a-time.h
--mandatory-y += xor.h
-diff --git a/include/asm-generic/xor.h b/include/asm-generic/xor.h
-deleted file mode 100644
-index fc151fdc45ab..000000000000
---- a/include/asm-generic/xor.h
-+++ /dev/null
-@@ -1,11 +0,0 @@
--/* SPDX-License-Identifier: GPL-2.0-or-later */
--/*
-- * include/asm-generic/xor.h
-- *
-- * Generic optimized RAID-5 checksumming functions.
-- */
--
--extern struct xor_block_template xor_block_8regs;
--extern struct xor_block_template xor_block_32regs;
--extern struct xor_block_template xor_block_8regs_p;
--extern struct xor_block_template xor_block_32regs_p;
-diff --git a/lib/raid/Kconfig b/lib/raid/Kconfig
-index 01b73a1c303f..81cb3f9c0a7b 100644
---- a/lib/raid/Kconfig
-+++ b/lib/raid/Kconfig
-@@ -2,3 +2,18 @@
+diff --git a/include/linux/raid/xor.h b/include/linux/raid/xor.h
+index 02bda8d99534..6d9a39fd85dd 100644
+--- a/include/linux/raid/xor.h
++++ b/include/linux/raid/xor.h
+@@ -7,4 +7,6 @@
+ extern void xor_blocks(unsigned int count, unsigned int bytes,
+ 	void *dest, void **srcs);
  
- config XOR_BLOCKS
- 	tristate
++void xor_gen(void *dest, void **srcs, unsigned int src_cnt, unsigned int bytes);
 +
-+# selected by architectures that provide an optimized XOR implementation
-+config XOR_BLOCKS_ARCH
-+	depends on XOR_BLOCKS
-+	default y if ALPHA
-+	default y if ARM
-+	default y if ARM64
-+	default y if CPU_HAS_LSX		# loongarch
-+	default y if ALTIVEC			# powerpc
-+	default y if RISCV_ISA_V
-+	default y if SPARC
-+	default y if S390
-+	default y if X86_32
-+	default y if X86_64
-+	bool
-diff --git a/lib/raid/xor/Makefile b/lib/raid/xor/Makefile
-index 05aca96041b3..df55823c4d82 100644
---- a/lib/raid/xor/Makefile
-+++ b/lib/raid/xor/Makefile
-@@ -1,5 +1,7 @@
- # SPDX-License-Identifier: GPL-2.0
- 
-+ccflags-y			+= -I $(src)
-+
- obj-$(CONFIG_XOR_BLOCKS)	+= xor.o
- 
- xor-y				+= xor-core.o
-@@ -8,6 +10,10 @@ xor-y				+= xor-32regs.o
- xor-y				+= xor-8regs-prefetch.o
- xor-y				+= xor-32regs-prefetch.o
- 
-+ifeq ($(CONFIG_XOR_BLOCKS_ARCH),y)
-+CFLAGS_xor-core.o		+= -I$(src)/$(SRCARCH)
-+endif
-+
- xor-$(CONFIG_ALPHA)		+= alpha/xor.o
- xor-$(CONFIG_ARM)		+= arm/xor.o
- ifeq ($(CONFIG_ARM),y)
-diff --git a/lib/raid/xor/alpha/xor.c b/lib/raid/xor/alpha/xor.c
-index 0964ac420604..90694cc47395 100644
---- a/lib/raid/xor/alpha/xor.c
-+++ b/lib/raid/xor/alpha/xor.c
-@@ -2,8 +2,8 @@
- /*
-  * Optimized XOR parity functions for alpha EV5 and EV6
-  */
--#include <linux/raid/xor_impl.h>
--#include <asm/xor.h>
-+#include "xor_impl.h"
-+#include "xor_arch.h"
- 
- extern void
- xor_alpha_2(unsigned long bytes, unsigned long * __restrict p1,
-diff --git a/arch/alpha/include/asm/xor.h b/lib/raid/xor/alpha/xor_arch.h
-similarity index 90%
-rename from arch/alpha/include/asm/xor.h
-rename to lib/raid/xor/alpha/xor_arch.h
-index e517be577a09..0dcfea578a48 100644
---- a/arch/alpha/include/asm/xor.h
-+++ b/lib/raid/xor/alpha/xor_arch.h
-@@ -1,7 +1,6 @@
- /* SPDX-License-Identifier: GPL-2.0-or-later */
- 
- #include <asm/special_insns.h>
--#include <asm-generic/xor.h>
- 
- extern struct xor_block_template xor_block_alpha;
- extern struct xor_block_template xor_block_alpha_prefetch;
-@@ -10,7 +9,6 @@ extern struct xor_block_template xor_block_alpha_prefetch;
-  * Force the use of alpha_prefetch if EV6, as it is significantly faster in the
-  * cold cache case.
-  */
--#define arch_xor_init arch_xor_init
- static __always_inline void __init arch_xor_init(void)
- {
- 	if (implver() == IMPLVER_EV6) {
-diff --git a/lib/raid/xor/arm/xor-neon-glue.c b/lib/raid/xor/arm/xor-neon-glue.c
-index c7b162b383a2..7afd6294464b 100644
---- a/lib/raid/xor/arm/xor-neon-glue.c
-+++ b/lib/raid/xor/arm/xor-neon-glue.c
-@@ -2,8 +2,8 @@
- /*
-  *  Copyright (C) 2001 Russell King
-  */
--#include <linux/raid/xor_impl.h>
--#include <asm/xor.h>
-+#include "xor_impl.h"
-+#include "xor_arch.h"
- 
- extern struct xor_block_template const xor_block_neon_inner;
- 
-diff --git a/lib/raid/xor/arm/xor-neon.c b/lib/raid/xor/arm/xor-neon.c
-index c9d4378b0f0e..806a42c5952c 100644
---- a/lib/raid/xor/arm/xor-neon.c
-+++ b/lib/raid/xor/arm/xor-neon.c
-@@ -3,7 +3,7 @@
-  * Copyright (C) 2013 Linaro Ltd <ard.biesheuvel@linaro.org>
-  */
- 
--#include <linux/raid/xor_impl.h>
-+#include "xor_impl.h"
- 
- #ifndef __ARM_NEON__
- #error You should compile this file with '-march=armv7-a -mfloat-abi=softfp -mfpu=neon'
-diff --git a/lib/raid/xor/arm/xor.c b/lib/raid/xor/arm/xor.c
-index 2263341dbbcd..5bd5f048bbe9 100644
---- a/lib/raid/xor/arm/xor.c
-+++ b/lib/raid/xor/arm/xor.c
-@@ -2,8 +2,8 @@
- /*
-  *  Copyright (C) 2001 Russell King
-  */
--#include <linux/raid/xor_impl.h>
--#include <asm/xor.h>
-+#include "xor_impl.h"
-+#include "xor_arch.h"
- 
- #define __XOR(a1, a2) a1 ^= a2
- 
-diff --git a/arch/arm/include/asm/xor.h b/lib/raid/xor/arm/xor_arch.h
-similarity index 87%
-rename from arch/arm/include/asm/xor.h
-rename to lib/raid/xor/arm/xor_arch.h
-index 989c55872ef6..5a7eedb48fbb 100644
---- a/arch/arm/include/asm/xor.h
-+++ b/lib/raid/xor/arm/xor_arch.h
-@@ -2,13 +2,11 @@
- /*
-  *  Copyright (C) 2001 Russell King
-  */
--#include <asm-generic/xor.h>
- #include <asm/neon.h>
- 
- extern struct xor_block_template xor_block_arm4regs;
- extern struct xor_block_template xor_block_neon;
- 
--#define arch_xor_init arch_xor_init
- static __always_inline void __init arch_xor_init(void)
- {
- 	xor_register(&xor_block_arm4regs);
-diff --git a/lib/raid/xor/arm64/xor-neon-glue.c b/lib/raid/xor/arm64/xor-neon-glue.c
-index 08c3e3573388..3db0a318cf5b 100644
---- a/lib/raid/xor/arm64/xor-neon-glue.c
-+++ b/lib/raid/xor/arm64/xor-neon-glue.c
-@@ -4,9 +4,9 @@
-  * Copyright (C) 2018,Tianjin KYLIN Information Technology Co., Ltd.
-  */
- 
--#include <linux/raid/xor_impl.h>
- #include <asm/simd.h>
--#include <asm/xor.h>
-+#include "xor_impl.h"
-+#include "xor_arch.h"
- #include "xor-neon.h"
- 
- #define XOR_TEMPLATE(_name)						\
-diff --git a/lib/raid/xor/arm64/xor-neon.c b/lib/raid/xor/arm64/xor-neon.c
-index 61194c292917..61f00c4fee49 100644
---- a/lib/raid/xor/arm64/xor-neon.c
-+++ b/lib/raid/xor/arm64/xor-neon.c
-@@ -4,10 +4,10 @@
-  * Copyright (C) 2018,Tianjin KYLIN Information Technology Co., Ltd.
-  */
- 
--#include <linux/raid/xor_impl.h>
- #include <linux/cache.h>
- #include <asm/neon-intrinsics.h>
--#include <asm/xor.h>
-+#include "xor_impl.h"
-+#include "xor_arch.h"
- #include "xor-neon.h"
- 
- void __xor_neon_2(unsigned long bytes, unsigned long * __restrict p1,
-diff --git a/arch/arm64/include/asm/xor.h b/lib/raid/xor/arm64/xor_arch.h
-similarity index 89%
-rename from arch/arm64/include/asm/xor.h
-rename to lib/raid/xor/arm64/xor_arch.h
-index 4782c760bcac..5dbb40319501 100644
---- a/arch/arm64/include/asm/xor.h
-+++ b/lib/raid/xor/arm64/xor_arch.h
-@@ -3,14 +3,11 @@
-  * Authors: Jackie Liu <liuyun01@kylinos.cn>
-  * Copyright (C) 2018,Tianjin KYLIN Information Technology Co., Ltd.
-  */
--
--#include <asm-generic/xor.h>
- #include <asm/simd.h>
- 
- extern struct xor_block_template xor_block_neon;
- extern struct xor_block_template xor_block_eor3;
- 
--#define arch_xor_init arch_xor_init
- static __always_inline void __init arch_xor_init(void)
- {
- 	xor_register(&xor_block_8regs);
-diff --git a/arch/loongarch/include/asm/xor.h b/lib/raid/xor/loongarch/xor_arch.h
-similarity index 85%
-rename from arch/loongarch/include/asm/xor.h
-rename to lib/raid/xor/loongarch/xor_arch.h
-index 7e32f72f8b03..fe5e8244fd0e 100644
---- a/arch/loongarch/include/asm/xor.h
-+++ b/lib/raid/xor/loongarch/xor_arch.h
-@@ -2,9 +2,6 @@
- /*
-  * Copyright (C) 2023 WANG Xuerui <git@xen0n.name>
-  */
--#ifndef _ASM_LOONGARCH_XOR_H
--#define _ASM_LOONGARCH_XOR_H
--
- #include <asm/cpu-features.h>
- 
- /*
-@@ -15,12 +12,10 @@
-  * the scalar ones, maybe for errata or micro-op reasons. It may be
-  * appropriate to revisit this after one or two more uarch generations.
-  */
--#include <asm-generic/xor.h>
- 
- extern struct xor_block_template xor_block_lsx;
- extern struct xor_block_template xor_block_lasx;
- 
--#define arch_xor_init arch_xor_init
- static __always_inline void __init arch_xor_init(void)
- {
- 	xor_register(&xor_block_8regs);
-@@ -36,5 +31,3 @@ static __always_inline void __init arch_xor_init(void)
- 		xor_register(&xor_block_lasx);
- #endif
- }
--
--#endif /* _ASM_LOONGARCH_XOR_H */
-diff --git a/lib/raid/xor/loongarch/xor_simd_glue.c b/lib/raid/xor/loongarch/xor_simd_glue.c
-index 11fa3b47ba83..b387aa0213b4 100644
---- a/lib/raid/xor/loongarch/xor_simd_glue.c
-+++ b/lib/raid/xor/loongarch/xor_simd_glue.c
-@@ -6,9 +6,9 @@
-  */
- 
- #include <linux/sched.h>
--#include <linux/raid/xor_impl.h>
- #include <asm/fpu.h>
--#include <asm/xor.h>
-+#include "xor_impl.h"
-+#include "xor_arch.h"
- #include "xor_simd.h"
- 
- #define MAKE_XOR_GLUE_2(flavor)							\
-diff --git a/arch/powerpc/include/asm/xor.h b/lib/raid/xor/powerpc/xor_arch.h
-similarity index 77%
-rename from arch/powerpc/include/asm/xor.h
-rename to lib/raid/xor/powerpc/xor_arch.h
-index 3293ac87181c..3b00a4a2fd67 100644
---- a/arch/powerpc/include/asm/xor.h
-+++ b/lib/raid/xor/powerpc/xor_arch.h
-@@ -5,15 +5,10 @@
-  *
-  * Author: Anton Blanchard <anton@au.ibm.com>
-  */
--#ifndef _ASM_POWERPC_XOR_H
--#define _ASM_POWERPC_XOR_H
--
- #include <asm/cpu_has_feature.h>
--#include <asm-generic/xor.h>
- 
- extern struct xor_block_template xor_block_altivec;
- 
--#define arch_xor_init arch_xor_init
- static __always_inline void __init arch_xor_init(void)
- {
- 	xor_register(&xor_block_8regs);
-@@ -25,5 +20,3 @@ static __always_inline void __init arch_xor_init(void)
- 		xor_register(&xor_block_altivec);
- #endif
- }
--
--#endif /* _ASM_POWERPC_XOR_H */
-diff --git a/lib/raid/xor/powerpc/xor_vmx_glue.c b/lib/raid/xor/powerpc/xor_vmx_glue.c
-index c41e38340700..56e99ddfb64f 100644
---- a/lib/raid/xor/powerpc/xor_vmx_glue.c
-+++ b/lib/raid/xor/powerpc/xor_vmx_glue.c
-@@ -7,9 +7,9 @@
- 
- #include <linux/preempt.h>
- #include <linux/sched.h>
--#include <linux/raid/xor_impl.h>
- #include <asm/switch_to.h>
--#include <asm/xor.h>
-+#include "xor_impl.h"
-+#include "xor_arch.h"
- #include "xor_vmx.h"
- 
- static void xor_altivec_2(unsigned long bytes, unsigned long * __restrict p1,
-diff --git a/lib/raid/xor/riscv/xor-glue.c b/lib/raid/xor/riscv/xor-glue.c
-index 11666a4b6b68..060e5f22ebcc 100644
---- a/lib/raid/xor/riscv/xor-glue.c
-+++ b/lib/raid/xor/riscv/xor-glue.c
-@@ -3,11 +3,11 @@
-  * Copyright (C) 2021 SiFive
-  */
- 
--#include <linux/raid/xor_impl.h>
- #include <asm/vector.h>
- #include <asm/switch_to.h>
- #include <asm/asm-prototypes.h>
--#include <asm/xor.h>
-+#include "xor_impl.h"
-+#include "xor_arch.h"
- 
- static void xor_vector_2(unsigned long bytes, unsigned long *__restrict p1,
- 			 const unsigned long *__restrict p2)
-diff --git a/arch/riscv/include/asm/xor.h b/lib/raid/xor/riscv/xor_arch.h
-similarity index 84%
-rename from arch/riscv/include/asm/xor.h
-rename to lib/raid/xor/riscv/xor_arch.h
-index 614d9209d078..9240857d760b 100644
---- a/arch/riscv/include/asm/xor.h
-+++ b/lib/raid/xor/riscv/xor_arch.h
-@@ -3,11 +3,9 @@
-  * Copyright (C) 2021 SiFive
-  */
- #include <asm/vector.h>
--#include <asm-generic/xor.h>
- 
- extern struct xor_block_template xor_block_rvv;
- 
--#define arch_xor_init arch_xor_init
- static __always_inline void __init arch_xor_init(void)
- {
- 	xor_register(&xor_block_8regs);
-diff --git a/lib/raid/xor/s390/xor.c b/lib/raid/xor/s390/xor.c
-index acbd268adfc8..c28cb56fec92 100644
---- a/lib/raid/xor/s390/xor.c
-+++ b/lib/raid/xor/s390/xor.c
-@@ -7,8 +7,8 @@
-  */
- 
- #include <linux/types.h>
--#include <linux/raid/xor_impl.h>
--#include <asm/xor.h>
-+#include "xor_impl.h"
-+#include "xor_arch.h"
- 
- static void xor_xc_2(unsigned long bytes, unsigned long * __restrict p1,
- 		     const unsigned long * __restrict p2)
-diff --git a/arch/s390/include/asm/xor.h b/lib/raid/xor/s390/xor_arch.h
-similarity index 71%
-rename from arch/s390/include/asm/xor.h
-rename to lib/raid/xor/s390/xor_arch.h
-index 4e2233f64da9..4a233ed2b97a 100644
---- a/arch/s390/include/asm/xor.h
-+++ b/lib/raid/xor/s390/xor_arch.h
-@@ -5,15 +5,9 @@
-  * Copyright IBM Corp. 2016
-  * Author(s): Martin Schwidefsky <schwidefsky@de.ibm.com>
-  */
--#ifndef _ASM_S390_XOR_H
--#define _ASM_S390_XOR_H
--
- extern struct xor_block_template xor_block_xc;
- 
--#define arch_xor_init arch_xor_init
- static __always_inline void __init arch_xor_init(void)
- {
- 	xor_force(&xor_block_xc);
- }
--
--#endif /* _ASM_S390_XOR_H */
-diff --git a/lib/raid/xor/sparc/xor-sparc32.c b/lib/raid/xor/sparc/xor-sparc32.c
-index b65a75a6e59d..307c4a84f535 100644
---- a/lib/raid/xor/sparc/xor-sparc32.c
-+++ b/lib/raid/xor/sparc/xor-sparc32.c
-@@ -5,8 +5,8 @@
-  *
-  * Copyright (C) 1999 Jakub Jelinek (jj@ultra.linux.cz)
-  */
--#include <linux/raid/xor_impl.h>
--#include <asm/xor.h>
-+#include "xor_impl.h"
-+#include "xor_arch.h"
- 
- static void
- sparc_2(unsigned long bytes, unsigned long * __restrict p1,
-diff --git a/lib/raid/xor/sparc/xor-sparc64-glue.c b/lib/raid/xor/sparc/xor-sparc64-glue.c
-index 3c67c8c3a0e8..5f90c2460b54 100644
---- a/lib/raid/xor/sparc/xor-sparc64-glue.c
-+++ b/lib/raid/xor/sparc/xor-sparc64-glue.c
-@@ -8,8 +8,8 @@
-  * Copyright (C) 2006 David S. Miller <davem@davemloft.net>
-  */
- 
--#include <linux/raid/xor_impl.h>
--#include <asm/xor.h>
-+#include "xor_impl.h"
-+#include "xor_arch.h"
- 
- void xor_vis_2(unsigned long bytes, unsigned long * __restrict p1,
- 	       const unsigned long * __restrict p2);
-diff --git a/arch/sparc/include/asm/xor.h b/lib/raid/xor/sparc/xor_arch.h
-similarity index 81%
-rename from arch/sparc/include/asm/xor.h
-rename to lib/raid/xor/sparc/xor_arch.h
-index f923b009fc24..af288abe4e91 100644
---- a/arch/sparc/include/asm/xor.h
-+++ b/lib/raid/xor/sparc/xor_arch.h
-@@ -3,16 +3,12 @@
-  * Copyright (C) 1997, 1999 Jakub Jelinek (jj@ultra.linux.cz)
-  * Copyright (C) 2006 David S. Miller <davem@davemloft.net>
-  */
--#ifndef ___ASM_SPARC_XOR_H
--#define ___ASM_SPARC_XOR_H
--
- #if defined(__sparc__) && defined(__arch64__)
- #include <asm/spitfire.h>
- 
- extern struct xor_block_template xor_block_VIS;
- extern struct xor_block_template xor_block_niagara;
- 
--#define arch_xor_init arch_xor_init
- static __always_inline void __init arch_xor_init(void)
- {
- 	/* Force VIS for everything except Niagara.  */
-@@ -28,12 +24,8 @@ static __always_inline void __init arch_xor_init(void)
- }
- #else /* sparc64 */
- 
--/* For grins, also test the generic routines.  */
--#include <asm-generic/xor.h>
--
- extern struct xor_block_template xor_block_SPARC;
- 
--#define arch_xor_init arch_xor_init
- static __always_inline void __init arch_xor_init(void)
- {
- 	xor_register(&xor_block_8regs);
-@@ -41,4 +33,3 @@ static __always_inline void __init arch_xor_init(void)
- 	xor_register(&xor_block_SPARC);
- }
- #endif /* !sparc64 */
--#endif /* ___ASM_SPARC_XOR_H */
-diff --git a/lib/raid/xor/um/xor_arch.h b/lib/raid/xor/um/xor_arch.h
-new file mode 100644
-index 000000000000..a33e57a26c5e
---- /dev/null
-+++ b/lib/raid/xor/um/xor_arch.h
-@@ -0,0 +1,2 @@
-+/* SPDX-License-Identifier: GPL-2.0 */
-+#include <../x86/xor_arch.h>
-diff --git a/lib/raid/xor/x86/xor-avx.c b/lib/raid/xor/x86/xor-avx.c
-index b49cb5199e70..d411efa1ff43 100644
---- a/lib/raid/xor/x86/xor-avx.c
-+++ b/lib/raid/xor/x86/xor-avx.c
-@@ -8,9 +8,9 @@
-  * Based on Ingo Molnar and Zach Brown's respective MMX and SSE routines
-  */
- #include <linux/compiler.h>
--#include <linux/raid/xor_impl.h>
- #include <asm/fpu/api.h>
--#include <asm/xor.h>
-+#include "xor_impl.h"
-+#include "xor_arch.h"
- 
- #define BLOCK4(i) \
- 		BLOCK(32 * i, 0) \
-diff --git a/lib/raid/xor/x86/xor-mmx.c b/lib/raid/xor/x86/xor-mmx.c
-index cf0fafea33b7..e48c58f92874 100644
---- a/lib/raid/xor/x86/xor-mmx.c
-+++ b/lib/raid/xor/x86/xor-mmx.c
-@@ -4,9 +4,9 @@
-  *
-  * Copyright (C) 1998 Ingo Molnar.
-  */
--#include <linux/raid/xor_impl.h>
- #include <asm/fpu/api.h>
--#include <asm/xor.h>
-+#include "xor_impl.h"
-+#include "xor_arch.h"
- 
- #define LD(x, y)	"       movq   8*("#x")(%1), %%mm"#y"   ;\n"
- #define ST(x, y)	"       movq %%mm"#y",   8*("#x")(%1)   ;\n"
-diff --git a/lib/raid/xor/x86/xor-sse.c b/lib/raid/xor/x86/xor-sse.c
-index 0e727ced8b00..5993ed688c15 100644
---- a/lib/raid/xor/x86/xor-sse.c
-+++ b/lib/raid/xor/x86/xor-sse.c
-@@ -12,9 +12,9 @@
-  * x86-64 changes / gcc fixes from Andi Kleen.
-  * Copyright 2002 Andi Kleen, SuSE Labs.
-  */
--#include <linux/raid/xor_impl.h>
- #include <asm/fpu/api.h>
--#include <asm/xor.h>
-+#include "xor_impl.h"
-+#include "xor_arch.h"
- 
- #ifdef CONFIG_X86_32
- /* reduce register pressure */
-diff --git a/arch/x86/include/asm/xor.h b/lib/raid/xor/x86/xor_arch.h
-similarity index 89%
-rename from arch/x86/include/asm/xor.h
-rename to lib/raid/xor/x86/xor_arch.h
-index d1aab8275908..99fe85a213c6 100644
---- a/arch/x86/include/asm/xor.h
-+++ b/lib/raid/xor/x86/xor_arch.h
-@@ -1,9 +1,5 @@
- /* SPDX-License-Identifier: GPL-2.0-or-later */
--#ifndef _ASM_X86_XOR_H
--#define _ASM_X86_XOR_H
--
- #include <asm/cpufeature.h>
--#include <asm-generic/xor.h>
- 
- extern struct xor_block_template xor_block_pII_mmx;
- extern struct xor_block_template xor_block_p5_mmx;
-@@ -20,7 +16,6 @@ extern struct xor_block_template xor_block_avx;
-  *
-  * 32-bit without MMX can fall back to the generic routines.
-  */
--#define arch_xor_init arch_xor_init
- static __always_inline void __init arch_xor_init(void)
- {
- 	if (boot_cpu_has(X86_FEATURE_AVX) &&
-@@ -39,5 +34,3 @@ static __always_inline void __init arch_xor_init(void)
- 		xor_register(&xor_block_32regs_p);
- 	}
- }
--
--#endif /* _ASM_X86_XOR_H */
-diff --git a/lib/raid/xor/xor-32regs-prefetch.c b/lib/raid/xor/xor-32regs-prefetch.c
-index 8666c287f777..2856a8e50cb8 100644
---- a/lib/raid/xor/xor-32regs-prefetch.c
-+++ b/lib/raid/xor/xor-32regs-prefetch.c
-@@ -1,7 +1,6 @@
- // SPDX-License-Identifier: GPL-2.0-or-later
- #include <linux/prefetch.h>
--#include <linux/raid/xor_impl.h>
--#include <asm-generic/xor.h>
-+#include "xor_impl.h"
- 
- static void
- xor_32regs_p_2(unsigned long bytes, unsigned long * __restrict p1,
-diff --git a/lib/raid/xor/xor-32regs.c b/lib/raid/xor/xor-32regs.c
-index 58d4fac43eb4..cc44d64032fa 100644
---- a/lib/raid/xor/xor-32regs.c
-+++ b/lib/raid/xor/xor-32regs.c
-@@ -1,6 +1,5 @@
- // SPDX-License-Identifier: GPL-2.0-or-later
--#include <linux/raid/xor_impl.h>
--#include <asm-generic/xor.h>
-+#include "xor_impl.h"
- 
- static void
- xor_32regs_2(unsigned long bytes, unsigned long * __restrict p1,
-diff --git a/lib/raid/xor/xor-8regs-prefetch.c b/lib/raid/xor/xor-8regs-prefetch.c
-index 67061e35a0a6..1d53aec50d27 100644
---- a/lib/raid/xor/xor-8regs-prefetch.c
-+++ b/lib/raid/xor/xor-8regs-prefetch.c
-@@ -1,7 +1,6 @@
- // SPDX-License-Identifier: GPL-2.0-or-later
- #include <linux/prefetch.h>
--#include <linux/raid/xor_impl.h>
--#include <asm-generic/xor.h>
-+#include "xor_impl.h"
- 
- static void
- xor_8regs_p_2(unsigned long bytes, unsigned long * __restrict p1,
-diff --git a/lib/raid/xor/xor-8regs.c b/lib/raid/xor/xor-8regs.c
-index 769f796ab2cf..72a44e898c55 100644
---- a/lib/raid/xor/xor-8regs.c
-+++ b/lib/raid/xor/xor-8regs.c
-@@ -1,6 +1,5 @@
- // SPDX-License-Identifier: GPL-2.0-or-later
--#include <linux/raid/xor_impl.h>
--#include <asm-generic/xor.h>
-+#include "xor_impl.h"
- 
- static void
- xor_8regs_2(unsigned long bytes, unsigned long * __restrict p1,
+ #endif /* _XOR_H */
 diff --git a/lib/raid/xor/xor-core.c b/lib/raid/xor/xor-core.c
-index 93608b5fece9..de1d2899490a 100644
+index de1d2899490a..07e06db32731 100644
 --- a/lib/raid/xor/xor-core.c
 +++ b/lib/raid/xor/xor-core.c
-@@ -9,10 +9,9 @@
- #include <linux/module.h>
- #include <linux/gfp.h>
- #include <linux/raid/xor.h>
--#include <linux/raid/xor_impl.h>
- #include <linux/jiffies.h>
- #include <linux/preempt.h>
--#include <asm/xor.h>
-+#include "xor_impl.h"
- 
- /* The xor routines to use.  */
- static struct xor_block_template *active_template;
-@@ -141,16 +140,21 @@ static int __init calibrate_xor_blocks(void)
- 	return 0;
+@@ -46,6 +46,38 @@ xor_blocks(unsigned int src_count, unsigned int bytes, void *dest, void **srcs)
  }
+ EXPORT_SYMBOL(xor_blocks);
  
--static int __init xor_init(void)
--{
--#ifdef arch_xor_init
--	arch_xor_init();
-+#ifdef CONFIG_XOR_BLOCKS_ARCH
-+#include "xor_arch.h" /* $SRCARCH/xor_arch.h */
- #else
-+static void __init arch_xor_init(void)
++/**
++ * xor_gen - generate RAID-style XOR information
++ * @dest:	destination vector
++ * @srcs:	source vectors
++ * @src_cnt:	number of source vectors
++ * @bytes:	length in bytes of each vector
++ *
++ * Performs bit-wise XOR operation into @dest for each of the @src_cnt vectors
++ * in @srcs for a length of @bytes bytes.  @src_cnt must be non-zero, and the
++ * memory pointed to by @dest and each member of @srcs must be at least 64-byte
++ * aligned.  @bytes must be non-zero and a multiple of 512.
++ *
++ * Note: for typical RAID uses, @dest either needs to be zeroed, or filled with
++ * the first disk, which then needs to be removed from @srcs.
++ */
++void xor_gen(void *dest, void **srcs, unsigned int src_cnt, unsigned int bytes)
 +{
- 	xor_register(&xor_block_8regs);
- 	xor_register(&xor_block_8regs_p);
- 	xor_register(&xor_block_32regs);
- 	xor_register(&xor_block_32regs_p);
--#endif
++	unsigned int src_off = 0;
++
++	WARN_ON_ONCE(bytes & 511);
++
++	while (src_cnt > 0) {
++		unsigned int this_cnt = min(src_cnt, MAX_XOR_BLOCKS);
++
++		xor_blocks(this_cnt, bytes, dest, srcs + src_off);
++
++		src_cnt -= this_cnt;
++		src_off += this_cnt;
++	}
 +}
-+#endif /* CONFIG_XOR_BLOCKS_ARCH */
++EXPORT_SYMBOL(xor_gen);
 +
-+static int __init xor_init(void)
-+{
-+	arch_xor_init();
- 
- 	/*
- 	 * If this arch/cpu has a short-circuited selection, don't loop through
-diff --git a/include/linux/raid/xor_impl.h b/lib/raid/xor/xor_impl.h
-similarity index 80%
-rename from include/linux/raid/xor_impl.h
-rename to lib/raid/xor/xor_impl.h
-index 6ed4c445ab24..44b6c99e2093 100644
---- a/include/linux/raid/xor_impl.h
-+++ b/lib/raid/xor/xor_impl.h
-@@ -24,6 +24,12 @@ struct xor_block_template {
- 		     const unsigned long * __restrict);
- };
- 
-+/* generic implementations */
-+extern struct xor_block_template xor_block_8regs;
-+extern struct xor_block_template xor_block_32regs;
-+extern struct xor_block_template xor_block_8regs_p;
-+extern struct xor_block_template xor_block_32regs_p;
-+
- void __init xor_register(struct xor_block_template *tmpl);
- void __init xor_force(struct xor_block_template *tmpl);
- 
+ /* Set of all registered templates.  */
+ static struct xor_block_template *__initdata template_list;
+ static bool __initdata xor_forced = false;
 -- 
 2.47.3
 

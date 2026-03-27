@@ -1,29 +1,29 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id ACCCC3FBEDB;
-	Fri, 27 Mar 2026 17:49:55 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8F4A73FE368;
+	Fri, 27 Mar 2026 17:51:29 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774633795; cv=none; b=M4MOVrf481rDbj9MOcoG8j9aSjzuXXaS+0aMCeCy+Red8sjU2JbBgYxm6vHMUmVsmhA5usDAj7bP6Z+uJhN2pbx+su4MwP8h5y5a1oMx1YoCDlEksSU4mlGSCjHgSv3ioX8mN6GAGOpi9Fa6WZUNnLXpp8sThL+o5oGWRDl1g9M=
+	t=1774633889; cv=none; b=qUl0lhQYiZNPf4q9V0a28Ai4zVAa9NhgutYTk+RV6fNyxGsAb6C8k+tp1FjefCvtn3d+Tx+49GrkMA+4Y5C3CMJ47WInoHobZ6GhoGFtQ8xRmzfyn0hffP5e5aLdr0qotHWpc6akhikA5es/D8cvuWhMvwz0KslzICLa8LGTeBk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774633795; c=relaxed/simple;
-	bh=fvV+eUnldLQbPdva1eQggufDFhZTLIQCCYJJa9ryFGE=;
+	s=arc-20240116; t=1774633889; c=relaxed/simple;
+	bh=ut3C5Oibhu02lZBarl5gtLhPMmjWlwAPsAficDpw9oU=;
 	h=Date:From:To:Cc:Subject:Message-Id:In-Reply-To:References:
-	 Mime-Version:Content-Type; b=MUdLyO0QQVemGfaTE/oNSw9kLFNobPGBdqGr7BbTkEVWVaYsCAikhYX8V4QAkZpMXwlpq+rV6GdnlFWhnhGMzWXnqNk0/3KvOkqI8Bi7yx1UXo/UTSPDvof2qhjCUf94YIZ0QPGd7R1il7W2Pp2kmwegDLQjXXseSclkf8ite1Q=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (1024-bit key) header.d=linux-foundation.org header.i=@linux-foundation.org header.b=Xukem7pw; arc=none smtp.client-ip=10.30.226.201
+	 Mime-Version:Content-Type; b=L/ypn8uEVlhBbYyTZCWBaskHKV25xUD6CYFd5TOk11oR/L2ElQC3Y3Sm0wn9iFwjl+tynTZgenBF409FCzx8K+sGZSnXcJZIO1fPCm5IhJ7sONKbA5a8f5+a14whZ+pgaUN+boCxHNRvt4BpX4Zrpzifbte1cbmgNV39wWdn3J8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (1024-bit key) header.d=linux-foundation.org header.i=@linux-foundation.org header.b=tDB0MgLH; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linux-foundation.org header.i=@linux-foundation.org header.b="Xukem7pw"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id D99ECC19423;
-	Fri, 27 Mar 2026 17:49:53 +0000 (UTC)
+	dkim=pass (1024-bit key) header.d=linux-foundation.org header.i=@linux-foundation.org header.b="tDB0MgLH"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id AF370C19423;
+	Fri, 27 Mar 2026 17:51:27 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linux-foundation.org;
-	s=korg; t=1774633795;
-	bh=fvV+eUnldLQbPdva1eQggufDFhZTLIQCCYJJa9ryFGE=;
+	s=korg; t=1774633889;
+	bh=ut3C5Oibhu02lZBarl5gtLhPMmjWlwAPsAficDpw9oU=;
 	h=Date:From:To:Cc:Subject:In-Reply-To:References:From;
-	b=Xukem7pwvHhzUBxAXhQ9NUugrvHjO83NuPglCq+AOxMC7jcj5knJ1iWiLSA3qMyPR
-	 XN8WgX2Ez7pjNH1P4TD8C2yL80THz5zSN5msmXHHVRwpdESPm9OS0FEtlzvOIU70KT
-	 MQ9zvWTqdnQj4+10/Ab7Ocs563lJZMmYcKdIZNc0=
-Date: Fri, 27 Mar 2026 10:49:53 -0700
+	b=tDB0MgLHz5uhVLWEaFReNs99y5u/YY74Iml33dpseoOBD0A8VJRFFQYeU9FvqxCuP
+	 nyqAUmYCNk1T74zARlT1dAb3bA7OmvIjh9mNwh7l1JQENaDWThwxkEsSuzSKK+Qc4+
+	 obJODpvlMAd7z/q0AZNLNKGt9R6dV77UeQmuFqzk=
+Date: Fri, 27 Mar 2026 10:51:27 -0700
 From: Andrew Morton <akpm@linux-foundation.org>
 To: Christoph Hellwig <hch@lst.de>
 Cc: Richard Henderson <richard.henderson@linaro.org>, Matt Turner
@@ -56,10 +56,11 @@ Cc: Richard Henderson <richard.henderson@linaro.org>, Matt Turner
  sparclinux@vger.kernel.org, linux-um@lists.infradead.org,
  linux-crypto@vger.kernel.org, linux-btrfs@vger.kernel.org,
  linux-arch@vger.kernel.org, linux-raid@vger.kernel.org
-Subject: Re: cleanup the RAID5 XOR library v4
-Message-Id: <20260327104953.b91d7a4a71b1c1cd202e5a1c@linux-foundation.org>
-In-Reply-To: <20260327061704.3707577-1-hch@lst.de>
+Subject: Re: [PATCH 23/28] xor: add a better public API
+Message-Id: <20260327105127.1a1f3895adb14681141a0a30@linux-foundation.org>
+In-Reply-To: <20260327061704.3707577-24-hch@lst.de>
 References: <20260327061704.3707577-1-hch@lst.de>
+	<20260327061704.3707577-24-hch@lst.de>
 X-Mailer: Sylpheed 3.8.0beta1 (GTK+ 2.24.33; x86_64-pc-linux-gnu)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
@@ -70,22 +71,16 @@ Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
 
-On Fri, 27 Mar 2026 07:16:32 +0100 Christoph Hellwig <hch@lst.de> wrote:
+On Fri, 27 Mar 2026 07:16:55 +0100 Christoph Hellwig <hch@lst.de> wrote:
 
-> the XOR library used for the RAID5 parity is a bit of a mess right now.
-> The main file sits in crypto/ despite not being cryptography and not
-> using the crypto API, with the generic implementations sitting in
-> include/asm-generic and the arch implementations sitting in an asm/
-> header in theory.  The latter doesn't work for many cases, so
-> architectures often build the code directly into the core kernel, or
-> create another module for the architecture code.
+> xor_blocks is very annoying to use, because it is limited to 4 + 1
+> sources / destinations, has an odd argument order and is completely
+> undocumented.
 > 
-> Changes this to a single module in lib/ that also contains the
-> architecture optimizations, similar to the library work Eric Biggers
-> has done for the CRC and crypto libraries later.  After that it changes
-> to better calling conventions that allow for smarter architecture
-> implementations (although none is contained here yet), and uses
-> static_call to avoid indirection function call overhead.
+> Lift the code that loops around it from btrfs and async_tx/async_xor into
+> common code under the name xor_gen and properly document it.
 
-Thanks, I've updated mm.git's mm-nonmm-unstable to this version of the
-patchset.
+Something funny here - two different patches with the same title and
+changelog.
+
+If you can send over new versions of title&changelog I can paste that in.

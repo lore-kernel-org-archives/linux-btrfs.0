@@ -1,35 +1,35 @@
 Received: from bombadil.infradead.org (bombadil.infradead.org [198.137.202.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 57A2F37F009;
-	Fri, 27 Mar 2026 06:19:52 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3B97637F739;
+	Fri, 27 Mar 2026 06:20:04 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.137.202.133
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774592396; cv=none; b=TCXRb7nUSuINadXgBHs/9uJDwFWn51PmIyVNJJP08zMoEzAQHZD8dXr/WujO+gx8r6Rxl+7rySD6K7kr5A+emW0H8EVSIiCJaCOVxkZHUfiwE+gxwe6BLw10R/zqcS84/R5w3HPrWUsNucs2XTHxLsvFzF/C80GYIJ/+lJZRn9s=
+	t=1774592409; cv=none; b=rmHK0dwXIYNkmXkJmZX+pNODhendU+o7Y94TP919Kbm9iRmuPhykfG3ZZt6hWKCNWhY/s0DhY1tUu43MWvJShoO3VWOcVqbc/Qr/WJSyuHNQYCxKi8MPKhZfrAUfJrXNynEMbWFUHWajpEAnCoH2zizpZPU4XXzYXWZRvuC5U6o=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774592396; c=relaxed/simple;
-	bh=DTJ32nJRuvLsoD7EPPRYriqNKPMsrwImpNIexHED7r0=;
+	s=arc-20240116; t=1774592409; c=relaxed/simple;
+	bh=q0gK460L0jREGvWTvOGa/l7d9BSq1AWVCLa+hSeMfM8=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=l7RvyQ2N+nE2jUGsAX0FF1xniopwPcBdecoPSLSIN0fXNfT6gVQlUr0Lco5Hr5tDIE5MmvGJcJFgjDI7Q+d3rnjlZpmmCR9NoKTF9/Fz9wFxfk9bXi0U63wF2/JNyq6BAy1p4EatUUipJsS33nhLna5hoT5XibM74Ry8LRa7tdU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=yfEkCSHT; arc=none smtp.client-ip=198.137.202.133
+	 MIME-Version; b=Ac1dChKTvI6YUAfCjLWkCxBDekp/wZq0375PQmRlAZNYMUrBo3igrKE4AMUs0Q2kYp1PA/vuvFre9WVQu+tb2T15ih2fcytAS6WMsr8LulWBSc/6Tjntiz6+MzMtn52DF0jlUrblTHYfJhlQ3PvNIoTpaRToHNToaUdJkUjmfOQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=AobrlijQ; arc=none smtp.client-ip=198.137.202.133
 Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de
 Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="yfEkCSHT"
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="AobrlijQ"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
 	d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
 	MIME-Version:References:In-Reply-To:Message-ID:Date:Subject:Cc:To:From:Sender
 	:Reply-To:Content-Type:Content-ID:Content-Description;
-	bh=zgZY5gyqgBp4tTU2Jxd3jfKktDHbBXxS4d4BaNz441Q=; b=yfEkCSHTfbfsn1TRlEEjIzQ671
-	fmhW9TrRTbbNWW34B1vT8HHQwt0Mmf+h8UelpWfN14UEk/zNIZ/KYci0hy4yXbjJqBnnszm05OFE0
-	Wu+BMvbSQhpya8AK/Wr4HTZjEH9bOEN9A2hNq3oeKH9S3bLUvqCy9yrtrdWEXdUkiju072eK58638
-	8etpGdUZxepINIklmgyJJSubCenFljSmazSGOprSr3JdOYRQxBPBdpEJ6DZwrsjb8CC72D9NWar/O
-	sfEtzCe+AtxFJ14atSNRYlUj9sv+OQsyqBc5ZKkmMYF0qNHMSiAoWQAQ4tStDGxzMsu1oX7wMSnIK
-	GN62Az/Q==;
+	bh=16iHVwlcEuXCxr3ygbaZQxjphufSruBj8SyX5330Ihs=; b=AobrlijQ56fLAd4ilWD6+FhQtv
+	H1p4IGpjuM3eHHxBgat8Nez/HU812HWESIKDXAt09lr7skDa9YoEIZmzD9O85Pc6MwTq/OcDRe+9R
+	Fg9lADaXTl/s76laNZJU5Tx/CX2GEzIRKniDS2CIShA0X444ota3EWURNQqWPv7gwEnC0yR54kelM
+	wCx6l8i8QutE1R3ZHDkQRAofzGotIiZkwNI4WqDrEBNrgwhE2pFRIuto1p1oeRuNePhnR5ch6WKkm
+	KYZQxaMTMbjBWdllC1OgfdgwEEgbk/W75ze1OW0KoukKeivTlAaYMgWO9ZSPUWTHfEnS+yF7Uz6ZK
+	RYYV6eBQ==;
 Received: from 2a02-8389-2341-5b80-d601-7564-c2e0-491c.cable.dynamic.v6.surfer.at ([2a02:8389:2341:5b80:d601:7564:c2e0:491c] helo=localhost)
 	by bombadil.infradead.org with esmtpsa (Exim 4.98.2 #2 (Red Hat Linux))
-	id 1w60Xf-00000006lQY-1pyV;
-	Fri, 27 Mar 2026 06:19:35 +0000
+	id 1w60Xr-00000006lYl-22x1;
+	Fri, 27 Mar 2026 06:19:47 +0000
 From: Christoph Hellwig <hch@lst.de>
 To: Andrew Morton <akpm@linux-foundation.org>
 Cc: Richard Henderson <richard.henderson@linaro.org>,
@@ -88,9 +88,9 @@ Cc: Richard Henderson <richard.henderson@linaro.org>,
 	linux-btrfs@vger.kernel.org,
 	linux-arch@vger.kernel.org,
 	linux-raid@vger.kernel.org
-Subject: [PATCH 08/28] xor: split xor.h
-Date: Fri, 27 Mar 2026 07:16:40 +0100
-Message-ID: <20260327061704.3707577-9-hch@lst.de>
+Subject: [PATCH 09/28] xor: remove macro abuse for XOR implementation registrations
+Date: Fri, 27 Mar 2026 07:16:41 +0100
+Message-ID: <20260327061704.3707577-10-hch@lst.de>
 X-Mailer: git-send-email 2.47.3
 In-Reply-To: <20260327061704.3707577-1-hch@lst.de>
 References: <20260327061704.3707577-1-hch@lst.de>
@@ -103,131 +103,583 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 
-Keep xor.h for the public API, and split the struct xor_block_template
-definition that is only needed by the xor.ko core and
-architecture-specific optimizations into a separate xor_impl.h header.
+Drop the pretty confusing historic XOR_TRY_TEMPLATES and
+XOR_SELECT_TEMPLATE, and instead let the architectures provide a
+arch_xor_init that calls either xor_register to register candidates
+or xor_force to force a specific implementation.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- arch/arm/lib/xor-neon.c       |  1 +
- arch/arm64/lib/xor-neon.c     |  1 +
- arch/s390/lib/xor.c           |  2 +-
- include/linux/raid/xor.h      | 22 +---------------------
- include/linux/raid/xor_impl.h | 25 +++++++++++++++++++++++++
- lib/raid/xor/xor-core.c       |  1 +
- 6 files changed, 30 insertions(+), 22 deletions(-)
- create mode 100644 include/linux/raid/xor_impl.h
+ arch/alpha/include/asm/xor.h     | 29 ++++++++++++----------
+ arch/arm/include/asm/xor.h       | 25 +++++++++----------
+ arch/arm64/include/asm/xor.h     | 18 +++++++-------
+ arch/loongarch/include/asm/xor.h | 42 ++++++++++++--------------------
+ arch/powerpc/include/asm/xor.h   | 31 ++++++++++-------------
+ arch/riscv/include/asm/xor.h     | 19 ++++++++-------
+ arch/s390/include/asm/xor.h      | 12 ++++-----
+ arch/sparc/include/asm/xor_32.h  | 14 +++++------
+ arch/sparc/include/asm/xor_64.h  | 31 +++++++++++------------
+ arch/x86/include/asm/xor.h       |  3 ---
+ arch/x86/include/asm/xor_32.h    | 36 ++++++++++++++-------------
+ arch/x86/include/asm/xor_64.h    | 18 ++++++++------
+ arch/x86/include/asm/xor_avx.h   |  9 -------
+ include/asm-generic/xor.h        |  8 ------
+ include/linux/raid/xor_impl.h    |  5 ++++
+ lib/raid/xor/xor-core.c          | 41 +++++++++++++++++++++++--------
+ 16 files changed, 168 insertions(+), 173 deletions(-)
 
-diff --git a/arch/arm/lib/xor-neon.c b/arch/arm/lib/xor-neon.c
-index cf57fca97908..282980b9bf2a 100644
---- a/arch/arm/lib/xor-neon.c
-+++ b/arch/arm/lib/xor-neon.c
-@@ -6,6 +6,7 @@
-  */
+diff --git a/arch/alpha/include/asm/xor.h b/arch/alpha/include/asm/xor.h
+index e0de0c233ab9..4c8085711df1 100644
+--- a/arch/alpha/include/asm/xor.h
++++ b/arch/alpha/include/asm/xor.h
+@@ -851,16 +851,19 @@ static struct xor_block_template xor_block_alpha_prefetch = {
+ /* For grins, also test the generic routines.  */
+ #include <asm-generic/xor.h>
  
- #include <linux/raid/xor.h>
-+#include <linux/raid/xor_impl.h>
- #include <linux/module.h>
- 
- MODULE_DESCRIPTION("NEON accelerated XOR implementation");
-diff --git a/arch/arm64/lib/xor-neon.c b/arch/arm64/lib/xor-neon.c
-index 8fffebfa17b2..351aba92d932 100644
---- a/arch/arm64/lib/xor-neon.c
-+++ b/arch/arm64/lib/xor-neon.c
-@@ -7,6 +7,7 @@
-  */
- 
- #include <linux/raid/xor.h>
-+#include <linux/raid/xor_impl.h>
- #include <linux/module.h>
- #include <asm/neon-intrinsics.h>
- 
-diff --git a/arch/s390/lib/xor.c b/arch/s390/lib/xor.c
-index 5363e4c2462d..3bbe21b40e66 100644
---- a/arch/s390/lib/xor.c
-+++ b/arch/s390/lib/xor.c
-@@ -8,7 +8,7 @@
- 
- #include <linux/types.h>
- #include <linux/export.h>
--#include <linux/raid/xor.h>
-+#include <linux/raid/xor_impl.h>
- #include <asm/xor.h>
- 
- static void xor_xc_2(unsigned long bytes, unsigned long * __restrict p1,
-diff --git a/include/linux/raid/xor.h b/include/linux/raid/xor.h
-index 51b811b62322..02bda8d99534 100644
---- a/include/linux/raid/xor.h
-+++ b/include/linux/raid/xor.h
-@@ -7,24 +7,4 @@
- extern void xor_blocks(unsigned int count, unsigned int bytes,
- 	void *dest, void **srcs);
- 
--struct xor_block_template {
--        struct xor_block_template *next;
--        const char *name;
--        int speed;
--	void (*do_2)(unsigned long, unsigned long * __restrict,
--		     const unsigned long * __restrict);
--	void (*do_3)(unsigned long, unsigned long * __restrict,
--		     const unsigned long * __restrict,
--		     const unsigned long * __restrict);
--	void (*do_4)(unsigned long, unsigned long * __restrict,
--		     const unsigned long * __restrict,
--		     const unsigned long * __restrict,
--		     const unsigned long * __restrict);
--	void (*do_5)(unsigned long, unsigned long * __restrict,
--		     const unsigned long * __restrict,
--		     const unsigned long * __restrict,
--		     const unsigned long * __restrict,
--		     const unsigned long * __restrict);
--};
+-#undef XOR_TRY_TEMPLATES
+-#define XOR_TRY_TEMPLATES				\
+-	do {						\
+-		xor_speed(&xor_block_8regs);		\
+-		xor_speed(&xor_block_32regs);		\
+-		xor_speed(&xor_block_alpha);		\
+-		xor_speed(&xor_block_alpha_prefetch);	\
+-	} while (0)
 -
+-/* Force the use of alpha_prefetch if EV6, as it is significantly
+-   faster in the cold cache case.  */
+-#define XOR_SELECT_TEMPLATE(FASTEST) \
+-	(implver() == IMPLVER_EV6 ? &xor_block_alpha_prefetch : FASTEST)
++/*
++ * Force the use of alpha_prefetch if EV6, as it is significantly faster in the
++ * cold cache case.
++ */
++#define arch_xor_init arch_xor_init
++static __always_inline void __init arch_xor_init(void)
++{
++	if (implver() == IMPLVER_EV6) {
++		xor_force(&xor_block_alpha_prefetch);
++	} else {
++		xor_register(&xor_block_8regs);
++		xor_register(&xor_block_32regs);
++		xor_register(&xor_block_alpha);
++		xor_register(&xor_block_alpha_prefetch);
++	}
++}
+diff --git a/arch/arm/include/asm/xor.h b/arch/arm/include/asm/xor.h
+index bca2a6514746..b2dcd49186e2 100644
+--- a/arch/arm/include/asm/xor.h
++++ b/arch/arm/include/asm/xor.h
+@@ -138,15 +138,6 @@ static struct xor_block_template xor_block_arm4regs = {
+ 	.do_5	= xor_arm4regs_5,
+ };
+ 
+-#undef XOR_TRY_TEMPLATES
+-#define XOR_TRY_TEMPLATES			\
+-	do {					\
+-		xor_speed(&xor_block_arm4regs);	\
+-		xor_speed(&xor_block_8regs);	\
+-		xor_speed(&xor_block_32regs);	\
+-		NEON_TEMPLATES;			\
+-	} while (0)
+-
+ #ifdef CONFIG_KERNEL_MODE_NEON
+ 
+ extern struct xor_block_template const xor_block_neon_inner;
+@@ -201,8 +192,16 @@ static struct xor_block_template xor_block_neon = {
+ 	.do_5	= xor_neon_5
+ };
+ 
+-#define NEON_TEMPLATES	\
+-	do { if (cpu_has_neon()) xor_speed(&xor_block_neon); } while (0)
+-#else
+-#define NEON_TEMPLATES
++#endif /* CONFIG_KERNEL_MODE_NEON */
++
++#define arch_xor_init arch_xor_init
++static __always_inline void __init arch_xor_init(void)
++{
++	xor_register(&xor_block_arm4regs);
++	xor_register(&xor_block_8regs);
++	xor_register(&xor_block_32regs);
++#ifdef CONFIG_KERNEL_MODE_NEON
++	if (cpu_has_neon())
++		xor_register(&xor_block_neon);
+ #endif
++}
+diff --git a/arch/arm64/include/asm/xor.h b/arch/arm64/include/asm/xor.h
+index bb7428d4ebc6..3cee1eb86371 100644
+--- a/arch/arm64/include/asm/xor.h
++++ b/arch/arm64/include/asm/xor.h
+@@ -60,14 +60,14 @@ static struct xor_block_template xor_block_arm64 = {
+ 	.do_4   = xor_neon_4,
+ 	.do_5	= xor_neon_5
+ };
+-#undef XOR_TRY_TEMPLATES
+-#define XOR_TRY_TEMPLATES           \
+-	do {        \
+-		xor_speed(&xor_block_8regs);    \
+-		xor_speed(&xor_block_32regs);    \
+-		if (cpu_has_neon()) { \
+-			xor_speed(&xor_block_arm64);\
+-		} \
+-	} while (0)
++
++#define arch_xor_init arch_xor_init
++static __always_inline void __init arch_xor_init(void)
++{
++	xor_register(&xor_block_8regs);
++	xor_register(&xor_block_32regs);
++	if (cpu_has_neon())
++		xor_register(&xor_block_arm64);
++}
+ 
+ #endif /* ! CONFIG_KERNEL_MODE_NEON */
+diff --git a/arch/loongarch/include/asm/xor.h b/arch/loongarch/include/asm/xor.h
+index 12467fffee46..d17c0e3b047f 100644
+--- a/arch/loongarch/include/asm/xor.h
++++ b/arch/loongarch/include/asm/xor.h
+@@ -16,14 +16,6 @@ static struct xor_block_template xor_block_lsx = {
+ 	.do_4 = xor_lsx_4,
+ 	.do_5 = xor_lsx_5,
+ };
+-
+-#define XOR_SPEED_LSX()					\
+-	do {						\
+-		if (cpu_has_lsx)			\
+-			xor_speed(&xor_block_lsx);	\
+-	} while (0)
+-#else /* CONFIG_CPU_HAS_LSX */
+-#define XOR_SPEED_LSX()
+ #endif /* CONFIG_CPU_HAS_LSX */
+ 
+ #ifdef CONFIG_CPU_HAS_LASX
+@@ -34,14 +26,6 @@ static struct xor_block_template xor_block_lasx = {
+ 	.do_4 = xor_lasx_4,
+ 	.do_5 = xor_lasx_5,
+ };
+-
+-#define XOR_SPEED_LASX()					\
+-	do {							\
+-		if (cpu_has_lasx)				\
+-			xor_speed(&xor_block_lasx);		\
+-	} while (0)
+-#else /* CONFIG_CPU_HAS_LASX */
+-#define XOR_SPEED_LASX()
+ #endif /* CONFIG_CPU_HAS_LASX */
+ 
+ /*
+@@ -54,15 +38,21 @@ static struct xor_block_template xor_block_lasx = {
+  */
+ #include <asm-generic/xor.h>
+ 
+-#undef XOR_TRY_TEMPLATES
+-#define XOR_TRY_TEMPLATES				\
+-do {							\
+-	xor_speed(&xor_block_8regs);			\
+-	xor_speed(&xor_block_8regs_p);			\
+-	xor_speed(&xor_block_32regs);			\
+-	xor_speed(&xor_block_32regs_p);			\
+-	XOR_SPEED_LSX();				\
+-	XOR_SPEED_LASX();				\
+-} while (0)
++#define arch_xor_init arch_xor_init
++static __always_inline void __init arch_xor_init(void)
++{
++	xor_register(&xor_block_8regs);
++	xor_register(&xor_block_8regs_p);
++	xor_register(&xor_block_32regs);
++	xor_register(&xor_block_32regs_p);
++#ifdef CONFIG_CPU_HAS_LSX
++	if (cpu_has_lsx)
++		xor_register(&xor_block_lsx);
++#endif
++#ifdef CONFIG_CPU_HAS_LASX
++	if (cpu_has_lasx)
++		xor_register(&xor_block_lasx);
++#endif
++}
+ 
+ #endif /* _ASM_LOONGARCH_XOR_H */
+diff --git a/arch/powerpc/include/asm/xor.h b/arch/powerpc/include/asm/xor.h
+index 37d05c11d09c..30224c5279c4 100644
+--- a/arch/powerpc/include/asm/xor.h
++++ b/arch/powerpc/include/asm/xor.h
+@@ -21,27 +21,22 @@ static struct xor_block_template xor_block_altivec = {
+ 	.do_4 = xor_altivec_4,
+ 	.do_5 = xor_altivec_5,
+ };
+-
+-#define XOR_SPEED_ALTIVEC()				\
+-	do {						\
+-		if (cpu_has_feature(CPU_FTR_ALTIVEC))	\
+-			xor_speed(&xor_block_altivec);	\
+-	} while (0)
+-#else
+-#define XOR_SPEED_ALTIVEC()
 -#endif
-+#endif /* _XOR_H */
++#endif /* CONFIG_ALTIVEC */
+ 
+ /* Also try the generic routines. */
+ #include <asm-generic/xor.h>
+ 
+-#undef XOR_TRY_TEMPLATES
+-#define XOR_TRY_TEMPLATES				\
+-do {							\
+-	xor_speed(&xor_block_8regs);			\
+-	xor_speed(&xor_block_8regs_p);			\
+-	xor_speed(&xor_block_32regs);			\
+-	xor_speed(&xor_block_32regs_p);			\
+-	XOR_SPEED_ALTIVEC();				\
+-} while (0)
++#define arch_xor_init arch_xor_init
++static __always_inline void __init arch_xor_init(void)
++{
++	xor_register(&xor_block_8regs);
++	xor_register(&xor_block_8regs_p);
++	xor_register(&xor_block_32regs);
++	xor_register(&xor_block_32regs_p);
++#ifdef CONFIG_ALTIVEC
++	if (cpu_has_feature(CPU_FTR_ALTIVEC))
++		xor_register(&xor_block_altivec);
++#endif
++}
+ 
+ #endif /* _ASM_POWERPC_XOR_H */
+diff --git a/arch/riscv/include/asm/xor.h b/arch/riscv/include/asm/xor.h
+index 96011861e46b..ed5f27903efc 100644
+--- a/arch/riscv/include/asm/xor.h
++++ b/arch/riscv/include/asm/xor.h
+@@ -55,14 +55,15 @@ static struct xor_block_template xor_block_rvv = {
+ 	.do_4 = xor_vector_4,
+ 	.do_5 = xor_vector_5
+ };
++#endif /* CONFIG_RISCV_ISA_V */
+ 
+-#undef XOR_TRY_TEMPLATES
+-#define XOR_TRY_TEMPLATES           \
+-	do {        \
+-		xor_speed(&xor_block_8regs);    \
+-		xor_speed(&xor_block_32regs);    \
+-		if (has_vector()) { \
+-			xor_speed(&xor_block_rvv);\
+-		} \
+-	} while (0)
++#define arch_xor_init arch_xor_init
++static __always_inline void __init arch_xor_init(void)
++{
++	xor_register(&xor_block_8regs);
++	xor_register(&xor_block_32regs);
++#ifdef CONFIG_RISCV_ISA_V
++	if (has_vector())
++		xor_register(&xor_block_rvv);
+ #endif
++}
+diff --git a/arch/s390/include/asm/xor.h b/arch/s390/include/asm/xor.h
+index 857d6759b67f..4e2233f64da9 100644
+--- a/arch/s390/include/asm/xor.h
++++ b/arch/s390/include/asm/xor.h
+@@ -10,12 +10,10 @@
+ 
+ extern struct xor_block_template xor_block_xc;
+ 
+-#undef XOR_TRY_TEMPLATES
+-#define XOR_TRY_TEMPLATES				\
+-do {							\
+-	xor_speed(&xor_block_xc);			\
+-} while (0)
+-
+-#define XOR_SELECT_TEMPLATE(FASTEST)	(&xor_block_xc)
++#define arch_xor_init arch_xor_init
++static __always_inline void __init arch_xor_init(void)
++{
++	xor_force(&xor_block_xc);
++}
+ 
+ #endif /* _ASM_S390_XOR_H */
+diff --git a/arch/sparc/include/asm/xor_32.h b/arch/sparc/include/asm/xor_32.h
+index 0351813cf3af..8fbf0c07ec28 100644
+--- a/arch/sparc/include/asm/xor_32.h
++++ b/arch/sparc/include/asm/xor_32.h
+@@ -259,10 +259,10 @@ static struct xor_block_template xor_block_SPARC = {
+ /* For grins, also test the generic routines.  */
+ #include <asm-generic/xor.h>
+ 
+-#undef XOR_TRY_TEMPLATES
+-#define XOR_TRY_TEMPLATES				\
+-	do {						\
+-		xor_speed(&xor_block_8regs);		\
+-		xor_speed(&xor_block_32regs);		\
+-		xor_speed(&xor_block_SPARC);		\
+-	} while (0)
++#define arch_xor_init arch_xor_init
++static __always_inline void __init arch_xor_init(void)
++{
++	xor_register(&xor_block_8regs);
++	xor_register(&xor_block_32regs);
++	xor_register(&xor_block_SPARC);
++}
+diff --git a/arch/sparc/include/asm/xor_64.h b/arch/sparc/include/asm/xor_64.h
+index caaddea8ad79..e0482ecc0a68 100644
+--- a/arch/sparc/include/asm/xor_64.h
++++ b/arch/sparc/include/asm/xor_64.h
+@@ -60,20 +60,17 @@ static struct xor_block_template xor_block_niagara = {
+         .do_5	= xor_niagara_5,
+ };
+ 
+-#undef XOR_TRY_TEMPLATES
+-#define XOR_TRY_TEMPLATES				\
+-	do {						\
+-		xor_speed(&xor_block_VIS);		\
+-		xor_speed(&xor_block_niagara);		\
+-	} while (0)
+-
+-/* For VIS for everything except Niagara.  */
+-#define XOR_SELECT_TEMPLATE(FASTEST) \
+-	((tlb_type == hypervisor && \
+-	  (sun4v_chip_type == SUN4V_CHIP_NIAGARA1 || \
+-	   sun4v_chip_type == SUN4V_CHIP_NIAGARA2 || \
+-	   sun4v_chip_type == SUN4V_CHIP_NIAGARA3 || \
+-	   sun4v_chip_type == SUN4V_CHIP_NIAGARA4 || \
+-	   sun4v_chip_type == SUN4V_CHIP_NIAGARA5)) ? \
+-	 &xor_block_niagara : \
+-	 &xor_block_VIS)
++#define arch_xor_init arch_xor_init
++static __always_inline void __init arch_xor_init(void)
++{
++	/* Force VIS for everything except Niagara.  */
++	if (tlb_type == hypervisor &&
++	    (sun4v_chip_type == SUN4V_CHIP_NIAGARA1 ||
++	     sun4v_chip_type == SUN4V_CHIP_NIAGARA2 ||
++	     sun4v_chip_type == SUN4V_CHIP_NIAGARA3 ||
++	     sun4v_chip_type == SUN4V_CHIP_NIAGARA4 ||
++	     sun4v_chip_type == SUN4V_CHIP_NIAGARA5))
++		xor_force(&xor_block_niagara);
++	else
++		xor_force(&xor_block_VIS);
++}
+diff --git a/arch/x86/include/asm/xor.h b/arch/x86/include/asm/xor.h
+index 7b0307acc410..33f5620d8d69 100644
+--- a/arch/x86/include/asm/xor.h
++++ b/arch/x86/include/asm/xor.h
+@@ -496,7 +496,4 @@ static struct xor_block_template xor_block_sse_pf64 = {
+ # include <asm/xor_64.h>
+ #endif
+ 
+-#define XOR_SELECT_TEMPLATE(FASTEST) \
+-	AVX_SELECT(FASTEST)
+-
+ #endif /* _ASM_X86_XOR_H */
+diff --git a/arch/x86/include/asm/xor_32.h b/arch/x86/include/asm/xor_32.h
+index 7a6b9474591e..ee32d08c27bc 100644
+--- a/arch/x86/include/asm/xor_32.h
++++ b/arch/x86/include/asm/xor_32.h
+@@ -552,22 +552,24 @@ static struct xor_block_template xor_block_pIII_sse = {
+ /* We force the use of the SSE xor block because it can write around L2.
+    We may also be able to load into the L1 only depending on how the cpu
+    deals with a load to a line that is being prefetched.  */
+-#undef XOR_TRY_TEMPLATES
+-#define XOR_TRY_TEMPLATES				\
+-do {							\
+-	AVX_XOR_SPEED;					\
+-	if (boot_cpu_has(X86_FEATURE_XMM)) {				\
+-		xor_speed(&xor_block_pIII_sse);		\
+-		xor_speed(&xor_block_sse_pf64);		\
+-	} else if (boot_cpu_has(X86_FEATURE_MMX)) {	\
+-		xor_speed(&xor_block_pII_mmx);		\
+-		xor_speed(&xor_block_p5_mmx);		\
+-	} else {					\
+-		xor_speed(&xor_block_8regs);		\
+-		xor_speed(&xor_block_8regs_p);		\
+-		xor_speed(&xor_block_32regs);		\
+-		xor_speed(&xor_block_32regs_p);		\
+-	}						\
+-} while (0)
++#define arch_xor_init arch_xor_init
++static __always_inline void __init arch_xor_init(void)
++{
++	if (boot_cpu_has(X86_FEATURE_AVX) &&
++	    boot_cpu_has(X86_FEATURE_OSXSAVE)) {
++		xor_force(&xor_block_avx);
++	} else if (boot_cpu_has(X86_FEATURE_XMM)) {
++		xor_register(&xor_block_pIII_sse);
++		xor_register(&xor_block_sse_pf64);
++	} else if (boot_cpu_has(X86_FEATURE_MMX)) {
++		xor_register(&xor_block_pII_mmx);
++		xor_register(&xor_block_p5_mmx);
++	} else {
++		xor_register(&xor_block_8regs);
++		xor_register(&xor_block_8regs_p);
++		xor_register(&xor_block_32regs);
++		xor_register(&xor_block_32regs_p);
++	}
++}
+ 
+ #endif /* _ASM_X86_XOR_32_H */
+diff --git a/arch/x86/include/asm/xor_64.h b/arch/x86/include/asm/xor_64.h
+index 0307e4ec5044..2d2ceb241866 100644
+--- a/arch/x86/include/asm/xor_64.h
++++ b/arch/x86/include/asm/xor_64.h
+@@ -17,12 +17,16 @@ static struct xor_block_template xor_block_sse = {
+ /* We force the use of the SSE xor block because it can write around L2.
+    We may also be able to load into the L1 only depending on how the cpu
+    deals with a load to a line that is being prefetched.  */
+-#undef XOR_TRY_TEMPLATES
+-#define XOR_TRY_TEMPLATES			\
+-do {						\
+-	AVX_XOR_SPEED;				\
+-	xor_speed(&xor_block_sse_pf64);		\
+-	xor_speed(&xor_block_sse);		\
+-} while (0)
++#define arch_xor_init arch_xor_init
++static __always_inline void __init arch_xor_init(void)
++{
++	if (boot_cpu_has(X86_FEATURE_AVX) &&
++	    boot_cpu_has(X86_FEATURE_OSXSAVE)) {
++		xor_force(&xor_block_avx);
++	} else {
++		xor_register(&xor_block_sse_pf64);
++		xor_register(&xor_block_sse);
++	}
++}
+ 
+ #endif /* _ASM_X86_XOR_64_H */
+diff --git a/arch/x86/include/asm/xor_avx.h b/arch/x86/include/asm/xor_avx.h
+index 7f81dd5897f4..c600888436bb 100644
+--- a/arch/x86/include/asm/xor_avx.h
++++ b/arch/x86/include/asm/xor_avx.h
+@@ -166,13 +166,4 @@ static struct xor_block_template xor_block_avx = {
+ 	.do_5 = xor_avx_5,
+ };
+ 
+-#define AVX_XOR_SPEED \
+-do { \
+-	if (boot_cpu_has(X86_FEATURE_AVX) && boot_cpu_has(X86_FEATURE_OSXSAVE)) \
+-		xor_speed(&xor_block_avx); \
+-} while (0)
+-
+-#define AVX_SELECT(FASTEST) \
+-	(boot_cpu_has(X86_FEATURE_AVX) && boot_cpu_has(X86_FEATURE_OSXSAVE) ? &xor_block_avx : FASTEST)
+-
+ #endif
+diff --git a/include/asm-generic/xor.h b/include/asm-generic/xor.h
+index 44509d48fca2..79c0096aa9d9 100644
+--- a/include/asm-generic/xor.h
++++ b/include/asm-generic/xor.h
+@@ -728,11 +728,3 @@ static struct xor_block_template xor_block_32regs_p __maybe_unused = {
+ 	.do_4 = xor_32regs_p_4,
+ 	.do_5 = xor_32regs_p_5,
+ };
+-
+-#define XOR_TRY_TEMPLATES			\
+-	do {					\
+-		xor_speed(&xor_block_8regs);	\
+-		xor_speed(&xor_block_8regs_p);	\
+-		xor_speed(&xor_block_32regs);	\
+-		xor_speed(&xor_block_32regs_p);	\
+-	} while (0)
 diff --git a/include/linux/raid/xor_impl.h b/include/linux/raid/xor_impl.h
-new file mode 100644
-index 000000000000..a1890cd66812
---- /dev/null
+index a1890cd66812..6ed4c445ab24 100644
+--- a/include/linux/raid/xor_impl.h
 +++ b/include/linux/raid/xor_impl.h
-@@ -0,0 +1,25 @@
-+/* SPDX-License-Identifier: GPL-2.0 */
-+#ifndef _XOR_IMPL_H
-+#define _XOR_IMPL_H
+@@ -2,6 +2,8 @@
+ #ifndef _XOR_IMPL_H
+ #define _XOR_IMPL_H
+ 
++#include <linux/init.h>
 +
-+struct xor_block_template {
-+	struct xor_block_template *next;
-+	const char *name;
-+	int speed;
-+	void (*do_2)(unsigned long, unsigned long * __restrict,
-+		     const unsigned long * __restrict);
-+	void (*do_3)(unsigned long, unsigned long * __restrict,
-+		     const unsigned long * __restrict,
-+		     const unsigned long * __restrict);
-+	void (*do_4)(unsigned long, unsigned long * __restrict,
-+		     const unsigned long * __restrict,
-+		     const unsigned long * __restrict,
-+		     const unsigned long * __restrict);
-+	void (*do_5)(unsigned long, unsigned long * __restrict,
-+		     const unsigned long * __restrict,
-+		     const unsigned long * __restrict,
-+		     const unsigned long * __restrict,
-+		     const unsigned long * __restrict);
-+};
+ struct xor_block_template {
+ 	struct xor_block_template *next;
+ 	const char *name;
+@@ -22,4 +24,7 @@ struct xor_block_template {
+ 		     const unsigned long * __restrict);
+ };
+ 
++void __init xor_register(struct xor_block_template *tmpl);
++void __init xor_force(struct xor_block_template *tmpl);
 +
-+#endif /* _XOR_IMPL_H */
+ #endif /* _XOR_IMPL_H */
 diff --git a/lib/raid/xor/xor-core.c b/lib/raid/xor/xor-core.c
-index e6e593e404fb..db1824011a12 100644
+index db1824011a12..93608b5fece9 100644
 --- a/lib/raid/xor/xor-core.c
 +++ b/lib/raid/xor/xor-core.c
-@@ -9,6 +9,7 @@
- #include <linux/module.h>
- #include <linux/gfp.h>
- #include <linux/raid/xor.h>
-+#include <linux/raid/xor_impl.h>
- #include <linux/jiffies.h>
+@@ -14,10 +14,6 @@
  #include <linux/preempt.h>
  #include <asm/xor.h>
+ 
+-#ifndef XOR_SELECT_TEMPLATE
+-#define XOR_SELECT_TEMPLATE(x) (x)
+-#endif
+-
+ /* The xor routines to use.  */
+ static struct xor_block_template *active_template;
+ 
+@@ -55,12 +51,33 @@ EXPORT_SYMBOL(xor_blocks);
+ static struct xor_block_template *__initdata template_list;
+ static bool __initdata xor_forced = false;
+ 
+-static void __init do_xor_register(struct xor_block_template *tmpl)
++/**
++ * xor_register - register a XOR template
++ * @tmpl:	template to register
++ *
++ * Register a XOR implementation with the core.  Registered implementations
++ * will be measured by a trivial benchmark, and the fastest one is chosen
++ * unless an implementation is forced using xor_force().
++ */
++void __init xor_register(struct xor_block_template *tmpl)
+ {
+ 	tmpl->next = template_list;
+ 	template_list = tmpl;
+ }
+ 
++/**
++ * xor_force - force use of a XOR template
++ * @tmpl:	template to register
++ *
++ * Register a XOR implementation with the core and force using it.  Forcing
++ * an implementation will make the core ignore any template registered using
++ * xor_register(), or any previous implementation forced using xor_force().
++ */
++void __init xor_force(struct xor_block_template *tmpl)
++{
++	active_template = tmpl;
++}
++
+ #define BENCH_SIZE	4096
+ #define REPS		800U
+ 
+@@ -126,11 +143,19 @@ static int __init calibrate_xor_blocks(void)
+ 
+ static int __init xor_init(void)
+ {
++#ifdef arch_xor_init
++	arch_xor_init();
++#else
++	xor_register(&xor_block_8regs);
++	xor_register(&xor_block_8regs_p);
++	xor_register(&xor_block_32regs);
++	xor_register(&xor_block_32regs_p);
++#endif
++
+ 	/*
+ 	 * If this arch/cpu has a short-circuited selection, don't loop through
+ 	 * all the possible functions, just use the best one.
+ 	 */
+-	active_template = XOR_SELECT_TEMPLATE(NULL);
+ 	if (active_template) {
+ 		pr_info("xor: automatically using best checksumming function   %-10s\n",
+ 			active_template->name);
+@@ -138,10 +163,6 @@ static int __init xor_init(void)
+ 		return 0;
+ 	}
+ 
+-#define xor_speed	do_xor_register
+-	XOR_TRY_TEMPLATES;
+-#undef xor_speed
+-
+ #ifdef MODULE
+ 	return calibrate_xor_blocks();
+ #else
 -- 
 2.47.3
 

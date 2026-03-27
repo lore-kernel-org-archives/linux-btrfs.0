@@ -1,214 +1,118 @@
-Received: from out30-130.freemail.mail.aliyun.com (out30-130.freemail.mail.aliyun.com [115.124.30.130])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E22F931ED93;
-	Fri, 27 Mar 2026 14:26:58 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=115.124.30.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D10CB3F23BA;
+	Fri, 27 Mar 2026 14:27:50 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774621624; cv=none; b=E1l5oq+iWibusFwO7Rvoyuo953POT1bVPGg7b7lCG6vs1hu8HvsmnbOzTDTyH4x9J7B7rbdOw69LzrnGHDv/kZFtW9GoELtOFBfNMBvWT16vdduc7zYQ/qbhyT+ChRLsPuf3CxB37qBJnu0/LGOj8LF1sHwklIlnKbTHbbHFs+4=
+	t=1774621670; cv=none; b=V8HIUhhcAQJV6a6lnhl7ZZRRx8XqKgMs5Vx8VUiNXTvuBOc7wypfoE7Hw2JnRghthHh0M7Y2Oa9q19XJ2j20S/C5U3df0kEs88dcg4IzGxV6fAU+W+jWIpFbLHvoLJUl4L5OB8DavcHGcPA3AlZWLEwBGBAmhQTfhR17E2D4esA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774621624; c=relaxed/simple;
-	bh=S849YbsTewCwRIs4fC0CRDUyssNKK6CAaatHObMQ30o=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=Av9dzVB8hq0oPA0TRF4LN5hazw1YlZK2StYbnC1LA5OvKWPswiznfJ+tF+sg8uVC4ZW8PLLZlY6D2VYD7OW7wiCIEhHwuO3FrRyN+aDWbUtYw7/kl9TcQqrE+ZeVGHoY88dXwGoiZrEBFFcfnYrF026QNUiloq014OWwHv8o/4o=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.alibaba.com; spf=pass smtp.mailfrom=linux.alibaba.com; dkim=pass (1024-bit key) header.d=linux.alibaba.com header.i=@linux.alibaba.com header.b=yGZJYOyk; arc=none smtp.client-ip=115.124.30.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.alibaba.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.alibaba.com
+	s=arc-20240116; t=1774621670; c=relaxed/simple;
+	bh=uMjc7wPnY72/FTyi9HtqnZvAKSirFVCXJFk12jkfT0c=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=YoqP5umL+S1W9ze2vAdj+kw3PElcrR1hBLvWtKm+16Oexk+u/PL3c9uBLahRpaTTXN0uQejlBJ5AXdZTgV9hJXfoXz0pOVP6OtodH58Ds0YBCa5Om95pK4H2ms+MC9o1LILVuniES2Bl1Wr9KwBXCnWvL/P9goG+bEXIHeTlrz0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=sYXIObf7; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linux.alibaba.com header.i=@linux.alibaba.com header.b="yGZJYOyk"
-DKIM-Signature:v=1; a=rsa-sha256; c=relaxed/relaxed;
-	d=linux.alibaba.com; s=default;
-	t=1774621616; h=Message-ID:Date:MIME-Version:Subject:To:From:Content-Type;
-	bh=IGtPBcxw9SmT8YrZeAYAA/G+Qaiyn6Pw5UUHZsnXfKo=;
-	b=yGZJYOykjFrtJk5RVWT0QEB4rhitDSFJXvWdfZeS42EY7Yl5co/4EuPYpWw0jRPcelfzfpXyAN7uVJWQb2og9RL15zpgBO8z+hY7ONbdKG9+orHLxI6Tzl8NcsBCHmVk05MwLxJ/WBQ7TZ/jfcdwvmmH08diklqb2ylHtBy8RN4=
-X-Alimail-AntiSpam:AC=PASS;BC=-1|-1;BR=01201311R241e4;CH=green;DM=||false|;DS=||;FP=0|-1|-1|-1|0|-1|-1|-1;HT=maildocker-contentspam033045098064;MF=baolin.wang@linux.alibaba.com;NM=1;PH=DS;RN=27;SR=0;TI=SMTPD_---0X.oc15I_1774621613;
-Received: from 30.42.98.36(mailfrom:baolin.wang@linux.alibaba.com fp:SMTPD_---0X.oc15I_1774621613 cluster:ay36)
-          by smtp.aliyun-inc.com;
-          Fri, 27 Mar 2026 22:26:54 +0800
-Message-ID: <b9bc241f-91a0-4df3-a5fb-2221bee3ab68@linux.alibaba.com>
-Date: Fri, 27 Mar 2026 22:26:53 +0800
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="sYXIObf7"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id B85B4C19423;
+	Fri, 27 Mar 2026 14:27:44 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1774621670;
+	bh=uMjc7wPnY72/FTyi9HtqnZvAKSirFVCXJFk12jkfT0c=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=sYXIObf7u8E4inwhzei0ZhB54zhLmqaQJW2Mgn82vk3W8OqKFIGgrWF/voGXxD701
+	 iLe5EZtBwbCZ8dVYYHyH4eFg4i9J/28LoZXCw/5KhY8bkJz58uhDxgwrkmyDkvZFYP
+	 4PlSOYXOB8vPpr4ZlXBWvmAy7PaEuAJo4hTnqvf7eBb2OcuiOV/594dQ81X6wEpRS4
+	 pK4VFeuspmdvPdzQ8hUm7gHqRECSdl8K9R4XF6aa0JK/mPF7vpaiN6bRBkOoSW8fKO
+	 8rPObuyN+KIaXZ963D5Vd64yLKJLRPByatVodri9aSPYQbIVQskYwegWRWGjyXEbfg
+	 Gl3WCR+Vg9QaA==
+Date: Fri, 27 Mar 2026 14:27:42 +0000
+From: "Lorenzo Stoakes (Oracle)" <ljs@kernel.org>
+To: "David Hildenbrand (Arm)" <david@kernel.org>
+Cc: Zi Yan <ziy@nvidia.com>, 
+	"Matthew Wilcox (Oracle)" <willy@infradead.org>, Song Liu <songliubraving@fb.com>, Chris Mason <clm@fb.com>, 
+	David Sterba <dsterba@suse.com>, Alexander Viro <viro@zeniv.linux.org.uk>, 
+	Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>, 
+	Andrew Morton <akpm@linux-foundation.org>, Baolin Wang <baolin.wang@linux.alibaba.com>, 
+	"Liam R. Howlett" <Liam.Howlett@oracle.com>, Nico Pache <npache@redhat.com>, 
+	Ryan Roberts <ryan.roberts@arm.com>, Dev Jain <dev.jain@arm.com>, Barry Song <baohua@kernel.org>, 
+	Lance Yang <lance.yang@linux.dev>, Vlastimil Babka <vbabka@kernel.org>, 
+	Mike Rapoport <rppt@kernel.org>, Suren Baghdasaryan <surenb@google.com>, 
+	Michal Hocko <mhocko@suse.com>, Shuah Khan <shuah@kernel.org>, linux-btrfs@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-mm@kvack.org, 
+	linux-kselftest@vger.kernel.org
+Subject: Re: [PATCH v1 00/10] Remove READ_ONLY_THP_FOR_FS Kconfig
+Message-ID: <4007802e-f87c-41a4-8dcd-9af867eb3fac@lucifer.local>
+References: <20260327014255.2058916-1-ziy@nvidia.com>
+ <10748785-08a9-41c7-bacd-88f05fdf1a88@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v1 02/10] mm/khugepaged: remove READ_ONLY_THP_FOR_FS check
-To: "Lorenzo Stoakes (Oracle)" <ljs@kernel.org>
-Cc: Zi Yan <ziy@nvidia.com>, "Matthew Wilcox (Oracle)" <willy@infradead.org>,
- Song Liu <songliubraving@fb.com>, Chris Mason <clm@fb.com>,
- David Sterba <dsterba@suse.com>, Alexander Viro <viro@zeniv.linux.org.uk>,
- Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>,
- Andrew Morton <akpm@linux-foundation.org>,
- David Hildenbrand <david@kernel.org>,
- "Liam R. Howlett" <Liam.Howlett@oracle.com>, Nico Pache <npache@redhat.com>,
- Ryan Roberts <ryan.roberts@arm.com>, Dev Jain <dev.jain@arm.com>,
- Barry Song <baohua@kernel.org>, Lance Yang <lance.yang@linux.dev>,
- Vlastimil Babka <vbabka@kernel.org>, Mike Rapoport <rppt@kernel.org>,
- Suren Baghdasaryan <surenb@google.com>, Michal Hocko <mhocko@suse.com>,
- Shuah Khan <shuah@kernel.org>, linux-btrfs@vger.kernel.org,
- linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
- linux-mm@kvack.org, linux-kselftest@vger.kernel.org
-References: <20260327014255.2058916-1-ziy@nvidia.com>
- <20260327014255.2058916-3-ziy@nvidia.com>
- <7fd90f5e-65b5-4734-abb2-77b22c733af5@linux.alibaba.com>
- <8f5119a1-9aa9-4a39-ac94-ca1631db26e1@lucifer.local>
- <ec927492-4577-4192-8fad-85eb1bb43121@linux.alibaba.com>
- <89c8b93c-f6dd-4d8e-bcee-3c1ff1c04295@lucifer.local>
-From: Baolin Wang <baolin.wang@linux.alibaba.com>
-In-Reply-To: <89c8b93c-f6dd-4d8e-bcee-3c1ff1c04295@lucifer.local>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <10748785-08a9-41c7-bacd-88f05fdf1a88@kernel.org>
 
+On Fri, Mar 27, 2026 at 02:46:43PM +0100, David Hildenbrand (Arm) wrote:
+> On 3/27/26 02:42, Zi Yan wrote:
+> > Hi all,
+> >
+> > This patchset removes READ_ONLY_THP_FOR_FS Kconfig and enables creating
+> > read-only THPs for FSes with large folio support (the supported orders
+> > need to include PMD_ORDER) by default.
+> >
+> > The changes are:
+> > 1. collapse_file() from mm/khugepaged.c, instead of checking
+> >    CONFIG_READ_ONLY_THP_FOR_FS, makes sure the mapping_max_folio_order()
+> >    of struct address_space of the file is at least PMD_ORDER.
+> > 2. file_thp_enabled() also checks mapping_max_folio_order() instead.
+> > 3. truncate_inode_partial_folio() calls folio_split() directly instead
+> >    of the removed try_folio_split_to_order(), since large folios can
+> >    only show up on a FS with large folio support.
+> > 4. nr_thps is removed from struct address_space, since it is no longer
+> >    needed to drop all read-only THPs from a FS without large folio
+> >    support when the fd becomes writable. Its related filemap_nr_thps*()
+> >    are removed too.
+> > 5. folio_check_splittable() no longer checks READ_ONLY_THP_FOR_FS.
+> > 6. Updated comments in various places.
+> >
+> > Changelog
+> > ===
+> > From RFC[1]:
+> > 1. instead of removing READ_ONLY_THP_FOR_FS function entirely, turn it
+> >    on by default for all FSes with large folio support and the supported
+> >    orders includes PMD_ORDER.
+> >
+> > Suggestions and comments are welcome.
+>
+> Hi! :)
+>
+> The patch set might be better structured by
+>
+> 1) Teaching code paths to not only respect READ_ONLY_THP_FOR_FS but also
+> filesystems with large folios. At that point, READ_ONLY_THP_FOR_FS would
+> have no effect.
 
+And also please do some cleaning up of the mess we have in the code base if at
+all possible :) I feel like we're constantly building on sand with this, and
+should treat every major change as a chance to do this.
 
-On 3/27/26 10:12 PM, Lorenzo Stoakes (Oracle) wrote:
-> On Fri, Mar 27, 2026 at 09:45:03PM +0800, Baolin Wang wrote:
->>
->>
->> On 3/27/26 8:02 PM, Lorenzo Stoakes (Oracle) wrote:
->>> On Fri, Mar 27, 2026 at 05:44:49PM +0800, Baolin Wang wrote:
->>>>
->>>>
->>>> On 3/27/26 9:42 AM, Zi Yan wrote:
->>>>> collapse_file() requires FSes supporting large folio with at least
->>>>> PMD_ORDER, so replace the READ_ONLY_THP_FOR_FS check with that. shmem with
->>>>> huge option turned on also sets large folio order on mapping, so the check
->>>>> also applies to shmem.
->>>>>
->>>>> While at it, replace VM_BUG_ON with returning failure values.
->>>>>
->>>>> Signed-off-by: Zi Yan <ziy@nvidia.com>
->>>>> ---
->>>>>     mm/khugepaged.c | 7 +++++--
->>>>>     1 file changed, 5 insertions(+), 2 deletions(-)
->>>>>
->>>>> diff --git a/mm/khugepaged.c b/mm/khugepaged.c
->>>>> index d06d84219e1b..45b12ffb1550 100644
->>>>> --- a/mm/khugepaged.c
->>>>> +++ b/mm/khugepaged.c
->>>>> @@ -1899,8 +1899,11 @@ static enum scan_result collapse_file(struct mm_struct *mm, unsigned long addr,
->>>>>     	int nr_none = 0;
->>>>>     	bool is_shmem = shmem_file(file);
->>>>> -	VM_BUG_ON(!IS_ENABLED(CONFIG_READ_ONLY_THP_FOR_FS) && !is_shmem);
->>>>> -	VM_BUG_ON(start & (HPAGE_PMD_NR - 1));
->>>>> +	/* "huge" shmem sets mapping folio order and passes the check below */
->>>>> +	if (mapping_max_folio_order(mapping) < PMD_ORDER)
->>>>> +		return SCAN_FAIL;
->>>>
->>>> This is not true for anonymous shmem, since its large order allocation logic
->>>> is similar to anonymous memory. That means it will not call
->>>> mapping_set_large_folios() for anonymous shmem.
->>>>
->>>> So I think the check should be:
->>>>
->>>> if (!is_shmem && mapping_max_folio_order(mapping) < PMD_ORDER)
->>>>        return SCAN_FAIL;
->>>
->>> Hmm but in shmem_init() we have:
->>>
->>> #ifdef CONFIG_TRANSPARENT_HUGEPAGE
->>> 	if (has_transparent_hugepage() && shmem_huge > SHMEM_HUGE_DENY)
->>> 		SHMEM_SB(shm_mnt->mnt_sb)->huge = shmem_huge;
->>> 	else
->>> 		shmem_huge = SHMEM_HUGE_NEVER; /* just in case it was patched */
->>>
->>> 	/*
->>> 	 * Default to setting PMD-sized THP to inherit the global setting and
->>> 	 * disable all other multi-size THPs.
->>> 	 */
->>> 	if (!shmem_orders_configured)
->>> 		huge_shmem_orders_inherit = BIT(HPAGE_PMD_ORDER);
->>> #endif
->>>
->>> And shm_mnt->mnt_sb is the superblock used for anon shmem. Also
->>> shmem_enabled_store() updates that if necessary.
->>>
->>> So we're still fine right?
->>>
->>> __shmem_file_setup() (used for anon shmem) calls shmem_get_inode() ->
->>> __shmem_get_inode() which has:
->>>
->>> 	if (sbinfo->huge)
->>> 		mapping_set_large_folios(inode->i_mapping);
->>>
->>> Shared for both anon shmem and tmpfs-style shmem.
->>>
->>> So I think it's fine as-is.
->>
->> I'm afraid not. Sorry, I should have been clearer.
->>
->> First, anonymous shmem large order allocation is dynamically controlled via
->> the global interface (/sys/kernel/mm/transparent_hugepage/shmem_enabled) and
->> the mTHP interfaces
->> (/sys/kernel/mm/transparent_hugepage/hugepages-*kB/shmem_enabled).
->>
->> This means that during anonymous shmem initialization, these interfaces
->> might be set to 'never'. so it will not call mapping_set_large_folios()
->> because sbinfo->huge is 'SHMEM_HUGE_NEVER'.
->>
->> Even if shmem large order allocation is subsequently enabled via the
->> interfaces, __shmem_file_setup -> mapping_set_large_folios() is not called
->> again.
-> 
-> I see your point, oh this is all a bit of a mess...
-> 
-> It feels like entirely the wrong abstraction anyway, since at best you're
-> getting a global 'is enabled'.
-> 
-> I guess what happened before was we'd never call into this with ! r/o thp for fs
-> && ! is_shmem.
+Or otherwise we constantly keep leaving this mess around to deal with...
 
-Right.
+>
+> 2) Removing READ_ONLY_THP_FOR_FS along with all the old cruft that is no
+> longer required
+>
+> MADV_COLLAPSE will keep working the whole time.
 
-> But now we are allowing it, but should STILL be gating on !is_shmem so yeah your
-> suggestion is correct I think actualyl.
-> 
-> I do hate:
-> 
-> 	if (!is_shmem && mapping_max_folio_order(mapping) < PMD_ORDER)
-> 
-> As a bit of code though. It's horrible.
+Obviously everything should keep working throughout any version of this series.
 
-Indeed.
+>
+> --
+> Cheers,
+>
+> David
 
-> Let's abstract that...
-> 
-> It'd be nice if we could find a way to clean things up in the lead up to changes
-> in series like this instead of sticking with the mess, but I guess since it
-> mostly removes stuff that's ok for now.
-
-I think this check can be removed from this patch.
-
-During the khugepaged's scan, it will call thp_vma_allowable_order() to 
-check if the VMA is allowed to collapse into a PMD.
-
-Specifically, within the call chain thp_vma_allowable_order() -> 
-__thp_vma_allowable_orders(), shmem is checked via 
-shmem_allowable_huge_orders(), while other FSes are checked via 
-file_thp_enabled().
-
-For those other filesystems, Patch 5 has already added the following 
-check, which I think is sufficient to filter out those FSes that do not 
-support large folios:
-
-if (mapping_max_folio_order(inode->i_mapping) < PMD_ORDER)
-	return false;
-
-
->> Anonymous shmem behaves similarly to anonymous pages: it is controlled by
->> the 'shmem_enabled' interfaces and uses shmem_allowable_huge_orders() to
->> check for allowed large orders, rather than relying on
->> mapping_max_folio_order().
->>
->> The mapping_max_folio_order() is intended to control large page allocation
->> only for tmpfs mounts. Therefore, I find the current code confusing and
->> think it needs to be fixed:
->>
->> /* Don't consider 'deny' for emergencies and 'force' for testing */
->> if (sb != shm_mnt->mnt_sb && sbinfo->huge)
->>         mapping_set_large_folios(inode->i_mapping);
-> 
-> Cheers, Lorenzo
-
+Cheers, Lorenzo

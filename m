@@ -1,33 +1,33 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D34663E4C7B;
-	Fri, 27 Mar 2026 13:58:19 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2F1CE3128A3;
+	Fri, 27 Mar 2026 14:00:38 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774619899; cv=none; b=Cmv32LfzPMUXaBdfR3NNhPEP/MgKl/GAXTCdp8+MHLUOGVq9QDOQ4yVH7l/Hy4Lse+QkWCQQg/VAzXBFjHTKPSQLQABu9upEE1YYO4FlRh5LybBxIxRLndLq/lWb01+UlwxKOUc6+SsSBYgIFAaMmIW+STYTnEWJsNOrS1f80Hw=
+	t=1774620038; cv=none; b=Uw/pQ03f/09gCVapAqqObvn7w4LPWtCpt1NAtA30TxphSI+x0Nj5yS3HEqnDfM4ky1TZBTzRm152JBUut+NZ9H4m+1rQzHxfEpeB51QrQoGBuIi0kPl+BMx+00znE/kO57i1ChOWultpdzqGX45olX2BSGbACi9KEqNqvoLE2OM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774619899; c=relaxed/simple;
-	bh=VqACtXhfTYZCQGZ04hZLNOj+ApxLBRqLokDeDdIuV6Y=;
+	s=arc-20240116; t=1774620038; c=relaxed/simple;
+	bh=/unA2rMv7zJScTAFCck5yVo7oEcK/p9cQsKiJOFmMDw=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=NE/Fb1ae/8kYUI3TG9D3EjjY0w8S5cQmUrz/+YfpJvAC0DZ78J6QF/2X5WjSHxeyJZbBBfbcaARUDIyERKCpRVx5EYQ48vOEnck8CZ/5RtjDj5S3gS7OuqFroJ4t1IPTMYIMlc5sSCttTkY2wdWublQbFxED2/Phs+P0o7GbQtQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=SWvmhHE9; arc=none smtp.client-ip=10.30.226.201
+	 In-Reply-To:Content-Type; b=Xz+pxCTBumy/XH3I/eJLzhIWDRNLFGVNeJ/t27dM2xOLMQcJ/99EdEXuZzsQ37nsCmBl8+HEi24NU+uk75NoBXyx/rnxQ6Sq8GZBEPQd1u+ptzaqrYNiMSQ0IppOe5537pEJ1ZNFcvmrvFsHGKoV+OIvLJJNrIJqXbrM6nRCons=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Ta7rAW3S; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="SWvmhHE9"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9D735C19423;
-	Fri, 27 Mar 2026 13:58:13 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Ta7rAW3S"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 39BECC19423;
+	Fri, 27 Mar 2026 14:00:31 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1774619899;
-	bh=VqACtXhfTYZCQGZ04hZLNOj+ApxLBRqLokDeDdIuV6Y=;
+	s=k20201202; t=1774620038;
+	bh=/unA2rMv7zJScTAFCck5yVo7oEcK/p9cQsKiJOFmMDw=;
 	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
-	b=SWvmhHE9QgoG7BeeIXiy8S/MxDrH6bLIFaNzJG3Tn0p2MnG/Io5/CWnOCyGrz2aLW
-	 geze3jKXXes3f/fa44jBQySmHCda1h0nV0OAoKNw+OX3CWBVdREOK48PnFPgHvmTVf
-	 qBqFCuR9AczmRrJNvdALxpqkDpfH7ZqC1oGWWP+3omn+BFX0U/I15Q7KJqWFWEbUIX
-	 9qaiy1dpsnmCWXcdijGqoWkc2BrZqIK5PcpUi2Jrdb4NvRLGVkrEueTpTnzLJIUSlV
-	 4uQpwJcszdyqiYrXKTT+BtUEbjtX6/zW00+pcfgM6YcYoQvk+eofuhty6uZaim/ZfS
-	 GTx/hySbDFbCA==
-Message-ID: <b098fce7-be16-479e-b9a4-36f0ad71d242@kernel.org>
-Date: Fri, 27 Mar 2026 14:58:12 +0100
+	b=Ta7rAW3St1r5Ta+mqH+8E/F44wq1jFofriTxgkIBtEHEKzBdoeF7s5dYhDWC0gxfK
+	 MhC120MTchYIgtM/zFUCPYoCchxQ/woQf9RUzHrCjzYEzocZagCoPqQowIYC3gUvMM
+	 BISc3e5TQuVeSGr4XyFwiU0dlvqA4YW7TT/liydeHG2Cz+D/SJ0NrMbFZeSmZwLPxM
+	 Ot9JwugK/+SnnsGF9RaTWmpf09/WCbapmLMA8nGMGuCKr6Jf3jh9I6sxkIiWStaP64
+	 L1+uPPvuolinerWe/egh3yHME0c7LDUvlAljMTzJA3jTKkdc0VVp+I8n56senwsiP/
+	 L7QgdTV3RndhQ==
+Message-ID: <abae6b28-cd67-4efb-bf4e-d9e33182a38e@kernel.org>
+Date: Fri, 27 Mar 2026 15:00:29 +0100
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -35,14 +35,13 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v1 03/10] mm: fs: remove filemap_nr_thps*() functions and
- their users
-To: "Lorenzo Stoakes (Oracle)" <ljs@kernel.org>, Zi Yan <ziy@nvidia.com>
-Cc: "Matthew Wilcox (Oracle)" <willy@infradead.org>,
- Song Liu <songliubraving@fb.com>, Chris Mason <clm@fb.com>,
- David Sterba <dsterba@suse.com>, Alexander Viro <viro@zeniv.linux.org.uk>,
+Subject: Re: [PATCH v1 04/10] fs: remove nr_thps from struct address_space
+To: Zi Yan <ziy@nvidia.com>, "Matthew Wilcox (Oracle)" <willy@infradead.org>,
+ Song Liu <songliubraving@fb.com>
+Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
+ Alexander Viro <viro@zeniv.linux.org.uk>,
  Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>,
- Andrew Morton <akpm@linux-foundation.org>,
+ Andrew Morton <akpm@linux-foundation.org>, Lorenzo Stoakes <ljs@kernel.org>,
  Baolin Wang <baolin.wang@linux.alibaba.com>,
  "Liam R. Howlett" <Liam.Howlett@oracle.com>, Nico Pache <npache@redhat.com>,
  Ryan Roberts <ryan.roberts@arm.com>, Dev Jain <dev.jain@arm.com>,
@@ -53,8 +52,7 @@ Cc: "Matthew Wilcox (Oracle)" <willy@infradead.org>,
  linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
  linux-mm@kvack.org, linux-kselftest@vger.kernel.org
 References: <20260327014255.2058916-1-ziy@nvidia.com>
- <20260327014255.2058916-4-ziy@nvidia.com>
- <aaea8ce1-eac6-49d6-8c85-7361977b9a9f@lucifer.local>
+ <20260327014255.2058916-5-ziy@nvidia.com>
 From: "David Hildenbrand (Arm)" <david@kernel.org>
 Content-Language: en-US
 Autocrypt: addr=david@kernel.org; keydata=
@@ -101,36 +99,18 @@ Autocrypt: addr=david@kernel.org; keydata=
  3iyY2Nsd7JxfKu1PRhCGwXzRw5TlfEsoRI7V9A8isUCoqE2Dzh3FvYHVeX4Us+bRL/oqareJ
  CIFqgYMyvHj7Q06kTKmauOe4Nf0l0qEkIuIzfoLJ3qr5UyXc2hLtWyT9Ir+lYlX9efqh7mOY
  qIws/H2t
-In-Reply-To: <aaea8ce1-eac6-49d6-8c85-7361977b9a9f@lucifer.local>
+In-Reply-To: <20260327014255.2058916-5-ziy@nvidia.com>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
 
-On 3/27/26 13:23, Lorenzo Stoakes (Oracle) wrote:
-> On Thu, Mar 26, 2026 at 09:42:48PM -0400, Zi Yan wrote:
->> They are used by READ_ONLY_THP_FOR_FS to handle writes to FSes without
->> large folio support, so that read-only THPs created in these FSes are not
->> seen by the FSes when the underlying fd becomes writable. Now read-only PMD
->> THPs only appear in a FS with large folio support and the supported orders
->> include PMD_ORDRE.
+On 3/27/26 02:42, Zi Yan wrote:
+> filemap_nr_thps*() are removed, the related field, address_space->nr_thps,
+> is no longer needed. Remove it.
 > 
-> Typo: PMD_ORDRE -> PMD_ORDER
-> 
->>
->> Signed-off-by: Zi Yan <ziy@nvidia.com>
-> 
-> This looks obviously-correct since this stuff wouldn't have been invoked for
-> large folio file systems before + they already had to handle it separately, and
-> this function is only tied to CONFIG_READ_ONLY_THP_FOR_FS (+ a quick grep
-> suggests you didn't miss anything), so:
+> Signed-off-by: Zi Yan <ziy@nvidia.com>
+> ---
 
-There could now be a race between collapsing and the file getting opened
-r/w.
-
-Are we sure that all code can really deal with that?
-
-IOW, "they already had to handle it separately" -- is that true?
-khugepaged would have never collapse in writable files, so I wonder if
-all code paths are prepared for that.
+Acked-by: David Hildenbrand (Arm) <david@kernel.org>
 
 -- 
 Cheers,

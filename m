@@ -1,172 +1,137 @@
-Received: from mail-pj1-f44.google.com (mail-pj1-f44.google.com [209.85.216.44])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 019A43D3D11
-	for <linux-btrfs@vger.kernel.org>; Fri, 27 Mar 2026 08:24:32 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.216.44
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F09553D6664;
+	Fri, 27 Mar 2026 08:25:45 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774599875; cv=none; b=tYyZDJ8psD4JwToUEAOaU9jv+WdbmVWf9yUX9QHjLnEJTB2OSY8FUSY3e0wQJudh6wmn5k3FaJVHpRpRk6UULR1megOEZWEWXW1aDap93ELEG9/bAH71U9QOlm+wXlNGWYvkdDJAo8YW6Jka7yU0S+IUJ+UfRLDavc5d8uyb3EA=
+	t=1774599946; cv=none; b=HgC6oIurogoSYLPLVF/uh8D4kpePUd+ffWSjQQ0EUnAF9aaSz3kOOh4i/xo8JQtKfh9XHBU/t1CVZM2sqqZHiCqOlIv6lm/0yUeuecc4fQL0buNRS1AMaCMfVTbF8mo98HYnZcglpYHOneKWZAmGQCPxiA9FMqj+5djp989xrhU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774599875; c=relaxed/simple;
-	bh=3vNoqKe/aR8g29HWgPtyQ7y1TEApUPs4a92OYmUp+wk=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=d617ZAV+4ZkTnfqw3DXY6lxE7QMyB+8ns6/IvsU18o1VugD1ALyzBkSycNeN7BXLZw3T+GNAHv2a+BSuKIEwfozZ2Bywxq+5az1DSYYCeCiR+B3OycKo6PndWgrE98RfWErhK1QkQgc6I7zKKu3iunqofPVTc4lfS9jr7bRogMY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=quora.org; spf=pass smtp.mailfrom=quora.org; dkim=pass (1024-bit key) header.d=quora.org header.i=@quora.org header.b=NvSilcsf; arc=none smtp.client-ip=209.85.216.44
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=quora.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=quora.org
+	s=arc-20240116; t=1774599946; c=relaxed/simple;
+	bh=oGcTlThlcrf/a6X6Pba0yaQBbOhK2gU5HD6vMRqLYbw=;
+	h=MIME-Version:Date:From:To:Cc:Message-Id:In-Reply-To:References:
+	 Subject:Content-Type; b=hXcpfFv4ywoZBxpJBjttOJj8lWNYgJ3TuA1uwK6mnRpIfZEjJte+Pwg0aOI/38j3t2PWcW+KZ4reCJD9SH4dFFgQLiXNWOE9VieajAzy+LiopP1I6zJcQRyC6w02ASrJ7IrTqXSOQQEQiE8/2d4LI93SnrHJIGvzPccovZTcmvI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=njQORTNY; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=quora.org header.i=@quora.org header.b="NvSilcsf"
-Received: by mail-pj1-f44.google.com with SMTP id 98e67ed59e1d1-358e3cc5e7eso985154a91.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 27 Mar 2026 01:24:32 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=quora.org; s=google; t=1774599872; x=1775204672; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:from:to:cc:subject:date:message-id:reply-to;
-        bh=9L57hTltiEsNstXFa51jdQMNN6vMySfO13WmKQYIEJU=;
-        b=NvSilcsftwXriZ3Ow1j1G/IZkebeQKX8aW7Rgmb41u3LsFh7OxWerTzon7TVowcNxO
-         YxlfcBQsCC9hUynBxM1bpC/R0gpTY1rNhMXRNDxbWkldHHcAD/Smed1s4lFizq1sItpv
-         CjRq+Rt690R3EM/yvWXG/Y1d1fiP7350PRUGo=
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1774599872; x=1775204672;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=9L57hTltiEsNstXFa51jdQMNN6vMySfO13WmKQYIEJU=;
-        b=HnZ789NsmrYDU/f712pz84RXwljkT8RkLAl9UoRL2eNHrtafzEAJLlB9FEfofXjlG0
-         Ky+R//2/JuNPniK3MDfN4BQYyYnh3cCEHsH24XBR5OLWSfZT7e00XVJ9VwfxEnmA1+lP
-         bRtD6miYiaccxdJXY3v4ndavjOEPD2+4Q6LSxGhF2DAQdzRZWWjNh1jWIhyOhHmlgFeX
-         Ah21U+z1n3NF/6hdu38YAdycDQBVUNyM7gyaJrl7zwpiyg9xqJHIUdzdkBL+1L+1wrPb
-         foN/+mJhidKa5mZ/4R1RH8x8ZZ46IE1gC0EVr+FM3aaMhUp2uvB4Qwak0MFgk60c3jL6
-         6rIA==
-X-Gm-Message-State: AOJu0YzLq+ja5LYNnuUbDurKp+DW5FPThtNmkfCVbB8s9gB6i3DA1Yad
-	V51jYNCSpieNKxJRX37dCYI6KWruLpkZgIzGLMqdzUR8jzzhtoIImg6cVTDRzJS8E5E=
-X-Gm-Gg: ATEYQzxUqoIfEIZRTbqP5bB5RtHZwxkI9On/UaVn1l/79UfUdN3SRLUQ26XX3jvjHuP
-	xujY4nKfDG2/LMBwJOg0AFLqCJTLkzgiY6FZA9qfB2tdTRtz1v4+/FJGvSKzTwTKtzyml2G9GcU
-	6NccWa6/JhgXlkmrjOEpFTRIDil/UwE3qRM73xz/73rJfjja2RIPwqM2RKGS3HmISD+Xka6wQSw
-	RjBj8XELouwqvZwdyvVnv567lA8yeMMGnJmSJoELOc9meiU2xKJl84xk2SZYaOk8Yd6E27MsS6h
-	A2EFfByYr71+jxymi0XNdmYDdZpDo1eQBNB71V5V4zhkxJR7mKqQBSsnpmlDbqUmnxXb/kBc9Ff
-	GkcAyJZJIACwOa4RkPOT9iSftfEuzC7qfbDXpb1jr79ktv1819xPqxPZoiocU+Nd273S8f5/qxt
-	fy9scQ2pltLTYD9bdZFPsLd67Psp/tLR1bOtNFc/sapU3od8cNaKm35YjgoR3uupw9D5TZ3Z3Cx
-	vt/y74wyHDZOzS3mhB/bsw4D/lwowvGMyT75TTiYXna/xOW0bBjAFtxIWYMwSyd0NA4HcIDRf4R
-	BMnFSWAsGRtWrcdNhrqKM3/KrycdnpJB0JW4ClzzFQFrXr/yhVcPwtu/4wk4gt3L
-X-Received: by 2002:a17:90b:558d:b0:35b:9d97:63ac with SMTP id 98e67ed59e1d1-35c2ffa82e2mr1854768a91.7.1774599872214;
-        Fri, 27 Mar 2026 01:24:32 -0700 (PDT)
-Received: from aegis ([2001:fd8:4d01:cc02:cf55:4e55:9fc2:64c5])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-35c22ba5700sm4114806a91.8.2026.03.27.01.24.29
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 27 Mar 2026 01:24:31 -0700 (PDT)
-From: Daniel J Blueman <daniel@quora.org>
-To: Chris Mason <clm@fb.com>,
-	David Sterba <dsterba@suse.com>,
-	Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	kasan-dev@googlegroups.com,
-	Daniel J Blueman <daniel@quora.org>,
-	stable@vger.kernel.org
-Subject: [PATCH v3] btrfs: Fix BTRFS arm64 tagged KASAN false-positive
-Date: Fri, 27 Mar 2026 16:24:18 +0800
-Message-ID: <20260327082419.12654-1-daniel@quora.org>
-X-Mailer: git-send-email 2.53.0
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="njQORTNY"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8F944C4AF0D;
+	Fri, 27 Mar 2026 08:25:44 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1774599945;
+	bh=oGcTlThlcrf/a6X6Pba0yaQBbOhK2gU5HD6vMRqLYbw=;
+	h=Date:From:To:Cc:In-Reply-To:References:Subject:From;
+	b=njQORTNYseBfNIOCfwhdeA9ppWJ7maUSfI1m29FCLMsOAc3VLwzoUH5yF8yKr6mea
+	 bx+1V7DTQAZd4ojLaeGJ0Cf3haex4YnlcYGkJc6gqWpYVE6NyhljsbVP0BA8rn4ocl
+	 th3E+L/MxnnFaA65UP+0OZlA+Vah5cD2+QCQtpMoLgNIFhCA8eqtKOZpCOxJlAkmXg
+	 mk+TUk0Rtz4vIo7JSvIUgAmQeWqKyPfMFemVWMOZXJJwErSg1qzGGRRVp3lXzBSaJ8
+	 C68setmayjda5hFti2rXgLBBjXsEJfs82WxkzWojyXlsFObrjk5392Uz/bQO/irUHV
+	 e65UQpbwEdk/A==
+Received: from phl-compute-01.internal (phl-compute-01.internal [10.202.2.41])
+	by mailfauth.phl.internal (Postfix) with ESMTP id 6F5B9F4006E;
+	Fri, 27 Mar 2026 04:25:43 -0400 (EDT)
+Received: from phl-imap-02 ([10.202.2.81])
+  by phl-compute-01.internal (MEProxy); Fri, 27 Mar 2026 04:25:43 -0400
+X-ME-Sender: <xms:Bz_GaeV3zNaSpHJHySYxTNOI14Bf1EmJgTqGji8Tx6XrdR-ly4fPVA>
+    <xme:Bz_GaVaecSFZVaUx_LS_q-dDchW3x2ph_U-FNZZvjkVa-2Cbgvi2qQJJQEWm1pEen
+    o2Nmsvazvbril7mJ2bFLAHoL0kR_6ydzStl4XH8vMJ4O7DQEb3zgw>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefgedrtddtgdefvdelkedtucetufdoteggodetrf
+    dotffvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfurfetoffkrfgpnffqhgenuceu
+    rghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmnecujf
+    gurhepofggfffhvfevkfgjfhfutgfgsehtjeertdertddtnecuhfhrohhmpedftehrugcu
+    uehivghshhgvuhhvvghlfdcuoegrrhgusgeskhgvrhhnvghlrdhorhhgqeenucggtffrrg
+    htthgvrhhnpedvueehiedtvedtleekuddutefgffdtleetfeetveejveejieehfefhjeei
+    jeefudenucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmhepmhgrihhlfhhrohhmpe
+    grrhguodhmvghsmhhtphgruhhthhhpvghrshhonhgrlhhithihqdduieejtdehtddtjeel
+    qdeffedvudeigeduhedqrghruggspeepkhgvrhhnvghlrdhorhhgseifohhrkhhofhgrrh
+    gurdgtohhmpdhnsggprhgtphhtthhopeehtddpmhhouggvpehsmhhtphhouhhtpdhrtghp
+    thhtohepsghpsegrlhhivghnkedruggvpdhrtghpthhtoheptggrthgrlhhinhdrmhgrrh
+    hinhgrshesrghrmhdrtghomhdprhgtphhtthhopehlihhnuhigsegrrhhmlhhinhhugidr
+    ohhrghdruhhkpdhrtghpthhtoheprghrnhgusegrrhhnuggsrdguvgdprhgtphhtthhope
+    grnhhtohhnrdhivhgrnhhovhestggrmhgsrhhiughgvghgrhgvhihsrdgtohhmpdhrtghp
+    thhtohepphgrlhhmvghrsegurggssggvlhhtrdgtohhmpdhrtghpthhtohepuggrvhgvmh
+    esuggrvhgvmhhlohhfthdrnhgvthdprhgtphhtthhopegrohhusegvvggtshdrsggvrhhk
+    vghlvgihrdgvughupdhrtghpthhtohepmhhpvgesvghllhgvrhhmrghnrdhiugdrrghu
+X-ME-Proxy: <xmx:Bz_GadcJkX20GupXEUp-1Bp1i56g4LWcqwmuAAUTXMfU5fJkgo7Tdw>
+    <xmx:Bz_Gae4Ua-AeB83mS_pFrGVbAUqLQoAnmgxrDbHOol1S2B-duVR5XQ>
+    <xmx:Bz_GaRnLH2iPqmlmio84hLTWA0CS_wnMOI2-h11M3d92fo7SmGfrqA>
+    <xmx:Bz_GaUbPhoo7c5hIYcd0gM0CfIgT0rg3SwoJSuxv9v4EumISMkIDVQ>
+    <xmx:Bz_GafNBX4aAxc6vxqjfi2htd4zy-WLnaQnlHHZvUG3bWFOqd9K8W1h7>
+Feedback-ID: ice86485a:Fastmail
+Received: by mailuser.phl.internal (Postfix, from userid 501)
+	id 3B247700065; Fri, 27 Mar 2026 04:25:43 -0400 (EDT)
+X-Mailer: MessagingEngine.com Webmail Interface
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+X-ThreadId: ALG_cRBuf6HF
+Date: Fri, 27 Mar 2026 09:25:22 +0100
+From: "Ard Biesheuvel" <ardb@kernel.org>
+To: "Christoph Hellwig" <hch@lst.de>,
+ "Andrew Morton" <akpm@linux-foundation.org>
+Cc: "Richard Henderson" <richard.henderson@linaro.org>,
+ "Matt Turner" <mattst88@gmail.com>,
+ "Magnus Lindholm" <linmag7@gmail.com>,
+ "Russell King" <linux@armlinux.org.uk>,
+ "Catalin Marinas" <catalin.marinas@arm.com>,
+ "Will Deacon" <will@kernel.org>, "Huacai Chen" <chenhuacai@kernel.org>,
+ "WANG Xuerui" <kernel@xen0n.name>,
+ "Madhavan Srinivasan" <maddy@linux.ibm.com>,
+ "Michael Ellerman" <mpe@ellerman.id.au>,
+ "Nicholas Piggin" <npiggin@gmail.com>,
+ "Christophe Leroy (CS GROUP)" <chleroy@kernel.org>,
+ "Paul Walmsley" <pjw@kernel.org>, "Palmer Dabbelt" <palmer@dabbelt.com>,
+ "Albert Ou" <aou@eecs.berkeley.edu>, "Alexandre Ghiti" <alex@ghiti.fr>,
+ "Heiko Carstens" <hca@linux.ibm.com>,
+ "Vasily Gorbik" <gor@linux.ibm.com>,
+ "Alexander Gordeev" <agordeev@linux.ibm.com>,
+ "Christian Borntraeger" <borntraeger@linux.ibm.com>,
+ "Sven Schnelle" <svens@linux.ibm.com>,
+ "David S. Miller" <davem@davemloft.net>,
+ "Andreas Larsson" <andreas@gaisler.com>,
+ "Richard Weinberger" <richard@nod.at>,
+ "Anton Ivanov" <anton.ivanov@cambridgegreys.com>,
+ "Johannes Berg" <johannes@sipsolutions.net>,
+ "Thomas Gleixner" <tglx@kernel.org>, "Ingo Molnar" <mingo@redhat.com>,
+ "Borislav Petkov" <bp@alien8.de>,
+ "Dave Hansen" <dave.hansen@linux.intel.com>, x86@kernel.org,
+ "H . Peter Anvin" <hpa@zytor.com>,
+ "Herbert Xu" <herbert@gondor.apana.org.au>,
+ "Dan Williams" <dan.j.williams@intel.com>, "Chris Mason" <clm@fb.com>,
+ "David Sterba" <dsterba@suse.com>, "Arnd Bergmann" <arnd@arndb.de>,
+ "Song Liu" <song@kernel.org>, "Yu Kuai" <yukuai@fnnas.com>,
+ "Li Nan" <linan122@huawei.com>, "Theodore Ts'o" <tytso@mit.edu>,
+ "Jason A . Donenfeld" <Jason@zx2c4.com>, linux-alpha@vger.kernel.org,
+ linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+ loongarch@lists.linux.dev, linuxppc-dev@lists.ozlabs.org,
+ linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
+ sparclinux@vger.kernel.org, linux-um@lists.infradead.org,
+ linux-crypto@vger.kernel.org, linux-btrfs@vger.kernel.org,
+ linux-arch@vger.kernel.org, linux-raid@vger.kernel.org
+Message-Id: <e7979928-b33a-4132-b08b-d95b91b14295@app.fastmail.com>
+In-Reply-To: <20260327061704.3707577-4-hch@lst.de>
+References: <20260327061704.3707577-1-hch@lst.de>
+ <20260327061704.3707577-4-hch@lst.de>
+Subject: Re: [PATCH 03/28] arm64/xor: fix conflicting attributes for xor_block_template
+Content-Type: text/plain
+Content-Transfer-Encoding: 7bit
 
-When booting Linux 7.0-rc5 on a Qualcomm Snapdragon X1 with KASAN
-software tagging with a BTRFS filesystem, we see:
 
-BUG: KASAN: invalid-access in xxh64_update (lib/xxhash.c:143 lib/xxhash.c:283)
-Read of size 8 at addr 7bff000804fe1000 by task kworker/u49:2/138
-Pointer tag: [7b], memory tag: [b2]
+On Fri, 27 Mar 2026, at 07:16, Christoph Hellwig wrote:
+> Commit 2c54b423cf85 ("arm64/xor: use EOR3 instructions when available")
+> changes the definition to __ro_after_init instead of const, but failed to
+> update the external declaration in xor.h.  This was not found because
+> xor-neon.c doesn't include <asm/xor.h>, and can't easily do that due to
+> current architecture of the XOR code.
+>
 
-CPU: 0 UID: 0 PID: 138 Comm: kworker/u49:2 Not tainted 7.0.0-rc4+ #34 PREEMPTLAZY
-Hardware name: LENOVO 83ED/LNVNB161216, BIOS NHCN60WW 09/11/2025
-Workqueue: btrfs-endio-meta simple_end_io_work
-Call trace:
-show_stack (arch/arm64/kernel/stacktrace.c:501) (C)
-dump_stack_lvl (lib/dump_stack.c:122)
-print_report (mm/kasan/report.c:379 mm/kasan/report.c:482)
-kasan_report (mm/kasan/report.c:597)
-kasan_check_range (mm/kasan/sw_tags.c:86 (discriminator 1))
-__hwasan_loadN_noabort (mm/kasan/sw_tags.c:158)
-xxh64_update (lib/xxhash.c:143 lib/xxhash.c:283)
-btrfs_csum_update (fs/btrfs/fs.c:106)
-csum_tree_block (fs/btrfs/disk-io.c:103 (discriminator 3))
-btrfs_validate_extent_buffer (fs/btrfs/disk-io.c:389)
-end_bbio_meta_read (fs/btrfs/extent_io.c:3853 (discriminator 1))
-btrfs_bio_end_io (fs/btrfs/bio.c:152)
-simple_end_io_work (fs/btrfs/bio.c:388)
-process_one_work (./arch/arm64/include/asm/jump_label.h:36 ./include/trace/events/workqueue.h:110 kernel/workqueue.c:3281)
-worker_thread (kernel/workqueue.c:3353 (discriminator 2) kernel/workqueue.c:3440 (discriminator 2))
-kthread (kernel/kthread.c:436)
-ret_from_fork (arch/arm64/kernel/entry.S:861)
+Even if it did, it wouldn't matter - __ro_after_init has no effect on declarations, only on definitions - it only controls the placement of the object in the .data..ro_after_init section (and declarations don't generate any code)
 
-The buggy address belongs to the physical page:
-page: refcount:3 mapcount:0 mapping:f1ff00080055dee8 index:0x2467bd pfn:0x884fe1
-memcg:51ff000800e68ec0 aops:btree_aops ino:1
-flags: 0x9340000000004000(private|zone=2|kasantag=0x4d)
-raw: 9340000000004000 0000000000000000 dead000000000122 f1ff00080055dee8
-raw: 00000000002467bd 43ff00081d0cc6f0 00000003ffffffff 51ff000800e68ec0
-page dumped because: kasan: bad access detected
-
-Memory state around the buggy address:
-ffff000804fe0e00: 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b
-ffff000804fe0f00: 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b
->ffff000804fe1000: b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2
-^
-ffff000804fe1100: b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2
-ffff000804fe1200: b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2
-
-This occurs as allocation in btrfs_alloc_page_array is from multiple
-discrete pages thus different KASAN tags by design, leading to a tag
-mismatch when linear access is used where the pages are physically
-contiguous.
-
-Fix this by retagging all the EB pages with the same KASAN tag.
-
-Cc: stable@vger.kernel.org
-Signed-off-by: Daniel J Blueman <daniel@quora.org>
-Fixes: 397239ed6a6c ("btrfs: allow extent buffer helpers to skip cross-page handling")
-Changelog:
- v3: Retag only when contiguous; fix build failure when generic KASAN configured
- v2: https://lore.kernel.org/lkml/20260323061827.22903-1-daniel@quora.org/
-  - Retag pages rather than bypass linear access optimisation
- v1: https://lore.kernel.org/lkml/20260319053413.14771-1-daniel@quora.org/
----
- fs/btrfs/extent_io.c | 17 ++++++++++++++++-
- 1 file changed, 16 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 5f97a3d2a8d7..141092da871b 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3533,8 +3533,23 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
- 	if (uptodate)
- 		set_bit(EXTENT_BUFFER_UPTODATE, &eb->bflags);
- 	/* All pages are physically contiguous, can skip cross page handling. */
--	if (page_contig)
-+	if (page_contig) {
-+#if defined(CONFIG_KASAN_SW_TAGS) || defined(CONFIG_KASAN_HW_TAGS)
-+		struct page *page = folio_page(eb->folios[0], 0);
-+		u8 tag = page_kasan_tag(page);
-+
-+		/*
-+		 * Since pages are from multiple allocations and physically
-+		 * contiguous allowing linear access, prevent KASAN warnings
-+		 * by retagging with the first tag
-+		 */
-+		for (int i = 1; i < num_extent_pages(eb); i++) {
-+			page_kasan_tag_set(page + i, tag);
-+			kasan_unpoison_range(page_address(page + i), PAGE_SIZE);
-+      }
-+#endif
- 		eb->addr = folio_address(eb->folios[0]) + offset_in_page(eb->start);
-+	}
- again:
- 	xa_lock_irq(&fs_info->buffer_tree);
- 	existing_eb = __xa_cmpxchg(&fs_info->buffer_tree,
--- 
-2.53.0
+> Fixes: 2c54b423cf85 ("arm64/xor: use EOR3 instructions when available")
+> Signed-off-by: Christoph Hellwig <hch@lst.de>
+> ---
+>  arch/arm64/include/asm/xor.h | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+>

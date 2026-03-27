@@ -1,35 +1,35 @@
 Received: from bombadil.infradead.org (bombadil.infradead.org [198.137.202.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3B97637F739;
-	Fri, 27 Mar 2026 06:20:04 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 652EB37FF5F;
+	Fri, 27 Mar 2026 06:20:17 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.137.202.133
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774592409; cv=none; b=rmHK0dwXIYNkmXkJmZX+pNODhendU+o7Y94TP919Kbm9iRmuPhykfG3ZZt6hWKCNWhY/s0DhY1tUu43MWvJShoO3VWOcVqbc/Qr/WJSyuHNQYCxKi8MPKhZfrAUfJrXNynEMbWFUHWajpEAnCoH2zizpZPU4XXzYXWZRvuC5U6o=
+	t=1774592422; cv=none; b=J3HTRRrzGZtTqxV2SF/6TIO6YbfCADOrkcUDfZcwvQqYiarYW4dqFKqT3IRjV9tEweJf9rt9dj1rYmgB0+PXzEgCh0DKfgoORdgORKo0X1f6CVxlHaZVhmwjk3BzhcM+HfZ6sXw0nEFI8z1A0ZrCnxNOiCLinfkwRpHdACuPY3g=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774592409; c=relaxed/simple;
-	bh=q0gK460L0jREGvWTvOGa/l7d9BSq1AWVCLa+hSeMfM8=;
+	s=arc-20240116; t=1774592422; c=relaxed/simple;
+	bh=7tm/I+ToBtGzhPxAelbzye3gAUwCUmdECLbEfmikNmA=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=Ac1dChKTvI6YUAfCjLWkCxBDekp/wZq0375PQmRlAZNYMUrBo3igrKE4AMUs0Q2kYp1PA/vuvFre9WVQu+tb2T15ih2fcytAS6WMsr8LulWBSc/6Tjntiz6+MzMtn52DF0jlUrblTHYfJhlQ3PvNIoTpaRToHNToaUdJkUjmfOQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=AobrlijQ; arc=none smtp.client-ip=198.137.202.133
+	 MIME-Version; b=PA+Mb2QuSEnfDpXe5AeFjWEJtZP8pmsdsXQXPkyi1XZcKHbjkYKjybKowQSp8/O/fOW0B8c1gXXBjL8xrLRAprk9LL3PpkOsdjvM4sqJjBX+E0jtrxXuv81dV4DeDELGGPac6o8WmFeSyPTBrUbAy+QOMu3Lne9tQg2L/A9Cxvg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=TKToHgEa; arc=none smtp.client-ip=198.137.202.133
 Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de
 Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="AobrlijQ"
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="TKToHgEa"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
 	d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
 	MIME-Version:References:In-Reply-To:Message-ID:Date:Subject:Cc:To:From:Sender
 	:Reply-To:Content-Type:Content-ID:Content-Description;
-	bh=16iHVwlcEuXCxr3ygbaZQxjphufSruBj8SyX5330Ihs=; b=AobrlijQ56fLAd4ilWD6+FhQtv
-	H1p4IGpjuM3eHHxBgat8Nez/HU812HWESIKDXAt09lr7skDa9YoEIZmzD9O85Pc6MwTq/OcDRe+9R
-	Fg9lADaXTl/s76laNZJU5Tx/CX2GEzIRKniDS2CIShA0X444ota3EWURNQqWPv7gwEnC0yR54kelM
-	wCx6l8i8QutE1R3ZHDkQRAofzGotIiZkwNI4WqDrEBNrgwhE2pFRIuto1p1oeRuNePhnR5ch6WKkm
-	KYZQxaMTMbjBWdllC1OgfdgwEEgbk/W75ze1OW0KoukKeivTlAaYMgWO9ZSPUWTHfEnS+yF7Uz6ZK
-	RYYV6eBQ==;
+	bh=AuswcUODFcjfkuCW6IvHw2LNaByAD11L1gbTzdzZTFM=; b=TKToHgEaJk1ZXAIER646HkN/4M
+	STC+XqfsXiZ9WKbYZxhRMdF1JS+8O2ihGMwVely3dAYzfQePGgfJyx1KVZ6YfVKTCq0Ixg30DUeLL
+	9qmjw52U2sxBMMpr9tnR5aAAk1eBlZ4vAmqZ/vaZ5wo+8UJSyQp/kaH7RDj1gUuj4FkBLqaU3KdkO
+	n9gZ8pU4jSX5ooMpQZjriSfWmD0oZyyebIxK7WdJM7q08tLOtjqrP00GwZu24LK0tZujZM8b73pmT
+	B+6WF57l3IJ1vneU4+OEFrZYaMeKm3nfqeq/Ne9hPF/UuQftPF2JZ0VWkGWelqpHNY5dV7PGlBn7v
+	7l1GM11Q==;
 Received: from 2a02-8389-2341-5b80-d601-7564-c2e0-491c.cable.dynamic.v6.surfer.at ([2a02:8389:2341:5b80:d601:7564:c2e0:491c] helo=localhost)
 	by bombadil.infradead.org with esmtpsa (Exim 4.98.2 #2 (Red Hat Linux))
-	id 1w60Xr-00000006lYl-22x1;
-	Fri, 27 Mar 2026 06:19:47 +0000
+	id 1w60Y3-00000006lgL-1dRL;
+	Fri, 27 Mar 2026 06:19:59 +0000
 From: Christoph Hellwig <hch@lst.de>
 To: Andrew Morton <akpm@linux-foundation.org>
 Cc: Richard Henderson <richard.henderson@linaro.org>,
@@ -88,9 +88,9 @@ Cc: Richard Henderson <richard.henderson@linaro.org>,
 	linux-btrfs@vger.kernel.org,
 	linux-arch@vger.kernel.org,
 	linux-raid@vger.kernel.org
-Subject: [PATCH 09/28] xor: remove macro abuse for XOR implementation registrations
-Date: Fri, 27 Mar 2026 07:16:41 +0100
-Message-ID: <20260327061704.3707577-10-hch@lst.de>
+Subject: [PATCH 10/28] xor: move generic implementations out of asm-generic/xor.h
+Date: Fri, 27 Mar 2026 07:16:42 +0100
+Message-ID: <20260327061704.3707577-11-hch@lst.de>
 X-Mailer: git-send-email 2.47.3
 In-Reply-To: <20260327061704.3707577-1-hch@lst.de>
 References: <20260327061704.3707577-1-hch@lst.de>
@@ -103,583 +103,1555 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 
-Drop the pretty confusing historic XOR_TRY_TEMPLATES and
-XOR_SELECT_TEMPLATE, and instead let the architectures provide a
-arch_xor_init that calls either xor_register to register candidates
-or xor_force to force a specific implementation.
+Move the generic implementations from asm-generic/xor.h to
+per-implementaion .c files in lib/raid.  This will build them
+unconditionally even when an architecture forces a specific
+implementation, but as we'll need at least one generic version
+for the static_call optimization later on we'll pay that price.
+
+Note that this would cause the second xor_block_8regs instance created by
+arch/arm/lib/xor-neon.c to be generated instead of discarded as dead
+code, so add a NO_TEMPLATE symbol to disable it for this case.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- arch/alpha/include/asm/xor.h     | 29 ++++++++++++----------
- arch/arm/include/asm/xor.h       | 25 +++++++++----------
- arch/arm64/include/asm/xor.h     | 18 +++++++-------
- arch/loongarch/include/asm/xor.h | 42 ++++++++++++--------------------
- arch/powerpc/include/asm/xor.h   | 31 ++++++++++-------------
- arch/riscv/include/asm/xor.h     | 19 ++++++++-------
- arch/s390/include/asm/xor.h      | 12 ++++-----
- arch/sparc/include/asm/xor_32.h  | 14 +++++------
- arch/sparc/include/asm/xor_64.h  | 31 +++++++++++------------
- arch/x86/include/asm/xor.h       |  3 ---
- arch/x86/include/asm/xor_32.h    | 36 ++++++++++++++-------------
- arch/x86/include/asm/xor_64.h    | 18 ++++++++------
- arch/x86/include/asm/xor_avx.h   |  9 -------
- include/asm-generic/xor.h        |  8 ------
- include/linux/raid/xor_impl.h    |  5 ++++
- lib/raid/xor/xor-core.c          | 41 +++++++++++++++++++++++--------
- 16 files changed, 168 insertions(+), 173 deletions(-)
+ arch/arm/lib/xor-neon.c            |   4 +-
+ include/asm-generic/xor.h          | 727 +----------------------------
+ lib/raid/xor/Makefile              |   4 +
+ lib/raid/xor/xor-32regs-prefetch.c | 268 +++++++++++
+ lib/raid/xor/xor-32regs.c          | 219 +++++++++
+ lib/raid/xor/xor-8regs-prefetch.c  | 146 ++++++
+ lib/raid/xor/xor-8regs.c           | 105 +++++
+ 7 files changed, 748 insertions(+), 725 deletions(-)
+ create mode 100644 lib/raid/xor/xor-32regs-prefetch.c
+ create mode 100644 lib/raid/xor/xor-32regs.c
+ create mode 100644 lib/raid/xor/xor-8regs-prefetch.c
+ create mode 100644 lib/raid/xor/xor-8regs.c
 
-diff --git a/arch/alpha/include/asm/xor.h b/arch/alpha/include/asm/xor.h
-index e0de0c233ab9..4c8085711df1 100644
---- a/arch/alpha/include/asm/xor.h
-+++ b/arch/alpha/include/asm/xor.h
-@@ -851,16 +851,19 @@ static struct xor_block_template xor_block_alpha_prefetch = {
- /* For grins, also test the generic routines.  */
- #include <asm-generic/xor.h>
- 
--#undef XOR_TRY_TEMPLATES
--#define XOR_TRY_TEMPLATES				\
--	do {						\
--		xor_speed(&xor_block_8regs);		\
--		xor_speed(&xor_block_32regs);		\
--		xor_speed(&xor_block_alpha);		\
--		xor_speed(&xor_block_alpha_prefetch);	\
--	} while (0)
--
--/* Force the use of alpha_prefetch if EV6, as it is significantly
--   faster in the cold cache case.  */
--#define XOR_SELECT_TEMPLATE(FASTEST) \
--	(implver() == IMPLVER_EV6 ? &xor_block_alpha_prefetch : FASTEST)
-+/*
-+ * Force the use of alpha_prefetch if EV6, as it is significantly faster in the
-+ * cold cache case.
-+ */
-+#define arch_xor_init arch_xor_init
-+static __always_inline void __init arch_xor_init(void)
-+{
-+	if (implver() == IMPLVER_EV6) {
-+		xor_force(&xor_block_alpha_prefetch);
-+	} else {
-+		xor_register(&xor_block_8regs);
-+		xor_register(&xor_block_32regs);
-+		xor_register(&xor_block_alpha);
-+		xor_register(&xor_block_alpha_prefetch);
-+	}
-+}
-diff --git a/arch/arm/include/asm/xor.h b/arch/arm/include/asm/xor.h
-index bca2a6514746..b2dcd49186e2 100644
---- a/arch/arm/include/asm/xor.h
-+++ b/arch/arm/include/asm/xor.h
-@@ -138,15 +138,6 @@ static struct xor_block_template xor_block_arm4regs = {
- 	.do_5	= xor_arm4regs_5,
- };
- 
--#undef XOR_TRY_TEMPLATES
--#define XOR_TRY_TEMPLATES			\
--	do {					\
--		xor_speed(&xor_block_arm4regs);	\
--		xor_speed(&xor_block_8regs);	\
--		xor_speed(&xor_block_32regs);	\
--		NEON_TEMPLATES;			\
--	} while (0)
--
- #ifdef CONFIG_KERNEL_MODE_NEON
- 
- extern struct xor_block_template const xor_block_neon_inner;
-@@ -201,8 +192,16 @@ static struct xor_block_template xor_block_neon = {
- 	.do_5	= xor_neon_5
- };
- 
--#define NEON_TEMPLATES	\
--	do { if (cpu_has_neon()) xor_speed(&xor_block_neon); } while (0)
--#else
--#define NEON_TEMPLATES
-+#endif /* CONFIG_KERNEL_MODE_NEON */
-+
-+#define arch_xor_init arch_xor_init
-+static __always_inline void __init arch_xor_init(void)
-+{
-+	xor_register(&xor_block_arm4regs);
-+	xor_register(&xor_block_8regs);
-+	xor_register(&xor_block_32regs);
-+#ifdef CONFIG_KERNEL_MODE_NEON
-+	if (cpu_has_neon())
-+		xor_register(&xor_block_neon);
- #endif
-+}
-diff --git a/arch/arm64/include/asm/xor.h b/arch/arm64/include/asm/xor.h
-index bb7428d4ebc6..3cee1eb86371 100644
---- a/arch/arm64/include/asm/xor.h
-+++ b/arch/arm64/include/asm/xor.h
-@@ -60,14 +60,14 @@ static struct xor_block_template xor_block_arm64 = {
- 	.do_4   = xor_neon_4,
- 	.do_5	= xor_neon_5
- };
--#undef XOR_TRY_TEMPLATES
--#define XOR_TRY_TEMPLATES           \
--	do {        \
--		xor_speed(&xor_block_8regs);    \
--		xor_speed(&xor_block_32regs);    \
--		if (cpu_has_neon()) { \
--			xor_speed(&xor_block_arm64);\
--		} \
--	} while (0)
-+
-+#define arch_xor_init arch_xor_init
-+static __always_inline void __init arch_xor_init(void)
-+{
-+	xor_register(&xor_block_8regs);
-+	xor_register(&xor_block_32regs);
-+	if (cpu_has_neon())
-+		xor_register(&xor_block_arm64);
-+}
- 
- #endif /* ! CONFIG_KERNEL_MODE_NEON */
-diff --git a/arch/loongarch/include/asm/xor.h b/arch/loongarch/include/asm/xor.h
-index 12467fffee46..d17c0e3b047f 100644
---- a/arch/loongarch/include/asm/xor.h
-+++ b/arch/loongarch/include/asm/xor.h
-@@ -16,14 +16,6 @@ static struct xor_block_template xor_block_lsx = {
- 	.do_4 = xor_lsx_4,
- 	.do_5 = xor_lsx_5,
- };
--
--#define XOR_SPEED_LSX()					\
--	do {						\
--		if (cpu_has_lsx)			\
--			xor_speed(&xor_block_lsx);	\
--	} while (0)
--#else /* CONFIG_CPU_HAS_LSX */
--#define XOR_SPEED_LSX()
- #endif /* CONFIG_CPU_HAS_LSX */
- 
- #ifdef CONFIG_CPU_HAS_LASX
-@@ -34,14 +26,6 @@ static struct xor_block_template xor_block_lasx = {
- 	.do_4 = xor_lasx_4,
- 	.do_5 = xor_lasx_5,
- };
--
--#define XOR_SPEED_LASX()					\
--	do {							\
--		if (cpu_has_lasx)				\
--			xor_speed(&xor_block_lasx);		\
--	} while (0)
--#else /* CONFIG_CPU_HAS_LASX */
--#define XOR_SPEED_LASX()
- #endif /* CONFIG_CPU_HAS_LASX */
- 
- /*
-@@ -54,15 +38,21 @@ static struct xor_block_template xor_block_lasx = {
-  */
- #include <asm-generic/xor.h>
- 
--#undef XOR_TRY_TEMPLATES
--#define XOR_TRY_TEMPLATES				\
--do {							\
--	xor_speed(&xor_block_8regs);			\
--	xor_speed(&xor_block_8regs_p);			\
--	xor_speed(&xor_block_32regs);			\
--	xor_speed(&xor_block_32regs_p);			\
--	XOR_SPEED_LSX();				\
--	XOR_SPEED_LASX();				\
--} while (0)
-+#define arch_xor_init arch_xor_init
-+static __always_inline void __init arch_xor_init(void)
-+{
-+	xor_register(&xor_block_8regs);
-+	xor_register(&xor_block_8regs_p);
-+	xor_register(&xor_block_32regs);
-+	xor_register(&xor_block_32regs_p);
-+#ifdef CONFIG_CPU_HAS_LSX
-+	if (cpu_has_lsx)
-+		xor_register(&xor_block_lsx);
-+#endif
-+#ifdef CONFIG_CPU_HAS_LASX
-+	if (cpu_has_lasx)
-+		xor_register(&xor_block_lasx);
-+#endif
-+}
- 
- #endif /* _ASM_LOONGARCH_XOR_H */
-diff --git a/arch/powerpc/include/asm/xor.h b/arch/powerpc/include/asm/xor.h
-index 37d05c11d09c..30224c5279c4 100644
---- a/arch/powerpc/include/asm/xor.h
-+++ b/arch/powerpc/include/asm/xor.h
-@@ -21,27 +21,22 @@ static struct xor_block_template xor_block_altivec = {
- 	.do_4 = xor_altivec_4,
- 	.do_5 = xor_altivec_5,
- };
--
--#define XOR_SPEED_ALTIVEC()				\
--	do {						\
--		if (cpu_has_feature(CPU_FTR_ALTIVEC))	\
--			xor_speed(&xor_block_altivec);	\
--	} while (0)
--#else
--#define XOR_SPEED_ALTIVEC()
--#endif
-+#endif /* CONFIG_ALTIVEC */
- 
- /* Also try the generic routines. */
- #include <asm-generic/xor.h>
- 
--#undef XOR_TRY_TEMPLATES
--#define XOR_TRY_TEMPLATES				\
--do {							\
--	xor_speed(&xor_block_8regs);			\
--	xor_speed(&xor_block_8regs_p);			\
--	xor_speed(&xor_block_32regs);			\
--	xor_speed(&xor_block_32regs_p);			\
--	XOR_SPEED_ALTIVEC();				\
--} while (0)
-+#define arch_xor_init arch_xor_init
-+static __always_inline void __init arch_xor_init(void)
-+{
-+	xor_register(&xor_block_8regs);
-+	xor_register(&xor_block_8regs_p);
-+	xor_register(&xor_block_32regs);
-+	xor_register(&xor_block_32regs_p);
-+#ifdef CONFIG_ALTIVEC
-+	if (cpu_has_feature(CPU_FTR_ALTIVEC))
-+		xor_register(&xor_block_altivec);
-+#endif
-+}
- 
- #endif /* _ASM_POWERPC_XOR_H */
-diff --git a/arch/riscv/include/asm/xor.h b/arch/riscv/include/asm/xor.h
-index 96011861e46b..ed5f27903efc 100644
---- a/arch/riscv/include/asm/xor.h
-+++ b/arch/riscv/include/asm/xor.h
-@@ -55,14 +55,15 @@ static struct xor_block_template xor_block_rvv = {
- 	.do_4 = xor_vector_4,
- 	.do_5 = xor_vector_5
- };
-+#endif /* CONFIG_RISCV_ISA_V */
- 
--#undef XOR_TRY_TEMPLATES
--#define XOR_TRY_TEMPLATES           \
--	do {        \
--		xor_speed(&xor_block_8regs);    \
--		xor_speed(&xor_block_32regs);    \
--		if (has_vector()) { \
--			xor_speed(&xor_block_rvv);\
--		} \
--	} while (0)
-+#define arch_xor_init arch_xor_init
-+static __always_inline void __init arch_xor_init(void)
-+{
-+	xor_register(&xor_block_8regs);
-+	xor_register(&xor_block_32regs);
-+#ifdef CONFIG_RISCV_ISA_V
-+	if (has_vector())
-+		xor_register(&xor_block_rvv);
- #endif
-+}
-diff --git a/arch/s390/include/asm/xor.h b/arch/s390/include/asm/xor.h
-index 857d6759b67f..4e2233f64da9 100644
---- a/arch/s390/include/asm/xor.h
-+++ b/arch/s390/include/asm/xor.h
-@@ -10,12 +10,10 @@
- 
- extern struct xor_block_template xor_block_xc;
- 
--#undef XOR_TRY_TEMPLATES
--#define XOR_TRY_TEMPLATES				\
--do {							\
--	xor_speed(&xor_block_xc);			\
--} while (0)
--
--#define XOR_SELECT_TEMPLATE(FASTEST)	(&xor_block_xc)
-+#define arch_xor_init arch_xor_init
-+static __always_inline void __init arch_xor_init(void)
-+{
-+	xor_force(&xor_block_xc);
-+}
- 
- #endif /* _ASM_S390_XOR_H */
-diff --git a/arch/sparc/include/asm/xor_32.h b/arch/sparc/include/asm/xor_32.h
-index 0351813cf3af..8fbf0c07ec28 100644
---- a/arch/sparc/include/asm/xor_32.h
-+++ b/arch/sparc/include/asm/xor_32.h
-@@ -259,10 +259,10 @@ static struct xor_block_template xor_block_SPARC = {
- /* For grins, also test the generic routines.  */
- #include <asm-generic/xor.h>
- 
--#undef XOR_TRY_TEMPLATES
--#define XOR_TRY_TEMPLATES				\
--	do {						\
--		xor_speed(&xor_block_8regs);		\
--		xor_speed(&xor_block_32regs);		\
--		xor_speed(&xor_block_SPARC);		\
--	} while (0)
-+#define arch_xor_init arch_xor_init
-+static __always_inline void __init arch_xor_init(void)
-+{
-+	xor_register(&xor_block_8regs);
-+	xor_register(&xor_block_32regs);
-+	xor_register(&xor_block_SPARC);
-+}
-diff --git a/arch/sparc/include/asm/xor_64.h b/arch/sparc/include/asm/xor_64.h
-index caaddea8ad79..e0482ecc0a68 100644
---- a/arch/sparc/include/asm/xor_64.h
-+++ b/arch/sparc/include/asm/xor_64.h
-@@ -60,20 +60,17 @@ static struct xor_block_template xor_block_niagara = {
-         .do_5	= xor_niagara_5,
- };
- 
--#undef XOR_TRY_TEMPLATES
--#define XOR_TRY_TEMPLATES				\
--	do {						\
--		xor_speed(&xor_block_VIS);		\
--		xor_speed(&xor_block_niagara);		\
--	} while (0)
--
--/* For VIS for everything except Niagara.  */
--#define XOR_SELECT_TEMPLATE(FASTEST) \
--	((tlb_type == hypervisor && \
--	  (sun4v_chip_type == SUN4V_CHIP_NIAGARA1 || \
--	   sun4v_chip_type == SUN4V_CHIP_NIAGARA2 || \
--	   sun4v_chip_type == SUN4V_CHIP_NIAGARA3 || \
--	   sun4v_chip_type == SUN4V_CHIP_NIAGARA4 || \
--	   sun4v_chip_type == SUN4V_CHIP_NIAGARA5)) ? \
--	 &xor_block_niagara : \
--	 &xor_block_VIS)
-+#define arch_xor_init arch_xor_init
-+static __always_inline void __init arch_xor_init(void)
-+{
-+	/* Force VIS for everything except Niagara.  */
-+	if (tlb_type == hypervisor &&
-+	    (sun4v_chip_type == SUN4V_CHIP_NIAGARA1 ||
-+	     sun4v_chip_type == SUN4V_CHIP_NIAGARA2 ||
-+	     sun4v_chip_type == SUN4V_CHIP_NIAGARA3 ||
-+	     sun4v_chip_type == SUN4V_CHIP_NIAGARA4 ||
-+	     sun4v_chip_type == SUN4V_CHIP_NIAGARA5))
-+		xor_force(&xor_block_niagara);
-+	else
-+		xor_force(&xor_block_VIS);
-+}
-diff --git a/arch/x86/include/asm/xor.h b/arch/x86/include/asm/xor.h
-index 7b0307acc410..33f5620d8d69 100644
---- a/arch/x86/include/asm/xor.h
-+++ b/arch/x86/include/asm/xor.h
-@@ -496,7 +496,4 @@ static struct xor_block_template xor_block_sse_pf64 = {
- # include <asm/xor_64.h>
+diff --git a/arch/arm/lib/xor-neon.c b/arch/arm/lib/xor-neon.c
+index 282980b9bf2a..b5be50567991 100644
+--- a/arch/arm/lib/xor-neon.c
++++ b/arch/arm/lib/xor-neon.c
+@@ -26,8 +26,8 @@ MODULE_LICENSE("GPL");
+ #pragma GCC optimize "tree-vectorize"
  #endif
  
--#define XOR_SELECT_TEMPLATE(FASTEST) \
--	AVX_SELECT(FASTEST)
--
- #endif /* _ASM_X86_XOR_H */
-diff --git a/arch/x86/include/asm/xor_32.h b/arch/x86/include/asm/xor_32.h
-index 7a6b9474591e..ee32d08c27bc 100644
---- a/arch/x86/include/asm/xor_32.h
-+++ b/arch/x86/include/asm/xor_32.h
-@@ -552,22 +552,24 @@ static struct xor_block_template xor_block_pIII_sse = {
- /* We force the use of the SSE xor block because it can write around L2.
-    We may also be able to load into the L1 only depending on how the cpu
-    deals with a load to a line that is being prefetched.  */
--#undef XOR_TRY_TEMPLATES
--#define XOR_TRY_TEMPLATES				\
--do {							\
--	AVX_XOR_SPEED;					\
--	if (boot_cpu_has(X86_FEATURE_XMM)) {				\
--		xor_speed(&xor_block_pIII_sse);		\
--		xor_speed(&xor_block_sse_pf64);		\
--	} else if (boot_cpu_has(X86_FEATURE_MMX)) {	\
--		xor_speed(&xor_block_pII_mmx);		\
--		xor_speed(&xor_block_p5_mmx);		\
--	} else {					\
--		xor_speed(&xor_block_8regs);		\
--		xor_speed(&xor_block_8regs_p);		\
--		xor_speed(&xor_block_32regs);		\
--		xor_speed(&xor_block_32regs_p);		\
--	}						\
--} while (0)
-+#define arch_xor_init arch_xor_init
-+static __always_inline void __init arch_xor_init(void)
-+{
-+	if (boot_cpu_has(X86_FEATURE_AVX) &&
-+	    boot_cpu_has(X86_FEATURE_OSXSAVE)) {
-+		xor_force(&xor_block_avx);
-+	} else if (boot_cpu_has(X86_FEATURE_XMM)) {
-+		xor_register(&xor_block_pIII_sse);
-+		xor_register(&xor_block_sse_pf64);
-+	} else if (boot_cpu_has(X86_FEATURE_MMX)) {
-+		xor_register(&xor_block_pII_mmx);
-+		xor_register(&xor_block_p5_mmx);
-+	} else {
-+		xor_register(&xor_block_8regs);
-+		xor_register(&xor_block_8regs_p);
-+		xor_register(&xor_block_32regs);
-+		xor_register(&xor_block_32regs_p);
-+	}
-+}
+-#pragma GCC diagnostic ignored "-Wunused-variable"
+-#include <asm-generic/xor.h>
++#define NO_TEMPLATE
++#include "../../../lib/raid/xor/xor-8regs.c"
  
- #endif /* _ASM_X86_XOR_32_H */
-diff --git a/arch/x86/include/asm/xor_64.h b/arch/x86/include/asm/xor_64.h
-index 0307e4ec5044..2d2ceb241866 100644
---- a/arch/x86/include/asm/xor_64.h
-+++ b/arch/x86/include/asm/xor_64.h
-@@ -17,12 +17,16 @@ static struct xor_block_template xor_block_sse = {
- /* We force the use of the SSE xor block because it can write around L2.
-    We may also be able to load into the L1 only depending on how the cpu
-    deals with a load to a line that is being prefetched.  */
--#undef XOR_TRY_TEMPLATES
--#define XOR_TRY_TEMPLATES			\
--do {						\
--	AVX_XOR_SPEED;				\
--	xor_speed(&xor_block_sse_pf64);		\
--	xor_speed(&xor_block_sse);		\
--} while (0)
-+#define arch_xor_init arch_xor_init
-+static __always_inline void __init arch_xor_init(void)
-+{
-+	if (boot_cpu_has(X86_FEATURE_AVX) &&
-+	    boot_cpu_has(X86_FEATURE_OSXSAVE)) {
-+		xor_force(&xor_block_avx);
-+	} else {
-+		xor_register(&xor_block_sse_pf64);
-+		xor_register(&xor_block_sse);
-+	}
-+}
- 
- #endif /* _ASM_X86_XOR_64_H */
-diff --git a/arch/x86/include/asm/xor_avx.h b/arch/x86/include/asm/xor_avx.h
-index 7f81dd5897f4..c600888436bb 100644
---- a/arch/x86/include/asm/xor_avx.h
-+++ b/arch/x86/include/asm/xor_avx.h
-@@ -166,13 +166,4 @@ static struct xor_block_template xor_block_avx = {
- 	.do_5 = xor_avx_5,
- };
- 
--#define AVX_XOR_SPEED \
--do { \
--	if (boot_cpu_has(X86_FEATURE_AVX) && boot_cpu_has(X86_FEATURE_OSXSAVE)) \
--		xor_speed(&xor_block_avx); \
--} while (0)
--
--#define AVX_SELECT(FASTEST) \
--	(boot_cpu_has(X86_FEATURE_AVX) && boot_cpu_has(X86_FEATURE_OSXSAVE) ? &xor_block_avx : FASTEST)
--
- #endif
+ struct xor_block_template const xor_block_neon_inner = {
+ 	.name	= "__inner_neon__",
 diff --git a/include/asm-generic/xor.h b/include/asm-generic/xor.h
-index 44509d48fca2..79c0096aa9d9 100644
+index 79c0096aa9d9..fc151fdc45ab 100644
 --- a/include/asm-generic/xor.h
 +++ b/include/asm-generic/xor.h
-@@ -728,11 +728,3 @@ static struct xor_block_template xor_block_32regs_p __maybe_unused = {
- 	.do_4 = xor_32regs_p_4,
- 	.do_5 = xor_32regs_p_5,
- };
+@@ -5,726 +5,7 @@
+  * Generic optimized RAID-5 checksumming functions.
+  */
+ 
+-#include <linux/prefetch.h>
 -
--#define XOR_TRY_TEMPLATES			\
--	do {					\
--		xor_speed(&xor_block_8regs);	\
--		xor_speed(&xor_block_8regs_p);	\
--		xor_speed(&xor_block_32regs);	\
--		xor_speed(&xor_block_32regs_p);	\
--	} while (0)
-diff --git a/include/linux/raid/xor_impl.h b/include/linux/raid/xor_impl.h
-index a1890cd66812..6ed4c445ab24 100644
---- a/include/linux/raid/xor_impl.h
-+++ b/include/linux/raid/xor_impl.h
-@@ -2,6 +2,8 @@
- #ifndef _XOR_IMPL_H
- #define _XOR_IMPL_H
- 
-+#include <linux/init.h>
-+
- struct xor_block_template {
- 	struct xor_block_template *next;
- 	const char *name;
-@@ -22,4 +24,7 @@ struct xor_block_template {
- 		     const unsigned long * __restrict);
- };
- 
-+void __init xor_register(struct xor_block_template *tmpl);
-+void __init xor_force(struct xor_block_template *tmpl);
-+
- #endif /* _XOR_IMPL_H */
-diff --git a/lib/raid/xor/xor-core.c b/lib/raid/xor/xor-core.c
-index db1824011a12..93608b5fece9 100644
---- a/lib/raid/xor/xor-core.c
-+++ b/lib/raid/xor/xor-core.c
-@@ -14,10 +14,6 @@
- #include <linux/preempt.h>
- #include <asm/xor.h>
- 
--#ifndef XOR_SELECT_TEMPLATE
--#define XOR_SELECT_TEMPLATE(x) (x)
--#endif
+-static void
+-xor_8regs_2(unsigned long bytes, unsigned long * __restrict p1,
+-	    const unsigned long * __restrict p2)
+-{
+-	long lines = bytes / (sizeof (long)) / 8;
 -
- /* The xor routines to use.  */
- static struct xor_block_template *active_template;
+-	do {
+-		p1[0] ^= p2[0];
+-		p1[1] ^= p2[1];
+-		p1[2] ^= p2[2];
+-		p1[3] ^= p2[3];
+-		p1[4] ^= p2[4];
+-		p1[5] ^= p2[5];
+-		p1[6] ^= p2[6];
+-		p1[7] ^= p2[7];
+-		p1 += 8;
+-		p2 += 8;
+-	} while (--lines > 0);
+-}
+-
+-static void
+-xor_8regs_3(unsigned long bytes, unsigned long * __restrict p1,
+-	    const unsigned long * __restrict p2,
+-	    const unsigned long * __restrict p3)
+-{
+-	long lines = bytes / (sizeof (long)) / 8;
+-
+-	do {
+-		p1[0] ^= p2[0] ^ p3[0];
+-		p1[1] ^= p2[1] ^ p3[1];
+-		p1[2] ^= p2[2] ^ p3[2];
+-		p1[3] ^= p2[3] ^ p3[3];
+-		p1[4] ^= p2[4] ^ p3[4];
+-		p1[5] ^= p2[5] ^ p3[5];
+-		p1[6] ^= p2[6] ^ p3[6];
+-		p1[7] ^= p2[7] ^ p3[7];
+-		p1 += 8;
+-		p2 += 8;
+-		p3 += 8;
+-	} while (--lines > 0);
+-}
+-
+-static void
+-xor_8regs_4(unsigned long bytes, unsigned long * __restrict p1,
+-	    const unsigned long * __restrict p2,
+-	    const unsigned long * __restrict p3,
+-	    const unsigned long * __restrict p4)
+-{
+-	long lines = bytes / (sizeof (long)) / 8;
+-
+-	do {
+-		p1[0] ^= p2[0] ^ p3[0] ^ p4[0];
+-		p1[1] ^= p2[1] ^ p3[1] ^ p4[1];
+-		p1[2] ^= p2[2] ^ p3[2] ^ p4[2];
+-		p1[3] ^= p2[3] ^ p3[3] ^ p4[3];
+-		p1[4] ^= p2[4] ^ p3[4] ^ p4[4];
+-		p1[5] ^= p2[5] ^ p3[5] ^ p4[5];
+-		p1[6] ^= p2[6] ^ p3[6] ^ p4[6];
+-		p1[7] ^= p2[7] ^ p3[7] ^ p4[7];
+-		p1 += 8;
+-		p2 += 8;
+-		p3 += 8;
+-		p4 += 8;
+-	} while (--lines > 0);
+-}
+-
+-static void
+-xor_8regs_5(unsigned long bytes, unsigned long * __restrict p1,
+-	    const unsigned long * __restrict p2,
+-	    const unsigned long * __restrict p3,
+-	    const unsigned long * __restrict p4,
+-	    const unsigned long * __restrict p5)
+-{
+-	long lines = bytes / (sizeof (long)) / 8;
+-
+-	do {
+-		p1[0] ^= p2[0] ^ p3[0] ^ p4[0] ^ p5[0];
+-		p1[1] ^= p2[1] ^ p3[1] ^ p4[1] ^ p5[1];
+-		p1[2] ^= p2[2] ^ p3[2] ^ p4[2] ^ p5[2];
+-		p1[3] ^= p2[3] ^ p3[3] ^ p4[3] ^ p5[3];
+-		p1[4] ^= p2[4] ^ p3[4] ^ p4[4] ^ p5[4];
+-		p1[5] ^= p2[5] ^ p3[5] ^ p4[5] ^ p5[5];
+-		p1[6] ^= p2[6] ^ p3[6] ^ p4[6] ^ p5[6];
+-		p1[7] ^= p2[7] ^ p3[7] ^ p4[7] ^ p5[7];
+-		p1 += 8;
+-		p2 += 8;
+-		p3 += 8;
+-		p4 += 8;
+-		p5 += 8;
+-	} while (--lines > 0);
+-}
+-
+-static void
+-xor_32regs_2(unsigned long bytes, unsigned long * __restrict p1,
+-	     const unsigned long * __restrict p2)
+-{
+-	long lines = bytes / (sizeof (long)) / 8;
+-
+-	do {
+-		register long d0, d1, d2, d3, d4, d5, d6, d7;
+-		d0 = p1[0];	/* Pull the stuff into registers	*/
+-		d1 = p1[1];	/*  ... in bursts, if possible.		*/
+-		d2 = p1[2];
+-		d3 = p1[3];
+-		d4 = p1[4];
+-		d5 = p1[5];
+-		d6 = p1[6];
+-		d7 = p1[7];
+-		d0 ^= p2[0];
+-		d1 ^= p2[1];
+-		d2 ^= p2[2];
+-		d3 ^= p2[3];
+-		d4 ^= p2[4];
+-		d5 ^= p2[5];
+-		d6 ^= p2[6];
+-		d7 ^= p2[7];
+-		p1[0] = d0;	/* Store the result (in bursts)		*/
+-		p1[1] = d1;
+-		p1[2] = d2;
+-		p1[3] = d3;
+-		p1[4] = d4;
+-		p1[5] = d5;
+-		p1[6] = d6;
+-		p1[7] = d7;
+-		p1 += 8;
+-		p2 += 8;
+-	} while (--lines > 0);
+-}
+-
+-static void
+-xor_32regs_3(unsigned long bytes, unsigned long * __restrict p1,
+-	     const unsigned long * __restrict p2,
+-	     const unsigned long * __restrict p3)
+-{
+-	long lines = bytes / (sizeof (long)) / 8;
+-
+-	do {
+-		register long d0, d1, d2, d3, d4, d5, d6, d7;
+-		d0 = p1[0];	/* Pull the stuff into registers	*/
+-		d1 = p1[1];	/*  ... in bursts, if possible.		*/
+-		d2 = p1[2];
+-		d3 = p1[3];
+-		d4 = p1[4];
+-		d5 = p1[5];
+-		d6 = p1[6];
+-		d7 = p1[7];
+-		d0 ^= p2[0];
+-		d1 ^= p2[1];
+-		d2 ^= p2[2];
+-		d3 ^= p2[3];
+-		d4 ^= p2[4];
+-		d5 ^= p2[5];
+-		d6 ^= p2[6];
+-		d7 ^= p2[7];
+-		d0 ^= p3[0];
+-		d1 ^= p3[1];
+-		d2 ^= p3[2];
+-		d3 ^= p3[3];
+-		d4 ^= p3[4];
+-		d5 ^= p3[5];
+-		d6 ^= p3[6];
+-		d7 ^= p3[7];
+-		p1[0] = d0;	/* Store the result (in bursts)		*/
+-		p1[1] = d1;
+-		p1[2] = d2;
+-		p1[3] = d3;
+-		p1[4] = d4;
+-		p1[5] = d5;
+-		p1[6] = d6;
+-		p1[7] = d7;
+-		p1 += 8;
+-		p2 += 8;
+-		p3 += 8;
+-	} while (--lines > 0);
+-}
+-
+-static void
+-xor_32regs_4(unsigned long bytes, unsigned long * __restrict p1,
+-	     const unsigned long * __restrict p2,
+-	     const unsigned long * __restrict p3,
+-	     const unsigned long * __restrict p4)
+-{
+-	long lines = bytes / (sizeof (long)) / 8;
+-
+-	do {
+-		register long d0, d1, d2, d3, d4, d5, d6, d7;
+-		d0 = p1[0];	/* Pull the stuff into registers	*/
+-		d1 = p1[1];	/*  ... in bursts, if possible.		*/
+-		d2 = p1[2];
+-		d3 = p1[3];
+-		d4 = p1[4];
+-		d5 = p1[5];
+-		d6 = p1[6];
+-		d7 = p1[7];
+-		d0 ^= p2[0];
+-		d1 ^= p2[1];
+-		d2 ^= p2[2];
+-		d3 ^= p2[3];
+-		d4 ^= p2[4];
+-		d5 ^= p2[5];
+-		d6 ^= p2[6];
+-		d7 ^= p2[7];
+-		d0 ^= p3[0];
+-		d1 ^= p3[1];
+-		d2 ^= p3[2];
+-		d3 ^= p3[3];
+-		d4 ^= p3[4];
+-		d5 ^= p3[5];
+-		d6 ^= p3[6];
+-		d7 ^= p3[7];
+-		d0 ^= p4[0];
+-		d1 ^= p4[1];
+-		d2 ^= p4[2];
+-		d3 ^= p4[3];
+-		d4 ^= p4[4];
+-		d5 ^= p4[5];
+-		d6 ^= p4[6];
+-		d7 ^= p4[7];
+-		p1[0] = d0;	/* Store the result (in bursts)		*/
+-		p1[1] = d1;
+-		p1[2] = d2;
+-		p1[3] = d3;
+-		p1[4] = d4;
+-		p1[5] = d5;
+-		p1[6] = d6;
+-		p1[7] = d7;
+-		p1 += 8;
+-		p2 += 8;
+-		p3 += 8;
+-		p4 += 8;
+-	} while (--lines > 0);
+-}
+-
+-static void
+-xor_32regs_5(unsigned long bytes, unsigned long * __restrict p1,
+-	     const unsigned long * __restrict p2,
+-	     const unsigned long * __restrict p3,
+-	     const unsigned long * __restrict p4,
+-	     const unsigned long * __restrict p5)
+-{
+-	long lines = bytes / (sizeof (long)) / 8;
+-
+-	do {
+-		register long d0, d1, d2, d3, d4, d5, d6, d7;
+-		d0 = p1[0];	/* Pull the stuff into registers	*/
+-		d1 = p1[1];	/*  ... in bursts, if possible.		*/
+-		d2 = p1[2];
+-		d3 = p1[3];
+-		d4 = p1[4];
+-		d5 = p1[5];
+-		d6 = p1[6];
+-		d7 = p1[7];
+-		d0 ^= p2[0];
+-		d1 ^= p2[1];
+-		d2 ^= p2[2];
+-		d3 ^= p2[3];
+-		d4 ^= p2[4];
+-		d5 ^= p2[5];
+-		d6 ^= p2[6];
+-		d7 ^= p2[7];
+-		d0 ^= p3[0];
+-		d1 ^= p3[1];
+-		d2 ^= p3[2];
+-		d3 ^= p3[3];
+-		d4 ^= p3[4];
+-		d5 ^= p3[5];
+-		d6 ^= p3[6];
+-		d7 ^= p3[7];
+-		d0 ^= p4[0];
+-		d1 ^= p4[1];
+-		d2 ^= p4[2];
+-		d3 ^= p4[3];
+-		d4 ^= p4[4];
+-		d5 ^= p4[5];
+-		d6 ^= p4[6];
+-		d7 ^= p4[7];
+-		d0 ^= p5[0];
+-		d1 ^= p5[1];
+-		d2 ^= p5[2];
+-		d3 ^= p5[3];
+-		d4 ^= p5[4];
+-		d5 ^= p5[5];
+-		d6 ^= p5[6];
+-		d7 ^= p5[7];
+-		p1[0] = d0;	/* Store the result (in bursts)		*/
+-		p1[1] = d1;
+-		p1[2] = d2;
+-		p1[3] = d3;
+-		p1[4] = d4;
+-		p1[5] = d5;
+-		p1[6] = d6;
+-		p1[7] = d7;
+-		p1 += 8;
+-		p2 += 8;
+-		p3 += 8;
+-		p4 += 8;
+-		p5 += 8;
+-	} while (--lines > 0);
+-}
+-
+-static void
+-xor_8regs_p_2(unsigned long bytes, unsigned long * __restrict p1,
+-	      const unsigned long * __restrict p2)
+-{
+-	long lines = bytes / (sizeof (long)) / 8 - 1;
+-	prefetchw(p1);
+-	prefetch(p2);
+-
+-	do {
+-		prefetchw(p1+8);
+-		prefetch(p2+8);
+- once_more:
+-		p1[0] ^= p2[0];
+-		p1[1] ^= p2[1];
+-		p1[2] ^= p2[2];
+-		p1[3] ^= p2[3];
+-		p1[4] ^= p2[4];
+-		p1[5] ^= p2[5];
+-		p1[6] ^= p2[6];
+-		p1[7] ^= p2[7];
+-		p1 += 8;
+-		p2 += 8;
+-	} while (--lines > 0);
+-	if (lines == 0)
+-		goto once_more;
+-}
+-
+-static void
+-xor_8regs_p_3(unsigned long bytes, unsigned long * __restrict p1,
+-	      const unsigned long * __restrict p2,
+-	      const unsigned long * __restrict p3)
+-{
+-	long lines = bytes / (sizeof (long)) / 8 - 1;
+-	prefetchw(p1);
+-	prefetch(p2);
+-	prefetch(p3);
+-
+-	do {
+-		prefetchw(p1+8);
+-		prefetch(p2+8);
+-		prefetch(p3+8);
+- once_more:
+-		p1[0] ^= p2[0] ^ p3[0];
+-		p1[1] ^= p2[1] ^ p3[1];
+-		p1[2] ^= p2[2] ^ p3[2];
+-		p1[3] ^= p2[3] ^ p3[3];
+-		p1[4] ^= p2[4] ^ p3[4];
+-		p1[5] ^= p2[5] ^ p3[5];
+-		p1[6] ^= p2[6] ^ p3[6];
+-		p1[7] ^= p2[7] ^ p3[7];
+-		p1 += 8;
+-		p2 += 8;
+-		p3 += 8;
+-	} while (--lines > 0);
+-	if (lines == 0)
+-		goto once_more;
+-}
+-
+-static void
+-xor_8regs_p_4(unsigned long bytes, unsigned long * __restrict p1,
+-	      const unsigned long * __restrict p2,
+-	      const unsigned long * __restrict p3,
+-	      const unsigned long * __restrict p4)
+-{
+-	long lines = bytes / (sizeof (long)) / 8 - 1;
+-
+-	prefetchw(p1);
+-	prefetch(p2);
+-	prefetch(p3);
+-	prefetch(p4);
+-
+-	do {
+-		prefetchw(p1+8);
+-		prefetch(p2+8);
+-		prefetch(p3+8);
+-		prefetch(p4+8);
+- once_more:
+-		p1[0] ^= p2[0] ^ p3[0] ^ p4[0];
+-		p1[1] ^= p2[1] ^ p3[1] ^ p4[1];
+-		p1[2] ^= p2[2] ^ p3[2] ^ p4[2];
+-		p1[3] ^= p2[3] ^ p3[3] ^ p4[3];
+-		p1[4] ^= p2[4] ^ p3[4] ^ p4[4];
+-		p1[5] ^= p2[5] ^ p3[5] ^ p4[5];
+-		p1[6] ^= p2[6] ^ p3[6] ^ p4[6];
+-		p1[7] ^= p2[7] ^ p3[7] ^ p4[7];
+-		p1 += 8;
+-		p2 += 8;
+-		p3 += 8;
+-		p4 += 8;
+-	} while (--lines > 0);
+-	if (lines == 0)
+-		goto once_more;
+-}
+-
+-static void
+-xor_8regs_p_5(unsigned long bytes, unsigned long * __restrict p1,
+-	      const unsigned long * __restrict p2,
+-	      const unsigned long * __restrict p3,
+-	      const unsigned long * __restrict p4,
+-	      const unsigned long * __restrict p5)
+-{
+-	long lines = bytes / (sizeof (long)) / 8 - 1;
+-
+-	prefetchw(p1);
+-	prefetch(p2);
+-	prefetch(p3);
+-	prefetch(p4);
+-	prefetch(p5);
+-
+-	do {
+-		prefetchw(p1+8);
+-		prefetch(p2+8);
+-		prefetch(p3+8);
+-		prefetch(p4+8);
+-		prefetch(p5+8);
+- once_more:
+-		p1[0] ^= p2[0] ^ p3[0] ^ p4[0] ^ p5[0];
+-		p1[1] ^= p2[1] ^ p3[1] ^ p4[1] ^ p5[1];
+-		p1[2] ^= p2[2] ^ p3[2] ^ p4[2] ^ p5[2];
+-		p1[3] ^= p2[3] ^ p3[3] ^ p4[3] ^ p5[3];
+-		p1[4] ^= p2[4] ^ p3[4] ^ p4[4] ^ p5[4];
+-		p1[5] ^= p2[5] ^ p3[5] ^ p4[5] ^ p5[5];
+-		p1[6] ^= p2[6] ^ p3[6] ^ p4[6] ^ p5[6];
+-		p1[7] ^= p2[7] ^ p3[7] ^ p4[7] ^ p5[7];
+-		p1 += 8;
+-		p2 += 8;
+-		p3 += 8;
+-		p4 += 8;
+-		p5 += 8;
+-	} while (--lines > 0);
+-	if (lines == 0)
+-		goto once_more;
+-}
+-
+-static void
+-xor_32regs_p_2(unsigned long bytes, unsigned long * __restrict p1,
+-	       const unsigned long * __restrict p2)
+-{
+-	long lines = bytes / (sizeof (long)) / 8 - 1;
+-
+-	prefetchw(p1);
+-	prefetch(p2);
+-
+-	do {
+-		register long d0, d1, d2, d3, d4, d5, d6, d7;
+-
+-		prefetchw(p1+8);
+-		prefetch(p2+8);
+- once_more:
+-		d0 = p1[0];	/* Pull the stuff into registers	*/
+-		d1 = p1[1];	/*  ... in bursts, if possible.		*/
+-		d2 = p1[2];
+-		d3 = p1[3];
+-		d4 = p1[4];
+-		d5 = p1[5];
+-		d6 = p1[6];
+-		d7 = p1[7];
+-		d0 ^= p2[0];
+-		d1 ^= p2[1];
+-		d2 ^= p2[2];
+-		d3 ^= p2[3];
+-		d4 ^= p2[4];
+-		d5 ^= p2[5];
+-		d6 ^= p2[6];
+-		d7 ^= p2[7];
+-		p1[0] = d0;	/* Store the result (in bursts)		*/
+-		p1[1] = d1;
+-		p1[2] = d2;
+-		p1[3] = d3;
+-		p1[4] = d4;
+-		p1[5] = d5;
+-		p1[6] = d6;
+-		p1[7] = d7;
+-		p1 += 8;
+-		p2 += 8;
+-	} while (--lines > 0);
+-	if (lines == 0)
+-		goto once_more;
+-}
+-
+-static void
+-xor_32regs_p_3(unsigned long bytes, unsigned long * __restrict p1,
+-	       const unsigned long * __restrict p2,
+-	       const unsigned long * __restrict p3)
+-{
+-	long lines = bytes / (sizeof (long)) / 8 - 1;
+-
+-	prefetchw(p1);
+-	prefetch(p2);
+-	prefetch(p3);
+-
+-	do {
+-		register long d0, d1, d2, d3, d4, d5, d6, d7;
+-
+-		prefetchw(p1+8);
+-		prefetch(p2+8);
+-		prefetch(p3+8);
+- once_more:
+-		d0 = p1[0];	/* Pull the stuff into registers	*/
+-		d1 = p1[1];	/*  ... in bursts, if possible.		*/
+-		d2 = p1[2];
+-		d3 = p1[3];
+-		d4 = p1[4];
+-		d5 = p1[5];
+-		d6 = p1[6];
+-		d7 = p1[7];
+-		d0 ^= p2[0];
+-		d1 ^= p2[1];
+-		d2 ^= p2[2];
+-		d3 ^= p2[3];
+-		d4 ^= p2[4];
+-		d5 ^= p2[5];
+-		d6 ^= p2[6];
+-		d7 ^= p2[7];
+-		d0 ^= p3[0];
+-		d1 ^= p3[1];
+-		d2 ^= p3[2];
+-		d3 ^= p3[3];
+-		d4 ^= p3[4];
+-		d5 ^= p3[5];
+-		d6 ^= p3[6];
+-		d7 ^= p3[7];
+-		p1[0] = d0;	/* Store the result (in bursts)		*/
+-		p1[1] = d1;
+-		p1[2] = d2;
+-		p1[3] = d3;
+-		p1[4] = d4;
+-		p1[5] = d5;
+-		p1[6] = d6;
+-		p1[7] = d7;
+-		p1 += 8;
+-		p2 += 8;
+-		p3 += 8;
+-	} while (--lines > 0);
+-	if (lines == 0)
+-		goto once_more;
+-}
+-
+-static void
+-xor_32regs_p_4(unsigned long bytes, unsigned long * __restrict p1,
+-	       const unsigned long * __restrict p2,
+-	       const unsigned long * __restrict p3,
+-	       const unsigned long * __restrict p4)
+-{
+-	long lines = bytes / (sizeof (long)) / 8 - 1;
+-
+-	prefetchw(p1);
+-	prefetch(p2);
+-	prefetch(p3);
+-	prefetch(p4);
+-
+-	do {
+-		register long d0, d1, d2, d3, d4, d5, d6, d7;
+-
+-		prefetchw(p1+8);
+-		prefetch(p2+8);
+-		prefetch(p3+8);
+-		prefetch(p4+8);
+- once_more:
+-		d0 = p1[0];	/* Pull the stuff into registers	*/
+-		d1 = p1[1];	/*  ... in bursts, if possible.		*/
+-		d2 = p1[2];
+-		d3 = p1[3];
+-		d4 = p1[4];
+-		d5 = p1[5];
+-		d6 = p1[6];
+-		d7 = p1[7];
+-		d0 ^= p2[0];
+-		d1 ^= p2[1];
+-		d2 ^= p2[2];
+-		d3 ^= p2[3];
+-		d4 ^= p2[4];
+-		d5 ^= p2[5];
+-		d6 ^= p2[6];
+-		d7 ^= p2[7];
+-		d0 ^= p3[0];
+-		d1 ^= p3[1];
+-		d2 ^= p3[2];
+-		d3 ^= p3[3];
+-		d4 ^= p3[4];
+-		d5 ^= p3[5];
+-		d6 ^= p3[6];
+-		d7 ^= p3[7];
+-		d0 ^= p4[0];
+-		d1 ^= p4[1];
+-		d2 ^= p4[2];
+-		d3 ^= p4[3];
+-		d4 ^= p4[4];
+-		d5 ^= p4[5];
+-		d6 ^= p4[6];
+-		d7 ^= p4[7];
+-		p1[0] = d0;	/* Store the result (in bursts)		*/
+-		p1[1] = d1;
+-		p1[2] = d2;
+-		p1[3] = d3;
+-		p1[4] = d4;
+-		p1[5] = d5;
+-		p1[6] = d6;
+-		p1[7] = d7;
+-		p1 += 8;
+-		p2 += 8;
+-		p3 += 8;
+-		p4 += 8;
+-	} while (--lines > 0);
+-	if (lines == 0)
+-		goto once_more;
+-}
+-
+-static void
+-xor_32regs_p_5(unsigned long bytes, unsigned long * __restrict p1,
+-	       const unsigned long * __restrict p2,
+-	       const unsigned long * __restrict p3,
+-	       const unsigned long * __restrict p4,
+-	       const unsigned long * __restrict p5)
+-{
+-	long lines = bytes / (sizeof (long)) / 8 - 1;
+-
+-	prefetchw(p1);
+-	prefetch(p2);
+-	prefetch(p3);
+-	prefetch(p4);
+-	prefetch(p5);
+-
+-	do {
+-		register long d0, d1, d2, d3, d4, d5, d6, d7;
+-
+-		prefetchw(p1+8);
+-		prefetch(p2+8);
+-		prefetch(p3+8);
+-		prefetch(p4+8);
+-		prefetch(p5+8);
+- once_more:
+-		d0 = p1[0];	/* Pull the stuff into registers	*/
+-		d1 = p1[1];	/*  ... in bursts, if possible.		*/
+-		d2 = p1[2];
+-		d3 = p1[3];
+-		d4 = p1[4];
+-		d5 = p1[5];
+-		d6 = p1[6];
+-		d7 = p1[7];
+-		d0 ^= p2[0];
+-		d1 ^= p2[1];
+-		d2 ^= p2[2];
+-		d3 ^= p2[3];
+-		d4 ^= p2[4];
+-		d5 ^= p2[5];
+-		d6 ^= p2[6];
+-		d7 ^= p2[7];
+-		d0 ^= p3[0];
+-		d1 ^= p3[1];
+-		d2 ^= p3[2];
+-		d3 ^= p3[3];
+-		d4 ^= p3[4];
+-		d5 ^= p3[5];
+-		d6 ^= p3[6];
+-		d7 ^= p3[7];
+-		d0 ^= p4[0];
+-		d1 ^= p4[1];
+-		d2 ^= p4[2];
+-		d3 ^= p4[3];
+-		d4 ^= p4[4];
+-		d5 ^= p4[5];
+-		d6 ^= p4[6];
+-		d7 ^= p4[7];
+-		d0 ^= p5[0];
+-		d1 ^= p5[1];
+-		d2 ^= p5[2];
+-		d3 ^= p5[3];
+-		d4 ^= p5[4];
+-		d5 ^= p5[5];
+-		d6 ^= p5[6];
+-		d7 ^= p5[7];
+-		p1[0] = d0;	/* Store the result (in bursts)		*/
+-		p1[1] = d1;
+-		p1[2] = d2;
+-		p1[3] = d3;
+-		p1[4] = d4;
+-		p1[5] = d5;
+-		p1[6] = d6;
+-		p1[7] = d7;
+-		p1 += 8;
+-		p2 += 8;
+-		p3 += 8;
+-		p4 += 8;
+-		p5 += 8;
+-	} while (--lines > 0);
+-	if (lines == 0)
+-		goto once_more;
+-}
+-
+-static struct xor_block_template xor_block_8regs = {
+-	.name = "8regs",
+-	.do_2 = xor_8regs_2,
+-	.do_3 = xor_8regs_3,
+-	.do_4 = xor_8regs_4,
+-	.do_5 = xor_8regs_5,
+-};
+-
+-static struct xor_block_template xor_block_32regs = {
+-	.name = "32regs",
+-	.do_2 = xor_32regs_2,
+-	.do_3 = xor_32regs_3,
+-	.do_4 = xor_32regs_4,
+-	.do_5 = xor_32regs_5,
+-};
+-
+-static struct xor_block_template xor_block_8regs_p __maybe_unused = {
+-	.name = "8regs_prefetch",
+-	.do_2 = xor_8regs_p_2,
+-	.do_3 = xor_8regs_p_3,
+-	.do_4 = xor_8regs_p_4,
+-	.do_5 = xor_8regs_p_5,
+-};
+-
+-static struct xor_block_template xor_block_32regs_p __maybe_unused = {
+-	.name = "32regs_prefetch",
+-	.do_2 = xor_32regs_p_2,
+-	.do_3 = xor_32regs_p_3,
+-	.do_4 = xor_32regs_p_4,
+-	.do_5 = xor_32regs_p_5,
+-};
++extern struct xor_block_template xor_block_8regs;
++extern struct xor_block_template xor_block_32regs;
++extern struct xor_block_template xor_block_8regs_p;
++extern struct xor_block_template xor_block_32regs_p;
+diff --git a/lib/raid/xor/Makefile b/lib/raid/xor/Makefile
+index 7bca0ce8e90a..89a944c9f990 100644
+--- a/lib/raid/xor/Makefile
++++ b/lib/raid/xor/Makefile
+@@ -3,3 +3,7 @@
+ obj-$(CONFIG_XOR_BLOCKS)	+= xor.o
  
-@@ -55,12 +51,33 @@ EXPORT_SYMBOL(xor_blocks);
- static struct xor_block_template *__initdata template_list;
- static bool __initdata xor_forced = false;
- 
--static void __init do_xor_register(struct xor_block_template *tmpl)
-+/**
-+ * xor_register - register a XOR template
-+ * @tmpl:	template to register
-+ *
-+ * Register a XOR implementation with the core.  Registered implementations
-+ * will be measured by a trivial benchmark, and the fastest one is chosen
-+ * unless an implementation is forced using xor_force().
-+ */
-+void __init xor_register(struct xor_block_template *tmpl)
- {
- 	tmpl->next = template_list;
- 	template_list = tmpl;
- }
- 
-+/**
-+ * xor_force - force use of a XOR template
-+ * @tmpl:	template to register
-+ *
-+ * Register a XOR implementation with the core and force using it.  Forcing
-+ * an implementation will make the core ignore any template registered using
-+ * xor_register(), or any previous implementation forced using xor_force().
-+ */
-+void __init xor_force(struct xor_block_template *tmpl)
+ xor-y				+= xor-core.o
++xor-y				+= xor-8regs.o
++xor-y				+= xor-32regs.o
++xor-y				+= xor-8regs-prefetch.o
++xor-y				+= xor-32regs-prefetch.o
+diff --git a/lib/raid/xor/xor-32regs-prefetch.c b/lib/raid/xor/xor-32regs-prefetch.c
+new file mode 100644
+index 000000000000..8666c287f777
+--- /dev/null
++++ b/lib/raid/xor/xor-32regs-prefetch.c
+@@ -0,0 +1,268 @@
++// SPDX-License-Identifier: GPL-2.0-or-later
++#include <linux/prefetch.h>
++#include <linux/raid/xor_impl.h>
++#include <asm-generic/xor.h>
++
++static void
++xor_32regs_p_2(unsigned long bytes, unsigned long * __restrict p1,
++	       const unsigned long * __restrict p2)
 +{
-+	active_template = tmpl;
++	long lines = bytes / (sizeof (long)) / 8 - 1;
++
++	prefetchw(p1);
++	prefetch(p2);
++
++	do {
++		register long d0, d1, d2, d3, d4, d5, d6, d7;
++
++		prefetchw(p1+8);
++		prefetch(p2+8);
++ once_more:
++		d0 = p1[0];	/* Pull the stuff into registers	*/
++		d1 = p1[1];	/*  ... in bursts, if possible.		*/
++		d2 = p1[2];
++		d3 = p1[3];
++		d4 = p1[4];
++		d5 = p1[5];
++		d6 = p1[6];
++		d7 = p1[7];
++		d0 ^= p2[0];
++		d1 ^= p2[1];
++		d2 ^= p2[2];
++		d3 ^= p2[3];
++		d4 ^= p2[4];
++		d5 ^= p2[5];
++		d6 ^= p2[6];
++		d7 ^= p2[7];
++		p1[0] = d0;	/* Store the result (in bursts)		*/
++		p1[1] = d1;
++		p1[2] = d2;
++		p1[3] = d3;
++		p1[4] = d4;
++		p1[5] = d5;
++		p1[6] = d6;
++		p1[7] = d7;
++		p1 += 8;
++		p2 += 8;
++	} while (--lines > 0);
++	if (lines == 0)
++		goto once_more;
 +}
 +
- #define BENCH_SIZE	4096
- #define REPS		800U
- 
-@@ -126,11 +143,19 @@ static int __init calibrate_xor_blocks(void)
- 
- static int __init xor_init(void)
- {
-+#ifdef arch_xor_init
-+	arch_xor_init();
-+#else
-+	xor_register(&xor_block_8regs);
-+	xor_register(&xor_block_8regs_p);
-+	xor_register(&xor_block_32regs);
-+	xor_register(&xor_block_32regs_p);
-+#endif
++static void
++xor_32regs_p_3(unsigned long bytes, unsigned long * __restrict p1,
++	       const unsigned long * __restrict p2,
++	       const unsigned long * __restrict p3)
++{
++	long lines = bytes / (sizeof (long)) / 8 - 1;
 +
- 	/*
- 	 * If this arch/cpu has a short-circuited selection, don't loop through
- 	 * all the possible functions, just use the best one.
- 	 */
--	active_template = XOR_SELECT_TEMPLATE(NULL);
- 	if (active_template) {
- 		pr_info("xor: automatically using best checksumming function   %-10s\n",
- 			active_template->name);
-@@ -138,10 +163,6 @@ static int __init xor_init(void)
- 		return 0;
- 	}
- 
--#define xor_speed	do_xor_register
--	XOR_TRY_TEMPLATES;
--#undef xor_speed
--
- #ifdef MODULE
- 	return calibrate_xor_blocks();
- #else
++	prefetchw(p1);
++	prefetch(p2);
++	prefetch(p3);
++
++	do {
++		register long d0, d1, d2, d3, d4, d5, d6, d7;
++
++		prefetchw(p1+8);
++		prefetch(p2+8);
++		prefetch(p3+8);
++ once_more:
++		d0 = p1[0];	/* Pull the stuff into registers	*/
++		d1 = p1[1];	/*  ... in bursts, if possible.		*/
++		d2 = p1[2];
++		d3 = p1[3];
++		d4 = p1[4];
++		d5 = p1[5];
++		d6 = p1[6];
++		d7 = p1[7];
++		d0 ^= p2[0];
++		d1 ^= p2[1];
++		d2 ^= p2[2];
++		d3 ^= p2[3];
++		d4 ^= p2[4];
++		d5 ^= p2[5];
++		d6 ^= p2[6];
++		d7 ^= p2[7];
++		d0 ^= p3[0];
++		d1 ^= p3[1];
++		d2 ^= p3[2];
++		d3 ^= p3[3];
++		d4 ^= p3[4];
++		d5 ^= p3[5];
++		d6 ^= p3[6];
++		d7 ^= p3[7];
++		p1[0] = d0;	/* Store the result (in bursts)		*/
++		p1[1] = d1;
++		p1[2] = d2;
++		p1[3] = d3;
++		p1[4] = d4;
++		p1[5] = d5;
++		p1[6] = d6;
++		p1[7] = d7;
++		p1 += 8;
++		p2 += 8;
++		p3 += 8;
++	} while (--lines > 0);
++	if (lines == 0)
++		goto once_more;
++}
++
++static void
++xor_32regs_p_4(unsigned long bytes, unsigned long * __restrict p1,
++	       const unsigned long * __restrict p2,
++	       const unsigned long * __restrict p3,
++	       const unsigned long * __restrict p4)
++{
++	long lines = bytes / (sizeof (long)) / 8 - 1;
++
++	prefetchw(p1);
++	prefetch(p2);
++	prefetch(p3);
++	prefetch(p4);
++
++	do {
++		register long d0, d1, d2, d3, d4, d5, d6, d7;
++
++		prefetchw(p1+8);
++		prefetch(p2+8);
++		prefetch(p3+8);
++		prefetch(p4+8);
++ once_more:
++		d0 = p1[0];	/* Pull the stuff into registers	*/
++		d1 = p1[1];	/*  ... in bursts, if possible.		*/
++		d2 = p1[2];
++		d3 = p1[3];
++		d4 = p1[4];
++		d5 = p1[5];
++		d6 = p1[6];
++		d7 = p1[7];
++		d0 ^= p2[0];
++		d1 ^= p2[1];
++		d2 ^= p2[2];
++		d3 ^= p2[3];
++		d4 ^= p2[4];
++		d5 ^= p2[5];
++		d6 ^= p2[6];
++		d7 ^= p2[7];
++		d0 ^= p3[0];
++		d1 ^= p3[1];
++		d2 ^= p3[2];
++		d3 ^= p3[3];
++		d4 ^= p3[4];
++		d5 ^= p3[5];
++		d6 ^= p3[6];
++		d7 ^= p3[7];
++		d0 ^= p4[0];
++		d1 ^= p4[1];
++		d2 ^= p4[2];
++		d3 ^= p4[3];
++		d4 ^= p4[4];
++		d5 ^= p4[5];
++		d6 ^= p4[6];
++		d7 ^= p4[7];
++		p1[0] = d0;	/* Store the result (in bursts)		*/
++		p1[1] = d1;
++		p1[2] = d2;
++		p1[3] = d3;
++		p1[4] = d4;
++		p1[5] = d5;
++		p1[6] = d6;
++		p1[7] = d7;
++		p1 += 8;
++		p2 += 8;
++		p3 += 8;
++		p4 += 8;
++	} while (--lines > 0);
++	if (lines == 0)
++		goto once_more;
++}
++
++static void
++xor_32regs_p_5(unsigned long bytes, unsigned long * __restrict p1,
++	       const unsigned long * __restrict p2,
++	       const unsigned long * __restrict p3,
++	       const unsigned long * __restrict p4,
++	       const unsigned long * __restrict p5)
++{
++	long lines = bytes / (sizeof (long)) / 8 - 1;
++
++	prefetchw(p1);
++	prefetch(p2);
++	prefetch(p3);
++	prefetch(p4);
++	prefetch(p5);
++
++	do {
++		register long d0, d1, d2, d3, d4, d5, d6, d7;
++
++		prefetchw(p1+8);
++		prefetch(p2+8);
++		prefetch(p3+8);
++		prefetch(p4+8);
++		prefetch(p5+8);
++ once_more:
++		d0 = p1[0];	/* Pull the stuff into registers	*/
++		d1 = p1[1];	/*  ... in bursts, if possible.		*/
++		d2 = p1[2];
++		d3 = p1[3];
++		d4 = p1[4];
++		d5 = p1[5];
++		d6 = p1[6];
++		d7 = p1[7];
++		d0 ^= p2[0];
++		d1 ^= p2[1];
++		d2 ^= p2[2];
++		d3 ^= p2[3];
++		d4 ^= p2[4];
++		d5 ^= p2[5];
++		d6 ^= p2[6];
++		d7 ^= p2[7];
++		d0 ^= p3[0];
++		d1 ^= p3[1];
++		d2 ^= p3[2];
++		d3 ^= p3[3];
++		d4 ^= p3[4];
++		d5 ^= p3[5];
++		d6 ^= p3[6];
++		d7 ^= p3[7];
++		d0 ^= p4[0];
++		d1 ^= p4[1];
++		d2 ^= p4[2];
++		d3 ^= p4[3];
++		d4 ^= p4[4];
++		d5 ^= p4[5];
++		d6 ^= p4[6];
++		d7 ^= p4[7];
++		d0 ^= p5[0];
++		d1 ^= p5[1];
++		d2 ^= p5[2];
++		d3 ^= p5[3];
++		d4 ^= p5[4];
++		d5 ^= p5[5];
++		d6 ^= p5[6];
++		d7 ^= p5[7];
++		p1[0] = d0;	/* Store the result (in bursts)		*/
++		p1[1] = d1;
++		p1[2] = d2;
++		p1[3] = d3;
++		p1[4] = d4;
++		p1[5] = d5;
++		p1[6] = d6;
++		p1[7] = d7;
++		p1 += 8;
++		p2 += 8;
++		p3 += 8;
++		p4 += 8;
++		p5 += 8;
++	} while (--lines > 0);
++	if (lines == 0)
++		goto once_more;
++}
++
++struct xor_block_template xor_block_32regs_p = {
++	.name = "32regs_prefetch",
++	.do_2 = xor_32regs_p_2,
++	.do_3 = xor_32regs_p_3,
++	.do_4 = xor_32regs_p_4,
++	.do_5 = xor_32regs_p_5,
++};
+diff --git a/lib/raid/xor/xor-32regs.c b/lib/raid/xor/xor-32regs.c
+new file mode 100644
+index 000000000000..58d4fac43eb4
+--- /dev/null
++++ b/lib/raid/xor/xor-32regs.c
+@@ -0,0 +1,219 @@
++// SPDX-License-Identifier: GPL-2.0-or-later
++#include <linux/raid/xor_impl.h>
++#include <asm-generic/xor.h>
++
++static void
++xor_32regs_2(unsigned long bytes, unsigned long * __restrict p1,
++	     const unsigned long * __restrict p2)
++{
++	long lines = bytes / (sizeof (long)) / 8;
++
++	do {
++		register long d0, d1, d2, d3, d4, d5, d6, d7;
++		d0 = p1[0];	/* Pull the stuff into registers	*/
++		d1 = p1[1];	/*  ... in bursts, if possible.		*/
++		d2 = p1[2];
++		d3 = p1[3];
++		d4 = p1[4];
++		d5 = p1[5];
++		d6 = p1[6];
++		d7 = p1[7];
++		d0 ^= p2[0];
++		d1 ^= p2[1];
++		d2 ^= p2[2];
++		d3 ^= p2[3];
++		d4 ^= p2[4];
++		d5 ^= p2[5];
++		d6 ^= p2[6];
++		d7 ^= p2[7];
++		p1[0] = d0;	/* Store the result (in bursts)		*/
++		p1[1] = d1;
++		p1[2] = d2;
++		p1[3] = d3;
++		p1[4] = d4;
++		p1[5] = d5;
++		p1[6] = d6;
++		p1[7] = d7;
++		p1 += 8;
++		p2 += 8;
++	} while (--lines > 0);
++}
++
++static void
++xor_32regs_3(unsigned long bytes, unsigned long * __restrict p1,
++	     const unsigned long * __restrict p2,
++	     const unsigned long * __restrict p3)
++{
++	long lines = bytes / (sizeof (long)) / 8;
++
++	do {
++		register long d0, d1, d2, d3, d4, d5, d6, d7;
++		d0 = p1[0];	/* Pull the stuff into registers	*/
++		d1 = p1[1];	/*  ... in bursts, if possible.		*/
++		d2 = p1[2];
++		d3 = p1[3];
++		d4 = p1[4];
++		d5 = p1[5];
++		d6 = p1[6];
++		d7 = p1[7];
++		d0 ^= p2[0];
++		d1 ^= p2[1];
++		d2 ^= p2[2];
++		d3 ^= p2[3];
++		d4 ^= p2[4];
++		d5 ^= p2[5];
++		d6 ^= p2[6];
++		d7 ^= p2[7];
++		d0 ^= p3[0];
++		d1 ^= p3[1];
++		d2 ^= p3[2];
++		d3 ^= p3[3];
++		d4 ^= p3[4];
++		d5 ^= p3[5];
++		d6 ^= p3[6];
++		d7 ^= p3[7];
++		p1[0] = d0;	/* Store the result (in bursts)		*/
++		p1[1] = d1;
++		p1[2] = d2;
++		p1[3] = d3;
++		p1[4] = d4;
++		p1[5] = d5;
++		p1[6] = d6;
++		p1[7] = d7;
++		p1 += 8;
++		p2 += 8;
++		p3 += 8;
++	} while (--lines > 0);
++}
++
++static void
++xor_32regs_4(unsigned long bytes, unsigned long * __restrict p1,
++	     const unsigned long * __restrict p2,
++	     const unsigned long * __restrict p3,
++	     const unsigned long * __restrict p4)
++{
++	long lines = bytes / (sizeof (long)) / 8;
++
++	do {
++		register long d0, d1, d2, d3, d4, d5, d6, d7;
++		d0 = p1[0];	/* Pull the stuff into registers	*/
++		d1 = p1[1];	/*  ... in bursts, if possible.		*/
++		d2 = p1[2];
++		d3 = p1[3];
++		d4 = p1[4];
++		d5 = p1[5];
++		d6 = p1[6];
++		d7 = p1[7];
++		d0 ^= p2[0];
++		d1 ^= p2[1];
++		d2 ^= p2[2];
++		d3 ^= p2[3];
++		d4 ^= p2[4];
++		d5 ^= p2[5];
++		d6 ^= p2[6];
++		d7 ^= p2[7];
++		d0 ^= p3[0];
++		d1 ^= p3[1];
++		d2 ^= p3[2];
++		d3 ^= p3[3];
++		d4 ^= p3[4];
++		d5 ^= p3[5];
++		d6 ^= p3[6];
++		d7 ^= p3[7];
++		d0 ^= p4[0];
++		d1 ^= p4[1];
++		d2 ^= p4[2];
++		d3 ^= p4[3];
++		d4 ^= p4[4];
++		d5 ^= p4[5];
++		d6 ^= p4[6];
++		d7 ^= p4[7];
++		p1[0] = d0;	/* Store the result (in bursts)		*/
++		p1[1] = d1;
++		p1[2] = d2;
++		p1[3] = d3;
++		p1[4] = d4;
++		p1[5] = d5;
++		p1[6] = d6;
++		p1[7] = d7;
++		p1 += 8;
++		p2 += 8;
++		p3 += 8;
++		p4 += 8;
++	} while (--lines > 0);
++}
++
++static void
++xor_32regs_5(unsigned long bytes, unsigned long * __restrict p1,
++	     const unsigned long * __restrict p2,
++	     const unsigned long * __restrict p3,
++	     const unsigned long * __restrict p4,
++	     const unsigned long * __restrict p5)
++{
++	long lines = bytes / (sizeof (long)) / 8;
++
++	do {
++		register long d0, d1, d2, d3, d4, d5, d6, d7;
++		d0 = p1[0];	/* Pull the stuff into registers	*/
++		d1 = p1[1];	/*  ... in bursts, if possible.		*/
++		d2 = p1[2];
++		d3 = p1[3];
++		d4 = p1[4];
++		d5 = p1[5];
++		d6 = p1[6];
++		d7 = p1[7];
++		d0 ^= p2[0];
++		d1 ^= p2[1];
++		d2 ^= p2[2];
++		d3 ^= p2[3];
++		d4 ^= p2[4];
++		d5 ^= p2[5];
++		d6 ^= p2[6];
++		d7 ^= p2[7];
++		d0 ^= p3[0];
++		d1 ^= p3[1];
++		d2 ^= p3[2];
++		d3 ^= p3[3];
++		d4 ^= p3[4];
++		d5 ^= p3[5];
++		d6 ^= p3[6];
++		d7 ^= p3[7];
++		d0 ^= p4[0];
++		d1 ^= p4[1];
++		d2 ^= p4[2];
++		d3 ^= p4[3];
++		d4 ^= p4[4];
++		d5 ^= p4[5];
++		d6 ^= p4[6];
++		d7 ^= p4[7];
++		d0 ^= p5[0];
++		d1 ^= p5[1];
++		d2 ^= p5[2];
++		d3 ^= p5[3];
++		d4 ^= p5[4];
++		d5 ^= p5[5];
++		d6 ^= p5[6];
++		d7 ^= p5[7];
++		p1[0] = d0;	/* Store the result (in bursts)		*/
++		p1[1] = d1;
++		p1[2] = d2;
++		p1[3] = d3;
++		p1[4] = d4;
++		p1[5] = d5;
++		p1[6] = d6;
++		p1[7] = d7;
++		p1 += 8;
++		p2 += 8;
++		p3 += 8;
++		p4 += 8;
++		p5 += 8;
++	} while (--lines > 0);
++}
++
++struct xor_block_template xor_block_32regs = {
++	.name = "32regs",
++	.do_2 = xor_32regs_2,
++	.do_3 = xor_32regs_3,
++	.do_4 = xor_32regs_4,
++	.do_5 = xor_32regs_5,
++};
+diff --git a/lib/raid/xor/xor-8regs-prefetch.c b/lib/raid/xor/xor-8regs-prefetch.c
+new file mode 100644
+index 000000000000..67061e35a0a6
+--- /dev/null
++++ b/lib/raid/xor/xor-8regs-prefetch.c
+@@ -0,0 +1,146 @@
++// SPDX-License-Identifier: GPL-2.0-or-later
++#include <linux/prefetch.h>
++#include <linux/raid/xor_impl.h>
++#include <asm-generic/xor.h>
++
++static void
++xor_8regs_p_2(unsigned long bytes, unsigned long * __restrict p1,
++	      const unsigned long * __restrict p2)
++{
++	long lines = bytes / (sizeof (long)) / 8 - 1;
++	prefetchw(p1);
++	prefetch(p2);
++
++	do {
++		prefetchw(p1+8);
++		prefetch(p2+8);
++ once_more:
++		p1[0] ^= p2[0];
++		p1[1] ^= p2[1];
++		p1[2] ^= p2[2];
++		p1[3] ^= p2[3];
++		p1[4] ^= p2[4];
++		p1[5] ^= p2[5];
++		p1[6] ^= p2[6];
++		p1[7] ^= p2[7];
++		p1 += 8;
++		p2 += 8;
++	} while (--lines > 0);
++	if (lines == 0)
++		goto once_more;
++}
++
++static void
++xor_8regs_p_3(unsigned long bytes, unsigned long * __restrict p1,
++	      const unsigned long * __restrict p2,
++	      const unsigned long * __restrict p3)
++{
++	long lines = bytes / (sizeof (long)) / 8 - 1;
++	prefetchw(p1);
++	prefetch(p2);
++	prefetch(p3);
++
++	do {
++		prefetchw(p1+8);
++		prefetch(p2+8);
++		prefetch(p3+8);
++ once_more:
++		p1[0] ^= p2[0] ^ p3[0];
++		p1[1] ^= p2[1] ^ p3[1];
++		p1[2] ^= p2[2] ^ p3[2];
++		p1[3] ^= p2[3] ^ p3[3];
++		p1[4] ^= p2[4] ^ p3[4];
++		p1[5] ^= p2[5] ^ p3[5];
++		p1[6] ^= p2[6] ^ p3[6];
++		p1[7] ^= p2[7] ^ p3[7];
++		p1 += 8;
++		p2 += 8;
++		p3 += 8;
++	} while (--lines > 0);
++	if (lines == 0)
++		goto once_more;
++}
++
++static void
++xor_8regs_p_4(unsigned long bytes, unsigned long * __restrict p1,
++	      const unsigned long * __restrict p2,
++	      const unsigned long * __restrict p3,
++	      const unsigned long * __restrict p4)
++{
++	long lines = bytes / (sizeof (long)) / 8 - 1;
++
++	prefetchw(p1);
++	prefetch(p2);
++	prefetch(p3);
++	prefetch(p4);
++
++	do {
++		prefetchw(p1+8);
++		prefetch(p2+8);
++		prefetch(p3+8);
++		prefetch(p4+8);
++ once_more:
++		p1[0] ^= p2[0] ^ p3[0] ^ p4[0];
++		p1[1] ^= p2[1] ^ p3[1] ^ p4[1];
++		p1[2] ^= p2[2] ^ p3[2] ^ p4[2];
++		p1[3] ^= p2[3] ^ p3[3] ^ p4[3];
++		p1[4] ^= p2[4] ^ p3[4] ^ p4[4];
++		p1[5] ^= p2[5] ^ p3[5] ^ p4[5];
++		p1[6] ^= p2[6] ^ p3[6] ^ p4[6];
++		p1[7] ^= p2[7] ^ p3[7] ^ p4[7];
++		p1 += 8;
++		p2 += 8;
++		p3 += 8;
++		p4 += 8;
++	} while (--lines > 0);
++	if (lines == 0)
++		goto once_more;
++}
++
++static void
++xor_8regs_p_5(unsigned long bytes, unsigned long * __restrict p1,
++	      const unsigned long * __restrict p2,
++	      const unsigned long * __restrict p3,
++	      const unsigned long * __restrict p4,
++	      const unsigned long * __restrict p5)
++{
++	long lines = bytes / (sizeof (long)) / 8 - 1;
++
++	prefetchw(p1);
++	prefetch(p2);
++	prefetch(p3);
++	prefetch(p4);
++	prefetch(p5);
++
++	do {
++		prefetchw(p1+8);
++		prefetch(p2+8);
++		prefetch(p3+8);
++		prefetch(p4+8);
++		prefetch(p5+8);
++ once_more:
++		p1[0] ^= p2[0] ^ p3[0] ^ p4[0] ^ p5[0];
++		p1[1] ^= p2[1] ^ p3[1] ^ p4[1] ^ p5[1];
++		p1[2] ^= p2[2] ^ p3[2] ^ p4[2] ^ p5[2];
++		p1[3] ^= p2[3] ^ p3[3] ^ p4[3] ^ p5[3];
++		p1[4] ^= p2[4] ^ p3[4] ^ p4[4] ^ p5[4];
++		p1[5] ^= p2[5] ^ p3[5] ^ p4[5] ^ p5[5];
++		p1[6] ^= p2[6] ^ p3[6] ^ p4[6] ^ p5[6];
++		p1[7] ^= p2[7] ^ p3[7] ^ p4[7] ^ p5[7];
++		p1 += 8;
++		p2 += 8;
++		p3 += 8;
++		p4 += 8;
++		p5 += 8;
++	} while (--lines > 0);
++	if (lines == 0)
++		goto once_more;
++}
++
++struct xor_block_template xor_block_8regs_p = {
++	.name = "8regs_prefetch",
++	.do_2 = xor_8regs_p_2,
++	.do_3 = xor_8regs_p_3,
++	.do_4 = xor_8regs_p_4,
++	.do_5 = xor_8regs_p_5,
++};
+diff --git a/lib/raid/xor/xor-8regs.c b/lib/raid/xor/xor-8regs.c
+new file mode 100644
+index 000000000000..769f796ab2cf
+--- /dev/null
++++ b/lib/raid/xor/xor-8regs.c
+@@ -0,0 +1,105 @@
++// SPDX-License-Identifier: GPL-2.0-or-later
++#include <linux/raid/xor_impl.h>
++#include <asm-generic/xor.h>
++
++static void
++xor_8regs_2(unsigned long bytes, unsigned long * __restrict p1,
++	    const unsigned long * __restrict p2)
++{
++	long lines = bytes / (sizeof (long)) / 8;
++
++	do {
++		p1[0] ^= p2[0];
++		p1[1] ^= p2[1];
++		p1[2] ^= p2[2];
++		p1[3] ^= p2[3];
++		p1[4] ^= p2[4];
++		p1[5] ^= p2[5];
++		p1[6] ^= p2[6];
++		p1[7] ^= p2[7];
++		p1 += 8;
++		p2 += 8;
++	} while (--lines > 0);
++}
++
++static void
++xor_8regs_3(unsigned long bytes, unsigned long * __restrict p1,
++	    const unsigned long * __restrict p2,
++	    const unsigned long * __restrict p3)
++{
++	long lines = bytes / (sizeof (long)) / 8;
++
++	do {
++		p1[0] ^= p2[0] ^ p3[0];
++		p1[1] ^= p2[1] ^ p3[1];
++		p1[2] ^= p2[2] ^ p3[2];
++		p1[3] ^= p2[3] ^ p3[3];
++		p1[4] ^= p2[4] ^ p3[4];
++		p1[5] ^= p2[5] ^ p3[5];
++		p1[6] ^= p2[6] ^ p3[6];
++		p1[7] ^= p2[7] ^ p3[7];
++		p1 += 8;
++		p2 += 8;
++		p3 += 8;
++	} while (--lines > 0);
++}
++
++static void
++xor_8regs_4(unsigned long bytes, unsigned long * __restrict p1,
++	    const unsigned long * __restrict p2,
++	    const unsigned long * __restrict p3,
++	    const unsigned long * __restrict p4)
++{
++	long lines = bytes / (sizeof (long)) / 8;
++
++	do {
++		p1[0] ^= p2[0] ^ p3[0] ^ p4[0];
++		p1[1] ^= p2[1] ^ p3[1] ^ p4[1];
++		p1[2] ^= p2[2] ^ p3[2] ^ p4[2];
++		p1[3] ^= p2[3] ^ p3[3] ^ p4[3];
++		p1[4] ^= p2[4] ^ p3[4] ^ p4[4];
++		p1[5] ^= p2[5] ^ p3[5] ^ p4[5];
++		p1[6] ^= p2[6] ^ p3[6] ^ p4[6];
++		p1[7] ^= p2[7] ^ p3[7] ^ p4[7];
++		p1 += 8;
++		p2 += 8;
++		p3 += 8;
++		p4 += 8;
++	} while (--lines > 0);
++}
++
++static void
++xor_8regs_5(unsigned long bytes, unsigned long * __restrict p1,
++	    const unsigned long * __restrict p2,
++	    const unsigned long * __restrict p3,
++	    const unsigned long * __restrict p4,
++	    const unsigned long * __restrict p5)
++{
++	long lines = bytes / (sizeof (long)) / 8;
++
++	do {
++		p1[0] ^= p2[0] ^ p3[0] ^ p4[0] ^ p5[0];
++		p1[1] ^= p2[1] ^ p3[1] ^ p4[1] ^ p5[1];
++		p1[2] ^= p2[2] ^ p3[2] ^ p4[2] ^ p5[2];
++		p1[3] ^= p2[3] ^ p3[3] ^ p4[3] ^ p5[3];
++		p1[4] ^= p2[4] ^ p3[4] ^ p4[4] ^ p5[4];
++		p1[5] ^= p2[5] ^ p3[5] ^ p4[5] ^ p5[5];
++		p1[6] ^= p2[6] ^ p3[6] ^ p4[6] ^ p5[6];
++		p1[7] ^= p2[7] ^ p3[7] ^ p4[7] ^ p5[7];
++		p1 += 8;
++		p2 += 8;
++		p3 += 8;
++		p4 += 8;
++		p5 += 8;
++	} while (--lines > 0);
++}
++
++#ifndef NO_TEMPLATE
++struct xor_block_template xor_block_8regs = {
++	.name = "8regs",
++	.do_2 = xor_8regs_2,
++	.do_3 = xor_8regs_3,
++	.do_4 = xor_8regs_4,
++	.do_5 = xor_8regs_5,
++};
++#endif /* NO_TEMPLATE */
 -- 
 2.47.3
 

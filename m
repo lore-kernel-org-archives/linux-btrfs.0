@@ -1,33 +1,33 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 02F721A682E;
-	Fri, 27 Mar 2026 13:46:51 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D34663E4C7B;
+	Fri, 27 Mar 2026 13:58:19 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774619212; cv=none; b=Gfjs81t+vhPruYTasmbvTHjOjWlblIy1Ts7wsU07Hs6oif30xUlZKfUjJJzwY6dzxOl6TBG+eWLPHwk4FroRbQFUOe0+ZHJZV8lZ3KgOKZKVmPrDhbhwbHf01d564mBo6ZKkFwr2rooLrvPxciD5nxHrdjMvl0lD0XGMopFIm5Q=
+	t=1774619899; cv=none; b=Cmv32LfzPMUXaBdfR3NNhPEP/MgKl/GAXTCdp8+MHLUOGVq9QDOQ4yVH7l/Hy4Lse+QkWCQQg/VAzXBFjHTKPSQLQABu9upEE1YYO4FlRh5LybBxIxRLndLq/lWb01+UlwxKOUc6+SsSBYgIFAaMmIW+STYTnEWJsNOrS1f80Hw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774619212; c=relaxed/simple;
-	bh=89JE0t0W4FzLVyP23bqYBnuh2CwNsQQKIZIl2xYaLfE=;
+	s=arc-20240116; t=1774619899; c=relaxed/simple;
+	bh=VqACtXhfTYZCQGZ04hZLNOj+ApxLBRqLokDeDdIuV6Y=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=obXomohpCgU6a7na7VtYZZtwmkeJldkcNtZHvVozdqH9iTPjfD5ZLciqsdlten4g9jnBfUrImhS5QjwB62gZFojCruI5FzRTv2dcgGCqL+Wn39s5hVXiNf18x0U78384xGd3F+MQZxn96YOgjWJUG1FCuOyHexRCngHIMtpaniw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Skms378B; arc=none smtp.client-ip=10.30.226.201
+	 In-Reply-To:Content-Type; b=NE/Fb1ae/8kYUI3TG9D3EjjY0w8S5cQmUrz/+YfpJvAC0DZ78J6QF/2X5WjSHxeyJZbBBfbcaARUDIyERKCpRVx5EYQ48vOEnck8CZ/5RtjDj5S3gS7OuqFroJ4t1IPTMYIMlc5sSCttTkY2wdWublQbFxED2/Phs+P0o7GbQtQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=SWvmhHE9; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Skms378B"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id EF860C19423;
-	Fri, 27 Mar 2026 13:46:44 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="SWvmhHE9"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9D735C19423;
+	Fri, 27 Mar 2026 13:58:13 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1774619211;
-	bh=89JE0t0W4FzLVyP23bqYBnuh2CwNsQQKIZIl2xYaLfE=;
+	s=k20201202; t=1774619899;
+	bh=VqACtXhfTYZCQGZ04hZLNOj+ApxLBRqLokDeDdIuV6Y=;
 	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
-	b=Skms378BzmiA/D6UoHZMqFCDd/CdHEEeQBcQchaLRjwdim+s1GgnWl+5JBVLnpAMm
-	 cbKPDmx9DTssIsoBKVJeAC7+kNgElYmmVK7JgRDodZkwSptrE86un0zAtc0bTn6jOc
-	 vcaZ98vrotoVY3/Zl0SAML8PJUSqBwzszdZ5kRSvUf6dBPVT8n6TUUG2IB6BYpVc5S
-	 B5wEhPs1jJHndVr/z3zFczH1US1IiU1N49vPmISYYMajrebZEUy/9IdXqOWnrdvy7x
-	 aLXGcR/Jc+/laB6lvrpF6TKPPOYQPc154t7HIr7SI+Ewc4XgEgCOwUu/9QnAztP6AY
-	 YAv8isoHSvaOA==
-Message-ID: <10748785-08a9-41c7-bacd-88f05fdf1a88@kernel.org>
-Date: Fri, 27 Mar 2026 14:46:43 +0100
+	b=SWvmhHE9QgoG7BeeIXiy8S/MxDrH6bLIFaNzJG3Tn0p2MnG/Io5/CWnOCyGrz2aLW
+	 geze3jKXXes3f/fa44jBQySmHCda1h0nV0OAoKNw+OX3CWBVdREOK48PnFPgHvmTVf
+	 qBqFCuR9AczmRrJNvdALxpqkDpfH7ZqC1oGWWP+3omn+BFX0U/I15Q7KJqWFWEbUIX
+	 9qaiy1dpsnmCWXcdijGqoWkc2BrZqIK5PcpUi2Jrdb4NvRLGVkrEueTpTnzLJIUSlV
+	 4uQpwJcszdyqiYrXKTT+BtUEbjtX6/zW00+pcfgM6YcYoQvk+eofuhty6uZaim/ZfS
+	 GTx/hySbDFbCA==
+Message-ID: <b098fce7-be16-479e-b9a4-36f0ad71d242@kernel.org>
+Date: Fri, 27 Mar 2026 14:58:12 +0100
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -35,13 +35,14 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v1 00/10] Remove READ_ONLY_THP_FOR_FS Kconfig
-To: Zi Yan <ziy@nvidia.com>, "Matthew Wilcox (Oracle)" <willy@infradead.org>,
- Song Liu <songliubraving@fb.com>
-Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
- Alexander Viro <viro@zeniv.linux.org.uk>,
+Subject: Re: [PATCH v1 03/10] mm: fs: remove filemap_nr_thps*() functions and
+ their users
+To: "Lorenzo Stoakes (Oracle)" <ljs@kernel.org>, Zi Yan <ziy@nvidia.com>
+Cc: "Matthew Wilcox (Oracle)" <willy@infradead.org>,
+ Song Liu <songliubraving@fb.com>, Chris Mason <clm@fb.com>,
+ David Sterba <dsterba@suse.com>, Alexander Viro <viro@zeniv.linux.org.uk>,
  Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>,
- Andrew Morton <akpm@linux-foundation.org>, Lorenzo Stoakes <ljs@kernel.org>,
+ Andrew Morton <akpm@linux-foundation.org>,
  Baolin Wang <baolin.wang@linux.alibaba.com>,
  "Liam R. Howlett" <Liam.Howlett@oracle.com>, Nico Pache <npache@redhat.com>,
  Ryan Roberts <ryan.roberts@arm.com>, Dev Jain <dev.jain@arm.com>,
@@ -52,6 +53,8 @@ Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
  linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
  linux-mm@kvack.org, linux-kselftest@vger.kernel.org
 References: <20260327014255.2058916-1-ziy@nvidia.com>
+ <20260327014255.2058916-4-ziy@nvidia.com>
+ <aaea8ce1-eac6-49d6-8c85-7361977b9a9f@lucifer.local>
 From: "David Hildenbrand (Arm)" <david@kernel.org>
 Content-Language: en-US
 Autocrypt: addr=david@kernel.org; keydata=
@@ -98,53 +101,36 @@ Autocrypt: addr=david@kernel.org; keydata=
  3iyY2Nsd7JxfKu1PRhCGwXzRw5TlfEsoRI7V9A8isUCoqE2Dzh3FvYHVeX4Us+bRL/oqareJ
  CIFqgYMyvHj7Q06kTKmauOe4Nf0l0qEkIuIzfoLJ3qr5UyXc2hLtWyT9Ir+lYlX9efqh7mOY
  qIws/H2t
-In-Reply-To: <20260327014255.2058916-1-ziy@nvidia.com>
+In-Reply-To: <aaea8ce1-eac6-49d6-8c85-7361977b9a9f@lucifer.local>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
 
-On 3/27/26 02:42, Zi Yan wrote:
-> Hi all,
+On 3/27/26 13:23, Lorenzo Stoakes (Oracle) wrote:
+> On Thu, Mar 26, 2026 at 09:42:48PM -0400, Zi Yan wrote:
+>> They are used by READ_ONLY_THP_FOR_FS to handle writes to FSes without
+>> large folio support, so that read-only THPs created in these FSes are not
+>> seen by the FSes when the underlying fd becomes writable. Now read-only PMD
+>> THPs only appear in a FS with large folio support and the supported orders
+>> include PMD_ORDRE.
 > 
-> This patchset removes READ_ONLY_THP_FOR_FS Kconfig and enables creating
-> read-only THPs for FSes with large folio support (the supported orders
-> need to include PMD_ORDER) by default.
+> Typo: PMD_ORDRE -> PMD_ORDER
 > 
-> The changes are:
-> 1. collapse_file() from mm/khugepaged.c, instead of checking
->    CONFIG_READ_ONLY_THP_FOR_FS, makes sure the mapping_max_folio_order()
->    of struct address_space of the file is at least PMD_ORDER.
-> 2. file_thp_enabled() also checks mapping_max_folio_order() instead.
-> 3. truncate_inode_partial_folio() calls folio_split() directly instead
->    of the removed try_folio_split_to_order(), since large folios can
->    only show up on a FS with large folio support.
-> 4. nr_thps is removed from struct address_space, since it is no longer
->    needed to drop all read-only THPs from a FS without large folio
->    support when the fd becomes writable. Its related filemap_nr_thps*()
->    are removed too.
-> 5. folio_check_splittable() no longer checks READ_ONLY_THP_FOR_FS.
-> 6. Updated comments in various places.
+>>
+>> Signed-off-by: Zi Yan <ziy@nvidia.com>
 > 
-> Changelog
-> ===
-> From RFC[1]:
-> 1. instead of removing READ_ONLY_THP_FOR_FS function entirely, turn it
->    on by default for all FSes with large folio support and the supported
->    orders includes PMD_ORDER.
-> 
-> Suggestions and comments are welcome.
+> This looks obviously-correct since this stuff wouldn't have been invoked for
+> large folio file systems before + they already had to handle it separately, and
+> this function is only tied to CONFIG_READ_ONLY_THP_FOR_FS (+ a quick grep
+> suggests you didn't miss anything), so:
 
-Hi! :)
+There could now be a race between collapsing and the file getting opened
+r/w.
 
-The patch set might be better structured by
+Are we sure that all code can really deal with that?
 
-1) Teaching code paths to not only respect READ_ONLY_THP_FOR_FS but also
-filesystems with large folios. At that point, READ_ONLY_THP_FOR_FS would
-have no effect.
-
-2) Removing READ_ONLY_THP_FOR_FS along with all the old cruft that is no
-longer required
-
-MADV_COLLAPSE will keep working the whole time.
+IOW, "they already had to handle it separately" -- is that true?
+khugepaged would have never collapse in writable files, so I wonder if
+all code paths are prepared for that.
 
 -- 
 Cheers,

@@ -1,33 +1,33 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0FB9E359A87;
-	Fri, 27 Mar 2026 13:33:28 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1DAD522127B;
+	Fri, 27 Mar 2026 13:37:37 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774618409; cv=none; b=I/ecdj7ZsRUs8ose1LLaNXgPSa0xJSK2s9+WAs0IpWKYPQI87J9+21Duxan/2ss0VsyhnCeO5lk7h0u7oDq0B+ks9eyVVeyELkPyb4IAJqqcO10ORfCqer2tefDTrl8CTRIGpMFRRzI4MLh06Au8EqxxYhYfI0c7B+ZSB6UYAZk=
+	t=1774618658; cv=none; b=JWiCJCQLsGAMIsrCfK586rc07FR3GcHfHvzfX0a4NQmq//4H2+tVFU7XQX7fhDOTKUIxliEye011aY21U1H4ub1WTlxAfoGLLTb2xukQfINu8Dl+qfM7m8IT6WZX858lAWtT+fCBj78A21vs9wJEXmE0Im1j/vrqF6PGu5sLS6Q=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774618409; c=relaxed/simple;
-	bh=xu8W7lqyzSXrcwxaklJNqkyZBDCnCyf4Es5zMCd5B2g=;
+	s=arc-20240116; t=1774618658; c=relaxed/simple;
+	bh=nZns1tAP9si4d7z5PzQHn2p8PDrBrvalmvMnDNZuEQQ=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=CZOtwnTo6I9B9+1srbXVYyhBIYcKmoLVsDl455qScFPUhSII07GYFaSRaB31+/QbsUeRMv9zXG23TxXkCTzfonSr5iCcDu/+kvKHsx0ycbznHuiVjpdQApTgCp2Lx5mXuWjl0jwnbdBZr3NTaJ+XaFp0b4KWn5Gu/pyCQ2Tq7pA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=cc5BiYnK; arc=none smtp.client-ip=10.30.226.201
+	 In-Reply-To:Content-Type; b=UQLPM9hRm6VY+kyPIIrY56aPaJiCjRtvwBm6Z0jxHvvoksnvFjj3uMbLo8JUKKoMCkrzOQbGtIcAkSWiHWLfX9oS7d21Em4lyt06LS4Kl0nr0Vr5Dw59ccEK2GzzhbiYcJSMsiS2QLr5lbHUHg8BImPX3REkHiWYK6wLqFJKCMM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=LpsGr8Rm; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="cc5BiYnK"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 100ACC19423;
-	Fri, 27 Mar 2026 13:33:21 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="LpsGr8Rm"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 61AA6C19423;
+	Fri, 27 Mar 2026 13:37:31 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1774618408;
-	bh=xu8W7lqyzSXrcwxaklJNqkyZBDCnCyf4Es5zMCd5B2g=;
+	s=k20201202; t=1774618657;
+	bh=nZns1tAP9si4d7z5PzQHn2p8PDrBrvalmvMnDNZuEQQ=;
 	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
-	b=cc5BiYnKpzNO+MmAjurOqx/BIjaAxwwZH1CtxzXm7CpdboYZ7p1vv2AviJru2aiec
-	 2UBGwR4xERHRPSmHj4bbk0/t6qj1vJ42SsY0W3Q7mQho1A3CC2lo7G7ipEwuXw2iGB
-	 V8AXG9/X+1VNdsTSxorfle9MKc5u+58u0T71iWb8DvDJpbSImbVKilgG+0wgElMhBn
-	 cBzqK1+Lf8O9tfPM1IXa8jXwreMhNhVFRX/b5narvt7xRqCnSe34/PhWB4aH9MpOGY
-	 q8wuo83smG57Pmjw+13lB4SbakPAjCQhSgJ9iGrd+o2LBknQKIp8mlmSlINSLx+c6G
-	 8Letxru1FSJCA==
-Message-ID: <a7976968-3598-47d5-99bd-a144783c72f2@kernel.org>
-Date: Fri, 27 Mar 2026 14:33:20 +0100
+	b=LpsGr8RmLF6EmeJkmn6EEFSZppz6AOLtBhVPzdaFRqbtb1LcOLvbNQOJ30/7s8erM
+	 rCNOEoeK4t0Wd2ACinrcnEQNRAppR5h8dWf9SkyVhckzmochrZCDtP7QvtQSIzFbfl
+	 y0R9ZeUTLMo1m1Zxwe3YPfvcs18ghsEvP27p7BQYMCZm/5Do0wa22+lwutV7UZRaRi
+	 6+/WlzwmWbPKLZnV3BZScEKlzqC1gmAOWogEFPe3YO5kfPhZ2qmkAECU0srIt1Xxeu
+	 mxghOQBYsbEPCIesgEiC3JCpZ5h13Ct7eyHEiDwyeQ4fhZxpMqmbNCshkDmy8TKajp
+	 H5cfBXUKipYmg==
+Message-ID: <f3602a65-69f1-4d80-82f9-c0c5b56afe00@kernel.org>
+Date: Fri, 27 Mar 2026 14:37:30 +0100
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -35,7 +35,7 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v1 01/10] mm: remove READ_ONLY_THP_FOR_FS Kconfig option
+Subject: Re: [PATCH v1 02/10] mm/khugepaged: remove READ_ONLY_THP_FOR_FS check
 To: Zi Yan <ziy@nvidia.com>, "Matthew Wilcox (Oracle)" <willy@infradead.org>,
  Song Liu <songliubraving@fb.com>
 Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
@@ -52,7 +52,7 @@ Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
  linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
  linux-mm@kvack.org, linux-kselftest@vger.kernel.org
 References: <20260327014255.2058916-1-ziy@nvidia.com>
- <20260327014255.2058916-2-ziy@nvidia.com>
+ <20260327014255.2058916-3-ziy@nvidia.com>
 From: "David Hildenbrand (Arm)" <david@kernel.org>
 Content-Language: en-US
 Autocrypt: addr=david@kernel.org; keydata=
@@ -99,44 +99,22 @@ Autocrypt: addr=david@kernel.org; keydata=
  3iyY2Nsd7JxfKu1PRhCGwXzRw5TlfEsoRI7V9A8isUCoqE2Dzh3FvYHVeX4Us+bRL/oqareJ
  CIFqgYMyvHj7Q06kTKmauOe4Nf0l0qEkIuIzfoLJ3qr5UyXc2hLtWyT9Ir+lYlX9efqh7mOY
  qIws/H2t
-In-Reply-To: <20260327014255.2058916-2-ziy@nvidia.com>
+In-Reply-To: <20260327014255.2058916-3-ziy@nvidia.com>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
 
 On 3/27/26 02:42, Zi Yan wrote:
-> No one will be able to use it, so the related code can be removed in the
-> coming commits.
+> collapse_file() requires FSes supporting large folio with at least
+> PMD_ORDER, so replace the READ_ONLY_THP_FOR_FS check with that. shmem with
+> huge option turned on also sets large folio order on mapping, so the check
+> also applies to shmem.
 > 
-> Signed-off-by: Zi Yan <ziy@nvidia.com>
-> ---
->  mm/Kconfig | 11 -----------
->  1 file changed, 11 deletions(-)
-> 
-> diff --git a/mm/Kconfig b/mm/Kconfig
-> index bd283958d675..408fc7b82233 100644
-> --- a/mm/Kconfig
-> +++ b/mm/Kconfig
-> @@ -937,17 +937,6 @@ config THP_SWAP
->  
->  	  For selection by architectures with reasonable THP sizes.
->  
-> -config READ_ONLY_THP_FOR_FS
-> -	bool "Read-only THP for filesystems (EXPERIMENTAL)"
-> -	depends on TRANSPARENT_HUGEPAGE
-> -
-> -	help
-> -	  Allow khugepaged to put read-only file-backed pages in THP.
-> -
-> -	  This is marked experimental because it is a new feature. Write
-> -	  support of file THPs will be developed in the next few release
-> -	  cycles.
-> -
->  config NO_PAGE_MAPCOUNT
->  	bool "No per-page mapcount (EXPERIMENTAL)"
->  	help
+> While at it, replace VM_BUG_ON with returning failure values.
 
-Isn't that usually what we do at the very end when we converted all the
-code?
+Why not VM_WARN_ON_ONCE() ?
+
+These are conditions that must be checked earlier, no?
+
 
 -- 
 Cheers,

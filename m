@@ -1,32 +1,32 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5783E377EB0;
-	Fri, 27 Mar 2026 12:42:31 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 27C7A39EF23;
+	Fri, 27 Mar 2026 12:50:35 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774615351; cv=none; b=AcVRN2neVo/03Ursi660AcBvag/hRnK3nPDA8quAlsSH9GX+1ZK3bV+wSpEu3CCa5dGX9HGQCMxWQ/0YxW5aoASdx2Ry7F6Trp9Ns301txVvO4GCoslbGHFdRMGi9m4HpQZSbB5N7fPSsd7xmKzRXHdgci5NcJP5390Q7wuxiOA=
+	t=1774615836; cv=none; b=qER/rxGvdeZmdeXLQfRgfWRco09BfSnXq2cR6ss+cd9FWkSH6J99UZLjiCadoeclftaDLqjymRJnkd2/vGEN7KW2o4c2OFPA1matR5ON3Pbc4J56w3C+X0Ca5CHPN+0pKAB5yLkwlrsIKvDmvO4ofeoS49b7CDGlmJE+Z8w/nUY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774615351; c=relaxed/simple;
-	bh=ScnDchtxz3nbi7fNStj38W0DlgF4uUAXNKsNM9UtlG0=;
+	s=arc-20240116; t=1774615836; c=relaxed/simple;
+	bh=7TtvxfvBKonF+oVtDcunkjFuZJVVhgHI8FyFmO9gAyY=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=OJKcryTXcM8BJssBh4pnt+rOSAKxoSRJWCj39da3f+olNM+fT7h9WcpWTFCeq9znenZGnhVYvQA5R1PgVpOmg84OdXmfCzf8ZOe4fKZU71hrpj5NU6/QtVEcU74mClUSAvkdks1y5u582O45Uy+5y76s2ZkUTlYRJHwRw14SgDg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=NgS84UX4; arc=none smtp.client-ip=10.30.226.201
+	 Content-Type:Content-Disposition:In-Reply-To; b=NzUx5PYB+NEfGDBvwZ6tPwXU6Mj2agjJ5UDbPWjskMB7A3R5B5kJMOw/hDxFAy5C6MJS3fH1ybwqlLoPKBUuLN695gLiBJN+2gSUTDVkit0hrwUoMLTLn1UdWKpmOzr6XM8wDl3f4vo+w/MyHrSiJQT6m8yky1i6x7UZhxjZx0c=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=dbrt/V4U; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="NgS84UX4"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 580B1C19423;
-	Fri, 27 Mar 2026 12:42:30 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="dbrt/V4U"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 3774DC19423;
+	Fri, 27 Mar 2026 12:50:35 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1774615351;
-	bh=ScnDchtxz3nbi7fNStj38W0DlgF4uUAXNKsNM9UtlG0=;
+	s=k20201202; t=1774615835;
+	bh=7TtvxfvBKonF+oVtDcunkjFuZJVVhgHI8FyFmO9gAyY=;
 	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=NgS84UX4fepMHIzVRMxlxt8c4PNx4Lya0rELlZuOIREISup3fXx7EAl/yssL53GMb
-	 yJpn8LwbkGfuY9kIrhEJ5WFKEah4afqMIhdg/2OA9WdokrehMn2KzghmJQfTKF3dUc
-	 2V6+fVywGgUmW2nFrij7A/0/JeHrqFABHPQLWZU6y98OppmfAKkmGajb6/zgIkc1PY
-	 MroVcDBhYiaIMJDq1rOBLAZWfmTKkVg/mpiLKcri/Ob8guDAdcLLeOs0WBCARqqTup
-	 cQJNiAtzEDQoz9oqFkIhcXz07ceXau3Qh6h4xDc8KUC7T4oVZAegzO1fltxzZnDIKA
-	 EEoIHwWVH8GLg==
-Date: Fri, 27 Mar 2026 12:42:28 +0000
+	b=dbrt/V4U3RhDsEEVQice4TAK4sJiHyb4Calj2k3bm3O2B2llHOuxX9IC0SP/Ooufj
+	 JKx+gTxPfFON6p/vKpJsGfUm7cJLFZFJf5/wmGK4M5PmC+rL0K2N5sSwFvcU/9lYRe
+	 nfsyXZ91doAm0vVLg3oO3pP0FG6a21YhfdVKVCh5Iy9pYCpPb8QbfeD40nECYwrfuZ
+	 EGmtmUxAUOUPOOdjKLVDzABtHSkbofi91uoQUVuMOarXnIoyaZ6g1qxjdzE8d6/APx
+	 t3jBYudMko9aT53uZlcaIA+tqoETqvMZsu/56Nwx56rIg6ijstSfa6CPmDX0mnlhHP
+	 tQouBAQ0ri3rQ==
+Date: Fri, 27 Mar 2026 12:50:33 +0000
 From: "Lorenzo Stoakes (Oracle)" <ljs@kernel.org>
 To: Zi Yan <ziy@nvidia.com>
 Cc: "Matthew Wilcox (Oracle)" <willy@infradead.org>, 
@@ -40,11 +40,11 @@ Cc: "Matthew Wilcox (Oracle)" <willy@infradead.org>,
 	Suren Baghdasaryan <surenb@google.com>, Michal Hocko <mhocko@suse.com>, Shuah Khan <shuah@kernel.org>, 
 	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
 	linux-mm@kvack.org, linux-kselftest@vger.kernel.org
-Subject: Re: [PATCH v1 05/10] mm/huge_memory: remove READ_ONLY_THP_FOR_FS
- from file_thp_enabled()
-Message-ID: <5ac47338-1954-43ce-9984-56d70f7c392f@lucifer.local>
+Subject: Re: [PATCH v1 06/10] mm/huge_memory: remove folio split check for
+ READ_ONLY_THP_FOR_FS
+Message-ID: <e5eed307-c0da-4de8-8be8-eb52e2af413e@lucifer.local>
 References: <20260327014255.2058916-1-ziy@nvidia.com>
- <20260327014255.2058916-6-ziy@nvidia.com>
+ <20260327014255.2058916-7-ziy@nvidia.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -53,65 +53,55 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20260327014255.2058916-6-ziy@nvidia.com>
+In-Reply-To: <20260327014255.2058916-7-ziy@nvidia.com>
 
-On Thu, Mar 26, 2026 at 09:42:50PM -0400, Zi Yan wrote:
-> Replace it with a check on the max folio order of the file's address space
-> mapping, making sure PMD_ORDER is supported.
+On Thu, Mar 26, 2026 at 09:42:51PM -0400, Zi Yan wrote:
+> Without READ_ONLY_THP_FOR_FS, large file-backed folios cannot be created by
+> a FS without large folio support. The check is no longer needed.
 >
 > Signed-off-by: Zi Yan <ziy@nvidia.com>
+
+Seems legitimate, so:
+
+Reviewed-by: Lorenzo Stoakes (Oracle) <ljs@kernel.org>
+
 > ---
->  mm/huge_memory.c | 6 +++---
->  1 file changed, 3 insertions(+), 3 deletions(-)
+>  mm/huge_memory.c | 22 ----------------------
+>  1 file changed, 22 deletions(-)
 >
 > diff --git a/mm/huge_memory.c b/mm/huge_memory.c
-> index c7873dbdc470..1da1467328a3 100644
+> index 1da1467328a3..30eddcbf86f1 100644
 > --- a/mm/huge_memory.c
 > +++ b/mm/huge_memory.c
-> @@ -89,9 +89,6 @@ static inline bool file_thp_enabled(struct vm_area_struct *vma)
->  {
->  	struct inode *inode;
+> @@ -3732,28 +3732,6 @@ int folio_check_splittable(struct folio *folio, unsigned int new_order,
+>  		/* order-1 is not supported for anonymous THP. */
+>  		if (new_order == 1)
+>  			return -EINVAL;
+> -	} else if (split_type == SPLIT_TYPE_NON_UNIFORM || new_order) {
+> -		if (IS_ENABLED(CONFIG_READ_ONLY_THP_FOR_FS) &&
+> -		    !mapping_large_folio_support(folio->mapping)) {
+> -			/*
+> -			 * We can always split a folio down to a single page
+> -			 * (new_order == 0) uniformly.
+> -			 *
+> -			 * For any other scenario
+> -			 *   a) uniform split targeting a large folio
+> -			 *      (new_order > 0)
+> -			 *   b) any non-uniform split
+> -			 * we must confirm that the file system supports large
+> -			 * folios.
+> -			 *
+> -			 * Note that we might still have THPs in such
+> -			 * mappings, which is created from khugepaged when
+> -			 * CONFIG_READ_ONLY_THP_FOR_FS is enabled. But in that
+> -			 * case, the mapping does not actually support large
+> -			 * folios properly.
+> -			 */
+> -			return -EINVAL;
+> -		}
+>  	}
 >
-> -	if (!IS_ENABLED(CONFIG_READ_ONLY_THP_FOR_FS))
-> -		return false;
-> -
->  	if (!vma->vm_file)
->  		return false;
->
-> @@ -100,6 +97,9 @@ static inline bool file_thp_enabled(struct vm_area_struct *vma)
->  	if (IS_ANON_FILE(inode))
->  		return false;
->
-> +	if (mapping_max_folio_order(inode->i_mapping) < PMD_ORDER)
-> +		return false;
-> +
-
-At this point I think this should be a separate function quite honestly and
-share it with 2/10's use, and then you can put the comment in here re: anon
-shmem etc.
-
-Though that won't apply here of course as shmem_allowable_huge_orders() would
-have been invoked :)
-
-But no harm in refactoring it anyway, and the repetitive < PMD_ORDER stuff is
-unfortunate.
-
-Buuut having said that is this right actually?
-
-Because we have:
-
-		if (((in_pf || smaps)) && vma->vm_ops->huge_fault)
-			return orders;
-
-Above it, and now you're enabling huge folio file systems to do non-page fault
-THP and that's err... isn't that quite a big change?
-
-So yeah probably no to this patch as is :) we should just drop
-file_thp_enabled()?
-
->  	return !inode_is_open_for_write(inode) && S_ISREG(inode->i_mode);
->  }
->
+>  	/*
 > --
 > 2.43.0
 >

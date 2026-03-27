@@ -1,32 +1,32 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E8E13377EA2;
-	Fri, 27 Mar 2026 12:07:24 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 15869391827;
+	Fri, 27 Mar 2026 12:23:48 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774613245; cv=none; b=J7kcDJ76XykQUGlW5vzFJBdPL1KfPi3Q/IRl/UP8WB1znf1ciX+yjzDC2nWgCDpuWS1Yk7TDyxJoI00LlquCYgjkMXPH/arI9LmoudBUrYpe6Ucp70y58FoC2pI1JfriQbWRulsTWsx5zn/ihSSdxz1NSrYR0TjRQnubUF9mhRA=
+	t=1774614229; cv=none; b=b/I+Y0GX1SKEXE8b+eDlmfTcGimm8M9sE+B5UiqrSH37YsbfhM72PoRum3bMgJ1/bHqNFhiadpGQFUcZ684/giRjOIqhmJB/FzaBIkpQK03PUcRWRSWzF9nsk3WRBs4lBgL+m43mlVNcu2L4kewrCCxV8RXBVzQ2nX5L7CXgQJY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774613245; c=relaxed/simple;
-	bh=2nB5DCPY0+8yCmvF7X6fCAPWRpuyi5kzCg7/hMaBpWM=;
+	s=arc-20240116; t=1774614229; c=relaxed/simple;
+	bh=V8sGUJvbBSQZ15CzkQaKkEa1Er8HddnCsDI3BKLTvtU=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=aOKGBT962fk65+rsMbkwPHtrXjeoiiI0gddCl1YI9g3ChR5kJxdl5hzhOZQ8p9cUGQn7oWztsv6DQ39Tk+VO71viUUpQYosNI25qqc1wow7JVRG5iBthVfGDvytPUAyJK6RX7VDEL2wp3SGoDpB5m/zOIYSOi34vGlbKIH+lJJw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=GV/OuxUv; arc=none smtp.client-ip=10.30.226.201
+	 Content-Type:Content-Disposition:In-Reply-To; b=kmbY/r/LGFVEQaBiMvMemZALlxGTPJTAWlnlTbCaQCcJ9qdpLF1yi+Ec5jzoGoZHOBdbQGVGqxb6vtJhTecqOD2EYVcJg1eeeRh1kkhIWPh6zqTAmUCM7MmAZCpTudSZPgYqxSYtdW1tys+zXPQduzvaeLj4pRExAP8Ov4CEZm8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=F8g4lx3T; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="GV/OuxUv"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 000F7C19423;
-	Fri, 27 Mar 2026 12:07:23 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="F8g4lx3T"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 43B8CC2BC87;
+	Fri, 27 Mar 2026 12:23:48 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1774613244;
-	bh=2nB5DCPY0+8yCmvF7X6fCAPWRpuyi5kzCg7/hMaBpWM=;
+	s=k20201202; t=1774614228;
+	bh=V8sGUJvbBSQZ15CzkQaKkEa1Er8HddnCsDI3BKLTvtU=;
 	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=GV/OuxUvODHLD58X/NXS2HIl2fDAtcrOkYl1usoY5dT3mhOCLFz+yYGOP1vLLqYOU
-	 15w99o49viWVLThwMVhKQQ4mpejWHKm/7mtnHk603YlQMPyZeiGUpI1aYuUMTC1qoK
-	 KP9QBrIxE8qH4usannUbPyhHkjf13t9L/naWuMmlMqpNeQm5IoyhpmO87gPoLqBf38
-	 FLBh1X6kvQW7NNnskhElLwD+CVW0SDGiuK3j+25mlnqfgSphcqJQtpx/983A9czRbG
-	 4lwP0/0dPbdKzGiM8hrNqbD6znlN6oHLzNcQqRNhGxdV9U8tI0Q7kPFORW+bOdT5XM
-	 WrZvcbArOiAzg==
-Date: Fri, 27 Mar 2026 12:07:22 +0000
+	b=F8g4lx3TiflLWf5tCAz6PYcHqfwkdC2OZT6fbVgng80WiGZeUSPvNUYNoJG8K5b1k
+	 ctE+Y9mi2tJbXfyDuDYpL+MLulBxdZdLTJ7hf9Gv3NjsRIyv2n3D02pKsxew980YrY
+	 4+aAgDeHNXTwUC9zVA8rD9RTvSfLv0b6MeQipBsM5cx/SVt0thD2DT5zRNOUOiBohx
+	 XMc2WXmuFzojQexEc+KdEdDUrkHdVKh24ktJCp5ilaCqdqttDpFSYHjHh2i73tnbQz
+	 gfZfOymgqxXaJrXm1saxMePV2fv6gwfSo+frkerGCyGdg58aV7PsrIPFpK3l/AGZwr
+	 7gLG979b4EszA==
+Date: Fri, 27 Mar 2026 12:23:46 +0000
 From: "Lorenzo Stoakes (Oracle)" <ljs@kernel.org>
 To: Zi Yan <ziy@nvidia.com>
 Cc: "Matthew Wilcox (Oracle)" <willy@infradead.org>, 
@@ -40,10 +40,11 @@ Cc: "Matthew Wilcox (Oracle)" <willy@infradead.org>,
 	Suren Baghdasaryan <surenb@google.com>, Michal Hocko <mhocko@suse.com>, Shuah Khan <shuah@kernel.org>, 
 	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
 	linux-mm@kvack.org, linux-kselftest@vger.kernel.org
-Subject: Re: [PATCH v1 02/10] mm/khugepaged: remove READ_ONLY_THP_FOR_FS check
-Message-ID: <31d9d5c1-02af-42b3-bc3e-aea151d3552b@lucifer.local>
+Subject: Re: [PATCH v1 03/10] mm: fs: remove filemap_nr_thps*() functions and
+ their users
+Message-ID: <aaea8ce1-eac6-49d6-8c85-7361977b9a9f@lucifer.local>
 References: <20260327014255.2058916-1-ziy@nvidia.com>
- <20260327014255.2058916-3-ziy@nvidia.com>
+ <20260327014255.2058916-4-ziy@nvidia.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -52,67 +53,184 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20260327014255.2058916-3-ziy@nvidia.com>
+In-Reply-To: <20260327014255.2058916-4-ziy@nvidia.com>
 
-On Thu, Mar 26, 2026 at 09:42:47PM -0400, Zi Yan wrote:
-> collapse_file() requires FSes supporting large folio with at least
-> PMD_ORDER, so replace the READ_ONLY_THP_FOR_FS check with that. shmem with
-> huge option turned on also sets large folio order on mapping, so the check
-> also applies to shmem.
->
-> While at it, replace VM_BUG_ON with returning failure values.
+On Thu, Mar 26, 2026 at 09:42:48PM -0400, Zi Yan wrote:
+> They are used by READ_ONLY_THP_FOR_FS to handle writes to FSes without
+> large folio support, so that read-only THPs created in these FSes are not
+> seen by the FSes when the underlying fd becomes writable. Now read-only PMD
+> THPs only appear in a FS with large folio support and the supported orders
+> include PMD_ORDRE.
+
+Typo: PMD_ORDRE -> PMD_ORDER
+
 >
 > Signed-off-by: Zi Yan <ziy@nvidia.com>
 
+This looks obviously-correct since this stuff wouldn't have been invoked for
+large folio file systems before + they already had to handle it separately, and
+this function is only tied to CONFIG_READ_ONLY_THP_FOR_FS (+ a quick grep
+suggests you didn't miss anything), so:
 
+Reviewed-by: Lorenzo Stoakes (Oracle) <ljs@kernel.org>
 
 > ---
->  mm/khugepaged.c | 7 +++++--
->  1 file changed, 5 insertions(+), 2 deletions(-)
+>  fs/open.c               | 27 ---------------------------
+>  include/linux/pagemap.h | 29 -----------------------------
+>  mm/filemap.c            |  1 -
+>  mm/huge_memory.c        |  1 -
+>  mm/khugepaged.c         | 29 ++---------------------------
+>  5 files changed, 2 insertions(+), 85 deletions(-)
 >
+> diff --git a/fs/open.c b/fs/open.c
+> index 91f1139591ab..cef382d9d8b8 100644
+> --- a/fs/open.c
+> +++ b/fs/open.c
+> @@ -970,33 +970,6 @@ static int do_dentry_open(struct file *f,
+>  	if ((f->f_flags & O_DIRECT) && !(f->f_mode & FMODE_CAN_ODIRECT))
+>  		return -EINVAL;
+>
+> -	/*
+> -	 * XXX: Huge page cache doesn't support writing yet. Drop all page
+> -	 * cache for this file before processing writes.
+> -	 */
+> -	if (f->f_mode & FMODE_WRITE) {
+> -		/*
+> -		 * Depends on full fence from get_write_access() to synchronize
+> -		 * against collapse_file() regarding i_writecount and nr_thps
+> -		 * updates. Ensures subsequent insertion of THPs into the page
+> -		 * cache will fail.
+> -		 */
+> -		if (filemap_nr_thps(inode->i_mapping)) {
+> -			struct address_space *mapping = inode->i_mapping;
+> -
+> -			filemap_invalidate_lock(inode->i_mapping);
+> -			/*
+> -			 * unmap_mapping_range just need to be called once
+> -			 * here, because the private pages is not need to be
+> -			 * unmapped mapping (e.g. data segment of dynamic
+> -			 * shared libraries here).
+> -			 */
+> -			unmap_mapping_range(mapping, 0, 0, 0);
+> -			truncate_inode_pages(mapping, 0);
+> -			filemap_invalidate_unlock(inode->i_mapping);
+> -		}
+> -	}
+> -
+>  	return 0;
+>
+>  cleanup_all:
+> diff --git a/include/linux/pagemap.h b/include/linux/pagemap.h
+> index ec442af3f886..dad3f8846cdc 100644
+> --- a/include/linux/pagemap.h
+> +++ b/include/linux/pagemap.h
+> @@ -530,35 +530,6 @@ static inline size_t mapping_max_folio_size(const struct address_space *mapping)
+>  	return PAGE_SIZE << mapping_max_folio_order(mapping);
+>  }
+>
+> -static inline int filemap_nr_thps(const struct address_space *mapping)
+> -{
+> -#ifdef CONFIG_READ_ONLY_THP_FOR_FS
+> -	return atomic_read(&mapping->nr_thps);
+> -#else
+> -	return 0;
+> -#endif
+> -}
+> -
+> -static inline void filemap_nr_thps_inc(struct address_space *mapping)
+> -{
+> -#ifdef CONFIG_READ_ONLY_THP_FOR_FS
+> -	if (!mapping_large_folio_support(mapping))
+> -		atomic_inc(&mapping->nr_thps);
+> -#else
+> -	WARN_ON_ONCE(mapping_large_folio_support(mapping) == 0);
+> -#endif
+> -}
+> -
+> -static inline void filemap_nr_thps_dec(struct address_space *mapping)
+> -{
+> -#ifdef CONFIG_READ_ONLY_THP_FOR_FS
+> -	if (!mapping_large_folio_support(mapping))
+> -		atomic_dec(&mapping->nr_thps);
+> -#else
+> -	WARN_ON_ONCE(mapping_large_folio_support(mapping) == 0);
+> -#endif
+> -}
+> -
+>  struct address_space *folio_mapping(const struct folio *folio);
+>
+>  /**
+> diff --git a/mm/filemap.c b/mm/filemap.c
+> index 2b933a1da9bd..4248e7cdecf3 100644
+> --- a/mm/filemap.c
+> +++ b/mm/filemap.c
+> @@ -189,7 +189,6 @@ static void filemap_unaccount_folio(struct address_space *mapping,
+>  			lruvec_stat_mod_folio(folio, NR_SHMEM_THPS, -nr);
+>  	} else if (folio_test_pmd_mappable(folio)) {
+>  		lruvec_stat_mod_folio(folio, NR_FILE_THPS, -nr);
+> -		filemap_nr_thps_dec(mapping);
+>  	}
+>  	if (test_bit(AS_KERNEL_FILE, &folio->mapping->flags))
+>  		mod_node_page_state(folio_pgdat(folio),
+> diff --git a/mm/huge_memory.c b/mm/huge_memory.c
+> index b2a6060b3c20..c7873dbdc470 100644
+> --- a/mm/huge_memory.c
+> +++ b/mm/huge_memory.c
+> @@ -3833,7 +3833,6 @@ static int __folio_freeze_and_split_unmapped(struct folio *folio, unsigned int n
+>  				} else {
+>  					lruvec_stat_mod_folio(folio,
+>  							NR_FILE_THPS, -nr);
+> -					filemap_nr_thps_dec(mapping);
+>  				}
+>  			}
+>  		}
 > diff --git a/mm/khugepaged.c b/mm/khugepaged.c
-> index d06d84219e1b..45b12ffb1550 100644
+> index 45b12ffb1550..8004ab8de6d2 100644
 > --- a/mm/khugepaged.c
 > +++ b/mm/khugepaged.c
-> @@ -1899,8 +1899,11 @@ static enum scan_result collapse_file(struct mm_struct *mm, unsigned long addr,
->  	int nr_none = 0;
->  	bool is_shmem = shmem_file(file);
+> @@ -2104,20 +2104,8 @@ static enum scan_result collapse_file(struct mm_struct *mm, unsigned long addr,
+>  		goto xa_unlocked;
+>  	}
 >
-> -	VM_BUG_ON(!IS_ENABLED(CONFIG_READ_ONLY_THP_FOR_FS) && !is_shmem);
-> -	VM_BUG_ON(start & (HPAGE_PMD_NR - 1));
-> +	/* "huge" shmem sets mapping folio order and passes the check below */
-
-I think this isn't quite clear and could be improved to e.g.:
-
-	/*
-	 * Either anon shmem supports huge pages as set by shmem_enabled sysfs,
-	 * or a shmem file system mounted with the "huge" option.
-	 */
-
-> +	if (mapping_max_folio_order(mapping) < PMD_ORDER)
-> +		return SCAN_FAIL;
-
-As per rest of thread, this looks correct.
-
-> +	if (start & (HPAGE_PMD_NR - 1))
-> +		return SCAN_ADDRESS_RANGE;
-
-Hmm, we're kinda making this - presumably buggy situation - into a valid input
-that just fails the scan.
-
-Maybe just make it a VM_WARN_ON_ONCE()? Or if we want to avoid propagating the
-bug that'd cause it any further:
-
-	if (start & (HPAGE_PMD_NR - 1)) {
-		VM_WARN_ON_ONCE(true);
-		return SCAN_ADDRESS_RANGE;
-	}
-
-Or similar.
-
+> -	if (!is_shmem) {
+> -		filemap_nr_thps_inc(mapping);
+> -		/*
+> -		 * Paired with the fence in do_dentry_open() -> get_write_access()
+> -		 * to ensure i_writecount is up to date and the update to nr_thps
+> -		 * is visible. Ensures the page cache will be truncated if the
+> -		 * file is opened writable.
+> -		 */
+> -		smp_mb();
+> -		if (inode_is_open_for_write(mapping->host)) {
+> -			result = SCAN_FAIL;
+> -			filemap_nr_thps_dec(mapping);
+> -		}
+> -	}
+> +	if (!is_shmem && inode_is_open_for_write(mapping->host))
+> +		result = SCAN_FAIL;
 >
->  	result = alloc_charge_folio(&new_folio, mm, cc);
->  	if (result != SCAN_SUCCEED)
+>  xa_locked:
+>  	xas_unlock_irq(&xas);
+> @@ -2296,19 +2284,6 @@ static enum scan_result collapse_file(struct mm_struct *mm, unsigned long addr,
+>  		folio_putback_lru(folio);
+>  		folio_put(folio);
+>  	}
+> -	/*
+> -	 * Undo the updates of filemap_nr_thps_inc for non-SHMEM
+> -	 * file only. This undo is not needed unless failure is
+> -	 * due to SCAN_COPY_MC.
+> -	 */
+> -	if (!is_shmem && result == SCAN_COPY_MC) {
+> -		filemap_nr_thps_dec(mapping);
+> -		/*
+> -		 * Paired with the fence in do_dentry_open() -> get_write_access()
+> -		 * to ensure the update to nr_thps is visible.
+> -		 */
+> -		smp_mb();
+> -	}
+>
+>  	new_folio->mapping = NULL;
+>
 > --
 > 2.43.0
 >

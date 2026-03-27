@@ -1,79 +1,96 @@
-Received: from out-176.mta1.migadu.com (out-176.mta1.migadu.com [95.215.58.176])
+Received: from out30-113.freemail.mail.aliyun.com (out30-113.freemail.mail.aliyun.com [115.124.30.113])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BBD4E78F4A
-	for <linux-btrfs@vger.kernel.org>; Fri, 27 Mar 2026 09:33:18 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=95.215.58.176
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7EA5D352C4E;
+	Fri, 27 Mar 2026 09:44:54 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=115.124.30.113
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774604000; cv=none; b=b4LsqoURstF2rRM7by/QWCPWItsJL4oBoJleWK/n6tPX3+scwi/zOiblJaG7V9D/BsVOBRUtFSszpxw5q8TMwsr2/ul7QucVZh7McXQap7igGupZhyEqeYXUkonQv0Zc8ypCV5FVdhVgVnq/a16eA5YUhphjZ+QFJjEImgGdimY=
+	t=1774604699; cv=none; b=i/LMgcApK8VEDGCcmb4ooA/LKWvNi1wSTK+HFbOFFNssk7WUyasrghh2oyCLA1/+FMmiDZEdO8U7KpZ8PeR/h7HDXHYn4pXAlnhTlM7rMSmiGGfyFznoS88Te9CQHGG8py/+YHhbS/fUa+6V9N2C6ULh22NeH72PZmsQLXynwe8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774604000; c=relaxed/simple;
-	bh=v3p8rhSFUQ2cdcKTAQ1HEiPQb+GhAfDZkyN3q7ICtqI=;
+	s=arc-20240116; t=1774604699; c=relaxed/simple;
+	bh=uwv/A6VDU71smC9cjCzHcWme2MW+RxTF5DCl65hyCZ8=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=JbfqUZ5oy5JID6Bd5IhXwnsARYesvobeL7sHZHUXgCesexfbvPeq5THNsIk+His7KPnatbQ3WW/hKFCV9D0mT2otLCU9K9zBeJi+vN1Lws5ghqFN6w/UkGv1OWeQ1g8rzF7tneELOVB8MdEOWOjtPxwLpbzdrKEVRHI2jPVVrP0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev; spf=pass smtp.mailfrom=linux.dev; dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b=D3qK82Ed; arc=none smtp.client-ip=95.215.58.176
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.dev
+	 In-Reply-To:Content-Type; b=aktLQLG+Ru6H4mqA33FqLNd0CORzme+NIW6t5Ykm17cpCp9w1hvCm/3R8SZS+e2RBX2JIMp4HKxCA8pFUFhDNtsegWwoD3I/BV1W15RzAIuhC5g24MvqftzPUXt/EA0WUphaBUFQZHROrvd5ZRuMKHWhIqPQq/uFxBZwv/iA3Ck=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.alibaba.com; spf=pass smtp.mailfrom=linux.alibaba.com; dkim=pass (1024-bit key) header.d=linux.alibaba.com header.i=@linux.alibaba.com header.b=u5n847fF; arc=none smtp.client-ip=115.124.30.113
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.alibaba.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.alibaba.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b="D3qK82Ed"
-Message-ID: <710a9152-83ac-4d5d-a74d-ef0653596bf8@linux.dev>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linux.dev; s=key1;
-	t=1774603986;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=5Lpsur5mfhIYIdcGTVML/ZxkQ0VDgNhtSZ2tOFHDJTk=;
-	b=D3qK82Edy8XhDc0vBrTeZETe7pTWZ1aqy26Q2CHBvfLW1hhtD8uA39WUpR7gwJC1eNy5dy
-	vimnFAwMAPkSbf15e1ev92Fqrn1kRoilpUGR+8coKrQLDzApVrsvMagiHDz+3ULa71u6Pk
-	tB/QHzmUxD9Vi+5nRiQpt+xefOW9a8k=
-Date: Fri, 27 Mar 2026 17:32:40 +0800
+	dkim=pass (1024-bit key) header.d=linux.alibaba.com header.i=@linux.alibaba.com header.b="u5n847fF"
+DKIM-Signature:v=1; a=rsa-sha256; c=relaxed/relaxed;
+	d=linux.alibaba.com; s=default;
+	t=1774604692; h=Message-ID:Date:MIME-Version:Subject:To:From:Content-Type;
+	bh=d0T3QbIX0f+LhSvEfVUQnp7VQm8nnkhkwzqmdsHsY0I=;
+	b=u5n847fFzODrKxFbvRndlqqg1iNbNPHkC53Mp3YUz8d4IdVmm8pGXmbjtVXY7vS7n0Hki6ovK37ln+vcl5nogfeMgtKuqm2XQY0oRn8DdqixEEb7m8GN4aFs1jg8zJjW6EhABlkLcSjDOjD5JZpjTuu4FOFUbdEiy0pEdEHRi1A=
+X-Alimail-AntiSpam:AC=PASS;BC=-1|-1;BR=01201311R611e4;CH=green;DM=||false|;DS=||;FP=0|-1|-1|-1|0|-1|-1|-1;HT=maildocker-contentspam033045098064;MF=baolin.wang@linux.alibaba.com;NM=1;PH=DS;RN=27;SR=0;TI=SMTPD_---0X.o0Fj8_1774604690;
+Received: from 30.74.146.57(mailfrom:baolin.wang@linux.alibaba.com fp:SMTPD_---0X.o0Fj8_1774604690 cluster:ay36)
+          by smtp.aliyun-inc.com;
+          Fri, 27 Mar 2026 17:44:50 +0800
+Message-ID: <7fd90f5e-65b5-4734-abb2-77b22c733af5@linux.alibaba.com>
+Date: Fri, 27 Mar 2026 17:44:49 +0800
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Subject: Re: [PATCH v1 03/10] mm: fs: remove filemap_nr_thps*() functions and
- their users
-Content-Language: en-US
-To: Zi Yan <ziy@nvidia.com>
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v1 02/10] mm/khugepaged: remove READ_ONLY_THP_FOR_FS check
+To: Zi Yan <ziy@nvidia.com>, "Matthew Wilcox (Oracle)" <willy@infradead.org>,
+ Song Liu <songliubraving@fb.com>
 Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
  Alexander Viro <viro@zeniv.linux.org.uk>,
  Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>,
  Andrew Morton <akpm@linux-foundation.org>,
  David Hildenbrand <david@kernel.org>, Lorenzo Stoakes <ljs@kernel.org>,
- Baolin Wang <baolin.wang@linux.alibaba.com>, Song Liu
- <songliubraving@fb.com>, "Liam R. Howlett" <Liam.Howlett@oracle.com>,
- Nico Pache <npache@redhat.com>, Ryan Roberts <ryan.roberts@arm.com>,
- Dev Jain <dev.jain@arm.com>, Barry Song <baohua@kernel.org>,
+ "Liam R. Howlett" <Liam.Howlett@oracle.com>, Nico Pache <npache@redhat.com>,
+ Ryan Roberts <ryan.roberts@arm.com>, Dev Jain <dev.jain@arm.com>,
+ Barry Song <baohua@kernel.org>, Lance Yang <lance.yang@linux.dev>,
  Vlastimil Babka <vbabka@kernel.org>, Mike Rapoport <rppt@kernel.org>,
  Suren Baghdasaryan <surenb@google.com>, Michal Hocko <mhocko@suse.com>,
  Shuah Khan <shuah@kernel.org>, linux-btrfs@vger.kernel.org,
  linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
- linux-mm@kvack.org, linux-kselftest@vger.kernel.org,
- "Matthew Wilcox (Oracle)" <willy@infradead.org>
+ linux-mm@kvack.org, linux-kselftest@vger.kernel.org
 References: <20260327014255.2058916-1-ziy@nvidia.com>
- <20260327014255.2058916-4-ziy@nvidia.com>
-X-Report-Abuse: Please report any abuse attempt to abuse@migadu.com and include these headers.
-From: Lance Yang <lance.yang@linux.dev>
-In-Reply-To: <20260327014255.2058916-4-ziy@nvidia.com>
+ <20260327014255.2058916-3-ziy@nvidia.com>
+From: Baolin Wang <baolin.wang@linux.alibaba.com>
+In-Reply-To: <20260327014255.2058916-3-ziy@nvidia.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 7bit
-X-Migadu-Flow: FLOW_OUT
 
 
 
-On 2026/3/27 09:42, Zi Yan wrote:
-> They are used by READ_ONLY_THP_FOR_FS to handle writes to FSes without
-> large folio support, so that read-only THPs created in these FSes are not
-> seen by the FSes when the underlying fd becomes writable. Now read-only PMD
-> THPs only appear in a FS with large folio support and the supported orders
-> include PMD_ORDRE.
+On 3/27/26 9:42 AM, Zi Yan wrote:
+> collapse_file() requires FSes supporting large folio with at least
+> PMD_ORDER, so replace the READ_ONLY_THP_FOR_FS check with that. shmem with
+> huge option turned on also sets large folio order on mapping, so the check
+> also applies to shmem.
+> 
+> While at it, replace VM_BUG_ON with returning failure values.
 > 
 > Signed-off-by: Zi Yan <ziy@nvidia.com>
 > ---
+>   mm/khugepaged.c | 7 +++++--
+>   1 file changed, 5 insertions(+), 2 deletions(-)
+> 
+> diff --git a/mm/khugepaged.c b/mm/khugepaged.c
+> index d06d84219e1b..45b12ffb1550 100644
+> --- a/mm/khugepaged.c
+> +++ b/mm/khugepaged.c
+> @@ -1899,8 +1899,11 @@ static enum scan_result collapse_file(struct mm_struct *mm, unsigned long addr,
+>   	int nr_none = 0;
+>   	bool is_shmem = shmem_file(file);
+>   
+> -	VM_BUG_ON(!IS_ENABLED(CONFIG_READ_ONLY_THP_FOR_FS) && !is_shmem);
+> -	VM_BUG_ON(start & (HPAGE_PMD_NR - 1));
+> +	/* "huge" shmem sets mapping folio order and passes the check below */
+> +	if (mapping_max_folio_order(mapping) < PMD_ORDER)
+> +		return SCAN_FAIL;
 
-LGTM, feel free to add:
+This is not true for anonymous shmem, since its large order allocation 
+logic is similar to anonymous memory. That means it will not call 
+mapping_set_large_folios() for anonymous shmem.
 
-Reviewed-by: Lance Yang <lance.yang@linux.dev>
+So I think the check should be:
+
+if (!is_shmem && mapping_max_folio_order(mapping) < PMD_ORDER)
+      return SCAN_FAIL;

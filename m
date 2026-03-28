@@ -1,65 +1,32 @@
-Received: from mail-wm1-f52.google.com (mail-wm1-f52.google.com [209.85.128.52])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from out30-131.freemail.mail.aliyun.com (out30-131.freemail.mail.aliyun.com [115.124.30.131])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9F5B234EF17
-	for <linux-btrfs@vger.kernel.org>; Fri, 27 Mar 2026 21:46:23 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.52
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9CF6E35836F;
+	Sat, 28 Mar 2026 02:29:40 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=115.124.30.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774647985; cv=none; b=GHzqjgkRc8NXjxrSgVMtGi3JIG+t3XL2JivNDRz8iZgLoUMm1RTB8DT+2CwW/Ai8p6DXTjdNm41r20/9GLmJXwC0q7hyTKk1oyVJpVQVaG/bx6ZyV2DcETOFQQ4xvu1eZJOXvFsAIJHiHBl7MuMp1igMK6FvQxi/FncV0ja1MY8=
+	t=1774664985; cv=none; b=P72em/hBPBIMrnzYoLDcAYHloHJ87Y3TqufC1HfcupdWPO26EygEHkAzyZWzRZ5bcJCs+SufsNYqN9n9GkZlQNGGp16ComeHsnEAf+CrUN7GySInhP8z/zRchAfnKcy9SlM3sdOK9YPeaDYky+SR3tnLfO/lM7SHSN051Nkgc5Q=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774647985; c=relaxed/simple;
-	bh=SQeUWl33c6QDsi9zu0TJJKbLRHn3yB32jLspSrqamZQ=;
+	s=arc-20240116; t=1774664985; c=relaxed/simple;
+	bh=mWIpc0ba41sAxLpAfGPJTOOG0DhT7auhqMHW9Zatpe0=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=Jcg4MaiG8gzp/NyGTvVnUSiUbRwiZwpRBvlBDeEXy0XpzYlTaw9WgvULyjOyDGEE20EhZ1+0uyl0KUnaqYpccAwKlfRWp2pqapCu7eC8d2ic+6o0HOvdGVLfQh3ofrAGr2IUOvahDHGYRHJeOh+rSkslKfK208T7S8CNS44hNio=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=QvB7DzWK; arc=none smtp.client-ip=209.85.128.52
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	 In-Reply-To:Content-Type; b=ZmQOKLXa/khC1LTRtih28m8j3ZQlQCsAp6lpuU5UEmF8esZTnRKOWOvMP243LoCfqLVsYOhiDV1pz1vn632zDRZJjgzpGHrIaw1pT7em4i+3ZSoKhhy6am6Vf9OSKEvqlJXk5JLbRVd3LbRq3iMFGwu9cKCvXF10nUGF4xyhXLQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.alibaba.com; spf=pass smtp.mailfrom=linux.alibaba.com; dkim=pass (1024-bit key) header.d=linux.alibaba.com header.i=@linux.alibaba.com header.b=BXJ/uXLw; arc=none smtp.client-ip=115.124.30.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.alibaba.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.alibaba.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="QvB7DzWK"
-Received: by mail-wm1-f52.google.com with SMTP id 5b1f17b1804b1-486fd27754bso24250975e9.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 27 Mar 2026 14:46:23 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1774647982; x=1775252782; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to;
-        bh=FA+vLxdI5HeF7c7rhynzB4yEqQYz3+SkFF3yOKC3P34=;
-        b=QvB7DzWKqa8satP6FgAz0yW2b6kQNC711tGiFqLUogIQMlCJVApq7sy2iJTW+WAmhN
-         765s55ggbMd39O8hdFVbr30TRf8ZL51tzKsef7U9BYMgljLdvCY8M2YsBOxy94SRPY94
-         X5I6CCXlhjjEkKGNfqqrHAPOBSSviM3YXBxoZKmeHt+f1QQx7MlLT75ufgM4F3VGcdt4
-         JwqLYeSMqB+FS9tfMjWJ6SkOZmGycFcXruquwTUQ7lBw4nnq48TazuPvydPcsHAGgARA
-         b9rnu4lvOlR8fyAeb1WaLyXKvDqjB243KUTsIHg1+GQiyQW+fcvWU7edmkNCAAa7MpxN
-         z8OA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1774647982; x=1775252782;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=FA+vLxdI5HeF7c7rhynzB4yEqQYz3+SkFF3yOKC3P34=;
-        b=GlIE/5bOYlzMshHq5lj+RrQqkdtlMnpWFxm8yQesYGk+XSSioyAVMl2R791OlPLo2J
-         xDHP3g564m7SNt2n9aL4432B3EmX/QYVSfmuY+/p3xO6UXlNCbHvCFR+SixSGV4drSUM
-         CKTlKt9szSpji11DUFqSFtpyFwdbb18scYQFxaouqLoIQb7KT6oPcsy7hCjHRXx3hVku
-         Drh/4wG14oiKrO8MSGc1zImpv5yUD5ClFBEwnuCxeQu53KpCC7Kx2YNkjCRmID2CW0Qn
-         8UCmcmt5AU4piY/ySASoZWw2daWGWS/c0svRDHryp3xJCHRDAtK0q18D468SmMqLwOr1
-         Dymg==
-X-Gm-Message-State: AOJu0YwXTGNfaOjWWz6HJJX1u+KeoJLuIra7J0EhI0CEbzFd8s9JnhOs
-	OFSD+xz+0mqsRWIV6Ka7VSDXwCWp31TxxxFWOOYYN1kCZ8D8EqqsoTassz/Q9F9EF+U=
-X-Gm-Gg: ATEYQzyrPkre3m/tvLEcdyQgjegvXknHI16XLAkw84Ftos3vsc7KWCdP6F4vWfDB9ED
-	H1EUHHHT7HPsN/3yHD5AhNR4xBXTIj9wZyzSwcz1ZuO3QimJfLKubDwGRNSidcJdZr+SRuwP7Zg
-	yCbQtAkzLuAV/J0v+wxzSbSe58Dv74xZYAbvvnHIVD6R98hyt8rqpCqZ75YaD1SO3AKbGombeBc
-	v1D3GHD3fSGYtcvgpQBmnTgYhNUg1nXZu/awKeaeXIz2dSOVt6w+GaP+Te6xwoohaBDgBBeiVbw
-	dou3+/nAoQye7SqszQ4y+oUaPYsSkJmNCVYVK+O2In25NwF+8I8/Lf9UP0FzuJXiWcL6LzgcWdm
-	R/o3r3XKkF0FXNs1qbTHiDJGRbo/fSqqN64cDB8nbDEChZ2LS1Xz9gg/Crq26srTAUZuqTtAMJX
-	AiXxjaFJt1dV1frI3BGzN8QhhMPTjrFUyMklkNygRcihmnB9VDFi1yGb/KVx9uBQ==
-X-Received: by 2002:a05:600c:c109:b0:485:40ed:2d1 with SMTP id 5b1f17b1804b1-48727ec777emr51375695e9.17.1774647981798;
-        Fri, 27 Mar 2026 14:46:21 -0700 (PDT)
-Received: from ?IPV6:2403:580d:fda1::299? (2403-580d-fda1--299.ip6.aussiebb.net. [2403:580d:fda1::299])
-        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2b2427663acsm2619455ad.46.2026.03.27.14.46.15
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 27 Mar 2026 14:46:20 -0700 (PDT)
-Message-ID: <e51b3afa-751f-41e9-b454-3405252dc6e2@suse.com>
-Date: Sat, 28 Mar 2026 08:16:11 +1030
+	dkim=pass (1024-bit key) header.d=linux.alibaba.com header.i=@linux.alibaba.com header.b="BXJ/uXLw"
+DKIM-Signature:v=1; a=rsa-sha256; c=relaxed/relaxed;
+	d=linux.alibaba.com; s=default;
+	t=1774664972; h=Message-ID:Date:MIME-Version:Subject:To:From:Content-Type;
+	bh=R12a3AlVnNxuV2juWEwgnbD/uqtxdGfbzuo7rBEpZ8o=;
+	b=BXJ/uXLwgzLjc2vAL82v76QsMuRELwKQm5p7SmFANdsh8Sg/ONJ3dexk+HoUlP6QzmSjj9y4IrE83q2i8kPlR0iqqKR7m44gt+ab1Sd190a19+Y9P3I7bF/fjVpnu6pmA++fUdGgbu/Y6RgQ+7ExQz3jsCMmqRthdzhWLVqr+DE=
+X-Alimail-AntiSpam:AC=PASS;BC=-1|-1;BR=01201311R631e4;CH=green;DM=||false|;DS=||;FP=0|-1|-1|-1|0|-1|-1|-1;HT=maildocker-contentspam033037009110;MF=baolin.wang@linux.alibaba.com;NM=1;PH=DS;RN=27;SR=0;TI=SMTPD_---0X.phNqC_1774664969;
+Received: from 30.42.98.36(mailfrom:baolin.wang@linux.alibaba.com fp:SMTPD_---0X.phNqC_1774664969 cluster:ay36)
+          by smtp.aliyun-inc.com;
+          Sat, 28 Mar 2026 10:29:30 +0800
+Message-ID: <b7cd4127-d178-43aa-901e-039d937a8ad8@linux.alibaba.com>
+Date: Sat, 28 Mar 2026 10:29:27 +0800
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -67,157 +34,232 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v3] btrfs: Fix BTRFS arm64 tagged KASAN false-positive
-To: Daniel J Blueman <daniel@quora.org>, Chris Mason <clm@fb.com>,
- David Sterba <dsterba@suse.com>
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
- kasan-dev@googlegroups.com, stable@vger.kernel.org
-References: <20260327082419.12654-1-daniel@quora.org>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <20260327082419.12654-1-daniel@quora.org>
+Subject: Re: [PATCH v1 02/10] mm/khugepaged: remove READ_ONLY_THP_FOR_FS check
+To: Zi Yan <ziy@nvidia.com>, Lance Yang <lance.yang@linux.dev>
+Cc: ljs@kernel.org, willy@infradead.org, songliubraving@fb.com, clm@fb.com,
+ dsterba@suse.com, viro@zeniv.linux.org.uk, brauner@kernel.org, jack@suse.cz,
+ akpm@linux-foundation.org, david@kernel.org, Liam.Howlett@oracle.com,
+ npache@redhat.com, ryan.roberts@arm.com, dev.jain@arm.com,
+ baohua@kernel.org, vbabka@kernel.org, rppt@kernel.org, surenb@google.com,
+ mhocko@suse.com, shuah@kernel.org, linux-btrfs@vger.kernel.org,
+ linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+ linux-mm@kvack.org, linux-kselftest@vger.kernel.org
+References: <6FCC0430-C98D-4D7C-8C53-F7722F1BDC4A@nvidia.com>
+ <20260327162252.57553-1-lance.yang@linux.dev>
+ <79053B0F-8A40-41D0-8539-0CC30C903B48@nvidia.com>
+From: Baolin Wang <baolin.wang@linux.alibaba.com>
+In-Reply-To: <79053B0F-8A40-41D0-8539-0CC30C903B48@nvidia.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: 7bit
 
 
 
-在 2026/3/27 18:54, Daniel J Blueman 写道:
-> When booting Linux 7.0-rc5 on a Qualcomm Snapdragon X1 with KASAN
-> software tagging with a BTRFS filesystem, we see:
+On 3/28/26 12:30 AM, Zi Yan wrote:
+> On 27 Mar 2026, at 12:22, Lance Yang wrote:
 > 
-> BUG: KASAN: invalid-access in xxh64_update (lib/xxhash.c:143 lib/xxhash.c:283)
-> Read of size 8 at addr 7bff000804fe1000 by task kworker/u49:2/138
-> Pointer tag: [7b], memory tag: [b2]
-> 
-> CPU: 0 UID: 0 PID: 138 Comm: kworker/u49:2 Not tainted 7.0.0-rc4+ #34 PREEMPTLAZY
-> Hardware name: LENOVO 83ED/LNVNB161216, BIOS NHCN60WW 09/11/2025
-> Workqueue: btrfs-endio-meta simple_end_io_work
-> Call trace:
-> show_stack (arch/arm64/kernel/stacktrace.c:501) (C)
-> dump_stack_lvl (lib/dump_stack.c:122)
-> print_report (mm/kasan/report.c:379 mm/kasan/report.c:482)
-> kasan_report (mm/kasan/report.c:597)
-> kasan_check_range (mm/kasan/sw_tags.c:86 (discriminator 1))
-> __hwasan_loadN_noabort (mm/kasan/sw_tags.c:158)
-> xxh64_update (lib/xxhash.c:143 lib/xxhash.c:283)
-> btrfs_csum_update (fs/btrfs/fs.c:106)
-> csum_tree_block (fs/btrfs/disk-io.c:103 (discriminator 3))
-> btrfs_validate_extent_buffer (fs/btrfs/disk-io.c:389)
-> end_bbio_meta_read (fs/btrfs/extent_io.c:3853 (discriminator 1))
-> btrfs_bio_end_io (fs/btrfs/bio.c:152)
-> simple_end_io_work (fs/btrfs/bio.c:388)
-> process_one_work (./arch/arm64/include/asm/jump_label.h:36 ./include/trace/events/workqueue.h:110 kernel/workqueue.c:3281)
-> worker_thread (kernel/workqueue.c:3353 (discriminator 2) kernel/workqueue.c:3440 (discriminator 2))
-> kthread (kernel/kthread.c:436)
-> ret_from_fork (arch/arm64/kernel/entry.S:861)
-> 
-> The buggy address belongs to the physical page:
-> page: refcount:3 mapcount:0 mapping:f1ff00080055dee8 index:0x2467bd pfn:0x884fe1
-> memcg:51ff000800e68ec0 aops:btree_aops ino:1
-> flags: 0x9340000000004000(private|zone=2|kasantag=0x4d)
-> raw: 9340000000004000 0000000000000000 dead000000000122 f1ff00080055dee8
-> raw: 00000000002467bd 43ff00081d0cc6f0 00000003ffffffff 51ff000800e68ec0
-> page dumped because: kasan: bad access detected
-> 
-> Memory state around the buggy address:
-> ffff000804fe0e00: 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b
-> ffff000804fe0f00: 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b 7b
->> ffff000804fe1000: b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2
-> ^
-> ffff000804fe1100: b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2
-> ffff000804fe1200: b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2 b2
-> 
-> This occurs as allocation in btrfs_alloc_page_array is from multiple
-> discrete pages thus different KASAN tags by design, leading to a tag
-> mismatch when linear access is used where the pages are physically
-> contiguous.
-> 
-> Fix this by retagging all the EB pages with the same KASAN tag.
-> 
-> Cc: stable@vger.kernel.org
-> Signed-off-by: Daniel J Blueman <daniel@quora.org>
-> Fixes: 397239ed6a6c ("btrfs: allow extent buffer helpers to skip cross-page handling")
-> Changelog:
->   v3: Retag only when contiguous; fix build failure when generic KASAN configured
->   v2: https://lore.kernel.org/lkml/20260323061827.22903-1-daniel@quora.org/
->    - Retag pages rather than bypass linear access optimisation
->   v1: https://lore.kernel.org/lkml/20260319053413.14771-1-daniel@quora.org/
+>> On Fri, Mar 27, 2026 at 11:00:26AM -0400, Zi Yan wrote:
+>>> On 27 Mar 2026, at 10:31, Lorenzo Stoakes (Oracle) wrote:
+>>>
+>>>> On Fri, Mar 27, 2026 at 10:26:53PM +0800, Baolin Wang wrote:
+>>>>>
+>>>>>
+>>>>> On 3/27/26 10:12 PM, Lorenzo Stoakes (Oracle) wrote:
+>>>>>> On Fri, Mar 27, 2026 at 09:45:03PM +0800, Baolin Wang wrote:
+>>>>>>>
+>>>>>>>
+>>>>>>> On 3/27/26 8:02 PM, Lorenzo Stoakes (Oracle) wrote:
+>>>>>>>> On Fri, Mar 27, 2026 at 05:44:49PM +0800, Baolin Wang wrote:
+>>>>>>>>>
+>>>>>>>>>
+>>>>>>>>> On 3/27/26 9:42 AM, Zi Yan wrote:
+>>>>>>>>>> collapse_file() requires FSes supporting large folio with at least
+>>>>>>>>>> PMD_ORDER, so replace the READ_ONLY_THP_FOR_FS check with that. shmem with
+>>>>>>>>>> huge option turned on also sets large folio order on mapping, so the check
+>>>>>>>>>> also applies to shmem.
+>>>>>>>>>>
+>>>>>>>>>> While at it, replace VM_BUG_ON with returning failure values.
+>>>>>>>>>>
+>>>>>>>>>> Signed-off-by: Zi Yan <ziy@nvidia.com>
+>>>>>>>>>> ---
+>>>>>>>>>>      mm/khugepaged.c | 7 +++++--
+>>>>>>>>>>      1 file changed, 5 insertions(+), 2 deletions(-)
+>>>>>>>>>>
+>>>>>>>>>> diff --git a/mm/khugepaged.c b/mm/khugepaged.c
+>>>>>>>>>> index d06d84219e1b..45b12ffb1550 100644
+>>>>>>>>>> --- a/mm/khugepaged.c
+>>>>>>>>>> +++ b/mm/khugepaged.c
+>>>>>>>>>> @@ -1899,8 +1899,11 @@ static enum scan_result collapse_file(struct mm_struct *mm, unsigned long addr,
+>>>>>>>>>>      	int nr_none = 0;
+>>>>>>>>>>      	bool is_shmem = shmem_file(file);
+>>>>>>>>>> -	VM_BUG_ON(!IS_ENABLED(CONFIG_READ_ONLY_THP_FOR_FS) && !is_shmem);
+>>>>>>>>>> -	VM_BUG_ON(start & (HPAGE_PMD_NR - 1));
+>>>>>>>>>> +	/* "huge" shmem sets mapping folio order and passes the check below */
+>>>>>>>>>> +	if (mapping_max_folio_order(mapping) < PMD_ORDER)
+>>>>>>>>>> +		return SCAN_FAIL;
+>>>>>>>>>
+>>>>>>>>> This is not true for anonymous shmem, since its large order allocation logic
+>>>>>>>>> is similar to anonymous memory. That means it will not call
+>>>>>>>>> mapping_set_large_folios() for anonymous shmem.
+>>>>>>>>>
+>>>>>>>>> So I think the check should be:
+>>>>>>>>>
+>>>>>>>>> if (!is_shmem && mapping_max_folio_order(mapping) < PMD_ORDER)
+>>>>>>>>>         return SCAN_FAIL;
+>>>>>>>>
+>>>>>>>> Hmm but in shmem_init() we have:
+>>>>>>>>
+>>>>>>>> #ifdef CONFIG_TRANSPARENT_HUGEPAGE
+>>>>>>>> 	if (has_transparent_hugepage() && shmem_huge > SHMEM_HUGE_DENY)
+>>>>>>>> 		SHMEM_SB(shm_mnt->mnt_sb)->huge = shmem_huge;
+>>>>>>>> 	else
+>>>>>>>> 		shmem_huge = SHMEM_HUGE_NEVER; /* just in case it was patched */
+>>>>>>>>
+>>>>>>>> 	/*
+>>>>>>>> 	 * Default to setting PMD-sized THP to inherit the global setting and
+>>>>>>>> 	 * disable all other multi-size THPs.
+>>>>>>>> 	 */
+>>>>>>>> 	if (!shmem_orders_configured)
+>>>>>>>> 		huge_shmem_orders_inherit = BIT(HPAGE_PMD_ORDER);
+>>>>>>>> #endif
+>>>>>>>>
+>>>>>>>> And shm_mnt->mnt_sb is the superblock used for anon shmem. Also
+>>>>>>>> shmem_enabled_store() updates that if necessary.
+>>>>>>>>
+>>>>>>>> So we're still fine right?
+>>>>>>>>
+>>>>>>>> __shmem_file_setup() (used for anon shmem) calls shmem_get_inode() ->
+>>>>>>>> __shmem_get_inode() which has:
+>>>>>>>>
+>>>>>>>> 	if (sbinfo->huge)
+>>>>>>>> 		mapping_set_large_folios(inode->i_mapping);
+>>>>>>>>
+>>>>>>>> Shared for both anon shmem and tmpfs-style shmem.
+>>>>>>>>
+>>>>>>>> So I think it's fine as-is.
+>>>>>>>
+>>>>>>> I'm afraid not. Sorry, I should have been clearer.
+>>>>>>>
+>>>>>>> First, anonymous shmem large order allocation is dynamically controlled via
+>>>>>>> the global interface (/sys/kernel/mm/transparent_hugepage/shmem_enabled) and
+>>>>>>> the mTHP interfaces
+>>>>>>> (/sys/kernel/mm/transparent_hugepage/hugepages-*kB/shmem_enabled).
+>>>>>>>
+>>>>>>> This means that during anonymous shmem initialization, these interfaces
+>>>>>>> might be set to 'never'. so it will not call mapping_set_large_folios()
+>>>>>>> because sbinfo->huge is 'SHMEM_HUGE_NEVER'.
+>>>>>>>
+>>>>>>> Even if shmem large order allocation is subsequently enabled via the
+>>>>>>> interfaces, __shmem_file_setup -> mapping_set_large_folios() is not called
+>>>>>>> again.
+>>>>>>
+>>>>>> I see your point, oh this is all a bit of a mess...
+>>>>>>
+>>>>>> It feels like entirely the wrong abstraction anyway, since at best you're
+>>>>>> getting a global 'is enabled'.
+>>>>>>
+>>>>>> I guess what happened before was we'd never call into this with ! r/o thp for fs
+>>>>>> && ! is_shmem.
+>>>>>
+>>>>> Right.
+>>>>>
+>>>>>> But now we are allowing it, but should STILL be gating on !is_shmem so yeah your
+>>>>>> suggestion is correct I think actualyl.
+>>>>>>
+>>>>>> I do hate:
+>>>>>>
+>>>>>> 	if (!is_shmem && mapping_max_folio_order(mapping) < PMD_ORDER)
+>>>>>>
+>>>>>> As a bit of code though. It's horrible.
+>>>>>
+>>>>> Indeed.
+>>>>>
+>>>>>> Let's abstract that...
+>>>>>>
+>>>>>> It'd be nice if we could find a way to clean things up in the lead up to changes
+>>>>>> in series like this instead of sticking with the mess, but I guess since it
+>>>>>> mostly removes stuff that's ok for now.
+>>>>>
+>>>>> I think this check can be removed from this patch.
+>>>>>
+>>>>> During the khugepaged's scan, it will call thp_vma_allowable_order() to
+>>>>> check if the VMA is allowed to collapse into a PMD.
+>>>>>
+>>>>> Specifically, within the call chain thp_vma_allowable_order() ->
+>>>>> __thp_vma_allowable_orders(), shmem is checked via
+>>>>> shmem_allowable_huge_orders(), while other FSes are checked via
+>>>>> file_thp_enabled().
+>>>
+>>> But for madvise(MADV_COLLAPSE) case, IIRC, it ignores shmem huge config
+>>> and can perform collapse anyway. This means without !is_shmem the check
+>>> will break madvise(MADV_COLLAPSE). Let me know if I get it wrong, since
+>>
+>> Right. That will break MADV_COLLAPSE, IIUC.
+>>
+>> For MADV_COLLAPSE on anonymous shmem, eligibility is determined by the
+>> TVA_FORCED_COLLAPSE path via shmem_allowable_huge_orders(), not by
+>> whether the inode mapping got mapping_set_large_folios() at creation
+>> time.
+>>
+>> Using mmap(MAP_SHARED | MAP_ANONYMOUS):
+>> - create time: shmem_enabled=never, hugepages-2048kB/shmem_enabled=never
+>> - collapse time: shmem_enabled=never, hugepages-2048kB/shmem_enabled=always
+>>
+>> With the !is_shmem guard, collapse succeeds. Without it, the same setup
+>> fails with -EINVAL.
 
-This one looks good to me for btrfs.
+Right. So my suggestion is that the check should be:
 
-But still a question related to kasan_unpoison_range().
+if (!is_shmem && mapping_max_folio_order(mapping) < PMD_ORDER)
 
-> ---
->   fs/btrfs/extent_io.c | 17 ++++++++++++++++-
->   1 file changed, 16 insertions(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index 5f97a3d2a8d7..141092da871b 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -3533,8 +3533,23 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
->   	if (uptodate)
->   		set_bit(EXTENT_BUFFER_UPTODATE, &eb->bflags);
->   	/* All pages are physically contiguous, can skip cross page handling. */
-> -	if (page_contig)
-> +	if (page_contig) {
-> +#if defined(CONFIG_KASAN_SW_TAGS) || defined(CONFIG_KASAN_HW_TAGS)
-> +		struct page *page = folio_page(eb->folios[0], 0);
-> +		u8 tag = page_kasan_tag(page);
-> +
-> +		/*
-> +		 * Since pages are from multiple allocations and physically
-> +		 * contiguous allowing linear access, prevent KASAN warnings
-> +		 * by retagging with the first tag
-> +		 */
-> +		for (int i = 1; i < num_extent_pages(eb); i++) {
-> +			page_kasan_tag_set(page + i, tag);
-> +			kasan_unpoison_range(page_address(page + i), PAGE_SIZE);
+or just keep a single VM_WARN_ONCE() here, becuase I hope the 
+thp_vma_allowable_order() will filter out  those FSes that do not 
+support large folios.
 
-There is a LKP report that __kasan_unpoison_range() is not properly 
-exported thus if btrfs is compiled as a module, we can not properly link 
-the module.
+>>> I was in that TVA_FORCED_COLLAPSE email thread but does not remember
+>>> everything there.
+>>>
+>>>
+>>>>
+>>>> It sucks not to have an assert. Maybe in that case make it a
+>>>> VM_WARN_ON_ONCE().
+>>>
+>>> Will do that as I replied to David already.
+>>>
+>>>>
+>>>> I hate that you're left tracing things back like that...
+>>>>
+>>>>>
+>>>>> For those other filesystems, Patch 5 has already added the following check,
+>>>>> which I think is sufficient to filter out those FSes that do not support
+>>>>> large folios:
+>>>>>
+>>>>> if (mapping_max_folio_order(inode->i_mapping) < PMD_ORDER)
+>>>>> 	return false;
+>>>>
+>>>> 2 < 5, we won't tolerate bisection hazards.
+>>>>
+>>>>>
+>>>>>
+>>>>>>> Anonymous shmem behaves similarly to anonymous pages: it is controlled by
+>>>>>>> the 'shmem_enabled' interfaces and uses shmem_allowable_huge_orders() to
+>>>>>>> check for allowed large orders, rather than relying on
+>>>>>>> mapping_max_folio_order().
+>>>>>>>
+>>>>>>> The mapping_max_folio_order() is intended to control large page allocation
+>>>>>>> only for tmpfs mounts. Therefore, I find the current code confusing and
+>>>>>>> think it needs to be fixed:
+>>>>>>>
+>>>>>>> /* Don't consider 'deny' for emergencies and 'force' for testing */
+>>>>>>> if (sb != shm_mnt->mnt_sb && sbinfo->huge)
+>>>>>>>          mapping_set_large_folios(inode->i_mapping);
+>>>>>>
+>>>
+>>> Hi Baolin,
+>>>
+>>> Do you want to send a fix for this?
+>>>
+>>> Also I wonder how I can distinguish between anonymous shmem code and tmpfs code.
+>>> I thought they are the same thing except that they have different user interface,
+>>> but it seems that I was wrong.
 
-   https://lore.kernel.org/linux-btrfs/202603240559.BNndaqHO-lkp@intel.com/
-
-You may need to export __kasan_unpoison_range() to fix it, or explain 
-why kasan_unpoison_range() is needed here.
-
-AFAIK those pages are already unpoisoned at allocation, thus I'm not 
-sure why we need to call kasan_unpoison_range() here again.
-
-Thanks,
-Qu
-
-> +      }
-> +#endif
->   		eb->addr = folio_address(eb->folios[0]) + offset_in_page(eb->start);
-> +	}
->   again:
->   	xa_lock_irq(&fs_info->buffer_tree);
->   	existing_eb = __xa_cmpxchg(&fs_info->buffer_tree,
-
+Sure. I can send a patch to make the code clear.

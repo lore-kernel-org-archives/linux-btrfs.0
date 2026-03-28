@@ -1,153 +1,147 @@
-Received: from mail-wm1-f52.google.com (mail-wm1-f52.google.com [209.85.128.52])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mgamail.intel.com (mgamail.intel.com [198.175.65.21])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D462C367F3F
-	for <linux-btrfs@vger.kernel.org>; Sat, 28 Mar 2026 07:14:04 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.52
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 589872036E9;
+	Sat, 28 Mar 2026 09:55:20 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.175.65.21
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774682046; cv=none; b=BPL0ro9y5GBkNnlvV86X+7AIXISWjV+2kE7Udux15m30BuPpFFz2cV7b2DsqZnzjvX9NR4wAd124g4JHDOcj622puKuxIX6nEIF6K9SAOkPJOBosg0id48O65JWG5UidH8HI78/Zt9joCnsTyV5LzSvAdSQy7fNUz6WJSXeDEgw=
+	t=1774691722; cv=none; b=J0ZwR6pCXdfjZbBH8LqBWrZ89CZWyjW4ypKaFjXWDeyuVSP6fKqRQERzsDq5I0/GWFnmz7fGEYkdUs2rwM2wg1l0lGNWAhL3apXO1BTzwYXhVd7I0vMstgIxDjbxyDPv+qkW5WklncLILqESyeF6LXA5HPfgxOtUHQgaDqqBa34=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774682046; c=relaxed/simple;
-	bh=1YVZZ4EG6PH9mBmv/7GNQAbm+6cJRWBtRTqsvNgY/Nw=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=AEbGmo2/GCuDSf2k4zFGK9/xDpr/9fp6dcqb8xhiGP67LjEeVB/ya+gfKD1CWuwn+XUOtIF7nObyYoN4+UaHrpS2EYQUPMNIQDcaGKC1rksONhN9vJboeZSP4Hp8mGOiCCGciPvp6p29ioucV0Ke8z5t4Ih1gjg58hrqie2xsH0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=BBsgXhJf; arc=none smtp.client-ip=209.85.128.52
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1774691722; c=relaxed/simple;
+	bh=tGRNjEkmKkP55RyI36TLF24P2O39ClA0J2pu35ocaXQ=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=i1cHWh5IHTmTOfaFQ+z8a/UpVYrGQ6HvSafMM/GG7RE1FepfoOY9FGOeLsSyOpBX4DuE9RCejCnmw2K+HO/bihIdh+0PlZDm1ua+Fqqx8r/SNWfs7ZQQ/JT63P6z5zal0jyZo4ec9sXO5mY5rWFZcU5237ws52XBpzGkK0zDQoE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com; spf=pass smtp.mailfrom=intel.com; dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b=Td77NANE; arc=none smtp.client-ip=198.175.65.21
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=intel.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="BBsgXhJf"
-Received: by mail-wm1-f52.google.com with SMTP id 5b1f17b1804b1-48540d21f7dso31610445e9.0
-        for <linux-btrfs@vger.kernel.org>; Sat, 28 Mar 2026 00:14:04 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1774682043; x=1775286843; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to;
-        bh=jJyWnSp+txUJQm5U1zdamqZGK5YIdYjiV4dBV0XCBns=;
-        b=BBsgXhJfo9ERRXLZdve7mi15qyZfVglzueTU7ddRUDYx2ItFchgi5CerLspuiHy1U+
-         KrFr3Hbgyk9olDfLfX74lDXJ0kZ74OrGY2zu7X16HS2RMx6SdNfWA6k8fs/CUrkNvh5v
-         ktXy55IoL+9RwWy5t0fRbPCGwrelwE8wLguVAR9R5mLWlcIgcTezI72oYUa5JaJNZHIH
-         Rwak/0IC1P8BCwjLqkCdyPT+1NblB6NDziuMJwBo7+nWeKrn06CmvajmzgXkyaL/z7qH
-         2VmG67SVQtqYlyMYEdsKaHwZulVegObdO1BdsKxRctzIZ8TJjrn5wkVh55GAX/Kd5x3c
-         /qEg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1774682043; x=1775286843;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=jJyWnSp+txUJQm5U1zdamqZGK5YIdYjiV4dBV0XCBns=;
-        b=FbaduHqXPmP8O/8ZGA2XDMv5Ee8bGhyGcVbxjVHn03+v++xmeW4Y7mLn+jjXjP2IUA
-         2cKzp/+F981A2c6bIlHKg8rxPm4i4FdD4/OdtHzP6LNZhTnsWNi93s7shaukA7p+mOzD
-         e5WDY7qC98u+ZodmMzZChFjxqS7yjwLN6ayoqPr0PijhQhfvGrM9Z+0I1t/Bb0SxPNFN
-         fRyrhxjhxVvF1oC1rrxYLFcnT9bZQfH7WRvHmqnkEToyoiCn/xAR3TN3UfLIv7xhT/sM
-         R3FVOYwwYf8gRuQN9b33Z96ysDTzOX4shbaObp2rJ2CKKKKi+oHZKAezIrg0SnNxzBRw
-         Kx/g==
-X-Forwarded-Encrypted: i=1; AJvYcCUyS5S6G7BZejt3y92bJ9Z7fG+Pchq39Mi3laOWJfFiphzVLzkVvkdSfVPxSWY0pefUl09YoN/nxhPOKg==@vger.kernel.org
-X-Gm-Message-State: AOJu0YwW5L86bMrY697Q5alnsTuPb6CddpGGB5D0+fmW/iheodGgNyJf
-	OQyKBHVLt9XMSLZt23p1YcMPvQBRJRtAMrkaDlBWUFVfdZns7p+axXt2V6sAGJdJC84=
-X-Gm-Gg: ATEYQzxakmkhzV0a/GrGwED/Re6O83UGt+EFrq7Wb/l5v18j1nzhCnepdeaspwMY+gu
-	KnKP9IWa+6LX2kFXAjiDJH6JoK52DASRJ4my1eU11MtMIx0+muHk4EMzcXArHvFLiy3+D+1t9Nb
-	0qvqLLlz289f0YGwxSyaveRDLCII7gjpcu0kkyDrf4AnYTxfgyMNuIx8v8pwLyYMZkXFFQwc6v/
-	YlBmgC6MNjyVU0or97a/kj5S08jz4TtP7QOx9FfTgRFixE5yC5Q5JQ/jGhyBae62GejizmPjNVP
-	uBlES24CSSpNW5fMDO8irM8tnglAymuP5gOPBHaA/YE5F7G0UV0WhSZuS9DL6tZr20Sc4SohbP2
-	02UGozmI5/MrdKYdwrplHCk9r3v8Zit1xTIl5JMYDItHW0N6RRZOn+ygpdg8rQgRwJFnQHa2Jwk
-	5UbQWIGrTUBWX+c8YLo2FPNGkzUU+sePHcdYDlobto1hXH2BH3g7Q=
-X-Received: by 2002:a05:600c:8b51:b0:485:40c6:f507 with SMTP id 5b1f17b1804b1-48727f1f47cmr102144545e9.30.1774682043057;
-        Sat, 28 Mar 2026 00:14:03 -0700 (PDT)
-Received: from ?IPV6:2403:580d:fda1::299? (2403-580d-fda1--299.ip6.aussiebb.net. [2403:580d:fda1::299])
-        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2b242795195sm14786595ad.61.2026.03.28.00.13.59
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sat, 28 Mar 2026 00:14:02 -0700 (PDT)
-Message-ID: <a9569d3b-f4d0-4077-a517-24c0f0c5fd4a@suse.com>
-Date: Sat, 28 Mar 2026 17:43:57 +1030
+	dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b="Td77NANE"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
+  t=1774691720; x=1806227720;
+  h=date:from:to:cc:subject:message-id:references:
+   mime-version:in-reply-to;
+  bh=tGRNjEkmKkP55RyI36TLF24P2O39ClA0J2pu35ocaXQ=;
+  b=Td77NANE9E85rUskshjPxE+WliZPVu9phaaqu+WHFxlnlnMxJEmQEE9p
+   ZMRlQyE0MpRL87F/95nwzYQHClmBTmnM6mKS6o6BZJUbEvYNux/+taTeV
+   xXlIBJKcLVE2fY0eVcrGNn8O1YHdozx9QEsbEioJzu8c7xGIlP9i/Cn9m
+   ctyTyMlt9QA69Hv+kpl2Ulicg9+wsuKcdtN3NzkG9/Ua3Nbk27+VR0gi6
+   TSsBcQlRuoaqCJPE199FbUVy1scrIYvOKn0TXvFmxkClSzlVRAE11GWV5
+   kDDzSA+NSOG6vjkb9m3HG+ARacCu7/8bexJyDB1+7sJiOTyMXNhW8jOwn
+   g==;
+X-CSE-ConnectionGUID: MElUTVqtTAGzIGihEaFh3w==
+X-CSE-MsgGUID: B7iBwJZTSJeFciKc7vNhCA==
+X-IronPort-AV: E=McAfee;i="6800,10657,11742"; a="75633807"
+X-IronPort-AV: E=Sophos;i="6.23,145,1770624000"; 
+   d="scan'208";a="75633807"
+Received: from fmviesa001.fm.intel.com ([10.60.135.141])
+  by orvoesa113.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 28 Mar 2026 02:55:19 -0700
+X-CSE-ConnectionGUID: v9BKKQRJS6W2wyd96Ksx5Q==
+X-CSE-MsgGUID: kuXnB5WIS620/P7LJwxCMw==
+X-ExtLoop1: 1
+X-IronPort-AV: E=Sophos;i="6.23,145,1770624000"; 
+   d="scan'208";a="248786208"
+Received: from lkp-server01.sh.intel.com (HELO 3905d212be1b) ([10.239.97.150])
+  by fmviesa001.fm.intel.com with ESMTP; 28 Mar 2026 02:55:13 -0700
+Received: from kbuild by 3905d212be1b with local (Exim 4.98.2)
+	(envelope-from <lkp@intel.com>)
+	id 1w6QNp-00000000BI1-3ouf;
+	Sat, 28 Mar 2026 09:55:09 +0000
+Date: Sat, 28 Mar 2026 17:54:51 +0800
+From: kernel test robot <lkp@intel.com>
+To: Zi Yan <ziy@nvidia.com>,
+	"Matthew Wilcox (Oracle)" <willy@infradead.org>,
+	Song Liu <songliubraving@fb.com>
+Cc: oe-kbuild-all@lists.linux.dev, Chris Mason <chris.mason@fusionio.com>,
+	David Sterba <dsterba@suse.com>,
+	Alexander Viro <viro@zeniv.linux.org.uk>,
+	Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Linux Memory Management List <linux-mm@kvack.org>,
+	David Hildenbrand <david@kernel.org>,
+	Lorenzo Stoakes <ljs@kernel.org>, Zi Yan <ziy@nvidia.com>,
+	Baolin Wang <baolin.wang@linux.alibaba.com>,
+	"Liam R. Howlett" <Liam.Howlett@oracle.com>,
+	Nico Pache <npache@redhat.com>, Ryan Roberts <ryan.roberts@arm.com>,
+	Dev Jain <dev.jain@arm.com>, Barry Song <baohua@kernel.org>,
+	Lance Yang <lance.yang@linux.dev>,
+	Vlastimil Babka <vbabka@kernel.org>,
+	Mike Rapoport <rppt@kernel.org>,
+	Suren Baghdasaryan <surenb@google.com>,
+	Michal Hocko <mhocko@suse.com>,
+	Shuah Khan <skhan@linuxfoundation.org>, linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+	linux-kselftest@vger.kernel.org
+Subject: Re: [PATCH v1 07/10] mm/truncate: use folio_split() in
+ truncate_inode_partial_folio()
+Message-ID: <202603281704.ILlsxaUM-lkp@intel.com>
+References: <20260327014255.2058916-8-ziy@nvidia.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2] btrfs: replace BUG_ON() with error return in
- cache_save_setup()
-To: Teng Liu <27rabbitlt@gmail.com>, linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.com, clm@fb.com, linux-kernel@vger.kernel.org
-References: <20260328064306.2854437-1-27rabbitlt@gmail.com>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <20260328064306.2854437-1-27rabbitlt@gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260327014255.2058916-8-ziy@nvidia.com>
+
+Hi Zi,
+
+kernel test robot noticed the following build errors:
+
+[auto build test ERROR on akpm-mm/mm-everything]
+[also build test ERROR on brauner-vfs/vfs.all kdave/for-next linus/master v7.0-rc5 next-20260327]
+[If your patch is applied to the wrong git tree, kindly drop us a note.
+And when submitting patch, we suggest to use '--base' as documented in
+https://git-scm.com/docs/git-format-patch#_base_tree_information]
+
+url:    https://github.com/intel-lab-lkp/linux/commits/Zi-Yan/mm-remove-READ_ONLY_THP_FOR_FS-Kconfig-option/20260327-142622
+base:   https://git.kernel.org/pub/scm/linux/kernel/git/akpm/mm.git mm-everything
+patch link:    https://lore.kernel.org/r/20260327014255.2058916-8-ziy%40nvidia.com
+patch subject: [PATCH v1 07/10] mm/truncate: use folio_split() in truncate_inode_partial_folio()
+config: nios2-allnoconfig (https://download.01.org/0day-ci/archive/20260328/202603281704.ILlsxaUM-lkp@intel.com/config)
+compiler: nios2-linux-gcc (GCC) 11.5.0
+reproduce (this is a W=1 build): (https://download.01.org/0day-ci/archive/20260328/202603281704.ILlsxaUM-lkp@intel.com/reproduce)
+
+If you fix the issue in a separate patch/commit (i.e. not just a new version of
+the same patch/commit), kindly add following tags
+| Reported-by: kernel test robot <lkp@intel.com>
+| Closes: https://lore.kernel.org/oe-kbuild-all/202603281704.ILlsxaUM-lkp@intel.com/
+
+All error/warnings (new ones prefixed by >>):
+
+   In file included from include/linux/mm.h:1746,
+                    from include/linux/pid_namespace.h:7,
+                    from include/linux/ptrace.h:10,
+                    from arch/nios2/kernel/asm-offsets.c:10:
+>> include/linux/huge_mm.h:625:1: error: expected identifier or '(' before '{' token
+     625 | {
+         | ^
+>> include/linux/huge_mm.h:623:19: warning: 'folio_split' declared 'static' but never defined [-Wunused-function]
+     623 | static inline int folio_split(struct folio *folio, unsigned int new_order,
+         |                   ^~~~~~~~~~~
+   make[3]: *** [scripts/Makefile.build:184: arch/nios2/kernel/asm-offsets.s] Error 1
+   make[3]: Target 'prepare' not remade because of errors.
+   make[2]: *** [Makefile:1337: prepare0] Error 2
+   make[2]: Target 'prepare' not remade because of errors.
+   make[1]: *** [Makefile:248: __sub-make] Error 2
+   make[1]: Target 'prepare' not remade because of errors.
+   make: *** [Makefile:248: __sub-make] Error 2
+   make: Target 'prepare' not remade because of errors.
 
 
+vim +625 include/linux/huge_mm.h
 
-在 2026/3/28 17:10, Teng Liu 写道:
-> In cache_save_setup(), if create_free_space_inode() succeeds but the
-> subsequent lookup_free_space_inode() still fails on retry, the
-> BUG_ON(retries) will crash the kernel. This can happen due to I/O
-> errors or transient failures, not just programming bugs.
-> 
-> Replace the BUG_ON with proper error handling that returns the original
-> error code through the existing cleanup path. The callers already handle
-> this gracefully: disk_cache_state defaults to BTRFS_DC_ERROR, so the
-> space cache simply won't be written for that block group.
-> 
-> Signed-off-by: Teng Liu <27rabbitlt@gmail.com>
+e220917fa50774 Luis Chamberlain 2024-08-22  622  
+9ee18d22957981 Zi Yan           2026-03-26 @623  static inline int folio_split(struct folio *folio, unsigned int new_order,
+9ee18d22957981 Zi Yan           2026-03-26  624  		struct page *page, struct list_head *list);
+7460b470a131f9 Zi Yan           2025-03-07 @625  {
+a488ba3124c82d Pankaj Raghav    2025-09-05  626  	VM_WARN_ON_ONCE_FOLIO(1, folio);
+a488ba3124c82d Pankaj Raghav    2025-09-05  627  	return -EINVAL;
+7460b470a131f9 Zi Yan           2025-03-07  628  }
+7460b470a131f9 Zi Yan           2025-03-07  629  
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
-
-And pushed to for-next.
-
-> ---
-> Changes in v2:
->    - Use btrfs_err() instead of btrfs_debug() (Qu Wenruo)
->    - Use PTR_ERR(inode) instead of hardcoded -EIO (Qu Wenruo)
->    - Include error code in the log message (Qu Wenruo)
-> 
->   fs/btrfs/block-group.c | 8 +++++++-
->   1 file changed, 7 insertions(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-> index ebf507909..89bfc9db0 100644
-> --- a/fs/btrfs/block-group.c
-> +++ b/fs/btrfs/block-group.c
-> @@ -3343,7 +3343,13 @@ static int cache_save_setup(struct btrfs_block_group *block_group,
->   	}
->   
->   	if (IS_ERR(inode)) {
-> -		BUG_ON(retries);
-> +		if (retries) {
-> +			ret = PTR_ERR(inode);
-> +			btrfs_err(fs_info,
-> +				  "failed to lookup free space inode after creation for block group %llu: %d",
-> +				  block_group->start, ret);
-> +			goto out_free;
-> +		}
->   		retries++;
->   
->   		if (block_group->ro)
-
+-- 
+0-DAY CI Kernel Test Service
+https://github.com/intel/lkp-tests/wiki

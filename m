@@ -1,147 +1,146 @@
-Received: from mgamail.intel.com (mgamail.intel.com [198.175.65.21])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E7ACD378D68;
-	Sat, 28 Mar 2026 09:55:22 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.175.65.21
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 129AE24B28
+	for <linux-btrfs@vger.kernel.org>; Sat, 28 Mar 2026 21:20:27 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774691724; cv=none; b=EYmFo0wxdq+nwmuJydZXtUrj9WZVH8p9I94UJBh6YqzJrAC/swoStecSTIih273WDIMKfrs+OjQgXKz76WZxLqtqjSn4jwvrLjnxY3nZasHflRSmrpz0LuxTqDnHvijGQIiFPbw3QFuE/zib0UrNiKcXycJgnrJIBp3IOqx2vk8=
+	t=1774732829; cv=none; b=s4/Mi0hViEZ+/SAvA9HqTFEQ54ZAmtcUnt4UlfmYUcST74uII1ydLspYYOogTD8mBcF8qjR/r48gEXqUG7lcXxmuDiBhA+Hs0pYAHSqvsCG3hOqxLsCf6i2qVx97VjftMHx+Zv9RZvryJPdoK3JpNmTgAIqMxAxDj96ALmn9wAc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774691724; c=relaxed/simple;
-	bh=GAqpCsRCdatJLMn/LB4VPXAG5/+DxNvNB1DDK+7U/SA=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=l50HweUmOCu4yvSkPG/HEa+W5wh1ZRmkoou1zMy9dUJq9TeaV/aYCIR5x9fwKu+xCVJF7BdXxFQv5P3nEoUEHf8/yURaYn846Z17g0lVcO8ONLIGwGBmO2k0qdAJO4mkyC0TrCDPXELzcWig6rBCc8QjVXtGBNn3zbmAr5nRtvU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com; spf=pass smtp.mailfrom=intel.com; dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b=hCQf05mQ; arc=none smtp.client-ip=198.175.65.21
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=intel.com
+	s=arc-20240116; t=1774732829; c=relaxed/simple;
+	bh=kFHIb0/roPqDA9fjpM8BEwcGe6XjtqzXUdQPPOqr/dA=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=jiyF9maXHzGAydfmqon3Q0Ym/QoMsWUZRMzSkqAJ6pA6izD7kWHdjxfPVkhH4uCp460cmt+ihLstIb6M+5PVg+N1P2g0Iii0VJN61Ve/afdsjr9i+Z1NSERIMTU+BltLCArmjgFPtopieLxKJNuHEj76wBaBAkrjTGdqcmNLmXg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=P2XO4vSX; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=P2XO4vSX; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b="hCQf05mQ"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1774691723; x=1806227723;
-  h=date:from:to:cc:subject:message-id:references:
-   mime-version:in-reply-to;
-  bh=GAqpCsRCdatJLMn/LB4VPXAG5/+DxNvNB1DDK+7U/SA=;
-  b=hCQf05mQyKUG/4yUibUBFYnfQjH2vwpwLGOwF3rAb9zeDUS90uO2aztN
-   GG79sKnjtoaq7UV/Agaj6dBGuq0bG/G44O93+jJtT86WkAn4AZ6W2893k
-   AXmrjwk68AgbCAH3FVs841a2L9sH+yfPw5ktjm4RNDrq3GCB+917MbYBx
-   QRq4aj0J8PiP8aJl7OJvO3Fz1GKzXCLX6a5rtqDIbSh1GrLKwPO1ifulh
-   lvUwqCsVel5MaUc0xArUBWXAEKY4Lji6nkofBed9DCxnkr5zSMVj2Gi8o
-   wAPkfYgecd1sT97nHikl/oWyA0++Y6sVgSOYpDOXIawGLadYCRIw1mn62
-   g==;
-X-CSE-ConnectionGUID: /vyV7dRkSUuVlpNPLQyYYg==
-X-CSE-MsgGUID: uGtkHkMqRJiOAj9g9D+spg==
-X-IronPort-AV: E=McAfee;i="6800,10657,11742"; a="75633832"
-X-IronPort-AV: E=Sophos;i="6.23,145,1770624000"; 
-   d="scan'208";a="75633832"
-Received: from fmviesa001.fm.intel.com ([10.60.135.141])
-  by orvoesa113.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 28 Mar 2026 02:55:19 -0700
-X-CSE-ConnectionGUID: mkBLqmVQQa+7lsX1dF1hXw==
-X-CSE-MsgGUID: nMNCMgLgQ7q8oZG85wWGBA==
-X-ExtLoop1: 1
-X-IronPort-AV: E=Sophos;i="6.23,145,1770624000"; 
-   d="scan'208";a="248786209"
-Received: from lkp-server01.sh.intel.com (HELO 3905d212be1b) ([10.239.97.150])
-  by fmviesa001.fm.intel.com with ESMTP; 28 Mar 2026 02:55:13 -0700
-Received: from kbuild by 3905d212be1b with local (Exim 4.98.2)
-	(envelope-from <lkp@intel.com>)
-	id 1w6QNp-00000000BI3-3sXI;
-	Sat, 28 Mar 2026 09:55:09 +0000
-Date: Sat, 28 Mar 2026 17:54:52 +0800
-From: kernel test robot <lkp@intel.com>
-To: Zi Yan <ziy@nvidia.com>,
-	"Matthew Wilcox (Oracle)" <willy@infradead.org>,
-	Song Liu <songliubraving@fb.com>
-Cc: llvm@lists.linux.dev, oe-kbuild-all@lists.linux.dev,
-	Chris Mason <chris.mason@fusionio.com>,
-	David Sterba <dsterba@suse.com>,
-	Alexander Viro <viro@zeniv.linux.org.uk>,
-	Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Linux Memory Management List <linux-mm@kvack.org>,
-	David Hildenbrand <david@kernel.org>,
-	Lorenzo Stoakes <ljs@kernel.org>, Zi Yan <ziy@nvidia.com>,
-	Baolin Wang <baolin.wang@linux.alibaba.com>,
-	"Liam R. Howlett" <Liam.Howlett@oracle.com>,
-	Nico Pache <npache@redhat.com>, Ryan Roberts <ryan.roberts@arm.com>,
-	Dev Jain <dev.jain@arm.com>, Barry Song <baohua@kernel.org>,
-	Lance Yang <lance.yang@linux.dev>,
-	Vlastimil Babka <vbabka@kernel.org>,
-	Mike Rapoport <rppt@kernel.org>,
-	Suren Baghdasaryan <surenb@google.com>,
-	Michal Hocko <mhocko@suse.com>,
-	Shuah Khan <skhan@linuxfoundation.org>, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-	linux-kselftest@vger.kernel.org
-Subject: Re: [PATCH v1 07/10] mm/truncate: use folio_split() in
- truncate_inode_partial_folio()
-Message-ID: <202603281736.bi9GWnsF-lkp@intel.com>
-References: <20260327014255.2058916-8-ziy@nvidia.com>
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="P2XO4vSX";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="P2XO4vSX"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 52F745BE53;
+	Sat, 28 Mar 2026 21:20:26 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1774732826; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=GYObJGwX4VU9wc3UBqOQbAR1ut+7yprgz/Ct0kOv41o=;
+	b=P2XO4vSXszk0Zsq5CYPpnJcqqNTiUHjMDYz/pB+Ly5i6SmtSUR2zgR6W29+Z3D+usnDQGc
+	P0VqkaMgiLOkcgRrHuRwjhtG/SXbMxUmvTf2gu1hPQCzGtfMsLN/w1WgQFsGJ32hmqB2iR
+	ktbayfw0fAt0w3hISlavLMMNLhCcuiU=
+Authentication-Results: smtp-out2.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1774732826; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=GYObJGwX4VU9wc3UBqOQbAR1ut+7yprgz/Ct0kOv41o=;
+	b=P2XO4vSXszk0Zsq5CYPpnJcqqNTiUHjMDYz/pB+Ly5i6SmtSUR2zgR6W29+Z3D+usnDQGc
+	P0VqkaMgiLOkcgRrHuRwjhtG/SXbMxUmvTf2gu1hPQCzGtfMsLN/w1WgQFsGJ32hmqB2iR
+	ktbayfw0fAt0w3hISlavLMMNLhCcuiU=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 4728D4A0A3;
+	Sat, 28 Mar 2026 21:20:26 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id aiHrEBpGyGkpXwAAD6G6ig
+	(envelope-from <dsterba@suse.com>); Sat, 28 Mar 2026 21:20:26 +0000
+From: David Sterba <dsterba@suse.com>
+To: torvalds@linux-foundation.org
+Cc: David Sterba <dsterba@suse.com>,
+	linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+Subject: [GIT PULL] Btrfs fixes for 7.0-rc6
+Date: Sat, 28 Mar 2026 22:18:56 +0100
+Message-ID: <cover.1774730316.git.dsterba@suse.com>
+X-Mailer: git-send-email 2.51.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20260327014255.2058916-8-ziy@nvidia.com>
+Content-Transfer-Encoding: 8bit
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-0.999];
+	MIME_GOOD(-0.10)[text/plain];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	ARC_NA(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	TO_DN_SOME(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	RCPT_COUNT_THREE(0.00)[4];
+	RCVD_TLS_ALL(0.00)[]
+X-Spam-Flag: NO
+X-Spam-Score: -2.80
+X-Spam-Level: 
 
-Hi Zi,
+Hi,
 
-kernel test robot noticed the following build errors:
+please pull a few more fixes. There's one that stands out in size as it
+fixes an edge case in fsync. Thanks.
 
-[auto build test ERROR on akpm-mm/mm-everything]
-[also build test ERROR on brauner-vfs/vfs.all kdave/for-next linus/master v7.0-rc5 next-20260327]
-[If your patch is applied to the wrong git tree, kindly drop us a note.
-And when submitting patch, we suggest to use '--base' as documented in
-https://git-scm.com/docs/git-format-patch#_base_tree_information]
+- fix issue on fsync where file with zero size appears as a non-zero
+  after log replay
 
-url:    https://github.com/intel-lab-lkp/linux/commits/Zi-Yan/mm-remove-READ_ONLY_THP_FOR_FS-Kconfig-option/20260327-142622
-base:   https://git.kernel.org/pub/scm/linux/kernel/git/akpm/mm.git mm-everything
-patch link:    https://lore.kernel.org/r/20260327014255.2058916-8-ziy%40nvidia.com
-patch subject: [PATCH v1 07/10] mm/truncate: use folio_split() in truncate_inode_partial_folio()
-config: x86_64-allnoconfig (https://download.01.org/0day-ci/archive/20260328/202603281736.bi9GWnsF-lkp@intel.com/config)
-compiler: clang version 20.1.8 (https://github.com/llvm/llvm-project 87f0227cb60147a26a1eeb4fb06e3b505e9c7261)
-reproduce (this is a W=1 build): (https://download.01.org/0day-ci/archive/20260328/202603281736.bi9GWnsF-lkp@intel.com/reproduce)
+- in zlib compression, handle a crash when data alignment causes folio
+  reference issues
 
-If you fix the issue in a separate patch/commit (i.e. not just a new version of
-the same patch/commit), kindly add following tags
-| Reported-by: kernel test robot <lkp@intel.com>
-| Closes: https://lore.kernel.org/oe-kbuild-all/202603281736.bi9GWnsF-lkp@intel.com/
+- fix possible crash with enabled tracepoints on a overlayfs mount
 
-All errors (new ones prefixed by >>):
+- handle device stats update error
 
-   In file included from arch/x86/kernel/asm-offsets.c:14:
-   In file included from include/linux/suspend.h:5:
-   In file included from include/linux/swap.h:9:
-   In file included from include/linux/memcontrol.h:21:
-   In file included from include/linux/mm.h:1746:
->> include/linux/huge_mm.h:625:1: error: expected identifier or '('
-     625 | {
-         | ^
-   1 error generated.
-   make[3]: *** [scripts/Makefile.build:184: arch/x86/kernel/asm-offsets.s] Error 1
-   make[3]: Target 'prepare' not remade because of errors.
-   make[2]: *** [Makefile:1337: prepare0] Error 2
-   make[2]: Target 'prepare' not remade because of errors.
-   make[1]: *** [Makefile:248: __sub-make] Error 2
-   make[1]: Target 'prepare' not remade because of errors.
-   make: *** [Makefile:248: __sub-make] Error 2
-   make: Target 'prepare' not remade because of errors.
+- on zoned filesystems, fix kobject leak on sub-block groups
 
+- fix super block offset in an error message in validation
 
-vim +625 include/linux/huge_mm.h
+----------------------------------------------------------------
+The following changes since commit b17b79ff896305fd74980a5f72afec370ee88ca4:
 
-e220917fa50774f Luis Chamberlain 2024-08-22  622  
-9ee18d22957981f Zi Yan           2026-03-26  623  static inline int folio_split(struct folio *folio, unsigned int new_order,
-9ee18d22957981f Zi Yan           2026-03-26  624  		struct page *page, struct list_head *list);
-7460b470a131f98 Zi Yan           2025-03-07 @625  {
-a488ba3124c82d7 Pankaj Raghav    2025-09-05  626  	VM_WARN_ON_ONCE_FOLIO(1, folio);
-a488ba3124c82d7 Pankaj Raghav    2025-09-05  627  	return -EINVAL;
-7460b470a131f98 Zi Yan           2025-03-07  628  }
-7460b470a131f98 Zi Yan           2025-03-07  629  
+  btrfs: reject root items with drop_progress and zero drop_level (2026-03-17 11:43:08 +0100)
 
--- 
-0-DAY CI Kernel Test Service
-https://github.com/intel/lkp-tests/wiki
+are available in the Git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git tags/for-7.0-rc5-tag
+
+for you to fetch changes up to 1c37d896b12dfd0d4c96e310b0033c6676933917:
+
+  btrfs: fix lost error when running device stats on multiple devices fs (2026-03-23 20:12:12 +0100)
+
+----------------------------------------------------------------
+Filipe Manana (2):
+      btrfs: fix zero size inode with non-zero size after log replay
+      btrfs: fix lost error when running device stats on multiple devices fs
+
+Goldwyn Rodrigues (1):
+      btrfs: tracepoints: get correct superblock from dentry in event btrfs_sync_file()
+
+Mark Harmstone (1):
+      btrfs: fix super block offset in error message in btrfs_validate_super()
+
+Qu Wenruo (1):
+      btrfs: zlib: handle page aligned compressed size correctly
+
+Shin'ichiro Kawasaki (1):
+      btrfs: fix leak of kobject name for sub-group space_info
+
+ fs/btrfs/block-group.c       |  2 +-
+ fs/btrfs/disk-io.c           |  4 +-
+ fs/btrfs/tree-log.c          | 98 +++++++++++++++++++++++++++++---------------
+ fs/btrfs/volumes.c           |  5 ++-
+ fs/btrfs/zlib.c              |  4 +-
+ include/trace/events/btrfs.h | 11 +++--
+ 6 files changed, 81 insertions(+), 43 deletions(-)

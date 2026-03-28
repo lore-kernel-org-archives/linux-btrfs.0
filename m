@@ -1,58 +1,59 @@
 Received: from mgamail.intel.com (mgamail.intel.com [198.175.65.21])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 589872036E9;
-	Sat, 28 Mar 2026 09:55:20 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E7ACD378D68;
+	Sat, 28 Mar 2026 09:55:22 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.175.65.21
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774691722; cv=none; b=J0ZwR6pCXdfjZbBH8LqBWrZ89CZWyjW4ypKaFjXWDeyuVSP6fKqRQERzsDq5I0/GWFnmz7fGEYkdUs2rwM2wg1l0lGNWAhL3apXO1BTzwYXhVd7I0vMstgIxDjbxyDPv+qkW5WklncLILqESyeF6LXA5HPfgxOtUHQgaDqqBa34=
+	t=1774691724; cv=none; b=EYmFo0wxdq+nwmuJydZXtUrj9WZVH8p9I94UJBh6YqzJrAC/swoStecSTIih273WDIMKfrs+OjQgXKz76WZxLqtqjSn4jwvrLjnxY3nZasHflRSmrpz0LuxTqDnHvijGQIiFPbw3QFuE/zib0UrNiKcXycJgnrJIBp3IOqx2vk8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774691722; c=relaxed/simple;
-	bh=tGRNjEkmKkP55RyI36TLF24P2O39ClA0J2pu35ocaXQ=;
+	s=arc-20240116; t=1774691724; c=relaxed/simple;
+	bh=GAqpCsRCdatJLMn/LB4VPXAG5/+DxNvNB1DDK+7U/SA=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=i1cHWh5IHTmTOfaFQ+z8a/UpVYrGQ6HvSafMM/GG7RE1FepfoOY9FGOeLsSyOpBX4DuE9RCejCnmw2K+HO/bihIdh+0PlZDm1ua+Fqqx8r/SNWfs7ZQQ/JT63P6z5zal0jyZo4ec9sXO5mY5rWFZcU5237ws52XBpzGkK0zDQoE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com; spf=pass smtp.mailfrom=intel.com; dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b=Td77NANE; arc=none smtp.client-ip=198.175.65.21
+	 Content-Type:Content-Disposition:In-Reply-To; b=l50HweUmOCu4yvSkPG/HEa+W5wh1ZRmkoou1zMy9dUJq9TeaV/aYCIR5x9fwKu+xCVJF7BdXxFQv5P3nEoUEHf8/yURaYn846Z17g0lVcO8ONLIGwGBmO2k0qdAJO4mkyC0TrCDPXELzcWig6rBCc8QjVXtGBNn3zbmAr5nRtvU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com; spf=pass smtp.mailfrom=intel.com; dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b=hCQf05mQ; arc=none smtp.client-ip=198.175.65.21
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=intel.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b="Td77NANE"
+	dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b="hCQf05mQ"
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
   d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1774691720; x=1806227720;
+  t=1774691723; x=1806227723;
   h=date:from:to:cc:subject:message-id:references:
    mime-version:in-reply-to;
-  bh=tGRNjEkmKkP55RyI36TLF24P2O39ClA0J2pu35ocaXQ=;
-  b=Td77NANE9E85rUskshjPxE+WliZPVu9phaaqu+WHFxlnlnMxJEmQEE9p
-   ZMRlQyE0MpRL87F/95nwzYQHClmBTmnM6mKS6o6BZJUbEvYNux/+taTeV
-   xXlIBJKcLVE2fY0eVcrGNn8O1YHdozx9QEsbEioJzu8c7xGIlP9i/Cn9m
-   ctyTyMlt9QA69Hv+kpl2Ulicg9+wsuKcdtN3NzkG9/Ua3Nbk27+VR0gi6
-   TSsBcQlRuoaqCJPE199FbUVy1scrIYvOKn0TXvFmxkClSzlVRAE11GWV5
-   kDDzSA+NSOG6vjkb9m3HG+ARacCu7/8bexJyDB1+7sJiOTyMXNhW8jOwn
+  bh=GAqpCsRCdatJLMn/LB4VPXAG5/+DxNvNB1DDK+7U/SA=;
+  b=hCQf05mQyKUG/4yUibUBFYnfQjH2vwpwLGOwF3rAb9zeDUS90uO2aztN
+   GG79sKnjtoaq7UV/Agaj6dBGuq0bG/G44O93+jJtT86WkAn4AZ6W2893k
+   AXmrjwk68AgbCAH3FVs841a2L9sH+yfPw5ktjm4RNDrq3GCB+917MbYBx
+   QRq4aj0J8PiP8aJl7OJvO3Fz1GKzXCLX6a5rtqDIbSh1GrLKwPO1ifulh
+   lvUwqCsVel5MaUc0xArUBWXAEKY4Lji6nkofBed9DCxnkr5zSMVj2Gi8o
+   wAPkfYgecd1sT97nHikl/oWyA0++Y6sVgSOYpDOXIawGLadYCRIw1mn62
    g==;
-X-CSE-ConnectionGUID: MElUTVqtTAGzIGihEaFh3w==
-X-CSE-MsgGUID: B7iBwJZTSJeFciKc7vNhCA==
-X-IronPort-AV: E=McAfee;i="6800,10657,11742"; a="75633807"
+X-CSE-ConnectionGUID: /vyV7dRkSUuVlpNPLQyYYg==
+X-CSE-MsgGUID: uGtkHkMqRJiOAj9g9D+spg==
+X-IronPort-AV: E=McAfee;i="6800,10657,11742"; a="75633832"
 X-IronPort-AV: E=Sophos;i="6.23,145,1770624000"; 
-   d="scan'208";a="75633807"
+   d="scan'208";a="75633832"
 Received: from fmviesa001.fm.intel.com ([10.60.135.141])
   by orvoesa113.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 28 Mar 2026 02:55:19 -0700
-X-CSE-ConnectionGUID: v9BKKQRJS6W2wyd96Ksx5Q==
-X-CSE-MsgGUID: kuXnB5WIS620/P7LJwxCMw==
+X-CSE-ConnectionGUID: mkBLqmVQQa+7lsX1dF1hXw==
+X-CSE-MsgGUID: nMNCMgLgQ7q8oZG85wWGBA==
 X-ExtLoop1: 1
 X-IronPort-AV: E=Sophos;i="6.23,145,1770624000"; 
-   d="scan'208";a="248786208"
+   d="scan'208";a="248786209"
 Received: from lkp-server01.sh.intel.com (HELO 3905d212be1b) ([10.239.97.150])
   by fmviesa001.fm.intel.com with ESMTP; 28 Mar 2026 02:55:13 -0700
 Received: from kbuild by 3905d212be1b with local (Exim 4.98.2)
 	(envelope-from <lkp@intel.com>)
-	id 1w6QNp-00000000BI1-3ouf;
+	id 1w6QNp-00000000BI3-3sXI;
 	Sat, 28 Mar 2026 09:55:09 +0000
-Date: Sat, 28 Mar 2026 17:54:51 +0800
+Date: Sat, 28 Mar 2026 17:54:52 +0800
 From: kernel test robot <lkp@intel.com>
 To: Zi Yan <ziy@nvidia.com>,
 	"Matthew Wilcox (Oracle)" <willy@infradead.org>,
 	Song Liu <songliubraving@fb.com>
-Cc: oe-kbuild-all@lists.linux.dev, Chris Mason <chris.mason@fusionio.com>,
+Cc: llvm@lists.linux.dev, oe-kbuild-all@lists.linux.dev,
+	Chris Mason <chris.mason@fusionio.com>,
 	David Sterba <dsterba@suse.com>,
 	Alexander Viro <viro@zeniv.linux.org.uk>,
 	Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>,
@@ -74,7 +75,7 @@ Cc: oe-kbuild-all@lists.linux.dev, Chris Mason <chris.mason@fusionio.com>,
 	linux-kselftest@vger.kernel.org
 Subject: Re: [PATCH v1 07/10] mm/truncate: use folio_split() in
  truncate_inode_partial_folio()
-Message-ID: <202603281704.ILlsxaUM-lkp@intel.com>
+Message-ID: <202603281736.bi9GWnsF-lkp@intel.com>
 References: <20260327014255.2058916-8-ziy@nvidia.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
@@ -100,28 +101,27 @@ url:    https://github.com/intel-lab-lkp/linux/commits/Zi-Yan/mm-remove-READ_ONL
 base:   https://git.kernel.org/pub/scm/linux/kernel/git/akpm/mm.git mm-everything
 patch link:    https://lore.kernel.org/r/20260327014255.2058916-8-ziy%40nvidia.com
 patch subject: [PATCH v1 07/10] mm/truncate: use folio_split() in truncate_inode_partial_folio()
-config: nios2-allnoconfig (https://download.01.org/0day-ci/archive/20260328/202603281704.ILlsxaUM-lkp@intel.com/config)
-compiler: nios2-linux-gcc (GCC) 11.5.0
-reproduce (this is a W=1 build): (https://download.01.org/0day-ci/archive/20260328/202603281704.ILlsxaUM-lkp@intel.com/reproduce)
+config: x86_64-allnoconfig (https://download.01.org/0day-ci/archive/20260328/202603281736.bi9GWnsF-lkp@intel.com/config)
+compiler: clang version 20.1.8 (https://github.com/llvm/llvm-project 87f0227cb60147a26a1eeb4fb06e3b505e9c7261)
+reproduce (this is a W=1 build): (https://download.01.org/0day-ci/archive/20260328/202603281736.bi9GWnsF-lkp@intel.com/reproduce)
 
 If you fix the issue in a separate patch/commit (i.e. not just a new version of
 the same patch/commit), kindly add following tags
 | Reported-by: kernel test robot <lkp@intel.com>
-| Closes: https://lore.kernel.org/oe-kbuild-all/202603281704.ILlsxaUM-lkp@intel.com/
+| Closes: https://lore.kernel.org/oe-kbuild-all/202603281736.bi9GWnsF-lkp@intel.com/
 
-All error/warnings (new ones prefixed by >>):
+All errors (new ones prefixed by >>):
 
-   In file included from include/linux/mm.h:1746,
-                    from include/linux/pid_namespace.h:7,
-                    from include/linux/ptrace.h:10,
-                    from arch/nios2/kernel/asm-offsets.c:10:
->> include/linux/huge_mm.h:625:1: error: expected identifier or '(' before '{' token
+   In file included from arch/x86/kernel/asm-offsets.c:14:
+   In file included from include/linux/suspend.h:5:
+   In file included from include/linux/swap.h:9:
+   In file included from include/linux/memcontrol.h:21:
+   In file included from include/linux/mm.h:1746:
+>> include/linux/huge_mm.h:625:1: error: expected identifier or '('
      625 | {
          | ^
->> include/linux/huge_mm.h:623:19: warning: 'folio_split' declared 'static' but never defined [-Wunused-function]
-     623 | static inline int folio_split(struct folio *folio, unsigned int new_order,
-         |                   ^~~~~~~~~~~
-   make[3]: *** [scripts/Makefile.build:184: arch/nios2/kernel/asm-offsets.s] Error 1
+   1 error generated.
+   make[3]: *** [scripts/Makefile.build:184: arch/x86/kernel/asm-offsets.s] Error 1
    make[3]: Target 'prepare' not remade because of errors.
    make[2]: *** [Makefile:1337: prepare0] Error 2
    make[2]: Target 'prepare' not remade because of errors.
@@ -133,14 +133,14 @@ All error/warnings (new ones prefixed by >>):
 
 vim +625 include/linux/huge_mm.h
 
-e220917fa50774 Luis Chamberlain 2024-08-22  622  
-9ee18d22957981 Zi Yan           2026-03-26 @623  static inline int folio_split(struct folio *folio, unsigned int new_order,
-9ee18d22957981 Zi Yan           2026-03-26  624  		struct page *page, struct list_head *list);
-7460b470a131f9 Zi Yan           2025-03-07 @625  {
-a488ba3124c82d Pankaj Raghav    2025-09-05  626  	VM_WARN_ON_ONCE_FOLIO(1, folio);
-a488ba3124c82d Pankaj Raghav    2025-09-05  627  	return -EINVAL;
-7460b470a131f9 Zi Yan           2025-03-07  628  }
-7460b470a131f9 Zi Yan           2025-03-07  629  
+e220917fa50774f Luis Chamberlain 2024-08-22  622  
+9ee18d22957981f Zi Yan           2026-03-26  623  static inline int folio_split(struct folio *folio, unsigned int new_order,
+9ee18d22957981f Zi Yan           2026-03-26  624  		struct page *page, struct list_head *list);
+7460b470a131f98 Zi Yan           2025-03-07 @625  {
+a488ba3124c82d7 Pankaj Raghav    2025-09-05  626  	VM_WARN_ON_ONCE_FOLIO(1, folio);
+a488ba3124c82d7 Pankaj Raghav    2025-09-05  627  	return -EINVAL;
+7460b470a131f98 Zi Yan           2025-03-07  628  }
+7460b470a131f98 Zi Yan           2025-03-07  629  
 
 -- 
 0-DAY CI Kernel Test Service

@@ -1,344 +1,152 @@
-Received: from out-170.mta0.migadu.com (out-170.mta0.migadu.com [91.218.175.170])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-pg1-f175.google.com (mail-pg1-f175.google.com [209.85.215.175])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EC3CC314A86
-	for <linux-btrfs@vger.kernel.org>; Sat, 28 Mar 2026 21:46:48 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=91.218.175.170
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9AB2E25FA29
+	for <linux-btrfs@vger.kernel.org>; Sun, 29 Mar 2026 04:08:32 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.215.175
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774734411; cv=none; b=OCstz7H+50AjtSRjqQslc7I4yB6BxJAIKtHDEYBexB7t5TsyLAE/pcHluN6Y3m0O2vnUHT9xv/orrpUkIUzJH3/1A+aSRiu7d2F2L42mbXCH2ueVVnWLEprx21HTBcEKQYN3vGpTzqq83D+AZ7SO/v0ZWwpQwYO9o1LVUaRaaB0=
+	t=1774757314; cv=none; b=WdJaTChlTsCp+tcnd77MbB+65d2VobUeT4zbYlvm06bD7c7P4Ty6tChZbFib5+hpjwdrBK9X/gelbKMLkU94yE2FgPfAtv4jUpLTVcLLHDvspG08PZ2dcHKLZUk/fZm2BJ/Xzw2a4lvF2Z6J5Qjvg8euDV9kE+/geMEd/PE4wLo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774734411; c=relaxed/simple;
-	bh=RT6QV6fWJDa3Sj1M7b3c4lv+SBuO/hqs792c9v2flTs=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=lW42helsZhVXrElFG9/v44gjO7mViHk2fc5TiJPSiqbPytrD3sXlDUmcrRdvysbcfZon1ziVdcoBSN+VkdTWzMElahpkTUK7iGoVWQ5R01p8Vo5qd0Cq6Yxr0V/NGTZ7lAew0Myki/atJmOKF5P0MoRDwy9FUjlhGxIR7IhOytQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev; spf=pass smtp.mailfrom=linux.dev; dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b=tFxrO+vH; arc=none smtp.client-ip=91.218.175.170
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.dev
+	s=arc-20240116; t=1774757314; c=relaxed/simple;
+	bh=ewrebA2GfSdT6QpVfkDrUS5CDGEm64zLO2fh0fmu2hQ=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version:Content-Type; b=m4W0qUzRgrw9O4ii9cyuh+/i+wi4rddEQOZpqkwVKzz1oJJWVx7qb/F1IMwk/A5wOBhEiR52fDW1oHarFIcYDykWB4IKyqz5IVP7dIAj/10vzY/EYaIi8ICrLJif9lb5Ootr49U6Hu54QCgPP0wbR93qzRG2GCOeAcSyzz0zTiw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=hev.cc; spf=pass smtp.mailfrom=hev.cc; dkim=pass (2048-bit key) header.d=hev-cc.20230601.gappssmtp.com header.i=@hev-cc.20230601.gappssmtp.com header.b=1gDZECIn; arc=none smtp.client-ip=209.85.215.175
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=hev.cc
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=hev.cc
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b="tFxrO+vH"
-X-Report-Abuse: Please report any abuse attempt to abuse@migadu.com and include these headers.
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linux.dev; s=key1;
-	t=1774734397;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding;
-	bh=CkEUN9AatbQu3T+a5tdpHck772+m/Kd+inu80apty1k=;
-	b=tFxrO+vHXKNTvnVocjpXgPCTaSr2lVVW2oRRnDgxOs7uacUikiecQcBz5lY9DRyQnQDNhD
-	v76NjtfwKt+BhJXTaawDe9yvcwTCoq3OTA0C4mLTjcnBf8X1xjFsgaokJ3Bixya0h4PR3u
-	BRL5kpN72gw9xvDpsg5tDgv1EEzjAYs=
-From: "JP Kobryn (Meta)" <jp.kobryn@linux.dev>
-To: mark@harmstone.com,
-	boris@bur.io,
-	wqu@suse.com,
-	dsterba@suse.com,
+	dkim=pass (2048-bit key) header.d=hev-cc.20230601.gappssmtp.com header.i=@hev-cc.20230601.gappssmtp.com header.b="1gDZECIn"
+Received: by mail-pg1-f175.google.com with SMTP id 41be03b00d2f7-c769e72512dso22020a12.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 28 Mar 2026 21:08:32 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=hev-cc.20230601.gappssmtp.com; s=20230601; t=1774757312; x=1775362112; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=fcMba91l4VHF9piAdu7w9FJqozouFzyx+yXZRyx5X4k=;
+        b=1gDZECInVa9/Dv29mdHI+HyhWocMDf5e567TLQdlY1Lj5u2o4QH8IWSxe1ZnyrzY0b
+         fIoDEOxUFKahBEUQajw2OmyeFXGJEHrGcKKDy2/w6QlbyjKn/BCE3ujK8kt+jOA8fcBT
+         yiG4BRq3UcRnb8FrgPInylc5hXY/FJ1OxshLtAq71t+HmXOeUJ7bOH48/JcSxFTzrTV5
+         UuVt+B8sP+G1CBp5vqVrfIqP7dTYrvrwnX4qZmHaEp0jZBU93Sldf/Q3zZvge8rw2Yap
+         QqAASZOJm331dbexWMryabh79JklSia/x273WIBaViUk/BPICqLglqv57dpl5KhsIb8k
+         Lx4Q==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1774757312; x=1775362112;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
+         :to:cc:subject:date:message-id:reply-to;
+        bh=fcMba91l4VHF9piAdu7w9FJqozouFzyx+yXZRyx5X4k=;
+        b=jVviLvg6i2xRlBG91GzTgpHhlKG6KNFj5SaiJkK+T45XL9ST8PE821noWr/lr+k3YM
+         CsjiZF4vOF6uNZZrKujDGmOGdlglbqw0I/QXJoYLKvx7rbd0rVltoM/QZQoSF91cOMI4
+         MhppmRs4bEu806s6TksS5qfgU2Sq/fY3SZd5C2yxhFGbSoa/mvv/qRDp3kNC0TxR+auT
+         12UypQdQnRjTW2TuXgk8aRsNtIQZ127trRMHtVE36LmOOPvJl5gUh+SQ7JoFmaZfXDkg
+         R5I7zlVZ1LODgNmXY3UdBZjpJXpj5UNQ2B1KAz8bKxr/qHH3FNCGukafgL1L2UIUh9qB
+         YxCA==
+X-Forwarded-Encrypted: i=1; AJvYcCXTO/VUWLEp/L8tGTb3Mf1Jnn5Q5yYce3h3Lizwqw4C9AiyjNw7aKMiu9RuaX5Do5gDfnttE+vx2OeKDA==@vger.kernel.org
+X-Gm-Message-State: AOJu0Ywd6Dep/bMpZhdBCInDROlVe1GXKPd6dAMOFqhM723xYc/zpm7b
+	rxDoMd4+PtVQIgmxfUgeaQvZ7tcbRFdO1ST8l7WZhIZGzgKWEQbA2EFFiGOYWGeq+Io=
+X-Gm-Gg: ATEYQzwI8HUyFtbaq3spJmyUBD6RMUtnukmwuTofsq5O5bg2zlXNpSu13W5Hj7jtKUh
+	r7NYHJxqS+rFAky1BUe+mANnSrlwHDZitI9rGbpC3N9c8F/2R0QRI7EoAe8Ojy84rT+Z67lLj9Q
+	0WHVg9SssRChYtKvHRP/BlWt639UHDLmQdJZ/yIvhFc/8JcEnhu/OCkUUeVy9kTAJO/cNkOKgXW
+	oXOVzFiPLJDKraOEGieLYi31HIxmJcDhLb9nvds/9e18YfFPKJ7EcJ98zITUmgpXnkQOZ+8tLHv
+	0EtC/oLw9KePHBfk94LjcEzRJ1IOddMW8UjI2Lz0iu6Po9E0ia8ifgaTlume57/R829aDP/ZKgi
+	eSprM+R4YyoJjD3B0NjSrYaEkVYGy2zZpZ2Ujv7iEF6dRRc8iSqhWLgt4rfmHuNxzcbv/e6XOHS
+	09
+X-Received: by 2002:a17:902:ced0:b0:2b0:c2d9:270a with SMTP id d9443c01a7336-2b0cdcf0019mr88952725ad.42.1774757311794;
+        Sat, 28 Mar 2026 21:08:31 -0700 (PDT)
+Received: from gpc ([2400:8902:e002:ded5:78c1:8178:95c1:6ca3])
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2b24b3a82f8sm11038575ad.63.2026.03.28.21.08.25
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sat, 28 Mar 2026 21:08:31 -0700 (PDT)
+From: WANG Rui <r@hev.cc>
+To: ziy@nvidia.com
+Cc: Liam.Howlett@oracle.com,
+	akpm@linux-foundation.org,
+	baohua@kernel.org,
+	baolin.wang@linux.alibaba.com,
+	brauner@kernel.org,
 	clm@fb.com,
-	linux-btrfs@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org,
-	linux-team@meta.com
-Subject: [RESEND PATCH v2] btrfs: prevent direct reclaim during compressed readahead
-Date: Sat, 28 Mar 2026 14:46:19 -0700
-Message-ID: <20260328214619.114790-1-jp.kobryn@linux.dev>
+	david@kernel.org,
+	dev.jain@arm.com,
+	dsterba@suse.com,
+	jack@suse.cz,
+	lance.yang@linux.dev,
+	linux-btrfs@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	linux-kselftest@vger.kernel.org,
+	linux-mm@kvack.org,
+	ljs@kernel.org,
+	mhocko@suse.com,
+	npache@redhat.com,
+	rppt@kernel.org,
+	ryan.roberts@arm.com,
+	shuah@kernel.org,
+	songliubraving@fb.com,
+	surenb@google.com,
+	vbabka@kernel.org,
+	viro@zeniv.linux.org.uk,
+	willy@infradead.org,
+	WANG Rui <r@hev.cc>
+Subject: Re: [PATCH v1 05/10] mm/huge_memory: remove READ_ONLY_THP_FOR_FS from file_thp_enabled()
+Date: Sun, 29 Mar 2026 12:07:41 +0800
+Message-ID: <20260329040742.17269-1-r@hev.cc>
+X-Mailer: git-send-email 2.53.0
+In-Reply-To: <52CACB9A-A782-4D11-8B6F-66DA8D345C78@nvidia.com>
+References: <52CACB9A-A782-4D11-8B6F-66DA8D345C78@nvidia.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-X-Migadu-Flow: FLOW_OUT
 
-Under memory pressure, direct reclaim can kick in during compressed
-readahead. This puts the associated task into D-state. Then shrink_lruvec()
-disables interrupts when acquiring the LRU lock. Under heavy pressure,
-we've observed reclaim can run long enough that the CPU becomes prone to
-CSD lock stalls since it cannot service incoming IPIs. Although the CSD
-lock stalls are the worst case scenario, we have found many more subtle
-occurrences of this latency on the order of seconds, over a minute in some
-cases.
+Hi Zi,
 
-Prevent direct reclaim during compressed readahead. This is achieved by
-using different GFP flags at key points when the bio is marked for
-readahead.
+>> Now without READ_ONLY_THP_FOR_FS you're going to:
+>>
+>>                        |    PF     | MADV_COLLAPSE | khugepaged |
+>> 		       |-----------|---------------|------------|
+>>  large folio fs        |     ✓     |       x       |      x     |
+>>  large folio + r/o     |     ✓     |       ✓       |      ✓     |
+>>
+>> And intentionally leaving behind the 'not large folio fs, r/o' case because
+>> those file systems need to implement large folio support.
+>>
+>> I guess we'll regress those users but we don't care?
+>
+> Yes. This also motivates FSes without large folio support to add large folio
+> support instead of relying on READ_ONLY_THP_FOR_FS hack.
 
-There are two functions that allocate during compressed readahead:
-btrfs_alloc_compr_folio() and add_ra_bio_pages(). Both currently use
-GFP_NOFS which includes __GFP_DIRECT_RECLAIM.
+Interesting, thanks for making this feature unconditional.
 
-For the internal API call btrfs_alloc_compr_folio(), the signature changes
-to accept an additional gfp_t parameter. At the readahead call site, it
-gets flags similar to GFP_NOFS but stripped of __GFP_DIRECT_RECLAIM.
-__GFP_NOWARN is added since these allocations are allowed to fail. Demand
-reads still use full GFP_NOFS and will enter reclaim if needed. All other
-existing call sites of btrfs_alloc_compr_folio() now explicitly pass
-GFP_NOFS to retain their current behavior.
+From my experiments, this is going to be a performance regression.
 
-add_ra_bio_pages() gains a bool parameter which allows callers to specify
-if they want to allow direct reclaim or not. In either case, the
-__GFP_NOWARN flag was added unconditionally since the allocations are
-speculative.
+Before this patch, even when the filesystem (e.g. btrfs without experimental)
+didn't support large folios, READ_ONLY_THP_FOR_FS still allowed read-only
+file-backed code segments to be collapsed into huge page mappings via khugepaged.
 
-There has been some previous work done on calling add_ra_bio_pages() [0].
-This patch is complementary: where that patch reduces call frequency, this
-patch reduces the latency associated with those calls.
+After this patch, FilePmdMapped will always be 0 unless the filesystem supports
+large folios up to PMD order, and it doesn't look like that support will arrive
+anytime soon [1].
 
-[0] https://lore.kernel.org/linux-btrfs/656838ec1232314a2657716e59f4f15a8eadba64.1751492111.git.boris@bur.io/
+Is there a reason we can't keep this hack while continuing to push filesystems
+toward proper large folio support?
 
-Signed-off-by: JP Kobryn (Meta) <jp.kobryn@linux.dev>
-Reviewed-by: Mark Harmstone <mark@harmstone.com>
----
-v2:
- - dropped patch 1/2, squashed into single patch based on David's feedback
- - changed btrfs_alloc_compr_folio() signature instead of new _gfp variant
- - update other existing callers to pass GFP_NOFS explicitly
+I'm currently working on making the ELF loader more THP-friendly by adjusting
+the virtual address alignment of read-only code segments [2]. The data shows a
+noticeable drop in iTLB misses, especially for programs whose text size is just
+slightly larger than PMD_SIZE. That size profile is actually quite common for
+real-world binaries when using 2M huge pages. This optimization relies on
+READ_ONLY_THP_FOR_FS. If the availability of huge page mappings for code segments
+ends up depending on filesystem support, it will be much harder to take advantage
+of this in practice. [3]
 
-v1: https://lore.kernel.org/linux-btrfs/20260320073445.80218-1-jp.kobryn@linux.dev/
+[1] https://lore.kernel.org/linux-fsdevel/ab2IIwKzmK9qwIlZ@casper.infradead.org/
+[2] https://lore.kernel.org/linux-fsdevel/20260313005211.882831-1-r@hev.cc/
+[3] https://lore.kernel.org/linux-fsdevel/20260320160519.80962-1-r@hev.cc/
 
- fs/btrfs/compression.c | 42 +++++++++++++++++++++++++++++++++++-------
- fs/btrfs/compression.h |  2 +-
- fs/btrfs/inode.c       |  2 +-
- fs/btrfs/lzo.c         |  6 +++---
- fs/btrfs/zlib.c        |  6 +++---
- fs/btrfs/zstd.c        |  6 +++---
- 6 files changed, 46 insertions(+), 18 deletions(-)
-
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index e897342bece1f..8f33ef48b501e 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -180,7 +180,7 @@ static unsigned long btrfs_compr_pool_scan(struct shrinker *sh, struct shrink_co
- /*
-  * Common wrappers for page allocation from compression wrappers
-  */
--struct folio *btrfs_alloc_compr_folio(struct btrfs_fs_info *fs_info)
-+struct folio *btrfs_alloc_compr_folio(struct btrfs_fs_info *fs_info, gfp_t gfp)
- {
- 	struct folio *folio = NULL;
- 
-@@ -200,7 +200,7 @@ struct folio *btrfs_alloc_compr_folio(struct btrfs_fs_info *fs_info)
- 		return folio;
- 
- alloc:
--	return folio_alloc(GFP_NOFS, fs_info->block_min_order);
-+	return folio_alloc(gfp, fs_info->block_min_order);
- }
- 
- void btrfs_free_compr_folio(struct folio *folio)
-@@ -368,7 +368,8 @@ struct compressed_bio *btrfs_alloc_compressed_write(struct btrfs_inode *inode,
- static noinline int add_ra_bio_pages(struct inode *inode,
- 				     u64 compressed_end,
- 				     struct compressed_bio *cb,
--				     int *memstall, unsigned long *pflags)
-+				     int *memstall, unsigned long *pflags,
-+				     bool direct_reclaim)
- {
- 	struct btrfs_fs_info *fs_info = inode_to_fs_info(inode);
- 	pgoff_t end_index;
-@@ -376,6 +377,7 @@ static noinline int add_ra_bio_pages(struct inode *inode,
- 	u64 cur = cb->orig_bbio->file_offset + orig_bio->bi_iter.bi_size;
- 	u64 isize = i_size_read(inode);
- 	int ret;
-+	gfp_t constraint_gfp, cache_gfp;
- 	struct folio *folio;
- 	struct extent_map *em;
- 	struct address_space *mapping = inode->i_mapping;
-@@ -405,6 +407,19 @@ static noinline int add_ra_bio_pages(struct inode *inode,
- 
- 	end_index = (i_size_read(inode) - 1) >> PAGE_SHIFT;
- 
-+	/*
-+	 * Avoid direct reclaim when the caller does not allow it.
-+	 * Since add_ra_bio_pages is always speculative, suppress
-+	 * allocation warnings in either case.
-+	 */
-+	if (!direct_reclaim) {
-+		constraint_gfp = ~(__GFP_FS | __GFP_DIRECT_RECLAIM);
-+		cache_gfp = (GFP_NOFS & ~__GFP_DIRECT_RECLAIM) | __GFP_NOWARN;
-+	} else {
-+		constraint_gfp = ~__GFP_FS;
-+		cache_gfp = GFP_NOFS | __GFP_NOWARN;
-+	}
-+
- 	while (cur < compressed_end) {
- 		pgoff_t page_end;
- 		pgoff_t pg_index = cur >> PAGE_SHIFT;
-@@ -434,12 +449,13 @@ static noinline int add_ra_bio_pages(struct inode *inode,
- 			continue;
- 		}
- 
--		folio = filemap_alloc_folio(mapping_gfp_constraint(mapping, ~__GFP_FS),
-+		folio = filemap_alloc_folio(mapping_gfp_constraint(mapping,
-+					    constraint_gfp) | __GFP_NOWARN,
- 					    0, NULL);
- 		if (!folio)
- 			break;
- 
--		if (filemap_add_folio(mapping, folio, pg_index, GFP_NOFS)) {
-+		if (filemap_add_folio(mapping, folio, pg_index, cache_gfp)) {
- 			/* There is already a page, skip to page end */
- 			cur += folio_size(folio);
- 			folio_put(folio);
-@@ -532,6 +548,7 @@ void btrfs_submit_compressed_read(struct btrfs_bio *bbio)
- 	unsigned int compressed_len;
- 	const u32 min_folio_size = btrfs_min_folio_size(fs_info);
- 	u64 file_offset = bbio->file_offset;
-+	gfp_t gfp;
- 	u64 em_len;
- 	u64 em_start;
- 	struct extent_map *em;
-@@ -539,6 +556,17 @@ void btrfs_submit_compressed_read(struct btrfs_bio *bbio)
- 	int memstall = 0;
- 	int ret;
- 
-+	/*
-+	 * If this is a readahead bio, prevent direct reclaim. This is done to
-+	 * avoid stalling on speculative allocations when memory pressure is
-+	 * high. The demand fault will retry with GFP_NOFS and enter direct
-+	 * reclaim if needed.
-+	 */
-+	if (bbio->bio.bi_opf & REQ_RAHEAD)
-+		gfp = (GFP_NOFS & ~__GFP_DIRECT_RECLAIM) | __GFP_NOWARN;
-+	else
-+		gfp = GFP_NOFS;
-+
- 	/* we need the actual starting offset of this extent in the file */
- 	read_lock(&em_tree->lock);
- 	em = btrfs_lookup_extent_mapping(em_tree, file_offset, fs_info->sectorsize);
-@@ -569,7 +597,7 @@ void btrfs_submit_compressed_read(struct btrfs_bio *bbio)
- 		struct folio *folio;
- 		u32 cur_len = min(compressed_len - i * min_folio_size, min_folio_size);
- 
--		folio = btrfs_alloc_compr_folio(fs_info);
-+		folio = btrfs_alloc_compr_folio(fs_info, gfp);
- 		if (!folio) {
- 			ret = -ENOMEM;
- 			goto out_free_bio;
-@@ -585,7 +613,7 @@ void btrfs_submit_compressed_read(struct btrfs_bio *bbio)
- 	ASSERT(cb->bbio.bio.bi_iter.bi_size == compressed_len);
- 
- 	add_ra_bio_pages(&inode->vfs_inode, em_start + em_len, cb, &memstall,
--			 &pflags);
-+			 &pflags, !(bbio->bio.bi_opf & REQ_RAHEAD));
- 
- 	cb->len = bbio->bio.bi_iter.bi_size;
- 	cb->bbio.bio.bi_iter.bi_sector = bbio->bio.bi_iter.bi_sector;
-diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
-index 973530e9ce6c2..1022dc53ec51e 100644
---- a/fs/btrfs/compression.h
-+++ b/fs/btrfs/compression.h
-@@ -98,7 +98,7 @@ void btrfs_submit_compressed_read(struct btrfs_bio *bbio);
- 
- int btrfs_compress_str2level(unsigned int type, const char *str, int *level_ret);
- 
--struct folio *btrfs_alloc_compr_folio(struct btrfs_fs_info *fs_info);
-+struct folio *btrfs_alloc_compr_folio(struct btrfs_fs_info *fs_info, gfp_t gfp);
- void btrfs_free_compr_folio(struct folio *folio);
- 
- struct workspace_manager {
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 8d97a8ad3858b..2d2fce77aec21 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -9980,7 +9980,7 @@ ssize_t btrfs_do_encoded_write(struct kiocb *iocb, struct iov_iter *from,
- 		size_t bytes = min(min_folio_size, iov_iter_count(from));
- 		char *kaddr;
- 
--		folio = btrfs_alloc_compr_folio(fs_info);
-+		folio = btrfs_alloc_compr_folio(fs_info, GFP_NOFS);
- 		if (!folio) {
- 			ret = -ENOMEM;
- 			goto out_cb;
-diff --git a/fs/btrfs/lzo.c b/fs/btrfs/lzo.c
-index 0c90937707395..4662c5c06eae9 100644
---- a/fs/btrfs/lzo.c
-+++ b/fs/btrfs/lzo.c
-@@ -218,7 +218,7 @@ static int copy_compressed_data_to_bio(struct btrfs_fs_info *fs_info,
- 	ASSERT((old_size >> sectorsize_bits) == (old_size + LZO_LEN - 1) >> sectorsize_bits);
- 
- 	if (!*out_folio) {
--		*out_folio = btrfs_alloc_compr_folio(fs_info);
-+		*out_folio = btrfs_alloc_compr_folio(fs_info, GFP_NOFS);
- 		if (!*out_folio)
- 			return -ENOMEM;
- 	}
-@@ -245,7 +245,7 @@ static int copy_compressed_data_to_bio(struct btrfs_fs_info *fs_info,
- 			return -E2BIG;
- 
- 		if (!*out_folio) {
--			*out_folio = btrfs_alloc_compr_folio(fs_info);
-+			*out_folio = btrfs_alloc_compr_folio(fs_info, GFP_NOFS);
- 			if (!*out_folio)
- 				return -ENOMEM;
- 		}
-@@ -296,7 +296,7 @@ int lzo_compress_bio(struct list_head *ws, struct compressed_bio *cb)
- 	ASSERT(bio->bi_iter.bi_size == 0);
- 	ASSERT(len);
- 
--	folio_out = btrfs_alloc_compr_folio(fs_info);
-+	folio_out = btrfs_alloc_compr_folio(fs_info, GFP_NOFS);
- 	if (!folio_out)
- 		return -ENOMEM;
- 
-diff --git a/fs/btrfs/zlib.c b/fs/btrfs/zlib.c
-index 147c92a4dd04c..145ead5be1c06 100644
---- a/fs/btrfs/zlib.c
-+++ b/fs/btrfs/zlib.c
-@@ -175,7 +175,7 @@ int zlib_compress_bio(struct list_head *ws, struct compressed_bio *cb)
- 	workspace->strm.total_in = 0;
- 	workspace->strm.total_out = 0;
- 
--	out_folio = btrfs_alloc_compr_folio(fs_info);
-+	out_folio = btrfs_alloc_compr_folio(fs_info, GFP_NOFS);
- 	if (out_folio == NULL) {
- 		ret = -ENOMEM;
- 		goto out;
-@@ -258,7 +258,7 @@ int zlib_compress_bio(struct list_head *ws, struct compressed_bio *cb)
- 				goto out;
- 			}
- 
--			out_folio = btrfs_alloc_compr_folio(fs_info);
-+			out_folio = btrfs_alloc_compr_folio(fs_info, GFP_NOFS);
- 			if (out_folio == NULL) {
- 				ret = -ENOMEM;
- 				goto out;
-@@ -296,7 +296,7 @@ int zlib_compress_bio(struct list_head *ws, struct compressed_bio *cb)
- 				goto out;
- 			}
- 			/* Get another folio for the stream end. */
--			out_folio = btrfs_alloc_compr_folio(fs_info);
-+			out_folio = btrfs_alloc_compr_folio(fs_info, GFP_NOFS);
- 			if (out_folio == NULL) {
- 				ret = -ENOMEM;
- 				goto out;
-diff --git a/fs/btrfs/zstd.c b/fs/btrfs/zstd.c
-index 41547ff187f65..080b29fe515c6 100644
---- a/fs/btrfs/zstd.c
-+++ b/fs/btrfs/zstd.c
-@@ -439,7 +439,7 @@ int zstd_compress_bio(struct list_head *ws, struct compressed_bio *cb)
- 	workspace->in_buf.size = btrfs_calc_input_length(in_folio, end, start);
- 
- 	/* Allocate and map in the output buffer. */
--	out_folio = btrfs_alloc_compr_folio(fs_info);
-+	out_folio = btrfs_alloc_compr_folio(fs_info, GFP_NOFS);
- 	if (out_folio == NULL) {
- 		ret = -ENOMEM;
- 		goto out;
-@@ -482,7 +482,7 @@ int zstd_compress_bio(struct list_head *ws, struct compressed_bio *cb)
- 				goto out;
- 			}
- 
--			out_folio = btrfs_alloc_compr_folio(fs_info);
-+			out_folio = btrfs_alloc_compr_folio(fs_info, GFP_NOFS);
- 			if (out_folio == NULL) {
- 				ret = -ENOMEM;
- 				goto out;
-@@ -555,7 +555,7 @@ int zstd_compress_bio(struct list_head *ws, struct compressed_bio *cb)
- 			ret = -E2BIG;
- 			goto out;
- 		}
--		out_folio = btrfs_alloc_compr_folio(fs_info);
-+		out_folio = btrfs_alloc_compr_folio(fs_info, GFP_NOFS);
- 		if (out_folio == NULL) {
- 			ret = -ENOMEM;
- 			goto out;
--- 
-2.52.0
-
+Thanks,
+Rui

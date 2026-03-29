@@ -1,152 +1,137 @@
-Received: from mail-pg1-f175.google.com (mail-pg1-f175.google.com [209.85.215.175])
+Received: from mail-wm1-f48.google.com (mail-wm1-f48.google.com [209.85.128.48])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9AB2E25FA29
-	for <linux-btrfs@vger.kernel.org>; Sun, 29 Mar 2026 04:08:32 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.215.175
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id ECDD2126C02
+	for <linux-btrfs@vger.kernel.org>; Sun, 29 Mar 2026 06:34:22 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.48
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774757314; cv=none; b=WdJaTChlTsCp+tcnd77MbB+65d2VobUeT4zbYlvm06bD7c7P4Ty6tChZbFib5+hpjwdrBK9X/gelbKMLkU94yE2FgPfAtv4jUpLTVcLLHDvspG08PZ2dcHKLZUk/fZm2BJ/Xzw2a4lvF2Z6J5Qjvg8euDV9kE+/geMEd/PE4wLo=
+	t=1774766064; cv=none; b=H0doXuDEAV3GGzG+8jZK6Y0uLKcv4XAlg6W5geqLj4K9HCznGk4DI24iGaRvu1YxmO2MKcQTBsVckwzOnvMFULDntQJca77TKwZJfmTOq4N4+5W5ap/JCNUsMy1rwByTdfWxG1MHQLk2UCVd1CU/VTdC+9CLFpa1Ke+8SUwn0sM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774757314; c=relaxed/simple;
-	bh=ewrebA2GfSdT6QpVfkDrUS5CDGEm64zLO2fh0fmu2hQ=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=m4W0qUzRgrw9O4ii9cyuh+/i+wi4rddEQOZpqkwVKzz1oJJWVx7qb/F1IMwk/A5wOBhEiR52fDW1oHarFIcYDykWB4IKyqz5IVP7dIAj/10vzY/EYaIi8ICrLJif9lb5Ootr49U6Hu54QCgPP0wbR93qzRG2GCOeAcSyzz0zTiw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=hev.cc; spf=pass smtp.mailfrom=hev.cc; dkim=pass (2048-bit key) header.d=hev-cc.20230601.gappssmtp.com header.i=@hev-cc.20230601.gappssmtp.com header.b=1gDZECIn; arc=none smtp.client-ip=209.85.215.175
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=hev.cc
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=hev.cc
+	s=arc-20240116; t=1774766064; c=relaxed/simple;
+	bh=qmDqVlJTtHX2UvgMvpy35WRzf+vIyk9h1ORwpXK56Ns=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=aJUzB/3jwvUb8cvyt98WLSVXaR2A7OEe7YE5HtbgXBwkAUFblYWQYqQ99GCDGsDScP/6eK5qG4H+eHdBb76BCf+o5X1iCHjYkJuIv8UIR9lpR5mJ/2WGOExKYNZ473a0pXmLOF/iNFDfpORdMBK2fMO6tnSiaA6/RLZDJcuqZEw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=i0YsgTui; arc=none smtp.client-ip=209.85.128.48
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=hev-cc.20230601.gappssmtp.com header.i=@hev-cc.20230601.gappssmtp.com header.b="1gDZECIn"
-Received: by mail-pg1-f175.google.com with SMTP id 41be03b00d2f7-c769e72512dso22020a12.1
-        for <linux-btrfs@vger.kernel.org>; Sat, 28 Mar 2026 21:08:32 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="i0YsgTui"
+Received: by mail-wm1-f48.google.com with SMTP id 5b1f17b1804b1-48704db565eso46421175e9.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 28 Mar 2026 23:34:22 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=hev-cc.20230601.gappssmtp.com; s=20230601; t=1774757312; x=1775362112; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=fcMba91l4VHF9piAdu7w9FJqozouFzyx+yXZRyx5X4k=;
-        b=1gDZECInVa9/Dv29mdHI+HyhWocMDf5e567TLQdlY1Lj5u2o4QH8IWSxe1ZnyrzY0b
-         fIoDEOxUFKahBEUQajw2OmyeFXGJEHrGcKKDy2/w6QlbyjKn/BCE3ujK8kt+jOA8fcBT
-         yiG4BRq3UcRnb8FrgPInylc5hXY/FJ1OxshLtAq71t+HmXOeUJ7bOH48/JcSxFTzrTV5
-         UuVt+B8sP+G1CBp5vqVrfIqP7dTYrvrwnX4qZmHaEp0jZBU93Sldf/Q3zZvge8rw2Yap
-         QqAASZOJm331dbexWMryabh79JklSia/x273WIBaViUk/BPICqLglqv57dpl5KhsIb8k
-         Lx4Q==
+        d=gmail.com; s=20251104; t=1774766061; x=1775370861; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to;
+        bh=drDeu/ST4zwjbt4ZeNi/3en+8OlkBURHTvmUi4yDDBA=;
+        b=i0YsgTuiUQk6KZE4fUeIFTwmWjfrfFdBOLwGuL98H6VpLEbIrZt2EPHwdS6XzI0ojN
+         vlEXFerfpMXPXNRdR3j3janwKJBcYdyEF+Fm+J/Zl0UTzbMantMNLpDDgRywVBdV3t+0
+         LdSUtz+/D9sXCl+qIGuKlO8wF8jHSGYCGXZ6kxrXi2NPRy7U38Pv4qcZ3chq6qob0VhO
+         9OigCgSIHdHBt+S7V2SaR2VZBVonve2tKslSXiU/JA7UJq28oYfF/IDG/+QKilLtb57J
+         SD0I0qDF63b1Ifs+5O61h5snjwat8rIgr7pDmyWfR7XPNEBg9smiMSpdunTm9uaRt50R
+         tmGA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1774757312; x=1775362112;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
-         :to:cc:subject:date:message-id:reply-to;
-        bh=fcMba91l4VHF9piAdu7w9FJqozouFzyx+yXZRyx5X4k=;
-        b=jVviLvg6i2xRlBG91GzTgpHhlKG6KNFj5SaiJkK+T45XL9ST8PE821noWr/lr+k3YM
-         CsjiZF4vOF6uNZZrKujDGmOGdlglbqw0I/QXJoYLKvx7rbd0rVltoM/QZQoSF91cOMI4
-         MhppmRs4bEu806s6TksS5qfgU2Sq/fY3SZd5C2yxhFGbSoa/mvv/qRDp3kNC0TxR+auT
-         12UypQdQnRjTW2TuXgk8aRsNtIQZ127trRMHtVE36LmOOPvJl5gUh+SQ7JoFmaZfXDkg
-         R5I7zlVZ1LODgNmXY3UdBZjpJXpj5UNQ2B1KAz8bKxr/qHH3FNCGukafgL1L2UIUh9qB
-         YxCA==
-X-Forwarded-Encrypted: i=1; AJvYcCXTO/VUWLEp/L8tGTb3Mf1Jnn5Q5yYce3h3Lizwqw4C9AiyjNw7aKMiu9RuaX5Do5gDfnttE+vx2OeKDA==@vger.kernel.org
-X-Gm-Message-State: AOJu0Ywd6Dep/bMpZhdBCInDROlVe1GXKPd6dAMOFqhM723xYc/zpm7b
-	rxDoMd4+PtVQIgmxfUgeaQvZ7tcbRFdO1ST8l7WZhIZGzgKWEQbA2EFFiGOYWGeq+Io=
-X-Gm-Gg: ATEYQzwI8HUyFtbaq3spJmyUBD6RMUtnukmwuTofsq5O5bg2zlXNpSu13W5Hj7jtKUh
-	r7NYHJxqS+rFAky1BUe+mANnSrlwHDZitI9rGbpC3N9c8F/2R0QRI7EoAe8Ojy84rT+Z67lLj9Q
-	0WHVg9SssRChYtKvHRP/BlWt639UHDLmQdJZ/yIvhFc/8JcEnhu/OCkUUeVy9kTAJO/cNkOKgXW
-	oXOVzFiPLJDKraOEGieLYi31HIxmJcDhLb9nvds/9e18YfFPKJ7EcJ98zITUmgpXnkQOZ+8tLHv
-	0EtC/oLw9KePHBfk94LjcEzRJ1IOddMW8UjI2Lz0iu6Po9E0ia8ifgaTlume57/R829aDP/ZKgi
-	eSprM+R4YyoJjD3B0NjSrYaEkVYGy2zZpZ2Ujv7iEF6dRRc8iSqhWLgt4rfmHuNxzcbv/e6XOHS
-	09
-X-Received: by 2002:a17:902:ced0:b0:2b0:c2d9:270a with SMTP id d9443c01a7336-2b0cdcf0019mr88952725ad.42.1774757311794;
-        Sat, 28 Mar 2026 21:08:31 -0700 (PDT)
-Received: from gpc ([2400:8902:e002:ded5:78c1:8178:95c1:6ca3])
-        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2b24b3a82f8sm11038575ad.63.2026.03.28.21.08.25
+        d=1e100.net; s=20251104; t=1774766061; x=1775370861;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=drDeu/ST4zwjbt4ZeNi/3en+8OlkBURHTvmUi4yDDBA=;
+        b=IfnmTspunv8iRcPxs5BiFh/9L0FMucBOyqkvZzYZwtjshGj1fbX76W1hbsWjsd8hpU
+         ictNRxf4G8Pw0+yGpYpYRgSjFfG79OfQ2/kA3MDLasMydy4vaumx7uOMPLgUH8wPodIX
+         A0Cvrpad1dRYV1gPiWJ9sZVP4eY+I9O0SfhJ1mdDgHS4CbcHq0gqPUDOdCjvvvb5iyDV
+         RjOx6aLR0oUF1sKQJ3eJnm5IZF7xXcueVA+DXiJSS/U5/rVfxGOsiAO5/fP3KFuLLusc
+         3PR8yA8iQQO3HKaMGEHV0SbQWSCQBxkNyPTcu5utSg7DwiYLvsvoG296oaxXNWT/8BWc
+         vS+A==
+X-Gm-Message-State: AOJu0YzcE7Mdb0YlEOFM+mvw6gasBuwLiRBx70uD5ZvljR56PGM6OO1R
+	i3w20q0HkmnnkDN5SikTOadUOYa46NTFW4YMd+gaiULlaklHalZpUuJeAnqTPdsFjNc=
+X-Gm-Gg: ATEYQzwOIMO5twFp5mPCVGRJ1auDXzeDdSHfr2V0Wt8zDA+QsL89VBXuBgM/znefTUw
+	blWt5YpjFkcpHg/jn+lZJATFPUQ3THlaYUx+p80vd0adhuv12kn8jEhOLF32dCSIJ2cOBor9Is/
+	HHE8fvxCk+XE22w4uXKAig0hBMCjAV+4QpejNHy1WsTDXh0BY3BWcUtPrfRZbi1TGXowcu3+PXK
+	S991LEJVYkysjh8XQlqb0JvQpWXZ302S0vgXVw9zbWqaSabox23/iMXaqQq2i36qTwGOZcrn8Jt
+	N7vHcrL+uwhDID+rlAxUDRqmL0EGTRpkBrg9F/+plstZo8RppFWdCUx7h/pJCj6Va0+IZ+m90UY
+	j+rUR+gDsNW+lf4WzDZwUnNl1JonGullF03GA1G/oom10Okeua/ChIiwSofnojCcmsTJd2uAOS6
+	Kwdx3JDHpvcjzvJhHacaQx+Mb1Q85rKNf6
+X-Received: by 2002:a05:600c:19cc:b0:487:300:d9ca with SMTP id 5b1f17b1804b1-48727ee9ea9mr123607555e9.31.1774766060543;
+        Sat, 28 Mar 2026 23:34:20 -0700 (PDT)
+Received: from localhost ([145.40.214.139])
+        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-4873062ec9bsm91500505e9.7.2026.03.28.23.34.19
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sat, 28 Mar 2026 21:08:31 -0700 (PDT)
-From: WANG Rui <r@hev.cc>
-To: ziy@nvidia.com
-Cc: Liam.Howlett@oracle.com,
-	akpm@linux-foundation.org,
-	baohua@kernel.org,
-	baolin.wang@linux.alibaba.com,
-	brauner@kernel.org,
+        Sat, 28 Mar 2026 23:34:20 -0700 (PDT)
+From: Teng Liu <27rabbitlt@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.com,
 	clm@fb.com,
-	david@kernel.org,
-	dev.jain@arm.com,
-	dsterba@suse.com,
-	jack@suse.cz,
-	lance.yang@linux.dev,
-	linux-btrfs@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org,
 	linux-kernel@vger.kernel.org,
-	linux-kselftest@vger.kernel.org,
-	linux-mm@kvack.org,
-	ljs@kernel.org,
-	mhocko@suse.com,
-	npache@redhat.com,
-	rppt@kernel.org,
-	ryan.roberts@arm.com,
-	shuah@kernel.org,
-	songliubraving@fb.com,
-	surenb@google.com,
-	vbabka@kernel.org,
-	viro@zeniv.linux.org.uk,
-	willy@infradead.org,
-	WANG Rui <r@hev.cc>
-Subject: Re: [PATCH v1 05/10] mm/huge_memory: remove READ_ONLY_THP_FOR_FS from file_thp_enabled()
-Date: Sun, 29 Mar 2026 12:07:41 +0800
-Message-ID: <20260329040742.17269-1-r@hev.cc>
+	Teng Liu <27rabbitlt@gmail.com>
+Subject: [PATCH] btrfs: wait for in-flight readahead BIOs on open_ctree() error
+Date: Sun, 29 Mar 2026 08:31:17 +0200
+Message-ID: <20260329063417.642647-1-27rabbitlt@gmail.com>
 X-Mailer: git-send-email 2.53.0
-In-Reply-To: <52CACB9A-A782-4D11-8B6F-66DA8D345C78@nvidia.com>
-References: <52CACB9A-A782-4D11-8B6F-66DA8D345C78@nvidia.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
-Hi Zi,
+When open_ctree() fails during btrfs_read_chunk_tree(), readahead BIOs
+submitted by readahead_tree_node_children() may still be in flight. The
+error path frees fs_info without waiting for these BIOs to complete.
+When a readahead BIO later completes, btrfs_simple_end_io() calls
+btrfs_bio_counter_dec() which accesses the already-freed
+fs_info->dev_replace.bio_counter, causing a use-after-free.
 
->> Now without READ_ONLY_THP_FOR_FS you're going to:
->>
->>                        |    PF     | MADV_COLLAPSE | khugepaged |
->> 		       |-----------|---------------|------------|
->>  large folio fs        |     ✓     |       x       |      x     |
->>  large folio + r/o     |     ✓     |       ✓       |      ✓     |
->>
->> And intentionally leaving behind the 'not large folio fs, r/o' case because
->> those file systems need to implement large folio support.
->>
->> I guess we'll regress those users but we don't care?
->
-> Yes. This also motivates FSes without large folio support to add large folio
-> support instead of relying on READ_ONLY_THP_FOR_FS hack.
+This can be triggered by connecting a USB drive with a corrupted btrfs
+filesystem (e.g. chunk tree destroyed by a partial format), where the
+slow USB device keeps readahead BIOs in flight long enough for the
+error path to free fs_info before they complete. It can be reproduced
+on qemu with a properly corrupted btrfs img.
 
-Interesting, thanks for making this feature unconditional.
+  BTRFS error (device sda): failed to read chunk tree: -2
+  BTRFS error (device sda): open_ctree failed: -2
+  BUG: unable to handle page fault for address: ffff89322ceb3000
+  RIP: 0010:percpu_counter_add_batch+0xe/0xb0
+   btrfs_bio_counter_sub+0x22/0x60
+   btrfs_simple_end_io+0x32/0x90
+   blk_update_request+0x12b/0x480
+   scsi_end_request+0x26/0x1b0
+   scsi_io_completion+0x50/0x790
 
-From my experiments, this is going to be a performance regression.
+Fix this by waiting for the bio_counter to reach zero in the error path
+before stopping workers, so all in-flight BIOs have completed their
+callbacks before fs_info is freed. The bio_counter is already
+initialized in init_mount_fs_info() so this wait is safe for all error
+paths reaching the fail_sb_buffer label.
 
-Before this patch, even when the filesystem (e.g. btrfs without experimental)
-didn't support large folios, READ_ONLY_THP_FOR_FS still allowed read-only
-file-backed code segments to be collapsed into huge page mappings via khugepaged.
+Link: https://bugzilla.kernel.org/show_bug.cgi?id=221270
+Reported-by: AHN SEOK-YOUNG
+Signed-off-by: Teng Liu <27rabbitlt@gmail.com>
+---
+ fs/btrfs/disk-io.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
-After this patch, FilePmdMapped will always be 0 unless the filesystem supports
-large folios up to PMD order, and it doesn't look like that support will arrive
-anytime soon [1].
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 01f2dbb69..61e6b8dca 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3723,6 +3723,18 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
+ 	invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
+ 
+ fail_sb_buffer:
++	/*
++	 * Wait for in-flight readahead BIOs before stopping workers.
++	 * Readahead BIOs from btrfs_read_chunk_tree() (via
++	 * readahead_tree_node_children) may still be in flight on slow
++	 * devices (e.g. USB). Their completion callbacks
++	 * (btrfs_simple_end_io) access fs_info->dev_replace.bio_counter
++	 * which would be destroyed later, causing a use-after-free.
++	 * The bio_counter was already initialized in init_mount_fs_info()
++	 * so this wait is safe for all error paths reaching this label.
++	 */
++	wait_event(fs_info->dev_replace.replace_wait,
++		   percpu_counter_sum(&fs_info->dev_replace.bio_counter) == 0);
+ 	btrfs_stop_all_workers(fs_info);
+ 	btrfs_free_block_groups(fs_info);
+ fail_alloc:
+-- 
+2.53.0
 
-Is there a reason we can't keep this hack while continuing to push filesystems
-toward proper large folio support?
-
-I'm currently working on making the ELF loader more THP-friendly by adjusting
-the virtual address alignment of read-only code segments [2]. The data shows a
-noticeable drop in iTLB misses, especially for programs whose text size is just
-slightly larger than PMD_SIZE. That size profile is actually quite common for
-real-world binaries when using 2M huge pages. This optimization relies on
-READ_ONLY_THP_FOR_FS. If the availability of huge page mappings for code segments
-ends up depending on filesystem support, it will be much harder to take advantage
-of this in practice. [3]
-
-[1] https://lore.kernel.org/linux-fsdevel/ab2IIwKzmK9qwIlZ@casper.infradead.org/
-[2] https://lore.kernel.org/linux-fsdevel/20260313005211.882831-1-r@hev.cc/
-[3] https://lore.kernel.org/linux-fsdevel/20260320160519.80962-1-r@hev.cc/
-
-Thanks,
-Rui

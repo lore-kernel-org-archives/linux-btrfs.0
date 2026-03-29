@@ -1,137 +1,178 @@
-Received: from mail-wm1-f48.google.com (mail-wm1-f48.google.com [209.85.128.48])
+Received: from mail-wm1-f46.google.com (mail-wm1-f46.google.com [209.85.128.46])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id ECDD2126C02
-	for <linux-btrfs@vger.kernel.org>; Sun, 29 Mar 2026 06:34:22 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.48
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7E0242AE78
+	for <linux-btrfs@vger.kernel.org>; Sun, 29 Mar 2026 07:03:27 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.46
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774766064; cv=none; b=H0doXuDEAV3GGzG+8jZK6Y0uLKcv4XAlg6W5geqLj4K9HCznGk4DI24iGaRvu1YxmO2MKcQTBsVckwzOnvMFULDntQJca77TKwZJfmTOq4N4+5W5ap/JCNUsMy1rwByTdfWxG1MHQLk2UCVd1CU/VTdC+9CLFpa1Ke+8SUwn0sM=
+	t=1774767809; cv=none; b=TsUXDay4YFWaRdZmBaPQ1itCrI6r0zhn3mum8TDoQE+ZaWqhLqIcLIjfFjl+qN8LHF9tZqiHat+CAG+bIMGiDeTmGCs3r0xPoPA+dxgEyQmIAaIlNkUDZyp7T8sSTqayx3IU9sI9RqfEh5fizSf0GEauw+XeQXFpTAxgIkFNY00=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774766064; c=relaxed/simple;
-	bh=qmDqVlJTtHX2UvgMvpy35WRzf+vIyk9h1ORwpXK56Ns=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=aJUzB/3jwvUb8cvyt98WLSVXaR2A7OEe7YE5HtbgXBwkAUFblYWQYqQ99GCDGsDScP/6eK5qG4H+eHdBb76BCf+o5X1iCHjYkJuIv8UIR9lpR5mJ/2WGOExKYNZ473a0pXmLOF/iNFDfpORdMBK2fMO6tnSiaA6/RLZDJcuqZEw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=i0YsgTui; arc=none smtp.client-ip=209.85.128.48
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1774767809; c=relaxed/simple;
+	bh=3HUKxSM6oaRr2TbspgDlR9M/W9dikUcCl+eSiHgmpGs=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=IM7GTvmiw9NiarOTM6MOvdGSN227kuhDJmBM67fgryBu2QdGPTZvVSyxbt04DuMxkzizWiGSmEX8PnCiVIzi74g5uYVz+ytrRTKUdCq/3R2ebzkUJRX6Z0/t5Kvibee839veBsADavm8w1sO2uUcAlTzQrGhkUn4tFCjXt5BlT8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=fl/9441y; arc=none smtp.client-ip=209.85.128.46
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="i0YsgTui"
-Received: by mail-wm1-f48.google.com with SMTP id 5b1f17b1804b1-48704db565eso46421175e9.1
-        for <linux-btrfs@vger.kernel.org>; Sat, 28 Mar 2026 23:34:22 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="fl/9441y"
+Received: by mail-wm1-f46.google.com with SMTP id 5b1f17b1804b1-486fe655187so43433225e9.2
+        for <linux-btrfs@vger.kernel.org>; Sun, 29 Mar 2026 00:03:27 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1774766061; x=1775370861; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:from:to:cc:subject:date:message-id:reply-to;
-        bh=drDeu/ST4zwjbt4ZeNi/3en+8OlkBURHTvmUi4yDDBA=;
-        b=i0YsgTuiUQk6KZE4fUeIFTwmWjfrfFdBOLwGuL98H6VpLEbIrZt2EPHwdS6XzI0ojN
-         vlEXFerfpMXPXNRdR3j3janwKJBcYdyEF+Fm+J/Zl0UTzbMantMNLpDDgRywVBdV3t+0
-         LdSUtz+/D9sXCl+qIGuKlO8wF8jHSGYCGXZ6kxrXi2NPRy7U38Pv4qcZ3chq6qob0VhO
-         9OigCgSIHdHBt+S7V2SaR2VZBVonve2tKslSXiU/JA7UJq28oYfF/IDG/+QKilLtb57J
-         SD0I0qDF63b1Ifs+5O61h5snjwat8rIgr7pDmyWfR7XPNEBg9smiMSpdunTm9uaRt50R
-         tmGA==
+        d=suse.com; s=google; t=1774767806; x=1775372606; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to;
+        bh=ThGTNLneGLxpxsZjLzURDO+LTdSj52Hz0aeufftXRBI=;
+        b=fl/9441yX/QRPV+E0LHqeBDL3KHouoxh7p4ZZV3uJTODIisXT8PfbDZt2HlyArsuVn
+         t2NgWBIHDWp01R99EF2Q+tvDAOvrqYfL0VE2xuTzl5D9R/nBgTstTheVWpJ5qfmazdhY
+         EtFN9EPJ6EIlqv0ZQaW4+IMbcJgJF8lWyDengUn8J2e4E4KyorwI8EQ5L5vXxhgYhuU/
+         TA9Nm7zq6OlyDXiaVpzj+RrFs2HCzZin4G0FCXym8eelPcYDYAa8KzWgQi+2Q0Kmv9y0
+         a/Ecfgx1R2ClTWXOM85ZPstkeM8ZLdgUCQoDw1LCejvhQOXp6He8msCiLub9WcpLKu/z
+         cwpQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1774766061; x=1775370861;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+        d=1e100.net; s=20251104; t=1774767806; x=1775372606;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=drDeu/ST4zwjbt4ZeNi/3en+8OlkBURHTvmUi4yDDBA=;
-        b=IfnmTspunv8iRcPxs5BiFh/9L0FMucBOyqkvZzYZwtjshGj1fbX76W1hbsWjsd8hpU
-         ictNRxf4G8Pw0+yGpYpYRgSjFfG79OfQ2/kA3MDLasMydy4vaumx7uOMPLgUH8wPodIX
-         A0Cvrpad1dRYV1gPiWJ9sZVP4eY+I9O0SfhJ1mdDgHS4CbcHq0gqPUDOdCjvvvb5iyDV
-         RjOx6aLR0oUF1sKQJ3eJnm5IZF7xXcueVA+DXiJSS/U5/rVfxGOsiAO5/fP3KFuLLusc
-         3PR8yA8iQQO3HKaMGEHV0SbQWSCQBxkNyPTcu5utSg7DwiYLvsvoG296oaxXNWT/8BWc
-         vS+A==
-X-Gm-Message-State: AOJu0YzcE7Mdb0YlEOFM+mvw6gasBuwLiRBx70uD5ZvljR56PGM6OO1R
-	i3w20q0HkmnnkDN5SikTOadUOYa46NTFW4YMd+gaiULlaklHalZpUuJeAnqTPdsFjNc=
-X-Gm-Gg: ATEYQzwOIMO5twFp5mPCVGRJ1auDXzeDdSHfr2V0Wt8zDA+QsL89VBXuBgM/znefTUw
-	blWt5YpjFkcpHg/jn+lZJATFPUQ3THlaYUx+p80vd0adhuv12kn8jEhOLF32dCSIJ2cOBor9Is/
-	HHE8fvxCk+XE22w4uXKAig0hBMCjAV+4QpejNHy1WsTDXh0BY3BWcUtPrfRZbi1TGXowcu3+PXK
-	S991LEJVYkysjh8XQlqb0JvQpWXZ302S0vgXVw9zbWqaSabox23/iMXaqQq2i36qTwGOZcrn8Jt
-	N7vHcrL+uwhDID+rlAxUDRqmL0EGTRpkBrg9F/+plstZo8RppFWdCUx7h/pJCj6Va0+IZ+m90UY
-	j+rUR+gDsNW+lf4WzDZwUnNl1JonGullF03GA1G/oom10Okeua/ChIiwSofnojCcmsTJd2uAOS6
-	Kwdx3JDHpvcjzvJhHacaQx+Mb1Q85rKNf6
-X-Received: by 2002:a05:600c:19cc:b0:487:300:d9ca with SMTP id 5b1f17b1804b1-48727ee9ea9mr123607555e9.31.1774766060543;
-        Sat, 28 Mar 2026 23:34:20 -0700 (PDT)
-Received: from localhost ([145.40.214.139])
-        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-4873062ec9bsm91500505e9.7.2026.03.28.23.34.19
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sat, 28 Mar 2026 23:34:20 -0700 (PDT)
-From: Teng Liu <27rabbitlt@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.com,
-	clm@fb.com,
-	linux-kernel@vger.kernel.org,
-	Teng Liu <27rabbitlt@gmail.com>
-Subject: [PATCH] btrfs: wait for in-flight readahead BIOs on open_ctree() error
-Date: Sun, 29 Mar 2026 08:31:17 +0200
-Message-ID: <20260329063417.642647-1-27rabbitlt@gmail.com>
-X-Mailer: git-send-email 2.53.0
+        bh=ThGTNLneGLxpxsZjLzURDO+LTdSj52Hz0aeufftXRBI=;
+        b=OU6XFbGMvfq7oAVM9Nrz/ve7QVqNfqGEtqArXPt6rTXe7eDbHxl1QgQIbNRzzCrLi9
+         9DxvXMQLHcnZVeESv22GAa/lgvJPttOH8Bxov8zBeftLuYyZNAJioSwRwnpBrRFoKN9S
+         ySN4Bmp60lIPj2iwqeRsJ9secNpcK97SGeMjmPsysnA/RaHEJvxmHvjIs2TK88ZENauG
+         +n62CmOxViV5vu2yCmPvtyR7E4YmsHG8p8Xve2y+At/5cNxc/CtXCDnT9Df76QNgPsiI
+         8J17BWS8yzh70J9RCyNp136+iYrVnydzBmlaGvLcfCACWCJSYECnx795rA4stbf+QQnP
+         ZKFg==
+X-Forwarded-Encrypted: i=1; AJvYcCVh1i4WDHH44dFU8DOjBKIThCBKoHb4y8fgQ5hS2WeU6PKw49A1UQAS3N2wfrgCkvEj9IFONwr1UAfLIw==@vger.kernel.org
+X-Gm-Message-State: AOJu0YzYEOjW+1lG33xvgdzHuqsczNOWwOzXdoZ6UFAniC3AGKI8ReJB
+	pDFYhi7bbrYRxFPlNPX9OQlt/EV4Dj45kLkKa8UPiplxcFz3d56SlWMnT9vbrEnlzXw=
+X-Gm-Gg: ATEYQzy/Oi8TZWA32Gyj414cNiZOEV1ayQ8QpAiqT3uUJE+mroiZUcC+gmg1f+NDu6I
+	MSD9yzeVyPFJDNNaYZFOlOX1XP7FzHHhQJvfHNZPJBRfm94DAig7NPxTn8nVn8RpIacWWAWl/2K
+	/LkKW75a+dqvBBvmiM3P9YGGA73C3JZLdA54vfihajfGOZTdD5gy+80DSo9C2bs9p5T2pSZiPRQ
+	+CagtsfGRGT9F3ajhjqBUGpiOQZf/X5//qXeJi9uIfoxHEBF7d5xIXD+pfuG1pMXsOy+NGwBFHI
+	tJI1PfR431tmhK6Z6rmGY9lzlcVepH5q4mdaknw19fjUMHUWnJWrNqBQTjBRsepvt9j92GAAOQ6
+	NbHhOqTtduc1+Wx0OMPpX2GQ7tunXdm8HypW8JzpP6gwniMWEihy+CdehohnYS14LwBXjO+EdBF
+	8Esp5vJOvYG78c5cs7vfDMjjY9ceNHmu9X1nMEsuxGfOYxGqD3IiMQOGoLHeQYww==
+X-Received: by 2002:a05:600d:8451:b0:485:40db:d40c with SMTP id 5b1f17b1804b1-48727d4596dmr120201885e9.3.1774767805865;
+        Sun, 29 Mar 2026 00:03:25 -0700 (PDT)
+Received: from ?IPV6:2403:580d:fda1::299? (2403-580d-fda1--299.ip6.aussiebb.net. [2403:580d:fda1::299])
+        by smtp.gmail.com with ESMTPSA id 41be03b00d2f7-c76916bd67dsm3129767a12.3.2026.03.29.00.03.22
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Sun, 29 Mar 2026 00:03:24 -0700 (PDT)
+Message-ID: <11c944aa-7745-4720-9f40-af99bf7bb727@suse.com>
+Date: Sun, 29 Mar 2026 17:33:19 +1030
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH] btrfs: wait for in-flight readahead BIOs on open_ctree()
+ error
+To: Teng Liu <27rabbitlt@gmail.com>, linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.com, clm@fb.com, linux-kernel@vger.kernel.org
+References: <20260329063417.642647-1-27rabbitlt@gmail.com>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <20260329063417.642647-1-27rabbitlt@gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
-When open_ctree() fails during btrfs_read_chunk_tree(), readahead BIOs
-submitted by readahead_tree_node_children() may still be in flight. The
-error path frees fs_info without waiting for these BIOs to complete.
-When a readahead BIO later completes, btrfs_simple_end_io() calls
-btrfs_bio_counter_dec() which accesses the already-freed
-fs_info->dev_replace.bio_counter, causing a use-after-free.
 
-This can be triggered by connecting a USB drive with a corrupted btrfs
-filesystem (e.g. chunk tree destroyed by a partial format), where the
-slow USB device keeps readahead BIOs in flight long enough for the
-error path to free fs_info before they complete. It can be reproduced
-on qemu with a properly corrupted btrfs img.
 
-  BTRFS error (device sda): failed to read chunk tree: -2
-  BTRFS error (device sda): open_ctree failed: -2
-  BUG: unable to handle page fault for address: ffff89322ceb3000
-  RIP: 0010:percpu_counter_add_batch+0xe/0xb0
-   btrfs_bio_counter_sub+0x22/0x60
-   btrfs_simple_end_io+0x32/0x90
-   blk_update_request+0x12b/0x480
-   scsi_end_request+0x26/0x1b0
-   scsi_io_completion+0x50/0x790
+在 2026/3/29 17:01, Teng Liu 写道:
+> When open_ctree() fails during btrfs_read_chunk_tree(), readahead BIOs
+> submitted by readahead_tree_node_children() may still be in flight. The
+> error path frees fs_info without waiting for these BIOs to complete.
+> When a readahead BIO later completes, btrfs_simple_end_io() calls
+> btrfs_bio_counter_dec() which accesses the already-freed
+> fs_info->dev_replace.bio_counter, causing a use-after-free.
+> 
+> This can be triggered by connecting a USB drive with a corrupted btrfs
+> filesystem (e.g. chunk tree destroyed by a partial format), where the
+> slow USB device keeps readahead BIOs in flight long enough for the
+> error path to free fs_info before they complete. It can be reproduced
+> on qemu with a properly corrupted btrfs img.
+> 
+>    BTRFS error (device sda): failed to read chunk tree: -2
+>    BTRFS error (device sda): open_ctree failed: -2
+>    BUG: unable to handle page fault for address: ffff89322ceb3000
+>    RIP: 0010:percpu_counter_add_batch+0xe/0xb0
+>     btrfs_bio_counter_sub+0x22/0x60
+>     btrfs_simple_end_io+0x32/0x90
+>     blk_update_request+0x12b/0x480
+>     scsi_end_request+0x26/0x1b0
+>     scsi_io_completion+0x50/0x790
+> 
+> Fix this by waiting for the bio_counter to reach zero in the error path
+> before stopping workers, so all in-flight BIOs have completed their
+> callbacks before fs_info is freed. The bio_counter is already
+> initialized in init_mount_fs_info() so this wait is safe for all error
+> paths reaching the fail_sb_buffer label.
+> 
+> Link: https://bugzilla.kernel.org/show_bug.cgi?id=221270
+> Reported-by: AHN SEOK-YOUNG
+> Signed-off-by: Teng Liu <27rabbitlt@gmail.com>
+> ---
+>   fs/btrfs/disk-io.c | 12 ++++++++++++
+>   1 file changed, 12 insertions(+)
+> 
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 01f2dbb69..61e6b8dca 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -3723,6 +3723,18 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
+>   	invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
+>   
+>   fail_sb_buffer:
+> +	/*
+> +	 * Wait for in-flight readahead BIOs before stopping workers.
+> +	 * Readahead BIOs from btrfs_read_chunk_tree() (via
+> +	 * readahead_tree_node_children) may still be in flight on slow
+> +	 * devices (e.g. USB). Their completion callbacks
+> +	 * (btrfs_simple_end_io) access fs_info->dev_replace.bio_counter
+> +	 * which would be destroyed later, causing a use-after-free.
+> +	 * The bio_counter was already initialized in init_mount_fs_info()
+> +	 * so this wait is safe for all error paths reaching this label.
+> +	 */
+> +	wait_event(fs_info->dev_replace.replace_wait,
+> +		   percpu_counter_sum(&fs_info->dev_replace.bio_counter) == 0);
 
-Fix this by waiting for the bio_counter to reach zero in the error path
-before stopping workers, so all in-flight BIOs have completed their
-callbacks before fs_info is freed. The bio_counter is already
-initialized in init_mount_fs_info() so this wait is safe for all error
-paths reaching the fail_sb_buffer label.
+This doesn't make any sense to me.
 
-Link: https://bugzilla.kernel.org/show_bug.cgi?id=221270
-Reported-by: AHN SEOK-YOUNG
-Signed-off-by: Teng Liu <27rabbitlt@gmail.com>
----
- fs/btrfs/disk-io.c | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
+The wait and counter are all for dev-reaplce, not matching your 
+description of the generic metadata readahead.
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 01f2dbb69..61e6b8dca 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3723,6 +3723,18 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
- 	invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
- 
- fail_sb_buffer:
-+	/*
-+	 * Wait for in-flight readahead BIOs before stopping workers.
-+	 * Readahead BIOs from btrfs_read_chunk_tree() (via
-+	 * readahead_tree_node_children) may still be in flight on slow
-+	 * devices (e.g. USB). Their completion callbacks
-+	 * (btrfs_simple_end_io) access fs_info->dev_replace.bio_counter
-+	 * which would be destroyed later, causing a use-after-free.
-+	 * The bio_counter was already initialized in init_mount_fs_info()
-+	 * so this wait is safe for all error paths reaching this label.
-+	 */
-+	wait_event(fs_info->dev_replace.replace_wait,
-+		   percpu_counter_sum(&fs_info->dev_replace.bio_counter) == 0);
- 	btrfs_stop_all_workers(fs_info);
- 	btrfs_free_block_groups(fs_info);
- fail_alloc:
--- 
-2.53.0
+If you want to wait for all existing metadata reads, I didn't find a 
+good helper, thus you will need to go through all extent buffers and 
+wait for EXTENT_BUFFER_READING flags.
+
+>   	btrfs_stop_all_workers(fs_info);
+>   	btrfs_free_block_groups(fs_info);
+>   fail_alloc:
 

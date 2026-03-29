@@ -1,141 +1,113 @@
-Received: from mail-wm1-f43.google.com (mail-wm1-f43.google.com [209.85.128.43])
+Received: from mail-vk1-f169.google.com (mail-vk1-f169.google.com [209.85.221.169])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 044B731E83D
-	for <linux-btrfs@vger.kernel.org>; Sun, 29 Mar 2026 17:23:45 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.43
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774805027; cv=none; b=ov8Jc1vDqJVnPdqGFab3fbZSAcrf0Z3+wnnUELJznQ9z7Xe/quv5jDfZTX7EszRL/QzbcF9GD+td+n7NTpYbNqWQX8Ex5eJgUbhQ/XaNgR54Mhw8X7ytYhplz/VGRkOB1pPPPSyMZd3XVauNznd9bpvRWMVuoSfw1GbycWoIeB0=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774805027; c=relaxed/simple;
-	bh=hcAE3yeCmb/ooluKUxqFOymuECNrqaZcMKJlGlrZuys=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=LIXXF3QQLTc3p9SpGyhbvYAXTN5VJVoCnEJRCo/mh19NHouzEyMNN0mtAzkAeGQDhAnGBpZNi2v0Alnu1ARtMm9if+qAEUryOQxNA1zGfWzpUyWg06zK6oVa0ozlbmORUBgy5yy5MH0goBTB2ODDrbN9aRL6lkSHpBAtqL5xZ0o=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=GclSeAQA; arc=none smtp.client-ip=209.85.128.43
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2702230100E
+	for <linux-btrfs@vger.kernel.org>; Sun, 29 Mar 2026 19:43:09 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.221.169
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1774813391; cv=pass; b=b0I1zHXzyXghYOD4ayvcwWvHPIYgEO3CNPisfi04IofZ10hI9yF9drMmLOlERzpRiHXlU6T2U6janz4pIQtyW6vQ4jXnzzKFsy/lXZK6j+1Jy28vBHG1QnZbEIVEAZb6V10vaz3PuSDiVzBLKjOTetCSAIF9RVxEKgbwxNoZj0w=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1774813391; c=relaxed/simple;
+	bh=ggBvbZDyKPjhx2pT06Qyu/gQSuonR/hy+EMzi+8MaXc=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=Vi8eQ8thDVxfD3DSwtKrHMf7I8Dq2wzKgqSAtsfbcUMdYuslLzIottY9blwInZy/bgaiuySdjIhPDJ7sNGXShF5pshoN9f8GeiKaK/KbOzhXY9EEsMfrIbXWfyK3xjs04kt2GFrg3aco5oxZ5mBuVQYWGa9MmSMqaoB/PXp6BUk=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=J9IhwQup; arc=pass smtp.client-ip=209.85.221.169
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="GclSeAQA"
-Received: by mail-wm1-f43.google.com with SMTP id 5b1f17b1804b1-48540d21f7dso43676335e9.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 29 Mar 2026 10:23:45 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="J9IhwQup"
+Received: by mail-vk1-f169.google.com with SMTP id 71dfb90a1353d-56cd71a7630so1346993e0c.2
+        for <linux-btrfs@vger.kernel.org>; Sun, 29 Mar 2026 12:43:09 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1774813389; cv=none;
+        d=google.com; s=arc-20240605;
+        b=je6zgHOsDEyQewoDzrDyw6swHJPM0vWs/TTvE/vZ64oDdvoasub46nJBpdCyKDFYza
+         kqds2bzisCyklQaqItb8AbOMpYgxND+RT4HXpAQ4aD4vKs7Jal4y9KcqzH3eBANnHvpe
+         eorB8uakPdWQbOtRC9FUijDaB4mdQCIuSz6qz2J40aJhFKGLNE8vAI4Xz8tgH1nEsXqa
+         nvOvztFDzmUPAnwB+BzgwilSKbQWGQ0l/OD90O4W91UVWqsqWj/TDnsYKNqW0YaHVYlY
+         5BTUywGie32r+pYfKy/4AYoI0NYfCnpZWxQtX6nz8Sxs0TJbgKyovt5qwFeO3DzRj5Vs
+         P8rg==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:dkim-signature;
+        bh=ggBvbZDyKPjhx2pT06Qyu/gQSuonR/hy+EMzi+8MaXc=;
+        fh=9NqtR1+9hOhvKhbhJSA+9Ky90aVRzFTpEln3/dHBVOA=;
+        b=NFigOsmCvd+XwrKNvBmr8mr9qxyp/AOUHABTgbKWMq2OQiMj6RgBjT2mCgAFvnGTDW
+         ny/0KST/oOHMEDB9Ua5/txEKyaUi3VGV++AEmD3N2XBU5NSv3idhJDDLTawdp66sBAXg
+         o11IZgRE57T2XzbBrDBqNQTDx6DGbfcOgn2zlODZEKJVSdfuczYJjoiosKiD3V5LOPbx
+         GWN6Y72xGVnx9sW6XVW3k6ZqdauM2xwJiWZ5IoZNsnZXnrYzBcF2Mcf/IdcFBEsy9GA5
+         teMwKAJNsOpqIIqKRwIcTfZxQbiWXmVxpg+zxci8tIBX5G2i9ATqQXJ77SO6YULQPgGs
+         WdFQ==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1774805024; x=1775409824; darn=vger.kernel.org;
-        h=in-reply-to:content-transfer-encoding:content-disposition
-         :mime-version:references:message-id:subject:cc:to:from:date:from:to
-         :cc:subject:date:message-id:reply-to;
-        bh=HEqLYX6RlhLf8loZnBNWRjt8pvMWIJoaUUPEjz3I7gQ=;
-        b=GclSeAQAPKV4Cy90QkTZ5oWcMCU9ozBdfmJdqD2qp7awbupiDRVXHTpg6ZzFxpmQrV
-         ZmSXfHgXRrHCMhCdikeF0dwzEGto6o4yh+L/UNHeF3Wa1hvdPi+1tD08krvmpRqhFjPf
-         7c4FMYoo0FQDR2ujlssi8/jQrOYK64GUU4iddEVuPfVZ+764jjjKLXsByMdmA7y+avLe
-         c1xRo8t5L2GMAjlYxsX4I1I2JkeO0ynkVgjIfv5zPRLrvOskblyMeGIMZzm0rrszgYL1
-         aB/6eQPBeF1gSFrVlM4oV3qAwU86Bga3cAcxcRIhYhB1gHDp4SOWp0b3R4CrGjwDhmjq
-         O2jQ==
+        d=gmail.com; s=20251104; t=1774813389; x=1775418189; darn=vger.kernel.org;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=ggBvbZDyKPjhx2pT06Qyu/gQSuonR/hy+EMzi+8MaXc=;
+        b=J9IhwQupqgbEtd9XtFZyzqEdFD/gXR+lecrD8bkBqdHNf8Z3YOnLHfkTQSHWtZOy2t
+         WxUNQPQvp9DYJDQzcP/Zgmr378lC5bG3cyPCzKazJZt/Q0TfhmzWHC8grT9dPCrLXLOB
+         0K/9IjHoT71iwFFbEyd5IqdkPWmka6BH8/Em7HRonXto4mAddFphwFBy8lodgxcUPooo
+         004R5ywkS7zRenaTR8HBCH+DEY5bnY8zsNoz4r8Aumiuk69RHpstYxcknH2GepzdDbXP
+         eMLgfK3T8nHSqo2vgGHywl0/asX6K129+mXYZzk38g/RKLvizZ5UO/wbaHA6x1RMUOs0
+         JwTA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1774805024; x=1775409824;
-        h=in-reply-to:content-transfer-encoding:content-disposition
-         :mime-version:references:message-id:subject:cc:to:from:date:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=HEqLYX6RlhLf8loZnBNWRjt8pvMWIJoaUUPEjz3I7gQ=;
-        b=H7jq6GnQpNThJmL5SknOixodihQOITER/Y5/1gCDP4HzD7NotxIJe5Fg22W8PqPtO7
-         Luc6wdsGyydGpCSt4N2QGIQG9/d+gUhaR3tFux+hRrFZAQSrI6Xhy7SJPEFMa5MLROnT
-         Dr19kSeHTw0ESwlDR30VqRIz/Wj8FQU+yJKIQITaKVeO5mCO0ao6cuPe0CZlYZcRwSfG
-         iN5K2aOa/UvgVHOB4wfKqyLa4MMhe1nYc60rZt7fgDYdQWZCES119iVYo8QW5SyUSmXg
-         sI9z2dLz8l/YuEO6Cu2/2+Mc6e59sVNhwtlp3OIxA5NWSigvqjhnGnVHrRK4z/R5hFT3
-         B5Tg==
-X-Forwarded-Encrypted: i=1; AJvYcCVZt/Vws3yYGBedJ2reejnii3JHcZaQ2tcuB8V6An0ZnJsitvxwx7XDWAPcJkhZS016RQJEdluGJP20kg==@vger.kernel.org
-X-Gm-Message-State: AOJu0YxvN5db+ie+sogjgNNIDxILjcfu4q8tptsbJW9e7VRkvIhfWN34
-	g/ArclDgUk/zMeoQPQAsY1tm+M6CvAh9VvcfrYhlfVpOOnCCxlqFu7iQ
-X-Gm-Gg: ATEYQzyi3gpenOYAEbZug26W2n1/VWuGpQj2xHUYL0rpujA9KyNOXkR95FR17igCAl7
-	7PhkGfcQwqe8DhsT2htTq+t6VhsE5mRJZ0q/pbu+/K3cLYDnIYcueLSb7VfhKzdxLut31H/ooXn
-	0nXE+Vb/XcUBBWC5WCWqyWQ8SVBLykws0kOBX2es5xtn/kt2K+B5VV0a2VXmX0qdk98tDVNc5Dt
-	wkiH13VEPzk+Kumr7NHOCXVJnu6c4hNf+Myms0exkdmdtXkO0KGwoLt2fMN9zMHqIH7tb4sjiwn
-	s1c80aw10TUaYKgaRTTAOnLgCBH3aWc7MF8fZyeIp5NnlKbMDOn0PkuXdd5GEB2jI7hf4kFri0q
-	wwPCAq6vI1sOSaRMSioGwHyPxZBQF4vyOoXwHAeBXXxB3sXETzkWScHOTZ7f+hqZCIg/JjBSQL4
-	WctEM/V/nXiqWcCu4B/MLcw5Q=
-X-Received: by 2002:a05:600c:5304:b0:485:f1d1:8f3d with SMTP id 5b1f17b1804b1-48727d67a43mr164954725e9.6.1774805024020;
-        Sun, 29 Mar 2026 10:23:44 -0700 (PDT)
-Received: from rabbitArch ([145.40.214.139])
-        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-48722c6b495sm434962275e9.2.2026.03.29.10.23.43
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sun, 29 Mar 2026 10:23:43 -0700 (PDT)
-Date: Sun, 29 Mar 2026 19:23:41 +0200
-From: Teng Liu <27rabbitlt@gmail.com>
-To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.com, clm@fb.com, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] btrfs: wait for in-flight readahead BIOs on open_ctree()
- error
-Message-ID: <aclYf4R2XxlUkxAQ@rabbitArch>
-References: <20260329063417.642647-1-27rabbitlt@gmail.com>
- <11c944aa-7745-4720-9f40-af99bf7bb727@suse.com>
+        d=1e100.net; s=20251104; t=1774813389; x=1775418189;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-gg:x-gm-message-state:from
+         :to:cc:subject:date:message-id:reply-to;
+        bh=ggBvbZDyKPjhx2pT06Qyu/gQSuonR/hy+EMzi+8MaXc=;
+        b=O1NYWzSIbBdjRPXlWs3XWfBv/rf94BY6EwCjW0nwthhMMj/eSCWafE3SS9tkjVWish
+         KFTTv684wBFUbRaeiHJMhEySvbqWSE8qRf6cmsNMGcIjsnyJJnYnh6qV2NUl8cB8Stjy
+         OcVV47b2Pn46JjFsQT+IvbsXMBkbRqrA/Zn9oAMnS8NUQpxRiN7MVWMEOKX6JFpDjJS0
+         X+8/0YPoDX8DT37PpdSGt0tPBQzu6O1c5mAzZicU3Yhso3ByJjLnSQJUWF14pD2Voy2a
+         60BIQIjFcnPotaxHhlYlbmCoD/8ItmnHDKbMXgHj5IVRFK5L/dGVKoQ+tgOhrUrJZc7o
+         lP/Q==
+X-Gm-Message-State: AOJu0YyJtMbeXzAjbxlFP7Qlqe1zW4aHH2s1ggmq9uhNYpGC9QcKRx18
+	fhJN6LrQ2x6AykOD8lHUdiQ6MijSiNNn9n7RITGYYj468PfoZkqX05j2KQdXrNgb7r9cPkWd0Sv
+	g7LLU2ymW/1oT41v76pNHT0tRAPdw1L2VaBLA8YY=
+X-Gm-Gg: ATEYQzyClkNOtaKLfWSZ6/aRZXWPUE5c7iKeIYLhVkYJGNKfkujpx8Cn0ZGPbzlyysj
+	9Xtg6bqJDtrMLw/0XkD+90SZhZGR6Z78LlSwjFilol2C1iGfCzii3HT+LCKNKXxu7yA9GwwvFDK
+	R5AyTohy5wDjylf1si20iGry2bYr24fKW5JCyHTdMrsWUPXzi06wHOdvKId41nurB/4YA8pkPTh
+	2EXRhh4siebsgILOXGi2Aus7GlPei3+Ri8JmRWWbGVGPtW5/milH2PIVOU8s6311a3hFRiHnhXd
+	I04c2sAB2YgRfAl5
+X-Received: by 2002:a05:6122:179b:b0:56c:db8b:504e with SMTP id
+ 71dfb90a1353d-56d4a68caf0mr3540783e0c.13.1774813389090; Sun, 29 Mar 2026
+ 12:43:09 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <11c944aa-7745-4720-9f40-af99bf7bb727@suse.com>
+References: <20260322063935.3951728-1-echelonh@gmail.com> <20260323223424.1876676-1-27rabbitlt@gmail.com>
+In-Reply-To: <20260323223424.1876676-1-27rabbitlt@gmail.com>
+From: Yochai E <echelonh@gmail.com>
+Date: Sun, 29 Mar 2026 22:42:57 +0300
+X-Gm-Features: AQROBzAVJssVv9JU9nI7Ljl7UUGzbTxWs_nRLn7e3WC5YvA0W6Ot_bvf5pUPG4o
+Message-ID: <CACo1jfjEU66mT1Aitw=2F7Sv9Ah0GXm4SOuH42_3=2CVV4s9vg@mail.gmail.com>
+Subject: Re: [PATCH] fs: btrfs: fix btrfs_ioctl_space_info() slot_count
+To: Teng Liu <27rabbitlt@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-Thanks for your review!
-On 2026-03-29 17:33, Qu Wenruo wrote:
-> 
-> 
-> This doesn't make any sense to me.
-It confuses me as well when I try to reproduce the bug. The reported
-claimed that btrfs_bio_counter_sub triggered a use-after-free but this
-function lives under `dev-reaplce.c` which should have nothing to do
-with the setting from the name.
+On Tue, Mar 24, 2026 at 12:34=E2=80=AFAM Teng Liu <27rabbitlt@gmail.com> wr=
+ote:
+>
+> Applied and tested on v7.0-rc4 in a QEMU VM with btrfs as the root
+> filesystem.
+>
+> Verified that BTRFS_IOC_SPACE_INFO (via btrfs fi usage) returns correct
+> results under normal operation and while running concurrent filesystem
+> activity (file creation/deletion in a loop).
+>
+> No kernel warnings or errors observed in dmesg.
+>
+> It's hard to create a race condition between 2 passes so didn't test whet=
+her
+> before-patch behaviour.
+>
+> Tested-by: Teng Liu <27rabbitlt@gmail.com>
 
-However when I checked the function call chain: 
-
-open_ctree()
-  → btrfs_read_sys_array()          # OK — sys_chunk_array in superblock is intact
-  → load_super_root(chunk_root)     # OK — reads root node, passes validation
-  → btrfs_read_chunk_tree()
-      → btrfs_for_each_slot()
-          → readahead_tree_node_children(node)
-              → for each child pointer in the internal node:
-                  btrfs_readahead_node_child()
-                    → btrfs_readahead_tree_block()
-                      → read_extent_buffer_pages_nowait()
-                        → btrfs_submit_bbio()
-                          → btrfs_submit_chunk()
-                            → btrfs_bio_counter_inc_blocked()  ← bio_counter++
-                            → btrfs_map_block()               
-                            → submit_bio()                     ← sent to USB drive
-
-After submit_bio() sends BIO to USB drive, we continue on
-read_one_dev():
-
-open_ctree()
-  → btrfs_read_sys_array()          # OK — sys_chunk_array in superblock is intact
-  → load_super_root(chunk_root)     # OK — reads root node, passes validation
-  → btrfs_read_chunk_tree()
-      → btrfs_for_each_slot()
-          → readahead_tree_node_children(node)
-            → bio_coutner++ and submit_bio() send BIO to USB drive
-          → read_one_dev()
-
-This read_one_dev will return an error since the leaf block is actually
-corrupted. Then open_ctree will get into error path and try to free
-fs_info. 
-
-After USB device finished BIO, it will try to decreament the counter but
-the fs_info is already freed.
-
-Any suggestions on this?
-
-
-> 
-> The wait and counter are all for dev-reaplce, not matching your description
-> of the generic metadata readahead.
-> 
-> If you want to wait for all existing metadata reads, I didn't find a good
-> helper, thus you will need to go through all extent buffers and wait for
-> EXTENT_BUFFER_READING flags.
-> 
-> 
-
-
+If it's relevant, I can provide a reproducer.

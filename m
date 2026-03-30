@@ -1,129 +1,127 @@
-Received: from out-173.mta0.migadu.com (out-173.mta0.migadu.com [91.218.175.173])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5AFA53AC0F7
-	for <linux-btrfs@vger.kernel.org>; Mon, 30 Mar 2026 09:15:55 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=91.218.175.173
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5C0283B6C19;
+	Mon, 30 Mar 2026 11:18:06 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774862156; cv=none; b=C1knimthJpU1cpLBWSuSYlxFGj4mpi0r+XBJeAFIlBnVuWMI8QV92bTDOiF4lBCDhbVUT4J2KiYywnUknyOkOltg2yWZXaZr/4BU0TmrzsCGSyo3LQZYvT55eDuNW6vOVW+PyWXfHpIAIvZpYFtAQdWJ9nPLqeXizkZLxDDG29U=
+	t=1774869486; cv=none; b=RsxySQXJj+MzshpVBnBN/iNRWFJcMCLjz4F7331gmJeFaP8nc7KOt0bx327NwSF/P7QLwFZY7ZMrHPTim2mXz1rMfNPWps92gdjGkh+wvKhw1s0UzaoZ2ztsc99qN9pDms1D3nFvDt5IhKW97v+5mwMap68QLHxsbwxf+qSgyCg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774862156; c=relaxed/simple;
-	bh=AzAa6DQjayThxteHcqdm/tmqzwVZZPl7N5KBVY2xBVM=;
-	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=uGgLa/oYHgP4/LxpfRjOOQD5N/PwPMOA2UpwNcGNxm9oFXKl6CcF7cl0xR3v4dzU9qolvmK1+RBDobqWMqIBvk0w4DfDb7S6Mwt2C9a6KfEvlVOUmYv8L82XkvDYqBRBX0/3+LMayte3b8PrIn1ZZCgGurLiRtVdKOZOn+MoX6Y=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev; spf=pass smtp.mailfrom=linux.dev; dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b=JlEVi6V9; arc=none smtp.client-ip=91.218.175.173
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.dev
+	s=arc-20240116; t=1774869486; c=relaxed/simple;
+	bh=bcehu9930zv7akkD3oS1tlm215YYcd6YLKnqN2zQwhw=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=k2gWZlfSyimb0n7ZspbyG8NGsA98j8EI4rRM+QjMWMQF0ho9tpOGcB2RM5uO2tXkfl5rp+H59AiiS51Jd0PvbaUKxjdFs0/BUaiLL2QHCqrhUHpwRWXQjw+560mEQacpIBTi3yZrgviV5DXDwFCKCEBFQ8xTrvKvucBi36lgmqo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=dlm89U4F; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b="JlEVi6V9"
-X-Report-Abuse: Please report any abuse attempt to abuse@migadu.com and include these headers.
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linux.dev; s=key1;
-	t=1774862153;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=LSCJ0gl8vSa6PI9GtiEGiz02O1vonLLeMqbuDT2/pT0=;
-	b=JlEVi6V9Dvb4mKdK823yLSF2UnR/iHJ0WcmyNTy0zY2Vi0Iw/QhfgPYo49r/guOUtqs07o
-	2wEfzceNfeC0ZghYSXatqvUiQtxgYTkFjR+fQdkCMeaKASv6tP9fKcmehrrBDbe60u65DD
-	rd2PAY99ZUhzsT3Xo99AG1Jk0KJicfE=
-From: Lance Yang <lance.yang@linux.dev>
-To: ziy@nvidia.com
-Cc: willy@infradead.org,
-	songliubraving@fb.com,
-	clm@fb.com,
-	dsterba@suse.com,
-	viro@zeniv.linux.org.uk,
-	brauner@kernel.org,
-	jack@suse.cz,
-	akpm@linux-foundation.org,
-	david@kernel.org,
-	ljs@kernel.org,
-	baolin.wang@linux.alibaba.com,
-	Liam.Howlett@oracle.com,
-	npache@redhat.com,
-	ryan.roberts@arm.com,
-	dev.jain@arm.com,
-	baohua@kernel.org,
-	lance.yang@linux.dev,
-	vbabka@kernel.org,
-	rppt@kernel.org,
-	surenb@google.com,
-	mhocko@suse.com,
-	shuah@kernel.org,
-	linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org,
-	linux-mm@kvack.org,
-	linux-kselftest@vger.kernel.org
-Subject: Re: [PATCH v1 06/10] mm/huge_memory: remove folio split check for READ_ONLY_THP_FOR_FS
-Date: Mon, 30 Mar 2026 17:15:36 +0800
-Message-Id: <20260330091536.20015-1-lance.yang@linux.dev>
-In-Reply-To: <20260327014255.2058916-7-ziy@nvidia.com>
-References: <20260327014255.2058916-7-ziy@nvidia.com>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="dlm89U4F"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id EC25FC4CEF7;
+	Mon, 30 Mar 2026 11:17:59 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1774869486;
+	bh=bcehu9930zv7akkD3oS1tlm215YYcd6YLKnqN2zQwhw=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=dlm89U4FcOq9CCM3y3iJOU23PncWWcU9P3CA6Ls3Wwm8CcxQHAJKAp+okUduyKLTR
+	 awCb/XkUaxKoK4q2Tiprz2PZb7dpp334Ovi1SG22va6xcetBu31JZeroLegZ7tui4p
+	 gbhMv5TGGdtdnKNUaHzAlcxeNnAqjIKXkN2kmti0b6faHVyvBw2Z4ZWiQFcjE+EGnf
+	 bvd57kjV8JEh0GLzZgunjm9vDT7oq186s3TFMkyoaJ6p4uVuWH9NOo+tvD706lgp4G
+	 zCe4eIj8ama1T1KI/JbQLy+nh4sTzc3H2mNgW9mL/LS5GVGlJXP78qIGk/fT4C/5zx
+	 UzI2PcGDSQPmg==
+Date: Mon, 30 Mar 2026 12:17:57 +0100
+From: "Lorenzo Stoakes (Oracle)" <ljs@kernel.org>
+To: WANG Rui <r@hev.cc>
+Cc: ziy@nvidia.com, Liam.Howlett@oracle.com, akpm@linux-foundation.org, 
+	baohua@kernel.org, baolin.wang@linux.alibaba.com, brauner@kernel.org, clm@fb.com, 
+	david@kernel.org, dev.jain@arm.com, dsterba@suse.com, jack@suse.cz, 
+	lance.yang@linux.dev, linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, linux-kselftest@vger.kernel.org, linux-mm@kvack.org, 
+	mhocko@suse.com, npache@redhat.com, rppt@kernel.org, ryan.roberts@arm.com, 
+	shuah@kernel.org, songliubraving@fb.com, surenb@google.com, vbabka@kernel.org, 
+	viro@zeniv.linux.org.uk, willy@infradead.org
+Subject: Re: [PATCH v1 05/10] mm/huge_memory: remove READ_ONLY_THP_FOR_FS
+ from file_thp_enabled()
+Message-ID: <32679321-b2d3-44d7-be2e-f7a6a166a510@lucifer.local>
+References: <52CACB9A-A782-4D11-8B6F-66DA8D345C78@nvidia.com>
+ <20260329040742.17269-1-r@hev.cc>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-X-Migadu-Flow: FLOW_OUT
+In-Reply-To: <20260329040742.17269-1-r@hev.cc>
 
-
-On Thu, Mar 26, 2026 at 09:42:51PM -0400, Zi Yan wrote:
->Without READ_ONLY_THP_FOR_FS, large file-backed folios cannot be created by
->a FS without large folio support. The check is no longer needed.
+On Sun, Mar 29, 2026 at 12:07:41PM +0800, WANG Rui wrote:
+> Hi Zi,
 >
->Signed-off-by: Zi Yan <ziy@nvidia.com>
->---
-> mm/huge_memory.c | 22 ----------------------
-> 1 file changed, 22 deletions(-)
+> >> Now without READ_ONLY_THP_FOR_FS you're going to:
+> >>
+> >>                        |    PF     | MADV_COLLAPSE | khugepaged |
+> >> 		       |-----------|---------------|------------|
+> >>  large folio fs        |     ✓     |       x       |      x     |
+> >>  large folio + r/o     |     ✓     |       ✓       |      ✓     |
+> >>
+> >> And intentionally leaving behind the 'not large folio fs, r/o' case because
+> >> those file systems need to implement large folio support.
+> >>
+> >> I guess we'll regress those users but we don't care?
+> >
+> > Yes. This also motivates FSes without large folio support to add large folio
+> > support instead of relying on READ_ONLY_THP_FOR_FS hack.
 >
->diff --git a/mm/huge_memory.c b/mm/huge_memory.c
->index 1da1467328a3..30eddcbf86f1 100644
->--- a/mm/huge_memory.c
->+++ b/mm/huge_memory.c
->@@ -3732,28 +3732,6 @@ int folio_check_splittable(struct folio *folio, unsigned int new_order,
-> 		/* order-1 is not supported for anonymous THP. */
-> 		if (new_order == 1)
-> 			return -EINVAL;
+> Interesting, thanks for making this feature unconditional.
+>
+> From my experiments, this is going to be a performance regression.
+>
+> Before this patch, even when the filesystem (e.g. btrfs without experimental)
+> didn't support large folios, READ_ONLY_THP_FOR_FS still allowed read-only
+> file-backed code segments to be collapsed into huge page mappings via khugepaged.
+>
+> After this patch, FilePmdMapped will always be 0 unless the filesystem supports
+> large folios up to PMD order, and it doesn't look like that support will arrive
+> anytime soon [1].
 
-While you're at it, could we also collapse this block above into a
-single condition:
+I think Matthew was being a little sarcastic there ;) but I suppose it's
+hinting at the fact they need to get a move on.
 
-	/* order-1 is not supported for anonymous THP. */
-	if (folio_test_anon(folio) && new_order == 1)
-		return -EINVAL;
+>
+> Is there a reason we can't keep this hack while continuing to push filesystems
+> toward proper large folio support?
 
-Just saying. LGTM.
+IMO - It's time for us to stop allowing filesystems to fail to implement what
+mm requires of them, while still providing a hack to improve performance.
 
-Reviewed-by: Lance Yang <lance.yang@linux.dev>
+Really this hack shouldn't have been there in the first place, but it was a
+'putting on notice' that filesystems need to support large folios, which
+has been made amply clear to them for some time.
 
+So yes there will be regressions for filesystems which _still_ do not
+implement this, I'd suggest you focus on trying to convince them to do so
+(or send patches :)
 
->-	} else if (split_type == SPLIT_TYPE_NON_UNIFORM || new_order) {
->-		if (IS_ENABLED(CONFIG_READ_ONLY_THP_FOR_FS) &&
->-		    !mapping_large_folio_support(folio->mapping)) {
->-			/*
->-			 * We can always split a folio down to a single page
->-			 * (new_order == 0) uniformly.
->-			 *
->-			 * For any other scenario
->-			 *   a) uniform split targeting a large folio
->-			 *      (new_order > 0)
->-			 *   b) any non-uniform split
->-			 * we must confirm that the file system supports large
->-			 * folios.
->-			 *
->-			 * Note that we might still have THPs in such
->-			 * mappings, which is created from khugepaged when
->-			 * CONFIG_READ_ONLY_THP_FOR_FS is enabled. But in that
->-			 * case, the mapping does not actually support large
->-			 * folios properly.
->-			 */
->-			return -EINVAL;
->-		}
-> 	}
-> 
-> 	/*
+>
+> I'm currently working on making the ELF loader more THP-friendly by adjusting
+> the virtual address alignment of read-only code segments [2]. The data shows a
+> noticeable drop in iTLB misses, especially for programs whose text size is just
+> slightly larger than PMD_SIZE. That size profile is actually quite common for
+> real-world binaries when using 2M huge pages. This optimization relies on
+> READ_ONLY_THP_FOR_FS. If the availability of huge page mappings for code segments
+> ends up depending on filesystem support, it will be much harder to take advantage
+> of this in practice. [3]
+
+Yeah, again IMO - sorry, but tough.
+
+This is something filesystems need to implement, if they fail to do so,
+that's on them.
+
+>
+> [1] https://lore.kernel.org/linux-fsdevel/ab2IIwKzmK9qwIlZ@casper.infradead.org/
+> [2] https://lore.kernel.org/linux-fsdevel/20260313005211.882831-1-r@hev.cc/
+> [3] https://lore.kernel.org/linux-fsdevel/20260320160519.80962-1-r@hev.cc/
+>
+> Thanks,
+> Rui
+
+Cheers, Lorenzo

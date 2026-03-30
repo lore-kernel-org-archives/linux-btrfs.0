@@ -1,84 +1,134 @@
-Received: from verein.lst.de (verein.lst.de [213.95.11.211])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 35EB121B192;
-	Mon, 30 Mar 2026 05:27:08 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=213.95.11.211
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2636C26AC3
+	for <linux-btrfs@vger.kernel.org>; Mon, 30 Mar 2026 07:10:03 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774848430; cv=none; b=nW/DPhXnkFyYbMbQdTE+cMhliO0npYozI27LMHRBhYVrIl15aR53ualk4GGaD0safyQ5hfCU/78xMwLsb+Giqi80po4NLHA67MZcBgvCqLzWurT3xskQAWNUUWxmuqTckKplTfpwxHqrvOtLHbL5wtujI3dfKbBl3oGPBcnct7Q=
+	t=1774854604; cv=none; b=JBFYLcJ6wgRu2fTOoTnc6iQCfESY7GwI7jC6t7o77cSl+nirjTJC5IglWMr7NTmOJ9xJ2b/tZXjOFfV0AnoqSMj6H78KeQKvyaBiTaqFfT+SnzRLYxL8JtB4ucrJiIC/rQ01Zk+mzTUFvcD4KqZ3Zr+P5vXiyl3JLb6KVXPkZMk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774848430; c=relaxed/simple;
-	bh=GpPfrbO8ZObn0n6Rf8KY0Ma52KsUrpz3vk6UtR7SLOI=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=Idz1Vb42SDwyUY8o/bwH79jP9dN4y15EG88bt2wGCdOWxrf3RAdRFa7UhHwwwAT5pQrYVOE0D4S0J2wj4VRMBNtPBDUYgeUrqV3DSisCGU/jyzvo8Mm1ctl79VL1ktGfMSb+0ifYKG9F8B5If/4AdEi7sQWUXRg45U04ItRcHGo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lst.de; spf=pass smtp.mailfrom=lst.de; arc=none smtp.client-ip=213.95.11.211
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lst.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=lst.de
-Received: by verein.lst.de (Postfix, from userid 2407)
-	id 6E3C268B05; Mon, 30 Mar 2026 07:26:55 +0200 (CEST)
-Date: Mon, 30 Mar 2026 07:26:55 +0200
-From: Christoph Hellwig <hch@lst.de>
-To: Eric Biggers <ebiggers@kernel.org>
-Cc: Christoph Hellwig <hch@lst.de>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Richard Henderson <richard.henderson@linaro.org>,
-	Matt Turner <mattst88@gmail.com>,
-	Magnus Lindholm <linmag7@gmail.com>,
-	Russell King <linux@armlinux.org.uk>,
-	Catalin Marinas <catalin.marinas@arm.com>,
-	Will Deacon <will@kernel.org>, Ard Biesheuvel <ardb@kernel.org>,
-	Huacai Chen <chenhuacai@kernel.org>,
-	WANG Xuerui <kernel@xen0n.name>,
-	Madhavan Srinivasan <maddy@linux.ibm.com>,
-	Michael Ellerman <mpe@ellerman.id.au>,
-	Nicholas Piggin <npiggin@gmail.com>,
-	"Christophe Leroy (CS GROUP)" <chleroy@kernel.org>,
-	Paul Walmsley <pjw@kernel.org>, Palmer Dabbelt <palmer@dabbelt.com>,
-	Albert Ou <aou@eecs.berkeley.edu>, Alexandre Ghiti <alex@ghiti.fr>,
-	Heiko Carstens <hca@linux.ibm.com>,
-	Vasily Gorbik <gor@linux.ibm.com>,
-	Alexander Gordeev <agordeev@linux.ibm.com>,
-	Christian Borntraeger <borntraeger@linux.ibm.com>,
-	Sven Schnelle <svens@linux.ibm.com>,
-	"David S. Miller" <davem@davemloft.net>,
-	Andreas Larsson <andreas@gaisler.com>,
-	Richard Weinberger <richard@nod.at>,
-	Anton Ivanov <anton.ivanov@cambridgegreys.com>,
-	Johannes Berg <johannes@sipsolutions.net>,
-	Thomas Gleixner <tglx@kernel.org>, Ingo Molnar <mingo@redhat.com>,
-	Borislav Petkov <bp@alien8.de>,
-	Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
-	"H. Peter Anvin" <hpa@zytor.com>,
-	Herbert Xu <herbert@gondor.apana.org.au>,
-	Dan Williams <dan.j.williams@intel.com>, Chris Mason <clm@fb.com>,
-	David Sterba <dsterba@suse.com>, Arnd Bergmann <arnd@arndb.de>,
-	Song Liu <song@kernel.org>, Yu Kuai <yukuai@fnnas.com>,
-	Li Nan <linan122@huawei.com>, Theodore Ts'o <tytso@mit.edu>,
-	"Jason A. Donenfeld" <Jason@zx2c4.com>, linux-alpha@vger.kernel.org,
-	linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
-	loongarch@lists.linux.dev, linuxppc-dev@lists.ozlabs.org,
-	linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
-	sparclinux@vger.kernel.org, linux-um@lists.infradead.org,
-	linux-crypto@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	linux-arch@vger.kernel.org, linux-raid@vger.kernel.org
-Subject: Re: cleanup the RAID5 XOR library v4
-Message-ID: <20260330052655.GA4592@lst.de>
-References: <20260327061704.3707577-1-hch@lst.de> <20260329213119.GA2106@quark>
+	s=arc-20240116; t=1774854604; c=relaxed/simple;
+	bh=aVIyA0G92Y81+qm3NIjA+FesQsEjYUOgU0kqRRXU+uM=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=rxpGgOvhvjs9wnw5PnS3dY5pFjP1NuCpiC/ShiHRL1BwuU/Lx3zo9aipHpBgdBXmxEVvTqszi2rQMDsBhnsv3up/vgj6fICmx1iyRErbq9i9IHx0BVyrpYxZMMOt9OQlQl9joTLZ0LQ1GpLawUW5IisS22yGMK/DANBdcuKoy3U=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=plwI5shU; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=plwI5shU; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="plwI5shU";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="plwI5shU"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 480754D1F1
+	for <linux-btrfs@vger.kernel.org>; Mon, 30 Mar 2026 07:10:01 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1774854601; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=2S4PkrzZZekfd2iLw4cIcUm7nz88U4jlNcvCK6/Sdm0=;
+	b=plwI5shUpWen6I4Q23mbYYg1CWO2oQYpy9dIxwy1gxHvhH167+EtJ9jf1eeTDKhxTuploG
+	T7DbhkB2UXVjkesDpqP08nneiYP1QV9rhrDaWGtcomKeJC0SKbmE7pYC7Q6BQjakC4matf
+	dTc1YXraC2doXROlw5yTPmGlKoc+gCw=
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=plwI5shU
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1774854601; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=2S4PkrzZZekfd2iLw4cIcUm7nz88U4jlNcvCK6/Sdm0=;
+	b=plwI5shUpWen6I4Q23mbYYg1CWO2oQYpy9dIxwy1gxHvhH167+EtJ9jf1eeTDKhxTuploG
+	T7DbhkB2UXVjkesDpqP08nneiYP1QV9rhrDaWGtcomKeJC0SKbmE7pYC7Q6BQjakC4matf
+	dTc1YXraC2doXROlw5yTPmGlKoc+gCw=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 8079A4A0A2
+	for <linux-btrfs@vger.kernel.org>; Mon, 30 Mar 2026 07:10:00 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id yExZEMghymk8DgAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Mon, 30 Mar 2026 07:10:00 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/4] btrfs-progs: mkfs/rootdir: cleanup and new fiemap based prealloc detection
+Date: Mon, 30 Mar 2026 17:39:34 +1030
+Message-ID: <cover.1774854459.git.wqu@suse.com>
+X-Mailer: git-send-email 2.53.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20260329213119.GA2106@quark>
-User-Agent: Mutt/1.5.17 (2007-11-01)
+Content-Transfer-Encoding: 8bit
+X-Rspamd-Action: no action
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Spamd-Result: default: False [-3.01 / 50.00];
+	BAYES_HAM(-3.00)[99.99%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	ARC_NA(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	RCPT_COUNT_ONE(0.00)[1];
+	MIME_TRACE(0.00)[0:+];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	FROM_HAS_DN(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,suse.com:mid,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from,2a07:de40:b281:106:10:150:64:167:received];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DKIM_TRACE(0.00)[suse.com:+]
+X-Rspamd-Queue-Id: 480754D1F1
+X-Spam-Flag: NO
+X-Spam-Score: -3.01
+X-Spam-Level: 
 
-On Sun, Mar 29, 2026 at 02:31:19PM -0700, Eric Biggers wrote:
-> But yes, as Andrew mentioned there are two "xor: add a better public
-> API" patches.  They should be folded together.
+The PR can be found here:
 
-Yes.  This is the ages old git bug of creating duplicate commits when
-a rebase has conflicts biting again, sorry.
+  https://github.com/kdave/btrfs-progs/pull/1103
+
+Although previously I added a SEEK_DATA/SEEK_HOLE based hole detection,
+it doesn't distinguish holes from preallocated ranges.
+Thus if a rootdir contains some preallocated extents and the end user
+also expects such preallocated space in the target fs, they will be
+replaced by holes.
+
+The 3rd patch adds such detection using fiemap, which can also detect
+holes.
+For preallocated space we now can create reserved data extent without
+data checksum.
+
+The first two patches are mostly cleanups, to disentangle the complex
+add_file_item_extent() function, so that compressed fall back is more
+straightforward.
+
+The last patch is a simple functional test for the new fiemap feature.
+
+Qu Wenruo (4):
+  btrfs-progs: mkfs/rootdir: use a helper to read from source fs
+  btrfs-progs: mkfs/rootdir: extract compressed write path
+  btrfs-progs: mkfs/rootdir: use fiemap to do prealloc detection
+  btrfs-progs: mkfs-tests: add a new test case for fiemap based
+    detection
+
+ kernel-shared/file-item.h                     |   3 -
+ mkfs/rootdir.c                                | 400 ++++++++++++------
+ tests/mkfs-tests/042-fiemap-detection/test.sh |  76 ++++
+ 3 files changed, 348 insertions(+), 131 deletions(-)
+ create mode 100755 tests/mkfs-tests/042-fiemap-detection/test.sh
+
+--
+2.53.0
 

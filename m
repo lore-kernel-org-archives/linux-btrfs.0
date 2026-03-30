@@ -1,125 +1,184 @@
-Received: from mx0a-00082601.pphosted.com (mx0a-00082601.pphosted.com [67.231.145.42])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-pl1-f171.google.com (mail-pl1-f171.google.com [209.85.214.171])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 73ED7377EC8
-	for <linux-btrfs@vger.kernel.org>; Mon, 30 Mar 2026 16:07:18 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=67.231.145.42
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0F8CA374728
+	for <linux-btrfs@vger.kernel.org>; Mon, 30 Mar 2026 16:10:58 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.214.171
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774886840; cv=none; b=Bi46sTKMOWjQQ1v/RGnfRIy4UD8o86AiJ+ymL908wKS/WjX8Py8ux7yTC4UDQox9+EjcBP3JqULnn/k8u+hl3abA3cldnOUThJBXAlIRxsKWg7jblYa/PkmFvGVQ4gwe0y+Svh6mHvowhgcx4EqHaoysRG+69vtmevzv696rnfI=
+	t=1774887059; cv=none; b=e/9aq1CSNk0eCxc0UCv/YXHoMV1G6tGnfS9mGbk2lW4k17ijMTMc5YRgZNFOYCHKk6gsudBpK00MxE/TYpc+mNPNUk91sITsdFiSl1vn0kCQ3WTxR/f6m7VDBlUiRn8Ns3GKidyUjkDEhVU1UXcJdLiEMaUUCTvtIM2jGs/dg6k=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774886840; c=relaxed/simple;
-	bh=Ghx2tGbJf1wo1QTnmla0fnQTwouWwVNikDh1hRjTZis=;
-	h=From:To:CC:Subject:Date:Message-ID:MIME-Version:Content-Type; b=oiHDdRa3cO+/gyR43PVNFlMgtGTLYcVFI8Xwvwd3xDF6ovqtncXxPI6VpAqO2eXFYcuGcheGKrX2GyeIGwsGPBO4HRrkpdgKACkNkQ6FH41VVYYO2tKeouIvl7UPd/k/+sprYfBZ+QYfI18ltuJD6PXyThjXZOV40+UX/+DVzYY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=meta.com; spf=pass smtp.mailfrom=meta.com; dkim=pass (2048-bit key) header.d=meta.com header.i=@meta.com header.b=SRH6gE7h; arc=none smtp.client-ip=67.231.145.42
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=meta.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=meta.com
+	s=arc-20240116; t=1774887059; c=relaxed/simple;
+	bh=2+WYUQHzg+x1gyh1x2+Tb60XcGj0RUlrhGNPEYoS7As=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=h0P9M3JdyjzTiA8Wm51/Q3v1Si2Mi3ueSUW1vOBFf3v6Rv2BOX8m8VJtmp8yOmrTFfiY6cbr6v+e1PRd4XZc6NI3U94/XxMk+/xBBjdCYq/zSo3U//6y86RPamow3OzKf8dVkLxnsWtO0qD3ZVegxx/oMLIohdWgWc4q49VgpDc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=hev.cc; spf=pass smtp.mailfrom=hev.cc; dkim=pass (2048-bit key) header.d=hev-cc.20230601.gappssmtp.com header.i=@hev-cc.20230601.gappssmtp.com header.b=zH94waZ/; arc=none smtp.client-ip=209.85.214.171
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=hev.cc
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=hev.cc
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=meta.com header.i=@meta.com header.b="SRH6gE7h"
-Received: from pps.filterd (m0528007.ppops.net [127.0.0.1])
-	by mx0a-00082601.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 62U6pWBr4099522
-	for <linux-btrfs@vger.kernel.org>; Mon, 30 Mar 2026 09:07:17 -0700
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=meta.com; h=cc
-	:content-transfer-encoding:content-type:date:from:message-id
-	:mime-version:subject:to; s=s2048-2025-q2; bh=OxZ19gzNrgl6tdZCMn
-	XNFa/i+IFfHSeu/+rz5MKYTj0=; b=SRH6gE7hrNEwsE0t+J5Nj9oNmaQv5JfZ9I
-	HJw3Hlti2VhHPDwjFkIirt6EV35o8VryDlQUBh0DKh1xs7P80O2dbZO36dkXah3D
-	1A4bUUEKqPXa6lds7j6CNDQdgoj9FmmmeGkM/YETecSX/dGSUa+QUdDrqs9UP4Ud
-	qk07l2cYDMOV6GIodcBJGr5ZGKEvqT/pNV8YzjJ0l/07OK7rHBBFRhYkbFUmwwZU
-	5/hYoUzNL/atDXUM7oSeXMb5y7Fe6qfzS0aeXQYEfqsJ8XFq9AXPruSWWTh13kIn
-	YMCxZyKFf3MH29+2Wm/Nute2UfukdztYDx4UCmB4IY8OKmDXsfBg==
-Received: from maileast.thefacebook.com ([163.114.135.16])
-	by mx0a-00082601.pphosted.com (PPS) with ESMTPS id 4d730qwu5e-2
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Mon, 30 Mar 2026 09:07:17 -0700 (PDT)
-Received: from twshared75248.15.frc2.facebook.com (2620:10d:c0a8:1b::30) by
- mail.thefacebook.com (2620:10d:c0a9:6f::8fd4) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
- 15.2.2562.35; Mon, 30 Mar 2026 16:07:07 +0000
-Received: by devvm36217.lla0.facebook.com (Postfix, from userid 240176)
-	id 992D322746C09; Mon, 30 Mar 2026 09:06:52 -0700 (PDT)
-From: Michal Grzedzicki <mge@meta.com>
-To: <linux-btrfs@vger.kernel.org>, <linux-kernel@vger.kernel.org>
-CC: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
-        Michal
- Grzedzicki <mge@meta.com>
-Subject: [PATCH] btrfs: fix silent IO error loss in encoded writes and zoned split
-Date: Mon, 30 Mar 2026 09:06:44 -0700
-Message-ID: <20260330160644.3678224-1-mge@meta.com>
-X-Mailer: git-send-email 2.52.0
+	dkim=pass (2048-bit key) header.d=hev-cc.20230601.gappssmtp.com header.i=@hev-cc.20230601.gappssmtp.com header.b="zH94waZ/"
+Received: by mail-pl1-f171.google.com with SMTP id d9443c01a7336-2a871daa98fso35718195ad.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 30 Mar 2026 09:10:57 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=hev-cc.20230601.gappssmtp.com; s=20230601; t=1774887057; x=1775491857; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=y9eg20jGYaatkJRZTB92X2Araip8YA2EKm9tEKL8B00=;
+        b=zH94waZ/JAdUqJTYZOOMx0QyDrpJLfsXrBlebLIYvTfE0jBegsOMj4ebiaFNLEMg7a
+         tyyjocRb8787286uw9YKaRK6aF+5UdKZHSOmFErSO0JwIToNYwgjVwZllUI507n0VABU
+         T9hBZLn9L9MPDufFx4W3c7Rsq/jJcrhUJDcYHXqdOqXFo7ZKAFidPhT+QPWLxwPjThXI
+         mextusa3M1a6ZA7qwgcv/fAKoofAyUBqNjv6TxepScn8hldl+BJEAPo5VTX+4/PS0XKJ
+         7pu/RQp4x17kVZ3Wg+9nNydKmU0XbIEze0uYaUQaJAVlZnz0DGRp59y3LVVy3VFx6kuu
+         AUfw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1774887057; x=1775491857;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
+         :to:cc:subject:date:message-id:reply-to;
+        bh=y9eg20jGYaatkJRZTB92X2Araip8YA2EKm9tEKL8B00=;
+        b=W7W3SQp62KgFwZ0RbiV3286x67tSIg0oMouYERL97l0/mrXX3chNSl92J4/fuVMvJL
+         mmK8CWJPttqa69EYX3SpQHTT/0Osdy7gToV82TohLfDgo9PtwTqf3SVLB4LPjdtAF0ZS
+         z99qPL5M22aFBE5+5TEho1XhinYFAdnQNBZnjItRHG8TpKqGOJv9fQTo9JlVIVgSaJQ7
+         5QCbDTRatJ3+gTrdBxuZjeMOhW4fU4lZsxW8s4suT9rpkUc/AnJFiqjzXSp0CjZL2Hf+
+         3kklLH48XqpgS7oonhsV+bmsLGlqiSPq0d0pH0XA64y1ALsRgMxlL8j/wYrdXfKBBpiJ
+         edqw==
+X-Forwarded-Encrypted: i=1; AJvYcCVcXVzQzi4YvNVAJLt68m3YUmwCs0/ZbJK39FeAYT64z/Xa2DRhCkc2/PQk4RlSWtpbZPHW5Rl8t/06Bw==@vger.kernel.org
+X-Gm-Message-State: AOJu0YycAwGnYqf0kWGWu7Jp02RqappWU59sPfWi6BDDdhOXR99GzSYV
+	fYTVjQButRt+UA8d7hc9nPn5rdNjci5U7PVSzGN5njiGB9BSpXXnpXTKBySjDge6U8I=
+X-Gm-Gg: ATEYQzzNtqHORmEY0l66dtS5J95bIrMG3FYxmqx751JbsPO9yX2woT5UpV+s0P2nJ3o
+	GoR5gsZVDDgXUQiorIlssT1863NZOK5JbD80x6aGanNFy6xyKqlqb0bQYfsnTUvzujUFk5u1hLJ
+	j83fTo5wTBzvFCTZg6wtcisAM3HrGAeGK3NCvT4PKuRicQ0lwx90nHKPcKxybXolYGPCOanqZiE
+	MP8vh4d80X6kxXueOn7CIUAEtYjHtfQtj8QHVwGnX6Oh0mzu7Rdt5Z93h7pTCkDaxcVlo9uTT1i
+	E9agijju8AW7Czxs+RIfr2O6LOB1Drh0eLiaIruAJ/DCwpSWrduiuP7oZ1PRQOGDPMUXXD89mTK
+	lqV3HMXvUCofBfBdIbCag/xypca12VDiXxth1jHPJHiVSQVj5qU3fz8Xe66ZYY31YcbOmam/RUQ
+	BK
+X-Received: by 2002:a17:903:1a67:b0:2b2:51e8:2c20 with SMTP id d9443c01a7336-2b251e831bemr51399275ad.21.1774887057296;
+        Mon, 30 Mar 2026 09:10:57 -0700 (PDT)
+Received: from gpc ([2400:8902:e002:dea1:c507:1213:2c85:ae99])
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2b242642905sm110979985ad.17.2026.03.30.09.10.52
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 30 Mar 2026 09:10:56 -0700 (PDT)
+From: WANG Rui <r@hev.cc>
+To: ziy@nvidia.com,
+	ljs@kernel.org
+Cc: Liam.Howlett@oracle.com,
+	akpm@linux-foundation.org,
+	baohua@kernel.org,
+	baolin.wang@linux.alibaba.com,
+	brauner@kernel.org,
+	clm@fb.com,
+	david@kernel.org,
+	dev.jain@arm.com,
+	dsterba@suse.com,
+	jack@suse.cz,
+	lance.yang@linux.dev,
+	linux-btrfs@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	linux-kselftest@vger.kernel.org,
+	linux-mm@kvack.org,
+	mhocko@suse.com,
+	npache@redhat.com,
+	r@hev.cc,
+	rppt@kernel.org,
+	ryan.roberts@arm.com,
+	shuah@kernel.org,
+	songliubraving@fb.com,
+	surenb@google.com,
+	vbabka@kernel.org,
+	viro@zeniv.linux.org.uk,
+	willy@infradead.org
+Subject: Re: [PATCH v1 05/10] mm/huge_memory: remove READ_ONLY_THP_FOR_FS from file_thp_enabled()
+Date: Tue, 31 Mar 2026 00:09:42 +0800
+Message-ID: <20260330160942.173324-1-r@hev.cc>
+X-Mailer: git-send-email 2.53.0
+In-Reply-To: <DDFEC0C1-3ECF-41CC-9630-A4A742F2B842@nvidia.com>
+References: <DDFEC0C1-3ECF-41CC-9630-A4A742F2B842@nvidia.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: quoted-printable
-X-FB-Internal: Safe
-Content-Type: text/plain
-X-Proofpoint-ORIG-GUID: qDyWApOzxXn142fTgUAzIPHMYSKFnkBz
-X-Authority-Analysis: v=2.4 cv=d6n4CBjE c=1 sm=1 tr=0 ts=69ca9fb5 cx=c_pps
- a=MfjaFnPeirRr97d5FC5oHw==:117 a=MfjaFnPeirRr97d5FC5oHw==:17
- a=Yq5XynenixoA:10 a=VkNPw1HP01LnGYTKEx00:22 a=7x6HtfJdh03M6CCDgxCd:22
- a=4h92JMTCafKA-fb_NiOh:22 a=VabnemYjAAAA:8 a=bGAskgYhJPmu6S7Wcf8A:9
- a=gKebqoRLp9LExxC7YDUY:22
-X-Proofpoint-GUID: qDyWApOzxXn142fTgUAzIPHMYSKFnkBz
-X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYwMzMwMDEyOSBTYWx0ZWRfXzcjMsn/WgUTM
- lExqT1LDwDIUnScSFInoXdVqqZ6X8gG2RO2YeM6C7gIn1Oy/wvFJwMUjHmA1EILvb8mxNHBz7Xm
- Lt+mmSWAwI4bZogx9Bafyoj13H95iBPpIsHg/SToIqXnuxCoJCInp5YBvz8pczjhx11jSkCiUNN
- oa0D5Q3KEV6u0ULlfiorkf9koSaYfArq41+ipr+1ahF3IjLuJDy2tXwID/7WZjYmStMwN37eSVW
- ti+CvhDLcQuDeG7akO+xOdkMMMpYUif1xjYh1PSP6t8OyGuTYT1GGx6TM0BmSGLxDGCnIVE2QZK
- l32TgVI7qC4iCBv/OKBfj+rqZoK9M9yMls3C/Jw5YGz7PUnFEmJTO0NqOjLhv9DXqFnenRB8ToN
- 99oSSUDZlEkM9fWyURMJc6gtHneYndQGvJxGJqfbFPYqDqOOLpxUGnbswM2t/cx5F4WeyOnWIWH
- SOtgkMPgqenHEBAlxZw==
-X-Proofpoint-Virus-Version: vendor=baseguard
- engine=ICAP:2.0.293,Aquarius:18.0.1143,Hydra:6.1.51,FMLib:17.12.100.49
- definitions=2026-03-29_05,2026-03-28_01,2025-10-01_01
+Content-Transfer-Encoding: 8bit
 
-can_finish_ordered_extent() and btrfs_finish_ordered_zoned() set
-BTRFS_ORDERED_IOERR via bare set_bit(). Later,
-btrfs_mark_ordered_extent_error() in btrfs_finish_one_ordered() uses
-test_and_set_bit(), finds it already set, and skips
-mapping_set_error(). The error is never recorded on the inode's
-address_space, making it invisible to fsync. For encoded writes this
-causes btrfs receive to silently produce files with zero-filled holes.
+Hi Lorenzo and Zi,
 
-Fix: replace bare set_bit(BTRFS_ORDERED_IOERR) with
-btrfs_mark_ordered_extent_error() which pairs test_and_set_bit() with
-mapping_set_error(), guaranteeing the error is recorded exactly once.
+>>> Is there a reason we can't keep this hack while continuing to push filesystems
+>>> toward proper large folio support?
+>>
+>> IMO - It's time for us to stop allowing filesystems to fail to implement what
+>> mm requires of them, while still providing a hack to improve performance.
+>>
+>> Really this hack shouldn't have been there in the first place, but it was a
+>> 'putting on notice' that filesystems need to support large folios, which
+>> has been made amply clear to them for some time.
+>>
+>> So yes there will be regressions for filesystems which _still_ do not
+>> implement this, I'd suggest you focus on trying to convince them to do so
+>> (or send patches :)
+>>
+>
+> Thank Lorenzo for clarifying the intention of this patchset.
+>
+> Hi Rui,
+>
+> READ_ONLY_THP_FOR_FS is an experimental feature since 2019 and that means the
+> feature can go away at any time.
+>
+> In addition, Matthew has made a heads-up on its removal [1] several months ago.
+> We have not heard any objection since.
+>
+> It seems that you care about btrfs with large folio support. Have you
+> talked to btrfs people on the timeline of moving the large folio support out
+> of the experimental state?
+>
+>
+> [1] https://lore.kernel.org/all/aTJg9vOijOGVTnVt@casper.infradead.org/
 
-Signed-off-by: Michal Grzedzicki <mge@meta.com>
----
- fs/btrfs/ordered-data.c | 2 +-
- fs/btrfs/zoned.c        | 2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+Thanks for the clarification.
 
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index 5df02c707aee..b65c1f1e2956 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -385,7 +385,7 @@ static bool can_finish_ordered_extent(struct btrfs_or=
-dered_extent *ordered,
- 	}
-=20
- 	if (!uptodate)
--		set_bit(BTRFS_ORDERED_IOERR, &ordered->flags);
-+		btrfs_mark_ordered_extent_error(ordered);
-=20
- 	if (ordered->bytes_left)
- 		return false;
-diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-index 0cd7fd3fcfa3..d728c3bafc09 100644
---- a/fs/btrfs/zoned.c
-+++ b/fs/btrfs/zoned.c
-@@ -2136,7 +2136,7 @@ void btrfs_finish_ordered_zoned(struct btrfs_ordere=
-d_extent *ordered)
- 			continue;
- 		}
- 		if (!btrfs_zoned_split_ordered(ordered, logical, len)) {
--			set_bit(BTRFS_ORDERED_IOERR, &ordered->flags);
-+			btrfs_mark_ordered_extent_error(ordered);
- 			btrfs_err(fs_info, "failed to split ordered extent");
- 			goto out;
- 		}
---=20
-2.52.0
+I fully agree with the long-term direction here. Ideally this should be
+handled by filesystems, and mm has already done a lot of work to make
+that possible.
 
+However, in practice it does not look like simply enabling an
+experimental feature is sufficient today. I did a quick check of
+mapping_max_folio_size() across a few common filesystems, and only XFS
+consistently reaches PMD order under both 4K and 16K base pages.
+Even ext4 falls short under 16K.
+
+PAGE_SIZE = 4K, PMD_SIZE = 2M
+
+Filesystem                     mapping_max_folio_size   PMD order
+------------------------------------------------------------------
+ext4                           2M                       yes
+btrfs (without experimental)   4K                       no
+btrfs (with experimental)      256K                     no
+xfs                            2M                       yes
+
+PAGE_SIZE = 16K, PMD_SIZE = 32M
+
+Filesystem                     mapping_max_folio_size   PMD order
+------------------------------------------------------------------
+ext4                           8M                       no
+btrfs (without experimental)   16K                      no
+btrfs (with experimental)      256K                     no
+xfs                            32M                      yes
+
+Given the diversity of filesystems in use, each one requires dedicated
+engineering effort to implement and validate large folio support, and
+that assumes both sufficient resources and prioritization on the
+filesystem side. Even after support lands, coverage across different
+base page sizes and configurations may take additional time to mature.
+
+What I am really concerned about is the transition period: if filesystem
+support is not yet broadly ready, while we have already removed the
+fallback path, we may end up in a situation where PMD-sized mappings
+become effectively unavailable on many systems for some time.
+
+This is not about the long-term direction, but about the timing and
+practical readiness.
+
+Thanks,
+Rui

@@ -1,41 +1,41 @@
-Received: from mout.gmx.net (mout.gmx.net [212.227.15.19])
+Received: from mout.gmx.net (mout.gmx.net [212.227.15.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 66C3036404D;
-	Mon, 30 Mar 2026 21:22:35 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.15.19
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 12C152E285C;
+	Mon, 30 Mar 2026 21:23:23 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.15.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774905757; cv=none; b=audC43BU/1kzHHMlzNiEFZ0vtWR+QDWEtB/Brj2nsklg/vq0sHuZmY6D3ng7VPO/7AvCn70Zx+h8TzoPJ1ZzI92tRk5RMlpRIRItrtA7lLsLPXeIpQ5xaHKiHgj/7EAvorGgsTViOHbnwqsMy6cC9OsabieJ4BDtFGRMJb8YPvk=
+	t=1774905805; cv=none; b=j+SYH5SE7f8u4X65RCatVesgCcU7rcWQK+AWkDG3PqtHpPBcZgcIsCssp7AsDHLaTx3aoKoLlSozJR5lKxfbg+zIYeSHlGq2jb3vWnpc4jaPSCO8Gv3+KtpKl+Vh50QFr7R+YO4opn5/RR6d4KNHOo3LVMAjo6jRQq9aFA6YKAU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774905757; c=relaxed/simple;
-	bh=9jPjcvkin1+8l+oP2Ff2kW7Y7V9Q4Vb8UrCKkSwHwuo=;
+	s=arc-20240116; t=1774905805; c=relaxed/simple;
+	bh=ElVAGBKjevYQZfMX58azoB2rqyZKDzdU7fBCpSaC4Sk=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=PWNySRZeVR+CivYerTT2lKg+g3Ex8PZi374+2KWb848+6z9xjsbuQj0CoOUyrjoEMbwBE79lQOB0dP4YdRbSw7dKRYUrMXXeuBKpDG5+vqdzd5WR4GrMSPpABluHMb8JdVmcdTGqVL0+ObfsIQNGKMvmsihR2LpFnwypy7JA4HQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=NVNwrUMP; arc=none smtp.client-ip=212.227.15.19
+	 In-Reply-To:Content-Type; b=aPqD2JRIqhdwIWUtNOiTuPCwoJvx5IgXXY5x7COMfWrDHXOGrKVIUjcW5v3Ns3kN2pXKPDCmtG3sbeYC7zwjSKgWXdJhFWTL1wTqQOcpOjOz0X5jP3Yj5abtluJB7FxogdALdtVg5n7jJgXkr8aECDliRXFAN38ie5XO73+MOG0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=uR/hU+L7; arc=none smtp.client-ip=212.227.15.18
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="NVNwrUMP"
+	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="uR/hU+L7"
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1774905746; x=1775510546; i=quwenruo.btrfs@gmx.com;
-	bh=LyqTvIlhcYoWhhHis9MXJdW4MzKLIpVouPp9+9NIH5k=;
+	s=s31663417; t=1774905799; x=1775510599; i=quwenruo.btrfs@gmx.com;
+	bh=8vLnJVPPxHx5o2+reOWF0nHtHETnXBUzpeQcSWGmw8o=;
 	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
 	 References:From:In-Reply-To:Content-Type:
 	 Content-Transfer-Encoding:cc:content-transfer-encoding:
 	 content-type:date:from:message-id:mime-version:reply-to:subject:
 	 to;
-	b=NVNwrUMPeVNUC71cLK3ooR7yCD1PpPgmVbkwq7jfU8OeBBh1qd9bT26+EHnvNecZ
-	 ohflJ4ITTtUuTF251QgIdaorexscGmVYQUlU1b675OW52M9asNfYD8rRYv6TbEkSO
-	 XJDBZasL8ax0vGPteEsN2EK1AComf6qLxa4zL92jOj9PjjD7MWQ5ay8Zc69U72Gm+
-	 9AsBgRfom9jvmKMePvuhVUkHjIkYVaES0+XRM3VTlBgjanB3SryQ8zGHux4bRKXV0
-	 Mywfzi9MdQsweZkv8wlN2H7iogwQclofusTZl+m+pLLnDPeotowWhUBm5JIjXWbvV
-	 j7P3QarqCD3qBVHiig==
+	b=uR/hU+L746mN0/24Iu3yAbVULGGyxcodQSPmOn2fQj8yNHu45uoNtm2ma7HkfYh8
+	 5xqjLsEPrtL3Cw7UxVV7vFtgMiZqRIDdHaZ1pmdaOwR/J4IdmaoN0imIIADWGoqIG
+	 0cr6v6JmQ1+pytSIJWe+CAiKAS1GitVbepVcuAD1MwDWFjkeDhiTo8AbNqlmf0iKA
+	 PauoED8LBpYqXPBzbbhQByygfCCo+2f9xH2XdFdygSevPtZU4UJb/obK4VajsTik+
+	 0/GGYoZyjyjLuORazH8ezwD89CePTQuB/xfms1+b7UmjgntCQzUzqaBzZ/+eLn84R
+	 ttNJ9w3SfVeZ2LdFHA==
 X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
 Received: from client.hidden.invalid by mail.gmx.net (mrgmx005
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1N7QxL-1vSfgF0KB3-0115p8; Mon, 30
- Mar 2026 23:22:26 +0200
-Message-ID: <9fd974c2-00aa-4906-8cab-ec0d85750c4b@gmx.com>
-Date: Tue, 31 Mar 2026 07:52:19 +1030
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1MmUHj-1vh1gT1cbR-00ov3H; Mon, 30
+ Mar 2026 23:23:19 +0200
+Message-ID: <b4077e08-18e1-480f-8c1c-0d08b9fd5bc8@gmx.com>
+Date: Tue, 31 Mar 2026 07:53:11 +1030
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -43,13 +43,12 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [RESEND PATCH v2] btrfs: prevent direct reclaim during compressed
- readahead
-To: "JP Kobryn (Meta)" <jp.kobryn@linux.dev>, mark@harmstone.com,
- boris@bur.io, wqu@suse.com, dsterba@suse.com, clm@fb.com,
- linux-btrfs@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org, linux-team@meta.com
-References: <20260328214619.114790-1-jp.kobryn@linux.dev>
+Subject: Re: [PATCH] btrfs: fix silent IO error loss in encoded writes and
+ zoned split
+To: Michal Grzedzicki <mge@meta.com>, linux-btrfs@vger.kernel.org,
+ linux-kernel@vger.kernel.org
+Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>
+References: <20260330160644.3678224-1-mge@meta.com>
 Content-Language: en-US
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
@@ -76,142 +75,107 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
  Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
  +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
  HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
-In-Reply-To: <20260328214619.114790-1-jp.kobryn@linux.dev>
+In-Reply-To: <20260330160644.3678224-1-mge@meta.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:JDJm3HjM4VwUeUw2ZINJDaKAP2nfctM1yUZINAwYAeOcqnlABcY
- htbCRe2ouWIA88pFTSu1J217ctAwKLEAo7seKF2f1oYmp3oBrEJDtnYvYYlfrihQUODHtJ9
- xsDZpno/RQ1Cniemd9zhBgyQpv/YCEarjBgBY0He/VJE2nef8xQJM3Z40+Cyf44hZ2Z8bVh
- 6sjKfOMv87nDbCYsM0PUg==
+X-Provags-ID: V03:K1:isGTpbZ9zeh3MYM2zloz+hh0suCgzVFotoaE3kuujRwAOQrq/4n
+ F52+glec6t/Del55YlVnzqYHs22zXyDRv14jPF6ekzWJDRj5zp0fiDAOIIqejFZ4bHhK1PA
+ Ae26De90+WNBr9bucjZ6NbkuijgeHeZwC57jPFWPF0AkJG8tS6946i362cE4D4OJxHjdj7P
+ POUoUYfvgOOtVdc6Mu+lQ==
 X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:g2VX/NgRfos=;9ek79ptGhkCiCoCh7I/RLLqiOcw
- 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
+UI-OutboundReport: notjunk:1;M01:P0:ZWZG0R5QlqM=;DaVvki64wRr38Egg2nqIzEFyUea
+ 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
 
 
 
-=E5=9C=A8 2026/3/29 08:16, JP Kobryn (Meta) =E5=86=99=E9=81=93:
-> Under memory pressure, direct reclaim can kick in during compressed
-> readahead. This puts the associated task into D-state. Then shrink_lruve=
-c()
-> disables interrupts when acquiring the LRU lock. Under heavy pressure,
-> we've observed reclaim can run long enough that the CPU becomes prone to
-> CSD lock stalls since it cannot service incoming IPIs. Although the CSD
-> lock stalls are the worst case scenario, we have found many more subtle
-> occurrences of this latency on the order of seconds, over a minute in so=
-me
-> cases.
+=E5=9C=A8 2026/3/31 02:36, Michal Grzedzicki =E5=86=99=E9=81=93:
+> can_finish_ordered_extent() and btrfs_finish_ordered_zoned() set
+> BTRFS_ORDERED_IOERR via bare set_bit(). Later,
+> btrfs_mark_ordered_extent_error() in btrfs_finish_one_ordered() uses
+> test_and_set_bit(), finds it already set, and skips
+> mapping_set_error(). The error is never recorded on the inode's
+> address_space, making it invisible to fsync. For encoded writes this
+> causes btrfs receive to silently produce files with zero-filled holes.
 >=20
-> Prevent direct reclaim during compressed readahead. This is achieved by
-> using different GFP flags at key points when the bio is marked for
-> readahead.
+> Fix: replace bare set_bit(BTRFS_ORDERED_IOERR) with
+> btrfs_mark_ordered_extent_error() which pairs test_and_set_bit() with
+> mapping_set_error(), guaranteeing the error is recorded exactly once.
 >=20
-> There are two functions that allocate during compressed readahead:
-> btrfs_alloc_compr_folio() and add_ra_bio_pages(). Both currently use
-> GFP_NOFS which includes __GFP_DIRECT_RECLAIM.
->=20
-> For the internal API call btrfs_alloc_compr_folio(), the signature chang=
-es
-> to accept an additional gfp_t parameter. At the readahead call site, it
-> gets flags similar to GFP_NOFS but stripped of __GFP_DIRECT_RECLAIM.
-> __GFP_NOWARN is added since these allocations are allowed to fail. Deman=
-d
-> reads still use full GFP_NOFS and will enter reclaim if needed. All othe=
-r
-> existing call sites of btrfs_alloc_compr_folio() now explicitly pass
-> GFP_NOFS to retain their current behavior.
->=20
-> add_ra_bio_pages() gains a bool parameter which allows callers to specif=
-y
-> if they want to allow direct reclaim or not. In either case, the
-> __GFP_NOWARN flag was added unconditionally since the allocations are
-> speculative.
->=20
-> There has been some previous work done on calling add_ra_bio_pages() [0]=
-.
-> This patch is complementary: where that patch reduces call frequency, th=
-is
-> patch reduces the latency associated with those calls.
->=20
-> [0] https://lore.kernel.org/linux-btrfs/656838ec1232314a2657716e59f4f15a=
-8eadba64.1751492111.git.boris@bur.io/
->=20
-> Signed-off-by: JP Kobryn (Meta) <jp.kobryn@linux.dev>
-> Reviewed-by: Mark Harmstone <mark@harmstone.com>
+> Signed-off-by: Michal Grzedzicki <mge@meta.com>
 
 Reviewed-by: Qu Wenruo <wqu@suse.com>
 
@@ -219,290 +183,36 @@ Thanks,
 Qu
 
 > ---
-> v2:
->   - dropped patch 1/2, squashed into single patch based on David's feedb=
-ack
->   - changed btrfs_alloc_compr_folio() signature instead of new _gfp vari=
-ant
->   - update other existing callers to pass GFP_NOFS explicitly
+>   fs/btrfs/ordered-data.c | 2 +-
+>   fs/btrfs/zoned.c        | 2 +-
+>   2 files changed, 2 insertions(+), 2 deletions(-)
 >=20
-> v1: https://lore.kernel.org/linux-btrfs/20260320073445.80218-1-jp.kobryn=
-@linux.dev/
->=20
->   fs/btrfs/compression.c | 42 +++++++++++++++++++++++++++++++++++-------
->   fs/btrfs/compression.h |  2 +-
->   fs/btrfs/inode.c       |  2 +-
->   fs/btrfs/lzo.c         |  6 +++---
->   fs/btrfs/zlib.c        |  6 +++---
->   fs/btrfs/zstd.c        |  6 +++---
->   6 files changed, 46 insertions(+), 18 deletions(-)
->=20
-> diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-> index e897342bece1f..8f33ef48b501e 100644
-> --- a/fs/btrfs/compression.c
-> +++ b/fs/btrfs/compression.c
-> @@ -180,7 +180,7 @@ static unsigned long btrfs_compr_pool_scan(struct sh=
-rinker *sh, struct shrink_co
->   /*
->    * Common wrappers for page allocation from compression wrappers
->    */
-> -struct folio *btrfs_alloc_compr_folio(struct btrfs_fs_info *fs_info)
-> +struct folio *btrfs_alloc_compr_folio(struct btrfs_fs_info *fs_info, gf=
-p_t gfp)
->   {
->   	struct folio *folio =3D NULL;
+> diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+> index 5df02c707aee..b65c1f1e2956 100644
+> --- a/fs/btrfs/ordered-data.c
+> +++ b/fs/btrfs/ordered-data.c
+> @@ -385,7 +385,7 @@ static bool can_finish_ordered_extent(struct btrfs_o=
+rdered_extent *ordered,
+>   	}
 >  =20
-> @@ -200,7 +200,7 @@ struct folio *btrfs_alloc_compr_folio(struct btrfs_f=
-s_info *fs_info)
->   		return folio;
+>   	if (!uptodate)
+> -		set_bit(BTRFS_ORDERED_IOERR, &ordered->flags);
+> +		btrfs_mark_ordered_extent_error(ordered);
 >  =20
->   alloc:
-> -	return folio_alloc(GFP_NOFS, fs_info->block_min_order);
-> +	return folio_alloc(gfp, fs_info->block_min_order);
->   }
->  =20
->   void btrfs_free_compr_folio(struct folio *folio)
-> @@ -368,7 +368,8 @@ struct compressed_bio *btrfs_alloc_compressed_write(=
-struct btrfs_inode *inode,
->   static noinline int add_ra_bio_pages(struct inode *inode,
->   				     u64 compressed_end,
->   				     struct compressed_bio *cb,
-> -				     int *memstall, unsigned long *pflags)
-> +				     int *memstall, unsigned long *pflags,
-> +				     bool direct_reclaim)
->   {
->   	struct btrfs_fs_info *fs_info =3D inode_to_fs_info(inode);
->   	pgoff_t end_index;
-> @@ -376,6 +377,7 @@ static noinline int add_ra_bio_pages(struct inode *i=
-node,
->   	u64 cur =3D cb->orig_bbio->file_offset + orig_bio->bi_iter.bi_size;
->   	u64 isize =3D i_size_read(inode);
->   	int ret;
-> +	gfp_t constraint_gfp, cache_gfp;
->   	struct folio *folio;
->   	struct extent_map *em;
->   	struct address_space *mapping =3D inode->i_mapping;
-> @@ -405,6 +407,19 @@ static noinline int add_ra_bio_pages(struct inode *=
-inode,
->  =20
->   	end_index =3D (i_size_read(inode) - 1) >> PAGE_SHIFT;
->  =20
-> +	/*
-> +	 * Avoid direct reclaim when the caller does not allow it.
-> +	 * Since add_ra_bio_pages is always speculative, suppress
-> +	 * allocation warnings in either case.
-> +	 */
-> +	if (!direct_reclaim) {
-> +		constraint_gfp =3D ~(__GFP_FS | __GFP_DIRECT_RECLAIM);
-> +		cache_gfp =3D (GFP_NOFS & ~__GFP_DIRECT_RECLAIM) | __GFP_NOWARN;
-> +	} else {
-> +		constraint_gfp =3D ~__GFP_FS;
-> +		cache_gfp =3D GFP_NOFS | __GFP_NOWARN;
-> +	}
-> +
->   	while (cur < compressed_end) {
->   		pgoff_t page_end;
->   		pgoff_t pg_index =3D cur >> PAGE_SHIFT;
-> @@ -434,12 +449,13 @@ static noinline int add_ra_bio_pages(struct inode =
-*inode,
+>   	if (ordered->bytes_left)
+>   		return false;
+> diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
+> index 0cd7fd3fcfa3..d728c3bafc09 100644
+> --- a/fs/btrfs/zoned.c
+> +++ b/fs/btrfs/zoned.c
+> @@ -2136,7 +2136,7 @@ void btrfs_finish_ordered_zoned(struct btrfs_order=
+ed_extent *ordered)
 >   			continue;
 >   		}
->  =20
-> -		folio =3D filemap_alloc_folio(mapping_gfp_constraint(mapping, ~__GFP_=
-FS),
-> +		folio =3D filemap_alloc_folio(mapping_gfp_constraint(mapping,
-> +					    constraint_gfp) | __GFP_NOWARN,
->   					    0, NULL);
->   		if (!folio)
->   			break;
->  =20
-> -		if (filemap_add_folio(mapping, folio, pg_index, GFP_NOFS)) {
-> +		if (filemap_add_folio(mapping, folio, pg_index, cache_gfp)) {
->   			/* There is already a page, skip to page end */
->   			cur +=3D folio_size(folio);
->   			folio_put(folio);
-> @@ -532,6 +548,7 @@ void btrfs_submit_compressed_read(struct btrfs_bio *=
-bbio)
->   	unsigned int compressed_len;
->   	const u32 min_folio_size =3D btrfs_min_folio_size(fs_info);
->   	u64 file_offset =3D bbio->file_offset;
-> +	gfp_t gfp;
->   	u64 em_len;
->   	u64 em_start;
->   	struct extent_map *em;
-> @@ -539,6 +556,17 @@ void btrfs_submit_compressed_read(struct btrfs_bio =
-*bbio)
->   	int memstall =3D 0;
->   	int ret;
->  =20
-> +	/*
-> +	 * If this is a readahead bio, prevent direct reclaim. This is done to
-> +	 * avoid stalling on speculative allocations when memory pressure is
-> +	 * high. The demand fault will retry with GFP_NOFS and enter direct
-> +	 * reclaim if needed.
-> +	 */
-> +	if (bbio->bio.bi_opf & REQ_RAHEAD)
-> +		gfp =3D (GFP_NOFS & ~__GFP_DIRECT_RECLAIM) | __GFP_NOWARN;
-> +	else
-> +		gfp =3D GFP_NOFS;
-> +
->   	/* we need the actual starting offset of this extent in the file */
->   	read_lock(&em_tree->lock);
->   	em =3D btrfs_lookup_extent_mapping(em_tree, file_offset, fs_info->sec=
-torsize);
-> @@ -569,7 +597,7 @@ void btrfs_submit_compressed_read(struct btrfs_bio *=
-bbio)
->   		struct folio *folio;
->   		u32 cur_len =3D min(compressed_len - i * min_folio_size, min_folio_s=
-ize);
->  =20
-> -		folio =3D btrfs_alloc_compr_folio(fs_info);
-> +		folio =3D btrfs_alloc_compr_folio(fs_info, gfp);
->   		if (!folio) {
->   			ret =3D -ENOMEM;
->   			goto out_free_bio;
-> @@ -585,7 +613,7 @@ void btrfs_submit_compressed_read(struct btrfs_bio *=
-bbio)
->   	ASSERT(cb->bbio.bio.bi_iter.bi_size =3D=3D compressed_len);
->  =20
->   	add_ra_bio_pages(&inode->vfs_inode, em_start + em_len, cb, &memstall,
-> -			 &pflags);
-> +			 &pflags, !(bbio->bio.bi_opf & REQ_RAHEAD));
->  =20
->   	cb->len =3D bbio->bio.bi_iter.bi_size;
->   	cb->bbio.bio.bi_iter.bi_sector =3D bbio->bio.bi_iter.bi_sector;
-> diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
-> index 973530e9ce6c2..1022dc53ec51e 100644
-> --- a/fs/btrfs/compression.h
-> +++ b/fs/btrfs/compression.h
-> @@ -98,7 +98,7 @@ void btrfs_submit_compressed_read(struct btrfs_bio *bb=
-io);
->  =20
->   int btrfs_compress_str2level(unsigned int type, const char *str, int *=
-level_ret);
->  =20
-> -struct folio *btrfs_alloc_compr_folio(struct btrfs_fs_info *fs_info);
-> +struct folio *btrfs_alloc_compr_folio(struct btrfs_fs_info *fs_info, gf=
-p_t gfp);
->   void btrfs_free_compr_folio(struct folio *folio);
->  =20
->   struct workspace_manager {
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 8d97a8ad3858b..2d2fce77aec21 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -9980,7 +9980,7 @@ ssize_t btrfs_do_encoded_write(struct kiocb *iocb,=
- struct iov_iter *from,
->   		size_t bytes =3D min(min_folio_size, iov_iter_count(from));
->   		char *kaddr;
->  =20
-> -		folio =3D btrfs_alloc_compr_folio(fs_info);
-> +		folio =3D btrfs_alloc_compr_folio(fs_info, GFP_NOFS);
->   		if (!folio) {
->   			ret =3D -ENOMEM;
->   			goto out_cb;
-> diff --git a/fs/btrfs/lzo.c b/fs/btrfs/lzo.c
-> index 0c90937707395..4662c5c06eae9 100644
-> --- a/fs/btrfs/lzo.c
-> +++ b/fs/btrfs/lzo.c
-> @@ -218,7 +218,7 @@ static int copy_compressed_data_to_bio(struct btrfs_=
-fs_info *fs_info,
->   	ASSERT((old_size >> sectorsize_bits) =3D=3D (old_size + LZO_LEN - 1) =
->> sectorsize_bits);
->  =20
->   	if (!*out_folio) {
-> -		*out_folio =3D btrfs_alloc_compr_folio(fs_info);
-> +		*out_folio =3D btrfs_alloc_compr_folio(fs_info, GFP_NOFS);
->   		if (!*out_folio)
->   			return -ENOMEM;
->   	}
-> @@ -245,7 +245,7 @@ static int copy_compressed_data_to_bio(struct btrfs_=
-fs_info *fs_info,
->   			return -E2BIG;
->  =20
->   		if (!*out_folio) {
-> -			*out_folio =3D btrfs_alloc_compr_folio(fs_info);
-> +			*out_folio =3D btrfs_alloc_compr_folio(fs_info, GFP_NOFS);
->   			if (!*out_folio)
->   				return -ENOMEM;
->   		}
-> @@ -296,7 +296,7 @@ int lzo_compress_bio(struct list_head *ws, struct co=
-mpressed_bio *cb)
->   	ASSERT(bio->bi_iter.bi_size =3D=3D 0);
->   	ASSERT(len);
->  =20
-> -	folio_out =3D btrfs_alloc_compr_folio(fs_info);
-> +	folio_out =3D btrfs_alloc_compr_folio(fs_info, GFP_NOFS);
->   	if (!folio_out)
->   		return -ENOMEM;
->  =20
-> diff --git a/fs/btrfs/zlib.c b/fs/btrfs/zlib.c
-> index 147c92a4dd04c..145ead5be1c06 100644
-> --- a/fs/btrfs/zlib.c
-> +++ b/fs/btrfs/zlib.c
-> @@ -175,7 +175,7 @@ int zlib_compress_bio(struct list_head *ws, struct c=
-ompressed_bio *cb)
->   	workspace->strm.total_in =3D 0;
->   	workspace->strm.total_out =3D 0;
->  =20
-> -	out_folio =3D btrfs_alloc_compr_folio(fs_info);
-> +	out_folio =3D btrfs_alloc_compr_folio(fs_info, GFP_NOFS);
->   	if (out_folio =3D=3D NULL) {
->   		ret =3D -ENOMEM;
->   		goto out;
-> @@ -258,7 +258,7 @@ int zlib_compress_bio(struct list_head *ws, struct c=
-ompressed_bio *cb)
->   				goto out;
->   			}
->  =20
-> -			out_folio =3D btrfs_alloc_compr_folio(fs_info);
-> +			out_folio =3D btrfs_alloc_compr_folio(fs_info, GFP_NOFS);
->   			if (out_folio =3D=3D NULL) {
->   				ret =3D -ENOMEM;
->   				goto out;
-> @@ -296,7 +296,7 @@ int zlib_compress_bio(struct list_head *ws, struct c=
-ompressed_bio *cb)
->   				goto out;
->   			}
->   			/* Get another folio for the stream end. */
-> -			out_folio =3D btrfs_alloc_compr_folio(fs_info);
-> +			out_folio =3D btrfs_alloc_compr_folio(fs_info, GFP_NOFS);
->   			if (out_folio =3D=3D NULL) {
->   				ret =3D -ENOMEM;
->   				goto out;
-> diff --git a/fs/btrfs/zstd.c b/fs/btrfs/zstd.c
-> index 41547ff187f65..080b29fe515c6 100644
-> --- a/fs/btrfs/zstd.c
-> +++ b/fs/btrfs/zstd.c
-> @@ -439,7 +439,7 @@ int zstd_compress_bio(struct list_head *ws, struct c=
-ompressed_bio *cb)
->   	workspace->in_buf.size =3D btrfs_calc_input_length(in_folio, end, sta=
-rt);
->  =20
->   	/* Allocate and map in the output buffer. */
-> -	out_folio =3D btrfs_alloc_compr_folio(fs_info);
-> +	out_folio =3D btrfs_alloc_compr_folio(fs_info, GFP_NOFS);
->   	if (out_folio =3D=3D NULL) {
->   		ret =3D -ENOMEM;
->   		goto out;
-> @@ -482,7 +482,7 @@ int zstd_compress_bio(struct list_head *ws, struct c=
-ompressed_bio *cb)
->   				goto out;
->   			}
->  =20
-> -			out_folio =3D btrfs_alloc_compr_folio(fs_info);
-> +			out_folio =3D btrfs_alloc_compr_folio(fs_info, GFP_NOFS);
->   			if (out_folio =3D=3D NULL) {
->   				ret =3D -ENOMEM;
->   				goto out;
-> @@ -555,7 +555,7 @@ int zstd_compress_bio(struct list_head *ws, struct c=
-ompressed_bio *cb)
->   			ret =3D -E2BIG;
+>   		if (!btrfs_zoned_split_ordered(ordered, logical, len)) {
+> -			set_bit(BTRFS_ORDERED_IOERR, &ordered->flags);
+> +			btrfs_mark_ordered_extent_error(ordered);
+>   			btrfs_err(fs_info, "failed to split ordered extent");
 >   			goto out;
 >   		}
-> -		out_folio =3D btrfs_alloc_compr_folio(fs_info);
-> +		out_folio =3D btrfs_alloc_compr_folio(fs_info, GFP_NOFS);
->   		if (out_folio =3D=3D NULL) {
->   			ret =3D -ENOMEM;
->   			goto out;
 

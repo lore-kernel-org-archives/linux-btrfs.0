@@ -1,106 +1,142 @@
-Received: from mail.synology.com (mail.synology.com [211.23.38.101])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 95DD740DFD1
-	for <linux-btrfs@vger.kernel.org>; Mon, 30 Mar 2026 03:32:14 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=211.23.38.101
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B8C7A34CFCF;
+	Mon, 30 Mar 2026 04:08:35 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774841535; cv=none; b=JRTYwuL7RP7wWxEtHQ2CRfye/MMGalqx9Alh7c/6ycLEwaavrtkcWmGOlCg4WkJGcBYxfi6R2IqH5YvpJZfx6Gd5qIkKJNxXj7IBW3Ns6KA7tTfPbBvzfiLgh6v52HQ7wuyhG3m5YFQ/GiEF/M6bbPWa2+Q1DtTGeRT6SRsJyc4=
+	t=1774843715; cv=none; b=Nxqskf0OvfX4X6CnUDc7artaL2lb8SLu0pDd5ZMltBP+CNClRg1j4yG4G0nlRo+SNsEZvVLfyQwCaOGqWVKfKTypox2mLBgqTwkmR1Cu11PLiVT7FTR+oANwV0cLRfrlz3uN/x1P4Y+Dm3P6LKIe5WhlWRSh3awYiuqU0gVXuSk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774841535; c=relaxed/simple;
-	bh=fs2v3HokEencOxhHjGu42mcLmjEqUAE8rhP9tgMEnsk=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version:Content-Type; b=JA1aQnLv6RrnJumv6zOUJhrN/k61y4gxjjG07sxDTO6aDA4/wNeq0HCfN3SfZAzopnjE0Px0oB5P/Q0ManCG+KCkDL/R61dFg/BVZol2H+zi5LYYARXbqLYyQrDQcMilGkLaJnaK6lbgKu5FSgVVWlIqpVVbWqq3pLzT/ekev+g=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=synology.com; spf=pass smtp.mailfrom=synology.com; dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b=nMyOvN+k; arc=none smtp.client-ip=211.23.38.101
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=synology.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=synology.com
+	s=arc-20240116; t=1774843715; c=relaxed/simple;
+	bh=+A5NQMhCBBRKzoUSudLKLJZAfA7+8FwRJRitDmnyubY=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=acUczmSJLmHsBQAP7KwT5UTCbi1bqGOWfVxgObxvehqVDFD+g7lfSV8nek9M3iLDJTbZ4wjG887WFTBbx/vHFtgEu8OAbhSp5qcD395CNWJ5rozSJCIkQc3L4qqG1EEkUP8Gz3Oh5DN7fg4BUboXL+ASBGVmcu50Y1/ZN2YBWzs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=rk5v/EL7; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b="nMyOvN+k"
-Received: from 11212-DT-014.. (unknown [10.17.40.185])
-	by mail.synology.com (Postfix) with ESMTPA id 4fkcHp5SDmzHdhJvB;
-	Mon, 30 Mar 2026 11:32:06 +0800 (CST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=synology.com; s=123;
-	t=1774841527; bh=fs2v3HokEencOxhHjGu42mcLmjEqUAE8rhP9tgMEnsk=;
-	h=From:To:Cc:Subject:Date;
-	b=nMyOvN+kZAvtyb6xQIBxNf9pHEzheI7zuAgIlTntLk+gfC+Fz0j3eF2TehNqC+6PR
-	 wxjp3QxNG+C8hP8+Ah1LalCzMJJ2ywIg7WBfU73SvpizVlIDehVSWyjNRwzOe6qd1B
-	 V9awFRe0VMQztXnEgnk3KdmAz24SWRrL3Hpp1qVY=
-From: Dave Chen <davechen@synology.com>
-To: linux-btrfs@vger.kernel.org,
-	dsterba@suse.com
-Cc: cccheng@synology.com,
-	robbieko@synology.com,
-	Dave Chen <davechen@synology.com>
-Subject: [PATCH] btrfs: skip clearing EXTENT_DEFRAG for nocow ordered extents
-Date: Mon, 30 Mar 2026 11:31:48 +0800
-Message-ID: <20260330033148.696942-1-davechen@synology.com>
-X-Mailer: git-send-email 2.43.0
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="rk5v/EL7"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id BFE31C2BCB0;
+	Mon, 30 Mar 2026 04:08:33 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1774843715;
+	bh=+A5NQMhCBBRKzoUSudLKLJZAfA7+8FwRJRitDmnyubY=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=rk5v/EL75EZ+hbfqEshAQz2QQe+iuSZNg84JSHBgQeHC7MQpiAlomNcv0214mZuA/
+	 gbjlTaVuay4FRB4MdNSX8Dc51tayHV0e0emc/xX42elGiN+vJjajX0Mj+DjRgCotku
+	 NJi0Cx4TsK5vFwnV0mTb3dWliU8/DvykqoMFl4Ne60JHqqLvWC6hKlA59DG+0Ub0mK
+	 i/RlQXksnWCqxo0T2LZaEiVWOLa6KPURQ9Z4xB+WBPWlEQnWDb+1w70onILoyinJz8
+	 gZZx9gSRcK/J1hwQTRHyR8albh/f2o81y7CxFJD3rwa1khO6zG0Hxaks+qBoOStyxZ
+	 Du8I3EdOFGAig==
+Date: Sun, 29 Mar 2026 21:07:24 -0700
+From: Eric Biggers <ebiggers@kernel.org>
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Christoph Hellwig <hch@lst.de>,
+	Richard Henderson <richard.henderson@linaro.org>,
+	Matt Turner <mattst88@gmail.com>,
+	Magnus Lindholm <linmag7@gmail.com>,
+	Russell King <linux@armlinux.org.uk>,
+	Catalin Marinas <catalin.marinas@arm.com>,
+	Will Deacon <will@kernel.org>, Ard Biesheuvel <ardb@kernel.org>,
+	Huacai Chen <chenhuacai@kernel.org>,
+	WANG Xuerui <kernel@xen0n.name>,
+	Madhavan Srinivasan <maddy@linux.ibm.com>,
+	Michael Ellerman <mpe@ellerman.id.au>,
+	Nicholas Piggin <npiggin@gmail.com>,
+	"Christophe Leroy (CS GROUP)" <chleroy@kernel.org>,
+	Paul Walmsley <pjw@kernel.org>, Palmer Dabbelt <palmer@dabbelt.com>,
+	Albert Ou <aou@eecs.berkeley.edu>, Alexandre Ghiti <alex@ghiti.fr>,
+	Heiko Carstens <hca@linux.ibm.com>,
+	Vasily Gorbik <gor@linux.ibm.com>,
+	Alexander Gordeev <agordeev@linux.ibm.com>,
+	Christian Borntraeger <borntraeger@linux.ibm.com>,
+	Sven Schnelle <svens@linux.ibm.com>,
+	"David S. Miller" <davem@davemloft.net>,
+	Andreas Larsson <andreas@gaisler.com>,
+	Richard Weinberger <richard@nod.at>,
+	Anton Ivanov <anton.ivanov@cambridgegreys.com>,
+	Johannes Berg <johannes@sipsolutions.net>,
+	Thomas Gleixner <tglx@kernel.org>, Ingo Molnar <mingo@redhat.com>,
+	Borislav Petkov <bp@alien8.de>,
+	Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
+	"H. Peter Anvin" <hpa@zytor.com>,
+	Herbert Xu <herbert@gondor.apana.org.au>,
+	Dan Williams <dan.j.williams@intel.com>, Chris Mason <clm@fb.com>,
+	David Sterba <dsterba@suse.com>, Arnd Bergmann <arnd@arndb.de>,
+	Song Liu <song@kernel.org>, Yu Kuai <yukuai@fnnas.com>,
+	Li Nan <linan122@huawei.com>, Theodore Ts'o <tytso@mit.edu>,
+	"Jason A. Donenfeld" <Jason@zx2c4.com>, linux-alpha@vger.kernel.org,
+	linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+	loongarch@lists.linux.dev, linuxppc-dev@lists.ozlabs.org,
+	linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
+	sparclinux@vger.kernel.org, linux-um@lists.infradead.org,
+	linux-crypto@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	linux-arch@vger.kernel.org, linux-raid@vger.kernel.org
+Subject: Re: cleanup the RAID5 XOR library v4
+Message-ID: <20260330040724.GA647721@sol>
+References: <20260327061704.3707577-1-hch@lst.de>
+ <20260329213119.GA2106@quark>
+ <20260329155126.a01a5729b7d8376712182851@linux-foundation.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Synology-Spam-Status: score=0, required 6, WHITELIST_FROM_ADDRESS 0
-X-Synology-Spam-Flag: no
-X-Synology-Virus-Status: no
-X-Synology-MCP-Status: no
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260329155126.a01a5729b7d8376712182851@linux-foundation.org>
 
-In btrfs_finish_one_ordered(), clear_bits is unconditionally initialized
-with EXTENT_DEFRAG.  For nocow ordered extents this is always a no-op
-because should_nocow() already forces the COW path when EXTENT_DEFRAG is
-set, so a nocow ordered extent can never have EXTENT_DEFRAG on its range.
+On Sun, Mar 29, 2026 at 03:51:26PM -0700, Andrew Morton wrote:
+> > 
+> > Reviewed-by: Eric Biggers <ebiggers@kernel.org>
+> 
+> Great, thanks, added to all changelogs.
+> 
+> > But yes, as Andrew mentioned there are two "xor: add a better public
+> > API" patches.  They should be folded together.
+> 
+> I folded them.
+> 
+> I'm a bit wobbly about upstreaming all this for 7.1-rc1.  It hits on a
+> lot of stuff and I don't think we've heard a lot from the affected
+> maintainers.
+> 
+> otoh, we're unlikely to learn much from an additional nine weeks in
+> linux-next so at some point one has to forge ahead and rely on seven
+> weeks of -rc to address any remaining niggles.  And I'm confident that
+> Christoph will support his work well.
+> 
+> But still, hearing some reassuring words about this would be
+> appreciated ;)
 
-Although harmless, the unconditional btrfs_clear_extent_bit() call still
-performs a cold rbtree lookup under the io tree spinlock on every nocow
-write completion.  Avoid this by only adding EXTENT_DEFRAG to clear_bits
-for non-nocow ordered extents, and skip the call entirely when there are
-no bits to clear.
+The architecture-optimized crypto and CRC code has been the same way.
+I've been working on it across architectures, and most of the arch
+maintainers don't pay much attention to it.
 
-Signed-off-by: Dave Chen <davechen@synology.com>
-Signed-off-by: Robbie Ko <robbieko@synology.com>
----
- fs/btrfs/inode.c | 10 +++++++---
- 1 file changed, 7 insertions(+), 3 deletions(-)
+I've seen engagement from a few of them, for example s390.  But as a
+general rule it's a separate group of people working on this code.
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index f643a05208720..80daf7e248ab8 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3203,7 +3203,7 @@ int btrfs_finish_one_ordered(struct btrfs_ordered_extent *ordered_extent)
- 	bool freespace_inode;
- 	bool truncated = false;
- 	bool clear_reserved_extent = true;
--	unsigned int clear_bits = EXTENT_DEFRAG;
-+	unsigned int clear_bits = 0;
- 
- 	start = ordered_extent->file_offset;
- 	end = start + ordered_extent->num_bytes - 1;
-@@ -3214,6 +3214,9 @@ int btrfs_finish_one_ordered(struct btrfs_ordered_extent *ordered_extent)
- 	    !test_bit(BTRFS_ORDERED_ENCODED, &ordered_extent->flags))
- 		clear_bits |= EXTENT_DELALLOC_NEW;
- 
-+	if (!test_bit(BTRFS_ORDERED_NOCOW, &ordered_extent->flags))
-+		clear_bits |= EXTENT_DEFRAG;
-+
- 	freespace_inode = btrfs_is_free_space_inode(inode);
- 	if (!freespace_inode)
- 		btrfs_lockdep_acquire(fs_info, btrfs_ordered_extent);
-@@ -3345,8 +3348,9 @@ int btrfs_finish_one_ordered(struct btrfs_ordered_extent *ordered_extent)
- 		goto out;
- 	}
- out:
--	btrfs_clear_extent_bit(&inode->io_tree, start, end, clear_bits,
--			       &cached_state);
-+	if (clear_bits)
-+		btrfs_clear_extent_bit(&inode->io_tree, start, end, clear_bits,
-+				       &cached_state);
- 
- 	if (trans)
- 		btrfs_end_transaction(trans);
--- 
-2.43.0
+I think seeing the same for lib/raid/ is expected.  So while the arch
+maintainers are always welcome to chime in, I don't think we need to
+wait for all of them, as then we'd be waiting forever.
 
+Re testing, I've been running the crypto, CRC, and now the XOR KUnit
+tests in QEMU for 8 architectures (arm, arm64, mips, powerpc, riscv,
+s390, sparc, and x86), and over 40 variants within those (e.g. varying
+CONFIG_64BIT, CONFIG_CPU_BIG_ENDIAN, and QEMU's "-cpu" flag).  They are
+all passing, including the XOR test that Christoph added in this series.
 
-Disclaimer: The contents of this e-mail message and any attachments are confidential and are intended solely for addressee. The information may also be legally privileged. This transmission is sent in trust, for the sole purpose of delivery to the intended recipient. If you have received this transmission in error, any use, reproduction or dissemination of this transmission is strictly prohibited. If you are not the intended recipient, please immediately notify the sender by reply e-mail or phone and delete this message and its attachments, if any.
+(So I guess feel free to add:
+
+    Tested-by: Eric Biggers <ebiggers@kernel.org>
+
+to all the patches in this series as well.)
+
+That still doesn't cover all the arch-optimized code, due to me missing
+various combinations or QEMU not supporting them.  But it's something.
+
+I'm also hoping that with the move to standard KUnit tests, we'll get a
+larger group of people, including projects like KernelCI, that simply
+run *all* the kernel's KUnit tests on whatever platforms they care
+about.  That approach is more scalable.
+
+- Eric

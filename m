@@ -1,65 +1,65 @@
-Received: from mail-wm1-f49.google.com (mail-wm1-f49.google.com [209.85.128.49])
+Received: from mail-wm1-f52.google.com (mail-wm1-f52.google.com [209.85.128.52])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 242A3382291
-	for <linux-btrfs@vger.kernel.org>; Mon, 30 Mar 2026 21:48:44 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.49
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9969239B94B
+	for <linux-btrfs@vger.kernel.org>; Mon, 30 Mar 2026 22:15:01 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.52
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774907326; cv=none; b=UX1tV1hxtf1q/KUVi7Ggpwlx1nS4yreKKqjAQq6jZO43FdkVxV51ttjE+kqELJIU3T+xS0tt+1Y+HxHPfPGnmnjd0LnjtDETmhnrH4KvH9+WMLjAOmixc40vD7u7h7Vq13s33ZJHl0k8uvDNbZMs8KBUmbmL4gGdcGrzj1SaoY8=
+	t=1774908904; cv=none; b=a9gvsvwrGJv8HtSry/wdv8AwWEEM22UrdwHCGrZcNDxiPdQt82rSUD3AUBvp8AagOPYFC8bx3MM+JPNQb5TuXXueuBr2Ob2I7IrH97eWg5uci2KcGHB5+t4StrFRwolKrQqxvNzHPk7CYdieEMOggeflaaPKMQ8Z+jTTRXHWPsM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774907326; c=relaxed/simple;
-	bh=PMpUArrW9JKW5mfz5e9h93OYrMwdYeLV+vmmqkvyqHk=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=hlEzWal9bHSvM/XmBS69Gzs/RDutKbp64zX40pW8GmkJT0Rrrd3WIYGhZpx6QT+Q5v16qRxl9xQ1i+mUr+D5YL7sg/oeewwlX4Q35lRRnLewcMIYXlf8SbM1vHZMUBaG138b7yR/Ri+QC++e2oMKelTsE/P7pn3MjcFhFS4ebVE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=Ei3jilqq; arc=none smtp.client-ip=209.85.128.49
+	s=arc-20240116; t=1774908904; c=relaxed/simple;
+	bh=/CmhggVcP7FKdoOFLkwtzPuSayN1YZdPVA9zZX+CR2g=;
+	h=Message-ID:Date:MIME-Version:Subject:From:To:Cc:References:
+	 In-Reply-To:Content-Type; b=ciBc6hUe2FCJ+OS1PunnO3W4h4Wzv8ULMFT1Qeb9MWVezZsTLDc8Ab432Vo1ofJgo+ueKrDXe0b9951CEvdXumiJA2FinWQv3IVHKvQjKBpRrypz+aLNcCTMvoujvHsLaZGQoMlFGczwCbmj02SCVpvCnUdxAA6Aa97D4xdyuuQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=BU+8CRUF; arc=none smtp.client-ip=209.85.128.52
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="Ei3jilqq"
-Received: by mail-wm1-f49.google.com with SMTP id 5b1f17b1804b1-4853c1ca73aso50594175e9.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 30 Mar 2026 14:48:44 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="BU+8CRUF"
+Received: by mail-wm1-f52.google.com with SMTP id 5b1f17b1804b1-4873ce69ba9so15401085e9.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 30 Mar 2026 15:15:01 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1774907323; x=1775512123; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to;
-        bh=qJdCwo4v2unlKk0cRfoVOJ3i62p6h6fL/fO1puM34+I=;
-        b=Ei3jilqqQpyf2FWLYWtcLPIxizgxlNyyll2+VLOxHhmOfe5/p2pS0XsxEEa9si5PjM
-         8GMqsYDTWKRylgL8faC0oYoRztAQ2nPNPpcF7UZoH1gd//ZTwH/N8KJatwvdo5n9uCcH
-         xwzAAb69pEIQW8Exy6avERjh7Jjd+bO2fb77ML0JdQ2U7/4+LZmTX544WSkFfWHsr0UV
-         a3FWc4qfrBgi3spJSbEPPOLC0XbrB3VB2eVKYx5dYD1/dGL3yorVoeBNGmag8VppJZsU
-         2ZauQqR+tpy/jwY1pCYdP4Z0Z3zarvBqtyB8FxItnv+uLWJ9H/YE3DdakWYOppq2NDkM
-         jH6A==
+        d=suse.com; s=google; t=1774908900; x=1775513700; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:autocrypt:content-language
+         :references:cc:to:from:subject:user-agent:mime-version:date
+         :message-id:from:to:cc:subject:date:message-id:reply-to;
+        bh=VF2FSQ7QUbNvthtKJvDzxVZCDtjhHU5BspA59sUdCAQ=;
+        b=BU+8CRUFP+33C5mos3N2jq63Sd8feb9z8pIcnErwm7TNhRtrAh2/QUB0GpjSejqMzn
+         teNFMuWNVL3OiQgKZar3FUDdnGM/E2tRN1lJF1JoI3ulDxTwRVWTJH2sqmaAStmFu2H5
+         +o6Av7jZvni4Wym28jRGNEbTaJqxBUdOMvEcZOW3vHNtmx8u0xkJc5fn1+ISnD1HO+9X
+         AHzVidJlXbPwSfr8mXVwlA8SzoHoR0yUVnh3cYh/yJXBlqdaXAleHWUCxqGDOlMOloOP
+         cfAD4vi1nu0AzF1M4VJtVqTNLgwsf8+GPNRaEJMbGbDe6WahsTZ8RmSIrQrZtNz6XBbe
+         cy7w==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1774907323; x=1775512123;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+        d=1e100.net; s=20251104; t=1774908900; x=1775513700;
+        h=content-transfer-encoding:in-reply-to:autocrypt:content-language
+         :references:cc:to:from:subject:user-agent:mime-version:date
+         :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=qJdCwo4v2unlKk0cRfoVOJ3i62p6h6fL/fO1puM34+I=;
-        b=su0/Bvy8JsFeXRVprSbrl86kP1wT7SMf8oCjGWpYcG32PyrpHIxnUfK0N6DV7MzV+O
-         tFMk7Ukt9vMpBV3OezXLD9qxqEde2ze2Bjrq/DT8S+6HmcrHHZdPdZtKs4aD/o1z09VQ
-         6DGE6zxTVshHwx/2O14SrGf+m2HGASh94H9gdciq8GkGBOK6A1m/myROF9y54a4tDNpp
-         2ynGe6Xx7uuBpaUUfm5X5dN/3Qg77U039E4ntx4NiVmr3drKHtell9BWyJVHtRAQDW8f
-         ba7UnWP1djmcZDBzNrAw3w+cYb0twDFUBhIcMD8qNEYqJyt8kjj4/lbf1ON1Rv6NE2Cl
-         kKcQ==
-X-Gm-Message-State: AOJu0YwJETJL7+S1zYx6qylSDPABUwqnpkxnx2g5GbcPvhHDZ6M25TF+
-	SEmF7MwJCzNlzyvM2ubWlaZUHgSjfhG91UQLDh6rkde6YdCfrTY1xvVfvDY3wU/zhbQ=
-X-Gm-Gg: ATEYQzxp21PADelkjqARZZzjABNIaUko9P6er0VhnfLFWaItQGUlKy1GWC0YWmz2GYx
-	E2YwZGuzt/QJDuRz2YfQpTTqNVTKOUzVX36xFBc9Dw60PP9kgs8MstuLEdcEQjfTE8Z8Ygyt0JB
-	xWawXHT7EpASuE8mcm/EpE/PmtIpdK5OXqur8rllH5GQokWEYORnMp11unAIUZGyCdFEeg0ClZT
-	Me74ncUG4zwd8hFqvenLLnnkH2c55gqQ6sQ+/pG2k0t7D4uXUqNiVAAEooDa29nLZuZvctoJEhT
-	CUcTspzpB6UDS5PRzwU+fr6NhsEWKU9Pj5s+L/MJgLZ12RE82G8WlD3Nh2rV5sOawdOJflzCtLl
-	x/hMhgVcVot9xmGRHxEDk50XLkytFRh7edKb/HGrkAnAeKyfzLQafYoRVMEihGGOu6l9oOBoYNe
-	jnGFj5RzFZmajfKIEUGIn+D0If8vPZHRTWXYtNM1V4AhuBNONwGN0=
-X-Received: by 2002:a05:600c:1d1e:b0:487:467:4276 with SMTP id 5b1f17b1804b1-48727f0e6b8mr237690115e9.30.1774907323213;
-        Mon, 30 Mar 2026 14:48:43 -0700 (PDT)
+        bh=VF2FSQ7QUbNvthtKJvDzxVZCDtjhHU5BspA59sUdCAQ=;
+        b=kcsuUexd81jPD8zOK08Rqf8/dkVSD1oBhovYugy8CKGDDqvz0q5WcTMVmdkXe4gJ+3
+         V9tuh9BgdcmL8/moUCvOcwu4A1Rh7OHMQVG0py3eB5Os/3W5yS+v1H6FW+/QBzXqlvb8
+         NyUlS6Lw1im6W3vDXqpxNZ+pPhM8H7Tnj8LXCeAxPNbDlQg18e7QxCpsaCXgDrJ9FxGT
+         XlOkNtQkaFNPWW0zlnIykBMbotepokgyKIqA4YdININ5ZVhtdqzuikd0usABam72iyha
+         PA/Mw2zseF792TM4zb+BjHxL+b9vCf3VIt8asbuY5MPGi3IpWV98EFkKItxV37YPXNoc
+         E0/A==
+X-Gm-Message-State: AOJu0Yx342x6zgP4dCRh7egCxiK6IiM7JldLbI7/MVY7MzW1lb9KED1j
+	ENjv9YgC2uX0l03BBkMDa/VRY1i+o+PCzc11EHUDzFLCKwRB9mD+pdmeVJG6vboqJe0=
+X-Gm-Gg: ATEYQzw5cusQydv9PZ4JkuIL9DAxvd2YpA3Eadh/yHqUPkKC1QR5JZ8nYqPLyM88X/Z
+	DwmT3fjWuNNFr8F6ioyaAyjmc6itCeTnx3AW+ClfYUVx0G+gS+/hyUvV+lJlzqm5sUlBPps95/H
+	eGIXSmKrdzu3WnXeck6uRDzBA+qyWXqNRUcX/9vuzz6BTECVYwaCNBu1QsK3AlgnNX1K4MzF2Y7
+	H1zcp80hhxcERbozJS+gQZNN2azIUFjrky7kKrHWbeHsDKXF2ATX/CYLJC2aQjMtedZXcw5eMjd
+	Gkapy8Wd+uO2t5jyy1ru9hvmCRRMoKRKJrwaTpLeV4rxrCNS0E0WbnndaLUPDQPOBTku+qGfyOk
+	7Yz7RZF5hmP4hJqVEXX9BbSsLN/CFZ7FBoNqV3Qe2/4WlNtEwbtxRAFX1hISw+B2N0tnZ+knc2H
+	6f45FPQoYdXcOXAafJVSdNmT3lU9dl2juAoDY4sMXi+HNdxz8Lvj8gkeDKZFipeA==
+X-Received: by 2002:a05:600c:4744:b0:485:3b00:f92e with SMTP id 5b1f17b1804b1-48727d5e95bmr234780405e9.2.1774908899873;
+        Mon, 30 Mar 2026 15:14:59 -0700 (PDT)
 Received: from ?IPV6:2403:580d:fda1::299? (2403-580d-fda1--299.ip6.aussiebb.net. [2403:580d:fda1::299])
-        by smtp.gmail.com with ESMTPSA id 41be03b00d2f7-c76916da892sm6998489a12.14.2026.03.30.14.48.40
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2b2427b1ef0sm115728835ad.74.2026.03.30.15.14.55
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 30 Mar 2026 14:48:42 -0700 (PDT)
-Message-ID: <6564fe96-ead0-45d4-9655-cd14f13bdc9a@suse.com>
-Date: Tue, 31 Mar 2026 08:18:37 +1030
+        Mon, 30 Mar 2026 15:14:58 -0700 (PDT)
+Message-ID: <05020d93-524f-458d-a44a-765043ddbdb7@suse.com>
+Date: Tue, 31 Mar 2026 08:44:53 +1030
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -69,6 +69,7 @@ MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
 Subject: Re: [PATCH] btrfs: wait for in-flight readahead BIOs on open_ctree()
  error
+From: Qu Wenruo <wqu@suse.com>
 To: Teng Liu <27rabbitlt@gmail.com>
 Cc: linux-btrfs@vger.kernel.org, dsterba@suse.com, clm@fb.com,
  linux-kernel@vger.kernel.org
@@ -76,8 +77,8 @@ References: <20260329063417.642647-1-27rabbitlt@gmail.com>
  <11c944aa-7745-4720-9f40-af99bf7bb727@suse.com> <aclYf4R2XxlUkxAQ@rabbitArch>
  <4a129696-0352-427f-9e0e-7962e789df57@suse.com>
  <840361b6-9b27-4419-b8ab-891ab254fac9@suse.com> <acq5Y9VuDI9htA-I@rabbitArch>
+ <6564fe96-ead0-45d4-9655-cd14f13bdc9a@suse.com>
 Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
 Autocrypt: addr=wqu@suse.com; keydata=
  xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
  8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
@@ -102,103 +103,156 @@ Autocrypt: addr=wqu@suse.com; keydata=
  /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
  o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
  JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <acq5Y9VuDI9htA-I@rabbitArch>
+In-Reply-To: <6564fe96-ead0-45d4-9655-cd14f13bdc9a@suse.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
 
 
-在 2026/3/31 04:30, Teng Liu 写道:
-> On 2026-03-30 08:51, Qu Wenruo wrote:
->>
->>
->> 在 2026/3/30 08:36, Qu Wenruo 写道:
->>>
->>>
->>> Even you wait for all bios, it can still cause problems.
->>>
->>> As the bio counter is only for btrfs bio layer, we still have
->>> btrfs_bio::end_io called after btrfs_bio_counter_dec().
->>>
->>> And if the full fs_info has been freed, then at end_bbio_meta_read(), we
->>> can still have problems as btrfs_validate_extent_buffer() will access eb
->>> (bbio->private) and fs_info (eb->fs_info), which triggers use after
->>> free.
->>>
->>> So using that bio counter is not going to solve all problems, but only
->>> reducing the race window thus masking the problem.
->>>
->>>
->>> The following ideas come up to me, but neither seems as simple as your
->>> current one:
->>>
->>> 1) Introduce a dedicated counter for metadata readahead/reads
->>>      This seems to be the simplest one among all.
->>>      But the only usage is only the error handling, thus may not be
->>>      worthy.
->>>
->>> 2) Disable metadata readahead during open_ctree()
->>>      Which will delay the mount, especially for large extent tree without
->>>      bgt feature.
->>>
->>> 3) Use buffer_tree xarray to iterate through all ebs
->>>      Since this is only for error handling of open_ctree(), we're fine to
->>>      do the full xarray iteration, and wait for any eb that has
->>>      EXTENT_BUFFER_READING flag.
->>>
->>>      The problem is, we do not have a dedicated tag like
->>>      PAGECACHE_TAG_(TOWRITE|DIRTY) to easily catch all dirty/writeback
->>>      ebs.
->>>      So the only option is to go through each eb and check their flags.
->>>
->>>      I think this is the one with minimal impact, but may cause much
->>>      longer runtime during this error handling path.
->>>
->>> My personal preference is option 3).
->>
->> Or the 4th one, which is only an idea and I haven't yet verified:
->>
->> 4) Handle error from invalidate_inode_pages2()
->>     Currently we just call invalidate_inode_pages2() on btree inode and
->>     expect it to return 0.
->>
->>     But if there is still an eb reading pending, it will make that
->>     function to return -EBUSY, as try_release_extent_buffer() will
->>     find a eb whose refs is not 0, and refuse the release that eb which
->>     belongs to a folio.
->>
->>     That should be a good indicator of any pending metadata reads.
->>
->>     So if that invalidate_inode_pages2() returned -EBUSY, we should wait
->>     retry until it returns 0.
->>
->>
+在 2026/3/31 08:18, Qu Wenruo 写道:
 > 
-> Thanks! Yes, it makes sense, simply waiting on the bio counter doesnt
-> fix the problem here.
 > 
-> Among the options, I prefer option 3. Although it may be slower, but it
-> only happens in mount failure path so extra cost seems acceptable.
-
-The problem is not limited to mount failure, but also affects 
-close_ctree() too.
-
-As it shares the same root problem, we have nothing to trace nor wait 
-for any pending metadata read.
-
+> 在 2026/3/31 04:30, Teng Liu 写道:
+[...]
+>>>>
+>>>> 3) Use buffer_tree xarray to iterate through all ebs
+>>>>      Since this is only for error handling of open_ctree(), we're 
+>>>> fine to
+>>>>      do the full xarray iteration, and wait for any eb that has
+>>>>      EXTENT_BUFFER_READING flag.
+>>>>
+>>>>      The problem is, we do not have a dedicated tag like
+>>>>      PAGECACHE_TAG_(TOWRITE|DIRTY) to easily catch all dirty/writeback
+>>>>      ebs.
+>>>>      So the only option is to go through each eb and check their flags.
+>>>>
+>>>>      I think this is the one with minimal impact, but may cause much
+>>>>      longer runtime during this error handling path.
+>>>>
+>>>> My personal preference is option 3).
+>>>
+>>> Or the 4th one, which is only an idea and I haven't yet verified:
+>>>
+>>> 4) Handle error from invalidate_inode_pages2()
+>>>     Currently we just call invalidate_inode_pages2() on btree inode and
+>>>     expect it to return 0.
+>>>
+>>>     But if there is still an eb reading pending, it will make that
+>>>     function to return -EBUSY, as try_release_extent_buffer() will
+>>>     find a eb whose refs is not 0, and refuse the release that eb which
+>>>     belongs to a folio.
+>>>
+>>>     That should be a good indicator of any pending metadata reads.
+>>>
+>>>     So if that invalidate_inode_pages2() returned -EBUSY, we should wait
+>>>     retry until it returns 0.
+>>>
+>>>
+>>
+>> Thanks! Yes, it makes sense, simply waiting on the bio counter doesnt
+>> fix the problem here.
+>>
+>> Among the options, I prefer option 3. Although it may be slower, but it
+>> only happens in mount failure path so extra cost seems acceptable.
 > 
-> I am quite new to btrfs codebase so I dont know whether
-> `invalidate_inode_pages2()` would be a reliable solution so maybe I
-> should start with option 3?
+> The problem is not limited to mount failure, but also affects 
+> close_ctree() too.
+> 
+> As it shares the same root problem, we have nothing to trace nor wait 
+> for any pending metadata read.
+> 
+>>
+>> I am quite new to btrfs codebase so I dont know whether
+>> `invalidate_inode_pages2()` would be a reliable solution so maybe I
+>> should start with option 3?
+> 
+> Sure. Although iterating through xarray may not be that simple either, 
+> as you may still need to look into all kinds of extra locks/rcu lock 
+> etc, and if you apply that to the callsite of close_ctree(), it may be a 
+> much bigger problem, as we have a lot of more ebs compared to mount time.
+> 
+> You can even mix option 3 and 4, e.g. only after 
+> invalidate_inode_pages2() failed with -EBUSY then switch to xarray 
+> iteration.
+> 
+> This should greatly reduce the number of ebs that are still inside the 
+> xarray, thus makes the iteration much faster.
+> 
 
-Sure. Although iterating through xarray may not be that simple either, 
-as you may still need to look into all kinds of extra locks/rcu lock 
-etc, and if you apply that to the callsite of close_ctree(), it may be a 
-much bigger problem, as we have a lot of more ebs compared to mount time.
+Although option 4 is much easier to implement. I'm already testing with 
+a testing patch applied, so far the fstests run looks pretty boring.
 
-You can even mix option 3 and 4, e.g. only after 
-invalidate_inode_pages2() failed with -EBUSY then switch to xarray 
-iteration.
+If you can verify this fix against the original report, it will be 
+appreciated.
 
-This should greatly reduce the number of ebs that are still inside the 
-xarray, thus makes the iteration much faster.
+But please note that, this is only a PoC, not perfect.
+
+
+The biggest problem is the busy loop wait, as I hit a bug of an older 
+version that invalidate_inode_pages2() is called before freeing the root 
+pointers, thus invalidate_inode_pages2() will always return -EBUSY, and 
+take a CPU core to do the busy loop forever.
+
+Even the current version has that problem fixed, it will still cause the 
+same unnecessary busy loop for very slow storage, which is far from ideal.
+
+So option 3 is still needed to avoid busy loop, and may detect 
+unexpected dirty ebs better.
+
+I believe the best option is really mixing option 3 and option 4.
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index c835141ee384..39420d599822 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3706,7 +3706,11 @@ int __cold open_ctree(struct super_block *sb, 
+struct btrfs_fs_devices *fs_device
+         if (fs_info->data_reloc_root)
+                 btrfs_drop_and_free_fs_root(fs_info, 
+fs_info->data_reloc_root);
+         free_root_pointers(fs_info, true);
+-       invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
++       ret = invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
++       while (ret) {
++               cond_resched();
++               ret = 
+invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
++       }
+
+  fail_sb_buffer:
+         btrfs_stop_all_workers(fs_info);
+@@ -4434,19 +4438,23 @@ void __cold close_ctree(struct btrfs_fs_info 
+*fs_info)
+
+         btrfs_put_block_group_cache(fs_info);
+
+-       /*
+-        * we must make sure there is not any read request to
+-        * submit after we stopping all workers.
+-        */
+-       invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
+-       btrfs_stop_all_workers(fs_info);
+-
+         /* We shouldn't have any transaction open at this point */
+         warn_about_uncommitted_trans(fs_info);
+
+         clear_bit(BTRFS_FS_OPEN, &fs_info->flags);
+         free_root_pointers(fs_info, true);
+         btrfs_free_fs_roots(fs_info);
++       /*
++        * we must make sure there is not any read request to
++        * submit after we stopping all workers.
++        */
++       ret = invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
++       while (ret) {
++               cond_resched();
++               ret = 
+invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
++       }
++       btrfs_stop_all_workers(fs_info);
++
+
+         /*
+          * We must free the block groups after dropping the fs_roots as 
+we could
+--

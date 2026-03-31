@@ -1,384 +1,171 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from mail-yx1-f42.google.com (mail-yx1-f42.google.com [74.125.224.42])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C93DB175A87
-	for <linux-btrfs@vger.kernel.org>; Tue, 31 Mar 2026 22:37:02 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774996624; cv=none; b=ilRlZuSxyM+3wtFg8Sb8rYhgppMFcvnaSUwWJBguCWT/Ak9QEMSh00tf37556rSnLrCcx4nb3JyuuSz+9sYYkji73ooBmGBbAtuuU1YgV6DsalJHIkxB6l90WyHWF05YY+m4jqbxrhD70hyNrA1NI1qMXj4f1xbkyJ2A6PQnmgQ=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774996624; c=relaxed/simple;
-	bh=WqA/uz3FEWrveJXehWqxvIbHw1LsDvysUCZKrCK/dUU=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=nQLm1AAI336n7HCK0/Up1EeLfDNR/VZsh6IU4c0Z2NrVTLN/I0qhzIMvxpwRQwe/97+g/nwrIHDdToL98aLqNoX4/JpZFkX55JOC8SgRQwXACCV4TWVraL2idiUWP4s+GfXYfOAXEsqwC/OGv2XOQsd8R1i/v5MzPGjmKpEwPik=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=cpe6uf+J; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=d4BHvKNr; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BA8551A682B
+	for <linux-btrfs@vger.kernel.org>; Tue, 31 Mar 2026 22:47:36 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=74.125.224.42
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1774997258; cv=pass; b=EJbSwECSNijtOehz0+2Wy3goyEerP9uEr6NplmCHBA6jDZ0HbtGvgvZaqyd8GIa973RYQMkTkKtLikadZMaOsVq0mhrIHPc0IsvrncIjXKx1COMKMX6JA9BiCyy6+sPepRn5HbeZ86nJxhkYTDKhdZsFaCqQcbQcKldGYXcaduE=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1774997258; c=relaxed/simple;
+	bh=OfoX7L703MZ4cJln56y4+I2XS1B+XrSr1xvVdv0/W5E=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=KRbBLAhZGMA7l/8ePTgARc9zVU1KCTiRAQ/tGqgR8U1TqB4hgIfn4iPQhOg/96h5o3M4dtHNRjeq+FgHReyc4Zx1GFpC+JCFfFFrlKOB1WfGAk7ix+E61UTeCMgIgLC01bzrYHuPrJLyAbRWtOvSkPuiLJaXvZiuRp8zzNHajyM=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=vietors.com; spf=pass smtp.mailfrom=vietors.com; dkim=pass (2048-bit key) header.d=vietors.com header.i=@vietors.com header.b=WFjPQCU2; arc=pass smtp.client-ip=74.125.224.42
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=vietors.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=vietors.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="cpe6uf+J";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="d4BHvKNr"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id CE25E5BD35;
-	Tue, 31 Mar 2026 22:37:00 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1774996621; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=kQVZpIXG/MrXPfJRHeTcEbydh4mpyvwAAxmCKK8jCJ4=;
-	b=cpe6uf+JemdEX0y1RP/EPjKlqsXf3QwZMZ75r8xtkiqOswgEXXnpm3ZERU+YtXYZFP71tH
-	vjsf4OjXeI+QYI3DkRrhpQvx3lZcR9a0bSYu/rRxMPhaqNYvxVpaeU8gyRgQZBOfr4wXrl
-	/uxAEUZZrOBKA3YJ8xLvJJm5VpaTqvY=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=d4BHvKNr
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1774996620; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=kQVZpIXG/MrXPfJRHeTcEbydh4mpyvwAAxmCKK8jCJ4=;
-	b=d4BHvKNrj6bn99O9BeSPt1QlNsaCFkHJc25kOyc0THUCIiCxAf6qsdw5lYQj2lCdG4/pZn
-	sUGgVrIxjhRSatthADr/js/A94bhZ3EEdF+prsI0Jl0PBdXULDsVh4/jgAPsDhPGO2CUIC
-	rpnNlHKJAODSs+XTWKNoTTA2mFesVFg=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id C178D4A0A2;
-	Tue, 31 Mar 2026 22:37:00 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id Y1m9LoxMzGn4DAAAD6G6ig
-	(envelope-from <dsterba@suse.com>); Tue, 31 Mar 2026 22:37:00 +0000
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH] btrfs: make more ASSERTs verbose, part 3
-Date: Wed,  1 Apr 2026 00:36:59 +0200
-Message-ID: <20260331223659.2098718-1-dsterba@suse.com>
-X-Mailer: git-send-email 2.53.0
+	dkim=pass (2048-bit key) header.d=vietors.com header.i=@vietors.com header.b="WFjPQCU2"
+Received: by mail-yx1-f42.google.com with SMTP id 956f58d0204a3-64ebdab2ecfso1065101d50.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 Mar 2026 15:47:36 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1774997256; cv=none;
+        d=google.com; s=arc-20240605;
+        b=UZ8biDB9UYrJhwZP1rNNzGoUs4svhar/TzfzRatE7icy39QJutomYiMQEq0OT1ME2i
+         BHrE9tDGsAesxqSbELATrLlVjc2Z+Z2paCFV/qNCixf3fWpqsbfc9g4xX7kZjqpaTW8L
+         VY3jZ/hSi4I5e5nQrMntLuCTLdSrIyaBBg8jrcYCIpN0+sPWM/4yWRyzaNmQUQm/lKEo
+         oZAXRGmf6UbdUgjxB8U3T6sxXpFOaSwDCHK8wu7WXB/XTqhssVpfqfaxRWbNGD+q8z+6
+         bkTfdR6UucQNtoMPhbEgbgTFENPFFvSq0Dez7oAHrGYOxNXYbtDSH9BVo8C2hciNq368
+         DG5w==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:dkim-signature;
+        bh=OfoX7L703MZ4cJln56y4+I2XS1B+XrSr1xvVdv0/W5E=;
+        fh=gccavu6KskZuhdxKZGGZqKbRpE8AZv+Jw1v9OVMw784=;
+        b=FcrmTe6LPxil2AoQJS7h3SI7Wi+qcUgpYABAeUG0Nb7t23N4MhjMH4aZDhu4eNwpO5
+         LZEk0xLzrGyGLBsF2CwOCzDFU1zsSs6EVFZNyGjFB6iukveEBBPb8wA/KZp0o2ep9G5d
+         YVxW2zRHz3zirA/672zV89iQhmxQCtfAKoj0TeVfzu7DTFlEP8vp/56KslGozwkg4cC3
+         F1u3Sklu9nncvHSh5DakTbPi0x8Imx0SviZOKK+ET1cV+/6Tzi4/iSSZs+3n8d4K7tW3
+         +9JS1JHpTRrUIdZpGNV40A512PPrYymVUQPvE+gwRMCWfbJk9SZmJrmHP33njyQ32SIt
+         S79Q==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=vietors.com; s=google; t=1774997256; x=1775602056; darn=vger.kernel.org;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=OfoX7L703MZ4cJln56y4+I2XS1B+XrSr1xvVdv0/W5E=;
+        b=WFjPQCU2uf6cr+nT6TIZBSM9ebr9UkZXRh81plD8YauER7eDHx9lqBEamclPJakdm5
+         wJk+wHzZd0QLaCa+GntZHa26PTjGo7JoFvRpFX9B18fVNiPBjC/NXLNlb0sS2/rRi1Bb
+         xLNMH9ujt+TuFoas38TgSmB067pxtJYYUEIawGAA6L+ZdEmqrDjTg36JKXfAwE3KPPKk
+         WYeJS7xL8pToDEWjvyLVc638a6Xu9122eIacBWcwPlwF4eIXEaqBLw2TjdUDW8RP6Iv9
+         CxVW9ZYN+cTxx6QCrxWR26UWEIH7iKoF312ei2pPCuTz2QZjESOjbXIr1aqGt8mnBFj/
+         z3cg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1774997256; x=1775602056;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-gg:x-gm-message-state:from
+         :to:cc:subject:date:message-id:reply-to;
+        bh=OfoX7L703MZ4cJln56y4+I2XS1B+XrSr1xvVdv0/W5E=;
+        b=Orz5C0YH8Tm/kYqCS/GBivPfznkA0Weqn95zSqaGqgVx6zp8/0KUCQpGIlbGcz9LUI
+         S0MfPZQcmTCdwREx3dnMJGsljMoH2d32lJFx+W5pB+3bA3cgr81yhgki286CqM4n4Fog
+         am5Rl+7Hrxn4nlWRQ+IiO7RRg/zyjc4CQRTWCoFbbHcH8zMRsj40MQopx6CG16E1yTvN
+         qmzzP3KqB00b9lQsklzEEnYzJ5J/e81J+jMmTQNBhvgkNHEiCHRnhH9JNKF6zDiaq1D1
+         MSBOHAs5l8DxVrZzoaVR4qA2O0ghhLcZFD2xL4KVrg79Q479NG+sUzFI/fTgXPBG0BZt
+         qiVA==
+X-Gm-Message-State: AOJu0YxikpjfWHJPX41OUNJuu5UfB5NAZGEN1i02eZ0pqc2DojZY+RJv
+	f5q8durK7TV5/kUtx8AllfU3IKMq3aPt/109yd6w+2iOWRaZ18+3hXxm/VtTI5nZmqkbIi36pNq
+	bz6YF/Vi2H1H33jF2NY77xx2a0W/JXreHf/jc8jIKjQ==
+X-Gm-Gg: ATEYQzzQkfuT+reNkAGNsrEqwni/v4cdwhJmgaRZN2dHMv1vKL/Y6sYADjTFzqyx1Dz
+	F4YyIErcR+1MVzbU1LuKsTR+0/TUkwKbkzo/dYnRoTiWhpcL51P5Jk6d0cbgP0HCwpNoE7XEmYb
+	cI560lxe3JrDjZdDNn95bvSQZDlw9fUmSTMk0VRyL5/B3cCjZRgvVPwRL+xkmXu1PsMbmu3tXwG
+	j2OnZ+By1uzjKRCaclCaN+W2L5+pJK/HetdZ/VzekReeekp3OtPCQWfImGmxZg88mWO6aXOPnXp
+	oLA8i+Hh8l2m4ehxRmNYeNdZB3+ZoaNCv8GUOQ==
+X-Received: by 2002:a05:690c:6704:b0:79e:631e:67b with SMTP id
+ 00721157ae682-7a21213f98fmr10554377b3.4.1774997255734; Tue, 31 Mar 2026
+ 15:47:35 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Rspamd-Action: no action
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	MID_CONTAINS_FROM(1.00)[];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	ARC_NA(0.00)[];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	MIME_TRACE(0.00)[0:+];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	TO_DN_SOME(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	FROM_HAS_DN(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,suse.com:mid,suse.com:email];
-	RCVD_TLS_ALL(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	RCPT_COUNT_TWO(0.00)[2];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Rspamd-Queue-Id: CE25E5BD35
-X-Spam-Flag: NO
-X-Spam-Score: -3.01
-X-Spam-Level: 
+References: <CAF1bhLVYLZvD=j2XyuxXDKD-NWNJAwDnpVN+UYeQW-HbzNRn1A@mail.gmail.com>
+ <2aa4a94b-1f10-4b17-a78a-2a58efb56522@suse.com> <CAF1bhLWJuHjf8e-4o9y-hhFqadpQ=13P-PZSJLem5Q_A2T-CTw@mail.gmail.com>
+ <d470a043-72c0-4124-800c-385c19007b9e@suse.com> <CAF1bhLVahaWzAk3xXLdDSgacHjnMZLutbcP05zuxfTc3JuK-4Q@mail.gmail.com>
+ <4f99d0c6-42a8-4d23-8cc0-48ff64cc8f4b@suse.com> <CAF1bhLWnf2CLnZ=BbBVS1je8a7LYacbKDAaLYNgFzY+Z1=L2=Q@mail.gmail.com>
+ <a2e56b07-b0fc-485c-8a68-2136e595ec3b@suse.com> <CAF1bhLUGwb17jVD-7cVqA1OTRRRYbt_ow1+GZYbFgChN8mdKtA@mail.gmail.com>
+ <22009c9f-f4cf-499f-aad6-70e94874dadc@suse.com>
+In-Reply-To: <22009c9f-f4cf-499f-aad6-70e94874dadc@suse.com>
+From: =?UTF-8?Q?Jaron_Vi=C3=ABtor?= <jaron@vietors.com>
+Date: Wed, 1 Apr 2026 00:47:24 +0200
+X-Gm-Features: AQROBzCdpNRFEzxUTlLXWShu8aKQmnrAOLfxjDQ8RmLRPRgeuxLTM_pGekb0gnQ
+Message-ID: <CAF1bhLXNCeoct-SPoeLWXUKEmZnbjd0gXLmJqDdEmoPOg-FwZg@mail.gmail.com>
+Subject: Re: Problem mounting 4-drive RAID1 fs after replace was interrupted
+ by kernel crash
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-We have support for optional string to be printed in ASSERT() (added in
-19468a623a9109 ("btrfs: enhance ASSERT() to take optional format
-string")), it's not yet everywhere it could be so add a few more files.
+On Wed, Apr 1, 2026 at 12:33=E2=80=AFAM Qu Wenruo <wqu@suse.com> wrote:
+>
+>
+>
+> =E5=9C=A8 2026/4/1 08:41, Jaron Vi=C3=ABtor =E5=86=99=E9=81=93:
+> > On Wed, Apr 1, 2026 at 12:07=E2=80=AFAM Qu Wenruo <wqu@suse.com> wrote:
+> >>
+> >>
+> >>
+> >> =E5=9C=A8 2026/4/1 08:31, Jaron Vi=C3=ABtor =E5=86=99=E9=81=93:
+> >>> On Tue, Mar 31, 2026 at 11:58=E2=80=AFPM Qu Wenruo <wqu@suse.com> wro=
+te:
+> >> [...]
+> >>>> My bad, I forgot to ask for dump-tree of dev tree:
+> >>>>
+> >>>> # btrfs ins dump-tree -t dev <device>
+> >>>>
+> >>>> Again it's fine to dump it from any good device.
+> >>>
+> >>> No worries! Here it is: https://transfer.ddvtech.com/pY3LV9yw1L/dump_=
+tree.txt
+> >>
+> >> And the last one, from chunk tree:
+> >>
+> >> # btrfs ins dump-tree -t chunk <device>
+> >
+> > Here you go:
+> > https://transfer.ddvtech.com/FAXxEEq71p/dump_tree_chunk.txt
+>
+> Thanks a lot.
+>
+> All the dumps show that everything is fine, except we do not have a
+> device item in the chunk tree for the replace target device.
+>
+> After some more digging, it looks like we didn't really insert the
+> device item for the target device into chunk tree.
+>
+> So it triggered a false alert from btrfs_verify_dev_items(), thus
+> rejected the mount.
+>
+> Thankfully the check is only introduced in v6.19 and should not been
+> backported to older kernels.
+>
+> You can try to downgrade the kernel to v6.18 or even the latest LTS
+> (v6.12), and try to mount them again.
+>
+> Meanwhile I'll need to address the regression properly.
 
-Try to finish what was left after 1c094e6ccead7a ("btrfs: make a few
-more ASSERTs verbose").
+That seems to have done the trick!
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/backref.c          |  4 ++--
- fs/btrfs/extent-tree.c      | 14 +++++++++-----
- fs/btrfs/extent_map.c       |  6 +++---
- fs/btrfs/fiemap.c           |  2 +-
- fs/btrfs/file-item.c        |  4 +++-
- fs/btrfs/file.c             | 10 +++++++---
- fs/btrfs/ioctl.c            |  3 ++-
- fs/btrfs/ordered-data.c     | 12 +++++++-----
- fs/btrfs/raid-stripe-tree.c |  7 +++++--
- fs/btrfs/reflink.c          |  5 +++--
- 10 files changed, 42 insertions(+), 25 deletions(-)
+BTRFS info (device sdb1): first mount of filesystem
+d18c93f8-d80a-4aa7-adc5-86d457ddde20
+BTRFS info (device sdb1): using crc32c (crc32c-lib) checksum algorithm
+BTRFS info (device sdb1): bdev /dev/sdh1 errs: wr 0, rd 16, flush 0,
+corrupt 1054, gen 0
+BTRFS info (device sdb1): bdev /dev/sdi1 errs: wr 0, rd 0, flush 0,
+corrupt 379, gen 0
+BTRFS info (device sdb1): bdev /dev/sdj1 errs: wr 0, rd 0, flush 0,
+corrupt 1652, gen 0
+BTRFS info (device sdb1): bdev /dev/sdk1 errs: wr 0, rd 0, flush 0,
+corrupt 1522, gen 0
+BTRFS info (device sdb1): start tree-log replay
+BTRFS info (device sdb1): enabling free space tree
+BTRFS info (device sdb1): continuing dev_replace from /dev/sdi1 (devid
+7) to target /dev/sdb1 @7%
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index 273924ca912c2f..2c25e5d86f3e42 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -2367,7 +2367,7 @@ int tree_backref_for_extent(unsigned long *ptr, struct extent_buffer *eb,
- 		info = (struct btrfs_tree_block_info *)(ei + 1);
- 		*out_level = btrfs_tree_block_level(eb, info);
- 	} else {
--		ASSERT(key->type == BTRFS_METADATA_ITEM_KEY);
-+		ASSERT(key->type == BTRFS_METADATA_ITEM_KEY, "key->type=%hhu", key->type);
- 		*out_level = (u8)key->offset;
- 	}
- 
-@@ -3199,7 +3199,7 @@ static int handle_direct_tree_backref(struct btrfs_backref_cache *cache,
- 	struct btrfs_backref_node *upper;
- 	struct rb_node *rb_node;
- 
--	ASSERT(ref_key->type == BTRFS_SHARED_BLOCK_REF_KEY);
-+	ASSERT(ref_key->type == BTRFS_SHARED_BLOCK_REF_KEY, "ref_key->type=%hhu", ref_key->type);
- 
- 	/* Only reloc root uses backref pointing to itself */
- 	if (ref_key->objectid == ref_key->offset) {
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 391fad41c3b6d9..a097ed8518645e 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -385,7 +385,7 @@ int btrfs_get_extent_inline_ref_type(const struct extent_buffer *eb,
- 					return type;
- 			}
- 		} else {
--			ASSERT(is_data == BTRFS_REF_TYPE_ANY);
-+			ASSERT(is_data == BTRFS_REF_TYPE_ANY, "is_data=%d", is_data);
- 			return type;
- 		}
- 	}
-@@ -2531,8 +2531,10 @@ int btrfs_cross_ref_exist(struct btrfs_inode *inode, u64 offset,
- 				struct btrfs_key key;
- 
- 				btrfs_item_key_to_cpu(leaf, &key, path->slots[0]);
--				ASSERT(key.objectid == bytenr);
--				ASSERT(key.type == BTRFS_EXTENT_ITEM_KEY);
-+				ASSERT(key.objectid == bytenr, "key.objectid=%llu",
-+				       key.objectid);
-+				ASSERT(key.type == BTRFS_EXTENT_ITEM_KEY, "key.type=%u",
-+				       key.type);
- 			}
- 		}
- 
-@@ -4598,10 +4600,12 @@ static noinline int find_free_extent(struct btrfs_root *root,
- 		/* Use dedicated sub-space_info for dedicated block group users. */
- 		if (ffe_ctl->for_data_reloc) {
- 			space_info = space_info->sub_group[0];
--			ASSERT(space_info->subgroup_id == BTRFS_SUB_GROUP_DATA_RELOC);
-+			ASSERT(space_info->subgroup_id == BTRFS_SUB_GROUP_DATA_RELOC,
-+			       "space_info->subgroup_id=%d", space_info->subgroup_id);
- 		} else if (ffe_ctl->for_treelog) {
- 			space_info = space_info->sub_group[0];
--			ASSERT(space_info->subgroup_id == BTRFS_SUB_GROUP_TREELOG);
-+			ASSERT(space_info->subgroup_id == BTRFS_SUB_GROUP_TREELOG,
-+			       "space_info->subgroup_id=%d", space_info->subgroup_id);
- 		}
- 	}
- 	if (!space_info) {
-diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-index 095a561d733f0c..93a0950293a335 100644
---- a/fs/btrfs/extent_map.c
-+++ b/fs/btrfs/extent_map.c
-@@ -717,7 +717,7 @@ int btrfs_add_extent_mapping(struct btrfs_inode *inode,
- 	 * file offset. Here just do a sanity check.
- 	 */
- 	if (em->disk_bytenr == EXTENT_MAP_INLINE)
--		ASSERT(em->start == 0);
-+		ASSERT(em->start == 0, "em->start=%llu", em->start);
- 
- 	ret = add_extent_mapping(inode, em, false);
- 	/* it is possible that someone inserted the extent into the tree
-@@ -761,7 +761,7 @@ int btrfs_add_extent_mapping(struct btrfs_inode *inode,
- 		}
- 	}
- 
--	ASSERT(ret == 0 || ret == -EEXIST);
-+	ASSERT(ret == 0 || ret == -EEXIST, "ret=%d", ret);
- 	return ret;
- }
- 
-@@ -943,7 +943,7 @@ void btrfs_drop_extent_map_range(struct btrfs_inode *inode, u64 start, u64 end,
- 
- 				ret = add_extent_mapping(inode, split, modified);
- 				/* Logic error, shouldn't happen. */
--				ASSERT(ret == 0);
-+				ASSERT(ret == 0, "ret=%d", ret);
- 				if (WARN_ON(ret != 0) && modified)
- 					btrfs_set_inode_full_sync(inode);
- 			}
-diff --git a/fs/btrfs/fiemap.c b/fs/btrfs/fiemap.c
-index 27d361c7adc4d8..6263e837093e42 100644
---- a/fs/btrfs/fiemap.c
-+++ b/fs/btrfs/fiemap.c
-@@ -112,7 +112,7 @@ static int emit_fiemap_extent(struct fiemap_extent_info *fieinfo,
- 	u64 cache_end;
- 
- 	/* Set at the end of extent_fiemap(). */
--	ASSERT((flags & FIEMAP_EXTENT_LAST) == 0);
-+	ASSERT((flags & FIEMAP_EXTENT_LAST) == 0, "flags=0x%u", flags);
- 
- 	if (!cache->cached)
- 		goto assign;
-diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index d72249390030f4..82ae4a2afd3471 100644
---- a/fs/btrfs/file-item.c
-+++ b/fs/btrfs/file-item.c
-@@ -325,7 +325,9 @@ static int search_csum_tree(struct btrfs_fs_info *fs_info,
- 
- 	csum_start = key.offset;
- 	csum_len = (itemsize / csum_size) * sectorsize;
--	ASSERT(in_range(disk_bytenr, csum_start, csum_len));
-+	ASSERT(in_range(disk_bytenr, csum_start, csum_len),
-+	       "disk_bytenr=%llu csum_start=%llu csum_len=%llu",
-+	       disk_bytenr, csum_start, csum_len);
- 
- found:
- 	ret = (min(csum_start + csum_len, disk_bytenr + len) -
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 06cc6e13cb621f..00318b9e5675d4 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1227,8 +1227,11 @@ static int copy_one_range(struct btrfs_inode *inode, struct iov_iter *iter,
- 		return ret;
- 	reserved_len = ret;
- 	/* Write range must be inside the reserved range. */
--	ASSERT(reserved_start <= start);
--	ASSERT(start + write_bytes <= reserved_start + reserved_len);
-+	ASSERT(reserved_start <= start, "reserved_start=%llu start=%llu",
-+	       reserved_start, start);
-+	ASSERT(start + write_bytes <= reserved_start + reserved_len,
-+	       "start=%llu write_bytes=%zu reserved_start=%llu reserved_len=%llu",
-+	       start, write_bytes, reserved_start, reserved_len);
- 
- again:
- 	ret = balance_dirty_pages_ratelimited_flags(inode->vfs_inode.i_mapping,
-@@ -2335,7 +2338,8 @@ static int btrfs_insert_replace_extent(struct btrfs_trans_handle *trans,
- 			    btrfs_item_ptr_offset(leaf, slot),
- 			    sizeof(struct btrfs_file_extent_item));
- 	extent = btrfs_item_ptr(leaf, slot, struct btrfs_file_extent_item);
--	ASSERT(btrfs_file_extent_type(leaf, extent) != BTRFS_FILE_EXTENT_INLINE);
-+	ASSERT(btrfs_file_extent_type(leaf, extent) != BTRFS_FILE_EXTENT_INLINE,
-+	       "file_extent_type=%u", btrfs_file_extent_type(leaf, extent));
- 	btrfs_set_file_extent_offset(leaf, extent, extent_info->data_offset);
- 	btrfs_set_file_extent_num_bytes(leaf, extent, replace_len);
- 	if (extent_info->is_new_extent)
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index b2e447f5005c16..312585d9e1cad0 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -5092,7 +5092,8 @@ static int btrfs_ioctl_subvol_sync(struct btrfs_fs_info *fs_info, void __user *a
- 			return -ENOENT;
- 
- 		wait_for_deletion = true;
--		ASSERT(root_flags & BTRFS_ROOT_SUBVOL_DEAD);
-+		ASSERT(root_flags & BTRFS_ROOT_SUBVOL_DEAD, "root_flags=0x%llx",
-+		       root_flags);
- 		sched_ret = schedule_timeout_interruptible(HZ);
- 		/* Early wake up or error. */
- 		if (sched_ret != 0)
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index d39f1c49d1cf8f..8ebd046b79569d 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -157,7 +157,8 @@ static struct btrfs_ordered_extent *alloc_ordered_extent(
- 	       ((1U << BTRFS_ORDERED_NOCOW) | (1U << BTRFS_ORDERED_PREALLOC)));
- 
- 	/* Only one type flag can be set. */
--	ASSERT(has_single_bit_set(flags & BTRFS_ORDERED_EXCLUSIVE_FLAGS));
-+	ASSERT(has_single_bit_set(flags & BTRFS_ORDERED_EXCLUSIVE_FLAGS),
-+	       "flags=0x%lx", flags);
- 
- 	/* DIRECT cannot be set with COMPRESSED nor ENCODED. */
- 	if (test_bit(BTRFS_ORDERED_DIRECT, &flags)) {
-@@ -302,7 +303,7 @@ struct btrfs_ordered_extent *btrfs_alloc_ordered_extent(
- {
- 	struct btrfs_ordered_extent *entry;
- 
--	ASSERT((flags & ~BTRFS_ORDERED_TYPE_FLAGS) == 0);
-+	ASSERT((flags & ~BTRFS_ORDERED_TYPE_FLAGS) == 0, "flags=0x%lx", flags);
- 
- 	/*
- 	 * For regular writes, we just use the members in @file_extent.
-@@ -1238,7 +1239,7 @@ struct btrfs_ordered_extent *btrfs_split_ordered_extent(
- 
- 	trace_btrfs_ordered_extent_split(inode, ordered);
- 
--	ASSERT(!(flags & (1U << BTRFS_ORDERED_COMPRESSED)));
-+	ASSERT(!(flags & (1U << BTRFS_ORDERED_COMPRESSED)), "flags=0x%lx", flags);
- 
- 	/*
- 	 * The entire bio must be covered by the ordered extent, but we can't
-@@ -1260,7 +1261,7 @@ struct btrfs_ordered_extent *btrfs_split_ordered_extent(
- 	}
- 	/* We cannot split partially completed ordered extents. */
- 	if (ordered->bytes_left) {
--		ASSERT(!(flags & ~BTRFS_ORDERED_TYPE_FLAGS));
-+		ASSERT(!(flags & ~BTRFS_ORDERED_TYPE_FLAGS), "flags=0x%lx", flags);
- 		if (WARN_ON_ONCE(ordered->bytes_left != ordered->disk_num_bytes))
- 			return ERR_PTR(-EINVAL);
- 	}
-@@ -1307,7 +1308,8 @@ struct btrfs_ordered_extent *btrfs_split_ordered_extent(
- 	ordered->ram_bytes -= len;
- 
- 	if (test_bit(BTRFS_ORDERED_IO_DONE, &ordered->flags)) {
--		ASSERT(ordered->bytes_left == 0);
-+		ASSERT(ordered->bytes_left == 0, "ordered->bytes_left=%llu",
-+		       ordered->bytes_left);
- 		new->bytes_left = 0;
- 	} else {
- 		ordered->bytes_left -= len;
-diff --git a/fs/btrfs/raid-stripe-tree.c b/fs/btrfs/raid-stripe-tree.c
-index 638c4ad572c996..03168f9c397e10 100644
---- a/fs/btrfs/raid-stripe-tree.c
-+++ b/fs/btrfs/raid-stripe-tree.c
-@@ -139,7 +139,8 @@ int btrfs_delete_raid_extent(struct btrfs_trans_handle *trans, u64 start, u64 le
- 			btrfs_item_key_to_cpu(leaf, &key, slot);
- 			found_start = key.objectid;
- 			found_end = found_start + key.offset;
--			ASSERT(found_start <= start);
-+			ASSERT(found_start <= start, "found_start=%llu start=%llu",
-+			       found_start, start);
- 		}
- 
- 		if (key.type != BTRFS_RAID_STRIPE_KEY)
-@@ -239,7 +240,9 @@ int btrfs_delete_raid_extent(struct btrfs_trans_handle *trans, u64 start, u64 le
- 			btrfs_partially_delete_raid_extent(trans, path, &key,
- 							   key.offset - length,
- 							   length);
--			ASSERT(key.offset - diff_end == length);
-+			ASSERT(key.offset - diff_end == length,
-+			       "key.offset=%llu diff_end=%llu length=%llu",
-+			       key.offset, diff_end, length);
- 			break;
- 		}
- 
-diff --git a/fs/btrfs/reflink.c b/fs/btrfs/reflink.c
-index 49865a46378091..1897816bf7f8db 100644
---- a/fs/btrfs/reflink.c
-+++ b/fs/btrfs/reflink.c
-@@ -69,7 +69,8 @@ static int copy_inline_to_page(struct btrfs_inode *inode,
- 	struct address_space *mapping = inode->vfs_inode.i_mapping;
- 	int ret;
- 
--	ASSERT(IS_ALIGNED(file_offset, block_size));
-+	ASSERT(IS_ALIGNED(file_offset, block_size), "file_offset=%llu block_size=%u",
-+	       file_offset, block_size);
- 
- 	/*
- 	 * We have flushed and locked the ranges of the source and destination
-@@ -459,7 +460,7 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
- 		    key.objectid != btrfs_ino(BTRFS_I(src)))
- 			break;
- 
--		ASSERT(key.type == BTRFS_EXTENT_DATA_KEY);
-+		ASSERT(key.type == BTRFS_EXTENT_DATA_KEY, "key.type=%u", key.type);
- 
- 		extent = btrfs_item_ptr(leaf, slot,
- 					struct btrfs_file_extent_item);
--- 
-2.53.0
+Thanks for the super fast response, and good luck patching the regression.
 
+>
+> Thanks,
+> Qu

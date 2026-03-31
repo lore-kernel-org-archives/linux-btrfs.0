@@ -1,158 +1,217 @@
-Received: from mail-yx1-f41.google.com (mail-yx1-f41.google.com [74.125.224.41])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BFDF33590A9
-	for <linux-btrfs@vger.kernel.org>; Tue, 31 Mar 2026 20:39:49 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=74.125.224.41
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774989591; cv=pass; b=DZCUBRHDittI+jOTcUsBdgoFW4RteWBAgnPQQjbl87TJnaAsZJpyE1gQoSdBc42K9IyfZO7ujRvZsQ30D9PvQvrHXRuRMvV2YJQQfSJSmQUCf0Jcy5oecVI6b+eomkN+PvzCQPMU/cRW4yM2q/xwM9QrhNnXicqwt+fg6bRCsbo=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774989591; c=relaxed/simple;
-	bh=8NGCN2uRKgpR2nvZMIOlPy8zJmYv5pSJnYgE208jz+Q=;
-	h=MIME-Version:From:Date:Message-ID:Subject:To:Content-Type; b=eRv8NsiErShCFwiDX2ajstsHK+UEJhXpMi7btcMsZY1OYoVGmDcuJdpdh17srh+ISya4Rf7VynDTodUHe1CNNZ32HtaZgETeQnypVFdQByXk6fXZpx0zM/9CWQCGYuYezbcsU+hALq7BMWSBVJsNE6NYh2F6Cm3WaMlXlAywtrs=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=vietors.com; spf=pass smtp.mailfrom=vietors.com; dkim=pass (2048-bit key) header.d=vietors.com header.i=@vietors.com header.b=ZFc19tpk; arc=pass smtp.client-ip=74.125.224.41
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=vietors.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=vietors.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1F32718859B
+	for <linux-btrfs@vger.kernel.org>; Tue, 31 Mar 2026 20:49:29 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.129.124
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1774990171; cv=none; b=ohnrDqheQE4oCMQHeNRWCqJ/g24JtvphGBq1z3rxMgFm8WR8AezsaRapFo0ELkDaO9HiKjqMJCJ+XCZaeqb5wZnhuC7JZv42x0fff2daqGDF9Fcu5avMZNsoW/DJYE7gaHkvkJbokLQYuCMA9l1AM2LhZTEPk7nPE9TheK9CefQ=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1774990171; c=relaxed/simple;
+	bh=bgXsPX9PS9PUkPSkrCQXidjXeHIZThaaQma6mPtdsp4=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=XqGhXG3CZVq2F2s/aspXKcynoCVKwX9mjMtr6iBkjvi9V84GWbGHuMbUeuU7306ryFr1KzrAqh/tSWxU4ue7ob5W4yS1qK0A/4Acze2AliMBDtfbcxdWVE9K8CBzbGgYJvw+mErl+UVp1fXB//spJvZplVl/mT4cYsb9AuONO6c=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=Es91Hl7y; dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b=poHHCpPc; arc=none smtp.client-ip=170.10.129.124
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=vietors.com header.i=@vietors.com header.b="ZFc19tpk"
-Received: by mail-yx1-f41.google.com with SMTP id 956f58d0204a3-6470d549e10so924357d50.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 31 Mar 2026 13:39:49 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1774989589; cv=none;
-        d=google.com; s=arc-20240605;
-        b=ZThzDSTQoj25LbnNT6frzvT8y0sfVy9quNuplMQ+OYDhWP2qiJPWqPd4cVvHz+BhbN
-         5v67nBZPwe5ApKKdB4GyG7kqkcGcvSAuj7TMGONglU6HkzlFJAeDDIkQJvlTJHgSTlXq
-         8ZookYOJhE0mF3pHOzSdcMNMJtJuEbgaLM6h6YSTH/XH9y77GkKuFZ4xEKGsQAadFZ3m
-         C5hX2ftut36cIjmhLnXBgxWgpeWp8HbLzi+xkPpTjIA5gnq4QZYCQUW3jgYFwtTxmd6e
-         1lhYSevAzwc3jZA6Iwx9fV67qv+Xue3O2OlxoUW54FYuWoau1tDIOTqcs50PFvru2YLT
-         97rQ==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
-        h=content-transfer-encoding:to:subject:message-id:date:from
-         :mime-version:dkim-signature;
-        bh=8NGCN2uRKgpR2nvZMIOlPy8zJmYv5pSJnYgE208jz+Q=;
-        fh=IOI3BSFtc4S+mY5yRaEOyEQVEbaexZFmwOG7FNW1hpE=;
-        b=O+HVe0AtWzNfHB2zxrQJngHvOuhEdZeTPmzmZTnet22RGK9+J7lQmU4jbcHjsCGXOK
-         0jKr7SNzQjOSQoBJLJv1DI8pM1xi0gpr5oLXIHtojDhyR5euUdi6FEIOQdVm88WQ0BVD
-         EbQyQQVmMh3e7n3G00ENMubt6b7InOgfpMz2OBbv8c7jR+wNcbV5knsoZ7FVfJohlnDH
-         8UHJ17iFjFLzGuJ5l8o8nqsX4d6zv/a+TU6O3JGoZglhHHMVgh1U0d5PeV/MIkdFeQ7f
-         f81eoQtismgA6PTkAuDf6EYtMVzCMV5VuEDUgczgAqZbWtDzXbgNQVp6xFfyfUJWp8el
-         npDQ==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
+	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="Es91Hl7y";
+	dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b="poHHCpPc"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+	s=mimecast20190719; t=1774990169;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=0mnAwTu+mdk6SjwzOQooJKc6qr/lCoIEhYMItpm9cG4=;
+	b=Es91Hl7ylNX9eFTJApc3uim5RB9RllwrwEZR1DmdraaxC7JYkvZNb6wDfQezuIX7oxcboc
+	iV4xbhqH/7ZVlWjPE4i5rLDWl5e274xh9uonI1IeuiffXuui+DwW5oS7OST4vdUiXxFjmq
+	MI+IjASSMGw7XDul6sDhEvuZjnGOF3Q=
+Received: from mail-pj1-f69.google.com (mail-pj1-f69.google.com
+ [209.85.216.69]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
+ us-mta-513-26aBBgLcOjaWYxO9UUYnFQ-1; Tue, 31 Mar 2026 16:49:27 -0400
+X-MC-Unique: 26aBBgLcOjaWYxO9UUYnFQ-1
+X-Mimecast-MFC-AGG-ID: 26aBBgLcOjaWYxO9UUYnFQ_1774990166
+Received: by mail-pj1-f69.google.com with SMTP id 98e67ed59e1d1-35d9467e85aso3520762a91.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 Mar 2026 13:49:27 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=vietors.com; s=google; t=1774989589; x=1775594389; darn=vger.kernel.org;
-        h=content-transfer-encoding:to:subject:message-id:date:from
-         :mime-version:from:to:cc:subject:date:message-id:reply-to;
-        bh=8NGCN2uRKgpR2nvZMIOlPy8zJmYv5pSJnYgE208jz+Q=;
-        b=ZFc19tpkj3E8OmfNXHdYReAPHXTyKtXPhY3AxnAudqeBJUGV4baH38rnWs+BPt2AV3
-         m2cW6rBKkt4FJ/+diUr5OzRdiBvecCu2z7BkpafE5DVlUG37i6Zgo00sxEvP0FRSuUWb
-         faigNs4N4spJwWgRFPjwux4J61FRMoY6hvzT4WKxSpyvW4VBiFAN5cgpNfi0vElcfWY9
-         h0GDisxkVG6TenbHnnyF3U5nSPjHVm5UYootyYFYkZEn0s1EYtsRx796sWAi2WS2OnJ5
-         k3vnnV3ZKDVMwHk8yoJaPail/c2cZsDjQ1hr7nQDMxkmAsKKPjZtCxUXtGOPF2gdSycf
-         PFTA==
+        d=redhat.com; s=google; t=1774990166; x=1775594966; darn=vger.kernel.org;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
+        bh=0mnAwTu+mdk6SjwzOQooJKc6qr/lCoIEhYMItpm9cG4=;
+        b=poHHCpPcDvN0PI4o/tz+XL0ss2ZN6l8QPH7h3iLuSz/h+mmy9ANk32dGoG3vl6RrhT
+         hBVOKhR6UerF3gvITtKPzcJjKxJdYx5ooAb0Q3J0wFDN4poYpW1DY+3VoXZD04VhzBCw
+         ehcEt7WLC0auyqOhxKBjGyz0Zxf+iSWIt4SMIurlbu1u/knTaGbyri7v/8Ir/UkD+moy
+         6dW8R7kPNgaRQLbjwuuHLaz1cRKafjPJuD53+mC25XuCBBoDnHq+V48HJnH6U8uJZxhl
+         cLvha+9TeN8oJwDDDGPTv0dFBi1mcp43l0dhhKvj4bqjoIzUjhbvUtX2Uq3pNwCPkIOM
+         it+A==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1774989589; x=1775594389;
-        h=content-transfer-encoding:to:subject:message-id:date:from
-         :mime-version:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=8NGCN2uRKgpR2nvZMIOlPy8zJmYv5pSJnYgE208jz+Q=;
-        b=VCJn/yQ8uvvpj0+Sat23GhFMjmXGw4UwdxyrBABOf1hD5t2uKL9newHkQfo4f+D9eG
-         8A/tF6eJgrsYGyE4iBit2q4pq/GH4TLVpkWl/jJ5xUvD3Oh0ClCyrMTtOfYSQJ1VC8Eb
-         O5ZAYna/V1iLryZi0BK+Kg1B8MygsK3ETYa0Ssd0cokdmsHwDjN3KpaWgx5aYNcmR3Sc
-         58yxn/Jr2JsCEme5Yi9XaVenz79S8b60bnYN+/UfMzb1mfzXsfykTTEUKO55H4d46ddw
-         cSQcPb2tQwOD3m7HTmXUSMnj1yNBynCwxhP01CtY+PcB9UWwKxZrccWhCl0Db1ULqT7x
-         z/HA==
-X-Gm-Message-State: AOJu0YwsLyUVW1op6LZDcWx+o2cqDllFOb0J7dDLJNOjlDciPjHpsvPz
-	wugOpqqhubh3gsRae5ilYlL+dPNUxiOSxwVVX4liJkQ8l6DddnZu78Or+IhuH3/ZbSIPToRhGmu
-	mhQMlAYavb6pgYr1E0d64u2jRCVNdpbEySbBAibuBCw2Dke0gudMOQ3o=
-X-Gm-Gg: ATEYQzzflPaq3Zz9Cb7MXmHjCxhRCu8EZYq9nG4Vzhihfui/qmhB1ZIAU3G7uMe66u4
-	jQ6jvxhBnytKyo7XU0f+sp4RuugXrhVyBgNQA8L1VrrI8AhqIv0ouejzXK2CAkR2qSzZe7dmb6t
-	U+NGj2awbUnK2cpvzm/5/7sV7BdtWa3SpSPag4gQG/Hlw7MC4xNpaRuAzl152mo93v6VRv6pgMG
-	uHVf1lWtNpytRBzuf2auhkNr9GrBr6CwAA3gfOQQ4E4iajh1K7wpBI/qydJZpG8ysMK0uCsXZC9
-	fiKri2ZYjn4aWFu8kX5WtAYFkKAONED1qP5wwn7X2TVsFKeo
-X-Received: by 2002:a53:ac8c:0:b0:64c:aaa5:ebb3 with SMTP id
- 956f58d0204a3-6502fd951f7mr635825d50.2.1774989588520; Tue, 31 Mar 2026
- 13:39:48 -0700 (PDT)
+        d=1e100.net; s=20251104; t=1774990166; x=1775594966;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=0mnAwTu+mdk6SjwzOQooJKc6qr/lCoIEhYMItpm9cG4=;
+        b=lTBfrCWrINtrlYa8U66Hp2k7Cl6m6/QAIHaD0Xaetlo9BDpS0XUJ1nZ5qa2hEUStv5
+         AYRvkV1gGhJ+5VfjHFcvJcVG8GjqbG+5x5LJM0V+V65gPRp4eCyrygjhgMLeFao/u2u/
+         /oVzyTd5Gc1S0upIuAc0KEXabKggdKwFvOci53fdCBddhDnCbawXFA+8ifVbcvMFqV2l
+         LImt2+kfspDIjExayu6lTZvCX96G/NivZG0PyteNMgSuyIpjNs5baf8h0e2NUxpUqnZv
+         82dK8N+tkNZ75evndrX/lXgNIObFxemM3lSJLu/axvfgc4I6UIGHUxeipQBWMlEZ0bk8
+         +GAw==
+X-Forwarded-Encrypted: i=1; AJvYcCVX6XG9b7R/0rqva9dk8zn1RwYBlfmqf76Ur4On75uX3kIfkK2ZqW1UNH5wVs4FGLDvrd4l2nLXfRE2GA==@vger.kernel.org
+X-Gm-Message-State: AOJu0YxwilTQwP5S3xX+C2jqi9BwZTa/1twYEArp/bC5gRGnWL1trXBW
+	tAcm6aWSfJJSHxC/LC4udcfQDJ0vwN6xRq172I/a1+V2lkG/Pe5VsvhjzkcN4BfkagaaM5poAyY
+	/m27aQAf0GSdfrtptH6RxcI98hG5CnHWvVIVlJu7g77hN2NW0A0/e3mYxmM5qp7J/
+X-Gm-Gg: ATEYQzw/X9eQYArRxf9PNtwSnBoZ8xdwYm/sDpvUB6Fue+mUFcewtmptQs63x2xJKID
+	HMqDTtTLcZJyhLGZgIWWDyDL1YkvD4ZVd16ncpN5ot0wkkihjNBx/QAH4V9ODpAnXb29Hyd+LD0
+	KfywjLyAC7x0WGIT/xmmyD+lgeGxArQNU6VPScmzEmdRgQxk7zIsp5VGmlQSzqfDwqVz9Olc/wl
+	oKGKOO+zKJ67Dzpu2x58ImaGDleEetqyQiFW/PsqY0FztI5NZRFHo9+AA+QnaL4WX9yGsjol5Ae
+	qyB1Yq8+RHTNXznW1XhP9mHEZVeFbhaNewI/QsOEa/WaID8izEdRmKv3jJZvClhC3stgu5W3Bfm
+	ROQaUkBz2rKvELDxdmg==
+X-Received: by 2002:a17:90b:528c:b0:35d:a0b7:9608 with SMTP id 98e67ed59e1d1-35dc6e7b1d8mr681936a91.7.1774990166058;
+        Tue, 31 Mar 2026 13:49:26 -0700 (PDT)
+X-Received: by 2002:a17:90b:528c:b0:35d:a0b7:9608 with SMTP id 98e67ed59e1d1-35dc6e7b1d8mr681917a91.7.1774990165529;
+        Tue, 31 Mar 2026 13:49:25 -0700 (PDT)
+Received: from doltdoltdolt ([209.132.188.88])
+        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-35dbe5e5127sm3440619a91.1.2026.03.31.13.49.23
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 31 Mar 2026 13:49:25 -0700 (PDT)
+Date: Wed, 1 Apr 2026 04:49:20 +0800
+From: Zorro Lang <zlang@redhat.com>
+To: fdmanana@kernel.org
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	Filipe Manana <fdmanana@suse.com>
+Subject: Re: [PATCH] fstests: add kernel commit IDs for patches already
+ merged upstream
+Message-ID: <20260331204920.o3cbcjt2ezx7uhim@doltdoltdolt>
+References: <63eb507011e1ab2681a8aaa68ec1214896c05b55.1774966392.git.fdmanana@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-From: =?UTF-8?Q?Jaron_Vi=C3=ABtor?= <jaron@vietors.com>
-Date: Tue, 31 Mar 2026 22:39:37 +0200
-X-Gm-Features: AQROBzDZLiZyRCDniegAKe57tvYy0jvpLZp7oX1IfLhBRkg8dGIqtyOa3rOsQrg
-Message-ID: <CAF1bhLVYLZvD=j2XyuxXDKD-NWNJAwDnpVN+UYeQW-HbzNRn1A@mail.gmail.com>
-Subject: Problem mounting 4-drive RAID1 fs after replace was interrupted by
- kernel crash
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <63eb507011e1ab2681a8aaa68ec1214896c05b55.1774966392.git.fdmanana@suse.com>
 
-Hello,
+On Tue, Mar 31, 2026 at 03:15:10PM +0100, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> Several tests mention patches that are already in Linus' git tree, so add
+> their commit IDs. For generic/762, also use "fixed_by_fs_commit xfs"
+> instead of "_fixed_by_git_commit kernel" since it's a XFS specific commit
+> and it does not make sense for the test to report that commit in case it
+> fails when running against a filesystem other than XFS.
+> 
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
 
-I have a machine with a 4-drive RAID1 btrfs filesystem attached to it
-over a USB3-to-SATA bridge. They are not connected directly over SATA
-because it's an Intel NUC, so USB3 is pretty much the only sensible
-option.
-A few days ago, one of the drives started failing so I connected a
-second USB-TO-SATA bridge (the first one could only hold 4 drives),
-inserted a new drive into the new bridge, and ran:
+Thanks for this updating, Filipe :)
 
-btrfs replace start -r 7 /dev/sdk1 /media
+Reviewed-by: Zorro Lang <zlang@redhat.com>
 
-Devid 7 was the failing drive, and sdk1 is the new (larger) replacement.
-This all went fine so far, and the replace was happily chugging along
-for several hours.
-Unfortunately, at around 7.1% done a kernel crash happened (I believe
-it was unrelated to the replace operation, but can't be sure -
-unfortunately I didn't save the errors it printed) and I had to reboot
-the machine.
+>  tests/btrfs/340   | 2 +-
+>  tests/btrfs/345   | 2 +-
+>  tests/btrfs/346   | 2 +-
+>  tests/btrfs/347   | 2 +-
+>  tests/generic/762 | 2 +-
+>  tests/generic/789 | 2 +-
+>  tests/generic/790 | 2 +-
+>  7 files changed, 7 insertions(+), 7 deletions(-)
+> 
+> diff --git a/tests/btrfs/340 b/tests/btrfs/340
+> index fc3b8d62..872f790c 100755
+> --- a/tests/btrfs/340
+> +++ b/tests/btrfs/340
+> @@ -10,7 +10,7 @@
+>  . ./common/preamble
+>  _begin_fstest auto quick qgroup
+>  
+> -_fixed_by_kernel_commit xxxxxxxxxxxx \
+> +_fixed_by_kernel_commit 68d4b3fa18d7 \
+>  	"btrfs: qgroup: update all parent qgroups when doing quick inherit"
+>  
+>  # For the automatic fsck at unmount.
+> diff --git a/tests/btrfs/345 b/tests/btrfs/345
+> index 75cc3067..58727049 100755
+> --- a/tests/btrfs/345
+> +++ b/tests/btrfs/345
+> @@ -17,7 +17,7 @@ _require_scratch
+>  _require_btrfs_support_sectorsize 4096
+>  _require_btrfs_command "property"
+>  
+> -_fixed_by_kernel_commit xxxxxxxxxxxx \
+> +_fixed_by_kernel_commit e1b18b959025 \
+>  	"btrfs: fix transaction abort when snapshotting received subvolumes"
+>  
+>  # Use a 4K node/leaf size to make the test faster.
+> diff --git a/tests/btrfs/346 b/tests/btrfs/346
+> index ef301ef7..28c1e536 100755
+> --- a/tests/btrfs/346
+> +++ b/tests/btrfs/346
+> @@ -14,7 +14,7 @@ _begin_fstest auto quick subvol
+>  _require_scratch
+>  _require_btrfs_support_sectorsize 4096
+>  
+> -_fixed_by_kernel_commit xxxxxxxxxxxx \
+> +_fixed_by_kernel_commit 2d1ababdedd4 \
+>  	"btrfs: fix transaction abort on file creation due to name hash collision"
+>  
+>  # Use a 4K node/leaf size to make the test faster and require less file names
+> diff --git a/tests/btrfs/347 b/tests/btrfs/347
+> index ebd53d97..9239e99a 100755
+> --- a/tests/btrfs/347
+> +++ b/tests/btrfs/347
+> @@ -16,7 +16,7 @@ _require_test_program t_btrfs_received_uuid_ioctl
+>  _require_scratch
+>  _require_btrfs_support_sectorsize 4096
+>  
+> -_fixed_by_kernel_commit xxxxxxxxxxxx \
+> +_fixed_by_kernel_commit 87f2c46003fc \
+>  	"btrfs: fix transaction abort on set received ioctl due to item overflow"
+>  
+>  # Use a 4K node/leaf size to make the test faster.
+> diff --git a/tests/generic/762 b/tests/generic/762
+> index e3a01de8..bbaf5051 100755
+> --- a/tests/generic/762
+> +++ b/tests/generic/762
+> @@ -10,7 +10,7 @@
+>  . ./common/preamble
+>  _begin_fstest auto quota prealloc
+>  
+> -_fixed_by_git_commit kernel XXXXXXXXXXXXXX \
+> +_fixed_by_fs_commit xfs 4b8d867ca6e2 \
+>  	"xfs: don't over-report free space or inodes in statvfs"
+>  
+>  . ./common/filter
+> diff --git a/tests/generic/789 b/tests/generic/789
+> index 1ed7a885..0e72966e 100755
+> --- a/tests/generic/789
+> +++ b/tests/generic/789
+> @@ -24,7 +24,7 @@ _cleanup()
+>  _require_scratch
+>  _require_dm_target flakey
+>  
+> -_fixed_by_fs_commit btrfs xxxxxxxxxxxx \
+> +_fixed_by_fs_commit btrfs 5254d4181add \
+>  	"btrfs: fix zero size inode with non-zero size after log replay"
+>  
+>  _scratch_mkfs >>$seqres.full 2>&1 || _fail "mkfs failed"
+> diff --git a/tests/generic/790 b/tests/generic/790
+> index 9aa577f5..28f7faa2 100755
+> --- a/tests/generic/790
+> +++ b/tests/generic/790
+> @@ -27,7 +27,7 @@ _cleanup()
+>  _require_scratch
+>  _require_dm_target flakey
+>  
+> -_fixed_by_fs_commit btrfs xxxxxxxxxxxx \
+> +_fixed_by_fs_commit btrfs 9573a365ff9f \
+>  	"btrfs: log new dentries when logging parent dir of a conflicting inode"
+>  
+>  _scratch_mkfs >>$seqres.full 2>&1 || _fail "mkfs failed"
+> -- 
+> 2.47.2
+> 
+> 
 
-After the reboot, attempting to mount the filesystem gives these messages:
-
-BTRFS info (device sdk1): first mount of filesystem
-d18c93f8-d80a-4aa7-adc5-86d457ddde20
-BTRFS info (device sdk1): using crc32c (crc32c-lib) checksum algorithm
-BTRFS error (device sdk1): devid 0 path /dev/sdk1 is registered but
-not found in chunk tree
-BTRFS error (device sdk1): remove the above devices or use 'btrfs
-device scan --forget <dev>' to unregister them before mount
-BTRFS error (device sdk1): open_ctree failed: -117
-
-Either running that command and/or unplugging the new replacement
-drive, instead gives me these (either action results in the same
-messages):
-
-BTRFS info (device sdg1): first mount of filesystem
-d18c93f8-d80a-4aa7-adc5-86d457ddde20
-BTRFS info (device sdg1): using crc32c (crc32c-lib) checksum algorithm
-BTRFS info (device sdg1): bdev /dev/sdg1 errs: wr 0, rd 16, flush 0,
-corrupt 1054, gen 0
-BTRFS info (device sdg1): bdev /dev/sdh1 errs: wr 0, rd 0, flush 0,
-corrupt 379, gen 0
-BTRFS info (device sdg1): bdev /dev/sdi1 errs: wr 0, rd 0, flush 0,
-corrupt 1652, gen 0
-BTRFS info (device sdg1): bdev /dev/sdj1 errs: wr 0, rd 0, flush 0,
-corrupt 1522, gen 0
-BTRFS warning (device sdg1): cannot mount because device replace
-operation is ongoing and
-BTRFS warning (device sdg1): tgtdev (devid 0) is missing, need to run
-'btrfs dev scan'?
-BTRFS error (device sdg1): failed to init dev_replace: -5
-BTRFS error (device sdg1): open_ctree failed: -5
-
-So... it seems to be stuck thinking the new drive both should -and-
-shouldn't be there. Huh.
-
-I already asked for help with this issue in the IRC channel, but the
-friendly folks there told me after some debugging that this was a
-problem for the mailing list. So... here I am!
-I do have access to other machines I could potentially connect the
-drives directly to... but I'm not inclined to think the USB-to-SATA
-bridge(s) is/are the problem here. (Unless somebody here says
-otherwise, of course.)
-
-Thanks in advance for any help you may be able to provide!
-
-Kind regards,
-Jaron Vi=C3=ABtor

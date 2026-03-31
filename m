@@ -1,126 +1,158 @@
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-yx1-f41.google.com (mail-yx1-f41.google.com [74.125.224.41])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 947B63CC9FF
-	for <linux-btrfs@vger.kernel.org>; Tue, 31 Mar 2026 20:06:29 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.133.124
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774987592; cv=none; b=acSOCLaLrBLoOZMnVfQZjlVHqmMQ58H1k0LUOwNp4vw+q3P/F9Dca1CNAIFlst5TF+OqxpmEe6JS5rkNPY8QFZXWcqk0vHM4/V2eruAQHpE+4pdaSWOx1rWlXgEG0OsQhRdhY3yrbfkUKi1/zccZFXXLRRJcxkhzcQCOnlvL+e0=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774987592; c=relaxed/simple;
-	bh=u7Cm9YVElUVjzpDu2GXr2uaPPzVtpRbccwHlOy6TUvE=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=UttuNqlQ9NmT4pG+meM/DRrYMyd7nuXaz0VXF1CKIEVcSDqRWY8yI0V+os18OebcHYG+ITqUqy9MJjvfSH4kNkFaOxv3Luz1NEbqsqlPgN4BmuH6gWLWbFetTXYdYwk+9XLbJpViHT4wZ0Rx8H30bqN1jXpFR1/q3P5gIeDD9xs=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=UhgQURf3; dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b=Gmxf9nj/; arc=none smtp.client-ip=170.10.133.124
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BFDF33590A9
+	for <linux-btrfs@vger.kernel.org>; Tue, 31 Mar 2026 20:39:49 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=74.125.224.41
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1774989591; cv=pass; b=DZCUBRHDittI+jOTcUsBdgoFW4RteWBAgnPQQjbl87TJnaAsZJpyE1gQoSdBc42K9IyfZO7ujRvZsQ30D9PvQvrHXRuRMvV2YJQQfSJSmQUCf0Jcy5oecVI6b+eomkN+PvzCQPMU/cRW4yM2q/xwM9QrhNnXicqwt+fg6bRCsbo=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1774989591; c=relaxed/simple;
+	bh=8NGCN2uRKgpR2nvZMIOlPy8zJmYv5pSJnYgE208jz+Q=;
+	h=MIME-Version:From:Date:Message-ID:Subject:To:Content-Type; b=eRv8NsiErShCFwiDX2ajstsHK+UEJhXpMi7btcMsZY1OYoVGmDcuJdpdh17srh+ISya4Rf7VynDTodUHe1CNNZ32HtaZgETeQnypVFdQByXk6fXZpx0zM/9CWQCGYuYezbcsU+hALq7BMWSBVJsNE6NYh2F6Cm3WaMlXlAywtrs=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=vietors.com; spf=pass smtp.mailfrom=vietors.com; dkim=pass (2048-bit key) header.d=vietors.com header.i=@vietors.com header.b=ZFc19tpk; arc=pass smtp.client-ip=74.125.224.41
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=vietors.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=vietors.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="UhgQURf3";
-	dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b="Gmxf9nj/"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-	s=mimecast20190719; t=1774987588;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=r0I94zO8k40YUG8ln8iyh6a8FQP9HTvjx16ZglDMrTI=;
-	b=UhgQURf3XZOCCsWssKO01iEn3XAgtTabMYPyogYGrdSrX+k6T14fdT22E9GhzSkrryRR/E
-	EQo6ubqHlZ1IJOv6T5VGeYmGSMQp+unY+my4Xgjiy+/YJMm1ofaqJVTI/QWYE4liXrUJrN
-	Au8cNyaMckVnPVcM8uzT2VstOsNEEF0=
-Received: from mail-pl1-f199.google.com (mail-pl1-f199.google.com
- [209.85.214.199]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
- us-mta-690-_gGGFaMyNhKYpMqeTpRv2Q-1; Tue, 31 Mar 2026 16:06:26 -0400
-X-MC-Unique: _gGGFaMyNhKYpMqeTpRv2Q-1
-X-Mimecast-MFC-AGG-ID: _gGGFaMyNhKYpMqeTpRv2Q_1774987585
-Received: by mail-pl1-f199.google.com with SMTP id d9443c01a7336-2b0f4e632caso61493915ad.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 31 Mar 2026 13:06:25 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=vietors.com header.i=@vietors.com header.b="ZFc19tpk"
+Received: by mail-yx1-f41.google.com with SMTP id 956f58d0204a3-6470d549e10so924357d50.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 Mar 2026 13:39:49 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1774989589; cv=none;
+        d=google.com; s=arc-20240605;
+        b=ZThzDSTQoj25LbnNT6frzvT8y0sfVy9quNuplMQ+OYDhWP2qiJPWqPd4cVvHz+BhbN
+         5v67nBZPwe5ApKKdB4GyG7kqkcGcvSAuj7TMGONglU6HkzlFJAeDDIkQJvlTJHgSTlXq
+         8ZookYOJhE0mF3pHOzSdcMNMJtJuEbgaLM6h6YSTH/XH9y77GkKuFZ4xEKGsQAadFZ3m
+         C5hX2ftut36cIjmhLnXBgxWgpeWp8HbLzi+xkPpTjIA5gnq4QZYCQUW3jgYFwtTxmd6e
+         1lhYSevAzwc3jZA6Iwx9fV67qv+Xue3O2OlxoUW54FYuWoau1tDIOTqcs50PFvru2YLT
+         97rQ==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
+        h=content-transfer-encoding:to:subject:message-id:date:from
+         :mime-version:dkim-signature;
+        bh=8NGCN2uRKgpR2nvZMIOlPy8zJmYv5pSJnYgE208jz+Q=;
+        fh=IOI3BSFtc4S+mY5yRaEOyEQVEbaexZFmwOG7FNW1hpE=;
+        b=O+HVe0AtWzNfHB2zxrQJngHvOuhEdZeTPmzmZTnet22RGK9+J7lQmU4jbcHjsCGXOK
+         0jKr7SNzQjOSQoBJLJv1DI8pM1xi0gpr5oLXIHtojDhyR5euUdi6FEIOQdVm88WQ0BVD
+         EbQyQQVmMh3e7n3G00ENMubt6b7InOgfpMz2OBbv8c7jR+wNcbV5knsoZ7FVfJohlnDH
+         8UHJ17iFjFLzGuJ5l8o8nqsX4d6zv/a+TU6O3JGoZglhHHMVgh1U0d5PeV/MIkdFeQ7f
+         f81eoQtismgA6PTkAuDf6EYtMVzCMV5VuEDUgczgAqZbWtDzXbgNQVp6xFfyfUJWp8el
+         npDQ==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=redhat.com; s=google; t=1774987585; x=1775592385; darn=vger.kernel.org;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
-        bh=r0I94zO8k40YUG8ln8iyh6a8FQP9HTvjx16ZglDMrTI=;
-        b=Gmxf9nj/siJlM58NYR/n8HraqPA7Dx1q23nc6zWweeD1k/AOlf6xeBu8GSSWm1b6D1
-         30TWg6CJsY9A/0MFHtX7s1St5g7PmqBTRKF3VigaKM3X5qUV+oxk0gyaMgSBCVt80Qit
-         f4Vrh2+0vweMYIm29zAG0cFfikbKWh6oP5NxMCl2e2CrdeRcQBtmP/anIv2sUKV9I0dm
-         Sn3hBmsoR3R8bHqealSuYXXBnay1DrRp0/KwqoXKSFbxK9o597uhhD5xOiIoD3NZJwXZ
-         PjmJLx8xLlc0WDqeQzaSb0hhTQ9h06cY1ja0jqVY763ee1rtLWG4ZvFlstxWmtHIbM0d
-         eNrg==
+        d=vietors.com; s=google; t=1774989589; x=1775594389; darn=vger.kernel.org;
+        h=content-transfer-encoding:to:subject:message-id:date:from
+         :mime-version:from:to:cc:subject:date:message-id:reply-to;
+        bh=8NGCN2uRKgpR2nvZMIOlPy8zJmYv5pSJnYgE208jz+Q=;
+        b=ZFc19tpkj3E8OmfNXHdYReAPHXTyKtXPhY3AxnAudqeBJUGV4baH38rnWs+BPt2AV3
+         m2cW6rBKkt4FJ/+diUr5OzRdiBvecCu2z7BkpafE5DVlUG37i6Zgo00sxEvP0FRSuUWb
+         faigNs4N4spJwWgRFPjwux4J61FRMoY6hvzT4WKxSpyvW4VBiFAN5cgpNfi0vElcfWY9
+         h0GDisxkVG6TenbHnnyF3U5nSPjHVm5UYootyYFYkZEn0s1EYtsRx796sWAi2WS2OnJ5
+         k3vnnV3ZKDVMwHk8yoJaPail/c2cZsDjQ1hr7nQDMxkmAsKKPjZtCxUXtGOPF2gdSycf
+         PFTA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1774987585; x=1775592385;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=r0I94zO8k40YUG8ln8iyh6a8FQP9HTvjx16ZglDMrTI=;
-        b=JMnS1tySEwNDObRQ/NJvQ/g3ZJAOc2XGMXzqYxLFGbZQGu6Ip1jI4iuVIpqTz9eLNe
-         UgPQJQZcTPmMwMRMIk6l6G+LS8LBTIYe9nTap3wIAJ7/6r0rxAK1L9OCbQOxV2ZuW1MU
-         0jwKv3bzln6nUy+KRR5a4UYIWNbDJuViueJeyQJ20EYdfPwb5cqX19zkfmjHWzyg05lH
-         COHS73RGFGLWufAl+hBYq1s+BrCwC3nF8Jg6XuqKhB8xQ6B0Jv/mi14Pii3AFtw/f2e6
-         ZDuQz6OuXzAdLPEueD05InJqnnl5XVs/g3LGu2fLzoM7/MEZGvcfI7BC29xIPmB7WROj
-         a54A==
-X-Forwarded-Encrypted: i=1; AJvYcCWkc6IuRZAHuHkiyLGS4j8ffqulI+4aO3QaHQWQjRsj7S3rTJgUXYuWQ35Y2oR27PQ+MoRXBrWeeKTuEg==@vger.kernel.org
-X-Gm-Message-State: AOJu0YxfPJv1H9EMHG4rMBz5Ze1+k+JkaanEtitO83OuW/h1O5xaWqEJ
-	nB+DbzI75yftaypH9dh642Co8zqVr8P7eEFGaK3HgY47PCLuqLHfQ48k1MmOJs9L83xClaTyt8B
-	CCHxAQ4sM6w6b/UfRdXCecd1XwzNbfbkHQAuEFpwpNvROyUFfaAEK91roBWp+EtWP
-X-Gm-Gg: ATEYQzxEcmgAG8I+2kvs7yRB+T+7qvuvFYLP1651zyEzd99YZTjtsmKau8ATKn1dUxA
-	qNH50OaquMOHYZ/r2ulXdfhagfqAhnQLCrkDEye43Fd5TTByOCs1/relS3Pkp2IMFH7/OLLNAgC
-	o7Zel49YlqrsaR1ijnEbsdCQRtIY3eiULWjmBauRBW6iLlFlFlOetaau1mE9V8C5okrKdlxE5eN
-	vP3s9FMoeRhboWGxJarQ4OQmBi+r7C4hHr4OvDKlreOJUjwegycR8i7z3ibduTmzKzj5XYvSKIo
-	xlulOtPGKN+bBERVqRwMpcwXiUR78DiB7Rwd50dl2BjXJ7xqz1elr7Ik5nKAv9+kt2kO0uxXoRt
-	wNd3S04chY0bzk0xjDg==
-X-Received: by 2002:a17:903:2983:b0:2b0:b075:f2fb with SMTP id d9443c01a7336-2b269c7c5e0mr5139685ad.35.1774987584916;
-        Tue, 31 Mar 2026 13:06:24 -0700 (PDT)
-X-Received: by 2002:a17:903:2983:b0:2b0:b075:f2fb with SMTP id d9443c01a7336-2b269c7c5e0mr5139465ad.35.1774987584440;
-        Tue, 31 Mar 2026 13:06:24 -0700 (PDT)
-Received: from doltdoltdolt ([209.132.188.88])
-        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2b242765b93sm132177325ad.51.2026.03.31.13.06.21
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 31 Mar 2026 13:06:23 -0700 (PDT)
-Date: Wed, 1 Apr 2026 04:06:19 +0800
-From: Zorro Lang <zlang@redhat.com>
-To: Christoph Hellwig <hch@infradead.org>
-Cc: Leo Martins <loemra.dev@gmail.com>, linux-btrfs@vger.kernel.org,
-	kernel-team@fb.com, fstests@vger.kernel.org
-Subject: Re: [PATCH] generic/301: skip extent count check on btrfs
-Message-ID: <20260331200619.buww7bpudldcmxof@doltdoltdolt>
-References: <c56960b514baf810f2929b5e955a966d9955c468.1774383226.git.loemra.dev@gmail.com>
- <acN3QEpx_YZZN5Qb@infradead.org>
+        d=1e100.net; s=20251104; t=1774989589; x=1775594389;
+        h=content-transfer-encoding:to:subject:message-id:date:from
+         :mime-version:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=8NGCN2uRKgpR2nvZMIOlPy8zJmYv5pSJnYgE208jz+Q=;
+        b=VCJn/yQ8uvvpj0+Sat23GhFMjmXGw4UwdxyrBABOf1hD5t2uKL9newHkQfo4f+D9eG
+         8A/tF6eJgrsYGyE4iBit2q4pq/GH4TLVpkWl/jJ5xUvD3Oh0ClCyrMTtOfYSQJ1VC8Eb
+         O5ZAYna/V1iLryZi0BK+Kg1B8MygsK3ETYa0Ssd0cokdmsHwDjN3KpaWgx5aYNcmR3Sc
+         58yxn/Jr2JsCEme5Yi9XaVenz79S8b60bnYN+/UfMzb1mfzXsfykTTEUKO55H4d46ddw
+         cSQcPb2tQwOD3m7HTmXUSMnj1yNBynCwxhP01CtY+PcB9UWwKxZrccWhCl0Db1ULqT7x
+         z/HA==
+X-Gm-Message-State: AOJu0YwsLyUVW1op6LZDcWx+o2cqDllFOb0J7dDLJNOjlDciPjHpsvPz
+	wugOpqqhubh3gsRae5ilYlL+dPNUxiOSxwVVX4liJkQ8l6DddnZu78Or+IhuH3/ZbSIPToRhGmu
+	mhQMlAYavb6pgYr1E0d64u2jRCVNdpbEySbBAibuBCw2Dke0gudMOQ3o=
+X-Gm-Gg: ATEYQzzflPaq3Zz9Cb7MXmHjCxhRCu8EZYq9nG4Vzhihfui/qmhB1ZIAU3G7uMe66u4
+	jQ6jvxhBnytKyo7XU0f+sp4RuugXrhVyBgNQA8L1VrrI8AhqIv0ouejzXK2CAkR2qSzZe7dmb6t
+	U+NGj2awbUnK2cpvzm/5/7sV7BdtWa3SpSPag4gQG/Hlw7MC4xNpaRuAzl152mo93v6VRv6pgMG
+	uHVf1lWtNpytRBzuf2auhkNr9GrBr6CwAA3gfOQQ4E4iajh1K7wpBI/qydJZpG8ysMK0uCsXZC9
+	fiKri2ZYjn4aWFu8kX5WtAYFkKAONED1qP5wwn7X2TVsFKeo
+X-Received: by 2002:a53:ac8c:0:b0:64c:aaa5:ebb3 with SMTP id
+ 956f58d0204a3-6502fd951f7mr635825d50.2.1774989588520; Tue, 31 Mar 2026
+ 13:39:48 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <acN3QEpx_YZZN5Qb@infradead.org>
+From: =?UTF-8?Q?Jaron_Vi=C3=ABtor?= <jaron@vietors.com>
+Date: Tue, 31 Mar 2026 22:39:37 +0200
+X-Gm-Features: AQROBzDZLiZyRCDniegAKe57tvYy0jvpLZp7oX1IfLhBRkg8dGIqtyOa3rOsQrg
+Message-ID: <CAF1bhLVYLZvD=j2XyuxXDKD-NWNJAwDnpVN+UYeQW-HbzNRn1A@mail.gmail.com>
+Subject: Problem mounting 4-drive RAID1 fs after replace was interrupted by
+ kernel crash
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On Tue, Mar 24, 2026 at 10:48:48PM -0700, Christoph Hellwig wrote:
-> On Tue, Mar 24, 2026 at 01:40:00PM -0700, Leo Martins wrote:
-> > +# btrfs CoW extent allocation depends on transaction commit frequency and
-> > +# metadata reservation behavior, so the 2/3 fragmentation threshold (designed
-> > +# for XFS cowextsize) is not applicable.
-> 
-> It really is a quality of implementation issue and not specifically
-> designed for XFS.  But I gues it is hard to force quality of
-> implementation on specific file systems.
-> 
-> > +if [ "$FSTYP" != "btrfs" ]; then
-> > +	test $new_extents -lt $((internal_blks * 2 / 3)) || echo "file2 badly fragmented"
-> 
-> Please break the echo into a separate line to keep this readable,
-> either by just breaking using \ or by turning this into a proper if
-> statement.
+Hello,
 
-Sure, I'll help to change it to:
+I have a machine with a 4-drive RAID1 btrfs filesystem attached to it
+over a USB3-to-SATA bridge. They are not connected directly over SATA
+because it's an Intel NUC, so USB3 is pretty much the only sensible
+option.
+A few days ago, one of the drives started failing so I connected a
+second USB-TO-SATA bridge (the first one could only hold 4 drives),
+inserted a new drive into the new bridge, and ran:
 
-	test $new_extents -lt $((internal_blks * 2 / 3)) || \
-		echo "file2 badly fragmented"
+btrfs replace start -r 7 /dev/sdk1 /media
 
-when I merge it.
+Devid 7 was the failing drive, and sdk1 is the new (larger) replacement.
+This all went fine so far, and the replace was happily chugging along
+for several hours.
+Unfortunately, at around 7.1% done a kernel crash happened (I believe
+it was unrelated to the replace operation, but can't be sure -
+unfortunately I didn't save the errors it printed) and I had to reboot
+the machine.
 
-Thanks,
-Zorro
+After the reboot, attempting to mount the filesystem gives these messages:
 
-> 
-> 
+BTRFS info (device sdk1): first mount of filesystem
+d18c93f8-d80a-4aa7-adc5-86d457ddde20
+BTRFS info (device sdk1): using crc32c (crc32c-lib) checksum algorithm
+BTRFS error (device sdk1): devid 0 path /dev/sdk1 is registered but
+not found in chunk tree
+BTRFS error (device sdk1): remove the above devices or use 'btrfs
+device scan --forget <dev>' to unregister them before mount
+BTRFS error (device sdk1): open_ctree failed: -117
 
+Either running that command and/or unplugging the new replacement
+drive, instead gives me these (either action results in the same
+messages):
+
+BTRFS info (device sdg1): first mount of filesystem
+d18c93f8-d80a-4aa7-adc5-86d457ddde20
+BTRFS info (device sdg1): using crc32c (crc32c-lib) checksum algorithm
+BTRFS info (device sdg1): bdev /dev/sdg1 errs: wr 0, rd 16, flush 0,
+corrupt 1054, gen 0
+BTRFS info (device sdg1): bdev /dev/sdh1 errs: wr 0, rd 0, flush 0,
+corrupt 379, gen 0
+BTRFS info (device sdg1): bdev /dev/sdi1 errs: wr 0, rd 0, flush 0,
+corrupt 1652, gen 0
+BTRFS info (device sdg1): bdev /dev/sdj1 errs: wr 0, rd 0, flush 0,
+corrupt 1522, gen 0
+BTRFS warning (device sdg1): cannot mount because device replace
+operation is ongoing and
+BTRFS warning (device sdg1): tgtdev (devid 0) is missing, need to run
+'btrfs dev scan'?
+BTRFS error (device sdg1): failed to init dev_replace: -5
+BTRFS error (device sdg1): open_ctree failed: -5
+
+So... it seems to be stuck thinking the new drive both should -and-
+shouldn't be there. Huh.
+
+I already asked for help with this issue in the IRC channel, but the
+friendly folks there told me after some debugging that this was a
+problem for the mailing list. So... here I am!
+I do have access to other machines I could potentially connect the
+drives directly to... but I'm not inclined to think the USB-to-SATA
+bridge(s) is/are the problem here. (Unless somebody here says
+otherwise, of course.)
+
+Thanks in advance for any help you may be able to provide!
+
+Kind regards,
+Jaron Vi=C3=ABtor

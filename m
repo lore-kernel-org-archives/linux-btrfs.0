@@ -1,156 +1,126 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B2F8733F8A2;
-	Tue, 31 Mar 2026 14:15:16 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 947B63CC9FF
+	for <linux-btrfs@vger.kernel.org>; Tue, 31 Mar 2026 20:06:29 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.133.124
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774966516; cv=none; b=WklT2hSqlbzYJ/0rQk5oPncXCZoyt9d1C/0jB0vmv3oPTBxvuoGLhQh6GXmaqXG2MeGG8HNyIS20d+GxoR+/yHbJqff/nkpSLESNWxgCpmt39LPNW7Uz6NLpf5W6xyvir7hEJn1WblsXDuiufNUdYv4cTr+sRwg3ONJzGZENE7I=
+	t=1774987592; cv=none; b=acSOCLaLrBLoOZMnVfQZjlVHqmMQ58H1k0LUOwNp4vw+q3P/F9Dca1CNAIFlst5TF+OqxpmEe6JS5rkNPY8QFZXWcqk0vHM4/V2eruAQHpE+4pdaSWOx1rWlXgEG0OsQhRdhY3yrbfkUKi1/zccZFXXLRRJcxkhzcQCOnlvL+e0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774966516; c=relaxed/simple;
-	bh=sQ0HnxJY4D4EolN35eHo3ARK9oYmcGlRrGEnhgi8k4Q=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=fj0IBsOg4I9e719kGplTdnmpTV1ybdquhqdShTyeBYisQwSvKaraWId1f98lioluPUFuwYdKDzUF+qxiTdPCR4r33MxYMpFjc/tHmuuD4vtM2O1zc99bhqXEndxL83DjPfM46s6mmIblU2TDVrydXUJo/mt8tl+mXlo/S4lwja4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=hjCdLoie; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1774987592; c=relaxed/simple;
+	bh=u7Cm9YVElUVjzpDu2GXr2uaPPzVtpRbccwHlOy6TUvE=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=UttuNqlQ9NmT4pG+meM/DRrYMyd7nuXaz0VXF1CKIEVcSDqRWY8yI0V+os18OebcHYG+ITqUqy9MJjvfSH4kNkFaOxv3Luz1NEbqsqlPgN4BmuH6gWLWbFetTXYdYwk+9XLbJpViHT4wZ0Rx8H30bqN1jXpFR1/q3P5gIeDD9xs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=UhgQURf3; dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b=Gmxf9nj/; arc=none smtp.client-ip=170.10.133.124
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="hjCdLoie"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9F32BC19423;
-	Tue, 31 Mar 2026 14:15:15 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1774966516;
-	bh=sQ0HnxJY4D4EolN35eHo3ARK9oYmcGlRrGEnhgi8k4Q=;
-	h=From:To:Cc:Subject:Date:From;
-	b=hjCdLoie/xEc2YZ+7/7rEP6oLufhFyzq3Zw7MMjIBndB9GDF/TuiOAyWomikVZJi/
-	 a0RLb75r95oNvjWxSv/mOvV7yBRRHYMoRVQMIaTeh/5beQ5uD8DTsoYqWR0NIP1l2b
-	 oRDzJ3iHIAiZ7m46Ol/EcW5s0OGezPdjHbbi8V0GYtNUbJyNY1eh+6FmWIZQjTBgQL
-	 ZJQEw8A0Mz2/jTHaNRE1Ra5Fk8C+dI+Jh7njg0e5GZl9+Zz08+kLsMicCP7jQoo+Aa
-	 SBCvlOhDtJJqmOZCnOaULbZXubwuSVuqOyo7SSK8s3VwZFd6dLt4OYsacHhrEziRda
-	 R1iBi4p00KcIg==
-From: fdmanana@kernel.org
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org,
-	Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] fstests: add kernel commit IDs for patches already merged upstream
-Date: Tue, 31 Mar 2026 15:15:10 +0100
-Message-ID: <63eb507011e1ab2681a8aaa68ec1214896c05b55.1774966392.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.47.2
+	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="UhgQURf3";
+	dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b="Gmxf9nj/"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+	s=mimecast20190719; t=1774987588;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=r0I94zO8k40YUG8ln8iyh6a8FQP9HTvjx16ZglDMrTI=;
+	b=UhgQURf3XZOCCsWssKO01iEn3XAgtTabMYPyogYGrdSrX+k6T14fdT22E9GhzSkrryRR/E
+	EQo6ubqHlZ1IJOv6T5VGeYmGSMQp+unY+my4Xgjiy+/YJMm1ofaqJVTI/QWYE4liXrUJrN
+	Au8cNyaMckVnPVcM8uzT2VstOsNEEF0=
+Received: from mail-pl1-f199.google.com (mail-pl1-f199.google.com
+ [209.85.214.199]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
+ us-mta-690-_gGGFaMyNhKYpMqeTpRv2Q-1; Tue, 31 Mar 2026 16:06:26 -0400
+X-MC-Unique: _gGGFaMyNhKYpMqeTpRv2Q-1
+X-Mimecast-MFC-AGG-ID: _gGGFaMyNhKYpMqeTpRv2Q_1774987585
+Received: by mail-pl1-f199.google.com with SMTP id d9443c01a7336-2b0f4e632caso61493915ad.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 Mar 2026 13:06:25 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=redhat.com; s=google; t=1774987585; x=1775592385; darn=vger.kernel.org;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
+        bh=r0I94zO8k40YUG8ln8iyh6a8FQP9HTvjx16ZglDMrTI=;
+        b=Gmxf9nj/siJlM58NYR/n8HraqPA7Dx1q23nc6zWweeD1k/AOlf6xeBu8GSSWm1b6D1
+         30TWg6CJsY9A/0MFHtX7s1St5g7PmqBTRKF3VigaKM3X5qUV+oxk0gyaMgSBCVt80Qit
+         f4Vrh2+0vweMYIm29zAG0cFfikbKWh6oP5NxMCl2e2CrdeRcQBtmP/anIv2sUKV9I0dm
+         Sn3hBmsoR3R8bHqealSuYXXBnay1DrRp0/KwqoXKSFbxK9o597uhhD5xOiIoD3NZJwXZ
+         PjmJLx8xLlc0WDqeQzaSb0hhTQ9h06cY1ja0jqVY763ee1rtLWG4ZvFlstxWmtHIbM0d
+         eNrg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1774987585; x=1775592385;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=r0I94zO8k40YUG8ln8iyh6a8FQP9HTvjx16ZglDMrTI=;
+        b=JMnS1tySEwNDObRQ/NJvQ/g3ZJAOc2XGMXzqYxLFGbZQGu6Ip1jI4iuVIpqTz9eLNe
+         UgPQJQZcTPmMwMRMIk6l6G+LS8LBTIYe9nTap3wIAJ7/6r0rxAK1L9OCbQOxV2ZuW1MU
+         0jwKv3bzln6nUy+KRR5a4UYIWNbDJuViueJeyQJ20EYdfPwb5cqX19zkfmjHWzyg05lH
+         COHS73RGFGLWufAl+hBYq1s+BrCwC3nF8Jg6XuqKhB8xQ6B0Jv/mi14Pii3AFtw/f2e6
+         ZDuQz6OuXzAdLPEueD05InJqnnl5XVs/g3LGu2fLzoM7/MEZGvcfI7BC29xIPmB7WROj
+         a54A==
+X-Forwarded-Encrypted: i=1; AJvYcCWkc6IuRZAHuHkiyLGS4j8ffqulI+4aO3QaHQWQjRsj7S3rTJgUXYuWQ35Y2oR27PQ+MoRXBrWeeKTuEg==@vger.kernel.org
+X-Gm-Message-State: AOJu0YxfPJv1H9EMHG4rMBz5Ze1+k+JkaanEtitO83OuW/h1O5xaWqEJ
+	nB+DbzI75yftaypH9dh642Co8zqVr8P7eEFGaK3HgY47PCLuqLHfQ48k1MmOJs9L83xClaTyt8B
+	CCHxAQ4sM6w6b/UfRdXCecd1XwzNbfbkHQAuEFpwpNvROyUFfaAEK91roBWp+EtWP
+X-Gm-Gg: ATEYQzxEcmgAG8I+2kvs7yRB+T+7qvuvFYLP1651zyEzd99YZTjtsmKau8ATKn1dUxA
+	qNH50OaquMOHYZ/r2ulXdfhagfqAhnQLCrkDEye43Fd5TTByOCs1/relS3Pkp2IMFH7/OLLNAgC
+	o7Zel49YlqrsaR1ijnEbsdCQRtIY3eiULWjmBauRBW6iLlFlFlOetaau1mE9V8C5okrKdlxE5eN
+	vP3s9FMoeRhboWGxJarQ4OQmBi+r7C4hHr4OvDKlreOJUjwegycR8i7z3ibduTmzKzj5XYvSKIo
+	xlulOtPGKN+bBERVqRwMpcwXiUR78DiB7Rwd50dl2BjXJ7xqz1elr7Ik5nKAv9+kt2kO0uxXoRt
+	wNd3S04chY0bzk0xjDg==
+X-Received: by 2002:a17:903:2983:b0:2b0:b075:f2fb with SMTP id d9443c01a7336-2b269c7c5e0mr5139685ad.35.1774987584916;
+        Tue, 31 Mar 2026 13:06:24 -0700 (PDT)
+X-Received: by 2002:a17:903:2983:b0:2b0:b075:f2fb with SMTP id d9443c01a7336-2b269c7c5e0mr5139465ad.35.1774987584440;
+        Tue, 31 Mar 2026 13:06:24 -0700 (PDT)
+Received: from doltdoltdolt ([209.132.188.88])
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2b242765b93sm132177325ad.51.2026.03.31.13.06.21
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 31 Mar 2026 13:06:23 -0700 (PDT)
+Date: Wed, 1 Apr 2026 04:06:19 +0800
+From: Zorro Lang <zlang@redhat.com>
+To: Christoph Hellwig <hch@infradead.org>
+Cc: Leo Martins <loemra.dev@gmail.com>, linux-btrfs@vger.kernel.org,
+	kernel-team@fb.com, fstests@vger.kernel.org
+Subject: Re: [PATCH] generic/301: skip extent count check on btrfs
+Message-ID: <20260331200619.buww7bpudldcmxof@doltdoltdolt>
+References: <c56960b514baf810f2929b5e955a966d9955c468.1774383226.git.loemra.dev@gmail.com>
+ <acN3QEpx_YZZN5Qb@infradead.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <acN3QEpx_YZZN5Qb@infradead.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+On Tue, Mar 24, 2026 at 10:48:48PM -0700, Christoph Hellwig wrote:
+> On Tue, Mar 24, 2026 at 01:40:00PM -0700, Leo Martins wrote:
+> > +# btrfs CoW extent allocation depends on transaction commit frequency and
+> > +# metadata reservation behavior, so the 2/3 fragmentation threshold (designed
+> > +# for XFS cowextsize) is not applicable.
+> 
+> It really is a quality of implementation issue and not specifically
+> designed for XFS.  But I gues it is hard to force quality of
+> implementation on specific file systems.
+> 
+> > +if [ "$FSTYP" != "btrfs" ]; then
+> > +	test $new_extents -lt $((internal_blks * 2 / 3)) || echo "file2 badly fragmented"
+> 
+> Please break the echo into a separate line to keep this readable,
+> either by just breaking using \ or by turning this into a proper if
+> statement.
 
-Several tests mention patches that are already in Linus' git tree, so add
-their commit IDs. For generic/762, also use "fixed_by_fs_commit xfs"
-instead of "_fixed_by_git_commit kernel" since it's a XFS specific commit
-and it does not make sense for the test to report that commit in case it
-fails when running against a filesystem other than XFS.
+Sure, I'll help to change it to:
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- tests/btrfs/340   | 2 +-
- tests/btrfs/345   | 2 +-
- tests/btrfs/346   | 2 +-
- tests/btrfs/347   | 2 +-
- tests/generic/762 | 2 +-
- tests/generic/789 | 2 +-
- tests/generic/790 | 2 +-
- 7 files changed, 7 insertions(+), 7 deletions(-)
+	test $new_extents -lt $((internal_blks * 2 / 3)) || \
+		echo "file2 badly fragmented"
 
-diff --git a/tests/btrfs/340 b/tests/btrfs/340
-index fc3b8d62..872f790c 100755
---- a/tests/btrfs/340
-+++ b/tests/btrfs/340
-@@ -10,7 +10,7 @@
- . ./common/preamble
- _begin_fstest auto quick qgroup
- 
--_fixed_by_kernel_commit xxxxxxxxxxxx \
-+_fixed_by_kernel_commit 68d4b3fa18d7 \
- 	"btrfs: qgroup: update all parent qgroups when doing quick inherit"
- 
- # For the automatic fsck at unmount.
-diff --git a/tests/btrfs/345 b/tests/btrfs/345
-index 75cc3067..58727049 100755
---- a/tests/btrfs/345
-+++ b/tests/btrfs/345
-@@ -17,7 +17,7 @@ _require_scratch
- _require_btrfs_support_sectorsize 4096
- _require_btrfs_command "property"
- 
--_fixed_by_kernel_commit xxxxxxxxxxxx \
-+_fixed_by_kernel_commit e1b18b959025 \
- 	"btrfs: fix transaction abort when snapshotting received subvolumes"
- 
- # Use a 4K node/leaf size to make the test faster.
-diff --git a/tests/btrfs/346 b/tests/btrfs/346
-index ef301ef7..28c1e536 100755
---- a/tests/btrfs/346
-+++ b/tests/btrfs/346
-@@ -14,7 +14,7 @@ _begin_fstest auto quick subvol
- _require_scratch
- _require_btrfs_support_sectorsize 4096
- 
--_fixed_by_kernel_commit xxxxxxxxxxxx \
-+_fixed_by_kernel_commit 2d1ababdedd4 \
- 	"btrfs: fix transaction abort on file creation due to name hash collision"
- 
- # Use a 4K node/leaf size to make the test faster and require less file names
-diff --git a/tests/btrfs/347 b/tests/btrfs/347
-index ebd53d97..9239e99a 100755
---- a/tests/btrfs/347
-+++ b/tests/btrfs/347
-@@ -16,7 +16,7 @@ _require_test_program t_btrfs_received_uuid_ioctl
- _require_scratch
- _require_btrfs_support_sectorsize 4096
- 
--_fixed_by_kernel_commit xxxxxxxxxxxx \
-+_fixed_by_kernel_commit 87f2c46003fc \
- 	"btrfs: fix transaction abort on set received ioctl due to item overflow"
- 
- # Use a 4K node/leaf size to make the test faster.
-diff --git a/tests/generic/762 b/tests/generic/762
-index e3a01de8..bbaf5051 100755
---- a/tests/generic/762
-+++ b/tests/generic/762
-@@ -10,7 +10,7 @@
- . ./common/preamble
- _begin_fstest auto quota prealloc
- 
--_fixed_by_git_commit kernel XXXXXXXXXXXXXX \
-+_fixed_by_fs_commit xfs 4b8d867ca6e2 \
- 	"xfs: don't over-report free space or inodes in statvfs"
- 
- . ./common/filter
-diff --git a/tests/generic/789 b/tests/generic/789
-index 1ed7a885..0e72966e 100755
---- a/tests/generic/789
-+++ b/tests/generic/789
-@@ -24,7 +24,7 @@ _cleanup()
- _require_scratch
- _require_dm_target flakey
- 
--_fixed_by_fs_commit btrfs xxxxxxxxxxxx \
-+_fixed_by_fs_commit btrfs 5254d4181add \
- 	"btrfs: fix zero size inode with non-zero size after log replay"
- 
- _scratch_mkfs >>$seqres.full 2>&1 || _fail "mkfs failed"
-diff --git a/tests/generic/790 b/tests/generic/790
-index 9aa577f5..28f7faa2 100755
---- a/tests/generic/790
-+++ b/tests/generic/790
-@@ -27,7 +27,7 @@ _cleanup()
- _require_scratch
- _require_dm_target flakey
- 
--_fixed_by_fs_commit btrfs xxxxxxxxxxxx \
-+_fixed_by_fs_commit btrfs 9573a365ff9f \
- 	"btrfs: log new dentries when logging parent dir of a conflicting inode"
- 
- _scratch_mkfs >>$seqres.full 2>&1 || _fail "mkfs failed"
--- 
-2.47.2
+when I merge it.
+
+Thanks,
+Zorro
+
+> 
+> 
 

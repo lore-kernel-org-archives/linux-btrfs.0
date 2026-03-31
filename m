@@ -1,197 +1,222 @@
-Received: from mail-yw1-f172.google.com (mail-yw1-f172.google.com [209.85.128.172])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 275E143C071
-	for <linux-btrfs@vger.kernel.org>; Tue, 31 Mar 2026 21:23:54 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.128.172
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774992236; cv=pass; b=o1nM98yyWmlwzDkIzH/gP1uwYDftUlMndY3qviMk2d4I4RMjPiClIV5XwHxw/wMO0rsCErlxGAJEtHSyWv7voCP5lhiXQuyROHdHBeUBWditgXnaO94qy+pZmD0PG35qCzA8D3rbTDEnIFbskqMJSUZYi2VZ3aP7jcDh4lRLZLU=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774992236; c=relaxed/simple;
-	bh=HubY0zWmhVmRyXjwkLXKs1E7jvVKlomDEwn2ivXUybc=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=cMTue/XkP4MP/BTOvV7Y2AuXdwJp0748tijDdIzFSu2M78Yes0WgRqcgMc8EPxkBnKEGHkM2cMqgGwbV50RgXhi4cAkMNHf5MPgAWRJZ/PCvG5bLuxN4Yicl3hvGpyW+JdVJuli2L/41mfWpVHX//hAzJ24ORRAB2/DgGoyyVpQ=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=vietors.com; spf=pass smtp.mailfrom=vietors.com; dkim=pass (2048-bit key) header.d=vietors.com header.i=@vietors.com header.b=ZZdtx8zP; arc=pass smtp.client-ip=209.85.128.172
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=vietors.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=vietors.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7C62B41B36F;
+	Tue, 31 Mar 2026 21:28:35 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1774992515; cv=none; b=qoRRaEvwcvJVdB1yYLcMd9jSbXpctAZshVYIy6vV8kDkoJjYzl2eNAXspndVMHSIVuz+H86Ig1a5Ge100uHz22+QHMGwuudQjiM8GZHyqf+TnAEvEftVSKeZMV+NTykEaAfujQ5Q1xzcAo8l6HO2x3vkYAWxW4LTr41L0eBla4Q=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1774992515; c=relaxed/simple;
+	bh=O5Wp6PIWIi6fK+QRdUlQ+iPXF6IQd4G/Ipxw8Y2h6F0=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=QyStKBJhAI8jcubJHFfnNNsot0XaIB2yEN7YK+064mQMxUoX11dkJs1Ej8mHec9E5BVUrOnOalZEvBuHxKJ1BbcQkhSom5Usxx1m4I5p4J/wWinZh3oU6M0AoyjB1lvjT9n57qOPtidbAhLeMWX/BQ4KUpzwfDBeaufaj8snzew=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=j81Lyhmt; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=vietors.com header.i=@vietors.com header.b="ZZdtx8zP"
-Received: by mail-yw1-f172.google.com with SMTP id 00721157ae682-79c28eb73d3so1281797b3.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 31 Mar 2026 14:23:54 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1774992234; cv=none;
-        d=google.com; s=arc-20240605;
-        b=NMneAMxcOI1NvVtk/kQzmkutX/ebnV5WxMzFuYK5kuk302kcd/lpZq6zLU2x8CTcOy
-         IB7mc3OXEyYAWha0StLHXG5l7HIrW5CIn2EccLbmEO6cEBEyPiwgTb2tD/tbxI9cXNHM
-         XCCJZQLbT+w9oe7H4JuXA4H5g+T519ZmmshLDdbGXuyNogy+Cx/gUFk4W/uhblIlU7I3
-         fmC5I6zmAtnxLUqznwVoQOqYIX+2n+vzBP8F1egR8PfCU2jK5Oo8djGh15YUWu+EfLLl
-         jPjjpmEKKMzMpmVlQC7LnN9khAVCAnHVClAzeFimHo9J3McO4abKcA91BwXTXFIx36Yj
-         tDPQ==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:dkim-signature;
-        bh=HubY0zWmhVmRyXjwkLXKs1E7jvVKlomDEwn2ivXUybc=;
-        fh=gccavu6KskZuhdxKZGGZqKbRpE8AZv+Jw1v9OVMw784=;
-        b=c7Ep/C8XHijlGwOM5fxgDU+r/u21MWPzh6kMZ6z/0+EWxwqoLe40OY9BB+INEiApdX
-         Av7PClbDtph5cN+kMWl/wuqNSsmaPWusxn6ftvUQfwuVFvfCH2qyaFupfNLRcbxilg7M
-         gLcy0bYpbRQo+R9RXUSOOf/8POaxvyZc8OsQxH8K4TKiHYqvZEfQinSt4nlDl1K8Hzvc
-         ufgc6XDDERHXoIlpoSZsn8JcK7gcJJExn61PGSMHziPaf6ezBY5DtC5qinLvTONu68YB
-         8KJoyfKQ7IVHRPFyEbai1Z+30hT0r2dbeHXSI76dZ4HYbJ6OacfKt+2ZX6TuhvElwdKJ
-         X1cg==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=vietors.com; s=google; t=1774992234; x=1775597034; darn=vger.kernel.org;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=HubY0zWmhVmRyXjwkLXKs1E7jvVKlomDEwn2ivXUybc=;
-        b=ZZdtx8zPKQjF8McETWGmf11ZrNow3d2hQpcceCXfYw31B30kDnqATQZox26Wv+m4v6
-         t5wyFyQXGeZIn4MszKMlaSYo7MaGYsFRpl2AlYd7sPFp3M2Nt1pxZQ+eTXxiJfUhqe9Y
-         iWgGQBGmOwPaT6o6AQvbtJ4N/3fH4P80nrBFneP1ITMBRJCaEwWdp3bmiiiCwaFb0icZ
-         1ipgVBQzgnuxbwPEVcAiQjacoPp9NQHQvyjUlde2OG58Awgx/pbI6UnKrZHVRyFcOLpW
-         KakA/pJ+6U31s+QjAjQkzW3t/YQ/3KvWy8yClQoz0+p48tCEFBIm/7nARIyYZUBCpY4x
-         SFAw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1774992234; x=1775597034;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-gg:x-gm-message-state:from
-         :to:cc:subject:date:message-id:reply-to;
-        bh=HubY0zWmhVmRyXjwkLXKs1E7jvVKlomDEwn2ivXUybc=;
-        b=fbwKNFca4E/ystpuuBFr++BxJ8XczLLSNMnfc/QJ0QDC3tyrhUyUaEvwsLYLF/eLCb
-         Fez7BGQUFaytpbETEYeo8ALzhLqTr9lgJF73LcxQDFPe5FJ+BbUqB0XkbrJg+kocO3mA
-         iAV1652GrGP8+l4gzoZRLGLRrJrd4zr6vaph0Ktqy87cCV2R35yowrIlopOOWbPH3GKE
-         lnIXjxYZFkliG92gFEWXyGdO+e3Tq3Zib+MeCrL2eB9odzW9vFirg6sKC1YGwB/AJM4Y
-         dliviXi8dSPrKxIbjwbBSZdd9+PBYiS4g1tR09QpPyPl55/XjrhmLcdm2UI9AhTdZX7c
-         20pA==
-X-Gm-Message-State: AOJu0YywAapb7nYlPdLcbiF1hORExRjWQk0/5bVzGydFRqYCrxPa8SSe
-	XpbXNxvqKu/quK6K6hzelt0m9fOextMgz81Bmwg8n0C7yMaqjID2F/zAu5rrLkL2T5rb64DPUzs
-	ezBdS9R7uuxJUFZbXwLCS32xD3VevFdI4hfnAc35aWQ==
-X-Gm-Gg: ATEYQzz0zSDyWsnClcMix+AdnobE0ZBezzIi2PxpDU81NLj6+MzX6zDomusjpRW9w4F
-	r/9jF4gF7c+fW03SaQkJaYuPVidzGVAQ3t2PInZPgaP0gt0oyKzJhXWg/7itEVOVLsc9jrPJQzx
-	aQh4XTz7ASXev7KdCH7N+VavnB6qdY7lXrrIfIs1lqiqef2vm0dYev9dAzekOTf1aoMH5a5Bp6+
-	al6AyX52/CDgyp/GYQaVWephhGr5gFH8j05t1Z6dF4/ZFFHPYjUaz3Zzf6QyvksheQWg4aBsirj
-	YpIZBW/G9lSx+MgIcUjlBYqYB5MFBrJwCnRWhQ==
-X-Received: by 2002:a05:690e:d0f:b0:64a:f23b:e2f5 with SMTP id
- 956f58d0204a3-6502fe69095mr710168d50.3.1774992234098; Tue, 31 Mar 2026
- 14:23:54 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="j81Lyhmt"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 3F73EC19423;
+	Tue, 31 Mar 2026 21:28:31 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1774992515;
+	bh=O5Wp6PIWIi6fK+QRdUlQ+iPXF6IQd4G/Ipxw8Y2h6F0=;
+	h=From:To:Cc:Subject:Date:From;
+	b=j81LyhmtnQk57aq/T0bkR8mecM61ZoxgbjIC2SVzJGKqxUFGcie7GwUQcUVrDq5pW
+	 5/vBDNIT+3ZwJTWr6Tmk1w940+392Nsx15FB87hgmRi9hGu6R3UwpVurGIGNhlu12A
+	 zNhGSf9zrTFfDKr+bqXs+/LbyHcVLa3h23iotWoH0WgpEe+1v6vtEj9tZ8eUS2Bmqc
+	 NigNAl8Y/+un/h2bVvesejWgFj903U+f1Oe7k7CK2n0tK88dk5/YPhvwAs0lG3pKpx
+	 QLZD3a3Alo2ODAqo0YQaTbZ1GxUXjlWlAN5HJ64N7vHEEFNMwIPgkb1e3xnJOe4owc
+	 7zB/IcQz7+uDg==
+From: Andrey Albershteyn <aalbersh@kernel.org>
+To: linux-xfs@vger.kernel.org,
+	fsverity@lists.linux.dev,
+	linux-fsdevel@vger.kernel.org,
+	ebiggers@kernel.org
+Cc: Andrey Albershteyn <aalbersh@kernel.org>,
+	hch@lst.de,
+	linux-ext4@vger.kernel.org,
+	linux-f2fs-devel@lists.sourceforge.net,
+	linux-btrfs@vger.kernel.org,
+	djwong@kernel.org,
+	david@fromorbit.com
+Subject: [PATCH v6 00/22] fs-verity support for XFS with post EOF merkle tree
+Date: Tue, 31 Mar 2026 23:28:01 +0200
+Message-ID: <20260331212827.2631020-1-aalbersh@kernel.org>
+X-Mailer: git-send-email 2.51.2
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <CAF1bhLVYLZvD=j2XyuxXDKD-NWNJAwDnpVN+UYeQW-HbzNRn1A@mail.gmail.com>
- <2aa4a94b-1f10-4b17-a78a-2a58efb56522@suse.com>
-In-Reply-To: <2aa4a94b-1f10-4b17-a78a-2a58efb56522@suse.com>
-From: =?UTF-8?Q?Jaron_Vi=C3=ABtor?= <jaron@vietors.com>
-Date: Tue, 31 Mar 2026 23:23:43 +0200
-X-Gm-Features: AQROBzDnfdP5zpOtJ1I1pYJxEqeI4jAWM0BTUDPP1hhkiYPi_3TRr6LfISBq6k4
-Message-ID: <CAF1bhLWJuHjf8e-4o9y-hhFqadpQ=13P-PZSJLem5Q_A2T-CTw@mail.gmail.com>
-Subject: Re: Problem mounting 4-drive RAID1 fs after replace was interrupted
- by kernel crash
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
 
-On Tue, Mar 31, 2026 at 11:14=E2=80=AFPM Qu Wenruo <wqu@suse.com> wrote:
->
->
->
-> =E5=9C=A8 2026/4/1 07:09, Jaron Vi=C3=ABtor =E5=86=99=E9=81=93:
-> > Hello,
-> >
-> > I have a machine with a 4-drive RAID1 btrfs filesystem attached to it
-> > over a USB3-to-SATA bridge. They are not connected directly over SATA
-> > because it's an Intel NUC, so USB3 is pretty much the only sensible
-> > option.
-> > A few days ago, one of the drives started failing so I connected a
-> > second USB-TO-SATA bridge (the first one could only hold 4 drives),
-> > inserted a new drive into the new bridge, and ran:
-> >
-> > btrfs replace start -r 7 /dev/sdk1 /media
-> >
-> > Devid 7 was the failing drive, and sdk1 is the new (larger) replacement=
-.
-> > This all went fine so far, and the replace was happily chugging along
-> > for several hours.
-> > Unfortunately, at around 7.1% done a kernel crash happened (I believe
-> > it was unrelated to the replace operation, but can't be sure -
-> > unfortunately I didn't save the errors it printed) and I had to reboot
-> > the machine.
-> >
-> > After the reboot, attempting to mount the filesystem gives these messag=
-es:
-> >
-> > BTRFS info (device sdk1): first mount of filesystem
-> > d18c93f8-d80a-4aa7-adc5-86d457ddde20
-> > BTRFS info (device sdk1): using crc32c (crc32c-lib) checksum algorithm
-> > BTRFS error (device sdk1): devid 0 path /dev/sdk1 is registered but
-> > not found in chunk tree
-> > BTRFS error (device sdk1): remove the above devices or use 'btrfs
-> > device scan --forget <dev>' to unregister them before mount
-> > BTRFS error (device sdk1): open_ctree failed: -117
-> >
-> > Either running that command and/or unplugging the new replacement
-> > drive, instead gives me these (either action results in the same
-> > messages):
->
-> Kernel version please.
->
-> And with all devices (including the new and failing disks), and "btrfs
-> dev scan", the mount still fails with the same message?
->
-> If so, mount with "degraded" mount option, and try to cancel the
-> replacement, then try again.
+Hi all,
 
-Thanks for your reply!
-This is on kernel 6.19.10, the problem (and start of the replace
-operation) was originally started on kernel 6.18.2 - I updated in
-hopes that would fix things, but it made no difference.
-Yes, with all drives the mount fails with the same message. Attempting
-to mount degraded (or ro,degraded) also gives the exact same message
-as well, so I have no way to cancel the replacement (that I know of).
+This patch series adds fs-verity support for XFS. This version stores
+merkle tree beyond end of the file, the same way as ext4 does it. The
+difference is that verity descriptor is stored at the next aligned 64k
+block after the merkle tree last block. This is done due to sparse
+merkle tree which doesn't store hashes of zero data blocks.
 
-Kind regards,
-Jaron
+The patchset starts with a few fs-verity preparation patches. Then, a
+few patches to allow iomap to work in post EOF region. The XFS fs-verity
+implementation follows.
 
->
-> Thanks,
-> Qu
->
-> >
-> > BTRFS info (device sdg1): first mount of filesystem
-> > d18c93f8-d80a-4aa7-adc5-86d457ddde20
-> > BTRFS info (device sdg1): using crc32c (crc32c-lib) checksum algorithm
-> > BTRFS info (device sdg1): bdev /dev/sdg1 errs: wr 0, rd 16, flush 0,
-> > corrupt 1054, gen 0
-> > BTRFS info (device sdg1): bdev /dev/sdh1 errs: wr 0, rd 0, flush 0,
-> > corrupt 379, gen 0
-> > BTRFS info (device sdg1): bdev /dev/sdi1 errs: wr 0, rd 0, flush 0,
-> > corrupt 1652, gen 0
-> > BTRFS info (device sdg1): bdev /dev/sdj1 errs: wr 0, rd 0, flush 0,
-> > corrupt 1522, gen 0
-> > BTRFS warning (device sdg1): cannot mount because device replace
-> > operation is ongoing and
-> > BTRFS warning (device sdg1): tgtdev (devid 0) is missing, need to run
-> > 'btrfs dev scan'?
-> > BTRFS error (device sdg1): failed to init dev_replace: -5
-> > BTRFS error (device sdg1): open_ctree failed: -5
-> >
-> > So... it seems to be stuck thinking the new drive both should -and-
-> > shouldn't be there. Huh.
-> >
-> > I already asked for help with this issue in the IRC channel, but the
-> > friendly folks there told me after some debugging that this was a
-> > problem for the mailing list. So... here I am!
-> > I do have access to other machines I could potentially connect the
-> > drives directly to... but I'm not inclined to think the USB-to-SATA
-> > bridge(s) is/are the problem here. (Unless somebody here says
-> > otherwise, of course.)
-> >
-> > Thanks in advance for any help you may be able to provide!
-> >
-> > Kind regards,
-> > Jaron Vi=C3=ABtor
-> >
->
+The tree is read by iomap into page cache at offset of next largest
+folio past end of file. The same offset is used for on-disk.
+
+This patchsets also synthesizes merkle tree block full of hashes of
+zeroed data blocks. This merkle blocks are not stored on disk, they are
+holes in the tree.
+
+Testing. The -g verity is passing for 1k, 8k and 4k with/without quota
+on 4k and 64k page size systems. Tested -g quick for enabled/disabled
+fsverity.
+
+This series based on v7.0-rc6 with patchset fs generated integrity
+information [1].
+
+kernel:
+https://git.kernel.org/pub/scm/linux/kernel/git/aalbersh/xfs-linux.git/log/?h=b4/fsverity
+
+xfsprogs:
+https://github.com/alberand/xfsprogs/tree/b4/fsverity
+
+xfstests:
+https://github.com/alberand/xfstests/tree/b4/fsverity
+
+Cc: fsverity@lists.linux.dev
+Cc: linux-fsdevel@vger.kernel.org
+Cc: linux-xfs@vger.kernel.org
+
+Cc: david@fromorbit.com
+Cc: djwong@kernel.org
+Cc: ebiggers@kernel.org
+Cc: hch@lst.de
+
+[1]: https://lore.kernel.org/linux-xfs/20260223132021.292832-1-hch@lst.de/
+
+---
+Changes in v6:
+- Removed stub for fsverity_ensure_verity_info() as it's optimized out
+- Rename fsverity_folio_zero_hash() to fsverify_fill_zerohash()
+- Merge patches 8 to 10 into one
+- Merge patch gerating zero_hash and fsverity_fill_zerohash() into one
+- Add kerneldoc to fsverity_ensure_verity_info()
+- Add comments to iomap_block_needs_zeroing()
+Changes in v5:
+- Add fserror_report_data_lost() for data blocks in page spanning EOF
+- Issue fsverity metadata readahead in data readahead
+- iomap_fsverity_write() return type fix
+- Use of S_ISREG(mode)
+- Make 65536 #define instead of open-coded
+- Use transaction per unwritten extent removal
+- Fetch fsverity_info for all fsverity metadata
+- Revert fsverity_folio_zero_hash() stub as used in iomap
+- Extend cancel_unwritten to whole file range to remove cow leftovers
+- Drop delayed allocation on the COW fork on fsverity completion
+Changes in v4:
+- Use fserror interface in fsverity instead of fs callback
+- Hoist pagecache_read from f2fs/ext4 to fsverity
+- Refactor iomap code
+- Fetch fsverity_info only for file data and merkle tree holes
+- Do not disable preallocation, remove unwritten extents instead
+- Offload fsverity hash I/O to fsverity workqueue in read path
+- Store merkle tree at round_up(i_size, 64k)
+- Add a spacing between merkle tree and fsverity descriptor as next 64k
+  aligned block
+- Squash helpers into first user commits
+- Squash on-disk format changes into single commit
+- Drop different offset for pagecache/on-disk
+- Don't zero out pages in higher order folios in write path
+- Link to v3: https://lore.kernel.org/fsverity/20260217231937.1183679-1-aalbersh@kernel.org/T/#t
+Changes in v3:
+- Different on-disk and pagecache offset
+- Use read path ioends
+- Switch to hashtable fsverity info
+- Synthesize merkle tree blocks full of zeroes
+- Other minor refactors
+- Link to v2: https://lore.kernel.org/fsverity/20260114164210.GO15583@frogsfrogsfrogs/T/#t
+Changes in v2:
+- Move to VFS interface for merkle tree block reading
+- Drop patchset for per filesystem workqueues
+- Change how offsets of the descriptor and tree metadata is calculated
+- Store fs-verity descriptor in data fork side by side with merkle tree
+- Simplify iomap changes, remove interface for post eof read/write
+- Get rid of extended attribute implementation
+- Link to v1: https://lore.kernel.org/r/20250728-fsverity-v1-0-9e5443af0e34@kernel.org
+
+Andrey Albershteyn (20):
+  fsverity: report validation errors through fserror to fsnotify
+  fsverity: expose ensure_fsverity_info()
+  fsverity: generate and store zero-block hash
+  fsverity: pass digest size and hash of the empty block to ->write
+  fsverity: hoist pagecache_read from f2fs/ext4 to fsverity
+  iomap: introduce IOMAP_F_FSVERITY and teach writeback to handle
+    fsverity
+  iomap: teach iomap to read files with fsverity
+  iomap: introduce iomap_fsverity_write() for writing fsverity metadata
+  xfs: introduce fsverity on-disk changes
+  xfs: initialize fs-verity on file open
+  xfs: don't allow to enable DAX on fs-verity sealed inode
+  xfs: disable direct read path for fs-verity files
+  xfs: handle fsverity I/O in write/read path
+  xfs: use read ioend for fsverity data verification
+  xfs: add fs-verity support
+  xfs: remove unwritten extents after preallocations in fsverity
+    metadata
+  xfs: add fs-verity ioctls
+  xfs: introduce health state for corrupted fsverity metadata
+  xfs: add fsverity traces
+  xfs: enable ro-compat fs-verity flag
+
+Darrick J. Wong (2):
+  xfs: advertise fs-verity being available on filesystem
+  xfs: check and repair the verity inode flag state
+
+ fs/btrfs/verity.c              |   6 +-
+ fs/ext4/verity.c               |  36 +--
+ fs/f2fs/verity.c               |  34 +--
+ fs/iomap/buffered-io.c         | 109 +++++++-
+ fs/iomap/trace.h               |   3 +-
+ fs/verity/enable.c             |   4 +-
+ fs/verity/fsverity_private.h   |   3 +
+ fs/verity/open.c               |   8 +-
+ fs/verity/pagecache.c          |  55 ++++
+ fs/verity/verify.c             |   4 +
+ fs/xfs/Makefile                |   1 +
+ fs/xfs/libxfs/xfs_bmap.c       |   7 +
+ fs/xfs/libxfs/xfs_format.h     |  35 ++-
+ fs/xfs/libxfs/xfs_fs.h         |   2 +
+ fs/xfs/libxfs/xfs_health.h     |   4 +-
+ fs/xfs/libxfs/xfs_inode_buf.c  |   8 +
+ fs/xfs/libxfs/xfs_inode_util.c |   2 +
+ fs/xfs/libxfs/xfs_sb.c         |   4 +
+ fs/xfs/scrub/attr.c            |   7 +
+ fs/xfs/scrub/common.c          |  53 ++++
+ fs/xfs/scrub/common.h          |   2 +
+ fs/xfs/scrub/inode.c           |   7 +
+ fs/xfs/scrub/inode_repair.c    |  36 +++
+ fs/xfs/xfs_aops.c              |  62 ++++-
+ fs/xfs/xfs_bmap_util.c         |   8 +
+ fs/xfs/xfs_file.c              |  19 +-
+ fs/xfs/xfs_fsverity.c          | 457 +++++++++++++++++++++++++++++++++
+ fs/xfs/xfs_fsverity.h          |  28 ++
+ fs/xfs/xfs_health.c            |   1 +
+ fs/xfs/xfs_inode.h             |   6 +
+ fs/xfs/xfs_ioctl.c             |  14 +
+ fs/xfs/xfs_iomap.c             |  15 +-
+ fs/xfs/xfs_iops.c              |   4 +
+ fs/xfs/xfs_message.c           |   4 +
+ fs/xfs/xfs_message.h           |   1 +
+ fs/xfs/xfs_mount.h             |   4 +
+ fs/xfs/xfs_super.c             |   7 +
+ fs/xfs/xfs_trace.h             |  46 ++++
+ include/linux/fsverity.h       |  29 ++-
+ include/linux/iomap.h          |  13 +
+ 40 files changed, 1054 insertions(+), 94 deletions(-)
+ create mode 100644 fs/xfs/xfs_fsverity.c
+ create mode 100644 fs/xfs/xfs_fsverity.h
+
+-- 
+2.51.2
+

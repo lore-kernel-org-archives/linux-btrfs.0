@@ -1,41 +1,41 @@
 Received: from stravinsky.debian.org (stravinsky.debian.org [82.195.75.108])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5E17240F8CE;
-	Wed,  1 Apr 2026 13:04:26 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 553F2411634;
+	Wed,  1 Apr 2026 13:04:30 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=82.195.75.108
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775048667; cv=none; b=Hk+hDwKknQBqjd373JvcMv3wIfYtprQpLhzD03RIEgOxm3emAPL6ToeMnmriCI0J6THXr/QkeyO1O/RlGJGgCV9JSQ36wyrXFxYIFkJKcBueTfviQF6CMTw//1qQWa/vehgJk6hq1rp79Sl0Tyhf+iY3/8drYl6Fffs9MIDPeag=
+	t=1775048671; cv=none; b=DWdKGq84CMpx+XTASh5KJx+FrpSW3p8fFnCtIVmyFt1sLdOW7hK8cPztbVFT9e7XI+8QKY5r55gp1nwLqUhl5wQugY2FwyH/bc/AzvwVO/X0b5hmtuUJUtu8OSIk30LnNLvs8GLsN+C9C96VpB0Dt0+nOX9dnWXoEiDLch3IqVo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1775048667; c=relaxed/simple;
-	bh=DxEMq1saeg34BF3Yzy95iKoy3ZKirsE09XMJF+o4lRM=;
+	s=arc-20240116; t=1775048671; c=relaxed/simple;
+	bh=WC6GVYqqH6uJpxirkIWe/Ma1i1dg1WyP1WFJSYjEFjY=;
 	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
-	 In-Reply-To:To:Cc; b=frzxugTQ0vWnJuGwzhJmAPByX6x56Ivg5/6SXU+rG/IYN3SBrQCuwDFfKDkuNCe6ikR1slRe+P1W3d5pZVRV5VOXcOwRUWs8hIvlAJ+ofN1l3zGLbpP+rwAYbKX/0GUVFOK8GquuJRWCKb5aBHgB/dhzcoJoDECLMjK6JUk5sjY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=debian.org; spf=none smtp.mailfrom=debian.org; dkim=pass (2048-bit key) header.d=debian.org header.i=@debian.org header.b=bBDdmxnz; arc=none smtp.client-ip=82.195.75.108
+	 In-Reply-To:To:Cc; b=PKn6MlcJPFq1gWK+xsKCdmC0zse1lFt6XHlbvzYW1cEgWv5KlrKp6DGY63rmqKrGctUt2M/kHzfsIL8gXbAkiRLfeER49KiBoU1qfNO5+1InvIqf4PlZHIMG9DFQbnVQ/OX9XBGB0v8dadjfjABsiJ4Hsex69XzRz3a2lcKCRkI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=debian.org; spf=none smtp.mailfrom=debian.org; dkim=pass (2048-bit key) header.d=debian.org header.i=@debian.org header.b=R62WKQMm; arc=none smtp.client-ip=82.195.75.108
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=debian.org
 Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=debian.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=debian.org header.i=@debian.org header.b="bBDdmxnz"
+	dkim=pass (2048-bit key) header.d=debian.org header.i=@debian.org header.b="R62WKQMm"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=debian.org;
 	s=smtpauto.stravinsky; h=X-Debian-User:Cc:To:In-Reply-To:References:
 	Message-Id:Content-Transfer-Encoding:Content-Type:MIME-Version:Subject:Date:
 	From:Reply-To:Content-ID:Content-Description;
-	bh=eHESwEHIq+qhqnmRErI38j145fir3UHyhCm3AZu26Jk=; b=bBDdmxnzHSnNVcUYWLaioq1bY6
-	vF3q5xvcsOqs3uTDMawJHICgbcltevWEUOWIDWeyCtNU4l8aF6HQ/v+6shgrXTW8/4qtmikXbJEOi
-	vZFVdjGePfi8/mHa2xZx+5skkgD/Kr7Ig7V4EVEZ7SgMxsHl3/CwRkXnRT/JlQHQZr6gCLNzE2U9+
-	zy45xGIjHr/uaE9AfK9bJyvySOhGNfN4JaZjL0Gb7ILZHWCvcXRGm8Vxq9m3wTbenFFrScS1q5rxL
-	D0gh+6ydqbUnQIqeBnpCdmcnVZf12mdJcCWU25wg+DPOj51duJb9BR/YVJzCKl+zPnzieGWn7Y/fb
-	IIXtHBnQ==;
+	bh=/9/FcUTrB1glb7awiHGGVzYmo0mRbW1klav76bPoW60=; b=R62WKQMmSVF7JrKZHW7GoZjp/G
+	XH4VEWaWutQULOGDZcsBgaL4YA6JtRibQYr3NSGzkMvH6Li37wA6ixO0Tstnm8dMHmfuBrLJCmE8j
+	OTAriTsZaNkOOOz++/fhr+0a/v9lUU3fb8YfIfElu0f+Wfwiy6c3fM5Q4kydzCi2/i6d8ZmLdJFc2
+	ESWBrrxmdQIbv21LYGPUZpu6DqWneF+CV0bLTOdTh5f6V3R4z4h0Ri1sJjPde5CbgldeyOvpP3FDc
+	B5C8qpCKUpoGsiugwBKOHHGZu9kiueORr1RkNHo9Sk1n6eAaylctgE1XMr2ljN5TGWbaKj7/dpsaa
+	8EnPZudg==;
 Received: from authenticated user
 	by stravinsky.debian.org with esmtpsa (TLS1.3:ECDHE_X25519__RSA_PSS_RSAE_SHA256__AES_256_GCM:256)
 	(Exim 4.96)
 	(envelope-from <leitao@debian.org>)
-	id 1w7vFC-0030Pp-0B;
-	Wed, 01 Apr 2026 13:04:24 +0000
+	id 1w7vFF-0030Py-2y;
+	Wed, 01 Apr 2026 13:04:28 +0000
 From: Breno Leitao <leitao@debian.org>
-Date: Wed, 01 Apr 2026 06:03:54 -0700
-Subject: [PATCH v3 3/6] workqueue: set WQ_AFFN_CACHE_SHARD as the default
- affinity scope
+Date: Wed, 01 Apr 2026 06:03:55 -0700
+Subject: [PATCH v3 4/6] tools/workqueue: add CACHE_SHARD support to
+ wq_dump.py
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -44,7 +44,7 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-Message-Id: <20260401-workqueue_sharded-v3-3-ab0b9336bf0b@debian.org>
+Message-Id: <20260401-workqueue_sharded-v3-4-ab0b9336bf0b@debian.org>
 References: <20260401-workqueue_sharded-v3-0-ab0b9336bf0b@debian.org>
 In-Reply-To: <20260401-workqueue_sharded-v3-0-ab0b9336bf0b@debian.org>
 To: Tejun Heo <tj@kernel.org>, Lai Jiangshan <jiangshanlai@gmail.com>, 
@@ -55,56 +55,55 @@ Cc: linux-kernel@vger.kernel.org, puranjay@kernel.org,
  kernel-team@meta.com, Chuck Lever <chuck.lever@oracle.com>, 
  Breno Leitao <leitao@debian.org>
 X-Mailer: b4 0.16-dev-453a6
-X-Developer-Signature: v=1; a=openpgp-sha256; l=1448; i=leitao@debian.org;
- h=from:subject:message-id; bh=DxEMq1saeg34BF3Yzy95iKoy3ZKirsE09XMJF+o4lRM=;
- b=owEBbQKS/ZANAwAIATWjk5/8eHdtAcsmYgBpzRfI1GonAFW4MAKAztm3cYO921irGE2DYuh3x
- ceeVLV42HqJAjMEAAEIAB0WIQSshTmm6PRnAspKQ5s1o5Of/Hh3bQUCac0XyAAKCRA1o5Of/Hh3
- bXatEACobQ1fDniF0Fy1IiXb+Jku/flGZS3t759U9j47WJKr7CuLkMUBO+RY8EWmdLf+/EeBHnM
- trCPd5KwUMLfq6gp9BL/N1lIai/d49Im/oAFd1hPCy1c3+ewg3CjlKasx7W09uMe5vWVintdbE5
- uqNCvAkfhotuDsiGA5aAb59NdA9V0IoPNe8vKblDm2AmnEGFN+p9+/WqBbVT0ZzQKLQip3mjHj0
- 1MSyuU08XHJv/8zECXGVoFBOZVou7pQDX5haNyhMLh2AiODxUGo0NHS9T42/3cJl8cJfFXdgw0j
- WuJkjFZ0WZUyJoQc0dPmSMHcArYDv4Ho83mvRyeyKR3fxqCykXB5bHv4AQLAWK0InyNjYQVOl+1
- jdqNP2m5xB++vE2rlHBRaagQrwMqQlajJZ4XhsaLgyKJ5RmeR1x/LVD+6AnaBooGG4edCMCIjCb
- 7dSrCtwbxZRJWOTysp/byjyYT3eXiTe6FAb26GuXv9uL/AcdnIz0UpslROA2yANcfBcJiOfD4E5
- elRz1bDe3yzvy9Ah7dd2iWp+e9kS0++rAGg5UaaHn0erYI7ScjR4tARcB0+sigAb5otLwTaKgTD
- 4G2OFG33tQMZSst1elqE3I/fKMc7ghqZTB4jCvJyqR14pczP5Mau8fPS6mk4pv2fMG+i/zwqU6y
- 40wuQLCM50CS6dA==
+X-Developer-Signature: v=1; a=openpgp-sha256; l=1481; i=leitao@debian.org;
+ h=from:subject:message-id; bh=WC6GVYqqH6uJpxirkIWe/Ma1i1dg1WyP1WFJSYjEFjY=;
+ b=owEBbQKS/ZANAwAIATWjk5/8eHdtAcsmYgBpzRfIFsglWU/C6Vu4ZEjPNoX8kONRE6ru70gtc
+ j/UX2j27waJAjMEAAEIAB0WIQSshTmm6PRnAspKQ5s1o5Of/Hh3bQUCac0XyAAKCRA1o5Of/Hh3
+ bZV/EACVte0wYZbmP8dVyCvQZd/6j6sp5gNvtm32/fXSaQcZtB0CxXsodhwelKGhlAFY2LEGDR4
+ 2tu5Le3H2JxrEqSyB3AEGUXJMljIWvIcHBnpN5beQ6Y8aLEAz4VAm/f+kOXTTANGLAOis0fAZZ8
+ lTnh8Hw9Q44u+kml0aDbSLPxq67UqxA5j5MDwXWdqliEqDG34I3Vrf1fNBa5cChEBBW56uZYUht
+ 1LJqyzddRQazp34CYmNUTnJP0HDpGdkZfh7QTKlRFoRMuVsjd9/wL84F3npVklm0HfyqMqM7vYS
+ 4N250fofPv7n8BBgh14dDxxTkjIcH+TvXVRuWW9m54kmBLuBBODCcH/pKzeJtUpZWsQIrXPa2Xo
+ W2hsEvu0kCCKo3VM908UUcd+cAXaJyz29MakVrABtjX4SRLnzFoInocLGAjYrF9/OO+TitLgK4F
+ Y2XcHfc2m8cVrLeICOdf8CjCRwt6oOxJAVjYXX7RQrFF4UbLBmmMQSsTzqDBaZAD98kGJNxG31O
+ F+KUDX7Iym9ykWg9F95xkPfLIy30LtvrzUN2OOtqdku/qokUXkW+AuGXcVsB4km1wKsazpBTz5H
+ sgal8n2CViD8ngbxjepG81WUa6JJFdy2wFacA2/5Pr1UUN2YeTYKvJrbdUak99HpL6UPvvBN1jR
+ VNCe+6GqIh0UQ7A==
 X-Developer-Key: i=leitao@debian.org; a=openpgp;
  fpr=AC8539A6E8F46702CA4A439B35A3939FFC78776D
 X-Debian-User: leitao
 
-Set WQ_AFFN_CACHE_SHARD as the default affinity scope for unbound
-workqueues. On systems where many CPUs share one LLC, the previous
-default (WQ_AFFN_CACHE) collapses all CPUs to a single worker pool,
-causing heavy spinlock contention on pool->lock.
-
-WQ_AFFN_CACHE_SHARD subdivides each LLC into smaller groups, providing
-a better balance between locality and contention. Users can revert to
-the previous behavior with workqueue.default_affinity_scope=cache.
-
-On systems with 8 or fewer cores per LLC, CACHE_SHARD produces a single
-shard covering the entire LLC, making it functionally identical to the
-previous CACHE default. The sharding only activates when an LLC has more
-than 8 cores.
+The WQ_AFFN_CACHE_SHARD affinity scope was added to the kernel but
+wq_dump.py was not updated to enumerate it. Add the missing constant
+lookup and include it in the affinity scopes iteration so that drgn
+output shows the CACHE_SHARD pod topology alongside the other scopes.
 
 Signed-off-by: Breno Leitao <leitao@debian.org>
 ---
- kernel/workqueue.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ tools/workqueue/wq_dump.py | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/kernel/workqueue.c b/kernel/workqueue.c
-index 5b1d42115e20..3b5b21136414 100644
---- a/kernel/workqueue.c
-+++ b/kernel/workqueue.c
-@@ -449,7 +449,7 @@ static bool wq_topo_initialized __read_mostly = false;
- static struct kmem_cache *pwq_cache;
+diff --git a/tools/workqueue/wq_dump.py b/tools/workqueue/wq_dump.py
+index d29b918306b4..06948ffcfc4b 100644
+--- a/tools/workqueue/wq_dump.py
++++ b/tools/workqueue/wq_dump.py
+@@ -107,6 +107,7 @@ WQ_MEM_RECLAIM          = prog['WQ_MEM_RECLAIM']
+ WQ_AFFN_CPU             = prog['WQ_AFFN_CPU']
+ WQ_AFFN_SMT             = prog['WQ_AFFN_SMT']
+ WQ_AFFN_CACHE           = prog['WQ_AFFN_CACHE']
++WQ_AFFN_CACHE_SHARD     = prog['WQ_AFFN_CACHE_SHARD']
+ WQ_AFFN_NUMA            = prog['WQ_AFFN_NUMA']
+ WQ_AFFN_SYSTEM          = prog['WQ_AFFN_SYSTEM']
  
- static struct wq_pod_type wq_pod_types[WQ_AFFN_NR_TYPES];
--static enum wq_affn_scope wq_affn_dfl = WQ_AFFN_CACHE;
-+static enum wq_affn_scope wq_affn_dfl = WQ_AFFN_CACHE_SHARD;
+@@ -138,7 +139,7 @@ def print_pod_type(pt):
+         print(f' [{cpu}]={pt.cpu_pod[cpu].value_()}', end='')
+     print('')
  
- /* buf for wq_update_unbound_pod_attrs(), protected by CPU hotplug exclusion */
- static struct workqueue_attrs *unbound_wq_update_pwq_attrs_buf;
+-for affn in [WQ_AFFN_CPU, WQ_AFFN_SMT, WQ_AFFN_CACHE, WQ_AFFN_NUMA, WQ_AFFN_SYSTEM]:
++for affn in [WQ_AFFN_CPU, WQ_AFFN_SMT, WQ_AFFN_CACHE, WQ_AFFN_CACHE_SHARD, WQ_AFFN_NUMA, WQ_AFFN_SYSTEM]:
+     print('')
+     print(f'{wq_affn_names[affn].string_().decode().upper()}{" (default)" if affn == wq_affn_dfl else ""}')
+     print_pod_type(wq_pod_types[affn])
 
 -- 
 2.52.0

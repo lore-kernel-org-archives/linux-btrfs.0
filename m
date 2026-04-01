@@ -1,98 +1,273 @@
-Received: from desiato.infradead.org (desiato.infradead.org [90.155.92.199])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 513A4331222
-	for <linux-btrfs@vger.kernel.org>; Wed,  1 Apr 2026 15:58:19 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=90.155.92.199
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 033812FD1AA
+	for <linux-btrfs@vger.kernel.org>; Wed,  1 Apr 2026 17:57:57 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775059104; cv=none; b=obM90f/DizfpW3umFHhfVjmSzJk+lkXJznrfJUvIwxOdoefxWI6ZOIktxqNdhQIqW6jnW1ckCzcTSQCS7gx7mqC5jte9MhZMXuYTZJHFEsyX5RBO4MZo2JnDjk0Px2E27UnD0ent3BItx/8WFSSVi9hCx3KLGDARRhd7hXEm+7Y=
+	t=1775066278; cv=none; b=rXeIgZIo6afecU1kNcjP5cOgTe2UBm0R7gdPU11D59Mmjxt3SuJWHX31po71pqiu7ZcrJ4burud1tV9Rwfn3KQkPSvE0KyIwOvrLR6uxoxb1VlLBiJXteWQCcPwYKFZa3cxEYglK7CCG1utcGIToR5DEr/axlff4cx5hg64cVrg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1775059104; c=relaxed/simple;
-	bh=46MleQHvJEp8Ljg50hF8/hDaSLt1dzlCwwc0BDZbB00=;
-	h=Message-ID:Subject:From:To:Date:Content-Type:MIME-Version; b=OaFjJMXfr2UdqeqNc4jHXPbug1DW6y0iK8o3p4fLy6upN3yVNwONzhVZqMY7H1MTUlgQo0pzpy7fqzG1vA13SJSjvvgZc9yuCfbI5aJOra9e/WmdDKX8loxzHujzMkeyQFLTvuzwOYu5EXQ5/nHinWtSC9exqZgQZkz3KYfPoag=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org; spf=none smtp.mailfrom=infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=jtHDhacl; arc=none smtp.client-ip=90.155.92.199
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=infradead.org
+	s=arc-20240116; t=1775066278; c=relaxed/simple;
+	bh=2Hy+OkaZBDVxYN3ggzF5YQWHDbeAxxdwrZEQskfNrhc=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=ACE2v1Xy6uYaBb3B9XIH2ZMIFzUfGKVS21IUwGZOvhZ9AB2EKS+H5096Ll9Qyd8Y3oAxyhs+AiuQgTQVt4SNqvnHfNJ1PkzWfbVzcVIdYJNtkkfdngAQytlWdEWmoVi9JkEFedRf9ZJyIe8sJX5vHjRD8+LYhrsTCfqzzA/nknE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=PFxgwS8Q; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="jtHDhacl"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=infradead.org; s=desiato.20200630; h=MIME-Version:Content-Transfer-Encoding
-	:Content-Type:Date:To:From:Subject:Message-ID:Sender:Reply-To:Cc:Content-ID:
-	Content-Description:In-Reply-To:References;
-	bh=hCrsH3xF697H4inxuvIQRYLopYH90xVZrPAY9SMgeN4=; b=jtHDhacl784QZyIKbelU9zIHCz
-	zaO4wGUs7LXMRW84iixnLO4deMIUPjYLPQaI/nz1EQnBPwiSpApOMRY4b/o3s3xK8n2siBCu2hGFa
-	tH86aJsw1BfS3FK8bLeefttPY5Y5BJoDC4LfIdGe/UVD0Y8V7QCVNKWT4dcHWF59R2LHA2BXDOaAL
-	w3mFXCK+Hq9p1mYbAjMzBrPqQ+sukRJxD16BJ85uKYw8iMj/wIp3At+DMgGZY3uhltcYlp3fVDEFW
-	lQIo9Q2qEWQHFc23ptMGNvw56RyW4VvrR+l/slVzqn0qlRBGcH1NpFLvK4TAR2xV5LMnSCY+gTxtT
-	D8sTmKYA==;
-Received: from [84.233.216.247] (helo=[172.31.28.190])
-	by desiato.infradead.org with esmtpsa (Exim 4.98.2 #2 (Red Hat Linux))
-	id 1w7xxS-00000000po3-0xju
-	for linux-btrfs@vger.kernel.org;
-	Wed, 01 Apr 2026 15:58:18 +0000
-Message-ID: <8c8e2466574b29ba1da29c325a108824c8373a85.camel@infradead.org>
-Subject: Fixing a corrupted file system
-From: Amit Shah <amit@infradead.org>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="PFxgwS8Q"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2EA85C4CEF7
+	for <linux-btrfs@vger.kernel.org>; Wed,  1 Apr 2026 17:57:57 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1775066277;
+	bh=2Hy+OkaZBDVxYN3ggzF5YQWHDbeAxxdwrZEQskfNrhc=;
+	h=From:To:Subject:Date:From;
+	b=PFxgwS8QzoDgh+5icepAooDSPMZnXpQVcGh2ElyXet2Sx9hvySWKzvw9zEEXM2dbc
+	 XJu8Uy5dqQziYCgY+dWhLYAcHSs47hdOJe2zvBCDDdDlaCY608dvYg0oXyWpHB+hLO
+	 264uRyOHO+9HUHu52XgrECy084UZ1JP+pFKfWQLCU5NAzr8zaxsSisZy3dlF+Tbfww
+	 MI/rbmCXrw6z+wnBWwxxR+RBwhwuFVbraSLigOZfYq2QbtiFka39kk7f2YNmBXbbjp
+	 GZV23siqMoiv41UKtCtiJStcvCPPJExwVYoH/FKb7Ee63CMzVdS4Pp0Sm2wjHhNmcs
+	 krYei3H+Lz4qQ==
+From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Date: Wed, 01 Apr 2026 17:58:17 +0200
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.58.3 (3.58.3-1.fc43) 
+Subject: [PATCH] btrfs: tag as unlikely if statements that check for fs in error state
+Date: Wed,  1 Apr 2026 18:57:53 +0100
+Message-ID: <8ea3a7a9c3c4e6123925646fa6484f6ba1524173.1775066198.git.fdmanana@suse.com>
+X-Mailer: git-send-email 2.47.2
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
 
-Hello folks,
+From: Filipe Manana <fdmanana@suse.com>
 
-I had a msata drive that started showing signs of failure - error
-reading sectors.  I had a single LUKS partition on it (for encryption)
-with btrfs as the file system taking up the entire space (1 TB).
+Having the filesystem in an error state, meaning we had a transaction
+abort, is unexpected. Mark every check for the error state with the
+unlikely annotation to convey that and to allow the compiler to generate
+better code.
 
-I got all the raw data from the drive via ddrescue, and have dumped it
-into a second drive.  However, it looks like before I noticed the disk
-errors, btrfs tried correcting them based on the erroneous reads on the
-first disk, causing those errors to propagate on the recovered copy:
+On x86_64, using gcc 14.2.0-19 from Debian, resulted in a sligthly
+reduced object size and better code.
 
-# mount /dev/mapper/luks-ad4cc8e3-17c1-41f8-8d9d-bb831bfcef23
-/mnt/msatassd/
-mount: /mnt/msatassd: can't read superblock on /dev/mapper/luks-
-ad4cc8e3-17c1-41f8-8d9d-bb831bfcef23.
-       dmesg(1) may have more information after failed mount system
-call.
+Before:
 
-# dmesg|tail
-[960464.502742] BTRFS: device label msatafs devid 1 transid 772442
-/dev/mapper/luks-ad4cc8e3-17c1-41f8-8d9d-bb831bfcef23 scanned by mount
-(10021)
-[960464.516714] BTRFS info (device dm-0): first mount of filesystem
-28fa4955-eadf-4f12-a34d-fb7405bbd0a5
-[960464.526014] BTRFS info (device dm-0): using crc32c (crc32c-generic)
-checksum algorithm
-[960464.534065] BTRFS info (device dm-0): disk space caching is enabled
-[960464.559255] BTRFS info (device dm-0): bdev /dev/mapper/luks-
-ad4cc8e3-17c1-41f8-8d9d-bb831bfcef23 errs: wr 0, rd 0, flush 0, corrupt
-100, gen 0
-[960464.607016] BTRFS error (device dm-0): bad tree block start, mirror
-1 want 1116258304 have 5031253079992706228
-[960464.617170] BTRFS error (device dm-0): failed to read block groups:
--5
-[960464.626009] BTRFS error (device dm-0): open_ctree failed: -5
+  $ size fs/btrfs/btrfs.ko
+     text	   data	    bss	    dec	    hex	filename
+  2008598	 175912	  15592	2200102	 219226	fs/btrfs/btrfs.ko
 
+After:
 
-(I also have the raw file that I can loop-mount instead of using this
-other drive, but for this experiment, working on the drive is simpler
-to iterate.)
+  $ size fs/btrfs/btrfs.ko
+     text	   data	    bss	    dec	    hex	filename
+  2008450	 175912	  15592	2199954	 219192	fs/btrfs/btrfs.ko
 
-So questions:
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/disk-io.c     |  6 +++---
+ fs/btrfs/extent_io.c   |  2 +-
+ fs/btrfs/file.c        |  2 +-
+ fs/btrfs/inode.c       |  4 ++--
+ fs/btrfs/messages.c    |  2 +-
+ fs/btrfs/scrub.c       |  2 +-
+ fs/btrfs/super.c       |  2 +-
+ fs/btrfs/transaction.c | 10 +++++-----
+ fs/btrfs/tree-log.c    |  2 +-
+ fs/btrfs/volumes.c     |  2 +-
+ 10 files changed, 17 insertions(+), 17 deletions(-)
 
-1. Can I do anything to fix the metadata for this filesystem, and have
-it mount, recognize and recover the data on there?
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 14ce9bfc981b..f26b6b8810f3 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1556,7 +1556,7 @@ static int transaction_kthread(void *arg)
+ 		wake_up_process(fs_info->cleaner_kthread);
+ 		mutex_unlock(&fs_info->transaction_kthread_mutex);
+ 
+-		if (BTRFS_FS_ERROR(fs_info))
++		if (unlikely(BTRFS_FS_ERROR(fs_info)))
+ 			btrfs_cleanup_transaction(fs_info);
+ 		if (!kthread_should_stop() &&
+ 				(!btrfs_transaction_blocked(fs_info) ||
+@@ -4148,7 +4148,7 @@ void btrfs_drop_and_free_fs_root(struct btrfs_fs_info *fs_info,
+ 		drop_ref = true;
+ 	spin_unlock(&fs_info->fs_roots_radix_lock);
+ 
+-	if (BTRFS_FS_ERROR(fs_info)) {
++	if (unlikely(BTRFS_FS_ERROR(fs_info))) {
+ 		ASSERT(root->log_root == NULL);
+ 		if (root->reloc_root) {
+ 			btrfs_put_root(root->reloc_root);
+@@ -4276,7 +4276,7 @@ void __cold close_ctree(struct btrfs_fs_info *fs_info)
+ 	 * extents.  This will generate delayed iputs, thus we want to handle
+ 	 * it first.
+ 	 */
+-	if (unlikely(BTRFS_FS_ERROR(fs_info)))
++	if (BTRFS_FS_ERROR(fs_info))
+ 		btrfs_error_commit_super(fs_info);
+ 
+ 	/*
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 9d7ca80477fd..1ba8a7d3587b 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2400,7 +2400,7 @@ int btree_writepages(struct address_space *mapping, struct writeback_control *wb
+ 	 * and it only returns 0 or errors.
+ 	 */
+ 	ASSERT(ret <= 0);
+-	if (!ret && BTRFS_FS_ERROR(fs_info))
++	if (unlikely(!ret && BTRFS_FS_ERROR(fs_info)))
+ 		ret = -EROFS;
+ 
+ 	if (ctx.zoned_bg)
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 06cc6e13cb62..cf1cb5c4db75 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1445,7 +1445,7 @@ ssize_t btrfs_do_write_iter(struct kiocb *iocb, struct iov_iter *from,
+ 	 * have opened a file as writable, we have to stop this write operation
+ 	 * to ensure consistency.
+ 	 */
+-	if (BTRFS_FS_ERROR(inode->root->fs_info))
++	if (unlikely(BTRFS_FS_ERROR(inode->root->fs_info)))
+ 		return -EROFS;
+ 
+ 	if (encoded && (iocb->ki_flags & IOCB_NOWAIT))
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 769e96dbe639..808e52aa6ef2 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -8972,7 +8972,7 @@ int btrfs_start_delalloc_snapshot(struct btrfs_root *root, bool in_reclaim_conte
+ {
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+ 
+-	if (BTRFS_FS_ERROR(fs_info))
++	if (unlikely(BTRFS_FS_ERROR(fs_info)))
+ 		return -EROFS;
+ 	return start_delalloc_inodes(root, NULL, true, in_reclaim_context);
+ }
+@@ -8985,7 +8985,7 @@ int btrfs_start_delalloc_roots(struct btrfs_fs_info *fs_info, long nr,
+ 	LIST_HEAD(splice);
+ 	int ret;
+ 
+-	if (BTRFS_FS_ERROR(fs_info))
++	if (unlikely(BTRFS_FS_ERROR(fs_info)))
+ 		return -EROFS;
+ 
+ 	mutex_lock(&fs_info->delalloc_root_mutex);
+diff --git a/fs/btrfs/messages.c b/fs/btrfs/messages.c
+index 6190777924bf..7c60c14e60fa 100644
+--- a/fs/btrfs/messages.c
++++ b/fs/btrfs/messages.c
+@@ -37,7 +37,7 @@ static void btrfs_state_to_string(const struct btrfs_fs_info *info, char *buf)
+ 	memcpy(curr, STATE_STRING_PREFACE, sizeof(STATE_STRING_PREFACE));
+ 	curr += sizeof(STATE_STRING_PREFACE) - 1;
+ 
+-	if (BTRFS_FS_ERROR(info)) {
++	if (unlikely(BTRFS_FS_ERROR(info))) {
+ 		*curr++ = 'E';
+ 		states_printed = true;
+ 	}
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 0234971894fa..1ac609239cbe 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -2974,7 +2974,7 @@ static noinline_for_stack int scrub_supers(struct scrub_ctx *sctx,
+ 	struct page *page;
+ 	struct btrfs_fs_info *fs_info = sctx->fs_info;
+ 
+-	if (BTRFS_FS_ERROR(fs_info))
++	if (unlikely(BTRFS_FS_ERROR(fs_info)))
+ 		return -EROFS;
+ 
+ 	page = alloc_page(GFP_KERNEL);
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 52137366b79b..b26aa9169e83 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1299,7 +1299,7 @@ static int btrfs_remount_rw(struct btrfs_fs_info *fs_info)
+ {
+ 	int ret;
+ 
+-	if (BTRFS_FS_ERROR(fs_info)) {
++	if (unlikely(BTRFS_FS_ERROR(fs_info))) {
+ 		btrfs_err(fs_info,
+ 			  "remounting read-write after error is not allowed");
+ 		return -EINVAL;
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 4358f4b63057..c9c316ce4bdc 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -275,7 +275,7 @@ static noinline int join_transaction(struct btrfs_fs_info *fs_info,
+ 	spin_lock(&fs_info->trans_lock);
+ loop:
+ 	/* The file system has been taken offline. No new transactions. */
+-	if (BTRFS_FS_ERROR(fs_info)) {
++	if (unlikely(BTRFS_FS_ERROR(fs_info))) {
+ 		spin_unlock(&fs_info->trans_lock);
+ 		return -EROFS;
+ 	}
+@@ -333,7 +333,7 @@ static noinline int join_transaction(struct btrfs_fs_info *fs_info,
+ 		btrfs_lockdep_release(fs_info, btrfs_trans_num_writers);
+ 		kfree(cur_trans);
+ 		goto loop;
+-	} else if (BTRFS_FS_ERROR(fs_info)) {
++	} else if (unlikely(BTRFS_FS_ERROR(fs_info))) {
+ 		spin_unlock(&fs_info->trans_lock);
+ 		btrfs_lockdep_release(fs_info, btrfs_trans_num_extwriters);
+ 		btrfs_lockdep_release(fs_info, btrfs_trans_num_writers);
+@@ -612,7 +612,7 @@ start_transaction(struct btrfs_root *root, unsigned int num_items,
+ 	bool do_chunk_alloc = false;
+ 	int ret;
+ 
+-	if (BTRFS_FS_ERROR(fs_info))
++	if (unlikely(BTRFS_FS_ERROR(fs_info)))
+ 		return ERR_PTR(-EROFS);
+ 
+ 	if (current->journal_info) {
+@@ -1120,7 +1120,7 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
+ 	if (throttle)
+ 		btrfs_run_delayed_iputs(info);
+ 
+-	if (TRANS_ABORTED(trans) || BTRFS_FS_ERROR(info)) {
++	if (unlikely(TRANS_ABORTED(trans) || BTRFS_FS_ERROR(info))) {
+ 		wake_up_process(info->transaction_kthread);
+ 		if (TRANS_ABORTED(trans))
+ 			ret = trans->aborted;
+@@ -2351,7 +2351,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
+ 		 * abort to prevent writing a new superblock that reflects a
+ 		 * corrupt state (pointing to trees with unwritten nodes/leafs).
+ 		 */
+-		if (BTRFS_FS_ERROR(fs_info)) {
++		if (unlikely(BTRFS_FS_ERROR(fs_info))) {
+ 			spin_unlock(&fs_info->trans_lock);
+ 			ret = -EROFS;
+ 			goto lockdep_release;
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index aa84649f63c2..9123adafa0d1 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -3566,7 +3566,7 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 	 * writing the super here would result in transid mismatches.  If there
+ 	 * is an error here just bail.
+ 	 */
+-	if (BTRFS_FS_ERROR(fs_info)) {
++	if (unlikely(BTRFS_FS_ERROR(fs_info))) {
+ 		ret = -EIO;
+ 		btrfs_set_log_full_commit(trans);
+ 		btrfs_abort_transaction(trans, ret);
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index d8f2722311c8..16e923987958 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3602,7 +3602,7 @@ int btrfs_relocate_chunk(struct btrfs_fs_info *fs_info, u64 chunk_offset, bool v
+ 		 * If we had a transaction abort, stop all running scrubs.
+ 		 * See transaction.c:cleanup_transaction() why we do it here.
+ 		 */
+-		if (BTRFS_FS_ERROR(fs_info))
++		if (unlikely(BTRFS_FS_ERROR(fs_info)))
+ 			btrfs_scrub_cancel(fs_info);
+ 		return ret;
+ 	}
+-- 
+2.47.2
 
-2. Does it make sense to drop down the filesystem to read-only when the
-underlying drive starts exhibiting errors?
-
-Thanks,
-		Amit

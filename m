@@ -1,33 +1,33 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4AD322DC357;
-	Wed,  1 Apr 2026 14:35:23 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DD16E2FD1B3;
+	Wed,  1 Apr 2026 14:38:30 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775054123; cv=none; b=Kz6O5o6TCTC0Zlkov2ckslbf01ztqSgRjg/IEHm8L1CwG2ivwO6wYoCv73J2xxI+bKHRyfHGb/dbA4A3afNpTD7y72+puNGEnYZxohDRcdQwboK5bZVZa7ylp7GHage2v9CBRC1oXmr8YNDGBXRxCnn/UPP9oGcIIkXybOHQ200=
+	t=1775054311; cv=none; b=iALtiRL6bzNfAn0Paqs1tMNV7qti73zoaQ8Jnuva0d5InqpD1I8f90EH4pro6wFky1eX6tV93FMPCLU/VY6ipAkHJvnWlSznd70J70MHxoBSRJ4kDRox5uQYD/bPVFRuOIEKoiRHDhKXdLp2rivuk5ztDeAtOC45r6iN7FsM0Eg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1775054123; c=relaxed/simple;
-	bh=8L15mk7uBbIcb7Tq2K1XChKVrDaUFFZb9Sv7JfqIHto=;
+	s=arc-20240116; t=1775054311; c=relaxed/simple;
+	bh=IYpu66gqA4awdKDYhB4MiwLR+Zk0dYRc4YHZqrv0M9Y=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=J2PHqVqzMVmu8yN7TAuBHg8jMWuyztHYhva9R4gkKhhrX8pKIDEeOEzXdppWmLTjWDKK8qMC+46/RWd2Y0ZgTQ8NdRYgTpl1GntWekbi24TW38huxXCPFogeDSG1xWhSGrdNOG8XZb5wnYAZL6HBLNZYkJXbGtpyDFJqFqooU00=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=YJJhGtI9; arc=none smtp.client-ip=10.30.226.201
+	 In-Reply-To:Content-Type; b=T/LPcm5UfpzO6qJveupPBPHOsMNNbPbwaJmwF3aH4pSAyN8XohXjNaw+b85girH+M0CImyKKAlVkmryjR+zaC9QYyYWDuTUnc4fg6gfwtZHuYqbvHiVWIVKMCo1XenUFC+sXP/3HsvmLgDHaAvleGEOzWK8TJhdWOnRlin59PjU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=I1JeGroo; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="YJJhGtI9"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id D8489C4CEF7;
-	Wed,  1 Apr 2026 14:35:16 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="I1JeGroo"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 784FBC2BCB0;
+	Wed,  1 Apr 2026 14:38:23 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1775054122;
-	bh=8L15mk7uBbIcb7Tq2K1XChKVrDaUFFZb9Sv7JfqIHto=;
+	s=k20201202; t=1775054310;
+	bh=IYpu66gqA4awdKDYhB4MiwLR+Zk0dYRc4YHZqrv0M9Y=;
 	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
-	b=YJJhGtI9LqaXWQGbRVZsPCUbXFlAgkfoX4ONmNboth4EOEPZ/BavQQ76K3894U6UB
-	 o4e7o4BAATRZ8R3zHDRokeuqDK+++QlmsrEtiFtENF3l6Xr4yce6xsquadb55zT+ZV
-	 S3QgbVdUGD2S+OTVwVxuRaB0p98IpDkit7XG2XsPRkTcGWwzN6/Cvyrys7jiHKpTrJ
-	 zZr1KX1PsRCo+vzPxmj9IolWPJMLgx5+x3O9Jtm3i82jP5VrpwOR/r0f4kOl27syp/
-	 DUaRPDO008259oUk3rrNfXm5o8c8cwGeOFbDTrwdQKVIPjt3mFJ5J9Nu1wr+ANUAqb
-	 w/mSd6j0BrhxQ==
-Message-ID: <cd36fe49-56b6-4ec6-8dc7-9c793f939bb5@kernel.org>
-Date: Wed, 1 Apr 2026 16:35:14 +0200
+	b=I1JeGroo5hMIqTqxRa9QFMgft/zZ2PWbwIK+GJHof+NucF9RGKXu06QCYnxZ1izgD
+	 VbwCrk+dYOlxJQLJ7HhTThd5XmYRA9pg6KNyqX7+95qIhlwTJJ8M86rc2IxOuqjTMS
+	 KzKMutpZYR7A+bH/IliIGo1NS7jSKG/R+lOCJQA/gk64/YG7XBFSmThGeTBsoBBVJ/
+	 9rg3ENyOIFI7CMS5xIou2ziewdT8gGkHb1w7VE0BSiMN17MSCaOw4q4oskKNy5vw+o
+	 0kAj6gGT8+ghznlOpAUxMyAe2wE7zZmz+lvg99mMqQSGEnsqW9sIhedMARplbaKD1i
+	 O8nkVwtBTCcUg==
+Message-ID: <b6596c2c-94de-43f4-b30c-c9361d55e3b8@kernel.org>
+Date: Wed, 1 Apr 2026 16:38:21 +0200
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -35,29 +35,20 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v1 03/10] mm: fs: remove filemap_nr_thps*() functions and
- their users
-To: Zi Yan <ziy@nvidia.com>, "Lorenzo Stoakes (Oracle)" <ljs@kernel.org>
-Cc: "Matthew Wilcox (Oracle)" <willy@infradead.org>,
- Song Liu <songliubraving@fb.com>, Chris Mason <clm@fb.com>,
- David Sterba <dsterba@suse.com>, Alexander Viro <viro@zeniv.linux.org.uk>,
- Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>,
- Andrew Morton <akpm@linux-foundation.org>,
- Baolin Wang <baolin.wang@linux.alibaba.com>,
- "Liam R. Howlett" <Liam.Howlett@oracle.com>, Nico Pache <npache@redhat.com>,
- Ryan Roberts <ryan.roberts@arm.com>, Dev Jain <dev.jain@arm.com>,
- Barry Song <baohua@kernel.org>, Lance Yang <lance.yang@linux.dev>,
- Vlastimil Babka <vbabka@kernel.org>, Mike Rapoport <rppt@kernel.org>,
- Suren Baghdasaryan <surenb@google.com>, Michal Hocko <mhocko@suse.com>,
- Shuah Khan <shuah@kernel.org>, linux-btrfs@vger.kernel.org,
- linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
- linux-mm@kvack.org, linux-kselftest@vger.kernel.org
-References: <20260327014255.2058916-1-ziy@nvidia.com>
- <20260327014255.2058916-4-ziy@nvidia.com>
- <aaea8ce1-eac6-49d6-8c85-7361977b9a9f@lucifer.local>
- <b098fce7-be16-479e-b9a4-36f0ad71d242@kernel.org>
- <53cf6157-58b1-4539-a276-2486e8796c57@lucifer.local>
- <25899F67-955D-44DC-935E-D7F234BD335A@nvidia.com>
+Subject: Re: [PATCH v1 05/10] mm/huge_memory: remove READ_ONLY_THP_FOR_FS from
+ file_thp_enabled()
+To: Matthew Wilcox <willy@infradead.org>, WANG Rui <r@hev.cc>
+Cc: ziy@nvidia.com, ljs@kernel.org, Liam.Howlett@oracle.com,
+ akpm@linux-foundation.org, baohua@kernel.org, baolin.wang@linux.alibaba.com,
+ brauner@kernel.org, clm@fb.com, dev.jain@arm.com, dsterba@suse.com,
+ jack@suse.cz, lance.yang@linux.dev, linux-btrfs@vger.kernel.org,
+ linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
+ linux-kselftest@vger.kernel.org, linux-mm@kvack.org, mhocko@suse.com,
+ npache@redhat.com, rppt@kernel.org, ryan.roberts@arm.com, shuah@kernel.org,
+ songliubraving@fb.com, surenb@google.com, vbabka@kernel.org,
+ viro@zeniv.linux.org.uk
+References: <DDFEC0C1-3ECF-41CC-9630-A4A742F2B842@nvidia.com>
+ <20260330160942.173324-1-r@hev.cc> <acqinu8H5jo3Zw7b@casper.infradead.org>
 From: "David Hildenbrand (Arm)" <david@kernel.org>
 Content-Language: en-US
 Autocrypt: addr=david@kernel.org; keydata=
@@ -104,66 +95,32 @@ Autocrypt: addr=david@kernel.org; keydata=
  3iyY2Nsd7JxfKu1PRhCGwXzRw5TlfEsoRI7V9A8isUCoqE2Dzh3FvYHVeX4Us+bRL/oqareJ
  CIFqgYMyvHj7Q06kTKmauOe4Nf0l0qEkIuIzfoLJ3qr5UyXc2hLtWyT9Ir+lYlX9efqh7mOY
  qIws/H2t
-In-Reply-To: <25899F67-955D-44DC-935E-D7F234BD335A@nvidia.com>
+In-Reply-To: <acqinu8H5jo3Zw7b@casper.infradead.org>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
 
-On 3/27/26 16:05, Zi Yan wrote:
-> On 27 Mar 2026, at 10:23, Lorenzo Stoakes (Oracle) wrote:
+On 3/30/26 18:19, Matthew Wilcox wrote:
+> On Tue, Mar 31, 2026 at 12:09:42AM +0800, WANG Rui wrote:
+>> Given the diversity of filesystems in use, each one requires dedicated
+>> engineering effort to implement and validate large folio support, and
+>> that assumes both sufficient resources and prioritization on the
+>> filesystem side. Even after support lands, coverage across different
+>> base page sizes and configurations may take additional time to mature.
+>>
+>> What I am really concerned about is the transition period: if filesystem
+>> support is not yet broadly ready, while we have already removed the
+>> fallback path, we may end up in a situation where PMD-sized mappings
+>> become effectively unavailable on many systems for some time.
+>>
+>> This is not about the long-term direction, but about the timing and
+>> practical readiness.
 > 
->> On Fri, Mar 27, 2026 at 02:58:12PM +0100, David Hildenbrand (Arm) wrote:
->>>
->>> There could now be a race between collapsing and the file getting opened
->>> r/w.
->>>
->>> Are we sure that all code can really deal with that?
->>>
->>> IOW, "they already had to handle it separately" -- is that true?
->>> khugepaged would have never collapse in writable files, so I wonder if
->>> all code paths are prepared for that.
->>
->> OK I guess I overlooked a part of this code... :) see below.
->>
->> This is fine and would be a no-op anyway
->>
->> -       if (f->f_mode & FMODE_WRITE) {
->> -               /*
->> -                * Depends on full fence from get_write_access() to synchronize
->> -                * against collapse_file() regarding i_writecount and nr_thps
->> -                * updates. Ensures subsequent insertion of THPs into the page
->> -                * cache will fail.
->> -                */
->> -               if (filemap_nr_thps(inode->i_mapping)) {
->>
->> But this:
->>
->> -       if (!is_shmem) {
->> -               filemap_nr_thps_inc(mapping);
->> -               /*
->> -                * Paired with the fence in do_dentry_open() -> get_write_access()
->> -                * to ensure i_writecount is up to date and the update to nr_thps
->> -                * is visible. Ensures the page cache will be truncated if the
->> -                * file is opened writable.
->> -                */
->> -               smp_mb();
->>
->> We can drop barrier
->>
->> -               if (inode_is_open_for_write(mapping->host)) {
->> -                       result = SCAN_FAIL;
->>
->> But this is a functional change!
->>
->> Yup missed this.
-> 
-> But I added
-> 
-> +	if (!is_shmem && inode_is_open_for_write(mapping->host))
-> +		result = SCAN_FAIL;
-> 
-> That keeps the original bail out, right?
+> If we leave this fallback in place, we'll never get filesystems to move
+> forward.  It's time to rip off this bandaid; they've got eight months
+> before the next stable kernel.
 
-Independent of that, are we sure that the possible race we allow is ok?
+I guess if we don't force them to work on it I guess this will never
+happen. They shouldn't be holding our THP hacks we want to remove hostage.
 
 -- 
 Cheers,

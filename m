@@ -1,237 +1,155 @@
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4606C191
-	for <linux-btrfs@vger.kernel.org>; Wed,  1 Apr 2026 00:06:00 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9A1A154774
+	for <linux-btrfs@vger.kernel.org>; Wed,  1 Apr 2026 00:17:18 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775001961; cv=none; b=UYeMX3aD2hzwJM+RxnNbilsnPqR/VSEuloEvmtFavjy3PIkFJUOuvD3Dhey+H4oH+tyVIwa5XLKPx/4D1BAnQTFFxyEpy6bbKc5bbVKfk2hCHtm47DAhJmw7+cS4AyWT9btJ73TiYFHdoQKtnUnNNhKXSSuizGQjyoXeE282cSY=
+	t=1775002639; cv=none; b=CmHQQmMsyAPKxV3SDpVfqnM0bHlhZev8u2xOjgiiC6cvwke3HGV9zGtLqmvTxAVzP7CDgN1ty1CIqKoQG4qPQNVATLUlPQudLBl3UV54Uila995KDv1uSRBntjLHCqN7SZ3DZo4TfhFZBalyGOAcGhhaAolSHoYpfdgOsi22vDs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1775001961; c=relaxed/simple;
-	bh=wYB1kht2f3UYxbnvETiYpNjOrH+puJNpRmEgsywTQiw=;
+	s=arc-20240116; t=1775002639; c=relaxed/simple;
+	bh=ZhKWfgU/YC01YMnvIXX0W+wl/BIAilEZ0cx6hosYZgY=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=btub4kUltF+jLKyAInlzPT2pcPCCgIhbn7WAMdRTyvwGWJkxw0G3NxCAtufAlWR3SWrUU6MyhvubOlRvEZgB85QZUkPVU23thMS5AtoPFMnYo9O1AzMiYLRR81ZxyZ4mFhG75VS3LlhG9e0L2awjAGiVWYJMcQCZjSz1Xgzes34=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=jMIHloJF; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=A8uoqEMy; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=jMIHloJF; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=A8uoqEMy; arc=none smtp.client-ip=195.135.223.130
+	 Content-Type:Content-Disposition:In-Reply-To; b=QtrH1LezC+0Nm94sAgrvFzHyt9P7XdDeKGlxwNxPgVtLdk5Bxtqj4Vm1vIhZHCtfAyjY3NmVBI/X8ySlS/PKVYeIyt+GxRYVcGEwydShG3LbxI//7O33VPKvKCG3+zfP/BaPmiLN2etZTLE+61I3lry/l4NU13nvGozDukPy2oE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=IXuf6CoL; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=mOnFznQX; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=IXuf6CoL; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=mOnFznQX; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="jMIHloJF";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="A8uoqEMy";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="jMIHloJF";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="A8uoqEMy"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="IXuf6CoL";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="mOnFznQX";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="IXuf6CoL";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="mOnFznQX"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 56F074D2AF;
-	Wed,  1 Apr 2026 00:05:58 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id CC8FA4D2AD;
+	Wed,  1 Apr 2026 00:17:16 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1775001958;
+	t=1775002636;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=NxElbzT/TGvC1GRJsJjgsjyjqXc45if+q0t9Wz+tpXQ=;
-	b=jMIHloJFo64m6UQ2esEQmrLjegr15/bUHNQRjhjJOyKfP4vNSpZBs9515xv5fyXzpxiGU/
-	O5DNzLK4rAzpE0fWAndVJA4Z+3JTV3ccjoG698tk55diw8MIDIB8tQ8iu462BK/icsDrUK
-	V3K7HSNXqc3aRlP3Fou/g+4uL/14Klw=
+	bh=P3ZQCLTxJ5PnbQOIlXwyLtwb0roi2wUYJiKV72Fn+e8=;
+	b=IXuf6CoL2/f+KmwJEktFnymulmG6ZaPkYhUJe/p6jwBqD6I4z8M04m+UD5ledvF1AVXt5B
+	TV8ha35yytoA8bhuLmThn4xQcsMivOZT0Jdm0Y1r1XKXhxkjhdlCFFU4lk8HZUYqTFo5Fr
+	m6jLKHn9oNYvqNAlhBHQjJQWXxyfrKg=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1775001958;
+	s=susede2_ed25519; t=1775002636;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=NxElbzT/TGvC1GRJsJjgsjyjqXc45if+q0t9Wz+tpXQ=;
-	b=A8uoqEMyuuK6waTZhSmx+qevZ/kBXKXt3Xcny02JVi1G/JaZ2XgFJ4m98feRwVEjej2LQm
-	ZrDywBunj6nugIDg==
+	bh=P3ZQCLTxJ5PnbQOIlXwyLtwb0roi2wUYJiKV72Fn+e8=;
+	b=mOnFznQX40XOKiACtXcCt+eqmeyUl3fIR0NqvZvm1e8jRVyx0rN7XRUpxZ6ex8iza+Oe9c
+	u7ivJssHlyXM+CBQ==
 Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b=jMIHloJF;
-	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=A8uoqEMy
+	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1775001958;
+	t=1775002636;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=NxElbzT/TGvC1GRJsJjgsjyjqXc45if+q0t9Wz+tpXQ=;
-	b=jMIHloJFo64m6UQ2esEQmrLjegr15/bUHNQRjhjJOyKfP4vNSpZBs9515xv5fyXzpxiGU/
-	O5DNzLK4rAzpE0fWAndVJA4Z+3JTV3ccjoG698tk55diw8MIDIB8tQ8iu462BK/icsDrUK
-	V3K7HSNXqc3aRlP3Fou/g+4uL/14Klw=
+	bh=P3ZQCLTxJ5PnbQOIlXwyLtwb0roi2wUYJiKV72Fn+e8=;
+	b=IXuf6CoL2/f+KmwJEktFnymulmG6ZaPkYhUJe/p6jwBqD6I4z8M04m+UD5ledvF1AVXt5B
+	TV8ha35yytoA8bhuLmThn4xQcsMivOZT0Jdm0Y1r1XKXhxkjhdlCFFU4lk8HZUYqTFo5Fr
+	m6jLKHn9oNYvqNAlhBHQjJQWXxyfrKg=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1775001958;
+	s=susede2_ed25519; t=1775002636;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=NxElbzT/TGvC1GRJsJjgsjyjqXc45if+q0t9Wz+tpXQ=;
-	b=A8uoqEMyuuK6waTZhSmx+qevZ/kBXKXt3Xcny02JVi1G/JaZ2XgFJ4m98feRwVEjej2LQm
-	ZrDywBunj6nugIDg==
+	bh=P3ZQCLTxJ5PnbQOIlXwyLtwb0roi2wUYJiKV72Fn+e8=;
+	b=mOnFznQX40XOKiACtXcCt+eqmeyUl3fIR0NqvZvm1e8jRVyx0rN7XRUpxZ6ex8iza+Oe9c
+	u7ivJssHlyXM+CBQ==
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 1E0744A0B0;
-	Wed,  1 Apr 2026 00:05:58 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id B1CD54A0B0;
+	Wed,  1 Apr 2026 00:17:16 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id q6bIBmZhzGn/ZAAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Wed, 01 Apr 2026 00:05:58 +0000
-Date: Wed, 1 Apr 2026 02:05:56 +0200
+	id NcOUKgxkzGkScAAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Wed, 01 Apr 2026 00:17:16 +0000
+Date: Wed, 1 Apr 2026 02:17:11 +0200
 From: David Sterba <dsterba@suse.cz>
-To: ZhengYuan Huang <gality369@gmail.com>
-Cc: dsterba@suse.com, clm@fb.com, anand.jain@oracle.com, wqu@suse.com,
-	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-	baijiaju1990@gmail.com, r33s3n6@gmail.com, zzzccc427@gmail.com
-Subject: Re: [PATCH] btrfs: disk-io: reject misaligned tree blocks in
- btree_csum_one_bio
-Message-ID: <20260401000556.GC5735@twin.jikos.cz>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org,
+	Jaron =?iso-8859-1?Q?Vi=EBtor?= <jaron@vietors.com>
+Subject: Re: [PATCH] btrfs: do not reject a valid running dev-replace
+Message-ID: <20260401001711.GD5735@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20260325100411.2483356-1-gality369@gmail.com>
+References: <03c15f51597e61c4d669db55f5c627b3a3af9b20.1774998167.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=iso-8859-1
 Content-Disposition: inline
-In-Reply-To: <20260325100411.2483356-1-gality369@gmail.com>
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <03c15f51597e61c4d669db55f5c627b3a3af9b20.1774998167.git.wqu@suse.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Rspamd-Action: no action
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Spamd-Result: default: False [-4.21 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
+X-Spamd-Result: default: False [-8.00 / 50.00];
+	REPLY(-4.00)[];
+	BAYES_HAM(-3.00)[99.99%];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	NEURAL_HAM_SHORT(-0.20)[-0.996];
 	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	FREEMAIL_TO(0.00)[gmail.com];
 	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	TO_DN_SOME(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	MIME_TRACE(0.00)[0:+];
 	ARC_NA(0.00)[];
-	FREEMAIL_ENVRCPT(0.00)[gmail.com];
-	FREEMAIL_CC(0.00)[suse.com,fb.com,oracle.com,vger.kernel.org,gmail.com];
-	REPLYTO_DOM_NEQ_TO_DOM(0.00)[];
-	REPLYTO_ADDR_EQ_FROM(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	TO_DN_SOME(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	RCVD_COUNT_TWO(0.00)[2];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCPT_COUNT_SEVEN(0.00)[10];
-	DKIM_TRACE(0.00)[suse.cz:+];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns]
-X-Rspamd-Queue-Id: 56F074D2AF
+	RCPT_COUNT_THREE(0.00)[3];
+	REPLYTO_ADDR_EQ_FROM(0.00)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,imap1.dmz-prg2.suse.org:helo];
+	REPLYTO_DOM_NEQ_TO_DOM(0.00)[]
 X-Spam-Flag: NO
-X-Spam-Score: -4.21
+X-Spam-Score: -8.00
 X-Spam-Level: 
 
-On Wed, Mar 25, 2026 at 06:04:11PM +0800, ZhengYuan Huang wrote:
+On Wed, Apr 01, 2026 at 09:32:57AM +1030, Qu Wenruo wrote:
 > [BUG]
-> Running btrfs balance on a corrupt image can trigger a GPF, with KASAN
-> reporting a wild memory access:
+> There is a bug report that a btrfs with running dev-replace got rejected
+> with the following messages:
 > 
->   BTRFS warning: tree block not nodesize aligned, start 6179131392 nodesize 16384, can be resolved by a full metadata balance
->   Oops: general protection fault, probably for non-canonical address 0xe0009d1000000052: 0000 [#1] SMP KASAN NOPTI
->   KASAN: maybe wild-memory-access in range [0x0005088000000290-0x0005088000000297]
->   Hardware name: QEMU Ubuntu 24.04 PC v2, BIOS 1.16.3-debian-1.16.3-2
->   RIP: 0010:get_unaligned_le64 include/linux/unaligned.h:28 [inline]
->   RIP: 0010:btrfs_header_bytenr fs/btrfs/accessors.h:647 [inline]
->   RIP: 0010:btree_csum_one_bio+0x175/0xfe0 fs/btrfs/disk-io.c:263
->   Call Trace:
-> 	<TASK>
-> 	btrfs_bio_csum fs/btrfs/bio.c:511 [inline]
-> 	btrfs_submit_chunk+0x138d/0x1750 fs/btrfs/bio.c:744
-> 	btrfs_submit_bbio+0x20/0x40 fs/btrfs/bio.c:814
-> 	write_one_eb+0x9ea/0xd30 fs/btrfs/extent_io.c:2239
-> 	btree_write_cache_pages+0x836/0xdc0 fs/btrfs/extent_io.c:2342
-> 	btree_writepages+0x163/0x1c0 fs/btrfs/disk-io.c:512
-> 	do_writepages+0x255/0x5c0 mm/page-writeback.c:2604
-> 	filemap_fdatawrite_wbc mm/filemap.c:389 [inline]
-> 	filemap_fdatawrite_wbc+0xf2/0x150 mm/filemap.c:379
-> 	__filemap_fdatawrite_range+0xd2/0x120 mm/filemap.c:422
-> 	filemap_fdatawrite_range+0x2f/0x50 mm/filemap.c:440
-> 	btrfs_write_marked_extents+0x13c/0x2d0 fs/btrfs/transaction.c:1157
-> 	btrfs_write_and_wait_transaction+0xe5/0x250 fs/btrfs/transaction.c:1264
-> 	btrfs_commit_transaction+0x28af/0x3d90 fs/btrfs/transaction.c:2533
-> 	insert_balance_item.isra.0+0x392/0x3f0 fs/btrfs/volumes.c:3712
-> 	btrfs_balance+0x1021/0x42b0 fs/btrfs/volumes.c:4582
-> 	btrfs_ioctl_balance fs/btrfs/ioctl.c:3577 [inline]
-> 	btrfs_ioctl+0x25cf/0x5b90 fs/btrfs/ioctl.c:5313
-> 	...
+>  BTRFS error (device sdk1): devid 0 path /dev/sdk1 is registered but not found in chunk tree
+>  BTRFS error (device sdk1): remove the above devices or use 'btrfs device scan --forget <dev>' to unregister them before mount
+>  BTRFS error (device sdk1): open_ctree failed: -117
 > 
 > [CAUSE]
-> The corrupt image contains a tree block whose start address (6179131392)
-> is page-aligned (4 KiB) but NOT nodesize-aligned (16 KiB):
+> The tree and super block dumps show the fs is completely sane, except
+> one thing, there is no dev item for devid 0 in chunk tree.
 > 
->   6179131392 % 16384 == 4096
-
-While you say it's a corrupted image it feels like it was crafted to
-have such offset. The warning is from 6d3a61945b0088 ("btrfs: warn on
-tree blocks which are not nodesize aligned") and it tries to catch
-problems of misaligned ebs.
-
-As we'll be moving to the large folios eventually such misaligned blocks
-will become a hard problem. So this should answer if this should be a
-warning or an error.
-
-As the commit and error message suggests to run balance to fix the
-alignment problem I see that this should be somehow fixed if the crash
-happens inside balance. On the other hand, the misalignment should not
-happen at all.
-
-As we try to be cautious about recognizing old filesystems with
-potential problems we also have to stop at some point if it blocks a new
-feature. The grace period is IMO long enough.
-
-If you have reprocued the problem by normal operations then we should
-look for the solution to prevent it. If it's from a crafted image that
-basically creates a valid image, shifts a block to be come misaligned
-and otherwise valid then I suggest to turn the warning to error and
-reject the filesystem as early as possible.
-
-> When alloc_extent_buffer() is called for such a block,
-> check_eb_alignment() detects the nodesize misalignment, but only emits
-> a one-time btrfs_warn() and returns false without failing the
-> allocation. This allows the extent buffer to be created with a
-> misaligned start.
+> However this is not a bug, as we do not insert dev item for devid 0 in
+> the first place.
+> Since the devid 0 is only there temporarily we do not really need to
+> insert a dev item for it and then later remove it again.
 > 
-> Later, during transaction commit triggered by balance, write_one_eb()
-> submits the dirty extent buffer for writeback, and
-> btree_csum_one_bio() is called to checksum it before I/O submission.
-> That path calls btrfs_header_bytenr(eb), which expands via
-> BTRFS_SETGET_HEADER_FUNCS to:
-> 
->   folio_address(eb->folios[0]) + offset_in_page(eb->start)
-> 
-> With a nodesize-misaligned start, eb->folios[0] does not correspond to
-> a valid direct-mapped kernel address. folio_address() returns the
-> garbage value 0x0005088000000260, and dereferencing +0x30 (the bytenr
-> field offset in struct btrfs_header) triggers the GPF.
+> It is the commit 34308187395f ("btrfs: add extra device item checks at
+> mount") adding a overly strict check that triggers a false alert and
+> rejected the valid filesystem.
 > 
 > [FIX]
-> Add a WARN_ON_ONCE() nodesize alignment check at the beginning of
-> btree_csum_one_bio() and return -EIO for misaligned tree blocks.
+> Add a special handling for devid 0, and doesn't require devid 0 to
+> have a device item in chunk tree.
 > 
-> btree_csum_one_bio() already guards against corrupted extent buffer
-> state on the checksum path, and it also revalidates metadata on the
-> write path. The alignment check follows that pattern and must happen
-> before the first access to eb->folios[] via btrfs_header_bytenr().
-> 
-> Fixes: 6d3a61945b00 ("btrfs: warn on tree blocks which are not nodesize aligned")
-> Signed-off-by: ZhengYuan Huang <gality369@gmail.com>
-> ---
-> An alternative fix of promoting check_eb_alignment() from warn to error
-> would prevent the misaligned eb from being created at all, but would
-> break mount and repair workflows: users need to be able to read and
-> inspect a filesystem containing legacy misaligned tree blocks in order
-> to run "btrfs balance -m" and correct the alignment.
+> Reported-by: Jaron Viëtor <jaron@vietors.com>
+> Link: https://lore.kernel.org/linux-btrfs/CAF1bhLVYLZvD=j2XyuxXDKD-NWNJAwDnpVN+UYeQW-HbzNRn1A@mail.gmail.com/
+> Fixes: 34308187395f ("btrfs: add extra device item checks at mount")
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-While I agree with that I think we should start rejecting such
-filesystems because of the large folio support and because we hopefully
-have spent the grace period without new reports and incidents.
-
-If you have a crafted image, and possibly a minimal one, I can add it to
-the btrfs-progs fuzzed images so it can be verified as part of the test
-suite.
+Reviewed-by: David Sterba <dsterba@suse.com>

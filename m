@@ -1,155 +1,119 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from mail-pj1-f47.google.com (mail-pj1-f47.google.com [209.85.216.47])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9A1A154774
-	for <linux-btrfs@vger.kernel.org>; Wed,  1 Apr 2026 00:17:18 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9CA3733F5A3
+	for <linux-btrfs@vger.kernel.org>; Wed,  1 Apr 2026 02:40:09 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.216.47
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775002639; cv=none; b=CmHQQmMsyAPKxV3SDpVfqnM0bHlhZev8u2xOjgiiC6cvwke3HGV9zGtLqmvTxAVzP7CDgN1ty1CIqKoQG4qPQNVATLUlPQudLBl3UV54Uila995KDv1uSRBntjLHCqN7SZ3DZo4TfhFZBalyGOAcGhhaAolSHoYpfdgOsi22vDs=
+	t=1775011223; cv=none; b=YNwzHy/9WM/Wf6YGQhy4QRLwSCVz8usq34IvHUY+DDLLahz5K7/YvOp93sDnWUh9NmhfxrgsCDFJ3inBkNFHGWd9wZVLC613W2SqtCQWXPLKOYebt1Zf6BgJlacwWRFpNw0JEAj5vdP9pz5DYkXAHsEww3Oy29vVHwXJcuzCeao=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1775002639; c=relaxed/simple;
-	bh=ZhKWfgU/YC01YMnvIXX0W+wl/BIAilEZ0cx6hosYZgY=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=QtrH1LezC+0Nm94sAgrvFzHyt9P7XdDeKGlxwNxPgVtLdk5Bxtqj4Vm1vIhZHCtfAyjY3NmVBI/X8ySlS/PKVYeIyt+GxRYVcGEwydShG3LbxI//7O33VPKvKCG3+zfP/BaPmiLN2etZTLE+61I3lry/l4NU13nvGozDukPy2oE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=IXuf6CoL; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=mOnFznQX; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=IXuf6CoL; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=mOnFznQX; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	s=arc-20240116; t=1775011223; c=relaxed/simple;
+	bh=iH8I2UG9Ru9X9r7Tzmndkj3VYipT+AVnI4VvyE3QJmQ=;
+	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version; b=bNUx6cAvwiaZva0RcZiH5QyGwA1VXgLtZKaGi0PUWN9GW2Yp5g1wvxh5Jw8VIz4mtR4E1QIMGqhJ7HGrHCpWqIAM5Vcx3qef0235Q1CF69pvrlcugffSWQ7Wk/+ceA3yssCFrhtXtLn6F2QL6uNz4FUDZpqCv2WAMcdgPwVMh6o=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=J/Td/IJb; arc=none smtp.client-ip=209.85.216.47
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="IXuf6CoL";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="mOnFznQX";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="IXuf6CoL";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="mOnFznQX"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id CC8FA4D2AD;
-	Wed,  1 Apr 2026 00:17:16 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1775002636;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=P3ZQCLTxJ5PnbQOIlXwyLtwb0roi2wUYJiKV72Fn+e8=;
-	b=IXuf6CoL2/f+KmwJEktFnymulmG6ZaPkYhUJe/p6jwBqD6I4z8M04m+UD5ledvF1AVXt5B
-	TV8ha35yytoA8bhuLmThn4xQcsMivOZT0Jdm0Y1r1XKXhxkjhdlCFFU4lk8HZUYqTFo5Fr
-	m6jLKHn9oNYvqNAlhBHQjJQWXxyfrKg=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1775002636;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=P3ZQCLTxJ5PnbQOIlXwyLtwb0roi2wUYJiKV72Fn+e8=;
-	b=mOnFznQX40XOKiACtXcCt+eqmeyUl3fIR0NqvZvm1e8jRVyx0rN7XRUpxZ6ex8iza+Oe9c
-	u7ivJssHlyXM+CBQ==
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1775002636;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=P3ZQCLTxJ5PnbQOIlXwyLtwb0roi2wUYJiKV72Fn+e8=;
-	b=IXuf6CoL2/f+KmwJEktFnymulmG6ZaPkYhUJe/p6jwBqD6I4z8M04m+UD5ledvF1AVXt5B
-	TV8ha35yytoA8bhuLmThn4xQcsMivOZT0Jdm0Y1r1XKXhxkjhdlCFFU4lk8HZUYqTFo5Fr
-	m6jLKHn9oNYvqNAlhBHQjJQWXxyfrKg=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1775002636;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=P3ZQCLTxJ5PnbQOIlXwyLtwb0roi2wUYJiKV72Fn+e8=;
-	b=mOnFznQX40XOKiACtXcCt+eqmeyUl3fIR0NqvZvm1e8jRVyx0rN7XRUpxZ6ex8iza+Oe9c
-	u7ivJssHlyXM+CBQ==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id B1CD54A0B0;
-	Wed,  1 Apr 2026 00:17:16 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id NcOUKgxkzGkScAAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Wed, 01 Apr 2026 00:17:16 +0000
-Date: Wed, 1 Apr 2026 02:17:11 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="J/Td/IJb"
+Received: by mail-pj1-f47.google.com with SMTP id 98e67ed59e1d1-35d9923eec5so2455399a91.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 Mar 2026 19:40:09 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1775011208; x=1775616008; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to;
+        bh=8sqDz/uMBZqTZGt94qEp7iRvQSh0/+1DFsjzVilUkuY=;
+        b=J/Td/IJb5ZETj5vG2ySHIyOTMRXPPZcW48g+IJV3gy6LJMcZ7b2ytTWmyT10nVYM5W
+         x+dmlC+WeGAp/u38kNiv9ZJFNs+Sx8gt2e9atLhTyEJuQ9AShLJiRt4I4mlOL9EfqoCh
+         WapL22Hdmr9zAjdv1aABug5k92aN9LFI+98N4CQC1x2So0DUTwAVhh7h/O25n4M1odMf
+         OO+mOFSmUWcy62AJZEICQoHDSdauf/mmH2dkaNMJA8Ky7s8CU1GnkJ+IrFYEz8ecYGQr
+         YkgYcGCn3JICl5SitdaOIIeED/57hpJaI6aVT4EUA9UPnZpKj1rgu6sDuE4uVrTgCYh6
+         U/1Q==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1775011208; x=1775616008;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=8sqDz/uMBZqTZGt94qEp7iRvQSh0/+1DFsjzVilUkuY=;
+        b=Ifch+ZE9hoDJpEnrasZpmcEcFqVDzGVBX48sRG8GZ7yBjoLY52X+NVGhGktqH+vgAR
+         M1VjVOcoAYvTW2lsXF0QrRoqitJtrTZTW0zdrEw3ymAXa2SJ7rhOdBKAhITJj92lpL/J
+         Mdr0u3gqQXtZ0IoVf5RV1m4FyPDiYDB0LIy4fCWdh+YLBE2Nu/QlSsFZwzzX7UPO5H0D
+         bLE0Ad1XYtf8vXloTU+KiEBAt4x5KQkG28v/A6rYuWDUUMQj7N6qklo2M+Nh6WGHQg0Y
+         wdDDy84uoQS4QzcR//igQyTCz4TknsnECnXNiAmRAwQbmtDxBWnooKiUdvTVFZ3U4TfH
+         Zg9g==
+X-Gm-Message-State: AOJu0YzCaTwXLUM995GBCHBt0nzA27eCqYVsT5CjLwtS31vI4wsQ8VNO
+	l4WJhUsxB9fdslO7on78vqZeEGqTPHdPnjxv8aG+VrHtI6O/d1EtvwK3
+X-Gm-Gg: ATEYQzwsTWeHyXhsG+N0Rqzb3nToAGZkjrUGpWpviG1H9yrbakxb9cunNuBVSokFHnL
+	PAmq5ywuZR2DTzKFTkhrKg3d2RTL7uQhuJjJ2UzsQT0fxid36kza5YfNNHfiwqw5kiJ2DMEh1H4
+	Mivtl+4dBEPkfbRafyg/40TxSxz01bIlI6ISkNu/rr8vrkp5YoqRhHHyXGRVf23gNSoMTU0HmcE
+	izp757lag+QOvzIUWgOhV4ijYcomqMeSJZ7/pTOu4lOpspIbwWTb9+XLESK6X+6itA6Ww1EwLJO
+	SP+LR9R1SsfbXiUuC2cHBPHil88zESHCDZGfGYEHVcHQxDes8lFrazohjMGdTNbyl0o/5Y/RLYo
+	Dct91JfXzeG1LU6E+gMkfq23r8Fyki7Z4FW2fP2N5kbq/6GyC3eS7jswFWWd3Gsgrd8MRlGzMTw
+	yW7s1yvPIpE3/cA8hHhQ==
+X-Received: by 2002:a17:90b:3f44:b0:354:a57c:65db with SMTP id 98e67ed59e1d1-35dc6f0128amr1367339a91.20.1775011208412;
+        Tue, 31 Mar 2026 19:40:08 -0700 (PDT)
+Received: from localhost ([111.228.63.84])
+        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-35dbe668b24sm3099011a91.8.2026.03.31.19.40.05
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 31 Mar 2026 19:40:08 -0700 (PDT)
+From: Cen Zhang <zzzccc427@gmail.com>
+To: clm@fb.com,
+	dsterba@suse.com
 Cc: linux-btrfs@vger.kernel.org,
-	Jaron =?iso-8859-1?Q?Vi=EBtor?= <jaron@vietors.com>
-Subject: Re: [PATCH] btrfs: do not reject a valid running dev-replace
-Message-ID: <20260401001711.GD5735@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <03c15f51597e61c4d669db55f5c627b3a3af9b20.1774998167.git.wqu@suse.com>
+	linux-kernel@vger.kernel.org,
+	baijiaju1990@gmail.com,
+	Cen Zhang <zzzccc427@gmail.com>
+Subject: [PATCH] btrfs: annotate lockless read of defrag_bytes in should_nocow()
+Date: Wed,  1 Apr 2026 10:21:53 +0800
+Message-Id: <20260401022153.743576-1-zzzccc427@gmail.com>
+X-Mailer: git-send-email 2.34.1
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <03c15f51597e61c4d669db55f5c627b3a3af9b20.1774998167.git.wqu@suse.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Spamd-Result: default: False [-8.00 / 50.00];
-	REPLY(-4.00)[];
-	BAYES_HAM(-3.00)[99.99%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	NEURAL_HAM_SHORT(-0.20)[-0.996];
-	MIME_GOOD(-0.10)[text/plain];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	ARC_NA(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	TO_DN_SOME(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	RCVD_COUNT_TWO(0.00)[2];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	RCPT_COUNT_THREE(0.00)[3];
-	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,imap1.dmz-prg2.suse.org:helo];
-	REPLYTO_DOM_NEQ_TO_DOM(0.00)[]
-X-Spam-Flag: NO
-X-Spam-Score: -8.00
-X-Spam-Level: 
 
-On Wed, Apr 01, 2026 at 09:32:57AM +1030, Qu Wenruo wrote:
-> [BUG]
-> There is a bug report that a btrfs with running dev-replace got rejected
-> with the following messages:
-> 
->  BTRFS error (device sdk1): devid 0 path /dev/sdk1 is registered but not found in chunk tree
->  BTRFS error (device sdk1): remove the above devices or use 'btrfs device scan --forget <dev>' to unregister them before mount
->  BTRFS error (device sdk1): open_ctree failed: -117
-> 
-> [CAUSE]
-> The tree and super block dumps show the fs is completely sane, except
-> one thing, there is no dev item for devid 0 in chunk tree.
-> 
-> However this is not a bug, as we do not insert dev item for devid 0 in
-> the first place.
-> Since the devid 0 is only there temporarily we do not really need to
-> insert a dev item for it and then later remove it again.
-> 
-> It is the commit 34308187395f ("btrfs: add extra device item checks at
-> mount") adding a overly strict check that triggers a false alert and
-> rejected the valid filesystem.
-> 
-> [FIX]
-> Add a special handling for devid 0, and doesn't require devid 0 to
-> have a device item in chunk tree.
-> 
-> Reported-by: Jaron Viëtor <jaron@vietors.com>
-> Link: https://lore.kernel.org/linux-btrfs/CAF1bhLVYLZvD=j2XyuxXDKD-NWNJAwDnpVN+UYeQW-HbzNRn1A@mail.gmail.com/
-> Fixes: 34308187395f ("btrfs: add extra device item checks at mount")
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+should_nocow() reads inode->defrag_bytes without holding inode->lock,
+while btrfs_set_delalloc_extent() and btrfs_clear_delalloc_extent()
+update it under that spinlock.
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+This is a data race.  The read is a quick check used to decide whether
+to fall back to COW for a NOCOW inode: if defrag_bytes is non-zero and
+the range is tagged EXTENT_DEFRAG, we force COW so that defragmentation
+can rewrite the extent.  Reading a stale value is harmless because:
+
+  - A missed increment may skip COW once, but the defrag pass will
+    redo the extent later.
+  - A stale non-zero may force an unnecessary COW, which is a minor
+    efficiency loss, not a correctness issue.
+
+On 64-bit platforms an aligned u64 load is naturally atomic so tearing
+cannot happen.  On 32-bit platforms u64 may tear, but we only test for
+zero vs non-zero, so the heuristic stays correct regardless.
+
+Add READ_ONCE() to prevent the compiler from caching or splitting the
+load and to document the intentional lock-free pattern.
+
+Fixes: 47059d930f0e ("Btrfs: make defragment work with nodatacow option")
+Signed-off-by: Cen Zhang <zzzccc427@gmail.com>
+---
+ fs/btrfs/inode.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index a6da98435ef7..afc5d75d2dcb 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2420,7 +2420,7 @@ static noinline int run_delalloc_nocow(struct btrfs_inode *inode,
+ static bool should_nocow(struct btrfs_inode *inode, u64 start, u64 end)
+ {
+ 	if (inode->flags & (BTRFS_INODE_NODATACOW | BTRFS_INODE_PREALLOC)) {
+-		if (inode->defrag_bytes &&
++		if (READ_ONCE(inode->defrag_bytes) &&
+ 		    btrfs_test_range_bit_exists(&inode->io_tree, start, end, EXTENT_DEFRAG))
+ 			return false;
+ 		return true;
+-- 
+2.34.1
+

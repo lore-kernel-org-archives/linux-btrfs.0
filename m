@@ -1,163 +1,136 @@
-Received: from mail-wm1-f45.google.com (mail-wm1-f45.google.com [209.85.128.45])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1E6AE317159
-	for <linux-btrfs@vger.kernel.org>; Wed,  1 Apr 2026 22:11:56 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.45
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 15EF53C73DA;
+	Wed,  1 Apr 2026 22:27:19 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775081519; cv=none; b=bp92YsZP4zQUd97oQAjnMUu2sO6p+43TKkoC1zIMfLeCbfS6Yq1wsQ9DBYH0oPMVwRN8HT59ZOrQldYy7hFW+/O3Xh0KOOLHb5f6on0b2Qr5YgNZoej3JY5VLKdJV/RVb7Kf++RrwbR/uD6JnqACOpg7pyeLG1YfZG6KgJxTQJA=
+	t=1775082440; cv=none; b=ZLR6zJsLlXFxNaO1plFrMSyk1OXR8xfZlC8GR60iAreJV1EKuXsihSozeKTjGtP1lEdDpen2n3TSiH5FwjdNXf7261Svf7/ZLhEvX/M7zt9HkC4NE0C8nENu29WEspK5R2lc56ECX9Uw6FxEMQjpKO0jtKtm3S+FTa8n6p8Wb1w=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1775081519; c=relaxed/simple;
-	bh=mXm/RVkydjltxBYXI3wsGZqHDOjU3KCa3eQf0otGLHA=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=IqJyCAf5JliHEd/KPlrIRnTO0QvmxUyxRAUTwMeX5Q9GXXbOVHaNPh/yIGI/i2Pn7/OeRuQel1y5tIOToiTWWxNMzpVjwe1WHdsD/S2th6zJQ/L2ktrq/siJC5J1fiyyEqmLKaGrimsfhoidtdxgfaPfl/5w1ID8vwTxb2yBXVo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=IFNjY6/e; arc=none smtp.client-ip=209.85.128.45
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1775082440; c=relaxed/simple;
+	bh=SYq0ujua23qXK/LmWqJZytMbuhwswv6VTuzwYXfuOO0=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=Evz3+cGsWAMbxjqNk5B6Z4gfIzQWRm3SMgR9YdkDo/hSpIRU8gBa8y2V/HkgEeauCHz+tAocT+at6SW+oIY/jWseOtFwVL6FSkKJiFFRX51mjBH4IlcFfjXmXQ2XqPAxC5CMrkYiP+UuNh1L7dkNSZen7Yv/cugc0JYJGBr/Xx8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=B5PXSPnM; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="IFNjY6/e"
-Received: by mail-wm1-f45.google.com with SMTP id 5b1f17b1804b1-4852c9b4158so1738195e9.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 01 Apr 2026 15:11:55 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1775081514; x=1775686314; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to;
-        bh=fuaXeXdxXua3ooI0sFkXIl7FkYLoUgWL2eTcBzrMgAk=;
-        b=IFNjY6/e81MPsvow3rvkbotTMBvg92VTrH0Hidf9DZIT/jIHJYVJ9RTuoyyvNTEDZa
-         ELgi+rFwwjK5TFj0o8GImHPAf/xNoMOSdmEAweS4HlLOAPpbY8DM6oGsHg9U+BswDawz
-         BfnEma9AY2aKYj1nG/atn6qiUIlphikzYrXIjQzBnyyEKZ9SCleBO022RLeXTwIzeHKr
-         +fpRzuYO5G9wkBIzjLT5G5oGlzjtOufhd0pUWUCd2R6q2tJg/84bSDaQIG/qxdZG99xU
-         E9jzrL7lIMIX1LeTeADxXFkBEf/Z7d+nKoqgwT4jS4cTflkuwwM+apY5NROByiECBFf2
-         5kdQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1775081514; x=1775686314;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=fuaXeXdxXua3ooI0sFkXIl7FkYLoUgWL2eTcBzrMgAk=;
-        b=ijB62r77mdNlIFLjkW+PiOgDtrE2/VMDs467SWFgm9LwtE8XV+VRbk05DsaDCZNdp7
-         565RECEvhXZVJbz0RS5NhK6Gh0SsGX+A0jlBn52ul5MwIovsxgIa1X/NTwhoNpebnXQq
-         Le9UoGOw0VD15OU69+37+JZ2IRnXq4w485haRq5eC+Cxj8Ku7CpNm5oa5qROXROaz/xP
-         cFGM9THJcAe79i5E3JV+YfA0snn+TjV0Mph6xc28R8Xr8r3QpmF6hQP8Qz59R+wLKdOM
-         C7Xz2QmjdWdDYkWlAkRxL5Mll/zDQH0fJORx2BOYbxIpzbRvpoCTwxUDfN4ShEIP46+K
-         /77w==
-X-Forwarded-Encrypted: i=1; AJvYcCU4FwMIJX8gVcewBo+P+eccfGJ+bdNxU8oSOdFQBHBR1Eq0UkoLQhPMnZnQqkODsx11mEXt+aihKaP/vw==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yz+6PLfDsWBjgfIFss1Xv8+fRUiindiDtbfWauizF0wkPRKHM6G
-	9X9lCM7HVbyJl7kjgO6c3jACahSU5DeYEltmhTEGCLEkoCtJ3W8PFrLFdAY8U6Co95Q=
-X-Gm-Gg: ATEYQzwL23jxxhJ01d2Z3EEmZkIBIa/R4lwKNu4PUpWWwmciJlbgM9olW9J2WwUb9Ne
-	NCjMiff4n7ftMJgIKFOcsdRs+cde3aZzv63gkvKUjOXjGOU4wyE+tK8WGoy14Qnv94dOqcvT8BM
-	89I/8Hyj5PTfWKANQqr/dE4jOrndWPFWXtDXMiqGWQRqSVD1O+e4ClhtD+1Ss2190T41uXyjxc+
-	pjbqzFn+5FNunUyM/ZxsIhiZkkX0ZSF2IhaRaE6c0rS/J8G1S0mDN2BT+dCPREZaBGrJg1Yvc7x
-	vPVwzrMDcLGuOIWAr4v+VdvUdUMNwG/U/Nky1UGmSjjGvJNdoZt8WAKHlapqVgEcoZUrj1jkAsB
-	2bMuZl6/7cGQG0UqhiljNa0H0HKaLZmtG4DsyMjjK1atn4xXjaF2jB4sE8gjoFyQQFdJkL4MkDe
-	SzNiIfGXiP6L8i9TdJCRrDMlbIEYxxNz8uRqpdf1xAY1WJqlNaXlU=
-X-Received: by 2002:a05:600c:2d52:b0:488:8d44:bf98 with SMTP id 5b1f17b1804b1-4888d44c16emr3631025e9.7.1775081514540;
-        Wed, 01 Apr 2026 15:11:54 -0700 (PDT)
-Received: from ?IPV6:2403:580d:fda1::299? (2403-580d-fda1--299.ip6.aussiebb.net. [2403:580d:fda1::299])
-        by smtp.gmail.com with ESMTPSA id 41be03b00d2f7-c76c6491157sm716394a12.9.2026.04.01.15.11.50
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 01 Apr 2026 15:11:53 -0700 (PDT)
-Message-ID: <4e0a7845-a9c0-48f6-9bb8-102411ff0a11@suse.com>
-Date: Thu, 2 Apr 2026 08:41:47 +1030
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="B5PXSPnM"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id E65FBC4CEF7;
+	Wed,  1 Apr 2026 22:27:18 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1775082439;
+	bh=SYq0ujua23qXK/LmWqJZytMbuhwswv6VTuzwYXfuOO0=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=B5PXSPnM0g7dK54PuwCSAWqQJYwrb9QuFC3fNTXETKKaPEJa0LN6Qb71B1NKfCgkg
+	 zJ0YjonIndei8PlYKBNx5dFcfXhWpE+WBZbDACHmNuwim4lfvEmA3bvnNrqmY9fahl
+	 Rl9nb+RqNpAaOMAysgc+seVnfv95Xj1Oym+k9JlAwQFods4T+I06Kf50gAfdZgcbkj
+	 GbdbrTPPg+Vkh1rA4vuOIcDNMaHtAZoEjic2ruqY4tQldFn4TygR5eXvCGwAXISi6S
+	 kJWerpbb33PgwTewr82iGadRDTJWVbaKtQFxcemStEAmZQ7+vEhxTr9EO0FxOa60bl
+	 ti4gyubWkuz8Q==
+Date: Wed, 1 Apr 2026 15:27:17 -0700
+From: Eric Biggers <ebiggers@kernel.org>
+To: Andrey Albershteyn <aalbersh@kernel.org>
+Cc: linux-xfs@vger.kernel.org, fsverity@lists.linux.dev,
+	linux-fsdevel@vger.kernel.org, hch@lst.de,
+	linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
+	linux-btrfs@vger.kernel.org, djwong@kernel.org
+Subject: Re: [PATCH v6 03/22] fsverity: generate and store zero-block hash
+Message-ID: <20260401222717.GH2466@quark>
+References: <20260331212827.2631020-1-aalbersh@kernel.org>
+ <20260331212827.2631020-4-aalbersh@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: fix double free in create_space_info_sub_group()
- error path
-To: Guangshuo Li <lgs201920130244@gmail.com>, Chris Mason <clm@fb.com>,
- David Sterba <dsterba@suse.com>, Naohiro Aota <naohiro.aota@wdc.com>,
- Johannes Thumshirn <johannes.thumshirn@wdc.com>,
- linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Cc: stable@vger.kernel.org
-References: <20260401110219.1517804-1-lgs201920130244@gmail.com>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <20260401110219.1517804-1-lgs201920130244@gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260331212827.2631020-4-aalbersh@kernel.org>
 
-
-
-在 2026/4/1 21:32, Guangshuo Li 写道:
-> When kobject_init_and_add() fails, the call chain is:
+On Tue, Mar 31, 2026 at 11:28:04PM +0200, Andrey Albershteyn wrote:
+> Compute the hash of one filesystem block's worth of zeros. A filesystem
+> implementation can decide to elide merkle tree blocks containing only
+> this hash and synthesize the contents at read time.
 > 
-> create_space_info_sub_group()
-> -> btrfs_sysfs_add_space_info_type()
-> -> kobject_init_and_add()
-> -> failure
-> -> kobject_put(&sub_group->kobj)
-> -> space_info_release()
-> -> kfree(sub_group)
+> Let's pretend that there's a file containing six data blocks and whose
+> merkle tree looks roughly like this:
 > 
-> Then control returns to create_space_info_sub_group(), where:
+> root
+>  +--leaf0
+>  |   +--data0
+>  |   +--data1
+>  |   `--data2
+>  `--leaf1
+>      +--data3
+>      +--data4
+>      `--data5
 > 
-> btrfs_sysfs_add_space_info_type() returns error
-> -> kfree(sub_group)
+> If data[0-2] are sparse holes, then leaf0 will contain a repeating
+> sequence of @zero_digest.  Therefore, leaf0 need not be written to disk
+> because its contents can be synthesized.
 > 
-> Thus, sub_group is freed twice.
+> A subsequent xfs patch will use this to reduce the size of the merkle
+> tree when dealing with sparse gold master disk images and the like.
 > 
-> Keep parent->sub_group[index] = NULL for the failure path, but after
-> btrfs_sysfs_add_space_info_type() has called kobject_put(), let the
-> kobject release callback handle the cleanup.
+> Add a helper to pre-fill folio with hashes of empty blocks. This will be
+> used by iomap to synthesize blocks full of zero hashes on the fly.
 > 
-> Fixes: f92ee31e031c ("btrfs: introduce btrfs_space_info sub-group")
-> Cc: stable@vger.kernel.org
-> Signed-off-by: Guangshuo Li <lgs201920130244@gmail.com>
-
-Reviewed-by: Qu Wenruo <wqu@suse.com>
-
+> Signed-off-by: Darrick J. Wong <djwong@kernel.org>
+> Signed-off-by: Andrey Albershteyn <aalbersh@kernel.org>
 > ---
->   fs/btrfs/space-info.c | 1 -
->   1 file changed, 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-> index d7176eb2fcbf..f5d0f587b755 100644
-> --- a/fs/btrfs/space-info.c
-> +++ b/fs/btrfs/space-info.c
-> @@ -277,7 +277,6 @@ static int create_space_info_sub_group(struct btrfs_space_info *parent, u64 flag
->   
->   	ret = btrfs_sysfs_add_space_info_type(sub_group);
->   	if (ret) {
-> -		kfree(sub_group);
->   		parent->sub_group[index] = NULL;
->   	}
+>  fs/verity/fsverity_private.h |  3 +++
+>  fs/verity/open.c             |  3 +++
+>  fs/verity/pagecache.c        | 22 ++++++++++++++++++++++
+>  include/linux/fsverity.h     |  8 ++++++++
+>  4 files changed, 36 insertions(+)
 
-For single line operation inside a if branch, we do not need the 
-brackets anymore.
+Acked-by: Eric Biggers <ebiggers@kernel.org>
 
-I'll remove them during merge so you don't need to resend the patch.
+The example given in the commit message is a bit misleading, though.
+Usually there are actually 128 hashes per block, and a block of hashes
+covers 512 KiB.  So this optimization applies only where there is a hole
+in the file's data of size (at least) 512 KiB, aligned to the same
+amount.
 
-Thanks,
-Qu
->   	return ret;
+It's also worth noting that this optimization is being done only for the
+first level.  The levels above that are still being stored.  So, this
+doesn't really enable e.g. exabyte sized sparse regions, as a block will
+still be stored for each 64 MiB (instead of every 512 KiB).
 
+I'm okay with this if you want to do this, but I just want to make sure
+its limitations are well-understood.
+
+> +	/* the hash of a merkle block-sized buffer of zeroes */
+> +	u8 zero_digest[FS_VERITY_MAX_DIGEST_SIZE];
+
+"the hash of an all-zeroes block" would be clearer.  This is the hash
+from fsverity_hash_block() which includes the optional salt, not the
+hash from fsverity_hash_buffer() which does not include the salt.
+
+> +/**
+> + * fsverity_fill_zerohash() - fill folio with hashes of zero data block
+> + * @folio:	folio to fill
+> + * @poff:	offset in the folio to start
+> + * @plen:	length of the range to fill with hashes
+
+Maybe go with (len, offset) for consistency with
+fsverity_verify_blocks().  (I assume the "p" prefix stands for "page",
+which is misleading since this works with a folio.)
+
+> +void fsverity_fill_zerohash(struct folio *folio, size_t poff, size_t plen,
+> +			      struct fsverity_info *vi)
+> +{
+> +	size_t offset = poff;
+> +
+> +	WARN_ON_ONCE(!IS_ALIGNED(poff, vi->tree_params.digest_size));
+> +	WARN_ON_ONCE(!IS_ALIGNED(plen, vi->tree_params.digest_size));
+> +
+> +	for (; offset < (poff + plen); offset += vi->tree_params.digest_size)
+> +		memcpy_to_folio(folio, offset, vi->tree_params.zero_digest,
+> +				vi->tree_params.digest_size);
+
+This could be done more efficiently, especially on HIGHMEM.  Probably
+fine for now though, especially since the intersection of anyone wanting
+XFS && fsverity && HIGHMEM is likely to be extremely small.
+
+- Eric

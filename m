@@ -1,163 +1,97 @@
-Received: from fout-a6-smtp.messagingengine.com (fout-a6-smtp.messagingengine.com [103.168.172.149])
+Received: from n169-110.mail.139.com (n169-110.mail.139.com [120.232.169.110])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 18FDA2571C7
-	for <linux-btrfs@vger.kernel.org>; Thu,  2 Apr 2026 00:51:08 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.149
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C21C5246782;
+	Thu,  2 Apr 2026 01:03:49 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=120.232.169.110
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775091072; cv=none; b=Ee74R9Dtp77jBj4WZGfGrqaf30SUlakEcCRq6cIsBfumcsa3pLm0xh/FnpdS1QhlKn1eB0XpxZC/9mJ6opIUc8oO8L07/3AfWQbhj5/G8qFWQ2Sbb1xQNsOsDc2ZmJwfcIZDBtCPxFW4PAsGVmOhbg95Wz/DMOj7SY+GdrfBO8A=
+	t=1775091834; cv=none; b=Mw+zpYvFtyqT4ZCbCSvrO5Z8GKYiiWRT+Kyv75bandb+BuF8Xg5P2YKCdHZEHOSQVfPO5WPbLv+Yw2QklPN8VZ2Zj4nvKddXvhE9OP1WkW+ZPK+L4yEw6f8xVasqHVhZVON+f289zYRpclyeUDt2/b1Xl3V42I+TI8vZkY199E8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1775091072; c=relaxed/simple;
-	bh=Kpx7mtjKkWp7B9uBoZ717gzS6PO7Bff+huzgttvGSTI=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=qetcwbRKaai4egfvlfulfC9WwpO3c6f1CHqvSO3WJ6ZYVoMaONG9nyoO+uZ6n1SxQ6uKx/7gTE35C/fgzM/fzc4M8P7ol+Ko/ErNOHVWhrjtglQKDuzIsa3BWmE+sOasYywd+71/Y9NPBPCnBl4YI8BzX717OfN1VY4v8Va+tKA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=qSrMSldn; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=TxsNGnKT; arc=none smtp.client-ip=103.168.172.149
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
+	s=arc-20240116; t=1775091834; c=relaxed/simple;
+	bh=rclsxU6clkDHoiMZVx46nR3oO7v9vqI3oxlCqDzoUAM=;
+	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version; b=WoPbjeFO6ebTi9w95240nNB3GymY0Ub1mvetDc3rAHV17V/dSryQTifX/94GddsQmvLRtZkz1BXDYYoDPw39SAYFAUjD0jX8cA6mPgGgUYbi/gQhMT74RLz1C3tGLgvajWrhfBqsR68Qtqpg52lWIdvDlSPFYiFy/9ISnYioehU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=139.com; spf=pass smtp.mailfrom=139.com; dkim=pass (1024-bit key) header.d=139.com header.i=@139.com header.b=nN8Y0VMG; arc=none smtp.client-ip=120.232.169.110
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=139.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=139.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="qSrMSldn";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="TxsNGnKT"
-Received: from phl-compute-01.internal (phl-compute-01.internal [10.202.2.41])
-	by mailfout.phl.internal (Postfix) with ESMTP id 3D22EEC0221;
-	Wed,  1 Apr 2026 20:51:08 -0400 (EDT)
-Received: from phl-frontend-03 ([10.202.2.162])
-  by phl-compute-01.internal (MEProxy); Wed, 01 Apr 2026 20:51:08 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
-	:content-transfer-encoding:content-type:content-type:date:date
-	:from:from:in-reply-to:in-reply-to:message-id:mime-version
-	:references:reply-to:subject:subject:to:to; s=fm3; t=1775091068;
-	 x=1775177468; bh=GqnQYUewJaKl0V8k4lXBj7+YieLup0fkmrl/UTubCDA=; b=
-	qSrMSldnwa+ycNzSBv9UrqDUmffOeUhM60lFvyC4xBO2TIn3JNyy0Nv4eg0OkcTJ
-	vTEOEKCRvIT1HFSgch2uVKxtpY5y/L1vhH8m9X59MhLd811x/Z/+nTLCh5ssobGo
-	39OFGAJ2nttchBjlGVeLMQlrzNcNzK1HTVuq46OdnAzeBmDxjsszQcQQxLWHCexu
-	TbHdOZrMwYT2L90w8EhpRocEL+8kOhkUMThITL93k9FBcHymcCGgWBsnyoqZyDlO
-	NlE8YCFb20NzKJrYE2mcgZD+hhh/XKvb++ICpaU0AIjd61lkH2suGzCVUIsvXYH1
-	j8AO4DptEbX8omtiSjD1oA==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:cc:content-transfer-encoding
-	:content-type:content-type:date:date:feedback-id:feedback-id
-	:from:from:in-reply-to:in-reply-to:message-id:mime-version
-	:references:reply-to:subject:subject:to:to:x-me-proxy
-	:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=1775091068; x=
-	1775177468; bh=GqnQYUewJaKl0V8k4lXBj7+YieLup0fkmrl/UTubCDA=; b=T
-	xsNGnKTJC6Hzkwyze+yDCVTXykKKBaqaJnUQxweM7tVKYzmxTJ+9gLst2uOHiNzI
-	iMOcuPQ0SVTjbue6sqSwdhjGnJExT02ZbxUpHdZSYNjVwViyLTlEMPwTGAeA5b6h
-	jitQgKhcIu2BYjHT2/I32SWJS0fQjYVRdKKoNAp8sbyB5eBKYB3E+HQ+LWyFuAg6
-	y8Oiy+gq/RbrdZnI5ceVPqX3DIipu1W9dSJxmMPnh0mcqvQ/kl1+7EhSScdzq7hP
-	5LUONDfEcAI/xzLE+uegyr85lgQrNdOrZT7fMJNY3dfmPXtC3T7vP1zb8TZaxp5y
-	Q3vYUW52s0QOALgS6zLlQ==
-X-ME-Sender: <xms:fL3Nac_xFAK1wIDQQaOAUYv_NV3gHCuuVrfVYCsPdUshd6PNZTfjwQ>
-    <xme:fL3NaauOkvnD2bBZ9h4QMwWuW4WAtrl-SIiUh3kqsPV0aYOvjWyglbNLJ4tNkFPMN
-    ir-vjbiQSLUEidmRLP97KsvPiD3WBSsJIzuJgHrmrDthIlcZymx6i8>
-X-ME-Received: <xmr:fL3NafpWgfPzgIztyhzr1vQa3Qf5CULszjwdRf2D-1_5P5l8Lv66WHXjqfQoeKE_im9Rd_YBOSgJR18YPV-FUeuk6LI>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefhedrtddtgdegiedvucetufdoteggodetrfdotf
-    fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfurfetoffkrfgpnffqhgenuceurghi
-    lhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmnecujfgurh
-    epfffhvfevuffkfhggtggugfgjsehtkeertddttdejnecuhfhrohhmpeeuohhrihhsuceu
-    uhhrkhhovhcuoegsohhrihhssegsuhhrrdhioheqnecuggftrfgrthhtvghrnhepudelhf
-    dthfetuddvtefhfedtiedtteehvddtkedvledtvdevgedtuedutdeitdeinecuvehluhhs
-    thgvrhfuihiivgeptdenucfrrghrrghmpehmrghilhhfrhhomhepsghorhhishessghurh
-    drihhopdhnsggprhgtphhtthhopedvpdhmohguvgepshhmthhpohhuthdprhgtphhtthho
-    peifqhhusehsuhhsvgdrtghomhdprhgtphhtthhopehlihhnuhigqdgsthhrfhhssehvgh
-    gvrhdrkhgvrhhnvghlrdhorhhg
-X-ME-Proxy: <xmx:fL3NaXntiASgi8FdnTl7chcUH9rWgTxDQecNk7sredW6jhji7fjmVA>
-    <xmx:fL3NaTxQ-raQJnjq85Ijd4_nmbwVKvlq7VGC7OFkYAN3Xk_7tuF1yQ>
-    <xmx:fL3Nafn8kWm1tVETpJZu_yM4871tMuRicB8YPFHWGCRkfRNt-Yms4Q>
-    <xmx:fL3NaccekRvxlDVC7WtDyeXM6DI8dFiLNdxZxzFkz5ukxJ7wxq-tAA>
-    <xmx:fL3NaSoprZ51TT3HifpqVjtNesQEm4xbxOnthD0gl4OYkW0ivuRAynod>
-Feedback-ID: i083147f8:Fastmail
-Received: by mail.messagingengine.com (Postfix) with ESMTPA; Wed,
- 1 Apr 2026 20:51:07 -0400 (EDT)
-Date: Wed, 1 Apr 2026 17:51:08 -0700
-From: Boris Burkov <boris@bur.io>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/6] btrfs: delay compression to bbio submission time
-Message-ID: <20260402005108.GA916963@zen.localdomain>
-References: <cover.1773953307.git.wqu@suse.com>
- <20260401225257.GA826348@zen.localdomain>
- <987d1e01-50d7-4877-b55c-62191b12754d@suse.com>
- <5f86e25a-00f9-4d48-b046-8ae93965f07d@suse.com>
+	dkim=pass (1024-bit key) header.d=139.com header.i=@139.com header.b="nN8Y0VMG"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+	d=139.com; s=dkim; l=0;
+	h=from:subject:message-id:to:cc:mime-version;
+	bh=47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=;
+	b=nN8Y0VMGXZbG4qPIBNAKfjUJz+sklfNog8SCnp8ar9by+bZCwZfulf5xdZBDRWYG/t/a4PFlqHwFa
+	 jcldxvu2L2BeKOyR2ONwXWh86OgI+h1QRdsjmSFJ6cN5AqTbMsQk7gjB9Bi8r+C4YhxhvnUx+9019c
+	 s61Z6WfO2j7xh0T4=
+X-RM-TagInfo: emlType=0                                       
+X-RM-SPAM:                                                                                        
+X-RM-SPAM-FLAG:00000000
+Received:from NTT-kernel-dev (unknown[60.247.85.88])
+	by rmsmtp-lg-appmail-05-12083 (RichMail) with SMTP id 2f3369cdc06662b-0265c;
+	Thu, 02 Apr 2026 09:03:38 +0800 (CST)
+X-RM-TRANSID:2f3369cdc06662b-0265c
+From: Li hongliang <1468888505@139.com>
+To: gregkh@linuxfoundation.org,
+	stable@vger.kernel.org,
+	fdmanana@suse.com
+Cc: patches@lists.linux.dev,
+	linux-kernel@vger.kernel.org,
+	clm@fb.com,
+	josef@toxicpanda.com,
+	dsterba@suse.com,
+	linux-btrfs@vger.kernel.org,
+	wqu@suse.com
+Subject: [PATCH 6.12.y] btrfs: do not free data reservation in fallback from inline due to -ENOSPC
+Date: Thu,  2 Apr 2026 09:03:37 +0800
+Message-Id: <20260402010337.340100-1-1468888505@139.com>
+X-Mailer: git-send-email 2.34.1
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <5f86e25a-00f9-4d48-b046-8ae93965f07d@suse.com>
 
-On Thu, Apr 02, 2026 at 10:45:14AM +1030, Qu Wenruo wrote:
-> 
-> 
-> 在 2026/4/2 09:59, Qu Wenruo 写道:
-> [...]
-> > > So
-> > > we are breaking the contract "OE <=> allocated space" to allow this. I
-> > > think making the absolute core of the improvement more apparent in the
-> > > descriptions would be helpful.
-> > > 
-> > > I think one thing I still don't understand is the desire for the layered
-> > > bios/OEs instead of creating the same delayed OE, but then as we do
-> > > the real
-> > > allocation/compression and discover the actual ranges doing
-> > > btrfs_split_ordered_extent() like short DIO writes, which seems quite
-> > > similar. Splitting/joining feels like a much more natural model for
-> > > ranges like OEs than layering into a tree. As we discover the sub ranges
-> > > we actually use, we split off the real OE.
-> > 
-> > I can definitely work towards that direction. Although my concern is the
-> > OE waiting/start part and error handling.
-> > 
-> > But so far those are only concerns, I need to implement the code to see
-> > what can go wrong.
-> > 
-> > And if no major problem is hit, you can see a v2 with the split solution.
-> 
-> Finally I recall the challenge using btrfs_split_ordered_extent(), that we
-> can not split the OE in the middle.
-> 
-> E.g. we have a delayed OE for range [0, 32K), then due to whatever reasons
-> (e.g. memory pressure), we are forced to submit range [0, 16K) first, then
-> range [16K, 32K).
-> 
-> Both go through delayed compression, but the range [16K, 32K) win the race
-> by failing the compression (bad ratio), and fallback to uncompressed
-> submission first, before range [0, 16K) even finishes its compression.
-> 
-> Furthermore, for the range [16K, 32K) we do not have a large enough free
-> space to fill it in one go, but can only allocate several 8K sized extents.
-> 
-> So we need to split the [16K, 32K) into two ranges, [16K, 24K) and [24K,
-> 32K).
-> 
-> This means we have to split the original [0, 32K) extent into [0, 16K),
-> [16K, 24K) and [24K, 32K) ranges.
-> This is not supported by the current btrfs_split_ordered_extent(), which can
-> only split range from the beginning of an OE.
-> 
-> 
-> I'll try to implement a version of btrfs_split_ordered_extent() that can
-> split the range at any offset to see how things will work then.
+From: Filipe Manana <fdmanana@suse.com>
 
-This was kinda buggy before with the extent maps, and I think Naohiro
-Christoph and I ended up doing a good amount of refactoring to get rid
-of it. I am confident you can implement it correctly, just a fair warning.
+[ Upstream commit f8da41de0bff9eb1d774a7253da0c9f637c4470a ]
 
-Also, you could consider doing an iterative split? Like if you need 16k,
-then split [0,128k) into [0,16k)[16k,128k) then split [16k,128k) into
-[16k,24k)[24k,128k).
+If we fail to create an inline extent due to -ENOSPC, we will attempt to
+go through the normal COW path, reserve an extent, create an ordered
+extent, etc. However we were always freeing the reserved qgroup data,
+which is wrong since we will use data. Fix this by freeing the reserved
+qgroup data in __cow_file_range_inline() only if we are not doing the
+fallback (ret is <= 0).
 
-Not sure if that is easier than the "true" 3 (or K) way split.
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Reviewed-by: David Sterba <dsterba@suse.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
+[ Minor conflict resolved. ]
+Signed-off-by: Li hongliang <1468888505@139.com>
+---
+ fs/btrfs/inode.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
 
-If all this becomes a huge headache please feel don't feel obliged to
-carry on forever, I am happy to discuss again.
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 4bff5d5953ed..73b950b58005 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -717,8 +717,12 @@ static noinline int __cow_file_range_inline(struct btrfs_inode *inode, u64 offse
+ 	 * it won't count as data extent, free them directly here.
+ 	 * And at reserve time, it's always aligned to page size, so
+ 	 * just free one page here.
++	 *
++	 * If we fallback to non-inline (ret == 1) due to -ENOSPC, then we need
++	 * to keep the data reservation.
+ 	 */
+-	btrfs_qgroup_free_data(inode, NULL, 0, PAGE_SIZE, NULL);
++	if (ret <= 0)
++		btrfs_qgroup_free_data(inode, NULL, 0, PAGE_SIZE, NULL);
+ 	btrfs_free_path(path);
+ 	if (trans)
+ 		btrfs_end_transaction(trans);
+-- 
+2.34.1
 
-Thanks,
-Boris
 
-> 
-> Thanks,
-> Qu

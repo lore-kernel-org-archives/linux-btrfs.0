@@ -1,276 +1,200 @@
-Received: from SA9PR02CU001.outbound.protection.outlook.com (mail-southcentralusazon11013021.outbound.protection.outlook.com [40.93.196.21])
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E452D3346A8;
-	Thu,  2 Apr 2026 14:38:12 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=40.93.196.21
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775140694; cv=fail; b=SauvzMt+3IMH6zR5YR+OZ4oTVUjEy3jCIgQeMUMkiMIaWulOWsZqTbiSwxGdwSvt5pWypxSqWeyzjRcCTthh0rMZsMcgAaEADJ9J+xftwlpHoyHnPjo/m1spbSaGLzeA4zFwiHoD+tUbqm6H/qVgMlVs6hzdFP2oq3LlOvYrfJQ=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1775140694; c=relaxed/simple;
-	bh=CyLOBn/bpQG/lsbmrDGPmp5hSoD/pxHC64hd1Iz1H64=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=ahNfGM0D8uD7Jm0PmgOatc0lFdMuDteioI6xLGJVHh62muexp7e+VQDiCji29lNQAyjbO1cIOJr1x9e10RTXrZn5HONyPIhQixEenKBeU/eOULdsujnfJKTrzTmNPRmGd4+21XbtwI2Xno1Y/Ss47jO8tgq0Z5Q55mo2jZ19cAM=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=nvidia.com; spf=fail smtp.mailfrom=nvidia.com; dkim=pass (2048-bit key) header.d=Nvidia.com header.i=@Nvidia.com header.b=T8GNyW4h; arc=fail smtp.client-ip=40.93.196.21
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=nvidia.com
-Authentication-Results: smtp.subspace.kernel.org; spf=fail smtp.mailfrom=nvidia.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F1D162E2852
+	for <linux-btrfs@vger.kernel.org>; Thu,  2 Apr 2026 14:47:38 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.129.124
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1775141261; cv=none; b=lWlH/YeAXn9qaYDU4psljyKXT7l4FkvHuALcy/VY/C2cxYBSSUF0XKlIRRxQ88TN5iZykbpbuMYJquZl1WxaXy3wzFAeUE3TICr5LvYZZLkOv0qppiX25ElAyDNtOYHZkE0ElVKXiISHr5VTzVvpGzQDR5ZLBvJH4zEjvQ3mLgQ=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1775141261; c=relaxed/simple;
+	bh=2WZAl71Kpx10jrC0rD91KnwDq7ibd6Y9Z5cgd6zClas=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=G5ScBEGyWXHTcBJ0yMB8tZN5ZzREdlTq7/LlGlAOoE/W24Mc+GcBQlYq90ygmmS595WK/fZm64fbQTQV/0YT3ths1XQbhlV4zy/XDQ/Xk0XqfEVCZ9SdEWLoaO97IUYCCgxHP1/5nOEEqlg52a876R0bVzCpTcNaRYeDEo7wAVU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=WH3gkPAA; dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b=SM8xYtAf; arc=none smtp.client-ip=170.10.129.124
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=Nvidia.com header.i=@Nvidia.com header.b="T8GNyW4h"
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
- b=aONVRPg9A3nvD8zpUK8l7e7YJJ310hw/LxGytaVpXHptBFr+R8SaPEPNDKZyeYNfqpbl+gXPF4/PyyRX03IqNSvKV9g3OBOvdfbCEobgKlioV4IN90Fcxzzijhd0StUIr9Iht4hMGiokcbTEJ7gKigozAIaCfcWYHcbF17KFafqhtqa+1m8kmcvWeDJnEGszEdYBooLBsHBLApJRM8nn96E9Q7uuG1LME46N9wZkbW8T4z1aUPEYYH0Dw5ufASfVKU8vR6LOwUsOj5WHZUdEgBWK6Usy7h3DaD5DnhhthQtyoWLQ5ObDbPqPAj7aYE2ZVQMkn7DJyyOrSjYabs2ZlA==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector10001;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
- bh=CyLOBn/bpQG/lsbmrDGPmp5hSoD/pxHC64hd1Iz1H64=;
- b=f0ZBfDiRUiduGf5E1px9GBHPhxErAoBqOu5/74oabps2bHt86ZHSxH7o79MhvyapQ6LI2sHD/szs1eGhdGdb057YxsVL44YEdGdC739Z+tiRFddqsJknFPvyRle5F+4RgkDkFHUyuyMPcwVdCn5xE5YGQKZRCjzh6vi5wFS5PfwkqtHY58EotdCMSTlXP0TmFktFhFSjvdOnf1z6hmrcGSDwZkqDW1/OwtuAcVMRvrujgHYVb7zXK2pN6aCzEmexlz617wSa53mrBNw7bmObZG/LPy7V0z3Pyt9aEJVKYMtokhu92PVyAcUeF3Wh8J5GO6uQYXl8iXeiuuiGqnZqdw==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=nvidia.com; dmarc=pass action=none header.from=nvidia.com;
- dkim=pass header.d=nvidia.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=Nvidia.com;
- s=selector2;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=CyLOBn/bpQG/lsbmrDGPmp5hSoD/pxHC64hd1Iz1H64=;
- b=T8GNyW4hS1VgZ1q7ThtROtLXoqYBGKXaxoE5nDk6VytCf9cxIwW5VgivjoNlmC1DBbtvqAlwv8EZZkcSivCLgIOG7KsTQ1GOleArEnOXXmFidqRTHfn0SJARs8+/lh8FdT/4klA6f/mszMnrNgF7n+px637Aw3m9xafRtII8nUAMALHleA9bh/EfLZqYLT8dNe0T2405zcEQpMfbAe21+bS1vTEKjBJz5xPGV1CpztPeiRy9lpI2k/Dgy3MyVojueaP1wBkLtKCGAdcUjSNpy5whF2x79zMqtaiFltYBuhLLYeWf/Ouy+fUUPD4q/McQLuhQBZQHylmjGNbZW+h4nA==
-Authentication-Results: dkim=none (message not signed)
- header.d=none;dmarc=none action=none header.from=nvidia.com;
-Received: from DS7PR12MB9473.namprd12.prod.outlook.com (2603:10b6:8:252::5) by
- MN6PR12MB8472.namprd12.prod.outlook.com (2603:10b6:208:46c::21) with
- Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.9769.21; Thu, 2 Apr
- 2026 14:38:07 +0000
-Received: from DS7PR12MB9473.namprd12.prod.outlook.com
- ([fe80::f01d:73d2:2dda:c7b2]) by DS7PR12MB9473.namprd12.prod.outlook.com
- ([fe80::f01d:73d2:2dda:c7b2%4]) with mapi id 15.20.9769.014; Thu, 2 Apr 2026
- 14:38:07 +0000
-From: Zi Yan <ziy@nvidia.com>
-To: "David Hildenbrand (Arm)" <david@kernel.org>
-Cc: "Lorenzo Stoakes (Oracle)" <ljs@kernel.org>,
- "Matthew Wilcox (Oracle)" <willy@infradead.org>,
- Song Liu <songliubraving@fb.com>, Chris Mason <clm@fb.com>,
- David Sterba <dsterba@suse.com>, Alexander Viro <viro@zeniv.linux.org.uk>,
- Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>,
- Andrew Morton <akpm@linux-foundation.org>,
- Baolin Wang <baolin.wang@linux.alibaba.com>,
- "Liam R. Howlett" <Liam.Howlett@oracle.com>, Nico Pache <npache@redhat.com>,
- Ryan Roberts <ryan.roberts@arm.com>, Dev Jain <dev.jain@arm.com>,
- Barry Song <baohua@kernel.org>, Lance Yang <lance.yang@linux.dev>,
- Vlastimil Babka <vbabka@kernel.org>, Mike Rapoport <rppt@kernel.org>,
- Suren Baghdasaryan <surenb@google.com>, Michal Hocko <mhocko@suse.com>,
- Shuah Khan <shuah@kernel.org>, linux-btrfs@vger.kernel.org,
- linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
- linux-mm@kvack.org, linux-kselftest@vger.kernel.org
-Subject: Re: [PATCH v1 03/10] mm: fs: remove filemap_nr_thps*() functions and
- their users
-Date: Thu, 02 Apr 2026 10:38:03 -0400
-X-Mailer: MailMate (2.0r6290)
-Message-ID: <AD7586F0-7480-4A34-B83C-F332AE9E36B1@nvidia.com>
-In-Reply-To: <d1fa25cb-083a-4afc-afce-a62929acbb33@kernel.org>
-References: <20260327014255.2058916-1-ziy@nvidia.com>
- <20260327014255.2058916-4-ziy@nvidia.com>
- <aaea8ce1-eac6-49d6-8c85-7361977b9a9f@lucifer.local>
- <b098fce7-be16-479e-b9a4-36f0ad71d242@kernel.org>
- <53cf6157-58b1-4539-a276-2486e8796c57@lucifer.local>
- <25899F67-955D-44DC-935E-D7F234BD335A@nvidia.com>
- <cd36fe49-56b6-4ec6-8dc7-9c793f939bb5@kernel.org>
- <EF04F17A-89ED-40EB-BA91-7A82713E28F8@nvidia.com>
- <f7e1bdbf-cb88-42f0-ac48-1a273bda2455@kernel.org>
- <44DEB48D-589B-493D-A278-4896BDB58564@nvidia.com>
- <d1fa25cb-083a-4afc-afce-a62929acbb33@kernel.org>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
-X-ClientProxiedBy: BL0PR05CA0022.namprd05.prod.outlook.com
- (2603:10b6:208:91::32) To DS7PR12MB9473.namprd12.prod.outlook.com
- (2603:10b6:8:252::5)
+	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="WH3gkPAA";
+	dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b="SM8xYtAf"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+	s=mimecast20190719; t=1775141258;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=1BejI4IFPYpJVG1OzBmEzwBIMK85H2fS4YLiIwk6ibs=;
+	b=WH3gkPAAR1OoViRH9k8Tgcpg5SR7Wce9poeJyr/BrxKo6uDJCFobNW+GYf0aeX3whU9xOw
+	d4lXZLXIgdQDAegpU7HzBHqx30Lz0bsxOO0YnXMjqo3xyIPKwDC38Y6da923RkrX+lr1Vk
+	kWIJHpDPXPwy9wK75T70t1GcCbzMOWE=
+Received: from mail-ed1-f69.google.com (mail-ed1-f69.google.com
+ [209.85.208.69]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
+ us-mta-453-YG-6bwbXNPOQXt9q-dnl7w-1; Thu, 02 Apr 2026 10:47:37 -0400
+X-MC-Unique: YG-6bwbXNPOQXt9q-dnl7w-1
+X-Mimecast-MFC-AGG-ID: YG-6bwbXNPOQXt9q-dnl7w_1775141256
+Received: by mail-ed1-f69.google.com with SMTP id 4fb4d7f45d1cf-66c165a7a8cso852187a12.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 02 Apr 2026 07:47:36 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=redhat.com; s=google; t=1775141256; x=1775746056; darn=vger.kernel.org;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
+        bh=1BejI4IFPYpJVG1OzBmEzwBIMK85H2fS4YLiIwk6ibs=;
+        b=SM8xYtAfPoWUNXzWB84BqYhsecbDJxtCvYnbqA4xd9GdNkR3xLI174XcAQWxbeSmRl
+         zQDd+RP49qfg9rE4zocQjlPVMS2Kg4cGWj4klDQ5FlbUvhGz8Fi4zgEpMq5o3301pmiY
+         /Sdf8cd+ee+R3YE+2t84U6BFUdfIxSDcMASoCpF+LsJWbGxw1ERDOGljfy5CWG2uRfTZ
+         OPj2j9rwT/MrLWUo484hSsEEdCQB+7b9mqHIDGcOu2CA87wAbjXTMU7VesEjNlp1CxQR
+         IziNPSQ9i7V7/jlwY8qtixwlQs1miRzFl9gLhounqW0ZhQx2GgTwrHqsOOt3WzpkDnAG
+         vv8w==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1775141256; x=1775746056;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=1BejI4IFPYpJVG1OzBmEzwBIMK85H2fS4YLiIwk6ibs=;
+        b=cY5BhGHH3zep6Uui11UOpqmlarj5D09IjcBp2CJ9g9N5UYaFws3sUyuxqRLKbyvW0M
+         zR+GGF5RyqZLFHhhqld/sfriGTHk0ENY+g5sA9R1DljYEwanL/PDo0HKvzPy4ReCWAmo
+         T1rhUZ9E8tTpitpYspCyVKTMnzA8j4HbDpHDd/jqjuZzZWCOUoVC2gDQTan9EyQskazX
+         rUEOPVIIAEszqoWrb5p/frfuY+fu311yNXW7cqgnO+9ePwK+k01Dyl+UZY9iVhsr33jM
+         DiGg3uur7AhR+QaTt7fmocT6vRT7XQVfR54uKPwCibuGyw+id1BLgFDSlTL3gHIxxQpj
+         R8VA==
+X-Forwarded-Encrypted: i=1; AJvYcCWsOX1u5QfWYB8BqAiI4LQBmMvPe/R9i/ekYB24zHKrFMwhrrTHgPgGRk4hLY+874S1WqwCdDPfCnihGQ==@vger.kernel.org
+X-Gm-Message-State: AOJu0Yz0/VdExhbuqUGMb2TPbyuZG12dI7aRwLKTL6EvPZ21EksqIjy6
+	B6sYIoVYHR4L+7fPuKib7cu4TL/oeYSS0Sp7+9ofdjZYNBn3QwHQg6V6N6OnY35pMflVs9+bySL
+	3BrfkYg9TSGlktkT8oW+4YwIeyg00PfaCL/2d3WcXMfaD+iTWK8B8v00pWQ5LqsM=
+X-Gm-Gg: AeBDietflUWQFJ/T7trrdxFsEx2b6JEvRE4oZXhk7FKKHoQCgNYe2fSdOn0fBEUNLmF
+	vv0CSk4D4EPV0/6ifd9Uaak2exFc8/bv9LOdmmqPWxHbrESb0KnRVtr9AACoZ1xGlnt53o+l4Ai
+	MjVc8aP3QRW86ueKxXri1EOBXgcD0HQtjXvwsR4Isv7DTJ+veN+iT4PJmwKwDoPPYj14I1emSVN
+	fk5dTpWHNMsSaf3wp+hbqX8q1uKxePk2XAQ33v7Tloh4/UsapF0ukNUf5nmfNn+6Y56bHFn9V04
+	p+5FGogGdLqsmCMFaVPtKDKCglfe5Jsxy9gcJ+3yGd2p4vRwxMts8mbFTmYV61LPeDCv3SaVeY6
+	s3Zqrcs+iMxSwoA==
+X-Received: by 2002:a05:6402:4349:b0:66e:3754:618a with SMTP id 4fb4d7f45d1cf-66e3754684dmr8242a12.22.1775141255719;
+        Thu, 02 Apr 2026 07:47:35 -0700 (PDT)
+X-Received: by 2002:a05:6402:4349:b0:66e:3754:618a with SMTP id 4fb4d7f45d1cf-66e3754684dmr8227a12.22.1775141255235;
+        Thu, 02 Apr 2026 07:47:35 -0700 (PDT)
+Received: from thinky ([91.245.205.131])
+        by smtp.gmail.com with ESMTPSA id 4fb4d7f45d1cf-66e033b9df1sm812760a12.21.2026.04.02.07.47.33
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Thu, 02 Apr 2026 07:47:34 -0700 (PDT)
+Date: Thu, 2 Apr 2026 16:47:33 +0200
+From: Andrey Albershteyn <aalbersh@redhat.com>
+To: Eric Biggers <ebiggers@kernel.org>
+Cc: Andrey Albershteyn <aalbersh@kernel.org>, linux-xfs@vger.kernel.org, 
+	fsverity@lists.linux.dev, linux-fsdevel@vger.kernel.org, hch@lst.de, 
+	linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, 
+	linux-btrfs@vger.kernel.org, djwong@kernel.org
+Subject: Re: [PATCH v6 03/22] fsverity: generate and store zero-block hash
+Message-ID: <cw2kmcrrd6a3rsk37jnchxxom565nzn64f6u7h56dozqa42z6e@zrxdtpdg25ie>
+References: <20260331212827.2631020-1-aalbersh@kernel.org>
+ <20260331212827.2631020-4-aalbersh@kernel.org>
+ <20260401222717.GH2466@quark>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-MS-PublicTrafficType: Email
-X-MS-TrafficTypeDiagnostic: DS7PR12MB9473:EE_|MN6PR12MB8472:EE_
-X-MS-Office365-Filtering-Correlation-Id: 0108bd6e-68b5-47da-7210-08de90c574d4
-X-MS-Exchange-SenderADCheck: 1
-X-MS-Exchange-AntiSpam-Relay: 0
-X-Microsoft-Antispam:
-	BCL:0;ARA:13230040|1800799024|366016|7416014|376014|22082099003|18002099003|56012099003;
-X-Microsoft-Antispam-Message-Info:
-	D+V3VyFaGeFlIzsBCOdmEkuJhXf6Gkj34H7XsD73cd8elWZWQLc2FMNnXkgoTuyzJ5+/vz0HVZUo6KquPisz6itz4Mq5VeLHsC7AE01TO89a6/jP23YRXp+xJ6KO6lFUERm9dujkvjr0I5YuFafg8l0pWMZiyZOjhkWV0/hdhqUL1L9w8DLGcqhvhua+qjLc+OrN44q6cmYxNfyU1sbfbVBfmZFmuhMXC4vZjUu5Jbq1r9mPWlsIeZzwiVAmWBmwRqgpSAj1qFZ4OjwXvZylLjPttGpYyKoZ9nGq6IYqB8wAUM1CDR5BrP0uso7x5KXmMmB97sgicZuJOf6NTQdHbrR6nL4kKckpm85EzX5xVPrB+SOI8YrEEujheMA28+jpLuRkh1i8bW9OGdPS8pquGEra4ouFXc6qZ7ZGzghGSeL9sLPFhyJAsDiwJWhaiB1EyfY/F2cHihBEDqGGswVvfaIIIkm10U7zJKSfpsZ+S5xZt7UKhEKPBQtqwS/PE9XEoOnRl/OXQkU420cCt7Qb4PSOcUDcX4cl+qrf4jzo5xUgoMyjzK0LQahCTqPXVZritucl5tmibqVd0p9xrXMLvQE+9RPOU2r3e6TznIC5a6u7eMlROSoz+/vgDJ3bmF0s3+LA3E/Nrv8xPH6xgwse95iwqLIAibv6YcoWBdDABT0vxV3mf0NCsOAzxfkE76ribwYNZyi0JjQPbCUYh5TeCbzAy6yTm2rcqLxCCEUQRQ0=
-X-Forefront-Antispam-Report:
-	CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:DS7PR12MB9473.namprd12.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(1800799024)(366016)(7416014)(376014)(22082099003)(18002099003)(56012099003);DIR:OUT;SFP:1101;
-X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
-X-MS-Exchange-AntiSpam-MessageData-0:
-	=?utf-8?B?M2lpU0hyZEJLT2NqMVo5eXVhTUJlY3U2RDNtQjNFd1p3UkdVVzcwWWxwZkxU?=
- =?utf-8?B?NzRaWmJ0QUtyektjbGo3OS92ajdhZXdHazBMbm5JZitnU3p1dnVDVXViNlov?=
- =?utf-8?B?WUp4bG12SW8vb2ZKS3NNNXNpVHF2UGZKVFZuNHJkRXJTV01LTGRPdGlnSm9X?=
- =?utf-8?B?cElrOUR5Q0xPRkkxUUJFa1lmZmZaYU16dFJqQkVQNUpVb1A3bFVmdEs4Z0RF?=
- =?utf-8?B?eEFZMFRjUjJkUFlMMlptWXlDOXRNaVgzYm5WcHIya1l0SzFQKzdycWhXS2lW?=
- =?utf-8?B?aXRpc2lvMm14MjB5Tmp2aDE5aGlIM3l3NTJ5b2M3b0ZENFVNUVFtN25tV3hZ?=
- =?utf-8?B?TkhjUFo1d0ZyMWVMZ2JMMlFNR2xmUGkyWjQvWXM0R252L2t4akxVZGhzVlFS?=
- =?utf-8?B?cy9HZXRadllGOHVNQ3lXN2htRVh1bGl4VlNMYkR1aG9zTzR3UHJpb0ZpYndv?=
- =?utf-8?B?RWsxcEhlc1VJSEtqSVJMZnY2V2ppcjIzM2plcC8yZkY2eW9rV2VVQWkza0xQ?=
- =?utf-8?B?dms5ZUxOVU03MW1SVmhjTXRiNDllSjdlQlhEWUpkU05sSm12WTMycjYwZi9a?=
- =?utf-8?B?ZVRncG1ObEtOMWY1OWNPNnJOZlZ6TnQ2QnNzcks0OVoxVkRNUTFwdStWMk1o?=
- =?utf-8?B?azd2S1RtRW5BQkpMV0hNQnlaVmxmRm5EQWZoVkxpcmhIdnJPQk9DWVpRU3JG?=
- =?utf-8?B?Yi9oNGx1eHBoeWkyRDFsWXpMOGRzUXhNbVhnQVZCNTZVNFZPQktBbXBoS1JG?=
- =?utf-8?B?S2RWS3hmYitINWZDUTlhMDY3UzJRaWl6clkwUjVUU0FySGdUZ0ZnWVNMODhV?=
- =?utf-8?B?QmFOUUVsaWpQNE1sQUpMOERvSEkyU25aQVZJWVVHMzE5K0VpM3FXdHdCR3Ni?=
- =?utf-8?B?MzcrcWFiMlhSakdtdHR6TGdQeWtSUTdUV1BKT0xaY2t5UG1ieHpDaFN5cGRI?=
- =?utf-8?B?RHRRRzVsUXdzVE45ZVQydEdvc0lPbEkwMUI0REl6ZDlpK2dsQ283Y2U4RUFh?=
- =?utf-8?B?d3YrQW9JeFpmTHBKa3VyZHFlV1FvTzFUN1YvaVZDR3N0QkJrNGtyNXRjVWdx?=
- =?utf-8?B?eDdqcDdmTWxRTEhaK3NCMzZDalRiaUdRbmUxczJrVWZpUEJ3ZnVRbk5MMFpC?=
- =?utf-8?B?SUd1N2pRc0J2VHd3VWtna29kRXlzRTM3M1N2cis4elNIYnRPa0s0UklxQlVB?=
- =?utf-8?B?NllZanlVM1dVNDBMeTZrU3JFS3p4UHNEeUxxTHcxd3ZraWM2bWtSNVhGd2U2?=
- =?utf-8?B?Yjlpdklra3dTblcyZmJja2xQWkhHS2xmNERVRGlLODJJZWxlNERydndmVXhC?=
- =?utf-8?B?QUtkUDFiNnE4bCtLZnpOV1Nxb0tWZi9pUVRLWkhKNzlLVTB2QWd5bEI5MnRv?=
- =?utf-8?B?TFdFbFYyR29jemEvcE5MTWY1OTlkdWFiOTJDMzM1OWhoVUVJL21pdTdSajZE?=
- =?utf-8?B?UUcwNVR1anVUNk9wb0F6cmxjK1dGek9udmdvM2VDUmducWtneThobzlNcEhj?=
- =?utf-8?B?Tk9zTWhQZEpoQVl6Z1hSWnpWOGtmVmhUdUhLMkJaa3VZdG5saThTK3FHajY1?=
- =?utf-8?B?ZWlYTklXQlNOS2prc3V3dkV3VGhaN1JSaFRxbmtCVGQ1eHY1RzlzcXp2bkha?=
- =?utf-8?B?Vy9mbGlKcmswOHlTVmJLa3lsUGwva2l4bEMvYU0wTkVLQ2tqUTdPK1diNm1T?=
- =?utf-8?B?bW9KUUpaNEx5azBLRWZOWTJDU3V4SG1DYWpuSjZMaDVURmZ5MEVkY0xOMVNH?=
- =?utf-8?B?eTVkQkZNQ2JYUEVmVllkRnhxS3dLL2o5bW5ZejQxTG9vZWJvVjVMQXp5Qk82?=
- =?utf-8?B?cVBMNDFjdldVVkpVRGQ3dFdoYmNxSDRoWHFBazNhRFNPMGlRT1lWM24xWjdZ?=
- =?utf-8?B?SFZobDJNWWV6eDlXdGhJblNEZXpDcjIrVTRFeG5tTEZoUlVobFhOaFo4WlMw?=
- =?utf-8?B?OFIydHUxMTloMGRxb1p4WW15d3NpR2x0NUpHdjh6cmZwMjJ0QmxEVWd5M0dz?=
- =?utf-8?B?NzQzam5JTmJpelJEaWVNTml4OTIyZDlLWXFXVVlYb0VuRE05UU9lV0ZQNVZJ?=
- =?utf-8?B?dDgzY0d0YXZZT3RZUTE0ZzRCa2pkN1lYNEV6NHdQL292L3FmcnU2R3lXeUJZ?=
- =?utf-8?B?Qm15QWJCS1BQMmVaaWltUGJtbCttdmRBeE9hVG54cXlHMFVSVzN3MmE3UjVh?=
- =?utf-8?B?SjVKclp0aEptUDF5RjRQenl2K1JaaVlnQXZ3Y3RXaWlQem0rdVQ3TzFyMzJC?=
- =?utf-8?B?YnRGVFNhcGMzYzNVbnltcjZlaUUxRW1kSmx2TFB5T0pmR0JJUW5mNkNvME85?=
- =?utf-8?B?Nm1WZnR5MGVQQUNTSVZzWFBaTERDY1p2V2ozUzRSRENxVnFzVDBKUT09?=
-X-OriginatorOrg: Nvidia.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: 0108bd6e-68b5-47da-7210-08de90c574d4
-X-MS-Exchange-CrossTenant-AuthSource: DS7PR12MB9473.namprd12.prod.outlook.com
-X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-OriginalArrivalTime: 02 Apr 2026 14:38:07.7150
- (UTC)
-X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
-X-MS-Exchange-CrossTenant-Id: 43083d15-7273-40c1-b7db-39efd9ccc17a
-X-MS-Exchange-CrossTenant-MailboxType: HOSTED
-X-MS-Exchange-CrossTenant-UserPrincipalName: ZnKHTV8uxjeCKAjo2luZG7vcp/Mf9cRwgxWY9kGVDdoBNkfbpQYwBA5tbUZM0NDd
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: MN6PR12MB8472
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260401222717.GH2466@quark>
 
-On 2 Apr 2026, at 10:35, David Hildenbrand (Arm) wrote:
+On 2026-04-01 15:27:17, Eric Biggers wrote:
+> On Tue, Mar 31, 2026 at 11:28:04PM +0200, Andrey Albershteyn wrote:
+> > Compute the hash of one filesystem block's worth of zeros. A filesystem
+> > implementation can decide to elide merkle tree blocks containing only
+> > this hash and synthesize the contents at read time.
+> > 
+> > Let's pretend that there's a file containing six data blocks and whose
+> > merkle tree looks roughly like this:
+> > 
+> > root
+> >  +--leaf0
+> >  |   +--data0
+> >  |   +--data1
+> >  |   `--data2
+> >  `--leaf1
+> >      +--data3
+> >      +--data4
+> >      `--data5
+> > 
+> > If data[0-2] are sparse holes, then leaf0 will contain a repeating
+> > sequence of @zero_digest.  Therefore, leaf0 need not be written to disk
+> > because its contents can be synthesized.
+> > 
+> > A subsequent xfs patch will use this to reduce the size of the merkle
+> > tree when dealing with sparse gold master disk images and the like.
+> > 
+> > Add a helper to pre-fill folio with hashes of empty blocks. This will be
+> > used by iomap to synthesize blocks full of zero hashes on the fly.
+> > 
+> > Signed-off-by: Darrick J. Wong <djwong@kernel.org>
+> > Signed-off-by: Andrey Albershteyn <aalbersh@kernel.org>
+> > ---
+> >  fs/verity/fsverity_private.h |  3 +++
+> >  fs/verity/open.c             |  3 +++
+> >  fs/verity/pagecache.c        | 22 ++++++++++++++++++++++
+> >  include/linux/fsverity.h     |  8 ++++++++
+> >  4 files changed, 36 insertions(+)
+> 
+> Acked-by: Eric Biggers <ebiggers@kernel.org>
+> 
+> The example given in the commit message is a bit misleading, though.
+> Usually there are actually 128 hashes per block, and a block of hashes
+> covers 512 KiB.  So this optimization applies only where there is a hole
+> in the file's data of size (at least) 512 KiB, aligned to the same
+> amount.
+> 
+> It's also worth noting that this optimization is being done only for the
+> first level.  The levels above that are still being stored.  So, this
+> doesn't really enable e.g. exabyte sized sparse regions, as a block will
+> still be stored for each 64 MiB (instead of every 512 KiB).
+> 
+> I'm okay with this if you want to do this, but I just want to make sure
+> its limitations are well-understood.
 
-> On 4/1/26 22:33, Zi Yan wrote:
->> On 1 Apr 2026, at 15:15, David Hildenbrand (Arm) wrote:
->>
->>> On 4/1/26 17:32, Zi Yan wrote:
->>>>
->>>>
->>>> Let me think.
->>>>
->>>> do_dentry_open() -> file_get_write_access() -> get_write_access() bumps
->>>> inode->i_writecount atomically and it turns inode_is_open_for_write()
->>>> to true. Then, do_dentry_open() also truncates all pages
->>>> if filemap_nr_thps() is not zero. This pairs with khugepaged’s first
->>>> filemap_nr_thps_inc() then inode_is_open_for_write() to prevent opening
->>>> a fd with write when there is a read-only THP.
->>>>
->>>> After removing READ_ONLY_THP_FOR_FS, khugepaged only creates read-only THPs
->>>> on FSes with large folio support (to be precise THP support). If a fd
->>>> is opened for write before inode_is_open_for_write() check, khugepaged
->>>> will stop. It is fine. But if a fd is opened for write after
->>>> inode_is_open_for_write() check, khugepaged will try to collapse a read-only
->>>> THP and the fd can be written at the same time.
->>>
->>> Exactly, that's the race I mean.
->>>
->>>>
->>>> I notice that fd write requires locking the to-be-written folio first
->>>> (I see it from f_ops->write_iter() -> write_begin_get_folio() and assume
->>>> f_ops->write() has the same locking requirement) and khugepaged has already
->>>> locked the to-be-collapsed folio before inode_is_open_for_write(). So if the
->>>> fd is opened for write after inode_is_open_for_write() check, its write
->>>> will wait for khugepaged collapse and see a new THP. Since the FS
->>>> supports THP, writing to the new THP should be fine.
->>>>
->>>> Let me know if my analysis above makes sense. If yes, I will add it
->>>> to the commit message and add a succinct comment about it before
->>>> inode_is_open_for_write().
->>>
->>> khugepaged code is the only code that replaces folios in the pagecache
->>> by other folios. So my main concern is if that is problematic on
->>> concurrent write access.
->>
->> folio_split() does it too, although it replaces a large folio with
->> a bunch of after-split folios. It is a kinda reverse process of
->> collapse_file().
->
-> Right. You won't start looking at a small folio and suddenly there is
-> something larger.
->
->>
->>
->>>
->>> You argue that the folio lock is sufficient. That's certainly true for
->>> individual folios, but I am more concerned about the replacement part.
->>
->> For the replacement part, both old and new folios are locked during
->> the process. A parallel writer uses filemap_get_entry() to get the folio
->> from mapping, but all of them check folio->mapping after acquiring the
->> folio lock, except mincore_page() which is a reader. A writer can see
->> either old folio or new folio during the process, but
->>
->> 1. if it sees the old one, it waits on the old folio lock. After
->> it acquires the lock, it sees old_folio->mapping is NULL, no longer
->> matches the original mapping. The writer will try again.
->>
->> 2. if it sees the new one, it waits on the new folio lock. After
->> it acquires the lock, it sees new_folio->mapping matches the
->> original mapping and proceeds to its writes.
->>
->> 3. if khugepaged needs to do a rollback, the old folio will stay
->> the same and the writer will see the old one after it gets the old
->> folio lock.
->
-> I am primarily wondering about what would happen if someone traverses
-> the pageache, and found+processed 3 small folios. Suddenly there is a
-> large folio that covers the 3 small folios processes before.
->
-> I suspect that is fine, because the code likely had to deal with
-> concurrent truncation+population if relevant locks are dropped already.
->
-> Just raising it.
->
->>
->>>
->>> I don't have anything concrete, primarily just pointing out that this is
->>> a change that might unlock some code paths that could not have been
->>> triggered before.
->>
->> Yes, the concern makes sense.
->>
->> BTW, Claude is trying to convince me that even inode_is_open_for_write()
->> is unecessary since 1) folio_test_dirty() before it has
->> made sure the folio is clean, 2) try_to_unmap() and the locked folio prevents
->> further writes.
->>
->> But then we find a hole between folio_test_dirty() and
->> try_to_unmap() where a write via a writable mmap PTE can dirty the folio
->> after folio_test_dirty() and try_to_unmap(). To remove that hole,
->> the “if (!is_shmem && (folio_test_dirty(...) || folio_test_writeback(...))”
->> needs to be moved after try_to_unmap(). With that, all to-be-collapsed
->> folios will be clean, unmapped, and locked, where unmapped means
->> writes via mmap need to fault and take the folio lock, locked means
->> writes via mmap and write() need to wait until the folio is unlocked.
->>
->> Let me know if my reasoning makes sense. It is definitely worth the time
->> and effort to ensure this patchset does not introduce any unexpected race
->> condition or issue.
->
-> Makes sense.
->
-> Please clearly spell out that there is a slight change now, where we
-> might be collapsing after the file has been opened for write. Then you
-> can document that the folio locks should be protecting us from that.
->
-> Implying that collapsing in writable files could likely "easily" done in
-> the future.
+Sure, I will fix the example and add a note that this is only for
+data level. 
 
-Definitely. Thank you for all the inputs. :)
+I think for higher levels it could be later added transparently.
+Old tree blocks will be read by iomap if exist, and for new format
+block will be generated.
 
+-- 
+- Andrey
 
-Best Regards,
-Yan, Zi
+> 
+> > +	/* the hash of a merkle block-sized buffer of zeroes */
+> > +	u8 zero_digest[FS_VERITY_MAX_DIGEST_SIZE];
+> 
+> "the hash of an all-zeroes block" would be clearer.  This is the hash
+> from fsverity_hash_block() which includes the optional salt, not the
+> hash from fsverity_hash_buffer() which does not include the salt.
+> 
+> > +/**
+> > + * fsverity_fill_zerohash() - fill folio with hashes of zero data block
+> > + * @folio:	folio to fill
+> > + * @poff:	offset in the folio to start
+> > + * @plen:	length of the range to fill with hashes
+> 
+> Maybe go with (len, offset) for consistency with
+> fsverity_verify_blocks().  (I assume the "p" prefix stands for "page",
+> which is misleading since this works with a folio.)
+> 
+> > +void fsverity_fill_zerohash(struct folio *folio, size_t poff, size_t plen,
+> > +			      struct fsverity_info *vi)
+> > +{
+> > +	size_t offset = poff;
+> > +
+> > +	WARN_ON_ONCE(!IS_ALIGNED(poff, vi->tree_params.digest_size));
+> > +	WARN_ON_ONCE(!IS_ALIGNED(plen, vi->tree_params.digest_size));
+> > +
+> > +	for (; offset < (poff + plen); offset += vi->tree_params.digest_size)
+> > +		memcpy_to_folio(folio, offset, vi->tree_params.zero_digest,
+> > +				vi->tree_params.digest_size);
+> 
+> This could be done more efficiently, especially on HIGHMEM.  Probably
+> fine for now though, especially since the intersection of anyone wanting
+> XFS && fsverity && HIGHMEM is likely to be extremely small.
+> 
+> - Eric
+> 
+

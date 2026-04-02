@@ -1,71 +1,92 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from mx.tnonline.net (mx.tnonline.net [135.181.111.198])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C523D364949
-	for <linux-btrfs@vger.kernel.org>; Thu,  2 Apr 2026 18:52:32 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E50DE374E7A
+	for <linux-btrfs@vger.kernel.org>; Thu,  2 Apr 2026 19:07:12 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=135.181.111.198
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775155952; cv=none; b=bqDaW+GPYMHgm/gkqpPFpV22W7/u+Cl0tHuLqeES55BwovSafebSJnRPfgtdRRekHmZHAiY5ZfOVha5banMZhagDu2VGtn4K5e0gtvOq+YeEcxaePedxKCka+sQ3WOHYsvROqQj0nRoHGImJ5JNtG8hVXmHhOczPjQlP1gnkpDs=
+	t=1775156834; cv=none; b=eRRyFrQv1MAi/HyKKYGVR2KfuVnKwab9eh3TUHTnhLvYCGJRmVZF8y1isxtgtAtc3lRW+p/UBItYINyNLKjy192spqW2erAKsmCI/heGHGt+jUn+YtEhK4FvLGad7wHHruAq2Zohl+xM1gtyFI6yn38uEfNJYsCVMe2oHrGfXL0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1775155952; c=relaxed/simple;
-	bh=IjH+bZF470UTwpeG0EhYkcJNU7zR16t8m161WhiVDA0=;
-	h=Message-ID:Subject:From:To:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=iHcvTjKCBnvlxR5dhrz7b/02hPHV1eotCQxqa9eTturlHYWKARwpbfVClSgFUOdRRfIx72SymtOEGOrPkfkTTYPo8C3kVdFdx5NFFzBSjvqk4vyM9DyX6ezwyUIj9/IaK5mUBtQzwmx4thHUDnQfRJNpEE/iYKua36rD71g14qg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=IxLBJRvp; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1775156834; c=relaxed/simple;
+	bh=qmC9C+Xi9Rg373sY/Gy01oydpp80QpOMo1YEE/AAcDc=;
+	h=Date:From:To:Message-ID:In-Reply-To:References:Subject:
+	 MIME-Version:Content-Type; b=eXlUqefKkRVlNeNrhkyrlKwmss40QdCJpAVnnC9mvH054lyQ4rpInRdAqdyNLDvgGS5zkEZP18fNNHsE4eQcO6dV7Ps6wGjWoQDnPpF7FeyiaTrDeNJwfCHkDzUaQV3L/9PPRsQUbGFg7sBuoODWmrb/ItLw53a+UedgfBKsokw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=tnonline.net; spf=pass smtp.mailfrom=tnonline.net; dkim=pass (2048-bit key) header.d=tnonline.net header.i=@tnonline.net header.b=bGRrWG02; arc=none smtp.client-ip=135.181.111.198
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=tnonline.net
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=tnonline.net
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="IxLBJRvp"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 4724EC116C6;
-	Thu,  2 Apr 2026 18:52:31 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1775155952;
-	bh=IjH+bZF470UTwpeG0EhYkcJNU7zR16t8m161WhiVDA0=;
-	h=Subject:From:To:Date:In-Reply-To:References:From;
-	b=IxLBJRvpUXFCu9MsWWwAbAmAMUNwkCVvQ/1ZPb/UgqIlJvs98BvUDPeCP3gitJGEF
-	 r2TLr+7a9vQnstxAtEppsApPs79sQMAL3cP4cEylvQfVsKt1nsxpa1EtxEz1yH1uqx
-	 b6DF6NRhVWRzukteAs0DzRrknPyK+59oSCvnVElyy48t/C5ctQTshLpx3PqTK7HLIQ
-	 wXCAcOddiYeOe6XvifJpqHJLqeTsapAfYpdNCyi/gQtGys62iikzBxFRA01wlSJHQZ
-	 UzPII1PIjeXKcPV8nE/Rpn4L5Ube1yXWSOgpWqg/eEoKR4zwU5R2VhXno4EKypKbCJ
-	 hkEwG4iktYXkQ==
-Message-ID: <e641e0aa7dba28cabbc3f889e7caeb7c1b857f35.camel@kernel.org>
-Subject: Re: Fixing a corrupted file system
-From: Amit Shah <amit@kernel.org>
+	dkim=pass (2048-bit key) header.d=tnonline.net header.i=@tnonline.net header.b="bGRrWG02"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=tnonline.net; s=default; h=Content-Transfer-Encoding:Content-Type:
+	MIME-Version:Subject:References:In-Reply-To:Message-ID:To:From:Date:Sender:
+	Reply-To:Cc:Content-ID:Content-Description:Resent-Date:Resent-From:
+	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
+	List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
+	bh=KgSKHCBu6VbcwubQpEae5ejQ+ZgG09Ima/JpXDbbmJ8=; t=1775156833; x=1776366433; 
+	b=bGRrWG02dSOCE1sIe2F+uO9z8BrjuhlUjEjSGJELn4Ttkb3PyALvMCEpXcy6dUcrRvIb5AvJHIz
+	kE9RzzxGum9D00+8bJlFNN+pX4L+b2laJIHA0/Fd1h6vQqE69DWGICdx00g/KgwiB6kPK+PJZrBZT
+	51FHK63ELH1Sx/DHGQt3/U0N5goMl9SmsS4RPdWK/HF6yNhmRGe2B8D2zf6vFfL3Ubpkd+iQqVjhi
+	aaYz/Ue/6bni/wYYvUF1aQGB9HwH2DUchG5lqGbWBnQ+gSbcXkrU7WDT3dAoTdI58ewCwwEE62T54
+	kb21QRuGVKX8irs0gVNa5/9+/8LOdpdGHw3A==;
+Received: from [2001:470:28:704::1] (port=48888 helo=tnonline.net)
+	by mx.tnonline.net with esmtpsa  (TLS1.3) tls TLS_AES_256_GCM_SHA384
+	(Exim 4.98.2)
+	(envelope-from <forza@tnonline.net>)
+	id 1w8NNe-000000003ey-2nR2;
+	Thu, 02 Apr 2026 19:07:03 +0000
+Received: from [192.168.0.114] (port=57608)
+	by tnonline.net with esmtpsa  (TLS1.3) tls TLS_AES_128_GCM_SHA256
+	(Exim 4.98.2)
+	(envelope-from <forza@tnonline.net>)
+	id 1w8NNe-00000000Ci3-1cBL;
+	Thu, 02 Apr 2026 21:07:02 +0200
+Date: Thu, 2 Apr 2026 21:07:01 +0200 (GMT+02:00)
+From: Forza <forza@tnonline.net>
 To: remi@georgianit.com, Qu Wenruo <wqu@suse.com>,
- linux-btrfs@vger.kernel.org
-Date: Thu, 02 Apr 2026 20:52:29 +0200
+	Amit Shah <amit@infradead.org>, linux-btrfs@vger.kernel.org
+Message-ID: <87d1aca.ae41f579.19d4f977d95@tnonline.net>
 In-Reply-To: <571fb6a8-d4e7-42ed-9f19-22962163918d@app.fastmail.com>
-References: <8c8e2466574b29ba1da29c325a108824c8373a85.camel@infradead.org>
-	 <fc202c52-cb3e-40b2-a80a-6ffda886f76b@suse.com>
-	 <571fb6a8-d4e7-42ed-9f19-22962163918d@app.fastmail.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.58.3 (3.58.3-1.fc43) 
+References: <8c8e2466574b29ba1da29c325a108824c8373a85.camel@infradead.org> <fc202c52-cb3e-40b2-a80a-6ffda886f76b@suse.com> <571fb6a8-d4e7-42ed-9f19-22962163918d@app.fastmail.com>
+Subject: Re: Fixing a corrupted file system
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Transfer-Encoding: quoted-printable
+X-Mailer: R2Mail2
+X-Spam-Score: 3.0 (++)
 
-On Thu, 2026-04-02 at 14:32 -0400, remi@georgianit.com wrote:
+
+
+---- From: remi@georgianit.com -- Sent: 2026-04-02 - 20:32 ----
+
 >=20
 >=20
 > On Wed, Apr 1, 2026, at 5:21 PM, Qu Wenruo wrote:
 >=20
-> >=20
-> > Nope, btrfs will only try extra mirrors, but in your case your
-> > metadata=20
-> > doesn't even have extra mirrors.
-> > Which is not common, as the default btrfs mkfs profiles will go DUP
-> > for=20
-> > metadata.
+>>
+>> Nope, btrfs will only try extra mirrors, but in your case your metadata=
+=20
+>> doesn't even have extra mirrors.
+>> Which is not common, as the default btrfs mkfs profiles will go DUP for=
+=20
+>> metadata.
 >=20
-> I forget what mkfs version, but the default behaviour changed a few
-> years ago so the default profile is Single on SSD's. (Correct me if
-> this has since been reverted.)=C2=A0 Something about the way SSD's copy o=
-n
-> write, the DUP entries would end up on the same physical block, so
-> the redundancy was not effective.
+> I forget what mkfs version, but the default behaviour changed a few years=
+ ago so the default profile is Single on SSD's. (Correct me if this has sin=
+ce been reverted.)  Something about the way SSD's copy on write, the DUP en=
+tries would end up on the same physical block, so the redundancy was not ef=
+fective.
+>=20
 
-Right, the man page continues to mention that now as well.
+It is the reverse. Since btrfs-progs 5.15, the default was changed to DUP f=
+or single device fs.
 
-		Amit
+https://github.com/kdave/btrfs-progs/commit/65181c273e67bd48d01fc79f00826dc=
+e38b93c4c
+
+~ Forza
+

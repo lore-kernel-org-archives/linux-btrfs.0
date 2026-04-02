@@ -1,125 +1,273 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail.burntcomma.com (mail2.burntcomma.com [217.169.27.34])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 970973EF0DD
-	for <linux-btrfs@vger.kernel.org>; Thu,  2 Apr 2026 15:01:35 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3700934DCE6
+	for <linux-btrfs@vger.kernel.org>; Thu,  2 Apr 2026 17:06:01 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=217.169.27.34
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775142095; cv=none; b=Jzv0hFx1Vd2y0Y4m2dokMFonXY3wupQmrfSflFzXLI1szPorVmv31umRNx3qs0BNu6D1L3TL+dt4i4kzF66gKyqUDj6VaaJtz5pSMtGvlqXqZVdre0fLAu9IbEAlPL9BNTugvI/8EOrfs6QPvoEt0hmbwl4VC0zU7yqdK47hpTk=
+	t=1775149569; cv=none; b=fhZOEe5msFFvS2nURcBKoizUQrGRXhIG3o8c2sgnEv1z0wjP4TFBsLMbVndCagLun3zzY5wp2bDG2CEfPbGGLZgJ1bRgCIlMJ4ujqCSDEnWGRjlhspNqRwee5cXi/cEYRHhr7F+LKVpslQWLyF9VLDCRyfHj189ZH+99Pqe2WJc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1775142095; c=relaxed/simple;
-	bh=fgHyewvAJs5Z9E9Cw2r+c5hWlt9lazwquZfoSn6WqXI=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=KnPlEvPmGG4+JBoypj7jd74xB1uCUhV/3QReLB/pjRkEytdjfmfcpyUKaM05up4sX9DMI9KQ4Lr2sYhV0q5vMaDYlBXLcB80580XwC684D26JKccTzgYOxo4cI+RL5zVeL/l1onq68RLYYOHuYJnBnmD8gJZoQaWtD95l+nXu28=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=YbaNM7zF; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1775149569; c=relaxed/simple;
+	bh=94M7ef0zvC5QLMYbTzVxNswVUA6a8MtRrhtSTUQfyQk=;
+	h=Message-ID:Date:Mime-Version:Subject:To:References:From:
+	 In-Reply-To:Content-Type; b=P+wlwCPYoCgjN9kdP6d/J8g5jxFKyV8cuQxkJJZI/xvZsndht0z3VyqN2c+6gHIQGjfJ+/EDn0aWwwDGLEL2N8EnOBAF2l2QDnkdTlH9P8cZB9SPhOl6mzgEVjG0Da6LGAO0k2wmtDBErK2MSm8Eq6SBg6rPLn4/UU6GLJhdWIY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com; spf=pass smtp.mailfrom=harmstone.com; dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b=md3n3Nhs; arc=none smtp.client-ip=217.169.27.34
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=harmstone.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="YbaNM7zF"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 36E6DC2BCAF
-	for <linux-btrfs@vger.kernel.org>; Thu,  2 Apr 2026 15:01:35 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1775142095;
-	bh=fgHyewvAJs5Z9E9Cw2r+c5hWlt9lazwquZfoSn6WqXI=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-	b=YbaNM7zFQFeDS91JFMf9qlp3WH0NhsUkXoiAkRNirICyHLfvgfKE9f3CIk5C+aFtF
-	 jX+DPvY8dX152yFjuI9T/EVo19+AU+6/448llRb4aWyaQQFrY0zIgozi2H0QKATvsy
-	 rsn81ntkOhOm6LvqbYUEwTcZyAODynGeZOqYCbALS3zYZncTTL/h2KQiVAJwQHqT5a
-	 3bJ8EGfmoL10t4XGs82p4L7c34eRlau/dQzJwGmZJV16S1P3qyhINYwCtexKZNEiAv
-	 LoXqhu2xWcOBYf6sLqROluKXDX+fzlN7K6ByAFgsvMP1s+N/te2OrGtDxIAZk3tZQI
-	 euWCsRgaZkq6g==
-Received: by mail-ed1-f44.google.com with SMTP id 4fb4d7f45d1cf-66bb4d4fcb4so1759107a12.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 02 Apr 2026 08:01:35 -0700 (PDT)
-X-Gm-Message-State: AOJu0Yw9bn9C1zJd31rpT4O+EbKszIH6fnx0p5H562Qs725z4+ZEKzwL
-	88lOEvq0LawgFmIDuMbrz+5B5lBt9HMjMjpMeTA0+zBD8rAOnt297lV2ay/U9FJsdigaaF48adW
-	u7HvfJPPYcb8y4U5ZDWHtwOt5XY6M0/I=
-X-Received: by 2002:a17:907:c789:b0:b83:95c8:15d0 with SMTP id
- a640c23a62f3a-b9c13cc8ddfmr503840066b.52.1775142093553; Thu, 02 Apr 2026
- 08:01:33 -0700 (PDT)
+	dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b="md3n3Nhs"
+Received: from [IPV6:2a02:8012:8cf0:0:ce28:aaff:fe0d:6db2] (beren.burntcomma.com [IPv6:2a02:8012:8cf0:0:ce28:aaff:fe0d:6db2])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256
+	 client-signature RSA-PSS (2048 bits) client-digest SHA256)
+	(Client CN "hellas", Issuer "burntcomma.com" (verified OK))
+	by mail.burntcomma.com (Postfix) with ESMTPS id 8A4503181FC;
+	Thu,  2 Apr 2026 18:05:53 +0100 (BST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=harmstone.com;
+	s=mail; t=1775149553;
+	bh=Vw0UOeDhI6uX+oXKByyKDbKGSViXpBbHnUghri3GujI=;
+	h=Date:Subject:To:References:From:In-Reply-To;
+	b=md3n3NhsXssJESr06lkVLCNUMwD/uVfjkTq/jvsMTen63wicfwYr/HmSMaC2TPyWX
+	 BUe7ky35M1HY2j32IWRbRauPpTBRylucVcuQ+2pWpfF7ybuZr60XahU3jiBoFw5P3l
+	 Wh5foh3aPbqOhfXQjjAKanOdZk8Hxu+OkKzlj/iY=
+Message-ID: <97ff76b9-5c07-4083-a020-3499ff595460@harmstone.com>
+Date: Thu, 2 Apr 2026 18:05:53 +0100
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-References: <20260402064348.2807138-1-davechen@synology.com>
-In-Reply-To: <20260402064348.2807138-1-davechen@synology.com>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Thu, 2 Apr 2026 16:00:56 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H4FMJxNtgsNcVGiETuPSQeiJhEy0KXeC7xRxdUT6h1NLA@mail.gmail.com>
-X-Gm-Features: AQROBzDS3aujEZ24lfIoTDOkCQ5R3lzqGQpY6FG_J_AU0KMVUSLkPU0UayN4ckY
-Message-ID: <CAL3q7H4FMJxNtgsNcVGiETuPSQeiJhEy0KXeC7xRxdUT6h1NLA@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: fix unnecessary UUID tree rescan on mount
-To: Dave Chen <davechen@synology.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.com, cccheng@synology.com, 
-	robbieko@synology.com
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Mime-Version: 1.0
+Subject: Re: [PATCH] btrfs: add BTRFS_IOC_GET_CSUMS ioctl
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
+References: <20260320125058.90053-1-mark@harmstone.com>
+ <07cf5ebc-ac52-4fd9-82c5-404c0f4d6056@gmx.com>
+ <3ad267b6-cc59-495f-b385-9b4b4686a473@gmx.com>
+ <39496ce5-74c2-4300-ba39-032edace4cfe@harmstone.com>
+ <a1675480-628b-46ba-95c7-f5ee29d6bf14@gmx.com>
+Content-Language: en-US
+From: Mark Harmstone <mark@harmstone.com>
+Autocrypt: addr=mark@harmstone.com; keydata=
+ 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
+In-Reply-To: <a1675480-628b-46ba-95c7-f5ee29d6bf14@gmx.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 
-On Thu, Apr 2, 2026 at 7:54=E2=80=AFAM Dave Chen <davechen@synology.com> wr=
-ote:
->
-> The UUID tree rescan check in open_ctree() compares
-> fs_info->generation with the superblock's uuid_tree_generation.
-> This comparison can produce false positives because
-> fs_info->generation is bumped at transaction start time in
-> join_transaction(), while uuid_tree_generation is only updated at
-> commit time via update_super_roots().
->
-> Between the early BTRFS_FS_UPDATE_UUID_TREE_GEN flag check and the
-> late rescan decision, mount operations such as orphan cleanup start
-> transactions without committing them. This advances
-> fs_info->generation past uuid_tree_generation, triggering an
-> unnecessary full UUID tree rescan on every mount that recovers
-> file orphans from an unclean shutdown.
->
-> Fix this by using the BTRFS_FS_UPDATE_UUID_TREE_GEN flag directly,
-> which was already set earlier when the generations were known to
-> match, and is not invalidated by subsequent transaction starts.
->
-> Fixes: 70f80175472 ("Btrfs: check UUID tree during mount if required")
+On 25/03/2026 9.04 pm, Qu Wenruo wrote:
+> 
+> 
+> 在 2026/3/26 01:13, Mark Harmstone 写道:
+>> On 25/03/2026 7.34 am, Qu Wenruo wrote:
+>>>
+>>>
+>>> 在 2026/3/21 08:48, Qu Wenruo 写道:
+>>>>
+>>>>
+>>>> 在 2026/3/20 23:20, Mark Harmstone 写道:
+>>>>> Add a new unprivileged BTRFS_IOC_GET_CSUMS ioctl, which can be used to
+>>>>> query the on-disk csums for a file.
+>>>>>
+>>>>> This is done by userspace passing a struct 
+>>>>> btrfs_ioctl_get_csums_args to
+>>>>> the kernel, which details the offset and length we're interested 
+>>>>> in, and
+>>>>> a buffer for the kernel to write its results into. The kernel writes a
+>>>>> struct btrfs_ioctl_get_csums_entry into the buffer, followed by the
+>>>>> csums if available.
+>>>>>
+>>>>> If the extent is an uncompressed, non-nodatasum extent, the kernel 
+>>>>> sets
+>>>>> the entry type to BTRFS_GET_CSUMS_HAS_CSUMS and follows it with the
+>>>>> csums. If it is sparse, preallocated, or beyond the EOF, it sets the
+>>>>> type to BTRFS_GET_CSUMS_SPARSE - this is so userspace knows it can use
+>>>>> the precomputed hash of the zero sector. Otherwise, it sets the 
+>>>>> type to
+>>>>> BTRFS_GET_CSUMS_NO_CSUMS.
+>>>>
+>>>> I'm not sure if it's a good idea to put hole and preallocated range 
+>>>> into the same BTRFS_GET_CSUMS_SPARSE.
+>>>>
+>>>> Although both means there is no csum, hole case means there is 
+>>>> really no data extent, thus we should not create any extent instead 
+>>>> of writing zero.
+>>
+>> Thanks Qu.
+>>
+>> "SPARSE" is probably a bad name for it. It probably should be "ZERO" 
+>> or somesuch. The point is to tell userspace not to waste time 
+>> calculating csums, but use the precomputed values because the data 
+>> would be zero (for whatever reason).
+>>
+>>>> For preallocated, indicating it has no CSUM can allow mkfs to 
+>>>> distinguish hole and preallocated, thus change to zero writes to 
+>>>> prealloc, which is faster and make the resulted fs more aligned to 
+>>>> the source dir.
+>>>>
+>>>>
+>>>> And for EOF checks, I think we don't need to bother that much, aka, 
+>>>> just let it return the regular results.
+>>>>
+>>>> My assumption is, the mkfs shouldn't pass a range completely beyond 
+>>>> the round_up(i_size), as non-reflink rootdir population would always 
+>>>> read out the content of the inode from the host fs.
+>>>> Thus we won't really read beyond the inode size.
+>>>
+>>> After more investigation, I think we can put the hole/preallocation/ 
+>>> compression detection into the user space.
+>>>
+>>> The hole detection is already pending for merge, mostly through 
+>>> SEEK_DATA/SEEK_HOLE flags of lseek():
+>>>
+>>>   https://github.com/kdave/btrfs-progs/pull/1097
+>>>
+>>> I'm planning to implement preallocation detection through fiemap, 
+>>> which also allows us to detect compressed range and skip them for 
+>>> your case.
+>>>
+>>> With all those features implemented in progs, we can further simplify 
+>>> the get csum ioctl, to something more aligned to 
+>>> btrfs_lookup_csums_bitmap().
+>>>
+>>> We do not need to bother why there is no checksum for some ranges, 
+>>> that will be handled by progs first, we only need to return all the 
+>>> checksums found for the specified range.
+>>>
+>>> And as an extra safenet, use some bitmap inthe ioctl structure to 
+>>> indicate which ranges have checksum and which doesn't.
+>>>
+>>> This will definitely simplify the ioctl as we only need to do csum 
+>>> tree lookup, no need to bother anything in the subvolume tree.
+>>
+>> Unfortunately this won't work. You have to explicitly filter out 
+>> compressed extents, and identifying these requires checking the FS tree.
+> 
+> That's done by progs through fiemap. There will be a flag ENCODED for 
+> compressed file extents.
 
-Normally we only use the Fixes tag for functional bugs and performance
-regressions that cause usability problems.
+No, this still won't work I'm afraid. The ioctl is answering the 
+question "what's the csum of the sector no. such-and-such in this 
+file?". That can't be answered for compressed extents, as the csums are 
+on the compressed data.
 
-How much slowdown did you see because of the unnecessary rescan?
-For this to make any significant difference we would probably need
-several thousand subvolumes or snapshots.
+There might be a use case for "fetch the csums for a compressed extent", 
+but it'd be something different.
 
-The change looks good to me; however, thanks.
+My concern about relying on ENCODED is that that would also be set when 
+we implement encryption. For an encrypted uncompressed extent the csum 
+*would* be meaningful.
 
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
+>> The reason is that they may be "bookended", and you would leak 
+>> information about other files if you returned the whole of the csums 
+>> for the compressed extent. This is the reason why encoded read needs 
+>> root.
+> 
+> Nope, for the fiemap call, we will never reach any bookend extents.
 
-> Signed-off-by: Dave Chen <davechen@synology.com>
-> Signed-off-by: Robbie Ko <robbieko@synology.com>
-> ---
->  fs/btrfs/disk-io.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
->
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 1b0eb246b7147..70357b12508d0 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -3674,7 +3674,7 @@ int __cold open_ctree(struct super_block *sb, struc=
-t btrfs_fs_devices *fs_device
->
->         if (fs_info->uuid_root &&
->             (btrfs_test_opt(fs_info, RESCAN_UUID_TREE) ||
-> -            fs_info->generation !=3D btrfs_super_uuid_tree_generation(di=
-sk_super))) {
-> +            !test_bit(BTRFS_FS_UPDATE_UUID_TREE_GEN, &fs_info->flags))) =
-{
->                 btrfs_info(fs_info, "checking UUID tree");
->                 ret =3D btrfs_check_uuid_tree(fs_info);
->                 if (ret) {
-> --
-> 2.43.0
->
->
-> Disclaimer: The contents of this e-mail message and any attachments are c=
-onfidential and are intended solely for addressee. The information may also=
- be legally privileged. This transmission is sent in trust, for the sole pu=
-rpose of delivery to the intended recipient. If you have received this tran=
-smission in error, any use, reproduction or dissemination of this transmiss=
-ion is strictly prohibited. If you are not the intended recipient, please i=
-mmediately notify the sender by reply e-mail or phone and delete this messa=
-ge and its attachments, if any.
->
+I really don't think the FIEMAP call achieves anything here. The kernel 
+still has to do a lookup in the FS tree to determine what the logical 
+address of the extent is. We can't allow (non-root) users to read the 
+csums of arbitrary sectors.
+
+> Thanks,
+> Qu
+> 
+>>
+>>> Thanks,
+>>> Qu
+>>>
+>>>>
+>>>>>
+>>>>> We do store the csums of compressed extents, but we deliberately don't
+>>>>> return them here: they're hashed over the compressed data, not the
+>>>>> uncompressed data that's returned to userspace.
+>>>>
+>>>> I agree with the skip of compressed extents, but I'd prefer to have 
+>>>> a special flag to indicate that, other than NO_CSUMS.
+>>>>
+>>>> Or mkfs is unable to distinguish hole and compressed extents.
+>>
+>> Compressed extents result in NO_CSUMS, a hole results in SPARSE.
+>>
+>>>> [...]
+>>>>> +/* Types for struct btrfs_ioctl_get_csums_entry::type */
+>>>>> +#define BTRFS_GET_CSUMS_HAS_CSUMS    0
+>>>>> +#define BTRFS_GET_CSUMS_SPARSE        1
+>>>>> +#define BTRFS_GET_CSUMS_NO_CSUMS    2
+>>>>> +
+>>>>> +struct btrfs_ioctl_get_csums_entry {
+>>>>> +    __u64 offset;        /* file offset of this range */
+>>>>> +    __u64 length;        /* length in bytes */
+>>>>> +    __u32 type;        /* BTRFS_GET_CSUMS_* type */
+>>>>> +    __u32 reserved;        /* padding, must be 0 */
+>>>>> +};
+>>>>> +
+>>>>> +struct btrfs_ioctl_get_csums_args {
+>>>>> +    __u64 offset;        /* in/out: file offset */
+>>>>> +    __u64 length;        /* in/out: range length */
+>>>>> +    __u64 buf_size;        /* in/out: buffer capacity / bytes 
+>>>>> written */
+>>>>> +    __u8 buf[];        /* out: entries + csum data */
+>>>>> +};
+>>>>
+>>>>  From the progs usage, it is always a single 
+>>>> btrfs_ioctl_get_csums_entry at the beginning of buf[], then real 
+>>>> buffer for csum, can we just combine both structures into one?
+>>>>
+>>>> Furthermore, since we only query one extent at one time, the offset/ 
+>>>> length are more or less duplicated between args and entry structure.
+>>>>
+>>>> We can just save the length into the args without the need for entry 
+>>>> members (except the type).
+>>>>
+>>>> Thanks,
+>>>> Qu
+>>>>
+>>>>> +
+>>>>>   /* Flags for IOC_SHUTDOWN, must match XFS_FSOP_GOING_FLAGS_* 
+>>>>> flags. */
+>>>>>   #define BTRFS_SHUTDOWN_FLAGS_DEFAULT            0x0
+>>>>>   #define BTRFS_SHUTDOWN_FLAGS_LOGFLUSH            0x1
+>>>>> @@ -1226,6 +1245,8 @@ enum btrfs_err_code {
+>>>>>                        struct btrfs_ioctl_encoded_io_args)
+>>>>>   #define BTRFS_IOC_SUBVOL_SYNC_WAIT _IOW(BTRFS_IOCTL_MAGIC, 65, \
+>>>>>                       struct btrfs_ioctl_subvol_wait)
+>>>>> +#define BTRFS_IOC_GET_CSUMS _IOWR(BTRFS_IOCTL_MAGIC, 66, \
+>>>>> +                  struct btrfs_ioctl_get_csums_args)
+>>>>>   /* Shutdown ioctl should follow XFS's interfaces, thus not using 
+>>>>> btrfs magic. */
+>>>>>   #define BTRFS_IOC_SHUTDOWN    _IOR('X', 125, __u32)
+>>>>
+>>>>
+>>>
+>>>
+>>
+> 
+

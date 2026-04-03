@@ -1,64 +1,64 @@
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 10CFD17BED0
-	for <linux-btrfs@vger.kernel.org>; Fri,  3 Apr 2026 04:33:45 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 15C9823E25B
+	for <linux-btrfs@vger.kernel.org>; Fri,  3 Apr 2026 04:33:51 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775190827; cv=none; b=JynxFqsiNpv57t3INhV6MIYYv7sF4tOH5Y77tWBBaXz9cJX4cDC0fzIOmSp/+yfw5mKynFhBfbxucSy9YUD4myDcltanOhDk82eIBorhvCUWy3B6nTCU+Vu9UfOCUTekc0IcpHA9vJ3UJDKJCFQPBcTjwKB9SwYYahYD3FjYfVY=
+	t=1775190833; cv=none; b=hi9WOnTtBxOD5sl9bRPGCzER5483PbVTcw83iC8ab2/puVikpxGkm749FVbAG8tNf9hPgBo7EVky2+zf83MAFh2FS26XQnriODtD1CEDi3dqex23IdtU/oY4yFiO2s1tIBMXldsgqCwokrOY5LJr0FIYxHJcqhEZEeV2BmUbJqs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1775190827; c=relaxed/simple;
-	bh=l8Wk6OcPlT/JevZb5iAbhFrqAoDhSOw7PliIkSGYP9c=;
+	s=arc-20240116; t=1775190833; c=relaxed/simple;
+	bh=X5eHUTtrTasC5G1KmZcPFZs4cSwQxwPXfmw5d5NQhaU=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=TSMofEI3i9pA3JTq481PPOYQpynQc6mHZSflsB7YAh92PK5Ab7DnYmXSyjsPS/T3q7u+3hFka3cbPnDTQuhLIbPKRt4shOWvAsPIKNMEDYsnchHx9FR02HAYnbfI0WFQT/v1CtbXtmK780+4MTNDuItFKepgg4pqNl1fVFFWul0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=YnUQ46h7; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=YnUQ46h7; arc=none smtp.client-ip=195.135.223.130
+	 MIME-Version; b=ewgmK1kfTkA5gvIFY43sTVZ3Xwlgf/UAlfFFKUNd2Ct4onxod0/7cq9lagzA2e60FiKkafyhXHAiTBl77w1OB+NZy92LYd2VzbQKawp6EQoN8csj3WfTw15VlbvtFQc+pprDQXJzXEQugT0PHoueSZ0TcpzAFu1AhpKMzBJvCbk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=jRTaPTrr; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=jRTaPTrr; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="YnUQ46h7";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="YnUQ46h7"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="jRTaPTrr";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="jRTaPTrr"
 Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id C0B854D1C3
-	for <linux-btrfs@vger.kernel.org>; Fri,  3 Apr 2026 04:33:23 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 2E0004D214
+	for <linux-btrfs@vger.kernel.org>; Fri,  3 Apr 2026 04:33:26 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1775190803; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1775190806; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=X26oVi7yfxBcKuAI+N4/zlNrcTB+ycTBiYM3HuF+TfY=;
-	b=YnUQ46h7Ma5cxN+ehu3BNjqAyAPqgsAPnOgHW2RQGMekAgaUC1rYWDJH20mTRoECtaDUCW
-	8AN/FBeY/080ACuRbIhbEEtZe0QeqYjjOUQWdGoqxe/X0wJ+vJb22mRnq6BOg+cTWz6xqk
-	UJLVPQPqxeTJBvSxRhgp5WWYszQWZHQ=
+	bh=ySXuAI63ielpiWeevFFm8QHrY3n+SM8buchDmtX0+x4=;
+	b=jRTaPTrr8tKuVJlvc5BcWtIcQY/GYfEkVfTpJeEAOqsf/5DvW9KDqEhFkROzhUS7XAyTpI
+	HUzCbC0ZFg3oF7rgCwhb/aJUxPwN7lrUx8v9TTdGxhcbrs/ljDpiNs+PMI/+7HXn2jKU9d
+	pEYgLojPcL4Qi0XcnCm0kqVX/V7iaGY=
 Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=YnUQ46h7
+	dkim=pass header.d=suse.com header.s=susede1 header.b=jRTaPTrr
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1775190803; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1775190806; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=X26oVi7yfxBcKuAI+N4/zlNrcTB+ycTBiYM3HuF+TfY=;
-	b=YnUQ46h7Ma5cxN+ehu3BNjqAyAPqgsAPnOgHW2RQGMekAgaUC1rYWDJH20mTRoECtaDUCW
-	8AN/FBeY/080ACuRbIhbEEtZe0QeqYjjOUQWdGoqxe/X0wJ+vJb22mRnq6BOg+cTWz6xqk
-	UJLVPQPqxeTJBvSxRhgp5WWYszQWZHQ=
+	bh=ySXuAI63ielpiWeevFFm8QHrY3n+SM8buchDmtX0+x4=;
+	b=jRTaPTrr8tKuVJlvc5BcWtIcQY/GYfEkVfTpJeEAOqsf/5DvW9KDqEhFkROzhUS7XAyTpI
+	HUzCbC0ZFg3oF7rgCwhb/aJUxPwN7lrUx8v9TTdGxhcbrs/ljDpiNs+PMI/+7HXn2jKU9d
+	pEYgLojPcL4Qi0XcnCm0kqVX/V7iaGY=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 0C7594A0B0
-	for <linux-btrfs@vger.kernel.org>; Fri,  3 Apr 2026 04:33:22 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 6DDC54A0B0
+	for <linux-btrfs@vger.kernel.org>; Fri,  3 Apr 2026 04:33:25 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id iLNmMBJDz2nTYQAAD6G6ig
+	id CDaNDBVDz2nTYQAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Fri, 03 Apr 2026 04:33:22 +0000
+	for <linux-btrfs@vger.kernel.org>; Fri, 03 Apr 2026 04:33:25 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 4/6] btrfs-progs: mkfs/rootdir: extract compressed write path
-Date: Fri,  3 Apr 2026 15:02:58 +1030
-Message-ID: <22fb3493afce20a68bb8b71854fbfdf043f23c5d.1775190565.git.wqu@suse.com>
+Subject: [PATCH v2 6/6] btrfs-progs: mkfs-tests: add a new test case for fiemap based detection
+Date: Fri,  3 Apr 2026 15:03:00 +1030
+Message-ID: <aa6e7dbc740dd836a75418e0dababc3010dbd8b7.1775190565.git.wqu@suse.com>
 X-Mailer: git-send-email 2.53.0
 In-Reply-To: <cover.1775190565.git.wqu@suse.com>
 References: <cover.1775190565.git.wqu@suse.com>
@@ -69,355 +69,129 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Rspamd-Action: no action
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
 X-Spamd-Result: default: False [-3.01 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
 	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	MIME_GOOD(-0.10)[text/plain];
 	MX_GOOD(-0.01)[];
-	ARC_NA(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	RCPT_COUNT_ONE(0.00)[1];
-	MIME_TRACE(0.00)[0:+];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	FROM_HAS_DN(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,suse.com:mid,suse.com:email,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
+	ARC_NA(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	RCPT_COUNT_ONE(0.00)[1];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
 	RCVD_TLS_ALL(0.00)[];
+	DKIM_TRACE(0.00)[suse.com:+];
+	RCVD_COUNT_TWO(0.00)[2];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	TO_DN_NONE(0.00)[];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
 	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received,2a07:de40:b281:104:10:150:64:97:from];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Rspamd-Queue-Id: C0B854D1C3
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.com:mid,suse.com:dkim,suse.com:email]
+X-Rspamd-Action: no action
 X-Spam-Flag: NO
 X-Spam-Score: -3.01
 X-Spam-Level: 
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Rspamd-Queue-Id: 2E0004D214
 
-Currently add_file_item_extent() have several different
-optimizations/handlings:
+The new test case will create an inode on btrfs, with the following
+layout:
 
-- Hole detection
-  Which happens before any writes.
-  Thus brings the minimal impact to the remaining methods.
+- [0, 16K): hole
+- [16K, 32K): regular
+- [32K, 64K): hole
+- [64K, 80K): prealloc
+- [80K, 84K): regular
 
-- Compressed write
-- Reflink from source fs
-- Regular read/writes
+Using fiemap based detection, we should be able to create a btrfs with
+exactly the same layout, verified by fssum with "-s" option.
 
-The last 3 share the same extent reservation, but with quite some extra
-handling.
-E.g. for compressed writes if the compression failed, we need to reset
-the buffer size and fallback to regular read/writes.
-
-This makes the code much harder to read, and the shared code is minimal,
-only sharing the same btrfs_reserve_extent() and
-insert_reserved_file_extent() calls.
-
-Extract compressed write into its dedicated helper so that the fallback
-logic is much easier to understand.
+And test both no-holes and ^no-holes features.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- mkfs/rootdir.c | 249 ++++++++++++++++++++++++++++---------------------
- 1 file changed, 141 insertions(+), 108 deletions(-)
+ tests/mkfs-tests/043-fiemap-detection/test.sh | 64 +++++++++++++++++++
+ 1 file changed, 64 insertions(+)
+ create mode 100755 tests/mkfs-tests/043-fiemap-detection/test.sh
 
-diff --git a/mkfs/rootdir.c b/mkfs/rootdir.c
-index 62f7c57c5e4a..5c0bc012a354 100644
---- a/mkfs/rootdir.c
-+++ b/mkfs/rootdir.c
-@@ -779,6 +779,125 @@ static int do_reflink_write(struct btrfs_fs_info *info,
- 	return 0;
- }
- 
-+static s32 read_from_source(const struct btrfs_fs_info *fs_info,
-+			    const char *path, int fd,
-+			    char *buf, u64 filepos, u32 length)
+diff --git a/tests/mkfs-tests/043-fiemap-detection/test.sh b/tests/mkfs-tests/043-fiemap-detection/test.sh
+new file mode 100755
+index 000000000000..bf6b6f79cd9a
+--- /dev/null
++++ b/tests/mkfs-tests/043-fiemap-detection/test.sh
+@@ -0,0 +1,64 @@
++#!/bin/bash
++# Test basic hole detection features
++
++source "$TEST_TOP/common" || exit
++
++check_prereq mkfs.btrfs
++check_prereq btrfs
++check_prereq fssum
++check_global_prereq xfs_io
++
++if ! [ -f "/sys/fs/btrfs/features/supported_sectorsizes" ]; then
++	_not_run "kernel support for different block sizes missing"
++fi
++
++setup_root_helper
++
++# tmpdir is normally inside /tmp, which can be tmpfs on a lot of distro.
++# Unfortunately tmpfs doesn't support fiemap ioctl.
++# So we need another btrfs as rootdir.
++setup_loopdevs 2
++prepare_loopdevs
++
++real_dev=${loopdevs[1]}
++rootdir_dev=${loopdevs[2]}
++fssum_prog="$INTERNAL_BIN/fssum"
++tmp=$(_mktemp_dir mkfs-fiemap)
++
++blocksize_supported=false
++for bs in $(cat /sys/fs/btrfs/features/supported_sectorsizes); do
++	if [ "$bs" == "4096" ]; then
++		blocksize_supported=true
++	fi
++done
++
++if [ "$blocksize_supported" != "true" ]; then
++	_not_run "kernel support for mounting blocksize 4096 is missing"
++fi
++
++run_check $SUDO_HELPER "$TOP/mkfs.btrfs" -f -s 4k -O no-holes "$rootdir_dev"
++run_check $SUDO_HELPER mount "$rootdir_dev" "$TEST_MNT"
++
++# Create an inode with holes, preallocated and regular file extents.
++run_check $SUDO_HELPER xfs_io -f \
++	-c "pwrite 16k 16k" -c "falloc 64k 16k" -c "pwrite 80k 4k" -c sync \
++	"$TEST_MNT/foobar"
++run_check $SUDO_HELPER $fssum_prog -n -d -s -f -w "$tmp/fssum" "$TEST_MNT"
++run_check $SUDO_HELPER umount "$TEST_MNT"
++
++workload()
 +{
-+	u32 cur = 0;
++	run_check $SUDO_HELPER mount "$rootdir_dev" "$TEST_MNT"
++	run_check $SUDO_HELPER "$TOP/mkfs.btrfs" -f --rootdir "$TEST_MNT" "$real_dev" $@
++	run_check $SUDO_HELPER umount "$TEST_MNT"
 +
-+	UASSERT(IS_ALIGNED(filepos, fs_info->sectorsize));
-+	UASSERT(length <= MAX_EXTENT_SIZE);
-+
-+	while (cur < length) {
-+		ssize_t ret;
-+
-+		ret = pread(fd, buf + cur, length - cur, filepos + cur);
-+		if (ret < 0) {
-+			error("cannot read %s at offset %llu length %u: %m",
-+			      path, filepos + cur, length - cur);
-+			return -errno;
-+		}
-+		cur += ret;
-+	}
-+	return length;
++	run_check $SUDO_HELPER "$TOP/btrfs" check "$real_dev"
++	run_check $SUDO_HELPER mount "$real_dev" "$TEST_MNT"
++	run_check $SUDO_HELPER $fssum_prog -r "$tmp/fssum" "$TEST_MNT"
++	run_check $SUDO_HELPER umount "$TEST_MNT"
 +}
 +
-+/*
-+ * Return >0 for the number of bytes read from @source and submitted as
-+ * compressed write.
-+ * Return <0 for errors, including non-fatal ones, e.g. -E2BIG if compression
-+ * ratio is bad.
-+ */
-+static int try_compressed_write(struct btrfs_trans_handle *trans,
-+				struct btrfs_root *root,
-+				struct btrfs_inode_item *btrfs_inode,
-+				u64 objectid,
-+				const struct source_descriptor *source,
-+				u64 filepos, u32 length)
-+{
-+	struct btrfs_fs_info *fs_info = root->fs_info;
-+	struct btrfs_file_extent_item stack_fi = { 0 };
-+	struct btrfs_key key;
-+	const u32 blocksize = fs_info->sectorsize;
-+	const bool first_sector = !(btrfs_stack_inode_flags(btrfs_inode) &
-+				    BTRFS_INODE_COMPRESS);
-+	u64 inode_flags = btrfs_stack_inode_flags(btrfs_inode);
-+	u64 sb_flags = btrfs_super_incompat_flags(fs_info->super_copy);
-+	u32 to_write;
-+	ssize_t comp_ret;
-+	int ret;
-+
-+	UASSERT(length > 0);
-+	length = min_t(u32, length, BTRFS_MAX_COMPRESSED);
-+	if (length <= root->fs_info->sectorsize)
-+		return -E2BIG;
-+	ret = read_from_source(root->fs_info, source->path_name, source->fd,
-+			       source->buf, filepos, length);
-+	if (ret < 0)
-+		return ret;
-+	switch (g_compression) {
-+	case BTRFS_COMPRESS_ZLIB:
-+		comp_ret = zlib_compress_extent(first_sector, blocksize,
-+						source->buf, length,
-+						source->comp_buf);
-+		break;
-+#if COMPRESSION_LZO
-+	case BTRFS_COMPRESS_LZO:
-+		sb_flags |= BTRFS_FEATURE_INCOMPAT_COMPRESS_LZO;
-+		comp_ret = lzo_compress_extent(blocksize, source->buf,
-+					       length, source->comp_buf,
-+					       source->wrkmem);
-+		break;
-+#endif
-+#if COMPRESSION_ZSTD
-+	case BTRFS_COMPRESS_ZSTD:
-+		sb_flags |= BTRFS_FEATURE_INCOMPAT_COMPRESS_ZSTD;
-+		comp_ret = zstd_compress_extent(first_sector, blocksize,
-+						source->buf, length,
-+						source->comp_buf);
-+		break;
-+#endif
-+	default:
-+		comp_ret = -EINVAL;
-+		break;
-+	}
-+	if (comp_ret < 0)
-+		return comp_ret;
-+
-+	to_write = round_up(comp_ret, blocksize);
-+	memset(source->comp_buf + comp_ret, 0, to_write - comp_ret);
-+	inode_flags |= BTRFS_INODE_COMPRESS;
-+	btrfs_set_stack_inode_flags(btrfs_inode, inode_flags);
-+	btrfs_set_super_incompat_flags(fs_info->super_copy, sb_flags);
-+
-+	ret = btrfs_reserve_extent(trans, root, to_write, 0, 0, (u64)-1, &key, 1);
-+	if (ret < 0)
-+		return ret;
-+	ret = write_data_to_disk(fs_info, source->comp_buf, key.objectid, to_write);
-+	if (ret < 0)
-+		return ret;
-+	for (unsigned int i = 0; i < to_write / blocksize; i++) {
-+		ret = btrfs_csum_file_block(trans, key.objectid + (i * blocksize),
-+				BTRFS_EXTENT_CSUM_OBJECTID,
-+				root->fs_info->csum_type,
-+				source->comp_buf + (i * blocksize));
-+		if (ret)
-+			return ret;
-+	}
-+	btrfs_set_stack_file_extent_type(&stack_fi, BTRFS_FILE_EXTENT_REG);
-+	btrfs_set_stack_file_extent_disk_bytenr(&stack_fi, key.objectid);
-+	btrfs_set_stack_file_extent_disk_num_bytes(&stack_fi, to_write);
-+	btrfs_set_stack_file_extent_num_bytes(&stack_fi, round_up(length, blocksize));
-+	btrfs_set_stack_file_extent_ram_bytes(&stack_fi, round_up(length, blocksize));
-+	btrfs_set_stack_file_extent_compression(&stack_fi, g_compression);
-+
-+	ret = insert_reserved_file_extent(trans, root, objectid, btrfs_inode,
-+					  filepos, &stack_fi);
-+	if (ret < 0)
-+		return ret;
-+	return length;
-+}
-+
- static int add_file_item_extent(struct btrfs_trans_handle *trans,
- 				struct btrfs_root *root,
- 				struct btrfs_inode_item *btrfs_inode,
-@@ -788,14 +907,13 @@ static int add_file_item_extent(struct btrfs_trans_handle *trans,
- {
- 	int ret;
- 	u32 sectorsize = root->fs_info->sectorsize;
--	u64 bytes_read, first_block, to_read, to_write;
-+	u64 first_block, to_read, to_write;
- 	struct btrfs_key key;
- 	struct btrfs_file_extent_item stack_fi = { 0 };
- 	u64 buf_size;
- 	char *write_buf;
- 	bool do_comp = g_compression != BTRFS_COMPRESS_NONE;
- 	bool datasum = true;
--	ssize_t comp_ret;
- 	u64 flags = btrfs_stack_inode_flags(btrfs_inode);
- 	off_t next;
- 
-@@ -835,120 +953,35 @@ static int add_file_item_extent(struct btrfs_trans_handle *trans,
- 	if (next == (off_t)-1 || !IS_ALIGNED(next, sectorsize) || next > source->size)
- 		next = source->size;
- 
--	buf_size = do_comp ? BTRFS_MAX_COMPRESSED : MAX_EXTENT_SIZE;
--	to_read = min_t(u64, file_pos + buf_size, next) - file_pos;
--	bytes_read = 0;
--
--	while (bytes_read < to_read) {
--		ssize_t ret_read;
--
--		ret_read = pread(source->fd, source->buf + bytes_read,
--				 to_read - bytes_read, file_pos + bytes_read);
--		if (ret_read < 0) {
--			error("cannot read %s at offset %llu length %llu: %m",
--			      source->path_name, file_pos + bytes_read,
--			      to_read - bytes_read);
--			return -errno;
--		}
--
--		bytes_read += ret_read;
--	}
--
--	if (bytes_read <= sectorsize)
--		do_comp = false;
--
--	if (do_comp) {
--		bool first_sector = !(flags & BTRFS_INODE_COMPRESS);
--
--		switch (g_compression) {
--		case BTRFS_COMPRESS_ZLIB:
--			comp_ret = zlib_compress_extent(first_sector, sectorsize,
--							source->buf, bytes_read,
--							source->comp_buf);
--			break;
--#if COMPRESSION_LZO
--		case BTRFS_COMPRESS_LZO:
--			comp_ret = lzo_compress_extent(sectorsize, source->buf,
--						       bytes_read,
--						       source->comp_buf,
--						       source->wrkmem);
--			break;
--#endif
--#if COMPRESSION_ZSTD
--		case BTRFS_COMPRESS_ZSTD:
--			comp_ret = zstd_compress_extent(first_sector, sectorsize,
--							source->buf, bytes_read,
--							source->comp_buf);
--			break;
--#endif
--		default:
--			comp_ret = -EINVAL;
--			break;
--		}
--
-+	if (do_comp && next - file_pos > sectorsize) {
-+		ret = try_compressed_write(trans, root, btrfs_inode, objectid,
-+					   source, file_pos, next - file_pos);
-+		if (ret > 0)
-+			return ret;
-+		if (ret < 0 && ret != -E2BIG)
-+			return ret;
- 		/*
--		 * If the function returned -E2BIG, the extent is incompressible.
--		 * If this is the first sector, add the nocompress flag,
--		 * increase the buffer size, and read the rest of the extent.
-+		 * If the inode doesn't have INODE_COMPRESS flag set, it means
-+		 * the compression failed at the first block.
-+		 * Set the NOCOMPRESS flag indicating bad compression ratio.
- 		 */
--		if (comp_ret == -E2BIG)
--			do_comp = false;
--		else if (comp_ret < 0)
--			return comp_ret;
--
--		if (comp_ret == -E2BIG && first_sector) {
-+		if (!(btrfs_stack_inode_flags(btrfs_inode) & BTRFS_INODE_COMPRESS)) {
- 			flags |= BTRFS_INODE_NOCOMPRESS;
- 			btrfs_set_stack_inode_flags(btrfs_inode, flags);
--
--			buf_size = MAX_EXTENT_SIZE;
--			to_read = min_t(u64, file_pos + buf_size, next) - file_pos;
--
--			while (bytes_read < to_read) {
--				ssize_t ret_read;
--
--				ret_read = pread(source->fd,
--						 source->buf + bytes_read,
--						 to_read - bytes_read,
--						 file_pos + bytes_read);
--				if (ret_read < 0) {
--					error("cannot read %s at offset %llu length %llu: %m",
--					      source->path_name,
--					      file_pos + bytes_read,
--					      to_read - bytes_read);
--					return -errno;
--				}
--
--				bytes_read += ret_read;
--			}
- 		}
-+		/* Fallback to other methods. */
- 	}
- 
--	if (do_comp) {
--		u64 features;
-+	buf_size = MAX_EXTENT_SIZE;
-+	to_read = min_t(u64, file_pos + buf_size, next) - file_pos;
-+	ret = read_from_source(root->fs_info, source->path_name, source->fd,
-+			       source->buf, file_pos, to_read);
-+	if (ret < 0)
-+		return ret;
- 
--		to_write = round_up(comp_ret, sectorsize);
--		write_buf = source->comp_buf;
--		memset(write_buf + comp_ret, 0, to_write - comp_ret);
--
--		flags |= BTRFS_INODE_COMPRESS;
--		btrfs_set_stack_inode_flags(btrfs_inode, flags);
--
--		if (g_compression == BTRFS_COMPRESS_ZSTD) {
--			features = btrfs_super_incompat_flags(trans->fs_info->super_copy);
--			features |= BTRFS_FEATURE_INCOMPAT_COMPRESS_ZSTD;
--			btrfs_set_super_incompat_flags(trans->fs_info->super_copy,
--						       features);
--		} else if (g_compression == BTRFS_COMPRESS_LZO) {
--			features = btrfs_super_incompat_flags(trans->fs_info->super_copy);
--			features |= BTRFS_FEATURE_INCOMPAT_COMPRESS_LZO;
--			btrfs_set_super_incompat_flags(trans->fs_info->super_copy,
--						       features);
--		}
--	} else {
--		to_write = round_up(to_read, sectorsize);
--		write_buf = source->buf;
--		memset(write_buf + to_read, 0, to_write - to_read);
--	}
-+	to_write = round_up(to_read, sectorsize);
-+	write_buf = source->buf;
-+	memset(write_buf + to_read, 0, to_write - to_read);
- 
- 	ret = btrfs_reserve_extent(trans, root, to_write, 0, 0,
- 				   (u64)-1, &key, 1);
++workload -O no-holes
++workload -O ^no-holes
++run_check rm -rf -- "$tmp"
++cleanup_loopdevs
 -- 
 2.53.0
 

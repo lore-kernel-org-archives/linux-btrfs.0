@@ -1,197 +1,203 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from OSPPR02CU001.outbound.protection.outlook.com (mail-norwayeastazon11023135.outbound.protection.outlook.com [40.107.159.135])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 15C9823E25B
-	for <linux-btrfs@vger.kernel.org>; Fri,  3 Apr 2026 04:33:51 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775190833; cv=none; b=hi9WOnTtBxOD5sl9bRPGCzER5483PbVTcw83iC8ab2/puVikpxGkm749FVbAG8tNf9hPgBo7EVky2+zf83MAFh2FS26XQnriODtD1CEDi3dqex23IdtU/oY4yFiO2s1tIBMXldsgqCwokrOY5LJr0FIYxHJcqhEZEeV2BmUbJqs=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1775190833; c=relaxed/simple;
-	bh=X5eHUTtrTasC5G1KmZcPFZs4cSwQxwPXfmw5d5NQhaU=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=ewgmK1kfTkA5gvIFY43sTVZ3Xwlgf/UAlfFFKUNd2Ct4onxod0/7cq9lagzA2e60FiKkafyhXHAiTBl77w1OB+NZy92LYd2VzbQKawp6EQoN8csj3WfTw15VlbvtFQc+pprDQXJzXEQugT0PHoueSZ0TcpzAFu1AhpKMzBJvCbk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=jRTaPTrr; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=jRTaPTrr; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7E0682FBDE0
+	for <linux-btrfs@vger.kernel.org>; Fri,  3 Apr 2026 06:14:15 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=40.107.159.135
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1775196862; cv=fail; b=EACu3J+or3KWXa8BTuji3xJF/WSvxk87889/aFu5zSbuJA0xVSmuPavH6Bffe6qrvScixOWJPTVVajqNzNP0zY+FV3jy1zm0kMTAlb5t4cOVHIBa8CxNbRy0XSr0oIyDwudzFR4kzriz2PXRTpkCk8R3wbaWyJjb2ruwqYHnPEM=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1775196862; c=relaxed/simple;
+	bh=tm/6C12sHTfXQV/ejLWxLFqLrXw0Z2536Z/9ciDaYJE=;
+	h=From:To:Subject:Date:Message-ID:Content-Type:MIME-Version; b=Rbr7Mdn6Ch+UodU+bVVsafTei3RcFr5Yrdw9Z0toaDFX9NuKg5xOB9PPbcQcTLTp7ZCzsCeHYu+++3CVko1QY7iFX9qwqp6x7uQa0rHPCQadBRP5M3bIQKxV2UkQarmbI+2Y+fDmqquhD1jeorXXa8oV/B4tLY5qWomkf8o6DP8=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=cyber64.com; spf=pass smtp.mailfrom=cyber64.com; dkim=pass (2048-bit key) header.d=cyber64.com header.i=@cyber64.com header.b=MA3X05Tz; arc=fail smtp.client-ip=40.107.159.135
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=cyber64.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=cyber64.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="jRTaPTrr";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="jRTaPTrr"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 2E0004D214
-	for <linux-btrfs@vger.kernel.org>; Fri,  3 Apr 2026 04:33:26 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1775190806; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=ySXuAI63ielpiWeevFFm8QHrY3n+SM8buchDmtX0+x4=;
-	b=jRTaPTrr8tKuVJlvc5BcWtIcQY/GYfEkVfTpJeEAOqsf/5DvW9KDqEhFkROzhUS7XAyTpI
-	HUzCbC0ZFg3oF7rgCwhb/aJUxPwN7lrUx8v9TTdGxhcbrs/ljDpiNs+PMI/+7HXn2jKU9d
-	pEYgLojPcL4Qi0XcnCm0kqVX/V7iaGY=
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=jRTaPTrr
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1775190806; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=ySXuAI63ielpiWeevFFm8QHrY3n+SM8buchDmtX0+x4=;
-	b=jRTaPTrr8tKuVJlvc5BcWtIcQY/GYfEkVfTpJeEAOqsf/5DvW9KDqEhFkROzhUS7XAyTpI
-	HUzCbC0ZFg3oF7rgCwhb/aJUxPwN7lrUx8v9TTdGxhcbrs/ljDpiNs+PMI/+7HXn2jKU9d
-	pEYgLojPcL4Qi0XcnCm0kqVX/V7iaGY=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 6DDC54A0B0
-	for <linux-btrfs@vger.kernel.org>; Fri,  3 Apr 2026 04:33:25 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id CDaNDBVDz2nTYQAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Fri, 03 Apr 2026 04:33:25 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 6/6] btrfs-progs: mkfs-tests: add a new test case for fiemap based detection
-Date: Fri,  3 Apr 2026 15:03:00 +1030
-Message-ID: <aa6e7dbc740dd836a75418e0dababc3010dbd8b7.1775190565.git.wqu@suse.com>
-X-Mailer: git-send-email 2.53.0
-In-Reply-To: <cover.1775190565.git.wqu@suse.com>
-References: <cover.1775190565.git.wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=cyber64.com header.i=@cyber64.com header.b="MA3X05Tz"
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
+ b=UI7ljJTbJhWyDTgaADNe2CESGhheDnSEhgf1tjdbg7Bycb25R5xIgpuLVgecqWVgoufl2oyHm7MfVaGvLIC8N0B9eH/X0T22ItGLKfV+IWkAE8q7z4YDqC0Zk6VKK1FboPbQQzODzUqnouCcgf9uFU6EpIDHC56o7tj/jAInH7uOXjgNWBs100ARnc65j2/LvOq0ZeQdshNtMYlqTvKlSw6v4nIqZoo2exejxeWOS8r37fuUWu8ReyNjidSeaLPnZwB1KI4QPx6CCNYYQqan6KAXI83xkDHZY5aNkS7RZJePfnPmDqAS2VkdVr4oj7c+JJsKbAs6+JxNzvbo4snwXA==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector10001;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=tm/6C12sHTfXQV/ejLWxLFqLrXw0Z2536Z/9ciDaYJE=;
+ b=NGmLIAjhUBBohV4MZDFyZKzWeZ5iV0dOuGakEyLjb6AnHxtgtMb6Syit42UEnXIB3CmvZYClH7yd26onKf0y2iuQnY05bjEtas8m5VMH94tuL6MfNWm0DJJ92m3UdutXQPP+8WFQj9iJjoUIWTIQlY+E796zNnNqzUVabtav/jRFaaVePuBU2gq/buu/DpC5xqfTPwQzew6TaNBUpxgZ31ujuhFsUV05Jv0JmyjlMlLNIK3vQ1hJPEjC78bN3PQejgeKIyPEf0BzC3S64eTmywi4dx2839/B3ujcg/fO37nDHJLWIE/QsiUHGpPZsqEPaeOXkHwBvdYVr8SEQguwRA==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=cyber64.com; dmarc=pass action=none header.from=cyber64.com;
+ dkim=pass header.d=cyber64.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=cyber64.com;
+ s=selector2;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=tm/6C12sHTfXQV/ejLWxLFqLrXw0Z2536Z/9ciDaYJE=;
+ b=MA3X05Tzi1brWYFHAHST4l0qG3uCAABCpfbaDT+779erUURDUBuawL9V8g05ueF80ZqWzZkbra+8bM4iarJWgRqh9JjB/3OH+cDU9A+mew/zeYWICORXHSTcfL1hEXqwua4Ym2y5dtnuzVSIKwl76p6qWpgE8LQEEz7m703n5UOKt5mN1kE2LYvQxYXxTz585OuH6ZMBCmDW2J6i8luk4qF9sp+sGueuFJ+wxMVpf7utXbCnR5bY8dmhOUzaYoC1JZjPjEUq8Mlg3PKWRekss1C1Kky2ursyIq7JMwTiBO4+kdFMNq1Ud7yVilaFnRJvrSWLpei4Gb1t6VYFEbEcpg==
+Received: from AS2PR10MB7659.EURPRD10.PROD.OUTLOOK.COM (2603:10a6:20b:643::14)
+ by AS1PR10MB5168.EURPRD10.PROD.OUTLOOK.COM (2603:10a6:20b:4aa::8) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.9769.17; Fri, 3 Apr
+ 2026 06:14:12 +0000
+Received: from AS2PR10MB7659.EURPRD10.PROD.OUTLOOK.COM
+ ([fe80::ddd1:c316:c6ae:9986]) by AS2PR10MB7659.EURPRD10.PROD.OUTLOOK.COM
+ ([fe80::ddd1:c316:c6ae:9986%6]) with mapi id 15.20.9769.020; Fri, 3 Apr 2026
+ 06:14:12 +0000
+From: =?Windows-1252?Q?Kristijan_Ve=9Aligaj?= <kristijan.vesligaj@cyber64.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Asking for help regarding data recovery
+Thread-Topic: Asking for help regarding data recovery
+Thread-Index: AQHcwzEXpRObbf+awU+sKbRLdesVyQ==
+Date: Fri, 3 Apr 2026 06:14:12 +0000
+Message-ID: <82FA2B24-4A3E-4880-B91C-417D4ED9D0D1@cyber64.com>
+Accept-Language: en-GB, en-US
+Content-Language: en-US
+X-MS-Has-Attach:
+X-MS-TNEF-Correlator:
+authentication-results: dkim=none (message not signed)
+ header.d=none;dmarc=none action=none header.from=cyber64.com;
+x-ms-publictraffictype: Email
+x-ms-traffictypediagnostic: AS2PR10MB7659:EE_|AS1PR10MB5168:EE_
+x-ms-office365-filtering-correlation-id: d8fe6c13-955a-4625-80b0-08de91483994
+x-ms-exchange-senderadcheck: 1
+x-ms-exchange-antispam-relay: 0
+x-microsoft-antispam:
+ BCL:0;ARA:13230040|1800799024|376014|366016|38070700021|18002099003|56012099003;
+x-microsoft-antispam-message-info:
+ EvwLp7sTca66eLIElB2KNrvnHbCkHj4ADADSnQJfvj1FPwAwwmK4zT4odiGBRbijgMC1kqsVfo/dWoA/YMHU81KRDJubGhSk5yle5yhNgkYi3plU8FDUc52xJWM9L7aDnXhDPzOHU7ZPFcfashKPis+/usd2jd7JZrpUxnkzTKjALZl/9HFGFaBHfYm2oAcetwI7ebfpXLwCe0qRkRYtdVEWs2SucR0ZZCm1JoQOY9c+figKnZa2SIkqDsJYUXOaHdPi8S+XspMM2O+UhIEm/ZLhZTCYE/70UTZ/xo3j2znfRSMs6K+c6NPbR4Dsh0X99iWS2sXOzgMDIO0tNpdWsgheH77bbzvT9xjuu2GrnIoCsIrm13laCa/rsYd/xQvF4qn8orNWQE1gMhqiM8WK+H1xrbZSZrKOzCJcLKLncfpWco/pENLJtYWpx/ZBULH9RUnPS60aE/DOsv8Iw69SUKnoBEkswdj+lyM9qfaBpGBB0D+qJkps9UkcfMmhTIGYOPtfnyt81eBk9yPcyFnjo2SnQdYxQMnfakWTteLDJwgzvt/CmfCHyBBHGj2vfDm03RMbB5iGK+HlGCBlOeL9dHI7GTLYaLLkDAqPpc9PNQ8k6X6EaNhfDOGQxII3AIAvwCyt4rZroGhG1c4j7ACO0TSWrcrI2CDVM0EMYEjsjmxuIyHcYnrji6ujTQGrUuo2wG95U6KIOBxdhzDOE8OcpyJaPRmNeaLO06WvJ9piAT9TP9LGdTPijHq2FP8GffIKjHbm6398ihFEa7mCcZLIndJSG8iWb5FL5AUveL9ZcCE=
+x-forefront-antispam-report:
+ CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:AS2PR10MB7659.EURPRD10.PROD.OUTLOOK.COM;PTR:;CAT:NONE;SFS:(13230040)(1800799024)(376014)(366016)(38070700021)(18002099003)(56012099003);DIR:OUT;SFP:1102;
+x-ms-exchange-antispam-messagedata-chunkcount: 1
+x-ms-exchange-antispam-messagedata-0:
+ =?Windows-1252?Q?bdyWVb6fqmTrw90GccAKaYiDPZ2a7cBQhz0z/Ef4DAr2+fxaSR3bj1/h?=
+ =?Windows-1252?Q?O5Rsnmf25dD69npMvcgLa1wp83nhhJeXHLadI1ZHFB+af6lGNLrzoKx7?=
+ =?Windows-1252?Q?KN1BMDPBThaxGck+eVY4EzbirTLMhy/SSavER+oXw60lBon+AqJlRk6S?=
+ =?Windows-1252?Q?gSsO2blk5cFKCy8mmT3xYt6ZguuGt0fdzCvWRVwM/smRpnXnc4kNgjz+?=
+ =?Windows-1252?Q?2JcZDVvHkGfsnT4kaclltJDsarzDbdHfcKbabCL6FxQqFFRQlnSTaV3W?=
+ =?Windows-1252?Q?52/L/rdSCgwqtT3uQxSGLHUHuq6m5zxdHHQkwFvFNrOhSaTUuKs2KtRZ?=
+ =?Windows-1252?Q?QQ93gWwi9rShl05M1Gk41f/wBsRqnd8ShJf76Wvbkf/9I2fs62DV1wuf?=
+ =?Windows-1252?Q?35wXKnXTmAlI4doyq/jpFhcGn3RUSmmNFLdBS8wjlJSCYmLnHvXUGZHO?=
+ =?Windows-1252?Q?xW92ebSbhajdpofdj2ZhkbmHI/znkzopRE/+CdYEjTWrRt5uteWQocuL?=
+ =?Windows-1252?Q?jplE5jSZlIj+4SnaXT3IhIDd14e/Aq8O+Uzoirvg8DltOpiK1U49y7Di?=
+ =?Windows-1252?Q?Q9SnwhVHxnhzw/V/w9MjrDYM1dPbcUoypcVn0kurg7wCA0YxmN5G+QE4?=
+ =?Windows-1252?Q?pKOI4BuYuEBkWNV16zo5RgYlaLuNJP/5PrZxE4p48CLKdkiu3pulWQKX?=
+ =?Windows-1252?Q?UxSL4I8/HEuvDLyl8K6fRo2CxKTKICUJcGnV69kbi78H8CgzBwWQRPnR?=
+ =?Windows-1252?Q?DiWzCWmlfyQo9iDKahJSio3v6Z0FnF1wYihJP8LKsy7yIwwpklpYUfxr?=
+ =?Windows-1252?Q?6O13pSJOnRCoB+2X9rbda6Pw2ZZCDHx47uORIOONGROpgvpWCpjkqcmf?=
+ =?Windows-1252?Q?qGgn9sXiMyjQXyCOUMOxOb3e90H4g6Wbgk+Q1rJX+6NncpJAVmFxH4Q1?=
+ =?Windows-1252?Q?Stlc4zVjAzk8FSKWwLZ1e6aWO7Imq40/FeET69yzxR01nfPIKtPnFo35?=
+ =?Windows-1252?Q?ny9wMx/w69usoa/Wro+AsHPZHU9QClpSvpTsHRCTV128oBRW4PlqANhW?=
+ =?Windows-1252?Q?ABD6L4rDr5wngeCCwPA84I0jDbK6QXBuraw6N1HFbJkJIJxxfYphIEQD?=
+ =?Windows-1252?Q?CVMPxJm1zor8pJ5Gvyw06+OHdvxkL0jqqI95H/fIv1efqhPhNYGonocK?=
+ =?Windows-1252?Q?VbhCGFC/zG8a5jpsFPf1VVa1a7Vqbg2jXZ7ICDaifNjGa2WD4nzGfJDg?=
+ =?Windows-1252?Q?GQ/F7ktHr+ZHK0fxpSkI9g2ENYsJ81C4gbEVWB86W0pKhI74+bc9I0Y9?=
+ =?Windows-1252?Q?dQTyAAnyztwNKsUsBn1xfJtrZ+grNSbDwnKeQpW1U3zsKOp2THzZ6Xyk?=
+ =?Windows-1252?Q?p10Gezf4T5x5s2vUpC+hap4V/r7V3yPTRVtJ5OAwMpOu+Qlkbm3i8+mx?=
+ =?Windows-1252?Q?aLWbFeDK8O6sKIMGmikTzEICmG6ZT0Juilt047xYToSVd0EePEn/WpAn?=
+ =?Windows-1252?Q?8Q29l9+jZgiBHzJUP3NiJj87kiN4T0uVKSNTWu6n1SIY88u9vsksCqi7?=
+ =?Windows-1252?Q?lgwzBc9bSGsGwqRncqs240xgiZOdFn05i0DwUwRQJQppdXLXXaiYcwmr?=
+ =?Windows-1252?Q?lTp2BxO31yYBF+87ua3tRbZ5GEFN/F5++KTMPr8vlLxlwEKT+vbgDjDh?=
+ =?Windows-1252?Q?RqLojb2Y0zZHkz8DMhDP/Y/aRi2ouT12934lQH3tCwXZuEKY1Xw2GmID?=
+ =?Windows-1252?Q?FoqrxVY7QjBlpnBic9QWPjU8oloM9vzWpm79rU03fcha0r5K6R+v2YwY?=
+ =?Windows-1252?Q?lBAfm/OROx3tGQEorIGeNHgooZaP9oRT/1ejdKOi+bc6lzVyAROg4VYk?=
+ =?Windows-1252?Q?mTo23H9DWGgcNxLPUkC2EeV9/oY5PjCimKI=3D?=
+Content-Type: text/plain; charset="Windows-1252"
+Content-ID: <F7BC2DC1B5BDB8488A23D3A83B55E01B@EURPRD10.PROD.OUTLOOK.COM>
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	ARC_NA(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCPT_COUNT_ONE(0.00)[1];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RCVD_TLS_ALL(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	TO_DN_NONE(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received,2a07:de40:b281:104:10:150:64:97:from];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.com:mid,suse.com:dkim,suse.com:email]
-X-Rspamd-Action: no action
-X-Spam-Flag: NO
-X-Spam-Score: -3.01
-X-Spam-Level: 
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Rspamd-Queue-Id: 2E0004D214
+X-OriginatorOrg: cyber64.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-AuthSource: AS2PR10MB7659.EURPRD10.PROD.OUTLOOK.COM
+X-MS-Exchange-CrossTenant-Network-Message-Id: d8fe6c13-955a-4625-80b0-08de91483994
+X-MS-Exchange-CrossTenant-originalarrivaltime: 03 Apr 2026 06:14:12.2607
+ (UTC)
+X-MS-Exchange-CrossTenant-fromentityheader: Hosted
+X-MS-Exchange-CrossTenant-id: 6a85943c-df24-4bf2-b00c-809c034a3197
+X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
+X-MS-Exchange-CrossTenant-userprincipalname: 7bLumD/a+GqWi41Z6sTV2vatBb5KwD2uvb9Igsr7gxZfojveFCVtn10QpUI+U6yZ4ZsfYn3GWk2SjUxeQLSZYp4TqkPfJQ/IGhUhj4ZcwFs=
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: AS1PR10MB5168
 
-The new test case will create an inode on btrfs, with the following
-layout:
+Hello!
+Our company is using Proxmox Virtual Environment for internal tools & servi=
+ces.
+Today I accidentally restored our main VM containing various business-valua=
+ble services and data to a snapshot that is ~4months old.
 
-- [0, 16K): hole
-- [16K, 32K): regular
-- [32K, 64K): hole
-- [64K, 80K): prealloc
-- [80K, 84K): regular
+Summary
+Our company is using Proxmox Virtual Environment as a hypervisor for VMs th=
+at contain our internal tools & services.
+Today I accidentally restored our main VM containing various business-valua=
+ble services and data to a snapshot that is ~4months old.
+It was a "fat finger error" - I was trigger-happy with the restore function=
+ality and misclicked it with the wrong VM selected - the old VM instead of =
+the newly-provisioned VM. It happened during 1on1 session while onboarding =
+a new colleague and demonstrating how to provision the VMs.
+The backups were temporarily disabled since we didn't yet set up any kind o=
+f external network storage nor Proxmox Backup Server (PBS) instance, so the=
+ reasoning is not to bother with scheduled backups, since the 3-2-1 rule wo=
+uldn't be satisfied anyways (no off-site storage available).
+Moreover, snapshots were only created on a manual discretionary basis befor=
+e major intrusive actions on VMs.
+Once we realized the mistake, we turned off the physical server relatively =
+quickly and booted to LiveCD environment.
 
-Using fiemap based detection, we should be able to create a btrfs with
-exactly the same layout, verified by fssum with "-s" option.
+Setup
+On few of our PVE nodes (that are, ofc, physical servers) we have the follo=
+wing setup:
+* 2 identical NVMe SSD disks (1TB each) per physical server
+* partioned via GPT
+* dedicated root partition per disk with FDE set up (using LUKS)
+* Btrfs RAID1 set up that uses 2 mentioned LUKS devices
+* Debian installed on top of the assembled Btrfs RAID1 filesystem
+* PVE installed in accordance with their guide
 
-And test both no-holes and ^no-holes features.
+Context
+With this setup, it is possible to enable Btrfs storage type in Proxmox, wh=
+ich relies on Btrfs-native features for creating instant VM snapshots, back=
+ups etc.
+What is interesting is that this way, behind the scenes, PVE relies on Btrf=
+s subvolumes & subvolume snapshots to allow for an instant "zero-cost" snap=
+shotting.
+For example, if you create a VM, it stores its disk in a raw format, but wi=
+th sparse attribute support enabled (e.g. think of "thin-provisioned" virtu=
+al disk). This results in the following Btrfs subvolume to be created:
+`/var/lib/vz/images/<vm-id>/vm-<id>-disk-<num>` 1
+And conversely, its associated disk file:
+`/var/lib/vz/images/<vm-id>/vm-<id>-disk-<num>/disk.raw`
+Moreover, if you create a snapshot of a VM, it relies on the following subv=
+olume(s) to be created:
+`/var/lib/vz/images/<vm-id>/vm-<id>-disk-<num>@<snap>` 2
+The disk file is then stored in the same fashion:
+`/var/lib/vz/images/<vm-id>/vm-<id>-disk-<num>@<snap>`
+To my understanding, what happens on a VM snapshot restore, in terms of und=
+erlying Btrfs storage implementation logic, and relevant Btrfs subvolumes l=
+ogic is that the former 1 is deleted and a new Btrfs subvolume (`R/W` Btrfs=
+ subvolume snapshot to be precise) is created from the latter 2.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- tests/mkfs-tests/043-fiemap-detection/test.sh | 64 +++++++++++++++++++
- 1 file changed, 64 insertions(+)
- create mode 100755 tests/mkfs-tests/043-fiemap-detection/test.sh
+The Problem
+Due to the implications and potential damages of the actions, it is very cr=
+itical for us to restore the aforementioned VM's disk file and this assumes=
+ locating the deleted Btrfs subvolume and recovering it.
+However, the typical `btrfs restore` approach assumes naively locating all =
+of the latest dangling / unreferenced root nodes that are not yet overwritt=
+en via `btrfs-find-root`, figuring out their generation number, and hoping =
+that the generation number of the state at which the deletion happened is s=
+ame or newer than the oldest root node generation number available.
+We have yet to confirm that this is the case, but at first it seems as if t=
+he oldest available generation number is newer than the generation number o=
+f the last presence of the critical Btrfs subvolume of interest.
+What is important to note is that the machine in question was powered off b=
+riefly ~25min after the incident and that the Btrfs filesystem in question =
+has the default commit time of 30 seconds.
+In the upcoming edit, we will post more details regarding the low-level app=
+roach we are trying that involves assembling the child trees of Btrfs subvo=
+lume by locating its own fs tree root, since the top-level / root tree root=
+ might not its reference anymore.
 
-diff --git a/tests/mkfs-tests/043-fiemap-detection/test.sh b/tests/mkfs-tests/043-fiemap-detection/test.sh
-new file mode 100755
-index 000000000000..bf6b6f79cd9a
---- /dev/null
-+++ b/tests/mkfs-tests/043-fiemap-detection/test.sh
-@@ -0,0 +1,64 @@
-+#!/bin/bash
-+# Test basic hole detection features
-+
-+source "$TEST_TOP/common" || exit
-+
-+check_prereq mkfs.btrfs
-+check_prereq btrfs
-+check_prereq fssum
-+check_global_prereq xfs_io
-+
-+if ! [ -f "/sys/fs/btrfs/features/supported_sectorsizes" ]; then
-+	_not_run "kernel support for different block sizes missing"
-+fi
-+
-+setup_root_helper
-+
-+# tmpdir is normally inside /tmp, which can be tmpfs on a lot of distro.
-+# Unfortunately tmpfs doesn't support fiemap ioctl.
-+# So we need another btrfs as rootdir.
-+setup_loopdevs 2
-+prepare_loopdevs
-+
-+real_dev=${loopdevs[1]}
-+rootdir_dev=${loopdevs[2]}
-+fssum_prog="$INTERNAL_BIN/fssum"
-+tmp=$(_mktemp_dir mkfs-fiemap)
-+
-+blocksize_supported=false
-+for bs in $(cat /sys/fs/btrfs/features/supported_sectorsizes); do
-+	if [ "$bs" == "4096" ]; then
-+		blocksize_supported=true
-+	fi
-+done
-+
-+if [ "$blocksize_supported" != "true" ]; then
-+	_not_run "kernel support for mounting blocksize 4096 is missing"
-+fi
-+
-+run_check $SUDO_HELPER "$TOP/mkfs.btrfs" -f -s 4k -O no-holes "$rootdir_dev"
-+run_check $SUDO_HELPER mount "$rootdir_dev" "$TEST_MNT"
-+
-+# Create an inode with holes, preallocated and regular file extents.
-+run_check $SUDO_HELPER xfs_io -f \
-+	-c "pwrite 16k 16k" -c "falloc 64k 16k" -c "pwrite 80k 4k" -c sync \
-+	"$TEST_MNT/foobar"
-+run_check $SUDO_HELPER $fssum_prog -n -d -s -f -w "$tmp/fssum" "$TEST_MNT"
-+run_check $SUDO_HELPER umount "$TEST_MNT"
-+
-+workload()
-+{
-+	run_check $SUDO_HELPER mount "$rootdir_dev" "$TEST_MNT"
-+	run_check $SUDO_HELPER "$TOP/mkfs.btrfs" -f --rootdir "$TEST_MNT" "$real_dev" $@
-+	run_check $SUDO_HELPER umount "$TEST_MNT"
-+
-+	run_check $SUDO_HELPER "$TOP/btrfs" check "$real_dev"
-+	run_check $SUDO_HELPER mount "$real_dev" "$TEST_MNT"
-+	run_check $SUDO_HELPER $fssum_prog -r "$tmp/fssum" "$TEST_MNT"
-+	run_check $SUDO_HELPER umount "$TEST_MNT"
-+}
-+
-+workload -O no-holes
-+workload -O ^no-holes
-+run_check rm -rf -- "$tmp"
-+cleanup_loopdevs
--- 
-2.53.0
+But regardless of this, are there any go-to approaches for recovering the d=
+eleted Btrfs subvolumes? Any tips? Are we heading in the right direction?
+Any help is much appreciated!
 
+BR,
+Kristijan=

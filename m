@@ -1,64 +1,64 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8CDA1274B5F
-	for <linux-btrfs@vger.kernel.org>; Fri,  3 Apr 2026 04:33:32 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 77CA927874F
+	for <linux-btrfs@vger.kernel.org>; Fri,  3 Apr 2026 04:33:33 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775190814; cv=none; b=WvrbxVwY3q2kXRbw9YUuyTrgD7nRaaDhN+S7UZCavD3AYYAfJlcMHTnXJOX4gEipzHjLz4wE7BsNgIZCEGg2N4p+gcG/qPP+WQEN1SghXisi3FOWzLg3BASgmhd9nn3FmOhAUjks/FBhIUN90lRAL70LI+KeiMWaVD8fhKmWpYM=
+	t=1775190814; cv=none; b=ktc/dWnlXYK1dyCE9K1xZp2Oo0FAZj495y+t1J9Y69ZIWVKFOvP9E5sgWZSVAZ4Qjd+1qjx7qf0u14KzXMj9/tPsxnXZ+BL+Whs+cyVa6ltMVU0ssLOpUINy5H0oIRd3TGBv5i1BZ/UPLW8fUkhpwuv0aLvYYqHOfMZHUEZWUok=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
 	s=arc-20240116; t=1775190814; c=relaxed/simple;
-	bh=yQkPNW+8KRsE3l2nHdaEdcNcL4iaKaY/+a2l7TP5ywg=;
+	bh=HBWkVbtU3Sv9Kmic3vxUIIg+sWEhcH3BfW4Xuag6Etg=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=kux4SHLFaUTQVWAfEDUmVFUYtsm3ObsulEEbV/u/w8lv9uLKBtH+EZY1/koGStB+4RUgtp8FR+BtEEIUDFpEVj9koYjyR530PprZVkIzp3VGJgOifKii4VMd86iBlOwxQeQiIT3f0YQuV1kxiVtItiTN8M2zQ9MMCev7b7FzsTg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=a7tgxCh3; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=hObgTiYg; arc=none smtp.client-ip=195.135.223.131
+	 MIME-Version; b=AEYIAIai3hdJDX599oJ5gIBWLzOYgX2Ndr5ddRtS9uIGEQR0AVnnOdVwJofqxfQpWM55Eu0f0a/khSFgStz4bAiReYrqX9uuJZpY0UnE7LzmtN6U5mYwNUPaZkZrpwU8VFEiQymqQ7N+XO1NzBnV4UUKPBK3XgoWNTQczdKWnyg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=u9RtDstY; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=u9RtDstY; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="a7tgxCh3";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="hObgTiYg"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="u9RtDstY";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="u9RtDstY"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id F1F5F5BD03
-	for <linux-btrfs@vger.kernel.org>; Fri,  3 Apr 2026 04:33:24 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 5E4FC4D1CB
+	for <linux-btrfs@vger.kernel.org>; Fri,  3 Apr 2026 04:33:21 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1775190805; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1775190801; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=TDxa87im5nZGxB2A8m0A/zJ2K74vBh8MPnNNlIJeNco=;
-	b=a7tgxCh3LCz8JIgcfVerP8UYivcoruDMs6dXNg9hE44FUfys9WSVXad/pNfkmZRallfKRI
-	XXkeK5LpNh9+mN37QOp1W06hU4dqQ/Abvwx7yCufUB2kgj7NUKAZIPsv1qeGz4xFzrQxaY
-	uIwChagDiRLVT49mgc8yAH1kCNB2i9Q=
-Authentication-Results: smtp-out2.suse.de;
-	none
+	bh=VxFyLuPipd3PyfTUhKNAVTUQrs++KMYc1LdGofuqjZs=;
+	b=u9RtDstY+5VDgQ2YU/L/CbE1YMelS8KT/CLrEHPqRgBm5e3ZpoKmzO7jmPKDSBaZ0wWUgO
+	eQq2tluNZuUmydY2NEKSaqVd0gi68k5TXs/vS1BFsH119f7cLh5M/xO/QHlwNisrkfZl7q
+	5s3jaalhh8LmSdn57wM0Dh+FJ7LobMs=
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=u9RtDstY
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1775190804; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1775190801; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=TDxa87im5nZGxB2A8m0A/zJ2K74vBh8MPnNNlIJeNco=;
-	b=hObgTiYgrzWn5Od7RBiH1wYZNSHT4CcSKi4RRUOWq1xbU1AQVA97Ei+rjrqztcuzxPI6Fq
-	EIbAoNnTOqVIAIXY4wFAk7mEqz/Znwt5nrHxpDHWs82tIcdycI4mKDwf5MvCPV7PCokcM3
-	WwyiRkycrLLQTxaO7xlLmBE8L0KF1C4=
+	bh=VxFyLuPipd3PyfTUhKNAVTUQrs++KMYc1LdGofuqjZs=;
+	b=u9RtDstY+5VDgQ2YU/L/CbE1YMelS8KT/CLrEHPqRgBm5e3ZpoKmzO7jmPKDSBaZ0wWUgO
+	eQq2tluNZuUmydY2NEKSaqVd0gi68k5TXs/vS1BFsH119f7cLh5M/xO/QHlwNisrkfZl7q
+	5s3jaalhh8LmSdn57wM0Dh+FJ7LobMs=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 3D2FD4A0B0
-	for <linux-btrfs@vger.kernel.org>; Fri,  3 Apr 2026 04:33:24 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 9D5104A0B0
+	for <linux-btrfs@vger.kernel.org>; Fri,  3 Apr 2026 04:33:20 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id UA6wABRDz2nTYQAAD6G6ig
+	id iFc1GBBDz2nTYQAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Fri, 03 Apr 2026 04:33:24 +0000
+	for <linux-btrfs@vger.kernel.org>; Fri, 03 Apr 2026 04:33:20 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 5/6] btrfs-progs: mkfs/rootdir: use fiemap to do prealloc detection
-Date: Fri,  3 Apr 2026 15:02:59 +1030
-Message-ID: <ffb5986f7e313a61b8686eb8ff2ceb0e0245b972.1775190565.git.wqu@suse.com>
+Subject: [PATCH v2 2/6] btrfs-progs: mkfs-tests: add a test case to verify the content of rootdir
+Date: Fri,  3 Apr 2026 15:02:56 +1030
+Message-ID: <65131d2cfac2a7714eb3b45b0fb0c0c952d3dd10.1775190565.git.wqu@suse.com>
 X-Mailer: git-send-email 2.53.0
 In-Reply-To: <cover.1775190565.git.wqu@suse.com>
 References: <cover.1775190565.git.wqu@suse.com>
@@ -69,224 +69,139 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Score: -2.80
-X-Spam-Level: 
-X-Spamd-Result: default: False [-2.80 / 50.00];
+X-Rspamd-Action: no action
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Spamd-Result: default: False [-3.01 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	MID_CONTAINS_FROM(1.00)[];
 	R_MISSING_CHARSET(0.50)[];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	MIME_GOOD(-0.10)[text/plain];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
+	MX_GOOD(-0.01)[];
 	ARC_NA(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:email,imap1.dmz-prg2.suse.org:helo];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
 	RCVD_COUNT_TWO(0.00)[2];
+	RCPT_COUNT_ONE(0.00)[1];
+	MIME_TRACE(0.00)[0:+];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	FROM_HAS_DN(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,suse.com:mid,suse.com:email,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	TO_DN_NONE(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_TLS_ALL(0.00)[]
+	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received,2a07:de40:b281:104:10:150:64:97:from];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DKIM_TRACE(0.00)[suse.com:+]
+X-Rspamd-Queue-Id: 5E4FC4D1CB
 X-Spam-Flag: NO
+X-Spam-Score: -3.01
+X-Spam-Level: 
 
-Introduce a new fiemap ioctl based hole/prealloc detection, which has
-the following features:
+When running mkfs.btrfs with --rootdir option, we should make sure the
+resulted fs has the same content of the source fs.
 
-- Preallocated extent detection
-- Hole detection
+Add a test case to verify that with the following contents as a rootdir:
 
-This allows the resulted image to reflect the source rootdir better,
-with proper preallocated extents.
+- A regular file with random data
+  The file size is 32M.
 
-However not all major fses support fiemap, e.g. tmpfs doesn't support
-fiemap.
+- A sparse file with random data
+  The sparse file is 512M, but there is only a 1MiB random data at file
+  offset 128M.
 
-So we still need the existing SEEK_DATA/SEEK_HOLE based solution as a
-fallback.
+- A directory generated by fsstress
 
-Furthermore, SEEK_DATA/SEEK_HOLE will treat preallocated space as a
-hole, thus we have to attempt fiemap before SEEK_DATA/SEEK_HOLE.
+Then we take fssum of the rootdir, create the btrfs, mount the btrfs and
+verify the contents against fssum.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- mkfs/rootdir.c | 112 ++++++++++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 110 insertions(+), 2 deletions(-)
+ Makefile                                      |  2 +-
+ tests/mkfs-tests/042-rootdir-contents/test.sh | 57 +++++++++++++++++++
+ 2 files changed, 58 insertions(+), 1 deletion(-)
+ create mode 100755 tests/mkfs-tests/042-rootdir-contents/test.sh
 
-diff --git a/mkfs/rootdir.c b/mkfs/rootdir.c
-index 5c0bc012a354..5fbbb2f43504 100644
---- a/mkfs/rootdir.c
-+++ b/mkfs/rootdir.c
-@@ -36,6 +36,7 @@
- #if COMPRESSION_LZO
- #include <lzo/lzo1x.h>
- #endif
-+#include <linux/fiemap.h>
- #include "kernel-lib/sizes.h"
- #include "kernel-shared/accessors.h"
- #include "kernel-shared/uapi/btrfs_tree.h"
-@@ -696,11 +697,13 @@ out:
+diff --git a/Makefile b/Makefile
+index cc998bf55f4a..f77494e8a71d 100644
+--- a/Makefile
++++ b/Makefile
+@@ -553,7 +553,7 @@ test-misc: btrfs btrfs-image btrfs-corrupt-block mkfs.btrfs btrfstune fssum fsst
+ 	@echo "  TEST     misc-tests.sh"
+ 	$(Q)bash tests/misc-tests.sh
  
- struct source_descriptor {
- 	int fd;
-+	u32 blocksize;
- 	char *buf;
- 	u64 size;
- 	const char *path_name;
- 	char *comp_buf;
- 	char *wrkmem;
-+	bool no_fiemap;
- };
+-test-mkfs: btrfs mkfs.btrfs
++test-mkfs: btrfs mkfs.btrfs fssum fsstress
+ 	@echo "  TEST     mkfs-tests.sh"
+ 	$(Q)bash tests/mkfs-tests.sh
  
- static int do_reflink_write(struct btrfs_fs_info *info,
-@@ -898,11 +901,106 @@ static int try_compressed_write(struct btrfs_trans_handle *trans,
- 	return length;
- }
- 
-+/*
-+ * Return 0 if we are unable to use fiemap result to handle any range.
-+ * Return >0 for the length of preallocated/hole space we have inserted.
-+ * Return <0 for critical errors.
-+ */
-+static int try_fiemap(struct btrfs_trans_handle *trans,
-+		      struct btrfs_root *root,
-+		      struct btrfs_inode_item *btrfs_inode,
-+		      u64 objectid,
-+		      struct source_descriptor *source,
-+		      u64 filepos)
+diff --git a/tests/mkfs-tests/042-rootdir-contents/test.sh b/tests/mkfs-tests/042-rootdir-contents/test.sh
+new file mode 100755
+index 000000000000..005ea28190b1
+--- /dev/null
++++ b/tests/mkfs-tests/042-rootdir-contents/test.sh
+@@ -0,0 +1,57 @@
++#!/bin/bash
++# Make sure the created btrfs with rootdir has its content matches its source
++
++source "$TEST_TOP/common" || exit
++
++check_prereq mkfs.btrfs
++check_prereq btrfs
++check_prereq fssum
++check_prereq fsstress
++
++if ! [ -f "/sys/fs/btrfs/features/supported_sectorsizes" ]; then
++	_not_run "kernel support for different block sizes missing"
++fi
++
++setup_root_helper
++prepare_test_dev
++
++fssum_prog="$INTERNAL_BIN/fssum"
++fsstress_prog="$INTERNAL_BIN/fsstress"
++tmp=$(_mktemp_dir mkfs-rootdir)
++
++mkdir "$tmp/rootdir"
++# Get the fs block size, normally it's page size (using tmpfs for /tmp),
++# but it can still be other values if /tmp is on a regular fs.
++blocksize=$(stat -f -c %S "$tmp")
++
++blocksize_supported=false
++for bs in $(cat /sys/fs/btrfs/features/supported_sectorsizes); do
++	if [ "$blocksize" == "$bs" ]; then
++		blocksize_supported=true
++	fi
++done
++
++if [ "$blocksize_supported" != "true" ]; then
++	_not_run "kernel support for mounting blocksize $blocksize is missing"
++fi
++
++run_check $SUDO_HELPER dd if=/dev/urandom of="$tmp/rootdir/large" bs=1M count=32
++run_check $SUDO_HELPER truncate -s 512M "$tmp/rootdir/sparse"
++run_check $SUDO_HELPER dd if=/dev/urandom of="$tmp/rootdir/sparse" bs=1M count=1 conv=notrunc seek=128
++run_check $SUDO_HELPER $fsstress_prog -w -n 256 -d "$tmp/rootdir/"
++run_check $SUDO_HELPER $fssum_prog -n -d -f -w "$tmp/fssum" "$tmp/rootdir"
++
++workload()
 +{
-+	struct btrfs_fs_info *fs_info = root->fs_info;
-+	struct btrfs_file_extent_item stack_fi = { 0 };
-+	struct btrfs_key key;
-+	const u32 blocksize = fs_info->sectorsize;
-+	struct fiemap *fiemap;
-+	struct fiemap_extent *extent;
-+	u64 length = round_up(source->size, blocksize) - filepos;
-+	int ret;
++	run_check_mkfs_test_dev -s $blocksize --rootdir "$tmp/rootdir" $@
++	run_check $SUDO_HELPER "$TOP/btrfs" check "$TEST_DEV"
++	run_check_mount_test_dev
 +
-+	UASSERT(IS_ALIGNED(filepos, blocksize));
-+	length = min_t(u64, length, MAX_EXTENT_SIZE);
-+
-+	if (blocksize != source->blocksize || source->no_fiemap)
-+		return 0;
-+	fiemap = malloc(sizeof(struct fiemap) + sizeof(struct fiemap_extent));
-+	if (!fiemap)
-+		return -ENOMEM;
-+
-+	fiemap->fm_flags = FIEMAP_FLAG_SYNC;
-+	fiemap->fm_extent_count = 1;
-+	fiemap->fm_mapped_extents = 0;
-+	fiemap->fm_start = filepos;
-+	fiemap->fm_length = length;
-+
-+	ret = ioctl(source->fd, FS_IOC_FIEMAP, (unsigned long)fiemap);
-+	if (ret < 0) {
-+		source->no_fiemap = true;
-+		free(fiemap);
-+		return 0;
-+	}
-+	/* This is no more non-hole extent beyond @filepos. */
-+	if (fiemap->fm_mapped_extents < 1) {
-+		free(fiemap);
-+		length = min_t(u64, length, SZ_1G);
-+		ret = btrfs_insert_hole_extent(trans, root, objectid, filepos, length);
-+		if (ret < 0)
-+			return ret;
-+		return length;
-+	}
-+	/*
-+	 * We really only care about the first returned extent which covers
-+	 * our block.
-+	 */
-+	extent = &fiemap->fm_extents[0];
-+
-+	/*
-+	 * Returned range is beyond our @filepos. This means a hole
-+	 * between @filepos and @fe_logical.
-+	 */
-+	if (extent->fe_logical > filepos) {
-+		length = extent->fe_logical - filepos;
-+		length = min_t(u64, length, SZ_1G);
-+		free(fiemap);
-+		ret = btrfs_insert_hole_extent(trans, root, objectid, filepos, length);
-+		if (ret < 0)
-+			return ret;
-+		return length;
-+	}
-+
-+	if (!(extent->fe_flags & FIEMAP_EXTENT_UNWRITTEN)) {
-+		free(fiemap);
-+		return 0;
-+	}
-+
-+	length = extent->fe_logical + extent->fe_length - filepos;
-+	free(fiemap);
-+	ret = btrfs_reserve_extent(trans, root, length, 0, 0, (u64)-1, &key, 1);
-+	if (ret)
-+		return ret;
-+
-+	btrfs_set_stack_inode_flags(btrfs_inode,
-+			btrfs_stack_inode_flags(btrfs_inode) | BTRFS_INODE_PREALLOC);
-+	btrfs_set_stack_file_extent_type(&stack_fi, BTRFS_FILE_EXTENT_PREALLOC);
-+	btrfs_set_stack_file_extent_disk_bytenr(&stack_fi, key.objectid);
-+	btrfs_set_stack_file_extent_disk_num_bytes(&stack_fi, length);
-+	btrfs_set_stack_file_extent_ram_bytes(&stack_fi, length);
-+	btrfs_set_stack_file_extent_num_bytes(&stack_fi, length);
-+	ret = insert_reserved_file_extent(trans, root, objectid, btrfs_inode, filepos, &stack_fi);
-+	if (ret < 0)
-+		return ret;
-+	return length;
++	run_check $SUDO_HELPER $fssum_prog -r "$tmp/fssum" "$TEST_MNT/"
++	run_check_umount_test_dev
 +}
 +
- static int add_file_item_extent(struct btrfs_trans_handle *trans,
- 				struct btrfs_root *root,
- 				struct btrfs_inode_item *btrfs_inode,
- 				u64 objectid,
--				const struct source_descriptor *source,
-+				struct source_descriptor *source,
- 				u64 file_pos)
- {
- 	int ret;
-@@ -915,7 +1013,7 @@ static int add_file_item_extent(struct btrfs_trans_handle *trans,
- 	bool do_comp = g_compression != BTRFS_COMPRESS_NONE;
- 	bool datasum = true;
- 	u64 flags = btrfs_stack_inode_flags(btrfs_inode);
--	off_t next;
-+	off_t next = file_pos;
- 
- 	if (g_do_reflink || flags & BTRFS_INODE_NOCOMPRESS)
- 		do_comp = false;
-@@ -925,6 +1023,14 @@ static int add_file_item_extent(struct btrfs_trans_handle *trans,
- 		do_comp = false;
- 	}
- 
-+	/*
-+	 * Try prealloc before hole detection, as preallocated space is also treated
-+	 * as hole by SEEK_DATA.
-+	 */
-+	ret = try_fiemap(trans, root, btrfs_inode, objectid, source, file_pos);
-+	if (ret)
-+		return ret;
++workload -O no-holes
++workload -O ^no-holes
 +
- 	next = lseek(source->fd, file_pos, SEEK_DATA);
- 	/* The current offset is inside a hole to the next of the file. */
- 	if (next == (off_t)-1 && errno == ENXIO)
-@@ -1475,9 +1581,11 @@ static int add_file_items(struct btrfs_trans_handle *trans,
- 	source.fd = fd;
- 	source.buf = buf;
- 	source.size = st->st_size;
-+	source.blocksize = st->st_blksize;
- 	source.path_name = path_name;
- 	source.comp_buf = comp_buf;
- 	source.wrkmem = wrkmem;
-+	source.no_fiemap = false;
- 
- 	while (file_pos < st->st_size) {
- 		ret = add_file_item_extent(trans, root, btrfs_inode, objectid,
++run_check rm -rf -- "$tmp"
 -- 
 2.53.0
 

@@ -1,153 +1,121 @@
-Received: from mail-pj1-f42.google.com (mail-pj1-f42.google.com [209.85.216.42])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from fout-a7-smtp.messagingengine.com (fout-a7-smtp.messagingengine.com [103.168.172.150])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 034EB390219
-	for <linux-btrfs@vger.kernel.org>; Sat,  4 Apr 2026 08:59:13 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.216.42
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7D65F3290DB
+	for <linux-btrfs@vger.kernel.org>; Sat,  4 Apr 2026 15:58:04 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.150
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775293157; cv=none; b=mmH69nNro+2+9X3xWoRsqJiek4ZvjLqZy2jP/LPS9S761vKdzTlus5MwJAyiH8qIW4rheJombTk5nTZql8zmanz6MLhbrcypDCsf+Hq+PhyAs7Q3XYyOz2BPdYNmkps8Zsm1AFXEg0gws2E3Z4P2gWZCp6XZPXeGSpYcV0Mrw8I=
+	t=1775318287; cv=none; b=cN9BUahMynwKPkZ7wp9Cs3FS9sZuOP6KSD7XyvkkPLb7dV272sDWgqABvkO7Ewq2uIG7KSn57fs7wQyDz/i5ekveDjZR4H5R8Nbbv/2Rfqom8/+p4z52zb7vyOKLg8GXOQeutuj8qiH/NBZgAj79dPo99uI+mQFmUxcZP+/73TA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1775293157; c=relaxed/simple;
-	bh=uDJtadNJQtVClJNGz6Fgvc0qOOD8ZBGg7n46C9beoAI=;
-	h=Message-ID:Date:MIME-Version:Subject:From:To:Cc:References:
-	 In-Reply-To:Content-Type; b=MjAEvHEJxbBZkIRkJ2vTo53L0/jFTxnE7gvejsLQutlvY+eYW1G1aVnFd+2OcKg3NRfGcdp5Mp6N5yR8aJBCwnn/QroCAMHaIp+YcTcup0jE/12ZkXBnWTfjZ0sEEyN+U+io4o4V6tJNti0D7YKKt3IbZNJwpOFvwMQxq6b3HHo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=APBqtasz; arc=none smtp.client-ip=209.85.216.42
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1775318287; c=relaxed/simple;
+	bh=c4TgmJFIT7XBehOL4KvZc0nryh1fOTcjEklNtd5lrwI=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=GKu1atZB0Po82ythVbaT5xGxgeDQoLnJODWowA+RcQUW3jOQ7yn9nHsBQuimdwwnxq1YYx58i7+Wl5P/fYSTvtEfQu7BYeUVSgpDThS0bh8L09Mg6ucbQGLVC4jX0q+aXF0kS+KfaC9fejvXkN5R9JwN/mM5YmyI4ur08Pyo7jo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=zT6mw9jQ; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=WX7i9ET2; arc=none smtp.client-ip=103.168.172.150
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="APBqtasz"
-Received: by mail-pj1-f42.google.com with SMTP id 98e67ed59e1d1-35d96be7c13so1524250a91.0
-        for <linux-btrfs@vger.kernel.org>; Sat, 04 Apr 2026 01:59:13 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1775293153; x=1775897953; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:content-language:references
-         :cc:to:from:subject:user-agent:mime-version:date:message-id:from:to
-         :cc:subject:date:message-id:reply-to;
-        bh=+kz27emeQpXLA53ZgoxFIbwzHRJwb1l4CVdcohSXzQg=;
-        b=APBqtasz4vbMdgpdGFkn84GpE9pncljnTKRYGWy7OCdn73MGUaNpbH9ICK96iyOXtP
-         qWoPSebTch8oB9S1Lf1cGZXyuoln8KMRojTscs/tvHggnAc1658CtOLRA+BeqA4bnj1q
-         GHVvYJlh9WMG+Y3h+drLI5mzEtjbUyEYaL0c4DaZyLwQlE8/sswI1ax3IL3uGpELKLkL
-         onydV9tbS6vcy0lEFYyEmX7XAE8G9lK5jJYlMHVQ9WFEPzb2sgCkilQOauIjxB2+LrJ5
-         kgZ0dNOqE/vIlViK3nseWYVMGvwEwJSl8FgRfQUk5hlWiYLU9uAuWLuXCUocIcQ7s1PP
-         NSHA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1775293153; x=1775897953;
-        h=content-transfer-encoding:in-reply-to:content-language:references
-         :cc:to:from:subject:user-agent:mime-version:date:message-id:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=+kz27emeQpXLA53ZgoxFIbwzHRJwb1l4CVdcohSXzQg=;
-        b=aWFcLW1WUSWGfGTfKVFLT7VhvpAr+jS1KqdtgdZXnx16D4mnWQiUMMWRpbE4rUOPGk
-         MDlXa40jCswrOzRsTQxt3YVcW9rLuoGe7lIWT3ku5buqCW+ar3//bMWKiA0+MwN1vdda
-         EkatZ8+DxoM33rxEMJ6nKq5EeKUALci3D8OAxrVXEiUJvEaIBj40NbOmlThjurJicWfD
-         MauLp7D+2igh0i0T32eoo8Tmp3haV5q1v3KN1HKmOFd7swu6xtycWMsqEJlLZCnybdwM
-         tiF2h0PmKeeow5zjr/mWr1JYrYGeuB16+GbRZ1SAJm4kYyBI06n5dNsL9QGTa33EdtZU
-         KRYQ==
-X-Forwarded-Encrypted: i=1; AJvYcCVXfeTvFTCs21Ql2xZzx1oirq3PMEBO6tB/btkRE+5kNeckg2oPc47eV+pMBhcVOeaFfaYfSb+alReGzg==@vger.kernel.org
-X-Gm-Message-State: AOJu0YyznE9PChluaLgx7Qdq7sg1Fn7lhaq7v8ZbXOwbaejp6XknAm2R
-	AeF4ERhKwQK2jJ/jMtaKcD2lQfxQV7ec16S/T28r7xCn74fn05XhB1F1
-X-Gm-Gg: AeBDies6w3UtgIrIkzf+b8UoeHJ3KET61i70x4RjMyYbj/Wg2vtstM9BaKqJeBqwj/N
-	wsorzdC8TBd1f+/FXRJUtXI4BITUpNbvzzdPh9/ZxMu02cMhQal9J+xvIopakRPsAoYx3dUV+iV
-	/z13Kx9bzjX6eD6GpYcXz9ytW/UQ4CLJPbLQ1WJMBqKAA8iEISqRvs0mFRqHH3H5gk0W/LyKBj/
-	KPQzarxxtWYc0l5gXBPLxLzNRwRZ17OeQdvGG+zOao9iTCyEwmYRcBj1WE2J4hlZtiuXPqha5Qq
-	lJ9PI6QLjYqAKbxI2tv+65kQaQVrZAPVtHroCx3zM04K9Z02AzOO6nwxdZwfgLUINjP+mTrJq+1
-	CZoT8snIXR/yqEF+/kSnHUcd9WetW+h+3ZbLqb7U/QEkvjVnCahs1l4nk+IrafcqugWLmtmrFG3
-	7y2fHpOMOs4x/0hUb4RUN//LOYSOg=
-X-Received: by 2002:a17:90b:52cf:b0:35c:195e:112f with SMTP id 98e67ed59e1d1-35dd68b3edamr8054586a91.18.1775293152635;
-        Sat, 04 Apr 2026 01:59:12 -0700 (PDT)
-Received: from [192.168.50.90] ([116.87.14.48])
-        by smtp.gmail.com with ESMTPSA id 41be03b00d2f7-c76c6491fe0sm6489143a12.11.2026.04.04.01.59.09
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sat, 04 Apr 2026 01:59:12 -0700 (PDT)
-Message-ID: <5bda3d00-df35-4ea1-b313-2fef6e5c5682@gmail.com>
-Date: Sat, 4 Apr 2026 16:59:08 +0800
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="zT6mw9jQ";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="WX7i9ET2"
+Received: from phl-compute-06.internal (phl-compute-06.internal [10.202.2.46])
+	by mailfout.phl.internal (Postfix) with ESMTP id 42015EC01AF;
+	Sat,  4 Apr 2026 11:58:03 -0400 (EDT)
+Received: from phl-frontend-03 ([10.202.2.162])
+  by phl-compute-06.internal (MEProxy); Sat, 04 Apr 2026 11:58:03 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc
+	:content-transfer-encoding:content-type:date:date:from:from
+	:in-reply-to:message-id:mime-version:reply-to:subject:subject:to
+	:to; s=fm3; t=1775318283; x=1775404683; bh=AonG/s3xqGFSta7q+av2L
+	SuhqSGHs3zteNsL0AbQzjY=; b=zT6mw9jQHVzP1kEw5I+PjnO8ALVC7RyE1Nqih
+	cch/VOiYWE/Y01Ynd+Wyzy4/qJTbkwGFHj9l8Mc5p4V4X3DRs4mKtTmItmFZnttz
+	At35fy6ZWeSuAnovlfRXDJgfsA/4ZYb8ZVqUsr6aQqkMwZGm0fHGramM+uO7Lm0w
+	sfk938V79QHC1MQp8PSE0sC//v7miflN9te0tz7zIsyJ7WBV4uHFJgFZkWPG2Nwj
+	GUnlIC2O+ZLo7rg06tTG5/2pkwV69S0HOM0bC8kA4UUJb535c2W5M+UVfOl0x17h
+	X4NBjNKldQd12B3jWrkhWFaXkfuYzm9dgKz60MGp3V6fSfA1g==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:content-transfer-encoding:content-type
+	:date:date:feedback-id:feedback-id:from:from:in-reply-to
+	:message-id:mime-version:reply-to:subject:subject:to:to
+	:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=
+	1775318283; x=1775404683; bh=AonG/s3xqGFSta7q+av2LSuhqSGHs3zteNs
+	L0AbQzjY=; b=WX7i9ET2Wf7415v2k8jxtKJ202c5hCfhcmptilNhelMqfTbQXZN
+	9reDCWsp3+WtLPs8I8VXQz9mHiZK+G+n/aOrpRecIsQ0K95d0l8zU4v/9EG2qvzp
+	bFiJuZ5lkONzQHVInY510UfPSlAn5rc8woRTWeFe4Qim1FJxRjuNXfeegBnjxLPh
+	KUT2a5ldnZzmhxkcLE4NcswL+Es02sRBKvAvgmZQEUNV4T+G7HPDqHpNwmI25NtV
+	wYEHUm6/Qss2x8d/Us770KDXh/F6Axda4YWEE6/lUoFHzikHtVr41R5VeD5K4JzV
+	8ilq1rbo8JhlIC6rCA48y/Jjf8Rp/HiERZA==
+X-ME-Sender: <xms:CzXRaXc6_XvZpb0jgP5vOnILJ5TmT-w_MUdPiFegs8SS_q4DpClnFw>
+    <xme:CzXRaTNuoD1mdETYqtiWWVrtdIBxLZYRh5BzyVkxAsFsQHkTq8XISuf4Oocnc0i34
+    cSWh3g3I498cxQy1z6Gqr-SSOT3PmktmCztCZAxQ0gpkFG0DO3ZX3U>
+X-ME-Received: <xmr:CzXRaeKznWVJm4SpKBR4OGg9MLoEPjNU8OHGvSiPg_yPcPtlnQgAApEXRZab2NhUIgr5_3xQ0vZQ2FQug-js_sNNNQM>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefhedrtddtgdduvddvjecutefuodetggdotefrod
+    ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpuffrtefokffrpgfnqfghnecuuegr
+    ihhlohhuthemuceftddtnecunecujfgurhephffvufffkffoggfgsedtkeertdertddtne
+    cuhfhrohhmpeeuohhrihhsuceuuhhrkhhovhcuoegsohhrihhssegsuhhrrdhioheqnecu
+    ggftrfgrthhtvghrnhepudeitdelueeijeefleffveelieefgfejjeeigeekudduteefke
+    fffeethfdvjeevnecuvehluhhsthgvrhfuihiivgeptdenucfrrghrrghmpehmrghilhhf
+    rhhomhepsghorhhishessghurhdrihhopdhnsggprhgtphhtthhopedvpdhmohguvgepsh
+    hmthhpohhuthdprhgtphhtthhopehlihhnuhigqdgsthhrfhhssehvghgvrhdrkhgvrhhn
+    vghlrdhorhhgpdhrtghpthhtohepkhgvrhhnvghlqdhtvggrmhesfhgsrdgtohhm
+X-ME-Proxy: <xmx:CzXRaUHs9OvbLBOz9cV3xwMIYP-1J325_iPlCxKrsY0TB8l2iBF2cw>
+    <xmx:CzXRaWR7PZd3IIdOWxk1KTHo5HSs_r5FY3B175gCF1rikhw-VSSRHg>
+    <xmx:CzXRaQFN0belT2Iw-vXanGuksFB3gV-w8alogguYwCr1VdIndiNctQ>
+    <xmx:CzXRaS9izQX5Wht24OqGfA41eyoFkqOVG5a0XAU_yWLmOfZhcOnrcw>
+    <xmx:CzXRabBFSUiyn5AB2QMhIjWRW_1W4e6hCPQsjJgIyvbfgePz7OKCiVDD>
+Feedback-ID: i083147f8:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Sat,
+ 4 Apr 2026 11:58:02 -0400 (EDT)
+From: Boris Burkov <boris@bur.io>
+To: linux-btrfs@vger.kernel.org,
+	kernel-team@fb.com
+Subject: [PATCH v2] btrfs: btrfs_log_dev_io_error() on all bio errors
+Date: Sat,  4 Apr 2026 08:57:53 -0700
+Message-ID: <f91b3827c56947e58b4606f142bef022b54da70e.1775318158.git.boris@bur.io>
+X-Mailer: git-send-email 2.53.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2 3/3] ext4: derive f_fsid from block device to avoid
- collisions
-From: Anand Jain <anajain.sg@gmail.com>
-To: Theodore Tso <tytso@mit.edu>, Christoph Hellwig <hch@infradead.org>,
- "Darrick J. Wong" <djwong@kernel.org>
-Cc: linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
- linux-xfs@vger.kernel.org, Anand Jain <asj@kernel.org>
-References: <cover.1774092915.git.asj@kernel.org>
- <33e8eb64c304a4d42b60f608c26497bf9a2e9e19.1774092915.git.asj@kernel.org>
- <20260323041624.GA11453@mac.lan>
- <d4a9970b-e7ed-4e74-be9d-2d08400f9d79@gmail.com>
-Content-Language: en-US
-In-Reply-To: <d4a9970b-e7ed-4e74-be9d-2d08400f9d79@gmail.com>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
 
+As far as I can tell, we never intentionally constrained ourselves to
+these status codes, and it is misleading and surprising to lack the
+bdev error logging when we get a different error code from the block
+layer. This can lead to jumping to a wrong conclusion like "this
+system didn't see any bio failures but aborted with EIO".
 
-Hi Ted, Christoph, Darrick,
+For example on nvme devices, I observe many failures coming back as
+BLK_STS_MEDIUM. It is apparent that the nvme driver returns a variety of
+BLK_STS_* status values in nvme_error_status().
 
-As I prepare v3, I'd appreciate your final thoughts on the mount option
-naming and its necessity for ext4.
+So handle the known expected errors and make some noise on the rest
+which we expect won't really happen.
 
-For the new option, I am considering:
+Signed-off-by: Boris Burkov <boris@bur.io>
+---
+Changelog:
+v2:
+- proper bdev err logging for expected block errors
+- btrfs_warn_rl for all other errors
+---
+ fs/btrfs/bio.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-  -o nodup_f_fsid
-
-  -o unique_f_fsid
-
-Context:
-Currently, ext4's f_fsid is consistent across reboots but fails to be
-unique when dealing with cloned filesystems (sharing the same UUID). Per
-statfs(2) [1], the primary requirement is that the (f_fsid, ino) pair
-uniquely identifies a file. The man page makes no explicit guarantee
-regarding consistency across mount cycles or reboots.
-
-Proposal:
-With this fix, f_fsid becomes f(uuid, dev_t). This ensures OS-wide
-uniqueness and maintains consistency as long as the underlying dev_t
-remains stable.
-
-Dilemma:
-While statfs(2) [1] suggests f_fsid is "some random stuff," we know
-userspace (NFS, systemd) often treats it as a persistent handle.
-
-Do you prefer one of the names above, or is there a more idiomatic ext4
-naming convention I should follow?
-
-Given the ambiguity in the man page, is gating this behind an -o option
-necessary, or should we consider making uniqueness the default behavior?
-
-
-
-[1]
-----------
-statfs(2)
-
-<snap>
-       Nobody knows what f_fsid is supposed to contain (but see below).
-
-<snap>
-   The f_fsid field
-       Solaris,  Irix,  and  POSIX  have  a  system  call  statvfs(2)
-that  returns  a  struct statvfs (defined in <sys/statvfs.h>) containing
-an unsigned long f_fsid. Linux,  SunOS,  HP-UX,  4.4BSD  have  a  system
- call statfs()  that  returns a struct statfs (defined in <sys/vfs.h>)
-containing a fsid_t f_fsid, where fsid_t is defined as struct { int
-val[2]; }.  The same holds for  FreeBSD,  except  that  it  uses  the
-include  file <sys/mount.h>.
-
-       The  general  idea is that f_fsid contains some random stuff such
-that the pair (f_fsid,ino) uniquely determines a file.  Some operating
-systems use (a variation on) the device number, or the device number
-combined with  the  filesystem type.  Several operating systems restrict
-giving out the f_fsid field to the superuser only (and zero it for
-unprivileged users), because this field is used in the filehandle  of
-the  filesystem when NFS-exported, and giving it out is a security concern.
-
-       Under some operating systems, the fsid can be used as the second
-argument to the sysfs(2) system call.
-----------
-
-
-Thanks, Anand
+diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
+index 2a2a21aec817..08b1d62603d0 100644
+--- a/fs/btrfs/bio.c
++++ b/fs/btrfs/bio.c
+@@ -352,8 +352,7 @@ static void btrfs_log_dev_io_error(const struct bio *bio, struct btrfs_device *d
+ {
+ 	if (!dev || !dev->bdev)
+ 		return;
+-	if (bio->bi_status != BLK_STS_IOERR && bio->bi_status != BLK_STS_TARGET)
+-		return;
++	ASSERT(bio->bi_status);
+ 
+ 	if (btrfs_op(bio) == BTRFS_MAP_WRITE)
+ 		btrfs_dev_stat_inc_and_print(dev, BTRFS_DEV_STAT_WRITE_ERRS);
+-- 
+2.53.0
 

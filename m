@@ -1,293 +1,207 @@
-Received: from mail-yw1-f180.google.com (mail-yw1-f180.google.com [209.85.128.180])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 485EB207DF7
-	for <linux-btrfs@vger.kernel.org>; Sun,  5 Apr 2026 10:05:48 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.128.180
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B75F329C325
+	for <linux-btrfs@vger.kernel.org>; Sun,  5 Apr 2026 17:38:41 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=170.10.129.124
 ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775383549; cv=pass; b=DhGKH7gewD106K/iSBK7c7quDlTO08xHCkWNYpZFAdRxbAOqV43h6ci8sG5QbvMxSOlmPE9xgZ2ut7BkcypY2SenEYO756NDryox50Lbvua9/iZgNVdmXTrwemIiIZqXRr+OH87jN2OOb5Twb4ibn0lfMmjz/uVQXTJjD+ePNas=
+	t=1775410723; cv=pass; b=asbxULyL96nOqymzPIyWplQRVc3GeZtxOkco73ZJB9v5cz9XDfiBfQcrzm2vBq6k3valI7sUfJTpnyl+jO/3JSMHhxWN++MnvnVN/Yzj/JR2HrWKzbZ0SsbPxNXawmWFBsUgZYVBfdTU7geJXzeMPKqY9e9e2cmahExr+mBvQoo=
 ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1775383549; c=relaxed/simple;
-	bh=PLvhB6f5tPNUof+KCb50udsv+rewU9dQh1jN/S/DRrI=;
+	s=arc-20240116; t=1775410723; c=relaxed/simple;
+	bh=M0fGNUnxdPTPfMB+NZtRovqgahD9QFR1fhA41vPhX90=;
 	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=gXX2KwqRktlA5uFlJs102H3zRds3qaMuuDsvRqIjkL5PeYqSNU5TRIHycIfgJeDFbwKyohtrhsotLNi90I5OiAfdstpRfYrpMtAHCM5923POZtVhPN0m9ZtYBRRLLorZ4UV4J4bTtxI7z6LOmc+Qk1PQsZ7zLrZ33X2J6Xj80dQ=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=dIuHNyhQ; arc=pass smtp.client-ip=209.85.128.180
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	 To:Cc:Content-Type; b=ii9sLLdRx/iuQw4DwwE+XilGsDM1KyP38I0dQ9zkKY8RSaOELLiqw57HUb4D3FPgKVOM78ft/YxLLsMAZMGiJTH6QonfKHkUs2rPzwjzK569fpKxzwWiyDXmxZPQ7e4zxSMPic1dWOSD98tyj5QxncSY6bQfY8GIBr6oTF297O0=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=cjsYYgIG; dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b=cTEclwI9; arc=pass smtp.client-ip=170.10.129.124
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="dIuHNyhQ"
-Received: by mail-yw1-f180.google.com with SMTP id 00721157ae682-79be0de8610so28515077b3.2
-        for <linux-btrfs@vger.kernel.org>; Sun, 05 Apr 2026 03:05:48 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1775383547; cv=none;
+	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="cjsYYgIG";
+	dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b="cTEclwI9"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+	s=mimecast20190719; t=1775410721;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=jPHyJbs4uiXMxYGli4epDavO7/1nm+agc9OgX+7C8vc=;
+	b=cjsYYgIGYcS+Yo59KbqKoxeAerUZRhAzhEWh2QQaKHrZeeF4jM36KOkCnqxM/yBKQfs0EY
+	ZnGXlH3G0u7ye1OiS7vYAD/z2XuJBxwzA//ZCPQ7veqKfNWk7VRm9Y4TIc0XHtB3QaDmQh
+	O2XijkiPBjNSgXvhk57zo1ifo3PXzuc=
+Received: from mail-yw1-f200.google.com (mail-yw1-f200.google.com
+ [209.85.128.200]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
+ us-mta-683-rUWN3u5GOBOGD-yiIXSjfA-1; Sun, 05 Apr 2026 13:38:39 -0400
+X-MC-Unique: rUWN3u5GOBOGD-yiIXSjfA-1
+X-Mimecast-MFC-AGG-ID: rUWN3u5GOBOGD-yiIXSjfA_1775410719
+Received: by mail-yw1-f200.google.com with SMTP id 00721157ae682-79472373f48so61432517b3.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 05 Apr 2026 10:38:39 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1775410719; cv=none;
         d=google.com; s=arc-20240605;
-        b=I+VpysI/W1iq7os0SyJMq6kghzkcX29zlHHSxT49/WoNpK6beE3GaGUUjXqevomGlT
-         Ht++ijIksoPhB2x+zLVPMIwYJJsiqEakQn8UQYep8BYFxJrLKlHu5gG43nZR5wiy6mPN
-         SUuUvpN6njrY01MAOVHLGbp8o8yJvN0B6JhrHO1iYZz/PM1WSasApVqU6aSCwDBI6e1x
-         X2xxxCG78tuwiGaSe5gbjJy84468DsPSro7JJojAsHD4TNdL23uRNRd6pk69MTQY14EY
-         VBZ0xipZ24hNrS/igYWmLHMduEy468pkm9uphzMLvxrWrBrTfTdZhvQm/vX8hb2gulzx
-         bdQQ==
+        b=csWg5/aMkH3B46PYvtJpK3LnVoo56bzPBLhBd9AgupajWh5N+8Pask9MfX0eIFd0hq
+         3zv7Bov/r48t/CUuoPykx+eoR02Y3RZDTR62s0Ab/mgPbygC+fL4u6f0XkXWfai2YKoo
+         FWF7/cPMdcJh1VDu1Fe7CLT7jqpcd/1kXc3bvBly4McLxUVgG1y3rGcX2NbpItVD0bW4
+         mSlXTnAkk8j3VTE8KJftSNcZ5qt3Nna8uF7KeP7czzKtMgEfCWh9vf4zmzFQ4vsIjjoo
+         iojrsgUHvr5IGHvA4x8NCzsG8Ybg5H6zjx3Bi2WC9cxq7BfdzEgjwtzgKzQOI+1Za84U
+         edjA==
 ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
         h=content-transfer-encoding:cc:to:subject:message-id:date:from
          :in-reply-to:references:mime-version:dkim-signature;
-        bh=aA4ut8iTGUbX9FTvkAUrIcRCoLUrVP3k1NaYUXgfAD0=;
-        fh=I0BZtym/dq2AkUzeGWefekiLWTjcI/dwL9dya7WC7sI=;
-        b=IObZwePvXDgxhBNF4hCJOjc9yAm7GUqHh9n3xEuxS5G7iA5HPd/0AmLN6ymp9FXS8M
-         Pn0DDpZwGHWUiF+pfx8vmPMlombC1UVQyGRUjuyxgKfOUFd0WjbVyUZdTwTvsw0WQs30
-         awPG825ZuhwpE8skdjCdHM3iv56sADOP9xw7r4veucXR3FPaFkxfj8AvJ4vwIAcOaYL2
-         mhukXXTAUmQ8yoaubsEtK3LpKGWnJkVW1RiKY1D7loyY61xr9U5N0JNdIIm8znFi7fB9
-         uomY2mFXGEyfoPfBrHEWKf5oYVJaWXVjeZT7iTK8BTCfjJEp2QJJX7pqKLuq5YovHKIl
-         NPKw==;
+        bh=jPHyJbs4uiXMxYGli4epDavO7/1nm+agc9OgX+7C8vc=;
+        fh=0AvBPwHSJaUgnfiZGPiGLlfRrVPX3MtQ1uuTYvC/VeM=;
+        b=FgY6oq3CI7I7prTJbOZhk9+ijd76IhWsp2x1GCJRO1i9mjDP4KPCt5mvXiszZ+HuTx
+         odlPr5TQ3Q9umvAd4w2vUUNbjKx9EI+KAbd6hXJGW4q/eIZR8Wo3AG9xatrFcEPTqS4C
+         s3yh4sFW39uzLXoTR0UVXRPPEkhmuI8ihbaBEy2T8vHg3WtviA6RuaBDSBZnknYIKLAx
+         wr/ysHJybZxcHV6ar/xHLHYmTVBF3s3YAH8rgmm4OG42z2iIZ24+wtc3X725/wc/Yhlt
+         4Vh630m5a25CjhC4VDcNFGE06qXxjysG23qROBBU2XxUlnakhurd0cPqA8EaIZ3si3SH
+         hNow==;
         darn=vger.kernel.org
 ARC-Authentication-Results: i=1; mx.google.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1775383547; x=1775988347; darn=vger.kernel.org;
+        d=redhat.com; s=google; t=1775410719; x=1776015519; darn=vger.kernel.org;
         h=content-transfer-encoding:cc:to:subject:message-id:date:from
          :in-reply-to:references:mime-version:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=aA4ut8iTGUbX9FTvkAUrIcRCoLUrVP3k1NaYUXgfAD0=;
-        b=dIuHNyhQCtYKD/woXnZBnY/wUBqshd3//sN3KWOCgoSwz/l7piokO35n45bxEg/1Lq
-         7qJf298cf63BDq/TJbatg+PjJttvRuCXeEWz0sByrZWGoL/v9HwwIasF4OU3kMMFTRaD
-         7H646HzuScc9B0JOeTekWxdpQkubU9QiqrrxHnSWS2Cj1ZQxEIn3gYJ8hmHL2l762OXG
-         0aHQxU+vvjdUzhYH43DdFNJ+943KKTyLcteF+axuzRRq0u14JfyXDUb8RrMM7ctN0qQ7
-         ThEjjEyXg/eR/h91pE+F95nwABQoHONcPSt96zX8UIqhRTH+VV2YA/SM7gYzxYDB63gs
-         z5OQ==
+        bh=jPHyJbs4uiXMxYGli4epDavO7/1nm+agc9OgX+7C8vc=;
+        b=cTEclwI9jK8i1yhwW5Qc/jNuyQDsKfydKPul9VKuW4T/+pZhR0wbXXqv96pDzb08EV
+         SdZUT59raZtr9UtXZV2FrQ0+pg/xOef8e+zVhmdwzW4Qt1Xyf2lAZkbNsvIlcV7tx2Ct
+         kYvS58l+pwJeV8vMPjlgfdqRB4OY1gL17INC1G4RzhM4CP+UU4/BhA0prxCcBAGd2SoF
+         yLZi2OfI/k3TjMFGgRVzclQl9jW7A5Q3DSZzy6uHD9kK7KPEKOaelIf96jS1v6a4SFMt
+         qmSNTKCyijkFRY0f9oA7nSVGkr1dRgmisQqAbHbEf+RrXTlIDSWlyo/6vPS4MuTZHwtP
+         IUGA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1775383547; x=1775988347;
+        d=1e100.net; s=20251104; t=1775410719; x=1776015519;
         h=content-transfer-encoding:cc:to:subject:message-id:date:from
          :in-reply-to:references:mime-version:x-gm-gg:x-gm-message-state:from
          :to:cc:subject:date:message-id:reply-to;
-        bh=aA4ut8iTGUbX9FTvkAUrIcRCoLUrVP3k1NaYUXgfAD0=;
-        b=Xd9TwXHXoq5/wrpc1Ae5M9NYGclCwBwllPiE1Adfu9OmEkp40dvxDjp5f9SDuDvqaL
-         NYti9YNhJ+nHQquzWsVd/XnOz5vA79Q+K+fwPdNXRszo8RhzC/xG4GFBA+Dl9BmnjQXo
-         kUHFLEe3/oTxo0MDt76MelsjsLe4jZJdqRRHKMcqwj1avRri6W1il3J0oto50pZ4i02x
-         P1Ff7iTOMdLSIxBSjy6DgFGmzipoGoQzpbHTliWydA+GWQgSGOT/JZFMWu/4Jjh81eh9
-         eWTYsmBkoM+TJGVQuP6N5SAVDbVlCym0oqEfEfj68j5I0p6QA5HsbMG84PkjxJzZR9Yv
-         MkMA==
-X-Gm-Message-State: AOJu0Yw+NStua4v5VXzLO/YQJsC9/USuv1/sONwyeyf5kcvkjrPuK9N9
-	cZCkpy1PfB+aQFXHlcQ9+rT6upAicdEiUK9oPlD4hfqEkjYVib4FU8jLzgX2BhsdAZVHdrvSWxK
-	2ZD+tYcBv0GbRqswtVZdZ853KCaTtC+vq0qajhgc=
-X-Gm-Gg: AeBDiesQ6sLAA6/h7wBKQrtKC9hRDGtaoaw5SHQRihrmlq7Nrykg3GX5m/PkoCHZQ4G
-	wMKy6DRONq3zryrKsddKElyFttob3p5O0UWJ1u6qr8x6VDybmLk8mzJTU63khVI9YtBVcirjBzg
-	76S4wLh7hZ5DIVyHtftwVnFxmqdWu4G2bnsZf+LG0HUEXGoqeu9RXCDfPEafEGPkKPmLhVRATmO
-	A6pf9YFxUJlR3R/DuJnXpRkFd7qNrUm8paF2Q1tuCq9SGx6bD0Q5TUR9rkB2wv/TUssQTsoA3u8
-	Xu+7aDU=
-X-Received: by 2002:a05:690c:6e86:b0:79a:c7f8:d99f with SMTP id
- 00721157ae682-7a4d3bd7d64mr88019887b3.19.1775383547203; Sun, 05 Apr 2026
- 03:05:47 -0700 (PDT)
+        bh=jPHyJbs4uiXMxYGli4epDavO7/1nm+agc9OgX+7C8vc=;
+        b=D2tmqe/yW4OqmgXB90SM0vl0nnS/issJuQkb5TFb9GiOGAhLQyoLcYnsOKL4uhiFuH
+         gQnpjJezbGqrrOHn/RZ+mr/hAs5LyixCNmGuU28LzIbFM93aodBeWpkc/Ij0edTNFf5j
+         RkuRzp1lbKx4sZYTDUagzdCA+Vrr4qwN2lwspltFAxjdmlnCkNZ7Fn9mVSyCaw/08PWl
+         syoAMSLxlUvkrWvbZwToQc6QzRDT39v7R6Em0vZiplO9Pf6TmHsw9adjpnSVQJMrjYRj
+         y+dtFPk7v99bx24xr6YOLhAFYRlL7SqKO1Ik7sxh0Rm9y5cTBe519LFpenGFRm74TePy
+         vcGQ==
+X-Forwarded-Encrypted: i=1; AJvYcCVXG6Z44kgXc0uEEl9vh4aj4tJJ+XDG+9AbSbfURiVmzzlQMx/WYmjaelVu06gVN1lFSLPqUq1DJPushA==@vger.kernel.org
+X-Gm-Message-State: AOJu0Yx3eYJ0X9NsEJpLa4vZu4cj1H6X8IOgkCT5ZYH+a1bf6Jd6rJ9s
+	cwY5i5Pf5JBI2zimV3Raz1SPh20iSvb1HS0KcFdPQ+CvgYZQr4Ycl9QHFkl0QDm6Y+qv9xoLnEi
+	Ve2XiIEnKXGldLeBa57WgZhjDK9+q1f1cBRxtmfWvTjC+4huXbVxky/E9gxiIGjtIqJptWu7WdJ
+	XsmhoypmA8oS/gZ8+GVyg+iNotElnseSunwLHwmfw=
+X-Gm-Gg: AeBDieu3jBQMKfoZ2UVbt7bJxRtTFbVi66lK0dK6x7AuYCEbgjk/2kMzQuoCRQ9norI
+	vL3TbuRvbHpqOZRdIu/fyctBT87ebC5IfqNVOkY2JwpANhClxbcLN+MtnEBAL7jo1TkG6xk/Zyn
+	qi5FOQfZQ2gIY8chGACadKSs7KUTzy6BWF1UzfA+QanND8g+TvxCIVzMvJ44u1VSxa3Ke7lC11S
+	fcdbwQX
+X-Received: by 2002:a05:690e:1246:b0:649:c36a:a9b4 with SMTP id 956f58d0204a3-650488246b4mr9221003d50.36.1775410718584;
+        Sun, 05 Apr 2026 10:38:38 -0700 (PDT)
+X-Received: by 2002:a05:690e:1246:b0:649:c36a:a9b4 with SMTP id
+ 956f58d0204a3-650488246b4mr9220969d50.36.1775410717507; Sun, 05 Apr 2026
+ 10:38:37 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <1c3a439e1e21c4ee32575b264ac0bc3935ea4f53.1775364843.git.wqu@suse.com>
-In-Reply-To: <1c3a439e1e21c4ee32575b264ac0bc3935ea4f53.1775364843.git.wqu@suse.com>
-From: =?UTF-8?B?66eQ656A66eQ7JW8?= <iamsyahn@gmail.com>
-Date: Sun, 5 Apr 2026 19:05:35 +0900
-X-Gm-Features: AQROBzCUA-EQwmFfkK_e2a8E5HJxcyoK6J5G8LZCaflx8F8yQlz2EdAz8iwiZB8
-Message-ID: <CAF88fHW78qAz6gxkJct2pSdDN0L4Np=uQPUixVr3Gim4430AAA@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: warn about extent buffer that can not be released
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org, Teng Liu <27rabbitlt@gmail.com>
+References: <20260327014255.2058916-1-ziy@nvidia.com>
+In-Reply-To: <20260327014255.2058916-1-ziy@nvidia.com>
+From: Nico Pache <npache@redhat.com>
+Date: Sun, 5 Apr 2026 11:38:20 -0600
+X-Gm-Features: AQROBzCPtZOBkOnc2jS1i15igfbub3Mq_1a1-pEjy-3xwa9Wl99L5UbfvWnok3w
+Message-ID: <CAA1CXcCmue7iX3O9RLo7wR5EqASvJGCLraw1+iQMZ98BiMJwrA@mail.gmail.com>
+Subject: Re: [PATCH v1 00/10] Remove READ_ONLY_THP_FOR_FS Kconfig
+To: Zi Yan <ziy@nvidia.com>, "Matthew Wilcox (Oracle)" <willy@infradead.org>, 
+	David Hildenbrand <david@kernel.org>
+Cc: Song Liu <songliubraving@fb.com>, Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>, 
+	Alexander Viro <viro@zeniv.linux.org.uk>, Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>, 
+	Andrew Morton <akpm@linux-foundation.org>, Lorenzo Stoakes <ljs@kernel.org>, 
+	Baolin Wang <baolin.wang@linux.alibaba.com>, "Liam R. Howlett" <Liam.Howlett@oracle.com>, 
+	Ryan Roberts <ryan.roberts@arm.com>, Dev Jain <dev.jain@arm.com>, Barry Song <baohua@kernel.org>, 
+	Lance Yang <lance.yang@linux.dev>, Vlastimil Babka <vbabka@kernel.org>, 
+	Mike Rapoport <rppt@kernel.org>, Suren Baghdasaryan <surenb@google.com>, Michal Hocko <mhocko@suse.com>, 
+	Shuah Khan <shuah@kernel.org>, linux-btrfs@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
+	linux-mm@kvack.org, linux-kselftest@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-Hi Qu,
+On Thu, Mar 26, 2026 at 7:43=E2=80=AFPM Zi Yan <ziy@nvidia.com> wrote:
+>
+> Hi all,
+>
+> This patchset removes READ_ONLY_THP_FOR_FS Kconfig and enables creating
+> read-only THPs for FSes with large folio support (the supported orders
+> need to include PMD_ORDER) by default.
 
-Thank you for the patch and for including me in the report.
+Hi Zi,
 
-Please understand that I am using an AI assistant to write this email
-as my English is not very strong, but I wanted to make sure my message
-is clear.
+Thank you for tackling this :) Ill try to review the next version as
+I'm a little behind on this thread.
 
-Unfortunately, I have already formatted the problematic drive to
-recover my system, so I cannot reproduce the exact same corrupted
-state to test this patch at the moment.
+Should we guard collapsing READ_ONLY_THPs with a sysctl? My fear is
+workloads that convert READ_ONLY THPs into writable pages (assuming
+this is common/possible; my understanding of FS is rather low),
+leading to storms of thp splitting. Do you think this is a real
+concern? I guess this is also true of read-only-->writable fs-THPS
+even without khugepaged, correct?
 
-However, I am very honored and glad to hear that my report helped
-improve BTRFS for everyone. Thank you for your hard work on this fix!
+Cheers,
+-- Nico
 
-Best regards,
-
-Seok-Young Ahn
-
-
-2026=EB=85=84 4=EC=9B=94 5=EC=9D=BC (=EC=9D=BC) =EC=98=A4=ED=9B=84 1:56, Qu=
- Wenruo <wqu@suse.com>=EB=8B=98=EC=9D=B4 =EC=9E=91=EC=84=B1:
 >
-> When we unmount the fs or during mount failures, btrfs will call
-> invalidate_inode_pages() to release all btree inode folios.
+> The changes are:
+> 1. collapse_file() from mm/khugepaged.c, instead of checking
+>    CONFIG_READ_ONLY_THP_FOR_FS, makes sure the mapping_max_folio_order()
+>    of struct address_space of the file is at least PMD_ORDER.
+> 2. file_thp_enabled() also checks mapping_max_folio_order() instead.
+> 3. truncate_inode_partial_folio() calls folio_split() directly instead
+>    of the removed try_folio_split_to_order(), since large folios can
+>    only show up on a FS with large folio support.
+> 4. nr_thps is removed from struct address_space, since it is no longer
+>    needed to drop all read-only THPs from a FS without large folio
+>    support when the fd becomes writable. Its related filemap_nr_thps*()
+>    are removed too.
+> 5. folio_check_splittable() no longer checks READ_ONLY_THP_FOR_FS.
+> 6. Updated comments in various places.
 >
-> However that function can return -EBUSY if any folios can not be
-> invalidated.
-> This can be caused by:
+> Changelog
+> =3D=3D=3D
+> From RFC[1]:
+> 1. instead of removing READ_ONLY_THP_FOR_FS function entirely, turn it
+>    on by default for all FSes with large folio support and the supported
+>    orders includes PMD_ORDER.
 >
-> - Some extent buffers are still held by btrfs
->   This is a logic error, as we should release all tree root nodes
->   during unmount and mount failure handling.
+> Suggestions and comments are welcome.
 >
-> - Some extent buffers are under readahead and haven't yet finished
->   This is much rarer but valid cases.
->   In that case we should wait for those extent buffers.
+> Link: https://lore.kernel.org/all/20260323190644.1714379-1-ziy@nvidia.com=
+/ [1]
 >
-> Introduce a new helper invalidate_btree_folios() which will:
+> Zi Yan (10):
+>   mm: remove READ_ONLY_THP_FOR_FS Kconfig option
+>   mm/khugepaged: remove READ_ONLY_THP_FOR_FS check
+>   mm: fs: remove filemap_nr_thps*() functions and their users
+>   fs: remove nr_thps from struct address_space
+>   mm/huge_memory: remove READ_ONLY_THP_FOR_FS from file_thp_enabled()
+>   mm/huge_memory: remove folio split check for READ_ONLY_THP_FOR_FS
+>   mm/truncate: use folio_split() in truncate_inode_partial_folio()
+>   fs/btrfs: remove a comment referring to READ_ONLY_THP_FOR_FS
+>   selftests/mm: remove READ_ONLY_THP_FOR_FS in khugepaged
+>   selftests/mm: remove READ_ONLY_THP_FOR_FS from comments in
+>     guard-regions
 >
-> - Call invalidate_inode_pages2() and catch its return value
->   If it returned 0 as expected, that's great and we can call it a day.
+>  fs/btrfs/defrag.c                          |  3 --
+>  fs/inode.c                                 |  3 --
+>  fs/open.c                                  | 27 ----------------
+>  include/linux/fs.h                         |  5 ---
+>  include/linux/huge_mm.h                    | 25 ++-------------
+>  include/linux/pagemap.h                    | 29 -----------------
+>  mm/Kconfig                                 | 11 -------
+>  mm/filemap.c                               |  1 -
+>  mm/huge_memory.c                           | 29 ++---------------
+>  mm/khugepaged.c                            | 36 +++++-----------------
+>  mm/truncate.c                              |  8 ++---
+>  tools/testing/selftests/mm/guard-regions.c |  9 +++---
+>  tools/testing/selftests/mm/khugepaged.c    |  4 +--
+>  13 files changed, 23 insertions(+), 167 deletions(-)
 >
-> - Otherwise go through each extent buffer in buffer_tree
->   For eb that still has EXTENT_BUFFER_READING flag, wait for them to
->   finish first.
->
->   Then check if the refs of the eb is greater than 1, if so it means
->   it's still held by someone, give it a warning.
->
-> Link: https://bugzilla.kernel.org/show_bug.cgi?id=3D221270
-> Reported-by: AHN SEOK-YOUNG <iamsyahn@gmail.com>
-> Cc: Teng Liu <27rabbitlt@gmail.com>
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
-> This new debug feature has exposed some problems, e.g. generic/648,
-> after an injected failure for device barrier, transaction is aborted but
-> we have a lot of dirty tree blocks unreleased and triggered the new
-> warning.
->
-> We still need to fix these corner cases.
->
-> Meanwhile if Ahn or Teng can give this patch a try for the existing
-> use-after-free problem, it would be appreciated a lot.
-> ---
->  fs/btrfs/disk-io.c   | 52 ++++++++++++++++++++++++++++++++++++++++++--
->  fs/btrfs/extent_io.c |  6 -----
->  fs/btrfs/extent_io.h |  6 +++++
->  3 files changed, 56 insertions(+), 8 deletions(-)
->
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index b8ac3275d8f8..d450bfc6d89b 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -3276,6 +3276,54 @@ static bool fs_is_full_ro(const struct btrfs_fs_in=
-fo *fs_info)
->         return false;
->  }
->
-> +static void invalidate_btree_folios(struct btrfs_fs_info *fs_info)
-> +{
-> +       XA_STATE(xas, &fs_info->buffer_tree, 0);
-> +       unsigned int checked =3D 0;
-> +       void *tmp;
-> +       int ret;
-> +
-> +       ret =3D invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
-> +       if (likely(ret =3D=3D 0))
-> +               return;
-> +
-> +       /*
-> +        * Some btree pages can not be invalidated, this happens when som=
-e
-> +        * tree blocks are still held (either by some pointer or readahea=
-d).
-> +        */
-> +       xas_lock_irq(&xas);
-> +       xas_for_each(&xas, tmp, ULONG_MAX) {
-> +               struct extent_buffer *eb =3D tmp;
-> +
-> +               /* Wait for any readahead first. */
-> +               if (test_bit(EXTENT_BUFFER_READING, &eb->bflags)) {
-> +                       xas_pause(&xas);
-> +                       xas_unlock_irq(&xas);
-> +                       wait_on_bit_io(&eb->bflags, EXTENT_BUFFER_READING=
-,
-> +                                      TASK_UNINTERRUPTIBLE);
-> +                       xas_lock_irq(&xas);
-> +               }
-> +
-> +               spin_lock(&eb->refs_lock);
-> +               if (refcount_read(&eb->refs) > 1 || extent_buffer_under_i=
-o(eb)) {
-> +                       btrfs_warn(fs_info,
-> +                       "unbale to release extent buffer %llu owner %llu =
-flags 0x%lx",
-> +                                  eb->start, btrfs_header_owner(eb), eb-=
->bflags);
-> +                       if (IS_ENABLED(CONFIG_BTRFS_DEBUG))
-> +                               WARN_ON_ONCE(true);
-> +               }
-> +               spin_unlock(&eb->refs_lock);
-> +               if (++checked % XA_CHECK_SCHED)
-> +                       continue;
-> +               xas_pause(&xas);
-> +               xas_unlock_irq(&xas);
-> +               cond_resched();
-> +               xas_lock_irq(&xas);
-> +       }
-> +       xas_unlock_irq(&xas);
-> +       invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
-> +}
-> +
->  int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *f=
-s_devices)
->  {
->         u32 sectorsize;
-> @@ -3706,7 +3754,7 @@ int __cold open_ctree(struct super_block *sb, struc=
-t btrfs_fs_devices *fs_device
->         if (fs_info->data_reloc_root)
->                 btrfs_drop_and_free_fs_root(fs_info, fs_info->data_reloc_=
-root);
->         free_root_pointers(fs_info, true);
-> -       invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
-> +       invalidate_btree_folios(fs_info);
->
->  fail_sb_buffer:
->         btrfs_stop_all_workers(fs_info);
-> @@ -4445,7 +4493,7 @@ void __cold close_ctree(struct btrfs_fs_info *fs_in=
-fo)
->          * We must make sure there is not any read request to
->          * submit after we stop all workers.
->          */
-> -       invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
-> +       invalidate_btree_folios(fs_info);
->         btrfs_stop_all_workers(fs_info);
->
->         /*
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index 1ba8a7d3587b..a8887285deda 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -2877,12 +2877,6 @@ bool try_release_extent_mapping(struct folio *foli=
-o, gfp_t mask)
->         return try_release_extent_state(io_tree, folio);
->  }
->
-> -static int extent_buffer_under_io(const struct extent_buffer *eb)
-> -{
-> -       return (test_bit(EXTENT_BUFFER_WRITEBACK, &eb->bflags) ||
-> -               test_bit(EXTENT_BUFFER_DIRTY, &eb->bflags));
-> -}
-> -
->  static bool folio_range_has_eb(struct folio *folio)
->  {
->         struct btrfs_folio_state *bfs;
-> diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-> index fd209233317f..b284aee1bfb0 100644
-> --- a/fs/btrfs/extent_io.h
-> +++ b/fs/btrfs/extent_io.h
-> @@ -326,6 +326,12 @@ static inline bool extent_buffer_uptodate(const stru=
-ct extent_buffer *eb)
->         return test_bit(EXTENT_BUFFER_UPTODATE, &eb->bflags);
->  }
->
-> +static inline bool extent_buffer_under_io(const struct extent_buffer *eb=
-)
-> +{
-> +       return (test_bit(EXTENT_BUFFER_WRITEBACK, &eb->bflags) ||
-> +               test_bit(EXTENT_BUFFER_DIRTY, &eb->bflags));
-> +}
-> +
->  int memcmp_extent_buffer(const struct extent_buffer *eb, const void *ptr=
-v,
->                          unsigned long start, unsigned long len);
->  void read_extent_buffer(const struct extent_buffer *eb, void *dst,
 > --
-> 2.53.0
+> 2.43.0
 >
+

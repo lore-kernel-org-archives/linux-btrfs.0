@@ -1,64 +1,64 @@
-Received: from mail-oi1-f170.google.com (mail-oi1-f170.google.com [209.85.167.170])
+Received: from mail-oi1-f171.google.com (mail-oi1-f171.google.com [209.85.167.171])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D3F5E381AE1
-	for <linux-btrfs@vger.kernel.org>; Sun,  5 Apr 2026 19:50:38 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.167.170
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 158E4382284
+	for <linux-btrfs@vger.kernel.org>; Sun,  5 Apr 2026 19:50:42 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.167.171
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775418641; cv=none; b=bGu+xY37K1ch+B0mnx6P10qfcyVfF3hLEzIs/Tivmt9NsU0/eV9xoVDWg43j10x9vrjj1kLq6N2gkQ9HXf7nOWEpJIdXvZBvl2q3twYuTWIldB0gt+dVv0RSGOKRJP0eaW5iSC3ETdIotfFdgk4kETK5PPCfgxikz3XEPTQAimg=
+	t=1775418643; cv=none; b=stMFS2RjKJyrIyZGX1Fbie1bA+NdNwLtp0YHU+L/1BLz0TwZBwOIXr5lSwkwahAY6jio+rNpliG5EYiJnV4/U5rNiHfzHukoMneJywVs97AQbBP3RRli/0hQpM0K0pGkhxg4MqlxGWnTVfiMmOi5Qf4od7UGeiIwbL1Pv2ANUEI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1775418641; c=relaxed/simple;
-	bh=hU9BEcBtU1BBLNMoyk+Hth5Nr+ssFTdxV7hM11OlEK8=;
+	s=arc-20240116; t=1775418643; c=relaxed/simple;
+	bh=M3Pjhbze6h8AbWBgQKGzzirkBeW7ABl2/2UM8BAwgDs=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=b/kUl/j14ivK94av5Wbzv8vaByTSuWcZEdD4Etv4aBQ29W6/6UwTUnb57B7OLE6/AoURTys2sNprtBDBsoQD2J2UBi2AlC1FI2361MefeiMz07Yyb7AAPesccku2JByo2Fs54l5FzJmbge20K5ASAnlNGoc/8SjsvszxeWBTpII=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=EVXrs8bm; arc=none smtp.client-ip=209.85.167.170
+	 MIME-Version; b=BMHfp9dIj99m/0D2Qj1xROfFXiHr5HpLv1iJTIONi+lIO5lxAw5VymT7Ju9R87YzvOHvvdc89dK9R5g/5TdkYo/2NncPhkKQhGZv1ufzkZc1rmEHycS80vh+4+/dQvFXZ1wGoTg47Lis0S4C9P44k2IA1mla1laJhbTfEiossio=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=MFGd3Z38; arc=none smtp.client-ip=209.85.167.171
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="EVXrs8bm"
-Received: by mail-oi1-f170.google.com with SMTP id 5614622812f47-46eca92a297so1675741b6e.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 05 Apr 2026 12:50:38 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="MFGd3Z38"
+Received: by mail-oi1-f171.google.com with SMTP id 5614622812f47-47018d341f8so1158470b6e.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 05 Apr 2026 12:50:41 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1775418638; x=1776023438; darn=vger.kernel.org;
+        d=gmail.com; s=20251104; t=1775418641; x=1776023441; darn=vger.kernel.org;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=8YfcbYnu/pMQdwPjkXzXqWwSF71Fmf6slXoGMkRuceU=;
-        b=EVXrs8bmHgO5s1t90z3Eg+M08P1oG8LrWnRCgXbjTfDMCRDKHcHznXQIsEr8SaYN2V
-         jynu10b89Jm8Xtk5/TelCEnVUsbUEbbK0I5anXQjsuIegtGQR9dLqSPB/wPJn9oHPgcg
-         ho9znGnNCmJKeu4INjVpi/1+6LT4IO5xLcnCkD31QwuIl5UVGsLBpVi1GaOvTQ+//Ejq
-         BWeEwYqj0YmOPSqZ/5IpuZOav4vxXJ7wUTD8Ba//k4MGi4cGxTU5X30PHG+DlvR91H24
-         utNwxCv+gYX3zqC81ePRIlWdDBvzENw2reukDwk15K+wD9MSIyLNaVxfpqMHjlEBGCee
-         oteA==
+        bh=NEusXoSwED78w0vyJyU5i030iDxdLxYwqTLGcdoyW1Q=;
+        b=MFGd3Z38AU/J7a2O6oIPMttJmmmN9rttQChMC6sOmnGQshaIseiIvJ0AU67UDhSlWb
+         I2RLPiBpqVWhTTFZWGDBzI8bqhEMtCIQROjUWIzUmDBPFcThCyNEbelT0+5u4KDc+cfD
+         YPc+JDCf9vTKTz3xjyUo7PW6X2t5EaTjRTQzH6qVgMRlwVbzeN0VBepiCNUzHB46JwcJ
+         ppFBSMKNPLNXCO0oA5mRNinVThyOYF9vELDMQjmBEyWPP1edyOiz0O/UB4QX5xu5nrUJ
+         UJOVxxzjQzd2P+1kH80hFE2RummrWZoczwBNN3kBsXLRepADMjd5XARKmyBA6DZgY5MC
+         CWtQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1775418638; x=1776023438;
+        d=1e100.net; s=20251104; t=1775418641; x=1776023441;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
          :to:cc:subject:date:message-id:reply-to;
-        bh=8YfcbYnu/pMQdwPjkXzXqWwSF71Fmf6slXoGMkRuceU=;
-        b=olq3EthLVLB5u5j4R5e2HYpg4bWEgau2CwMAkLLbEhlZITXpPbAg0mQMejqB3VcaYq
-         zn6FKyGhOhqOyqQQB5/3HI3AHTO+tpTGwAbh6Z0NauM2Ra1Q2q8foCJ25+Mm88a71x3R
-         uyFpQjuWIGyNkdsPXB6u2LuKmJFUM+kjcI+F/pc9wUTJhezvwABFRG0E4p3U+4tZOwRU
-         7pCn/wzXQUFJYWzdfiNetX5CsIk6LyHYW1zZ0X8JP8umTXEi9jQ4P82WH+Yf3T8HiHCt
-         mD+9slmH5n8+kGOcj9bZghc0WqU+1bp3IcDUP837P7rMyOYJ6Xgs/Ai7629TTIhU7XyC
-         w7Mw==
-X-Forwarded-Encrypted: i=1; AJvYcCV/JkphPN2ttPdiaXLFsr0R7cCwsevnjjhCYvaK6cl2FOcPQRVt+zoSapLChuxTcbESJvOiHbPnJk191Q==@vger.kernel.org
-X-Gm-Message-State: AOJu0YyqiYbh3dUpBXdeH0rH/6geaP5X8p8kZ0Kr0hSm6vnYqbIa5nDg
-	YGgdaMLpUkFRjQGaYnlCGlHtUvxV6GIhBXAKUW93LpwdE88q0Ae3odiv
-X-Gm-Gg: AeBDiesP2mF8iuTXl8uxAhj3IzyToMtOasmDsh4dcYZLdyPrXetlckz3Bf4gZUZscZQ
-	BMYCuzIoB6l3tzV7dSGtXa9aES95/07SF6oC4fA4CZZzrdT3QfnNGALjhVO8n8iaCATv1G9w5RK
-	hRLzL/jOgLdmBIUP7vHJerloEycoc2JV50QTTb+m+3ouPODcFoTiAmA7CezY1Wbx4r5qOpVgLgh
-	8Pz4Acdo1rFq/5x1qd6/AwL2PnGPcHMKlcyAJXdi0kmf6tvlectwUMpmawter5xoVVYoOyluScv
-	SEBTFasYGRS+PSyy4vJBU2qDuXDL2w/I7b8YBm2T3IW005EQ46BRj5qDV/0Wp/cWQmZTUbAKTUk
-	T8sD7eiT4ro+Rs7EHxmRiXqOMmD90fY4bCfdc6m2coA0oquskEyUl3BESRx7BpBojonf0q0Pf/Z
-	TO3vtVpwn2lZSMFUCzZNncjfC2cWleQShsuAuyz1HpGrO0bY6bbC92uRmMp/FxVsWDFPHdkqmDY
-	eZXiri1W2JwjQ8=
-X-Received: by 2002:a05:6808:1903:b0:467:46e7:e6fd with SMTP id 5614622812f47-46efb1cf743mr5361782b6e.35.1775418637761;
-        Sun, 05 Apr 2026 12:50:37 -0700 (PDT)
+        bh=NEusXoSwED78w0vyJyU5i030iDxdLxYwqTLGcdoyW1Q=;
+        b=mx4Gz7FGKwc70oGMlqTyN/dIR/2xgxL1g66TnVZNzfjSqWNxwGbKuy4u1TTLpynYAN
+         ZMMPb1MVuRLCNfuA1hv/NgnkAJTCtNaMfDsSvu/MF14s5P5q13I5zN4achA3c7FLoxaJ
+         iDiFwH6GOcgFfTFUHwF3GGGir9nq+mQr6PRfCAojNXGwT0Kd/WajFtskTPGMFX5D2ITc
+         IaJ0NQwa3fcOS0E3NDBVCaschNNG2PoUjSaFPzWQdTNMFhpFA1Pjl8fDDdTDaaM4bALF
+         6fbifIWTVNQeEfpmMiP7iqKvjyH/afxCiZXxh0aVTwUFxF4yb58EhUBXLIyHAN3Hg4xe
+         lRiQ==
+X-Forwarded-Encrypted: i=1; AJvYcCXw4+yi6cHZVm+COmvUv5LPl9JVIZgJBQRYYacTltTjen4WRI/dKQ8k0/TNIB1O0kYvzwcEyqj2B1Uucg==@vger.kernel.org
+X-Gm-Message-State: AOJu0YyyogvlA6mRrROk/w8pfdAbEnT1q35jw0Z1ZOTkrUlhlkbGq8W+
+	COA+BzB8o/Dmib2ZgHQVv1Xu8UNFKSx0PedfWalrAUol/NE+qJKY/n4v
+X-Gm-Gg: AeBDies7y2LII5boOQIhOL2Q4/CWtdIAA4PmYXqYcDz1M9OQTxPWAPpiwgpiLUhe+QL
+	TqK+ovY18UMXY9tuBpwPA8vPL2P4/70DjLK0XQyiM+1SlNqn63hhIfGVdx/GZXj0BHy03fGreL7
+	xe9qNn2m5KGCfp3CoV3fU97ePhTfl0bX24QbXKDRFx1CULnier55wHE3hRsxDCj3tffHBORQhBF
+	IMO0XBQ/NyA5qhd6RvEh31dO0m9KJJnz0pBU5X+fRXSjGNw1KrIgMn9yGbEiyIA+Zm2drBz3bEL
+	hy9w3bYAvcTs1mUI6TS9xbRKGgIfuNMfT9/c0nF/E3BgkLIolTRY8yrSsxVtEOjaJoXMS2jJYxm
+	nqCO6o+LpGG4ck/YPDilwvcS9Vwudgz6YI2KyTdEHvABthVUUapbMNB8uOppbahcUd4Q1JQTwMn
+	hD+zTMeFDMqtyD4GzGg/7XCZ/jJzwnUbyohnsW9tNHcpcapz+EynKjt4luC0SyO0VJH+CHcuWxT
+	A5tCs4ecBY7IBApP8j1+CwQ/w==
+X-Received: by 2002:a05:6808:5088:b0:468:1574:4cc1 with SMTP id 5614622812f47-46ef8d5bf29mr5189492b6e.3.1775418641053;
+        Sun, 05 Apr 2026 12:50:41 -0700 (PDT)
 Received: from localhost.localdomain (c-73-5-99-191.hsd1.la.comcast.net. [73.5.99.191])
-        by smtp.gmail.com with ESMTPSA id 5614622812f47-46f46160155sm4547428b6e.17.2026.04.05.12.50.34
+        by smtp.gmail.com with ESMTPSA id 5614622812f47-46f46160155sm4547428b6e.17.2026.04.05.12.50.39
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sun, 05 Apr 2026 12:50:36 -0700 (PDT)
+        Sun, 05 Apr 2026 12:50:39 -0700 (PDT)
 From: Sean Smith <defendthedisabled@gmail.com>
 X-Google-Original-From: Sean Smith <DefendTheDisabled@gmail.com>
 To: linux-fsdevel@vger.kernel.org
@@ -73,9 +73,9 @@ Cc: linux-ext4@vger.kernel.org,
 	hirofumi@mail.parknet.co.jp,
 	linkinjeon@kernel.org,
 	Sean Smith <DefendTheDisabled@gmail.com>
-Subject: [PATCH 3/6] ntfs3: map ptime to NTFS creation time with rename-over
-Date: Sun,  5 Apr 2026 14:49:59 -0500
-Message-ID: <20260405195007.1306-4-DefendTheDisabled@gmail.com>
+Subject: [PATCH 4/6] ext4: add dedicated ptime field alongside i_crtime
+Date: Sun,  5 Apr 2026 14:50:00 -0500
+Message-ID: <20260405195007.1306-5-DefendTheDisabled@gmail.com>
 X-Mailer: git-send-email 2.51.0.windows.1
 In-Reply-To: <20260405195007.1306-1-DefendTheDisabled@gmail.com>
 References: <20260405195007.1306-1-DefendTheDisabled@gmail.com>
@@ -87,109 +87,117 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Map ptime to the NTFS Date Created field in $STANDARD_INFORMATION.
-This is a mapped-ptime implementation: setting ptime overwrites the
-creation time. Justified because Windows treats NTFS creation time
-as mutable via SetFileTime() - it was never truly immutable.
+Add i_ptime (__le32) and i_ptime_extra (__le32) to the ext4 on-disk
+inode structure after i_projid. Total: 8 bytes in the extended inode
+area. i_crtime remains untouched as immutable birth time.
 
-Getattr: report NTFS creation time as ptime.
-Setattr: write ptime to NTFS creation time via frecord cr_time path.
-Rename-over: save target creation time before unlink, restore to
-  source after rename. Replicates Windows behavior where creation
-  time survives application atomic saves.
+This is a native-ptime implementation: ptime and btime are separate
+fields. On 256-byte inodes (modern default), both fit easily. On
+128-byte inodes, ptime is silently unavailable (same graceful
+degradation as i_crtime via EXT4_FITS_IN_INODE).
 
-Round-trip: NTFS Date Created -> Btrfs ptime -> NTFS Date Created
-preserves the original creation date through cross-FS copies.
+Uses existing EXT4_EINODE_GET_XTIME/SET_XTIME macros for read/write.
+Rename-over: when a file with ptime=0 replaces a file with ptime set,
+inherit target ptime (same zero-sentinel logic as Btrfs).
 
 Signed-off-by: Sean Smith <DefendTheDisabled@gmail.com>
 ---
- fs/ntfs3/file.c    | 13 +++++++++++++
- fs/ntfs3/frecord.c |  8 ++++++++
- fs/ntfs3/namei.c   | 14 ++++++++++++++
- 3 files changed, 35 insertions(+)
+ fs/ext4/ext4.h  |  3 +++
+ fs/ext4/inode.c | 14 ++++++++++++++
+ fs/ext4/namei.c | 13 +++++++++++++
+ 3 files changed, 30 insertions(+)
 
-diff --git a/fs/ntfs3/file.c b/fs/ntfs3/file.c
-index 13d014b87..8688a48b1 100644
---- a/fs/ntfs3/file.c
-+++ b/fs/ntfs3/file.c
-@@ -161,6 +161,13 @@ int ntfs_getattr(struct mnt_idmap *idmap, const struct path *path,
+diff --git a/fs/ext4/ext4.h b/fs/ext4/ext4.h
+index f1c476303..5c2812637 100644
+--- a/fs/ext4/ext4.h
++++ b/fs/ext4/ext4.h
+@@ -860,6 +860,8 @@ struct ext4_inode {
+ 	__le32  i_crtime_extra; /* extra FileCreationtime (nsec << 2 | epoch) */
+ 	__le32  i_version_hi;	/* high 32 bits for 64-bit version */
+ 	__le32	i_projid;	/* Project ID */
++	__le32	i_ptime;		/* Provenance time */
++	__le32	i_ptime_extra;	/* extra Provenance time (nsec << 2 | epoch) */
+ };
  
- 	stat->result_mask |= STATX_BTIME;
- 	stat->btime = ni->i_crtime;
-+
-+	/* Map NTFS creation time to ptime (provenance time) */
-+	if (request_mask & STATX_PTIME) {
-+		stat->ptime = ni->i_crtime;
-+		stat->result_mask |= STATX_PTIME;
-+	}
-+
- 	stat->blksize = ni->mi.sbi->cluster_size; /* 512, 1K, ..., 2M */
+ #define EXT4_EPOCH_BITS 2
+@@ -1136,6 +1138,7 @@ struct ext4_inode_info {
+ 	 * struct timespec64 i_{a,c,m}time in the generic inode.
+ 	 */
+ 	struct timespec64 i_crtime;
++	struct timespec64 i_ptime;
  
- 	if (inode->i_flags & S_IMMUTABLE)
-@@ -857,6 +864,12 @@ int ntfs_setattr(struct mnt_idmap *idmap, struct dentry *dentry,
- 		i_size_write(inode, newsize);
- 	}
+ 	/* mballoc */
+ 	atomic_t i_prealloc_active;
+diff --git a/fs/ext4/inode.c b/fs/ext4/inode.c
+index 625cfbf61..15b6b6dc6 100644
+--- a/fs/ext4/inode.c
++++ b/fs/ext4/inode.c
+@@ -4753,6 +4753,7 @@ static int ext4_fill_raw_inode(struct inode *inode, struct ext4_inode *raw_inode
+ 	EXT4_INODE_SET_MTIME(inode, raw_inode);
+ 	EXT4_INODE_SET_ATIME(inode, raw_inode);
+ 	EXT4_EINODE_SET_XTIME(i_crtime, ei, raw_inode);
++	EXT4_EINODE_SET_XTIME(i_ptime, ei, raw_inode);
  
-+	/* Accept ptime and store as NTFS creation time */
-+	if (ia_valid & ATTR_PTIME) {
-+		ni->i_crtime = attr->ia_ptime;
-+		ni->ni_flags |= NI_FLAG_UPDATE_PARENT;
-+	}
-+
- 	setattr_copy(idmap, inode, attr);
+ 	raw_inode->i_dtime = cpu_to_le32(ei->i_dtime);
+ 	raw_inode->i_flags = cpu_to_le32(ei->i_flags & 0xFFFFFFFF);
+@@ -5409,6 +5410,7 @@ struct inode *__ext4_iget(struct super_block *sb, unsigned long ino,
+ 	EXT4_INODE_GET_ATIME(inode, raw_inode);
+ 	EXT4_INODE_GET_MTIME(inode, raw_inode);
+ 	EXT4_EINODE_GET_XTIME(i_crtime, ei, raw_inode);
++	EXT4_EINODE_GET_XTIME(i_ptime, ei, raw_inode);
  
- 	if (mode != inode->i_mode) {
-diff --git a/fs/ntfs3/frecord.c b/fs/ntfs3/frecord.c
-index d5bbd47e1..b164b2f50 100644
---- a/fs/ntfs3/frecord.c
-+++ b/fs/ntfs3/frecord.c
-@@ -3197,6 +3197,14 @@ int ni_write_inode(struct inode *inode, int sync, const char *hint)
- 			modified = true;
- 		}
- 
-+		/* Write creation time (ptime maps to NTFS cr_time) */
-+		ts = ni->i_crtime;
-+		dup.cr_time = kernel2nt(&ts);
-+		if (std->cr_time != dup.cr_time) {
-+			std->cr_time = dup.cr_time;
-+			modified = true;
-+		}
+ 	if (likely(!test_opt2(inode->i_sb, HURD_COMPAT))) {
+ 		u64 ivers = le32_to_cpu(raw_inode->i_disk_version);
+@@ -6061,6 +6063,9 @@ int ext4_setattr(struct mnt_idmap *idmap, struct dentry *dentry,
+ 	if (!error) {
+ 		if (inc_ivers)
+ 			inode_inc_iversion(inode);
++		if (attr->ia_valid & ATTR_PTIME)
++			EXT4_I(inode)->i_ptime = attr->ia_ptime;
 +
- 		dup.fa = ni->std_fa;
- 		if (std->fa != dup.fa) {
- 			std->fa = dup.fa;
-diff --git a/fs/ntfs3/namei.c b/fs/ntfs3/namei.c
-index b2af8f695..40d06884f 100644
---- a/fs/ntfs3/namei.c
-+++ b/fs/ntfs3/namei.c
-@@ -292,6 +292,16 @@ static int ntfs_rename(struct mnt_idmap *idmap, struct inode *dir,
- 		return -EINVAL;
- 	}
- 
-+	/* ptime rename-over: save target creation time before unlink */
-+	struct timespec64 saved_crtime = {};
-+	bool inherit_crtime = false;
-+
-+	if (new_inode && S_ISREG(inode->i_mode) &&
-+	    S_ISREG(new_inode->i_mode) && inode->i_nlink == 1) {
-+		saved_crtime = ntfs_i(new_inode)->i_crtime;
-+		inherit_crtime = true;
-+	}
-+
- 	if (new_inode) {
- 		/* Target name exists. Unlink it. */
- 		dget(new_dentry);
-@@ -330,6 +340,10 @@ static int ntfs_rename(struct mnt_idmap *idmap, struct inode *dir,
- 
- 	err = ni_rename(dir_ni, new_dir_ni, ni, de, new_de);
- 	if (!err) {
-+		/* ptime rename-over: inherit target creation time */
-+		if (inherit_crtime)
-+			ni->i_crtime = saved_crtime;
-+
- 		simple_rename_timestamp(dir, dentry, new_dir, new_dentry);
+ 		setattr_copy(idmap, inode, attr);
  		mark_inode_dirty(inode);
- 		mark_inode_dirty(dir);
+ 	}
+@@ -6114,6 +6119,15 @@ int ext4_getattr(struct mnt_idmap *idmap, const struct path *path,
+ 		stat->btime.tv_nsec = ei->i_crtime.tv_nsec;
+ 	}
+ 
++	/* Report ptime from dedicated field, not crtime */
++	if ((request_mask & STATX_PTIME) &&
++	    EXT4_FITS_IN_INODE(raw_inode, ei, i_ptime) &&
++	    (ei->i_ptime.tv_sec || ei->i_ptime.tv_nsec)) {
++		stat->result_mask |= STATX_PTIME;
++		stat->ptime.tv_sec = ei->i_ptime.tv_sec;
++		stat->ptime.tv_nsec = ei->i_ptime.tv_nsec;
++	}
++
+ 	/*
+ 	 * Return the DIO alignment restrictions if requested.  We only return
+ 	 * this information when requested, since on encrypted files it might
+diff --git a/fs/ext4/namei.c b/fs/ext4/namei.c
+index c4b5e252a..1bfe4df24 100644
+--- a/fs/ext4/namei.c
++++ b/fs/ext4/namei.c
+@@ -3942,6 +3942,19 @@ static int ext4_rename(struct mnt_idmap *idmap, struct inode *old_dir,
+ 	 * rename.
+ 	 */
+ 	inode_set_ctime_current(old.inode);
++
++	/* ptime rename-over: preserve ptime across atomic saves */
++	if (new.inode && S_ISREG(old.inode->i_mode) &&
++	    S_ISREG(new.inode->i_mode) && old.inode->i_nlink == 1 &&
++	    !(flags & RENAME_WHITEOUT)) {
++		struct ext4_inode_info *old_ei = EXT4_I(old.inode);
++		struct ext4_inode_info *new_ei = EXT4_I(new.inode);
++
++		if (!old_ei->i_ptime.tv_sec && !old_ei->i_ptime.tv_nsec &&
++		    (new_ei->i_ptime.tv_sec || new_ei->i_ptime.tv_nsec))
++			old_ei->i_ptime = new_ei->i_ptime;
++	}
++
+ 	retval = ext4_mark_inode_dirty(handle, old.inode);
+ 	if (unlikely(retval))
+ 		goto end_rename;
 -- 
 2.53.0
 

@@ -1,64 +1,64 @@
-Received: from mail-oi1-f175.google.com (mail-oi1-f175.google.com [209.85.167.175])
+Received: from mail-oi1-f169.google.com (mail-oi1-f169.google.com [209.85.167.169])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DAD1A3815ED
-	for <linux-btrfs@vger.kernel.org>; Sun,  5 Apr 2026 19:50:46 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.167.175
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9607E37B010
+	for <linux-btrfs@vger.kernel.org>; Sun,  5 Apr 2026 19:50:51 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.167.169
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775418648; cv=none; b=sLkcWAv7c0p9/jJtNH2W3vLuJ5bt2UWk+P8hOMJ27aq/kvhwf4/7pa9dqwFtvqWk0vV5ZthtUUnS1qfPyYK1ExJo4mOADA3EsBbgujrwwbpDkQPwDY2krFCbzGXfME6ACpyH0Grs4NO1bCqgBoH48FexgOCfYSZ8/YgkUA4W8jA=
+	t=1775418652; cv=none; b=sop8CVdJdI82Xgzf5GnlczV0bjBNj83s2froL+lsBkmesJ70Td4mDpI6gAa4Xx1uJiikM91EbHSTEkBRm7erdQQBTgzwsgiItqJpbVZm4CcsX3+FVQwBBFHfs3YLxH6Ip/54LGFR9xulNb6qG3UyTuFMQ3IItWhRRoWgP48P5Qg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1775418648; c=relaxed/simple;
-	bh=Y0VePmfDKqj2Wr4uBDtOu+PZcxWOL70k8AGZMMUQvs4=;
+	s=arc-20240116; t=1775418652; c=relaxed/simple;
+	bh=pj9izgkvaTpAgOnLoFsABfEkNw9zO15w9ucfnlZdKpk=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=TfUVY7k3Md6X0MBRhzjLVn14DZIi5hnbiTphsqJOvhFiqWnW4xHLiot7N/bdQD29sU9nxInuHtn4qjGtMOsWv2ew4UDhCNvlkoCqoIFc1DsFUAaBlIwFYxfTGFgkViGesud4uhzKW6J0eQLNgHoxz9fMJp20SHrG1EwtnkbgYbI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=XdDrRQQ5; arc=none smtp.client-ip=209.85.167.175
+	 MIME-Version:Content-Type; b=lQ7qneJvwaonU+tW7Dda1tCZPvFGFDiaf4/HYWH5UxLbjFVETNmIijHc9HG9j2yCJbwHBuY6YbRUd27qH3WQByE/j8p7cED1yp96jS+gFeV8P/x/pzAScQSiBe27LnA7jVYI8/jzMsjIrWvCxYYoNKQqNUv5fRoo9+G0s8wWmfI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=rh6owsbo; arc=none smtp.client-ip=209.85.167.169
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="XdDrRQQ5"
-Received: by mail-oi1-f175.google.com with SMTP id 5614622812f47-470145d7e6fso433609b6e.2
-        for <linux-btrfs@vger.kernel.org>; Sun, 05 Apr 2026 12:50:46 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="rh6owsbo"
+Received: by mail-oi1-f169.google.com with SMTP id 5614622812f47-470145d7e6fso433620b6e.2
+        for <linux-btrfs@vger.kernel.org>; Sun, 05 Apr 2026 12:50:51 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1775418646; x=1776023446; darn=vger.kernel.org;
+        d=gmail.com; s=20251104; t=1775418650; x=1776023450; darn=vger.kernel.org;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=K8lGtdviJ/yNeFObSgzOPOsYD9zf1PXG9ZhAjN6EY4Q=;
-        b=XdDrRQQ5qPYkH9zR2x/+NtoWTga+XHyaTfGu1QNncVF0j2P77Okxr4pSiPY5tVZ1XK
-         2eV4SZrhm1H7mdLog/K+3uJqJ8MwfupaNM0WfLwj0hV6rwZzzGKUv5gq+7j4dn1J1rRG
-         Lx+PUov62S0/fA0CNBAT+tn5RjkXh+UarmL6Nj40U+N5kYOp+Z2fsSjLtMUBbS3RmLVv
-         zsHg78reMJJuXVPkHgVXT/jF0GyodEaZCMktPIBj4wCWdrB+Hf/s3w7hNhFS3vjI7UQ3
-         EZRt4JkHYq/34JFuYw0TKcAog1ZpCcLAVCD3CTPUajc5sl6NAIsdyJnpZSAccg4KNZDz
-         LxvQ==
+        bh=KlPOfR3Gdqzse/ZH/+C3LmQPc6s/iyp+29XZTkd6JSs=;
+        b=rh6owsbo2uEvJW6wIx2n3RiJ3gNb2G/Z6Y++ui7W+U1rQ5w/GzAfkVBKxmsfLCVtyi
+         BiaJnDUgPrACvNiq0elkWG6+gRQocmyUHDJvGVKGn62wWiBJN6mGTUltO9YQDmUX+sKY
+         CjkupcbyftMtNVHL616kFreIp0aaLgUHN5VWYcNBk5lyaE8Ei0Vm2hYhU4t2QsGPBc3N
+         mU7/Y1+2ziR7PeI/abF+w5COa1dDtFz7wR0vDy9sNsVy2xraRGSsC029uUpbaKrKksHi
+         JfLosLNN0fOLCtQ5BxrGEuXPDIL1p6wp4Th5+F8lXbH2zrgdtAvPbm/g3OwRwkocMpER
+         NG3w==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1775418646; x=1776023446;
+        d=1e100.net; s=20251104; t=1775418650; x=1776023450;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
          :to:cc:subject:date:message-id:reply-to;
-        bh=K8lGtdviJ/yNeFObSgzOPOsYD9zf1PXG9ZhAjN6EY4Q=;
-        b=ahxgnasVjcgVugfZ7w9ZzCpO1dLHsjdCnAXahIddW6yltVkn82cy6S2S4nk0KjE7dZ
-         1ADRSJehPvnqrIq+N/jGulYjAQfC82V3SdaF+w84lqMELsf1yYRpMKYkc6kbwCYK8EVd
-         S3qigz04cVqG57iN5p2SrTA5G2ov9EWulYNnOQJPCcTplb0XeuFYu7efhAPooa6176Yn
-         TH7+oBmEClK9AXR4XeEzEWZ8eDncTFD5x22bmotjwfPjKMc35eu0DQqInRUI64YZ1W9j
-         D8R74P3uSX6vR0JCGyg4Bbo7534xcIEpEKio+TMJj6gxto+VMoxyzJE5nhNaGty8vy+J
-         wNpA==
-X-Forwarded-Encrypted: i=1; AJvYcCV4NzL1jRgzsQFzd61OFyXSrlCj7HsLGAcy+CPohm+I87Oc6xpweIStWwza/0RPLU1cd3hPDtYENlaaPA==@vger.kernel.org
-X-Gm-Message-State: AOJu0YyyWmI11CEaaouVtSw/tDaoR5euTkS5RC5L+vppzIBILCkakaD7
-	xVwWo+w7FppW6f2b96HoZbAWJD2+uswUqdlztrh3eYEkPP8LzSjODj6cB20STYui
-X-Gm-Gg: AeBDietl7r0HUET5JqFTtzLF7p0UHelUrbACeg5JzYAnDY5af8JaC4CNTbYXZPHrsZx
-	fAaS/uloHHpMYVDxGRhY9L0mV9xYkkdQMo0GoirUn7X0Tlko/OUL3lAKq4cdHuCPHqOR9zeLgV7
-	CoFkPDdSvAPaf+bg1tk5Vet5Dwh9rudR81pEaqHq8KZF+xHsH1DvStoeH7AFe2OcMpu79b6ixxr
-	aYHvzqXK9jLq10mjUXQ2SC2vRryESp1jWg5rDOM/PJiI6+14Q6KAur0PTc2qJCpKOnthmjTUniO
-	NZYR4p4/Gku7hRifS7MkbC7IKMyMy2JewduykT5/dWORdVAAojvLRJvfzRV90bF+GpKuCTpPG8L
-	4ob2BmY/oQ0Vhf4vasrVtBGIjBbYzUPbPLGdrQ/1ateieW5gs+cPl06opN0wVdPs+RliYE5Ek4f
-	Cag8sEtgTKrDR2KzHPRoRLIaXCZFjNhuzNfq98VbLiNaAq982Zx9O8gQoI3hDiUWmOvV8supWsx
-	NwkiH7T5cjpy4s=
-X-Received: by 2002:a05:6808:1511:b0:46a:738f:7666 with SMTP id 5614622812f47-46ef7a12be7mr5024308b6e.36.1775418645800;
-        Sun, 05 Apr 2026 12:50:45 -0700 (PDT)
+        bh=KlPOfR3Gdqzse/ZH/+C3LmQPc6s/iyp+29XZTkd6JSs=;
+        b=pF6whKTuD5yEn4Dptkplya4Iejb87Y3JhcogPquZ9+DGhslyoa36dfiadtukRtlDVI
+         dtE/M6XkNwtXgENtz7rrTxterPWog4eo8sJG71OlWqr5FfcNbmqoLPqmXr6qL11R4fOf
+         /CkxMxHVSyWoG20DXg2ge/I/5FUX+VwFJl/faDFvFmcT9lR8mHypH4TlU4QIDBDKXLKb
+         HftzXSVfbHqO3ashLoAnzsNZghzqXB9afwIs+EowCqyHZF05UTkhRlTYWWUFeGsrmNXe
+         MFQoNfgw//v+eyhR6uwly0yHMTaX2xMfncWrErfAadTlp6UN2uLliyfS3qB4qP4OAwJu
+         JsNA==
+X-Forwarded-Encrypted: i=1; AJvYcCVF9d4qc/sSepPq5NfEKkcFVfOq4oC3vV1nKLvNSAriwoEmGJ+YgrMLJ4Y8OGcSVLoNc+/27T+SJh1F4A==@vger.kernel.org
+X-Gm-Message-State: AOJu0YwHD44yWUvi8fibYmgy8LkbSZJTfo5aCU6DyL3+9sPlSUvIHBlT
+	PbI4CNdoeNM0L33Hkb65zKEULTDWJYRcqYT30FEejGz4iUmufUSXs/4d
+X-Gm-Gg: AeBDieuk0DUtZ+YXKCDsieSrA6rS9AUoI6WHuSy9x41pDB0FYSJM+NBQQLI+7Yj5rMh
+	2cEMLV/Uv2UacXJ47xfYy91uOIEcDtu1aR1Lq9i7zRuNac67cOf4eTka0Af6dU5QyLHDJkaBpSZ
+	3iPZNNvgzHXjae4vY6VFttheAHe1aUr7gTYiLPsNYFksQ8uDR/ET4fJ2YTP17lTXM7D7//i9Gtz
+	fJ3iReTyGOgxwBvjpY68EVPT2fP/Ovr2ve+Qyij26Ok15S0iJ6sE/BrbBw9oP3ExUAiIhD2OpIY
+	mIkJLQIAungLTKS4vkEQpNZQbwI8C61+Qp6J/aIEDP7n4n7nZ5ilwZvh0oGfKw2LY6Jq3ZAhDF2
+	r5+kYIuKh6lHGahqCfYXbM05ZHWv9u1kDWhHc6ZcfeEtl8WTK7nzH/VyIRDhHo/gXNvZFNxS9t1
+	tvMbx7XeacrXfOva1BuQBt8kiPescUondP4UTV1GAdZkkY3/XSNSMDMa3PzqGUcLwUfBjJeaTaN
+	z1W6QWXRBGFuGw=
+X-Received: by 2002:a05:6808:67cc:b0:467:1ad3:80c with SMTP id 5614622812f47-46ef50025b2mr5012571b6e.1.1775418650293;
+        Sun, 05 Apr 2026 12:50:50 -0700 (PDT)
 Received: from localhost.localdomain (c-73-5-99-191.hsd1.la.comcast.net. [73.5.99.191])
-        by smtp.gmail.com with ESMTPSA id 5614622812f47-46f46160155sm4547428b6e.17.2026.04.05.12.50.42
+        by smtp.gmail.com with ESMTPSA id 5614622812f47-46f46160155sm4547428b6e.17.2026.04.05.12.50.47
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sun, 05 Apr 2026 12:50:44 -0700 (PDT)
+        Sun, 05 Apr 2026 12:50:48 -0700 (PDT)
 From: Sean Smith <defendthedisabled@gmail.com>
 X-Google-Original-From: Sean Smith <DefendTheDisabled@gmail.com>
 To: linux-fsdevel@vger.kernel.org
@@ -73,9 +73,9 @@ Cc: linux-ext4@vger.kernel.org,
 	hirofumi@mail.parknet.co.jp,
 	linkinjeon@kernel.org,
 	Sean Smith <DefendTheDisabled@gmail.com>
-Subject: [PATCH 5/6] fat: map ptime to FAT creation time with rename-over
-Date: Sun,  5 Apr 2026 14:50:01 -0500
-Message-ID: <20260405195007.1306-6-DefendTheDisabled@gmail.com>
+Subject: [PATCH 6/6] exfat: map ptime to exFAT creation time with rename-over
+Date: Sun,  5 Apr 2026 14:50:02 -0500
+Message-ID: <20260405195007.1306-7-DefendTheDisabled@gmail.com>
 X-Mailer: git-send-email 2.51.0.windows.1
 In-Reply-To: <20260405195007.1306-1-DefendTheDisabled@gmail.com>
 References: <20260405195007.1306-1-DefendTheDisabled@gmail.com>
@@ -85,57 +85,76 @@ List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
-Map ptime to the FAT/VFAT creation time field. Only active on VFAT
-(long filename) mounts since plain FAT12/FAT16 lack creation time.
-FAT32 creation time has 2-second precision.
+Map ptime to the exFAT creation time field. exFAT creation time
+has 10ms precision.
 
-Getattr: report creation time as ptime (VFAT only, via isvfat check).
+Getattr: report creation time as ptime.
 Setattr: write ptime to i_crtime.
-Rename-over: save target creation time before detach, restore to
-  source after attach. Preserves creation time across atomic saves.
+Rename-over: save target creation time before __exfat_rename, restore
+  after. Preserves creation time across atomic saves.
 
 Signed-off-by: Sean Smith <DefendTheDisabled@gmail.com>
 ---
- fs/fat/file.c       |  6 ++++++
- fs/fat/namei_vfat.c | 20 ++++++++++++++++++--
- 2 files changed, 24 insertions(+), 2 deletions(-)
+ fs/btrfs/inode.c |  3 ++-
+ fs/exfat/file.c  |  9 +++++++++
+ fs/exfat/namei.c | 21 ++++++++++++++++++---
+ 3 files changed, 29 insertions(+), 4 deletions(-)
 
-diff --git a/fs/fat/file.c b/fs/fat/file.c
-index 4fc49a614..9d1fcc554 100644
---- a/fs/fat/file.c
-+++ b/fs/fat/file.c
-@@ -413,6 +413,10 @@ int fat_getattr(struct mnt_idmap *idmap, const struct path *path,
- 		stat->result_mask |= STATX_BTIME;
- 		stat->btime = MSDOS_I(inode)->i_crtime;
- 	}
-+	if (sbi->options.isvfat && (request_mask & STATX_PTIME)) {
-+		stat->result_mask |= STATX_PTIME;
-+		stat->ptime = MSDOS_I(inode)->i_crtime;
-+	}
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index dce80561a..918dfd4c5 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -8715,7 +8715,8 @@ static int btrfs_rename(struct mnt_idmap *idmap,
+ 		/* Note: if rename fails below, ptime mutation is harmless —
+ 		 * the source file keeps its previous ptime=0 semantics since
+ 		 * the rename didn't complete. The in-memory value will be
+-		 * overwritten on next inode read from disk. */
++		 * overwritten on next inode read from disk.
++		 */
  
+ 		ret = btrfs_update_inode(trans, BTRFS_I(old_inode));
+ 		if (unlikely(ret)) {
+diff --git a/fs/exfat/file.c b/fs/exfat/file.c
+index 536c8078f..b6438bd79 100644
+--- a/fs/exfat/file.c
++++ b/fs/exfat/file.c
+@@ -277,6 +277,11 @@ int exfat_getattr(struct mnt_idmap *idmap, const struct path *path,
+ 	stat->result_mask |= STATX_BTIME;
+ 	stat->btime.tv_sec = ei->i_crtime.tv_sec;
+ 	stat->btime.tv_nsec = ei->i_crtime.tv_nsec;
++	if (request_mask & STATX_PTIME) {
++		stat->result_mask |= STATX_PTIME;
++		stat->ptime.tv_sec = ei->i_crtime.tv_sec;
++		stat->ptime.tv_nsec = ei->i_crtime.tv_nsec;
++	}
+ 	stat->blksize = EXFAT_SB(inode->i_sb)->cluster_size;
  	return 0;
  }
-@@ -564,6 +568,8 @@ int fat_setattr(struct mnt_idmap *idmap, struct dentry *dentry,
- 		fat_truncate_time(inode, &attr->ia_mtime, S_MTIME);
- 	attr->ia_valid &= ~(ATTR_ATIME|ATTR_CTIME|ATTR_MTIME);
+@@ -337,6 +342,10 @@ int exfat_setattr(struct mnt_idmap *idmap, struct dentry *dentry,
+ 	if (attr->ia_valid & ATTR_SIZE)
+ 		inode_set_mtime_to_ts(inode, inode_set_ctime_current(inode));
  
-+	if (attr->ia_valid & ATTR_PTIME)
-+		MSDOS_I(inode)->i_crtime = attr->ia_ptime;
++	if (attr->ia_valid & ATTR_PTIME) {
++		struct exfat_inode_info *exi = EXFAT_I(inode);
++		exi->i_crtime = attr->ia_ptime;
++	}
  	setattr_copy(idmap, inode, attr);
- 	mark_inode_dirty(inode);
- out:
-diff --git a/fs/fat/namei_vfat.c b/fs/fat/namei_vfat.c
-index 47ff083cf..f1e2eadf8 100644
---- a/fs/fat/namei_vfat.c
-+++ b/fs/fat/namei_vfat.c
-@@ -975,8 +975,24 @@ static int vfat_rename(struct inode *old_dir, struct dentry *old_dentry,
- 	}
- 	inode_inc_iversion(new_dir);
+ 	exfat_truncate_inode_atime(inode);
  
--	fat_detach(old_inode);
--	fat_attach(old_inode, new_i_pos);
+diff --git a/fs/exfat/namei.c b/fs/exfat/namei.c
+index dfe957493..9c0b59e00 100644
+--- a/fs/exfat/namei.c
++++ b/fs/exfat/namei.c
+@@ -1262,9 +1262,24 @@ static int exfat_rename(struct mnt_idmap *idmap,
+ 	old_inode = old_dentry->d_inode;
+ 	new_inode = new_dentry->d_inode;
+ 
+-	err = __exfat_rename(old_dir, EXFAT_I(old_inode), new_dir, new_dentry);
+-	if (err)
+-		goto unlock;
 +	/* ptime rename-over: save target creation time */
 +	{
 +		struct timespec64 saved_crtime = {};
@@ -143,20 +162,20 @@ index 47ff083cf..f1e2eadf8 100644
 +
 +		if (new_inode && S_ISREG(old_inode->i_mode) &&
 +		    S_ISREG(new_inode->i_mode) && old_inode->i_nlink == 1) {
-+			saved_crtime = MSDOS_I(new_inode)->i_crtime;
++			saved_crtime = EXFAT_I(new_inode)->i_crtime;
 +			inherit_crtime = true;
 +		}
 +
-+		fat_detach(old_inode);
-+		fat_attach(old_inode, new_i_pos);
++		err = __exfat_rename(old_dir, EXFAT_I(old_inode), new_dir, new_dentry);
++		if (err)
++			goto unlock;
 +
 +		if (inherit_crtime)
-+			MSDOS_I(old_inode)->i_crtime = saved_crtime;
++			EXFAT_I(old_inode)->i_crtime = saved_crtime;
 +	}
-+
- 	err = vfat_sync_ipos(new_dir, old_inode);
- 	if (err)
- 		goto error_inode;
+ 
+ 	inode_inc_iversion(new_dir);
+ 	simple_rename_timestamp(old_dir, old_dentry, new_dir, new_dentry);
 -- 
 2.53.0
 

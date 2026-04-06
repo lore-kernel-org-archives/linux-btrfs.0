@@ -1,240 +1,175 @@
-Received: from BYAPR05CU005.outbound.protection.outlook.com (mail-westusazon11010033.outbound.protection.outlook.com [52.101.85.33])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-pj1-f54.google.com (mail-pj1-f54.google.com [209.85.216.54])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1722B156C6A;
-	Mon,  6 Apr 2026 01:59:47 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=52.101.85.33
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775440789; cv=fail; b=JQiU42Pa44HDJMKBxvReSz2cDbq45I+Xe8Qbmq2ypGABI23Id7miT6tVGLw9Z9JS2ojYaY9Yt43AKIf3ZBjBBXd1d2Oo2aPd3X0cetE6yCzE88bKJ3D4OvOTfRYpKWy9x7jv5BOK7RSZQSplOxAXtQPlrFCPyV9BK/ZwtfCXFJc=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1775440789; c=relaxed/simple;
-	bh=7SlogQlYyrSLpsu/KsQ24A8dCL75eKznt9+sr9TBm/s=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=ce7lXiS/8KYdE/ptuY6XT+1dSZcC+GEyJSq80zNK7uynOzwU7L3KTHPfAMh5+fw1dPc400fSQAYoOOHSKTg6XErk4nUs90ck9DtnzW3qK00ELfFLK4P995j1p4GIFti/kAxKGuu9nBqHFVcNYfU/bOJ4nyi4qunOe+ryL8997qA=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=nvidia.com; spf=fail smtp.mailfrom=nvidia.com; dkim=pass (2048-bit key) header.d=Nvidia.com header.i=@Nvidia.com header.b=B4x2mxhg; arc=fail smtp.client-ip=52.101.85.33
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=nvidia.com
-Authentication-Results: smtp.subspace.kernel.org; spf=fail smtp.mailfrom=nvidia.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8C78D29B799
+	for <linux-btrfs@vger.kernel.org>; Mon,  6 Apr 2026 13:56:12 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.216.54
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1775483773; cv=none; b=ATO2EqemfBRHuS6XpgQNUOgso2OBEfgY9px4kZE495CNilCL3AdGBNi54SHe6N9idhSf16G4mw9h16Qe+RlnVsfPn/vp9+vL1ZO3a28/nOm2U2x4qNDDz5IBd+56ISc6lLREZQ4q7+Zi7ExCo5hqYoAcL78Ncl2UPyoEieccJM4=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1775483773; c=relaxed/simple;
+	bh=FpUFBpb8+X/PVQTrwXV2LX04t53Q2wRe+tJStXyfeVM=;
+	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
+	 In-Reply-To:Content-Type; b=aegySctg6bXKi5BQCTG+mFF/UggcEy1j/5wNBriR2XULJW3ZngwKKqyCMMlL64n2VycLEmtuyHfe9i6cChn/g2NyvRdE/z6DelCCNW0CqAxjvIR1qIQ7KFKYp7CilxReHrabxx+rg32Fy7V4QCmOLsw/gPSDN5Y2+lRey8xl+9U=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=OFg9+9ni; arc=none smtp.client-ip=209.85.216.54
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=Nvidia.com header.i=@Nvidia.com header.b="B4x2mxhg"
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
- b=YYf5XQ1fSw5bYc2V6emx3Oxub8R8A2CU737cIMoz0uVp1XFz3DTT2ftkbLRhRE0kz9NWB7CvNqFuZ9UAKWkvYlLPMFsrDqSv1IwIxpZjWdMHoXRUaTIOVR4bhHgDD16M4ek2Q0SlNcI0Gjrqoy9g+hc6wsruhY/pAzUJccT6TqfUOmBmY8iekqk/0PUY2X/L/TblwTgOLsnhcz6UrXV/wMKUKRFFjJ6+XLvKiTgHlgwH0M1pANLD7MPxz3EHYNcygome5oA2FWunGf8aEg4irnsrw2G67VTW7LSRjuDiHbYWEy6yUYOx+pt/t8/OBlAQO53+Z87nbxTPXmEkXZ2DGA==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector10001;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
- bh=E5MaxEYRhbgCw1BMg9CsjnIUtc+tJ2/yJ1leQZxwYMw=;
- b=cLnAFQy06Vf1huDuYjYvpi04+kOP3T3CEGHkBmdLupvYEMIzkLRsg81WD6awAiUu28u/Fuz7XbW+Z0M05MsUayTqE0EOdi2OA5i+adh09HY2KPTOioxO92F1kgFYZHna+XiRtydvjV0dX3zFT7o4pE8lEDaKDpDFBl290cgFDIaoNKZSz/hEK5tD5aEbdn05jY8g/6oIFlWWivpm/1mA+6v6DYLV1nK9TrCUxOmROUBs5nKWqhyUYymoxFCd1DYfZgHb1s4LGcSekXDAPV7JITb0I4XZ/AwdoXGmafpctULE7NNNJH2dwoBmfCpoTKaRYr/dfbC7kkHXjqfI+ChmHw==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=nvidia.com; dmarc=pass action=none header.from=nvidia.com;
- dkim=pass header.d=nvidia.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=Nvidia.com;
- s=selector2;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=E5MaxEYRhbgCw1BMg9CsjnIUtc+tJ2/yJ1leQZxwYMw=;
- b=B4x2mxhgDhbGpR9PzyRpV2ZOVV/8mPnv45WozZAWQLSSCiFTQrMOgLfoSCHw7sX1VfXgEuBQes00VZpm2C2rl90XeHjW2NLiHkQyztSjImA4aur5eoARqtlvMK4nN6iRwwWYaU/MkDr/tx9I3Rv6GqKUAKY7YZ2wQjD6j6ciq58aZAQ9+uxpxb+CHNU4apfV3Z/Et6ypXmVNr2eQf7To8J9pdrrdoHtfYtoUod9qn1mGa0tEQ8uKemlgeUvC9tPrIPInuU2p0/dWO52YbN38OD2TvNNG4kDfQmXMBH+8iiCIISqcUsbg9sJWIrWj3xnUkZ17LlBv0nFtcQSdrrYxFg==
-Authentication-Results: dkim=none (message not signed)
- header.d=none;dmarc=none action=none header.from=nvidia.com;
-Received: from DS7PR12MB9473.namprd12.prod.outlook.com (2603:10b6:8:252::5) by
- PH7PR12MB5829.namprd12.prod.outlook.com (2603:10b6:510:1d4::6) with Microsoft
- SMTP Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.20.9769.17; Mon, 6 Apr 2026 01:59:44 +0000
-Received: from DS7PR12MB9473.namprd12.prod.outlook.com
- ([fe80::f01d:73d2:2dda:c7b2]) by DS7PR12MB9473.namprd12.prod.outlook.com
- ([fe80::f01d:73d2:2dda:c7b2%4]) with mapi id 15.20.9769.014; Mon, 6 Apr 2026
- 01:59:44 +0000
-From: Zi Yan <ziy@nvidia.com>
-To: Nico Pache <npache@redhat.com>
-Cc: "Matthew Wilcox (Oracle)" <willy@infradead.org>,
- David Hildenbrand <david@kernel.org>, Song Liu <songliubraving@fb.com>,
- Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
- Alexander Viro <viro@zeniv.linux.org.uk>,
- Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>,
- Andrew Morton <akpm@linux-foundation.org>, Lorenzo Stoakes <ljs@kernel.org>,
- Baolin Wang <baolin.wang@linux.alibaba.com>,
- "Liam R. Howlett" <Liam.Howlett@oracle.com>,
- Ryan Roberts <ryan.roberts@arm.com>, Dev Jain <dev.jain@arm.com>,
- Barry Song <baohua@kernel.org>, Lance Yang <lance.yang@linux.dev>,
- Vlastimil Babka <vbabka@kernel.org>, Mike Rapoport <rppt@kernel.org>,
- Suren Baghdasaryan <surenb@google.com>, Michal Hocko <mhocko@suse.com>,
- Shuah Khan <shuah@kernel.org>, linux-btrfs@vger.kernel.org,
- linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
- linux-mm@kvack.org, linux-kselftest@vger.kernel.org
-Subject: Re: [PATCH v1 00/10] Remove READ_ONLY_THP_FOR_FS Kconfig
-Date: Sun, 05 Apr 2026 21:59:41 -0400
-X-Mailer: MailMate (2.0r6290)
-Message-ID: <737AA503-E522-4F01-B78E-AB6C6B2E89B0@nvidia.com>
-In-Reply-To: <CAA1CXcCmue7iX3O9RLo7wR5EqASvJGCLraw1+iQMZ98BiMJwrA@mail.gmail.com>
-References: <20260327014255.2058916-1-ziy@nvidia.com>
- <CAA1CXcCmue7iX3O9RLo7wR5EqASvJGCLraw1+iQMZ98BiMJwrA@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
-X-ClientProxiedBy: MN2PR01CA0033.prod.exchangelabs.com (2603:10b6:208:10c::46)
- To DS7PR12MB9473.namprd12.prod.outlook.com (2603:10b6:8:252::5)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="OFg9+9ni"
+Received: by mail-pj1-f54.google.com with SMTP id 98e67ed59e1d1-35da1af3e10so3564681a91.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 06 Apr 2026 06:56:12 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1775483772; x=1776088572; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:from:content-language
+         :references:to:subject:user-agent:mime-version:date:message-id:from
+         :to:cc:subject:date:message-id:reply-to;
+        bh=xLyzAn9QqfQlSITZf0YC+/6euCArn6YS8CZWi+Adyn0=;
+        b=OFg9+9niJT1vUZLIWbH1NyPoMIEMw3bzlYlvaayJcP291zn4Pjof8y0D5aUSTVaQKT
+         L4My0SXv9Xw2TCjtfk7wXxTV2uxsLgm30tuSh3hE7/H19WFIg7BEhe6hdjahy8BsQqKO
+         agm6MX4NrmYtMSYPPwdVBwVWeZZRlCacJnv5286AatRmnP39bVR4VaeqRHvnUckmzdGZ
+         NfC0bOTWg8KDZ8K7WovW/nltAq61ww3+1aooxs52U8rbC117+K+2g2/K9YL2ethZw717
+         JHRxfGQ+DNNMINAA5uFsXG+UvV37OjxjDH+elccgWIncgexBqrNqoXPyyO+rIDH/mw4s
+         q45w==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1775483772; x=1776088572;
+        h=content-transfer-encoding:in-reply-to:from:content-language
+         :references:to:subject:user-agent:mime-version:date:message-id
+         :x-gm-gg:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=xLyzAn9QqfQlSITZf0YC+/6euCArn6YS8CZWi+Adyn0=;
+        b=QaIyjSSCF8NrOwgyxb6LBD2IT9M+/uTfaM6P5w6uVm+7JM9Iblqp5rqa9v7zhLZKng
+         sRfAp6ADZtq20SjW0iL5jJOgvsRmIpn9PO6AxESH0wMNqKVPH90uqlOEZ0gnn4oLkn7s
+         fiaKy20AO5ol8HKwO9ABwxLAaJLMB6NXeHTeFUCuqN1hLMDfGPe60Cb9mXzPCEzhR5ZU
+         EDPZARtI6XKCMcogSnS2pn/QmPeRv6VPcGSMlP7wXt/bn5jIlrheYWjOxUM2rf64M8Xa
+         PaFMUNqA8Mt7Y+EZcA6kNwWDOW60UQHLLGhCFVz28gBa7HK4Jpoaec0+S8xMUf/Q65ZL
+         7LvQ==
+X-Forwarded-Encrypted: i=1; AJvYcCXqEdiCoV6C7dGujGPgdzUFwAiYGb2h0cFqbM7QG9ssTAoC+gIrvySy9uVB7KKHW8emXqKXntuVWejmfg==@vger.kernel.org
+X-Gm-Message-State: AOJu0YznCGl5HCg32X7y3peZQshHr92Ybk/wrY3+L9C2uDmAEqF+hd6I
+	3K53YecDvYLk8rIyMGPfZZ9g1yJp2dYqzJj5/Mp9HwKGE440xnFr2KcXIwhjrM0k
+X-Gm-Gg: AeBDiesdDTUNv+oTvi9ET1Z4TgaIcJJfWzI04VUawB1TPgAzdzr2maL+KZG8aNX1ID8
+	7bHe3cOnR6hF93YV3fIBZc84YC47STz9WooRPSJNGC/riRtv+3WCusf1IRwXgbLpVkscqs59Ax4
+	nwLCUp7F4A2Xg/hgG+DpwNY91oya4eaUkOzQmMa2h4UeXZYNiaatH+EXt0bj2YhH5/Wm+u6WPPl
+	qwmUnnI0W+xy3ZhfYROQwFSS+5LAYxX8U8CxrEGVcYWM7mmecWOsp7A8zm7Sosh/RCtzX9D/Wmo
+	wqyGWcpHha3hf1HN0kgsnLu0BoSR012p/LEudW9OkJ17vd2I8/CvidZNhKsBRl4Y1p4ZUAzGPzS
+	Y2UY7IoWz4UniaQibKq67v8583U8k+tgOtDwOyqoVRLksDxpJp3EW4q0pVwB0TTMobP0pJNb2fs
+	n8Q5QUrtNEIE51bDbN/hSSUt5srz5pCs5WopVf2sE=
+X-Received: by 2002:a17:90b:3c4c:b0:35d:95eb:879a with SMTP id 98e67ed59e1d1-35de6871781mr12501401a91.13.1775483771626;
+        Mon, 06 Apr 2026 06:56:11 -0700 (PDT)
+Received: from [192.168.50.119] ([116.87.14.48])
+        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-35dbe959886sm19373895a91.14.2026.04.06.06.56.09
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 06 Apr 2026 06:56:11 -0700 (PDT)
+Message-ID: <5790719b-70a6-4d75-813d-5842e77c7b89@gmail.com>
+Date: Mon, 6 Apr 2026 21:56:07 +0800
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-MS-PublicTrafficType: Email
-X-MS-TrafficTypeDiagnostic: DS7PR12MB9473:EE_|PH7PR12MB5829:EE_
-X-MS-Office365-Filtering-Correlation-Id: 11c57a64-c544-446e-4d40-08de93802c31
-X-MS-Exchange-SenderADCheck: 1
-X-MS-Exchange-AntiSpam-Relay: 0
-X-Microsoft-Antispam:
-	BCL:0;ARA:13230040|7416014|376014|1800799024|366016|18002099003|22082099003|56012099003;
-X-Microsoft-Antispam-Message-Info:
-	u1qMJjQ/fg3rR/FAfYJpJVMRP/DNuZ0JMrvornz+OTsjY2R7sriSsHyyKzdaNCwU48iHOPNmYRXbLnuiYZDXa0JI+EZJe3Y0mtsTIRj617PxEdh3+2yglq/2GrFYvmlaVl0B1vslGtLYnn162hwtogge0gPMuhnex0W0AyqKT/AZ/5/c7bd/rwyb7Q8N3cJHedztaaC4AO36Pik818XjijSMBPXCbNLviTrD0YZSTDqG9Am7LGTZjD1hRYY0FeRDo11V/JDpZ1Pq8RRYa0bOH+d7bVGLNIZ6n/bRPrDPfjoQSP/tzjs1wb9rpDbBbDh8xd1fdANYK9k1C/1Yk0RgNx7TQcfyvB0oPFZl5IlMwmPsXFOydaliGIkDAhV+wZqa5bbyW4jP5DHyb8Nx7tjvAb8XraFThgzu7U+r8tWdtidAV2BeiRns0jHSryXxWRVU4WpSEYRgPNw6C+ePkYrTLGzIgbdrxef2GnO9eipYl3n5LhpCb+502TaaN6n7QR/V0Nb+zHgGRsJHM7uI8sfkSFcKDP3BHL4bv5+54nYkPXTPjaVsDbTE5vdC88FxfLBjGxDiwJ46Hy8HUA7b4Fp5uCJdz/031ujM76HP/xYcTdpGml9Lm83/6Fi0CFmhn5W6Gvw6oSoK+nEw0aTMv3h9p6BNANfV2Hav5/85cRGfF3XGyBJjNHl2Q7gXPhPPynwU/1mb54AGm1WdoQtquIMve0H1Nw5uOHHHrFxbE82pllo=
-X-Forefront-Antispam-Report:
-	CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:DS7PR12MB9473.namprd12.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(7416014)(376014)(1800799024)(366016)(18002099003)(22082099003)(56012099003);DIR:OUT;SFP:1101;
-X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
-X-MS-Exchange-AntiSpam-MessageData-0:
-	=?utf-8?B?ZnFFNDdaekFhU3VUdFczT0NwL3pZMVlNbkVORVR5aGVwSEhYSjZTS25uQ3FO?=
- =?utf-8?B?SjUybElEM0ZNQitaS1o4d250Wk5hVkwvSThxcEk1Qmd5d0lnK0UxUXhoZFVy?=
- =?utf-8?B?bTczOEcrNXRwaDU0dk9CUElRc1JXYlJ0SG9XakUyRFlmVnlHbW94dDlGRGJq?=
- =?utf-8?B?Q2dqZ2ZYTVdLVE9RYTBWek1qL3V1MmE5Sm5PejBvV0hoSnMySkc3U3g4QlND?=
- =?utf-8?B?Z1BEQ2xXT1lqb2NBZG52OGY5aTJjM1RxNXN4c2U1VmJvajVuU2JhTUFTckJz?=
- =?utf-8?B?MC9qSTgwbi9YcUdGcVB4NllNZzNjNkpuUG5tdnpLcmZiS1p3Nk5IWGI0dHhO?=
- =?utf-8?B?UERRQ202YXJIUkxxTm5FWGY1N1ZTUGJ4NWpPeDVRUHhVanV3MVpmZkxLS0E1?=
- =?utf-8?B?UkY3b0FKYUo2VFhxdm5aczI4c0NpRmRJK3pJZVMwYUtUMHZFbTNzb3cyc0gr?=
- =?utf-8?B?YUYyc2ZWVDJVaDdyYWxMTENSdXBhVDNmNjR0bmwwNVRlMzZuYUtqMDZCOFh0?=
- =?utf-8?B?dVZqQTMvbCtsb21pcWxwQXVqTVloVkZ6c0kxQW9KZlMwYXk4Lyt2OWRBU001?=
- =?utf-8?B?WmxEdTl6Z2pFU0RyWDhwQXNxcU53Z2ErZ2h1VWJ2VGcxb3BpUFlHV2VnWDRN?=
- =?utf-8?B?TkFBSzJBK0k2ZUdlNnpGVEEvMmJGK3E4aW02ZFdOMGJUV05rUzZKSUdBM05o?=
- =?utf-8?B?SVZrSkY5ZTZlUUx0N0Y0NnllSEphd0VPRUV4bkV6S0tzZ0E0eThmcnVsUllG?=
- =?utf-8?B?czdSSnE4Sm93L0lkaWg0QklUYndVb0JRMVRuVVVCMzlJbFBmd3FqcDhHS3R0?=
- =?utf-8?B?RllDdmVMaUZSNFlQeHJTUVJQL3lSTDNELzQ4aU9IMktHM1JNTkpmQ2FzSTRq?=
- =?utf-8?B?V2FPYk12SlVsQWpwWGM2MWIrVGxJblc4ME53UHU4ZzRBQ1draHFOb3MvNjNv?=
- =?utf-8?B?Z0FqRGVBdUphdTg0a1VQcEtQa3RVVHA1eFNmNzhBSzJHTFZuYXMxTytKWTh3?=
- =?utf-8?B?Wnlvem54ZitNME13dzl3eWF6T0JRenkrSHhNcHZDZ2tmSHpjdnYvVkl2ZVVG?=
- =?utf-8?B?aHBNY1dmMXprc1o5LzhPRjJQWWpzTitEcmZvL3FOYjFiMmNMWisrZjdCVkNj?=
- =?utf-8?B?OHhZM0pJV2dqRnVxa2dSem9NODllcjhXeEJVblJ2ejhTTDNvRXhBZXVqOW5C?=
- =?utf-8?B?MVQvc3daY2toSldhVGoxdVYvK09BS1MwYVE2UkR1NzhnWnhSaWk5WlNkOXBQ?=
- =?utf-8?B?ODdTeFdQV1gxNUZFclB2RGFqZUUzbHpOZXpSZ1RMSjhDTDVpamtTckF4TXQ3?=
- =?utf-8?B?UTBVelBURmZKajM3K3BESk9CK3YyYmR2dXJlaWpCa0gwMWp0K3hmNlh3clRp?=
- =?utf-8?B?NkN5VmNzR0lseFd3UnBMeDQ0eE1EZFBuNU4wdGhub2k5OUFWQ084cmE1OTBI?=
- =?utf-8?B?WkhaUlc4SnZpYnN3MU53VzRXU0dKbEl1SVFxaHBoZzRobVR3K0NxcW9VTGtj?=
- =?utf-8?B?QUEyOWNYeW1FVmxPYlJhbHllVXRhb2ZvOFdkam1pU1pqcmJsd2hSN0QvZWdu?=
- =?utf-8?B?VHloRUxjRXlra28wOFA3SkNrbGZQaEIwYWgrbTJHU0VURWVjd2RSQmRxaXgw?=
- =?utf-8?B?djBlUk93Tk1WRmRqRU56aUNYcnhCNWFQOGExYVNBWUFUaTNCSkRORW1PVWVV?=
- =?utf-8?B?QUcwbUltZWlGMzhua01zMnR6NTcyaXlEbUVUTVE2M0hnUHJybzQ3YjZjRkd2?=
- =?utf-8?B?SG1ZMSs1WjB4dmtOQlFRbU5IdGo0Y3RRSDZTVUhON0tVWHdWNm9aaUc1cGpl?=
- =?utf-8?B?cVcvTFZRNjBGdTJqMnBLcEtydVdINHVoZ25ZMHlpZ25vZ2dMNnNKMythcVBr?=
- =?utf-8?B?amVMWGxvRmJWc3RZMzFNTW9EMWcxUWxnTFI1VGE4U2d6YUo0M1VyZkJNTUJX?=
- =?utf-8?B?bHhOVE9SUTlmUVMwTkpPNzNlcFlGdmwwNGRPek1PUm4vckx0S2N5Z2JCdy9m?=
- =?utf-8?B?L0ZZUU16blZ4MnpUZ3l2d1BoV2VUODhqRGFRK0szeUdKS1pMd1J3bUQrVFkz?=
- =?utf-8?B?WlBzdkVQRlZnSzh2M0dzVWRhNHlrRnZxMnJKSnZ4VEdnL290bDNxV0JRMlFq?=
- =?utf-8?B?K0FUZEVsclQyWkMvM09RdGl6MkcvMGxORzVldU5wK2JqR1FFTFJXUEpwQ3Fl?=
- =?utf-8?B?UGZZSUlub1ovYXlGUWk2V0I1V1lQRHEreS9nVlRkR0ZGTXNZOGgrczV5blgw?=
- =?utf-8?B?UjR3VjJCZDI4MEpyVnZQOHI3R2pzQjlPU2hmaG1tbzFldmkwUVhqQ3BqT3U4?=
- =?utf-8?Q?rOMUlJ3g+aTlZXIKPF?=
-X-OriginatorOrg: Nvidia.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: 11c57a64-c544-446e-4d40-08de93802c31
-X-MS-Exchange-CrossTenant-AuthSource: DS7PR12MB9473.namprd12.prod.outlook.com
-X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-OriginalArrivalTime: 06 Apr 2026 01:59:44.0924
- (UTC)
-X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
-X-MS-Exchange-CrossTenant-Id: 43083d15-7273-40c1-b7db-39efd9ccc17a
-X-MS-Exchange-CrossTenant-MailboxType: HOSTED
-X-MS-Exchange-CrossTenant-UserPrincipalName: 35XK4NhgYDFQBUsFfimlHayHYqdXGKQGTk+QW72U7Kd4CFa0QVPxyECA4Hm0KGHz
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: PH7PR12MB5829
-
-On 5 Apr 2026, at 13:38, Nico Pache wrote:
-
-> On Thu, Mar 26, 2026 at 7:43 PM Zi Yan <ziy@nvidia.com> wrote:
->>
->> Hi all,
->>
->> This patchset removes READ_ONLY_THP_FOR_FS Kconfig and enables creating
->> read-only THPs for FSes with large folio support (the supported orders
->> need to include PMD_ORDER) by default.
->
-> Hi Zi,
->
-> Thank you for tackling this :) Ill try to review the next version as
-> I'm a little behind on this thread.
-
-Sure. Thanks.
-
->
-> Should we guard collapsing READ_ONLY_THPs with a sysctl? My fear is
-> workloads that convert READ_ONLY THPs into writable pages (assuming
-> this is common/possible; my understanding of FS is rather low),
-> leading to storms of thp splitting. Do you think this is a real
-> concern? I guess this is also true of read-only-->writable fs-THPS
-> even without khugepaged, correct?
-
-Why would a read-only THP need to be split when it becomes writable?
-After this patchset, a read-only THP can only be created on a FS that
-supports large folios (to be precise PMD THP). That means any write
-to that read-only THP would just change it to a writable THP.
-
-Let me know if I miss anything.
-
->
-> Cheers,
-> -- Nico
->
->>
->> The changes are:
->> 1. collapse_file() from mm/khugepaged.c, instead of checking
->>    CONFIG_READ_ONLY_THP_FOR_FS, makes sure the mapping_max_folio_order()
->>    of struct address_space of the file is at least PMD_ORDER.
->> 2. file_thp_enabled() also checks mapping_max_folio_order() instead.
->> 3. truncate_inode_partial_folio() calls folio_split() directly instead
->>    of the removed try_folio_split_to_order(), since large folios can
->>    only show up on a FS with large folio support.
->> 4. nr_thps is removed from struct address_space, since it is no longer
->>    needed to drop all read-only THPs from a FS without large folio
->>    support when the fd becomes writable. Its related filemap_nr_thps*()
->>    are removed too.
->> 5. folio_check_splittable() no longer checks READ_ONLY_THP_FOR_FS.
->> 6. Updated comments in various places.
->>
->> Changelog
->> ===
->> From RFC[1]:
->> 1. instead of removing READ_ONLY_THP_FOR_FS function entirely, turn it
->>    on by default for all FSes with large folio support and the supported
->>    orders includes PMD_ORDER.
->>
->> Suggestions and comments are welcome.
->>
->> Link: https://lore.kernel.org/all/20260323190644.1714379-1-ziy@nvidia.com/ [1]
->>
->> Zi Yan (10):
->>   mm: remove READ_ONLY_THP_FOR_FS Kconfig option
->>   mm/khugepaged: remove READ_ONLY_THP_FOR_FS check
->>   mm: fs: remove filemap_nr_thps*() functions and their users
->>   fs: remove nr_thps from struct address_space
->>   mm/huge_memory: remove READ_ONLY_THP_FOR_FS from file_thp_enabled()
->>   mm/huge_memory: remove folio split check for READ_ONLY_THP_FOR_FS
->>   mm/truncate: use folio_split() in truncate_inode_partial_folio()
->>   fs/btrfs: remove a comment referring to READ_ONLY_THP_FOR_FS
->>   selftests/mm: remove READ_ONLY_THP_FOR_FS in khugepaged
->>   selftests/mm: remove READ_ONLY_THP_FOR_FS from comments in
->>     guard-regions
->>
->>  fs/btrfs/defrag.c                          |  3 --
->>  fs/inode.c                                 |  3 --
->>  fs/open.c                                  | 27 ----------------
->>  include/linux/fs.h                         |  5 ---
->>  include/linux/huge_mm.h                    | 25 ++-------------
->>  include/linux/pagemap.h                    | 29 -----------------
->>  mm/Kconfig                                 | 11 -------
->>  mm/filemap.c                               |  1 -
->>  mm/huge_memory.c                           | 29 ++---------------
->>  mm/khugepaged.c                            | 36 +++++-----------------
->>  mm/truncate.c                              |  8 ++---
->>  tools/testing/selftests/mm/guard-regions.c |  9 +++---
->>  tools/testing/selftests/mm/khugepaged.c    |  4 +--
->>  13 files changed, 23 insertions(+), 167 deletions(-)
->>
->> --
->> 2.43.0
->>
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v2] btrfs: btrfs_log_dev_io_error() on all bio errors
+To: Boris Burkov <boris@bur.io>, linux-btrfs@vger.kernel.org,
+ kernel-team@fb.com
+References: <f91b3827c56947e58b4606f142bef022b54da70e.1775318158.git.boris@bur.io>
+Content-Language: en-US
+From: Anand Jain <anajain.sg@gmail.com>
+In-Reply-To: <f91b3827c56947e58b4606f142bef022b54da70e.1775318158.git.boris@bur.io>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 
 
---
-Best Regards,
-Yan, Zi
+
+Disagree. We should only track block-device-specific errors;
+specifically, only the missing MEDIUM ERROR should be added [1].
+
+Including all error types would capture transport and fabric-related
+errors, which do not justify a device replacement or permanent error state.
+
+In my experience with storage and transport protocols, transport errors
+and timeouts are often transient and far more frequent than actual block
+device media failures. Including them would introduce unnecessary noise
+into the device statistics.
+
+
+#define BLK_STS_NOTSUPP         ((__force blk_status_t)1)
+#define BLK_STS_TIMEOUT         ((__force blk_status_t)2)
+#define BLK_STS_NOSPC           ((__force blk_status_t)3)
+#define BLK_STS_TRANSPORT       ((__force blk_status_t)4)
+#define BLK_STS_TARGET          ((__force blk_status_t)5)
+#define BLK_STS_RESV_CONFLICT   ((__force blk_status_t)6)
+#define BLK_STS_MEDIUM          ((__force blk_status_t)7)
+#define BLK_STS_PROTECTION      ((__force blk_status_t)8)
+#define BLK_STS_RESOURCE        ((__force blk_status_t)9)
+#define BLK_STS_IOERR           ((__force blk_status_t)10)
+<snap>
+#define BLK_STS_OFFLINE         ((__force blk_status_t)16)
+#define BLK_STS_DURATION_LIMIT  ((__force blk_status_t)17)
+#define BLK_STS_INVAL           ((__force blk_status_t)19)
+
+
+
+[1]
+
+
+diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
+index 2a2a21aec817..d7af38e9ce29 100644
+--- a/fs/btrfs/bio.c
++++ b/fs/btrfs/bio.c
+@@ -352,7 +352,8 @@ static void btrfs_log_dev_io_error(const struct bio
+*bio, struct btrfs_device *d
+ {
+        if (!dev || !dev->bdev)
+                return;
+-       if (bio->bi_status != BLK_STS_IOERR && bio->bi_status !=
+BLK_STS_TARGET)
++       if (bio->bi_status != BLK_STS_IOERR && bio->bi_status !=
+BLK_STS_TARGET &&
++           bio->bi_status != BLK_STS_MEDIUM)
+                return;
+
+        if (btrfs_op(bio) == BTRFS_MAP_WRITE)
+
+
+
+Thanks, Anand
+
+On 4/4/26 23:57, Boris Burkov wrote:
+> As far as I can tell, we never intentionally constrained ourselves to
+> these status codes, and it is misleading and surprising to lack the
+> bdev error logging when we get a different error code from the block
+> layer. This can lead to jumping to a wrong conclusion like "this
+> system didn't see any bio failures but aborted with EIO".
+> 
+> For example on nvme devices, I observe many failures coming back as
+> BLK_STS_MEDIUM. It is apparent that the nvme driver returns a variety of
+> BLK_STS_* status values in nvme_error_status().
+> 
+> So handle the known expected errors and make some noise on the rest
+> which we expect won't really happen.
+> 
+> Signed-off-by: Boris Burkov <boris@bur.io>
+> ---
+> Changelog:
+> v2:
+> - proper bdev err logging for expected block errors
+> - btrfs_warn_rl for all other errors
+> ---
+>  fs/btrfs/bio.c | 3 +--
+>  1 file changed, 1 insertion(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
+> index 2a2a21aec817..08b1d62603d0 100644
+> --- a/fs/btrfs/bio.c
+> +++ b/fs/btrfs/bio.c
+> @@ -352,8 +352,7 @@ static void btrfs_log_dev_io_error(const struct bio *bio, struct btrfs_device *d
+>  {
+>  	if (!dev || !dev->bdev)
+>  		return;
+> -	if (bio->bi_status != BLK_STS_IOERR && bio->bi_status != BLK_STS_TARGET)
+> -		return;
+> +	ASSERT(bio->bi_status);
+>  
+>  	if (btrfs_op(bio) == BTRFS_MAP_WRITE)
+>  		btrfs_dev_stat_inc_and_print(dev, BTRFS_DEV_STAT_WRITE_ERRS);
+

@@ -1,64 +1,64 @@
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4798E397E9F
-	for <linux-btrfs@vger.kernel.org>; Tue,  7 Apr 2026 09:34:41 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E96BE331A77
+	for <linux-btrfs@vger.kernel.org>; Tue,  7 Apr 2026 09:34:46 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775554482; cv=none; b=RWYDS932zVgUqykqSozt5yqz6fahiP1eB5WTpAHmJ2dhC3CdYEfJvNtYwomMO4ERFnYSZHF0XC0cDrE76LTFy6BzyTUY5JX4qJObAQlmCP2I/yNrs7SxjB3t/2KkimibNhcoZhq461H53a/ViMMxhoeBpAddPdARta6ERd6gSKU=
+	t=1775554488; cv=none; b=JMmsQpZf4/LLg+drtjMwyPEi0pIPls2AER7tfAarzoNiw+t43tEWqqzhtM6EbFWcfbPAlFIhg/sXmQrCYrNY4QCQlrSL4SbmV2v+aN6+9yp4eLAnplEbL11ubsrAob2Dm+gAnF/NuK6pvBd4hNFttg9ZB+lZDb65BsUpfunnByE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1775554482; c=relaxed/simple;
-	bh=Oux+U21/EX7fmdmiRPlujAP8lWHl+xlTtNzCpPYx49g=;
+	s=arc-20240116; t=1775554488; c=relaxed/simple;
+	bh=PzEn/iIx8hxRWbg80QYVzK1z2YooxR3bIFO38LW4dbA=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=OGe9cezEOJ4hDyRV4AkJFYBZj8yKd2jL4/Gl5hEwTkoe+B2bgTXF42jQ4KTNxsUHO6ir2MaPAGlpSPDw2uaeboRuYqwPpDlGIJmNCWCFA2/p1QSEqXrFNYNB9OAnL+LacdEMwpt00kNuffN4+RWIbh2G1k2HvuHruQvUCaMTH4o=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=ijhbYEC2; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=ijhbYEC2; arc=none smtp.client-ip=195.135.223.130
+	 MIME-Version; b=g2srh3vfoSvcwvtU0elTFpw7Jp1V9LVFFB6Qjz6va7FLFdI9bNwOOsrb58pL30Kmm7LB2cR2W2sXqAFgvTYtfv/Z+KY8otoyYBRjpbCpdH+tpnkNsZNK//6HjSG0Z+iFdQUSWwCK6wLtkj7DqOB7Ipm3AiF9TEzhFAv3tX4EgT0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=U1yggnw/; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=U1yggnw/; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="ijhbYEC2";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="ijhbYEC2"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="U1yggnw/";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="U1yggnw/"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 6FC774E3AD
-	for <linux-btrfs@vger.kernel.org>; Tue,  7 Apr 2026 09:34:26 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 18BB64E3B1
+	for <linux-btrfs@vger.kernel.org>; Tue,  7 Apr 2026 09:34:28 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1775554466; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1775554468; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=qw7Ggo1WGdVoMTlgyGb5ZkflfVVI1Lb1IYjDtnVJ4tA=;
-	b=ijhbYEC2gt7mpjyYKeZbbZbmnf9SFDKNzL9Nd5I1TRIKaw90S6N1RrrDq8YyBvOfrVe0b8
-	NqXq1APf8+Qv0OrdXwrro+E1ZFtt07ISoX5YsN9afs9MavX1k8bZKg2OW0LkiYtFQtitKK
-	sUegFZUOzDdWzWqNTAHOxTKM2CDanLI=
+	bh=uyBtMywTzWVtk5Y3eBDPQRwHPjgDD01WSQK9zo6DSAM=;
+	b=U1yggnw/0Xxdp3PTZcOU/Cn33EQ2Ffitxu/VJc2Nf9Q4q3dHWk7fm3ruMv9w7a5UA7MAoW
+	2n6mKMm2kVOBjVK1nwS1UgUgmEs9zY0OdArI1I/BCNmo1yrykfPv2goDAz92IJzcO7i7bo
+	vN0hi/LUqUquRxDKwxpXuv/zvHdazXc=
 Authentication-Results: smtp-out1.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1775554466; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1775554468; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=qw7Ggo1WGdVoMTlgyGb5ZkflfVVI1Lb1IYjDtnVJ4tA=;
-	b=ijhbYEC2gt7mpjyYKeZbbZbmnf9SFDKNzL9Nd5I1TRIKaw90S6N1RrrDq8YyBvOfrVe0b8
-	NqXq1APf8+Qv0OrdXwrro+E1ZFtt07ISoX5YsN9afs9MavX1k8bZKg2OW0LkiYtFQtitKK
-	sUegFZUOzDdWzWqNTAHOxTKM2CDanLI=
+	bh=uyBtMywTzWVtk5Y3eBDPQRwHPjgDD01WSQK9zo6DSAM=;
+	b=U1yggnw/0Xxdp3PTZcOU/Cn33EQ2Ffitxu/VJc2Nf9Q4q3dHWk7fm3ruMv9w7a5UA7MAoW
+	2n6mKMm2kVOBjVK1nwS1UgUgmEs9zY0OdArI1I/BCNmo1yrykfPv2goDAz92IJzcO7i7bo
+	vN0hi/LUqUquRxDKwxpXuv/zvHdazXc=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 622EC4A0B0
-	for <linux-btrfs@vger.kernel.org>; Tue,  7 Apr 2026 09:34:25 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 188644A0B0
+	for <linux-btrfs@vger.kernel.org>; Tue,  7 Apr 2026 09:34:26 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id qP1LBKHP1GkOYAAAD6G6ig
+	id AHz7LaLP1GkOYAAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Tue, 07 Apr 2026 09:34:25 +0000
+	for <linux-btrfs@vger.kernel.org>; Tue, 07 Apr 2026 09:34:26 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/4] btrfs: always update/create the dev stats item when adding a new device
-Date: Tue,  7 Apr 2026 19:04:00 +0930
-Message-ID: <c91b7c64bcb331b03831c9d8018f6791ca70c82e.1775553952.git.wqu@suse.com>
+Subject: [PATCH 4/4] btrfs: avoid unnecessary dev stats updates
+Date: Tue,  7 Apr 2026 19:04:01 +0930
+Message-ID: <cfcf51637e298790485caa28b4961590dec3e651.1775553952.git.wqu@suse.com>
 X-Mailer: git-send-email 2.53.0
 In-Reply-To: <cover.1775553952.git.wqu@suse.com>
 References: <cover.1775553952.git.wqu@suse.com>
@@ -69,6 +69,8 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
+X-Spam-Score: -2.80
+X-Spam-Level: 
 X-Spamd-Result: default: False [-2.80 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
@@ -91,113 +93,52 @@ X-Spamd-Result: default: False [-2.80 / 50.00];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
 	RCVD_TLS_ALL(0.00)[]
 X-Spam-Flag: NO
-X-Spam-Score: -2.80
-X-Spam-Level: 
 
 [MINOR PROBLEM]
-When adding a new btrfs device, the corresponding DEV_STATS item creation
-can only triggered by a mount cycle if there is no other error
-triggered:
-
- # mkfs.btrfs -f $dev1 $mnt
- # mount $dev1 $mnt
- # btrfs dev add $dev2 $mnt
- # sync
- # btrfs ins dump-tree -t dev $dev1
- device tree key (DEV_TREE ROOT_ITEM 0)
- leaf 30588928 items 6 free space 15853 generation 9 owner DEV_TREE
-	item 0 key (DEV_STATS PERSISTENT_ITEM 1) itemoff 16243 itemsize 40 <<<
-		persistent item objectid DEV_STATS offset 1
-		device stats
-		write_errs 0 read_errs 0 flush_errs 0 corruption_errs 0 generation 0
-	item 1 key (1 DEV_EXTENT 13631488) itemoff 16195 itemsize 48
-
-Only after a mount cycle and a new transaction, the DEV_STATS for devid
-2 can show up:
-
- # umount $mnt
- # mount $dev1 $mnt
- # touch $mnt
- # sync
- # btrfs ins dump-tree -t dev $dev1
- device tree key (DEV_TREE ROOT_ITEM 0)
- leaf 30605312 items 7 free space 15788 generation 10 owner DEV_TREE
-	item 0 key (DEV_STATS PERSISTENT_ITEM 1) itemoff 16243 itemsize 40
-		persistent item objectid DEV_STATS offset 1
-		device stats
-		write_errs 0 read_errs 0 flush_errs 0 corruption_errs 0 generation 0
-	item 1 key (DEV_STATS PERSISTENT_ITEM 2) itemoff 16203 itemsize 40
-		persistent item objectid DEV_STATS offset 2
-		device stats
-		write_errs 0 read_errs 0 flush_errs 0 corruption_errs 0 generation 0
+When mounting a btrfs with a valid DEV_STATS item, btrfs will always
+update the DEV_STATS again in the next transaction commit, even if there
+is no change the values.
 
 [CAUSE]
-Btrfs only updates the DEV_STATS item when the device->dev_stats_ccnt
-counter is not 0.
+During the mount, btrfs_device_init_dev_stats() will read out the
+on-disk DEV_STATS item for each device.
+Then it calls btrfs_dev_stat_set() to update the in-memory structure.
 
-This is to reduce COW for the device tree. However that dev_stats_ccnt is
-only increased at the following call sites:
+However btrfs_dev_stat_set() does not only set the dev stats value, but
+also increase device->dev_stats_ccnt.
 
-- btrfs_dev_stat_inc()
-  This happens when some IO error happened.
+That member determines if we should update the device item at the next
+transaction commit. Since we have called btrfs_dev_stat_set() for each
+dev status member, dev_stats_ccnt will be non-zero and we will update
+the dev stats item even it doesn't change at all.
 
-- btrfs_dev_stat_read_and_reset()
-  This happens for GET_DEV_STATS ioctl with BTRFS_DEV_STATS_RESET flag.
+[FIX]
+Instead of using btrfs_dev_stat_set() for valid on-disk DEV_STATUS
+values, directly call atomic_set() to set the in-memory values.
 
-- btrfs_dev_stat_set()
-  This happens inside btrfs_device_init_dev_stats().
-
-So when a new device is added, its dev_stats_ccnt is just initialized to
-0, and btrfs won't create nor update the corresponding DEV_STATS item at
-all.
-
-[ENHANCEMENT]
-When a new device is added, also increase the dev_stats_ccnt by one.
-This includes both device add ioctl and dev-replace.
-
-This will force btrfs to create a new DEV_STATS item or update the
-existing one with the correct values.
-
-This not only makes the DEV_STATS creation early, but also prevents
-old DEV_STATS left from older kernels to cause false alerts for the
-newly added device.
+For other call sites, we still want to use btrfs_dev_stat_set() so that
+we will force updating/creating the dev stats item.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/dev-replace.c | 2 ++
- fs/btrfs/volumes.c     | 6 ++++++
- 2 files changed, 8 insertions(+)
+ fs/btrfs/volumes.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 5ea14d74824d..5bcc26b4022d 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -307,6 +307,8 @@ static int btrfs_init_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
- 	device->bdev_file = bdev_file;
- 	set_bit(BTRFS_DEV_STATE_IN_FS_METADATA, &device->dev_state);
- 	set_bit(BTRFS_DEV_STATE_REPLACE_TGT, &device->dev_state);
-+	/* Check the comment in btrfs_init_new_device() for the reason. */
-+	atomic_inc(&device->dev_stats_ccnt);
- 	device->dev_stats_valid = 1;
- 	set_blocksize(bdev_file, BTRFS_BDEV_BLOCKSIZE);
- 	device->fs_devices = fs_devices;
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 5e47157fa86d..09d6382beda5 100644
+index 09d6382beda5..0acd17c57698 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -2927,6 +2927,12 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
- 	device->commit_total_bytes = device->total_bytes;
- 	set_bit(BTRFS_DEV_STATE_IN_FS_METADATA, &device->dev_state);
- 	clear_bit(BTRFS_DEV_STATE_REPLACE_TGT, &device->dev_state);
-+
-+	/*
-+	 * Increase dev_stats_ccnt so that corresponding DEV_STATS item
-+	 * can be created at the next transaction commit.
-+	 */
-+	atomic_inc(&device->dev_stats_ccnt);
- 	device->dev_stats_valid = 1;
- 	set_blocksize(device->bdev_file, BTRFS_BDEV_BLOCKSIZE);
+@@ -8181,8 +8181,8 @@ static int btrfs_device_init_dev_stats(struct btrfs_device *device,
  
+ 	for (i = 0; i < BTRFS_DEV_STAT_VALUES_MAX; i++) {
+ 		if (item_size >= (1 + i) * sizeof(__le64))
+-			btrfs_dev_stat_set(device, i,
+-					   btrfs_dev_stats_value(eb, ptr, i));
++			atomic_set(device->dev_stat_values + i,
++				   btrfs_dev_stats_value(eb, ptr, i));
+ 		else
+ 			btrfs_dev_stat_set(device, i, 0);
+ 	}
 -- 
 2.53.0
 

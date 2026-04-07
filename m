@@ -1,78 +1,80 @@
 Received: from fout-a5-smtp.messagingengine.com (fout-a5-smtp.messagingengine.com [103.168.172.148])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2EBAF37C901
-	for <linux-btrfs@vger.kernel.org>; Tue,  7 Apr 2026 21:27:24 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E4D2634F24A
+	for <linux-btrfs@vger.kernel.org>; Tue,  7 Apr 2026 21:31:20 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.148
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775597245; cv=none; b=uCBBz/+UCFM/2bshCFkanEwmLHdMMUG3Wpi5esgqobP//EjARnHHjCGiZgleMfdeHWchYBvu6Z+kkDFg6Jd1stPHhtihPl+LNHvw8zuXPtIEX5yFhyt+8DCC47bqE7Mej+MhxZdNunr9B3+f/JnKW7oqVCnZPvojsl1YCXsC0jk=
+	t=1775597482; cv=none; b=Q3epbzoLQOlbLWtYyAiCFOfzUfRSevFePxpjSGSguNF/aDQ8+cOGNxA/vMsrSxpVgWODlh1L3lrtiBsur2/OrnGtCxT5zGTD+Zd/XOGkrK1AYGurUJTo8Xpubd91PkGG4CfnroB4nj7aFLHu95fmoxRrXz0albo+MIz/fB6VqbM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1775597245; c=relaxed/simple;
-	bh=g2lKnDa68MobJwapVH0dI97OxJhhHOKbAuSrO05drBw=;
+	s=arc-20240116; t=1775597482; c=relaxed/simple;
+	bh=CauJq0PFsI6cQglf2yTJP7UDOqjqy3wT6tV3E3UDTXA=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=ejcXUQG0aE2LIKGgEsZIhDXle0VBAQhyoKrL1szBGox5WuDOk9S8a3i9VDa63Q5aUWbgVwIMlFfAYvI2UEyij5uDKIjWoePvHICyBHWgvGzuoPTXUV4Sc/w7DAiiK5bvYptyLwGRAXbkp80FVqSiRRuX4DsRNdeOXL10Lt1K22o=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=b5kLR76O; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=ZRudllEA; arc=none smtp.client-ip=103.168.172.148
+	 Content-Type:Content-Disposition:In-Reply-To; b=rqnoD+CibXMIH/28B+fzYoWaiQTN0hiNE2XU3coFNTnkme38ZqYOA/lc8lONNQ31dHU2EpMn8GRWRjzu29eGlCbdnjLqTpMF4czWYqlihVE1B63uZD4JH1CwnBlB0U6dLz03K/JzEroP6C69wAdeWyopM0Mxc7Qi6TgnS68ep2c=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=k2oL2614; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=MSjCvVVl; arc=none smtp.client-ip=103.168.172.148
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="b5kLR76O";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="ZRudllEA"
-Received: from phl-compute-06.internal (phl-compute-06.internal [10.202.2.46])
-	by mailfout.phl.internal (Postfix) with ESMTP id 77D81EC0084;
-	Tue,  7 Apr 2026 17:27:23 -0400 (EDT)
-Received: from phl-frontend-03 ([10.202.2.162])
-  by phl-compute-06.internal (MEProxy); Tue, 07 Apr 2026 17:27:23 -0400
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="k2oL2614";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="MSjCvVVl"
+Received: from phl-compute-05.internal (phl-compute-05.internal [10.202.2.45])
+	by mailfout.phl.internal (Postfix) with ESMTP id 25AA9EC0181;
+	Tue,  7 Apr 2026 17:31:20 -0400 (EDT)
+Received: from phl-frontend-04 ([10.202.2.163])
+  by phl-compute-05.internal (MEProxy); Tue, 07 Apr 2026 17:31:20 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
 	:content-type:content-type:date:date:from:from:in-reply-to
 	:in-reply-to:message-id:mime-version:references:reply-to:subject
-	:subject:to:to; s=fm3; t=1775597243; x=1775683643; bh=io/QTFjI/M
-	tyIYU1x+zgLT11Ti6V5c7S7yf/YFcv8/c=; b=b5kLR76ONiHflCKZWHNM+J0TsW
-	2iDaJEipY5o+r6Ii2FPZVhI6dGYWrP1I5csUNMinvBfGB2EMJ3Mtv6X1CI4/s1DC
-	PgVodgo+WYFzjb3E9enGLQWJfsmj7NnJGTxV0dpH7iKUcDJXRPg2thvZZBxIMJQT
-	RaBgoaU+LwJbdAiTOp97PRiyH2sV4cTBMG2e3X7BM/uMTKh9bhM45bf3pDqH9PbY
-	wzpftdAqiJiRnifGtM4RG4FmwkhBbk8o44GPc6ha5QpuUUqNIhs4oT6z6rJYlHzK
-	0eahQtLkmwtmjJpBIA4NAA9umKKdS1g/VT2N81xUGh3CVsF8PQkYF2cfFG1A==
+	:subject:to:to; s=fm3; t=1775597480; x=1775683880; bh=ThKghE/M+2
+	GqU9+9yWbt5hpAgYV6QyFsT14r0AaI8KE=; b=k2oL261416yYxcJ0FyaQFrNTvG
+	tQkl6OTg1Em0GLZkGkfHisD28do/k0CjzZ29saqoGuPiXBI6DiA/mdA/0oFDD1ur
+	jwzwZtsqDd1OcNzDFdrzETTRtWlqc53OxuH0XSVkSca5mCmqxDbCrBR6CYECULyG
+	0FfsDeHF3+cK9VVL4aSOD2NQ24aLFQe1xcJRExyBHQoxFCEaoQ2uNWhncN6yIIQw
+	fPj/uUy8VozQCOEDwY5Q2rNE1oRFSwXZBbWJ9P/Ns2bixmSEFyJ0YhR2Y05X9No4
+	SBBSQMqS1AogKoVYJkgLk4fNQTTBkgZ1ePK1lndHY1ne/yEdIEp3dGrTf3pA==
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
 	messagingengine.com; h=cc:cc:content-type:content-type:date:date
 	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
 	:message-id:mime-version:references:reply-to:subject:subject:to
 	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=
-	1775597243; x=1775683643; bh=io/QTFjI/MtyIYU1x+zgLT11Ti6V5c7S7yf
-	/YFcv8/c=; b=ZRudllEAnXdKzNBdMWzhwbO9Xu//ywqNnHtwglVdjnaVVa48eH2
-	/qP4iNumV9KC2rnxh2Ukg0awn6HS6e2P3HB2Th+WPy6JcccHtoBRBdBLA7/eAgWB
-	m8mHgdRdzyPF59aMAWd7lpGK0IyOBi4DRhIyCevcb1eITLh/Gv0b3WQwpFOav6lH
-	PDzYzEWc0ouIO4nwoDyzNi6A87eCRS23c66DJV+zSgbc0mq4YLonHNmp2ltWJrEr
-	aoJ+nZry9u28etckw4xA+GmFsaO2JXTTr9TM1316bsG/8zjfWwd2HVsDj0o2vcjv
-	Zwu4B7KcSI+LJCgDrUu8KGfDXb5QEusbQGA==
-X-ME-Sender: <xms:u3bVaa9KTcz_9S36BChXr1jjs0vSi4tBjRir7A1SXvDh1giZkpluZw>
-    <xme:u3bVaQum6eG5wI-0P3tCyv_7AB4idi2_utDTmPUGj5vp4Y6FN0ObG58MN47WSweno
-    mOsxLh8XKvm2LiCEMOQwqdcbdKx8CYO6KNdrw3CMJCV-m8VSYjxWQs>
-X-ME-Received: <xmr:u3bVadqKFuxnm_gNjv68U-qqxLaBmZ5aNgr-IyWzwuOC8trtm9OSbFcPTRsdpmVGBBhfy6MdC-L2n3u1IYWmUtvWYXY>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefhedrtddtgddvudejgecutefuodetggdotefrod
+	1775597480; x=1775683880; bh=ThKghE/M+2GqU9+9yWbt5hpAgYV6QyFsT14
+	r0AaI8KE=; b=MSjCvVVlIl6ulm11pfsX+ZEAyBGhYYBAu9diKsSklgfWGXrnIIX
+	taEB7toplv0GAlKyjS/9otD9yjUSb6hxDJDkOuOmJezNc4i382ovCQD3HEUKnFty
+	To7iruKtLw52nrgQZoEH3qg1dJ6/RDg1TRWDBbq9JiPrmqPTSwSN7Ykk/HFT2oqX
+	gZZb5FzSiqKv9HEK5gLmOFOKY/3czh5mrZjuIvtELdS/A9m8FBBX9JlcEt/Q176G
+	g15sEuZqDzeGsDP7BYYHA49A9yXI/VhxX0U3NZV29lh9x51iGV3kzlQov2xMKY3e
+	x+PSOIQRKwv7eq88TF1tQ3boH0ArM/1JD2A==
+X-ME-Sender: <xms:p3fVae39i4Yk0qlOFRIaigr0PiHPGnjzwiu832_ftiEhkzejFhfbxw>
+    <xme:p3fVaXGrzYTq5yaX13L8zkjYEL_0cUVkC3V06sfRek262v-icg0H_k_OIogNfyFX5
+    SUX_dBqTd-Tnobzlr7VB7_JNzxEfyK2KTgppf3Gr-l_3uUvJK_lUx4>
+X-ME-Received: <xmr:p3fVaUh7DpLpT5Y2jYxT1MeZpjfuHIoVsRJzEeT1jE6p7SrwZL4fBVTI5QJvK-Qmmqcn5-qU0iVjzmJ2odxzygJn2JU>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefhedrtddtgddvudejhecutefuodetggdotefrod
     ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpuffrtefokffrpgfnqfghnecuuegr
     ihhlohhuthemuceftddtnecusecvtfgvtghiphhivghnthhsucdlqddutddtmdenucfjug
     hrpeffhffvvefukfhfgggtuggjsehttdertddttddvnecuhfhrohhmpeeuohhrihhsuceu
-    uhhrkhhovhcuoegsohhrihhssegsuhhrrdhioheqnecuggftrfgrthhtvghrnhepkedvke
-    ffjeellefhveehvdejudfhjedthfdvveeiieeiudfguefgtdejgfefleejnecuvehluhhs
-    thgvrhfuihiivgeptdenucfrrghrrghmpehmrghilhhfrhhomhepsghorhhishessghurh
-    drihhopdhnsggprhgtphhtthhopedvpdhmohguvgepshhmthhpohhuthdprhgtphhtthho
-    pehmrghrkheshhgrrhhmshhtohhnvgdrtghomhdprhgtphhtthhopehlihhnuhigqdgsth
-    hrfhhssehvghgvrhdrkhgvrhhnvghlrdhorhhg
-X-ME-Proxy: <xmx:u3bVadlDK_vrTyBYmKY59B2zmVDH7FS43smQeSyw9l50ga3D3gTDrQ>
-    <xmx:u3bVaRxXM3Q9D84zIO9H-MrOAAyu4kqwIxOHbVzsIs88JG4diEjmmg>
-    <xmx:u3bVaVkqh81ifw-YJbHe4zN0RM56AtEzPyGlq_5UoHQMrcN3n0Bm9g>
-    <xmx:u3bVaaewOQYdL72DTw-k2vtx3u3Hb_oRmo4uHMyiWp08sI1mGaMuzA>
-    <xmx:u3bVaUR9dxcHObTqbO-wspyNT1hx8qi_xpjqNcj0GOcIWx0p1bem_HQj>
+    uhhrkhhovhcuoegsohhrihhssegsuhhrrdhioheqnecuggftrfgrthhtvghrnhephedthf
+    evgffhtdevgffhlefhgfeuueegtdevudeiheeiheetleeghedvfeegfeegnecuffhomhgr
+    ihhnpehkvghrnhgvlhdrohhrghenucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmh
+    epmhgrihhlfhhrohhmpegsohhrihhssegsuhhrrdhiohdpnhgspghrtghpthhtohepvddp
+    mhhouggvpehsmhhtphhouhhtpdhrtghpthhtohepmhgrrhhksehhrghrmhhsthhonhgvrd
+    gtohhmpdhrtghpthhtoheplhhinhhugidqsghtrhhfshesvhhgvghrrdhkvghrnhgvlhdr
+    ohhrgh
+X-ME-Proxy: <xmx:p3fVaa92J3Gv3Np1O7sxGKjzY2SKhf6ePT4Ljo7oG4MUdKRcHc9XSQ>
+    <xmx:p3fVaTpAibcLFSczLBdzM3xfekXRU5JQ42S1sYIHOMx7Fs5nKsuEVw>
+    <xmx:p3fVaR9gNJT4_rFKHjNoDEuR1B5_akVl5Kl9ROqncLzlLrRth52cxg>
+    <xmx:p3fVafV50YJ4cJwf4AgEOAyAZzfV0lR76SRSkAFn8ruV0A9a8BwB9g>
+    <xmx:p3fVaZIF5KS32VuOFirpqzcbtpTw69mln4h0hKsPuhXlU_1nuZ4vkpKE>
 Feedback-ID: i083147f8:Fastmail
 Received: by mail.messagingengine.com (Postfix) with ESMTPA; Tue,
- 7 Apr 2026 17:27:23 -0400 (EDT)
-Date: Tue, 7 Apr 2026 14:27:13 -0700
+ 7 Apr 2026 17:31:19 -0400 (EDT)
+Date: Tue, 7 Apr 2026 14:31:10 -0700
 From: Boris Burkov <boris@bur.io>
 To: Mark Harmstone <mark@harmstone.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: fix bytes_may_use leak in move_existing_remap()
-Message-ID: <20260407212713.GB1564178@zen.localdomain>
-References: <20260323143618.119698-1-mark@harmstone.com>
+Subject: Re: [PATCH] btrfs: abort transaction in do_remap_reloc_trans() on
+ failure
+Message-ID: <20260407213110.GC1564178@zen.localdomain>
+References: <20260407161703.123545-1-mark@harmstone.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -81,38 +83,42 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20260323143618.119698-1-mark@harmstone.com>
+In-Reply-To: <20260407161703.123545-1-mark@harmstone.com>
 
-On Mon, Mar 23, 2026 at 02:36:14PM +0000, Mark Harmstone wrote:
-> If the call to btrfs_reserve_extent() in move_existing_remap() returns a
-> smaller extent than we asked for, currently we're not undoing the
-> bytes_may_use change that we made. Fix this by calling
-> btrfs_space_info_update_bytes_may_use() again for the difference.
+On Tue, Apr 07, 2026 at 05:16:56PM +0100, Mark Harmstone wrote:
+> If one of the calls made by do_remap_reloc_trans() fails, we can leave
+> the remap tree in an inconsistent state. Abort the transaction if this
+> happens, to prevent the corrupt state from reaching the disk.
 > 
 > Signed-off-by: Mark Harmstone <mark@harmstone.com>
-Reviewed-by: Boris Burkov <boris@bur.io>
-> Fixes: bbea42dfb91f ("btrfs: move existing remaps before relocating block group")
 > ---
->  fs/btrfs/relocation.c | 6 ++++++
->  1 file changed, 6 insertions(+)
+>  fs/btrfs/relocation.c | 1 +
+>  1 file changed, 1 insertion(+)
 > 
 > diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-> index 1c42c5180bddd5..3d1756b6116246 100644
+> index 1c42c5180bddd5..277a0042967665 100644
 > --- a/fs/btrfs/relocation.c
 > +++ b/fs/btrfs/relocation.c
-> @@ -4174,6 +4174,12 @@ static int move_existing_remap(struct btrfs_fs_info *fs_info,
->  		return ret;
->  	}
+> @@ -5089,6 +5089,7 @@ static int do_remap_reloc_trans(struct btrfs_fs_info *fs_info,
+>  	btrfs_free_reserved_extent(fs_info, new_addr, length, 0);
 >  
-> +	if (ins.offset < length) {
-> +		spin_lock(&sinfo->lock);
-> +		btrfs_space_info_update_bytes_may_use(sinfo, ins.offset - length);
-> +		spin_unlock(&sinfo->lock);
-> +	}
-> +
->  	dest_addr = ins.objectid;
->  	dest_length = ins.offset;
+>  	mutex_unlock(&fs_info->remap_mutex);
+> +	btrfs_abort_transaction(trans, ret);
+
+Counterintuitively to the usual pattern of sharing code in fail: labels,
+I think it is quite nice to put a separate abort at each failing code
+path that requires an abort. That way we get better diagnostic
+information on what actually went wrong.
+
+e.g. a recent patch from Filipe unfolding it across a function call:
+https://lore.kernel.org/linux-btrfs/99743ac0b4b9a69dcaa8f9adcaf301bd1a0f1a89.1769163248.git.fdmanana@suse.com/
+
+Thanks,
+Boris
+
+>  	btrfs_end_transaction(trans);
 >  
+>  	return ret;
 > -- 
 > 2.52.0
 > 

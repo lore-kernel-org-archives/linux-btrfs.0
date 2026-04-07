@@ -1,85 +1,50 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from outgoing.mit.edu (outgoing-auth-1.mit.edu [18.9.28.11])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 889B121257F
-	for <linux-btrfs@vger.kernel.org>; Tue,  7 Apr 2026 22:40:30 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CA96033F394
+	for <linux-btrfs@vger.kernel.org>; Tue,  7 Apr 2026 23:37:36 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=18.9.28.11
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775601631; cv=none; b=Owvs5+wZaezl12BOMFSCFrwndgJ2MWC1HZNCVSz1uQUvvvvClcs/DisRBsCu/WxMAm81Um2pateaVL/wPjNKusDc+Npaomc+nRtC6CGzu9AVymgm9NJaCgbO+L2wrf5Cho88XyGEG2rDQhOXAujb4z3tC2hMOSZNYhGvj6iGQ6U=
+	t=1775605058; cv=none; b=iI/4dfhHp9vtGglDdDW5mIYOSiclCHcYxcaA6EQy6B2Fq47ZIZHw/VOhZSxAy8xrVM9KHkLzIjBreC6v9S9QTCHjQ7PBCXlduSXImekQZ8xrHHIgU90vGPKBHmIdHfxoHrgjh49H/frHnpn3TkWKU+ZIHsS5RjgsPrw9OnSBZvM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1775601631; c=relaxed/simple;
-	bh=LWaT66DG6Xpp/XbkOCKrUlA9okBwXse/AbsL5bZ0EMk=;
+	s=arc-20240116; t=1775605058; c=relaxed/simple;
+	bh=j+99azgYy0vKK3UY0we2bGSE9cNp6pIy4pj3/0pKyY8=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=TTbT6gaNhHXofmRbq42sXeMDEVVnVSO3rsVDz46V+9bbZcfnDQLpR3EfMjP3gG9iA+b9IOsKbAUaoG865uPEIsWPNfp/19aFr4hP/T7CUgnXi5Pvla/g9rgroAhaOmxxX9XUGmwA+bK0dZp3fgu999kAsHFp82t7MUeDzpRjvQM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=nuyF6k10; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=rLQGWuJx; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=nuyF6k10; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=rLQGWuJx; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	 Content-Type:Content-Disposition:In-Reply-To; b=Hy8td4T+cC13ENgPh5ILnLsMlO8DUJcLEH0JG888E7g6DY+QfxjkPeunB6iVZxrElpPWsOtQ+fnsUEKqUztthrJW7yUWvgq1ZrPu6xYBaVxXWoSaAwfVKM+gcxuYb/yNtAnQd0I58nDv/uclw1V+OvXOJWMfGf5kmXy9UMfuEIg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=mit.edu; spf=pass smtp.mailfrom=mit.edu; dkim=pass (2048-bit key) header.d=mit.edu header.i=@mit.edu header.b=YHDvSX56; arc=none smtp.client-ip=18.9.28.11
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=mit.edu
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=mit.edu
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="nuyF6k10";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="rLQGWuJx";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="nuyF6k10";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="rLQGWuJx"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id B28A95BD54;
-	Tue,  7 Apr 2026 22:40:28 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1775601628;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=7I79eoXPQ01cfv/+OvM+q6EamapMczjWTdXaxcHCcG8=;
-	b=nuyF6k10CJ7EwfjjFCRCW9t0n2IqOeQqVFfG1hOBf+6mNWZZvq+vuz5xyjCa4T3Rks88nq
-	XDghYQA/6or7ixp+8XOpHz8vCYX59y1QbcOyJ582FVTmsDpll9w6owGUU1K8ceesWqckud
-	yR87eP2Ql02TpICln5TZJIO2lSKYYrc=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1775601628;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=7I79eoXPQ01cfv/+OvM+q6EamapMczjWTdXaxcHCcG8=;
-	b=rLQGWuJxcP4sVFyKTppoaILqxkFvYlSpGXrLcqyUnPFuWqfF9NkABNtyk9UdC6kvFvNAlp
-	+U1OZMeqCpETwfDA==
-Authentication-Results: smtp-out2.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1775601628;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=7I79eoXPQ01cfv/+OvM+q6EamapMczjWTdXaxcHCcG8=;
-	b=nuyF6k10CJ7EwfjjFCRCW9t0n2IqOeQqVFfG1hOBf+6mNWZZvq+vuz5xyjCa4T3Rks88nq
-	XDghYQA/6or7ixp+8XOpHz8vCYX59y1QbcOyJ582FVTmsDpll9w6owGUU1K8ceesWqckud
-	yR87eP2Ql02TpICln5TZJIO2lSKYYrc=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1775601628;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=7I79eoXPQ01cfv/+OvM+q6EamapMczjWTdXaxcHCcG8=;
-	b=rLQGWuJxcP4sVFyKTppoaILqxkFvYlSpGXrLcqyUnPFuWqfF9NkABNtyk9UdC6kvFvNAlp
-	+U1OZMeqCpETwfDA==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 96FDB4A0B0;
-	Tue,  7 Apr 2026 22:40:28 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id lfGYJNyH1Wl4egAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Tue, 07 Apr 2026 22:40:28 +0000
-Date: Wed, 8 Apr 2026 00:40:19 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Filipe Manana <fdmanana@kernel.org>
-Cc: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: make more ASSERTs verbose, part 3
-Message-ID: <20260407224019.GO5735@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <20260331223659.2098718-1-dsterba@suse.com>
- <CAL3q7H7CVWM_WSafttqhn8x-q3iUFxOGaipZExuchZH73SP9Fg@mail.gmail.com>
+	dkim=pass (2048-bit key) header.d=mit.edu header.i=@mit.edu header.b="YHDvSX56"
+Received: from macsyma.thunk.org (pool-173-48-119-176.bstnma.fios.verizon.net [173.48.119.176])
+	(authenticated bits=0)
+        (User authenticated as tytso@ATHENA.MIT.EDU)
+	by outgoing.mit.edu (8.14.7/8.12.4) with ESMTP id 637NbI3g013361
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Tue, 7 Apr 2026 19:37:19 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=mit.edu; s=outgoing;
+	t=1775605041; bh=EM9+Y65ZKjeH9MFPMAEsNqFW5ghZHnWR3WX389z7zgs=;
+	h=Date:From:Subject:Message-ID:MIME-Version:Content-Type;
+	b=YHDvSX56xWowlPH5og8N94jX3jyGLIipHmE/UaTZWlKBq2jllSEXNIE4NWB1XKBjH
+	 9aPFePl2TxCAbR2nopgEvDR4aGTVspF1xglEL9jg3gyXaIy87KQun+TJOgzpIiLyyA
+	 pbQ66vv0xqi1MXrFYqxBjyv5o6AByHPDqS2/T6RCIOg3PgoR41PUGt+VNdfFeoTrHM
+	 VwsF7dgQv1Eq3In9tk1O8ngvue/bl/Ki9PcS7LmtZzb1LBndkAL0F5niujUT097hqX
+	 qW6eWVZHy0E2IKqmrHxQByUbOIAUf7yN5gdegPxPQs4hcUbLdZQkZkL1mPXhaNZ/4Y
+	 WlQJw0odGcRPw==
+Received: by macsyma.thunk.org (Postfix, from userid 15806)
+	id 5DC516230A04; Tue,  7 Apr 2026 19:36:18 -0400 (EDT)
+Date: Tue, 7 Apr 2026 19:36:18 -0400
+From: "Theodore Tso" <tytso@mit.edu>
+To: Sean Smith <defendthedisabled@gmail.com>
+Cc: linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, dsterba@suse.com, david@fromorbit.com,
+        brauner@kernel.org, osandov@osandov.com, almaz@kernel.org,
+        hirofumi@mail.parknet.co.jp, linkinjeon@kernel.org
+Subject: Re: [RFC PATCH v1 0/6] provenance_time (ptime): a new settable
+ timestamp for cross-filesystem provenance
+Message-ID: <20260407233618.GB12536@macsyma-wired.lan>
+References: <20260405225442.GA1763@macsyma-wired.lan>
+ <20260407000558.417-1-DefendTheDisabled@gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -88,45 +53,27 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <CAL3q7H7CVWM_WSafttqhn8x-q3iUFxOGaipZExuchZH73SP9Fg@mail.gmail.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Spam-Score: -4.00
-X-Spam-Level: 
-X-Spamd-Result: default: False [-4.00 / 50.00];
-	BAYES_HAM(-3.00)[99.99%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	NEURAL_HAM_SHORT(-0.20)[-0.991];
-	MIME_GOOD(-0.10)[text/plain];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	ARC_NA(0.00)[];
-	TO_DN_SOME(0.00)[];
-	MID_RHS_MATCH_FROM(0.00)[];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	RCPT_COUNT_THREE(0.00)[3];
-	FROM_EQ_ENVFROM(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	REPLYTO_DOM_NEQ_TO_DOM(0.00)[]
-X-Spam-Flag: NO
+In-Reply-To: <20260407000558.417-1-DefendTheDisabled@gmail.com>
 
-On Wed, Apr 01, 2026 at 03:24:39PM +0100, Filipe Manana wrote:
-> > @@ -2335,7 +2338,8 @@ static int btrfs_insert_replace_extent(struct btrfs_trans_handle *trans,
-> >                             btrfs_item_ptr_offset(leaf, slot),
-> >                             sizeof(struct btrfs_file_extent_item));
-> >         extent = btrfs_item_ptr(leaf, slot, struct btrfs_file_extent_item);
-> > -       ASSERT(btrfs_file_extent_type(leaf, extent) != BTRFS_FILE_EXTENT_INLINE);
-> > +       ASSERT(btrfs_file_extent_type(leaf, extent) != BTRFS_FILE_EXTENT_INLINE,
-> > +              "file_extent_type=%u", btrfs_file_extent_type(leaf, extent));
-> 
-> There's no point printing the file extent type here, if the assertion
-> fails it's because it's an inline extent. This would only be useful if
-> we were asserting it's inline, not that it's not inline.
+On Mon, Apr 06, 2026 at 07:05:55PM -0500, Sean Smith wrote:
+> The patches implement rename-over preservation in all 5
+> filesystem rename handlers. When rename(source, target)
+> replaces an existing file, and the source has ptime=0 (the
+> default for any newly-created temp file) while the target
+> has ptime != 0, the filesystem copies the target's ptime to
+> the source before destroying the target's inode. This runs
+> inside the rename transaction, atomic with the rename itself.
 
-Right, I was skipping the pattern where it was clear why the assertion
-failed but missed that one.
+Yelch.   This is so *very* non-Unixy / non-POSIX / non-Linux.
+
+I understand why it's convenient for your particular use case, but
+rename(2) is fundamentally an operation which works on directory
+entries.  We don't copy over extended attributes, or Posix ACL's, or
+Unix permission mode bits, because (a) that would violate POSIX and
+historical Unix behavior, and (b) because rename(2) is fundamentally a
+directory entry operation.  This is despite the fact that it be more
+convenient if we didn't have to copy over things like extended
+attributes, ACL's, permission mode bits, etc.  So you want to make an
+exception for ptime?   Yelch.  Just Yelch.
+
+						- Ted

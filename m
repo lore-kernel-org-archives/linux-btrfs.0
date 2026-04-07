@@ -1,144 +1,133 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E96BE331A77
-	for <linux-btrfs@vger.kernel.org>; Tue,  7 Apr 2026 09:34:46 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 464E339FCD8
+	for <linux-btrfs@vger.kernel.org>; Tue,  7 Apr 2026 11:24:19 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775554488; cv=none; b=JMmsQpZf4/LLg+drtjMwyPEi0pIPls2AER7tfAarzoNiw+t43tEWqqzhtM6EbFWcfbPAlFIhg/sXmQrCYrNY4QCQlrSL4SbmV2v+aN6+9yp4eLAnplEbL11ubsrAob2Dm+gAnF/NuK6pvBd4hNFttg9ZB+lZDb65BsUpfunnByE=
+	t=1775561059; cv=none; b=j+FeumK9C3zt7vMWTSWUxpl9wGXCDL+bI6pQmHRA5G9jU8+zWfgm6rEDd8ZC1kA8F9mMjilaP33idPPj961gTjaRVodorDRpEAb0472J7qsv/6vRqEi9N+IEUqzm1wKh6pWZvyEMziSLZHfA4Ki4uWsbReg/KHJ5f4XxYCZDVwk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1775554488; c=relaxed/simple;
-	bh=PzEn/iIx8hxRWbg80QYVzK1z2YooxR3bIFO38LW4dbA=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=g2srh3vfoSvcwvtU0elTFpw7Jp1V9LVFFB6Qjz6va7FLFdI9bNwOOsrb58pL30Kmm7LB2cR2W2sXqAFgvTYtfv/Z+KY8otoyYBRjpbCpdH+tpnkNsZNK//6HjSG0Z+iFdQUSWwCK6wLtkj7DqOB7Ipm3AiF9TEzhFAv3tX4EgT0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=U1yggnw/; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=U1yggnw/; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1775561059; c=relaxed/simple;
+	bh=JpO+0a6hLI0Qipk7dMcNJqLzTtGoylY7t+7+GLGXmaU=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=b/KA7o39vpALC/G58TdIn33OIdcv/3dV1r3DhUBEPpk3ifgL0+OyNv9X74nH4uqKSADBiEHG5Ol1iAKmicnl+tE8zdYXvvnU2R4uIm96L5plE28gITO0uE9sFShwQkx8vuythrqc3F1YpR3jvyGlgAJtaUMHi65/cwFleV4ne70=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=BkV4j2Lx; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="U1yggnw/";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="U1yggnw/"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 18BB64E3B1
-	for <linux-btrfs@vger.kernel.org>; Tue,  7 Apr 2026 09:34:28 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1775554468; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=uyBtMywTzWVtk5Y3eBDPQRwHPjgDD01WSQK9zo6DSAM=;
-	b=U1yggnw/0Xxdp3PTZcOU/Cn33EQ2Ffitxu/VJc2Nf9Q4q3dHWk7fm3ruMv9w7a5UA7MAoW
-	2n6mKMm2kVOBjVK1nwS1UgUgmEs9zY0OdArI1I/BCNmo1yrykfPv2goDAz92IJzcO7i7bo
-	vN0hi/LUqUquRxDKwxpXuv/zvHdazXc=
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1775554468; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=uyBtMywTzWVtk5Y3eBDPQRwHPjgDD01WSQK9zo6DSAM=;
-	b=U1yggnw/0Xxdp3PTZcOU/Cn33EQ2Ffitxu/VJc2Nf9Q4q3dHWk7fm3ruMv9w7a5UA7MAoW
-	2n6mKMm2kVOBjVK1nwS1UgUgmEs9zY0OdArI1I/BCNmo1yrykfPv2goDAz92IJzcO7i7bo
-	vN0hi/LUqUquRxDKwxpXuv/zvHdazXc=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 188644A0B0
-	for <linux-btrfs@vger.kernel.org>; Tue,  7 Apr 2026 09:34:26 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id AHz7LaLP1GkOYAAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Tue, 07 Apr 2026 09:34:26 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 4/4] btrfs: avoid unnecessary dev stats updates
-Date: Tue,  7 Apr 2026 19:04:01 +0930
-Message-ID: <cfcf51637e298790485caa28b4961590dec3e651.1775553952.git.wqu@suse.com>
-X-Mailer: git-send-email 2.53.0
-In-Reply-To: <cover.1775553952.git.wqu@suse.com>
-References: <cover.1775553952.git.wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="BkV4j2Lx"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id E9D2FC2BCB0
+	for <linux-btrfs@vger.kernel.org>; Tue,  7 Apr 2026 11:24:18 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1775561058;
+	bh=JpO+0a6hLI0Qipk7dMcNJqLzTtGoylY7t+7+GLGXmaU=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+	b=BkV4j2LxLCuN4COUrVxSgk0KUoDLbyQHh7XmzCKGpiUHnkWqasE8WXTWOR/ZZYJsh
+	 JpXsTPgevQGbdsE4eTYAKB3LlO0vWj6DWOZPFu9M80nAcQH6IWu83z1WMNR5PibMs3
+	 qNWHu1AAyvTgJzSTKx0JAQqAQ59AAbTW46fLWkwvYwuGsVhw1DpLFVv5MaYIbr9Ic8
+	 aH4oxK9vo6sBBj2xB8h/VgmMLCgty+qKIskdAeCf1FGJlJzR58jrtkd6eQLIVd5aBf
+	 TJ3b3e6Id6vEJhrdXBkMLu7SiI2MfV3tDbwhxvGqQubWNe4iWD7x5iBESBzfunH58H
+	 kg8GiExPy7DJQ==
+Received: by mail-ej1-f41.google.com with SMTP id a640c23a62f3a-b9382e59c0eso778831266b.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 07 Apr 2026 04:24:18 -0700 (PDT)
+X-Gm-Message-State: AOJu0YwvW2U8Z2a7TQ0qxRUUf6qPt1uiEilKPBYh7v+USOeWathhNqkq
+	HcP6pqWH32pE/WoZxWh11eIFWw4fMRP1eMcGrNjPf0uMERRlj4PeXjIFuF/A5X/p0DvRgrb5w4c
+	bGaPjI9Rb1Opv6HZZRJdKxDVFOgteN2Q=
+X-Received: by 2002:a17:906:9fd0:b0:b9c:24a7:510c with SMTP id
+ a640c23a62f3a-b9c67447fcemr842414366b.1.1775561057442; Tue, 07 Apr 2026
+ 04:24:17 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spam-Score: -2.80
-X-Spam-Level: 
-X-Spamd-Result: default: False [-2.80 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	MID_CONTAINS_FROM(1.00)[];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	ARC_NA(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:email,imap1.dmz-prg2.suse.org:helo];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Flag: NO
+References: <20260330033148.696942-1-davechen@synology.com>
+In-Reply-To: <20260330033148.696942-1-davechen@synology.com>
+From: Filipe Manana <fdmanana@kernel.org>
+Date: Tue, 7 Apr 2026 12:23:40 +0100
+X-Gmail-Original-Message-ID: <CAL3q7H60TA-pZAzh33UpRNQkDesO9URLRwq1AA0a2RqhvnS9xw@mail.gmail.com>
+X-Gm-Features: AQROBzCUmxrEXpBInl5htSOcwaT1NgOrJnsJZR9fJzcihCjM65Ly6c6TcRgwp8s
+Message-ID: <CAL3q7H60TA-pZAzh33UpRNQkDesO9URLRwq1AA0a2RqhvnS9xw@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: skip clearing EXTENT_DEFRAG for nocow ordered extents
+To: Dave Chen <davechen@synology.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.com, cccheng@synology.com, 
+	robbieko@synology.com
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-[MINOR PROBLEM]
-When mounting a btrfs with a valid DEV_STATS item, btrfs will always
-update the DEV_STATS again in the next transaction commit, even if there
-is no change the values.
+On Mon, Mar 30, 2026 at 4:32=E2=80=AFAM Dave Chen <davechen@synology.com> w=
+rote:
+>
+> In btrfs_finish_one_ordered(), clear_bits is unconditionally initialized
+> with EXTENT_DEFRAG.  For nocow ordered extents this is always a no-op
+> because should_nocow() already forces the COW path when EXTENT_DEFRAG is
+> set, so a nocow ordered extent can never have EXTENT_DEFRAG on its range.
+>
+> Although harmless, the unconditional btrfs_clear_extent_bit() call still
+> performs a cold rbtree lookup under the io tree spinlock on every nocow
+> write completion.  Avoid this by only adding EXTENT_DEFRAG to clear_bits
+> for non-nocow ordered extents, and skip the call entirely when there are
+> no bits to clear.
+>
+> Signed-off-by: Dave Chen <davechen@synology.com>
+> Signed-off-by: Robbie Ko <robbieko@synology.com>
 
-[CAUSE]
-During the mount, btrfs_device_init_dev_stats() will read out the
-on-disk DEV_STATS item for each device.
-Then it calls btrfs_dev_stat_set() to update the in-memory structure.
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
 
-However btrfs_dev_stat_set() does not only set the dev stats value, but
-also increase device->dev_stats_ccnt.
+Looks good. Pushed it to the github for-next branch, thanks.
 
-That member determines if we should update the device item at the next
-transaction commit. Since we have called btrfs_dev_stat_set() for each
-dev status member, dev_stats_ccnt will be non-zero and we will update
-the dev stats item even it doesn't change at all.
-
-[FIX]
-Instead of using btrfs_dev_stat_set() for valid on-disk DEV_STATUS
-values, directly call atomic_set() to set the in-memory values.
-
-For other call sites, we still want to use btrfs_dev_stat_set() so that
-we will force updating/creating the dev stats item.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/volumes.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 09d6382beda5..0acd17c57698 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -8181,8 +8181,8 @@ static int btrfs_device_init_dev_stats(struct btrfs_device *device,
- 
- 	for (i = 0; i < BTRFS_DEV_STAT_VALUES_MAX; i++) {
- 		if (item_size >= (1 + i) * sizeof(__le64))
--			btrfs_dev_stat_set(device, i,
--					   btrfs_dev_stats_value(eb, ptr, i));
-+			atomic_set(device->dev_stat_values + i,
-+				   btrfs_dev_stats_value(eb, ptr, i));
- 		else
- 			btrfs_dev_stat_set(device, i, 0);
- 	}
--- 
-2.53.0
-
+> ---
+>  fs/btrfs/inode.c | 10 +++++++---
+>  1 file changed, 7 insertions(+), 3 deletions(-)
+>
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index f643a05208720..80daf7e248ab8 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -3203,7 +3203,7 @@ int btrfs_finish_one_ordered(struct btrfs_ordered_e=
+xtent *ordered_extent)
+>         bool freespace_inode;
+>         bool truncated =3D false;
+>         bool clear_reserved_extent =3D true;
+> -       unsigned int clear_bits =3D EXTENT_DEFRAG;
+> +       unsigned int clear_bits =3D 0;
+>
+>         start =3D ordered_extent->file_offset;
+>         end =3D start + ordered_extent->num_bytes - 1;
+> @@ -3214,6 +3214,9 @@ int btrfs_finish_one_ordered(struct btrfs_ordered_e=
+xtent *ordered_extent)
+>             !test_bit(BTRFS_ORDERED_ENCODED, &ordered_extent->flags))
+>                 clear_bits |=3D EXTENT_DELALLOC_NEW;
+>
+> +       if (!test_bit(BTRFS_ORDERED_NOCOW, &ordered_extent->flags))
+> +               clear_bits |=3D EXTENT_DEFRAG;
+> +
+>         freespace_inode =3D btrfs_is_free_space_inode(inode);
+>         if (!freespace_inode)
+>                 btrfs_lockdep_acquire(fs_info, btrfs_ordered_extent);
+> @@ -3345,8 +3348,9 @@ int btrfs_finish_one_ordered(struct btrfs_ordered_e=
+xtent *ordered_extent)
+>                 goto out;
+>         }
+>  out:
+> -       btrfs_clear_extent_bit(&inode->io_tree, start, end, clear_bits,
+> -                              &cached_state);
+> +       if (clear_bits)
+> +               btrfs_clear_extent_bit(&inode->io_tree, start, end, clear=
+_bits,
+> +                                      &cached_state);
+>
+>         if (trans)
+>                 btrfs_end_transaction(trans);
+> --
+> 2.43.0
+>
+>
+> Disclaimer: The contents of this e-mail message and any attachments are c=
+onfidential and are intended solely for addressee. The information may also=
+ be legally privileged. This transmission is sent in trust, for the sole pu=
+rpose of delivery to the intended recipient. If you have received this tran=
+smission in error, any use, reproduction or dissemination of this transmiss=
+ion is strictly prohibited. If you are not the intended recipient, please i=
+mmediately notify the sender by reply e-mail or phone and delete this messa=
+ge and its attachments, if any.
+>

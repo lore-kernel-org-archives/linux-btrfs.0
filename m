@@ -1,53 +1,53 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 174C63B0AD4
-	for <linux-btrfs@vger.kernel.org>; Wed,  8 Apr 2026 14:59:03 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5DC053D525F
+	for <linux-btrfs@vger.kernel.org>; Wed,  8 Apr 2026 15:05:00 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775660343; cv=none; b=rkDImyuknECEvuv244LidUHvJIYkcOMbbSAJoSHxE9iidGeWITu94bKkHodo1qb571imaSHLpJoCSByxrAGVw5BpHMf1qv0Ajmtq6OZNT6PX0uEfBlF5iuJGM+jwOQBTADpPh2DkFLs7Pb4+hmZ2CnY8VTFEIeNVanOAPDNFiPU=
+	t=1775660700; cv=none; b=WVIuHiKRLMVRe/eBZGoxjT6BR0jEE+Nwq0cR9HT3p7mAL9/1q1/J8K+qrZnVyF6djSWnEtTKrLmD4XFdg4e8FPuyUFreDZWrsb0ZabBbzNvvm7/QuRhRfKntNgX1rE+uAu3pndrHWUFeKam/b21/+FpvDuUucocAD+ik+VN0n0Y=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1775660343; c=relaxed/simple;
-	bh=lAzhy1cEKJm1obouUT8VjxoHxu3l9iOeDI5b+RnLLZU=;
+	s=arc-20240116; t=1775660700; c=relaxed/simple;
+	bh=RY2lrVtYoRPuwgz5QBMlQCv6t7d1G8DysMbUQezDoJE=;
 	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=TCNC1GgYKM5O7GgkP1657csCEjSda20wKhRlJ8R2kIERsQz5yx16a7v1z2auea2oMTFBMxtKjhgmrSEHLBpCEbKOoaKGx3Vlns3uFjgtw2bw6pw/Ah8+KC9mbbzmFZZ7FJsCV/CcZdE+WyBjS/X/DOxd9Zb8AN0G673oXqXrsFg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=e62Jz9uo; arc=none smtp.client-ip=10.30.226.201
+	 To:Cc:Content-Type; b=Vdr57ypcWmRibA12Xk1tD/ZfcDimU8vJC95ZXkXEom2W/J45V0qFXjvG/SgNV7K3Oc2VzNFTTKNLVcROKXt+9FLeQKi+Rw8+ujfzb9sSWXwy3O5clwKWcaJGzBtzw8x6GahzrCgirkKXTrOO9DRtl3F+9903NBmLN30ZKeyLF5M=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=dIDqiFTF; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="e62Jz9uo"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id EE510C2BC9E
-	for <linux-btrfs@vger.kernel.org>; Wed,  8 Apr 2026 14:59:02 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="dIDqiFTF"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 89A26C19424
+	for <linux-btrfs@vger.kernel.org>; Wed,  8 Apr 2026 15:04:59 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1775660343;
-	bh=lAzhy1cEKJm1obouUT8VjxoHxu3l9iOeDI5b+RnLLZU=;
+	s=k20201202; t=1775660699;
+	bh=RY2lrVtYoRPuwgz5QBMlQCv6t7d1G8DysMbUQezDoJE=;
 	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-	b=e62Jz9uov1Sem0HiOE5YcYUWz6JD2Kh02Qz0XhDqPnlEgwo2DUJllN3jv6kUxZrnK
-	 gAAM3WB2C5JtvbcjecbiSDDtlm12p5j4iZfBrOxmcNx1wA60nBOdWvT5V79Em4+zA4
-	 dtgnjNY4d4zwa2f6Di9jndOekXAxmGm14WjYW8RDJ8KzN+j1Q7aUCSB6mqA5x9h6d9
-	 j8fYv857Ssx3QGZtivAsYlm2VPdGuagqRLhPg3hyyDUBTlPKXiiNc3jfZeSFc+An/c
-	 /E403aq2RFY7Qqv0t+eHhluALqAOD/y5lOBNAcyKV9TyHQLIwJ3wrGz4nxM2T48N9P
-	 o0ipmn4jwNuBw==
-Received: by mail-ej1-f49.google.com with SMTP id a640c23a62f3a-b982b0889d8so827158566b.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 08 Apr 2026 07:59:02 -0700 (PDT)
-X-Gm-Message-State: AOJu0YxxbNMuVJ0hid9S7DESZ4meUVJaprEovMbLQ6P40PmrIk2Q/iYP
-	7+rcUdBwAitD89wqkuEDusLihhHdb4kBi+sWmyHmm9qTf69ZnoPM4yzbyN/790PMYNVc2r3m0dz
-	WvLg3jnuYcZP9Z76Ydo2DYgoWveDoLJY=
-X-Received: by 2002:a17:907:a0cf:b0:b98:36cd:7e14 with SMTP id
- a640c23a62f3a-b9c6793df4bmr1138686266b.42.1775660341269; Wed, 08 Apr 2026
- 07:59:01 -0700 (PDT)
+	b=dIDqiFTFvySaaj2xLOPB+0WxNJ7wB1zqh6yoPuC5KaANaELUyn7VIjt4biBNv23n2
+	 8l/YH/5ExFDVLEtuQKoG4437X9muNiO5l7wGE8lfLcMYWbJ5ykirVopYQc8bYWfI7y
+	 NgQSM/+EgOU13g54RIcU7IrjVfU5JG/Luw9fzkmeesnYYwGqs82R92L2A/GmeGkWGT
+	 Hi0s1KF7R2TlrDqXVf37C1MXSxsOBSvJksrVMpIetdroDFkhyBAdWTA0TBoimimH/h
+	 txcafFgBc3sPmeHLnY5onyrWqsu9HC+a76SThGksFgEhq5YHM+Gu0c5JgrgbhfE/sR
+	 5OS2wWZ3kKkBg==
+Received: by mail-ej1-f48.google.com with SMTP id a640c23a62f3a-b9c3e2cf3c0so1012344766b.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 08 Apr 2026 08:04:59 -0700 (PDT)
+X-Gm-Message-State: AOJu0YwWB36fw79VoN+Sh8M6ePRIVOPLCvUIMYxTkPNJDEJvYP/sIkR6
+	SIBcM6D3WPPbPvURpshqDxP+PF9eIks+O9CwBhWn4WpvdM+yE1XeuwIc87lJqnn9f6pSH/j1TCQ
+	xWMrKmwYg/ybLZBsM9J8TJDTjZZbe+E0=
+X-Received: by 2002:a17:907:c92a:b0:b9b:207c:f7ba with SMTP id
+ a640c23a62f3a-b9c67431325mr766702366b.4.1775660698014; Wed, 08 Apr 2026
+ 08:04:58 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <cover.1775589916.git.boris@bur.io> <493ab19a3b664dd63c99ac413d6c6dce555ff43f.1775589916.git.boris@bur.io>
-In-Reply-To: <493ab19a3b664dd63c99ac413d6c6dce555ff43f.1775589916.git.boris@bur.io>
+References: <cover.1775589916.git.boris@bur.io> <8df7bdc59dfd2b9d7af31708a5d6e93251581d20.1775589916.git.boris@bur.io>
+In-Reply-To: <8df7bdc59dfd2b9d7af31708a5d6e93251581d20.1775589916.git.boris@bur.io>
 From: Filipe Manana <fdmanana@kernel.org>
-Date: Wed, 8 Apr 2026 15:58:24 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H4fFVEjzwJj42ksK-nFwC=SfYS++pkCMwoN6i4ncHQ9og@mail.gmail.com>
-X-Gm-Features: AQROBzCfDWYkVZtPCMWU6zjqgRN0iStNIH48mtd6Bv7kib6C841Ln0_VONR9tM0
-Message-ID: <CAL3q7H4fFVEjzwJj42ksK-nFwC=SfYS++pkCMwoN6i4ncHQ9og@mail.gmail.com>
-Subject: Re: [PATCH v3 2/4] btrfs: account for compression in delalloc extent reservation
+Date: Wed, 8 Apr 2026 16:04:20 +0100
+X-Gmail-Original-Message-ID: <CAL3q7H6pMX7gzKbBfk89fG3hL40KrabmNsXnosS7Zia3M_3xbg@mail.gmail.com>
+X-Gm-Features: AQROBzAEI11IZb3NYh0FRm4FMbxlwoQLpgpdn_AnYt7JAJ7iaby8EgAG12nBt8g
+Message-ID: <CAL3q7H6pMX7gzKbBfk89fG3hL40KrabmNsXnosS7Zia3M_3xbg@mail.gmail.com>
+Subject: Re: [PATCH v3 3/4] btrfs: make inode->outstanding_extents a u64
 To: Boris Burkov <boris@bur.io>
 Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com
 Content-Type: text/plain; charset="UTF-8"
@@ -55,329 +55,401 @@ Content-Transfer-Encoding: quoted-printable
 
 On Tue, Apr 7, 2026 at 8:31=E2=80=AFPM Boris Burkov <boris@bur.io> wrote:
 >
-> The btrfs maximum uncompressed extent size is 128MiB. The maximum
-> compressed extent size in file extent space is 128KiB. Therefore, the
-> estimate for outstanding_extents is off by 3 orders of magnitude when
-> COMPRESS_FORCE is set or the inode is set to always compress.
+> The maximum file size is MAX_LFS_FILESIZE =3D (loff_t)LLONG_MAX
 >
-> Because we use re-calculation when necessary, rather than super detailed
-> extent tracking, we don't grow this reservation as the true number of
-> extents is revealed. We don't want to be too clever with it, however, as
-> we don't want the calculation to change for a given inode between
-> reservation and release, so we only rely on the forcing type flags.
->
-> With this change, we no longer under-reserve delayed refs reservations
-> for delalloc writes, even with compress-force.
->
-> Because this would turn count_max_extents() into a named shim for
-> div_u64(size + max_extent_size - 1, max_extent_size);
-> we can just get rid of it.
+> As a result, the max extent size computation in btrfs has always been
+> bounded above by LLONG_MAX / 128MiB, which is ~ 2^63 / 2^27. This has
+> never fit in a u32. With the recent changes to also divide by 128KiB in
+> compressed cases, that bound is even higher. Whether or not it is likely
+> to happen, I think it is nice to try to capture the intent in the types,
+> so change outstanding_extents to u64, and make mod_outstanding_extents
+> try to capture some expectations around the size of its inputs.
 >
 > Signed-off-by: Boris Burkov <boris@bur.io>
 > ---
->  fs/btrfs/btrfs_inode.h    |  2 +
->  fs/btrfs/delalloc-space.c | 13 ++++---
->  fs/btrfs/fs.h             | 13 -------
->  fs/btrfs/inode.c          | 78 ++++++++++++++++++++++++++++++++-------
->  4 files changed, 73 insertions(+), 33 deletions(-)
+>  fs/btrfs/btrfs_inode.h       | 18 ++++++++++++++----
+>  fs/btrfs/delalloc-space.c    | 19 +++++++++----------
+>  fs/btrfs/inode.c             | 14 +++++++-------
+>  fs/btrfs/ordered-data.c      |  4 ++--
+>  fs/btrfs/tests/inode-tests.c | 18 +++++++++---------
+>  include/trace/events/btrfs.h |  8 ++++----
+>  6 files changed, 45 insertions(+), 36 deletions(-)
 >
 > diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-> index 55c272fe5d92..5368ef87b41a 100644
+> index 5368ef87b41a..04825b28f384 100644
 > --- a/fs/btrfs/btrfs_inode.h
 > +++ b/fs/btrfs/btrfs_inode.h
-> @@ -510,6 +510,8 @@ static inline bool btrfs_inode_can_compress(const str=
-uct btrfs_inode *inode)
->         return true;
+> @@ -180,7 +180,7 @@ struct btrfs_inode {
+>          * items we think we'll end up using, and reserved_extents is the=
+ number
+>          * of extent items we've reserved metadata for. Protected by 'loc=
+k'.
+>          */
+> -       unsigned outstanding_extents;
+> +       u64 outstanding_extents;
+>
+>         /* used to order data wrt metadata */
+>         spinlock_t ordered_tree_lock;
+> @@ -429,14 +429,24 @@ static inline bool is_data_inode(const struct btrfs=
+_inode *inode)
 >  }
 >
-> +u64 btrfs_inode_max_extents(const struct btrfs_inode *inode, u64 size);
-> +
->  static inline void btrfs_assert_inode_locked(struct btrfs_inode *inode)
+>  static inline void btrfs_mod_outstanding_extents(struct btrfs_inode *ino=
+de,
+> -                                                int mod)
+> +                                                int mod, u64 nr_extents)
 >  {
->         /* Immediately trigger a crash if the inode is not locked. */
-> diff --git a/fs/btrfs/delalloc-space.c b/fs/btrfs/delalloc-space.c
-> index c99f516ce8af..9ff02a7da05b 100644
-> --- a/fs/btrfs/delalloc-space.c
-> +++ b/fs/btrfs/delalloc-space.c
-> @@ -7,6 +7,7 @@
->  #include "delayed-ref.h"
->  #include "block-rsv.h"
->  #include "btrfs_inode.h"
-> +#include "compression.h"
+> +       s64 delta =3D mod * (s64)nr_extents;
+> +
+>         lockdep_assert_held(&inode->lock);
+> -       inode->outstanding_extents +=3D mod;
+> +       ASSERT(mod =3D=3D 1 || mod =3D=3D -1, "mod=3D%d", mod);
+> +       ASSERT(nr_extents <=3D S64_MAX, "nr_extents=3D%llu", nr_extents);
+> +       ASSERT(mod =3D=3D -1 || inode->outstanding_extents <=3D U64_MAX -=
+ nr_extents,
+> +              "nr_extents=3D%llu, inode->outstanding_extents=3D%llu",
+> +              nr_extents, inode->outstanding_extents);
+> +       ASSERT(mod =3D=3D 1 || inode->outstanding_extents >=3D nr_extents=
+,
+> +              "mod=3D%d, nr_extents=3D%llu, inode->outstanding_extents=
+=3D%llu",
 
-No need for this include. We're not using anything from compression.{h,c}.
+I don't think there is a need to print mod here, if the assertion
+failed, we know it must be -1.
+In the previous assertion, we don't print mod, which makes sense since
+it must be 1 if it fails.
 
-With that removed:
+With that change:
 
 Reviewed-by: Filipe Manana <fdmanana@suse.com>
 
->  #include "space-info.h"
->  #include "qgroup.h"
->  #include "fs.h"
-> @@ -66,7 +67,7 @@
->   *     This is the number of file extent items we'll need to handle all =
-of the
->   *     outstanding DELALLOC space we have in this inode.  We limit the m=
-aximum
->   *     size of an extent, so a large contiguous dirty area may require m=
-ore than
-> - *     one outstanding_extent, which is why count_max_extents() is used =
-to
-> + *     one outstanding_extent, which is why we use the max extent size t=
-o
->   *     determine how many outstanding_extents get added.
->   *
->   *   ->csum_bytes
-> @@ -328,7 +329,7 @@ static void calc_inode_reservations(struct btrfs_inod=
-e *inode,
->                                     u64 *meta_reserve, u64 *qgroup_reserv=
-e)
+Thanks.
+
+> +              mod, nr_extents, inode->outstanding_extents);
+> +       inode->outstanding_extents +=3D delta;
+>         if (btrfs_is_free_space_inode(inode))
+>                 return;
+>         trace_btrfs_inode_mod_outstanding_extents(inode->root, btrfs_ino(=
+inode),
+> -                                                 mod, inode->outstanding=
+_extents);
+> +                                                 delta, inode->outstandi=
+ng_extents);
+>  }
+>
+>  /*
+> diff --git a/fs/btrfs/delalloc-space.c b/fs/btrfs/delalloc-space.c
+> index 9ff02a7da05b..d50081c8089a 100644
+> --- a/fs/btrfs/delalloc-space.c
+> +++ b/fs/btrfs/delalloc-space.c
+> @@ -289,7 +289,7 @@ static void btrfs_calculate_inode_block_rsv_size(stru=
+ct btrfs_fs_info *fs_info,
+>         struct btrfs_block_rsv *block_rsv =3D &inode->block_rsv;
+>         u64 reserve_size =3D 0;
+>         u64 qgroup_rsv_size =3D 0;
+> -       unsigned outstanding_extents;
+> +       u64 outstanding_extents;
+>
+>         lockdep_assert_held(&inode->lock);
+>         outstanding_extents =3D inode->outstanding_extents;
+> @@ -316,7 +316,7 @@ static void btrfs_calculate_inode_block_rsv_size(stru=
+ct btrfs_fs_info *fs_info,
+>          *
+>          * This is overestimating in most cases.
+>          */
+> -       qgroup_rsv_size =3D (u64)outstanding_extents * fs_info->nodesize;
+> +       qgroup_rsv_size =3D outstanding_extents * fs_info->nodesize;
+>
+>         spin_lock(&block_rsv->lock);
+>         block_rsv->size =3D reserve_size;
+> @@ -376,7 +376,7 @@ int btrfs_delalloc_reserve_metadata(struct btrfs_inod=
+e *inode, u64 num_bytes,
+>         struct btrfs_fs_info *fs_info =3D root->fs_info;
+>         struct btrfs_block_rsv *block_rsv =3D &inode->block_rsv;
+>         u64 meta_reserve, qgroup_reserve;
+> -       unsigned nr_extents;
+> +       u64 nr_extents;
+>         enum btrfs_reserve_flush_enum flush =3D BTRFS_RESERVE_FLUSH_ALL;
+>         int ret =3D 0;
+>
+> @@ -430,7 +430,7 @@ int btrfs_delalloc_reserve_metadata(struct btrfs_inod=
+e *inode, u64 num_bytes,
+>          */
+>         nr_extents =3D btrfs_inode_max_extents(inode, num_bytes);
+>         spin_lock(&inode->lock);
+> -       btrfs_mod_outstanding_extents(inode, nr_extents);
+> +       btrfs_mod_outstanding_extents(inode, 1, nr_extents);
+>         if (!(inode->flags & BTRFS_INODE_NODATASUM))
+>                 inode->csum_bytes +=3D disk_num_bytes;
+>         btrfs_calculate_inode_block_rsv_size(fs_info, inode);
+> @@ -492,11 +492,11 @@ void btrfs_delalloc_release_metadata(struct btrfs_i=
+node *inode, u64 num_bytes,
+>  void btrfs_delalloc_release_extents(struct btrfs_inode *inode, u64 num_b=
+ytes)
 >  {
 >         struct btrfs_fs_info *fs_info =3D inode->root->fs_info;
-> -       u64 nr_extents =3D count_max_extents(fs_info, num_bytes);
-> +       u64 nr_extents =3D btrfs_inode_max_extents(inode, num_bytes);
->         u64 csum_leaves;
->         u64 inode_update =3D btrfs_calc_metadata_size(fs_info, 1);
->
-> @@ -427,7 +428,7 @@ int btrfs_delalloc_reserve_metadata(struct btrfs_inod=
-e *inode, u64 num_bytes,
->          * racing with an ordered completion or some such that would thin=
-k it
->          * needs to free the reservation we just made.
->          */
-> -       nr_extents =3D count_max_extents(fs_info, num_bytes);
-> +       nr_extents =3D btrfs_inode_max_extents(inode, num_bytes);
->         spin_lock(&inode->lock);
->         btrfs_mod_outstanding_extents(inode, nr_extents);
->         if (!(inode->flags & BTRFS_INODE_NODATASUM))
-> @@ -494,7 +495,7 @@ void btrfs_delalloc_release_extents(struct btrfs_inod=
-e *inode, u64 num_bytes)
->         unsigned num_extents;
+> -       unsigned num_extents;
+> +       u64 num_extents;
 >
 >         spin_lock(&inode->lock);
-> -       num_extents =3D count_max_extents(fs_info, num_bytes);
-> +       num_extents =3D btrfs_inode_max_extents(inode, num_bytes);
->         btrfs_mod_outstanding_extents(inode, -num_extents);
+>         num_extents =3D btrfs_inode_max_extents(inode, num_bytes);
+> -       btrfs_mod_outstanding_extents(inode, -num_extents);
+> +       btrfs_mod_outstanding_extents(inode, -1, num_extents);
 >         btrfs_calculate_inode_block_rsv_size(fs_info, inode);
 >         spin_unlock(&inode->lock);
-> @@ -509,8 +510,8 @@ void btrfs_delalloc_release_extents(struct btrfs_inod=
-e *inode, u64 num_bytes)
+>
+> @@ -510,16 +510,15 @@ void btrfs_delalloc_release_extents(struct btrfs_in=
+ode *inode, u64 num_bytes)
 >  void btrfs_delalloc_shrink_extents(struct btrfs_inode *inode, u64 reserv=
 ed_len, u64 new_len)
 >  {
 >         struct btrfs_fs_info *fs_info =3D inode->root->fs_info;
-> -       const u32 reserved_num_extents =3D count_max_extents(fs_info, res=
-erved_len);
-> -       const u32 new_num_extents =3D count_max_extents(fs_info, new_len)=
-;
-> +       const u32 reserved_num_extents =3D btrfs_inode_max_extents(inode,=
+> -       const u32 reserved_num_extents =3D btrfs_inode_max_extents(inode,=
  reserved_len);
-> +       const u32 new_num_extents =3D btrfs_inode_max_extents(inode, new_=
+> -       const u32 new_num_extents =3D btrfs_inode_max_extents(inode, new_=
 len);
->         const int diff_num_extents =3D new_num_extents - reserved_num_ext=
+> -       const int diff_num_extents =3D new_num_extents - reserved_num_ext=
 ents;
+> +       const u64 reserved_num_extents =3D btrfs_inode_max_extents(inode,=
+ reserved_len);
+> +       const u64 new_num_extents =3D btrfs_inode_max_extents(inode, new_=
+len);
 >
 >         ASSERT(new_len <=3D reserved_len);
-> diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
-> index a4758d94b32e..2c1626155645 100644
-> --- a/fs/btrfs/fs.h
-> +++ b/fs/btrfs/fs.h
-> @@ -1051,19 +1051,6 @@ static inline bool btrfs_is_zoned(const struct btr=
-fs_fs_info *fs_info)
->         return IS_ENABLED(CONFIG_BLK_DEV_ZONED) && fs_info->zone_size > 0=
-;
->  }
->
-> -/*
-> - * Count how many fs_info->max_extent_size cover the @size
-> - */
-> -static inline u32 count_max_extents(const struct btrfs_fs_info *fs_info,=
- u64 size)
-> -{
-> -#ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
-> -       if (!fs_info)
-> -               return div_u64(size + BTRFS_MAX_EXTENT_SIZE - 1, BTRFS_MA=
-X_EXTENT_SIZE);
-> -#endif
-> -
-> -       return div_u64(size + fs_info->max_extent_size - 1, fs_info->max_=
-extent_size);
-> -}
-> -
->  static inline unsigned int btrfs_blocks_per_folio(const struct btrfs_fs_=
-info *fs_info,
->                                                   const struct folio *fol=
-io)
->  {
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 15945744a304..55255f3794c6 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -747,6 +747,56 @@ static int add_async_extent(struct async_chunk *cow,=
- u64 start, u64 ram_size,
->         return 0;
->  }
->
-> +/*
-> + * Check if compression will definitely be attempted for this inode base=
-d on
-> + * mount options and inode properties.  Unlike inode_need_compress(), th=
-is does
-> + * NOT run the compression heuristic or check range-specific conditions,=
- so it
-> + * is safe to call under locks (e.g. io_tree lock) and for reservation s=
-izing.
-> + *
-> + * Only returns true for cases where BTRFS_INODE_NOCOMPRESS cannot be se=
-t at
-> + * runtime (FORCE_COMPRESS and prop_compress), ensuring that the effecti=
-ve max
-> + * extent size is stable across paired set/clear delalloc operations.
-> + */
-> +static inline bool inode_may_compress(const struct btrfs_inode *inode)
-> +{
-> +       if (!btrfs_inode_can_compress(inode))
-> +               return false;
-> +
-> +       /* Force compress always attempts compression. */
-> +       if (btrfs_test_opt(inode->root->fs_info, FORCE_COMPRESS))
-> +               return true;
-> +
-> +       /* Per-inode property: NOCOMPRESS cannot override this. */
-> +       if (inode->prop_compress)
-> +               return true;
-> +
-> +       return false;
-> +}
-> +
-> +/*
-> + * Return the effective maximum extent size for reservation accounting.
-> + *
-> + * When compression is guaranteed to be attempted (FORCE_COMPRESS or
-> + * prop_compress), the compression path splits ranges into
-> + * BTRFS_MAX_UNCOMPRESSED chunks, each producing an independent ordered
-> + * extent.  Use that as the divisor instead of fs_info->max_extent_size
-> + * to avoid severely undercounting outstanding extents.
-> + */
-> +static u64 btrfs_inode_max_extent_size(const struct btrfs_inode *inode)
-> +{
-> +       if (inode_may_compress(inode))
-> +               return BTRFS_MAX_UNCOMPRESSED;
-> +
-> +       return inode->root->fs_info->max_extent_size;
-> +}
-> +
-> +u64 btrfs_inode_max_extents(const struct btrfs_inode *inode, u64 size)
-> +{
-> +       u64 max_extent_size =3D btrfs_inode_max_extent_size(inode);
-> +
-> +       return div_u64(size + max_extent_size - 1, max_extent_size);
-> +}
-> +
->  /*
->   * Check if the inode needs to be submitted to compression, based on mou=
-nt
->   * options, defragmentation, properties or heuristics.
-> @@ -2459,8 +2509,8 @@ int btrfs_run_delalloc_range(struct btrfs_inode *in=
-ode, struct folio *locked_fol
->  void btrfs_split_delalloc_extent(struct btrfs_inode *inode,
->                                  struct extent_state *orig, u64 split)
->  {
-> -       struct btrfs_fs_info *fs_info =3D inode->root->fs_info;
->         u64 size;
-> +       u64 max_extent_size =3D btrfs_inode_max_extent_size(inode);
->
->         lockdep_assert_held(&inode->io_tree.lock);
->
-> @@ -2469,8 +2519,8 @@ void btrfs_split_delalloc_extent(struct btrfs_inode=
- *inode,
->                 return;
->
->         size =3D orig->end - orig->start + 1;
-> -       if (size > fs_info->max_extent_size) {
-> -               u32 num_extents;
-> +       if (size > max_extent_size) {
-> +               u64 num_extents;
->                 u64 new_size;
->
->                 /*
-> @@ -2478,10 +2528,10 @@ void btrfs_split_delalloc_extent(struct btrfs_ino=
-de *inode,
->                  * applies here, just in reverse.
->                  */
->                 new_size =3D orig->end - split + 1;
-> -               num_extents =3D count_max_extents(fs_info, new_size);
-> +               num_extents =3D btrfs_inode_max_extents(inode, new_size);
->                 new_size =3D split - orig->start;
-> -               num_extents +=3D count_max_extents(fs_info, new_size);
-> -               if (count_max_extents(fs_info, size) >=3D num_extents)
-> +               num_extents +=3D btrfs_inode_max_extents(inode, new_size)=
-;
-> +               if (btrfs_inode_max_extents(inode, size) >=3D num_extents=
-)
->                         return;
->         }
->
-> @@ -2498,9 +2548,9 @@ void btrfs_split_delalloc_extent(struct btrfs_inode=
- *inode,
->  void btrfs_merge_delalloc_extent(struct btrfs_inode *inode, struct exten=
-t_state *new,
->                                  struct extent_state *other)
->  {
-> -       struct btrfs_fs_info *fs_info =3D inode->root->fs_info;
->         u64 new_size, old_size;
-> -       u32 num_extents;
-> +       u64 max_extent_size =3D btrfs_inode_max_extent_size(inode);
-> +       u64 num_extents;
->
->         lockdep_assert_held(&inode->io_tree.lock);
->
-> @@ -2514,7 +2564,7 @@ void btrfs_merge_delalloc_extent(struct btrfs_inode=
- *inode, struct extent_state
->                 new_size =3D other->end - new->start + 1;
->
->         /* we're not bigger than the max, unreserve the space and go */
-> -       if (new_size <=3D fs_info->max_extent_size) {
-> +       if (new_size <=3D max_extent_size) {
->                 spin_lock(&inode->lock);
->                 btrfs_mod_outstanding_extents(inode, -1);
->                 spin_unlock(&inode->lock);
-> @@ -2540,10 +2590,10 @@ void btrfs_merge_delalloc_extent(struct btrfs_ino=
-de *inode, struct extent_state
->          * this case.
->          */
->         old_size =3D other->end - other->start + 1;
-> -       num_extents =3D count_max_extents(fs_info, old_size);
-> +       num_extents =3D btrfs_inode_max_extents(inode, old_size);
->         old_size =3D new->end - new->start + 1;
-> -       num_extents +=3D count_max_extents(fs_info, old_size);
-> -       if (count_max_extents(fs_info, new_size) >=3D num_extents)
-> +       num_extents +=3D btrfs_inode_max_extents(inode, old_size);
-> +       if (btrfs_inode_max_extents(inode, new_size) >=3D num_extents)
+>         if (new_num_extents =3D=3D reserved_num_extents)
 >                 return;
 >
 >         spin_lock(&inode->lock);
-> @@ -2616,7 +2666,7 @@ void btrfs_set_delalloc_extent(struct btrfs_inode *=
-inode, struct extent_state *s
+> -       btrfs_mod_outstanding_extents(inode, diff_num_extents);
+> +       btrfs_mod_outstanding_extents(inode, -1, reserved_num_extents - n=
+ew_num_extents);
+>         btrfs_calculate_inode_block_rsv_size(fs_info, inode);
+>         spin_unlock(&inode->lock);
+>
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 55255f3794c6..b45a92cfe94e 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -2536,7 +2536,7 @@ void btrfs_split_delalloc_extent(struct btrfs_inode=
+ *inode,
+>         }
+>
+>         spin_lock(&inode->lock);
+> -       btrfs_mod_outstanding_extents(inode, 1);
+> +       btrfs_mod_outstanding_extents(inode, 1, 1);
+>         spin_unlock(&inode->lock);
+>  }
+>
+> @@ -2566,7 +2566,7 @@ void btrfs_merge_delalloc_extent(struct btrfs_inode=
+ *inode, struct extent_state
+>         /* we're not bigger than the max, unreserve the space and go */
+>         if (new_size <=3D max_extent_size) {
+>                 spin_lock(&inode->lock);
+> -               btrfs_mod_outstanding_extents(inode, -1);
+> +               btrfs_mod_outstanding_extents(inode, -1, 1);
+>                 spin_unlock(&inode->lock);
+>                 return;
+>         }
+> @@ -2597,7 +2597,7 @@ void btrfs_merge_delalloc_extent(struct btrfs_inode=
+ *inode, struct extent_state
+>                 return;
+>
+>         spin_lock(&inode->lock);
+> -       btrfs_mod_outstanding_extents(inode, -1);
+> +       btrfs_mod_outstanding_extents(inode, -1, 1);
+>         spin_unlock(&inode->lock);
+>  }
+>
+> @@ -2666,10 +2666,10 @@ void btrfs_set_delalloc_extent(struct btrfs_inode=
+ *inode, struct extent_state *s
 >         if (!(state->state & EXTENT_DELALLOC) && (bits & EXTENT_DELALLOC)=
 ) {
 >                 u64 len =3D state->end + 1 - state->start;
 >                 u64 prev_delalloc_bytes;
-> -               u32 num_extents =3D count_max_extents(fs_info, len);
-> +               u32 num_extents =3D btrfs_inode_max_extents(inode, len);
+> -               u32 num_extents =3D btrfs_inode_max_extents(inode, len);
+> +               u64 num_extents =3D btrfs_inode_max_extents(inode, len);
 >
 >                 spin_lock(&inode->lock);
->                 btrfs_mod_outstanding_extents(inode, num_extents);
-> @@ -2662,7 +2712,7 @@ void btrfs_clear_delalloc_extent(struct btrfs_inode=
+> -               btrfs_mod_outstanding_extents(inode, num_extents);
+> +               btrfs_mod_outstanding_extents(inode, 1, num_extents);
+>                 spin_unlock(&inode->lock);
+>
+>                 /* For sanity tests */
+> @@ -2712,7 +2712,7 @@ void btrfs_clear_delalloc_extent(struct btrfs_inode=
  *inode,
 >  {
 >         struct btrfs_fs_info *fs_info =3D inode->root->fs_info;
 >         u64 len =3D state->end + 1 - state->start;
-> -       u32 num_extents =3D count_max_extents(fs_info, len);
-> +       u32 num_extents =3D btrfs_inode_max_extents(inode, len);
+> -       u32 num_extents =3D btrfs_inode_max_extents(inode, len);
+> +       u64 num_extents =3D btrfs_inode_max_extents(inode, len);
 >
 >         lockdep_assert_held(&inode->io_tree.lock);
 >
+> @@ -2732,7 +2732,7 @@ void btrfs_clear_delalloc_extent(struct btrfs_inode=
+ *inode,
+>                 u64 new_delalloc_bytes;
+>
+>                 spin_lock(&inode->lock);
+> -               btrfs_mod_outstanding_extents(inode, -num_extents);
+> +               btrfs_mod_outstanding_extents(inode, -1, num_extents);
+>                 spin_unlock(&inode->lock);
+>
+>                 /*
+> diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+> index e5a24b3ff95e..96ee8ebfdb92 100644
+> --- a/fs/btrfs/ordered-data.c
+> +++ b/fs/btrfs/ordered-data.c
+> @@ -223,7 +223,7 @@ static struct btrfs_ordered_extent *alloc_ordered_ext=
+ent(
+>          * smallest the extent is going to get.
+>          */
+>         spin_lock(&inode->lock);
+> -       btrfs_mod_outstanding_extents(inode, 1);
+> +       btrfs_mod_outstanding_extents(inode, 1, 1);
+>         spin_unlock(&inode->lock);
+>
+>  out:
+> @@ -655,7 +655,7 @@ void btrfs_remove_ordered_extent(struct btrfs_ordered=
+_extent *entry)
+>         btrfs_lockdep_acquire(fs_info, btrfs_trans_pending_ordered);
+>         /* This is paired with alloc_ordered_extent(). */
+>         spin_lock(&btrfs_inode->lock);
+> -       btrfs_mod_outstanding_extents(btrfs_inode, -1);
+> +       btrfs_mod_outstanding_extents(btrfs_inode, -1, 1);
+>         spin_unlock(&btrfs_inode->lock);
+>         if (root !=3D fs_info->tree_root) {
+>                 u64 release;
+> diff --git a/fs/btrfs/tests/inode-tests.c b/fs/btrfs/tests/inode-tests.c
+> index b04fbcaf0a1d..e63afbb9be2b 100644
+> --- a/fs/btrfs/tests/inode-tests.c
+> +++ b/fs/btrfs/tests/inode-tests.c
+> @@ -931,7 +931,7 @@ static int test_extent_accounting(u32 sectorsize, u32=
+ nodesize)
+>         }
+>         if (BTRFS_I(inode)->outstanding_extents !=3D 1) {
+>                 ret =3D -EINVAL;
+> -               test_err("miscount, wanted 1, got %u",
+> +               test_err("miscount, wanted 1, got %llu",
+>                          BTRFS_I(inode)->outstanding_extents);
+>                 goto out;
+>         }
+> @@ -946,7 +946,7 @@ static int test_extent_accounting(u32 sectorsize, u32=
+ nodesize)
+>         }
+>         if (BTRFS_I(inode)->outstanding_extents !=3D 2) {
+>                 ret =3D -EINVAL;
+> -               test_err("miscount, wanted 2, got %u",
+> +               test_err("miscount, wanted 2, got %llu",
+>                          BTRFS_I(inode)->outstanding_extents);
+>                 goto out;
+>         }
+> @@ -962,7 +962,7 @@ static int test_extent_accounting(u32 sectorsize, u32=
+ nodesize)
+>         }
+>         if (BTRFS_I(inode)->outstanding_extents !=3D 2) {
+>                 ret =3D -EINVAL;
+> -               test_err("miscount, wanted 2, got %u",
+> +               test_err("miscount, wanted 2, got %llu",
+>                          BTRFS_I(inode)->outstanding_extents);
+>                 goto out;
+>         }
+> @@ -978,7 +978,7 @@ static int test_extent_accounting(u32 sectorsize, u32=
+ nodesize)
+>         }
+>         if (BTRFS_I(inode)->outstanding_extents !=3D 2) {
+>                 ret =3D -EINVAL;
+> -               test_err("miscount, wanted 2, got %u",
+> +               test_err("miscount, wanted 2, got %llu",
+>                          BTRFS_I(inode)->outstanding_extents);
+>                 goto out;
+>         }
+> @@ -996,7 +996,7 @@ static int test_extent_accounting(u32 sectorsize, u32=
+ nodesize)
+>         }
+>         if (BTRFS_I(inode)->outstanding_extents !=3D 4) {
+>                 ret =3D -EINVAL;
+> -               test_err("miscount, wanted 4, got %u",
+> +               test_err("miscount, wanted 4, got %llu",
+>                          BTRFS_I(inode)->outstanding_extents);
+>                 goto out;
+>         }
+> @@ -1013,7 +1013,7 @@ static int test_extent_accounting(u32 sectorsize, u=
+32 nodesize)
+>         }
+>         if (BTRFS_I(inode)->outstanding_extents !=3D 3) {
+>                 ret =3D -EINVAL;
+> -               test_err("miscount, wanted 3, got %u",
+> +               test_err("miscount, wanted 3, got %llu",
+>                          BTRFS_I(inode)->outstanding_extents);
+>                 goto out;
+>         }
+> @@ -1029,7 +1029,7 @@ static int test_extent_accounting(u32 sectorsize, u=
+32 nodesize)
+>         }
+>         if (BTRFS_I(inode)->outstanding_extents !=3D 4) {
+>                 ret =3D -EINVAL;
+> -               test_err("miscount, wanted 4, got %u",
+> +               test_err("miscount, wanted 4, got %llu",
+>                          BTRFS_I(inode)->outstanding_extents);
+>                 goto out;
+>         }
+> @@ -1047,7 +1047,7 @@ static int test_extent_accounting(u32 sectorsize, u=
+32 nodesize)
+>         }
+>         if (BTRFS_I(inode)->outstanding_extents !=3D 3) {
+>                 ret =3D -EINVAL;
+> -               test_err("miscount, wanted 3, got %u",
+> +               test_err("miscount, wanted 3, got %llu",
+>                          BTRFS_I(inode)->outstanding_extents);
+>                 goto out;
+>         }
+> @@ -1061,7 +1061,7 @@ static int test_extent_accounting(u32 sectorsize, u=
+32 nodesize)
+>         }
+>         if (BTRFS_I(inode)->outstanding_extents) {
+>                 ret =3D -EINVAL;
+> -               test_err("miscount, wanted 0, got %u",
+> +               test_err("miscount, wanted 0, got %llu",
+>                          BTRFS_I(inode)->outstanding_extents);
+>                 goto out;
+>         }
+> diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+> index 8ad7a2d76c1d..caabdc8d9eed 100644
+> --- a/include/trace/events/btrfs.h
+> +++ b/include/trace/events/btrfs.h
+> @@ -2003,15 +2003,15 @@ DEFINE_EVENT(btrfs__prelim_ref, btrfs_prelim_ref_=
+insert,
+>  );
+>
+>  TRACE_EVENT(btrfs_inode_mod_outstanding_extents,
+> -       TP_PROTO(const struct btrfs_root *root, u64 ino, int mod, unsigne=
+d outstanding),
+> +       TP_PROTO(const struct btrfs_root *root, u64 ino, s64 mod, u64 out=
+standing),
+>
+>         TP_ARGS(root, ino, mod, outstanding),
+>
+>         TP_STRUCT__entry_btrfs(
+>                 __field(        u64, root_objectid      )
+>                 __field(        u64, ino                )
+> -               __field(        int, mod                )
+> -               __field(        unsigned, outstanding   )
+> +               __field(        s64, mod                )
+> +               __field(        u64, outstanding        )
+>         ),
+>
+>         TP_fast_assign_btrfs(root->fs_info,
+> @@ -2021,7 +2021,7 @@ TRACE_EVENT(btrfs_inode_mod_outstanding_extents,
+>                 __entry->outstanding    =3D outstanding;
+>         ),
+>
+> -       TP_printk_btrfs("root=3D%llu(%s) ino=3D%llu mod=3D%d outstanding=
+=3D%u",
+> +       TP_printk_btrfs("root=3D%llu(%s) ino=3D%llu mod=3D%lld outstandin=
+g=3D%llu",
+>                         show_root_type(__entry->root_objectid),
+>                         __entry->ino, __entry->mod, __entry->outstanding)
+>  );
 > --
 > 2.53.0
 >

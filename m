@@ -1,451 +1,512 @@
-Received: from fhigh-b6-smtp.messagingengine.com (fhigh-b6-smtp.messagingengine.com [202.12.124.157])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail.burntcomma.com (mail2.burntcomma.com [217.169.27.34])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 391F5351C0B
-	for <linux-btrfs@vger.kernel.org>; Wed,  8 Apr 2026 17:34:38 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.157
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8E9E430F924
+	for <linux-btrfs@vger.kernel.org>; Wed,  8 Apr 2026 17:46:47 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=217.169.27.34
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775669680; cv=none; b=cXTe2hKtEBfJtQ50lXJxFsQJi16HAYT9Qpj9PlQwKyJ9F6kZqIvWDJtWoM/FVrdURNsCiG1AQyaWazSca5Rh+sqS3REpZxpxjNf629XXIVAgw31ydiXwxAcJCTRcK1Ulu0Yby5KAG6ui7Pk41Pa28lOtOu/dPaFoDGAjehDC+oQ=
+	t=1775670410; cv=none; b=IhnUeVsQzgjzMHSe2NoXCLjna1sGixoWlwqY1lqvGe8swXmEEL85kFVoSXX0gOW/Fjb2l5PpfD4vLQqLsoYXA/AT6L17U1qIdDRLYrfTRtKerHF8PLVESmi0kDjFw95Zw7llhC5D89He4w0U0flEAc3b+unrJkQTur5hA7p53uI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1775669680; c=relaxed/simple;
-	bh=MDm7Ze4ILpWf6j7d9aF3jgyowj2ZrbiCjhLqt8BUYQM=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=eDx0l5L8iZv8PZFHYspkPJIIYM4TcGBAWy+7Hp6qHqYEIYmJhRmYB/Csqnxqo4OxjXlPKqI3Z4QaL1xIpliyAwJqm35vxNN4EcEayPm6Pq2pRhcU+VRGb546exEVzyyeESXrJL7B9kmSDrOpZ1SubxIiQPutOXtbRoG1/6w9Otk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=BL9XzkBV; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=AFNqKvSu; arc=none smtp.client-ip=202.12.124.157
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
+	s=arc-20240116; t=1775670410; c=relaxed/simple;
+	bh=9Rszmrf3Z2KCJ6nR6dAsXVgaBR4woX95SdXVjNEmYrg=;
+	h=From:To:Cc:Subject:Date:Message-ID:Mime-Version; b=BPyslJrcVgK1r2PpA8K0KZGQiiBNNTBfsEpkuN/I08rmbW37hU1YLmIn08P9z1D9+WU+zJyhIwRf0i7sJMGT7MAHCFOR2m197aTemAFJEVdqHZaR+kHz2ftmPc70ETU22KsdaiHcdr2S4u+nccewmXP47wID16ssjUbBlCflz9w=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com; spf=pass smtp.mailfrom=harmstone.com; dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b=Q2/kxXSc; arc=none smtp.client-ip=217.169.27.34
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=harmstone.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="BL9XzkBV";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="AFNqKvSu"
-Received: from phl-compute-01.internal (phl-compute-01.internal [10.202.2.41])
-	by mailfhigh.stl.internal (Postfix) with ESMTP id 54EF57A018F;
-	Wed,  8 Apr 2026 13:34:37 -0400 (EDT)
-Received: from phl-frontend-03 ([10.202.2.162])
-  by phl-compute-01.internal (MEProxy); Wed, 08 Apr 2026 13:34:37 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
-	:content-transfer-encoding:content-type:content-type:date:date
-	:from:from:in-reply-to:in-reply-to:message-id:mime-version
-	:references:reply-to:subject:subject:to:to; s=fm3; t=1775669677;
-	 x=1775756077; bh=y+/0nS44R+FouCdz+zhBEVeu9hwjKrdnhmcYLWTeH00=; b=
-	BL9XzkBVUXwZGvKAi4TP6Z13CnKYUru64m+qxh8x4FaBThkq4EPxlHwWV3V/Lgom
-	Bp5XfSwkehg53WQbLDUXM3Z9hGtAvx7irIn6YTX7NMBTvIj+KuP+u8XVvEH1Ua+c
-	/BQDOn/z60tlnqd/WAH3OxkTBHVq4yKaaD74K7c0QFIgd+bcoU95a+A3vKvmslC5
-	Qx7kbK+tG5bcFQAPcZwEKz4DXKNnChzVTmLYm1TsE4uyXPcf/DBZf3NWlQj48U8/
-	dJ1VkYZSW8doX9e5ez3mH9XpbYxXDBh6S23Q/GgVhPz/FvzpOhOVERB1ILP2LaAB
-	7HyfvzAyb1y6nsASlqE3HQ==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:cc:content-transfer-encoding
-	:content-type:content-type:date:date:feedback-id:feedback-id
-	:from:from:in-reply-to:in-reply-to:message-id:mime-version
-	:references:reply-to:subject:subject:to:to:x-me-proxy
-	:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=1775669677; x=
-	1775756077; bh=y+/0nS44R+FouCdz+zhBEVeu9hwjKrdnhmcYLWTeH00=; b=A
-	FNqKvSuLKT/g+kjTe/VZhPKnZYNPRjjauRsA6iauEh6vxQPoH2HcX4b4XogfVRMd
-	Tki0NN5A/GJGyIIAolzOWR12ogzcRg8VgZKvUt/eO6fiK7pc6yuXdeHUEj1ARN3t
-	Ce3gMOYVK+CwxPppt0JS/FzCdo3lh4ZgI7nCQ9+2Yv9Ry7ynM9IZ4O+RQZx0UllM
-	SHJLE4aYneFTQ0anYE+RszCfKYEP3hTiRffRkCOwapVr/pi1gt0LJ7F6B6bnilsv
-	W62+EKF5U/fgUewx5HKTcHvlpA7oC5TgNo3T6n/a12aoaOxl/46RjvqVh7E0h4Kv
-	JlXkWen8ORSAaITnxm2tA==
-X-ME-Sender: <xms:rJHWafb6Wniccgg_EGQOEKDx40kN2dT_-9Ct31fVNk6xrnnGcJR4DA>
-    <xme:rJHWaV3Wz1zaEbGByMJY-xikhzQ-EHYaKeFWSY0RktC3Zu8TGvJY6poqmTYAx2qEm
-    ol0wj2z4XBxRWvgGKP4NS87-fkQRBpxolm6AWjD5A9Ivro0fa1rlYQ>
-X-ME-Received: <xmr:rJHWafXbT7d3i5_hUeUZDlt3DtPRuadQj4yPOAObZl7bXURonpiObjvyaB0YWg_uPf3VHxc0_D9j7z-32OLlUNCG8os>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefhedrtddtgddvgedukecutefuodetggdotefrod
-    ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpuffrtefokffrpgfnqfghnecuuegr
-    ihhlohhuthemuceftddtnecusecvtfgvtghiphhivghnthhsucdlqddutddtmdenucfjug
-    hrpeffhffvvefukfhfgggtugfgjgesthekredttddtjeenucfhrhhomhepuehorhhishcu
-    uehurhhkohhvuceosghorhhishessghurhdrihhoqeenucggtffrrghtthgvrhhnpedule
-    fhtdfhteduvdethfeftdeitdethedvtdekvdeltddvveegtdeuuddtiedtieenucevlhhu
-    shhtvghrufhiiigvpedtnecurfgrrhgrmhepmhgrihhlfhhrohhmpegsohhrihhssegsuh
-    hrrdhiohdpnhgspghrtghpthhtohepfedpmhhouggvpehsmhhtphhouhhtpdhrtghpthht
-    ohepfhgumhgrnhgrnhgrsehkvghrnhgvlhdrohhrghdprhgtphhtthhopehlihhnuhigqd
-    gsthhrfhhssehvghgvrhdrkhgvrhhnvghlrdhorhhgpdhrtghpthhtohepkhgvrhhnvghl
-    qdhtvggrmhesfhgsrdgtohhm
-X-ME-Proxy: <xmx:rJHWafVIRfF5e64twqah0O5DsZ2YlUeE3VPrzKX6xB1MQBOq0uDGrw>
-    <xmx:rJHWaeepSRyNdncPYaBIGjnMFmwA19z6kfOeN8O2_5LVX60UiTYvSg>
-    <xmx:rJHWaYViiDeFjVNUMpCFmCsi18YN43_X8uQKZG0dqsveCrd21w2vUQ>
-    <xmx:rJHWaXd6BMRTan0wN4MCFioqcGKgRWsBBraoANZSPdAyOVSx8Nt_Uw>
-    <xmx:rZHWaU35YZoIIi3V3qr4fTexCMV3DVlBjps3_Rj8T7Jeq6MTmF3zk5aI>
-Feedback-ID: i083147f8:Fastmail
-Received: by mail.messagingengine.com (Postfix) with ESMTPA; Wed,
- 8 Apr 2026 13:34:36 -0400 (EDT)
-Date: Wed, 8 Apr 2026 10:34:25 -0700
-From: Boris Burkov <boris@bur.io>
-To: Filipe Manana <fdmanana@kernel.org>
-Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH v3 1/4] btrfs: reserve space for delayed_refs in delalloc
-Message-ID: <20260408173425.GA2076825@zen.localdomain>
-References: <cover.1775589916.git.boris@bur.io>
- <ab37e7be01a428f76651fa667d5ff2db28deae8e.1775589916.git.boris@bur.io>
- <CAL3q7H7X6eFwrVXW6p21nuxawE8+O1dyXV-Yyg_uS4ipf1O5+w@mail.gmail.com>
+	dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b="Q2/kxXSc"
+Received: from beren (beren.burntcomma.com [IPv6:2a02:8012:8cf0:0:ce28:aaff:fe0d:6db2])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
+	(Client did not present a certificate)
+	by mail.burntcomma.com (Postfix) with ESMTPSA id E621B31ACCC;
+	Wed,  8 Apr 2026 18:46:44 +0100 (BST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=harmstone.com;
+	s=mail; t=1775670404;
+	bh=x3+Z6jA11WKPDO1VWUJV5g+IABaaVTDnYuYG2aQFnC4=;
+	h=From:To:Cc:Subject:Date;
+	b=Q2/kxXSc9TZkWYNjZzpSL10M2xPHdqNotAjmA5Ul+Ev0KEtMx3eZnzFxBC4UbZH/x
+	 w73RfFVrE/R+oBivZYhBdvYxavrMF7Fmv+YwwrUw6p7/tRwsbF7Z5f+xLNCSND6SAW
+	 yuS4Bo3ES5fTtQe1fuEJA/BSiqG4qaxMTyHCwSeU=
+From: Mark Harmstone <mark@harmstone.com>
+To: linux-btrfs@vger.kernel.org,
+	wqu@suse.com,
+	boris@bur.io
+Cc: Mark Harmstone <mark@harmstone.com>
+Subject: [PATCH v2] btrfs: add BTRFS_IOC_GET_CSUMS ioctl
+Date: Wed,  8 Apr 2026 18:46:30 +0100
+Message-ID: <20260408174642.136962-1-mark@harmstone.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
+Mime-Version: 1.0
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <CAL3q7H7X6eFwrVXW6p21nuxawE8+O1dyXV-Yyg_uS4ipf1O5+w@mail.gmail.com>
 
-On Wed, Apr 08, 2026 at 03:56:14PM +0100, Filipe Manana wrote:
-> On Tue, Apr 7, 2026 at 8:31 PM Boris Burkov <boris@bur.io> wrote:
-> >
-> > delalloc uses a per-inode block_rsv to perform metadata reservations for
-> > the cow operations it anticipates based on the number of outstanding
-> > extents. This calculation is done based on inode->outstanding_extents in
-> > btrfs_calculate_inode_block_rsv_size(). The reservation is *not*
-> > meticulously tracked as each ordered_extent is actually created in
-> > writeback, but rather delalloc attempts to over-estimate and the
-> > writeback and ordered_extent finish portions are responsible to release
-> > all the reservation.
-> >
-> > However, there is a notable gap in this reservation, it reserves no
-> > space for the resulting delayed_refs. If you compare to how
-> > btrfs_start_transaction() reservations work, this is a noteable
-> > difference.
-> >
-> > As writeback actually occurs, and we trigger btrfs_finish_one_ordered(),
-> > that function will start generating delayed refs, which will draw from
-> > the trans_handle's delayed_refs_rsv via btrfs_update_delayed_refs_rsv():
-> >
-> > For example, we can trace the primary data delayed ref:
-> >
-> > btrfs_finish_one_ordered()
-> >   insert_ordered_extent_file_extent()
-> >     insert_reserved_file_extent()
-> >       btrfs_alloc_reserved_file_extent()
-> >         btrfs_add_delayed_data_ref()
-> >           add_delayed_ref()
-> >             btrfs_update_delayed_refs_rsv();
-> >
-> > This trans_handle was created in finish_one_ordered() with
-> > btrfs_join_transaction() which calls start_transaction with
-> > num_items=0 and BTRFS_RESERVE_NO_FLUSH. As a result, this trans_handle
-> > has no reserved in h->delayed_rsv, as neither the num_items reservation
-> > nor the btrfs_delayed_refs_rsv_refill() reservation is run.
-> >
-> > Thus, when btrfs_update_delayed_refs_rsv() runs, reserved_bytes is 0 and
-> > fs_info->delayed_rsv->size grows but not fs_info->delayed_rsv->reserved.
-> >
-> > If a large amount of writeback happens all at once (perhaps due to
-> > dirty_ratio being tuned too high), this results in, among other things,
-> > erroneous assessments of the amount of delayed_refs reserved in the
-> > metadata space reclaim logic, like need_preemptive_reclaim() which
-> > relies on fs_info->delayed_rsv->reserved and even worse, poor decision
-> > making in btrfs_preempt_reclaim_metadata_space() which counts
-> > delalloc_bytes like so:
-> >
-> >   block_rsv_size = global_rsv_size +
-> >           btrfs_block_rsv_reserved(delayed_block_rsv) +
-> >           btrfs_block_rsv_reserved(delayed_refs_rsv) +
-> >           btrfs_block_rsv_reserved(trans_rsv);
-> >   delalloc_size = bytes_may_use - block_rsv_size;
-> >
-> > So all that lost delayed refs usage gets accounted as delalloc_size and
-> > leads to preemptive reclaim continuously choosing FLUSH_DELALLOC, which
-> > further exacerbates the problem.
-> >
-> > With enough writeback around, we can run enough delalloc that we get
-> > into async reclaim which starts blocking start_transaction() and
-> > eventually hits FLUSH_DELALLOC_WAIT/FLUSH_DELALLOC_FULL at which point
-> > the filesystem gets heavily blocked on metadata space in reserve_space(),
-> > blocking all new transaction work until all the ordered_extents finish.
-> >
-> > If we had an accurate view of the reservation for delayed refs, then we
-> > could mostly break this feedback loop in preemptive reclaim, and
-> > generally would be able to make more accurate decisions with regards to
-> > metadata space reclamation.
-> >
-> > This patch adds extra metadata reservation to the inode's block_rsv to
-> > account for the delayed refs. When the ordered_extent finishes and we
-> > are about to do work in the transaction that uses delayed refs, we
-> > migrate enough for 1 extent. Since this is not necessarily perfect, we
-> > have to be careful and do a "soft" migrate which succeeds even if there
-> > is not enough reservation. This is strictly better than what we have and
-> > also matches how the delayed ref rsv gets used in the transaction at
-> > btrfs_update_delayed_refs_rsv().
-> >
-> > Aside from this data delayed_ref, there are also some metadata
-> > delayed_refs to consider. These are:
-> > - subvolume tree for the file extent item
-> > - csum tree for data csums
-> > - raid stripe tree if enabled
-> > - free space tree if enabled
-> >
-> > So account for those delayed_refs in the reservation as well. This
-> > greatly increases the size of the reservation as each metadata cow
-> > results in two delayed refs: one add for the new block in
-> > btrfs_alloc_tree_block() and one drop for the old in
-> > btrfs_free_tree_block(). As a result, to be completely conservative,
-> > we need to reserve 2 delayed refs worth of space for each cow.
-> >
-> > Signed-off-by: Boris Burkov <boris@bur.io>
-> > ---
-> >  fs/btrfs/delalloc-space.c | 56 +++++++++++++++++++++++++++++++++++++++
-> >  fs/btrfs/delalloc-space.h |  3 +++
-> >  fs/btrfs/inode.c          |  2 ++
-> >  fs/btrfs/transaction.c    | 36 +++++++++++--------------
-> >  4 files changed, 76 insertions(+), 21 deletions(-)
-> >
-> > diff --git a/fs/btrfs/delalloc-space.c b/fs/btrfs/delalloc-space.c
-> > index 0970799d0aa4..c99f516ce8af 100644
-> > --- a/fs/btrfs/delalloc-space.c
-> > +++ b/fs/btrfs/delalloc-space.c
-> > @@ -1,13 +1,16 @@
-> >  // SPDX-License-Identifier: GPL-2.0
-> >
-> > +#include "linux/btrfs_tree.h"
-> 
-> Not needed.
-> 
-> >  #include "messages.h"
-> >  #include "ctree.h"
-> >  #include "delalloc-space.h"
-> > +#include "delayed-ref.h"
-> >  #include "block-rsv.h"
-> >  #include "btrfs_inode.h"
-> >  #include "space-info.h"
-> >  #include "qgroup.h"
-> >  #include "fs.h"
-> > +#include "transaction.h"
-> >
-> >  /*
-> >   * HOW DOES THIS WORK
-> > @@ -247,6 +250,38 @@ static void btrfs_inode_rsv_release(struct btrfs_inode *inode, bool qgroup_free)
-> >                                                    qgroup_to_release);
-> >  }
-> >
-> > +/*
-> > + * Each delalloc extent could become an ordered_extent and end up inserting a
-> > + * new data extent and modify a number of btrees. Each of those is associated with
-> > + * adding delayed refs which need a corresponding delayed refs reservation.
-> > + *
-> > + * Each metadata cow operation results in an add and a drop delayed ref, both of
-> > + * which call add_delayed_ref() and ultimately btrfs_update_delayed_refs_rsv(),
-> > + * so each must account for 2 delayed refs.
-> > + */
-> > +static u64 delalloc_calc_delayed_refs_rsv(const struct btrfs_inode *inode, u64 nr_extents)
-> > +{
-> > +       const struct btrfs_fs_info *fs_info = inode->root->fs_info;
-> > +
-> > +       /*
-> > +        * Factor for how many delayed refs updates we will generate per extent.
-> > +        * Non-optional:
-> > +        * extent tree: 1 data delayed ref.
-> 
-> Running the delayed data ref to insert the extent item in the extent
-> tree requires COWing an extent tree leaf, which creates a delayed tree
-> ref for deletion too.
-> So, 2.
-> 
-> Otherwise it looks good, thanks.
-> 
+Add a new unprivileged BTRFS_IOC_GET_CSUMS ioctl, which can be used to
+query the on-disk csums for a file.
 
-I think I might be getting confused now :)
+This is done by userspace passing a struct btrfs_ioctl_get_csums_args to
+the kernel, which details the offset and length we're interested in, and
+a buffer for the kernel to write its results into. The kernel writes a
+struct btrfs_ioctl_get_csums_entry into the buffer, followed by the
+csums if available.
 
-I'll try to work it out "out loud" and hopefully I can reach a good
-conclusion.
+If the extent is an uncompressed, non-nodatasum extent, the kernel sets
+the entry type to BTRFS_GET_CSUMS_HAS_CSUMS and follows it with the
+csums. If it is sparse, preallocated, or beyond the EOF, it sets the
+type to BTRFS_GET_CSUMS_ZEROED - this is so userspace knows it can use
+the precomputed hash of the zero sector. Otherwise, it sets the type to
+BTRFS_GET_CSUMS_NO_CSUMS.
 
-I have been trying to reserve for the calls to add_delayed_ref in the
-transaction handle context. And tracing each cow in that context yields
-2 delayed refs each while tracing the data extent insertion only creates
-one. The reason I care particularly about this context is the
-trans_handle delayed_refs rsv accounting in
-btrfs_update_delayed_refs_rsv(), as described in the patch. Ultimately,
-all the reservations get sunk into the global reserve from
-trans->delayed_rsv at btrfs_end_transaction(). Does this all sound right
-to you so far?
+We do store the csums of compressed extents, but we deliberately don't
+return them here: they're hashed over the compressed data, not the
+uncompressed data that's returned to userspace.
 
-Cows that we clearly do from finish_one_ordered() are the ones to:
-raid stripe tree, subvol tree, and csum tree. Notably, the free space
-tree *does not* happen in this context, it happens when we run the
-delayed ref, so I think I was not consistent to include that. In that
-context we cow the extent and free space tree for the data extent.
+The main use case for this is for speeding up mkfs.btrfs --rootdir. For
+the case when the source FS is btrfs and using the same csum algorithm,
+we can avoid having to recalculate the csums - in my synthetic
+benchmarks (16GB file on a spinning-rust drive), this resulted in a ~11%
+speed-up (218s to 196s).
 
-But the point of reserving for a delayed ref is to account for the cows
-that it will ultimately cause and reserve ahead for them. So I think it
-does make sense to reserve for the fst and extent tree. On the other
-hand, I think we actively *don't* want to account for the potential
-infinite regress where each metadata delayed_ref run "unluckily" results
-in cow-ing the extent tree again and again since it doesn't actually
-happen in practice (especially with Leo's writeback inhibition and
-hopefully eb overwriting soon). That series diverges so it would require
-an infinite reservation anyway.
+When using the --reflink option added in btrfs-progs v6.16.1, we can forgo
+reading the data entirely, resulting a ~2200% speed-up on the same test
+(128s to 6s).
 
-In conclusion, I think I am agreeing and proposing that I shift the goal
-from "count add_delayed_ref calls under the trans handle" to "predict
-metadata reservation due to delayed refs" and in that world, it should
-be 2 for the data extent in the extent tree.
+    # mkdir rootdir
+    # dd if=/dev/urandom of=rootdir/file bs=4096 count=4194304
 
-The other principled option is to count 1 for the data delayed ref now
-and not account for the fst or the extent tree cows that happen at
-delayed_refs time, but I think that makes less sense.
+    (without ioctl)
+    # echo 3 > /proc/sys/vm/drop_caches
+    # time mkfs.btrfs --rootdir rootdir testimg
+    ...
+    real    3m37.965s
+    user    0m5.496s
+    sys     0m6.125s
 
-Sorry if that was a lot of text to just agree with you, but I want to be
-careful since it's easy to go astray and "get away with it" cause of the
-reservations being conservative and getting sloshed into the global
-reserves.
+    # echo 3 > /proc/sys/vm/drop_caches
+    # time mkfs.btrfs --rootdir rootdir --reflink testimg
+    ...
+    real    2m8.342s
+    user    0m5.472s
+    sys     0m1.667s
 
-One final note / question:
-the "normal" start_transaction() reservation which computes the space
-for the cow itself and then the delayed_refs cows does *not* seem to
-count 2 per cow for delayed refs in btrfs_calc_delayed_ref_bytes().
-But in theory the same reasoning applies that we will touch two metadata
-items for each cow.  I assume this is OK in practice because the depth
-is generally not 8 anyway, but do you think that is something I should
-clean up as well?
+    (with ioctl)
+    # echo 3 > /proc/sys/vm/drop_caches
+    # time mkfs.btrfs --rootdir rootdir testimg
+    ...
+    real    3m15.865s
+    user    0m4.258s
+    sys     0m6.261s
 
-Thanks again,
-Boris
+    # echo 3 > /proc/sys/vm/drop_caches
+    # time mkfs.btrfs --rootdir rootdir --reflink testimg
+    ...
+    real    0m5.847s
+    user    0m2.899s
+    sys     0m0.097s
 
-> > +        * subvolume tree: 1 cow => 2 metadata delayed refs.
-> > +        */
-> > +       int factor = 3;
-> > +
-> > +       /* The remaining trees are only written to conditionally. */
-> > +       if (!(inode->flags & BTRFS_INODE_NODATASUM))
-> > +               factor += 2;
-> > +       if (btrfs_test_opt(fs_info, FREE_SPACE_TREE))
-> > +               factor += 2;
-> > +       if (btrfs_fs_incompat(fs_info, RAID_STRIPE_TREE))
-> > +               factor += 2;
-> > +
-> > +       return btrfs_calc_insert_metadata_size(fs_info, nr_extents) * factor;
-> > +}
-> > +
-> >  static void btrfs_calculate_inode_block_rsv_size(struct btrfs_fs_info *fs_info,
-> >                                                  struct btrfs_inode *inode)
-> >  {
-> > @@ -266,6 +301,7 @@ static void btrfs_calculate_inode_block_rsv_size(struct btrfs_fs_info *fs_info,
-> >                 reserve_size = btrfs_calc_insert_metadata_size(fs_info,
-> >                                                 outstanding_extents);
-> >                 reserve_size += btrfs_calc_metadata_size(fs_info, 1);
-> > +               reserve_size += delalloc_calc_delayed_refs_rsv(inode, outstanding_extents);
-> >         }
-> >         if (!(inode->flags & BTRFS_INODE_NODATASUM)) {
-> >                 u64 csum_leaves;
-> > @@ -309,9 +345,29 @@ static void calc_inode_reservations(struct btrfs_inode *inode,
-> >          * for an inode update.
-> >          */
-> >         *meta_reserve += inode_update;
-> > +
-> > +       *meta_reserve += delalloc_calc_delayed_refs_rsv(inode, nr_extents);
-> > +
-> >         *qgroup_reserve = nr_extents * fs_info->nodesize;
-> >  }
-> >
-> > +void btrfs_delalloc_migrate_delayed_refs_rsv(struct btrfs_trans_handle *trans,
-> > +                                            struct btrfs_inode *inode)
-> > +{
-> > +       struct btrfs_block_rsv *inode_rsv = &inode->block_rsv;
-> > +       struct btrfs_block_rsv *trans_rsv = &trans->delayed_rsv;
-> > +       u64 num_bytes = delalloc_calc_delayed_refs_rsv(inode, 1);
-> > +
-> > +       spin_lock(&inode_rsv->lock);
-> > +       num_bytes = min(num_bytes, inode_rsv->reserved);
-> > +       inode_rsv->reserved -= num_bytes;
-> > +       inode_rsv->full = (inode_rsv->reserved >= inode_rsv->size);
-> > +       spin_unlock(&inode_rsv->lock);
-> > +
-> > +       btrfs_block_rsv_add_bytes(trans_rsv, num_bytes, true);
-> > +       trans->delayed_refs_bytes_reserved += num_bytes;
-> > +}
-> > +
-> >  int btrfs_delalloc_reserve_metadata(struct btrfs_inode *inode, u64 num_bytes,
-> >                                     u64 disk_num_bytes, bool noflush)
-> >  {
-> > diff --git a/fs/btrfs/delalloc-space.h b/fs/btrfs/delalloc-space.h
-> > index 6119c0d3f883..bd7041166987 100644
-> > --- a/fs/btrfs/delalloc-space.h
-> > +++ b/fs/btrfs/delalloc-space.h
-> > @@ -8,6 +8,7 @@
-> >  struct extent_changeset;
-> >  struct btrfs_inode;
-> >  struct btrfs_fs_info;
-> > +struct btrfs_trans_handle;
-> >
-> >  int btrfs_alloc_data_chunk_ondemand(const struct btrfs_inode *inode, u64 bytes);
-> >  int btrfs_check_data_free_space(struct btrfs_inode *inode,
-> > @@ -27,5 +28,7 @@ int btrfs_delalloc_reserve_metadata(struct btrfs_inode *inode, u64 num_bytes,
-> >                                     u64 disk_num_bytes, bool noflush);
-> >  void btrfs_delalloc_release_extents(struct btrfs_inode *inode, u64 num_bytes);
-> >  void btrfs_delalloc_shrink_extents(struct btrfs_inode *inode, u64 reserved_len, u64 new_len);
-> > +void btrfs_delalloc_migrate_delayed_refs_rsv(struct btrfs_trans_handle *trans,
-> > +                                            struct btrfs_inode *inode);
-> >
-> >  #endif /* BTRFS_DELALLOC_SPACE_H */
-> > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> > index 40474014c03f..15945744a304 100644
-> > --- a/fs/btrfs/inode.c
-> > +++ b/fs/btrfs/inode.c
-> > @@ -653,6 +653,7 @@ static noinline int __cow_file_range_inline(struct btrfs_inode *inode,
-> >                 goto out;
-> >         }
-> >         trans->block_rsv = &inode->block_rsv;
-> > +       btrfs_delalloc_migrate_delayed_refs_rsv(trans, inode);
-> >
-> >         drop_args.path = path;
-> >         drop_args.start = 0;
-> > @@ -3259,6 +3260,7 @@ int btrfs_finish_one_ordered(struct btrfs_ordered_extent *ordered_extent)
-> >         }
-> >
-> >         trans->block_rsv = &inode->block_rsv;
-> > +       btrfs_delalloc_migrate_delayed_refs_rsv(trans, inode);
-> >
-> >         ret = btrfs_insert_raid_extent(trans, ordered_extent);
-> >         if (unlikely(ret)) {
-> > diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> > index 248adb785051..55791bb100a2 100644
-> > --- a/fs/btrfs/transaction.c
-> > +++ b/fs/btrfs/transaction.c
-> > @@ -1047,29 +1047,23 @@ static void btrfs_trans_release_metadata(struct btrfs_trans_handle *trans)
-> >                 return;
-> >         }
-> >
-> > -       if (!trans->bytes_reserved) {
-> > -               ASSERT(trans->delayed_refs_bytes_reserved == 0,
-> > -                      "trans->delayed_refs_bytes_reserved=%llu",
-> > -                      trans->delayed_refs_bytes_reserved);
-> > -               return;
-> > +       if (trans->bytes_reserved) {
-> > +               ASSERT(trans->block_rsv == &fs_info->trans_block_rsv);
-> > +               trace_btrfs_space_reservation(fs_info, "transaction",
-> > +                                       trans->transid, trans->bytes_reserved, 0);
-> > +               btrfs_block_rsv_release(fs_info, trans->block_rsv,
-> > +                                       trans->bytes_reserved, NULL);
-> > +               trans->bytes_reserved = 0;
-> >         }
-> >
-> > -       ASSERT(trans->block_rsv == &fs_info->trans_block_rsv);
-> > -       trace_btrfs_space_reservation(fs_info, "transaction",
-> > -                                     trans->transid, trans->bytes_reserved, 0);
-> > -       btrfs_block_rsv_release(fs_info, trans->block_rsv,
-> > -                               trans->bytes_reserved, NULL);
-> > -       trans->bytes_reserved = 0;
-> > -
-> > -       if (!trans->delayed_refs_bytes_reserved)
-> > -               return;
-> > -
-> > -       trace_btrfs_space_reservation(fs_info, "local_delayed_refs_rsv",
-> > -                                     trans->transid,
-> > -                                     trans->delayed_refs_bytes_reserved, 0);
-> > -       btrfs_block_rsv_release(fs_info, &trans->delayed_rsv,
-> > -                               trans->delayed_refs_bytes_reserved, NULL);
-> > -       trans->delayed_refs_bytes_reserved = 0;
-> > +       if (trans->delayed_refs_bytes_reserved) {
-> > +               trace_btrfs_space_reservation(fs_info, "local_delayed_refs_rsv",
-> > +                                       trans->transid,
-> > +                                       trans->delayed_refs_bytes_reserved, 0);
-> > +               btrfs_block_rsv_release(fs_info, &trans->delayed_rsv,
-> > +                                       trans->delayed_refs_bytes_reserved, NULL);
-> > +               trans->delayed_refs_bytes_reserved = 0;
-> > +       }
-> >  }
-> >
-> >  static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
-> > --
-> > 2.53.0
-> >
-> >
+Signed-off-by: Mark Harmstone <mark@harmstone.com>
+---
+ fs/btrfs/ioctl.c           | 330 +++++++++++++++++++++++++++++++++++++
+ include/uapi/linux/btrfs.h |  21 +++
+ 2 files changed, 351 insertions(+)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index b2e447f5005c16..5cdda33eeaf05a 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -56,6 +56,7 @@
+ #include "uuid-tree.h"
+ #include "ioctl.h"
+ #include "file.h"
++#include "file-item.h"
+ #include "scrub.h"
+ #include "super.h"
+ 
+@@ -5139,6 +5140,333 @@ static int btrfs_ioctl_shutdown(struct btrfs_fs_info *fs_info, unsigned long arg
+ }
+ #endif
+ 
++#define GET_CSUMS_BUF_MAX	(16 * 1024 * 1024)
++
++static int copy_csums_to_user(struct btrfs_fs_info *fs_info, u64 disk_bytenr,
++			      u64 len, u8 __user *buf)
++{
++	struct btrfs_root *csum_root;
++	struct btrfs_ordered_sum *sums;
++	LIST_HEAD(list);
++	const u32 csum_size = fs_info->csum_size;
++	int ret;
++
++	csum_root = btrfs_csum_root(fs_info, disk_bytenr);
++
++	ret = btrfs_lookup_csums_list(csum_root, disk_bytenr,
++				      disk_bytenr + len - 1, &list, false);
++	if (ret < 0)
++		return ret;
++
++	/* Clear the output buffer to handle potential gaps in csum coverage. */
++	if (clear_user(buf, (len >> fs_info->sectorsize_bits) * csum_size)) {
++		ret = -EFAULT;
++		goto out;
++	}
++
++	ret = 0;
++	while (!list_empty(&list)) {
++		u64 offset;
++		size_t copy_size;
++
++		sums = list_first_entry(&list, struct btrfs_ordered_sum, list);
++		list_del(&sums->list);
++
++		offset = ((sums->logical - disk_bytenr) >> fs_info->sectorsize_bits) * csum_size;
++		copy_size = (sums->len >> fs_info->sectorsize_bits) * csum_size;
++
++		if (copy_to_user(buf + offset, sums->sums, copy_size)) {
++			kfree(sums);
++			ret = -EFAULT;
++			goto out;
++		}
++
++		kfree(sums);
++	}
++
++out:
++	while (!list_empty(&list)) {
++		sums = list_first_entry(&list, struct btrfs_ordered_sum, list);
++		list_del(&sums->list);
++		kfree(sums);
++	}
++	return ret;
++}
++
++static int btrfs_ioctl_get_csums(struct file *file, void __user *argp)
++{
++	struct inode *inode = file_inode(file);
++	struct btrfs_inode *bi = BTRFS_I(inode);
++	struct btrfs_fs_info *fs_info = bi->root->fs_info;
++	struct btrfs_root *root = bi->root;
++	struct btrfs_ioctl_get_csums_args args;
++	BTRFS_PATH_AUTO_FREE(path);
++	const u64 ino = btrfs_ino(bi);
++	const u32 sectorsize = fs_info->sectorsize;
++	const u32 csum_size = fs_info->csum_size;
++	u8 __user *ubuf;
++	u64 buf_limit;
++	u64 buf_used = 0;
++	u64 cur_offset;
++	u64 end_offset;
++	u64 prev_extent_end;
++	struct btrfs_key key;
++	int ret;
++
++	if (!(file->f_mode & FMODE_READ))
++		return -EBADF;
++
++	if (!S_ISREG(inode->i_mode))
++		return -EINVAL;
++
++	if (copy_from_user(&args, argp, sizeof(args)))
++		return -EFAULT;
++
++	if (!IS_ALIGNED(args.offset, sectorsize) ||
++	    !IS_ALIGNED(args.length, sectorsize))
++		return -EINVAL;
++	if (args.length == 0)
++		return -EINVAL;
++	if (args.offset + args.length < args.offset)
++		return -EOVERFLOW;
++	if (args.buf_size < sizeof(struct btrfs_ioctl_get_csums_entry))
++		return -EINVAL;
++
++	buf_limit = min_t(u64, args.buf_size, GET_CSUMS_BUF_MAX);
++	ubuf = (u8 __user *)(argp + offsetof(struct btrfs_ioctl_get_csums_args, buf));
++	cur_offset = args.offset;
++	end_offset = args.offset + args.length;
++
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
++
++	ret = btrfs_wait_ordered_range(bi, cur_offset, args.length);
++	if (ret)
++		return ret;
++
++	btrfs_inode_lock(bi, BTRFS_ILOCK_SHARED);
++
++	ret = btrfs_wait_ordered_range(bi, cur_offset, args.length);
++	if (ret)
++		goto out_unlock;
++
++	/* NODATASUM early exit. */
++	if (bi->flags & BTRFS_INODE_NODATASUM) {
++		struct btrfs_ioctl_get_csums_entry entry = {
++			.offset = cur_offset,
++			.length = end_offset - cur_offset,
++			.type = BTRFS_GET_CSUMS_NO_CSUMS,
++		};
++
++		if (copy_to_user(ubuf, &entry, sizeof(entry))) {
++			ret = -EFAULT;
++			goto out_unlock;
++		}
++
++		buf_used = sizeof(entry);
++		cur_offset = end_offset;
++		goto done;
++	}
++
++	prev_extent_end = cur_offset;
++
++	while (cur_offset < end_offset) {
++		struct btrfs_file_extent_item *ei;
++		struct extent_buffer *leaf;
++		struct btrfs_ioctl_get_csums_entry entry;
++		u64 extent_end;
++		u64 disk_bytenr = 0;
++		u64 extent_offset = 0;
++		u64 range_start, range_len;
++		u64 entry_csum_size;
++		u64 key_offset;
++		int extent_type;
++		u8 compression;
++
++		/* Search for the extent at or before cur_offset. */
++		key.objectid = ino;
++		key.type = BTRFS_EXTENT_DATA_KEY;
++		key.offset = cur_offset;
++
++		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
++		if (ret < 0)
++			goto out_unlock;
++
++		if (ret > 0 && path->slots[0] > 0) {
++			btrfs_item_key_to_cpu(path->nodes[0], &key,
++					      path->slots[0] - 1);
++			if (key.objectid == ino &&
++			    key.type == BTRFS_EXTENT_DATA_KEY) {
++				path->slots[0]--;
++				if (btrfs_file_extent_end(path) <= cur_offset)
++					path->slots[0]++;
++			}
++		}
++
++		if (path->slots[0] >= btrfs_header_nritems(path->nodes[0])) {
++			ret = btrfs_next_leaf(root, path);
++			if (ret < 0)
++				goto out_unlock;
++			if (ret > 0) {
++				ret = 0;
++				btrfs_release_path(path);
++				break;
++			}
++		}
++
++		leaf = path->nodes[0];
++
++		btrfs_item_key_to_cpu(leaf, &key, path->slots[0]);
++		if (key.objectid != ino || key.type != BTRFS_EXTENT_DATA_KEY) {
++			btrfs_release_path(path);
++			break;
++		}
++
++		extent_end = btrfs_file_extent_end(path);
++		key_offset = key.offset;
++
++		/* Read extent fields before releasing the path. */
++		ei = btrfs_item_ptr(leaf, path->slots[0],
++				    struct btrfs_file_extent_item);
++		extent_type = btrfs_file_extent_type(leaf, ei);
++		compression = btrfs_file_extent_compression(leaf, ei);
++
++		if (extent_type != BTRFS_FILE_EXTENT_INLINE) {
++			disk_bytenr = btrfs_file_extent_disk_bytenr(leaf, ei);
++			if (disk_bytenr && compression == BTRFS_COMPRESS_NONE)
++				extent_offset = btrfs_file_extent_offset(leaf, ei);
++		}
++
++		btrfs_release_path(path);
++
++		/* Implicit hole (NO_HOLES feature). */
++		if (prev_extent_end < key_offset) {
++			u64 hole_end = min(key_offset, end_offset);
++			u64 hole_len = hole_end - prev_extent_end;
++
++			if (prev_extent_end >= cur_offset) {
++				memset(&entry, 0, sizeof(entry));
++				entry.offset = prev_extent_end;
++				entry.length = hole_len;
++				entry.type = BTRFS_GET_CSUMS_ZEROED;
++
++				if (buf_used + sizeof(entry) > buf_limit)
++					goto done;
++				if (copy_to_user(ubuf + buf_used, &entry,
++						 sizeof(entry))) {
++					ret = -EFAULT;
++					goto out_unlock;
++				}
++				buf_used += sizeof(entry);
++				cur_offset = hole_end;
++			}
++
++			if (key_offset >= end_offset) {
++				cur_offset = end_offset;
++				break;
++			}
++		}
++
++		/* Clamp to our query range. */
++		range_start = max(cur_offset, key_offset);
++		range_len = min(extent_end, end_offset) - range_start;
++
++		memset(&entry, 0, sizeof(entry));
++		entry.offset = range_start;
++		entry.length = range_len;
++
++		if (extent_type == BTRFS_FILE_EXTENT_INLINE) {
++			entry.type = BTRFS_GET_CSUMS_NO_CSUMS;
++			entry_csum_size = 0;
++		} else if (extent_type == BTRFS_FILE_EXTENT_PREALLOC) {
++			entry.type = BTRFS_GET_CSUMS_ZEROED;
++			entry_csum_size = 0;
++		} else {
++			/* BTRFS_FILE_EXTENT_REG */
++			if (disk_bytenr == 0) {
++				/* Explicit hole. */
++				entry.type = BTRFS_GET_CSUMS_ZEROED;
++				entry_csum_size = 0;
++			} else if (compression != BTRFS_COMPRESS_NONE) {
++				entry.type = BTRFS_GET_CSUMS_NO_CSUMS;
++				entry_csum_size = 0;
++			} else {
++				entry.type = BTRFS_GET_CSUMS_HAS_CSUMS;
++				entry_csum_size = (range_len >> fs_info->sectorsize_bits) * csum_size;
++			}
++		}
++
++		/* Check if this entry (+ csum data) fits in the buffer. */
++		if (buf_used + sizeof(entry) + entry_csum_size > buf_limit) {
++			if (buf_used == 0) {
++				ret = -EOVERFLOW;
++				goto out_unlock;
++			}
++			goto done;
++		}
++
++		if (copy_to_user(ubuf + buf_used, &entry, sizeof(entry))) {
++			ret = -EFAULT;
++			goto out_unlock;
++		}
++		buf_used += sizeof(entry);
++
++		if (entry.type == BTRFS_GET_CSUMS_HAS_CSUMS) {
++			ret = copy_csums_to_user(fs_info,
++				disk_bytenr + extent_offset + (range_start - key_offset),
++				range_len, ubuf + buf_used);
++			if (ret)
++				goto out_unlock;
++			buf_used += entry_csum_size;
++		}
++
++		cur_offset = range_start + range_len;
++		prev_extent_end = extent_end;
++
++		if (fatal_signal_pending(current)) {
++			if (buf_used == 0) {
++				ret = -EINTR;
++				goto out_unlock;
++			}
++			goto done;
++		}
++
++		cond_resched();
++	}
++
++	/* Handle trailing implicit hole. */
++	if (cur_offset < end_offset) {
++		struct btrfs_ioctl_get_csums_entry entry = {
++			.offset = prev_extent_end,
++			.length = end_offset - prev_extent_end,
++			.type = BTRFS_GET_CSUMS_ZEROED,
++		};
++
++		if (buf_used + sizeof(entry) <= buf_limit) {
++			if (copy_to_user(ubuf + buf_used, &entry,
++					 sizeof(entry))) {
++				ret = -EFAULT;
++				goto out_unlock;
++			}
++			buf_used += sizeof(entry);
++			cur_offset = end_offset;
++		}
++	}
++
++done:
++	args.offset = cur_offset;
++	args.length = (cur_offset < end_offset) ? end_offset - cur_offset : 0;
++	args.buf_size = buf_used;
++
++	if (copy_to_user(argp, &args, sizeof(args)))
++		ret = -EFAULT;
++
++out_unlock:
++	btrfs_inode_unlock(bi, BTRFS_ILOCK_SHARED);
++	return ret;
++}
++
+ long btrfs_ioctl(struct file *file, unsigned int
+ 		cmd, unsigned long arg)
+ {
+@@ -5294,6 +5622,8 @@ long btrfs_ioctl(struct file *file, unsigned int
+ #endif
+ 	case BTRFS_IOC_SUBVOL_SYNC_WAIT:
+ 		return btrfs_ioctl_subvol_sync(fs_info, argp);
++	case BTRFS_IOC_GET_CSUMS:
++		return btrfs_ioctl_get_csums(file, argp);
+ #ifdef CONFIG_BTRFS_EXPERIMENTAL
+ 	case BTRFS_IOC_SHUTDOWN:
+ 		return btrfs_ioctl_shutdown(fs_info, arg);
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index 9165154a274d94..d079e8b67fd740 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -1100,6 +1100,25 @@ enum btrfs_err_code {
+ 	BTRFS_ERROR_DEV_RAID1C4_MIN_NOT_MET,
+ };
+ 
++/* Types for struct btrfs_ioctl_get_csums_entry::type */
++#define BTRFS_GET_CSUMS_HAS_CSUMS	0
++#define BTRFS_GET_CSUMS_ZEROED		1
++#define BTRFS_GET_CSUMS_NO_CSUMS	2
++
++struct btrfs_ioctl_get_csums_entry {
++	__u64 offset;		/* file offset of this range */
++	__u64 length;		/* length in bytes */
++	__u32 type;		/* BTRFS_GET_CSUMS_* type */
++	__u32 reserved;		/* padding, must be 0 */
++};
++
++struct btrfs_ioctl_get_csums_args {
++	__u64 offset;		/* in/out: file offset */
++	__u64 length;		/* in/out: range length */
++	__u64 buf_size;		/* in/out: buffer capacity / bytes written */
++	__u8 buf[];		/* out: entries + csum data */
++};
++
+ /* Flags for IOC_SHUTDOWN, must match XFS_FSOP_GOING_FLAGS_* flags. */
+ #define BTRFS_SHUTDOWN_FLAGS_DEFAULT			0x0
+ #define BTRFS_SHUTDOWN_FLAGS_LOGFLUSH			0x1
+@@ -1226,6 +1245,8 @@ enum btrfs_err_code {
+ 				     struct btrfs_ioctl_encoded_io_args)
+ #define BTRFS_IOC_SUBVOL_SYNC_WAIT _IOW(BTRFS_IOCTL_MAGIC, 65, \
+ 					struct btrfs_ioctl_subvol_wait)
++#define BTRFS_IOC_GET_CSUMS _IOWR(BTRFS_IOCTL_MAGIC, 66, \
++				  struct btrfs_ioctl_get_csums_args)
+ 
+ /* Shutdown ioctl should follow XFS's interfaces, thus not using btrfs magic. */
+ #define BTRFS_IOC_SHUTDOWN	_IOR('X', 125, __u32)
+-- 
+2.52.0
+

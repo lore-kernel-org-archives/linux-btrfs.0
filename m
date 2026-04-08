@@ -1,153 +1,340 @@
-Received: from mail-oa1-f45.google.com (mail-oa1-f45.google.com [209.85.160.45])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A78933624B7
-	for <linux-btrfs@vger.kernel.org>; Wed,  8 Apr 2026 02:54:21 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.160.45
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 292F01D5ADE
+	for <linux-btrfs@vger.kernel.org>; Wed,  8 Apr 2026 04:25:57 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775616863; cv=none; b=vCSh+2l5wk6HG1SG32C8G3Q8w0l4CHfCrChhUmz+uE8ceh88u06O7urGM+1PnV73aNwZmDgW5W72+vcdGF5P2K73sL1g4qpTviUTnMxmcl8F4C6sY8k+OyyjGpcl4Mx77Ejo1M8j85QLpwnCY+Lfm8nIDu8OVJr6CdtWPjXPybM=
+	t=1775622360; cv=none; b=QuKjEnfml/KFoVAwzE21J4egVDDpyFkoum5KIiQ5y0bS0NkT8rX7I7ohZRv5nNYTkDktGK4Mugahyn4W+jAYHy5sx8WTfp3IgwZ6g6hTqwj+lJthJ5cp9LfJZyr4ejru/wGPPyAxT/qcezOg31ZyzX1LR2UPodqHIOa+mvQlZVw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1775616863; c=relaxed/simple;
-	bh=/LsGG8fyDJdk0nB/2+CPab2G575SfdRCyYn3V+orZ2A=;
-	h=From:Message-ID:Date:MIME-Version:Subject:To:Cc:References:
-	 In-Reply-To:Content-Type; b=BJ7+ImTxqNzjOqoYOSPrkUNiumWZ2CzBUPsXyq/IS99nK6oTW66iQhNymjYFM6xpQ23l5MhAcBVgJ0bofYxZUNldjeiDLyutWetFIjQw16T2ytK3FPfrF2kgVlCrIn1LVgH5ou2WJwm9CX1RlTz1hIclbmevLIydu+vj3tM+9Wg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=HDECuNUg; arc=none smtp.client-ip=209.85.160.45
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1775622360; c=relaxed/simple;
+	bh=m9REN1sBNGARc+PEnKawtJ135iVkomJ5wuxnEkOGmRk=;
+	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=PY3kd3K2cb0s6Q9d3x3Fg3CXtdEsxzkBZB0QZ/IuJxpx0m+X29ybZyyCDUfMHd9DuIol67gfSJ/PX2pNMD741D0zR0wEx+Cg/7BpoBRRzfUP+74Xn1tU0A2Yl7aQkTYBdLZiBWWJV3DHGHG3bKR0idsjzTQFKYA91tLUhyEBKv8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=R0gfcAIB; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=V1wcPlKl; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="HDECuNUg"
-Received: by mail-oa1-f45.google.com with SMTP id 586e51a60fabf-40ea36b56b7so4409051fac.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 07 Apr 2026 19:54:21 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1775616860; x=1776221660; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:content-language:references
-         :cc:to:subject:user-agent:mime-version:date:message-id:from:from:to
-         :cc:subject:date:message-id:reply-to;
-        bh=JEL13xtDv41LlRYS3s5MQx8Hg/AYy31h+VDDos6Ewbs=;
-        b=HDECuNUgEY4GLVcPPwocvCWKrkA706UFEP75EXT9y6qQtAIK45KpNfxJS+VIm/rU6G
-         /ysUjupjsSDJATagvLPjZXg1kacz1dcmtIZAlpHQJR4D/sbY5YKAv1xATfEvHhW6/+gA
-         oyXvG5nue/VD5RbubONewrP+iFftZfEDCa0ZghtKjH9fFNsuMWHqVPFJMD+eLq51T1mE
-         Qicn5G0xhmJqMwB8qTdZGeZBndJb1813PLvsQC6foaoq5pX8rP3C9qUG/xySJfP/F+my
-         JQepLQn3YqFxAOV1auhCvfesnYcYIQhVYOLh84C2KyHJgeYYglCfrAek1WYFnMXI2xDE
-         8BTw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1775616860; x=1776221660;
-        h=content-transfer-encoding:in-reply-to:content-language:references
-         :cc:to:subject:user-agent:mime-version:date:message-id:from:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=JEL13xtDv41LlRYS3s5MQx8Hg/AYy31h+VDDos6Ewbs=;
-        b=kG2pGqwN8vzYZwnL8H4U9Eo4Ei7hwsB6SuPqQWfBL9oymeKugstx+ep9G+sLWrwa7u
-         sWuEO88UNCdom8QHZNJ2bIKGTTzshBqiB0hv3A3OCgTtqOmHpLKPfjVzu4sWRKoorlOd
-         TfLGlb/0XWvNngDzw04DBtfHcNeWskbI7/KXeKEV0OqN0s8Hu2MVHh9gbDTYSo5cQpKG
-         LQprf0PBKdh2fHQYT2uGHaNf5u3uH3Dua/ZTk7LPeWbaNFMe6QvDkcXYwrPZeHcPojzi
-         ghHpYuDO0jWsSnDjnKKz0XRY+ovQUvbxxZeeBt6POII2pP6ZBCm395WHxmUzkvF9sjDD
-         jcfg==
-X-Forwarded-Encrypted: i=1; AJvYcCUkvLrASJ4C+gTJyBZX7fqJZ0YbdwZ3/6xtv/B1Tn301TdWq9SVQjLr5OAbImx1KW5vGQ8qbVcEd96Z9g==@vger.kernel.org
-X-Gm-Message-State: AOJu0YyK+cBYU2O3awBm/Z7iqaVqtPhGijcaV/YxCGDcBGB2JvSKu4FM
-	h7F3SMSECCXrz7ybPbTbRzPbCbUsTatiHRnK/ius2NlzUSuOr3bXSm11
-X-Gm-Gg: AeBDieuWR0PnMlkuJolCLlbKOcLxtd/EKk9eqPu71n+xDjQlaajFBMwbDPzX+a0vNl0
-	BaZMifiU6B8BHCuNWpbiVEe6Q7r0t1qMfwEWsnJ62e4SzjfiSkYfsnNDAfV6SEz3zS09MwFPRVt
-	79Jr7QEksouq5Yt1UpvEOuWE7jxJiz2tI9yLEIXmBem/ZE8cDfO7lyphJqOObtqLBsjIQLGi2J9
-	2aYV743L0MJxtD66+TTs/AjsYA2+LC2XopsfcCuR/u3KSVhzXZGisPYUKpOPk780XPwG+7Fi3OD
-	/tGIuedZfLsnEGA8Kpd+Di+jUQkMvEDDXGb9TUVZUrXUSuMecdBzLTcocgPEAWBDQ7PVSVB+qC6
-	1tfIkz3AaBC16Hzafdk9VpmLucoFaNAmvAspsi87+n30xlhb6Cs3dH0bpK/ccUykr1s7gyPb/ZM
-	zmJ60hYzfKYQwNX56cq4vB/x48nvAt58IsdKT/uBAdD41H1mkVtD9hAVMDWfGleqbUB27C6ORZY
-	NUl/nWP
-X-Received: by 2002:a05:6870:174f:b0:417:a84c:4d8c with SMTP id 586e51a60fabf-4230fd7c2e8mr12144349fac.15.1775616860346;
-        Tue, 07 Apr 2026 19:54:20 -0700 (PDT)
-Received: from [192.168.50.127] (c-73-5-99-191.hsd1.la.comcast.net. [73.5.99.191])
-        by smtp.gmail.com with ESMTPSA id 586e51a60fabf-42356d581c1sm6893598fac.4.2026.04.07.19.54.18
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 07 Apr 2026 19:54:19 -0700 (PDT)
-From: Sean Smith <defendthedisabled@gmail.com>
-X-Google-Original-From: Sean Smith <DefendTheDisabled@gmail.com>
-Message-ID: <92e61267-eb24-4f94-b9a1-e009b5e00d65@gmail.com>
-Date: Tue, 7 Apr 2026 21:54:17 -0500
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="R0gfcAIB";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="V1wcPlKl"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id EDD285BD54
+	for <linux-btrfs@vger.kernel.org>; Wed,  8 Apr 2026 04:25:55 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1775622356; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=x14KgDDCJjOT6a7E4gJmDUWRYUxKVDNih+vE+9hz81Y=;
+	b=R0gfcAIBarI4KNOYOxE5C91WAVg8Oa8UnAfYew74ip/xiahfT+JWgV5zVoKA0Fdb0ChLe6
+	k0wvE29TQN/Pw50RQ2LuoT/zMwa8A7eKGGsmvRfJHc1E+1iIpmtioZqVD8/Yz6TmPMqStK
+	QRqEV9mDOpOZah9r79zT/OCmBw9OV3s=
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=V1wcPlKl
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1775622355; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=x14KgDDCJjOT6a7E4gJmDUWRYUxKVDNih+vE+9hz81Y=;
+	b=V1wcPlKlFwrtQMmpYGsl+0wA7xNwLTOFCrak3774O8HVrbjEHFMJFLt8ECHHjCmvKXFZnU
+	SWEC0TBq+fR+msPHV2vi95v0eYHrhFROHa4BhsNcO5fwQmVXteP60bugYGyndcPS4WHSkL
+	d21c945oFaO41P1+4dh2iJaY3giAMAs=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id DD7BC4A0B5
+	for <linux-btrfs@vger.kernel.org>; Wed,  8 Apr 2026 04:25:54 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id MIbDIdLY1WklUAAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Wed, 08 Apr 2026 04:25:54 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 2/2] btrfs: remove folio checked subpage bitmap tracking
+Date: Wed,  8 Apr 2026 13:55:32 +0930
+Message-ID: <fff2f9521f43686883ba7da0c3f1381038b936cf.1775621833.git.wqu@suse.com>
+X-Mailer: git-send-email 2.53.0
+In-Reply-To: <cover.1775621833.git.wqu@suse.com>
+References: <cover.1775621833.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [RFC PATCH v1 0/6] provenance_time (ptime): a new settable
- timestamp for cross-filesystem provenance
-To: Theodore Tso <tytso@mit.edu>
-Cc: linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
- linux-btrfs@vger.kernel.org, dsterba@suse.com, david@fromorbit.com,
- brauner@kernel.org, osandov@osandov.com, almaz@kernel.org,
- hirofumi@mail.parknet.co.jp, linkinjeon@kernel.org
-References: <20260405225442.GA1763@macsyma-wired.lan>
- <20260407000558.417-1-DefendTheDisabled@gmail.com>
- <20260407233618.GB12536@macsyma-wired.lan>
-Content-Language: en-US
-In-Reply-To: <20260407233618.GB12536@macsyma-wired.lan>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
+X-Spamd-Result: default: False [-3.01 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
+	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	ARC_NA(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCPT_COUNT_ONE(0.00)[1];
+	MIME_TRACE(0.00)[0:+];
+	FROM_HAS_DN(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	FROM_EQ_ENVFROM(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.com:mid,suse.com:dkim,suse.com:email];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	RCVD_TLS_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	DKIM_TRACE(0.00)[suse.com:+]
+X-Rspamd-Action: no action
+X-Spam-Flag: NO
+X-Spam-Score: -3.01
+X-Spam-Level: 
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Rspamd-Queue-Id: EDD285BD54
 
+The folio checked flag is only utilized by the COW fixup mechanism
+inside btrfs.
 
+Since the COW fixup is already removed from non-experimental builds,
+there is no need to keep the checked subpage bitmap.
 
-On 4/7/2026 18:36, Theodore Tso wrote:
-> Yelch.   This is so *very* non-Unixy / non-POSIX / non-Linux.
-> 
-> I understand why it's convenient for your particular use case, but
-> rename(2) is fundamentally an operation which works on directory
-> entries.  We don't copy over extended attributes, or Posix ACL's, or
-> Unix permission mode bits, because (a) that would violate POSIX and
-> historical Unix behavior, and (b) because rename(2) is fundamentally a
-> directory entry operation.  This is despite the fact that it be more
-> convenient if we didn't have to copy over things like extended
-> attributes, ACL's, permission mode bits, etc.  So you want to make an
-> exception for ptime?   Yelch.  Just Yelch.
-> 
-> 						- Ted
+This will saves us some space for large folios, for example for a single
+256K sized large folio on 4K page sized systems:
 
-[written by Sean]
+ Old bitmap size = 6 * (256K / 4K / 8) = 48 bytes
+ New bitmap size = 5 * (256K / 4K / 8) = 40 bytes
 
-Finding an alternative to using rename() to transfer ptime between
-inodes during atomic saves seems beyond the scope of what I can address
-as someone who relies upon AI agents to review and modify code. From
-what my agents have been able to explain to me, the options here are
-using rename() to transfer ptime via the kernel, or using renameat2 to
-require each application to manually preserve/transfer ptime. The latter
-is, well, the phrase herding cats might be an understatement of the
-difficulty involved.
+This will be more obvious when we're going to support huge folios (order
+= 9).
 
-As an individual, I don't see how I could convince every major
-open-source and closed source application developer for Linux to code
-their application to preserve and transfer ptime. That seems like
-something only leadership in the community has any chance of doing, and
-even then, that would be a very slow-moving process.
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/defrag.c           |  1 -
+ fs/btrfs/file.c             | 10 ----------
+ fs/btrfs/free-space-cache.c |  4 ----
+ fs/btrfs/inode.c            |  3 ---
+ fs/btrfs/reflink.c          |  1 -
+ fs/btrfs/subpage.c          | 39 ++-----------------------------------
+ fs/btrfs/subpage.h          |  5 +----
+ 7 files changed, 3 insertions(+), 60 deletions(-)
 
-It also doesn't solve the immediate needs of increasing number of users
-who are trying to ditch Windows for Linux. Windows 11 has pushed one too
-many people too far, and they, like me, have had enough.
-
-Maybe senior developers can find an alternative to rename() that works.
-I can cross my fingers and hope. Discussing matters with my agents we
-couldn't find one. The need for ptime is very real, and the code in my
-patch gets the job done, but a solution that respects conventions
-requires a level of expertise I don't have. Perhaps in 4-8 months when
-my AI harness is more mature and smarter models are available we can
-solve this.
-
-If the rename() code making atomic saves work prevents an upstream
-merge, I understand. It would be messy adding ptime to the kernel only
-to have it disappear anytime any unpatched application modified a file.
-Avoiding such failure modes is why it seemed necessary to take a kernel
-level approach.
-
-Additionally, the reason an xattr ptime isn't a viable solution is
-because applications do not reliably support xattr transfer. Thus it
-would not seem likely ptime would receive better support.
-
-I can patch every application I use which is open-source, or I can patch
-the kernel. Rational analysis requires that I patch the kernel.
-
-I'll continue using the rename-over approach in my own system, and
-maintaining a github repo so that others who need it can patch their own
-kernels. As the phrase goes, it's better than nothing. If there's a path
-that respects conventions, I'm genuinely interested in guidance.
-
-- Sean
+diff --git a/fs/btrfs/defrag.c b/fs/btrfs/defrag.c
+index 7e2db5d3a4d4..af40ad62009a 100644
+--- a/fs/btrfs/defrag.c
++++ b/fs/btrfs/defrag.c
+@@ -1179,7 +1179,6 @@ static int defrag_one_locked_target(struct btrfs_inode *inode,
+ 		if (start >= folio_next_pos(folio) ||
+ 		    start + len <= folio_pos(folio))
+ 			continue;
+-		btrfs_folio_clamp_clear_checked(fs_info, folio, start, len);
+ 		btrfs_folio_clamp_set_dirty(fs_info, folio, start, len);
+ 	}
+ 	btrfs_delalloc_release_extents(inode, len);
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index cf1cb5c4db75..586f32fa03d5 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -49,14 +49,6 @@ static void btrfs_drop_folio(struct btrfs_fs_info *fs_info, struct folio *folio,
+ 	u64 block_len = round_up(pos + copied, fs_info->sectorsize) - block_start;
+ 
+ 	ASSERT(block_len <= U32_MAX);
+-	/*
+-	 * Folio checked is some magic around finding folios that have been
+-	 * modified without going through btrfs_dirty_folio().  Clear it here.
+-	 * There should be no need to mark the pages accessed as
+-	 * prepare_one_folio() should have marked them accessed in
+-	 * prepare_one_folio() via find_or_create_page()
+-	 */
+-	btrfs_folio_clamp_clear_checked(fs_info, folio, block_start, block_len);
+ 	folio_unlock(folio);
+ 	folio_put(folio);
+ }
+@@ -107,7 +99,6 @@ int btrfs_dirty_folio(struct btrfs_inode *inode, struct folio *folio, loff_t pos
+ 		return ret;
+ 
+ 	btrfs_folio_clamp_set_uptodate(fs_info, folio, start_pos, num_bytes);
+-	btrfs_folio_clamp_clear_checked(fs_info, folio, start_pos, num_bytes);
+ 	btrfs_folio_clamp_set_dirty(fs_info, folio, start_pos, num_bytes);
+ 
+ 	/*
+@@ -1987,7 +1978,6 @@ static vm_fault_t btrfs_page_mkwrite(struct vm_fault *vmf)
+ 	if (zero_start != fsize)
+ 		folio_zero_range(folio, zero_start, folio_size(folio) - zero_start);
+ 
+-	btrfs_folio_clear_checked(fs_info, folio, page_start, fsize);
+ 	btrfs_folio_set_dirty(fs_info, folio, page_start, end + 1 - page_start);
+ 	btrfs_folio_set_uptodate(fs_info, folio, page_start, end + 1 - page_start);
+ 
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index ab22e4f9ffdd..07567fd45634 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -433,10 +433,6 @@ static void io_ctl_drop_pages(struct btrfs_io_ctl *io_ctl)
+ 
+ 	for (i = 0; i < io_ctl->num_pages; i++) {
+ 		if (io_ctl->pages[i]) {
+-			btrfs_folio_clear_checked(io_ctl->fs_info,
+-					page_folio(io_ctl->pages[i]),
+-					page_offset(io_ctl->pages[i]),
+-					PAGE_SIZE);
+ 			unlock_page(io_ctl->pages[i]);
+ 			put_page(io_ctl->pages[i]);
+ 		}
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 2119c957aa47..8cd537e9d44a 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -5032,8 +5032,6 @@ int btrfs_truncate_block(struct btrfs_inode *inode, u64 offset, u64 start, u64 e
+ 	folio_zero_range(folio, zero_start - folio_pos(folio),
+ 			 zero_end - zero_start + 1);
+ 
+-	btrfs_folio_clear_checked(fs_info, folio, block_start,
+-				  block_end + 1 - block_start);
+ 	btrfs_folio_set_dirty(fs_info, folio, block_start,
+ 			      block_end + 1 - block_start);
+ 
+@@ -7650,7 +7648,6 @@ static void btrfs_invalidate_folio(struct folio *folio, size_t offset,
+ 	 * did something wrong.
+ 	 */
+ 	ASSERT(!folio_test_ordered(folio));
+-	btrfs_folio_clear_checked(fs_info, folio, folio_pos(folio), folio_size(folio));
+ 	if (!inode_evicting)
+ 		__btrfs_release_folio(folio, GFP_NOFS);
+ 	clear_folio_extent_mapped(folio);
+diff --git a/fs/btrfs/reflink.c b/fs/btrfs/reflink.c
+index 49865a463780..14742abe0f92 100644
+--- a/fs/btrfs/reflink.c
++++ b/fs/btrfs/reflink.c
+@@ -141,7 +141,6 @@ static int copy_inline_to_page(struct btrfs_inode *inode,
+ 		folio_zero_range(folio, datal, block_size - datal);
+ 
+ 	btrfs_folio_set_uptodate(fs_info, folio, file_offset, block_size);
+-	btrfs_folio_clear_checked(fs_info, folio, file_offset, block_size);
+ 	btrfs_folio_set_dirty(fs_info, folio, file_offset, block_size);
+ out_unlock:
+ 	if (!IS_ERR(folio)) {
+diff --git a/fs/btrfs/subpage.c b/fs/btrfs/subpage.c
+index f82e71f5d88b..8a09f34ea31e 100644
+--- a/fs/btrfs/subpage.c
++++ b/fs/btrfs/subpage.c
+@@ -508,35 +508,6 @@ void btrfs_subpage_clear_ordered(const struct btrfs_fs_info *fs_info,
+ 	spin_unlock_irqrestore(&bfs->lock, flags);
+ }
+ 
+-void btrfs_subpage_set_checked(const struct btrfs_fs_info *fs_info,
+-			       struct folio *folio, u64 start, u32 len)
+-{
+-	struct btrfs_folio_state *bfs = folio_get_private(folio);
+-	unsigned int start_bit = subpage_calc_start_bit(fs_info, folio,
+-							checked, start, len);
+-	unsigned long flags;
+-
+-	spin_lock_irqsave(&bfs->lock, flags);
+-	bitmap_set(bfs->bitmaps, start_bit, len >> fs_info->sectorsize_bits);
+-	if (subpage_test_bitmap_all_set(fs_info, folio, checked))
+-		folio_set_checked(folio);
+-	spin_unlock_irqrestore(&bfs->lock, flags);
+-}
+-
+-void btrfs_subpage_clear_checked(const struct btrfs_fs_info *fs_info,
+-				 struct folio *folio, u64 start, u32 len)
+-{
+-	struct btrfs_folio_state *bfs = folio_get_private(folio);
+-	unsigned int start_bit = subpage_calc_start_bit(fs_info, folio,
+-							checked, start, len);
+-	unsigned long flags;
+-
+-	spin_lock_irqsave(&bfs->lock, flags);
+-	bitmap_clear(bfs->bitmaps, start_bit, len >> fs_info->sectorsize_bits);
+-	folio_clear_checked(folio);
+-	spin_unlock_irqrestore(&bfs->lock, flags);
+-}
+-
+ /*
+  * Unlike set/clear which is dependent on each page status, for test all bits
+  * are tested in the same way.
+@@ -561,7 +532,6 @@ IMPLEMENT_BTRFS_SUBPAGE_TEST_OP(uptodate);
+ IMPLEMENT_BTRFS_SUBPAGE_TEST_OP(dirty);
+ IMPLEMENT_BTRFS_SUBPAGE_TEST_OP(writeback);
+ IMPLEMENT_BTRFS_SUBPAGE_TEST_OP(ordered);
+-IMPLEMENT_BTRFS_SUBPAGE_TEST_OP(checked);
+ 
+ /*
+  * Note that, in selftests (extent-io-tests), we can have empty fs_info passed
+@@ -659,8 +629,6 @@ IMPLEMENT_BTRFS_PAGE_OPS(writeback, folio_start_writeback, folio_end_writeback,
+ 			 folio_test_writeback);
+ IMPLEMENT_BTRFS_PAGE_OPS(ordered, folio_set_ordered, folio_clear_ordered,
+ 			 folio_test_ordered);
+-IMPLEMENT_BTRFS_PAGE_OPS(checked, folio_set_checked, folio_clear_checked,
+-			 folio_test_checked);
+ 
+ #define GET_SUBPAGE_BITMAP(fs_info, folio, name, dst)			\
+ {									\
+@@ -782,7 +750,6 @@ void __cold btrfs_subpage_dump_bitmap(const struct btrfs_fs_info *fs_info,
+ 	unsigned long dirty_bitmap;
+ 	unsigned long writeback_bitmap;
+ 	unsigned long ordered_bitmap;
+-	unsigned long checked_bitmap;
+ 	unsigned long locked_bitmap;
+ 	unsigned long flags;
+ 
+@@ -795,20 +762,18 @@ void __cold btrfs_subpage_dump_bitmap(const struct btrfs_fs_info *fs_info,
+ 	GET_SUBPAGE_BITMAP(fs_info, folio, dirty, &dirty_bitmap);
+ 	GET_SUBPAGE_BITMAP(fs_info, folio, writeback, &writeback_bitmap);
+ 	GET_SUBPAGE_BITMAP(fs_info, folio, ordered, &ordered_bitmap);
+-	GET_SUBPAGE_BITMAP(fs_info, folio, checked, &checked_bitmap);
+ 	GET_SUBPAGE_BITMAP(fs_info, folio, locked, &locked_bitmap);
+ 	spin_unlock_irqrestore(&bfs->lock, flags);
+ 
+ 	dump_page(folio_page(folio, 0), "btrfs folio state dump");
+ 	btrfs_warn(fs_info,
+-"start=%llu len=%u page=%llu, bitmaps uptodate=%*pbl dirty=%*pbl locked=%*pbl writeback=%*pbl ordered=%*pbl checked=%*pbl",
++"start=%llu len=%u page=%llu, bitmaps uptodate=%*pbl dirty=%*pbl locked=%*pbl writeback=%*pbl ordered=%*pbl",
+ 		    start, len, folio_pos(folio),
+ 		    blocks_per_folio, &uptodate_bitmap,
+ 		    blocks_per_folio, &dirty_bitmap,
+ 		    blocks_per_folio, &locked_bitmap,
+ 		    blocks_per_folio, &writeback_bitmap,
+-		    blocks_per_folio, &ordered_bitmap,
+-		    blocks_per_folio, &checked_bitmap);
++		    blocks_per_folio, &ordered_bitmap);
+ }
+ 
+ void btrfs_get_subpage_dirty_bitmap(struct btrfs_fs_info *fs_info,
+diff --git a/fs/btrfs/subpage.h b/fs/btrfs/subpage.h
+index d81a0ade559f..fdea0b605bfc 100644
+--- a/fs/btrfs/subpage.h
++++ b/fs/btrfs/subpage.h
+@@ -41,11 +41,9 @@ enum {
+ 	btrfs_bitmap_nr_writeback,
+ 
+ 	/*
+-	 * The ordered and checked flags are for COW fixup, already marked
+-	 * deprecated, and will be removed eventually.
++	 * The ordered flags shows if the range has an ordered extent.
+ 	 */
+ 	btrfs_bitmap_nr_ordered,
+-	btrfs_bitmap_nr_checked,
+ 
+ 	/*
+ 	 * The locked bit is for async delalloc range (compression), currently
+@@ -182,7 +180,6 @@ DECLARE_BTRFS_SUBPAGE_OPS(uptodate);
+ DECLARE_BTRFS_SUBPAGE_OPS(dirty);
+ DECLARE_BTRFS_SUBPAGE_OPS(writeback);
+ DECLARE_BTRFS_SUBPAGE_OPS(ordered);
+-DECLARE_BTRFS_SUBPAGE_OPS(checked);
+ 
+ /*
+  * Helper for error cleanup, where a folio will have its dirty flag cleared,
+-- 
+2.53.0
 

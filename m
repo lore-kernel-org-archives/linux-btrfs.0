@@ -1,275 +1,273 @@
-Received: from fout-b7-smtp.messagingengine.com (fout-b7-smtp.messagingengine.com [202.12.124.150])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 59538281525;
-	Thu,  9 Apr 2026 16:31:19 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.150
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 52F4F2E2EF9
+	for <linux-btrfs@vger.kernel.org>; Thu,  9 Apr 2026 17:19:27 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775752280; cv=none; b=qpuTzpidDyoO1saqG0LO1bP6BUDO05FQ3VjaxAkbusAI/0wR5wA2OxAcwMNVjbryyQ2khLXZLpkU3InLImyOZQgJsuZ6toOCJMX/8X/PVDTPBaoVCsMKl4AYYl8cRXM4H8dmoiBmaMMEeypttoG/F2JKGOTW4Hg8wx++GMwP25Y=
+	t=1775755167; cv=none; b=KUvtJjls1Tp7UDjLk30cFPRag6hkfl0muYUqGufaoyOy8LiiQ+oDbq/aThCzDcgOrdkOG9A6bUqiyOYhW5d1j/VW5guXK4l1NV7IkuQKM0MPvdRtqWFCy575T/oxNuwQZgm98pMDtyWjqC+HsIR1FFd/UowRnmWL5NAXWFLD1yQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1775752280; c=relaxed/simple;
-	bh=pxmQp3BJ3k3v392XDIseqZvzxHs9Z8Xtk5hrL2t/Igg=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=pE5ygw2bmipyXNX3fHvxYVd3NBXkvZzMDNEs0VNVyhiT5w1nJeIatLWAX0jRtTFIEK9Yh1Y9iw90L0BQa0X3WoBWrtYCJDyTjoek/qjWaeKopceKlrxzTODgipI4waGdMYd2AoGH755ASMfqT7doDOKu4Hrv7uC/18MFpx/BdNw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=dYSCnGiQ; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=npniuZ8+; arc=none smtp.client-ip=202.12.124.150
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
+	s=arc-20240116; t=1775755167; c=relaxed/simple;
+	bh=arZb/6trpDlqEZQHXl6RLLnt/ON9SXa51C12DX5f/F0=;
+	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=tcwogZVHUKIJHjyO2ujgJFjbboOwRbsTJlew28qIJ6rWflrk+4S33/XzNnticmFlnbqykIo/XAHHscdxTHDasJQPL3AFlTvLEq0o0RyDqpyuqltOgAkYyi1EUbi43ivjXKIlNFcFH4nAe3JfUNamyGdSWfNusR7NRL9TDKnkXBs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Mel4gWl6; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="dYSCnGiQ";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="npniuZ8+"
-Received: from phl-compute-01.internal (phl-compute-01.internal [10.202.2.41])
-	by mailfout.stl.internal (Postfix) with ESMTP id 8C1BB1D001B9;
-	Thu,  9 Apr 2026 12:31:18 -0400 (EDT)
-Received: from phl-frontend-03 ([10.202.2.162])
-  by phl-compute-01.internal (MEProxy); Thu, 09 Apr 2026 12:31:18 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
-	:content-type:content-type:date:date:from:from:in-reply-to
-	:in-reply-to:message-id:mime-version:references:reply-to:subject
-	:subject:to:to; s=fm3; t=1775752278; x=1775838678; bh=7rzsss9VG1
-	/+QBq6ytQFQcjW2CXjWpQDa2IJzTVRHHc=; b=dYSCnGiQggXioToqwo0lxxJJuU
-	WwWpN4m6E9dCQbV30I5CFvMBftyV79KRzKjxH1aDp/L4pOTuwQ3all1VU7OqrHkl
-	zmpgq6tyZ3DSnrq5A42dchTz5NTG9/ynzRcKmqA2qNTC3752YXbEethNbxI9yoj0
-	HyzdYYb3GJjbcDxR9iOJWMX6aMHI0RJZejOT9M/mnChnAYqW6gvFejr3tRa7Hp6p
-	zxZFQikFlOfR1qxHB+VzrveanEazYizzl0qZWag3oamVWOt+HzpLHLKOljqCRj3a
-	S3NlRddnEw1rbQmQlUMnjmZPUYMjCC1cK19iCJik7Ap1EFxErj0Eg+ZUypoA==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:cc:content-type:content-type:date:date
-	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
-	:message-id:mime-version:references:reply-to:subject:subject:to
-	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=
-	1775752278; x=1775838678; bh=7rzsss9VG1/+QBq6ytQFQcjW2CXjWpQDa2I
-	JzTVRHHc=; b=npniuZ8+2XVFtWPjiWd+7B/ny3kE8vJQl1bSPjVeBoWKJveJwy8
-	XHqW08iwNk0wBHM5kfEDotKRGaT1cmty5uXUx5hursMusL40l7id7GekDUP6hUvn
-	iwN7wltb675cjvXElhFlXLBiQq2ygjm67v/It4QdwY7/CBb+DXmZtJDpy7NRJont
-	XK3etj4ekMCAzHoqexwkdkhFpDM/8Ca/NJvkyh9kalfX7ifnw4D0SCoNPIHBJ+rr
-	nFmTQqFPS3EkpNHcfoGr0XEeVfG/sVUqGAOJqVKkWsNxDeDdkYISqo+xWLEnZGrN
-	Gg3ljzu13WnfDuWML0Y2tcSQIXQAkydtgWg==
-X-ME-Sender: <xms:VtTXaYGA8sSmiCVut_0pu2URT0pafsDEa7jh1QJszlyIc5YWRBHWAw>
-    <xme:VtTXafKqwOgYRToQiqVC0uG-X09Y6PDHbOrZvwVrnng9Z9AkwizHPWtlgYaGxfCg4
-    we6cFOufe3Kbs4LVXK48xGIHMLhcf5SKbrxNDegSSpmzqZx6ykJDGo>
-X-ME-Received: <xmr:VtTXaclq91PvOnVQ3T9zxYoZTSXLxFJtb6nleGlnjwS6N6zv4LXOgpavtW5WU2hrixbywzf77wcnt9ZU-qIVesCdzVU>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefhedrtddtgddvieelkecutefuodetggdotefrod
-    ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpuffrtefokffrpgfnqfghnecuuegr
-    ihhlohhuthemuceftddtnecusecvtfgvtghiphhivghnthhsucdlqddutddtmdenucfjug
-    hrpeffhffvvefukfhfgggtuggjsehttdertddttddvnecuhfhrohhmpeeuohhrihhsuceu
-    uhhrkhhovhcuoegsohhrihhssegsuhhrrdhioheqnecuggftrfgrthhtvghrnhepkedvke
-    ffjeellefhveehvdejudfhjedthfdvveeiieeiudfguefgtdejgfefleejnecuvehluhhs
-    thgvrhfuihiivgeptdenucfrrghrrghmpehmrghilhhfrhhomhepsghorhhishessghurh
-    drihhopdhnsggprhgtphhtthhopeegpdhmohguvgepshhmthhpohhuthdprhgtphhtthho
-    pehfughmrghnrghnrgeskhgvrhhnvghlrdhorhhgpdhrtghpthhtohepfhhsthgvshhtsh
-    esvhhgvghrrdhkvghrnhgvlhdrohhrghdprhgtphhtthhopehlihhnuhigqdgsthhrfhhs
-    sehvghgvrhdrkhgvrhhnvghlrdhorhhgpdhrtghpthhtohepfhgumhgrnhgrnhgrsehsuh
-    hsvgdrtghomh
-X-ME-Proxy: <xmx:VtTXaXRbKxh8nwmrc4mLGx1ig2TFRI9ti6sciX5janL-zheDXX2kBw>
-    <xmx:VtTXaeI7e60Bh9hHlXVV-Ga4m7dbtm_win1LZzfikB4Xmg27ghF2qQ>
-    <xmx:VtTXadBxyuCzx5SebvVsB0N1dyCqWPHWSjMllrnU5U1x28dHlIYU3g>
-    <xmx:VtTXaXDoRYdLbsntuicgx7UWzWCvBM0-ehkhVdiTMPI2eNMok3cOfA>
-    <xmx:VtTXaYkWG1smNWkKSRdYmFqZxysl-pRVyY4Z3BrwWTACF_E4LDBa6TK4>
-Feedback-ID: i083147f8:Fastmail
-Received: by mail.messagingengine.com (Postfix) with ESMTPA; Thu,
- 9 Apr 2026 12:31:17 -0400 (EDT)
-Date: Thu, 9 Apr 2026 09:31:05 -0700
-From: Boris Burkov <boris@bur.io>
-To: fdmanana@kernel.org
-Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	Filipe Manana <fdmanana@suse.com>
-Subject: Re: [PATCH] generic: test fsync against a removed directory
-Message-ID: <20260409163105.GB2654001@zen.localdomain>
-References: <d4b466fd960d1dd8e25f7db75fd323f48053cef1.1775747936.git.fdmanana@suse.com>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Mel4gWl6"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8A614C4CEF7
+	for <linux-btrfs@vger.kernel.org>; Thu,  9 Apr 2026 17:19:26 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1775755167;
+	bh=arZb/6trpDlqEZQHXl6RLLnt/ON9SXa51C12DX5f/F0=;
+	h=From:To:Subject:Date:In-Reply-To:References:From;
+	b=Mel4gWl6re7K2jTE8lThWw7imbrWeNWbSbxLuRBEjevnPj6vHw7gRvAwFzzT1D5NL
+	 iD3ZWodpTeKcgmcInlruXeE/OhIG7+ARr2mOLBe3qs4JJTLid1VKh0fVJBeS3jA3Ay
+	 COUQfNeK5a4nuQtdY0j3NaOQWm50UEtsghKaw+h9inSxRwRWSn6lS/wIeZ00SUN8By
+	 TKSd9D2GOcM0wm/JO8igzwfYtdTP2kTNkJ32tJQRXuSmJ28oZfa7tj4DrA+vHT5Gl5
+	 XjGW4PnM+oNMX0/SnENE22NTbz3QHpCcpfmy2eyDQ0mGnUOk9Q+ZJXRcxpIqSoAa/5
+	 e7RdUhYkB25nQ==
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2] btrfs: fix missing last_unlink_trans update when removing a directory
+Date: Thu,  9 Apr 2026 18:19:23 +0100
+Message-ID: <8c8eb0bb3fb3fe5ccb1ad60be1ded4c8c1e34b43.1775754827.git.fdmanana@suse.com>
+X-Mailer: git-send-email 2.47.2
+In-Reply-To: <3f193ac4b0faadc24d718c3633f8c1a9c61a687c.1775747553.git.fdmanana@suse.com>
+References: <3f193ac4b0faadc24d718c3633f8c1a9c61a687c.1775747553.git.fdmanana@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <d4b466fd960d1dd8e25f7db75fd323f48053cef1.1775747936.git.fdmanana@suse.com>
+Content-Transfer-Encoding: 8bit
 
-On Thu, Apr 09, 2026 at 04:22:27PM +0100, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> Test that if we fsync a directory that became empty after removing it
-> and we have a power failure, we are able to mount the filesystem and the
-> directory does not exists anymore.
-> 
-> This exercises a bug found in btrfs which is fixed by the following patch:
-> 
->   btrfs: fix missing last_unlink_trans update when removing a directory
-> 
+From: Filipe Manana <fdmanana@suse.com>
 
-Reviewed-by: Boris Burkov <boris@bur.io>
+When removing a directory we are not updating its last_unlink_trans field,
+which can result in incorrect fsync behaviour in case some one fsyncs the
+directory after it was removed because it's holding a file descriptor on
+it.
 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> ---
->  src/unlink-fsync.c    | 39 ++++++++++++++++++------
->  tests/generic/792     | 69 +++++++++++++++++++++++++++++++++++++++++++
->  tests/generic/792.out | 10 +++++++
->  3 files changed, 109 insertions(+), 9 deletions(-)
->  create mode 100755 tests/generic/792
->  create mode 100644 tests/generic/792.out
-> 
-> diff --git a/src/unlink-fsync.c b/src/unlink-fsync.c
-> index ce008c6b..364f9226 100644
-> --- a/src/unlink-fsync.c
-> +++ b/src/unlink-fsync.c
-> @@ -4,10 +4,12 @@
->   */
->  
->  /*
-> - * Utility to open an existing file, unlink it while holding an open fd on it
-> - * and then fsync the file before closing the fd.
-> + * Utility to open an existing file or directory, unlink or rmdir it while
-> + * holding an open fd on it and then fsync it before closing the fd.
->   */
->  
-> +#include <sys/types.h>
-> +#include <sys/stat.h>
->  #include <stdio.h>
->  #include <stdlib.h>
->  #include <unistd.h>
-> @@ -15,24 +17,43 @@
->  
->  int main(int argc, char *argv[])
->  {
-> +	struct stat path_stat;
->  	int fd;
->  	int ret;
->  
->  	if (argc != 2) {
-> -		fprintf(stderr, "Use: %s <file path>\n", argv[0]);
-> +		fprintf(stderr, "Use: %s <file or dir path>\n", argv[0]);
->  		return 1;
->  	}
->  
-> -	fd = open(argv[1], O_WRONLY, 0666);
-> +	ret = stat(argv[1], &path_stat);
-> +	if (ret == -1) {
-> +		perror("stat failed");
-> +		exit(1);
-> +	}
-> +
-> +	if (S_ISDIR(path_stat.st_mode))
-> +		fd = open(argv[1], O_RDONLY | O_DIRECTORY);
-> +	else
-> +		fd = open(argv[1], O_WRONLY, 0666);
-> +
->  	if (fd == -1) {
-> -		perror("failed to open file");
-> +		perror("failed to open file/dir");
->  		exit(1);
->  	}
->  
-> -	ret = unlink(argv[1]);
-> -	if (ret == -1) {
-> -		perror("unlink failed");
-> -		exit(2);
-> +	if (S_ISDIR(path_stat.st_mode)) {
-> +		ret = rmdir(argv[1]);
-> +		if (ret == -1) {
-> +			perror("rmdir failed");
-> +			exit(2);
-> +		}
-> +	} else {
-> +		ret = unlink(argv[1]);
-> +		if (ret == -1) {
-> +			perror("unlink failed");
-> +			exit(2);
-> +		}
->  	}
->  
->  	ret = fsync(fd);
-> diff --git a/tests/generic/792 b/tests/generic/792
-> new file mode 100755
-> index 00000000..892ca2d8
-> --- /dev/null
-> +++ b/tests/generic/792
-> @@ -0,0 +1,69 @@
-> +#! /bin/bash
-> +# SPDX-License-Identifier: GPL-2.0
-> +# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
-> +#
-> +# FS QA Test 792
-> +#
-> +# Test that if we fsync a directory that became empty after removing it and we
-> +# have a power failure, we are able to mount the filesystem and the directory
-> +# does not exists anymore.
-> +#
-> +. ./common/preamble
-> +_begin_fstest auto quick log
-> +
-> +_cleanup()
-> +{
-> +	_cleanup_flakey
-> +	cd /
-> +	rm -r -f $tmp.*
-> +}
-> +
-> +. ./common/filter
-> +. ./common/dmflakey
-> +
-> +_require_scratch
-> +_require_test_program unlink-fsync
-> +_require_dm_target flakey
-> +
-> +_fixed_by_fs_commit btrfs xxxxxxxxxxxx \
-> +	"btrfs: fix missing last_unlink_trans update when removing a directory"
-> +
-> +_scratch_mkfs >> $seqres.full 2>&1 || _fail "mkfs failed"
-> +_require_metadata_journaling $SCRATCH_DEV
-> +_init_flakey
-> +_scratch_mount
-> +
-> +# Create our first directory and define its permissions (we will later change
-> +# them).
-> +mkdir $SCRATCH_MNT/dir1
-> +chmod a+rwx $SCRATCH_MNT/dir1
-> +
-> +# Created another directory inside that first directoy and then another one at
-> +# the top level.
-> +mkdir $SCRATCH_MNT/dir1/dir2
-> +mkdir $SCRATCH_MNT/dir3
-> +
-> +# Persist everything done so far.
-> +_scratch_sync
-> +
-> +# Do some change to the first directory, like change its permissions, fsync it.
-> +chmod o-rwx $SCRATCH_MNT/dir1
-> +$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/dir1
-> +
-> +# Now move the second directory from dir1 to dir3, so that dir1 becomes empty.
-> +mv $SCRATCH_MNT/dir1/dir2 $SCRATCH_MNT/dir3/
-> +
-> +# Now open an fd for dir1, rmdir it and fsync it before closing the fd.
-> +$here/src/unlink-fsync $SCRATCH_MNT/dir1
-> +
-> +# Simulate a power failure and replay the log/journal.
-> +# The mount should succeed, dir1 must not exist anymore and dir2 must now be
-> +# inside dir3.
-> +_flakey_drop_and_remount
-> +
-> +echo -e "Filesystem content after power failure:\n"
-> +# Exclude 'lost+found' dir from ext4 and last line if it's blank (due to removal
-> +# of 'lost+found').
-> +ls -R $SCRATCH_MNT/ | grep -v 'lost+found' | sed -e '${/^$/d;}' | _filter_scratch
-> +
-> +_exit 0
-> diff --git a/tests/generic/792.out b/tests/generic/792.out
-> new file mode 100644
-> index 00000000..f806258c
-> --- /dev/null
-> +++ b/tests/generic/792.out
-> @@ -0,0 +1,10 @@
-> +QA output created by 792
-> +Filesystem content after power failure:
-> +
-> +SCRATCH_MNT/:
-> +dir3
-> +
-> +SCRATCH_MNT/dir3:
-> +dir2
-> +
-> +SCRATCH_MNT/dir3/dir2:
-> -- 
-> 2.47.2
-> 
+Example scenario:
+
+   mkdir /mnt/dir1
+   mkdir /mnt/dir1/dir2
+   mkdir /mnt/dir3
+
+   sync -f /mnt
+
+   # Do some change to the directory and fsync it.
+   chmod 700 /mnt/dir1
+   xfs_io -c fsync /mnt/dir1
+
+   # Move dir2 out of dir1 so that dir1 becomes empty.
+   mv /mnt/dir1/dir2 /mnt/dir3/
+
+   open fd on /mnt/dir1
+   call rmdir(2) on path "/mnt/dir1"
+   fsync fd
+
+   <trigger power failure>
+
+When attempting to mount the filesystem, the log replay will fail with
+an -EIO error and dmesg/syslog has the following:
+
+   [445771.626482] BTRFS info (device dm-0): first mount of filesystem 0368bbea-6c5e-44b5-b409-09abe496e650
+   [445771.626486] BTRFS info (device dm-0): using crc32c checksum algorithm
+   [445771.627912] BTRFS info (device dm-0): start tree-log replay
+   [445771.628335] page: refcount:2 mapcount:0 mapping:0000000061443ddc index:0x1d00 pfn:0x7072a5
+   [445771.629453] memcg:ffff89f400351b00
+   [445771.629892] aops:btree_aops [btrfs] ino:1
+   [445771.630737] flags: 0x17fffc00000402a(uptodate|lru|private|writeback|node=0|zone=2|lastcpupid=0x1ffff)
+   [445771.632359] raw: 017fffc00000402a fffff47284d950c8 fffff472907b7c08 ffff89f458e412b8
+   [445771.633713] raw: 0000000000001d00 ffff89f6c51d1a90 00000002ffffffff ffff89f400351b00
+   [445771.635029] page dumped because: eb page dump
+   [445771.635825] BTRFS critical (device dm-0): corrupt leaf: root=5 block=30408704 slot=10 ino=258, invalid nlink: has 2 expect no more than 1 for dir
+   [445771.638088] BTRFS info (device dm-0): leaf 30408704 gen 10 total ptrs 17 free space 14878 owner 5
+   [445771.638091] BTRFS info (device dm-0): refs 4 lock_owner 0 current 3581087
+   [445771.638094] 	item 0 key (256 INODE_ITEM 0) itemoff 16123 itemsize 160
+   [445771.638097] 		inode generation 3 transid 9 size 16 nbytes 16384
+   [445771.638098] 		block group 0 mode 40755 links 1 uid 0 gid 0
+   [445771.638100] 		rdev 0 sequence 2 flags 0x0
+   [445771.638102] 		atime 1775744884.0
+   [445771.660056] 		ctime 1775744885.645502983
+   [445771.660058] 		mtime 1775744885.645502983
+   [445771.660060] 		otime 1775744884.0
+   [445771.660062] 	item 1 key (256 INODE_REF 256) itemoff 16111 itemsize 12
+   [445771.660064] 		index 0 name_len 2
+   [445771.660066] 	item 2 key (256 DIR_ITEM 1843588421) itemoff 16077 itemsize 34
+   [445771.660068] 		location key (259 1 0) type 2
+   [445771.660070] 		transid 9 data_len 0 name_len 4
+   [445771.660075] 	item 3 key (256 DIR_ITEM 2363071922) itemoff 16043 itemsize 34
+   [445771.660076] 		location key (257 1 0) type 2
+   [445771.660077] 		transid 9 data_len 0 name_len 4
+   [445771.660078] 	item 4 key (256 DIR_INDEX 2) itemoff 16009 itemsize 34
+   [445771.660079] 		location key (257 1 0) type 2
+   [445771.660080] 		transid 9 data_len 0 name_len 4
+   [445771.660081] 	item 5 key (256 DIR_INDEX 3) itemoff 15975 itemsize 34
+   [445771.660082] 		location key (259 1 0) type 2
+   [445771.660083] 		transid 9 data_len 0 name_len 4
+   [445771.660084] 	item 6 key (257 INODE_ITEM 0) itemoff 15815 itemsize 160
+   [445771.660086] 		inode generation 9 transid 9 size 8 nbytes 0
+   [445771.660087] 		block group 0 mode 40777 links 1 uid 0 gid 0
+   [445771.660088] 		rdev 0 sequence 2 flags 0x0
+   [445771.660089] 		atime 1775744885.641174097
+   [445771.660090] 		ctime 1775744885.645502983
+   [445771.660091] 		mtime 1775744885.645502983
+   [445771.660105] 		otime 1775744885.641174097
+   [445771.660106] 	item 7 key (257 INODE_REF 256) itemoff 15801 itemsize 14
+   [445771.660107] 		index 2 name_len 4
+   [445771.660108] 	item 8 key (257 DIR_ITEM 2676584006) itemoff 15767 itemsize 34
+   [445771.660109] 		location key (258 1 0) type 2
+   [445771.660110] 		transid 9 data_len 0 name_len 4
+   [445771.660111] 	item 9 key (257 DIR_INDEX 2) itemoff 15733 itemsize 34
+   [445771.660112] 		location key (258 1 0) type 2
+   [445771.660113] 		transid 9 data_len 0 name_len 4
+   [445771.660114] 	item 10 key (258 INODE_ITEM 0) itemoff 15573 itemsize 160
+   [445771.660115] 		inode generation 9 transid 10 size 0 nbytes 0
+   [445771.660116] 		block group 0 mode 40755 links 2 uid 0 gid 0
+   [445771.660117] 		rdev 0 sequence 0 flags 0x0
+   [445771.660118] 		atime 1775744885.645502983
+   [445771.660119] 		ctime 1775744885.645502983
+   [445771.660120] 		mtime 1775744885.645502983
+   [445771.660121] 		otime 1775744885.645502983
+   [445771.660122] 	item 11 key (258 INODE_REF 257) itemoff 15559 itemsize 14
+   [445771.660123] 		index 2 name_len 4
+   [445771.660124] 	item 12 key (258 INODE_REF 259) itemoff 15545 itemsize 14
+   [445771.660125] 		index 2 name_len 4
+   [445771.660126] 	item 13 key (259 INODE_ITEM 0) itemoff 15385 itemsize 160
+   [445771.660127] 		inode generation 9 transid 10 size 8 nbytes 0
+   [445771.660128] 		block group 0 mode 40755 links 1 uid 0 gid 0
+   [445771.660129] 		rdev 0 sequence 1 flags 0x0
+   [445771.660130] 		atime 1775744885.645502983
+   [445771.660130] 		ctime 1775744885.645502983
+   [445771.660131] 		mtime 1775744885.645502983
+   [445771.660132] 		otime 1775744885.645502983
+   [445771.660133] 	item 14 key (259 INODE_REF 256) itemoff 15371 itemsize 14
+   [445771.660134] 		index 3 name_len 4
+   [445771.660135] 	item 15 key (259 DIR_ITEM 2676584006) itemoff 15337 itemsize 34
+   [445771.660136] 		location key (258 1 0) type 2
+   [445771.660137] 		transid 10 data_len 0 name_len 4
+   [445771.660138] 	item 16 key (259 DIR_INDEX 2) itemoff 15303 itemsize 34
+   [445771.660139] 		location key (258 1 0) type 2
+   [445771.660140] 		transid 10 data_len 0 name_len 4
+   [445771.660144] BTRFS error (device dm-0): block=30408704 write time tree block corruption detected
+   [445771.661650] ------------[ cut here ]------------
+   [445771.662358] WARNING: fs/btrfs/disk-io.c:326 at btree_csum_one_bio+0x217/0x230 [btrfs], CPU#8: mount/3581087
+   [445771.663588] Modules linked in: btrfs f2fs xfs (...)
+   [445771.671229] CPU: 8 UID: 0 PID: 3581087 Comm: mount Tainted: G        W           7.0.0-rc6-btrfs-next-230+ #2 PREEMPT(full)
+   [445771.672575] Tainted: [W]=WARN
+   [445771.672987] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.16.2-0-gea1b7a073390-prebuilt.qemu.org 04/01/2014
+   [445771.674460] RIP: 0010:btree_csum_one_bio+0x217/0x230 [btrfs]
+   [445771.675222] Code: 89 44 24 (...)
+   [445771.677364] RSP: 0018:ffffd23882247660 EFLAGS: 00010246
+   [445771.678029] RAX: 0000000000000000 RBX: ffff89f6c51d1a90 RCX: 0000000000000000
+   [445771.678975] RDX: 0000000000000000 RSI: 0000000000000001 RDI: ffff89f406020000
+   [445771.679983] RBP: ffff89f821204000 R08: 0000000000000000 R09: 00000000ffefffff
+   [445771.680905] R10: ffffd23882247448 R11: 0000000000000003 R12: ffffd23882247668
+   [445771.681978] R13: ffff89f458e40fc0 R14: ffff89f737f4f500 R15: ffff89f737f4f500
+   [445771.682912] FS:  00007f0447a98840(0000) GS:ffff89fb9771d000(0000) knlGS:0000000000000000
+   [445771.684393] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+   [445771.685230] CR2: 00007f0447bf1330 CR3: 000000017cb02002 CR4: 0000000000370ef0
+   [445771.686273] Call Trace:
+   [445771.686646]  <TASK>
+   [445771.686969]  btrfs_submit_bbio+0x83f/0x860 [btrfs]
+   [445771.687750]  ? write_one_eb+0x28f/0x340 [btrfs]
+   [445771.688428]  btree_writepages+0x2e3/0x550 [btrfs]
+   [445771.689180]  ? kmem_cache_alloc_noprof+0x12a/0x490
+   [445771.689963]  ? alloc_extent_state+0x19/0x120 [btrfs]
+   [445771.690801]  ? kmem_cache_free+0x135/0x380
+   [445771.691328]  ? preempt_count_add+0x69/0xa0
+   [445771.691831]  ? set_extent_bit+0x252/0x8e0 [btrfs]
+   [445771.692468]  ? xas_load+0x9/0xc0
+   [445771.692873]  ? xas_find+0x14d/0x1a0
+   [445771.693304]  do_writepages+0xc6/0x160
+   [445771.693756]  filemap_writeback+0xb8/0xe0
+   [445771.694274]  btrfs_write_marked_extents+0x61/0x170 [btrfs]
+   [445771.694999]  btrfs_write_and_wait_transaction+0x4e/0xc0 [btrfs]
+   [445771.695818]  btrfs_commit_transaction+0x5c8/0xd10 [btrfs]
+   [445771.696530]  ? kmem_cache_free+0x135/0x380
+   [445771.697120]  ? release_extent_buffer+0x34/0x160 [btrfs]
+   [445771.697786]  btrfs_recover_log_trees+0x7be/0x7e0 [btrfs]
+   [445771.698525]  ? __pfx_replay_one_buffer+0x10/0x10 [btrfs]
+   [445771.699206]  open_ctree+0x11e5/0x1810 [btrfs]
+   [445771.699776]  btrfs_get_tree.cold+0xb/0x162 [btrfs]
+   [445771.700463]  ? fscontext_read+0x165/0x180
+   [445771.701146]  ? rw_verify_area+0x50/0x180
+   [445771.701866]  vfs_get_tree+0x25/0xd0
+   [445771.702491]  vfs_cmd_create+0x59/0xe0
+   [445771.703125]  __do_sys_fsconfig+0x303/0x610
+   [445771.703603]  do_syscall_64+0xe9/0xf20
+   [445771.703974]  entry_SYSCALL_64_after_hwframe+0x76/0x7e
+   [445771.704700] RIP: 0033:0x7f0447cbd4aa
+   [445771.705108] Code: 73 01 c3 (...)
+   [445771.707263] RSP: 002b:00007ffc4e528318 EFLAGS: 00000246 ORIG_RAX: 00000000000001af
+   [445771.708107] RAX: ffffffffffffffda RBX: 00005561585d8c20 RCX: 00007f0447cbd4aa
+   [445771.708931] RDX: 0000000000000000 RSI: 0000000000000006 RDI: 0000000000000003
+   [445771.709744] RBP: 00005561585d9120 R08: 0000000000000000 R09: 0000000000000000
+   [445771.710674] R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
+   [445771.711477] R13: 00007f0447e4f580 R14: 00007f0447e5126c R15: 00007f0447e36a23
+   [445771.712277]  </TASK>
+   [445771.712541] ---[ end trace 0000000000000000 ]---
+   [445771.713382] BTRFS error (device dm-0): error while writing out transaction: -5
+   [445771.714679] BTRFS warning (device dm-0): Skipping commit of aborted transaction.
+   [445771.715562] BTRFS error (device dm-0 state A): Transaction aborted (error -5)
+   [445771.716459] BTRFS: error (device dm-0 state A) in cleanup_transaction:2068: errno=-5 IO failure
+   [445771.717936] BTRFS error (device dm-0 state EA): failed to recover log trees with error: -5
+   [445771.719681] BTRFS error (device dm-0 state EA): open_ctree failed: -5
+
+The problem is that such a fsync should have result in a fallback to a
+transaction commit, but that did not happen because through the
+btrfs_rmdir() we never update the directory's last_unlink_trans field.
+Any inode that had a link removed must have its last_unlink_trans updated
+to the ID of transaction used for the operation, otherwise fsync and log
+replay will not work correctly.
+
+btrfs_rmdir() calls btrfs_unlink_inode() and through that call chain we
+never call btrfs_record_unlink_dir() in order to update last_unlink_trans.
+However btrfs_unlink(), which is used for unlinking regular files, calls
+btrfs_record_unlink_dir() and then calls btrfs_unlink_inode(). So fix
+this by moving the call to btrfs_record_unlink_dir() from btrfs_unlink()
+to btrfs_unlink_inode().
+
+A test case for fstests will follow soon.
+
+Reported-by: Slava0135 <slava.kovalevskiy.2014@gmail.com>
+Link: https://lore.kernel.org/linux-btrfs/CAAJYhww5ov62Hm+n+tmhcL-e_4cBobg+OWogKjOJxVUXivC=MQ@mail.gmail.com/
+CC: stable@vger.kernel.org
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+
+V2: Move the btrfs_record_unlink_dir() to happen before calling
+    __btrfs_unlink_inode().
+
+ fs/btrfs/inode.c | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 40474014c03f..2b504e3242b2 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -4506,6 +4506,8 @@ int btrfs_unlink_inode(struct btrfs_trans_handle *trans,
+ {
+ 	int ret;
+ 
++	btrfs_record_unlink_dir(trans, dir, inode, false);
++
+ 	ret = __btrfs_unlink_inode(trans, dir, inode, name, NULL);
+ 	if (!ret) {
+ 		drop_nlink(&inode->vfs_inode);
+@@ -4549,9 +4551,6 @@ static int btrfs_unlink(struct inode *dir, struct dentry *dentry)
+ 		goto fscrypt_free;
+ 	}
+ 
+-	btrfs_record_unlink_dir(trans, BTRFS_I(dir), BTRFS_I(d_inode(dentry)),
+-				false);
+-
+ 	ret = btrfs_unlink_inode(trans, BTRFS_I(dir), BTRFS_I(d_inode(dentry)),
+ 				 &fname.disk_name);
+ 	if (ret)
+-- 
+2.47.2
+

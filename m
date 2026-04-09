@@ -1,54 +1,54 @@
-Received: from fout-b7-smtp.messagingengine.com (fout-b7-smtp.messagingengine.com [202.12.124.150])
+Received: from fhigh-b5-smtp.messagingengine.com (fhigh-b5-smtp.messagingengine.com [202.12.124.156])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2289F2E7162
-	for <linux-btrfs@vger.kernel.org>; Thu,  9 Apr 2026 17:49:06 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.150
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id ECC513CB2D9
+	for <linux-btrfs@vger.kernel.org>; Thu,  9 Apr 2026 17:49:08 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.156
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775756948; cv=none; b=n+/qAY0rFqZV4T2rKH3H0G0cNQpfYM8+8ipumm7JznM/zh1nWbNZ7ScOPdNhlRUN55FZZU/IJTTA1KkjHJzYDDf6QuEYreBXwvXTzDmTLufe6+cfUIHyfe4QF12gij5Qd//Ycj5XQnEVvH6e5jswc9s3iB0CcZ07wwbKgWk2o3s=
+	t=1775756950; cv=none; b=agHkWTd7HGVkqzLFGnfZlbZKCBQT36dGVzRS6BieW9om3965Sjp9XyZu8y1hodhdZOPG9hPV43emdwSJxsw2GhFljKuWfa0DUuJYu7yZsFJM+1/APgRJbZSlzZILpBbUlIZGI6Gt/yHSiVrMDOnIMsxB7SWWl7hH4rwpGb//+Lo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1775756948; c=relaxed/simple;
-	bh=z/eEvSKTHYaBOw1uF7e+D+Ps+njXaRk63a31qEUkOO8=;
+	s=arc-20240116; t=1775756950; c=relaxed/simple;
+	bh=3wbebPS/GhCMxbUlGr6/ezc/s/akFBAb7p7RIBCBXgU=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=Wwv6LWsITknGzX+G+a1HFxbJGY33HPyj/UZ0TeSSQbkGj4lLP1BQS7DinHUEGBtKU0gq1RwdHdGIH+rC2tg+tYQy6hWB/YiLeBgWAFDetp3J8iiWu39B+U/yJhp5Qv2h+AC3odHqKd0/dLnJDZwd6JVsGaU+jRDyYLtg6QaIZVY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=lSZckH7V; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=DsYeb1Kv; arc=none smtp.client-ip=202.12.124.150
+	 MIME-Version; b=HAFZ6OsTyBdbAUgWd96SNp1hlJDY0RO5ZSJZVc+EtcX3AVaHw2GvR564NTWriwzO4DZwsV+rU7OviVvSjjmhqQg4ZkxkT8MEq8x39Ecm/h4ZzxeG4kFYGHK0Q0USLFPdnSyFHbSsypwYetVJeTbnEin+kt2S3MXxSArrAoOGxZ4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=H7sDKd85; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=GFf1XXy2; arc=none smtp.client-ip=202.12.124.156
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="lSZckH7V";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="DsYeb1Kv"
-Received: from phl-compute-02.internal (phl-compute-02.internal [10.202.2.42])
-	by mailfout.stl.internal (Postfix) with ESMTP id 5BCDA1D000F5;
-	Thu,  9 Apr 2026 13:49:06 -0400 (EDT)
-Received: from phl-frontend-04 ([10.202.2.163])
-  by phl-compute-02.internal (MEProxy); Thu, 09 Apr 2026 13:49:06 -0400
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="H7sDKd85";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="GFf1XXy2"
+Received: from phl-compute-06.internal (phl-compute-06.internal [10.202.2.46])
+	by mailfhigh.stl.internal (Postfix) with ESMTP id 3CC007A019D;
+	Thu,  9 Apr 2026 13:49:08 -0400 (EDT)
+Received: from phl-frontend-03 ([10.202.2.162])
+  by phl-compute-06.internal (MEProxy); Thu, 09 Apr 2026 13:49:08 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc
 	:content-transfer-encoding:content-type:date:date:from:from
 	:in-reply-to:in-reply-to:message-id:mime-version:references
-	:reply-to:subject:subject:to:to; s=fm3; t=1775756946; x=
-	1775843346; bh=Ts0fSeus8GGKGJwvJmXkVz8OkHDwjTvUomx+WBgjz5A=; b=l
-	SZckH7V8zm8J81FFsqLQUeiaiRjAj1WidB7bMSZbZFucq2MvoxAeKPmtmpg3isL3
-	Xqe8ceFqHsra2e1Mu4MXE0CN/t+QnRl2fHGX+2VdtpZRrv/3MsIRAZ8eIC45RDU5
-	zJuOlr5kOMFiecLEmWGZURjmLH7nZtJzJBkEl+WW0y+24KWIMgNI9trbM7IwepWD
-	t3U9hr+6bky8HhLTdXx4BFUTULGxLDuVw8dexMxIgiEzdBeP9kJZHQFWdsJB9Gzo
-	pkEl0j+/+1c5hQ2X4I/MhpGLz4v3dq3KSWhdX++rQJBrPJgq/pBSSB4DuvmyHmth
-	kZkrDtiyxvQyaet++lXtQ==
+	:reply-to:subject:subject:to:to; s=fm3; t=1775756948; x=
+	1775843348; bh=u/kb1ZDFLiilABO5gatzmc3eaQB1oRSHhhflPQVkoIs=; b=H
+	7sDKd85ixuY2cfi9OnFTRQPWQipmhm0BXOmSt+vpdIfAB+OBmt+SRoOmocsQYhQq
+	6ruPGcm3u2x9LJyVvj+KKRdeGt3TYlRSzj46sMEW8LwaUctwXM0PUA+zBUnlrcLl
+	i+Tyrupx2NGPWxJij1vUlM61S1gN+edrOLobhxaDK52fL1am/xieGUyWvp7iktM8
+	fQBe/AvHd7LjwffzFkqBZ0tw66cbJGAHuEDzI31AvBDyl1LWh/H69QrbhFo5kxKZ
+	TGusCdF9N/hKWvnCv0Du3WiFPMiy5lezJIodIuu45aQ42kFMKH/4lq4/yOFM8iGp
+	vEgd3Y+W043XboFEeprNA==
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
 	messagingengine.com; h=cc:content-transfer-encoding:content-type
 	:date:date:feedback-id:feedback-id:from:from:in-reply-to
 	:in-reply-to:message-id:mime-version:references:reply-to:subject
 	:subject:to:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=
-	fm2; t=1775756946; x=1775843346; bh=Ts0fSeus8GGKGJwvJmXkVz8OkHDw
-	jTvUomx+WBgjz5A=; b=DsYeb1Kv/pnP77113Ur0RskIQe7cNaFKEujA+Cg0hS0K
-	jskJyKNSuzbFp7TocDkD+hCeASkMKg3TZZgLnjB82maRRL5A/FNAkPI+ZbBIm8FK
-	gwH0htZbAPfBbXnp/0JSBuoWXh89jXQ1zDU52OdpPc6fGYBcoHPBNNwSJswwiwPu
-	mT9Zbmcjdp5rwEsrAxHdPKy3lbZfiN7taP8e48bFJbvo0LTb5n0zU+t/yoLtha4Q
-	H2qMrD1bie/NkB31+wSHxlQKCow39zp5NlzdeArK6fypOix4o0ubvLFqHIlQkkkn
-	tNk/QP0PRIggmkPwdYqfFJLlmA9bRi2/WVYLDFBvXQ==
-X-ME-Sender: <xms:kubXaet7B4BnqUfO7d9F_j_aikTatbDv7VMuMd3L5bzvzuXQcHHvZw>
-    <xme:kubXaZeEvBu9I82jLZspvmrXYNvGFeG40pAFUD_au4rdmNho3Dn5nB5zHk5MiHaeH
-    OzSugkUIi6zzWrLD-v478NzGALvupPygCAPswgvza-63TfLFJ7gRpE>
-X-ME-Received: <xmr:kubXaXYU4Y_AHKOAVbmWl7079lckzyAjUwgN4MArArmA-OYDHgt8ecpJDa6WIzw97omc0O1_U95CU9-4TreZOSncd7A>
+	fm2; t=1775756948; x=1775843348; bh=u/kb1ZDFLiilABO5gatzmc3eaQB1
+	oRSHhhflPQVkoIs=; b=GFf1XXy2iVV3p+LdGWKYkA+S/kWGQtQ3daTPWNdSb1im
+	x7a4KkqA/aOQc/OIIt9gBrabu4XLAT3PSuPHAbgmQt/rtVJR3dHJacgyzZLPznYM
+	6FYESZioHmk65IP5nWlcrmUIy20z7DmweSOAICejmbCMaxy66r7CTXBpp4fFQ4WX
+	ITamSL/NDMYvg7uybrDQZmNRo/PjRylFjixdiikh2Xku/hjRzz9ML36fcKvA3vJW
+	GiXc+wkbpsFqPDVgQ2UCLPxY5M75njmH5mSJ0NjHzepuR6fKg+/ToXHUub0jxR6g
+	PX48/9GgsAkyX7d4G62fJ6nYYss6L1JPBuej63OEiw==
+X-ME-Sender: <xms:lObXaQAsnv0wL4d9dCUKwseeeIiFC7KWR8fE38pQWmPCmZJpp8VDew>
+    <xme:lObXaYhbdIBF3REO84wZpLFraCX-I9MTIvenpSg_KCjIbxh2gr59jv0kucxwXwq8a
+    i81eUbVLw4SyDAoD9fBTgElo1wHtgPG3FvgoGWXYNWXI8F18boRYRgZ>
+X-ME-Received: <xmr:lObXaRMfcMGg6Y3smjfx3O6hYV6WhA1HJjqNw92TDiWWtExvqOQSgspGuc5cCwWY9s4C3O3l0Y64Zob41RcDS540eGc>
 X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefhedrtddtgddvjedufecutefuodetggdotefrod
     ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpuffrtefokffrpgfnqfghnecuuegr
     ihhlohhuthemuceftddtnecunecujfgurhephffvufffkffojghfggfgsedtkeertdertd
@@ -58,20 +58,20 @@ X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefhedrtddtgddvjedufecutefuodetgg
     lhhfrhhomhepsghorhhishessghurhdrihhopdhnsggprhgtphhtthhopedvpdhmohguvg
     epshhmthhpohhuthdprhgtphhtthhopehlihhnuhigqdgsthhrfhhssehvghgvrhdrkhgv
     rhhnvghlrdhorhhgpdhrtghpthhtohepkhgvrhhnvghlqdhtvggrmhesfhgsrdgtohhm
-X-ME-Proxy: <xmx:kubXaUUD2tNJVDKV7UpwoBp3CVii4XEQmAnhkPOaxJkXWTfssgq40A>
-    <xmx:kubXaRjgJda6TspTj6HQOuPTPm7LNqANsRIya5qJv3olSHSvYvCO6w>
-    <xmx:kubXaaXlLTlDL7eKwAKtQ-DsjWH3-sFFXBerSIFdFU0BL_B5ArbUzQ>
-    <xmx:kubXaQO4jTphY0kYmcQPQUFYmwTJSv-iPwcNObij50DDBmOiHDuC5A>
-    <xmx:kubXaWQU5mW6YhkWREGyX9xZI2SLCXgfMSGfROIAXpEbBKVfXoF8vOm0>
+X-ME-Proxy: <xmx:lObXaR6WBmCEbb-rTxESQC2uWmnPQdH2s7DUU5mhtlZZcxCQekZDhA>
+    <xmx:lObXaX1cGx90j8Yi55tifYHocqP5LzFx7NZPDUReP6QI19I4pgAdEA>
+    <xmx:lObXaaaakhqJqV1tiQV3VrTraJL_-L2SBzqnxGbqc-D2hTaJn35Ucw>
+    <xmx:lObXaXCv-WdR1waUq6kQILj5EAQFEMRp07NnRxTtXBFRUnBuaL4tgQ>
+    <xmx:lObXaUmn0jLmKnkk4iCAl1N5yicoVLuwQv-OG7UwFVD8sBJHDx_F2o_t>
 Feedback-ID: i083147f8:Fastmail
 Received: by mail.messagingengine.com (Postfix) with ESMTPA; Thu,
- 9 Apr 2026 13:49:05 -0400 (EDT)
+ 9 Apr 2026 13:49:07 -0400 (EDT)
 From: Boris Burkov <boris@bur.io>
 To: linux-btrfs@vger.kernel.org,
 	kernel-team@fb.com
-Subject: [PATCH v4 1/4] btrfs: reserve space for delayed_refs in delalloc
-Date: Thu,  9 Apr 2026 10:48:48 -0700
-Message-ID: <05bde74e587402f5d77897f0507a292ab9522355.1775756789.git.boris@bur.io>
+Subject: [PATCH v4 2/4] btrfs: account for compression in delalloc extent reservation
+Date: Thu,  9 Apr 2026 10:48:49 -0700
+Message-ID: <b1da881707fe4a7010c4b4543aafbee26fb70a45.1775756790.git.boris@bur.io>
 X-Mailer: git-send-email 2.53.0
 In-Reply-To: <cover.1775756789.git.boris@bur.io>
 References: <cover.1775756789.git.boris@bur.io>
@@ -83,284 +83,270 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-delalloc uses a per-inode block_rsv to perform metadata reservations for
-the cow operations it anticipates based on the number of outstanding
-extents. This calculation is done based on inode->outstanding_extents in
-btrfs_calculate_inode_block_rsv_size(). The reservation is *not*
-meticulously tracked as each ordered_extent is actually created in
-writeback, but rather delalloc attempts to over-estimate and the
-writeback and ordered_extent finish portions are responsible to release
-all the reservation.
+The btrfs maximum uncompressed extent size is 128MiB. The maximum
+compressed extent size in file extent space is 128KiB. Therefore, the
+estimate for outstanding_extents is off by 3 orders of magnitude when
+COMPRESS_FORCE is set or the inode is set to always compress.
 
-However, there is a notable gap in this reservation, it reserves no
-space for the resulting delayed_refs. If you compare to how
-btrfs_start_transaction() reservations work, this is a noteable
-difference.
+Because we use re-calculation when necessary, rather than super detailed
+extent tracking, we don't grow this reservation as the true number of
+extents is revealed. We don't want to be too clever with it, however, as
+we don't want the calculation to change for a given inode between
+reservation and release, so we only rely on the forcing type flags.
 
-As writeback actually occurs, and we trigger btrfs_finish_one_ordered(),
-that function will start generating delayed refs, which will draw from
-the trans_handle's delayed_refs_rsv via btrfs_update_delayed_refs_rsv():
+With this change, we no longer under-reserve delayed refs reservations
+for delalloc writes, even with compress-force.
 
-For example, we can trace the primary data delayed ref:
+Because this would turn count_max_extents() into a named shim for
+div_u64(size + max_extent_size - 1, max_extent_size);
+we can just get rid of it.
 
-btrfs_finish_one_ordered()
-  insert_ordered_extent_file_extent()
-    insert_reserved_file_extent()
-      btrfs_alloc_reserved_file_extent()
-        btrfs_add_delayed_data_ref()
-          add_delayed_ref()
-            btrfs_update_delayed_refs_rsv();
-
-This trans_handle was created in finish_one_ordered() with
-btrfs_join_transaction() which calls start_transaction with
-num_items=0 and BTRFS_RESERVE_NO_FLUSH. As a result, this trans_handle
-has no reserved in h->delayed_rsv, as neither the num_items reservation
-nor the btrfs_delayed_refs_rsv_refill() reservation is run.
-
-Thus, when btrfs_update_delayed_refs_rsv() runs, reserved_bytes is 0 and
-fs_info->delayed_rsv->size grows but not fs_info->delayed_rsv->reserved.
-
-If a large amount of writeback happens all at once (perhaps due to
-dirty_ratio being tuned too high), this results in, among other things,
-erroneous assessments of the amount of delayed_refs reserved in the
-metadata space reclaim logic, like need_preemptive_reclaim() which
-relies on fs_info->delayed_rsv->reserved and even worse, poor decision
-making in btrfs_preempt_reclaim_metadata_space() which counts
-delalloc_bytes like so:
-
-  block_rsv_size = global_rsv_size +
-          btrfs_block_rsv_reserved(delayed_block_rsv) +
-          btrfs_block_rsv_reserved(delayed_refs_rsv) +
-          btrfs_block_rsv_reserved(trans_rsv);
-  delalloc_size = bytes_may_use - block_rsv_size;
-
-So all that lost delayed refs usage gets accounted as delalloc_size and
-leads to preemptive reclaim continuously choosing FLUSH_DELALLOC, which
-further exacerbates the problem.
-
-With enough writeback around, we can run enough delalloc that we get
-into async reclaim which starts blocking start_transaction() and
-eventually hits FLUSH_DELALLOC_WAIT/FLUSH_DELALLOC_FULL at which point
-the filesystem gets heavily blocked on metadata space in reserve_space(),
-blocking all new transaction work until all the ordered_extents finish.
-
-If we had an accurate view of the reservation for delayed refs, then we
-could mostly break this feedback loop in preemptive reclaim, and
-generally would be able to make more accurate decisions with regards to
-metadata space reclamation.
-
-This patch adds extra metadata reservation to the inode's block_rsv to
-account for the delayed refs. When the ordered_extent finishes and we
-are about to do work in the transaction that uses delayed refs, we
-migrate enough for 1 extent. Since this is not necessarily perfect, we
-have to be careful and do a "soft" migrate which succeeds even if there
-is not enough reservation. This is strictly better than what we have and
-also matches how the delayed ref rsv gets used in the transaction at
-btrfs_update_delayed_refs_rsv().
-
-Aside from this data delayed_ref, there are also some metadata
-delayed_refs to consider. These are:
-- subvolume tree for the file extent item
-- csum tree for data csums
-- raid stripe tree if enabled
-- free space tree if enabled
-
-So account for those delayed_refs in the reservation as well. This
-greatly increases the size of the reservation as each metadata cow
-results in two delayed refs: one add for the new block in
-btrfs_alloc_tree_block() and one drop for the old in
-btrfs_free_tree_block(). As a result, to be completely conservative,
-we need to reserve 2 delayed refs worth of space for each cow.
-
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
 Signed-off-by: Boris Burkov <boris@bur.io>
 ---
- fs/btrfs/delalloc-space.c | 52 +++++++++++++++++++++++++++++++++++++++
- fs/btrfs/delalloc-space.h |  3 +++
- fs/btrfs/inode.c          |  2 ++
- fs/btrfs/transaction.c    | 36 +++++++++++----------------
- 4 files changed, 72 insertions(+), 21 deletions(-)
+ fs/btrfs/btrfs_inode.h    |  2 +
+ fs/btrfs/delalloc-space.c | 12 +++---
+ fs/btrfs/fs.h             | 13 -------
+ fs/btrfs/inode.c          | 78 ++++++++++++++++++++++++++++++++-------
+ 4 files changed, 72 insertions(+), 33 deletions(-)
 
+diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+index 55c272fe5d92..5368ef87b41a 100644
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -510,6 +510,8 @@ static inline bool btrfs_inode_can_compress(const struct btrfs_inode *inode)
+ 	return true;
+ }
+ 
++u64 btrfs_inode_max_extents(const struct btrfs_inode *inode, u64 size);
++
+ static inline void btrfs_assert_inode_locked(struct btrfs_inode *inode)
+ {
+ 	/* Immediately trigger a crash if the inode is not locked. */
 diff --git a/fs/btrfs/delalloc-space.c b/fs/btrfs/delalloc-space.c
-index 0970799d0aa4..63e174cc9393 100644
+index 63e174cc9393..609ec75884cd 100644
 --- a/fs/btrfs/delalloc-space.c
 +++ b/fs/btrfs/delalloc-space.c
-@@ -3,11 +3,13 @@
- #include "messages.h"
- #include "ctree.h"
- #include "delalloc-space.h"
-+#include "delayed-ref.h"
- #include "block-rsv.h"
- #include "btrfs_inode.h"
- #include "space-info.h"
- #include "qgroup.h"
- #include "fs.h"
-+#include "transaction.h"
+@@ -65,7 +65,7 @@
+  *     This is the number of file extent items we'll need to handle all of the
+  *     outstanding DELALLOC space we have in this inode.  We limit the maximum
+  *     size of an extent, so a large contiguous dirty area may require more than
+- *     one outstanding_extent, which is why count_max_extents() is used to
++ *     one outstanding_extent, which is why we use the max extent size to
+  *     determine how many outstanding_extents get added.
+  *
+  *   ->csum_bytes
+@@ -324,7 +324,7 @@ static void calc_inode_reservations(struct btrfs_inode *inode,
+ 				    u64 *meta_reserve, u64 *qgroup_reserve)
+ {
+ 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+-	u64 nr_extents = count_max_extents(fs_info, num_bytes);
++	u64 nr_extents = btrfs_inode_max_extents(inode, num_bytes);
+ 	u64 csum_leaves;
+ 	u64 inode_update = btrfs_calc_metadata_size(fs_info, 1);
  
- /*
-  * HOW DOES THIS WORK
-@@ -247,6 +249,35 @@ static void btrfs_inode_rsv_release(struct btrfs_inode *inode, bool qgroup_free)
- 						   qgroup_to_release);
+@@ -423,7 +423,7 @@ int btrfs_delalloc_reserve_metadata(struct btrfs_inode *inode, u64 num_bytes,
+ 	 * racing with an ordered completion or some such that would think it
+ 	 * needs to free the reservation we just made.
+ 	 */
+-	nr_extents = count_max_extents(fs_info, num_bytes);
++	nr_extents = btrfs_inode_max_extents(inode, num_bytes);
+ 	spin_lock(&inode->lock);
+ 	btrfs_mod_outstanding_extents(inode, nr_extents);
+ 	if (!(inode->flags & BTRFS_INODE_NODATASUM))
+@@ -490,7 +490,7 @@ void btrfs_delalloc_release_extents(struct btrfs_inode *inode, u64 num_bytes)
+ 	unsigned num_extents;
+ 
+ 	spin_lock(&inode->lock);
+-	num_extents = count_max_extents(fs_info, num_bytes);
++	num_extents = btrfs_inode_max_extents(inode, num_bytes);
+ 	btrfs_mod_outstanding_extents(inode, -num_extents);
+ 	btrfs_calculate_inode_block_rsv_size(fs_info, inode);
+ 	spin_unlock(&inode->lock);
+@@ -505,8 +505,8 @@ void btrfs_delalloc_release_extents(struct btrfs_inode *inode, u64 num_bytes)
+ void btrfs_delalloc_shrink_extents(struct btrfs_inode *inode, u64 reserved_len, u64 new_len)
+ {
+ 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+-	const u32 reserved_num_extents = count_max_extents(fs_info, reserved_len);
+-	const u32 new_num_extents = count_max_extents(fs_info, new_len);
++	const u32 reserved_num_extents = btrfs_inode_max_extents(inode, reserved_len);
++	const u32 new_num_extents = btrfs_inode_max_extents(inode, new_len);
+ 	const int diff_num_extents = new_num_extents - reserved_num_extents;
+ 
+ 	ASSERT(new_len <= reserved_len);
+diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
+index a4758d94b32e..2c1626155645 100644
+--- a/fs/btrfs/fs.h
++++ b/fs/btrfs/fs.h
+@@ -1051,19 +1051,6 @@ static inline bool btrfs_is_zoned(const struct btrfs_fs_info *fs_info)
+ 	return IS_ENABLED(CONFIG_BLK_DEV_ZONED) && fs_info->zone_size > 0;
+ }
+ 
+-/*
+- * Count how many fs_info->max_extent_size cover the @size
+- */
+-static inline u32 count_max_extents(const struct btrfs_fs_info *fs_info, u64 size)
+-{
+-#ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+-	if (!fs_info)
+-		return div_u64(size + BTRFS_MAX_EXTENT_SIZE - 1, BTRFS_MAX_EXTENT_SIZE);
+-#endif
+-
+-	return div_u64(size + fs_info->max_extent_size - 1, fs_info->max_extent_size);
+-}
+-
+ static inline unsigned int btrfs_blocks_per_folio(const struct btrfs_fs_info *fs_info,
+ 						  const struct folio *folio)
+ {
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 15945744a304..55255f3794c6 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -747,6 +747,56 @@ static int add_async_extent(struct async_chunk *cow, u64 start, u64 ram_size,
+ 	return 0;
  }
  
 +/*
-+ * Each delalloc extent could become an ordered_extent and end up inserting a
-+ * new data extent and modify a number of btrees. Each of those is associated with
-+ * adding delayed refs which need a corresponding delayed refs reservation.
++ * Check if compression will definitely be attempted for this inode based on
++ * mount options and inode properties.  Unlike inode_need_compress(), this does
++ * NOT run the compression heuristic or check range-specific conditions, so it
++ * is safe to call under locks (e.g. io_tree lock) and for reservation sizing.
 + *
-+ * Each metadata cow operation results in an add and a drop delayed ref, both of
-+ * which call add_delayed_ref() and ultimately btrfs_update_delayed_refs_rsv(),
-+ * so each must account for 2 delayed refs.
++ * Only returns true for cases where BTRFS_INODE_NOCOMPRESS cannot be set at
++ * runtime (FORCE_COMPRESS and prop_compress), ensuring that the effective max
++ * extent size is stable across paired set/clear delalloc operations.
 + */
-+static u64 delalloc_calc_delayed_refs_rsv(const struct btrfs_inode *inode, u64 nr_extents)
++static inline bool inode_may_compress(const struct btrfs_inode *inode)
 +{
-+	const struct btrfs_fs_info *fs_info = inode->root->fs_info;
-+	/*
-+	 * Factor for how many delayed refs updates we will generate per extent.
-+	 * Non-optional: extent tree, subvolume tree
-+	 */
-+	int factor = 4;
++	if (!btrfs_inode_can_compress(inode))
++		return false;
 +
-+	/* The remaining trees are only written to conditionally. */
-+	if (!(inode->flags & BTRFS_INODE_NODATASUM))
-+		factor += 2;
-+	if (btrfs_test_opt(fs_info, FREE_SPACE_TREE))
-+		factor += 2;
-+	if (btrfs_fs_incompat(fs_info, RAID_STRIPE_TREE))
-+		factor += 2;
++	/* Force compress always attempts compression. */
++	if (btrfs_test_opt(inode->root->fs_info, FORCE_COMPRESS))
++		return true;
 +
-+	return btrfs_calc_insert_metadata_size(fs_info, nr_extents) * factor;
++	/* Per-inode property: NOCOMPRESS cannot override this. */
++	if (inode->prop_compress)
++		return true;
++
++	return false;
 +}
 +
- static void btrfs_calculate_inode_block_rsv_size(struct btrfs_fs_info *fs_info,
- 						 struct btrfs_inode *inode)
- {
-@@ -266,6 +297,7 @@ static void btrfs_calculate_inode_block_rsv_size(struct btrfs_fs_info *fs_info,
- 		reserve_size = btrfs_calc_insert_metadata_size(fs_info,
- 						outstanding_extents);
- 		reserve_size += btrfs_calc_metadata_size(fs_info, 1);
-+		reserve_size += delalloc_calc_delayed_refs_rsv(inode, outstanding_extents);
- 	}
- 	if (!(inode->flags & BTRFS_INODE_NODATASUM)) {
- 		u64 csum_leaves;
-@@ -309,9 +341,29 @@ static void calc_inode_reservations(struct btrfs_inode *inode,
- 	 * for an inode update.
- 	 */
- 	*meta_reserve += inode_update;
-+
-+	*meta_reserve += delalloc_calc_delayed_refs_rsv(inode, nr_extents);
-+
- 	*qgroup_reserve = nr_extents * fs_info->nodesize;
- }
- 
-+void btrfs_delalloc_migrate_delayed_refs_rsv(struct btrfs_trans_handle *trans,
-+					     struct btrfs_inode *inode)
++/*
++ * Return the effective maximum extent size for reservation accounting.
++ *
++ * When compression is guaranteed to be attempted (FORCE_COMPRESS or
++ * prop_compress), the compression path splits ranges into
++ * BTRFS_MAX_UNCOMPRESSED chunks, each producing an independent ordered
++ * extent.  Use that as the divisor instead of fs_info->max_extent_size
++ * to avoid severely undercounting outstanding extents.
++ */
++static u64 btrfs_inode_max_extent_size(const struct btrfs_inode *inode)
 +{
-+       struct btrfs_block_rsv *inode_rsv = &inode->block_rsv;
-+       struct btrfs_block_rsv *trans_rsv = &trans->delayed_rsv;
-+       u64 num_bytes = delalloc_calc_delayed_refs_rsv(inode, 1);
++	if (inode_may_compress(inode))
++		return BTRFS_MAX_UNCOMPRESSED;
 +
-+       spin_lock(&inode_rsv->lock);
-+       num_bytes = min(num_bytes, inode_rsv->reserved);
-+       inode_rsv->reserved -= num_bytes;
-+       inode_rsv->full = (inode_rsv->reserved >= inode_rsv->size);
-+       spin_unlock(&inode_rsv->lock);
-+
-+       btrfs_block_rsv_add_bytes(trans_rsv, num_bytes, true);
-+       trans->delayed_refs_bytes_reserved += num_bytes;
++	return inode->root->fs_info->max_extent_size;
 +}
 +
- int btrfs_delalloc_reserve_metadata(struct btrfs_inode *inode, u64 num_bytes,
- 				    u64 disk_num_bytes, bool noflush)
++u64 btrfs_inode_max_extents(const struct btrfs_inode *inode, u64 size)
++{
++	u64 max_extent_size = btrfs_inode_max_extent_size(inode);
++
++	return div_u64(size + max_extent_size - 1, max_extent_size);
++}
++
+ /*
+  * Check if the inode needs to be submitted to compression, based on mount
+  * options, defragmentation, properties or heuristics.
+@@ -2459,8 +2509,8 @@ int btrfs_run_delalloc_range(struct btrfs_inode *inode, struct folio *locked_fol
+ void btrfs_split_delalloc_extent(struct btrfs_inode *inode,
+ 				 struct extent_state *orig, u64 split)
  {
-diff --git a/fs/btrfs/delalloc-space.h b/fs/btrfs/delalloc-space.h
-index 6119c0d3f883..bd7041166987 100644
---- a/fs/btrfs/delalloc-space.h
-+++ b/fs/btrfs/delalloc-space.h
-@@ -8,6 +8,7 @@
- struct extent_changeset;
- struct btrfs_inode;
- struct btrfs_fs_info;
-+struct btrfs_trans_handle;
+-	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+ 	u64 size;
++	u64 max_extent_size = btrfs_inode_max_extent_size(inode);
  
- int btrfs_alloc_data_chunk_ondemand(const struct btrfs_inode *inode, u64 bytes);
- int btrfs_check_data_free_space(struct btrfs_inode *inode,
-@@ -27,5 +28,7 @@ int btrfs_delalloc_reserve_metadata(struct btrfs_inode *inode, u64 num_bytes,
- 				    u64 disk_num_bytes, bool noflush);
- void btrfs_delalloc_release_extents(struct btrfs_inode *inode, u64 num_bytes);
- void btrfs_delalloc_shrink_extents(struct btrfs_inode *inode, u64 reserved_len, u64 new_len);
-+void btrfs_delalloc_migrate_delayed_refs_rsv(struct btrfs_trans_handle *trans,
-+					     struct btrfs_inode *inode);
+ 	lockdep_assert_held(&inode->io_tree.lock);
  
- #endif /* BTRFS_DELALLOC_SPACE_H */
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 40474014c03f..15945744a304 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -653,6 +653,7 @@ static noinline int __cow_file_range_inline(struct btrfs_inode *inode,
- 		goto out;
- 	}
- 	trans->block_rsv = &inode->block_rsv;
-+	btrfs_delalloc_migrate_delayed_refs_rsv(trans, inode);
- 
- 	drop_args.path = path;
- 	drop_args.start = 0;
-@@ -3259,6 +3260,7 @@ int btrfs_finish_one_ordered(struct btrfs_ordered_extent *ordered_extent)
- 	}
- 
- 	trans->block_rsv = &inode->block_rsv;
-+	btrfs_delalloc_migrate_delayed_refs_rsv(trans, inode);
- 
- 	ret = btrfs_insert_raid_extent(trans, ordered_extent);
- 	if (unlikely(ret)) {
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 248adb785051..55791bb100a2 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1047,29 +1047,23 @@ static void btrfs_trans_release_metadata(struct btrfs_trans_handle *trans)
+@@ -2469,8 +2519,8 @@ void btrfs_split_delalloc_extent(struct btrfs_inode *inode,
  		return;
+ 
+ 	size = orig->end - orig->start + 1;
+-	if (size > fs_info->max_extent_size) {
+-		u32 num_extents;
++	if (size > max_extent_size) {
++		u64 num_extents;
+ 		u64 new_size;
+ 
+ 		/*
+@@ -2478,10 +2528,10 @@ void btrfs_split_delalloc_extent(struct btrfs_inode *inode,
+ 		 * applies here, just in reverse.
+ 		 */
+ 		new_size = orig->end - split + 1;
+-		num_extents = count_max_extents(fs_info, new_size);
++		num_extents = btrfs_inode_max_extents(inode, new_size);
+ 		new_size = split - orig->start;
+-		num_extents += count_max_extents(fs_info, new_size);
+-		if (count_max_extents(fs_info, size) >= num_extents)
++		num_extents += btrfs_inode_max_extents(inode, new_size);
++		if (btrfs_inode_max_extents(inode, size) >= num_extents)
+ 			return;
  	}
  
--	if (!trans->bytes_reserved) {
--		ASSERT(trans->delayed_refs_bytes_reserved == 0,
--		       "trans->delayed_refs_bytes_reserved=%llu",
--		       trans->delayed_refs_bytes_reserved);
--		return;
-+	if (trans->bytes_reserved) {
-+		ASSERT(trans->block_rsv == &fs_info->trans_block_rsv);
-+		trace_btrfs_space_reservation(fs_info, "transaction",
-+					trans->transid, trans->bytes_reserved, 0);
-+		btrfs_block_rsv_release(fs_info, trans->block_rsv,
-+					trans->bytes_reserved, NULL);
-+		trans->bytes_reserved = 0;
- 	}
+@@ -2498,9 +2548,9 @@ void btrfs_split_delalloc_extent(struct btrfs_inode *inode,
+ void btrfs_merge_delalloc_extent(struct btrfs_inode *inode, struct extent_state *new,
+ 				 struct extent_state *other)
+ {
+-	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+ 	u64 new_size, old_size;
+-	u32 num_extents;
++	u64 max_extent_size = btrfs_inode_max_extent_size(inode);
++	u64 num_extents;
  
--	ASSERT(trans->block_rsv == &fs_info->trans_block_rsv);
--	trace_btrfs_space_reservation(fs_info, "transaction",
--				      trans->transid, trans->bytes_reserved, 0);
--	btrfs_block_rsv_release(fs_info, trans->block_rsv,
--				trans->bytes_reserved, NULL);
--	trans->bytes_reserved = 0;
--
--	if (!trans->delayed_refs_bytes_reserved)
--		return;
--
--	trace_btrfs_space_reservation(fs_info, "local_delayed_refs_rsv",
--				      trans->transid,
--				      trans->delayed_refs_bytes_reserved, 0);
--	btrfs_block_rsv_release(fs_info, &trans->delayed_rsv,
--				trans->delayed_refs_bytes_reserved, NULL);
--	trans->delayed_refs_bytes_reserved = 0;
-+	if (trans->delayed_refs_bytes_reserved) {
-+		trace_btrfs_space_reservation(fs_info, "local_delayed_refs_rsv",
-+					trans->transid,
-+					trans->delayed_refs_bytes_reserved, 0);
-+		btrfs_block_rsv_release(fs_info, &trans->delayed_rsv,
-+					trans->delayed_refs_bytes_reserved, NULL);
-+		trans->delayed_refs_bytes_reserved = 0;
-+	}
- }
+ 	lockdep_assert_held(&inode->io_tree.lock);
  
- static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
+@@ -2514,7 +2564,7 @@ void btrfs_merge_delalloc_extent(struct btrfs_inode *inode, struct extent_state
+ 		new_size = other->end - new->start + 1;
+ 
+ 	/* we're not bigger than the max, unreserve the space and go */
+-	if (new_size <= fs_info->max_extent_size) {
++	if (new_size <= max_extent_size) {
+ 		spin_lock(&inode->lock);
+ 		btrfs_mod_outstanding_extents(inode, -1);
+ 		spin_unlock(&inode->lock);
+@@ -2540,10 +2590,10 @@ void btrfs_merge_delalloc_extent(struct btrfs_inode *inode, struct extent_state
+ 	 * this case.
+ 	 */
+ 	old_size = other->end - other->start + 1;
+-	num_extents = count_max_extents(fs_info, old_size);
++	num_extents = btrfs_inode_max_extents(inode, old_size);
+ 	old_size = new->end - new->start + 1;
+-	num_extents += count_max_extents(fs_info, old_size);
+-	if (count_max_extents(fs_info, new_size) >= num_extents)
++	num_extents += btrfs_inode_max_extents(inode, old_size);
++	if (btrfs_inode_max_extents(inode, new_size) >= num_extents)
+ 		return;
+ 
+ 	spin_lock(&inode->lock);
+@@ -2616,7 +2666,7 @@ void btrfs_set_delalloc_extent(struct btrfs_inode *inode, struct extent_state *s
+ 	if (!(state->state & EXTENT_DELALLOC) && (bits & EXTENT_DELALLOC)) {
+ 		u64 len = state->end + 1 - state->start;
+ 		u64 prev_delalloc_bytes;
+-		u32 num_extents = count_max_extents(fs_info, len);
++		u32 num_extents = btrfs_inode_max_extents(inode, len);
+ 
+ 		spin_lock(&inode->lock);
+ 		btrfs_mod_outstanding_extents(inode, num_extents);
+@@ -2662,7 +2712,7 @@ void btrfs_clear_delalloc_extent(struct btrfs_inode *inode,
+ {
+ 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+ 	u64 len = state->end + 1 - state->start;
+-	u32 num_extents = count_max_extents(fs_info, len);
++	u32 num_extents = btrfs_inode_max_extents(inode, len);
+ 
+ 	lockdep_assert_held(&inode->io_tree.lock);
+ 
 -- 
 2.53.0
 

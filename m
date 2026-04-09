@@ -1,97 +1,164 @@
-Received: from outgoing.mit.edu (outgoing-auth-1.mit.edu [18.9.28.11])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 44D311FAC42
-	for <linux-btrfs@vger.kernel.org>; Thu,  9 Apr 2026 04:11:58 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=18.9.28.11
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C85611E89C
+	for <linux-btrfs@vger.kernel.org>; Thu,  9 Apr 2026 04:31:54 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775707920; cv=none; b=FXf/+T6tfZNHZ6gSDkPmqdxXdL6prdyAURTYLKwa+3uFl8If9UXDvjVboG4tZKR+nVEPV7zlf7mORa62IYLq/H3EsN+zDvnQXcP9HPEitVdVqE8Eehf9lPxE+vC/D5iKQ1QioSl6ptCqs2LqxizSEORmeAlUoHeUzjPFTLr1qTg=
+	t=1775709116; cv=none; b=bLyIjLxLi9HsmX0D1J0CNLTrLROzx3rxMuw9olEyjhmCxsacFM0k3lpTinE92CHrF83CrxmuSxWxKWl1CAkXju/tNfjuRUu4cKNRzoxOttlHf9p3MS+bgtIwWM8FrVdECI8MhbD1gs5sxHrfLTnBZeRtbZx+ywIhlSh2NPpfVOA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1775707920; c=relaxed/simple;
-	bh=6YHfrpk1CLmgitkyrjwN+HR9dP3AJnFyvTSvr+bFdDY=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=eOZxCA8DO19SKpfJC9vq0kW9GzJCkDhx/1z6H537VaPS83Ix25PzC4iD+sRPlJaQxShUX8kDHWga1GQXOE4KJJcX+ucB4SXgy5sjhAGH0r9/BNsKhir44QR1usU6XciGZ929MZ/adJAOGjiZKM4CuznDKNx4OVGSIoILL91ZhPY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=mit.edu; spf=pass smtp.mailfrom=mit.edu; dkim=pass (2048-bit key) header.d=mit.edu header.i=@mit.edu header.b=PQurBuLz; arc=none smtp.client-ip=18.9.28.11
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=mit.edu
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=mit.edu
+	s=arc-20240116; t=1775709116; c=relaxed/simple;
+	bh=F9IEoR1w/xFvJqfwrXUyoRzLOYbzvf8LMv2M2R/5AK4=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=BUG03SrOLZRkX2tcKGyr8ZEwbiA/fcIw50jZ8BSYwpi5JUm9VB0+RiAELzczzCdvqRqmUCSxFgLH12iajAPqzG1hL9pB0i8NDeogUiuJdb+Ed6KL4wmHzHRLyt7HH4cXAtsW5Mz1gbi+z4Df6txffrAxnNflc6SCLNKE113zuMc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Q3icl8p7; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Q3icl8p7; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=mit.edu header.i=@mit.edu header.b="PQurBuLz"
-Received: from macsyma.thunk.org (pool-173-48-116-90.bstnma.fios.verizon.net [173.48.116.90])
-	(authenticated bits=0)
-        (User authenticated as tytso@ATHENA.MIT.EDU)
-	by outgoing.mit.edu (8.14.7/8.12.4) with ESMTP id 6394Bakp013983
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Thu, 9 Apr 2026 00:11:38 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=mit.edu; s=outgoing;
-	t=1775707899; bh=NBFukzxQNIlbpu4dR1BAdcrERQuSpFgXbePc35/CAcQ=;
-	h=Date:From:Subject:Message-ID:MIME-Version:Content-Type;
-	b=PQurBuLzZ1AJBBaBEtKJQ2CAbaNk78ZzQ/69Sr7DZbFPK+9IJybrvvx8OEoBmt0K/
-	 zZu31CKmU5WLkwCcTmVy29QPU8jaAGhUWRbnsm18GtjIxGjrcrWZKRcJAHI9xQNQfp
-	 DnHbaJ7lF1dRStlbJL+qQlHVCeI+leVoZ+ee+4GXaTkxm/NKeWB6pgyiYzetQYAgtL
-	 JfWWBFoKDi8Mu9On1wilzEsFAjM/K3XL7RbyiGetEYu5UtiZRJOIXmI2SQkDv/Xtei
-	 NeECjPfMgW+OdGkv5wnbai8oA4DyT0njG5I56F96F15ZWwLxUQHWKXNheb9YV3Grex
-	 iLe9tyRKGI8bw==
-Received: by macsyma.thunk.org (Postfix, from userid 15806)
-	id C9709625964A; Thu,  9 Apr 2026 00:10:35 -0400 (EDT)
-Date: Thu, 9 Apr 2026 00:10:35 -0400
-From: "Theodore Tso" <tytso@mit.edu>
-To: Anand Jain <anajain.sg@gmail.com>
-Cc: Christoph Hellwig <hch@infradead.org>,
-        "Darrick J. Wong" <djwong@kernel.org>, linux-ext4@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org,
-        Anand Jain <asj@kernel.org>
-Subject: Re: [PATCH v2 3/3] ext4: derive f_fsid from block device to avoid
- collisions
-Message-ID: <20260409041035.GC99725@macsyma-wired.lan>
-References: <cover.1774092915.git.asj@kernel.org>
- <33e8eb64c304a4d42b60f608c26497bf9a2e9e19.1774092915.git.asj@kernel.org>
- <20260323041624.GA11453@mac.lan>
- <d4a9970b-e7ed-4e74-be9d-2d08400f9d79@gmail.com>
- <5bda3d00-df35-4ea1-b313-2fef6e5c5682@gmail.com>
- <adSUiB9L0sFAd04U@infradead.org>
- <20260407144709.GA81690@macsyma-wired.lan>
- <3c9e478a-42ef-446f-a8cc-1b4ac970d2ef@gmail.com>
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Q3icl8p7";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Q3icl8p7"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 9771B5BCEB
+	for <linux-btrfs@vger.kernel.org>; Thu,  9 Apr 2026 04:31:52 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1775709112; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=Dd6Q50pt4zUdFN+YuYXEYNJvjggzXuUSldyhTNbNYTo=;
+	b=Q3icl8p7O3bDFfaAxul3r61ylgEcjYZx7yQ43pHOULAc/l+qYd0dv0fX5fYX7ldJ5k62Eb
+	at4pT5LWHTGAYTWlE+pVNUmqGGrr9PLy6fWvXIQqk3TNyTrgMDXZJmwx0jbXTbx1hT9PXA
+	fTjYCSu/ePXSZ9xRF0R0rRd74wxmySU=
+Authentication-Results: smtp-out2.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1775709112; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=Dd6Q50pt4zUdFN+YuYXEYNJvjggzXuUSldyhTNbNYTo=;
+	b=Q3icl8p7O3bDFfaAxul3r61ylgEcjYZx7yQ43pHOULAc/l+qYd0dv0fX5fYX7ldJ5k62Eb
+	at4pT5LWHTGAYTWlE+pVNUmqGGrr9PLy6fWvXIQqk3TNyTrgMDXZJmwx0jbXTbx1hT9PXA
+	fTjYCSu/ePXSZ9xRF0R0rRd74wxmySU=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 8AAF54A0B3
+	for <linux-btrfs@vger.kernel.org>; Thu,  9 Apr 2026 04:31:51 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id 6T9QDbcr12lLIgAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Thu, 09 Apr 2026 04:31:51 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v3 0/5] btrfs-progs: mkfs/rootdir: cleanup and test case enhancement
+Date: Thu,  9 Apr 2026 14:01:12 +0930
+Message-ID: <cover.1775708393.git.wqu@suse.com>
+X-Mailer: git-send-email 2.53.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <3c9e478a-42ef-446f-a8cc-1b4ac970d2ef@gmail.com>
+Content-Transfer-Encoding: 8bit
+X-Spam-Score: -2.80
+X-Spam-Level: 
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	ARC_NA(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,imap1.dmz-prg2.suse.org:helo];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	RCVD_TLS_ALL(0.00)[]
+X-Spam-Flag: NO
 
-On Thu, Apr 09, 2026 at 06:28:32AM +0800, Anand Jain wrote:
-> Some A/B testing use cases require the filesystem to remain
-> byte-for-byte identical. In those scenarios, changing the UUID
-> isn't an option.
+[CHANGELOG]
+v3:
+- Remove the fiemap based prealloc detection
+  The complexity doesn't really bring any other benefit and preallocated
+  space itself is not that commonly used for fs image creation.
 
-But in that case, where the file systems A and B are bit-fot-bit
-identical, why do we care whether statfs returns different fsid's for
-statfs(A) and statfs(B).  After all, f_fsid is only defined as "File
-system ID", and there is no other definition.  Which is why I say that
-people *really* shouldn't depending on its semantics, because it's not
-well defined.
+- Update the image size estimation
+  To fully co-operate with the new hole detection.
 
-Quoting from the statfs(2) man page:
+v2:
+- Add a new test case to verify hole detection with/without no-holes
+  There is a bug in the ^no-holes handling that an incorrect file extent
+  is inserted with uninitialized type.
 
-    Nobody knows what f_fsid is supposed to contain (but see below).
+  Exposed and fixed by Mark.
 
-    ...
+- Add a new test case to verify the file contents of hole detection
 
-    The general idea is that f_fsid contains some random stuff such
-    that the pair (f_fsid,ino) uniquely determines a file. Some
-    operating systems use (a variation on) the device number, or the
-    device number combined with the filesystem type. Several operating
-    systems restrict giving out the f_fsid field to the superuser only
-    (and zero it for unprivileged users), because this field is used
-    in the filehandle of the filesystem when NFS-exported, and giving
-    it out is a security concern.
+  There is a bug in the refactor of read, which overwrites the buffer
+  instead of properly advance the cursor.
 
-So if the two file systems are identical, the (f_fsid, ino) will
-uniquely determines a file.  And that's *fine* if f_fsid is the same
-for statfs(A) and statfs(B).
+  Exposed by Mark with Chris Mason's review prompts.
 
-No?
+- Keep the existing first block based bad compress ratio detection
+  Previously if we had bad compression ratio after the first block, we
+  do not mark the inode incompressible.
 
-					- Ted
+  Follow the existing behavior.
+
+- Fix the hole size capping in fiemap mode
+  Which previously is not capping the hole size, and can trigger
+  UASSERT()s.
+
+- Enhance the new fiemap test case with fssum
+  To verify both the hole and file contents matches.
+
+The PR can be found here:
+
+  https://github.com/kdave/btrfs-progs/pull/1103
+
+The first 2 patches are enhancing mkfs test cases to be more robust,
+covering both no-holes and ^no-holes features, as Mark exposed a bug
+affecting ^no-holes only in previous hole-detection.
+
+The 3rd patch extracts btrfs_insert_hole_extent() to make it a little
+simpler to use, without the need to populate a local on-stack file
+extent item.
+
+The 4th patch makes compressed write path easier to read, without
+combining both compressed and uncompressed paths.
+
+The final one is to use st_blocks to estimate the data size, so the
+resulted fs image can be as small as possible.
+
+
+Qu Wenruo (5):
+  btrfs-progs: mkfs-tests: also test hole-deteciton without no-holes
+  btrfs-progs: mkfs-tests: add a test case to verify the content of
+    rootdir
+  btrfs-progs: implement the missing btrfs_insert_hole_extent()
+  btrfs-progs: mkfs/rootdir: extract compressed write path
+  btrfs-progs: mkfs/rootdir: use st_blocks for size estimation
+
+ Makefile                                      |   2 +-
+ kernel-shared/file-item.c                     |  17 ++
+ kernel-shared/file.c                          |   6 +-
+ mkfs/rootdir.c                                | 272 ++++++++++--------
+ tests/mkfs-tests/041-hole-detection/test.sh   |  48 ++--
+ tests/mkfs-tests/042-rootdir-contents/test.sh |  57 ++++
+ 6 files changed, 260 insertions(+), 142 deletions(-)
+ create mode 100755 tests/mkfs-tests/042-rootdir-contents/test.sh
+
+--
+2.53.0
+

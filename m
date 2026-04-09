@@ -1,54 +1,54 @@
 Received: from fout-b7-smtp.messagingengine.com (fout-b7-smtp.messagingengine.com [202.12.124.150])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BC65633E37D
-	for <linux-btrfs@vger.kernel.org>; Thu,  9 Apr 2026 17:49:10 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BB5683CB2D9
+	for <linux-btrfs@vger.kernel.org>; Thu,  9 Apr 2026 17:49:12 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.150
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775756952; cv=none; b=Z+1gs0GF9RxnGC5nz68UqiTH3str1vOrtxncKb8m/WX8WnJarFCLV3qVDia0jeu3O1r/l/Xeem9PwVRe1nd9aJEgclWestXaaNTm2F0Fe1t2denslxsOrim4jT0I3YNL0yvvmgpSB9MYzykEGCXfrMKmuZD5c+H20Eqbuo9ymvA=
+	t=1775756954; cv=none; b=lOtDs+dyvhvT23tWTdwcb49zOT/Wjkq6tvXxDDWN3OzW/xDMs/UnDmkBvQOo4cfTwuvlyJxXcUSUVtJhWUnMjzrZWdCNoSroMJCQY/vZWkxyjJLuZnGNOId+eMpy1NxPylmdVehY7oC1r+8Nuy4FJT0T9NiDjfogfUQvL+/IaXw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1775756952; c=relaxed/simple;
-	bh=OvwgEgdUSYVu8g9UKXDqYdC+wsQxxJdj2PJuXPAjx6M=;
+	s=arc-20240116; t=1775756954; c=relaxed/simple;
+	bh=3WlcKhdrF9GDPTYua5Y2LSCAMEFmnAYKs2pTfaKgECY=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=oW5QN1VcMu/cyANMYDJU5+ZIiSOHbdbOpxls+6e4Qrl+E/rvtkZ5ghY29ton26r920cCeMNHTlc/IwHVsjI8KBlSZu+DVTDgvd5kNg/49v7RB/oL2/KRzibb/Gd5zvKypmX5zB9rs+/A15rNKck1aRGy0THlXsLh08Nuj175ozM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=JzgUeAoo; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=ezxtGiho; arc=none smtp.client-ip=202.12.124.150
+	 MIME-Version; b=ncMZEpdzxijOb+iWJxvYvPHeuvqeu+2CMcH2i2bRKSl+cH6Hv6Ttm92Sxs9QU0AKxpfnglpI4LDX7+Hs31W8d7zeW0orAQefthBah08OK6fiiJlxUwH8TDPtziAA1T7BACqDR7oIQ8ONW8c6VOKSCE2gbG0S81j6cWYygmV7pXs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=Igszks1x; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=EWkdOjhh; arc=none smtp.client-ip=202.12.124.150
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="JzgUeAoo";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="ezxtGiho"
-Received: from phl-compute-02.internal (phl-compute-02.internal [10.202.2.42])
-	by mailfout.stl.internal (Postfix) with ESMTP id 0D38C1D000BC;
-	Thu,  9 Apr 2026 13:49:10 -0400 (EDT)
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="Igszks1x";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="EWkdOjhh"
+Received: from phl-compute-01.internal (phl-compute-01.internal [10.202.2.41])
+	by mailfout.stl.internal (Postfix) with ESMTP id 1CCBF1D000F5;
+	Thu,  9 Apr 2026 13:49:11 -0400 (EDT)
 Received: from phl-frontend-03 ([10.202.2.162])
-  by phl-compute-02.internal (MEProxy); Thu, 09 Apr 2026 13:49:10 -0400
+  by phl-compute-01.internal (MEProxy); Thu, 09 Apr 2026 13:49:12 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc
 	:content-transfer-encoding:content-type:date:date:from:from
 	:in-reply-to:in-reply-to:message-id:mime-version:references
-	:reply-to:subject:subject:to:to; s=fm3; t=1775756949; x=
-	1775843349; bh=+akPrqSn935AMQzXHqnGmnrYDuZwsZK91bd7rto8obQ=; b=J
-	zgUeAoozAekGby+TmAnqx/lEilrYaGCkOK2B42pGwtyqUeLmLd0SCt6mQmi71GlN
-	fIqo1/+xbhkDbJ2irIidWvtOsPrM3PgJw5qku82xHBGKNZ22H5VbHxRCRFTpmvLm
-	ew751ak23s5mQ1bdhe03KbnBXP70JiTn39BZQlGJOkGdiuVCxY10yDdWe7iCMaLk
-	spvKcv9ljsKYJdd6vWs4PTzE5aUtdjd7N3f5lsloT8pZd/WU6uxzOlR3Fu8b12mE
-	X43JmM6BEPtG6/xD7dvxNONyH7Gd9WiQj+pwCf3Dnu33tQBgJpACqDvUQVhsgUhF
-	oIsJVT1T1n/+xL+ATs0Cg==
+	:reply-to:subject:subject:to:to; s=fm3; t=1775756951; x=
+	1775843351; bh=go7qzjkTEJ2hPhLdhnwDEvQm07KoOIiCQZ1NPD+7Vyw=; b=I
+	gszks1xdQfvKvLKMCOo+57raz6qf5AgJOEKKyB/7pAfnTkYXJ6wvgeguGPnZt/pQ
+	3JzA/uIG5FYxf6AxCfneSU9g+o4sVj7p6HDMFbmEvRQgJoSYffN7K9wjPd+LIvgz
+	G62rme2mNktaSL3EIDsQA/yOYE7huYmB4Mk91bMEaCAv1WafJPtNS+saxMUoD4cA
+	oumuMjFZSaFva4ednapUQyFDKAp7MsH1isBMchsr+ijEJbF0AS7yvtXW4e/ymgDA
+	rkDEaAe2bxlVd9jdDVXtTdl/hIeeNSFrNDFSuzM0HShL3o3o/5P2zAyQJYamHxQs
+	6Czoj83FStk/2XIjDDPnw==
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
 	messagingengine.com; h=cc:content-transfer-encoding:content-type
 	:date:date:feedback-id:feedback-id:from:from:in-reply-to
 	:in-reply-to:message-id:mime-version:references:reply-to:subject
 	:subject:to:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=
-	fm2; t=1775756949; x=1775843349; bh=+akPrqSn935AMQzXHqnGmnrYDuZw
-	sZK91bd7rto8obQ=; b=ezxtGihofR45UdZ2oamnOQzUhO1Ayidl1zKXO3HmJMYV
-	vTrsNlSxfYB/9EY9Sn/4IDK7vWdFwcaXCgJsAHGI7izMgL4JlTXQZrMdieITchDp
-	8I0MN5tJ/+z5vH+jpvUhfL+t+XDw33ec7EQ9qeRbVHE306oHQNWuTGxL+k9enpXZ
-	W0uViFAXiyl6hbopRtZR4nIZHRdCzsBmWFM5KDdhU8ciBIMDetQjSXeWD49fnAag
-	1LloFJKOstLKLSQtzMoVP7H+yxe1C7Szy1Y0TP6rp1q5W1ckhqndK5eHvSyhNUzu
-	5pjT2ISbjS6P8JacsvSlRtirO4LHWS9d8XDOajKlSg==
-X-ME-Sender: <xms:lebXae28VdTegEVxafOAClm0IMnlYEmZbQbXAGaSfucZWzwmzJynaQ>
-    <xme:lebXaXH-TfliwDsu4ymjbQKlF4x7sLEoK8nsQC2fZ7I_JCdjqnrkJR5wxOPhwtQTf
-    LIejH-zjie1z7yCi2Qj-x3KRFwKjpucz3pR-nL0sMk2uqsqWqkwq00>
-X-ME-Received: <xmr:lebXaUjSQ_vaidZB0ujys909KUxWsyGYSqIWEL6_ajwQtSqvf-q9Ugp_frW_rWd74OgLzcor2zteN3UfRZL21-k1qLk>
+	fm2; t=1775756951; x=1775843351; bh=go7qzjkTEJ2hPhLdhnwDEvQm07Ko
+	OIiCQZ1NPD+7Vyw=; b=EWkdOjhhbbFfKWq3df9wvqldZfa5Kijrhl3BRHaUCBgy
+	O9ovD4nD7iGvTy87YuYxi7dBU01u9lKrMopD7YoXS9CwF3BNCRwR5odKyJlhuM2V
+	lyUp6zWK4uD/Zo2b476vBPpMR68qbsobCU7ndGpQenPpJA8ysVhR8PQnLMM1h3Zc
+	/CONVSslLShs7/iJvbYEItN2jcXAu0J28FvDf8mMPGVw8b9hu1y5BvPMUeT/LPdL
+	QA56hZy+Q2CJ7SyL3iX+eyHoyr8p+7/rJLogZSrU33Oh5NMKVzmK8BRwPIM5siKQ
+	wNg1mrjfLriOiiyF/eqI/SMtHSac9M1NhWR5/dfqLQ==
+X-ME-Sender: <xms:l-bXaU9yp68R-BQqJPdwMI3lZOD63VFhqy86fI1WgbC18Jaaj-dA5Q>
+    <xme:l-bXaStFZvYgD3PTLtBA5ipvW6ZKQuVHJCW_TfVk4fz3FwP25epM75uvzyd7TT2VA
+    PxsrzyNhaQzYA_a4psJwufbd2qFJrsKybxy_Tr8tzUIpzg6Ikb4T4M>
+X-ME-Received: <xmr:l-bXaXoLnQ0eT4rQltLraUOdsHosqQ-yvqkQrTn3O5glZCSkM14uRntEPY3Ou6qR8Ik3io_HzyiNesR5Ndfv8fYCK0w>
 X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefhedrtddtgddvjedufecutefuodetggdotefrod
     ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpuffrtefokffrpgfnqfghnecuuegr
     ihhlohhuthemuceftddtnecunecujfgurhephffvufffkffojghfggfgsedtkeertdertd
@@ -58,20 +58,20 @@ X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefhedrtddtgddvjedufecutefuodetgg
     lhhfrhhomhepsghorhhishessghurhdrihhopdhnsggprhgtphhtthhopedvpdhmohguvg
     epshhmthhpohhuthdprhgtphhtthhopehlihhnuhigqdgsthhrfhhssehvghgvrhdrkhgv
     rhhnvghlrdhorhhgpdhrtghpthhtohepkhgvrhhnvghlqdhtvggrmhesfhgsrdgtohhm
-X-ME-Proxy: <xmx:lebXaa-BB13VubdZNw25FEynelVyLRWoNO4e6MRT5PR_oE4CEB4jQA>
-    <xmx:lebXaTrvz5MJK7-LuhFB_UGWcEGNmqHhFAttpp7Qyx6v2qsXanPlgg>
-    <xmx:lebXaR_jhjNDEOzY1nZWkDoYiu_xdr4poFtvItBNnusDxU9_Ch8ASw>
-    <xmx:lebXafVApT4Uh0TyUxQVEnw-x2m4UOwXF8ueGrOE9sH_HZlUmpwtqA>
-    <xmx:lebXaYZcQBhonYjTU4n9Y9M3UEaw-ZEmyGhl0WsUU9WJ77E3xYSRYFAI>
+X-ME-Proxy: <xmx:l-bXafnHf2ydk-ZiMXdhlJ45LyjXfNIIWFWq6WNKDJNbWkSAe3MVOg>
+    <xmx:l-bXabxYZDGwJ9dJRCuFH516z2yrTtg2ED873v_oFSKVwwvQ7-0JvA>
+    <xmx:l-bXaXmbWqJTQul-6uJM22QX7enEta-u5nOH2lYVwDubY0gLpyEEBA>
+    <xmx:l-bXaUebY6VNd7p6hzviS-BDEc4pAwwYQRwAWFV47muQs9YgKH7H1Q>
+    <xmx:l-bXaQivoVkFEOvJMn5dOQrhEIi3dJNoFwZt5uJZAoheIDNhU5N_DW8I>
 Feedback-ID: i083147f8:Fastmail
 Received: by mail.messagingengine.com (Postfix) with ESMTPA; Thu,
- 9 Apr 2026 13:49:09 -0400 (EDT)
+ 9 Apr 2026 13:49:11 -0400 (EDT)
 From: Boris Burkov <boris@bur.io>
 To: linux-btrfs@vger.kernel.org,
 	kernel-team@fb.com
-Subject: [PATCH v4 3/4] btrfs: make inode->outstanding_extents a u64
-Date: Thu,  9 Apr 2026 10:48:50 -0700
-Message-ID: <fab916144bcfc974c3231ac9dbd57e28faa02a28.1775756790.git.boris@bur.io>
+Subject: [PATCH v4 4/4] btrfs: cap shrink_delalloc iterations to 128M
+Date: Thu,  9 Apr 2026 10:48:51 -0700
+Message-ID: <b990d13d17d8f6eeb341457801fdaabdf123f8e3.1775756790.git.boris@bur.io>
 X-Mailer: git-send-email 2.53.0
 In-Reply-To: <cover.1775756789.git.boris@bur.io>
 References: <cover.1775756789.git.boris@bur.io>
@@ -83,343 +83,138 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-The maximum file size is MAX_LFS_FILESIZE = (loff_t)LLONG_MAX
+Even with more accurate delayed_refs reservations, preemptive reclaim is
+not perfect and we might generate tickets, especially in cases with a
+very large flood of writeback outstanding.
 
-As a result, the max extent size computation in btrfs has always been
-bounded above by LLONG_MAX / 128MiB, which is ~ 2^63 / 2^27. This has
-never fit in a u32. With the recent changes to also divide by 128KiB in
-compressed cases, that bound is even higher. Whether or not it is likely
-to happen, I think it is nice to try to capture the intent in the types,
-so change outstanding_extents to u64, and make mod_outstanding_extents
-try to capture some expectations around the size of its inputs.
+Ultimately, if we do get into a situation with tickets pending and async
+reclaim blocking the system, we want to try to make as much progress as
+quickly as possible to unblock tasks. We want space reclaim to be
+effective, and to have a good chance at making progress, but not to
+block arbitrarily as this leads to untenable syscall latencies, long
+commits, and even hung task warnings.
+
+I traced such cases of heavy writeback async reclaim hung tasks and
+observed that we were blocking for long periods of time in
+shrink_delalloc(). This was particularly bad when doing writeback of
+incompressible data with the compress-force mount option.
+
+e.g.
+dd if=/dev/urandom of=urandom.seed bs=1G count=1
+dd if=urandom.seed of=urandom.big bs=1G count=300
+
+shrink_delalloc() computes to_reclaim as delalloc_bytes >> 3. With
+hundreds of gigs of delalloc (again imagine a large dirty_ratio and lots
+of ram), this is still 10-20+ GiB. Particularly in the wait phases, this
+can be quite slow, and generates even more delayed-refs as mentioned in
+the previous patch, so it doesn't even help that much with the immediate
+space shortfall.
+
+We do satisfy some tickets, but we are ultimately keep the system in
+essentially the same state, and with long stalling reclaim calls into
+shrink_delalloc().
+
+It would be much better to start some good chunk of I/O and also to work
+through the new delayed_refs and keep things moving through the system
+while releasing the conservative over-estimated metadata reservations.
+
+To acheive this, tighten up the delalloc work to be in units of the
+maximum extent size. If we issue 128MiB of delalloc, we don't leave too
+much (any?) extent merging on the table, but don't ever block on
+pathological 10GiB+ chunks of delalloc. If we do detect that we
+satisfied a ticket, break out of shrink_delalloc() and run some of the
+new delayed_refs as well before going again. This way we strike a nice
+balance of making delalloc progress, but not at the cost of every other
+sort of reservation, as they all feed into each other.
+
+This means iterating over to_reclaim by 128MiB at a time until it is
+drained or we satisfy a ticket, rather than trying 3 times to do the
+whole thing.
 
 Reviewed-by: Filipe Manana <fdmanana@suse.com>
 Signed-off-by: Boris Burkov <boris@bur.io>
 ---
- fs/btrfs/btrfs_inode.h       | 18 ++++++++++++++----
- fs/btrfs/delalloc-space.c    | 19 +++++++++----------
- fs/btrfs/inode.c             | 14 +++++++-------
- fs/btrfs/ordered-data.c      |  4 ++--
- fs/btrfs/tests/inode-tests.c | 18 +++++++++---------
- include/trace/events/btrfs.h |  8 ++++----
- 6 files changed, 45 insertions(+), 36 deletions(-)
+ fs/btrfs/space-info.c | 31 ++++++++++++++++++++-----------
+ 1 file changed, 20 insertions(+), 11 deletions(-)
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 5368ef87b41a..0d48f67eb5c7 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -180,7 +180,7 @@ struct btrfs_inode {
- 	 * items we think we'll end up using, and reserved_extents is the number
- 	 * of extent items we've reserved metadata for. Protected by 'lock'.
- 	 */
--	unsigned outstanding_extents;
-+	u64 outstanding_extents;
+diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
+index f0436eea1544..e931deb3d013 100644
+--- a/fs/btrfs/space-info.c
++++ b/fs/btrfs/space-info.c
+@@ -725,9 +725,8 @@ static void shrink_delalloc(struct btrfs_space_info *space_info,
+ 	struct btrfs_trans_handle *trans;
+ 	u64 delalloc_bytes;
+ 	u64 ordered_bytes;
+-	u64 items;
+ 	long time_left;
+-	int loops;
++	u64 orig_tickets_id;
  
- 	/* used to order data wrt metadata */
- 	spinlock_t ordered_tree_lock;
-@@ -429,14 +429,24 @@ static inline bool is_data_inode(const struct btrfs_inode *inode)
- }
- 
- static inline void btrfs_mod_outstanding_extents(struct btrfs_inode *inode,
--						 int mod)
-+						 int mod, u64 nr_extents)
- {
-+	s64 delta = mod * (s64)nr_extents;
-+
- 	lockdep_assert_held(&inode->lock);
--	inode->outstanding_extents += mod;
-+	ASSERT(mod == 1 || mod == -1, "mod=%d", mod);
-+	ASSERT(nr_extents <= S64_MAX, "nr_extents=%llu", nr_extents);
-+	ASSERT(mod == -1 || inode->outstanding_extents <= U64_MAX - nr_extents,
-+	       "nr_extents=%llu, inode->outstanding_extents=%llu",
-+	       nr_extents, inode->outstanding_extents);
-+	ASSERT(mod == 1 || inode->outstanding_extents >= nr_extents,
-+	       "nr_extents=%llu, inode->outstanding_extents=%llu",
-+	       nr_extents, inode->outstanding_extents);
-+	inode->outstanding_extents += delta;
- 	if (btrfs_is_free_space_inode(inode))
- 		return;
- 	trace_btrfs_inode_mod_outstanding_extents(inode->root, btrfs_ino(inode),
--						  mod, inode->outstanding_extents);
-+						  delta, inode->outstanding_extents);
- }
- 
- /*
-diff --git a/fs/btrfs/delalloc-space.c b/fs/btrfs/delalloc-space.c
-index 609ec75884cd..31b33db8afe5 100644
---- a/fs/btrfs/delalloc-space.c
-+++ b/fs/btrfs/delalloc-space.c
-@@ -284,7 +284,7 @@ static void btrfs_calculate_inode_block_rsv_size(struct btrfs_fs_info *fs_info,
- 	struct btrfs_block_rsv *block_rsv = &inode->block_rsv;
- 	u64 reserve_size = 0;
- 	u64 qgroup_rsv_size = 0;
--	unsigned outstanding_extents;
-+	u64 outstanding_extents;
- 
- 	lockdep_assert_held(&inode->lock);
- 	outstanding_extents = inode->outstanding_extents;
-@@ -311,7 +311,7 @@ static void btrfs_calculate_inode_block_rsv_size(struct btrfs_fs_info *fs_info,
- 	 *
- 	 * This is overestimating in most cases.
- 	 */
--	qgroup_rsv_size = (u64)outstanding_extents * fs_info->nodesize;
-+	qgroup_rsv_size = outstanding_extents * fs_info->nodesize;
- 
- 	spin_lock(&block_rsv->lock);
- 	block_rsv->size = reserve_size;
-@@ -371,7 +371,7 @@ int btrfs_delalloc_reserve_metadata(struct btrfs_inode *inode, u64 num_bytes,
- 	struct btrfs_fs_info *fs_info = root->fs_info;
- 	struct btrfs_block_rsv *block_rsv = &inode->block_rsv;
- 	u64 meta_reserve, qgroup_reserve;
--	unsigned nr_extents;
-+	u64 nr_extents;
- 	enum btrfs_reserve_flush_enum flush = BTRFS_RESERVE_FLUSH_ALL;
- 	int ret = 0;
- 
-@@ -425,7 +425,7 @@ int btrfs_delalloc_reserve_metadata(struct btrfs_inode *inode, u64 num_bytes,
- 	 */
- 	nr_extents = btrfs_inode_max_extents(inode, num_bytes);
- 	spin_lock(&inode->lock);
--	btrfs_mod_outstanding_extents(inode, nr_extents);
-+	btrfs_mod_outstanding_extents(inode, 1, nr_extents);
- 	if (!(inode->flags & BTRFS_INODE_NODATASUM))
- 		inode->csum_bytes += disk_num_bytes;
- 	btrfs_calculate_inode_block_rsv_size(fs_info, inode);
-@@ -487,11 +487,11 @@ void btrfs_delalloc_release_metadata(struct btrfs_inode *inode, u64 num_bytes,
- void btrfs_delalloc_release_extents(struct btrfs_inode *inode, u64 num_bytes)
- {
- 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
--	unsigned num_extents;
-+	u64 num_extents;
- 
- 	spin_lock(&inode->lock);
- 	num_extents = btrfs_inode_max_extents(inode, num_bytes);
--	btrfs_mod_outstanding_extents(inode, -num_extents);
-+	btrfs_mod_outstanding_extents(inode, -1, num_extents);
- 	btrfs_calculate_inode_block_rsv_size(fs_info, inode);
- 	spin_unlock(&inode->lock);
- 
-@@ -505,16 +505,15 @@ void btrfs_delalloc_release_extents(struct btrfs_inode *inode, u64 num_bytes)
- void btrfs_delalloc_shrink_extents(struct btrfs_inode *inode, u64 reserved_len, u64 new_len)
- {
- 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
--	const u32 reserved_num_extents = btrfs_inode_max_extents(inode, reserved_len);
--	const u32 new_num_extents = btrfs_inode_max_extents(inode, new_len);
--	const int diff_num_extents = new_num_extents - reserved_num_extents;
-+	const u64 reserved_num_extents = btrfs_inode_max_extents(inode, reserved_len);
-+	const u64 new_num_extents = btrfs_inode_max_extents(inode, new_len);
- 
- 	ASSERT(new_len <= reserved_len);
- 	if (new_num_extents == reserved_num_extents)
+ 	delalloc_bytes = percpu_counter_sum_positive(&fs_info->delalloc_bytes);
+ 	ordered_bytes = percpu_counter_sum_positive(&fs_info->ordered_bytes);
+@@ -735,9 +734,7 @@ static void shrink_delalloc(struct btrfs_space_info *space_info,
  		return;
  
- 	spin_lock(&inode->lock);
--	btrfs_mod_outstanding_extents(inode, diff_num_extents);
-+	btrfs_mod_outstanding_extents(inode, -1, reserved_num_extents - new_num_extents);
- 	btrfs_calculate_inode_block_rsv_size(fs_info, inode);
- 	spin_unlock(&inode->lock);
- 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 55255f3794c6..b45a92cfe94e 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2536,7 +2536,7 @@ void btrfs_split_delalloc_extent(struct btrfs_inode *inode,
- 	}
- 
- 	spin_lock(&inode->lock);
--	btrfs_mod_outstanding_extents(inode, 1);
-+	btrfs_mod_outstanding_extents(inode, 1, 1);
- 	spin_unlock(&inode->lock);
- }
- 
-@@ -2566,7 +2566,7 @@ void btrfs_merge_delalloc_extent(struct btrfs_inode *inode, struct extent_state
- 	/* we're not bigger than the max, unreserve the space and go */
- 	if (new_size <= max_extent_size) {
- 		spin_lock(&inode->lock);
--		btrfs_mod_outstanding_extents(inode, -1);
-+		btrfs_mod_outstanding_extents(inode, -1, 1);
- 		spin_unlock(&inode->lock);
- 		return;
- 	}
-@@ -2597,7 +2597,7 @@ void btrfs_merge_delalloc_extent(struct btrfs_inode *inode, struct extent_state
- 		return;
- 
- 	spin_lock(&inode->lock);
--	btrfs_mod_outstanding_extents(inode, -1);
-+	btrfs_mod_outstanding_extents(inode, -1, 1);
- 	spin_unlock(&inode->lock);
- }
- 
-@@ -2666,10 +2666,10 @@ void btrfs_set_delalloc_extent(struct btrfs_inode *inode, struct extent_state *s
- 	if (!(state->state & EXTENT_DELALLOC) && (bits & EXTENT_DELALLOC)) {
- 		u64 len = state->end + 1 - state->start;
- 		u64 prev_delalloc_bytes;
--		u32 num_extents = btrfs_inode_max_extents(inode, len);
-+		u64 num_extents = btrfs_inode_max_extents(inode, len);
- 
- 		spin_lock(&inode->lock);
--		btrfs_mod_outstanding_extents(inode, num_extents);
-+		btrfs_mod_outstanding_extents(inode, 1, num_extents);
- 		spin_unlock(&inode->lock);
- 
- 		/* For sanity tests */
-@@ -2712,7 +2712,7 @@ void btrfs_clear_delalloc_extent(struct btrfs_inode *inode,
- {
- 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
- 	u64 len = state->end + 1 - state->start;
--	u32 num_extents = btrfs_inode_max_extents(inode, len);
-+	u64 num_extents = btrfs_inode_max_extents(inode, len);
- 
- 	lockdep_assert_held(&inode->io_tree.lock);
- 
-@@ -2732,7 +2732,7 @@ void btrfs_clear_delalloc_extent(struct btrfs_inode *inode,
- 		u64 new_delalloc_bytes;
- 
- 		spin_lock(&inode->lock);
--		btrfs_mod_outstanding_extents(inode, -num_extents);
-+		btrfs_mod_outstanding_extents(inode, -1, num_extents);
- 		spin_unlock(&inode->lock);
- 
+ 	/* Calc the number of the pages we need flush for space reservation */
+-	if (to_reclaim == U64_MAX) {
+-		items = U64_MAX;
+-	} else {
++	if (to_reclaim != U64_MAX) {
  		/*
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index e5a24b3ff95e..96ee8ebfdb92 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -223,7 +223,7 @@ static struct btrfs_ordered_extent *alloc_ordered_extent(
- 	 * smallest the extent is going to get.
- 	 */
- 	spin_lock(&inode->lock);
--	btrfs_mod_outstanding_extents(inode, 1);
-+	btrfs_mod_outstanding_extents(inode, 1, 1);
- 	spin_unlock(&inode->lock);
+ 		 * to_reclaim is set to however much metadata we need to
+ 		 * reclaim, but reclaiming that much data doesn't really track
+@@ -751,7 +748,6 @@ static void shrink_delalloc(struct btrfs_space_info *space_info,
+ 		 * aggressive.
+ 		 */
+ 		to_reclaim = max(to_reclaim, delalloc_bytes >> 3);
+-		items = calc_reclaim_items_nr(fs_info, to_reclaim) * 2;
+ 	}
  
- out:
-@@ -655,7 +655,7 @@ void btrfs_remove_ordered_extent(struct btrfs_ordered_extent *entry)
- 	btrfs_lockdep_acquire(fs_info, btrfs_trans_pending_ordered);
- 	/* This is paired with alloc_ordered_extent(). */
- 	spin_lock(&btrfs_inode->lock);
--	btrfs_mod_outstanding_extents(btrfs_inode, -1);
-+	btrfs_mod_outstanding_extents(btrfs_inode, -1, 1);
- 	spin_unlock(&btrfs_inode->lock);
- 	if (root != fs_info->tree_root) {
- 		u64 release;
-diff --git a/fs/btrfs/tests/inode-tests.c b/fs/btrfs/tests/inode-tests.c
-index b04fbcaf0a1d..e63afbb9be2b 100644
---- a/fs/btrfs/tests/inode-tests.c
-+++ b/fs/btrfs/tests/inode-tests.c
-@@ -931,7 +931,7 @@ static int test_extent_accounting(u32 sectorsize, u32 nodesize)
- 	}
- 	if (BTRFS_I(inode)->outstanding_extents != 1) {
- 		ret = -EINVAL;
--		test_err("miscount, wanted 1, got %u",
-+		test_err("miscount, wanted 1, got %llu",
- 			 BTRFS_I(inode)->outstanding_extents);
- 		goto out;
- 	}
-@@ -946,7 +946,7 @@ static int test_extent_accounting(u32 sectorsize, u32 nodesize)
- 	}
- 	if (BTRFS_I(inode)->outstanding_extents != 2) {
- 		ret = -EINVAL;
--		test_err("miscount, wanted 2, got %u",
-+		test_err("miscount, wanted 2, got %llu",
- 			 BTRFS_I(inode)->outstanding_extents);
- 		goto out;
- 	}
-@@ -962,7 +962,7 @@ static int test_extent_accounting(u32 sectorsize, u32 nodesize)
- 	}
- 	if (BTRFS_I(inode)->outstanding_extents != 2) {
- 		ret = -EINVAL;
--		test_err("miscount, wanted 2, got %u",
-+		test_err("miscount, wanted 2, got %llu",
- 			 BTRFS_I(inode)->outstanding_extents);
- 		goto out;
- 	}
-@@ -978,7 +978,7 @@ static int test_extent_accounting(u32 sectorsize, u32 nodesize)
- 	}
- 	if (BTRFS_I(inode)->outstanding_extents != 2) {
- 		ret = -EINVAL;
--		test_err("miscount, wanted 2, got %u",
-+		test_err("miscount, wanted 2, got %llu",
- 			 BTRFS_I(inode)->outstanding_extents);
- 		goto out;
- 	}
-@@ -996,7 +996,7 @@ static int test_extent_accounting(u32 sectorsize, u32 nodesize)
- 	}
- 	if (BTRFS_I(inode)->outstanding_extents != 4) {
- 		ret = -EINVAL;
--		test_err("miscount, wanted 4, got %u",
-+		test_err("miscount, wanted 4, got %llu",
- 			 BTRFS_I(inode)->outstanding_extents);
- 		goto out;
- 	}
-@@ -1013,7 +1013,7 @@ static int test_extent_accounting(u32 sectorsize, u32 nodesize)
- 	}
- 	if (BTRFS_I(inode)->outstanding_extents != 3) {
- 		ret = -EINVAL;
--		test_err("miscount, wanted 3, got %u",
-+		test_err("miscount, wanted 3, got %llu",
- 			 BTRFS_I(inode)->outstanding_extents);
- 		goto out;
- 	}
-@@ -1029,7 +1029,7 @@ static int test_extent_accounting(u32 sectorsize, u32 nodesize)
- 	}
- 	if (BTRFS_I(inode)->outstanding_extents != 4) {
- 		ret = -EINVAL;
--		test_err("miscount, wanted 4, got %u",
-+		test_err("miscount, wanted 4, got %llu",
- 			 BTRFS_I(inode)->outstanding_extents);
- 		goto out;
- 	}
-@@ -1047,7 +1047,7 @@ static int test_extent_accounting(u32 sectorsize, u32 nodesize)
- 	}
- 	if (BTRFS_I(inode)->outstanding_extents != 3) {
- 		ret = -EINVAL;
--		test_err("miscount, wanted 3, got %u",
-+		test_err("miscount, wanted 3, got %llu",
- 			 BTRFS_I(inode)->outstanding_extents);
- 		goto out;
- 	}
-@@ -1061,7 +1061,7 @@ static int test_extent_accounting(u32 sectorsize, u32 nodesize)
- 	}
- 	if (BTRFS_I(inode)->outstanding_extents) {
- 		ret = -EINVAL;
--		test_err("miscount, wanted 0, got %u",
-+		test_err("miscount, wanted 0, got %llu",
- 			 BTRFS_I(inode)->outstanding_extents);
- 		goto out;
- 	}
-diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index 8ad7a2d76c1d..caabdc8d9eed 100644
---- a/include/trace/events/btrfs.h
-+++ b/include/trace/events/btrfs.h
-@@ -2003,15 +2003,15 @@ DEFINE_EVENT(btrfs__prelim_ref, btrfs_prelim_ref_insert,
- );
+ 	trans = current->journal_info;
+@@ -764,10 +760,14 @@ static void shrink_delalloc(struct btrfs_space_info *space_info,
+ 	if (ordered_bytes > delalloc_bytes && !for_preempt)
+ 		wait_ordered = true;
  
- TRACE_EVENT(btrfs_inode_mod_outstanding_extents,
--	TP_PROTO(const struct btrfs_root *root, u64 ino, int mod, unsigned outstanding),
-+	TP_PROTO(const struct btrfs_root *root, u64 ino, s64 mod, u64 outstanding),
+-	loops = 0;
+-	while ((delalloc_bytes || ordered_bytes) && loops < 3) {
+-		u64 temp = min(delalloc_bytes, to_reclaim) >> PAGE_SHIFT;
+-		long nr_pages = min_t(u64, temp, LONG_MAX);
++	spin_lock(&space_info->lock);
++	orig_tickets_id = space_info->tickets_id;
++	spin_unlock(&space_info->lock);
++
++	while ((delalloc_bytes || ordered_bytes) && to_reclaim) {
++		u64 iter_reclaim = min_t(u64, to_reclaim, SZ_128M);
++		long nr_pages = min_t(u64, delalloc_bytes, iter_reclaim) >> PAGE_SHIFT;
++		u64 items = calc_reclaim_items_nr(fs_info, iter_reclaim) * 2;
+ 		int async_pages;
  
- 	TP_ARGS(root, ino, mod, outstanding),
+ 		btrfs_start_delalloc_roots(fs_info, nr_pages, true);
+@@ -811,7 +811,7 @@ static void shrink_delalloc(struct btrfs_space_info *space_info,
+ 			   atomic_read(&fs_info->async_delalloc_pages) <=
+ 			   async_pages);
+ skip_async:
+-		loops++;
++		to_reclaim -= iter_reclaim;
+ 		if (wait_ordered && !trans) {
+ 			btrfs_wait_ordered_roots(fs_info, items, NULL);
+ 		} else {
+@@ -834,6 +834,15 @@ static void shrink_delalloc(struct btrfs_space_info *space_info,
+ 			spin_unlock(&space_info->lock);
+ 			break;
+ 		}
++		/*
++		 * If a ticket was satisfied since we started, break out
++		 * so the async reclaim state machine can process delayed
++		 * refs before we flush more delalloc.
++		 */
++		if (space_info->tickets_id != orig_tickets_id) {
++			spin_unlock(&space_info->lock);
++			break;
++		}
+ 		spin_unlock(&space_info->lock);
  
- 	TP_STRUCT__entry_btrfs(
- 		__field(	u64, root_objectid	)
- 		__field(	u64, ino		)
--		__field(	int, mod		)
--		__field(	unsigned, outstanding	)
-+		__field(	s64, mod		)
-+		__field(	u64, outstanding	)
- 	),
- 
- 	TP_fast_assign_btrfs(root->fs_info,
-@@ -2021,7 +2021,7 @@ TRACE_EVENT(btrfs_inode_mod_outstanding_extents,
- 		__entry->outstanding    = outstanding;
- 	),
- 
--	TP_printk_btrfs("root=%llu(%s) ino=%llu mod=%d outstanding=%u",
-+	TP_printk_btrfs("root=%llu(%s) ino=%llu mod=%lld outstanding=%llu",
- 			show_root_type(__entry->root_objectid),
- 			__entry->ino, __entry->mod, __entry->outstanding)
- );
+ 		delalloc_bytes = percpu_counter_sum_positive(
 -- 
 2.53.0
 

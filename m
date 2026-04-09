@@ -1,117 +1,157 @@
-Received: from mail-ed1-f49.google.com (mail-ed1-f49.google.com [209.85.208.49])
+Received: from mail-pg1-f176.google.com (mail-pg1-f176.google.com [209.85.215.176])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7E527377575
-	for <linux-btrfs@vger.kernel.org>; Thu,  9 Apr 2026 08:01:30 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.208.49
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775721691; cv=pass; b=NHNWjY4yQrspixoMdBB61/FJ64dg/2YSsSK9o17GpCD75phaYhJlfPCOEViPnKK3lKnG9ptQ4S5Caqw9VKwgYNibToIcuXQqNyw8XzwpUvyVWfzavppiWaP+93mSOEJL0prv0lGxo77MRgguekHr4P0URtC47Od7MAfRuwGaTPc=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1775721691; c=relaxed/simple;
-	bh=9I5XxOuwn9ECzKCMU6ZiC4RaY9IIFkAheHNxEyhjb3c=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=BGqVId/8UReze/IaNwakGWR5BIuXWkvBJKFSTemWnaxhy5XjUH0dG7zOJqQ62ujvYe5AaobAiUgdRMyMu6mUhEOcYJ4dzQzbvrsG3RDtBl0eGw5v0FvUWsSRVC1iD4nDHNb6eKlqvlFxnrjJD6XMIWvkYZezc/Wdw1c1VYTVqQI=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=FQo/48GN; arc=pass smtp.client-ip=209.85.208.49
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 157183859C0
+	for <linux-btrfs@vger.kernel.org>; Thu,  9 Apr 2026 08:11:56 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.215.176
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1775722318; cv=none; b=NDhqtBOM0nSs9/w+iAZ4jXYWp/DsRjkOC229aOluSG3R0PgHXdEAr76X9hXc3fuXw8ifmcdbs+g1DEKhO749bIQhi/nJWBfUUQMiXUxm4OfIFH4+gmszQdgRL1YXLhw2rKax5nC1MIJvn9Fk1J2ccHvaNO09gZt8sxeVNwYUChI=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1775722318; c=relaxed/simple;
+	bh=4FmYzVSLwZ4TOjkqmnh54MQ8cMq8i1uy4Ite11pD2oU=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=ogCkBeIS06hbyMh8wmiwkVuuZvUw0suU5YUv7zJm2UGrYAVA1Ktra4zc097sleUArdztpUqEvO2WVS5ynuX8GHSi2BYXs1WhiVL/YQdu5wFGVvocLjuUal1dDCTYvCZhTGxfkprGLyXq0DkL3jjjcihnqvHAEetO3ZxiVf+6Ajk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=HfEOEJ0L; arc=none smtp.client-ip=209.85.215.176
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="FQo/48GN"
-Received: by mail-ed1-f49.google.com with SMTP id 4fb4d7f45d1cf-66f727d6849so748681a12.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 09 Apr 2026 01:01:30 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1775721689; cv=none;
-        d=google.com; s=arc-20240605;
-        b=fSAgQ38MCqlxLzS9guXHbGMtSPMyUhb5B4JqGDxVYqouYNaGNL8FQzpLC++1xytOTl
-         lBV1+11tAVgB9ZoE271ehDOzag7GhuBuLEmMZfqlJu7FRrImq7wm2ASKwtJViyEE3muk
-         gMK4husM+P2BC/hAU0+xkRmcT5NBFkzDgMZH1CYtzlavaCJH2sHSJanP9+D/yLw7yNlA
-         1MpRGLPRgjdmDIYSw8/pLApdWvji76Vf/jwXSF0jpuOn8j6yBDnIu+K6+W8jW/QxxaFb
-         GJCGG7wNSZxFgAsL7htJ7egkB2J6a44oIRZgTXZiYvUifY5KUepg7kh8n+836mSl8O1c
-         GJDg==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:dkim-signature;
-        bh=7RRgK1Vs+AT24AP1cRKsejMe6fZBGGT3wKp4RehfJOw=;
-        fh=zxO5h8+B2IX8c0jxymfI9p6i9bu22qgNwpcrX4dqPDk=;
-        b=f2v/uz+jzaounEW0vO9G3t2VbgSzUXCRxaGKP7Qc4tT51wMJ/2TjrNwn4IN3IM8mEK
-         uG7EV4ZqbGeGfLDShWwib3E+22kJYxYdgiGSy5xKhSDOe5+pyG/5yJG51voRzAX//dsI
-         3BdyrRTBHi2/sVe1qLXZHPfKLb/34+hf/kUCE5MsGRK4AEOD97EYVVj4c3CGb2OpfPRL
-         F1Si1jQ553F/Pcw9lc43QF8JRMAoZwPk8fYlMcScT+MsCRRUdMj5t4K5dd14HtaC/sJj
-         YJvzbX9g+2qGqdzXUfvTQ9SzCeW5iOG1B3eK7CzMrW8V71AvkoSobfZXtKD7epgJURNq
-         dhAA==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="HfEOEJ0L"
+Received: by mail-pg1-f176.google.com with SMTP id 41be03b00d2f7-c74f0c3fc16so239040a12.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 09 Apr 2026 01:11:56 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1775721689; x=1776326489; darn=vger.kernel.org;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=7RRgK1Vs+AT24AP1cRKsejMe6fZBGGT3wKp4RehfJOw=;
-        b=FQo/48GNUMuwsWo9BP+hCXXvwBPvcNzfwIzffmgw5rluc21igyMNt1DAdseMMzfSg5
-         X6fxMptHSpJopx9dE71OTDiXxsyVWP35K7LjzC5K1Fzgqr1YA9pIVsNbr2gFVTwNW8Ud
-         u+JzktV6FSQ0QzRmL3Fes1bhNACNA/g85YmDBmj0Wb3T2+KXNDQwieDeS+O81sFPqpGy
-         eSjTtgDXyc2z3NYVFRvX1HAB4qhwYS5ZJvVAr1vco6rKm6EWlJUjB181gLROJ0ZhcHlt
-         /mbI2HFS3Qb8seidvivwH5OLmcr137bhQq0LkNjPhUhY5/JSCC9HI3goSlGn/ChRr5cj
-         SeNw==
+        d=gmail.com; s=20251104; t=1775722316; x=1776327116; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to;
+        bh=4nsehLI9jIB2pvtAUMLCIGtoJBjqHEt2917WeRtwqXk=;
+        b=HfEOEJ0L5kpWcGo/ia96LqjbvwlwVEfUjvP1k4gBLNUCmT0tpV00CzEIvnf+SiKhMe
+         3bkTWDF3bQYPCefcOAm511jaEu4Zj/731W76M0/8Lf/F9vH3eekTLbQkGduAlF10gfBy
+         swyyE3AQVzlsCi3SpbRBVhj7KaCDwQ+dmiS0Dy1KKIXwxAkgbzQFV+01ydT3k3Erh0AQ
+         8aNGF2fvRXV3WsebAKg8BitR7FMmxbBUbpcRJ7otvhbf4N6GjRuZynNNjBUCQf/Wfnf6
+         sN97cKtGptS7ms/4H9JEmCVrsMztobo1H5KOTWa0oDeWNcpas4pzYk6igJiKi8k+9hgp
+         oArg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1775721689; x=1776326489;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-gg:x-gm-message-state:from
-         :to:cc:subject:date:message-id:reply-to;
-        bh=7RRgK1Vs+AT24AP1cRKsejMe6fZBGGT3wKp4RehfJOw=;
-        b=eM7RUbBViY5XNUKZ0ZDyaUF1/mbVT712KscKVtZj+5XtyOmO4Al50d5gj5ZYjlBByK
-         7dftfm1sKGN5JgTpSQqBfdPF5PHAnSnFmXAyUYyriWtVdLqH3f/iqsdO8AO8a4y7Etvh
-         GMqGLfE5MLu7nkApJtQVUq7fqGSlSmCc9+gGkslhePXpONZ+ip/Fc4R+Xz/YdjGYzvXn
-         XRBHEXRX7joJTxjDN6XZG0zmO89J4ftdzaxRvsSiwMTA159MCsc/3aZizIEtKS8lTL2e
-         tMpAmryZ2hNhRVEavgZeHqnI/UtzQQfzuzIiS82qfKFJNXXBv6ZDGMwrsot8LmAjpdPT
-         SU1Q==
-X-Forwarded-Encrypted: i=1; AJvYcCWEmIzCEoros7CTJD2GiNiyqhs9FJK1kYXd8SVWax0eITOy+wDbu21wZQo0z+JoMWQ2CT/0escLFSn9+A==@vger.kernel.org
-X-Gm-Message-State: AOJu0YxIaERL4MXwps0rVdPSVDZMW1iYeacRPwYWKFCXNzCNFU8lv6GV
-	zvB5QvUzDxfcW1fqFXeVSwnyf5cuMJt8zlfnrkoH1zC+GWCLdTMitZZ3QcUMutrh2DXOak1cmut
-	1W9Zfvtb0+/phWDSl4ybo6jthyQY0Cgk=
-X-Gm-Gg: AeBDiesE0CKts+SJTMW8ccDQhcqgs0g9Hjyel4gTsiZcmXAKYLXHnKFk6jbnbJGPdCA
-	qg+Z7XnEtsrESPCHrkl4YYjlR9nDIHCwA5FhaSooouvXljTg2bY87ldLIouLLhrHth7pQvMGPoo
-	QikkCWzissAhABFwqlqLMrLWNnnuy0Dq+imD1r2qHZ8Yu8Wv4Hchjui44tBPU5biRqjZSo7VNkX
-	38uqgTpFcsQYjC0nIYM2VG+GNPAuKnPtzsvK5YLsHxkUn6Olu8GX7uTgViGHPRZ7RSUC7FuGAj8
-	VjJ0PF7gT8XLS0sS5ndYyIE/yCiqRQ5WxRpkfQ47Gbc8RTYh2rfMwLk=
-X-Received: by 2002:a05:6402:158e:b0:66e:56a6:fed3 with SMTP id
- 4fb4d7f45d1cf-670040e8328mr1238451a12.9.1775721688411; Thu, 09 Apr 2026
- 01:01:28 -0700 (PDT)
+        d=1e100.net; s=20251104; t=1775722316; x=1776327116;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=4nsehLI9jIB2pvtAUMLCIGtoJBjqHEt2917WeRtwqXk=;
+        b=T5pwZHytj4DbPzc4m+70T6Rq6f7F5C0fasfc5UFIMn++tymVoaRTKgxvj4GZEspQJt
+         3DrrShdk5OkiNwJaQvDmGIQlPvl18DEuo/DORwqU00w4eN0jqT64Nh1LsLDgS+hVRk6k
+         h4U4YwPVCNTu7WEFc5mc1BIxhAqhOO0qa6aYvH6XEMzslg01ADiubiqIFcM9TsLFC+BX
+         xt7+mJJLLdhlrm9U/4sTRJFqqXj7ahyCS9ir9fbV2RdO+DWvZa5gnKwaZp3VB6hUeCL3
+         pu1cmbv11qiJiojfsmJRQfSDlPyVoROENj1J8FA1rjYJJOZsbfnSgB5krJub4NyQYLt0
+         PmRQ==
+X-Gm-Message-State: AOJu0YzQ/qxQG0LJyUgxw2AJawWomAU+CMkbgPnNEkvSUakANfIDKIAb
+	DNIyIXMV38SpuzeaA8JThu9FUfnrc/csh3zInqRt5tCGeqs41x/nxJ/r
+X-Gm-Gg: AeBDietv0BEGj1wHpc4Z5kB6vt0pnnFxPkBtvajKinxllooXoFGqAiBaZpnNzGzTunU
+	qDoPBNntMt/03r58vNluIquB99y5tCsCJ/7qmBKPuRCSBgbJ5E8N1Wl80yLIFQ/+2cHhfL+DcD0
+	M1LReEuZ3ycmVTld/IC+zPcID/EjJlM/tTVbNiF0gCPs97YdX+CSKTWdQCgIxtFoiozzrIYz/WH
+	DKcImS1ALzKq58Y7iBmg5p85P39O98Sv/Szc/4mcSdbmyIDSenJgIyznIsmjMbw9snGc8O1ku85
+	wsHTlV0sd89y+8NzJtZ+kN/vhzTLuPHOPw1mey5+49kbYtmk25o+sI6Pwuzs+/GObtbnZysQtB0
+	cN9ikoUjXJ6G7xK8OC+dPKMbdJLfBh88QTR0ru/fXP/XljWb3s6cwI4xaJGNuSGNRe1FN5CGXDU
+	A06vfc3iQ/Lmvr3jyG4X8P80mJArH3fLY6y53asojXQ3atC7B4fCYXwipBo74nOvNTN+C+hoTyQ
+	BN5ptba
+X-Received: by 2002:a17:903:38cf:b0:2b2:ccfb:8387 with SMTP id d9443c01a7336-2b2ccfb8623mr10523125ad.28.1775722316202;
+        Thu, 09 Apr 2026 01:11:56 -0700 (PDT)
+Received: from kernel-fuzz.. ([138.199.21.245])
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2b27478bc96sm239544935ad.33.2026.04.09.01.11.52
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Thu, 09 Apr 2026 01:11:55 -0700 (PDT)
+From: ZhengYuan Huang <gality369@gmail.com>
+To: dsterba@suse.com,
+	clm@fb.com,
+	zheng.yan@oracle.com
+Cc: linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	baijiaju1990@gmail.com,
+	r33s3n6@gmail.com,
+	zzzccc427@gmail.com,
+	ZhengYuan Huang <gality369@gmail.com>
+Subject: [PATCH v2] btrfs: reject empty non-root tree blocks at read time
+Date: Thu,  9 Apr 2026 16:11:40 +0800
+Message-ID: <20260409081140.3400650-1-gality369@gmail.com>
+X-Mailer: git-send-email 2.43.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260409071255.3358044-1-gality369@gmail.com> <fdc220ea-8f1f-45e4-9851-5eaaf8051153@suse.com>
-In-Reply-To: <fdc220ea-8f1f-45e4-9851-5eaaf8051153@suse.com>
-From: ZhengYuan Huang <gality369@gmail.com>
-Date: Thu, 9 Apr 2026 16:01:01 +0800
-X-Gm-Features: AQROBzB1v_i0GceXyCNVcJ07slsKZeas4ZXolCTTzYZp5MbDVI6hNKln4rIFPyA
-Message-ID: <CAOmEq9UeQcS9UVWOrPV6RX2H-3gneCfQJyYJT32ke5gLjOFbcg@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: treat empty left leaf as corruption in push_leaf_left()
-To: Qu Wenruo <wqu@suse.com>
-Cc: dsterba@suse.com, clm@fb.com, zheng.yan@oracle.com, 
-	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, 
-	baijiaju1990@gmail.com, r33s3n6@gmail.com, zzzccc427@gmail.com
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
 
-On Thu, Apr 9, 2026 at 3:51=E2=80=AFPM Qu Wenruo <wqu@suse.com> wrote:
-> I think the timing is too late, and if there is an non-root empty leaf
-> but we never modified it, kernel will not detect it.
->
-> I'd recommend to reject such empty leaves at
-> btrfs_validate_extent_buffer(), if we have check->has_first_key, then
-> the leaf should not be empty.
->
-> Thanks,
-> Qu
-> >
-> >       free_space =3D btrfs_leaf_free_space(left);
-> >       if (free_space < data_size) {
+[BUG]
+A corrupted tree can contain an empty non-root tree block linked from
+its parent. If that block is later used by normal tree balancing,
+btrfs can hit:
 
-Thanks for your suggestion. That makes sense.
+kernel BUG at fs/btrfs/ctree.c:3388!
+Oops: invalid opcode: 0000 [#1] SMP KASAN NOPTI
+RIP: 0010:__push_leaf_left+0x11f8/0x1610 fs/btrfs/ctree.c:3388
+Code: ff48c1ea 03803c02 000f85bd 00000048
+Call Trace:
+ push_leaf_left+0x3b3/0x540 fs/btrfs/ctree.c:3511
+ btrfs_del_items+0x74d/0xf10 fs/btrfs/ctree.c:4541
+ btrfs_del_csums+0x44d/0xa50 fs/btrfs/file-item.c:969
+ do_free_extent_accounting fs/btrfs/extent-tree.c:2984 [inline]
+ __btrfs_free_extent.isra.0+0xded/0x41d0 fs/btrfs/extent-tree.c:3372
+ run_delayed_data_ref fs/btrfs/extent-tree.c:1599 [inline]
+ run_one_delayed_ref fs/btrfs/extent-tree.c:1779 [inline]
+ btrfs_run_delayed_refs_for_head fs/btrfs/extent-tree.c:1972 [inline]
+ __btrfs_run_delayed_refs+0x86e/0x39a0 fs/btrfs/extent-tree.c:2047
+ btrfs_run_delayed_refs+0x181/0x420 fs/btrfs/extent-tree.c:2159
+ btrfs_commit_transaction+0xc9b/0x3d90 fs/btrfs/transaction.c:2211
+ btrfs_sync_fs+0xf0/0x630 fs/btrfs/super.c:1057
+ sync_fs_one_sb fs/sync.c:84 [inline]
+ sync_fs_one_sb+0xf4/0x140 fs/sync.c:80
+ __iterate_supers+0x1be/0x290 fs/super.c:923
+ iterate_supers+0x24/0x40 fs/super.c:938
+ ksys_sync+0xb4/0x160 fs/sync.c:104
+ __do_sys_sync+0x13/0x20 fs/sync.c:113
+ ...
 
-I will send a v2 patch incorporating this change.
+[CAUSE]
+The old btrfs_verify_level_key() path rejected tree blocks with
+nritems == 0 whenever the parent check provided a first key.
+Commit 947a629988f1 ("btrfs: move tree block parentness check into
+validate_extent_buffer()") moved the parentness checks into the read-time
+validation path, but it dropped that guard. This lets an empty non-root
+tree block pass read-time validation even though slot 0 must exist if the
+parent provides a first key.
 
-Thanks,
-ZhengYuan Huang
+[FIX]
+Restore the nritems == 0 rejection in btrfs_validate_extent_buffer()
+when check->has_first_key is set. This rejects empty non-root tree
+blocks as soon as they are read from disk, before later btree
+operations can hit BUG_ONs while trying to use them.
+
+Fixes: 947a629988f1 ("btrfs: move tree block parentness check into validate_extent_buffer()")
+Signed-off-by: ZhengYuan Huang <gality369@gmail.com>
+---
+v2:
+- Move the corruption check from push_leaf_left() to read-time validation
+- Restore the old nritems == 0 guard before reading slot 0
+
+ fs/btrfs/disk-io.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 0aa7e5d1b05f..ab2044d83155 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -430,6 +430,15 @@ int btrfs_validate_extent_buffer(struct extent_buffer *eb,
+ 		const struct btrfs_key *expect_key = &check->first_key;
+ 		struct btrfs_key found_key;
+ 
++		/* We have @first_key, so this @eb must have at least one item. */
++		if (unlikely(btrfs_header_nritems(eb) == 0)) {
++			btrfs_err(fs_info,
++				  "invalid tree nritems, bytenr=%llu nritems=0 expect >0",
++				  eb->start);
++			ret = -EUCLEAN;
++			goto out;
++		}
++
+ 		if (found_level)
+ 			btrfs_node_key_to_cpu(eb, &found_key, 0);
+ 		else
+-- 
+2.43.0

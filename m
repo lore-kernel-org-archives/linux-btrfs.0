@@ -1,421 +1,128 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from mail-wm1-f52.google.com (mail-wm1-f52.google.com [209.85.128.52])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7505738F937
-	for <linux-btrfs@vger.kernel.org>; Thu,  9 Apr 2026 08:52:50 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D14DD3AA4FA
+	for <linux-btrfs@vger.kernel.org>; Thu,  9 Apr 2026 09:10:08 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.52
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775724772; cv=none; b=fuJp+VSWUG9NmX0OXsWUQqihg/XBvPPpCxl/K5EzC6anvFktntrdflNjzdNMcnZWM9vT1SwvYYrkXu+/x90eHofgKrAFzvY0O1u35TsvYcbFtMVoZpRiMDRlkScfSOwo9ARqRh/ogJVeRrT2A1fUnK4/bfaDwo/HY4Fc7c/C0xk=
+	t=1775725810; cv=none; b=DerE9LanyCDXWzqly2Jm64eZ5e2vBppKqtr0fFt1phMeRThmMy4NoUa3piLv64qzijfD18Hinr6mNsvnRlQv7Ag1k1kjKH5lp7lveBzG1rRTY2YyrETX4lyz4OGBUFzz/x04fzmsYPI2HKKz9hZqtiHGGuxLRFuluc7/DSUWWBs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1775724772; c=relaxed/simple;
-	bh=l8Wk6OcPlT/JevZb5iAbhFrqAoDhSOw7PliIkSGYP9c=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=pFmmt+88u7i/heaC3KdkM9aBwVN+T7zrY1Nz5gN1JR7QqvIIBmTQZwGSGYIsdCUvnpCf0RgimUmuySSrN9sZVj5Q+yA5XOaBuLIBgqeQapWYm9+UyxRlU7GOTh6wC8dJ3AH2B65FG3QHbV5EVsuPr915g53sfVt66R/l5/EM+6A=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=aLXC7bYT; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=aLXC7bYT; arc=none smtp.client-ip=195.135.223.130
+	s=arc-20240116; t=1775725810; c=relaxed/simple;
+	bh=aHSCcGT95+kWl6j42ltcbAa4mMZ60X09QFDlZKL+WSk=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=HIeV0Mg5XQACosNMNbo2X8/Lkvm/HJCR6xX2NnDV6tEU5c5aD4M7NSoq+HlNtsZgFxLoFawuj0wE0hMOBr1qmWiRD/ggNTiBxq6MLKO7zYmNcgv+6U5y+SvOCA9NGfVyj0VMcA/JV91ZfwjLi6txIFs1JB3G6ME3OUPUYzqAhxI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=O0aeGyfN; arc=none smtp.client-ip=209.85.128.52
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="aLXC7bYT";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="aLXC7bYT"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 101794EE59
-	for <linux-btrfs@vger.kernel.org>; Thu,  9 Apr 2026 08:52:31 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1775724751; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=X26oVi7yfxBcKuAI+N4/zlNrcTB+ycTBiYM3HuF+TfY=;
-	b=aLXC7bYT+Y/iSHR2u79baNrRzJOr/ZHf83qRzDFvpZ82KoqZhyW1q2CVlk4bXPYIza+iAk
-	OPPiLgceycQe/vwWy/S8ta85xtD46xPhI00Sbt5CEqH5CJgc/73nnFBcYcK5a4OrGliwq7
-	1AEasfCxX9C26ZJIvP6VTF2xpNoAwz8=
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=aLXC7bYT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1775724751; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=X26oVi7yfxBcKuAI+N4/zlNrcTB+ycTBiYM3HuF+TfY=;
-	b=aLXC7bYT+Y/iSHR2u79baNrRzJOr/ZHf83qRzDFvpZ82KoqZhyW1q2CVlk4bXPYIza+iAk
-	OPPiLgceycQe/vwWy/S8ta85xtD46xPhI00Sbt5CEqH5CJgc/73nnFBcYcK5a4OrGliwq7
-	1AEasfCxX9C26ZJIvP6VTF2xpNoAwz8=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 0C00E4A0B4
-	for <linux-btrfs@vger.kernel.org>; Thu,  9 Apr 2026 08:52:29 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 6PnPKs1o12lUJwAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Thu, 09 Apr 2026 08:52:29 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v4 4/5] btrfs-progs: mkfs/rootdir: extract compressed write path
-Date: Thu,  9 Apr 2026 18:22:03 +0930
-Message-ID: <22fb3493afce20a68bb8b71854fbfdf043f23c5d.1775724568.git.wqu@suse.com>
-X-Mailer: git-send-email 2.53.0
-In-Reply-To: <cover.1775724568.git.wqu@suse.com>
-References: <cover.1775724568.git.wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="O0aeGyfN"
+Received: by mail-wm1-f52.google.com with SMTP id 5b1f17b1804b1-488d2079582so2423855e9.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 09 Apr 2026 02:10:08 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1775725807; x=1776330607; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to;
+        bh=hn1YfMN5dNczp3TPS/oCuceIDSJTLacozfn6OJnroZg=;
+        b=O0aeGyfN5lFBCOYOgIlFRIL7fdN6hprr50Rv1fen8nk+o9NgT9uu0SgUWCIb5dLkFt
+         8CtKG1qe50ysf4iClSp6TjwhpD5YfMHyoQ2hUfNdJZpjsL2XvXF7zjiyam9a3aDFBnIV
+         qy/qBuK1iMBgJ60/XMeh/T0yNs5Qhuv4ucH6nqWS6XfvLkjzdPTsGBm1vce+s87BNVo6
+         QZCQzC42C7QJcyij+wp6GmD+xcbkm/OskFfbcZeR2wu43mqg+5YhdNk/jtcg0jgNMwsR
+         QwFsVRCjwvSR1XLTdElk/7GKNk/Jlt5LB9bQdJgQxolAfUnMhUA0FuERgn+skyrAkhHY
+         wIfw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1775725807; x=1776330607;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=hn1YfMN5dNczp3TPS/oCuceIDSJTLacozfn6OJnroZg=;
+        b=i+35aSy7iN4izxidBOO6fqN3XeRSsVjvOckSFtpdm1w2vvhTJpIm5rmWnL/VQ+bL1f
+         pZa/8o8xWzQ9Qg77l06TwYEEPZW2fjbtnsWvH6CIhVoM3JyyHC6AWSeOhZaHjC4qLC8c
+         P0spLx44HzTBZEU49QBMh9oaHm47YZNjlBChtHTTJ8Es0foV4NfDzpiz/FzjR3KPZMCk
+         1w+LfmMlLgbIwpjtZgxTupKQlsKyF+0WZJlWkPQRsWBB86SgfUdb7mIVCaQlD+yRAwrj
+         JmzkNphlve7hfBeiAXt5mu87XxIJb/okTjVCAZTXPsyjQPLxzWxo11xmsxK/D/tnq3BX
+         nr9w==
+X-Gm-Message-State: AOJu0Ywfmv7g03UWC8+2I9x8iEx6DGpZnrcWt21wq79AyTj4rGJhE0na
+	9ceXv27vbp1abtCi2cseWx1FCrfwARywfwSQUVplA4CUHvM38mqDudj/966SuXzXVBU=
+X-Gm-Gg: AeBDievZZismBRbmd5gjimzLD6y3qYURpxSD+i4ldQPr4pqq259lUulPCFj6skU8iO4
+	71fH52PkQPC2HxvMtLTemwiAHy9O5mwogpSJbNsJqr/29YH13gNil+AMWPbhc9veb/oII8ae8I+
+	j+P9wAr+BoQ39OH6e9tEXmDJcS5077JcPqgDVJe/1FN09Kd6SRobR6kMhhVJHym4IXChJMVV3Zt
+	xzWVJn+NhcTz7DXah5uYLWBlJWQ9qV7oN2qQrsh2JCSqDniwya1/B0n1Zo1XWeBBzsZkovB7krv
+	JmQAL1SWFuuCgaDFwp6g3A0BoR8a5cBwQH0lAjA6xtL9M/DSkiR17tyNdjQ8I48et/pO46hk4Uy
+	mgN0i+hIcpaZIMjD/sQksEaON2+tNRQpDHj1hiYzreLfVHtZN4d+adp7xxC8apy1AVTDBaw15Yy
+	D8hBCZ2gGcV5e0x0p/MQ7xkInTLHfLY/uVErkvVqL/GXOwqgD0YA0=
+X-Received: by 2002:a05:600c:630a:b0:488:8840:e5ae with SMTP id 5b1f17b1804b1-488997eed8bmr343379825e9.24.1775725806685;
+        Thu, 09 Apr 2026 02:10:06 -0700 (PDT)
+Received: from ?IPV6:2403:580d:fda1::299? (2403-580d-fda1--299.ip6.aussiebb.net. [2403:580d:fda1::299])
+        by smtp.gmail.com with ESMTPSA id 41be03b00d2f7-c76c65991a8sm22370515a12.28.2026.04.09.02.10.02
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Thu, 09 Apr 2026 02:10:05 -0700 (PDT)
+Message-ID: <baea8ced-c1c2-4a2b-810e-30c957c50498@suse.com>
+Date: Thu, 9 Apr 2026 18:39:59 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v2] btrfs: reject empty non-root tree blocks at read time
+To: ZhengYuan Huang <gality369@gmail.com>, dsterba@suse.com, clm@fb.com,
+ zheng.yan@oracle.com
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+ baijiaju1990@gmail.com, r33s3n6@gmail.com, zzzccc427@gmail.com
+References: <20260409081140.3400650-1-gality369@gmail.com>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <20260409081140.3400650-1-gality369@gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	MID_CONTAINS_FROM(1.00)[];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	ARC_NA(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	FROM_EQ_ENVFROM(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:dkim,suse.com:email];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RCVD_TLS_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	MIME_TRACE(0.00)[0:+];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Rspamd-Action: no action
-X-Spam-Flag: NO
-X-Spam-Score: -3.01
-X-Spam-Level: 
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Rspamd-Queue-Id: 101794EE59
 
-Currently add_file_item_extent() have several different
-optimizations/handlings:
 
-- Hole detection
-  Which happens before any writes.
-  Thus brings the minimal impact to the remaining methods.
 
-- Compressed write
-- Reflink from source fs
-- Regular read/writes
+在 2026/4/9 17:41, ZhengYuan Huang 写道:
+> 
+> [CAUSE]
+> The old btrfs_verify_level_key() path rejected tree blocks with
+> nritems == 0 whenever the parent check provided a first key.
+> Commit 947a629988f1 ("btrfs: move tree block parentness check into
+> validate_extent_buffer()") moved the parentness checks into the read-time
+> validation path, but it dropped that guard. This lets an empty non-root
+> tree block pass read-time validation even though slot 0 must exist if the
+> parent provides a first key.
 
-The last 3 share the same extent reservation, but with quite some extra
-handling.
-E.g. for compressed writes if the compression failed, we need to reset
-the buffer size and fallback to regular read/writes.
+Wait for a second, there is still the nritems == 0 check inside 
+btrfs_verify_level_key().
 
-This makes the code much harder to read, and the shared code is minimal,
-only sharing the same btrfs_reserve_extent() and
-insert_reserved_file_extent() calls.
+It looks like there is a missing link.
 
-Extract compressed write into its dedicated helper so that the fallback
-logic is much easier to understand.
+Is the btrfs_buffer_uptodate() call inside read_block_for_search() not 
+passing the correct check structure?
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- mkfs/rootdir.c | 249 ++++++++++++++++++++++++++++---------------------
- 1 file changed, 141 insertions(+), 108 deletions(-)
-
-diff --git a/mkfs/rootdir.c b/mkfs/rootdir.c
-index 62f7c57c5e4a..5c0bc012a354 100644
---- a/mkfs/rootdir.c
-+++ b/mkfs/rootdir.c
-@@ -779,6 +779,125 @@ static int do_reflink_write(struct btrfs_fs_info *info,
- 	return 0;
- }
- 
-+static s32 read_from_source(const struct btrfs_fs_info *fs_info,
-+			    const char *path, int fd,
-+			    char *buf, u64 filepos, u32 length)
-+{
-+	u32 cur = 0;
-+
-+	UASSERT(IS_ALIGNED(filepos, fs_info->sectorsize));
-+	UASSERT(length <= MAX_EXTENT_SIZE);
-+
-+	while (cur < length) {
-+		ssize_t ret;
-+
-+		ret = pread(fd, buf + cur, length - cur, filepos + cur);
-+		if (ret < 0) {
-+			error("cannot read %s at offset %llu length %u: %m",
-+			      path, filepos + cur, length - cur);
-+			return -errno;
-+		}
-+		cur += ret;
-+	}
-+	return length;
-+}
-+
-+/*
-+ * Return >0 for the number of bytes read from @source and submitted as
-+ * compressed write.
-+ * Return <0 for errors, including non-fatal ones, e.g. -E2BIG if compression
-+ * ratio is bad.
-+ */
-+static int try_compressed_write(struct btrfs_trans_handle *trans,
-+				struct btrfs_root *root,
-+				struct btrfs_inode_item *btrfs_inode,
-+				u64 objectid,
-+				const struct source_descriptor *source,
-+				u64 filepos, u32 length)
-+{
-+	struct btrfs_fs_info *fs_info = root->fs_info;
-+	struct btrfs_file_extent_item stack_fi = { 0 };
-+	struct btrfs_key key;
-+	const u32 blocksize = fs_info->sectorsize;
-+	const bool first_sector = !(btrfs_stack_inode_flags(btrfs_inode) &
-+				    BTRFS_INODE_COMPRESS);
-+	u64 inode_flags = btrfs_stack_inode_flags(btrfs_inode);
-+	u64 sb_flags = btrfs_super_incompat_flags(fs_info->super_copy);
-+	u32 to_write;
-+	ssize_t comp_ret;
-+	int ret;
-+
-+	UASSERT(length > 0);
-+	length = min_t(u32, length, BTRFS_MAX_COMPRESSED);
-+	if (length <= root->fs_info->sectorsize)
-+		return -E2BIG;
-+	ret = read_from_source(root->fs_info, source->path_name, source->fd,
-+			       source->buf, filepos, length);
-+	if (ret < 0)
-+		return ret;
-+	switch (g_compression) {
-+	case BTRFS_COMPRESS_ZLIB:
-+		comp_ret = zlib_compress_extent(first_sector, blocksize,
-+						source->buf, length,
-+						source->comp_buf);
-+		break;
-+#if COMPRESSION_LZO
-+	case BTRFS_COMPRESS_LZO:
-+		sb_flags |= BTRFS_FEATURE_INCOMPAT_COMPRESS_LZO;
-+		comp_ret = lzo_compress_extent(blocksize, source->buf,
-+					       length, source->comp_buf,
-+					       source->wrkmem);
-+		break;
-+#endif
-+#if COMPRESSION_ZSTD
-+	case BTRFS_COMPRESS_ZSTD:
-+		sb_flags |= BTRFS_FEATURE_INCOMPAT_COMPRESS_ZSTD;
-+		comp_ret = zstd_compress_extent(first_sector, blocksize,
-+						source->buf, length,
-+						source->comp_buf);
-+		break;
-+#endif
-+	default:
-+		comp_ret = -EINVAL;
-+		break;
-+	}
-+	if (comp_ret < 0)
-+		return comp_ret;
-+
-+	to_write = round_up(comp_ret, blocksize);
-+	memset(source->comp_buf + comp_ret, 0, to_write - comp_ret);
-+	inode_flags |= BTRFS_INODE_COMPRESS;
-+	btrfs_set_stack_inode_flags(btrfs_inode, inode_flags);
-+	btrfs_set_super_incompat_flags(fs_info->super_copy, sb_flags);
-+
-+	ret = btrfs_reserve_extent(trans, root, to_write, 0, 0, (u64)-1, &key, 1);
-+	if (ret < 0)
-+		return ret;
-+	ret = write_data_to_disk(fs_info, source->comp_buf, key.objectid, to_write);
-+	if (ret < 0)
-+		return ret;
-+	for (unsigned int i = 0; i < to_write / blocksize; i++) {
-+		ret = btrfs_csum_file_block(trans, key.objectid + (i * blocksize),
-+				BTRFS_EXTENT_CSUM_OBJECTID,
-+				root->fs_info->csum_type,
-+				source->comp_buf + (i * blocksize));
-+		if (ret)
-+			return ret;
-+	}
-+	btrfs_set_stack_file_extent_type(&stack_fi, BTRFS_FILE_EXTENT_REG);
-+	btrfs_set_stack_file_extent_disk_bytenr(&stack_fi, key.objectid);
-+	btrfs_set_stack_file_extent_disk_num_bytes(&stack_fi, to_write);
-+	btrfs_set_stack_file_extent_num_bytes(&stack_fi, round_up(length, blocksize));
-+	btrfs_set_stack_file_extent_ram_bytes(&stack_fi, round_up(length, blocksize));
-+	btrfs_set_stack_file_extent_compression(&stack_fi, g_compression);
-+
-+	ret = insert_reserved_file_extent(trans, root, objectid, btrfs_inode,
-+					  filepos, &stack_fi);
-+	if (ret < 0)
-+		return ret;
-+	return length;
-+}
-+
- static int add_file_item_extent(struct btrfs_trans_handle *trans,
- 				struct btrfs_root *root,
- 				struct btrfs_inode_item *btrfs_inode,
-@@ -788,14 +907,13 @@ static int add_file_item_extent(struct btrfs_trans_handle *trans,
- {
- 	int ret;
- 	u32 sectorsize = root->fs_info->sectorsize;
--	u64 bytes_read, first_block, to_read, to_write;
-+	u64 first_block, to_read, to_write;
- 	struct btrfs_key key;
- 	struct btrfs_file_extent_item stack_fi = { 0 };
- 	u64 buf_size;
- 	char *write_buf;
- 	bool do_comp = g_compression != BTRFS_COMPRESS_NONE;
- 	bool datasum = true;
--	ssize_t comp_ret;
- 	u64 flags = btrfs_stack_inode_flags(btrfs_inode);
- 	off_t next;
- 
-@@ -835,120 +953,35 @@ static int add_file_item_extent(struct btrfs_trans_handle *trans,
- 	if (next == (off_t)-1 || !IS_ALIGNED(next, sectorsize) || next > source->size)
- 		next = source->size;
- 
--	buf_size = do_comp ? BTRFS_MAX_COMPRESSED : MAX_EXTENT_SIZE;
--	to_read = min_t(u64, file_pos + buf_size, next) - file_pos;
--	bytes_read = 0;
--
--	while (bytes_read < to_read) {
--		ssize_t ret_read;
--
--		ret_read = pread(source->fd, source->buf + bytes_read,
--				 to_read - bytes_read, file_pos + bytes_read);
--		if (ret_read < 0) {
--			error("cannot read %s at offset %llu length %llu: %m",
--			      source->path_name, file_pos + bytes_read,
--			      to_read - bytes_read);
--			return -errno;
--		}
--
--		bytes_read += ret_read;
--	}
--
--	if (bytes_read <= sectorsize)
--		do_comp = false;
--
--	if (do_comp) {
--		bool first_sector = !(flags & BTRFS_INODE_COMPRESS);
--
--		switch (g_compression) {
--		case BTRFS_COMPRESS_ZLIB:
--			comp_ret = zlib_compress_extent(first_sector, sectorsize,
--							source->buf, bytes_read,
--							source->comp_buf);
--			break;
--#if COMPRESSION_LZO
--		case BTRFS_COMPRESS_LZO:
--			comp_ret = lzo_compress_extent(sectorsize, source->buf,
--						       bytes_read,
--						       source->comp_buf,
--						       source->wrkmem);
--			break;
--#endif
--#if COMPRESSION_ZSTD
--		case BTRFS_COMPRESS_ZSTD:
--			comp_ret = zstd_compress_extent(first_sector, sectorsize,
--							source->buf, bytes_read,
--							source->comp_buf);
--			break;
--#endif
--		default:
--			comp_ret = -EINVAL;
--			break;
--		}
--
-+	if (do_comp && next - file_pos > sectorsize) {
-+		ret = try_compressed_write(trans, root, btrfs_inode, objectid,
-+					   source, file_pos, next - file_pos);
-+		if (ret > 0)
-+			return ret;
-+		if (ret < 0 && ret != -E2BIG)
-+			return ret;
- 		/*
--		 * If the function returned -E2BIG, the extent is incompressible.
--		 * If this is the first sector, add the nocompress flag,
--		 * increase the buffer size, and read the rest of the extent.
-+		 * If the inode doesn't have INODE_COMPRESS flag set, it means
-+		 * the compression failed at the first block.
-+		 * Set the NOCOMPRESS flag indicating bad compression ratio.
- 		 */
--		if (comp_ret == -E2BIG)
--			do_comp = false;
--		else if (comp_ret < 0)
--			return comp_ret;
--
--		if (comp_ret == -E2BIG && first_sector) {
-+		if (!(btrfs_stack_inode_flags(btrfs_inode) & BTRFS_INODE_COMPRESS)) {
- 			flags |= BTRFS_INODE_NOCOMPRESS;
- 			btrfs_set_stack_inode_flags(btrfs_inode, flags);
--
--			buf_size = MAX_EXTENT_SIZE;
--			to_read = min_t(u64, file_pos + buf_size, next) - file_pos;
--
--			while (bytes_read < to_read) {
--				ssize_t ret_read;
--
--				ret_read = pread(source->fd,
--						 source->buf + bytes_read,
--						 to_read - bytes_read,
--						 file_pos + bytes_read);
--				if (ret_read < 0) {
--					error("cannot read %s at offset %llu length %llu: %m",
--					      source->path_name,
--					      file_pos + bytes_read,
--					      to_read - bytes_read);
--					return -errno;
--				}
--
--				bytes_read += ret_read;
--			}
- 		}
-+		/* Fallback to other methods. */
- 	}
- 
--	if (do_comp) {
--		u64 features;
-+	buf_size = MAX_EXTENT_SIZE;
-+	to_read = min_t(u64, file_pos + buf_size, next) - file_pos;
-+	ret = read_from_source(root->fs_info, source->path_name, source->fd,
-+			       source->buf, file_pos, to_read);
-+	if (ret < 0)
-+		return ret;
- 
--		to_write = round_up(comp_ret, sectorsize);
--		write_buf = source->comp_buf;
--		memset(write_buf + comp_ret, 0, to_write - comp_ret);
--
--		flags |= BTRFS_INODE_COMPRESS;
--		btrfs_set_stack_inode_flags(btrfs_inode, flags);
--
--		if (g_compression == BTRFS_COMPRESS_ZSTD) {
--			features = btrfs_super_incompat_flags(trans->fs_info->super_copy);
--			features |= BTRFS_FEATURE_INCOMPAT_COMPRESS_ZSTD;
--			btrfs_set_super_incompat_flags(trans->fs_info->super_copy,
--						       features);
--		} else if (g_compression == BTRFS_COMPRESS_LZO) {
--			features = btrfs_super_incompat_flags(trans->fs_info->super_copy);
--			features |= BTRFS_FEATURE_INCOMPAT_COMPRESS_LZO;
--			btrfs_set_super_incompat_flags(trans->fs_info->super_copy,
--						       features);
--		}
--	} else {
--		to_write = round_up(to_read, sectorsize);
--		write_buf = source->buf;
--		memset(write_buf + to_read, 0, to_write - to_read);
--	}
-+	to_write = round_up(to_read, sectorsize);
-+	write_buf = source->buf;
-+	memset(write_buf + to_read, 0, to_write - to_read);
- 
- 	ret = btrfs_reserve_extent(trans, root, to_write, 0, 0,
- 				   (u64)-1, &key, 1);
--- 
-2.53.0
-
+Thanks,
+Qu

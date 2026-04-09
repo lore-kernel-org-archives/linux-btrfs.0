@@ -1,64 +1,64 @@
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D6D81389E02
-	for <linux-btrfs@vger.kernel.org>; Thu,  9 Apr 2026 08:52:44 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7505738F937
+	for <linux-btrfs@vger.kernel.org>; Thu,  9 Apr 2026 08:52:50 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775724766; cv=none; b=oz99UOmexK80sV9iMSVFviCg6wEcWf+MbMlZitoz/NDuMLnXqkhGQPvoncedabyf2gNN8g3ko0UzEtrYLs2zwizT8Xutx/gF3SSsrh3z8TyNqiR7yxc8sGDGB8jT5e+t6ieO65KY8rJoTbncaKVRbfAiT8fOKdgqrEjWR9p034k=
+	t=1775724772; cv=none; b=fuJp+VSWUG9NmX0OXsWUQqihg/XBvPPpCxl/K5EzC6anvFktntrdflNjzdNMcnZWM9vT1SwvYYrkXu+/x90eHofgKrAFzvY0O1u35TsvYcbFtMVoZpRiMDRlkScfSOwo9ARqRh/ogJVeRrT2A1fUnK4/bfaDwo/HY4Fc7c/C0xk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1775724766; c=relaxed/simple;
-	bh=DMKp0cdAqzpYNzEuRvy4XFp8dmTZ3GDQy8D83EXJBpw=;
+	s=arc-20240116; t=1775724772; c=relaxed/simple;
+	bh=l8Wk6OcPlT/JevZb5iAbhFrqAoDhSOw7PliIkSGYP9c=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=gCIoNf5F5RkZbIbAZRMtU0HFJx8+hQvIYHq8jt+mgG5qlx4wWEIaLRFZnJ62alXr/JTFwHv0k9zZeovX/K5Tb7yUwu6kLb2gULwWH4JroQQkhr0YliqJgpl/WoNbQgzykjy8siUEkgmfydzIB6pLw2wdgRe0HAcrt2/GL+TgV+g=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=a93NFVVA; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=mOpTr3kf; arc=none smtp.client-ip=195.135.223.130
+	 MIME-Version; b=pFmmt+88u7i/heaC3KdkM9aBwVN+T7zrY1Nz5gN1JR7QqvIIBmTQZwGSGYIsdCUvnpCf0RgimUmuySSrN9sZVj5Q+yA5XOaBuLIBgqeQapWYm9+UyxRlU7GOTh6wC8dJ3AH2B65FG3QHbV5EVsuPr915g53sfVt66R/l5/EM+6A=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=aLXC7bYT; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=aLXC7bYT; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="a93NFVVA";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="mOpTr3kf"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="aLXC7bYT";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="aLXC7bYT"
 Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 627474EE5B
-	for <linux-btrfs@vger.kernel.org>; Thu,  9 Apr 2026 08:52:29 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 101794EE59
+	for <linux-btrfs@vger.kernel.org>; Thu,  9 Apr 2026 08:52:31 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1775724750; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1775724751; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=14Lh5Vk2AEsXstkv1erBc6dYPXdKKRs7y+cPY47R7Yk=;
-	b=a93NFVVAGhnyFqKqe5pdk8ktFPvBA/+1T08M2Bybz48lkqwRFoXr3Rwy71oMc+fkGlvRUv
-	CMDfHfaNLWB38bDOWMdp1MsYJS4CtlqhyZnaKF20Z1B8/kGPR83rQDcCtQhdYIW0VKOF/D
-	VtY9iyo+eewlJuhnRF/h3A2giIyHRSY=
+	bh=X26oVi7yfxBcKuAI+N4/zlNrcTB+ycTBiYM3HuF+TfY=;
+	b=aLXC7bYT+Y/iSHR2u79baNrRzJOr/ZHf83qRzDFvpZ82KoqZhyW1q2CVlk4bXPYIza+iAk
+	OPPiLgceycQe/vwWy/S8ta85xtD46xPhI00Sbt5CEqH5CJgc/73nnFBcYcK5a4OrGliwq7
+	1AEasfCxX9C26ZJIvP6VTF2xpNoAwz8=
 Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=mOpTr3kf
+	dkim=pass header.d=suse.com header.s=susede1 header.b=aLXC7bYT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1775724749; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1775724751; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=14Lh5Vk2AEsXstkv1erBc6dYPXdKKRs7y+cPY47R7Yk=;
-	b=mOpTr3kfE2umAVoBAV1B+F/gbIXVcIP5tlKRG0Iog0OItt4+26CIfWSxS/tmR/aGyTx71g
-	LvKppj81RkgM3L1SS+0n9jPck333Rr1n4KLtb6VuRFVhDDHRQFrLpF5x5sZHUqfkoKZ4wk
-	/5dC2SsteR2bsJW9uuHbn57/3eoHfBc=
+	bh=X26oVi7yfxBcKuAI+N4/zlNrcTB+ycTBiYM3HuF+TfY=;
+	b=aLXC7bYT+Y/iSHR2u79baNrRzJOr/ZHf83qRzDFvpZ82KoqZhyW1q2CVlk4bXPYIza+iAk
+	OPPiLgceycQe/vwWy/S8ta85xtD46xPhI00Sbt5CEqH5CJgc/73nnFBcYcK5a4OrGliwq7
+	1AEasfCxX9C26ZJIvP6VTF2xpNoAwz8=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 5EC114A0B3
-	for <linux-btrfs@vger.kernel.org>; Thu,  9 Apr 2026 08:52:28 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 0C00E4A0B4
+	for <linux-btrfs@vger.kernel.org>; Thu,  9 Apr 2026 08:52:29 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id IIRiA8xo12lUJwAAD6G6ig
+	id 6PnPKs1o12lUJwAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Thu, 09 Apr 2026 08:52:28 +0000
+	for <linux-btrfs@vger.kernel.org>; Thu, 09 Apr 2026 08:52:29 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v4 3/5] btrfs-progs: implement the missing btrfs_insert_hole_extent()
-Date: Thu,  9 Apr 2026 18:22:02 +0930
-Message-ID: <e5b3209b5f8361329087ff7fce417b9af99946d1.1775724568.git.wqu@suse.com>
+Subject: [PATCH v4 4/5] btrfs-progs: mkfs/rootdir: extract compressed write path
+Date: Thu,  9 Apr 2026 18:22:03 +0930
+Message-ID: <22fb3493afce20a68bb8b71854fbfdf043f23c5d.1775724568.git.wqu@suse.com>
 X-Mailer: git-send-email 2.53.0
 In-Reply-To: <cover.1775724568.git.wqu@suse.com>
 References: <cover.1775724568.git.wqu@suse.com>
@@ -98,102 +98,324 @@ X-Spam-Flag: NO
 X-Spam-Score: -3.01
 X-Spam-Level: 
 X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Rspamd-Queue-Id: 627474EE5B
+X-Rspamd-Queue-Id: 101794EE59
 
-Commit f8efe9f724c0 ("btrfs-progs: sync file-item.h into progs")
-introduce the definition of btrfs_insert_hole_extent() but without an
-implementation.
+Currently add_file_item_extent() have several different
+optimizations/handlings:
 
-Now there are several call sites implementing a simple wrapper to insert
-a hole extent. It's time to implement that function, which is pretty
-simple, just set the file extent type to REG and set
-disk_num_bytes/disk_bytenr to 0 with proper ram_bytes/num_bytes.
+- Hole detection
+  Which happens before any writes.
+  Thus brings the minimal impact to the remaining methods.
+
+- Compressed write
+- Reflink from source fs
+- Regular read/writes
+
+The last 3 share the same extent reservation, but with quite some extra
+handling.
+E.g. for compressed writes if the compression failed, we need to reset
+the buffer size and fallback to regular read/writes.
+
+This makes the code much harder to read, and the shared code is minimal,
+only sharing the same btrfs_reserve_extent() and
+insert_reserved_file_extent() calls.
+
+Extract compressed write into its dedicated helper so that the fallback
+logic is much easier to understand.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- kernel-shared/file-item.c | 17 +++++++++++++++++
- kernel-shared/file.c      |  6 +-----
- mkfs/rootdir.c            |  8 ++------
- 3 files changed, 20 insertions(+), 11 deletions(-)
+ mkfs/rootdir.c | 249 ++++++++++++++++++++++++++++---------------------
+ 1 file changed, 141 insertions(+), 108 deletions(-)
 
-diff --git a/kernel-shared/file-item.c b/kernel-shared/file-item.c
-index c6cd3ce51124..76d6bfdb6824 100644
---- a/kernel-shared/file-item.c
-+++ b/kernel-shared/file-item.c
-@@ -25,6 +25,23 @@
- #include "kernel-shared/file-item.h"
- #include "kernel-shared/extent_io.h"
- #include "common/internal.h"
-+#include "common/messages.h"
-+
-+int btrfs_insert_hole_extent(struct btrfs_trans_handle *trans,
-+			     struct btrfs_root *root, u64 objectid, u64 pos,
-+			     u64 num_bytes)
-+{
-+	struct btrfs_file_extent_item stack_fi = { 0 };
-+	const u32 blocksize = root->fs_info->sectorsize;
-+
-+	UASSERT(IS_ALIGNED(pos, blocksize));
-+	UASSERT(IS_ALIGNED(num_bytes, blocksize));
-+
-+	btrfs_set_stack_file_extent_type(&stack_fi, BTRFS_FILE_EXTENT_REG);
-+	btrfs_set_stack_file_extent_num_bytes(&stack_fi, num_bytes);
-+	btrfs_set_stack_file_extent_ram_bytes(&stack_fi, num_bytes);
-+	return btrfs_insert_file_extent(trans, root, objectid, pos, &stack_fi);
-+}
- 
- #define MAX_CSUM_ITEMS(r, size) ((((BTRFS_LEAF_DATA_SIZE(r->fs_info) - \
- 			       sizeof(struct btrfs_item) * 2) / \
-diff --git a/kernel-shared/file.c b/kernel-shared/file.c
-index 12cd50e796b9..546e161abfdb 100644
---- a/kernel-shared/file.c
-+++ b/kernel-shared/file.c
-@@ -150,7 +150,6 @@ int btrfs_punch_hole(struct btrfs_trans_handle *trans,
- 		     u64 ino, u64 offset, u64 len)
- {
- 	struct btrfs_path *path;
--	struct btrfs_file_extent_item stack_fi = { 0 };
- 	int ret = 0;
- 
- 	path = btrfs_alloc_path();
-@@ -165,10 +164,7 @@ int btrfs_punch_hole(struct btrfs_trans_handle *trans,
- 		goto out;
- 	}
- 
--	btrfs_set_stack_file_extent_type(&stack_fi, BTRFS_FILE_EXTENT_REG);
--	btrfs_set_stack_file_extent_num_bytes(&stack_fi, len);
--	btrfs_set_stack_file_extent_ram_bytes(&stack_fi, len);
--	ret = btrfs_insert_file_extent(trans, root, ino, offset, &stack_fi);
-+	ret = btrfs_insert_hole_extent(trans, root, ino, offset, len);
- out:
- 	btrfs_free_path(path);
- 	return ret;
 diff --git a/mkfs/rootdir.c b/mkfs/rootdir.c
-index 37191ee427b7..62f7c57c5e4a 100644
+index 62f7c57c5e4a..5c0bc012a354 100644
 --- a/mkfs/rootdir.c
 +++ b/mkfs/rootdir.c
-@@ -411,8 +411,7 @@ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
- 	 * hole.  And hole extent has no size limit, no need to loop.
- 	 */
- 	if (disk_bytenr == 0)
--		return btrfs_insert_file_extent(trans, root, ino,
--					       file_pos, stack_fi);
-+		return btrfs_insert_hole_extent(trans, root, ino, file_pos, num_bytes);
+@@ -779,6 +779,125 @@ static int do_reflink_write(struct btrfs_fs_info *info,
+ 	return 0;
+ }
  
- 	path = btrfs_alloc_path();
- 	if (!path)
-@@ -819,10 +818,7 @@ static int add_file_item_extent(struct btrfs_trans_handle *trans,
++static s32 read_from_source(const struct btrfs_fs_info *fs_info,
++			    const char *path, int fd,
++			    char *buf, u64 filepos, u32 length)
++{
++	u32 cur = 0;
++
++	UASSERT(IS_ALIGNED(filepos, fs_info->sectorsize));
++	UASSERT(length <= MAX_EXTENT_SIZE);
++
++	while (cur < length) {
++		ssize_t ret;
++
++		ret = pread(fd, buf + cur, length - cur, filepos + cur);
++		if (ret < 0) {
++			error("cannot read %s at offset %llu length %u: %m",
++			      path, filepos + cur, length - cur);
++			return -errno;
++		}
++		cur += ret;
++	}
++	return length;
++}
++
++/*
++ * Return >0 for the number of bytes read from @source and submitted as
++ * compressed write.
++ * Return <0 for errors, including non-fatal ones, e.g. -E2BIG if compression
++ * ratio is bad.
++ */
++static int try_compressed_write(struct btrfs_trans_handle *trans,
++				struct btrfs_root *root,
++				struct btrfs_inode_item *btrfs_inode,
++				u64 objectid,
++				const struct source_descriptor *source,
++				u64 filepos, u32 length)
++{
++	struct btrfs_fs_info *fs_info = root->fs_info;
++	struct btrfs_file_extent_item stack_fi = { 0 };
++	struct btrfs_key key;
++	const u32 blocksize = fs_info->sectorsize;
++	const bool first_sector = !(btrfs_stack_inode_flags(btrfs_inode) &
++				    BTRFS_INODE_COMPRESS);
++	u64 inode_flags = btrfs_stack_inode_flags(btrfs_inode);
++	u64 sb_flags = btrfs_super_incompat_flags(fs_info->super_copy);
++	u32 to_write;
++	ssize_t comp_ret;
++	int ret;
++
++	UASSERT(length > 0);
++	length = min_t(u32, length, BTRFS_MAX_COMPRESSED);
++	if (length <= root->fs_info->sectorsize)
++		return -E2BIG;
++	ret = read_from_source(root->fs_info, source->path_name, source->fd,
++			       source->buf, filepos, length);
++	if (ret < 0)
++		return ret;
++	switch (g_compression) {
++	case BTRFS_COMPRESS_ZLIB:
++		comp_ret = zlib_compress_extent(first_sector, blocksize,
++						source->buf, length,
++						source->comp_buf);
++		break;
++#if COMPRESSION_LZO
++	case BTRFS_COMPRESS_LZO:
++		sb_flags |= BTRFS_FEATURE_INCOMPAT_COMPRESS_LZO;
++		comp_ret = lzo_compress_extent(blocksize, source->buf,
++					       length, source->comp_buf,
++					       source->wrkmem);
++		break;
++#endif
++#if COMPRESSION_ZSTD
++	case BTRFS_COMPRESS_ZSTD:
++		sb_flags |= BTRFS_FEATURE_INCOMPAT_COMPRESS_ZSTD;
++		comp_ret = zstd_compress_extent(first_sector, blocksize,
++						source->buf, length,
++						source->comp_buf);
++		break;
++#endif
++	default:
++		comp_ret = -EINVAL;
++		break;
++	}
++	if (comp_ret < 0)
++		return comp_ret;
++
++	to_write = round_up(comp_ret, blocksize);
++	memset(source->comp_buf + comp_ret, 0, to_write - comp_ret);
++	inode_flags |= BTRFS_INODE_COMPRESS;
++	btrfs_set_stack_inode_flags(btrfs_inode, inode_flags);
++	btrfs_set_super_incompat_flags(fs_info->super_copy, sb_flags);
++
++	ret = btrfs_reserve_extent(trans, root, to_write, 0, 0, (u64)-1, &key, 1);
++	if (ret < 0)
++		return ret;
++	ret = write_data_to_disk(fs_info, source->comp_buf, key.objectid, to_write);
++	if (ret < 0)
++		return ret;
++	for (unsigned int i = 0; i < to_write / blocksize; i++) {
++		ret = btrfs_csum_file_block(trans, key.objectid + (i * blocksize),
++				BTRFS_EXTENT_CSUM_OBJECTID,
++				root->fs_info->csum_type,
++				source->comp_buf + (i * blocksize));
++		if (ret)
++			return ret;
++	}
++	btrfs_set_stack_file_extent_type(&stack_fi, BTRFS_FILE_EXTENT_REG);
++	btrfs_set_stack_file_extent_disk_bytenr(&stack_fi, key.objectid);
++	btrfs_set_stack_file_extent_disk_num_bytes(&stack_fi, to_write);
++	btrfs_set_stack_file_extent_num_bytes(&stack_fi, round_up(length, blocksize));
++	btrfs_set_stack_file_extent_ram_bytes(&stack_fi, round_up(length, blocksize));
++	btrfs_set_stack_file_extent_compression(&stack_fi, g_compression);
++
++	ret = insert_reserved_file_extent(trans, root, objectid, btrfs_inode,
++					  filepos, &stack_fi);
++	if (ret < 0)
++		return ret;
++	return length;
++}
++
+ static int add_file_item_extent(struct btrfs_trans_handle *trans,
+ 				struct btrfs_root *root,
+ 				struct btrfs_inode_item *btrfs_inode,
+@@ -788,14 +907,13 @@ static int add_file_item_extent(struct btrfs_trans_handle *trans,
+ {
+ 	int ret;
+ 	u32 sectorsize = root->fs_info->sectorsize;
+-	u64 bytes_read, first_block, to_read, to_write;
++	u64 first_block, to_read, to_write;
+ 	struct btrfs_key key;
+ 	struct btrfs_file_extent_item stack_fi = { 0 };
+ 	u64 buf_size;
+ 	char *write_buf;
+ 	bool do_comp = g_compression != BTRFS_COMPRESS_NONE;
+ 	bool datasum = true;
+-	ssize_t comp_ret;
+ 	u64 flags = btrfs_stack_inode_flags(btrfs_inode);
+ 	off_t next;
+ 
+@@ -835,120 +953,35 @@ static int add_file_item_extent(struct btrfs_trans_handle *trans,
+ 	if (next == (off_t)-1 || !IS_ALIGNED(next, sectorsize) || next > source->size)
+ 		next = source->size;
+ 
+-	buf_size = do_comp ? BTRFS_MAX_COMPRESSED : MAX_EXTENT_SIZE;
+-	to_read = min_t(u64, file_pos + buf_size, next) - file_pos;
+-	bytes_read = 0;
+-
+-	while (bytes_read < to_read) {
+-		ssize_t ret_read;
+-
+-		ret_read = pread(source->fd, source->buf + bytes_read,
+-				 to_read - bytes_read, file_pos + bytes_read);
+-		if (ret_read < 0) {
+-			error("cannot read %s at offset %llu length %llu: %m",
+-			      source->path_name, file_pos + bytes_read,
+-			      to_read - bytes_read);
+-			return -errno;
+-		}
+-
+-		bytes_read += ret_read;
+-	}
+-
+-	if (bytes_read <= sectorsize)
+-		do_comp = false;
+-
+-	if (do_comp) {
+-		bool first_sector = !(flags & BTRFS_INODE_COMPRESS);
+-
+-		switch (g_compression) {
+-		case BTRFS_COMPRESS_ZLIB:
+-			comp_ret = zlib_compress_extent(first_sector, sectorsize,
+-							source->buf, bytes_read,
+-							source->comp_buf);
+-			break;
+-#if COMPRESSION_LZO
+-		case BTRFS_COMPRESS_LZO:
+-			comp_ret = lzo_compress_extent(sectorsize, source->buf,
+-						       bytes_read,
+-						       source->comp_buf,
+-						       source->wrkmem);
+-			break;
+-#endif
+-#if COMPRESSION_ZSTD
+-		case BTRFS_COMPRESS_ZSTD:
+-			comp_ret = zstd_compress_extent(first_sector, sectorsize,
+-							source->buf, bytes_read,
+-							source->comp_buf);
+-			break;
+-#endif
+-		default:
+-			comp_ret = -EINVAL;
+-			break;
+-		}
+-
++	if (do_comp && next - file_pos > sectorsize) {
++		ret = try_compressed_write(trans, root, btrfs_inode, objectid,
++					   source, file_pos, next - file_pos);
++		if (ret > 0)
++			return ret;
++		if (ret < 0 && ret != -E2BIG)
++			return ret;
+ 		/*
+-		 * If the function returned -E2BIG, the extent is incompressible.
+-		 * If this is the first sector, add the nocompress flag,
+-		 * increase the buffer size, and read the rest of the extent.
++		 * If the inode doesn't have INODE_COMPRESS flag set, it means
++		 * the compression failed at the first block.
++		 * Set the NOCOMPRESS flag indicating bad compression ratio.
  		 */
- 		const u64 length = min_t(u64, next - file_pos, SZ_1G);
+-		if (comp_ret == -E2BIG)
+-			do_comp = false;
+-		else if (comp_ret < 0)
+-			return comp_ret;
+-
+-		if (comp_ret == -E2BIG && first_sector) {
++		if (!(btrfs_stack_inode_flags(btrfs_inode) & BTRFS_INODE_COMPRESS)) {
+ 			flags |= BTRFS_INODE_NOCOMPRESS;
+ 			btrfs_set_stack_inode_flags(btrfs_inode, flags);
+-
+-			buf_size = MAX_EXTENT_SIZE;
+-			to_read = min_t(u64, file_pos + buf_size, next) - file_pos;
+-
+-			while (bytes_read < to_read) {
+-				ssize_t ret_read;
+-
+-				ret_read = pread(source->fd,
+-						 source->buf + bytes_read,
+-						 to_read - bytes_read,
+-						 file_pos + bytes_read);
+-				if (ret_read < 0) {
+-					error("cannot read %s at offset %llu length %llu: %m",
+-					      source->path_name,
+-					      file_pos + bytes_read,
+-					      to_read - bytes_read);
+-					return -errno;
+-				}
+-
+-				bytes_read += ret_read;
+-			}
+ 		}
++		/* Fallback to other methods. */
+ 	}
  
--		btrfs_set_stack_file_extent_type(&stack_fi, BTRFS_FILE_EXTENT_REG);
--		btrfs_set_stack_file_extent_num_bytes(&stack_fi, length);
--		btrfs_set_stack_file_extent_ram_bytes(&stack_fi, length);
--		ret = btrfs_insert_file_extent(trans, root, objectid, file_pos, &stack_fi);
-+		ret = btrfs_insert_hole_extent(trans, root, objectid, file_pos, length);
- 		if (ret < 0) {
- 			error("cannot insert hole for range [%llu, %llu)",
- 			      file_pos, file_pos + length);
+-	if (do_comp) {
+-		u64 features;
++	buf_size = MAX_EXTENT_SIZE;
++	to_read = min_t(u64, file_pos + buf_size, next) - file_pos;
++	ret = read_from_source(root->fs_info, source->path_name, source->fd,
++			       source->buf, file_pos, to_read);
++	if (ret < 0)
++		return ret;
+ 
+-		to_write = round_up(comp_ret, sectorsize);
+-		write_buf = source->comp_buf;
+-		memset(write_buf + comp_ret, 0, to_write - comp_ret);
+-
+-		flags |= BTRFS_INODE_COMPRESS;
+-		btrfs_set_stack_inode_flags(btrfs_inode, flags);
+-
+-		if (g_compression == BTRFS_COMPRESS_ZSTD) {
+-			features = btrfs_super_incompat_flags(trans->fs_info->super_copy);
+-			features |= BTRFS_FEATURE_INCOMPAT_COMPRESS_ZSTD;
+-			btrfs_set_super_incompat_flags(trans->fs_info->super_copy,
+-						       features);
+-		} else if (g_compression == BTRFS_COMPRESS_LZO) {
+-			features = btrfs_super_incompat_flags(trans->fs_info->super_copy);
+-			features |= BTRFS_FEATURE_INCOMPAT_COMPRESS_LZO;
+-			btrfs_set_super_incompat_flags(trans->fs_info->super_copy,
+-						       features);
+-		}
+-	} else {
+-		to_write = round_up(to_read, sectorsize);
+-		write_buf = source->buf;
+-		memset(write_buf + to_read, 0, to_write - to_read);
+-	}
++	to_write = round_up(to_read, sectorsize);
++	write_buf = source->buf;
++	memset(write_buf + to_read, 0, to_write - to_read);
+ 
+ 	ret = btrfs_reserve_extent(trans, root, to_write, 0, 0,
+ 				   (u64)-1, &key, 1);
 -- 
 2.53.0
 

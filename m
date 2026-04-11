@@ -1,315 +1,377 @@
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.20])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 706DE1DE4E0
-	for <linux-btrfs@vger.kernel.org>; Sat, 11 Apr 2026 04:47:40 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.17.20
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 95BA0175A63
+	for <linux-btrfs@vger.kernel.org>; Sat, 11 Apr 2026 07:14:31 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775882862; cv=none; b=OB/RE+NXkz/G/g2r6uiEkzNUcCFQfEq954zOeGC0szopRyewVH0tri4Pjq8fiCvhCBj0CRg0thJD/FPJYJ+jb/QB292EWF7jGDdoxHDPOnr8KLYhVlyWjq52q45IWm+MIGB78kjxQ0lJICjc/EdFxYrQIVAiQo4AG7ITsitIqM4=
+	t=1775891673; cv=none; b=FNHOqOKNweu6AvPAcOwnPgXOLd5nH0CvjQA43G4vHFNs5sBruqiJ3ABUXE1iS7/6XK1LLUGeyyOVEZdsnOHcT3EDC/oEs2fPvdG1X+1ceJ3nhpU5aBbb84vTzwMW1aZDD2M8B+HnnhNZjI7oRnU/IgHrk0XrJckP99fKdD1xQ/c=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1775882862; c=relaxed/simple;
-	bh=Vv66PepTzYX44s8TOLB89aiO41WIwVUdmWjnI/kpWNE=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=fFiXN5AdcHfcm2hFccqQU0s3T4GHqX/dGLOd0aebGc2awnFXIylkOmYGxmOUgLCSPSfaQAJtjsuNEAjuo0hxfDxUeSUP4+DfRmpBfeT2VFjsLGkrScj20qbrGzmWGlDVIEehzv9RqhRdfty4hq6eYWvtyL8E4TJmZmmaDO12ph4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=AXTwx+t2; arc=none smtp.client-ip=212.227.17.20
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
+	s=arc-20240116; t=1775891673; c=relaxed/simple;
+	bh=D4TW3+JEFcyUE3iUrxe+fgTAni9iLSBUsgrClGyHKCc=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=P+xdei3OAnaBeuCfazVn6rlgZb8kmxe9546tFf3BM9Kdxjl5gh6BCKOhrMb2TfKwsGL6/kD5++A780TPKucnbZDwybw7wycbxb+zfW+e5/kBRfiQtEq6JdXEKUg03yxMjE+jPl03wgbLrMRAcSohA+1RNeF2jkd5q5AigqfzANQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=QxtAmlGD; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=QxtAmlGD; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="AXTwx+t2"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1775882850; x=1776487650; i=quwenruo.btrfs@gmx.com;
-	bh=Vv66PepTzYX44s8TOLB89aiO41WIwVUdmWjnI/kpWNE=;
-	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
-	 References:From:In-Reply-To:Content-Type:
-	 Content-Transfer-Encoding:cc:content-transfer-encoding:
-	 content-type:date:from:message-id:mime-version:reply-to:subject:
-	 to;
-	b=AXTwx+t2IA7XErvs6l00E5IAW4epTonAVagDEz2YfhrzBhBOIaw/x3HGQWbRH+9t
-	 r05slegJNZc2WvUGdVGxs/AaxTvztsqBU+3N2aroGs//e7c9KxwoLOpojql3CvaXs
-	 6xNlJVvEXLFYjdQOJQtkFkEYmUiURG+DgdyeJL0rSszv/omYNaoWQgwIh4SK2BB8F
-	 TpvODd7t1WrTTlNGWvUYGDJDQNHbpQ/7gzzyQnrV+ao+b6SdMg0EZxuO3LSA1vn02
-	 R7iQfiDXmsUGHwzUSU5QcFPd8AFPA5KEWWUTAxSAtxsQ6QtLJreEIbGJyTCkN6ivb
-	 zHthObBGIJM2Xlq78w==
-X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from client.hidden.invalid by mail.gmx.net (mrgmx104
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1MOiHf-1voWac3ieN-00JpDA; Sat, 11
- Apr 2026 06:47:30 +0200
-Message-ID: <03e3077a-28a4-4e68-af01-940eed58689e@gmx.com>
-Date: Sat, 11 Apr 2026 14:17:24 +0930
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="QxtAmlGD";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="QxtAmlGD"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id C49465BCE9
+	for <linux-btrfs@vger.kernel.org>; Sat, 11 Apr 2026 07:14:29 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1775891669; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=cEoB25uEqiLPZ3oKUsUb74SmNjS+9Op+1ZZqYDhhBro=;
+	b=QxtAmlGDvFFJxRx0EYGwAu+ik+9zZI7U3bRbct+5lFpi0cl52hzHW8n02/eV8g1rKLR3wq
+	qirHLIbQPXMNrgNajgzMSiSupixU2SuAnDicAfFgDFF3kDIaSsjsW2Fh7ptlA7XfwLGuio
+	TX9zBlt+yigfmvn5uQ+aosbzawWj/Nw=
+Authentication-Results: smtp-out2.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1775891669; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=cEoB25uEqiLPZ3oKUsUb74SmNjS+9Op+1ZZqYDhhBro=;
+	b=QxtAmlGDvFFJxRx0EYGwAu+ik+9zZI7U3bRbct+5lFpi0cl52hzHW8n02/eV8g1rKLR3wq
+	qirHLIbQPXMNrgNajgzMSiSupixU2SuAnDicAfFgDFF3kDIaSsjsW2Fh7ptlA7XfwLGuio
+	TX9zBlt+yigfmvn5uQ+aosbzawWj/Nw=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id C2F2E4A259
+	for <linux-btrfs@vger.kernel.org>; Sat, 11 Apr 2026 07:14:28 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id 9EQAHNT02WnuKQAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Sat, 11 Apr 2026 07:14:28 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs-progs: reject writes if the fs has running replace/balance
+Date: Sat, 11 Apr 2026 16:44:02 +0930
+Message-ID: <0ec0bc8fa6d3a331d0e49d5a1b365d31863e7d66.1775891635.git.wqu@suse.com>
+X-Mailer: git-send-email 2.53.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: BTRFS discard crash: failed to run delayed ref for logical
- 15506102321152 num_bytes 16384 type 182 action 2 ref_mod 1: -2 6.11.2)
-To: Marc MERLIN <marc@merlins.org>, linux-btrfs
- <linux-btrfs@vger.kernel.org>, Boris Burkov <boris@bur.io>,
- Josef Bacik <josef@toxicpanda.com>, QuWenruo <wqu@suse.com>,
- Filipe Manana <fdmanana@kernel.org>
-Cc: Chris Murphy <lists@colorremedies.com>,
- Zygo Blaxell <ce3g8jdj@umail.furryterror.org>, Roman Mamedov
- <rm@romanrm.net>, Su Yue <Damenly_Su@gmx.com>
-References: <adnBhWfJQ1n3hZC8@merlins.org>
-Content-Language: en-US
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1YAUJEP5a
- sQAKCRDCPZHzoSX+qF+mB/9gXu9C3BV0omDZBDWevJHxpWpOwQ8DxZEbk9b9LcrQlWdhFhyn
- xi+l5lRziV9ZGyYXp7N35a9t7GQJndMCFUWYoEa+1NCuxDs6bslfrCaGEGG/+wd6oIPb85xo
- naxnQ+SQtYLUFbU77WkUPaaIU8hH2BAfn9ZSDX9lIxheQE8ZYGGmo4wYpnN7/hSXALD7+oun
- tZljjGNT1o+/B8WVZtw/YZuCuHgZeaFdhcV2jsz7+iGb+LsqzHuznrXqbyUQgQT9kn8ZYFNW
- 7tf+LNxXuwedzRag4fxtR+5GVvJ41Oh/eygp8VqiMAtnFYaSlb9sjia1Mh+m+OBFeuXjgGlG
- VvQFzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1gQUJEP5a0gAK
- CRDCPZHzoSX+qHGpB/kB8A7M7KGL5qzat+jBRoLwB0Y3Zax0QWuANVdZM3eJDlKJKJ4HKzjo
- B2Pcn4JXL2apSan2uJftaMbNQbwotvabLXkE7cPpnppnBq7iovmBw++/d8zQjLQLWInQ5kNq
- Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
- +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
- HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
-In-Reply-To: <adnBhWfJQ1n3hZC8@merlins.org>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: base64
-X-Provags-ID: V03:K1:ijp6TCuSdMbHRrga58M5foK4WyG5c3WWOztg/nFetS5UIBVOL1V
- PovbN4RUs+qXDBIZLFBfMmsDJ0fsAM6ZCgPBVvIKmqXS9EuuWEEkGlItcBaC7r/JpNq0NCt
- OXM1w4q1Remfq2WSlERjx8YAJr392pOlp8pqfjAz3lBsO2shPKobmKQtUnNsT5AQgPUUS/c
- WsQJdmYyEsZ2CmD/Gd0FA==
+Content-Transfer-Encoding: 8bit
+X-Spam-Score: -2.77
+X-Spam-Level: 
+X-Spamd-Result: default: False [-2.77 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.17)[-0.865];
+	MIME_GOOD(-0.10)[text/plain];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	ARC_NA(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	RCVD_TLS_ALL(0.00)[]
 X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:Qa1sZR3J08A=;5UD/brwrwwNMrf//+hOf1JyGo/G
- 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
- SyS2B1GT4CRWF48zlVshFJlg==
 
-DQoNCuWcqCAyMDI2LzQvMTEgMTM6MDUsIE1hcmMgTUVSTElOIOWGmemBkzoNCj4gW0lzIHRo
-ZXJlIGEgbW9yZSBhcHByb3ByaWF0ZSB3YXkgdG8gcmVwb3J0IEZTIGNvcnJ1cHRpb24/IExv
-b2tzIGxpa2UNCj4gRW1haWxzIHRvIGp1c3QgbGludXgtYnRyZnNAdmdlci5rZXJuZWwub3Jn
-IGRvIG5vdCBnZXQgc2VlbiBhbW9uZ3N0IGFsbA0KPiB0aGUgcGF0Y2hlcyBoaWRpbmcgYSBu
-b3JtYWwgRW1haWxdDQo+IA0KPiBIb3dkeSwNCj4gDQo+IEkgaGFkIGJ0ZnJzIGZpbGVzeXN0
-ZW0gb24gdG9wIG9mIHJhaWQ1IHdpdGggNSBzcGlubmluZyBkcml2ZXMuDQo+IEkgbWlzdGFr
-ZW5seSBlbmFibGVkIGRpc2NhcmQgYnkgbWlzdGFrZSB3aGljaCBjYXVzZWQgYSBjcmFzaCB3
-aGVuIHRoZSBkaXNjYXJkIHRocmVhZCB0cmllZA0KPiB0byBydW4gKG5vIGRpc2NhcmQgb24g
-dGhvc2UgZHJpdmVzKQ0KPiBLZXJuZWwgNi4xMg0KPiANCj4gSSB3b3JrZWQgb24gcmVjb3Zl
-cnkgdXNpbmcgZ2VtaW5pIDMuMCBwcm8sIG1vdW50aW5nIHJlYWQgb25seSBpcyBmaW5lLCBi
-dXQgSSBuZWVkIHJlYWQgd3JpdGUNCj4gb3Igd2lsbCB3YXN0ZSBkYXlzIChwcm9iYWJseSB3
-ZWVrcykgcmVjcmVhdGluZyB0aGlzIGVudGlyZSAyMFRCKyBiYWNrdXAgb3ZlciB0aGUgaW50
-ZXJuZXQNCj4gDQo+IEknbSBub3QgcXVhbGlmaWVkIHRvIHNheSBpZiBldmVyeXRoaW5nIEdl
-bWluaSBzYWlkIHdhcyBjb3JyZWN0LCBidXQgSSB0aGluayBzdW1tYXJ5IGlzOg0KPiAxKSBk
-aXNjYXJkIGNhbiBhcHBhcmVudGx5IGtpbGwgYSBmaWxlc3lzdGVtIHdoZW4gaXQncyBoYXJk
-IGRyaXZlcyBiZWxvdyAoaXQgZGlkIGZvciBtZSkNCj4gMikgLW8gc2tpcF9iYWxhbmNlLHVz
-ZWJhY2t1cHJvb3QgZGlkbid0IGhlbHANCj4gMykgbm8gd2F5IHRvIG1vdW50IGFmdGVyIHNw
-YWNlIGNhY2hlIGhhcyBiZWVuIGNsZWFyZWQgYW5kIGJsb2NrLWdyb3VwLXRyZWUgaXMgZW5h
-YmxlZA0KPiA0KSBzdGlsbCBubyB3YXkgdG8gbW91bnQgcmVhZCB3cml0ZSBhZnRlciByZW1v
-dmluZyBibG9jay1ncm91cC10cmVlDQo+IA0KPiBJdCBzdGFydGVkIHdpdGg6DQo+IFsyMzM0
-NS4zMjYzMjFdIEJUUkZTOiBlcnJvciAoZGV2aWNlIGRtLTAgc3RhdGUgQSkgaW4gZG9fZnJl
-ZV9leHRlbnRfYWNjb3VudGluZzoyOTk2OiBlcnJubz0tMiBObyBzdWNoIGVudHJ5DQo+IFsy
-MzM0NS4zMzYzOTRdIEJUUkZTIGVycm9yIChkZXZpY2UgZG0tMCBzdGF0ZSBFQSk6IGZhaWxl
-ZCB0byBydW4gZGVsYXllZCByZWYgZm9yIGxvZ2ljYWwgMTU1MDYxMDIzMjExNTIgbnVtX2J5
-dGVzIDE2Mzg0IHR5cGUgMTgyIGFjdGlvbiAyIHJlZl9tb2QgMTogLTINCj4gWzIzMzQ1LjM1
-MDI5OV0gQlRSRlM6IGVycm9yIChkZXZpY2UgZG0tMCBzdGF0ZSBFQSkgaW4gYnRyZnNfcnVu
-X2RlbGF5ZWRfcmVmczoyMjE1OiBlcnJubz0tMiBObyBzdWNoIGVudHJ5DQo+IFsyMzM0NS4z
-NjAxNTRdIEJUUkZTIHdhcm5pbmcgKGRldmljZSBkbS0wIHN0YXRlIEVBKToNCj4gDQo+IEkg
-ZW5kZWQgdXAgd2l0aDoNCj4gDQo+IG1vcmVtYWdpYzp+IyBtb3VudCAtdCBidHJmcyAtbyBy
-dyxza2lwX2JhbGFuY2Usc3BhY2VfY2FjaGU9djIsY2xlYXJfY2FjaGUgL2Rldi9tYXBwZXIv
-Y3J5cHRfYmNhY2hlMCAvbW50L2J0cmZzX2JpZ2JhY2t1cA0KPiBCVFJGUzogZGV2aWNlIGxh
-YmVsIERTNiBkZXZpZCAxIHRyYW5zaWQgMjk2OTUwIC9kZXYvbWFwcGVyL2NyeXB0X2JjYWNo
-ZTAgKDI1MTowKSBzY2FubmVkIGJ5IG1vdW50ICg2MDI5KQ0KPiBCVFJGUyBpbmZvIChkZXZp
-Y2UgZG0tMCk6IGZpcnN0IG1vdW50IG9mIGZpbGVzeXN0ZW0gYTk3ZGVjODUtYTBkNS00MmFi
-LWEwZWYtZTliNzQ3OWZiZTQzDQo+IEJUUkZTIGluZm8gKGRldmljZSBkbS0wKTogdXNpbmcg
-Y3JjMzJjIChjcmMzMmMtZ2VuZXJpYykgY2hlY2tzdW0gYWxnb3JpdGhtDQo+IEJUUkZTIHdh
-cm5pbmcgKGRldmljZSBkbS0wKTogcmVhZC13cml0ZSBmb3Igc2VjdG9yIHNpemUgNDA5NiB3
-aXRoIHBhZ2Ugc2l6ZSAxNjM4NCBpcyBleHBlcmltZW50YWwNCj4gQlRSRlMgaW5mbyAoZGV2
-aWNlIGRtLTApOiBiZGV2IC9kZXYvbWFwcGVyL2NyeXB0X2JjYWNoZTAgZXJyczogd3IgMCwg
-cmQgMCwgZmx1c2ggMCwgY29ycnVwdCA1MDc0LCBnZW4gMA0KPiAtLS0tLS0tLS0tLS1bIGN1
-dCBoZXJlIF0tLS0tLS0tLS0tLS0NCj4gQlRSRlM6IFRyYW5zYWN0aW9uIGFib3J0ZWQgKGVy
-cm9yIC0yKQ0KPiBXQVJOSU5HOiBDUFU6IDMgUElEOiA2MDI5IGF0IGZzL2J0cmZzL2V4dGVu
-dC10cmVlLmM6Mjk5NiBfX2J0cmZzX2ZyZWVfZXh0ZW50LmlzcmEuMCsweDEzYTAvMHgxNGEw
-IFtidHJmc10NCj4gTW9kdWxlcyBsaW5rZWQgaW46IGRtX2NyeXB0IGRtX21vZCBiY2FjaGUg
-cmFpZDQ1NiBhc3luY19yYWlkNl9yZWNvdiBhc3luY19tZW1jcHkgYXN5bmNfcHEgYXN5bmNf
-eG9yIGFzeW5jX3R4IHh0X01BU1FVRVJBREUgaXB0X1JFSkVDVCBuZl9yZWplY3RfaXB2NCB4
-dF90Y3B1ZHAgeHRfY29ubnRyYWNrIHh0X0xPRyBuZl9sb2dfc3lzbG9nIG5mdF9jb21wYXQg
-bmZ0X2NoYWluX25hdCBuZl9uYXQgbmZfY29ubnRyYWNrIG5mX2RlZnJhZ19pcHY2IG5mX2Rl
-ZnJhZ19pcHY0IG5mX3RhYmxlcyByZmNvbW0gYWxnaWZfaGFzaCBhbGdpZl9za2NpcGhlciBh
-Zl9hbGcgYm5lcCBjcDIxMHggYnJjbWZtYWNfd2NjIGJpbmZtdF9taXNjIHVzYnNlcmlhbCBo
-Y2lfdWFydCBicmNtZm1hYyBidGJjbSB2YzQgc25kX3NvY19oZG1pX2NvZGVjIGJyY211dGls
-IGJsdWV0b290aCBkcm1fZGlzcGxheV9oZWxwZXIgY2ZnODAyMTEgY2VjIGRybV9kbWFfaGVs
-cGVyIHJwaV9oZXZjX2RlYyBlY2RoX2dlbmVyaWMgdjRsMl9tZW0ybWVtIGVjYyBzbmRfc29j
-X2NvcmUgcGlzcF9iZSB2aWRlb2J1ZjJfZG1hX2NvbnRpZyB2M2QgdmlkZW9idWYyX21lbW9w
-cyB2aWRlb2J1ZjJfdjRsMiBncHVfc2NoZWQgcmZraWxsIHZpZGVvZGV2IGRybV9zaG1lbV9o
-ZWxwZXIgc25kX2NvbXByZXNzIHNuZF9wY21fZG1hZW5naW5lIHNuZF9wY20gdmlkZW9idWYy
-X2NvbW1vbiBycDFfcGlvIHNuZF90aW1lciBzbmQgZHJtX2ttc19oZWxwZXIgbWMgcmFzcGJl
-cnJ5cGlfZ3Bpb21lbSBycDFfZncgc2cgc2NoX2ZxX2NvZGVsIGVjcnlwdGZzIGZ1c2UgZHJt
-IGRybV9wYW5lbF9vcmllbnRhdGlvbl9xdWlya3MgYmFja2xpZ2h0IG5mbmV0bGluayBpcF90
-YWJsZXMgeF90YWJsZXMgcmFpZDEgYWVzX2NlX2JsayBhZXNfY2VfY2lwaGVyIGdoYXNoX2Nl
-IGdmMTI4bXVsIGxpYmFlcyBzaGEyX2NlIHNwaWRldiBzaGEyNTZfYXJtNjQgc2hhMV9jZSBy
-YXNwYmVycnlwaV9od21vbiBzaGExX2dlbmVyaWMgYWhjaSBpMmNfYnJjbXN0YiBzcGlfYmNt
-MjgzNQ0KPiAgIG1kX21vZCBncGlvX2tleXMgbGliYWhjaSBwd21fZmFuIHJwMV9hZGMgbGli
-YXRhIHJwMV9tYWlsYm94IG52bWVtX3JtZW0gdWlvX3BkcnZfZ2VuaXJxIHVpbyBidHJmcyBi
-bGFrZTJiX2dlbmVyaWMgeG9yIHhvcl9uZW9uIHJhaWQ2X3BxIHpyYW0gbHo0X2NvbXByZXNz
-IGlwdjYNCj4gQ1BVOiAzIFVJRDogMCBQSUQ6IDYwMjkgQ29tbTogbW91bnQgTm90IHRhaW50
-ZWQgNi4xMi40NytycHQtcnBpLTI3MTIgIzEgIERlYmlhbiAxOjYuMTIuNDctMStycHQxDQo+
-IEhhcmR3YXJlIG5hbWU6IFJhc3BiZXJyeSBQaSA1IE1vZGVsIEIgUmV2IDEuMSAoRFQpDQo+
-IHBzdGF0ZTogNjA0MDAwMDkgKG5aQ3YgZGFpZiArUEFOIC1VQU8gLVRDTyAtRElUIC1TU0JT
-IEJUWVBFPS0tKQ0KPiBwYyA6IF9fYnRyZnNfZnJlZV9leHRlbnQuaXNyYS4wKzB4MTNhMC8w
-eDE0YTAgW2J0cmZzXQ0KPiBsciA6IF9fYnRyZnNfZnJlZV9leHRlbnQuaXNyYS4wKzB4MTNh
-MC8weDE0YTAgW2J0cmZzXQ0KPiBzcCA6IGZmZmZjMDAwODY4YmI2ODANCj4geDI5OiBmZmZm
-YzAwMDg2OGJiNzIwIHgyODogMDAwMDAwMDAwMDAwMDAwMCB4Mjc6IDAwMDAwMDAwMDAwMDJm
-MDINCj4geDI2OiAwMDAwMDAwMDAwMDAwMDdmIHgyNTogZmZmZjgwMDFkZTgzM2FhMCB4MjQ6
-IDAwMDAwMDAwMDAwMDQwMDANCj4geDIzOiAwMDAwMDAwMDAwMDAwMDAwIHgyMjogZmZmZjgw
-MDEwMmI2NGU3MCB4MjE6IDAwMDAwMDAwMDAwMDQwMDANCj4geDIwOiAwMDAwMGUxYTRiYjg4
-MDAwIHgxOTogMDAwMDAwMDBmZmZmZmZmZSB4MTg6IDAwMDAwMDAwMDAwMDAwMDANCj4geDE3
-OiAwMDAwMDAwMDAwMDAwMDAwIHgxNjogMDAwMDAwMDAwMDAwMDAwMCB4MTU6IDAwMDAwMDAw
-MDAwMDAwMDANCj4geDE0OiAwMDAwMDAwMDAwMDAwMDAwIHgxMzogMDAwMDAwMDAwMDAwMDAw
-MCB4MTI6IDAwMDAwMDAwMDAwMDAwMDANCj4geDExOiAwMDAwMDAwMDAwMDAwMGMwIHgxMDog
-MDAwMDAwMDAwMDAwMWE0MCB4OSA6IGZmZmZkMDZmY2U0ZTA2YzANCj4geDggOiBmZmZmODAw
-MTFmNTZlMGEwIHg3IDogMDAwMDAwMDQyZjcyYTdiZCB4NiA6IDAwMDAwMDAwMDAwMDAwMzkN
-Cj4geDUgOiAwMDAwMDAwMDAwMDAwMDAxIHg0IDogMDAwMDAwMDAwMDAwMWFiMCB4MyA6IDAw
-MDAwMDAwMDAwMDA4MDQNCj4geDIgOiAwMDAwMDAwMDAwMDAwMDAwIHgxIDogMDAwMDAwMDAw
-MDAwMDAwMCB4MCA6IGZmZmY4MDAxMWY1NmM2MDANCj4gQ2FsbCB0cmFjZToNCj4gICBfX2J0
-cmZzX2ZyZWVfZXh0ZW50LmlzcmEuMCsweDEzYTAvMHgxNGEwIFtidHJmc10NCj4gICBfX2J0
-cmZzX3J1bl9kZWxheWVkX3JlZnMrMHg1MDgvMHhlYzAgW2J0cmZzXQ0KPiAgIGJ0cmZzX3J1
-bl9kZWxheWVkX3JlZnMrMHg0OC8weDE5OCBbYnRyZnNdDQo+ICAgYnRyZnNfY29tbWl0X3Ry
-YW5zYWN0aW9uKzB4ODgvMHhlMjAgW2J0cmZzXQ0KPiAgIGJ0cmZzX3JlY292ZXJfcmVsb2Nh
-dGlvbisweDU1Yy8weDVkMCBbYnRyZnNdDQo+ICAgYnRyZnNfc3RhcnRfcHJlX3J3X21vdW50
-KzB4MWQ0LzB4NDcwIFtidHJmc10NCj4gICBvcGVuX2N0cmVlKzB4MTAxYy8weDEzYjggW2J0
-cmZzXQ0KPiAgIGJ0cmZzX2dldF90cmVlKzB4NWI0LzB4ODAwIFtidHJmc10NCj4gICB2ZnNf
-Z2V0X3RyZWUrMHgzMC8weDEwOA0KPiAgIGZjX21vdW50KzB4MjAvMHg2OA0KPiAgIGJ0cmZz
-X2dldF90cmVlKzB4MjM4LzB4ODAwIFtidHJmc10NCj4gICB2ZnNfZ2V0X3RyZWUrMHgzMC8w
-eDEwOA0KPiAgIHZmc19jbWRfY3JlYXRlKzB4NTgvMHhmOA0KPiAgIF9fYXJtNjRfc3lzX2Zz
-Y29uZmlnKzB4NDQ0LzB4NWI4DQo+ICAgaW52b2tlX3N5c2NhbGwrMHg1MC8weDEyMA0KPiAg
-IGVsMF9zdmNfY29tbW9uLmNvbnN0cHJvcC4wKzB4NDgvMHhmMA0KPiAgIGRvX2VsMF9zdmMr
-MHgyNC8weDM4DQo+ICAgZWwwX3N2YysweDMwLzB4ZjgNCj4gICBlbDB0XzY0X3N5bmNfaGFu
-ZGxlcisweDEyMC8weDEzMA0KPiAgIGVsMHRfNjRfc3luYysweDE5MC8weDE5OA0KPiAtLS1b
-IGVuZCB0cmFjZSAwMDAwMDAwMDAwMDAwMDAwIF0tLS0NCj4gQlRSRlM6IGVycm9yIChkZXZp
-Y2UgZG0tMCBzdGF0ZSBBKSBpbiBkb19mcmVlX2V4dGVudF9hY2NvdW50aW5nOjI5OTY6IGVy
-cm5vPS0yIE5vIHN1Y2ggZW50cnkNCj4gQlRSRlMgZXJyb3IgKGRldmljZSBkbS0wIHN0YXRl
-IEVBKTogZmFpbGVkIHRvIHJ1biBkZWxheWVkIHJlZiBmb3IgbG9naWNhbCAxNTUwNjEwMjMy
-MTE1MiBudW1fYnl0ZXMgMTYzODQgdHlwZSAxODIgYWN0aW9uIDIgcmVmX21vZCAxOiAtMg0K
-DQpUaGVyZSBpcyBhIG1pc3NpbmcgZXh0ZW50IGl0ZW0gZm9yIGEgc2hhcmVkIHRyZWUgYmxv
-Y2ssIGFrYSBleHRlbnQgdHJlZSANCmNvcnJ1cHRpb24uDQoNClBsZWFzZSB0cnkgc2tpcF9i
-YWxhbmNlIHRvIHNlZSBpZiB0aGUgZnMgY2FuIGJlIG1vdW50ZWQsIHRoZW4gY2FuY2VsIHRo
-ZSANCnJlbG9jYXRpb24uDQoNClRoZW4gcmUtcnVuIGJ0cmZzIGNoZWNrIHNvIHdlIGRvIG5v
-dCBoYXZlIGJhbGFuY2UgY29tcGxpY2F0aW5nIHRoZSANCnNpdHVhdGlvbi4NCg0KPiBCVFJG
-UzogZXJyb3IgKGRldmljZSBkbS0wIHN0YXRlIEVBKSBpbiBidHJmc19ydW5fZGVsYXllZF9y
-ZWZzOjIyMTU6IGVycm5vPS0yIE5vIHN1Y2ggZW50cnkNCj4gQlRSRlMgd2FybmluZyAoZGV2
-aWNlIGRtLTAgc3RhdGUgRUEpOiBmYWlsZWQgdG8gcmVjb3ZlciByZWxvY2F0aW9uOiAtMg0K
-PiBCVFJGUyBlcnJvciAoZGV2aWNlIGRtLTAgc3RhdGUgRUEpOiBjb21taXQgc3VwZXIgcmV0
-IC0zMA0KPiBCVFJGUyBlcnJvciAoZGV2aWNlIGRtLTAgc3RhdGUgRUEpOiBvcGVuX2N0cmVl
-IGZhaWxlZDogLTINCj4gDQo+IA0KPiBHZW1pbmkgc2FpZA0KDQpQbGVhc2UgZHJvcCB3aGF0
-ZXZlciBMTE0gc2F5cywgZm9yIG1vc3QgY2FzZXMgaXQgbWFrZXMgbm8gZGlmZmVyZW5jZSBu
-b3IgDQpzZW5zZS4NCg0KSSBldmVuIGJlbGlldmUgaXQncyBtYWtpbmcgdGhpbmdzIHdvcnNl
-Lg0KDQo+IA0KPiBtb3JlIGRldGFpbHM6DQo+IGJhY2t1cHJvb3QgZGlkbid0IHdvcmsgKHJl
-YWQgd3JpdGUpDQo+IEkgd2FzIGZvcmNlZCB0byBydW4NCj4gYnRyZnN0dW5lIC0tY29udmVy
-dC1mcm9tLWJsb2NrLWdyb3VwLXRyZWUgL2Rldi9tYXBwZXIvY3J5cHRfYmNhY2hlMA0KDQpQ
-bGVhc2UgZG8gbm90IGRvIHdoYXRldmVyIHdyaXRlcyB0byB0aGUgZnMgdW50aWwgeW91IGtu
-b3cgd2h5IHlvdSBzaG91bGQgDQpkbyB0aGF0Lg0KQW5kIGluIHRoaXMgY2FzZSwgdGhpcyB3
-aWxsIG9ubHkgbWFrZSB0aGluZ3Mgd29yc2UuDQoNCk5vdyBJIGRvIG5vdCBldmVuIGtub3cg
-aWYgdGhpcyBpcyB0aGUgb3JpZ2luYWwgcHJvYmxlbSBvciBzb21ldGhpbmcgDQppbnRyb2R1
-Y2VkIGJ5IHlvdXIgd3JpdGVzLg0KDQoNCkF0IGxlYXN0IGJ0cmZzLXByb2dzIGNhbiBhZGQg
-c29tZSBjaGVja3MgdG8gcHJldmVudCBzdWNoIG9wZXJhdGlvbnMgd2hlbiANCnRoZXJlIGlz
-IGEgcnVubmluZyBiYWxhbmNlLg0KSSBiZWxpZXZlIHRoYXQncyB0aGUgb25seSB0aGluZyB3
-ZSBjYW4gYmVuZWZpdCBmcm9tIHlvdXIgcmVwb3J0Lg0KDQpOZXh0IHRpbWUsIHBsZWFzZSBk
-byBub3QgZG8gd2hhdGV2ZXIgY3Jhenkvc3R1cGlkIHRoaW5ncyB1bmxlc3MgKllPVSogDQpr
-bm93IHRoZSByZWFzb24uDQoNClRoYW5rcywNClF1DQoNCj4gYmVjYXVzZQ0KPiBXaGVuIHlv
-dSByYW4gYnRyZnMgY2hlY2sgLS1jbGVhci1zcGFjZS1jYWNoZSB2MiwgdGhlIHRvb2wgZGlk
-IGV4YWN0bHkNCj4gd2hhdCBpdCB3YXMgc3VwcG9zZWQgdG8gZG86IGl0IGRlbGV0ZWQgdGhl
-IEZyZWUgU3BhY2UgVHJlZSBhbmQgcmVtb3ZlZA0KPiB0aGUgRlJFRV9TUEFDRV9UUkVFIGZs
-YWcgZnJvbSB5b3VyIHN1cGVyYmxvY2suDQo+IFRoZSBDb25mbGljdDogWW91ciAyM1RCIGFy
-cmF5IHdhcyBmb3JtYXR0ZWQgd2l0aCB0aGUgbW9kZXJuDQo+IGJsb2NrLWdyb3VwLXRyZWUg
-ZmVhdHVyZSAod2hpY2ggc3BlZWRzIHVwIG1vdW50aW5nKS4NCj4gVGhlIEtlcm5lbCBSdWxl
-OiBUaGUgQnRyZnMga2VybmVsIGNvZGUgZXhwbGljaXRseSBkaWN0YXRlczogSWYgdGhlIEJs
-b2NrDQo+IEdyb3VwIFRyZWUgaXMgZW5hYmxlZCwgdGhlIEZyZWUgU3BhY2UgVHJlZSBNVVNU
-IGFsc28gYmUgZW5hYmxlZC4gKiBUaGUNCj4gQ3Jhc2g6IEJlY2F1c2UgdGhlIEZSRUVfU1BB
-Q0VfVFJFRSBmbGFnIGlzIG5vdyBtaXNzaW5nLCB0aGUga2VybmVsIHNlZXMNCj4gYW4gImls
-bGVnYWwiIHN1cGVyYmxvY2sgc3RhdGUgYW5kIHRocm93cyBhIGZhdGFsIC0yMiBlcnJvciwg
-cmVmdXNpbmcgdG8NCj4gcHJvY2VlZCB0byB0aGUgbW91bnQgb3B0aW9ucy4NCj4gDQo+IFRo
-aXMgd2FzIHZleGluZywgaG91cnMgbG9zdCByZW1vdmluZyB0aGUgYmxvY2sgZ3JvdXAgdHJl
-ZS4NCj4gYW5kIHdoZW4gaXQgd2FzIGZpbmFsbHkgZmluaXNoZWQsDQo+IG1vdW50IC10IGJ0
-cmZzIC1vIHNraXBfYmFsYW5jZSAvZGV2L21hcHBlci9jcnlwdF9iY2FjaGUwIC9tbnQvYnRy
-ZnNfYmlnYmFja3VwLw0KPiBkaWQgcnVuLCBidXQgY3Jhc2hlZCBhcyBhYm92ZQ0KPiANCj4g
-Tm93IGRvaW5nIGEgcmVwYWlyIGluIGNhc2UgaXQgY2FuIHNhbHZhZ2UgdGhpbmdzLg0KPiAN
-Cj4gTWFyYw0KDQo=
+Btrfs-progs never has the ability to handle reloc trees, thus if a btrfs
+with running balance is passed to btrfstune, btrfstune will just ignore
+all the reloc trees and continue modifying the fs.
+
+This can easily screw up the balance resume on the next RW mount and
+corrupt the fs.
+
+For dev-replace it's very similar, we can modify the metadata before the
+current replace cursor, causing writes that will not be written to the
+dev-replace target device and cause corruption.
+
+Reject those fses with running replace/balance to prevent corruption for
+the following tools:
+
+- btrfstune
+  All write operations will be rejected.
+
+- btrfs check --clear-space-cache
+- btrfs rescue clear-space-cache
+- btrfs rescue fix-data-checksum
+- btrfs rescue clear-uuid-tree
+- btrfs rescue clear-ino-cache
+- btrfs check --repair
+
+Some "btrfs rescue" subcommands do not start a new transaction and
+directly update the super blocks, thus they are safe from the
+replace/balance.
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ Documentation/btrfs-check.rst   |  3 ++
+ Documentation/btrfs-rescue.rst  |  4 +++
+ Documentation/btrfstune.rst     |  4 +++
+ check/main.c                    | 13 ++++++++
+ cmds/rescue-fix-data-checksum.c |  9 ++++++
+ cmds/rescue.c                   | 19 +++++++++++
+ common/clear-cache.c            | 57 +++++++++++++++++++++++++++++++++
+ common/clear-cache.h            |  1 +
+ tune/main.c                     | 10 ++++++
+ 9 files changed, 120 insertions(+)
+
+diff --git a/Documentation/btrfs-check.rst b/Documentation/btrfs-check.rst
+index 176639e71d73..cdcc603fe815 100644
+--- a/Documentation/btrfs-check.rst
++++ b/Documentation/btrfs-check.rst
+@@ -110,6 +110,9 @@ DANGEROUS OPTIONS
+                 *--force* to give users a chance to think twice before running repair, the
+                 warnings in documentation have shown to be insufficient.
+ 
++	.. note::
++		Please finish/cancel the running replace/balance before using this command.
++
+ --init-csum-tree
+         create a new checksum tree and recalculate checksums in all files
+ 
+diff --git a/Documentation/btrfs-rescue.rst b/Documentation/btrfs-rescue.rst
+index b4070714f56b..f8de733d1800 100644
+--- a/Documentation/btrfs-rescue.rst
++++ b/Documentation/btrfs-rescue.rst
+@@ -12,6 +12,10 @@ DESCRIPTION
+ A set of commands that are targeting to fix a specific problem and may not
+ suitable for :doc`btrfs-check`.
+ 
++.. note::
++   All the subcommands can not handle an ongoing replace/balance, please finish/cancel
++   the replace/balance before using this command.
++
+ SUBCOMMAND
+ ----------
+ 
+diff --git a/Documentation/btrfstune.rst b/Documentation/btrfstune.rst
+index c7d592bcaca2..6811851f92bf 100644
+--- a/Documentation/btrfstune.rst
++++ b/Documentation/btrfstune.rst
+@@ -21,6 +21,10 @@ complete list of features and kernel version of their introduction at
+ Some of the features could be also enabled on a mounted filesystem by other
+ means.  Please refer to the *FILESYSTEM FEATURES* in :doc:`btrfs-man5`.
+ 
++.. note::
++   :command:`btrfstune` requires the target fs to have no running replace nor balance.
++   Please finish/cancel the running replace/balance before using :command:`btrfstune`.
++
+ OPTIONS
+ -------
+ 
+diff --git a/check/main.c b/check/main.c
+index a16423103529..daddd5e05f82 100644
+--- a/check/main.c
++++ b/check/main.c
+@@ -10825,6 +10825,19 @@ static int cmd_check(const struct cmd_struct *cmd, int argc, char **argv)
+ 		err |= !!ret;
+ 		goto err_out;
+ 	}
++	if (opt_check_repair) {
++		ret = has_running_replace_or_balance(gfs_info);
++		if (ret < 0) {
++			err |= !!ret;
++			goto close_out;
++		}
++		if (ret > 0) {
++			error("please finish/cacnel the running replace/balance before running this command");
++			ret = -EINVAL;
++			err |= !!ret;
++			goto close_out;
++		}
++	}
+ 
+ 	root = gfs_info->fs_root;
+ 	uuid_unparse(gfs_info->super_copy->fsid, uuidbuf);
+diff --git a/cmds/rescue-fix-data-checksum.c b/cmds/rescue-fix-data-checksum.c
+index cee187e9b83e..a4bf4c066088 100644
+--- a/cmds/rescue-fix-data-checksum.c
++++ b/cmds/rescue-fix-data-checksum.c
+@@ -24,6 +24,7 @@
+ #include "kernel-shared/file-item.h"
+ #include "common/messages.h"
+ #include "common/open-utils.h"
++#include "common/clear-cache.h"
+ #include "cmds/rescue.h"
+ 
+ /*
+@@ -492,6 +493,14 @@ int btrfs_recover_fix_data_checksum(const char *path, enum btrfs_fix_data_checks
+ 		error("failed to open btrfs at %s", path);
+ 		return -EIO;
+ 	}
++	ret = has_running_replace_or_balance(fs_info);
++	if (ret < 0)
++		goto out_close;
++	if (ret > 0) {
++		error("please finish/cancel the running replace/balance before running this command");
++		ret = -EINVAL;
++		goto out_close;
++	}
+ 	csum_root = btrfs_csum_root(fs_info, 0);
+ 	if (!csum_root) {
+ 		error("failed to get csum root");
+diff --git a/cmds/rescue.c b/cmds/rescue.c
+index 4af5415d6761..00a4e909a91e 100644
+--- a/cmds/rescue.c
++++ b/cmds/rescue.c
+@@ -466,7 +466,17 @@ static int cmd_rescue_clear_uuid_tree(const struct cmd_struct *cmd,
+ 		goto out;
+ 	}
+ 
++	ret = has_running_replace_or_balance(fs_info);
++	if (ret < 0)
++		goto out_close;
++	if (ret > 0) {
++		error("please finish/cancel the running replace/balance before running this command");
++		ret = -EINVAL;
++		goto out_close;
++	}
++
+ 	ret = clear_uuid_tree(fs_info);
++out_close:
+ 	close_ctree(fs_info->tree_root);
+ out:
+ 	return !!ret;
+@@ -511,6 +521,14 @@ static int cmd_rescue_clear_ino_cache(const struct cmd_struct *cmd,
+ 		ret = -EIO;
+ 		goto out;
+ 	}
++	ret = has_running_replace_or_balance(fs_info);
++	if (ret < 0)
++		goto out_close;
++	if (ret > 0) {
++		error("please finish/cancel the running replace/balance before running this command");
++		ret = -EINVAL;
++		goto out_close;
++	}
+ 	ret = clear_ino_cache_items(fs_info);
+ 	if (ret < 0) {
+ 		errno = -ret;
+@@ -518,6 +536,7 @@ static int cmd_rescue_clear_ino_cache(const struct cmd_struct *cmd,
+ 	} else {
+ 		pr_default("Successfully cleared ino cache\n");
+ 	}
++out_close:
+ 	close_ctree(fs_info->tree_root);
+ out:
+ 	return !!ret;
+diff --git a/common/clear-cache.c b/common/clear-cache.c
+index c90ae738439e..891decd75707 100644
+--- a/common/clear-cache.c
++++ b/common/clear-cache.c
+@@ -98,10 +98,67 @@ int btrfs_clear_v1_cache(struct btrfs_fs_info *fs_info)
+ 	return ret;
+ }
+ 
++/*
++ * Return <0 for critical errors, mostly tree search failure.
++ * Return >0 if there is a running balance or replace.
++ * Return 0 if there is no running balance nor replace.
++ */
++int has_running_replace_or_balance(struct btrfs_fs_info *fs_info)
++{
++	struct btrfs_root *tree_root = fs_info->tree_root;
++	struct btrfs_root *dev_root = fs_info->dev_root;
++	struct btrfs_path path = { 0 };
++	struct btrfs_key key;
++	struct btrfs_dev_replace_item *dri;
++	u64 replace_state;
++	int ret;
++
++	key.objectid = BTRFS_BALANCE_OBJECTID;
++	key.type = BTRFS_TEMPORARY_ITEM_KEY;
++	key.offset = 0;
++
++	ret = btrfs_search_slot(NULL, tree_root, &key, &path, 0, 0);
++	btrfs_release_path(&path);
++	if (ret < 0)
++		return ret;
++	if (ret == 0)
++		return 1;
++
++	key.objectid = 0;
++	key.type = BTRFS_DEV_REPLACE_KEY;
++	key.offset = 0;
++
++	ret = btrfs_search_slot(NULL, dev_root, &key, &path, 0, 0);
++	if (ret < 0)
++		return ret;
++	if (ret > 0) {
++		btrfs_release_path(&path);
++		return 0;
++	}
++	/*
++	 * We still need to check if the dev_replace item to determine if
++	 * there is a running replace.
++	 */
++	dri = btrfs_item_ptr(path.nodes[0], path.slots[0], struct btrfs_dev_replace_item);
++	replace_state = btrfs_dev_replace_replace_state(path.nodes[0], dri);
++	btrfs_release_path(&path);
++	if (replace_state == BTRFS_IOCTL_DEV_REPLACE_STATE_STARTED ||
++	    replace_state == BTRFS_IOCTL_DEV_REPLACE_STATE_SUSPENDED)
++		return 1;
++	return 0;
++}
++
+ int do_clear_free_space_cache(struct btrfs_fs_info *fs_info, int clear_version)
+ {
+ 	int ret = 0;
+ 
++	ret = has_running_replace_or_balance(fs_info);
++	if (ret < 0)
++		return ret;
++	if (ret > 0) {
++		error("please finish/cancel the running replace/balance before running this command");
++		return -EINVAL;
++	}
+ 	if (clear_version == 1) {
+ 		if (btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE))
+ 			warning(
+diff --git a/common/clear-cache.h b/common/clear-cache.h
+index 1cdf49051244..1e31e2d5b0aa 100644
+--- a/common/clear-cache.h
++++ b/common/clear-cache.h
+@@ -26,5 +26,6 @@ int do_clear_free_space_cache(struct btrfs_fs_info *fs_info, int clear_version);
+ int validate_free_space_cache(struct btrfs_root *root, struct task_ctx *task_ctx);
+ int truncate_free_ino_items(struct btrfs_root *root);
+ int clear_ino_cache_items(struct btrfs_fs_info *fs_info);
++int has_running_replace_or_balance(struct btrfs_fs_info *fs_info);
+ 
+ #endif
+diff --git a/tune/main.c b/tune/main.c
+index 32189502f988..3dd110e0dba9 100644
+--- a/tune/main.c
++++ b/tune/main.c
+@@ -415,6 +415,16 @@ int BOX_MAIN(btrfstune)(int argc, char *argv[])
+ 	}
+ 	fs_info = root->fs_info;
+ 
++	ret = has_running_replace_or_balance(fs_info);
++	if (ret < 0) {
++		ret = 1;
++		goto out;
++	}
++	if (ret > 0) {
++		error("please finish/cancel the running replace/balance before running this command");
++		ret = 1;
++		goto out;
++	}
+ 	/*
+ 	 * As we increment the generation number here, it is unlikely that the
+ 	 * missing device will have a higher generation number, and the kernel
+-- 
+2.53.0
+

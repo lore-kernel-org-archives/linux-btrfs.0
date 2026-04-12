@@ -1,60 +1,62 @@
-Received: from mgamail.intel.com (mgamail.intel.com [198.175.65.16])
+Received: from mgamail.intel.com (mgamail.intel.com [192.198.163.15])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AEA01286D5D;
-	Sun, 12 Apr 2026 04:08:30 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.175.65.16
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8017D34DCD9;
+	Sun, 12 Apr 2026 04:53:29 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=192.198.163.15
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775966912; cv=none; b=ZonlHfyC59rftOTt3M6NUlSvqO0e0OtycUicABq0rZ71pHMs85axEfE9vELv8i7SIKLmPxGIcbDJq8m8BFoCFjmvC2xphChL734TuLxHHQIVH+mjK72qFzupIv3U4kMUpAdU3lJghPrCMye3JGM/MJkwQVkt6BRyAk+pTdkIaGs=
+	t=1775969612; cv=none; b=glmhuZRJbEEQsVvWOhMHeWvKZM/fosjwbW6GBjYzPlfouTpimreLNVmpiLP3SHrRENkRvyNDuIQriXHt6YkAC07s9N2wFRFQL9LjgsN1iaD5zgwGINjH94wvEM1qntaUiVypCsH9O9D5sS+YhXbVr4T8XyXtziSIc8KrfMr3Ls0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1775966912; c=relaxed/simple;
-	bh=EM3pY/4Lfp0D742+YWNWoAubitPxOLpCFDoZe6jYc30=;
+	s=arc-20240116; t=1775969612; c=relaxed/simple;
+	bh=k6i6n7ANp7UUruZNPHaNrTVWuktyoAPTYZQ0XKKtND8=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=K4Rq73lvGGmRzi8Ki49lKR++RHRjFjY2IVOlhOzQwoyQIAxaYGgOGNNB4RZ7mvg4Anqn50qVanZ3/UUvY4Gw02HGdKYhaO19gPDfInNU904Kob/2stQYiGdK7Bklpney1gBCYxwccb3DgSSpmBOCi5aa1ByU/rv+n0EyWt5EEsA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com; spf=pass smtp.mailfrom=intel.com; dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b=VsOKizwN; arc=none smtp.client-ip=198.175.65.16
+	 Content-Type:Content-Disposition:In-Reply-To; b=rs1JkPU+Qqh+qJWKw0y4a2xFs8AeFAhZFsQWjIJ/GzDJCw9y01gV5zONJRFA7YxNcotMMIBGqAcoFwCAKXsEvQ/4mvHJjVlWHZyxF9NTiVuGCDqH0pU0uSD9IFTrZ5p5dDESA8hUiW31bV1FZDXFM2h5VQSe7rNxARuVZAp1F/E=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com; spf=pass smtp.mailfrom=intel.com; dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b=b6LdGF/G; arc=none smtp.client-ip=192.198.163.15
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=intel.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b="VsOKizwN"
+	dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b="b6LdGF/G"
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
   d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1775966911; x=1807502911;
+  t=1775969610; x=1807505610;
   h=date:from:to:cc:subject:message-id:references:
    mime-version:in-reply-to;
-  bh=EM3pY/4Lfp0D742+YWNWoAubitPxOLpCFDoZe6jYc30=;
-  b=VsOKizwNgpF8tD7YeiTt2oCOZEkrlWGBSvC2aCHWC4+O5+ozu9WzaVgx
-   39mS42UykCVeA9H8+ZlSznl7Qgb+wNXwttYWDLE3Eb0sPsRf4z2roDLRX
-   JDrNEJy8576BTE1a2qeWJABgtYBhIgJ8jTxW72ReUd1VUqxd0u0xYIDh0
-   dCxz2+pIFJ2HziMqxOZnKCxau6TIUq84UTev7BU0gz6JZw2u7zxi1AM8h
-   uKt+3Ova4cCxtK3V9kUCraK6pT39y4r73JLCRFvrm4wu+jq2jV95Q7v3r
-   zKf/M4dgp4FVdMbRKyxd6alu5qFYpTUOIHDyJd9fgsjFZ/NY66U4RSr+l
-   Q==;
-X-CSE-ConnectionGUID: VY7TZ1ItSkqaknTs1ksLXA==
-X-CSE-MsgGUID: 4x9dVDSvSAiKiYSvdlqSlQ==
-X-IronPort-AV: E=McAfee;i="6800,10657,11755"; a="77117063"
+  bh=k6i6n7ANp7UUruZNPHaNrTVWuktyoAPTYZQ0XKKtND8=;
+  b=b6LdGF/GgDGUdUvvazxSt0d6u93NuUMy3hOOG6NdDPio/JzgkP1KUkE1
+   KL+Wcjec49xsYFniqdLukkrGzvTekZhBOKT3eqbrqVzSwcH6A3BZd7wZ3
+   ybt2vzmL2JnhJ5mMkDLdVE9CXYA2ISDQIvVWL/7VSg39YcgOgE88d3Uif
+   1MV7FUpB/FXkE+SvtBtXxNCeIAqKZaKYam5QqBaV4+xsWmUD+0HD2DfOz
+   7dEyKPO7BOMWEsekZFMGBo2jthE6l1vXHWmBoZMNOnI3lAkm70GJZ/35f
+   vF4Diq5kGYXGCy8oojUQ2ImB5dT+Q/t6Jk7X0dMaOYWGttJUxy3buNQRd
+   A==;
+X-CSE-ConnectionGUID: 2X5VVjlwQdOO1fAAiCScDw==
+X-CSE-MsgGUID: kG0bAPzBTkuTDq9CnjEWHg==
+X-IronPort-AV: E=McAfee;i="6800,10657,11755"; a="77051686"
 X-IronPort-AV: E=Sophos;i="6.23,174,1770624000"; 
-   d="scan'208";a="77117063"
-Received: from fmviesa003.fm.intel.com ([10.60.135.143])
-  by orvoesa108.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 11 Apr 2026 21:08:31 -0700
-X-CSE-ConnectionGUID: FCQ/uaR6R+qXU8jso7MvMQ==
-X-CSE-MsgGUID: P7PoNqgmTF+BvBTCfWvUdQ==
+   d="scan'208";a="77051686"
+Received: from orviesa001.jf.intel.com ([10.64.159.141])
+  by fmvoesa109.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 11 Apr 2026 21:53:29 -0700
+X-CSE-ConnectionGUID: 8BJ0Oqp+Rn6Bxb0/pHaWnw==
+X-CSE-MsgGUID: e70vVnQcRy2L3hkGAo6IEQ==
 X-ExtLoop1: 1
-Received: from igk-lkp-server01.igk.intel.com (HELO 9958d990ccf2) ([10.211.93.152])
-  by fmviesa003.fm.intel.com with ESMTP; 11 Apr 2026 21:08:27 -0700
-Received: from kbuild by 9958d990ccf2 with local (Exim 4.98.2)
+X-IronPort-AV: E=Sophos;i="6.23,174,1770624000"; 
+   d="scan'208";a="267438707"
+Received: from lkp-server01.sh.intel.com (HELO 3eaaf1a74b89) ([10.239.97.150])
+  by orviesa001.jf.intel.com with ESMTP; 11 Apr 2026 21:53:26 -0700
+Received: from kbuild by 3eaaf1a74b89 with local (Exim 4.98.2)
 	(envelope-from <lkp@intel.com>)
-	id 1wBm7V-00000000BEj-1acY;
-	Sun, 12 Apr 2026 04:08:25 +0000
-Date: Sun, 12 Apr 2026 06:07:54 +0200
+	id 1wBmp1-000000001sf-1joS;
+	Sun, 12 Apr 2026 04:53:23 +0000
+Date: Sun, 12 Apr 2026 12:53:15 +0800
 From: kernel test robot <lkp@intel.com>
 To: ZhengYuan Huang <gality369@gmail.com>, dsterba@suse.com, clm@fb.com,
 	zheng.yan@oracle.com
-Cc: llvm@lists.linux.dev, oe-kbuild-all@lists.linux.dev,
-	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-	baijiaju1990@gmail.com, r33s3n6@gmail.com, zzzccc427@gmail.com,
+Cc: oe-kbuild-all@lists.linux.dev, linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org, baijiaju1990@gmail.com,
+	r33s3n6@gmail.com, zzzccc427@gmail.com,
 	ZhengYuan Huang <gality369@gmail.com>
 Subject: Re: [PATCH v2] btrfs: reject empty non-root tree blocks at read time
-Message-ID: <202604120628.G64NL6IJ-lkp@intel.com>
+Message-ID: <202604121228.ciXtbZT6-lkp@intel.com>
 References: <20260409081140.3400650-1-gality369@gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
@@ -80,14 +82,15 @@ url:    https://github.com/intel-lab-lkp/linux/commits/ZhengYuan-Huang/btrfs-rej
 base:   https://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-next
 patch link:    https://lore.kernel.org/r/20260409081140.3400650-1-gality369%40gmail.com
 patch subject: [PATCH v2] btrfs: reject empty non-root tree blocks at read time
-config: x86_64-kexec (https://download.01.org/0day-ci/archive/20260412/202604120628.G64NL6IJ-lkp@intel.com/config)
+config: i386-randconfig-141-20260412 (https://download.01.org/0day-ci/archive/20260412/202604121228.ciXtbZT6-lkp@intel.com/config)
 compiler: clang version 20.1.8 (https://github.com/llvm/llvm-project 87f0227cb60147a26a1eeb4fb06e3b505e9c7261)
-reproduce (this is a W=1 build): (https://download.01.org/0day-ci/archive/20260412/202604120628.G64NL6IJ-lkp@intel.com/reproduce)
+smatch: v0.5.0-9004-gb810ac53
+reproduce (this is a W=1 build): (https://download.01.org/0day-ci/archive/20260412/202604121228.ciXtbZT6-lkp@intel.com/reproduce)
 
 If you fix the issue in a separate patch/commit (i.e. not just a new version of
 the same patch/commit), kindly add following tags
 | Reported-by: kernel test robot <lkp@intel.com>
-| Closes: https://lore.kernel.org/oe-kbuild-all/202604120628.G64NL6IJ-lkp@intel.com/
+| Closes: https://lore.kernel.org/oe-kbuild-all/202604121228.ciXtbZT6-lkp@intel.com/
 
 All errors (new ones prefixed by >>):
 

@@ -1,60 +1,67 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1606836494B
-	for <linux-btrfs@vger.kernel.org>; Sun, 12 Apr 2026 05:09:06 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CBA7336494F
+	for <linux-btrfs@vger.kernel.org>; Sun, 12 Apr 2026 05:09:08 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775970548; cv=none; b=M6RKcNue5gCA2b18xA4m3l7TjXj8iI93avyaP5qey1YVCJkLVbsdQgxPaqLhe0pEhiEAwqTVn0s3/eFVUMIb3Y8+61Wp3NCRGhoumlZum7ToMHLrEP317gQ5NmkoaoRJl85EmyQqZRvnZmr5YzCbIQpP7z6QdSbCLfqkzH0/Vzk=
+	t=1775970550; cv=none; b=nQp8y0QtW0SX4nFayiNtL7SYOsLZBINzdXVomg2GRcdT02oVGCtSAidpRfVFMMGQzfHtZMK4cS0UFPA3Lg7giCbYHoH6OWClKV1kVYrA/1zeNlKrvkhJNHiRYPEmiqfQfknl4CA8RqRdAE6LBqN1ZhL2MJ3vB5l9uuTTivwXOZk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1775970548; c=relaxed/simple;
-	bh=8ViUCce+o3QOQNbghnn2BuWh01kd4L8Dezk4sZFCh2o=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=d55nBynRZetL4fNR+DeP/T8B3TiW1w9ilY48DR/bPQNUpqu2PSzlJhlIbHSbNByQV88bZ0y4Wu7JkvM34J6paHFRw5EnNKv7pykRfRZ4aZ/k3+iNxSGORDr5Bbo5Y5bJRg9SP57YkH53JhM0vrZikX5/VN0mVVviY4Ex18fl4qI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=V8OQnKBn; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=V8OQnKBn; arc=none smtp.client-ip=195.135.223.131
+	s=arc-20240116; t=1775970550; c=relaxed/simple;
+	bh=aS1E2JDPOnavhG+9+w82bPsAmdAAQkW69nwdOVVTnZU=;
+	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=CbHpv4jWf6lb7/ChJruUCKqk1ZdynDt+HCC7jlPPVuymo5BL+c3xQelvO21ZEpwojoPZc3NxuloMU6bSk/Taj70rLeNnInHnbYvQISrY6iL47RuJOrrJ174vRAuWgD7mZxrId8hnF+h4Rx/cMjx+r3X7UlgkMkxF6JVGoBDIMVs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=PdWyhAZ8; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=PdWyhAZ8; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="V8OQnKBn";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="V8OQnKBn"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="PdWyhAZ8";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="PdWyhAZ8"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 571395BCCE
-	for <linux-btrfs@vger.kernel.org>; Sun, 12 Apr 2026 05:09:05 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 03F426A83E
+	for <linux-btrfs@vger.kernel.org>; Sun, 12 Apr 2026 05:09:07 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1775970545; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=A+lKJqazM8LW8l5eDAV7P3Okj11yXCHcbfJhYHmZx20=;
-	b=V8OQnKBnoKZ9yFB0xYvOhcgI9Igfry+UKFYoD37FCc1N9h3ZKumhWUAdy25e/c4TuEJ1AE
-	5CVSlCU+FJ2CvHuSh3FA2sZVM7RQUQQDc1I5RNfEvVKZj0XfJVdDDIJkjET0BC8JFlzt1M
-	Nsrr7uNxkGWDsep4xXKUmv11cq4tOdI=
-Authentication-Results: smtp-out2.suse.de;
+	t=1775970547; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=EHBsUMzH2IxyZhamOccnWPVlIB0ghjO1BG39eJpcH6Y=;
+	b=PdWyhAZ8ey2jkefKffk1pEnxUi8k1pqKj4CcZnlqHAK36GG/iKcBF+9HWpFFmkODHcwDUG
+	I/4WmJRfzS/7OikE2SXLGRNsAzO/kfDXy3IG5gOxSM8qMtuR5/LLPhYRk0HsdxZMpToR2U
+	bKULT0GOyQsjIGDTx+675bmCdJl1mPE=
+Authentication-Results: smtp-out1.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1775970545; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=A+lKJqazM8LW8l5eDAV7P3Okj11yXCHcbfJhYHmZx20=;
-	b=V8OQnKBnoKZ9yFB0xYvOhcgI9Igfry+UKFYoD37FCc1N9h3ZKumhWUAdy25e/c4TuEJ1AE
-	5CVSlCU+FJ2CvHuSh3FA2sZVM7RQUQQDc1I5RNfEvVKZj0XfJVdDDIJkjET0BC8JFlzt1M
-	Nsrr7uNxkGWDsep4xXKUmv11cq4tOdI=
+	t=1775970547; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=EHBsUMzH2IxyZhamOccnWPVlIB0ghjO1BG39eJpcH6Y=;
+	b=PdWyhAZ8ey2jkefKffk1pEnxUi8k1pqKj4CcZnlqHAK36GG/iKcBF+9HWpFFmkODHcwDUG
+	I/4WmJRfzS/7OikE2SXLGRNsAzO/kfDXy3IG5gOxSM8qMtuR5/LLPhYRk0HsdxZMpToR2U
+	bKULT0GOyQsjIGDTx+675bmCdJl1mPE=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 4961E4A756
-	for <linux-btrfs@vger.kernel.org>; Sun, 12 Apr 2026 05:09:03 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id F10904A756
+	for <linux-btrfs@vger.kernel.org>; Sun, 12 Apr 2026 05:09:05 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id DDQBOe8o22k7AwAAD6G6ig
+	id mNjMJvEo22k7AwAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Sun, 12 Apr 2026 05:09:03 +0000
+	for <linux-btrfs@vger.kernel.org>; Sun, 12 Apr 2026 05:09:05 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/3] btrfs-progs: check/lowmem: fix false alerts on
-Date: Sun, 12 Apr 2026 14:38:42 +0930
-Message-ID: <cover.1775970499.git.wqu@suse.com>
+Subject: [PATCH 1/3] btrfs-progs: print-tree: fix the format string for EXTENT_OWNER_REF_KEY
+Date: Sun, 12 Apr 2026 14:38:43 +0930
+Message-ID: <c2c8d98d47188e395c1afa4aa755cac6ac5a41a6.1775970499.git.wqu@suse.com>
 X-Mailer: git-send-email 2.53.0
+In-Reply-To: <cover.1775970499.git.wqu@suse.com>
+References: <cover.1775970499.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -76,7 +83,7 @@ X-Spamd-Result: default: False [-2.80 / 50.00];
 	RCPT_COUNT_ONE(0.00)[1];
 	ARC_NA(0.00)[];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,imap1.dmz-prg2.suse.org:helo];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:mid,suse.com:email];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
 	MIME_TRACE(0.00)[0:+];
@@ -87,33 +94,48 @@ X-Spamd-Result: default: False [-2.80 / 50.00];
 	RCVD_TLS_ALL(0.00)[]
 X-Spam-Flag: NO
 
-The lowmem mode check doesn't recognize the new EXTENT_OWNER_REF key
-type, thus it will always treat it as an unknown inline type and cause
-false alerts.
+There is missing tab for EXTENT_OWNER_REF_KEY, which results output not
+following the same indent:
 
-Fix it by adding such types to lowmem check.
+	item 13 key (84082688 EXTENT_ITEM 1048576) itemoff 15763 itemsize 62
+		refs 1 gen 14 flags DATA
+	(172 0x100) textent owner root 256 <<<
+		(178 0xdea30debbf5f519) extent data backref root 256 objectid 258 offset 0 count 1
 
-The first patch is to fix a format string error during the add of inline
-backref sequence output, which breaks the indent.
+And it's caused by a misplaced 't':
 
-The second patch is the real fix for lowmem btrfs check on squota
-feature.
+			printf("\t\(%u 0x%llx) textent owner root %llu\n",
 
-The last one is a new test case for fsck on squota.
+There is no special escape sequence "\(", nor the word "textent", it
+looks like the 't' is incorrectly placed by commit ad8a831a742c
+("btrfs-progs: dump-tree: output the sequence number for inline
+references").
 
-Qu Wenruo (3):
-  btrfs-progs: print-tree: fix the format string for
-    EXTENT_OWNER_REF_KEY
-  btrfs-progs: check/lowmem: fix false alerts about EXTENT_OWNER
-  btrfs-progs: fsck-tests: add a new test case for squota lowmem false
-    alerts
+Fix it so that the output is correct now:
 
- check/mode-lowmem.c                 |  7 +++++++
- kernel-shared/print-tree.c          |  2 +-
- tests/fsck-tests/073-squota/test.sh | 31 +++++++++++++++++++++++++++++
- 3 files changed, 39 insertions(+), 1 deletion(-)
- create mode 100755 tests/fsck-tests/073-squota/test.sh
+	item 13 key (84082688 EXTENT_ITEM 1048576) itemoff 15763 itemsize 62
+		refs 1 gen 14 flags DATA
+		(172 0x100) textent owner root 256
+		(178 0xdea30debbf5f519) extent data backref root 256 objectid 258 offset 0 count 1
 
---
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ kernel-shared/print-tree.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/kernel-shared/print-tree.c b/kernel-shared/print-tree.c
+index 28d6f4ded3f4..0afa36963b6a 100644
+--- a/kernel-shared/print-tree.c
++++ b/kernel-shared/print-tree.c
+@@ -579,7 +579,7 @@ void print_extent_item(struct extent_buffer *eb, int slot, int metadata)
+ 			       type, seq, offset, btrfs_shared_data_ref_count(eb, sref));
+ 			break;
+ 		case BTRFS_EXTENT_OWNER_REF_KEY:
+-			printf("\t\(%u 0x%llx) textent owner root %llu\n",
++			printf("\t\t(%u 0x%llx) extent owner root %llu\n",
+ 			       type, seq, offset);
+ 			break;
+ 		default:
+-- 
 2.53.0
 

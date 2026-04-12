@@ -1,215 +1,215 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mail1.merlins.org (magic.merlins.org [209.81.13.136])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3F139211A28
-	for <linux-btrfs@vger.kernel.org>; Sun, 12 Apr 2026 11:01:34 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BB91C233704
+	for <linux-btrfs@vger.kernel.org>; Sun, 12 Apr 2026 17:38:52 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.81.13.136
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775991695; cv=none; b=eaLno35IX5wQ/lDViSusIwrFQQjzr1bPjGd3S0ryc23C1ht5Doyp0kBtQ0zdiicnSkWciepO4dnspiPT+1M5wB7JM2HhhWqUeN2b7bYNECGUnHVsBmLdJrSGq66uck2rNM5TQjUU8xK7Va2HgKlmaCfmURLxWFk/MFncPPFi8cs=
+	t=1776015534; cv=none; b=HnPyC8JAoCdncXcGbP2guKRCoNABi67/i+JZs6XiexzOyiTgb0IgqTdwB52L1NwECu3ym0TnaG5wX3pYLHQEpcQnAfZhM6EjPtu7y7U/3fqC2LPOMQIMG9JIV2wFvEQSWxuvp3J+RT5KyN5QC1Xa09Y5el/aOjJTs32yECP04uo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1775991695; c=relaxed/simple;
-	bh=5vWvcw1IZcKUBf2DZWZXSZyBZ8xJ/iZUQgAxA4JINeU=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=LMnTNs10J2rSaWm6Sgox95w2oixV4hoL5WJYfxTf7g7wiyV04eznWPlANHmo9uyoIFlASXzfRc2xjaarE23iq/z0/VH3EtpFSmKF66BuljVTy8XQMA9qOZvPjbKcRgRYIIVyGPX9MFDm3p8pWCcIxCTYpfea1XsasxpgFr6XzIY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=YgsK1RBU; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=YAVUNttp; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1776015534; c=relaxed/simple;
+	bh=Rq2ON2bmyPIc4kXUOOjejYZE8O8PevpIIxng1pW5Zno=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=Kby5AHMWlp5TncdWTRB5Q70kXYTFi5CFo+8sgwNShT1iWQj2K5oo+it9phaaglCFgVb8UNwsL+JN+qxJfT7M+5hf1gf6FSAF41rUFG6dl7Sz/TvTVjs4ePQmXBN5Fq+XZnRY5nD7DmiY5IfSbLeXNKi5+s3mgxnFvo7q1Rx2c+s=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=merlins.org; spf=pass smtp.mailfrom=merlins.org; dkim=pass (2048-bit key) header.d=merlins.org header.i=@merlins.org header.b=Xflz3sWM; arc=none smtp.client-ip=209.81.13.136
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=merlins.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=merlins.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="YgsK1RBU";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="YAVUNttp"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id A4CF56A84A
-	for <linux-btrfs@vger.kernel.org>; Sun, 12 Apr 2026 11:01:25 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1775991687; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=sy2Xf4yuFfLqZe64J4ajjE3+z4v0WN23Tqgvh+npYQM=;
-	b=YgsK1RBUEQDICRKl+FWNH6c48tSh+6He+30WEF8e8VbDiXwXZK//c8uLO8dEGnFK1G2dOk
-	z6dIxtJOr0zF5c8r7BzaGZQ150EB3UCuoWSG6VOn/l+2CR6qg4OM+3e7Fwl8YDTRJ1zbLd
-	9GH2xc9Ayn+jCBqOWTWLP1mAlbixy70=
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=YAVUNttp
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1775991685; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=sy2Xf4yuFfLqZe64J4ajjE3+z4v0WN23Tqgvh+npYQM=;
-	b=YAVUNttp53UoFZIrtjR5k3ue2fAmagsR+vFd7NAs/lBPurFkw5mVVDxhilSw8sV592s/xI
-	SxKBWSyVe5eMOnNd7ANNacjX0qnQhVG9n2aIeDKjk8Msx/0As398qxRWMUzOPyTCMhQPs4
-	YX1RIC9G8rJbsPtZlFwE97+CnarkE6k=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 9B0384A8B6
-	for <linux-btrfs@vger.kernel.org>; Sun, 12 Apr 2026 11:01:24 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 12PAEYR722kSTgAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Sun, 12 Apr 2026 11:01:24 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: apply first key check for readahead when possible
-Date: Sun, 12 Apr 2026 20:31:05 +0930
-Message-ID: <49ae0f6badb787c1111daff252f034b7ae94f257.1775991651.git.wqu@suse.com>
-X-Mailer: git-send-email 2.53.0
+	dkim=pass (2048-bit key) header.d=merlins.org header.i=@merlins.org header.b="Xflz3sWM"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=merlins.org
+	; s=20251023; h=In-Reply-To:Content-Transfer-Encoding:Content-Type:
+	MIME-Version:References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+	Content-ID:Content-Description:Resent-Date:Resent-From:Resent-Sender:
+	Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:List-Unsubscribe:
+	List-Subscribe:List-Post:List-Owner:List-Archive;
+	bh=EnpVwazdUVYn//i1IY4FzfnHMEOS7lYHkTWcYQEn4m8=; b=Xflz3sWMnmhtC4leA4MxspU4hf
+	qtYWZvgfnC88FuaUx9kgQ6OPtCB1/3pt2oz2P1P0Gl2lYwnvop0+CE1HD27u7LU1A8UmRnQvwa8eM
+	1dUmo3XqpIgSiiaiIqCSTUcBv4C7j536MyJD2fwlXhy1Wbh21Fu8HInBjfyrjx33/OiJCJwYOsRac
+	Rk6JwUQow6CBUPcAFYsiwRc11xj6nDTPtWwY+s1MKv8kDHSsPwFRv2oSoYo6I079Qu9OH76B8izZd
+	wKYZ8SfYmI8gFp7nokorrXUr7jKtzqS/LPJcuXFsKuLG/HDmK+MIIApmjT+w9ngNe+EPsZLa9pe8z
+	kfGYHHSA==;
+Received: from [24.6.49.44] (port=53040 helo=sauron.svh.merlins.org)
+	by mail1.merlins.org with esmtpsa 
+	(Cipher TLS1.3:ECDHE_SECP256R1__ECDSA_SECP256R1_SHA256__AES_256_GCM:256) (Exim 4.98.2 #2)
+	id 1wByld-00000007E6x-32Pf by authid <merlins.org> with srv_auth_plain;
+	Sun, 12 Apr 2026 10:38:41 -0700
+Received: from merlin by sauron.svh.merlins.org with local (Exim 4.96)
+	(envelope-from <marc@merlins.org>)
+	id 1wBylc-003MC2-0v;
+	Sun, 12 Apr 2026 10:38:40 -0700
+Date: Sun, 12 Apr 2026 10:38:40 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>, Boris Burkov <boris@bur.io>,
+	Josef Bacik <josef@toxicpanda.com>, QuWenruo <wqu@suse.com>,
+	Qu Wenruo <quwenruo.btrfs@gmx.com>,
+	Filipe Manana <fdmanana@kernel.org>
+Cc: Chris Murphy <lists@colorremedies.com>,
+	Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
+	Roman Mamedov <rm@romanrm.net>, To: Su Yue <Damenly_Su@gmx.com>,
+	Su Yue <suy.fnst@cn.fujitsu.com>;
+Subject: Re: BTRFS discard crash: failed to run delayed ref for logical
+ 15506102321152 num_bytes 16384 type 182 action 2 ref_mod 1: -2 6.11.2)
+Message-ID: <advYoKqUCUmD4oO6@merlins.org>
+References: <adnBhWfJQ1n3hZC8@merlins.org>
+ <adr8DUbqkdFyvZsf@merlins.org>
+ <adsDRShNS8OkIcbr@merlins.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Rspamd-Action: no action
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	MID_CONTAINS_FROM(1.00)[];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	ARC_NA(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	RCPT_COUNT_ONE(0.00)[1];
-	MIME_TRACE(0.00)[0:+];
-	FROM_HAS_DN(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	FROM_EQ_ENVFROM(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,suse.com:mid,suse.com:email,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RCVD_TLS_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Rspamd-Queue-Id: A4CF56A84A
-X-Spam-Flag: NO
-X-Spam-Score: -3.01
-X-Spam-Level: 
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+In-Reply-To: <adsDRShNS8OkIcbr@merlins.org>
+X-Sysadmin: BOFH
+X-URL: http://marc.merlins.org/
+X-SA-Exim-Connect-IP: 24.6.49.44
+X-SA-Exim-Mail-From: marc@merlins.org
 
-Currently for tree block readahead we never pass a
-btrfs_tree_parent_check with @has_first_key set.
+Last update, looks like there is no way out for a regular user, which is di=
+appointing.
+btrfs check eventually worked with a lot of swap and a trick Gemini gave me:
+moremagic:~# echo -1000 > /proc/$(pgrep -x btrfs)/oom_score_adj
+moremagic:~# sysctl vm.swappiness=3D100
 
-Without @has_first_key set, btrfs will skip the following extra
-checks:
+At least it got that part right, I was able to run the whole check:
 
-- Header generation check
-  This is a minor one.
+Opening filesystem to check...
+Checking filesystem on /dev/mapper/crypt_bcache0
+UUID: a97dec85-a0d5-42ab-a0ef-e9b7479fbe43
+[1/8] checking log skipped (none written)
+[1/7] checking root items                      (0:06:49 elapsed, 35112838 i=
+tems checked)
+Fixed 0 roots.
+No device size related problem found           (1:11:30 elapsed, 4288885 it=
+ems checked)
+[2/7] checking extents                         (1:11:31 elapsed, 4288885 it=
+ems checked)
+[3/7] checking free space cache                (0:07:16 elapsed, 20918 item=
+s checked)
+[4/7] checking fs roots                        (6:16:17 elapsed, 2835820 it=
+ems checked)
+[5/7] checking csums (without verifying data)  (0:50:04 elapsed, 10400884 i=
+tems checked)
+[6/7] checking root refs                       (0:00:00 elapsed, 112 items =
+checked)
+[7/7] checking quota groups                    (0:08:19 elapsed)
+found 18657895645184 bytes used, no error found
+total csum bytes: 18153824804
+total tree bytes: 70266978304
+total fs tree bytes: 46633795584
+total extent tree bytes: 3394486272
+btree space waste bytes: 11583902998
+file data blocks allocated: 43054973927424
+ referenced 23610773848064
 
-- Empty leaf/node checks
-  This is more serious, for certain trees like the csum tree, they are
-  allowed to be empty, thus an empty leaf can pass the tree checker.
-  But if there is a parent node for such an empty leaf, it indicates
-  corruption.
+So, not bad, but not good either since it shows nothing fixed.
+And unsurprisingly, I'm back to square 1
 
-  Without @has_first_key set, we can no longer detect such a problem.
+As per my previous comments on btrfs and raid5, I think it's now my 5,
+6th or 7th time in 12 years losing a filesystem (defined by it went bad
+and I can't recover it myself).  I was really hopeful that after all
+these years, fixes and new code, it would be more solid but at least for
+me, it hasn't been :-/
 
-  In fact there is already a fuzzed image report that a corrupted csum
-  leaf which has zero nritems but still has a parent node can trigger
-  a BUG_ON() during csum deletion.
+Before I wipe it and start over, I'm willing to try a few things you'd like
+to try and fix this issue kernel and/or btrfs check side.
+I can build a TOT btrfs-progs, but can't upgrade the kernel as it's a Pi5 w=
+ith
+indeed a page size of 16384 which hopefully isn't the source of all of this
+(retiring power hungry 400W-ish intel systems to save on electricity bills)
 
-However there are only two call sites of btrfs_readahead_tree_block():
+moremagic:~# mount -o rw,skip_balance /dev/mapper/crypt_bcache0 /mnt/btrfs_=
+bigbackup
+usb 2-1: reset SuperSpeed USB device number 3 using xhci-hcd
+BTRFS: device label DS6 devid 1 transid 296961 /dev/mapper/crypt_bcache0 (2=
+51:0) scanned by mount (304163)
+BTRFS info (device dm-0): first mount of filesystem a97dec85-a0d5-42ab-a0ef=
+-e9b7479fbe43
+BTRFS info (device dm-0): using crc32c (crc32c-generic) checksum algorithm
+BTRFS info (device dm-0): forcing free space tree for sector size 4096 with=
+ page size 16384
+BTRFS warning (device dm-0): read-write for sector size 4096 with page size=
+ 16384 is experimental
+BTRFS info (device dm-0): bdev /dev/mapper/crypt_bcache0 errs: wr 0, rd 0, =
+flush 0, corrupt 5074, gen 0
+------------[ cut here ]------------
+BTRFS: Transaction aborted (error -2)
+WARNING: CPU: 1 PID: 304163 at fs/btrfs/extent-tree.c:2996 __btrfs_free_ext=
+ent.isra.0+0x13a0/0x14a0 [btrfs]
+Modules linked in: dm_crypt dm_mod bcache raid456 async_raid6_recov async_m=
+emcpy async_pq async_xor async_tx xt_MASQUERADE ipt_REJECT nf_reject_ipv4 x=
+t_tcpudp xt_conntrack xt_LOG nf_log_syslog nft_compat nft_chain_nat nf_nat =
+nf_conntrack nf_defrag_ipv6 nf_defrag_ipv4 nf_tables rfcomm algif_hash algi=
+f_skcipher af_alg bnep cp210x brcmfmac_wcc binfmt_misc usbserial hci_uart b=
+rcmfmac btbcm vc4 snd_soc_hdmi_codec brcmutil bluetooth drm_display_helper =
+cfg80211 cec drm_dma_helper rpi_hevc_dec ecdh_generic v4l2_mem2mem ecc snd_=
+soc_core pisp_be videobuf2_dma_contig v3d videobuf2_memops videobuf2_v4l2 g=
+pu_sched rfkill videodev drm_shmem_helper snd_compress snd_pcm_dmaengine sn=
+d_pcm videobuf2_common rp1_pio snd_timer snd drm_kms_helper mc raspberrypi_=
+gpiomem rp1_fw sg sch_fq_codel ecryptfs fuse drm drm_panel_orientation_quir=
+ks backlight nfnetlink ip_tables x_tables raid1 aes_ce_blk aes_ce_cipher gh=
+ash_ce gf128mul libaes sha2_ce spidev sha256_arm64 sha1_ce raspberrypi_hwmo=
+n sha1_generic ahci i2c_brcmstb spi_bcm2835
+ md_mod gpio_keys libahci pwm_fan rp1_adc libata rp1_mailbox nvmem_rmem uio=
+_pdrv_genirq uio btrfs blake2b_generic xor xor_neon raid6_pq zram lz4_compr=
+ess ipv6
+CPU: 1 UID: 0 PID: 304163 Comm: mount Tainted: G        W          6.12.47+=
+rpt-rpi-2712 #1  Debian 1:6.12.47-1+rpt1
+Tainted: [W]=3DWARN
+Hardware name: Raspberry Pi 5 Model B Rev 1.1 (DT)
+pstate: 60400009 (nZCv daif +PAN -UAO -TCO -DIT -SSBS BTYPE=3D--)
+pc : __btrfs_free_extent.isra.0+0x13a0/0x14a0 [btrfs]
+lr : __btrfs_free_extent.isra.0+0x13a0/0x14a0 [btrfs]
+sp : ffffc00086a93680
+x29: ffffc00086a93720 x28: 0000000000000000 x27: 0000000000002f02
+x26: 000000000000007f x25: ffff8000157cec30 x24: 0000000000004000
+x23: 0000000000000000 x22: ffff800102b671e0 x21: 0000000000004000
+x20: 00000e1a4bb88000 x19: 00000000fffffffe x18: 0000000000000006
+x17: ffff800100393640 x16: 0000000000000020 x15: 0000000000000002
+x14: 0000000000000001 x13: 0000000020000000 x12: 0000000000000000
+x11: ffffd06fcf9884f8 x10: 0000000000000ca9 x9 : ffffd06fcf1deb40
+x8 : 0000000000017fe8 x7 : 00000000fffff000 x6 : 0000000000000002
+x5 : 0000000000000400 x4 : 0000000000000800 x3 : 0000000000000000
+x2 : 0000000000000000 x1 : 0000000000000000 x0 : ffff80011f76c600
+Call trace:
+ __btrfs_free_extent.isra.0+0x13a0/0x14a0 [btrfs]
+ __btrfs_run_delayed_refs+0x508/0xec0 [btrfs]
+ btrfs_run_delayed_refs+0x48/0x198 [btrfs]
+ btrfs_commit_transaction+0x88/0xe20 [btrfs]
+ btrfs_recover_relocation+0x55c/0x5d0 [btrfs]
+ btrfs_start_pre_rw_mount+0x1d4/0x470 [btrfs]
+ open_ctree+0x101c/0x13b8 [btrfs]
+ btrfs_get_tree+0x5b4/0x800 [btrfs]
+ vfs_get_tree+0x30/0x108
+ fc_mount+0x20/0x68
+ btrfs_get_tree+0x238/0x800 [btrfs]
+ vfs_get_tree+0x30/0x108
+ vfs_cmd_create+0x58/0xf8
+ __arm64_sys_fsconfig+0x444/0x5b8
+ invoke_syscall+0x50/0x120
+ el0_svc_common.constprop.0+0x48/0xf0
+ do_el0_svc+0x24/0x38
+ el0_svc+0x30/0xf8
+ el0t_64_sync_handler+0x120/0x130
+ el0t_64_sync+0x190/0x198
+---[ end trace 0000000000000000 ]---
+BTRFS: error (device dm-0 state A) in do_free_extent_accounting:2996: errno=
+=3D-2 No such entry
+BTRFS error (device dm-0 state EA): failed to run delayed ref for logical 1=
+5506102321152 num_bytes 16384 type 182 action 2 ref_mod 1: -2
+BTRFS: error (device dm-0 state EA) in btrfs_run_delayed_refs:2215: errno=
+=3D-2 No such entry
+BTRFS warning (device dm-0 state EA): failed to recover relocation: -2
+BTRFS error (device dm-0 state EA): commit super ret -30
+mount: /mnt/btrfs_bigbackup: fsconfig() failed: No such file or directory.
+       dmesg(1) may have more information after failed mount system call.
+BTRFS error (device dm-0 state EA): open_ctree failed: -2
 
-- Inside relocate_tree_blocks()
-  At this call site we are trying to grab the first key of the tree
-  block, thus we are not able to pass a @first_key parameter.
-
-- Inside btrfs_readahead_node_child()
-  This is the more common call site, where we have the parent node and
-  want to readahead the child tree blocks.
-
-  In this case we can easily grab the node key and pass it for checks.
-
-Add a new parameter @first_key to btrfs_readahead_tree_block() and pass
-the node key to it inside btrfs_readahead_node_child().
-
-This should plug the gap in empty leaf detection during readahead.
-
-Link: https://lore.kernel.org/linux-btrfs/20260409071255.3358044-1-gality369@gmail.com/
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/extent_io.c  | 16 +++++++++++++---
- fs/btrfs/extent_io.h  |  3 ++-
- fs/btrfs/relocation.c |  2 +-
- 3 files changed, 16 insertions(+), 5 deletions(-)
-
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 3f59fb0a9ee5..4d5605aaf827 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -4635,15 +4635,21 @@ int try_release_extent_buffer(struct folio *folio)
-  * to read the block we will not block on anything.
-  */
- void btrfs_readahead_tree_block(struct btrfs_fs_info *fs_info,
--				u64 bytenr, u64 owner_root, u64 gen, int level)
-+				u64 bytenr, u64 owner_root, u64 gen, int level,
-+				const struct btrfs_key *first_key)
- {
- 	struct btrfs_tree_parent_check check = {
- 		.level = level,
--		.transid = gen
-+		.transid = gen,
- 	};
- 	struct extent_buffer *eb;
- 	int ret;
- 
-+	if (first_key) {
-+		memcpy(&check.first_key, first_key, sizeof(struct btrfs_key));
-+		check.has_first_key = true;
-+	}
-+
- 	eb = btrfs_find_create_tree_block(fs_info, bytenr, owner_root, level);
- 	if (IS_ERR(eb))
- 		return;
-@@ -4671,9 +4677,13 @@ void btrfs_readahead_tree_block(struct btrfs_fs_info *fs_info,
-  */
- void btrfs_readahead_node_child(struct extent_buffer *node, int slot)
- {
-+	struct btrfs_key node_key;
-+
-+	btrfs_node_key_to_cpu(node, &node_key, slot);
- 	btrfs_readahead_tree_block(node->fs_info,
- 				   btrfs_node_blockptr(node, slot),
- 				   btrfs_header_owner(node),
- 				   btrfs_node_ptr_generation(node, slot),
--				   btrfs_header_level(node) - 1);
-+				   btrfs_header_level(node) - 1,
-+				   &node_key);
- }
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index b284aee1bfb0..7b4152387d88 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -287,7 +287,8 @@ static inline void wait_on_extent_buffer_writeback(struct extent_buffer *eb)
- }
- 
- void btrfs_readahead_tree_block(struct btrfs_fs_info *fs_info,
--				u64 bytenr, u64 owner_root, u64 gen, int level);
-+				u64 bytenr, u64 owner_root, u64 gen, int level,
-+				const struct btrfs_key *first_key);
- void btrfs_readahead_node_child(struct extent_buffer *node, int slot);
- 
- /* Note: this can be used in for loops without caching the value in a variable. */
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 1c42c5180bdd..c42ef4bed8d3 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -2607,7 +2607,7 @@ int relocate_tree_blocks(struct btrfs_trans_handle *trans,
- 		if (!block->key_ready)
- 			btrfs_readahead_tree_block(fs_info, block->bytenr,
- 						   block->owner, 0,
--						   block->level);
-+						   block->level, NULL);
- 	}
- 
- 	/* Get first keys */
--- 
-2.53.0
-
+--=20
+"A mouse is a device used to point at the xterm you want to type in" - A.S.=
+R.
+Home page: http://marc.merlins.org/                       | PGP 7F55D5F27AA=
+F9D08
